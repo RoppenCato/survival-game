@@ -441,6 +441,9 @@ __COMBAT__
       if (kit.PROPS[q[0]] && isLand(px, py)) addProp({ name: q[0], x: px, y: py, s: 1, r: q[3], v: 0 });
     });
     buckets.forEach(function (b) { if (b) b.sort(function (p, q) { return p.y - q.y; }); });
+    // Brokk the dwarf stands by the hearth at the camp, on the first bit of clear land found there
+    [[-95, 8], [-80, 30], [-60, 0], [-40, -20], [-20, 0]].some(function (q) { if (!isLand(home.x + q[0], home.y + q[1])) return false; npc.x = home.x + q[0]; npc.y = home.y + q[1]; return true; });
+    npc.say = ''; npc.line = 0;
 
     // 6. the chart in the corner
     var step = Math.max(1, Math.ceil(GW / 260)), mw = Math.floor(GW / step), mh = Math.floor(GH / step);
@@ -461,6 +464,35 @@ __COMBAT__
     showStat();
   }
   function showStat() { stat.textContent = info + ' Sailing that gap at top speed takes about ' + Math.max(1, Math.round(parseFloat((info.match(/island: (\d+) m/) || [0, 0])[1]) / 10 * T / spec.top)) + ' s.'; }
+  /* ---------- a friendly dwarf at the camp: he turns to watch you, and E talks to him ---------- */
+  var npc = { x: 0, y: 0, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: lib.makeFigure(lib.folkSpec('dwarf')), name: lib.folk.dwarf.name };
+  var LINES = ['Well met, friend! I am Brokk. I keep the fire here.', 'Good oak grows inland. Mind the boar when you fetch it.', 'The ship is sound. Bring her back in one piece.', 'Bring me iron one day and I will make you a proper axe.', 'Fair winds to you.'];
+  function nearNpc(P) { return !aboard && Math.hypot(P.x - npc.x, P.y - npc.y) < 40; }
+  function talk() { npc.say = LINES[npc.line % LINES.length]; npc.line++; npc.sayT = 4.5; }
+  function drawNpc(c) {
+    var vx = Math.cos(npc.face), vy = Math.sin(npc.face), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
+    var talking = npc.sayT > 0, an = { phase: 0, amt: 0, t: clock * (talking ? 2.2 : 1), lx: 0, ly: talking ? Math.sin(clock * 9) * 0.5 : 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) };
+    c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(npc.x, npc.y * K, 9, 4, 0, 0, 7); c.fill();
+    lib.figureD(c, npc.x, npc.y * K, dir, an, null, npc.fig);
+  }
+  function bubble(c) {             // his name, and what he says, above his head
+    var s = 1 / cam.z, text = npc.sayT > 0 ? npc.say : '', near = hero && Math.hypot(hero.x - npc.x, hero.y - npc.y) < 90;
+    if (!text && !near) return;
+    c.save(); c.translate(npc.x, npc.y * K - 36); c.scale(s, s); c.textAlign = 'center';
+    if (!text) { c.font = '600 8px system-ui, sans-serif'; c.lineWidth = 2.5; c.strokeStyle = 'rgba(20,16,30,0.8)'; c.strokeText(npc.name, 0, 0); c.fillStyle = '#ffffff'; c.fillText(npc.name, 0, 0); c.restore(); return; }
+    c.font = '500 8.5px system-ui, sans-serif';
+    var words = text.split(' '), lines = [''], i, w = 0;
+    for (i = 0; i < words.length; i++) { var tryL = lines[lines.length - 1] + (lines[lines.length - 1] ? ' ' : '') + words[i]; if (c.measureText(tryL).width > 130 && lines[lines.length - 1]) lines.push(words[i]); else lines[lines.length - 1] = tryL; }
+    for (i = 0; i < lines.length; i++) w = Math.max(w, c.measureText(lines[i]).width);
+    var bw = w + 14, bh = lines.length * 11 + 8, a = Math.min(1, npc.sayT / 0.4);
+    c.globalAlpha = a; c.translate(0, -bh - 2);
+    c.fillStyle = '#fffaf0'; c.strokeStyle = '#3a2a36'; c.lineWidth = 1.5;
+    c.beginPath(); c.roundRect(-bw / 2, 0, bw, bh, 5); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(-4, bh - 0.8); c.lineTo(0, bh + 5); c.lineTo(4, bh - 0.8); c.fill(); c.beginPath(); c.moveTo(-4, bh); c.lineTo(0, bh + 5); c.lineTo(4, bh); c.stroke();
+    c.fillStyle = '#3a2a36'; for (i = 0; i < lines.length; i++) c.fillText(lines[i], 0, 12 + i * 11);
+    c.restore();
+  }
+
   var boat = { x: 0, y: 0, h: 0, speed: 0, vx: 0, vy: 0 }, aboard = false, wakes = [], smoke = [], wakeT = 0, clock = 0;
   function moor() {                               // the first spot beside the dock where the whole hull floats
     var d = dims(), side, along;
@@ -484,7 +516,7 @@ __COMBAT__
   function releaseWalk() { for (var k in walkCodes) Combat.key(k, false); }
   window.addEventListener('keydown', function (e) {
     if (typing(e)) return;
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) useBoat(); return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (nearNpc(Combat.dbg().P)) talk(); else useBoat(); } return; }
     if (!walkCodes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
     keys[e.code] = true; if (!aboard) Combat.key(e.code, true);
@@ -716,6 +748,7 @@ __COMBAT__
     items: function (items) {
       var z = cam.z, hw = 200 / z, hh = 125 / z;
       items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { drawBoat(ctx); } });
+      if (Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
       if (aboard) items.push({ y: hero.y + 0.5, f: function () { drawBoatFront(ctx); } });
       // only the objects in the pieces of map near the view (trees are tall, so look a little further down)
       var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1);
@@ -743,6 +776,7 @@ __COMBAT__
       c.fillStyle = '#ffffff'; c.fillRect(mx + boat.x / WX * mw - 1.5, my + boat.y / WY * mh - 1.5, 3, 3);
       c.fillStyle = '#ffd34d'; c.fillRect(mx + P.x / WX * mw - 1, my + P.y / WY * mh - 1, 2, 2);
       c.imageSmoothingEnabled = true; c.restore();
+      bubble(c);
       if (prompt) {
         var tx = P.x, ty = P.y * K - 44 - (aboard ? 6 : 0), s = 1 / cam.z;
         c.save(); c.translate(tx, ty); c.scale(s, s);
@@ -777,13 +811,17 @@ __COMBAT__
     var dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
     var D = Combat.dbg(), P = D.P;
     D.W.pillars = nearSolids(P);
+    if (Math.hypot(P.x - npc.x, P.y - npc.y) < 200) D.W.pillars.push({ x: npc.x, y: npc.y, r: 7, hide: true });
+    // he turns to face you when you are close, and back toward the sea when you leave
+    var want = Math.hypot(P.x - npc.x, P.y - npc.y) < 110 ? Math.atan2(P.y - npc.y, P.x - npc.x) : Math.PI / 2, dn = Math.atan2(Math.sin(want - npc.face), Math.cos(want - npc.face));
+    npc.face += Math.max(-4 * dt, Math.min(4 * dt, dn)); if (npc.sayT > 0) npc.sayT -= dt;
     if (!P.dead) P.hp = P.maxHp;
     sail(dt);
     if (aboard) {
       var d = dims(); P.x = boat.x - Math.cos(boat.h) * d.L * 0.25; P.y = boat.y - Math.sin(boat.h) * d.L * 0.25; P.vx = P.vy = 0;
       if (Math.hypot(boat.vx, boat.vy) > 8 || keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD) { P.face = boat.h; }
       prompt = landing() ? 'Step ashore' : '';
-    } else prompt = canBoard(P) ? 'Board' : '';
+    } else prompt = nearNpc(P) ? (npc.sayT > 0 ? '' : 'Talk') : (canBoard(P) ? 'Board' : '');
     Combat.update(dt);
     if (aboard) { var d2 = dims(); P.x = boat.x - Math.cos(boat.h) * d2.L * 0.25; P.y = boat.y - Math.sin(boat.h) * d2.L * 0.25; }
     Combat.render(ctx);

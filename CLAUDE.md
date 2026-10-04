@@ -120,6 +120,14 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - A pixel-sprite hero (`heroP`, `SPRITES`, `Combat.S.look = 'sprite'`, V in the Combat Arena) is still in the code
   as a comparison only. Do not build on it.
 
+## People
+
+- Other people are the hero's figure with their own spec: `lib.makeFigure(spec)` then `lib.figureD(c, x, y, dir, an,
+  pose, F)`. `FOLK` in `src/art.js` holds them (`lib.folkSpec(key)`); spec key `beard` adds a beard.
+- The first is Brokk, a friendly dwarf smith (dwarfs are from Norse myth). He stands at the home camp in the Sea
+  Editor, turns to watch the hero, and E talks to him (a speech bubble cycling through a few lines). He does not
+  walk, trade or give tasks yet.
+
 ## Creatures
 
 - `creatureD(c, x, y, s, H)` draws creature `H` (from `makeCreature(spec)`), or the one set by `setCreature` if
