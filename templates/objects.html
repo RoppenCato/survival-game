@@ -181,6 +181,9 @@ __COMBAT__
 
   /* ---------- objects by category ---------- */
   var CATS = [
+    { name: 'Found in nature', ground: 'grass', solid: 10, list: ['cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
+    { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile'] },
+    { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['longhouse', 'beachedBoat', 'campfire', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
     { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'pine', 'pineBig', 'willow', 'birch', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
     { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'bellFlower', 'flowerBed', 'tallGrass', 'mushrooms', 'mushRing', 'snowBush', 'emberBush'] },
     { name: 'Rocks and terrain', ground: 'grass', solid: 12, list: ['rock', 'snowRock', 'emberRock', 'standingStone', 'cliff', 'rubble', 'iceCrystal', 'iceCrystalBig', 'log', 'stump', 'vent', 'ventBig', 'waterfall'] },
@@ -258,7 +261,7 @@ __COMBAT__
     return p;
   }
 
-  var cur = 'oak', spec = defSpec('oak'), copies = 1, ground = 'grass', night = false, showFoot = false, view = { zoom: 1 };
+  var cur = 'longhouse', spec = defSpec('longhouse'), copies = 1, ground = 'grass', night = false, showFoot = false, view = { zoom: 1 };
   var baked = [], dirty = true, OBJ_X = 200, OBJ_Y = 170;
   var inputs = {}, outputs = {}, params = {};
   var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg'), info = document.getElementById('info');
@@ -451,7 +454,7 @@ __COMBAT__
     jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
   });
 
-  showCat(CATS[0]); pick('oak');
+  showCat(CATS[2]); pick('longhouse');
 
   var last = performance.now();
   function frame(now) {

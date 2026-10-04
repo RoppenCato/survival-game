@@ -64,7 +64,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
   <h1>Sea Editor</h1>
-  <p class="lede">Walk down the dock, board the boat and sail between islands. Pick a boat, then change how it handles and how the sea looks. Step ashore anywhere the boat touches land.</p>
+  <p class="lede">Walk down the jetty, board the ship and sail between islands. Pick a ship, then change how it handles and how the sea looks. Step ashore anywhere the boat touches land.</p>
   <div class="wrap">
     <div class="left">
       <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Sea and islands"></canvas></div>
@@ -146,10 +146,10 @@ __COMBAT__
   /* ---------- boats ---------- */
   var LINE = '#1d1622';
   var TYPES = [
-    { name: 'Raft', L: 21, W: 14, note: 'Lashed logs and a patched sail. Slow, wide and it slides around.', set: { top: 75, accel: 45, turn: 1.3, glide: 1.6, grip: 0.3 } },
-    { name: 'Rowboat', L: 19, W: 8.5, note: 'Light and nimble. Stops quickly and turns on the spot.', set: { top: 105, accel: 120, turn: 2.8, glide: 0.7, grip: 0.8 } },
-    { name: 'Sailboat', L: 27, W: 10, note: 'Fast once it gets going, and it glides a long way.', set: { top: 170, accel: 70, turn: 1.8, glide: 2.2, grip: 0.6 } },
-    { name: 'Steam launch', L: 29, W: 12, note: 'The fastest. Slow to build speed and wide in the turn.', set: { top: 215, accel: 55, turn: 1.2, glide: 1.8, grip: 0.7 } }
+    { name: 'Faering', L: 20, W: 7.5, oars: 2, sail: 0, shields: 0, head: 0, note: 'A small four-oared boat. Nimble, for short hops along the coast.', set: { top: 95, accel: 110, turn: 2.6, glide: 0.8, grip: 0.8 } },
+    { name: 'Karve', L: 27, W: 9, oars: 3, sail: 1, mast: 34, yard: 1.5, stripes: 1, shields: 0, head: 0, note: 'A small ship with oars and a striped sail. A good all-rounder.', set: { top: 130, accel: 70, turn: 2, glide: 1.8, grip: 0.65 } },
+    { name: 'Longship', L: 36, W: 9, oars: 5, sail: 1, mast: 40, yard: 1.7, stripes: 1, shields: 6, head: 1, note: 'A dragon-headed warship with shields along the rail. Fast and long, wide in the turn.', set: { top: 165, accel: 60, turn: 1.5, glide: 2.4, grip: 0.6 } },
+    { name: 'Knarr', L: 30, W: 12, oars: 0, sail: 1, mast: 38, yard: 1.3, stripes: 0, shields: 0, head: 0, note: 'A broad cargo ship under sail alone. Slow to start and steady.', set: { top: 110, accel: 40, turn: 1.2, glide: 2.6, grip: 0.55 } }
   ];
   var STEER = [['Direct', 'Hold a direction and the boat turns to face it and goes. Easy, like walking.'], ['Tiller', 'W drives forward, S backs up, A and D turn the bow. More like a real boat: you have to be moving to turn.']];
   var BOAT = [
@@ -177,9 +177,9 @@ __COMBAT__
   ];
   var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.3, max: 2, step: 0.05 }];
   var NUM = BOAT.concat(HANDLE, SEA, LAND);
-  var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Trim']];
-  var DEF = { type: 2, steer: 1, size: 1.8, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, hue: 60, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6, isle: 32, count: 5, gap: 60, seed: 25,
-    col: { hull: '#704c33', deck: '#c49a68', sail: '#efe6cf', trim: '#e0a93a' } };
+  var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Stripes and shields']];
+  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, hue: 60, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6, isle: 32, count: 5, gap: 60, seed: 25,
+    col: { hull: '#5a3a26', deck: '#b98a5a', sail: '#efe6cf', trim: '#b83a2e' } };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var spec = clone(DEF), view = { zoom: 0.7 }, inputs = {}, outputs = {}, swatch = {};
   var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg'), stat = document.getElementById('stat');
@@ -202,7 +202,7 @@ __COMBAT__
     document.getElementById('typedesc').textContent = TYPES[spec.type].note;
     document.getElementById('steerdesc').textContent = STEER[spec.steer][1];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
-    try { localStorage.setItem('seaeditor', JSON.stringify(spec)); } catch (e) {}
+    try { localStorage.setItem('seaeditor2', JSON.stringify(spec)); } catch (e) {}
     var wk = [spec.isle, spec.count, spec.gap, spec.seed, spec.hue].join('|');
     if (wk === worldKey) showStat();
     if (wk !== worldKey) { var relocate = wk.split('|').slice(0, 4).join('|') !== worldKey.split('|').slice(0, 4).join('|'); worldKey = wk; buildWorld(relocate); }
@@ -338,10 +338,16 @@ __COMBAT__
       if (green && vnoise(x / 6, y / 6, s + 20) > 0.62 && roll < 0.24) o = { name: ['pine', 'birch', 'pine', 'cypress', 'oak'][Math.floor(R() * 5)], s: 0.5 + R() * 0.15, r: 8 };
       else if (green && roll < 0.05) o = { name: R() < 0.5 ? 'bush' : 'tallGrass', s: 0.9, r: 0 };
       else if (t3 === 'shore' && roll < 0.03) o = { name: 'rock', s: 0.8 + R() * 0.3, r: 9 };
+      else if (green && roll > 0.9965) o = { name: R() < 0.5 ? 'runestone' : 'cairn', s: 1, r: 11 };
       if (!o || !kit.PROPS[o.name]) continue;
       o.x = wx; o.y = wy; o.v = Math.floor(R() * 3); props.push(o);
       if (o.r) solids.push({ x: wx, y: wy, r: o.r * o.s, hide: true });
     }
+    [['dryingRack', -70, -64, 0], ['woodpile', -6, -74, 12], ['brazier', 40, -30, 6], ['vikingTent', -96, 60, 16], ['dragonPost', 58, 28, 6]].forEach(function (q) {
+      var px = home.x + q[1], py = home.y + q[2];
+      if (!kit.PROPS[q[0]] || !isLand(px, py)) return;
+      props.push({ name: q[0], x: px, y: py, s: 1, r: q[3], v: 0 }); if (q[3]) solids.push({ x: px, y: py, r: q[3], hide: true });
+    });
     props.sort(function (a, b) { return a.y - b.y; });
     landPct = Math.round(landTiles / (GW * GH) * 100);
 
@@ -358,7 +364,7 @@ __COMBAT__
   var boat = { x: 0, y: 0, h: 0, speed: 0, vx: 0, vy: 0 }, aboard = false, wakes = [], smoke = [], wakeT = 0, clock = 0;
   function moor() {                               // the first spot beside the dock where the whole hull floats
     var d = dims(), side, along;
-    for (side = 1; side >= -1; side -= 2) for (along = 2; along <= 12; along += 0.5) {
+    for (side = 1; side >= -1; side -= 2) for (along = 6; along >= 1.5; along -= 0.5) {   // as far out along the jetty as it fits
       var bx = (dockEnd.x + along) * T, by = (dockEnd.y + 0.5) * T + side * (T * 0.5 + d.W + 5);
       if (free(bx, by, 0)) return { x: bx, y: by };
     }
@@ -441,78 +447,102 @@ __COMBAT__
     wakeT -= dt;
     if (sp > 12 && wakeT <= 0 && spec.wake > 0) { wakeT = 0.07; wakes.push({ x: boat.x - Math.cos(boat.h) * d.L * 0.9, y: boat.y - Math.sin(boat.h) * d.L * 0.9, r: d.W * 0.7, life: 1.3, max: 1.3, v: 6 + sp * 0.05 }); }
     for (var i = wakes.length - 1; i >= 0; i--) { wakes[i].life -= dt; wakes[i].r += wakes[i].v * dt; if (wakes[i].life <= 0) wakes.splice(i, 1); }
-    if (spec.type === 3 && Math.random() < dt * (3 + sp * 0.06)) smoke.push({ x: boat.x - Math.cos(boat.h) * d.L * 0.15, y: boat.y - Math.sin(boat.h) * d.L * 0.15, z: 26 * spec.size, r: 2.5, life: 1.6, max: 1.6 });
     for (i = smoke.length - 1; i >= 0; i--) { var q = smoke[i]; q.life -= dt; q.z += 14 * dt; q.r += 4 * dt; q.x -= boat.vx * dt * 0.02; if (q.life <= 0) smoke.splice(i, 1); }
   }
 
-  /* ---------- drawing the boat ---------- */
+  /* ---------- drawing the ship ----------
+     The hull is a top-down outline, turned to the ship's heading and squashed by the view. Stems, mast and sail
+     stand upright on top of it. */
   function shadeHex(hex, d) { var n = parseInt(hex.substr(1), 16), r = Math.max(0, Math.min(255, (n >> 16) + d)), g = Math.max(0, Math.min(255, ((n >> 8) & 255) + d)), b = Math.max(0, Math.min(255, (n & 255) + d)); return 'rgb(' + r + ',' + g + ',' + b + ')'; }
   function bobY() { return Math.sin(clock * 2.1) * 1.2 * spec.bob; }
+  function hullPath(c, L, W) { c.moveTo(-L, 0); c.quadraticCurveTo(0, -W * 1.9, L, 0); c.quadraticCurveTo(0, W * 1.9, -L, 0); c.closePath(); }   // pointed at both ends
+  function halfW(W, u) { return 0.95 * W * (1 - u * u); }
   function drawBoat(c) {
-    var d = dims(), L = d.L, W = d.W, sz = spec.size, ty = spec.type, col = spec.col, h = boat.h;
+    var d = dims(), L = d.L, W = d.W, sz = spec.size, TY = TYPES[spec.type], col = spec.col, h = boat.h, i;
     var sx = boat.x, sy = boat.y * K + bobY(), roll = Math.sin(clock * 1.7 + 1) * 0.03 * spec.bob, mv = Math.min(1, Math.hypot(boat.vx, boat.vy) / Math.max(1, spec.top));
     function inFrame(dy, fn) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(h + roll); fn(); c.restore(); }
-    function hull() {
-      c.beginPath();
-      if (ty === 0) { c.rect(-L, -W, L * 2, W * 2); return; }
-      c.moveTo(-L, -W * 0.75); c.quadraticCurveTo(L * 0.35, -W * 1.2, L, 0); c.quadraticCurveTo(L * 0.35, W * 1.2, -L, W * 0.75); c.closePath();
-    }
     function fillStroke(fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke(); }
     c.fillStyle = 'rgba(8,12,40,0.28)'; c.beginPath(); c.ellipse(sx + 2, boat.y * K + 5 * sz, L * 0.95, W * 1.05, 0, 0, 7); c.fill();
-    inFrame(4 * sz, function () { hull(); fillStroke(shadeHex(col.hull, -38)); });
+    inFrame(4 * sz, function () { c.beginPath(); hullPath(c, L, W); fillStroke(shadeHex(col.hull, -30)); });
     inFrame(0, function () {
-      hull(); fillStroke(col.hull);
-      if (ty === 0) {
-        for (var i = 0; i < 5; i++) { c.beginPath(); c.rect(-L, -W + i * W * 0.4, L * 2, W * 0.4); fillStroke(i % 2 ? shadeHex(col.hull, 14) : col.hull, 1.1); }
-        c.strokeStyle = col.trim; c.lineWidth = 1.6; c.beginPath(); c.moveTo(-L * 0.6, -W); c.lineTo(-L * 0.6, W); c.moveTo(L * 0.6, -W); c.lineTo(L * 0.6, W); c.stroke();
-      } else {
-        c.save(); c.scale(0.82, 0.7); hull(); fillStroke(col.deck, 1.2); c.restore();
-        if (ty === 1) {
-          [-0.3, 0.22].forEach(function (u) { c.beginPath(); c.rect(L * u - 1.6, -W * 0.62, 3.2, W * 1.24); fillStroke(shadeHex(col.hull, 10), 1); });
-          [-1, 1].forEach(function (sd) {
-            var a = sd * (Math.PI / 2) - Math.sin(clock * (3 + mv * 5)) * 0.6 * mv, ox = 0, oy = sd * W * 0.8, ex = ox + Math.cos(a) * W * 2.3, ey = oy + Math.sin(a) * W * 2.3;
-            c.strokeStyle = LINE; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
-            c.strokeStyle = shadeHex(col.deck, -10); c.lineWidth = 1.6; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
-            c.beginPath(); c.ellipse(ex, ey, 3.4, 1.8, a, 0, 7); fillStroke(shadeHex(col.deck, -10), 1);
-          });
-        } else if (ty === 2) { c.beginPath(); c.arc(L * 0.12, 0, 2.2, 0, 7); fillStroke(col.trim, 1); }
-        else {
-          c.beginPath(); c.rect(-L * 0.5, -W * 0.5, L * 0.62, W); fillStroke(shadeHex(col.deck, -30), 1.2);
-          c.beginPath(); c.arc(L * 0.4, 0, W * 0.42, 0, 7); fillStroke(col.trim, 1.2);
-          c.beginPath(); c.rect(-L - 2, -W * 0.55, 5, W * 1.1); fillStroke(shadeHex(col.hull, -50), 1.2);
-        }
-      }
+      c.beginPath(); hullPath(c, L, W); fillStroke(col.hull);
+      c.save(); c.scale(0.9, 0.78); c.beginPath(); hullPath(c, L, W); c.lineWidth = 0.9; c.strokeStyle = 'rgba(20,12,20,0.45)'; c.stroke(); c.restore();   // a line of planking
+      c.save(); c.scale(0.84, 0.62); c.beginPath(); hullPath(c, L, W); fillStroke(col.deck, 1.2); c.restore();
+      for (i = -2; i <= 2; i++) { var tu = i * 0.22, tw = halfW(W, tu) * 0.6; c.beginPath(); c.rect(L * tu - 1.3, -tw, 2.6, tw * 2); fillStroke(shadeHex(col.hull, 12), 0.9); }   // rowing benches
+      // steering oar on the right side of the stern
+      c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = 3; c.beginPath(); c.moveTo(-L * 0.7, W * 0.45); c.lineTo(-L * 0.98, W * 1.0); c.stroke();
+      c.strokeStyle = shadeHex(col.deck, -20); c.lineWidth = 1.6; c.beginPath(); c.moveTo(-L * 0.7, W * 0.45); c.lineTo(-L * 0.98, W * 1.0); c.stroke();
+      for (var n = 0; n < TY.oars; n++) [-1, 1].forEach(function (sd) {
+        var u = TY.oars === 1 ? 0 : -0.42 + n * (0.78 / (TY.oars - 1)), a = sd * (Math.PI / 2) - Math.sin(clock * (2.6 + mv * 4.5)) * 0.55 * mv - 0.2;
+        var ox = L * u, oy = sd * halfW(W, u), len = W * 1.7 + 7 * sz, ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
+        c.strokeStyle = LINE; c.lineWidth = 2.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
+        c.strokeStyle = shadeHex(col.deck, -10); c.lineWidth = 1.3; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
+        c.beginPath(); c.ellipse(ex, ey, 3.2, 1.6, a, 0, 7); fillStroke(shadeHex(col.deck, -10), 0.9);
+      });
+      for (i = 0; i < TY.shields; i++) [-1, 1].forEach(function (sd) {
+        var u = -0.6 + i * (1.2 / (TY.shields - 1)), r = 2.7 * sz;
+        c.beginPath(); c.arc(L * u, sd * halfW(W, u), r, 0, 7); fillStroke(i % 2 ? col.sail : col.trim, 1);
+        c.beginPath(); c.arc(L * u, sd * halfW(W, u), r * 0.32, 0, 7); c.fillStyle = '#8a8f9a'; c.fill();
+      });
     });
-    // upright parts
+    // upright parts: stems, mast and sail
+    var fx = Math.cos(h), fy = Math.sin(h) * K;
     function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
-    function pole(p, hgt, w) { c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = w + 2; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(p[0], p[1] - hgt); c.stroke(); c.strokeStyle = shadeHex(col.hull, -18); c.lineWidth = w; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(p[0], p[1] - hgt); c.stroke(); }
-    if (ty === 0) {
-      var m0 = at(L * 0.15, 0); pole(m0, 30 * sz, 2);
-      c.beginPath(); c.rect(m0[0] - 9 * sz, m0[1] - 30 * sz, 18 * sz, 17 * sz); fillStroke(col.sail, 1.4);
-      c.beginPath(); c.rect(m0[0] - 1 * sz, m0[1] - 24 * sz, 6 * sz, 6 * sz); fillStroke(shadeHex(col.sail, -34), 1);
-    } else if (ty === 2) {
-      var m2 = at(L * 0.12, 0), bm = at(-L * 0.78, W * 0.5 * Math.sin(clock * 0.8)), mh = 40 * sz;
-      c.beginPath(); c.moveTo(m2[0], m2[1] - mh); c.quadraticCurveTo((m2[0] + bm[0]) / 2 + 5 * sz, (m2[1] - mh + bm[1] - 6) / 2, bm[0], bm[1] - 6 * sz); c.lineTo(m2[0], m2[1] - 6 * sz); c.closePath(); fillStroke(col.sail, 1.4);
-      pole(m2, mh, 2);
-      c.strokeStyle = LINE; c.lineWidth = 2; c.beginPath(); c.moveTo(m2[0], m2[1] - 6 * sz); c.lineTo(bm[0], bm[1] - 6 * sz); c.stroke();
-    } else if (ty === 3) {
-      var f = at(-L * 0.15, 0);
-      c.beginPath(); c.rect(f[0] - 3.2 * sz, f[1] - 24 * sz, 6.4 * sz, 21 * sz); fillStroke('#4a4f58', 1.4);
-      c.beginPath(); c.rect(f[0] - 3.8 * sz, f[1] - 19 * sz, 7.6 * sz, 3 * sz); fillStroke(col.trim, 1);
-      c.beginPath(); c.ellipse(f[0], f[1] - 24 * sz, 3.6 * sz, 1.6 * sz, 0, 0, 7); fillStroke('#2a2c33', 1.2);
+    function curve(p0, p1, p2, w, fill) {
+      c.lineCap = 'round';
+      c.strokeStyle = LINE; c.lineWidth = w + 2; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke();
+      c.strokeStyle = fill; c.lineWidth = w; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke();
+    }
+    function stem(lx, dir, hgt, head) {
+      var p = at(lx, 0), tip = [p[0] + fx * dir * 7 * sz, p[1] + fy * dir * 7 * sz - hgt], w = 3.2 * sz, wood = shadeHex(col.hull, -8);
+      curve(p, [p[0] - fx * dir * 1.5 * sz, p[1] - hgt * 0.6], tip, w, wood);
+      if (head) {
+        var jaw = [tip[0] + fx * dir * 7 * sz, tip[1] + fy * dir * 7 * sz + 2.5 * sz];
+        curve(tip, [tip[0] + fx * dir * 3 * sz, tip[1] - 1.5 * sz], jaw, w * 0.9, wood);
+        curve(tip, [tip[0] - fx * dir * 4 * sz, tip[1] - 4.5 * sz], [tip[0] - fx * dir * 5 * sz, tip[1] - 0.5 * sz], w * 0.5, wood);   // crest curling back
+        c.beginPath(); c.arc(tip[0] + fx * dir * 2.4 * sz, tip[1] + fy * dir * 2.4 * sz - 0.4 * sz, 1.1 * sz, 0, 7); c.fillStyle = '#ffd34d'; c.fill();
+        c.strokeStyle = col.trim; c.lineWidth = 1.2 * sz; c.beginPath(); c.moveTo(jaw[0], jaw[1]); c.lineTo(jaw[0] + fx * dir * 3 * sz, jaw[1] + fy * dir * 3 * sz + 1.5 * sz); c.stroke();
+      } else curve(tip, [tip[0] + fx * dir * 3.5 * sz, tip[1] - 3 * sz], [tip[0] + fx * dir * 1.5 * sz, tip[1] + 2.4 * sz], w * 0.55, wood);   // a simple curl
+    }
+    stem(-L * 0.96, -1, (TY.head ? 15 : 10) * sz, false);
+    stem(L * 0.96, 1, (TY.head ? 19 : 11) * sz, !!TY.head);
+    if (TY.sail) {
+      var m = at(L * 0.05, 0), mh = TY.mast * sz, top = mh * 0.92, foot = mh * 0.3, yw = W * TY.yard, bl = 10 * sz;
+      var a1 = at(L * 0.05, -yw), b1 = at(L * 0.05, yw), a0 = at(L * 0.05, -yw * 0.9), b0 = at(L * 0.05, yw * 0.9);
+      // corners and a centre line that billows forward, so the sail still shows when the ship is seen side on
+      var TA = [a1[0], a1[1] - top], TB = [b1[0], b1[1] - top], TM = [m[0] + fx * bl * 0.3, m[1] + fy * bl * 0.3 - top];
+      var BA = [a0[0], a0[1] - foot], BB = [b0[0], b0[1] - foot], BM = [m[0] + fx * bl, m[1] + fy * bl - foot];
+      function topAt(s) { return s < 0.5 ? [TA[0] + (TM[0] - TA[0]) * s * 2, TA[1] + (TM[1] - TA[1]) * s * 2] : [TM[0] + (TB[0] - TM[0]) * (s - 0.5) * 2, TM[1] + (TB[1] - TM[1]) * (s - 0.5) * 2]; }
+      function botAt(s) { return s < 0.5 ? [BA[0] + (BM[0] - BA[0]) * s * 2, BA[1] + (BM[1] - BA[1]) * s * 2] : [BM[0] + (BB[0] - BM[0]) * (s - 0.5) * 2, BM[1] + (BB[1] - BM[1]) * (s - 0.5) * 2]; }
+      c.strokeStyle = LINE; c.lineWidth = 2 * sz + 2; c.lineCap = 'round'; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();
+      c.strokeStyle = shadeHex(col.hull, -8); c.lineWidth = 2 * sz; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();
+      c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.lineTo(BB[0], BB[1]); c.lineTo(BM[0], BM[1]); c.lineTo(BA[0], BA[1]); c.closePath();
+      c.fillStyle = col.sail; c.fill();
+      if (TY.stripes) { c.fillStyle = col.trim; for (i = 0; i < 6; i += 2) { var s0 = i / 6, s1 = (i + 1) / 6, mid = (s0 < 0.5 && s1 > 0.5); c.beginPath(); var q = topAt(s0); c.moveTo(q[0], q[1]); if (mid) c.lineTo(TM[0], TM[1]); q = topAt(s1); c.lineTo(q[0], q[1]); q = botAt(s1); c.lineTo(q[0], q[1]); if (mid) c.lineTo(BM[0], BM[1]); q = botAt(s0); c.lineTo(q[0], q[1]); c.closePath(); c.fill(); } }
+      c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.lineTo(BB[0], BB[1]); c.lineTo(BM[0], BM[1]); c.lineTo(BA[0], BA[1]); c.closePath();
+      c.lineWidth = 1.5; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke();
+      c.strokeStyle = LINE; c.lineWidth = 2.2 * sz + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke();
+      c.strokeStyle = shadeHex(col.hull, -8); c.lineWidth = 2.2 * sz; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke();
     }
   }
-
-  // The near side of the hull, drawn again over the hero's feet so he stands in the boat instead of on it.
+  // The near side of the hull, drawn again over the hero's feet so he stands in the ship instead of on it.
   function drawBoatFront(c) {
     var d = dims(), L = d.L, W = d.W, sz = spec.size, sx = boat.x, sy = boat.y * K + bobY(), roll = Math.sin(clock * 1.7 + 1) * 0.03 * spec.bob;
-    function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(boat.h + roll); c.scale(k1, k2); c.moveTo(-L, -W * 0.75); c.quadraticCurveTo(L * 0.35, -W * 1.2, L, 0); c.quadraticCurveTo(L * 0.35, W * 1.2, -L, W * 0.75); c.closePath(); c.restore(); }
+    function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(boat.h + roll); c.scale(k1, k2); hullPath(c, L, W); c.restore(); }
     c.save();
     c.beginPath(); c.rect(sx - L * 2, sy + 1.5, L * 4, L * 3); c.clip();
     c.lineJoin = 'round'; c.strokeStyle = LINE;
-    c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.82, 0.7); c.fillStyle = shadeHex(spec.col.hull, -38); c.fill('evenodd'); c.lineWidth = 1.6; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
-    c.beginPath(); sub(0, 1, 1); sub(0, 0.82, 0.7); c.fillStyle = spec.col.hull; c.fill('evenodd');
-    c.lineWidth = 1.6; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 1.2; c.beginPath(); sub(0, 0.82, 0.7); c.stroke();
+    c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(spec.col.hull, -30); c.fill('evenodd'); c.lineWidth = 1.6; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
+    c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = spec.col.hull; c.fill('evenodd');
+    c.lineWidth = 1.6; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 1.2; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
+    var TY = TYPES[spec.type];
+    for (var i = 0; i < TY.shields; i++) {            // the shields on the near rail sit in front of him too
+      var u = -0.6 + i * (1.2 / (TY.shields - 1)), cs = Math.cos(boat.h + roll), sn = Math.sin(boat.h + roll);
+      [-1, 1].forEach(function (sd) {
+        var ly = sd * halfW(W, u), px = sx + L * u * cs - ly * sn, py = sy + (L * u * sn + ly * cs) * K, r = 2.7 * sz;
+        c.beginPath(); c.ellipse(px, py, r, r * K, 0, 0, 7); c.fillStyle = i % 2 ? spec.col.sail : spec.col.trim; c.fill(); c.lineWidth = 1; c.stroke();
+      });
+    }
     c.restore();
   }
 
@@ -522,7 +552,7 @@ __COMBAT__
     noHud: true,
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
     walk: function (x, y) { return aboard || isLand(x, y); },
-    heroLift: function () { return aboard ? -bobY() - (spec.type === 0 ? 0 : 3.5) : 0; },   // feet sit a little below the rim, inside the hull
+    heroLift: function () { return aboard ? -bobY() - 3.5 : 0; },   // feet sit a little below the rim, inside the hull
     begin: function (c, P) {
       hero = P; this.noHeroShadow = aboard;
       var z = view.zoom, hw = 200 / z, hh = 125 / z, i;
@@ -564,12 +594,12 @@ __COMBAT__
     items: function (items) {
       var z = cam.z, hw = 200 / z, hh = 125 / z;
       items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { drawBoat(ctx); } });
-      if (aboard && spec.type !== 0) items.push({ y: hero.y + 0.5, f: function () { drawBoatFront(ctx); } });
+      if (aboard) items.push({ y: hero.y + 0.5, f: function () { drawBoatFront(ctx); } });
       props.forEach(function (o) {
         var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
         if (px + w < cam.x - hw || px > cam.x + hw || py + h < cam.y - hh || py > cam.y + hh) return;
         items.push({ y: o.y, f: function () {
-          var behind = o.r >= 8 && o.name !== 'rock' && hero.y < o.y && hero.y * K > py + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3;
+          var behind = o.r === 8 && hero.y < o.y && hero.y * K > py + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3;
           if (behind) ctx.globalAlpha = 0.45;
           ctx.drawImage(s.cv, px, py, w, h); ctx.globalAlpha = 1;
         } });
@@ -611,7 +641,7 @@ __COMBAT__
     json.blur(); spec = o; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
   });
 
-  try { var saved = JSON.parse(localStorage.getItem('seaeditor')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
+  try { var saved = JSON.parse(localStorage.getItem('seaeditor2')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
   apply();
 
   var last = performance.now();

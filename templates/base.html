@@ -62,7 +62,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
   <h1>Base Editor</h1>
-  <p class="lede">Build a base piece by piece. Lay floors, raise walls along the edges of tiles, add doors and windows, and put furniture inside. When walls, doors and windows close a loop, a roof appears by itself and fades away when you walk in.</p>
+  <p class="lede">Build a Viking homestead piece by piece. Lay floors, raise walls along the edges of tiles, add doors and windows, and put furniture inside. When walls, doors and windows close a loop, a roof appears by itself and fades away when you walk in.</p>
   <div class="wrap">
     <div class="left">
       <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Building site"></canvas></div>
@@ -166,11 +166,13 @@ __COMBAT__
     { name: 'Timber', face: '#7d5b3d', top: '#a07a52', dark: '#5a3f2a', tex: 'planks' },
     { name: 'Stone', face: '#7c808c', top: '#a3a7b3', dark: '#585c68', tex: 'blocks' },
     { name: 'Brick', face: '#8c5142', top: '#b07262', dark: '#63352b', tex: 'bricks' },
-    { name: 'Scrap metal', face: '#5c6d78', top: '#8194a0', dark: '#3f4d56', tex: 'plates' }
+    { name: 'Scrap metal', face: '#5c6d78', top: '#8194a0', dark: '#3f4d56', tex: 'plates' },
+    { name: 'Logs', face: '#6a4a30', top: '#8a6644', dark: '#3a2616', tex: 'logs' },
+    { name: 'Wattle', face: '#b39a6a', top: '#c9b384', dark: '#7a6540', tex: 'wattle' }
   ];
   var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Metal plate', tile: 'plate' }, { name: 'Cobble', tile: 'path' }, { name: 'Packed dirt', tile: 'dirt' }];
-  var ROOFS = [{ name: 'Shingles', col: '#6b4a4f', line: '#48303a' }, { name: 'Thatch', col: '#b89a55', line: '#8a7038' }, { name: 'Metal sheets', col: '#6f8591', line: '#4d606b' }, { name: 'No roof' }];
-  var FURN = [['bed', 12], ['table', 13], ['chair', 6], ['bench', 10], ['workbench', 14], ['shelf', 12], ['locker', 8], ['crate', 9], ['barrel', 8], ['lamp', 4], ['furnace', 16], ['console', 12], ['campfire', 0], ['well', 11]]
+  var ROOFS = [{ name: 'Shingles', col: '#6b4a4f', line: '#48303a' }, { name: 'Thatch', col: '#b89a55', line: '#8a7038' }, { name: 'Metal sheets', col: '#6f8591', line: '#4d606b' }, { name: 'No roof' }, { name: 'Turf', col: '#5f8a4a', line: '#3f6a34' }];
+  var FURN = [['bed', 12], ['table', 13], ['chair', 6], ['bench', 10], ['workbench', 14], ['shelf', 12], ['locker', 8], ['crate', 9], ['barrel', 8], ['lamp', 4], ['furnace', 16], ['console', 12], ['campfire', 0], ['well', 11], ['brazier', 6], ['shieldRack', 14], ['woodpile', 14], ['forge', 18], ['dryingRack', 16], ['dragonPost', 6]]
     .filter(function (f) { return !!kit.PROPS[f[0]]; });
   FLOORS = FLOORS.filter(function (f) { return !!kit.TILES[f.tile]; });
   var TOOLS = [['floor', 'Floor', 'Click or drag over tiles to lay floor.'], ['wall', 'Wall', 'Click or drag near the edge of a tile to raise a wall along it.'], ['door', 'Door', 'Click the edge of a tile to hang a door. It opens when you walk up to it.'],
@@ -290,6 +292,8 @@ __COMBAT__
     if (m.tex === 'planks') for (i = 8; i < w; i += 8) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); }
     else if (m.tex === 'blocks') { c.moveTo(x, y + h / 2); c.lineTo(x + w, y + h / 2); c.moveTo(x + 16, y); c.lineTo(x + 16, y + h / 2); c.moveTo(x + 8, y + h / 2); c.lineTo(x + 8, y + h); c.moveTo(x + 24, y + h / 2); c.lineTo(x + 24, y + h); }
     else if (m.tex === 'bricks') for (r = 0; r * 5 < h; r++) { c.moveTo(x, y + r * 5); c.lineTo(x + w, y + r * 5); for (i = (r % 2) * 5; i < w; i += 10) { c.moveTo(x + i, y + r * 5); c.lineTo(x + i, y + r * 5 + 5); } }
+    else if (m.tex === 'logs') for (r = 5; r < h; r += 5) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
+    else if (m.tex === 'wattle') { for (i = 4; i < w; i += 6) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); } for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); } }
     else { c.moveTo(x + 16, y); c.lineTo(x + 16, y + h); }
     c.stroke();
     if (m.tex === 'plates') { c.globalAlpha = 0.8; c.fillStyle = m.dark; [[3, 3], [13, 3], [19, 3], [29, 3], [3, h - 3], [13, h - 3], [19, h - 3], [29, h - 3]].forEach(function (q) { c.beginPath(); c.arc(x + q[0], y + q[1], 0.9, 0, 7); c.fill(); }); }
@@ -484,6 +488,7 @@ __COMBAT__
   function put(name, tx, ty, flip) { if (kit.PROPS[name]) B.items.push({ name: name, x: Math.round(tx * T), y: Math.round(ty * T), flip: flip ? 1 : 0 }); }
   function wipe() { B.floors = {}; B.H = {}; B.V = {}; B.items = []; }
   var EXAMPLES = [
+    ['Longhouse', function () { wipe(); room(10, 9, 10, 4, 4, 0); B.H[key(14, 13)] = { t: 'door', m: 4 }; B.V[key(20, 10)] = { t: 'door', m: 4 }; put('brazier', 15, 11.2); put('bench', 12, 10.4); put('bench', 18, 10.4); put('table', 13, 12); put('bed', 11.2, 10.6); put('shieldRack', 17.5, 9.7); put('dragonPost', 13.3, 13.6); put('dragonPost', 15.7, 13.6, true); put('woodpile', 21.5, 12.5); B.roof = 4; }],
     ['Hut', function () { wipe(); room(13, 10, 4, 3, 0, 0); B.H[key(15, 13)] = { t: 'door', m: 0 }; B.H[key(14, 10)] = { t: 'window', m: 0 }; put('bed', 13.8, 11.2); put('table', 16, 11.4); B.roof = 1; }],
     ['Workshop', function () { wipe(); room(12, 9, 6, 4, 1, 1); B.H[key(14, 13)] = { t: 'door', m: 1 }; B.H[key(13, 9)] = { t: 'window', m: 1 }; B.H[key(16, 9)] = { t: 'window', m: 1 }; B.V[key(18, 11)] = { t: 'window', m: 1 }; put('workbench', 13.3, 10.3); put('shelf', 16.8, 10); put('crate', 17.2, 12.3); put('barrel', 12.6, 12.4); B.roof = 2; }],
     ['Two rooms', function () { wipe(); room(11, 9, 8, 4, 2, 0); for (var y = 9; y < 13; y++) B.V[key(15, y)] = { t: 'wall', m: 2 }; B.V[key(15, 11)] = { t: 'door', m: 2 }; B.H[key(12, 13)] = { t: 'door', m: 2 }; B.H[key(17, 9)] = { t: 'window', m: 2 }; B.H[key(13, 9)] = { t: 'window', m: 2 }; put('table', 12.8, 10.6); put('chair', 14, 11); put('bed', 17.6, 10.4); put('locker', 16, 9.8); B.roof = 0; }]

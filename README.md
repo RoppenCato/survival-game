@@ -1,6 +1,7 @@
 # Survival game prototype
 
-A 2D top-down survival crafting game: post-apocalyptic steampunk world, Valheim-style progression
+A 2D top-down survival crafting game with a Viking theme (changed from post-apocalyptic steampunk in October 2026;
+the `viking` branch holds the new direction). Valheim-style progression
 seen through a Zelda-style three-quarter camera, with a MapleStory-like cartoon look.
 Everything (art, animation, sound) is drawn or synthesized in code.
 

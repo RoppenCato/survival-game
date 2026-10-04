@@ -1740,6 +1740,414 @@ function paintTile(c, K, type, v, R) {
   }
   c.fillStyle = 'hsl(' + P.shadowHue.toFixed(0) + ',40%,6%)'; c.fillRect(0, 0, TW, TH);
 }
+/* ---------------- Viking set: village, graves and camp ---------------- */
+function vShield(c, cx, cy, r, hue, seed) {
+  var d = shape(c, ellPts(cx, cy, r, r, 16), M(hue, 62, 44), { seed: seed, size: 'S', sh: 1.5, rough: 0.15 });
+  c.save(); path(c, d); c.clip(); c.fillStyle = C(44, 38, 82); c.fillRect(cx - r, cy - r, r, r); c.fillRect(cx, cy, r, r); c.restore();
+  path(c, d); c.lineWidth = 0.9 + ow('S') * 0.5; c.strokeStyle = OLC; c.stroke();
+  shape(c, ellPts(cx, cy, r * 0.3, r * 0.3, 8), M(P.factoryHue + 14, 14, 52), { seed: seed + 1, size: 'S', flat: true, rough: 0.1 });
+}
+function runestone(c, K, x, y, seed) {
+  var R = rng(seed), h = 50 + R() * 12, i;
+  longShadow(c, x, y, 22, 24); gshadow(c, x, y, 17, 5, 0.4);
+  shape(c, [[x - 13, y], [x - 14, y - h * 0.55], [x - 9, y - h * 0.92], [x - 1, y - h], [x + 8, y - h * 0.93], [x + 14, y - h * 0.6], [x + 13, y]], K.rockC, { seed: seed, size: 'M', sh: 4, hl: 2, rough: 0.4 });
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  c.strokeStyle = C(8, 72, 46); c.lineWidth = 3;
+  c.beginPath(); c.moveTo(x - 8, y - 8); c.quadraticCurveTo(x - 11, y - h * 0.6, x - 5, y - h * 0.82); c.quadraticCurveTo(x, y - h * 0.95, x + 5, y - h * 0.82); c.quadraticCurveTo(x + 11, y - h * 0.6, x + 8, y - 8); c.stroke();
+  c.strokeStyle = C(8, 72, 46); c.lineWidth = 1.2;
+  for (i = 0; i < 9; i++) {
+    var gx = x - 4 + (i % 3) * 4, gy = y - h * (0.3 + Math.floor(i / 3) * 0.15), k = Math.floor(R() * 4);
+    c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx, gy - 5);
+    if (k === 0) { c.moveTo(gx, gy - 5); c.lineTo(gx + 2, gy - 3); } else if (k === 1) { c.moveTo(gx, gy - 4); c.lineTo(gx + 2, gy - 2.5); c.lineTo(gx, gy - 1); } else if (k === 2) { c.moveTo(gx - 1.5, gy - 4); c.lineTo(gx + 1.5, gy - 1.5); }
+    c.stroke();
+  }
+  c.restore();
+  shape(c, blobPts(x - 3, y - 3, 12, 3.4, seed + 3, 8, 0.4), K.moss, { seed: seed + 4, size: 'S' });
+}
+function longhouse(c, K, x, y, seed) {
+  var R = rng(seed), i, thatch = M(46, 46, 44);
+  longShadow(c, x, y, 124, 60); gshadow(c, x, y, 72, 10, 0.45);
+  var wall = shape(c, rrPts(x - 60, y - 30, 120, 30, 2), K.wood, { seed: seed, size: 'L', sh: 4, rough: 0.3 });
+  c.save(); path(c, wall); c.clip(); c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.4)'; c.lineWidth = 1;
+  for (i = -56; i < 60; i += 8) { c.beginPath(); c.moveTo(x + i, y - 30); c.lineTo(x + i, y); c.stroke(); } c.restore();
+  var roof = shape(c, [[x - 68, y - 27], [x - 54, y - 70], [x + 54, y - 70], [x + 68, y - 27]], thatch, { seed: seed + 1, size: 'L', sh: 6, hl: 3, rough: 0.5 });
+  c.save(); path(c, roof); c.clip(); c.strokeStyle = C(42, 50, 28); c.globalAlpha = 0.45; c.lineWidth = 1;
+  for (i = 0; i < 46; i++) { var tx = x - 64 + R() * 128, ty = y - 30 - R() * 38; c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + (R() - 0.5) * 3, ty - 5 - R() * 4); c.stroke(); }
+  c.restore();
+  shape(c, blobPts(x - 30, y - 64, 16, 4, seed + 2, 10, 0.4), K.moss, { seed: seed + 3, size: 'S' });
+  shape(c, blobPts(x + 34, y - 44, 13, 4, seed + 4, 10, 0.4), K.moss, { seed: seed + 5, size: 'S' });
+  line(c, [[x - 56, y - 70], [x + 56, y - 70]], 4, K.wood.base, true);
+  [-1, 1].forEach(function (sd) {            // crossed gable beams with curled dragon tips
+    var ex = x + sd * 55;
+    line(c, curvePts([ex - sd * 11, y - 56], [ex - sd * 2, y - 74], [ex + sd * 7, y - 88], 6), 3.2, K.wood.base, true);
+    line(c, curvePts([ex + sd * 11, y - 56], [ex + sd * 2, y - 74], [ex - sd * 7, y - 88], 6), 3.2, K.wood.base, true);
+    line(c, curvePts([ex + sd * 7, y - 88], [ex + sd * 12, y - 92], [ex + sd * 11, y - 86], 4), 2.4, K.wood.base, true);
+    line(c, curvePts([ex - sd * 7, y - 88], [ex - sd * 12, y - 92], [ex - sd * 11, y - 86], 4), 2.4, K.wood.base, true);
+  });
+  var door = shape(c, [[x - 9, y], [x - 9, y - 19], [x - 5, y - 25], [x + 5, y - 25], [x + 9, y - 19], [x + 9, y]], M(P.shadowHue, 40, 10), { seed: seed + 6, size: 'M', flat: true, rough: 0.2 });
+  c.save(); path(c, door); c.clip(); c.fillStyle = 'hsla(28,95%,58%,0.5)'; c.fillRect(x - 9, y - 16, 18, 16); c.restore();
+  [-13, 10].forEach(function (dx, k) { shape(c, rrPts(x + dx, y - 28, 3, 28, 1), K.trunkL, { seed: seed + 7 + k, size: 'S', flat: true, rough: 0.2 }); });
+  vShield(c, x - 36, y - 16, 7, 8, seed + 10); vShield(c, x - 22, y - 15, 6, 212, seed + 12); vShield(c, x + 26, y - 16, 7, 44, seed + 14); vShield(c, x + 42, y - 15, 6, 8, seed + 16);
+  for (i = 0; i < 4; i++) { c.save(); c.globalAlpha = 0.16 - i * 0.03; c.fillStyle = '#e8ecf4'; c.beginPath(); c.arc(x + 10 + i * 3, y - 76 - i * 8, 5 + i * 2.2, 0, 7); c.fill(); c.restore(); }
+  addLight(x, y - 12, 70, 28, 95, 58, 0.6);
+}
+function vikingTent(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 32, 7, 0.4);
+  var cloth = shape(c, [[x - 26, y], [x, y - 40], [x + 26, y]], M(42, 26, 78), { seed: seed, size: 'M', sh: 3, rough: 0.4 });
+  c.save(); path(c, cloth); c.clip(); c.fillStyle = C(8, 68, 44); c.globalAlpha = 0.85;
+  for (i = -24; i < 26; i += 10) c.fillRect(x + i, y - 42, 4.4, 44);
+  c.restore();
+  path(c, cloth); c.lineWidth = 0.9 + ow('M') * 0.5; c.strokeStyle = OLC; c.stroke();
+  shape(c, [[x - 7, y], [x, y - 22], [x + 7, y]], M(P.shadowHue, 40, 10), { seed: seed + 1, size: 'S', flat: true, rough: 0.2 });
+  line(c, [[x - 30, y + 1], [x + 7, y - 52]], 3, K.wood.base, true);
+  line(c, [[x + 30, y + 1], [x - 7, y - 52]], 3, K.wood.base, true);
+  line(c, curvePts([x + 7, y - 52], [x + 11, y - 57], [x + 8, y - 59], 4), 2.2, K.wood.base, true);
+  line(c, curvePts([x - 7, y - 52], [x - 11, y - 57], [x - 8, y - 59], 4), 2.2, K.wood.base, true);
+}
+function palisade(c, K, x, y, seed) {
+  var R = rng(seed), i;
+  gshadow(c, x, y, 36, 5, 0.35);
+  for (i = 0; i < 6; i++) { var px = x - 30 + i * 12, hh = 38 + R() * 9; shape(c, [[px - 5.5, y], [px - 5.5, y - hh + 8], [px, y - hh], [px + 5.5, y - hh + 8], [px + 5.5, y]], i % 2 ? K.wood : K.trunk, { seed: seed + i, size: 'S', sh: 1.5, rough: 0.3 }); }
+  line(c, [[x - 35, y - 21], [x + 35, y - 21]], 2.4, C(40, 34, 58), true);
+}
+function shieldRack(c, K, x, y, seed) {
+  gshadow(c, x, y, 28, 5, 0.35);
+  [[-14, -18], [14, 18]].forEach(function (s, k) {
+    line(c, [[x + s[0], y], [x + s[1], y - 52]], 2, K.wood.base, true);
+    shape(c, [[x + s[1] - 2.4, y - 51], [x + s[1] + (k ? 1.6 : -1.6), y - 60], [x + s[1] + 2.4, y - 51]], K.ironLight, { seed: seed + k, size: 'S', flat: true, rough: 0.1 });
+  });
+  [-24, 20].forEach(function (dx, k) { shape(c, rrPts(x + dx, y - 34, 4, 34, 1), K.wood, { seed: seed + 2 + k, size: 'S', sh: 1, rough: 0.2 }); });
+  shape(c, rrPts(x - 26, y - 31, 52, 4, 1.5), K.wood, { seed: seed + 4, size: 'S', sh: 1, rough: 0.2 });
+  vShield(c, x - 15, y - 18, 9, 8, seed + 6); vShield(c, x, y - 17, 9, 212, seed + 8); vShield(c, x + 15, y - 18, 9, 44, seed + 10);
+}
+function dragonPost(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 11, 4, 0.4);
+  shape(c, ribbon(curvePts([x, y], [x - 2, y - 30], [x + 3, y - 52], 8), 9, 6.5), K.wood, { seed: seed, size: 'M', sh: 2, rough: 0.3 });
+  c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.55)'; c.lineWidth = 1.1;
+  for (i = 0; i < 3; i++) { c.beginPath(); c.moveTo(x - 5, y - 12 - i * 11); c.lineTo(x + 4, y - 14 - i * 11); c.stroke(); }
+  shape(c, [[x - 1, y - 49], [x - 2, y - 60], [x + 4, y - 68], [x + 13, y - 67], [x + 20, y - 61], [x + 14, y - 59], [x + 18, y - 55], [x + 9, y - 55], [x + 8, y - 49]], K.wood, { seed: seed + 1, size: 'S', sh: 1.5, rough: 0.2 });
+  line(c, curvePts([x - 1, y - 62], [x - 8, y - 68], [x - 5, y - 60], 5), 2.2, K.wood.base, true);
+  c.fillStyle = 'hsl(' + P.accentHue.toFixed(0) + ',95%,66%)'; c.beginPath(); c.arc(x + 8, y - 62.5, 1.5, 0, 7); c.fill();
+  line(c, [[x + 14, y - 58], [x + 19, y - 57]], 1.2, C(6, 75, 50), false);
+}
+function burialMound(c, K, x, y, seed) {
+  var R = rng(seed), i;
+  gshadow(c, x, y, 54, 9, 0.35);
+  var m = shape(c, [[x - 48, y], [x - 40, y - 14], [x - 22, y - 26], [x, y - 30], [x + 22, y - 26], [x + 40, y - 14], [x + 48, y]], K.grassB, { seed: seed, size: 'L', sh: 5, hl: 3, rough: 0.5 });
+  c.save(); path(c, m); c.clip(); c.strokeStyle = K.leaf.base; c.globalAlpha = 0.6; c.lineWidth = 1;
+  for (i = 0; i < 18; i++) { var gx = x - 40 + R() * 80, gy = y - 4 - R() * 20; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx + (R() - 0.5) * 3, gy - 4 - R() * 3); c.stroke(); }
+  c.restore();
+  for (i = 0; i < 8; i++) { if (i === 3 || i === 4) continue; shape(c, blobPts(x - 42 + i * 12, y - 2, 5, 3.4, seed + 10 + i, 8, 0.25), i % 2 ? K.rockC : K.rock, { seed: seed + 20 + i, size: 'S', sh: 1.2, rough: 0.3 }); }
+  shape(c, rectPts(x - 5, y - 15, 10, 15), M(P.shadowHue, 40, 8), { seed: seed + 2, size: 'S', flat: true, rough: 0.1 });
+  shape(c, rrPts(x - 10, y - 16, 5, 16, 1.5), K.rockC, { seed: seed + 3, size: 'S', sh: 1.2, rough: 0.3 });
+  shape(c, rrPts(x + 5, y - 16, 5, 16, 1.5), K.rockC, { seed: seed + 4, size: 'S', sh: 1.2, rough: 0.3 });
+  shape(c, rrPts(x - 12, y - 21, 24, 5.5, 1.5), K.rockC, { seed: seed + 5, size: 'S', sh: 1.2, rough: 0.3 });
+}
+function dryingRack(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 30, 5, 0.3);
+  [-24, 24].forEach(function (dx) { line(c, [[x + dx - 7, y], [x + dx, y - 41]], 2.6, K.wood.base, true); line(c, [[x + dx + 7, y], [x + dx, y - 41]], 2.6, K.wood.base, true); });
+  line(c, [[x - 28, y - 38], [x + 28, y - 38]], 2.6, K.wood.base, true);
+  for (i = 0; i < 6; i++) { var fx = x - 20 + i * 8; shape(c, [[fx - 2, y - 36], [fx + 2, y - 36], [fx + 2.6, y - 26], [fx, y - 19], [fx - 2.6, y - 26]], M(205, 14, 68), { seed: seed + i, size: 'S', sh: 1, rough: 0.2 }); }
+}
+function forgeObj(c, K, x, y, seed) {
+  gshadow(c, x, y, 36, 7, 0.4);
+  shape(c, rrPts(x - 32, y - 22, 36, 22, 4), K.rockC, { seed: seed, size: 'M', sh: 3, rough: 0.4 });
+  shape(c, ellPts(x - 14, y - 22, 13, 4.6, 14), M(18, 95, 48), { seed: seed + 1, size: 'S', flat: true, rough: 0.2 });
+  shape(c, [[x - 20, y - 22], [x - 18, y - 30], [x - 14, y - 25], [x - 11, y - 33], [x - 8, y - 22]], M(40, 100, 62), { seed: seed + 2, size: 'S', flat: true, rough: 0.3 });
+  shape(c, rrPts(x + 9, y - 12, 14, 12, 3), K.wood, { seed: seed + 3, size: 'S', sh: 1.5, rough: 0.3 });
+  shape(c, [[x + 5, y - 12], [x + 26, y - 12], [x + 31, y - 17], [x + 26, y - 20], [x + 8, y - 20], [x + 3, y - 17]], K.iron, { seed: seed + 4, size: 'S', sh: 1.5, rough: 0.15 });
+  line(c, [[x + 14, y - 20], [x + 22, y - 31]], 2, K.wood.base, true);
+  shape(c, rrPts(x + 18, y - 35, 9, 5, 1), K.ironLight, { seed: seed + 5, size: 'S', flat: true, rough: 0.1 });
+  addLight(x - 14, y - 24, 90, 24, 100, 58, 0.9);
+}
+function brazierObj(c, K, x, y, seed) {
+  gshadow(c, x, y, 12, 4, 0.4);
+  [[-8, 0], [8, 0], [0, 2]].forEach(function (p) { line(c, [[x + p[0], y + p[1]], [x + p[0] * 0.3, y - 17]], 2, K.iron.base, true); });
+  shape(c, [[x - 7, y - 22], [x - 8, y - 30], [x - 3, y - 38], [x, y - 30], [x + 3, y - 42], [x + 8, y - 28], [x + 7, y - 22]], M(24, 100, 52), { seed: seed + 1, size: 'S', flat: true, rough: 0.4 });
+  shape(c, [[x - 3, y - 22], [x - 4, y - 28], [x, y - 33], [x + 3, y - 27], [x + 3, y - 22]], M(46, 100, 66), { seed: seed + 2, size: 'S', flat: true, rough: 0.3 });
+  shape(c, [[x - 11, y - 23], [x + 11, y - 23], [x + 7, y - 15], [x - 7, y - 15]], K.iron, { seed: seed, size: 'S', sh: 1.5, rough: 0.2 });
+  addLight(x, y - 28, 110 + 40 * P.glow, 28, 100, 58, 1);
+}
+function cairnObj(c, K, x, y, seed) {
+  gshadow(c, x, y, 20, 5, 0.4);
+  [[0, -5, 14, 6], [-7, -12, 9, 5], [6, -13, 9, 5], [0, -20, 9, 5], [0, -27, 6.5, 4], [0, -33, 4, 3]].forEach(function (s, i) {
+    shape(c, blobPts(x + s[0], y + s[1], s[2], s[3], seed + i, 8, 0.2), i % 2 ? K.rockC : K.rock, { seed: seed + 10 + i, size: 'S', sh: 2, rough: 0.4 });
+  });
+}
+function stoneShip(c, K, x, y, seed) {
+  var n = 16, i, list = [];
+  for (i = 0; i < n; i++) { var a = i / n * Math.PI * 2, e = Math.abs(Math.cos(a)); list.push({ x: x + Math.cos(a) * 42, y: y + Math.sin(a) * 11 * (1 - e * e * 0.55), h: 8 + 11 * e * e * e, k: i }); }
+  list.sort(function (p, q) { return p.y - q.y; });
+  list.forEach(function (s) {
+    gshadow(c, s.x, s.y, 5, 2, 0.3);
+    shape(c, [[s.x - 3, s.y], [s.x - 3.6, s.y - s.h * 0.7], [s.x, s.y - s.h], [s.x + 3.6, s.y - s.h * 0.7], [s.x + 3, s.y]], s.k % 2 ? K.rockC : K.rock, { seed: seed + s.k, size: 'S', sh: 1.5, rough: 0.35 });
+  });
+}
+function woodpile(c, K, x, y, seed) {
+  var r, i;
+  gshadow(c, x, y, 24, 5, 0.35);
+  line(c, [[x - 22, y], [x - 20, y - 20]], 2.4, K.wood.base, true); line(c, [[x + 22, y], [x + 20, y - 20]], 2.4, K.wood.base, true);
+  for (r = 0; r < 3; r++) for (i = 0; i < 4 - r; i++) {
+    var cx = x - 15 + r * 5 + i * 10, cy = y - 5 - r * 8.6;
+    shape(c, ellPts(cx, cy, 5, 5, 10), K.wood, { seed: seed + r * 5 + i, size: 'S', sh: 1, rough: 0.2 });
+    shape(c, ellPts(cx, cy, 2.6, 2.6, 8), K.trunkL, { seed: seed + 30 + r * 5 + i, size: 'S', flat: true, rough: 0.1 });
+  }
+}
+
+/* ---------------- Viking age Scandinavia: things found in nature ---------------- */
+function dark(l) { return M(P.shadowHue, 40, l == null ? 7 : l); }
+function caveObj(c, K, x, y, seed) {
+  longShadow(c, x, y, 92, 40); gshadow(c, x, y, 58, 9, 0.45);
+  shape(c, [[x - 52, y], [x - 56, y - 30], [x - 40, y - 58], [x - 14, y - 70], [x + 16, y - 66], [x + 40, y - 52], [x + 54, y - 24], [x + 50, y]], K.rockC, { seed: seed, size: 'L', sh: 6, hl: 3, rough: 0.6 });
+  shape(c, [[x + 16, y - 66], [x + 40, y - 52], [x + 54, y - 24], [x + 50, y], [x + 30, y - 22]], K.rockD, { seed: seed + 1, size: 'M', flat: true, rough: 0.5 });
+  shape(c, [[x - 22, y], [x - 24, y - 20], [x - 14, y - 36], [x + 2, y - 40], [x + 14, y - 30], [x + 18, y]], dark(5), { seed: seed + 2, size: 'M', flat: true, rough: 0.35 });
+  shape(c, blobPts(x - 28, y - 2, 8, 5, seed + 3, 8, 0.25), K.rock, { seed: seed + 4, size: 'S', sh: 1.5, rough: 0.3 });
+  shape(c, blobPts(x + 24, y - 1, 7, 4, seed + 5, 8, 0.25), K.rockC, { seed: seed + 6, size: 'S', sh: 1.5, rough: 0.3 });
+  shape(c, blobPts(x - 22, y - 60, 20, 6, seed + 7, 10, 0.4), K.moss, { seed: seed + 8, size: 'S' });
+  shape(c, blobPts(x + 22, y - 60, 14, 5, seed + 9, 10, 0.4), K.moss, { seed: seed + 10, size: 'S' });
+  line(c, curvePts([x - 8, y - 38], [x - 10, y - 30], [x - 7, y - 24], 5), 1.4, K.leaf.base, false);
+  line(c, curvePts([x + 6, y - 38], [x + 8, y - 30], [x + 5, y - 27], 5), 1.4, K.leaf.base, false);
+}
+function birdNest(c, K, x, y, seed) {
+  var R = rng(seed), i;
+  gshadow(c, x, y, 13, 4, 0.3);
+  shape(c, ellPts(x, y - 4, 11, 5.5, 14), M(34, 38, 34), { seed: seed, size: 'S', sh: 1.5, rough: 0.7 });
+  shape(c, ellPts(x, y - 5, 7.4, 3.2, 12), M(30, 35, 19), { seed: seed + 1, size: 'S', flat: true, rough: 0.3 });
+  [[-3, -6], [1, -5.4], [3.8, -6.6]].forEach(function (e, k) { shape(c, ellPts(x + e[0], y + e[1], 2, 2.6, 8), M(190, 24, 84), { seed: seed + 2 + k, size: 'S', sh: 0.8, rough: 0.05 }); });
+  c.strokeStyle = C(32, 34, 24); c.lineWidth = 0.9; c.lineCap = 'round';
+  for (i = 0; i < 9; i++) { var a = R() * 6.28; c.beginPath(); c.moveTo(x + Math.cos(a) * 9, y - 4 + Math.sin(a) * 4.4); c.lineTo(x + Math.cos(a + 0.5) * 13, y - 4 + Math.sin(a + 0.5) * 6.4); c.stroke(); }
+}
+function animalDen(c, K, x, y, seed) {
+  gshadow(c, x, y, 32, 6, 0.35);
+  shape(c, [[x - 30, y], [x - 26, y - 12], [x - 12, y - 20], [x + 6, y - 22], [x + 22, y - 14], [x + 30, y]], K.grassB, { seed: seed, size: 'M', sh: 4, hl: 2, rough: 0.5 });
+  shape(c, blobPts(x - 2, y + 1, 15, 4.4, seed + 1, 10, 0.3), M(28, 36, 30), { seed: seed + 2, size: 'S', sh: 1, rough: 0.4 });
+  shape(c, ellPts(x - 2, y - 6, 9, 6.6, 12), dark(5), { seed: seed + 3, size: 'S', flat: true, rough: 0.3 });
+  line(c, curvePts([x - 14, y - 16], [x - 10, y - 8], [x - 13, y - 1], 5), 2, K.trunk.base, true);
+  line(c, curvePts([x + 9, y - 19], [x + 10, y - 10], [x + 8, y - 4], 5), 1.8, K.trunk.base, true);
+  c.fillStyle = 'rgba(20,12,16,0.55)'; [[6, 3], [11, 5], [16, 3.4]].forEach(function (p) { c.beginPath(); c.ellipse(x + p[0], y + p[1], 1.5, 1, 0, 0, 7); c.fill(); });
+}
+function wildHive(c, K, x, y, seed) {
+  var R = rng(seed), i;
+  gshadow(c, x, y, 13, 4, 0.4);
+  shape(c, rrPts(x - 9, y - 30, 18, 30, 5), K.trunk, { seed: seed, size: 'M', sh: 2, rough: 0.4 });
+  shape(c, ellPts(x, y - 30, 9, 3.4, 12), K.trunkL, { seed: seed + 1, size: 'S', flat: true, rough: 0.2 });
+  shape(c, ellPts(x + 1, y - 16, 5, 7, 10), dark(6), { seed: seed + 2, size: 'S', flat: true, rough: 0.2 });
+  shape(c, ellPts(x + 1, y - 15, 3.2, 4.6, 8), M(42, 92, 56), { seed: seed + 3, size: 'S', flat: true, rough: 0.2 });
+  line(c, [[x + 1, y - 10], [x + 1.4, y - 5]], 1.3, C(42, 95, 60), false);
+  for (i = 0; i < 5; i++) { var bx = x - 14 + R() * 30, by = y - 12 - R() * 28; c.fillStyle = C(46, 95, 60); c.beginPath(); c.ellipse(bx, by, 1.5, 1.1, 0, 0, 7); c.fill(); c.fillStyle = OLC; c.fillRect(bx - 0.3, by - 1, 0.7, 2); c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.ellipse(bx, by - 1.3, 1.3, 0.7, 0, 0, 7); c.fill(); }
+}
+function rockFormation(c, K, x, y, seed) {
+  longShadow(c, x, y, 44, 30); gshadow(c, x + 2, y, 32, 7, 0.4);
+  shape(c, [[x + 4, y], [x + 6, y - 28], [x + 16, y - 38], [x + 26, y - 30], [x + 28, y]], K.rock, { seed: seed + 1, size: 'M', sh: 4, rough: 0.5 });
+  shape(c, [[x - 20, y], [x - 24, y - 30], [x - 14, y - 52], [x - 2, y - 56], [x + 6, y - 40], [x + 8, y]], K.rockC, { seed: seed, size: 'L', sh: 5, hl: 2.5, rough: 0.5 });
+  shape(c, [[x - 10, y + 2], [x - 12, y - 12], [x - 2, y - 18], [x + 8, y - 12], [x + 8, y + 2]], K.rockC, { seed: seed + 2, size: 'M', sh: 3, rough: 0.5 });
+  shape(c, blobPts(x - 27, y - 3, 7, 5, seed + 3, 8, 0.25), K.rock, { seed: seed + 4, size: 'S', sh: 1.5, rough: 0.3 });
+  shape(c, blobPts(x - 12, y - 50, 10, 4, seed + 5, 10, 0.4), K.moss, { seed: seed + 6, size: 'S' });
+  line(c, [[x - 14, y - 40], [x - 8, y - 22]], 1.2, OLC, false);
+}
+function wildHerbs(c, K, x, y, seed) {
+  var R = rng(seed), i, hue = [60, 48, 285, 330][Math.floor(R() * 4)];
+  gshadow(c, x, y, 11, 3, 0.25);
+  for (i = 0; i < 7; i++) {
+    var bx = x - 9 + R() * 18, h = 12 + R() * 14, tx = bx + (R() - 0.5) * 8, ty = y - h;
+    line(c, curvePts([bx, y], [bx + (R() - 0.5) * 5, y - h * 0.5], [tx, ty], 5), 1.3, K.leaf.base, false);
+    c.fillStyle = K.leaf.hl; c.beginPath(); c.ellipse((bx + tx) / 2 + 2, y - h * 0.5, 2.6, 1.2, 0.5, 0, 7); c.fill(); c.beginPath(); c.ellipse((bx + tx) / 2 - 2, y - h * 0.4, 2.6, 1.2, -0.5, 0, 7); c.fill();
+    c.fillStyle = C(hue, hue === 60 ? 20 : 70, 86); for (var k = 0; k < 4; k++) { c.beginPath(); c.arc(tx + (R() - 0.5) * 4, ty + (R() - 0.5) * 3, 1.1, 0, 7); c.fill(); }
+  }
+}
+function springObj(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 28, 6, 0.3);
+  [[-16, -9, 7, 5], [-4, -12, 8, 6], [10, -10, 7, 5], [19, -5, 5, 4]].forEach(function (s, k) { shape(c, blobPts(x + s[0], y + s[1], s[2], s[3], seed + k, 8, 0.25), k % 2 ? K.rock : K.rockC, { seed: seed + 10 + k, size: 'S', sh: 1.5, rough: 0.35 }); });
+  shape(c, ribbon(curvePts([x + 8, y - 1], [x + 22, y + 6], [x + 38, y + 5], 7), 7, 3), K.waterL, { seed: seed + 5, size: 'S', flat: true, rough: 0.3 });
+  shape(c, blobPts(x, y - 3, 20, 7, seed + 6, 12, 0.18), K.waterL, { seed: seed + 7, size: 'S', flat: true, rough: 0.2 });
+  c.strokeStyle = 'rgba(255,255,255,0.7)'; c.lineWidth = 1; for (i = 0; i < 3; i++) { c.beginPath(); c.ellipse(x - 4, y - 5, 3 + i * 3.4, 1.2 + i * 1.3, 0, 0, 7); c.stroke(); }
+  [[-21, 0, 5, 3.4], [-12, 3, 4, 3]].forEach(function (s, k) { shape(c, blobPts(x + s[0], y + s[1], s[2], s[3], seed + 20 + k, 8, 0.25), K.rockC, { seed: seed + 30 + k, size: 'S', sh: 1.2, rough: 0.3 }); });
+  addLight(x, y - 4, 34, 196, 70, 70, 0.25);
+}
+function fallenTree(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x + 4, y, 50, 6, 0.35);
+  [[-6, -30, 1], [16, -28, -1], [32, -22, 1]].forEach(function (b) { line(c, [[x + b[0], y - 12], [x + b[0] + b[2] * 5, y + b[1]]], 2.6, K.trunk.base, true); });
+  shape(c, ribbon(curvePts([x - 34, y - 9], [x, y - 13], [x + 46, y - 6], 8), 13, 7), K.trunk, { seed: seed, size: 'M', sh: 3, rough: 0.4 });
+  for (i = 0; i < 5; i++) { var a = -1.9 + i * 0.75; line(c, [[x - 37, y - 11], [x - 37 + Math.cos(a) * 13, y - 11 + Math.sin(a) * 15]], 2.4, K.trunk.base, true); }
+  shape(c, blobPts(x - 37, y - 11, 8, 11, seed + 1, 10, 0.3), K.trunk, { seed: seed + 2, size: 'S', sh: 2, rough: 0.5 });
+  shape(c, blobPts(x + 6, y - 17, 14, 3.6, seed + 3, 10, 0.4), K.moss, { seed: seed + 4, size: 'S' });
+  [[20, -14], [24, -13]].forEach(function (m, k) { line(c, [[x + m[0], y + m[1]], [x + m[0], y + m[1] - 4]], 1.2, C(40, 30, 82), false); shape(c, ellPts(x + m[0], y + m[1] - 5, 3 - k * 0.6, 1.8, 8), M(18, 60, 46), { seed: seed + 6 + k, size: 'S', sh: 0.8, rough: 0.1 }); });
+}
+
+/* ---------------- things people left out in the wild ---------------- */
+function animalTrap(c, K, x, y, seed) {
+  gshadow(c, x, y, 22, 5, 0.35);
+  line(c, [[x + 10, y], [x + 12, y - 18]], 2.2, K.wood.base, true);
+  line(c, [[x - 6, y - 5], [x + 13, y - 11]], 1.8, K.wood.base, true);
+  shape(c, [[x - 20, y - 1], [x - 15, y - 10], [x + 15, y - 25], [x + 21, y - 17], [x - 12, y + 1]], K.rockC, { seed: seed, size: 'M', sh: 3, rough: 0.4 });
+  c.fillStyle = C(6, 70, 48); c.beginPath(); c.arc(x - 5, y - 4, 1.8, 0, 7); c.fill();
+  [[-22, 2], [20, 3]].forEach(function (p, k) { shape(c, blobPts(x + p[0], y + p[1], 4, 2.6, seed + 2 + k, 8, 0.25), K.rock, { seed: seed + 4 + k, size: 'S', sh: 1, rough: 0.3 }); });
+}
+function huntingBlind(c, K, x, y, seed) {
+  var R = rng(seed), i;
+  gshadow(c, x, y, 32, 6, 0.35);
+  [-24, 0, 24].forEach(function (dx) { line(c, [[x + dx, y], [x + dx * 0.9, y - 30]], 2.2, K.trunk.base, true); });
+  var d = shape(c, [[x - 30, y], [x - 31, y - 20], [x - 16, y - 30], [x + 4, y - 32], [x + 22, y - 27], [x + 31, y - 13], [x + 29, y]], K.leaf, { seed: seed, size: 'M', sh: 4, rough: 0.8 });
+  c.save(); path(c, d); c.clip(); c.lineCap = 'round';
+  for (i = 0; i < 22; i++) { var bx = x - 30 + R() * 60, by = y - R() * 30; c.strokeStyle = i % 3 ? K.trunk.base : K.leaf.hl; c.globalAlpha = 0.7; c.lineWidth = 1.2; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx + 8 + R() * 8, by - 3 + R() * 6); c.stroke(); }
+  c.restore();
+  shape(c, rrPts(x - 7, y - 20, 14, 4, 1.5), dark(6), { seed: seed + 1, size: 'S', flat: true, rough: 0.2 });
+}
+function fishingNet(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 30, 5, 0.3);
+  line(c, [[x - 26, y], [x - 26, y - 44]], 2.6, K.wood.base, true); line(c, [[x + 26, y], [x + 26, y - 44]], 2.6, K.wood.base, true);
+  var top = curvePts([x - 26, y - 42], [x, y - 34], [x + 26, y - 42], 10), bot = curvePts([x + 24, y - 8], [x, y - 3], [x - 24, y - 8], 10), net = top.concat(bot);
+  c.save(); path(c, net); c.fillStyle = 'rgba(200,190,160,0.14)'; c.fill(); c.clip();
+  c.strokeStyle = 'rgba(225,215,185,0.75)'; c.lineWidth = 0.8;
+  for (i = -70; i < 70; i += 6) { c.beginPath(); c.moveTo(x + i, y - 46); c.lineTo(x + i + 30, y); c.stroke(); c.beginPath(); c.moveTo(x + i + 30, y - 46); c.lineTo(x + i, y); c.stroke(); }
+  c.restore();
+  line(c, top, 1.6, C(40, 30, 62), false);
+  for (i = 1; i < 10; i += 2) shape(c, ellPts(top[i][0], top[i][1], 2.2, 1.6, 8), K.trunkL, { seed: seed + i, size: 'S', flat: true, rough: 0.1 });
+}
+function fishWeir(c, K, x, y, seed) {
+  var i, pts = [];
+  c.save(); c.fillStyle = 'hsla(196,60%,60%,0.2)'; c.beginPath(); c.ellipse(x, y - 2, 44, 12, 0, 0, 7); c.fill(); c.restore();
+  for (i = 0; i <= 10; i++) { var u = i / 10, px = x - 38 + u * 76, py = y - 10 + (1 - Math.abs(u - 0.5) * 2) * 13; pts.push([px, py]); }
+  line(c, pts.map(function (p) { return [p[0], p[1] - 5]; }), 1.3, C(34, 36, 40), false);
+  line(c, pts.map(function (p) { return [p[0], p[1] - 10]; }), 1.3, C(34, 36, 40), false);
+  pts.forEach(function (p, k) { shape(c, rrPts(p[0] - 1.6, p[1] - 15, 3.2, 15, 1), K.wood, { seed: seed + k, size: 'S', sh: 0.8, rough: 0.2 }); });
+  c.strokeStyle = 'rgba(255,255,255,0.4)'; c.lineWidth = 0.9; for (i = 0; i < 3; i++) { c.beginPath(); c.ellipse(x - 14 + i * 14, y + 6, 5, 1.4, 0, 0, 7); c.stroke(); }
+}
+function trailStone(c, K, x, y, seed) {
+  gshadow(c, x, y, 11, 4, 0.4);
+  shape(c, [[x - 7, y], [x - 8, y - 16], [x - 3, y - 26], [x + 4, y - 25], [x + 8, y - 14], [x + 7, y]], K.rockC, { seed: seed, size: 'S', sh: 2.5, hl: 1.5, rough: 0.35 });
+  c.strokeStyle = C(8, 72, 46); c.lineWidth = 1.5; c.lineCap = 'round';
+  c.beginPath(); c.arc(x, y - 17, 3, 0, 7); c.stroke(); c.beginPath(); c.moveTo(x - 4, y - 8); c.lineTo(x + 4, y - 8); c.lineTo(x + 1.5, y - 10.5); c.moveTo(x + 4, y - 8); c.lineTo(x + 1.5, y - 5.5); c.stroke();
+  shape(c, blobPts(x + 9, y - 1, 4.4, 3, seed + 1, 8, 0.25), K.rock, { seed: seed + 2, size: 'S', sh: 1, rough: 0.3 });
+  shape(c, blobPts(x - 9, y, 3.6, 2.6, seed + 3, 8, 0.25), K.rockC, { seed: seed + 4, size: 'S', sh: 1, rough: 0.3 });
+}
+function charcoalPit(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 36, 7, 0.4);
+  shape(c, [[x - 30, y], [x - 26, y - 16], [x - 12, y - 27], [x + 8, y - 28], [x + 24, y - 18], [x + 30, y]], M(28, 20, 17), { seed: seed, size: 'M', sh: 4, rough: 0.5 });
+  shape(c, blobPts(x - 12, y - 22, 12, 4, seed + 1, 10, 0.4), K.moss, { seed: seed + 2, size: 'S' });
+  shape(c, blobPts(x + 16, y - 12, 9, 3.4, seed + 3, 10, 0.4), K.moss, { seed: seed + 4, size: 'S' });
+  [[-18, -8], [-2, -5], [14, -7]].forEach(function (p) { c.fillStyle = C(20, 100, 54); c.beginPath(); c.ellipse(x + p[0], y + p[1], 2.4, 1.5, 0, 0, 7); c.fill(); });
+  for (i = 0; i < 5; i++) { c.save(); c.globalAlpha = 0.2 - i * 0.03; c.fillStyle = '#d9dde6'; c.beginPath(); c.arc(x + 2 + i * 2.4, y - 32 - i * 7, 5 + i * 2.2, 0, 7); c.fill(); c.restore(); }
+  for (i = 0; i < 3; i++) { shape(c, ellPts(x + 36 + i * 0, y - 4 - i * 6, 4.4, 4.4, 10), K.wood, { seed: seed + 6 + i, size: 'S', sh: 1, rough: 0.2 }); }
+  addLight(x - 2, y - 8, 46, 22, 100, 56, 0.45);
+}
+function beeSkeps(c, K, x, y, seed) {
+  var R = rng(seed), i;
+  gshadow(c, x, y, 26, 5, 0.35);
+  [-22, 19].forEach(function (dx, k) { shape(c, rrPts(x + dx, y - 12, 3.4, 12, 1), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  shape(c, rrPts(x - 25, y - 15, 50, 4, 1.5), K.wood, { seed: seed + 2, size: 'S', sh: 1, rough: 0.2 });
+  [-15, 0, 15].forEach(function (dx, k) {
+    var cx = x + dx, by = y - 15, d = shape(c, [[cx - 7, by], [cx - 7, by - 8], [cx - 4, by - 14], [cx, by - 16], [cx + 4, by - 14], [cx + 7, by - 8], [cx + 7, by]], M(44, 60, 56), { seed: seed + 3 + k, size: 'S', sh: 1.5, rough: 0.2 });
+    c.save(); path(c, d); c.clip(); c.strokeStyle = C(40, 55, 36); c.globalAlpha = 0.6; c.lineWidth = 0.9; for (i = 3; i < 16; i += 3) { c.beginPath(); c.moveTo(cx - 8, by - i); c.lineTo(cx + 8, by - i); c.stroke(); } c.restore();
+    c.fillStyle = OLC; c.beginPath(); c.ellipse(cx, by - 3, 1.6, 1.3, 0, 0, 7); c.fill();
+  });
+  for (i = 0; i < 5; i++) { var bx = x - 24 + R() * 48, by2 = y - 24 - R() * 16; c.fillStyle = C(46, 95, 60); c.beginPath(); c.ellipse(bx, by2, 1.4, 1, 0, 0, 7); c.fill(); c.fillStyle = OLC; c.fillRect(bx - 0.3, by2 - 0.9, 0.7, 1.8); }
+}
+function woodenBridge(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y + 2, 46, 6, 0.3);
+  function arch(u) { return -7 * (1 - u * u); }
+  for (i = 0; i < 11; i++) { var u = (i - 5) / 5.5; shape(c, rrPts(x - 44 + i * 8, y - 8 + arch(u), 7.4, 17, 1.2), K.wood, { seed: seed + i, size: 'S', sh: 1, rough: 0.25 }); }
+  [-8, 9].forEach(function (dy, k) {
+    var rail = [], j; for (j = 0; j <= 10; j++) { var u2 = (j - 5) / 5; rail.push([x - 42 + j * 8.4, y + dy - 12 + arch(u2)]); }
+    [0, 5, 10].forEach(function (j2) { line(c, [[rail[j2][0], rail[j2][1] + 12], [rail[j2][0], rail[j2][1] - 1]], 2.4, K.wood.base, true); });
+    line(c, rail, 2.2, K.wood.base, true);
+  });
+}
+function farmland(c, K, x, y, seed) {
+  var R = rng(seed), i, soil = M(28, 38, 23);
+  var d = shape(c, [[x - 52, y + 6], [x - 45, y - 22], [x + 45, y - 22], [x + 52, y + 6]], soil, { seed: seed, size: 'M', sh: 1.5, rough: 0.5, flat: true });
+  c.save(); path(c, d); c.clip();
+  c.strokeStyle = C(26, 40, 13); c.lineWidth = 1.6; c.globalAlpha = 0.7;
+  for (i = 0; i < 7; i++) { var yy = y - 19 + i * 4; c.beginPath(); c.moveTo(x - 54, yy); c.lineTo(x + 54, yy); c.stroke(); }
+  c.globalAlpha = 1; c.strokeStyle = K.leaf.hl; c.lineWidth = 1.1; c.lineCap = 'round';
+  for (i = 0; i < 60; i++) { var sx = x - 46 + R() * 92, sy = y - 17 + Math.floor(R() * 6) * 4; c.beginPath(); c.moveTo(sx - 1.6, sy - 2.6); c.lineTo(sx, sy); c.lineTo(sx + 1.6, sy - 2.6); c.stroke(); }
+  c.restore();
+}
+
+/* ---------------- things people built ---------------- */
+function beachedBoat(c, K, x, y, seed) {
+  gshadow(c, x, y, 42, 6, 0.4);
+  line(c, [[x - 8, y - 2], [x + 30, y - 30]], 1.8, K.wood.hl, true);
+  var d = shape(c, [[x - 20, y], [x - 34, y - 8], [x - 40, y - 26], [x - 35, y - 28], [x - 24, y - 17], [x + 24, y - 17], [x + 35, y - 28], [x + 40, y - 26], [x + 34, y - 8], [x + 20, y]], K.wood, { seed: seed, size: 'M', sh: 3, rough: 0.25 });
+  c.save(); path(c, d); c.clip(); c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.5)'; c.lineWidth = 1;
+  [-12, -7].forEach(function (dy) { c.beginPath(); c.moveTo(x - 38, y + dy - 8); c.quadraticCurveTo(x, y + dy + 6, x + 38, y + dy - 8); c.stroke(); });
+  c.restore();
+  line(c, curvePts([x - 38, y - 27], [x - 41, y - 33], [x - 37, y - 35], 4), 2.2, K.wood.base, true);
+  line(c, curvePts([x + 38, y - 27], [x + 41, y - 33], [x + 37, y - 35], 4), 2.2, K.wood.base, true);
+  [[-24, 2], [22, 2]].forEach(function (p, k) { shape(c, blobPts(x + p[0], y + p[1], 5, 3, seed + 2 + k, 8, 0.25), K.rockC, { seed: seed + 4 + k, size: 'S', sh: 1, rough: 0.3 }); });
+}
+function plankLines(c, d, x0, x1, y0, y1, step) { c.save(); path(c, d); c.clip(); c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.4)'; c.lineWidth = 1; for (var i = x0; i < x1; i += step) { c.beginPath(); c.moveTo(i, y0); c.lineTo(i, y1); c.stroke(); } c.restore(); }
+function storageHut(c, K, x, y, seed) {
+  var R = rng(seed), i;
+  longShadow(c, x, y, 50, 30); gshadow(c, x, y, 28, 6, 0.4);
+  [-18, 14].forEach(function (dx, k) { shape(c, blobPts(x + dx + 2, y - 1, 5, 3, seed + k, 8, 0.2), K.rockC, { seed: seed + 2 + k, size: 'S', sh: 1, rough: 0.3 }); shape(c, rrPts(x + dx, y - 12, 4, 11, 1), K.wood, { seed: seed + 4 + k, size: 'S', sh: 1, rough: 0.2 }); });
+  var w = shape(c, rrPts(x - 23, y - 38, 46, 27, 2), K.wood, { seed: seed + 6, size: 'M', sh: 3, rough: 0.3 });
+  plankLines(c, w, x - 20, x + 24, y - 38, y - 11, 7);
+  shape(c, rrPts(x - 5, y - 30, 10, 19, 1.5), dark(9), { seed: seed + 7, size: 'S', flat: true, rough: 0.15 });
+  var rf = shape(c, [[x - 29, y - 35], [x, y - 58], [x + 29, y - 35]], K.grassB, { seed: seed + 8, size: 'M', sh: 4, hl: 2, rough: 0.5 });
+  c.save(); path(c, rf); c.clip(); c.strokeStyle = K.leaf.hl; c.globalAlpha = 0.6; c.lineWidth = 1; for (i = 0; i < 16; i++) { var gx = x - 24 + R() * 48, gy = y - 37 - R() * 16; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx + (R() - 0.5) * 3, gy - 4); c.stroke(); } c.restore();
+  line(c, [[x - 30, y - 35], [x + 30, y - 35]], 2.4, K.wood.base, true);
+  shape(c, rrPts(x - 8, y - 6, 16, 5, 2), K.wood, { seed: seed + 9, size: 'S', sh: 1, rough: 0.2 });
+}
+function boathouse(c, K, x, y, seed) {
+  var R = rng(seed), i;
+  longShadow(c, x, y, 92, 44); gshadow(c, x, y, 52, 8, 0.45);
+  var rf = shape(c, [[x - 46, y - 2], [x - 30, y - 48], [x + 30, y - 48], [x + 46, y - 2]], K.grassB, { seed: seed, size: 'L', sh: 5, hl: 3, rough: 0.5 });
+  c.save(); path(c, rf); c.clip(); c.strokeStyle = K.leaf.hl; c.globalAlpha = 0.55; c.lineWidth = 1; for (i = 0; i < 30; i++) { var gx = x - 42 + R() * 84, gy = y - 6 - R() * 38; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx + (R() - 0.5) * 3, gy - 4.4); c.stroke(); } c.restore();
+  shape(c, [[x - 24, y], [x - 24, y - 20], [x, y - 38], [x + 24, y - 20], [x + 24, y]], dark(7), { seed: seed + 1, size: 'M', flat: true, rough: 0.2 });
+  line(c, curvePts([x - 3, y], [x - 5, y - 16], [x + 2, y - 28], 6), 3.4, K.wood.base, true);
+  line(c, curvePts([x + 2, y - 28], [x + 7, y - 33], [x + 4, y - 26], 4), 2.2, K.wood.base, true);
+  shape(c, [[x - 14, y], [x - 9, y - 8], [x + 5, y - 8], [x + 10, y]], K.wood, { seed: seed + 2, size: 'S', sh: 1.5, rough: 0.2 });
+  line(c, [[x - 26, y], [x - 1, y - 41]], 3, K.wood.base, true); line(c, [[x + 26, y], [x + 1, y - 41]], 3, K.wood.base, true);
+  line(c, [[x - 1, y - 41], [x + 6, y - 53]], 2.6, K.wood.base, true); line(c, [[x + 1, y - 41], [x - 6, y - 53]], 2.6, K.wood.base, true);
+  [[-44, 0], [44, 0]].forEach(function (p, k) { shape(c, blobPts(x + p[0], y + p[1] - 2, 6, 4, seed + 4 + k, 8, 0.25), K.rockC, { seed: seed + 6 + k, size: 'S', sh: 1.2, rough: 0.3 }); });
+}
+function watchtower(c, K, x, y, seed) {
+  var i;
+  longShadow(c, x, y, 34, 40); gshadow(c, x, y, 22, 5, 0.4);
+  line(c, [[x - 12, y - 4], [x - 9, y - 58]], 2.6, K.wood.shade, true); line(c, [[x + 12, y - 4], [x + 9, y - 58]], 2.6, K.wood.shade, true);
+  line(c, [[x - 15, y - 20], [x + 13, y - 44]], 1.8, K.wood.base, true); line(c, [[x + 15, y - 20], [x - 13, y - 44]], 1.8, K.wood.base, true);
+  line(c, [[x - 17, y], [x - 11, y - 60]], 3, K.wood.base, true); line(c, [[x + 17, y], [x + 11, y - 60]], 3, K.wood.base, true);
+  line(c, [[x + 22, y], [x + 16, y - 62]], 1.6, K.wood.hl, true); line(c, [[x + 28, y], [x + 22, y - 62]], 1.6, K.wood.hl, true);
+  for (i = 0; i < 7; i++) line(c, [[x + 21.4 - i * 0.86, y - 6 - i * 8.6], [x + 27.4 - i * 0.86, y - 6 - i * 8.6]], 1.3, K.wood.hl, false);
+  shape(c, rrPts(x - 18, y - 65, 36, 6, 1.5), K.wood, { seed: seed, size: 'S', sh: 1.5, rough: 0.2 });
+  [-16, 0, 14].forEach(function (dx, k) { shape(c, rrPts(x + dx, y - 77, 2.6, 12, 1), K.wood, { seed: seed + 1 + k, size: 'S', flat: true, rough: 0.2 }); });
+  line(c, [[x - 17, y - 76], [x + 17, y - 76]], 2, K.wood.base, true);
+  shape(c, [[x - 21, y - 86], [x, y - 100], [x + 21, y - 86]], M(46, 46, 44), { seed: seed + 4, size: 'M', sh: 3, rough: 0.5 });
+  [-15, 15].forEach(function (dx) { line(c, [[x + dx, y - 76], [x + dx, y - 87]], 2, K.wood.base, true); });
+}
+function stoneHearth(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 24, 6, 0.4);
+  for (i = 0; i < 10; i++) { var a = i / 10 * 6.28; shape(c, ellPts(x + Math.cos(a) * 16, y - 3 + Math.sin(a) * 6, 4.4, 3.2, 8), i % 2 ? K.rockC : K.rock, { seed: seed + i, size: 'S', sh: 1, rough: 0.3 }); }
+  shape(c, ellPts(x, y - 3, 11, 4, 12), M(18, 95, 46), { seed: seed + 12, size: 'S', flat: true, rough: 0.3 });
+  shape(c, [[x - 5, y - 4], [x - 6, y - 11], [x - 2, y - 16], [x, y - 10], [x + 3, y - 17], [x + 6, y - 9], [x + 5, y - 4]], M(34, 100, 58), { seed: seed + 13, size: 'S', flat: true, rough: 0.4 });
+  line(c, [[x - 15, y + 2], [x, y - 38]], 2, K.iron.base, true); line(c, [[x + 15, y + 2], [x, y - 38]], 2, K.iron.base, true); line(c, [[x + 2, y - 6], [x, y - 38]], 1.6, K.iron.base, true);
+  line(c, [[x, y - 36], [x, y - 25]], 1, K.iron.base, false);
+  shape(c, [[x - 8, y - 25], [x + 8, y - 25], [x + 6, y - 15], [x, y - 13], [x - 6, y - 15]], K.iron, { seed: seed + 14, size: 'S', sh: 1.5, rough: 0.15 });
+  addLight(x, y - 10, 100 + 40 * P.glow, 28, 100, 58, 0.9);
+}
+function woodenWell(c, K, x, y, seed) {
+  longShadow(c, x, y, 26, 26); gshadow(c, x, y, 18, 5, 0.4);
+  var w = shape(c, rrPts(x - 13, y - 15, 26, 15, 1.5), K.wood, { seed: seed, size: 'M', sh: 2, rough: 0.3 });
+  plankLines(c, w, x - 9, x + 13, y - 15, y, 6);
+  shape(c, ellPts(x, y - 15, 13, 4.4, 14), K.trunkL, { seed: seed + 1, size: 'S', sh: 1, rough: 0.2 });
+  shape(c, ellPts(x, y - 15, 9, 2.8, 12), dark(10), { seed: seed + 2, size: 'S', flat: true, rough: 0.1 });
+  line(c, [[x + 24, y], [x + 24, y - 44]], 3, K.wood.base, true);
+  line(c, [[x + 42, y - 30], [x - 2, y - 60]], 2.4, K.wood.base, true);
+  shape(c, blobPts(x + 42, y - 28, 5, 4, seed + 3, 8, 0.25), K.rockC, { seed: seed + 4, size: 'S', sh: 1, rough: 0.3 });
+  line(c, [[x - 2, y - 60], [x - 1, y - 30]], 1, C(40, 30, 62), false);
+  shape(c, [[x - 5, y - 30], [x + 3, y - 30], [x + 2, y - 23], [x - 4, y - 23]], K.wood, { seed: seed + 5, size: 'S', sh: 1, rough: 0.2 });
+}
+
 function kitSetup(params) { setup(params || {}); }
 function bakeTile(type, v) {
   var cv = mk(TW * 2, TH * 2), c = cv.getContext('2d'), K = mats();
@@ -1765,6 +2173,42 @@ function blendTile(dst, tileCv, side, seed) {
   dst.drawImage(tmpCv, 0, 0, TW * 2, TH * 2, 0, 0, TW, TH);
 }
 var PROPS = {
+  cave: { b: [-68, -82, 106, 16], f: function (c, K, s) { caveObj(c, K, 0, 0, s); } },
+  birdNest: { b: [-16, -16, 18, 8], f: function (c, K, s) { birdNest(c, K, 0, 0, s); } },
+  animalDen: { b: [-38, -30, 38, 10], f: function (c, K, s) { animalDen(c, K, 0, 0, s); } },
+  wildHive: { b: [-20, -46, 20, 8], f: function (c, K, s) { wildHive(c, K, 0, 0, s); } },
+  rockFormation: { b: [-38, -64, 62, 12], f: function (c, K, s) { rockFormation(c, K, 0, 0, s); } },
+  wildHerbs: { b: [-16, -32, 16, 6], f: function (c, K, s) { wildHerbs(c, K, 0, 0, s); } },
+  spring: { b: [-34, -24, 46, 16], f: function (c, K, s) { springObj(c, K, 0, 0, s); } },
+  fallenTree: { b: [-56, -38, 62, 10], f: function (c, K, s) { fallenTree(c, K, 0, 0, s); } },
+  animalTrap: { b: [-30, -32, 30, 8], f: function (c, K, s) { animalTrap(c, K, 0, 0, s); } },
+  huntingBlind: { b: [-38, -40, 38, 8], f: function (c, K, s) { huntingBlind(c, K, 0, 0, s); } },
+  fishingNet: { b: [-36, -52, 36, 8], f: function (c, K, s) { fishingNet(c, K, 0, 0, s); } },
+  fishWeir: { b: [-48, -30, 48, 14], f: function (c, K, s) { fishWeir(c, K, 0, 0, s); } },
+  trailStone: { b: [-16, -32, 18, 6], f: function (c, K, s) { trailStone(c, K, 0, 0, s); } },
+  charcoalPit: { b: [-42, -72, 48, 10], f: function (c, K, s) { charcoalPit(c, K, 0, 0, s); } },
+  beeSkeps: { b: [-32, -46, 32, 8], f: function (c, K, s) { beeSkeps(c, K, 0, 0, s); } },
+  woodenBridge: { b: [-52, -34, 52, 16], f: function (c, K, s) { woodenBridge(c, K, 0, 0, s); } },
+  farmland: { b: [-58, -28, 58, 12], f: function (c, K, s) { farmland(c, K, 0, 0, s); } },
+  beachedBoat: { b: [-48, -40, 48, 8], f: function (c, K, s) { beachedBoat(c, K, 0, 0, s); } },
+  storageHut: { b: [-36, -66, 60, 14], f: function (c, K, s) { storageHut(c, K, 0, 0, s); } },
+  boathouse: { b: [-58, -66, 96, 16], f: function (c, K, s) { boathouse(c, K, 0, 0, s); } },
+  watchtower: { b: [-30, -106, 60, 16], f: function (c, K, s) { watchtower(c, K, 0, 0, s); } },
+  stoneHearth: { b: [-26, -44, 26, 10], f: function (c, K, s) { stoneHearth(c, K, 0, 0, s); } },
+  woodenWell: { b: [-22, -66, 52, 10], f: function (c, K, s) { woodenWell(c, K, 0, 0, s); } },
+  runestone: { b: [-22, -72, 40, 12], f: function (c, K, s) { runestone(c, K, 0, 0, s); } },
+  longhouse: { b: [-114, -136, 182, 33], f: function (c, K, s) { c.save(); c.scale(1.35, 1.35); longhouse(c, K, 0, 0, s); c.restore(); } },
+  vikingTent: { b: [-38, -64, 38, 10], f: function (c, K, s) { vikingTent(c, K, 0, 0, s); } },
+  palisade: { b: [-42, -56, 42, 8], f: function (c, K, s) { palisade(c, K, 0, 0, s); } },
+  shieldRack: { b: [-34, -66, 34, 8], f: function (c, K, s) { shieldRack(c, K, 0, 0, s); } },
+  dragonPost: { b: [-18, -76, 28, 8], f: function (c, K, s) { dragonPost(c, K, 0, 0, s); } },
+  burialMound: { b: [-62, -40, 62, 12], f: function (c, K, s) { burialMound(c, K, 0, 0, s); } },
+  dryingRack: { b: [-38, -50, 38, 8], f: function (c, K, s) { dryingRack(c, K, 0, 0, s); } },
+  forge: { b: [-44, -46, 44, 10], f: function (c, K, s) { forgeObj(c, K, 0, 0, s); } },
+  brazier: { b: [-18, -50, 18, 8], f: function (c, K, s) { brazierObj(c, K, 0, 0, s); } },
+  cairn: { b: [-26, -44, 26, 8], f: function (c, K, s) { cairnObj(c, K, 0, 0, s); } },
+  stoneShip: { b: [-52, -30, 52, 18], f: function (c, K, s) { stoneShip(c, K, 0, 0, s); } },
+  woodpile: { b: [-30, -34, 30, 8], f: function (c, K, s) { woodpile(c, K, 0, 0, s); } },
   snowPine: { b: [-60, -170, 100, 18], f: function (c, K, s) { snowPine(c, K, 0, 0, 128, s); } },
   snowPineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { snowPine(c, K, 0, 0, 190, s); } },
   iceCrystal: { b: [-40, -80, 50, 10], f: function (c, K, s) { iceCrystal(c, K, 0, 0, 1, s); } },

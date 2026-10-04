@@ -185,6 +185,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
 function damageEnemy(e, dmg, ang, kb, stag, kind) {
+  if (e.aggro) e.awake = true;   // hitting a calm creature rouses it
   if (e.dead) return;
   var mult = 1, weak = false;
   var bigE = e.type === 'boss' || e.type === 'bossbot';
@@ -562,6 +563,17 @@ function updateEnemies(dt) {
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
     if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
+    if (e.aggro) {                       // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away
+      var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
+      if (!e.awake && gd < e.aggro && !P.dead) e.awake = true;
+      else if (e.awake && gd > e.aggro * 2.6 && (e.state === 'chase' || e.state === 'idle')) e.awake = false;
+      if (e.flee) {                      // a grazer bolts instead of fighting
+        if (e.awake && !P.dead) { var fs2 = (e.cfg ? e.cfg.speed : 58) * 1.5; e.state = 'chase'; e.t += dt; e.face = ga + Math.PI; moveCircle(e, -Math.cos(ga) * fs2 * dt, -Math.sin(ga) * fs2 * dt); }
+        else e.state = 'idle';
+        continue;
+      }
+      if (!e.awake) { e.state = 'idle'; e.t += dt; continue; }
+    }
     if (e.freezeT > 0) { e.freezeT -= dt; if (e.freezeT <= 0) { e.kx += e.pkx; e.ky += e.pky; e.pkx = e.pky = 0; } continue; }
     e.sq = Math.max(0, e.sq - dt * 4.5);
     var adt = e.rattle > 0 ? dt * 0.7 : dt;

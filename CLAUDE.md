@@ -1,8 +1,32 @@
 # Survival game prototype
 
-2D top-down survival crafting game (post-apocalyptic steampunk, Zelda-style three-quarter camera,
-MapleStory-like cartoon look). All art, animation and sound is drawn or synthesized in code: there
+2D top-down survival crafting game with a Viking theme (Zelda-style three-quarter camera, MapleStory-like
+cartoon look). All art, animation and sound is drawn or synthesized in code: there
 are no asset files. This repo holds browser prototypes, not a full game yet.
+
+## Direction: Viking (since 2026-10-04)
+
+Robin changed the game from post-apocalyptic steampunk to a Viking game. The `viking` branch holds this work;
+`main` is the last steampunk state, kept so nothing is lost. The change is being made in steps, graphics first:
+
+- Done: a Viking prop set in `src/stylelab.js` (longhouse, tent, palisade, shield rack, dragon post, runestone,
+  burial mound, stone ship, drying rack, forge, brazier, woodpile, cairn), Viking biomes in the Environment Editor, 23 more nature and Viking-age props (cave, nest, den, hive, spring,
+  traps, nets, weir, bridge, farmland, storage hut, boathouse, watchtower, hearth, well and more),
+  Viking ships in the Sea Editor (faering, karve, longship, knarr), log and wattle walls and a turf roof in the Base
+  Editor, and Norse base models in the Creature Editor (wolf, boar, draugr, troll, raven).
+- Not done: the hero is unchanged (Robin said to leave it), the enemies in the Combat Arena are still robots, the
+  World Prototype is still the Factory, and the linked design doc still describes the steampunk game.
+- Tone: Robin wants Scandinavia in the Viking age, not a copy of Valheim. Prefer things that really existed (well
+  sweeps, storehouses on posts, boathouses, fish weirs, bee skeps, charcoal pits) and real animals drawn with
+  accurate proportions over fantasy monsters. Earlier creature models were rejected as "one-eyed and a bit alien".
+- Environment objects are organised in three groups, from Robin's lists: found in nature, left by people in the wild,
+  and built by Vikings. The Environment Editor has a layer and a count slider for each; the Object Editor has a
+  category for each. Keep new props in one of the three.
+- Animals (wild boar, deer, bear, snake, moose, wolf) use `animalD` in `src/art.js`: body plans 5 (four-legged,
+  side-on, with neck, snout, ears, antlers, tusks, hump) and 6 (snake). They are the base models in the Creature
+  Editor. Creatures there spawn between the two top pillars and stay calm until the hero is within `aggro`
+  (`e.aggro`, `e.awake`, `e.flee` in `updateEnemies`); the deer is a grazer that runs away.
+- New content should be Viking. Treat the steampunk props, robots and Factory as legacy unless Robin says otherwise.
 
 See `README.md` for controls, status and the links to the design doc and published pages. The design
 doc (linked there) is the source of truth for vision, world and systems.

@@ -62,7 +62,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
   <h1>Environment Editor</h1>
-  <p class="lede">Build a patch of world and walk through it. Pick a biome, choose the ground and which objects grow there, then steer how dense, how grouped and how open it is. The aim is groves and clearings with room to breathe, and room to build a base.</p>
+  <p class="lede">Build a patch of the Viking world and walk through it. Pick a biome, choose the ground and which objects grow there, then steer how dense, how grouped and how open it is. The aim is groves and clearings with room to breathe, and room to build a base.</p>
   <div class="wrap">
     <div class="left">
       <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Scene"></canvas></div>
@@ -114,7 +114,11 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div class="group chips" id="l-rocks"></div>
         <h2 class="more">Ground detail</h2>
         <div class="group chips" id="l-detail"></div>
-        <h2 class="more">Landmarks</h2>
+        <h2 class="more">Found in nature</h2>
+        <div class="group chips" id="l-finds"></div>
+        <h2 class="more">Left by people</h2>
+        <div class="group chips" id="l-traces"></div>
+        <h2 class="more">Buildings</h2>
         <div class="group chips" id="l-marks"></div>
         <p class="desc">Switch objects on and off to choose what can appear in each layer.</p>
       </section>
@@ -176,15 +180,19 @@ __COMBAT__
 
   /* ---------- what each layer can contain ---------- */
   var POOLS = {
-    trees: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'blossom', 'ancient', 'deadTree', 'snowPine', 'snowPineBig'],
-    under: ['bush', 'berryBush', 'fern', 'reeds', 'snowBush', 'emberBush', 'mushrooms'],
-    rocks: ['rock', 'snowRock', 'emberRock', 'standingStone', 'cliff', 'rubble', 'iceCrystal', 'vent'],
-    detail: ['tallGrass', 'flower', 'bellFlower', 'flowerBed', 'fern', 'mushrooms', 'reeds'],
-    marks: ['log', 'stump', 'campfire', 'mushRing', 'well', 'signpost', 'fence', 'scarecrow', 'haystack', 'cart', 'bench', 'lamp', 'ruinHouse', 'brokenPillar', 'gatePost', 'banner', 'iceCrystalBig', 'ventBig', 'crate', 'barrel']
+    trees: ['birch', 'pine', 'pineBig', 'oak', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'],
+    under: ['bush', 'berryBush', 'fern', 'wildHerbs', 'mushrooms', 'reeds', 'snowBush'],
+    rocks: ['rock', 'rockFormation', 'cairn', 'snowRock', 'standingStone', 'cliff', 'iceCrystal'],
+    detail: ['tallGrass', 'flower', 'bellFlower', 'wildHerbs', 'flowerBed', 'fern', 'mushrooms', 'reeds'],
+    finds: ['cave', 'birdNest', 'animalDen', 'wildHive', 'spring', 'fallenTree', 'rockFormation', 'mushRing', 'log', 'stump'],
+    traces: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile', 'haystack'],
+    marks: ['longhouse', 'beachedBoat', 'campfire', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'woodenWell',
+      'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier', 'cart', 'bench', 'barrel', 'crate']
   };
-  var LAYERS = ['trees', 'under', 'rocks', 'detail', 'marks'];
-  var SOLID = { trees: 9, under: 0, rocks: 10, detail: 0, marks: 11 };
-  var NO_SOLID = { mushRing: 1, campfire: 1 };
+  var LAYERS = ['trees', 'under', 'rocks', 'detail', 'finds', 'traces', 'marks'];
+  var SOLID = { trees: 9, under: 0, rocks: 10, detail: 0, finds: 10, traces: 9, marks: 11 };
+  var NO_SOLID = { mushRing: 1, campfire: 1, stoneShip: 1, birdNest: 1, wildHerbs: 1, farmland: 1, woodenBridge: 1, fishWeir: 1, spring: 1, animalTrap: 1 };
+  var BIG = { cave: 44, boathouse: 40, storageHut: 22, watchtower: 16, charcoalPit: 26, fallenTree: 22, rockFormation: 22, beachedBoat: 30, huntingBlind: 24, fishingNet: 22, beeSkeps: 20, animalDen: 20, longhouse: 62, burialMound: 34, palisade: 24, vikingTent: 18, forge: 20, shieldRack: 16, dryingRack: 18, woodpile: 14 };   // footprints of the larger landmarks
   var GROUNDS = ['grass', 'grassDark', 'moss', 'leaves', 'dirt', 'path', 'shore', 'rock', 'snow', 'snowDark', 'ice', 'ash', 'char', 'basalt', 'crack'];
   var GNAME = { grass: 'Grass', grassDark: 'Dark grass', moss: 'Moss', leaves: 'Leaf litter', dirt: 'Dirt', path: 'Path', shore: 'Sand', rock: 'Rock', snow: 'Snow', snowDark: 'Packed snow', ice: 'Ice', ash: 'Ash', char: 'Charred', basalt: 'Basalt', crack: 'Cracked' };
   Object.keys(POOLS).forEach(function (k) { POOLS[k] = POOLS[k].filter(function (n) { return !!kit.PROPS[n]; }); });
@@ -192,27 +200,36 @@ __COMBAT__
   function label(n) { var s = n.replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
 
   var BIOMES = [
-    { name: 'Forest clearing', ground: 'grass', ground2: 'grassDark', accent: 'dirt', path: 1,
-      trees: ['oak', 'birch', 'pine', 'blossom'], under: ['bush', 'berryBush', 'fern'], rocks: ['rock'], detail: ['tallGrass', 'flower', 'bellFlower'], marks: ['log', 'stump', 'campfire', 'standingStone'],
-      set: { trees: 0.42, group: 0.8, open: 0.5, under: 0.4, rocks: 0.2, detail: 0.45, marks: 3, treeSize: 0.7, patch: 0.35, accentAmt: 0.1 } },
-    { name: 'Deep forest', ground: 'grassDark', ground2: 'moss', accent: 'leaves', path: 0,
-      trees: ['oak', 'ancient', 'willow', 'pineBig'], under: ['fern', 'bush', 'mushrooms'], rocks: ['rock', 'standingStone'], detail: ['tallGrass', 'mushrooms', 'fern'], marks: ['log', 'stump', 'mushRing'],
-      set: { trees: 0.75, group: 0.6, open: 0.3, under: 0.6, rocks: 0.25, detail: 0.35, marks: 2, treeSize: 0.75, patch: 0.4, accentAmt: 0.2 } },
-    { name: 'Meadow', ground: 'grass', ground2: 'grassDark', accent: 'path', path: 1,
-      trees: ['birch', 'blossom', 'oak'], under: ['bush', 'berryBush'], rocks: ['rock'], detail: ['tallGrass', 'flower', 'flowerBed', 'bellFlower'], marks: ['well', 'fence', 'scarecrow', 'haystack', 'signpost'],
-      set: { trees: 0.16, group: 0.85, open: 0.75, under: 0.2, rocks: 0.12, detail: 0.8, marks: 3, treeSize: 0.7, patch: 0.2, accentAmt: 0.05 } },
-    { name: 'Pine woods', ground: 'grassDark', ground2: 'dirt', accent: 'rock', path: 0,
-      trees: ['pine', 'pineBig', 'cypress'], under: ['fern', 'bush'], rocks: ['rock', 'cliff'], detail: ['tallGrass', 'mushrooms', 'fern'], marks: ['log', 'stump', 'campfire'],
-      set: { trees: 0.55, group: 0.7, open: 0.45, under: 0.35, rocks: 0.4, detail: 0.3, marks: 2, treeSize: 0.8, patch: 0.3, accentAmt: 0.08 } },
-    { name: 'Snowfield', ground: 'snow', ground2: 'snowDark', accent: 'ice', path: 0,
-      trees: ['snowPine', 'snowPineBig', 'deadTree'], under: ['snowBush'], rocks: ['snowRock', 'iceCrystal'], detail: ['snowBush'], marks: ['iceCrystalBig', 'standingStone', 'campfire'],
-      set: { trees: 0.3, group: 0.8, open: 0.6, under: 0.3, rocks: 0.3, detail: 0.15, marks: 2, treeSize: 0.8, patch: 0.3, accentAmt: 0.1 } },
-    { name: 'Ashlands', ground: 'ash', ground2: 'char', accent: 'crack', path: 0,
-      trees: ['deadTree'], under: ['emberBush'], rocks: ['emberRock', 'vent', 'rubble'], detail: ['emberBush'], marks: ['ventBig', 'brokenPillar'],
-      set: { trees: 0.22, group: 0.6, open: 0.65, under: 0.3, rocks: 0.45, detail: 0.1, marks: 2, treeSize: 0.8, patch: 0.4, accentAmt: 0.15 } },
-    { name: 'Old ruins', ground: 'grass', ground2: 'path', accent: 'dirt', path: 1,
-      trees: ['oak', 'willow'], under: ['bush', 'fern'], rocks: ['rock', 'rubble'], detail: ['tallGrass', 'flower'], marks: ['ruinHouse', 'brokenPillar', 'standingStone', 'well', 'gatePost', 'lamp', 'fence', 'banner'],
-      set: { trees: 0.25, group: 0.8, open: 0.65, under: 0.3, rocks: 0.3, detail: 0.4, marks: 6, treeSize: 0.7, patch: 0.3, accentAmt: 0.1 } }
+    { name: 'Birch grove', ground: 'grass', ground2: 'grassDark', accent: 'dirt', path: 1,
+      trees: ['birch', 'birch', 'oak', 'pine'], under: ['bush', 'berryBush', 'fern', 'wildHerbs', 'mushrooms'], rocks: ['rock', 'rockFormation'], detail: ['tallGrass', 'flower', 'wildHerbs'],
+      finds: ['birdNest', 'wildHive', 'fallenTree', 'animalDen', 'spring'], traces: ['trailStone', 'animalTrap', 'beeSkeps', 'woodpile', 'runestone'], marks: ['campfire', 'vikingTent'],
+      set: { trees: 0.4, group: 0.8, open: 0.5, under: 0.45, rocks: 0.2, detail: 0.45, finds: 5, traces: 4, marks: 2, treeSize: 0.7, patch: 0.35, accentAmt: 0.1 } },
+    { name: 'Homestead', ground: 'grass', ground2: 'path', accent: 'dirt', path: 1,
+      trees: ['birch', 'pine'], under: ['bush', 'berryBush', 'wildHerbs'], rocks: ['rock'], detail: ['tallGrass', 'flower'],
+      finds: ['birdNest', 'fallenTree'], traces: ['farmland', 'farmland', 'fence', 'beeSkeps', 'charcoalPit', 'haystack', 'woodpile', 'trailStone'],
+      marks: ['longhouse', 'longhouse', 'storageHut', 'woodenWell', 'stoneHearth', 'palisade', 'watchtower', 'forge', 'dryingRack', 'shieldRack', 'cart', 'barrel'],
+      set: { trees: 0.16, group: 0.85, open: 0.8, under: 0.2, rocks: 0.1, detail: 0.35, finds: 2, traces: 8, marks: 12, treeSize: 0.7, patch: 0.35, accentAmt: 0.12 } },
+    { name: 'Fjord shore', ground: 'grass', ground2: 'shore', accent: 'rock', path: 1,
+      trees: ['pine', 'birch', 'pine'], under: ['bush', 'reeds', 'wildHerbs'], rocks: ['rock', 'rockFormation', 'cliff'], detail: ['tallGrass', 'reeds', 'flower'],
+      finds: ['cave', 'spring', 'birdNest', 'fallenTree'], traces: ['fishingNet', 'fishWeir', 'trailStone', 'woodenBridge', 'runestone', 'stoneShip'],
+      marks: ['boathouse', 'beachedBoat', 'beachedBoat', 'dryingRack', 'storageHut', 'campfire', 'watchtower', 'vikingTent'],
+      set: { trees: 0.25, group: 0.8, open: 0.7, under: 0.25, rocks: 0.35, detail: 0.5, finds: 4, traces: 6, marks: 7, treeSize: 0.75, patch: 0.4, accentAmt: 0.08 } },
+    { name: 'Pine forest', ground: 'grassDark', ground2: 'moss', accent: 'dirt', path: 0,
+      trees: ['pine', 'pineBig', 'pine', 'birch'], under: ['fern', 'bush', 'mushrooms', 'berryBush'], rocks: ['rock', 'rockFormation', 'cliff'], detail: ['tallGrass', 'fern', 'mushrooms'],
+      finds: ['cave', 'animalDen', 'wildHive', 'fallenTree', 'birdNest', 'mushRing', 'spring'], traces: ['animalTrap', 'huntingBlind', 'trailStone', 'charcoalPit', 'cairn'], marks: ['campfire'],
+      set: { trees: 0.6, group: 0.7, open: 0.4, under: 0.5, rocks: 0.4, detail: 0.3, finds: 8, traces: 5, marks: 1, treeSize: 0.8, patch: 0.4, accentAmt: 0.08 } },
+    { name: 'Burial ground', ground: 'grassDark', ground2: 'moss', accent: 'leaves', path: 0,
+      trees: ['oak', 'birch', 'deadTree'], under: ['fern', 'mushrooms', 'wildHerbs'], rocks: ['standingStone', 'cairn', 'rock'], detail: ['tallGrass', 'mushrooms', 'bellFlower'],
+      finds: ['birdNest', 'fallenTree'], traces: ['runestone', 'runestone', 'stoneShip', 'cairn', 'trailStone'], marks: ['burialMound', 'burialMound', 'brazier'],
+      set: { trees: 0.25, group: 0.75, open: 0.7, under: 0.3, rocks: 0.3, detail: 0.4, finds: 2, traces: 7, marks: 5, treeSize: 0.75, patch: 0.4, accentAmt: 0.15 } },
+    { name: 'Winter highlands', ground: 'snow', ground2: 'snowDark', accent: 'ice', path: 0,
+      trees: ['snowPine', 'snowPineBig', 'deadTree'], under: ['snowBush'], rocks: ['snowRock', 'cairn', 'rockFormation'], detail: ['snowBush'],
+      finds: ['cave', 'animalDen', 'fallenTree'], traces: ['trailStone', 'animalTrap', 'cairn', 'runestone'], marks: ['vikingTent', 'campfire', 'stoneHearth', 'woodpile'],
+      set: { trees: 0.3, group: 0.8, open: 0.6, under: 0.3, rocks: 0.3, detail: 0.12, finds: 3, traces: 4, marks: 3, treeSize: 0.8, patch: 0.3, accentAmt: 0.1 } },
+    { name: 'Farm meadow', ground: 'grass', ground2: 'grassDark', accent: 'path', path: 1,
+      trees: ['birch', 'blossom', 'oak'], under: ['bush', 'berryBush', 'wildHerbs'], rocks: ['rock'], detail: ['tallGrass', 'flower', 'flowerBed', 'wildHerbs'],
+      finds: ['birdNest', 'wildHive', 'spring'], traces: ['farmland', 'farmland', 'farmland', 'fence', 'fence', 'beeSkeps', 'haystack', 'woodenBridge', 'trailStone'], marks: ['storageHut', 'woodenWell', 'cart'],
+      set: { trees: 0.14, group: 0.85, open: 0.78, under: 0.25, rocks: 0.12, detail: 0.75, finds: 3, traces: 9, marks: 3, treeSize: 0.7, patch: 0.25, accentAmt: 0.06 } }
   ];
 
   /* ---------- settings ---------- */
@@ -223,7 +240,9 @@ __COMBAT__
     { k: 'under', label: 'Undergrowth', min: 0, max: 1, step: 0.01 },
     { k: 'rocks', label: 'Rocks', min: 0, max: 1, step: 0.01 },
     { k: 'detail', label: 'Ground detail', min: 0, max: 1, step: 0.01 },
-    { k: 'marks', label: 'Landmarks', min: 0, max: 8, step: 1 },
+    { k: 'finds', label: 'Found in nature', min: 0, max: 14, step: 1 },
+    { k: 'traces', label: 'Left by people', min: 0, max: 14, step: 1 },
+    { k: 'marks', label: 'Buildings', min: 0, max: 16, step: 1 },
     { k: 'treeSize', label: 'Tree size', min: 0.4, max: 1.2, step: 0.05 },
     { k: 'variety', label: 'Size variety', min: 0, max: 1, step: 0.05 },
     { k: 'seed', label: 'Layout number', min: 1, max: 99, step: 1 }
@@ -276,7 +295,7 @@ __COMBAT__
     document.getElementById('path').setAttribute('aria-pressed', spec.path ? 'true' : 'false');
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
     dirty = true;
-    try { localStorage.setItem('enveditor', JSON.stringify(spec)); } catch (e) {}
+    try { localStorage.setItem('enveditor2', JSON.stringify(spec)); } catch (e) {}
   }
 
   function sliders(hostId, list, target, onChange) {
@@ -388,7 +407,7 @@ __COMBAT__
     function inClear(x, y, pad) { for (var n = 0; n < clear.length; n++) if (Math.hypot(x - clear[n].x, y - clear[n].y) < clear[n].r + (pad || 0)) return true; return onPath(x, y, 0.6); }
     function add(L, name, x, y, sc) {
       if (!name) return null;
-      var r = NO_SOLID[name] ? 0 : SOLID[L] * sc, o = { L: L, name: name, v: Math.floor(R() * 3), x: x, y: y, s: sc, r: r };
+      var r = NO_SOLID[name] ? 0 : (BIG[name] || SOLID[L]) * sc, o = { L: L, name: name, v: Math.floor(R() * 3), x: x, y: y, s: sc, r: r };
       objs.push(o); if (r > 0) solids.push({ x: x, y: y, r: r, hide: true });
       return o;
     }
@@ -430,12 +449,24 @@ __COMBAT__
       if (fbm(dx / 150, dy / 150, spec.seed + 60) < 0.46 || onPath(dx, dy, 0) || Math.hypot(dx - WX / 2, dy - WY / 2) < 26) continue;
       add('detail', pick('detail'), dx, dy, vary(0.8));
     }
-    // landmarks sit at the edge of a clearing
-    for (i = 0; i < spec.marks; i++) {
-      var cl = clear[i % clear.length], la = R() * 6.283, lr = cl.r * rnd(0.55, 0.9), lx = cl.x + Math.cos(la) * lr, ly = cl.y + Math.sin(la) * lr;
-      if (lx < 60 || ly < 70 || lx > WX - 60 || ly > WY - 50 || onPath(lx, ly, 1)) continue;
-      add('marks', pick('marks'), lx, ly, 1);
+    // three kinds of finds, each kept clear of the others:
+    //   found in nature: at the edge of a grove; left by people: around the outer clearings; buildings: round the middle
+    var placed = [];
+    function scatter(L, count, spot) {
+      for (i = 0; i < count; i++) for (tries = 0; tries < 16; tries++) {
+        var p = spot(), nm = pick(L); if (!nm) return;
+        if (p[0] < 70 || p[1] < 90 || p[0] > WX - 70 || p[1] > WY - 50 || onPath(p[0], p[1], 1.2) || Math.hypot(p[0] - WX / 2, p[1] - WY / 2) < 46) continue;
+        var need = (BIG[nm] || 12) + 24, okm = true;
+        for (k = 0; k < placed.length; k++) if (Math.hypot(placed[k].x - p[0], placed[k].y - p[1]) < need + placed[k].n) { okm = false; break; }
+        if (!okm) continue;
+        if (L === 'finds') for (k = 0; k < trees.length; k++) if (Math.hypot(trees[k].x - p[0], trees[k].y - p[1]) < 30) { okm = false; break; }
+        if (!okm) continue;
+        placed.push({ x: p[0], y: p[1], n: need }); add(L, nm, p[0], p[1], 1); break;
+      }
     }
+    scatter('marks', spec.marks, function () { var cl = clear[R() < 0.7 ? 0 : Math.floor(R() * clear.length) % clear.length], a = R() * 6.283, r = cl.r * rnd(0.5, 0.95); return [cl.x + Math.cos(a) * r, cl.y + Math.sin(a) * r * 0.8]; });
+    scatter('traces', spec.traces, function () { var cl = clear[Math.floor(R() * clear.length) % clear.length], a = R() * 6.283, r = cl.r * rnd(0.6, 1.25); return [cl.x + Math.cos(a) * r, cl.y + Math.sin(a) * r * 0.8]; });
+    scatter('finds', spec.finds, function () { var gv = groves[Math.floor(R() * nG) % nG], a = R() * 6.283, r = gv.r * rnd(0.7, 1.2); return [gv.x + Math.cos(a) * r, gv.y + Math.sin(a) * r]; });
     objs.sort(function (a, b) { return a.y - b.y; });
     // open ground: tiles with nothing solid close by; base plots: free rectangles of 6 by 5 tiles
     var x, y, free = 0, plots = 0, used = [];
@@ -534,7 +565,7 @@ __COMBAT__
     json.blur(); spec = o; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
   });
 
-  try { var saved = JSON.parse(localStorage.getItem('enveditor')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
+  try { var saved = JSON.parse(localStorage.getItem('enveditor2')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
   apply();
   var start = Combat.dbg().P; start.x = WX / 2; start.y = WY / 2;
 
