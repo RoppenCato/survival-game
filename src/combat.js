@@ -1,0 +1,1114 @@
+var Combat = (function () {
+'use strict';
+var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
+var lib = null;
+var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy' };
+var WPRE = {
+  snappy: { fz: 0.55, pf: 0.6, kb: 0.9, hs: 0.6, hd: 0.06, kd: 0.5 },
+  normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
+  heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
+};
+var DASH_T = 0.18;
+var api = { sfx: function () {} };
+function sfx(n, v) { if (S.sound) api.sfx(n, v); }
+
+function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
+function turnToward(a, b, step) { var d = wrap(b - a); if (Math.abs(d) <= step) return b; return a + (d > 0 ? step : -step); }
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+var P, W;
+var IN = { keys: {}, pressed: {}, mx: 200, my: 125, lmb: false, rmb: false };
+function key(code, down) { if (down && !IN.keys[code]) IN.pressed[code] = true; IN.keys[code] = down; }
+function button(b, down) {
+  if (b === 0) { if (down && !IN.lmb) IN.pressed.lmb = true; IN.lmb = down; }
+  if (b === 2) { if (down && !IN.rmb) IN.pressed.rmb = true; IN.rmb = down; }
+}
+function mouse(x, y) { IN.mx = x; IN.my = y; }
+
+var STEPS = [
+  { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
+  { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
+  { wu: 0.10, ac: 0.12, rec: 0.26, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
+];
+
+function newWorld() {
+  W = { ghosts: [], rings: [], slow: { t: 0, s: 1 }, t: 0, enemies: [], projs: [], parts: [], nums: [], lock: null, kills: 0, dustT: 0,
+    pillars: [{ x: 100, y: 90, r: 7 }, { x: 300, y: 90, r: 7 }, { x: 100, y: 243, r: 7 }, { x: 300, y: 243, r: 7 }] };
+}
+function newPlayer() {
+  P = { x: 200, y: 255, vx: 0, vy: 0, kx: 0, ky: 0, face: -Math.PI / 2, faceVis: -Math.PI / 2, hp: 100, maxHp: 100, st: 100, stDelay: 0, r: 6,
+    atk: { ph: 'none', t: 0, combo: 0, since: 9, dir: 0, hit: [], tr: null, chg: 0, lvl: 0 }, atkBuf: 0,
+    roll: { t: 0, cd: 0, dx: 0, dy: 1 }, guard: false, guardT: 0, lastRaise: -9, invuln: 0, flash: 0, hurtT: 0, dead: false,
+    sprintLock: false, sprinting: false, anim: { run: 0, phase: 0, amt: 0, t: 0, lx: 0, ly: 0, bob: 0, lvx: 0, lvy: 0, blink: 0, blinkT: 2, blinkP: 0, sq: 0, sqv: 0 }, inAng: null, fireCd: 0, fireT: 0, fireAng: 0, freezeT: 0, dashBuf: 0, holdT: 0, animT: 0, moving: false, parryFx: 0 };
+}
+function reset() {
+  newWorld(); newPlayer();
+  spawn('bot'); spawn('bot'); spawn('turret');
+}
+
+/* ---------- helpers ---------- */
+function pillarHit(x, y, r) {
+  for (var i = 0; i < W.pillars.length; i++) { var p = W.pillars[i]; if (Math.hypot(x - p.x, y - p.y) < r + p.r) return true; }
+  return false;
+}
+function moveCircle(e, dx, dy) {
+  e.x += dx; e.y += dy;
+  e.x = clamp(e.x, 24, AW - 24); e.y = clamp(e.y, 40, AH - 20);
+  for (var i = 0; i < W.pillars.length; i++) {
+    var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
+    if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; }
+  }
+}
+function alive(e) { return e && !e.dead; }
+function spawn(type) {
+  var x, y, tries = 0;
+  do { x = 40 + Math.random() * (AW - 80); y = 70 + Math.random() * (AH - 120); tries++; }
+  while ((Math.hypot(x - P.x, y - P.y) < 110 || pillarHit(x, y, 20)) && tries < 50);
+  var e = { type: type, x: x, y: y, kx: 0, ky: 0, state: 'idle', t: 0, dur: 0, cd: 0.8 + Math.random(), flash: 0, face: Math.PI / 2, aim: Math.PI / 2,
+    seed: Math.random() * 10, size: 1, chain: 0, showBar: 0, freezeT: 0, pkx: 0, pky: 0, sq: 0, sqAng: 0, rattle: 0, flashRgb: '255,255,255', dead: false, deadT: 0, dirLock: 0, hitDone: false, stagMeter: 0, sinceHit: 9, attack: '' };
+  if (type === 'bot') { e.hp = e.maxHp = 4; e.r = 7; }
+  else if (type === 'turret') { e.hp = e.maxHp = 5; e.r = 8; }
+  else if (type === 'bossbot') { e.hp = e.maxHp = 32; e.r = 13; e.size = 1.8; }
+  else { e.hp = e.maxHp = 26; e.r = 16; }
+  W.enemies.push(e);
+  return e;
+}
+function spark(x, y, n, color, speed) {
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2, s = (0.4 + Math.random()) * speed;
+    W.parts.push({ k: 'spark', x: x, y: y, z: 12, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, vz: 20 + Math.random() * 50, life: 0.3 + Math.random() * 0.25, max: 0.5, c: color, s: 1 + Math.random() * 1.2 });
+  }
+}
+function dust(x, y, n) {
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2;
+    W.parts.push({ k: 'dust', x: x, y: y, z: 2, vx: Math.cos(a) * 14, vy: Math.sin(a) * 8, vz: 8, life: 0.35, max: 0.35, c: '#e8dcc0', s: 2 + Math.random() * 2 });
+  }
+}
+function bits(x, y, n) {
+  for (var i = 0; i < n; i++) {
+    var a = Math.random() * Math.PI * 2, s = 30 + Math.random() * 60;
+    W.parts.push({ k: 'bit', x: x, y: y, z: 10, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, vz: 40 + Math.random() * 60, life: 0.8, max: 0.8, c: Math.random() < 0.5 ? '#e0a93a' : '#8f8ba6', s: 1.6 });
+  }
+}
+function num(x, y, txt, c, big) { W.nums.push({ x: x, y: y, t: 0, txt: txt, c: c || '#ffffff', big: !!big }); }
+function slowmo(scale, dur) { if (S.juice && dur > W.slow.t) { W.slow.t = dur; W.slow.s = scale; } }
+function ring(x, y, z, r1, life, col, air, w) { if (S.juice) W.rings.push({ x: x, y: y, z: z || 0, r1: r1, life: life, max: life, c: col || '255,255,255', air: !!air, w: w || 2 }); }
+function streaks(x, y, ang, n, speed, rgb) {
+  if (!S.juice) return;
+  for (var i = 0; i < n; i++) {
+    var a = ang + (Math.random() - 0.5) * 1.0, sp = speed * (0.6 + Math.random() * 0.7);
+    W.parts.push({ k: 'streak', x: x, y: y, z: 12, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp * 0.7, vz: 0, life: 0.16, max: 0.16, c: '#fff6c8', rgb: rgb || '255,246,200', s: 1.4 });
+  }
+}
+function lockFor(ent, t) { if (S.juice && ent) ent.freezeT = Math.max(ent.freezeT || 0, t); }
+
+/* ---------- aiming ---------- */
+function nearest(range, face, cone) {
+  var best = null, bs = 1e9;
+  for (var i = 0; i < W.enemies.length; i++) {
+    var e = W.enemies[i]; if (e.dead) continue;
+    var d = Math.hypot(e.x - P.x, e.y - P.y);
+    if (d > range + e.r) continue;
+    var df = Math.abs(wrap(Math.atan2(e.y - P.y, e.x - P.x) - face));
+    if (df > cone) continue;
+    var sc = d + df * 25;
+    if (sc < bs) { bs = sc; best = e; }
+  }
+  return best;
+}
+function lockValid() { return S.aim === 'lock' && alive(W.lock); }
+function aimAngle() {
+  if (lockValid()) return Math.atan2(W.lock.y - P.y, W.lock.x - P.x);
+  var base = P.inAng !== null ? P.inAng : P.face;
+  if (S.aim === 'facing') return base;
+  var e = nearest(85, base, 1.3);
+  if (!e) e = nearest(52, base, 3.3);
+  if (e) return Math.atan2(e.y - P.y, e.x - P.x);
+  return base;
+}
+function rangedAngle() {
+  if (S.ranged === 'mouse') return Math.atan2(IN.my / K - P.y, IN.mx - P.x);
+  if (lockValid()) return Math.atan2(W.lock.y - P.y, W.lock.x - P.x);
+  var e = nearest(280, P.face, 1.6);
+  if (e) return Math.atan2(e.y - P.y, e.x - P.x);
+  return P.face;
+}
+function toggleLock() {
+  if (alive(W.lock)) { W.lock = null; return; }
+  W.lock = nearest(220, P.face, 3.2);
+  sfx('tele');
+}
+
+/* ---------- damage ---------- */
+function parryWindow() { return S.shield ? 0.22 : 0.12; }
+function hurtPlayer(dmg, sx, sy, kind, src) {
+  var p = P; if (p.dead || p.invuln > 0) return false;
+  var toSrc = Math.atan2(sy - p.y, sx - p.x);
+  var front = Math.abs(wrap(toSrc - p.face)) <= (S.shield ? 1.9 : 1.4);
+  if (p.guard && front) {
+    if (kind !== 'heavy' && p.guardT < parryWindow()) {
+      p.parryFx = 0.35; p.st = Math.min(100, p.st + 12);
+      spark(p.x + Math.cos(p.face) * 10, p.y + Math.sin(p.face) * 10, 14, '#fff6c8', 140);
+      lockFor(p, 0.09); lockFor(src, 0.09); slowmo(0.25, 0.14); ring(p.x + Math.cos(p.face) * 10, p.y, 13, 24, 0.2, '255,243,196', true, 2.4); sfx('parry');
+      num(p.x, p.y - 26, 'PARRY!', '#ffe27a');
+      return 'parry';
+    }
+    var red = kind === 'heavy' ? (S.shield ? 0.4 : 0.8) : (S.shield ? 0.12 : 0.55);
+    var d2 = dmg * red;
+    p.hp -= d2; p.st -= S.shield ? 10 : 18; p.stDelay = 0.8;
+    var kbs = kind === 'heavy' ? 110 : 55;
+    p.kx = -Math.cos(toSrc) * kbs; p.ky = -Math.sin(toSrc) * kbs;
+    spark(p.x + Math.cos(p.face) * 9, p.y + Math.sin(p.face) * 9, 6, '#cfd6e6', 90);
+    lockFor(p, 0.035); sfx('block');
+    if (d2 > 0.5) num(p.x, p.y - 26, String(Math.round(d2)), '#cfd6e6');
+    if (p.st <= 0) { p.st = 0; p.guard = false; p.hurtT = 0.35; num(p.x, p.y - 34, 'GUARD BREAK', '#ff9a7a'); }
+    if (p.hp <= 0) die();
+    return 'block';
+  }
+  p.hp -= dmg; p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false; p.anim.sq = 1; p.anim.sqv = 0;
+  p.atk.ph = 'none'; p.atkBuf = 0;
+  var kb = kind === 'heavy' ? 170 : 110;
+  p.kx = -Math.cos(toSrc) * kb * (S.juice ? 1 : 0.4); p.ky = -Math.sin(toSrc) * kb * (S.juice ? 1 : 0.4);
+  spark(p.x, p.y, 8, '#ff8a6a', 100);
+  num(p.x, p.y - 28, String(Math.round(dmg)), '#ff7a6a');
+  lockFor(p, kind === 'heavy' ? 0.09 : 0.055); if (kind === 'heavy') slowmo(0.3, 0.12); sfx('hurt');
+  if (p.hp <= 0) die();
+  return 'hit';
+}
+function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
+
+function damageEnemy(e, dmg, ang, kb, stag, kind) {
+  if (e.dead) return;
+  var mult = 1, weak = false;
+  var bigE = e.type === 'boss' || e.type === 'bossbot';
+  if (e.state === 'recover') mult = bigE ? 1.3 : 1.5;
+  if (bigE && e.state === 'stunned') mult = 2;
+  if (e.type === 'boss') {
+    var toP = Math.atan2(P.y - e.y, P.x - e.x);
+    if ((kind === 'melee' || kind === 'heavy') && Math.abs(wrap(toP - e.face)) > 2.3) { mult *= 1.8; weak = true; }
+  }
+  var crit = S.crit > 0 && Math.random() < S.crit;
+  if (crit) mult *= 1.5;
+  var dealt = dmg * mult;
+  e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
+  var killing = e.hp <= 0;
+  if (S.juice) { e.flash = 1; e.flashRgb = crit ? '255,208,70' : '255,255,255'; }
+  var heavy = kind === 'heavy' || weak || stag >= 20, melee = kind === 'melee' || kind === 'heavy';
+  var kbm = e.type === 'boss' ? 0.12 : (e.type === 'bossbot' ? 0.3 : (e.type === 'turret' ? 0.15 : 1));
+  var hx = e.x - Math.cos(ang) * e.r * 0.8, hy = e.y - Math.sin(ang) * e.r * 0.8;
+  var hot = crit ? '255,208,70' : (weak ? '143,227,255' : '255,255,255');
+  if (S.juice) {
+    var WM = WPRE[S.weight] || WPRE.normal;
+    var fz = melee ? ((heavy && !killing) ? 0.09 : 0.055) : 0.025;
+    if (crit) fz += 0.015;
+    fz *= WM.fz;
+    e.freezeT = Math.max(e.freezeT, fz); if (melee) P.freezeT = Math.max(P.freezeT, fz * 0.9 * WM.pf);
+    e.pkx = Math.cos(ang) * kb * kbm * WM.kb; e.pky = Math.sin(ang) * kb * kbm * WM.kb;
+    e.sq = 1; e.sqAng = ang;
+    streaks(hx, hy, ang, (heavy && !killing ? 8 : 5) + (crit ? 4 : 0), heavy ? 260 : 200, crit ? '255,214,90' : null);
+    ring(hx, hy, 12, (heavy && !killing) ? 22 : 14, heavy ? 0.16 : 0.12, hot, true, heavy ? 3 : 2);
+    if (crit) ring(hx, hy, 12, 28, 0.2, '255,208,70', true, 2.4);
+    if (heavy && !killing) slowmo(WM.hs, WM.hd);
+  }
+  spark(hx, hy, (heavy && !killing ? 12 : 7) + (crit ? 5 : 0), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
+  num(e.x, e.y - e.r * 2.2 - 10, String(Math.round(dealt * 5)), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), heavy || crit);
+  sfx((heavy && !killing) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0);
+  if (crit) { sfx('crit'); e.rattle = 1.6; }
+  if (bigE) {
+    if (e.state !== 'stunned') {
+      e.stagMeter += stag * (weak ? 2 : 1) * (crit ? 1.25 : 1);
+      if (e.stagMeter >= 100) { e.state = 'stunned'; e.t = 0; e.dur = 2.6; e.stagMeter = 100; num(e.x, e.y - 50, 'STAGGERED!', '#ffd34d'); slowmo(0.3, 0.2); ring(e.x, e.y, 0, 60, 0.35, '255,230,140', false, 3); sfx('stagger'); }
+    }
+  } else if (e.state !== 'lunge' || e.type !== 'bot') {
+    if (e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = 0.34; }
+  }
+  if (killing) killEnemy(e);
+}
+function killEnemy(e) {
+  var bigK = e.type === 'boss' || e.type === 'bossbot';
+  e.dead = true; e.deadT = 0; W.kills++;
+  bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
+  slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die');
+  if (W.lock === e) W.lock = null;
+  if (e.type === 'boss') num(e.x, e.y - 60, 'GUARDIAN DOWN', '#ffe27a');
+  if (e.type === 'bossbot') num(e.x, e.y - 50, 'BOSSBOT DOWN', '#ffe27a');
+}
+function daze(e, dur) { e.state = 'recover'; e.t = 0; e.dur = dur; }
+
+/* ---------- player ---------- */
+function startAttack() {
+  var p = P, a = p.atk;
+  if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % 3; else a.combo = 0;
+  a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
+  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null;
+  p.st -= 7; p.stDelay = 0.5; p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
+}
+function releaseCharge() {
+  var p = P, a = p.atk, c = clamp((a.t - 0.3) / 0.7, 0, 1);
+  a.combo = 3; a.chg = c; a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
+  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; p.st -= 10; p.stDelay = 0.6;
+}
+function stepData(a) {
+  var s;
+  if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
+  else s = STEPS[a.combo];
+  if (S.juice) return s;
+  return { wu: s.wu * 2.6, ac: s.ac, rec: s.rec * 2.2, arc: s.arc, reach: s.reach, blade: s.blade, dmg: s.dmg, kb: s.kb, lunge: 0, stag: s.stag };
+}
+function gapAhead(dir) {
+  var g = 999;
+  for (var i = 0; i < W.enemies.length; i++) {
+    var e = W.enemies[i]; if (e.dead) continue;
+    var dx = e.x - P.x, dy = e.y - P.y;
+    if (Math.abs(wrap(Math.atan2(dy, dx) - dir)) < 1.0) g = Math.min(g, Math.hypot(dx, dy) - e.r - P.r);
+  }
+  return g;
+}
+function collideBodies() {
+  var p = P; if (p.dead || p.roll.t > 0) return;
+  for (var i = 0; i < W.enemies.length; i++) {
+    var e = W.enemies[i]; if (e.dead) continue;
+    var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), mn = p.r + e.r;
+    if (d < mn && d > 0.01) {
+      var ov = mn - d, share = e.type === 'turret' ? 1 : (e.type === 'boss' ? 0.85 : (e.type === 'bossbot' ? 0.7 : 0.45)), nx = dx / d, ny = dy / d;
+      moveCircle(p, nx * ov * share, ny * ov * share);
+      if (e.type !== 'turret') moveCircle(e, -nx * ov * (1 - share), -ny * ov * (1 - share));
+    }
+  }
+}
+function updateAnim(dt, dashing) {
+  var p = P, an = p.anim;
+  var sp = Math.min(200, Math.hypot(p.vx, p.vy * K));
+  var target = dashing ? 1 : Math.min(1, sp / 105);
+  an.amt += (target - an.amt) * Math.min(1, dt * (target > an.amt ? 14 : 9));
+  if (an.amt > 0.04) an.phase += Math.max(sp, 30) * dt * 0.115;
+  an.t += dt;
+  an.run += ((p.sprinting ? 1 : 0) - an.run) * Math.min(1, dt * 8);
+  an.bob = -Math.abs(Math.sin(an.phase)) * 1.0 * an.amt * (1 + 0.45 * an.run) + Math.sin(an.t * 2.2) * (1 - an.amt) * 0.4;
+  var tx = (p.vx / 118) * 1.1, ty = (p.vy * K / 118) * 0.8;
+  an.lvx += ((tx - an.lx) * 220 - an.lvx * 27) * dt; an.lx += an.lvx * dt;
+  an.lvy += ((ty - an.ly) * 220 - an.lvy * 27) * dt; an.ly += an.lvy * dt;
+  an.blinkT -= dt;
+  if (an.blinkT <= 0) { an.blinkT = 2.4 + Math.random() * 3.2; an.blinkP = 0.14; }
+  an.blinkP -= dt; an.blink = an.blinkP > 0 ? Math.sin(Math.PI * (1 - an.blinkP / 0.14)) : 0;
+  an.sqv += ((0 - an.sq) * 260 - an.sqv * 20) * dt; an.sq += an.sqv * dt;
+}
+function updatePlayer(dt) {
+  var p = P, a = p.atk, i;
+  if (p.dead) return;
+  if (IN.pressed.lmb || IN.pressed.KeyJ) p.atkBuf = S.juice ? 0.2 : 0.02;
+  if (IN.pressed.Space) p.dashBuf = 0.18;
+  if (p.freezeT > 0) {
+    p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
+    return;
+  }
+  p.animT += dt;
+  p.invuln = Math.max(0, p.invuln - dt); p.flash = Math.max(0, p.flash - dt * 4); p.hurtT = Math.max(0, p.hurtT - dt);
+  p.fireCd = Math.max(0, p.fireCd - dt); p.fireT = Math.max(0, p.fireT - dt); p.roll.cd = Math.max(0, p.roll.cd - dt); p.parryFx = Math.max(0, p.parryFx - dt);
+  p.stDelay -= dt; if (p.stDelay <= 0) p.st = Math.min(100, p.st + 34 * dt);
+  var ix = (IN.keys.KeyD ? 1 : 0) - (IN.keys.KeyA ? 1 : 0), iy = (IN.keys.KeyS ? 1 : 0) - (IN.keys.KeyW ? 1 : 0);
+  var il = Math.hypot(ix, iy); if (il > 0) { ix /= il; iy /= il; }
+  p.inAng = il > 0 ? Math.atan2(iy, ix) : null;
+  p.moving = il > 0 && p.hurtT <= 0;
+
+  p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
+  if (IN.pressed.lmb || IN.pressed.KeyJ) p.atkBuf = S.juice ? 0.2 : 0.02;
+  if (IN.pressed.Space) p.dashBuf = 0.18;
+  if (IN.pressed.KeyQ) toggleLock();
+  if (S.aim !== 'lock' && W.lock) W.lock = null;
+
+  var held = IN.lmb || IN.keys.KeyJ;
+  p.holdT = held ? p.holdT + dt : 0;
+  if (a.ph === 'charge' && (IN.rmb || IN.keys.KeyK)) { a.ph = 'none'; a.since = 9; }
+  // guard
+  var want = IN.rmb || IN.keys.KeyK;
+  if (want && !p.guard && a.ph === 'none' && p.roll.t <= 0 && p.hurtT <= 0 && p.st > 0 && p.atkBuf <= 0) {
+    p.guard = true; p.guardT = (W.t - p.lastRaise > 0.5) ? 0 : 99; p.lastRaise = W.t; sfx('raise');
+  }
+  if (!want && p.guard) p.guard = false;
+  if (p.guard) p.guardT += dt;
+
+  // roll
+  if (p.dashBuf > 0 && p.roll.cd <= 0 && p.roll.t <= 0 && p.hurtT <= 0 && p.st >= 18) {
+    p.dashBuf = 0;
+    p.st -= 18; p.stDelay = 0.5; p.guard = false; a.ph = 'none'; a.since = 0; p.atkBuf = 0;
+    var rx = il > 0 ? ix : -Math.cos(p.face), ry = il > 0 ? iy : -Math.sin(p.face);
+    p.roll.t = DASH_T; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = 0.08; p.invuln = Math.max(p.invuln, 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0;
+    dust(p.x, p.y, 7); sfx('dash');
+  }
+
+  if (a.ph === 'none' && held && p.holdT > 0.25 && p.st >= 10 && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && p.atkBuf <= 0) { a.ph = 'charge'; a.t = 0; a.lvl = 0; }
+  if (a.ph === 'charge') {
+    if (!held) { if (a.t >= 0.3) releaseCharge(); else { a.ph = 'none'; a.since = 9; } }
+    else {
+      a.t = Math.min(1.0, a.t + dt);
+      var lv = a.t >= 1.0 ? 3 : (a.t >= 0.66 ? 2 : (a.t >= 0.33 ? 1 : 0));
+      if (lv > a.lvl) { a.lvl = lv; sfx('charge', lv); if (lv === 3) ring(p.x, p.y, 14, 24, 0.22, '255,214,90', true, 2.4); }
+    }
+  }
+  // attack
+  if (p.atkBuf > 0 && p.roll.t <= 0 && p.hurtT <= 0 && p.st >= 7) {
+    var can = a.ph === 'none' || (S.juice && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5);
+    if (can) { startAttack(); p.atkBuf = 0; }
+  }
+  if (a.ph === 'none') a.since += dt;
+  else if (a.ph !== 'charge') {
+    var sd = stepData(a);
+    a.t += dt;
+    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing'); }
+    else if (a.ph === 'active') {
+      var u = Math.min(1, a.t / sd.ac);
+      var half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
+      var ang = a.dir - half * sign + sd.arc * sign * u;
+      a.tr = { start: a.dir - half * sign, cur: ang, age: 0, reach: 9 + sd.blade, sign: sign, hot: a.combo === 3 && a.chg > 0.6 };
+      for (i = 0; i < W.enemies.length; i++) {
+        var e = W.enemies[i];
+        if (e.dead || a.hit.indexOf(e) >= 0) continue;
+        var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
+        if (d <= sd.reach + e.r + 2 && Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12) {
+          a.hit.push(e);
+          damageEnemy(e, sd.dmg, Math.atan2(dy, dx), sd.kb, sd.stag, a.combo >= 2 ? 'heavy' : 'melee');
+        }
+      }
+      if (a.t >= sd.ac) { a.ph = 'recover'; a.t = 0; }
+    } else if (a.ph === 'recover' && a.t >= sd.rec) { a.ph = 'none'; a.t = 0; a.since = 0; }
+  }
+  if (a.tr) { if (a.ph === 'recover' || a.ph === 'none') a.tr.age += dt; if (a.tr.age > 0.18) a.tr = null; }
+
+  // ranged
+  if (IN.pressed.KeyF && p.fireCd <= 0 && p.st >= 6 && p.roll.t <= 0 && p.hurtT <= 0) {
+    p.fireCd = 0.4; p.fireT = 0.2; p.st -= 6; p.stDelay = 0.4;
+    var fa = rangedAngle();
+    p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
+    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * 240, vy: Math.sin(fa) * 240, r: 3.5, dmg: 1, owner: 'player', life: 1.0, ang: fa });
+    spark(p.x + Math.cos(fa) * 10, p.y + Math.sin(fa) * 10, 3, '#ffe9a0', 60);
+    if (S.juice) { p.kx -= Math.cos(fa) * 30; p.ky -= Math.sin(fa) * 30; }
+    sfx('shoot');
+  }
+
+  // facing
+  var target = p.face;
+  if (a.ph !== 'none' && a.ph !== 'charge' && !(a.ph === 'recover' && il > 0)) target = a.dir;
+  else if (lockValid()) target = Math.atan2(W.lock.y - p.y, W.lock.x - p.x);
+  else if (il > 0) target = Math.atan2(iy, ix);
+  p.face = turnToward(p.face, target, S.juice ? dt * 30 : 99);
+  p.faceVis = turnToward(p.faceVis, p.face, S.juice ? dt * 42 : 99);
+
+  // movement
+  var sprint = (IN.keys.ShiftLeft || IN.keys.ShiftRight) && il > 0 && a.ph === 'none' && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && !p.sprintLock && p.st > 0;
+  if (p.st <= 0.5) p.sprintLock = true; else if (p.st >= 14) p.sprintLock = false;
+  p.sprinting = !!sprint;
+  var spd = 118;
+  if (sprint) { spd *= 1.55; p.st = Math.max(0, p.st - 22 * dt); p.stDelay = Math.max(p.stDelay, 0.55); }
+  if (p.guard) spd *= 0.55;
+  if (a.ph === 'windup' || a.ph === 'active') spd *= 0.55; else if (a.ph === 'recover') spd *= 0.9; else if (a.ph === 'charge') spd *= 0.6;
+  var tvx = ix * spd, tvy = iy * spd;
+  if (p.roll.t > 0) {
+    p.roll.t -= dt;
+    if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; }
+    var rs = 460 * (0.25 + 0.75 * Math.max(0, p.roll.t) / DASH_T);
+    p.ghostT -= dt; if (p.ghostT <= 0 && S.juice) { p.ghostT = 0.035; W.ghosts.push({ x: p.x, y: p.y, dir: heroDir(), t: p.animT, ph: p.anim.phase, life: 0.22, max: 0.22 }); }
+    p.vx = p.roll.dx * rs; p.vy = p.roll.dy * rs;
+  } else if (p.hurtT > 0) { p.vx *= Math.exp(-dt * 8); p.vy *= Math.exp(-dt * 8); }
+  else if (S.juice) { var k = Math.min(1, dt * 15); p.vx += (tvx - p.vx) * k; p.vy += (tvy - p.vy) * k; }
+  else { p.vx = tvx; p.vy = tvy; }
+  var lvx = 0, lvy = 0;
+  if (a.ph === 'active') { var sd2 = stepData(a), lf = clamp((gapAhead(a.dir) - 3) / 14, 0, 1); lvx = Math.cos(a.dir) * sd2.lunge * lf; lvy = Math.sin(a.dir) * sd2.lunge * lf; }
+  p.kx *= Math.exp(-dt * 10); p.ky *= Math.exp(-dt * 10);
+  moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);
+  updateAnim(dt, p.roll.t > 0);
+  if (S.juice && p.moving && p.roll.t <= 0) { W.dustT -= dt; if (W.dustT <= 0) { W.dustT = p.sprinting ? 0.07 : 0.14; dust(p.x, p.y, p.sprinting ? 2 : 1); } }
+}
+
+/* ---------- enemies ---------- */
+function botAI(e, dt, d, ang) {
+  e.cd -= dt;
+  switch (e.state) {
+    case 'idle': if (d < 130 && !P.dead) { e.state = 'chase'; e.t = 0; } break;
+    case 'chase':
+      e.face = ang;
+      if (d > 52) moveCircle(e, Math.cos(ang) * 58 * dt, Math.sin(ang) * 58 * dt);
+      else if (d < 30) moveCircle(e, -Math.cos(ang) * 45 * dt, -Math.sin(ang) * 45 * dt);
+      else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * 30 * dt, Math.sin(ang + sd * 1.57) * 30 * dt); }
+      if (d < 56 && e.cd <= 0 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.55; e.dirLock = ang; sfx('tele'); }
+      break;
+    case 'windup': e.face = e.dirLock; if (e.t >= e.dur) { e.state = 'lunge'; e.t = 0; e.dur = 0.22; e.hitDone = false; } break;
+    case 'lunge':
+      moveCircle(e, Math.cos(e.dirLock) * 175 * dt, Math.sin(e.dirLock) * 175 * dt);
+      if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
+        e.hitDone = true;
+        var r = hurtPlayer(12, e.x, e.y, 'melee', e);
+        if (r === 'parry') daze(e, 1.5);
+      }
+      if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = 0.8; }
+      break;
+    case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 1.1; } break;
+    case 'stagger': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.6; } break;
+  }
+}
+function turretAI(e, dt, d, ang) {
+  e.cd -= dt;
+  switch (e.state) {
+    case 'idle':
+      e.aim = turnToward(e.aim, ang, dt * 2.2);
+      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele'); }
+      break;
+    case 'windup':
+      e.aim = e.dirLock;
+      if (e.t >= e.dur) {
+        W.projs.push({ x: e.x + Math.cos(e.aim) * 10, y: e.y + Math.sin(e.aim) * 10, vx: Math.cos(e.aim) * 105, vy: Math.sin(e.aim) * 105, r: 4, dmg: 10, owner: 'enemy', life: 4, ang: e.aim });
+        spark(e.x + Math.cos(e.aim) * 12, e.y + Math.sin(e.aim) * 12, 5, '#ffffff', 50);
+        sfx('shoot'); e.state = 'recover'; e.t = 0; e.dur = 0.55; e.cd = 2.2;
+      }
+      break;
+    case 'recover': if (e.t >= e.dur) { e.state = 'idle'; e.t = 0; } break;
+    case 'stagger': if (e.t >= e.dur) { e.state = 'idle'; e.t = 0; e.cd = 1.2; } break;
+  }
+}
+function bossAI(e, dt, d, ang) {
+  e.cd -= dt; e.sinceHit += dt;
+  if (e.state !== 'stunned' && e.sinceHit > 1.5) e.stagMeter = Math.max(0, e.stagMeter - 8 * dt);
+  switch (e.state) {
+    case 'idle': if (d < 280 && !P.dead) { e.state = 'chase'; e.t = 0; } break;
+    case 'chase':
+      e.face = turnToward(e.face, ang, dt * 2.4);
+      if (d > 48) moveCircle(e, Math.cos(e.face) * 30 * dt, Math.sin(e.face) * 30 * dt);
+      if (e.cd <= 0 && d < 100 && !P.dead) {
+        e.attack = (d < 60 || Math.random() < 0.45) ? 'slam' : 'sweep';
+        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'slam' ? 1.0 : 0.8; e.dirLock = ang; e.face = ang; e.hitDone = false; sfx('tele');
+      }
+      break;
+    case 'windup':
+      if (e.t >= e.dur) {
+        e.state = 'active'; e.t = 0; e.dur = 0.14; e.hitDone = false;
+        if (e.attack === 'slam') { ring(e.x, e.y, 0, 52, 0.32, '255,226,160', false, 3); sfx('slam'); spark(e.x, e.y, 16, '#ffd98a', 150); dust(e.x, e.y, 14); }
+        else sfx('swing');
+      }
+      break;
+    case 'active':
+      if (!e.hitDone) {
+        var dx = P.x - e.x, dy = P.y - e.y, dd = Math.hypot(dx, dy), res = false;
+        if (e.attack === 'slam' && dd <= 40 + P.r) { e.hitDone = true; res = hurtPlayer(24, e.x, e.y, 'heavy', e); }
+        else if (e.attack === 'sweep' && dd <= 50 + P.r && Math.abs(wrap(Math.atan2(dy, dx) - e.dirLock)) <= 1.75) { e.hitDone = true; res = hurtPlayer(16, e.x, e.y, 'melee', e); }
+        if (res === 'parry' && e.state === 'active') { e.stagMeter += 50; if (e.stagMeter >= 100) { e.state = 'stunned'; e.t = 0; e.dur = 2.6; e.stagMeter = 100; num(e.x, e.y - 50, 'STAGGERED!', '#ffd34d'); } else daze(e, 1.0); }
+      }
+      if (e.state === 'active' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = e.attack === 'slam' ? 1.1 : 0.7; }
+      break;
+    case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 1.2; } break;
+    case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 1.0; e.stagMeter = 0; } break;
+  }
+}
+function stunBig(e) { e.state = 'stunned'; e.t = 0; e.dur = 2.2; e.stagMeter = 100; num(e.x, e.y - e.r * 2 - 14, 'STAGGERED!', '#ffd34d'); sfx('stagger'); }
+function bossbotAI(e, dt, d, ang) {
+  e.cd -= dt; e.sinceHit += dt;
+  if (e.state !== 'stunned' && e.sinceHit > 1.5) e.stagMeter = Math.max(0, e.stagMeter - 8 * dt);
+  switch (e.state) {
+    case 'idle': if (d < 220 && !P.dead) { e.state = 'chase'; e.t = 0; } break;
+    case 'chase':
+      e.face = turnToward(e.face, ang, dt * 3);
+      if (d > 72) moveCircle(e, Math.cos(ang) * 54 * dt, Math.sin(ang) * 54 * dt);
+      else if (d < 40) moveCircle(e, -Math.cos(ang) * 38 * dt, -Math.sin(ang) * 38 * dt);
+      else { var sdr = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sdr * 1.57) * 26 * dt, Math.sin(ang + sdr * 1.57) * 26 * dt); }
+      if (e.cd <= 0 && d < 96 && !P.dead) {
+        var r = Math.random();
+        e.attack = r < 0.4 ? 'lunge' : (r < 0.75 ? 'chain' : 'spin'); e.chain = e.attack === 'chain' ? 3 : 1;
+        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele');
+      }
+      break;
+    case 'windup':
+      e.face = e.dirLock;
+      if (e.t >= e.dur) {
+        e.t = 0; e.hitDone = false;
+        if (e.attack === 'spin') { e.state = 'active'; e.dur = 0.22; ring(e.x, e.y, 0, 50, 0.3, '255,226,160', false, 3); sfx('slam'); dust(e.x, e.y, 8); }
+        else { e.state = 'lunge'; e.dur = e.attack === 'chain' ? 0.2 : 0.3; }
+      }
+      break;
+    case 'lunge':
+      var sp = e.attack === 'chain' ? 190 : 215;
+      moveCircle(e, Math.cos(e.dirLock) * sp * dt, Math.sin(e.dirLock) * sp * dt);
+      if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
+        e.hitDone = true;
+        var rs = hurtPlayer(e.attack === 'chain' ? 12 : 18, e.x, e.y, 'melee', e);
+        if (rs === 'parry') { e.stagMeter += 40; if (e.stagMeter >= 100) stunBig(e); else daze(e, 1.2); }
+      }
+      if (e.state === 'lunge' && e.t >= e.dur) {
+        e.chain--;
+        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele'); }
+        else { e.state = 'recover'; e.t = 0; e.dur = 1.0; }
+      }
+      break;
+    case 'active':
+      if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) <= 46 + P.r) { e.hitDone = true; hurtPlayer(14, e.x, e.y, 'heavy', e); }
+      if (e.state === 'active' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = 1.1; }
+      break;
+    case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.9; } break;
+    case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.9; e.stagMeter = 0; } break;
+  }
+}
+function updateEnemies(dt) {
+  for (var i = 0; i < W.enemies.length; i++) {
+    var e = W.enemies[i];
+    if (e.dead) { e.deadT += dt; continue; }
+    e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
+    if (e.freezeT > 0) { e.freezeT -= dt; if (e.freezeT <= 0) { e.kx += e.pkx; e.ky += e.pky; e.pkx = e.pky = 0; } continue; }
+    e.sq = Math.max(0, e.sq - dt * 4.5);
+    var adt = e.rattle > 0 ? dt * 0.7 : dt;
+    if (e.rattle > 0) { e.rattle = Math.max(0, e.rattle - dt); if (Math.random() < dt * 16) spark(e.x + (Math.random() - 0.5) * e.r * 2, e.y, 1, '#ffe27a', 36); }
+    e.t += adt;
+    var dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy), ang = Math.atan2(dy, dx);
+    e.kx *= Math.exp(-dt * 9); e.ky *= Math.exp(-dt * 9);
+    if (e.type !== 'turret' && Math.abs(e.kx) + Math.abs(e.ky) > 1) {
+      moveCircle(e, e.kx * dt, e.ky * dt);
+      if (S.juice && Math.abs(e.kx) + Math.abs(e.ky) > 70 && Math.random() < dt * 22) dust(e.x, e.y, 1);
+    }
+    if (P.dead) { if (e.state !== 'idle' && e.state !== 'recover') { e.state = 'idle'; } if (e.type !== 'boss' && e.state === 'idle') continue; }
+    if (e.type === 'bot') botAI(e, adt, d, ang); else if (e.type === 'bossbot') bossbotAI(e, adt, d, ang); else if (e.type === 'turret') turretAI(e, adt, d, ang); else bossAI(e, adt, d, ang);
+  }
+  W.enemies = W.enemies.filter(function (e) { return !(e.dead && e.deadT > 0.5); });
+  // soft separation
+  for (var a = 0; a < W.enemies.length; a++) for (var b = a + 1; b < W.enemies.length; b++) {
+    var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.type === 'turret' || B.type === 'turret') continue;
+    var ox = B.x - A.x, oy = B.y - A.y, dd = Math.hypot(ox, oy), mn = A.r + B.r;
+    if (dd < mn && dd > 0.01) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }
+  }
+}
+function updateProjs(dt) {
+  for (var i = W.projs.length - 1; i >= 0; i--) {
+    var pr = W.projs[i];
+    pr.x += pr.vx * dt; pr.y += pr.vy * dt; pr.life -= dt;
+    var gone = pr.life <= 0 || pr.x < 8 || pr.x > AW - 8 || pr.y < 30 || pr.y > AH - 6;
+    if (!gone && pillarHit(pr.x, pr.y, pr.r)) { gone = true; spark(pr.x, pr.y, 4, '#ffe9a0', 60); }
+    if (!gone) {
+      if (pr.owner === 'enemy') {
+        if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) {
+          var res = hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr);
+          if (res === 'parry') { pr.owner = 'player'; pr.vx *= -1.4; pr.vy *= -1.4; pr.dmg = 3; pr.life = 3; pr.ang += Math.PI; pr.reflected = true; }
+          else if (res) gone = true;
+        }
+      } else {
+        for (var j = 0; j < W.enemies.length; j++) {
+          var e = W.enemies[j];
+          if (e.dead) continue;
+          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), 40, 8, 'proj'); gone = true; break; }
+        }
+      }
+    }
+    if (gone) W.projs.splice(i, 1);
+  }
+}
+function updateFx(dt) {
+  var i;
+  for (i = W.parts.length - 1; i >= 0; i--) {
+    var q = W.parts[i];
+    q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt;
+    if (q.k === 'streak') { q.vx *= 0.9; q.vy *= 0.9; } else if (q.k !== 'dust') q.vz -= 260 * dt; else q.vz *= 0.9;
+    if (q.z < 0) { q.z = 0; q.vz *= -0.3; q.vx *= 0.6; q.vy *= 0.6; }
+    if (q.life <= 0) W.parts.splice(i, 1);
+  }
+  for (i = W.ghosts.length - 1; i >= 0; i--) { W.ghosts[i].life -= dt; if (W.ghosts[i].life <= 0) W.ghosts.splice(i, 1); }
+  for (i = W.nums.length - 1; i >= 0; i--) { W.nums[i].t += dt; if (W.nums[i].t > 0.9) W.nums.splice(i, 1); }
+  for (i = W.rings.length - 1; i >= 0; i--) { W.rings[i].life -= dt; if (W.rings[i].life <= 0) W.rings.splice(i, 1); }
+}
+
+function update(dt) {
+  dt = Math.min(dt, 0.05);
+  if (IN.pressed.KeyR && P.dead) { reset(); }
+  if (IN.pressed.KeyH && !P.dead && W.enemies.length < 14) spawn('bot');
+  if (W.slow.t > 0) { W.slow.t -= dt; dt *= W.slow.s; }
+  W.t += dt;
+  updatePlayer(dt); updateEnemies(dt); collideBodies(); updateProjs(dt); updateFx(dt);
+  IN.pressed = {};
+}
+
+/* =====================================================
+   RENDER
+   ===================================================== */
+var groundCv = null, scratch = null;
+function R(c) { return lib; }
+function buildGround() {
+  var cv = lib.mk(SW * 2, SH * 2), c = cv.getContext('2d'), i;
+  c.setTransform(2, 0, 0, 2, 0, 0);
+  c.fillStyle = '#8fd66d'; c.fillRect(0, 0, SW, SH);
+  var r = lib.rng(12);
+  for (i = 0; i < 26; i++) {
+    c.fillStyle = r() < 0.5 ? 'rgba(200,245,140,0.25)' : 'rgba(60,150,70,0.18)';
+    c.beginPath(); c.ellipse(r() * SW, r() * SH, 16 + r() * 28, 8 + r() * 12, 0, 0, Math.PI * 2); c.fill();
+  }
+  // cobble arena
+  var cx = 200, cy = 128, rx = 158, ry = 118;
+  c.beginPath(); c.ellipse(cx, cy + 3, rx + 4, ry + 4, 0, 0, Math.PI * 2); c.fillStyle = 'rgba(40,70,50,0.25)'; c.fill();
+  c.beginPath(); c.ellipse(cx, cy, rx + 3, ry + 3, 0, 0, Math.PI * 2); c.fillStyle = '#9c8662'; c.fill();
+  c.beginPath(); c.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); c.fillStyle = '#d6c49c'; c.fill();
+  for (i = 0; i < 260; i++) {
+    var a = r() * Math.PI * 2, d = Math.sqrt(r()), sx = cx + Math.cos(a) * (rx - 6) * d, sy = cy + Math.sin(a) * (ry - 5) * d;
+    lib.ell(c, sx, sy, 5 + r() * 3, 3.2 + r() * 1.4, r() < 0.5 ? '#cdb98f' : '#dccaa4', 1, '#a08a64');
+  }
+  c.strokeStyle = 'rgba(90,70,50,0.5)'; c.lineWidth = 1;
+  c.beginPath(); c.ellipse(cx, cy, rx - 1, ry - 1, 0, 0, Math.PI * 2); c.stroke();
+  c.strokeStyle = '#4f9d3c'; c.lineWidth = 1.3; c.lineCap = 'round';
+  for (i = 0; i < 90; i++) {
+    var tx = r() * SW, ty = r() * SH;
+    var ex = (tx - cx) / (rx + 6), ey = (ty - cy) / (ry + 6);
+    if (ex * ex + ey * ey < 1) continue;
+    c.beginPath(); c.moveTo(tx - 2.5, ty); c.quadraticCurveTo(tx - 3, ty - 3, tx - 4, ty - 4.5);
+    c.moveTo(tx, ty); c.quadraticCurveTo(tx, ty - 4, tx, ty - 6);
+    c.moveTo(tx + 2.5, ty); c.quadraticCurveTo(tx + 3, ty - 3, tx + 4, ty - 4.2); c.stroke();
+  }
+  groundCv = cv;
+}
+function sxy(x, y, z) { return [x, y * K - (z || 0)]; }
+function gEll(c, x, y, rx, ry) { c.beginPath(); c.ellipse(x, y * K, rx, ry * K, 0, 0, Math.PI * 2); }
+
+function drawGear(c, cx, cy, r, rot, fill) {
+  var n = 6, first = true;
+  c.beginPath();
+  for (var i = 0; i < n; i++) {
+    var a = rot + i * Math.PI * 2 / n;
+    var pts = [[a - 0.22, r], [a - 0.14, r + 2], [a + 0.14, r + 2], [a + 0.22, r]];
+    for (var j = 0; j < pts.length; j++) {
+      var px = cx + Math.cos(pts[j][0]) * pts[j][1], py = cy + Math.sin(pts[j][0]) * pts[j][1];
+      if (first) { c.moveTo(px, py); first = false; } else c.lineTo(px, py);
+    }
+  }
+  c.closePath(); lib.fs(c, fill, 1.4);
+  lib.ell(c, cx, cy, r * 0.35, r * 0.35, '#5a4a68', 0.9);
+}
+function flashDraw(c, x, y, drawFn, amt, rgb) {
+  if (amt <= 0.03) { c.save(); c.translate(x, y); drawFn(c); c.restore(); return; }
+  if (!scratch) scratch = lib.mk(300, 300);
+  var s = scratch.getContext('2d');
+  s.setTransform(1, 0, 0, 1, 0, 0); s.clearRect(0, 0, 300, 300);
+  s.setTransform(2, 0, 0, 2, 0, 0); s.translate(75, 120); s.lineJoin = 'round'; s.lineCap = 'round';
+  drawFn(s);
+  s.globalCompositeOperation = 'source-atop'; s.setTransform(1, 0, 0, 1, 0, 0);
+  s.fillStyle = 'rgba(' + (rgb || '255,255,255') + ',' + Math.min(1, amt * 0.9) + ')'; s.fillRect(0, 0, 300, 300);
+  s.globalCompositeOperation = 'source-over';
+  c.drawImage(scratch, x - 75, y - 120, 150, 150);
+}
+
+function drawBot(c, e) {
+  var t = W.t, wob = Math.sin(t * 6 + e.seed) * 0.5, sqx = 1, sqy = 1, jx = 0;
+  if (e.state === 'windup') { var k = e.t / e.dur; sqx = 1 + 0.22 * k; sqy = 1 - 0.22 * k; jx = Math.sin(e.t * 70) * 0.9; }
+  else if (e.state === 'lunge') { sqx = 0.8; sqy = 1.25; }
+  else if (e.state === 'stagger') { sqx = 1.2; sqy = 0.8; }
+  var sz = e.size || 1;
+  c.translate(jx, 0); c.scale(sqx * sz, sqy * sz);
+  var col = e.state === 'windup' ? '#e8603a' : (e.state === 'recover' || e.state === 'stunned' ? '#b6a592' : (e.type === 'bossbot' ? '#a85a33' : '#c9733f'));
+  lib.rr(c, -6.5, -3.5, 5, 3.8, 1.6, '#6b4a35', 1.4); lib.rr(c, 1.5, -3.5, 5, 3.8, 1.6, '#6b4a35', 1.4);
+  lib.ell(c, 0, -9 + wob, 8.8, 7.6, col, 1.8);
+  lib.ell(c, -3, -12.6 + wob, 4, 2, 'rgba(255,255,255,0.3)', 0);
+  lib.ell(c, -6, -8 + wob, 0.9, 0.9, '#e0a93a', 0.8); lib.ell(c, 6, -8 + wob, 0.9, 0.9, '#e0a93a', 0.8);
+  lib.ell(c, 0, -9.5 + wob, 4.6, 4.4, '#fff7e8', 1.4);
+  if (e.state === 'recover' || e.state === 'stunned') {
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 1.3; c.beginPath();
+    c.moveTo(-2.4, -11.6 + wob); c.lineTo(2.4, -7.4 + wob); c.moveTo(2.4, -11.6 + wob); c.lineTo(-2.4, -7.4 + wob); c.stroke();
+    for (var i = 0; i < 3; i++) { var a = t * 5 + i * 2.09; lib.ell(c, Math.cos(a) * 8, -21 + Math.sin(a) * 2.5, 1.5, 1.5, '#ffd34d', 0.9); }
+  } else {
+    var ang = Math.atan2((P.y - e.y) * K, P.x - e.x);
+    var px = Math.cos(ang) * 1.7, py = Math.sin(ang) * 1.5;
+    lib.ell(c, px, -9.5 + py + wob, 2.1, 2.3, '#2a1c2a', 0);
+    lib.ell(c, px - 0.7, -10.4 + py + wob, 0.7, 0.7, '#ffffff', 0);
+  }
+  drawGear(c, 0, -18.5 + wob, 3.2, t * 2 + e.seed, '#e0a93a');
+  if (e.type === 'bossbot') {
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 2; c.lineCap = 'round'; c.beginPath(); c.moveTo(-6, -14 + wob); c.lineTo(0, -11.6 + wob); c.lineTo(6, -14 + wob); c.stroke();
+    lib.ell(c, -8.5, -14.5 + wob, 1.6, 1.6, '#e0a93a', 0.9); lib.ell(c, 8.5, -14.5 + wob, 1.6, 1.6, '#e0a93a', 0.9);
+    drawGear(c, -6.5, -17 + wob, 2.2, -t * 2.4, '#e8b447'); drawGear(c, 6.5, -17 + wob, 2.2, -t * 2.4 + 1, '#e8b447');
+  }
+  if (e.state === 'windup') {
+    lib.ell(c, 0, -30, 4.4, 4.4, '#ffd34d', 1.5);
+    c.fillStyle = '#3a2a36'; c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('!', 0, -27.4);
+  }
+}
+function drawTurret(c, e) {
+  var ca = Math.cos(e.aim), sa = Math.sin(e.aim) * K, wu = e.state === 'windup' ? e.t / e.dur : 0;
+  lib.rr(c, -9, -6, 18, 7, 2.5, '#5f5b70', 1.8);
+  lib.rr(c, -7, -12, 14, 8, 2, '#7a7690', 1.6);
+  var behind = sa < 0;
+  function barrel() {
+    c.lineCap = 'round';
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 6.4; c.beginPath(); c.moveTo(0, -14); c.lineTo(ca * 12, -14 + sa * 12); c.stroke();
+    c.strokeStyle = wu > 0 ? 'rgb(' + Math.round(150 + 100 * wu) + ',' + Math.round(130 - 40 * wu) + ',90)' : '#8a86a0'; c.lineWidth = 4; c.beginPath(); c.moveTo(0, -14); c.lineTo(ca * 12, -14 + sa * 12); c.stroke();
+    if (wu > 0) lib.ell(c, ca * 13, -14 + sa * 13, 1.5 + wu * 2.5, 1.5 + wu * 2.5, '#ffb347', 0);
+  }
+  if (behind) barrel();
+  lib.ell(c, 0, -14, 7.2, 6.2, '#e0a93a', 1.8);
+  lib.ell(c, -2, -16, 3, 1.8, 'rgba(255,255,255,0.4)', 0);
+  if (!behind) barrel();
+  if (e.state === 'recover') for (var i = 0; i < 3; i++) lib.ell(c, ca * 14 + (i - 1) * 2, -16 - (e.t * 24) - i * 3, 2 + e.t * 3, 2 + e.t * 3, 'rgba(255,255,255,' + (0.7 - e.t) + ')', 0);
+  if (e.state === 'windup') {
+    lib.ell(c, 0, -26, 4.4, 4.4, '#ffd34d', 1.5);
+    c.fillStyle = '#3a2a36'; c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('!', 0, -23.4);
+  }
+}
+function drawBoss(c, e) {
+  var t = W.t, back = Math.sin(e.face) < -0.25, sway = Math.sin(t * 2) * 0.7;
+  var k = e.state === 'windup' ? e.t / e.dur : 0;
+  var hot = e.state === 'windup' || e.state === 'active';
+  var stun = e.state === 'stunned';
+  var body = stun ? '#9a96b0' : '#7b7790';
+  lib.rr(c, -15, -13, 12, 13, 3, '#55516a', 2); lib.rr(c, 3, -13, 12, 13, 3, '#55516a', 2);
+  var fistL = [-24, -22], fistR = [24, -22];
+  if (e.attack === 'slam' && hot) { var up = e.state === 'windup' ? k : 0; fistL = [-22, -22 - 30 * up]; fistR = [22, -22 - 30 * up]; }
+  if (e.attack === 'sweep' && hot) { var sw = e.state === 'windup' ? -k * 0.8 : 1; fistR = [24 + 12 * sw, -22 - 4 * sw]; fistL = [-26 - 10 * (e.state === 'windup' ? k : 0), -24]; }
+  function arms() {
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 8.6; c.beginPath(); c.moveTo(-17, -32); c.lineTo(fistL[0], fistL[1]); c.moveTo(17, -32); c.lineTo(fistR[0], fistR[1]); c.stroke();
+    c.strokeStyle = '#6a6682'; c.lineWidth = 6; c.beginPath(); c.moveTo(-17, -32); c.lineTo(fistL[0], fistL[1]); c.moveTo(17, -32); c.lineTo(fistR[0], fistR[1]); c.stroke();
+    lib.ell(c, fistL[0], fistL[1], 7, 6.5, '#e0a93a', 1.8); lib.ell(c, fistR[0], fistR[1], 7, 6.5, '#e0a93a', 1.8);
+  }
+  if (back) arms();
+  lib.ell(c, 0, -29 + sway, 22, 19.5, body, 2.2);
+  lib.ell(c, -7, -38 + sway, 10, 5, 'rgba(255,255,255,0.18)', 0);
+  lib.rr(c, -20, -25 + sway, 40, 5, 2, '#e0a93a', 1.6);
+  if (!back) {
+    drawGear(c, 0, -31 + sway, 6.5, t * 0.8, '#e8b447');
+    var glow = hot ? '#ff7a3a' : (stun ? '#6a6682' : '#ffd34d');
+    lib.rr(c, -11, -44 + sway, 8, 3.4, 1.5, glow, 1.2); lib.rr(c, 3, -44 + sway, 8, 3.4, 1.5, glow, 1.2);
+  } else {
+    lib.rr(c, -10, -42 + sway, 20, 17, 3, '#5a5670', 1.8);
+    var pulse = 0.6 + 0.4 * Math.sin(t * 6);
+    lib.ell(c, 0, -33 + sway, 6, 6, 'rgb(' + Math.round(110 + 60 * pulse) + ',' + Math.round(200 + 40 * pulse) + ',255)', 1.4);
+    drawGear(c, 0, -33 + sway, 3.2, -t * 2, '#e8f7ff');
+  }
+  if (!back) arms();
+  if (stun) for (var i = 0; i < 4; i++) { var a = t * 4 + i * 1.57; lib.ell(c, Math.cos(a) * 14, -54 + Math.sin(a) * 3.5, 2, 2, '#ffd34d', 1); }
+}
+
+function drawTelegraphs(c) {
+  var i, e;
+  for (i = 0; i < W.enemies.length; i++) {
+    e = W.enemies[i]; if (e.dead) continue;
+    if (e.type === 'bossbot' && e.state === 'windup') {
+      var kk = e.t / e.dur;
+      if (e.attack === 'spin') {
+        gEll(c, e.x, e.y, 46, 46); c.fillStyle = 'rgba(255,70,60,0.14)'; c.fill(); c.strokeStyle = 'rgba(255,70,60,0.6)'; c.lineWidth = 1.5; c.stroke();
+        gEll(c, e.x, e.y, 46 * kk, 46 * kk); c.fillStyle = 'rgba(255,70,60,0.3)'; c.fill();
+      } else {
+        c.strokeStyle = 'rgba(255,70,60,' + (0.22 + 0.4 * kk) + ')'; c.lineWidth = 7; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 78, (e.y + Math.sin(e.dirLock) * 78) * K); c.stroke();
+      }
+    }
+    if (e.type === 'bot' && e.state === 'windup') {
+      c.strokeStyle = 'rgba(255,70,60,' + (0.25 + 0.35 * (e.t / e.dur)) + ')'; c.lineWidth = 4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 52, (e.y + Math.sin(e.dirLock) * 52) * K); c.stroke();
+    }
+    if (e.type === 'turret' && e.state === 'windup') {
+      c.strokeStyle = 'rgba(255,70,60,0.55)'; c.lineWidth = 1.6; c.setLineDash([4, 3]); c.lineDashOffset = -e.t * 30;
+      c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 300, (e.y + Math.sin(e.dirLock) * 300) * K); c.stroke(); c.setLineDash([]);
+    }
+    if (e.type === 'boss' && e.state === 'windup') {
+      var k = e.t / e.dur;
+      if (e.attack === 'slam') {
+        gEll(c, e.x, e.y, 40, 40); c.fillStyle = 'rgba(255,70,60,0.14)'; c.fill(); c.strokeStyle = 'rgba(255,70,60,0.6)'; c.lineWidth = 1.5; c.stroke();
+        gEll(c, e.x, e.y, 40 * k, 40 * k); c.fillStyle = 'rgba(255,70,60,0.3)'; c.fill();
+      } else {
+        c.beginPath(); c.moveTo(e.x, e.y * K);
+        for (var a = e.dirLock - 1.75; a <= e.dirLock + 1.75; a += 0.1) c.lineTo(e.x + Math.cos(a) * 50, (e.y + Math.sin(a) * 50) * K);
+        c.closePath(); c.fillStyle = 'rgba(255,70,60,' + (0.1 + 0.25 * k) + ')'; c.fill(); c.strokeStyle = 'rgba(255,70,60,0.6)'; c.lineWidth = 1.5; c.stroke();
+      }
+    }
+  }
+  if (lockValid()) {
+    var L = W.lock;
+    c.strokeStyle = '#ffd34d'; c.lineWidth = 1.8; c.setLineDash([4, 3]); c.lineDashOffset = -W.t * 14;
+    gEll(c, L.x, L.y, L.r + 5, L.r + 5); c.stroke(); c.setLineDash([]);
+  }
+}
+function visAngle(ang, dir) {
+  if (dir !== 'up' && dir !== 'down') return ang;
+  var half = Math.max(0.5, stepData(P.atk).arc / 2), f = Math.min(0.52, 0.7 / half);
+  return P.atk.dir + (ang - P.atk.dir) * f;
+}
+function guardSide() { return Math.cos(P.face) >= 0 ? 1 : -1; }
+function bodyPose() {
+  var p = P, a = p.atk, lx = 0, ly = 0, cr = 0;
+  if (a.ph === 'charge') {
+    var amt0 = -3.4 * Math.min(1, a.t / 0.3), jit = a.t >= 1 ? Math.sin(W.t * 70) * 0.5 : 0;
+    lx = Math.cos(p.face) * amt0 + jit; ly = Math.sin(p.face) * K * amt0 * 0.7; cr = 1.2 * Math.min(1, a.t / 0.3);
+  } else if (a.ph !== 'none') {
+    var sd = stepData(a), amt, big = a.combo === 3 ? 1.7 : (a.combo === 2 ? 1.4 : 1);
+    if (a.ph === 'windup') amt = -2.6 * big * Math.min(1, a.t / sd.wu);
+    else if (a.ph === 'active') amt = (-2.6 + 6.2 * Math.min(1, a.t / sd.ac)) * big;
+    else amt = 3.6 * big * Math.max(0, 1 - a.t / sd.rec);
+    lx = Math.cos(a.dir) * amt; ly = Math.sin(a.dir) * K * amt * 0.7;
+  }
+  if (p.guard) { lx += Math.cos(p.face) * 1.6; cr = 1.4; }
+  lx += p.anim.lx; ly += p.anim.ly + p.anim.bob;
+  if (p.fireT > 0) { var f = p.fireT / 0.2; lx -= Math.cos(p.fireAng) * 1.8 * f; ly -= Math.sin(p.fireAng) * K * 1.4 * f; }
+  return { lx: lx, ly: ly + cr };
+}
+function swordPose(dir) {
+  var p = P, a = p.atk, o = {};
+  if (a.ph === 'charge') {
+    var ang2 = p.face + 2.3;
+    o.hx = Math.cos(ang2) * 9; o.hy = -13 + Math.sin(ang2) * 9 * K; o.ca = Math.cos(ang2); o.sa = Math.sin(ang2) * K;
+    o.len = 26; o.front = Math.sin(ang2) >= -0.05; o.side = Math.cos(ang2) >= 0 ? 1 : -1; o.armSide = o.side; o.atk = true;
+  } else if (a.ph !== 'none') {
+    var sd = stepData(a), half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1, u;
+    var pb = (dir === 'up' || dir === 'down') ? 0.12 : 0.45;
+    if (a.ph === 'windup') u = -pb * (a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
+    var ang = visAngle(a.dir - half * sign + sd.arc * sign * u, dir);
+    var upv = Math.max(0, -Math.sin(ang)), sdn = Math.cos(a.dir) >= 0 ? 1 : -1, sb = Math.cos(ang) >= 0 ? 1 : -1;
+    o.len = sd.blade;
+    if (dir === 'up' || dir === 'down') {
+      var startAng = a.dir - half * sign, armSide = Math.cos(startAng) >= 0 ? 1 : -1, AR = 8.6;
+      var gpx0 = armSide * 6.5 + AR * Math.cos(ang), gpy = AR * Math.sin(ang);
+      var mm = armSide * gpx0, mixu = clamp((upv - 0.3) / 0.4, 0, 1); mixu = mixu * mixu * (3 - 2 * mixu);
+      var gpx = armSide * (mm + (Math.max(mm, 10.5) - mm) * mixu);
+      var tt = clamp(u, -0.1, 1), sg2 = a.combo >= 2 ? 1 : sign, amp = a.combo >= 2 ? 1.25 : 1;
+      o.hx = gpx; o.hy = -17 + gpy * K + sg2 * (tt - 0.5) * 5 * amp - 3 * upv;
+      o.tilt = sg2 * (tt - 0.5) * 0.5 * amp;
+      o.len = clamp(9 + sd.blade - (gpx * Math.cos(ang) + gpy * Math.sin(ang)), sd.blade * 0.8, sd.blade * 1.45);
+      o.armSide = armSide;
+    } else {
+      o.hx = Math.cos(ang) * 9 + sdn * 10 * upv * upv; o.hy = -13 + Math.sin(ang) * 9 * K - 5 * upv;
+    }
+    o.ca = Math.cos(ang); o.sa = Math.sin(ang) * K + (o.tilt || 0);
+    if (o.tilt) { var nn = Math.hypot(o.ca, o.sa); o.ca /= nn; o.sa /= nn; }
+    o.front = Math.sin(ang) >= -0.05; o.side = sdn; o.atk = true;
+  } else {
+    var side = (p.guard && S.shield) ? -guardSide() : 1;
+    if (dir === 'left') { o.hx = -1; o.hy = -14; o.ca = 0.5; o.sa = -0.85; }
+    else if (dir === 'right') { o.hx = 1; o.hy = -14; o.ca = -0.5; o.sa = -0.85; }
+    else { o.hx = side * 8; o.hy = -14; o.ca = side * 0.55; o.sa = -0.83; }
+    o.len = 20; o.front = true; o.side = side; o.atk = false;
+  }
+  return o;
+}
+function shieldBehind() { return Math.sin(P.face) < -0.05; }
+function shieldPose() {
+  if (shieldBehind()) { var bx = Math.cos(P.face) * 9; if (Math.abs(bx) < 2.5) bx = guardSide() * 2.5; return [bx, -16]; }
+  return [Math.cos(P.face) * 9, -15 + Math.sin(P.face) * 3];
+}
+function heroPose(dir) {
+  var p = P, a = p.atk, bp = bodyPose(), sp = swordPose(dir), pose = { lx: bp.lx, ly: bp.ly };
+  var side = (dir === 'left' || dir === 'right');
+  var drawn = a.ph !== 'none';
+  pose.sheath = !drawn;
+  var swordHand = [sp.hx + bp.lx, sp.hy + bp.ly];
+  if (p.fireT > 0) swordHand = [Math.cos(p.fireAng) * 10 + bp.lx, -13 + Math.sin(p.fireAng) * 10 * K + bp.ly];
+  if (p.guard && !S.shield) {
+    if (side) { pose.near = [Math.cos(p.face) * 5 + bp.lx, -13 + bp.ly]; pose.far = [Math.cos(p.face) * 6 + bp.lx, -14 + bp.ly]; }
+    else { pose.armL = [-2.5 + bp.lx, -13 + bp.ly]; pose.armR = [2.5 + bp.lx, -13 + bp.ly]; }
+  } else {
+    var sh = shieldPose(), shieldHand = [sh[0] + bp.lx, sh[1] + bp.ly];
+    if (shieldBehind() && !side) shieldHand = [guardSide() * 9 + bp.lx, -16 + bp.ly];
+    var useSword = drawn || p.fireT > 0;
+    if (side) {
+      if (useSword) pose.near = swordHand;
+      if (p.guard) { if (useSword) pose.far = shieldHand; else pose.near = shieldHand; }
+    } else {
+      var ss = useSword ? (((dir === 'up' || dir === 'down') && drawn && sp.armSide) ? sp.armSide : sp.side) : -guardSide();
+      if (useSword) pose[ss < 0 ? 'armL' : 'armR'] = swordHand;
+      if (p.guard) pose[guardSide() < 0 ? 'armL' : 'armR'] = shieldHand;
+    }
+  }
+  return pose;
+}
+function drawHeroWeapon(c, front) {
+  var p = P, a = p.atk, dir = heroDir(), bp = bodyPose(), sp = swordPose(dir);
+  var hideSword = a.ph === 'none' || (p.guard && !S.shield);
+  var hx = p.x + sp.hx + bp.lx, hy = p.y * K + sp.hy + bp.ly;
+  if (a.ph === 'charge' && !front) {
+    var c01 = Math.min(1, a.t), full = a.t >= 1, pulse = full ? 0.5 + 0.5 * Math.sin(W.t * 24) : 0;
+    c.strokeStyle = full ? 'rgba(255,214,90,' + (0.6 + 0.4 * pulse) + ')' : 'rgba(255,255,255,' + (0.25 + 0.4 * c01) + ')'; c.lineWidth = 1.6 + c01;
+    c.beginPath(); c.ellipse(p.x, p.y * K, 8 + c01 * 14 + pulse * 2, (8 + c01 * 14 + pulse * 2) * K, 0, 0, Math.PI * 2); c.stroke();
+    bar(c, p.x - 12, p.y * K + 7, 24, 3, c01, full ? '#ffd34d' : '#ffffff', '#5b4a58');
+  }
+  if (!hideSword && sp.front === front) {
+    var ca = sp.ca, sa = sp.sa, len = sp.len, ex = hx + ca * len, ey = hy + sa * len, px = -sa, py = ca;
+    c.lineCap = 'round';
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
+    c.strokeStyle = '#eef3fb'; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
+    c.strokeStyle = 'rgba(120,130,160,0.5)'; c.lineWidth = 1; c.beginPath(); c.moveTo(hx + ca * 4, hy + sa * 4 + 0.6); c.lineTo(ex - ca * 2, ey - sa * 2 + 0.6); c.stroke();
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 6.4; c.beginPath(); c.moveTo(hx - ca * 3, hy - sa * 3); c.lineTo(hx + ca * 2, hy + sa * 2); c.stroke();
+    c.strokeStyle = '#e0a93a'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(hx - ca * 3, hy - sa * 3); c.lineTo(hx + ca * 2, hy + sa * 2); c.stroke();
+    var gx = hx + ca * 3, gy = hy + sa * 3;
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
+    c.strokeStyle = '#f6d878'; c.lineWidth = 3; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
+    if (a.ph === 'charge' && a.t >= 0.33) { c.fillStyle = 'rgba(255,224,110,' + (0.35 + 0.25 * Math.sin(W.t * 20)) + ')'; c.beginPath(); c.arc(ex, ey, 4 + a.t * 3, 0, Math.PI * 2); c.fill(); }
+    if (front) lib.ell(c, hx, hy, 2.6, 2.6, '#ffd8b0', 1.5);
+  }
+  if (p.fireT > 0) {
+    var fa = p.fireAng, fca = Math.cos(fa), fsa = Math.sin(fa) * K;
+    if ((Math.sin(fa) >= -0.05) === front) {
+      var fx = p.x + fca * 10 + bp.lx, fy = p.y * K - 13 + fsa * 10 + bp.ly;
+      c.lineCap = 'round';
+      c.strokeStyle = '#3a2a36'; c.lineWidth = 6.4; c.beginPath(); c.moveTo(fx - fca * 3, fy - fsa * 3); c.lineTo(fx + fca * 9, fy + fsa * 9); c.stroke();
+      c.strokeStyle = '#e0a93a'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(fx - fca * 3, fy - fsa * 3); c.lineTo(fx + fca * 9, fy + fsa * 9); c.stroke();
+      if (front) lib.ell(c, fx, fy, 2.6, 2.6, '#ffd8b0', 1.5);
+    }
+  }
+  if (S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) {
+    var tr = a.tr, fade = 1 - tr.age / 0.18, n, steps = 16, inner = 12, ox = p.x + bp.lx, oy = p.y * K - 13 + bp.ly;
+    c.beginPath();
+    for (n = 0; n <= steps; n++) { var aa = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(aa) * tr.reach, oy + Math.sin(aa) * tr.reach * K); }
+    for (n = steps; n >= 0; n--) { var ab = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(ab) * inner, oy + Math.sin(ab) * inner * K); }
+    c.closePath(); c.fillStyle = (tr.hot ? 'rgba(255,224,110,' : 'rgba(255,255,255,') + (0.5 * fade) + ')'; c.fill();
+  }
+}
+function drawShield(c, front) {
+  var p = P; if (!p.guard) return;
+  var inFront = Math.sin(p.face) >= -0.05;
+  if (inFront !== front) return;
+  var bp = bodyPose(), sh = shieldPose();
+  var x = p.x + sh[0] + bp.lx, y = p.y * K + sh[1] + bp.ly;
+  var parry = p.guardT < parryWindow();
+  if (S.shield) {
+    var bh = shieldBehind(), srx = bh ? 10.5 : 7.5, sry = bh ? 11 : 9;
+    lib.ell(c, x, y, srx, sry, parry ? '#fff3c4' : '#8f8ba6', 1.8);
+    lib.ell(c, x, y, srx * 0.53, sry * 0.55, '#e0a93a', 1.2); lib.ell(c, x, y, srx * 0.19, sry * 0.2, '#f6d878', 0);
+  }
+  if (parry) { c.strokeStyle = 'rgba(255,240,170,' + (0.8 - p.guardT / parryWindow() * 0.6) + ')'; c.lineWidth = 1.6; c.beginPath(); c.ellipse(S.shield ? x : p.x + Math.cos(p.face) * 8, S.shield ? y : p.y * K - 12 + Math.sin(p.face) * 5, 12, 13, 0, 0, Math.PI * 2); c.stroke(); }
+}
+function heroDir() {
+  var vx = Math.cos(P.faceVis), vy = Math.sin(P.faceVis) * K;
+  if (Math.abs(vx) > Math.abs(vy)) return vx > 0 ? 'right' : 'left';
+  return vy > 0 ? 'down' : 'up';
+}
+function heroFn(dashing, dir, an, pose) {
+  var p = P;
+  return function (s) {
+    if (dashing) {
+      var ax = Math.abs(p.roll.dx), ay = Math.abs(p.roll.dy);
+      s.rotate(p.roll.dx * 0.16);
+      s.scale(1 + 0.2 * ax, 1 - 0.1 * ax + 0.08 * ay);
+    }
+    lib.playerD(s, 0, 0, dir, an, pose);
+  };
+}
+function drawHero(c) {
+  var p = P;
+  var amt = p.flash;
+  if (p.invuln > 0 && p.flash <= 0 && p.roll.t <= 0) amt = (Math.floor(W.t * 20) % 2) ? 0.5 : 0;
+  var dashing = p.roll.t > 0;
+  for (var gi = 0; gi < W.ghosts.length; gi++) {
+    var g = W.ghosts[gi];
+    c.globalAlpha = 0.45 * g.life / g.max;
+    flashDraw(c, g.x, g.y * K, heroFn(false, g.dir, { phase: g.ph, amt: 1, t: g.t, lx: 0, ly: 0, blink: 0, sq: 0 }, null), 0.75, '110,200,255');
+    c.globalAlpha = 1;
+  }
+  drawHeroWeapon(c, false); drawShield(c, false);
+  flashDraw(c, p.x, p.y * K, heroFn(dashing, heroDir(), p.anim, heroPose(heroDir())), amt);
+  drawHeroWeapon(c, true); drawShield(c, true);
+}
+function drawEnemy(c, e) {
+  var fn = (e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss);
+  if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
+  var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0;
+  flashDraw(c, e.x + jx, e.y * K, function (s) {
+    if (e.sq > 0.01) {
+      var k = e.sq, f = 0.3 * k * Math.cos((1 - k) * 7), ax = Math.abs(Math.cos(e.sqAng)), ay = Math.abs(Math.sin(e.sqAng)) * K;
+      s.scale(1 - f * ax + f * 0.5 * ay, 1 + f * ax * 0.6 - f * ay);
+    }
+    fn(s, e);
+  }, e.flash, e.flashRgb);
+}
+function drawProj(c, pr) {
+  var x = pr.x, y = pr.y * K - 10;
+  if (pr.owner === 'enemy') {
+    lib.ell(c, x, y, 4.4, 4.4, '#ffe9d0', 1.5, '#8a3a2a'); lib.ell(c, x, y, 2.2, 2.2, '#ff8a5a', 0);
+    c.fillStyle = 'rgba(255,255,255,0.5)'; c.beginPath(); c.arc(x - pr.vx * 0.03, y - pr.vy * 0.03 * K, 2.6, 0, Math.PI * 2); c.fill();
+  } else {
+    var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K;
+    c.lineCap = 'round';
+    c.strokeStyle = 'rgba(255,240,170,0.5)'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - ca * 14, y - sa * 14); c.lineTo(x, y); c.stroke();
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 4.6; c.beginPath(); c.moveTo(x - ca * 4, y - sa * 4); c.lineTo(x + ca * 4, y + sa * 4); c.stroke();
+    c.strokeStyle = pr.reflected ? '#ffd34d' : '#e0a93a'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(x - ca * 4, y - sa * 4); c.lineTo(x + ca * 4, y + sa * 4); c.stroke();
+  }
+}
+function drawPart(c, q) {
+  var a = Math.max(0, q.life / q.max), x = q.x, y = q.y * K - q.z;
+  if (q.k === 'streak') { c.strokeStyle = 'rgba(' + (q.rgb || '255,246,200') + ',' + a + ')'; c.lineWidth = 1.6 * (0.4 + a * 0.6); c.lineCap = 'round'; c.beginPath(); c.moveTo(x, y); c.lineTo(x - q.vx * 0.045, y - q.vy * 0.045 * K); c.stroke(); }
+  else if (q.k === 'dust') { c.fillStyle = 'rgba(232,220,192,' + (0.55 * a) + ')'; c.beginPath(); c.arc(x, y, q.s * (1.6 - a * 0.6), 0, Math.PI * 2); c.fill(); }
+  else if (q.k === 'bit') { c.fillStyle = q.c; c.strokeStyle = '#3a2a36'; c.lineWidth = 0.9; c.beginPath(); c.arc(x, y, q.s, 0, Math.PI * 2); c.fill(); c.stroke(); }
+  else { c.fillStyle = q.c; c.globalAlpha = a; c.beginPath(); c.arc(x, y, q.s, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; }
+}
+function bar(c, x, y, w, h, v, fill, back) {
+  c.fillStyle = '#3a2a36'; c.fillRect(x - 1.5, y - 1.5, w + 3, h + 3);
+  c.fillStyle = back || '#5b4a58'; c.fillRect(x, y, w, h);
+  c.fillStyle = fill; c.fillRect(x, y, Math.max(0, w * clamp(v, 0, 1)), h);
+}
+function drawHud(c) {
+  var i, bigRow = 0;
+  bar(c, 10, 10, 84, 7, P.hp / P.maxHp, '#e8584a');
+  bar(c, 10, 22, 84, 5, P.st / 100, P.st < 22 ? '#d6b54a' : '#7fd66d');
+  c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36';
+  var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 40); c.fillStyle = '#fff'; c.fillText(txt, 10, 40);
+  for (i = 0; i < W.enemies.length; i++) {
+    var e = W.enemies[i];
+    if (e.dead) continue;
+    if (e.type === 'boss' || e.type === 'bossbot') {
+      var by = 10 + bigRow * 30; bigRow++;
+      bar(c, 124, by, 152, 8, e.hp / e.maxHp, '#e0a93a');
+      bar(c, 124, by + 12, 152, 4, e.stagMeter / 100, e.state === 'stunned' ? '#ffd34d' : '#8fe3ff');
+      var nm = e.type === 'boss' ? 'GUARDIAN' : 'BOSSBOT';
+      c.textAlign = 'center'; c.strokeText(nm, 200, by + 27); c.fillStyle = '#fff'; c.fillText(nm, 200, by + 27);
+    } else if (e.showBar > 0) {
+      bar(c, e.x - 10, e.y * K - e.r * 2.6 - 10, 20, 3, e.hp / e.maxHp, '#e8584a');
+    }
+  }
+  for (i = 0; i < W.nums.length; i++) {
+    var n = W.nums[i], a = 1 - n.t / 0.9;
+    c.globalAlpha = Math.max(0, Math.min(1, a * 1.6)); c.textAlign = 'center';
+    var pop = 1 + (n.big ? 0.9 : 0.5) * Math.max(0, 1 - n.t / 0.14);
+    c.font = 'bold ' + (9 * pop).toFixed(1) + 'px system-ui, sans-serif';
+    c.lineWidth = 2.6; c.strokeStyle = '#3a2a36'; var ny = n.y * K - n.t * 24;
+    c.strokeText(n.txt, n.x, ny); c.fillStyle = n.c; c.fillText(n.txt, n.x, ny); c.globalAlpha = 1;
+  }
+  if (P.dead) {
+    c.fillStyle = 'rgba(20,20,40,0.55)'; c.fillRect(0, 0, SW, SH);
+    c.font = 'bold 16px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3.4; c.strokeStyle = '#3a2a36';
+    c.strokeText('Scrapped!', 200, 118); c.fillStyle = '#fff'; c.fillText('Scrapped!', 200, 118);
+    c.font = '10px system-ui, sans-serif'; c.lineWidth = 2.4; c.strokeText('Press R or Reset to try again', 200, 136); c.fillText('Press R or Reset to try again', 200, 136);
+  }
+}
+
+function render(c) {
+  if (!groundCv) buildGround();
+  c.setTransform(2, 0, 0, 2, 0, 0); c.lineJoin = 'round'; c.lineCap = 'round';
+  c.save();
+  c.drawImage(groundCv, 0, 0, SW, SH);
+  drawTelegraphs(c);
+  var i, items = [];
+  // shadows
+  c.fillStyle = 'rgba(30,70,50,0.28)';
+  function sh2(x, y, rx, ry) { c.beginPath(); c.ellipse(x, y * K, rx, ry * K, 0, 0, Math.PI * 2); c.fill(); }
+  for (i = 0; i < W.pillars.length; i++) sh2(W.pillars[i].x + 2, W.pillars[i].y, 9, 5);
+  for (i = 0; i < W.enemies.length; i++) { var en = W.enemies[i]; if (!en.dead) sh2(en.x, en.y, en.r * 1.3, en.r * 0.8); }
+  if (!P.dead) sh2(P.x, P.y, 9, 4);
+  for (i = 0; i < W.projs.length; i++) sh2(W.projs[i].x, W.projs[i].y, 3, 2);
+  // pillars
+  W.pillars.forEach(function (pl) {
+    items.push({ y: pl.y, f: function () {
+      lib.rr(c, pl.x - 8, pl.y * K - 3, 16, 5, 2, '#8f8ba6', 1.8);
+      lib.rr(c, pl.x - 5.5, pl.y * K - 26, 11, 24, 2, '#7a7690', 1.8);
+      c.fillStyle = 'rgba(255,255,255,0.22)'; c.fillRect(pl.x - 3.5, pl.y * K - 24, 2, 20);
+      lib.rr(c, pl.x - 8, pl.y * K - 30, 16, 6, 2.5, '#e0a93a', 1.8);
+    } });
+  });
+  W.enemies.forEach(function (e) { items.push({ y: e.y, f: function () { drawEnemy(c, e); } }); });
+  W.projs.forEach(function (pr) { items.push({ y: pr.y + 1, f: function () { drawProj(c, pr); } }); });
+  W.parts.forEach(function (q) { if (q.k === 'dust') items.push({ y: q.y, f: function () { drawPart(c, q); } }); });
+  if (!P.dead) items.push({ y: P.y, f: function () { drawHero(c); } });
+  items.sort(function (a, b) { return a.y - b.y; });
+  for (i = 0; i < items.length; i++) items[i].f();
+  for (i = 0; i < W.parts.length; i++) if (W.parts[i].k !== 'dust') drawPart(c, W.parts[i]);
+  for (i = 0; i < W.rings.length; i++) {
+    var rg = W.rings[i], u = 1 - rg.life / rg.max, rr0 = rg.r1 * (0.25 + 0.75 * Math.sin(u * Math.PI / 2));
+    c.strokeStyle = 'rgba(' + rg.c + ',' + (0.85 * (1 - u)) + ')'; c.lineWidth = rg.w * (1 - u * 0.6);
+    c.beginPath();
+    if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
+    c.stroke();
+  }
+  c.restore();
+  drawHud(c);
+}
+
+function init(l) { lib = l; reset(); buildGround(); }
+return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, reset: reset, S: S, api: api,
+  clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
+  dbg: function () { return { P: P, W: W, IN: IN }; } };
+})();
+if (typeof module !== 'undefined') module.exports = Combat;

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combat test</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:960px;margin:0 auto}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:64ch}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+canvas{display:block;width:100%;height:auto;border-radius:8px;background:#8fd66d;cursor:crosshair;touch-action:none}
+.panel{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.group{display:flex;flex-wrap:wrap;gap:8px}
+button{min-height:44px;padding:0 14px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;cursor:pointer}
+button:hover{background:var(--btnh)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem;min-height:1.3em}
+.cols{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:760px){.cols{grid-template-columns:1fr 1fr}}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--ink2)}
+.note{margin:10px 2px 0;color:var(--ink2);font-size:.88rem;max-width:72ch}
+</style>
+</head>
+<body>
+<main>
+  <h1>Combat test</h1>
+  <p class="lede">Fight the bots, the turret, the Bossbot and the Guardian. Everything works from the keyboard alone. The mouse is only used to aim the ranged weapon, and you can switch that to auto.</p>
+  <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Combat arena"></canvas></div>
+
+  <div class="cols">
+    <section class="panel">
+      <h2>Melee aiming</h2>
+      <div class="group" id="aim">
+        <button data-aim="facing" aria-pressed="false">Facing</button>
+        <button data-aim="soft" aria-pressed="true">Soft aim</button>
+        <button data-aim="lock" aria-pressed="false">Target lock</button>
+      </div>
+      <p class="desc" id="aimdesc"></p>
+      <h2 style="margin-top:14px">Ranged aiming</h2>
+      <div class="group" id="rng">
+        <button data-r="mouse" aria-pressed="true">Mouse</button>
+        <button data-r="auto" aria-pressed="false">Auto</button>
+      </div>
+      <p class="desc" id="rngdesc"></p>
+      <h2 style="margin-top:14px">Hit weight</h2>
+      <div class="group" id="wgt">
+        <button data-w="snappy" aria-pressed="true">Snappy</button>
+        <button data-w="normal" aria-pressed="false">Normal</button>
+        <button data-w="heavy" aria-pressed="false">Heavy</button>
+      </div>
+      <p class="desc" id="wgtdesc"></p>
+      <h2 style="margin-top:14px">Crit chance</h2>
+      <div class="group" id="crt">
+        <button data-c="0" aria-pressed="false">Off</button>
+        <button data-c="0.15" aria-pressed="true">15%</button>
+        <button data-c="0.5" aria-pressed="false">50%</button>
+        <button data-c="1" aria-pressed="false">Always</button>
+      </div>
+      <p class="desc">A crit hits for 50% more, shows in yellow, and rattles the enemy: it moves and attacks 30% slower for a moment.</p>
+      <h2 style="margin-top:14px">Options</h2>
+      <div class="group">
+        <button id="shield" aria-pressed="true">Shield</button>
+        <button id="juice" aria-pressed="true">Juice</button>
+        <button id="sound" aria-pressed="true">Sound</button>
+      </div>
+      <p class="desc" id="optdesc"></p>
+    </section>
+    <section class="panel">
+      <h2>Arena</h2>
+      <div class="group">
+        <button id="sbot">Add bot</button>
+        <button id="sturret">Add turret</button>
+        <button id="sbossbot">Add Bossbot</button>
+        <button id="sboss">Add Guardian</button>
+        <button id="sclear">Clear</button>
+        <button id="sreset">Reset</button>
+      </div>
+      <h2 style="margin-top:14px">Controls</h2>
+      <dl class="keys">
+        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move</dd>
+        <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack (three-hit combo, the third hits harder). You can keep moving while you swing</dd>
+        <dt>Hold <kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Charge a heavy swing for up to a second, then let go. Dash or block to cancel</dd>
+        <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Hold to block. Press just before a hit to parry</dd>
+        <dt>Hold <kbd>Shift</kbd></dt><dd>Sprint while moving. It drains stamina and stops when you run out</dd>
+        <dt><kbd>Space</kbd></dt><dd>Dash. A quick sidestep in the direction you move (a backstep if you stand still), with brief invulnerability. You dash through enemies</dd>
+        <dt><kbd>F</kbd></dt><dd>Fire the ranged weapon (at the mouse cursor, or automatically)</dd>
+        <dt><kbd>Q</kbd></dt><dd>Lock onto the nearest enemy (Target lock mode)</dd>
+        <dt><kbd>H</kbd></dt><dd>Spawn a bot</dd>
+        <dt><kbd>R</kbd></dt><dd>Restart after you are scrapped</dd>
+      </dl>
+    </section>
+  </div>
+  <p class="note">Try these: hold the attack button for a charged swing, fight the Bossbot and learn its three attacks, keep moving while you swing, dash through a bot to get behind it, parry a bot's lunge, parry the turret's shot to send it back, roll behind the Guardian and hit the glowing panel on its back, and fill its stagger bar. Then turn Juice off to feel the stiff version of the same combat.</p>
+</main>
+<script>
+__ART__
+__COMBAT__
+(function () {
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  Combat.init(GameArt.lib);
+  var S = Combat.S;
+  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
+  var held = {};
+
+  /* sound */
+  var AC = null;
+  function ac() {
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (AC && AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  function tone(f, d, type, v, to) {
+    var a = ac(); if (!a) return; var t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + d);
+    g.gain.setValueAtTime(v || 0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+  }
+  function noise(d, v, fc, q) {
+    var a = ac(); if (!a) return; var n = Math.floor(a.sampleRate * d), b = a.createBuffer(1, n, a.sampleRate), ch = b.getChannelData(0);
+    for (var i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var s = a.createBufferSource(); s.buffer = b;
+    var f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fc; f.Q.value = q || 1;
+    var g = a.createGain(); g.gain.value = v; s.connect(f); f.connect(g); g.connect(a.destination); s.start();
+  }
+  var SFX = {
+    swing: function (v) { noise(0.12, 0.2, 1500 + (v || 0) * 400, 0.8); },
+    hit: function (v) { var m = 1 + (v || 0) * 0.16; tone(200 * m, 0.1, 'square', 0.09, 70); tone(90, 0.12, 'sine', 0.16, 45); noise(0.05, 0.28, 2600, 1); },
+    heavyhit: function (v) { tone(130, 0.2, 'sawtooth', 0.12, 38); tone(70, 0.3, 'sine', 0.26, 32); noise(0.1, 0.32, 1400, 0.8); tone(900, 0.08, 'triangle', 0.05, 400); },
+    parry: function () { tone(1320, 0.35, 'triangle', 0.12); tone(1980, 0.28, 'sine', 0.08); noise(0.04, 0.2, 5000, 2); },
+    block: function () { tone(220, 0.1, 'square', 0.08, 120); noise(0.06, 0.2, 900, 1); },
+    dash: function () { noise(0.13, 0.16, 1400, 0.9); tone(760, 0.1, 'triangle', 0.05, 320); },
+    shoot: function () { tone(520, 0.1, 'square', 0.06, 180); },
+    hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
+    tele: function () { tone(880, 0.07, 'square', 0.04); },
+    die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
+    crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
+    stagger: function () { tone(260, 0.3, 'triangle', 0.1, 520); },
+    slam: function () { tone(70, 0.35, 'sine', 0.25, 35); noise(0.25, 0.3, 300, 0.6); },
+    raise: function () { tone(420, 0.04, 'triangle', 0.03); },
+    charge: function (v) { tone(420 + (v || 0) * 220, 0.12, 'triangle', 0.05); if (v === 3) tone(1400, 0.2, 'sine', 0.06); }
+  };
+  Combat.api.sfx = function (n, v) { if (SFX[n]) SFX[n](v); };
+
+  /* input */
+  window.addEventListener('keydown', function (e) {
+    if (!codes[e.code]) return;
+    e.preventDefault(); ac();
+    if (e.repeat) return;
+    held[e.code] = true; Combat.key(e.code, true);
+  });
+  window.addEventListener('keyup', function (e) {
+    if (!codes[e.code]) return;
+    e.preventDefault(); held[e.code] = false; Combat.key(e.code, false);
+  });
+  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
+  function pos(e) {
+    var r = cv.getBoundingClientRect();
+    Combat.mouse((e.clientX - r.left) / r.width * 400, (e.clientY - r.top) / r.height * 250);
+  }
+  cv.addEventListener('mousemove', pos);
+  cv.addEventListener('mousedown', function (e) { ac(); pos(e); Combat.button(e.button, true); e.preventDefault(); });
+  window.addEventListener('mouseup', function (e) { Combat.button(e.button, false); });
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  /* ui */
+  var aimDesc = {
+    facing: 'Attacks go where you are facing, with a wide swing and a small lunge. No aiming needed.',
+    soft: 'Attacks snap to the nearest enemy in front of you, and you turn smoothly to face it. With nothing there, you swing forward.',
+    lock: 'Press Q to lock onto the nearest enemy. You face it and strafe around it with WASD. Press Q again to release.'
+  };
+  var aimBtns = document.querySelectorAll('#aim button'), aimdesc = document.getElementById('aimdesc');
+  function setAim(m) {
+    S.aim = m;
+    for (var i = 0; i < aimBtns.length; i++) aimBtns[i].setAttribute('aria-pressed', aimBtns[i].getAttribute('data-aim') === m ? 'true' : 'false');
+    aimdesc.textContent = aimDesc[m];
+  }
+  for (var i = 0; i < aimBtns.length; i++) aimBtns[i].addEventListener('click', function (e) { setAim(e.currentTarget.getAttribute('data-aim')); e.currentTarget.blur(); });
+  setAim('soft');
+  var rngBtns = document.querySelectorAll('#rng button'), rngdesc = document.getElementById('rngdesc');
+  var rngTxt = { mouse: 'F fires toward the mouse cursor.', auto: 'F fires at the nearest enemy in front of you, or straight ahead. No mouse needed.' };
+  function setRng(m) {
+    S.ranged = m;
+    for (var i = 0; i < rngBtns.length; i++) rngBtns[i].setAttribute('aria-pressed', rngBtns[i].getAttribute('data-r') === m ? 'true' : 'false');
+    rngdesc.textContent = rngTxt[m];
+  }
+  for (var j = 0; j < rngBtns.length; j++) rngBtns[j].addEventListener('click', function (e) { setRng(e.currentTarget.getAttribute('data-r')); e.currentTarget.blur(); });
+  setRng('mouse');
+  var wgtBtns = document.querySelectorAll('#wgt button'), wgtdesc = document.getElementById('wgtdesc');
+  var wgtTxt = { snappy: 'Short pauses and a light slow-mo beat. Hits land fast and combos flow.', normal: 'The previous setting: longer pauses and a slow-mo beat on heavy hits.', heavy: 'Long pauses and stronger knockback. Each hit feels big but the pace is slower.' };
+  function setWgt(m) {
+    S.weight = m;
+    for (var i = 0; i < wgtBtns.length; i++) wgtBtns[i].setAttribute('aria-pressed', wgtBtns[i].getAttribute('data-w') === m ? 'true' : 'false');
+    wgtdesc.textContent = wgtTxt[m];
+  }
+  for (var w = 0; w < wgtBtns.length; w++) wgtBtns[w].addEventListener('click', function (e) { setWgt(e.currentTarget.getAttribute('data-w')); e.currentTarget.blur(); });
+  setWgt('snappy');
+  var crtBtns = document.querySelectorAll('#crt button');
+  function setCrit(v) {
+    S.crit = v;
+    for (var i = 0; i < crtBtns.length; i++) crtBtns[i].setAttribute('aria-pressed', parseFloat(crtBtns[i].getAttribute('data-c')) === v ? 'true' : 'false');
+  }
+  for (var k = 0; k < crtBtns.length; k++) crtBtns[k].addEventListener('click', function (e) { setCrit(parseFloat(e.currentTarget.getAttribute('data-c'))); e.currentTarget.blur(); });
+  setCrit(0.15);
+  var optdesc = document.getElementById('optdesc');
+  function opt(id, key) {
+    var b = document.getElementById(id);
+    b.addEventListener('click', function () { S[key] = !S[key]; b.setAttribute('aria-pressed', S[key] ? 'true' : 'false'); upd(); b.blur(); });
+  }
+  opt('shield', 'shield'); opt('juice', 'juice'); opt('sound', 'sound');
+  function upd() {
+    var t = [];
+    t.push(S.shield ? 'Shield: wide parry window and strong blocking.' : 'No shield: parrying still works, but the window is tight and blocking is weak.');
+    t.push(S.juice ? 'Juice on: smooth movement, lunges, hit pauses, knockback, squash, impact rings, slow-mo on big hits, flashes and swing trails.' : 'Juice off: instant movement, slow stiff swings and no feedback.');
+    optdesc.textContent = t.join(' ');
+  }
+  upd();
+  function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(); b.blur(); }); }
+  act('sbot', function () { Combat.spawn('bot'); });
+  act('sturret', function () { Combat.spawn('turret'); });
+  act('sbossbot', function () { Combat.spawn('bossbot'); });
+  act('sboss', function () { Combat.spawn('boss'); });
+  act('sclear', function () { Combat.clear(); });
+  act('sreset', function () { Combat.reset(); });
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    Combat.update(dt); Combat.render(ctx);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

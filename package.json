@@ -1,0 +1,13 @@
+{
+  "name": "survival-game-prototype",
+  "version": "0.1.0",
+  "private": true,
+  "description": "2D top-down survival crafting game: combat and animation prototype",
+  "scripts": {
+    "build": "python3 tools/build.py",
+    "test": "node tests/ctest2.js && node tests/ctest4.js && node tests/btest3.js && node tests/ktest.js && node tests/turntest.js && node tests/wtest2.js && node tests/sprinttest.js && node tests/fuzz.js"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^0.1.0"
+  }
+}
