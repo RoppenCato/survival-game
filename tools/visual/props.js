@@ -5,7 +5,7 @@ const fs=require('fs');
 global.__mk=(w,h)=>createCanvas(w,h);
 global.GameArt=require('../../src/art.js');
 const SL=require('../../src/stylelab.js'),kit=SL.kit;
-const BASE={factoryHue:238,outsideHue:152,accentHue:42,shadowHue:250,sat:1.1,bright:-1,contrast:1.12,shade:0.55,round:0.85,spindly:0.12,lush:0.95,twist:0.12,sparkle:0.8,texture:0.6,outlineW:1.1,outlineDark:0.86,rough:0.08,light:0.5,fog:0.3,glow:0.9,vignette:0.4,look:1,seed:7,scaleRef:0};
+const BASE=kit.STYLE;
 kit.setup(BASE);
 const names=process.argv.length>2?process.argv.slice(2):['longhouse','vikingTent','palisade','shieldRack','dragonPost','runestone','burialMound','stoneShip','dryingRack','forge','brazier','woodpile','cairn'];
 const sprites=names.map(n=>kit.bakeProp(n,10));

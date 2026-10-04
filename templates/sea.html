@@ -104,8 +104,9 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div id="psea"></div>
       </section>
       <section class="panel">
-        <h2>Islands</h2>
+        <h2>Archipelago</h2>
         <div id="pland"></div>
+        <p class="desc">Sizes and gaps are in tiles: 100 tiles is one kilometre, and the hero is about one tile wide. Island width is the normal island; Size variety mixes in small and large ones. Most gaps are near the typical gap; Gap variety adds narrow straits and the occasional long crossing. Skerries are the tiny rocky islets around the coasts.</p>
       </section>
       <section class="panel">
         <h2>Boat colours</h2>
@@ -141,7 +142,7 @@ __COMBAT__
   Combat.init(lib);
   var S = Combat.S; S.look = 'classic'; S.sound = false;
   Combat.clear();
-  var BASE = { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, round: 0.85, spindly: 0.12, lush: 0.95, twist: 0.12, sparkle: 0.8, texture: 0.6, outlineW: 1.1, outlineDark: 0.86, rough: 0.08, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4, look: 1, seed: 7, scaleRef: 0 };
+  var BASE = kit.STYLE;   // the one shared look of the world, set in src/stylelab.js
 
   /* ---------- boats ---------- */
   var LINE = '#1d1622';
@@ -165,20 +166,26 @@ __COMBAT__
   var SEA = [
     { k: 'hue', label: 'Water colour', min: -60, max: 60, step: 2 },
     { k: 'waves', label: 'Waves', min: 0, max: 2, step: 0.05 },
-    { k: 'foam', label: 'Shore foam', min: 0, max: 1.5, step: 0.05 },
+    { k: 'foam', label: 'Shore waves', min: 0, max: 1.5, step: 0.05 },
     { k: 'bob', label: 'Boat bobbing', min: 0, max: 2.5, step: 0.05 },
     { k: 'wake', label: 'Wake', min: 0, max: 2, step: 0.05 }
   ];
   var LAND = [
-    { k: 'isle', label: 'Island size', min: 10, max: 60, step: 1 },
-    { k: 'count', label: 'Islands', min: 2, max: 8, step: 1 },
-    { k: 'gap', label: 'Sea between', min: 10, max: 120, step: 2 },
+    { k: 'isle', label: 'Island width', min: 40, max: 500, step: 10 },
+    { k: 'sizeVar', label: 'Size variety', min: 0, max: 1, step: 0.05 },
+    { k: 'count', label: 'Islands', min: 2, max: 14, step: 1 },
+    { k: 'gap', label: 'Typical gap', min: 10, max: 150, step: 5 },
+    { k: 'gapVar', label: 'Gap variety', min: 0, max: 1, step: 0.05 },
+    { k: 'skerries', label: 'Skerries', min: 0, max: 2, step: 0.1 },
+    { k: 'rough', label: 'Coast roughness', min: 0, max: 1.5, step: 0.05 },
+    { k: 'beach', label: 'Beach width', min: 1, max: 9, step: 0.5 },
     { k: 'seed', label: 'Sea number', min: 1, max: 99, step: 1 }
   ];
   var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.3, max: 2, step: 0.05 }];
   var NUM = BOAT.concat(HANDLE, SEA, LAND);
   var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Stripes and shields']];
-  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, hue: 60, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6, isle: 32, count: 5, gap: 60, seed: 25,
+  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
+    isle: 220, sizeVar: 0.8, count: 7, gap: 50, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, seed: 25,
     col: { hull: '#5a3a26', deck: '#b98a5a', sail: '#efe6cf', trim: '#b83a2e' } };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var spec = clone(DEF), view = { zoom: 0.7 }, inputs = {}, outputs = {}, swatch = {};
@@ -202,10 +209,10 @@ __COMBAT__
     document.getElementById('typedesc').textContent = TYPES[spec.type].note;
     document.getElementById('steerdesc').textContent = STEER[spec.steer][1];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
-    try { localStorage.setItem('seaeditor2', JSON.stringify(spec)); } catch (e) {}
-    var wk = [spec.isle, spec.count, spec.gap, spec.seed, spec.hue].join('|');
+    try { localStorage.setItem('seaeditor4', JSON.stringify(spec)); } catch (e) {}
+    var wk = [spec.isle, spec.sizeVar, spec.count, spec.gap, spec.gapVar, spec.skerries, spec.rough, spec.beach, spec.seed, spec.hue].join('|');
     if (wk === worldKey) showStat();
-    if (wk !== worldKey) { var relocate = wk.split('|').slice(0, 4).join('|') !== worldKey.split('|').slice(0, 4).join('|'); worldKey = wk; buildWorld(relocate); }
+    if (wk !== worldKey) { var relocate = wk.split('|').slice(0, 9).join('|') !== worldKey.split('|').slice(0, 9).join('|'); worldKey = wk; buildWorld(relocate); }
   }
   function sliders(hostId, list, target, onChange) {
     var host = document.getElementById(hostId);
@@ -241,126 +248,219 @@ __COMBAT__
     lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
   });
 
-  /* ---------- world: a few big islands with wide sea between them ----------
-     The map grows with the settings. Only the parts of the sea that touch land are painted as their own
-     pieces, and only when they first come into view; open water reuses one shared piece. */
-  var GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = 16, CW = 4, CH = 3;
-  var grid = [], coast = [], landChunk = [], chunkCv = {}, waterCv = null, tiles = {}, seaStyle = null;
-  var props = [], solids = [], shore = [], sprites = {}, home = { x: 0, y: 0 }, dockEnd = { x: 0, y: 0 }, mini = null, landPct = 0, nIsles = 0;
+  /* ---------- world: a procedural archipelago ----------
+     Scale: one tile is one unit of the design brief, so 100 tiles are a kilometre. The map grows to fit the islands.
+     Islands are placed one after another, each next to an earlier one at a random gap, so they form clusters and
+     chains with open water between.
+
+     The ground is not built from square tiles. Each island writes a height into a field (E, in hundredths of a
+     tile: above zero is land, below is sea), and the ground is painted per pixel from that field, read smoothly
+     between tiles. So coasts curve, the beach is a wide band of sand between the waterline and the grass, and the
+     water shades from pale shallows to deep sea. Walking and sailing use the same field, so they match what you see.
+     Pieces of the map are painted when first seen; open sea reuses one shared piece. */
+  var GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = 16, CW = 4, CH = 3, MAXTILES = 9e6;
+  var E = new Int16Array(GW * GH), grid = new Uint8Array(GW * GH), landChunk = new Uint8Array(1), chunkCv = {}, chunkOrder = [], waterCv = null, tiles = {}, PAL = null;
+  var buckets = [], solidB = [], sprites = {}, home = { x: 0, y: 0 }, dockEnd = { x: 0, y: 0 }, mini = null, info = '';
   function hash(x, y, s) { var h = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); }
   function vnoise(x, y, s) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); var a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
   function fbm(x, y, s) { return vnoise(x, y, s) * 0.65 + vnoise(x * 2.1, y * 2.1, s + 9) * 0.35; }
-  function tileAt(wx, wy) { var x = Math.floor(wx / T), y = Math.floor(wy / T); return (x < 0 || y < 0 || x >= GW || y >= GH) ? 'edge' : grid[y][x]; }
-  function isWater(wx, wy) { return tileAt(wx, wy) === 'water'; }
-  function isLand(wx, wy) { var t = tileAt(wx, wy); return t !== 'water' && t !== 'edge'; }
+  // a small sheet of smooth noise that repeats every 128 pixels, for grain that lines up across pieces of the map
+  var NT = 128, noiseT = (function () {
+    var o = new Float32Array(NT * NT), x, y;
+    function vn(px, py, cell, sd) { var n = NT / cell, fx = px / cell, fy = py / cell, xi = Math.floor(fx), yi = Math.floor(fy), u = fx - xi, v = fy - yi; u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v);
+      var a = hash(xi % n, yi % n, sd), b = hash((xi + 1) % n, yi % n, sd), c = hash(xi % n, (yi + 1) % n, sd), d = hash((xi + 1) % n, (yi + 1) % n, sd); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+    for (y = 0; y < NT; y++) for (x = 0; x < NT; x++) o[y * NT + x] = vn(x, y, 32, 3) * 0.6 + vn(x, y, 16, 5) * 0.4;
+    return o;
+  })();
+  function eTile(tx, ty) { return (tx < 0 || ty < 0 || tx >= GW || ty >= GH) ? -10 : E[ty * GW + tx] / 100; }
+  function elevAt(wx, wy) {                 // height at a point, read smoothly between tile centres
+    var fx = wx / T - 0.5, fy = wy / T - 0.5, x0 = Math.floor(fx), y0 = Math.floor(fy), u = fx - x0, v = fy - y0;
+    var a = eTile(x0, y0), b = eTile(x0 + 1, y0), c = eTile(x0, y0 + 1), d = eTile(x0 + 1, y0 + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  function code(tx, ty) { return (tx < 0 || ty < 0 || tx >= GW || ty >= GH) ? 255 : grid[ty * GW + tx]; }
+  function onPlank(wx, wy) { return code(Math.floor(wx / T), Math.floor(wy / T)) === 4; }
+  function isLand(wx, wy) { return onPlank(wx, wy) || elevAt(wx, wy) > 0.05; }
+  function isWater(wx, wy) { return !onPlank(wx, wy) && elevAt(wx, wy) < -0.18 && wx > 40 && wy > 40 && wx < WX - 40 && wy < WY - 40; }
+  function beachAt(tx, ty) { return spec.beach * (0.55 + 0.9 * vnoise(tx / 8, ty / 8, spec.seed + 50)); }   // the beach is wider in some places than others
   function sprite(name, v) { var k = name + ':' + v; if (!sprites[k]) { kit.setup(BASE); sprites[k] = kit.bakeProp(name, 3 + v * 7); } return sprites[k]; }
   function tile(t, gx, gy) {
-    if (!tiles[t]) { kit.setup(t === 'water' ? seaStyle : BASE); tiles[t] = []; for (var n = 0; n < kit.TILES[t].n; n++) tiles[t].push(kit.bakeTile(t, n)); }
-    return tiles[t][t === 'water' ? 0 : Math.floor(hash(gx, gy, 5) * tiles[t].length) % tiles[t].length];
+    if (!tiles[t]) { kit.setup(BASE); tiles[t] = []; for (var n = 0; n < kit.TILES[t].n; n++) tiles[t].push(kit.bakeTile(t, n)); }
+    return tiles[t][Math.floor(hash(gx, gy, 5) * tiles[t].length) % tiles[t].length];
   }
-  var SIDES = [['n', 0, -1], ['s', 0, 1], ['w', -1, 0], ['e', 1, 0]];
+  function hslRgb(h, s, l) {
+    h = ((h % 360) + 360) % 360; var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; } else if (h < 180) { r = 0; g = c; b = x; } else if (h < 240) { r = 0; g = x; b = c; } else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+  }
   function bakeChunk(cx, cy) {
-    var ccv = kit.mk(CT * T * 2, CT * TS * 2), c = ccv.getContext('2d'), x, y, i;
+    var W2 = CT * T, H2 = CT * TS, ccv = kit.mk(W2 * 2, H2 * 2), c = ccv.getContext('2d'), x, y, i, j;
     c.setTransform(2, 0, 0, 2, 0, 0);
-    for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) c.drawImage(tile(grid[cy * CT + y][cx * CT + x], cx * CT + x, cy * CT + y), x * T, y * TS, T, TS);
-    for (y = -2; y < CT + 2; y++) for (x = -2; x < CT + 2; x++) {             // soft light along the coast
-      var sgx = cx * CT + x, sgy = cy * CT + y; if (sgx < 0 || sgy < 0 || sgx >= GW || sgy >= GH || !coast[sgy * GW + sgx]) continue;
-      var lg = c.createRadialGradient((x + 0.5) * T, (y + 0.5) * TS, 0, (x + 0.5) * T, (y + 0.5) * TS, 54);
-      lg.addColorStop(0, 'rgba(150,240,225,0.13)'); lg.addColorStop(1, 'rgba(150,240,225,0)'); c.fillStyle = lg; c.fillRect((x - 1.5) * T, (y - 2) * TS, T * 4, TS * 5);
-    }
-    for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) {
-      var gx2 = cx * CT + x, gy2 = cy * CT + y, t2 = grid[gy2][gx2]; if (t2 === 'plank') continue;
-      for (i = 0; i < 4; i++) {
-        var nx = gx2 + SIDES[i][1], ny = gy2 + SIDES[i][2]; if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) continue;
-        var nt = grid[ny][nx];
-        if (nt === t2 || nt === 'plank' || kit.TILES[nt].pr <= kit.TILES[t2].pr) continue;
-        c.save(); c.translate(x * T, y * TS); kit.blendTile(c, tile(nt, nx, ny), SIDES[i][0], gx2 * 131 + gy2 * 17 + i); c.restore();
+    for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) c.drawImage(tile('grass', cx * CT + x, cy * CT + y), x * T, y * TS, T + 0.3, TS + 0.3);
+    // the fields at the tile centres in and just around this piece
+    var n1 = CT + 2, EE = new Float32Array(n1 * n1), BW = new Float32Array(n1 * n1), DK = new Float32Array(n1 * n1);
+    for (j = 0; j < n1; j++) for (i = 0; i < n1; i++) { var gx = cx * CT + i - 1, gy = cy * CT + j - 1; EE[j * n1 + i] = eTile(gx, gy); BW[j * n1 + i] = beachAt(gx, gy); DK[j * n1 + i] = fbm(gx / 9, gy / 9, spec.seed + 70); }
+    var ov = kit.mk(W2, H2), oc = ov.getContext('2d'), img = oc.createImageData(W2, H2), d = img.data, P = PAL, p = 0;
+    for (var py = 0; py < H2; py++) {
+      var v = py / TS + 0.5, j0 = Math.floor(v), tv = v - j0, wy = cy * H2 + py;
+      for (var px = 0; px < W2; px++, p += 4) {
+        var u = px / T + 0.5, i0 = Math.floor(u), tu = u - i0, q = j0 * n1 + i0, wx = cx * W2 + px;
+        var w00 = (1 - tu) * (1 - tv), w10 = tu * (1 - tv), w01 = (1 - tu) * tv, w11 = tu * tv;
+        var n1v = noiseT[((wy & 127) << 7) | (wx & 127)], n2v = noiseT[(((wy * 2) & 127) << 7) | ((wx * 2) & 127)];
+        var e = EE[q] * w00 + EE[q + 1] * w10 + EE[q + n1] * w01 + EE[q + n1 + 1] * w11 + (n1v - 0.5) * 0.5;
+        var r, g, b, a = 255;
+        if (e < 0) {                                        // sea: pale over the sand at the edge, turquoise shallows, deep blue beyond
+          var t = Math.min(1, -e / 3.4); t = t * t * (3 - 2 * t);
+          r = P.sh[0] + (P.dp[0] - P.sh[0]) * t; g = P.sh[1] + (P.dp[1] - P.sh[1]) * t; b = P.sh[2] + (P.dp[2] - P.sh[2]) * t;
+          var st = Math.max(0, 1 + e / 0.95) * 0.62;
+          r += (P.wet[0] - r) * st; g += (P.wet[1] - g) * st; b += (P.wet[2] - b) * st;
+          var tx2 = (n2v - 0.5) * 12; r += tx2; g += tx2; b += tx2;
+          if (e > -0.14) { var fo = (1 + e / 0.14) * 0.85; r += (255 - r) * fo; g += (255 - g) * fo; b += (252 - b) * fo; }   // the white lip at the waterline
+        } else {
+          var bw = BW[q] * w00 + BW[q + 1] * w10 + BW[q + n1] * w01 + BW[q + n1 + 1] * w11, eg = e + (n2v - 0.5) * 0.7;
+          if (eg < bw) {                                    // beach: wet and dark by the water, pale and dry higher up, soft dunes
+            var dry = Math.min(1, e / 0.75); dry = dry * dry * (3 - 2 * dry);
+            var dune = (n1v - 0.5) * 22 + Math.sin((wx * 0.33 + wy * 0.95) * 0.2 + n1v * 6) * 5;
+            r = P.wet[0] + (P.sand[0] - P.wet[0]) * dry + dune; g = P.wet[1] + (P.sand[1] - P.wet[1]) * dry + dune; b = P.wet[2] + (P.sand[2] - P.wet[2]) * dry + dune * 0.8;
+            a = Math.min(1, (bw - eg) / 0.32) * 255;        // the grass comes in raggedly at the top of the beach
+          } else {                                          // grass: darker by the beach and in soft patches, never in squares
+            var dk = DK[q] * w00 + DK[q + 1] * w10 + DK[q + n1] * w01 + DK[q + n1 + 1] * w11, rim = Math.max(0, 1 - (eg - bw) / 0.4);
+            r = 22; g = 84; b = 40; a = Math.min(120, Math.max(0, (dk - 0.54) * 5) * 62 + rim * 70);
+          }
+        }
+        d[p] = r; d[p + 1] = g; d[p + 2] = b; d[p + 3] = a;
       }
+    }
+    oc.putImageData(img, 0, 0);
+    c.imageSmoothingEnabled = true; c.drawImage(ov, 0, 0, W2, H2);
+    // grains, pebbles and shells on the dry sand
+    var R = kit.rng(cx * 7919 + cy * 104729 + spec.seed);
+    for (i = 0; i < 260; i++) {
+      var sx = R() * W2, sy = R() * H2, kind = R(), wxx = cx * W2 + sx, wyy = (cy * H2 + sy) / K, e2 = elevAt(wxx, wyy);
+      if (e2 < 0.5 || e2 > beachAt(wxx / T, wyy / T) - 0.6) continue;
+      if (kind < 0.86) { c.fillStyle = kind < 0.5 ? 'rgba(150,104,52,0.5)' : 'rgba(255,246,214,0.75)'; c.fillRect(sx, sy, 1, 1); }
+      else if (kind < 0.95) { c.fillStyle = 'rgba(150,140,140,0.9)'; c.beginPath(); c.ellipse(sx, sy, 1.6, 1.1, 0, 0, 7); c.fill(); }
+      else { c.fillStyle = '#fff6ea'; c.strokeStyle = 'rgba(150,104,52,0.7)'; c.lineWidth = 0.6; c.beginPath(); c.ellipse(sx, sy, 2, 1.5, 0.5, 0, 7); c.fill(); c.stroke(); }
+    }
+    for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) if (code(cx * CT + x, cy * CT + y) === 4) {       // the jetty
+      c.drawImage(tile('plank', cx * CT + x, cy * CT + y), x * T, y * TS, T + 0.3, TS + 0.3);
+      c.fillStyle = 'rgba(20,14,26,0.3)'; c.fillRect(x * T, (y + 1) * TS, T, 3);
     }
     return ccv;
   }
+  function addProp(o) {
+    var b = Math.floor(o.x / T / CT) + Math.floor(o.y / T / CT) * CW;
+    (buckets[b] || (buckets[b] = [])).push(o);
+    if (o.r) (solidB[b] || (solidB[b] = [])).push({ x: o.x, y: o.y, r: o.r * o.s, hide: true });
+  }
+  function nearSolids(P) {                 // only what stands near the hero can block him
+    var bx = Math.floor(P.x / T / CT), by = Math.floor(P.y / T / CT), out = [], dx, dy;
+    for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++) { var x = bx + dx, y = by + dy; if (x < 0 || y < 0 || x >= CW || y >= CH) continue; var l = solidB[y * CW + x]; if (l) for (var i = 0; i < l.length; i++) out.push(l[i]); }
+    return out;
+  }
 
   function buildWorld(relocate) {
-    var x, y, i, k, s = spec.seed, n = Math.round(spec.count), cols = Math.ceil(Math.sqrt(n * 1.3)), rows = Math.ceil(n / cols), cell = 2 * spec.isle + spec.gap;
-    GW = Math.ceil((cols * cell + 10) / CT) * CT; GH = Math.ceil((rows * cell + 10) / CT) * CT; WX = GW * T; WY = GH * T; CW = GW / CT; CH = GH / CT;
-    var R = kit.rng(s * 53 + 9), isles = [], offX = (GW - cols * cell) / 2, offY = (GH - rows * cell) / 2, homeIdx = Math.floor((n - 1) / 2);
-    for (i = 0; i < n; i++) isles.push({ x: offX + (i % cols + 0.5) * cell + (R() - 0.5) * spec.gap * 0.45, y: offY + (Math.floor(i / cols) + 0.5) * cell + (R() - 0.5) * spec.gap * 0.45, r: spec.isle * (0.7 + R() * 0.4) });
-    isles.forEach(function (I, q) { if (Math.hypot(I.x - GW / 2, I.y - GH / 2) < Math.hypot(isles[homeIdx].x - GW / 2, isles[homeIdx].y - GH / 2)) homeIdx = q; });   // home is the island nearest the middle
-    isles[homeIdx].r = spec.isle;
-    nIsles = n;
-    var land = [];
-    for (y = 0; y < GH; y++) { land.push([]); for (x = 0; x < GW; x++) {
-      var L = false;
-      for (k = 0; k < n && !L; k++) { var I = isles[k], d = Math.hypot(x + 0.5 - I.x, (y + 0.5 - I.y) * 1.12); if (d < I.r * 1.25 && d < I.r * (0.72 + 0.5 * fbm(x / 8, y / 8, s + k * 17))) L = true; }
-      land[y].push(L && x > 1 && y > 1 && x < GW - 2 && y < GH - 2);
-    } }
-    function nearWater(x0, y0, rad) { for (var dy = -rad; dy <= rad; dy++) for (var dx = -rad; dx <= rad; dx++) { var nx = x0 + dx, ny = y0 + dy; if (nx < 0 || ny < 0 || nx >= GW || ny >= GH || !land[ny][nx]) return true; } return false; }
-    grid = [];
-    for (y = 0; y < GH; y++) { grid.push([]); for (x = 0; x < GW; x++) grid[y].push(!land[y][x] ? 'water' : (nearWater(x, y, 2) ? 'shore' : (fbm(x / 9, y / 9, s + 70) > 0.6 ? 'grassDark' : 'grass'))); }
-    // a dock: planks running east from the home island into open water
-    var hx = Math.round(isles[homeIdx].x), hy = Math.round(isles[homeIdx].y);
-    for (x = hx; x < GW - 8 && grid[hy][x] !== 'water'; x++) {}
-    for (i = 0; i < 8; i++) grid[hy][x + i] = 'plank';
-    home = { x: (x - 2 + 0.5) * T, y: (hy + 0.5) * T };
-    dockEnd = { x: x, y: hy };                    // tile where the dock leaves the shore
+    var s = spec.seed, R = kit.rng(s * 53 + 9), i, k, x, y, tries;
+    function rnd(a, b) { return a + R() * (b - a); }
+    function pickR() { var u = R(), f = u < 0.25 ? rnd(0.15, 0.45) : (u < 0.78 ? rnd(0.7, 1.3) : rnd(1.5, 2.2)); return Math.max(5, spec.isle / 2 * (1 + (f - 1) * spec.sizeVar)); }
+    function pickGap() { var u = R(), f = u < 0.15 ? rnd(0.1, 0.3) : (u < 0.75 ? rnd(0.5, 1.5) : (u < 0.95 ? rnd(1.6, 3) : rnd(4, 8))); return Math.max(4, spec.gap * (1 + (f - 1) * spec.gapVar)); }
+    // 1. place the islands: the home island first, then each new one beside an earlier one
+    var isles = [{ x: 0, y: 0, r: spec.isle / 2, gap: 0 }];
+    for (i = 1; i < spec.count; i++) for (tries = 0; tries < 60; tries++) {
+      var par = isles[Math.floor(R() * isles.length) % isles.length], a = R() * 6.283, r = pickR(), g = pickGap(), d = par.r + r + g;
+      var cand = { x: par.x + Math.cos(a) * d, y: par.y + Math.sin(a) * d * 0.9, r: r, gap: g }, ok = true;
+      for (k = 0; k < isles.length; k++) if (Math.hypot(isles[k].x - cand.x, isles[k].y - cand.y) < isles[k].r + r + 4) { ok = false; break; }
+      if (ok) { isles.push(cand); break; }
+    }
+    // 2. size the map to fit them; if it would be too big, leave out the last islands
+    var x0, y0, x1, y1, n = isles.length;
+    for (;;) {
+      x0 = y0 = 1e9; x1 = y1 = -1e9;
+      for (i = 0; i < n; i++) { var q = isles[i], e = q.r * 1.45 + 30; x0 = Math.min(x0, q.x - e); y0 = Math.min(y0, q.y - e); x1 = Math.max(x1, q.x + e); y1 = Math.max(y1, q.y + e); }
+      GW = Math.ceil((x1 - x0) / CT) * CT; GH = Math.ceil((y1 - y0) / CT) * CT;
+      if (GW * GH <= MAXTILES || n <= 2) break;
+      n--;
+    }
+    isles.length = n;
+    isles.forEach(function (q) { q.x -= x0; q.y -= y0; });
+    WX = GW * T; WY = GH * T; CW = GW / CT; CH = GH / CT;
 
-    coast = []; landChunk = []; chunkCv = {}; tiles = {};
-    for (i = 0; i < CW * CH; i++) landChunk.push(false);
-    for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
-      var wtr = grid[y][x] === 'water';
-      coast.push(wtr && ((x > 0 && grid[y][x - 1] !== 'water') || (x < GW - 1 && grid[y][x + 1] !== 'water') || (y > 0 && grid[y - 1][x] !== 'water') || (y < GH - 1 && grid[y + 1][x] !== 'water')));
-      if (!wtr) for (var dy = -3; dy <= 3; dy += 3) for (var dx = -3; dx <= 3; dx += 3) { var qx = Math.floor((x + dx) / CT), qy = Math.floor((y + dy) / CT); if (qx >= 0 && qy >= 0 && qx < CW && qy < CH) landChunk[qy * CW + qx] = true; }
+    // 3. the height field: each island is a rough dome, with skerries scattered round its coast
+    E = new Int16Array(GW * GH).fill(-1000);
+    var skerries = 0;
+    function blob(cx, cy, r, sd, rough) {
+      var sc = Math.max(7, r * 0.42), e = r * 1.45 + 8, ya = Math.max(2, Math.floor(cy - e)), yb = Math.min(GH - 3, Math.ceil(cy + e)), xa = Math.max(2, Math.floor(cx - e)), xb = Math.min(GW - 3, Math.ceil(cx + e));
+      for (var yy = ya; yy <= yb; yy++) for (var xx = xa; xx <= xb; xx++) {
+        var dd = Math.hypot(xx + 0.5 - cx, (yy + 0.5 - cy) * 1.1); if (dd > e) continue;
+        var rr = r * (1 + (fbm(xx / sc, yy / sc, sd) - 0.5) * 1.35 * rough + (vnoise(xx / 5, yy / 5, sd + 3) - 0.5) * 0.22 * rough * Math.min(1, 30 / r + 0.3));
+        var h = Math.max(-1000, Math.min(3000, Math.round((rr - dd) * 100))), pp = yy * GW + xx;
+        if (h > E[pp]) E[pp] = h;
+      }
     }
-    seaStyle = {}; for (k in BASE) seaStyle[k] = BASE[k];
-    seaStyle.outsideHue = BASE.outsideHue + spec.hue;
-    waterCv = kit.mk(CT * T * 2, CT * TS * 2);
-    var wc = waterCv.getContext('2d'); wc.setTransform(2, 0, 0, 2, 0, 0);
-    for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) wc.drawImage(tile('water', 0, 0), x * T, y * TS, T, TS);
-
-    // shoreline pieces for the foam
-    shore = [];
-    for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
-      if (!coast[y * GW + x]) continue;
-      if (y > 0 && grid[y - 1][x] !== 'water') shore.push([x * T, y * TS, (x + 1) * T, y * TS, 0, 1]);
-      if (y < GH - 1 && grid[y + 1][x] !== 'water') shore.push([x * T, (y + 1) * TS, (x + 1) * T, (y + 1) * TS, 0, -1]);
-      if (x > 0 && grid[y][x - 1] !== 'water') shore.push([x * T, y * TS, x * T, (y + 1) * TS, 1, 0]);
-      if (x < GW - 1 && grid[y][x + 1] !== 'water') shore.push([(x + 1) * T, y * TS, (x + 1) * T, (y + 1) * TS, -1, 0]);
-    }
-    // trees in groves with open ground between them, rocks on the beaches
-    var landTiles = 0;
-    props = []; solids = [];
-    for (y = 1; y < GH - 1; y++) for (x = 1; x < GW - 1; x++) {
-      var t3 = grid[y][x]; if (t3 === 'water' || t3 === 'plank') continue;
-      landTiles++;
-      var wx = (x + 0.2 + R() * 0.6) * T, wy = (y + 0.3 + R() * 0.5) * T, o = null, roll = R();
-      if (Math.hypot(wx - home.x, wy - home.y) < 110) continue;
-      var green = t3 === 'grass' || t3 === 'grassDark';
-      if (green && vnoise(x / 6, y / 6, s + 20) > 0.62 && roll < 0.24) o = { name: ['pine', 'birch', 'pine', 'cypress', 'oak'][Math.floor(R() * 5)], s: 0.5 + R() * 0.15, r: 8 };
-      else if (green && roll < 0.05) o = { name: R() < 0.5 ? 'bush' : 'tallGrass', s: 0.9, r: 0 };
-      else if (t3 === 'shore' && roll < 0.03) o = { name: 'rock', s: 0.8 + R() * 0.3, r: 9 };
-      else if (green && roll > 0.9965) o = { name: R() < 0.5 ? 'runestone' : 'cairn', s: 1, r: 11 };
-      if (!o || !kit.PROPS[o.name]) continue;
-      o.x = wx; o.y = wy; o.v = Math.floor(R() * 3); props.push(o);
-      if (o.r) solids.push({ x: wx, y: wy, r: o.r * o.s, hide: true });
-    }
-    [['dryingRack', -70, -64, 0], ['woodpile', -6, -74, 12], ['brazier', 40, -30, 6], ['vikingTent', -96, 60, 16], ['dragonPost', 58, 28, 6]].forEach(function (q) {
-      var px = home.x + q[1], py = home.y + q[2];
-      if (!kit.PROPS[q[0]] || !isLand(px, py)) return;
-      props.push({ name: q[0], x: px, y: py, s: 1, r: q[3], v: 0 }); if (q[3]) solids.push({ x: px, y: py, r: q[3], hide: true });
+    isles.forEach(function (q, idx) {
+      blob(q.x, q.y, q.r, s + idx * 17, spec.rough);
+      var ns = Math.round(spec.skerries * (2 + q.r * 0.07));
+      for (var j = 0; j < ns; j++) { var sa = R() * 6.283, sdist = q.r * rnd(1.1, 1.42) + rnd(3, 12); blob(q.x + Math.cos(sa) * sdist, q.y + Math.sin(sa) * sdist * 0.9, rnd(1.8, 5.5), s + idx * 31 + j, 0.8); skerries++; }
     });
-    props.sort(function (a, b) { return a.y - b.y; });
-    landPct = Math.round(landTiles / (GW * GH) * 100);
+    // 4. what each tile is for the game: sea, beach, grass. A jetty runs east from the home island to deep water.
+    grid = new Uint8Array(GW * GH); landChunk = new Uint8Array(CW * CH);
+    var landTiles = 0;
+    for (y = 1; y < GH - 1; y++) for (x = 1; x < GW - 1; x++) {
+      var p = y * GW + x, h2 = E[p] / 100;
+      if (h2 > -4.5) for (var dy = -2; dy <= 2; dy += 2) for (var dx = -2; dx <= 2; dx += 2) { var qx = Math.floor((x + dx) / CT), qy = Math.floor((y + dy) / CT); if (qx >= 0 && qy >= 0 && qx < CW && qy < CH) landChunk[qy * CW + qx] = 1; }
+      if (h2 <= 0) continue;
+      landTiles++;
+      grid[p] = h2 < beachAt(x, y) ? 1 : (fbm(x / 9, y / 9, s + 70) > 0.6 ? 3 : 2);
+    }
+    var hx = Math.round(isles[0].x), hy = Math.round(isles[0].y);
+    for (x = hx; x < GW - 16 && E[hy * GW + x] > 0; x++) {}
+    for (i = -1; i < 9; i++) grid[hy * GW + x + i] = 4;
+    home = { x: (x - 3 + 0.5) * T, y: (hy + 0.5) * T }; dockEnd = { x: x + 1, y: hy };
+    chunkCv = {}; chunkOrder = []; tiles = {};
+    PAL = { sand: [246, 210, 132], wet: [216, 166, 94], sh: hslRgb(170 + spec.hue, 0.6, 0.62), dp: hslRgb(202 + spec.hue, 0.7, 0.4) };
+    waterCv = bakeChunk(-64, -64);                      // far outside the map: nothing but deep sea
 
-    // the chart in the corner: one dot per tile
-    mini = kit.mk(GW, GH);
-    var mc = mini.getContext('2d'), COLS2 = { water: '#21525f', shore: '#d8c389', grass: '#4f9a5a', grassDark: '#3f8450', plank: '#8a6a48' };
-    for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) { mc.fillStyle = COLS2[grid[y][x]]; mc.fillRect(x, y, 1, 1); }
+    // 5. what grows there: the first biome only. Trees stand in groves with open ground between them; the beach stays bare.
+    buckets = []; solidB = [];
+    var TREES = ['birch', 'pine', 'birch', 'pine', 'oak'].filter(function (nm) { return !!kit.PROPS[nm]; }), trees = 0;
+    for (y = 3; y < GH - 3; y++) for (x = 3; x < GW - 3; x++) {
+      var t3 = grid[y * GW + x]; if (t3 === 0 || t3 === 4) continue;
+      var roll = R(), wx = (x + 0.2 + R() * 0.6) * T, wy = (y + 0.3 + R() * 0.5) * T, o = null;
+      if (Math.hypot(wx - home.x, wy - home.y) < 130) continue;
+      if (t3 >= 2) {
+        if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { o = { name: TREES[Math.floor(R() * TREES.length) % TREES.length], s: 0.5 + R() * 0.16, r: 8 }; trees++; }
+        else if (roll > 0.955) o = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
+        else if (roll > 0.9535) o = { name: R() < 0.6 ? 'rock' : 'rockFormation', s: 0.9, r: 10 };
+        else if (roll > 0.9532) o = { name: ['runestone', 'cairn', 'fallenTree', 'birdNest'][Math.floor(R() * 4)], s: 1, r: 10 };
+      } else if (roll < 0.006) o = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 };
+      if (!o || !kit.PROPS[o.name]) continue;
+      o.x = wx; o.y = wy; o.v = Math.floor(R() * 3); addProp(o);
+    }
+    [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]].forEach(function (q) {
+      var px = home.x + q[1], py = home.y + q[2];
+      if (kit.PROPS[q[0]] && isLand(px, py)) addProp({ name: q[0], x: px, y: py, s: 1, r: q[3], v: 0 });
+    });
+    buckets.forEach(function (b) { if (b) b.sort(function (p, q) { return p.y - q.y; }); });
 
+    // 6. the chart in the corner
+    var step = Math.max(1, Math.ceil(GW / 260)), mw = Math.floor(GW / step), mh = Math.floor(GH / step);
+    mini = kit.mk(mw, mh);
+    var mc = mini.getContext('2d'), img = mc.createImageData(mw, mh), COL = [[33, 96, 122], [232, 204, 140], [96, 168, 84], [78, 146, 76], [140, 106, 72]];
+    for (y = 0; y < mh; y++) for (x = 0; x < mw; x++) { var cc = COL[grid[y * step * GW + x * step]], ip = (y * mw + x) * 4; img.data[ip] = cc[0]; img.data[ip + 1] = cc[1]; img.data[ip + 2] = cc[2]; img.data[ip + 3] = 255; }
+    mc.putImageData(img, 0, 0);
+
+    // 7. what the numbers come to, in kilometres and seconds
+    var near = 1e9, big = 0, mid = 0, small = 0;
+    isles.forEach(function (q, idx) { var w = q.r * 2 / spec.isle; if (w > 1.4) big++; else if (w < 0.55) small++; else mid++; if (idx) near = Math.min(near, Math.hypot(q.x - isles[0].x, q.y - isles[0].y) - q.r - isles[0].r); });
+    function km(tl) { return (tl / 100).toFixed(1); }
+    info = n + ' islands (' + big + ' large, ' + mid + ' normal, ' + small + ' small) and ' + skerries + ' skerries on a sea of ' + km(GW) + ' by ' + km(GH) + ' km, ' + Math.round(landTiles / (GW * GH) * 100) + '% land. '
+      + 'Home island: ' + km(isles[0].r * 2) + ' km across, about ' + Math.round(isles[0].r * 2 * T / 118) + ' s to walk. Nearest island: ' + Math.max(0, Math.round(near * 10)) + ' m of water'
+      + (n < spec.count ? '. Only ' + n + ' of ' + spec.count + ' islands fit; lower the sizes or gaps for more.' : '.');
     if (Combat.api.scene) Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 };
     if (relocate) toDock();
     showStat();
   }
-  function showStat() { stat.textContent = nIsles + ' islands on a sea of ' + GW + ' by ' + GH + ' tiles: ' + landPct + '% land, ' + (100 - landPct) + '% sea. Top speed is ' + (spec.top / 118).toFixed(1) + ' times walking pace (sprinting is 1.6).'; }
+  function showStat() { stat.textContent = info + ' Sailing that gap at top speed takes about ' + Math.max(1, Math.round(parseFloat((info.match(/island: (\d+) m/) || [0, 0])[1]) / 10 * T / spec.top)) + ' s.'; }
   var boat = { x: 0, y: 0, h: 0, speed: 0, vx: 0, vy: 0 }, aboard = false, wakes = [], smoke = [], wakeT = 0, clock = 0;
   function moor() {                               // the first spot beside the dock where the whole hull floats
     var d = dims(), side, along;
@@ -564,7 +664,13 @@ __COMBAT__
       var pw = CT * T, phh = CT * TS, baked = 0;
       for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
         var ck = qy * CW + qx, piece = waterCv;
-        if (landChunk[ck]) { if (!chunkCv[ck] && baked < 2) { chunkCv[ck] = bakeChunk(qx, qy); baked++; } if (chunkCv[ck]) piece = chunkCv[ck]; }
+        if (landChunk[ck]) {
+          if (!chunkCv[ck] && baked < 1) {            // paint a new piece of coast; forget the oldest when there are many
+            chunkCv[ck] = bakeChunk(qx, qy); chunkOrder.push(ck); baked++;
+            if (chunkOrder.length > 60) delete chunkCv[chunkOrder.shift()];
+          }
+          if (chunkCv[ck]) piece = chunkCv[ck];
+        }
         c.drawImage(piece, qx * pw, qy * phh, pw + 0.5, phh + 0.5);
       }
       // wave glints drifting across the water
@@ -578,16 +684,32 @@ __COMBAT__
           c.strokeStyle = 'rgba(220,250,255,' + al.toFixed(3) + ')'; c.beginPath(); c.moveTo(wx - 5, wy); c.quadraticCurveTo(wx - 2.5, wy - 2.2, wx, wy); c.quadraticCurveTo(wx + 2.5, wy + 2.2, wx + 5, wy); c.stroke();
         }
       }
-      // foam breathing in and out along the shore
+      // small waves rolling in against the shore: lines of equal depth that start a little way out, run up to the
+      // sand and fade. They are traced along the smooth height field, so they follow the curve of the coast.
       if (spec.foam > 0) {
-        c.lineWidth = 1.6; c.lineCap = 'round'; c.setLineDash([4, 6]); c.lineDashOffset = -clock * 5;
-        for (i = 0; i < shore.length; i++) {
-          var sh = shore[i]; if (sh[2] < cam.x - hw || sh[0] > cam.x + hw || sh[3] < cam.y - hh || sh[1] > cam.y + hh) continue;
-          var ph = Math.sin(clock * 1.5 + sh[0] * 0.05 + sh[1] * 0.07), off = 2.5 + ph * 2.2;
-          c.strokeStyle = 'rgba(240,255,255,' + ((0.2 + 0.14 * ph) * spec.foam).toFixed(3) + ')';
-          c.beginPath(); c.moveTo(sh[0] + sh[4] * off, sh[1] + sh[5] * off); c.lineTo(sh[2] + sh[4] * off, sh[3] + sh[5] * off); c.stroke();
+        var lx0 = Math.max(0, Math.floor((cam.x - hw) / T) - 1), lx1 = Math.min(GW - 2, Math.ceil((cam.x + hw) / T)), ly0 = Math.max(0, Math.floor((cam.y - hh) / TS) - 1), ly1 = Math.min(GH - 2, Math.ceil((cam.y + hh) / TS));
+        var lw = lx1 - lx0 + 2, lh = ly1 - ly0 + 2, F = new Float32Array(lw * lh), any = false, yy, xx;
+        for (yy = 0; yy < lh; yy++) for (xx = 0; xx < lw; xx++) {
+          var ev = E[(ly0 + yy) * GW + lx0 + xx] / 100; if (ev > -3 && ev < 1) any = true;
+          F[yy * lw + xx] = ev + Math.sin((lx0 + xx) * 0.9 + clock * 0.7) * Math.cos((ly0 + yy) * 0.8 - clock * 0.5) * 0.14;   // a slow ripple, so stretches of coast are out of step
         }
-        c.setLineDash([]);
+        if (any) for (var wv = 0; wv < 2; wv++) {
+          var pr = (clock * 0.3 + wv * 0.5) % 1, lv = -1.25 + pr * 1.15, al2 = Math.pow(Math.sin(pr * Math.PI), 0.8) * (0.25 + 0.6 * pr) * spec.foam;
+          if (al2 < 0.03) continue;
+          c.strokeStyle = 'rgba(255,255,255,' + Math.min(0.9, al2).toFixed(3) + ')'; c.lineWidth = 1 + pr * 1.5; c.lineCap = 'round'; c.beginPath();
+          for (yy = 0; yy < lh - 1; yy++) for (xx = 0; xx < lw - 1; xx++) {
+            var q0 = yy * lw + xx, a0 = F[q0] - lv, b0 = F[q0 + 1] - lv, d0 = F[q0 + lw] - lv, c0 = F[q0 + lw + 1] - lv;
+            if ((a0 > 0) === (b0 > 0) && (a0 > 0) === (c0 > 0) && (a0 > 0) === (d0 > 0)) continue;
+            var X = (lx0 + xx + 0.5) * T, Y = (ly0 + yy + 0.5) * TS, pts = [];
+            if ((a0 > 0) !== (b0 > 0)) pts.push(X + a0 / (a0 - b0) * T, Y);
+            if ((b0 > 0) !== (c0 > 0)) pts.push(X + T, Y + b0 / (b0 - c0) * TS);
+            if ((d0 > 0) !== (c0 > 0)) pts.push(X + d0 / (d0 - c0) * T, Y + TS);
+            if ((a0 > 0) !== (d0 > 0)) pts.push(X, Y + a0 / (a0 - d0) * TS);
+            c.moveTo(pts[0], pts[1]); c.lineTo(pts[2], pts[3]);
+            if (pts.length === 8) { c.moveTo(pts[4], pts[5]); c.lineTo(pts[6], pts[7]); }
+          }
+          c.stroke();
+        }
       }
       for (i = 0; i < wakes.length; i++) { var w = wakes[i], a = w.life / w.max; c.strokeStyle = 'rgba(235,252,255,' + (0.5 * a * Math.min(1, spec.wake)).toFixed(3) + ')'; c.lineWidth = 1.2 + spec.wake; c.beginPath(); c.ellipse(w.x, w.y * K, w.r, w.r * K, 0, 0, 7); c.stroke(); }
     },
@@ -595,20 +717,26 @@ __COMBAT__
       var z = cam.z, hw = 200 / z, hh = 125 / z;
       items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { drawBoat(ctx); } });
       if (aboard) items.push({ y: hero.y + 0.5, f: function () { drawBoatFront(ctx); } });
-      props.forEach(function (o) {
-        var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
-        if (px + w < cam.x - hw || px > cam.x + hw || py + h < cam.y - hh || py > cam.y + hh) return;
-        items.push({ y: o.y, f: function () {
-          var behind = o.r === 8 && hero.y < o.y && hero.y * K > py + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3;
-          if (behind) ctx.globalAlpha = 0.45;
-          ctx.drawImage(s.cv, px, py, w, h); ctx.globalAlpha = 1;
-        } });
-      });
+      // only the objects in the pieces of map near the view (trees are tall, so look a little further down)
+      var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1);
+      var by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1);
+      for (var by = by0; by <= by1; by++) for (var bx = bx0; bx <= bx1; bx++) {
+        var list = buckets[by * CW + bx]; if (!list) continue;
+        list.forEach(function (o) {
+          var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
+          if (px + w < cam.x - hw || px > cam.x + hw || py + h < cam.y - hh || py > cam.y + hh) return;
+          items.push({ y: o.y, f: function () {
+            var behind = o.r === 8 && hero.y < o.y && hero.y * K > py + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3;
+            if (behind) ctx.globalAlpha = 0.45;
+            ctx.drawImage(s.cv, px, py, w, h); ctx.globalAlpha = 1;
+          } });
+        });
+      }
     },
     end: function (c, P) {
       for (var i = 0; i < smoke.length; i++) { var q = smoke[i], a = q.life / q.max; c.fillStyle = 'rgba(225,225,235,' + (0.5 * a).toFixed(3) + ')'; c.beginPath(); c.arc(q.x, q.y * K - q.z, q.r, 0, 7); c.fill(); }
       // chart
-      var mw = 96, mh = mw * GH / GW, mx = 400 - mw - 6, my = 6;
+      var mw = GW >= GH ? 96 : 96 * GW / GH, mh = mw * GH / GW, mx = 400 - mw - 6, my = 6;
       var PSN = Combat.api.pixelScale || 2; c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0); c.imageSmoothingEnabled = false;
       c.fillStyle = 'rgba(20,16,30,0.85)'; c.fillRect(mx - 2, my - 2, mw + 4, mh + 4);
       c.drawImage(mini, mx, my, mw, mh);
@@ -641,14 +769,14 @@ __COMBAT__
     json.blur(); spec = o; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
   });
 
-  try { var saved = JSON.parse(localStorage.getItem('seaeditor2')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
+  try { var saved = JSON.parse(localStorage.getItem('seaeditor4')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
   apply();
 
   var last = performance.now();
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
     var D = Combat.dbg(), P = D.P;
-    D.W.pillars = solids;
+    D.W.pillars = nearSolids(P);
     if (!P.dead) P.hp = P.maxHp;
     sail(dt);
     if (aboard) {

@@ -9,7 +9,7 @@ var WPRE = {
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
 var DASH_T = 0.18;
-var api = { sfx: function () {} };
+var api = { sfx: function () {}, facings8: true };   // facings8: the hero turns on the diagonals and animals turn freely
 function sfx(n, v) { if (S.sound) api.sfx(n, v); }
 
 function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
@@ -43,7 +43,7 @@ function newPlayer() {
 }
 function reset() {
   newWorld(); newPlayer();
-  spawn('bot'); spawn('bot'); spawn('turret');
+  (api.roster || ['bot', 'bot', 'turret']).forEach(function (t) { spawn(t); });   // a page can choose who starts in the arena
 }
 
 /* ---------- helpers ---------- */
@@ -76,6 +76,7 @@ function spawn(type) {
   else if (type === 'turret') { e.hp = e.maxHp = 5; e.r = 8; }
   else if (type === 'bossbot') { e.hp = e.maxHp = 32; e.r = 13; e.size = 1.8; }
   else { e.hp = e.maxHp = 26; e.r = 16; }
+  if (api.dress) api.dress(e);   // a page can give each enemy its own look and numbers (see templates/combat.html)
   W.enemies.push(e);
   return e;
 }
@@ -238,8 +239,8 @@ function killEnemy(e) {
   bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
   slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die');
   if (W.lock === e) W.lock = null;
-  if (e.type === 'boss') num(e.x, e.y - 60, 'GUARDIAN DOWN', '#ffe27a');
-  if (e.type === 'bossbot') num(e.x, e.y - 50, 'BOSSBOT DOWN', '#ffe27a');
+  if (e.type === 'boss') num(e.x, e.y - 60, (e.name || 'GUARDIAN') + ' DOWN', '#ffe27a');
+  if (e.type === 'bossbot') num(e.x, e.y - 50, (e.name || 'BOSSBOT') + ' DOWN', '#ffe27a');
 }
 function daze(e, dur) { e.state = 'recover'; e.t = 0; e.dur = dur; }
 
@@ -1101,8 +1102,16 @@ function drawShield(c, front) {
   }
   if (parry) { c.strokeStyle = 'rgba(255,240,170,' + (0.8 - p.guardT / parryWindow() * 0.6) + ')'; c.lineWidth = 1.6; c.beginPath(); c.ellipse(S.shield ? x : p.x + Math.cos(p.face) * 8, S.shield ? y : p.y * K - 12 + Math.sin(p.face) * 5, 12, 13, 0, 0, Math.PI * 2); c.stroke(); }
 }
+// With api.facings8 the side view is used only when he faces nearly straight left or right; on the diagonals he is
+// drawn from the front or back, turned (heroTurn) toward the side.
+function heroTurn() {
+  if (!api.facings8) return 0;
+  var d = heroDir(); if (d === 'left' || d === 'right') return 0;
+  return Math.max(-1, Math.min(1, Math.cos(P.faceVis) / 0.7));
+}
 function heroDir() {
   var vx = Math.cos(P.faceVis), vy = Math.sin(P.faceVis) * K;
+  if (api.facings8) { if (Math.abs(Math.sin(P.faceVis)) < 0.4) return vx > 0 ? 'right' : 'left'; return vy > 0 ? 'down' : 'up'; }
   if (Math.abs(vx) > Math.abs(vy)) return vx > 0 ? 'right' : 'left';
   return vy > 0 ? 'down' : 'up';
 }
@@ -1139,14 +1148,21 @@ function drawHero(c) {
     var fr = spriteFrame(), sw = spriteSword(), ab = atkBody(), hd = ab.spin > 0 ? spinDir(heroDir(), ab.spin) : heroDir();
     flashDraw(c, Math.round(p.x + ab.x), Math.round(p.y * K + ab.y - ab.hop), heroSprFn(dashing, hd, fr.pose, fr.f, sw ? sw.armSide : 1, ab), amt);
   }
-  else flashDraw(c, p.x, p.y * K, heroFn(dashing, heroDir(), p.anim, heroPose(heroDir())), amt);
+  else { p.anim.turn = heroTurn(); flashDraw(c, p.x, p.y * K, heroFn(dashing, heroDir(), p.anim, heroPose(heroDir())), amt); }
   drawHeroWeapon(c, true); drawShield(c, true);
   if (!spr) c.restore();
 }
+// the heading an animal is drawn at: it follows the true facing, but turns over a few frames instead of snapping
+function creatureTurn(e, a) {
+  if (e.faceVis == null) e.faceVis = a;
+  var d = Math.atan2(Math.sin(a - e.faceVis), Math.cos(a - e.faceVis)), stepMax = 0.22;
+  e.faceVis += Math.max(-stepMax, Math.min(stepMax, d));
+  return e.faceVis;
+}
 function drawCreature(c, e) {
-  var sp = lib.creature().spec, a = e.type === 'turret' ? e.aim : e.face, dx = P.x - e.x, dy = (P.y - e.y) * K, dl = Math.hypot(dx, dy) || 1;
+  var sp = (e.skin || lib.creature()).spec, a = e.type === 'turret' ? e.aim : e.face, dx = P.x - e.x, dy = (P.y - e.y) * K, dl = Math.hypot(dx, dy) || 1;
   lib.creatureD(c, 0, 0, { t: W.t + e.seed, move: (e.state === 'chase' || e.state === 'lunge') ? 1 : 0, phase: (W.t + e.seed) * 9 * sp.stepRate,
-    dir: Math.cos(a) >= 0 ? 1 : -1, look: [dx / dl, dy / dl], state: e.state, k: e.dur ? e.t / e.dur : 0 });
+    dir: Math.cos(a) >= 0 ? 1 : -1, ang: api.facings8 ? creatureTurn(e, a) : null, look: [dx / dl, dy / dl], state: e.state, k: e.dur ? e.t / e.dur : 0 }, e.skin);
 }
 function drawEnemy(c, e) {
   var fn = e.creature ? drawCreature : ((e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss));
@@ -1198,7 +1214,7 @@ function drawHud(c) {
       var by = 10 + bigRow * 30; bigRow++;
       bar(c, 124, by, 152, 8, e.hp / e.maxHp, '#e0a93a');
       bar(c, 124, by + 12, 152, 4, e.stagMeter / 100, e.state === 'stunned' ? '#ffd34d' : '#8fe3ff');
-      var nm = e.type === 'boss' ? 'GUARDIAN' : 'BOSSBOT';
+      var nm = e.name || (e.type === 'boss' ? 'GUARDIAN' : 'BOSSBOT');
       c.textAlign = 'center'; c.strokeText(nm, 200, by + 27); c.fillStyle = '#fff'; c.fillText(nm, 200, by + 27);
     } else if (e.showBar > 0) {
       bar(c, e.x - 10, e.y * K - e.r * 2.6 - 10, 20, 3, e.hp / e.maxHp, '#e8584a');
@@ -1244,7 +1260,7 @@ function render(c) {
       lib.rr(c, pl.x - 8, pl.y * K - 3, 16, 5, 2, '#8f8ba6', 1.8);
       lib.rr(c, pl.x - 5.5, pl.y * K - 26, 11, 24, 2, '#7a7690', 1.8);
       c.fillStyle = 'rgba(255,255,255,0.22)'; c.fillRect(pl.x - 3.5, pl.y * K - 24, 2, 20);
-      lib.rr(c, pl.x - 8, pl.y * K - 30, 16, 6, 2.5, '#e0a93a', 1.8);
+      lib.rr(c, pl.x - 8, pl.y * K - 30, 16, 6, 2.5, '#a9a5bb', 1.8);
     } });
   });
   W.enemies.forEach(function (e) { items.push({ y: e.y, f: function () { drawEnemy(c, e); } }); });

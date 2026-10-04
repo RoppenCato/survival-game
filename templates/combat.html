@@ -48,7 +48,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <main>
   <a href="index.html" style="display:inline-block;margin:0 0 6px;color:inherit;opacity:.7;font-size:.9rem;text-decoration:none">&larr; Back to menu</a>
   <h1>Combat Arena</h1>
-  <p class="lede">Fight the bots, the turret, the Bossbot and the Guardian. Everything works from the keyboard alone. The mouse is only used to aim the ranged weapon, and you can switch that to auto.</p>
+  <p class="lede">Fight the animals of the first islands: wolves, boars, snakes and the bear. Everything works from the keyboard alone. The mouse is only used to aim the ranged weapon, and you can switch that to auto.</p>
   <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Combat arena"></canvas></div>
 
   <div class="cols">
@@ -98,10 +98,10 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
     <section class="panel">
       <h2>Arena</h2>
       <div class="group">
-        <button id="sbot">Add bot</button>
-        <button id="sturret">Add turret</button>
-        <button id="sbossbot">Add Bossbot</button>
-        <button id="sboss">Add Guardian</button>
+        <button id="sbot">Add wolf</button>
+        <button id="sturret">Add boar</button>
+        <button id="sbossbot">Add bear</button>
+        <button id="sboss">Add snake</button>
         <button id="sclear">Clear</button>
         <button id="sreset">Reset</button>
       </div>
@@ -115,19 +115,30 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <dt><kbd>Space</kbd></dt><dd>Dash. A quick sidestep in the direction you move (a backstep if you stand still), with brief invulnerability. You dash through enemies</dd>
         <dt><kbd>F</kbd></dt><dd>Fire the ranged weapon (at the mouse cursor, or automatically)</dd>
         <dt><kbd>Q</kbd></dt><dd>Lock onto the nearest enemy (Target lock mode)</dd>
-        <dt><kbd>H</kbd></dt><dd>Spawn a bot</dd>
+        <dt><kbd>H</kbd></dt><dd>Add a wolf or a boar</dd>
         <dt><kbd>R</kbd></dt><dd>Restart after you are scrapped</dd>
         <dt><kbd>V</kbd></dt><dd>Switch the hero look between Classic and Sprite</dd>
       </dl>
     </section>
   </div>
-  <p class="note">Try these: hold the attack button for a charged swing, fight the Bossbot and learn its three attacks, keep moving while you swing, dash through a bot to get behind it, parry a bot's lunge, parry the turret's shot to send it back, roll behind the Guardian and hit the glowing panel on its back, and fill its stagger bar. Then turn Juice off to feel the stiff version of the same combat.</p>
+  <p class="note">Try these: hold the attack button for a charged swing, keep moving while you swing, dash through a wolf to get behind it, parry a boar's charge, and fill the bear's stagger bar to stun it. Then turn Juice off to feel the stiff version of the same combat.</p>
 </main>
 <script>
 __ART__
 __COMBAT__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  // Every enemy in this arena wears an animal: the plain attacker is a wolf, boar or snake, the big one is the bear.
+  var lib = GameArt.lib, want = null, BASE_R = { wolf: 7, boar: 8, snake: 5, bear: 9 };
+  Combat.api.roster = ['bot', 'bot'];
+  Combat.api.dress = function (e) {
+    if (e.type !== 'bot' && e.type !== 'bossbot') return;
+    var k = e.type === 'bossbot' ? 'bear' : (want || (Math.random() < 0.5 ? 'wolf' : 'boar')), sp = lib.animalSpec(k);
+    want = null;
+    e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase();
+    e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge };
+    if (e.type === 'bot') e.hp = e.maxHp = sp.hp;
+  };
   Combat.init(GameArt.lib);
   var S = Combat.S;
   var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
@@ -257,10 +268,10 @@ __COMBAT__
   }
   upd();
   function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(); b.blur(); }); }
-  act('sbot', function () { Combat.spawn('bot'); });
-  act('sturret', function () { Combat.spawn('turret'); });
+  act('sbot', function () { want = 'wolf'; Combat.spawn('bot'); });
+  act('sturret', function () { want = 'boar'; Combat.spawn('bot'); });
   act('sbossbot', function () { Combat.spawn('bossbot'); });
-  act('sboss', function () { Combat.spawn('boss'); });
+  act('sboss', function () { want = 'snake'; Combat.spawn('bot'); });
   act('sclear', function () { Combat.clear(); });
   act('sreset', function () { Combat.reset(); });
 

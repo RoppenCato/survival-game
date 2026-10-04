@@ -176,15 +176,15 @@ __COMBAT__
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
   /* ---------- the chosen world style (Night Forest, Painted) ---------- */
-  var BASE = { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, round: 0.85, spindly: 0.12, lush: 0.95, twist: 0.12, sparkle: 0.8, texture: 0.6, outlineW: 1.1, outlineDark: 0.86, rough: 0.08, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4, look: 1, seed: 7, scaleRef: 0 };
+  var BASE = kit.STYLE;   // the one shared look of the world, set in src/stylelab.js
 
   /* ---------- what each layer can contain ---------- */
   var POOLS = {
     trees: ['birch', 'pine', 'pineBig', 'oak', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'],
     under: ['bush', 'berryBush', 'fern', 'wildHerbs', 'mushrooms', 'reeds', 'snowBush'],
-    rocks: ['rock', 'rockFormation', 'cairn', 'snowRock', 'standingStone', 'cliff', 'iceCrystal'],
-    detail: ['tallGrass', 'flower', 'bellFlower', 'wildHerbs', 'flowerBed', 'fern', 'mushrooms', 'reeds'],
-    finds: ['cave', 'birdNest', 'animalDen', 'wildHive', 'spring', 'fallenTree', 'rockFormation', 'mushRing', 'log', 'stump'],
+    rocks: ['rock', 'rockFormation', 'cairn', 'snowRock', 'cliff'],
+    detail: ['tallGrass', 'flower', 'wildHerbs', 'flowerBed', 'fern', 'mushrooms', 'reeds'],
+    finds: ['cave', 'birdNest', 'animalDen', 'wildHive', 'spring', 'fallenTree', 'rockFormation', 'mushRing', 'log'],
     traces: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile', 'haystack'],
     marks: ['longhouse', 'beachedBoat', 'campfire', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'woodenWell',
       'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier', 'cart', 'bench', 'barrel', 'crate']
@@ -193,8 +193,8 @@ __COMBAT__
   var SOLID = { trees: 9, under: 0, rocks: 10, detail: 0, finds: 10, traces: 9, marks: 11 };
   var NO_SOLID = { mushRing: 1, campfire: 1, stoneShip: 1, birdNest: 1, wildHerbs: 1, farmland: 1, woodenBridge: 1, fishWeir: 1, spring: 1, animalTrap: 1 };
   var BIG = { cave: 44, boathouse: 40, storageHut: 22, watchtower: 16, charcoalPit: 26, fallenTree: 22, rockFormation: 22, beachedBoat: 30, huntingBlind: 24, fishingNet: 22, beeSkeps: 20, animalDen: 20, longhouse: 62, burialMound: 34, palisade: 24, vikingTent: 18, forge: 20, shieldRack: 16, dryingRack: 18, woodpile: 14 };   // footprints of the larger landmarks
-  var GROUNDS = ['grass', 'grassDark', 'moss', 'leaves', 'dirt', 'path', 'shore', 'rock', 'snow', 'snowDark', 'ice', 'ash', 'char', 'basalt', 'crack'];
-  var GNAME = { grass: 'Grass', grassDark: 'Dark grass', moss: 'Moss', leaves: 'Leaf litter', dirt: 'Dirt', path: 'Path', shore: 'Sand', rock: 'Rock', snow: 'Snow', snowDark: 'Packed snow', ice: 'Ice', ash: 'Ash', char: 'Charred', basalt: 'Basalt', crack: 'Cracked' };
+  var GROUNDS = ['grass', 'grassDark', 'moss', 'leaves', 'dirt', 'trail', 'shore', 'rock', 'snow', 'snowDark', 'ice', 'ash', 'char', 'basalt', 'crack'];
+  var GNAME = { grass: 'Grass', grassDark: 'Dark grass', moss: 'Moss', leaves: 'Leaf litter', dirt: 'Dirt', trail: 'Path', shore: 'Sand', rock: 'Rock', snow: 'Snow', snowDark: 'Packed snow', ice: 'Ice', ash: 'Ash', char: 'Charred', basalt: 'Basalt', crack: 'Cracked' };
   Object.keys(POOLS).forEach(function (k) { POOLS[k] = POOLS[k].filter(function (n) { return !!kit.PROPS[n]; }); });
   GROUNDS = GROUNDS.filter(function (g) { return !!kit.TILES[g]; });
   function label(n) { var s = n.replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -204,7 +204,7 @@ __COMBAT__
       trees: ['birch', 'birch', 'oak', 'pine'], under: ['bush', 'berryBush', 'fern', 'wildHerbs', 'mushrooms'], rocks: ['rock', 'rockFormation'], detail: ['tallGrass', 'flower', 'wildHerbs'],
       finds: ['birdNest', 'wildHive', 'fallenTree', 'animalDen', 'spring'], traces: ['trailStone', 'animalTrap', 'beeSkeps', 'woodpile', 'runestone'], marks: ['campfire', 'vikingTent'],
       set: { trees: 0.4, group: 0.8, open: 0.5, under: 0.45, rocks: 0.2, detail: 0.45, finds: 5, traces: 4, marks: 2, treeSize: 0.7, patch: 0.35, accentAmt: 0.1 } },
-    { name: 'Homestead', ground: 'grass', ground2: 'path', accent: 'dirt', path: 1,
+    { name: 'Homestead', ground: 'grass', ground2: 'trail', accent: 'dirt', path: 1,
       trees: ['birch', 'pine'], under: ['bush', 'berryBush', 'wildHerbs'], rocks: ['rock'], detail: ['tallGrass', 'flower'],
       finds: ['birdNest', 'fallenTree'], traces: ['farmland', 'farmland', 'fence', 'beeSkeps', 'charcoalPit', 'haystack', 'woodpile', 'trailStone'],
       marks: ['longhouse', 'longhouse', 'storageHut', 'woodenWell', 'stoneHearth', 'palisade', 'watchtower', 'forge', 'dryingRack', 'shieldRack', 'cart', 'barrel'],
@@ -219,14 +219,14 @@ __COMBAT__
       finds: ['cave', 'animalDen', 'wildHive', 'fallenTree', 'birdNest', 'mushRing', 'spring'], traces: ['animalTrap', 'huntingBlind', 'trailStone', 'charcoalPit', 'cairn'], marks: ['campfire'],
       set: { trees: 0.6, group: 0.7, open: 0.4, under: 0.5, rocks: 0.4, detail: 0.3, finds: 8, traces: 5, marks: 1, treeSize: 0.8, patch: 0.4, accentAmt: 0.08 } },
     { name: 'Burial ground', ground: 'grassDark', ground2: 'moss', accent: 'leaves', path: 0,
-      trees: ['oak', 'birch', 'deadTree'], under: ['fern', 'mushrooms', 'wildHerbs'], rocks: ['standingStone', 'cairn', 'rock'], detail: ['tallGrass', 'mushrooms', 'bellFlower'],
+      trees: ['oak', 'birch', 'deadTree'], under: ['fern', 'mushrooms', 'wildHerbs'], rocks: ['rockFormation', 'cairn', 'rock'], detail: ['tallGrass', 'mushrooms', 'flower'],
       finds: ['birdNest', 'fallenTree'], traces: ['runestone', 'runestone', 'stoneShip', 'cairn', 'trailStone'], marks: ['burialMound', 'burialMound', 'brazier'],
       set: { trees: 0.25, group: 0.75, open: 0.7, under: 0.3, rocks: 0.3, detail: 0.4, finds: 2, traces: 7, marks: 5, treeSize: 0.75, patch: 0.4, accentAmt: 0.15 } },
     { name: 'Winter highlands', ground: 'snow', ground2: 'snowDark', accent: 'ice', path: 0,
       trees: ['snowPine', 'snowPineBig', 'deadTree'], under: ['snowBush'], rocks: ['snowRock', 'cairn', 'rockFormation'], detail: ['snowBush'],
       finds: ['cave', 'animalDen', 'fallenTree'], traces: ['trailStone', 'animalTrap', 'cairn', 'runestone'], marks: ['vikingTent', 'campfire', 'stoneHearth', 'woodpile'],
       set: { trees: 0.3, group: 0.8, open: 0.6, under: 0.3, rocks: 0.3, detail: 0.12, finds: 3, traces: 4, marks: 3, treeSize: 0.8, patch: 0.3, accentAmt: 0.1 } },
-    { name: 'Farm meadow', ground: 'grass', ground2: 'grassDark', accent: 'path', path: 1,
+    { name: 'Farm meadow', ground: 'grass', ground2: 'grassDark', accent: 'trail', path: 1,
       trees: ['birch', 'blossom', 'oak'], under: ['bush', 'berryBush', 'wildHerbs'], rocks: ['rock'], detail: ['tallGrass', 'flower', 'flowerBed', 'wildHerbs'],
       finds: ['birdNest', 'wildHive', 'spring'], traces: ['farmland', 'farmland', 'farmland', 'fence', 'fence', 'beeSkeps', 'haystack', 'woodenBridge', 'trailStone'], marks: ['storageHut', 'woodenWell', 'cart'],
       set: { trees: 0.14, group: 0.85, open: 0.78, under: 0.25, rocks: 0.12, detail: 0.75, finds: 3, traces: 9, marks: 3, treeSize: 0.7, patch: 0.25, accentAmt: 0.06 } }
@@ -295,7 +295,7 @@ __COMBAT__
     document.getElementById('path').setAttribute('aria-pressed', spec.path ? 'true' : 'false');
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
     dirty = true;
-    try { localStorage.setItem('enveditor2', JSON.stringify(spec)); } catch (e) {}
+    try { localStorage.setItem('enveditor4', JSON.stringify(spec)); } catch (e) {}
   }
 
   function sliders(hostId, list, target, onChange) {
@@ -355,44 +355,74 @@ __COMBAT__
   function pathX(ty) { return GW / 2 + Math.sin(ty * 0.16 + spec.seed) * 5 + Math.sin(ty * 0.05 + spec.seed * 2.3) * 7; }
   function onPath(wx, wy, pad) { return spec.path && Math.abs(wx / TW - pathX(wy / TW)) < 1.3 + pad; }
 
+  // a small sheet of smooth noise that repeats every 128 pixels: it roughens the edges between kinds of ground
+  var NT = 128, noiseT = (function () {
+    var o = new Float32Array(NT * NT), x, y;
+    function vn(px, py, cell, sd) { var n = NT / cell, fx = px / cell, fy = py / cell, xi = Math.floor(fx), yi = Math.floor(fy), u = fx - xi, v = fy - yi; u = u * u * (3 - 2 * u); v = v * v * (3 - 2 * v);
+      var a = hash(xi % n, yi % n, sd), b = hash((xi + 1) % n, yi % n, sd), c = hash(xi % n, (yi + 1) % n, sd), d = hash((xi + 1) % n, (yi + 1) % n, sd); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+    for (y = 0; y < NT; y++) for (x = 0; x < NT; x++) o[y * NT + x] = vn(x, y, 16, 3) * 0.6 + vn(x, y, 8, 5) * 0.4;
+    return o;
+  })();
+  /* The ground is not drawn as squares. Each kind of ground (second ground, accent, path) has a smooth field that
+     says where it lies; the grid of tiles only records the answer for the game (what you stand on, what may grow).
+     Each kind is painted as a full sheet of its texture and cut out along its field, with a ragged soft edge. */
   function buildGround() {
     var key = [spec.ground, spec.ground2, spec.accent, spec.patch, spec.patchSize, spec.accentAmt, spec.path, spec.seed, styleKey].join('|');
     if (key === groundKey) return;
     groundKey = key;
-    var x, y, i, tiles = {}, s = spec.seed;
+    var x, y, i, tiles = {}, s = spec.seed, n1 = GW + 2, F2 = new Float32Array(n1 * (GH + 2)), FA = new Float32Array(n1 * (GH + 2));
+    for (y = -1; y <= GH; y++) for (x = -1; x <= GW; x++) {
+      F2[(y + 1) * n1 + x + 1] = fbm(x / spec.patchSize, y / spec.patchSize, s) - (1 - spec.patch * 1.1 - 0.12);
+      FA[(y + 1) * n1 + x + 1] = fbm(x / 3.2, y / 3.2, s + 40) - (1 - spec.accentAmt * 1.1 - 0.16);
+    }
     grid = [];
     for (y = 0; y < GH; y++) { grid.push([]); for (x = 0; x < GW; x++) {
-      var t = spec.ground;
-      if (fbm(x / spec.patchSize, y / spec.patchSize, s) > 1 - spec.patch * 1.1 - 0.12) t = spec.ground2;
-      if (fbm(x / 3.2, y / 3.2, s + 40) > 1 - spec.accentAmt * 1.1 - 0.16) t = spec.accent;
-      if (spec.path && Math.abs(x + 0.5 - pathX(y + 0.5)) < 1.15) t = 'path';
+      var t = spec.ground, q = (y + 1) * n1 + x + 1;
+      if (F2[q] > 0) t = spec.ground2;
+      if (FA[q] > 0) t = spec.accent;
+      if (spec.path && Math.abs(x + 0.5 - pathX(y + 0.5)) < 1.15) t = 'trail';
       grid[y].push(t);
     } }
     kit.setup(styleNow());
     function tile(t, gx, gy) { if (!tiles[t]) { tiles[t] = []; for (var n = 0; n < kit.TILES[t].n; n++) tiles[t].push(kit.bakeTile(t, n)); } return tiles[t][Math.floor(hash(gx, gy, 5) * tiles[t].length) % tiles[t].length]; }
-    var SIDES = [['n', 0, -1], ['s', 0, 1], ['w', -1, 0], ['e', 1, 0]];
+    var W2 = CT * TW, H2 = CT * TH, LAYERS2 = [[spec.ground2, F2, 0.05], [spec.accent, FA, 0.05]];
+    if (spec.path) LAYERS2.push(['trail', null, 0]);
     chunks = [];
     for (var cy = 0; cy < GH / CT; cy++) for (var cx = 0; cx < GW / CT; cx++) {
-      var ccv = kit.mk(CT * TW * 2, CT * TH * 2), c = ccv.getContext('2d');
+      var ccv = kit.mk(W2 * 2, H2 * 2), c = ccv.getContext('2d');
       c.setTransform(2, 0, 0, 2, 0, 0);
-      for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) { var gx = cx * CT + x, gy = cy * CT + y; c.drawImage(tile(grid[gy][gx], gx, gy), x * TW, y * TH, TW, TH); }
-      for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) {
-        var gx2 = cx * CT + x, gy2 = cy * CT + y, t2 = grid[gy2][gx2];
-        for (i = 0; i < 4; i++) {
-          var nx = gx2 + SIDES[i][1], ny = gy2 + SIDES[i][2]; if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) continue;
-          var nt = grid[ny][nx];
-          if (nt === t2 || kit.TILES[nt].pr <= kit.TILES[t2].pr) continue;
-          c.save(); c.translate(x * TW, y * TH); kit.blendTile(c, tile(nt, nx, ny), SIDES[i][0], gx2 * 131 + gy2 * 17 + i); c.restore();
+      for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) c.drawImage(tile(spec.ground, cx * CT + x, cy * CT + y), x * TW, y * TH, TW + 0.3, TH + 0.3);
+      LAYERS2.forEach(function (L, li) {
+        if (L[0] === spec.ground) return;
+        var mcv = kit.mk(W2, H2), mc = mcv.getContext('2d'), img = mc.createImageData(W2, H2), d = img.data, p = 3, any = false, F = L[1];
+        for (var py = 0; py < H2; py++) {
+          var wy = cy * H2 + py, v = wy / TH + 0.5, j0 = Math.floor(v), tv = v - j0, pxc = pathX(wy / TH);
+          for (var px = 0; px < W2; px++, p += 4) {
+            var wx = cx * W2 + px, nz = noiseT[((wy & 127) << 7) | (wx & 127)] - 0.5, a;
+            if (F) {
+              var u = wx / TW + 0.5, i0 = Math.floor(u), tu = u - i0, q2 = j0 * n1 + i0;
+              var f = F[q2] * (1 - tu) * (1 - tv) + F[q2 + 1] * tu * (1 - tv) + F[q2 + n1] * (1 - tu) * tv + F[q2 + n1 + 1] * tu * tv;
+              a = (f + nz * L[2]) / 0.022 + 0.5;
+            } else a = (1.15 - Math.abs(wx / TW - pxc) + nz * 0.7) / 0.22 + 0.5;
+            if (a > 0) { d[p] = a >= 1 ? 255 : a * 255; any = true; }
+          }
         }
-      }
+        if (!any) return;
+        mc.putImageData(img, 0, 0);
+        var lcv = kit.mk(W2 * 2, H2 * 2), lc = lcv.getContext('2d');
+        lc.setTransform(2, 0, 0, 2, 0, 0);
+        for (var ty = 0; ty < CT; ty++) for (var tx = 0; tx < CT; tx++) lc.drawImage(tile(L[0], cx * CT + tx + li * 7, cy * CT + ty), tx * TW, ty * TH, TW + 0.3, TH + 0.3);
+        lc.globalCompositeOperation = 'destination-in'; lc.imageSmoothingEnabled = true; lc.drawImage(mcv, 0, 0, W2, H2);
+        c.drawImage(lcv, 0, 0, W2, H2);
+      });
       // soft light and dark patches so the tiling never shows
       for (i = 0; i < 26; i++) {
-        var hv = hash(cx * 31 + i, cy * 17, 77), px = hash(cx + i, cy, 78) * CT * TW, py = hash(cx, cy + i, 79) * CT * TH, r = 50 + hv * 70;
-        var g2 = c.createRadialGradient(px, py, 0, px, py, r), col = hv < 0.5 ? '255,245,200' : '10,8,30';
-        g2.addColorStop(0, 'rgba(' + col + ',' + (hv < 0.5 ? 0.07 : 0.13) + ')'); g2.addColorStop(1, 'rgba(' + col + ',0)');
-        c.fillStyle = g2; c.fillRect(px - r, py - r, r * 2, r * 2);
+        var hv = hash(cx * 31 + i, cy * 17, 77), px2 = hash(cx + i, cy, 78) * W2, py2 = hash(cx, cy + i, 79) * H2, r = 50 + hv * 70;
+        var g2 = c.createRadialGradient(px2, py2, 0, px2, py2, r), col = hv < 0.5 ? '255,250,215' : '20,40,30';
+        g2.addColorStop(0, 'rgba(' + col + ',' + (hv < 0.5 ? 0.08 : 0.07) + ')'); g2.addColorStop(1, 'rgba(' + col + ',0)');
+        c.fillStyle = g2; c.fillRect(px2 - r, py2 - r, r * 2, r * 2);
       }
-      chunks.push({ cv: ccv, x: cx * CT * TW, y: cy * CT * TH, w: CT * TW, h: CT * TH });
+      chunks.push({ cv: ccv, x: cx * W2, y: cy * H2, w: W2, h: H2 });
     }
   }
 
@@ -565,7 +595,7 @@ __COMBAT__
     json.blur(); spec = o; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
   });
 
-  try { var saved = JSON.parse(localStorage.getItem('enveditor2')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
+  try { var saved = JSON.parse(localStorage.getItem('enveditor4')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
   apply();
   var start = Combat.dbg().P; start.x = WX / 2; start.y = WY / 2;
 

@@ -177,26 +177,21 @@ __COMBAT__
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
   /* ---------- the chosen world style (Night Forest, Painted) ---------- */
-  var BASE = { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, round: 0.85, spindly: 0.12, lush: 0.95, twist: 0.12, sparkle: 0.8, texture: 0.6, outlineW: 1.1, outlineDark: 0.86, rough: 0.08, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4, look: 1, seed: 7, scaleRef: 0 };
+  var BASE = kit.STYLE;   // the one shared look of the world, set in src/stylelab.js
 
   /* ---------- objects by category ---------- */
   var CATS = [
     { name: 'Found in nature', ground: 'grass', solid: 10, list: ['cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
     { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile'] },
     { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['longhouse', 'beachedBoat', 'campfire', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
-    { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'pine', 'pineBig', 'willow', 'birch', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
-    { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'bellFlower', 'flowerBed', 'tallGrass', 'mushrooms', 'mushRing', 'snowBush', 'emberBush'] },
-    { name: 'Rocks and terrain', ground: 'grass', solid: 12, list: ['rock', 'snowRock', 'emberRock', 'standingStone', 'cliff', 'rubble', 'iceCrystal', 'iceCrystalBig', 'log', 'stump', 'vent', 'ventBig', 'waterfall'] },
-    { name: 'Furniture', ground: 'plank', solid: 10, list: ['bench', 'chair', 'table', 'bed', 'locker', 'shelf', 'workbench', 'crate', 'barrel', 'haystack', 'cart'] },
-    { name: 'Village and ruins', ground: 'path', solid: 12, list: ['well', 'signpost', 'fence', 'scarecrow', 'ruinHouse', 'waterWheel', 'dock', 'campfire', 'banner', 'gatePost', 'brokenPillar'] },
-    { name: 'Lights', ground: 'path', solid: 6, list: ['lamp', 'lampDead', 'hangLamp', 'pendant', 'wallLamp', 'skylight'] },
-    { name: 'Factory machines', ground: 'plate', solid: 16, list: ['engine', 'furnace', 'vat', 'tank', 'conveyor', 'console', 'valve', 'steamVent', 'gearBig', 'cable', 'scrap'] },
-    { name: 'Walls and structure', ground: 'plate', solid: 14, list: ['pillar', 'pillarMid', 'wallBlock', 'wallTop', 'wallFace', 'wallCol', 'backWall', 'backWallDoor'] },
-    { name: 'Things to use', ground: 'plate', solid: 8, list: ['bell', 'leverOff', 'leverOn', 'keyItem', 'fuseItem', 'gateBar', 'gateLock', 'pedestal'] }
+    { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
+    { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'flowerBed', 'tallGrass', 'wildHerbs', 'mushrooms', 'mushRing', 'snowBush'] },
+    { name: 'Rocks and ground', ground: 'grass', solid: 12, list: ['rock', 'rockFormation', 'cliff', 'rubble', 'log', 'cairn', 'snowRock', 'waterfall'] },
+    { name: 'Household', ground: 'plank', solid: 10, list: ['bench', 'chair', 'table', 'bed', 'crate', 'barrel', 'haystack', 'cart', 'well', 'scarecrow', 'dock'] }
   ];
   var GROUND_FOR = { snowPine: 'snow', snowPineBig: 'snow', snowRock: 'snow', snowBush: 'snow', iceCrystal: 'snow', iceCrystalBig: 'snow', deadTree: 'ash', emberRock: 'ash', emberBush: 'ash', vent: 'ash', ventBig: 'ash', cliff: 'rock' };
   var NO_SOLID = { hangLamp: 1, pendant: 1, skylight: 1, wallLamp: 1, keyItem: 1, fuseItem: 1, cable: 1, dock: 1 };
-  var GROUNDS = [['grass', 'Grass'], ['grassDark', 'Dark grass'], ['path', 'Path'], ['plank', 'Planks'], ['snow', 'Snow'], ['ash', 'Ash'], ['rock', 'Rock'], ['plate', 'Factory floor'], ['flat', 'Plain grey']];
+  var GROUNDS = [['grass', 'Grass'], ['grassDark', 'Dark grass'], ['path', 'Path'], ['plank', 'Planks'], ['snow', 'Snow'], ['ash', 'Ash'], ['rock', 'Rock'], ['flat', 'Plain grey']];
   CATS.forEach(function (cat) { cat.list = cat.list.filter(function (n) { return !!kit.PROPS[n]; }); });
   function label(n) { var s = n.replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
   function catOf(name) { for (var i = 0; i < CATS.length; i++) if (CATS[i].list.indexOf(name) >= 0) return CATS[i]; return CATS[0]; }
@@ -280,7 +275,7 @@ __COMBAT__
     var out = { object: cur }; for (k in spec) out[k] = spec[k];
     if (document.activeElement !== json) json.value = JSON.stringify(out);
     dirty = true;
-    try { localStorage.setItem('objecttest.' + cur, JSON.stringify(spec)); } catch (e) {}
+    try { localStorage.setItem('objecteditor2.' + cur, JSON.stringify(spec)); } catch (e) {}
   }
 
   function sliders(hostId, list, target, onChange) {
@@ -428,7 +423,7 @@ __COMBAT__
   }
   function pick(name) {
     cur = name; spec = null;
-    try { spec = JSON.parse(localStorage.getItem('objecttest.' + name)); } catch (e) {}
+    try { spec = JSON.parse(localStorage.getItem('objecteditor2.' + name)); } catch (e) {}
     if (!spec || typeof spec !== 'object') spec = defSpec(name);
     var cat = catOf(name);
     if (cat !== curCat) showCat(cat);
