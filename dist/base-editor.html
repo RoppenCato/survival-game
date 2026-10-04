@@ -2575,6 +2575,153 @@ return { DEF: DEF, kit: { STYLE: STYLE, TW: TW, TH: TH, TILES: TILES, PROPS: PRO
 })();
 if (typeof module !== 'undefined') module.exports = StyleLab;
 
+/* Build: the building pieces, shared by the Base Editor and the game.
+   A building is B = { floors: { 'x,y': floorMat }, H: { 'x,y': { t, m } }, V: { 'x,y': { t, m } } } on a tile grid:
+   floors fill tiles, H edges run along the top of tile (x, y), V edges along its left side. t is 'wall', 'door'
+   or 'window'; m indexes WALLS. Build.rooms finds the closed rooms (which get a roof) and the collision circles;
+   drawH, drawV and drawRoof draw the pieces in the world (y-sorted by the page). cfg: wallH, thick, overhang, roof. */
+var Build = (function () {
+'use strict';
+var T = 32, TS = 24, K = 0.75, LINE = '#1d1622';
+var WALLS = [
+  { name: 'Logs', face: '#7a5636', top: '#9a744c', dark: '#3f2a18', tex: 'logs' },
+  { name: 'Planks', face: '#8a6440', top: '#aa8358', dark: '#5a3f2a', tex: 'planks' },
+  { name: 'Wattle', face: '#b89d6c', top: '#ceb686', dark: '#7a6540', tex: 'wattle' },
+  { name: 'Stone', face: '#868a94', top: '#a9adb8', dark: '#5c606c', tex: 'blocks' },
+  { name: 'Turf', face: '#5c7f48', top: '#79a25e', dark: '#3c5a30', tex: 'turf' }
+];
+var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: 'dirt' }, { name: 'Stone flags', tile: 'path' }];
+var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a' }, { name: 'Thatch', col: '#c4a55c', line: '#93793c' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a' }, { name: 'No roof' }];
+var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 0, seeThrough: 0.12 };
+function key(x, y) { return x + ',' + y; }
+function cfg(c) { var o = {}, k; for (k in CFG) o[k] = CFG[k]; for (k in c || {}) if (c[k] != null) o[k] = c[k]; return o; }
+
+// the edge of a tile nearest to a world point, with how far from it (in tiles)
+function edgeAt(wx, wy) {
+  var tx = Math.floor(wx / T), ty = Math.floor(wy / T), fx = wx / T - tx, fy = wy / T - ty, best = Math.min(fx, 1 - fx, fy, 1 - fy);
+  if (best === fy) return { L: 'H', x: tx, y: ty, d: best }; if (best === 1 - fy) return { L: 'H', x: tx, y: ty + 1, d: best };
+  if (best === fx) return { L: 'V', x: tx, y: ty, d: best }; return { L: 'V', x: tx + 1, y: ty, d: best };
+}
+function edgeOk(ed, GW, GH) { return ed.L === 'H' ? (ed.x >= 0 && ed.x < GW && ed.y >= 0 && ed.y <= GH) : (ed.x >= 0 && ed.x <= GW && ed.y >= 0 && ed.y < GH); }
+
+// Closed rooms by flood fill from the outside, and three small collision circles along every wall and window
+// (doors are open ground). Returns { rooms: [{ id, tiles, maxY }], roomOf: Int32Array, solids: [] }.
+// bounds (optional) limits the search to a rectangle of tiles, for big grids.
+function rooms(B, GW, GH, bounds) {
+  var bx0 = 0, by0 = 0, bx1 = GW - 1, by1 = GH - 1, x, y, i;
+  if (bounds) { bx0 = Math.max(0, bounds.x0); by0 = Math.max(0, bounds.y0); bx1 = Math.min(GW - 1, bounds.x1); by1 = Math.min(GH - 1, bounds.y1); }
+  var w = bx1 - bx0 + 1, h = by1 - by0 + 1, seen = new Uint8Array(w * h), roomOf = new Int32Array(w * h).fill(-1), q;
+  function idx(x, y) { return (y - by0) * w + (x - bx0); }
+  function inside(x, y) { return x >= bx0 && y >= by0 && x <= bx1 && y <= by1; }
+  function pass(ax, ay, bx, by) {                       // can you step from tile a to its neighbour b?
+    if (bx < ax) return !B.V[key(ax, ay)]; if (bx > ax) return !B.V[key(bx, by)];
+    if (by < ay) return !B.H[key(ax, ay)]; return !B.H[key(bx, by)];
+  }
+  function flood(start, id) {
+    var tiles = []; q = start.slice();
+    while (q.length) {
+      var c = q.pop(), cx = c[0], cy = c[1];
+      var nb = [[cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]];
+      for (var n = 0; n < 4; n++) {
+        var nx = nb[n][0], ny = nb[n][1];
+        if (!inside(nx, ny) || seen[idx(nx, ny)] || !pass(cx, cy, nx, ny)) continue;
+        seen[idx(nx, ny)] = 1; roomOf[idx(nx, ny)] = id; tiles.push(nb[n]); q.push(nb[n]);
+      }
+    }
+    return tiles;
+  }
+  var border = [];
+  for (x = bx0; x <= bx1; x++) { border.push([x, by0], [x, by1]); } for (y = by0; y <= by1; y++) { border.push([bx0, y], [bx1, y]); }
+  border.forEach(function (b) { seen[idx(b[0], b[1])] = 1; });
+  flood(border, -1);
+  var out = [];
+  for (y = by0; y <= by1; y++) for (x = bx0; x <= bx1; x++) {
+    if (seen[idx(x, y)]) continue;
+    seen[idx(x, y)] = 1; roomOf[idx(x, y)] = out.length;
+    var tiles = [[x, y]].concat(flood([[x, y]], out.length)), maxY = 0;
+    tiles.forEach(function (t) { maxY = Math.max(maxY, t[1]); });
+    out.push({ id: 'r' + x + '_' + y, tiles: tiles, maxY: maxY });
+  }
+  var solids = [], k, p;
+  for (k in B.H) { if (B.H[k].t === 'door') continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }
+  for (k in B.V) { if (B.V[k].t === 'door') continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
+  return { rooms: out, roomOf: roomOf, solids: solids, x0: bx0, y0: by0, w: w, h: h, at: function (tx, ty) { return inside(tx, ty) ? roomOf[idx(tx, ty)] : -1; } };
+}
+
+/* drawing */
+function texture(c, m, x, y, w, h) {
+  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip(); c.strokeStyle = m.dark; c.globalAlpha = 0.55; c.lineWidth = 0.9; c.beginPath();
+  var i, r;
+  if (m.tex === 'planks') for (i = 8; i < w; i += 8) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); }
+  else if (m.tex === 'blocks') { c.moveTo(x, y + h / 2); c.lineTo(x + w, y + h / 2); c.moveTo(x + 16, y); c.lineTo(x + 16, y + h / 2); c.moveTo(x + 8, y + h / 2); c.lineTo(x + 8, y + h); c.moveTo(x + 24, y + h / 2); c.lineTo(x + 24, y + h); }
+  else if (m.tex === 'turf') for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
+  else if (m.tex === 'logs') for (r = 5; r < h; r += 5) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
+  else if (m.tex === 'wattle') { for (i = 4; i < w; i += 6) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); } for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); } }
+  else { c.moveTo(x + 16, y); c.lineTo(x + 16, y + h); }
+  c.stroke(); c.restore();
+}
+function box(c, x, y, w, h, fill) { c.fillStyle = fill; c.fillRect(x, y, w, h); c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(x, y, w, h); }
+// an edge along the top of tile (x, y): low while you are inside and it is in front of you; open for a door you stand near
+function drawH(c, x, y, e, low, open, C) {
+  C = C || CFG;
+  var m = WALLS[e.m] || WALLS[0], h = low ? 7 : C.wallH, x0 = x * T, yb = y * TS, cap = C.thick * K;
+  if (e.t === 'door' && !low) {
+    box(c, x0, yb - h, 4, h, m.dark); box(c, x0 + T - 4, yb - h, 4, h, m.dark); box(c, x0, yb - h - cap, T, cap + 4, m.top);
+    if (open) box(c, x0 + 4, yb - h + 4, 4, h - 4, '#6b4a35');
+    else { box(c, x0 + 4, yb - h + 4, T - 8, h - 4, '#6b4a35'); c.fillStyle = '#e0a93a'; c.beginPath(); c.arc(x0 + T - 9, yb - h * 0.45, 1.4, 0, 7); c.fill(); }
+    return;
+  }
+  if (e.t === 'door') { box(c, x0, yb - h, 4, h, m.dark); box(c, x0 + T - 4, yb - h, 4, h, m.dark); return; }
+  c.fillStyle = m.face; c.fillRect(x0, yb - h, T, h); texture(c, m, x0, yb - h, T, h);
+  c.fillStyle = m.top; c.fillRect(x0, yb - h - cap, T, cap);
+  c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(x0, yb - h - cap, T, h + cap); c.beginPath(); c.moveTo(x0, yb - h); c.lineTo(x0 + T, yb - h); c.stroke();
+  if (e.t === 'window' && !low) { c.fillStyle = 'rgba(150,215,240,0.8)'; c.fillRect(x0 + 7, yb - h + 5, T - 14, h - 12); c.strokeRect(x0 + 7, yb - h + 5, T - 14, h - 12); c.beginPath(); c.moveTo(x0 + T / 2, yb - h + 5); c.lineTo(x0 + T / 2, yb - 7); c.stroke(); }
+}
+// an edge along the left side of tile (x, y). more: whether the V edge below continues it (no end face then)
+function drawV(c, x, y, e, open, more, C) {
+  C = C || CFG;
+  var m = WALLS[e.m] || WALLS[0], h = C.wallH, th = C.thick, xl = x * T - th / 2, yt = y * TS - h;
+  if (e.t === 'door') {
+    box(c, xl, yt, th, 4, m.dark); box(c, xl, yt + TS - 4, th, 4, m.dark);
+    if (!open) box(c, xl + 0.6, yt + 4, th - 1.2, TS - 8, '#6b4a35');
+    if (!more) box(c, xl, yt + TS, th, h, m.dark);
+    return;
+  }
+  if (!more) { c.fillStyle = m.face; c.fillRect(xl, yt + TS, th, h); c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(xl, yt + TS, th, h); }
+  box(c, xl, yt, th, TS, m.top);
+  if (e.t === 'window') { c.fillStyle = 'rgba(150,215,240,0.9)'; c.fillRect(xl + 0.8, yt + 6, th - 1.6, TS - 12); }
+}
+function drawRoof(c, room, a, C) {
+  C = C || CFG;
+  var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
+  var ov = C.overhang, up = C.wallH + C.thick * K + 1, i, y0 = 1e9, y1 = -1e9, x0 = 1e9, x1 = -1e9;
+  function rects(pad) { c.beginPath(); room.tiles.forEach(function (t) { c.rect(t[0] * T - ov - pad, t[1] * TS - up - ov * K - pad, T + (ov + pad) * 2, TS + (ov * K + pad) * 2); }); }
+  room.tiles.forEach(function (t) { y0 = Math.min(y0, t[1]); y1 = Math.max(y1, t[1]); x0 = Math.min(x0, t[0]); x1 = Math.max(x1, t[0]); });
+  c.save(); c.globalAlpha = a;
+  rects(1.3); c.fillStyle = LINE; c.fill();
+  rects(0); c.fillStyle = r.col; c.fill(); c.clip();
+  var top = y0 * TS - up - ov * K, bot = (y1 + 1) * TS - up + ov * K, left = x0 * T - ov, right = (x1 + 1) * T + ov, mid = (top + bot) / 2;
+  c.fillStyle = 'rgba(0,0,0,0.16)'; c.fillRect(left, mid, right - left, bot - mid);
+  c.strokeStyle = r.line; c.lineWidth = 1; c.beginPath();
+  for (i = top + 5; i < bot; i += 5) { c.moveTo(left, i); c.lineTo(right, i); }
+  c.stroke();
+  c.strokeStyle = 'rgba(255,255,255,0.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(left, mid); c.lineTo(right, mid); c.stroke();
+  c.restore();
+}
+// a small icon of a piece, for a hotbar slot (centred on 0, 0, about 14 wide)
+function icon(c, id, m) {
+  var w = WALLS[m || 0];
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  if (id === 'floor') { c.fillStyle = '#b98a5a'; c.fillRect(-6, -4, 12, 8); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -4, 12, 8); c.beginPath(); c.moveTo(-2, -4); c.lineTo(-2, 4); c.moveTo(2, -4); c.lineTo(2, 4); c.stroke(); }
+  else if (id === 'door') { c.fillStyle = w.dark; c.fillRect(-6, -7, 12, 14); c.fillStyle = '#6b4a35'; c.fillRect(-4, -5, 8, 12); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -7, 12, 14); c.fillStyle = '#e0a93a'; c.beginPath(); c.arc(2, 1, 1, 0, 7); c.fill(); }
+  else if (id === 'window') { c.fillStyle = w.face; c.fillRect(-6, -7, 12, 14); c.fillStyle = 'rgba(150,215,240,0.9)'; c.fillRect(-3.5, -4.5, 7, 9); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -7, 12, 14); c.strokeRect(-3.5, -4.5, 7, 9); }
+  else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); texture(c, w, -6, -6, 12, 12); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
+  c.restore();
+}
+return { T: T, TS: TS, K: K, LINE: LINE, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, rooms: rooms, texture: texture, box: box, drawH: drawH, drawV: drawV, drawRoof: drawRoof, icon: icon };
+})();
+if (typeof module !== 'undefined') module.exports = Build;
+
 var Combat = (function () {
 'use strict';
 var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
@@ -2586,7 +2733,7 @@ var WPRE = {
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
 var DASH_T = 0.18;
-var api = { sfx: function () {}, facings8: true };   // facings8: the hero turns on the diagonals and animals turn freely
+var api = { sfx: function () {}, facings8: true, harvest: null, onDeath: null, buildSlots: null, beltSlots: null };   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) }   // facings8: the hero turns on the diagonals and animals turn freely
 function sfx(n, v) { if (S.sound) api.sfx(n, v); }
 
 function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
@@ -2602,6 +2749,13 @@ function button(b, down) {
 }
 function mouse(x, y) { IN.mx = x; IN.my = y; }
 
+// Gather mode: the tools on keys 1 to 3. The right tool does full damage, any other does half.
+var TOOLS = [
+  { id: 'axe', name: 'Axe', good: 'tree', dmg: 2 },
+  { id: 'pick', name: 'Pickaxe', good: 'stone', dmg: 2 },
+  { id: 'knife', name: 'Knife', good: 'bush', dmg: 2 }
+];
+api.tools = TOOLS;
 var STEPS = [
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
@@ -2616,7 +2770,7 @@ function newPlayer() {
   P = { x: 200, y: 255, vx: 0, vy: 0, kx: 0, ky: 0, face: -Math.PI / 2, faceVis: -Math.PI / 2, hp: 100, maxHp: 100, st: 100, stDelay: 0, r: 6,
     atk: { ph: 'none', t: 0, combo: 0, since: 9, dir: 0, hit: [], tr: null, chg: 0, lvl: 0 }, atkBuf: 0,
     roll: { t: 0, cd: 0, dx: 0, dy: 1 }, guard: false, guardT: 0, lastRaise: -9, invuln: 0, flash: 0, hurtT: 0, dead: false,
-    sprintLock: false, sprinting: false, anim: { run: 0, phase: 0, amt: 0, t: 0, lx: 0, ly: 0, bob: 0, lvx: 0, lvy: 0, blink: 0, blinkT: 2, blinkP: 0, sq: 0, sqv: 0 }, inAng: null, fireCd: 0, fireT: 0, fireAng: 0, freezeT: 0, dashBuf: 0, holdT: 0, animT: 0, moving: false, parryFx: 0 };
+    sprintLock: false, sprinting: false, anim: { run: 0, phase: 0, amt: 0, t: 0, lx: 0, ly: 0, bob: 0, lvx: 0, lvy: 0, blink: 0, blinkT: 2, blinkP: 0, sq: 0, sqv: 0 }, inAng: null, fireCd: 0, fireT: 0, fireAng: 0, freezeT: 0, dashBuf: 0, holdT: 0, animT: 0, moving: false, parryFx: 0, mode: 'fight', weapon: 'melee', tool: 0, piece: 0, wreck: false, lastMode: 'fight', sel: 0 };
 }
 function reset() {
   newWorld(); newPlayer();
@@ -2701,7 +2855,7 @@ function nearest(range, face, cone) {
   }
   return best;
 }
-function lockValid() { return S.aim === 'lock' && alive(W.lock); }
+function lockValid() { return alive(W.lock); }
 function aimAngle() {
   if (lockValid()) return Math.atan2(W.lock.y - P.y, W.lock.x - P.x);
   var base = P.inAng !== null ? P.inAng : P.face;
@@ -2718,10 +2872,18 @@ function rangedAngle() {
   if (e) return Math.atan2(e.y - P.y, e.x - P.x);
   return P.face;
 }
-function toggleLock() {
-  if (alive(W.lock)) { W.lock = null; return; }
-  W.lock = nearest(220, P.face, 3.2);
-  sfx('tele');
+function cycleLock() {         // Ctrl: nearest enemy, then the next nearest, then no target
+  var list = W.enemies.filter(function (e) { return alive(e) && Math.hypot(e.x - P.x, e.y - P.y) < 300; });
+  list.sort(function (a, b) { return Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y); });
+  var i = list.indexOf(W.lock);
+  W.lock = !list.length ? null : (i < 0 ? list[0] : (i + 1 < list.length ? list[i + 1] : null));
+  if (W.lock) sfx('tele');
+}
+function switchMode() {
+  var p = P, a = p.atk;
+  p.mode = p.mode === 'fight' ? 'gather' : 'fight';
+  a.ph = 'none'; a.t = 0; a.since = 9; a.tr = null; p.atkBuf = 0; p.guard = false; p.holdT = 0;
+  W.lock = null; sfx('tele');
 }
 
 /* ---------- damage ---------- */
@@ -2816,6 +2978,7 @@ function killEnemy(e) {
   bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
   slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die');
   if (W.lock === e) W.lock = null;
+  if (api.onDeath) api.onDeath(e);
   if (e.type === 'boss') num(e.x, e.y - 60, (e.name || 'GUARDIAN') + ' DOWN', '#ffe27a');
   if (e.type === 'bossbot') num(e.x, e.y - 50, (e.name || 'BOSSBOT') + ' DOWN', '#ffe27a');
 }
@@ -2827,7 +2990,8 @@ function startAttack() {
   if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % 3; else a.combo = 0;
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null;
-  p.st -= 7; p.stDelay = 0.5; p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
+  if (p.mode === 'fight') { p.st -= 7; p.stDelay = 0.5; }
+  p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
 }
 function releaseCharge() {
   var p = P, a = p.atk, c = clamp((a.t - 0.3) / 0.7, 0, 1);
@@ -2883,7 +3047,8 @@ function updateAnim(dt, dashing) {
 function updatePlayer(dt) {
   var p = P, a = p.atk, i;
   if (p.dead) return;
-  if (IN.pressed.lmb || IN.pressed.KeyJ) p.atkBuf = S.juice ? 0.2 : 0.02;
+  var bowOut = p.mode === 'fight' && p.weapon === 'ranged';
+  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bowOut && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
@@ -2899,16 +3064,25 @@ function updatePlayer(dt) {
   p.moving = il > 0 && p.hurtT <= 0;
 
   p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
-  if (IN.pressed.lmb || IN.pressed.KeyJ) p.atkBuf = S.juice ? 0.2 : 0.02;
+  var bow = p.mode === 'fight' && p.weapon === 'ranged';
+  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;
   if (IN.pressed.Space) p.dashBuf = 0.18;
-  if (IN.pressed.KeyQ) toggleLock();
-  if (S.aim !== 'lock' && W.lock) W.lock = null;
+  // B enters and leaves build mode; Q swaps fight and gather (and leaves build mode for fight)
+  if (IN.pressed.KeyB) { if (p.mode === 'build') p.mode = p.lastMode || 'fight'; else { p.lastMode = p.mode; p.mode = 'build'; } p.wreck = false; a.ph = 'none'; a.since = 9; a.tr = null; p.atkBuf = 0; p.holdT = 0; p.guard = false; W.lock = null; sfx('tele'); }
+  if (IN.pressed.KeyQ) { if (p.mode === 'build') { p.mode = 'fight'; p.wreck = false; sfx('tele'); } else switchMode(); }
+  bow = p.mode === 'fight' && p.weapon === 'ranged';
+  if (IN.pressed.KeyF) {
+    if (p.mode === 'fight') { p.weapon = p.weapon === 'melee' ? 'ranged' : 'melee'; a.ph = 'none'; a.since = 9; p.atkBuf = 0; p.holdT = 0; bow = p.weapon === 'ranged'; sfx('tele'); }
+    else if (p.mode === 'build') p.wreck = !p.wreck;      // F in build mode: the red crossed box that takes pieces down
+  }
+  for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) { if (p.mode === 'gather' && i <= TOOLS.length) p.tool = i - 1; else if (p.mode === 'fight') p.sel = i - 1; }
+  if (IN.pressed.ControlLeft || IN.pressed.ControlRight) cycleLock();
 
-  var held = IN.lmb || IN.keys.KeyJ;
+  var held = (IN.lmb || IN.keys.KeyJ) && p.mode === 'fight' && !bow;
   p.holdT = held ? p.holdT + dt : 0;
   if (a.ph === 'charge' && (IN.rmb || IN.keys.KeyK)) { a.ph = 'none'; a.since = 9; }
   // guard
-  var want = IN.rmb || IN.keys.KeyK;
+  var want = (IN.rmb || IN.keys.KeyK) && p.mode === 'fight';
   if (want && !p.guard && a.ph === 'none' && p.roll.t <= 0 && p.hurtT <= 0 && p.st > 0 && p.atkBuf <= 0) {
     p.guard = true; p.guardT = (W.t - p.lastRaise > 0.5) ? 0 : 99; p.lastRaise = W.t; sfx('raise');
   }
@@ -2934,7 +3108,7 @@ function updatePlayer(dt) {
     }
   }
   // attack
-  if (p.atkBuf > 0 && p.roll.t <= 0 && p.hurtT <= 0 && p.st >= 7) {
+  if (p.atkBuf > 0 && p.roll.t <= 0 && p.hurtT <= 0 && (p.mode === 'gather' || p.st >= 7)) {
     var can = a.ph === 'none' || (S.juice && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5);
     if (can) { startAttack(); p.atkBuf = 0; }
   }
@@ -2948,7 +3122,21 @@ function updatePlayer(dt) {
       var half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
       var ang = a.dir - half * sign + sd.arc * sign * u;
       a.tr = { start: a.dir - half * sign, cur: ang, age: 0, reach: 9 + sd.blade, sign: sign, hot: a.combo === 3 && a.chg > 0.6 };
-      for (i = 0; i < W.enemies.length; i++) {
+      if (p.mode === 'gather') {                      // tools hit trees, rocks and bushes, never enemies
+        var hv = api.harvest, tl = TOOLS[p.tool];
+        var objs = hv ? hv.list(p.x, p.y, 90) : [];
+        for (i = 0; i < objs.length; i++) {
+          var o = objs[i];
+          if (a.hit.indexOf(o) >= 0) continue;
+          var ox = o.x - p.x, oy = o.y - p.y, od = Math.hypot(ox, oy);
+          if (od <= sd.reach + (o.r || 8) + 2 && Math.abs(wrap(Math.atan2(oy, ox) - a.dir)) <= half + 0.12) {
+            a.hit.push(o);
+            var right = o.kind === tl.good, pw = tl.dmg * (right ? 1 : 0.5) * (a.combo >= 2 ? 1.5 : 1);
+            hv.hit(o, pw, right, tl.id);
+            num(o.x, o.y, (right ? '' : 'wrong tool  ') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#ffd34d', a.combo >= 2);
+          }
+        }
+      } else for (i = 0; i < W.enemies.length; i++) {
         var e = W.enemies[i];
         if (e.dead || a.hit.indexOf(e) >= 0) continue;
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
@@ -2963,8 +3151,8 @@ function updatePlayer(dt) {
   if (a.tr) { if (a.ph === 'recover' || a.ph === 'none') a.tr.age += dt; if (a.tr.age > 0.18) a.tr = null; }
 
   // ranged
-  if (IN.pressed.KeyF && p.fireCd <= 0 && p.st >= 6 && p.roll.t <= 0 && p.hurtT <= 0) {
-    p.fireCd = 0.4; p.fireT = 0.2; p.st -= 6; p.stDelay = 0.4;
+  if (bow && (IN.lmb || IN.keys.KeyJ) && p.fireCd <= 0 && p.st >= 6 && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none') {
+    p.fireCd = 0.45; p.fireT = 0.2; p.st -= 6; p.stDelay = 0.4;
     var fa = rangedAngle();
     p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
     W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * 240, vy: Math.sin(fa) * 240, r: 3.5, dmg: 1, owner: 'player', life: 1.0, ang: fa });
@@ -3000,7 +3188,7 @@ function updatePlayer(dt) {
   else if (S.juice) { var k = Math.min(1, dt * 15); p.vx += (tvx - p.vx) * k; p.vy += (tvy - p.vy) * k; }
   else { p.vx = tvx; p.vy = tvy; }
   var lvx = 0, lvy = 0;
-  if (a.ph === 'active') { var sd2 = stepData(a), lf = clamp((gapAhead(a.dir) - 3) / 14, 0, 1); lvx = Math.cos(a.dir) * sd2.lunge * lf; lvy = Math.sin(a.dir) * sd2.lunge * lf; }
+  if (a.ph === 'active' && P.mode !== 'gather') { var sd2 = stepData(a), lf = clamp((gapAhead(a.dir) - 3) / 14, 0, 1); lvx = Math.cos(a.dir) * sd2.lunge * lf; lvy = Math.sin(a.dir) * sd2.lunge * lf; }
   p.kx *= Math.exp(-dt * 10); p.ky *= Math.exp(-dt * 10);
   moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);
   updateAnim(dt, p.roll.t > 0);
@@ -3135,6 +3323,19 @@ function bossbotAI(e, dt, d, ang) {
     case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.9; e.stagMeter = 0; } break;
   }
 }
+// A calm animal with e.wander = { x0, y0, r } ambles between points near its home ground, pausing between walks.
+function wanderStep(e, dt) {
+  var w = e.wander;
+  if (w.wait > 0) { w.wait -= dt; e.state = 'idle'; return; }
+  if (w.tx == null) { var a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * w.r; w.tx = w.x0 + Math.cos(a) * r; w.ty = w.y0 + Math.sin(a) * r; w.tt = 7; }
+  w.tt -= dt;
+  if (w.tt <= 0 || Math.hypot(w.tx - e.x, w.ty - e.y) < 6) { w.tx = null; w.wait = 1.5 + Math.random() * 4; e.state = 'idle'; return; }
+  var ang = Math.atan2(w.ty - e.y, w.tx - e.x), sp = (e.cfg ? e.cfg.speed : 58) * 0.38, ox = e.x, oy = e.y;
+  e.face = turnToward(e.face, ang, dt * 3);
+  moveCircle(e, Math.cos(e.face) * sp * dt, Math.sin(e.face) * sp * dt);
+  if (Math.hypot(e.x - ox, e.y - oy) < sp * dt * 0.25) { w.tx = null; w.wait = 1; }   // something is in the way: try elsewhere
+  e.state = 'chase';
+}
 function updateEnemies(dt) {
   for (var i = 0; i < W.enemies.length; i++) {
     var e = W.enemies[i];
@@ -3150,7 +3351,7 @@ function updateEnemies(dt) {
         else e.state = 'idle';
         continue;
       }
-      if (!e.awake) { e.state = 'idle'; e.t += dt; continue; }
+      if (!e.awake) { if (e.wander && !P.dead) wanderStep(e, dt); else e.state = 'idle'; e.t += dt; continue; }
     }
     if (e.freezeT > 0) { e.freezeT -= dt; if (e.freezeT <= 0) { e.kx += e.pkx; e.ky += e.pky; e.pkx = e.pky = 0; } continue; }
     e.sq = Math.max(0, e.sq - dt * 4.5);
@@ -3448,6 +3649,7 @@ function swordPose(dir) {
     o.hx = Math.cos(ang2) * 9; o.hy = -13 + Math.sin(ang2) * 9 * K; o.ca = Math.cos(ang2); o.sa = Math.sin(ang2) * K;
     o.len = 26; o.front = Math.sin(ang2) >= -0.05; o.side = Math.cos(ang2) >= 0 ? 1 : -1; o.armSide = o.side; o.atk = true;
   } else if (a.ph !== 'none') {
+    if (p.mode === 'gather') return chopPose(dir, a);
     var sd = stepData(a), half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1, u;
     var pb = 0.45;
     if (a.ph === 'windup') u = -pb * (a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
@@ -3472,6 +3674,25 @@ function swordPose(dir) {
     o.len = 20; o.front = true; o.side = side; o.atk = false;
   }
   if (o.atk && S.look === 'classic') o.len *= lib.hero().spec.bladeLen;
+  return o;
+}
+// Gathering: the axe and pickaxe go up over the shoulder in the windup and come down onto the target; the knife
+// is a short stab forward. Returns the same shape as swordPose.
+function chopPose(dir, a) {
+  var p = P, sd = stepData(a), o = {}, u, sdn = Math.cos(a.dir) >= 0 ? 1 : -1, knife = TOOLS[p.tool].id === 'knife';
+  if (a.ph === 'windup') u = -(a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
+  var raise = u < 0 ? -u : 1, e = u < 0 ? 0 : 1 - (1 - u) * (1 - u), dx = Math.cos(a.dir), dy = Math.sin(a.dir) * K;
+  if (knife) {
+    var reach = u < 0 ? -2 * raise : 9 * Math.sin(Math.min(1, u) * Math.PI);
+    o.hx = dx * (6 + reach); o.hy = -13 + dy * (6 + reach) * 0.6; o.ca = dx; o.sa = dy; o.len = 10;
+  } else {
+    var upX = -sdn * 4, upY = -31, downX = dx * 12, downY = -8 + dy * 7;
+    o.hx = u < 0 ? -sdn * 1 + (upX + sdn * 1) * raise : upX + (downX - upX) * e;
+    o.hy = u < 0 ? -16 + (upY + 16) * raise : upY + (downY - upY) * e;
+    var ang0 = Math.atan2(-0.95, -sdn * 0.3), ang1 = Math.atan2(dy + 0.45, dx * 0.9), ang = u < 0 ? ang0 : ang0 + wrap(ang1 - ang0) * e;
+    o.ca = Math.cos(ang); o.sa = Math.sin(ang); o.len = 15;
+  }
+  o.front = u < 0 || u < 0.3 || Math.sin(a.dir) >= -0.05; o.side = sdn; o.armSide = sdn; o.atk = true;
   return o;
 }
 function shieldBehind() { return Math.sin(P.face) < -0.05; }
@@ -3533,6 +3754,7 @@ function atkBody() {
   if (a.ph === 'none') return o;
   var sp = lookSpec(), st = ATK_STYLES[Math.round(sp.atkStyle)] || ATK_STYLES[0];
   if (st.spin && S.look !== 'sprite') st = { pull: st.pull, lunge: st.lunge, sq: st.sq, hop: st.hop, spin: 0 };
+  if (P.mode === 'gather') st = { pull: 1, lunge: 1.5, sq: 0.12, hop: 0, spin: 0 };   // a chop: a small lean, no lunge or spin
   var pw = sp.atkPower * (a.combo >= 2 ? 1.5 : 1), off = 0, sq = 0, hop = 0, dir = a.ph === 'charge' ? P.face : a.dir, u;
   if (a.ph === 'charge') { u = Math.min(1, a.t / 0.3); off = -st.pull * u; sq = -st.sq * 0.8 * u; }
   else {
@@ -3635,6 +3857,8 @@ function drawHeroWeapon(c, front) {
   if (!hideSword && sp.front === front) {
     var ca = sp.ca, sa = sp.sa, len = sp.len, ex = hx + ca * len, ey = hy + sa * len, px = -sa, py = ca;
     c.lineCap = 'round';
+    if (p.mode === 'gather') { drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
+    else {
     c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
     c.strokeStyle = HC.blade; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
     c.strokeStyle = 'rgba(120,130,160,0.5)'; c.lineWidth = 1; c.beginPath(); c.moveTo(hx + ca * 4, hy + sa * 4 + 0.6); c.lineTo(ex - ca * 2, ey - sa * 2 + 0.6); c.stroke();
@@ -3645,25 +3869,51 @@ function drawHeroWeapon(c, front) {
     c.strokeStyle = HC.trimL; c.lineWidth = 3; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
     if (a.ph === 'charge' && a.t >= 0.33) { c.fillStyle = 'rgba(255,224,110,' + (0.35 + 0.25 * Math.sin(W.t * 20)) + ')'; c.beginPath(); c.arc(ex, ey, 4 + a.t * 3, 0, Math.PI * 2); c.fill(); }
     if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5);
+    }
   }
   if (p.fireT > 0) {
     var fa = p.fireAng, fca = Math.cos(fa), fsa = Math.sin(fa) * K;
     if ((Math.sin(fa) >= -0.05) === front) {
       var fx = p.x + fca * 10 + bp.lx, fy = p.y * K - 13 + fsa * 10 + bp.ly;
-      c.lineCap = 'round';
-      c.strokeStyle = '#3a2a36'; c.lineWidth = 6.4; c.beginPath(); c.moveTo(fx - fca * 3, fy - fsa * 3); c.lineTo(fx + fca * 9, fy + fsa * 9); c.stroke();
-      c.strokeStyle = '#e0a93a'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(fx - fca * 3, fy - fsa * 3); c.lineTo(fx + fca * 9, fy + fsa * 9); c.stroke();
+      drawBowShape(c, fx + fca * 3, fy + fsa * 3, fca, fsa);
       if (front) lib.ell(c, fx, fy, 2.6, 2.6, HC.skin, 1.5);
     }
   }
   if (spr && S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) drawPixSlash(c);
-  else if (S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) {
+  else if (S.juice && a.tr && p.mode === 'fight' && front === (Math.sin(a.dir) >= -0.3)) {
     var tr = a.tr, fade = 1 - tr.age / 0.18, n, steps = 16, reach = tr.reach * HH.spec.slashSize, inner = reach * (1 - HH.spec.slashWidth), ox = p.x + bp.lx, oy = p.y * K - 13 + bp.ly;
     c.beginPath();
     for (n = 0; n <= steps; n++) { var aa = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(aa) * reach, oy + Math.sin(aa) * reach * K); }
     for (n = steps; n >= 0; n--) { var ab = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(ab) * inner, oy + Math.sin(ab) * inner * K); }
     c.closePath(); var sh = HC.slash; c.fillStyle = (tr.hot ? 'rgba(255,224,110,' : 'rgba(' + parseInt(sh.substr(1, 2), 16) + ',' + parseInt(sh.substr(3, 2), 16) + ',' + parseInt(sh.substr(5, 2), 16) + ',') + (0.5 * fade) + ')'; c.fill();
   }
+}
+function drawToolShape(c, hx, hy, ca, sa, len, id) {     // a tool in the hand, pointing along (ca, sa)
+  var px = -sa, py = ca, ex = hx + ca * len, ey = hy + sa * len, wood = '#8a5a3a', steel = '#c5ccd6', dark = '#3a2a36';
+  function ln(x1, y1, x2, y2, col, w) { c.strokeStyle = dark; c.lineWidth = w + 2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); }
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  if (id === 'knife') {
+    var kx = hx + ca * 5, ky = hy + sa * 5;
+    ln(hx - ca * 2, hy - sa * 2, kx, ky, wood, 3);
+    ln(kx, ky, hx + ca * len * 0.62, hy + sa * len * 0.62, '#eef3fb', 2.4);
+    return;
+  }
+  ln(hx - ca * 3, hy - sa * 3, ex, ey, wood, 2.8);
+  if (id === 'axe') {
+    var q = [[ex - ca * 7, ey - sa * 7], [ex + ca * 1.5, ey + sa * 1.5], [ex + ca * 3 + px * 8, ey + sa * 3 + py * 8], [ex - ca * 7 + px * 6, ey - sa * 7 + py * 6]];
+    c.beginPath(); c.moveTo(q[0][0], q[0][1]); for (var i = 1; i < 4; i++) c.lineTo(q[i][0], q[i][1]); c.closePath();
+    c.fillStyle = steel; c.fill(); c.lineWidth = 1.5; c.strokeStyle = dark; c.stroke();
+  } else {
+    c.beginPath(); c.moveTo(ex + px * 9 - ca * 2, ey + py * 9 - sa * 2); c.quadraticCurveTo(ex + ca * 5, ey + sa * 5, ex - px * 9 - ca * 2, ey - py * 9 - sa * 2);
+    c.strokeStyle = dark; c.lineWidth = 4.6; c.stroke(); c.strokeStyle = steel; c.lineWidth = 2.6; c.stroke();
+  }
+}
+function drawBowShape(c, bx, by, ca, sa) {                // a bow held out along (ca, sa)
+  var px = -sa, py = ca, r = 8;
+  c.lineCap = 'round';
+  c.beginPath(); c.moveTo(bx + px * r, by + py * r); c.quadraticCurveTo(bx + ca * 6, by + sa * 6, bx - px * r, by - py * r);
+  c.strokeStyle = '#3a2a36'; c.lineWidth = 4.2; c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 2.4; c.stroke();
+  c.strokeStyle = '#efe6cf'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(bx + px * r, by + py * r); c.lineTo(bx - px * r, by - py * r); c.stroke();
 }
 function drawShield(c, front) {
   var p = P; if (!p.guard) return;
@@ -3759,11 +4009,13 @@ function drawProj(c, pr) {
     lib.ell(c, x, y, 4.4, 4.4, '#ffe9d0', 1.5, '#8a3a2a'); lib.ell(c, x, y, 2.2, 2.2, '#ff8a5a', 0);
     c.fillStyle = 'rgba(255,255,255,0.5)'; c.beginPath(); c.arc(x - pr.vx * 0.03, y - pr.vy * 0.03 * K, 2.6, 0, Math.PI * 2); c.fill();
   } else {
-    var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K;
-    c.lineCap = 'round';
-    c.strokeStyle = 'rgba(255,240,170,0.5)'; c.lineWidth = 2; c.beginPath(); c.moveTo(x - ca * 14, y - sa * 14); c.lineTo(x, y); c.stroke();
-    c.strokeStyle = '#3a2a36'; c.lineWidth = 4.6; c.beginPath(); c.moveTo(x - ca * 4, y - sa * 4); c.lineTo(x + ca * 4, y + sa * 4); c.stroke();
-    c.strokeStyle = pr.reflected ? '#ffd34d' : '#e0a93a'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(x - ca * 4, y - sa * 4); c.lineTo(x + ca * 4, y + sa * 4); c.stroke();
+    // an arrow: shaft, iron head, two feathers
+    var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K, px = -sa, py = ca, tx = x + ca * 8, ty = y + sa * 8, bx = x - ca * 8, by = y - sa * 8;
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 3; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
+    c.strokeStyle = pr.reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
+    c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.beginPath(); c.moveTo(tx + ca * 4, ty + sa * 4); c.lineTo(tx + px * 1.8, ty + py * 1.8); c.lineTo(tx - px * 1.8, ty - py * 1.8); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#eef3fb'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 2.4, by - sa * 3 + py * 2.4); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 2.4, by - sa * 3 - py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 2.4, by - sa * 0.5 + py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 2.4, by - sa * 0.5 - py * 2.4); c.stroke();
   }
 }
 function drawPart(c, q) {
@@ -3778,12 +4030,23 @@ function bar(c, x, y, w, h, v, fill, back) {
   c.fillStyle = back || '#5b4a58'; c.fillRect(x, y, w, h);
   c.fillStyle = fill; c.fillRect(x, y, Math.max(0, w * clamp(v, 0, 1)), h);
 }
+// damage numbers and pickups float up from where they happened; a page with a camera draws them inside it
+function drawNums(c) {
+  for (var i = 0; i < W.nums.length; i++) {
+    var n = W.nums[i], a = 1 - n.t / 0.9;
+    c.globalAlpha = Math.max(0, Math.min(1, a * 1.6)); c.textAlign = 'center';
+    var pop = 1 + (n.big ? 0.9 : 0.5) * Math.max(0, 1 - n.t / 0.14);
+    c.font = 'bold ' + (9 * pop).toFixed(1) + 'px system-ui, sans-serif';
+    c.lineWidth = 2.6; c.strokeStyle = '#3a2a36'; var ny = n.y * K - n.t * 24;
+    c.strokeText(n.txt, n.x, ny); c.fillStyle = n.c; c.fillText(n.txt, n.x, ny); c.globalAlpha = 1;
+  }
+}
 function drawHud(c) {
   var i, bigRow = 0;
   bar(c, 10, 10, 84, 7, P.hp / P.maxHp, '#e8584a');
   bar(c, 10, 22, 84, 5, P.st / 100, P.st < 22 ? '#d6b54a' : '#7fd66d');
   c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36';
-  var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 40); c.fillStyle = '#fff'; c.fillText(txt, 10, 40);
+  if (!(api.scene && api.scene.noKills)) { var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 40); c.fillStyle = '#fff'; c.fillText(txt, 10, 40); }
   for (i = 0; i < W.enemies.length; i++) {
     var e = W.enemies[i];
     if (e.dead) continue;
@@ -3793,24 +4056,70 @@ function drawHud(c) {
       bar(c, 124, by + 12, 152, 4, e.stagMeter / 100, e.state === 'stunned' ? '#ffd34d' : '#8fe3ff');
       var nm = e.name || (e.type === 'boss' ? 'GUARDIAN' : 'BOSSBOT');
       c.textAlign = 'center'; c.strokeText(nm, 200, by + 27); c.fillStyle = '#fff'; c.fillText(nm, 200, by + 27);
-    } else if (e.showBar > 0) {
+    } else if (e.showBar > 0 && !api.scene) {
       bar(c, e.x - 10, e.y * K - e.r * 2.6 - 10, 20, 3, e.hp / e.maxHp, '#e8584a');
     }
   }
-  for (i = 0; i < W.nums.length; i++) {
-    var n = W.nums[i], a = 1 - n.t / 0.9;
-    c.globalAlpha = Math.max(0, Math.min(1, a * 1.6)); c.textAlign = 'center';
-    var pop = 1 + (n.big ? 0.9 : 0.5) * Math.max(0, 1 - n.t / 0.14);
-    c.font = 'bold ' + (9 * pop).toFixed(1) + 'px system-ui, sans-serif';
-    c.lineWidth = 2.6; c.strokeStyle = '#3a2a36'; var ny = n.y * K - n.t * 24;
-    c.strokeText(n.txt, n.x, ny); c.fillStyle = n.c; c.fillText(n.txt, n.x, ny); c.globalAlpha = 1;
-  }
+  if (!api.scene) drawNums(c);
   if (P.dead) {
     c.fillStyle = 'rgba(20,20,40,0.55)'; c.fillRect(0, 0, SW, SH);
     c.font = 'bold 16px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3.4; c.strokeStyle = '#3a2a36';
-    c.strokeText('Scrapped!', 200, 118); c.fillStyle = '#fff'; c.fillText('Scrapped!', 200, 118);
-    c.font = '10px system-ui, sans-serif'; c.lineWidth = 2.4; c.strokeText('Press R or Reset to try again', 200, 136); c.fillText('Press R or Reset to try again', 200, 136);
+    c.strokeText('You have fallen', 200, 118); c.fillStyle = '#fff'; c.fillText('You have fallen', 200, 118);
+    c.font = '10px system-ui, sans-serif'; c.lineWidth = 2.4; c.strokeText('Press R to rise again', 200, 136); c.fillText('Press R to rise again', 200, 136);
   }
+}
+
+/* ---------- hotbar: weapons left of six slots, bottom middle ---------- */
+function slotIcon(c, id, x, y) {
+  c.save(); c.translate(x, y); c.lineCap = 'round'; c.lineJoin = 'round';
+  function ln(x1, y1, x2, y2, col, w) { c.strokeStyle = '#3a2a36'; c.lineWidth = w + 1.6; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); }
+  if (id === 'sword') { ln(-4, 4, 5, -5, '#eef3fb', 2.4); ln(-4.2, -0.2, 0.2, 4.2, '#e0a93a', 2); ln(-4, 4, -6, 6, '#8a5a3a', 2.4); }
+  else if (id === 'bow') {
+    c.beginPath(); c.arc(-3, 0, 8, -1.1, 1.1); c.strokeStyle = '#3a2a36'; c.lineWidth = 3.8; c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 2.2; c.stroke();
+    ln(-3 + 8 * Math.cos(1.1), -8 * Math.sin(1.1), -3 + 8 * Math.cos(1.1), 8 * Math.sin(1.1), '#efe6cf', 0.9); ln(-4, 0, 6, 0, '#efe6cf', 1.1);
+  }
+  else if (id === 'axe') { ln(-4, 5, 3, -3, '#8a5a3a', 2.2); c.beginPath(); c.moveTo(0, -5.5); c.lineTo(5, -5); c.lineTo(6, -0.5); c.lineTo(2.5, -2); c.closePath(); c.fillStyle = '#c5ccd6'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); }
+  else if (id === 'pick') { ln(-4, 5, 3, -3, '#8a5a3a', 2.2); c.beginPath(); c.moveTo(-3, -6); c.quadraticCurveTo(2, -7.5, 7, -1); c.strokeStyle = '#3a2a36'; c.lineWidth = 3.6; c.stroke(); c.strokeStyle = '#c5ccd6'; c.lineWidth = 2; c.stroke(); }
+  else if (id === 'knife') { ln(-5, 5, -2, 2, '#8a5a3a', 2.6); ln(-2, 2, 5, -5, '#eef3fb', 2.2); }
+  c.restore();
+}
+function slotBox(c, x, y, on, sz) {
+  c.fillStyle = 'rgba(20,16,30,0.78)'; c.fillRect(x, y, sz, sz);
+  c.strokeStyle = on ? '#ffd34d' : 'rgba(255,255,255,0.28)'; c.lineWidth = on ? 1.2 : 0.8; c.strokeRect(x + 0.5, y + 0.5, sz - 1, sz - 1);
+}
+function roundIcon(c, id, x, y, r, on, dim) {
+  c.globalAlpha = dim ? 0.45 : 1;
+  c.fillStyle = 'rgba(20,16,30,0.82)'; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+  c.strokeStyle = on ? '#ffd34d' : 'rgba(255,255,255,0.35)'; c.lineWidth = on ? 1.3 : 0.8; c.stroke();
+  c.save(); c.translate(x, y); c.scale(r / 10, r / 10); slotIcon(c, id, 0, 0); c.restore();
+  c.globalAlpha = 1;
+}
+function drawHotbar(c) {
+  var sz = 11, gap = 2, x0 = Math.round((SW - (6 * sz + 5 * gap)) / 2), y0 = SH - sz - 5, mode = P.mode, gather = mode === 'gather', build = mode === 'build', i, k = 0.55;
+  var slots = build ? (api.buildSlots || []) : [];
+  c.save();
+  // sword above left, bow below right, like the two rings of a % sign
+  roundIcon(c, 'sword', x0 - 23, y0 - 1, 6.5, mode === 'fight' && P.weapon === 'melee', mode !== 'fight');
+  roundIcon(c, 'bow', x0 - 10, y0 + 9, 6.5, mode === 'fight' && P.weapon === 'ranged', mode !== 'fight');
+  c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 - 11, y0 - 2); c.lineTo(x0 - 22, y0 + 10); c.stroke();
+  c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText('F', x0 - 16.5, y0 + 14.5);
+  for (i = 0; i < 6; i++) {
+    var x = x0 + i * (sz + gap), tool = gather && i < TOOLS.length ? TOOLS[i] : null, cx = x + sz / 2, cy = y0 + sz / 2;
+    slotBox(c, x, y0, (gather && i === P.tool) || (mode === 'fight' && i === (P.sel || 0)), sz);
+    c.save(); c.translate(cx, cy); c.scale(k, k);
+    if (tool) slotIcon(c, tool.id, 0, 0);
+    else if (api.beltSlots && api.beltSlots[i] && (mode !== 'gather' || i >= TOOLS.length)) {
+      var bs = api.beltSlots[i]; bs.draw(c);
+      if (bs.n > 1) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36'; c.strokeText(String(bs.n), 9.5, 9.5); c.fillStyle = '#fff'; c.fillText(String(bs.n), 9.5, 9.5); }
+    }
+    c.restore();
+    c.font = 'bold 3.8px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText(String(i + 1), x + 1.3, y0 + 4.5);
+  }
+  c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36';
+  var pc = slots[P.piece], label = build ? (P.wreck ? 'WRECK  (F to build, B to leave)' : 'BUILD: ' + (pc ? pc.name + (pc.cost ? ' (' + pc.cost + ')' : '') : '') + '   (right click: pieces, F: wreck, B: leave)') : (gather ? 'GATHER  (Q to fight, B to build)' : 'FIGHT  (Q to gather, B to build)');
+  var col = build ? (P.wreck ? '#ff8a7a' : '#9fd8ff') : (gather ? '#9be58b' : '#ffd34d');
+  c.strokeText(label, SW / 2, y0 - 3); c.fillStyle = col; c.fillText(label, SW / 2, y0 - 3);
+  c.restore();
 }
 
 function render(c) {
@@ -3855,9 +4164,11 @@ function render(c) {
     if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
     c.stroke();
   }
+  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && eb.showBar > 0 && eb.type !== 'boss' && eb.type !== 'bossbot') bar(c, eb.x - 10, eb.y * K - eb.r * 2.6 - 10, 20, 3, eb.hp / eb.maxHp, '#e8584a'); } }
   if (sc && sc.end) sc.end(c, P);
   c.restore();
   if (!(sc && sc.noHud)) drawHud(c);
+  if (!(sc && sc.noHotbar)) drawHotbar(c);
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
@@ -3900,16 +4211,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   kit.setup(BASE);
 
   /* ---------- pieces ---------- */
-  var LINE = '#1d1622';
-  var WALLS = [
-    { name: 'Logs', face: '#7a5636', top: '#9a744c', dark: '#3f2a18', tex: 'logs' },
-    { name: 'Planks', face: '#8a6440', top: '#aa8358', dark: '#5a3f2a', tex: 'planks' },
-    { name: 'Wattle', face: '#b89d6c', top: '#ceb686', dark: '#7a6540', tex: 'wattle' },
-    { name: 'Stone', face: '#868a94', top: '#a9adb8', dark: '#5c606c', tex: 'blocks' },
-    { name: 'Turf', face: '#5c7f48', top: '#79a25e', dark: '#3c5a30', tex: 'turf' }
-  ];
-  var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: 'dirt' }, { name: 'Stone flags', tile: 'path' }];
-  var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a' }, { name: 'Thatch', col: '#c4a55c', line: '#93793c' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a' }, { name: 'No roof' }];
+  var LINE = Build.LINE, WALLS = Build.WALLS, FLOORS = Build.FLOORS.slice(), ROOFS = Build.ROOFS;   // the pieces live in src/build.js, shared with the game
   var FURN = [['bed', 12], ['table', 13], ['chair', 6], ['bench', 10], ['crate', 9], ['barrel', 8], ['stoneHearth', 14], ['campfire', 0], ['brazier', 6], ['shieldRack', 14], ['woodpile', 14], ['forge', 18], ['dryingRack', 16], ['dragonPost', 6], ['woodenWell', 12], ['haystack', 14]]
     .filter(function (f) { return !!kit.PROPS[f[0]]; });
   FLOORS = FLOORS.filter(function (f) { return !!kit.TILES[f.tile]; });
@@ -3976,42 +4278,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function n1(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
   function rebuild() {
     dirty = false;
-    var x, y, seen = [], q = [], i;
-    function pass(ax, ay, bx, by) {                       // can you step from tile a to its neighbour b?
-      if (bx < ax) return !closed(key(ax, ay), B.V); if (bx > ax) return !closed(key(bx, by), B.V);
-      if (by < ay) return !closed(key(ax, ay), B.H); return !closed(key(bx, by), B.H);
-    }
-    function flood(start, id) {
-      var tiles = []; q = start.slice();
-      while (q.length) {
-        var c = q.pop(), cx = c[0], cy = c[1];
-        [[cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]].forEach(function (n) {
-          if (!inGrid(n[0], n[1]) || seen[n[1] * GW + n[0]] || !pass(cx, cy, n[0], n[1])) return;
-          seen[n[1] * GW + n[0]] = true; roomOf[n[1] * GW + n[0]] = id; tiles.push(n); q.push(n);
-        });
-      }
-      return tiles;
-    }
-    roomOf = []; for (i = 0; i < GW * GH; i++) { roomOf.push(-1); seen.push(false); }
-    var border = [];
-    for (x = 0; x < GW; x++) { border.push([x, 0], [x, GH - 1]); } for (y = 0; y < GH; y++) { border.push([0, y], [GW - 1, y]); }
-    border.forEach(function (b) { seen[b[1] * GW + b[0]] = true; });
-    flood(border, -1);
-    rooms = [];
-    for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
-      if (seen[y * GW + x]) continue;
-      seen[y * GW + x] = true; roomOf[y * GW + x] = rooms.length;
-      var tiles = [[x, y]].concat(flood([[x, y]], rooms.length)), maxY = 0;
-      tiles.forEach(function (t) { maxY = Math.max(maxY, t[1]); });
-      var id = 'r' + x + '_' + y; if (roofA[id] == null) roofA[id] = 1;
-      rooms.push({ id: id, tiles: tiles, maxY: maxY });
-    }
-    // collision: three small circles along every wall and window; doors are open ground
-    solids = [];
-    var k, p;
-    for (k in B.H) { if (B.H[k].t === 'door') continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }
-    for (k in B.V) { if (B.V[k].t === 'door') continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
-    B.items.forEach(function (it) { var r = 0; FURN.forEach(function (f) { if (f[0] === it.name) r = f[1]; }); if (r) solids.push({ x: it.x, y: it.y, r: r, hide: true }); });
+    var r = Build.rooms(B, GW, GH), i;
+    rooms = r.rooms; roomOf = r.roomOf;
+    rooms.forEach(function (rm) { if (roofA[rm.id] == null) roofA[rm.id] = 1; });
+    // collision: the walls and windows from Build, then furniture, trees and rocks
+    solids = r.solids.slice();
+    B.items.forEach(function (it) { var rr = 0; FURN.forEach(function (f) { if (f[0] === it.name) rr = f[1]; }); if (rr) solids.push({ x: it.x, y: it.y, r: rr, hide: true }); });
     B.nature.forEach(function (n) { if (n.r) solids.push({ x: n.x, y: n.y, r: n.r * n.s, hide: true }); });
     // readout
     var nf = Object.keys(B.floors).length, nw = 0, nd = 0, nwin = 0, roofed = 0;
@@ -4023,64 +4295,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     try { localStorage.setItem('baseeditor2', JSON.stringify(B)); } catch (e) {}
   }
 
-  /* ---------- drawing pieces ---------- */
-  function texture(c, m, x, y, w, h) {
-    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip(); c.strokeStyle = m.dark; c.globalAlpha = 0.55; c.lineWidth = 0.9; c.beginPath();
-    var i, r;
-    if (m.tex === 'planks') for (i = 8; i < w; i += 8) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); }
-    else if (m.tex === 'blocks') { c.moveTo(x, y + h / 2); c.lineTo(x + w, y + h / 2); c.moveTo(x + 16, y); c.lineTo(x + 16, y + h / 2); c.moveTo(x + 8, y + h / 2); c.lineTo(x + 8, y + h); c.moveTo(x + 24, y + h / 2); c.lineTo(x + 24, y + h); }
-    else if (m.tex === 'bricks') for (r = 0; r * 5 < h; r++) { c.moveTo(x, y + r * 5); c.lineTo(x + w, y + r * 5); for (i = (r % 2) * 5; i < w; i += 10) { c.moveTo(x + i, y + r * 5); c.lineTo(x + i, y + r * 5 + 5); } }
-    else if (m.tex === 'turf') for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
-    else if (m.tex === 'logs') for (r = 5; r < h; r += 5) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
-    else if (m.tex === 'wattle') { for (i = 4; i < w; i += 6) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); } for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); } }
-    else { c.moveTo(x + 16, y); c.lineTo(x + 16, y + h); }
-    c.stroke();
-    if (m.tex === 'plates') { c.globalAlpha = 0.8; c.fillStyle = m.dark; [[3, 3], [13, 3], [19, 3], [29, 3], [3, h - 3], [13, h - 3], [19, h - 3], [29, h - 3]].forEach(function (q) { c.beginPath(); c.arc(x + q[0], y + q[1], 0.9, 0, 7); c.fill(); }); }
-    c.restore();
-  }
-  function box(c, x, y, w, h, fill) { c.fillStyle = fill; c.fillRect(x, y, w, h); c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(x, y, w, h); }
-  function drawH(c, x, y, e, low, open) {
-    var m = WALLS[e.m] || WALLS[0], h = low ? 7 : B.wallH, x0 = x * T, yb = y * TS, cap = B.thick * K;
-    if (e.t === 'door' && !low) {
-      box(c, x0, yb - h, 4, h, m.dark); box(c, x0 + T - 4, yb - h, 4, h, m.dark); box(c, x0, yb - h - cap, T, cap + 4, m.top);
-      if (open) box(c, x0 + 4, yb - h + 4, 4, h - 4, '#6b4a35');
-      else { box(c, x0 + 4, yb - h + 4, T - 8, h - 4, '#6b4a35'); c.fillStyle = '#e0a93a'; c.beginPath(); c.arc(x0 + T - 9, yb - h * 0.45, 1.4, 0, 7); c.fill(); }
-      return;
-    }
-    if (e.t === 'door') { box(c, x0, yb - h, 4, h, m.dark); box(c, x0 + T - 4, yb - h, 4, h, m.dark); return; }
-    c.fillStyle = m.face; c.fillRect(x0, yb - h, T, h); texture(c, m, x0, yb - h, T, h);
-    c.fillStyle = m.top; c.fillRect(x0, yb - h - cap, T, cap);
-    c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(x0, yb - h - cap, T, h + cap); c.beginPath(); c.moveTo(x0, yb - h); c.lineTo(x0 + T, yb - h); c.stroke();
-    if (e.t === 'window' && !low) { c.fillStyle = 'rgba(150,215,240,0.8)'; c.fillRect(x0 + 7, yb - h + 5, T - 14, h - 12); c.strokeRect(x0 + 7, yb - h + 5, T - 14, h - 12); c.beginPath(); c.moveTo(x0 + T / 2, yb - h + 5); c.lineTo(x0 + T / 2, yb - 7); c.stroke(); }
-  }
-  function drawV(c, x, y, e, open) {
-    var m = WALLS[e.m] || WALLS[0], h = B.wallH, th = B.thick, xl = x * T - th / 2, yt = y * TS - h, more = !!B.V[key(x, y + 1)];
-    if (e.t === 'door') {
-      box(c, xl, yt, th, 4, m.dark); box(c, xl, yt + TS - 4, th, 4, m.dark);
-      if (!open) box(c, xl + 0.6, yt + 4, th - 1.2, TS - 8, '#6b4a35');
-      if (!more) box(c, xl, yt + TS, th, h, m.dark);
-      return;
-    }
-    if (!more) { c.fillStyle = m.face; c.fillRect(xl, yt + TS, th, h); c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(xl, yt + TS, th, h); }
-    box(c, xl, yt, th, TS, m.top);
-    if (e.t === 'window') { c.fillStyle = 'rgba(150,215,240,0.9)'; c.fillRect(xl + 0.8, yt + 6, th - 1.6, TS - 12); }
-  }
-  function drawRoof(c, room, a) {
-    var r = ROOFS[B.roof]; if (!r || !r.col || a <= 0.01) return;
-    var ov = B.overhang, up = B.wallH + B.thick * K + 1, i, y0 = 1e9, y1 = -1e9, x0 = 1e9, x1 = -1e9;
-    function rects(pad) { c.beginPath(); room.tiles.forEach(function (t) { c.rect(t[0] * T - ov - pad, t[1] * TS - up - ov * K - pad, T + (ov + pad) * 2, TS + (ov * K + pad) * 2); }); }
-    room.tiles.forEach(function (t) { y0 = Math.min(y0, t[1]); y1 = Math.max(y1, t[1]); x0 = Math.min(x0, t[0]); x1 = Math.max(x1, t[0]); });
-    c.save(); c.globalAlpha = a;
-    rects(1.3); c.fillStyle = LINE; c.fill();
-    rects(0); c.fillStyle = r.col; c.fill(); c.clip();
-    var top = y0 * TS - up - ov * K, bot = (y1 + 1) * TS - up + ov * K, left = x0 * T - ov, right = (x1 + 1) * T + ov, mid = (top + bot) / 2;
-    c.fillStyle = 'rgba(0,0,0,0.16)'; c.fillRect(left, mid, right - left, bot - mid);
-    c.strokeStyle = r.line; c.lineWidth = 1; c.beginPath();
-    for (i = top + 5; i < bot; i += 5) { c.moveTo(left, i); c.lineTo(right, i); }
-    c.stroke();
-    c.strokeStyle = 'rgba(255,255,255,0.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(left, mid); c.lineTo(right, mid); c.stroke();
-    c.restore();
-  }
+  /* ---------- drawing pieces: src/build.js, with this page's wall height, thickness, overhang and roof ---------- */
+  function drawH(c, x, y, e, low, open) { Build.drawH(c, x, y, e, low, open, B); }
+  function drawV(c, x, y, e, open) { Build.drawV(c, x, y, e, open, !!B.V[key(x, y + 1)], B); }
+  function drawRoof(c, room, a) { Build.drawRoof(c, room, a, B); }
 
   /* ---------- mouse: place and remove ---------- */
   var cam = { x: WX / 2, y: WY / 2 * K, z: 1 }, mouse = null, down = 0, hero = null, lastPlaced = '';
@@ -4088,12 +4306,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var r = cv.getBoundingClientRect(), mx = (e.clientX - r.left) / r.width * 400, my = (e.clientY - r.top) / r.height * 250;
     return { x: (mx - 200) / cam.z + cam.x, y: ((my - 125) / cam.z + cam.y) / K };
   }
-  function edgeAt(w) {
-    var tx = Math.floor(w.x / T), ty = Math.floor(w.y / T), fx = w.x / T - tx, fy = w.y / T - ty, best = Math.min(fx, 1 - fx, fy, 1 - fy);
-    if (best === fy) return { L: 'H', x: tx, y: ty, d: best }; if (best === 1 - fy) return { L: 'H', x: tx, y: ty + 1, d: best };
-    if (best === fx) return { L: 'V', x: tx, y: ty, d: best }; return { L: 'V', x: tx + 1, y: ty, d: best };
-  }
-  function edgeOk(ed) { return ed.L === 'H' ? (ed.x >= 0 && ed.x < GW && ed.y >= 0 && ed.y <= GH) : (ed.x >= 0 && ed.x <= GW && ed.y >= 0 && ed.y < GH); }
+  function edgeAt(w) { return Build.edgeAt(w.x, w.y); }
+  function edgeOk(ed) { return Build.edgeOk(ed, GW, GH); }
   function place(w, first) {
     var tx = Math.floor(w.x / T), ty = Math.floor(w.y / T), ed, k;
     if (tool === 'floor') { if (inGrid(tx, ty)) { B.floors[key(tx, ty)] = floorMat; dirty = true; } }
@@ -4123,7 +4337,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
 
   /* ---------- scene ---------- */
   Combat.api.scene = {
-    noHud: true,
+    noHud: true, noHotbar: true,
     bounds: { x0: 14, y0: 22, x1: WX - 14, y1: WY - 10 },
     begin: function (c, P) {
       hero = P;

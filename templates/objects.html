@@ -376,7 +376,7 @@ __COMBAT__
     cam.x = cx + (P.x - cx) * f; cam.y = cy + (P.y * K - 16 - cy) * f; cam.z = z;
   }
   Combat.api.scene = {
-    noHud: true,
+    noHud: true, noHotbar: true,
     begin: function (c, P) {
       bake(); bakeGround(); camera(P);
       c.fillStyle = '#20262c'; c.fillRect(0, 0, 400, 250);

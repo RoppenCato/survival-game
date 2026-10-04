@@ -25,6 +25,7 @@ no dependencies, so you can also open any file in `dist/` directly.
 | Base Editor | Build a homestead piece by piece; closed rooms get a roof |
 | Sea Editor | The archipelago and the ships: island sizes, sea distances, handling |
 | Combat Arena | Fight wolves, boars, snakes and the bear |
+| The game | The first island: chop trees, mine stone, hunt boar, keep what you find |
 
 Each editor can copy its settings out as text, and paste them back in.
 
@@ -46,6 +47,8 @@ npm test
 ```
 src/art.js          the hero, the animals and other creatures
 src/stylelab.js     the world: props, ground tiles and the shared look
+src/world.js        the archipelago: islands, ground, what grows there (Sea Editor and the game)
+src/build.js        building pieces, rooms and roofs (Base Editor and the game)
 src/combat.js       the arena engine: movement, combat, enemy behaviour, rendering
 templates/          the HTML shell for each page
 tools/build.py      stitches templates and source into single-file pages in dist/
@@ -63,8 +66,14 @@ dist/               the built pages
 | J or left click | Attack, three-hit combo. Hold to charge a heavy swing |
 | K or right click | Block. Press just before a hit to parry |
 | Space | Dash (sidestep, brief invulnerability) |
-| F | Ranged shot (mouse or auto aim) |
-| Q | Target lock |
+| Q | Switch between fight mode and gather mode |
+| F | Fight mode: swap sword and bow (with the bow out, the attack button shoots) |
+| Ctrl | Target the nearest enemy; again for the next nearest, then let go |
+| 1 to 3 | Gather mode: axe, pickaxe, knife (the wrong tool does half damage) |
+| B | Build mode (the game): right click opens the board of pieces, click to place, F toggles the wreck cursor |
+| E | Cook at the camp hearth (the game); click food in the inventory to eat it |
+| Tab | The bag (the game): a 6 by 4 grid, stacks of 25; the top row is the belt, numbered like the hotbar |
+| R | Rise again after falling (the game) |
 | E | Board a ship, or step ashore (Sea Editor) |
 
 ## Design in brief

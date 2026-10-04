@@ -127,6 +127,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <script>
 __ART__
 __LIB__
+__BUILD__
 __COMBAT__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
@@ -161,16 +162,7 @@ __COMBAT__
   kit.setup(BASE);
 
   /* ---------- pieces ---------- */
-  var LINE = '#1d1622';
-  var WALLS = [
-    { name: 'Logs', face: '#7a5636', top: '#9a744c', dark: '#3f2a18', tex: 'logs' },
-    { name: 'Planks', face: '#8a6440', top: '#aa8358', dark: '#5a3f2a', tex: 'planks' },
-    { name: 'Wattle', face: '#b89d6c', top: '#ceb686', dark: '#7a6540', tex: 'wattle' },
-    { name: 'Stone', face: '#868a94', top: '#a9adb8', dark: '#5c606c', tex: 'blocks' },
-    { name: 'Turf', face: '#5c7f48', top: '#79a25e', dark: '#3c5a30', tex: 'turf' }
-  ];
-  var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: 'dirt' }, { name: 'Stone flags', tile: 'path' }];
-  var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a' }, { name: 'Thatch', col: '#c4a55c', line: '#93793c' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a' }, { name: 'No roof' }];
+  var LINE = Build.LINE, WALLS = Build.WALLS, FLOORS = Build.FLOORS.slice(), ROOFS = Build.ROOFS;   // the pieces live in src/build.js, shared with the game
   var FURN = [['bed', 12], ['table', 13], ['chair', 6], ['bench', 10], ['crate', 9], ['barrel', 8], ['stoneHearth', 14], ['campfire', 0], ['brazier', 6], ['shieldRack', 14], ['woodpile', 14], ['forge', 18], ['dryingRack', 16], ['dragonPost', 6], ['woodenWell', 12], ['haystack', 14]]
     .filter(function (f) { return !!kit.PROPS[f[0]]; });
   FLOORS = FLOORS.filter(function (f) { return !!kit.TILES[f.tile]; });
@@ -237,42 +229,12 @@ __COMBAT__
   function n1(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
   function rebuild() {
     dirty = false;
-    var x, y, seen = [], q = [], i;
-    function pass(ax, ay, bx, by) {                       // can you step from tile a to its neighbour b?
-      if (bx < ax) return !closed(key(ax, ay), B.V); if (bx > ax) return !closed(key(bx, by), B.V);
-      if (by < ay) return !closed(key(ax, ay), B.H); return !closed(key(bx, by), B.H);
-    }
-    function flood(start, id) {
-      var tiles = []; q = start.slice();
-      while (q.length) {
-        var c = q.pop(), cx = c[0], cy = c[1];
-        [[cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]].forEach(function (n) {
-          if (!inGrid(n[0], n[1]) || seen[n[1] * GW + n[0]] || !pass(cx, cy, n[0], n[1])) return;
-          seen[n[1] * GW + n[0]] = true; roomOf[n[1] * GW + n[0]] = id; tiles.push(n); q.push(n);
-        });
-      }
-      return tiles;
-    }
-    roomOf = []; for (i = 0; i < GW * GH; i++) { roomOf.push(-1); seen.push(false); }
-    var border = [];
-    for (x = 0; x < GW; x++) { border.push([x, 0], [x, GH - 1]); } for (y = 0; y < GH; y++) { border.push([0, y], [GW - 1, y]); }
-    border.forEach(function (b) { seen[b[1] * GW + b[0]] = true; });
-    flood(border, -1);
-    rooms = [];
-    for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
-      if (seen[y * GW + x]) continue;
-      seen[y * GW + x] = true; roomOf[y * GW + x] = rooms.length;
-      var tiles = [[x, y]].concat(flood([[x, y]], rooms.length)), maxY = 0;
-      tiles.forEach(function (t) { maxY = Math.max(maxY, t[1]); });
-      var id = 'r' + x + '_' + y; if (roofA[id] == null) roofA[id] = 1;
-      rooms.push({ id: id, tiles: tiles, maxY: maxY });
-    }
-    // collision: three small circles along every wall and window; doors are open ground
-    solids = [];
-    var k, p;
-    for (k in B.H) { if (B.H[k].t === 'door') continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }
-    for (k in B.V) { if (B.V[k].t === 'door') continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
-    B.items.forEach(function (it) { var r = 0; FURN.forEach(function (f) { if (f[0] === it.name) r = f[1]; }); if (r) solids.push({ x: it.x, y: it.y, r: r, hide: true }); });
+    var r = Build.rooms(B, GW, GH), i;
+    rooms = r.rooms; roomOf = r.roomOf;
+    rooms.forEach(function (rm) { if (roofA[rm.id] == null) roofA[rm.id] = 1; });
+    // collision: the walls and windows from Build, then furniture, trees and rocks
+    solids = r.solids.slice();
+    B.items.forEach(function (it) { var rr = 0; FURN.forEach(function (f) { if (f[0] === it.name) rr = f[1]; }); if (rr) solids.push({ x: it.x, y: it.y, r: rr, hide: true }); });
     B.nature.forEach(function (n) { if (n.r) solids.push({ x: n.x, y: n.y, r: n.r * n.s, hide: true }); });
     // readout
     var nf = Object.keys(B.floors).length, nw = 0, nd = 0, nwin = 0, roofed = 0;
@@ -284,64 +246,10 @@ __COMBAT__
     try { localStorage.setItem('baseeditor2', JSON.stringify(B)); } catch (e) {}
   }
 
-  /* ---------- drawing pieces ---------- */
-  function texture(c, m, x, y, w, h) {
-    c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip(); c.strokeStyle = m.dark; c.globalAlpha = 0.55; c.lineWidth = 0.9; c.beginPath();
-    var i, r;
-    if (m.tex === 'planks') for (i = 8; i < w; i += 8) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); }
-    else if (m.tex === 'blocks') { c.moveTo(x, y + h / 2); c.lineTo(x + w, y + h / 2); c.moveTo(x + 16, y); c.lineTo(x + 16, y + h / 2); c.moveTo(x + 8, y + h / 2); c.lineTo(x + 8, y + h); c.moveTo(x + 24, y + h / 2); c.lineTo(x + 24, y + h); }
-    else if (m.tex === 'bricks') for (r = 0; r * 5 < h; r++) { c.moveTo(x, y + r * 5); c.lineTo(x + w, y + r * 5); for (i = (r % 2) * 5; i < w; i += 10) { c.moveTo(x + i, y + r * 5); c.lineTo(x + i, y + r * 5 + 5); } }
-    else if (m.tex === 'turf') for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
-    else if (m.tex === 'logs') for (r = 5; r < h; r += 5) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
-    else if (m.tex === 'wattle') { for (i = 4; i < w; i += 6) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); } for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); } }
-    else { c.moveTo(x + 16, y); c.lineTo(x + 16, y + h); }
-    c.stroke();
-    if (m.tex === 'plates') { c.globalAlpha = 0.8; c.fillStyle = m.dark; [[3, 3], [13, 3], [19, 3], [29, 3], [3, h - 3], [13, h - 3], [19, h - 3], [29, h - 3]].forEach(function (q) { c.beginPath(); c.arc(x + q[0], y + q[1], 0.9, 0, 7); c.fill(); }); }
-    c.restore();
-  }
-  function box(c, x, y, w, h, fill) { c.fillStyle = fill; c.fillRect(x, y, w, h); c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(x, y, w, h); }
-  function drawH(c, x, y, e, low, open) {
-    var m = WALLS[e.m] || WALLS[0], h = low ? 7 : B.wallH, x0 = x * T, yb = y * TS, cap = B.thick * K;
-    if (e.t === 'door' && !low) {
-      box(c, x0, yb - h, 4, h, m.dark); box(c, x0 + T - 4, yb - h, 4, h, m.dark); box(c, x0, yb - h - cap, T, cap + 4, m.top);
-      if (open) box(c, x0 + 4, yb - h + 4, 4, h - 4, '#6b4a35');
-      else { box(c, x0 + 4, yb - h + 4, T - 8, h - 4, '#6b4a35'); c.fillStyle = '#e0a93a'; c.beginPath(); c.arc(x0 + T - 9, yb - h * 0.45, 1.4, 0, 7); c.fill(); }
-      return;
-    }
-    if (e.t === 'door') { box(c, x0, yb - h, 4, h, m.dark); box(c, x0 + T - 4, yb - h, 4, h, m.dark); return; }
-    c.fillStyle = m.face; c.fillRect(x0, yb - h, T, h); texture(c, m, x0, yb - h, T, h);
-    c.fillStyle = m.top; c.fillRect(x0, yb - h - cap, T, cap);
-    c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(x0, yb - h - cap, T, h + cap); c.beginPath(); c.moveTo(x0, yb - h); c.lineTo(x0 + T, yb - h); c.stroke();
-    if (e.t === 'window' && !low) { c.fillStyle = 'rgba(150,215,240,0.8)'; c.fillRect(x0 + 7, yb - h + 5, T - 14, h - 12); c.strokeRect(x0 + 7, yb - h + 5, T - 14, h - 12); c.beginPath(); c.moveTo(x0 + T / 2, yb - h + 5); c.lineTo(x0 + T / 2, yb - 7); c.stroke(); }
-  }
-  function drawV(c, x, y, e, open) {
-    var m = WALLS[e.m] || WALLS[0], h = B.wallH, th = B.thick, xl = x * T - th / 2, yt = y * TS - h, more = !!B.V[key(x, y + 1)];
-    if (e.t === 'door') {
-      box(c, xl, yt, th, 4, m.dark); box(c, xl, yt + TS - 4, th, 4, m.dark);
-      if (!open) box(c, xl + 0.6, yt + 4, th - 1.2, TS - 8, '#6b4a35');
-      if (!more) box(c, xl, yt + TS, th, h, m.dark);
-      return;
-    }
-    if (!more) { c.fillStyle = m.face; c.fillRect(xl, yt + TS, th, h); c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(xl, yt + TS, th, h); }
-    box(c, xl, yt, th, TS, m.top);
-    if (e.t === 'window') { c.fillStyle = 'rgba(150,215,240,0.9)'; c.fillRect(xl + 0.8, yt + 6, th - 1.6, TS - 12); }
-  }
-  function drawRoof(c, room, a) {
-    var r = ROOFS[B.roof]; if (!r || !r.col || a <= 0.01) return;
-    var ov = B.overhang, up = B.wallH + B.thick * K + 1, i, y0 = 1e9, y1 = -1e9, x0 = 1e9, x1 = -1e9;
-    function rects(pad) { c.beginPath(); room.tiles.forEach(function (t) { c.rect(t[0] * T - ov - pad, t[1] * TS - up - ov * K - pad, T + (ov + pad) * 2, TS + (ov * K + pad) * 2); }); }
-    room.tiles.forEach(function (t) { y0 = Math.min(y0, t[1]); y1 = Math.max(y1, t[1]); x0 = Math.min(x0, t[0]); x1 = Math.max(x1, t[0]); });
-    c.save(); c.globalAlpha = a;
-    rects(1.3); c.fillStyle = LINE; c.fill();
-    rects(0); c.fillStyle = r.col; c.fill(); c.clip();
-    var top = y0 * TS - up - ov * K, bot = (y1 + 1) * TS - up + ov * K, left = x0 * T - ov, right = (x1 + 1) * T + ov, mid = (top + bot) / 2;
-    c.fillStyle = 'rgba(0,0,0,0.16)'; c.fillRect(left, mid, right - left, bot - mid);
-    c.strokeStyle = r.line; c.lineWidth = 1; c.beginPath();
-    for (i = top + 5; i < bot; i += 5) { c.moveTo(left, i); c.lineTo(right, i); }
-    c.stroke();
-    c.strokeStyle = 'rgba(255,255,255,0.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(left, mid); c.lineTo(right, mid); c.stroke();
-    c.restore();
-  }
+  /* ---------- drawing pieces: src/build.js, with this page's wall height, thickness, overhang and roof ---------- */
+  function drawH(c, x, y, e, low, open) { Build.drawH(c, x, y, e, low, open, B); }
+  function drawV(c, x, y, e, open) { Build.drawV(c, x, y, e, open, !!B.V[key(x, y + 1)], B); }
+  function drawRoof(c, room, a) { Build.drawRoof(c, room, a, B); }
 
   /* ---------- mouse: place and remove ---------- */
   var cam = { x: WX / 2, y: WY / 2 * K, z: 1 }, mouse = null, down = 0, hero = null, lastPlaced = '';
@@ -349,12 +257,8 @@ __COMBAT__
     var r = cv.getBoundingClientRect(), mx = (e.clientX - r.left) / r.width * 400, my = (e.clientY - r.top) / r.height * 250;
     return { x: (mx - 200) / cam.z + cam.x, y: ((my - 125) / cam.z + cam.y) / K };
   }
-  function edgeAt(w) {
-    var tx = Math.floor(w.x / T), ty = Math.floor(w.y / T), fx = w.x / T - tx, fy = w.y / T - ty, best = Math.min(fx, 1 - fx, fy, 1 - fy);
-    if (best === fy) return { L: 'H', x: tx, y: ty, d: best }; if (best === 1 - fy) return { L: 'H', x: tx, y: ty + 1, d: best };
-    if (best === fx) return { L: 'V', x: tx, y: ty, d: best }; return { L: 'V', x: tx + 1, y: ty, d: best };
-  }
-  function edgeOk(ed) { return ed.L === 'H' ? (ed.x >= 0 && ed.x < GW && ed.y >= 0 && ed.y <= GH) : (ed.x >= 0 && ed.x <= GW && ed.y >= 0 && ed.y < GH); }
+  function edgeAt(w) { return Build.edgeAt(w.x, w.y); }
+  function edgeOk(ed) { return Build.edgeOk(ed, GW, GH); }
   function place(w, first) {
     var tx = Math.floor(w.x / T), ty = Math.floor(w.y / T), ed, k;
     if (tool === 'floor') { if (inGrid(tx, ty)) { B.floors[key(tx, ty)] = floorMat; dirty = true; } }
@@ -384,7 +288,7 @@ __COMBAT__
 
   /* ---------- scene ---------- */
   Combat.api.scene = {
-    noHud: true,
+    noHud: true, noHotbar: true,
     bounds: { x0: 14, y0: 22, x1: WX - 14, y1: WY - 10 },
     begin: function (c, P) {
       hero = P;

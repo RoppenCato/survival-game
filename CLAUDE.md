@@ -37,7 +37,7 @@ source of truth for the new direction.
 - **Progression:** no gates, keys or locked doors between areas. Biomes are open, and you struggle in a biome
   until you have done certain things in earlier ones. Biome rarity changes with distance from the spawn point.
 - **Scope for now:** only the starter island and travel to nearby islands, all of the first biome. None of the
-  raiding, clan or calendar systems are built yet.
+  raiding, clan or calendar systems are built yet. `game.html` is the playable start (see "The game" below).
 - **Scale:** one tile (32 world units, about the hero's width) is one "unit" of Robin's scale brief, and 100 tiles
   are a kilometre. A normal island is 200 to 400 tiles across, large ones 500 to 700, small ones around 50, and
   tiny skerries (5 to 30 tiles) are common round the coasts. Most gaps between islands are 20 to 80 tiles, some
@@ -84,6 +84,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `base-editor.html` | `base.html` | Base Editor: free building |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear |
+| `game.html` | `game.html` | The game: the first island, gathering, boars, inventory |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
 template and one line in `PAGES` in `tools/build.py`.
@@ -103,13 +104,20 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `CREATURE_DEF`, `makeCreature`, `setCreature`), animals (`animal3D`, `ANIMALS`, `animalSpec`), and small drawing helpers.
 - `src/stylelab.js` (`StyleLab.kit`): the world prop kit. `PROPS` (about 80 props), ground `TILES`, `bakeProp`,
   `bakeTile`, `blendTile`, and `STYLE`, the one shared look of the world. Every editor starts from `kit.STYLE`.
+- `src/world.js` (`World`): the archipelago, shared by the Sea Editor and the game. `World.make(kit, opts)` returns a
+  world: height field `E`, tile `grid`, `isLand`/`isWater`/`elevAt`, props in `buckets` (`plant`, `camp`, `addProp`,
+  `removeProp`, `around`, `nearSolids`), lazy ground painting (`drawGround`), shore waves (`drawWaves`), `chart`.
+  `World.KIND` and `World.HP` say what can be gathered. Island changes go here, once.
+- `src/build.js` (`Build`): building pieces, shared by the Base Editor and the game: `WALLS`, `FLOORS`, `ROOFS`,
+  `rooms(B, GW, GH, bounds)` (closed rooms by flood fill, and collision circles), `drawH`, `drawV`, `drawRoof`,
+  `edgeAt`, `icon`. A building is `B = { floors, H, V }` keyed `"x,y"`.
 - `src/combat.js` (`Combat`): the arena engine: hero movement and combat, enemy AI, effects, rendering. The editors
   reuse it through hooks on `Combat.api`:
   - `scene`: `begin(c, P)` (camera and ground), `items(list)` (extra y-sorted things), `end(c, P)`, `bounds`,
     `walk(x, y)` (ground that can be walked on), `heroLift()`, `noHud`, `noHeroShadow`
   - `pixelScale`, `roster` (who starts in the arena), `dress(e)` (give an enemy its own look and numbers)
   - Collision is circles only: `W.pillars` holds `{ x, y, r, hide }`. Big maps pass only the solids near the hero.
-- `templates/`: one HTML shell per page with `__ART__`, `__LIB__`, `__COMBAT__` placeholders.
+- `templates/`: one HTML shell per page with `__ART__`, `__LIB__`, `__WORLD__`, `__BUILD__`, `__COMBAT__` placeholders.
 - `tools/build.py`: plain string substitution. `tools/open.js`: opens the start page. `tools/visual/`: scripts that
   render things to PNG for checking (`props.js`, `creatures.js`, `walkcycle.js`, `swingdirs.js`, `attackstyles.js`).
 - `tests/`: headless combat checks (table in `tests/README.md`).
@@ -151,6 +159,68 @@ the text and it is made the default. When a spec's meaning changes, change the s
   Editor, turns to watch the hero, and E talks to him (a speech bubble cycling through a few lines). He does not
   walk, trade or give tasks yet.
 
+## The game (templates/game.html)
+
+The first playable build, started 2026-10-04. One generated island from `World` (count 1), a camp with a jetty, and:
+- **Gathering** through `Combat.api.harvest`. Trees, rocks and bushes have `kind`, `hp`, `max`. A tree leans
+  more with each chop and shows a small bar, then falls away from the hero (rotation about its base), scatters
+  wood along the trunk and leaves a stump decal. A rock cracks and shrinks as it is mined, then bursts into
+  shards and drops stone. Bushes fade and drop fiber. Props are removed from their bucket when gone.
+- **Drops** lie on the ground with a bounce, and are picked up by walking over them (+1 toast). **The bag** (Tab)
+  is a wooden board that slides in from the right, under the chart, so it never covers the hero: 6 slots wide, 4
+  high, stacks of 25, no weight (Robin: "no weight system, just slots"). The top row is the belt, numbered like the
+  hotbar; a belt item shows in any hotbar slot the mode leaves free (`Combat.api.beltSlots`) and its number key
+  uses it (food). Drag moves stacks, click eats food, **Sort** tidies the rows below the belt. `slots` is the
+  truth; `inv` is a count per kind derived from it (`recount`), used by costs. A full bag leaves drops lying.
+- **Boars**: six at a time, placed on grass away from camp, each with `e.wander = { x0, y0, r }` so it ambles
+  round a home range (`wanderStep` in the engine) and `e.aggro` so it charges when the hero comes close.
+  `Combat.api.onDeath(e)` drops meat; a new boar wanders in a few seconds after one dies.
+- **Building** on **B** through `Build`: five pieces (log wall, plank floor, door, window, stone wall) at low cost
+  (2 wood, 1 wood, 2 wood, 2 wood, 2 stone), chosen with 1 to 5, placed with the mouse (drag lays floors and walls),
+  only on land, away from trees and rocks, within reach. **F** toggles the red crossed wreck cursor, which gives
+  the material back in full. Closed rooms get a turf roof that fades when the hero is inside; walls are collision
+  circles near the hero. `Combat.api.buildSlots` feeds the build hotbar; `P.piece` and `P.wreck` hold the state.
+- **Build menu:** right click in build mode opens a big centred wooden board (8 by 4 cells, most empty for later
+  pieces, a "Building [n]" tab); click a piece to pick it. Wrecking is only on F (no cell for it). Pieces are not
+  in the hotbar: in build mode the bar shows the belt, and the chosen piece is named in the bar's label. The mouse
+  wheel steps through tools, pieces or the belt slot (`P.sel`). A hearth is a buildable item (`B.items`, drawn
+  as a prop, solid, cookable); the camp hearth stays.
+- **HUD:** only health and stamina top left, the chart and the meal icon top right; no kills or carry line (Robin:
+  "we can just open the inventory"). Damage numbers and pickup toasts are drawn in world space inside the camera
+  (`drawNums`), so they appear over the tree, rock or hero in the big world.
+- **Hotbar:** half size (11 px slots), with the sword and bow as two round icons set like the rings of a % sign to
+  its left. Tools use a chop (`chopPose`: up over the shoulder, down onto the target; the knife stabs) with no
+  lunge, and every tool hit shows a damage number. The bow shoots drawn arrows (visual only; no arrow item yet).
+  The meal buff is a round icon by the chart with a timer ring and a mouseover tooltip, not a text line.
+- **Food** (the reward-not-punish rule): berry bushes drop berries, boars drop meat. **E** at the camp hearth opens
+  a cooking panel: roast boar (1 meat), boar and berry stew (1 meat, 2 berries). Click food in the inventory to
+  eat it: berries heal 10; a meal heals and, for minutes, raises top health and gives health a second (`FOOD`,
+  `fed` in the page). No hunger meter. The meal is saved with the game.
+- **Saving** in `localStorage` (`game.save`): island seed, inventory, buildings, felled props (keyed by rounded
+  position), stumps, hero position. Saved on every change, every 10 s and on leaving; loaded on start. "New
+  island" deletes it. Boars and dropped items are not saved.
+- **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
+- Not built: Brokk, boats, crafting, food, skills, sound, night.
+
+## Controls and modes (decided 2026-10-04)
+
+The hero has two modes, switched with **Q**, each with its own six-slot hotbar at the bottom middle of the screen.
+- **Fight mode:** two weapons, a sword (melee) and a bow (ranged), swapped with **F**; the attack button uses
+  whichever is out. Slots 1 to 6 are for skills and spells, which fill in later. The two weapons show as icons left
+  of the slots.
+- **Gather mode:** tools on 1 to 6: axe, pickaxe, knife so far (trees, stone, bushes). The right tool does full
+  damage and any other does half. Tools do not hurt enemies. Tools are chosen by hand: no auto-pick, no highlight.
+- **Build mode:** **B** enters it (no hammer item). In it **F** turns the cursor into a red crossed box that
+  destroys pieces. Built in the game (see "The game").
+- **Tab:** inventory. **Ctrl:** target the nearest enemy, then the next nearest on each press, then let go.
+- Food and consumables should work in both modes (their own keys). Dragging things from the inventory onto the
+  hotbar, so you can choose the layout, is wanted ("maybe"). Neither is built yet.
+- Built so far: modes, Q, F, Ctrl, the hotbar, the sword, the bow, and axe, pickaxe and knife, shown in the Combat
+  Arena and the Creature Editor; gathering works in the Environment Editor (trees give wood, rocks stone, bushes
+  fiber, counted under the view; there is no inventory yet). `Combat.api.harvest` is how a page offers things to
+  gather. `P.mode`, `P.weapon` and `P.tool` hold the state, and `Combat.api.tools` the tools.
+- Ctrl is a browser modifier: Ctrl+W closes the tab, so avoid Ctrl together with a movement key.
+
 ## Creatures
 
 - `creatureD(c, x, y, s, H)` draws creature `H` (from `makeCreature(spec)`), or the one set by `setCreature` if
@@ -182,7 +252,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
 
 ## Sea and islands
 
-`templates/sea.html` is the reference for the archipelago. Islands are placed one after another, each beside an
+The archipelago code is `src/world.js` (`World`), used by `templates/sea.html` and `templates/game.html`. Islands are placed one after another, each beside an
 earlier one at a random gap, so they cluster and chain. Each is a rough blob from noise, with skerries round it.
 The map grows to fit (capped at nine million tiles; islands that do not fit are left out and the readout says so).
 Each island writes a height into a field (`E`, hundredths of a tile; above zero is land). The ground is painted

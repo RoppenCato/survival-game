@@ -19,7 +19,7 @@ def write(path, text):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(text)
 
-SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__COMBAT__': read('src', 'combat.js')}
+SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__BUILD__': read('src', 'build.js'), '__COMBAT__': read('src', 'combat.js')}
 
 # page name in dist/  ->  template in templates/
 PAGES = [
@@ -30,7 +30,7 @@ PAGES = [
     ('environment-editor', 'environment'),
     ('base-editor', 'base'),
     ('sea-editor', 'sea'),
-    ('combat-arena', 'combat'),
+    ('combat-arena', 'combat'), ('game', 'game'),
 ]
 for page, template in PAGES:
     html = read('templates', template + '.html')

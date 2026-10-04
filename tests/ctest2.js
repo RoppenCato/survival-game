@@ -45,7 +45,7 @@ console.log('frames bot spent hugging (<20):',hug,'of 180');
 
 // 7 ranged auto
 C.reset();C.clear();C.S.ranged='auto';e=C.spawn('bot');e.x=300;e.y=255;e.state='idle';e.cd=99;P=dd().P;P.x=150;P.y=255;P.face=0;P.faceVis=0;
-C.key('KeyF',true);step(1);C.key('KeyF',false);step(40);console.log('auto ranged hit:',e.hp<4);C.S.ranged='mouse';
+C.key('KeyF',true);step(1);C.key('KeyF',false);C.key('KeyJ',true);step(2);C.key('KeyJ',false);step(40);console.log('auto ranged hit:',e.hp<4);C.S.ranged='mouse';
 
 // screenshots
 e=setup(236,255,200,255,0);e.state='idle';

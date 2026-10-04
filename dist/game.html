@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sea Editor</title>
+<title>The game</title>
 <style>
 :root{
   box-sizing:border-box;
@@ -22,38 +22,25 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
-main{max-width:2400px;margin:0 auto}
+main{max-width:1800px;margin:0 auto}
 .back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
 .back:hover{color:var(--accent)}
 h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
 .lede{margin:0 0 14px;color:var(--ink2);max-width:76ch}
-.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
-@media (min-width:1000px){
-  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
-  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
-}
 .stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
-#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto}
-#poses,#sheet{max-width:900px}
+#cv{width:min(100%,calc((100vh - 170px)*1.6));margin:0 auto}
 canvas{display:block;width:100%;height:auto;border-radius:8px;background:#20262c;touch-action:none}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.panel + .panel,.stage + .panel{margin-top:12px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px}
 .panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
 .panel h2.more{margin-top:14px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){ .cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
 .group{display:flex;flex-wrap:wrap;gap:8px}
 button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
 button:hover{background:var(--btnh)}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
 .stat{margin:0 2px;font-size:.95rem;font-weight:600}
-.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
-.row input{width:100%;accent-color:var(--accent);margin:0}
-.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
-.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
-.sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
-.sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
-textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
 kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .keys dt{white-space:nowrap}
@@ -63,66 +50,45 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <body>
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
-  <h1>Sea Editor</h1>
-  <p class="lede">Walk down the jetty, board the ship and sail between islands. Pick a ship, then change how it handles and how the sea looks. Step ashore anywhere the boat touches land.</p>
-  <div class="wrap">
-    <div class="left">
-      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Sea and islands"></canvas></div>
-      <section class="panel">
-        <p class="stat" id="stat"></p>
-        <p class="desc">The chart in the corner shows the whole sea. The white dot is the boat, the yellow dot is you.</p>
-        <div id="pview" style="margin-top:8px"></div>
-        <div class="group" style="margin-top:8px">
-          <button id="tohome">Back to the dock</button>
-          <button id="newsea">New sea</button>
-        </div>
-        <h2 class="more">Controls</h2>
+  <h1>The game</h1>
+  <p class="lede">The first island. Chop trees and mine stone in gather mode, draw your sword or bow in fight mode when the boar turns on you, build a hut from what you gather, and come back to it later: the game saves itself.</p>
+  <div class="stage"><canvas id="cv" width="800" height="500" aria-label="The island"></canvas></div>
+  <section class="panel">
+    <p class="stat" id="stat"></p>
+    <div class="group" style="margin-top:8px">
+      <button id="newisle">New island (starts over)</button>
+      <button id="tohome">Back to camp</button>
+    </div>
+    <div class="cols" style="margin-top:12px">
+      <div>
+        <h2>Controls</h2>
         <dl class="keys">
-          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk on land, steer on water. Hold <kbd>Shift</kbd> to sprint on land</dd>
-          <dt><kbd>E</kbd></dt><dd>Board the boat when you stand next to it. Step ashore when the boat is next to land</dd>
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk. Hold <kbd>Shift</kbd> to sprint</dd>
+          <dt><kbd>Q</kbd></dt><dd>Switch between fight mode and gather mode</dd>
+          <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Swing the sword or the tool, or shoot the bow. Hold for a charged swing</dd>
+          <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block. Press just before a hit to parry</dd>
+          <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+          <dt><kbd>F</kbd></dt><dd>Fight mode: swap sword and bow</dd>
+          <dt><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>Gather mode: axe, pickaxe, knife. The right tool does full damage, the wrong one half</dd>
+          <dt><kbd>Ctrl</kbd></dt><dd>Target the nearest boar; again for the next, then let go</dd>
+          <dt><kbd>B</kbd></dt><dd>Build mode. <kbd>Right click</kbd> opens the board of pieces: pick one, then click to place it (drag for walls and floors). <kbd>F</kbd> turns the cursor into the wreck cursor: the piece under it glows red, and a click takes it down and gives the material back</dd>
+          <dt><kbd>Mouse wheel</kbd></dt><dd>Step through the hotbar: tools in gather mode, pieces in build mode, the belt in fight mode</dd>
+          <dt><kbd>E</kbd></dt><dd>Cook at the camp hearth</dd>
+          <dt><kbd>Tab</kbd></dt><dd>The bag: a wooden board that slides in from the right. Six slots wide, four high, stacks of 25. The top row is the belt and matches the hotbar numbers. Drag to move things, click food to eat it, Sort tidies the rows below the belt</dd>
+          <dt><kbd>R</kbd></dt><dd>Rise again after you have fallen</dd>
         </dl>
-      </section>
+      </div>
+      <div>
+        <h2>What there is to do</h2>
+        <p class="desc" style="margin-top:0">Trees take a few chops with the axe and fall. Rocks crack as you mine them and break apart. Bushes are cut with the knife. What falls out lies on the ground until you walk over it, and lands in your inventory.</p>
+        <p class="desc">Boars roam the island in small home ranges. They leave you alone until you come close, then charge. A dead boar leaves meat, and berry bushes give berries.</p>
+        <p class="desc">Food never punishes you: you do not have to eat. Eat, and you heal; cook a meal at the hearth and your health keeps coming back for minutes, with your top health raised. Roast boar is good; boar and berry stew is better. Open the bag and click food to eat it, or put food on the belt and press its number.</p>
+        <p class="desc">Building is cheap: a wall, door or window costs two wood (a stone wall two stone), a floor tile one wood, and a hearth of your own four stone and two wood (you can cook at it like the one at camp). Close a loop of walls and a turf roof appears by itself, and fades when you step inside. Add a door, or you will not get in.</p>
+        <p class="desc">Your island, inventory, buildings and felled trees are saved in this browser and are there when you come back. "New island" throws it all away and starts again.</p>
+        <p class="desc">The chart in the corner shows the island; the yellow dot is you.</p>
+      </div>
     </div>
-
-    <div class="right">
-      <section class="panel">
-        <h2>Boat</h2>
-        <div class="group" id="types"></div>
-        <p class="desc" id="typedesc"></p>
-        <div id="pboat" style="margin-top:8px"></div>
-        <p class="desc">Choosing a boat sets its handling. The sliders then change it.</p>
-      </section>
-      <section class="panel">
-        <h2>Steering</h2>
-        <div class="group" id="steers"></div>
-        <p class="desc" id="steerdesc"></p>
-        <div id="phandle" style="margin-top:8px"></div>
-        <p class="desc">Glide is how long the boat keeps moving after you let go. Grip is how firmly it follows its bow; low grip lets it slide sideways in turns.</p>
-      </section>
-      <section class="panel">
-        <h2>Sea</h2>
-        <div id="psea"></div>
-      </section>
-      <section class="panel">
-        <h2>Archipelago</h2>
-        <div id="pland"></div>
-        <p class="desc">Sizes and gaps are in tiles: 100 tiles is one kilometre, and the hero is about one tile wide. Island width is the normal island; Size variety mixes in small and large ones. Most gaps are near the typical gap; Gap variety adds narrow straits and the occasional long crossing. Skerries are the tiny rocky islets around the coasts.</p>
-      </section>
-      <section class="panel">
-        <h2>Boat colours</h2>
-        <div class="swatches" id="swatches"></div>
-      </section>
-      <section class="panel">
-        <h2>Settings as text</h2>
-        <textarea id="json" spellcheck="false" aria-label="Sea settings as text"></textarea>
-        <div class="group" style="margin-top:8px">
-          <button id="copy">Copy</button>
-          <button id="applyjson">Apply text</button>
-        </div>
-        <p class="desc" id="jsonmsg">Copy this to keep a setup. Paste one in and press Apply text to load it.</p>
-      </section>
-    </div>
-  </div>
+  </section>
 </main>
 <script>
 var GameArt = (function () {
@@ -2872,6 +2838,153 @@ return { make: make, DEF: DEF, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnois
 })();
 if (typeof module !== 'undefined') module.exports = World;
 
+/* Build: the building pieces, shared by the Base Editor and the game.
+   A building is B = { floors: { 'x,y': floorMat }, H: { 'x,y': { t, m } }, V: { 'x,y': { t, m } } } on a tile grid:
+   floors fill tiles, H edges run along the top of tile (x, y), V edges along its left side. t is 'wall', 'door'
+   or 'window'; m indexes WALLS. Build.rooms finds the closed rooms (which get a roof) and the collision circles;
+   drawH, drawV and drawRoof draw the pieces in the world (y-sorted by the page). cfg: wallH, thick, overhang, roof. */
+var Build = (function () {
+'use strict';
+var T = 32, TS = 24, K = 0.75, LINE = '#1d1622';
+var WALLS = [
+  { name: 'Logs', face: '#7a5636', top: '#9a744c', dark: '#3f2a18', tex: 'logs' },
+  { name: 'Planks', face: '#8a6440', top: '#aa8358', dark: '#5a3f2a', tex: 'planks' },
+  { name: 'Wattle', face: '#b89d6c', top: '#ceb686', dark: '#7a6540', tex: 'wattle' },
+  { name: 'Stone', face: '#868a94', top: '#a9adb8', dark: '#5c606c', tex: 'blocks' },
+  { name: 'Turf', face: '#5c7f48', top: '#79a25e', dark: '#3c5a30', tex: 'turf' }
+];
+var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: 'dirt' }, { name: 'Stone flags', tile: 'path' }];
+var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a' }, { name: 'Thatch', col: '#c4a55c', line: '#93793c' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a' }, { name: 'No roof' }];
+var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 0, seeThrough: 0.12 };
+function key(x, y) { return x + ',' + y; }
+function cfg(c) { var o = {}, k; for (k in CFG) o[k] = CFG[k]; for (k in c || {}) if (c[k] != null) o[k] = c[k]; return o; }
+
+// the edge of a tile nearest to a world point, with how far from it (in tiles)
+function edgeAt(wx, wy) {
+  var tx = Math.floor(wx / T), ty = Math.floor(wy / T), fx = wx / T - tx, fy = wy / T - ty, best = Math.min(fx, 1 - fx, fy, 1 - fy);
+  if (best === fy) return { L: 'H', x: tx, y: ty, d: best }; if (best === 1 - fy) return { L: 'H', x: tx, y: ty + 1, d: best };
+  if (best === fx) return { L: 'V', x: tx, y: ty, d: best }; return { L: 'V', x: tx + 1, y: ty, d: best };
+}
+function edgeOk(ed, GW, GH) { return ed.L === 'H' ? (ed.x >= 0 && ed.x < GW && ed.y >= 0 && ed.y <= GH) : (ed.x >= 0 && ed.x <= GW && ed.y >= 0 && ed.y < GH); }
+
+// Closed rooms by flood fill from the outside, and three small collision circles along every wall and window
+// (doors are open ground). Returns { rooms: [{ id, tiles, maxY }], roomOf: Int32Array, solids: [] }.
+// bounds (optional) limits the search to a rectangle of tiles, for big grids.
+function rooms(B, GW, GH, bounds) {
+  var bx0 = 0, by0 = 0, bx1 = GW - 1, by1 = GH - 1, x, y, i;
+  if (bounds) { bx0 = Math.max(0, bounds.x0); by0 = Math.max(0, bounds.y0); bx1 = Math.min(GW - 1, bounds.x1); by1 = Math.min(GH - 1, bounds.y1); }
+  var w = bx1 - bx0 + 1, h = by1 - by0 + 1, seen = new Uint8Array(w * h), roomOf = new Int32Array(w * h).fill(-1), q;
+  function idx(x, y) { return (y - by0) * w + (x - bx0); }
+  function inside(x, y) { return x >= bx0 && y >= by0 && x <= bx1 && y <= by1; }
+  function pass(ax, ay, bx, by) {                       // can you step from tile a to its neighbour b?
+    if (bx < ax) return !B.V[key(ax, ay)]; if (bx > ax) return !B.V[key(bx, by)];
+    if (by < ay) return !B.H[key(ax, ay)]; return !B.H[key(bx, by)];
+  }
+  function flood(start, id) {
+    var tiles = []; q = start.slice();
+    while (q.length) {
+      var c = q.pop(), cx = c[0], cy = c[1];
+      var nb = [[cx - 1, cy], [cx + 1, cy], [cx, cy - 1], [cx, cy + 1]];
+      for (var n = 0; n < 4; n++) {
+        var nx = nb[n][0], ny = nb[n][1];
+        if (!inside(nx, ny) || seen[idx(nx, ny)] || !pass(cx, cy, nx, ny)) continue;
+        seen[idx(nx, ny)] = 1; roomOf[idx(nx, ny)] = id; tiles.push(nb[n]); q.push(nb[n]);
+      }
+    }
+    return tiles;
+  }
+  var border = [];
+  for (x = bx0; x <= bx1; x++) { border.push([x, by0], [x, by1]); } for (y = by0; y <= by1; y++) { border.push([bx0, y], [bx1, y]); }
+  border.forEach(function (b) { seen[idx(b[0], b[1])] = 1; });
+  flood(border, -1);
+  var out = [];
+  for (y = by0; y <= by1; y++) for (x = bx0; x <= bx1; x++) {
+    if (seen[idx(x, y)]) continue;
+    seen[idx(x, y)] = 1; roomOf[idx(x, y)] = out.length;
+    var tiles = [[x, y]].concat(flood([[x, y]], out.length)), maxY = 0;
+    tiles.forEach(function (t) { maxY = Math.max(maxY, t[1]); });
+    out.push({ id: 'r' + x + '_' + y, tiles: tiles, maxY: maxY });
+  }
+  var solids = [], k, p;
+  for (k in B.H) { if (B.H[k].t === 'door') continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }
+  for (k in B.V) { if (B.V[k].t === 'door') continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
+  return { rooms: out, roomOf: roomOf, solids: solids, x0: bx0, y0: by0, w: w, h: h, at: function (tx, ty) { return inside(tx, ty) ? roomOf[idx(tx, ty)] : -1; } };
+}
+
+/* drawing */
+function texture(c, m, x, y, w, h) {
+  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip(); c.strokeStyle = m.dark; c.globalAlpha = 0.55; c.lineWidth = 0.9; c.beginPath();
+  var i, r;
+  if (m.tex === 'planks') for (i = 8; i < w; i += 8) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); }
+  else if (m.tex === 'blocks') { c.moveTo(x, y + h / 2); c.lineTo(x + w, y + h / 2); c.moveTo(x + 16, y); c.lineTo(x + 16, y + h / 2); c.moveTo(x + 8, y + h / 2); c.lineTo(x + 8, y + h); c.moveTo(x + 24, y + h / 2); c.lineTo(x + 24, y + h); }
+  else if (m.tex === 'turf') for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
+  else if (m.tex === 'logs') for (r = 5; r < h; r += 5) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); }
+  else if (m.tex === 'wattle') { for (i = 4; i < w; i += 6) { c.moveTo(x + i, y); c.lineTo(x + i, y + h); } for (r = 4; r < h; r += 4) { c.moveTo(x, y + r); c.lineTo(x + w, y + r); } }
+  else { c.moveTo(x + 16, y); c.lineTo(x + 16, y + h); }
+  c.stroke(); c.restore();
+}
+function box(c, x, y, w, h, fill) { c.fillStyle = fill; c.fillRect(x, y, w, h); c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(x, y, w, h); }
+// an edge along the top of tile (x, y): low while you are inside and it is in front of you; open for a door you stand near
+function drawH(c, x, y, e, low, open, C) {
+  C = C || CFG;
+  var m = WALLS[e.m] || WALLS[0], h = low ? 7 : C.wallH, x0 = x * T, yb = y * TS, cap = C.thick * K;
+  if (e.t === 'door' && !low) {
+    box(c, x0, yb - h, 4, h, m.dark); box(c, x0 + T - 4, yb - h, 4, h, m.dark); box(c, x0, yb - h - cap, T, cap + 4, m.top);
+    if (open) box(c, x0 + 4, yb - h + 4, 4, h - 4, '#6b4a35');
+    else { box(c, x0 + 4, yb - h + 4, T - 8, h - 4, '#6b4a35'); c.fillStyle = '#e0a93a'; c.beginPath(); c.arc(x0 + T - 9, yb - h * 0.45, 1.4, 0, 7); c.fill(); }
+    return;
+  }
+  if (e.t === 'door') { box(c, x0, yb - h, 4, h, m.dark); box(c, x0 + T - 4, yb - h, 4, h, m.dark); return; }
+  c.fillStyle = m.face; c.fillRect(x0, yb - h, T, h); texture(c, m, x0, yb - h, T, h);
+  c.fillStyle = m.top; c.fillRect(x0, yb - h - cap, T, cap);
+  c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(x0, yb - h - cap, T, h + cap); c.beginPath(); c.moveTo(x0, yb - h); c.lineTo(x0 + T, yb - h); c.stroke();
+  if (e.t === 'window' && !low) { c.fillStyle = 'rgba(150,215,240,0.8)'; c.fillRect(x0 + 7, yb - h + 5, T - 14, h - 12); c.strokeRect(x0 + 7, yb - h + 5, T - 14, h - 12); c.beginPath(); c.moveTo(x0 + T / 2, yb - h + 5); c.lineTo(x0 + T / 2, yb - 7); c.stroke(); }
+}
+// an edge along the left side of tile (x, y). more: whether the V edge below continues it (no end face then)
+function drawV(c, x, y, e, open, more, C) {
+  C = C || CFG;
+  var m = WALLS[e.m] || WALLS[0], h = C.wallH, th = C.thick, xl = x * T - th / 2, yt = y * TS - h;
+  if (e.t === 'door') {
+    box(c, xl, yt, th, 4, m.dark); box(c, xl, yt + TS - 4, th, 4, m.dark);
+    if (!open) box(c, xl + 0.6, yt + 4, th - 1.2, TS - 8, '#6b4a35');
+    if (!more) box(c, xl, yt + TS, th, h, m.dark);
+    return;
+  }
+  if (!more) { c.fillStyle = m.face; c.fillRect(xl, yt + TS, th, h); c.strokeStyle = LINE; c.lineWidth = 1.2; c.strokeRect(xl, yt + TS, th, h); }
+  box(c, xl, yt, th, TS, m.top);
+  if (e.t === 'window') { c.fillStyle = 'rgba(150,215,240,0.9)'; c.fillRect(xl + 0.8, yt + 6, th - 1.6, TS - 12); }
+}
+function drawRoof(c, room, a, C) {
+  C = C || CFG;
+  var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
+  var ov = C.overhang, up = C.wallH + C.thick * K + 1, i, y0 = 1e9, y1 = -1e9, x0 = 1e9, x1 = -1e9;
+  function rects(pad) { c.beginPath(); room.tiles.forEach(function (t) { c.rect(t[0] * T - ov - pad, t[1] * TS - up - ov * K - pad, T + (ov + pad) * 2, TS + (ov * K + pad) * 2); }); }
+  room.tiles.forEach(function (t) { y0 = Math.min(y0, t[1]); y1 = Math.max(y1, t[1]); x0 = Math.min(x0, t[0]); x1 = Math.max(x1, t[0]); });
+  c.save(); c.globalAlpha = a;
+  rects(1.3); c.fillStyle = LINE; c.fill();
+  rects(0); c.fillStyle = r.col; c.fill(); c.clip();
+  var top = y0 * TS - up - ov * K, bot = (y1 + 1) * TS - up + ov * K, left = x0 * T - ov, right = (x1 + 1) * T + ov, mid = (top + bot) / 2;
+  c.fillStyle = 'rgba(0,0,0,0.16)'; c.fillRect(left, mid, right - left, bot - mid);
+  c.strokeStyle = r.line; c.lineWidth = 1; c.beginPath();
+  for (i = top + 5; i < bot; i += 5) { c.moveTo(left, i); c.lineTo(right, i); }
+  c.stroke();
+  c.strokeStyle = 'rgba(255,255,255,0.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(left, mid); c.lineTo(right, mid); c.stroke();
+  c.restore();
+}
+// a small icon of a piece, for a hotbar slot (centred on 0, 0, about 14 wide)
+function icon(c, id, m) {
+  var w = WALLS[m || 0];
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  if (id === 'floor') { c.fillStyle = '#b98a5a'; c.fillRect(-6, -4, 12, 8); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -4, 12, 8); c.beginPath(); c.moveTo(-2, -4); c.lineTo(-2, 4); c.moveTo(2, -4); c.lineTo(2, 4); c.stroke(); }
+  else if (id === 'door') { c.fillStyle = w.dark; c.fillRect(-6, -7, 12, 14); c.fillStyle = '#6b4a35'; c.fillRect(-4, -5, 8, 12); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -7, 12, 14); c.fillStyle = '#e0a93a'; c.beginPath(); c.arc(2, 1, 1, 0, 7); c.fill(); }
+  else if (id === 'window') { c.fillStyle = w.face; c.fillRect(-6, -7, 12, 14); c.fillStyle = 'rgba(150,215,240,0.9)'; c.fillRect(-3.5, -4.5, 7, 9); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -7, 12, 14); c.strokeRect(-3.5, -4.5, 7, 9); }
+  else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); texture(c, w, -6, -6, 12, 12); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
+  c.restore();
+}
+return { T: T, TS: TS, K: K, LINE: LINE, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, rooms: rooms, texture: texture, box: box, drawH: drawH, drawV: drawV, drawRoof: drawRoof, icon: icon };
+})();
+if (typeof module !== 'undefined') module.exports = Build;
+
 var Combat = (function () {
 'use strict';
 var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
@@ -4329,470 +4442,626 @@ return { init: init, update: update, render: render, key: key, button: button, m
 if (typeof module !== 'undefined') module.exports = Combat;
 
 (function () {
-  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-
-  // The canvas is shown large, so give it enough pixels to stay sharp at its displayed size.
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), stat = document.getElementById('stat');
   function fitCanvas() {
     var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4;
     if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); }
     Combat.api.pixelScale = ps;
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
-  var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, TS = kit.TH;
+  var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, TS = kit.TH, BASE = kit.STYLE;
+
+  /* ---------- the engine: nobody starts in the world; boars are placed by hand ---------- */
+  Combat.api.roster = [];
+  var BOAR_R = 9;
+  Combat.api.dress = function (e) {
+    var sp = lib.animalSpec('boar');
+    e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = 'WILD BOAR';
+    e.r = BOAR_R * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge };
+    e.hp = e.maxHp = sp.hp; e.aggro = 75;
+  };
   Combat.init(lib);
   var S = Combat.S; S.look = 'classic'; S.sound = false;
   Combat.clear();
-  var BASE = kit.STYLE;   // the one shared look of the world, set in src/stylelab.js
 
-  /* ---------- boats ---------- */
-  var LINE = '#1d1622';
-  var TYPES = [
-    { name: 'Faering', L: 20, W: 7.5, oars: 2, sail: 0, shields: 0, head: 0, note: 'A small four-oared boat. Nimble, for short hops along the coast.', set: { top: 95, accel: 110, turn: 2.6, glide: 0.8, grip: 0.8 } },
-    { name: 'Karve', L: 27, W: 9, oars: 3, sail: 1, mast: 34, yard: 1.5, stripes: 1, shields: 0, head: 0, note: 'A small ship with oars and a striped sail. A good all-rounder.', set: { top: 130, accel: 70, turn: 2, glide: 1.8, grip: 0.65 } },
-    { name: 'Longship', L: 36, W: 9, oars: 5, sail: 1, mast: 40, yard: 1.7, stripes: 1, shields: 6, head: 1, note: 'A dragon-headed warship with shields along the rail. Fast and long, wide in the turn.', set: { top: 165, accel: 60, turn: 1.5, glide: 2.4, grip: 0.6 } },
-    { name: 'Knarr', L: 30, W: 12, oars: 0, sail: 1, mast: 38, yard: 1.3, stripes: 0, shields: 0, head: 0, note: 'A broad cargo ship under sail alone. Slow to start and steady.', set: { top: 110, accel: 40, turn: 1.2, glide: 2.6, grip: 0.55 } }
-  ];
-  var STEER = [['Direct', 'Hold a direction and the boat turns to face it and goes. Easy, like walking.'], ['Tiller', 'W drives forward, S backs up, A and D turn the bow. More like a real boat: you have to be moving to turn.']];
-  var BOAT = [
-    { k: 'size', label: 'Boat size', min: 0.7, max: 1.8, step: 0.05 },
-    { k: 'top', label: 'Top speed', min: 40, max: 300, step: 5 },
-    { k: 'accel', label: 'Acceleration', min: 20, max: 300, step: 5 }
-  ];
-  var HANDLE = [
-    { k: 'turn', label: 'Turn speed', min: 0.5, max: 5, step: 0.1 },
-    { k: 'glide', label: 'Glide', min: 0.2, max: 4, step: 0.1 },
-    { k: 'grip', label: 'Grip', min: 0, max: 1, step: 0.05 }
-  ];
-  var SEA = [
-    { k: 'hue', label: 'Water colour', min: -60, max: 60, step: 2 },
-    { k: 'waves', label: 'Waves', min: 0, max: 2, step: 0.05 },
-    { k: 'foam', label: 'Shore waves', min: 0, max: 1.5, step: 0.05 },
-    { k: 'bob', label: 'Boat bobbing', min: 0, max: 2.5, step: 0.05 },
-    { k: 'wake', label: 'Wake', min: 0, max: 2, step: 0.05 }
-  ];
-  var LAND = [
-    { k: 'isle', label: 'Island width', min: 40, max: 500, step: 10 },
-    { k: 'sizeVar', label: 'Size variety', min: 0, max: 1, step: 0.05 },
-    { k: 'count', label: 'Islands', min: 2, max: 14, step: 1 },
-    { k: 'gap', label: 'Typical gap', min: 10, max: 150, step: 5 },
-    { k: 'gapVar', label: 'Gap variety', min: 0, max: 1, step: 0.05 },
-    { k: 'skerries', label: 'Skerries', min: 0, max: 2, step: 0.1 },
-    { k: 'rough', label: 'Coast roughness', min: 0, max: 1.5, step: 0.05 },
-    { k: 'beach', label: 'Beach width', min: 1, max: 9, step: 0.5 },
-    { k: 'seed', label: 'Sea number', min: 1, max: 99, step: 1 }
-  ];
-  var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.3, max: 2, step: 0.05 }];
-  var NUM = BOAT.concat(HANDLE, SEA, LAND);
-  var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Stripes and shields']];
-  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
-    isle: 220, sizeVar: 0.8, count: 7, gap: 50, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, seed: 25,
-    col: { hull: '#5a3a26', deck: '#b98a5a', sail: '#efe6cf', trim: '#b83a2e' } };
-  function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  var spec = clone(DEF), view = { zoom: 0.7 }, inputs = {}, outputs = {}, swatch = {};
-  var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg'), stat = document.getElementById('stat');
-  function snap(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
-  function fmt(p, v) { return p.step < 1 ? v.toFixed(2) : String(v); }
-  function pressed(hostId, n) { var b = document.querySelectorAll('#' + hostId + ' button'); for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', i === n ? 'true' : 'false'); }
-
-  var worldKey = '';
-  function apply() {
-    var i;
-    for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : DEF[p.k]); }
-    spec.type = Math.max(0, Math.min(TYPES.length - 1, Math.round(Number(spec.type)) || 0));
-    spec.steer = spec.steer === 1 ? 1 : 0;
-    if (!spec.col || typeof spec.col !== 'object') spec.col = {};
-    COLS.forEach(function (c) { if (!/^#[0-9a-fA-F]{6}$/.test(spec.col[c[0]])) spec.col[c[0]] = DEF.col[c[0]]; });
-    var clean = {}; for (var k in DEF) clean[k] = spec[k]; spec = clean;
-    for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
-    COLS.forEach(function (c) { swatch[c[0]].value = spec.col[c[0]]; });
-    pressed('types', spec.type); pressed('steers', spec.steer);
-    document.getElementById('typedesc').textContent = TYPES[spec.type].note;
-    document.getElementById('steerdesc').textContent = STEER[spec.steer][1];
-    if (document.activeElement !== json) json.value = JSON.stringify(spec);
-    try { localStorage.setItem('seaeditor4', JSON.stringify(spec)); } catch (e) {}
-    var wk = [spec.isle, spec.sizeVar, spec.count, spec.gap, spec.gapVar, spec.skerries, spec.rough, spec.beach, spec.seed, spec.hue].join('|');
-    if (wk === worldKey) showStat();
-    if (wk !== worldKey) { var relocate = wk.split('|').slice(0, 9).join('|') !== worldKey.split('|').slice(0, 9).join('|'); worldKey = wk; buildWorld(relocate); }
-  }
-  function sliders(hostId, list, target, onChange) {
-    var host = document.getElementById(hostId);
-    list.forEach(function (p) {
-      var row = document.createElement('label'); row.className = 'row';
-      var name = document.createElement('span'); name.textContent = p.label;
-      var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step;
-      var out = document.createElement('output');
-      inp.addEventListener(p.slow ? 'change' : 'input', function () { target()[p.k] = parseFloat(inp.value); onChange(); });
-      if (p.slow) inp.addEventListener('input', function () { out.textContent = fmt(p, parseFloat(inp.value)); });
-      inp.addEventListener('change', function () { inp.blur(); });
-      row.appendChild(name); row.appendChild(inp); row.appendChild(out); host.appendChild(row);
-      inputs[p.k] = inp; outputs[p.k] = out;
-    });
-  }
-  function getSpec() { return spec; }
-  LAND.forEach(function (p) { p.slow = true; }); SEA[0].slow = true;   // these rebuild the map, so wait until the slider is let go
-  sliders('pboat', BOAT, getSpec, apply); sliders('phandle', HANDLE, getSpec, apply); sliders('psea', SEA, getSpec, apply); sliders('pland', LAND, getSpec, apply);
-  function syncView() { inputs.zoom.value = view.zoom; outputs.zoom.textContent = view.zoom.toFixed(2); }
-  sliders('pview', VIEW, function () { return view; }, syncView); syncView();
-  function buttons(hostId, list, text, fn) {
-    var host = document.getElementById(hostId);
-    list.forEach(function (item, i) { var b = document.createElement('button'); b.textContent = text(item); b.addEventListener('click', function () { fn(item, i); b.blur(); }); host.appendChild(b); });
-  }
-  buttons('types', TYPES, function (t) { return t.name; }, function (t, i) { spec.type = i; for (var k in t.set) spec[k] = t.set[k]; apply(); });
-  buttons('steers', STEER, function (s) { return s[0]; }, function (s, i) { spec.steer = i; apply(); });
-  var swHost = document.getElementById('swatches');
-  COLS.forEach(function (cdef) {
-    var lab = document.createElement('label'); lab.className = 'sw';
-    var inp = document.createElement('input'); inp.type = 'color';
-    var name = document.createElement('span'); name.textContent = cdef[1];
-    inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); });
-    lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
-  });
-
-  /* ---------- world: the archipelago comes from src/world.js; this page keeps short names for what it uses ---------- */
-  var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3;
-  var E = null, grid = null, buckets = [], solidB = [], home = { x: 0, y: 0 }, dockEnd = { x: 0, y: 0 }, mini = null, info = '';
+  /* ---------- the island: one island from the shared archipelago code (src/world.js) ---------- */
+  var spec = { isle: 240, count: 1, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.85;
+  var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
+  var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
+  function hash(x, y, s) { return World.hash(x, y, s); }
   function isLand(x, y) { return w.isLand(x, y); }
-  function isWater(x, y) { return w.isWater(x, y); }
   function code(tx, ty) { return w.code(tx, ty); }
   function sprite(name, v) { return w.sprite(name, v); }
+  function around(x, y, fn) { w.around(x, y, fn); }
   function nearSolids(P) { return w.nearSolids(P); }
-
-  function buildWorld(relocate) {
+  function removeProp(o) { w.removeProp(o); if (o.kind) { gone[propKey(o)] = 1; save(); } }
+  function buildWorld() {
     w = World.make(kit, spec);
-    GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; E = w.E; grid = w.grid; home = w.home; dockEnd = w.dockEnd;
-    w.plant(); w.camp(); w.sortBuckets();
-    buckets = w.buckets; solidB = w.solidB;
-    var isles = w.isles, n = isles.length, skerries = w.stats.skerries, landTiles = w.stats.landTiles;
-    // Brokk the dwarf stands by the hearth at the camp, on the first bit of clear land found there
-    [[-95, 8], [-80, 30], [-60, 0], [-40, -20], [-20, 0]].some(function (q) { if (!isLand(home.x + q[0], home.y + q[1])) return false; npc.x = home.x + q[0]; npc.y = home.y + q[1]; return true; });
-    npc.say = ''; npc.line = 0;
-
-    mini = w.chart(260);
-
-    // 7. what the numbers come to, in kilometres and seconds
-    var near = 1e9, big = 0, mid = 0, small = 0;
-    isles.forEach(function (q, idx) { var w = q.r * 2 / spec.isle; if (w > 1.4) big++; else if (w < 0.55) small++; else mid++; if (idx) near = Math.min(near, Math.hypot(q.x - isles[0].x, q.y - isles[0].y) - q.r - isles[0].r); });
-    function km(tl) { return (tl / 100).toFixed(1); }
-    info = n + ' islands (' + big + ' large, ' + mid + ' normal, ' + small + ' small) and ' + skerries + ' skerries on a sea of ' + km(GW) + ' by ' + km(GH) + ' km, ' + Math.round(landTiles / (GW * GH) * 100) + '% land. '
-      + 'Home island: ' + km(isles[0].r * 2) + ' km across, about ' + Math.round(isles[0].r * 2 * T / 118) + ' s to walk. Nearest island: ' + Math.max(0, Math.round(near * 10)) + ' m of water'
-      + (n < spec.count ? '. Only ' + n + ' of ' + spec.count + ' islands fit; lower the sizes or gaps for more.' : '.');
-    if (Combat.api.scene) Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 };
-    if (relocate) toDock();
-    showStat();
-  }
-  function showStat() { stat.textContent = info + ' Sailing that gap at top speed takes about ' + Math.max(1, Math.round(parseFloat((info.match(/island: (\d+) m/) || [0, 0])[1]) / 10 * T / spec.top)) + ' s.'; }
-  /* ---------- a friendly dwarf at the camp: he turns to watch you, and E talks to him ---------- */
-  var npc = { x: 0, y: 0, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: lib.makeFigure(lib.folkSpec('dwarf')), name: lib.folk.dwarf.name };
-  var LINES = ['Well met, friend! I am Brokk. I keep the fire here.', 'Good oak grows inland. Mind the boar when you fetch it.', 'The ship is sound. Bring her back in one piece.', 'Bring me iron one day and I will make you a proper axe.', 'Fair winds to you.'];
-  function nearNpc(P) { return !aboard && Math.hypot(P.x - npc.x, P.y - npc.y) < 40; }
-  function talk() { npc.say = LINES[npc.line % LINES.length]; npc.line++; npc.sayT = 4.5; }
-  function drawNpc(c) {
-    var vx = Math.cos(npc.face), vy = Math.sin(npc.face), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
-    var talking = npc.sayT > 0, an = { phase: 0, amt: 0, t: clock * (talking ? 2.2 : 1), lx: 0, ly: talking ? Math.sin(clock * 9) * 0.5 : 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) };
-    c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(npc.x, npc.y * K, 9, 4, 0, 0, 7); c.fill();
-    lib.figureD(c, npc.x, npc.y * K, dir, an, null, npc.fig);
-  }
-  function bubble(c) {             // his name, and what he says, above his head
-    var s = 1 / cam.z, text = npc.sayT > 0 ? npc.say : '', near = hero && Math.hypot(hero.x - npc.x, hero.y - npc.y) < 90;
-    if (!text && !near) return;
-    c.save(); c.translate(npc.x, npc.y * K - 36); c.scale(s, s); c.textAlign = 'center';
-    if (!text) { c.font = '600 8px system-ui, sans-serif'; c.lineWidth = 2.5; c.strokeStyle = 'rgba(20,16,30,0.8)'; c.strokeText(npc.name, 0, 0); c.fillStyle = '#ffffff'; c.fillText(npc.name, 0, 0); c.restore(); return; }
-    c.font = '500 8.5px system-ui, sans-serif';
-    var words = text.split(' '), lines = [''], i, w = 0;
-    for (i = 0; i < words.length; i++) { var tryL = lines[lines.length - 1] + (lines[lines.length - 1] ? ' ' : '') + words[i]; if (c.measureText(tryL).width > 130 && lines[lines.length - 1]) lines.push(words[i]); else lines[lines.length - 1] = tryL; }
-    for (i = 0; i < lines.length; i++) w = Math.max(w, c.measureText(lines[i]).width);
-    var bw = w + 14, bh = lines.length * 11 + 8, a = Math.min(1, npc.sayT / 0.4);
-    c.globalAlpha = a; c.translate(0, -bh - 2);
-    c.fillStyle = '#fffaf0'; c.strokeStyle = '#3a2a36'; c.lineWidth = 1.5;
-    c.beginPath(); c.roundRect(-bw / 2, 0, bw, bh, 5); c.fill(); c.stroke();
-    c.beginPath(); c.moveTo(-4, bh - 0.8); c.lineTo(0, bh + 5); c.lineTo(4, bh - 0.8); c.fill(); c.beginPath(); c.moveTo(-4, bh); c.lineTo(0, bh + 5); c.lineTo(4, bh); c.stroke();
-    c.fillStyle = '#3a2a36'; for (i = 0; i < lines.length; i++) c.fillText(lines[i], 0, 12 + i * 11);
-    c.restore();
+    GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
+    w.plant(); w.camp(); w.sortBuckets(); buckets = w.buckets;
+    drops = []; bits = []; decals = []; gone = {}; B = { floors: {}, H: {}, V: {}, items: [] }; roofA = {}; bDirty = true;
+    mini = w.chart(200);
+    hearth = null; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
+    info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
+    Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 };
   }
 
-  var boat = { x: 0, y: 0, h: 0, speed: 0, vx: 0, vy: 0 }, aboard = false, wakes = [], smoke = [], wakeT = 0, clock = 0;
-  function moor() {                               // the first spot beside the dock where the whole hull floats
-    var d = dims(), side, along;
-    for (side = 1; side >= -1; side -= 2) for (along = 6; along >= 1.5; along -= 0.5) {   // as far out along the jetty as it fits
-      var bx = (dockEnd.x + along) * T, by = (dockEnd.y + 0.5) * T + side * (T * 0.5 + d.W + 5);
-      if (free(bx, by, 0)) return { x: bx, y: by };
+  /* ---------- building: B enters build mode; pieces cost a little wood or stone; F takes them down again ---------- */
+  var PIECES = [
+    { id: 'wall', name: 'Log wall', m: 0, cost: { wood: 2 } },
+    { id: 'floor', name: 'Plank floor', m: 0, cost: { wood: 1 } },
+    { id: 'door', name: 'Door', m: 0, cost: { wood: 2 } },
+    { id: 'window', name: 'Window', m: 0, cost: { wood: 2 } },
+    { id: 'wall', name: 'Stone wall', m: 3, cost: { stone: 2 } },
+    { id: 'hearth', name: 'Hearth', kind: 'item', prop: 'stoneHearth', r: 8, cost: { stone: 4, wood: 2 }, icon: function (c) {
+      c.fillStyle = '#7d8290'; [[-6, 4], [0, 5.5], [6, 4]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 3.2, 2, 0, 0, 7); c.fill(); });
+      c.fillStyle = '#e8702a'; c.beginPath(); c.moveTo(-4, 3); c.quadraticCurveTo(-5, -3, 0, -7); c.quadraticCurveTo(5, -3, 4, 3); c.closePath(); c.fill();
+      c.fillStyle = '#ffd34d'; c.beginPath(); c.moveTo(-2, 3); c.quadraticCurveTo(-2.5, -1, 0, -3.5); c.quadraticCurveTo(2.5, -1, 2, 3); c.closePath(); c.fill();
+    } }
+  ];
+  function costText(cost) { var p = []; for (var k in cost) p.push(cost[k] + ' ' + k); return p.join(', '); }
+  Combat.api.buildSlots = PIECES.map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function (c) { Build.icon(c, p.id, p.m); } }; });
+  var B = { floors: {}, H: {}, V: {}, items: [] }, BCFG = Build.cfg({ roof: 0 }), roomInfo = null, roofA = {}, bDirty = true, mouseW = null, mdown = 0, lastPlaced = '';
+  function canAfford(cost) { for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
+  function pay(cost, sign) { for (var k in cost) { if ((sign || -1) > 0) addItem(k, cost[k]); else takeItem(k, cost[k]); } }
+  function costOf(e) { return e.m === 3 ? { stone: 2 } : { wood: 2 }; }     // walls, doors and windows
+  function costOfItem(name) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].prop === name) return PIECES[i].cost; return {}; }
+  function edgeMid(ed) { return ed.L === 'H' ? { x: (ed.x + 0.5) * T, y: ed.y * T } : { x: ed.x * T, y: (ed.y + 0.5) * T }; }
+  function spotClear(x, y) { var ok = isLand(x, y); if (ok) around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < o.r * o.s + 10) ok = false; }); return ok; }
+  function buildTarget() {           // what the cursor is over in build mode, and whether the piece may go there
+    var P = hero(); if (!mouseW || P.mode !== 'build') return null;
+    var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(mouseW.y / T), far = Math.hypot(mouseW.x - P.x, mouseW.y - P.y) > 150, i;
+    if (P.wreck) {
+      for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - mouseW.y) < 16) return { kind: 'item', item: B.items[i], idx: i, ok: !far };
+      var ed = Build.edgeAt(mouseW.x, mouseW.y), k = Build.key(ed.x, ed.y);
+      if (ed.d < 0.3 && B[ed.L][k]) return { kind: 'edge', ed: ed, has: B[ed.L][k], ok: !far };
+      var fk = Build.key(tx, ty); return { kind: 'tile', tx: tx, ty: ty, ok: !far && B.floors[fk] != null };
     }
-    return { x: (dockEnd.x + 9) * T + d.L, y: (dockEnd.y + 0.5) * T };
-  }
-  function toDock() {
-    var P = Combat.dbg().P;
-    var m = moor(); aboard = false; boat.x = m.x; boat.y = m.y; boat.h = 0; boat.speed = 0; boat.vx = boat.vy = 0;
-    P.x = home.x; P.y = home.y; P.vx = P.vy = 0; wakes = []; smoke = [];
-  }
-  document.getElementById('tohome').addEventListener('click', function (e) { toDock(); e.currentTarget.blur(); });
-  document.getElementById('newsea').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; apply(); e.currentTarget.blur(); });
-
-  /* ---------- input ---------- */
-  var keys = {}, walkCodes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, ShiftLeft: 1, ShiftRight: 1 };
-  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')); }
-  function releaseWalk() { for (var k in walkCodes) Combat.key(k, false); }
-  window.addEventListener('keydown', function (e) {
-    if (typing(e)) return;
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (nearNpc(Combat.dbg().P)) talk(); else useBoat(); } return; }
-    if (!walkCodes[e.code]) return;
-    e.preventDefault(); if (e.repeat) return;
-    keys[e.code] = true; if (!aboard) Combat.key(e.code, true);
-  });
-  window.addEventListener('keyup', function (e) {
-    if (!walkCodes[e.code] || typing(e)) return;
-    e.preventDefault(); keys[e.code] = false; Combat.key(e.code, false);
-  });
-  window.addEventListener('blur', function () { keys = {}; releaseWalk(); });
-
-  /* ---------- boarding ---------- */
-  function dims() { var d = TYPES[spec.type]; return { L: d.L * spec.size, W: d.W * spec.size }; }
-  function landing() {                     // the nearest spot of land the hero could step onto from the boat
-    var d = dims(), best = null, bd = 1e9, a, r;
-    for (r = d.W + 10; r <= d.L + 30; r += 8) for (a = 0; a < 16; a++) {
-      var x = boat.x + Math.cos(a * 0.3927) * r, y = boat.y + Math.sin(a * 0.3927) * r;
-      if (isLand(x, y) && r < bd) { bd = r; best = { x: x, y: y }; }
+    if (pc.kind === 'item') {
+      var ix = (tx + 0.5) * T, iy = (ty + 0.5) * T, clear = spotClear(ix, iy);
+      for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 24) clear = false;
+      return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && canAfford(pc.cost) };
     }
-    return best;
+    if (pc.id === 'floor') return { kind: 'tile', tx: tx, ty: ty, piece: pc, ok: !far && code(tx, ty) >= 1 && code(tx, ty) !== 255 && B.floors[Build.key(tx, ty)] == null && canAfford(pc.cost) };
+    var ed2 = Build.edgeAt(mouseW.x, mouseW.y), m = edgeMid(ed2), k2 = Build.key(ed2.x, ed2.y);
+    return { kind: 'edge', ed: ed2, piece: pc, ok: !far && Build.edgeOk(ed2, GW, GH) && !B[ed2.L][k2] && spotClear(m.x, m.y) && canAfford(pc.cost) };
   }
-  function canBoard(P) { var d = dims(); return !aboard && Math.hypot(P.x - boat.x, P.y - boat.y) < Math.max(d.L, d.W) + 30; }
-  function useBoat() {
-    var P = Combat.dbg().P;
-    if (!aboard) { if (canBoard(P)) { aboard = true; releaseWalk(); P.vx = P.vy = 0; } return; }
-    var spot = landing();
-    if (spot) { aboard = false; boat.speed = 0; boat.vx = boat.vy = 0; P.x = spot.x; P.y = spot.y; P.vx = P.vy = 0; for (var k in keys) if (keys[k]) Combat.key(k, true); }
+  function buildAct(first) {
+    var P = hero(), t = buildTarget(); if (!t || !t.ok) return;
+    if (P.wreck) {
+      if (t.kind === 'item') { pay(costOfItem(t.item.name), 1); B.items.splice(t.idx, 1); }
+      else if (t.kind === 'edge') { pay(costOf(t.has), 1); delete B[t.ed.L][Build.key(t.ed.x, t.ed.y)]; }
+      else { pay(PIECES[1].cost, 1); delete B.floors[Build.key(t.tx, t.ty)]; }
+      bDirty = true; save(); return;
+    }
+    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); B.items.push({ name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r }); save(); return; }
+    var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : 'F' + Build.key(t.tx, t.ty);
+    if (!first && (id === lastPlaced || (t.piece.id !== 'floor' && t.piece.id !== 'wall'))) return;   // drag lays floors and walls; doors and windows one per click
+    lastPlaced = id; pay(t.piece.cost);
+    if (t.kind === 'tile') B.floors[Build.key(t.tx, t.ty)] = 0; else B[t.ed.L][Build.key(t.ed.x, t.ed.y)] = { t: t.piece.id, m: t.piece.m };
+    bDirty = true; save();
   }
-
-  /* ---------- sailing ---------- */
-  function wrapA(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
-  function free(x, y, h) {                 // is the whole hull over water?
-    var d = dims(), c = Math.cos(h), s = Math.sin(h);
-    return isWater(x + c * d.L, y + s * d.L) && isWater(x - c * d.L, y - s * d.L) && isWater(x - s * d.W, y + c * d.W) && isWater(x + s * d.W, y - c * d.W) && isWater(x, y);
+  function rebuildRooms() {          // only the part of the grid with pieces in it is searched for closed rooms
+    bDirty = false;
+    var keys = Object.keys(B.H).concat(Object.keys(B.V)), x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    keys.forEach(function (k) { var p = k.split(','); x0 = Math.min(x0, +p[0] - 2); y0 = Math.min(y0, +p[1] - 2); x1 = Math.max(x1, +p[0] + 2); y1 = Math.max(y1, +p[1] + 2); });
+    roomInfo = keys.length ? Build.rooms(B, GW, GH, { x0: x0, y0: y0, x1: x1, y1: y1 }) : { rooms: [], solids: [], at: function () { return -1; } };
+    roomInfo.rooms.forEach(function (r) { if (roofA[r.id] == null) roofA[r.id] = 1; });
   }
-  function sail(dt) {
-    var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), iy = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0), want = 0, stuck = !free(boat.x, boat.y, boat.h);
-    if (!aboard) ix = iy = 0;
-    if (spec.steer === 0) {
-      if (ix || iy) {
-        var target = Math.atan2(iy, ix), diff = wrapA(target - boat.h), stepA = spec.turn * dt;
-        var nh = Math.abs(diff) <= stepA ? target : boat.h + (diff > 0 ? stepA : -stepA);
-        if (stuck || free(boat.x, boat.y, nh)) boat.h = nh;
-        want = spec.top * Math.max(0.25, Math.cos(Math.min(1.4, Math.abs(diff))));   // ease off while the bow swings round
+  function wreckRect(t) {
+    if (t.kind === 'edge') return t.ed.L === 'H' ? { x: t.ed.x * T, y: t.ed.y * TS - BCFG.wallH - 2, w: T, h: BCFG.wallH + 4 } : { x: t.ed.x * T - 4, y: t.ed.y * TS - BCFG.wallH, w: 8, h: TS + BCFG.wallH };
+    if (t.kind === 'item') { var s = sprite(t.item.name, 0); return { x: t.item.x + s.l, y: t.item.y * K + s.t, w: s.w, h: s.h }; }
+    return { x: t.tx * T, y: t.ty * TS, w: T, h: TS };
+  }
+  function drawGhost(c) {
+    var P = hero(), t = buildTarget(); if (!t) return;
+    c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+    if (P.wreck) {                     // a soft red glow over the piece that would go
+      var r = wreckRect(t);
+      c.shadowColor = 'rgba(255,70,50,0.95)'; c.shadowBlur = 14; c.fillStyle = 'rgba(255,80,60,' + (t.ok ? 0.38 : 0.14) + ')';
+      c.fillRect(r.x, r.y, r.w, r.h); c.fillRect(r.x, r.y, r.w, r.h); c.shadowBlur = 0;
+      if (t.ok) { c.strokeStyle = 'rgba(255,120,100,0.9)'; c.lineWidth = 1.4; c.strokeRect(r.x, r.y, r.w, r.h); c.beginPath(); c.moveTo(r.x, r.y); c.lineTo(r.x + r.w, r.y + r.h); c.moveTo(r.x + r.w, r.y); c.lineTo(r.x, r.y + r.h); c.stroke(); }
+    } else {                           // the piece as it would stand, and where it rests on the ground
+      var col = t.ok ? '255,255,255' : '255,80,60';
+      c.globalAlpha = t.ok ? 0.6 : 0.35;
+      if (t.kind === 'tile') c.drawImage(w.tile('plank', t.tx, t.ty), t.tx * T, t.ty * TS, T, TS);
+      else if (t.kind === 'item') { var sp = sprite(t.piece.prop, 0); c.drawImage(sp.cv, t.x + sp.l, t.y * K + sp.t, sp.w, sp.h); }
+      else { var e = { t: t.piece.id, m: t.piece.m }; if (t.ed.L === 'H') Build.drawH(c, t.ed.x, t.ed.y, e, false, false, BCFG); else Build.drawV(c, t.ed.x, t.ed.y, e, false, false, BCFG); }
+      c.globalAlpha = 1;
+      c.shadowColor = 'rgba(' + col + ',0.95)'; c.shadowBlur = 10; c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 2;
+      for (var pass = 0; pass < 2; pass++) {
+        c.beginPath();
+        if (t.kind === 'tile') c.rect(t.tx * T, t.ty * TS, T, TS);
+        else if (t.kind === 'item') c.ellipse(t.x, t.y * K, 15, 9, 0, 0, 7);
+        else { c.moveTo(t.ed.x * T, t.ed.y * TS); if (t.ed.L === 'H') c.lineTo((t.ed.x + 1) * T, t.ed.y * TS); else c.lineTo(t.ed.x * T, (t.ed.y + 1) * TS); }
+        c.stroke();
       }
-    } else {
-      want = iy < 0 ? spec.top : (iy > 0 ? -spec.top * 0.4 : 0);
-      var nh2 = boat.h + ix * spec.turn * dt * Math.min(1, Math.abs(boat.speed) / (spec.top * 0.35)) * (boat.speed < 0 ? -1 : 1);
-      if (stuck || free(boat.x, boat.y, nh2)) boat.h = nh2;
-    }
-    if (want !== 0) { var up = spec.accel * dt; boat.speed += Math.max(-up, Math.min(up, want - boat.speed)); }
-    else boat.speed *= Math.exp(-dt / spec.glide);
-    var tvx = Math.cos(boat.h) * boat.speed, tvy = Math.sin(boat.h) * boat.speed, g = Math.min(1, dt * (1 + spec.grip * 11));
-    boat.vx += (tvx - boat.vx) * g; boat.vy += (tvy - boat.vy) * g;
-    var nx = boat.x + boat.vx * dt, ny = boat.y + boat.vy * dt;
-    if (stuck || free(nx, ny, boat.h)) { boat.x = nx; boat.y = ny; }
-    else if (free(nx, boat.y, boat.h)) { boat.x = nx; boat.vy *= 0.3; boat.speed *= 0.9; }
-    else if (free(boat.x, ny, boat.h)) { boat.y = ny; boat.vx *= 0.3; boat.speed *= 0.9; }
-    else { boat.vx *= 0.2; boat.vy *= 0.2; boat.speed *= 0.5; }
-    var sp = Math.hypot(boat.vx, boat.vy), d = dims();
-    wakeT -= dt;
-    if (sp > 12 && wakeT <= 0 && spec.wake > 0) { wakeT = 0.07; wakes.push({ x: boat.x - Math.cos(boat.h) * d.L * 0.9, y: boat.y - Math.sin(boat.h) * d.L * 0.9, r: d.W * 0.7, life: 1.3, max: 1.3, v: 6 + sp * 0.05 }); }
-    for (var i = wakes.length - 1; i >= 0; i--) { wakes[i].life -= dt; wakes[i].r += wakes[i].v * dt; if (wakes[i].life <= 0) wakes.splice(i, 1); }
-    for (i = smoke.length - 1; i >= 0; i--) { var q = smoke[i]; q.life -= dt; q.z += 14 * dt; q.r += 4 * dt; q.x -= boat.vx * dt * 0.02; if (q.life <= 0) smoke.splice(i, 1); }
-  }
-
-  /* ---------- drawing the ship ----------
-     The hull is a top-down outline, turned to the ship's heading and squashed by the view. Stems, mast and sail
-     stand upright on top of it. */
-  function shadeHex(hex, d) { var n = parseInt(hex.substr(1), 16), r = Math.max(0, Math.min(255, (n >> 16) + d)), g = Math.max(0, Math.min(255, ((n >> 8) & 255) + d)), b = Math.max(0, Math.min(255, (n & 255) + d)); return 'rgb(' + r + ',' + g + ',' + b + ')'; }
-  function bobY() { return Math.sin(clock * 2.1) * 1.2 * spec.bob; }
-  function hullPath(c, L, W) { c.moveTo(-L, 0); c.quadraticCurveTo(0, -W * 1.9, L, 0); c.quadraticCurveTo(0, W * 1.9, -L, 0); c.closePath(); }   // pointed at both ends
-  function halfW(W, u) { return 0.95 * W * (1 - u * u); }
-  function drawBoat(c) {
-    var d = dims(), L = d.L, W = d.W, sz = spec.size, TY = TYPES[spec.type], col = spec.col, h = boat.h, i;
-    var sx = boat.x, sy = boat.y * K + bobY(), roll = Math.sin(clock * 1.7 + 1) * 0.03 * spec.bob, mv = Math.min(1, Math.hypot(boat.vx, boat.vy) / Math.max(1, spec.top));
-    function inFrame(dy, fn) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(h + roll); fn(); c.restore(); }
-    function fillStroke(fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke(); }
-    c.fillStyle = 'rgba(8,12,40,0.28)'; c.beginPath(); c.ellipse(sx + 2, boat.y * K + 5 * sz, L * 0.95, W * 1.05, 0, 0, 7); c.fill();
-    inFrame(4 * sz, function () { c.beginPath(); hullPath(c, L, W); fillStroke(shadeHex(col.hull, -30)); });
-    inFrame(0, function () {
-      c.beginPath(); hullPath(c, L, W); fillStroke(col.hull);
-      c.save(); c.scale(0.9, 0.78); c.beginPath(); hullPath(c, L, W); c.lineWidth = 0.9; c.strokeStyle = 'rgba(20,12,20,0.45)'; c.stroke(); c.restore();   // a line of planking
-      c.save(); c.scale(0.84, 0.62); c.beginPath(); hullPath(c, L, W); fillStroke(col.deck, 1.2); c.restore();
-      for (i = -2; i <= 2; i++) { var tu = i * 0.22, tw = halfW(W, tu) * 0.6; c.beginPath(); c.rect(L * tu - 1.3, -tw, 2.6, tw * 2); fillStroke(shadeHex(col.hull, 12), 0.9); }   // rowing benches
-      // steering oar on the right side of the stern
-      c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = 3; c.beginPath(); c.moveTo(-L * 0.7, W * 0.45); c.lineTo(-L * 0.98, W * 1.0); c.stroke();
-      c.strokeStyle = shadeHex(col.deck, -20); c.lineWidth = 1.6; c.beginPath(); c.moveTo(-L * 0.7, W * 0.45); c.lineTo(-L * 0.98, W * 1.0); c.stroke();
-      for (var n = 0; n < TY.oars; n++) [-1, 1].forEach(function (sd) {
-        var u = TY.oars === 1 ? 0 : -0.42 + n * (0.78 / (TY.oars - 1)), a = sd * (Math.PI / 2) - Math.sin(clock * (2.6 + mv * 4.5)) * 0.55 * mv - 0.2;
-        var ox = L * u, oy = sd * halfW(W, u), len = W * 1.7 + 7 * sz, ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
-        c.strokeStyle = LINE; c.lineWidth = 2.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
-        c.strokeStyle = shadeHex(col.deck, -10); c.lineWidth = 1.3; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
-        c.beginPath(); c.ellipse(ex, ey, 3.2, 1.6, a, 0, 7); fillStroke(shadeHex(col.deck, -10), 0.9);
-      });
-      for (i = 0; i < TY.shields; i++) [-1, 1].forEach(function (sd) {
-        var u = -0.6 + i * (1.2 / (TY.shields - 1)), r = 2.7 * sz;
-        c.beginPath(); c.arc(L * u, sd * halfW(W, u), r, 0, 7); fillStroke(i % 2 ? col.sail : col.trim, 1);
-        c.beginPath(); c.arc(L * u, sd * halfW(W, u), r * 0.32, 0, 7); c.fillStyle = '#8a8f9a'; c.fill();
-      });
-    });
-    // upright parts: stems, mast and sail
-    var fx = Math.cos(h), fy = Math.sin(h) * K;
-    function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
-    function curve(p0, p1, p2, w, fill) {
-      c.lineCap = 'round';
-      c.strokeStyle = LINE; c.lineWidth = w + 2; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke();
-      c.strokeStyle = fill; c.lineWidth = w; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke();
-    }
-    function stem(lx, dir, hgt, head) {
-      var p = at(lx, 0), tip = [p[0] + fx * dir * 7 * sz, p[1] + fy * dir * 7 * sz - hgt], w = 3.2 * sz, wood = shadeHex(col.hull, -8);
-      curve(p, [p[0] - fx * dir * 1.5 * sz, p[1] - hgt * 0.6], tip, w, wood);
-      if (head) {
-        var jaw = [tip[0] + fx * dir * 7 * sz, tip[1] + fy * dir * 7 * sz + 2.5 * sz];
-        curve(tip, [tip[0] + fx * dir * 3 * sz, tip[1] - 1.5 * sz], jaw, w * 0.9, wood);
-        curve(tip, [tip[0] - fx * dir * 4 * sz, tip[1] - 4.5 * sz], [tip[0] - fx * dir * 5 * sz, tip[1] - 0.5 * sz], w * 0.5, wood);   // crest curling back
-        c.beginPath(); c.arc(tip[0] + fx * dir * 2.4 * sz, tip[1] + fy * dir * 2.4 * sz - 0.4 * sz, 1.1 * sz, 0, 7); c.fillStyle = '#ffd34d'; c.fill();
-        c.strokeStyle = col.trim; c.lineWidth = 1.2 * sz; c.beginPath(); c.moveTo(jaw[0], jaw[1]); c.lineTo(jaw[0] + fx * dir * 3 * sz, jaw[1] + fy * dir * 3 * sz + 1.5 * sz); c.stroke();
-      } else curve(tip, [tip[0] + fx * dir * 3.5 * sz, tip[1] - 3 * sz], [tip[0] + fx * dir * 1.5 * sz, tip[1] + 2.4 * sz], w * 0.55, wood);   // a simple curl
-    }
-    stem(-L * 0.96, -1, (TY.head ? 15 : 10) * sz, false);
-    stem(L * 0.96, 1, (TY.head ? 19 : 11) * sz, !!TY.head);
-    if (TY.sail) {
-      var m = at(L * 0.05, 0), mh = TY.mast * sz, top = mh * 0.92, foot = mh * 0.3, yw = W * TY.yard, bl = 10 * sz;
-      var a1 = at(L * 0.05, -yw), b1 = at(L * 0.05, yw), a0 = at(L * 0.05, -yw * 0.9), b0 = at(L * 0.05, yw * 0.9);
-      // corners and a centre line that billows forward, so the sail still shows when the ship is seen side on
-      var TA = [a1[0], a1[1] - top], TB = [b1[0], b1[1] - top], TM = [m[0] + fx * bl * 0.3, m[1] + fy * bl * 0.3 - top];
-      var BA = [a0[0], a0[1] - foot], BB = [b0[0], b0[1] - foot], BM = [m[0] + fx * bl, m[1] + fy * bl - foot];
-      function topAt(s) { return s < 0.5 ? [TA[0] + (TM[0] - TA[0]) * s * 2, TA[1] + (TM[1] - TA[1]) * s * 2] : [TM[0] + (TB[0] - TM[0]) * (s - 0.5) * 2, TM[1] + (TB[1] - TM[1]) * (s - 0.5) * 2]; }
-      function botAt(s) { return s < 0.5 ? [BA[0] + (BM[0] - BA[0]) * s * 2, BA[1] + (BM[1] - BA[1]) * s * 2] : [BM[0] + (BB[0] - BM[0]) * (s - 0.5) * 2, BM[1] + (BB[1] - BM[1]) * (s - 0.5) * 2]; }
-      c.strokeStyle = LINE; c.lineWidth = 2 * sz + 2; c.lineCap = 'round'; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();
-      c.strokeStyle = shadeHex(col.hull, -8); c.lineWidth = 2 * sz; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();
-      c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.lineTo(BB[0], BB[1]); c.lineTo(BM[0], BM[1]); c.lineTo(BA[0], BA[1]); c.closePath();
-      c.fillStyle = col.sail; c.fill();
-      if (TY.stripes) { c.fillStyle = col.trim; for (i = 0; i < 6; i += 2) { var s0 = i / 6, s1 = (i + 1) / 6, mid = (s0 < 0.5 && s1 > 0.5); c.beginPath(); var q = topAt(s0); c.moveTo(q[0], q[1]); if (mid) c.lineTo(TM[0], TM[1]); q = topAt(s1); c.lineTo(q[0], q[1]); q = botAt(s1); c.lineTo(q[0], q[1]); if (mid) c.lineTo(BM[0], BM[1]); q = botAt(s0); c.lineTo(q[0], q[1]); c.closePath(); c.fill(); } }
-      c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.lineTo(BB[0], BB[1]); c.lineTo(BM[0], BM[1]); c.lineTo(BA[0], BA[1]); c.closePath();
-      c.lineWidth = 1.5; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke();
-      c.strokeStyle = LINE; c.lineWidth = 2.2 * sz + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke();
-      c.strokeStyle = shadeHex(col.hull, -8); c.lineWidth = 2.2 * sz; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke();
-    }
-  }
-  // The near side of the hull, drawn again over the hero's feet so he stands in the ship instead of on it.
-  function drawBoatFront(c) {
-    var d = dims(), L = d.L, W = d.W, sz = spec.size, sx = boat.x, sy = boat.y * K + bobY(), roll = Math.sin(clock * 1.7 + 1) * 0.03 * spec.bob;
-    function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(boat.h + roll); c.scale(k1, k2); hullPath(c, L, W); c.restore(); }
-    c.save();
-    c.beginPath(); c.rect(sx - L * 2, sy + 1.5, L * 4, L * 3); c.clip();
-    c.lineJoin = 'round'; c.strokeStyle = LINE;
-    c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(spec.col.hull, -30); c.fill('evenodd'); c.lineWidth = 1.6; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
-    c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = spec.col.hull; c.fill('evenodd');
-    c.lineWidth = 1.6; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 1.2; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
-    var TY = TYPES[spec.type];
-    for (var i = 0; i < TY.shields; i++) {            // the shields on the near rail sit in front of him too
-      var u = -0.6 + i * (1.2 / (TY.shields - 1)), cs = Math.cos(boat.h + roll), sn = Math.sin(boat.h + roll);
-      [-1, 1].forEach(function (sd) {
-        var ly = sd * halfW(W, u), px = sx + L * u * cs - ly * sn, py = sy + (L * u * sn + ly * cs) * K, r = 2.7 * sz;
-        c.beginPath(); c.ellipse(px, py, r, r * K, 0, 0, 7); c.fillStyle = i % 2 ? spec.col.sail : spec.col.trim; c.fill(); c.lineWidth = 1; c.stroke();
-      });
     }
     c.restore();
+  }
+
+  /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
+  var SAVE = 'game.save', gone = {}, saveT = 0;
+  function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
+  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, hero: { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
+
+  /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
+  var fullT = -9, drops = [], bits = [], decals = [], inv = { wood: 0, stone: 0, fiber: 0, berries: 0, meat: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'berries', 'meat', 'cookedMeat', 'stew'];
+  var NAMES = { wood: 'Wood', stone: 'Stone', fiber: 'Fiber', berries: 'Berries', meat: 'Boar meat', cookedMeat: 'Roast boar', stew: 'Berry stew' };
+  // The bag: 24 slots, 6 wide. The top six are the belt and match the hotbar's numbers. A slot holds one kind, up to 25.
+  var COLS = 6, ROWS = 4, SLOTS = COLS * ROWS, STACK = 25, slots = [], held = null, pick = null;
+  for (var si0 = 0; si0 < SLOTS; si0++) slots.push(null);
+  function recount() { for (var k in inv) inv[k] = 0; slots.forEach(function (s) { if (s) inv[s.kind] = (inv[s.kind] || 0) + s.n; }); }
+  function addItem(kind, n) {             // fills stacks of the same kind first, then empty slots; returns what did not fit
+    var i, s, take;
+    for (i = 0; i < SLOTS && n > 0; i++) { s = slots[i]; if (s && s.kind === kind && s.n < STACK) { take = Math.min(n, STACK - s.n); s.n += take; n -= take; } }
+    for (i = 0; i < SLOTS && n > 0; i++) if (!slots[i]) { take = Math.min(n, STACK); slots[i] = { kind: kind, n: take }; n -= take; }
+    recount(); return n;
+  }
+  function takeItem(kind, n) {            // from the bottom of the bag up, so the belt keeps its things
+    for (var i = SLOTS - 1; i >= 0 && n > 0; i--) { var s = slots[i]; if (s && s.kind === kind) { var take = Math.min(n, s.n); s.n -= take; n -= take; if (!s.n) slots[i] = null; } }
+    recount();
+  }
+  function canHold(kind, n) { for (var i = 0; i < SLOTS && n > 0; i++) { var s = slots[i]; if (!s) n -= STACK; else if (s.kind === kind) n -= STACK - s.n; } return n <= 0; }
+  function sortBag() {                    // the rows below the belt: by kind, stacks merged
+    var pool = {}, i, k; for (i = COLS; i < SLOTS; i++) { if (slots[i]) pool[slots[i].kind] = (pool[slots[i].kind] || 0) + slots[i].n; slots[i] = null; }
+    i = COLS; ORDER.forEach(function (kind) { for (k = pool[kind] || 0; k > 0 && i < SLOTS; k -= STACK) slots[i++] = { kind: kind, n: Math.min(STACK, k) }; });
+    recount(); save();
+  }
+  function useSlot(i) { var s = slots[i]; if (s && FOOD[s.kind]) eat(s.kind); }
+  function dropOn(from, to) {             // drag and drop: merge like kinds, otherwise swap
+    if (from === to || from < 0 || to < 0) return;
+    var a = slots[from], b = slots[to];
+    if (a && b && a.kind === b.kind && b.n < STACK) { var take = Math.min(a.n, STACK - b.n); b.n += take; a.n -= take; if (!a.n) slots[from] = null; }
+    else { slots[from] = b; slots[to] = a; }
+    recount(); save();
+  }
+  function toast(txt) { var P = hero(); Combat.dbg().W.nums.push({ x: P.x, y: P.y - 20, t: 0, txt: txt, c: '#ffffff', big: false }); }
+
+  /* ---------- food: cooked at the camp hearth (E), eaten from the inventory. Food only ever helps: it heals, and
+     a meal keeps your health coming back and your top health raised for a while. Nothing happens if you do not eat. ---------- */
+  var RECIPES = [
+    { id: 'cookedMeat', needs: { meat: 1 }, text: 'Boar meat roasted over the fire' },
+    { id: 'stew', needs: { meat: 1, berries: 2 }, text: 'Meat and berries stewed together: the best meal on the island' }
+  ];
+  var FOOD = { berries: { heal: 10, regen: 0, time: 0, bonus: 0 }, cookedMeat: { heal: 30, regen: 1, time: 120, bonus: 10 }, stew: { heal: 50, regen: 2, time: 180, bonus: 25 } };
+  var fed = null, hearth = null, cookOpen = false, menu = null, mouseS = null;   // fed: { kind, left, regen, bonus }
+  function nearHearth(P) { if (hearth && Math.hypot(P.x - hearth.x, P.y - hearth.y) < 46) return true; for (var i = 0; i < B.items.length; i++) if (B.items[i].name === 'stoneHearth' && Math.hypot(P.x - B.items[i].x, P.y - B.items[i].y) < 46) return true; return false; }
+  function cook(r) { if (!canAfford(r.needs)) return; pay(r.needs); if (!canHold(r.id, 1)) { pay(r.needs, 1); toast('The bag is full'); return; } addItem(r.id, 1); toast('+1 ' + NAMES[r.id].toLowerCase()); save(); }
+  function eat(kind) {
+    var f = FOOD[kind], P = hero(); if (!f || !(inv[kind] > 0) || P.dead) return;
+    takeItem(kind, 1);
+    if (f.time) fed = { kind: kind, left: f.time, regen: f.regen, bonus: f.bonus };
+    P.maxHp = 100 + (fed ? fed.bonus : 0); P.hp = Math.min(P.maxHp, P.hp + f.heal);
+    toast('Ate ' + NAMES[kind].toLowerCase()); save();
+  }
+  function feedTick(dt) {
+    var P = hero();
+    if (!fed) { P.maxHp = 100; P.hp = Math.min(P.hp, 100); return; }
+    fed.left -= dt;
+    if (fed.left <= 0) { fed = null; P.maxHp = 100; P.hp = Math.min(P.hp, 100); return; }
+    P.maxHp = 100 + fed.bonus; if (!P.dead) P.hp = Math.min(P.maxHp, P.hp + fed.regen * dt);
+  }
+  function drawFedIcon(c, x, y) {          // a small round board with the meal on it; the ring is the time left
+    var f = FOOD[fed.kind], frac = f.time ? fed.left / f.time : 0, hov = mouseS && Math.hypot(mouseS.x - x, mouseS.y - y) < 10;
+    c.save();
+    c.fillStyle = '#4a2e1c'; c.beginPath(); c.arc(x, y, 9, 0, 7); c.fill();
+    c.fillStyle = '#7a5236'; c.beginPath(); c.arc(x, y, 7.5, 0, 7); c.fill();
+    c.strokeStyle = '#9be58b'; c.lineWidth = 2; c.beginPath(); c.arc(x, y, 8.2, -Math.PI / 2, -Math.PI / 2 + frac * 6.283); c.stroke();
+    c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.arc(x, y, 9, 0, 7); c.stroke();
+    drawDropIcon(c, fed.kind, x, y, 1.1);
+    var m = Math.floor(fed.left / 60), s = Math.floor(fed.left % 60), t = m + ':' + (s < 10 ? '0' : '') + s;
+    c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 1.6; c.strokeStyle = '#2e1a10'; c.strokeText(t, x, y + 15); c.fillStyle = '#fff'; c.fillText(t, x, y + 15);
+    if (hov) {                               // what the meal does, on mouseover
+      var lines = [NAMES[fed.kind] + ': well fed', '+' + fed.regen + ' health a second', 'Top health ' + (100 + fed.bonus), 'for ' + t + ' more'];
+      c.font = '600 6px system-ui, sans-serif'; var bw = 0; lines.forEach(function (l) { bw = Math.max(bw, c.measureText(l).width); }); bw += 12;
+      var bx = Math.min(x - bw / 2, 400 - bw - 4), by = y + 20;
+      wood(c, bx, by, bw, 8 + lines.length * 8);
+      c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; lines.forEach(function (l, i) { c.fillText(l, bx + 6, by + 10 + i * 8); });
+    }
+    c.restore();
+  }
+  function fedText() { if (!fed) return ''; var m = Math.floor(fed.left / 60), s = Math.floor(fed.left % 60); return 'Well fed (' + NAMES[fed.kind].toLowerCase() + '): ' + m + ':' + (s < 10 ? '0' : '') + s + (fed.regen ? '  +' + fed.regen + ' health a second' : ''); }
+  // the build menu (right click in build mode): a wooden board of big piece icons; the wreck cursor is the last one
+  var MCELL = 22, MCOLS = 8, MROWS = 4;
+  function openMenu() {
+    var n = MCOLS * MROWS, i; menu = { items: [], w: MCOLS * (MCELL + 3) + 11, h: 19 + MROWS * (MCELL + 3) + 12 };
+    menu.x = Math.round((400 - menu.w) / 2); menu.y = 34;
+    for (i = 0; i < n; i++) menu.items.push({ i: i, piece: PIECES[i] || null, x: menu.x + 7 + (i % MCOLS) * (MCELL + 3), y: menu.y + 19 + Math.floor(i / MCOLS) * (MCELL + 3) });
+  }
+  function menuHit() { if (!menu || !mouseS) return null; for (var i = 0; i < menu.items.length; i++) { var it = menu.items[i]; if (mouseS.x >= it.x && mouseS.x <= it.x + MCELL && mouseS.y >= it.y && mouseS.y <= it.y + MCELL) return it; } return null; }
+  function drawMenu(c) {
+    var P = hero(), hit = menuHit(), i;
+    wood(c, menu.x, menu.y, menu.w, menu.h);
+    c.fillStyle = 'rgba(255,230,180,0.16)'; c.fillRect(menu.x + 5, menu.y + 4, 58, 12);
+    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Building [' + PIECES.length + ']', menu.x + 9, menu.y + 12.5);
+    c.font = '600 5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'right'; c.fillText('right click or Esc closes', menu.x + menu.w - 7, menu.y + 12.5);
+    for (i = 0; i < menu.items.length; i++) {
+      var it = menu.items[i], on = it.piece && !P.wreck && P.piece === it.i, hov = hit === it && it.piece;
+      c.fillStyle = hov ? '#5c3e2a' : (it.piece ? '#452c1b' : '#3d2718'); c.fillRect(it.x, it.y, MCELL, MCELL);
+      c.strokeStyle = on ? '#ffd34d' : 'rgba(0,0,0,0.45)'; c.lineWidth = on ? 1.4 : 1; c.strokeRect(it.x + 0.5, it.y + 0.5, MCELL - 1, MCELL - 1);
+      if (!it.piece) continue;
+      c.save(); c.translate(it.x + MCELL / 2, it.y + MCELL / 2); c.scale(1.35, 1.35);
+      if (it.piece.icon) it.piece.icon(c); else Build.icon(c, it.piece.id, it.piece.m);
+      c.restore();
+    }
+    var label = hit && hit.piece ? hit.piece.name + '  (' + costText(hit.piece.cost) + ')' : 'Click a piece to build with it';
+    c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = '#fff'; c.fillText(label, menu.x + 8, menu.y + menu.h - 5);
+  }
+  // panels: the inventory (Tab) and the hearth (E). Rows are remembered so clicks can find them.
+  var rows = [];
+  function wood(c, x, y, w, h) {          // a wooden board with planks, a dark rim and iron rivets at the corners
+    c.save();
+    c.fillStyle = '#4a2e1c'; c.beginPath(); c.roundRect(x, y, w, h, 4); c.fill();
+    c.beginPath(); c.roundRect(x + 2.5, y + 2.5, w - 5, h - 5, 3); c.clip();
+    c.fillStyle = '#7a5236'; c.fillRect(x, y, w, h);
+    c.strokeStyle = 'rgba(60,35,20,0.55)'; c.lineWidth = 1;
+    for (var py = y + 2.5 + 9; py < y + h - 3; py += 9) { c.beginPath(); c.moveTo(x, py); c.lineTo(x + w, py); c.stroke(); }
+    c.strokeStyle = 'rgba(255,225,170,0.08)'; for (var gx = x + 6; gx < x + w; gx += 11) { c.beginPath(); c.moveTo(gx, y); c.lineTo(gx + 3, y + h); c.stroke(); }
+    c.restore();
+    c.strokeStyle = '#2e1a10'; c.lineWidth = 1.4; c.beginPath(); c.roundRect(x, y, w, h, 4); c.stroke();
+    c.fillStyle = '#7d8290'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8;
+    [[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 1.7, 0, 7); c.fill(); c.stroke(); });
+  }
+  function panel(c, x0, y0, w0, title, hint, list, draw) {
+    var h0 = 24 + list.length * 20 + (hint ? 12 : 0), i;
+    wood(c, x0, y0, w0, h0);
+    c.font = 'bold 9px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(title, x0 + 10, y0 + 13);
+    for (i = 0; i < list.length; i++) {
+      var yy = y0 + 29 + i * 20, hov = mouseS && mouseS.x > x0 + 8 && mouseS.x < x0 + w0 - 8 && Math.abs(mouseS.y - yy) < 9;
+      rows.push({ x0: x0 + 8, x1: x0 + w0 - 8, y: yy, item: list[i] });
+      c.fillStyle = hov && list[i].can ? 'rgba(255,230,180,0.22)' : 'rgba(30,16,8,0.45)'; c.fillRect(x0 + 8, yy - 9, w0 - 16, 18);
+      draw(list[i], x0, yy, w0);
+    }
+    if (hint) { c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'left'; c.fillText(hint, x0 + 10, y0 + h0 - 5); }
+  }
+  // the bag: cell size, where it sits when open (right side, under the chart, clear of the hero), how far it has slid in
+  var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + ROWS * CELL + 8, slide: 0 };
+  INV.x = 400 - INV.w - 24; INV.y = 80;
+  function invLeft() { return INV.x + (1 - INV.slide) * (INV.w + 40); }
+  function slotRect(i) { var x0 = invLeft(); return { x: x0 + 6 + (i % COLS) * CELL, y: INV.y + 16 + Math.floor(i / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
+  function slotAt() { if (!mouseS || INV.slide < 0.9) return -1; for (var i = 0; i < SLOTS; i++) { var r = slotRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return i; } return -1; }
+  var BTN = [{ id: 'sort', label: 'Sort' }, { id: 'close', label: 'X' }];
+  function btnRect(k) { return { x: invLeft() + INV.w - 1, y: INV.y + 6 + k * 20, w: 22, h: 17 }; }
+  function btnAt() { if (!mouseS || INV.slide < 0.9) return null; for (var k = 0; k < BTN.length; k++) { var r = btnRect(k); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return BTN[k].id; } return null; }
+  function drawInv(c) {
+    var x0 = invLeft(), i, hov = slotAt(), hb = btnAt();
+    for (i = 0; i < BTN.length; i++) {                 // the tabs on the right: Sort, close
+      var br = btnRect(i); wood(c, br.x, br.y, br.w, br.h);
+      if (hb === BTN[i].id) { c.fillStyle = 'rgba(255,230,180,0.2)'; c.fillRect(br.x + 2, br.y + 2, br.w - 4, br.h - 4); }
+      c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'center'; c.fillText(BTN[i].label, br.x + br.w / 2, br.y + 11);
+    }
+    wood(c, x0, INV.y, INV.w, INV.h);
+    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Bag', x0 + 8, INV.y + 11);
+    c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'right'; c.fillText('top row: belt', x0 + INV.w - 8, INV.y + 11);
+    for (i = 0; i < SLOTS; i++) {
+      var r = slotRect(i), s = slots[i], top = i < COLS;
+      c.fillStyle = hov === i ? '#5c3e2a' : (top ? '#3e2718' : '#452c1b'); c.fillRect(r.x, r.y, r.w, r.h);
+      c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = 1; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+      c.strokeStyle = 'rgba(255,225,170,0.12)'; c.beginPath(); c.moveTo(r.x + 1, r.y + r.h - 1); c.lineTo(r.x + r.w - 1, r.y + r.h - 1); c.lineTo(r.x + r.w - 1, r.y + 1); c.stroke();
+      if (top) { c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.textAlign = 'left'; c.fillText(String(i + 1), r.x + 2, r.y + 6.5); }
+      if (s && !(pick && pick.drag && pick.i === i)) {
+        drawDropIcon(c, s.kind, r.x + r.w / 2, r.y + r.h / 2 + 0.5, 1.15);
+        if (s.n > 1) { c.font = 'bold 6px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'right'; c.strokeText(String(s.n), r.x + r.w - 1.5, r.y + r.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(s.n), r.x + r.w - 1.5, r.y + r.h - 1.5); }
+      }
+    }
+    if (hov >= 0 && slots[hov] && !(pick && pick.drag)) {   // the name of what you point at, and what eating it does
+      var s2 = slots[hov], f = FOOD[s2.kind], txt = NAMES[s2.kind] + (f ? '  (eat: +' + f.heal + (f.time ? ', meal)' : ')') : '');
+      c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + INV.w - 2, INV.y - 4); c.fillStyle = '#fff'; c.fillText(txt, x0 + INV.w - 2, INV.y - 4);
+    }
+    if (pick && pick.drag && slots[pick.i] && mouseS) { var sd = slots[pick.i]; c.globalAlpha = 0.9; drawDropIcon(c, sd.kind, mouseS.x, mouseS.y, 1.3); c.globalAlpha = 1; }
+  }
+  function drawPanels(c) {
+    rows = [];
+    INV.slide += ((invOpen ? 1 : 0) - INV.slide) * 0.25; if (INV.slide < 0.01 && !invOpen) INV.slide = 0;
+    if (INV.slide > 0.01) drawInv(c);
+    if (cookOpen) panel(c, 6, 80, 150, 'Hearth', 'Click a dish to cook it. E closes.', RECIPES.map(function (r) { return { r: r, kind: r.id, can: canAfford(r.needs) }; }), function (it, x0, yy, w0) {
+      c.globalAlpha = it.can ? 1 : 0.45;
+      drawDropIcon(c, it.kind, x0 + 18, yy, 1.4);
+      c.font = '600 8px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(NAMES[it.kind], x0 + 32, yy + 1);
+      c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,0.7)'; c.fillText('needs ' + costText(it.r.needs), x0 + 32, yy + 8);
+      c.textAlign = 'right'; c.fillStyle = '#9be58b'; c.fillText('+' + FOOD[it.kind].heal + ', meal', x0 + w0 - 12, yy + 3);
+      c.globalAlpha = 1;
+    });
+  }
+  function rowAt() { if (!mouseS) return null; for (var i = 0; i < rows.length; i++) { var r = rows[i]; if (mouseS.x > r.x0 && mouseS.x < r.x1 && Math.abs(mouseS.y - r.y) < 9) return r.item; } return null; }
+  function hero() { return Combat.dbg().P; }
+  function chip(x, y, z, col, n, spd) {
+    for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, v = spd * (0.4 + Math.random() * 0.8); bits.push({ x: x, y: y, z: z, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.6, vz: 60 + Math.random() * 90, life: 0.5 + Math.random() * 0.4, max: 0.9, col: col, r: 1.2 + Math.random() * 1.4 }); }
+  }
+  function drop(kind, x, y, n) {
+    for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, v = 30 + Math.random() * 50; drops.push({ kind: kind, x: x, y: y, z: 10, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7, vz: 90 + Math.random() * 60, t: 0, spin: Math.random() * 6.283 }); }
+  }
+  Combat.api.harvest = {
+    list: function (x, y, rad) { var out = []; around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); return out; },
+    hit: function (o, power, right, tool) {
+      var P = hero(), s = sprite(o.name, o.v), top = o.y * K + s.t * o.s;
+      o.hp -= power; o.shake = 0.3; o.leanDir = o.x >= P.x ? 1 : -1;
+      if (o.kind === 'tree') { chip(o.x, o.y, (o.y * K - top) * 0.6, '#6fb84f', 4, 50); chip(o.x, o.y, 8, '#d9b37a', right ? 4 : 2, 70); }
+      else if (o.kind === 'stone') chip(o.x, o.y, 6, '#b8b4b0', right ? 5 : 2, 80);
+      else chip(o.x, o.y, 6, '#7fc26a', 4, 55);
+      if (busy.indexOf(o) < 0) busy.push(o);
+      if (o.hp <= 0) {
+        o.dying = 0;
+        if (o.kind === 'stone') { chip(o.x, o.y, 8, '#9d9995', 14, 110); drop('stone', o.x, o.y, o.name === 'rockFormation' ? 4 : 2); }
+        else if (o.kind === 'bush') { if (o.name === 'berryBush') drop('berries', o.x, o.y, 2); else drop('fiber', o.x, o.y, 1); }
+      }
+    }
+  };
+  Combat.api.onDeath = function (e) { drop('meat', e.x, e.y, 1); };
+  var busy = [], lastT = performance.now();
+  function tick() {
+    var now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000), i; lastT = now; clock += dt;
+    var P = hero(), W = Combat.dbg().W;
+    for (i = busy.length - 1; i >= 0; i--) {
+      var o = busy[i]; o.shake = Math.max(0, o.shake - dt);
+      if (o.dying != null) {
+        o.dying += dt;
+        var done = o.kind === 'tree' ? 1.3 : (o.kind === 'stone' ? 0.4 : 0.3);
+        if (o.kind === 'tree' && o.dying >= 0.95 && !o.dropped) {       // the trunk hits the ground: wood flies out along it
+          o.dropped = true; var s = sprite(o.name, o.v), len = -s.t * o.s * 0.8;
+          drop('wood', o.x + o.leanDir * len * 0.6, o.y, GIVES.tree[1]); chip(o.x + o.leanDir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
+          decals.push({ x: o.x, y: o.y, r: 5 * o.s + 2 });
+        }
+        if (o.dying >= done) { removeProp(o); busy.splice(i, 1); }
+      } else if (o.shake <= 0) busy.splice(i, 1);
+    }
+    for (i = bits.length - 1; i >= 0; i--) { var b = bits[i]; b.life -= dt; b.vz -= 420 * dt; b.z += b.vz * dt; b.x += b.vx * dt; b.y += b.vy * dt; if (b.z < 0) { b.z = 0; b.vz = -b.vz * 0.3; b.vx *= 0.6; b.vy *= 0.6; } if (b.life <= 0) bits.splice(i, 1); }
+    for (i = drops.length - 1; i >= 0; i--) {
+      var d = drops[i]; d.t += dt; d.vz -= 520 * dt; d.z += d.vz * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= Math.exp(-dt * 3); d.vy *= Math.exp(-dt * 3);
+      if (d.z < 0) { d.z = 0; d.vz = -d.vz * 0.35; if (Math.abs(d.vz) < 20) d.vz = 0; }
+      if (!isLand(d.x, d.y)) { d.x -= d.vx * dt * 2; d.y -= d.vy * dt * 2; d.vx = d.vy = 0; }
+      if (d.t > 0.4 && !P.dead && Math.hypot(d.x - P.x, d.y - P.y) < 16) {
+        if (addItem(d.kind, 1)) { if (clock - fullT > 1.5) { fullT = clock; toast('The bag is full'); } d.t = 0.2; }
+        else { toast('+1 ' + NAMES[d.kind].toLowerCase()); drops.splice(i, 1); }
+      }
+    }
+  }
+
+  /* ---------- boars: a few roam the island in home ranges; a new one wanders in when one is killed ---------- */
+  var BOARS = 6, respawnT = 0;
+  function landSpot(minFromHero, minFromHome) {
+    var P = hero();
+    for (var tries = 0; tries < 200; tries++) {
+      var x = (3 + Math.random() * (GW - 6)) * T, y = (3 + Math.random() * (GH - 6)) * T;
+      if (code(Math.floor(x / T), Math.floor(y / T)) < 2 || !isLand(x, y)) continue;
+      if (Math.hypot(x - home.x, y - home.y) < minFromHome || Math.hypot(x - P.x, y - P.y) < minFromHero) continue;
+      var blocked = false; around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < o.r * o.s + 14) blocked = true; });
+      if (!blocked) return { x: x, y: y };
+    }
+    return null;
+  }
+  function placeBoar(minFromHero) {
+    var sp = landSpot(minFromHero, 220); if (!sp) return;
+    var e = Combat.spawn('bot'); e.x = sp.x; e.y = sp.y; e.wander = { x0: sp.x, y0: sp.y, r: 110, wait: Math.random() * 3 }; e.face = Math.random() * 6.283;
+  }
+  function spawnBoars() { Combat.clear(); for (var i = 0; i < BOARS; i++) placeBoar(260); }
+  function keepBoars(dt) {
+    respawnT -= dt; if (respawnT > 0) return; respawnT = 3;
+    var alive = Combat.dbg().W.enemies.filter(function (e) { return !e.dead; }).length;
+    if (alive < BOARS) placeBoar(520);
   }
 
   /* ---------- scene ---------- */
-  var cam = { x: 0, y: 0, z: 1 }, hero = null, prompt = '';
+  var cam = { x: 0, y: 0, z: 1 };
   Combat.api.scene = {
-    noHud: true, noHotbar: true,
+    noHud: false, noKills: true,
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
-    walk: function (x, y) { return aboard || isLand(x, y); },
-    heroLift: function () { return aboard ? -bobY() - 3.5 : 0; },   // feet sit a little below the rim, inside the hull
+    walk: function (x, y) { return isLand(x, y); },
     begin: function (c, P) {
-      hero = P; this.noHeroShadow = aboard;
-      var z = view.zoom, hw = 200 / z, hh = 125 / z, i;
+      var z = zoom, hw = 200 / z, hh = 125 / z, i;
       cam.z = z;
       cam.x = hw * 2 >= WX ? WX / 2 : Math.max(hw, Math.min(WX - hw, P.x));
       cam.y = hh * 2 >= WY * K ? WY * K / 2 : Math.max(hh, Math.min(WY * K - hh, P.y * K - 14));
       c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250);
       c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y);
       w.drawGround(c, cam, hw, hh);
+      // floors you have laid
+      for (var fk in B.floors) { var fp = fk.split(','), fx = fp[0] * T, fy = fp[1] * TS; if (fx + T < cam.x - hw || fx > cam.x + hw || fy + TS < cam.y - hh || fy > cam.y + hh) continue; c.drawImage(w.tile('plank', +fp[0], +fp[1]), fx, fy, T + 0.4, TS + 0.4); c.strokeStyle = 'rgba(20,14,26,0.35)'; c.lineWidth = 0.8; c.strokeRect(fx, fy, T, TS); }
+      // stumps where trees stood
+      for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue;
+        c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(dc.x, dc.y * K, dc.r, dc.r * 0.7, 0, 0, 7); c.fill();
+        c.fillStyle = '#b98a5a'; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.78, dc.r * 0.52, 0, 0, 7); c.fill();
+        c.strokeStyle = 'rgba(90,58,38,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.45, dc.r * 0.3, 0, 0, 7); c.stroke(); }
       w.drawWaves(c, cam, hw, hh, clock, spec.waves, spec.foam);
-      for (i = 0; i < wakes.length; i++) { var wk = wakes[i], a = wk.life / wk.max; c.strokeStyle = 'rgba(235,252,255,' + (0.5 * a * Math.min(1, spec.wake)).toFixed(3) + ')'; c.lineWidth = 1.2 + spec.wake; c.beginPath(); c.ellipse(wk.x, wk.y * K, wk.r, wk.r * K, 0, 0, 7); c.stroke(); }
+      // shadows of what lies on the ground
+      c.fillStyle = 'rgba(20,40,20,0.22)';
+      for (i = 0; i < drops.length; i++) { var dr = drops[i]; c.beginPath(); c.ellipse(dr.x, dr.y * K, 4, 2.2, 0, 0, 7); c.fill(); }
+      if (bDirty) rebuildRooms();
+      drawGhost(c);
     },
     items: function (items) {
-      var z = cam.z, hw = 200 / z, hh = 125 / z;
-      items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { drawBoat(ctx); } });
-      if (Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
-      if (aboard) items.push({ y: hero.y + 0.5, f: function () { drawBoatFront(ctx); } });
-      // only the objects in the pieces of map near the view (trees are tall, so look a little further down)
+      var z = cam.z, hw = 200 / z, hh = 125 / z, P = hero(), i;
       var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1);
       var by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1);
       for (var by = by0; by <= by1; by++) for (var bx = bx0; bx <= bx1; bx++) {
         var list = buckets[by * CW + bx]; if (!list) continue;
         list.forEach(function (o) {
           var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
-          if (px + w < cam.x - hw || px > cam.x + hw || py + h < cam.y - hh || py > cam.y + hh) return;
-          items.push({ y: o.y, f: function () {
-            var behind = o.r === 8 && hero.y < o.y && hero.y * K > py + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3;
-            if (behind) ctx.globalAlpha = 0.45;
-            ctx.drawImage(s.cv, px, py, w, h); ctx.globalAlpha = 1;
-          } });
+          if (px + w < cam.x - hw - 60 || px > cam.x + hw + 60 || py + h < cam.y - hh || py > cam.y + hh) return;
+          items.push({ y: o.y, f: function () { drawProp(o, s, px, py, w, h, P); } });
         });
       }
+      var here = roomInfo ? roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1;
+      function near(wx, wy) { return Math.hypot(P.x - wx, P.y - wy) < 34; }
+      function mine(ax, ay, bx2, by2) { return here >= 0 && (roomInfo.at(ax, ay) === here || roomInfo.at(bx2, by2) === here); }
+      Object.keys(B.H).forEach(function (kk) {
+        var q = kk.split(','), x = +q[0], y = +q[1], e = B.H[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
+        var low = mine(x, y - 1, x, y) && y * T > P.y;      // the walls in front of you drop low while you are inside
+        items.push({ y: y * T, f: function () { Build.drawH(ctx, x, y, e, low, near((x + 0.5) * T, y * T), BCFG); } });
+      });
+      Object.keys(B.V).forEach(function (kk) {
+        var q = kk.split(','), x = +q[0], y = +q[1], e = B.V[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
+        items.push({ y: (y + 1) * T - 1, f: function () { Build.drawV(ctx, x, y, e, near(x * T, (y + 0.5) * T), !!B.V[Build.key(x, y + 1)], BCFG); } });
+      });
+      B.items.forEach(function (it) {
+        if (Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
+        var s = sprite(it.name, 0); items.push({ y: it.y, f: function () { ctx.drawImage(s.cv, it.x + s.l, it.y * K + s.t, s.w, s.h); } });
+      });
+      if (roomInfo) roomInfo.rooms.forEach(function (r, ri) {
+        var target = here === ri ? BCFG.seeThrough : 1;
+        roofA[r.id] += (target - roofA[r.id]) * 0.18;
+        items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(ctx, r, roofA[r.id], BCFG); } });
+      });
+      for (i = 0; i < drops.length; i++) (function (d) { items.push({ y: d.y, f: function () { drawDrop(ctx, d); } }); })(drops[i]);
+      for (i = 0; i < bits.length; i++) (function (b) { items.push({ y: b.y + 1, f: function () { ctx.globalAlpha = Math.min(1, b.life / 0.25); ctx.fillStyle = b.col; ctx.beginPath(); ctx.arc(b.x, b.y * K - b.z, b.r, 0, 7); ctx.fill(); ctx.globalAlpha = 1; } }); })(bits[i]);
     },
     end: function (c, P) {
-      for (var i = 0; i < smoke.length; i++) { var q = smoke[i], a = q.life / q.max; c.fillStyle = 'rgba(225,225,235,' + (0.5 * a).toFixed(3) + ')'; c.beginPath(); c.arc(q.x, q.y * K - q.z, q.r, 0, 7); c.fill(); }
-      // chart
-      var mw = GW >= GH ? 96 : 96 * GW / GH, mh = mw * GH / GW, mx = 400 - mw - 6, my = 6;
-      var PSN = Combat.api.pixelScale || 2; c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0); c.imageSmoothingEnabled = false;
+      var PSN = Combat.api.pixelScale || 2;
+      c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0);
+      // the chart
+      var mw = GW >= GH ? 64 : 64 * GW / GH, mh = mw * GH / GW, mx = 400 - mw - 6, my = 6;
+      c.imageSmoothingEnabled = false;
       c.fillStyle = 'rgba(20,16,30,0.85)'; c.fillRect(mx - 2, my - 2, mw + 4, mh + 4);
       c.drawImage(mini, mx, my, mw, mh);
-      c.fillStyle = '#ffffff'; c.fillRect(mx + boat.x / WX * mw - 1.5, my + boat.y / WY * mh - 1.5, 3, 3);
       c.fillStyle = '#ffd34d'; c.fillRect(mx + P.x / WX * mw - 1, my + P.y / WY * mh - 1, 2, 2);
-      c.imageSmoothingEnabled = true; c.restore();
-      bubble(c);
-      if (prompt) {
-        var tx = P.x, ty = P.y * K - 44 - (aboard ? 6 : 0), s = 1 / cam.z;
-        c.save(); c.translate(tx, ty); c.scale(s, s);
-        c.font = '600 9px system-ui, sans-serif'; var w = c.measureText(prompt).width + 26;
-        c.fillStyle = 'rgba(20,16,30,0.82)'; c.beginPath(); c.rect(-w / 2, -9, w, 16); c.fill();
-        c.fillStyle = '#ffd34d'; c.beginPath(); c.rect(-w / 2 + 3, -6.5, 12, 11); c.fill();
-        c.fillStyle = '#1d1622'; c.textAlign = 'center'; c.fillText('E', -w / 2 + 9, 2.5);
-        c.fillStyle = '#ffffff'; c.textAlign = 'left'; c.fillText(prompt, -w / 2 + 19, 2.5);
-        c.restore();
+      c.imageSmoothingEnabled = true;
+      if (fed) drawFedIcon(c, mx - 14, my + 10);
+      if (nearHearth(P) && !cookOpen && !invOpen && P.mode !== 'build' && !menu) {       // E to cook, over the hero
+        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = 'Cook';
+        c.font = '600 9px system-ui, sans-serif'; var pw = c.measureText(pt).width + 26;
+        c.fillStyle = 'rgba(20,16,30,0.82)'; c.fillRect(tx - pw / 2, ty - 9, pw, 16);
+        c.fillStyle = '#ffd34d'; c.fillRect(tx - pw / 2 + 3, ty - 6.5, 12, 11);
+        c.fillStyle = '#1d1622'; c.textAlign = 'center'; c.fillText('E', tx - pw / 2 + 9, ty + 2.5);
+        c.fillStyle = '#ffffff'; c.textAlign = 'left'; c.fillText(pt, tx - pw / 2 + 19, ty + 2.5);
       }
+      drawPanels(c);
+      if (menu) drawMenu(c);
+      c.restore();
     }
   };
+  // a tree leans more the more it is chopped, then falls away from you; a rock cracks and shrinks, then bursts
+  function drawProp(o, s, px, py, w, h, P) {
+    var c = ctx, bx = o.x, byy = o.y * K, shk = o.shake > 0 ? Math.sin(o.shake * 70) * 1.8 * Math.min(1, o.shake * 4) : 0, dmg = o.kind ? 1 - o.hp / o.max : 0;
+    var behind = o.kind === 'tree' && P.y < o.y && P.y * K > py + h * 0.25 && Math.abs(P.x - o.x) < w * 0.3;
+    c.save();
+    if (behind) c.globalAlpha = 0.45;
+    if (o.kind === 'tree') {
+      var u = o.dying != null ? Math.min(1, o.dying / 0.95) : 0, ang = o.leanDir * (Math.max(0, dmg) * 0.1 + u * u * 1.5);
+      if (o.dying != null && o.dying > 0.95) c.globalAlpha *= Math.max(0, 1 - (o.dying - 0.95) / 0.35);
+      c.translate(bx + shk, byy); c.rotate(ang); c.translate(-bx, -byy);
+      c.drawImage(s.cv, px, py, w, h);
+    } else if (o.kind === 'stone') {
+      var sh = o.dying != null ? Math.max(0, 1 - o.dying / 0.4) : 1, sc = (1 - 0.18 * dmg) * sh;
+      c.globalAlpha *= sh;
+      c.translate(bx + shk, byy); c.scale(sc, sc); c.translate(-bx, -byy);
+      c.drawImage(s.cv, px, py, w, h);
+      if (dmg > 0.15) {                                 // cracks spread as it is mined
+        var n = Math.floor(dmg * 6), cx = px + w / 2, cy = py + h * 0.55; c.strokeStyle = 'rgba(30,24,30,0.65)'; c.lineWidth = 1.1; c.lineCap = 'round';
+        for (var k = 0; k < n; k++) { var a = hash(o.x, o.y, k) * 6.283, L = w * (0.18 + hash(o.y, o.x, k) * 0.2), mx = cx + Math.cos(a) * L * 0.5 + (hash(k, o.x, 2) - 0.5) * 4, my = cy + Math.sin(a) * L * 0.5 * 0.7; c.beginPath(); c.moveTo(cx, cy); c.lineTo(mx, my); c.lineTo(cx + Math.cos(a) * L, cy + Math.sin(a) * L * 0.7); c.stroke(); }
+      }
+    } else {
+      if (o.dying != null) c.globalAlpha *= Math.max(0, 1 - o.dying / 0.3);
+      c.drawImage(s.cv, px + shk, py, w, h);
+    }
+    c.restore();
+    if (o.kind && dmg > 0 && o.dying == null) {       // how much is left
+      c.fillStyle = 'rgba(20,16,30,0.6)'; c.fillRect(bx - 9, py - 5, 18, 3);
+      c.fillStyle = o.kind === 'stone' ? '#c5ccd6' : '#9be58b'; c.fillRect(bx - 9, py - 5, 18 * (1 - dmg), 3);
+    }
+  }
+  function drawDropIcon(c, kind, x, y, sc) {
+    c.save(); c.translate(x, y); c.scale(sc, sc); c.lineCap = 'round'; c.lineJoin = 'round';
+    if (kind === 'wood') { c.strokeStyle = '#3a2a36'; c.lineWidth = 5.6; c.beginPath(); c.moveTo(-4.5, 1.5); c.lineTo(4.5, -1.5); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 3.6; c.stroke(); c.fillStyle = '#d9b37a'; c.beginPath(); c.ellipse(4.5, -1.5, 1.6, 1.8, -0.3, 0, 7); c.fill(); }
+    else if (kind === 'stone') { c.beginPath(); c.moveTo(-4, 2); c.lineTo(-2.5, -2.5); c.lineTo(2, -3); c.lineTo(4.5, 0.5); c.lineTo(2.5, 3); c.closePath(); c.fillStyle = '#9d9995'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.ellipse(-0.5, -1, 1.8, 1, 0, 0, 7); c.fill(); }
+    else if (kind === 'fiber') { c.strokeStyle = '#3a2a36'; c.lineWidth = 2.6; for (var p = 0; p < 2; p++) { for (var i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(i * 1.6, 3); c.quadraticCurveTo(i * 2.6, -1, i * 3.2, -3.5); c.stroke(); } c.strokeStyle = '#7fc26a'; c.lineWidth = 1.3; } }
+    else if (kind === 'meat') { c.beginPath(); c.ellipse(0, 0, 4.6, 3.2, -0.4, 0, 7); c.fillStyle = '#d9636a'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#f6c9b6'; c.beginPath(); c.ellipse(-1.2, -0.6, 1.6, 1, -0.4, 0, 7); c.fill(); }
+    else if (kind === 'berries') { c.fillStyle = '#5a9a3a'; c.beginPath(); c.ellipse(1.5, -3, 3, 1.4, 0.5, 0, 7); c.fill(); c.lineWidth = 1.1; c.strokeStyle = '#3a2a36'; [[-2.5, 0.5], [1.5, 1.5], [-0.5, -1.5], [3, -1]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 2.1, 0, 7); c.fillStyle = '#b8304a'; c.fill(); c.stroke(); c.fillStyle = 'rgba(255,255,255,0.5)'; c.beginPath(); c.arc(q[0] - 0.6, q[1] - 0.7, 0.6, 0, 7); c.fill(); }); }
+    else if (kind === 'cookedMeat') { c.beginPath(); c.ellipse(-0.5, 0, 4.4, 3.2, -0.5, 0, 7); c.fillStyle = '#9a5a2e'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.strokeStyle = '#3a2a36'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(2.5, 2); c.lineTo(5.5, 4.5); c.stroke(); c.strokeStyle = '#f4ecdc'; c.lineWidth = 1.4; c.stroke(); c.fillStyle = 'rgba(255,220,150,0.45)'; c.beginPath(); c.ellipse(-1.5, -1, 1.6, 0.9, -0.5, 0, 7); c.fill(); }
+    else { c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(0, 1.5, 5.2, 3, 0, 0, Math.PI); c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#b84a3a'; c.beginPath(); c.ellipse(0, 1.5, 5.2, 1.6, 0, 0, 7); c.fill(); c.stroke(); c.strokeStyle = 'rgba(255,255,255,0.6)'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-1.5, -1); c.quadraticCurveTo(-2.5, -3, -1.5, -5); c.moveTo(1.5, -1); c.quadraticCurveTo(0.5, -3, 1.5, -5); c.stroke(); }
+    c.restore();
+  }
+  function drawDrop(c, d) { c.save(); c.translate(d.x, d.y * K - d.z); c.rotate(d.kind === 'wood' ? d.spin : 0); drawDropIcon(c, d.kind, 0, 0, 1); c.restore(); }
 
-  /* settings as text */
-  document.getElementById('copy').addEventListener('click', function (e) {
-    var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json.value).then(done, fail); else fail();
-    e.currentTarget.blur();
+  /* ---------- input ---------- */
+  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyJ: 1, KeyK: 1, KeyQ: 1, KeyF: 1, KeyR: 1, KeyB: 1, Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, ShiftLeft: 1, ShiftRight: 1 };
+  var heldK = {};
+  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')); }
+  window.addEventListener('keydown', function (e) {
+    if (typing(e)) return;
+    if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (cookOpen) cookOpen = false; else if (nearHearth(hero())) { cookOpen = true; invOpen = false; menu = null; } } return; }
+    if (e.code === 'Escape') { invOpen = false; cookOpen = false; menu = null; return; }
+    if (!codes[e.code]) return;
+    e.preventDefault(); if (e.repeat) return;
+    if (/^Digit[1-6]$/.test(e.code) && beltFree(+e.code.slice(5) - 1)) useSlot(+e.code.slice(5) - 1);
+    heldK[e.code] = true; Combat.key(e.code, true);
   });
-  document.getElementById('applyjson').addEventListener('click', function (e) {
-    var o = null;
-    try { o = JSON.parse(json.value); } catch (err) {}
-    if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing was changed.'; return; }
-    json.blur(); spec = o; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
+  window.addEventListener('keyup', function (e) { if (!codes[e.code] || typing(e)) return; e.preventDefault(); heldK[e.code] = false; Combat.key(e.code, false); });
+  window.addEventListener('blur', function () { for (var k in heldK) if (heldK[k]) { heldK[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
+  // a hotbar slot shows the belt when the mode has nothing of its own there: fight has nothing yet, gather uses 1 to 3, build 1 to 5
+  function beltFree(i) { var m = hero().mode; return m !== 'gather' || i >= Combat.api.tools.length; }
+  function toWorld(e) { var r = cv.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * 400, sy = (e.clientY - r.top) / r.height * 250; return { x: (sx - 200) / cam.z + cam.x, y: ((sy - 125) / cam.z + cam.y) / K }; }
+  function toScreen(e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 400, y: (e.clientY - r.top) / r.height * 250 }; }
+  cv.addEventListener('mousedown', function (e) {
+    e.preventDefault(); mouseW = toWorld(e); mouseS = toScreen(e);
+    var P = hero();
+    if (menu) { var hit = menuHit(); if (hit && hit.piece && e.button === 0) { P.piece = hit.i; P.wreck = false; menu = null; } else if (e.button === 2 || !hit) menu = null; return; }
+    if (invOpen && INV.slide > 0.9) {
+      var b = btnAt(), sl = slotAt();
+      if (b === 'sort') { sortBag(); return; } if (b === 'close') { invOpen = false; return; }
+      if (sl >= 0) { if (e.button === 0 && slots[sl]) pick = { i: sl, x: mouseS.x, y: mouseS.y, drag: false }; return; }
+      if (mouseS.x > invLeft() - 4 && mouseS.y > INV.y - 4 && mouseS.y < INV.y + INV.h + 4) return;   // on the board, nothing behind it
+    }
+    if (cookOpen) { var row = rowAt(); if (row && e.button === 0) { cook(row.r); return; } if (mouseS.x < 160 && mouseS.y > 76 && mouseS.y < 150) return; }
+    if (P.mode === 'build') { if (e.button === 2) openMenu(); else if (e.button === 0) { mdown = 1; lastPlaced = ''; buildAct(true); } return; }
+    Combat.button(e.button, true);
   });
+  window.addEventListener('mouseup', function (e) {
+    mdown = 0; Combat.button(e.button, false);
+    if (pick) { mouseS = toScreen(e); if (pick.drag) dropOn(pick.i, slotAt()); else useSlot(pick.i); pick = null; }
+  });
+  cv.addEventListener('mousemove', function (e) {        // the bow aims at the mouse; build mode places under it
+    mouseW = toWorld(e); mouseS = toScreen(e); Combat.mouse(mouseW.x, mouseW.y * K);
+    if (pick && !pick.drag && Math.hypot(mouseS.x - pick.x, mouseS.y - pick.y) > 4) pick.drag = true;
+    if (mdown === 1) buildAct(false);
+  });
+  cv.addEventListener('mouseleave', function () { mouseW = null; mouseS = null; });
+  cv.addEventListener('wheel', function (e) {
+    e.preventDefault(); var P = hero(), d = e.deltaY > 0 ? 1 : -1, n;
+    if (P.mode === 'gather') { n = Combat.api.tools.length; P.tool = (P.tool + d + n) % n; }
+    else if (P.mode === 'build') { P.piece = (P.piece + d + PIECES.length) % PIECES.length; P.wreck = false; }
+    else P.sel = ((P.sel || 0) + d + 6) % 6;
+  }, { passive: false });
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  try { var saved = JSON.parse(localStorage.getItem('seaeditor4')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
-  apply();
+  function toCamp() { var P = hero(); P.x = home.x - 40; P.y = home.y; P.vx = P.vy = 0; }
+  function start(fresh) {
+    var sv = fresh ? null : loadSave(), k;
+    if (sv) spec.seed = sv.seed;
+    buildWorld();
+    for (k = 0; k < SLOTS; k++) slots[k] = null;
+    recount();
+    if (sv) {                                            // a saved game: the same island, with what was done to it
+      if (sv.slots) { for (k = 0; k < SLOTS; k++) slots[k] = sv.slots[k] && NAMES[sv.slots[k].kind] ? { kind: sv.slots[k].kind, n: Math.min(STACK, sv.slots[k].n | 0) } : null; recount(); }
+      else for (k in sv.inv || {}) addItem(k, sv.inv[k]);
+      B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; (sv.gone || []).forEach(function (g) { gone[g] = 1; });
+      w.eachProp(function (o) { if (o.kind && gone[propKey(o)]) w.removeProp(o); });
+      decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null;
+      var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; } else toCamp();
+    } else toCamp();
+    spawnBoars(); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Press Tab for your inventory, B to build.'; save();
+  }
+  document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
+  document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
+  window.addEventListener('beforeunload', save);
+  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES }; };   // for checks from the console
 
-  var last = performance.now();
+  start();
+  var lastP = hero();
+  var lastF = performance.now();
   function frame(now) {
-    var dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
+    var dt = Math.min(0.05, (now - lastF) / 1000); lastF = now;
     var D = Combat.dbg(), P = D.P;
+    if (P !== lastP) { lastP = P; toCamp(); spawnBoars(); }     // R after falling: the engine made a new hero
     D.W.pillars = nearSolids(P);
-    if (Math.hypot(P.x - npc.x, P.y - npc.y) < 200) D.W.pillars.push({ x: npc.x, y: npc.y, r: 7, hide: true });
-    // he turns to face you when you are close, and back toward the sea when you leave
-    var want = Math.hypot(P.x - npc.x, P.y - npc.y) < 110 ? Math.atan2(P.y - npc.y, P.x - npc.x) : Math.PI / 2, dn = Math.atan2(Math.sin(want - npc.face), Math.cos(want - npc.face));
-    npc.face += Math.max(-4 * dt, Math.min(4 * dt, dn)); if (npc.sayT > 0) npc.sayT -= dt;
-    if (!P.dead) P.hp = P.maxHp;
-    sail(dt);
-    if (aboard) {
-      var d = dims(); P.x = boat.x - Math.cos(boat.h) * d.L * 0.25; P.y = boat.y - Math.sin(boat.h) * d.L * 0.25; P.vx = P.vy = 0;
-      if (Math.hypot(boat.vx, boat.vy) > 8 || keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD) { P.face = boat.h; }
-      prompt = landing() ? 'Step ashore' : '';
-    } else prompt = nearNpc(P) ? (npc.sayT > 0 ? '' : 'Talk') : (canBoard(P) ? 'Board' : '');
+    if (roomInfo) for (var si = 0; si < roomInfo.solids.length; si++) { var sl = roomInfo.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
+    for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
+    tick(); keepBoars(dt); feedTick(dt);
+    Combat.api.beltSlots = slots.slice(0, COLS).map(function (s) { return s ? { n: s.n, draw: function (c) { drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; });
+    saveT += dt; if (saveT > 10) { saveT = 0; save(); }
     Combat.update(dt);
-    if (aboard) { var d2 = dims(); P.x = boat.x - Math.cos(boat.h) * d2.L * 0.25; P.y = boat.y - Math.sin(boat.h) * d2.L * 0.25; }
     Combat.render(ctx);
     requestAnimationFrame(frame);
   }
