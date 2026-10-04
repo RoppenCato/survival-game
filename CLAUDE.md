@@ -4,8 +4,9 @@
 animation and sound is drawn or synthesized in code: there are no asset files. This repo holds browser
 prototypes and editors, not a full game yet.
 
-The game was post-apocalyptic steampunk until 2026-10-04. Robin changed it to a Viking game on the `viking`
-branch; `main` holds the last steampunk state. All steampunk content has been removed from this branch. The old
+The game was post-apocalyptic steampunk until 2026-10-04. Robin changed it to a Viking game, and `main`
+is now the Viking game (merged from the `viking` branch on 2026-10-04). The last steampunk state is commit
+`59f5dd6`. All steampunk content has been removed. The old
 linked design doc (see `README.md`) still describes the steampunk game and is out of date: this file is the
 source of truth for the new direction.
 

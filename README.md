@@ -5,7 +5,7 @@ between them, seen through a three-quarter camera with a cartoon look. Everythin
 or synthesized in code.
 
 This folder holds the editors and playable prototypes built so far. The game was a post-apocalyptic steampunk
-game until October 2026; the `main` branch keeps that last state and the `viking` branch holds the new direction.
+game until October 2026; `main` is now the Viking game, and commit `59f5dd6` is the last steampunk state.
 
 ## Run it
 
