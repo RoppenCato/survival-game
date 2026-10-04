@@ -74,6 +74,13 @@ or keys: areas are open, and harder ones are a struggle until you have progresse
 work covers only the starter island and the nearby islands, all of the first biome. The look is bright, lush
 and green. The tone is real Viking-age Scandinavia.
 
+What sets the game apart is raiding, exploring and expanding: you raid villages, castles and churches for loot
+and recruits, build a clan that crews your ships and works your village, and claim places. A yearly calendar of
+four seasons repopulates unclaimed places after each winter. The compass always means the same
+thing (cold north, rich south, trade to the east, open ocean to the west) but every world is generated anew.
+Ideas that are not decided yet are in
+`docs/idea-bank.md`.
+
 `CLAUDE.md` has the full, current design notes and the conventions for the code. An older design document for
 the steampunk version exists (https://claude.ai/code/artifact/3b87f164-5988-46e9-9044-d0914e1a2131); it is out of
 date and has not been rewritten for the Viking game.

@@ -12,11 +12,32 @@ source of truth for the new direction.
 
 ## The game design, as decided so far
 
+- **What makes it different:** raiding, exploring and expanding. You do not progress by killing bosses, as in
+  Valheim; there are several ways to progress.
+- **Raiding:** villages, castles and churches stand on the islands and can be raided for loot and for people to
+  recruit into your clan. Churches have only friendly priests who cannot really defend themselves, so they are
+  "lucky strikes", though an army may turn up. Some villages are for trading. There is one big central trading
+  hub, heavily guarded, which it is unwise to attack.
+- **Clan members:** they crew your ships (the more aboard, the faster the ship goes, rowing and sailing), they can
+  die in battle, they can work at home in your own village, and they defend places you have claimed.
+- **The year:** a calendar of spring, summer, autumn and winter. After winter, villages, castles and other places
+  that nobody has claimed are repopulated and rebuilt in generated ways. This keeps the map interesting and
+  rewards claiming places.
+- **Map layout (decided 2026-10-04):** the compass means something, the details are generated. North is always
+  colder, south is richer and more settled ("England in the south"), east is rivers and trade, west is open ocean
+  and the unknown. Which islands, coasts and places exist is new in every world, so it feels fresh each time.
+  Distance from home sets how hard a place is; direction sets what kind of place it is.
+- **Not decided yet:** how places regenerate naturally and how the year ends, how members are recruited,
+  legendary Vikings and how their names spread, and attacks on your territory (Robin dislikes random raids that
+  break your base). These, with suggestions, are in `docs/idea-bank.md`. Undecided ideas go there, not here.
 - **World:** an archipelago. The world is water with islands everywhere, as in Valheim. Islands are big and so
   is the sea between them. One island can hold several biomes.
+- **Difficulty:** each biome is harder than the one before it (confirmed 2026-10-04). That sits alongside the
+  several ways to progress; it is not replaced by them.
 - **Progression:** no gates, keys or locked doors between areas. Biomes are open, and you struggle in a biome
   until you have done certain things in earlier ones. Biome rarity changes with distance from the spawn point.
-- **Scope for now:** only the starter island and travel to nearby islands, all of the first biome.
+- **Scope for now:** only the starter island and travel to nearby islands, all of the first biome. None of the
+  raiding, clan or calendar systems are built yet.
 - **Scale:** one tile (32 world units, about the hero's width) is one "unit" of Robin's scale brief, and 100 tiles
   are a kilometre. A normal island is 200 to 400 tiles across, large ones 500 to 700, small ones around 50, and
   tiny skerries (5 to 30 tiles) are common round the coasts. Most gaps between islands are 20 to 80 tiles, some
@@ -92,6 +113,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `tools/build.py`: plain string substitution. `tools/open.js`: opens the start page. `tools/visual/`: scripts that
   render things to PNG for checking (`props.js`, `creatures.js`, `walkcycle.js`, `swingdirs.js`, `attackstyles.js`).
 - `tests/`: headless combat checks (table in `tests/README.md`).
+- `docs/idea-bank.md`: ideas and open design questions that are not decided yet.
 - `dist/`: built single-file pages, committed to git.
 
 ## Things to know before changing code
@@ -178,5 +200,12 @@ speed, glide, grip, and two steering modes (Direct and Tiller).
 
 - Game rules live in plain data plus a few systems. Balancing should mean editing numbers, not rewriting code.
 - Combat is keyboard-first. The mouse is only for aiming the ranged weapon, which also has an auto option.
+- Reward doing right instead of punishing doing wrong (Robin, 2026-10-04). The model is Valheim's food: you do
+  not starve, but eating gives the health you need, so going without leaves you weak and likely to die from
+  something else. No meters that drain and hurt you; the unprepared state is the weak baseline and preparation
+  gives buffs. This applies to food, weather, biomes and attacks on the base (no repair chores as punishment).
+  Nothing cuts your stamina: Robin finds that not fun, and hates Valheim's wetness mechanic, so there is no
+  "wet" state and no weather or biome effect that lowers stamina or slows its return. A rested or comfort buff
+  (for example from a warm, well-furnished home) is wanted.
 - No screen shake. Hit weight comes from short local pauses, squash, impact rings and sound.
 - Hit weight preset "Snappy" is the chosen setting.
