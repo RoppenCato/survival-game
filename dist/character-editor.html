@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Combat test</title>
+<title>Character Editor</title>
 <style>
 :root{
   box-sizing:border-box;
@@ -22,98 +22,126 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
-main{max-width:960px;margin:0 auto}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
 h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
-.lede{margin:0 0 14px;color:var(--ink2);max-width:64ch}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:72ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
 .stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
-canvas{display:block;width:100%;height:auto;border-radius:8px;background:#8fd66d;cursor:crosshair;touch-action:none}
-.panel{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto}
+#poses,#sheet{max-width:900px}
+canvas{display:block;width:100%;height:auto;border-radius:8px}
+#cv{background:#8fd66d;cursor:crosshair;touch-action:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel{margin-top:12px}
 .panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
 .group{display:flex;flex-wrap:wrap;gap:8px}
-button{min-height:44px;padding:0 14px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;cursor:pointer}
+button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
 button:hover{background:var(--btnh)}
-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
-.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem;min-height:1.3em}
-.cols{display:grid;grid-template-columns:1fr;gap:12px}
-@media (min-width:760px){.cols{grid-template-columns:1fr 1fr}}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
+.sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
+textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
 kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .keys dt{white-space:nowrap}
 .keys dd{margin:0;color:var(--ink2)}
-.note{margin:10px 2px 0;color:var(--ink2);font-size:.88rem;max-width:72ch}
 </style>
 </head>
 <body>
 <main>
-  <h1>Combat test</h1>
-  <p class="lede">Fight the bots, the turret, the Bossbot and the Guardian. Everything works from the keyboard alone. The mouse is only used to aim the ranged weapon, and you can switch that to auto.</p>
-  <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Combat arena"></canvas></div>
+  <a class="back" href="index.html">&larr; Back to menu</a>
+  <h1>Character Editor</h1>
+  <p class="lede">Reshape and recolour a character and see it move straight away. Walk, sprint, dash and attack in the arena while you drag the sliders. The settings can be copied out as text and pasted back in later.</p>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Arena"></canvas></div>
+      <section class="panel">
+        <h2>Frames</h2>
+        <canvas id="sheet" width="500" height="400" aria-label="Poses of the character"></canvas>
+        <p class="desc">Columns: standing, then four moments of the walk. Rows: south, west, east, north. Attacks are best judged in the arena.</p>
+      </section>
+      <section class="panel">
+        <h2>Arena</h2>
+        <div class="group">
+          <button id="sbot">Add bot</button>
+          <button id="sturret">Add turret</button>
+          <button id="sbossbot">Add Bossbot</button>
+          <button id="sboss">Add Guardian</button>
+          <button id="sclear">Clear</button>
+          <button id="nodmg" aria-pressed="true">No damage</button>
+          <button id="sound" aria-pressed="true">Sound</button>
+        </div>
+        <h2 class="more">Controls</h2>
+        <dl class="keys">
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
+          <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack (three-hit combo). Hold to charge a heavy swing</dd>
+          <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block</dd>
+          <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+          <dt><kbd>F</kbd></dt><dd>Ranged shot</dd>
+          <dt><kbd>H</kbd></dt><dd>Spawn a bot</dd>
+        </dl>
+      </section>
+    </div>
 
-  <div class="cols">
-    <section class="panel">
-      <h2>Melee aiming</h2>
-      <div class="group" id="aim">
-        <button data-aim="facing" aria-pressed="false">Facing</button>
-        <button data-aim="soft" aria-pressed="true">Soft aim</button>
-        <button data-aim="lock" aria-pressed="false">Target lock</button>
-      </div>
-      <p class="desc" id="aimdesc"></p>
-      <h2 style="margin-top:14px">Ranged aiming</h2>
-      <div class="group" id="rng">
-        <button data-r="mouse" aria-pressed="true">Mouse</button>
-        <button data-r="auto" aria-pressed="false">Auto</button>
-      </div>
-      <p class="desc" id="rngdesc"></p>
-      <h2 style="margin-top:14px">Hit weight</h2>
-      <div class="group" id="wgt">
-        <button data-w="snappy" aria-pressed="true">Snappy</button>
-        <button data-w="normal" aria-pressed="false">Normal</button>
-        <button data-w="heavy" aria-pressed="false">Heavy</button>
-      </div>
-      <p class="desc" id="wgtdesc"></p>
-      <h2 style="margin-top:14px">Crit chance</h2>
-      <div class="group" id="crt">
-        <button data-c="0" aria-pressed="false">Off</button>
-        <button data-c="0.15" aria-pressed="true">15%</button>
-        <button data-c="0.5" aria-pressed="false">50%</button>
-        <button data-c="1" aria-pressed="false">Always</button>
-      </div>
-      <p class="desc">A crit hits for 50% more, shows in yellow, and rattles the enemy: it moves and attacks 30% slower for a moment.</p>
-      <h2 style="margin-top:14px">Options</h2>
-      <div class="group">
-        <button id="shield" aria-pressed="true">Shield</button>
-        <button id="juice" aria-pressed="true">Juice</button>
-        <button id="sound" aria-pressed="true">Sound</button>
-      </div>
-      <p class="desc" id="optdesc"></p>
-    </section>
-    <section class="panel">
-      <h2>Arena</h2>
-      <div class="group">
-        <button id="sbot">Add bot</button>
-        <button id="sturret">Add turret</button>
-        <button id="sbossbot">Add Bossbot</button>
-        <button id="sboss">Add Guardian</button>
-        <button id="sclear">Clear</button>
-        <button id="sreset">Reset</button>
-      </div>
-      <h2 style="margin-top:14px">Controls</h2>
-      <dl class="keys">
-        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move</dd>
-        <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack (three-hit combo, the third hits harder). You can keep moving while you swing</dd>
-        <dt>Hold <kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Charge a heavy swing for up to a second, then let go. Dash or block to cancel</dd>
-        <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Hold to block. Press just before a hit to parry</dd>
-        <dt>Hold <kbd>Shift</kbd></dt><dd>Sprint while moving. It drains stamina and stops when you run out</dd>
-        <dt><kbd>Space</kbd></dt><dd>Dash. A quick sidestep in the direction you move (a backstep if you stand still), with brief invulnerability. You dash through enemies</dd>
-        <dt><kbd>F</kbd></dt><dd>Fire the ranged weapon (at the mouse cursor, or automatically)</dd>
-        <dt><kbd>Q</kbd></dt><dd>Lock onto the nearest enemy (Target lock mode)</dd>
-        <dt><kbd>H</kbd></dt><dd>Spawn a bot</dd>
-        <dt><kbd>R</kbd></dt><dd>Restart after you are scrapped</dd>
-      </dl>
-    </section>
+    <div class="right">
+      <section class="panel">
+        <h2>Sprite</h2>
+        <div class="group" id="sprites"></div>
+        <h2 class="more">Shape variations</h2>
+        <div class="group" id="shapes"></div>
+        <h2 class="more">Colour variations</h2>
+        <div class="group" id="palettes"></div>
+        <div class="group" style="margin-top:12px">
+          <button id="random">Randomise</button>
+          <button id="resetall">Reset to default</button>
+        </div>
+        <p class="desc">Shape and colour variations are independent, so you can combine one of each.</p>
+      </section>
+      <section class="panel">
+        <h2>Body</h2>
+        <div id="pbody"></div>
+        <div class="group" id="toggles" style="margin-top:8px"></div>
+        <h2 class="more">Eyewear</h2>
+        <div class="group" id="eyewear"></div>
+      </section>
+      <section class="panel">
+        <h2>Attack style</h2>
+        <div class="group" id="attacks"></div>
+        <p class="desc" id="atkdesc"></p>
+        <h2 class="more">Animation</h2>
+        <div id="panim"></div>
+        <p class="desc">Side-to-side sway and Stance width only show when walking north or south. Sway at 1 is the old waddle.</p>
+      </section>
+      <section class="panel">
+        <h2>Colours</h2>
+        <div class="swatches" id="swatches"></div>
+        <h2 class="more">Tone (all colours at once)</h2>
+        <div id="ptone"></div>
+      </section>
+      <section class="panel">
+        <h2>Settings as text</h2>
+        <textarea id="json" spellcheck="false" aria-label="Sprite settings as text"></textarea>
+        <div class="group" style="margin-top:8px">
+          <button id="copy">Copy</button>
+          <button id="applyjson">Apply text</button>
+        </div>
+        <p class="desc" id="jsonmsg">Copy this to keep a look. Paste one in and press Apply text to load it.</p>
+      </section>
+    </div>
   </div>
-  <p class="note">Try these: hold the attack button for a charged swing, fight the Bossbot and learn its three attacks, keep moving while you swing, dash through a bot to get behind it, parry a bot's lunge, parry the turret's shot to send it back, roll behind the Guardian and hit the glowing panel on its back, and fill its stagger bar. Then turn Juice off to feel the stiff version of the same combat.</p>
 </main>
 <script>
 var GameArt = (function () {
@@ -440,6 +468,182 @@ function playerSprA(dir, frame) {
     pcacheA[k] = (dir === 'right' ? sp.flip() : sp).canvas();
   }
   return pcacheA[k];
+}
+
+/* ---------- sprite-sheet characters (four directions, four-frame walk and attack) ----------
+   Each entry in SPRITES has a default spec (plain numbers and colours) and a build function
+   that turns a spec into one 48 x 48 frame with the feet at (24, 46).
+   pose: 'idle', 'walk' or 'atk'; f: frame 0..3.
+   In 'atk' frames the sword arm is left out (armSide -1 / 1 picks which one in the
+   front and back views) so the caller can draw the arm and blade at any angle.
+   The Sprite test page edits the spec live; setSprite() swaps it in. */
+var SPR_W = 48, SPR_H = 48, SPR_OX = 24, SPR_OY = 46;
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+function toHsl(c) {
+  var q = hex(c), r = q[0] / 255, g = q[1] / 255, b = q[2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), h = 0, s = 0, l = (mx + mn) / 2, d = mx - mn;
+  if (d > 0) {
+    s = d / (1 - Math.abs(2 * l - 1));
+    if (mx === r) h = ((g - b) / d) % 6; else if (mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  return [h, s, l];
+}
+function fromHsl(h, s, l) {
+  h = ((h % 360) + 360) % 360; s = clamp01(s); l = clamp01(l);
+  var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r, g, b;
+  if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; } else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; } else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+  function h2(v) { v = Math.round((v + m) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
+  return '#' + h2(r) + h2(g) + h2(b);
+}
+function shade(c, d) { var q = toHsl(c); return fromHsl(q[0], q[1], q[2] + d); }
+
+var HERO_DEF = {
+  scale: 1, headW: 7.5, headH: 6.5, bodyW: 10, bodyH: 9, legH: 8, legW: 3, armL: 7, armW: 2, eyewear: 0, eyewearSize: 2, eyeH: 2, blush: 1, outline: 1,
+  walkRate: 1, bob: 1, stride: 3, armSwing: 1, lunge: 1, atkStyle: 1, atkPower: 1, bladeLen: 0.9, slashSize: 1.1, slashWidth: 0.2,
+  hue: 0, sat: 1, lum: 1,
+  col: { skin: '#f6cfa6', hair: '#8a4a22', coat: '#2f7f80', vest: '#5c4033', pants: '#27324a', boot: '#1c1a26', trim: '#d9a534',
+    lens: '#7fe3f2', eye: '#2a1a22', line: '#1b1626', blade: '#5fd4f2', slash: '#8fefff' }
+};
+function spritePalette(sp) {
+  function t(k) { var q = toHsl(sp.col[k]); return fromHsl(q[0] + sp.hue, q[1] * sp.sat, q[2] * sp.lum); }
+  var C = { skin: t('skin'), hair: t('hair'), coat: t('coat'), vest: t('vest'), pants: t('pants'), boot: t('boot'), belt: t('trim'),
+    lens: t('lens'), eye: t('eye'), line: sp.col.line, blade: t('blade'), slash: t('slash') };
+  C.skinD = shade(C.skin, -0.12); C.hairD = shade(C.hair, -0.09); C.hairL = shade(C.hair, 0.1); C.strap = shade(C.hair, -0.17);
+  C.coatD = shade(C.coat, -0.08); C.coatL = shade(C.coat, 0.08); C.pantsD = shade(C.pants, -0.06);
+  C.beltL = shade(C.belt, 0.18); C.rim = shade(C.belt, -0.06); C.lensL = shade(C.lens, 0.2);
+  C.bladeL = shade(C.blade, 0.3); C.slashL = shade(C.slash, 0.2); C.slashD = shade(C.slash, -0.2);
+  var sk = toHsl(C.skin); C.blush = fromHsl(8, Math.min(1, sk[1] + 0.1), sk[2] - 0.08); C.mouth = fromHsl(12, 0.45, Math.max(0.2, sk[2] - 0.38));
+  return C;
+}
+function buildHeroP(sp, C, dir, pose, f, armSide) {
+  var s = new Spr(SPR_W, SPR_H), cx = SPR_OX, B = SPR_OY, x, y;
+  var walk = pose === 'walk', atk = pose === 'atk';
+  var rx = sp.headW, ry = sp.headH, bodyW = Math.round(sp.bodyW), bodyH = Math.round(sp.bodyH), legH = Math.round(sp.legH), legW = Math.round(sp.legW);
+  var armL = Math.round(sp.armL), armW = Math.round(sp.armW), ew = Math.round(sp.eyewear), g = Math.round(sp.eyewearSize), eyeH = Math.round(sp.eyeH);
+  var bob = walk ? ((f === 1 || f === 3) ? Math.round(sp.bob) : 0) : (atk && (f === 0 || f === 2) ? -1 : 0);
+  var legTop = B - 2 - legH, bodyTop = legTop + 1 - bodyH - bob, hy = Math.round(legTop + 1 - bodyH - ry + 0.5) - bob;
+  var gy = hy - Math.round(ry * 0.8), eyeX = Math.round(rx * 0.47), mouthY = hy + Math.min(eyeH + 2, Math.round(ry - 2));
+  function headPx(hx, cb) {
+    for (y = Math.floor(hy - ry); y <= Math.ceil(hy + ry); y++) for (x = Math.floor(hx - rx); x <= Math.ceil(hx + rx); x++) {
+      var dx = x + 0.5 - hx, dy = y + 0.5 - hy;
+      if ((dx / rx) * (dx / rx) + (dy / ry) * (dy / ry) <= 1) cb(x, y, dx, dy);
+    }
+  }
+  // eyewear: 0 none, 1 goggles pushed up, 2 goggles worn, 3 round glasses, 4 square glasses, 5 shades, 6 monocle
+  var ecy = hy + 1 + eyeH / 2, erow = Math.round(ecy - 0.5);
+  function goggle(gx, gyy, r) { if (r < 1) return; s.ell(gx, gyy, r, r, C.rim); if (r >= 2) { s.ell(gx, gyy, r - 1, r - 1, C.lens); s.set(gx - 1, Math.round(gyy - 1), C.lensL); } }
+  function ring(gx, gyy, r, col) {
+    for (var yy = Math.floor(gyy - r); yy <= Math.ceil(gyy + r); yy++) for (var xx = Math.floor(gx - r); xx <= Math.ceil(gx + r); xx++) {
+      var dd = Math.hypot(xx + 0.5 - gx, yy + 0.5 - gyy); if (dd <= r && dd > r - 1) s.set(xx, yy, col);
+    }
+  }
+  function box(gx, gyy, r, col) {
+    var x0 = gx - r, x1 = gx + r - 1, y0 = Math.round(gyy - r), y1 = Math.round(gyy + r) - 1;
+    for (var yy = y0; yy <= y1; yy++) for (var xx = x0; xx <= x1; xx++) if (xx === x0 || xx === x1 || yy === y0 || yy === y1) s.set(xx, yy, col);
+  }
+  function band(xa, xb, row, col) { for (var xx = xa; xx <= xb; xx++) if (s.get(xx, row) !== null) s.set(xx, row, col); }
+  function hairCol(dx, dy) { return (dx * 0.5 + dy * 0.6 > ry * 0.43) ? C.hairD : C.hair; }
+
+  if (dir === 'left') {
+    var S = Math.round(sp.stride), st = walk ? (f === 0 ? S : (f === 2 ? -S : 0)) : (atk && f === 2 ? S : 0);
+    var sx = atk ? (f === 1 ? 1 : (f === 2 ? -Math.round(sp.lunge) : 0)) : 0, hx = cx - 1 + sx;
+    var liftB = st > 0 ? 1 : 0, liftF = st < 0 ? 1 : 0, bw = Math.max(4, bodyW - 2), bx0 = cx - Math.floor(bw / 2) + sx;
+    s.rect(cx - 1 + st, legTop, legW, legH - liftB, C.pantsD); s.rect(cx - 2 + st, B - 2 - liftB, legW + 1, 2, C.boot);
+    s.rect(cx - 2 - st, legTop, legW, legH - liftF, C.pants); s.rect(cx - 3 - st, B - 2 - liftF, legW + 1, 2, C.boot);
+    s.rect(bx0, bodyTop, bw, bodyH, C.coat); s.rect(bx0 + bw - 2, bodyTop, 2, bodyH, C.coatD);
+    s.rect(bx0, bodyTop + bodyH - 2, bw, 1, C.belt); s.rect(bx0, bodyTop + bodyH - 1, bw, 1, C.coatD);
+    if (!atk) { var ax = cx - 1 + (walk ? Math.round(st * sp.armSwing / Math.max(1, S)) * 1 : 0); s.rect(ax, bodyTop + 1, armW, armL, C.coatL); s.rect(ax, bodyTop + 1 + armL, armW, 2, C.skin); }
+    headPx(hx, function (px, py, dx, dy) {
+      var fringe = -ry * 0.27 + ((px % 3 === 0) ? 1 : 0);
+      if (dy <= fringe || dx >= 0.5 || (dx >= -2 && dy <= 1)) s.set(px, py, hairCol(dx, dy));
+      else s.set(px, py, dy > ry - 2.5 ? C.skinD : C.skin);
+    });
+    for (x = hx - 3; x <= hx - 1; x++) s.set(x, hy - Math.round(ry * 0.67), C.hairL);
+    var sy = hy - Math.round(ry * 0.53);
+    if (ew === 1) {
+      for (x = hx + 1; x <= hx + Math.ceil(rx); x++) { var qs = s.get(x, sy); if (qs === C.hair || qs === C.hairD) s.set(x, sy, C.strap); }
+      goggle(hx + Math.round(rx * 0.24), gy, g - 1); goggle(hx - eyeX, gy, g);
+    }
+    s.rect(hx - Math.round(rx * 0.6), hy + 1, 2, eyeH, C.eye); s.set(hx - Math.round(rx * 0.6), hy + 1, '#ffffff');
+    if (sp.blush) s.rect(hx - Math.round(rx * 0.82), hy + 1 + eyeH, 2, 1, C.blush);
+    s.set(hx - Math.round(rx * 0.7), mouthY, C.mouth);
+    var exS = hx - Math.round(rx * 0.6) + 1;
+    if (ew === 2) { band(exS, hx + Math.ceil(rx), erow, C.strap); goggle(exS, ecy, g); }
+    if (ew === 3) { band(exS, hx + 2, erow, C.rim); ring(exS, ecy, g + 0.5, C.rim); }
+    if (ew === 4) { band(exS, hx + 2, erow, C.line); box(exS, ecy, g, C.line); }
+    if (ew === 5) { band(exS, hx + 2, hy + 1, C.line); s.rect(exS - 2, hy + 1, 4, Math.max(2, g), C.line); s.set(exS - 1, hy + 1, C.lens); }
+    if (ew === 6) ring(exS, ecy, g + 0.5, C.rim);
+    if (ew === 1 || ew === 2) { s.ell(hx + 2, hy + 2, 2, 2, C.rim); s.set(hx + 1, hy + 1, C.beltL); }
+  } else {
+    var back = dir === 'up', bx = cx - Math.floor(bodyW / 2);
+    var lf = sp.stride > 0 ? 1 : 0, lL = walk && f === 0 ? lf : 0, lR = walk && f === 2 ? lf : 0, spd = atk && f === 2 ? 1 : 0;
+    var lxL = bx + 1, lxR = bx + bodyW - 1 - legW;
+    s.rect(lxL - spd, legTop, legW, legH - lL, C.pants); s.rect(lxL - spd, B - 2 - lL, legW, 2, C.boot);
+    s.rect(lxR + spd, legTop, legW, legH - lR, C.pants); s.rect(lxR + spd, B - 2 - lR, legW, 2, C.boot);
+    if (lxR > lxL + legW) s.rect(lxL + legW, legTop, lxR - lxL - legW, Math.min(2, legH), C.pantsD);
+    s.rect(bx, bodyTop, bodyW, bodyH, C.coat); s.rect(bx + bodyW - 2, bodyTop, 2, bodyH, C.coatD);
+    if (!back) {
+      var vw = Math.max(2, Math.round(bodyW * 0.4)); vw += (bodyW - vw) % 2;
+      s.rect(cx - vw / 2, bodyTop, vw, Math.max(1, bodyH - 2), C.vest);
+      for (y = bodyTop + 2; y < bodyTop + bodyH - 2; y += 2) s.set(cx - 1, y, C.belt);
+    }
+    s.rect(bx, bodyTop + bodyH - 2, bodyW, 1, C.belt); if (!back) s.rect(cx - 1, bodyTop + bodyH - 2, 2, 1, C.beltL);
+    s.rect(bx, bodyTop + bodyH - 1, bodyW, 1, C.coatD);
+    var sw = Math.round(sp.armSwing), aL = walk ? (f === 0 ? -sw : (f === 2 ? sw : 0)) : 0, aR = -aL;
+    if (!(atk && armSide < 0)) { s.rect(bx - armW, bodyTop + 1 + aL, armW, armL, C.coat); s.rect(bx - armW, bodyTop + 1 + armL + aL, armW, 2, C.skin); }
+    if (!(atk && armSide > 0)) { s.rect(bx + bodyW, bodyTop + 1 + aR, armW, armL, C.coatD); s.rect(bx + bodyW, bodyTop + 1 + armL + aR, armW, 2, C.skin); }
+    headPx(cx, function (px, py, dx, dy) {
+      var fringe = -ry * 0.27 + ((px % 4 === 0) ? 2 : ((px % 3 === 0) ? 1 : 0));
+      if (back || dy <= fringe || (Math.abs(dx) >= rx - 2 && dy <= ry * 0.4)) s.set(px, py, hairCol(dx, dy));
+      else s.set(px, py, dy > ry - 2 ? C.skinD : C.skin);
+    });
+    var hlx = cx - Math.round(rx * 0.6);
+    for (x = hlx; x <= hlx + 2; x++) s.set(x, hy - Math.round(ry * 0.67), C.hairL);
+    var by = hy - Math.round(ry * 0.4);
+    if (back && (ew === 1 || ew === 2)) for (x = cx - Math.ceil(rx); x <= cx + Math.ceil(rx); x++) { var qb = s.get(x, by); if (qb === C.hair || qb === C.hairD) s.set(x, by, C.strap); }
+    if (ew === 1) { s.rect(cx - 1, gy - 1, 2, 1, C.strap); goggle(cx - eyeX, gy, g); goggle(cx + eyeX, gy, g); }
+    if (!back) {
+      s.rect(cx - eyeX, hy + 1, 2, eyeH, C.eye); s.rect(cx + eyeX - 2, hy + 1, 2, eyeH, C.eye);
+      s.set(cx - eyeX, hy + 1, '#ffffff'); s.set(cx + eyeX - 2, hy + 1, '#ffffff');
+      if (sp.blush) { s.rect(cx - eyeX - 2, hy + 1 + eyeH, 2, 1, C.blush); s.rect(cx + eyeX, hy + 1 + eyeH, 2, 1, C.blush); }
+      s.set(cx - 1, mouthY, C.mouth); s.set(cx, mouthY, C.mouth);
+      var exL = cx - eyeX + 1, exR = cx + eyeX - 1;
+      if (ew === 2) { band(cx - Math.ceil(rx), cx + Math.ceil(rx), erow, C.strap); goggle(exL, ecy, g); goggle(exR, ecy, g); }
+      if (ew === 3) { band(exL, exR, erow, C.rim); ring(exL, ecy, g + 0.5, C.rim); ring(exR, ecy, g + 0.5, C.rim); }
+      if (ew === 4) { band(exL, exR, erow, C.line); box(exL, ecy, g, C.line); box(exR, ecy, g, C.line); }
+      if (ew === 5) { s.rect(cx - eyeX - 1, hy + 1, 2 * eyeX + 2, Math.max(2, g), C.line); s.set(cx - eyeX, hy + 1, C.lens); s.set(cx + 1, hy + 1, C.lens); }
+      if (ew === 6) { ring(exR, ecy, g + 0.5, C.rim); for (y = Math.round(ecy + g); y <= Math.round(ecy + g) + 3; y++) s.set(exR + g, y, C.rim); }
+    }
+  }
+  return sp.outline ? s.outline(C.line) : s;
+}
+
+var SPRITES = { hero: { name: 'Hero', def: HERO_DEF, build: buildHeroP } };
+var curSpr = null, pcacheP = {};
+function fillSpec(def, spec) {
+  var o = {}, k;
+  for (k in def) if (k !== 'col') o[k] = (spec && typeof spec[k] === 'number' && isFinite(spec[k])) ? spec[k] : def[k];
+  o.col = {};
+  for (k in def.col) o.col[k] = (spec && spec.col && /^#[0-9a-fA-F]{6}$/.test(spec.col[k])) ? spec.col[k].toLowerCase() : def.col[k];
+  return o;
+}
+function setSprite(id, spec) {
+  var e = SPRITES[id] || SPRITES.hero, sp = fillSpec(e.def, spec);
+  curSpr = { id: SPRITES[id] ? id : 'hero', build: e.build, spec: sp, pal: spritePalette(sp) };
+  curSpr.m = { ox: SPR_OX, oy: SPR_OY, w: SPR_W, h: SPR_H, shX: Math.round(sp.bodyW) / 2, shY: Math.round(sp.legH) + Math.round(sp.bodyH) - 1 };
+  pcacheP = {};
+  return sp;
+}
+function sprite() { if (!curSpr) setSprite('hero'); return curSpr; }
+function heroP(dir, pose, f, armSide) {
+  var cur = sprite(), as = pose === 'atk' && dir !== 'left' && dir !== 'right' ? (armSide < 0 ? -1 : 1) : 0;
+  var k = dir + pose + f + as;
+  if (!pcacheP[k]) {
+    var s = cur.build(cur.spec, cur.pal, dir === 'right' ? 'left' : dir, pose, f, as);
+    pcacheP[k] = (dir === 'right' ? s.flip() : s).canvas();
+  }
+  return pcacheP[k];
 }
 
 function shadowA(c, cx, cy, rx, ry) {
@@ -819,28 +1023,60 @@ function playerB(c, x, y, dir, moving, t, pose) {
 }
 
 
-/* ---------- animated hero (smooth walk cycle, lean, squash, follow-through) ---------- */
+/* ---------- animated hero (smooth walk cycle, lean, squash, follow-through) ----------
+   Drawn from the current hero spec (setHero). Proportions are factors on the original figure,
+   so a spec of all ones is the original hero. The Sprite test page edits the spec live.
+   sway and stance only affect walking toward or away from the camera: sway is the side-to-side rock of the
+   body (1 is the original, which read as a waddle), stance is how far apart the feet land. */
+var HEROD_DEF = {
+  scale: 0.75, headW: 1, headH: 1, bodyW: 0.9, bodyH: 1, legL: 1, legW: 1, armL: 0.9, armW: 0.9, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 1,
+  walkRate: 1.4, bob: 1, stride: 1, armSwing: 1, sway: 0.25, stance: 0.8, lean: 1, atkStyle: 0, atkPower: 1, bladeLen: 1, slashSize: 1, slashWidth: 0.66,
+  hue: 0, sat: 1, lum: 1,
+  col: { skin: '#ffd8b0', hair: '#b4602d', coat: '#4fa8a4', vest: '#7a5236', pants: '#55466b', boot: '#4a3329', trim: '#e0a93a',
+    lens: '#a9e6ff', eye: '#2a1c2a', line: '#3a2a36', blade: '#eef3fb', slash: '#ffffff' }
+};
+var LEG_LEN = 7.3, curHero = null;
+function heroPalette(sp) {
+  function t(k) { var q = toHsl(sp.col[k]); return fromHsl(q[0] + sp.hue, q[1] * sp.sat, q[2] * sp.lum); }
+  var C = { skin: t('skin'), hair: t('hair'), coat: t('coat'), vest: t('vest'), pants: t('pants'), boot: t('boot'), trim: t('trim'),
+    lens: t('lens'), eye: t('eye'), line: sp.col.line, blade: t('blade'), slash: t('slash') };
+  C.skinD = shade(C.skin, -0.08); C.hairD = shade(C.hair, -0.09); C.hairL = shade(C.hair, 0.14); C.strap = shade(C.hair, -0.13);
+  C.coatD = shade(C.coat, -0.07); C.pantsD = shade(C.pants, -0.07); C.rim = shade(C.trim, -0.15); C.trimL = shade(C.trim, 0.17);
+  return C;
+}
+function setHero(spec) {
+  var sp = fillSpec(HEROD_DEF, spec);
+  curHero = { spec: sp, pal: heroPalette(sp), lift: (sp.legL - 1) * LEG_LEN };
+  return sp;
+}
+function hero() { if (!curHero) setHero(); return curHero; }
+
 function playerD(c, x, y, dir, an, pose) {
   an = an || { phase: 0, amt: 0, t: 0, lx: 0, ly: 0, blink: 0, sq: 0 };
+  var H = hero(), sp = H.spec, C = H.pal, lift = H.lift, LN0 = LN;
+  LN = C.line;
   var ph = an.phase, amt = an.amt, t = an.t;
-  var SK = '#ffd8b0', SKS = '#f2b98d', HAIR = '#b4602d', COAT = '#4fa8a4', COATD = '#3b8a87', VEST = '#7a5236', PANTS = '#55466b', PANTSD = '#41345a', BOOT = '#4a3329', BR = '#e0a93a';
+  var SK = C.skin, SKS = C.skinD, HAIR = C.hair, COAT = C.coat, VEST = C.vest, PANTS = C.pants, PANTSD = C.pantsD, BOOT = C.boot, BR = C.trim;
   var run = an.run || 0;
   var breathe = Math.sin(t * 2.2) * (1 - amt);
-  var bob = -Math.abs(Math.sin(ph)) * 1.0 * amt * (1 + 0.45 * run) + breathe * 0.4;
-  var headBob = -Math.abs(Math.sin(ph - 0.7)) * 0.7 * amt * (1 + 0.45 * run) + breathe * 0.5;
+  var bob = -Math.abs(Math.sin(ph)) * 1.0 * amt * (1 + 0.45 * run) * sp.bob + breathe * 0.4;
+  var headBob = -Math.abs(Math.sin(ph - 0.7)) * 0.7 * amt * (1 + 0.45 * run) * sp.bob + breathe * 0.5;
   var sway = Math.sin(ph) * amt;
   var side = dir === 'left' || dir === 'right', flip = dir === 'right';
   var L = pose ? [pose.lx, pose.ly] : [an.lx || 0, an.ly || 0];
   var lxl = (flip ? -L[0] : L[0]), lyl = L[1];
-  if (!side) lxl += Math.sin(ph) * amt * 0.6;
-  function loc(h) { return [(flip ? -h[0] : h[0]) - lxl, h[1] - lyl]; }
+  if (!side) lxl += Math.sin(ph) * amt * 0.6 * sp.sway;
+  var bw = sp.bodyW, bh = sp.bodyH, ew = Math.round(sp.eyewear), es = sp.eyewearSize, hipY = -9 - lift;
+  var legW = 4.4 * sp.legW, armW = 3.8 * sp.armW, armSeg = 5.2 * sp.armL, st = sp.stride;
+  // hand targets arrive in figure space; undo the upper-body lift and stretch so the hand lands on them
+  function loc(h) { return [((flip ? -h[0] : h[0]) - lxl) / bw, -9 + (h[1] - lyl + lift + 9) / bh]; }
   function capsule(x1, y1, x2, y2, col, w) {
     c.lineCap = 'round';
     c.strokeStyle = LN; c.lineWidth = (w || 4.4) + 2.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
     c.strokeStyle = col; c.lineWidth = (w || 4.4); c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
   }
   function armTo(shx, shy, hx, hy2, px, py) {
-    var dx = hx - shx, dy = hy2 - shy, d = Math.max(0.01, Math.hypot(dx, dy)), Ls = 5.2, ex, ey;
+    var dx = hx - shx, dy = hy2 - shy, d = Math.max(0.01, Math.hypot(dx, dy)), Ls = armSeg, ex, ey;
     if (d >= 2 * Ls - 0.2) { ex = shx + dx / 2; ey = shy + dy / 2; }
     else {
       var hh = Math.sqrt(Ls * Ls - d * d / 4), nx = -dy / d, ny = dx / d;
@@ -848,8 +1084,8 @@ function playerD(c, x, y, dir, an, pose) {
       ex = shx + dx / 2 + nx * hh; ey = shy + dy / 2 + ny * hh;
     }
     c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = LN; c.lineWidth = 6; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
-    c.strokeStyle = COAT; c.lineWidth = 3.8; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
+    c.strokeStyle = LN; c.lineWidth = armW + 2.2; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
+    c.strokeStyle = COAT; c.lineWidth = armW; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
     ell(c, hx, hy2, 2.4, 2.4, SK, 1.4);
   }
   function armPose(shx, shy, h, px, py) { var q = loc(h); armTo(shx, shy, q[0], q[1], px, py); }
@@ -861,35 +1097,38 @@ function playerD(c, x, y, dir, an, pose) {
   /* legs */
   if (side) {
     var legS = function (phi, col) {
-      var sw = Math.sin(phi), lift = Math.max(0, Math.cos(phi)) * amt;
-      var fx = -sw * 3.9 * amt * (1 + 0.3 * run), fy = -1.7 - lift * 3.2 * (1 + 0.3 * run);
-      capsule(0.6, -9, fx, fy, col);
-      c.save(); c.translate(fx - 1.1, fy + 0.5); c.rotate(-lift * 0.35); ell(c, 0, 0, 3.5, 1.9, BOOT, 1.6); c.restore();
+      var sw = Math.sin(phi), lf = Math.max(0, Math.cos(phi)) * amt;
+      var fx = -sw * 3.9 * amt * (1 + 0.3 * run) * st, fy = -1.7 - lf * 3.2 * (1 + 0.3 * run) * Math.min(1.4, st);
+      capsule(0.6, hipY, fx, fy, col, legW);
+      c.save(); c.translate(fx - 1.1, fy + 0.5); c.rotate(-lf * 0.35); ell(c, 0, 0, 3.5, 1.9, BOOT, 1.6); c.restore();
     };
     legS(ph + Math.PI, PANTSD); legS(ph, PANTS);
   } else {
     var dirS = dir === 'down' ? 1 : -1;
     var legF = function (sd, phi, col) {
-      var sw = Math.sin(phi), lift = Math.max(0, Math.cos(phi)) * amt;
-      var fx = sd * (3.3 + lift * 0.5), fy = -1.7 + sw * dirS * (2.7 + 0.8 * run) * amt - lift * (3.0 + 0.8 * run);
-      capsule(sd * 3.2, -9, fx, fy, col);
+      var sw = Math.sin(phi), lf = Math.max(0, Math.cos(phi)) * amt;
+      // the lifted foot swings in toward the centre line, like a real step seen from the front
+      var fx = sd * (3.3 * bw * sp.stance - lf * 0.9 * (1 - 0.5 * sp.sway)), fy = -1.7 + sw * dirS * (2.3 + 0.8 * run) * amt * st - lf * (2.6 + 0.8 * run) * Math.min(1.4, st);
+      capsule(sd * 3.2 * bw * (0.5 + 0.5 * sp.stance), hipY, fx, fy, col, legW);
       ell(c, fx + sd * 0.4, fy + 0.5, 3.3, 1.9, BOOT, 1.6);
     };
     var swL = Math.sin(ph) * dirS, swR = Math.sin(ph + Math.PI) * dirS;
     if (swL <= swR) { legF(-1, ph, PANTS); legF(1, ph + Math.PI, PANTS); } else { legF(1, ph + Math.PI, PANTS); legF(-1, ph, PANTS); }
   }
 
-  /* upper body */
+  /* upper body: lifted by the leg length, stretched about the hips */
   c.save();
-  c.translate(lxl, pose ? lyl : lyl + bob);
+  c.translate(lxl, (pose ? lyl : lyl + bob) - lift);
   c.translate(0, -9);
-  var rot = side ? sway * 0.025 : sway * 0.04;
+  var rot = side ? sway * 0.025 : sway * 0.04 * sp.sway;
   c.rotate(rot);
-  c.scale(1 - 0.012 * breathe, 1 + 0.03 * breathe);
+  c.scale((1 - 0.012 * breathe) * bw, (1 + 0.03 * breathe) * bh);
   c.translate(0, 9);
   var hy = -26 + (headBob - bob);
   function head(hairFn, faceFn) {
-    c.save(); c.translate(0, hy); c.rotate(-rot * 1.6 + (side ? 0 : sway * 0.02)); c.translate(0, -hy);
+    c.save();
+    c.translate(0, hy + 9); c.scale(sp.headW / bw, sp.headH / bh); c.translate(0, -(hy + 9));
+    c.translate(0, hy); c.rotate(-rot * 1.6 + (side ? 0 : sway * 0.02 * sp.sway)); c.translate(0, -hy);
     c.beginPath(); c.ellipse(0, hy, 10, 9, 0, 0, Math.PI * 2); c.fillStyle = SK; c.fill();
     c.save(); c.clip();
     c.fillStyle = SKS; c.fillRect(-12, hy - 12, 24, 24);
@@ -901,33 +1140,58 @@ function playerD(c, x, y, dir, an, pose) {
     c.restore();
   }
   var gOff = (headBob - bob) * -0.4 + Math.sin(ph - 1.6) * amt * 0.25;
-  function goggles(xs) {
-    for (var i = 0; i < xs.length; i++) {
-      ell(c, xs[i], hy - 8.2 + gOff, 3.6, 3.6, '#a8741f', 1.6);
-      ell(c, xs[i], hy - 8.2 + gOff, 2.3, 2.3, '#a9e6ff', 0);
-      ell(c, xs[i] - 0.8, hy - 9 + gOff, 0.8, 0.8, '#ffffff', 0);
+  function lensAt(gx, gy, r) {
+    ell(c, gx, gy, r, r, C.rim, 1.6);
+    ell(c, gx, gy, r * 0.64, r * 0.64, C.lens, 0);
+    ell(c, gx - r * 0.22, gy - r * 0.22, r * 0.22, r * 0.22, '#ffffff', 0);
+  }
+  function wire(x1, y1, x2, y2, col, w) { c.strokeStyle = col; c.lineWidth = w || 1.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); }
+  // eyewear: 0 none, 1 goggles pushed up, 2 goggles worn, 3 round glasses, 4 square glasses, 5 shades, 6 monocle
+  // xs: eye positions; back: x where the arm or strap ends (null in the front view)
+  function eyewear(xs, upXs, back) {
+    var ey = hy + 2.6, i, r;
+    if (ew === 1) { for (i = 0; i < upXs.length; i++) lensAt(upXs[i], hy - 8.2 + gOff, 3.6 * es); return; }
+    if (ew === 2) {
+      c.fillStyle = C.strap; if (back == null) c.fillRect(-9.3, ey - 1, 18.6, 2); else c.fillRect(xs[0], ey - 1, back - xs[0], 2);
+      for (i = 0; i < xs.length; i++) lensAt(xs[i], ey, 3.5 * es);
+    } else if (ew === 3 || ew === 4) {
+      r = 3.2 * es;
+      var col = ew === 3 ? C.rim : LN;
+      if (back == null) wire(xs[0] + r, ey, xs[1] - r, ey, col); else wire(xs[0] + r, ey, back, ey - 0.6, col);
+      for (i = 0; i < xs.length; i++) {
+        c.beginPath(); if (ew === 3) c.arc(xs[i], ey, r, 0, Math.PI * 2); else pathRR(c, xs[i] - r, ey - r * 0.85, r * 2, r * 1.7, 1);
+        c.fillStyle = 'rgba(255,255,255,0.22)'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = col; c.stroke();
+      }
+    } else if (ew === 5) {
+      r = 2.6 * es;
+      if (back == null) rr(c, -8, ey - r, 16, r * 2, 1.6, LN, 0); else { wire(xs[0], ey - r * 0.4, back, ey - r * 0.6, LN, 1.4); rr(c, xs[0] - 4, ey - r, 7, r * 2, 1.6, LN, 0); }
+      c.fillStyle = C.lens; for (i = 0; i < xs.length; i++) c.fillRect(xs[i] - 2, ey - r * 0.55, 2.2, 1);
+    } else if (ew === 6) {
+      r = 3.2 * es; var mx = xs[xs.length - 1];
+      c.beginPath(); c.arc(mx, ey, r, 0, Math.PI * 2); c.fillStyle = 'rgba(255,255,255,0.22)'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = C.rim; c.stroke();
+      if (back == null) wire(mx + r * 0.7, ey + r * 0.7, mx + r * 0.9, ey + r + 5, C.rim, 0.9);
     }
   }
   var bl = 1 - (an.blink || 0) * 0.88;
   function eye(ex) {
-    c.fillStyle = '#2a1c2a'; c.beginPath(); c.ellipse(ex, hy + 2.6, 1.7, 2.4 * bl, 0, 0, Math.PI * 2); c.fill();
-    if (bl > 0.5) { c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ex - 0.5, hy + 1.6, 0.7, 0, Math.PI * 2); c.fill(); }
+    c.fillStyle = C.eye; c.beginPath(); c.ellipse(ex, hy + 2.6, 1.7 * sp.eyeSize, 2.4 * bl * sp.eyeSize, 0, 0, Math.PI * 2); c.fill();
+    if (bl > 0.5) { c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ex - 0.5 * sp.eyeSize, hy + 2.6 - sp.eyeSize, 0.7 * sp.eyeSize, 0, Math.PI * 2); c.fill(); }
   }
-  function blush(bx) { c.fillStyle = 'rgba(255,120,135,0.5)'; c.beginPath(); c.ellipse(bx, hy + 6.2, 2, 1.2, 0, 0, Math.PI * 2); c.fill(); }
-  function strap() { c.fillStyle = '#6b4a35'; c.fillRect(-12, hy - 7, 24, 2.2); }
+  function blush(bx) { if (!sp.blush) return; c.fillStyle = 'rgba(255,120,135,0.5)'; c.beginPath(); c.ellipse(bx, hy + 6.2, 2, 1.2, 0, 0, Math.PI * 2); c.fill(); }
+  function strap() { if (ew === 1) { c.fillStyle = C.strap; c.fillRect(-12, hy - 7, 24, 2.2); } else if (ew === 2 && dir === 'up') { c.fillStyle = C.strap; c.fillRect(-12, hy + 1.6, 24, 2); } }
   function drawSheath() {
     if (!pose || !pose.sheath) return;
-    var T, H;
-    if (side) { T = [-2, -8]; H = [8, -19]; } else if (dir === 'down') { T = [-7, -7]; H = [7, -23]; } else { T = [5, -8]; H = [-8, -19]; }
-    var ux = H[0] - T[0], uy = H[1] - T[1], ul = Math.hypot(ux, uy); ux /= ul; uy /= ul;
+    var T, Hh;
+    if (side) { T = [-2, -8]; Hh = [8, -19]; } else if (dir === 'down') { T = [-7, -7]; Hh = [7, -23]; } else { T = [5, -8]; Hh = [-8, -19]; }
+    var ux = Hh[0] - T[0], uy = Hh[1] - T[1], ul = Math.hypot(ux, uy); ux /= ul; uy /= ul;
     var px = -uy, py = ux;
-    capsule(T[0], T[1], H[0], H[1], '#7a5236', 3.0);
+    capsule(T[0], T[1], Hh[0], Hh[1], '#7a5236', 3.0);
     ell(c, T[0], T[1], 1.8, 1.8, BR, 1.2);
     c.lineCap = 'round';
-    c.strokeStyle = LN; c.lineWidth = 4.8; c.beginPath(); c.moveTo(H[0] - px * 3.4, H[1] - py * 3.4); c.lineTo(H[0] + px * 3.4, H[1] + py * 3.4); c.stroke();
-    c.strokeStyle = '#f6d878'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(H[0] - px * 3.4, H[1] - py * 3.4); c.lineTo(H[0] + px * 3.4, H[1] + py * 3.4); c.stroke();
-    capsule(H[0] + ux * 0.5, H[1] + uy * 0.5, H[0] + ux * 4.6, H[1] + uy * 4.6, '#8a5a3a', 2.8);
-    ell(c, H[0] + ux * 5.7, H[1] + uy * 5.7, 1.7, 1.7, BR, 1.2);
+    c.strokeStyle = LN; c.lineWidth = 4.8; c.beginPath(); c.moveTo(Hh[0] - px * 3.4, Hh[1] - py * 3.4); c.lineTo(Hh[0] + px * 3.4, Hh[1] + py * 3.4); c.stroke();
+    c.strokeStyle = C.trimL; c.lineWidth = 2.6; c.beginPath(); c.moveTo(Hh[0] - px * 3.4, Hh[1] - py * 3.4); c.lineTo(Hh[0] + px * 3.4, Hh[1] + py * 3.4); c.stroke();
+    capsule(Hh[0] + ux * 0.5, Hh[1] + uy * 0.5, Hh[0] + ux * 4.6, Hh[1] + uy * 4.6, '#8a5a3a', 2.8);
+    ell(c, Hh[0] + ux * 5.7, Hh[1] + uy * 5.7, 1.7, 1.7, BR, 1.2);
   }
   function flap(fx, ang, w) { c.save(); c.translate(fx, -9); c.rotate(ang); rr(c, -w / 2, -0.5, w, 6.2, 2.2, COAT, 1.5); c.restore(); }
 
@@ -941,8 +1205,8 @@ function playerD(c, x, y, dir, an, pose) {
     rr(c, -5.5, -12, 11, 2.4, 1, BR, 1.2);
     if (pose && pose.near) armPose(0, -17, pose.near, 0.6, 1);
     else {
-      var aa = -Math.sin(ph) * 0.65 * amt * (1 + 0.35 * run);
-      var rr0 = 9.3 - Math.max(0, Math.sin(aa)) * 1.9;
+      var aa = -Math.sin(ph) * 0.65 * amt * (1 + 0.35 * run) * sp.armSwing;
+      var rr0 = (9.3 - Math.max(0, Math.sin(aa)) * 1.9) * sp.armL;
       var hx2 = -Math.sin(aa) * rr0, hy3 = -17 + Math.cos(aa) * rr0 - Math.max(0, Math.sin(aa)) * 1.2 - (1 - amt) * 0.4;
       armTo(0, -17, hx2, hy3, 1, 0.3);
     }
@@ -950,28 +1214,30 @@ function playerD(c, x, y, dir, an, pose) {
       c.fillStyle = HAIR; c.fillRect(-12, hy - 12, 24, 11.5);
       c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy + 1, 6.5, 8.5, 0, 0, Math.PI * 2); c.fill();
       for (var i = 0; i < 3; i++) { c.beginPath(); c.arc(-8 + i * 3, hy - 1.5, 2.3, 0, Math.PI * 2); c.fill(); }
-      c.strokeStyle = '#e08a4d'; c.lineWidth = 1.3; c.beginPath(); c.arc(-2, hy - 1, 7.5, Math.PI * 1.15, Math.PI * 1.6); c.stroke();
+      c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-2, hy - 1, 7.5, Math.PI * 1.15, Math.PI * 1.6); c.stroke();
       strap();
     }, function () {
-      goggles([3, -1.5]);
       eye(-4.5); blush(-7);
       c.strokeStyle = '#9b4a3a'; c.lineWidth = 1.1; c.beginPath(); c.arc(-5.8, hy + 8.2, 1.4, 0.2 * Math.PI, 0.8 * Math.PI); c.stroke();
+      eyewear([-4.5], [3, -1.5], 4);
     });
   } else {
     var sw2 = Math.sin(ph) * amt;
-    var aL = Math.sin(ph) * dirS_(dir) * amt, aR = -aL;
-    var hx0 = dir === 'up' ? 8.4 : 9.4;
-    function armLf() { if (pose && pose.armL) armPose(-6.5, -17, pose.armL, -0.7, 1); else armTo(-6.5, -17, -hx0 + aL * 0.5, -8.0 + aL * 1.3 * (1 + 0.4 * run) - Math.max(0, aL) * 0.4, -1, 0.4); }
-    function armRf() { if (pose && pose.armR) armPose(6.5, -17, pose.armR, 0.7, 1); else armTo(6.5, -17, hx0 - aR * 0.5, -8.0 + aR * 1.3 * (1 + 0.4 * run) - Math.max(0, aR) * 0.4, 1, 0.4); }
+    // arms swing opposite to the legs (same-side arm and leg moving together reads as a waddle)
+    var aL = -Math.sin(ph) * dirS_(dir) * amt * sp.armSwing, aR = -aL;
+    var hx0 = (dir === 'up' ? 8.4 : 9.4) - (1 - Math.min(1, sp.sway)) * 0.9, handY = -17 + 9 * sp.armL;
+    var armLf = function () { if (pose && pose.armL) armPose(-6.5, -17, pose.armL, -0.7, 1); else armTo(-6.5, -17, -hx0 + aL * 0.5 * sp.sway, handY + aL * 1.3 * (1 + 0.4 * run) - Math.max(0, aL) * 0.4, -1, 0.4); };
+    var armRf = function () { if (pose && pose.armR) armPose(6.5, -17, pose.armR, 0.7, 1); else armTo(6.5, -17, hx0 - aR * 0.5 * sp.sway, handY + aR * 1.3 * (1 + 0.4 * run) - Math.max(0, aR) * 0.4, 1, 0.4); };
     var behindArms = dir === 'up';
     if (behindArms) { if (!(pose && pose.armL)) armLf(); if (!(pose && pose.armR)) armRf(); }
     if (dir === 'down') drawSheath();
-    flap(-5, -0.14 - sw2 * 0.28, 5.4); flap(5, 0.14 + sw2 * 0.28, 5.4);
+    var fsw = sw2 * 0.28 * Math.min(1, 0.25 + sp.sway);
+    flap(-5, -0.14 - fsw, 5.4); flap(5, 0.14 + fsw, 5.4);
     rr(c, -7.5, -19, 15, 12, 4.5, COAT, 1.8);
     if (dir === 'down') rr(c, -3, -19, 6, 11, 2, VEST, 0);
     else { rr(c, -5, -18, 10, 8, 2.5, VEST, 1.4); ell(c, 0, -14, 1.6, 1.6, BR, 1); }
     rr(c, -7.5, -12, 15, 2.5, 1, BR, 1.3);
-    if (dir === 'down') rr(c, -1.6, -12.4, 3.2, 3.2, 1, '#f6d878', 1.1);
+    if (dir === 'down') rr(c, -1.6, -12.4, 3.2, 3.2, 1, C.trimL, 1.1);
     if (dir === 'up') drawSheath();
     if (!behindArms || (pose && pose.armL)) armLf();
     if (!behindArms || (pose && pose.armR)) armRf();
@@ -981,26 +1247,219 @@ function playerD(c, x, y, dir, an, pose) {
         for (var i = -3; i <= 3; i++) { c.beginPath(); c.arc(i * 3.4, hy - 1.5, 2.3, 0, Math.PI * 2); c.fill(); }
         c.beginPath(); c.ellipse(-9 - sw2 * 0.4, hy + 1, 2.5, 6, 0, 0, Math.PI * 2); c.fill();
         c.beginPath(); c.ellipse(9 - sw2 * 0.4, hy + 1, 2.5, 6, 0, 0, Math.PI * 2); c.fill();
-        c.strokeStyle = '#e08a4d'; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy - 1, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
+        c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy - 1, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
         strap();
       }, function () {
-        goggles([-5, 5]);
         eye(-4); eye(4); blush(-6.6); blush(6.6);
         c.strokeStyle = '#9b4a3a'; c.lineWidth = 1.1; c.beginPath(); c.arc(0, hy + 7.4, 1.8, 0.1 * Math.PI, 0.9 * Math.PI); c.stroke();
+        eyewear([-4, 4], [-5, 5], null);
       });
     } else {
       head(function () {
         c.fillStyle = HAIR; c.fillRect(-12, hy - 12, 24, 24);
-        c.fillStyle = '#8f4a22'; c.beginPath(); c.ellipse(3 + sw2 * 0.5, hy + 4, 9, 7, 0, 0, Math.PI * 2); c.fill();
-        c.strokeStyle = '#e08a4d'; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
+        c.fillStyle = C.hairD; c.beginPath(); c.ellipse(3 + sw2 * 0.5, hy + 4, 9, 7, 0, 0, Math.PI * 2); c.fill();
+        c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
         strap();
       }, function () {});
     }
   }
   c.restore();
   c.restore();
+  LN = LN0;
 }
 function dirS_(dir) { return dir === 'down' ? 1 : -1; }
+
+/* ---------- creatures (monsters, bosses, critters) in the same smooth outlined style as the hero ----------
+   One spec drives five body plans. creatureD(c, x, y, s) draws the current spec (setCreature) with its feet at
+   (x, y); s = { t, move 0..1, phase, dir 1 or -1, look [x, y], state, k } where state is an enemy state from
+   src/combat.js ('idle', 'chase', 'windup', 'lunge', 'recover', 'stagger', 'stunned') and k is how far through it.
+   plan: 0 blob, 1 critter (four legs), 2 brute (upright), 3 floater, 4 crawler (many legs)
+   eyeStyle: 0 round, 1 glowing, 2 angry, 3 sleepy    mouth: 0 none, 1 line, 2 fangs, 3 maw
+   top: 0 none, 1 nubs, 2 horns, 3 antennae, 4 spikes, 5 gear    tail: 0 none, 1 stub, 2 long, 3 spiked
+   pattern: 0 none, 1 belly, 2 spots, 3 stripes    tell (how it warns before attacking): 0 swell, 1 shake, 2 rear up, 3 eye glow
+   behave: 0 lunger, 1 brute, 2 shooter (which enemy AI drives it in the arena) */
+var CREATURE_DEF = {
+  plan: 0, size: 1, bodyW: 1, bodyH: 1, head: 1, legLen: 1, legW: 1, legs: 6, armLen: 1,
+  eyes: 2, eyeStyle: 0, eyeSize: 1, mouth: 1, top: 0, tail: 0, pattern: 1,
+  bob: 1, stepRate: 1, wobble: 1, hover: 1, tell: 0, mark: 1,
+  behave: 0, speed: 1, windup: 0.55, lunge: 1, hp: 4,
+  hue: 0, sat: 1, lum: 1,
+  col: { body: '#7fb86a', belly: '#d9e8a8', accent: '#f1ead6', eye: '#2a1c2a', glow: '#ff6a3a', line: '#3a2a36' }
+};
+var curCreature = null;
+function mixHex(a, b, t) {
+  var p = hex(a), q = hex(b), o = '#', i;
+  for (i = 0; i < 3; i++) { var v = Math.round(p[i] + (q[i] - p[i]) * t).toString(16); o += v.length < 2 ? '0' + v : v; }
+  return o;
+}
+function setCreature(spec) {
+  var sp = fillSpec(CREATURE_DEF, spec), C = {}, k;
+  for (k in sp.col) { var q = toHsl(sp.col[k]); C[k] = k === 'line' ? sp.col[k] : fromHsl(q[0] + sp.hue, q[1] * sp.sat, q[2] * sp.lum); }
+  curCreature = { spec: sp, pal: C };
+  return sp;
+}
+function creature() { if (!curCreature) setCreature(); return curCreature; }
+
+function creatureD(c, x, y, s) {
+  var H = creature(), sp = H.spec, C = H.pal, LN0 = LN;
+  LN = C.line;
+  var t = s.t || 0, mv = s.move || 0, ph = s.phase || 0, dir = s.dir < 0 ? -1 : 1, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
+  var look = s.look || [1, 0], lkx = look[0] * dir, lky = look[1];
+  var plan = Math.round(sp.plan), bw = sp.bodyW, bh = sp.bodyH, hd = sp.head, ll = sp.legLen, lw = 3.4 * sp.legW, T = Math.round(sp.tell);
+  var tell = st === 'windup' ? k : 0, down = st === 'recover' || st === 'stunned', lunge = st === 'lunge';
+  var bodyCol = down ? mixHex(C.body, '#b6a592', 0.55) : (tell ? mixHex(C.body, C.glow, tell * (T === 3 ? 0.12 : 0.55)) : C.body);
+  var bodyD = shade(bodyCol, -0.09), i;
+  var sx = 1, sy = 1 + Math.sin(t * 2.4) * 0.03 * sp.wobble, jx = 0, lift = 0, rot = 0;
+  if (tell) {
+    if (T === 0) { sx *= 1 + 0.24 * tell; sy *= 1 - 0.22 * tell; }
+    else if (T === 1) { jx = Math.sin(t * 70) * 1.5 * tell; sy *= 1 - 0.06 * tell; }
+    else if (T === 2) { lift = 4 * tell; rot = -0.3 * tell; sy *= 1 + 0.1 * tell; }
+    else { sx *= 1 + 0.05 * Math.sin(t * 30) * tell; }
+  }
+  if (lunge) { sx *= 0.84; sy *= 1.2; rot = 0.2; }
+  if (st === 'stagger') { sx *= 1.2; sy *= 0.8; }
+  function capsule(x1, y1, x2, y2, col, w) {
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = LN; c.lineWidth = w + 2.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+    c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+  }
+  function bent(pts, col, w) {
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (var pass = 0; pass < 2; pass++) {
+      c.strokeStyle = pass ? col : LN; c.lineWidth = pass ? w : w + 2.2; c.beginPath();
+      for (var n = 0; n < pts.length; n++) { if (n) c.lineTo(pts[n][0], pts[n][1]); else c.moveTo(pts[n][0], pts[n][1]); }
+      c.stroke();
+    }
+  }
+  function tri(x1, y1, x2, y2, x3, y3, col) { c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.lineTo(x3, y3); c.closePath(); fs(c, col, 1.3); }
+
+  c.save(); c.translate(x + jx, y); c.scale(dir * sp.size, sp.size);
+
+  /* body plan: B is the body ellipse, F the face, TOP where horns sit, TL where a tail starts, HD a separate head */
+  var B, F, TOP, TL = null, HD = null, step = Math.abs(Math.sin(ph)) * mv, bobY = step * 1.2 * sp.bob;
+  if (plan === 1) {
+    var hipY = -(5 * ll);
+    B = { x: 0, y: hipY - 5 * bh - bobY, rx: 10 * bw, ry: 6 * bh };
+    HD = { x: B.rx * 0.8 + 2.5 * hd, y: B.y - 2.5 * bh - 1.5 * hd, r: 5.4 * hd };
+    F = { x: HD.x + 1.2, y: HD.y, w: HD.r * 1.1 }; TOP = { x: HD.x - 0.5, y: HD.y - HD.r, w: HD.r * 0.7 }; TL = { x: -B.rx + 1.5, y: B.y - 1 };
+    [[-3.5, Math.PI, 1], [4, 0, 1], [-5.5, 0, 0], [6, Math.PI, 0]].forEach(function (q) {
+      var p2 = ph + q[1], hx = q[0] * bw, fx = hx + Math.sin(p2) * 3.2 * mv, fy = -Math.max(0, Math.cos(p2)) * 2.4 * mv;
+      capsule(hx, hipY + 1 - bobY, fx, fy - 1, q[2] ? bodyD : bodyCol, lw); ell(c, fx + 0.8, fy - 0.6, 2.6, 1.6, bodyD, 1.3);
+    });
+  } else if (plan === 2) {
+    var hip = -(5 * ll);
+    B = { x: 0, y: hip - 7.5 * bh - bobY, rx: 8.6 * bw, ry: 8.6 * bh };
+    HD = { x: 0, y: B.y - B.ry - 3 * hd + 1.5, r: 5.4 * hd };
+    F = { x: 0.8, y: HD.y + 0.4, w: HD.r * 1.15 }; TOP = { x: 0, y: HD.y - HD.r, w: HD.r * 0.75 };
+    [-1, 1].forEach(function (sd) {
+      var p2 = ph + (sd > 0 ? Math.PI : 0), fx = sd * 3.6 * bw + Math.sin(p2) * 1.2 * mv, fy = -Math.max(0, Math.cos(p2)) * 2.6 * mv;
+      capsule(sd * 3.4 * bw, hip - bobY, fx, fy - 1.4, bodyD, lw + 0.8); ell(c, fx + 0.5, fy - 0.8, 3.2, 1.9, bodyD, 1.4);
+    });
+  } else if (plan === 3) {
+    var hov = (10 + Math.sin(t * 2.2) * 3 * sp.bob) * sp.hover;
+    B = { x: 0, y: -8.5 * bh - hov, rx: 8.6 * bw, ry: 8 * bh };
+    F = { x: 1.5, y: B.y - 0.5, w: B.rx }; TOP = { x: 0, y: B.y - B.ry, w: B.rx * 0.55 };
+    for (i = 0; i < 4; i++) {
+      var tx = (i - 1.5) * B.rx * 0.42, pts = [], n;
+      for (n = 0; n <= 4; n++) pts.push([tx + Math.sin(t * 3.4 + i * 1.7 + n * 0.9) * 1.6 * (n / 4) - mv * n * 0.9, B.y + B.ry - 2 + n * 2 * ll]);
+      bent(pts, i % 2 ? bodyD : bodyCol, lw * 0.6);
+    }
+  } else if (plan === 4) {
+    B = { x: 0, y: -(2.6 * ll + 4.6 * bh) - bobY * 0.4, rx: 10 * bw, ry: 5 * bh };
+    F = { x: B.rx * 0.35, y: B.y - 0.6, w: B.rx * 0.7 }; TOP = { x: -1, y: B.y - B.ry, w: B.rx * 0.5 }; TL = { x: -B.rx + 1.5, y: B.y };
+    var nl = Math.max(2, Math.min(4, Math.round(sp.legs / 2)));
+    [-1, 1].forEach(function (sd) {
+      for (var q = 0; q < nl; q++) {
+        var u = nl === 1 ? 0 : q / (nl - 1) - 0.5, p2 = ph * 1.4 + q * Math.PI + (sd > 0 ? Math.PI : 0), up = Math.max(0, Math.sin(p2)) * 2.6 * mv;
+        var bx0 = sd * B.rx * 0.55 + u * 3, kx = sd * (B.rx + 2.6 * ll) + u * 5, fx = sd * (B.rx + 5 * ll) + u * 9 + Math.cos(p2) * 1.6 * mv;
+        bent([[bx0, B.y + 1], [kx, B.y - 3.4 * ll - up], [fx, u * 3.4 - up]], bodyD, lw * 0.62);
+      }
+    });
+  } else {
+    var hop = step * 4 * sp.bob, squ = 1 + Math.cos(ph * 2) * 0.09 * mv * sp.wobble;
+    B = { x: 0, y: -6.6 * bh + 0.8 - hop, rx: 9.6 * bw * squ, ry: 7.2 * bh / squ };
+    F = { x: 1.5, y: B.y - 0.6, w: B.rx }; TOP = { x: 0, y: B.y - B.ry, w: B.rx * 0.55 }; TL = { x: -B.rx + 1.5, y: B.y + B.ry * 0.45 };
+  }
+
+  /* everything above the legs leans, swells and stretches with the state */
+  c.save(); c.translate(0, -lift); c.translate(B.x, B.y + B.ry); c.rotate(rot); c.scale(sx, sy); c.translate(-B.x, -(B.y + B.ry));
+  var tail = Math.round(sp.tail);
+  if (TL && tail) {
+    if (tail === 1) ell(c, TL.x - 1.5, TL.y, 2.6, 2.4, bodyD, 1.4);
+    else {
+      var tp = [], n2;
+      for (n2 = 0; n2 <= 5; n2++) tp.push([TL.x - n2 * 2.3, TL.y - n2 * 0.9 + Math.sin(t * 4 + n2 * 0.9) * 1.3 * (n2 / 5) - n2 * n2 * 0.12]);
+      bent(tp, bodyD, 2.6);
+      if (tail === 3) { var e5 = tp[5]; tri(e5[0] - 3.6, e5[1] - 1.2, e5[0] + 0.6, e5[1] - 3, e5[0] + 0.8, e5[1] + 2, C.accent); }
+    }
+  }
+  var top = Math.round(sp.top);
+  if (top === 4) for (i = 0; i < 4; i++) { var sxp = B.x - B.rx * 0.6 + i * B.rx * 0.4, syp = B.y - B.ry * Math.sqrt(Math.max(0.05, 1 - Math.pow((sxp - B.x) / B.rx, 2))) + 1; tri(sxp - 2, syp + 1, sxp + 0.4, syp - 4.6, sxp + 2.4, syp + 1, C.accent); }
+  if (plan === 2) {
+    var raise = Math.max(tell, lunge ? 1 : 0);
+    [-1, 1].forEach(function (sd) {
+      var sw = Math.sin(ph + (sd > 0 ? 0 : Math.PI)) * 1.6 * mv, shx = sd * (B.rx - 1.4), shy = B.y - 3 * bh;
+      var hx = sd * (B.rx + 2.6 + raise * 2), hy = shy + 8 * sp.armLen * (1 - raise * 1.7) + sw;
+      if (lunge) { hx = sd * (B.rx * 0.5) + 6; hy = B.y - 1; }
+      capsule(shx, shy, hx, hy, bodyD, lw + 0.4); ell(c, hx, hy, 3, 3, bodyCol, 1.4);
+    });
+  }
+  c.beginPath(); c.ellipse(B.x, B.y, B.rx, B.ry, 0, 0, Math.PI * 2); c.fillStyle = bodyCol; c.fill();
+  c.save(); c.clip();
+  c.fillStyle = bodyD; c.beginPath(); c.ellipse(B.x + B.rx * 0.25, B.y + B.ry * 0.9, B.rx * 1.2, B.ry * 0.7, 0, 0, Math.PI * 2); c.fill();
+  var pat = Math.round(sp.pattern);
+  if (pat === 1) { c.fillStyle = C.belly; c.beginPath(); c.ellipse(B.x + 1, B.y + B.ry * 0.55, B.rx * 0.68, B.ry * 0.6, 0, 0, Math.PI * 2); c.fill(); }
+  else if (pat === 2) { c.fillStyle = C.belly; [[-0.55, -0.3, 0.2], [-0.15, 0.35, 0.16], [0.3, -0.45, 0.14], [0.6, 0.2, 0.18], [-0.7, 0.3, 0.12]].forEach(function (q) { c.beginPath(); c.ellipse(B.x + q[0] * B.rx, B.y + q[1] * B.ry, q[2] * B.rx, q[2] * B.rx * 0.8, 0, 0, Math.PI * 2); c.fill(); }); }
+  else if (pat === 3) { c.strokeStyle = C.belly; c.lineWidth = B.rx * 0.16; c.lineCap = 'round'; for (i = -2; i <= 1; i++) { c.beginPath(); c.moveTo(B.x + i * B.rx * 0.42 - 2, B.y - B.ry); c.lineTo(B.x + i * B.rx * 0.42 + 1.5, B.y + B.ry * 0.1); c.stroke(); } }
+  c.fillStyle = 'rgba(255,255,255,0.26)'; c.beginPath(); c.ellipse(B.x - B.rx * 0.35, B.y - B.ry * 0.5, B.rx * 0.4, B.ry * 0.22, -0.3, 0, Math.PI * 2); c.fill();
+  c.restore();
+  c.beginPath(); c.ellipse(B.x, B.y, B.rx, B.ry, 0, 0, Math.PI * 2); c.lineWidth = 1.8; c.strokeStyle = LN; c.stroke();
+  if (HD) {
+    ell(c, HD.x, HD.y, HD.r * 1.04, HD.r, bodyCol, 1.8);
+    c.fillStyle = 'rgba(255,255,255,0.24)'; c.beginPath(); c.ellipse(HD.x - HD.r * 0.3, HD.y - HD.r * 0.5, HD.r * 0.4, HD.r * 0.22, -0.3, 0, Math.PI * 2); c.fill();
+  }
+  if (top === 1) { ell(c, TOP.x - TOP.w, TOP.y + 1, 2.2, 2.6, bodyD, 1.3); ell(c, TOP.x + TOP.w, TOP.y + 1, 2.2, 2.6, bodyD, 1.3); }
+  else if (top === 2) [-1, 1].forEach(function (sd) { var hx2 = TOP.x + sd * TOP.w; c.beginPath(); c.moveTo(hx2 - sd * 1.8, TOP.y + 2); c.quadraticCurveTo(hx2 + sd * 4.5, TOP.y - 1, hx2 + sd * 3.4, TOP.y - 7); c.quadraticCurveTo(hx2 + sd * 0.6, TOP.y - 2.5, hx2 + sd * 1.8, TOP.y + 2.4); c.closePath(); fs(c, C.accent, 1.3); });
+  else if (top === 3) [-1, 1].forEach(function (sd) { var ax = TOP.x + sd * TOP.w * 0.7, tipx = ax + sd * 2.5 + Math.sin(t * 3 + sd) * 0.8, tipy = TOP.y - 7.5; c.strokeStyle = LN; c.lineWidth = 1.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(ax, TOP.y + 1); c.quadraticCurveTo(ax + sd, TOP.y - 4, tipx, tipy); c.stroke(); ell(c, tipx, tipy, 1.9 + tell, 1.9 + tell, C.glow, 1.1); });
+  else if (top === 5) {
+    c.save(); c.translate(TOP.x, TOP.y - 2.2); c.rotate(t * 2);
+    for (i = 0; i < 6; i++) { c.rotate(Math.PI / 3); rr(c, -1.1, -4.6, 2.2, 2.6, 0.5, C.accent, 1.1); }
+    ell(c, 0, 0, 3.1, 3.1, C.accent, 1.3); ell(c, 0, 0, 1.1, 1.1, bodyD, 0.9); c.restore();
+  }
+
+  /* face */
+  var ne = Math.max(1, Math.min(4, Math.round(sp.eyes))), es = Math.round(sp.eyeStyle), er = (ne === 1 ? 3.5 : 2.7 - (ne - 2) * 0.35) * sp.eyeSize * (T === 3 ? 1 + 0.3 * tell : 1);
+  var ey = F.y - (plan === 0 || plan === 3 ? B.ry * 0.12 : 0), my = ey + er + 2.2, open = Math.max(tell, lunge ? 1 : 0);
+  for (i = 0; i < ne; i++) {
+    var ex = F.x + (ne === 1 ? 0 : -F.w * 0.45 + i * F.w * 0.9 / (ne - 1));
+    if (down) { c.strokeStyle = LN; c.lineWidth = 1.3; c.lineCap = 'round'; c.beginPath(); c.moveTo(ex - er * 0.7, ey - er * 0.7); c.lineTo(ex + er * 0.7, ey + er * 0.7); c.moveTo(ex + er * 0.7, ey - er * 0.7); c.lineTo(ex - er * 0.7, ey + er * 0.7); c.stroke(); continue; }
+    if (es === 1) { ell(c, ex, ey, er * 0.85, er * 0.85, C.glow, 1.1); ell(c, ex - er * 0.2, ey - er * 0.2, er * 0.35, er * 0.35, '#ffffff', 0); continue; }
+    ell(c, ex, ey, er, er * 1.08, tell && T === 3 ? mixHex('#fff7e8', C.glow, tell) : '#fff7e8', 1.3);
+    ell(c, ex + lkx * er * 0.38, ey + lky * er * 0.34, er * 0.48, er * 0.54, tell ? mixHex(C.eye, C.glow, tell * 0.7) : C.eye, 0);
+    ell(c, ex + lkx * er * 0.38 - er * 0.18, ey + lky * er * 0.34 - er * 0.22, er * 0.16, er * 0.16, '#ffffff', 0);
+    if (es === 2) { var sl = ne === 1 ? 0 : (ex < F.x ? 1 : -1); c.strokeStyle = LN; c.lineWidth = 1.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(ex - er * 1.1, ey - er * (1.25 + sl * 0.45)); c.lineTo(ex + er * 1.1, ey - er * (1.25 - sl * 0.45)); c.stroke(); }
+    if (es === 3) { c.beginPath(); c.ellipse(ex, ey, er + 0.7, er * 1.08 + 0.7, 0, Math.PI, Math.PI * 2); c.closePath(); c.fillStyle = bodyCol; c.fill(); c.strokeStyle = LN; c.lineWidth = 1.2; c.beginPath(); c.moveTo(ex - er - 0.4, ey); c.lineTo(ex + er + 0.4, ey); c.stroke(); }
+  }
+  var mouth = Math.round(sp.mouth), mw = Math.min(F.w * 0.5, 4.6);
+  if (mouth === 1) { c.strokeStyle = LN; c.lineWidth = 1.2; c.lineCap = 'round'; c.beginPath(); c.arc(F.x, my - 1.2, mw * 0.6, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); }
+  else if (mouth === 2) { c.strokeStyle = LN; c.lineWidth = 1.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(F.x - mw, my); c.lineTo(F.x + mw, my); c.stroke(); tri(F.x - mw * 0.7, my, F.x - mw * 0.25, my, F.x - mw * 0.5, my + 2.8 + open, C.accent); tri(F.x + mw * 0.25, my, F.x + mw * 0.7, my, F.x + mw * 0.5, my + 2.8 + open, C.accent); }
+  else if (mouth === 3) {
+    var mh = 1.6 + open * 2.2;
+    ell(c, F.x, my + mh * 0.5, mw, mh, '#3a1c24', 1.3);
+    c.fillStyle = C.accent; for (i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(F.x + i * mw * 0.55 - 1, my + mh * 0.5 - mh * 0.75); c.lineTo(F.x + i * mw * 0.55 + 1, my + mh * 0.5 - mh * 0.75); c.lineTo(F.x + i * mw * 0.55, my + mh * 0.5 - mh * 0.75 + 1.8); c.closePath(); c.fill(); }
+  }
+  if (tell && T === 3) { c.strokeStyle = C.glow; c.globalAlpha = 0.7 * (1 - (t * 3 % 1)); c.lineWidth = 1.4; c.beginPath(); c.arc(F.x, ey, er * 1.6 + (t * 3 % 1) * 8, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1; }
+  c.restore();
+
+  /* markers stay upright and unflipped */
+  c.scale(dir, 1);
+  var headTop = (HD ? HD.y - HD.r : B.y - B.ry) - lift - 9;
+  if (st === 'stunned') for (i = 0; i < 3; i++) { var a = t * 5 + i * 2.09; ell(c, Math.cos(a) * 8, headTop + 3 + Math.sin(a) * 2.5, 1.5, 1.5, '#ffd34d', 0.9); }
+  if (tell && sp.mark) { ell(c, 0, headTop, 4.4, 4.4, '#ffd34d', 1.5); c.fillStyle = LN; c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('!', 0, headTop + 2.6); }
+  c.restore();
+  LN = LN0;
+}
+
 
 var dkB = null;
 function lightingB(c) {
@@ -1052,7 +1511,7 @@ function renderB(c) {
 }
 
 return { W: W, H: H, state: state, update: update, renderA: renderA, renderB: renderB,
-  lib: { playerB: playerB, playerD: playerD, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+  lib: { playerB: playerB, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 
@@ -1060,7 +1519,7 @@ var Combat = (function () {
 'use strict';
 var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
 var lib = null;
-var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy' };
+var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy', look: 'classic' };
 var WPRE = {
   snappy: { fz: 0.55, pf: 0.6, kb: 0.9, hs: 0.6, hd: 0.06, kd: 0.5 },
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
@@ -1110,8 +1569,14 @@ function pillarHit(x, y, r) {
   return false;
 }
 function moveCircle(e, dx, dy) {
+  var ox = e.x, oy = e.y;
   e.x += dx; e.y += dy;
-  e.x = clamp(e.x, 24, AW - 24); e.y = clamp(e.y, 40, AH - 20);
+  var B = api.scene && api.scene.bounds;  // a tool page can swap the arena for a bigger world
+  if (B) { e.x = clamp(e.x, B.x0, B.x1); e.y = clamp(e.y, B.y0, B.y1); }
+  else { e.x = clamp(e.x, 24, AW - 24); e.y = clamp(e.y, 40, AH - 20); }
+  // a tool page can mark ground as not walkable (the Sea Editor keeps walkers out of the water); slide along it
+  var wk = api.scene && api.scene.walk;
+  if (wk && !wk(e.x, e.y)) { if (wk(e.x, oy)) e.y = oy; else if (wk(ox, e.y)) e.x = ox; else { e.x = ox; e.y = oy; } }
   for (var i = 0; i < W.pillars.length; i++) {
     var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
     if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; }
@@ -1340,10 +1805,11 @@ function updateAnim(dt, dashing) {
   var sp = Math.min(200, Math.hypot(p.vx, p.vy * K));
   var target = dashing ? 1 : Math.min(1, sp / 105);
   an.amt += (target - an.amt) * Math.min(1, dt * (target > an.amt ? 14 : 9));
-  if (an.amt > 0.04) an.phase += Math.max(sp, 30) * dt * 0.115;
+  var hs = S.look === 'classic' ? lib.hero().spec : null;
+  if (an.amt > 0.04) an.phase += Math.max(sp, 30) * dt * 0.115 * (hs ? hs.walkRate : 1);
   an.t += dt;
   an.run += ((p.sprinting ? 1 : 0) - an.run) * Math.min(1, dt * 8);
-  an.bob = -Math.abs(Math.sin(an.phase)) * 1.0 * an.amt * (1 + 0.45 * an.run) + Math.sin(an.t * 2.2) * (1 - an.amt) * 0.4;
+  an.bob = -Math.abs(Math.sin(an.phase)) * 1.0 * an.amt * (1 + 0.45 * an.run) * (hs ? hs.bob : 1) + Math.sin(an.t * 2.2) * (1 - an.amt) * 0.4;
   var tx = (p.vx / 118) * 1.1, ty = (p.vy * K / 118) * 0.8;
   an.lvx += ((tx - an.lx) * 220 - an.lvx * 27) * dt; an.lx += an.lvx * dt;
   an.lvy += ((ty - an.ly) * 220 - an.lvy * 27) * dt; an.ly += an.lvy * dt;
@@ -1414,7 +1880,7 @@ function updatePlayer(dt) {
   else if (a.ph !== 'charge') {
     var sd = stepData(a);
     a.t += dt;
-    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing'); }
+    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing'); if (S.juice && lookSpec().atkStyle >= 2) dust(p.x, p.y, 3); }
     else if (a.ph === 'active') {
       var u = Math.min(1, a.t / sd.ac);
       var half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
@@ -1480,20 +1946,23 @@ function updatePlayer(dt) {
 }
 
 /* ---------- enemies ---------- */
+// A creature from the Creature Editor can carry its own numbers in e.cfg; plain bots use these.
+var BOT_CFG = { speed: 58, windup: 0.55, lunge: 175 };
 function botAI(e, dt, d, ang) {
+  var cf = e.cfg || BOT_CFG, sk = cf.speed / 58;
   e.cd -= dt;
   switch (e.state) {
     case 'idle': if (d < 130 && !P.dead) { e.state = 'chase'; e.t = 0; } break;
     case 'chase':
       e.face = ang;
-      if (d > 52) moveCircle(e, Math.cos(ang) * 58 * dt, Math.sin(ang) * 58 * dt);
-      else if (d < 30) moveCircle(e, -Math.cos(ang) * 45 * dt, -Math.sin(ang) * 45 * dt);
-      else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * 30 * dt, Math.sin(ang + sd * 1.57) * 30 * dt); }
-      if (d < 56 && e.cd <= 0 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.55; e.dirLock = ang; sfx('tele'); }
+      if (d > 52) moveCircle(e, Math.cos(ang) * cf.speed * dt, Math.sin(ang) * cf.speed * dt);
+      else if (d < 30) moveCircle(e, -Math.cos(ang) * 45 * sk * dt, -Math.sin(ang) * 45 * sk * dt);
+      else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * 30 * sk * dt, Math.sin(ang + sd * 1.57) * 30 * sk * dt); }
+      if (d < 56 && e.cd <= 0 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = cf.windup; e.dirLock = ang; sfx('tele'); }
       break;
     case 'windup': e.face = e.dirLock; if (e.t >= e.dur) { e.state = 'lunge'; e.t = 0; e.dur = 0.22; e.hitDone = false; } break;
     case 'lunge':
-      moveCircle(e, Math.cos(e.dirLock) * 175 * dt, Math.sin(e.dirLock) * 175 * dt);
+      moveCircle(e, Math.cos(e.dirLock) * cf.lunge * dt, Math.sin(e.dirLock) * cf.lunge * dt);
       if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
         e.hitDone = true;
         var r = hurtPlayer(12, e.x, e.y, 'melee', e);
@@ -1609,6 +2078,7 @@ function updateEnemies(dt) {
     var e = W.enemies[i];
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
+    if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
     if (e.freezeT > 0) { e.freezeT -= dt; if (e.freezeT <= 0) { e.kx += e.pkx; e.ky += e.pky; e.pkx = e.pky = 0; } continue; }
     e.sq = Math.max(0, e.sq - dt * 4.5);
     var adt = e.rattle > 0 ? dt * 0.7 : dt;
@@ -1873,11 +2343,12 @@ function drawTelegraphs(c) {
     gEll(c, L.x, L.y, L.r + 5, L.r + 5); c.stroke(); c.setLineDash([]);
   }
 }
-function visAngle(ang, dir) {
-  if (dir !== 'up' && dir !== 'down') return ang;
-  var half = Math.max(0.5, stepData(P.atk).arc / 2), f = Math.min(0.52, 0.7 / half);
-  return P.atk.dir + (ang - P.atk.dir) * f;
-}
+// The swing is drawn at its true angle in every direction (it used to be narrowed when facing up or down,
+// which made it look like a stab).
+function visAngle(ang, dir) { return ang; }
+// The settings of whichever hero look is showing, and how far long legs raise the classic hero's body.
+function lookSpec() { return S.look === 'sprite' ? lib.sprite().spec : lib.hero().spec; }
+function heroLift() { return S.look === 'sprite' ? 0 : lib.hero().lift; }
 function guardSide() { return Math.cos(P.face) >= 0 ? 1 : -1; }
 function bodyPose() {
   var p = P, a = p.atk, lx = 0, ly = 0, cr = 0;
@@ -1889,12 +2360,13 @@ function bodyPose() {
     if (a.ph === 'windup') amt = -2.6 * big * Math.min(1, a.t / sd.wu);
     else if (a.ph === 'active') amt = (-2.6 + 6.2 * Math.min(1, a.t / sd.ac)) * big;
     else amt = 3.6 * big * Math.max(0, 1 - a.t / sd.rec);
+    if (S.look === 'classic') amt *= lib.hero().spec.lean;
     lx = Math.cos(a.dir) * amt; ly = Math.sin(a.dir) * K * amt * 0.7;
   }
   if (p.guard) { lx += Math.cos(p.face) * 1.6; cr = 1.4; }
   lx += p.anim.lx; ly += p.anim.ly + p.anim.bob;
   if (p.fireT > 0) { var f = p.fireT / 0.2; lx -= Math.cos(p.fireAng) * 1.8 * f; ly -= Math.sin(p.fireAng) * K * 1.4 * f; }
-  return { lx: lx, ly: ly + cr };
+  return { lx: lx, ly: ly + cr - heroLift() };
 }
 function swordPose(dir) {
   var p = P, a = p.atk, o = {};
@@ -1904,25 +2376,19 @@ function swordPose(dir) {
     o.len = 26; o.front = Math.sin(ang2) >= -0.05; o.side = Math.cos(ang2) >= 0 ? 1 : -1; o.armSide = o.side; o.atk = true;
   } else if (a.ph !== 'none') {
     var sd = stepData(a), half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1, u;
-    var pb = (dir === 'up' || dir === 'down') ? 0.12 : 0.45;
+    var pb = 0.45;
     if (a.ph === 'windup') u = -pb * (a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
     var ang = visAngle(a.dir - half * sign + sd.arc * sign * u, dir);
     var upv = Math.max(0, -Math.sin(ang)), sdn = Math.cos(a.dir) >= 0 ? 1 : -1, sb = Math.cos(ang) >= 0 ? 1 : -1;
     o.len = sd.blade;
     if (dir === 'up' || dir === 'down') {
-      var startAng = a.dir - half * sign, armSide = Math.cos(startAng) >= 0 ? 1 : -1, AR = 8.6;
-      var gpx0 = armSide * 6.5 + AR * Math.cos(ang), gpy = AR * Math.sin(ang);
-      var mm = armSide * gpx0, mixu = clamp((upv - 0.3) / 0.4, 0, 1); mixu = mixu * mixu * (3 - 2 * mixu);
-      var gpx = armSide * (mm + (Math.max(mm, 10.5) - mm) * mixu);
-      var tt = clamp(u, -0.1, 1), sg2 = a.combo >= 2 ? 1 : sign, amp = a.combo >= 2 ? 1.25 : 1;
-      o.hx = gpx; o.hy = -17 + gpy * K + sg2 * (tt - 0.5) * 5 * amp - 3 * upv;
-      o.tilt = sg2 * (tt - 0.5) * 0.5 * amp;
-      o.len = clamp(9 + sd.blade - (gpx * Math.cos(ang) + gpy * Math.sin(ang)), sd.blade * 0.8, sd.blade * 1.45);
-      o.armSide = armSide;
-    } else {
+    // a wide side-to-side swing: the hand sweeps across in front of the body, or over the head when facing away
+    var startAng = a.dir - half * sign, armSide = Math.cos(startAng) >= 0 ? 1 : -1;
+    o.hx = armSide * 2.5 + Math.cos(ang) * 8; o.hy = -14 + Math.sin(ang) * 8 * K - 4 * upv; o.armSide = armSide; o.lift = upv;
+  } else {
       o.hx = Math.cos(ang) * 9 + sdn * 10 * upv * upv; o.hy = -13 + Math.sin(ang) * 9 * K - 5 * upv;
     }
-    o.ca = Math.cos(ang); o.sa = Math.sin(ang) * K + (o.tilt || 0);
+    o.ca = Math.cos(ang); o.sa = Math.sin(ang) * (K + (1 - K) * (o.lift || 0));
     if (o.tilt) { var nn = Math.hypot(o.ca, o.sa); o.ca /= nn; o.sa /= nn; }
     o.front = Math.sin(ang) >= -0.05; o.side = sdn; o.atk = true;
   } else {
@@ -1932,6 +2398,7 @@ function swordPose(dir) {
     else { o.hx = side * 8; o.hy = -14; o.ca = side * 0.55; o.sa = -0.83; }
     o.len = 20; o.front = true; o.side = side; o.atk = false;
   }
+  if (o.atk && S.look === 'classic') o.len *= lib.hero().spec.bladeLen;
   return o;
 }
 function shieldBehind() { return Math.sin(P.face) < -0.05; }
@@ -1940,7 +2407,7 @@ function shieldPose() {
   return [Math.cos(P.face) * 9, -15 + Math.sin(P.face) * 3];
 }
 function heroPose(dir) {
-  var p = P, a = p.atk, bp = bodyPose(), sp = swordPose(dir), pose = { lx: bp.lx, ly: bp.ly };
+  var p = P, a = p.atk, bp = bodyPose(), sp = swordPose(dir), pose = { lx: bp.lx, ly: bp.ly + heroLift() };
   var side = (dir === 'left' || dir === 'right');
   var drawn = a.ph !== 'none';
   pose.sheath = !drawn;
@@ -1964,9 +2431,127 @@ function heroPose(dir) {
   }
   return pose;
 }
+/* ---------- sprite look: stepped frames, pixel sword and a big cyan slash ---------- */
+function walkFrame(ph) { var q = ph / (Math.PI * 2); return Math.floor((q - Math.floor(q)) * 4) % 4; }
+function spriteFrame() {
+  var p = P, a = p.atk;
+  if (a.ph === 'charge') return { pose: 'atk', f: 1 };
+  if (a.ph !== 'none') {
+    var sd = stepData(a);
+    if (a.ph === 'windup') return { pose: 'atk', f: a.t < sd.wu * 0.5 ? 0 : 1 };
+    if (a.ph === 'active') return { pose: 'atk', f: 2 };
+    return { pose: 'atk', f: a.t < sd.rec * 0.45 ? 2 : 3 };
+  }
+  if (p.anim.amt > 0.35) return { pose: 'walk', f: walkFrame(p.anim.phase * lib.sprite().spec.walkRate) };
+  return { pose: 'idle', f: 0 };
+}
+// Attack styles for the sprite look. All of it is visual: the hitbox and timing do not change.
+// pull: step back in the wind-up (px), lunge: step into the swing (px), sq: squash and stretch amount,
+// hop: jump height (px), spin: the body and blade turn a full circle.
+var ATK_STYLES = [
+  { pull: 0, lunge: 0, sq: 0, hop: 0, spin: 0 },
+  { pull: 2, lunge: 5, sq: 0.1, hop: 0, spin: 0 },
+  { pull: 4, lunge: 10, sq: 0.18, hop: 0, spin: 0 },
+  { pull: 1, lunge: 3, sq: 0.22, hop: 6, spin: 0 },
+  { pull: 2, lunge: 4, sq: 0.1, hop: 2, spin: 1 }
+];
+function atkBody() {
+  var o = { x: 0, y: 0, hop: 0, sx: 1, sy: 1, spin: -1 }, a = P.atk;
+  if (a.ph === 'none') return o;
+  var sp = lookSpec(), st = ATK_STYLES[Math.round(sp.atkStyle)] || ATK_STYLES[0];
+  if (st.spin && S.look !== 'sprite') st = { pull: st.pull, lunge: st.lunge, sq: st.sq, hop: st.hop, spin: 0 };
+  var pw = sp.atkPower * (a.combo >= 2 ? 1.5 : 1), off = 0, sq = 0, hop = 0, dir = a.ph === 'charge' ? P.face : a.dir, u;
+  if (a.ph === 'charge') { u = Math.min(1, a.t / 0.3); off = -st.pull * u; sq = -st.sq * 0.8 * u; }
+  else {
+    var sd = stepData(a);
+    if (a.ph === 'windup') { u = Math.min(1, a.t / sd.wu); off = -st.pull * u; sq = -st.sq * u; hop = st.hop * u; if (st.spin) o.spin = 0; }
+    else if (a.ph === 'active') { u = Math.min(1, a.t / sd.ac); var e = 1 - (1 - u) * (1 - u); off = -st.pull + (st.pull + st.lunge) * e; sq = st.sq * (1 - u * 0.5); hop = st.hop * (1 - e); if (st.spin) o.spin = u * 0.75; }
+    else { u = Math.min(1, a.t / sd.rec); var v = u < 0.4 ? 0 : (u - 0.4) / 0.6; off = st.lunge * (1 - v * v); sq = -st.sq * 0.9 * Math.max(0, 1 - u / 0.5); if (st.spin) o.spin = Math.min(1, 0.75 + 0.25 * u / 0.4); }
+  }
+  o.x = Math.cos(dir) * off * pw * sp.scale; o.y = Math.sin(dir) * K * off * pw * sp.scale; o.hop = hop * pw * sp.scale;
+  sq *= Math.min(1.6, pw);
+  if (sq < 0 || Math.abs(Math.sin(dir)) * K > Math.abs(Math.cos(dir))) { o.sy = 1 + sq; o.sx = 1 - sq * 0.5; }
+  else { o.sx = 1 + sq; o.sy = 1 - sq * 0.5; }
+  return o;
+}
+function spinDir(dir, prog) { var order = ['down', 'left', 'up', 'right'], i = order.indexOf(dir); return order[(i + Math.floor(prog * 4)) % 4]; }
+function spriteSword() {
+  var p = P, a = p.atk, ang, len, start, sp = lib.sprite().spec;
+  if (a.ph === 'none' || (p.guard && !S.shield)) return null;
+  if (a.ph === 'charge') { ang = p.face + 2.3; start = ang; len = 28 * sp.bladeLen; }
+  else {
+    var sd = stepData(a), half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
+    start = a.dir - half * sign;
+    if (a.ph === 'active') ang = start + sd.arc * sign * Math.min(1, a.t / sd.ac);
+    else ang = [start - 0.25 * sign, start - 0.6 * sign, a.dir + half * sign, a.dir + half * sign * 1.15][spriteFrame().f];
+    var spin = atkBody().spin;
+    if (spin > 0) ang = start + sign * Math.PI * 2 * spin;
+    len = sd.blade * sp.bladeLen;
+  }
+  return { ang: ang, len: len, front: Math.sin(ang) >= -0.05, armSide: Math.cos(start) >= 0 ? 1 : -1 };
+}
+function pixLine(c, x1, y1, x2, y2, w, col) {
+  var dx = x2 - x1, dy = y2 - y1, n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)))), i;
+  c.fillStyle = col;
+  for (i = 0; i <= n; i++) c.fillRect(Math.round(x1 + dx * i / n - w / 2), Math.round(y1 + dy * i / n - w / 2), w, w);
+}
+function drawPixSword(c, front) {
+  var sw = spriteSword(); if (!sw || sw.front !== front) return;
+  var p = P, a = p.atk, dir = heroDir(), side = dir === 'left' || dir === 'right';
+  var ab = atkBody(), bx = Math.round(p.x + ab.x), by = Math.round(p.y * K + ab.y - ab.hop), ca = Math.cos(sw.ang), sa = Math.sin(sw.ang) * K;
+  var cur = lib.sprite(), C = cur.pal, sc = cur.spec.scale, al = cur.spec.armL * sc, w = Math.max(1, Math.round(2 * sc)), len = sw.len * sc;
+  var sx = bx + (side ? 0 : sw.armSide * cur.m.shX * sc), sy = by - cur.m.shY * sc;
+  var hx = sx + ca * al, hy = sy + sa * al, tx = hx + ca * len, ty = hy + sa * len;
+  var hot = a.ph === 'charge' && a.t >= 0.33;
+  pixLine(c, sx, sy, hx, hy, w + 2, C.line);
+  pixLine(c, hx + ca * 2, hy + sa * 2, tx, ty, w + 2, C.line);
+  pixLine(c, sx, sy, hx, hy, w, C.coatL);
+  pixLine(c, hx + ca * 3, hy + sa * 3, tx, ty, w, hot ? '#ffd34d' : C.blade);
+  pixLine(c, hx + ca * 4, hy + sa * 4, tx - ca * 2, ty - sa * 2, Math.max(1, w - 1), hot ? '#fff3c4' : C.bladeL);
+  pixLine(c, hx + ca * 2 + sa * w, hy + sa * 2 - ca * w, hx + ca * 2 - sa * w, hy + sa * 2 + ca * w, w, C.belt);
+  pixLine(c, hx, hy, hx, hy, w, C.skin);
+}
+function drawPixSlash(c) {
+  var p = P, tr = p.atk.tr, fade = 1 - tr.age / 0.18;
+  var cur = lib.sprite(), C = cur.pal;
+  var ab = atkBody(), tcur = ab.spin > 0 ? tr.start + tr.sign * Math.PI * 2 * ab.spin : tr.cur;
+  if ((ATK_STYLES[Math.round(cur.spec.atkStyle)] || {}).spin && ab.spin < 0) tcur = tr.start + tr.sign * Math.PI * 2;
+  var R = tr.reach * cur.spec.slashSize, T = R * cur.spec.slashWidth, span = Math.min(Math.PI, Math.abs(tcur - tr.start) / 2);
+  if (span < 0.05) return;
+  var mid = (tr.start + tcur) / 2, sg = tcur >= tr.start ? 1 : -1;
+  var ox = Math.round(p.x + ab.x), oy = Math.round(p.y * K + ab.y - ab.hop - cur.m.shY * cur.spec.scale), ry = Math.ceil(R * K), x, y;
+  var cols = tr.hot ? ['#fff8dc', '#ffe06e', '#f0a830'] : [C.slashL, C.slash, C.slashD];
+  c.globalAlpha = fade > 0.66 ? 0.95 : (fade > 0.33 ? 0.7 : 0.4);
+  for (y = -ry; y <= ry; y++) for (x = -Math.ceil(R); x <= Math.ceil(R); x++) {
+    var ux = x + 0.5, uy = (y + 0.5) / K, r = Math.hypot(ux, uy);
+    if (r > R || r < Math.min(10, R * 0.3)) continue;
+    var d = wrap(Math.atan2(uy, ux) - mid);
+    if (Math.abs(d) > span) continue;
+    var q = (d * sg + span) / (2 * span);
+    var inner = R - T * Math.pow(Math.sin(Math.PI * Math.pow(q, 1.6)), 0.7);
+    if (r < inner) continue;
+    c.fillStyle = cols[r > R - 2.5 ? 0 : (r < inner + 3 ? 2 : 1)];
+    c.fillRect(ox + x, oy + y, 1, 1);
+  }
+  c.globalAlpha = 1;
+}
+function heroSprFn(dashing, dir, pose, f, armSide, ab) {
+  var p = P;
+  return function (s) {
+    var img = lib.heroP(dir, pose, f, armSide), sm = s.imageSmoothingEnabled, cur = lib.sprite();
+    s.imageSmoothingEnabled = false;
+    if (dashing) { var ax = Math.abs(p.roll.dx), ay = Math.abs(p.roll.dy); s.scale(1 + 0.2 * ax, 1 - 0.1 * ax + 0.08 * ay); }
+    if (ab) s.scale(ab.sx, ab.sy);
+    s.scale(cur.spec.scale, cur.spec.scale);
+    s.drawImage(img, -cur.m.ox, -cur.m.oy);
+    s.imageSmoothingEnabled = sm;
+  };
+}
+
 function drawHeroWeapon(c, front) {
-  var p = P, a = p.atk, dir = heroDir(), bp = bodyPose(), sp = swordPose(dir);
-  var hideSword = a.ph === 'none' || (p.guard && !S.shield);
+  var p = P, a = p.atk, dir = heroDir(), bp = bodyPose(), sp = swordPose(dir), spr = S.look === 'sprite';
+  var hideSword = spr || a.ph === 'none' || (p.guard && !S.shield), HH = lib.hero(), HC = HH.pal;
+  if (spr) drawPixSword(c, front);
   var hx = p.x + sp.hx + bp.lx, hy = p.y * K + sp.hy + bp.ly;
   if (a.ph === 'charge' && !front) {
     var c01 = Math.min(1, a.t), full = a.t >= 1, pulse = full ? 0.5 + 0.5 * Math.sin(W.t * 24) : 0;
@@ -1978,15 +2563,15 @@ function drawHeroWeapon(c, front) {
     var ca = sp.ca, sa = sp.sa, len = sp.len, ex = hx + ca * len, ey = hy + sa * len, px = -sa, py = ca;
     c.lineCap = 'round';
     c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
-    c.strokeStyle = '#eef3fb'; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
+    c.strokeStyle = HC.blade; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
     c.strokeStyle = 'rgba(120,130,160,0.5)'; c.lineWidth = 1; c.beginPath(); c.moveTo(hx + ca * 4, hy + sa * 4 + 0.6); c.lineTo(ex - ca * 2, ey - sa * 2 + 0.6); c.stroke();
     c.strokeStyle = '#3a2a36'; c.lineWidth = 6.4; c.beginPath(); c.moveTo(hx - ca * 3, hy - sa * 3); c.lineTo(hx + ca * 2, hy + sa * 2); c.stroke();
-    c.strokeStyle = '#e0a93a'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(hx - ca * 3, hy - sa * 3); c.lineTo(hx + ca * 2, hy + sa * 2); c.stroke();
+    c.strokeStyle = HC.trim; c.lineWidth = 4.2; c.beginPath(); c.moveTo(hx - ca * 3, hy - sa * 3); c.lineTo(hx + ca * 2, hy + sa * 2); c.stroke();
     var gx = hx + ca * 3, gy = hy + sa * 3;
     c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
-    c.strokeStyle = '#f6d878'; c.lineWidth = 3; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
+    c.strokeStyle = HC.trimL; c.lineWidth = 3; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
     if (a.ph === 'charge' && a.t >= 0.33) { c.fillStyle = 'rgba(255,224,110,' + (0.35 + 0.25 * Math.sin(W.t * 20)) + ')'; c.beginPath(); c.arc(ex, ey, 4 + a.t * 3, 0, Math.PI * 2); c.fill(); }
-    if (front) lib.ell(c, hx, hy, 2.6, 2.6, '#ffd8b0', 1.5);
+    if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5);
   }
   if (p.fireT > 0) {
     var fa = p.fireAng, fca = Math.cos(fa), fsa = Math.sin(fa) * K;
@@ -1995,15 +2580,16 @@ function drawHeroWeapon(c, front) {
       c.lineCap = 'round';
       c.strokeStyle = '#3a2a36'; c.lineWidth = 6.4; c.beginPath(); c.moveTo(fx - fca * 3, fy - fsa * 3); c.lineTo(fx + fca * 9, fy + fsa * 9); c.stroke();
       c.strokeStyle = '#e0a93a'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(fx - fca * 3, fy - fsa * 3); c.lineTo(fx + fca * 9, fy + fsa * 9); c.stroke();
-      if (front) lib.ell(c, fx, fy, 2.6, 2.6, '#ffd8b0', 1.5);
+      if (front) lib.ell(c, fx, fy, 2.6, 2.6, HC.skin, 1.5);
     }
   }
-  if (S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) {
-    var tr = a.tr, fade = 1 - tr.age / 0.18, n, steps = 16, inner = 12, ox = p.x + bp.lx, oy = p.y * K - 13 + bp.ly;
+  if (spr && S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) drawPixSlash(c);
+  else if (S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) {
+    var tr = a.tr, fade = 1 - tr.age / 0.18, n, steps = 16, reach = tr.reach * HH.spec.slashSize, inner = reach * (1 - HH.spec.slashWidth), ox = p.x + bp.lx, oy = p.y * K - 13 + bp.ly;
     c.beginPath();
-    for (n = 0; n <= steps; n++) { var aa = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(aa) * tr.reach, oy + Math.sin(aa) * tr.reach * K); }
+    for (n = 0; n <= steps; n++) { var aa = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(aa) * reach, oy + Math.sin(aa) * reach * K); }
     for (n = steps; n >= 0; n--) { var ab = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(ab) * inner, oy + Math.sin(ab) * inner * K); }
-    c.closePath(); c.fillStyle = (tr.hot ? 'rgba(255,224,110,' : 'rgba(255,255,255,') + (0.5 * fade) + ')'; c.fill();
+    c.closePath(); var sh = HC.slash; c.fillStyle = (tr.hot ? 'rgba(255,224,110,' : 'rgba(' + parseInt(sh.substr(1, 2), 16) + ',' + parseInt(sh.substr(3, 2), 16) + ',' + parseInt(sh.substr(5, 2), 16) + ',') + (0.5 * fade) + ')'; c.fill();
   }
 }
 function drawShield(c, front) {
@@ -2040,19 +2626,35 @@ function drawHero(c) {
   var p = P;
   var amt = p.flash;
   if (p.invuln > 0 && p.flash <= 0 && p.roll.t <= 0) amt = (Math.floor(W.t * 20) % 2) ? 0.5 : 0;
-  var dashing = p.roll.t > 0;
+  var dashing = p.roll.t > 0, spr = S.look === 'sprite';
   for (var gi = 0; gi < W.ghosts.length; gi++) {
     var g = W.ghosts[gi];
     c.globalAlpha = 0.45 * g.life / g.max;
-    flashDraw(c, g.x, g.y * K, heroFn(false, g.dir, { phase: g.ph, amt: 1, t: g.t, lx: 0, ly: 0, blink: 0, sq: 0 }, null), 0.75, '110,200,255');
+    if (spr) flashDraw(c, Math.round(g.x), Math.round(g.y * K), heroSprFn(false, g.dir, 'walk', walkFrame(g.ph), 1), 0.75, '110,200,255');
+    else flashDraw(c, g.x, g.y * K, heroFn(false, g.dir, { phase: g.ph, amt: 1, t: g.t, lx: 0, ly: 0, blink: 0, sq: 0 }, null), 0.75, '110,200,255');
     c.globalAlpha = 1;
   }
+  if (!spr) {
+    var ab0 = atkBody(), hsc = lib.hero().spec.scale;
+    var lift0 = api.scene && api.scene.heroLift ? api.scene.heroLift() : 0;   // e.g. standing on a bobbing deck
+    c.save(); c.translate(p.x + ab0.x, p.y * K + ab0.y - ab0.hop - lift0); c.scale(hsc * ab0.sx, hsc * ab0.sy); c.translate(-p.x, -p.y * K);
+  }
   drawHeroWeapon(c, false); drawShield(c, false);
-  flashDraw(c, p.x, p.y * K, heroFn(dashing, heroDir(), p.anim, heroPose(heroDir())), amt);
+  if (spr) {
+    var fr = spriteFrame(), sw = spriteSword(), ab = atkBody(), hd = ab.spin > 0 ? spinDir(heroDir(), ab.spin) : heroDir();
+    flashDraw(c, Math.round(p.x + ab.x), Math.round(p.y * K + ab.y - ab.hop), heroSprFn(dashing, hd, fr.pose, fr.f, sw ? sw.armSide : 1, ab), amt);
+  }
+  else flashDraw(c, p.x, p.y * K, heroFn(dashing, heroDir(), p.anim, heroPose(heroDir())), amt);
   drawHeroWeapon(c, true); drawShield(c, true);
+  if (!spr) c.restore();
+}
+function drawCreature(c, e) {
+  var sp = lib.creature().spec, a = e.type === 'turret' ? e.aim : e.face, dx = P.x - e.x, dy = (P.y - e.y) * K, dl = Math.hypot(dx, dy) || 1;
+  lib.creatureD(c, 0, 0, { t: W.t + e.seed, move: (e.state === 'chase' || e.state === 'lunge') ? 1 : 0, phase: (W.t + e.seed) * 9 * sp.stepRate,
+    dir: Math.cos(a) >= 0 ? 1 : -1, look: [dx / dl, dy / dl], state: e.state, k: e.dur ? e.t / e.dur : 0 });
 }
 function drawEnemy(c, e) {
-  var fn = (e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss);
+  var fn = e.creature ? drawCreature : ((e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss));
   if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
   var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0;
   flashDraw(c, e.x + jx, e.y * K, function (s) {
@@ -2125,20 +2727,24 @@ function drawHud(c) {
 
 function render(c) {
   if (!groundCv) buildGround();
-  c.setTransform(2, 0, 0, 2, 0, 0); c.lineJoin = 'round'; c.lineCap = 'round';
+  var PS = api.pixelScale || 2;   // canvas pixels per world unit; editor pages raise it so a large canvas stays sharp
+  c.setTransform(PS, 0, 0, PS, 0, 0); c.lineJoin = 'round'; c.lineCap = 'round';
   c.save();
-  c.drawImage(groundCv, 0, 0, SW, SH);
+  // api.scene lets a tool page swap in its own camera, ground and extra y-sorted items
+  var sc = api.scene;
+  if (sc) sc.begin(c, P); else c.drawImage(groundCv, 0, 0, SW, SH);
   drawTelegraphs(c);
   var i, items = [];
   // shadows
   c.fillStyle = 'rgba(30,70,50,0.28)';
   function sh2(x, y, rx, ry) { c.beginPath(); c.ellipse(x, y * K, rx, ry * K, 0, 0, Math.PI * 2); c.fill(); }
-  for (i = 0; i < W.pillars.length; i++) sh2(W.pillars[i].x + 2, W.pillars[i].y, 9, 5);
+  for (i = 0; i < W.pillars.length; i++) if (!W.pillars[i].hide) sh2(W.pillars[i].x + 2, W.pillars[i].y, 9, 5);
   for (i = 0; i < W.enemies.length; i++) { var en = W.enemies[i]; if (!en.dead) sh2(en.x, en.y, en.r * 1.3, en.r * 0.8); }
-  if (!P.dead) sh2(P.x, P.y, 9, 4);
+  if (!P.dead && !(sc && sc.noHeroShadow)) sh2(P.x, P.y, 9, 4);
   for (i = 0; i < W.projs.length; i++) sh2(W.projs[i].x, W.projs[i].y, 3, 2);
   // pillars
   W.pillars.forEach(function (pl) {
+    if (pl.hide) return;
     items.push({ y: pl.y, f: function () {
       lib.rr(c, pl.x - 8, pl.y * K - 3, 16, 5, 2, '#8f8ba6', 1.8);
       lib.rr(c, pl.x - 5.5, pl.y * K - 26, 11, 24, 2, '#7a7690', 1.8);
@@ -2150,6 +2756,7 @@ function render(c) {
   W.projs.forEach(function (pr) { items.push({ y: pr.y + 1, f: function () { drawProj(c, pr); } }); });
   W.parts.forEach(function (q) { if (q.k === 'dust') items.push({ y: q.y, f: function () { drawPart(c, q); } }); });
   if (!P.dead) items.push({ y: P.y, f: function () { drawHero(c); } });
+  if (sc) sc.items(items);
   items.sort(function (a, b) { return a.y - b.y; });
   for (i = 0; i < items.length; i++) items[i].f();
   for (i = 0; i < W.parts.length; i++) if (W.parts[i].k !== 'dust') drawPart(c, W.parts[i]);
@@ -2160,8 +2767,9 @@ function render(c) {
     if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
     c.stroke();
   }
+  if (sc && sc.end) sc.end(c, P);
   c.restore();
-  drawHud(c);
+  if (!(sc && sc.noHud)) drawHud(c);
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
@@ -2173,8 +2781,18 @@ if (typeof module !== 'undefined') module.exports = Combat;
 
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-  Combat.init(GameArt.lib);
-  var S = Combat.S;
+
+  // The canvas is shown large, so give it enough pixels to stay sharp at its displayed size.
+  function fitCanvas() {
+    var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4;
+    if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); }
+    Combat.api.pixelScale = ps;
+  }
+  fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
+  var lib = GameArt.lib;
+  Combat.init(lib);
+  var S = Combat.S; S.look = 'classic';
+  Combat.clear();
   var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
   var held = {};
 
@@ -2218,15 +2836,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
   };
   Combat.api.sfx = function (n, v) { if (SFX[n]) SFX[n](v); };
 
-  /* input */
+  /* input: game keys are ignored while typing in a text field */
+  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')); }
   window.addEventListener('keydown', function (e) {
-    if (!codes[e.code]) return;
+    if (!codes[e.code] || typing(e)) return;
     e.preventDefault(); ac();
     if (e.repeat) return;
     held[e.code] = true; Combat.key(e.code, true);
   });
   window.addEventListener('keyup', function (e) {
-    if (!codes[e.code]) return;
+    if (!codes[e.code] || typing(e)) return;
     e.preventDefault(); held[e.code] = false; Combat.key(e.code, false);
   });
   window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
@@ -2239,69 +2858,244 @@ if (typeof module !== 'undefined') module.exports = Combat;
   window.addEventListener('mouseup', function (e) { Combat.button(e.button, false); });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  /* ui */
-  var aimDesc = {
-    facing: 'Attacks go where you are facing, with a wide swing and a small lunge. No aiming needed.',
-    soft: 'Attacks snap to the nearest enemy in front of you, and you turn smoothly to face it. With nothing there, you swing forward.',
-    lock: 'Press Q to lock onto the nearest enemy. You face it and strafe around it with WASD. Press Q again to release.'
-  };
-  var aimBtns = document.querySelectorAll('#aim button'), aimdesc = document.getElementById('aimdesc');
-  function setAim(m) {
-    S.aim = m;
-    for (var i = 0; i < aimBtns.length; i++) aimBtns[i].setAttribute('aria-pressed', aimBtns[i].getAttribute('data-aim') === m ? 'true' : 'false');
-    aimdesc.textContent = aimDesc[m];
+  /* ---------- sprite settings ---------- */
+  var BODY = [
+    { k: 'scale', label: 'Overall size', min: 0.5, max: 2, step: 0.05 },
+    { k: 'headW', label: 'Head width', min: 0.7, max: 1.4, step: 0.02 },
+    { k: 'headH', label: 'Head height', min: 0.7, max: 1.4, step: 0.02 },
+    { k: 'bodyW', label: 'Body width', min: 0.7, max: 1.5, step: 0.02 },
+    { k: 'bodyH', label: 'Body height', min: 0.7, max: 1.5, step: 0.02 },
+    { k: 'legL', label: 'Leg length', min: 0.6, max: 2, step: 0.05 },
+    { k: 'legW', label: 'Leg width', min: 0.6, max: 1.6, step: 0.05 },
+    { k: 'armL', label: 'Arm length', min: 0.7, max: 1.5, step: 0.05 },
+    { k: 'armW', label: 'Arm width', min: 0.6, max: 1.6, step: 0.05 },
+    { k: 'eyeSize', label: 'Eye size', min: 0.5, max: 1.6, step: 0.05 },
+    { k: 'eyewearSize', label: 'Eyewear size', min: 0.6, max: 1.6, step: 0.05 }
+  ];
+  var ANIM = [
+    { k: 'walkRate', label: 'Walk speed', min: 0.5, max: 2, step: 0.05 },
+    { k: 'bob', label: 'Walk bob', min: 0, max: 2.5, step: 0.05 },
+    { k: 'stride', label: 'Stride', min: 0, max: 2, step: 0.05 },
+    { k: 'armSwing', label: 'Arm swing', min: 0, max: 2.5, step: 0.05 },
+    { k: 'sway', label: 'Side-to-side sway', min: 0, max: 1.5, step: 0.05 },
+    { k: 'stance', label: 'Stance width', min: 0.4, max: 1.3, step: 0.05 },
+    { k: 'lean', label: 'Attack lean', min: 0, max: 2.5, step: 0.05 },
+    { k: 'atkPower', label: 'Attack power', min: 0, max: 2, step: 0.1 },
+    { k: 'bladeLen', label: 'Blade length', min: 0.5, max: 1.8, step: 0.05 },
+    { k: 'slashSize', label: 'Slash size', min: 0.6, max: 2, step: 0.05 },
+    { k: 'slashWidth', label: 'Slash thickness', min: 0.15, max: 0.9, step: 0.01 }
+  ];
+  var TONE = [
+    { k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 },
+    { k: 'sat', label: 'Saturation', min: 0, max: 2, step: 0.05 },
+    { k: 'lum', label: 'Brightness', min: 0.5, max: 1.5, step: 0.05 }
+  ];
+  var TOGGLES = [{ k: 'blush', label: 'Blush' }];
+  var COLS = [['skin', 'Skin'], ['hair', 'Hair'], ['coat', 'Coat'], ['vest', 'Vest'], ['pants', 'Trousers'], ['boot', 'Boots'], ['trim', 'Brass trim'],
+    ['lens', 'Lenses'], ['eye', 'Eyes'], ['line', 'Outline'], ['blade', 'Blade'], ['slash', 'Slash']];
+  var EYEWEAR = ['None', 'Goggles up', 'Goggles on', 'Round glasses', 'Square glasses', 'Shades', 'Monocle'];
+  var ATTACKS = [['Arm only', 'The old version: the body stands still and only the arm swings.'],
+    ['Step-in', 'A small step back, then a step into the swing with a little stretch. Light and quick.'],
+    ['Lunge', 'A deeper pull back and a long lunge forward, a held pose at full reach, then a slide back. The most forward drive.'],
+    ['Hop chop', 'A short hop in the wind-up and a hard landing that squashes the body. Feels heavy.']];
+  var NUM = BODY.concat(ANIM, TONE);
+  var SHAPE_KEYS = BODY.concat(ANIM).map(function (p) { return p.k; });
+
+  var SHAPES = [
+    { name: 'Default', set: {} },
+    { name: 'Chibi', set: { headW: 1.2, headH: 1.2, bodyH: 0.85, legL: 0.7, armL: 0.9, eyeSize: 1.3 } },
+    { name: 'Lean', set: { headW: 0.9, headH: 0.88, bodyH: 1.1, legL: 1.45, armL: 1.2, eyeSize: 0.8, stride: 1.3 } },
+    { name: 'Tall', set: { headW: 0.85, headH: 0.85, bodyH: 1.2, legL: 1.7, armL: 1.3, eyeSize: 0.8, stride: 1.4 } },
+    { name: 'Scout', set: { bodyW: 0.85, legL: 1.2, walkRate: 1.4, stride: 1.3, bladeLen: 0.8 } },
+    { name: 'Brute', set: { scale: 1.4, headW: 0.85, headH: 0.85, bodyW: 1.4, bodyH: 1.15, legL: 0.8, legW: 1.4, armL: 1.2, armW: 1.5, walkRate: 0.8, bladeLen: 1.3, slashSize: 1.3 } },
+    { name: 'Tiny', set: { scale: 0.75, walkRate: 1.4 } },
+    { name: 'Boss', set: { scale: 1.8, bodyW: 1.2, armW: 1.3, walkRate: 0.7, bladeLen: 1.2, slashSize: 1.4 } }
+  ];
+  var PALETTES = [
+    { name: 'Default', set: {}, col: {} },
+    { name: 'Night', set: { sat: 0.6, lum: 0.75 }, col: { coat: '#2b4a6b' } },
+    { name: 'Crimson', set: {}, col: { coat: '#a8323a', vest: '#3a2a30', pants: '#2a2230', hair: '#3a2a26', blade: '#ffb09a', slash: '#ff8a6a' } },
+    { name: 'Forest', set: {}, col: { coat: '#4a7a3a', vest: '#6b4a2a', pants: '#4a3a2a', hair: '#c98a3a', lens: '#b8f27f', blade: '#c8f59a', slash: '#b8f27f' } },
+    { name: 'Ghost', set: { sat: 0.25, lum: 1.25 }, col: { slash: '#ffffff', blade: '#ffffff' } },
+    { name: 'Rival', set: { hue: 180 }, col: {} },
+    { name: 'Rust bot', set: {}, col: { skin: '#9aa3ad', hair: '#6b6f7a', coat: '#a5562e', vest: '#6b6f7a', pants: '#4b4f58', boot: '#2a2c33', trim: '#c9c2a8', lens: '#ff5a4a', eye: '#ff5a4a', blade: '#ffc09a', slash: '#ff8a4a' } }
+  ];
+
+  var curId = 'hero', spec = null, inputs = {}, outputs = {}, swatch = {}, toggleBtn = {};
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function defOf() { return clone(lib.heroDef); }
+  function snap(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
+  function fmt(p, v) { return p.step < 1 ? v.toFixed(p.step < 0.1 || (p.step * 100) % 10 ? 2 : 1) : String(v); }
+  var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg');
+
+  function apply() {
+    for (var i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : lib.heroDef[p.k]); }
+    var dflt = lib.heroDef;
+    if (!isFinite(Number(spec.eyewear))) spec.eyewear = dflt.eyewear;
+    if (!isFinite(Number(spec.atkStyle))) spec.atkStyle = dflt.atkStyle;
+    spec.eyewear = Math.max(0, Math.min(EYEWEAR.length - 1, Math.round(Number(spec.eyewear)) || 0));
+    spec.atkStyle = Math.max(0, Math.min(ATTACKS.length - 1, Math.round(Number(spec.atkStyle)) || 0));
+    spec = lib.setHero(spec);
+    for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
+    for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
+    for (i = 0; i < TOGGLES.length; i++) toggleBtn[TOGGLES[i].k].setAttribute('aria-pressed', spec[TOGGLES[i].k] ? 'true' : 'false');
+    choice('eyewear', spec.eyewear); choice('attacks', spec.atkStyle);
+    document.getElementById('atkdesc').textContent = ATTACKS[spec.atkStyle][1];
+    if (document.activeElement !== json) json.value = JSON.stringify(spec);
+    drawSheet();
+    try { localStorage.setItem('herotest.' + curId, JSON.stringify(spec)); } catch (e) {}
   }
-  for (var i = 0; i < aimBtns.length; i++) aimBtns[i].addEventListener('click', function (e) { setAim(e.currentTarget.getAttribute('data-aim')); e.currentTarget.blur(); });
-  setAim('soft');
-  var rngBtns = document.querySelectorAll('#rng button'), rngdesc = document.getElementById('rngdesc');
-  var rngTxt = { mouse: 'F fires toward the mouse cursor.', auto: 'F fires at the nearest enemy in front of you, or straight ahead. No mouse needed.' };
-  function setRng(m) {
-    S.ranged = m;
-    for (var i = 0; i < rngBtns.length; i++) rngBtns[i].setAttribute('aria-pressed', rngBtns[i].getAttribute('data-r') === m ? 'true' : 'false');
-    rngdesc.textContent = rngTxt[m];
+
+  function sliders(hostId, list) {
+    var host = document.getElementById(hostId);
+    list.forEach(function (p) {
+      var row = document.createElement('label'); row.className = 'row';
+      var name = document.createElement('span'); name.textContent = p.label;
+      var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step;
+      var out = document.createElement('output');
+      inp.addEventListener('input', function () { spec[p.k] = parseFloat(inp.value); apply(); });
+      inp.addEventListener('change', function () { inp.blur(); });
+      row.appendChild(name); row.appendChild(inp); row.appendChild(out); host.appendChild(row);
+      inputs[p.k] = inp; outputs[p.k] = out;
+    });
   }
-  for (var j = 0; j < rngBtns.length; j++) rngBtns[j].addEventListener('click', function (e) { setRng(e.currentTarget.getAttribute('data-r')); e.currentTarget.blur(); });
-  setRng('mouse');
-  var wgtBtns = document.querySelectorAll('#wgt button'), wgtdesc = document.getElementById('wgtdesc');
-  var wgtTxt = { snappy: 'Short pauses and a light slow-mo beat. Hits land fast and combos flow.', normal: 'The previous setting: longer pauses and a slow-mo beat on heavy hits.', heavy: 'Long pauses and stronger knockback. Each hit feels big but the pace is slower.' };
-  function setWgt(m) {
-    S.weight = m;
-    for (var i = 0; i < wgtBtns.length; i++) wgtBtns[i].setAttribute('aria-pressed', wgtBtns[i].getAttribute('data-w') === m ? 'true' : 'false');
-    wgtdesc.textContent = wgtTxt[m];
+  sliders('pbody', BODY); sliders('panim', ANIM); sliders('ptone', TONE);
+
+  var togHost = document.getElementById('toggles');
+  TOGGLES.forEach(function (t) {
+    var b = document.createElement('button'); b.textContent = t.label;
+    b.addEventListener('click', function () { spec[t.k] = spec[t.k] ? 0 : 1; apply(); b.blur(); });
+    togHost.appendChild(b); toggleBtn[t.k] = b;
+  });
+
+  function choice(hostId, v) { var b = document.querySelectorAll('#' + hostId + ' button'); for (var n = 0; n < b.length; n++) b[n].setAttribute('aria-pressed', n === v ? 'true' : 'false'); }
+  function choices(hostId, names, key) {
+    var host = document.getElementById(hostId);
+    names.forEach(function (nm, n) {
+      var b = document.createElement('button'); b.textContent = nm;
+      b.addEventListener('click', function () { spec[key] = n; apply(); b.blur(); });
+      host.appendChild(b);
+    });
   }
-  for (var w = 0; w < wgtBtns.length; w++) wgtBtns[w].addEventListener('click', function (e) { setWgt(e.currentTarget.getAttribute('data-w')); e.currentTarget.blur(); });
-  setWgt('snappy');
-  var crtBtns = document.querySelectorAll('#crt button');
-  function setCrit(v) {
-    S.crit = v;
-    for (var i = 0; i < crtBtns.length; i++) crtBtns[i].setAttribute('aria-pressed', parseFloat(crtBtns[i].getAttribute('data-c')) === v ? 'true' : 'false');
+  choices('eyewear', EYEWEAR, 'eyewear'); choices('attacks', ATTACKS.map(function (q) { return q[0]; }), 'atkStyle');
+
+  var swHost = document.getElementById('swatches');
+  COLS.forEach(function (cdef) {
+    var lab = document.createElement('label'); lab.className = 'sw';
+    var inp = document.createElement('input'); inp.type = 'color';
+    var name = document.createElement('span'); name.textContent = cdef[1];
+    inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); });
+    lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
+  });
+
+  function buttons(hostId, list, fn) {
+    var host = document.getElementById(hostId);
+    list.forEach(function (item) {
+      var b = document.createElement('button'); b.textContent = item.name;
+      b.addEventListener('click', function () { fn(item); b.blur(); });
+      host.appendChild(b);
+    });
   }
-  for (var k = 0; k < crtBtns.length; k++) crtBtns[k].addEventListener('click', function (e) { setCrit(parseFloat(e.currentTarget.getAttribute('data-c'))); e.currentTarget.blur(); });
-  setCrit(0.15);
-  var optdesc = document.getElementById('optdesc');
-  function opt(id, key) {
-    var b = document.getElementById(id);
-    b.addEventListener('click', function () { S[key] = !S[key]; b.setAttribute('aria-pressed', S[key] ? 'true' : 'false'); upd(); b.blur(); });
+  buttons('shapes', SHAPES, function (v) {
+    var d = defOf(), k;
+    SHAPE_KEYS.forEach(function (key) { spec[key] = d[key]; });
+    for (k in v.set) spec[k] = v.set[k];
+    apply();
+  });
+  buttons('palettes', PALETTES, function (v) {
+    var d = defOf(), k;
+    spec.col = d.col; spec.hue = d.hue; spec.sat = d.sat; spec.lum = d.lum;
+    for (k in v.set) spec[k] = v.set[k];
+    for (k in v.col) spec.col[k] = v.col[k];
+    apply();
+  });
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function hsl(h, s, l) {
+    h = ((h % 360) + 360) % 360; var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; } else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; } else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+    function h2(v) { v = Math.round((v + m) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
+    return '#' + h2(r) + h2(g) + h2(b);
   }
-  opt('shield', 'shield'); opt('juice', 'juice'); opt('sound', 'sound');
-  function upd() {
-    var t = [];
-    t.push(S.shield ? 'Shield: wide parry window and strong blocking.' : 'No shield: parrying still works, but the window is tight and blocking is weak.');
-    t.push(S.juice ? 'Juice on: smooth movement, lunges, hit pauses, knockback, squash, impact rings, slow-mo on big hits, flashes and swing trails.' : 'Juice off: instant movement, slow stiff swings and no feedback.');
-    optdesc.textContent = t.join(' ');
+  document.getElementById('random').addEventListener('click', function (e) {
+    var d = defOf();
+    BODY.forEach(function (p) { if (p.k !== 'scale') spec[p.k] = rnd(p.min + (p.max - p.min) * 0.15, p.max - (p.max - p.min) * 0.15); });
+    spec.scale = [0.75, 1, 1, 1, 1.25, 1.5][Math.floor(Math.random() * 6)];
+    spec.hue = 0; spec.sat = 1; spec.lum = 1;
+    var coat = rnd(0, 360), glow = rnd(0, 360);
+    spec.col = d.col;
+    spec.col.coat = hsl(coat, rnd(0.3, 0.6), rnd(0.28, 0.42));
+    spec.col.pants = hsl(coat + rnd(120, 240), rnd(0.15, 0.35), rnd(0.18, 0.28));
+    spec.col.hair = hsl(rnd(10, 50), rnd(0.3, 0.7), rnd(0.15, 0.6));
+    spec.col.skin = ['#ffd8b0', '#e8b88a', '#c98e62', '#8f5e3c', '#fbe0c8'][Math.floor(Math.random() * 5)];
+    spec.col.lens = hsl(glow, 0.8, 0.72); spec.col.blade = hsl(glow, 0.85, 0.66); spec.col.slash = hsl(glow, 0.95, 0.78);
+    apply(); e.currentTarget.blur();
+  });
+  document.getElementById('resetall').addEventListener('click', function (e) { spec = defOf(); apply(); e.currentTarget.blur(); });
+
+  /* settings as text */
+  document.getElementById('copy').addEventListener('click', function (e) {
+    json.value = JSON.stringify(spec);
+    var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json.value).then(done, fail); else fail();
+    e.currentTarget.blur();
+  });
+  document.getElementById('applyjson').addEventListener('click', function (e) {
+    var o = null;
+    try { o = JSON.parse(json.value); } catch (err) {}
+    if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing was changed.'; return; }
+    spec = o; json.blur(); apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
+  });
+
+  /* frame sheet */
+  var sheet = document.getElementById('sheet'), sctx = sheet.getContext('2d');
+  function drawSheet() {
+    var dirs = ['down', 'left', 'right', 'up'], r, f;
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.fillStyle = '#d9c9a0'; sctx.fillRect(0, 0, 500, 400);
+    sctx.fillStyle = 'rgba(60,40,20,0.12)'; sctx.fillRect(100, 0, 2, 400);
+    sctx.setTransform(2, 0, 0, 2, 0, 0); sctx.lineJoin = 'round'; sctx.lineCap = 'round';
+    for (r = 0; r < 4; r++) for (f = 0; f < 5; f++) {
+      var an = { phase: f === 0 ? 0 : (f - 1) * Math.PI / 2 + 0.5, amt: f === 0 ? 0 : 1, t: 0.7, lx: 0, ly: 0, blink: 0, sq: 0 };
+      sctx.save(); sctx.beginPath(); sctx.rect(f * 50, r * 50, 50, 50); sctx.clip();
+      sctx.translate(f * 50 + 25, r * 50 + 46); sctx.scale(0.72, 0.72);
+      lib.playerD(sctx, 0, 0, dirs[r], an, null);
+      sctx.restore();
+    }
   }
-  upd();
-  function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(); b.blur(); }); }
+
+  /* sprite picker */
+  var sprHost = document.getElementById('sprites'), sprBtns = {};
+  function pick(id) {
+    curId = id; spec = null;
+    try { spec = JSON.parse(localStorage.getItem('herotest.' + id)); } catch (e) {}
+    if (!spec || typeof spec !== 'object') spec = defOf();
+    for (var k in sprBtns) sprBtns[k].setAttribute('aria-pressed', k === id ? 'true' : 'false');
+    apply();
+  }
+  ['hero'].forEach(function (id) {
+    var b = document.createElement('button'); b.textContent = 'Hero';
+    b.addEventListener('click', function () { pick(id); b.blur(); });
+    sprHost.appendChild(b); sprBtns[id] = b;
+  });
+  pick('hero');
+
+  /* arena */
+  var noDmg = true;
+  function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(b); b.blur(); }); }
   act('sbot', function () { Combat.spawn('bot'); });
   act('sturret', function () { Combat.spawn('turret'); });
   act('sbossbot', function () { Combat.spawn('bossbot'); });
   act('sboss', function () { Combat.spawn('boss'); });
   act('sclear', function () { Combat.clear(); });
-  act('sreset', function () { Combat.reset(); });
+  act('nodmg', function (b) { noDmg = !noDmg; b.setAttribute('aria-pressed', noDmg ? 'true' : 'false'); });
+  act('sound', function (b) { S.sound = !S.sound; b.setAttribute('aria-pressed', S.sound ? 'true' : 'false'); });
 
   var last = performance.now();
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (noDmg) { var P = Combat.dbg().P; if (!P.dead) P.hp = P.maxHp; }
     Combat.update(dt); Combat.render(ctx);
     requestAnimationFrame(frame);
   }

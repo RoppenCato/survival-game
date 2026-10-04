@@ -34,12 +34,33 @@ templates/          the HTML shells for each page
 tools/build.py      stitches templates and source into single-file pages in dist/
 tools/visual/       scripts that render pose sheets (swings, walking, guarding) to PNG
 tests/              headless checks for combat behaviour (see tests/README.md)
-dist/               built pages: combat-test, style-test, style-lab, walk-test and zone-world (.html)
+dist/               built pages: index, the three editors, combat-arena, world-prototype and three older experiments (.html)
 ```
 
 ## Run it
 
-Open `dist/combat-test.html` in a desktop browser. It is a single file with no dependencies.
+`npm start` rebuilds and opens the workbench (`dist/index.html`), a start page that links to every editor
+(Create) and every playable page (Game).
+
+The pages are single files with no dependencies. The editors are `character-editor.html`, `object-editor.html`
+and `environment-editor.html`; the playable pages are `combat-arena.html` and `world-prototype.html`.
+
+Open `dist/character-editor.html` to tune a character: the same arena, plus sliders for body proportions and
+animation, colour pickers, tone controls and preset variations. Settings can be copied out as text.
+
+Open `dist/creature-editor.html` to design monsters, bosses and critters: body plan, features, colours,
+movement and how they warn before attacking, with a live arena to fight them in.
+
+Open `dist/object-editor.html` to tune world objects (trees, rocks, furniture, machines and more, by category):
+size, shape, surface and colour, with the hero walking next to them for scale.
+
+Open `dist/environment-editor.html` to lay out a patch of world: biome, ground, which objects grow there,
+how dense, how grouped and how open, with a readout of open ground and room for base plots.
+
+Open `dist/base-editor.html` to build a base piece by piece: floors, walls on tile edges, doors, windows and
+furniture. Closed rooms get a roof automatically, and it fades when you walk in.
+
+Open `dist/sea-editor.html` to try travel by boat: board at the dock, sail between islands, step ashore.
 
 Rebuild after changing anything in `src/` or `templates/`:
 

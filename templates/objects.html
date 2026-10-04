@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Object Editor</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:72ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto}
+#poses,#sheet{max-width:900px}
+canvas{display:block;width:100%;height:auto;border-radius:8px;background:#20262c;cursor:crosshair;touch-action:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel{margin-top:12px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
+.group{display:flex;flex-wrap:wrap;gap:8px}
+button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
+button:hover{background:var(--btnh)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+#objs button{min-height:36px;padding:0 11px;font-size:.9rem}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--ink2)}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">&larr; Back to menu</a>
+  <h1>Object Editor</h1>
+  <p class="lede">Pick a world object, then change its size, shape, surface and colour and see it next to the hero. Walk around it to judge the scale. The settings can be copied out as text and pasted back in later.</p>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Scene"></canvas></div>
+      <section class="panel">
+        <h2>View</h2>
+        <div id="pview"></div>
+        <div class="group" style="margin-top:8px">
+          <button id="fit">Fit to view</button>
+          <button id="night" aria-pressed="false">Night lighting</button>
+          <button id="foot" aria-pressed="false">Show footprint</button>
+        </div>
+        <h2 class="more">Copies side by side</h2>
+        <div class="group" id="copies"></div>
+        <h2 class="more">Ground</h2>
+        <div class="group" id="grounds"></div>
+        <p class="desc" id="info"></p>
+        <h2 class="more">Controls</h2>
+        <dl class="keys">
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
+          <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+          <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack</dd>
+          <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block</dd>
+        </dl>
+      </section>
+    </div>
+
+    <div class="right">
+      <section class="panel">
+        <h2>Category</h2>
+        <div class="group" id="cats"></div>
+        <h2 class="more">Object</h2>
+        <div class="group" id="objs"></div>
+      </section>
+      <section class="panel">
+        <h2>Shape variations</h2>
+        <div class="group" id="shapes"></div>
+        <h2 class="more">Colour variations</h2>
+        <div class="group" id="palettes"></div>
+        <h2 class="more">Drawing style</h2>
+        <div class="group" id="looks"></div>
+        <div class="group" style="margin-top:12px">
+          <button id="nextvar">Next variation</button>
+          <button id="resetall">Reset this object</button>
+        </div>
+        <p class="desc">Shape and colour variations are independent, so you can combine one of each. Next variation redraws the same object with different random details.</p>
+      </section>
+      <section class="panel">
+        <h2>Size</h2>
+        <div id="psize"></div>
+        <div class="group" style="margin-top:8px"><button id="flip" aria-pressed="false">Mirror</button></div>
+      </section>
+      <section class="panel">
+        <h2>Shape</h2>
+        <div id="pshape"></div>
+        <p class="desc">Wonkiness, Thinness and Fullness mostly affect trees and plants. Roughness affects every outline.</p>
+      </section>
+      <section class="panel">
+        <h2>Surface</h2>
+        <div id="psurf"></div>
+      </section>
+      <section class="panel">
+        <h2>Colour</h2>
+        <div id="pcol"></div>
+      </section>
+      <section class="panel">
+        <h2>Settings as text</h2>
+        <textarea id="json" spellcheck="false" aria-label="Object settings as text"></textarea>
+        <div class="group" style="margin-top:8px">
+          <button id="copy">Copy</button>
+          <button id="applyjson">Apply text</button>
+        </div>
+        <p class="desc" id="jsonmsg">Copy this to keep a look. Paste one in and press Apply text to load it.</p>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+__ART__
+__LIB__
+__COMBAT__
+(function () {
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+
+  // The canvas is shown large, so give it enough pixels to stay sharp at its displayed size.
+  function fitCanvas() {
+    var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4;
+    if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); }
+    Combat.api.pixelScale = ps;
+  }
+  fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
+  var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75;
+  Combat.init(lib);
+  var S = Combat.S; S.look = 'classic'; S.sound = false;
+  Combat.clear();
+  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyJ: 1, KeyK: 1, ShiftLeft: 1, ShiftRight: 1 };
+  var held = {};
+
+  /* input: game keys are ignored while typing in a text field */
+  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')); }
+  window.addEventListener('keydown', function (e) {
+    if (!codes[e.code] || typing(e)) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    held[e.code] = true; Combat.key(e.code, true);
+  });
+  window.addEventListener('keyup', function (e) {
+    if (!codes[e.code] || typing(e)) return;
+    e.preventDefault(); held[e.code] = false; Combat.key(e.code, false);
+  });
+  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
+  cv.addEventListener('mousedown', function (e) { Combat.button(e.button, true); e.preventDefault(); });
+  window.addEventListener('mouseup', function (e) { Combat.button(e.button, false); });
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  /* ---------- the chosen world style (Night Forest, Painted) ---------- */
+  var BASE = { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, round: 0.85, spindly: 0.12, lush: 0.95, twist: 0.12, sparkle: 0.8, texture: 0.6, outlineW: 1.1, outlineDark: 0.86, rough: 0.08, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4, look: 1, seed: 7, scaleRef: 0 };
+
+  /* ---------- objects by category ---------- */
+  var CATS = [
+    { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'pine', 'pineBig', 'willow', 'birch', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
+    { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'bellFlower', 'flowerBed', 'tallGrass', 'mushrooms', 'mushRing', 'snowBush', 'emberBush'] },
+    { name: 'Rocks and terrain', ground: 'grass', solid: 12, list: ['rock', 'snowRock', 'emberRock', 'standingStone', 'cliff', 'rubble', 'iceCrystal', 'iceCrystalBig', 'log', 'stump', 'vent', 'ventBig', 'waterfall'] },
+    { name: 'Furniture', ground: 'plank', solid: 10, list: ['bench', 'chair', 'table', 'bed', 'locker', 'shelf', 'workbench', 'crate', 'barrel', 'haystack', 'cart'] },
+    { name: 'Village and ruins', ground: 'path', solid: 12, list: ['well', 'signpost', 'fence', 'scarecrow', 'ruinHouse', 'waterWheel', 'dock', 'campfire', 'banner', 'gatePost', 'brokenPillar'] },
+    { name: 'Lights', ground: 'path', solid: 6, list: ['lamp', 'lampDead', 'hangLamp', 'pendant', 'wallLamp', 'skylight'] },
+    { name: 'Factory machines', ground: 'plate', solid: 16, list: ['engine', 'furnace', 'vat', 'tank', 'conveyor', 'console', 'valve', 'steamVent', 'gearBig', 'cable', 'scrap'] },
+    { name: 'Walls and structure', ground: 'plate', solid: 14, list: ['pillar', 'pillarMid', 'wallBlock', 'wallTop', 'wallFace', 'wallCol', 'backWall', 'backWallDoor'] },
+    { name: 'Things to use', ground: 'plate', solid: 8, list: ['bell', 'leverOff', 'leverOn', 'keyItem', 'fuseItem', 'gateBar', 'gateLock', 'pedestal'] }
+  ];
+  var GROUND_FOR = { snowPine: 'snow', snowPineBig: 'snow', snowRock: 'snow', snowBush: 'snow', iceCrystal: 'snow', iceCrystalBig: 'snow', deadTree: 'ash', emberRock: 'ash', emberBush: 'ash', vent: 'ash', ventBig: 'ash', cliff: 'rock' };
+  var NO_SOLID = { hangLamp: 1, pendant: 1, skylight: 1, wallLamp: 1, keyItem: 1, fuseItem: 1, cable: 1, dock: 1 };
+  var GROUNDS = [['grass', 'Grass'], ['grassDark', 'Dark grass'], ['path', 'Path'], ['plank', 'Planks'], ['snow', 'Snow'], ['ash', 'Ash'], ['rock', 'Rock'], ['plate', 'Factory floor'], ['flat', 'Plain grey']];
+  CATS.forEach(function (cat) { cat.list = cat.list.filter(function (n) { return !!kit.PROPS[n]; }); });
+  function label(n) { var s = n.replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function catOf(name) { for (var i = 0; i < CATS.length; i++) if (CATS[i].list.indexOf(name) >= 0) return CATS[i]; return CATS[0]; }
+
+  /* ---------- settings ---------- */
+  var SIZE = [
+    { k: 'scale', label: 'Overall size', min: 0.4, max: 2.5, step: 0.05 },
+    { k: 'wide', label: 'Width', min: 0.5, max: 1.8, step: 0.05 },
+    { k: 'tall', label: 'Height', min: 0.5, max: 1.8, step: 0.05 },
+    { k: 'solid', label: 'Footprint', min: 0, max: 40, step: 1 }
+  ];
+  var SHAPE = [
+    { k: 'rough', label: 'Roughness', min: 0, max: 0.6, step: 0.01 },
+    { k: 'twist', label: 'Wonkiness', min: 0, max: 1, step: 0.01 },
+    { k: 'spindly', label: 'Thinness', min: 0, max: 1, step: 0.01 },
+    { k: 'lush', label: 'Fullness', min: 0.2, max: 1.4, step: 0.01 },
+    { k: 'round', label: 'Roundness', min: 0, max: 1.2, step: 0.01 },
+    { k: 'seed', label: 'Variation number', min: 1, max: 60, step: 1 }
+  ];
+  var SURF = [
+    { k: 'texture', label: 'Brush texture', min: 0, max: 1.5, step: 0.01 },
+    { k: 'shade', label: 'Shading depth', min: 0, max: 1, step: 0.01 },
+    { k: 'outlineW', label: 'Outline width', min: 0.4, max: 2.5, step: 0.05 },
+    { k: 'outlineDark', label: 'Outline darkness', min: 0, max: 1, step: 0.01 },
+    { k: 'glow', label: 'Glow', min: 0, max: 1.5, step: 0.05 }
+  ];
+  var COL = [
+    { k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 },
+    { k: 'accentHue', label: 'Glow colour', min: 0, max: 360, step: 2 },
+    { k: 'sat', label: 'Saturation', min: 0, max: 1.8, step: 0.05 },
+    { k: 'bright', label: 'Brightness', min: -15, max: 15, step: 1 },
+    { k: 'contrast', label: 'Contrast', min: 0.7, max: 1.4, step: 0.02 }
+  ];
+  var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.4, max: 3, step: 0.05 }];
+  var NUM = SIZE.concat(SHAPE, SURF, COL);
+  var SHAPE_KEYS = ['scale', 'wide', 'tall', 'rough', 'twist', 'spindly', 'lush', 'round', 'texture'];
+  var COLOUR_KEYS = ['hue', 'accentHue', 'sat', 'bright', 'contrast'];
+  var SHAPES = [
+    { name: 'Default', set: {} }, { name: 'Small', set: { scale: 0.7 } }, { name: 'Large', set: { scale: 1.4 } }, { name: 'Giant', set: { scale: 2 } },
+    { name: 'Wide', set: { wide: 1.3 } }, { name: 'Tall', set: { tall: 1.3 } }, { name: 'Squat', set: { wide: 1.2, tall: 0.75 } }, { name: 'Slender', set: { wide: 0.8, tall: 1.2 } },
+    { name: 'Rough', set: { rough: 0.3, texture: 1.1 } }, { name: 'Smooth', set: { rough: 0, texture: 0.2, round: 1.1 } },
+    { name: 'Gnarled', set: { twist: 0.6, spindly: 0.45, rough: 0.18 } }, { name: 'Lush', set: { lush: 1.3, round: 1 } }, { name: 'Sparse', set: { lush: 0.4, spindly: 0.5 } }
+  ];
+  var PALETTES = [
+    { name: 'Default', set: {} }, { name: 'Autumn', set: { hue: -115, sat: 1.1 } }, { name: 'Frosted', set: { hue: 45, sat: 0.55, bright: 8 } },
+    { name: 'Withered', set: { hue: -95, sat: 0.45, bright: -3 } }, { name: 'Vivid', set: { sat: 1.35, contrast: 1.2 } },
+    { name: 'Faded', set: { sat: 0.6, contrast: 0.9, bright: 4 } }, { name: 'Gloomy', set: { sat: 0.75, bright: -7, contrast: 1.16 } }, { name: 'Alien', set: { hue: 140, accentHue: 300 } }
+  ];
+  var LOOKS = [[1, 'Painted'], [0, 'Cartoon'], [2, 'Ink']];
+
+  function defSpec(name) {
+    return { scale: 1, wide: 1, tall: 1, solid: NO_SOLID[name] ? 0 : catOf(name).solid, flip: 0, seed: 3, look: 1,
+      rough: BASE.rough, twist: BASE.twist, spindly: BASE.spindly, lush: BASE.lush, round: BASE.round,
+      texture: BASE.texture, shade: BASE.shade, outlineW: BASE.outlineW, outlineDark: BASE.outlineDark, glow: BASE.glow,
+      hue: 0, accentHue: BASE.accentHue, sat: 1, bright: 0, contrast: 1 };
+  }
+  function styleFor(sp) {
+    var p = {}, k; for (k in BASE) p[k] = BASE[k];
+    ['rough', 'twist', 'spindly', 'lush', 'round', 'texture', 'shade', 'outlineW', 'outlineDark', 'glow', 'look', 'accentHue'].forEach(function (key) { p[key] = sp[key]; });
+    p.outsideHue = BASE.outsideHue + sp.hue; p.factoryHue = BASE.factoryHue + sp.hue;
+    p.sat = BASE.sat * sp.sat; p.bright = BASE.bright + sp.bright; p.contrast = BASE.contrast * sp.contrast;
+    return p;
+  }
+
+  var cur = 'oak', spec = defSpec('oak'), copies = 1, ground = 'grass', night = false, showFoot = false, view = { zoom: 1 };
+  var baked = [], dirty = true, OBJ_X = 200, OBJ_Y = 170;
+  var inputs = {}, outputs = {}, params = {};
+  var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg'), info = document.getElementById('info');
+  function snap(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
+  function fmt(p, v) { return p.step < 1 ? v.toFixed(2) : String(v); }
+  function pressed(hostId, test) { var b = document.querySelectorAll('#' + hostId + ' button'); for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', test(b[i]) ? 'true' : 'false'); }
+
+  function apply() {
+    var d = defSpec(cur), i;
+    for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : d[p.k]); }
+    spec.flip = spec.flip ? 1 : 0; spec.look = (spec.look === 0 || spec.look === 2) ? spec.look : 1;
+    var clean = {}; for (var k in d) clean[k] = spec[k]; spec = clean;
+    for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
+    document.getElementById('flip').setAttribute('aria-pressed', spec.flip ? 'true' : 'false');
+    pressed('looks', function (b) { return Number(b.getAttribute('data-v')) === spec.look; });
+    var out = { object: cur }; for (k in spec) out[k] = spec[k];
+    if (document.activeElement !== json) json.value = JSON.stringify(out);
+    dirty = true;
+    try { localStorage.setItem('objecttest.' + cur, JSON.stringify(spec)); } catch (e) {}
+  }
+
+  function sliders(hostId, list, target, onChange) {
+    var host = document.getElementById(hostId);
+    list.forEach(function (p) {
+      var row = document.createElement('label'); row.className = 'row';
+      var name = document.createElement('span'); name.textContent = p.label;
+      var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step;
+      var out = document.createElement('output');
+      inp.addEventListener('input', function () { target()[p.k] = parseFloat(inp.value); onChange(); });
+      inp.addEventListener('change', function () { inp.blur(); });
+      row.appendChild(name); row.appendChild(inp); row.appendChild(out); host.appendChild(row);
+      inputs[p.k] = inp; outputs[p.k] = out; params[p.k] = p;
+    });
+  }
+  function getSpec() { return spec; }
+  sliders('psize', SIZE, getSpec, apply); sliders('pshape', SHAPE, getSpec, apply); sliders('psurf', SURF, getSpec, apply); sliders('pcol', COL, getSpec, apply);
+  function syncView() { inputs.zoom.value = view.zoom; outputs.zoom.textContent = view.zoom.toFixed(2); }
+  sliders('pview', VIEW, function () { return view; }, syncView);
+
+  function buttons(hostId, list, text, fn, attr) {
+    var host = document.getElementById(hostId); host.textContent = '';
+    list.forEach(function (item) {
+      var b = document.createElement('button'); b.textContent = text(item);
+      if (attr) b.setAttribute('data-v', attr(item));
+      b.addEventListener('click', function () { fn(item); b.blur(); });
+      host.appendChild(b);
+    });
+  }
+  buttons('shapes', SHAPES, function (v) { return v.name; }, function (v) {
+    var d = defSpec(cur), k; SHAPE_KEYS.forEach(function (key) { spec[key] = d[key]; });
+    for (k in v.set) spec[k] = v.set[k];
+    apply(); fit();
+  });
+  buttons('palettes', PALETTES, function (v) { return v.name; }, function (v) {
+    var d = defSpec(cur), k; COLOUR_KEYS.forEach(function (key) { spec[key] = d[key]; });
+    for (k in v.set) spec[k] = v.set[k];
+    apply();
+  });
+  buttons('looks', LOOKS, function (v) { return v[1]; }, function (v) { spec.look = v[0]; apply(); }, function (v) { return v[0]; });
+  buttons('copies', [1, 3, 5], function (v) { return String(v); }, function (v) { copies = v; pressed('copies', function (b) { return Number(b.getAttribute('data-v')) === copies; }); dirty = true; bake(); fit(); }, function (v) { return v; });
+  buttons('grounds', GROUNDS, function (v) { return v[1]; }, function (v) { setGround(v[0]); }, function (v) { return v[0]; });
+  pressed('copies', function (b) { return Number(b.getAttribute('data-v')) === copies; });
+
+  function toggle(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { b.setAttribute('aria-pressed', fn() ? 'true' : 'false'); b.blur(); }); }
+  toggle('night', function () { night = !night; return night; });
+  toggle('foot', function () { showFoot = !showFoot; return showFoot; });
+  document.getElementById('flip').addEventListener('click', function (e) { spec.flip = spec.flip ? 0 : 1; apply(); e.currentTarget.blur(); });
+  document.getElementById('nextvar').addEventListener('click', function (e) { spec.seed = spec.seed >= 60 ? 1 : spec.seed + 1; apply(); e.currentTarget.blur(); });
+  document.getElementById('resetall').addEventListener('click', function (e) { spec = defSpec(cur); apply(); bake(); fit(); e.currentTarget.blur(); });
+  document.getElementById('fit').addEventListener('click', function (e) { bake(); fit(); e.currentTarget.blur(); });
+
+  /* ---------- baking ---------- */
+  function bake() {
+    if (!dirty) return;
+    dirty = false; baked = [];
+    kit.setup(styleFor(spec));
+    var b0 = kit.PROPS[cur].b, corner = b0[0] === 0 && b0[1] === 0, i;
+    for (i = 0; i < copies; i++) {
+      var s = kit.bakeProp(cur, spec.seed + i * 7, { sx: spec.scale * spec.wide, sy: spec.scale * spec.tall });
+      if (corner) { s.lights.forEach(function (l) { l.x -= s.w / 2; l.y -= s.h; }); s.l = -s.w / 2; s.t = -s.h; }
+      baked.push(s);
+    }
+    kit.setup(BASE);
+    var s0 = baked[0], gap = Math.max(44, s0.w * 0.8);
+    baked.forEach(function (s2, n) { s2.x = OBJ_X + (n - (copies - 1) / 2) * gap; });
+    info.textContent = label(cur) + ': ' + Math.round(s0.w) + ' wide and ' + Math.round(s0.h) + ' tall. The hero is about 28 tall. Footprint is the solid circle the hero cannot walk through (0 means walk-through).';
+  }
+  function fit() {
+    if (!baked.length) return;
+    var s0 = baked[0], spanW = (baked[baked.length - 1].x - baked[0].x) + s0.w + 70, spanH = -s0.t + 110;
+    view.zoom = snap(VIEW[0], Math.min(1.5, 400 / spanW, 250 / spanH)); syncView();
+  }
+
+  /* ---------- ground ---------- */
+  var GT = 16, groundCv = null, groundKey = '';
+  function hash(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+  function bakeGround() {
+    if (groundKey === ground) return;
+    groundKey = ground;
+    var w = GT * kit.TW, h = GT * kit.TH, x, y;
+    groundCv = kit.mk(w * 2, h * 2);
+    var g = groundCv.getContext('2d'); g.setTransform(2, 0, 0, 2, 0, 0);
+    if (ground === 'flat') { g.fillStyle = '#6b6f7a'; g.fillRect(0, 0, w, h); return; }
+    kit.setup(BASE);
+    var n = kit.TILES[ground].n, tiles = [];
+    for (x = 0; x < n; x++) tiles.push(kit.bakeTile(ground, x));
+    for (y = 0; y < GT; y++) for (x = 0; x < GT; x++) g.drawImage(tiles[Math.floor(hash(x, y) * n) % n], x * kit.TW, y * kit.TH, kit.TW, kit.TH);
+  }
+  function setGround(t) { ground = t; pressed('grounds', function (b) { return b.getAttribute('data-v') === ground; }); }
+
+  /* ---------- scene hook for the arena renderer ---------- */
+  var cam = { x: 200, y: 125, z: 1 }, dark = null;
+  function camera(P) {
+    var z = view.zoom, s0 = baked[0], bottom = OBJ_Y * K + 95, top = OBJ_Y * K + (s0 ? s0.t : -60) - 12, vh = 250 / z;
+    var cy = (bottom - top <= vh) ? (top + bottom) / 2 : bottom - vh / 2, cx = OBJ_X;
+    var f = Math.max(0, Math.min(1, z - 1));
+    cam.x = cx + (P.x - cx) * f; cam.y = cy + (P.y * K - 16 - cy) * f; cam.z = z;
+  }
+  Combat.api.scene = {
+    noHud: true,
+    begin: function (c, P) {
+      bake(); bakeGround(); camera(P);
+      c.fillStyle = '#20262c'; c.fillRect(0, 0, 400, 250);
+      c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y);
+      var w = GT * kit.TW, h = GT * kit.TH, hw = 200 / cam.z, hh = 125 / cam.z, gx, gy;
+      for (gy = Math.floor((cam.y - hh) / h); gy * h < cam.y + hh; gy++) for (gx = Math.floor((cam.x - hw) / w); gx * w < cam.x + hw; gx++) c.drawImage(groundCv, gx * w, gy * h, w + 0.5, h + 0.5);
+      if (showFoot && spec.solid > 0) {
+        var r = spec.solid * spec.scale;
+        baked.forEach(function (s) { c.fillStyle = 'rgba(255,90,70,0.28)'; c.strokeStyle = 'rgba(255,120,90,0.9)'; c.lineWidth = 1; c.beginPath(); c.ellipse(s.x, OBJ_Y * K, r, r * K, 0, 0, Math.PI * 2); c.fill(); c.stroke(); });
+      }
+    },
+    items: function (items) {
+      baked.forEach(function (s) {
+        items.push({ y: OBJ_Y, f: function () {
+          ctx.save(); ctx.translate(s.x, OBJ_Y * K); if (spec.flip) ctx.scale(-1, 1);
+          ctx.drawImage(s.cv, s.l, s.t, s.w, s.h); ctx.restore();
+        } });
+      });
+    },
+    end: function (c, P) {
+      if (!night) return;
+      if (!dark || dark.width !== cv.width) dark = kit.mk(cv.width, cv.height);
+      var d = dark.getContext('2d'), lights = [{ x: P.x, y: P.y * K - 14, r: 46, h: 40, s: 60, l: 70, a: 0.55 }];
+      baked.forEach(function (s) { s.lights.forEach(function (l) { lights.push({ x: s.x + (spec.flip ? -l.x : l.x), y: OBJ_Y * K + l.y, r: l.r, h: l.h, s: l.s, l: l.l, a: l.a }); }); });
+      var PSN = Combat.api.pixelScale || 2;
+      function px(l) { return [((l.x - cam.x) * cam.z + 200) * PSN, ((l.y - cam.y) * cam.z + 125) * PSN, l.r * cam.z * PSN]; }
+      d.globalCompositeOperation = 'source-over'; d.clearRect(0, 0, cv.width, cv.height); d.fillStyle = 'rgba(10,9,34,0.66)'; d.fillRect(0, 0, cv.width, cv.height);
+      d.globalCompositeOperation = 'destination-out';
+      lights.forEach(function (l) { var q = px(l), g = d.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); g.addColorStop(0, 'rgba(0,0,0,' + Math.min(1, l.a) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = g; d.fillRect(q[0] - q[2], q[1] - q[2], q[2] * 2, q[2] * 2); });
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(dark, 0, 0);
+      c.globalCompositeOperation = 'lighter';
+      lights.forEach(function (l) { var q = px(l), g = c.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); g.addColorStop(0, 'hsla(' + l.h + ',' + l.s + '%,' + l.l + '%,' + (0.22 * l.a) + ')'); g.addColorStop(1, 'hsla(' + l.h + ',' + l.s + '%,' + l.l + '%,0)'); c.fillStyle = g; c.fillRect(q[0] - q[2], q[1] - q[2], q[2] * 2, q[2] * 2); });
+      c.restore();
+    }
+  };
+
+  /* ---------- pickers ---------- */
+  var curCat = CATS[0];
+  function showCat(cat) {
+    curCat = cat;
+    pressed('cats', function (b) { return b.textContent === cat.name; });
+    buttons('objs', cat.list, label, pick, function (n) { return n; });
+    pressed('objs', function (b) { return b.getAttribute('data-v') === cur; });
+  }
+  function pick(name) {
+    cur = name; spec = null;
+    try { spec = JSON.parse(localStorage.getItem('objecttest.' + name)); } catch (e) {}
+    if (!spec || typeof spec !== 'object') spec = defSpec(name);
+    var cat = catOf(name);
+    if (cat !== curCat) showCat(cat);
+    pressed('objs', function (b) { return b.getAttribute('data-v') === cur; });
+    setGround(GROUND_FOR[name] || cat.ground);
+    apply(); bake(); fit();
+  }
+  buttons('cats', CATS, function (cat) { return cat.name; }, function (cat) { showCat(cat); pick(cat.list[0]); });
+
+  /* settings as text */
+  document.getElementById('copy').addEventListener('click', function (e) {
+    var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json.value).then(done, fail); else fail();
+    e.currentTarget.blur();
+  });
+  document.getElementById('applyjson').addEventListener('click', function (e) {
+    var o = null;
+    try { o = JSON.parse(json.value); } catch (err) {}
+    if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing was changed.'; return; }
+    json.blur();
+    if (typeof o.object === 'string' && kit.PROPS[o.object] && o.object !== cur) { cur = o.object; var cat = catOf(cur); showCat(cat); setGround(GROUND_FOR[cur] || cat.ground); }
+    spec = o; apply(); bake(); fit(); pressed('objs', function (b) { return b.getAttribute('data-v') === cur; });
+    jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
+  });
+
+  showCat(CATS[0]); pick('oak');
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    var D = Combat.dbg(), r = spec.solid * spec.scale;
+    D.W.pillars = r > 0 ? baked.map(function (s) { return { x: s.x, y: OBJ_Y, r: r, hide: true }; }) : [];
+    if (!D.P.dead) D.P.hp = D.P.maxHp;
+    Combat.update(dt); Combat.render(ctx);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

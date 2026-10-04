@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Survival game workbench</title>
+<style>
+:root{
+  box-sizing:border-box;
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btnh:#f3f5f8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btnh:#262b36;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btnh:#262b36;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:24px 16px 40px}
+main{max-width:960px;margin:0 auto}
+h1{font-size:1.5rem;line-height:1.2;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 22px;color:var(--ink2);max-width:64ch}
+h2{font-size:1.05rem;margin:26px 0 4px;font-weight:650}
+.sub{margin:0 0 12px;color:var(--ink2);font-size:.92rem;max-width:64ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:inherit;text-decoration:none}
+a.card:hover{background:var(--btnh);border-color:var(--accent)}
+a.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card strong{display:block;font-size:1rem;margin-bottom:4px}
+.card span{display:block;color:var(--ink2);font-size:.9rem}
+.card.soon{border-style:dashed}
+.card.soon strong{color:var(--ink2)}
+.old .card{padding:10px 14px}
+.old .card strong{font-size:.93rem;font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <h1>Survival game workbench</h1>
+  <p class="lede">Pick what you want to work in. Create holds the editors for building and tuning things. Game is where the pieces are played.</p>
+
+  <h2>Create</h2>
+  <p class="sub">Editors. Change how something looks or moves and see it straight away.</p>
+  <div class="grid">
+    <a class="card" href="character-editor.html"><strong>Character Editor</strong><span>Reshape, recolour and re-time a character, then walk and fight with it.</span></a>
+    <a class="card" href="creature-editor.html"><strong>Creature Editor</strong><span>Monsters, bosses and critters: body plan, features, colours, how they move and how they warn before attacking.</span></a>
+    <a class="card" href="object-editor.html"><strong>Object Editor</strong><span>One world object at a time: trees, rocks, furniture, machines. Size, shape, surface and colour.</span></a>
+    <a class="card" href="environment-editor.html"><strong>Environment Editor</strong><span>A whole patch of world: biome, ground, which objects grow there, how dense and how open. Walk through it.</span></a>
+    <a class="card" href="base-editor.html"><strong>Base Editor</strong><span>Build a base piece by piece: floors, walls, doors, windows and furniture. Closed rooms get a roof that fades when you walk in.</span></a>
+    <a class="card" href="sea-editor.html"><strong>Sea Editor</strong><span>Board a boat at the dock and sail between islands. Four boats, with handling, waves and islands to tune.</span></a>
+  </div>
+
+  <h2>Game</h2>
+  <p class="sub">Playable pieces. There is no single game build yet, so each system has its own page.</p>
+  <div class="grid">
+    <a class="card" href="combat-arena.html"><strong>Combat Arena</strong><span>Fight bots, the turret, the Bossbot and the Guardian.</span></a>
+    <a class="card" href="world-prototype.html"><strong>World Prototype</strong><span>A random world: the sealed Factory, its gates, and the Commons outside.</span></a>
+    <div class="card soon"><strong>The game</strong><span>Not built yet. This is where the first real map (milestone M1) will go.</span></div>
+  </div>
+
+  <h2>Older experiments</h2>
+  <p class="sub">Kept for reference. The editors above have replaced them.</p>
+  <div class="grid old">
+    <a class="card" href="style-lab.html"><strong>Style Lab</strong><span>Where the Night Forest painted look was chosen.</span></a>
+    <a class="card" href="style-test.html"><strong>Style Test</strong><span>The first comparison: pixel art against cartoon.</span></a>
+    <a class="card" href="walk-test.html"><strong>Walk Test</strong><span>An early tiled world, before the World Prototype.</span></a>
+  </div>
+</main>
+</body>
+</html>

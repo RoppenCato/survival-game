@@ -5,6 +5,7 @@
   "description": "2D top-down survival crafting game: combat and animation prototype",
   "scripts": {
     "build": "python3 tools/build.py",
+    "start": "python3 tools/build.py && node tools/open.js",
     "test": "node tests/ctest2.js && node tests/ctest4.js && node tests/btest3.js && node tests/ktest.js && node tests/turntest.js && node tests/wtest2.js && node tests/sprinttest.js && node tests/fuzz.js"
   },
   "devDependencies": {

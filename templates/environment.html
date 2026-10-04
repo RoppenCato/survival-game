@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Environment Editor</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:76ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto}
+#poses,#sheet{max-width:900px}
+canvas{display:block;width:100%;height:auto;border-radius:8px;background:#20262c;cursor:crosshair;touch-action:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel{margin-top:12px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
+.group{display:flex;flex-wrap:wrap;gap:8px}
+button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
+button:hover{background:var(--btnh)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chips button{min-height:34px;padding:0 10px;font-size:.87rem}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+.stat{margin:8px 2px 0;font-size:.95rem;font-weight:600}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--ink2)}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">&larr; Back to menu</a>
+  <h1>Environment Editor</h1>
+  <p class="lede">Build a patch of world and walk through it. Pick a biome, choose the ground and which objects grow there, then steer how dense, how grouped and how open it is. The aim is groves and clearings with room to breathe, and room to build a base.</p>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Scene"></canvas></div>
+      <section class="panel">
+        <p class="stat" id="stat"></p>
+        <div id="pview" style="margin-top:8px"></div>
+        <div class="group" style="margin-top:8px">
+          <button id="newlayout">New layout</button>
+          <button id="showopen" aria-pressed="false">Show open ground</button>
+          <button id="night" aria-pressed="false">Night lighting</button>
+        </div>
+        <p class="desc">Open ground is every spot with no tree, rock or landmark close by. A base plot is a free rectangle of 6 by 5 tiles.</p>
+        <h2 class="more">Controls</h2>
+        <dl class="keys">
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
+          <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+          <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack</dd>
+        </dl>
+      </section>
+    </div>
+
+    <div class="right">
+      <section class="panel">
+        <h2>Biome</h2>
+        <div class="group" id="biomes"></div>
+        <p class="desc">A biome sets the ground, the objects and a starting layout. Everything below can then be changed.</p>
+      </section>
+      <section class="panel">
+        <h2>Layout</h2>
+        <div id="playout"></div>
+        <p class="desc">Grouping gathers trees into groves instead of spreading them evenly. Open space adds clearings where no trees or rocks grow.</p>
+      </section>
+      <section class="panel">
+        <h2>Ground</h2>
+        <div class="group chips" id="g1"></div>
+        <h2 class="more">Patches of a second ground</h2>
+        <div class="group chips" id="g2"></div>
+        <h2 class="more">Small accents</h2>
+        <div class="group chips" id="g3"></div>
+        <div id="pground" style="margin-top:8px"></div>
+        <div class="group" style="margin-top:8px"><button id="path" aria-pressed="false">Winding path</button></div>
+      </section>
+      <section class="panel">
+        <h2>Trees</h2>
+        <div class="group chips" id="l-trees"></div>
+        <h2 class="more">Undergrowth</h2>
+        <div class="group chips" id="l-under"></div>
+        <h2 class="more">Rocks</h2>
+        <div class="group chips" id="l-rocks"></div>
+        <h2 class="more">Ground detail</h2>
+        <div class="group chips" id="l-detail"></div>
+        <h2 class="more">Landmarks</h2>
+        <div class="group chips" id="l-marks"></div>
+        <p class="desc">Switch objects on and off to choose what can appear in each layer.</p>
+      </section>
+      <section class="panel">
+        <h2>Look</h2>
+        <div class="group" id="looks"></div>
+        <div id="plook" style="margin-top:8px"></div>
+      </section>
+      <section class="panel">
+        <h2>Settings as text</h2>
+        <textarea id="json" spellcheck="false" aria-label="Environment settings as text"></textarea>
+        <div class="group" style="margin-top:8px">
+          <button id="copy">Copy</button>
+          <button id="applyjson">Apply text</button>
+        </div>
+        <p class="desc" id="jsonmsg">Copy this to keep an environment. Paste one in and press Apply text to load it.</p>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+__ART__
+__LIB__
+__COMBAT__
+(function () {
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+
+  // The canvas is shown large, so give it enough pixels to stay sharp at its displayed size.
+  function fitCanvas() {
+    var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4;
+    if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); }
+    Combat.api.pixelScale = ps;
+  }
+  fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
+  var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, TW = kit.TW, TH = kit.TH;
+  Combat.init(lib);
+  var S = Combat.S; S.look = 'classic'; S.sound = false;
+  Combat.clear();
+  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyJ: 1, KeyK: 1, ShiftLeft: 1, ShiftRight: 1 };
+  var held = {};
+  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')); }
+  window.addEventListener('keydown', function (e) {
+    if (!codes[e.code] || typing(e)) return;
+    e.preventDefault();
+    if (e.repeat) return;
+    held[e.code] = true; Combat.key(e.code, true);
+  });
+  window.addEventListener('keyup', function (e) {
+    if (!codes[e.code] || typing(e)) return;
+    e.preventDefault(); held[e.code] = false; Combat.key(e.code, false);
+  });
+  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
+  cv.addEventListener('mousedown', function (e) { Combat.button(e.button, true); e.preventDefault(); });
+  window.addEventListener('mouseup', function (e) { Combat.button(e.button, false); });
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  /* ---------- the chosen world style (Night Forest, Painted) ---------- */
+  var BASE = { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, round: 0.85, spindly: 0.12, lush: 0.95, twist: 0.12, sparkle: 0.8, texture: 0.6, outlineW: 1.1, outlineDark: 0.86, rough: 0.08, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4, look: 1, seed: 7, scaleRef: 0 };
+
+  /* ---------- what each layer can contain ---------- */
+  var POOLS = {
+    trees: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'blossom', 'ancient', 'deadTree', 'snowPine', 'snowPineBig'],
+    under: ['bush', 'berryBush', 'fern', 'reeds', 'snowBush', 'emberBush', 'mushrooms'],
+    rocks: ['rock', 'snowRock', 'emberRock', 'standingStone', 'cliff', 'rubble', 'iceCrystal', 'vent'],
+    detail: ['tallGrass', 'flower', 'bellFlower', 'flowerBed', 'fern', 'mushrooms', 'reeds'],
+    marks: ['log', 'stump', 'campfire', 'mushRing', 'well', 'signpost', 'fence', 'scarecrow', 'haystack', 'cart', 'bench', 'lamp', 'ruinHouse', 'brokenPillar', 'gatePost', 'banner', 'iceCrystalBig', 'ventBig', 'crate', 'barrel']
+  };
+  var LAYERS = ['trees', 'under', 'rocks', 'detail', 'marks'];
+  var SOLID = { trees: 9, under: 0, rocks: 10, detail: 0, marks: 11 };
+  var NO_SOLID = { mushRing: 1, campfire: 1 };
+  var GROUNDS = ['grass', 'grassDark', 'moss', 'leaves', 'dirt', 'path', 'shore', 'rock', 'snow', 'snowDark', 'ice', 'ash', 'char', 'basalt', 'crack'];
+  var GNAME = { grass: 'Grass', grassDark: 'Dark grass', moss: 'Moss', leaves: 'Leaf litter', dirt: 'Dirt', path: 'Path', shore: 'Sand', rock: 'Rock', snow: 'Snow', snowDark: 'Packed snow', ice: 'Ice', ash: 'Ash', char: 'Charred', basalt: 'Basalt', crack: 'Cracked' };
+  Object.keys(POOLS).forEach(function (k) { POOLS[k] = POOLS[k].filter(function (n) { return !!kit.PROPS[n]; }); });
+  GROUNDS = GROUNDS.filter(function (g) { return !!kit.TILES[g]; });
+  function label(n) { var s = n.replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  var BIOMES = [
+    { name: 'Forest clearing', ground: 'grass', ground2: 'grassDark', accent: 'dirt', path: 1,
+      trees: ['oak', 'birch', 'pine', 'blossom'], under: ['bush', 'berryBush', 'fern'], rocks: ['rock'], detail: ['tallGrass', 'flower', 'bellFlower'], marks: ['log', 'stump', 'campfire', 'standingStone'],
+      set: { trees: 0.42, group: 0.8, open: 0.5, under: 0.4, rocks: 0.2, detail: 0.45, marks: 3, treeSize: 0.7, patch: 0.35, accentAmt: 0.1 } },
+    { name: 'Deep forest', ground: 'grassDark', ground2: 'moss', accent: 'leaves', path: 0,
+      trees: ['oak', 'ancient', 'willow', 'pineBig'], under: ['fern', 'bush', 'mushrooms'], rocks: ['rock', 'standingStone'], detail: ['tallGrass', 'mushrooms', 'fern'], marks: ['log', 'stump', 'mushRing'],
+      set: { trees: 0.75, group: 0.6, open: 0.3, under: 0.6, rocks: 0.25, detail: 0.35, marks: 2, treeSize: 0.75, patch: 0.4, accentAmt: 0.2 } },
+    { name: 'Meadow', ground: 'grass', ground2: 'grassDark', accent: 'path', path: 1,
+      trees: ['birch', 'blossom', 'oak'], under: ['bush', 'berryBush'], rocks: ['rock'], detail: ['tallGrass', 'flower', 'flowerBed', 'bellFlower'], marks: ['well', 'fence', 'scarecrow', 'haystack', 'signpost'],
+      set: { trees: 0.16, group: 0.85, open: 0.75, under: 0.2, rocks: 0.12, detail: 0.8, marks: 3, treeSize: 0.7, patch: 0.2, accentAmt: 0.05 } },
+    { name: 'Pine woods', ground: 'grassDark', ground2: 'dirt', accent: 'rock', path: 0,
+      trees: ['pine', 'pineBig', 'cypress'], under: ['fern', 'bush'], rocks: ['rock', 'cliff'], detail: ['tallGrass', 'mushrooms', 'fern'], marks: ['log', 'stump', 'campfire'],
+      set: { trees: 0.55, group: 0.7, open: 0.45, under: 0.35, rocks: 0.4, detail: 0.3, marks: 2, treeSize: 0.8, patch: 0.3, accentAmt: 0.08 } },
+    { name: 'Snowfield', ground: 'snow', ground2: 'snowDark', accent: 'ice', path: 0,
+      trees: ['snowPine', 'snowPineBig', 'deadTree'], under: ['snowBush'], rocks: ['snowRock', 'iceCrystal'], detail: ['snowBush'], marks: ['iceCrystalBig', 'standingStone', 'campfire'],
+      set: { trees: 0.3, group: 0.8, open: 0.6, under: 0.3, rocks: 0.3, detail: 0.15, marks: 2, treeSize: 0.8, patch: 0.3, accentAmt: 0.1 } },
+    { name: 'Ashlands', ground: 'ash', ground2: 'char', accent: 'crack', path: 0,
+      trees: ['deadTree'], under: ['emberBush'], rocks: ['emberRock', 'vent', 'rubble'], detail: ['emberBush'], marks: ['ventBig', 'brokenPillar'],
+      set: { trees: 0.22, group: 0.6, open: 0.65, under: 0.3, rocks: 0.45, detail: 0.1, marks: 2, treeSize: 0.8, patch: 0.4, accentAmt: 0.15 } },
+    { name: 'Old ruins', ground: 'grass', ground2: 'path', accent: 'dirt', path: 1,
+      trees: ['oak', 'willow'], under: ['bush', 'fern'], rocks: ['rock', 'rubble'], detail: ['tallGrass', 'flower'], marks: ['ruinHouse', 'brokenPillar', 'standingStone', 'well', 'gatePost', 'lamp', 'fence', 'banner'],
+      set: { trees: 0.25, group: 0.8, open: 0.65, under: 0.3, rocks: 0.3, detail: 0.4, marks: 6, treeSize: 0.7, patch: 0.3, accentAmt: 0.1 } }
+  ];
+
+  /* ---------- settings ---------- */
+  var LAYOUT = [
+    { k: 'trees', label: 'Trees', min: 0, max: 1, step: 0.01 },
+    { k: 'group', label: 'Grouping', min: 0, max: 1, step: 0.01 },
+    { k: 'open', label: 'Open space', min: 0, max: 0.9, step: 0.01 },
+    { k: 'under', label: 'Undergrowth', min: 0, max: 1, step: 0.01 },
+    { k: 'rocks', label: 'Rocks', min: 0, max: 1, step: 0.01 },
+    { k: 'detail', label: 'Ground detail', min: 0, max: 1, step: 0.01 },
+    { k: 'marks', label: 'Landmarks', min: 0, max: 8, step: 1 },
+    { k: 'treeSize', label: 'Tree size', min: 0.4, max: 1.2, step: 0.05 },
+    { k: 'variety', label: 'Size variety', min: 0, max: 1, step: 0.05 },
+    { k: 'seed', label: 'Layout number', min: 1, max: 99, step: 1 }
+  ];
+  var GROUND = [
+    { k: 'patch', label: 'Patch amount', min: 0, max: 0.7, step: 0.01 },
+    { k: 'patchSize', label: 'Patch size', min: 2, max: 12, step: 0.5 },
+    { k: 'accentAmt', label: 'Accent amount', min: 0, max: 0.4, step: 0.01 }
+  ];
+  var LOOK = [
+    { k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 },
+    { k: 'sat', label: 'Saturation', min: 0, max: 1.8, step: 0.05 },
+    { k: 'bright', label: 'Brightness', min: -15, max: 15, step: 1 },
+    { k: 'contrast', label: 'Contrast', min: 0.7, max: 1.4, step: 0.02 }
+  ];
+  var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.35, max: 2, step: 0.05 }];
+  var NUM = LAYOUT.concat(GROUND, LOOK);
+  var LOOKS = [[1, 'Painted'], [0, 'Cartoon'], [2, 'Ink']];
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function fromBiome(b) {
+    var sp = { biome: b.name, seed: 7, variety: 0.5, patchSize: 6, hue: 0, sat: 1, bright: 0, contrast: 1, look: 1,
+      ground: b.ground, ground2: b.ground2, accent: b.accent, path: b.path, lists: {} }, k;
+    for (k in b.set) sp[k] = b.set[k];
+    LAYERS.forEach(function (L) { sp.lists[L] = b[L].slice(); });
+    return sp;
+  }
+  var spec = fromBiome(BIOMES[0]), view = { zoom: 0.7 }, night = false, showOpen = false;
+  var inputs = {}, outputs = {};
+  var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg'), stat = document.getElementById('stat');
+  function snap(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
+  function fmt(p, v) { return p.step < 1 ? v.toFixed(2) : String(v); }
+  function pressed(hostId, test) { var b = document.querySelectorAll('#' + hostId + ' button'); for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', test(b[i]) ? 'true' : 'false'); }
+
+  var dirty = true, timer = 0;
+  function apply() {
+    var d = fromBiome(BIOMES[0]), i;
+    for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : d[p.k]); }
+    ['ground', 'ground2', 'accent'].forEach(function (g) { if (GROUNDS.indexOf(spec[g]) < 0) spec[g] = d[g]; });
+    spec.path = spec.path ? 1 : 0; spec.look = (spec.look === 0 || spec.look === 2) ? spec.look : 1;
+    if (!spec.lists || typeof spec.lists !== 'object') spec.lists = {};
+    LAYERS.forEach(function (L) { var a = Array.isArray(spec.lists[L]) ? spec.lists[L] : []; spec.lists[L] = a.filter(function (n) { return POOLS[L].indexOf(n) >= 0; }); });
+    for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
+    pressed('biomes', function (b) { return b.textContent === spec.biome; });
+    pressed('g1', function (b) { return b.getAttribute('data-v') === spec.ground; });
+    pressed('g2', function (b) { return b.getAttribute('data-v') === spec.ground2; });
+    pressed('g3', function (b) { return b.getAttribute('data-v') === spec.accent; });
+    pressed('looks', function (b) { return Number(b.getAttribute('data-v')) === spec.look; });
+    LAYERS.forEach(function (L) { pressed('l-' + L, function (b) { return spec.lists[L].indexOf(b.getAttribute('data-v')) >= 0; }); });
+    document.getElementById('path').setAttribute('aria-pressed', spec.path ? 'true' : 'false');
+    if (document.activeElement !== json) json.value = JSON.stringify(spec);
+    dirty = true;
+    try { localStorage.setItem('enveditor', JSON.stringify(spec)); } catch (e) {}
+  }
+
+  function sliders(hostId, list, target, onChange) {
+    var host = document.getElementById(hostId);
+    list.forEach(function (p) {
+      var row = document.createElement('label'); row.className = 'row';
+      var name = document.createElement('span'); name.textContent = p.label;
+      var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step;
+      var out = document.createElement('output');
+      inp.addEventListener('input', function () { target()[p.k] = parseFloat(inp.value); onChange(); });
+      inp.addEventListener('change', function () { inp.blur(); });
+      row.appendChild(name); row.appendChild(inp); row.appendChild(out); host.appendChild(row);
+      inputs[p.k] = inp; outputs[p.k] = out;
+    });
+  }
+  function getSpec() { return spec; }
+  sliders('playout', LAYOUT, getSpec, apply); sliders('pground', GROUND, getSpec, apply); sliders('plook', LOOK, getSpec, apply);
+  function syncView() { inputs.zoom.value = view.zoom; outputs.zoom.textContent = view.zoom.toFixed(2); }
+  sliders('pview', VIEW, function () { return view; }, syncView); syncView();
+
+  function buttons(hostId, list, text, fn, attr) {
+    var host = document.getElementById(hostId);
+    list.forEach(function (item) {
+      var b = document.createElement('button'); b.textContent = text(item);
+      if (attr) b.setAttribute('data-v', attr(item));
+      b.addEventListener('click', function () { fn(item); b.blur(); });
+      host.appendChild(b);
+    });
+  }
+  function same(v) { return v; }
+  buttons('biomes', BIOMES, function (b) { return b.name; }, function (b) { var keep = { hue: spec.hue, sat: spec.sat, bright: spec.bright, contrast: spec.contrast, look: spec.look, seed: spec.seed }; spec = fromBiome(b); for (var k in keep) spec[k] = keep[k]; apply(); });
+  buttons('g1', GROUNDS, function (g) { return GNAME[g] || label(g); }, function (g) { spec.ground = g; apply(); }, same);
+  buttons('g2', GROUNDS, function (g) { return GNAME[g] || label(g); }, function (g) { spec.ground2 = g; apply(); }, same);
+  buttons('g3', GROUNDS, function (g) { return GNAME[g] || label(g); }, function (g) { spec.accent = g; apply(); }, same);
+  buttons('looks', LOOKS, function (v) { return v[1]; }, function (v) { spec.look = v[0]; apply(); }, function (v) { return v[0]; });
+  LAYERS.forEach(function (L) {
+    buttons('l-' + L, POOLS[L], label, function (n) { var a = spec.lists[L], i = a.indexOf(n); if (i >= 0) a.splice(i, 1); else a.push(n); apply(); }, same);
+  });
+  function toggle(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { b.setAttribute('aria-pressed', fn() ? 'true' : 'false'); b.blur(); }); }
+  toggle('night', function () { night = !night; return night; });
+  toggle('showopen', function () { showOpen = !showOpen; return showOpen; });
+  document.getElementById('path').addEventListener('click', function (e) { spec.path = spec.path ? 0 : 1; apply(); e.currentTarget.blur(); });
+  document.getElementById('newlayout').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; apply(); e.currentTarget.blur(); });
+
+  /* ---------- world ---------- */
+  var GW = 40, GH = 40, WX = GW * TW, WY = GH * TW, CT = 20;   // world units: one tile is 32 by 32, drawn 32 by 24
+  var grid = [], chunks = [], objs = [], solids = [], sprites = {}, freeTile = [], groundKey = '', styleKey = '';
+  function hash(x, y, s) { var h = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); }
+  function vnoise(x, y, s) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); var a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+  function fbm(x, y, s) { return vnoise(x, y, s) * 0.65 + vnoise(x * 2.1, y * 2.1, s + 9) * 0.35; }
+  function styleNow() {
+    var p = {}, k; for (k in BASE) p[k] = BASE[k];
+    p.outsideHue = BASE.outsideHue + spec.hue; p.factoryHue = BASE.factoryHue + spec.hue;
+    p.sat = BASE.sat * spec.sat; p.bright = BASE.bright + spec.bright; p.contrast = BASE.contrast * spec.contrast; p.look = spec.look;
+    return p;
+  }
+  function pathX(ty) { return GW / 2 + Math.sin(ty * 0.16 + spec.seed) * 5 + Math.sin(ty * 0.05 + spec.seed * 2.3) * 7; }
+  function onPath(wx, wy, pad) { return spec.path && Math.abs(wx / TW - pathX(wy / TW)) < 1.3 + pad; }
+
+  function buildGround() {
+    var key = [spec.ground, spec.ground2, spec.accent, spec.patch, spec.patchSize, spec.accentAmt, spec.path, spec.seed, styleKey].join('|');
+    if (key === groundKey) return;
+    groundKey = key;
+    var x, y, i, tiles = {}, s = spec.seed;
+    grid = [];
+    for (y = 0; y < GH; y++) { grid.push([]); for (x = 0; x < GW; x++) {
+      var t = spec.ground;
+      if (fbm(x / spec.patchSize, y / spec.patchSize, s) > 1 - spec.patch * 1.1 - 0.12) t = spec.ground2;
+      if (fbm(x / 3.2, y / 3.2, s + 40) > 1 - spec.accentAmt * 1.1 - 0.16) t = spec.accent;
+      if (spec.path && Math.abs(x + 0.5 - pathX(y + 0.5)) < 1.15) t = 'path';
+      grid[y].push(t);
+    } }
+    kit.setup(styleNow());
+    function tile(t, gx, gy) { if (!tiles[t]) { tiles[t] = []; for (var n = 0; n < kit.TILES[t].n; n++) tiles[t].push(kit.bakeTile(t, n)); } return tiles[t][Math.floor(hash(gx, gy, 5) * tiles[t].length) % tiles[t].length]; }
+    var SIDES = [['n', 0, -1], ['s', 0, 1], ['w', -1, 0], ['e', 1, 0]];
+    chunks = [];
+    for (var cy = 0; cy < GH / CT; cy++) for (var cx = 0; cx < GW / CT; cx++) {
+      var ccv = kit.mk(CT * TW * 2, CT * TH * 2), c = ccv.getContext('2d');
+      c.setTransform(2, 0, 0, 2, 0, 0);
+      for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) { var gx = cx * CT + x, gy = cy * CT + y; c.drawImage(tile(grid[gy][gx], gx, gy), x * TW, y * TH, TW, TH); }
+      for (y = 0; y < CT; y++) for (x = 0; x < CT; x++) {
+        var gx2 = cx * CT + x, gy2 = cy * CT + y, t2 = grid[gy2][gx2];
+        for (i = 0; i < 4; i++) {
+          var nx = gx2 + SIDES[i][1], ny = gy2 + SIDES[i][2]; if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) continue;
+          var nt = grid[ny][nx];
+          if (nt === t2 || kit.TILES[nt].pr <= kit.TILES[t2].pr) continue;
+          c.save(); c.translate(x * TW, y * TH); kit.blendTile(c, tile(nt, nx, ny), SIDES[i][0], gx2 * 131 + gy2 * 17 + i); c.restore();
+        }
+      }
+      // soft light and dark patches so the tiling never shows
+      for (i = 0; i < 26; i++) {
+        var hv = hash(cx * 31 + i, cy * 17, 77), px = hash(cx + i, cy, 78) * CT * TW, py = hash(cx, cy + i, 79) * CT * TH, r = 50 + hv * 70;
+        var g2 = c.createRadialGradient(px, py, 0, px, py, r), col = hv < 0.5 ? '255,245,200' : '10,8,30';
+        g2.addColorStop(0, 'rgba(' + col + ',' + (hv < 0.5 ? 0.07 : 0.13) + ')'); g2.addColorStop(1, 'rgba(' + col + ',0)');
+        c.fillStyle = g2; c.fillRect(px - r, py - r, r * 2, r * 2);
+      }
+      chunks.push({ cv: ccv, x: cx * CT * TW, y: cy * CT * TH, w: CT * TW, h: CT * TH });
+    }
+  }
+
+  function buildObjects() {
+    var R = kit.rng(spec.seed * 101 + 3), i, k, tries;
+    function rnd(a, b) { return a + R() * (b - a); }
+    function pick(L) { var a = spec.lists[L]; return a.length ? a[Math.floor(R() * a.length) % a.length] : null; }
+    objs = []; solids = [];
+    // clearings: the spawn point is always one, Open space adds more and makes them bigger
+    var clear = [{ x: WX / 2, y: WY / 2, r: 110 + spec.open * 90 }], nC = Math.round(spec.open * 9);
+    for (i = 0; i < nC; i++) clear.push({ x: rnd(120, WX - 120), y: rnd(120, WY - 120), r: rnd(90, 150) * (0.7 + spec.open) });
+    function inClear(x, y, pad) { for (var n = 0; n < clear.length; n++) if (Math.hypot(x - clear[n].x, y - clear[n].y) < clear[n].r + (pad || 0)) return true; return onPath(x, y, 0.6); }
+    function add(L, name, x, y, sc) {
+      if (!name) return null;
+      var r = NO_SOLID[name] ? 0 : SOLID[L] * sc, o = { L: L, name: name, v: Math.floor(R() * 3), x: x, y: y, s: sc, r: r };
+      objs.push(o); if (r > 0) solids.push({ x: x, y: y, r: r, hide: true });
+      return o;
+    }
+    function vary(base) { return base * (1 + (R() - 0.5) * 0.5 * spec.variety); }
+    // trees: groves when Grouping is high, spread evenly when it is low
+    var groves = [], nG = 4 + Math.floor(R() * 4), trees = [], want = Math.round(spec.trees * 120), minD = 46 * spec.treeSize + 14;
+    for (i = 0; i < nG; i++) { tries = 0; do { k = { x: rnd(80, WX - 80), y: rnd(80, WY - 80), r: rnd(110, 230) }; tries++; } while (inClear(k.x, k.y, 40) && tries < 20); groves.push(k); }
+    for (i = 0; i < want; i++) {
+      for (tries = 0; tries < 24; tries++) {
+        var tx, ty;
+        if (R() < spec.group) { var gv = groves[Math.floor(R() * nG) % nG], ga = R() * 6.283, gr = Math.sqrt(R()) * gv.r; tx = gv.x + Math.cos(ga) * gr; ty = gv.y + Math.sin(ga) * gr; }
+        else { tx = rnd(30, WX - 30); ty = rnd(30, WY - 30); }
+        if (tx < 30 || ty < 40 || tx > WX - 30 || ty > WY - 20 || inClear(tx, ty, 10)) continue;
+        var ok = true; for (k = 0; k < trees.length; k++) if (Math.hypot(trees[k].x - tx, trees[k].y - ty) < minD) { ok = false; break; }
+        if (!ok) continue;
+        var to = add('trees', pick('trees'), tx, ty, vary(spec.treeSize)); if (to) trees.push(to); break;
+      }
+    }
+    // undergrowth hugs the trees, so the open ground stays open
+    want = Math.round(spec.under * 170);
+    for (i = 0; i < want; i++) {
+      var ux, uy;
+      if (trees.length && R() < 0.75) { var ut = trees[Math.floor(R() * trees.length) % trees.length], ua = R() * 6.283, ud = rnd(26, 80); ux = ut.x + Math.cos(ua) * ud; uy = ut.y + Math.sin(ua) * ud * 0.8; }
+      else { ux = rnd(20, WX - 20); uy = rnd(30, WY - 20); }
+      if (ux < 20 || uy < 30 || ux > WX - 20 || uy > WY - 20 || (inClear(ux, uy, -20) && R() < 0.85)) continue;
+      add('under', pick('under'), ux, uy, vary(0.9));
+    }
+    // rocks: small clusters, mostly outside the clearings
+    want = Math.round(spec.rocks * 34);
+    for (i = 0; i < want; i++) {
+      var rx = rnd(40, WX - 40), ry = rnd(50, WY - 40), n = 1 + Math.floor(R() * 3);
+      if (inClear(rx, ry, -30) && R() < 0.8) continue;
+      for (k = 0; k < n; k++) { var qx = rx + (k ? rnd(-34, 34) : 0), qy = ry + (k ? rnd(-26, 26) : 0); if (!onPath(qx, qy, 0.5)) add('rocks', pick('rocks'), qx, qy, vary(k ? 0.75 : 1)); }
+    }
+    // ground detail: drifts of grass and flowers, also in the open
+    want = Math.round(spec.detail * 520);
+    for (i = 0; i < want; i++) {
+      var dx = rnd(10, WX - 10), dy = rnd(20, WY - 10);
+      if (fbm(dx / 150, dy / 150, spec.seed + 60) < 0.46 || onPath(dx, dy, 0) || Math.hypot(dx - WX / 2, dy - WY / 2) < 26) continue;
+      add('detail', pick('detail'), dx, dy, vary(0.8));
+    }
+    // landmarks sit at the edge of a clearing
+    for (i = 0; i < spec.marks; i++) {
+      var cl = clear[i % clear.length], la = R() * 6.283, lr = cl.r * rnd(0.55, 0.9), lx = cl.x + Math.cos(la) * lr, ly = cl.y + Math.sin(la) * lr;
+      if (lx < 60 || ly < 70 || lx > WX - 60 || ly > WY - 50 || onPath(lx, ly, 1)) continue;
+      add('marks', pick('marks'), lx, ly, 1);
+    }
+    objs.sort(function (a, b) { return a.y - b.y; });
+    // open ground: tiles with nothing solid close by; base plots: free rectangles of 6 by 5 tiles
+    var x, y, free = 0, plots = 0, used = [];
+    freeTile = [];
+    for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
+      var wx = (x + 0.5) * TW, wy = (y + 0.5) * TW, f = true;
+      for (k = 0; k < solids.length; k++) if (Math.abs(solids[k].x - wx) < 40 && Math.hypot(solids[k].x - wx, solids[k].y - wy) < solids[k].r + 24) { f = false; break; }
+      freeTile.push(f); used.push(false); if (f) free++;
+    }
+    for (y = 0; y + 5 <= GH; y++) for (x = 0; x + 6 <= GW; x++) {
+      var fits = true;
+      for (var yy = y; yy < y + 5 && fits; yy++) for (var xx = x; xx < x + 6; xx++) if (!freeTile[yy * GW + xx] || used[yy * GW + xx]) { fits = false; break; }
+      if (!fits) continue;
+      for (yy = y; yy < y + 5; yy++) for (xx = x; xx < x + 6; xx++) used[yy * GW + xx] = true;
+      plots++;
+    }
+    stat.textContent = 'Open ground: ' + Math.round(free / (GW * GH) * 100) + '%. Room for ' + plots + ' base plot' + (plots === 1 ? '' : 's') + '. ' + trees.length + ' trees, ' + objs.length + ' objects in all.';
+  }
+  function sprite(o) {
+    var key = o.name + ':' + o.v;
+    if (!sprites[key]) { kit.setup(styleNow()); sprites[key] = kit.bakeProp(o.name, 3 + o.v * 7); }
+    return sprites[key];
+  }
+  function rebuild() {
+    if (!dirty) return;
+    dirty = false;
+    var sk = [spec.hue, spec.sat, spec.bright, spec.contrast, spec.look].join('|');
+    if (sk !== styleKey) { styleKey = sk; sprites = {}; }
+    buildGround(); buildObjects();
+  }
+
+  /* ---------- scene hook for the arena renderer ---------- */
+  var cam = { x: WX / 2, y: WY / 2 * K, z: 1 }, dark = null, hero = null;
+  Combat.api.scene = {
+    noHud: true,
+    bounds: { x0: 16, y0: 24, x1: WX - 16, y1: WY - 12 },
+    begin: function (c, P) {
+      hero = P;
+      var z = view.zoom, hw = 200 / z, hh = 125 / z;
+      cam.z = z;
+      cam.x = hw * 2 >= WX ? WX / 2 : Math.max(hw, Math.min(WX - hw, P.x));
+      cam.y = hh * 2 >= WY * K ? WY * K / 2 : Math.max(hh, Math.min(WY * K - hh, P.y * K - 14));
+      c.fillStyle = '#12161a'; c.fillRect(0, 0, 400, 250);
+      c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y);
+      for (var i = 0; i < chunks.length; i++) { var ch = chunks[i]; if (ch.x + ch.w < cam.x - hw || ch.x > cam.x + hw || ch.y + ch.h < cam.y - hh || ch.y > cam.y + hh) continue; c.drawImage(ch.cv, ch.x, ch.y, ch.w + 0.5, ch.h + 0.5); }
+      if (showOpen) {
+        c.fillStyle = 'rgba(120,255,160,0.22)';
+        for (var y = 0; y < GH; y++) for (var x = 0; x < GW; x++) if (freeTile[y * GW + x]) c.fillRect(x * TW, y * TH, TW - 1, TH - 1);
+      }
+    },
+    items: function (items) {
+      var z = cam.z, hw = 200 / z, hh = 125 / z;
+      objs.forEach(function (o) {
+        var s = sprite(o), sx = o.x + s.l * o.s, sy = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
+        if (sx + w < cam.x - hw || sx > cam.x + hw || sy + h < cam.y - hh || sy > cam.y + hh) return;
+        items.push({ y: o.y, f: function () {
+          // a tree fades when the hero walks behind it
+          var behind = o.L === 'trees' && hero && hero.y < o.y && hero.y * K > sy + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3;
+          if (behind) ctx.globalAlpha = 0.45;
+          ctx.drawImage(s.cv, sx, sy, w, h);
+          ctx.globalAlpha = 1;
+        } });
+      });
+    },
+    end: function (c, P) {
+      if (!night) return;
+      if (!dark || dark.width !== cv.width) dark = kit.mk(cv.width, cv.height);
+      var d = dark.getContext('2d'), z = cam.z, hw = 200 / z + 120, hh = 125 / z + 120;
+      var lights = [{ x: P.x, y: P.y * K - 14, r: 70, h: 40, s: 60, l: 70, a: 0.6 }];
+      objs.forEach(function (o) {
+        if (Math.abs(o.x - cam.x) > hw || Math.abs(o.y * K - cam.y) > hh + 200) return;
+        sprite(o).lights.forEach(function (l) { lights.push({ x: o.x + l.x * o.s, y: o.y * K + l.y * o.s, r: l.r * o.s, h: l.h, s: l.s, l: l.l, a: l.a }); });
+      });
+      var PSN = Combat.api.pixelScale || 2;
+      function px(l) { return [((l.x - cam.x) * z + 200) * PSN, ((l.y - cam.y) * z + 125) * PSN, l.r * z * PSN]; }
+      d.globalCompositeOperation = 'source-over'; d.clearRect(0, 0, cv.width, cv.height); d.fillStyle = 'rgba(10,9,34,0.62)'; d.fillRect(0, 0, cv.width, cv.height);
+      d.globalCompositeOperation = 'destination-out';
+      lights.forEach(function (l) { var q = px(l), g = d.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); g.addColorStop(0, 'rgba(0,0,0,' + Math.min(1, l.a) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = g; d.fillRect(q[0] - q[2], q[1] - q[2], q[2] * 2, q[2] * 2); });
+      c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(dark, 0, 0);
+      c.globalCompositeOperation = 'lighter';
+      lights.forEach(function (l) { var q = px(l), g = c.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); g.addColorStop(0, 'hsla(' + l.h + ',' + l.s + '%,' + l.l + '%,' + (0.2 * l.a) + ')'); g.addColorStop(1, 'hsla(' + l.h + ',' + l.s + '%,' + l.l + '%,0)'); c.fillStyle = g; c.fillRect(q[0] - q[2], q[1] - q[2], q[2] * 2, q[2] * 2); });
+      c.restore();
+    }
+  };
+
+  /* settings as text */
+  document.getElementById('copy').addEventListener('click', function (e) {
+    var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json.value).then(done, fail); else fail();
+    e.currentTarget.blur();
+  });
+  document.getElementById('applyjson').addEventListener('click', function (e) {
+    var o = null;
+    try { o = JSON.parse(json.value); } catch (err) {}
+    if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing was changed.'; return; }
+    json.blur(); spec = o; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
+  });
+
+  try { var saved = JSON.parse(localStorage.getItem('enveditor')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
+  apply();
+  var start = Combat.dbg().P; start.x = WX / 2; start.y = WY / 2;
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    rebuild();
+    var D = Combat.dbg();
+    D.W.pillars = solids;
+    if (!D.P.dead) D.P.hp = D.P.maxHp;
+    Combat.update(dt); Combat.render(ctx);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

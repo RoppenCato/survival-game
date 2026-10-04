@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Character Editor</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:72ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto}
+#poses,#sheet{max-width:900px}
+canvas{display:block;width:100%;height:auto;border-radius:8px}
+#cv{background:#8fd66d;cursor:crosshair;touch-action:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel{margin-top:12px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
+.group{display:flex;flex-wrap:wrap;gap:8px}
+button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
+button:hover{background:var(--btnh)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
+.sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
+textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--ink2)}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">&larr; Back to menu</a>
+  <h1>Character Editor</h1>
+  <p class="lede">Reshape and recolour a character and see it move straight away. Walk, sprint, dash and attack in the arena while you drag the sliders. The settings can be copied out as text and pasted back in later.</p>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Arena"></canvas></div>
+      <section class="panel">
+        <h2>Frames</h2>
+        <canvas id="sheet" width="500" height="400" aria-label="Poses of the character"></canvas>
+        <p class="desc">Columns: standing, then four moments of the walk. Rows: south, west, east, north. Attacks are best judged in the arena.</p>
+      </section>
+      <section class="panel">
+        <h2>Arena</h2>
+        <div class="group">
+          <button id="sbot">Add bot</button>
+          <button id="sturret">Add turret</button>
+          <button id="sbossbot">Add Bossbot</button>
+          <button id="sboss">Add Guardian</button>
+          <button id="sclear">Clear</button>
+          <button id="nodmg" aria-pressed="true">No damage</button>
+          <button id="sound" aria-pressed="true">Sound</button>
+        </div>
+        <h2 class="more">Controls</h2>
+        <dl class="keys">
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
+          <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack (three-hit combo). Hold to charge a heavy swing</dd>
+          <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block</dd>
+          <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+          <dt><kbd>F</kbd></dt><dd>Ranged shot</dd>
+          <dt><kbd>H</kbd></dt><dd>Spawn a bot</dd>
+        </dl>
+      </section>
+    </div>
+
+    <div class="right">
+      <section class="panel">
+        <h2>Sprite</h2>
+        <div class="group" id="sprites"></div>
+        <h2 class="more">Shape variations</h2>
+        <div class="group" id="shapes"></div>
+        <h2 class="more">Colour variations</h2>
+        <div class="group" id="palettes"></div>
+        <div class="group" style="margin-top:12px">
+          <button id="random">Randomise</button>
+          <button id="resetall">Reset to default</button>
+        </div>
+        <p class="desc">Shape and colour variations are independent, so you can combine one of each.</p>
+      </section>
+      <section class="panel">
+        <h2>Body</h2>
+        <div id="pbody"></div>
+        <div class="group" id="toggles" style="margin-top:8px"></div>
+        <h2 class="more">Eyewear</h2>
+        <div class="group" id="eyewear"></div>
+      </section>
+      <section class="panel">
+        <h2>Attack style</h2>
+        <div class="group" id="attacks"></div>
+        <p class="desc" id="atkdesc"></p>
+        <h2 class="more">Animation</h2>
+        <div id="panim"></div>
+        <p class="desc">Side-to-side sway and Stance width only show when walking north or south. Sway at 1 is the old waddle.</p>
+      </section>
+      <section class="panel">
+        <h2>Colours</h2>
+        <div class="swatches" id="swatches"></div>
+        <h2 class="more">Tone (all colours at once)</h2>
+        <div id="ptone"></div>
+      </section>
+      <section class="panel">
+        <h2>Settings as text</h2>
+        <textarea id="json" spellcheck="false" aria-label="Sprite settings as text"></textarea>
+        <div class="group" style="margin-top:8px">
+          <button id="copy">Copy</button>
+          <button id="applyjson">Apply text</button>
+        </div>
+        <p class="desc" id="jsonmsg">Copy this to keep a look. Paste one in and press Apply text to load it.</p>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+__ART__
+__COMBAT__
+(function () {
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+
+  // The canvas is shown large, so give it enough pixels to stay sharp at its displayed size.
+  function fitCanvas() {
+    var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4;
+    if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); }
+    Combat.api.pixelScale = ps;
+  }
+  fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
+  var lib = GameArt.lib;
+  Combat.init(lib);
+  var S = Combat.S; S.look = 'classic';
+  Combat.clear();
+  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
+  var held = {};
+
+  /* sound */
+  var AC = null;
+  function ac() {
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (AC && AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  function tone(f, d, type, v, to) {
+    var a = ac(); if (!a) return; var t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t);
+    if (to) o.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + d);
+    g.gain.setValueAtTime(v || 0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+  }
+  function noise(d, v, fc, q) {
+    var a = ac(); if (!a) return; var n = Math.floor(a.sampleRate * d), b = a.createBuffer(1, n, a.sampleRate), ch = b.getChannelData(0);
+    for (var i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var s = a.createBufferSource(); s.buffer = b;
+    var f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fc; f.Q.value = q || 1;
+    var g = a.createGain(); g.gain.value = v; s.connect(f); f.connect(g); g.connect(a.destination); s.start();
+  }
+  var SFX = {
+    swing: function (v) { noise(0.12, 0.2, 1500 + (v || 0) * 400, 0.8); },
+    hit: function (v) { var m = 1 + (v || 0) * 0.16; tone(200 * m, 0.1, 'square', 0.09, 70); tone(90, 0.12, 'sine', 0.16, 45); noise(0.05, 0.28, 2600, 1); },
+    heavyhit: function (v) { tone(130, 0.2, 'sawtooth', 0.12, 38); tone(70, 0.3, 'sine', 0.26, 32); noise(0.1, 0.32, 1400, 0.8); tone(900, 0.08, 'triangle', 0.05, 400); },
+    parry: function () { tone(1320, 0.35, 'triangle', 0.12); tone(1980, 0.28, 'sine', 0.08); noise(0.04, 0.2, 5000, 2); },
+    block: function () { tone(220, 0.1, 'square', 0.08, 120); noise(0.06, 0.2, 900, 1); },
+    dash: function () { noise(0.13, 0.16, 1400, 0.9); tone(760, 0.1, 'triangle', 0.05, 320); },
+    shoot: function () { tone(520, 0.1, 'square', 0.06, 180); },
+    hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
+    tele: function () { tone(880, 0.07, 'square', 0.04); },
+    die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
+    crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
+    stagger: function () { tone(260, 0.3, 'triangle', 0.1, 520); },
+    slam: function () { tone(70, 0.35, 'sine', 0.25, 35); noise(0.25, 0.3, 300, 0.6); },
+    raise: function () { tone(420, 0.04, 'triangle', 0.03); },
+    charge: function (v) { tone(420 + (v || 0) * 220, 0.12, 'triangle', 0.05); if (v === 3) tone(1400, 0.2, 'sine', 0.06); }
+  };
+  Combat.api.sfx = function (n, v) { if (SFX[n]) SFX[n](v); };
+
+  /* input: game keys are ignored while typing in a text field */
+  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')); }
+  window.addEventListener('keydown', function (e) {
+    if (!codes[e.code] || typing(e)) return;
+    e.preventDefault(); ac();
+    if (e.repeat) return;
+    held[e.code] = true; Combat.key(e.code, true);
+  });
+  window.addEventListener('keyup', function (e) {
+    if (!codes[e.code] || typing(e)) return;
+    e.preventDefault(); held[e.code] = false; Combat.key(e.code, false);
+  });
+  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
+  function pos(e) {
+    var r = cv.getBoundingClientRect();
+    Combat.mouse((e.clientX - r.left) / r.width * 400, (e.clientY - r.top) / r.height * 250);
+  }
+  cv.addEventListener('mousemove', pos);
+  cv.addEventListener('mousedown', function (e) { ac(); pos(e); Combat.button(e.button, true); e.preventDefault(); });
+  window.addEventListener('mouseup', function (e) { Combat.button(e.button, false); });
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  /* ---------- sprite settings ---------- */
+  var BODY = [
+    { k: 'scale', label: 'Overall size', min: 0.5, max: 2, step: 0.05 },
+    { k: 'headW', label: 'Head width', min: 0.7, max: 1.4, step: 0.02 },
+    { k: 'headH', label: 'Head height', min: 0.7, max: 1.4, step: 0.02 },
+    { k: 'bodyW', label: 'Body width', min: 0.7, max: 1.5, step: 0.02 },
+    { k: 'bodyH', label: 'Body height', min: 0.7, max: 1.5, step: 0.02 },
+    { k: 'legL', label: 'Leg length', min: 0.6, max: 2, step: 0.05 },
+    { k: 'legW', label: 'Leg width', min: 0.6, max: 1.6, step: 0.05 },
+    { k: 'armL', label: 'Arm length', min: 0.7, max: 1.5, step: 0.05 },
+    { k: 'armW', label: 'Arm width', min: 0.6, max: 1.6, step: 0.05 },
+    { k: 'eyeSize', label: 'Eye size', min: 0.5, max: 1.6, step: 0.05 },
+    { k: 'eyewearSize', label: 'Eyewear size', min: 0.6, max: 1.6, step: 0.05 }
+  ];
+  var ANIM = [
+    { k: 'walkRate', label: 'Walk speed', min: 0.5, max: 2, step: 0.05 },
+    { k: 'bob', label: 'Walk bob', min: 0, max: 2.5, step: 0.05 },
+    { k: 'stride', label: 'Stride', min: 0, max: 2, step: 0.05 },
+    { k: 'armSwing', label: 'Arm swing', min: 0, max: 2.5, step: 0.05 },
+    { k: 'sway', label: 'Side-to-side sway', min: 0, max: 1.5, step: 0.05 },
+    { k: 'stance', label: 'Stance width', min: 0.4, max: 1.3, step: 0.05 },
+    { k: 'lean', label: 'Attack lean', min: 0, max: 2.5, step: 0.05 },
+    { k: 'atkPower', label: 'Attack power', min: 0, max: 2, step: 0.1 },
+    { k: 'bladeLen', label: 'Blade length', min: 0.5, max: 1.8, step: 0.05 },
+    { k: 'slashSize', label: 'Slash size', min: 0.6, max: 2, step: 0.05 },
+    { k: 'slashWidth', label: 'Slash thickness', min: 0.15, max: 0.9, step: 0.01 }
+  ];
+  var TONE = [
+    { k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 },
+    { k: 'sat', label: 'Saturation', min: 0, max: 2, step: 0.05 },
+    { k: 'lum', label: 'Brightness', min: 0.5, max: 1.5, step: 0.05 }
+  ];
+  var TOGGLES = [{ k: 'blush', label: 'Blush' }];
+  var COLS = [['skin', 'Skin'], ['hair', 'Hair'], ['coat', 'Coat'], ['vest', 'Vest'], ['pants', 'Trousers'], ['boot', 'Boots'], ['trim', 'Brass trim'],
+    ['lens', 'Lenses'], ['eye', 'Eyes'], ['line', 'Outline'], ['blade', 'Blade'], ['slash', 'Slash']];
+  var EYEWEAR = ['None', 'Goggles up', 'Goggles on', 'Round glasses', 'Square glasses', 'Shades', 'Monocle'];
+  var ATTACKS = [['Arm only', 'The old version: the body stands still and only the arm swings.'],
+    ['Step-in', 'A small step back, then a step into the swing with a little stretch. Light and quick.'],
+    ['Lunge', 'A deeper pull back and a long lunge forward, a held pose at full reach, then a slide back. The most forward drive.'],
+    ['Hop chop', 'A short hop in the wind-up and a hard landing that squashes the body. Feels heavy.']];
+  var NUM = BODY.concat(ANIM, TONE);
+  var SHAPE_KEYS = BODY.concat(ANIM).map(function (p) { return p.k; });
+
+  var SHAPES = [
+    { name: 'Default', set: {} },
+    { name: 'Chibi', set: { headW: 1.2, headH: 1.2, bodyH: 0.85, legL: 0.7, armL: 0.9, eyeSize: 1.3 } },
+    { name: 'Lean', set: { headW: 0.9, headH: 0.88, bodyH: 1.1, legL: 1.45, armL: 1.2, eyeSize: 0.8, stride: 1.3 } },
+    { name: 'Tall', set: { headW: 0.85, headH: 0.85, bodyH: 1.2, legL: 1.7, armL: 1.3, eyeSize: 0.8, stride: 1.4 } },
+    { name: 'Scout', set: { bodyW: 0.85, legL: 1.2, walkRate: 1.4, stride: 1.3, bladeLen: 0.8 } },
+    { name: 'Brute', set: { scale: 1.4, headW: 0.85, headH: 0.85, bodyW: 1.4, bodyH: 1.15, legL: 0.8, legW: 1.4, armL: 1.2, armW: 1.5, walkRate: 0.8, bladeLen: 1.3, slashSize: 1.3 } },
+    { name: 'Tiny', set: { scale: 0.75, walkRate: 1.4 } },
+    { name: 'Boss', set: { scale: 1.8, bodyW: 1.2, armW: 1.3, walkRate: 0.7, bladeLen: 1.2, slashSize: 1.4 } }
+  ];
+  var PALETTES = [
+    { name: 'Default', set: {}, col: {} },
+    { name: 'Night', set: { sat: 0.6, lum: 0.75 }, col: { coat: '#2b4a6b' } },
+    { name: 'Crimson', set: {}, col: { coat: '#a8323a', vest: '#3a2a30', pants: '#2a2230', hair: '#3a2a26', blade: '#ffb09a', slash: '#ff8a6a' } },
+    { name: 'Forest', set: {}, col: { coat: '#4a7a3a', vest: '#6b4a2a', pants: '#4a3a2a', hair: '#c98a3a', lens: '#b8f27f', blade: '#c8f59a', slash: '#b8f27f' } },
+    { name: 'Ghost', set: { sat: 0.25, lum: 1.25 }, col: { slash: '#ffffff', blade: '#ffffff' } },
+    { name: 'Rival', set: { hue: 180 }, col: {} },
+    { name: 'Rust bot', set: {}, col: { skin: '#9aa3ad', hair: '#6b6f7a', coat: '#a5562e', vest: '#6b6f7a', pants: '#4b4f58', boot: '#2a2c33', trim: '#c9c2a8', lens: '#ff5a4a', eye: '#ff5a4a', blade: '#ffc09a', slash: '#ff8a4a' } }
+  ];
+
+  var curId = 'hero', spec = null, inputs = {}, outputs = {}, swatch = {}, toggleBtn = {};
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function defOf() { return clone(lib.heroDef); }
+  function snap(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
+  function fmt(p, v) { return p.step < 1 ? v.toFixed(p.step < 0.1 || (p.step * 100) % 10 ? 2 : 1) : String(v); }
+  var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg');
+
+  function apply() {
+    for (var i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : lib.heroDef[p.k]); }
+    var dflt = lib.heroDef;
+    if (!isFinite(Number(spec.eyewear))) spec.eyewear = dflt.eyewear;
+    if (!isFinite(Number(spec.atkStyle))) spec.atkStyle = dflt.atkStyle;
+    spec.eyewear = Math.max(0, Math.min(EYEWEAR.length - 1, Math.round(Number(spec.eyewear)) || 0));
+    spec.atkStyle = Math.max(0, Math.min(ATTACKS.length - 1, Math.round(Number(spec.atkStyle)) || 0));
+    spec = lib.setHero(spec);
+    for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
+    for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
+    for (i = 0; i < TOGGLES.length; i++) toggleBtn[TOGGLES[i].k].setAttribute('aria-pressed', spec[TOGGLES[i].k] ? 'true' : 'false');
+    choice('eyewear', spec.eyewear); choice('attacks', spec.atkStyle);
+    document.getElementById('atkdesc').textContent = ATTACKS[spec.atkStyle][1];
+    if (document.activeElement !== json) json.value = JSON.stringify(spec);
+    drawSheet();
+    try { localStorage.setItem('herotest.' + curId, JSON.stringify(spec)); } catch (e) {}
+  }
+
+  function sliders(hostId, list) {
+    var host = document.getElementById(hostId);
+    list.forEach(function (p) {
+      var row = document.createElement('label'); row.className = 'row';
+      var name = document.createElement('span'); name.textContent = p.label;
+      var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step;
+      var out = document.createElement('output');
+      inp.addEventListener('input', function () { spec[p.k] = parseFloat(inp.value); apply(); });
+      inp.addEventListener('change', function () { inp.blur(); });
+      row.appendChild(name); row.appendChild(inp); row.appendChild(out); host.appendChild(row);
+      inputs[p.k] = inp; outputs[p.k] = out;
+    });
+  }
+  sliders('pbody', BODY); sliders('panim', ANIM); sliders('ptone', TONE);
+
+  var togHost = document.getElementById('toggles');
+  TOGGLES.forEach(function (t) {
+    var b = document.createElement('button'); b.textContent = t.label;
+    b.addEventListener('click', function () { spec[t.k] = spec[t.k] ? 0 : 1; apply(); b.blur(); });
+    togHost.appendChild(b); toggleBtn[t.k] = b;
+  });
+
+  function choice(hostId, v) { var b = document.querySelectorAll('#' + hostId + ' button'); for (var n = 0; n < b.length; n++) b[n].setAttribute('aria-pressed', n === v ? 'true' : 'false'); }
+  function choices(hostId, names, key) {
+    var host = document.getElementById(hostId);
+    names.forEach(function (nm, n) {
+      var b = document.createElement('button'); b.textContent = nm;
+      b.addEventListener('click', function () { spec[key] = n; apply(); b.blur(); });
+      host.appendChild(b);
+    });
+  }
+  choices('eyewear', EYEWEAR, 'eyewear'); choices('attacks', ATTACKS.map(function (q) { return q[0]; }), 'atkStyle');
+
+  var swHost = document.getElementById('swatches');
+  COLS.forEach(function (cdef) {
+    var lab = document.createElement('label'); lab.className = 'sw';
+    var inp = document.createElement('input'); inp.type = 'color';
+    var name = document.createElement('span'); name.textContent = cdef[1];
+    inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); });
+    lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
+  });
+
+  function buttons(hostId, list, fn) {
+    var host = document.getElementById(hostId);
+    list.forEach(function (item) {
+      var b = document.createElement('button'); b.textContent = item.name;
+      b.addEventListener('click', function () { fn(item); b.blur(); });
+      host.appendChild(b);
+    });
+  }
+  buttons('shapes', SHAPES, function (v) {
+    var d = defOf(), k;
+    SHAPE_KEYS.forEach(function (key) { spec[key] = d[key]; });
+    for (k in v.set) spec[k] = v.set[k];
+    apply();
+  });
+  buttons('palettes', PALETTES, function (v) {
+    var d = defOf(), k;
+    spec.col = d.col; spec.hue = d.hue; spec.sat = d.sat; spec.lum = d.lum;
+    for (k in v.set) spec[k] = v.set[k];
+    for (k in v.col) spec.col[k] = v.col[k];
+    apply();
+  });
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function hsl(h, s, l) {
+    h = ((h % 360) + 360) % 360; var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; } else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; } else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+    function h2(v) { v = Math.round((v + m) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
+    return '#' + h2(r) + h2(g) + h2(b);
+  }
+  document.getElementById('random').addEventListener('click', function (e) {
+    var d = defOf();
+    BODY.forEach(function (p) { if (p.k !== 'scale') spec[p.k] = rnd(p.min + (p.max - p.min) * 0.15, p.max - (p.max - p.min) * 0.15); });
+    spec.scale = [0.75, 1, 1, 1, 1.25, 1.5][Math.floor(Math.random() * 6)];
+    spec.hue = 0; spec.sat = 1; spec.lum = 1;
+    var coat = rnd(0, 360), glow = rnd(0, 360);
+    spec.col = d.col;
+    spec.col.coat = hsl(coat, rnd(0.3, 0.6), rnd(0.28, 0.42));
+    spec.col.pants = hsl(coat + rnd(120, 240), rnd(0.15, 0.35), rnd(0.18, 0.28));
+    spec.col.hair = hsl(rnd(10, 50), rnd(0.3, 0.7), rnd(0.15, 0.6));
+    spec.col.skin = ['#ffd8b0', '#e8b88a', '#c98e62', '#8f5e3c', '#fbe0c8'][Math.floor(Math.random() * 5)];
+    spec.col.lens = hsl(glow, 0.8, 0.72); spec.col.blade = hsl(glow, 0.85, 0.66); spec.col.slash = hsl(glow, 0.95, 0.78);
+    apply(); e.currentTarget.blur();
+  });
+  document.getElementById('resetall').addEventListener('click', function (e) { spec = defOf(); apply(); e.currentTarget.blur(); });
+
+  /* settings as text */
+  document.getElementById('copy').addEventListener('click', function (e) {
+    json.value = JSON.stringify(spec);
+    var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json.value).then(done, fail); else fail();
+    e.currentTarget.blur();
+  });
+  document.getElementById('applyjson').addEventListener('click', function (e) {
+    var o = null;
+    try { o = JSON.parse(json.value); } catch (err) {}
+    if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing was changed.'; return; }
+    spec = o; json.blur(); apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
+  });
+
+  /* frame sheet */
+  var sheet = document.getElementById('sheet'), sctx = sheet.getContext('2d');
+  function drawSheet() {
+    var dirs = ['down', 'left', 'right', 'up'], r, f;
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.fillStyle = '#d9c9a0'; sctx.fillRect(0, 0, 500, 400);
+    sctx.fillStyle = 'rgba(60,40,20,0.12)'; sctx.fillRect(100, 0, 2, 400);
+    sctx.setTransform(2, 0, 0, 2, 0, 0); sctx.lineJoin = 'round'; sctx.lineCap = 'round';
+    for (r = 0; r < 4; r++) for (f = 0; f < 5; f++) {
+      var an = { phase: f === 0 ? 0 : (f - 1) * Math.PI / 2 + 0.5, amt: f === 0 ? 0 : 1, t: 0.7, lx: 0, ly: 0, blink: 0, sq: 0 };
+      sctx.save(); sctx.beginPath(); sctx.rect(f * 50, r * 50, 50, 50); sctx.clip();
+      sctx.translate(f * 50 + 25, r * 50 + 46); sctx.scale(0.72, 0.72);
+      lib.playerD(sctx, 0, 0, dirs[r], an, null);
+      sctx.restore();
+    }
+  }
+
+  /* sprite picker */
+  var sprHost = document.getElementById('sprites'), sprBtns = {};
+  function pick(id) {
+    curId = id; spec = null;
+    try { spec = JSON.parse(localStorage.getItem('herotest.' + id)); } catch (e) {}
+    if (!spec || typeof spec !== 'object') spec = defOf();
+    for (var k in sprBtns) sprBtns[k].setAttribute('aria-pressed', k === id ? 'true' : 'false');
+    apply();
+  }
+  ['hero'].forEach(function (id) {
+    var b = document.createElement('button'); b.textContent = 'Hero';
+    b.addEventListener('click', function () { pick(id); b.blur(); });
+    sprHost.appendChild(b); sprBtns[id] = b;
+  });
+  pick('hero');
+
+  /* arena */
+  var noDmg = true;
+  function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(b); b.blur(); }); }
+  act('sbot', function () { Combat.spawn('bot'); });
+  act('sturret', function () { Combat.spawn('turret'); });
+  act('sbossbot', function () { Combat.spawn('bossbot'); });
+  act('sboss', function () { Combat.spawn('boss'); });
+  act('sclear', function () { Combat.clear(); });
+  act('nodmg', function (b) { noDmg = !noDmg; b.setAttribute('aria-pressed', noDmg ? 'true' : 'false'); });
+  act('sound', function (b) { S.sound = !S.sound; b.setAttribute('aria-pressed', S.sound ? 'true' : 'false'); });
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (noDmg) { var P = Combat.dbg().P; if (!P.dead) P.hp = P.maxHp; }
+    Combat.update(dt); Combat.render(ctx);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

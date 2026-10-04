@@ -1876,12 +1876,14 @@ function bakeProp(name, seed, opts) {
     sv = { b: P.bright, s: P.sat, ns: P.noShadow, oh: P.outsideHue, fh: P.factoryHue };
     var vr = rng(seed * 53 + 11); P.bright += (vr() - 0.5) * 5; P.sat *= 0.92 + vr() * 0.16; P.outsideHue += (vr() - 0.5) * 14; P.factoryHue += (vr() - 0.5) * 10; P.noShadow = true;
   }
-  var cv = mk(w * 2, h * 2), c = cv.getContext('2d');
-  c.setTransform(2, 0, 0, 2, -b[0] * 2, -b[1] * 2); c.lineJoin = 'round'; c.lineCap = 'round';
+  // opts.sx / opts.sy stretch the prop at bake time, so a resized prop stays sharp
+  var sx = opts.sx || 1, sy = opts.sy || 1;
+  var cv = mk(Math.ceil(w * 2 * sx), Math.ceil(h * 2 * sy)), c = cv.getContext('2d');
+  c.setTransform(2 * sx, 0, 0, 2 * sy, -b[0] * 2 * sx, -b[1] * 2 * sy); c.lineJoin = 'round'; c.lineCap = 'round';
   lights.length = 0; def.f(c, mats(), seed);
-  var L = lights.map(function (l) { return { x: l.x, y: l.y, r: l.r, h: l.h, s: l.s, l: l.l, a: l.a }; });
+  var L = lights.map(function (l) { return { x: l.x * sx, y: l.y * sy, r: l.r * Math.max(sx, sy), h: l.h, s: l.s, l: l.l, a: l.a }; });
   if (sv) { P.bright = sv.b; P.sat = sv.s; P.noShadow = sv.ns; P.outsideHue = sv.oh; P.factoryHue = sv.fh; }
-  return { cv: cv, l: b[0], t: b[1], w: w, h: h, lights: L };
+  return { cv: cv, l: b[0] * sx, t: b[1] * sy, w: w * sx, h: h * sy, lights: L };
 }
 
 function waterShimmer(c, x, y, t, seed) {

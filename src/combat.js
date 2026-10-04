@@ -2,7 +2,7 @@ var Combat = (function () {
 'use strict';
 var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
 var lib = null;
-var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy' };
+var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy', look: 'classic' };
 var WPRE = {
   snappy: { fz: 0.55, pf: 0.6, kb: 0.9, hs: 0.6, hd: 0.06, kd: 0.5 },
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
@@ -52,8 +52,14 @@ function pillarHit(x, y, r) {
   return false;
 }
 function moveCircle(e, dx, dy) {
+  var ox = e.x, oy = e.y;
   e.x += dx; e.y += dy;
-  e.x = clamp(e.x, 24, AW - 24); e.y = clamp(e.y, 40, AH - 20);
+  var B = api.scene && api.scene.bounds;  // a tool page can swap the arena for a bigger world
+  if (B) { e.x = clamp(e.x, B.x0, B.x1); e.y = clamp(e.y, B.y0, B.y1); }
+  else { e.x = clamp(e.x, 24, AW - 24); e.y = clamp(e.y, 40, AH - 20); }
+  // a tool page can mark ground as not walkable (the Sea Editor keeps walkers out of the water); slide along it
+  var wk = api.scene && api.scene.walk;
+  if (wk && !wk(e.x, e.y)) { if (wk(e.x, oy)) e.y = oy; else if (wk(ox, e.y)) e.x = ox; else { e.x = ox; e.y = oy; } }
   for (var i = 0; i < W.pillars.length; i++) {
     var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
     if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; }
@@ -282,10 +288,11 @@ function updateAnim(dt, dashing) {
   var sp = Math.min(200, Math.hypot(p.vx, p.vy * K));
   var target = dashing ? 1 : Math.min(1, sp / 105);
   an.amt += (target - an.amt) * Math.min(1, dt * (target > an.amt ? 14 : 9));
-  if (an.amt > 0.04) an.phase += Math.max(sp, 30) * dt * 0.115;
+  var hs = S.look === 'classic' ? lib.hero().spec : null;
+  if (an.amt > 0.04) an.phase += Math.max(sp, 30) * dt * 0.115 * (hs ? hs.walkRate : 1);
   an.t += dt;
   an.run += ((p.sprinting ? 1 : 0) - an.run) * Math.min(1, dt * 8);
-  an.bob = -Math.abs(Math.sin(an.phase)) * 1.0 * an.amt * (1 + 0.45 * an.run) + Math.sin(an.t * 2.2) * (1 - an.amt) * 0.4;
+  an.bob = -Math.abs(Math.sin(an.phase)) * 1.0 * an.amt * (1 + 0.45 * an.run) * (hs ? hs.bob : 1) + Math.sin(an.t * 2.2) * (1 - an.amt) * 0.4;
   var tx = (p.vx / 118) * 1.1, ty = (p.vy * K / 118) * 0.8;
   an.lvx += ((tx - an.lx) * 220 - an.lvx * 27) * dt; an.lx += an.lvx * dt;
   an.lvy += ((ty - an.ly) * 220 - an.lvy * 27) * dt; an.ly += an.lvy * dt;
@@ -356,7 +363,7 @@ function updatePlayer(dt) {
   else if (a.ph !== 'charge') {
     var sd = stepData(a);
     a.t += dt;
-    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing'); }
+    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing'); if (S.juice && lookSpec().atkStyle >= 2) dust(p.x, p.y, 3); }
     else if (a.ph === 'active') {
       var u = Math.min(1, a.t / sd.ac);
       var half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
@@ -422,20 +429,23 @@ function updatePlayer(dt) {
 }
 
 /* ---------- enemies ---------- */
+// A creature from the Creature Editor can carry its own numbers in e.cfg; plain bots use these.
+var BOT_CFG = { speed: 58, windup: 0.55, lunge: 175 };
 function botAI(e, dt, d, ang) {
+  var cf = e.cfg || BOT_CFG, sk = cf.speed / 58;
   e.cd -= dt;
   switch (e.state) {
     case 'idle': if (d < 130 && !P.dead) { e.state = 'chase'; e.t = 0; } break;
     case 'chase':
       e.face = ang;
-      if (d > 52) moveCircle(e, Math.cos(ang) * 58 * dt, Math.sin(ang) * 58 * dt);
-      else if (d < 30) moveCircle(e, -Math.cos(ang) * 45 * dt, -Math.sin(ang) * 45 * dt);
-      else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * 30 * dt, Math.sin(ang + sd * 1.57) * 30 * dt); }
-      if (d < 56 && e.cd <= 0 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.55; e.dirLock = ang; sfx('tele'); }
+      if (d > 52) moveCircle(e, Math.cos(ang) * cf.speed * dt, Math.sin(ang) * cf.speed * dt);
+      else if (d < 30) moveCircle(e, -Math.cos(ang) * 45 * sk * dt, -Math.sin(ang) * 45 * sk * dt);
+      else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * 30 * sk * dt, Math.sin(ang + sd * 1.57) * 30 * sk * dt); }
+      if (d < 56 && e.cd <= 0 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = cf.windup; e.dirLock = ang; sfx('tele'); }
       break;
     case 'windup': e.face = e.dirLock; if (e.t >= e.dur) { e.state = 'lunge'; e.t = 0; e.dur = 0.22; e.hitDone = false; } break;
     case 'lunge':
-      moveCircle(e, Math.cos(e.dirLock) * 175 * dt, Math.sin(e.dirLock) * 175 * dt);
+      moveCircle(e, Math.cos(e.dirLock) * cf.lunge * dt, Math.sin(e.dirLock) * cf.lunge * dt);
       if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
         e.hitDone = true;
         var r = hurtPlayer(12, e.x, e.y, 'melee', e);
@@ -551,6 +561,7 @@ function updateEnemies(dt) {
     var e = W.enemies[i];
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
+    if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
     if (e.freezeT > 0) { e.freezeT -= dt; if (e.freezeT <= 0) { e.kx += e.pkx; e.ky += e.pky; e.pkx = e.pky = 0; } continue; }
     e.sq = Math.max(0, e.sq - dt * 4.5);
     var adt = e.rattle > 0 ? dt * 0.7 : dt;
@@ -815,11 +826,12 @@ function drawTelegraphs(c) {
     gEll(c, L.x, L.y, L.r + 5, L.r + 5); c.stroke(); c.setLineDash([]);
   }
 }
-function visAngle(ang, dir) {
-  if (dir !== 'up' && dir !== 'down') return ang;
-  var half = Math.max(0.5, stepData(P.atk).arc / 2), f = Math.min(0.52, 0.7 / half);
-  return P.atk.dir + (ang - P.atk.dir) * f;
-}
+// The swing is drawn at its true angle in every direction (it used to be narrowed when facing up or down,
+// which made it look like a stab).
+function visAngle(ang, dir) { return ang; }
+// The settings of whichever hero look is showing, and how far long legs raise the classic hero's body.
+function lookSpec() { return S.look === 'sprite' ? lib.sprite().spec : lib.hero().spec; }
+function heroLift() { return S.look === 'sprite' ? 0 : lib.hero().lift; }
 function guardSide() { return Math.cos(P.face) >= 0 ? 1 : -1; }
 function bodyPose() {
   var p = P, a = p.atk, lx = 0, ly = 0, cr = 0;
@@ -831,12 +843,13 @@ function bodyPose() {
     if (a.ph === 'windup') amt = -2.6 * big * Math.min(1, a.t / sd.wu);
     else if (a.ph === 'active') amt = (-2.6 + 6.2 * Math.min(1, a.t / sd.ac)) * big;
     else amt = 3.6 * big * Math.max(0, 1 - a.t / sd.rec);
+    if (S.look === 'classic') amt *= lib.hero().spec.lean;
     lx = Math.cos(a.dir) * amt; ly = Math.sin(a.dir) * K * amt * 0.7;
   }
   if (p.guard) { lx += Math.cos(p.face) * 1.6; cr = 1.4; }
   lx += p.anim.lx; ly += p.anim.ly + p.anim.bob;
   if (p.fireT > 0) { var f = p.fireT / 0.2; lx -= Math.cos(p.fireAng) * 1.8 * f; ly -= Math.sin(p.fireAng) * K * 1.4 * f; }
-  return { lx: lx, ly: ly + cr };
+  return { lx: lx, ly: ly + cr - heroLift() };
 }
 function swordPose(dir) {
   var p = P, a = p.atk, o = {};
@@ -846,25 +859,19 @@ function swordPose(dir) {
     o.len = 26; o.front = Math.sin(ang2) >= -0.05; o.side = Math.cos(ang2) >= 0 ? 1 : -1; o.armSide = o.side; o.atk = true;
   } else if (a.ph !== 'none') {
     var sd = stepData(a), half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1, u;
-    var pb = (dir === 'up' || dir === 'down') ? 0.12 : 0.45;
+    var pb = 0.45;
     if (a.ph === 'windup') u = -pb * (a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
     var ang = visAngle(a.dir - half * sign + sd.arc * sign * u, dir);
     var upv = Math.max(0, -Math.sin(ang)), sdn = Math.cos(a.dir) >= 0 ? 1 : -1, sb = Math.cos(ang) >= 0 ? 1 : -1;
     o.len = sd.blade;
     if (dir === 'up' || dir === 'down') {
-      var startAng = a.dir - half * sign, armSide = Math.cos(startAng) >= 0 ? 1 : -1, AR = 8.6;
-      var gpx0 = armSide * 6.5 + AR * Math.cos(ang), gpy = AR * Math.sin(ang);
-      var mm = armSide * gpx0, mixu = clamp((upv - 0.3) / 0.4, 0, 1); mixu = mixu * mixu * (3 - 2 * mixu);
-      var gpx = armSide * (mm + (Math.max(mm, 10.5) - mm) * mixu);
-      var tt = clamp(u, -0.1, 1), sg2 = a.combo >= 2 ? 1 : sign, amp = a.combo >= 2 ? 1.25 : 1;
-      o.hx = gpx; o.hy = -17 + gpy * K + sg2 * (tt - 0.5) * 5 * amp - 3 * upv;
-      o.tilt = sg2 * (tt - 0.5) * 0.5 * amp;
-      o.len = clamp(9 + sd.blade - (gpx * Math.cos(ang) + gpy * Math.sin(ang)), sd.blade * 0.8, sd.blade * 1.45);
-      o.armSide = armSide;
-    } else {
+    // a wide side-to-side swing: the hand sweeps across in front of the body, or over the head when facing away
+    var startAng = a.dir - half * sign, armSide = Math.cos(startAng) >= 0 ? 1 : -1;
+    o.hx = armSide * 2.5 + Math.cos(ang) * 8; o.hy = -14 + Math.sin(ang) * 8 * K - 4 * upv; o.armSide = armSide; o.lift = upv;
+  } else {
       o.hx = Math.cos(ang) * 9 + sdn * 10 * upv * upv; o.hy = -13 + Math.sin(ang) * 9 * K - 5 * upv;
     }
-    o.ca = Math.cos(ang); o.sa = Math.sin(ang) * K + (o.tilt || 0);
+    o.ca = Math.cos(ang); o.sa = Math.sin(ang) * (K + (1 - K) * (o.lift || 0));
     if (o.tilt) { var nn = Math.hypot(o.ca, o.sa); o.ca /= nn; o.sa /= nn; }
     o.front = Math.sin(ang) >= -0.05; o.side = sdn; o.atk = true;
   } else {
@@ -874,6 +881,7 @@ function swordPose(dir) {
     else { o.hx = side * 8; o.hy = -14; o.ca = side * 0.55; o.sa = -0.83; }
     o.len = 20; o.front = true; o.side = side; o.atk = false;
   }
+  if (o.atk && S.look === 'classic') o.len *= lib.hero().spec.bladeLen;
   return o;
 }
 function shieldBehind() { return Math.sin(P.face) < -0.05; }
@@ -882,7 +890,7 @@ function shieldPose() {
   return [Math.cos(P.face) * 9, -15 + Math.sin(P.face) * 3];
 }
 function heroPose(dir) {
-  var p = P, a = p.atk, bp = bodyPose(), sp = swordPose(dir), pose = { lx: bp.lx, ly: bp.ly };
+  var p = P, a = p.atk, bp = bodyPose(), sp = swordPose(dir), pose = { lx: bp.lx, ly: bp.ly + heroLift() };
   var side = (dir === 'left' || dir === 'right');
   var drawn = a.ph !== 'none';
   pose.sheath = !drawn;
@@ -906,9 +914,127 @@ function heroPose(dir) {
   }
   return pose;
 }
+/* ---------- sprite look: stepped frames, pixel sword and a big cyan slash ---------- */
+function walkFrame(ph) { var q = ph / (Math.PI * 2); return Math.floor((q - Math.floor(q)) * 4) % 4; }
+function spriteFrame() {
+  var p = P, a = p.atk;
+  if (a.ph === 'charge') return { pose: 'atk', f: 1 };
+  if (a.ph !== 'none') {
+    var sd = stepData(a);
+    if (a.ph === 'windup') return { pose: 'atk', f: a.t < sd.wu * 0.5 ? 0 : 1 };
+    if (a.ph === 'active') return { pose: 'atk', f: 2 };
+    return { pose: 'atk', f: a.t < sd.rec * 0.45 ? 2 : 3 };
+  }
+  if (p.anim.amt > 0.35) return { pose: 'walk', f: walkFrame(p.anim.phase * lib.sprite().spec.walkRate) };
+  return { pose: 'idle', f: 0 };
+}
+// Attack styles for the sprite look. All of it is visual: the hitbox and timing do not change.
+// pull: step back in the wind-up (px), lunge: step into the swing (px), sq: squash and stretch amount,
+// hop: jump height (px), spin: the body and blade turn a full circle.
+var ATK_STYLES = [
+  { pull: 0, lunge: 0, sq: 0, hop: 0, spin: 0 },
+  { pull: 2, lunge: 5, sq: 0.1, hop: 0, spin: 0 },
+  { pull: 4, lunge: 10, sq: 0.18, hop: 0, spin: 0 },
+  { pull: 1, lunge: 3, sq: 0.22, hop: 6, spin: 0 },
+  { pull: 2, lunge: 4, sq: 0.1, hop: 2, spin: 1 }
+];
+function atkBody() {
+  var o = { x: 0, y: 0, hop: 0, sx: 1, sy: 1, spin: -1 }, a = P.atk;
+  if (a.ph === 'none') return o;
+  var sp = lookSpec(), st = ATK_STYLES[Math.round(sp.atkStyle)] || ATK_STYLES[0];
+  if (st.spin && S.look !== 'sprite') st = { pull: st.pull, lunge: st.lunge, sq: st.sq, hop: st.hop, spin: 0 };
+  var pw = sp.atkPower * (a.combo >= 2 ? 1.5 : 1), off = 0, sq = 0, hop = 0, dir = a.ph === 'charge' ? P.face : a.dir, u;
+  if (a.ph === 'charge') { u = Math.min(1, a.t / 0.3); off = -st.pull * u; sq = -st.sq * 0.8 * u; }
+  else {
+    var sd = stepData(a);
+    if (a.ph === 'windup') { u = Math.min(1, a.t / sd.wu); off = -st.pull * u; sq = -st.sq * u; hop = st.hop * u; if (st.spin) o.spin = 0; }
+    else if (a.ph === 'active') { u = Math.min(1, a.t / sd.ac); var e = 1 - (1 - u) * (1 - u); off = -st.pull + (st.pull + st.lunge) * e; sq = st.sq * (1 - u * 0.5); hop = st.hop * (1 - e); if (st.spin) o.spin = u * 0.75; }
+    else { u = Math.min(1, a.t / sd.rec); var v = u < 0.4 ? 0 : (u - 0.4) / 0.6; off = st.lunge * (1 - v * v); sq = -st.sq * 0.9 * Math.max(0, 1 - u / 0.5); if (st.spin) o.spin = Math.min(1, 0.75 + 0.25 * u / 0.4); }
+  }
+  o.x = Math.cos(dir) * off * pw * sp.scale; o.y = Math.sin(dir) * K * off * pw * sp.scale; o.hop = hop * pw * sp.scale;
+  sq *= Math.min(1.6, pw);
+  if (sq < 0 || Math.abs(Math.sin(dir)) * K > Math.abs(Math.cos(dir))) { o.sy = 1 + sq; o.sx = 1 - sq * 0.5; }
+  else { o.sx = 1 + sq; o.sy = 1 - sq * 0.5; }
+  return o;
+}
+function spinDir(dir, prog) { var order = ['down', 'left', 'up', 'right'], i = order.indexOf(dir); return order[(i + Math.floor(prog * 4)) % 4]; }
+function spriteSword() {
+  var p = P, a = p.atk, ang, len, start, sp = lib.sprite().spec;
+  if (a.ph === 'none' || (p.guard && !S.shield)) return null;
+  if (a.ph === 'charge') { ang = p.face + 2.3; start = ang; len = 28 * sp.bladeLen; }
+  else {
+    var sd = stepData(a), half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
+    start = a.dir - half * sign;
+    if (a.ph === 'active') ang = start + sd.arc * sign * Math.min(1, a.t / sd.ac);
+    else ang = [start - 0.25 * sign, start - 0.6 * sign, a.dir + half * sign, a.dir + half * sign * 1.15][spriteFrame().f];
+    var spin = atkBody().spin;
+    if (spin > 0) ang = start + sign * Math.PI * 2 * spin;
+    len = sd.blade * sp.bladeLen;
+  }
+  return { ang: ang, len: len, front: Math.sin(ang) >= -0.05, armSide: Math.cos(start) >= 0 ? 1 : -1 };
+}
+function pixLine(c, x1, y1, x2, y2, w, col) {
+  var dx = x2 - x1, dy = y2 - y1, n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)))), i;
+  c.fillStyle = col;
+  for (i = 0; i <= n; i++) c.fillRect(Math.round(x1 + dx * i / n - w / 2), Math.round(y1 + dy * i / n - w / 2), w, w);
+}
+function drawPixSword(c, front) {
+  var sw = spriteSword(); if (!sw || sw.front !== front) return;
+  var p = P, a = p.atk, dir = heroDir(), side = dir === 'left' || dir === 'right';
+  var ab = atkBody(), bx = Math.round(p.x + ab.x), by = Math.round(p.y * K + ab.y - ab.hop), ca = Math.cos(sw.ang), sa = Math.sin(sw.ang) * K;
+  var cur = lib.sprite(), C = cur.pal, sc = cur.spec.scale, al = cur.spec.armL * sc, w = Math.max(1, Math.round(2 * sc)), len = sw.len * sc;
+  var sx = bx + (side ? 0 : sw.armSide * cur.m.shX * sc), sy = by - cur.m.shY * sc;
+  var hx = sx + ca * al, hy = sy + sa * al, tx = hx + ca * len, ty = hy + sa * len;
+  var hot = a.ph === 'charge' && a.t >= 0.33;
+  pixLine(c, sx, sy, hx, hy, w + 2, C.line);
+  pixLine(c, hx + ca * 2, hy + sa * 2, tx, ty, w + 2, C.line);
+  pixLine(c, sx, sy, hx, hy, w, C.coatL);
+  pixLine(c, hx + ca * 3, hy + sa * 3, tx, ty, w, hot ? '#ffd34d' : C.blade);
+  pixLine(c, hx + ca * 4, hy + sa * 4, tx - ca * 2, ty - sa * 2, Math.max(1, w - 1), hot ? '#fff3c4' : C.bladeL);
+  pixLine(c, hx + ca * 2 + sa * w, hy + sa * 2 - ca * w, hx + ca * 2 - sa * w, hy + sa * 2 + ca * w, w, C.belt);
+  pixLine(c, hx, hy, hx, hy, w, C.skin);
+}
+function drawPixSlash(c) {
+  var p = P, tr = p.atk.tr, fade = 1 - tr.age / 0.18;
+  var cur = lib.sprite(), C = cur.pal;
+  var ab = atkBody(), tcur = ab.spin > 0 ? tr.start + tr.sign * Math.PI * 2 * ab.spin : tr.cur;
+  if ((ATK_STYLES[Math.round(cur.spec.atkStyle)] || {}).spin && ab.spin < 0) tcur = tr.start + tr.sign * Math.PI * 2;
+  var R = tr.reach * cur.spec.slashSize, T = R * cur.spec.slashWidth, span = Math.min(Math.PI, Math.abs(tcur - tr.start) / 2);
+  if (span < 0.05) return;
+  var mid = (tr.start + tcur) / 2, sg = tcur >= tr.start ? 1 : -1;
+  var ox = Math.round(p.x + ab.x), oy = Math.round(p.y * K + ab.y - ab.hop - cur.m.shY * cur.spec.scale), ry = Math.ceil(R * K), x, y;
+  var cols = tr.hot ? ['#fff8dc', '#ffe06e', '#f0a830'] : [C.slashL, C.slash, C.slashD];
+  c.globalAlpha = fade > 0.66 ? 0.95 : (fade > 0.33 ? 0.7 : 0.4);
+  for (y = -ry; y <= ry; y++) for (x = -Math.ceil(R); x <= Math.ceil(R); x++) {
+    var ux = x + 0.5, uy = (y + 0.5) / K, r = Math.hypot(ux, uy);
+    if (r > R || r < Math.min(10, R * 0.3)) continue;
+    var d = wrap(Math.atan2(uy, ux) - mid);
+    if (Math.abs(d) > span) continue;
+    var q = (d * sg + span) / (2 * span);
+    var inner = R - T * Math.pow(Math.sin(Math.PI * Math.pow(q, 1.6)), 0.7);
+    if (r < inner) continue;
+    c.fillStyle = cols[r > R - 2.5 ? 0 : (r < inner + 3 ? 2 : 1)];
+    c.fillRect(ox + x, oy + y, 1, 1);
+  }
+  c.globalAlpha = 1;
+}
+function heroSprFn(dashing, dir, pose, f, armSide, ab) {
+  var p = P;
+  return function (s) {
+    var img = lib.heroP(dir, pose, f, armSide), sm = s.imageSmoothingEnabled, cur = lib.sprite();
+    s.imageSmoothingEnabled = false;
+    if (dashing) { var ax = Math.abs(p.roll.dx), ay = Math.abs(p.roll.dy); s.scale(1 + 0.2 * ax, 1 - 0.1 * ax + 0.08 * ay); }
+    if (ab) s.scale(ab.sx, ab.sy);
+    s.scale(cur.spec.scale, cur.spec.scale);
+    s.drawImage(img, -cur.m.ox, -cur.m.oy);
+    s.imageSmoothingEnabled = sm;
+  };
+}
+
 function drawHeroWeapon(c, front) {
-  var p = P, a = p.atk, dir = heroDir(), bp = bodyPose(), sp = swordPose(dir);
-  var hideSword = a.ph === 'none' || (p.guard && !S.shield);
+  var p = P, a = p.atk, dir = heroDir(), bp = bodyPose(), sp = swordPose(dir), spr = S.look === 'sprite';
+  var hideSword = spr || a.ph === 'none' || (p.guard && !S.shield), HH = lib.hero(), HC = HH.pal;
+  if (spr) drawPixSword(c, front);
   var hx = p.x + sp.hx + bp.lx, hy = p.y * K + sp.hy + bp.ly;
   if (a.ph === 'charge' && !front) {
     var c01 = Math.min(1, a.t), full = a.t >= 1, pulse = full ? 0.5 + 0.5 * Math.sin(W.t * 24) : 0;
@@ -920,15 +1046,15 @@ function drawHeroWeapon(c, front) {
     var ca = sp.ca, sa = sp.sa, len = sp.len, ex = hx + ca * len, ey = hy + sa * len, px = -sa, py = ca;
     c.lineCap = 'round';
     c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
-    c.strokeStyle = '#eef3fb'; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
+    c.strokeStyle = HC.blade; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
     c.strokeStyle = 'rgba(120,130,160,0.5)'; c.lineWidth = 1; c.beginPath(); c.moveTo(hx + ca * 4, hy + sa * 4 + 0.6); c.lineTo(ex - ca * 2, ey - sa * 2 + 0.6); c.stroke();
     c.strokeStyle = '#3a2a36'; c.lineWidth = 6.4; c.beginPath(); c.moveTo(hx - ca * 3, hy - sa * 3); c.lineTo(hx + ca * 2, hy + sa * 2); c.stroke();
-    c.strokeStyle = '#e0a93a'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(hx - ca * 3, hy - sa * 3); c.lineTo(hx + ca * 2, hy + sa * 2); c.stroke();
+    c.strokeStyle = HC.trim; c.lineWidth = 4.2; c.beginPath(); c.moveTo(hx - ca * 3, hy - sa * 3); c.lineTo(hx + ca * 2, hy + sa * 2); c.stroke();
     var gx = hx + ca * 3, gy = hy + sa * 3;
     c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
-    c.strokeStyle = '#f6d878'; c.lineWidth = 3; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
+    c.strokeStyle = HC.trimL; c.lineWidth = 3; c.beginPath(); c.moveTo(gx - px * 3.4, gy - py * 3.4); c.lineTo(gx + px * 3.4, gy + py * 3.4); c.stroke();
     if (a.ph === 'charge' && a.t >= 0.33) { c.fillStyle = 'rgba(255,224,110,' + (0.35 + 0.25 * Math.sin(W.t * 20)) + ')'; c.beginPath(); c.arc(ex, ey, 4 + a.t * 3, 0, Math.PI * 2); c.fill(); }
-    if (front) lib.ell(c, hx, hy, 2.6, 2.6, '#ffd8b0', 1.5);
+    if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5);
   }
   if (p.fireT > 0) {
     var fa = p.fireAng, fca = Math.cos(fa), fsa = Math.sin(fa) * K;
@@ -937,15 +1063,16 @@ function drawHeroWeapon(c, front) {
       c.lineCap = 'round';
       c.strokeStyle = '#3a2a36'; c.lineWidth = 6.4; c.beginPath(); c.moveTo(fx - fca * 3, fy - fsa * 3); c.lineTo(fx + fca * 9, fy + fsa * 9); c.stroke();
       c.strokeStyle = '#e0a93a'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(fx - fca * 3, fy - fsa * 3); c.lineTo(fx + fca * 9, fy + fsa * 9); c.stroke();
-      if (front) lib.ell(c, fx, fy, 2.6, 2.6, '#ffd8b0', 1.5);
+      if (front) lib.ell(c, fx, fy, 2.6, 2.6, HC.skin, 1.5);
     }
   }
-  if (S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) {
-    var tr = a.tr, fade = 1 - tr.age / 0.18, n, steps = 16, inner = 12, ox = p.x + bp.lx, oy = p.y * K - 13 + bp.ly;
+  if (spr && S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) drawPixSlash(c);
+  else if (S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) {
+    var tr = a.tr, fade = 1 - tr.age / 0.18, n, steps = 16, reach = tr.reach * HH.spec.slashSize, inner = reach * (1 - HH.spec.slashWidth), ox = p.x + bp.lx, oy = p.y * K - 13 + bp.ly;
     c.beginPath();
-    for (n = 0; n <= steps; n++) { var aa = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(aa) * tr.reach, oy + Math.sin(aa) * tr.reach * K); }
+    for (n = 0; n <= steps; n++) { var aa = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(aa) * reach, oy + Math.sin(aa) * reach * K); }
     for (n = steps; n >= 0; n--) { var ab = visAngle(tr.start + (tr.cur - tr.start) * n / steps, dir); c.lineTo(ox + Math.cos(ab) * inner, oy + Math.sin(ab) * inner * K); }
-    c.closePath(); c.fillStyle = (tr.hot ? 'rgba(255,224,110,' : 'rgba(255,255,255,') + (0.5 * fade) + ')'; c.fill();
+    c.closePath(); var sh = HC.slash; c.fillStyle = (tr.hot ? 'rgba(255,224,110,' : 'rgba(' + parseInt(sh.substr(1, 2), 16) + ',' + parseInt(sh.substr(3, 2), 16) + ',' + parseInt(sh.substr(5, 2), 16) + ',') + (0.5 * fade) + ')'; c.fill();
   }
 }
 function drawShield(c, front) {
@@ -982,19 +1109,35 @@ function drawHero(c) {
   var p = P;
   var amt = p.flash;
   if (p.invuln > 0 && p.flash <= 0 && p.roll.t <= 0) amt = (Math.floor(W.t * 20) % 2) ? 0.5 : 0;
-  var dashing = p.roll.t > 0;
+  var dashing = p.roll.t > 0, spr = S.look === 'sprite';
   for (var gi = 0; gi < W.ghosts.length; gi++) {
     var g = W.ghosts[gi];
     c.globalAlpha = 0.45 * g.life / g.max;
-    flashDraw(c, g.x, g.y * K, heroFn(false, g.dir, { phase: g.ph, amt: 1, t: g.t, lx: 0, ly: 0, blink: 0, sq: 0 }, null), 0.75, '110,200,255');
+    if (spr) flashDraw(c, Math.round(g.x), Math.round(g.y * K), heroSprFn(false, g.dir, 'walk', walkFrame(g.ph), 1), 0.75, '110,200,255');
+    else flashDraw(c, g.x, g.y * K, heroFn(false, g.dir, { phase: g.ph, amt: 1, t: g.t, lx: 0, ly: 0, blink: 0, sq: 0 }, null), 0.75, '110,200,255');
     c.globalAlpha = 1;
   }
+  if (!spr) {
+    var ab0 = atkBody(), hsc = lib.hero().spec.scale;
+    var lift0 = api.scene && api.scene.heroLift ? api.scene.heroLift() : 0;   // e.g. standing on a bobbing deck
+    c.save(); c.translate(p.x + ab0.x, p.y * K + ab0.y - ab0.hop - lift0); c.scale(hsc * ab0.sx, hsc * ab0.sy); c.translate(-p.x, -p.y * K);
+  }
   drawHeroWeapon(c, false); drawShield(c, false);
-  flashDraw(c, p.x, p.y * K, heroFn(dashing, heroDir(), p.anim, heroPose(heroDir())), amt);
+  if (spr) {
+    var fr = spriteFrame(), sw = spriteSword(), ab = atkBody(), hd = ab.spin > 0 ? spinDir(heroDir(), ab.spin) : heroDir();
+    flashDraw(c, Math.round(p.x + ab.x), Math.round(p.y * K + ab.y - ab.hop), heroSprFn(dashing, hd, fr.pose, fr.f, sw ? sw.armSide : 1, ab), amt);
+  }
+  else flashDraw(c, p.x, p.y * K, heroFn(dashing, heroDir(), p.anim, heroPose(heroDir())), amt);
   drawHeroWeapon(c, true); drawShield(c, true);
+  if (!spr) c.restore();
+}
+function drawCreature(c, e) {
+  var sp = lib.creature().spec, a = e.type === 'turret' ? e.aim : e.face, dx = P.x - e.x, dy = (P.y - e.y) * K, dl = Math.hypot(dx, dy) || 1;
+  lib.creatureD(c, 0, 0, { t: W.t + e.seed, move: (e.state === 'chase' || e.state === 'lunge') ? 1 : 0, phase: (W.t + e.seed) * 9 * sp.stepRate,
+    dir: Math.cos(a) >= 0 ? 1 : -1, look: [dx / dl, dy / dl], state: e.state, k: e.dur ? e.t / e.dur : 0 });
 }
 function drawEnemy(c, e) {
-  var fn = (e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss);
+  var fn = e.creature ? drawCreature : ((e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss));
   if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
   var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0;
   flashDraw(c, e.x + jx, e.y * K, function (s) {
@@ -1067,20 +1210,24 @@ function drawHud(c) {
 
 function render(c) {
   if (!groundCv) buildGround();
-  c.setTransform(2, 0, 0, 2, 0, 0); c.lineJoin = 'round'; c.lineCap = 'round';
+  var PS = api.pixelScale || 2;   // canvas pixels per world unit; editor pages raise it so a large canvas stays sharp
+  c.setTransform(PS, 0, 0, PS, 0, 0); c.lineJoin = 'round'; c.lineCap = 'round';
   c.save();
-  c.drawImage(groundCv, 0, 0, SW, SH);
+  // api.scene lets a tool page swap in its own camera, ground and extra y-sorted items
+  var sc = api.scene;
+  if (sc) sc.begin(c, P); else c.drawImage(groundCv, 0, 0, SW, SH);
   drawTelegraphs(c);
   var i, items = [];
   // shadows
   c.fillStyle = 'rgba(30,70,50,0.28)';
   function sh2(x, y, rx, ry) { c.beginPath(); c.ellipse(x, y * K, rx, ry * K, 0, 0, Math.PI * 2); c.fill(); }
-  for (i = 0; i < W.pillars.length; i++) sh2(W.pillars[i].x + 2, W.pillars[i].y, 9, 5);
+  for (i = 0; i < W.pillars.length; i++) if (!W.pillars[i].hide) sh2(W.pillars[i].x + 2, W.pillars[i].y, 9, 5);
   for (i = 0; i < W.enemies.length; i++) { var en = W.enemies[i]; if (!en.dead) sh2(en.x, en.y, en.r * 1.3, en.r * 0.8); }
-  if (!P.dead) sh2(P.x, P.y, 9, 4);
+  if (!P.dead && !(sc && sc.noHeroShadow)) sh2(P.x, P.y, 9, 4);
   for (i = 0; i < W.projs.length; i++) sh2(W.projs[i].x, W.projs[i].y, 3, 2);
   // pillars
   W.pillars.forEach(function (pl) {
+    if (pl.hide) return;
     items.push({ y: pl.y, f: function () {
       lib.rr(c, pl.x - 8, pl.y * K - 3, 16, 5, 2, '#8f8ba6', 1.8);
       lib.rr(c, pl.x - 5.5, pl.y * K - 26, 11, 24, 2, '#7a7690', 1.8);
@@ -1092,6 +1239,7 @@ function render(c) {
   W.projs.forEach(function (pr) { items.push({ y: pr.y + 1, f: function () { drawProj(c, pr); } }); });
   W.parts.forEach(function (q) { if (q.k === 'dust') items.push({ y: q.y, f: function () { drawPart(c, q); } }); });
   if (!P.dead) items.push({ y: P.y, f: function () { drawHero(c); } });
+  if (sc) sc.items(items);
   items.sort(function (a, b) { return a.y - b.y; });
   for (i = 0; i < items.length; i++) items[i].f();
   for (i = 0; i < W.parts.length; i++) if (W.parts[i].k !== 'dust') drawPart(c, W.parts[i]);
@@ -1102,8 +1250,9 @@ function render(c) {
     if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
     c.stroke();
   }
+  if (sc && sc.end) sc.end(c, P);
   c.restore();
-  drawHud(c);
+  if (!(sc && sc.noHud)) drawHud(c);
 }
 
 function init(l) { lib = l; reset(); buildGround(); }

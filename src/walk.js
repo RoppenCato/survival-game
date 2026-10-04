@@ -240,7 +240,7 @@ function updateHero(dt) {
   // animation (same springs as the combat test)
   var sp = Math.min(200, Math.hypot(h.vx, h.vy * KY)), target = Math.min(1, sp / 105);
   an.amt += (target - an.amt) * Math.min(1, dt * (target > an.amt ? 14 : 9));
-  if (an.amt > 0.04) an.phase += Math.max(sp, 30) * dt * 0.115;
+  if (an.amt > 0.04) an.phase += Math.max(sp, 30) * dt * 0.115 * GameArt.lib.hero().spec.walkRate;
   an.t += dt; an.run += ((h.sprint ? 1 : 0) - an.run) * Math.min(1, dt * 8);
   an.bob = -Math.abs(Math.sin(an.phase)) * 1.0 * an.amt * (1 + 0.45 * an.run) + Math.sin(an.t * 2.2) * (1 - an.amt) * 0.4;
   var tx2 = (h.vx / 118) * 1.1, ty2 = (h.vy * KY / 118) * 0.8;
@@ -255,11 +255,9 @@ function updateHero(dt) {
 
 /* ---------------- attack ---------------- */
 function atkAngle(u) { var a = hero.atk, half = ATK.arc / 2; return a.dir - half * a.sign + ATK.arc * a.sign * u; }
-function visAngle(ang, dir) {
-  if (dir !== 'up' && dir !== 'down') return ang;
-  var half = ATK.arc / 2, f = Math.min(0.52, 0.7 / half);
-  return hero.atk.dir + (ang - hero.atk.dir) * f;
-}
+// The swing is drawn at its true angle in every direction (it used to be narrowed when facing up or down,
+// which made it look like a stab).
+function visAngle(ang, dir) { return ang; }
 function beginAttack() {
   var a = hero.atk, h = hero;
   a.ph = 'windup'; a.t = 0; a.dir = h.face; a.sign = -a.sign; a.queued = false; a.tr = null; h.faceVis = h.face;
@@ -292,20 +290,17 @@ function updateAtk(dt) {
 }
 function swordPose(dir) {
   var a = hero.atk, o = {}, half = ATK.arc / 2, sign = a.sign, u;
-  var pb = (dir === 'up' || dir === 'down') ? 0.12 : 0.45;
+  var pb = 0.45;
   if (a.ph === 'windup') u = -pb * (a.t / ATK.wu); else if (a.ph === 'active') u = Math.min(1, a.t / ATK.ac); else u = 1;
   var ang = visAngle(a.dir - half * sign + ATK.arc * sign * u, dir);
   var upv = Math.max(0, -Math.sin(ang)), sdn = Math.cos(a.dir) >= 0 ? 1 : -1;
   o.len = ATK.blade;
   if (dir === 'up' || dir === 'down') {
-    var startAng = a.dir - half * sign, armSide = Math.cos(startAng) >= 0 ? 1 : -1, AR = 8.6;
-    var gpx0 = armSide * 6.5 + AR * Math.cos(ang), gpy = AR * Math.sin(ang);
-    var mm = armSide * gpx0, mixu = clamp((upv - 0.3) / 0.4, 0, 1); mixu = mixu * mixu * (3 - 2 * mixu);
-    var gpx = armSide * (mm + (Math.max(mm, 10.5) - mm) * mixu), tt = clamp(u, -0.1, 1);
-    o.hx = gpx; o.hy = -17 + gpy * KY + sign * (tt - 0.5) * 5 - 3 * upv; o.tilt = sign * (tt - 0.5) * 0.5;
-    o.len = clamp(9 + ATK.blade - (gpx * Math.cos(ang) + gpy * Math.sin(ang)), ATK.blade * 0.8, ATK.blade * 1.45); o.armSide = armSide;
+    // a wide side-to-side swing: the hand sweeps across in front of the body, or over the head when facing away
+    var startAng = a.dir - half * sign, armSide = Math.cos(startAng) >= 0 ? 1 : -1;
+    o.hx = armSide * 2.5 + Math.cos(ang) * 8; o.hy = -14 + Math.sin(ang) * 8 * KY - 4 * upv; o.armSide = armSide; o.lift = upv;
   } else { o.hx = Math.cos(ang) * 9 + sdn * 10 * upv * upv; o.hy = -13 + Math.sin(ang) * 9 * KY - 5 * upv; }
-  o.ca = Math.cos(ang); o.sa = Math.sin(ang) * KY + (o.tilt || 0);
+  o.ca = Math.cos(ang); o.sa = Math.sin(ang) * (KY + (1 - KY) * (o.lift || 0));
   if (o.tilt) { var nn = Math.hypot(o.ca, o.sa); o.ca /= nn; o.sa /= nn; }
   o.front = Math.sin(ang) >= -0.05; o.side = sdn;
   return o;
@@ -419,7 +414,8 @@ function render(ctx) {
     } else {
       drawShadow(ctx, hsx, hsy, 10, 3.4, 0.34);
       ctx.save(); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      var hd = heroDir();
+      var hd = heroDir(), hsc = GameArt.lib.hero().spec.scale;
+      ctx.translate(hsx, hsy); ctx.scale(hsc, hsc); ctx.translate(-hsx, -hsy);
       drawWeapon(ctx, hsx, hsy, false);
       GameArt.lib.playerD(ctx, hsx, hsy, hd, hero.anim, heroPose(hd));
       drawWeapon(ctx, hsx, hsy, true);

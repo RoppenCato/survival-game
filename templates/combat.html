@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Combat test</title>
+<title>Combat Arena</title>
 <style>
 :root{
   box-sizing:border-box;
@@ -46,13 +46,20 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 </head>
 <body>
 <main>
-  <h1>Combat test</h1>
+  <a href="index.html" style="display:inline-block;margin:0 0 6px;color:inherit;opacity:.7;font-size:.9rem;text-decoration:none">&larr; Back to menu</a>
+  <h1>Combat Arena</h1>
   <p class="lede">Fight the bots, the turret, the Bossbot and the Guardian. Everything works from the keyboard alone. The mouse is only used to aim the ranged weapon, and you can switch that to auto.</p>
   <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Combat arena"></canvas></div>
 
   <div class="cols">
     <section class="panel">
-      <h2>Melee aiming</h2>
+      <h2>Hero look</h2>
+      <div class="group" id="look">
+        <button data-l="classic" aria-pressed="false">Classic</button>
+        <button data-l="sprite" aria-pressed="true">Sprite</button>
+      </div>
+      <p class="desc" id="lookdesc"></p>
+      <h2 style="margin-top:14px">Melee aiming</h2>
       <div class="group" id="aim">
         <button data-aim="facing" aria-pressed="false">Facing</button>
         <button data-aim="soft" aria-pressed="true">Soft aim</button>
@@ -110,6 +117,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <dt><kbd>Q</kbd></dt><dd>Lock onto the nearest enemy (Target lock mode)</dd>
         <dt><kbd>H</kbd></dt><dd>Spawn a bot</dd>
         <dt><kbd>R</kbd></dt><dd>Restart after you are scrapped</dd>
+        <dt><kbd>V</kbd></dt><dd>Switch the hero look between Classic and Sprite</dd>
       </dl>
     </section>
   </div>
@@ -167,6 +175,7 @@ __COMBAT__
 
   /* input */
   window.addEventListener('keydown', function (e) {
+    if (e.code === 'KeyV' && !e.repeat) { setLook(S.look === 'sprite' ? 'classic' : 'sprite'); return; }
     if (!codes[e.code]) return;
     e.preventDefault(); ac();
     if (e.repeat) return;
@@ -200,6 +209,15 @@ __COMBAT__
   }
   for (var i = 0; i < aimBtns.length; i++) aimBtns[i].addEventListener('click', function (e) { setAim(e.currentTarget.getAttribute('data-aim')); e.currentTarget.blur(); });
   setAim('soft');
+  var lookBtns = document.querySelectorAll('#look button'), lookdesc = document.getElementById('lookdesc');
+  var lookTxt = { classic: 'The smooth hero: flowing walk cycle, lean and follow-through, white swing trail.', sprite: 'Sprite-sheet hero: four directions, four-frame walk and attack, and a big cyan slash. Press V to switch.' };
+  function setLook(m) {
+    S.look = m;
+    for (var i = 0; i < lookBtns.length; i++) lookBtns[i].setAttribute('aria-pressed', lookBtns[i].getAttribute('data-l') === m ? 'true' : 'false');
+    lookdesc.textContent = lookTxt[m];
+  }
+  for (var lk = 0; lk < lookBtns.length; lk++) lookBtns[lk].addEventListener('click', function (e) { setLook(e.currentTarget.getAttribute('data-l')); e.currentTarget.blur(); });
+  setLook(S.look);
   var rngBtns = document.querySelectorAll('#rng button'), rngdesc = document.getElementById('rngdesc');
   var rngTxt = { mouse: 'F fires toward the mouse cursor.', auto: 'F fires at the nearest enemy in front of you, or straight ahead. No mouse needed.' };
   function setRng(m) {

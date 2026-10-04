@@ -11,9 +11,9 @@ function setup(bx,by,px,py,face){C.reset();C.clear();const e=C.spawn('bot');e.x=
 let e=setup(200,213,200,255,-Math.PI/2);
 C.key('KeyJ',true);step(1);C.key('KeyJ',false);step(30);
 console.log('reach 42 hit:',e.hp<4,'hp',e.hp);
-e=setup(200,205,200,255,-Math.PI/2); // 50 away
+e=setup(200,195,200,255,-Math.PI/2); // 60 away: past reach + body radius + the lunge step
 C.key('KeyJ',true);step(1);C.key('KeyJ',false);step(30);
-console.log('reach 50 hit (should be false):',e.hp<4);
+console.log('reach 60 hit (should be false):',e.hp<4);
 
 // 2 stuck test: bot adjacent, mash attack 3x, measure min distance and final distance
 e=setup(200,238,200,255,-Math.PI/2); e.state='idle';
