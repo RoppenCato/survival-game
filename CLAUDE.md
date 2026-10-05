@@ -479,6 +479,13 @@ The hero has two modes, switched with **Q**, each with its own six-slot hotbar a
   *Ore outside:* about a third of the rocks hold copper (`markOre`): a sure 2 at night, one in six by day; they glow
   copper at night. Copper ore is the first metal in the bag; smelting and copper tools are not built. With the tapping
   bot a troll costs 44 to 57 health in leather and kills an unarmoured hero 3 times in 12.
+- **The torch (2026-10-05):** two torches from 1 wood and 2 fiber at the Crafting tab (a stackable kind in the bag).
+  **T** lights one (taking it from the bag, 6 minutes: `TORCH_TIME`) and puts it out again, keeping what is left; a click
+  on the stack in the bag does the same. Lit, the hero carries a flickering torch (`drawTorchHeld`), a round icon by
+  the chart shows the time left, the light round you grows from 96 to about 190 units in the cave (a warm glow over it)
+  and from a faint circle to a wide warm one at night outside. It burns out, is put out when you sleep, and is saved.
+  **It does not frighten the troll** (Robin): only a hearth or brazier does (`fireNear`); a torch is not one. A hint
+  after you find the cave (`seen.cave`, which also marks it on the chart) says to make torches.
 - **Fight balance (2026-10-05, `tests/balance.js`):** armour turns a share of *every* blow aside (it used to count only
   while blocking). An animal that has begun its attack (windup or lunge) finishes it unless hit by a heavy blow (third
   combo hit, charged, or a parry); a light hit is a 0.14 s flinch and does not reset its attack cooldown, so
