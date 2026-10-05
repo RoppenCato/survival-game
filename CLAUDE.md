@@ -241,6 +241,15 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
   its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision
   radii of the matching pieces were cut to match. Old saved benches still draw as a table.
+- **The shipwright’s bench (step 8, 2026-10-05):** a board piece (12 wood, 2 stone; prop `shipwright`: two trestles carrying
+  a keel timber with its curled stem and the first ribs; `it.ship`). It only goes on **sand** (`code` 1) within 4 tiles
+  of the sea (`nearWater`), and only when your home has **Comfort 4** (`baseComfort`); the cursor says which is
+  missing ("Build it on the sand", "Build it at the water’s edge", "Your home needs a roof, a fire, a workbench and
+  a rug first"). Standing within 70 units of it adds a **Shipwright** tab to the B board (`shipNear`); its recipes
+  are `RECIPES2` entries with `at: 'ship'`. The **raft** recipe (20 wood, 10 fiber, 2 leather) has `taught: 'raft'`,
+  so `known()` is false until Brokk has taught it (`seen.raft`; the cell says "Someone must teach you this"), and
+  `soon: true` until step 9 builds the raft. Hints: speak to Brokk again once the home is ready, then build the
+  bench at the water.
 - **Comfort (step 6, 2026-10-05):** a closed room is worth 1 for its roof and 1 each for a hearth, a workbench, a
   bed and a rug in it, and up to 2 for furniture (chair, bench seat, table, chest): at most 7 (`comfortOf`, per room
   index; `baseComfort()` is the best room within 500 units of the camp, so the steading does not count). The dial

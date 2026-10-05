@@ -264,6 +264,7 @@ __COMBAT__
       c.fillStyle = '#8a5a3a'; c.fillRect(-8, -2, 16, 7); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-8, -2, 16, 7);
       c.fillStyle = '#d9c9a6'; c.fillRect(-7, -4, 14, 4); c.strokeRect(-7, -4, 14, 4); c.fillStyle = '#c96a4a'; c.fillRect(-2, -4, 9, 4); c.fillStyle = '#f1e6cf'; c.beginPath(); c.ellipse(-4.5, -2, 2.2, 1.4, 0, 0, 7); c.fill();
     } },
+    { id: 'ship', name: 'Shipwright’s bench', kind: 'item', prop: 'shipwright', ship: true, r: 9, cost: { wood: 12, stone: 2 } },
     { id: 'hearth', name: 'Hearth', kind: 'item', prop: 'stoneHearth', r: 8, cost: { stone: 4, wood: 2 }, icon: function (c) {
       c.fillStyle = '#7d8290'; [[-6, 4], [0, 5.5], [6, 4]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 3.2, 2, 0, 0, 7); c.fill(); });
       c.fillStyle = '#e8702a'; c.beginPath(); c.moveTo(-4, 3); c.quadraticCurveTo(-5, -3, 0, -7); c.quadraticCurveTo(5, -3, 4, 3); c.closePath(); c.fill();
@@ -287,7 +288,7 @@ __COMBAT__
     { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 9, cost: { wood: 8 } },
     { id: 'post', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 5, cost: { wood: 4 } }
   ];
-  var ICON_SCALE = { workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
+  var ICON_SCALE = { shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   function propIcon(c, name) {             // a prop's baked sprite, shrunk to fit a board cell
     var s = sprite(name, 0), sc = ICON_SCALE[name] || Math.min(18 / s.w, 18 / s.h);
     c.drawImage(s.cv, -s.w * sc / 2, -s.h * sc / 2 + 1, s.w * sc, s.h * sc);
@@ -400,13 +401,15 @@ __COMBAT__
     { id: 'leatherTunic', out: { item: ['tunic', 'leather'] }, needs: { leather: 3, fiber: 2 }, at: 'bench' },
     { id: 'leatherTrousers', out: { item: ['trousers', 'leather'] }, needs: { leather: 2, fiber: 1 }, at: 'bench' },
     { id: 'leatherBoots', out: { item: ['boots', 'leather'] }, needs: { leather: 1, fiber: 1 }, at: 'bench' },
+    { id: 'raft', out: { raft: 1 }, needs: { wood: 20, fiber: 10, leather: 2 }, at: 'ship', taught: 'raft', soon: true },
     { id: 'leatherCloak', out: { item: ['cloak', 'leather'] }, needs: { leather: 2, fiber: 2 }, at: 'bench' }
   ];
-  function known(r) { for (var k in r.needs) if (!seen[k]) return false; return true; }
+  function known(r) { if (r.taught && !seen[r.taught]) return false; for (var k in r.needs) if (!seen[k]) return false; return true; }
   function recipeName(r) { return r.out.item ? Items.name(Items.make(r.out.item[0], r.out.item[1])) : (r.out.arrows + ' wood arrows'); }
   function needsText(r) { var p = []; for (var k in r.needs) p.push(r.needs[k] + ' ' + NAMES[k].toLowerCase() + ' (' + (inv[k] || 0) + ')'); return p.join(', '); }
   function craft(r) {
     if (!known(r) || !canAfford(r.needs)) return;
+    if (r.soon) { toast('The raft itself comes next: the bench is ready for it'); return; }
     if (r.out.item) {
       var made = Items.make(r.out.item[0], r.out.item[1]), where = TOOL_SLOT[made.kind];
       if (where && !equip[where]) equip[where] = made;                 // a tool made into an empty slot goes straight into your hand
@@ -415,6 +418,8 @@ __COMBAT__
     else if (r.out.arrows) { var na = Math.round(r.out.arrows * (1 + 0.5 * runeMul('fletcher'))); if (quiverAdd('arrow', na)) { toast('The quiver is full'); return; } deed('arrows', na); }
     pay(r.needs); toast('Made ' + recipeName(r).toLowerCase()); sfx('craft'); save();
   }
+  function nearWater(tx, ty, r) { for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) if (code(tx + dx, ty + dy) === 0) return true; return false; }
+  function shipNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.ship && Math.hypot(P.x - it.x, P.y - it.y) < 70) return it; } return null; }
   function edgeMid(ed) { return ed.L === 'H' ? { x: (ed.x + 0.5) * T, y: ed.y * T } : { x: ed.x * T, y: (ed.y + 0.5) * T }; }
   function spotClear(x, y) { var ok = isLand(x, y); if (ok) around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < o.r * o.s + 10) ok = false; }); return ok; }
   function buildTarget() {           // what the cursor is over in build mode, and whether the piece may go there
@@ -429,7 +434,9 @@ __COMBAT__
     if (pc.kind === 'item') {
       var ix = (tx + 0.5) * T, iy = (ty + 0.5) * T, clear = spotClear(ix, iy);
       for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 24 && (!pc.flat || B.items[i].name === 'rug') && (pc.flat || B.items[i].name !== 'rug')) clear = false;   // a rug lies under furniture, so only rugs block rugs
-      return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && canAfford(pc.cost), why: far ? 'Too far' : !clear ? 'Blocked, or not on land' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
+      var shipWhy = '';
+      if (pc.ship) { shipWhy = baseComfort().n < 4 ? 'Your home needs a roof, a fire, a workbench and a rug first (Comfort 4)' : (code(tx, ty) !== 1 ? 'Build it on the sand' : (!nearWater(tx, ty, 4) ? 'Build it at the water’s edge' : '')); }
+      return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && !shipWhy && canAfford(pc.cost), why: far ? 'Too far' : shipWhy ? shipWhy : !clear ? 'Blocked, or not on land' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
     }
     if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), onLand = code(tx, ty) >= 1 && code(tx, ty) !== 255, hasF = B.floors[fk2] != null && B.floors[fk2] === pc.m;
       return { kind: 'tile', tx: tx, ty: ty, piece: pc, ok: !far && onLand && !hasF && canAfford(pc.cost), why: far ? 'Too far' : !onLand ? 'Not on land' : hasF ? 'Already that floor' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
@@ -447,7 +454,7 @@ __COMBAT__
       else { pay(costOfFloor(B.floors[Build.key(t.tx, t.ty)]), 1); delete B.floors[Build.key(t.tx, t.ty)]; }
       bDirty = true; save(); return;
     }
-    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, light: t.piece.light || 0 }; if (t.piece.chest) { nit.store = []; for (var si = 0; si < STORE_N; si++) nit.store.push(null); } B.items.push(nit); sfx('build'); save(); return; }
+    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, ship: !!t.piece.ship, light: t.piece.light || 0 }; if (t.piece.chest) { nit.store = []; for (var si = 0; si < STORE_N; si++) nit.store.push(null); } B.items.push(nit); sfx('build'); save(); return; }
     if (t.kind === 'roof') { if (!first) return; pay(t.piece.cost); if (!B.roofs) B.roofs = {}; B.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
     var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : 'F' + Build.key(t.tx, t.ty);
     var drags = t.piece.id === 'floor' || t.piece.id === 'wall' || t.piece.id === 'fence' || t.piece.id === 'palisade';
@@ -780,7 +787,7 @@ __COMBAT__
   function fedText() { if (!fed) return ''; var m = Math.floor(fed.left / 60), s = Math.floor(fed.left % 60); return 'Well fed (' + NAMES[fed.kind].toLowerCase() + '): ' + m + ':' + (s < 10 ? '0' : '') + s + (fed.regen ? '  +' + fed.regen + ' health a second' : ''); }
   // the build menu (right click in build mode): a wooden board of big piece icons; the wreck cursor is the last one
   var MCELL = 22, MCOLS = 8, MROWS = 4, menuTab = 'build';
-  function menuTabs() { var tabs = [{ id: 'build', name: 'Building' }, { id: 'hand', name: 'Crafting' }]; var P = hero(), b = benchNear(P); if (b) tabs.push({ id: 'bench', name: 'Workbench', roofed: benchRoofed(b) }); if (nearHearth(P)) tabs.push({ id: 'hearth', name: 'Hearth' }); return tabs; }
+  function menuTabs() { var tabs = [{ id: 'build', name: 'Building' }, { id: 'hand', name: 'Crafting' }]; if (shipNear(hero())) tabs.push({ id: 'ship', name: 'Shipwright' }); var P = hero(), b = benchNear(P); if (b) tabs.push({ id: 'bench', name: 'Workbench', roofed: benchRoofed(b) }); if (nearHearth(P)) tabs.push({ id: 'hearth', name: 'Hearth' }); return tabs; }
   function openMenu(tab) {
     var n = MCOLS * MROWS, i; if (tab) menuTab = tab;
     if (menuTab === 'bench' && !benchNear(hero())) menuTab = 'hand';
@@ -788,7 +795,7 @@ __COMBAT__
     menu = { items: [], w: MCOLS * (MCELL + 3) + 11, h: 21 + MROWS * (MCELL + 3) + 14, tabs: [] };
     menu.x = Math.round((400 - menu.w) / 2); menu.y = 34;
     var list = menuTab === 'build' ? PIECES : (menuTab === 'hearth' ? RECIPES : RECIPES2.filter(function (r) { return r.at === menuTab; }));
-    for (i = 0; i < n; i++) { var e = list[i] || null; menu.items.push({ i: i, piece: menuTab === 'build' ? e : null, r: menuTab === 'hand' || menuTab === 'bench' ? e : null, dish: menuTab === 'hearth' ? e : null, x: menu.x + 7 + (i % MCOLS) * (MCELL + 3), y: menu.y + 21 + Math.floor(i / MCOLS) * (MCELL + 3) }); }
+    for (i = 0; i < n; i++) { var e = list[i] || null; menu.items.push({ i: i, piece: menuTab === 'build' ? e : null, r: menuTab === 'hand' || menuTab === 'bench' || menuTab === 'ship' ? e : null, dish: menuTab === 'hearth' ? e : null, x: menu.x + 7 + (i % MCOLS) * (MCELL + 3), y: menu.y + 21 + Math.floor(i / MCOLS) * (MCELL + 3) }); }
     var tx = menu.x + 5; menuTabs().forEach(function (t) { var w = t.name.length * 4 + 12; menu.tabs.push({ id: t.id, name: t.name, roofed: t.roofed, x: tx, y: menu.y + 4, w: w, h: 13 }); tx += w + 3; });
   }
   function menuHit() { if (!menu || !mouseS) return null; for (var i = 0; i < menu.items.length; i++) { var it = menu.items[i]; if (mouseS.x >= it.x && mouseS.x <= it.x + MCELL && mouseS.y >= it.y && mouseS.y <= it.y + MCELL) return it; } return null; }
@@ -810,13 +817,13 @@ __COMBAT__
       if (it.piece) { c.scale(1.05, 1.05); if (it.piece.icon) it.piece.icon(c); else Build.icon(c, it.piece.id, it.piece.m); }
       else if (it.dish) { c.globalAlpha = ok ? 1 : 0.4; drawDropIcon(c, it.dish.id, 0, 0, 1.4); c.globalAlpha = 1; }
       else if (!kn) { c.fillStyle = 'rgba(246,226,184,0.35)'; c.font = 'bold 12px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('?', 0, 4.5); }
-      else { c.globalAlpha = ok ? 1 : 0.4; if (it.r.out.item) Items.icon(c, Items.make(it.r.out.item[0], it.r.out.item[1]), 16); else drawDropIcon(c, 'arrow', 0, 0, 1.3); c.globalAlpha = 1; }
+      else { c.globalAlpha = ok ? 1 : 0.4; if (it.r.out.item) Items.icon(c, Items.make(it.r.out.item[0], it.r.out.item[1]), 16); else drawDropIcon(c, it.r.out.raft ? 'raft' : 'arrow', 0, 0, it.r.out.raft ? 1.7 : 1.3); c.globalAlpha = 1; }
       c.restore();
     }
     var label = '';
     if (hit && hit.piece) label = hit.piece.name + '  (' + costText(hit.piece.cost) + ')';
     else if (hit && hit.dish) label = NAMES[hit.dish.id] + ':  ' + (function () { var p = []; for (var k in hit.dish.needs) p.push(hit.dish.needs[k] + ' ' + NAMES[k].toLowerCase() + ' (' + (inv[k] || 0) + ')'); return p.join(', '); })() + '.  +' + FOOD[hit.dish.id].heal + ' health; top health +' + FOOD[hit.dish.id].bonus + ', stamina +' + FOOD[hit.dish.id].stam + ' for ' + Math.round(FOOD[hit.dish.id].time / 60) + ' min';
-    else if (hit && hit.r) label = known(hit.r) ? recipeName(hit.r) + ':  ' + needsText(hit.r) : 'Pick up more kinds of things to learn this';
+    else if (hit && hit.r) label = known(hit.r) ? recipeName(hit.r) + ':  ' + needsText(hit.r) : (hit.r.taught && !seen[hit.r.taught] ? 'Someone must teach you this' : 'Pick up more kinds of things to learn this');
     else if (menuTab === 'bench' && !roofed) label = 'The workbench needs a roof over it';
     else if (menuTab === 'hand' && !RECIPES2.some(function (r) { return r.at === 'hand' && known(r); })) label = 'Pick things up and you will see what can be made';
     c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = menuTab === 'bench' && !roofed ? '#ff9a8a' : '#fff'; c.fillText(label, menu.x + 8, menu.y + menu.h - 5);
@@ -844,6 +851,8 @@ __COMBAT__
     { done: function () { return baseComfort().has.hearth; }, text: 'Put a hearth inside your hut (B, a few stones and wood)' },
     { done: function () { return baseComfort().has.bench; }, text: 'Put a workbench in it: it only works under a roof' },
     { done: function () { return baseComfort().n >= 4; }, text: 'A rug on the floor makes a home: Comfort 4 (leather and fiber)' },
+    { done: function () { return !(baseComfort().n >= 4 && seen.met && !seen.raft); }, text: 'Your home is ready: go and speak to Brokk again at the steading' },
+    { done: function () { return !seen.raft || B.items.some(function (it) { return it.ship; }); }, text: 'B: build a shipwright’s bench on the sand at the water’s edge' },
     { done: function () { return B.items.some(function (it) { return it.bed; }); }, text: 'Build a bed in the hut: sleep through the night' }
   ];
   function hasItem(kind) { return slots.some(function (s) { return s && s.kind === 'item' && s.item.kind === kind; }); }
@@ -1544,6 +1553,7 @@ __COMBAT__
     else if (kind === 'antler') { c.strokeStyle = '#3a2a36'; c.lineWidth = 2.8; c.beginPath(); c.moveTo(-1, 5); c.lineTo(-1, -2); c.lineTo(-5, -5); c.moveTo(-1, -1); c.lineTo(3, -5); c.moveTo(-1, 2); c.lineTo(4, 0); c.stroke(); c.strokeStyle = '#d9c9a6'; c.lineWidth = 1.4; c.stroke(); }
     else if (kind === 'hide') { c.beginPath(); c.moveTo(-5, -3); c.quadraticCurveTo(-2, -6, 0, -4); c.quadraticCurveTo(2, -6, 5, -3); c.quadraticCurveTo(6, 0, 4.5, 4); c.quadraticCurveTo(0, 5.5, -4.5, 4); c.quadraticCurveTo(-6, 0, -5, -3); c.closePath(); c.fillStyle = '#9a6a44'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.strokeStyle = 'rgba(60,35,20,0.5)'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(-3, -1); c.lineTo(3, 1); c.moveTo(-2, 2); c.lineTo(2, -1); c.stroke(); }
     else if (kind === 'leather') { c.beginPath(); c.moveTo(-5, -3); c.lineTo(4, -4); c.lineTo(5.5, 2); c.lineTo(-3, 4); c.closePath(); c.fillStyle = '#b07a48'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.strokeStyle = 'rgba(255,225,170,0.6)'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-3.5, -1.8); c.lineTo(3.2, -2.6); c.stroke(); c.setLineDash([1.2, 1.2]); c.strokeStyle = 'rgba(60,35,20,0.7)'; c.beginPath(); c.moveTo(-3, 2.4); c.lineTo(4, 1.2); c.stroke(); c.setLineDash([]); }
+    else if (kind === 'raft') { c.strokeStyle = '#3a2a36'; c.lineWidth = 4.4; for (var rl = -1; rl <= 1; rl++) { c.beginPath(); c.moveTo(-5.5, rl * 3.2 + 1); c.lineTo(5.5, rl * 3.2 - 1); c.stroke(); } c.strokeStyle = '#a8794a'; c.lineWidth = 2.8; for (var rl2 = -1; rl2 <= 1; rl2++) { c.beginPath(); c.moveTo(-5.5, rl2 * 3.2 + 1); c.lineTo(5.5, rl2 * 3.2 - 1); c.stroke(); } c.strokeStyle = '#e8d8a8'; c.lineWidth = 1; c.beginPath(); c.moveTo(-2, -5.5); c.lineTo(-2, 6); c.moveTo(2.5, -6); c.lineTo(2.5, 5.5); c.stroke(); }
     else if (kind === 'berries') { c.fillStyle = '#5a9a3a'; c.beginPath(); c.ellipse(1.5, -3, 3, 1.4, 0.5, 0, 7); c.fill(); c.lineWidth = 1.1; c.strokeStyle = '#3a2a36'; [[-2.5, 0.5], [1.5, 1.5], [-0.5, -1.5], [3, -1]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 2.1, 0, 7); c.fillStyle = '#b8304a'; c.fill(); c.stroke(); c.fillStyle = 'rgba(255,255,255,0.5)'; c.beginPath(); c.arc(q[0] - 0.6, q[1] - 0.7, 0.6, 0, 7); c.fill(); }); }
     else if (kind === 'roastBerries') { c.fillStyle = '#9d9995'; c.beginPath(); c.ellipse(0, 2.5, 5.5, 2.2, 0, 0, 7); c.fill(); c.lineWidth = 1.1; c.strokeStyle = '#3a2a36'; c.stroke(); [[-2.5, 0], [1.5, 0.5], [-0.5, -1.8]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 2, 0, 7); c.fillStyle = '#8a2a3a'; c.fill(); c.stroke(); }); }
     else if (kind === 'cookedMeat') { c.beginPath(); c.ellipse(-0.5, 0, 4.4, 3.2, -0.5, 0, 7); c.fillStyle = '#9a5a2e'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.strokeStyle = '#3a2a36'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(2.5, 2); c.lineTo(5.5, 4.5); c.stroke(); c.strokeStyle = '#f4ecdc'; c.lineWidth = 1.4; c.stroke(); c.fillStyle = 'rgba(255,220,150,0.45)'; c.beginPath(); c.ellipse(-1.5, -1, 1.6, 0.9, -0.5, 0, 7); c.fill(); }
@@ -1682,7 +1692,7 @@ __COMBAT__
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -1691,7 +1701,8 @@ __COMBAT__
     var dt = pauseOpen ? 0 : Math.min(0.05, (now - lastF) / 1000); lastF = now;
     var D = Combat.dbg(), P = D.P;
     if (P !== lastP) { lastP = P; toCamp(); spawnBoars(); }     // R after falling: the engine made a new hero
-    if (P.mode === 'build' && lastMode !== 'build') openMenu(!hasTool() ? 'hand' : 'build');   // the first B opens on Crafting: until you hold a tool you have things to make before anything to build if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
+    if (P.mode === 'build' && lastMode !== 'build') openMenu(!hasTool() ? 'hand' : 'build');   // the first B opens on Crafting: until you hold a tool you have things to make before anything to build
+    if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
     D.W.pillars = nearSolids(P);
     if (roomInfo) for (var si = 0; si < roomInfo.solids.length; si++) { var sl = roomInfo.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }

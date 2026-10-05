@@ -100,7 +100,7 @@ order is the order a new player meets them; build them in the same order so the 
 - **Test:** a new player finds the village by walking inland within the first day (the hint "smoke to the
   north" or a chart marker), and Brokk's first line tells the whole story in one read.
 
-### 8. The shipwright's bench
+### 8. The shipwright's bench (built 2026-10-05: the piece, its placement rules, the Shipwright tab with the raft recipe locked until Brokk has taught it; the raft itself is step 9)
 - **Have:** the workbench's "needs a roof" rule (`benchRoofed`) as the pattern for a placing rule; the jetty.
 - **Build:** the **shipwright's bench** piece: a trestle with a keel-piece, buildable only on sand within a few
   tiles of the water, costing wood and stone, and only when the player's base has **comfort 4 or more** (the

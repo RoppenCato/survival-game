@@ -258,6 +258,20 @@ function workbenchObj(c, K, x, y, seed) {
   shape(c, ellPts(x + 12, y - 20, 3.2, 2.2, 10), K.trunkL, { seed: seed + 8, size: 'S', sh: 0.8, rough: 0.15 });   // a split log
 }
 
+// the shipwright's bench: two trestles carrying a keel timber with its upturned stem, and the first ribs standing on it
+function shipwrightObj(c, K, x, y, seed) {
+  gshadow(c, x + 2, y, 30, 5, 0.35);
+  [-17, 17].forEach(function (dx) { line(c, [[x + dx - 7, y], [x + dx, y - 15]], 3, K.wood.base, true); line(c, [[x + dx + 7, y], [x + dx, y - 15]], 3, K.wood.base, true); line(c, [[x + dx - 4, y - 6], [x + dx + 4, y - 6]], 2, K.wood.base, true); });
+  [-12, 0, 12].forEach(function (dx, k) {   // ribs rising from the keel, a V seen from the side
+    line(c, curvePts([x + dx, y - 17], [x + dx - 5, y - 27], [x + dx - 8, y - 36], 5), 2.4, K.wood.base, true);
+    line(c, curvePts([x + dx, y - 17], [x + dx + 5, y - 26], [x + dx + 9, y - 33], 5), 2.4, K.wood.shade, true);
+  });
+  shape(c, ribbon(curvePts([x - 32, y - 16], [x - 4, y - 13], [x + 30, y - 21], 10), 0, 0, function (t) { return 6 - 2.4 * t; }), K.trunkL, { seed: seed, size: 'M', sh: 1.2, rough: 0.2 });   // the keel
+  line(c, curvePts([x + 30, y - 21], [x + 36, y - 26], [x + 35, y - 34], 5), 3.4, K.trunkL.base, true);                                                           // its stem, curled up
+  shape(c, [[x - 20, y - 24], [x - 4, y - 25], [x - 3, y - 22], [x - 19, y - 21]], K.wood, { seed: seed + 3, size: 'S', flat: true, rough: 0.2 });                 // a first plank laid across
+  line(c, [[x - 36, y - 2], [x - 30, y - 8]], 2, K.wood.base, true); shape(c, rrPts(x - 34, y - 11, 6, 3.4, 1), K.iron, { seed: seed + 4, size: 'S', flat: true, rough: 0.1 });   // a mallet on the ground
+}
+
 function barrel(c, K, x, y, s, seed) {
   var w = s * 0.62, h = s;
   gshadow(c, x + 2, y + 1, w * 0.7, 4);
@@ -1558,6 +1572,7 @@ var PROPS = {
   crate: { b: [-30, -50, 40, 10], f: function (c, K, s) { crate(c, K, 0, 0, 28, s, 0); } },
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
   workbench: { b: [-22, -32, 24, 4], f: function (c, K, s) { workbenchObj(c, K, 0, 0, s); } },
+  shipwright: { b: [-42, -44, 44, 4], f: function (c, K, s) { shipwrightObj(c, K, 0, 0, s); } },
   chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },
 };
 function bakeProp(name, seed, opts) {
