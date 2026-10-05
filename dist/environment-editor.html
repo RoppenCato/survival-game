@@ -2961,7 +2961,8 @@ function bits(x, y, n) {
     W.parts.push({ k: 'bit', x: x, y: y, z: 10, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, vz: 40 + Math.random() * 60, life: 0.8, max: 0.8, c: Math.random() < 0.5 ? '#e0a93a' : '#8f8ba6', s: 1.6 });
   }
 }
-function num(x, y, txt, c, big) { W.nums.push({ x: x, y: y, t: 0, txt: txt, c: c || '#ffffff', big: !!big }); }
+function num(x, y, txt, c, big, weak) { W.nums.push({ x: x, y: y, t: 0, txt: txt, c: c || '#ffffff', big: !!big, weak: !!weak }); }
+var wrongToolAt = -1e9;                   // when the 'wrong tool' note was last shown (W.t); it comes back after five minutes
 function slowmo(scale, dur) { if (S.juice && dur > W.slow.t) { W.slow.t = dur; W.slow.s = scale; } }
 function ring(x, y, z, r1, life, col, air, w) { if (S.juice) W.rings.push({ x: x, y: y, z: z || 0, r1: r1, life: life, max: life, c: col || '255,255,255', air: !!air, w: w || 2 }); }
 function streaks(x, y, ang, n, speed, rgb) {
@@ -3288,7 +3289,8 @@ function updatePlayer(dt) {
             a.hit.push(o);
             var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (a.combo >= 2 ? 1.5 : 1);
             hv.hit(o, pw, right, tl.id);
-            num(o.x, o.y, (right ? '' : 'wrong tool  ') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#ffd34d', a.combo >= 2);
+            var sayWrong = !right && W.t - wrongToolAt > 300; if (sayWrong) wrongToolAt = W.t;
+            num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#d9d0c0', a.combo >= 2, !right);
             sfx(o.kind === 'stone' ? 'clink' : 'chop', right ? 1 : 0);
           }
         }
@@ -3857,10 +3859,12 @@ function swordPose(dir) {
     o.front = Math.sin(ang) >= -0.05; o.side = sdn; o.atk = true;
   } else {
     var side = (p.guard && S.shield) ? -guardSide() : 1;
-    if (dir === 'left') { o.hx = -3; o.hy = -10; o.ca = 0.45; o.sa = -0.88; }
-    else if (dir === 'right') { o.hx = 3; o.hy = -10; o.ca = -0.45; o.sa = -0.88; }
-    else { o.hx = side * 6.5; o.hy = -10; o.ca = side * 0.5; o.sa = -0.86; }
-    o.len = 20; o.front = true; o.side = side; o.atk = false;
+    // at rest the thing hangs down at the side from a straight arm, the way you carry an axe when you walk
+    // the hand is the figure's own hanging hand (about 6 out and 7 up from the feet; 4 forward in the side view)
+    if (dir === 'left') { o.hx = -4; o.hy = -7; o.ca = -0.3; o.sa = 0.95; }
+    else if (dir === 'right') { o.hx = 4; o.hy = -7; o.ca = 0.3; o.sa = 0.95; }
+    else { o.hx = side * 6.3; o.hy = -7; o.ca = side * 0.22; o.sa = 0.97; }
+    o.len = 14; o.front = dir !== 'up'; o.side = side; o.atk = false;
   }
   if (o.atk && S.look === 'classic') o.len *= lib.hero().spec.bladeLen;
   return o;
@@ -4047,13 +4051,10 @@ function drawHeroWeapon(c, front) {
     var ca = sp.ca, sa = sp.sa, len = sp.len, ex = hx + ca * len, ey = hy + sa * len, px = -sa, py = ca;
     c.lineCap = 'round';
     var heldIt = itemOf('held');
-    if (a.ph === 'none' && (heldIt || api.items)) {          // at rest the hand is at the hip and an arm reaches it
-      var sdn2 = sp.side || 1, shx = p.x + bp.lx + (dir === 'left' ? -2 : dir === 'right' ? 2 : sdn2 * 5), shy = p.y * K + bp.ly - 20;
-      c.strokeStyle = '#3a2a36'; c.lineWidth = 5; c.beginPath(); c.moveTo(shx, shy); c.lineTo(hx, hy); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3; c.stroke();
-    }
-    if (heldIt) { Items.draw(c, heldIt, hx, hy, ca, sa, heldIt.kind === 'sword' ? len * heldIt.size : null, p.mode === 'gather' && a.ph !== 'none'); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
+    var rest = a.ph === 'none', restLen = heldIt && rest ? Math.min(Items.KINDS[heldIt.kind].len * heldIt.size, heldIt.kind === 'axe' || heldIt.kind === 'pick' ? 11 : 15) : null;   // carried, a thing hangs short beside the leg
+    if (heldIt) { Items.draw(c, heldIt, hx, hy, ca, sa, rest ? restLen : (heldIt.kind === 'sword' ? len * heldIt.size : null), p.mode === 'gather' && a.ph !== 'none'); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (p.mode === 'gather') { if (!api.items) drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
-    else if (api.items) { var fx2 = hx + ca * 4, fy2 = hy + sa * 4; c.strokeStyle = '#3a2a36'; c.lineWidth = 6; c.beginPath(); c.moveTo(hx, hy); c.lineTo(fx2, fy2); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3.6; c.stroke(); lib.ell(c, fx2, fy2, 3.4, 3.2, HC.skin, 1.5); }   // no sword: a fist
+    else if (api.items) { if (!rest) { var fx2 = hx + ca * 4, fy2 = hy + sa * 4; c.strokeStyle = '#3a2a36'; c.lineWidth = 6; c.beginPath(); c.moveTo(hx, hy); c.lineTo(fx2, fy2); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3.6; c.stroke(); lib.ell(c, fx2, fy2, 3.4, 3.2, HC.skin, 1.5); } }   // no sword: a fist (at rest the figure's own hands hang)
     else {
     c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
     c.strokeStyle = HC.blade; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
@@ -4235,7 +4236,13 @@ function drawNums(c) {
     var pop = 1 + (n.big ? 0.9 : 0.5) * Math.max(0, 1 - n.t / 0.14);
     c.font = 'bold ' + (9 * pop).toFixed(1) + 'px system-ui, sans-serif';
     c.lineWidth = 2.6; c.strokeStyle = '#3a2a36'; var ny = n.y * K - n.t * 24;
-    c.strokeText(n.txt, n.x, ny); c.fillStyle = n.c; c.fillText(n.txt, n.x, ny); c.globalAlpha = 1;
+    if (n.weak) c.globalAlpha *= 0.7;
+    c.strokeText(n.txt, n.x, ny); c.fillStyle = n.c; c.fillText(n.txt, n.x, ny);
+    if (n.weak) {                                            // a crack through a weak blow's number
+      var tw = c.measureText(n.txt).width, cx0 = n.x - tw * 0.1, cy0 = ny - 9 * pop * 0.75;
+      c.strokeStyle = '#3a2a36'; c.lineWidth = 1.1; c.beginPath(); c.moveTo(cx0 - 1.5, cy0); c.lineTo(cx0 + 0.6, cy0 + 2.6); c.lineTo(cx0 - 0.4, cy0 + 4.4); c.lineTo(cx0 + 1.6, cy0 + 7.2); c.stroke();
+    }
+    c.globalAlpha = 1;
   }
 }
 function drawHud(c) {

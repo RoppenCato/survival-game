@@ -192,10 +192,50 @@ function make(kit, opts) {
       c.drawImage(piece, qx * pw, qy * phh, pw + 0.5, phh + 0.5);
     }
   };
+  // the meadow under the blades (painted first, still): soft lighter and darker patches of grass, bare earth, and drifts of
+  // tiny flowers in several colours, the way a real meadow is blotchy and flecked rather than one green
+  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
+  w.drawMeadow = function (c, cam, hw, hh, G) {
+    var sp = G.patchSize || 70, gx0 = Math.floor((cam.x - hw) / sp) - 2, gx1 = Math.ceil((cam.x + hw) / sp) + 1, gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 2, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1, gx, gy;
+    if (G.patches > 0) for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) {           // big soft blotches, lighter or darker
+      var hp = hash(gx, gy, 41); if (hp > 0.8) continue;
+      var x = (gx + hash(gx, gy, 42)) * sp, y = (gy + hash(gx, gy, 43)) * sp * 0.75; if (!meadowOk(x, y)) continue;
+      var r = sp * (0.5 + hash(gx, gy, 44) * 0.7), light = hp < 0.45;
+      var gr = c.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, light ? G.patchLight : G.patchDark); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      c.save(); c.translate(x, y); c.scale(1, 0.6 + hash(gx, gy, 45) * 0.2); c.rotate((hash(gx, gy, 46) - 0.5) * 0.8); c.translate(-x, -y);
+      c.fillStyle = gr; c.globalAlpha = (light ? 0.5 : 0.4) * G.patches; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore();
+    }
+    c.globalAlpha = 1;
+    var es = sp * 1.9; gx0 = Math.floor((cam.x - hw) / es) - 1; gx1 = Math.ceil((cam.x + hw) / es); gy0 = Math.floor((cam.y - hh) / (es * 0.75)) - 1; gy1 = Math.ceil((cam.y + hh) / (es * 0.75));
+    if (G.earth > 0) for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) {             // bare earth showing through, with a soft grassy edge
+      if (hash(gx, gy, 51) > G.earth) continue;
+      var ex0 = (gx + hash(gx, gy, 52)) * es, ey0 = (gy + hash(gx, gy, 53)) * es * 0.75; if (!meadowOk(ex0, ey0)) continue;
+      var er = 9 + hash(gx, gy, 54) * 14, k;
+      c.save(); c.translate(ex0, ey0); c.rotate((hash(gx, gy, 55) - 0.5) * 1.2); c.scale(1, 0.55);
+      c.fillStyle = G.earthEdge; c.globalAlpha = 0.55; c.beginPath(); for (k = 0; k < 8; k++) { var aa = k / 8 * 6.283, rr = er * (1.15 + (hash(gx * 3 + k, gy, 56) - 0.5) * 0.5); c.lineTo(Math.cos(aa) * rr, Math.sin(aa) * rr); } c.closePath(); c.fill();
+      c.fillStyle = G.earthCol; c.globalAlpha = 0.9; c.beginPath(); for (k = 0; k < 8; k++) { var ab = k / 8 * 6.283, rb = er * (0.85 + (hash(gx * 3 + k, gy, 56) - 0.5) * 0.5); c.lineTo(Math.cos(ab) * rb, Math.sin(ab) * rb); } c.closePath(); c.fill();
+      c.fillStyle = G.earthLight; c.globalAlpha = 0.5; c.beginPath(); c.ellipse(-er * 0.2, -er * 0.25, er * 0.4, er * 0.3, 0, 0, 7); c.fill();
+      c.restore();
+    }
+    c.globalAlpha = 1;
+    var ds = sp * 1.3; gx0 = Math.floor((cam.x - hw) / ds) - 1; gx1 = Math.ceil((cam.x + hw) / ds); gy0 = Math.floor((cam.y - hh) / (ds * 0.75)) - 1; gy1 = Math.ceil((cam.y + hh) / (ds * 0.75));
+    if (G.drifts > 0) for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) {            // drifts of tiny flowers, one colour to a drift
+      if (hash(gx, gy, 61) > G.drifts) continue;
+      var dx0 = (gx + hash(gx, gy, 62)) * ds, dy0 = (gy + hash(gx, gy, 63)) * ds * 0.75, n = 8 + Math.floor(hash(gx, gy, 64) * 16), col = G.bloom[Math.floor(hash(gx, gy, 65) * G.bloom.length) % G.bloom.length];
+      var ang = hash(gx, gy, 66) * 3.14, lenD = ds * (0.5 + hash(gx, gy, 67) * 0.6), wid = ds * 0.18;
+      c.fillStyle = col;
+      for (var q = 0; q < n; q++) {
+        var u = (hash(gx, gy + 100, 70 + q) - 0.5) * lenD, v = (hash(gx + 100, gy, 70 + q) - 0.5) * wid, fx = dx0 + Math.cos(ang) * u - Math.sin(ang) * v, fy = dy0 + (Math.sin(ang) * u + Math.cos(ang) * v) * 0.75;
+        if (!meadowOk(fx, fy)) continue;
+        var fr = 0.7 + hash(gx + q, gy, 71) * 0.7; c.globalAlpha = 0.85; c.beginPath(); c.arc(fx, fy, fr, 0, 7); c.fill();
+      }
+    }
+    c.globalAlpha = 1;
+  };
   // living grass: tufts of blades on the open ground that sway in a wind, with slow bands of light rolling over the meadow
   // like the glints on the water. G is a World.GRASS-style spec (palette, density, sway); nothing is drawn on sand or water.
   w.drawGrass = function (c, cam, hw, hh, clock, G) {
-    G = G || GRASS; if (!(G.density > 0)) return;
+    G = G || GRASS; w.drawMeadow(c, cam, hw, hh, G); if (!(G.density > 0)) return;
     var sp = G.spacing, gx0 = Math.floor((cam.x - hw) / sp) - 1, gx1 = Math.ceil((cam.x + hw) / sp), gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 1, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1;
     var cols = [G.dark, G.mid, G.light], sp0 = G.speed;
     c.lineCap = 'round';
@@ -203,7 +243,7 @@ function make(kit, opts) {
       var h1 = hash(gx, gy, 31); if (h1 > G.density) continue;
       var x = (gx + hash(gx, gy, 32)) * sp, y = (gy + hash(gx, gy, 33)) * sp * 0.75;
       if (x < 0 || y < 0 || x >= WX || y / K >= WY) continue;
-      var ex = elevAt(x, y / K); if (ex < 0.4 || ex < beachAt(x / T, y / K / T) + 0.35) continue;
+      if (!meadowOk(x, y)) continue;
       var wave = Math.sin(x * 0.011 - clock * 0.9 * sp0 + y * 0.007), gust = Math.sin(clock * 0.35 * sp0 + x * 0.004 - y * 0.003);
       if (G.shimmer > 0 && wave > 0.2) { var gr = c.createRadialGradient(x, y, 0, x, y, sp * 1.1); gr.addColorStop(0, G.glow); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.save(); c.translate(x, y); c.scale(1, 0.5); c.translate(-x, -y); c.fillStyle = gr; c.globalAlpha = (wave - 0.2) * 0.34 * G.shimmer; c.beginPath(); c.arc(x, y, sp * 1.1, 0, 7); c.fill(); c.restore(); c.globalAlpha = 1; }
       var sway = (Math.sin(clock * 1.9 * sp0 + x * 0.05 + y * 0.03) * 0.5 + gust * 0.7 + wave * 0.25) * G.sway, n = 3 + Math.floor(hash(gx, gy, 34) * 3);
@@ -320,8 +360,9 @@ function make(kit, opts) {
   };
   return w;
 }
-var GRASS = { density: 0.55, spacing: 17, height: 6, sway: 0.5, speed: 1, shimmer: 0.9, shade: 0.8, flowers: 0.08,
-  dark: '#3f8a3c', mid: '#6cb84a', light: '#a6d85c', glow: '#f4ffb0', bloom: ['#ffffff', '#ffe36b', '#ff9fc2'] };   // the default living-grass look (the Grass Editor tunes it)
+var GRASS = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shimmer: 0.6, shade: 0.8, flowers: 0.05,
+  patches: 1, patchSize: 70, patchLight: '#c8e07a', patchDark: '#4a8a3a', earth: 0.3, earthCol: '#b08a56', earthLight: '#d2b078', earthEdge: '#7a9a40', drifts: 0.55,
+  dark: '#3f8a3c', mid: '#6cb84a', light: '#a6d85c', glow: '#f4ffb0', bloom: ['#ffffff', '#ffe36b', '#ff9fc2', '#ff8a4a'] };   // the default living-grass look (the Grass Editor tunes it)
 return { make: make, DEF: DEF, GRASS: GRASS, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
 })();
 if (typeof module !== 'undefined') module.exports = World;

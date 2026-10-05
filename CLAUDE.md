@@ -449,6 +449,17 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Panels:** the character panel hero always faces south; the bag is aligned right with the same margin (8) as the
   character panel; Sort is a small button on top of the bag (three small rectangles); tooltips draw above boards;
   Brokk's bubble draws on top of roofs.
+- **Carrying things (2026-10-05):** at rest a tool or sword hangs down beside the leg from the figure's own hanging hand
+  (`swordPose` rest branch in `src/combat.js`; axes and picks drawn short, 11 units, swords 15), in every direction; no
+  extra arm is drawn. `node tools/visual/poses.js` renders the hero carrying each thing, standing and walking, in four
+  directions, and `chop.js` the tool strokes. The **wrong tool** note shows once, then not again for five minutes
+  (`wrongToolAt`); every weak blow's number is dim with a crack through it (`num(..., weak)`).
+- **Leather (2026-10-05):** animals drop leather directly (`drops` in `ANIMALS`); curing is gone (`rackUsable` returns
+  null) and the drying rack is only a thing to build. The chart is half size (48 by 32).
+- **The meadow (2026-10-05, Grass Editor):** under the blades `w.drawMeadow` paints soft lighter and darker patches
+  (`patches`, `patchSize`, `patchLight`, `patchDark`), bare earth with a grassy edge (`earth`, `earthCol`, `earthLight`,
+  `earthEdge`) and drifts of tiny flowers in one colour each (`drifts`, `bloom`), all hashed from position so they never
+  move. Robin's reference is a painterly meadow: blotchy greens flecked with flower drifts and earth.
 - **Grass Editor** (`grass-editor.html`, `templates/grass.html`): `World.GRASS` is the living-grass spec (blade
   palette, density, height, sway, wind speed, soft bands of light, flowers) drawn by `w.drawGrass` after the waves,
   plus the ground hue, brightness and saturation. "Use in the game" stores `game.grass`, which the game merges over
