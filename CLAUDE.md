@@ -408,9 +408,19 @@ The hero has two modes, switched with **Q**, each with its own six-slot hotbar a
   to be redrawn later; the troll and other väsen should look like the classic old illustrations (hairy, heavy,
   long-armed), not cute. Editors add per-page overrides on top (hue, saturation and so on).
 - **The reference set** (Object Editor, first category, starred): oak, pine, bush, rock, cliff, longhouse, woodpile,
-  tallGrass, flower, runestone. Robin fixes these by hand first; each settles one family's drawing rules (canopy,
-  tiers, stone, wood and roofs, blades, small bright things, carved stone), and the rest of the props are then
-  restyled to match. The notes under the object buttons say what each one settles.
+  tallGrass, flower, runestone. Each settles one family's drawing rules (canopy, tiers, stone, wood and roofs,
+  blades, small bright things, carved stone), and the rest of the props are then restyled to match. The notes
+  under the object buttons say what each one settles. **Redrawn 2026-10-05 from Robin's notes:** foliage is
+  layered lobed silhouettes (`foliage`: a dark mass, a lit mass, a small highlight, leaf notches), never circles
+  on circles; the oak (`oakTree`) is a thick forking trunk under a broad crown with two lower side masses; the
+  pine is kept at Robin's 1.4 (h 180); the bush is one foliage mass over a few stems; rocks sit flat on the
+  ground with a lit top facet, a dark foot and grass at the base (three builds by seed); the cliff is a stepped
+  rock outcrop with grass on its ledges; the longhouse is seen from the three-quarter camera (long plank wall
+  with the door, a receding gable end, a bowed turf roof with a hipped end, crossed ridge boards, a stone foot);
+  the woodpile shows the logs' lengths running back with the cut ends toward you; tall grass is outlined blades,
+  darker and yellower than the ground, with lit tips and seed heads; the flower bends, has two leaves and a bud,
+  and its head is a lobed disc seen from a little above; the runestone's grooves are cut (a lit edge below each
+  dark stroke) with a trace of red in them. Robin judges these next.
 - Props are functions that draw with `shape`, `line`, `gshadow` and materials from `mats()`, registered in `PROPS`
   with a bounding box. `node tools/visual/props.js name name ...` renders them next to the hero.
 - Built things use `K.wood`; `K.trunk` is living bark.

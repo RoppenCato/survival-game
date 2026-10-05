@@ -1483,13 +1483,59 @@ function tree(c, K, x, y, h, seed, wid, mat) {
   }
 }
 
+/* ---------------- the reference set, redrawn after Robin's notes (2026-10-05) ----------------
+   Foliage is layered silhouettes with lobed edges (a dark mass, a lit mass, a highlight), not circles on circles.
+   Rocks sit flat on the ground with a lit top facet. Everything reads from the three-quarter camera. */
+function fillPath(c, d, col, outline, lw) { path(c, d); c.fillStyle = col; c.fill(); if (outline) { c.lineWidth = lw || ow('M'); c.strokeStyle = OLC; c.lineJoin = 'round'; c.stroke(); } }
+function lobed(cx, cy, rx, ry, seed, n, v) { return wob(dens(blobPts(cx, cy, rx, ry, seed, n || 40, v == null ? 0.16 : v), 5), P.rough * 0.8, seed); }
+// a canopy or a bush: three stacked masses, dark below, lit in the middle, a highlight up and to the left
+function foliage(c, K, cx, cy, rx, ry, seed, mat) {
+  mat = mat || K.leaf;
+  var base = lobed(cx, cy, rx, ry, seed, 44, 0.15);
+  fillPath(c, base, mat.shade, true, ow('L') * 1.1);
+  fillPath(c, lobed(cx - rx * 0.05, cy - ry * 0.2, rx * 0.76, ry * 0.66, seed + 1, 40, 0.17), mat.base, false);
+  fillPath(c, lobed(cx - rx * 0.26, cy - ry * 0.46, rx * 0.34, ry * 0.26, seed + 2, 30, 0.2), mat.hl, false);
+  // a few leaf notches along the lit edge
+  var R = rng(seed + 9), i; c.save(); c.strokeStyle = mat.shade; c.lineWidth = 1.1; c.lineCap = 'round';
+  for (i = 0; i < 5; i++) { var a = -2.6 + R() * 2.2, px = cx + Math.cos(a) * rx * 0.72, py = cy + Math.sin(a) * ry * 0.72; c.beginPath(); c.moveTo(px - 2, py + 1.5); c.lineTo(px, py - 1.5); c.lineTo(px + 2, py + 1.5); c.stroke(); }
+  c.restore();
+  return base;
+}
+// the oak: a short thick trunk that forks into three limbs under a broad crown
+function oakTree(c, K, x, y, h, seed) {
+  var R = rng(seed), bw = h * 0.16, lean = (R() - 0.5) * P.twist * 20, i;
+  longShadow(c, x, y, bw * 2.2, h * 0.45); gshadow(c, x, y + 1, bw * 1.9, 7, 0.4);
+  rootFlare(c, K, x, y, bw, seed, bw * 0.9);
+  var top = y - h * 0.42;
+  shape(c, ribbon(curvePts([x, y], [x + lean * 0.5, y - h * 0.2], [x + lean, top], 8), 0, 0, function (t) { return lerp(bw, bw * 0.7, t) + (t < 0.12 ? (0.12 - t) * bw * 2.4 : 0); }), K.trunk, { seed: seed, size: 'XL', sh: 5, hl: 3, rough: 0.3 });
+  var cr = h * 0.34, cx = x + lean, cy = top - cr * 0.55;
+  [[-1, 0.9], [1, 0.9], [0.1, 1.15]].forEach(function (q, k) { var p0 = [x + lean * 0.9, top + 4]; shape(c, ribbon(curvePts(p0, [p0[0] + q[0] * cr * 0.25, p0[1] - cr * 0.25], [p0[0] + q[0] * cr * 0.55 * q[1], p0[1] - cr * 0.7 * q[1]], 6), bw * 0.5, bw * 0.2), K.trunk, { seed: seed + 20 + k, size: 'M', sh: 1.5, rough: 0.2 }); });
+  groundTufts(c, K, x, y, bw * 1.4, seed);
+  foliage(c, K, cx - cr * 0.78, cy + cr * 0.5, cr * 0.55, cr * 0.42, seed * 3 + 7, K.leaf);
+  foliage(c, K, cx + cr * 0.82, cy + cr * 0.45, cr * 0.5, cr * 0.4, seed * 3 + 11, K.leaf);
+  foliage(c, K, cx, cy, cr * 1.2, cr * 1.0, seed * 3, K.leaf);
+  var bm = M(P.accentHue, 88, 64), nf = P.fruit ? 3 : 0;
+  for (i = 0; i < nf; i++) { var a = R() * 6.28, bx = cx + Math.cos(a) * cr * 0.6, by = cy + Math.sin(a) * cr * 0.5; c.beginPath(); c.arc(bx, by, 4, 0, 7); c.fillStyle = bm.base; c.fill(); }
+}
+// a boulder: flat on the ground, a lit top facet, a dark foot, one crack; three builds by seed
 function rock(c, K, x, y, s, seed, mossy) {
-  var R = rng(seed), pts = [], n = 8, i;
-  gshadow(c, x + 2, y + 1, s * 0.9, s * 0.28);
-  for (i = 0; i < n; i++) { var a = i / n * Math.PI * 2, r = s * (0.7 + R() * 0.4); pts.push([x + Math.cos(a) * r, y - s * 0.55 + Math.sin(a) * r * 0.62]); }
-  var d = shape(c, pts, K.rock, { seed: seed, size: 'M', sh: 4, rough: 0.6 });
-  if (mossy) { shape(c, blobPts(x - s * 0.15, y - s * 0.95, s * 0.7, s * 0.28, seed + 3, 10, 0.35), K.moss, { seed: seed + 4, size: 'S', sh: 1.5 }); }
-  line(c, [[x + s * 0.1, y - s * 0.8], [x + s * 0.25, y - s * 0.4]], 1.2, OLC, false);
+  var R = rng(seed), kind = seed % 3, w = s * (1.4 + R() * 0.5), hh = s * (0.9 + R() * 0.5) * (kind === 1 ? 0.7 : 1), i;
+  gshadow(c, x + 2, y + 1, w * 0.62, s * 0.26);
+  var body = [[x - w * 0.5, y], [x - w * 0.56, y - hh * 0.45], [x - w * (0.3 + R() * 0.15), y - hh * (0.85 + R() * 0.15)], [x + w * (0.05 + R() * 0.2), y - hh], [x + w * 0.42, y - hh * (0.7 + R() * 0.2)], [x + w * 0.55, y - hh * 0.35], [x + w * 0.48, y]];
+  if (kind === 2) body.splice(3, 0, [x - w * 0.05, y - hh * 0.78], [x + w * 0.05, y - hh * 1.08]);
+  var d = shape(c, body, K.rock, { seed: seed, size: 'M', flat: true, rough: 0.45 });
+  c.save(); path(c, d); c.clip();
+  // the lit top: a facet that follows the upper edge; the foot: a dark band at the bottom
+  var topF = [[x - w * 0.56, y - hh * 0.45], [x - w * 0.36, y - hh * 0.92], [x + w * 0.12, y - hh * 1.02], [x + w * 0.46, y - hh * 0.74], [x + w * 0.2, y - hh * 0.5], [x - w * 0.2, y - hh * 0.46]];
+  path(c, wob(dens(topF, 5), P.rough * 0.8, seed + 2)); c.fillStyle = K.rock.hl; c.fill();
+  c.fillStyle = K.rock.shade; c.globalAlpha = 0.9; c.fillRect(x - w, y - hh * 0.28, w * 2, hh * 0.3); c.globalAlpha = 1;
+  c.fillStyle = K.rock.shade; c.beginPath(); c.moveTo(x + w * 0.2, y - hh * 0.5); c.lineTo(x + w * 0.5, y - hh * 0.6); c.lineTo(x + w * 0.6, y); c.lineTo(x + w * 0.2, y); c.closePath(); c.globalAlpha = 0.55; c.fill(); c.globalAlpha = 1;
+  c.restore();
+  line(c, [[x + w * 0.05, y - hh * 0.7], [x + w * 0.12, y - hh * 0.45], [x + w * 0.06, y - hh * 0.25]], 1.1, K.rock.shade, false);
+  if (mossy) fillPath(c, lobed(x - w * 0.12, y - hh * 0.9, w * 0.26, hh * 0.14, seed + 3, 20, 0.3), K.moss.base, false);
+  c.save(); c.lineCap = 'round'; c.strokeStyle = K.grassB.base; c.lineWidth = 1.3;   // grass at the foot, so it sits in the ground
+  for (i = 0; i < 4; i++) { var gx = x - w * 0.45 + R() * w * 0.9, gy = y + 1; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx - 1 + R() * 2, gy - 4 - R() * 3); c.stroke(); }
+  c.restore();
 }
 function mushroom(c, K, x, y, s, seed) {
   var R = rng(seed), tw = P.twist;
@@ -1505,14 +1551,24 @@ function mushroom(c, K, x, y, s, seed) {
   addLight(cx, cy, 26 + 18 * P.glow, P.accentHue, 85, 60, 0.5);
 }
 
+// a wildflower: a bending stem with a leaf each side, the head seen a little from the side, and a bud beside it
 function flower(c, K, x, y, seed) {
-  var R = rng(seed), h = 12 + R() * 14 * (0.6 + P.spindly), tw = P.twist;
-  var tip = [x + (R() - 0.5) * 6 * tw, y - h];
-  line(c, curvePts([x, y], [x + (R() - 0.5) * 6 * tw, y - h * 0.5], tip, 6), 2.4, K.leafD.base, true);
-  shape(c, ellPts(x + 4, y - h * 0.35, 4.2, 2.2, 8), K.leaf, { seed: seed + 30, size: 'S', sh: 0.8, rough: 0.1 });
-  var m = [K.flowerA, K.flowerB, K.flowerC][Math.floor(R() * 3)], np = 5, pr = 4.4 + R() * 2.2, i;
-  for (i = 0; i < np; i++) { var a = i / np * Math.PI * 2 + 0.3; shape(c, ellPts(tip[0] + Math.cos(a) * pr, tip[1] + Math.sin(a) * pr * 0.85, pr * 0.95, pr * 0.78, 10), m, { seed: seed + i, size: 'S', sh: 0.9, hl: 0.8, rough: 0.1 }); }
-  c.beginPath(); c.arc(tip[0], tip[1], pr * 0.55, 0, 7); c.fillStyle = K.spot.base; c.fill(); c.lineWidth = ow('S') * 0.8; c.strokeStyle = OLC; c.stroke();
+  var R = rng(seed), h = 14 + R() * 12, bend = (R() - 0.5) * 10 - 2, m = [K.flowerA, K.flowerB, K.flowerC][seed % 3], i;
+  var stem = curvePts([x, y], [x + bend * 0.3, y - h * 0.55], [x + bend, y - h], 8), tip = stem[8];
+  line(c, stem, 1.9, K.leafD.base, true);
+  // leaves: a drooping pair, one low and one higher
+  [[-1, 0.28], [1, 0.5]].forEach(function (q, k) { var p = stem[Math.round(q[1] * 8)]; var lf = ribbon(curvePts(p, [p[0] + q[0] * 4, p[1] - 1], [p[0] + q[0] * 8, p[1] + 2.5], 5), 0.5, 0, function (t) { return Math.sin(t * Math.PI) * 4; }); fillPath(c, wob(dens(lf, 4), P.rough * 0.5, seed + k), K.leaf.base, true, ow('S') * 0.8); });
+  // the bud: a small closed head on a short stem
+  var bp = [x + 7, y - 2], bs = curvePts(bp, [bp[0] + 2, bp[1] - 6], [bp[0] + 1, bp[1] - h * 0.5], 5); line(c, bs, 1.4, K.leafD.base, true);
+  fillPath(c, wob(dens(ellPts(bs[5][0], bs[5][1] - 1.5, 2.2, 3, 10), 3), P.rough * 0.4, seed + 5), m.shade, true, ow('S') * 0.8);
+  // the head: petals as one lobed disc seen from a little above, a darker underside showing below, a centre
+  var pr = 5 + R() * 2, hd = lobed(tip[0], tip[1], pr * 1.15, pr * 0.85, seed + 7, 24, 0.3);
+  fillPath(c, hd.map(function (p) { return [p[0], p[1] + 1.6]; }), m.shade, true, ow('S') * 0.9);
+  fillPath(c, hd, m.base, true, ow('S') * 0.9);
+  c.save(); path(c, hd); c.clip(); c.strokeStyle = m.shade; c.lineWidth = 0.9; c.globalAlpha = 0.6;
+  for (i = 0; i < 6; i++) { var a = i / 6 * 6.28 + 0.4; c.beginPath(); c.moveTo(tip[0] + Math.cos(a) * pr * 0.35, tip[1] + Math.sin(a) * pr * 0.25); c.lineTo(tip[0] + Math.cos(a) * pr * 1.1, tip[1] + Math.sin(a) * pr * 0.85); c.stroke(); }
+  c.restore();
+  c.beginPath(); c.ellipse(tip[0], tip[1] + 0.5, pr * 0.42, pr * 0.3, 0, 0, 7); c.fillStyle = K.spot.base; c.fill(); c.lineWidth = ow('S') * 0.7; c.strokeStyle = OLC; c.stroke();
 }
 
 function fence(c, K, x0, y, n, seed) {
@@ -1567,9 +1623,12 @@ function willow(c, K, x, y, h, seed) {
   for (i = 0; i < (P.fruit ? 3 : 0); i++) { var bx = cx + (R() - 0.5) * cr * 1.5, by = cy + cr * 0.2 + R() * h * 0.2; c.beginPath(); c.arc(bx, by, 3.4, 0, 7); c.fillStyle = bm.base; c.fill(); c.fillStyle = 'hsla(' + P.accentHue.toFixed(0) + ',100%,90%,0.95)'; c.beginPath(); c.arc(bx - 1, by - 1, 1.2, 0, 7); c.fill(); addLight(bx, by, 28 + 20 * P.glow, P.accentHue, 92, 62, 0.8); }
 }
 function bush(c, K, x, y, r, seed, berries) {
-  var R = rng(seed);
+  var R = rng(seed), i;
   gshadow(c, x, y, r * 1.15, r * 0.38, 0.4);
-  leafBlobs(c, K, x, y - r * 0.55, r, seed, 3 + Math.round(P.lush * 3));
+  c.save(); c.lineCap = 'round'; c.strokeStyle = K.trunk.shade; c.lineWidth = 1.6;   // a few stems at the foot
+  for (i = 0; i < 4; i++) { var sx = x + (i - 1.5) * r * 0.3; c.beginPath(); c.moveTo(sx, y); c.lineTo(sx + (R() - 0.5) * 4, y - r * 0.5); c.stroke(); }
+  c.restore();
+  foliage(c, K, x, y - r * 0.62, r * 1.45, r * 0.85, seed, K.leaf);
   if (berries) { var bm = M(352, 74, 50), i; for (i = 0; i < 5; i++) { var bx = x + (R() - 0.5) * r * 1.6, by = y - r * 0.5 + (R() - 0.3) * r * 0.8; c.beginPath(); c.arc(bx, by, 2.8, 0, 7); c.fillStyle = bm.base; c.fill(); c.fillStyle = 'rgba(255,255,255,0.8)'; c.beginPath(); c.arc(bx - 0.8, by - 0.8, 0.9, 0, 7); c.fill(); } }
 }
 function fern(c, K, x, y, s, seed) {
@@ -1712,13 +1771,26 @@ function emberBush(c, K, x, y, r, seed) {
   var R = rng(seed), i; for (i = 0; i < 5; i++) { var bx = x + (R() - 0.5) * r * 1.6, by = y - r * 0.5 + (R() - 0.3) * r * 0.8; c.fillStyle = 'hsl(30,100%,62%)'; c.beginPath(); c.arc(bx, by, 1.5, 0, 7); c.fill(); }
   addLight(x, y - r * 0.5, 30 + 14 * P.glow, 26, 100, 58, 0.4);
 }
+// a rock outcrop: a stepped mass of bedrock breaking through the grass, two tiers with flat lit tops and dark faces, grass on the ledges
 function cliffObj(c, K, x, y, seed) {
-  var R = rng(seed);
-  gshadow(c, x + 3, y, 24, 6, 0.4);
-  shape(c, [[x - 18, y], [x - 20, y - 30], [x - 12, y - 52], [x - 2, y - 46], [x + 8, y - 60], [x + 18, y - 40], [x + 22, y - 12], [x + 18, y]], K.rockC, { seed: seed, size: 'L', sh: 5, hl: 3, rough: 0.6 });
-  shape(c, [[x + 8, y - 60], [x + 18, y - 40], [x + 22, y - 12], [x + 18, y], [x + 10, y - 20]], K.rockD, { seed: seed + 1, size: 'M', flat: true, rough: 0.5 });
-  c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.5)'; c.lineWidth = 1; c.beginPath(); c.moveTo(x - 8, y - 40); c.lineTo(x - 4, y - 22); c.lineTo(x - 9, y - 8); c.stroke();
-  if (seed % 3 === 0) shape(c, blobPts(x - 8, y - 44, 9, 4, seed + 3, 8, 0.4), K.moss, { seed: seed + 4, size: 'S' });
+  var R = rng(seed), i;
+  gshadow(c, x + 2, y + 1, 40, 7, 0.4);
+  function tier(x0, y0, w, h, sd) {           // a block: dark front face, lit top seen from above
+    var face = [[x0 - w * 0.5, y0], [x0 - w * 0.56, y0 - h * 0.45], [x0 - w * 0.48, y0 - h * 0.78], [x0 - w * 0.3, y0 - h], [x0 - w * 0.05, y0 - h * 0.9], [x0 + w * 0.2, y0 - h * 1.02], [x0 + w * 0.42, y0 - h * 0.86], [x0 + w * 0.54, y0 - h * 0.5], [x0 + w * 0.46, y0 - h * 0.2], [x0 + w * 0.5, y0]];
+    var d = shape(c, face, K.rockC, { seed: sd, size: 'L', flat: true, rough: 0.7 });
+    c.save(); path(c, d); c.clip(); c.fillStyle = K.rockC.shade; c.globalAlpha = 0.85; c.fillRect(x0 - w, y0 - h * 0.32, w * 2, h * 0.35); c.globalAlpha = 1;
+    c.fillStyle = K.rockD.base; c.globalAlpha = 0.5; c.beginPath(); c.moveTo(x0 + w * 0.1, y0 - h); c.lineTo(x0 + w * 0.52, y0 - h * 0.55); c.lineTo(x0 + w * 0.5, y0); c.lineTo(x0 + w * 0.12, y0); c.closePath(); c.fill(); c.globalAlpha = 1; c.restore();
+    var top = [[x0 - w * 0.48, y0 - h * 0.78], [x0 - w * 0.3, y0 - h], [x0 - w * 0.05, y0 - h * 0.9], [x0 + w * 0.2, y0 - h * 1.02], [x0 + w * 0.42, y0 - h * 0.86], [x0 + w * 0.3, y0 - h * 0.66], [x0, y0 - h * 0.7], [x0 - w * 0.25, y0 - h * 0.62]];
+    fillPath(c, wob(dens(top, 5), P.rough * 0.8, sd + 1), K.rockC.hl, false);
+    line(c, [[x0 - w * 0.12, y0 - h * 0.6], [x0 - w * 0.06, y0 - h * 0.3], [x0 - w * 0.14, y0 - h * 0.08]], 1.1, K.rockC.shade, false);
+  }
+  tier(x + 4, y, 80, 28, seed);
+  tier(x - 12, y - 22, 50, 26, seed + 3);
+  tier(x + 26, y - 20, 22, 12, seed + 6);
+  c.save(); c.lineCap = 'round'; c.lineWidth = 1.4;   // grass on the ledge and at the foot
+  for (i = 0; i < 9; i++) { var gx = x - 34 + R() * 70, gy = i < 4 ? y - 24 - (R() * 3) : y + 1; c.strokeStyle = R() < 0.5 ? K.grassB.base : K.grassB.hl; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx - 1 + R() * 2, gy - 4 - R() * 3); c.moveTo(gx + 2, gy); c.lineTo(gx + 3.5, gy - 3 - R() * 3); c.stroke(); }
+  c.restore();
+  fillPath(c, lobed(x - 16, y - 50, 9, 3.5, seed + 5, 16, 0.3), K.moss.base, false);
 }
 
 
@@ -1816,9 +1888,22 @@ function flowerBedObj(c, K, x, y, seed) {
   var R = rng(seed), i;
   for (i = 0; i < 9; i++) flower(c, K, x + (R() - 0.5) * 36, y + (R() - 0.5) * 12, seed * 3 + i);
 }
+// tall grass: a tuft of outlined blades, darker and yellower than the ground so it stands off it, lit tips, two seed heads
 function tallGrassObj(c, K, x, y, seed) {
-  var R = rng(seed), i;
-  for (i = 0; i < 16; i++) { var bx = x + (R() - 0.5) * 26, h = 12 + R() * 18, tip = [bx + (R() - 0.5) * 12, y - h]; line(c, curvePts([bx, y + (R() - 0.5) * 4], [bx + (R() - 0.5) * 6, y - h * 0.5], tip, 5), 1.7, (i % 3 ? K.leaf : K.leafD).base, false); if (i % 5 === 0) { c.fillStyle = K.spot.base; c.beginPath(); c.ellipse(tip[0], tip[1], 1.4, 2.2, 0, 0, 7); c.fill(); } }
+  var R = rng(seed), i, dk = M(P.outsideHue + 4, 50, 26), md = M(P.outsideHue + 10, 56, 36), lt = M(P.outsideHue + 18, 62, 50);
+  gshadow(c, x, y + 1, 12, 3, 0.25);
+  var blades = [];
+  for (i = 0; i < 14; i++) { var bx = x + (R() - 0.5) * 22, h = 14 + R() * 18, sway = (R() - 0.5) * 14; blades.push({ pts: curvePts([bx, y + (R() - 0.5) * 3], [bx + sway * 0.3, y - h * 0.55], [bx + sway, y - h], 6), h: h, k: i }); }
+  blades.sort(function (a, b) { return b.h - a.h; });
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  blades.forEach(function (b) { c.strokeStyle = OLC; c.lineWidth = 3.2; c.beginPath(); b.pts.forEach(function (p, j) { if (j) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.stroke(); });
+  blades.forEach(function (b) {
+    var col = b.k % 3 === 0 ? dk : (b.k % 3 === 1 ? md : lt);
+    c.strokeStyle = col.base; c.lineWidth = 1.8; c.beginPath(); b.pts.forEach(function (p, j) { if (j) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.stroke();
+    c.strokeStyle = col.hl; c.lineWidth = 1; c.beginPath(); c.moveTo(b.pts[3][0], b.pts[3][1]); c.lineTo(b.pts[6][0], b.pts[6][1]); c.stroke();
+  });
+  c.restore();
+  for (i = 0; i < 2; i++) { var t = blades[i].pts[6]; c.fillStyle = M(44, 50, 70).base; c.beginPath(); c.ellipse(t[0], t[1] - 1, 1.5, 2.6, 0.3, 0, 7); c.fill(); c.lineWidth = 0.8; c.strokeStyle = OLC; c.stroke(); }
 }
 function mushRing(c, K, x, y, seed) {
   var i;
@@ -2085,45 +2170,61 @@ function runestone(c, K, x, y, seed) {
   var R = rng(seed), h = 50 + R() * 12, i;
   longShadow(c, x, y, 22, 24); gshadow(c, x, y, 17, 5, 0.4);
   shape(c, [[x - 13, y], [x - 14, y - h * 0.55], [x - 9, y - h * 0.92], [x - 1, y - h], [x + 8, y - h * 0.93], [x + 14, y - h * 0.6], [x + 13, y]], K.rockC, { seed: seed, size: 'M', sh: 4, hl: 2, rough: 0.4 });
-  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
-  c.strokeStyle = C(8, 72, 46); c.lineWidth = 3;
-  c.beginPath(); c.moveTo(x - 8, y - 8); c.quadraticCurveTo(x - 11, y - h * 0.6, x - 5, y - h * 0.82); c.quadraticCurveTo(x, y - h * 0.95, x + 5, y - h * 0.82); c.quadraticCurveTo(x + 11, y - h * 0.6, x + 8, y - 8); c.stroke();
-  c.strokeStyle = C(8, 72, 46); c.lineWidth = 1.2;
-  for (i = 0; i < 9; i++) {
-    var gx = x - 4 + (i % 3) * 4, gy = y - h * (0.3 + Math.floor(i / 3) * 0.15), k = Math.floor(R() * 4);
-    c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx, gy - 5);
-    if (k === 0) { c.moveTo(gx, gy - 5); c.lineTo(gx + 2, gy - 3); } else if (k === 1) { c.moveTo(gx, gy - 4); c.lineTo(gx + 2, gy - 2.5); c.lineTo(gx, gy - 1); } else if (k === 2) { c.moveTo(gx - 1.5, gy - 4); c.lineTo(gx + 1.5, gy - 1.5); }
-    c.stroke();
+  // carved, not painted: each groove is a dark cut with a lit edge below and to the right, and a trace of red left in the cut
+  function strokes(dx, dy, col, lw) {
+    c.save(); c.translate(dx, dy); c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = col; c.lineWidth = lw;
+    c.beginPath(); c.moveTo(x - 8, y - 8); c.quadraticCurveTo(x - 11, y - h * 0.6, x - 5, y - h * 0.82); c.quadraticCurveTo(x, y - h * 0.95, x + 5, y - h * 0.82); c.quadraticCurveTo(x + 11, y - h * 0.6, x + 8, y - 8); c.stroke();
+    c.lineWidth = lw * 0.55; var R2 = rng(seed + 1);
+    for (i = 0; i < 9; i++) {
+      var gx = x - 4 + (i % 3) * 4, gy = y - h * (0.3 + Math.floor(i / 3) * 0.15), k = Math.floor(R2() * 4);
+      c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx, gy - 5);
+      if (k === 0) { c.moveTo(gx, gy - 5); c.lineTo(gx + 2, gy - 3); } else if (k === 1) { c.moveTo(gx, gy - 4); c.lineTo(gx + 2, gy - 2.5); c.lineTo(gx, gy - 1); } else if (k === 2) { c.moveTo(gx - 1.5, gy - 4); c.lineTo(gx + 1.5, gy - 1.5); }
+      c.stroke();
+    }
+    c.restore();
   }
-  c.restore();
+  strokes(0.8, 0.8, K.rockC.hl, 2.6);
+  strokes(0, 0, K.rockC.shade, 2.6);
+  c.save(); c.globalAlpha = 0.55; strokes(0, 0, C(8, 70, 42), 1.3); c.restore();
   shape(c, blobPts(x - 3, y - 3, 12, 3.4, seed + 3, 8, 0.4), K.moss, { seed: seed + 4, size: 'S' });
 }
+// the longhouse, from the three-quarter camera: the long wall of standing planks faces you with the door in it, the
+// gable end shows on the right, the roof is turf with a bowed ridge and crossed boards at the ends, and stones hold the foot
 function longhouse(c, K, x, y, seed) {
-  var R = rng(seed), i, thatch = M(46, 46, 44);
-  longShadow(c, x, y, 124, 60); gshadow(c, x, y, 72, 10, 0.45);
-  var wall = shape(c, rrPts(x - 60, y - 30, 120, 30, 2), K.wood, { seed: seed, size: 'L', sh: 4, rough: 0.3 });
-  c.save(); path(c, wall); c.clip(); c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.4)'; c.lineWidth = 1;
-  for (i = -56; i < 60; i += 8) { c.beginPath(); c.moveTo(x + i, y - 30); c.lineTo(x + i, y); c.stroke(); } c.restore();
-  var roof = shape(c, [[x - 68, y - 27], [x - 54, y - 70], [x + 54, y - 70], [x + 68, y - 27]], thatch, { seed: seed + 1, size: 'L', sh: 6, hl: 3, rough: 0.5 });
-  c.save(); path(c, roof); c.clip(); c.strokeStyle = C(42, 50, 28); c.globalAlpha = 0.45; c.lineWidth = 1;
-  for (i = 0; i < 46; i++) { var tx = x - 64 + R() * 128, ty = y - 30 - R() * 38; c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + (R() - 0.5) * 3, ty - 5 - R() * 4); c.stroke(); }
-  c.restore();
-  shape(c, blobPts(x - 30, y - 64, 16, 4, seed + 2, 10, 0.4), K.moss, { seed: seed + 3, size: 'S' });
-  shape(c, blobPts(x + 34, y - 44, 13, 4, seed + 4, 10, 0.4), K.moss, { seed: seed + 5, size: 'S' });
-  line(c, [[x - 56, y - 70], [x + 56, y - 70]], 4, K.wood.base, true);
-  [-1, 1].forEach(function (sd) {            // crossed gable beams with curled dragon tips
-    var ex = x + sd * 55;
-    line(c, curvePts([ex - sd * 11, y - 56], [ex - sd * 2, y - 74], [ex + sd * 7, y - 88], 6), 3.2, K.wood.base, true);
-    line(c, curvePts([ex + sd * 11, y - 56], [ex + sd * 2, y - 74], [ex - sd * 7, y - 88], 6), 3.2, K.wood.base, true);
-    line(c, curvePts([ex + sd * 7, y - 88], [ex + sd * 12, y - 92], [ex + sd * 11, y - 86], 4), 2.4, K.wood.base, true);
-    line(c, curvePts([ex - sd * 7, y - 88], [ex - sd * 12, y - 92], [ex - sd * 11, y - 86], 4), 2.4, K.wood.base, true);
+  var R = rng(seed), i, turf = M(P.outsideHue + 4, 42, 38), plank = K.wood, gableEnd = x + 60, dp = 26, k = 0.5;
+  longShadow(c, x, y, 130, 52); gshadow(c, x + 6, y, 78, 10, 0.45);
+  // the long wall (front) and the gable end (right, receding)
+  var wall = shape(c, [[x - 62, y], [x - 62, y - 34], [x + 60, y - 34], [x + 60, y]], plank, { seed: seed, size: 'L', flat: true, rough: 0.2 });
+  c.save(); path(c, wall); c.clip(); c.strokeStyle = plank.shade; c.lineWidth = 1.1; c.globalAlpha = 0.7;
+  for (i = -58; i < 60; i += 6) { c.beginPath(); c.moveTo(x + i, y - 34); c.lineTo(x + i, y); c.stroke(); }
+  c.globalAlpha = 0.35; c.fillStyle = plank.shade; c.fillRect(x - 62, y - 34, 122, 5); c.restore();
+  var gable = shape(c, [[gableEnd, y], [gableEnd, y - 34], [gableEnd + dp * 0.5, y - 60], [gableEnd + dp, y - 34 - dp * k], [gableEnd + dp, y - dp * k]], plank, { seed: seed + 1, size: 'L', flat: true, rough: 0.2 });
+  c.save(); path(c, gable); c.clip(); c.fillStyle = plank.shade; c.globalAlpha = 0.45; c.fillRect(gableEnd, y - 80, dp + 2, 90); c.strokeStyle = plank.shade; c.globalAlpha = 0.6; c.lineWidth = 1;
+  for (i = 4; i < dp; i += 5) { c.beginPath(); c.moveTo(gableEnd + i, y - 70); c.lineTo(gableEnd + i, y); c.stroke(); } c.restore();
+  // the foot: a row of stones along the front
+  for (i = 0; i < 14; i++) { var sx = x - 58 + i * 9 + (R() - 0.5) * 2; shape(c, ellPts(sx, y - 2, 4.5 + R() * 1.5, 3 + R(), 10), K.rockC, { seed: seed + 40 + i, size: 'S', sh: 1, rough: 0.3 }); }
+  // the roof: a front slope that bows up to the ridge, a hipped end on the right, turf with a few streaks
+  var ridgeY = y - 78, eaveY = y - 30;
+  var roof = shape(c, [[x - 72, eaveY], [x - 64, ridgeY + 6], [x - 20, ridgeY], [x + 30, ridgeY], [x + 62, ridgeY + 5], [gableEnd + dp * 0.5, y - 60 + 2], [x + 70, eaveY]], turf, { seed: seed + 2, size: 'L', flat: true, rough: 0.35 });
+  c.save(); path(c, roof); c.clip(); c.strokeStyle = turf.shade; c.globalAlpha = 0.45; c.lineWidth = 1.2;
+  for (i = 0; i < 30; i++) { var tx = x - 66 + R() * 134, ty = y - 32 - R() * 42; c.beginPath(); c.moveTo(tx, ty); c.lineTo(tx + (R() - 0.5) * 3, ty - 6 - R() * 5); c.stroke(); }
+  c.fillStyle = turf.hl; c.globalAlpha = 0.5; c.beginPath(); c.moveTo(x - 64, ridgeY + 8); c.lineTo(x - 20, ridgeY + 3); c.lineTo(x + 30, ridgeY + 3); c.lineTo(x + 62, ridgeY + 8); c.lineTo(x + 56, ridgeY + 22); c.lineTo(x - 56, ridgeY + 24); c.closePath(); c.fill();
+  c.fillStyle = turf.shade; c.globalAlpha = 0.45; c.fillRect(x - 80, eaveY - 9, 170, 10); c.restore();
+  var hip = shape(c, [[x + 62, ridgeY + 5], [gableEnd + dp, y - 34 - dp * k], [gableEnd + dp * 0.5, y - 60 + 2]], turf, { seed: seed + 3, size: 'M', flat: true, rough: 0.3 });
+  c.save(); path(c, hip); c.clip(); c.fillStyle = turf.shade; c.globalAlpha = 0.5; c.fillRect(x, y - 100, 120, 100); c.restore();
+  // the ridge beam, bowed, with crossed boards at both ends
+  line(c, curvePts([x - 66, ridgeY + 6], [x + 5, ridgeY - 4], [x + 64, ridgeY + 5], 10), 3.4, plank.base, true);
+  [[x - 66, ridgeY + 6, -1], [x + 64, ridgeY + 5, 1]].forEach(function (e) {
+    line(c, [[e[0] - 6, e[1] + 10], [e[0] + 5, e[1] - 12]], 2.6, plank.base, true); line(c, [[e[0] + 6, e[1] + 10], [e[0] - 5, e[1] - 12]], 2.6, plank.base, true);
   });
-  var door = shape(c, [[x - 9, y], [x - 9, y - 19], [x - 5, y - 25], [x + 5, y - 25], [x + 9, y - 19], [x + 9, y]], M(P.shadowHue, 40, 10), { seed: seed + 6, size: 'M', flat: true, rough: 0.2 });
-  c.save(); path(c, door); c.clip(); c.fillStyle = 'hsla(28,95%,58%,0.5)'; c.fillRect(x - 9, y - 16, 18, 16); c.restore();
-  [-13, 10].forEach(function (dx, k) { shape(c, rrPts(x + dx, y - 28, 3, 28, 1), K.trunkL, { seed: seed + 7 + k, size: 'S', flat: true, rough: 0.2 }); });
-  vShield(c, x - 36, y - 16, 7, 8, seed + 10); vShield(c, x - 22, y - 15, 6, 212, seed + 12); vShield(c, x + 26, y - 16, 7, 44, seed + 14); vShield(c, x + 42, y - 15, 6, 8, seed + 16);
-  for (i = 0; i < 4; i++) { c.save(); c.globalAlpha = 0.16 - i * 0.03; c.fillStyle = '#e8ecf4'; c.beginPath(); c.arc(x + 10 + i * 3, y - 76 - i * 8, 5 + i * 2.2, 0, 7); c.fill(); c.restore(); }
-  addLight(x, y - 12, 70, 28, 95, 58, 0.6);
+  // the door in the long wall, with a lintel and a little light inside
+  var door = shape(c, [[x - 16, y], [x - 16, y - 24], [x - 2, y - 24], [x - 2, y]], M(P.shadowHue, 40, 10), { seed: seed + 6, size: 'M', flat: true, rough: 0.15 });
+  c.save(); path(c, door); c.clip(); c.fillStyle = 'hsla(28,95%,58%,0.45)'; c.fillRect(x - 16, y - 14, 14, 14); c.restore();
+  shape(c, rrPts(x - 19, y - 27, 20, 4, 1), K.trunkL, { seed: seed + 7, size: 'S', flat: true, rough: 0.2 });
+  [-19, 0].forEach(function (dx, j) { shape(c, rrPts(x + dx - 1, y - 27, 3, 27, 1), K.trunkL, { seed: seed + 8 + j, size: 'S', flat: true, rough: 0.2 }); });
+  vShield(c, x + 20, y - 18, 7, 8, seed + 10); vShield(c, x + 36, y - 18, 7, 212, seed + 12);
+  for (i = 0; i < 4; i++) { c.save(); c.globalAlpha = 0.16 - i * 0.03; c.fillStyle = '#e8ecf4'; c.beginPath(); c.arc(x + 4 + i * 3, ridgeY - 8 - i * 8, 5 + i * 2.2, 0, 7); c.fill(); c.restore(); }
+  addLight(x - 9, y - 12, 70, 28, 95, 58, 0.6);
 }
 function vikingTent(c, K, x, y, seed) {
   var i;
@@ -2220,15 +2321,24 @@ function stoneShip(c, K, x, y, seed) {
     shape(c, [[s.x - 3, s.y], [s.x - 3.6, s.y - s.h * 0.7], [s.x, s.y - s.h], [s.x + 3.6, s.y - s.h * 0.7], [s.x + 3, s.y]], s.k % 2 ? K.rockC : K.rock, { seed: seed + s.k, size: 'S', sh: 1.5, rough: 0.35 });
   });
 }
+// a woodpile seen from the three-quarter camera: split logs lying along the pile, their cut ends toward you, stacked between two stakes
 function woodpile(c, K, x, y, seed) {
-  var r, i;
-  gshadow(c, x, y, 24, 5, 0.35);
-  line(c, [[x - 22, y], [x - 20, y - 20]], 2.4, K.wood.base, true); line(c, [[x + 22, y], [x + 20, y - 20]], 2.4, K.wood.base, true);
-  for (r = 0; r < 3; r++) for (i = 0; i < 4 - r; i++) {
-    var cx = x - 15 + r * 5 + i * 10, cy = y - 5 - r * 8.6;
-    shape(c, ellPts(cx, cy, 5, 5, 10), K.wood, { seed: seed + r * 5 + i, size: 'S', sh: 1, rough: 0.2 });
-    shape(c, ellPts(cx, cy, 2.6, 2.6, 8), K.trunkL, { seed: seed + 30 + r * 5 + i, size: 'S', flat: true, rough: 0.1 });
+  var R = rng(seed), r, i;
+  gshadow(c, x + 2, y + 1, 26, 6, 0.4);
+  var L = 22, dx = 0.72, dy = -0.42;                 // the logs run back and to the right
+  for (r = 0; r < 3; r++) {
+    var n = 4 - r, y0 = y - 4 - r * 7.6;
+    for (i = n - 1; i >= 0; i--) {
+      var ex = x - 13 + r * 4.3 + i * 8.6, ey = y0, bx = ex + dx * L, by = ey + dy * L;
+      // the length of the log: a bar from the cut end back into the pile, darker underneath
+      shape(c, ribbon([[ex, ey], [bx, by]], 8, 7.4), r === 1 ? K.trunk : K.wood, { seed: seed + r * 7 + i, size: 'S', flat: true, rough: 0.2 });
+      c.save(); c.strokeStyle = K.wood.shade; c.globalAlpha = 0.5; c.lineWidth = 1.2; c.beginPath(); c.moveTo(ex + 1, ey + 3); c.lineTo(bx, by + 3); c.stroke(); c.restore();
+      // the cut end, facing the camera: a pale disc with rings
+      shape(c, ellPts(ex, ey, 4.3, 4.1, 12), K.trunkL, { seed: seed + 30 + r * 7 + i, size: 'S', sh: 0.8, rough: 0.15 });
+      c.save(); c.strokeStyle = K.trunk.shade; c.globalAlpha = 0.45; c.lineWidth = 0.8; c.beginPath(); c.ellipse(ex, ey, 2.4, 2.3, 0, 0, 7); c.stroke(); c.beginPath(); c.moveTo(ex - 3, ey + 0.5); c.lineTo(ex + 3, ey - 0.5); c.stroke(); c.restore();
+    }
   }
+  line(c, [[x - 20, y + 1], [x - 18, y - 24]], 2.6, K.wood.base, true); line(c, [[x + 18, y + 1], [x + 20, y - 24]], 2.6, K.wood.base, true);
 }
 
 /* ---------------- Viking age Scandinavia: things found in nature ---------------- */
@@ -2531,7 +2641,7 @@ var PROPS = {
   stoneHearth: { b: [-26, -44, 26, 10], f: function (c, K, s) { stoneHearth(c, K, 0, 0, s); } },
   woodenWell: { b: [-22, -66, 52, 10], f: function (c, K, s) { woodenWell(c, K, 0, 0, s); } },
   runestone: { b: [-22, -72, 40, 12], f: function (c, K, s) { runestone(c, K, 0, 0, s); } },
-  longhouse: { b: [-114, -136, 182, 33], f: function (c, K, s) { c.save(); c.scale(1.35, 1.35); longhouse(c, K, 0, 0, s); c.restore(); } },
+  longhouse: { b: [-114, -136, 182, 33], f: function (c, K, s) { c.save(); c.scale(1.3, 1.3); longhouse(c, K, 0, 0, s); c.restore(); } },
   vikingTent: { b: [-38, -64, 38, 10], f: function (c, K, s) { vikingTent(c, K, 0, 0, s); } },
   palisade: { b: [-42, -56, 42, 8], f: function (c, K, s) { palisade(c, K, 0, 0, s); } },
   shieldRack: { b: [-34, -66, 34, 8], f: function (c, K, s) { shieldRack(c, K, 0, 0, s); } },
@@ -2542,7 +2652,7 @@ var PROPS = {
   brazier: { b: [-18, -50, 18, 8], f: function (c, K, s) { brazierObj(c, K, 0, 0, s); } },
   cairn: { b: [-26, -44, 26, 8], f: function (c, K, s) { cairnObj(c, K, 0, 0, s); } },
   stoneShip: { b: [-52, -30, 52, 18], f: function (c, K, s) { stoneShip(c, K, 0, 0, s); } },
-  woodpile: { b: [-30, -34, 30, 8], f: function (c, K, s) { woodpile(c, K, 0, 0, s); } },
+  woodpile: { b: [-30, -46, 42, 10], f: function (c, K, s) { woodpile(c, K, 0, 0, s); } },
   snowPine: { b: [-60, -170, 100, 18], f: function (c, K, s) { snowPine(c, K, 0, 0, 128, s); } },
   snowPineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { snowPine(c, K, 0, 0, 190, s); } },
   snowRock: { b: [-34, -50, 34, 10], f: function (c, K, s) { snowRock(c, K, 0, 0, 16, s); } },
@@ -2552,7 +2662,7 @@ var PROPS = {
   ventBig: { b: [-70, -120, 80, 12], f: function (c, K, s) { vent(c, K, 0, 0, 1.8, s); } },
   emberRock: { b: [-34, -50, 34, 10], f: function (c, K, s) { emberRock(c, K, 0, 0, 16, s); } },
   emberBush: { b: [-34, -60, 34, 10], f: function (c, K, s) { emberBush(c, K, 0, 0, 22, s); } },
-  cliff: { b: [-30, -74, 36, 10], f: function (c, K, s) { cliffObj(c, K, 0, 0, s); } },
+  cliff: { b: [-48, -64, 52, 12], f: function (c, K, s) { cliffObj(c, K, 0, 0, s); } },
   bed: { b: [-30, -36, 30, 8], f: function (c, K, s) { bedObj(c, K, 0, 0, s); } },
   rubble: { b: [-34, -34, 34, 10], f: function (c, K, s) { rubbleObj(c, K, 0, 0, s); } },
   bench: { b: [-30, -44, 30, 8], f: function (c, K, s) { benchObj(c, K, 0, 0, s); } },
@@ -2564,12 +2674,12 @@ var PROPS = {
   campfire: { b: [-28, -40, 28, 8], f: function (c, K, s) { campfireObj(c, K, 0, 0, s); } },
   dock: { b: [-16, -26, 84, 26], f: function (c, K, s) { dockObj(c, K, 0, 0, s); } },
   flowerBed: { b: [-30, -50, 30, 14], f: function (c, K, s) { flowerBedObj(c, K, 0, 0, s); } },
-  tallGrass: { b: [-26, -40, 26, 10], f: function (c, K, s) { tallGrassObj(c, K, 0, 0, s); } },
+  tallGrass: { b: [-24, -40, 24, 10], f: function (c, K, s) { tallGrassObj(c, K, 0, 0, s); } },
   mushRing: { b: [-44, -40, 44, 22], f: function (c, K, s) { mushRing(c, K, 0, 0, s); } },
   chair: { b: [-14, -36, 14, 6], f: function (c, K, s) { chairObj(c, K, 0, 0, s); } },
   table: { b: [-34, -44, 44, 8], f: function (c, K, s) { tableObj(c, K, 0, 0, s); } },
-  oak: { b: [-140, -280, 140, 26], f: function (c, K, s) { tree(c, K, 0, 0, 250, s, 34); } },
-  pine: { b: [-60, -160, 100, 18], f: function (c, K, s) { pine(c, K, 0, 0, 128, s); } },
+  oak: { b: [-120, -230, 120, 26], f: function (c, K, s) { oakTree(c, K, 0, 0, 200, s); } },
+  pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
   willow: { b: [-120, -210, 150, 22], f: function (c, K, s) { willow(c, K, 0, 0, 190, s); } },
   birch: { b: [-70, -200, 90, 16], f: function (c, K, s) { birch(c, K, 0, 0, 150, s); } },
@@ -2581,9 +2691,9 @@ var PROPS = {
   fern: { b: [-34, -40, 34, 10], f: function (c, K, s) { fern(c, K, 0, 0, 22, s); } },
   log: { b: [-50, -50, 50, 14], f: function (c, K, s) { fallenLog(c, K, 0, 0, 64, s); } },
   reeds: { b: [-30, -60, 30, 10], f: function (c, K, s) { reeds(c, K, 0, 0, s); } },
-  rock: { b: [-34, -46, 34, 10], f: function (c, K, s) { rock(c, K, 0, 0, 16, s, s % 2 === 0); } },
+  rock: { b: [-36, -40, 36, 10], f: function (c, K, s) { rock(c, K, 0, 0, 16, s, s % 2 === 0); } },
   mushrooms: { b: [-30, -46, 36, 10], f: function (c, K, s) { mushroom(c, K, 0, 0, 22, s); mushroom(c, K, 15, 5, 14, s + 1); } },
-  flower: { b: [-20, -44, 24, 8], f: function (c, K, s) { flower(c, K, 0, 0, s); } },
+  flower: { b: [-20, -40, 24, 8], f: function (c, K, s) { flower(c, K, 0, 0, s); } },
   fence: { b: [-20, -50, 100, 10], f: function (c, K, s) { fence(c, K, 0, 0, 5, s); } },
   crate: { b: [-30, -50, 40, 10], f: function (c, K, s) { crate(c, K, 0, 0, 28, s, 0); } },
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
