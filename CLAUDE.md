@@ -270,6 +270,24 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   so `known()` is false until Brokk has taught it (`seen.raft`; the cell says "Someone must teach you this"), and
   `soon: true` until step 9 builds the raft. Hints: speak to Brokk again once the home is ready, then build the
   bench at the water.
+- **The Shipyard (2026-10-05, Robin's design):** E at the shipwright's bench steps into its own small place (like the cave,
+  east of the map at `YARD.X`): a stretch of plain grass in a wooden frame, the parts to pick down the left side, the hero
+  in the bottom-right corner, and the build cursor laying parts in a 6 by 4 cell grid. **Parts are data** (`YPARTS`: id,
+  name, cost, width in cells, the layer they lie on: hull, bind, deck, fit, and `on` for what they must sit on) and so is
+  **what makes a boat** (`PLANS.raft.checks`: functions that return the line of guidance while unmet: three logs side by
+  side, ends even, at most five, a rope on every log in two places, an oar). The guidance shows along the top; when every
+  check passes a **Finish** button (or Enter) launches: `placeRaft(bench)` puts the raft in clear water, `raft.parts` keeps
+  the parts for later drawing, the bench is `launched` and the yard cleared. One raft per bench while it floats. Right
+  click takes a part back for its full cost; the wheel or the strip picks a part. The half-built yard is saved on the bench
+  (`it.yard`), saving in the yard saves you at the bench, death leaves it. Until Brokk has taught the raft (`seen.raft`)
+  the bench says "You do not know how to lay a hull". A ship with a sail later is more parts (`mast`, `sail`) and a second
+  plan with a bigger grid. The old raft recipe is gone.
+- **One bounds box (2026-10-05):** the engine clamps every mover to `scene.bounds`, so swapping bounds for the cave or the
+  yard dragged all the animals in. `worldBounds()` now covers the map, the cave and the yard at once and never changes;
+  the `walk` test keeps the hero on the floor he is on.
+- **Crafting on E (2026-10-05):** E at a workbench opens its board (Workbench and "By hand" tabs, `menuFrom`); B keeps
+  Building and Crafting (the hand recipes: first tools, torch, stick weapons, arrows). The bars sit on their own board
+  (`BAR`) above the bag.
 - **Comfort (step 6, 2026-10-05):** a closed room is worth 1 for its roof and 1 each for a hearth, a workbench, a
   bed and a rug in it, and up to 2 for furniture (chair, bench seat, table, chest): at most 7 (`comfortOf`, per room
   index; `baseComfort()` is the best room within 500 units of the camp, so the steading does not count). The dial
