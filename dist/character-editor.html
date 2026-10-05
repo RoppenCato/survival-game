@@ -1185,7 +1185,8 @@ var api = { sfx: function () {}, facings8: true, harvest: null, onDeath: null, b
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
 // mods(): { sprint, stam, dash, block } multipliers from runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
 // trigger: a skill id to cast this frame; powerMul(kind): tool power multiplier; onDeed(kind): 'block', 'parry', 'dash'
-function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null ? m[k] : 1; }   // armor(): share of a blow the hero's gear turns aside
+function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null ? m[k] : 1; }
+function maxSt() { var m = api.mods ? api.mods() : null; return m && m.stMax ? m.stMax : 100; }   // food can raise top stamina (mods().stMax)   // armor(): share of a blow the hero's gear turns aside
 // api.items = { held(), tool(i), weapon(kind) } gives the item specs (src/items.js) in the hand, in tool slot i and for 'sword' or 'bow'
 function itemOf(fn, a) { if (!api.items || typeof Items === 'undefined' || !api.items[fn]) return null; return api.items[fn](a) || null; }
 function dmgMul(kind) { var it = itemOf('weapon', kind); return it ? Items.stats(it).dmg : 1; }   // canShoot()/onShoot(): ammunition; onArrowLand(x, y): a player's arrow that hit nothing; quiver: the count shown by the bow   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) }   // facings8: the hero turns on the diagonals and animals turn freely
@@ -1349,7 +1350,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
   var front = Math.abs(wrap(toSrc - p.face)) <= (S.shield ? 1.9 : 1.4);
   if (p.guard && front) {
     if (kind !== 'heavy' && p.guardT < parryWindow()) {
-      p.parryFx = 0.35; p.st = Math.min(100, p.st + 12);
+      p.parryFx = 0.35; p.st = Math.min(maxSt(), p.st + 12);
       spark(p.x + Math.cos(p.face) * 10, p.y + Math.sin(p.face) * 10, 14, '#fff6c8', 140);
       lockFor(p, 0.09); lockFor(src, 0.09); slowmo(0.25, 0.14); ring(p.x + Math.cos(p.face) * 10, p.y, 13, 24, 0.2, '255,243,196', true, 2.4); sfx('parry');
       num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); if (api.onDeed) api.onDeed('parry');
@@ -1519,7 +1520,7 @@ function updatePlayer(dt) {
   p.animT += dt;
   p.invuln = Math.max(0, p.invuln - dt); p.flash = Math.max(0, p.flash - dt * 4); p.hurtT = Math.max(0, p.hurtT - dt);
   p.fireCd = Math.max(0, p.fireCd - dt); p.fireT = Math.max(0, p.fireT - dt); p.roll.cd = Math.max(0, p.roll.cd - dt); p.parryFx = Math.max(0, p.parryFx - dt);
-  p.stDelay -= dt; if (p.stDelay <= 0) p.st = Math.min(100, p.st + 34 * dt * mod('stam'));
+  p.stDelay -= dt; if (p.stDelay <= 0) p.st = Math.min(maxSt(), p.st + 34 * dt * mod('stam')); if (p.st > maxSt()) p.st = maxSt();
   var ix = (IN.keys.KeyD ? 1 : 0) - (IN.keys.KeyA ? 1 : 0), iy = (IN.keys.KeyS ? 1 : 0) - (IN.keys.KeyW ? 1 : 0);
   var il = Math.hypot(ix, iy); if (il > 0) { ix /= il; iy /= il; }
   p.inAng = il > 0 ? Math.atan2(iy, ix) : null;
@@ -1537,7 +1538,7 @@ function updatePlayer(dt) {
     if (p.mode === 'fight') { p.weapon = p.weapon === 'melee' ? 'ranged' : 'melee'; a.ph = 'none'; a.since = 9; p.atkBuf = 0; p.holdT = 0; bow = p.weapon === 'ranged'; sfx('tele'); }
     else if (p.mode === 'build') p.wreck = !p.wreck;      // F in build mode: the red crossed box that takes pieces down
   }
-  for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) { if (p.mode === 'gather' && i <= TOOLS.length) p.tool = i - 1; else if (p.mode === 'fight') p.sel = i - 1; }
+  for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) { if (p.mode === 'gather' && i <= TOOLS.length) p.tool = i - 1; else if (p.mode === 'fight') p.sel = i - 1; if (api.beltUse && api.beltSlots && api.beltSlots[i - 1] && (p.mode !== 'gather' || i > TOOLS.length)) api.beltUse(i - 1); }   // a belt thing on a free slot is used in any mode
   if (IN.pressed.ControlLeft || IN.pressed.ControlRight) cycleLock();
 
   var held = (IN.lmb || IN.keys.KeyJ) && p.mode === 'fight' && !bow;
@@ -2551,7 +2552,7 @@ function drawNums(c) {
 function drawHud(c) {
   var i, bigRow = 0;
   bar(c, 10, 10, 84, 7, P.hp / P.maxHp, '#e8584a');
-  bar(c, 10, 22, 84, 5, P.st / 100, P.st < 22 ? '#d6b54a' : '#7fd66d');
+  bar(c, 10, 22, 84 * maxSt() / 100, 5, P.st / maxSt(), P.st < 22 ? '#d6b54a' : '#7fd66d');
   c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36';
   if (!(api.scene && api.scene.noKills)) { var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 40); c.fillStyle = '#fff'; c.fillText(txt, 10, 40); }
   for (i = 0; i < W.enemies.length; i++) {

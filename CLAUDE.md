@@ -362,7 +362,11 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   its left. Tools use a chop (`chopPose`: up over the shoulder, down onto the target; the knife stabs) with no
   lunge, and every tool hit shows a damage number. The bow shoots drawn arrows (visual only; no arrow item yet).
   The meal buff is a round icon by the chart with a timer ring and a mouseover tooltip, not a text line.
-- **Food** (the reward-not-punish rule): berry bushes drop berries, boars drop meat. **E** at the camp hearth opens
+- **Food** (the reward-not-punish rule; stamina added 2026-10-05): `FOOD` gives each dish `heal` at once and, for
+  `time` seconds, `bonus` on top health, `regen` health a second, `stam` on top stamina and `stamRegen` on how fast
+  it returns (through `Combat.api.mods().stMax` and `.stam`; the engine's `maxSt()` and the longer stamina bar).
+  Roast berries (3 berries: small), roast meat, berry stew (the best: +25 health, +30 stamina, 35% faster).
+  A number key uses a belt food in any mode (`Combat.api.beltUse`). Berry bushes drop berries, boars drop meat. **E** at the camp hearth opens
   a cooking panel: roast boar (1 meat), boar and berry stew (1 meat, 2 berries). Click food in the inventory to
   eat it: berries heal 10; a meal heals and, for minutes, raises top health and gives health a second (`FOOD`,
   `fed` in the page). No hunger meter. The meal is saved with the game.

@@ -57,7 +57,7 @@ order is the order a new player meets them; build them in the same order so the 
 - **Test:** a player with axe, knife and pick gathers 40 wood, 20 stone, 15 fiber and 6 hide in one game day
   without dying, and has leather by the next morning.
 
-### 4. Food that raises health and stamina
+### 4. Food that raises health and stamina (built 2026-10-05: every meal sets top stamina and stamina return as well as health; roast berries added; the belt's number keys eat in any mode; the fish comes with the raft)
 - **Have:** berries heal; roast meat and stew are cooked at any hearth on the Hearth tab; a meal raises top
   health and gives health a second for minutes; the meal icon with its timer by the chart; no hunger.
 - **Build:** stamina on food (Robin): every meal sets a **top stamina** and a **stamina return** as it sets top
