@@ -237,6 +237,10 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   cart, dragon post. Prop pieces take their board icon from the baked sprite (`propIcon`, `ICON_SCALE`). The
   wreck cursor gives back what the piece cost (`pieceFor`, `costOf`, `costOfFloor`, `costOfItem`); laying a
   floor over another gives the old one back.
+- **Furniture is sized to the hero (2026-10-05):** a hero is about 39 units tall, so the table, bed, cart, well,
+  drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
+  its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision
+  radii of the matching pieces were cut to match. Old saved benches still draw as a table.
 - **Comfort (step 6, 2026-10-05):** a closed room is worth 1 for its roof and 1 each for a hearth, a workbench, a
   bed and a rug in it, and up to 2 for furniture (chair, bench seat, table, chest): at most 7 (`comfortOf`, per room
   index; `baseComfort()` is the best room within 500 units of the camp, so the steading does not count). The dial
@@ -317,9 +321,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   gaps and a gate on the north side, a fence, and a woodpile, cart, drying rack, haystack, shield rack, brazier
   and dragon post. **Crates and barrels with `it.loot`** (counts per kind, `arrows` to the quiver, `thing` a
   made item) show a glint; break one with the axe and it spills out (`breakBox`). **Brokk** (`npc`, the dwarf figure from
-  `FOLK`) stands by the well, turns to watch the hero, and E talks to him: five lines (`NPC_LINES`) about the
-  steading, Ragnar Ironside's crew who burnt it and sailed east, how a house is built, and the crates. He does not
-  walk, trade or give tasks. Old saves get the cleared site and Brokk but no pieces.
+  `FOLK`) stands by the well, turns to watch the hero, and E talks to him. **Simple on purpose (2026-10-05):** three
+  states (`brokkState`, lines in `brokkLines`): *meet* (four lines: he is the last of Hildir's steading, Ragnar
+  Ironside's crew burnt it, some were taken as thralls, some went with them, the rest are dead; build a home), *wait*
+  (one line naming what your home still lacks: walls and a roof, a hearth, a workbench, a rug) and *teach* (once
+  your home has Comfort 4: three lines, then `seen.raft` is set and a toast says he taught you the raft; step 8's
+  bench will read it), then *taught*. The story always comes first (`seen.met` after all four lines). He does not
+  Old saves get the cleared site and Brokk but no pieces.
 - **The first minute (tested fresh 2026-10-05):** you land on nothing; 12 branches and 9 stones lie on land
   round the camp, never within 82 units of where you land (`campScatter`), and three lone trees (oak, birch,
   pine) stand 170 to 300 from camp (`campTrees`) so the first axe has something to fell. Things lying within

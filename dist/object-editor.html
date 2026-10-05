@@ -1413,6 +1413,19 @@ function rugObj(c, K, x, y, seed) {
   c.restore();
 }
 
+// the workbench: a low trestle bench of thick planks, with a hammer, a saw and a split log on it (about as wide as the hero is tall)
+function workbenchObj(c, K, x, y, seed) {
+  gshadow(c, x + 1, y, 18, 4, 0.35);
+  [[-12, 1], [12, 1]].forEach(function (p, k) { shape(c, rrPts(x + p[0] - 2, y - 13, 4, 14, 1), K.wood, { seed: seed + k, size: 'S', flat: true, rough: 0.2 }); });
+  shape(c, rrPts(x - 12, y - 7, 24, 3, 1), K.wood, { seed: seed + 3, size: 'S', flat: true, rough: 0.2 });
+  shape(c, [[x - 17, y - 14], [x + 15, y - 14], [x + 19, y - 19], [x - 13, y - 19]], K.trunkL, { seed: seed + 4, size: 'S', sh: 1, rough: 0.2 });
+  shape(c, rrPts(x - 17, y - 14, 32, 4.5, 1.2), K.wood, { seed: seed + 5, size: 'S', sh: 1.2, rough: 0.2 });
+  line(c, [[x - 9, y - 18], [x - 4, y - 23]], 1.8, K.wood.base, true);                       // hammer: a haft and an iron head
+  shape(c, rrPts(x - 6.5, y - 26, 6, 3.4, 1), K.iron, { seed: seed + 6, size: 'S', flat: true, rough: 0.1 });
+  shape(c, [[x + 1, y - 18], [x + 11, y - 18.6], [x + 10, y - 21], [x + 2, y - 20.4]], K.ironLight, { seed: seed + 7, size: 'S', flat: true, rough: 0.1 });   // saw blade
+  shape(c, ellPts(x + 12, y - 20, 3.2, 2.2, 10), K.trunkL, { seed: seed + 8, size: 'S', sh: 0.8, rough: 0.15 });   // a split log
+}
+
 function barrel(c, K, x, y, s, seed) {
   var w = s * 0.62, h = s;
   gshadow(c, x + 2, y + 1, w * 0.7, 4);
@@ -2645,7 +2658,7 @@ var PROPS = {
   fishWeir: { b: [-48, -30, 48, 14], f: function (c, K, s) { fishWeir(c, K, 0, 0, s); } },
   trailStone: { b: [-16, -32, 18, 6], f: function (c, K, s) { trailStone(c, K, 0, 0, s); } },
   charcoalPit: { b: [-42, -72, 48, 10], f: function (c, K, s) { charcoalPit(c, K, 0, 0, s); } },
-  beeSkeps: { b: [-32, -46, 32, 8], f: function (c, K, s) { beeSkeps(c, K, 0, 0, s); } },
+  beeSkeps: { b: [-29, -41, 29, 8], f: function (c, K, s) { c.save(); c.scale(0.85, 0.85); beeSkeps(c, K, 0, 0, s); c.restore(); } },
   woodenBridge: { b: [-52, -34, 52, 16], f: function (c, K, s) { woodenBridge(c, K, 0, 0, s); } },
   farmland: { b: [-58, -28, 58, 12], f: function (c, K, s) { farmland(c, K, 0, 0, s); } },
   beachedBoat: { b: [-48, -40, 48, 8], f: function (c, K, s) { beachedBoat(c, K, 0, 0, s); } },
@@ -2653,15 +2666,15 @@ var PROPS = {
   boathouse: { b: [-58, -66, 96, 16], f: function (c, K, s) { boathouse(c, K, 0, 0, s); } },
   watchtower: { b: [-30, -106, 60, 16], f: function (c, K, s) { watchtower(c, K, 0, 0, s); } },
   stoneHearth: { b: [-26, -44, 26, 10], f: function (c, K, s) { stoneHearth(c, K, 0, 0, s); } },
-  woodenWell: { b: [-22, -66, 52, 10], f: function (c, K, s) { woodenWell(c, K, 0, 0, s); } },
+  woodenWell: { b: [-18, -51, 40, 9], f: function (c, K, s) { c.save(); c.scale(0.75, 0.75); woodenWell(c, K, 0, 0, s); c.restore(); } },
   runestone: { b: [-22, -72, 40, 12], f: function (c, K, s) { runestone(c, K, 0, 0, s); } },
   longhouse: { b: [-114, -136, 182, 33], f: function (c, K, s) { c.save(); c.scale(1.3, 1.3); longhouse(c, K, 0, 0, s); c.restore(); } },
   vikingTent: { b: [-38, -64, 38, 10], f: function (c, K, s) { vikingTent(c, K, 0, 0, s); } },
   palisade: { b: [-42, -56, 42, 8], f: function (c, K, s) { palisade(c, K, 0, 0, s); } },
-  shieldRack: { b: [-34, -66, 34, 8], f: function (c, K, s) { shieldRack(c, K, 0, 0, s); } },
+  shieldRack: { b: [-30, -58, 30, 8], f: function (c, K, s) { c.save(); c.scale(0.85, 0.85); shieldRack(c, K, 0, 0, s); c.restore(); } },
   dragonPost: { b: [-18, -76, 28, 8], f: function (c, K, s) { dragonPost(c, K, 0, 0, s); } },
   burialMound: { b: [-62, -40, 62, 12], f: function (c, K, s) { burialMound(c, K, 0, 0, s); } },
-  dryingRack: { b: [-38, -50, 38, 8], f: function (c, K, s) { dryingRack(c, K, 0, 0, s); } },
+  dryingRack: { b: [-34, -44, 34, 8], f: function (c, K, s) { c.save(); c.scale(0.85, 0.85); dryingRack(c, K, 0, 0, s); c.restore(); } },
   forge: { b: [-44, -46, 44, 10], f: function (c, K, s) { forgeObj(c, K, 0, 0, s); } },
   brazier: { b: [-18, -50, 18, 8], f: function (c, K, s) { brazierObj(c, K, 0, 0, s); } },
   cairn: { b: [-26, -44, 26, 8], f: function (c, K, s) { cairnObj(c, K, 0, 0, s); } },
@@ -2677,12 +2690,12 @@ var PROPS = {
   emberRock: { b: [-34, -50, 34, 10], f: function (c, K, s) { emberRock(c, K, 0, 0, 16, s); } },
   emberBush: { b: [-34, -60, 34, 10], f: function (c, K, s) { emberBush(c, K, 0, 0, 22, s); } },
   cliff: { b: [-48, -64, 52, 12], f: function (c, K, s) { cliffObj(c, K, 0, 0, s); } },
-  bed: { b: [-30, -36, 30, 8], f: function (c, K, s) { bedObj(c, K, 0, 0, s); } },
+  bed: { b: [-25, -30, 25, 8], f: function (c, K, s) { c.save(); c.scale(0.8, 0.8); bedObj(c, K, 0, 0, s); c.restore(); } },
   rubble: { b: [-34, -34, 34, 10], f: function (c, K, s) { rubbleObj(c, K, 0, 0, s); } },
   bench: { b: [-30, -44, 30, 8], f: function (c, K, s) { benchObj(c, K, 0, 0, s); } },
-  well: { b: [-30, -76, 30, 8], f: function (c, K, s) { wellObj(c, K, 0, 0, s); } },
-  haystack: { b: [-30, -40, 40, 8], f: function (c, K, s) { haystackObj(c, K, 0, 0, s); } },
-  cart: { b: [-40, -50, 60, 10], f: function (c, K, s) { cartObj(c, K, 0, 0, s); } },
+  well: { b: [-24, -58, 24, 7], f: function (c, K, s) { c.save(); c.scale(0.75, 0.75); wellObj(c, K, 0, 0, s); c.restore(); } },
+  haystack: { b: [-27, -35, 35, 8], f: function (c, K, s) { c.save(); c.scale(0.85, 0.85); haystackObj(c, K, 0, 0, s); c.restore(); } },
+  cart: { b: [-30, -37, 45, 9], f: function (c, K, s) { c.save(); c.scale(0.72, 0.72); cartObj(c, K, 0, 0, s); c.restore(); } },
   scarecrow: { b: [-26, -76, 26, 8], f: function (c, K, s) { scarecrowObj(c, K, 0, 0, s); } },
   waterfall: { b: [-56, -116, 90, 14], f: function (c, K, s) { waterfallObj(c, K, 0, 0, s); } },
   campfire: { b: [-28, -40, 28, 8], f: function (c, K, s) { campfireObj(c, K, 0, 0, s); } },
@@ -2691,7 +2704,7 @@ var PROPS = {
   tallGrass: { b: [-24, -40, 24, 10], f: function (c, K, s) { tallGrassObj(c, K, 0, 0, s); } },
   mushRing: { b: [-44, -40, 44, 22], f: function (c, K, s) { mushRing(c, K, 0, 0, s); } },
   chair: { b: [-14, -36, 14, 6], f: function (c, K, s) { chairObj(c, K, 0, 0, s); } },
-  table: { b: [-34, -44, 44, 8], f: function (c, K, s) { tableObj(c, K, 0, 0, s); } },
+  table: { b: [-23, -29, 29, 6], f: function (c, K, s) { c.save(); c.scale(0.62, 0.62); tableObj(c, K, 0, 0, s); c.restore(); } },
   oak: { b: [-120, -230, 120, 26], f: function (c, K, s) { oakTree(c, K, 0, 0, 200, s); } },
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
@@ -2712,6 +2725,7 @@ var PROPS = {
   rug: { b: [-30, -24, 30, 4], f: function (c, K, s) { rugObj(c, K, 0, 0, s); } },
   crate: { b: [-30, -50, 40, 10], f: function (c, K, s) { crate(c, K, 0, 0, 28, s, 0); } },
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
+  workbench: { b: [-22, -32, 24, 4], f: function (c, K, s) { workbenchObj(c, K, 0, 0, s); } },
   chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },
 };
 function bakeProp(name, seed, opts) {
@@ -4322,7 +4336,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
     { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'flowerBed', 'tallGrass', 'wildHerbs', 'mushrooms', 'mushRing', 'snowBush'] },
     { name: 'Rocks and ground', ground: 'grass', solid: 12, list: ['rock', 'rockFormation', 'cliff', 'rubble', 'log', 'cairn', 'snowRock', 'waterfall'] },
-    { name: 'Household', ground: 'plank', solid: 10, list: ['bench', 'chair', 'table', 'bed', 'crate', 'barrel', 'chest', 'rug', 'haystack', 'cart', 'well', 'scarecrow', 'dock'] }
+    { name: 'Household', ground: 'plank', solid: 10, list: ['bench', 'chair', 'table', 'bed', 'crate', 'barrel', 'chest', 'rug', 'workbench', 'haystack', 'cart', 'well', 'scarecrow', 'dock'] }
   ];
   var GROUND_FOR = { snowPine: 'snow', snowPineBig: 'snow', snowRock: 'snow', snowBush: 'snow', iceCrystal: 'snow', iceCrystalBig: 'snow', deadTree: 'ash', emberRock: 'ash', emberBush: 'ash', vent: 'ash', ventBig: 'ash', cliff: 'rock' };
   var NO_SOLID = { hangLamp: 1, pendant: 1, skylight: 1, wallLamp: 1, keyItem: 1, fuseItem: 1, cable: 1, dock: 1 };

@@ -88,7 +88,7 @@ order is the order a new player meets them; build them in the same order so the 
 - **Test:** a 3 by 3 hut with door, roof, hearth, workbench, bed and rug reads Comfort 6; sleeping in it gives
   Rested for 12 minutes; the same hut without a roof reads nothing.
 
-### 7. The village and the survivor
+### 7. The village and the survivor (built simply 2026-10-05: Brokk tells the story once, reminds you what your home lacks, teaches the raft at Comfort 4 and sets `seen.raft`; the chart marks the steading once found; still to do if wanted: lines for after the raft, more tales)
 - **Have:** Hildir's steading, broken, inland: the burnt hall, the whole hut, the stone house, the palisade,
   loot crates that break, Brokk by the well with five lines.
 - **Build:** Brokk's story told straight: the village was raided, some were taken as slaves or went with the

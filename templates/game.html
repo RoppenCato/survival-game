@@ -256,11 +256,11 @@ __COMBAT__
     { id: 'roof', name: 'Turf roof', m: 0, cost: { fiber: 2 } },
     { id: 'roof', name: 'Thatch roof', m: 1, cost: { fiber: 4 } },
     { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 } },
-    { id: 'bench', name: 'Workbench', kind: 'item', prop: 'table', bench: true, r: 9, cost: { wood: 6, stone: 1 }, icon: function (c) {
+    { id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 7, cost: { wood: 6, stone: 1 }, icon: function (c) {
       c.fillStyle = '#b98a5a'; c.fillRect(-7, -3, 14, 3); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-7, -3, 14, 3); c.fillStyle = '#8a5a3a'; c.fillRect(-6, 0, 2, 6); c.fillRect(4, 0, 2, 6);
       c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(-3, -4); c.lineTo(1, -8); c.lineTo(3, -6); c.lineTo(-1, -3); c.closePath(); c.fill(); c.stroke();
     } },
-    { id: 'bed', name: 'Bed', kind: 'item', prop: 'bed', bed: true, r: 9, cost: { wood: 6, fiber: 4 }, icon: function (c) {
+    { id: 'bed', name: 'Bed', kind: 'item', prop: 'bed', bed: true, r: 8, cost: { wood: 6, fiber: 4 }, icon: function (c) {
       c.fillStyle = '#8a5a3a'; c.fillRect(-8, -2, 16, 7); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-8, -2, 16, 7);
       c.fillStyle = '#d9c9a6'; c.fillRect(-7, -4, 14, 4); c.strokeRect(-7, -4, 14, 4); c.fillStyle = '#c96a4a'; c.fillRect(-2, -4, 9, 4); c.fillStyle = '#f1e6cf'; c.beginPath(); c.ellipse(-4.5, -2, 2.2, 1.4, 0, 0, 7); c.fill();
     } },
@@ -272,7 +272,7 @@ __COMBAT__
     // outdoor and household things, drawn from the kit's props; their icons are the props shrunk
     { id: 'chair', name: 'Chair', kind: 'item', prop: 'chair', r: 5, cost: { wood: 2 } },
     { id: 'seat', name: 'Bench seat', kind: 'item', prop: 'bench', r: 8, cost: { wood: 3 } },
-    { id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 9, cost: { wood: 4 } },
+    { id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 7, cost: { wood: 4 } },
     { id: 'barrel', name: 'Barrel', kind: 'item', prop: 'barrel', r: 6, cost: { wood: 3 } },
     { id: 'crate', name: 'Crate', kind: 'item', prop: 'crate', r: 7, cost: { wood: 3 } },
     { id: 'rug', name: 'Rug', kind: 'item', prop: 'rug', r: 0, flat: true, cost: { leather: 2, fiber: 4 } },
@@ -280,14 +280,14 @@ __COMBAT__
     { id: 'woodpile', name: 'Woodpile', kind: 'item', prop: 'woodpile', r: 8, cost: { wood: 5 } },
     { id: 'rack', name: 'Drying rack', kind: 'item', prop: 'dryingRack', r: 8, cost: { wood: 4, fiber: 2 } },
     { id: 'brazier', name: 'Brazier', kind: 'item', prop: 'brazier', r: 5, light: 1, cost: { stone: 2, wood: 2 } },
-    { id: 'well', name: 'Well', kind: 'item', prop: 'woodenWell', r: 10, cost: { stone: 6, wood: 4 } },
+    { id: 'well', name: 'Well', kind: 'item', prop: 'woodenWell', r: 8, cost: { stone: 6, wood: 4 } },
     { id: 'hay', name: 'Haystack', kind: 'item', prop: 'haystack', r: 9, cost: { fiber: 8 } },
     { id: 'shields', name: 'Shield rack', kind: 'item', prop: 'shieldRack', r: 7, cost: { wood: 4 } },
     { id: 'skeps', name: 'Bee skeps', kind: 'item', prop: 'beeSkeps', r: 8, cost: { fiber: 6, wood: 1 } },
-    { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 11, cost: { wood: 8 } },
+    { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 9, cost: { wood: 8 } },
     { id: 'post', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 5, cost: { wood: 4 } }
   ];
-  var ICON_SCALE = { rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
+  var ICON_SCALE = { workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   function propIcon(c, name) {             // a prop's baked sprite, shrunk to fit a board cell
     var s = sprite(name, 0), sc = ICON_SCALE[name] || Math.min(18 / s.w, 18 / s.h);
     c.drawImage(s.cv, -s.w * sc / 2, -s.h * sc / 2 + 1, s.w * sc, s.h * sc);
@@ -553,7 +553,15 @@ __COMBAT__
      into B on a fresh start, so they are saved and can be wrecked for their wood and stone; the site, the rubble
      and Brokk's place come from the island seed every time. */
   var village = null, npc = null;
-  var NPC_LINES = ['Well met. I am Brokk, a smith, and all that is left here. This was Hildir\'s steading.', 'Two winters back a longship came up the sound. Ragnar Ironside\'s crew. They burnt the hall and took the young ones.', 'Look at the hut: that is how a house is made. Walls all round, a door, and the roof comes of itself.', 'Break open the crates with your axe; nobody here needs what is in them now. The stone house still has its well.', 'They sailed east, towards the rivers. One day you will want a ship, and a crew, and then we will talk again.'];
+  /* Brokk, the only one left of Hildir's steading. Simple on purpose: he tells the story once, then reminds you what your
+     home still needs, then, when it is a home (Comfort 4), teaches the raft (seen.raft, saved). */
+  function brokkState() { return seen.raft ? 'taught' : (!seen.met ? 'meet' : (baseComfort().n >= 4 ? 'teach' : 'wait')); }   // the story always comes first
+  function brokkLines(st) {
+    if (st === 'meet') return ['Well met. I am Brokk, a smith. All that is left of Hildir’s steading.', 'Two winters back a longship came up the sound: Ragnar Ironside and his crew. They burnt the hall.', 'Some of ours they took as thralls. Some went with them of their own will. The rest lie in the ground. I am the last.', baseComfort().n >= 4 ? 'I see you already have a home: a roof, a fire, a bench and a rug. Speak to me again and I will teach you to build a raft.' : 'Build yourself a proper home: a roof, a hearth, a workbench and a rug. Then come back, and I will teach you to build a raft.'];
+    if (st === 'wait') { var h = baseComfort().has, need = []; if (!h.hearth) need.push('a hearth'); if (!h.bench) need.push('a workbench'); if (!h.rug) need.push('a rug'); if (!baseComfort().n) need.unshift('walls and a roof'); return [need.length ? 'Your home still needs ' + need.join(', ') + '. Then come back.' : 'A little more comfort and it is a home. A chair, a table, a bed.']; }
+    if (st === 'teach') return ['A roof, a fire, a bench and a rug. That is a home.', 'Now listen. A raft is logs lashed with fiber rope and a hide or two. Build a shipwright’s bench on the sand by the water and lay it there.', 'They sailed east, Ragnar’s crew. Go after them when you can.'];
+    return ['The raft is yours to build. Fair winds. They sailed east.'];
+  }
   function villageSite() {               // a flat stretch of grass 10 by 12 tiles, 350 to 800 from the camp, from the island seed
     var R = kit.rng(spec.seed * 13 + 5), tries, best = null;
     for (tries = 0; tries < 400 && !best; tries++) {
@@ -617,7 +625,15 @@ __COMBAT__
   }
   function rackTick(dt) { for (var i = 0; i < B.items.length; i++) { var h = B.items[i].hang; if (h) for (var j = 0; j < h.length; j++) if (h[j] > 0) h[j] -= dt; } }
   function nearNpc(P) { return npc && Math.hypot(P.x - npc.x, P.y - npc.y) < 40; }
-  function talk() { npc.say = NPC_LINES[npc.line % NPC_LINES.length]; npc.line++; npc.sayT = 5; }
+  function talk() {
+    var st = brokkState(), L = brokkLines(st);
+    if (npc.st !== st) { npc.st = st; npc.line = 0; }
+    npc.say = L[npc.line % L.length]; npc.line++; npc.sayT = 5;
+    if (npc.line >= L.length) {          // heard it all: the story is known; the lesson is learnt
+      if (st === 'meet' && !seen.met) { seen.met = 1; save(); }
+      else if (st === 'teach' && !seen.raft) { seen.raft = 1; toast('Brokk taught you the raft'); save(); }
+    }
+  }
   function drawNpc(c) {
     var vx = Math.cos(npc.face), vy = Math.sin(npc.face), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
     var talking = npc.sayT > 0, an = { phase: 0, amt: 0, t: clock * (talking ? 2.2 : 1), lx: 0, ly: talking ? Math.sin(clock * 9) * 0.5 : 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) };
@@ -823,6 +839,7 @@ __COMBAT__
     { done: function () { return inv.fiber > 0 && inv.wood >= 6; }, text: 'Q: gather mode. The knife cuts bushes, the axe fells trees' },
     { done: function () { return !(inv.hide > 0) || !B.items.some(function (it) { return it.name === 'dryingRack'; }); }, text: 'E at a drying rack: hung hide cures into leather' },
     { done: function () { return (equip.pick || hasItem('pick')) && (equip.weapon || hasItem('sword')); }, text: 'B, Crafting: a pickaxe for rocks, a stick sword for boars' },
+    { done: function () { return !!seen.met; }, text: 'A broken steading lies inland. Someone may be there' },
     { done: function () { return baseComfort().n >= 1; }, text: 'B: build walls round a space, with a door. The roof comes by itself' },
     { done: function () { return baseComfort().has.hearth; }, text: 'Put a hearth inside your hut (B, a few stones and wood)' },
     { done: function () { return baseComfort().has.bench; }, text: 'Put a workbench in it: it only works under a roof' },
@@ -1665,7 +1682,7 @@ __COMBAT__
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
