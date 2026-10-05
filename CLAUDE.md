@@ -455,18 +455,30 @@ The hero has two modes, switched with **Q**, each with its own six-slot hotbar a
   The arena passes a heading that eases toward the true facing (`creatureTurn`). The hero uses the side view only
   when facing nearly straight left or right; otherwise the front or back view turned by `an.turn` (-1..1).
   `Combat.api.facings8` (on by default) switches both. `node tools/visual/facings.js` renders them all.
-- **The mountain troll (2026-10-05, from `docs/beasts.md`):** creature plan 7, drawn by `trollD` in `src/art.js`
-  (hunched, hairy, long-armed, about twice the hero's height; arms swing, rise over its head in the windup, slam down;
-  `ANIMALS.troll`, and `trollStone` for its grey skin). 40 health, a slow heavy `arc` attack (28 damage, windup 1.1 s,
-  reach 36), turns slowly. In the game (`trollTick`): **one troll each night** (light above 0.7), on the dark ground
-  at least 600 from camp and 420 from you; a hearth or brazier within 105 units makes it **shield its eyes** (held
-  still 4 s, then it ignores light for 14 s); at dawn (or if you sleep through the night) it **turns to stone**
-  (grey skin, "TROLL STONE"), and 6 s later **cracks into a rock formation** that gives 6 stone and 4 copper when
-  mined. Killed, it drops 3 copper and 3 stone. It has a card in the Book (hidden for now). **Ore:** about a third of
-  the rocks hold copper (`markOre`, from the island seed); mining one gives copper, a sure 2 at night and a one-in-six
-  1 by day; ore rocks **glow a faint copper** at night (drawn after the night overlay in `drawNight`). Copper ore is
-  a new kind in the bag (the first metal: smelting and copper tools are not built). With the tapping bot a troll
-  costs 44 to 57 health in leather and kills an unarmoured hero 3 times in 12.
+- **The cave and the mountain troll (2026-10-05, from `docs/beasts.md`):**
+  *The mouth:* `caveSetup` picks a clear spot on grass 700 to 1600 units from camp (not near the steading), clears
+  the props round it and plants a `cave` prop (`caveMouth`); E beside it enters (a short black fade), E near the
+  west end inside leaves. The chart marks the hero at the mouth while inside. Saving inside saves you at the mouth.
+  *The inside:* a generated tunnel with chambers and side pockets, 72 by 40 tiles, laid out in its own coordinates
+  far east of the map (`CAVE_X`), so nothing outside can see you in it; `scene.walk` and `scene.bounds` switch to it
+  (`caveFloor`, `drawCaveFloor`). Everything is **dark** (`drawCaveDark`): you see a circle of about 96 units round
+  you, a warm glow round each ore rock, and daylight spilling in at the entrance; building is off inside. **Ore rocks**
+  (`cave.ores`, up to 18, thick near the opening and thinner deeper) each give 2 copper and 3 stone, sure, and glow
+  faintly (they are drawn through the same prop path as outside rocks: `o.cave`).
+  *The troll* (creature plan 7, `trollD`; 40 health, a slow heavy `arc` swing of 28 damage, windup 1.1 s) lives at
+  the back (`cave.lair`), wandering within 150 of it, and is awake when you come within 100. **Mining is loud**
+  (`caveHear`): each hit on a cave ore sets `troll.heard` for 14 s, and the engine (`e.heard` in `updateEnemies` and
+  the `botAI` idle case) makes him come however far, slowly (about 45 units a second against your 84). Far off he
+  is only two amber **eyes** (drawn after the darkness, from up to 640 units), and he appears in full as he enters
+  your light. *Outside:* on some nights (light above 0.7, one night each, only if you are not inside) he walks out
+  to the mouth and strolls within 340 of it (`troll.place` 'in' or 'out'); a hearth or brazier within 105 makes him
+  shield his eyes (held 4 s, then he ignores light for 14 s). **Unprovoked he goes back in before morning** (from
+  t 1620, or at once after dawn begins); **provoked** (awake) and caught outside by the light he turns to stone
+  ("TROLL STONE") and 6 s later cracks into a rock formation worth 6 stone and 4 copper. A killed or stoned troll is
+  replaced three days later (`trollDeadDay`). Killed, he drops 3 copper and 3 stone. He has a card in the Book (hidden).
+  *Ore outside:* about a third of the rocks hold copper (`markOre`): a sure 2 at night, one in six by day; they glow
+  copper at night. Copper ore is the first metal in the bag; smelting and copper tools are not built. With the tapping
+  bot a troll costs 44 to 57 health in leather and kills an unarmoured hero 3 times in 12.
 - **Fight balance (2026-10-05, `tests/balance.js`):** armour turns a share of *every* blow aside (it used to count only
   while blocking). An animal that has begun its attack (windup or lunge) finishes it unless hit by a heavy blow (third
   combo hit, charged, or a parry); a light hit is a 0.14 s flinch and does not reset its attack cooldown, so

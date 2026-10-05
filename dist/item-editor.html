@@ -3484,7 +3484,7 @@ function botAI(e, dt, d, ang) {
   var near = kind === 'arc' ? e.r + (A.reach || 20) * 0.8 : (A.near || 56), ring = A.ring || Math.min(52, near);
   e.cd -= dt;
   switch (e.state) {
-    case 'idle': if (d < 130 && !P.dead) { e.state = 'chase'; e.t = 0; } break;
+    case 'idle': if ((d < 130 || e.heard > 0) && !P.dead) { e.state = 'chase'; e.t = 0; } break;
     case 'chase':
       e.face = A.turn ? turnToward(e.face, ang, A.turn * dt) : ang;
       var fa = e.face, aligned = Math.abs(wrap(ang - e.face)) < 0.5;
@@ -3650,6 +3650,7 @@ function updateEnemies(dt) {
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
       if (!e.awake && gd < e.aggro && !P.dead) e.awake = true;
       else if (e.awake && gd > e.aggro * 2.6 && (e.state === 'chase' || e.state === 'idle')) e.awake = false;
+      if (e.heard > 0) { e.heard -= dt; if (!P.dead) e.awake = true; }   // it heard something (mining): it comes
       if (e.flee) {                      // a grazer bolts instead of fighting
         if (e.awake && !P.dead) { var fs2 = (e.cfg ? e.cfg.speed : 58) * 1.5; e.state = 'chase'; e.t += dt; e.face = ga + Math.PI; moveCircle(e, -Math.cos(ga) * fs2 * dt, -Math.sin(ga) * fs2 * dt); }
         else e.state = 'idle';
