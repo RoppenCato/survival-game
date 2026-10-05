@@ -156,6 +156,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
   render things to PNG for checking (`props.js`, `creatures.js`, `walkcycle.js`, `swingdirs.js`, `attackstyles.js`).
 - `tests/`: headless combat checks (table in `tests/README.md`).
 - `docs/idea-bank.md`: ideas and open design questions that are not decided yet.
+- `docs/beasts.md`: the cards and rules for Robin's creatures from Norse myth and folklore (troll, bysen,
+  shapeshifter, huldra, tomtar, näcken, draugr, mara, jötunn, valkyrie), and the ore-at-night mining idea. Robin's
+  lore and mechanics are marked; the rest are suggestions, not decided.
 - `docs/roadmap.md`: the build order (steps 1 to 10), what to test after each, and open questions for Robin.
   Update it when a step is done.
 - `dist/`: built single-file pages, committed to git.

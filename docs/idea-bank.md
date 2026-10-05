@@ -176,6 +176,13 @@ Decided: the book, the unlock on first kill. Not decided: which creatures, and t
 | Fenrir's brood | Great wolves, bigger than any pack leader | The far north | A wolf that takes down a moose alone | Chains hold it: the trap is the weapon |
 | Odin's ravens | Huginn and Muninn | Everywhere, watching | Cannot be killed | Not a foe: where they circle, something is worth finding |
 
+### Robin's creatures (2026-10-05)
+Robin named and gave the lore of ten: mountain troll, bysen, shapeshifter, huldra, tomtar, näcken, draugr, mara,
+jötunn and valkyrie, with the mechanics he had in mind (the troll only at night and stoned at dawn, ore glowing at
+night, bysen confusing the player, the huldra as a boss stunned to reach her back, shapeshifters as a rare meeting).
+Their cards in the book's format, with strengths, weaknesses, warning signs, drops and suggested rules, are in
+`docs/beasts.md`. The table above stays as the longer list of candidates.
+
 ### How the book could grow (Claude)
 - A page is earned on the first kill (decided). Later pages could also be earned by *meeting* a creature you
   cannot or should not kill (the ravens, the tomte, the huldra), by reading a runestone, or by Brokk's stories.
