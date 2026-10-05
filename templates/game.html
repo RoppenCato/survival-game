@@ -399,25 +399,28 @@ __COMBAT__
 
   /* ---------- crafting: recipes open when you have picked up every kind of thing they need ---------- */
   var RECIPES2 = [
-    { id: 'flintAxe', out: { item: ['axe', 'flint'] }, needs: { wood: 3, stone: 2 }, at: 'hand' },
-    { id: 'torch', out: { stack: ['torch', 2] }, needs: { wood: 1, fiber: 2 }, at: 'hand' },
-    { id: 'flintKnife', out: { item: ['knife', 'flint'] }, needs: { wood: 1, stone: 1 }, at: 'hand' },
-    { id: 'flintPick', out: { item: ['pick', 'flint'] }, needs: { wood: 3, stone: 3 }, at: 'hand' },
-    { id: 'woodSword', out: { item: ['sword', 'wood'] }, needs: { wood: 2 }, at: 'hand' },
-    { id: 'woodBow', out: { item: ['bow', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand' },
-    { id: 'arrows5', out: { arrows: 5 }, needs: { wood: 2, fiber: 1 }, at: 'hand' },
-    { id: 'flintSword', out: { item: ['sword', 'flint'] }, needs: { wood: 2, stone: 4, fiber: 1 }, at: 'bench' },
-    { id: 'arrows15', out: { arrows: 15 }, needs: { wood: 4, fiber: 2 }, at: 'bench' },
-    { id: 'woodShield', out: { item: ['shield', 'wood'] }, needs: { wood: 5, leather: 1 }, at: 'bench' },
+    { id: 'flintAxe', out: { item: ['axe', 'flint'] }, needs: { wood: 3, stone: 2 }, at: 'hand', key: 'stone' },
+    { id: 'torch', out: { stack: ['torch', 2] }, needs: { wood: 1, fiber: 2 }, at: 'hand', key: 'fiber' },
+    { id: 'flintKnife', out: { item: ['knife', 'flint'] }, needs: { wood: 1, stone: 1 }, at: 'hand', key: 'stone' },
+    { id: 'flintPick', out: { item: ['pick', 'flint'] }, needs: { wood: 3, stone: 3 }, at: 'hand', key: 'stone' },
+    { id: 'woodSword', out: { item: ['sword', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },
+    { id: 'woodBow', out: { item: ['bow', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'fiber' },
+    { id: 'arrows5', out: { arrows: 5 }, needs: { wood: 2, fiber: 1 }, at: 'hand', key: 'fiber' },
+    { id: 'flintSword', out: { item: ['sword', 'flint'] }, needs: { wood: 2, stone: 4, fiber: 1 }, at: 'bench', key: 'stone' },
+    { id: 'arrows15', out: { arrows: 15 }, needs: { wood: 4, fiber: 2 }, at: 'bench', key: 'fiber' },
+    { id: 'woodShield', out: { item: ['shield', 'wood'] }, needs: { wood: 5, leather: 1 }, at: 'bench', key: 'leather' },
     // the first set of armour takes nine leather: a few deer and boars, cured on a drying rack
-    { id: 'leatherHelmet', out: { item: ['helmet', 'leather'] }, needs: { leather: 1, fiber: 1 }, at: 'bench' },
-    { id: 'leatherTunic', out: { item: ['tunic', 'leather'] }, needs: { leather: 3, fiber: 2 }, at: 'bench' },
-    { id: 'leatherTrousers', out: { item: ['trousers', 'leather'] }, needs: { leather: 2, fiber: 1 }, at: 'bench' },
-    { id: 'leatherBoots', out: { item: ['boots', 'leather'] }, needs: { leather: 1, fiber: 1 }, at: 'bench' },
+    { id: 'leatherHelmet', out: { item: ['helmet', 'leather'] }, needs: { leather: 1, fiber: 1 }, at: 'bench', key: 'leather' },
+    { id: 'leatherTunic', out: { item: ['tunic', 'leather'] }, needs: { leather: 3, fiber: 2 }, at: 'bench', key: 'leather' },
+    { id: 'leatherTrousers', out: { item: ['trousers', 'leather'] }, needs: { leather: 2, fiber: 1 }, at: 'bench', key: 'leather' },
+    { id: 'leatherBoots', out: { item: ['boots', 'leather'] }, needs: { leather: 1, fiber: 1 }, at: 'bench', key: 'leather' },
     { id: 'raft', out: { raft: 1 }, needs: { wood: 20, fiber: 10, leather: 2 }, at: 'ship', taught: 'raft' },
-    { id: 'leatherCloak', out: { item: ['cloak', 'leather'] }, needs: { leather: 2, fiber: 2 }, at: 'bench' }
+    { id: 'leatherCloak', out: { item: ['cloak', 'leather'] }, needs: { leather: 2, fiber: 2 }, at: 'bench', key: 'leather' }
   ];
-  function known(r) { if (r.taught && !seen[r.taught]) return false; for (var k in r.needs) if (!seen[k]) return false; return true; }
+  // A recipe is learnt when you first hold its key ingredient (the important one: flint for a flint axe, fiber for a
+  // bow, leather for armour); until then it is not shown at all. Taught recipes (the raft) wait for the teaching.
+  function known(r) { if (r.taught && !seen[r.taught]) return false; if (r.key) return !!seen[r.key]; for (var k in r.needs) if (!seen[k]) return false; return true; }
+  function dishKnown(d) { for (var k in d.needs) if (!seen[k]) return false; return true; }
   function recipeName(r) { return r.out.item ? Items.name(Items.make(r.out.item[0], r.out.item[1])) : (r.out.raft ? 'raft' : (r.out.stack ? r.out.stack[1] + ' torches' : r.out.arrows + ' wood arrows')); }
   function needsText(r) { var p = []; for (var k in r.needs) p.push(r.needs[k] + ' ' + NAMES[k].toLowerCase() + ' (' + (inv[k] || 0) + ')'); return p.join(', '); }
   function craft(r) {
@@ -541,7 +544,7 @@ __COMBAT__
   var fullT = -9, drops = [], bits = [], decals = [], inv = { wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, torch: 0, antler: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'torch', 'antler', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
   var NAMES = { wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
-  function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; var n = RECIPES2.filter(function (r) { return known(r) && !r._told; }).length; if (n) toast('Picked up ' + NAMES[kind].toLowerCase() + ': you can make new things'); RECIPES2.forEach(function (r) { if (known(r)) r._told = true; }); } }
+  function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; var n = RECIPES2.filter(function (r) { return known(r) && !r._told; }).length; if (n) toast('Something new to make'); RECIPES2.forEach(function (r) { if (known(r)) r._told = true; }); } }
   // The bag: 24 slots, 6 wide. The top six are the belt and match the hotbar's numbers. A slot holds one kind, up to 25.
   var COLS = 6, ROWS = 4, SLOTS = COLS * ROWS, STACK = 25, slots = [], held = null, pick = null;
   for (var si0 = 0; si0 < SLOTS; si0++) slots.push(null);
@@ -582,10 +585,10 @@ __COMBAT__
      home still needs, then, when it is a home (Comfort 4), teaches the raft (seen.raft, saved). */
   function brokkState() { return seen.raft ? 'taught' : (!seen.met ? 'meet' : (baseComfort().n >= 4 ? 'teach' : 'wait')); }   // the story always comes first
   function brokkLines(st) {
-    if (st === 'meet') return ['Well met. I am Brokk, a smith. All that is left of Hildir’s steading.', 'Two winters back a longship came up the sound: Ragnar Ironside and his crew. They burnt the hall.', 'Some of ours they took as thralls. Some went with them of their own will. The rest lie in the ground. I am the last.', baseComfort().n >= 4 ? 'I see you already have a home: a roof, a fire, a bench and a rug. Speak to me again and I will teach you to build a raft.' : 'Build yourself a proper home: a roof, a hearth, a workbench and a rug. Then come back, and I will teach you to build a raft.'];
-    if (st === 'wait') { var h = baseComfort().has, need = []; if (!h.hearth) need.push('a hearth'); if (!h.bench) need.push('a workbench'); if (!h.rug) need.push('a rug'); if (!baseComfort().n) need.unshift('walls and a roof'); return [need.length ? 'Your home still needs ' + need.join(', ') + '. Then come back.' : 'A little more comfort and it is a home. A chair, a table, a bed.']; }
-    if (st === 'teach') return ['A roof, a fire, a bench and a rug. That is a home.', 'Now listen. A raft is logs lashed with fiber rope and a hide or two. Build a shipwright’s bench on the sand by the water and lay it there.', 'They sailed east, Ragnar’s crew. Go after them when you can.'];
-    return ['The raft is yours to build. Fair winds. They sailed east.'];
+    if (st === 'meet') return ['Well met. I am Brokk, a smith. All that is left of Hildir’s steading.', 'Two winters back a longship came up the sound: Ragnar Ironside and his crew. They burnt the hall.', 'Some of ours they took as thralls. Some went with them of their own will. The rest lie in the ground. I am the last.', baseComfort().n >= 4 ? 'You have a home already. Come and talk to me again.' : 'A home is a roof and what you put under it. Make one, and come and talk to me again.'];
+    if (st === 'wait') return [baseComfort().n ? 'It keeps the rain off. Is it somewhere you would want to be?' : 'The sea is wide. A man needs somewhere to come back to.'];
+    if (st === 'teach') return ['Now that is a home. Sit. I will show you something.', 'Logs, bound with rope, and a hide or two. A shipwright’s bench on the sand to lay it on. That is how we crossed the first time.', 'They sailed east, Ragnar’s crew.'];
+    return ['The sea is wide. Mind it.'];
   }
   function villageSite() {               // a flat stretch of grass 10 by 12 tiles, 350 to 800 from the camp, from the island seed
     var R = kit.rng(spec.seed * 13 + 5), tries, best = null;
@@ -1055,7 +1058,7 @@ __COMBAT__
     if (menuTab === 'hearth' && !nearHearth(hero())) menuTab = 'hand';
     menu = { items: [], w: MCOLS * (MCELL + 3) + 11, h: 21 + MROWS * (MCELL + 3) + 14, tabs: [] };
     menu.x = Math.round((400 - menu.w) / 2); menu.y = 34;
-    var list = menuTab === 'build' ? PIECES : (menuTab === 'hearth' ? RECIPES : RECIPES2.filter(function (r) { return r.at === menuTab; }));
+    var list = menuTab === 'build' ? PIECES : (menuTab === 'hearth' ? RECIPES.filter(dishKnown) : RECIPES2.filter(function (r) { return r.at === menuTab && known(r); }));
     for (i = 0; i < n; i++) { var e = list[i] || null; menu.items.push({ i: i, piece: menuTab === 'build' ? e : null, r: menuTab === 'hand' || menuTab === 'bench' || menuTab === 'ship' ? e : null, dish: menuTab === 'hearth' ? e : null, x: menu.x + 7 + (i % MCOLS) * (MCELL + 3), y: menu.y + 21 + Math.floor(i / MCOLS) * (MCELL + 3) }); }
     var tx = menu.x + 5; menuTabs().forEach(function (t) { var w = t.name.length * 4 + 12; menu.tabs.push({ id: t.id, name: t.name, roofed: t.roofed, x: tx, y: menu.y + 4, w: w, h: 13 }); tx += w + 3; });
   }
@@ -1084,9 +1087,8 @@ __COMBAT__
     var label = '';
     if (hit && hit.piece) label = hit.piece.name + '  (' + costText(hit.piece.cost) + ')';
     else if (hit && hit.dish) label = NAMES[hit.dish.id] + ':  ' + (function () { var p = []; for (var k in hit.dish.needs) p.push(hit.dish.needs[k] + ' ' + NAMES[k].toLowerCase() + ' (' + (inv[k] || 0) + ')'); return p.join(', '); })() + '.  +' + FOOD[hit.dish.id].heal + ' health; top health +' + FOOD[hit.dish.id].bonus + ', stamina +' + FOOD[hit.dish.id].stam + ' for ' + Math.round(FOOD[hit.dish.id].time / 60) + ' min';
-    else if (hit && hit.r) label = known(hit.r) ? recipeName(hit.r) + ':  ' + needsText(hit.r) : (hit.r.taught && !seen[hit.r.taught] ? 'Someone must teach you this' : 'Pick up more kinds of things to learn this');
+    else if (hit && hit.r) label = known(hit.r) ? recipeName(hit.r) + ':  ' + needsText(hit.r) : '';
     else if (menuTab === 'bench' && !roofed) label = 'The workbench needs a roof over it';
-    else if (menuTab === 'hand' && !RECIPES2.some(function (r) { return r.at === 'hand' && known(r); })) label = 'Pick things up and you will see what can be made';
     c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = menuTab === 'bench' && !roofed ? '#ff9a8a' : '#fff'; c.fillText(label, menu.x + 8, menu.y + menu.h - 5);
   }
   // panels: the inventory (Tab) and the hearth (E). Rows are remembered so clicks can find them.
@@ -1101,23 +1103,12 @@ __COMBAT__
   var musicDrag = false;
   function musicBar(x0, w0) { return { x: x0 + w0 - 70, y: 0, w: 56 }; }
   function musicSet(mx, x0, w0) { var b = musicBar(x0, w0); setMusic(Math.round(Math.max(0, Math.min(1, (mx - b.x) / b.w)) * 20) / 20); }
+  // Guidance is subtle (Robin): a few quiet key reminders at the very start, never a goal and never an explanation. The
+  // rest is found by exploring: prompts over the hero, the people, the way things look.
   var HINTS = [
-    { done: function () { return hasTool() || (inv.wood >= 4 && inv.stone >= 3); }, text: function () { return 'Walk over branches and stones (' + inv.wood + '/4 wood, ' + inv.stone + '/3 stone)'; } },
-    { done: function () { return hasTool(); }, text: 'Press B: the Crafting tab makes a flint axe and knife' },
-    { done: function () { return inv.fiber > 0 && inv.wood >= 6; }, text: 'Q: gather mode. The knife cuts bushes, the axe fells trees' },
-    { done: function () { return !(inv.hide > 0) || !B.items.some(function (it) { return it.name === 'dryingRack'; }); }, text: 'E at a drying rack: hung hide cures into leather' },
-    { done: function () { return (equip.pick || hasItem('pick')) && (equip.weapon || hasItem('sword')); }, text: 'B, Crafting: a pickaxe for rocks, a stick sword for boars' },
-    { done: function () { return !seen.cave || !!seen.torch; }, text: 'A cave! Make torches in B, Crafting, and press T to light one' },
-    { done: function () { return !!seen.met; }, text: 'A broken steading lies inland. Someone may be there' },
-    { done: function () { return baseComfort().n >= 1; }, text: 'B: build walls round a space, with a door. The roof comes by itself' },
-    { done: function () { return baseComfort().has.hearth; }, text: 'Put a hearth inside your hut (B, a few stones and wood)' },
-    { done: function () { return baseComfort().has.bench; }, text: 'Put a workbench in it: it only works under a roof' },
-    { done: function () { return baseComfort().n >= 4; }, text: 'A rug on the floor makes a home: Comfort 4 (leather and fiber)' },
-    { done: function () { return !(baseComfort().n >= 4 && seen.met && !seen.raft); }, text: 'Your home is ready: go and speak to Brokk again at the steading' },
-    { done: function () { return !seen.raft || B.items.some(function (it) { return it.ship; }); }, text: 'B: build a shipwright’s bench on the sand at the water’s edge' },
-    { done: function () { return !seen.raft || !B.items.some(function (it) { return it.ship; }) || !!raft; }, text: 'B at the bench: the Shipwright tab makes the raft' },
-    { done: function () { return !raft || !!seen.left; }, text: 'E at the raft to board, WASD to paddle. Find the other island' },
-    { done: function () { return B.items.some(function (it) { return it.bed; }); }, text: 'Build a bed in the hut: sleep through the night' }
+    { done: function () { return hasTool() || (inv.wood >= 4 && inv.stone >= 3); }, text: 'Walk over the things lying about' },
+    { done: function () { return hasTool(); }, text: 'Press B' },
+    { done: function () { return inv.fiber > 0 || seen.fiber; }, text: 'Press Q' }
   ];
   function hasItem(kind) { return slots.some(function (s) { return s && s.kind === 'item' && s.item.kind === kind; }); }
   function hasTool() { return !!(equip.axe || equip.knife || equip.pick || hasItem('axe') || hasItem('knife') || hasItem('pick')); }
@@ -1302,7 +1293,7 @@ __COMBAT__
       }
     }
     if (hov >= 0 && slotGet(hov) && !(pick && pick.drag)) {   // the name of what you point at, and what eating it does
-      var s2 = slotGet(hov), f = FOOD[s2.kind], txt = store ? (s2.kind === 'item' ? s2.item.name : NAMES[s2.kind]) + '  (click: move across)' : s2.kind === 'item' ? s2.item.name + '  (right click: equip)' : NAMES[s2.kind] + (f ? '  (eat: +' + f.heal + (f.time ? ', meal)' : ')') : '');
+      var s2 = slotGet(hov), f = FOOD[s2.kind], txt = !store && s2.kind === 'torch' ? NAMES.torch + '  (T)' : store ? (s2.kind === 'item' ? s2.item.name : NAMES[s2.kind]) + '  (click: move across)' : s2.kind === 'item' ? s2.item.name + '  (right click: equip)' : NAMES[s2.kind] + (f ? '  (eat: +' + f.heal + (f.time ? ', meal)' : ')') : '');
       c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + INV.w - 2, INV.y - 4); c.fillStyle = '#fff'; c.fillText(txt, x0 + INV.w - 2, INV.y - 4);
       if (s2.kind === 'item') itemCard(c, s2.item, x0 - 150, INV.y);
     }

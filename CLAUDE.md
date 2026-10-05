@@ -305,8 +305,12 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   arrows. Arrow types and making arrows come with the workbench (roadmap step 3). Saved with the game.
 - **Crafting (2026-10-05):** you start with nothing in your hands; branches and stones lie round the camp
   (`campScatter`). Recipes (`RECIPES2`) are made by hand anywhere or at a **workbench**, a buildable piece that
-  only works with a roof over it (`benchRoofed`: the room flood fill). A recipe shows as "?" until every kind of
-  thing it needs has been picked up (`seen`, saved); picking up a new kind toasts that new things can be made.
+  only works with a roof over it (`benchRoofed`: the room flood fill). **Recipes are learnt from their key
+  ingredient** (Robin, 2026-10-05; `key` on each `RECIPES2` entry: stone for the flint tools, fiber for the bow, arrows
+  and torches, leather for armour and the shield, wood for the stick sword; the raft is `taught` by Brokk): a recipe is
+  listed once you have first picked up its key (`seen`, saved) and not before. **There are no question marks**: an
+  unknown recipe is simply absent (`known`, `dishKnown` for the hearth), and a quiet "Something new to make" toast
+  marks a discovery.
   Hand: flint axe, knife, pick, **stick sword** (2 wood), **stick bow** (3 wood, 2 fiber), 5 arrows. Bench: flint
   sword, 15 arrows, wooden shield, leather helmet, tunic, trousers, boots, cloak, all made of **leather** (nine
   for the set). A tool made into an empty slot goes straight into your hand. Gear is worn in the
@@ -359,10 +363,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **The first minute (tested fresh 2026-10-05):** you land on nothing; 12 branches and 9 stones lie on land
   round the camp, never within 82 units of where you land (`campScatter`), and three lone trees (oak, birch,
   pine) stand 170 to 300 from camp (`campTrees`) so the first axe has something to fell. Things lying within
-  56 units slide toward you if the bag has room. A hint line at the top centre (`HINTS`, short enough to clear
-  the health bars, some with live counts), one at a time, each gone when its condition is met: walk over
-  branches and stones (4 and 3), **B opens on Crafting until you hold a tool** (axe and knife), Q for gather
-  mode, a pickaxe and a stick sword, then the hut, workbench and bed. The chart marks the camp's fire, and the
+  56 units slide toward you if the bag has room. **B opens on Crafting until you hold a tool.** Guidance is
+  subtle (Robin): the only hint line is three bare key reminders at the start (`HINTS`: "Walk over the things lying
+  about", "Press B", "Press Q"), each gone when its condition is met; nothing states a goal. The chart marks the camp's fire, and the
   steading once you have come within 380 of it (`seen.village`). Drops per thing (`TREE_WOOD` oak 6, pine 5,
   birch 4; `ROCK_STONE` rock 3, formation 6; bushes 2 fiber, berry bushes 3 berries and 1 fiber): a day's work
   reaches 40 wood, 20 stone and 15 fiber. Deer (2 hide) and a boar (1 hide) live within 800 to 900 of camp
@@ -551,6 +554,11 @@ speed, glide, grip, and two steering modes (Direct and Tiller).
 
 - Game rules live in plain data plus a few systems. Balancing should mean editing numbers, not rewriting code.
 - Combat is keyboard-first. The mouse is only for aiming the ranged weapon, which also has an auto option.
+- **Guidance is subtle (Robin, 2026-10-05).** The game does not state goals or explain itself: no journal, no checklists,
+  no "your goal is". Exploring and trying things is the game. Only three bare key reminders appear at the very start;
+  everything else is found: prompts over the hero ("E Cook"), people (Brokk speaks in his own voice, never as a
+  checklist), how things look, a tooltip ("Torch (T)"). New features must not add hint lines or explaining labels.
+  Recipes appear when you first hold their key ingredient, never as question marks.
 - Reward doing right instead of punishing doing wrong (Robin, 2026-10-04). The model is Valheim's food: you do
   not starve, but eating gives the health you need, so going without leaves you weak and likely to die from
   something else. No meters that drain and hurt you; the unprepared state is the weak baseline and preparation

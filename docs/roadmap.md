@@ -8,6 +8,10 @@ Robin are at the end; where a step depends on an answer, it says so.
 
 # Goal 1: leave the island (Robin, 2026-10-05)
 
+> **Note (2026-10-05, Robin): guidance is subtle.** Where the steps below mention hints, a goal line or labels that explain, read
+> them as design intent only: the game shows no goals and no explanations (see `CLAUDE.md`, design conventions). Only three bare
+> key reminders remain at the start; recipes appear when you first hold their key ingredient; there are no question marks.
+
 The first big goal. The player lands with nothing, and leaves the island on a raft. Everything below is what it
 takes to get there, in the order it has to be played, with what already exists, what is still to build, and how
 to test each step. The runes and the Book of Beasts stay hidden until this is done.
