@@ -77,7 +77,7 @@ order is the order a new player meets them; build them in the same order so the 
 - **Test:** in full leather with a stick sword a boar dies with the player above half health; a wolf pair is
   survivable with the shield; the bear kills a careless player.
 
-### 6. The house: a roof, a workbench, a fireplace, a rug
+### 6. The house: a roof, a workbench, a fireplace, a rug (built 2026-10-05: the rug piece, comfort per roofed room, the dial's label, Rested = comfort x 2 minutes, the house hint sequence)
 - **Have:** walls in five materials, floors, door, window, fences and gates, roofs per room, the workbench (needs
   a roof), the hearth as a piece, the bed, sleep and the Rested buff, the build cursor with its reasons.
 - **Build:** the **rug** piece (leather and fiber; a woven mat on the floor, drawn as a prop), and **comfort**: a

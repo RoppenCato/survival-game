@@ -1399,6 +1399,20 @@ function chestObj(c, K, x, y, s, seed) {
   shape(c, rrPts(x - 3, y - h * 0.62 - 1, 6, 7, 1.5), K.brass, { seed: seed + 9, size: 'S', sh: 1, rough: 0.2 });
 }
 
+// a woven rug lying flat on the floor: a dark red field, a cream border, a pale band down the middle, fringe at the ends
+function rugObj(c, K, x, y, seed) {
+  var red = M(6, 52, 36), cream = M(44, 40, 76), blue = M(212, 40, 40), i;
+  gshadow(c, x, y - 1, 20, 3, 0.18);
+  shape(c, rrPts(x - 24, y - 20, 48, 20, 4), red, { seed: seed, size: 'M', sh: 1, hl: 0.8, rough: 0.2 });
+  fillPath(c, rrPts(x - 20, y - 17, 40, 14, 3), cream.base, true, ow('S') * 0.7);
+  fillPath(c, rrPts(x - 17, y - 15, 34, 10, 2), red.base, false);
+  fillPath(c, [[x - 12, y - 10], [x - 5, y - 14], [x + 2, y - 10], [x - 5, y - 6]], blue.base, false);
+  fillPath(c, [[x + 4, y - 10], [x + 11, y - 14], [x + 17, y - 10], [x + 11, y - 6]], blue.base, false);
+  c.save(); c.strokeStyle = cream.base; c.lineWidth = 1; c.lineCap = 'round';
+  for (i = 0; i < 6; i++) { var fy = y - 18 + i * 3.2; c.beginPath(); c.moveTo(x - 24, fy); c.lineTo(x - 27, fy + 0.5); c.moveTo(x + 24, fy); c.lineTo(x + 27, fy + 0.5); c.stroke(); }
+  c.restore();
+}
+
 function barrel(c, K, x, y, s, seed) {
   var w = s * 0.62, h = s;
   gshadow(c, x + 2, y + 1, w * 0.7, 4);
@@ -2695,6 +2709,7 @@ var PROPS = {
   mushrooms: { b: [-30, -46, 36, 10], f: function (c, K, s) { mushroom(c, K, 0, 0, 22, s); mushroom(c, K, 15, 5, 14, s + 1); } },
   flower: { b: [-20, -40, 24, 8], f: function (c, K, s) { flower(c, K, 0, 0, s); } },
   fence: { b: [-20, -50, 100, 10], f: function (c, K, s) { fence(c, K, 0, 0, 5, s); } },
+  rug: { b: [-30, -24, 30, 4], f: function (c, K, s) { rugObj(c, K, 0, 0, s); } },
   crate: { b: [-30, -50, 40, 10], f: function (c, K, s) { crate(c, K, 0, 0, 28, s, 0); } },
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
   chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },

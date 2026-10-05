@@ -237,6 +237,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   cart, dragon post. Prop pieces take their board icon from the baked sprite (`propIcon`, `ICON_SCALE`). The
   wreck cursor gives back what the piece cost (`pieceFor`, `costOf`, `costOfFloor`, `costOfItem`); laying a
   floor over another gives the old one back.
+- **Comfort (step 6, 2026-10-05):** a closed room is worth 1 for its roof and 1 each for a hearth, a workbench, a
+  bed and a rug in it, and up to 2 for furniture (chair, bench seat, table, chest): at most 7 (`comfortOf`, per room
+  index; `baseComfort()` is the best room within 500 units of the camp, so the steading does not count). The dial
+  by the chart shows "Comfort N" while you stand in a room (green from 4); sleeping there leaves you **Rested for
+  N x 2 minutes** (`restedMax`); 4 is what the shipwright's bench will ask of your home. The **rug** is a flat
+  piece (leather 2, fiber 4; `PIECES` `flat`, prop `rug`, drawn under everything, only rugs block rugs). The hints
+  walk the house: walls and a door, a hearth inside, a workbench, a rug (Comfort 4), a bed.
 - **Storage (2026-10-05):** a **chest** is a buildable piece (8 wood, prop `chest` in the kit) with twelve slots
   (`it.store`, saved with `B`, things remade on load). **E** at a chest opens it with the bag: the chest's board
   takes the character panel's place on the left; a click on a stack moves it across (`transfer`), drag and drop

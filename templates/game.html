@@ -275,6 +275,7 @@ __COMBAT__
     { id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 9, cost: { wood: 4 } },
     { id: 'barrel', name: 'Barrel', kind: 'item', prop: 'barrel', r: 6, cost: { wood: 3 } },
     { id: 'crate', name: 'Crate', kind: 'item', prop: 'crate', r: 7, cost: { wood: 3 } },
+    { id: 'rug', name: 'Rug', kind: 'item', prop: 'rug', r: 0, flat: true, cost: { leather: 2, fiber: 4 } },
     { id: 'chest', name: 'Chest', kind: 'item', prop: 'chest', r: 8, chest: true, cost: { wood: 8 } },
     { id: 'woodpile', name: 'Woodpile', kind: 'item', prop: 'woodpile', r: 8, cost: { wood: 5 } },
     { id: 'rack', name: 'Drying rack', kind: 'item', prop: 'dryingRack', r: 8, cost: { wood: 4, fiber: 2 } },
@@ -286,7 +287,7 @@ __COMBAT__
     { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 11, cost: { wood: 8 } },
     { id: 'post', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 5, cost: { wood: 4 } }
   ];
-  var ICON_SCALE = { chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
+  var ICON_SCALE = { rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   function propIcon(c, name) {             // a prop's baked sprite, shrunk to fit a board cell
     var s = sprite(name, 0), sc = ICON_SCALE[name] || Math.min(18 / s.w, 18 / s.h);
     c.drawImage(s.cv, -s.w * sc / 2, -s.h * sc / 2 + 1, s.w * sc, s.h * sc);
@@ -310,6 +311,24 @@ __COMBAT__
 
   /* ---------- the day: 20 minutes of day and dusk, then a 10 minute night (decided 2026-10-05) ---------- */
   // day.t runs 0..DAY_LEN seconds. light() is 0 by day and 1 at deepest night; dusk() is the warm glow before it.
+  /* ---------- comfort: what makes a roofed room a home ----------
+     A closed room counts 1 for its roof, and 1 each for a hearth, a workbench, a bed and a rug in it, and up to 2 for
+     furniture (chair, bench seat, table, chest): at most 7. Comfort is how long sleeping there leaves you Rested
+     (2 minutes each) and, at 4, what the shipwright's bench asks of your home. */
+  var FURN = { chair: 1, bench: 1, table: 1, chest: 1 };
+  function comfortOf(ri) {
+    if (ri < 0 || !roomInfo || !roomInfo.rooms[ri]) return { n: 0, has: {} };
+    var has = {}, furn = 0;
+    B.items.forEach(function (it) { if (roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T)) !== ri) return; if (it.name === 'stoneHearth') has.hearth = 1; else if (it.bench) has.bench = 1; else if (it.bed) has.bed = 1; else if (it.name === 'rug') has.rug = 1; else if (FURN[it.name]) furn++; });
+    has.furn = Math.min(2, furn);
+    return { n: 1 + (has.hearth ? 1 : 0) + (has.bench ? 1 : 0) + (has.bed ? 1 : 0) + (has.rug ? 1 : 0) + has.furn, has: has };
+  }
+  function baseComfort() {                 // the best room within 500 units of the camp: your home (the steading is further off)
+    var best = { n: 0, has: {} };
+    if (roomInfo) roomInfo.rooms.forEach(function (r, ri) { var t = r.tiles[0]; if (Math.hypot((t[0] + 0.5) * T - home.x, (t[1] + 0.5) * T - home.y) > 500) return; var c = comfortOf(ri); if (c.n > best.n) best = c; });
+    return best;
+  }
+  var restedMax = 600;
   var DAY_LEN = 1800, DUSK_AT = 840, NIGHT_AT = 1200, DAWN_AT = 1740, day = { t: 0, n: 1 }, sleep = null, rested = 0, nightCv = null;
   function light() { var t = day.t; if (t < DUSK_AT) return 0; if (t < NIGHT_AT) return (t - DUSK_AT) / (NIGHT_AT - DUSK_AT); if (t < DAWN_AT) return 1; return 1 - (t - DAWN_AT) / (DAY_LEN - DAWN_AT); }
   function dusk() { var t = day.t; return t >= DUSK_AT && t < NIGHT_AT ? Math.sin((t - DUSK_AT) / (NIGHT_AT - DUSK_AT) * Math.PI) : 0; }
@@ -318,14 +337,14 @@ __COMBAT__
   function dayTick(dt) {
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
       sleep.t += dt;
-      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) rested = 600; toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
+      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { restedMax = rested = Math.max(120, sleep.comfort * 120); } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
       if (sleep.t >= 2.6) sleep = null;
       return;
     }
     day.t += dt; if (day.t >= DAY_LEN) { day.t -= DAY_LEN; day.n++; save(); }
     if (rested > 0) { rested -= dt; var P2 = hero(); if (!P2.dead) P2.hp = Math.min(P2.maxHp, P2.hp + 0.3 * dt); }
   }
-  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening()) return; sleep = { t: 0, roofed: benchRoofed(bd) }; invOpen = false; menu = null; }
+  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening()) return; sleep = { t: 0, roofed: benchRoofed(bd), comfort: comfortOf(roomInfo ? roomInfo.at(Math.floor(bd.x / T), Math.floor(bd.y / T)) : -1).n }; invOpen = false; menu = null; }
   function drawNight(c) {                  // the evening glow and the night's blue, with the hearths' light cut out
     var L = light(), D = dusk(); if (L <= 0 && D <= 0) return;
     if (!nightCv) { nightCv = document.createElement('canvas'); nightCv.width = 200; nightCv.height = 125; }
@@ -358,9 +377,11 @@ __COMBAT__
     if (L > 0.5) { c.fillStyle = '#f1e6cf'; c.beginPath(); c.arc(px, py, 2.4, 0, 7); c.fill(); c.fillStyle = '#2a3458'; c.beginPath(); c.arc(px + 1.2, py - 0.6, 2, 0, 7); c.fill(); }
     else { c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(px, py, 2.4, 0, 7); c.fill(); }
     c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.arc(x, y, 9, 0, 7); c.stroke();
-    if (rested > 0) { c.strokeStyle = '#9be58b'; c.lineWidth = 1.6; c.beginPath(); c.arc(x, y, 8.2, -Math.PI / 2, -Math.PI / 2 + rested / 600 * 6.283); c.stroke(); }
+    if (rested > 0) { c.strokeStyle = '#9be58b'; c.lineWidth = 1.6; c.beginPath(); c.arc(x, y, 8.2, -Math.PI / 2, -Math.PI / 2 + rested / restedMax * 6.283); c.stroke(); }
     c.restore();
-    if (hov) { var t = 'Day ' + day.n + ', ' + timeName() + (rested > 0 ? '. Rested: ' + Math.ceil(rested / 60) + ' min' : ''); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(t, x, y + 16); c.fillStyle = '#fff'; c.fillText(t, x, y + 16); }
+    var hr = roomInfo ? roomInfo.at(Math.floor(hero().x / T), Math.floor(hero().y / T)) : -1, cf = comfortOf(hr);
+    if (cf.n > 0 && !hov) { var ct = 'Comfort ' + cf.n; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(ct, x, y + 16); c.fillStyle = cf.n >= 4 ? '#9be58b' : '#fff'; c.fillText(ct, x, y + 16); }
+    if (hov) { var t = 'Day ' + day.n + ', ' + timeName() + (cf.n ? '. Comfort ' + cf.n : '') + (rested > 0 ? '. Rested: ' + Math.ceil(rested / 60) + ' min' : ''); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(t, x, y + 16); c.fillStyle = '#fff'; c.fillText(t, x, y + 16); }
   }
 
   /* ---------- crafting: recipes open when you have picked up every kind of thing they need ---------- */
@@ -407,7 +428,7 @@ __COMBAT__
     }
     if (pc.kind === 'item') {
       var ix = (tx + 0.5) * T, iy = (ty + 0.5) * T, clear = spotClear(ix, iy);
-      for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 24) clear = false;
+      for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 24 && (!pc.flat || B.items[i].name === 'rug') && (pc.flat || B.items[i].name !== 'rug')) clear = false;   // a rug lies under furniture, so only rugs block rugs
       return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && canAfford(pc.cost), why: far ? 'Too far' : !clear ? 'Blocked, or not on land' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
     }
     if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), onLand = code(tx, ty) >= 1 && code(tx, ty) !== 255, hasF = B.floors[fk2] != null && B.floors[fk2] === pc.m;
@@ -802,7 +823,10 @@ __COMBAT__
     { done: function () { return inv.fiber > 0 && inv.wood >= 6; }, text: 'Q: gather mode. The knife cuts bushes, the axe fells trees' },
     { done: function () { return !(inv.hide > 0) || !B.items.some(function (it) { return it.name === 'dryingRack'; }); }, text: 'E at a drying rack: hung hide cures into leather' },
     { done: function () { return (equip.pick || hasItem('pick')) && (equip.weapon || hasItem('sword')); }, text: 'B, Crafting: a pickaxe for rocks, a stick sword for boars' },
-    { done: function () { return B.items.some(function (it) { return it.bench; }); }, text: 'Build a hut with B, and a workbench under its roof' },
+    { done: function () { return baseComfort().n >= 1; }, text: 'B: build walls round a space, with a door. The roof comes by itself' },
+    { done: function () { return baseComfort().has.hearth; }, text: 'Put a hearth inside your hut (B, a few stones and wood)' },
+    { done: function () { return baseComfort().has.bench; }, text: 'Put a workbench in it: it only works under a roof' },
+    { done: function () { return baseComfort().n >= 4; }, text: 'A rug on the floor makes a home: Comfort 4 (leather and fiber)' },
     { done: function () { return B.items.some(function (it) { return it.bed; }); }, text: 'Build a bed in the hut: sleep through the night' }
   ];
   function hasItem(kind) { return slots.some(function (s) { return s && s.kind === 'item' && s.item.kind === kind; }); }
@@ -1413,7 +1437,7 @@ __COMBAT__
       });
       B.items.forEach(function (it) {
         if (Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
-        var s = sprite(it.name, 0); items.push({ y: it.y, f: function () { ctx.drawImage(s.cv, it.x + s.l, it.y * K + s.t, s.w, s.h); if (it.loot) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something
+        var s = sprite(it.name, 0); items.push({ y: it.name === 'rug' ? it.y - 300 : it.y, f: function () { ctx.drawImage(s.cv, it.x + s.l, it.y * K + s.t, s.w, s.h); if (it.loot) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something
       });
       if (npc && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); bubble(ctx); } });
       if (roomInfo) roomInfo.rooms.forEach(function (r, ri) {
@@ -1641,7 +1665,7 @@ __COMBAT__
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
