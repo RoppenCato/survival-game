@@ -449,7 +449,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Panels:** the character panel hero always faces south; the bag is aligned right with the same margin (8) as the
   character panel; Sort is a small button on top of the bag (three small rectangles); tooltips draw above boards;
   Brokk's bubble draws on top of roofs.
-- **Carrying things (2026-10-05):** at rest a tool or sword hangs down beside the leg, **held**: `heroPose` sends the
+- **Carrying things (2026-10-05):** at rest a tool or sword is carried up at the shoulder (hand at the hip, the thing pointing up and outward past the chin, behind the body when facing away), **held**: `heroPose` sends the
   figure's arm on that side to the grip (`carried`), and the thing is drawn there at 0.85 (`swordPose` rest branch in
   `src/combat.js`; axes and picks 11 units long, swords 15), in every direction. The sheath is not drawn when a page holds
   items. `node tools/visual/poses.js` renders the hero carrying each thing, standing and walking, in four

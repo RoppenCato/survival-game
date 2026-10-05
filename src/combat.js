@@ -1014,8 +1014,8 @@ function swordPose(dir) {
     var side = (p.guard && S.shield) ? -guardSide() : 1;
     // at rest the thing hangs down at the side from a straight arm, the way you carry an axe when you walk
     // carried: the hand at the hip and the thing pointing up past the shoulder, resting on it, so it stays short and clear
-    if (dir === 'left') { o.hx = -4; o.hy = -9; o.ca = 0.42; o.sa = -0.91; }       // over the shoulder, leaning back, so the head sits behind the hair
-    else if (dir === 'right') { o.hx = 4; o.hy = -9; o.ca = -0.42; o.sa = -0.91; }
+    if (dir === 'left') { o.hx = -4; o.hy = -9; o.ca = -0.66; o.sa = -0.75; }      // up and forward past the chin, clear of the face
+    else if (dir === 'right') { o.hx = 4; o.hy = -9; o.ca = 0.66; o.sa = -0.75; }
     else { o.hx = side * 6.5; o.hy = -9; o.ca = side * 0.55; o.sa = -0.84; }        // leaning outward, clear of the face
     o.len = 13; o.front = dir !== 'up'; o.side = side; o.atk = false;
   }
