@@ -294,6 +294,12 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   in the hotbar: in build mode the bar shows the belt, and the chosen piece is named in the bar's label. The mouse
   wheel steps through tools, pieces or the belt slot (`P.sel`). A hearth is a buildable item (`B.items`, drawn
   as a prop, solid, cookable); the camp hearth stays.
+- **HUD bars and the stats board (2026-10-05):** the health and stamina bars are small (60 units wide, the stamina bar
+  longer with a meal) with the numbers beside them ("72 / 100"), drawn in `drawHud` in `src/combat.js`. The character
+  panel has two tabs, **Gear | Stats**: the stats page (`statRows`) lists health, stamina (and how fast it comes
+  back), attack (the damage number you see in the world, and the heavy swing), arrow damage, crit chance (15%) and
+  crit damage (x1.5), defense (the share of a blow turned aside, at most 60%), walk and run speed, and the chop, mine
+  and cut power of the tools in hand. It reads the live numbers, so food, gear and tools change it.
 - **The character panel** slides in from the left on Tab while the bag slides in from the right (one key, two
   boards; Robin: fewer menus). Wood outside, leather inside; the hero drawn large and turning in the middle
   (`playerD`, like the Character Editor), five equipment slots on the left (helmet, cloak, tunic, trousers, boots)

@@ -4352,10 +4352,14 @@ function drawNums(c) {
 }
 function drawHud(c) {
   var i, bigRow = 0;
-  bar(c, 10, 10, 84, 7, P.hp / P.maxHp, '#e8584a');
-  bar(c, 10, 22, 84 * maxSt() / 100, 5, P.st / maxSt(), P.st < 22 ? '#d6b54a' : '#7fd66d');
-  c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36';
-  if (!(api.scene && api.scene.noKills)) { var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 40); c.fillStyle = '#fff'; c.fillText(txt, 10, 40); }
+  var mst = maxSt(), bw = 60, stw = bw * mst / 100;       // small bars with the numbers beside them
+  bar(c, 10, 8, bw, 5, P.hp / P.maxHp, '#e8584a');
+  bar(c, 10, 17, stw, 3.5, P.st / mst, P.st < 22 ? '#d6b54a' : '#7fd66d');
+  c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2; c.strokeStyle = '#3a2a36'; c.fillStyle = '#fff';
+  var hpTxt = Math.ceil(Math.max(0, P.hp)) + ' / ' + Math.round(P.maxHp), stTxt = Math.round(Math.max(0, P.st)) + ' / ' + Math.round(mst);
+  c.strokeText(hpTxt, 10 + bw + 5, 12.6); c.fillText(hpTxt, 10 + bw + 5, 12.6); c.strokeText(stTxt, 10 + stw + 5, 20.6); c.fillText(stTxt, 10 + stw + 5, 20.6);
+  c.font = 'bold 8px system-ui, sans-serif'; c.lineWidth = 2.4;
+  if (!(api.scene && api.scene.noKills)) { var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 34); c.fillStyle = '#fff'; c.fillText(txt, 10, 34); }
   for (i = 0; i < W.enemies.length; i++) {
     var e = W.enemies[i];
     if (e.dead) continue;
