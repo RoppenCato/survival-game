@@ -192,8 +192,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - Other people are the hero's figure with their own spec: `lib.makeFigure(spec)` then `lib.figureD(c, x, y, dir, an,
   pose, F)`. `FOLK` in `src/art.js` holds them (`lib.folkSpec(key)`); spec key `beard` adds a beard.
 - The first is Brokk, a friendly dwarf smith (dwarfs are from Norse myth). He stands at the home camp in the Sea
-  Editor, turns to watch the hero, and E talks to him (a speech bubble cycling through a few lines). He does not
-  walk, trade or give tasks yet.
+  Editor and by the well of the broken village in the game, turns to watch the hero, and E talks to him (a speech
+  bubble cycling through a few lines). He does not walk, trade or give tasks yet.
 
 ## The game (templates/game.html)
 
@@ -217,11 +217,23 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   still to do).
 - **Scale (2026-10-05):** the hero walks at 84 units a second (was 118); islands default to 160 tiles (1.6 km)
   in `World.DEF`, the Sea Editor and the game.
-- **Building** on **B** through `Build`: five pieces (log wall, plank floor, door, window, stone wall) at low cost
-  (2 wood, 1 wood, 2 wood, 2 wood, 2 stone), chosen with 1 to 5, placed with the mouse (drag lays floors and walls),
-  only on land, away from trees and rocks, within reach. **F** toggles the red crossed wreck cursor, which gives
-  the material back in full. Closed rooms get a turf roof that fades when the hero is inside; walls are collision
-  circles near the hero. `Combat.api.buildSlots` feeds the build hotbar; `P.piece` and `P.wreck` hold the state.
+- **Building** on **B** through `Build`: `PIECES` in the page, at low cost, placed with the mouse (drag lays
+  floors, walls and fences), only on land, away from trees and rocks, within reach. **F** toggles the red crossed
+  wreck cursor, which gives the material back in full. Closed rooms get a roof that fades when the hero is
+  inside; walls are collision circles near the hero. `P.piece` and `P.wreck` hold the state.
+  **The pieces (2026-10-05):** walls in five materials (logs, planks, wattle, stone, turf), door, window; floors
+  in three (planks, packed earth, stone flags: `B.floors[key]` is the material index); yard pieces **fence**,
+  **gate** and **palisade** (`Build.YARD`: they stop you, the gate opens as you come near, but they never close a
+  room, so a yard stays open to the sky); **roofs** (turf, thatch, shingles: point at a closed room or its drawn
+  roof; `B.roofs[roomId]`); and things from the prop kit: workbench, hearth, bed, chair, bench seat, table, barrel,
+  crate, woodpile, drying rack, brazier (a light at night: `it.light`), well, haystack, shield rack, bee skeps,
+  cart, dragon post. Prop pieces take their board icon from the baked sprite (`propIcon`, `ICON_SCALE`). The
+  wreck cursor gives back what the piece cost (`pieceFor`, `costOf`, `costOfFloor`, `costOfItem`); laying a
+  floor over another gives the old one back. Crates and barrels are only looks for now (no storage).
+  **The build cursor:** a faint dotted tile grid round the cursor, the piece drawn where it would stand (green
+  glow when it can go there, red when not), and a label by the cursor with the name and cost, or the reason it
+  cannot go there ("Too far", "Not on land", "Something stands here already", "Need 2 wood", "Point at a closed
+  room"); the wreck cursor says what it gives back (`ghostLabel`, drawn on the HUD).
 - **Build menu:** right click in build mode opens a big centred wooden board (8 by 4 cells, most empty for later
   pieces, a "Building [n]" tab); click a piece to pick it. Wrecking is only on F (no cell for it). Pieces are not
   in the hotbar: in build mode the bar shows the belt, and the chosen piece is named in the bar's label. The mouse
@@ -272,6 +284,18 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   time you slay that creature (`learn(key)` from `onDeath`; `e.kind` names it); unknown beasts are dark
   silhouettes with "?". `BESTIARY` holds the cards (all six animals written, only boars exist in the game yet);
   `book` (slain counts) is saved. Creature ideas (Norse myth and nordiska väsen) are in `docs/idea-bank.md`.
+- **The broken village (step 6, 2026-10-05):** Hildir's steading, abandoned, on the home island. `villageSite`
+  finds a flat 14 by 12 tile stretch of grass 350 to 800 from camp from the island seed; `villageClear` (every
+  start) clears its trees and bushes, scatters rubble and places Brokk; `villageBuild` (a fresh start only)
+  writes the pieces into `B`, so they are saved and can be wrecked for their wood and stone: a burnt log hall
+  with five gaps knocked out and a hearth inside, a small wattle hut still whole with a thatch roof, a bed and a
+  crate (a house to learn from), a stone house half gone with a barrel and the well beside it, a palisade with
+  gaps and a gate on the north side, a fence, and a woodpile, cart, drying rack, haystack, shield rack, brazier
+  and dragon post. **Crates and barrels with `it.loot`** (counts per kind, `arrows` to the quiver, `thing` a
+  made item) show a glint; E opens one and empties it (`openCrate`). **Brokk** (`npc`, the dwarf figure from
+  `FOLK`) stands by the well, turns to watch the hero, and E talks to him: five lines (`NPC_LINES`) about the
+  steading, Ragnar Ironside's crew who burnt it and sailed east, how a house is built, and the crates. He does not
+  walk, trade or give tasks. Old saves get the cleared site and Brokk but no pieces.
 - **The first minute:** a hint line at the top centre (`HINTS`), one at a time, each gone when its condition is
   met: pick up the branches, make an axe and a knife, take them up, cut and chop, build a hut and a workbench.
 - **Sound:** on in the game (`S.sound = true`); the Combat Arena's synthesized set copied into the page, plus
@@ -309,7 +333,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   position), stumps, hero position. Saved on every change, every 10 s and on leaving; loaded on start. "New
   island" deletes it. Boars and dropped items are not saved.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
-- Not built: Brokk, boats, real per-animal attacks, night-only beasts, the broken village.
+- Not built: boats, night-only beasts, trading, storage in crates, the torch.
 
 ## Controls and modes (decided 2026-10-04)
 
