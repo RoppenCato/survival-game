@@ -219,6 +219,18 @@ function crate(c, K, x, y, s, seed, rot) {
   c.restore();
 }
 
+// a chest: a wooden box with a lid, two iron bands and a brass lock (storage the player builds)
+function chestObj(c, K, x, y, s, seed) {
+  var w = s, h = s * 0.62, dp = s * 0.26, rd = 2 + 2 * P.round;
+  gshadow(c, x + 3, y + 1, w * 0.75, 4.5);
+  shape(c, [[x + w / 2, y - h], [x + w / 2 + dp, y - h - dp * 0.7], [x + w / 2 + dp, y - dp * 0.7], [x + w / 2, y]], K.wallDark, { seed: seed + 4, size: 'M', flat: true, rough: 0.3 });
+  shape(c, [[x - w / 2, y - h], [x - w / 2 + dp, y - h - dp * 0.7], [x + w / 2 + dp, y - h - dp * 0.7], [x + w / 2, y - h]], K.wood, { seed: seed + 2, size: 'M', sh: 1.5, rough: 0.3 });
+  shape(c, rrPts(x - w / 2, y - h, w, h, rd), K.wood, { seed: seed, size: 'M', rough: 0.3 });
+  line(c, [[x - w / 2 + 1, y - h * 0.6], [x + w / 2 - 1, y - h * 0.6]], 1.6, K.wood.shade, false);
+  [-0.3, 0.3].forEach(function (t, i) { shape(c, rrPts(x + w * t - 2.5, y - h - 1, 5, h + 2, 1.5), K.iron, { seed: seed + 6 + i, size: 'S', flat: true }); });
+  shape(c, rrPts(x - 3, y - h * 0.62 - 1, 6, 7, 1.5), K.brass, { seed: seed + 9, size: 'S', sh: 1, rough: 0.2 });
+}
+
 function barrel(c, K, x, y, s, seed) {
   var w = s * 0.62, h = s;
   gshadow(c, x + 2, y + 1, w * 0.7, 4);
@@ -1407,6 +1419,7 @@ var PROPS = {
   fence: { b: [-20, -50, 100, 10], f: function (c, K, s) { fence(c, K, 0, 0, 5, s); } },
   crate: { b: [-30, -50, 40, 10], f: function (c, K, s) { crate(c, K, 0, 0, 28, s, 0); } },
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
+  chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },
 };
 function bakeProp(name, seed, opts) {
   opts = opts || {};

@@ -232,7 +232,16 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   crate, woodpile, drying rack, brazier (a light at night: `it.light`), well, haystack, shield rack, bee skeps,
   cart, dragon post. Prop pieces take their board icon from the baked sprite (`propIcon`, `ICON_SCALE`). The
   wreck cursor gives back what the piece cost (`pieceFor`, `costOf`, `costOfFloor`, `costOfItem`); laying a
-  floor over another gives the old one back. Crates and barrels are only looks for now (no storage).
+  floor over another gives the old one back.
+- **Storage (2026-10-05):** a **chest** is a buildable piece (8 wood, prop `chest` in the kit) with twelve slots
+  (`it.store`, saved with `B`, things remade on load). **E** at a chest opens it with the bag: the chest's board
+  takes the character panel's place on the left; a click on a stack moves it across (`transfer`), drag and drop
+  works between the two boards (chest slots are numbered from 100 so `slotGet`/`slotSet`, `slotAt` and `dropOn`
+  reach both), and dragging off the boards still drops on the ground. It closes when you walk away. A chest
+  with things in it cannot be wrecked ("Empty it first"). **Crates, barrels and chests break** under a tool in
+  gather mode (`BREAK`: the axe is the right tool; `harvest.list` offers them as boxes, `breakBox`): what was
+  inside falls out (village loot `it.loot`/`it.thing`, a chest's contents) plus a little wood. The village's
+  crates are opened this way, not with E; a glint marks those still holding something.
   **The build cursor:** a faint dotted tile grid round the cursor, the piece drawn where it would stand (green
   glow when it can go there, red when not), and a label by the cursor with the name and cost, or the reason it
   cannot go there ("Too far", "Not on land", "Something stands here already", "Need 2 wood", "Point at a closed
@@ -295,7 +304,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   crate (a house to learn from), a stone house half gone with a barrel and the well beside it, a palisade with
   gaps and a gate on the north side, a fence, and a woodpile, cart, drying rack, haystack, shield rack, brazier
   and dragon post. **Crates and barrels with `it.loot`** (counts per kind, `arrows` to the quiver, `thing` a
-  made item) show a glint; E opens one and empties it (`openCrate`). **Brokk** (`npc`, the dwarf figure from
+  made item) show a glint; break one with the axe and it spills out (`breakBox`). **Brokk** (`npc`, the dwarf figure from
   `FOLK`) stands by the well, turns to watch the hero, and E talks to him: five lines (`NPC_LINES`) about the
   steading, Ragnar Ironside's crew who burnt it and sailed east, how a house is built, and the crates. He does not
   walk, trade or give tasks. Old saves get the cleared site and Brokk but no pieces.
@@ -336,7 +345,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   position), stumps, hero position. Saved on every change, every 10 s and on leaving; loaded on start. "New
   island" deletes it. Boars and dropped items are not saved.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
-- Not built: boats, night-only beasts, trading, storage in crates, the torch.
+- Not built: boats, night-only beasts, trading, the torch.
 
 ## Controls and modes (decided 2026-10-04)
 

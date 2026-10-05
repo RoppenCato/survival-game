@@ -78,7 +78,7 @@ The quiver is built (the character panel); step 3 adds making arrows and new arr
 
 Depends on: Q1 (which väsen first).
 
-## Step 6: the broken village, the first friend, and trading (2026-10-05: the broken steading is built from the building pieces with loot crates, and Brokk stands there with the tale of Ragnar Ironside; still to do: the living village, trading, storage)
+## Step 6: the broken village, the first friend, and trading (2026-10-05: the broken steading is built from the building pieces with loot crates, and Brokk stands there with the tale of Ragnar Ironside; chests for storage and breakable crates and barrels added the same day; still to do: the living village, trading)
 
 - On the home island (decided): an abandoned, broken village. Fallen walls, a burnt longhouse, a palisade with
   gaps, things left behind. It shows the player how a village is built and set up, and that the world has

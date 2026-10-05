@@ -74,7 +74,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <dt><kbd>Esc</kbd></dt><dd>The menu: continue, a sandbox to try things out in, restart with nothing, a new island, the music volume and the evening theme</dd>
           <dt><kbd>B</kbd></dt><dd>The board: Building, Crafting (made by hand, anywhere) and Workbench (only with a roof over it). Recipes show as ? until you have picked up every kind of thing they need. Build mode. <kbd>Right click</kbd> opens the board of pieces: pick one, then click to place it (drag for walls and floors). <kbd>F</kbd> turns the cursor into the wreck cursor: the piece under it glows red, and a click takes it down and gives the material back</dd>
           <dt><kbd>Mouse wheel</kbd></dt><dd>Step through the hotbar: tools in gather mode, pieces in build mode, the belt in fight mode</dd>
-          <dt><kbd>E</kbd></dt><dd>At a hearth: the board on its Hearth tab, to cook. At a runestone: read it. At a bed, from dusk: sleep until morning. At a crate with a glint: open it. At Brokk: talk</dd>
+          <dt><kbd>E</kbd></dt><dd>At a hearth: the board on its Hearth tab, to cook. At a runestone: read it. At a bed, from dusk: sleep until morning. At a chest: open it beside the bag (click moves things across). At Brokk: talk</dd>
           <dt><kbd>Right click</kbd> on a thing</dt><dd>In the bag: equip it (a sword to the weapon slot, an axe to the axe slot). On the character panel: take it off into the bag. Drag a thing off the boards to drop it on the ground; walk over it to pick it up again</dd>
           <dt><kbd>C</kbd></dt><dd>The casting cloth: the runes you have learnt lie in the pouch on the left; drag one into a hollow of its kind on the board to use it. Attack runes then sit on the fight hotbar and are cast with their number. Runes are learnt by deeds (fell fifteen trees, block fifteen blows, slay five beasts), by reading runestones with <kbd>E</kbd>, and more to come. Not in a fight</dd>
           <dt><kbd>L</kbd></dt><dd>The Book of Beasts. Every creature gets a page the first time you slay one: what it is, its strengths and weaknesses, how it warns you, what it drops. Click the small book by the chart to open it too</dd>
@@ -87,7 +87,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <p class="desc" style="margin-top:0">Trees take a few chops with the axe and fall. Rocks crack as you mine them and break apart. Bushes are cut with the knife. What falls out lies on the ground until you walk over it, and lands in your inventory.</p>
         <p class="desc">The bow shoots from the quiver: you start with twenty wood arrows, and most arrows that miss land on the ground and can be picked up again. Making more arrows comes with the workbench.</p>
         <p class="desc">Six kinds of beast live on the island, each on its own ground: boars and deer in the open, adders on the grass by the beach, wolves in pairs in the dark forest, and far from camp, in the deepest woods, moose and a bear. They keep to their home ranges and leave you alone until you come close; the deer runs, the rest charge. Meat and hide from most; antler from the moose. Berry bushes give berries.</p>
-        <p class="desc">Somewhere inland is a broken steading: a burnt hall, a hut still standing, a stone house and a palisade with gaps, crates with things left behind, and Brokk the smith by the well, who will tell you what happened. The pieces are the same you build with, and the wreck cursor takes them apart for their wood and stone.</p>
+        <p class="desc">Somewhere inland is a broken steading: a burnt hall, a hut still standing, a stone house and a palisade with gaps, crates with things left behind (break them open with the axe), and Brokk the smith by the well, who will tell you what happened. The pieces are the same you build with, and the wreck cursor takes them apart for their wood and stone. A chest you build holds twelve stacks.</p>
         <p class="desc">Food never punishes you: you do not have to eat. Eat, and you heal; cook a meal at the hearth and your health keeps coming back for minutes, with your top health raised. Roast boar is good; boar and berry stew is better. Open the bag and click food to eat it, or put food on the belt and press its number.</p>
         <p class="desc">Building is cheap: a wall, door or window costs two wood (a stone wall two stone), a floor tile one wood, and a hearth of your own four stone and two wood (you can cook at it like the one at camp). Close a loop of walls and a turf roof appears by itself, and fades when you step inside. Add a door, or you will not get in.</p>
         <p class="desc">Your island, inventory, buildings and felled trees are saved in this browser and are there when you come back. "New island" throws it all away and starts again.</p>
@@ -1344,6 +1344,18 @@ function crate(c, K, x, y, s, seed, rot) {
   c.restore();
 }
 
+// a chest: a wooden box with a lid, two iron bands and a brass lock (storage the player builds)
+function chestObj(c, K, x, y, s, seed) {
+  var w = s, h = s * 0.62, dp = s * 0.26, rd = 2 + 2 * P.round;
+  gshadow(c, x + 3, y + 1, w * 0.75, 4.5);
+  shape(c, [[x + w / 2, y - h], [x + w / 2 + dp, y - h - dp * 0.7], [x + w / 2 + dp, y - dp * 0.7], [x + w / 2, y]], K.wallDark, { seed: seed + 4, size: 'M', flat: true, rough: 0.3 });
+  shape(c, [[x - w / 2, y - h], [x - w / 2 + dp, y - h - dp * 0.7], [x + w / 2 + dp, y - h - dp * 0.7], [x + w / 2, y - h]], K.wood, { seed: seed + 2, size: 'M', sh: 1.5, rough: 0.3 });
+  shape(c, rrPts(x - w / 2, y - h, w, h, rd), K.wood, { seed: seed, size: 'M', rough: 0.3 });
+  line(c, [[x - w / 2 + 1, y - h * 0.6], [x + w / 2 - 1, y - h * 0.6]], 1.6, K.wood.shade, false);
+  [-0.3, 0.3].forEach(function (t, i) { shape(c, rrPts(x + w * t - 2.5, y - h - 1, 5, h + 2, 1.5), K.iron, { seed: seed + 6 + i, size: 'S', flat: true }); });
+  shape(c, rrPts(x - 3, y - h * 0.62 - 1, 6, 7, 1.5), K.brass, { seed: seed + 9, size: 'S', sh: 1, rough: 0.2 });
+}
+
 function barrel(c, K, x, y, s, seed) {
   var w = s * 0.62, h = s;
   gshadow(c, x + 2, y + 1, w * 0.7, 4);
@@ -2532,6 +2544,7 @@ var PROPS = {
   fence: { b: [-20, -50, 100, 10], f: function (c, K, s) { fence(c, K, 0, 0, 5, s); } },
   crate: { b: [-30, -50, 40, 10], f: function (c, K, s) { crate(c, K, 0, 0, 28, s, 0); } },
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
+  chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },
 };
 function bakeProp(name, seed, opts) {
   opts = opts || {};
@@ -5232,6 +5245,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 9, cost: { wood: 4 } },
     { id: 'barrel', name: 'Barrel', kind: 'item', prop: 'barrel', r: 6, cost: { wood: 3 } },
     { id: 'crate', name: 'Crate', kind: 'item', prop: 'crate', r: 7, cost: { wood: 3 } },
+    { id: 'chest', name: 'Chest', kind: 'item', prop: 'chest', r: 8, chest: true, cost: { wood: 8 } },
     { id: 'woodpile', name: 'Woodpile', kind: 'item', prop: 'woodpile', r: 8, cost: { wood: 5 } },
     { id: 'rack', name: 'Drying rack', kind: 'item', prop: 'dryingRack', r: 8, cost: { wood: 4, fiber: 2 } },
     { id: 'brazier', name: 'Brazier', kind: 'item', prop: 'brazier', r: 5, light: 1, cost: { stone: 2, wood: 2 } },
@@ -5242,7 +5256,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 11, cost: { wood: 8 } },
     { id: 'post', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 5, cost: { wood: 4 } }
   ];
-  var ICON_SCALE = { woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
+  var ICON_SCALE = { chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   function propIcon(c, name) {             // a prop's baked sprite, shrunk to fit a board cell
     var s = sprite(name, 0), sc = ICON_SCALE[name] || Math.min(18 / s.w, 18 / s.h);
     c.drawImage(s.cv, -s.w * sc / 2, -s.h * sc / 2 + 1, s.w * sc, s.h * sc);
@@ -5351,7 +5365,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(); if (!mouseW || P.mode !== 'build') return null;
     var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(mouseW.y / T), far = Math.hypot(mouseW.x - P.x, mouseW.y - P.y) > 150, i;
     if (P.wreck) {
-      for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - mouseW.y) < 16) return { kind: 'item', item: B.items[i], idx: i, ok: !far };
+      for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - mouseW.y) < 16) { var full = B.items[i].store && B.items[i].store.some(function (q) { return !!q; }); return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
       var ed = Build.edgeAt(mouseW.x, mouseW.y), k = Build.key(ed.x, ed.y);
       if (ed.d < 0.3 && B[ed.L][k]) return { kind: 'edge', ed: ed, has: B[ed.L][k], ok: !far };
       var fk = Build.key(tx, ty); return { kind: 'tile', tx: tx, ty: ty, ok: !far && B.floors[fk] != null };
@@ -5377,7 +5391,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       else { pay(costOfFloor(B.floors[Build.key(t.tx, t.ty)]), 1); delete B.floors[Build.key(t.tx, t.ty)]; }
       bDirty = true; save(); return;
     }
-    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); B.items.push({ name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, light: t.piece.light || 0 }); sfx('build'); save(); return; }
+    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, light: t.piece.light || 0 }; if (t.piece.chest) { nit.store = []; for (var si = 0; si < STORE_N; si++) nit.store.push(null); } B.items.push(nit); sfx('build'); save(); return; }
     if (t.kind === 'roof') { if (!first) return; pay(t.piece.cost); if (!B.roofs) B.roofs = {}; B.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
     var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : 'F' + Build.key(t.tx, t.ty);
     var drags = t.piece.id === 'floor' || t.piece.id === 'wall' || t.piece.id === 'fence' || t.piece.id === 'palisade';
@@ -5413,7 +5427,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.shadowColor = 'rgba(255,70,50,0.95)'; c.shadowBlur = 14; c.fillStyle = 'rgba(255,80,60,' + (t.ok ? 0.38 : 0.14) + ')';
       c.fillRect(r.x, r.y, r.w, r.h); c.fillRect(r.x, r.y, r.w, r.h); c.shadowBlur = 0;
       if (t.ok) { c.strokeStyle = 'rgba(255,120,100,0.9)'; c.lineWidth = 1.4; c.strokeRect(r.x, r.y, r.w, r.h); c.beginPath(); c.moveTo(r.x, r.y); c.lineTo(r.x + r.w, r.y + r.h); c.moveTo(r.x + r.w, r.y); c.lineTo(r.x, r.y + r.h); c.stroke(); }
-      if (t.ok && back) ghostLabel = { text: 'Wreck: +' + costText(back), bad: false }; else if (!t.ok && t.kind !== 'tile') ghostLabel = { text: 'Too far', bad: true };
+      if (t.ok && back) ghostLabel = { text: 'Wreck: +' + costText(back), bad: false }; else if (!t.ok && t.kind !== 'tile') ghostLabel = { text: t.why || 'Too far', bad: true };
     } else {                           // the piece as it would stand, its footprint, and the reason if it cannot go there
       var col = t.ok ? '120,255,160' : '255,80,60';
       c.globalAlpha = t.ok ? 0.65 : 0.35;
@@ -5467,7 +5481,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      into B on a fresh start, so they are saved and can be wrecked for their wood and stone; the site, the rubble
      and Brokk's place come from the island seed every time. */
   var village = null, npc = null;
-  var NPC_LINES = ['Well met. I am Brokk, a smith, and all that is left here. This was Hildir\'s steading.', 'Two winters back a longship came up the sound. Ragnar Ironside\'s crew. They burnt the hall and took the young ones.', 'Look at the hut: that is how a house is made. Walls all round, a door, and the roof comes of itself.', 'Take what is in the crates; nobody here needs it now. The stone house still has its well.', 'They sailed east, towards the rivers. One day you will want a ship, and a crew, and then we will talk again.'];
+  var NPC_LINES = ['Well met. I am Brokk, a smith, and all that is left here. This was Hildir\'s steading.', 'Two winters back a longship came up the sound. Ragnar Ironside\'s crew. They burnt the hall and took the young ones.', 'Look at the hut: that is how a house is made. Walls all round, a door, and the roof comes of itself.', 'Break open the crates with your axe; nobody here needs what is in them now. The stone house still has its well.', 'They sailed east, towards the rivers. One day you will want a ship, and a crew, and then we will talk again.'];
   function villageSite() {               // a flat stretch of grass 10 by 12 tiles, 350 to 800 from the camp, from the island seed
     var R = kit.rng(spec.seed * 13 + 5), tries, best = null;
     for (tries = 0; tries < 400 && !best; tries++) {
@@ -5517,13 +5531,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
     roofLater = { tx: vx + 9, ty: vy + 1, m: 1 };          // the hut's thatch is set once the rooms are known
   }
   var roofLater = null;
-  function crateNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.loot && Math.hypot(P.x - it.x, P.y - it.y) < 36) return it; } return null; }
-  function openCrate(it) {
-    var got = [], q;
-    for (q in it.loot) { if (q === 'arrows') { quiverAdd('arrow', it.loot[q]); got.push(it.loot[q] + ' arrows'); } else if (addItem(q, it.loot[q])) got.push(it.loot[q] + ' ' + NAMES[q].toLowerCase()); else drop(q, it.x, it.y + 10, it.loot[q]); }
-    if (it.thing) { var th = Items.make(it.thing[0], it.thing[1]); if (!addThing(th)) dropThing(th, it.x, it.y + 10); got.push(th.name); }
-    it.loot = null; it.thing = null; sfx('pick'); toast('Found ' + got.join(', ')); save();
-  }
   function nearNpc(P) { return npc && Math.hypot(P.x - npc.x, P.y - npc.y) < 40; }
   function talk() { npc.say = NPC_LINES[npc.line % NPC_LINES.length]; npc.line++; npc.sayT = 5; }
   function drawNpc(c) {
@@ -5595,12 +5602,30 @@ if (typeof module !== 'undefined') module.exports = Combat;
     things.sort(function (a, b) { return Items.ORDER.indexOf(a.item.kind) - Items.ORDER.indexOf(b.item.kind); }).forEach(function (t) { if (i < SLOTS) slots[i++] = t; });
     recount(); save();
   }
-  function useSlot(i) { var s = slots[i]; if (!s) return; if (FOOD[s.kind]) eat(s.kind); else if (s.kind === 'item') equipFromBag(i); }
+  /* ---------- storage: a chest you build, opened with E; its slots count from 100 so the bag's drag and drop reaches them ---------- */
+  var STORE_N = 12, store = null;           // store: the open chest (a B.items entry with .store)
+  function slotGet(i) { return i >= 100 ? (store ? store.store[i - 100] : null) : slots[i]; }
+  function slotSet(i, v) { if (i >= 100) { if (store) store.store[i - 100] = v; } else slots[i] = v; }
+  function storeNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.store && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
+  function storeAdd(s) {                   // a stack or thing into the open chest: like kinds first, then an empty slot; returns what did not fit
+    if (!store) return s;
+    var i, t;
+    if (s.kind !== 'item') for (i = 0; i < STORE_N && s.n > 0; i++) { t = store.store[i]; if (t && t.kind === s.kind && t.n < STACK) { var take = Math.min(s.n, STACK - t.n); t.n += take; s.n -= take; } }
+    for (i = 0; i < STORE_N && (s.kind === 'item' ? s : s.n > 0); i++) if (!store.store[i]) { store.store[i] = s; return null; }
+    return s.kind === 'item' || s.n > 0 ? s : null;
+  }
+  function transfer(i) {                   // a click while a chest is open moves the stack across
+    var s = slotGet(i); if (!s) return;
+    if (i >= 100) { var left = s.kind === 'item' ? (addThing(s.item) ? 0 : 1) : addItem(s.kind, s.n); if (!left) slotSet(i, null); else if (s.kind !== 'item') s.n = left; }
+    else { var rest = storeAdd(s.kind === 'item' ? s : { kind: s.kind, n: s.n }); slotSet(i, rest && rest.kind === 'item' ? s : (rest && rest.n > 0 ? { kind: s.kind, n: rest.n } : null)); }
+    recount(); sfx('pick'); save();
+  }
+  function useSlot(i) { var s = slotGet(i); if (!s) return; if (store) transfer(i); else if (FOOD[s.kind]) eat(s.kind); else if (s.kind === 'item') equipFromBag(i); }
   function dropOn(from, to) {             // drag and drop: merge like kinds, otherwise swap
     if (from === to || from < 0 || to < 0) return;
-    var a = slots[from], b = slots[to];
-    if (a && b && a.kind === b.kind && a.kind !== 'item' && b.n < STACK) { var take = Math.min(a.n, STACK - b.n); b.n += take; a.n -= take; if (!a.n) slots[from] = null; }
-    else { slots[from] = b; slots[to] = a; }
+    var a = slotGet(from), b = slotGet(to);
+    if (a && b && a.kind === b.kind && a.kind !== 'item' && b.n < STACK) { var take = Math.min(a.n, STACK - b.n); b.n += take; a.n -= take; if (!a.n) slotSet(from, null); }
+    else { slotSet(from, b); slotSet(to, a); }
     recount(); save();
   }
   function toast(txt) { var P = hero(); Combat.dbg().W.nums.push({ x: P.x, y: P.y - 20, t: 0, txt: txt, c: '#ffffff', big: false }); }
@@ -5843,7 +5868,31 @@ if (typeof module !== 'undefined') module.exports = Combat;
   INV.x = 400 - INV.w - 24; INV.y = 80;
   function invLeft() { return INV.x + (1 - INV.slide) * (INV.w + 40); }
   function slotRect(i) { var x0 = invLeft(); return { x: x0 + 6 + (i % COLS) * CELL, y: INV.y + 16 + Math.floor(i / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
-  function slotAt() { if (!mouseS || INV.slide < 0.9) return -1; for (var i = 0; i < SLOTS; i++) { var r = slotRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return i; } return -1; }
+  var STORE_UI = { x: 8, y: 80, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };
+  function storeLeft() { return STORE_UI.x - (1 - INV.slide) * (STORE_UI.w + 40); }
+  function storeRect(j) { var x0 = storeLeft(); return { x: x0 + 6 + (j % COLS) * CELL, y: STORE_UI.y + 16 + Math.floor(j / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
+  function slotAt() {
+    if (!mouseS || INV.slide < 0.9) return -1; var i, r;
+    for (i = 0; i < SLOTS; i++) { r = slotRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return i; }
+    if (store) for (i = 0; i < STORE_N; i++) { r = storeRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return 100 + i; }
+    return -1;
+  }
+  function drawStore(c) {                  // the open chest's board, on the left where the character panel sits
+    var x0 = storeLeft(), i, hov = slotAt();
+    wood(c, x0, STORE_UI.y, STORE_UI.w, STORE_UI.h);
+    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Chest', x0 + 8, STORE_UI.y + 11);
+    c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'right'; c.fillText('click moves across', x0 + STORE_UI.w - 6, STORE_UI.y + 11);
+    for (i = 0; i < STORE_N; i++) {
+      var r = storeRect(i), s = store.store[i];
+      c.fillStyle = hov === 100 + i ? '#5c3e2a' : '#452c1b'; c.fillRect(r.x, r.y, r.w, r.h);
+      c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = 1; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+      if (s && !(pick && pick.drag && pick.i === 100 + i)) {
+        if (s.kind === 'item') { c.save(); c.translate(r.x + r.w / 2, r.y + r.h / 2); Items.icon(c, s.item, 14); c.restore(); }
+        else drawDropIcon(c, s.kind, r.x + r.w / 2, r.y + r.h / 2 + 0.5, 1.15);
+        if (s.n > 1) { c.font = 'bold 6px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'right'; c.strokeText(String(s.n), r.x + r.w - 1.5, r.y + r.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(s.n), r.x + r.w - 1.5, r.y + r.h - 1.5); }
+      }
+    }
+  }
   var BTN = [{ id: 'sort', label: 'Sort' }, { id: 'close', label: 'X' }];
   function btnRect(k) { return { x: invLeft() + INV.w - 1, y: INV.y + 6 + k * 20, w: 22, h: 17 }; }
   function btnAt() { if (!mouseS || INV.slide < 0.9) return null; for (var k = 0; k < BTN.length; k++) { var r = btnRect(k); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return BTN[k].id; } return null; }
@@ -5868,18 +5917,18 @@ if (typeof module !== 'undefined') module.exports = Combat;
         if (s.n > 1) { c.font = 'bold 6px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'right'; c.strokeText(String(s.n), r.x + r.w - 1.5, r.y + r.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(s.n), r.x + r.w - 1.5, r.y + r.h - 1.5); }
       }
     }
-    if (hov >= 0 && slots[hov] && !(pick && pick.drag)) {   // the name of what you point at, and what eating it does
-      var s2 = slots[hov], f = FOOD[s2.kind], txt = s2.kind === 'item' ? s2.item.name + '  (right click: equip)' : NAMES[s2.kind] + (f ? '  (eat: +' + f.heal + (f.time ? ', meal)' : ')') : '');
+    if (hov >= 0 && slotGet(hov) && !(pick && pick.drag)) {   // the name of what you point at, and what eating it does
+      var s2 = slotGet(hov), f = FOOD[s2.kind], txt = store ? (s2.kind === 'item' ? s2.item.name : NAMES[s2.kind]) + '  (click: move across)' : s2.kind === 'item' ? s2.item.name + '  (right click: equip)' : NAMES[s2.kind] + (f ? '  (eat: +' + f.heal + (f.time ? ', meal)' : ')') : '');
       c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + INV.w - 2, INV.y - 4); c.fillStyle = '#fff'; c.fillText(txt, x0 + INV.w - 2, INV.y - 4);
       if (s2.kind === 'item') itemCard(c, s2.item, x0 - 150, INV.y);
     }
-    if (pick && pick.drag && slots[pick.i] && mouseS) { var sd = slots[pick.i]; c.globalAlpha = 0.9; if (sd.kind === 'item') { c.save(); c.translate(mouseS.x, mouseS.y); Items.icon(c, sd.item, 16); c.restore(); } else drawDropIcon(c, sd.kind, mouseS.x, mouseS.y, 1.3); c.globalAlpha = 1; }
+    if (pick && pick.drag && slotGet(pick.i) && mouseS) { var sd = slotGet(pick.i); c.globalAlpha = 0.9; if (sd.kind === 'item') { c.save(); c.translate(mouseS.x, mouseS.y); Items.icon(c, sd.item, 16); c.restore(); } else drawDropIcon(c, sd.kind, mouseS.x, mouseS.y, 1.3); c.globalAlpha = 1; }
   }
   function drawPanels(c) {
     rows = [];
     INV.slide += ((invOpen ? 1 : 0) - INV.slide) * 0.25; if (INV.slide < 0.01 && !invOpen) INV.slide = 0;
     CHAR.slide = INV.slide;
-    if (INV.slide > 0.01) { drawChar(c); drawInv(c); }
+    if (INV.slide > 0.01) { if (store) drawStore(c); else drawChar(c); drawInv(c); }
 
   }
   function rowAt() { if (!mouseS) return null; for (var i = 0; i < rows.length; i++) { var r = rows[i]; if (mouseS.x > r.x0 && mouseS.x < r.x1 && Math.abs(mouseS.y - r.y) < 9) return r.item; } return null; }
@@ -5890,9 +5939,21 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function drop(kind, x, y, n) {
     for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, v = 30 + Math.random() * 50; drops.push({ kind: kind, x: x, y: y, z: 10, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7, vz: 90 + Math.random() * 60, t: 0, spin: Math.random() * 6.283 }); }
   }
+  // Crates, barrels and chests break under a tool (the axe is the right one): what was inside falls out, and a little wood.
+  var BREAK = { crate: 3, barrel: 3, chest: 6 }, hvMap = new WeakMap();
+  function hvOf(it) { var h = hvMap.get(it); if (!h) { h = { x: it.x, y: it.y, r: it.r || 7, kind: 'tree', box: it, hp: BREAK[it.name], max: BREAK[it.name], name: it.name, v: 0, s: 1 }; hvMap.set(it, h); } return h; }
+  function breakBox(it) {
+    var i = B.items.indexOf(it), q; if (i < 0) return; B.items.splice(i, 1); if (store === it) store = null;
+    chip(it.x, it.y, 8, '#b98a5a', 10, 90); sfx('fall');
+    for (q in it.loot || {}) { if (q === 'arrows') drop('arrow', it.x, it.y, it.loot[q]); else drop(q, it.x, it.y, it.loot[q]); }
+    if (it.thing) dropThing(Items.make(it.thing[0], it.thing[1]), it.x, it.y);
+    (it.store || []).forEach(function (s) { if (!s) return; if (s.kind === 'item') dropThing(s.item, it.x, it.y); else drop(s.kind, it.x, it.y, s.n); });
+    drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
+  }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); return out; },
+    list: function (x, y, rad) { var out = []; around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad) out.push(hvOf(it)); }); return out; },
     hit: function (o, power, right, tool) {
+      if (o.box) { o.hp -= power; chip(o.x, o.y, 8, '#b98a5a', right ? 4 : 2, 70); if (o.hp <= 0) breakBox(o.box); return; }
       var P = hero(), s = sprite(o.name, o.v), top = o.y * K + s.t * o.s;
       o.hp -= power; o.shake = 0.3; o.leanDir = o.x >= P.x ? 1 : -1;
       if (o.kind === 'tree') { chip(o.x, o.y, (o.y * K - top) * 0.6, '#6fb84f', 4, 50); chip(o.x, o.y, 8, '#d9b37a', right ? 4 : 2, 70); }
@@ -6303,7 +6364,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       drawBookIcon(c, mx - 34, my + 10); drawPouchIcon(c, mx - 54, my + 10); drawDayIcon(c, mx - 74, my + 10); clothFlash = Math.max(0, clothFlash - 0.02);
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       var rsn = !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;   // a stone read once needs no prompt
-      var bedP = !nearHearth(P) && !rsn && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && crateNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && nearNpc(P) && !(npc.sayT > 0);
+      var bedP = !nearHearth(P) && !rsn && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && nearNpc(P) && !(npc.sayT > 0);
       if ((nearHearth(P) || rsn || bedP || crP || npcP) && !invOpen && P.mode !== 'build' && !menu && !clothOpen && !sleep) {       // E to cook, read, sleep, open or talk, over the hero
         var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = rsn ? 'Read the stone' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : 'Cook';
         c.font = '600 9px system-ui, sans-serif'; var pw = c.measureText(pt).width + 26;
@@ -6391,7 +6452,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   window.addEventListener('keydown', function (e) {
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (menu && menuTab === 'hearth') menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else { var rs = stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (crateNear(hero())) openCrate(crateNear(hero())); else if (nearNpc(hero())) talk(); } } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (menu && menuTab === 'hearth') menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else { var rs = stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); } } return; }
     if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else pauseOpen = !pauseOpen; return; }
@@ -6426,7 +6487,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
       else if (e.button === 2 || (!hit && !th)) menu = null;
       return;
     }
-    if (invOpen && CHAR.slide > 0.9) {
+    if (invOpen && store && INV.slide > 0.9 && mouseS.x < storeLeft() + STORE_UI.w + 4 && mouseS.y > STORE_UI.y - 4 && mouseS.y < STORE_UI.y + STORE_UI.h + 4) {
+      var ssl = slotAt(); if (ssl >= 100 && e.button === 0 && slotGet(ssl)) pick = { i: ssl, x: mouseS.x, y: mouseS.y, drag: false }; return;
+    }
+    if (invOpen && !store && CHAR.slide > 0.9) {
       var cs = chSlotAt();
       if (cs) { if (cs.q != null && quiver.slots[cs.q] && e.button === 0) { quiver.sel = cs.q; save(); } else if (cs.q == null && e.button === 2 && equip[cs.id]) unequipToBag(cs.id); return; }
       if (mouseS.x < chLeft() + CHAR.w + 4 && mouseS.y > CHAR.y - 4 && mouseS.y < CHAR.y + CHAR.h + 4) return;
@@ -6446,9 +6510,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (pick) {
       mouseS = toScreen(e);
       if (pick.drag) {                      // onto another slot: move it; off the boards: it falls to the ground
-        var to = slotAt(), s = slots[pick.i], onBoards = mouseS.x > invLeft() - 4 || mouseS.x < chLeft() + CHAR.w + 4;
+        var to = slotAt(), s = slotGet(pick.i), onBoards = mouseS.x > invLeft() - 4 || mouseS.x < (store ? storeLeft() + STORE_UI.w : chLeft() + CHAR.w) + 4;
         if (to >= 0) dropOn(pick.i, to);
-        else if (s && !onBoards) { var P2 = hero(); if (s.kind === 'item') dropThing(s.item, P2.x, P2.y + 6); else drop(s.kind, P2.x, P2.y + 6, s.n); slots[pick.i] = null; recount(); save(); }
+        else if (s && !onBoards) { var P2 = hero(); if (s.kind === 'item') dropThing(s.item, P2.x, P2.y + 6); else drop(s.kind, P2.x, P2.y + 6, s.n); slotSet(pick.i, null); recount(); save(); }
       } else useSlot(pick.i);
       pick = null;
     }
@@ -6485,6 +6549,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       RS = sv.runes && sv.runes.slots ? sv.runes : freshRunes(); if (!RS.heard) RS.heard = {}; if (!RS.stones) RS.stones = {}; if (!RS.deeds) RS.deeds = freshRunes().deeds;
       (sv.drops || []).forEach(function (d) { drops.push({ kind: d.kind, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0 }); });
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; (sv.gone || []).forEach(function (g) { gone[g] = 1; });
+      B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
       w.eachProp(function (o) { if (o.kind && gone[propKey(o)]) w.removeProp(o); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0;
       decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
@@ -6497,7 +6562,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, openCrate: openCrate }; };   // for checks from the console
+  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -6511,6 +6576,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (roomInfo) for (var si = 0; si < roomInfo.solids.length; si++) { var sl = roomInfo.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
     tick(); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt);
+    if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;
     if (P.sprinting) { RS.deeds.sprint = (RS.deeds.sprint || 0) + dt; if (RS.deeds.sprint >= 60) learnRune('surefeet', 'a minute of sprinting'); if (inUse('surefeet') && Math.random() < dt * 0.2) useRune('surefeet', 1); }
