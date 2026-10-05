@@ -1324,9 +1324,9 @@ __COMBAT__
         if (qs) { drawDropIcon(c, 'arrow', mx, my, 1.1); c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 1.8; c.strokeStyle = '#2e1a10'; c.strokeText(String(qs.n), s.x + s.w - 1.5, s.y + s.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(qs.n), s.x + s.w - 1.5, s.y + s.h - 1.5); }
         else arrowGlyph(c, mx, my);
       } else if (equip[s.id]) { c.save(); c.translate(mx, my); Items.icon(c, equip[s.id], s.id === 'axe' || s.id === 'pick' || s.id === 'knife' ? 9.5 : 11); c.restore(); }
+      else if (s.id === 'axe' || s.id === 'pick' || s.id === 'knife') { c.save(); c.globalAlpha = 0.34; c.translate(mx, my); Items.icon(c, Items.make(s.id, 'wood'), 9.5); c.restore(); }   // an empty tool slot shows its tool, faint
       else glyph(c, s.id, mx, my);
     });
-    knotOrn(c, x0 + 22, CHAR.y + CHAR.h - 46, 6.5); knotOrn(c, x0 + 22, CHAR.y + CHAR.h - 27, 6.5); runeRow(c, x0 + 22, CHAR.y + CHAR.h - 14.5 - 4, CHAR.w - 44); runeRow(c, x0 + 22, CHAR.y + 20.5 + 4, CHAR.w - 44);
     if (hov) {                              // what the slot is
       var txt = hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ' (nothing yet)');
       if (equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
