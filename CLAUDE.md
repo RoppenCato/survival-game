@@ -18,7 +18,7 @@ source of truth for the new direction.
   recruit into your clan. Churches have only friendly priests who cannot really defend themselves, so they are
   "lucky strikes", though an army may turn up. Some villages are for trading. There is one big central trading
   hub, heavily guarded, which it is unwise to attack.
-- **Clan members:** they crew your ships (the more aboard, the faster the ship goes, rowing and sailing), they can
+- **The hird (clan members):** they crew your ships (the more aboard, the faster the ship goes, rowing and sailing), they can
   die in battle, they can work at home in your own village, and they defend places you have claimed.
 - **The year:** a calendar of spring, summer, autumn and winter. After winter, villages, castles and other places
   that nobody has claimed are repopulated and rebuilt in generated ways. This keeps the map interesting and
@@ -36,6 +36,19 @@ source of truth for the new direction.
   several ways to progress; it is not replaced by them.
 - **Progression:** no gates, keys or locked doors between areas. Biomes are open, and you struggle in a biome
   until you have done certain things in earlier ones. Biome rarity changes with distance from the spawn point.
+- **Decided 2026-10-05 (answers to the roadmap questions):** the hero walks too fast and will be slowed, and
+  islands are made smaller for now (sizes can grow again later). Arrows are ammunition with different arrow
+  types, but not stacks of arrows in the bag: a way to carry them outside the bag (a quiver) is to be found.
+  Sleeping skips the night and you wake fully rested. The home island has an abandoned, broken village: it shows
+  how a village is built and set up and that the world is dangerous, and it is where the first friendly person is
+  met and the first legendary Viking is heard of. Raiding has a reputation system (risk and reward). Dying at sea
+  is forgiving: the boat drifts to the shore of the island where you last slept and needs half its materials to
+  repair. Currencies: more than one but not one per biome, a new one about every third biome; the first island
+  trades in the basics (food, materials). Members are found and recruited in different ways, fight beside you on
+  land as well as crewing and working, and have randomised stats and traits so each is good at different things,
+  with training to change that. The band is the **hird** (Old Norse hirð, the sworn household band); a member is a
+  **hirdman**, and they call each other fellows (decided 2026-10-05). A game day is 20 minutes of real time:
+  day and dusk 20 minutes, then a night of 10 minutes (decided 2026-10-05).
 - **Scope for now:** only the starter island and travel to nearby islands, all of the first biome. None of the
   raiding, clan or calendar systems are built yet. `game.html` is the playable start (see "The game" below).
 - **Scale:** one tile (32 world units, about the hero's width) is one "unit" of Robin's scale brief, and 100 tiles
@@ -122,6 +135,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
   render things to PNG for checking (`props.js`, `creatures.js`, `walkcycle.js`, `swingdirs.js`, `attackstyles.js`).
 - `tests/`: headless combat checks (table in `tests/README.md`).
 - `docs/idea-bank.md`: ideas and open design questions that are not decided yet.
+- `docs/roadmap.md`: the build order (steps 1 to 10), what to test after each, and open questions for Robin.
+  Update it when a step is done.
 - `dist/`: built single-file pages, committed to git.
 
 ## Things to know before changing code
@@ -185,6 +200,12 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   in the hotbar: in build mode the bar shows the belt, and the chosen piece is named in the bar's label. The mouse
   wheel steps through tools, pieces or the belt slot (`P.sel`). A hearth is a buildable item (`B.items`, drawn
   as a prop, solid, cookable); the camp hearth stays.
+- **The Book of Beasts** (L, or the small book by the chart): a leather-bound book over a dimmed screen, two
+  parchment pages. Left: the beast drawn live by `creatureD`, turning slowly, its name and folk name, a tab row
+  of all beasts. Right: lore, strengths, weaknesses, warning sign, drops, where found. A page is earned the first
+  time you slay that creature (`learn(key)` from `onDeath`; `e.kind` names it); unknown beasts are dark
+  silhouettes with "?". `BESTIARY` holds the cards (all six animals written, only boars exist in the game yet);
+  `book` (slain counts) is saved. Creature ideas (Norse myth and nordiska väsen) are in `docs/idea-bank.md`.
 - **HUD:** only health and stamina top left, the chart and the meal icon top right; no kills or carry line (Robin:
   "we can just open the inventory"). Damage numbers and pickup toasts are drawn in world space inside the camera
   (`drawNums`), so they appear over the tree, rock or hero in the big world.

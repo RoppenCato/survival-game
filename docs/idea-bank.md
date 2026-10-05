@@ -145,3 +145,43 @@ stamina; that is dropped.
 How the difficulty then works: each biome's animals and enemies are tuned for a prepared player. The weather
 itself does nothing to you. Without the buffs you have less health than the place expects, exactly like going
 without food in Valheim.
+
+## Creatures: Norse myth and nordiska väsen (Robin's direction, 2026-10-05)
+
+Robin: creatures should come from Norse mythology and from Scandinavian folklore (nordiska väsen). The first time
+you slay one you get its card in your book, with interesting facts and useful things like strengths and
+weaknesses. The book exists in the game (the Book of Beasts, L); these are the creatures it could fill up with.
+Decided: the book, the unlock on first kill. Not decided: which creatures, and their rules.
+
+### Candidates (Claude), with the weakness the card could reveal
+
+| Creature | What it is | Where | Strength | Weakness the card reveals |
+| --- | --- | --- | --- | --- |
+| Troll | Big, slow, stupid, strong; lives under bridges and in hills | Hills, caves, old bridges | Hits like a falling tree, regenerates | Turns to stone in sunlight; lure it out at dawn. Hates church bells and iron |
+| Draugr | The restless dead of a burial mound, guarding its grave goods | Burial mounds, ship graves | Does not tire, cannot be frightened | Fire, and it cannot leave its mound. Decapitation keeps it down |
+| Huldra | A beautiful forest woman with a cow's tail and a hollow back | Deep forest, charcoal burners' camps | Lures you off the path; the forest closes behind you | Be polite and she helps; see the tail and the spell breaks. Never follow her at dusk |
+| Näcken | A naked man playing a fiddle at a waterfall, drowning those who listen | Rivers, mill ponds, waterfalls | His tune makes you walk into the water | Say his name, or throw iron in the water. Will teach you the fiddle for a black cat |
+| Skogsrå | The ruler of the forest; luck in hunting is hers to give | Old forest | Turns the game against you | Leave her a gift; a hunter who shares his catch finds game everywhere |
+| Tomte / Nisse | A small old man who looks after the farm | Your own homestead, after you build a barn | Works your fields at night | Takes offence easily: forget his porridge at Yule and your livestock sicken. A friend, not a foe |
+| Lindorm | A great serpent, wingless, that circles a hill or a church | Hills, cairns, cliff caves | Crushing coils, poisonous breath | Its belly is soft; slide beneath it. Grows with every year it is left alone |
+| Sjöorm | The sea serpent | Deep water between islands | Takes ships; cannot be fought from land | Follows the boat; a knarr full of rowers outruns it. Harpoons from the bow |
+| Kraken | An island that is an animal | The open ocean, west | Pulls a ship down whole | Never found twice in the same sea. The card itself is the reward |
+| Mara | The nightmare: a woman who rides sleepers at night | Your bed, if you sleep uneasy | Steals the rested buff | Steel under the bed, or a broom over the door. Cannot pass a plugged keyhole |
+| Varulv | A man who becomes a wolf | Villages with a dark secret | A wolf with a man's cunning | Silver, and sunrise. Spare the man and gain an ally |
+| Myling | The ghost of an unbaptised child, heavy on your back | Lonely roads at night | Rides your back and grows heavier with every step | Carry it to a churchyard and it rests. It asks only for a name |
+| Vättar | The small underground folk | Under big stones and old trees | Spoil your stores if you build over their home | Move the building, or leave them beer. They trade |
+| Bäckahäst | The brook horse: a white horse that offers a ride | Streams and lake shores | Whoever mounts it cannot get off, and it rides into the water | Its name spoken aloud, or a bridle of iron: then it works your fields until dawn |
+| Kyrkogrim | The church grim, a spirit that guards a churchyard | Churches (the "lucky strike" raids) | Appears when a church is raided | Only after the priests are harmed. Raiding without bloodshed never wakes it |
+| Gloson | A ghost sow with a razor back that runs between your legs | Fields at night around Yule | Cuts you in two | Jump; it runs in straight lines only |
+| Fenrir's brood | Great wolves, bigger than any pack leader | The far north | A wolf that takes down a moose alone | Chains hold it: the trap is the weapon |
+| Odin's ravens | Huginn and Muninn | Everywhere, watching | Cannot be killed | Not a foe: where they circle, something is worth finding |
+
+### How the book could grow (Claude)
+- A page is earned on the first kill (decided). Later pages could also be earned by *meeting* a creature you
+  cannot or should not kill (the ravens, the tomte, the huldra), by reading a runestone, or by Brokk's stories.
+- Facts could fill in by degrees: the silhouette after the first sighting, the name after the first kill, the
+  weakness after the third, so the book rewards hunting a thing more than once.
+- Legendary Vikings (idea bank, question 3) could have cards of their own in a second section of the book, with
+  their ship, their base and where they were last seen.
+- Weaknesses should be real rules in the fight (sunlight stones the troll; iron in the water silences näcken),
+  so reading the card is worth something.

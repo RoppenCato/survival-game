@@ -74,6 +74,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <dt><kbd>B</kbd></dt><dd>Build mode. <kbd>Right click</kbd> opens the board of pieces: pick one, then click to place it (drag for walls and floors). <kbd>F</kbd> turns the cursor into the wreck cursor: the piece under it glows red, and a click takes it down and gives the material back</dd>
           <dt><kbd>Mouse wheel</kbd></dt><dd>Step through the hotbar: tools in gather mode, pieces in build mode, the belt in fight mode</dd>
           <dt><kbd>E</kbd></dt><dd>Cook at the camp hearth</dd>
+          <dt><kbd>L</kbd></dt><dd>The Book of Beasts. Every creature gets a page the first time you slay one: what it is, its strengths and weaknesses, how it warns you, what it drops. Click the small book by the chart to open it too</dd>
           <dt><kbd>Tab</kbd></dt><dd>The bag: a wooden board that slides in from the right. Six slots wide, four high, stacks of 25. The top row is the belt and matches the hotbar numbers. Drag to move things, click food to eat it, Sort tidies the rows below the belt</dd>
           <dt><kbd>R</kbd></dt><dd>Rise again after you have fallen</dd>
         </dl>
@@ -111,7 +112,7 @@ __COMBAT__
   var BOAR_R = 9;
   Combat.api.dress = function (e) {
     var sp = lib.animalSpec('boar');
-    e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = 'WILD BOAR';
+    e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = 'WILD BOAR'; e.kind = 'boar';
     e.r = BOAR_R * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge };
     e.hp = e.maxHp = sp.hp; e.aggro = 75;
   };
@@ -134,7 +135,7 @@ __COMBAT__
     w = World.make(kit, spec);
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); w.camp(); w.sortBuckets(); buckets = w.buckets;
-    drops = []; bits = []; decals = []; gone = {}; B = { floors: {}, H: {}, V: {}, items: [] }; roofA = {}; bDirty = true;
+    drops = []; bits = []; decals = []; gone = {}; book = {}; B = { floors: {}, H: {}, V: {}, items: [] }; roofA = {}; bDirty = true;
     mini = w.chart(200);
     hearth = null; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
@@ -238,7 +239,7 @@ __COMBAT__
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   var SAVE = 'game.save', gone = {}, saveT = 0;
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, hero: { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, hero: { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -444,7 +445,141 @@ __COMBAT__
       }
     }
   };
-  Combat.api.onDeath = function (e) { drop('meat', e.x, e.y, 1); };
+  Combat.api.onDeath = function (e) { drop('meat', e.x, e.y, 1); if (e.kind) learn(e.kind); };
+
+  /* ---------- the Book of Beasts: a card for every creature, earned the first time you slay one ----------
+     The left page shows the beast itself, turning slowly; the right page what is known: lore, strengths,
+     weaknesses, how it warns you, what it drops and where it lives. Unknown beasts are dark shapes. */
+  var BESTIARY = [
+    { key: 'boar', name: 'Wild boar', folk: 'Vildsvin', where: 'Grass and oak groves, in small home ranges',
+      lore: 'Boars root for acorns and keep to the same few groves. The Norse hunted them with spears and served them at the winter feast, and the god Freyr rode a boar with golden bristles.',
+      strengths: 'Charges hard and fast. Its thick hide takes the first blow.',
+      weaknesses: 'Slow to turn. Step aside as it charges and strike its flank.',
+      tell: 'It stamps and shakes before it charges.', drops: 'Boar meat; cook it at the hearth' },
+    { key: 'deer', name: 'Deer', folk: 'Hjort', where: 'Open meadows and the edges of groves',
+      lore: 'Shy and quick, deer are the hunter\'s prize. Their antlers were carved into combs and the hides made good cloaks.',
+      strengths: 'Faster than you, and always watching.', weaknesses: 'Timid: it flees rather than fights. Arrows reach it; feet do not.',
+      tell: 'It raises its head and freezes before it bolts.', drops: 'Meat and hide' },
+    { key: 'wolf', name: 'Wolf', folk: 'Ulv', where: 'Deep forest, in packs, bolder at night',
+      lore: 'The wolf was the outlaw\'s name and the giant wolf Fenrir will swallow the sun at the end of the world. Few beasts were feared more.',
+      strengths: 'Quick, relentless, and never alone for long.', weaknesses: 'Light. A parry throws it and a shield wall stops it.',
+      tell: 'It crouches low with its ears back.', drops: 'Meat and a grey pelt' },
+    { key: 'bear', name: 'Bear', folk: 'Björn', where: 'Dense forest and rocky hills',
+      lore: 'The strongest beast of the North. Berserkers wore its skin and fought in its rage, and to kill one alone made a man\'s name.',
+      strengths: 'Enormous strength; one blow takes most of your health.', weaknesses: 'Slow. It rears up before it strikes, which is the moment to move. Fire frightens it.',
+      tell: 'It rises on its hind legs and roars.', drops: 'Meat and a bear pelt' },
+    { key: 'moose', name: 'Moose', folk: 'Älg', where: 'Wet woods, lakesides and marsh',
+      lore: 'The king of the forest. Taller than a man at the shoulder, it was hunted in deep snow when it could not run.',
+      strengths: 'Great reach with its antlers, and it does not scare.', weaknesses: 'Cannot turn quickly in trees. Keep a trunk between you.',
+      tell: 'It lowers its head and paws the ground.', drops: 'A great deal of meat, and antler' },
+    { key: 'snake', name: 'Adder', folk: 'Huggorm', where: 'Sunny rocks and the edges of the beach',
+      lore: 'The only venomous snake of the North. It basks on warm stones and strikes only when stepped on or cornered.',
+      strengths: 'Hard to see in the grass; its bite burns.', weaknesses: 'Short reach and a soft body. Keep your distance and strike first.',
+      tell: 'It coils and lifts its head.', drops: 'Nothing worth keeping' }
+  ];
+  var book = {}, bookOpen = false, bookPage = 0, bookFlash = 0, figs = {}, sil = null;
+  function entryOf(key) { for (var i = 0; i < BESTIARY.length; i++) if (BESTIARY[i].key === key) return i; return -1; }
+  function learn(key) {
+    var e = book[key] || (book[key] = { slain: 0 }); e.slain++;
+    if (e.slain === 1) { toast('A new page in your book: ' + BESTIARY[entryOf(key)].name); bookFlash = 6; }
+    save();
+  }
+  function fig(key) { return figs[key] || (figs[key] = lib.makeCreature(lib.animalSpec(key))); }
+  function wrapLines(c, text, maxW) { var words = text.split(' '), lines = [], cur = ''; words.forEach(function (wd) { var t = cur ? cur + ' ' + wd : wd; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = wd; } else cur = t; }); if (cur) lines.push(cur); return lines; }
+  function leather(c, x, y, w, h) {           // a dark leather cover with a stitched edge
+    c.save();
+    c.fillStyle = '#3b2416'; c.beginPath(); c.roundRect(x, y, w, h, 6); c.fill();
+    c.beginPath(); c.roundRect(x + 2, y + 2, w - 4, h - 4, 5); c.clip();
+    c.fillStyle = '#4e3020'; c.fillRect(x, y, w, h);
+    c.fillStyle = 'rgba(0,0,0,0.18)'; for (var i = 0; i < 40; i++) { var gx = x + ((i * 37) % w), gy = y + ((i * 53) % h); c.beginPath(); c.ellipse(gx, gy, 6 + (i % 5) * 3, 3 + (i % 3) * 2, i, 0, 7); c.fill(); }
+    c.restore();
+    c.strokeStyle = 'rgba(230,200,150,0.55)'; c.lineWidth = 0.8; c.setLineDash([2, 2]); c.beginPath(); c.roundRect(x + 4.5, y + 4.5, w - 9, h - 9, 4); c.stroke(); c.setLineDash([]);
+    c.fillStyle = '#7d8290'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8;
+    [[x + 7, y + 7], [x + w - 7, y + 7], [x + 7, y + h - 7], [x + w - 7, y + h - 7]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 1.8, 0, 7); c.fill(); c.stroke(); });
+  }
+  function parchment(c, x, y, w, h, left) {   // a cream page, darker toward the spine, with a worn edge
+    var g = c.createLinearGradient(left ? x + w : x, 0, left ? x : x + w, 0);
+    g.addColorStop(0, '#d9c59a'); g.addColorStop(0.12, '#ead9b3'); g.addColorStop(1, '#efe2c1');
+    c.fillStyle = g; c.fillRect(x, y, w, h);
+    c.strokeStyle = 'rgba(90,60,30,0.35)'; c.lineWidth = 0.8; c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    c.fillStyle = 'rgba(120,80,40,0.08)'; for (var i = 0; i < 14; i++) { var gx = x + ((i * 41) % w), gy = y + ((i * 29) % h); c.beginPath(); c.ellipse(gx, gy, 8, 5, i * 0.7, 0, 7); c.fill(); }
+  }
+  var BOOK = { x: 52, y: 22, w: 296, h: 206 };
+  function bookRects() {
+    var b = BOOK, cover = { x: b.x, y: b.y, w: b.w, h: b.h }, pl = { x: b.x + 10, y: b.y + 10, w: b.w / 2 - 12, h: b.h - 20 }, pr = { x: b.x + b.w / 2 + 2, y: b.y + 10, w: b.w / 2 - 12, h: b.h - 20 };
+    var tabs = BESTIARY.map(function (e, i) { return { i: i, x: pl.x + 6 + i * 21, y: pl.y + pl.h - 22, w: 18, h: 18 }; });
+    return { cover: cover, pl: pl, pr: pr, tabs: tabs, close: { x: b.x + b.w - 22, y: b.y - 2, w: 20, h: 14 } };
+  }
+  function drawBook(c) {
+    var R = bookRects(), e = BESTIARY[bookPage], known = book[e.key] && book[e.key].slain > 0, i;
+    c.save();
+    c.fillStyle = 'rgba(10,8,6,0.35)'; c.fillRect(0, 0, 400, 250);
+    leather(c, R.cover.x, R.cover.y, R.cover.w, R.cover.h);
+    parchment(c, R.pl.x, R.pl.y, R.pl.w, R.pl.h, true); parchment(c, R.pr.x, R.pr.y, R.pr.w, R.pr.h, false);
+    c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(R.pl.x + R.pl.w, R.pl.y, 2, R.pl.h);   // the spine
+    // the close tab on the cover
+    c.fillStyle = '#5a3a26'; c.fillRect(R.close.x, R.close.y, R.close.w, R.close.h); c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.strokeRect(R.close.x + 0.5, R.close.y + 0.5, R.close.w - 1, R.close.h - 1);
+    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'center'; c.fillText('X', R.close.x + R.close.w / 2, R.close.y + 10);
+    // left page: the beast, turning slowly on a patch of ground
+    var cx = R.pl.x + R.pl.w / 2, cy = R.pl.y + 92, ang = clock * 0.5;
+    c.fillStyle = 'rgba(90,60,30,0.14)'; c.beginPath(); c.ellipse(cx, cy + 2, 46, 12, 0, 0, 7); c.fill();
+    c.save(); c.translate(cx, cy); c.scale(1.5, 1.5);
+    if (known) lib.creatureD(c, 0, 0, { t: clock, move: 0, phase: 0, dir: 1, ang: ang, state: 'idle', k: 0 }, fig(e.key));
+    else {                                    // a dark shape of what you have not met
+      if (!sil) sil = kit.mk(160, 160); var sc = sil.getContext('2d'); sc.setTransform(1, 0, 0, 1, 0, 0); sc.clearRect(0, 0, 160, 160);
+      sc.save(); sc.translate(80, 110); sc.scale(1.5, 1.5); lib.creatureD(sc, 0, 0, { t: 0, move: 0, phase: 0, dir: 1, ang: ang, state: 'idle', k: 0 }, fig(e.key)); sc.restore();
+      sc.globalCompositeOperation = 'source-in'; sc.fillStyle = '#4a3a2c'; sc.fillRect(0, 0, 160, 160); sc.globalCompositeOperation = 'source-over';
+      c.globalAlpha = 0.85; c.drawImage(sil, -80 / 1.5, -110 / 1.5, 160 / 1.5, 160 / 1.5); c.globalAlpha = 1;
+      c.fillStyle = '#efe2c1'; c.font = 'bold 14px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('?', 0, -18);
+    }
+    c.restore();
+    c.fillStyle = '#3b2416'; c.textAlign = 'center';
+    c.font = 'bold 11px Georgia, serif'; c.fillText(known ? e.name : 'Unknown beast', cx, R.pl.y + 20);
+    c.font = 'italic 7px Georgia, serif'; c.fillStyle = '#6b4a30'; c.fillText(known ? e.folk : 'Slay one to learn about it', cx, R.pl.y + 31);
+    if (known) { c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = '#6b4a30'; c.fillText('Slain: ' + book[e.key].slain, cx, R.pl.y + 120); }
+    // the row of tabs: one small head per beast
+    c.font = '600 5px system-ui, sans-serif'; c.fillStyle = '#6b4a30'; c.textAlign = 'left'; c.fillText('Beasts of the first island', R.pl.x + 6, R.pl.y + R.pl.h - 27);
+    R.tabs.forEach(function (t) {
+      var en = BESTIARY[t.i], kn = book[en.key] && book[en.key].slain > 0, on = t.i === bookPage;
+      c.fillStyle = on ? '#c9a876' : 'rgba(90,60,30,0.18)'; c.fillRect(t.x, t.y, t.w, t.h);
+      c.strokeStyle = on ? '#3b2416' : 'rgba(90,60,30,0.4)'; c.lineWidth = on ? 1.2 : 0.8; c.strokeRect(t.x + 0.5, t.y + 0.5, t.w - 1, t.h - 1);
+      c.save(); c.translate(t.x + t.w / 2, t.y + t.h - 3); c.scale(0.28, 0.28);
+      if (kn) lib.creatureD(c, 0, 0, { t: 0, move: 0, phase: 0, dir: 1, state: 'idle', k: 0 }, fig(en.key));
+      else { c.fillStyle = '#4a3a2c'; c.font = 'bold 30px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('?', 0, -8); }
+      c.restore();
+    });
+    // right page: what is known
+    var x = R.pr.x + 8, y = R.pr.y + 18, wdt = R.pr.w - 16;
+    c.textAlign = 'left'; c.fillStyle = '#3b2416'; c.font = 'bold 8px Georgia, serif'; c.fillText(known ? 'What is known' : 'Nothing is known yet', x, y); y += 6;
+    c.strokeStyle = 'rgba(59,36,22,0.5)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x, y); c.lineTo(x + wdt, y); c.stroke(); y += 9;
+    if (known) {
+      [['', e.lore], ['Strengths', e.strengths], ['Weaknesses', e.weaknesses], ['Warning', e.tell], ['Drops', e.drops], ['Found', e.where]].forEach(function (sec) {
+        if (sec[0]) { c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#6b4a30'; c.fillText(sec[0].toUpperCase(), x, y); y += 7; }
+        c.font = '6px Georgia, serif'; c.fillStyle = '#3b2416';
+        wrapLines(c, sec[1], wdt).forEach(function (l) { c.fillText(l, x, y); y += 7; });
+        y += 3;
+      });
+    } else { c.font = 'italic 6.5px Georgia, serif'; c.fillStyle = '#6b4a30'; wrapLines(c, 'The page is empty. Meet this beast and bring it down, and what you learn will be written here.', wdt).forEach(function (l) { c.fillText(l, x, y); y += 8; }); }
+    c.font = '600 5px system-ui, sans-serif'; c.fillStyle = 'rgba(107,74,48,0.7)'; c.textAlign = 'right'; c.fillText((bookPage + 1) + ' / ' + BESTIARY.length + '   L closes', R.pr.x + R.pr.w - 6, R.pr.y + R.pr.h - 6);
+    c.restore();
+  }
+  function bookClick() {
+    if (!mouseS) return; var R = bookRects(), i;
+    for (i = 0; i < R.tabs.length; i++) { var t = R.tabs[i]; if (mouseS.x >= t.x && mouseS.x <= t.x + t.w && mouseS.y >= t.y && mouseS.y <= t.y + t.h) { bookPage = t.i; return; } }
+    if (mouseS.x >= R.close.x && mouseS.x <= R.close.x + R.close.w && mouseS.y >= R.close.y && mouseS.y <= R.close.y + R.close.h) { bookOpen = false; return; }
+    if (mouseS.x < R.cover.x || mouseS.x > R.cover.x + R.cover.w || mouseS.y < R.cover.y || mouseS.y > R.cover.y + R.cover.h) bookOpen = false;
+  }
+  function drawBookIcon(c, x, y) {           // a small closed book by the chart; it glows when a page was just added
+    var hov = mouseS && Math.abs(mouseS.x - x) < 9 && Math.abs(mouseS.y - y) < 9;
+    c.save();
+    if (bookFlash > 0) { c.shadowColor = 'rgba(255,214,90,' + Math.min(1, bookFlash / 2) + ')'; c.shadowBlur = 8; }
+    c.fillStyle = '#3b2416'; c.beginPath(); c.roundRect(x - 7, y - 8, 14, 16, 1.5); c.fill(); c.shadowBlur = 0;
+    c.fillStyle = '#efe2c1'; c.fillRect(x - 5, y - 6, 11, 12);
+    c.fillStyle = '#4e3020'; c.fillRect(x - 7, y - 8, 3, 16); c.fillRect(x - 7, y - 8, 14, 2);
+    c.strokeStyle = 'rgba(230,200,150,0.6)'; c.lineWidth = 0.6; c.setLineDash([1, 1]); c.strokeRect(x - 6, y - 7, 12, 14); c.setLineDash([]);
+    c.restore();
+    if (hov) { c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText('Book of Beasts (L)', x, y + 16); c.fillStyle = '#fff'; c.fillText('Book of Beasts (L)', x, y + 16); }
+  }
   var busy = [], lastT = performance.now();
   function tick() {
     var now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000), i; lastT = now; clock += dt;
@@ -572,6 +707,7 @@ __COMBAT__
       c.drawImage(mini, mx, my, mw, mh);
       c.fillStyle = '#ffd34d'; c.fillRect(mx + P.x / WX * mw - 1, my + P.y / WY * mh - 1, 2, 2);
       c.imageSmoothingEnabled = true;
+      drawBookIcon(c, mx - 34, my + 10);
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       if (nearHearth(P) && !cookOpen && !invOpen && P.mode !== 'build' && !menu) {       // E to cook, over the hero
         var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = 'Cook';
@@ -582,6 +718,8 @@ __COMBAT__
         c.fillStyle = '#ffffff'; c.textAlign = 'left'; c.fillText(pt, tx - pw / 2 + 19, ty + 2.5);
       }
       drawPanels(c);
+      bookFlash = Math.max(0, bookFlash - 0.02);
+      if (bookOpen) drawBook(c);
       if (menu) drawMenu(c);
       c.restore();
     }
@@ -637,7 +775,8 @@ __COMBAT__
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
     if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (cookOpen) cookOpen = false; else if (nearHearth(hero())) { cookOpen = true; invOpen = false; menu = null; } } return; }
-    if (e.code === 'Escape') { invOpen = false; cookOpen = false; menu = null; return; }
+    if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
+    if (e.code === 'Escape') { invOpen = false; cookOpen = false; menu = null; bookOpen = false; return; }
     if (!codes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
     if (/^Digit[1-6]$/.test(e.code) && beltFree(+e.code.slice(5) - 1)) useSlot(+e.code.slice(5) - 1);
@@ -652,6 +791,8 @@ __COMBAT__
   cv.addEventListener('mousedown', function (e) {
     e.preventDefault(); mouseW = toWorld(e); mouseS = toScreen(e);
     var P = hero();
+    if (bookOpen) { if (e.button === 0) bookClick(); return; }
+    var mxc = 400 - (GW >= GH ? 64 : 64 * GW / GH) - 6 - 34; if (e.button === 0 && Math.abs(mouseS.x - mxc) < 9 && Math.abs(mouseS.y - 16) < 9) { bookOpen = true; invOpen = false; cookOpen = false; menu = null; return; }
     if (menu) { var hit = menuHit(); if (hit && hit.piece && e.button === 0) { P.piece = hit.i; P.wreck = false; menu = null; } else if (e.button === 2 || !hit) menu = null; return; }
     if (invOpen && INV.slide > 0.9) {
       var b = btnAt(), sl = slotAt();
@@ -693,7 +834,7 @@ __COMBAT__
       else for (k in sv.inv || {}) addItem(k, sv.inv[k]);
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       w.eachProp(function (o) { if (o.kind && gone[propKey(o)]) w.removeProp(o); });
-      decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null;
+      decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {};
       var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; } else toCamp();
     } else toCamp();
     spawnBoars(); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Press Tab for your inventory, B to build.'; save();
@@ -701,7 +842,7 @@ __COMBAT__
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES }; };   // for checks from the console
+  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; } }; };   // for checks from the console
 
   start();
   var lastP = hero();
