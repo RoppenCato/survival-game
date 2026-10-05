@@ -2988,7 +2988,8 @@ function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null
 function maxSt() { var m = api.mods ? api.mods() : null; return m && m.stMax ? m.stMax : 100; }   // food can raise top stamina (mods().stMax)   // armor(): share of a blow the hero's gear turns aside
 // api.items = { held(), tool(i), weapon(kind) } gives the item specs (src/items.js) in the hand, in tool slot i and for 'sword' or 'bow'
 function itemOf(fn, a) { if (!api.items || typeof Items === 'undefined' || !api.items[fn]) return null; return api.items[fn](a) || null; }
-function dmgMul(kind) { var it = itemOf('weapon', kind); return it ? Items.stats(it).dmg : 1; }   // canShoot()/onShoot(): ammunition; onArrowLand(x, y): a player's arrow that hit nothing; quiver: the count shown by the bow   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) }   // facings8: the hero turns on the diagonals and animals turn freely
+function bareHanded() { return !!api.items && P.mode === 'fight' && P.weapon === 'melee' && !itemOf('weapon', 'sword'); }   // a page that holds items and has no sword equipped: punch
+function dmgMul(kind) { var it = itemOf('weapon', kind); return it ? Items.stats(it).dmg : (api.items ? 0.4 : 1); }   // canShoot()/onShoot(): ammunition; onArrowLand(x, y): a player's arrow that hit nothing; quiver: the count shown by the bow   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) }   // facings8: the hero turns on the diagonals and animals turn freely
 function sfx(n, v, src) { if (S.sound) api.sfx(n, v, src); }   // src: the enemy making the sound, so a page can keep far-off ones quiet
 
 function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
@@ -3255,6 +3256,11 @@ function releaseCharge() {
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; p.st -= 10; p.stDelay = 0.6;
 }
 function stepData(a) {
+  var s0 = stepData0(a);
+  if (bareHanded() && !a.bash && !a.spin) return { wu: s0.wu, ac: s0.ac, rec: s0.rec, arc: s0.arc * 0.6, reach: s0.reach * 0.66, blade: 7, dmg: s0.dmg, kb: s0.kb * 0.5, lunge: s0.lunge * 0.7, stag: s0.stag * 0.5 };   // a punch: short, quick, light
+  return s0;
+}
+function stepData0(a) {
   var s;
   if (a.bash) return { wu: 0.06, ac: 0.1, rec: 0.3, arc: 1.6, reach: 30, blade: 20, dmg: 0.6, kb: 260, lunge: 160, stag: 45 };
   if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
@@ -3974,9 +3980,9 @@ function swordPose(dir) {
     o.front = Math.sin(ang) >= -0.05; o.side = sdn; o.atk = true;
   } else {
     var side = (p.guard && S.shield) ? -guardSide() : 1;
-    if (dir === 'left') { o.hx = -1; o.hy = -14; o.ca = 0.5; o.sa = -0.85; }
-    else if (dir === 'right') { o.hx = 1; o.hy = -14; o.ca = -0.5; o.sa = -0.85; }
-    else { o.hx = side * 8; o.hy = -14; o.ca = side * 0.55; o.sa = -0.83; }
+    if (dir === 'left') { o.hx = -3; o.hy = -10; o.ca = 0.45; o.sa = -0.88; }
+    else if (dir === 'right') { o.hx = 3; o.hy = -10; o.ca = -0.45; o.sa = -0.88; }
+    else { o.hx = side * 6.5; o.hy = -10; o.ca = side * 0.5; o.sa = -0.86; }
     o.len = 20; o.front = true; o.side = side; o.atk = false;
   }
   if (o.atk && S.look === 'classic') o.len *= lib.hero().spec.bladeLen;
@@ -4164,8 +4170,13 @@ function drawHeroWeapon(c, front) {
     var ca = sp.ca, sa = sp.sa, len = sp.len, ex = hx + ca * len, ey = hy + sa * len, px = -sa, py = ca;
     c.lineCap = 'round';
     var heldIt = itemOf('held');
+    if (a.ph === 'none' && (heldIt || api.items)) {          // at rest the hand is at the hip and an arm reaches it
+      var sdn2 = sp.side || 1, shx = p.x + bp.lx + (dir === 'left' ? -2 : dir === 'right' ? 2 : sdn2 * 5), shy = p.y * K + bp.ly - 20;
+      c.strokeStyle = '#3a2a36'; c.lineWidth = 5; c.beginPath(); c.moveTo(shx, shy); c.lineTo(hx, hy); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3; c.stroke();
+    }
     if (heldIt) { Items.draw(c, heldIt, hx, hy, ca, sa, heldIt.kind === 'sword' ? len * heldIt.size : null, p.mode === 'gather' && a.ph !== 'none'); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (p.mode === 'gather') { if (!api.items) drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
+    else if (api.items) { var fx2 = hx + ca * 4, fy2 = hy + sa * 4; c.strokeStyle = '#3a2a36'; c.lineWidth = 6; c.beginPath(); c.moveTo(hx, hy); c.lineTo(fx2, fy2); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3.6; c.stroke(); lib.ell(c, fx2, fy2, 3.4, 3.2, HC.skin, 1.5); }   // no sword: a fist
     else {
     c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
     c.strokeStyle = HC.blade; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
@@ -4353,13 +4364,13 @@ function drawNums(c) {
 function drawHud(c) {
   var i, bigRow = 0;
   var mst = maxSt(), bw = 60, stw = bw * mst / 100;       // small bars with the numbers beside them
-  bar(c, 10, 8, bw, 5, P.hp / P.maxHp, '#e8584a');
-  bar(c, 10, 17, stw, 3.5, P.st / mst, P.st < 22 ? '#d6b54a' : '#7fd66d');
-  c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2; c.strokeStyle = '#3a2a36'; c.fillStyle = '#fff';
-  var hpTxt = Math.ceil(Math.max(0, P.hp)) + ' / ' + Math.round(P.maxHp), stTxt = Math.round(Math.max(0, P.st)) + ' / ' + Math.round(mst);
-  c.strokeText(hpTxt, 10 + bw + 5, 12.6); c.fillText(hpTxt, 10 + bw + 5, 12.6); c.strokeText(stTxt, 10 + stw + 5, 20.6); c.fillText(stTxt, 10 + stw + 5, 20.6);
+  bar(c, 10, 8, bw, 7, P.hp / P.maxHp, '#e8584a');
+  bar(c, 10, 18, stw, 6, P.st / mst, P.st < 22 ? '#d6b54a' : '#7fd66d');
+  c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.6; c.strokeStyle = '#3a2a36'; c.fillStyle = '#fff';   // the number sits inside its bar
+  var hpTxt = String(Math.ceil(Math.max(0, P.hp))), stTxt = String(Math.round(Math.max(0, P.st)));
+  c.strokeText(hpTxt, 13, 13.2); c.fillText(hpTxt, 13, 13.2); c.strokeText(stTxt, 13, 22.8); c.fillText(stTxt, 13, 22.8);
   c.font = 'bold 8px system-ui, sans-serif'; c.lineWidth = 2.4;
-  if (!(api.scene && api.scene.noKills)) { var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 34); c.fillStyle = '#fff'; c.fillText(txt, 10, 34); }
+  if (!(api.scene && api.scene.noKills)) { var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 38); c.fillStyle = '#fff'; c.fillText(txt, 10, 38); }
   for (i = 0; i < W.enemies.length; i++) {
     var e = W.enemies[i];
     if (e.dead) continue;
@@ -4396,6 +4407,18 @@ function slotIcon(c, id, x, y) {
   else if (id === 'knife') { ln(-5, 5, -2, 2, '#8a5a3a', 2.6); ln(-2, 2, 5, -5, '#eef3fb', 2.2); }
   c.restore();
 }
+function neutralIcon(c, id) {            // what is in your hand when nothing is: a plain fist, and the faint outline of a bow
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  if (id === 'sword') {
+    c.fillStyle = '#e9c39a'; c.strokeStyle = '#3a2a36'; c.lineWidth = 1.2;
+    c.beginPath(); c.roundRect(-5, -3, 10, 8, 2.2); c.fill(); c.stroke();
+    for (var k = 0; k < 4; k++) { c.beginPath(); c.ellipse(-3.6 + k * 2.4, -3.2, 1.3, 1.6, 0, 0, 7); c.fill(); c.stroke(); }
+    c.beginPath(); c.ellipse(-4.6, 2, 1.5, 2.2, 0.4, 0, 7); c.fill(); c.stroke();
+  } else {
+    c.strokeStyle = 'rgba(200,205,215,0.55)'; c.lineWidth = 1.5; c.beginPath(); c.arc(-3, 0, 8, -1.1, 1.1); c.stroke();
+    c.lineWidth = 0.9; c.beginPath(); c.moveTo(-3 + 8 * Math.cos(1.1), -8 * Math.sin(1.1)); c.lineTo(-3 + 8 * Math.cos(1.1), 8 * Math.sin(1.1)); c.stroke();
+  }
+}
 function slotBox(c, x, y, on, sz) {
   c.fillStyle = 'rgba(20,16,30,0.78)'; c.fillRect(x, y, sz, sz);
   c.strokeStyle = on ? '#ffd34d' : 'rgba(255,255,255,0.28)'; c.lineWidth = on ? 1.2 : 0.8; c.strokeRect(x + 0.5, y + 0.5, sz - 1, sz - 1);
@@ -4405,7 +4428,7 @@ function roundIcon(c, id, x, y, r, on, dim) {
   c.fillStyle = 'rgba(20,16,30,0.82)'; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
   c.strokeStyle = on ? '#ffd34d' : 'rgba(255,255,255,0.35)'; c.lineWidth = on ? 1.3 : 0.8; c.stroke();
   var wi = itemOf('weapon', id);
-  c.save(); c.translate(x, y); if (wi) Items.icon(c, wi, r * 1.6); else { c.scale(r / 10, r / 10); slotIcon(c, id, 0, 0); } c.restore();
+  c.save(); c.translate(x, y); if (wi) Items.icon(c, wi, r * 1.6); else if (api.items) { c.scale(r / 10, r / 10); neutralIcon(c, id); } else { c.scale(r / 10, r / 10); slotIcon(c, id, 0, 0); } c.restore();
   c.globalAlpha = 1;
 }
 function drawHotbar(c) {
