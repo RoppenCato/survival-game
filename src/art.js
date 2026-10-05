@@ -612,7 +612,7 @@ var CREATURE_DEF = {
   behave: 0, speed: 1, windup: 0.55, lunge: 1, hp: 4, aggro: 80,
   neck: 1, neckUp: 0.4, snout: 1, snoutW: 1, ears: 1, antlers: 0, antlerSize: 1, tusks: 0, hump: 0, mane: 0, hoof: 0, tailPale: 0, paleMuzzle: 0, snoutFlat: 0, fangs: 0, brow: 0,
   hue: 0, sat: 1, lum: 1,
-  col: { body: '#7fb86a', belly: '#d9e8a8', accent: '#f1ead6', eye: '#2a1c2a', glow: '#ff6a3a', line: '#3a2a36' }
+  col: { body: '#7fb86a', belly: '#d9e8a8', accent: '#f1ead6', eye: '#2a1c2a', glow: '#ff6a3a', line: '#4a3326' }
 };
 var curCreature = null;
 function mixHex(a, b, t) {

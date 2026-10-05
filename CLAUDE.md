@@ -96,6 +96,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `environment-editor.html` | `environment.html` | Environment Editor: a patch of land with biomes and object layers |
 | `base-editor.html` | `base.html` | Base Editor: free building |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
+| `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory |
 
@@ -124,6 +125,12 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `src/build.js` (`Build`): building pieces, shared by the Base Editor and the game: `WALLS`, `FLOORS`, `ROOFS`,
   `rooms(B, GW, GH, bounds)` (closed rooms by flood fill, and collision circles), `drawH`, `drawV`, `drawRoof`,
   `edgeAt`, `icon`. A building is `B = { floors, H, V }` keyed `"x,y"`.
+- `src/items.js` (`Items`): weapons and tools as specs ({ kind, mat, name, desc, size, width, sharp, glow, twist,
+  curl, hue }), with `make`, `name`, `desc` (plain names like "Silver Axe" and a generic tale), `stats` (damage,
+  gathering power), `draw` (in the hand, along a direction) and `icon` (in a slot). Kinds: sword, axe, pick,
+  knife, bow. Materials: wood, flint, copper, bronze, iron, silver, gold. Shared by the engine, the game and the
+  Item Editor. `Combat.api.items = { held(), tool(i), weapon(kind) }` tells the engine what is in hand; it then
+  draws the item instead of its built-in shapes and uses its damage or power.
 - `src/combat.js` (`Combat`): the arena engine: hero movement and combat, enemy AI, effects, rendering. The editors
   reuse it through hooks on `Combat.api`:
   - `scene`: `begin(c, P)` (camera and ground), `items(list)` (extra y-sorted things), `end(c, P)`, `bounds`,
@@ -200,6 +207,22 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   in the hotbar: in build mode the bar shows the belt, and the chosen piece is named in the bar's label. The mouse
   wheel steps through tools, pieces or the belt slot (`P.sel`). A hearth is a buildable item (`B.items`, drawn
   as a prop, solid, cookable); the camp hearth stays.
+- **The character panel** slides in from the left on Tab while the bag slides in from the right (one key, two
+  boards; Robin: fewer menus). Wood outside, leather inside; the hero drawn large and turning in the middle
+  (`playerD`, like the Character Editor), five equipment slots on the left (helmet, cloak, tunic, trousers, boots)
+  and four on the right (sword, shield, bow, amulet), all with faint glyphs when empty; only the sword and bow are
+  "equipped" and nothing can be changed yet. Below, **the quiver**: three arrow slots (one arrow type each, up to 40),
+  outside the bag; the gold one is in use and a click chooses another. The bow shoots from it
+  (`Combat.api.canShoot`/`onShoot`), the count shows by the bow icon on the hotbar, 70% of arrows that hit
+  nothing land as pickups that go back into the quiver (`onArrowLand`), and a new game starts with 20 wood
+  arrows. Arrow types and making arrows come with the workbench (roadmap step 3). Saved with the game.
+- **Things** (weapons and tools) live in bag slots as `{ kind: 'item', n: 1, item: spec }`, never stacked, and in
+  `equip` (weapon, shield, bow, trinket, axe, pick, knife, and the clothing slots, empty for now). Right click in
+  the bag equips (swapping what was there back), right click on the panel takes off, dragging off the boards drops
+  the thing on the ground, walking over it loots it. A new game starts with an iron sword, a wooden bow and flint
+  axe, pick and knife. The hotbar's tool and weapon icons are the equipped things; an empty tool slot means no
+  gathering with that tool. Hovering a thing shows a leather card with its numbers and tale. The Item Editor's
+  "Give to the game" puts a thing in `localStorage` (`game.give`) that the game picks up on load.
 - **The Book of Beasts** (L, or the small book by the chart): a leather-bound book over a dimmed screen, two
   parchment pages. Left: the beast drawn live by `creatureD`, turning slowly, its name and folk name, a tab row
   of all beasts. Right: lore, strengths, weaknesses, warning sign, drops, where found. A page is earned the first
@@ -263,8 +286,18 @@ The hero has two modes, switched with **Q**, each with its own six-slot hotbar a
 
 ## World look and props
 
-- `kit.STYLE` is bright daylight: fresh green, brown bark, blue water, no glowing fruit (`fruit: 0`).
-  Change the look of the whole world there. Editors add per-page overrides on top (hue, saturation and so on).
+- `kit.STYLE` is the look of every prop and tile at once. Since 2026-10-05 it is the **flat, clean look** Robin
+  chose from a reference (soft pastel cartoon: two or three flat tones per shape, thin olive outlines, round forms,
+  no texture strokes): `look: 0` (the flat renderer), `texture: 0`, `sparkle: 0`, `outlineW: 0.6`, `shadowHue:
+  100` (olive shades and outlines), a yellower, lighter green (`outsideHue: 100`, `bright: 14`, `sat: 0.92`).
+  The beaches and water (painted in `World`) are kept as they were; Robin likes them. Canopies are fuller and
+  lower with a dark underside and a lit top; the grass tile is a calm mottled green with a few tufts. The hero is
+  to be redrawn later; the troll and other väsen should look like the classic old illustrations (hairy, heavy,
+  long-armed), not cute. Editors add per-page overrides on top (hue, saturation and so on).
+- **The reference set** (Object Editor, first category, starred): oak, pine, bush, rock, cliff, longhouse, woodpile,
+  tallGrass, flower, runestone. Robin fixes these by hand first; each settles one family's drawing rules (canopy,
+  tiers, stone, wood and roofs, blades, small bright things, carved stone), and the rest of the props are then
+  restyled to match. The notes under the object buttons say what each one settles.
 - Props are functions that draw with `shape`, `line`, `gshadow` and materials from `mats()`, registered in `PROPS`
   with a bounding box. `node tools/visual/props.js name name ...` renders them next to the hero.
 - Built things use `K.wood`; `K.trunk` is living bark.

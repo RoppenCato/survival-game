@@ -24,6 +24,7 @@ no dependencies, so you can also open any file in `dist/` directly.
 | Environment Editor | A patch of land: biome, ground, which objects appear, how dense and how open |
 | Base Editor | Build a homestead piece by piece; closed rooms get a roof |
 | Sea Editor | The archipelago and the ships: island sizes, sea distances, handling |
+| Item Editor | Weapons and tools: material, size, sharpness, glow, twist and curl, name and tale; give them to the game |
 | Combat Arena | Fight wolves, boars, snakes and the bear |
 | The game | The first island: chop trees, mine stone, hunt boar, keep what you find |
 
@@ -49,6 +50,7 @@ src/art.js          the hero, the animals and other creatures
 src/stylelab.js     the world: props, ground tiles and the shared look
 src/world.js        the archipelago: islands, ground, what grows there (Sea Editor and the game)
 src/build.js        building pieces, rooms and roofs (Base Editor and the game)
+src/items.js        weapons and tools: drawing, names and numbers (Item Editor and the game)
 src/combat.js       the arena engine: movement, combat, enemy behaviour, rendering
 templates/          the HTML shell for each page
 tools/build.py      stitches templates and source into single-file pages in dist/

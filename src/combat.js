@@ -9,7 +9,10 @@ var WPRE = {
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
 var DASH_T = 0.18;
-var api = { sfx: function () {}, facings8: true, harvest: null, onDeath: null, buildSlots: null, beltSlots: null };   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) }   // facings8: the hero turns on the diagonals and animals turn freely
+var api = { sfx: function () {}, facings8: true, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null };
+// api.items = { held(), tool(i), weapon(kind) } gives the item specs (src/items.js) in the hand, in tool slot i and for 'sword' or 'bow'
+function itemOf(fn, a) { if (!api.items || typeof Items === 'undefined' || !api.items[fn]) return null; return api.items[fn](a) || null; }
+function dmgMul(kind) { var it = itemOf('weapon', kind); return it ? Items.stats(it).dmg : 1; }   // canShoot()/onShoot(): ammunition; onArrowLand(x, y): a player's arrow that hit nothing; quiver: the count shown by the bow   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) }   // facings8: the hero turns on the diagonals and animals turn freely
 function sfx(n, v) { if (S.sound) api.sfx(n, v); }
 
 function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
@@ -399,15 +402,15 @@ function updatePlayer(dt) {
       var ang = a.dir - half * sign + sd.arc * sign * u;
       a.tr = { start: a.dir - half * sign, cur: ang, age: 0, reach: 9 + sd.blade, sign: sign, hot: a.combo === 3 && a.chg > 0.6 };
       if (p.mode === 'gather') {                      // tools hit trees, rocks and bushes, never enemies
-        var hv = api.harvest, tl = TOOLS[p.tool];
-        var objs = hv ? hv.list(p.x, p.y, 90) : [];
+        var hv = api.harvest, tl = TOOLS[p.tool], ti = itemOf('tool', p.tool), tpow = ti ? Items.stats(ti).power : tl.dmg;
+        var objs = hv && !(api.items && !ti) ? hv.list(p.x, p.y, 90) : [];   // no tool in the slot, nothing to swing
         for (i = 0; i < objs.length; i++) {
           var o = objs[i];
           if (a.hit.indexOf(o) >= 0) continue;
           var ox = o.x - p.x, oy = o.y - p.y, od = Math.hypot(ox, oy);
           if (od <= sd.reach + (o.r || 8) + 2 && Math.abs(wrap(Math.atan2(oy, ox) - a.dir)) <= half + 0.12) {
             a.hit.push(o);
-            var right = o.kind === tl.good, pw = tl.dmg * (right ? 1 : 0.5) * (a.combo >= 2 ? 1.5 : 1);
+            var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (a.combo >= 2 ? 1.5 : 1);
             hv.hit(o, pw, right, tl.id);
             num(o.x, o.y, (right ? '' : 'wrong tool  ') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#ffd34d', a.combo >= 2);
           }
@@ -418,7 +421,7 @@ function updatePlayer(dt) {
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
         if (d <= sd.reach + e.r + 2 && Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12) {
           a.hit.push(e);
-          damageEnemy(e, sd.dmg, Math.atan2(dy, dx), sd.kb, sd.stag, a.combo >= 2 ? 'heavy' : 'melee');
+          damageEnemy(e, sd.dmg * dmgMul('sword'), Math.atan2(dy, dx), sd.kb, sd.stag, a.combo >= 2 ? 'heavy' : 'melee');
         }
       }
       if (a.t >= sd.ac) { a.ph = 'recover'; a.t = 0; }
@@ -427,11 +430,11 @@ function updatePlayer(dt) {
   if (a.tr) { if (a.ph === 'recover' || a.ph === 'none') a.tr.age += dt; if (a.tr.age > 0.18) a.tr = null; }
 
   // ranged
-  if (bow && (IN.lmb || IN.keys.KeyJ) && p.fireCd <= 0 && p.st >= 6 && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none') {
-    p.fireCd = 0.45; p.fireT = 0.2; p.st -= 6; p.stDelay = 0.4;
+  if (bow && (IN.lmb || IN.keys.KeyJ) && p.fireCd <= 0 && p.st >= 6 && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {
+    p.fireCd = 0.45; if (api.onShoot) api.onShoot(); p.fireT = 0.2; p.st -= 6; p.stDelay = 0.4;
     var fa = rangedAngle();
     p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
-    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * 240, vy: Math.sin(fa) * 240, r: 3.5, dmg: 1, owner: 'player', life: 1.0, ang: fa });
+    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * 240, vy: Math.sin(fa) * 240, r: 3.5, dmg: dmgMul('bow'), owner: 'player', life: 1.0, ang: fa });
     spark(p.x + Math.cos(fa) * 10, p.y + Math.sin(fa) * 10, 3, '#ffe9a0', 60);
     if (S.juice) { p.kx -= Math.cos(fa) * 30; p.ky -= Math.sin(fa) * 30; }
     sfx('shoot');
@@ -655,7 +658,8 @@ function updateProjs(dt) {
   for (var i = W.projs.length - 1; i >= 0; i--) {
     var pr = W.projs[i];
     pr.x += pr.vx * dt; pr.y += pr.vy * dt; pr.life -= dt;
-    var gone = pr.life <= 0 || pr.x < 8 || pr.x > AW - 8 || pr.y < 30 || pr.y > AH - 6;
+    var SB = api.scene && api.scene.bounds, hit = false;   // a page with a big world has its own edges
+    var gone = pr.life <= 0 || (SB ? (pr.x < SB.x0 || pr.x > SB.x1 || pr.y < SB.y0 || pr.y > SB.y1) : (pr.x < 8 || pr.x > AW - 8 || pr.y < 30 || pr.y > AH - 6));
     if (!gone && pillarHit(pr.x, pr.y, pr.r)) { gone = true; spark(pr.x, pr.y, 4, '#ffe9a0', 60); }
     if (!gone) {
       if (pr.owner === 'enemy') {
@@ -668,11 +672,11 @@ function updateProjs(dt) {
         for (var j = 0; j < W.enemies.length; j++) {
           var e = W.enemies[j];
           if (e.dead) continue;
-          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), 40, 8, 'proj'); gone = true; break; }
+          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), 40, 8, 'proj'); gone = true; hit = true; break; }
         }
       }
     }
-    if (gone) W.projs.splice(i, 1);
+    if (gone) { W.projs.splice(i, 1); if (!hit && pr.owner === 'player' && !pr.reflected && api.onArrowLand) api.onArrowLand(pr.x, pr.y); }
   }
 }
 function updateFx(dt) {
@@ -1121,7 +1125,7 @@ function heroSprFn(dashing, dir, pose, f, armSide, ab) {
 
 function drawHeroWeapon(c, front) {
   var p = P, a = p.atk, dir = heroDir(), bp = bodyPose(), sp = swordPose(dir), spr = S.look === 'sprite';
-  var hideSword = spr || a.ph === 'none' || (p.guard && !S.shield), HH = lib.hero(), HC = HH.pal;
+  var hideSword = spr || (p.guard && !S.shield) || (a.ph === 'none' && !itemOf('held')), HH = lib.hero(), HC = HH.pal;
   if (spr) drawPixSword(c, front);
   var hx = p.x + sp.hx + bp.lx, hy = p.y * K + sp.hy + bp.ly;
   if (a.ph === 'charge' && !front) {
@@ -1133,7 +1137,9 @@ function drawHeroWeapon(c, front) {
   if (!hideSword && sp.front === front) {
     var ca = sp.ca, sa = sp.sa, len = sp.len, ex = hx + ca * len, ey = hy + sa * len, px = -sa, py = ca;
     c.lineCap = 'round';
-    if (p.mode === 'gather') { drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
+    var heldIt = itemOf('held');
+    if (heldIt) { Items.draw(c, heldIt, hx, hy, ca, sa, heldIt.kind === 'sword' ? len * heldIt.size : null, p.mode === 'gather' && a.ph !== 'none'); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
+    else if (p.mode === 'gather') { if (!api.items) drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else {
     c.strokeStyle = '#3a2a36'; c.lineWidth = 5.4; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
     c.strokeStyle = HC.blade; c.lineWidth = 3; c.beginPath(); c.moveTo(hx + ca * 3, hy + sa * 3); c.lineTo(ex, ey); c.stroke();
@@ -1151,7 +1157,8 @@ function drawHeroWeapon(c, front) {
     var fa = p.fireAng, fca = Math.cos(fa), fsa = Math.sin(fa) * K;
     if ((Math.sin(fa) >= -0.05) === front) {
       var fx = p.x + fca * 10 + bp.lx, fy = p.y * K - 13 + fsa * 10 + bp.ly;
-      drawBowShape(c, fx + fca * 3, fy + fsa * 3, fca, fsa);
+      var bowIt = itemOf('weapon', 'bow');
+      if (bowIt) Items.draw(c, bowIt, fx + fca * 3, fy + fsa * 3, fca, fsa, null); else drawBowShape(c, fx + fca * 3, fy + fsa * 3, fca, fsa);
       if (front) lib.ell(c, fx, fy, 2.6, 2.6, HC.skin, 1.5);
     }
   }
@@ -1367,7 +1374,8 @@ function roundIcon(c, id, x, y, r, on, dim) {
   c.globalAlpha = dim ? 0.45 : 1;
   c.fillStyle = 'rgba(20,16,30,0.82)'; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
   c.strokeStyle = on ? '#ffd34d' : 'rgba(255,255,255,0.35)'; c.lineWidth = on ? 1.3 : 0.8; c.stroke();
-  c.save(); c.translate(x, y); c.scale(r / 10, r / 10); slotIcon(c, id, 0, 0); c.restore();
+  var wi = itemOf('weapon', id);
+  c.save(); c.translate(x, y); if (wi) Items.icon(c, wi, r * 1.6); else { c.scale(r / 10, r / 10); slotIcon(c, id, 0, 0); } c.restore();
   c.globalAlpha = 1;
 }
 function drawHotbar(c) {
@@ -1379,11 +1387,12 @@ function drawHotbar(c) {
   roundIcon(c, 'bow', x0 - 10, y0 + 9, 6.5, mode === 'fight' && P.weapon === 'ranged', mode !== 'fight');
   c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 - 11, y0 - 2); c.lineTo(x0 - 22, y0 + 10); c.stroke();
   c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText('F', x0 - 16.5, y0 + 14.5);
+  if (api.quiver != null) { c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36'; c.strokeText(String(api.quiver), x0 - 3, y0 + 13); c.fillStyle = api.quiver > 0 ? '#fff' : '#ff8a7a'; c.fillText(String(api.quiver), x0 - 3, y0 + 13); }
   for (i = 0; i < 6; i++) {
     var x = x0 + i * (sz + gap), tool = gather && i < TOOLS.length ? TOOLS[i] : null, cx = x + sz / 2, cy = y0 + sz / 2;
     slotBox(c, x, y0, (gather && i === P.tool) || (mode === 'fight' && i === (P.sel || 0)), sz);
     c.save(); c.translate(cx, cy); c.scale(k, k);
-    if (tool) slotIcon(c, tool.id, 0, 0);
+    if (tool) { var ti2 = itemOf('tool', i); if (ti2) Items.icon(c, ti2, 16); else { if (api.items) c.globalAlpha = 0.3; slotIcon(c, tool.id, 0, 0); c.globalAlpha = 1; } }
     else if (api.beltSlots && api.beltSlots[i] && (mode !== 'gather' || i >= TOOLS.length)) {
       var bs = api.beltSlots[i]; bs.draw(c);
       if (bs.n > 1) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36'; c.strokeText(String(bs.n), 9.5, 9.5); c.fillStyle = '#fff'; c.fillText(String(bs.n), 9.5, 9.5); }

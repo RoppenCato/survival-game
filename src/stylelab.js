@@ -28,9 +28,11 @@ var DEF = {
 };
 // The chosen look of the world: bright, lush, green Scandinavian daylight. Every editor starts from this.
 // fruit: 0 switches off the glowing lantern fruit the old night style hung in the trees.
-var STYLE = { factoryHue: 215, outsideHue: 118, accentHue: 46, shadowHue: 176, sat: 1.18, bright: 12, contrast: 1, shade: 0.4,
-  round: 0.9, spindly: 0.1, lush: 1, twist: 0.1, sparkle: 0.5, texture: 0.5, outlineW: 1.1, outlineDark: 0.8, rough: 0.08,
-  light: 0.8, fog: 0, glow: 0.3, vignette: 0, look: 1, seed: 7, scaleRef: 0, fruit: 0 };
+// The look (2026-10-05): flat, clean shapes in two or three tones, thin olive outlines, no texture strokes, round
+// forms. Look 0 is the flat renderer; shadowHue 100 makes shades and outlines olive instead of teal.
+var STYLE = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 100, sat: 0.92, bright: 14, contrast: 0.96, shade: 0.34,
+  round: 1, spindly: 0.05, lush: 1, twist: 0.08, sparkle: 0, texture: 0, outlineW: 0.6, outlineDark: 0.6, rough: 0.03,
+  light: 0.8, fog: 0, glow: 0.2, vignette: 0, look: 0, seed: 7, scaleRef: 0, fruit: 0 };
 var PRESETS = [
   { name: 'Night Forest', note: 'Blue-violet Factory, deep teal-green outside, warm amber lanterns. Cozy and a little mysterious, like a MapleStory forest at night.',
     p: { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, twist: 0.12, spindly: 0.12, rough: 0.08, lush: 0.95, round: 0.85, sparkle: 0.8, outlineW: 1.1, outlineDark: 0.86, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4 } },
@@ -190,7 +192,7 @@ function mats() {
   K.floorA = M(f, 16, 24); K.floorB = M(f + 6, 15, 29); K.wall = M(f + 8, 20, 33); K.wallDark = M(f + 4, 22, 22);
   K.iron = M(f + 14, 14, 42); K.ironLight = M(f + 14, 13, 52); K.brass = M(mixHue(38, a, 0.2), 48, 48); K.rust = M(14, 52, 34);
   K.pipe = M(f - 28, 24, 38); K.crate = M(mixHue(30, f, 0.15), 28, 34); K.glass = M(a, 70, 62);
-  K.grassA = M(o, 40, 36); K.grassB = M(o + 14, 42, 41); K.leaf = M(o - 6, 50, 44); K.leafD = M(o + 6, 44, 32);
+  K.grassA = M(o, 44, 42); K.grassB = M(o + 12, 46, 46); K.leaf = M(o - 4, 50, 46); K.leafD = M(o + 6, 46, 35);
   K.trunk = M(mixHue(26, o, 0.08), 34, 30); K.trunkL = M(mixHue(28, o, 0.08), 30, 40);   // plain brown bark
   K.rock = M(mixHue(o, 270, 0.6), 10, 42); K.moss = M(o - 10, 52, 36); K.path = M(mixHue(35, o, 0.15), 18, 44);
   K.water = M(204 + (o - STYLE.outsideHue), 62, 38); K.waterL = M(197 + (o - STYLE.outsideHue), 62, 48);   // clear blue sea; the hue follows any hue shift
@@ -252,9 +254,9 @@ function leafBlobs(c, K, cx, cy, r, seed, count, tint, noBase) {
   }
   blobs.forEach(function (b) { path(c, b.d); c.lineWidth = ow('L') * 2; c.strokeStyle = OLC; c.lineJoin = 'round'; c.stroke(); });
   blobs.forEach(function (b) { path(c, b.d); c.fillStyle = mat.base; c.fill(); });
-  blobs.forEach(function (b) { var bb = bbox(b.d); crescent(c, b.d, -b.r * 0.12 * (0.5 + P.shade), -b.r * 0.12 * (0.5 + P.shade), mat.shade, bb); crescent(c, b.d, b.r * 0.16, b.r * 0.16, mat.hl, bb); });
-  blobs.forEach(function (b, k) { if (k === 0) return; path(c, b.d); c.lineWidth = ow('S') * 0.7; c.strokeStyle = OLC; c.globalAlpha = 0.5; c.stroke(); c.globalAlpha = 1; });
-  for (i = 0; i < count * 3; i++) { var b3 = blobs[i % blobs.length], lx2 = b3.x + (R() - 0.7) * b3.r * 1.1, ly2 = b3.y + (R() - 0.6) * b3.r * 0.7; line(c, curvePts([lx2, ly2], [lx2 + 2.5, ly2 - 3], [lx2 + 5.5, ly2 - 1.5], 4), 1.3, mat.hl, false); }
+  blobs.forEach(function (b) { var bb = bbox(b.d); crescent(c, b.d, -b.r * 0.26, -b.r * 0.3, mat.shade, bb); crescent(c, b.d, b.r * 0.22, b.r * 0.26, mat.hl, bb); });
+  blobs.forEach(function (b, k) { if (k === 0) return; path(c, b.d); c.lineWidth = ow('S') * 0.7; c.strokeStyle = OLC; c.globalAlpha = 0.35; c.stroke(); c.globalAlpha = 1; });
+  for (i = 0; i < count; i++) { var b3 = blobs[i % blobs.length], lx2 = b3.x + (R() - 0.7) * b3.r * 1.1, ly2 = b3.y + (R() - 0.6) * b3.r * 0.7; line(c, curvePts([lx2, ly2], [lx2 + 2.5, ly2 - 3], [lx2 + 5.5, ly2 - 1.5], 4), 1.3, mat.hl, false); }
 }
 
 // Roots that curve out of the trunk and down into the ground, thick at the trunk and thin at the tip.
@@ -286,7 +288,7 @@ function tree(c, K, x, y, h, seed, wid, mat) {
   rootFlare(c, K, x, y, baseW, seed, baseW * 0.8);
   shape(c, ribbon(cl, 0, 0, function (t) { return lerp(baseW, baseW * 0.62, t) + (t < 0.12 ? (0.12 - t) * baseW * 2.6 : 0); }), K.trunk, { seed: seed, size: 'XL', sh: 6, hl: 3, rough: 0.3 });
   groundTufts(c, K, x, y, baseW * 1.35, seed);
-  var top = cl[n], cr = h * (0.2 + 0.16 * P.lush), cx = top[0], cy = top[1] - cr * 0.42;
+  var top = cl[n], cr = h * (0.24 + 0.18 * P.lush), cx = top[0], cy = top[1] - cr * 0.2;
   // two short branches into the canopy
   [-1, 1].forEach(function (sd, k) { var p0 = cl[8]; shape(c, ribbon(curvePts([p0[0], p0[1]], [p0[0] + sd * cr * 0.2, p0[1] - cr * 0.15], [p0[0] + sd * cr * 0.38, p0[1] - cr * 0.55], 6), baseW * 0.42, baseW * 0.24), K.trunk, { seed: seed + 20 + k, size: 'M', sh: 1.5, rough: 0.2 }); });
   var cnt = 4 + Math.round(P.lush * 4);
@@ -705,12 +707,12 @@ function paintTile(c, K, type, v, R) {
     var m = type === 'moss' ? K.moss : K.grassA;
     c.fillStyle = type === 'grass' ? m.base : (type === 'moss' ? K.moss.base : K.gdark.base); c.fillRect(0, 0, TW, TH);
     var bl = []; for (i = 0; i < 3; i++) bl.push([R() * TW, R() * TH, 8 + R() * 9, R() < 0.5]);
-    wrapDraw(c, function () { bl.forEach(function (b) { soft(c, b[0], b[1], b[2], b[3] ? m.hl : m.shade, type === 'grass' ? 0.07 : 0.14); }); });
+    wrapDraw(c, function () { bl.forEach(function (b) { soft(c, b[0], b[1], b[2] * 1.4, b[3] ? m.hl : m.shade, type === 'grass' ? 0.035 : 0.1); }); });   // faint: the real mottling is painted over whole pieces of map, never per tile
     if (type === 'grass') {
-      blades(c, R, 22, [K.leaf.base, K.leafD.base, K.grassB.hl, K.grassA.hl], 3, 6.5, 0.5);
+      blades(c, R, 5, [K.leafD.base, K.grassA.shade, K.leaf.base], 2.5, 4.5, 0.3);
       var ex = v % 6;
       if (ex === 1) { list = []; for (i = 0; i < 3; i++) list.push([3 + R() * 26, 3 + R() * 18]); wrapDraw(c, function () { list.forEach(function (p) { [[0, 0], [2.4, 1], [-2, 1.2]].forEach(function (o) { c.fillStyle = K.leaf.hl; c.beginPath(); c.ellipse(p[0] + o[0], p[1] + o[1], 2, 1.5, 0, 0, 7); c.fill(); }); }); }); }
-      if (ex === 2 || ex === 5) { list = []; for (i = 0; i < 3; i++) list.push([4 + R() * 24, 6 + R() * 14, R()]); wrapDraw(c, function () { list.forEach(function (p) { c.strokeStyle = K.leafD.base; c.lineWidth = 1; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(p[0], p[1] - 4); c.stroke(); c.fillStyle = p[2] < 0.5 ? K.flowerA.base : (p[2] < 0.8 ? K.flowerC.base : K.spot.base); c.beginPath(); c.arc(p[0], p[1] - 4.6, 1.9, 0, 7); c.fill(); c.fillStyle = K.spot.base; c.beginPath(); c.arc(p[0], p[1] - 4.6, 0.7, 0, 7); c.fill(); }); }); }
+      if (ex === 2) { list = []; for (i = 0; i < 2; i++) list.push([4 + R() * 24, 6 + R() * 14, R()]); wrapDraw(c, function () { list.forEach(function (p) { c.strokeStyle = K.leafD.base; c.lineWidth = 1; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(p[0], p[1] - 4); c.stroke(); c.fillStyle = p[2] < 0.5 ? K.flowerA.base : (p[2] < 0.8 ? K.flowerC.base : K.spot.base); c.beginPath(); c.arc(p[0], p[1] - 4.6, 1.9, 0, 7); c.fill(); c.fillStyle = K.spot.base; c.beginPath(); c.arc(p[0], p[1] - 4.6, 0.7, 0, 7); c.fill(); }); }); }
       if (ex === 3) { list = []; for (i = 0; i < 2; i++) list.push([4 + R() * 24, 4 + R() * 16, 1.6 + R() * 1.6]); wrapDraw(c, function () { list.forEach(function (p) { c.fillStyle = K.rock.base; c.beginPath(); c.ellipse(p[0], p[1], p[2], p[2] * 0.7, 0, 0, 7); c.fill(); c.fillStyle = K.rock.hl; c.beginPath(); c.ellipse(p[0] - 0.5, p[1] - 0.5, p[2] * 0.5, p[2] * 0.3, 0, 0, 7); c.fill(); }); }); }
     } else if (type === 'grassDark') {
       blades(c, R, 14, [K.leafD.base, K.grassA.base, K.grassA.hl], 3, 5.5, 0.45);

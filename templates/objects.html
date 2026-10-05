@@ -94,6 +94,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div class="group" id="cats"></div>
         <h2 class="more">Object</h2>
         <div class="group" id="objs"></div>
+        <p class="desc" id="refnote"></p>
       </section>
       <section class="panel">
         <h2>Shape variations</h2>
@@ -180,7 +181,23 @@ __COMBAT__
   var BASE = kit.STYLE;   // the one shared look of the world, set in src/stylelab.js
 
   /* ---------- objects by category ---------- */
+  // The reference set: fix these ten by hand and the rest of the world is restyled to match them. One of each
+  // family, so every drawing rule gets settled once: a round tree, a pine, a bush, a rock, a cliff, a house, a
+  // small built thing, a ground plant, a flower, and a landmark.
+  var REF = {
+    oak: 'The round tree. Settles the canopy: how many lobes, the scalloped edge, the dark underside, the lit top, how short and wide the trunk is.',
+    pine: 'The pointed tree. Settles tiers and their edges, and how the pines differ from the round trees.',
+    bush: 'The small plant mass. Same canopy rules as the oak at bush size; the berry bush follows it.',
+    rock: 'The boulder. Settles the rock: facets or smooth, the highlight, the moss, the outline weight.',
+    cliff: 'The big rock. Settles how stone reads at the size of a wall, and the layered strata of the first reference.',
+    longhouse: 'The house. Settles wood, thatch or turf, the horned gable, doors and windows; the hut and boathouse follow it.',
+    woodpile: 'The small built thing. Settles planks and logs in the same hand as the house.',
+    tallGrass: 'The ground plant. Settles blades: how few, how soft, how they sit on the grass.',
+    flower: 'The flower. Settles the tiny bright things: petals, the dot of a centre, how much outline a small thing gets.',
+    runestone: 'The landmark. Settles carved stone and the marks on it; cairns and burial mounds follow it.'
+  };
   var CATS = [
+    { name: 'Reference set', ground: 'grass', solid: 10, ref: true, list: Object.keys(REF) },
     { name: 'Found in nature', ground: 'grass', solid: 10, list: ['cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
     { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile'] },
     { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['longhouse', 'beachedBoat', 'campfire', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
@@ -194,7 +211,7 @@ __COMBAT__
   var GROUNDS = [['grass', 'Grass'], ['grassDark', 'Dark grass'], ['path', 'Path'], ['plank', 'Planks'], ['snow', 'Snow'], ['ash', 'Ash'], ['rock', 'Rock'], ['flat', 'Plain grey']];
   CATS.forEach(function (cat) { cat.list = cat.list.filter(function (n) { return !!kit.PROPS[n]; }); });
   function label(n) { var s = n.replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
-  function catOf(name) { for (var i = 0; i < CATS.length; i++) if (CATS[i].list.indexOf(name) >= 0) return CATS[i]; return CATS[0]; }
+  function catOf(name) { for (var i = 1; i < CATS.length; i++) if (CATS[i].list.indexOf(name) >= 0) return CATS[i]; return CATS[1]; }
 
   /* ---------- settings ---------- */
   var SIZE = [
@@ -418,16 +435,17 @@ __COMBAT__
   function showCat(cat) {
     curCat = cat;
     pressed('cats', function (b) { return b.textContent === cat.name; });
-    buttons('objs', cat.list, label, pick, function (n) { return n; });
+    buttons('objs', cat.list, function (n) { return (REF[n] ? '\u2605 ' : '') + label(n); }, pick, function (n) { return n; });
     pressed('objs', function (b) { return b.getAttribute('data-v') === cur; });
   }
   function pick(name) {
     cur = name; spec = null;
     try { spec = JSON.parse(localStorage.getItem('objecteditor2.' + name)); } catch (e) {}
     if (!spec || typeof spec !== 'object') spec = defSpec(name);
-    var cat = catOf(name);
+    var cat = curCat && curCat.list.indexOf(name) >= 0 ? curCat : catOf(name);
     if (cat !== curCat) showCat(cat);
     pressed('objs', function (b) { return b.getAttribute('data-v') === cur; });
+    document.getElementById('refnote').textContent = REF[name] ? '\u2605 Reference object. ' + REF[name] : '';
     setGround(GROUND_FOR[name] || cat.ground);
     apply(); bake(); fit();
   }
@@ -449,7 +467,7 @@ __COMBAT__
     jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
   });
 
-  showCat(CATS[2]); pick('longhouse');
+  showCat(CATS[0]); pick('oak');
 
   var last = performance.now();
   function frame(now) {

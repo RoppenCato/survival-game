@@ -55,7 +55,7 @@ Tests: see "Testing" below, the animals row.
 - Tool tiers are what gates gathering: "harder each biome" starts here, because the next island's trees and
   rocks want the better tools.
 
-Depends on: nothing; the quiver above is a suggestion to confirm (Q2).
+The quiver is built (the character panel); step 3 adds making arrows and new arrow types.
 
 ## Step 4: the boat and the second island
 
@@ -183,4 +183,4 @@ members in combat (both, with random stats and traits, and training), the day (2
 (hird, hirdmen). Still open:
 
 1. **The first väsen.** The troll (night, stone at dawn), or another? The troll is the clearest rule.
-2. **The quiver.** Is the quiver in step 3 the way to carry arrows?
+2. ~~The quiver~~: decided and built (the character panel, Tab): three arrow slots outside the bag.

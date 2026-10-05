@@ -74,14 +74,16 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <dt><kbd>B</kbd></dt><dd>Build mode. <kbd>Right click</kbd> opens the board of pieces: pick one, then click to place it (drag for walls and floors). <kbd>F</kbd> turns the cursor into the wreck cursor: the piece under it glows red, and a click takes it down and gives the material back</dd>
           <dt><kbd>Mouse wheel</kbd></dt><dd>Step through the hotbar: tools in gather mode, pieces in build mode, the belt in fight mode</dd>
           <dt><kbd>E</kbd></dt><dd>Cook at the camp hearth</dd>
+          <dt><kbd>Right click</kbd> on a thing</dt><dd>In the bag: equip it (a sword to the weapon slot, an axe to the axe slot). On the character panel: take it off into the bag. Drag a thing off the boards to drop it on the ground; walk over it to pick it up again</dd>
           <dt><kbd>L</kbd></dt><dd>The Book of Beasts. Every creature gets a page the first time you slay one: what it is, its strengths and weaknesses, how it warns you, what it drops. Click the small book by the chart to open it too</dd>
-          <dt><kbd>Tab</kbd></dt><dd>The bag: a wooden board that slides in from the right. Six slots wide, four high, stacks of 25. The top row is the belt and matches the hotbar numbers. Drag to move things, click food to eat it, Sort tidies the rows below the belt</dd>
+          <dt><kbd>Tab</kbd></dt><dd>The character panel slides in from the left (the hero, the equipment slots, and the quiver: three arrow slots, click one to shoot from it) and the bag from the right. The bag: a wooden board that slides in from the right. Six slots wide, four high, stacks of 25. The top row is the belt and matches the hotbar numbers. Drag to move things, click food to eat it, Sort tidies the rows below the belt</dd>
           <dt><kbd>R</kbd></dt><dd>Rise again after you have fallen</dd>
         </dl>
       </div>
       <div>
         <h2>What there is to do</h2>
         <p class="desc" style="margin-top:0">Trees take a few chops with the axe and fall. Rocks crack as you mine them and break apart. Bushes are cut with the knife. What falls out lies on the ground until you walk over it, and lands in your inventory.</p>
+        <p class="desc">The bow shoots from the quiver: you start with twenty wood arrows, and most arrows that miss land on the ground and can be picked up again. Making more arrows comes with the workbench.</p>
         <p class="desc">Boars roam the island in small home ranges. They leave you alone until you come close, then charge. A dead boar leaves meat, and berry bushes give berries.</p>
         <p class="desc">Food never punishes you: you do not have to eat. Eat, and you heal; cook a meal at the hearth and your health keeps coming back for minutes, with your top health raised. Roast boar is good; boar and berry stew is better. Open the bag and click food to eat it, or put food on the belt and press its number.</p>
         <p class="desc">Building is cheap: a wall, door or window costs two wood (a stone wall two stone), a floor tile one wood, and a hearth of your own four stone and two wood (you can cook at it like the one at camp). Close a loop of walls and a turf roof appears by itself, and fades when you step inside. Add a door, or you will not get in.</p>
@@ -96,6 +98,7 @@ __ART__
 __LIB__
 __WORLD__
 __BUILD__
+__ITEMS__
 __COMBAT__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), stat = document.getElementById('stat');
@@ -135,7 +138,7 @@ __COMBAT__
     w = World.make(kit, spec);
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); w.camp(); w.sortBuckets(); buckets = w.buckets;
-    drops = []; bits = []; decals = []; gone = {}; book = {}; B = { floors: {}, H: {}, V: {}, items: [] }; roofA = {}; bDirty = true;
+    drops = []; bits = []; decals = []; gone = {}; book = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [{ kind: 'arrow', n: 20 }, null, null], sel: 0 }; B = { floors: {}, H: {}, V: {}, items: [] }; roofA = {}; bDirty = true;
     mini = w.chart(200);
     hearth = null; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
@@ -239,7 +242,7 @@ __COMBAT__
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   var SAVE = 'game.save', gone = {}, saveT = 0;
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, hero: { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, hero: { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -248,7 +251,24 @@ __COMBAT__
   // The bag: 24 slots, 6 wide. The top six are the belt and match the hotbar's numbers. A slot holds one kind, up to 25.
   var COLS = 6, ROWS = 4, SLOTS = COLS * ROWS, STACK = 25, slots = [], held = null, pick = null;
   for (var si0 = 0; si0 < SLOTS; si0++) slots.push(null);
-  function recount() { for (var k in inv) inv[k] = 0; slots.forEach(function (s) { if (s) inv[s.kind] = (inv[s.kind] || 0) + s.n; }); }
+  function recount() { for (var k in inv) inv[k] = 0; slots.forEach(function (s) { if (s && s.kind !== 'item') inv[s.kind] = (inv[s.kind] || 0) + s.n; }); }
+  // weapons and tools are things: one to a slot, never stacked, kept as { kind: 'item', n: 1, item: spec }
+  function addThing(spec) { for (var i = 0; i < SLOTS; i++) if (!slots[i]) { slots[i] = { kind: 'item', n: 1, item: spec }; return true; } return false; }
+  var TOOL_SLOT = { sword: 'weapon', bow: 'bow', axe: 'axe', pick: 'pick', knife: 'knife' }, TOOL_IDS = ['axe', 'pick', 'knife'];
+  var equip = { weapon: null, shield: null, bow: null, trinket: null, axe: null, pick: null, knife: null, head: null, cloak: null, chest: null, legs: null, feet: null };
+  function startKit() { equip.weapon = Items.make('sword', 'iron'); equip.bow = Items.make('bow', 'wood'); equip.axe = Items.make('axe', 'flint'); equip.pick = Items.make('pick', 'flint'); equip.knife = Items.make('knife', 'flint'); }
+  function equipFromBag(i) {               // right click in the bag: the thing goes to its slot, what was there comes back
+    var s = slots[i]; if (!s || s.kind !== 'item') return; var where = TOOL_SLOT[s.item.kind]; if (!where) return;
+    var old = equip[where]; equip[where] = s.item; slots[i] = old ? { kind: 'item', n: 1, item: old } : null;
+    toast('Equipped ' + s.item.name); recount(); save();
+  }
+  function unequipToBag(where) { var it = equip[where]; if (!it) return; if (!addThing(it)) { toast('The bag is full'); return; } equip[where] = null; recount(); save(); }
+  function dropThing(spec, x, y) { var a = Math.random() * 6.283; drops.push({ kind: 'item', item: spec, x: x, y: y, z: 8, vx: Math.cos(a) * 40, vy: Math.sin(a) * 28, vz: 80, t: 0, spin: Math.random() * 6.283 }); }
+  Combat.api.items = {
+    held: function () { var P = hero(); if (P.mode === 'fight') return P.weapon === 'melee' ? equip.weapon : equip.bow; if (P.mode === 'gather') return equip[TOOL_IDS[P.tool]] || null; return null; },
+    tool: function (i) { return equip[TOOL_IDS[i]] || null; },
+    weapon: function (k) { return k === 'bow' ? equip.bow : equip.weapon; }
+  };
   function addItem(kind, n) {             // fills stacks of the same kind first, then empty slots; returns what did not fit
     var i, s, take;
     for (i = 0; i < SLOTS && n > 0; i++) { s = slots[i]; if (s && s.kind === kind && s.n < STACK) { take = Math.min(n, STACK - s.n); s.n += take; n -= take; } }
@@ -261,15 +281,16 @@ __COMBAT__
   }
   function canHold(kind, n) { for (var i = 0; i < SLOTS && n > 0; i++) { var s = slots[i]; if (!s) n -= STACK; else if (s.kind === kind) n -= STACK - s.n; } return n <= 0; }
   function sortBag() {                    // the rows below the belt: by kind, stacks merged
-    var pool = {}, i, k; for (i = COLS; i < SLOTS; i++) { if (slots[i]) pool[slots[i].kind] = (pool[slots[i].kind] || 0) + slots[i].n; slots[i] = null; }
+    var pool = {}, things = [], i, k; for (i = COLS; i < SLOTS; i++) { if (slots[i]) { if (slots[i].kind === 'item') things.push(slots[i]); else pool[slots[i].kind] = (pool[slots[i].kind] || 0) + slots[i].n; } slots[i] = null; }
     i = COLS; ORDER.forEach(function (kind) { for (k = pool[kind] || 0; k > 0 && i < SLOTS; k -= STACK) slots[i++] = { kind: kind, n: Math.min(STACK, k) }; });
+    things.sort(function (a, b) { return Items.ORDER.indexOf(a.item.kind) - Items.ORDER.indexOf(b.item.kind); }).forEach(function (t) { if (i < SLOTS) slots[i++] = t; });
     recount(); save();
   }
-  function useSlot(i) { var s = slots[i]; if (s && FOOD[s.kind]) eat(s.kind); }
+  function useSlot(i) { var s = slots[i]; if (!s) return; if (FOOD[s.kind]) eat(s.kind); else if (s.kind === 'item') equipFromBag(i); }
   function dropOn(from, to) {             // drag and drop: merge like kinds, otherwise swap
     if (from === to || from < 0 || to < 0) return;
     var a = slots[from], b = slots[to];
-    if (a && b && a.kind === b.kind && b.n < STACK) { var take = Math.min(a.n, STACK - b.n); b.n += take; a.n -= take; if (!a.n) slots[from] = null; }
+    if (a && b && a.kind === b.kind && a.kind !== 'item' && b.n < STACK) { var take = Math.min(a.n, STACK - b.n); b.n += take; a.n -= take; if (!a.n) slots[from] = null; }
     else { slots[from] = b; slots[to] = a; }
     recount(); save();
   }
@@ -332,17 +353,16 @@ __COMBAT__
     wood(c, menu.x, menu.y, menu.w, menu.h);
     c.fillStyle = 'rgba(255,230,180,0.16)'; c.fillRect(menu.x + 5, menu.y + 4, 58, 12);
     c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Building [' + PIECES.length + ']', menu.x + 9, menu.y + 12.5);
-    c.font = '600 5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'right'; c.fillText('right click or Esc closes', menu.x + menu.w - 7, menu.y + 12.5);
     for (i = 0; i < menu.items.length; i++) {
       var it = menu.items[i], on = it.piece && !P.wreck && P.piece === it.i, hov = hit === it && it.piece;
       c.fillStyle = hov ? '#5c3e2a' : (it.piece ? '#452c1b' : '#3d2718'); c.fillRect(it.x, it.y, MCELL, MCELL);
       c.strokeStyle = on ? '#ffd34d' : 'rgba(0,0,0,0.45)'; c.lineWidth = on ? 1.4 : 1; c.strokeRect(it.x + 0.5, it.y + 0.5, MCELL - 1, MCELL - 1);
       if (!it.piece) continue;
-      c.save(); c.translate(it.x + MCELL / 2, it.y + MCELL / 2); c.scale(1.35, 1.35);
+      c.save(); c.translate(it.x + MCELL / 2, it.y + MCELL / 2); c.scale(1.05, 1.05);
       if (it.piece.icon) it.piece.icon(c); else Build.icon(c, it.piece.id, it.piece.m);
       c.restore();
     }
-    var label = hit && hit.piece ? hit.piece.name + '  (' + costText(hit.piece.cost) + ')' : 'Click a piece to build with it';
+    var label = hit && hit.piece ? hit.piece.name + '  (' + costText(hit.piece.cost) + ')' : '';
     c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = '#fff'; c.fillText(label, menu.x + 8, menu.y + menu.h - 5);
   }
   // panels: the inventory (Tab) and the hearth (E). Rows are remembered so clicks can find them.
@@ -373,6 +393,89 @@ __COMBAT__
     if (hint) { c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'left'; c.fillText(hint, x0 + 10, y0 + h0 - 5); }
   }
   // the bag: cell size, where it sits when open (right side, under the chart, clear of the hero), how far it has slid in
+  /* ---------- the quiver: three arrow slots, outside the bag; the bow shoots the active one ---------- */
+  var ARROWS = { arrow: { name: 'Wood arrow' } }, QCAP = 40, quiver = { slots: [{ kind: 'arrow', n: 20 }, null, null], sel: 0 };
+  function quiverCount() { var s = quiver.slots[quiver.sel]; return s ? s.n : 0; }
+  function quiverAdd(kind, n) {            // into the slot of that kind, else an empty one; returns what did not fit
+    var i, s;
+    for (i = 0; i < 3 && n > 0; i++) { s = quiver.slots[i]; if (s && s.kind === kind && s.n < QCAP) { var take = Math.min(n, QCAP - s.n); s.n += take; n -= take; } }
+    for (i = 0; i < 3 && n > 0; i++) if (!quiver.slots[i]) { quiver.slots[i] = { kind: kind, n: Math.min(n, QCAP) }; n -= QCAP; }
+    return Math.max(0, n);
+  }
+  Combat.api.canShoot = function () { return quiverCount() > 0; };
+  Combat.api.onShoot = function () {
+    var s = quiver.slots[quiver.sel]; if (!s) return; s.n--;
+    if (s.n <= 0) { quiver.slots[quiver.sel] = null; for (var i = 0; i < 3; i++) if (quiver.slots[i]) { quiver.sel = i; break; } }
+    save();
+  };
+  Combat.api.onArrowLand = function (x, y) { if (Math.random() < 0.7 && isLand(x, y)) drops.push({ kind: 'arrow', x: x, y: y, z: 0, vx: 0, vy: 0, vz: 0, t: 0.3, spin: Math.random() * 6.283 }); };
+
+  /* ---------- the character panel: slides in from the left on Tab, the bag from the right ---------- */
+  var CHAR = { w: 118, h: 178, x: 8, y: 38, slide: 0 };
+  function chLeft() { return CHAR.x - (1 - CHAR.slide) * (CHAR.w + 40); }
+  var EQUIP = [['head', 'Helmet'], ['cloak', 'Cloak'], ['chest', 'Tunic'], ['legs', 'Trousers'], ['feet', 'Boots'], ['weapon', 'Sword'], ['shield', 'Shield'], ['bow', 'Bow'], ['trinket', 'Amulet']];
+  var EQUIPPED = { weapon: 'sword', bow: 'bow' };
+  function chSlots() {
+    var x0 = chLeft(), out = [], i;
+    for (i = 0; i < 5; i++) out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + 10, y: CHAR.y + 24 + i * 20, w: 16, h: 16 });
+    for (i = 5; i < 9; i++) out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + CHAR.w - 26, y: CHAR.y + 24 + (i - 5) * 20, w: 16, h: 16 });
+    for (i = 0; i < 3; i++) out.push({ id: TOOL_IDS[i], name: Items.KINDS[TOOL_IDS[i]].name, x: x0 + 38 + i * 19, y: CHAR.y + CHAR.h - 44, w: 16, h: 16 });
+    for (i = 0; i < 3; i++) out.push({ id: 'quiver' + i, q: i, x: x0 + 38 + i * 19, y: CHAR.y + CHAR.h - 23, w: 16, h: 16 });
+    return out;
+  }
+  function chSlotAt() { if (!mouseS || CHAR.slide < 0.9) return null; var S = chSlots(); for (var i = 0; i < S.length; i++) { var s = S[i]; if (mouseS.x >= s.x && mouseS.x <= s.x + s.w && mouseS.y >= s.y && mouseS.y <= s.y + s.h) return s; } return null; }
+  function glyph(c, id, x, y) {            // what goes in a slot, drawn faintly when it is empty
+    c.save(); c.translate(x, y); c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = 'rgba(246,226,184,0.35)'; c.lineWidth = 1.2; c.beginPath();
+    if (id === 'head') { c.arc(0, 1, 5, Math.PI, 0); c.lineTo(5, 3); c.lineTo(-5, 3); c.closePath(); }
+    else if (id === 'cloak') { c.moveTo(-3, -5); c.lineTo(3, -5); c.lineTo(5.5, 5); c.lineTo(-5.5, 5); c.closePath(); }
+    else if (id === 'chest') { c.moveTo(-5, -5); c.lineTo(-2, -5); c.lineTo(0, -3); c.lineTo(2, -5); c.lineTo(5, -5); c.lineTo(5, 5); c.lineTo(-5, 5); c.closePath(); }
+    else if (id === 'legs') { c.moveTo(-4, -5); c.lineTo(4, -5); c.lineTo(4, 5); c.lineTo(1.5, 5); c.lineTo(0, -1); c.lineTo(-1.5, 5); c.lineTo(-4, 5); c.closePath(); }
+    else if (id === 'feet') { c.moveTo(-3, -5); c.lineTo(1, -5); c.lineTo(1, 1); c.lineTo(5, 3); c.lineTo(5, 5); c.lineTo(-3, 5); c.closePath(); }
+    else if (id === 'shield') { c.moveTo(0, -5.5); c.quadraticCurveTo(5.5, -4, 5, 0); c.quadraticCurveTo(4.5, 4, 0, 5.5); c.quadraticCurveTo(-4.5, 4, -5, 0); c.quadraticCurveTo(-5.5, -4, 0, -5.5); }
+    else if (id === 'trinket') { c.arc(0, 1.5, 3, 0, 7); c.moveTo(-2.5, -0.5); c.quadraticCurveTo(0, -7, 2.5, -0.5); }
+    else if (id === 'weapon') { c.moveTo(-4, 4); c.lineTo(4, -4); c.moveTo(-4, 0); c.lineTo(0, 4); }
+    else if (id === 'bow') { c.arc(-2, 0, 6, -1.1, 1.1); c.moveTo(0.7, -5.4); c.lineTo(0.7, 5.4); }
+    c.stroke(); c.restore();
+  }
+  function equipIcon(c, kind, x, y) {      // the sword and the bow, equipped
+    c.save(); c.translate(x, y); c.lineCap = 'round';
+    function ln(x1, y1, x2, y2, col, w) { c.strokeStyle = '#3a2a36'; c.lineWidth = w + 1.6; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); }
+    if (kind === 'sword') { ln(-3.5, 3.5, 4.5, -4.5, '#eef3fb', 2.2); ln(-3.8, -0.2, 0.2, 3.8, '#e0a93a', 1.8); ln(-3.5, 3.5, -5.5, 5.5, '#8a5a3a', 2.2); }
+    else if (kind === 'bow') { c.beginPath(); c.arc(-2.5, 0, 7, -1.1, 1.1); c.strokeStyle = '#3a2a36'; c.lineWidth = 3.4; c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 2; c.stroke(); ln(-2.5 + 7 * Math.cos(1.1), -7 * Math.sin(1.1), -2.5 + 7 * Math.cos(1.1), 7 * Math.sin(1.1), '#efe6cf', 0.8); }
+    c.restore();
+  }
+  function drawChar(c) {
+    var x0 = chLeft(), P = hero(), hov = chSlotAt(), i;
+    wood(c, x0, CHAR.y, CHAR.w, CHAR.h);
+    leather(c, x0 + 5, CHAR.y + 15, CHAR.w - 10, CHAR.h - 20);
+    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Character', x0 + 10, CHAR.y + 11);
+    // the hero, turning slowly, on a patch of floor
+    var cx = x0 + CHAR.w / 2, cy = CHAR.y + 118, a = clock * 0.45, vx = Math.cos(a), vy = Math.sin(a) * K, side = Math.abs(Math.sin(a)) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
+    c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(cx, cy + 2, 20, 7, 0, 0, 7); c.fill();
+    c.save(); c.translate(cx, cy); c.scale(1.8, 1.8);
+    lib.playerD(c, 0, 0, dir, { phase: 0, amt: 0, t: clock, lx: 0, ly: 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) }, null);
+    c.restore();
+    // equipment and quiver slots
+    chSlots().forEach(function (s) {
+      var isQ = s.q != null, on = isQ && s.q === quiver.sel && quiver.slots[s.q], hv = hov === s;
+      c.fillStyle = hv ? '#5c3e2a' : '#3e2718'; c.fillRect(s.x, s.y, s.w, s.h);
+      c.strokeStyle = on ? '#ffd34d' : 'rgba(0,0,0,0.5)'; c.lineWidth = on ? 1.3 : 1; c.strokeRect(s.x + 0.5, s.y + 0.5, s.w - 1, s.h - 1);
+      c.strokeStyle = 'rgba(255,225,170,0.12)'; c.beginPath(); c.moveTo(s.x + 1, s.y + s.h - 1); c.lineTo(s.x + s.w - 1, s.y + s.h - 1); c.lineTo(s.x + s.w - 1, s.y + 1); c.stroke();
+      var mx = s.x + s.w / 2, my = s.y + s.h / 2;
+      if (isQ) {
+        var qs = quiver.slots[s.q];
+        if (qs) { drawDropIcon(c, 'arrow', mx, my, 1.1); c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 1.8; c.strokeStyle = '#2e1a10'; c.strokeText(String(qs.n), s.x + s.w - 1.5, s.y + s.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(qs.n), s.x + s.w - 1.5, s.y + s.h - 1.5); }
+        else glyph(c, 'bow', mx, my);
+      } else if (equip[s.id]) { c.save(); c.translate(mx, my); Items.icon(c, equip[s.id], 14); c.restore(); }
+      else glyph(c, s.id, mx, my);
+    });
+    c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'left'; c.fillText('Quiver', x0 + 11, CHAR.y + CHAR.h - 12); c.fillText('Tools', x0 + 11, CHAR.y + CHAR.h - 33);
+    if (hov) {                              // what the slot is
+      var txt = hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ' (nothing yet)');
+      if (equip[hov.id]) itemCard(c, equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
+      c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0, CHAR.y + CHAR.h + 7); c.fillStyle = '#fff'; c.fillText(txt, x0, CHAR.y + CHAR.h + 7);
+    }
+  }
   var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + ROWS * CELL + 8, slide: 0 };
   INV.x = 400 - INV.w - 24; INV.y = 80;
   function invLeft() { return INV.x + (1 - INV.slide) * (INV.w + 40); }
@@ -390,7 +493,6 @@ __COMBAT__
     }
     wood(c, x0, INV.y, INV.w, INV.h);
     c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Bag', x0 + 8, INV.y + 11);
-    c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'right'; c.fillText('top row: belt', x0 + INV.w - 8, INV.y + 11);
     for (i = 0; i < SLOTS; i++) {
       var r = slotRect(i), s = slots[i], top = i < COLS;
       c.fillStyle = hov === i ? '#5c3e2a' : (top ? '#3e2718' : '#452c1b'); c.fillRect(r.x, r.y, r.w, r.h);
@@ -398,20 +500,23 @@ __COMBAT__
       c.strokeStyle = 'rgba(255,225,170,0.12)'; c.beginPath(); c.moveTo(r.x + 1, r.y + r.h - 1); c.lineTo(r.x + r.w - 1, r.y + r.h - 1); c.lineTo(r.x + r.w - 1, r.y + 1); c.stroke();
       if (top) { c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.textAlign = 'left'; c.fillText(String(i + 1), r.x + 2, r.y + 6.5); }
       if (s && !(pick && pick.drag && pick.i === i)) {
-        drawDropIcon(c, s.kind, r.x + r.w / 2, r.y + r.h / 2 + 0.5, 1.15);
+        if (s.kind === 'item') { c.save(); c.translate(r.x + r.w / 2, r.y + r.h / 2); Items.icon(c, s.item, 14); c.restore(); }
+        else drawDropIcon(c, s.kind, r.x + r.w / 2, r.y + r.h / 2 + 0.5, 1.15);
         if (s.n > 1) { c.font = 'bold 6px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'right'; c.strokeText(String(s.n), r.x + r.w - 1.5, r.y + r.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(s.n), r.x + r.w - 1.5, r.y + r.h - 1.5); }
       }
     }
     if (hov >= 0 && slots[hov] && !(pick && pick.drag)) {   // the name of what you point at, and what eating it does
-      var s2 = slots[hov], f = FOOD[s2.kind], txt = NAMES[s2.kind] + (f ? '  (eat: +' + f.heal + (f.time ? ', meal)' : ')') : '');
+      var s2 = slots[hov], f = FOOD[s2.kind], txt = s2.kind === 'item' ? s2.item.name + '  (right click: equip)' : NAMES[s2.kind] + (f ? '  (eat: +' + f.heal + (f.time ? ', meal)' : ')') : '');
       c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + INV.w - 2, INV.y - 4); c.fillStyle = '#fff'; c.fillText(txt, x0 + INV.w - 2, INV.y - 4);
+      if (s2.kind === 'item') itemCard(c, s2.item, x0 - 150, INV.y);
     }
-    if (pick && pick.drag && slots[pick.i] && mouseS) { var sd = slots[pick.i]; c.globalAlpha = 0.9; drawDropIcon(c, sd.kind, mouseS.x, mouseS.y, 1.3); c.globalAlpha = 1; }
+    if (pick && pick.drag && slots[pick.i] && mouseS) { var sd = slots[pick.i]; c.globalAlpha = 0.9; if (sd.kind === 'item') { c.save(); c.translate(mouseS.x, mouseS.y); Items.icon(c, sd.item, 16); c.restore(); } else drawDropIcon(c, sd.kind, mouseS.x, mouseS.y, 1.3); c.globalAlpha = 1; }
   }
   function drawPanels(c) {
     rows = [];
     INV.slide += ((invOpen ? 1 : 0) - INV.slide) * 0.25; if (INV.slide < 0.01 && !invOpen) INV.slide = 0;
-    if (INV.slide > 0.01) drawInv(c);
+    CHAR.slide = INV.slide;
+    if (INV.slide > 0.01) { drawChar(c); drawInv(c); }
     if (cookOpen) panel(c, 6, 80, 150, 'Hearth', 'Click a dish to cook it. E closes.', RECIPES.map(function (r) { return { r: r, kind: r.id, can: canAfford(r.needs) }; }), function (it, x0, yy, w0) {
       c.globalAlpha = it.can ? 1 : 0.45;
       drawDropIcon(c, it.kind, x0 + 18, yy, 1.4);
@@ -602,8 +707,10 @@ __COMBAT__
       var d = drops[i]; d.t += dt; d.vz -= 520 * dt; d.z += d.vz * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= Math.exp(-dt * 3); d.vy *= Math.exp(-dt * 3);
       if (d.z < 0) { d.z = 0; d.vz = -d.vz * 0.35; if (Math.abs(d.vz) < 20) d.vz = 0; }
       if (!isLand(d.x, d.y)) { d.x -= d.vx * dt * 2; d.y -= d.vy * dt * 2; d.vx = d.vy = 0; }
-      if (d.t > 0.4 && !P.dead && Math.hypot(d.x - P.x, d.y - P.y) < 16) {
-        if (addItem(d.kind, 1)) { if (clock - fullT > 1.5) { fullT = clock; toast('The bag is full'); } d.t = 0.2; }
+      if (d.t > 0.4 && !P.dead && Math.hypot(d.x - P.x, d.y - P.y) < 34) {
+        if (d.item) { if (addThing(d.item)) { toast('Picked up ' + d.item.name); drops.splice(i, 1); } else { if (clock - fullT > 1.5) { fullT = clock; toast('The bag is full'); } d.t = 0.2; } }
+        else if (d.kind === 'arrow') { if (quiverAdd('arrow', 1)) { if (clock - fullT > 1.5) { fullT = clock; toast('The quiver is full'); } d.t = 0.2; } else { toast('+1 arrow'); drops.splice(i, 1); } }
+        else if (addItem(d.kind, 1)) { if (clock - fullT > 1.5) { fullT = clock; toast('The bag is full'); } d.t = 0.2; }
         else { toast('+1 ' + NAMES[d.kind].toLowerCase()); drops.splice(i, 1); }
       }
     }
@@ -760,12 +867,26 @@ __COMBAT__
     else if (kind === 'stone') { c.beginPath(); c.moveTo(-4, 2); c.lineTo(-2.5, -2.5); c.lineTo(2, -3); c.lineTo(4.5, 0.5); c.lineTo(2.5, 3); c.closePath(); c.fillStyle = '#9d9995'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.ellipse(-0.5, -1, 1.8, 1, 0, 0, 7); c.fill(); }
     else if (kind === 'fiber') { c.strokeStyle = '#3a2a36'; c.lineWidth = 2.6; for (var p = 0; p < 2; p++) { for (var i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(i * 1.6, 3); c.quadraticCurveTo(i * 2.6, -1, i * 3.2, -3.5); c.stroke(); } c.strokeStyle = '#7fc26a'; c.lineWidth = 1.3; } }
     else if (kind === 'meat') { c.beginPath(); c.ellipse(0, 0, 4.6, 3.2, -0.4, 0, 7); c.fillStyle = '#d9636a'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#f6c9b6'; c.beginPath(); c.ellipse(-1.2, -0.6, 1.6, 1, -0.4, 0, 7); c.fill(); }
+    else if (kind === 'arrow') { c.strokeStyle = '#3a2a36'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(-5, 2.5); c.lineTo(4, -2); c.stroke(); c.strokeStyle = '#b98a5a'; c.lineWidth = 1.2; c.stroke(); c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(6, -3); c.lineTo(3.2, -1.2); c.lineTo(4.3, -3.4); c.closePath(); c.fill(); c.strokeStyle = '#eef3fb'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-5, 2.5); c.lineTo(-6, 0.5); c.moveTo(-5, 2.5); c.lineTo(-4, 4.5); c.stroke(); }
     else if (kind === 'berries') { c.fillStyle = '#5a9a3a'; c.beginPath(); c.ellipse(1.5, -3, 3, 1.4, 0.5, 0, 7); c.fill(); c.lineWidth = 1.1; c.strokeStyle = '#3a2a36'; [[-2.5, 0.5], [1.5, 1.5], [-0.5, -1.5], [3, -1]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 2.1, 0, 7); c.fillStyle = '#b8304a'; c.fill(); c.stroke(); c.fillStyle = 'rgba(255,255,255,0.5)'; c.beginPath(); c.arc(q[0] - 0.6, q[1] - 0.7, 0.6, 0, 7); c.fill(); }); }
     else if (kind === 'cookedMeat') { c.beginPath(); c.ellipse(-0.5, 0, 4.4, 3.2, -0.5, 0, 7); c.fillStyle = '#9a5a2e'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.strokeStyle = '#3a2a36'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(2.5, 2); c.lineTo(5.5, 4.5); c.stroke(); c.strokeStyle = '#f4ecdc'; c.lineWidth = 1.4; c.stroke(); c.fillStyle = 'rgba(255,220,150,0.45)'; c.beginPath(); c.ellipse(-1.5, -1, 1.6, 0.9, -0.5, 0, 7); c.fill(); }
     else { c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(0, 1.5, 5.2, 3, 0, 0, Math.PI); c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#b84a3a'; c.beginPath(); c.ellipse(0, 1.5, 5.2, 1.6, 0, 0, 7); c.fill(); c.stroke(); c.strokeStyle = 'rgba(255,255,255,0.6)'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-1.5, -1); c.quadraticCurveTo(-2.5, -3, -1.5, -5); c.moveTo(1.5, -1); c.quadraticCurveTo(0.5, -3, 1.5, -5); c.stroke(); }
     c.restore();
   }
-  function drawDrop(c, d) { c.save(); c.translate(d.x, d.y * K - d.z); c.rotate(d.kind === 'wood' ? d.spin : 0); drawDropIcon(c, d.kind, 0, 0, 1); c.restore(); }
+  function drawDrop(c, d) { c.save(); c.translate(d.x, d.y * K - d.z); if (d.item) { c.rotate(Math.sin(d.spin) * 0.3); Items.icon(c, d.item, 14); } else { c.rotate(d.kind === 'wood' ? d.spin : 0); drawDropIcon(c, d.kind, 0, 0, 1); } c.restore(); }
+  function itemCard(c, it, x, y) {        // a small leather card: the thing's name, what it is made of, its numbers, its tale
+    var st = Items.stats(it), lines = [], K = Items.KINDS[it.kind];
+    c.font = '6px Georgia, serif';
+    var body = wrapLines(c, it.desc, 128);
+    lines.push([Items.MATS[it.mat].name.toLowerCase() + ' ' + K.name.toLowerCase(), '600 5.5px system-ui, sans-serif', 'rgba(246,226,184,0.7)']);
+    lines.push([(st.tool ? 'Gathering ' + st.power : 'Damage ' + st.dmg) + (it.kind === 'bow' ? '  (per arrow)' : ''), '600 6px system-ui, sans-serif', '#9be58b']);
+    body.forEach(function (l) { lines.push([l, '6px Georgia, serif', '#efe2c1']); });
+    var h = 18 + lines.length * 8 + 4, w = 140; x = Math.max(4, Math.min(400 - w - 4, x)); y = Math.max(4, Math.min(250 - h - 4, y));
+    leather(c, x, y, w, h);
+    c.save(); c.translate(x + 14, y + 12); Items.icon(c, it, 16); c.restore();
+    c.font = 'bold 7px Georgia, serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(it.name, x + 26, y + 14);
+    lines.forEach(function (l, i) { c.font = l[1]; c.fillStyle = l[2]; c.fillText(l[0], x + 8, y + 26 + i * 8); });
+  }
 
   /* ---------- input ---------- */
   var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyJ: 1, KeyK: 1, KeyQ: 1, KeyF: 1, KeyR: 1, KeyB: 1, Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, ShiftLeft: 1, ShiftRight: 1 };
@@ -794,10 +915,15 @@ __COMBAT__
     if (bookOpen) { if (e.button === 0) bookClick(); return; }
     var mxc = 400 - (GW >= GH ? 64 : 64 * GW / GH) - 6 - 34; if (e.button === 0 && Math.abs(mouseS.x - mxc) < 9 && Math.abs(mouseS.y - 16) < 9) { bookOpen = true; invOpen = false; cookOpen = false; menu = null; return; }
     if (menu) { var hit = menuHit(); if (hit && hit.piece && e.button === 0) { P.piece = hit.i; P.wreck = false; menu = null; } else if (e.button === 2 || !hit) menu = null; return; }
+    if (invOpen && CHAR.slide > 0.9) {
+      var cs = chSlotAt();
+      if (cs) { if (cs.q != null && quiver.slots[cs.q] && e.button === 0) { quiver.sel = cs.q; save(); } else if (cs.q == null && e.button === 2 && equip[cs.id]) unequipToBag(cs.id); return; }
+      if (mouseS.x < chLeft() + CHAR.w + 4 && mouseS.y > CHAR.y - 4 && mouseS.y < CHAR.y + CHAR.h + 4) return;
+    }
     if (invOpen && INV.slide > 0.9) {
       var b = btnAt(), sl = slotAt();
       if (b === 'sort') { sortBag(); return; } if (b === 'close') { invOpen = false; return; }
-      if (sl >= 0) { if (e.button === 0 && slots[sl]) pick = { i: sl, x: mouseS.x, y: mouseS.y, drag: false }; return; }
+      if (sl >= 0) { if (e.button === 0 && slots[sl]) pick = { i: sl, x: mouseS.x, y: mouseS.y, drag: false }; else if (e.button === 2 && slots[sl] && slots[sl].kind === 'item') equipFromBag(sl); return; }
       if (mouseS.x > invLeft() - 4 && mouseS.y > INV.y - 4 && mouseS.y < INV.y + INV.h + 4) return;   // on the board, nothing behind it
     }
     if (cookOpen) { var row = rowAt(); if (row && e.button === 0) { cook(row.r); return; } if (mouseS.x < 160 && mouseS.y > 76 && mouseS.y < 150) return; }
@@ -806,7 +932,15 @@ __COMBAT__
   });
   window.addEventListener('mouseup', function (e) {
     mdown = 0; Combat.button(e.button, false);
-    if (pick) { mouseS = toScreen(e); if (pick.drag) dropOn(pick.i, slotAt()); else useSlot(pick.i); pick = null; }
+    if (pick) {
+      mouseS = toScreen(e);
+      if (pick.drag) {                      // onto another slot: move it; off the boards: it falls to the ground
+        var to = slotAt(), s = slots[pick.i], onBoards = mouseS.x > invLeft() - 4 || mouseS.x < chLeft() + CHAR.w + 4;
+        if (to >= 0) dropOn(pick.i, to);
+        else if (s && !onBoards) { var P2 = hero(); if (s.kind === 'item') dropThing(s.item, P2.x, P2.y + 6); else drop(s.kind, P2.x, P2.y + 6, s.n); slots[pick.i] = null; recount(); save(); }
+      } else useSlot(pick.i);
+      pick = null;
+    }
   });
   cv.addEventListener('mousemove', function (e) {        // the bow aims at the mouse; build mode places under it
     mouseW = toWorld(e); mouseS = toScreen(e); Combat.mouse(mouseW.x, mouseW.y * K);
@@ -830,19 +964,21 @@ __COMBAT__
     for (k = 0; k < SLOTS; k++) slots[k] = null;
     recount();
     if (sv) {                                            // a saved game: the same island, with what was done to it
-      if (sv.slots) { for (k = 0; k < SLOTS; k++) slots[k] = sv.slots[k] && NAMES[sv.slots[k].kind] ? { kind: sv.slots[k].kind, n: Math.min(STACK, sv.slots[k].n | 0) } : null; recount(); }
+      if (sv.slots) { for (k = 0; k < SLOTS; k++) { var ss = sv.slots[k]; slots[k] = !ss ? null : (ss.kind === 'item' && ss.item ? { kind: 'item', n: 1, item: Items.make(ss.item.kind, ss.item.mat, ss.item) } : (NAMES[ss.kind] ? { kind: ss.kind, n: Math.min(STACK, ss.n | 0) } : null)); } recount(); }
       else for (k in sv.inv || {}) addItem(k, sv.inv[k]);
+      if (sv.equip) { for (k in equip) equip[k] = sv.equip[k] ? Items.make(sv.equip[k].kind, sv.equip[k].mat, sv.equip[k]) : null; } else startKit();
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       w.eachProp(function (o) { if (o.kind && gone[propKey(o)]) w.removeProp(o); });
-      decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {};
+      decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
       var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; } else toCamp();
-    } else toCamp();
+    } else { startKit(); toCamp(); }
+    try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
     spawnBoars(); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Press Tab for your inventory, B to build.'; save();
   }
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; } }; };   // for checks from the console
 
   start();
   var lastP = hero();
@@ -855,7 +991,8 @@ __COMBAT__
     if (roomInfo) for (var si = 0; si < roomInfo.solids.length; si++) { var sl = roomInfo.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
     tick(); keepBoars(dt); feedTick(dt);
-    Combat.api.beltSlots = slots.slice(0, COLS).map(function (s) { return s ? { n: s.n, draw: function (c) { drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; });
+    Combat.api.quiver = quiverCount();
+    Combat.api.beltSlots = slots.slice(0, COLS).map(function (s) { return s ? { n: s.n, draw: function (c) { if (s.kind === 'item') Items.icon(c, s.item, 18); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; });
     saveT += dt; if (saveT > 10) { saveT = 0; save(); }
     Combat.update(dt);
     Combat.render(ctx);
