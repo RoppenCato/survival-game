@@ -4961,11 +4961,11 @@ function swordPose(dir) {
   } else {
     var side = (p.guard && S.shield) ? -guardSide() : 1;
     // at rest the thing hangs down at the side from a straight arm, the way you carry an axe when you walk
-    // the hand is the figure's own hanging hand (about 6 out and 7 up from the feet; 4 forward in the side view)
-    if (dir === 'left') { o.hx = -4; o.hy = -7; o.ca = -0.3; o.sa = 0.95; }
-    else if (dir === 'right') { o.hx = 4; o.hy = -7; o.ca = 0.3; o.sa = 0.95; }
-    else { o.hx = side * 6.3; o.hy = -7; o.ca = side * 0.22; o.sa = 0.97; }
-    o.len = 14; o.front = dir !== 'up'; o.side = side; o.atk = false;
+    // carried: the hand at the hip and the thing pointing up past the shoulder, resting on it, so it stays short and clear
+    if (dir === 'left') { o.hx = -4; o.hy = -9; o.ca = 0.42; o.sa = -0.91; }       // over the shoulder, leaning back, so the head sits behind the hair
+    else if (dir === 'right') { o.hx = 4; o.hy = -9; o.ca = -0.42; o.sa = -0.91; }
+    else { o.hx = side * 6.5; o.hy = -9; o.ca = side * 0.55; o.sa = -0.84; }        // leaning outward, clear of the face
+    o.len = 13; o.front = dir !== 'up'; o.side = side; o.atk = false;
   }
   if (o.atk && S.look === 'classic') o.len *= lib.hero().spec.bladeLen;
   return o;
@@ -5153,7 +5153,7 @@ function drawHeroWeapon(c, front) {
     var ca = sp.ca, sa = sp.sa, len = sp.len, ex = hx + ca * len, ey = hy + sa * len, px = -sa, py = ca;
     c.lineCap = 'round';
     var heldIt = itemOf('held');
-    var rest = a.ph === 'none', restLen = heldIt && rest ? Math.min(Items.KINDS[heldIt.kind].len * heldIt.size, heldIt.kind === 'axe' || heldIt.kind === 'pick' ? 11 : 15) : null;   // carried, a thing hangs short beside the leg
+    var rest = a.ph === 'none', restLen = heldIt && rest ? Math.min(Items.KINDS[heldIt.kind].len * heldIt.size, heldIt.kind === 'axe' || heldIt.kind === 'pick' ? 12 : 15) : null;   // carried, a thing hangs short beside the leg
     if (heldIt) { if (rest) { c.save(); c.translate(hx, hy); c.scale(0.85, 0.85); c.translate(-hx, -hy); } Items.draw(c, heldIt, hx, hy, ca, sa, rest ? restLen : (heldIt.kind === 'sword' ? len * heldIt.size : null), p.mode === 'gather' && a.ph !== 'none'); if (rest) c.restore(); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (p.mode === 'gather') { if (!api.items) drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (api.items) { if (!rest) { var fx2 = hx + ca * 4, fy2 = hy + sa * 4; c.strokeStyle = '#3a2a36'; c.lineWidth = 6; c.beginPath(); c.moveTo(hx, hy); c.lineTo(fx2, fy2); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3.6; c.stroke(); lib.ell(c, fx2, fy2, 3.4, 3.2, HC.skin, 1.5); } }   // no sword: a fist (at rest the figure's own hands hang)
