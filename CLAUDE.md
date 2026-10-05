@@ -324,7 +324,12 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   Sleeping rough just skips the night. A dial by the chart shows the sun or moon going round, with the day
   number and time of day on mouseover and the rested ring. `day` and `rested` are saved. No night-only
   beasts yet.
-- **Music (2026-10-05):** on by default, starting at the first key or click (browsers require it). A day theme
+- **Hidden for now (Robin, 2026-10-05):** the runes (casting cloth, C, the pouch icon, runestone reading,
+  skills on the hotbar, rune toasts) and the Book of Beasts (L, the book icon, page toasts) are built but not
+  finished, so `SHOW = { runes: false, book: false }` in the page hides them until the basics are right. The
+  data still runs underneath (`book` counts kills, deeds count) so nothing is lost when they come back.
+- **Music (2026-10-05):** off by default (`OPTS.music` 0; Robin): the bar in the Escape menu turns it on; it
+  then starts at the next key or click (browsers require it). A day theme
   by day (`dayTheme()`: the Song Editor's "Use in the game" choice in `localStorage['game.theme']`, else
   `meadowDay`; the candidates are `birchGrove`, `oakAndWell`, `seaWind` and `meadowDay`); the evening theme
   from dusk to dawn (`musicTick` switches when `isEvening()` changes). Volume is a bar in the Escape menu only,

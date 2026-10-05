@@ -74,10 +74,8 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <dt><kbd>Esc</kbd></dt><dd>The menu: continue, a sandbox to try things out in, restart with nothing, a new island, the music volume and the evening theme</dd>
           <dt><kbd>B</kbd></dt><dd>The board: Building, Crafting (made by hand, anywhere) and Workbench (only with a roof over it). Recipes show as ? until you have picked up every kind of thing they need. Build mode. <kbd>Right click</kbd> opens the board of pieces: pick one, then click to place it (drag for walls and floors). <kbd>F</kbd> turns the cursor into the wreck cursor: the piece under it glows red, and a click takes it down and gives the material back</dd>
           <dt><kbd>Mouse wheel</kbd></dt><dd>Step through the hotbar: tools in gather mode, pieces in build mode, the belt in fight mode</dd>
-          <dt><kbd>E</kbd></dt><dd>At a hearth: the board on its Hearth tab, to cook. At a runestone: read it. At a bed, from dusk: sleep until morning. At a chest: open it beside the bag (click moves things across). At Brokk: talk</dd>
+          <dt><kbd>E</kbd></dt><dd>At a hearth: the board on its Hearth tab, to cook. At a bed, from dusk: sleep until morning. At a chest: open it beside the bag (click moves things across). At Brokk: talk</dd>
           <dt><kbd>Right click</kbd> on a thing</dt><dd>In the bag: equip it (a sword to the weapon slot, an axe to the axe slot). On the character panel: take it off into the bag. Drag a thing off the boards to drop it on the ground; walk over it to pick it up again</dd>
-          <dt><kbd>C</kbd></dt><dd>The casting cloth: the runes you have learnt lie in the pouch on the left; drag one into a hollow of its kind on the board to use it. Attack runes then sit on the fight hotbar and are cast with their number. Runes are learnt by deeds (fell fifteen trees, block fifteen blows, slay five beasts), by reading runestones with <kbd>E</kbd>, and more to come. Not in a fight</dd>
-          <dt><kbd>L</kbd></dt><dd>The Book of Beasts. Every creature gets a page the first time you slay one: what it is, its strengths and weaknesses, how it warns you, what it drops. Click the small book by the chart to open it too</dd>
           <dt><kbd>Tab</kbd></dt><dd>The character panel slides in from the left (the hero, the equipment slots, and the quiver: three arrow slots, click one to shoot from it) and the bag from the right. The bag: a wooden board that slides in from the right. Six slots wide, four high, stacks of 25. The top row is the belt and matches the hotbar numbers. Drag to move things, click food to eat it, Sort tidies the rows below the belt</dd>
           <dt><kbd>R</kbd></dt><dd>Rise again after you have fallen</dd>
         </dl>
@@ -5350,7 +5348,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   window.addEventListener('keydown', ac); window.addEventListener('mousedown', ac);
 
   /* ---------- music: the meadow by day or evening, with a fight layer that fades in when a beast is awake ---------- */
-  var OPTS = { music: 0.6 }, musicOn = false, dangerT = 0, songsLS = null, musicSong = '';
+  // What is shown: the runes (the casting cloth, runestones, skills on the hotbar) and the Book of Beasts are built but
+  // not finished, so they are hidden until the basics are right (Robin, 2026-10-05). Flip these to bring them back.
+  var SHOW = { runes: false, book: false };
+  var OPTS = { music: 0 }, musicOn = false, dangerT = 0, songsLS = null, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
   function songOf(id) {                   // the Song Editor's saved version wins over the built-in one
@@ -5762,7 +5763,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, 'leather'); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
     ORDER.forEach(function (k) { seen[k] = 1; });
-    sandboxRunes(); recount(); save(); toast('Sandbox: everything to try things out with');
+    if (SHOW.runes) sandboxRunes(); recount(); save(); toast('Sandbox: everything to try things out with');
   }
   Combat.api.armor = function () { var a = 0; for (var k in equip) if (equip[k] && Items.KINDS[equip[k].kind].gear) a += Items.stats(equip[k]).armor; if (inUse('thickskin')) a += 0.1 * runeMul('thickskin'); return Math.min(0.6, a); };
   function equipFromBag(i) {               // right click in the bag: the thing goes to its slot, what was there comes back
@@ -6172,7 +6173,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function runeMul(id) { return inUse(id) ? Runes.tier(RS.learnt[id].uses).mul : 0; }
   function useRune(id, n) { if (inUse(id)) { RS.learnt[id].uses += n || 1; } }
   function learnRune(id, how) {
-    var r = Runes.BY[id]; if (!r || RS.learnt[id]) return;
+    var r = Runes.BY[id]; if (!r || RS.learnt[id] || !SHOW.runes) return;
     RS.learnt[id] = { uses: 0 }; delete RS.heard[id]; clothFlash = 6;
     toast('A rune learnt: ' + r.name + ' (' + r.norse + ')' + (how ? ', ' + how : ''));
     if (r.kind === 'guard' && !RS.slots.some(function (s) { return s.kind === 'guard'; })) { RS.slots.push({ kind: 'guard', id: null }); toast('A guard hollow opens on your cloth'); }
@@ -6306,7 +6307,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function entryOf(key) { for (var i = 0; i < BESTIARY.length; i++) if (BESTIARY[i].key === key) return i; return -1; }
   function learn(key) {
     var e = book[key] || (book[key] = { slain: 0 }); e.slain++;
-    if (e.slain === 1) { toast('A new page in your book: ' + BESTIARY[entryOf(key)].name); bookFlash = 6; }
+    if (e.slain === 1 && SHOW.book) { toast('A new page in your book: ' + BESTIARY[entryOf(key)].name); bookFlash = 6; }
     save();
   }
   function fig(key) { return figs[key] || (figs[key] = lib.makeCreature(lib.animalSpec(key))); }
@@ -6553,9 +6554,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var hdx = mx + P.x / WX * mw, hdy = my + P.y / WY * mh;
       c.fillStyle = '#2e1a10'; c.beginPath(); c.arc(hdx, hdy, 2.6, 0, 7); c.fill(); c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(hdx, hdy, 1.7, 0, 7); c.fill();
       c.imageSmoothingEnabled = true;
-      drawBookIcon(c, mx - 34, my + 10); drawPouchIcon(c, mx - 54, my + 10); drawDayIcon(c, mx - 74, my + 10); clothFlash = Math.max(0, clothFlash - 0.02);
+      if (SHOW.book) drawBookIcon(c, mx - 34, my + 10); if (SHOW.runes) drawPouchIcon(c, mx - 54, my + 10); drawDayIcon(c, mx - (SHOW.book || SHOW.runes ? 74 : 34), my + 10); clothFlash = Math.max(0, clothFlash - 0.02);
       if (fed) drawFedIcon(c, mx - 14, my + 10);
-      var rsn = !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;   // a stone read once needs no prompt
+      var rsn = SHOW.runes && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;   // a stone read once needs no prompt
       var bedP = !nearHearth(P) && !rsn && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && nearNpc(P) && !(npc.sayT > 0);
       if ((nearHearth(P) || rsn || bedP || crP || npcP) && !invOpen && P.mode !== 'build' && !menu && !clothOpen && !sleep) {       // E to cook, read, sleep, open or talk, over the hero
         var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = rsn ? 'Read the stone' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : 'Cook';
@@ -6644,9 +6645,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   window.addEventListener('keydown', function (e) {
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (menu && menuTab === 'hearth') menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else { var rs = stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); } } return; }
-    if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
-    if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (menu && menuTab === 'hearth') menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); } } return; }
+    if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat && SHOW.runes) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
+    if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else pauseOpen = !pauseOpen; return; }
     if (!codes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
@@ -6668,8 +6669,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     if (clothOpen) { clothDown(e.button); return; }
     if (bookOpen) { if (e.button === 0) bookClick(); return; }
-    var mxc = 400 - (GW >= GH ? 64 : 64 * GW / GH) - 6 - 34; if (e.button === 0 && Math.abs(mouseS.x - mxc) < 9 && Math.abs(mouseS.y - 16) < 9) { bookOpen = true; invOpen = false; cookOpen = false; menu = null; return; }
-    if (e.button === 0 && Math.abs(mouseS.x - (mxc - 20)) < 9 && Math.abs(mouseS.y - 16) < 9) { clothOpen = true; invOpen = false; cookOpen = false; menu = null; bookOpen = false; return; }
+    var mxc = 400 - (GW >= GH ? 64 : 64 * GW / GH) - 6 - 34; if (SHOW.book && e.button === 0 && Math.abs(mouseS.x - mxc) < 9 && Math.abs(mouseS.y - 16) < 9) { bookOpen = true; invOpen = false; cookOpen = false; menu = null; return; }
+    if (SHOW.runes && e.button === 0 && Math.abs(mouseS.x - (mxc - 20)) < 9 && Math.abs(mouseS.y - 16) < 9) { clothOpen = true; invOpen = false; cookOpen = false; menu = null; bookOpen = false; return; }
     if (menu) {
       var th = menuTabHit(), hit = menuHit();
       if (th && e.button === 0) { openMenu(th.id); return; }
@@ -6773,7 +6774,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;
     if (P.sprinting) { RS.deeds.sprint = (RS.deeds.sprint || 0) + dt; if (RS.deeds.sprint >= 60) learnRune('surefeet', 'a minute of sprinting'); if (inUse('surefeet') && Math.random() < dt * 0.2) useRune('surefeet', 1); }
     if (inUse('longwind') && P.st < 100 && Math.random() < dt * 0.1) useRune('longwind', 1);
-    Combat.api.skills = attackSkills().map(function (r) { return r ? { id: r.id, name: r.name, cd: Math.max(0, (cds[r.id] || 0) / r.cd), draw: function (c) { Runes.stone(c, r, 0, 0, 13, 'slotted', Runes.tier(RS.learnt[r.id].uses).name); } } : null; });
+    Combat.api.skills = !SHOW.runes ? [] : attackSkills().map(function (r) { return r ? { id: r.id, name: r.name, cd: Math.max(0, (cds[r.id] || 0) / r.cd), draw: function (c) { Runes.stone(c, r, 0, 0, 13, 'slotted', Runes.tier(RS.learnt[r.id].uses).name); } } : null; });
     // runestones in view are heard of
     around(P.x, P.y, function (o) { if (o.name === 'runestone' && Math.abs(o.x - cam.x) < 240 && Math.abs(o.y * K - cam.y) < 160) { var id = stoneRune(o); if (!RS.learnt[id] && !RS.stones[propKey(o)]) RS.heard[id] = 1; } });
     Combat.api.beltSlots = slots.slice(0, COLS).map(function (s) { return s ? { n: s.n, draw: function (c) { if (s.kind === 'item') Items.icon(c, s.item, 18); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; });
