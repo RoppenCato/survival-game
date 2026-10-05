@@ -73,7 +73,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <dt><kbd>Esc</kbd></dt><dd>The menu: continue, a sandbox to try things out in, restart with nothing, a new island, the music volume and the evening theme</dd>
           <dt><kbd>B</kbd></dt><dd>The board: Building, Crafting (made by hand, anywhere) and Workbench (only with a roof over it). Recipes show as ? until you have picked up every kind of thing they need. Build mode. <kbd>Right click</kbd> opens the board of pieces: pick one, then click to place it (drag for walls and floors). <kbd>F</kbd> turns the cursor into the wreck cursor: the piece under it glows red, and a click takes it down and gives the material back</dd>
           <dt><kbd>Mouse wheel</kbd></dt><dd>Step through the hotbar: tools in gather mode, pieces in build mode, the belt in fight mode</dd>
-          <dt><kbd>E</kbd></dt><dd>At a hearth: the board on its Hearth tab, to cook. At a bed, from dusk: sleep until morning. At a chest: open it beside the bag (click moves things across). At Brokk: talk</dd>
+          <dt><kbd>E</kbd></dt><dd>At a workbench: its board, with everything made at a bench (and the hand recipes). At a hearth: the board on its Hearth tab, to cook. At a bed, from dusk: sleep until morning. At a chest: open it beside the bag (click moves things across). At Brokk: talk</dd>
           <dt><kbd>Right click</kbd> on a thing</dt><dd>In the bag: equip it (a sword to the weapon slot, an axe to the axe slot). On the character panel: take it off into the bag. Drag a thing off the boards to drop it on the ground; walk over it to pick it up again</dd>
           <dt><kbd>Tab</kbd></dt><dd>The character panel slides in from the left (the hero, the equipment slots, and the quiver: three arrow slots, click one to shoot from it) and the bag from the right. The bag: a wooden board that slides in from the right. Six slots wide, four high, stacks of 25. The top row is the belt and matches the hotbar numbers. Drag to move things, click food to eat it, Sort tidies the rows below the belt</dd>
           <dt><kbd>R</kbd></dt><dd>Rise again after you have fallen</dd>
@@ -5821,7 +5821,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'leatherTunic', out: { item: ['tunic', 'leather'] }, needs: { leather: 3, fiber: 2 }, at: 'bench', key: 'leather' },
     { id: 'leatherTrousers', out: { item: ['trousers', 'leather'] }, needs: { leather: 2, fiber: 1 }, at: 'bench', key: 'leather' },
     { id: 'leatherBoots', out: { item: ['boots', 'leather'] }, needs: { leather: 1, fiber: 1 }, at: 'bench', key: 'leather' },
-    { id: 'raft', out: { raft: 1 }, needs: { wood: 20, fiber: 10, leather: 2 }, at: 'ship', taught: 'raft' },
     { id: 'leatherCloak', out: { item: ['cloak', 'leather'] }, needs: { leather: 2, fiber: 2 }, at: 'bench', key: 'leather' }
   ];
   // A recipe is learnt when you first hold its key ingredient (the important one: flint for a flint axe, fiber for a
@@ -6536,10 +6535,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function fedText() { if (!fed) return ''; var m = Math.floor(fed.left / 60), s = Math.floor(fed.left % 60); return 'Well fed (' + NAMES[fed.kind].toLowerCase() + '): ' + m + ':' + (s < 10 ? '0' : '') + s + (fed.regen ? '  +' + fed.regen + ' health a second' : ''); }
   // the build menu (right click in build mode): a wooden board of big piece icons; the wreck cursor is the last one
-  var MCELL = 22, MCOLS = 8, MROWS = 4, menuTab = 'build';
-  function menuTabs() { var tabs = [{ id: 'build', name: 'Building' }, { id: 'hand', name: 'Crafting' }]; if (shipNear(hero())) tabs.push({ id: 'ship', name: 'Shipwright' }); var P = hero(), b = benchNear(P); if (b) tabs.push({ id: 'bench', name: 'Workbench', roofed: benchRoofed(b) }); if (nearHearth(P)) tabs.push({ id: 'hearth', name: 'Hearth' }); return tabs; }
+  var MCELL = 22, MCOLS = 8, MROWS = 4, menuTab = 'build', menuFrom = 'B';   // menuFrom: 'B' for the build board, 'bench' when E opened it at a workbench
+  function menuTabs() { var P = hero(), b = benchNear(P); if (menuTab === 'bench') return [{ id: 'bench', name: 'Workbench', roofed: b && benchRoofed(b) }, { id: 'hand', name: 'By hand' }]; if (menuTab === 'hearth') return [{ id: 'hearth', name: 'Hearth' }]; var tabs = [{ id: 'build', name: 'Building' }, { id: 'hand', name: 'Crafting' }]; if (false) tabs.push({ id: 'hearth', name: 'Hearth' }); return tabs; }
   function openMenu(tab) {
-    var n = MCOLS * MROWS, i; if (tab) menuTab = tab;
+    var n = MCOLS * MROWS, i; if (tab) menuTab = tab; if (tab === 'build' || tab === 'hand' && menuFrom !== 'bench') menuFrom = 'B';
     if (menuTab === 'bench' && !benchNear(hero())) menuTab = 'hand';
     if (menuTab === 'hearth' && !nearHearth(hero())) menuTab = 'hand';
     menu = { items: [], w: MCOLS * (MCELL + 3) + 11, h: 21 + MROWS * (MCELL + 3) + 14, tabs: [] };
@@ -6768,10 +6767,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0, CHAR.y + CHAR.h + 7); c.fillStyle = '#fff'; c.fillText(txt, x0, CHAR.y + CHAR.h + 7);
     }
   }
-  var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + ROWS * CELL + 8, slide: 0 };
-  INV.x = 400 - INV.w - 8; INV.y = 68;
+  var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + (ROWS - 2) * CELL + 8, slide: 0 }, BAR = { y: 62, h: 2 * CELL + 10 };   // the bars' board sits above the bag
+  INV.x = 400 - INV.w - 8; INV.y = BAR.y + BAR.h + 14;
   function invLeft() { return INV.x + (1 - INV.slide) * (INV.w + 40); }
-  function slotRect(i) { var x0 = invLeft(); return { x: x0 + 6 + (i < BAG0 ? 0 : 0) + (i % COLS) * CELL, y: INV.y + 16 + Math.floor(i / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
+  function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + 6 + (i % COLS) * CELL, y: i < BAG0 ? BAR.y + 6 + row * CELL : INV.y + 16 + (row - 2) * CELL, w: CELL - 2, h: CELL - 2 }; }
   var STORE_UI = { x: 8, y: 80, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };
   function storeLeft() { return STORE_UI.x - (1 - INV.slide) * (STORE_UI.w + 40); }
   function storeRect(j) { var x0 = storeLeft(); return { x: x0 + 6 + (j % COLS) * CELL, y: STORE_UI.y + 16 + Math.floor(j / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
@@ -6805,13 +6804,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var sr = btnRect(0);                                // a small Sort button above the bag: three bars side by side
     c.fillStyle = hb === 'sort' ? '#6b4a32' : '#4a2e1c'; c.beginPath(); c.roundRect(sr.x, sr.y, sr.w, sr.h, 2); c.fill(); c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.stroke();
     c.fillStyle = '#f6e2b8'; c.fillRect(sr.x + 3.5, sr.y + 3, 2.2, 5); c.fillRect(sr.x + 6.9, sr.y + 2, 2.2, 6); c.fillRect(sr.x + 10.3, sr.y + 3.8, 2.2, 4.2);
+    wood(c, x0, BAR.y, INV.w, BAR.h);                   // the bars: fight above, gather below
     wood(c, x0, INV.y, INV.w, INV.h);
     c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Bag', x0 + 8, INV.y + 11);
     for (i = 0; i < SLOTS; i++) {
       var r = slotRect(i), s = slots[i], top = i < BAG0, inHand = top && (i % COLS) === hand[i < COLS ? 'fight' : 'gather'];
       c.fillStyle = hov === i ? '#5c3e2a' : (top ? '#3e2718' : '#452c1b'); c.fillRect(r.x, r.y, r.w, r.h);
       c.strokeStyle = inHand ? '#ffd34d' : 'rgba(0,0,0,0.45)'; c.lineWidth = inHand ? 1.3 : 1; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-      if (top && i % COLS === 0) barMark(c, i < COLS ? 'fight' : 'gather', r.x - 4.5, r.y + r.h / 2);
+      if (top && i % COLS === 0) barMark(c, i < COLS ? 'fight' : 'gather', r.x - 3.5, r.y + r.h / 2);
       c.strokeStyle = 'rgba(255,225,170,0.12)'; c.beginPath(); c.moveTo(r.x + 1, r.y + r.h - 1); c.lineTo(r.x + r.w - 1, r.y + r.h - 1); c.lineTo(r.x + r.w - 1, r.y + 1); c.stroke();
       if (top) { c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.textAlign = 'left'; c.fillText(String(i + 1), r.x + 2, r.y + 6.5); }
       if (s && !(pick && pick.drag && pick.i === i)) {
@@ -7313,9 +7313,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       drawTorchIcon(c, mx - (SHOW.runes || SHOW.book ? 94 : 54), my + 10);
       var rsn = SHOW.runes && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;   // a stone read once needs no prompt
-      var bedP = !nearHearth(P) && !rsn && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && nearNpc(P) && !(npc.sayT > 0), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P);
-      if ((nearHearth(P) || rsn || bedP || crP || npcP || rkP || rfP || cvP || bbP) && !invOpen && P.mode !== 'build' && !menu && !clothOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
-        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : 'Board the raft') : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
+      var bnP = !nearHearth(P) && !rsn && benchNear(P), bedP = !nearHearth(P) && !rsn && !bnP && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && nearNpc(P) && !(npc.sayT > 0), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P);
+      if ((nearHearth(P) || rsn || bnP || bedP || crP || npcP || rkP || rfP || cvP || bbP) && !invOpen && P.mode !== 'build' && !menu && !clothOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
+        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : 'Board the raft') : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
         c.font = '600 9px system-ui, sans-serif'; var pw = c.measureText(pt).width + 26;
         c.fillStyle = 'rgba(20,16,30,0.82)'; c.fillRect(tx - pw / 2, ty - 9, pw, 16);
         c.fillStyle = '#ffd34d'; c.fillRect(tx - pw / 2 + 3, ty - 6.5, 12, 11);
@@ -7415,7 +7415,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (raftUsable()) raftUse(); else if (caveUsable()) caveUse(); else if (menu && menuTab === 'hearth') menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (raftUsable()) raftUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; openMenu('bench'); menuFrom = 'bench'; } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
     if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat && SHOW.runes) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else pauseOpen = !pauseOpen; return; }
@@ -7461,7 +7461,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var b = btnAt(), sl = slotAt();
       if (b === 'sort') { sortBag(); return; } if (b === 'close') { invOpen = false; return; }
       if (sl >= 0) { if (e.button === 0 && slots[sl]) pick = { i: sl, x: mouseS.x, y: mouseS.y, drag: false }; else if (e.button === 2 && slots[sl] && slots[sl].kind === 'item') equipFromBag(sl); return; }
-      if (mouseS.x > invLeft() - 4 && mouseS.y > INV.y - 4 && mouseS.y < INV.y + INV.h + 4) return;   // on the board, nothing behind it
+      if (mouseS.x > invLeft() - 4 && mouseS.y > BAR.y - 4 && mouseS.y < INV.y + INV.h + 4) return;   // on the boards, nothing behind them
     }
     if (P.mode === 'build') { if (e.button === 2) openMenu(); else if (e.button === 0) { mdown = 1; lastPlaced = ''; buildAct(true); } return; }
     Combat.button(e.button, true);
