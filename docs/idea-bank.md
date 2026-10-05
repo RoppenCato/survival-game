@@ -185,3 +185,126 @@ Decided: the book, the unlock on first kill. Not decided: which creatures, and t
   their ship, their base and where they were last seen.
 - Weaknesses should be real rules in the fight (sunlight stones the troll; iron in the water silences näcken),
   so reading the card is worth something.
+
+## Perks and levelling (Robin's direction, 2026-10-05; not decided)
+
+Robin wants a perk system: you level up and choose between attacking skills from fighting, and choose skills
+from the other things you do (chopping, mining, cooking, running). In the end you can get everything, but you
+choose from the start.
+
+### Options (Claude)
+
+- **A. Skills that grow by doing, no choices** (Valheim): swing an axe and your axe skill rises; it only gives
+  numbers. Fits "from the things you do" but there is nothing to choose.
+- **B. One pool of points** (classic RPG): any activity gives experience, you spend points anywhere. Choices, but
+  the link between what you did and what you get is gone.
+- **C. A craft per activity, each with its own small tree of runes** *(recommended)*. Every activity is a
+  **craft** that levels by doing it: Sword, Bow, Shield, Axe (chopping), Pickaxe (mining), Cooking, Running,
+  Building, later Sailing and Rowing. Each craft has three tiers of two or three **runes** (the perks). At craft
+  levels 5, 10 and 15 you pick one rune of that tier; every five levels after that you may take one you passed
+  over. So you choose first, and in the end you hold them all, and what you did is what you got better at.
+
+### What the runes could be (C)
+
+| Craft | Tier 1 (level 5) | Tier 2 (level 10) | Tier 3 (level 15) |
+| --- | --- | --- | --- |
+| Sword | Follow-through: the third blow sweeps wider / Riposte: a parry opens a free heavy blow | Shield wall: block costs less stamina / Berserk: more damage below half health | **Whirlwind** (active, hotbar): a spin that hits all round |
+| Bow | Steady hand: arrows fly straighter / Quick draw: faster shots | Hunter's eye: more damage to animals / Fletcher: arrows are cheaper to make | **Pinning shot** (active): the target cannot move for a moment |
+| Axe | Clean cut: trees need one chop less / Splinters: a chance of extra wood | Lumberjack: chopping costs no stamina / Timber!: a falling tree hurts what it lands on | Woodwise: oak and the far island's trees give rare wood |
+| Pickaxe | Hard swing: rocks break sooner / Vein sense: ore shows on the chart | Stonemason: stone pieces cost less | Deep delver: a chance of flint and later ore from any rock |
+| Cooking | Hearty: meals last longer / Second helping: cook two for the price of one | Feast: a meal shared raises the whole hird | Chef: a new dish at the hearth |
+| Running | Long wind: stamina returns faster / Sure feet: sprint is faster | Wanderer: the chart reveals more as you walk | Sprinter: a dash costs less |
+| Building | Thrifty: pieces cost less / Sturdy: pieces take more damage | Roofwright: bigger rooms get a roof | Hall: the longhouse pieces |
+
+Active runes (tier 3 of the fighting crafts) are what fill the fight hotbar's slots 1 to 6 (decided earlier: skills on
+the fight bar). Everything else is passive.
+
+### Presentation (Claude)
+- A **Deeds** section in the leather book (the Book of Beasts has room for sections): one page per craft with its
+  level, a bar, and its runes as carved rune stones, dark until taken. Taking a rune carves it. Viking crafts with
+  Norse-sounding rune names ("Fylgja" for the follow-through, and so on) would suit the tone.
+- A toast when a craft levels ("Axe 5: choose a rune"), the book glows, nothing is forced.
+- No overall character level is needed; the sum of craft levels can be the **renown** that the world reacts to
+  (recruits, traders, the legendary Vikings hearing of you).
+
+### Questions for Robin
+1. Is C the shape you want: a craft per activity, levelled by doing, with a small rune tree each and the choice
+   being the order?
+2. Should some runes be truly exclusive (never both), or does "in the end you can get everything" hold for all?
+3. Do the active fighting runes go on the fight hotbar slots 1 to 6, as decided for skills earlier?
+
+### Robin's shape (2026-10-05): runes you find and slot
+
+Robin: a set number of skill slots, by kind (attacking, utility, mobility, and so on). Skills are **runes** you earn,
+find or get from various sources, and you drag the rune you want into a slot to use it. An interface with slots.
+
+Expanded (Claude):
+
+**Runes are things.** A rune is an item: a small carved stone with a skill on it. It sits in the bag like an axe
+does, can be dropped, looted, traded, and given by people. That makes skills part of raiding, exploring and
+trading at once, which is the game's point. The Item Editor's sibling, a Rune Editor, would make them.
+
+**Slots by kind.** The hero has a rune board with a fixed number of slots, each of a kind:
+- **Attack** (2 slots): active skills used from the fight hotbar: Whirlwind, Pinning shot, Shield bash, Berserk.
+- **Utility** (2): mostly passive, some active: Hearty (meals last longer), Fletcher (cheap arrows), Clean cut,
+  Second helping, Wanderer (the chart fills in as you walk), Night eyes.
+- **Mobility** (1): Sure feet (faster sprint), Long wind (stamina back faster), Sprinter (cheap dash), Sea legs.
+- **Guard** (1): Shield wall, Riposte, Thick skin.
+- **Hird** (1, later): runes that act on your followers: Feast, Rower's song, Shield wall for the whole band.
+More slots are earned, not bought: the first attack slot from the first kill, the second from a legend's rune, a
+hird slot when you have a hird. A grown character has perhaps nine slots and a bag of forty runes, and chooses.
+
+**Where runes come from** (the sources, each with a feel of its own):
+- **Deeds.** The first rune of each craft is earned by doing: fell fifty trees and the axe rune Clean cut is
+  carved for you. These are the floor every player reaches.
+- **Runestones** in the world (the prop exists): read one and copy its rune. Some stand on the home island, the
+  rare ones far away. The compass rule applies: the north's stones carry cold runes, the south's trading runes.
+- **Beasts.** A beast slain for the first time can drop its rune (the Book of Beasts already marks the first kill):
+  Boar's charge, Wolf's hunger, Bear's hide, Moose's shoulder.
+- **People.** Brokk teaches a smith's rune for a favour; traders sell common ones; the first friend in the broken
+  village gives the first attack rune.
+- **Raids.** Castles and churches keep rare runes in their storehouses; the legendary Vikings carry the best,
+  which is a reason to meet them.
+- **Rune crafting**, late: two runes of a kind at a rune-cutter make a stronger one.
+
+**Levels without a level.** Runes have a tier (common, carved, legendary) shown by the stone, and a rune in a
+slot **grows with use**: an attack rune used a hundred times becomes carved, and its numbers rise. So "level up"
+is per rune, from doing, and swapping a rune out costs you nothing but its growth stays on it. This keeps Robin's
+"choose from the start, get everything in the end": every rune can be found, but a slot holds one.
+
+**Exclusive by slot, not by rule.** Nothing is forbidden; the board is the limit. Taking Berserk out to put
+Whirlwind in is the choice, and it can be undone at any hearth (not in a fight).
+
+**Interface.** A third board beside the character panel and the bag: a dark leather **rune board** with the
+slots as carved hollows, each hollow shaped by its kind (a sword notch, a boot, a shield), and the bag's runes
+drag into them. A rune in a slot is also shown on the fight hotbar (actives in 1 to 6) or as a small glyph by the
+chart (passives). Hover reads the rune: name, what it does, its tier and growth.
+
+**Tone.** Runes are the right Norse thing: the Vikings believed runes carried power, and carving one was a deed.
+Names from the futhark where they fit (Fehu for wealth and trade, Uruz the aurochs for strength, Raido the ride
+for travel, Algiz the elk for guarding, Sowilo the sun for a torch's light) with a plain name beside them.
+
+### Questions for Robin
+1. Runes as items in the bag (drop, loot, trade), or a separate rune book that cannot be lost?
+2. How many slots to start with, and are new slots earned (recommended) or always there?
+3. Should a rune in a slot grow with use, so "levelling" is per rune?
+4. Do deeds (fifty trees felled) carve runes for free, so every player gets a floor?
+
+### Decided 2026-10-05: runes are learnt, not carried
+
+Robin: runes do not end up in the inventory; they are read or learnt in various ways (runestones, deeds, people,
+beasts, raids), and they live in a menu of their own, not a book.
+
+Suggestion for that menu (Claude): **the casting cloth**. Vikings cast runes: stones carried in a leather pouch,
+poured out onto a cloth to be read. So the menu is a cloth you unroll across the screen (dark leather, a stitched
+edge, the same hand as the bag and the book):
+- **Left: the pouch.** Every rune you have learnt lies loose on the cloth, grouped by kind (attack, guard,
+  mobility, utility, hird), each a small stone with its glyph; dim stones for runes you have heard of but not
+  learnt (a runestone seen but not read, a beast met but not slain), so the cloth also tells you what is out
+  there. Hover reads it: the plain name, the futhark name, what it does, its tier, how it has grown.
+- **Right: the board.** The slots as carved hollows, shaped by kind. Drag a stone from the pouch into a hollow;
+  drag it out to the cloth to take it off. Nothing is lost either way, because learnt runes cannot be dropped.
+- **Where it opens:** a key of its own (**C**, "cloth"; R is taken) and a small pouch icon by the chart next to the
+  book. Changing runes is allowed only out of combat, and the cloth says so when a fight is on.
+- Other names if "cloth" does not sit right: the **Pouch**, the **Staves** (runes cut on a staff), **Muninn**
+  (Odin's raven of memory: what you have learnt lives in your memory).

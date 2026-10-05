@@ -14,7 +14,14 @@ var KINDS = {
   axe: { name: 'Axe', len: 15, w: 2.8, dmg: 0.9, tool: 'tree', desc: 'For felling trees, and anything else that stands in the way.' },
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: 'bush', desc: 'Cuts fiber, berries and rope.' },
-  bow: { name: 'Bow', len: 8, w: 2.4, dmg: 1, tool: null, desc: 'Bent wood and a string. Arrows come from the quiver.' }
+  bow: { name: 'Bow', len: 8, w: 2.4, dmg: 1, tool: null, desc: 'Bent wood and a string. Arrows come from the quiver.' },
+  // gear: worn, not held. armor is the share of a blow it turns aside
+  helmet: { name: 'Helmet', len: 10, w: 2, dmg: 0, tool: null, gear: 'head', armor: 0.08, desc: 'Keeps the rain and the blows off your head.' },
+  tunic: { name: 'Tunic', len: 10, w: 2, dmg: 0, tool: null, gear: 'chest', armor: 0.14, desc: 'Worn over the shirt.' },
+  trousers: { name: 'Trousers', len: 10, w: 2, dmg: 0, tool: null, gear: 'legs', armor: 0.08, desc: 'For the legs.' },
+  boots: { name: 'Boots', len: 10, w: 2, dmg: 0, tool: null, gear: 'feet', armor: 0.05, desc: 'Good on rock and in snow.' },
+  cloak: { name: 'Cloak', len: 10, w: 2, dmg: 0, tool: null, gear: 'cloak', armor: 0.05, desc: 'Against the wind at sea.' },
+  shield: { name: 'Shield', len: 10, w: 2, dmg: 0, tool: null, gear: 'shield', armor: 0.1, desc: 'A round shield with an iron boss, painted the way you like.' }
 };
 var MATS = {
   wood: { name: 'Wooden', face: '#b98a5a', dark: '#8a5a3a', edge: '#e9cfa0', glow: '255,230,170', power: 0.7, grain: true },
@@ -23,10 +30,12 @@ var MATS = {
   bronze: { name: 'Bronze', face: '#b8903f', dark: '#7a5a22', edge: '#efd27a', glow: '255,210,120', power: 1.15 },
   iron: { name: 'Iron', face: '#9ca3ad', dark: '#5c636c', edge: '#e6ebf2', glow: '200,220,255', power: 1.3 },
   silver: { name: 'Silver', face: '#d6dbe4', dark: '#8d94a0', edge: '#ffffff', glow: '220,235,255', power: 1.45 },
-  gold: { name: 'Golden', face: '#e2b63a', dark: '#9a7418', edge: '#fff0a8', glow: '255,220,100', power: 1.6 }
+  gold: { name: 'Golden', face: '#e2b63a', dark: '#9a7418', edge: '#fff0a8', glow: '255,220,100', power: 1.6 },
+  leather: { name: 'Leather', face: '#9a6a44', dark: '#5e3d26', edge: '#c9a07a', glow: '255,220,170', power: 0.9, grain: true },
+  fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
-var ORDER = ['sword', 'axe', 'pick', 'knife', 'bow'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold'];
+var ORDER = ['sword', 'axe', 'pick', 'knife', 'bow', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
   var it = { kind: KINDS[kind] ? kind : 'sword', mat: MATS[mat] ? mat : 'iron' }, k;
   for (k in DEF) it[k] = DEF[k];
@@ -54,7 +63,7 @@ function desc(it) {
 function stats(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], sh = it.kind === 'bow' ? 1 : 0.8 + it.sharp * 0.4;
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * 100) / 100;
-  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size };
+  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * M.power * 100) / 100 : 0 };
 }
 function hsl(hex, dh) {                 // shift a colour's hue a little (hue is a small personal tint)
   if (!dh) return hex;
@@ -76,6 +85,7 @@ function draw(c, it, hx, hy, ca, sa, len, mirror) {
   c.save(); c.translate(hx, hy); c.transform(ca, sa, -sa, ca, 0, 0); if (mirror) c.scale(1, -1); c.lineCap = 'round'; c.lineJoin = 'round';
   if (it.glow > 0) { c.shadowColor = 'rgba(' + P.glow + ',' + (0.5 + it.glow * 0.5) + ')'; c.shadowBlur = 4 + it.glow * 10; }
   var tw = it.twist * L * 0.25, cu = it.curl;
+  if (K.gear) { gear(c, it, P, K); c.restore(); return; }
   if (it.kind === 'sword') {
     // grip behind the hand, guard, then the blade: a tapered shape bent by twist, its point curled by curl
     strokeLn(c, -6, 0, 1, 0, LN, w + 2.4); strokeLn(c, -6, 0, 1, 0, '#8a5a3a', w);
@@ -122,11 +132,24 @@ function draw(c, it, hx, hy, ca, sa, len, mirror) {
   }
   c.restore();
 }
+// worn things, drawn upright about (0, 0), about 14 tall
+function gear(c, it, P, K) {
+  var s = 0.8 + it.size * 0.2;
+  c.save(); c.scale(s, s); c.lineJoin = 'round';
+  if (it.kind === 'helmet') { outlined(c, function () { c.beginPath(); c.moveTo(-6, 2); c.quadraticCurveTo(-6, -7, 0, -7); c.quadraticCurveTo(6, -7, 6, 2); c.closePath(); }, P.face, 1.2); c.fillStyle = P.dark; c.fillRect(-6.5, 1.5, 13, 2.2); c.fillRect(-1, -7, 2, 9); }
+  else if (it.kind === 'tunic') { outlined(c, function () { c.beginPath(); c.moveTo(-6, -6); c.lineTo(-2.5, -7); c.quadraticCurveTo(0, -5, 2.5, -7); c.lineTo(6, -6); c.lineTo(7.5, -2); c.lineTo(5, -1); c.lineTo(5, 7); c.lineTo(-5, 7); c.lineTo(-5, -1); c.lineTo(-7.5, -2); c.closePath(); }, P.face, 1.2); c.fillStyle = P.dark; c.fillRect(-5, 3.5, 10, 1.6); }
+  else if (it.kind === 'trousers') { outlined(c, function () { c.beginPath(); c.moveTo(-5, -7); c.lineTo(5, -7); c.lineTo(5.5, 7); c.lineTo(1.5, 7); c.lineTo(0, -1); c.lineTo(-1.5, 7); c.lineTo(-5.5, 7); c.closePath(); }, P.face, 1.2); c.fillStyle = P.dark; c.fillRect(-5, -7, 10, 1.8); }
+  else if (it.kind === 'boots') { [-4.5, 3].forEach(function (x) { outlined(c, function () { c.beginPath(); c.moveTo(x - 2.5, -6); c.lineTo(x + 1.5, -6); c.lineTo(x + 1.5, 1); c.lineTo(x + 5, 3.5); c.lineTo(x + 5, 6); c.lineTo(x - 2.5, 6); c.closePath(); }, P.face, 1.1); c.fillStyle = P.dark; c.fillRect(x - 2.5, 4.3, 7.5, 1.7); }); }
+  else if (it.kind === 'cloak') { outlined(c, function () { c.beginPath(); c.moveTo(-3, -7); c.lineTo(3, -7); c.quadraticCurveTo(5, -2, 7, 7); c.lineTo(-7, 7); c.quadraticCurveTo(-5, -2, -3, -7); c.closePath(); }, P.face, 1.2); c.fillStyle = P.edge; c.beginPath(); c.arc(0, -6, 1.6, 0, 7); c.fill(); c.strokeStyle = P.dark; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-2, -4); c.lineTo(-3.5, 6); c.moveTo(2, -4); c.lineTo(3.5, 6); c.stroke(); }
+  else if (it.kind === 'shield') { outlined(c, function () { c.beginPath(); c.arc(0, 0, 7.5, 0, 7); }, P.face, 1.3); c.fillStyle = P.dark; c.beginPath(); c.arc(0, 0, 7.5, -0.3, 1.27); c.lineTo(0, 0); c.fill(); c.beginPath(); c.arc(0, 0, 7.5, 2.84, 4.41); c.lineTo(0, 0); c.fill(); c.fillStyle = '#9ca3ad'; c.beginPath(); c.arc(0, 0, 2.2, 0, 7); c.fill(); c.strokeStyle = LN; c.lineWidth = 0.9; c.stroke(); }
+  c.restore();
+}
 // icon(c, it, s): the item in a slot, handle at lower left and tip at upper right, about s wide
 function icon(c, it, s) {
   var K = KINDS[it.kind], L = K.len * (it.kind === 'bow' ? 1 : it.size), span = it.kind === 'bow' ? L * it.size * 2.2 : L + 7, k = (s || 14) / span;
   c.save(); c.scale(k, k);
-  if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
+  if (K.gear) draw(c, it, 0, 0, 1, 0, null);
+  else if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
   c.restore();
 }
 return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon };

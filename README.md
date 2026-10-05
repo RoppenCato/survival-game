@@ -75,6 +75,8 @@ dist/               the built pages
 | B | Build mode (the game): right click opens the board of pieces, click to place, F toggles the wreck cursor |
 | E | Cook at the camp hearth (the game); click food in the inventory to eat it |
 | Tab | The bag (the game): a 6 by 4 grid, stacks of 25; the top row is the belt, numbered like the hotbar |
+| C | The casting cloth (the game): lay learnt runes in hollows to use them |
+| L | The Book of Beasts (the game) |
 | R | Rise again after falling (the game) |
 | E | Board a ship, or step ashore (Sea Editor) |
 

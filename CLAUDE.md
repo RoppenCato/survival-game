@@ -131,6 +131,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
   knife, bow. Materials: wood, flint, copper, bronze, iron, silver, gold. Shared by the engine, the game and the
   Item Editor. `Combat.api.items = { held(), tool(i), weapon(kind) }` tells the engine what is in hand; it then
   draws the item instead of its built-in shapes and uses its damage or power.
+- `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
+  guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
+  `hollow` drawings for the casting cloth. Thirteen runes so far.
 - `src/combat.js` (`Combat`): the arena engine: hero movement and combat, enemy AI, effects, rendering. The editors
   reuse it through hooks on `Combat.api`:
   - `scene`: `begin(c, P)` (camera and ground), `items(list)` (extra y-sorted things), `end(c, P)`, `bounds`,
@@ -216,6 +219,16 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   (`Combat.api.canShoot`/`onShoot`), the count shows by the bow icon on the hotbar, 70% of arrows that hit
   nothing land as pickups that go back into the quiver (`onArrowLand`), and a new game starts with 20 wood
   arrows. Arrow types and making arrows come with the workbench (roadmap step 3). Saved with the game.
+- **Crafting (2026-10-05):** you start with nothing in your hands; branches and stones lie round the camp
+  (`campScatter`). Recipes (`RECIPES2`) are made by hand anywhere or at a **workbench**, a buildable piece that
+  only works with a roof over it (`benchRoofed`: the room flood fill). A recipe shows as "?" until every kind of
+  thing it needs has been picked up (`seen`, saved); picking up a new kind toasts that new things can be made.
+  Hand: flint axe, knife, pick, wooden sword, wooden bow, 5 arrows. Bench: flint sword, 15 arrows, wooden shield,
+  leather helmet, tunic, trousers, boots, cloak (boar **hide** drops from boars, 70%). Gear is worn in the
+  clothing slots and turns a share of blows aside (`Items.stats().armor`, `Combat.api.armor`), up to 60%.
+  The **B board** has tabs: Building, Crafting, Workbench (when near one). It opens with build mode and closes
+  with it. **Esc** opens a menu: Continue, Sandbox (full kit, materials, every recipe known), Restart with
+  nothing, New island. The quiver starts empty; drops on the ground are saved.
 - **Things** (weapons and tools) live in bag slots as `{ kind: 'item', n: 1, item: spec }`, never stacked, and in
   `equip` (weapon, shield, bow, trinket, axe, pick, knife, and the clothing slots, empty for now). Right click in
   the bag equips (swapping what was there back), right click on the panel takes off, dragging off the boards drops
@@ -223,6 +236,18 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   axe, pick and knife. The hotbar's tool and weapon icons are the equipped things; an empty tool slot means no
   gathering with that tool. Hovering a thing shows a leather card with its numbers and tale. The Item Editor's
   "Give to the game" puts a thing in `localStorage` (`game.give`) that the game picks up on load.
+- **Runes (2026-10-05):** skills are runes, learnt and never carried (Robin). State `RS` = { learnt, heard, slots,
+  deeds, stones }. Learnt from **deeds** (`DEEDS`: fifteen trees for Clean cut, fifteen rocks for Hard swing, five
+  meals for Hearty, twenty arrows for Fletcher, a minute of sprinting for Sure feet, thirty dashes for Sprinter,
+  fifteen blocks for Shield wall, five kills for Shield bash), from **runestones** (E near one reads it; the rune
+  is set by the stone's position from `STONE_POOL`; stones in view are "heard of" and show dim), and later from
+  beasts, people and raids. The **casting cloth** (C, or the pouch by the chart): the pouch of learnt runes on the
+  left, the board of hollows on the right (start: attack, utility, mobility; a guard hollow opens with the first
+  guard rune, a second attack hollow at ten kills); drag stones in and out, not in a fight. Slotted attack runes
+  sit on the fight hotbar and are cast with their number (`Combat.api.trigger`: whirlwind is a full-circle
+  heavy swing, bash a short staggering shove, pin holds the next arrow's target); passives work through
+  `Combat.api.mods`, `armor`, `powerMul` and the page (meals, arrows). A rune in use grows with use
+  (`uses`, tier multiplier). Sandbox learns every rune.
 - **The Book of Beasts** (L, or the small book by the chart): a leather-bound book over a dimmed screen, two
   parchment pages. Left: the beast drawn live by `creatureD`, turning slowly, its name and folk name, a tab row
   of all beasts. Right: lore, strengths, weaknesses, warning sign, drops, where found. A page is earned the first

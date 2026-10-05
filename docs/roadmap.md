@@ -43,7 +43,7 @@ Tests: see "Testing" below, the animals row.
 - No hunger, no cold, no wetness, nothing that cuts stamina (decided).
 
 
-## Step 3: crafting at the workbench
+## Step 3: crafting at the workbench (built 2026-10-05: hand and bench recipes, unlock by picking things up, leather gear, the tabbed B board, the Escape menu; still to do: better tools by tier, the torch, the cloak's warmth)
 
 - A buildable workbench piece. E opens a crafting panel like the hearth's.
 - Recipes: a better axe and pick (gather faster; oak needs the better axe), arrows (see below), a torch, a wooden
