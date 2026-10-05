@@ -135,8 +135,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
   `hollow` drawings for the casting cloth. Thirteen runes so far.
-- `src/music.js` (`Music`): the music, with no sound files. Songs are data (`Music.SONGS`: `meadowDay`,
-  `meadowEvening`): `bpm`, `chords` one per bar, `tracks` that are either written notes (`'F5:q. E5:e r:e'`:
+- `src/music.js` (`Music`): the music, with no sound files. Songs are data (`Music.SONGS`: `birchGrove`,
+  `oakAndWell`, `seaWind`, `meadowDay`, `meadowEvening`; the first four are day-theme candidates for Robin to
+  choose between, each built round a short repeating hook): `bpm`, `chords` one per bar, `tracks` that are either written notes (`'F5:q. E5:e r:e'`:
   name+octave:length w h q e s, dotted with `.`, `r` rests, `+` chords, `@70` velocity) or a `pattern` played
   from the chords (`arp`, `pad`, `bass`, `comp`, `pulse`; drums `shaker`, `rim`, `kick`). A track's `tag` is
   `calm` (peace only), `danger` (fights only) or none (always); the game crossfades the two with
@@ -323,10 +324,14 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   Sleeping rough just skips the night. A dial by the chart shows the sun or moon going round, with the day
   number and time of day on mouseover and the rested ring. `day` and `rested` are saved. No night-only
   beasts yet.
-- **Music (2026-10-05):** on by default, starting at the first key or click (browsers require it). The meadow
-  day theme by day; the evening theme from dusk to dawn (`musicTick` switches when `isEvening()` changes).
-  Volume is a bar in the Escape menu only, saved in `localStorage['game.opts']`; **there is no mute key: M is
-  reserved for the map.** When a beast within earshot is chasing or attacking, the `danger`
+- **Music (2026-10-05):** on by default, starting at the first key or click (browsers require it). A day theme
+  by day (`dayTheme()`: the Song Editor's "Use in the game" choice in `localStorage['game.theme']`, else
+  `meadowDay`; the candidates are `birchGrove`, `oakAndWell`, `seaWind` and `meadowDay`); the evening theme
+  from dusk to dawn (`musicTick` switches when `isEvening()` changes). Volume is a bar in the Escape menu only,
+  saved in `localStorage['game.opts']`; **there is no mute key: M is reserved for the map.** `Music` hushes
+  itself when the window loses focus or is hidden and comes back on focus, so the game never plays into another
+  window. The Escape menu holds the world still (`Combat.update` is skipped, `dt` is 0). A beast's sounds
+  (`sfx(name, v, e)` from the engine) are only played within 260 units of the hero. When a beast within earshot is chasing or attacking, the `danger`
   layer (kick, pulsing strings and piano) fades in over a second and the `calm` layer (melody, harp, shaker) fades
   mostly out; four seconds after the last beast calms down it fades back (`musicTick`). Breath of the Wild was the
   model: the same song gets tenser, it does not switch.

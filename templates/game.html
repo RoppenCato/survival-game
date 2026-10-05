@@ -176,7 +176,10 @@ __COMBAT__
     craft: function () { tone(440, 0.08, 'triangle', 0.06); tone(660, 0.1, 'triangle', 0.06); tone(880, 0.14, 'sine', 0.05); },
     build: function () { tone(220, 0.08, 'square', 0.06, 160); noise(0.08, 0.2, 1200, 1); }
   };
-  Combat.api.sfx = function (n, v) { if (SFX[n]) SFX[n](v); };
+  Combat.api.sfx = function (n, v, src) {   // a beast's sound is only heard when it is near; the world is big
+    if (src && src.x != null) { var P = hero(); if (Math.hypot(src.x - P.x, src.y - P.y) > 260) return; }
+    if (SFX[n]) SFX[n](v);
+  };
   function sfx(n, v) { if (S.sound) Combat.api.sfx(n, v); }
   window.addEventListener('keydown', ac); window.addEventListener('mousedown', ac);
 
@@ -190,12 +193,13 @@ __COMBAT__
   }
   function startMusic() {                 // browsers allow sound only after the first key or click
     if (musicOn || OPTS.music <= 0) return;
-    musicSong = isEvening() ? 'meadowEvening' : 'meadowDay';
+    musicSong = isEvening() ? 'meadowEvening' : dayTheme();
     Music.setVolume(OPTS.music); if (Music.play(songOf(musicSong))) musicOn = true;
   }
+  function dayTheme() { var id = null; try { id = localStorage.getItem('game.theme'); } catch (e) {} return id && songOf(id) ? id : 'meadowDay'; }   // the Song Editor's "Use in the game" choice
   function musicTick(dt) {
     if (!musicOn) return;
-    var want = isEvening() ? 'meadowEvening' : 'meadowDay';   // the song follows the clock: the evening theme from dusk to dawn
+    var want = isEvening() ? 'meadowEvening' : dayTheme();   // the song follows the clock: the evening theme from dusk to dawn
     if (want !== musicSong) { Music.stop(); musicOn = false; dangerT = 0; startMusic(); return; }
     var P = hero(), awake = false;       // a beast counts as awake when it is chasing or attacking within earshot
     Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
@@ -1590,7 +1594,7 @@ __COMBAT__
   var lastP = hero(), lastMode = 'fight';
   var lastF = performance.now();
   function frame(now) {
-    var dt = Math.min(0.05, (now - lastF) / 1000); lastF = now;
+    var dt = pauseOpen ? 0 : Math.min(0.05, (now - lastF) / 1000); lastF = now;
     var D = Combat.dbg(), P = D.P;
     if (P !== lastP) { lastP = P; toCamp(); spawnBoars(); }     // R after falling: the engine made a new hero
     if (P.mode === 'build' && lastMode !== 'build') openMenu('build'); if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
@@ -1608,7 +1612,7 @@ __COMBAT__
     around(P.x, P.y, function (o) { if (o.name === 'runestone' && Math.abs(o.x - cam.x) < 240 && Math.abs(o.y * K - cam.y) < 160) { var id = stoneRune(o); if (!RS.learnt[id] && !RS.stones[propKey(o)]) RS.heard[id] = 1; } });
     Combat.api.beltSlots = slots.slice(0, COLS).map(function (s) { return s ? { n: s.n, draw: function (c) { if (s.kind === 'item') Items.icon(c, s.item, 18); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; });
     saveT += dt; if (saveT > 10) { saveT = 0; save(); }
-    Combat.update(dt);
+    if (!pauseOpen) Combat.update(dt);    // the Escape menu holds the world still
     Combat.render(ctx);
     requestAnimationFrame(frame);
   }

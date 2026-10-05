@@ -69,6 +69,12 @@ function ac() {
   if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return ctx; }
   var A = window.AudioContext || window.webkitAudioContext; if (!A) return null;
   ctx = new A(); master = ctx.createGain(); master.gain.value = vol; master.connect(ctx.destination);
+  // the music belongs to the page: it goes quiet when the window loses focus or is hidden, and comes back when it is looked at again
+  var away = false;
+  function hush(on) { if (on === away || !master) return; away = on; master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(on ? 0 : vol, ctx.currentTime, 0.15); }
+  window.addEventListener('blur', function () { hush(true); }); window.addEventListener('focus', function () { hush(false); });
+  document.addEventListener('visibilitychange', function () { hush(document.hidden || !document.hasFocus()); });
+  if (!document.hasFocus()) hush(true);
   verb = ctx.createConvolver(); var n = Math.floor(ctx.sampleRate * 1.8), buf = ctx.createBuffer(2, n, ctx.sampleRate), ch;
   for (ch = 0; ch < 2; ch++) { var d = buf.getChannelData(ch); for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.6); }
   verb.buffer = buf; wet = ctx.createGain(); wet.gain.value = 0.22; verb.connect(wet); wet.connect(master);
@@ -93,7 +99,7 @@ var VOICES = {
     var lfo = osc('sine', 5.2, t, end), lg = ctx.createGain(); lg.gain.value = f * 0.006; lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency);
     o.connect(g); o2.connect(g2); g2.connect(g); g.connect(dest);
     var n = ctx.createBufferSource(), nb = ctx.createBuffer(1, 2205, ctx.sampleRate), nd = nb.getChannelData(0); for (var i = 0; i < 2205; i++) nd[i] = (Math.random() * 2 - 1) * (1 - i / 2205);
-    n.buffer = nb; var ng = ctx.createGain(); ng.gain.value = v / 127 * 0.05; var hp = ctx.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = f * 2; n.connect(hp); hp.connect(ng); ng.connect(dest); n.start(t);
+    n.buffer = nb; var ng = ctx.createGain(); ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(v / 127 * 0.025, t + 0.015); var hp = ctx.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = f * 2; n.connect(hp); hp.connect(ng); ng.connect(dest); n.start(t);
   },
   clarinet: function (dest, f, t, dur, v) {
     var g = ctx.createGain(), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; var end = env(g, t, 0.05, 0.1, 0.85, 0.1, dur, v / 127 * 0.22);
@@ -125,9 +131,9 @@ var VOICES = {
   },
   drum: function (dest, n, t, v) {
     var g = ctx.createGain(); g.gain.value = v / 127;
-    if (n === 36) { var o = osc('sine', 120, t, t + 0.3); o.frequency.exponentialRampToValueAtTime(42, t + 0.12); var kg = ctx.createGain(); kg.gain.setValueAtTime(0.6, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.28); o.connect(kg); kg.connect(g); }
+    if (n === 36) { var o = osc('sine', 120, t, t + 0.3); o.frequency.exponentialRampToValueAtTime(42, t + 0.12); var kg = ctx.createGain(); kg.gain.setValueAtTime(0.001, t); kg.gain.linearRampToValueAtTime(0.6, t + 0.004); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.28); o.connect(kg); kg.connect(g); }
     else { var len = n === 37 ? 0.06 : 0.09, nb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * len), ctx.sampleRate), d = nb.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-      var s = ctx.createBufferSource(); s.buffer = nb; var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = n === 37 ? 1800 : 6500; bp.Q.value = n === 37 ? 2 : 0.8; var ng = ctx.createGain(); ng.gain.value = n === 37 ? 0.5 : 0.22; s.connect(bp); bp.connect(ng); ng.connect(g); s.start(t); }
+      var s = ctx.createBufferSource(); s.buffer = nb; var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = n === 37 ? 1400 : 6500; bp.Q.value = n === 37 ? 1.5 : 0.8; var ng = ctx.createGain(); ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(n === 37 ? 0.32 : 0.16, t + 0.004); s.connect(bp); bp.connect(ng); ng.connect(g); s.start(t); }   // a short rise so the hit does not click
     g.connect(dest);
   }
 };
@@ -159,7 +165,7 @@ function play(song, fromBeat) {               // start the song (from a beat, fo
 function stop() { playing = false; if (timer) clearInterval(timer); timer = null; }
 function restart() { if (cur) play(cur); }
 function setLayer(tag, g, secs) { if (!ctx) return; var L = layer(tag); L.gain.cancelScheduledValues(ctx.currentTime); L.gain.setTargetAtTime(g, ctx.currentTime, (secs || 1) / 3); }
-function setVolume(v) { vol = v; if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.05); }
+function setVolume(v) { vol = v; if (master && (typeof document === 'undefined' || document.hasFocus())) master.gain.setTargetAtTime(v, ctx.currentTime, 0.05); }
 function at() { if (!playing || !cur) return 0; var spb = 60 / cur.bpm; return ((ctx.currentTime - startT) / spb) % loopLen; }
 
 // Render a song into an offline context (Node with node-web-audio-api, or an OfflineAudioContext in a page):
@@ -197,7 +203,79 @@ function midiFile(song) {
 }
 
 /* ---------- the songs ---------- */
+// Three more day themes to choose between, each round a short hook that repeats (the thing that stays in the head):
+// four bars of intro, A, A' (the same hook with a new ending), B (a second voice takes over), A again: 36 bars.
+var R4 = 'r:w | r:w | r:w | r:w | ', R8 = R4 + R4;
+var BG_A = 'E5:e G5:e C6:q G5:q E5:q | D5:q. E5:e D5:h | C5:e E5:e A5:q E5:q C5:q | A4:q. C5:e A4:h | E5:e G5:e C6:q G5:q E5:q | D5:q. E5:e F5:q D5:q | ';
+var OW_A = 'D5:q G5:q B5:q. A5:e | A5:q F#5:q D5:h | E5:q G5:q B5:q. A5:e | G5:q E5:q C5:h | D5:q G5:q B5:q. A5:e | A5:q F#5:q A5:q B5:q | ';
+var SW_A = 'A4:e D5:e F#5:q A5:q F#5:q | E5:q. C#5:e A4:h | B4:e D5:e F#5:q B5:q A5:q | G5:q. F#5:e D5:h | A4:e D5:e F#5:q A5:q F#5:q | E5:q. C#5:e E5:q F#5:q | ';
 var SONGS = {
+  birchGrove: {
+    name: 'Birch grove', bpm: 124, key: 'C major', transpose: 0,
+    chords: ['C', 'G', 'Am', 'F',
+      'C', 'G', 'Am', 'F', 'C', 'G', 'F', 'G',
+      'C', 'G', 'Am', 'F', 'C', 'G', 'F', 'C',
+      'F', 'G', 'Em', 'Am', 'F', 'G', 'C', 'G',
+      'C', 'G', 'Am', 'F', 'C', 'G', 'F', 'C'],
+    tracks: [
+      { inst: 'clarinet', vol: 1, tag: 'calm', notes: R4 + BG_A + 'A5:q G5:q F5:q E5:q | D5:h. r:q | ' + BG_A + 'A5:q G5:q F5:q D5:q | C5:w | ' + R8 + BG_A + 'A5:q G5:q F5:q D5:q | C5:w |' },
+      { inst: 'celesta', vol: 0.9, tag: 'calm', notes: 'r:w | r:w | r:w | r:h E5:e G5:e C6:q | ' + R8 + R8 + 'A5:q C6:q F6:h | G6:q. F6:e D6:h | E6:q G6:q B5:h | C6:q. B5:e A5:h | A5:e C6:e F6:q E6:q D6:q | D6:q. B5:e G5:h | E6:q G6:q C6:q E6:q | D6:w | ' + R8 },
+      { inst: 'flute', vol: 0.6, tag: 'calm', transpose: 12, notes: R4 + R8 + R8 + R8 + BG_A + 'A5:q G5:q F5:q D5:q | C5:w |' },
+      { inst: 'harp', pattern: 'arp', vol: 0.6, tag: 'calm', oct: 0 },
+      { inst: 'piano', pattern: 'comp', vol: 0.45, tag: '', oct: 0 },
+      { inst: 'strings', pattern: 'pad', vol: 0.55, tag: '', oct: 0 },
+      { inst: 'bass', pattern: 'bass', vol: 0.75, tag: '', oct: 0 },
+      { inst: 'shaker', pattern: 'shaker', vol: 0.45, tag: 'calm' },
+      { inst: 'rim', pattern: 'rim', vol: 0.4, tag: '' },
+      { inst: 'kick', pattern: 'kick', vol: 0.9, tag: 'danger' },
+      { inst: 'strings', pattern: 'pulse', vol: 1.1, tag: 'danger', oct: 0 },
+      { inst: 'piano', pattern: 'pulse', vol: 0.7, tag: 'danger', oct: -1 }
+    ]
+  },
+  oakAndWell: {
+    name: 'Oak and well', bpm: 108, key: 'G major', transpose: 0,
+    chords: ['G', 'D', 'Em', 'C',
+      'G', 'D', 'Em', 'C', 'G', 'D', 'C', 'D',
+      'G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G',
+      'C', 'D', 'G', 'Em', 'C', 'D', 'Am', 'D',
+      'G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G'],
+    tracks: [
+      { inst: 'flute', vol: 1, tag: 'calm', notes: R4 + OW_A + 'C6:q B5:q A5:q G5:q | A5:h. r:q | ' + OW_A + 'C6:q B5:q A5:q F#5:q | G5:w | ' + R8 + OW_A + 'C6:q B5:q A5:q F#5:q | G5:w |' },
+      { inst: 'piano', vol: 0.9, tag: 'calm', notes: 'r:w | r:w | r:w | r:h D5:q G5:q | ' + R8 + R8 + 'E5:e G5:e C6:q G5:q E5:q | F#5:q A5:q D6:h | B5:q G5:q D5:h | E5:q G5:q B5:h | E5:e G5:e C6:q G5:q E5:q | F#5:q A5:q D6:q C6:q | C6:q A5:q E5:h | F#5:w | ' + R8 },
+      { inst: 'musicbox', vol: 0.5, tag: 'calm', transpose: 12, notes: R4 + R8 + R8 + R8 + OW_A + 'C6:q B5:q A5:q F#5:q | G5:w |' },
+      { inst: 'harp', pattern: 'arp', vol: 0.6, tag: 'calm', oct: 0 },
+      { inst: 'piano', pattern: 'comp', vol: 0.4, tag: '', oct: 0 },
+      { inst: 'strings', pattern: 'pad', vol: 0.6, tag: '', oct: 0 },
+      { inst: 'bass', pattern: 'bass', vol: 0.75, tag: '', oct: 0 },
+      { inst: 'shaker', pattern: 'shaker', vol: 0.35, tag: 'calm' },
+      { inst: 'rim', pattern: 'rim', vol: 0.4, tag: '' },
+      { inst: 'kick', pattern: 'kick', vol: 0.9, tag: 'danger' },
+      { inst: 'strings', pattern: 'pulse', vol: 1.1, tag: 'danger', oct: 0 },
+      { inst: 'piano', pattern: 'pulse', vol: 0.7, tag: 'danger', oct: -1 }
+    ]
+  },
+  seaWind: {
+    name: 'Sea wind', bpm: 132, key: 'D major', transpose: 0,
+    chords: ['D', 'A', 'Bm', 'G',
+      'D', 'A', 'Bm', 'G', 'D', 'A', 'G', 'A',
+      'D', 'A', 'Bm', 'G', 'D', 'A', 'G', 'D',
+      'G', 'A', 'F#m', 'Bm', 'G', 'A', 'D', 'A',
+      'D', 'A', 'Bm', 'G', 'D', 'A', 'G', 'D'],
+    tracks: [
+      { inst: 'piano', vol: 1, tag: 'calm', notes: R4 + SW_A + 'G5:q A5:q B5:q G5:q | A5:h. r:q | ' + SW_A + 'G5:q F#5:q E5:q C#5:q | D5:w | ' + R8 + SW_A + 'G5:q F#5:q E5:q C#5:q | D5:w |' },
+      { inst: 'flute', vol: 0.9, tag: 'calm', notes: 'r:w | r:w | r:w | r:h A4:e D5:e F#5:q | ' + R8 + R8 + 'B5:q. A5:e G5:q F#5:q | E5:q F#5:q A5:h | A5:q. G5:e F#5:q E5:q | D5:q F#5:q B5:h | B5:q. A5:e G5:q F#5:q | E5:q F#5:q A5:q B5:q | A5:q F#5:q D5:q F#5:q | E5:w | ' + R8 },
+      { inst: 'celesta', vol: 0.55, tag: 'calm', transpose: 12, notes: R4 + R8 + R8 + R8 + SW_A + 'G5:q F#5:q E5:q C#5:q | D5:w |' },
+      { inst: 'harp', pattern: 'arp', vol: 0.6, tag: 'calm', oct: 0 },
+      { inst: 'piano', pattern: 'comp', vol: 0.4, tag: '', oct: 0 },
+      { inst: 'strings', pattern: 'pad', vol: 0.55, tag: '', oct: 0 },
+      { inst: 'bass', pattern: 'bass', vol: 0.8, tag: '', oct: 0 },
+      { inst: 'shaker', pattern: 'shaker', vol: 0.45, tag: 'calm' },
+      { inst: 'rim', pattern: 'rim', vol: 0.4, tag: '' },
+      { inst: 'kick', pattern: 'kick', vol: 0.9, tag: 'danger' },
+      { inst: 'strings', pattern: 'pulse', vol: 1.1, tag: 'danger', oct: 0 },
+      { inst: 'piano', pattern: 'pulse', vol: 0.7, tag: 'danger', oct: -1 }
+    ]
+  },
   meadowDay: {
     name: 'Meadow, day', bpm: 118, key: 'F major', transpose: 0,
     // intro 4 | A 8 | A' 8 | B 8 (up a tone) | bridge 4 | A 8 = 40 bars

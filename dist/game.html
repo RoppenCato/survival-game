@@ -3355,6 +3355,12 @@ function ac() {
   if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return ctx; }
   var A = window.AudioContext || window.webkitAudioContext; if (!A) return null;
   ctx = new A(); master = ctx.createGain(); master.gain.value = vol; master.connect(ctx.destination);
+  // the music belongs to the page: it goes quiet when the window loses focus or is hidden, and comes back when it is looked at again
+  var away = false;
+  function hush(on) { if (on === away || !master) return; away = on; master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(on ? 0 : vol, ctx.currentTime, 0.15); }
+  window.addEventListener('blur', function () { hush(true); }); window.addEventListener('focus', function () { hush(false); });
+  document.addEventListener('visibilitychange', function () { hush(document.hidden || !document.hasFocus()); });
+  if (!document.hasFocus()) hush(true);
   verb = ctx.createConvolver(); var n = Math.floor(ctx.sampleRate * 1.8), buf = ctx.createBuffer(2, n, ctx.sampleRate), ch;
   for (ch = 0; ch < 2; ch++) { var d = buf.getChannelData(ch); for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.6); }
   verb.buffer = buf; wet = ctx.createGain(); wet.gain.value = 0.22; verb.connect(wet); wet.connect(master);
@@ -3379,7 +3385,7 @@ var VOICES = {
     var lfo = osc('sine', 5.2, t, end), lg = ctx.createGain(); lg.gain.value = f * 0.006; lfo.connect(lg); lg.connect(o.frequency); lg.connect(o2.frequency);
     o.connect(g); o2.connect(g2); g2.connect(g); g.connect(dest);
     var n = ctx.createBufferSource(), nb = ctx.createBuffer(1, 2205, ctx.sampleRate), nd = nb.getChannelData(0); for (var i = 0; i < 2205; i++) nd[i] = (Math.random() * 2 - 1) * (1 - i / 2205);
-    n.buffer = nb; var ng = ctx.createGain(); ng.gain.value = v / 127 * 0.05; var hp = ctx.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = f * 2; n.connect(hp); hp.connect(ng); ng.connect(dest); n.start(t);
+    n.buffer = nb; var ng = ctx.createGain(); ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(v / 127 * 0.025, t + 0.015); var hp = ctx.createBiquadFilter(); hp.type = 'bandpass'; hp.frequency.value = f * 2; n.connect(hp); hp.connect(ng); ng.connect(dest); n.start(t);
   },
   clarinet: function (dest, f, t, dur, v) {
     var g = ctx.createGain(), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200; var end = env(g, t, 0.05, 0.1, 0.85, 0.1, dur, v / 127 * 0.22);
@@ -3411,9 +3417,9 @@ var VOICES = {
   },
   drum: function (dest, n, t, v) {
     var g = ctx.createGain(); g.gain.value = v / 127;
-    if (n === 36) { var o = osc('sine', 120, t, t + 0.3); o.frequency.exponentialRampToValueAtTime(42, t + 0.12); var kg = ctx.createGain(); kg.gain.setValueAtTime(0.6, t); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.28); o.connect(kg); kg.connect(g); }
+    if (n === 36) { var o = osc('sine', 120, t, t + 0.3); o.frequency.exponentialRampToValueAtTime(42, t + 0.12); var kg = ctx.createGain(); kg.gain.setValueAtTime(0.001, t); kg.gain.linearRampToValueAtTime(0.6, t + 0.004); kg.gain.exponentialRampToValueAtTime(0.001, t + 0.28); o.connect(kg); kg.connect(g); }
     else { var len = n === 37 ? 0.06 : 0.09, nb = ctx.createBuffer(1, Math.floor(ctx.sampleRate * len), ctx.sampleRate), d = nb.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
-      var s = ctx.createBufferSource(); s.buffer = nb; var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = n === 37 ? 1800 : 6500; bp.Q.value = n === 37 ? 2 : 0.8; var ng = ctx.createGain(); ng.gain.value = n === 37 ? 0.5 : 0.22; s.connect(bp); bp.connect(ng); ng.connect(g); s.start(t); }
+      var s = ctx.createBufferSource(); s.buffer = nb; var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = n === 37 ? 1400 : 6500; bp.Q.value = n === 37 ? 1.5 : 0.8; var ng = ctx.createGain(); ng.gain.setValueAtTime(0, t); ng.gain.linearRampToValueAtTime(n === 37 ? 0.32 : 0.16, t + 0.004); s.connect(bp); bp.connect(ng); ng.connect(g); s.start(t); }   // a short rise so the hit does not click
     g.connect(dest);
   }
 };
@@ -3445,7 +3451,7 @@ function play(song, fromBeat) {               // start the song (from a beat, fo
 function stop() { playing = false; if (timer) clearInterval(timer); timer = null; }
 function restart() { if (cur) play(cur); }
 function setLayer(tag, g, secs) { if (!ctx) return; var L = layer(tag); L.gain.cancelScheduledValues(ctx.currentTime); L.gain.setTargetAtTime(g, ctx.currentTime, (secs || 1) / 3); }
-function setVolume(v) { vol = v; if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.05); }
+function setVolume(v) { vol = v; if (master && (typeof document === 'undefined' || document.hasFocus())) master.gain.setTargetAtTime(v, ctx.currentTime, 0.05); }
 function at() { if (!playing || !cur) return 0; var spb = 60 / cur.bpm; return ((ctx.currentTime - startT) / spb) % loopLen; }
 
 // Render a song into an offline context (Node with node-web-audio-api, or an OfflineAudioContext in a page):
@@ -3483,7 +3489,79 @@ function midiFile(song) {
 }
 
 /* ---------- the songs ---------- */
+// Three more day themes to choose between, each round a short hook that repeats (the thing that stays in the head):
+// four bars of intro, A, A' (the same hook with a new ending), B (a second voice takes over), A again: 36 bars.
+var R4 = 'r:w | r:w | r:w | r:w | ', R8 = R4 + R4;
+var BG_A = 'E5:e G5:e C6:q G5:q E5:q | D5:q. E5:e D5:h | C5:e E5:e A5:q E5:q C5:q | A4:q. C5:e A4:h | E5:e G5:e C6:q G5:q E5:q | D5:q. E5:e F5:q D5:q | ';
+var OW_A = 'D5:q G5:q B5:q. A5:e | A5:q F#5:q D5:h | E5:q G5:q B5:q. A5:e | G5:q E5:q C5:h | D5:q G5:q B5:q. A5:e | A5:q F#5:q A5:q B5:q | ';
+var SW_A = 'A4:e D5:e F#5:q A5:q F#5:q | E5:q. C#5:e A4:h | B4:e D5:e F#5:q B5:q A5:q | G5:q. F#5:e D5:h | A4:e D5:e F#5:q A5:q F#5:q | E5:q. C#5:e E5:q F#5:q | ';
 var SONGS = {
+  birchGrove: {
+    name: 'Birch grove', bpm: 124, key: 'C major', transpose: 0,
+    chords: ['C', 'G', 'Am', 'F',
+      'C', 'G', 'Am', 'F', 'C', 'G', 'F', 'G',
+      'C', 'G', 'Am', 'F', 'C', 'G', 'F', 'C',
+      'F', 'G', 'Em', 'Am', 'F', 'G', 'C', 'G',
+      'C', 'G', 'Am', 'F', 'C', 'G', 'F', 'C'],
+    tracks: [
+      { inst: 'clarinet', vol: 1, tag: 'calm', notes: R4 + BG_A + 'A5:q G5:q F5:q E5:q | D5:h. r:q | ' + BG_A + 'A5:q G5:q F5:q D5:q | C5:w | ' + R8 + BG_A + 'A5:q G5:q F5:q D5:q | C5:w |' },
+      { inst: 'celesta', vol: 0.9, tag: 'calm', notes: 'r:w | r:w | r:w | r:h E5:e G5:e C6:q | ' + R8 + R8 + 'A5:q C6:q F6:h | G6:q. F6:e D6:h | E6:q G6:q B5:h | C6:q. B5:e A5:h | A5:e C6:e F6:q E6:q D6:q | D6:q. B5:e G5:h | E6:q G6:q C6:q E6:q | D6:w | ' + R8 },
+      { inst: 'flute', vol: 0.6, tag: 'calm', transpose: 12, notes: R4 + R8 + R8 + R8 + BG_A + 'A5:q G5:q F5:q D5:q | C5:w |' },
+      { inst: 'harp', pattern: 'arp', vol: 0.6, tag: 'calm', oct: 0 },
+      { inst: 'piano', pattern: 'comp', vol: 0.45, tag: '', oct: 0 },
+      { inst: 'strings', pattern: 'pad', vol: 0.55, tag: '', oct: 0 },
+      { inst: 'bass', pattern: 'bass', vol: 0.75, tag: '', oct: 0 },
+      { inst: 'shaker', pattern: 'shaker', vol: 0.45, tag: 'calm' },
+      { inst: 'rim', pattern: 'rim', vol: 0.4, tag: '' },
+      { inst: 'kick', pattern: 'kick', vol: 0.9, tag: 'danger' },
+      { inst: 'strings', pattern: 'pulse', vol: 1.1, tag: 'danger', oct: 0 },
+      { inst: 'piano', pattern: 'pulse', vol: 0.7, tag: 'danger', oct: -1 }
+    ]
+  },
+  oakAndWell: {
+    name: 'Oak and well', bpm: 108, key: 'G major', transpose: 0,
+    chords: ['G', 'D', 'Em', 'C',
+      'G', 'D', 'Em', 'C', 'G', 'D', 'C', 'D',
+      'G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G',
+      'C', 'D', 'G', 'Em', 'C', 'D', 'Am', 'D',
+      'G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G'],
+    tracks: [
+      { inst: 'flute', vol: 1, tag: 'calm', notes: R4 + OW_A + 'C6:q B5:q A5:q G5:q | A5:h. r:q | ' + OW_A + 'C6:q B5:q A5:q F#5:q | G5:w | ' + R8 + OW_A + 'C6:q B5:q A5:q F#5:q | G5:w |' },
+      { inst: 'piano', vol: 0.9, tag: 'calm', notes: 'r:w | r:w | r:w | r:h D5:q G5:q | ' + R8 + R8 + 'E5:e G5:e C6:q G5:q E5:q | F#5:q A5:q D6:h | B5:q G5:q D5:h | E5:q G5:q B5:h | E5:e G5:e C6:q G5:q E5:q | F#5:q A5:q D6:q C6:q | C6:q A5:q E5:h | F#5:w | ' + R8 },
+      { inst: 'musicbox', vol: 0.5, tag: 'calm', transpose: 12, notes: R4 + R8 + R8 + R8 + OW_A + 'C6:q B5:q A5:q F#5:q | G5:w |' },
+      { inst: 'harp', pattern: 'arp', vol: 0.6, tag: 'calm', oct: 0 },
+      { inst: 'piano', pattern: 'comp', vol: 0.4, tag: '', oct: 0 },
+      { inst: 'strings', pattern: 'pad', vol: 0.6, tag: '', oct: 0 },
+      { inst: 'bass', pattern: 'bass', vol: 0.75, tag: '', oct: 0 },
+      { inst: 'shaker', pattern: 'shaker', vol: 0.35, tag: 'calm' },
+      { inst: 'rim', pattern: 'rim', vol: 0.4, tag: '' },
+      { inst: 'kick', pattern: 'kick', vol: 0.9, tag: 'danger' },
+      { inst: 'strings', pattern: 'pulse', vol: 1.1, tag: 'danger', oct: 0 },
+      { inst: 'piano', pattern: 'pulse', vol: 0.7, tag: 'danger', oct: -1 }
+    ]
+  },
+  seaWind: {
+    name: 'Sea wind', bpm: 132, key: 'D major', transpose: 0,
+    chords: ['D', 'A', 'Bm', 'G',
+      'D', 'A', 'Bm', 'G', 'D', 'A', 'G', 'A',
+      'D', 'A', 'Bm', 'G', 'D', 'A', 'G', 'D',
+      'G', 'A', 'F#m', 'Bm', 'G', 'A', 'D', 'A',
+      'D', 'A', 'Bm', 'G', 'D', 'A', 'G', 'D'],
+    tracks: [
+      { inst: 'piano', vol: 1, tag: 'calm', notes: R4 + SW_A + 'G5:q A5:q B5:q G5:q | A5:h. r:q | ' + SW_A + 'G5:q F#5:q E5:q C#5:q | D5:w | ' + R8 + SW_A + 'G5:q F#5:q E5:q C#5:q | D5:w |' },
+      { inst: 'flute', vol: 0.9, tag: 'calm', notes: 'r:w | r:w | r:w | r:h A4:e D5:e F#5:q | ' + R8 + R8 + 'B5:q. A5:e G5:q F#5:q | E5:q F#5:q A5:h | A5:q. G5:e F#5:q E5:q | D5:q F#5:q B5:h | B5:q. A5:e G5:q F#5:q | E5:q F#5:q A5:q B5:q | A5:q F#5:q D5:q F#5:q | E5:w | ' + R8 },
+      { inst: 'celesta', vol: 0.55, tag: 'calm', transpose: 12, notes: R4 + R8 + R8 + R8 + SW_A + 'G5:q F#5:q E5:q C#5:q | D5:w |' },
+      { inst: 'harp', pattern: 'arp', vol: 0.6, tag: 'calm', oct: 0 },
+      { inst: 'piano', pattern: 'comp', vol: 0.4, tag: '', oct: 0 },
+      { inst: 'strings', pattern: 'pad', vol: 0.55, tag: '', oct: 0 },
+      { inst: 'bass', pattern: 'bass', vol: 0.8, tag: '', oct: 0 },
+      { inst: 'shaker', pattern: 'shaker', vol: 0.45, tag: 'calm' },
+      { inst: 'rim', pattern: 'rim', vol: 0.4, tag: '' },
+      { inst: 'kick', pattern: 'kick', vol: 0.9, tag: 'danger' },
+      { inst: 'strings', pattern: 'pulse', vol: 1.1, tag: 'danger', oct: 0 },
+      { inst: 'piano', pattern: 'pulse', vol: 0.7, tag: 'danger', oct: -1 }
+    ]
+  },
   meadowDay: {
     name: 'Meadow, day', bpm: 118, key: 'F major', transpose: 0,
     // intro 4 | A 8 | A' 8 | B 8 (up a tone) | bridge 4 | A 8 = 40 bars
@@ -3583,7 +3661,7 @@ function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null
 // api.items = { held(), tool(i), weapon(kind) } gives the item specs (src/items.js) in the hand, in tool slot i and for 'sword' or 'bow'
 function itemOf(fn, a) { if (!api.items || typeof Items === 'undefined' || !api.items[fn]) return null; return api.items[fn](a) || null; }
 function dmgMul(kind) { var it = itemOf('weapon', kind); return it ? Items.stats(it).dmg : 1; }   // canShoot()/onShoot(): ammunition; onArrowLand(x, y): a player's arrow that hit nothing; quiver: the count shown by the bow   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) }   // facings8: the hero turns on the diagonals and animals turn freely
-function sfx(n, v) { if (S.sound) api.sfx(n, v); }
+function sfx(n, v, src) { if (S.sound) api.sfx(n, v, src); }   // src: the enemy making the sound, so a page can keep far-off ones quiet
 
 function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
 function turnToward(a, b, step) { var d = wrap(b - a); if (Math.abs(d) <= step) return b; return a + (d > 0 ? step : -step); }
@@ -4086,7 +4164,7 @@ function botAI(e, dt, d, ang) {
       else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt, Math.sin(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt); }
       var canGo = e.cd <= 0 && !P.dead && aligned && (!A.pack || packT <= 0);
       if (canGo && (d < near || (kind === 'charge' && d < (A.from || 150)) || (A.ring && d < ring + 14))) {
-        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele');
+        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e);
         if (A.pack) packT = (A.windup || cf.windup) + (A.dur || 0.22) + 1.0;   // the next of the pack waits its turn
       }
       break;
@@ -4126,7 +4204,7 @@ function turretAI(e, dt, d, ang) {
   switch (e.state) {
     case 'idle':
       e.aim = turnToward(e.aim, ang, dt * 2.2);
-      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele'); }
+      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele', 0, e); }
       break;
     case 'windup':
       e.aim = e.dirLock;
@@ -4150,7 +4228,7 @@ function bossAI(e, dt, d, ang) {
       if (d > 48) moveCircle(e, Math.cos(e.face) * 30 * dt, Math.sin(e.face) * 30 * dt);
       if (e.cd <= 0 && d < 100 && !P.dead) {
         e.attack = (d < 60 || Math.random() < 0.45) ? 'slam' : 'sweep';
-        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'slam' ? 1.0 : 0.8; e.dirLock = ang; e.face = ang; e.hitDone = false; sfx('tele');
+        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'slam' ? 1.0 : 0.8; e.dirLock = ang; e.face = ang; e.hitDone = false; sfx('tele', 0, e);
       }
       break;
     case 'windup':
@@ -4187,7 +4265,7 @@ function bossbotAI(e, dt, d, ang) {
       if (e.cd <= 0 && d < 96 && !P.dead) {
         var r = Math.random();
         e.attack = r < 0.4 ? 'lunge' : (r < 0.75 ? 'chain' : 'spin'); e.chain = e.attack === 'chain' ? 3 : 1;
-        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele');
+        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e);
       }
       break;
     case 'windup':
@@ -4208,7 +4286,7 @@ function bossbotAI(e, dt, d, ang) {
       }
       if (e.state === 'lunge' && e.t >= e.dur) {
         e.chain--;
-        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele'); }
+        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele', 0, e); }
         else { e.state = 'recover'; e.t = 0; e.dur = 1.0; }
       }
       break;
@@ -5154,7 +5232,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     craft: function () { tone(440, 0.08, 'triangle', 0.06); tone(660, 0.1, 'triangle', 0.06); tone(880, 0.14, 'sine', 0.05); },
     build: function () { tone(220, 0.08, 'square', 0.06, 160); noise(0.08, 0.2, 1200, 1); }
   };
-  Combat.api.sfx = function (n, v) { if (SFX[n]) SFX[n](v); };
+  Combat.api.sfx = function (n, v, src) {   // a beast's sound is only heard when it is near; the world is big
+    if (src && src.x != null) { var P = hero(); if (Math.hypot(src.x - P.x, src.y - P.y) > 260) return; }
+    if (SFX[n]) SFX[n](v);
+  };
   function sfx(n, v) { if (S.sound) Combat.api.sfx(n, v); }
   window.addEventListener('keydown', ac); window.addEventListener('mousedown', ac);
 
@@ -5168,12 +5249,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function startMusic() {                 // browsers allow sound only after the first key or click
     if (musicOn || OPTS.music <= 0) return;
-    musicSong = isEvening() ? 'meadowEvening' : 'meadowDay';
+    musicSong = isEvening() ? 'meadowEvening' : dayTheme();
     Music.setVolume(OPTS.music); if (Music.play(songOf(musicSong))) musicOn = true;
   }
+  function dayTheme() { var id = null; try { id = localStorage.getItem('game.theme'); } catch (e) {} return id && songOf(id) ? id : 'meadowDay'; }   // the Song Editor's "Use in the game" choice
   function musicTick(dt) {
     if (!musicOn) return;
-    var want = isEvening() ? 'meadowEvening' : 'meadowDay';   // the song follows the clock: the evening theme from dusk to dawn
+    var want = isEvening() ? 'meadowEvening' : dayTheme();   // the song follows the clock: the evening theme from dusk to dawn
     if (want !== musicSong) { Music.stop(); musicOn = false; dangerT = 0; startMusic(); return; }
     var P = hero(), awake = false;       // a beast counts as awake when it is chasing or attacking within earshot
     Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
@@ -6568,7 +6650,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var lastP = hero(), lastMode = 'fight';
   var lastF = performance.now();
   function frame(now) {
-    var dt = Math.min(0.05, (now - lastF) / 1000); lastF = now;
+    var dt = pauseOpen ? 0 : Math.min(0.05, (now - lastF) / 1000); lastF = now;
     var D = Combat.dbg(), P = D.P;
     if (P !== lastP) { lastP = P; toCamp(); spawnBoars(); }     // R after falling: the engine made a new hero
     if (P.mode === 'build' && lastMode !== 'build') openMenu('build'); if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
@@ -6586,7 +6668,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     around(P.x, P.y, function (o) { if (o.name === 'runestone' && Math.abs(o.x - cam.x) < 240 && Math.abs(o.y * K - cam.y) < 160) { var id = stoneRune(o); if (!RS.learnt[id] && !RS.stones[propKey(o)]) RS.heard[id] = 1; } });
     Combat.api.beltSlots = slots.slice(0, COLS).map(function (s) { return s ? { n: s.n, draw: function (c) { if (s.kind === 'item') Items.icon(c, s.item, 18); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; });
     saveT += dt; if (saveT > 10) { saveT = 0; save(); }
-    Combat.update(dt);
+    if (!pauseOpen) Combat.update(dt);    // the Escape menu holds the world still
     Combat.render(ctx);
     requestAnimationFrame(frame);
   }

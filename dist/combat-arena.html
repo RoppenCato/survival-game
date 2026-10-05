@@ -1171,7 +1171,7 @@ function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null
 // api.items = { held(), tool(i), weapon(kind) } gives the item specs (src/items.js) in the hand, in tool slot i and for 'sword' or 'bow'
 function itemOf(fn, a) { if (!api.items || typeof Items === 'undefined' || !api.items[fn]) return null; return api.items[fn](a) || null; }
 function dmgMul(kind) { var it = itemOf('weapon', kind); return it ? Items.stats(it).dmg : 1; }   // canShoot()/onShoot(): ammunition; onArrowLand(x, y): a player's arrow that hit nothing; quiver: the count shown by the bow   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) }   // facings8: the hero turns on the diagonals and animals turn freely
-function sfx(n, v) { if (S.sound) api.sfx(n, v); }
+function sfx(n, v, src) { if (S.sound) api.sfx(n, v, src); }   // src: the enemy making the sound, so a page can keep far-off ones quiet
 
 function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
 function turnToward(a, b, step) { var d = wrap(b - a); if (Math.abs(d) <= step) return b; return a + (d > 0 ? step : -step); }
@@ -1674,7 +1674,7 @@ function botAI(e, dt, d, ang) {
       else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt, Math.sin(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt); }
       var canGo = e.cd <= 0 && !P.dead && aligned && (!A.pack || packT <= 0);
       if (canGo && (d < near || (kind === 'charge' && d < (A.from || 150)) || (A.ring && d < ring + 14))) {
-        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele');
+        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e);
         if (A.pack) packT = (A.windup || cf.windup) + (A.dur || 0.22) + 1.0;   // the next of the pack waits its turn
       }
       break;
@@ -1714,7 +1714,7 @@ function turretAI(e, dt, d, ang) {
   switch (e.state) {
     case 'idle':
       e.aim = turnToward(e.aim, ang, dt * 2.2);
-      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele'); }
+      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele', 0, e); }
       break;
     case 'windup':
       e.aim = e.dirLock;
@@ -1738,7 +1738,7 @@ function bossAI(e, dt, d, ang) {
       if (d > 48) moveCircle(e, Math.cos(e.face) * 30 * dt, Math.sin(e.face) * 30 * dt);
       if (e.cd <= 0 && d < 100 && !P.dead) {
         e.attack = (d < 60 || Math.random() < 0.45) ? 'slam' : 'sweep';
-        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'slam' ? 1.0 : 0.8; e.dirLock = ang; e.face = ang; e.hitDone = false; sfx('tele');
+        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'slam' ? 1.0 : 0.8; e.dirLock = ang; e.face = ang; e.hitDone = false; sfx('tele', 0, e);
       }
       break;
     case 'windup':
@@ -1775,7 +1775,7 @@ function bossbotAI(e, dt, d, ang) {
       if (e.cd <= 0 && d < 96 && !P.dead) {
         var r = Math.random();
         e.attack = r < 0.4 ? 'lunge' : (r < 0.75 ? 'chain' : 'spin'); e.chain = e.attack === 'chain' ? 3 : 1;
-        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele');
+        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e);
       }
       break;
     case 'windup':
@@ -1796,7 +1796,7 @@ function bossbotAI(e, dt, d, ang) {
       }
       if (e.state === 'lunge' && e.t >= e.dur) {
         e.chain--;
-        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele'); }
+        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele', 0, e); }
         else { e.state = 'recover'; e.t = 0; e.dur = 1.0; }
       }
       break;

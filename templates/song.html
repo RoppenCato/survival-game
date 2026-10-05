@@ -71,8 +71,10 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <select id="song"></select>
           <button id="calm" aria-pressed="true">Peace</button>
           <button id="danger">Danger</button>
+          <button id="usegame">Use in the game</button>
           <span class="tag" id="pos"></span>
         </div>
+        <p class="desc" id="inuse"></p>
         <p class="desc">Peace plays the calm layer, Danger the fight layer over the shared bones of the song, as the game crossfades them when a beast wakes. Click in the roll to jump.</p>
       </section>
       <section class="panel">
@@ -165,9 +167,11 @@ __MUSIC__
   }
   roll.addEventListener('mousedown', function (e) { var r = roll.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * roll.width, L = Music.length(song()), left = 40, pw = (roll.width - left - 8) / L, beat = Math.max(0, Math.floor((x - left) / pw / 4) * 4); Music.play(song(), beat); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); });
 
+  function inUse() { var id = null; try { id = localStorage.getItem('game.theme'); } catch (e) {} if (!id || !songs[id]) id = 'meadowDay'; $('inuse').textContent = 'The game plays "' + (songs[id] ? songs[id].name : id) + '" by day' + (id === curId ? ' (this one).' : '.') + ' The evening theme is always "Meadow, evening".'; }
+  $('usegame').onclick = function () { try { localStorage.setItem('game.theme', curId); } catch (e) {} inUse(); };
   $('play').onclick = function () { Music.setVolume(+$('vol').value); Music.play(song()); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); };
   $('stop').onclick = function () { Music.stop(); };
-  $('song').onchange = function () { curId = $('song').value; trk = 0; fill(); if (Music.playing()) $('play').onclick(); };
+  $('song').onchange = function () { curId = $('song').value; trk = 0; fill(); inUse(); if (Music.playing()) $('play').onclick(); };
   $('calm').onclick = function () { layer = 'calm'; Music.setLayer('calm', 1, 1.5); Music.setLayer('danger', 0, 1.5); fill(); };
   $('danger').onclick = function () { layer = 'danger'; Music.setLayer('calm', 0, 1.5); Music.setLayer('danger', 1, 1.5); fill(); };
   $('bpm').oninput = function () { song().bpm = +$('bpm').value; $('bpmv').value = song().bpm; changed(true); restartT = 0.6; };
@@ -182,7 +186,7 @@ __MUSIC__
   $('reset').onclick = function () { songs[curId] = clone(Music.SONGS[curId] || songs[curId]); changed(); };
   $('midi').onclick = function () { var bytes = Music.midi(song()), a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes], { type: 'audio/midi' })); a.download = curId + '.mid'; a.click(); };
   window.addEventListener('keydown', function (e) { if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); if (Music.playing()) Music.stop(); else $('play').onclick(); } });
-  load(); fill(); draw();
+  load(); fill(); inUse(); draw();
 })();
 </script>
 </body>
