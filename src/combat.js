@@ -331,6 +331,12 @@ function updateAnim(dt, dashing) {
 function updatePlayer(dt) {
   var p = P, a = p.atk, i;
   if (p.dead) return;
+  packT -= dt;
+  if (p.venom) {                           // a lingering bite: a little damage each second, then it passes
+    p.venom.t -= dt; p.venom.tick = (p.venom.tick || 0) - dt;
+    if (p.venom.tick <= 0) { p.venom.tick = 1; p.hp -= p.venom.dmg; num(p.x, p.y - 24, String(p.venom.dmg), '#9be58b'); if (p.hp <= 0) die(); }
+    if (p.venom.t <= 0) p.venom = null;
+  }
   var bowOut = p.mode === 'fight' && p.weapon === 'ranged';
   if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bowOut && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
@@ -492,29 +498,60 @@ function updatePlayer(dt) {
 /* ---------- enemies ---------- */
 // A creature from the Creature Editor can carry its own numbers in e.cfg; plain bots use these.
 var BOT_CFG = { speed: 58, windup: 0.55, lunge: 175 };
+// A page gives each animal its own attack in e.cfg.atk (all optional; the plain lunge without it):
+//   kind: 'lunge' (a short jump at the hero), 'charge' (a long run straight ahead that goes past you; the boar),
+//         'arc' (a swipe or gore in front, no run; the bear and the moose)
+//   windup, dur, speed (run speed for lunge and charge), reach and arc (for 'arc', in radians), hitAt (when in dur
+//   the arc lands), recover, cd, heavy (a heavy blow: bigger knockback, blocks cost more), ring (the distance it
+//   keeps while circling; the wolf), turn (how fast it can turn while chasing, radians a second; the boar and moose
+//   are slow), pack (only one of the pack bites at a time), venom (seconds of a lingering bite; the adder).
+var packT = 0;
 function botAI(e, dt, d, ang) {
-  var cf = e.cfg || BOT_CFG, sk = cf.speed / 58;
+  var cf = e.cfg || BOT_CFG, sk = cf.speed / 58, A = cf.atk || {}, kind = A.kind || 'lunge';
+  var near = kind === 'arc' ? e.r + (A.reach || 20) * 0.8 : (A.near || 56), ring = A.ring || Math.min(52, near);
   e.cd -= dt;
   switch (e.state) {
     case 'idle': if (d < 130 && !P.dead) { e.state = 'chase'; e.t = 0; } break;
     case 'chase':
-      e.face = ang;
-      if (d > 52) moveCircle(e, Math.cos(ang) * cf.speed * dt, Math.sin(ang) * cf.speed * dt);
-      else if (d < 30) moveCircle(e, -Math.cos(ang) * 45 * sk * dt, -Math.sin(ang) * 45 * sk * dt);
-      else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * 30 * sk * dt, Math.sin(ang + sd * 1.57) * 30 * sk * dt); }
-      if (d < 56 && e.cd <= 0 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = cf.windup; e.dirLock = ang; sfx('tele'); }
-      break;
-    case 'windup': e.face = e.dirLock; if (e.t >= e.dur) { e.state = 'lunge'; e.t = 0; e.dur = 0.22; e.hitDone = false; } break;
-    case 'lunge':
-      moveCircle(e, Math.cos(e.dirLock) * cf.lunge * dt, Math.sin(e.dirLock) * cf.lunge * dt);
-      if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
-        e.hitDone = true;
-        var r = hurtPlayer(cf.dmg || 12, e.x, e.y, 'melee', e);
-        if (r === 'parry') daze(e, 1.5);
+      e.face = A.turn ? turnToward(e.face, ang, A.turn * dt) : ang;
+      var fa = e.face, aligned = Math.abs(wrap(ang - e.face)) < 0.5;
+      if (d > ring) moveCircle(e, Math.cos(fa) * cf.speed * dt, Math.sin(fa) * cf.speed * dt);
+      else if (d < ring * 0.6) moveCircle(e, -Math.cos(ang) * 45 * sk * dt, -Math.sin(ang) * 45 * sk * dt);
+      else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt, Math.sin(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt); }
+      var canGo = e.cd <= 0 && !P.dead && aligned && (!A.pack || packT <= 0);
+      if (canGo && (d < near || (kind === 'charge' && d < (A.from || 150)) || (A.ring && d < ring + 14))) {
+        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele');
+        if (A.pack) packT = (A.windup || cf.windup) + (A.dur || 0.22) + 1.0;   // the next of the pack waits its turn
       }
-      if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = 0.8; }
       break;
-    case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 1.1; } break;
+    case 'windup':
+      e.face = kind === 'arc' ? turnToward(e.face, ang, 1.5 * dt) : e.dirLock;   // a swipe follows you a little; a charge is committed
+      if (e.t >= e.dur) { e.state = 'lunge'; e.t = 0; e.dur = A.dur || 0.22; e.hitDone = false; if (kind === 'arc') e.dirLock = e.face; }
+      break;
+    case 'lunge':
+      if (kind === 'arc') {
+        if (A.step) moveCircle(e, Math.cos(e.dirLock) * A.step * dt, Math.sin(e.dirLock) * A.step * dt);
+        if (!e.hitDone && e.t >= e.dur * (A.hitAt || 0.4)) {
+          e.hitDone = true;
+          var dd = Math.hypot(P.x - e.x, P.y - e.y), da = Math.abs(wrap(Math.atan2(P.y - e.y, P.x - e.x) - e.dirLock));
+          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') daze(e, 1.5); }
+          else dust(e.x + Math.cos(e.dirLock) * e.r, e.y + Math.sin(e.dirLock) * e.r, 3);
+        }
+      } else {
+        var sp = A.speed || cf.lunge, ox = e.x, oy = e.y;
+        moveCircle(e, Math.cos(e.dirLock) * sp * dt, Math.sin(e.dirLock) * sp * dt);
+        if (kind === 'charge' && Math.hypot(e.x - ox, e.y - oy) < sp * dt * 0.3) { e.t = e.dur; }   // ran into something: the charge ends
+        if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
+          e.hitDone = true;
+          var r = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e);
+          if (r === 'parry') daze(e, 1.5);
+          else if (r === 'hit' && A.venom) P.venom = { t: A.venom, dmg: A.venomDmg || 2 };
+          if (kind === 'charge' && r !== 'parry') { P.kx += Math.cos(e.dirLock) * 80; P.ky += Math.sin(e.dirLock) * 80; }   // bowled along
+        }
+      }
+      if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = A.recover || 0.8; }
+      break;
+    case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = A.cd || 1.1; } break;
     case 'stagger': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.6; } break;
   }
 }

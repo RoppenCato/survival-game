@@ -118,10 +118,11 @@ __COMBAT__
   Combat.api.roster = [];
   // The animals of the first island: where each lives, how many, how it fights, what it leaves.
   // ground: 'grass' (open), 'dark' (the darker, denser ground: forest), 'shore' (grass next to sand), 'far' (dark, far from camp)
+  // How each fights is lib.animalAttack(kind) in art.js (ATTACKS), shared with the Combat Arena.
   var ANIMALS = {
     boar: { n: 5, ground: 'grass', r: 9, dmg: 14, aggro: 75, range: 110, drops: { meat: 1, hide: 0.7 } },
     deer: { n: 4, ground: 'grass', r: 8, dmg: 0, aggro: 95, range: 140, flee: true, drops: { meat: 1, hide: 1 } },
-    snake: { n: 4, ground: 'shore', r: 5, dmg: 8, aggro: 40, range: 40, drops: {} },
+    snake: { n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: {} },
     wolf: { n: 4, ground: 'dark', r: 8, dmg: 10, aggro: 120, range: 130, pair: true, drops: { meat: 1, hide: 0.5 } },
     moose: { n: 2, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, hide: 2, antler: 1 } },
     bear: { n: 1, ground: 'far', r: 12, dmg: 30, aggro: 85, range: 90, drops: { meat: 3, hide: 2 } }
@@ -130,7 +131,7 @@ __COMBAT__
   Combat.api.dress = function (e) {
     var k = wantKind, A = ANIMALS[k], sp = lib.animalSpec(k);
     e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase(); e.kind = k;
-    e.r = A.r * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, dmg: A.dmg };
+    e.r = A.r * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, dmg: A.dmg, atk: lib.animalAttack(k) };
     e.hp = e.maxHp = sp.hp; e.aggro = A.aggro; if (A.flee) e.flee = true;
   };
   Combat.init(lib);

@@ -347,7 +347,14 @@ The hero has two modes, switched with **Q**, each with its own six-slot hotbar a
   The arena passes a heading that eases toward the true facing (`creatureTurn`). The hero uses the side view only
   when facing nearly straight left or right; otherwise the front or back view turned by `an.turn` (-1..1).
   `Combat.api.facings8` (on by default) switches both. `node tools/visual/facings.js` renders them all.
-- All animals still attack with the same "chase and lunge" underneath. Real per-animal attacks are not built.
+- **Attacks (2026-10-05):** each animal fights its own way through `e.cfg.atk`, from `ATTACKS` in `src/art.js`
+  (`lib.animalAttack(key)`), read by `botAI` in `src/combat.js`. Kinds: `lunge` (a short jump), `charge` (a long
+  committed run straight ahead that bowls you along and goes past; the boar, which also turns slowly: `turn`),
+  `arc` (a swipe or gore in a cone in front with no run: the bear's heavy rearing swipe, the moose's gore with a
+  step). Extras: `ring` (the wolf circles at a distance and only one of the pack bites at a time: `pack`),
+  `venom` (the adder's bite does a little damage a second for a few seconds, drawn as green numbers),
+  `heavy` (bigger knockback, blocks cost more). The Combat Arena uses the same table. The deer flees. The
+  Creature Editor's behaviours are the older generic ones.
 
 ## World look and props
 

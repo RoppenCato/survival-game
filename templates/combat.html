@@ -138,7 +138,7 @@ __COMBAT__
     var k = e.type === 'bossbot' ? 'bear' : (want || (Math.random() < 0.5 ? 'wolf' : 'boar')), sp = lib.animalSpec(k);
     want = null;
     e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase();
-    e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge };
+    e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, atk: e.type === 'bot' ? lib.animalAttack(k) : null };
     if (e.type === 'bot') e.hp = e.maxHp = sp.hp;
   };
   Combat.init(GameArt.lib);

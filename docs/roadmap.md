@@ -14,7 +14,7 @@ because they all stand on it.
 The first island: generated from `World`, trees and rocks that wear down and fall, drops, the bag, building with
 roofs, saving, the hearth and food, the hotbar and modes, boars that roam and charge, the Book of Beasts.
 
-## Step 1: a living island (2026-10-05: scale set, all six animals placed by ground with their numbers and drops; still to do: real per-animal attacks, the book's extra drops like pelts and feathers)
+## Step 1: a living island (2026-10-05: scale set, all six animals placed by ground with their numbers and drops, and each with its own attack: the boar's charge, the wolves' circling bites in turns, the adder's lingering bite, the bear's rearing swipe, the moose's gore; still to do: the book's extra drops like pelts and feathers)
 
 Everything the island needs before anyone leaves it.
 - First, scale (decided): slow the hero to a walk that fits the world, and make the islands smaller for now so
