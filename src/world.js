@@ -3,7 +3,7 @@
    smoothly between tiles, painted per pixel), what stands on it (props in buckets per piece of map) and how to
    draw both. One tile is 32 world units (one unit of the scale brief; 100 tiles are a kilometre).
 
-   Options (all optional): isle (normal island width in tiles, 220), count (islands, 1), sizeVar, gap, gapVar,
+   Options (all optional): isle (normal island width in tiles, 220), count (islands, 1), dir (angle of the second island), sizeVar, gap, gapVar,
    skerries, rough, beach (width of the sand in tiles, 4.5), hue (shift of the water colour), seed, maxTiles.
    Islands are placed one after another, each beside an earlier one at a random gap, so they cluster and chain.
    Each island writes a height into the field E (hundredths of a tile; above zero is land). Walking, sailing and
@@ -50,7 +50,7 @@ function make(kit, opts) {
   function pickGap() { var u = R(), f = u < 0.15 ? rnd(0.1, 0.3) : (u < 0.75 ? rnd(0.5, 1.5) : (u < 0.95 ? rnd(1.6, 3) : rnd(4, 8))); return Math.max(4, o.gap * (1 + (f - 1) * o.gapVar)); }
   var isles = [{ x: 0, y: 0, r: o.isle / 2, gap: 0 }];
   for (i = 1; i < o.count; i++) for (tries = 0; tries < 60; tries++) {
-    var par = isles[Math.floor(R() * isles.length) % isles.length], a = R() * 6.283, r = pickR(), g = pickGap(), d = par.r + r + g;
+    var par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(), d = par.r + r + g;   // o.dir: the second island lies in that direction (0 is east, where the game's camp is)
     var cand = { x: par.x + Math.cos(a) * d, y: par.y + Math.sin(a) * d * 0.9, r: r, gap: g }, ok = true;
     for (k = 0; k < isles.length; k++) if (Math.hypot(isles[k].x - cand.x, isles[k].y - cand.y) < isles[k].r + r + 4) { ok = false; break; }
     if (ok) { isles.push(cand); break; }

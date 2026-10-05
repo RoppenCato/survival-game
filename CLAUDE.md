@@ -241,6 +241,25 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
   its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision
   radii of the matching pieces were cut to match. Old saved benches still draw as a table.
+- **The raft and the second island (step 9, 2026-10-05; Goal 1):** the game world now has **two islands**
+  (`spec.count` 2, `dir` 0.1 so the neighbour lies east of the camp, `gap` 26 tiles, `gapVar` 0: `World.make` takes
+  `dir`, the angle of the second island). Saves are keyed to the arrangement (`layoutKey()`, saved as `layout`): a
+  save from another layout is dropped. The **raft** (`raft = { x, y, h, vx, vy, aboard }`, saved) is crafted at the
+  shipwright’s bench from `RECIPES2` `raft` (20 wood, 10 fiber, 2 leather, taught by Brokk; one raft only) and
+  placed in clear water near the bench (`raftSpot`, `raftHull`: eight probes round it must all be water). **E** by it
+  boards (`raftUse`), **WASD** paddles it (54 units a second, Shift 1.35, smoothed, it slides along coasts, heading
+  eases to the motion; the hero rides it, `raftAfter` pins him to it each frame and `scene.walk` allows water while
+  aboard), **E** again steps ashore on the nearest land, looking ahead first. Stepping ashore on the second island
+  (`onOtherIsland`: within 1.4 radii of `w.isles[1]`) sets `seen.left` and shows the banner **"You have left the
+  island"** with the day. If the hero dies aboard, the raft drifts back to the camp shore. Hints: craft the raft,
+  then board and find the other island. Animals are placed over the whole map, so the second island has beasts too.
+  From camp the second island is about ten seconds of paddling.
+- **The play-through (2026-10-05):** a fresh start was played to the bench (gather by walking over drops, craft in
+  hand, fell, mine, cut, make a bow and arrows, hunt a deer, cure leather on the rack, cook and eat, build a hut with
+  `place`, furnish it to Comfort 5, Brokk, the bench) and then the raft. Two bugs: the board reopened every frame in
+  build mode (a comment swallowed the reset line) and a stick bow could not kill even a deer (0.7 an arrow; bows now
+  do 2 x the material: 1.4). Console hooks used for this are on `Combat.api.debug()` (`place`, `pieceIndex`, `raftObj`,
+  `raftUse`, `comfort`, `brokk`, `isles`, `dirty`).
 - **The shipwright’s bench (step 8, 2026-10-05):** a board piece (12 wood, 2 stone; prop `shipwright`: two trestles carrying
   a keel timber with its curled stem and the first ribs; `it.ship`). It only goes on **sand** (`code` 1) within 4 tiles
   of the sea (`nearWater`), and only when your home has **Comfort 4** (`baseComfort`); the cursor says which is
@@ -398,7 +417,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   position), stumps, hero position. Saved on every change, every 10 s and on leaving; loaded on start. "New
   island" deletes it. Boars and dropped items are not saved.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
-- Not built: boats, night-only beasts, trading, the torch.
+- Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch, a village on the second island.
 
 ## Controls and modes (decided 2026-10-04)
 

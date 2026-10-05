@@ -14,7 +14,7 @@ var KINDS = {
   axe: { name: 'Axe', len: 15, w: 2.8, dmg: 0.9, tool: 'tree', desc: 'For felling trees, and anything else that stands in the way.' },
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: 'bush', desc: 'Cuts fiber, berries and rope.' },
-  bow: { name: 'Bow', len: 8, w: 2.4, dmg: 1, tool: null, desc: 'Bent wood and a string. Arrows come from the quiver.' },
+  bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, desc: 'Bent wood and a string. Arrows come from the quiver.' },
   // gear: worn, not held. armor is the share of a blow it turns aside
   helmet: { name: 'Helmet', len: 10, w: 2, dmg: 0, tool: null, gear: 'head', armor: 0.08, desc: 'Keeps the rain and the blows off your head.' },
   tunic: { name: 'Tunic', len: 10, w: 2, dmg: 0, tool: null, gear: 'chest', armor: 0.14, desc: 'Worn over the shirt.' },

@@ -110,7 +110,7 @@ order is the order a new player meets them; build them in the same order so the 
 - **Test:** the bench cannot be placed inland or with comfort 3; with comfort 4 it can; its tab shows the raft
   recipe only after talking to Brokk with comfort 4.
 
-### 9. The raft, and leaving
+### 9. The raft, and leaving (built 2026-10-05: **Goal 1 is playable from a fresh start**; still to do: the drifting raft after death at sea is only a respawn rule, no hazards at sea yet, and the Book and runes stay hidden until Robin says)
 - **Have:** the ships and sailing in the Sea Editor (hull, heading, speed, boarding with E); nothing in the game.
 - **Build:** the **raft**: logs lashed with rope (20 wood, 10 fiber, 2 leather), crafted at the shipwright's
   bench and placed in the water by the bench; E boards, WASD paddles it slowly, E steps ashore on any land;
