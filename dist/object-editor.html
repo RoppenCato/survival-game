@@ -4174,7 +4174,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var LOOKS = [[1, 'Painted'], [0, 'Cartoon'], [2, 'Ink']];
 
   function defSpec(name) {
-    return { scale: 1, wide: 1, tall: 1, solid: NO_SOLID[name] ? 0 : catOf(name).solid, flip: 0, seed: 3, look: 1,
+    return { scale: 1, wide: 1, tall: 1, solid: NO_SOLID[name] ? 0 : catOf(name).solid, flip: 0, seed: 3, look: BASE.look,
       rough: BASE.rough, twist: BASE.twist, spindly: BASE.spindly, lush: BASE.lush, round: BASE.round,
       texture: BASE.texture, shade: BASE.shade, outlineW: BASE.outlineW, outlineDark: BASE.outlineDark, glow: BASE.glow,
       hue: 0, accentHue: BASE.accentHue, sat: 1, bright: 0, contrast: 1 };
@@ -4198,7 +4198,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function apply() {
     var d = defSpec(cur), i;
     for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : d[p.k]); }
-    spec.flip = spec.flip ? 1 : 0; spec.look = (spec.look === 0 || spec.look === 2) ? spec.look : 1;
+    spec.flip = spec.flip ? 1 : 0; spec.look = (spec.look === 0 || spec.look === 1 || spec.look === 2) ? spec.look : BASE.look;
     var clean = {}; for (var k in d) clean[k] = spec[k]; spec = clean;
     for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
     document.getElementById('flip').setAttribute('aria-pressed', spec.flip ? 'true' : 'false');
@@ -4206,7 +4206,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var out = { object: cur }; for (k in spec) out[k] = spec[k];
     if (document.activeElement !== json) json.value = JSON.stringify(out);
     dirty = true;
-    try { localStorage.setItem('objecteditor2.' + cur, JSON.stringify(spec)); } catch (e) {}
+    try { localStorage.setItem('objecteditor3.' + cur, JSON.stringify(spec)); } catch (e) {}
   }
 
   function sliders(hostId, list, target, onChange) {
@@ -4354,7 +4354,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function pick(name) {
     cur = name; spec = null;
-    try { spec = JSON.parse(localStorage.getItem('objecteditor2.' + name)); } catch (e) {}
+    try { spec = JSON.parse(localStorage.getItem('objecteditor3.' + name)); } catch (e) {}
     if (!spec || typeof spec !== 'object') spec = defSpec(name);
     var cat = curCat && curCat.list.indexOf(name) >= 0 ? curCat : catOf(name);
     if (cat !== curCat) showCat(cat);

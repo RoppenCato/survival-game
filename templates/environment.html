@@ -264,7 +264,7 @@ __COMBAT__
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function fromBiome(b) {
-    var sp = { biome: b.name, seed: 7, variety: 0.5, patchSize: 6, hue: 0, sat: 1, bright: 0, contrast: 1, look: 1,
+    var sp = { biome: b.name, seed: 7, variety: 0.5, patchSize: 6, hue: 0, sat: 1, bright: 0, contrast: 1, look: BASE.look,
       ground: b.ground, ground2: b.ground2, accent: b.accent, path: b.path, lists: {} }, k;
     for (k in b.set) sp[k] = b.set[k];
     LAYERS.forEach(function (L) { sp.lists[L] = b[L].slice(); });
@@ -295,7 +295,7 @@ __COMBAT__
     document.getElementById('path').setAttribute('aria-pressed', spec.path ? 'true' : 'false');
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
     dirty = true;
-    try { localStorage.setItem('enveditor4', JSON.stringify(spec)); } catch (e) {}
+    try { localStorage.setItem('enveditor5', JSON.stringify(spec)); } catch (e) {}
   }
 
   function sliders(hostId, list, target, onChange) {
@@ -628,7 +628,7 @@ __COMBAT__
     json.blur(); spec = o; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
   });
 
-  try { var saved = JSON.parse(localStorage.getItem('enveditor4')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
+  try { var saved = JSON.parse(localStorage.getItem('enveditor5')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
   apply();
   var start = Combat.dbg().P; start.x = WX / 2; start.y = WY / 2;
 
