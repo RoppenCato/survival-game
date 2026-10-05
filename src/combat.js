@@ -286,7 +286,7 @@ function releaseCharge() {
 }
 function stepData(a) {
   var s0 = stepData0(a);
-  if (P.mode === 'gather') return { wu: s0.wu * 3, ac: s0.ac * 1.6, rec: s0.rec * 3.2, arc: s0.arc, reach: s0.reach, blade: s0.blade, dmg: s0.dmg, kb: s0.kb, lunge: 0, stag: s0.stag };   // chopping and mining are slow, deliberate swings
+  if (P.mode === 'gather') return { wu: s0.wu, ac: s0.ac, rec: s0.rec, arc: s0.arc, reach: s0.reach, blade: s0.blade, dmg: s0.dmg, kb: s0.kb, lunge: 0, stag: s0.stag };   // chopping and mining at the original quick pace (holding the button keeps swinging)
   if (bareHanded() && !a.bash && !a.spin) return { wu: s0.wu, ac: s0.ac, rec: s0.rec, arc: s0.arc * 0.6, reach: s0.reach * 0.66, blade: 7, dmg: s0.dmg, kb: s0.kb * 0.5, lunge: s0.lunge * 0.7, stag: s0.stag * 0.5 };   // a punch: short, quick, light
   return s0;
 }
