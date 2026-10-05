@@ -161,6 +161,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/beasts.md`: the cards and rules for Robin's creatures from Norse myth and folklore (troll, bysen,
   shapeshifter, huldra, tomtar, näcken, draugr, mara, jötunn, valkyrie), and the ore-at-night mining idea. Robin's
   lore and mechanics are marked; the rest are suggestions, not decided.
+- `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster), not built.
 - `docs/roadmap.md`: **Goal 1, "leave the island"** (Robin, 2026-10-05) is at the top: the chain from landing
   with nothing to a raft (tools, gathering, food with stamina, leather, a comfortable house with a rug, Brokk
   the survivor who teaches the raft, the shipwright's bench on the shore, the second island), nine steps each
@@ -288,6 +289,19 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Crafting on E (2026-10-05):** E at a workbench opens its board (Workbench and "By hand" tabs, `menuFrom`); B keeps
   Building and Crafting (the hand recipes: first tools, torch, stick weapons, arrows). The bars sit on their own board
   (`BAR`) above the bag.
+- **The hamlet (step 5, 2026-10-05):** a living village on the big island (`hamletSite` from the seed, 12 by 10 tiles, away
+  from the cave): four wattle huts with thatch round a green, a well, woodpile, haystack, drying rack, a barrel and a
+  crate with a little in them, and a fence (`hamletBuild`, a fresh start only, saved in `B`; the roofs via `roofLaters`).
+  Seven to nine **folk** (`folk`, remade every start from the seed, not saved) are the hero's figure with hair, coat,
+  trousers, build and beard from a small palette (`lib.folkSpec('villager', R)`), named from `FOLK_NAMES`. Each walks
+  between a few spots (their hut door, the well, the woodpile, the green; `folkTick`, 38 units a second), waits, turns
+  to watch you within 110 units, and E gives one of two lines in their own voice (`FOLK_LINES`: Ragnar's men, the
+  east, the troll, the hall in the south). They do not trade or fight. Coming within 420 marks the hamlet on the chart
+  (`seen.hamlet`). `bubble(c, who)` and `drawFolk` draw them; Brokk uses the same bubble.
+- **The hird (design only, 2026-10-05):** `docs/hird.md` holds the concept for claiming a town (a claim stone and its
+  territory), how people join (Brokk, helped villagers, kin by boat, freed thralls, yielding raiders), what the town
+  needs (a bed, food in store, a fire), jobs at workplaces, the idle day, muster and crewing, with Robin's open
+  questions and a build order. Nothing of it is built.
 - **Comfort (step 6, 2026-10-05):** a closed room is worth 1 for its roof and 1 each for a hearth, a workbench, a
   bed and a rug in it, and up to 2 for furniture (chair, bench seat, table, chest): at most 7 (`comfortOf`, per room
   index; `baseComfort()` is the best room within 500 units of the camp, so the steading does not count). The dial

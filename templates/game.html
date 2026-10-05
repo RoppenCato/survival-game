@@ -237,7 +237,7 @@ __COMBAT__
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = { floors: {}, H: {}, V: {}, items: [] }; roofA = {}; bDirty = true;
     mini = w.chart(700);
     raft = null; leftBanner = 0; hearth = null; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
-    villageClear(); caveSetup();
+    villageClear(); caveSetup(); hamletClear();
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
     Combat.api.scene.bounds = worldBounds();
   }
@@ -1090,6 +1090,95 @@ __COMBAT__
     return best;
   }
   function pickBerries(o) { var left = addItem('berries', 3); if (left) drop('berries', o.x, o.y + 10, left); lootNote('berries', 3 - left); o.was = o.name; o.name = 'bush'; o.regrow = clock + 360; sfx('pick'); }
+
+  /* ---------- the hamlet: a living village on the big island, with folk who wander it (step 5, 2026-10-05) ----------
+     A point of interest found by exploring: four huts round a green with a well, a woodpile, a haystack and a fence,
+     and seven to nine people made from the hero's figure with hair, coat and trousers from one small palette, so they
+     look like one people. Each walks between a few spots (their hut door, the well, the woodpile, the green), waits,
+     turns to watch you when you come near, and has a line or two in their own voice on E. They do not trade or fight. */
+  var hamlet = null, folk = [], roofLaters = [];
+  var FOLK_NAMES = ['Ulf', 'Sigrid', 'Hakon', 'Astrid', 'Leif', 'Thora', 'Gunnar', 'Ingrid', 'Eirik', 'Helga', 'Bjorn', 'Runa'];
+  var FOLK_HAIR = ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a'], FOLK_COAT = ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a6a4a', '#4f5f7a', '#9a7a5a'], FOLK_PANTS = ['#4a4038', '#5a4a3a', '#3f4a5a', '#6a5a48'];
+  var FOLK_LINES = [
+    ['Fair winds brought you, or foul?', 'The well is sweet here. Drink if you like.'],
+    ['Ragnar’s men came by last winter. We paid them in wool and they left.', 'Pay, and they leave. Fight, and they burn.'],
+    ['My brother went east with the traders. Rivers all the way, he said.', 'East is trade. West is nothing but sea.'],
+    ['Colder north of here than you would think.', 'Keep a fire. Keep a roof. The rest comes.'],
+    ['You will find no work here, but no trouble either.', 'We mind our own.'],
+    ['The hall in the south has silver on its walls, they say. And a hundred spears round it.', 'Churches have less spears.'],
+    ['Wolves took two sheep last moon.', 'They come at night, from the dark wood.'],
+    ['You built that raft yourself? It floats, so it is a boat.', 'A keel next. Then you can go somewhere.'],
+    ['There is a troll in the hill cave. We leave it be and it leaves us be.', 'Do not mine there at night.']
+  ];
+  function hamletSite() {                // a flat stretch of grass 12 by 10 tiles on the big island, from the seed, away from the cave
+    var q = w.isles[1]; if (!q) return null;
+    var R = kit.rng(spec.seed * 23 + 11), tries, best = null;
+    for (tries = 0; tries < 900 && !best; tries++) {
+      var a = R() * 6.283, d = R() * q.r * 0.6, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d), ok = true, x, y;
+      for (y = cy - 5; y <= cy + 5 && ok; y++) for (x = cx - 6; x <= cx + 6; x++) { var cd = code(x, y); if (cd < 2 || cd === 255) { ok = false; break; } }
+      if (ok && caveMouth && Math.hypot(caveMouth.x - (cx + 0.5) * T, caveMouth.y - (cy + 0.5) * T) < 500) ok = false;
+      if (ok) best = { tx: cx - 6, ty: cy - 5, w: 12, h: 10 };
+    }
+    return best;
+  }
+  function hamletClear() {               // the site is cleared and the folk made (every start)
+    hamlet = hamletSite(); folk = []; if (!hamlet) return;
+    var x0 = hamlet.tx * T, y0 = hamlet.ty * T, x1 = (hamlet.tx + hamlet.w) * T, y1 = (hamlet.ty + hamlet.h) * T, list = [];
+    w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20) list.push(o); });
+    list.forEach(function (o) { w.removeProp(o); });
+    var R = kit.rng(spec.seed * 29 + 3), n = 7 + Math.floor(R() * 3), nameOff = Math.floor(R() * FOLK_NAMES.length), hx = hamlet.tx, hy = hamlet.ty, i;
+    var green = { x: (hx + 6) * T, y: (hy + 5) * T }, well = { x: (hx + 6) * T, y: (hy + 4.2) * T }, pile = { x: (hx + 2) * T, y: (hy + 8) * T };
+    var doors = [[hx + 2.5, hy + 3.1], [hx + 9.5, hy + 3.1], [hx + 2.5, hy + 8.1], [hx + 9.5, hy + 8.1]];
+    for (i = 0; i < n; i++) {
+      var sp = lib.makeFigure(lib.folkSpec('villager', R)), d = doors[i % doors.length], home = { x: d[0] * T, y: d[1] * T + 12 };
+      var spots = [home, well, pile, { x: green.x + (R() - 0.5) * 120, y: green.y + (R() - 0.5) * 60 }, { x: green.x + (R() - 0.5) * 120, y: green.y + (R() - 0.5) * 60 }];
+      folk.push({ x: home.x + (R() - 0.5) * 20, y: home.y + 10, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: sp, name: FOLK_NAMES[(nameOff + i) % FOLK_NAMES.length], lines: FOLK_LINES[i % FOLK_LINES.length], spots: spots, target: null, wait: R() * 4, ph: 0, moving: false });
+    }
+  }
+  function hamletBuild() {               // the pieces: four wattle huts with thatch round a green, written into B (a fresh start only)
+    if (!hamlet) return;
+    var R = kit.rng(spec.seed * 31 + 5), hx = hamlet.tx, hy = hamlet.ty, x, y, k = Build.key;
+    function H(x, y, t, m) { B.H[k(x, y)] = { t: t, m: m }; } function V(x, y, t, m) { B.V[k(x, y)] = { t: t, m: m }; }
+    function item(name, tx, ty, extra) { var it = { name: name, x: (tx + 0.5) * T, y: (ty + 0.5) * T, r: (PIECES.filter(function (p) { return p.prop === name; })[0] || { r: 8 }).r }; for (var q in extra || {}) it[q] = extra[q]; B.items.push(it); return it; }
+    function hut(x0, y0, w, h, door) {
+      for (x = x0; x < x0 + w; x++) { H(x, y0, 'wall', 2); H(x, y0 + h, x === door ? 'door' : 'wall', 2); }
+      for (y = y0; y < y0 + h; y++) { V(x0, y, y === y0 ? 'window' : 'wall', 2); V(x0 + w, y, 'wall', 2); }
+      for (y = y0; y < y0 + h; y++) for (x = x0; x < x0 + w; x++) B.floors[k(x, y)] = 1;
+      roofLaters.push({ tx: x0, ty: y0, m: 1 });
+    }
+    hut(hx + 1, hy + 1, 3, 2, hx + 2); hut(hx + 8, hy + 1, 3, 2, hx + 9); hut(hx + 1, hy + 6, 3, 2, hx + 2); hut(hx + 8, hy + 6, 3, 2, hx + 9);
+    item('bed', hx + 1, hy + 1, { bed: true }); item('bed', hx + 10, hy + 1, { bed: true }); item('bed', hx + 1, hy + 6, { bed: true }); item('bed', hx + 10, hy + 6, { bed: true });
+    item('woodenWell', hx + 6, hy + 4); item('woodpile', hx + 2, hy + 8); item('haystack', hx + 9, hy + 9); item('dryingRack', hx + 5, hy + 9);
+    item('barrel', hx + 4, hy + 1, { loot: { berries: 4 } }); item('crate', hx + 7, hy + 1, { loot: { fiber: 6 } });
+    for (x = hx; x < hx + hamlet.w; x++) if (R() < 0.85) H(x, hy, 'fence', 2);
+    for (y = hy; y < hy + hamlet.h; y++) if (R() < 0.6) V(hx + hamlet.w, y, 'fence', 2);
+    bDirty = true;
+  }
+  function folkNear(P) { var best = null; folk.forEach(function (f) { var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
+  function folkTalk(f) { f.say = f.lines[f.line % f.lines.length]; f.line++; f.sayT = 5; }
+  function folkTick(dt) {
+    var P = hero(), i;
+    if (hamlet && !seen.hamlet && Math.hypot(P.x - (hamlet.tx + 6) * T, P.y - (hamlet.ty + 5) * T) < 420) { seen.hamlet = 1; toast('A hamlet: marked on your chart'); save(); }
+    for (i = 0; i < folk.length; i++) {
+      var f = folk[i], d = Math.hypot(P.x - f.x, P.y - f.y);
+      if (f.sayT > 0) f.sayT -= dt;
+      if (d < 110 || f.sayT > 0) {                                 // someone near: stop and watch
+        f.moving = false; f.wait = Math.max(f.wait, 1.5);
+        var want = Math.atan2(P.y - f.y, P.x - f.x), diff = ((want - f.face + Math.PI * 3) % (Math.PI * 2)) - Math.PI; f.face += diff * Math.min(1, dt * 4);
+        continue;
+      }
+      if (!f.target) { f.wait -= dt; if (f.wait > 0) { f.moving = false; continue; } f.target = f.spots[Math.floor(Math.random() * f.spots.length)]; }
+      var dx = f.target.x - f.x, dy = f.target.y - f.y, dist = Math.hypot(dx, dy);
+      if (dist < 6) { f.target = null; f.wait = 3 + Math.random() * 6; f.moving = false; continue; }
+      var sp = 38 * dt; f.x += dx / dist * sp; f.y += dy / dist * sp; f.face = Math.atan2(dy, dx); f.moving = true; f.ph += dt * 7;
+    }
+  }
+  function drawFolk(c, f) {
+    var vx = Math.cos(f.face), vy = Math.sin(f.face), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
+    var talking = f.sayT > 0, an = { phase: f.moving ? f.ph : 0, amt: f.moving ? 1 : 0, t: clock * (talking ? 2.2 : 1), lx: 0, ly: talking ? Math.sin(clock * 9) * 0.5 : 0, blink: ((clock + f.ph) % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) };
+    c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(f.x, f.y * K, 9, 4, 0, 0, 7); c.fill();
+    lib.figureD(c, f.x, f.y * K, dir, an, null, f.fig);
+  }
   function nearNpc(P) { return npc && Math.hypot(P.x - npc.x, P.y - npc.y) < 40; }
   function talk() {
     var st = brokkState(), L = brokkLines(st);
@@ -1106,8 +1195,8 @@ __COMBAT__
     c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(npc.x, npc.y * K, 9, 4, 0, 0, 7); c.fill();
     lib.figureD(c, npc.x, npc.y * K, dir, an, null, npc.fig);
   }
-  function bubble(c) {                   // his name, and what he says, above his head
-    var P = hero(), s = 1 / cam.z, text = npc.sayT > 0 ? npc.say : '', near = Math.hypot(P.x - npc.x, P.y - npc.y) < 90;
+  function bubble(c, who) {              // a name, and what is said, above the head
+    var npc = who; var P = hero(), s = 1 / cam.z, text = npc.sayT > 0 ? npc.say : '', near = Math.hypot(P.x - npc.x, P.y - npc.y) < 90;
     if (!text && !near) return;
     c.save(); c.translate((npc.x - cam.x) * cam.z + 200, (npc.y * K - cam.y) * cam.z + 125 - 36 * cam.z); c.textAlign = 'center';
     if (!text) { c.font = '600 8px system-ui, sans-serif'; c.lineWidth = 2.5; c.strokeStyle = 'rgba(20,16,30,0.8)'; c.strokeText(npc.name, 0, 0); c.fillStyle = '#ffffff'; c.fillText(npc.name, 0, 0); c.restore(); return; }
@@ -1129,6 +1218,7 @@ __COMBAT__
     if (!seen.village && d < 380) { seen.village = 1; toast('A broken steading: marked on your chart'); save(); }
     if (d < 160) { var want = Math.atan2(P.y - npc.y, P.x - npc.x), diff = ((want - npc.face + Math.PI * 3) % (Math.PI * 2)) - Math.PI; npc.face += diff * Math.min(1, dt * 4); }
     if (npc.sayT > 0) npc.sayT -= dt;
+    if (roofLaters.length && roomInfo && !bDirty) { roofLaters.forEach(function (rl) { var ri2 = roomInfo.at(rl.tx, rl.ty); if (ri2 >= 0) { if (!B.roofs) B.roofs = {}; B.roofs[roomInfo.rooms[ri2].id] = rl.m; } }); roofLaters = []; save(); }
     if (roofLater && roomInfo && !bDirty) { var ri = roomInfo.at(roofLater.tx, roofLater.ty); if (ri >= 0) { if (!B.roofs) B.roofs = {}; B.roofs[roomInfo.rooms[ri].id] = roofLater.m; save(); } roofLater = null; }
   }
 
@@ -2015,6 +2105,7 @@ __COMBAT__
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       if (npc && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
+      folk.forEach(function (f) { if (Math.abs(f.x - cam.x) < hw + 30 && Math.abs(f.y * K - cam.y) < hh + 50) items.push({ y: f.y, f: function () { drawFolk(ctx, f); } }); });
       if (roomInfo) roomInfo.rooms.forEach(function (r, ri) {
         var target = here === ri ? BCFG.seeThrough : 1;
         roofA[r.id] += (target - roofA[r.id]) * 0.18;
@@ -2046,7 +2137,7 @@ __COMBAT__
         else { c.moveTo(q.x - 3.2, q.y + 1.8); c.lineTo(q.x + 3.2, q.y + 1.8); c.lineTo(q.x + 1.6, q.y - 1.2); c.lineTo(q.x - 1.6, q.y - 1.2); c.closePath(); }
         c.fill(); c.stroke();
       }
-      mark(home.x, home.y, 'boat'); if (caveMouth && seen.cave) mark(caveMouth.x, caveMouth.y, 'cave'); if (village && seen.village) mark((village.tx + 7) * T, (village.ty + 6) * T, 'village');
+      mark(home.x, home.y, 'boat'); if (caveMouth && seen.cave) mark(caveMouth.x, caveMouth.y, 'cave'); if (hamlet && seen.hamlet) mark((hamlet.tx + 6) * T, (hamlet.ty + 5) * T, 'village'); if (village && seen.village) mark((village.tx + 7) * T, (village.ty + 6) * T, 'village');
       var hm = mp(hpx, hpy); c.fillStyle = '#ffd34d'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.3; c.beginPath(); c.arc(hm.x, hm.y, 2.7, 0, 7); c.fill(); c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 0.7; c.beginPath(); c.arc(hm.x, hm.y, 4.2, 0, 7); c.stroke();
       c.restore();
       c.imageSmoothingEnabled = true;
@@ -2054,7 +2145,7 @@ __COMBAT__
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       drawTorchIcon(c, mx - (SHOW.runes || SHOW.book ? 94 : 54), my + 10);
       var rsn = SHOW.runes && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;   // a stone read once needs no prompt
-      var ydP = yardUsable(), bnP = !ydP && !nearHearth(P) && !rsn && benchNear(P), bedP = !nearHearth(P) && !rsn && !bnP && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && nearNpc(P) && !(npc.sayT > 0), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P);
+      var ydP = yardUsable(), bnP = !ydP && !nearHearth(P) && !rsn && benchNear(P), bedP = !nearHearth(P) && !rsn && !bnP && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && ((nearNpc(P) && !(npc.sayT > 0)) || (folkNear(P) && !(folkNear(P).sayT > 0))), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P);
       if ((ydP || nearHearth(P) || rsn || bnP || bedP || crP || npcP || rkP || rfP || cvP || bbP) && !invOpen && P.mode !== 'build' && !menu && !clothOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
         var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = ydP ? 'Lay a hull' : bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : 'Board the raft') : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
         c.font = '600 9px system-ui, sans-serif'; var pw = c.measureText(pt).width + 26;
@@ -2073,7 +2164,8 @@ __COMBAT__
         c.font = 'bold 13px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#f6e2b8'; c.fillText('You have left the island', 200, by + 4);
         c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.fillText('Day ' + day.n + '. Ragnar sailed east.', 200, by + 18); c.restore();
       }
-      if (npc && !inCave && Math.abs(npc.x - cam.x) < 260 && Math.abs(npc.y * K - cam.y) < 200) bubble(c);
+      if (npc && !inCave && Math.abs(npc.x - cam.x) < 260 && Math.abs(npc.y * K - cam.y) < 200) bubble(c, npc);
+      if (!inCave && !inYard) folk.forEach(function (f) { if (Math.abs(f.x - cam.x) < 260 && Math.abs(f.y * K - cam.y) < 200) bubble(c, f); });
       drawNotes(c);
       drawPanels(c); drawHint(c);
       bookFlash = Math.max(0, bookFlash - 0.02);
@@ -2156,7 +2248,7 @@ __COMBAT__
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (inYard) yardLeave(); else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; openMenu('bench'); menuFrom = 'bench'; } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (inYard) yardLeave(); else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; openMenu('bench'); menuFrom = 'bench'; } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); else if (folkNear(hero())) folkTalk(folkNear(hero())); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
     if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat && SHOW.runes) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else pauseOpen = !pauseOpen; return; }
@@ -2265,7 +2357,7 @@ __COMBAT__
       var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; } else toCamp();
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, aboard: !!sv.raft.aboard }; if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }
-    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); caveFade = 2.6; }   // he wakes in the wreck: the screen opens slowly
+    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
     spawnBoars(); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Press Tab for your inventory, B to build.'; save();
@@ -2273,7 +2365,7 @@ __COMBAT__
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { yard: function () { return { yard: yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -2290,7 +2382,7 @@ __COMBAT__
     if (roomInfo) for (var si = 0; si < roomInfo.solids.length; si++) { var sl = roomInfo.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
-    tick(); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    tick(); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

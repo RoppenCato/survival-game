@@ -363,7 +363,13 @@ var FOLK = {
   dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 1.12, headH: 1.02, bodyW: 1.28, bodyH: 0.9, legL: 0.5, legW: 1.3, armL: 0.78, armW: 1.25, eyeSize: 0.85, blush: 1, beard: 1, walkRate: 1.7, stance: 1 },
     col: { skin: '#f0c49c', hair: '#c8743a', coat: '#7d4a3a', vest: '#4f3b2c', pants: '#4a4038', boot: '#3a2a22', trim: '#b9b2a6' } }
 };
-function folkSpec(key) {
+function folkSpec(key, R) {
+  if (key === 'villager') {            // one of the people of a village: the hero's figure with its own hair, coat and build, from R
+    R = R || Math.random; var sp2 = fillSpec(HEROD_DEF, null), hair = ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a'], coat = ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a6a4a', '#4f5f7a', '#9a7a5a'], pants = ['#4a4038', '#5a4a3a', '#3f4a5a', '#6a5a48'];
+    sp2.scale = 0.92 + R() * 0.14; sp2.bodyW = 0.9 + R() * 0.3; sp2.headW = 0.95 + R() * 0.1; sp2.beard = R() < 0.4 ? 1 : 0; sp2.walkRate = 1.3;
+    sp2.col.hair = hair[Math.floor(R() * hair.length)]; sp2.col.coat = coat[Math.floor(R() * coat.length)]; sp2.col.pants = pants[Math.floor(R() * pants.length)]; sp2.col.vest = coat[Math.floor(R() * coat.length)]; sp2.col.skin = R() < 0.5 ? '#ffd8b0' : '#f0c49c';
+    return sp2;
+  }
   var a = FOLK[key], sp = fillSpec(HEROD_DEF, null), k;
   for (k in a.set) sp[k] = a.set[k];
   for (k in a.col) sp.col[k] = a.col[k];
