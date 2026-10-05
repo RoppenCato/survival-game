@@ -308,3 +308,66 @@ edge, the same hand as the bag and the book):
   book. Changing runes is allowed only out of combat, and the cloth says so when a fight is on.
 - Other names if "cloth" does not sit right: the **Pouch**, the **Staves** (runes cut on a staff), **Muninn**
   (Odin's raven of memory: what you have learnt lives in your memory).
+
+## Music (Robin's brief, 2026-10-05; not decided)
+
+Robin wants original music in the style of the early MapleStory soundtrack (2003 to 2005): MIDI-based, expressive
+MIDI programming, nostalgic JRPG/MMORPG character, playful melodies, accessible but slightly sophisticated harmony,
+a small number of clearly defined instruments (piano, flute or clarinet, celesta or music box, strings, harp,
+acoustic bass, light percussion). Free tools: LMMS or REAPER, Surge XT and Vital, Spitfire LABS and BBC SO
+Discover, Polyphone with free SoundFonts for the older General MIDI character (preferred over realistic
+orchestral libraries), Audacity, Valhalla Supermassive and TDR Nova. Workflow: MIDI arrangement first, then
+instruments and SoundFonts, then velocity and timing, then EQ, reverb and mastering. Claude as composition and
+production assistant that makes and changes MIDI files and arranges. Analysis of existing tracks (tempo, key,
+chords, melody, bass, instruments, structure) as inspiration for wholly original pieces.
+
+### Claude's thoughts
+
+**Two routes, and a hybrid.**
+- **A. The DAW route** (Robin's brief): Claude writes MIDI files (a Node script can write a .mid from note data),
+  Robin opens them in LMMS or REAPER, picks SoundFonts, renders to OGG. Real mixing and reverb. But it breaks the
+  project's rule that there are no asset files (a fine exception if chosen), the loop is slow (every change is an
+  export, a render and a listen), and Claude cannot drive the DAW: there is no practical integration with LMMS,
+  and REAPER's scripting would be a project of its own.
+- **B. The in-code route**: a small sequencer in the game (Web Audio) plays songs written as note data in
+  \`src/music.js\` through six to eight synthesized General-MIDI-like voices (an FM piano, a breathy flute, a
+  bell for celesta and music box, a soft string pad, a plucked harp, a round acoustic bass, shaker and rim). No
+  files, which keeps the rule; the early-Maple character comes from exactly this kind of plain GM voice; Claude
+  writes and changes songs directly and Robin hears them in the browser within a minute; a **Song Editor** page
+  (play, stop, loop, tempo, per-track instrument, volume, mute, transpose, "Settings as text") lets Robin tweak.
+  The ceiling is the synthesis quality: good for the style, not as rich as a SoundFont piano.
+- **Hybrid (recommended):** B is the writing room and the preview, with an **Export MIDI** button. A song that
+  works can then go down route A for a SoundFont rendering if its sound is wanted, and the game can play either
+  the in-code version or an OGG. Start with B; decide on A per song.
+
+**What early Maple sounds like, in rules Claude can compose by** (from knowledge of the style, not from any
+specific track): tempos 100 to 140; bright major keys and relative minors (F, Bb, C, G, D minor); eight-bar
+phrases in intro, A, A', B, bridge, back to A, looping at one and a half to two and a half minutes; harmony of
+I, IV, V and vi with jazz colour (ii–V–I turnarounds, secondary dominants, a sudden key change up a tone for
+the B section, major sevenths and sixths on the tonic); a singable lead on flute, clarinet or piano in stepwise
+lines with leaps of a sixth at phrase ends; harp or celesta arpeggios in even eighths under it; a root-and-fifth
+or walking acoustic bass; light percussion (shaker, rim, soft kick) that drops out in the bridge; strings held
+underneath; velocities that breathe (louder at the top of a phrase, softer at the end) and small timing pushes.
+
+**Analysing tracks:** Claude cannot listen. Robin can take a track's tempo, key and chord progression (by ear, or
+from a fan transcription or a MIDI of it) and give them to Claude; Claude then writes something original in that
+frame. The analysis stays a description; nothing is copied.
+
+**Where music goes in the game:** by place and state, with crossfades: the camp by day (warm, flute), the forest
+(celesta, slower), night (sparser, strings), the sea (harp, wide), danger when a beast turns on you (percussion
+in, melody out), a village (clarinet, bouncier). Six pieces to start, each looping.
+
+### Decided 2026-10-05
+Route B with MIDI export, built (`src/music.js`, the Song Editor). The first piece is the first-biome theme:
+comforting, relaxing, happy (Valheim's meadows, Breath of the Wild's calm, in the Maple style), as a day theme and
+an evening theme. Combat does not switch the song: it gets more intense, Breath of the Wild-like (a danger layer
+fades in). Music is on by default; the volume is in the menu only. **M is not mute: M will be the map.**
+
+What was learnt about the classic Maple tune for inspiration (descriptions, nothing copied): the Ellinia theme is
+in Bb major, 4/4, about 122 bpm, three minutes, with around nineteen General MIDI parts (piano on several channels,
+nylon guitar, bassoon, finger bass, piccolo, strings, a reverse cymbal); the early soundtrack was composed in-house
+at Wizet with plain GM voices, which is where the character comes from. Sources: https://www.midishow.com/en/midi/111583.html,
+https://en.wikipedia.org/wiki/MapleStory, https://tvtropes.org/pmwiki/pmwiki.php/AwesomeMusic/MapleStory.
+
+Still open: an OGG per song as an asset later if a SoundFont rendering sounds better; the forest, sea, night and
+village pieces; music by place once the island has places.

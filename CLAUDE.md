@@ -97,6 +97,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `base-editor.html` | `base.html` | Base Editor: free building |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
 | `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
+| `song-editor.html` | `song.html` | Song Editor: the game's music, its instruments and songs; export .mid |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory |
 
@@ -134,6 +135,16 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
   `hollow` drawings for the casting cloth. Thirteen runes so far.
+- `src/music.js` (`Music`): the music, with no sound files. Songs are data (`Music.SONGS`: `meadowDay`,
+  `meadowEvening`): `bpm`, `chords` one per bar, `tracks` that are either written notes (`'F5:q. E5:e r:e'`:
+  name+octave:length w h q e s, dotted with `.`, `r` rests, `+` chords, `@70` velocity) or a `pattern` played
+  from the chords (`arp`, `pad`, `bass`, `comp`, `pulse`; drums `shaker`, `rim`, `kick`). A track's `tag` is
+  `calm` (peace only), `danger` (fights only) or none (always); the game crossfades the two with
+  `Music.setLayer`. Eight synthesized General-MIDI-like voices (piano, flute, clarinet, celesta, musicbox, harp,
+  strings, bass) plus drums, a generated-impulse reverb, lookahead scheduling (`play(song, fromBeat)`, `stop`,
+  `setVolume`, `at`), and `Music.midi(song)` writes a standard MIDI file. The Song Editor edits the songs and saves
+  them in `localStorage['songeditor1']`; the game plays the saved version if there is one. Composing rules (early
+  MapleStory style) are in `docs/idea-bank.md` under Music.
 - `src/combat.js` (`Combat`): the arena engine: hero movement and combat, enemy AI, effects, rendering. The editors
   reuse it through hooks on `Combat.api`:
   - `scene`: `begin(c, P)` (camera and ground), `items(list)` (extra y-sorted things), `end(c, P)`, `bounds`,
@@ -265,6 +276,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   met: pick up the branches, make an axe and a knife, take them up, cut and chop, build a hut and a workbench.
 - **Sound:** on in the game (`S.sound = true`); the Combat Arena's synthesized set copied into the page, plus
   chop, clink, fall, pick, craft and build. The engine calls `sfx('chop'|'clink')` on tool hits.
+- **Music (2026-10-05):** on by default, starting at the first key or click (browsers require it). The meadow
+  day theme, or the evening theme when "Evening music" is on in the Escape menu (there is no day and night yet, so
+  it is a switch for now). Volume is a bar in the Escape menu only, saved in `localStorage['game.opts']`; **there
+  is no mute key: M is reserved for the map.** When a beast within earshot is chasing or attacking, the `danger`
+  layer (kick, pulsing strings and piano) fades in over a second and the `calm` layer (melody, harp, shaker) fades
+  mostly out; four seconds after the last beast calms down it fades back (`musicTick`). Breath of the Wild was the
+  model: the same song gets tenser, it does not switch.
 - **HUD:** only health and stamina top left, the chart and the meal icon top right; no kills or carry line (Robin:
   "we can just open the inventory"). Damage numbers and pickup toasts are drawn in world space inside the camera
   (`drawNums`), so they appear over the tree, rock or hero in the big world.

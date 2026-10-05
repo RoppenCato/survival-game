@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Song Editor</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:80ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(380px,26vw,520px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+canvas{display:block;width:100%;height:auto;border-radius:8px;background:#1b1f26;touch-action:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel{margin-top:12px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
+.group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
+button:hover{background:var(--btnh)}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+textarea{display:block;width:100%;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px;min-height:92px;resize:vertical}
+.trk{display:grid;grid-template-columns:1.6em 7.4em 7em minmax(0,1fr) 2.6em 2.6em;gap:6px;align-items:center;font-size:.86rem;min-height:36px;border-top:1px solid var(--line);padding:4px 0}
+.trk:first-child{border-top:0}
+.trk select{min-height:30px;padding:0 6px;font-size:.84rem}
+.trk input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.trk button{min-height:28px;padding:0 6px;font-size:.78rem;border-radius:7px}
+.sw{display:inline-block;width:.9em;height:.9em;border-radius:3px}
+.tag{font-size:.74rem;color:var(--ink2)}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">&larr; Back to menu</a>
+  <h1>Song Editor</h1>
+  <p class="lede">The game's music, played by its own instruments. Pick a song, hear it, change tempo, key and the tracks, and write new melodies in the note text. The game plays whatever is saved here. Export a .mid to open the song in any DAW.</p>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="roll" width="1600" height="700" aria-label="Piano roll"></canvas></div>
+      <section class="panel">
+        <div class="group">
+          <button id="play">&#9654; Play</button>
+          <button id="stop">&#9632; Stop</button>
+          <select id="song"></select>
+          <button id="calm" aria-pressed="true">Peace</button>
+          <button id="danger">Danger</button>
+          <span class="tag" id="pos"></span>
+        </div>
+        <p class="desc">Peace plays the calm layer, Danger the fight layer over the shared bones of the song, as the game crossfades them when a beast wakes. Click in the roll to jump.</p>
+      </section>
+      <section class="panel">
+        <h2>Tracks</h2>
+        <div id="tracks"></div>
+        <div class="group" style="margin-top:8px"><button id="addnotes">Add melody track</button><button id="addpat">Add pattern track</button></div>
+        <p class="desc">A melody track is written as notes: <code>F5:q. E5:e r:e C5:e</code> (name and octave, then length w h q e s, a dot for dotted, <code>r</code> rests, <code>+</code> stacks a chord, <code>@60</code> sets a velocity). Bars with <code>|</code> are for reading only. A pattern track plays from the chords: arp, pad, bass, comp, pulse, and the drums shaker, rim, kick.</p>
+      </section>
+    </div>
+    <div class="right">
+      <section class="panel">
+        <h2>Song</h2>
+        <label class="row"><span>Tempo</span><input id="bpm" type="range" min="60" max="180" step="1"><output id="bpmv"></output></label>
+        <label class="row"><span>Transpose</span><input id="tp" type="range" min="-7" max="7" step="1"><output id="tpv"></output></label>
+        <label class="row"><span>Volume</span><input id="vol" type="range" min="0" max="1" step="0.01"><output id="volv"></output></label>
+        <h2 class="more">Chords, one per bar</h2>
+        <textarea id="chords" spellcheck="false" style="min-height:70px"></textarea>
+        <p class="desc">F, Dm7, Bb, C7, Fmaj7, Gsus, Bdim, F6, F/A. The patterns follow these; the melodies do not move with them, so change both.</p>
+        <h2 class="more">Notes of <span id="trkname">track</span></h2>
+        <textarea id="notes" spellcheck="false" style="min-height:220px"></textarea>
+        <p class="desc">Choose a track with its number button. <span id="bars"></span></p>
+      </section>
+      <section class="panel">
+        <h2>Settings as text</h2>
+        <textarea id="json" spellcheck="false" style="min-height:120px"></textarea>
+        <div class="group" style="margin-top:8px">
+          <button id="apply">Apply text</button>
+          <button id="copy">Copy</button>
+          <button id="midi">Export .mid</button>
+          <button id="reset">Reset to the game's version</button>
+        </div>
+        <p class="desc">The songs are saved in this browser and the game uses them. Paste the text to Robin to make it the game's default (it goes into <code>src/music.js</code>).</p>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+__MUSIC__
+(function () {
+  var KEY = 'songeditor1', songs = {}, curId = 'meadowDay', trk = 0, layer = 'calm';
+  var roll = document.getElementById('roll'), rc = roll.getContext('2d');
+  var $ = function (id) { return document.getElementById(id); };
+  var COL = ['#f6c453', '#7fd1a9', '#8db8ff', '#f08fb7', '#c9a3ff', '#ffa06a', '#9ad7e8', '#d6e07a', '#ff7f7f', '#b0b8c4', '#e8c9a3', '#92e3d2'];
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function load() { songs = {}; for (var k in Music.SONGS) songs[k] = clone(Music.SONGS[k]); try { var s = JSON.parse(localStorage.getItem(KEY)); if (s) for (var k2 in s) songs[k2] = s[k2]; } catch (e) {} }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(songs)); } catch (e) {} }
+  function song() { return songs[curId]; }
+  function isDrum(tr) { return tr.pattern === 'shaker' || tr.pattern === 'rim' || tr.pattern === 'kick'; }
+
+  function fill() {
+    var S = song(), sel = $('song'); sel.innerHTML = ''; for (var k in songs) { var o = document.createElement('option'); o.value = k; o.textContent = songs[k].name; if (k === curId) o.selected = true; sel.appendChild(o); }
+    $('bpm').value = S.bpm; $('bpmv').value = S.bpm; $('tp').value = S.transpose || 0; $('tpv').value = (S.transpose > 0 ? '+' : '') + (S.transpose || 0);
+    $('chords').value = S.chords.join(' ');
+    var T = $('tracks'); T.innerHTML = '';
+    S.tracks.forEach(function (tr, i) {
+      var d = document.createElement('div'); d.className = 'trk';
+      var b = document.createElement('button'); b.textContent = i + 1; b.setAttribute('aria-pressed', i === trk ? 'true' : 'false'); b.style.borderLeft = '4px solid ' + COL[i % COL.length]; b.onclick = function () { trk = i; fill(); }; d.appendChild(b);
+      var si = document.createElement('select'); (isDrum(tr) ? [tr.pattern] : Music.INSTS).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; if (n === tr.inst) o.selected = true; si.appendChild(o); }); si.disabled = isDrum(tr); si.onchange = function () { tr.inst = si.value; changed(); }; d.appendChild(si);
+      var sp = document.createElement('select'); if (tr.notes != null) { var o0 = document.createElement('option'); o0.textContent = 'melody'; sp.appendChild(o0); sp.disabled = true; } else Music.PATTERNS.forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; if (n === tr.pattern) o.selected = true; sp.appendChild(o); });
+      sp.onchange = function () { tr.pattern = sp.value; if (isDrum(tr)) tr.inst = sp.value; else if (!Music.INSTS.includes(tr.inst)) tr.inst = 'piano'; changed(); }; d.appendChild(sp);
+      var v = document.createElement('input'); v.type = 'range'; v.min = 0; v.max = 1.5; v.step = 0.05; v.value = tr.vol == null ? 1 : tr.vol; v.oninput = function () { tr.vol = +v.value; changed(true); }; d.appendChild(v);
+      var tg = document.createElement('button'); tg.textContent = tr.tag === 'calm' ? 'calm' : tr.tag === 'danger' ? 'fight' : 'both'; tg.title = 'calm: only in peace. fight: only in danger. both: always'; tg.onclick = function () { tr.tag = tr.tag === 'calm' ? 'danger' : tr.tag === 'danger' ? '' : 'calm'; changed(); }; d.appendChild(tg);
+      var m = document.createElement('button'); m.textContent = tr.mute ? 'off' : 'on'; m.setAttribute('aria-pressed', tr.mute ? 'false' : 'true'); m.onclick = function () { tr.mute = !tr.mute; changed(); }; d.appendChild(m);
+      T.appendChild(d);
+    });
+    var tr0 = S.tracks[trk]; $('trkname').textContent = tr0 ? (trk + 1) + ' (' + tr0.inst + ')' : 'track';
+    $('notes').value = tr0 && tr0.notes != null ? tr0.notes.replace(/\|\s*/g, '|\n').trim() : (tr0 ? 'pattern: ' + tr0.pattern + ' (from the chords)' : ''); $('notes').disabled = !tr0 || tr0.notes == null;
+    barsInfo(); $('json').value = JSON.stringify(S, null, 1).replace(/\n\s*("[^"]*":\s*)?(?=[\]}])/g, '');
+    $('calm').setAttribute('aria-pressed', layer === 'calm'); $('danger').setAttribute('aria-pressed', layer === 'danger');
+  }
+  function barsInfo() { var S = song(), tr0 = S.tracks[trk]; if (!tr0 || tr0.notes == null) { $('bars').textContent = S.chords.length + ' bars of chords.'; return; } var ev = Music.parse(tr0.notes), end = 0; ev.forEach(function (e) { end = Math.max(end, e.t + e.d); }); $('bars').textContent = 'This track is ' + (Math.round(end / 4 * 100) / 100) + ' bars long; the chords are ' + S.chords.length + '.'; }
+  var restartT = 0;
+  function changed(soft) { save(); if (!soft) fill(); else $('json').value = JSON.stringify(song()); if (Music.playing()) restartT = soft ? 0 : 1; }
+  // the piano roll
+  function draw() {
+    var S = song(), W = roll.width, H = roll.height, L = Music.length(S), lo = 36, hi = 96, left = 40, top = 24, pw = (W - left - 8) / L, ph = (H - top - 8) / (hi - lo);
+    rc.fillStyle = '#1b1f26'; rc.fillRect(0, 0, W, H);
+    for (var n = lo; n < hi; n++) { var k = n % 12, black = k === 1 || k === 3 || k === 6 || k === 8 || k === 10; rc.fillStyle = black ? '#20252d' : '#262c35'; rc.fillRect(left, top + (hi - 1 - n) * ph, W - left - 8, ph); if (k === 0) { rc.fillStyle = '#9aa4b5'; rc.font = '600 14px system-ui'; rc.textAlign = 'right'; rc.fillText('C' + (n / 12 - 1), left - 6, top + (hi - n) * ph - 2); } }
+    for (var b = 0; b <= L / 4; b++) { var x = left + b * 4 * pw; rc.strokeStyle = b % 4 === 0 ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'; rc.lineWidth = 1; rc.beginPath(); rc.moveTo(x, top); rc.lineTo(x, H - 8); rc.stroke(); if (b < S.chords.length) { rc.fillStyle = '#eef1f6'; rc.font = '600 14px system-ui'; rc.textAlign = 'left'; rc.fillText(S.chords[b], x + 4, 17); } }
+    S.tracks.forEach(function (tr, i) {
+      if (tr.mute) return; if (layer === 'calm' && tr.tag === 'danger') return; if (layer === 'danger' && tr.tag === 'calm') return;
+      rc.fillStyle = COL[i % COL.length]; rc.globalAlpha = i === trk ? 1 : 0.55;
+      Music.events(S, tr).forEach(function (e) { var y = isDrum(tr) ? H - 8 - (e.n === 36 ? 1 : e.n === 37 ? 2 : 3) * ph : top + (hi - 1 - e.n) * ph; if (e.n < lo || e.n >= hi) { if (!isDrum(tr)) return; } rc.fillRect(left + e.t * pw + 1, y + 1, Math.max(2, e.d * pw - 2), ph - 2); });
+      rc.globalAlpha = 1;
+    });
+    if (Music.playing()) { var px = left + Music.at() * pw; rc.strokeStyle = '#ffd34d'; rc.lineWidth = 2; rc.beginPath(); rc.moveTo(px, top); rc.lineTo(px, H - 8); rc.stroke(); $('pos').textContent = 'bar ' + (Math.floor(Music.at() / 4) + 1) + ' of ' + (L / 4); }
+    else $('pos').textContent = '';
+    if (restartT > 0) { restartT -= 1 / 60; if (restartT <= 0) { Music.play(song()); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); } }
+    requestAnimationFrame(draw);
+  }
+  roll.addEventListener('mousedown', function (e) { var r = roll.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * roll.width, L = Music.length(song()), left = 40, pw = (roll.width - left - 8) / L, beat = Math.max(0, Math.floor((x - left) / pw / 4) * 4); Music.play(song(), beat); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); });
+
+  $('play').onclick = function () { Music.setVolume(+$('vol').value); Music.play(song()); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); };
+  $('stop').onclick = function () { Music.stop(); };
+  $('song').onchange = function () { curId = $('song').value; trk = 0; fill(); if (Music.playing()) $('play').onclick(); };
+  $('calm').onclick = function () { layer = 'calm'; Music.setLayer('calm', 1, 1.5); Music.setLayer('danger', 0, 1.5); fill(); };
+  $('danger').onclick = function () { layer = 'danger'; Music.setLayer('calm', 0, 1.5); Music.setLayer('danger', 1, 1.5); fill(); };
+  $('bpm').oninput = function () { song().bpm = +$('bpm').value; $('bpmv').value = song().bpm; changed(true); restartT = 0.6; };
+  $('tp').oninput = function () { song().transpose = +$('tp').value; $('tpv').value = (song().transpose > 0 ? '+' : '') + song().transpose; changed(true); restartT = 0.6; };
+  $('vol').value = 0.8; $('volv').value = '80%'; $('vol').oninput = function () { $('volv').value = Math.round($('vol').value * 100) + '%'; Music.setVolume(+$('vol').value); };
+  $('chords').onchange = function () { song().chords = $('chords').value.trim().split(/[\s,]+/).filter(Boolean); changed(); };
+  $('notes').oninput = function () { var tr0 = song().tracks[trk]; if (tr0 && tr0.notes != null) { tr0.notes = $('notes').value.replace(/\n/g, ' '); save(); barsInfo(); restartT = 1; } };
+  $('addnotes').onclick = function () { song().tracks.push({ inst: 'piano', vol: 1, tag: 'calm', notes: 'C5:q D5:q E5:q F5:q | G5:w |' }); trk = song().tracks.length - 1; changed(); };
+  $('addpat').onclick = function () { song().tracks.push({ inst: 'harp', pattern: 'arp', vol: 0.8, tag: '', oct: 0 }); trk = song().tracks.length - 1; changed(); };
+  $('apply').onclick = function () { try { var s = JSON.parse($('json').value); if (s && s.chords && s.tracks) { songs[curId] = s; changed(); } } catch (e) { alert('That is not a song: ' + e.message); } };
+  $('copy').onclick = function () { navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(song())); };
+  $('reset').onclick = function () { songs[curId] = clone(Music.SONGS[curId] || songs[curId]); changed(); };
+  $('midi').onclick = function () { var bytes = Music.midi(song()), a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([bytes], { type: 'audio/midi' })); a.download = curId + '.mid'; a.click(); };
+  window.addEventListener('keydown', function (e) { if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); if (Music.playing()) Music.stop(); else $('play').onclick(); } });
+  load(); fill(); draw();
+})();
+</script>
+</body>
+</html>
