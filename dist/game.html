@@ -2573,6 +2573,22 @@ function beachedBoat(c, K, x, y, seed) {
   line(c, curvePts([x + 38, y - 27], [x + 41, y - 33], [x + 37, y - 35], 4), 2.2, K.wood.base, true);
   [[-24, 2], [22, 2]].forEach(function (p, k) { shape(c, blobPts(x + p[0], y + p[1], 5, 3, seed + 2 + k, 8, 0.25), K.rockC, { seed: seed + 4 + k, size: 'S', sh: 1, rough: 0.3 }); });
 }
+// the hero's boat after the storm: tilted on the sand, a hole in its side with the ribs showing, the mast snapped and the sail
+// torn and hanging over the edge, a broken oar and a loose plank beside it
+function wreckedBoat(c, K, x, y, seed) {
+  gshadow(c, x, y, 44, 7, 0.42);
+  c.save(); c.translate(x, y); c.rotate(-0.07);
+  var d = shape(c, [[-20, 0], [-34, -8], [-40, -24], [-33, -28], [-24, -17], [2, -15], [10, -19], [24, -17], [35, -28], [41, -25], [35, -8], [22, 0]], K.wood, { seed: seed, size: 'L', sh: 4, rough: 0.5 });
+  c.save(); path(c, d); c.clip(); c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.5)'; c.lineWidth = 1; [-12, -7].forEach(function (dy) { c.beginPath(); c.moveTo(-38, dy - 8); c.quadraticCurveTo(0, dy + 6, 38, dy - 8); c.stroke(); }); c.restore();
+  shape(c, [[-9, -15], [2, -17], [9, -9], [1, -4], [-9, -8]], dark(6), { seed: seed + 2, size: 'M', flat: true, rough: 0.5 });                   // the hole
+  [-6, 0, 6].forEach(function (rx, i) { line(c, [[rx - 1, -16], [rx + 1, -6]], 1.8, K.wood.shade, true); });                                            // ribs showing through it
+  line(c, [[-3, -17], [-7, -33], [-4, -37], [-8, -35]], 3.4, K.wood.base, true);                                                                       // the snapped mast
+  var sail = shape(c, [[-7, -32], [-22, -29], [-28, -17], [-21, -11], [-15, -19], [-8, -19]], M(42, 26, 80), { seed: seed + 3, size: 'M', sh: 1.4, rough: 0.6 });
+  c.save(); path(c, sail); c.clip(); c.fillStyle = C(8, 62, 44); c.globalAlpha = 0.85; for (var i = -30; i < -6; i += 7) c.fillRect(i, -40, 3.4, 40); c.restore();
+  c.restore();
+  line(c, [[x + 32, y + 5], [x + 56, y + 11], [x + 60, y + 9]], 2.2, K.wood.base, true);                                                               // a broken oar
+  shape(c, rrPts(x + 38, y + 14, 18, 3.4, 1.2), K.wood, { seed: seed + 5, size: 'S', flat: true, rough: 0.3 }); shape(c, rrPts(x - 52, y + 9, 12, 3, 1), K.wood, { seed: seed + 6, size: 'S', flat: true, rough: 0.3 });
+}
 function plankLines(c, d, x0, x1, y0, y1, step) { c.save(); path(c, d); c.clip(); c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.4)'; c.lineWidth = 1; for (var i = x0; i < x1; i += step) { c.beginPath(); c.moveTo(i, y0); c.lineTo(i, y1); c.stroke(); } c.restore(); }
 function storageHut(c, K, x, y, seed) {
   var R = rng(seed), i;
@@ -2679,6 +2695,7 @@ var PROPS = {
   beeSkeps: { b: [-29, -41, 29, 8], f: function (c, K, s) { c.save(); c.scale(0.85, 0.85); beeSkeps(c, K, 0, 0, s); c.restore(); } },
   woodenBridge: { b: [-52, -34, 52, 16], f: function (c, K, s) { woodenBridge(c, K, 0, 0, s); } },
   farmland: { b: [-58, -28, 58, 12], f: function (c, K, s) { farmland(c, K, 0, 0, s); } },
+  wreckedBoat: { b: [-60, -48, 66, 22], f: function (c, K, s) { wreckedBoat(c, K, 0, 0, s); } },
   beachedBoat: { b: [-48, -40, 48, 8], f: function (c, K, s) { beachedBoat(c, K, 0, 0, s); } },
   storageHut: { b: [-36, -66, 60, 14], f: function (c, K, s) { storageHut(c, K, 0, 0, s); } },
   boathouse: { b: [-58, -66, 96, 16], f: function (c, K, s) { boathouse(c, K, 0, 0, s); } },
@@ -2788,7 +2805,7 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
    smoothly between tiles, painted per pixel), what stands on it (props in buckets per piece of map) and how to
    draw both. One tile is 32 world units (one unit of the scale brief; 100 tiles are a kilometre).
 
-   Options (all optional): isle (normal island width in tiles, 220), count (islands, 1), dir (angle of the second island), sizeVar, gap, gapVar,
+   Options (all optional): isle (normal island width in tiles, 220), isle0 (the first island's width), big (the second island's width), noDock, count (islands, 1), dir (angle of the second island), sizeVar, gap, gapVar,
    skerries, rough, beach (width of the sand in tiles, 4.5), hue (shift of the water colour), seed, maxTiles.
    Islands are placed one after another, each beside an earlier one at a random gap, so they cluster and chain.
    Each island writes a height into the field E (hundredths of a tile; above zero is land). Walking, sailing and
@@ -2833,9 +2850,10 @@ function make(kit, opts) {
   /* 1. place the islands: the home island first, then each new one beside an earlier one */
   function pickR() { var u = R(), f = u < 0.25 ? rnd(0.15, 0.45) : (u < 0.78 ? rnd(0.7, 1.3) : rnd(1.5, 2.2)); return Math.max(5, o.isle / 2 * (1 + (f - 1) * o.sizeVar)); }
   function pickGap() { var u = R(), f = u < 0.15 ? rnd(0.1, 0.3) : (u < 0.75 ? rnd(0.5, 1.5) : (u < 0.95 ? rnd(1.6, 3) : rnd(4, 8))); return Math.max(4, o.gap * (1 + (f - 1) * o.gapVar)); }
-  var isles = [{ x: 0, y: 0, r: o.isle / 2, gap: 0 }];
+  var isles = [{ x: 0, y: 0, r: (o.isle0 || o.isle) / 2, gap: 0 }];   // o.isle0: the first island's width (the starter island is small)
   for (i = 1; i < o.count; i++) for (tries = 0; tries < 60; tries++) {
-    var par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(), d = par.r + r + g;   // o.dir: the second island lies in that direction (0 is east, where the game's camp is)
+    var par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(); if (i === 1 && o.big) r = o.big / 2;   // o.big: the second island's width
+    var d0 = 0, d = par.r + r + g;   // o.dir: the second island lies in that direction (0 is east, where the game's camp is)
     var cand = { x: par.x + Math.cos(a) * d, y: par.y + Math.sin(a) * d * 0.9, r: r, gap: g }, ok = true;
     for (k = 0; k < isles.length; k++) if (Math.hypot(isles[k].x - cand.x, isles[k].y - cand.y) < isles[k].r + r + 4) { ok = false; break; }
     if (ok) { isles.push(cand); break; }
@@ -2883,7 +2901,7 @@ function make(kit, opts) {
   }
   var hx = Math.round(isles[0].x), hy = Math.round(isles[0].y);
   for (x = hx; x < GW - 16 && E[hy * GW + x] > 0; x++) {}
-  for (i = -1; i < 9; i++) grid[hy * GW + x + i] = 4;
+  if (!o.noDock) for (i = -1; i < 9; i++) grid[hy * GW + x + i] = 4;   // o.noDock: no jetty (the game's hero wakes in a wrecked boat)
   w.grid = grid; w.landChunk = landChunk;
   w.home = { x: (x - 3 + 0.5) * T, y: (hy + 0.5) * T }; w.dockEnd = { x: x + 1, y: hy };
   w.stats = { landTiles: landTiles, skerries: skerries, trees: 0, rocks: 0 };
@@ -5425,9 +5443,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // How each fights is lib.animalAttack(kind) in art.js (ATTACKS), shared with the Combat Arena.
   var ANIMALS = {
     // nearN of them live within nearMax of camp: the safe first meat and hide, a short walk from the fire
-    boar: { n: 5, ground: 'grass', r: 9, dmg: 14, aggro: 75, range: 110, nearN: 1, nearMax: 900, drops: { meat: 1, hide: 1 } },
-    deer: { n: 4, ground: 'grass', r: 8, dmg: 0, aggro: 95, range: 140, nearN: 2, nearMax: 800, flee: true, drops: { meat: 1, hide: 2 } },
-    snake: { n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: {} },
+    boar: { start: 2, n: 5, ground: 'grass', r: 9, dmg: 14, aggro: 75, range: 110, nearN: 1, nearMax: 900, drops: { meat: 1, hide: 1 } },
+    deer: { start: 3, n: 4, ground: 'grass', r: 8, dmg: 0, aggro: 95, range: 140, nearN: 2, nearMax: 800, flee: true, drops: { meat: 1, hide: 2 } },
+    snake: { start: 2, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: {} },
     wolf: { n: 4, ground: 'dark', r: 8, dmg: 10, aggro: 120, range: 130, pair: true, drops: { meat: 1, hide: 0.5 } },
     moose: { n: 2, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, hide: 2, antler: 1 } },
     troll: { n: 0, ground: 'dark', r: 9, dmg: 28, aggro: 100, range: 120, minHome: 600, drops: { copper: 3, stone: 3 } },
@@ -5519,7 +5537,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   window.addEventListener('visibilitychange', function () { if (document.hidden) Music.setVolume(0); else Music.setVolume(OPTS.music); });
 
   /* ---------- the island: one island from the shared archipelago code (src/world.js) ---------- */
-  var spec = { isle: 160, count: 2, dir: 0.1, gap: 26, gapVar: 0, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.85;
+  var spec = { isle: 160, isle0: 60, big: 230, noDock: true, count: 2, dir: 0.1, gap: 26, gapVar: 0, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.85;
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
   // what a felled tree, a broken rock and a cut bush give: a day's work should reach 40 wood, 20 stone and 15 fiber
@@ -5534,7 +5552,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function buildWorld() {
     w = World.make(kit, spec);
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
-    w.plant(); w.camp(); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets;
+    w.plant(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets;
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = { floors: {}, H: {}, V: {}, items: [] }; roofA = {}; bDirty = true;
     mini = w.chart(700);
     raft = null; leftBanner = 0; hearth = null; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
@@ -5919,9 +5937,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function villageSite() {               // a flat stretch of grass 10 by 12 tiles, 350 to 800 from the camp, from the island seed
     var R = kit.rng(spec.seed * 13 + 5), tries, best = null;
-    for (tries = 0; tries < 400 && !best; tries++) {
-      var a = R() * 6.283, d = 350 + R() * 450, cx = Math.floor((home.x + Math.cos(a) * d) / T), cy = Math.floor((home.y + Math.sin(a) * d) / T), ok = true, x, y;
+    for (tries = 0; tries < 900 && !best; tries++) {
+      var a = R() * 6.283, d = (tries < 500 ? 330 : 220) + R() * 420, cx = Math.floor((home.x + Math.cos(a) * d) / T), cy = Math.floor((home.y + Math.sin(a) * d) / T), ok = true, x, y;
       for (y = cy - 6; y <= cy + 6 && ok; y++) for (x = cx - 7; x <= cx + 7; x++) { var cd = code(x, y); if (cd < 2 || cd === 255) { ok = false; break; } }
+      if (ok && isleAt((cx + 0.5) * T, (cy + 0.5) * T) !== 0) ok = false;   // on the starter island
       if (ok) best = { tx: cx - 7, ty: cy - 6, w: 14, h: 12 };
     }
     return best;
@@ -6031,11 +6050,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     cave = null; caveMouth = null; inCave = false; CAVE_X = WX + 4000;
     var R = kit.rng(spec.seed * 31 + 9), tries, i, x, y, tx, ty, site = null;
     for (tries = 0; tries < 800 && !site; tries++) {
-      var a = R() * 6.283, d = 700 + R() * 900; x = home.x + Math.cos(a) * d; y = home.y + Math.sin(a) * d * 0.8; tx = Math.floor(x / T); ty = Math.floor(y / T);
-      var ok = w.isLand(x, y) && x > 300 && y > 300 && x < WX - 300 && y < WY - 300, dx, dy;
+      var q1 = w.isles[1] || w.isles[0], a = R() * 6.283, d = R() * q1.r * 0.7 * T; x = q1.x * T + Math.cos(a) * d; y = q1.y * T + Math.sin(a) * d * 0.9; tx = Math.floor(x / T); ty = Math.floor(y / T);
+      var ok = w.isLand(x, y) && x > 300 && y > 300 && x < WX - 300 && y < WY - 300 && isleAt(x, y) === 1, dx, dy;
       for (dy = -3; ok && dy <= 3; dy++) for (dx = -3; dx <= 3; dx++) { var cd = code(tx + dx, ty + dy); if (cd < 2 || cd === 255) { ok = false; break; } }
       if (ok && village && Math.hypot(x - (village.tx + 7) * T, y - (village.ty + 6) * T) < 420) ok = false;
-      if (ok && w.isles[0] && Math.hypot(x - home.x, y - home.y) < 600) ok = false;
       if (ok) site = { x: x, y: y };
     }
     if (!site) return;
@@ -7029,9 +7047,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
 
   /* ---------- boars: a few roam the island in home ranges; a new one wanders in when one is killed ---------- */
   var respawnT = 0;
+  function isleAt(x, y) { var best = -1, bd = 1e9; w.isles.forEach(function (q, i) { var d = Math.hypot(x / T - q.x, y / T - q.y) - q.r; if (d < bd) { bd = d; best = i; } }); return best; }
+  var placeIsle = null;                  // when set, animals are placed only on that island
   function groundOk(kind, x, y) {        // whether this spot is the kind of ground an animal lives on
     var tx = Math.floor(x / T), ty = Math.floor(y / T), cd = code(tx, ty);
     if (cd < 2 || cd === 255 || !isLand(x, y)) return false;
+    if (placeIsle != null && isleAt(x, y) !== placeIsle) return false;
     if (kind === 'grass') return cd === 2;
     if (kind === 'dark') return cd === 3;
     if (kind === 'far') return cd === 3 && Math.hypot(x - home.x, y - home.y) > 700;
@@ -7059,13 +7080,17 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function spawnBoars() {                 // all the animals, by kind; wolves in pairs
     Combat.clear();
-    for (var k in ANIMALS) for (var i = 0; i < ANIMALS[k].n; i++) { var e = placeAnimal(k, 260, null, i < (ANIMALS[k].nearN || 0)); if (e && ANIMALS[k].pair && i % 2 === 0) placeAnimal(k, 260, { x: e.wander.x0, y: e.wander.y0 }); }
+    for (var k in ANIMALS) { placeIsle = 0; for (var i0 = 0; i0 < (ANIMALS[k].start || 0); i0++) { var e0 = placeAnimal(k, 260, null, false); if (e0) e0.isle = 0; } placeIsle = null; }   // a few on the starter island
+    for (var k in ANIMALS) for (var i = 0; i < ANIMALS[k].n; i++) { placeIsle = 1; var e = placeAnimal(k, 260, null, false); placeIsle = null; if (e) e.isle = 1; if (e && ANIMALS[k].pair && i % 2 === 0) placeAnimal(k, 260, { x: e.wander.x0, y: e.wander.y0 }); }
     trollReset();
   }
   function keepBoars(dt) {                // a missing animal wanders back in after a while, far from the hero
     respawnT -= dt; if (respawnT > 0) return; respawnT = 4;
-    var alive = {}; Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead) alive[e.kind] = (alive[e.kind] || 0) + 1; });
-    for (var k in ANIMALS) if ((alive[k] || 0) < ANIMALS[k].n * (ANIMALS[k].pair ? 2 : 1)) { placeAnimal(k, 520); return; }
+    var alive = {}, aliveStart = {}; Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead) { alive[e.kind] = (alive[e.kind] || 0) + 1; if (e.isle === 0) aliveStart[e.kind] = (aliveStart[e.kind] || 0) + 1; } });
+    for (var k in ANIMALS) {
+      if ((ANIMALS[k].start || 0) > (aliveStart[k] || 0)) { placeIsle = 0; var e0 = placeAnimal(k, 520); placeIsle = null; if (e0) { e0.isle = 0; return; } }
+      if (ANIMALS[k].n && (alive[k] || 0) - (aliveStart[k] || 0) < ANIMALS[k].n * (ANIMALS[k].pair ? 2 : 1)) { placeIsle = 1; var e1 = placeAnimal(k, 520); placeIsle = null; if (e1) { e1.isle = 1; return; } }
+    }
   }
 
   /* ---------- scene ---------- */
@@ -7351,8 +7376,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.isle; }   // a save only fits the same arrangement of islands
-  function toCamp() { var P = hero(); P.x = home.x - 40; P.y = home.y; P.vx = P.vy = 0; }
+  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big; }   // a save only fits the same arrangement of islands
+  function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }   // the hero starts in his wrecked boat on the beach
   function start(fresh) {
     var sv = fresh ? null : loadSave(), k;
     if (sv && sv.layout !== layoutKey()) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The sea was remade with a second island: a fresh start'); }, 500); }
@@ -7376,7 +7401,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; } else toCamp();
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, aboard: !!sv.raft.aboard }; if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }
-    } else { startKit(); toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); }
+    } else { startKit(); toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); caveFade = 2.6; }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
     spawnBoars(); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Press Tab for your inventory, B to build.'; save();

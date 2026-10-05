@@ -1398,6 +1398,22 @@ function beachedBoat(c, K, x, y, seed) {
   line(c, curvePts([x + 38, y - 27], [x + 41, y - 33], [x + 37, y - 35], 4), 2.2, K.wood.base, true);
   [[-24, 2], [22, 2]].forEach(function (p, k) { shape(c, blobPts(x + p[0], y + p[1], 5, 3, seed + 2 + k, 8, 0.25), K.rockC, { seed: seed + 4 + k, size: 'S', sh: 1, rough: 0.3 }); });
 }
+// the hero's boat after the storm: tilted on the sand, a hole in its side with the ribs showing, the mast snapped and the sail
+// torn and hanging over the edge, a broken oar and a loose plank beside it
+function wreckedBoat(c, K, x, y, seed) {
+  gshadow(c, x, y, 44, 7, 0.42);
+  c.save(); c.translate(x, y); c.rotate(-0.07);
+  var d = shape(c, [[-20, 0], [-34, -8], [-40, -24], [-33, -28], [-24, -17], [2, -15], [10, -19], [24, -17], [35, -28], [41, -25], [35, -8], [22, 0]], K.wood, { seed: seed, size: 'L', sh: 4, rough: 0.5 });
+  c.save(); path(c, d); c.clip(); c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.5)'; c.lineWidth = 1; [-12, -7].forEach(function (dy) { c.beginPath(); c.moveTo(-38, dy - 8); c.quadraticCurveTo(0, dy + 6, 38, dy - 8); c.stroke(); }); c.restore();
+  shape(c, [[-9, -15], [2, -17], [9, -9], [1, -4], [-9, -8]], dark(6), { seed: seed + 2, size: 'M', flat: true, rough: 0.5 });                   // the hole
+  [-6, 0, 6].forEach(function (rx, i) { line(c, [[rx - 1, -16], [rx + 1, -6]], 1.8, K.wood.shade, true); });                                            // ribs showing through it
+  line(c, [[-3, -17], [-7, -33], [-4, -37], [-8, -35]], 3.4, K.wood.base, true);                                                                       // the snapped mast
+  var sail = shape(c, [[-7, -32], [-22, -29], [-28, -17], [-21, -11], [-15, -19], [-8, -19]], M(42, 26, 80), { seed: seed + 3, size: 'M', sh: 1.4, rough: 0.6 });
+  c.save(); path(c, sail); c.clip(); c.fillStyle = C(8, 62, 44); c.globalAlpha = 0.85; for (var i = -30; i < -6; i += 7) c.fillRect(i, -40, 3.4, 40); c.restore();
+  c.restore();
+  line(c, [[x + 32, y + 5], [x + 56, y + 11], [x + 60, y + 9]], 2.2, K.wood.base, true);                                                               // a broken oar
+  shape(c, rrPts(x + 38, y + 14, 18, 3.4, 1.2), K.wood, { seed: seed + 5, size: 'S', flat: true, rough: 0.3 }); shape(c, rrPts(x - 52, y + 9, 12, 3, 1), K.wood, { seed: seed + 6, size: 'S', flat: true, rough: 0.3 });
+}
 function plankLines(c, d, x0, x1, y0, y1, step) { c.save(); path(c, d); c.clip(); c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,9%,0.4)'; c.lineWidth = 1; for (var i = x0; i < x1; i += step) { c.beginPath(); c.moveTo(i, y0); c.lineTo(i, y1); c.stroke(); } c.restore(); }
 function storageHut(c, K, x, y, seed) {
   var R = rng(seed), i;
@@ -1504,6 +1520,7 @@ var PROPS = {
   beeSkeps: { b: [-29, -41, 29, 8], f: function (c, K, s) { c.save(); c.scale(0.85, 0.85); beeSkeps(c, K, 0, 0, s); c.restore(); } },
   woodenBridge: { b: [-52, -34, 52, 16], f: function (c, K, s) { woodenBridge(c, K, 0, 0, s); } },
   farmland: { b: [-58, -28, 58, 12], f: function (c, K, s) { farmland(c, K, 0, 0, s); } },
+  wreckedBoat: { b: [-60, -48, 66, 22], f: function (c, K, s) { wreckedBoat(c, K, 0, 0, s); } },
   beachedBoat: { b: [-48, -40, 48, 8], f: function (c, K, s) { beachedBoat(c, K, 0, 0, s); } },
   storageHut: { b: [-36, -66, 60, 14], f: function (c, K, s) { storageHut(c, K, 0, 0, s); } },
   boathouse: { b: [-58, -66, 96, 16], f: function (c, K, s) { boathouse(c, K, 0, 0, s); } },
