@@ -162,6 +162,18 @@ function setLayer(tag, g, secs) { if (!ctx) return; var L = layer(tag); L.gain.c
 function setVolume(v) { vol = v; if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.05); }
 function at() { if (!playing || !cur) return 0; var spb = 60 / cur.bpm; return ((ctx.currentTime - startT) / spb) % loopLen; }
 
+// Render a song into an offline context (Node with node-web-audio-api, or an OfflineAudioContext in a page):
+// every event up to `seconds`, layers set by `gains` ({ calm: 1, danger: 0 }). The caller then renders.
+function render(context, song, seconds, gains) {
+  ctx = context; master = ctx.createGain(); master.gain.value = vol; master.connect(ctx.destination);
+  verb = ctx.createConvolver(); var n = Math.floor(ctx.sampleRate * 1.8), buf = ctx.createBuffer(2, n, ctx.sampleRate), ch;
+  for (ch = 0; ch < 2; ch++) { var d = buf.getChannelData(ch); for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2.6); }
+  verb.buffer = buf; wet = ctx.createGain(); wet.gain.value = 0.22; verb.connect(wet); wet.connect(master);
+  layerGain = {}; for (var k in gains || {}) layer(k).gain.value = gains[k];
+  cur = song; prepare(song); var spb = 60 / song.bpm, loop = 0;
+  for (;;) { var any = false; for (var p = 0; p < evs.length; p++) { var e = evs[p], t = (e.t + loop * loopLen) * spb; if (t >= seconds) continue; any = true; var dest = layer(e.tag || 'all'); if (e.drum) VOICES.drum(dest, e.n, t, Math.min(127, e.v)); else (VOICES[e.inst] || VOICES.piano)(dest, freq(e.n), t, e.d * spb, Math.min(127, e.v)); } if (!any) break; loop++; }
+}
+
 /* ---------- MIDI file ---------- */
 function vlq(n) { var b = [n & 0x7f]; n >>= 7; while (n > 0) { b.unshift((n & 0x7f) | 0x80); n >>= 7; } return b; }
 function midiFile(song) {
@@ -221,10 +233,10 @@ var SONGS = {
         'r:w | r:w | r:w | r:w | r:w | r:w | r:w | r:w |' +
         'Bb4:q. A4:e G4:q Bb4:q | C5:w | Bb4:q. A4:e G4:q E4:q | G4:h. r:q |' +
         'r:w | r:w | r:w | r:w | r:w | r:w | r:w | r:w |' },
-      { inst: 'harp', pattern: 'arp', vol: 0.8, tag: 'calm', oct: 0 },
-      { inst: 'piano', pattern: 'comp', vol: 0.55, tag: '', oct: 0 },
-      { inst: 'strings', pattern: 'pad', vol: 0.75, tag: '', oct: 0 },
-      { inst: 'bass', pattern: 'bass', vol: 0.9, tag: '', oct: 0 },
+      { inst: 'harp', pattern: 'arp', vol: 0.65, tag: 'calm', oct: 0 },
+      { inst: 'piano', pattern: 'comp', vol: 0.45, tag: '', oct: 0 },
+      { inst: 'strings', pattern: 'pad', vol: 0.6, tag: '', oct: 0 },
+      { inst: 'bass', pattern: 'bass', vol: 0.75, tag: '', oct: 0 },
       { inst: 'shaker', pattern: 'shaker', vol: 0.5, tag: 'calm' },
       { inst: 'rim', pattern: 'rim', vol: 0.5, tag: '' },
       { inst: 'kick', pattern: 'kick', vol: 0.9, tag: 'danger' },
@@ -262,6 +274,6 @@ var SONGS = {
     ]
   }
 };
-return { SONGS: SONGS, INSTS: INSTS, PATTERNS: PATTERNS, GM: GM, play: play, stop: stop, restart: restart, setLayer: setLayer, setVolume: setVolume, at: at, length: length, events: events, parse: parse, chord: chord, midi: midiFile, playing: function () { return playing; }, layers: function () { var o = {}; for (var k in layerGain) o[k] = layerGain[k].gain.value; return o; }, current: function () { return cur; } };
+return { SONGS: SONGS, INSTS: INSTS, PATTERNS: PATTERNS, GM: GM, play: play, stop: stop, restart: restart, setLayer: setLayer, setVolume: setVolume, at: at, render: render, length: length, events: events, parse: parse, chord: chord, midi: midiFile, playing: function () { return playing; }, layers: function () { var o = {}; for (var k in layerGain) o[k] = layerGain[k].gain.value; return o; }, current: function () { return cur; } };
 })();
 if (typeof module !== 'undefined') module.exports = Music;

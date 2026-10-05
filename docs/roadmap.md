@@ -33,7 +33,7 @@ Everything the island needs before anyone leaves it.
 
 Tests: see "Testing" below, the animals row.
 
-## Step 2: day, night and the first buffs
+## Step 2: day, night and the first buffs (built 2026-10-05: the 30 minute cycle with dusk and dawn, hearth light at night, the bed, sleep that skips the night, the Rested buff under a roof, the evening theme from dusk; still to do: the torch, wolves by night, furs and fire lengthening Rested)
 
 - A day of 20 minutes and a night of 10 (decided), with a dusk and dawn, drawn with the Environment Editor's lighting (already written
   there). Night is darker, not black; a torch (buildable, carried) lights the way.

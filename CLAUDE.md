@@ -276,10 +276,21 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   met: pick up the branches, make an axe and a knife, take them up, cut and chop, build a hut and a workbench.
 - **Sound:** on in the game (`S.sound = true`); the Combat Arena's synthesized set copied into the page, plus
   chop, clink, fall, pick, craft and build. The engine calls `sfx('chop'|'clink')` on tool hits.
+- **Day and night (step 2, 2026-10-05):** `day = { t, n }`, `t` in seconds over a 30 minute cycle (`DAY_LEN`
+  1800): day until `DUSK_AT` 840 (14 min), dusk to `NIGHT_AT` 1200 (20 min), night to `DAWN_AT` 1740, then dawn.
+  `light()` is 0 by day and 1 at night, `dusk()` the warm glow between. `drawNight` multiplies a small
+  screen-space canvas over the world (warm at dusk, blue at night, never black: the HUD and hotbar are drawn
+  after it and stay clear) with the camp hearth, built hearths and the hero cut out as light. A **bed** is a
+  buildable piece (6 wood, 4 fiber; `it.bed`). E at a bed from dusk on sleeps: the screen fades, the clock jumps
+  to morning (`day.n` + 1), health and stamina are full, and if the bed was under a roof (`benchRoofed`) you are
+  **rested** for 10 minutes (`rested`: +0.3 health a second, stamina returns 30% faster through `mods().stam`).
+  Sleeping rough just skips the night. A dial by the chart shows the sun or moon going round, with the day
+  number and time of day on mouseover and the rested ring. `day` and `rested` are saved. No night-only
+  beasts yet.
 - **Music (2026-10-05):** on by default, starting at the first key or click (browsers require it). The meadow
-  day theme, or the evening theme when "Evening music" is on in the Escape menu (there is no day and night yet, so
-  it is a switch for now). Volume is a bar in the Escape menu only, saved in `localStorage['game.opts']`; **there
-  is no mute key: M is reserved for the map.** When a beast within earshot is chasing or attacking, the `danger`
+  day theme by day; the evening theme from dusk to dawn (`musicTick` switches when `isEvening()` changes).
+  Volume is a bar in the Escape menu only, saved in `localStorage['game.opts']`; **there is no mute key: M is
+  reserved for the map.** When a beast within earshot is chasing or attacking, the `danger`
   layer (kick, pulsing strings and piano) fades in over a second and the `calm` layer (melody, harp, shaker) fades
   mostly out; four seconds after the last beast calms down it fades back (`musicTick`). Breath of the Wild was the
   model: the same song gets tenser, it does not switch.
@@ -298,7 +309,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   position), stumps, hero position. Saved on every change, every 10 s and on leaving; loaded on start. "New
   island" deletes it. Boars and dropped items are not saved.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
-- Not built: Brokk, boats, crafting, food, skills, sound, night.
+- Not built: Brokk, boats, real per-animal attacks, night-only beasts, the broken village.
 
 ## Controls and modes (decided 2026-10-04)
 
