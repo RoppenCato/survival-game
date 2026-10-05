@@ -226,6 +226,8 @@ __COMBAT__
   function around(x, y, fn) { w.around(x, y, fn); }
   function nearSolids(P) { return w.nearSolids(P); }
   function removeProp(o) { if (o.cave) { var ci = cave.ores.indexOf(o); if (ci >= 0) cave.ores.splice(ci, 1); return; } w.removeProp(o); if (o.kind) { gone[propKey(o)] = 1; save(); } }
+  var grassLook = World.GRASS;   // the Grass Editor's "Use in the game" look, if there is one
+  try { var gg = JSON.parse(localStorage.getItem('game.grass')); if (gg && gg.g) { grassLook = JSON.parse(JSON.stringify(World.GRASS)); for (var gk in gg.g) grassLook[gk] = gg.g[gk]; for (var gs in (gg.st || {})) kit.STYLE[gs] = gg.st[gs]; } } catch (e) {}
   function buildWorld() {
     w = World.make(kit, spec);
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
@@ -1793,6 +1795,7 @@ __COMBAT__
         c.fillStyle = '#b98a5a'; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.78, dc.r * 0.52, 0, 0, 7); c.fill();
         c.strokeStyle = 'rgba(90,58,38,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.45, dc.r * 0.3, 0, 0, 7); c.stroke(); }
       w.drawWaves(c, cam, hw, hh, clock, spec.waves, spec.foam);
+      if (!inCave) w.drawGrass(c, cam, hw, hh, clock, grassLook);
       // shadows of what lies on the ground
       c.fillStyle = 'rgba(20,40,20,0.22)';
       for (i = 0; i < drops.length; i++) { var dr = drops[i]; c.beginPath(); c.ellipse(dr.x, dr.y * K, 4, 2.2, 0, 0, 7); c.fill(); }

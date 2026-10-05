@@ -96,6 +96,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `environment-editor.html` | `environment.html` | Environment Editor: a patch of land with biomes and object layers |
 | `base-editor.html` | `base.html` | Base Editor: free building |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
+| `grass-editor.html` | `grass.html` | Grass Editor: swaying grass, its colours and the ground |
 | `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
 | `song-editor.html` | `song.html` | Song Editor: the game's music, its instruments and songs; export .mid |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear |
@@ -427,6 +428,31 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   island" deletes it. Boars and dropped items are not saved.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
 - Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch, a village on the second island.
+
+
+### The 26-fix batch (2026-10-05, after Robin's play-test)
+
+- **World:** the starter island is small (`isle0: 60` tiles); the second is the big one (`big: 230`), with the cave,
+  bear, troll, wolves and moose. A few boar, deer and snakes live on the starter island (`start` in `ANIMALS`, tagged
+  `e.isle`). The hero wakes in a wrecked boat on the beach (`wreckedBoat` prop, no jetty: `noDock`), and the screen
+  opens slowly from black. The camp props (drying rack, tent, dragon post) are gone. The village is on the starter
+  island, at least a walk from the boat. `layoutKey()` includes the island sizes, so old saves are dropped.
+- **Loot notes** are small, fade, sit to the side and stack counts. Trees are 3 to 4 times the hero, give far more
+  wood each and take more blows (`TREE_WOOD`, `World.HP`). Chopping and mining are slower, and holding the button
+  keeps going. Berries are picked with E (cutting still gives berries and grass).
+- **In hand:** the chosen tool or weapon is held when idle; with no sword you punch (fists, 0.4 damage). Neutral
+  icons show when nothing is equipped. HP and stamina numbers sit inside the bars.
+- **Minimap:** a sharp window of about 110 tiles round the hero (`VIEW` in the minimap block), distinct markers.
+- **Building:** items stand free of walls (`fitItem`, `wallHit`); the wheel in build mode turns an item (mirror plus
+  footprint swap only, because sprites are three-quarter view, not a true 90 degree turn). Furniture sizes come from
+  the `SIZE` table in `src/stylelab.js`, set against the hero's 27 units.
+- **Panels:** the character panel hero always faces south; the bag is aligned right with the same margin (8) as the
+  character panel; Sort is a small button on top of the bag (three small rectangles); tooltips draw above boards;
+  Brokk's bubble draws on top of roofs.
+- **Grass Editor** (`grass-editor.html`, `templates/grass.html`): `World.GRASS` is the living-grass spec (blade
+  palette, density, height, sway, wind speed, soft bands of light, flowers) drawn by `w.drawGrass` after the waves,
+  plus the ground hue, brightness and saturation. "Use in the game" stores `game.grass`, which the game merges over
+  the defaults on load.
 
 ## Controls and modes (decided 2026-10-04)
 

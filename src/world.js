@@ -192,6 +192,34 @@ function make(kit, opts) {
       c.drawImage(piece, qx * pw, qy * phh, pw + 0.5, phh + 0.5);
     }
   };
+  // living grass: tufts of blades on the open ground that sway in a wind, with slow bands of light rolling over the meadow
+  // like the glints on the water. G is a World.GRASS-style spec (palette, density, sway); nothing is drawn on sand or water.
+  w.drawGrass = function (c, cam, hw, hh, clock, G) {
+    G = G || GRASS; if (!(G.density > 0)) return;
+    var sp = G.spacing, gx0 = Math.floor((cam.x - hw) / sp) - 1, gx1 = Math.ceil((cam.x + hw) / sp), gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 1, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1;
+    var cols = [G.dark, G.mid, G.light], sp0 = G.speed;
+    c.lineCap = 'round';
+    for (var gy = gy0; gy <= gy1; gy++) for (var gx = gx0; gx <= gx1; gx++) {
+      var h1 = hash(gx, gy, 31); if (h1 > G.density) continue;
+      var x = (gx + hash(gx, gy, 32)) * sp, y = (gy + hash(gx, gy, 33)) * sp * 0.75;
+      if (x < 0 || y < 0 || x >= WX || y / K >= WY) continue;
+      var ex = elevAt(x, y / K); if (ex < 0.4 || ex < beachAt(x / T, y / K / T) + 0.35) continue;
+      var wave = Math.sin(x * 0.011 - clock * 0.9 * sp0 + y * 0.007), gust = Math.sin(clock * 0.35 * sp0 + x * 0.004 - y * 0.003);
+      if (G.shimmer > 0 && wave > 0.2) { var gr = c.createRadialGradient(x, y, 0, x, y, sp * 1.1); gr.addColorStop(0, G.glow); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.save(); c.translate(x, y); c.scale(1, 0.5); c.translate(-x, -y); c.fillStyle = gr; c.globalAlpha = (wave - 0.2) * 0.34 * G.shimmer; c.beginPath(); c.arc(x, y, sp * 1.1, 0, 7); c.fill(); c.restore(); c.globalAlpha = 1; }
+      var sway = (Math.sin(clock * 1.9 * sp0 + x * 0.05 + y * 0.03) * 0.5 + gust * 0.7 + wave * 0.25) * G.sway, n = 3 + Math.floor(hash(gx, gy, 34) * 3);
+      if (G.shade > 0) { c.fillStyle = G.dark; c.globalAlpha = 0.28 * G.shade; c.beginPath(); c.ellipse(x, y + 0.6, 4.6, 1.8, 0, 0, 7); c.fill(); c.globalAlpha = 1; }
+      for (var k = 0; k < n; k++) {
+        var hk = hash(gx * 7 + k, gy, 35), bx = (k - (n - 1) / 2) * 1.7 + (hk - 0.5) * 1.2, bh = G.height * (0.65 + hk * 0.7), lean = (k - (n - 1) / 2) * 0.9 + sway * bh * 0.5;
+        c.fillStyle = cols[(k + gx + gy) % 3 === 0 ? 0 : (hk > 0.55 ? 2 : 1)];
+        c.beginPath(); c.moveTo(x + bx - 0.9, y); c.quadraticCurveTo(x + bx + lean * 0.35, y - bh * 0.6, x + bx + lean, y - bh); c.quadraticCurveTo(x + bx + lean * 0.35 + 0.5, y - bh * 0.55, x + bx + 0.9, y); c.closePath(); c.fill();
+      }
+      if (G.flowers > 0 && hash(gx, gy, 36) < G.flowers) {
+        var fc = G.bloom[Math.floor(hash(gx, gy, 37) * G.bloom.length) % G.bloom.length], fh = G.height * 0.9;
+        c.strokeStyle = G.mid; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x + 2.2, y); c.lineTo(x + 2.2 + sway * fh * 0.5, y - fh); c.stroke();
+        c.fillStyle = fc; c.beginPath(); c.arc(x + 2.2 + sway * fh * 0.5, y - fh, 1.4, 0, 7); c.fill();
+      }
+    }
+  };
   // wave glints drifting across open water, and small waves rolling in against the shore: lines of equal depth
   // traced along the height field, so they follow the curve of the coast
   w.drawWaves = function (c, cam, hw, hh, clock, waves, foam) {
@@ -292,6 +320,8 @@ function make(kit, opts) {
   };
   return w;
 }
-return { make: make, DEF: DEF, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
+var GRASS = { density: 0.55, spacing: 17, height: 6, sway: 0.5, speed: 1, shimmer: 0.9, shade: 0.8, flowers: 0.08,
+  dark: '#3f8a3c', mid: '#6cb84a', light: '#a6d85c', glow: '#f4ffb0', bloom: ['#ffffff', '#ffe36b', '#ff9fc2'] };   // the default living-grass look (the Grass Editor tunes it)
+return { make: make, DEF: DEF, GRASS: GRASS, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
 })();
 if (typeof module !== 'undefined') module.exports = World;

@@ -30,6 +30,7 @@ PAGES = [
     ('environment-editor', 'environment'),
     ('base-editor', 'base'),
     ('sea-editor', 'sea'),
+    ('grass-editor', 'grass'),
     ('item-editor', 'items'),
     ('song-editor', 'song'),
     ('combat-arena', 'combat'), ('game', 'game'),
