@@ -455,6 +455,12 @@ The hero has two modes, switched with **Q**, each with its own six-slot hotbar a
   The arena passes a heading that eases toward the true facing (`creatureTurn`). The hero uses the side view only
   when facing nearly straight left or right; otherwise the front or back view turned by `an.turn` (-1..1).
   `Combat.api.facings8` (on by default) switches both. `node tools/visual/facings.js` renders them all.
+- **Fight balance (2026-10-05, `tests/balance.js`):** armour turns a share of *every* blow aside (it used to count only
+  while blocking). An animal that has begun its attack (windup or lunge) finishes it unless hit by a heavy blow (third
+  combo hit, charged, or a parry); a light hit is a 0.14 s flinch and does not reset its attack cooldown, so
+  tapping the sword cannot lock an animal in place. Health: boar 12, wolf 8, deer 5, snake 3, moose 26, bear 30. With a
+  naive tapping bot: boar and snake lose nothing, a wolf pair 4 to 12 (leather), moose 33 to 48, bear 54 to 88 and
+  sometimes death. A skilled player does better; the numbers are the floor.
 - **Attacks (2026-10-05):** each animal fights its own way through `e.cfg.atk`, from `ATTACKS` in `src/art.js`
   (`lib.animalAttack(key)`), read by `botAI` in `src/combat.js`. Kinds: `lunge` (a short jump), `charge` (a long
   committed run straight ahead that bowls you along and goes past; the boar, which also turns slowly: `turn`),

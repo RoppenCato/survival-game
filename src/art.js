@@ -622,7 +622,7 @@ function mixHex(a, b, t) {
 }
 // The animals of the first biome. Each is a set of changes on top of CREATURE_DEF.
 var ANIMALS = {
-  boar: { name: 'Wild boar', set: { plan: 5, bodyH: 1.15, head: 1.15, legLen: 0.75, legW: 1.1, neck: 0.6, neckUp: 0.05, snout: 1.25, ears: 1, tusks: 1, hump: 0.8, mane: 1, hoof: 1, snoutFlat: 1, brow: 1, tail: 2, pattern: 0, eyeSize: 0.8, tell: 1, speed: 1.25, lunge: 1.6, windup: 0.6, hp: 8, aggro: 70 },
+  boar: { name: 'Wild boar', set: { plan: 5, bodyH: 1.15, head: 1.15, legLen: 0.75, legW: 1.1, neck: 0.6, neckUp: 0.05, snout: 1.25, ears: 1, tusks: 1, hump: 0.8, mane: 1, hoof: 1, snoutFlat: 1, brow: 1, tail: 2, pattern: 0, eyeSize: 0.8, tell: 1, speed: 1.25, lunge: 1.6, windup: 0.6, hp: 12, aggro: 70 },
     col: { body: '#5b4636', belly: '#7a6350', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
   deer: { name: 'Deer', set: { plan: 5, size: 1.05, bodyW: 0.95, bodyH: 0.9, head: 0.85, legLen: 1.45, legW: 0.75, neck: 1.3, neckUp: 0.95, snout: 1.05, snoutW: 0.8, ears: 3, antlers: 2, hoof: 1, tail: 1, tailPale: 1, pattern: 1, eyeSize: 0.9, behave: 3, speed: 1.7, stepRate: 1.3, hp: 5, aggro: 95 },
     col: { body: '#a8713f', belly: '#ead9bd', accent: '#d9c9a6', eye: '#1e1418', glow: '#ffd34d' } },
@@ -632,7 +632,7 @@ var ANIMALS = {
     col: { body: '#8a8f78', belly: '#d9d5bd', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
   moose: { name: 'Moose', set: { plan: 5, size: 1.6, bodyW: 1.05, bodyH: 1.1, head: 1.1, legLen: 1.7, legW: 0.9, neck: 1, neckUp: 0.55, snout: 1.5, snoutW: 1.2, ears: 3, antlers: 3, antlerSize: 1.15, hump: 1.2, hoof: 1, tail: 1, pattern: 0, eyeSize: 0.75, tell: 1, lunge: 1.3, windup: 0.7, hp: 26, aggro: 70 },
     col: { body: '#4f3b2c', belly: '#8a7a6a', accent: '#cdbb98', eye: '#1e1418', glow: '#ff5a3a' } },
-  wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.3, windup: 0.45, hp: 6, aggro: 100 },
+  wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.3, windup: 0.45, hp: 8, aggro: 100 },
     col: { body: '#727982', belly: '#d3d7dc', accent: '#f1ead6', eye: '#3a2a10', glow: '#ffd34d' } }
 };
 // How each animal fights (read by botAI in combat.js through e.cfg.atk). The boar charges straight past you and turns

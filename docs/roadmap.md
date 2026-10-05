@@ -67,7 +67,7 @@ order is the order a new player meets them; build them in the same order so the 
   raft. Eating from the belt with its number key in any mode. Food shows its numbers on the board.
 - **Test:** eat each dish and read the health and stamina bars grow; sprint longer on stew than on nothing.
 
-### 5. Leather armour, and the beasts kept at bay
+### 5. Leather armour, and the beasts kept at bay (balance pass done 2026-10-05 with `tests/balance.js`: armour now counts on every blow, a light hit no longer interrupts an animal's attack or resets its cooldown, boar 12 and wolf 8 health; results: boar and snake easy, wolf pair costs 4 to 12 health in leather, moose 33 to 48, bear 54 to 88 and sometimes kills)
 - **Have:** leather helmet, tunic, trousers, boots and cloak at the workbench (hide and fiber); gear turns a share
   of blows aside, up to 60%; the character panel's five clothing slots; the wooden shield.
 - **Build:** recipes take **leather** (from the rack, step 3) instead of raw hide; the panel shows the armour

@@ -196,12 +196,13 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
     if (p.hp <= 0) die();
     return 'block';
   }
-  p.hp -= dmg; p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false; p.anim.sq = 1; p.anim.sqv = 0;
+  var hit = dmg * (api.armor ? 1 - api.armor() : 1);     // armour turns a share of every blow aside, not only blocked ones
+  p.hp -= hit; p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false; p.anim.sq = 1; p.anim.sqv = 0;
   p.atk.ph = 'none'; p.atkBuf = 0;
   var kb = kind === 'heavy' ? 170 : 110;
   p.kx = -Math.cos(toSrc) * kb * (S.juice ? 1 : 0.4); p.ky = -Math.sin(toSrc) * kb * (S.juice ? 1 : 0.4);
   spark(p.x, p.y, 8, '#ff8a6a', 100);
-  num(p.x, p.y - 28, String(Math.round(dmg)), '#ff7a6a');
+  num(p.x, p.y - 28, String(Math.round(hit)), '#ff7a6a');
   lockFor(p, kind === 'heavy' ? 0.09 : 0.055); if (kind === 'heavy') slowmo(0.3, 0.12); sfx('hurt');
   if (p.hp <= 0) die();
   return 'hit';
@@ -251,9 +252,9 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
       e.stagMeter += stag * (weak ? 2 : 1) * (crit ? 1.25 : 1);
       if (e.stagMeter >= 100) { e.state = 'stunned'; e.t = 0; e.dur = 2.6; e.stagMeter = 100; num(e.x, e.y - 50, 'STAGGERED!', '#ffd34d'); slowmo(0.3, 0.2); ring(e.x, e.y, 0, 60, 0.35, '255,230,140', false, 3); sfx('stagger'); }
     }
-  } else if (e.state !== 'lunge' || e.type !== 'bot') {
-    if (e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = 0.34; }
-  }
+  } else if (e.type === 'bot' && (e.state === 'lunge' || (e.state === 'windup' && !heavy))) {
+    // an animal that has begun its attack finishes it: a light hit does not stop it (only a heavy hit or a parry does)
+  } else if (e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = heavy ? 0.34 : 0.14; }   // a light hit is only a flinch: sword-tapping cannot lock an animal in place
   if (killing) killEnemy(e);
 }
 function killEnemy(e) {
@@ -553,7 +554,7 @@ function botAI(e, dt, d, ang) {
       if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = A.recover || 0.8; }
       break;
     case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = A.cd || 1.1; } break;
-    case 'stagger': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.6; } break;
+    case 'stagger': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = Math.min(e.cd, 0.6); } break;   // a flinch does not reset the wait before its next attack
   }
 }
 function turretAI(e, dt, d, ang) {
