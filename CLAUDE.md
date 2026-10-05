@@ -197,9 +197,15 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   hotbar; a belt item shows in any hotbar slot the mode leaves free (`Combat.api.beltSlots`) and its number key
   uses it (food). Drag moves stacks, click eats food, **Sort** tidies the rows below the belt. `slots` is the
   truth; `inv` is a count per kind derived from it (`recount`), used by costs. A full bag leaves drops lying.
-- **Boars**: six at a time, placed on grass away from camp, each with `e.wander = { x0, y0, r }` so it ambles
-  round a home range (`wanderStep` in the engine) and `e.aggro` so it charges when the hero comes close.
-  `Combat.api.onDeath(e)` drops meat; a new boar wanders in a few seconds after one dies.
+- **Animals** (step 1, 2026-10-05): all six, from the `ANIMALS` table in the page: count, ground ('grass' open,
+  'dark' the denser ground, 'shore' grass by sand, 'far' dark ground over 700 from camp), collision radius,
+  damage (`e.cfg.dmg`), aggro distance, home range, drops (meat, hide, antler; fractional = chance), and
+  `flee` for the deer. Wolves come in pairs. Each ambles round a home range (`wanderStep`) and charges when
+  the hero comes close. A missing animal of each kind wanders back in after a few seconds, far from the hero.
+  They all still fight with the engine's chase-and-lunge; only the numbers differ (real per-animal attacks are
+  still to do).
+- **Scale (2026-10-05):** the hero walks at 84 units a second (was 118); islands default to 160 tiles (1.6 km)
+  in `World.DEF`, the Sea Editor and the game.
 - **Building** on **B** through `Build`: five pieces (log wall, plank floor, door, window, stone wall) at low cost
   (2 wood, 1 wood, 2 wood, 2 wood, 2 stone), chosen with 1 to 5, placed with the mouse (drag lays floors and walls),
   only on land, away from trees and rocks, within reach. **F** toggles the red crossed wreck cursor, which gives
@@ -226,8 +232,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   Hand: flint axe, knife, pick, wooden sword, wooden bow, 5 arrows. Bench: flint sword, 15 arrows, wooden shield,
   leather helmet, tunic, trousers, boots, cloak (boar **hide** drops from boars, 70%). Gear is worn in the
   clothing slots and turns a share of blows aside (`Items.stats().armor`, `Combat.api.armor`), up to 60%.
-  The **B board** has tabs: Building, Crafting, Workbench (when near one). It opens with build mode and closes
-  with it. **Esc** opens a menu: Continue, Sandbox (full kit, materials, every recipe known), Restart with
+  The **B board** has tabs: Building, Crafting, Workbench (when near one) and Hearth (when near a fire; E opens
+  it there). It opens with build mode and closes when build mode is left; picking a building piece enters build
+  mode. The old hearth panel is gone: one board for everything made. **Esc** opens a menu: Continue, Sandbox (full kit, materials, every recipe known), Restart with
   nothing, New island. The quiver starts empty; drops on the ground are saved.
 - **Things** (weapons and tools) live in bag slots as `{ kind: 'item', n: 1, item: spec }`, never stacked, and in
   `equip` (weapon, shield, bow, trinket, axe, pick, knife, and the clothing slots, empty for now). Right click in
@@ -254,6 +261,10 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   time you slay that creature (`learn(key)` from `onDeath`; `e.kind` names it); unknown beasts are dark
   silhouettes with "?". `BESTIARY` holds the cards (all six animals written, only boars exist in the game yet);
   `book` (slain counts) is saved. Creature ideas (Norse myth and nordiska väsen) are in `docs/idea-bank.md`.
+- **The first minute:** a hint line at the top centre (`HINTS`), one at a time, each gone when its condition is
+  met: pick up the branches, make an axe and a knife, take them up, cut and chop, build a hut and a workbench.
+- **Sound:** on in the game (`S.sound = true`); the Combat Arena's synthesized set copied into the page, plus
+  chop, clink, fall, pick, craft and build. The engine calls `sfx('chop'|'clink')` on tool hits.
 - **HUD:** only health and stamina top left, the chart and the meal icon top right; no kills or carry line (Robin:
   "we can just open the inventory"). Damage numbers and pickup toasts are drawn in world space inside the camera
   (`drawNums`), so they appear over the tree, rock or hero in the big world.

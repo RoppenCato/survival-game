@@ -11,7 +11,7 @@
 var World = (function () {
 'use strict';
 var T = 32, TS = 24, K = 0.75, CT = 16;
-var DEF = { isle: 220, count: 1, sizeVar: 0.8, gap: 50, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
+var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
 var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', rock: 'stone', rockFormation: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush' };

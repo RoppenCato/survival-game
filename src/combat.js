@@ -427,6 +427,7 @@ function updatePlayer(dt) {
             var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (a.combo >= 2 ? 1.5 : 1);
             hv.hit(o, pw, right, tl.id);
             num(o.x, o.y, (right ? '' : 'wrong tool  ') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#ffd34d', a.combo >= 2);
+            sfx(o.kind === 'stone' ? 'clink' : 'chop', right ? 1 : 0);
           }
         }
       } else for (i = 0; i < W.enemies.length; i++) {
@@ -466,7 +467,7 @@ function updatePlayer(dt) {
   var sprint = (IN.keys.ShiftLeft || IN.keys.ShiftRight) && il > 0 && a.ph === 'none' && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && !p.sprintLock && p.st > 0;
   if (p.st <= 0.5) p.sprintLock = true; else if (p.st >= 14) p.sprintLock = false;
   p.sprinting = !!sprint;
-  var spd = 118;
+  var spd = 84;                          // a walk, not a jog (118 was too fast for the world's scale)
   if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt); p.stDelay = Math.max(p.stDelay, 0.55); }
   if (p.guard) spd *= 0.55;
   if (a.ph === 'windup' || a.ph === 'active') spd *= 0.55; else if (a.ph === 'recover') spd *= 0.9; else if (a.ph === 'charge') spd *= 0.6;
@@ -508,7 +509,7 @@ function botAI(e, dt, d, ang) {
       moveCircle(e, Math.cos(e.dirLock) * cf.lunge * dt, Math.sin(e.dirLock) * cf.lunge * dt);
       if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
         e.hitDone = true;
-        var r = hurtPlayer(12, e.x, e.y, 'melee', e);
+        var r = hurtPlayer(cf.dmg || 12, e.x, e.y, 'melee', e);
         if (r === 'parry') daze(e, 1.5);
       }
       if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = 0.8; }

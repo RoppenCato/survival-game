@@ -33,7 +33,9 @@ function edgeOk(ed, GW, GH) { return ed.L === 'H' ? (ed.x >= 0 && ed.x < GW && e
 function rooms(B, GW, GH, bounds) {
   var bx0 = 0, by0 = 0, bx1 = GW - 1, by1 = GH - 1, x, y, i;
   if (bounds) { bx0 = Math.max(0, bounds.x0); by0 = Math.max(0, bounds.y0); bx1 = Math.min(GW - 1, bounds.x1); by1 = Math.min(GH - 1, bounds.y1); }
-  var w = bx1 - bx0 + 1, h = by1 - by0 + 1, seen = new Uint8Array(w * h), roomOf = new Int32Array(w * h).fill(-1), q;
+  var w = bx1 - bx0 + 1, h = by1 - by0 + 1;
+  if (w <= 0 || h <= 0) return { rooms: [], roomOf: new Int32Array(0), solids: [], x0: bx0, y0: by0, w: 0, h: 0, at: function () { return -1; } };
+  var seen = new Uint8Array(w * h), roomOf = new Int32Array(w * h).fill(-1), q;
   function idx(x, y) { return (y - by0) * w + (x - bx0); }
   function inside(x, y) { return x >= bx0 && y >= by0 && x <= bx1 && y <= by1; }
   function pass(ax, ay, bx, by) {                       // can you step from tile a to its neighbour b?

@@ -2590,7 +2590,7 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
 var World = (function () {
 'use strict';
 var T = 32, TS = 24, K = 0.75, CT = 16;
-var DEF = { isle: 220, count: 1, sizeVar: 0.8, gap: 50, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
+var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
 var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', rock: 'stone', rockFormation: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush' };
@@ -3303,6 +3303,7 @@ function updatePlayer(dt) {
             var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (a.combo >= 2 ? 1.5 : 1);
             hv.hit(o, pw, right, tl.id);
             num(o.x, o.y, (right ? '' : 'wrong tool  ') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#ffd34d', a.combo >= 2);
+            sfx(o.kind === 'stone' ? 'clink' : 'chop', right ? 1 : 0);
           }
         }
       } else for (i = 0; i < W.enemies.length; i++) {
@@ -3342,7 +3343,7 @@ function updatePlayer(dt) {
   var sprint = (IN.keys.ShiftLeft || IN.keys.ShiftRight) && il > 0 && a.ph === 'none' && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && !p.sprintLock && p.st > 0;
   if (p.st <= 0.5) p.sprintLock = true; else if (p.st >= 14) p.sprintLock = false;
   p.sprinting = !!sprint;
-  var spd = 118;
+  var spd = 84;                          // a walk, not a jog (118 was too fast for the world's scale)
   if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt); p.stDelay = Math.max(p.stDelay, 0.55); }
   if (p.guard) spd *= 0.55;
   if (a.ph === 'windup' || a.ph === 'active') spd *= 0.55; else if (a.ph === 'recover') spd *= 0.9; else if (a.ph === 'charge') spd *= 0.6;
@@ -3384,7 +3385,7 @@ function botAI(e, dt, d, ang) {
       moveCircle(e, Math.cos(e.dirLock) * cf.lunge * dt, Math.sin(e.dirLock) * cf.lunge * dt);
       if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
         e.hitDone = true;
-        var r = hurtPlayer(12, e.x, e.y, 'melee', e);
+        var r = hurtPlayer(cf.dmg || 12, e.x, e.y, 'melee', e);
         if (r === 'parry') daze(e, 1.5);
       }
       if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = 0.8; }
@@ -4412,7 +4413,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var NUM = BOAT.concat(HANDLE, SEA, LAND);
   var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Stripes and shields']];
   var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
-    isle: 220, sizeVar: 0.8, count: 7, gap: 50, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, seed: 25,
+    isle: 160, sizeVar: 0.8, count: 7, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, seed: 25,
     col: { hull: '#5a3a26', deck: '#b98a5a', sail: '#efe6cf', trim: '#b83a2e' } };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var spec = clone(DEF), view = { zoom: 0.7 }, inputs = {}, outputs = {}, swatch = {};
