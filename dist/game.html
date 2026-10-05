@@ -2369,24 +2369,21 @@ function stoneShip(c, K, x, y, seed) {
     shape(c, [[s.x - 3, s.y], [s.x - 3.6, s.y - s.h * 0.7], [s.x, s.y - s.h], [s.x + 3.6, s.y - s.h * 0.7], [s.x + 3, s.y]], s.k % 2 ? K.rockC : K.rock, { seed: seed + s.k, size: 'S', sh: 1.5, rough: 0.35 });
   });
 }
-// a woodpile seen from the three-quarter camera: split logs lying along the pile, their cut ends toward you, stacked between two stakes
+// a woodpile from the three-quarter camera: a block of logs, the cut ends facing you in three rows, a bark top and a bark
+// side showing how long the logs are, held between two stakes
 function woodpile(c, K, x, y, seed) {
-  var R = rng(seed), r, i;
-  gshadow(c, x + 2, y + 1, 26, 6, 0.4);
-  var L = 22, dx = 0.72, dy = -0.42;                 // the logs run back and to the right
-  for (r = 0; r < 3; r++) {
-    var n = 4 - r, y0 = y - 4 - r * 7.6;
-    for (i = n - 1; i >= 0; i--) {
-      var ex = x - 13 + r * 4.3 + i * 8.6, ey = y0, bx = ex + dx * L, by = ey + dy * L;
-      // the length of the log: a bar from the cut end back into the pile, darker underneath
-      shape(c, ribbon([[ex, ey], [bx, by]], 8, 7.4), r === 1 ? K.trunk : K.wood, { seed: seed + r * 7 + i, size: 'S', flat: true, rough: 0.2 });
-      c.save(); c.strokeStyle = K.wood.shade; c.globalAlpha = 0.5; c.lineWidth = 1.2; c.beginPath(); c.moveTo(ex + 1, ey + 3); c.lineTo(bx, by + 3); c.stroke(); c.restore();
-      // the cut end, facing the camera: a pale disc with rings
-      shape(c, ellPts(ex, ey, 4.3, 4.1, 12), K.trunkL, { seed: seed + 30 + r * 7 + i, size: 'S', sh: 0.8, rough: 0.15 });
-      c.save(); c.strokeStyle = K.trunk.shade; c.globalAlpha = 0.45; c.lineWidth = 0.8; c.beginPath(); c.ellipse(ex, ey, 2.4, 2.3, 0, 0, 7); c.stroke(); c.beginPath(); c.moveTo(ex - 3, ey + 0.5); c.lineTo(ex + 3, ey - 0.5); c.stroke(); c.restore();
-    }
+  var r, i, bw = 40, bh = 27, dp = 11, R = rng(seed);
+  gshadow(c, x + 4, y + 1, 30, 6, 0.4);
+  shape(c, [[x + bw / 2, y - bh], [x + bw / 2 + dp, y - bh - dp * 0.6], [x + bw / 2 + dp, y - dp * 0.6], [x + bw / 2, y]], K.trunk, { seed: seed + 1, size: 'M', sh: 1.5, flat: true, rough: 0.2 });          // the side
+  shape(c, [[x - bw / 2, y - bh], [x - bw / 2 + dp, y - bh - dp * 0.6], [x + bw / 2 + dp, y - bh - dp * 0.6], [x + bw / 2, y - bh]], K.trunkL, { seed: seed + 2, size: 'M', sh: 1.2, flat: true, rough: 0.2 });   // the top
+  c.save(); c.strokeStyle = K.trunk.shade; c.globalAlpha = 0.5; c.lineWidth = 0.9; c.beginPath(); for (i = 1; i < 4; i++) { c.moveTo(x - bw / 2 + i * 10 + 2, y - bh - 0.5); c.lineTo(x - bw / 2 + i * 10 + dp + 2, y - bh - dp * 0.6 - 0.5); } c.stroke(); c.restore();
+  shape(c, rrPts(x - bw / 2, y - bh, bw, bh, 2), K.wood, { seed: seed, size: 'M', flat: true, rough: 0.2 });                                                                                           // the dark face behind the ends
+  for (r = 0; r < 3; r++) for (i = 0; i < 4 - (r === 2 ? 1 : 0); i++) {
+    var cx = x - bw / 2 + 5.5 + i * 9.6 + (r === 2 ? 4.8 : 0), cy = y - 5.2 - r * 8.6;
+    shape(c, ellPts(cx, cy, 4.7, 4.6, 12), K.trunkL, { seed: seed + 10 + r * 5 + i, size: 'S', sh: 0.8, rough: 0.15 });
+    c.save(); c.strokeStyle = K.trunk.shade; c.globalAlpha = 0.5; c.lineWidth = 0.8; c.beginPath(); c.ellipse(cx, cy, 2.5, 2.4, 0, 0, 7); c.stroke(); c.beginPath(); c.arc(cx, cy, 0.8, 0, 7); c.stroke(); c.restore();
   }
-  line(c, [[x - 20, y + 1], [x - 18, y - 24]], 2.6, K.wood.base, true); line(c, [[x + 18, y + 1], [x + 20, y - 24]], 2.6, K.wood.base, true);
+  line(c, [[x - bw / 2 - 3, y + 1], [x - bw / 2 - 2, y - bh - 3]], 2.6, K.wood.base, true); line(c, [[x + bw / 2 + 3, y + 1], [x + bw / 2 + 4, y - bh - 3]], 2.6, K.wood.base, true);
 }
 
 /* ---------------- Viking age Scandinavia: things found in nature ---------------- */
@@ -2730,7 +2727,7 @@ var PROPS = {
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
   willow: { b: [-120, -210, 150, 22], f: function (c, K, s) { willow(c, K, 0, 0, 190, s); } },
-  birch: { b: [-70, -200, 90, 16], f: function (c, K, s) { birch(c, K, 0, 0, 150, s); } },
+  birch: { b: [-92, -270, 118, 20], f: function (c, K, s) { birch(c, K, 0, 0, 205, s); } },
   cypress: { b: [-50, -230, 80, 14], f: function (c, K, s) { cypress(c, K, 0, 0, 170, s); } },
   ancient: { b: [-190, -330, 220, 36], f: function (c, K, s) { ancient(c, K, 0, 0, 260, s); } },
   blossom: { b: [-100, -200, 130, 18], f: function (c, K, s) { blossomTree(c, K, 0, 0, 150, s); } },
@@ -2750,6 +2747,15 @@ var PROPS = {
   shipwright: { b: [-42, -44, 44, 4], f: function (c, K, s) { shipwrightObj(c, K, 0, 0, s); } },
   chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },
 };
+// Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
+// drawn: measured beside the hero they were all two to three times too big.
+var SIZE = { workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+Object.keys(SIZE).forEach(function (n) {
+  var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
+  p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
+  p.b = [Math.floor(p.b[0] * k) - 3, Math.floor(p.b[1] * k) - 3, Math.ceil(p.b[2] * k) + 3, Math.ceil(p.b[3] * k) + 3];
+});
+
 function bakeProp(name, seed, opts) {
   opts = opts || {};
   var def = PROPS[name], b = def.b, w = b[2] - b[0], h = b[3] - b[1], sv = null;
@@ -2794,7 +2800,7 @@ var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1
 
 // what can be gathered in the first biome, and how much it takes
 var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', rock: 'stone', rockFormation: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush' };
-var HP = { birch: 6, pine: 7, oak: 9, rock: 8, rockFormation: 14, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1 };
+var HP = { birch: 14, pine: 18, oak: 22, rock: 11, rockFormation: 18, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1 };
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
@@ -3042,7 +3048,7 @@ function make(kit, opts) {
       var roll = R(), wx = (x + 0.2 + R() * 0.6) * T, wy = (y + 0.3 + R() * 0.5) * T, p = null;
       if (Math.hypot(wx - home.x, wy - home.y) < 130) continue;
       if (t3 >= 2) {
-        if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { p = { name: TREES[Math.floor(R() * TREES.length) % TREES.length], s: 0.5 + R() * 0.16, r: 8 }; w.stats.trees++; }
+        if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tn = TREES[Math.floor(R() * TREES.length) % TREES.length]; p = { name: tn, s: (tn === 'pine' ? 0.54 : 0.49) + R() * 0.1, r: 11 }; w.stats.trees++; }
         else if (roll > 0.955) p = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
         else if (roll > 0.948) { p = { name: R() < 0.6 ? 'rock' : 'rockFormation', s: 0.9, r: 10 }; w.stats.rocks++; }
         else if (roll > 0.9475) p = { name: ['runestone', 'cairn', 'fallenTree', 'birdNest'][Math.floor(R() * 4)], s: 1, r: 10 };
@@ -4140,6 +4146,7 @@ function releaseCharge() {
 }
 function stepData(a) {
   var s0 = stepData0(a);
+  if (P.mode === 'gather') return { wu: s0.wu * 3, ac: s0.ac * 1.6, rec: s0.rec * 3.2, arc: s0.arc, reach: s0.reach, blade: s0.blade, dmg: s0.dmg, kb: s0.kb, lunge: 0, stag: s0.stag };   // chopping and mining are slow, deliberate swings
   if (bareHanded() && !a.bash && !a.spin) return { wu: s0.wu, ac: s0.ac, rec: s0.rec, arc: s0.arc * 0.6, reach: s0.reach * 0.66, blade: 7, dmg: s0.dmg, kb: s0.kb * 0.5, lunge: s0.lunge * 0.7, stag: s0.stag * 0.5 };   // a punch: short, quick, light
   return s0;
 }
@@ -4200,7 +4207,7 @@ function updatePlayer(dt) {
     if (p.venom.t <= 0) p.venom = null;
   }
   var bowOut = p.mode === 'fight' && p.weapon === 'ranged';
-  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bowOut && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
+  if ((IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
@@ -5516,7 +5523,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
   // what a felled tree, a broken rock and a cut bush give: a day's work should reach 40 wood, 20 stone and 15 fiber
-  var TREE_WOOD = { oak: 6, pine: 5, birch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6 }, BUSH_FIBER = 2, BERRIES = 3;
+  var TREE_WOOD = { oak: 14, pine: 11, birch: 9 }, ROCK_STONE = { rock: 3, rockFormation: 6 }, BUSH_FIBER = 2, BERRIES = 3;
   function hash(x, y, s) { return World.hash(x, y, s); }
   function isLand(x, y) { return w.isLand(x, y); }
   function code(tx, ty) { return w.code(tx, ty); }
@@ -5555,41 +5562,41 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'roof', name: 'Turf roof', m: 0, cost: { fiber: 2 } },
     { id: 'roof', name: 'Thatch roof', m: 1, cost: { fiber: 4 } },
     { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 } },
-    { id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 7, cost: { wood: 6, stone: 1 }, icon: function (c) {
+    { id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 4, cost: { wood: 6, stone: 1 }, icon: function (c) {
       c.fillStyle = '#b98a5a'; c.fillRect(-7, -3, 14, 3); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-7, -3, 14, 3); c.fillStyle = '#8a5a3a'; c.fillRect(-6, 0, 2, 6); c.fillRect(4, 0, 2, 6);
       c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(-3, -4); c.lineTo(1, -8); c.lineTo(3, -6); c.lineTo(-1, -3); c.closePath(); c.fill(); c.stroke();
     } },
-    { id: 'bed', name: 'Bed', kind: 'item', prop: 'bed', bed: true, r: 8, cost: { wood: 6, fiber: 4 }, icon: function (c) {
+    { id: 'bed', name: 'Bed', kind: 'item', prop: 'bed', bed: true, r: 6, cost: { wood: 6, fiber: 4 }, icon: function (c) {
       c.fillStyle = '#8a5a3a'; c.fillRect(-8, -2, 16, 7); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-8, -2, 16, 7);
       c.fillStyle = '#d9c9a6'; c.fillRect(-7, -4, 14, 4); c.strokeRect(-7, -4, 14, 4); c.fillStyle = '#c96a4a'; c.fillRect(-2, -4, 9, 4); c.fillStyle = '#f1e6cf'; c.beginPath(); c.ellipse(-4.5, -2, 2.2, 1.4, 0, 0, 7); c.fill();
     } },
-    { id: 'ship', name: 'Shipwright’s bench', kind: 'item', prop: 'shipwright', ship: true, r: 9, cost: { wood: 12, stone: 2 } },
+    { id: 'ship', name: 'Shipwright’s bench', kind: 'item', prop: 'shipwright', ship: true, r: 7, cost: { wood: 12, stone: 2 } },
     { id: 'hearth', name: 'Hearth', kind: 'item', prop: 'stoneHearth', r: 8, cost: { stone: 4, wood: 2 }, icon: function (c) {
       c.fillStyle = '#7d8290'; [[-6, 4], [0, 5.5], [6, 4]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 3.2, 2, 0, 0, 7); c.fill(); });
       c.fillStyle = '#e8702a'; c.beginPath(); c.moveTo(-4, 3); c.quadraticCurveTo(-5, -3, 0, -7); c.quadraticCurveTo(5, -3, 4, 3); c.closePath(); c.fill();
       c.fillStyle = '#ffd34d'; c.beginPath(); c.moveTo(-2, 3); c.quadraticCurveTo(-2.5, -1, 0, -3.5); c.quadraticCurveTo(2.5, -1, 2, 3); c.closePath(); c.fill();
     } },
     // outdoor and household things, drawn from the kit's props; their icons are the props shrunk
-    { id: 'chair', name: 'Chair', kind: 'item', prop: 'chair', r: 5, cost: { wood: 2 } },
-    { id: 'seat', name: 'Bench seat', kind: 'item', prop: 'bench', r: 8, cost: { wood: 3 } },
-    { id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 7, cost: { wood: 4 } },
-    { id: 'barrel', name: 'Barrel', kind: 'item', prop: 'barrel', r: 6, cost: { wood: 3 } },
-    { id: 'crate', name: 'Crate', kind: 'item', prop: 'crate', r: 7, cost: { wood: 3 } },
+    { id: 'chair', name: 'Chair', kind: 'item', prop: 'chair', r: 3, cost: { wood: 2 } },
+    { id: 'seat', name: 'Bench seat', kind: 'item', prop: 'bench', r: 6, cost: { wood: 3 } },
+    { id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 5, cost: { wood: 4 } },
+    { id: 'barrel', name: 'Barrel', kind: 'item', prop: 'barrel', r: 4, cost: { wood: 3 } },
+    { id: 'crate', name: 'Crate', kind: 'item', prop: 'crate', r: 4, cost: { wood: 3 } },
     { id: 'rug', name: 'Rug', kind: 'item', prop: 'rug', r: 0, flat: true, cost: { leather: 2, fiber: 4 } },
-    { id: 'chest', name: 'Chest', kind: 'item', prop: 'chest', r: 8, chest: true, cost: { wood: 8 } },
-    { id: 'woodpile', name: 'Woodpile', kind: 'item', prop: 'woodpile', r: 8, cost: { wood: 5 } },
-    { id: 'rack', name: 'Drying rack', kind: 'item', prop: 'dryingRack', r: 8, cost: { wood: 4, fiber: 2 } },
-    { id: 'brazier', name: 'Brazier', kind: 'item', prop: 'brazier', r: 5, light: 1, cost: { stone: 2, wood: 2 } },
-    { id: 'well', name: 'Well', kind: 'item', prop: 'woodenWell', r: 8, cost: { stone: 6, wood: 4 } },
-    { id: 'hay', name: 'Haystack', kind: 'item', prop: 'haystack', r: 9, cost: { fiber: 8 } },
-    { id: 'shields', name: 'Shield rack', kind: 'item', prop: 'shieldRack', r: 7, cost: { wood: 4 } },
-    { id: 'skeps', name: 'Bee skeps', kind: 'item', prop: 'beeSkeps', r: 8, cost: { fiber: 6, wood: 1 } },
-    { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 9, cost: { wood: 8 } },
-    { id: 'post', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 5, cost: { wood: 4 } }
+    { id: 'chest', name: 'Chest', kind: 'item', prop: 'chest', r: 5, chest: true, cost: { wood: 8 } },
+    { id: 'woodpile', name: 'Woodpile', kind: 'item', prop: 'woodpile', r: 6, cost: { wood: 5 } },
+    { id: 'rack', name: 'Drying rack', kind: 'item', prop: 'dryingRack', r: 6, cost: { wood: 4, fiber: 2 } },
+    { id: 'brazier', name: 'Brazier', kind: 'item', prop: 'brazier', r: 3, light: 1, cost: { stone: 2, wood: 2 } },
+    { id: 'well', name: 'Well', kind: 'item', prop: 'woodenWell', r: 6, cost: { stone: 6, wood: 4 } },
+    { id: 'hay', name: 'Haystack', kind: 'item', prop: 'haystack', r: 6, cost: { fiber: 8 } },
+    { id: 'shields', name: 'Shield rack', kind: 'item', prop: 'shieldRack', r: 5, cost: { wood: 4 } },
+    { id: 'skeps', name: 'Bee skeps', kind: 'item', prop: 'beeSkeps', r: 5, cost: { fiber: 6, wood: 1 } },
+    { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 7, cost: { wood: 8 } },
+    { id: 'post', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 3, cost: { wood: 4 } }
   ];
   var ICON_SCALE = { shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   function propIcon(c, name) {             // a prop's baked sprite, shrunk to fit a board cell
-    var s = sprite(name, 0), sc = ICON_SCALE[name] || Math.min(18 / s.w, 18 / s.h);
+    var s = sprite(name, 0), sc = Math.min(18 / s.w, 18 / s.h, 1.5);
     c.drawImage(s.cv, -s.w * sc / 2, -s.h * sc / 2 + 1, s.w * sc, s.h * sc);
   }
   PIECES.forEach(function (p) { if (p.kind === 'item' && !p.icon) p.icon = function (c) { propIcon(c, p.prop); }; });
@@ -5751,11 +5758,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var fk = Build.key(tx, ty); return { kind: 'tile', tx: tx, ty: ty, ok: !far && B.floors[fk] != null };
     }
     if (pc.kind === 'item') {
-      var ix = (tx + 0.5) * T, iy = (ty + 0.5) * T, clear = spotClear(ix, iy);
+      var ix = Math.round(mouseW.x / 4) * 4, iy = Math.round(mouseW.y / 4) * 4, wallWhy = '', ft = footOf(pc, buildRot);
+      if (!pc.flat) { var fit = fitItem(ix, iy, ft.hw, ft.hd); if (fit) { ix = fit.x; iy = fit.y; } else wallWhy = 'Too close to a wall'; }
+      var clear = spotClear(ix, iy);
       for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 24 && (!pc.flat || B.items[i].name === 'rug') && (pc.flat || B.items[i].name !== 'rug')) clear = false;   // a rug lies under furniture, so only rugs block rugs
       var shipWhy = '';
       if (pc.ship) { shipWhy = baseComfort().n < 4 ? 'Your home needs a roof, a fire, a workbench and a rug first (Comfort 4)' : (code(tx, ty) !== 1 ? 'Build it on the sand' : (!nearWater(tx, ty, 4) ? 'Build it at the water’s edge' : '')); }
-      return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && !shipWhy && canAfford(pc.cost), why: far ? 'Too far' : shipWhy ? shipWhy : !clear ? 'Blocked, or not on land' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
+      return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && !shipWhy && !wallWhy && canAfford(pc.cost), why: far ? 'Too far' : shipWhy ? shipWhy : wallWhy ? wallWhy : !clear ? 'Blocked, or not on land' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
     }
     if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), onLand = code(tx, ty) >= 1 && code(tx, ty) !== 255, hasF = B.floors[fk2] != null && B.floors[fk2] === pc.m;
       return { kind: 'tile', tx: tx, ty: ty, piece: pc, ok: !far && onLand && !hasF && canAfford(pc.cost), why: far ? 'Too far' : !onLand ? 'Not on land' : hasF ? 'Already that floor' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
@@ -5765,6 +5774,22 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var ed2 = Build.edgeAt(mouseW.x, mouseW.y), m = edgeMid(ed2), k2 = Build.key(ed2.x, ed2.y), taken = !!B[ed2.L][k2], clear2 = spotClear(m.x, m.y);
     return { kind: 'edge', ed: ed2, piece: pc, ok: !far && Build.edgeOk(ed2, GW, GH) && !taken && clear2 && canAfford(pc.cost), why: far ? 'Too far' : taken ? 'Something stands here already' : !clear2 ? 'Blocked, or not on land' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
   }
+  var buildRot = 0;                          // 0 to 3: the way the next thing faces (the wheel turns it)
+  function footOf(pc, rot) {                  // half width and depth of what the thing covers on the ground
+    var s = sprite(pc.prop, 0), hw = Math.max(5, Math.min(24, s.w * 0.3)), hd = 6;
+    return (rot & 1) ? { hw: Math.max(5, hd + hw * 0.3), hd: Math.max(6, hw * 0.55) } : { hw: hw, hd: hd };
+  }
+  function wallHit(x, y, hw, hd) {            // does the footprint touch a wall, door, window or fence?
+    var k, p;
+    for (k in B.H) { p = k.split(','); var ey = p[1] * T, ex0 = p[0] * T, ex1 = ex0 + T; if (Math.abs(ey - y) < hd + 2 && x + hw > ex0 && x - hw < ex1) return true; }
+    for (k in B.V) { p = k.split(','); var vx = p[0] * T, vy0 = p[1] * T, vy1 = vy0 + T; if (Math.abs(vx - x) < hw + 2 && y + hd > vy0 && y - hd < vy1) return true; }
+    return false;
+  }
+  function fitItem(x, y, hw, hd) {            // the nearest free spot to where you pointed, within a few steps
+    if (!wallHit(x, y, hw, hd)) return { x: x, y: y };
+    for (var d = 3; d <= 18; d += 3) for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4, fx = x + Math.cos(a) * d, fy = y + Math.sin(a) * d; if (!wallHit(fx, fy, hw, hd)) return { x: fx, y: fy }; }
+    return null;
+  }
   function buildAct(first) {
     var P = hero(), t = buildTarget(); if (!t || !t.ok) return;
     if (P.wreck) {
@@ -5773,7 +5798,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       else { pay(costOfFloor(B.floors[Build.key(t.tx, t.ty)]), 1); delete B.floors[Build.key(t.tx, t.ty)]; }
       bDirty = true; save(); return;
     }
-    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, ship: !!t.piece.ship, light: t.piece.light || 0 }; if (t.piece.chest) { nit.store = []; for (var si = 0; si < STORE_N; si++) nit.store.push(null); } B.items.push(nit); sfx('build'); save(); return; }
+    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: !!t.piece.ship, light: t.piece.light || 0 }; if (t.piece.chest) { nit.store = []; for (var si = 0; si < STORE_N; si++) nit.store.push(null); } B.items.push(nit); sfx('build'); save(); return; }
     if (t.kind === 'roof') { if (!first) return; pay(t.piece.cost); if (!B.roofs) B.roofs = {}; B.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
     var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : 'F' + Build.key(t.tx, t.ty);
     var drags = t.piece.id === 'floor' || t.piece.id === 'wall' || t.piece.id === 'fence' || t.piece.id === 'palisade';
@@ -5796,6 +5821,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return { x: t.tx * T, y: t.ty * TS, w: T, h: TS };
   }
   var ghostLabel = null;                 // what to say by the cursor, drawn on the HUD after the world
+  function drawSpriteAt(c, sp, x, y, flip) {
+    if (!flip) { c.drawImage(sp.cv, x + sp.l, y * K + sp.t, sp.w, sp.h); return; }
+    c.save(); c.translate(x, 0); c.scale(-1, 1); c.drawImage(sp.cv, sp.l, y * K + sp.t, sp.w, sp.h); c.restore();   // turned: seen from the other side
+  }
   function drawGhost(c) {
     var P = hero(), t = buildTarget(); ghostLabel = null; if (!t) return;
     c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
@@ -5814,7 +5843,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var col = t.ok ? '120,255,160' : '255,80,60';
       c.globalAlpha = t.ok ? 0.65 : 0.35;
       if (t.kind === 'tile') c.drawImage(w.tile((Build.FLOORS[t.piece.m] || Build.FLOORS[0]).tile, t.tx, t.ty), t.tx * T, t.ty * TS, T, TS);
-      else if (t.kind === 'item') { var sp = sprite(t.piece.prop, 0); c.drawImage(sp.cv, t.x + sp.l, t.y * K + sp.t, sp.w, sp.h); }
+      else if (t.kind === 'item') { var sp = sprite(t.piece.prop, 0); drawSpriteAt(c, sp, t.x, t.y, buildRot & 1); }
       else if (t.kind === 'roof') { if (t.room) Build.drawRoof(c, t.room, 0.7, Build.cfg({ roof: t.piece.m })); }
       else { var e = { t: t.piece.id, m: t.piece.m }; if (t.ed.L === 'H') Build.drawH(c, t.ed.x, t.ed.y, e, false, false, BCFG); else Build.drawV(c, t.ed.x, t.ed.y, e, false, false, BCFG); }
       c.globalAlpha = 1;
@@ -5869,7 +5898,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var a = R() * 6.283, d = 170 + R() * 130, x = home.x + Math.cos(a) * d, y = home.y + Math.sin(a) * d * 0.8, nm = names[placed];
       if (!w.isLand(x, y) || !kit.PROPS[nm] || code(Math.floor(x / T), Math.floor(y / T)) < 2) continue;
       var clear = true; w.around(x, y, function (o) { if (Math.hypot(o.x - x, o.y - y) < 40) clear = false; }); if (!clear) continue;
-      var p = { name: nm, x: x, y: y, s: 0.55, r: 8, v: Math.floor(R() * 3), kind: 'tree', leanDir: R() < 0.5 ? -1 : 1 }; p.max = p.hp = World.HP[nm] * (0.7 + 0.6 * p.s); w.addProp(p); placed++;
+      var p = { name: nm, x: x, y: y, s: nm === 'pine' ? 0.58 : 0.52, r: 11, v: Math.floor(R() * 3), kind: 'tree', leanDir: R() < 0.5 ? -1 : 1 }; p.max = p.hp = World.HP[nm] * (0.7 + 0.6 * p.s); w.addProp(p); placed++;
     }
   }
   /* ---------- the broken village: an abandoned steading on the home island (roadmap step 6) ----------
@@ -6192,6 +6221,17 @@ if (typeof module !== 'undefined') module.exports = Combat;
     sfx('pick'); toast(msg.join(', ')); save();
   }
   function rackTick(dt) { for (var i = 0; i < B.items.length; i++) { var h = B.items[i].hang; if (h) for (var j = 0; j < h.length; j++) if (h[j] > 0) h[j] -= dt; } }
+  /* ---------- berries are picked, not cut: E at a bush that has them; the bush grows more later ---------- */
+  function berryNear(P) {
+    var best = null;
+    around(P.x, P.y, function (o) {
+      if (o.kind !== 'bush' || o.dying != null || Math.hypot(o.x - P.x, o.y - P.y) > 38) return;
+      if (o.was && clock > o.regrow) { o.name = o.was; o.was = null; }          // the berries are back
+      if (o.name === 'berryBush' && (!best || Math.hypot(o.x - P.x, o.y - P.y) < Math.hypot(best.x - P.x, best.y - P.y))) best = o;
+    });
+    return best;
+  }
+  function pickBerries(o) { var left = addItem('berries', 3); if (left) drop('berries', o.x, o.y + 10, left); lootNote('berries', 3 - left); o.was = o.name; o.name = 'bush'; o.regrow = clock + 360; sfx('pick'); }
   function nearNpc(P) { return npc && Math.hypot(P.x - npc.x, P.y - npc.y) < 40; }
   function talk() {
     var st = brokkState(), L = brokkLines(st);
@@ -7085,7 +7125,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       });
       B.items.forEach(function (it) {
         if (Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
-        var s = sprite(it.name, 0); items.push({ y: it.name === 'rug' ? it.y - 300 : it.y, f: function () { ctx.drawImage(s.cv, it.x + s.l, it.y * K + s.t, s.w, s.h); if (it.loot) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something
+        var s = sprite(it.name, 0); items.push({ y: it.name === 'rug' ? it.y - 300 : it.y, f: function () { drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.loot) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       if (npc && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
@@ -7127,9 +7167,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       drawTorchIcon(c, mx - (SHOW.runes || SHOW.book ? 94 : 54), my + 10);
       var rsn = SHOW.runes && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;   // a stone read once needs no prompt
-      var bedP = !nearHearth(P) && !rsn && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && nearNpc(P) && !(npc.sayT > 0), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable();
-      if ((nearHearth(P) || rsn || bedP || crP || npcP || rkP || rfP || cvP) && !invOpen && P.mode !== 'build' && !menu && !clothOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
-        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = rfP ? (raft.aboard ? 'Step ashore' : 'Board the raft') : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
+      var bedP = !nearHearth(P) && !rsn && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && nearNpc(P) && !(npc.sayT > 0), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P);
+      if ((nearHearth(P) || rsn || bedP || crP || npcP || rkP || rfP || cvP || bbP) && !invOpen && P.mode !== 'build' && !menu && !clothOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
+        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : 'Board the raft') : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
         c.font = '600 9px system-ui, sans-serif'; var pw = c.measureText(pt).width + 26;
         c.fillStyle = 'rgba(20,16,30,0.82)'; c.fillRect(tx - pw / 2, ty - 9, pw, 16);
         c.fillStyle = '#ffd34d'; c.fillRect(tx - pw / 2 + 3, ty - 6.5, 12, 11);
@@ -7229,7 +7269,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (raftUsable()) raftUse(); else if (caveUsable()) caveUse(); else if (menu && menuTab === 'hearth') menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); else if (rackUsable(hero())) rackUse(rackNear(hero())); } } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (raftUsable()) raftUse(); else if (caveUsable()) caveUse(); else if (menu && menuTab === 'hearth') menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (nearNpc(hero())) talk(); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
     if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat && SHOW.runes) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else pauseOpen = !pauseOpen; return; }
@@ -7306,7 +7346,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   cv.addEventListener('wheel', function (e) {
     e.preventDefault(); var P = hero(), d = e.deltaY > 0 ? 1 : -1, n;
     if (P.mode === 'gather') { n = Combat.api.tools.length; P.tool = (P.tool + d + n) % n; }
-    else if (P.mode === 'build') { P.piece = (P.piece + d + PIECES.length) % PIECES.length; P.wreck = false; }
+    else if (P.mode === 'build') { if (!P.wreck && PIECES[P.piece] && PIECES[P.piece].kind === 'item') buildRot = (buildRot + (d > 0 ? 1 : 3)) & 3; else { P.piece = (P.piece + d + PIECES.length) % PIECES.length; P.wreck = false; } }   // the wheel turns what you are placing; the board picks the piece
     else P.sel = ((P.sel || 0) + d + 6) % 6;
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });

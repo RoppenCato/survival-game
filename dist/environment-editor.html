@@ -2414,24 +2414,21 @@ function stoneShip(c, K, x, y, seed) {
     shape(c, [[s.x - 3, s.y], [s.x - 3.6, s.y - s.h * 0.7], [s.x, s.y - s.h], [s.x + 3.6, s.y - s.h * 0.7], [s.x + 3, s.y]], s.k % 2 ? K.rockC : K.rock, { seed: seed + s.k, size: 'S', sh: 1.5, rough: 0.35 });
   });
 }
-// a woodpile seen from the three-quarter camera: split logs lying along the pile, their cut ends toward you, stacked between two stakes
+// a woodpile from the three-quarter camera: a block of logs, the cut ends facing you in three rows, a bark top and a bark
+// side showing how long the logs are, held between two stakes
 function woodpile(c, K, x, y, seed) {
-  var R = rng(seed), r, i;
-  gshadow(c, x + 2, y + 1, 26, 6, 0.4);
-  var L = 22, dx = 0.72, dy = -0.42;                 // the logs run back and to the right
-  for (r = 0; r < 3; r++) {
-    var n = 4 - r, y0 = y - 4 - r * 7.6;
-    for (i = n - 1; i >= 0; i--) {
-      var ex = x - 13 + r * 4.3 + i * 8.6, ey = y0, bx = ex + dx * L, by = ey + dy * L;
-      // the length of the log: a bar from the cut end back into the pile, darker underneath
-      shape(c, ribbon([[ex, ey], [bx, by]], 8, 7.4), r === 1 ? K.trunk : K.wood, { seed: seed + r * 7 + i, size: 'S', flat: true, rough: 0.2 });
-      c.save(); c.strokeStyle = K.wood.shade; c.globalAlpha = 0.5; c.lineWidth = 1.2; c.beginPath(); c.moveTo(ex + 1, ey + 3); c.lineTo(bx, by + 3); c.stroke(); c.restore();
-      // the cut end, facing the camera: a pale disc with rings
-      shape(c, ellPts(ex, ey, 4.3, 4.1, 12), K.trunkL, { seed: seed + 30 + r * 7 + i, size: 'S', sh: 0.8, rough: 0.15 });
-      c.save(); c.strokeStyle = K.trunk.shade; c.globalAlpha = 0.45; c.lineWidth = 0.8; c.beginPath(); c.ellipse(ex, ey, 2.4, 2.3, 0, 0, 7); c.stroke(); c.beginPath(); c.moveTo(ex - 3, ey + 0.5); c.lineTo(ex + 3, ey - 0.5); c.stroke(); c.restore();
-    }
+  var r, i, bw = 40, bh = 27, dp = 11, R = rng(seed);
+  gshadow(c, x + 4, y + 1, 30, 6, 0.4);
+  shape(c, [[x + bw / 2, y - bh], [x + bw / 2 + dp, y - bh - dp * 0.6], [x + bw / 2 + dp, y - dp * 0.6], [x + bw / 2, y]], K.trunk, { seed: seed + 1, size: 'M', sh: 1.5, flat: true, rough: 0.2 });          // the side
+  shape(c, [[x - bw / 2, y - bh], [x - bw / 2 + dp, y - bh - dp * 0.6], [x + bw / 2 + dp, y - bh - dp * 0.6], [x + bw / 2, y - bh]], K.trunkL, { seed: seed + 2, size: 'M', sh: 1.2, flat: true, rough: 0.2 });   // the top
+  c.save(); c.strokeStyle = K.trunk.shade; c.globalAlpha = 0.5; c.lineWidth = 0.9; c.beginPath(); for (i = 1; i < 4; i++) { c.moveTo(x - bw / 2 + i * 10 + 2, y - bh - 0.5); c.lineTo(x - bw / 2 + i * 10 + dp + 2, y - bh - dp * 0.6 - 0.5); } c.stroke(); c.restore();
+  shape(c, rrPts(x - bw / 2, y - bh, bw, bh, 2), K.wood, { seed: seed, size: 'M', flat: true, rough: 0.2 });                                                                                           // the dark face behind the ends
+  for (r = 0; r < 3; r++) for (i = 0; i < 4 - (r === 2 ? 1 : 0); i++) {
+    var cx = x - bw / 2 + 5.5 + i * 9.6 + (r === 2 ? 4.8 : 0), cy = y - 5.2 - r * 8.6;
+    shape(c, ellPts(cx, cy, 4.7, 4.6, 12), K.trunkL, { seed: seed + 10 + r * 5 + i, size: 'S', sh: 0.8, rough: 0.15 });
+    c.save(); c.strokeStyle = K.trunk.shade; c.globalAlpha = 0.5; c.lineWidth = 0.8; c.beginPath(); c.ellipse(cx, cy, 2.5, 2.4, 0, 0, 7); c.stroke(); c.beginPath(); c.arc(cx, cy, 0.8, 0, 7); c.stroke(); c.restore();
   }
-  line(c, [[x - 20, y + 1], [x - 18, y - 24]], 2.6, K.wood.base, true); line(c, [[x + 18, y + 1], [x + 20, y - 24]], 2.6, K.wood.base, true);
+  line(c, [[x - bw / 2 - 3, y + 1], [x - bw / 2 - 2, y - bh - 3]], 2.6, K.wood.base, true); line(c, [[x + bw / 2 + 3, y + 1], [x + bw / 2 + 4, y - bh - 3]], 2.6, K.wood.base, true);
 }
 
 /* ---------------- Viking age Scandinavia: things found in nature ---------------- */
@@ -2775,7 +2772,7 @@ var PROPS = {
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
   willow: { b: [-120, -210, 150, 22], f: function (c, K, s) { willow(c, K, 0, 0, 190, s); } },
-  birch: { b: [-70, -200, 90, 16], f: function (c, K, s) { birch(c, K, 0, 0, 150, s); } },
+  birch: { b: [-92, -270, 118, 20], f: function (c, K, s) { birch(c, K, 0, 0, 205, s); } },
   cypress: { b: [-50, -230, 80, 14], f: function (c, K, s) { cypress(c, K, 0, 0, 170, s); } },
   ancient: { b: [-190, -330, 220, 36], f: function (c, K, s) { ancient(c, K, 0, 0, 260, s); } },
   blossom: { b: [-100, -200, 130, 18], f: function (c, K, s) { blossomTree(c, K, 0, 0, 150, s); } },
@@ -2795,6 +2792,15 @@ var PROPS = {
   shipwright: { b: [-42, -44, 44, 4], f: function (c, K, s) { shipwrightObj(c, K, 0, 0, s); } },
   chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },
 };
+// Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
+// drawn: measured beside the hero they were all two to three times too big.
+var SIZE = { workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+Object.keys(SIZE).forEach(function (n) {
+  var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
+  p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
+  p.b = [Math.floor(p.b[0] * k) - 3, Math.floor(p.b[1] * k) - 3, Math.ceil(p.b[2] * k) + 3, Math.ceil(p.b[3] * k) + 3];
+});
+
 function bakeProp(name, seed, opts) {
   opts = opts || {};
   var def = PROPS[name], b = def.b, w = b[2] - b[0], h = b[3] - b[1], sv = null;
@@ -3110,6 +3116,7 @@ function releaseCharge() {
 }
 function stepData(a) {
   var s0 = stepData0(a);
+  if (P.mode === 'gather') return { wu: s0.wu * 3, ac: s0.ac * 1.6, rec: s0.rec * 3.2, arc: s0.arc, reach: s0.reach, blade: s0.blade, dmg: s0.dmg, kb: s0.kb, lunge: 0, stag: s0.stag };   // chopping and mining are slow, deliberate swings
   if (bareHanded() && !a.bash && !a.spin) return { wu: s0.wu, ac: s0.ac, rec: s0.rec, arc: s0.arc * 0.6, reach: s0.reach * 0.66, blade: 7, dmg: s0.dmg, kb: s0.kb * 0.5, lunge: s0.lunge * 0.7, stag: s0.stag * 0.5 };   // a punch: short, quick, light
   return s0;
 }
@@ -3170,7 +3177,7 @@ function updatePlayer(dt) {
     if (p.venom.t <= 0) p.venom = null;
   }
   var bowOut = p.mode === 'fight' && p.weapon === 'ranged';
-  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bowOut && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
+  if ((IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
