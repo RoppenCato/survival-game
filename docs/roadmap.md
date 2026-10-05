@@ -4,6 +4,135 @@ Written 2026-10-05 from `CLAUDE.md` (the decided design) and `docs/idea-bank.md`
 build order. When a step is done, mark it here and move anything it decided into `CLAUDE.md`. Questions for
 Robin are at the end; where a step depends on an answer, it says so.
 
+---
+
+# Goal 1: leave the island (Robin, 2026-10-05)
+
+The first big goal. The player lands with nothing, and leaves the island on a raft. Everything below is what it
+takes to get there, in the order it has to be played, with what already exists, what is still to build, and how
+to test each step. The runes and the Book of Beasts stay hidden until this is done.
+
+**The chain, backwards from the raft:** to leave you need a **raft**. To build a raft you need the raft recipe
+(taught by Brokk, the only survivor of the raided village) and a **shipwright's bench** on the shore. To build the
+shipwright's bench your base must be **comfortable** enough: a house with a roof, a workbench, a fireplace and a
+rug inside it. To build those you need to **gather** wood, stone, fiber and hide on the island, which needs
+**tools** of stone and wood, **leather armour** so the beasts do not stop you, and **food** that raises health
+and stamina.
+
+**The name:** Robin asked what to call the boat-building table. A Viking-age boat was built on the shore at a
+*naust* (a boathouse) by a shipwright. For a raft, a boathouse is too much; the suggestion is **shipwright's
+bench** (a trestle with a shaped keel-piece on it, built on sand), and the **naust** comes later as the bigger
+building for real boats. Alternatives: *boatyard*, *slipway*. Not decided.
+
+## The workflow, step by step
+
+Each step says **Have** (what exists today), **Build** (what is missing), **Test** (how to know it is done). The
+order is the order a new player meets them; build them in the same order so the game is playable after each.
+
+### 1. Land with nothing, and gather by hand
+- **Have:** the island, the camp with its hearth and jetty, branches and stones lying round the camp, pickup by
+  walking over, the bag with the belt row, the hint line, saving.
+- **Build:** nothing new. Play the first minute as a new player and fix snags: a hint that points at the
+  branches, the bag opening the first time something is picked up (once), the chart marking the camp.
+- **Test:** a fresh start reaches 9 wood and 5 stone in under a minute without reading anything but the hints.
+
+### 2. First tools of stone and wood
+- **Have:** hand recipes on the B board's Crafting tab: flint axe, flint knife, flint pick, wooden sword, wooden
+  bow, 5 arrows; recipes show as "?" until every kind they need has been picked up; right click in the bag equips;
+  tools on the gather hotbar, weapons on the fight hotbar.
+- **Build:** rename to what they are (a **stick sword**: a sharpened branch; a **stick bow**), and a **wooden
+  club** as the very first weapon (2 wood, by hand) so the first boar can be met before flint. Make the Crafting
+  tab the one that opens when B is first pressed with nothing built. One hint per tool, in order: axe, knife,
+  pick, then club or bow.
+- **Test:** from step 1's materials the axe and knife are made and in hand within two minutes; a tree and a bush
+  go down with them; the pick cracks a rock.
+
+### 3. Gathering: wood, stone, fiber, hide, berries, meat
+- **Have:** trees lean and fall, rocks crack and burst, bushes fade; wood, stone, fiber, berries drop; boars and
+  the other animals drop meat and hide; chests, crates and barrels break.
+- **Build:** balance the numbers so the chain below is reachable in one game day: hits per tree and rock, drop
+  counts, the pickup radius, how far wood scatters. The deer as the safe source of hide (it runs, it does not
+  fight): more deer near camp. Hide from boars already. A **drying rack** that turns hide into **leather**
+  (put hide on it, come back after a while), so leather is a thing you make, not a thing you find.
+- **Test:** a player with axe, knife and pick gathers 40 wood, 20 stone, 15 fiber and 6 hide in one game day
+  without dying, and has leather by the next morning.
+
+### 4. Food that raises health and stamina
+- **Have:** berries heal; roast meat and stew are cooked at any hearth on the Hearth tab; a meal raises top
+  health and gives health a second for minutes; the meal icon with its timer by the chart; no hunger.
+- **Build:** stamina on food (Robin): every meal sets a **top stamina** and a **stamina return** as it sets top
+  health, so better food means longer sprints and more swings, never less (`FOOD` gets `stam` and `stamRegen`;
+  the engine reads them through `mods`). Two or three more dishes so food has a ladder: **roast berries**
+  (fire, berries only: small), **roast meat** (health), **stew** (health and stamina), **fish** later with the
+  raft. Eating from the belt with its number key in any mode. Food shows its numbers on the board.
+- **Test:** eat each dish and read the health and stamina bars grow; sprint longer on stew than on nothing.
+
+### 5. Leather armour, and the beasts kept at bay
+- **Have:** leather helmet, tunic, trousers, boots and cloak at the workbench (hide and fiber); gear turns a share
+  of blows aside, up to 60%; the character panel's five clothing slots; the wooden shield.
+- **Build:** recipes take **leather** (from the rack, step 3) instead of raw hide; the panel shows the armour
+  total; the first set is cheap enough to wear by day two. Balance the animals against a player in leather with
+  a stick sword: the boar is a fair fight, the wolf pair is hard, the bear and the moose are to be avoided (the
+  book's "far from camp" placement already does this).
+- **Test:** in full leather with a stick sword a boar dies with the player above half health; a wolf pair is
+  survivable with the shield; the bear kills a careless player.
+
+### 6. The house: a roof, a workbench, a fireplace, a rug
+- **Have:** walls in five materials, floors, door, window, fences and gates, roofs per room, the workbench (needs
+  a roof), the hearth as a piece, the bed, sleep and the Rested buff, the build cursor with its reasons.
+- **Build:** the **rug** piece (leather and fiber; a woven mat on the floor, drawn as a prop), and **comfort**: a
+  number for a roofed room, counted from what stands in it: roof 1, hearth 1, workbench 1, bed 1, rug 1, chairs
+  and tables and a chest 1 each up to a cap. Shown on the dial by the chart when you are inside ("Comfort 4") and
+  as the Rested buff's length (comfort × 2 minutes). Comfort is what the shipwright's bench asks for (step 8).
+  A hint sequence: wall, door, roof, hearth inside, workbench, rug.
+- **Test:** a 3 by 3 hut with door, roof, hearth, workbench, bed and rug reads Comfort 6; sleeping in it gives
+  Rested for 12 minutes; the same hut without a roof reads nothing.
+
+### 7. The village and the survivor
+- **Have:** Hildir's steading, broken, inland: the burnt hall, the whole hut, the stone house, the palisade,
+  loot crates that break, Brokk by the well with five lines.
+- **Build:** Brokk's story told straight: the village was raided, some were taken as slaves or went with the
+  Vikings, some died, he is the only one left. His lines gate on what the player has done: first meeting (the
+  tale), after the player has a roofed house ("you build well; come back when your hall is warm"), after comfort
+  reaches the bar ("I will teach you the raft"), after the raft ("they sailed east"). A chart marker for the
+  village once found. A small reason to go there before the raft: the crates (there), and the well as the only
+  water (not yet a system; skip for now).
+- **Test:** a new player finds the village by walking inland within the first day (the hint "smoke to the
+  north" or a chart marker), and Brokk's first line tells the whole story in one read.
+
+### 8. The shipwright's bench
+- **Have:** the workbench's "needs a roof" rule (`benchRoofed`) as the pattern for a placing rule; the jetty.
+- **Build:** the **shipwright's bench** piece: a trestle with a keel-piece, buildable only on sand within a few
+  tiles of the water, costing wood and stone, and only when the player's base has **comfort 4 or more** (the
+  cursor says "Your home needs a roof, a fire, a workbench and a rug first" until it does). It opens a
+  **Shipwright** tab on the B board when near, like the workbench's. Brokk's raft recipe appears there once he
+  has taught it (step 7); until then the tab says "Someone must teach you".
+- **Test:** the bench cannot be placed inland or with comfort 3; with comfort 4 it can; its tab shows the raft
+  recipe only after talking to Brokk with comfort 4.
+
+### 9. The raft, and leaving
+- **Have:** the ships and sailing in the Sea Editor (hull, heading, speed, boarding with E); nothing in the game.
+- **Build:** the **raft**: logs lashed with rope (20 wood, 10 fiber, 2 leather), crafted at the shipwright's
+  bench and placed in the water by the bench; E boards, WASD paddles it slowly, E steps ashore on any land;
+  the Sea Editor's hull code reused with a raft hull. The world gets a **second island** within raft range
+  (count 2, a short gap). Dying at sea drifts the raft to the shore of the island you last slept on (decided).
+  The moment you step onto the second island is the goal reached: a line on screen ("You have left the
+  island"), the day counted, and the Book and the runes can come back after this.
+- **Test:** a full play-through from nothing to the second island in about two game days (an hour of play),
+  with each hint arriving when it is needed.
+
+## The order of work
+
+1. Step 4's stamina on food and step 3's drying rack and leather (small, and everything after wears leather).
+2. Step 2's club, stick names and the first-press Crafting tab, with the step 1 snags, played as a new player.
+3. Step 6's rug and comfort, with the hint sequence.
+4. Step 7's Brokk lines and the village marker.
+5. Step 8's shipwright's bench.
+6. Step 9's raft, the second island and the goal line.
+7. Step 5's balance pass last, once the whole chain can be played, because every earlier step changes it.
+
+---
+
 The rule behind the order: every step should make the game more like the game it is meant to be (raiding,
 exploring, expanding, in a world where the compass means something), and each step should be playable and
 tested before the next starts. Big systems (boats, villages, the clan, the year) come after the island is alive,

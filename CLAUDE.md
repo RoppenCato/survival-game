@@ -160,8 +160,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/beasts.md`: the cards and rules for Robin's creatures from Norse myth and folklore (troll, bysen,
   shapeshifter, huldra, tomtar, näcken, draugr, mara, jötunn, valkyrie), and the ore-at-night mining idea. Robin's
   lore and mechanics are marked; the rest are suggestions, not decided.
-- `docs/roadmap.md`: the build order (steps 1 to 10), what to test after each, and open questions for Robin.
-  Update it when a step is done.
+- `docs/roadmap.md`: **Goal 1, "leave the island"** (Robin, 2026-10-05) is at the top: the chain from landing
+  with nothing to a raft (tools, gathering, food with stamina, leather, a comfortable house with a rug, Brokk
+  the survivor who teaches the raft, the shipwright's bench on the shore, the second island), nine steps each
+  with Have / Build / Test, and the order of work. Below it the older build order (steps 1 to 10) and open
+  questions. Update it when a step is done.
 - `dist/`: built single-file pages, committed to git.
 
 ## Things to know before changing code
