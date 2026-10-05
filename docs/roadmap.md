@@ -198,7 +198,7 @@ The quiver is built (the character panel); step 3 adds making arrows and new arr
 - Dying at sea (decided): forgiving. The boat drifts to the shore of the island where you last slept, damaged, and
   needs half its materials to repair. You wake in your bed.
 
-## Step 5: the first väsen
+## Step 5: the first väsen (the mountain troll built 2026-10-05: night, fire, dawn stone, ore, copper; still to do: caves, the torch, smelting copper into tools, the other väsen)
 
 - A troll that lives under a hill on the second island, comes out at night, and turns to stone at dawn. Its card
   says so, and that is the way to beat it: lure it into the open and fight until the sun rises, or run.

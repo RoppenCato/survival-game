@@ -7,7 +7,7 @@ global.__mk = (w, h) => createCanvas(w, h);
 global.GameArt = require('../src/art.js'); global.Items = require('../src/items.js');
 const lib = GameArt.lib, Combat = require('../src/combat.js');
 const ARMOUR = { none: 0, leather: Items.stats(Items.make('helmet', 'leather')).armor + Items.stats(Items.make('tunic', 'leather')).armor + Items.stats(Items.make('trousers', 'leather')).armor + Items.stats(Items.make('boots', 'leather')).armor + Items.stats(Items.make('cloak', 'leather')).armor };
-const DMG = { aggro: { boar: 14, wolf: 10, snake: 6, bear: 30, moose: 22 }, n: { boar: 1, wolf: 2, snake: 1, bear: 1, moose: 1 }, r: { boar: 9, wolf: 8, snake: 5, bear: 12, moose: 13 } };
+const DMG = { aggro: { boar: 14, wolf: 10, snake: 6, bear: 30, moose: 22, troll: 28 }, n: { boar: 1, wolf: 2, snake: 1, bear: 1, moose: 1, troll: 1 }, r: { boar: 9, wolf: 8, snake: 5, bear: 12, moose: 13, troll: 9 } };
 function fight(kind, weapon, armour, trials) {
   let kills = 0, deaths = 0, tSum = 0, lossSum = 0;
   for (let t = 0; t < trials; t++) {
@@ -31,7 +31,7 @@ function fight(kind, weapon, armour, trials) {
   return { kills, deaths, trials, secs: kills ? (tSum / kills).toFixed(1) : '-', lost: kills ? Math.round(lossSum / kills) : '-' };
 }
 console.log('leather set armour =', ARMOUR.leather.toFixed(2), '(share of a blow turned aside)');
-['boar', 'wolf', 'snake', 'moose', 'bear'].forEach((k) => {
+['boar', 'wolf', 'snake', 'moose', 'bear', 'troll'].forEach((k) => {
   [['wood', 'none'], ['wood', 'leather'], ['flint', 'leather']].forEach(([wp, ar]) => {
     const r = fight(k, wp, ar, 12);
     console.log((k + ' (' + DMG.n[k] + ')').padEnd(10), (wp === 'wood' ? 'stick sword' : 'flint sword').padEnd(12), ar.padEnd(8), 'won', String(r.kills).padStart(2) + '/' + r.trials, ' died', String(r.deaths).padStart(2), ' took', String(r.secs).padStart(5), 's, lost', String(r.lost).padStart(3), 'hp');

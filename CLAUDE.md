@@ -455,6 +455,18 @@ The hero has two modes, switched with **Q**, each with its own six-slot hotbar a
   The arena passes a heading that eases toward the true facing (`creatureTurn`). The hero uses the side view only
   when facing nearly straight left or right; otherwise the front or back view turned by `an.turn` (-1..1).
   `Combat.api.facings8` (on by default) switches both. `node tools/visual/facings.js` renders them all.
+- **The mountain troll (2026-10-05, from `docs/beasts.md`):** creature plan 7, drawn by `trollD` in `src/art.js`
+  (hunched, hairy, long-armed, about twice the hero's height; arms swing, rise over its head in the windup, slam down;
+  `ANIMALS.troll`, and `trollStone` for its grey skin). 40 health, a slow heavy `arc` attack (28 damage, windup 1.1 s,
+  reach 36), turns slowly. In the game (`trollTick`): **one troll each night** (light above 0.7), on the dark ground
+  at least 600 from camp and 420 from you; a hearth or brazier within 105 units makes it **shield its eyes** (held
+  still 4 s, then it ignores light for 14 s); at dawn (or if you sleep through the night) it **turns to stone**
+  (grey skin, "TROLL STONE"), and 6 s later **cracks into a rock formation** that gives 6 stone and 4 copper when
+  mined. Killed, it drops 3 copper and 3 stone. It has a card in the Book (hidden for now). **Ore:** about a third of
+  the rocks hold copper (`markOre`, from the island seed); mining one gives copper, a sure 2 at night and a one-in-six
+  1 by day; ore rocks **glow a faint copper** at night (drawn after the night overlay in `drawNight`). Copper ore is
+  a new kind in the bag (the first metal: smelting and copper tools are not built). With the tapping bot a troll
+  costs 44 to 57 health in leather and kills an unarmoured hero 3 times in 12.
 - **Fight balance (2026-10-05, `tests/balance.js`):** armour turns a share of *every* blow aside (it used to count only
   while blocking). An animal that has begun its attack (windup or lunge) finishes it unless hit by a heavy blow (third
   combo hit, charged, or a parry); a light hit is a 0.14 s flinch and does not reset its attack cooldown, so

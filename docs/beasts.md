@@ -13,7 +13,7 @@ sign, drops. Under it, **In the game** is the mechanics, and **Open** what still
 
 ---
 
-## Mountain troll (Bergtroll)
+## Mountain troll (Bergtroll)  (BUILT 2026-10-05: night-only, fire-shy, stones at dawn into an ore rock, copper, glowing ore; no caves or torch yet; see CLAUDE.md)
 
 **Found:** mountains and the hills above the tree line; caves anywhere. Only at night, or in the dark of a cave.
 
