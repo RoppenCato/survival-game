@@ -29,14 +29,14 @@ building for real boats. Alternatives: *boatyard*, *slipway*. Not decided.
 Each step says **Have** (what exists today), **Build** (what is missing), **Test** (how to know it is done). The
 order is the order a new player meets them; build them in the same order so the game is playable after each.
 
-### 1. Land with nothing, and gather by hand
+### 1. Land with nothing, and gather by hand (built 2026-10-05, tested from a fresh start)
 - **Have:** the island, the camp with its hearth and jetty, branches and stones lying round the camp, pickup by
   walking over, the bag with the belt row, the hint line, saving.
 - **Build:** nothing new. Play the first minute as a new player and fix snags: a hint that points at the
   branches, the bag opening the first time something is picked up (once), the chart marking the camp.
 - **Test:** a fresh start reaches 9 wood and 5 stone in under a minute without reading anything but the hints.
 
-### 2. First tools of stone and wood
+### 2. First tools of stone and wood (built 2026-10-05; the stick sword at 2 wood is the first weapon, so there is no separate club)
 - **Have:** hand recipes on the B board's Crafting tab: flint axe, flint knife, flint pick, wooden sword, wooden
   bow, 5 arrows; recipes show as "?" until every kind they need has been picked up; right click in the bag equips;
   tools on the gather hotbar, weapons on the fight hotbar.
@@ -47,7 +47,7 @@ order is the order a new player meets them; build them in the same order so the 
 - **Test:** from step 1's materials the axe and knife are made and in hand within two minutes; a tree and a bush
   go down with them; the pick cracks a rock.
 
-### 3. Gathering: wood, stone, fiber, hide, berries, meat
+### 3. Gathering: wood, stone, fiber, hide, berries, meat (built 2026-10-05: drop counts raised, deer and a boar near camp, drying rack and leather; the 40/20/15/6 day-of-gathering test is still to be played by hand)
 - **Have:** trees lean and fall, rocks crack and burst, bushes fade; wood, stone, fiber, berries drop; boars and
   the other animals drop meat and hide; chests, crates and barrels break.
 - **Build:** balance the numbers so the chain below is reachable in one game day: hits per tree and rock, drop

@@ -268,8 +268,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   (`campScatter`). Recipes (`RECIPES2`) are made by hand anywhere or at a **workbench**, a buildable piece that
   only works with a roof over it (`benchRoofed`: the room flood fill). A recipe shows as "?" until every kind of
   thing it needs has been picked up (`seen`, saved); picking up a new kind toasts that new things can be made.
-  Hand: flint axe, knife, pick, wooden sword, wooden bow, 5 arrows. Bench: flint sword, 15 arrows, wooden shield,
-  leather helmet, tunic, trousers, boots, cloak (boar **hide** drops from boars, 70%). Gear is worn in the
+  Hand: flint axe, knife, pick, **stick sword** (2 wood), **stick bow** (3 wood, 2 fiber), 5 arrows. Bench: flint
+  sword, 15 arrows, wooden shield, leather helmet, tunic, trousers, boots, cloak, all made of **leather** (nine
+  for the set). A tool made into an empty slot goes straight into your hand. Gear is worn in the
   clothing slots and turns a share of blows aside (`Items.stats().armor`, `Combat.api.armor`), up to 60%.
   The **B board** has tabs: Building, Crafting, Workbench (when near one) and Hearth (when near a fire; E opens
   it there). It opens with build mode and closes when build mode is left; picking a building piece enters build
@@ -312,8 +313,19 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   `FOLK`) stands by the well, turns to watch the hero, and E talks to him: five lines (`NPC_LINES`) about the
   steading, Ragnar Ironside's crew who burnt it and sailed east, how a house is built, and the crates. He does not
   walk, trade or give tasks. Old saves get the cleared site and Brokk but no pieces.
-- **The first minute:** a hint line at the top centre (`HINTS`), one at a time, each gone when its condition is
-  met: pick up the branches, make an axe and a knife, take them up, cut and chop, build a hut and a workbench.
+- **The first minute (tested fresh 2026-10-05):** you land on nothing; 12 branches and 9 stones lie on land
+  round the camp, never within 82 units of where you land (`campScatter`), and three lone trees (oak, birch,
+  pine) stand 170 to 300 from camp (`campTrees`) so the first axe has something to fell. Things lying within
+  56 units slide toward you if the bag has room. A hint line at the top centre (`HINTS`, short enough to clear
+  the health bars, some with live counts), one at a time, each gone when its condition is met: walk over
+  branches and stones (4 and 3), **B opens on Crafting until you hold a tool** (axe and knife), Q for gather
+  mode, a pickaxe and a stick sword, then the hut, workbench and bed. The chart marks the camp's fire, and the
+  steading once you have come within 380 of it (`seen.village`). Drops per thing (`TREE_WOOD` oak 6, pine 5,
+  birch 4; `ROCK_STONE` rock 3, formation 6; bushes 2 fiber, berry bushes 3 berries and 1 fiber): a day's work
+  reaches 40 wood, 20 stone and 15 fiber. Deer (2 hide) and a boar (1 hide) live within 800 to 900 of camp
+  (`nearN`, `nearMax` in `ANIMALS`). **The drying rack** (`dryingRack` pieces, the village's included): E hangs
+  hide on it (up to 4), 90 seconds later E collects leather (`rackUse`, `rack.hang` saved with the building;
+  wrecking returns the hide); `leather` is a kind of its own in the bag.
 - **Sound:** on in the game (`S.sound = true`); the Combat Arena's synthesized set copied into the page, plus
   chop, clink, fall, pick, craft and build. The engine calls `sfx('chop'|'clink')` on tool hits.
 - **Day and night (step 2, 2026-10-05):** `day = { t, n }`, `t` in seconds over a 30 minute cycle (`DAY_LEN`

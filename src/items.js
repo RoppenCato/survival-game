@@ -44,10 +44,16 @@ function make(kind, mat, o) {
   if (!it.desc) it.desc = desc(it);
   return it;
 }
-function name(it) { return MATS[it.mat].name + ' ' + KINDS[it.kind].name; }
+function name(it) {
+  if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
+  if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
+  return MATS[it.mat].name + ' ' + KINDS[it.kind].name;
+}
 function desc(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], s = K.desc, bits = [];
-  if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
+  if (it.mat === 'wood' && it.kind === 'sword') bits.push('A branch cut to a point and hardened in the fire. Good enough for a boar.');
+  else if (it.mat === 'wood' && it.kind === 'bow') bits.push('A bent stick and a twist of fiber. It will do until something better is found.');
+  else if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');
   else if (it.mat === 'copper') bits.push('Soft red copper, the first metal. It bends before it breaks.');
   else if (it.mat === 'bronze') bits.push('Bronze, the metal of the old heroes. Heavy and sure.');
