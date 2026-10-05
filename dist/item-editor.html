@@ -3366,10 +3366,10 @@ function updatePlayer(dt) {
   if (IN.pressed.KeyQ) { if (p.mode === 'build') { p.mode = 'fight'; p.wreck = false; sfx('tele'); } else switchMode(); }
   bow = p.mode === 'fight' && p.weapon === 'ranged';
   if (IN.pressed.KeyF) {
-    if (p.mode === 'fight') { p.weapon = p.weapon === 'melee' ? 'ranged' : 'melee'; a.ph = 'none'; a.since = 9; p.atkBuf = 0; p.holdT = 0; bow = p.weapon === 'ranged'; sfx('tele'); }
+    if (p.mode === 'fight' && !api.barSlots) { p.weapon = p.weapon === 'melee' ? 'ranged' : 'melee'; a.ph = 'none'; a.since = 9; p.atkBuf = 0; p.holdT = 0; bow = p.weapon === 'ranged'; sfx('tele'); }
     else if (p.mode === 'build') p.wreck = !p.wreck;      // F in build mode: the red crossed box that takes pieces down
   }
-  for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) { if (p.mode === 'gather' && i <= TOOLS.length) p.tool = i - 1; else if (p.mode === 'fight') p.sel = i - 1; if (api.beltUse && api.beltSlots && api.beltSlots[i - 1] && (p.mode !== 'gather' || i > TOOLS.length)) api.beltUse(i - 1); }   // a belt thing on a free slot is used in any mode
+  for (i = 1; i <= 6; i++) if (IN.pressed['Digit' + i]) { if (api.barSelect && (p.mode === 'fight' || p.mode === 'gather')) { api.barSelect(i - 1); continue; } if (p.mode === 'gather' && i <= TOOLS.length) p.tool = i - 1; else if (p.mode === 'fight') p.sel = i - 1; if (api.beltUse && api.beltSlots && api.beltSlots[i - 1] && (p.mode !== 'gather' || i > TOOLS.length)) api.beltUse(i - 1); }   // a belt thing on a free slot is used in any mode
   if (IN.pressed.ControlLeft || IN.pressed.ControlRight) cycleLock();
 
   var held = (IN.lmb || IN.keys.KeyJ) && p.mode === 'fight' && !bow;
@@ -4044,7 +4044,8 @@ function heroPose(dir) {
   var p = P, a = p.atk, bp = bodyPose(), sp = swordPose(dir), pose = { lx: bp.lx, ly: bp.ly + heroLift() };
   var side = (dir === 'left' || dir === 'right');
   var drawn = a.ph !== 'none';
-  pose.sheath = !drawn;
+  var carried = !drawn && !!itemOf('held');          // a thing carried at rest: the arm hangs to its grip
+  pose.sheath = !drawn && !api.items;
   var swordHand = [sp.hx + bp.lx, sp.hy + bp.ly];
   if (p.fireT > 0) swordHand = [Math.cos(p.fireAng) * 10 + bp.lx, -13 + Math.sin(p.fireAng) * 10 * K + bp.ly];
   if (p.guard && !S.shield) {
@@ -4053,7 +4054,7 @@ function heroPose(dir) {
   } else {
     var sh = shieldPose(), shieldHand = [sh[0] + bp.lx, sh[1] + bp.ly];
     if (shieldBehind() && !side) shieldHand = [guardSide() * 9 + bp.lx, -16 + bp.ly];
-    var useSword = drawn || p.fireT > 0;
+    var useSword = drawn || p.fireT > 0 || carried;
     if (side) {
       if (useSword) pose.near = swordHand;
       if (p.guard) { if (useSword) pose.far = shieldHand; else pose.near = shieldHand; }
@@ -4199,7 +4200,7 @@ function drawHeroWeapon(c, front) {
     c.lineCap = 'round';
     var heldIt = itemOf('held');
     var rest = a.ph === 'none', restLen = heldIt && rest ? Math.min(Items.KINDS[heldIt.kind].len * heldIt.size, heldIt.kind === 'axe' || heldIt.kind === 'pick' ? 11 : 15) : null;   // carried, a thing hangs short beside the leg
-    if (heldIt) { Items.draw(c, heldIt, hx, hy, ca, sa, rest ? restLen : (heldIt.kind === 'sword' ? len * heldIt.size : null), p.mode === 'gather' && a.ph !== 'none'); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
+    if (heldIt) { if (rest) { c.save(); c.translate(hx, hy); c.scale(0.85, 0.85); c.translate(-hx, -hy); } Items.draw(c, heldIt, hx, hy, ca, sa, rest ? restLen : (heldIt.kind === 'sword' ? len * heldIt.size : null), p.mode === 'gather' && a.ph !== 'none'); if (rest) c.restore(); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (p.mode === 'gather') { if (!api.items) drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (api.items) { if (!rest) { var fx2 = hx + ca * 4, fy2 = hy + sa * 4; c.strokeStyle = '#3a2a36'; c.lineWidth = 6; c.beginPath(); c.moveTo(hx, hy); c.lineTo(fx2, fy2); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3.6; c.stroke(); lib.ell(c, fx2, fy2, 3.4, 3.2, HC.skin, 1.5); } }   // no sword: a fist (at rest the figure's own hands hang)
     else {
@@ -4465,19 +4466,23 @@ function roundIcon(c, id, x, y, r, on, dim) {
 function drawHotbar(c) {
   var sz = 11, gap = 2, x0 = Math.round((SW - (6 * sz + 5 * gap)) / 2), y0 = SH - sz - 5, mode = P.mode, gather = mode === 'gather', build = mode === 'build', i, k = 0.55;
   var slots = build ? (api.buildSlots || []) : [];
+  var bar = api.barSlots && (mode === 'fight' || gather) ? api.barSlots(mode) : null;   // a page's own bar: six things, one in hand
   c.save();
+  if (!bar) {
   // sword above left, bow below right, like the two rings of a % sign
   roundIcon(c, 'sword', x0 - 23, y0 - 1, 6.5, mode === 'fight' && P.weapon === 'melee', mode !== 'fight');
   roundIcon(c, 'bow', x0 - 10, y0 + 9, 6.5, mode === 'fight' && P.weapon === 'ranged', mode !== 'fight');
   c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 - 11, y0 - 2); c.lineTo(x0 - 22, y0 + 10); c.stroke();
   c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText('F', x0 - 16.5, y0 + 14.5);
-  if (api.quiver != null) { c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36'; c.strokeText(String(api.quiver), x0 - 3, y0 + 13); c.fillStyle = api.quiver > 0 ? '#fff' : '#ff8a7a'; c.fillText(String(api.quiver), x0 - 3, y0 + 13); }
+  }
+  if (api.quiver != null && (!bar || (mode === 'fight' && P.weapon === 'ranged'))) { c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36'; c.strokeText(String(api.quiver), x0 - 3, y0 + 13); c.fillStyle = api.quiver > 0 ? '#fff' : '#ff8a7a'; c.fillText(String(api.quiver), x0 - 3, y0 + 13); }
   for (i = 0; i < 6; i++) {
     var x = x0 + i * (sz + gap), tool = gather && i < TOOLS.length ? TOOLS[i] : null, cx = x + sz / 2, cy = y0 + sz / 2;
-    slotBox(c, x, y0, (gather && i === P.tool) || (mode === 'fight' && i === (P.sel || 0)), sz);
+    slotBox(c, x, y0, bar ? i === bar.hand : ((gather && i === P.tool) || (mode === 'fight' && i === (P.sel || 0))), sz);
     c.save(); c.translate(cx, cy); c.scale(k, k);
     var skl = mode === 'fight' && api.skills ? api.skills[i] : null;
-    if (tool) { var ti2 = itemOf('tool', i); if (ti2) Items.icon(c, ti2, 16); else { if (api.items) c.globalAlpha = 0.3; slotIcon(c, tool.id, 0, 0); c.globalAlpha = 1; } }
+    if (bar) { var bq = bar.slots[i]; if (bq) { bq.draw(c); if (bq.n > 1) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36'; c.strokeText(String(bq.n), 9.5, 9.5); c.fillStyle = '#fff'; c.fillText(String(bq.n), 9.5, 9.5); } } }
+    else if (tool) { var ti2 = itemOf('tool', i); if (ti2) Items.icon(c, ti2, 16); else { if (api.items) c.globalAlpha = 0.3; slotIcon(c, tool.id, 0, 0); c.globalAlpha = 1; } }
     else if (skl) { skl.draw(c); if (skl.cd > 0) { c.fillStyle = 'rgba(20,16,30,0.7)'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 14, -Math.PI / 2, -Math.PI / 2 + skl.cd * 6.283); c.closePath(); c.fill(); } }
     else if (api.beltSlots && api.beltSlots[i] && (mode !== 'gather' || i >= TOOLS.length)) {
       var bs = api.beltSlots[i]; bs.draw(c);

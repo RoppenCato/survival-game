@@ -449,9 +449,10 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Panels:** the character panel hero always faces south; the bag is aligned right with the same margin (8) as the
   character panel; Sort is a small button on top of the bag (three small rectangles); tooltips draw above boards;
   Brokk's bubble draws on top of roofs.
-- **Carrying things (2026-10-05):** at rest a tool or sword hangs down beside the leg from the figure's own hanging hand
-  (`swordPose` rest branch in `src/combat.js`; axes and picks drawn short, 11 units, swords 15), in every direction; no
-  extra arm is drawn. `node tools/visual/poses.js` renders the hero carrying each thing, standing and walking, in four
+- **Carrying things (2026-10-05):** at rest a tool or sword hangs down beside the leg, **held**: `heroPose` sends the
+  figure's arm on that side to the grip (`carried`), and the thing is drawn there at 0.85 (`swordPose` rest branch in
+  `src/combat.js`; axes and picks 11 units long, swords 15), in every direction. The sheath is not drawn when a page holds
+  items. `node tools/visual/poses.js` renders the hero carrying each thing, standing and walking, in four
   directions, and `chop.js` the tool strokes. The **wrong tool** note shows once, then not again for five minutes
   (`wrongToolAt`); every weak blow's number is dim with a crack through it (`num(..., weak)`).
 - **Leather (2026-10-05):** animals drop leather directly (`drops` in `ANIMALS`); curing is gone (`rackUsable` returns
@@ -467,12 +468,23 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 
 ## Controls and modes (decided 2026-10-04)
 
-The hero has two modes, switched with **Q**, each with its own six-slot hotbar at the bottom middle of the screen.
-- **Fight mode:** two weapons, a sword (melee) and a bow (ranged), swapped with **F**; the attack button uses
-  whichever is out. Slots 1 to 6 are for skills and spells, which fill in later. The two weapons show as icons left
-  of the slots.
-- **Gather mode:** tools on 1 to 6: axe, pickaxe, knife so far (trees, stone, bushes). The right tool does full
-  damage and any other does half. Tools do not hurt enemies. Tools are chosen by hand: no auto-pick, no highlight.
+The hero has two modes, switched with **Q**, each with its own six-slot bar at the bottom middle of the screen
+(**rebuilt 2026-10-05**; Robin found the fixed sword-and-bow with F awkward).
+- **The bars are the top two rows of the bag:** row one is the Fight bar, row two the Gather bar, each numbered 1 to 6
+  and marked with a tiny sword or axe. Anything can be dragged into them. A number key takes a weapon or tool in that
+  slot **in hand** (`hand = { fight, gather }`, the gold slot; saved), eats food, or lights a torch; an empty slot means
+  empty hands (fists in fight mode, nothing to swing in gather mode). The wheel steps the hand. The engine reads the hand
+  through `Combat.api.items` (`held`, `tool(i)`, `weapon(kind)`), `api.barSlots(mode)` draws the bar and
+  `api.barSelect(i)` takes the number keys; `handSync()` sets `P.tool` and `P.weapon` (a bow in hand is ranged) each
+  frame. **F no longer swaps weapons** (it still toggles wrecking in build mode). A crafted weapon or tool goes to the
+  first free slot of its bar (`barPut`), as does right-clicking one in the bag (swapping with the hand slot when the bar
+  is full); loot fills the bag rows first (`addItem`, `addThing` start at `BAG0`). Old saves (24 slots, weapons in
+  `equip`) are remapped on load.
+- **Fight mode:** whatever is in hand from the Fight bar: a sword hits, a bow shoots from the quiver, fists punch.
+- **Gather mode:** tools from the Gather bar. The right tool does full damage and any other half. Tools do not hurt
+  enemies. No auto-pick, no highlight.
+- **Worn gear** (`equip`): helmet, cloak, tunic, trousers, boots on the character panel's left, shield and amulet on its
+  right. The shield shows only when used (blocking); Robin likes that as it is.
 - **Build mode:** **B** enters it (no hammer item). In it **F** turns the cursor into a red crossed box that
   destroys pieces. Built in the game (see "The game").
 - **Tab:** inventory. **Ctrl:** target the nearest enemy, then the next nearest on each press, then let go.
