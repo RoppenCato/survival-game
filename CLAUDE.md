@@ -311,8 +311,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   side that pulls when under way (`Yard.drawVessel`, `boatDims`), and the near side of the hull drawn over the hero's feet
   so he stands in it (`Yard.drawVesselFront`). The halo is gone: a thin line of foam hugs the hull and a **wake** of
   ripples trails from the stern when moving (`drawWater`, from the vessel's `vx`, `vy`). A mast and sail come later.
-  **Where you sit (Robin):** alone, the hero sits aft (`seat` at -0.45 of the half length) with a **paddle** over the right
-  side that strokes when the boat moves; the oars are drawn only when there are rowers (`v.crew`, none yet), and then
+  **Where you sit (Robin):** alone, the hero sits aft (`seat` at -0.45 of the half length), **seated** behind the gunwale
+  (the near hull covers him from the hips down) with a **paddle** in his hands going down the near side into the water,
+  stroking when the boat moves (drawn in `drawVesselFront`); there is no steering oar; the oars are drawn only when there are rowers (`v.crew`, none yet), and then
   he stands halfway from the middle to the bow. The near hull is drawn only below his feet (`drawVesselFront` takes
   the hero's y) and `heroLift` sinks him 3 units into the hull, so he no longer clips.
   A boat rows at 78 against the raft's 54. **The water test follows the hull** (`raftFit` sets `hw`, `hh` from the parts;
