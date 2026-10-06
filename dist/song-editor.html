@@ -55,7 +55,7 @@ textarea{display:block;width:100%;border:1px solid var(--line);border-radius:8px
 .tag{font-size:.74rem;color:var(--ink2)}
 kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .adv{display:none}
-body.adv .adv{display:block}
+body.advanced .adv{display:block}
 .tagline{font-size:.85rem;color:var(--ink2)}
 #lib button{min-height:34px}
 </style>
@@ -583,7 +583,7 @@ if (typeof module !== 'undefined') module.exports = Music;
   function changed(soft) { save(); if (!soft) fill(); else $('json').value = JSON.stringify(song()); if (Music.playing()) restartT = soft ? 0 : 1; }
   // the piano roll (Advanced)
   function draw() {
-    if (document.body.classList.contains('adv')) {
+    if (document.body.classList.contains('advanced')) {
     var S = song(), W = roll.width, H = roll.height, L = Music.length(S), lo = 36, hi = 96, left = 40, top = 24, pw = (W - left - 8) / L, ph = (H - top - 8) / (hi - lo);
     rc.fillStyle = '#1b1f26'; rc.fillRect(0, 0, W, H);
     for (var n = lo; n < hi; n++) { var k = n % 12, black = k === 1 || k === 3 || k === 6 || k === 8 || k === 10; rc.fillStyle = black ? '#20252d' : '#262c35'; rc.fillRect(left, top + (hi - 1 - n) * ph, W - left - 8, ph); if (k === 0) { rc.fillStyle = '#9aa4b5'; rc.font = '600 14px system-ui'; rc.textAlign = 'right'; rc.fillText('C' + (n / 12 - 1), left - 6, top + (hi - 1 - n) * ph + ph); } }
@@ -623,8 +623,8 @@ if (typeof module !== 'undefined') module.exports = Music;
   $('dice').onclick = function () { var S = song(), m = S.tracks.filter(function (t) { return t.notes != null; })[0]; if (!m) { S.tracks.unshift({ inst: 'flute', vol: 1, tag: 'calm', notes: '' }); m = S.tracks[0]; } m.notes = rollMelody(S.chords, Math.random); changed(); if (Music.playing()) $('play').onclick(); };
   $('dicechords').onclick = function () { var S = song(), R = Math.random; S.chords = rollChords(R); S.tracks.forEach(function (t) { if (t.notes != null) t.notes = rollMelody(S.chords, R); }); changed(); if (Music.playing()) $('play').onclick(); };
   $('diceinst').onclick = function () { rollInstruments(song(), Math.random); changed(); if (Music.playing()) $('play').onclick(); };
-  $('advbtn').onclick = function () { var on = !document.body.classList.contains('adv'); document.body.classList.toggle('adv', on); $('advbtn').setAttribute('aria-pressed', on); try { localStorage.setItem('songeditor.adv', on ? '1' : ''); } catch (e) {} };
-  try { if (localStorage.getItem('songeditor.adv')) { document.body.classList.add('adv'); $('advbtn').setAttribute('aria-pressed', 'true'); } } catch (e) {}
+  $('advbtn').onclick = function () { var on = !document.body.classList.contains('advanced'); document.body.classList.toggle('advanced', on); $('advbtn').setAttribute('aria-pressed', on); try { localStorage.setItem('songeditor.adv', on ? '1' : ''); } catch (e) {} };
+  try { if (localStorage.getItem('songeditor.adv')) { document.body.classList.add('advanced'); $('advbtn').setAttribute('aria-pressed', 'true'); } } catch (e) {}
   $('play').onclick = function () { Music.setVolume(+$('vol').value); Music.play(song()); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); };
   $('stop').onclick = function () { Music.stop(); };
   $('song').onchange = function () { curId = $('song').value; trk = 0; fill(); inUse(); if (Music.playing()) $('play').onclick(); };
