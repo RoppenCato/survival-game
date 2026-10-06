@@ -1454,7 +1454,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
   }
   var crit = S.crit > 0 && Math.random() < S.crit;
   if (crit) mult *= 1.5;
-  var dealt = dmg * mult;
+  var dealt = dmg * mult * mod('dmg');          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
   var killing = e.hp <= 0;
   if (S.juice) { e.flash = 1; e.flashRgb = crit ? '255,208,70' : '255,255,255'; }
@@ -1714,7 +1714,7 @@ function updatePlayer(dt) {
   var sprint = (IN.keys.ShiftLeft || IN.keys.ShiftRight) && il > 0 && a.ph === 'none' && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && !p.sprintLock && p.st > 0;
   if (p.st <= 0.5) p.sprintLock = true; else if (p.st >= 14) p.sprintLock = false;
   p.sprinting = !!sprint;
-  var spd = 84;                          // a walk, not a jog (118 was too fast for the world's scale)
+  var spd = 84 * mod('speed');           // a walk, not a jog (118 was too fast for the world's scale); mods().speed for a page's cheats
   if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt); p.stDelay = Math.max(p.stDelay, 0.55); }
   if (p.guard) spd *= 0.55;
   if (a.ph === 'windup' || a.ph === 'active') spd *= 0.55; else if (a.ph === 'recover') spd *= 0.9; else if (a.ph === 'charge') spd *= 0.6;

@@ -4251,7 +4251,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
   }
   var crit = S.crit > 0 && Math.random() < S.crit;
   if (crit) mult *= 1.5;
-  var dealt = dmg * mult;
+  var dealt = dmg * mult * mod('dmg');          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
   var killing = e.hp <= 0;
   if (S.juice) { e.flash = 1; e.flashRgb = crit ? '255,208,70' : '255,255,255'; }
@@ -4511,7 +4511,7 @@ function updatePlayer(dt) {
   var sprint = (IN.keys.ShiftLeft || IN.keys.ShiftRight) && il > 0 && a.ph === 'none' && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && !p.sprintLock && p.st > 0;
   if (p.st <= 0.5) p.sprintLock = true; else if (p.st >= 14) p.sprintLock = false;
   p.sprinting = !!sprint;
-  var spd = 84;                          // a walk, not a jog (118 was too fast for the world's scale)
+  var spd = 84 * mod('speed');           // a walk, not a jog (118 was too fast for the world's scale); mods().speed for a page's cheats
   if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt); p.stDelay = Math.max(p.stDelay, 0.55); }
   if (p.guard) spd *= 0.55;
   if (a.ph === 'windup' || a.ph === 'active') spd *= 0.55; else if (a.ph === 'recover') spd *= 0.9; else if (a.ph === 'charge') spd *= 0.6;
@@ -5674,19 +5674,20 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var OPTS = { music: 0 }, musicOn = false, dangerT = 0, songsLS = null, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
-  function songOf(id) {                   // the Song Editor's saved version wins over the built-in one
-    if (songsLS === null) { songsLS = {}; try { songsLS = JSON.parse(localStorage.getItem('songeditor1')) || {}; } catch (e) {} }
+  function songOf(id) {                   // a song from the Song Editor's library (saved there on purpose), else the built-in one
+    if (songsLS === null) { songsLS = {}; try { songsLS = JSON.parse(localStorage.getItem('song.library')) || {}; } catch (e) {} }
     return songsLS[id] || Music.SONGS[id];
   }
   function startMusic() {                 // browsers allow sound only after the first key or click
     if (musicOn || OPTS.music <= 0) return;
-    musicSong = isEvening() ? 'meadowEvening' : dayTheme();
+    musicSong = isEvening() ? eveTheme() : dayTheme();
     Music.setVolume(OPTS.music); if (Music.play(songOf(musicSong))) musicOn = true;
   }
-  function dayTheme() { var id = null; try { id = localStorage.getItem('game.theme'); } catch (e) {} return id && songOf(id) ? id : 'meadowDay'; }   // the Song Editor's "Use in the game" choice
+  function dayTheme() { var id = null; try { id = localStorage.getItem('game.theme'); } catch (e) {} return id && songOf(id) ? id : 'meadowDay'; }
+  function eveTheme() { var id = null; try { id = localStorage.getItem('game.theme.eve'); } catch (e) {} return id && songOf(id) ? id : 'meadowEvening'; }   // the Song Editor's "Use in the game" choice
   function musicTick(dt) {
     if (!musicOn) return;
-    var want = isEvening() ? 'meadowEvening' : dayTheme();   // the song follows the clock: the evening theme from dusk to dawn
+    var want = isEvening() ? eveTheme() : dayTheme();   // the song follows the clock: the evening theme from dusk to dawn
     if (want !== musicSong) { Music.stop(); musicOn = false; dangerT = 0; startMusic(); return; }
     var P = hero(), awake = false;       // a beast counts as awake when it is chasing or attacking within earshot
     Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
@@ -5789,8 +5790,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var buildSlots0 = PIECES.map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function (c) { Build.icon(c, p.id, p.m); } }; });
   Combat.api.buildSlots = buildSlots0;
   var B = { floors: {}, H: {}, V: {}, items: [] }, BCFG = Build.cfg({ roof: 0 }), roomInfo = null, roofA = {}, bDirty = true, mouseW = null, mdown = 0, lastPlaced = '';
-  function canAfford(cost) { for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
-  function pay(cost, sign) { for (var k in cost) { if ((sign || -1) > 0) addItem(k, cost[k]); else takeItem(k, cost[k]); } }
+  function canAfford(cost) { if (ADMIN.free) return true; for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
+  function pay(cost, sign) { if (ADMIN.free && (sign || -1) < 0) return; for (var k in cost) { if ((sign || -1) > 0) addItem(k, cost[k]); else takeItem(k, cost[k]); } }
   function pieceFor(id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (PIECES[i].m == null || PIECES[i].m === m)) return PIECES[i]; return null; }
   function costOf(e) { var p = pieceFor(e.t, e.m) || pieceFor(e.t, 0); return p ? p.cost : { wood: 2 }; }     // what an edge piece gave for, to give back
   function costOfFloor(m) { var p = pieceFor('floor', m || 0); return p ? p.cost : { wood: 1 }; }
@@ -6997,12 +6998,55 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = menuTab === 'bench' && !roofed ? '#ff9a8a' : '#fff'; c.fillText(label, menu.x + 8, menu.y + menu.h - 5);
   }
   // panels: the inventory (Tab) and the hearth (E). Rows are remembered so clicks can find them.
+
+  /* ---------- Admin: cheats for testing, in the Escape menu (Robin, 2026-10-06). Toggles persist in game.admin ---------- */
+  var ADMIN = { immortal: false, oneshot: false, free: false, fly: false }, adminOpen = false;
+  try { var ad0 = JSON.parse(localStorage.getItem('game.admin')); if (ad0) for (var ak in ADMIN) if (ad0[ak] != null) ADMIN[ak] = !!ad0[ak]; } catch (e) {}
+  function saveAdmin() { try { localStorage.setItem('game.admin', JSON.stringify(ADMIN)); } catch (e) {} }
+  var ADMIN_ROWS = [
+    { id: 'immortal', name: 'Immortal', text: 'Health and stamina stay full.', toggle: true },
+    { id: 'oneshot', name: 'One-shot hits', text: 'Every blow kills, every chop fells.', toggle: true },
+    { id: 'free', name: 'Free building and crafting', text: 'Nothing costs anything.', toggle: true },
+    { id: 'fly', name: 'Fly', text: 'Walk over water and through anything, fast.', toggle: true },
+    { id: 'stuff', name: 'Plenty of everything', text: '25 of every material into the bag.' },
+    { id: 'reveal', name: 'Reveal the chart', text: 'The steading, the hamlet and the cave known; the raft taught.' },
+    { id: 'dusk', name: 'Skip to dusk', text: 'The clock jumps to the evening.' },
+    { id: 'dawn', name: 'Skip to dawn', text: 'A new day begins.' },
+    { id: 'tpVillage', name: 'Go to the steading', text: 'Stand by Hildir’s well.' },
+    { id: 'tpHamlet', name: 'Go to the hamlet', text: 'Stand on its green.' },
+    { id: 'tpCave', name: 'Go to the cave', text: 'Stand at its mouth.' },
+    { id: 'brokk', name: 'Brokk joins', text: 'Hildir’s stone stands and he is yours.' },
+    { id: 'back', name: 'Back', text: '' }
+  ];
+  function drawAdmin(c) {
+    c.fillStyle = 'rgba(10,8,6,0.45)'; c.fillRect(0, 0, 400, 250);
+    panel(c, 100, 2, 200, 'Admin', 'For testing. Toggles stay on until turned off, across reloads.', ADMIN_ROWS.map(function (p) { return { p: p, can: true }; }), function (it, x0, yy, w0) {
+      c.font = '600 7px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(it.p.name, x0 + 14, yy);
+      c.font = '600 4.8px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText(it.p.text, x0 + 14, yy + 6);
+      if (it.p.toggle) { var on = ADMIN[it.p.id]; c.font = 'bold 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = on ? '#9be58b' : 'rgba(255,255,255,0.45)'; c.fillText(on ? 'ON' : 'off', x0 + w0 - 14, yy + 3); }
+    }, 15);
+  }
+  function adminAct(id) {
+    var P = hero(), row = ADMIN_ROWS.filter(function (r) { return r.id === id; })[0];
+    if (id === 'back') { adminOpen = false; return; }
+    if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); return; }
+    if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }
+    else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; toast('The chart knows the island'); }
+    else if (id === 'dusk') { day.t = DUSK_AT + 1; }
+    else if (id === 'dawn') { day.t = 0; day.n++; }
+    else if (id === 'tpVillage' && village) { P.x = (village.tx + 8) * T; P.y = (village.ty + 8.5) * T; }
+    else if (id === 'tpHamlet' && hamlet) { P.x = (hamlet.tx + 6) * T; P.y = (hamlet.ty + 5.5) * T; }
+    else if (id === 'tpCave' && caveMouth) { P.x = caveMouth.x; P.y = caveMouth.y + 44; }
+    else if (id === 'brokk') { var fs = B.items.filter(function (it) { return it.claim && it.fallen; })[0]; seen.met = 1; seen.raft = 1; if (fs) raiseStone(fs); else if (npc && !npc.joined && stones().length) brokkJoin(stones()[0]); toast('Brokk is yours'); }
+    P.vx = P.vy = 0; save(); pauseOpen = false; adminOpen = false;
+  }
   var rows = [], pauseOpen = false;
   var PAUSE = [
     { id: 'go', name: 'Continue', text: 'Back to the island.' },
     { id: 'sandbox', name: 'Sandbox: try things out', text: 'A full kit, plenty of materials, every recipe known. On this island.' },
     { id: 'restart', name: 'Restart with nothing', text: 'The same island, a fresh start: empty hands, branches and stones at camp.' },
     { id: 'newisle', name: 'New island', text: 'A different island, a fresh start. The old one is gone.' },
+    { id: 'admin', name: 'Admin', text: 'Cheats for testing: immortal, one-shot hits, free building, fly, teleports.' },
     { id: 'music', name: 'Music', text: 'Drag the bar. All the way left is silence. The evening theme plays from dusk.' }
   ];
   var musicDrag = false;
@@ -7048,14 +7092,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.fillStyle = '#7d8290'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8;
     [[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 1.7, 0, 7); c.fill(); c.stroke(); });
   }
-  function panel(c, x0, y0, w0, title, hint, list, draw) {
-    var h0 = 24 + list.length * 20 + (hint ? 12 : 0), i;
+  function panel(c, x0, y0, w0, title, hint, list, draw, rowH) {
+    rowH = rowH || 20; var h0 = 24 + list.length * rowH + (hint ? 12 : 0), i;
     wood(c, x0, y0, w0, h0);
     c.font = 'bold 9px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(title, x0 + 10, y0 + 13);
     for (i = 0; i < list.length; i++) {
-      var yy = y0 + 29 + i * 20, hov = mouseS && mouseS.x > x0 + 8 && mouseS.x < x0 + w0 - 8 && Math.abs(mouseS.y - yy) < 9;
+      var yy = y0 + 29 + i * rowH, hov = mouseS && mouseS.x > x0 + 8 && mouseS.x < x0 + w0 - 8 && Math.abs(mouseS.y - yy) < rowH / 2 - 1;
       rows.push({ x0: x0 + 8, x1: x0 + w0 - 8, y: yy, item: list[i] });
-      c.fillStyle = hov && list[i].can ? 'rgba(255,230,180,0.22)' : 'rgba(30,16,8,0.45)'; c.fillRect(x0 + 8, yy - 9, w0 - 16, 18);
+      c.fillStyle = hov && list[i].can ? 'rgba(255,230,180,0.22)' : 'rgba(30,16,8,0.45)'; c.fillRect(x0 + 8, yy - rowH / 2 + 1, w0 - 16, rowH - 2);
       draw(list[i], x0, yy, w0);
     }
     if (hint) { c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'left'; c.fillText(hint, x0 + 10, y0 + h0 - 5); }
@@ -7326,8 +7370,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (grow) useRune(grow, 1);
   }
   Combat.api.onDeed = function (kind) { if (kind === 'parry' && inUse('riposte')) { var P = hero(); P.st = Math.min(100, P.st + 15 * runeMul('riposte')); P.hp = Math.min(P.maxHp, P.hp + 5 * runeMul('riposte')); } deed(kind === 'block' ? 'blocks' : (kind === 'dash' ? 'dashes' : kind)); };
-  Combat.api.mods = function () { return { stMax: 100 + (fed ? fed.stam || 0 : 0), sprint: 1 + 0.2 * runeMul('surefeet'), stam: (1 + 0.5 * runeMul('longwind')) * (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: inUse('sprinter') ? 1 - 0.5 * Math.min(1, runeMul('sprinter')) : 1, block: inUse('shieldwall') ? 1 - 0.5 * Math.min(1, runeMul('shieldwall')) : 1 }; };
-  Combat.api.powerMul = function (kind) { if (kind === 'tree' && inUse('cleancut')) return 1 + 0.33 * runeMul('cleancut'); if (kind === 'stone' && inUse('hardswing')) return 1 + 0.33 * runeMul('hardswing'); return 1; };
+  Combat.api.mods = function () { return { dmg: ADMIN.oneshot ? 1000 : 1, speed: ADMIN.fly ? 2.6 : 1, stMax: 100 + (fed ? fed.stam || 0 : 0), sprint: 1 + 0.2 * runeMul('surefeet'), stam: (1 + 0.5 * runeMul('longwind')) * (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: inUse('sprinter') ? 1 - 0.5 * Math.min(1, runeMul('sprinter')) : 1, block: inUse('shieldwall') ? 1 - 0.5 * Math.min(1, runeMul('shieldwall')) : 1 }; };
+  Combat.api.powerMul = function (kind) { if (ADMIN.oneshot) return 1000; if (kind === 'tree' && inUse('cleancut')) return 1 + 0.33 * runeMul('cleancut'); if (kind === 'stone' && inUse('hardswing')) return 1 + 0.33 * runeMul('hardswing'); return 1; };
   function attackSkills() { return RS.slots.filter(function (s) { return s.kind === 'attack'; }).map(function (s) { return s.id ? Runes.BY[s.id] : null; }); }
   function castSkill(i) {
     var sk = attackSkills()[i]; if (!sk) return false; if ((cds[sk.id] || 0) > 0) { toast(sk.name + ' is not ready'); return true; }
@@ -7638,7 +7682,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.scene = {
     noHud: false, noKills: true,
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
-    walk: function (x, y) { if (inYard) return x >= YARD.X - 18 && x <= YARD.X + YARD.W * T + 18 && y >= YARD.Y - 14 && y <= YARD.Y + YARD.H * T + 26; if (inCave) return caveFloor(x, y); return (raft && raft.aboard) || isLand(x, y); },
+    walk: function (x, y) { if (ADMIN.fly && !inYard && !inCave) return true; if (inYard) return x >= YARD.X - 18 && x <= YARD.X + YARD.W * T + 18 && y >= YARD.Y - 14 && y <= YARD.Y + YARD.H * T + 26; if (inCave) return caveFloor(x, y); return (raft && raft.aboard) || isLand(x, y); },
     begin: function (c, P) {
       var z = zoom, hw = 200 / z, hh = 125 / z, i;
       cam.z = z;
@@ -7768,7 +7812,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       bookFlash = Math.max(0, bookFlash - 0.02);
       if (bookOpen) drawBook(c);
       if (clothOpen) drawCloth(c);
-      if (pauseOpen) { rows = []; drawPause(c); }
+      if (pauseOpen) { rows = []; if (adminOpen) drawAdmin(c); else drawPause(c); }
       if (menu) drawMenu(c);
       c.restore();
     }
@@ -7848,7 +7892,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (inYard) yardLeave(); else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (musterOpen) musterOpen = false; else if (stoneNearH(hero()) && stoneNearH(hero()).fallen) { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(stoneNearH(hero())); } else toast('It takes 6 stone to raise it'); } else if (hirdAssign(hero())) {} else if (hirdNear(hero())) hirdTalk(hirdNear(hero())); else if (stoneNearH(hero())) { musterOpen = true; invOpen = false; menu = null; } else if (nearNpc(hero())) talk(); else if (folkNear(hero())) folkTalk(folkNear(hero())); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
     if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat && SHOW.runes) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
-    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || musterOpen) { musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else pauseOpen = !pauseOpen; return; }
+    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || musterOpen) { musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
     if (inYard && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) yardFinish(); return; }
     if (inYard && (e.code === 'KeyB' || e.code === 'KeyQ')) { e.preventDefault(); return; }
     if (!codes[e.code]) return;
@@ -7864,7 +7908,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     e.preventDefault(); mouseW = toWorld(e); mouseS = toScreen(e);
     var P = hero();
     if (pauseOpen) {
-      var pr = rowAt(); if (pr && e.button === 0) { var id = pr.p.id; if (id === 'music') { musicDrag = true; musicSet(mouseS.x, 120, 160); return; } pauseOpen = false; if (id === 'sandbox') sandbox(); else if (id === 'restart') start(true); else if (id === 'newisle') { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); } }
+      var pr = rowAt(); if (adminOpen) { if (pr && e.button === 0) adminAct(pr.p.id); else if (e.button === 2) adminOpen = false; return; }
+      if (pr && e.button === 0) { var id = pr.p.id; if (id === 'admin') { adminOpen = true; return; } if (id === 'music') { musicDrag = true; musicSet(mouseS.x, 120, 160); return; } pauseOpen = false; if (id === 'sandbox') sandbox(); else if (id === 'restart') start(true); else if (id === 'newisle') { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); } }
       return;
     }
     if (musterOpen) { if (e.button === 0) musterClick(); else musterOpen = false; return; }
@@ -7981,6 +8026,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (roomInfo) for (var si = 0; si < roomInfo.solids.length; si++) { var sl = roomInfo.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
+    if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     tick(); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();

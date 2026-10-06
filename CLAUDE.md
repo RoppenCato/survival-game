@@ -99,7 +99,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `grass-editor.html` | `grass.html` | Grass Editor: swaying grass, its colours and the ground |
 | `hird-editor.html` | `hird.html` | Hird Editor: roll a hirdman, tune stats, traits, jobs, food and the claim stone |
 | `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
-| `song-editor.html` | `song.html` | Song Editor: the game's music, its instruments and songs; export .mid |
+| `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory |
 
@@ -145,8 +145,15 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `calm` (peace only), `danger` (fights only) or none (always); the game crossfades the two with
   `Music.setLayer`. Eight synthesized General-MIDI-like voices (piano, flute, clarinet, celesta, musicbox, harp,
   strings, bass) plus drums, a generated-impulse reverb, lookahead scheduling (`play(song, fromBeat)`, `stop`,
-  `setVolume`, `at`), and `Music.midi(song)` writes a standard MIDI file. The Song Editor edits the songs and saves
-  them in `localStorage['songeditor1']`; the game plays the saved version if there is one. Composing rules (early
+  `setVolume`, `at`), and `Music.midi(song)` writes a standard MIDI file. **The Song Editor (reworked 2026-10-06):** a simple
+  view first (play, song picker with Built in / Library / Unsaved groups, peace or danger, tempo, key, volume, the tracks)
+  and an **Advanced** button for the piano roll, the chords and notes as text and the song as text. **Dice:** New song
+  (chords from good progressions, a melody, harp, bass, shaker, and the danger layer), New tune (another melody over the
+  same chords: a two-bar motif repeated with small changes, chord tones on strong beats, scale steps near the last note),
+  New chords, Shuffle instruments. **The library** (`song.library`) holds saved songs by name; working copies live in
+  `songeditor2` and **the game never reads them**: it plays only what "Use in the game (day)" / "(evening)" hand over
+  (`game.theme`, `game.theme.eve`, ids looked up in the library then the built-ins), which fixed songs changing in the
+  game while being edited. Composing rules (early
   MapleStory style) are in `docs/idea-bank.md` under Music.
 - `src/combat.js` (`Combat`): the arena engine: hero movement and combat, enemy AI, effects, rendering. The editors
   reuse it through hooks on `Combat.api`:
@@ -478,6 +485,10 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Saving** in `localStorage` (`game.save`): island seed, inventory, buildings, felled props (keyed by rounded
   position), stumps, hero position. Saved on every change, every 10 s and on leaving; loaded on start. "New
   island" deletes it. Boars and dropped items are not saved.
+- **Admin (2026-10-06):** an Admin row in the Escape menu opens a cheat board for testing (`ADMIN`, kept in `game.admin`):
+  toggles Immortal, One-shot hits (`mods().dmg` and `powerMul` 1000), Free building and crafting (`canAfford`/`pay`), Fly
+  (`walk` true everywhere, `mods().speed` 2.6); and one-offs: plenty of everything, reveal the chart, skip to dusk or dawn,
+  go to the steading, hamlet or cave, Brokk joins. The engine took `mods().dmg` and `mods().speed` for it.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
 - Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch, a village on the second island.
 
