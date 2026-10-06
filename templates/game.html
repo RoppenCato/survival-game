@@ -367,7 +367,25 @@ __COMBAT__
     var L = light(), P = hero(), W = Combat.dbg().W, i;
     if (day.t >= DUSK_AT && nightSaid !== day.n) { nightSaid = day.n; note('The light is going'); }
     nightWolves = nightWolves.filter(function (e) { return !e.dead && W.enemies.indexOf(e) >= 0; });
-    if (L > 0.5 && !inCave && !inYard) nightWolves.forEach(function (e) { if (!e.dead && Math.hypot(e.x - P.x, e.y - P.y) < 900) e.heard = 3; });   // the pack hunts you by scent and sight from far off
+    // the pack hunts you by scent and sight from far off, but fire keeps it off (Robin): a wolf never comes within FIRE_R
+    // of a hearth, brazier or campfire. While you stand in that light the pack prowls the ring outside it, and after a
+    // while gives up and runs off into the dark for the night
+    var FIRE_R = 140, safe = fireNear(P.x, P.y, FIRE_R);
+    if (L > 0.5 && !inCave && !inYard) nightWolves.forEach(function (e) {
+      if (e.dead) return;
+      var nf = nearestFire(e.x, e.y), inFire = nf && nf.d < FIRE_R;
+      if (e.gone) { e.goneT = (e.goneT || 0) + dt; e.awake = false; e.heard = 0; e.aggro = 1; if (e.goneT > 20) { var k = W.enemies.indexOf(e); if (k >= 0) W.enemies.splice(k, 1); e.dead = true; } return; }
+      if (inFire) {                         // too close to a fire: it shies back out of the light
+        var a = Math.atan2(e.y - nf.y, e.x - nf.x); e.x += Math.cos(a) * 110 * dt; e.y += Math.sin(a) * 110 * dt; e.face = a; e.awake = false; e.heard = 0; e.aggro = 1; e.state = 'idle'; e.t = 0;
+        if (e.wander) { e.wander.tx = null; e.wander.wait = 0; }
+      }
+      if (safe) {                           // you are by a fire: it prowls the ring round you instead of coming in
+        e.awake = false; e.heard = 0; e.aggro = 1; e.prowl = (e.prowl || 0) + dt;
+        if (!e.ringT || e.ringT <= 0) { var ra = Math.random() * 6.283; e.wander.x0 = P.x + Math.cos(ra) * (FIRE_R + 60); e.wander.y0 = P.y + Math.sin(ra) * (FIRE_R + 60); e.wander.r = 40; e.wander.tx = null; e.wander.wait = 0; e.ringT = 2 + Math.random() * 3; }
+        e.ringT -= dt;
+        if (e.prowl > 16) { e.gone = true; var ga = Math.atan2(e.y - P.y, e.x - P.x); e.wander.x0 = e.x + Math.cos(ga) * 700; e.wander.y0 = e.y + Math.sin(ga) * 700; e.wander.r = 60; e.wander.tx = null; e.wander.wait = 0; }
+      } else if (!inFire) { e.aggro = 220; e.prowl = Math.max(0, (e.prowl || 0) - dt); if (Math.hypot(e.x - P.x, e.y - P.y) < 900) e.heard = 3; }
+    });
     if (L > 0.6 && !nightSpawned && !inCave && !inYard && !sleep) {
       nightSpawned = true;
       var isle = isleAt(P.x, P.y), first = null; if (isle < 0) return;
@@ -378,6 +396,7 @@ __COMBAT__
     }
     if (L < 0.3 && nightSpawned) { nightSpawned = false; nightWolves.forEach(function (e) { var k = W.enemies.indexOf(e); if (k >= 0) W.enemies.splice(k, 1); }); nightWolves = []; }
   }
+  function nearestFire(x, y) { var best = null; function q(f) { var d = Math.hypot(x - f.x, y - f.y); if (!best || d < best.d) best = { x: f.x, y: f.y, d: d }; } if (hearth) q(hearth); B.items.forEach(function (it) { if (it.name === 'stoneHearth' || it.light) q(it); }); return best; }
   function drawWolfEyes(c) {               // two red points per wolf, through the dark, from far off
     var L = light(); if (L < 0.3) return;
     c.save(); c.globalCompositeOperation = 'lighter';

@@ -460,7 +460,10 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   island you stand on (`nightWolves`, `e.night`), with a howl; at dawn what is left slinks away (removed, not killed). One
   pack a night. They are far stronger than the day beasts (`art.js` wolf hp 22, speed 1.75, lunge 1.4, windup 0.35; the
   attack cd 0.8, speed 320; the game's `dmg` 22, `aggro` 220) so the answer is a roof and a fire, not a fight; their
-  **eyes glow red** in the dark (`drawWolfEyes`). The clock's sun-and-moon icon is gone; a note says "The light is going"
+  **eyes glow red** in the dark (`drawWolfEyes`). **Fire keeps them off** (Robin): a wolf never comes within 140 units of a hearth, brazier or
+  campfire (`nearestFire`; it shies back out of the light), and while you stand in that light the pack prowls the ring
+  outside it (`e.prowl`, `e.ringT`) and after about sixteen seconds gives up and runs off into the dark (`e.gone`, removed
+  twenty seconds later). So running to a fire is safety. The clock's sun-and-moon icon is gone; a note says "The light is going"
   at dusk. **Brokk's campfire** (a `stoneHearth` with `light`) burns by the well at the steading, so the first night shows
   what a fire does. **Copper is not on the starter island** (`markOre` skips island 0); it begins on the big island with
   the cave.
