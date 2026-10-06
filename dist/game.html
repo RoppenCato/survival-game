@@ -425,7 +425,7 @@ var canopyB = null;
    sway and stance only affect walking toward or away from the camera: sway is the side-to-side rock of the
    body (1 is the original, which read as a waddle), stance is how far apart the feet land. */
 // Styles (2026-10-06, for the people of this world): hair 0 bowl, 1 cropped, 2 long, 3 braids, 4 knot, 5 bald, 6 shaved sides
-// with a tail; beard 0 none, 1 full, 2 short, 3 long and braided, 4 moustache; hat 0 none, 1 hood, 2 leather cap, 3 nasal
+// with a tail, 7 wavy (with volume), 8 a mane (volume and long); beard 0 none, 1 full, 2 short, 3 long and braided, 4 moustache; hat 0 none, 1 hood, 2 leather cap, 3 nasal
 // helmet, 4 fur hat, 5 headband; clothes 0 the coat and vest, 1 belted tunic, 2 tunic and cloak, 3 apron dress, 4 fur vest.
 // matte 0..1 dulls the highlights, softens the colours and browns the outline toward the world's, like the trees.
 var HEROD_DEF = {
@@ -490,10 +490,13 @@ function conceptSpec(name) {
   return sp;
 }
 function folkSpec(key, R) {
-  if (key === 'villager') {            // one of the people of a village: the hero's figure with its own hair, coat and build, from R
-    R = R || Math.random; var sp2 = fillSpec(HEROD_DEF, null), hair = ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a'], coat = ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a6a4a', '#4f5f7a', '#9a7a5a'], pants = ['#4a4038', '#5a4a3a', '#3f4a5a', '#6a5a48'];
-    sp2.scale = 0.92 + R() * 0.14; sp2.bodyW = 0.9 + R() * 0.3; sp2.headW = 0.95 + R() * 0.1; sp2.beard = R() < 0.4 ? 1 : 0; sp2.walkRate = 1.3;
-    sp2.col.hair = hair[Math.floor(R() * hair.length)]; sp2.col.coat = coat[Math.floor(R() * coat.length)]; sp2.col.pants = pants[Math.floor(R() * pants.length)]; sp2.col.vest = coat[Math.floor(R() * coat.length)]; sp2.col.skin = R() < 0.5 ? '#ffd8b0' : '#f0c49c';
+  if (key === 'villager') {            // one of the people of a village: the hero's own figure and look (matte, build, outline), with their own hair, beard, clothes and colours, from R
+    R = R || Math.random; var base = hero().spec, sp2 = fillSpec(HEROD_DEF, base), k2;
+    var hair = ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a', '#8a5a3a'], coat = ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a7a5c', '#4f5f7a', '#9a7a5a', '#b9ad94'], pants = ['#4a4038', '#5a4a3a', '#3f4a5a', '#6a5a48'], cloak = ['#7a3b3b', '#3a3550', '#5a5a5a', '#6b4a2e'], dress = ['#8a4a4a', '#4a5a78', '#6b5a3a'];
+    function pick(a) { return a[Math.floor(R() * a.length)]; }
+    sp2.scale = base.scale * (0.96 + R() * 0.1); sp2.bodyW = base.bodyW * (0.95 + R() * 0.14); sp2.headW = 0.95 + R() * 0.1; sp2.walkRate = 1.3;
+    sp2.hair = pick([0, 1, 1, 2, 3, 4, 6, 7, 7, 8]); sp2.beard = R() < 0.45 ? pick([1, 2, 2, 3, 4]) : 0; sp2.hat = R() < 0.3 ? pick([1, 2, 4, 5]) : 0; sp2.clothes = pick([1, 1, 2, 3, 4]); sp2.eyewear = 0;
+    sp2.col.hair = pick(hair); sp2.col.coat = pick(coat); sp2.col.pants = pick(pants); sp2.col.vest = pick(coat); sp2.col.cloak = pick(cloak); sp2.col.dress = pick(dress); sp2.col.skin = R() < 0.5 ? '#ffd8b0' : '#f0c49c';
     return sp2;
   }
   var a = FOLK[key], sp = fillSpec(HEROD_DEF, null), k;
@@ -582,7 +585,8 @@ function playerD(c, x, y, dir, an, pose) {
     c.save();
     c.translate(0, hy + 9); c.scale(sp.headW / bw, sp.headH / bh); c.translate(0, -(hy + 9));
     c.translate(0, hy); c.rotate(-rot * 1.6 + (side ? 0 : sway * 0.02 * sp.sway)); c.translate(0, -hy);
-    if (HS === 2 || HS === 3) longHair(view);                 // long hair and braids hang beside the head, under it
+    if (HS === 2 || HS === 3 || HS === 8) longHair(view);     // long hair, braids and the mane hang beside the head, under it
+    if (HS === 7 || HS === 8) bigHair(view);                  // hair with volume stands out past the head
     c.beginPath(); c.ellipse(0, hy, 10, 9, 0, 0, Math.PI * 2); c.fillStyle = SK; c.fill();
     c.save(); c.clip();
     c.fillStyle = SKS; c.fillRect(-12, hy - 12, 24, 24);
@@ -611,6 +615,14 @@ function playerD(c, x, y, dir, an, pose) {
     if (view === 'back') { c.beginPath(); c.moveTo(-9, hy - 2); c.quadraticCurveTo(-11, hy + 10, -7, hy + 16); c.lineTo(7, hy + 16); c.quadraticCurveTo(11, hy + 10, 9, hy - 2); c.closePath(); fs(c, HAIR, 1.6); if (HS === 3) { lock(-4.5, true); lock(4.5, true); } return; }
     if (view === 'side') { lock(3.5, HS === 3); return; }
     lock(-9 - tqv * 2, HS === 3); lock(9 - tqv * 2, HS === 3);
+  }
+  function bigHair(view) {                                    // a lobed mass behind the head, wider and taller than it
+    var ox = view === 'side' ? 1.5 : (view === 'back' ? 0 : tq * 1.5), i;
+    c.beginPath(); c.ellipse(ox, hy - 2.5, 12.6, 11, 0, 0, 7); fs(c, HAIR, 1.8);
+    for (i = 0; i < 5; i++) { var a = Math.PI * (1.08 + i * 0.21), bx = ox + Math.cos(a) * 10.5, by = hy - 2.5 + Math.sin(a) * 9; c.beginPath(); c.arc(bx, by, 4.2, 0, 7); fs(c, HAIR, 1.8); }
+    c.beginPath(); c.ellipse(ox, hy - 2.5, 12.6, 11, 0, 0, 7); c.fillStyle = HAIR; c.fill();
+    for (i = 0; i < 5; i++) { var a2 = Math.PI * (1.08 + i * 0.21); c.beginPath(); c.arc(ox + Math.cos(a2) * 10.5, hy - 2.5 + Math.sin(a2) * 9, 4.2, 0, 7); c.fill(); }
+    c.strokeStyle = C.hairL; c.lineWidth = 1.4; c.beginPath(); c.arc(ox - 2, hy - 4, 9.5, Math.PI * 1.15, Math.PI * 1.5); c.stroke();
   }
   function knot(view) {                                       // a knot of hair on top, toward the back
     var kx = view === 'side' ? 3 : (view === 'back' ? 0 : tq * 2); ell(c, kx, hy - 10, 3.4, 2.8, HAIR, 1.6); c.strokeStyle = C.hairL; c.lineWidth = 1; c.beginPath(); c.arc(kx - 0.5, hy - 10.5, 1.8, Math.PI * 1.2, Math.PI * 1.8); c.stroke();
@@ -765,6 +777,7 @@ function playerD(c, x, y, dir, an, pose) {
       else if (HS === 4) { c.fillRect(-12, hy - 12, 24, 9); c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy, 6.5, 6, 0, 0, Math.PI * 2); c.fill(); }
       else if (HS === 6) { c.fillRect(-4, hy - 12, 10, 8); c.beginPath(); c.ellipse(3, hy - 6, 6, 5, 0, 0, 7); c.fill(); }
       else { c.fillRect(-12, hy - 12, 24, 11.5); c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy + 1, 6.5, 8.5, 0, 0, Math.PI * 2); c.fill(); }
+      if (HS >= 7) { c.fillRect(-12, hy - 12, 24, 13); c.beginPath(); c.ellipse(6 + sw1 * 0.6, hy + 2, 7, 9.5, 0, 0, 7); c.fill(); }
       if (HS !== 6) for (var i = 0; i < 3; i++) { c.beginPath(); c.arc(-8 + i * 3, hy - 1.5 - (HS === 1 ? 2 : 0), 2.3, 0, Math.PI * 2); c.fill(); }
       c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-2, hy - 1, 7.5, Math.PI * 1.15, Math.PI * 1.6); c.stroke();
       strap();
@@ -800,8 +813,9 @@ function playerD(c, x, y, dir, an, pose) {
         else {
           c.fillRect(-12, hy - 12, 24, top);
           for (var i = -3; i <= 3; i++) { c.beginPath(); c.arc(i * 3.4, hy - 1.5 - (HS === 1 ? 2 : 0), 2.3, 0, Math.PI * 2); c.fill(); }
-          if (HS !== 1 && HS !== 4) { c.beginPath(); c.ellipse(-9 - sw2 * 0.4, hy + 1, 2.5 + Math.max(0, tq) * 3.4, 6 + Math.max(0, tq) * 2, 0, 0, Math.PI * 2); c.fill();
-            c.beginPath(); c.ellipse(9 - sw2 * 0.4, hy + 1, 2.5 + Math.max(0, -tq) * 3.4, 6 + Math.max(0, -tq) * 2, 0, 0, Math.PI * 2); c.fill(); }
+          if (HS >= 7) { c.fillRect(-12, hy - 12, 24, 12.5); }
+          if (HS !== 1 && HS !== 4) { c.beginPath(); c.ellipse(-9 - sw2 * 0.4, hy + 1, (HS >= 7 ? 3.6 : 2.5) + Math.max(0, tq) * 3.4, (HS >= 7 ? 8 : 6) + Math.max(0, tq) * 2, 0, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.ellipse(9 - sw2 * 0.4, hy + 1, (HS >= 7 ? 3.6 : 2.5) + Math.max(0, -tq) * 3.4, (HS >= 7 ? 8 : 6) + Math.max(0, -tq) * 2, 0, 0, Math.PI * 2); c.fill(); }
         }
         c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy - 1, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
         strap();
@@ -939,6 +953,7 @@ function animal3D(c, x, y, s, H) {
     c.fillStyle = tell ? mixHex(C.eye, C.glow, tell) : C.eye; c.beginPath(); c.ellipse(ex, ey, r, r * 1.1, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ex - r * 0.3, ey - r * 0.4, r * 0.32, 0, Math.PI * 2); c.fill();
   }
+  H.eyes = [];                                                 // where the eyes were drawn, for the page (glowing eyes at night)
   c.save(); c.translate(x + (tell && T === 1 ? Math.sin(t * 70) * 1.3 * tell : 0), y); c.scale(sp.size, sp.size);
 
   if (Math.round(sp.plan) === 6) {
@@ -1074,6 +1089,7 @@ function animal3D(c, x, y, s, H) {
     for (sd = -1; sd <= 1; sd += 2) {
       if (depth(hr * 0.35, sd * hr * 0.62) <= -hr * 0.22) continue;
       var e = pt(hf + hr * 0.32, sd * hr * 0.62, hh + hr * 0.5);
+      H.eyes.push([x + e[0] * sp.size, y + e[1] * sp.size]);
       eyeAt(e[0], e[1], 0.95 * hd * sp.eyeSize);
       if (sp.brow) { var b0 = pt(hf, sd * hr * 0.8, hh + hr * 1.0), b1 = pt(hf + hr * 0.55, sd * hr * 0.4, hh + hr * 0.68); c.strokeStyle = LN; c.lineWidth = 1.1; c.beginPath(); c.moveTo(b0[0], b0[1]); c.lineTo(b1[0], b1[1]); c.stroke(); }
     }
@@ -3302,7 +3318,7 @@ function make(kit, opts) {
         if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tn = TREES[Math.floor(R() * TREES.length) % TREES.length]; p = { name: tn, s: (tn === 'pine' ? 0.54 : 0.49) + R() * 0.1, r: 11 }; w.stats.trees++; }
         else if (roll > 0.955) p = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
         else if (roll > 0.948) { p = { name: R() < 0.6 ? 'rock' : 'rockFormation', s: 0.9, r: 10 }; w.stats.rocks++; }
-        else if (roll > 0.9475) p = { name: ['runestone', 'cairn', 'fallenTree', 'birdNest'][Math.floor(R() * 4)], s: 1, r: 10 };
+        else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs'][Math.floor(R() * 5)], s: 1, r: 10 };   // things of nature only: no carved stones or posts lie about
       } else if (roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
       p.x = wx; p.y = wy; p.v = Math.floor(R() * 3);
@@ -5990,6 +6006,7 @@ function drawCreature(c, e) {
   var sp = (e.skin || lib.creature()).spec, a = e.type === 'turret' ? e.aim : e.face, dx = P.x - e.x, dy = (P.y - e.y) * K, dl = Math.hypot(dx, dy) || 1;
   lib.creatureD(c, 0, 0, { t: W.t + e.seed, move: (e.state === 'chase' || e.state === 'lunge') ? 1 : 0, phase: (W.t + e.seed) * 9 * sp.stepRate,
     dir: Math.cos(a) >= 0 ? 1 : -1, ang: api.facings8 ? creatureTurn(e, a) : null, look: [dx / dl, dy / dl], state: e.state, k: e.dur ? e.t / e.dur : 0 }, e.skin);
+  if (e.skin && e.skin.eyes) e.eyes = e.skin.eyes;                 // where its eyes were just drawn, about (e.x, e.y * K)
 }
 function drawEnemy(c, e) {
   var fn = e.creature ? drawCreature : ((e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss));
@@ -6541,10 +6558,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var L = light(); if (L < 0.3) return;
     c.save(); c.globalCompositeOperation = 'lighter';
     nightWolves.forEach(function (e) {
-      if (e.dead) return; var dir = Math.cos(e.face || 0) >= 0 ? 1 : -1, ex = (e.x + dir * 9 - cam.x) * cam.z + 200, ey = (e.y * K - 11 - cam.y) * cam.z + 125;
-      if (ex < -20 || ex > 420 || ey < -20 || ey > 270) return;
+      if (e.dead || !e.eyes || !e.eyes.length) return;        // the eyes sit where the animal was drawn with them (e.eyes, about its feet)
       var pulse = (0.5 + 0.2 * Math.sin(clock * 4 + e.x)) * Math.min(1, (L - 0.3) / 0.4);
-      [0, -dir * 3.2].forEach(function (o) { var gx = ex + o * cam.z, g = c.createRadialGradient(gx, ey, 0, gx, ey, 3.2 * cam.z); g.addColorStop(0, 'rgba(255,60,40,' + pulse + ')'); g.addColorStop(0.35, 'rgba(255,30,20,' + pulse * 0.6 + ')'); g.addColorStop(1, 'rgba(255,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(gx, ey, 3.2 * cam.z, 0, 7); c.fill(); });
+      e.eyes.forEach(function (q) { var gx = (e.x + q[0] - cam.x) * cam.z + 200, ey = (e.y * K + q[1] - cam.y) * cam.z + 125; if (gx < -20 || gx > 420 || ey < -20 || ey > 270) return; var g = c.createRadialGradient(gx, ey, 0, gx, ey, 3.2 * cam.z); g.addColorStop(0, 'rgba(255,60,40,' + pulse + ')'); g.addColorStop(0.35, 'rgba(255,30,20,' + pulse * 0.6 + ')'); g.addColorStop(1, 'rgba(255,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(gx, ey, 3.2 * cam.z, 0, 7); c.fill(); });
     });
     c.restore();
   }
@@ -6823,9 +6839,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.stroke(); c.setLineDash([]);
     if (P.wreck) {                     // a soft red glow over the piece that would go, and what it gives back
       c.translate(0, -gdy); var r = wreckRect(t), back = t.kind === 'item' ? costOfItem(t.item.name) : t.kind === 'edge' ? costOf(t.has) : t.kind === 'post' ? pieceFor('post', 0).cost : t.kind === 'stairs' ? pieceFor('stairs', 0).cost : (Bl().floors[Build.key(t.tx, t.ty)] != null ? costOfFloor(Bl().floors[Build.key(t.tx, t.ty)]) : null);
-      c.shadowColor = 'rgba(255,70,50,0.95)'; c.shadowBlur = 14; c.fillStyle = 'rgba(255,80,60,' + (t.ok ? 0.38 : 0.14) + ')';
-      c.fillRect(r.x, r.y, r.w, r.h); c.fillRect(r.x, r.y, r.w, r.h); c.shadowBlur = 0;
-      if (t.ok) { c.strokeStyle = 'rgba(255,120,100,0.9)'; c.lineWidth = 1.4; c.strokeRect(r.x, r.y, r.w, r.h); c.beginPath(); c.moveTo(r.x, r.y); c.lineTo(r.x + r.w, r.y + r.h); c.moveTo(r.x + r.w, r.y); c.lineTo(r.x, r.y + r.h); c.stroke(); }
+      c.fillStyle = t.ok ? 'rgba(255,214,80,0.16)' : 'rgba(255,80,60,0.12)'; c.fillRect(r.x, r.y, r.w, r.h);
+      c.shadowColor = t.ok ? 'rgba(255,214,80,0.95)' : 'rgba(255,70,50,0.8)'; c.shadowBlur = 10; c.strokeStyle = t.ok ? '#ffd34d' : 'rgba(255,120,100,0.8)'; c.lineWidth = 2;   // what would go is framed in yellow
+      c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); c.shadowBlur = 0;
+      if (t.ok) { c.strokeStyle = 'rgba(255,214,80,0.55)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(r.x + 3, r.y + 3); c.lineTo(r.x + r.w - 3, r.y + r.h - 3); c.moveTo(r.x + r.w - 3, r.y + 3); c.lineTo(r.x + 3, r.y + r.h - 3); c.stroke(); }
       if (t.ok && back) ghostLabel = { text: 'Wreck: +' + costText(back), bad: false }; else if (!t.ok && (t.kind !== 'tile' || t.why)) ghostLabel = { text: t.why || 'Too far', bad: true };
     } else {                           // the piece as it would stand, its footprint, and the reason if it cannot go there
       var col = t.ok ? '120,255,160' : '255,80,60';

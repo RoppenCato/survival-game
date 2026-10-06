@@ -437,10 +437,9 @@ __COMBAT__
     var L = light(); if (L < 0.3) return;
     c.save(); c.globalCompositeOperation = 'lighter';
     nightWolves.forEach(function (e) {
-      if (e.dead) return; var dir = Math.cos(e.face || 0) >= 0 ? 1 : -1, ex = (e.x + dir * 9 - cam.x) * cam.z + 200, ey = (e.y * K - 11 - cam.y) * cam.z + 125;
-      if (ex < -20 || ex > 420 || ey < -20 || ey > 270) return;
+      if (e.dead || !e.eyes || !e.eyes.length) return;        // the eyes sit where the animal was drawn with them (e.eyes, about its feet)
       var pulse = (0.5 + 0.2 * Math.sin(clock * 4 + e.x)) * Math.min(1, (L - 0.3) / 0.4);
-      [0, -dir * 3.2].forEach(function (o) { var gx = ex + o * cam.z, g = c.createRadialGradient(gx, ey, 0, gx, ey, 3.2 * cam.z); g.addColorStop(0, 'rgba(255,60,40,' + pulse + ')'); g.addColorStop(0.35, 'rgba(255,30,20,' + pulse * 0.6 + ')'); g.addColorStop(1, 'rgba(255,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(gx, ey, 3.2 * cam.z, 0, 7); c.fill(); });
+      e.eyes.forEach(function (q) { var gx = (e.x + q[0] - cam.x) * cam.z + 200, ey = (e.y * K + q[1] - cam.y) * cam.z + 125; if (gx < -20 || gx > 420 || ey < -20 || ey > 270) return; var g = c.createRadialGradient(gx, ey, 0, gx, ey, 3.2 * cam.z); g.addColorStop(0, 'rgba(255,60,40,' + pulse + ')'); g.addColorStop(0.35, 'rgba(255,30,20,' + pulse * 0.6 + ')'); g.addColorStop(1, 'rgba(255,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(gx, ey, 3.2 * cam.z, 0, 7); c.fill(); });
     });
     c.restore();
   }
@@ -719,9 +718,10 @@ __COMBAT__
     c.stroke(); c.setLineDash([]);
     if (P.wreck) {                     // a soft red glow over the piece that would go, and what it gives back
       c.translate(0, -gdy); var r = wreckRect(t), back = t.kind === 'item' ? costOfItem(t.item.name) : t.kind === 'edge' ? costOf(t.has) : t.kind === 'post' ? pieceFor('post', 0).cost : t.kind === 'stairs' ? pieceFor('stairs', 0).cost : (Bl().floors[Build.key(t.tx, t.ty)] != null ? costOfFloor(Bl().floors[Build.key(t.tx, t.ty)]) : null);
-      c.shadowColor = 'rgba(255,70,50,0.95)'; c.shadowBlur = 14; c.fillStyle = 'rgba(255,80,60,' + (t.ok ? 0.38 : 0.14) + ')';
-      c.fillRect(r.x, r.y, r.w, r.h); c.fillRect(r.x, r.y, r.w, r.h); c.shadowBlur = 0;
-      if (t.ok) { c.strokeStyle = 'rgba(255,120,100,0.9)'; c.lineWidth = 1.4; c.strokeRect(r.x, r.y, r.w, r.h); c.beginPath(); c.moveTo(r.x, r.y); c.lineTo(r.x + r.w, r.y + r.h); c.moveTo(r.x + r.w, r.y); c.lineTo(r.x, r.y + r.h); c.stroke(); }
+      c.fillStyle = t.ok ? 'rgba(255,214,80,0.16)' : 'rgba(255,80,60,0.12)'; c.fillRect(r.x, r.y, r.w, r.h);
+      c.shadowColor = t.ok ? 'rgba(255,214,80,0.95)' : 'rgba(255,70,50,0.8)'; c.shadowBlur = 10; c.strokeStyle = t.ok ? '#ffd34d' : 'rgba(255,120,100,0.8)'; c.lineWidth = 2;   // what would go is framed in yellow
+      c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); c.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); c.shadowBlur = 0;
+      if (t.ok) { c.strokeStyle = 'rgba(255,214,80,0.55)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(r.x + 3, r.y + 3); c.lineTo(r.x + r.w - 3, r.y + r.h - 3); c.moveTo(r.x + r.w - 3, r.y + 3); c.lineTo(r.x + 3, r.y + r.h - 3); c.stroke(); }
       if (t.ok && back) ghostLabel = { text: 'Wreck: +' + costText(back), bad: false }; else if (!t.ok && (t.kind !== 'tile' || t.why)) ghostLabel = { text: t.why || 'Too far', bad: true };
     } else {                           // the piece as it would stand, its footprint, and the reason if it cannot go there
       var col = t.ok ? '120,255,160' : '255,80,60';

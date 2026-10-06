@@ -336,7 +336,7 @@ function make(kit, opts) {
         if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tn = TREES[Math.floor(R() * TREES.length) % TREES.length]; p = { name: tn, s: (tn === 'pine' ? 0.54 : 0.49) + R() * 0.1, r: 11 }; w.stats.trees++; }
         else if (roll > 0.955) p = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
         else if (roll > 0.948) { p = { name: R() < 0.6 ? 'rock' : 'rockFormation', s: 0.9, r: 10 }; w.stats.rocks++; }
-        else if (roll > 0.9475) p = { name: ['runestone', 'cairn', 'fallenTree', 'birdNest'][Math.floor(R() * 4)], s: 1, r: 10 };
+        else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs'][Math.floor(R() * 5)], s: 1, r: 10 };   // things of nature only: no carved stones or posts lie about
       } else if (roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
       p.x = wx; p.y = wy; p.v = Math.floor(R() * 3);

@@ -11,7 +11,7 @@ cons.forEach(function (cn, i) { var sp = lib.conceptSpec(cn.name); dirs.forEach(
 if (big) { fs.writeFileSync('folk.png', cv.toBuffer('image/png')); console.log('wrote folk.png (big)'); process.exit(0); }
 // the styles: rows of hair, beard, hat, clothes (front view), each over a matte base
 var base = { matte: 1, col: { coat: '#8a7a5c', pants: '#4f4336', trim: '#5a3a26', hair: '#a86a3a' } };
-var rows = [['hair', 7], ['beard', 5], ['hat', 6], ['clothes', 5]];
+var rows = [['hair', 9], ['beard', 5], ['hat', 6], ['clothes', 5]];
 rows.forEach(function (rw, r) { for (var k = 0; k < rw[1]; k++) { var sp = JSON.parse(JSON.stringify(base)); sp[rw[0]] = k; if (rw[0] !== 'beard') sp.beard = 0; draw(sp, k * cell + 30, (5 + r) * cell + 52, 'down'); draw(sp, k * cell + 30 + 400, (5 + r) * cell + 52, 'left'); } c.fillStyle = '#243018'; c.textAlign = 'left'; c.fillText(rw[0] + ' 0..' + (rw[1] - 1), 4, (5 + r) * cell + 8); });
 // back views of a few
 [{ hair: 2 }, { hair: 3 }, { hair: 6, hat: 4 }, { clothes: 2, hair: 4 }, { clothes: 3, hat: 1 }, { hair: 1, beard: 3 }].forEach(function (o, k) { var sp = JSON.parse(JSON.stringify(base)); for (var q in o) sp[q] = o[q]; draw(sp, k * cell + 30, 9 * cell + 52, 'up'); draw(sp, k * cell + 30 + 400, 9 * cell + 52, 'right'); });
