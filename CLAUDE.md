@@ -167,6 +167,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/beasts.md`: the cards and rules for Robin's creatures from Norse myth and folklore (troll, bysen,
   shapeshifter, huldra, tomtar, näcken, draugr, mara, jötunn, valkyrie), and the ore-at-night mining idea. Robin's
   lore and mechanics are marked; the rest are suggestions, not decided.
+- `docs/start-loop.md`: the first hour against Valheim, Grounded and Enshrouded, our path from the wreck to the raft, what
+  is missing, and the proposed start (smoke and cairn, the steading as the beginner base, finds, the first night, sitting
+  and fishing, Brokk at the shore). A proposal, not decided.
 - `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster); step 1 is built.
 - `docs/roadmap.md`: **Goal 1, "leave the island"** (Robin, 2026-10-05) is at the top: the chain from landing
   with nothing to a raft (tools, gathering, food with stamina, leather, a comfortable house with a rug, Brokk
