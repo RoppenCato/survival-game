@@ -27,8 +27,6 @@ PAGES = [
     ('character-editor', 'sprite'),
     ('creature-editor', 'creature'),
     ('object-editor', 'objects'),
-    ('environment-editor', 'environment'),
-    ('base-editor', 'base'),
     ('sea-editor', 'sea'),
     ('grass-editor', 'grass'),
     ('hird-editor', 'hird'),
