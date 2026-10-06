@@ -642,7 +642,7 @@ var ANIMALS = {
     col: { body: '#6f7e66', belly: '#92a088', accent: '#5a4636', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824' } },
   trollStone: { name: 'Stone troll', set: { plan: 7, size: 2.05, speed: 0.78, windup: 1.1, lunge: 0, hp: 40, aggro: 130, tell: 1 },
     col: { body: '#8c8c92', belly: '#a6a6ac', accent: '#6e6e74', eye: '#8c8c92', glow: '#8c8c92', line: '#3a3a40' } },
-  wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.3, windup: 0.45, hp: 8, aggro: 100 },
+  wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.4, windup: 0.35, hp: 22, aggro: 220 },
     col: { body: '#727982', belly: '#d3d7dc', accent: '#f1ead6', eye: '#3a2a10', glow: '#ffd34d' } }
 };
 // How each animal fights (read by botAI in combat.js through e.cfg.atk). The boar charges straight past you and turns
@@ -652,7 +652,7 @@ var ATTACKS = {
   boar: { kind: 'charge', windup: 0.6, dur: 0.55, speed: 330, from: 150, recover: 1.1, cd: 1.2, turn: 2.4 },
   snake: { kind: 'lunge', windup: 0.5, dur: 0.14, speed: 330, near: 34, recover: 1.2, cd: 1.5, venom: 4, venomDmg: 2 },
   troll: { kind: 'arc', windup: 1.1, dur: 0.4, reach: 36, arc: 2.4, hitAt: 0.35, step: 50, recover: 1.5, cd: 1.7, heavy: true, turn: 1.7 },
-  wolf: { kind: 'lunge', windup: 0.3, dur: 0.2, speed: 280, ring: 60, recover: 0.5, cd: 1.1, pack: true },
+  wolf: { kind: 'lunge', windup: 0.25, dur: 0.2, speed: 320, ring: 70, recover: 0.4, cd: 0.8, pack: true },
   moose: { kind: 'arc', windup: 0.7, dur: 0.35, reach: 30, arc: 1.7, hitAt: 0.4, step: 120, recover: 0.9, cd: 1.3, turn: 2.6 },
   bear: { kind: 'arc', windup: 0.9, dur: 0.3, reach: 26, arc: 2.1, hitAt: 0.35, step: 50, recover: 1.0, cd: 1.5, heavy: true }
 };

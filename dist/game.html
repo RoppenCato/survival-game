@@ -738,7 +738,7 @@ var ANIMALS = {
     col: { body: '#6f7e66', belly: '#92a088', accent: '#5a4636', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824' } },
   trollStone: { name: 'Stone troll', set: { plan: 7, size: 2.05, speed: 0.78, windup: 1.1, lunge: 0, hp: 40, aggro: 130, tell: 1 },
     col: { body: '#8c8c92', belly: '#a6a6ac', accent: '#6e6e74', eye: '#8c8c92', glow: '#8c8c92', line: '#3a3a40' } },
-  wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.3, windup: 0.45, hp: 8, aggro: 100 },
+  wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.4, windup: 0.35, hp: 22, aggro: 220 },
     col: { body: '#727982', belly: '#d3d7dc', accent: '#f1ead6', eye: '#3a2a10', glow: '#ffd34d' } }
 };
 // How each animal fights (read by botAI in combat.js through e.cfg.atk). The boar charges straight past you and turns
@@ -748,7 +748,7 @@ var ATTACKS = {
   boar: { kind: 'charge', windup: 0.6, dur: 0.55, speed: 330, from: 150, recover: 1.1, cd: 1.2, turn: 2.4 },
   snake: { kind: 'lunge', windup: 0.5, dur: 0.14, speed: 330, near: 34, recover: 1.2, cd: 1.5, venom: 4, venomDmg: 2 },
   troll: { kind: 'arc', windup: 1.1, dur: 0.4, reach: 36, arc: 2.4, hitAt: 0.35, step: 50, recover: 1.5, cd: 1.7, heavy: true, turn: 1.7 },
-  wolf: { kind: 'lunge', windup: 0.3, dur: 0.2, speed: 280, ring: 60, recover: 0.5, cd: 1.1, pack: true },
+  wolf: { kind: 'lunge', windup: 0.25, dur: 0.2, speed: 320, ring: 70, recover: 0.4, cd: 0.8, pack: true },
   moose: { kind: 'arc', windup: 0.7, dur: 0.35, reach: 30, arc: 1.7, hitAt: 0.4, step: 120, recover: 0.9, cd: 1.3, turn: 2.6 },
   bear: { kind: 'arc', windup: 0.9, dur: 0.3, reach: 26, arc: 2.1, hitAt: 0.35, step: 50, recover: 1.0, cd: 1.5, heavy: true }
 };
@@ -5607,7 +5607,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     boar: { start: 2, n: 5, ground: 'grass', r: 9, dmg: 14, aggro: 75, range: 110, nearN: 1, nearMax: 900, drops: { meat: 1, leather: 1 } },
     deer: { start: 3, n: 4, ground: 'grass', r: 8, dmg: 0, aggro: 95, range: 140, nearN: 2, nearMax: 800, flee: true, drops: { meat: 1, leather: 2 } },
     snake: { start: 2, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: {} },
-    wolf: { n: 4, ground: 'dark', r: 8, dmg: 10, aggro: 120, range: 130, pair: true, drops: { meat: 1, leather: 0.5 } },
+    wolf: { n: 0, ground: 'grass', r: 8, dmg: 22, aggro: 220, range: 260, drops: { meat: 1, leather: 0.5 } },   // only at night, in packs of three: see nightTick
     moose: { n: 2, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, leather: 2, antler: 1 } },
     troll: { n: 0, ground: 'dark', r: 9, dmg: 28, aggro: 100, range: 120, minHome: 600, drops: { copper: 3, stone: 3 } },
     bear: { n: 1, ground: 'far', r: 12, dmg: 30, aggro: 85, range: 90, drops: { meat: 3, leather: 2 } }
@@ -5658,7 +5658,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     fall: function () { tone(90, 0.5, 'sine', 0.22, 30); noise(0.35, 0.3, 500, 0.6); },
     pick: function () { tone(660, 0.06, 'triangle', 0.06); tone(990, 0.08, 'sine', 0.05); },
     craft: function () { tone(440, 0.08, 'triangle', 0.06); tone(660, 0.1, 'triangle', 0.06); tone(880, 0.14, 'sine', 0.05); },
-    build: function () { tone(220, 0.08, 'square', 0.06, 160); noise(0.08, 0.2, 1200, 1); }
+    build: function () { tone(220, 0.08, 'square', 0.06, 160); noise(0.08, 0.2, 1200, 1); },
+    howl: function () { tone(330, 1.6, 'sine', 0.08, 520); tone(495, 1.4, 'triangle', 0.03, 760); }
   };
   Combat.api.sfx = function (n, v, src) {   // a beast's sound is only heard when it is near; the world is big
     if (src && src.x != null) { var P = hero(); if (Math.hypot(src.x - P.x, src.y - P.y) > 260) return; }
@@ -5839,28 +5840,76 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (rested > 0) { rested -= dt; var P2 = hero(); if (!P2.dead) P2.hp = Math.min(P2.maxHp, P2.hp + 0.3 * dt); }
   }
   function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening()) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: comfortOf(roomInfo ? roomInfo.at(Math.floor(bd.x / T), Math.floor(bd.y / T)) : -1).n }; invOpen = false; menu = null; }
+
+  /* ---------- the night (Robin, 2026-10-06): dark, and the wolves come. Home, with its fire, is where you are safe ----------
+     Wolves live nowhere by day. When the light has mostly gone a pack of three comes in from the edge of your view, on
+     either island, and hunts you by sight from far off; at dawn what is left of it slinks away. One pack a night: kill it
+     and the night is yours. They are far stronger than the day beasts (22 health, 22 a bite, quick): the point is to be
+     indoors by a fire, not to fight. Their eyes glow red in the dark. */
+  var nightWolves = [], nightSpawned = false, nightSaid = 0;
+  function nightTick(dt) {
+    var L = light(), P = hero(), W = Combat.dbg().W, i;
+    if (day.t >= DUSK_AT && nightSaid !== day.n) { nightSaid = day.n; note('The light is going'); }
+    nightWolves = nightWolves.filter(function (e) { return !e.dead && W.enemies.indexOf(e) >= 0; });
+    if (L > 0.5 && !inCave && !inYard) nightWolves.forEach(function (e) { if (!e.dead && Math.hypot(e.x - P.x, e.y - P.y) < 900) e.heard = 3; });   // the pack hunts you by scent and sight from far off
+    if (L > 0.6 && !nightSpawned && !inCave && !inYard && !sleep) {
+      nightSpawned = true;
+      var isle = isleAt(P.x, P.y), first = null; if (isle < 0) return;
+      placeIsle = isle;
+      for (i = 0; i < 3; i++) { var e = placeAnimal('wolf', 380, first ? { x: first.wander.x0, y: first.wander.y0 } : null, false); if (!e) continue; if (!first) first = e; e.isle = isle; e.night = true; e.wander.r = 260; nightWolves.push(e); }
+      placeIsle = null;
+      if (first) sfx('howl');
+    }
+    if (L < 0.3 && nightSpawned) { nightSpawned = false; nightWolves.forEach(function (e) { var k = W.enemies.indexOf(e); if (k >= 0) W.enemies.splice(k, 1); }); nightWolves = []; }
+  }
+  function drawWolfEyes(c) {               // two red points per wolf, through the dark, from far off
+    var L = light(); if (L < 0.3) return;
+    c.save(); c.globalCompositeOperation = 'lighter';
+    nightWolves.forEach(function (e) {
+      if (e.dead) return; var dir = Math.cos(e.face || 0) >= 0 ? 1 : -1, ex = (e.x + dir * 9 - cam.x) * cam.z + 200, ey = (e.y * K - 11 - cam.y) * cam.z + 125;
+      if (ex < -20 || ex > 420 || ey < -20 || ey > 270) return;
+      var pulse = (0.5 + 0.2 * Math.sin(clock * 4 + e.x)) * Math.min(1, (L - 0.3) / 0.4);
+      [0, -dir * 3.2].forEach(function (o) { var gx = ex + o * cam.z, g = c.createRadialGradient(gx, ey, 0, gx, ey, 3.2 * cam.z); g.addColorStop(0, 'rgba(255,60,40,' + pulse + ')'); g.addColorStop(0.35, 'rgba(255,30,20,' + pulse * 0.6 + ')'); g.addColorStop(1, 'rgba(255,0,0,0)'); c.fillStyle = g; c.beginPath(); c.arc(gx, ey, 3.2 * cam.z, 0, 7); c.fill(); });
+    });
+    c.restore();
+  }
+  function drawEmbers(c) {                 // sparks drifting up from every fire in view, and from the torch
+    var L = light(); if (L < 0.15) return;
+    var fires = []; if (hearth) fires.push(hearth); B.items.forEach(function (it) { if (it.name === 'stoneHearth' || it.light) fires.push(it); });
+    var P = hero(); if (torchOn) fires.push({ x: P.x + (Math.cos(P.face) >= 0 ? 8 : -8), y: P.y - 24, torch: true });
+    c.save(); c.globalCompositeOperation = 'lighter';
+    fires.forEach(function (f, fi) {
+      var sx = (f.x - cam.x) * cam.z + 200, sy = (f.y * K - (f.torch ? 0 : 6) - cam.y) * cam.z + 125; if (sx < -30 || sx > 430 || sy < -30 || sy > 280) return;
+      for (var k = 0; k < (f.torch ? 4 : 7); k++) {
+        var t = (clock * 0.55 + k * 0.173 + fi * 0.31) % 1, wob = Math.sin((clock + k) * 3.1) * 2.5, px = sx + wob * cam.z + (k - 3) * 1.4 * cam.z, py = sy - t * 26 * cam.z, a = (1 - t) * 0.8 * L;
+        c.fillStyle = 'rgba(255,' + Math.round(140 + 80 * (1 - t)) + ',60,' + a.toFixed(2) + ')'; c.beginPath(); c.arc(px, py, (0.9 + (1 - t) * 0.6) * cam.z, 0, 7); c.fill();
+      }
+    });
+    c.restore();
+  }
   function drawNight(c) {                  // the evening glow and the night's blue, with the hearths' light cut out
     var L = light(), D = dusk(); if (L <= 0 && D <= 0) return;
     if (!nightCv) { nightCv = document.createElement('canvas'); nightCv.width = 200; nightCv.height = 125; }
     var n = nightCv.getContext('2d'), P = hero();
     n.globalCompositeOperation = 'source-over';
-    var r = Math.round(255 - 125 * L + 0 * D), g = Math.round(255 - 110 * L - 35 * D), b = Math.round(255 - 60 * L - 80 * D);
+    var r = Math.round(255 - 222 * L + 0 * D), g = Math.round(255 - 215 * L - 70 * D), b = Math.round(255 - 178 * L - 120 * D);   // dusk goes amber, night goes very dark blue
     n.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')'; n.fillRect(0, 0, 200, 125);
     if (L > 0.05) {                        // fires light their surroundings
       n.globalCompositeOperation = 'lighter'; var fires = [], i;
       if (hearth) fires.push(hearth); for (i = 0; i < B.items.length; i++) if (B.items[i].name === 'stoneHearth' || B.items[i].light) fires.push(B.items[i]);
       for (i = 0; i < fires.length; i++) {
-        var f = fires[i], sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (40 + Math.sin(clock * 9 + i) * 2.5) * cam.z / 2;
+        var f = fires[i], sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (48 + Math.sin(clock * 9 + i) * 2.5 + Math.sin(clock * 1.7 + i) * 3) * cam.z / 2;
         if (sx < -rad || sx > 200 + rad || sy < -rad || sy > 125 + rad) continue;
-        var gr = n.createRadialGradient(sx, sy, 0, sx, sy, rad); gr.addColorStop(0, 'rgba(' + Math.round(140 * L) + ',' + Math.round(110 * L) + ',' + Math.round(40 * L) + ',1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+        var gr = n.createRadialGradient(sx, sy, 0, sx, sy, rad); gr.addColorStop(0, 'rgba(' + Math.round(190 * L) + ',' + Math.round(150 * L) + ',' + Math.round(70 * L) + ',1)'); gr.addColorStop(0.35, 'rgba(' + Math.round(130 * L) + ',' + Math.round(90 * L) + ',' + Math.round(30 * L) + ',1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
         n.fillStyle = gr; n.beginPath(); n.arc(sx, sy, rad, 0, 7); n.fill();
       }
-      var hx = ((P.x - cam.x) * cam.z + 200) / 2, hy = ((P.y * K - cam.y) * cam.z + 125) / 2, hr = (torchOn ? 70 : 22) * cam.z / 2;   // and you can always see yourself; a torch lights a wide warm circle
-      var g2 = n.createRadialGradient(hx, hy, 0, hx, hy, hr); g2.addColorStop(0, torchOn ? 'rgba(' + Math.round(150 * L) + ',' + Math.round(115 * L) + ',' + Math.round(65 * L) + ',1)' : 'rgba(' + Math.round(50 * L) + ',' + Math.round(50 * L) + ',' + Math.round(45 * L) + ',1)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+      var hx = ((P.x - cam.x) * cam.z + 200) / 2, hy = ((P.y * K - cam.y) * cam.z + 125) / 2, hr = (torchOn ? 66 + Math.sin(clock * 11) * 2 + Math.sin(clock * 23) * 1.2 : 14) * cam.z / 2;   // and you can always see yourself; a torch lights a wide warm circle
+      var g2 = n.createRadialGradient(hx, hy, 0, hx, hy, hr); g2.addColorStop(0, torchOn ? 'rgba(' + Math.round(180 * L) + ',' + Math.round(135 * L) + ',' + Math.round(70 * L) + ',1)' : 'rgba(' + Math.round(34 * L) + ',' + Math.round(34 * L) + ',' + Math.round(36 * L) + ',1)'); if (torchOn) g2.addColorStop(0.4, 'rgba(' + Math.round(110 * L) + ',' + Math.round(80 * L) + ',' + Math.round(35 * L) + ',1)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
       n.fillStyle = g2; n.beginPath(); n.arc(hx, hy, hr, 0, 7); n.fill();
     }
     c.save(); c.globalCompositeOperation = 'multiply'; c.imageSmoothingEnabled = true; c.drawImage(nightCv, 0, 0, 400, 250); c.restore();
-    if (L > 0.25) {                        // ore glows faintly in the dark: a warm copper light on rocks that hold it
+    drawEmbers(c); drawWolfEyes(c);
+    if (false) {                           // (ore no longer glows outside: Robin wants the night dark, with no stray lights)
       var gc = c, P3 = hero(); c.save(); c.globalCompositeOperation = 'lighter';
       around(P3.x, P3.y, function (o) {
         if (o.kind !== 'stone' || !o.ore || o.dying != null) return;
@@ -6174,7 +6223,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     house(vx + 9, vy + 1, 3, 2, 2, 1, vx + 10, 0);         // the hut still whole: wattle, packed earth, a thatch roof, a bed and a crate
     item('bed', vx + 9, vy + 1, { bed: true }); item('crate', vx + 11, vy + 2, { loot: { wood: 8, fiber: 4 } });
     house(vx + 9, vy + 6, 4, 3, 3, 2, vx + 11, 6);         // the stone house, half gone
-    item('woodenWell', vx + 8, vy + 7); item('claimStone', vx + 6.5, vy + 8.2, { claim: true, fallen: true }); item('barrel', vx + 12, vy + 7, { loot: { berries: 5, meat: 2 } });
+    item('woodenWell', vx + 8, vy + 7); item('claimStone', vx + 6.5, vy + 8.2, { claim: true, fallen: true }); item('stoneHearth', vx + 6.2, vy + 6.4, { light: 1 });   // Brokk's fire: light, and a hint that you will want one item('barrel', vx + 12, vy + 7, { loot: { berries: 5, meat: 2 } });
     for (x = vx; x < vx + village.w; x++) if (!(x >= vx + 6 && x <= vx + 7) && R() < 0.8) H(x, vy, 'palisade', 0);   // the palisade: a gate in the north, gaps all round
     H(vx + 6, vy, 'gate', 2);
     for (y = vy; y < vy + village.h; y++) if (R() < 0.75) V(vx, y, 'palisade', 0);
@@ -6474,7 +6523,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var troll = null, trollOutNight = 0, trollDeadDay = -99, STONE_T = 6, HOME_AT = 1620;
   function markOre() {                     // about a third of the rocks outside hold copper, from the island seed
     var R = kit.rng(spec.seed * 29 + 1);
-    w.eachProp(function (o) { if (o.kind === 'stone') o.ore = R() < 0.35; });
+    w.eachProp(function (o) { if (o.kind === 'stone') o.ore = R() < 0.35 && isleAt(o.x, o.y) !== 0; });   // copper is for the islands beyond the first
   }
   function fireNear(x, y, r) {
     if (hearth && Math.hypot(x - hearth.x, y - hearth.y) < r) return true;
@@ -7637,7 +7686,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var tx = Math.floor(x / T), ty = Math.floor(y / T), cd = code(tx, ty);
     if (cd < 2 || cd === 255 || !isLand(x, y)) return false;
     if (placeIsle != null && isleAt(x, y) !== placeIsle) return false;
-    if (kind === 'grass') return cd === 2;
+    if (kind === 'grass') return cd === 2 || cd === 3;
     if (kind === 'dark') return cd === 3;
     if (kind === 'far') return cd === 3 && Math.hypot(x - home.x, y - home.y) > 700;
     if (kind === 'shore') { for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++) if (code(tx + dx, ty + dy) === 1) return cd === 2; return false; }
@@ -7779,7 +7828,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var hm = mp(hpx, hpy); c.fillStyle = '#ffd34d'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.3; c.beginPath(); c.arc(hm.x, hm.y, 2.7, 0, 7); c.fill(); c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 0.7; c.beginPath(); c.arc(hm.x, hm.y, 4.2, 0, 7); c.stroke();
       c.restore();
       c.imageSmoothingEnabled = true;
-      if (SHOW.book) drawBookIcon(c, mx - 34, my + 10); if (SHOW.runes) drawPouchIcon(c, mx - 54, my + 10); drawDayIcon(c, mx - (SHOW.book || SHOW.runes ? 74 : 34), my + 10); clothFlash = Math.max(0, clothFlash - 0.02);
+      if (SHOW.book) drawBookIcon(c, mx - 34, my + 10); if (SHOW.runes) drawPouchIcon(c, mx - 54, my + 10); clothFlash = Math.max(0, clothFlash - 0.02);
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       drawTorchIcon(c, mx - (SHOW.runes || SHOW.book ? 94 : 54), my + 10);
       var rsn = SHOW.runes && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;   // a stone read once needs no prompt
@@ -8009,7 +8058,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -8027,7 +8076,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
-    tick(); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    tick(); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

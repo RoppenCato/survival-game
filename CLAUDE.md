@@ -452,6 +452,18 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   Sleeping rough just skips the night. A dial by the chart shows the sun or moon going round, with the day
   number and time of day on mouseover and the rested ring. `day` and `rested` are saved. No night-only
   beasts yet.
+- **The night (Robin, 2026-10-06): dark, and the wolves.** Night should feel dangerous so that home with a fire feels safe.
+  The night overlay is far darker (deep blue, with an amber dusk), you barely see yourself without a torch (14 units), the
+  torch is a warm flickering circle, fires have a bright core and a long soft reach that breathes, and **embers** drift
+  up from every fire and the torch (`drawEmbers`). No stray lights: ore no longer glows outside (the cave keeps its glow).
+  **Wolves** exist only at night (`nightTick`): when the light passes 0.6 a pack of three comes in 380 units off on the
+  island you stand on (`nightWolves`, `e.night`), with a howl; at dawn what is left slinks away (removed, not killed). One
+  pack a night. They are far stronger than the day beasts (`art.js` wolf hp 22, speed 1.75, lunge 1.4, windup 0.35; the
+  attack cd 0.8, speed 320; the game's `dmg` 22, `aggro` 220) so the answer is a roof and a fire, not a fight; their
+  **eyes glow red** in the dark (`drawWolfEyes`). The clock's sun-and-moon icon is gone; a note says "The light is going"
+  at dusk. **Brokk's campfire** (a `stoneHearth` with `light`) burns by the well at the steading, so the first night shows
+  what a fire does. **Copper is not on the starter island** (`markOre` skips island 0); it begins on the big island with
+  the cave.
 - **Hidden for now (Robin, 2026-10-05):** the runes (casting cloth, C, the pouch icon, runestone reading,
   skills on the hotbar, rune toasts) and the Book of Beasts (L, the book icon, page toasts) are built but not
   finished, so `SHOW = { runes: false, book: false }` in the page hides them until the basics are right. The
