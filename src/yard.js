@@ -61,7 +61,7 @@ var T = 32, TS = 24, K = 0.75;
   function fitVessel(raft) {                     // from its parts: how big the hull is (for the water test) and where you sit
     if (!raft) return; var parts = raft.parts && raft.parts.length ? raft.parts : RAFT_DEFAULT, hull = hullCells(parts), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
     hull.forEach(function (p) { var w = partOf(p.id).w; minI = Math.min(minI, p.i); maxI = Math.max(maxI, p.i + w); minJ = Math.min(minJ, p.j); maxJ = Math.max(maxJ, p.j + 1); });
-    if (raft.kind === 'boat') { var n = maxI - minI, rows = maxJ - minJ; raft.hw = n * CW / 2 + 10; raft.hh = (rows * CH * 0.85 + 4) * 0.6; raft.seat = raft.hw - 22; }
+    if (raft.kind === 'boat') { var n = maxI - minI, rows = maxJ - minJ; raft.hw = n * CW / 2 + 10; raft.hh = (rows * CH * 0.85 + 4) * 0.6; raft.seat = (raft.crew || 0) > 0 ? raft.hw * 0.5 : -raft.hw * 0.45; }   // alone you sit aft and paddle; with rowers you stand halfway to the bow
     else { raft.hw = (maxI - minI) * CW / 2 + 4; raft.hh = (maxJ - minJ) * CH / 2 + 4; raft.seat = 0; }
   }
 
@@ -137,7 +137,7 @@ var T = 32, TS = 24, K = 0.75;
       seats.forEach(function (x) { var u = x / L, tw = halfW(W, u) * 0.6; c.beginPath(); c.rect(x - 1.3, -tw, 2.6, tw * 2); fillStroke(shadeHex(col.hull, 12), 0.9); });   // the rowing seats as laid
       c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = 3; c.beginPath(); c.moveTo(-L * 0.7, W * 0.45); c.lineTo(-L * 0.98, W * 1.0); c.stroke();   // the steering oar, right of the stern
       c.strokeStyle = shadeHex(col.deck, -20); c.lineWidth = 1.6; c.beginPath(); c.moveTo(-L * 0.7, W * 0.45); c.lineTo(-L * 0.98, W * 1.0); c.stroke();
-      seats.forEach(function (x, n) { [-1, 1].forEach(function (sd) {                                  // an oar each side of every seat, pulling when under way
+      if ((v.crew || 0) > 0) seats.forEach(function (x, n) { [-1, 1].forEach(function (sd) {          // an oar each side of every seat, pulling when under way (only with rowers)
         var u = x / L, a = sd * (Math.PI / 2) - Math.sin(clock * (2.6 + mv * 4.5) + n) * 0.55 * mv - 0.2;
         var ox = x, oy = sd * halfW(W, u), len = W * 1.7 + 7 * sz, ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
         c.strokeStyle = LINE; c.lineWidth = 2.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
@@ -154,15 +154,20 @@ var T = 32, TS = 24, K = 0.75;
       curve(tip, [tip[0] + fx * dir * 3.5 * sz, tip[1] - 3 * sz], [tip[0] + fx * dir * 1.5 * sz, tip[1] + 2.4 * sz], w * 0.55, wood);
     }
     stem(-L * 0.96, -1, 10 * sz); stem(L * 0.96, 1, 11 * sz);
+    if (!(v.crew || 0) && v.aboard) {                      // alone: a paddle over the right side by the stern seat, stroking when under way
+      var px = v.seat || -L * 0.45, dip = mv > 0.05 ? Math.sin(clock * (3 + mv * 3)) : -0.6, ang = 0.95 + dip * 0.35;
+      inFrame(-6, function () { c.save(); c.translate(px + 4, 2); c.rotate(ang); c.strokeStyle = LINE; c.lineWidth = 3.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(-9, 0); c.lineTo(W * 1.3 + 8, 0); c.stroke(); c.strokeStyle = shadeHex(col.deck, -10); c.lineWidth = 1.7; c.stroke(); c.beginPath(); c.ellipse(W * 1.3 + 8, 0, 4, 2.2, 0, 0, 7); fillStroke(shadeHex(col.deck, -10), 0.9); c.restore(); });
+    }
   }
   // the near side of the hull, drawn again over the hero's feet so he stands in the boat instead of on it
-  function drawVesselFront(c, v, clock) {
+  function drawVesselFront(c, v, clock, heroY) {
     if (v.kind !== 'boat') return;
     var parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT, d = boatDims(parts), L = d.L, W = d.W, sz = Math.max(0.7, Math.min(1.2, L / 60)), bob = Math.sin(clock * 2 + v.x * 0.01) * 0.8;
     var sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02;
     function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(v.h + roll); c.scale(k1, k2); hullPath(c, L, W); c.restore(); }
     c.save();
-    c.beginPath(); c.rect(sx - L * 2, sy + 1.5, L * 4, L * 3); c.clip();
+    var cy = heroY != null ? heroY * K + 1 : sy + 1.5;
+    c.beginPath(); c.rect(sx - L * 2, cy, L * 4, L * 3); c.clip();
     c.lineJoin = 'round'; c.strokeStyle = LINE;
     c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(COL.hull, -30); c.fill('evenodd'); c.lineWidth = 1.6; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
     c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = COL.hull; c.fill('evenodd');
