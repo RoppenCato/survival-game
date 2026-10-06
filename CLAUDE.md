@@ -93,8 +93,6 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `character-editor.html` | `sprite.html` | Character Editor: tune the hero |
 | `creature-editor.html` | `creature.html` | Creature Editor: the six animals and their behaviour |
 | `object-editor.html` | `objects.html` | Object Editor: tune one world prop |
-| `environment-editor.html` | `environment.html` | Environment Editor: a patch of land with biomes and object layers |
-| `base-editor.html` | `base.html` | Base Editor: free building |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
 | `grass-editor.html` | `grass.html` | Grass Editor: swaying grass, its colours and the ground |
 | `hird-editor.html` | `hird.html` | Hird Editor: roll a hirdman, tune stats, traits, jobs, food and the claim stone |
@@ -125,7 +123,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   world: height field `E`, tile `grid`, `isLand`/`isWater`/`elevAt`, props in `buckets` (`plant`, `camp`, `addProp`,
   `removeProp`, `around`, `nearSolids`), lazy ground painting (`drawGround`), shore waves (`drawWaves`), `chart`.
   `World.KIND` and `World.HP` say what can be gathered. Island changes go here, once.
-- `src/build.js` (`Build`): building pieces, shared by the Base Editor and the game: `WALLS`, `FLOORS`, `ROOFS`,
+- `src/build.js` (`Build`): building pieces, used by the game (the Base Editor is gone): `WALLS`, `FLOORS`, `ROOFS`,
   `rooms(B, GW, GH, bounds)` (closed rooms by flood fill, and collision circles), `drawH`, `drawV`, `drawRoof`,
   `edgeAt`, `icon`. A building is `B = { floors, H, V }` keyed `"x,y"`.
 - `src/items.js` (`Items`): weapons and tools as specs ({ kind, mat, name, desc, size, width, sharp, glow, twist,
@@ -649,8 +647,9 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
 - Props are functions that draw with `shape`, `line`, `gshadow` and materials from `mats()`, registered in `PROPS`
   with a bounding box. `node tools/visual/props.js name name ...` renders them next to the hero.
 - Built things use `K.wood`; `K.trunk` is living bark.
-- A new prop must also be added to a category in `CATS` in `templates/objects.html` and to a pool in
-  `templates/environment.html`, or it will not show up there.
+- A new prop must also be added to a category in `CATS` in `templates/objects.html`, or it will not show up there.
+- **Removed 2026-10-06:** the Environment Editor and the Base Editor (superseded by the game's own world and build mode;
+  last in commit `3f526e7`).
 
 ## Sea and islands
 

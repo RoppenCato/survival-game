@@ -3,7 +3,7 @@
 
 Usage:  python3 tools/build.py
 Output in dist/: index.html (the start page), the editors (character-editor, creature-editor,
-object-editor, environment-editor, base-editor, sea-editor) and the playable combat-arena.
+object-editor, sea-editor, grass-editor, hird-editor) and the playable combat-arena.
 Each is a single self-contained file you can open in a browser or host anywhere.
 """
 import os
