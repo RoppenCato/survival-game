@@ -625,7 +625,7 @@ if (typeof module !== 'undefined') module.exports = Music;
   $('diceinst').onclick = function () { rollInstruments(song(), Math.random); changed(); if (Music.playing()) $('play').onclick(); };
   $('advbtn').onclick = function () { var on = !document.body.classList.contains('advanced'); document.body.classList.toggle('advanced', on); $('advbtn').setAttribute('aria-pressed', on); try { localStorage.setItem('songeditor.adv', on ? '1' : ''); } catch (e) {} };
   try { if (localStorage.getItem('songeditor.adv')) { document.body.classList.add('advanced'); $('advbtn').setAttribute('aria-pressed', 'true'); } } catch (e) {}
-  $('play').onclick = function () { Music.setVolume(+$('vol').value); Music.play(song()); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); };
+  $('play').onclick = function () { restartT = 0; Music.setVolume(+$('vol').value); Music.play(song()); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); };
   $('stop').onclick = function () { Music.stop(); };
   $('song').onchange = function () { curId = $('song').value; trk = 0; fill(); inUse(); if (Music.playing()) $('play').onclick(); };
   $('calm').onclick = function () { layer = 'calm'; Music.setLayer('calm', 1, 1.5); Music.setLayer('danger', 0, 1.5); fill(); };
