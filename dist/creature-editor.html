@@ -669,7 +669,7 @@ function playerD(c, x, y, dir, an, pose) {
     if (HS === 5 && view !== 'back') { c.fillStyle = C.hairD; c.globalAlpha = 0.35; c.fillRect(-12, hy - 4, 24, 9); c.globalAlpha = 1; c.fillStyle = SK; c.beginPath(); c.ellipse(view === 'side' ? -4 : 0, hy + 1, 8.5, 8.5, 0, 0, 7); c.fill(); }   // bald: a shadow of stubble round the sides
     if (HT === 1) hood(view);
     c.restore();
-    c.beginPath(); c.ellipse(0, hy, 10, 9, 0, 0, Math.PI * 2); c.lineWidth = 2; c.strokeStyle = LN; c.stroke();
+    c.beginPath(); if (HS >= 7 && HT !== 1) c.ellipse(0, hy, 10, 9, 0, Math.PI * 0.08, Math.PI * 0.92); else c.ellipse(0, hy, 10, 9, 0, 0, Math.PI * 2); c.lineWidth = 2; c.strokeStyle = LN; c.stroke();   // under big hair only the chin's edge shows
     if (HT === 1) hoodEdge(view);
     faceFn();
     if (HS === 4) knot(view); if (HS === 6) tail(view);
