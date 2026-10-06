@@ -262,6 +262,12 @@ __COMBAT__
     { id: 'floor', name: 'Plank floor', m: 0, cost: { wood: 1 } },
     { id: 'floor', name: 'Packed earth', m: 1, cost: { fiber: 1 } },
     { id: 'floor', name: 'Stone flags', m: 2, cost: { stone: 1 } },
+    { id: 'floor', name: 'Gravel trail', m: 3, cost: { stone: 1 } },
+    { id: 'floor', name: 'Grass', m: 4, cost: { fiber: 1 } },
+    { id: 'floor', name: 'Dark grass', m: 5, cost: { fiber: 1 } },
+    { id: 'floor', name: 'Moss', m: 6, cost: { fiber: 1 } },
+    { id: 'floor', name: 'Bare rock', m: 7, cost: { stone: 1 } },
+    { id: 'floor', name: 'Dock', m: 8, cost: { wood: 2 } },
     { id: 'fence', name: 'Wattle fence', m: 2, cost: { wood: 1 }, yard: true },
     { id: 'gate', name: 'Gate', m: 2, cost: { wood: 2 }, yard: true },
     { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true },
@@ -552,6 +558,11 @@ __COMBAT__
   function nearWater(tx, ty, r) { for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) if (code(tx + dx, ty + dy) === 0) return true; return false; }
   function shipNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.ship && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 70) return it; } return null; }
   function edgeMid(ed) { return ed.L === 'H' ? { x: (ed.x + 0.5) * T, y: ed.y * T } : { x: ed.x * T, y: (ed.y + 0.5) * T }; }
+  function dockAt(tx, ty) { var f = B.floors[Build.key(tx, ty)]; return f != null && !!(Build.FLOORS[f] || {}).water; }
+  function dockOk(tx, ty) {                 // water beside land or a dock (not the deep sea), or any land tile
+    var cd = code(tx, ty); if (cd >= 1 && cd !== 255) return true; if (cd !== 0 || w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) < -4) return false;   // the shallows reach a little past the wading water
+    var n = [[1, 0], [-1, 0], [0, 1], [0, -1]]; for (var i = 0; i < 4; i++) { var cx = tx + n[i][0], cy = ty + n[i][1], c2 = code(cx, cy); if ((c2 >= 1 && c2 !== 255) || dockAt(cx, cy)) return true; } return false;
+  }
   function spotClear(x, y) { var ok = isLand(x, y); if (ok) around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < o.r * o.s + 10) ok = false; }); return ok; }
   function cornerAt(wx, wy) { var cx = Math.round(wx / T), cy = Math.round(wy / T); return { x: cx, y: cy, d: Math.hypot(wx / T - cx, wy / T - cy) }; }
   function floorBeside(ed) { return ed.L === 'H' ? (upFloorAt(ed.x, ed.y - 1) || upFloorAt(ed.x, ed.y)) : (upFloorAt(ed.x - 1, ed.y) || upFloorAt(ed.x, ed.y)); }
@@ -593,8 +604,8 @@ __COMBAT__
       if (L && (pc.ship || pc.claim || pc.id === 'well' || pc.id === 'charcoal')) shipWhy = 'Not up here';
       return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && !shipWhy && !wallWhy && canAfford(pc.cost), why: far ? 'Too far' : shipWhy ? shipWhy : wallWhy ? wallWhy : !clear ? (L ? 'No floor here' : 'Blocked, or not on land') : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
     }
-    if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), onLand = L ? (roomInfo && roomInfo.at(tx, ty) >= 0) : (code(tx, ty) >= 1 && code(tx, ty) !== 255), hasF = BB.floors[fk2] != null && BB.floors[fk2] === pc.m, auto = L && B.up.auto[fk2];
-      return { kind: 'tile', tx: tx, ty: ty, piece: pc, ok: !far && onLand && !hasF && !auto && canAfford(pc.cost), why: far ? 'Too far' : !onLand ? (L ? 'Only over a closed room' : 'Not on land') : auto ? 'The stairs hold this floor up' : hasF ? 'Already that floor' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
+    if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), fw = !!(Build.FLOORS[pc.m] || {}).water, onLand = L ? (roomInfo && roomInfo.at(tx, ty) >= 0 && !fw) : (fw ? dockOk(tx, ty) : (code(tx, ty) >= 1 && code(tx, ty) !== 255)), hasF = BB.floors[fk2] != null && BB.floors[fk2] === pc.m, auto = L && B.up.auto[fk2];
+      return { kind: 'tile', tx: tx, ty: ty, piece: pc, ok: !far && onLand && !hasF && !auto && canAfford(pc.cost), why: far ? 'Too far' : !onLand ? (L ? 'Only over a closed room' : fw ? 'Lay it from the shore out over the shallows' : 'Not on land') : auto ? 'The stairs hold this floor up' : hasF ? 'Already that floor' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
     if (pc.id === 'post') { var pco = cornerAt(mouseW.x, my), pk = Build.key(pco.x, pco.y), ptaken = !!BB.posts[pk], pm = { x: pco.x * T, y: pco.y * T }, pclear = L ? floorAtCorner(pco.x, pco.y) : spotClear(pm.x, pm.y), inB = pco.x >= 0 && pco.y >= 0 && pco.x <= GW && pco.y <= GH;
       return { kind: 'post', cx: pco.x, cy: pco.y, piece: pc, ok: !far && inB && !ptaken && pclear && canAfford(pc.cost), why: far ? 'Too far' : ptaken ? 'A post stands here already' : !pclear ? (L ? 'No floor here' : 'Blocked, or not on land') : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
     if (pc.id === 'stairs') { var sk = Build.key(tx, ty), inRoom = !L && roomInfo && roomInfo.at(tx, ty) >= 0, hasS = !!B.stairs[sk], item = false;
@@ -603,7 +614,7 @@ __COMBAT__
     if (pc.id === 'roof') { var ri = R ? R.at(tx, ty) : -1; if (ri < 0 && R) { var ty3 = Math.floor((my + 42) / T); ri = R.at(tx, ty3); if (ri >= 0) ty = ty3; }   // pointing at the drawn roof counts too
       var room = ri >= 0 ? R.rooms[ri] : null, same = room && BB.roofs && BB.roofs[room.id] === pc.m, stair = room && room.up;
       return { kind: 'roof', tx: tx, ty: ty, room: room, piece: pc, ok: !far && !!room && !same && !stair && canAfford(pc.cost), why: far ? 'Too far' : !room ? 'Point at a closed room' : stair ? 'The stairs lead to a floor above' : same ? 'Already that roof' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
-    var ed2 = Build.edgeAt(mouseW.x, my), m = edgeMid(ed2), k2 = Build.key(ed2.x, ed2.y), taken = !!BB[ed2.L][k2], clear2 = L ? floorBeside(ed2) : spotClear(m.x, m.y), needPosts = !pc.yard && !Build.postsOk(BB, ed2);
+    var ed2 = Build.edgeAt(mouseW.x, my), m = edgeMid(ed2), k2 = Build.key(ed2.x, ed2.y), taken = !!BB[ed2.L][k2], clear2 = L ? floorBeside(ed2) : spotClear(m.x, m.y), needPosts = false;
     return { kind: 'edge', ed: ed2, piece: pc, ok: !far && Build.edgeOk(ed2, GW, GH) && !taken && clear2 && !needPosts && canAfford(pc.cost), why: far ? 'Too far' : taken ? 'Something stands here already' : !clear2 ? (L ? 'No floor here' : 'Blocked, or not on land') : needPosts ? 'Raise a post at each end first' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
   }
   var buildRot = 0;                          // 0 to 3: the way the next thing faces (the wheel turns it)
@@ -732,6 +743,12 @@ __COMBAT__
         else if (t.kind === 'stairs') c.rect(t.tx * T, t.ty * TS, T, TS);
         else { c.moveTo(t.ed.x * T, t.ed.y * TS); if (t.ed.L === 'H') c.lineTo((t.ed.x + 1) * T, t.ed.y * TS); else c.lineTo(t.ed.x * T, (t.ed.y + 1) * TS); }
         c.stroke();
+      }
+      if (t.kind === 'edge') {           // the edge itself on the ground, bright, so you see which side of the tile you are laying on
+        c.shadowBlur = 0; c.fillStyle = 'rgba(' + col + ',0.55)';
+        if (t.ed.L === 'H') c.fillRect(t.ed.x * T, t.ed.y * TS - 2.2, T, 4.4); else c.fillRect(t.ed.x * T - 2.2, t.ed.y * TS, 4.4, TS);
+        c.fillStyle = 'rgba(255,255,255,0.9)'; var e1 = t.ed.L === 'H' ? [[t.ed.x * T, t.ed.y * TS], [(t.ed.x + 1) * T, t.ed.y * TS]] : [[t.ed.x * T, t.ed.y * TS], [t.ed.x * T, (t.ed.y + 1) * TS]];
+        e1.forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 2.2, 0, 7); c.fill(); });
       }
       ghostLabel = t.ok ? { text: t.piece.name + '  ' + costText(t.piece.cost), bad: false } : { text: t.why || 'Cannot build here', bad: true };
     }
@@ -876,8 +893,8 @@ __COMBAT__
     if (x < 70 || y < 70 || x > WX - 70 || y > WY - 70) return false;
     var hw = (raft && raft.hw || 21) * 0.8, hh = (raft && raft.hh || 21) * 0.8, ch, sh;
     if (h == null) h = raft ? raft.h : 0; ch = Math.cos(h); sh = Math.sin(h);
-    for (var k = 0; k < 10; k++) { var a = k * Math.PI / 5, ex = Math.cos(a) * hw, ey = Math.sin(a) * hh; if (isLand(x + ex * ch - ey * sh, y + ex * sh + ey * ch)) return false; }
-    return !isLand(x, y);
+    for (var k = 0; k < 10; k++) { var a = k * Math.PI / 5, ex = Math.cos(a) * hw, ey = Math.sin(a) * hh, px = x + ex * ch - ey * sh, py = y + ex * sh + ey * ch; if (isLand(px, py) || dockAt(Math.floor(px / T), Math.floor(py / T))) return false; }
+    return !isLand(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T));
   }
   function raftSpot(nx, ny) {              // the clear water nearest a point, searched outward in rings
     for (var r = 36; r < 320; r += 12) for (var a = 0; a < 6.283; a += 0.3) { var x = nx + Math.cos(a) * r, y = ny + Math.sin(a) * r; if (raftHull(x, y)) return { x: x, y: y }; }
@@ -2344,9 +2361,14 @@ __COMBAT__
     }
     var P = hero();
     function slab(a) {                         // the floor tiles a storey up, with a dark joist edge on their south side
-      ctx.save(); ctx.globalAlpha = a; ctx.translate(0, -UP);
+      ctx.save(); ctx.globalAlpha *= a; ctx.translate(0, -UP);
       for (var fk in up.floors) { var fp = fk.split(','), tx = +fp[0], ty = +fp[1], fx = tx * T, fy = ty * TS; if (Math.abs(fx - cam.x) > hw + 40 || Math.abs(fy - cam.y) > hh + 60) continue;
         var fm = Build.FLOORS[up.floors[fk]] || Build.FLOORS[0]; ctx.drawImage(w.tile(fm.tile, tx, ty), fx, fy, T, TS);
+        if (B.stairs[fk]) {                  // the stairwell: an opening in the floor with the top treads showing, and a rail round it
+          ctx.fillStyle = '#2a2024'; ctx.fillRect(fx + 3, fy + TS * 0.3, T - 6, TS * 0.7); ctx.strokeStyle = Build.LINE; ctx.lineWidth = 1; ctx.strokeRect(fx + 3, fy + TS * 0.3, T - 6, TS * 0.7);
+          ctx.fillStyle = '#b98a5a'; ctx.fillRect(fx + 5, fy + TS * 0.3 + 1, T - 10, 3.5); ctx.fillStyle = '#8a6a45'; ctx.fillRect(fx + 5, fy + TS * 0.3 + 5.5, T - 10, 3); ctx.fillStyle = '#5a4030'; ctx.fillRect(fx + 5, fy + TS * 0.3 + 9.5, T - 10, 2.5);
+          ctx.fillStyle = '#6b4a35'; ctx.fillRect(fx + 1.5, fy + TS * 0.3 - 7, 2.5, 8); ctx.fillRect(fx + T - 4, fy + TS * 0.3 - 7, 2.5, 8); ctx.fillRect(fx + 1.5, fy + TS * 0.3 - 7, T - 3, 2);
+        }
         if (!upFloorAt(tx, ty + 1)) { ctx.fillStyle = '#4a3222'; ctx.fillRect(fx, fy + TS - 1, T, 3.5); ctx.strokeStyle = Build.LINE; ctx.lineWidth = 1; ctx.strokeRect(fx, fy + TS - 1, T, 3.5); }
         if (!upFloorAt(tx - 1, ty)) { ctx.fillStyle = '#5a3f2a'; ctx.fillRect(fx - 1, fy, 2, TS + 2.5); }
       }
@@ -2383,6 +2405,7 @@ __COMBAT__
     heroLift: function () { return (hero().lvl ? UP : 0) + (raft && raft.aboard && raft.kind === 'boat' ? -3 : 0); },   // a storey up upstairs   // feet a little below the rim, inside the hull
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
     walk: function (x, y, e) { var PH = hero(); if (!inYard && !inCave && (!e || e === PH)) { var wtx = Math.floor(x / T), wty = Math.floor(y / T); if (PH.lvl) return upFloorAt(wtx, wty); if (B.stairs[Build.key(wtx, wty)] && y / T - wty < 0.5) return false; }   // upstairs only the floor; the stairs' top half is reached by climbing
+      if (!inYard && !inCave && dockAt(Math.floor(x / T), Math.floor(y / T))) return true;
       if (ADMIN.fly && !inYard && !inCave) return true; if (inYard) return YSCENE.walk(x, y); if (inCave) return caveFloor(x, y); return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y); },   // the shallows can be waded
     begin: function (c, P) {
       var z = zoom, hw = 200 / z, hh = 125 / z, i;
@@ -2395,7 +2418,9 @@ __COMBAT__
       c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y);
       w.drawGround(c, cam, hw, hh);
       // floors you have laid
-      for (var fk in B.floors) { var fp = fk.split(','), fx = fp[0] * T, fy = fp[1] * TS; if (fx + T < cam.x - hw || fx > cam.x + hw || fy + TS < cam.y - hh || fy > cam.y + hh) continue; var fm = Build.FLOORS[B.floors[fk]] || Build.FLOORS[0]; c.drawImage(w.tile(fm.tile, +fp[0], +fp[1]), fx, fy, T + 0.4, TS + 0.4); if (fm.tile !== 'dirt') { c.strokeStyle = 'rgba(20,14,26,0.35)'; c.lineWidth = 0.8; c.strokeRect(fx, fy, T, TS); } }
+      for (var fk in B.floors) { var fp = fk.split(','), fx = fp[0] * T, fy = fp[1] * TS; if (fx + T < cam.x - hw || fx > cam.x + hw || fy + TS < cam.y - hh || fy > cam.y + hh) continue; var fm = Build.FLOORS[B.floors[fk]] || Build.FLOORS[0]; c.drawImage(w.tile(fm.tile, +fp[0], +fp[1]), fx, fy, T + 0.4, TS + 0.4);
+        if (fm.water) { var dtx = +fp[0], dty = +fp[1]; c.fillStyle = '#5a3f2a'; if (!dockAt(dtx, dty + 1) && code(dtx, dty + 1) === 0) { c.fillRect(fx, fy + TS - 2.5, T, 3); c.fillRect(fx + 2, fy + TS - 1, 3.5, 6); c.fillRect(fx + T - 5.5, fy + TS - 1, 3.5, 6); } if (!dockAt(dtx - 1, dty) && code(dtx - 1, dty) === 0) c.fillRect(fx - 1, fy, 2.5, TS); if (!dockAt(dtx + 1, dty) && code(dtx + 1, dty) === 0) c.fillRect(fx + T - 1.5, fy, 2.5, TS); c.strokeStyle = 'rgba(20,14,26,0.4)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(fx, fy + TS / 2); c.lineTo(fx + T, fy + TS / 2); c.stroke(); }
+        else if (fm.tile !== 'dirt' && !fm.bare) { c.strokeStyle = 'rgba(20,14,26,0.35)'; c.lineWidth = 0.8; c.strokeRect(fx, fy, T, TS); } }
       // stumps where trees stood
       for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue;
         c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(dc.x, dc.y * K, dc.r, dc.r * 0.7, 0, 0, 7); c.fill();
@@ -2623,6 +2648,7 @@ __COMBAT__
     if (inYard && (e.code === 'KeyB' || e.code === 'KeyQ')) { e.preventDefault(); return; }
     if (!codes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
+    if (e.code === 'KeyF' && hero().mode === 'build') menu = null;      // the board closes when the wreck cursor comes
     if (/^Digit[1-6]$/.test(e.code)) { var di = +e.code.slice(5) - 1; if (hero().mode === 'fight' && attackSkills()[di]) castSkill(di); }
     heldK[e.code] = true; Combat.key(e.code, true);
   });
@@ -2725,7 +2751,7 @@ __COMBAT__
       w.eachProp(function (o) { if (o.kind && gone[propKey(o)]) w.removeProp(o); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0;
       decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
-      var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; P.lvl = sv.lvl || 0; } else toCamp();
+      var P = hero(); if (sv.hero && (isLand(sv.hero.x, sv.hero.y) || dockAt(Math.floor(sv.hero.x / T), Math.floor(sv.hero.y / T)))) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; P.lvl = sv.lvl || 0; } else toCamp();
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null }; raftFit(); if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }
     } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; }   // he wakes in the wreck: the screen opens slowly

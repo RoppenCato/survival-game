@@ -272,9 +272,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Houses with a frame, a floor above, thatch and chimneys (2026-10-06, Robin):** the Building board is laid out in rows
   by category (`BCATS`: Frame and walls, Floors and roofs, Yard, Furniture, Outdoors; 11 columns, from the top of the screen;
   a piece's `cat`). **The frame:** a **post** (1 wood) stands at a tile corner (`B.posts` keyed by corner; drag lays a row);
-  a wall, door or window needs a post at each of its ends ("Raise a post at each end first": `Build.postsOk`); beams are
-  drawn between neighbouring posts with no wall between (`drawBeam`), so you raise the frame and then fill the walls; a post
-  carrying walls cannot be wrecked. Fences need no posts. Old saves, the steading and the hamlet get their posts from
+  beams are drawn between neighbouring posts with no wall between (`drawBeam`), so a frame reads as a frame; **posts are an
+  option, not a rule** (Robin, 2026-10-06: walls go up without them; `Build.postsOk` is kept but unused); a post carrying
+  walls cannot be wrecked. Old saves, the steading and the hamlet get their posts from
   `Build.ensurePosts`. **Stairs** (6 wood; `B.stairs` by tile, climbing north, `drawStairs`) go on a tile inside a closed
   room; a room with stairs gets **no roof but a floor above**: its tiles become the upper floor (`B.up.floors`, marked
   `B.up.auto`, laid again by `rebuildRooms`), seen from outside as a plank slab a storey up (`UP` = `Build.UP`, 30.75) that
@@ -293,6 +293,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   over the eaves, crossed ridge boards) or shingles (`drawRoof`; `dy` lifts it a storey; it fades with the alpha it is drawn
   under). **Yard:** a split-**rail fence** and a low **dry-stone wall** (`Build.YARD` `rail`, `drystone`); and **outdoors**
   the campfire, trough (new prop), scarecrow, flower bed, cairn and charcoal pit from the kit. The dragon post's id is `dragon`.
+  **Ground and docks (2026-10-06):** floors double as paths and yards: gravel trail, grass, dark grass, moss and bare rock
+  (`Build.FLOORS` with `bare`, no tile frame drawn) beside planks, earth and flags. The **dock** (2 wood; `water: true`) also
+  goes on water beside land or another dock while the sea is shallow (`dockOk`: elevation above -4), draws planks with beams
+  and posts at its open sides, and is walked on (`dockAt` in `scene.walk`); the boat is kept off it (`raftHull`). Upstairs the
+  stairwell shows as an opening with the top treads and a rail (`slab`), and the floor above fades with its bundle (the bug
+  was an alpha set instead of multiplied). The edge ghost marks the edge on the ground with a bright band and its two ends,
+  so east and west walls are easy to aim; F closes the board when it turns on the wreck cursor.
 - **Furniture is sized to the hero (2026-10-05):** a hero is about 39 units tall, so the table, bed, cart, well,
   drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
   its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision

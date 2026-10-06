@@ -17,7 +17,11 @@ var WALLS = [
   { name: 'Stone', face: '#868a94', top: '#a9adb8', dark: '#5c606c', tex: 'blocks' },
   { name: 'Turf', face: '#5c7f48', top: '#79a25e', dark: '#3c5a30', tex: 'turf' }
 ];
-var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: 'dirt' }, { name: 'Stone flags', tile: 'path' }];
+// Floors go on any land tile, so they make paths, yards and decks round a house as well as the floor in it. The dock
+// (water: true) also goes on water beside land or another dock, and can be walked on.
+var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: 'dirt' }, { name: 'Stone flags', tile: 'path' },
+  { name: 'Gravel trail', tile: 'trail', bare: true }, { name: 'Grass', tile: 'grass', bare: true }, { name: 'Dark grass', tile: 'grassDark', bare: true }, { name: 'Moss', tile: 'moss', bare: true }, { name: 'Bare rock', tile: 'rock', bare: true },
+  { name: 'Dock', tile: 'plank', water: true }];
 var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a', ridge: '#7a5636' }, { name: 'Thatch', col: '#d9b866', line: '#a3823f', ridge: '#6b4a2e' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a', ridge: '#4a3222' }, { name: 'No roof' }];
 var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 0, seeThrough: 0.12 };
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
@@ -266,11 +270,12 @@ function drawRoof(c, room, a, C, dy) {
   c.restore();
 }
 // a small icon of a piece, for a hotbar slot (centred on 0, 0, about 14 wide)
-var FLOOR_COL = { plank: ['#b98a5a', '#7a5636'], dirt: ['#a8865a', '#7a6040'], path: ['#9a9ca6', '#5c606c'] };
+var FLOOR_COL = { plank: ['#b98a5a', '#7a5636'], dirt: ['#a8865a', '#7a6040'], path: ['#9a9ca6', '#5c606c'], trail: ['#b9a07a', '#8a7050'], grass: ['#7fc45a', '#5a9a3a'], grassDark: ['#5f9a46', '#3f6a30'], moss: ['#6a9a58', '#4a7a3a'], rock: ['#8a8c94', '#5c606c'] };
 function icon(c, id, m) {
   var w = WALLS[m || 0];
   c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
-  if (id === 'floor') { var fc = FLOOR_COL[(FLOORS[m || 0] || FLOORS[0]).tile] || FLOOR_COL.plank; c.fillStyle = fc[0]; c.fillRect(-6, -4, 12, 8); c.strokeStyle = fc[1]; c.lineWidth = 1; c.beginPath(); if ((FLOORS[m || 0] || FLOORS[0]).tile === 'path') { c.moveTo(-6, 0); c.lineTo(6, 0); c.moveTo(-1, -4); c.lineTo(-1, 0); c.moveTo(2, 0); c.lineTo(2, 4); } else if ((FLOORS[m || 0] || FLOORS[0]).tile === 'plank') { c.moveTo(-2, -4); c.lineTo(-2, 4); c.moveTo(2, -4); c.lineTo(2, 4); } c.stroke(); c.strokeStyle = LINE; c.strokeRect(-6, -4, 12, 8); }
+  if (id === 'floor' && (FLOORS[m || 0] || {}).water) { c.fillStyle = '#4a86b8'; c.fillRect(-7, -5, 14, 10); c.fillStyle = '#b98a5a'; c.fillRect(-7, -3, 14, 5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-7, -3, 14, 5); c.fillStyle = '#5a3f2a'; c.fillRect(-6, 2, 2, 4); c.fillRect(4, 2, 2, 4); }
+  else if (id === 'floor') { var fc = FLOOR_COL[(FLOORS[m || 0] || FLOORS[0]).tile] || FLOOR_COL.plank; c.fillStyle = fc[0]; c.fillRect(-6, -4, 12, 8); c.strokeStyle = fc[1]; c.lineWidth = 1; c.beginPath(); if ((FLOORS[m || 0] || FLOORS[0]).tile === 'path') { c.moveTo(-6, 0); c.lineTo(6, 0); c.moveTo(-1, -4); c.lineTo(-1, 0); c.moveTo(2, 0); c.lineTo(2, 4); } else if ((FLOORS[m || 0] || FLOORS[0]).tile === 'plank') { c.moveTo(-2, -4); c.lineTo(-2, 4); c.moveTo(2, -4); c.lineTo(2, 4); } c.stroke(); c.strokeStyle = LINE; c.strokeRect(-6, -4, 12, 8); }
   else if (id === 'roof') { var r = ROOFS[m || 0]; c.fillStyle = r.col; c.beginPath(); c.moveTo(-7, 3); c.lineTo(0, -6); c.lineTo(7, 3); c.closePath(); c.fill(); c.strokeStyle = LINE; c.lineWidth = 1; c.stroke(); c.strokeStyle = r.line; c.beginPath(); c.moveTo(-3.5, -1.5); c.lineTo(3.5, -1.5); c.moveTo(-5.5, 1); c.lineTo(5.5, 1); c.stroke(); }
   else if (id === 'fence') { c.fillStyle = w.face; c.fillRect(-7, -2, 14, 5); c.strokeStyle = w.dark; c.lineWidth = 0.8; c.beginPath(); for (var fi = -5; fi <= 5; fi += 3) { c.moveTo(fi, -2); c.lineTo(fi, 3); } c.stroke(); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-7, -2, 14, 5); c.fillStyle = w.dark; c.fillRect(-7.5, -5, 2.5, 10); c.fillRect(-1.2, -5, 2.5, 10); c.fillRect(5, -5, 2.5, 10); }
   else if (id === 'gate') { c.fillStyle = w.dark; c.fillRect(-7.5, -5, 2.5, 10); c.fillRect(5, -5, 2.5, 10); c.fillStyle = w.top; c.fillRect(-5, -3, 10, 2); c.fillRect(-5, 2, 10, 2); c.strokeStyle = w.dark; c.lineWidth = 1.2; c.beginPath(); c.moveTo(-5, 3); c.lineTo(5, -2); c.stroke(); }
