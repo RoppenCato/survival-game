@@ -3841,9 +3841,9 @@ var T = 32, TS = 24, K = 0.75;
       var mv = Math.min(1, speedOf(v) / 60), st = mv > 0.05 ? Math.sin(clock * (3 + mv * 3)) : -1, side = Math.cos(v.h) >= 0 ? 1 : -1;
       var ch = Math.cos(v.h), sh = Math.sin(v.h), seat = v.seat || 0;
       function toS(bx, by) { return [v.x + bx * ch - by * sh, v.y * K + (bx * sh + by * ch) * K]; }
-      var hand = [v.x + ch * seat + 2, heroY * K - 8], rail = toS(seat + 4 + st * 5, side * (W * 0.95 + 1)), blade = toS(seat + 7 + st * 9, side * (W * 1.05 + 9));
+      var rail = toS(seat + 2 + st * 3, side * (W * 0.9)), blade = toS(seat + 5 + st * 7, side * (W * 0.9 + 13));   // a straight paddle from the rail down into the water
       c.save(); c.lineCap = 'round';
-      c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(hand[0], hand[1]); c.lineTo(rail[0], rail[1]); c.lineTo(blade[0], blade[1]); c.stroke(); c.strokeStyle = shadeHex(COL.deck, -10); c.lineWidth = 1.8; c.stroke();
+      c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(rail[0], rail[1]); c.lineTo(blade[0], blade[1]); c.stroke(); c.strokeStyle = shadeHex(COL.deck, -10); c.lineWidth = 1.8; c.stroke();
       c.beginPath(); c.ellipse(blade[0], blade[1], 2.6, 4.4, Math.atan2(blade[1] - rail[1], blade[0] - rail[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(COL.deck, -10); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke();
       if (mv > 0.05 && st > 0.3) { c.strokeStyle = 'rgba(235,250,255,0.6)'; c.lineWidth = 1.2; c.beginPath(); c.ellipse(blade[0], blade[1] + 2, 5 + st * 3, 2 + st, 0, 0, 7); c.stroke(); }
       c.restore();
