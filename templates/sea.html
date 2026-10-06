@@ -107,6 +107,8 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div class="group" id="steers"></div>
         <p class="desc" id="steerdesc"></p>
         <div id="phandle" style="margin-top:8px"></div>
+        <div class="group" style="margin-top:8px"><button id="usehandling">Use in the game</button></div>
+        <p class="desc" id="usemsg">The game's boat takes this steering, speed, acceleration, turn, glide and grip; its raft a slower share of them.</p>
         <p class="desc">Glide is how long the boat keeps moving after you let go. Grip is how firmly it follows its bow; low grip lets it slide sideways in turns.</p>
       </section>
       <section class="panel">
@@ -341,6 +343,7 @@ __COMBAT__
   }
   function yardLeave() { var P = Combat.dbg().P; inYard = false; YSCENE.leave(); view.zoom = yardZoom || 0.7; syncView(); P.x = (dockEnd.x + 8.3) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; yui(); }
   function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + (built.kind === 'boat' ? 'a boat' : 'a raft') + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
+  document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { localStorage.setItem('game.boat', JSON.stringify({ steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip })); document.getElementById('usemsg').textContent = 'The game now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ').'; } catch (err) {} };
   document.getElementById('yopen').onclick = function (e) { e.currentTarget.blur(); if (inYard) yardLeave(); else yardEnter(); };
   document.getElementById('yclear').onclick = function (e) { e.currentTarget.blur(); yardS.cells = []; ysave(); yui(); };
   document.getElementById('yship').onclick = function (e) { e.currentTarget.blur(); built = null; ysave(); yui(); if (!inYard) toDock(); };
@@ -411,29 +414,9 @@ __COMBAT__
     return isWater(x + c * d.L, y + s * d.L) && isWater(x - c * d.L, y - s * d.L) && isWater(x - s * d.W, y + c * d.W) && isWater(x + s * d.W, y - c * d.W) && isWater(x, y);
   }
   function sail(dt) {
-    var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), iy = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0), want = 0, stuck = !free(boat.x, boat.y, boat.h);
+    var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), iy = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0);
     if (!aboard) ix = iy = 0;
-    if (spec.steer === 0) {
-      if (ix || iy) {
-        var target = Math.atan2(iy, ix), diff = wrapA(target - boat.h), stepA = spec.turn * dt;
-        var nh = Math.abs(diff) <= stepA ? target : boat.h + (diff > 0 ? stepA : -stepA);
-        if (stuck || free(boat.x, boat.y, nh)) boat.h = nh;
-        want = spec.top * Math.max(0.25, Math.cos(Math.min(1.4, Math.abs(diff))));   // ease off while the bow swings round
-      }
-    } else {
-      want = iy < 0 ? spec.top : (iy > 0 ? -spec.top * 0.4 : 0);
-      var nh2 = boat.h + ix * spec.turn * dt * Math.min(1, Math.abs(boat.speed) / (spec.top * 0.35)) * (boat.speed < 0 ? -1 : 1);
-      if (stuck || free(boat.x, boat.y, nh2)) boat.h = nh2;
-    }
-    if (want !== 0) { var up = spec.accel * dt; boat.speed += Math.max(-up, Math.min(up, want - boat.speed)); }
-    else boat.speed *= Math.exp(-dt / spec.glide);
-    var tvx = Math.cos(boat.h) * boat.speed, tvy = Math.sin(boat.h) * boat.speed, g = Math.min(1, dt * (1 + spec.grip * 11));
-    boat.vx += (tvx - boat.vx) * g; boat.vy += (tvy - boat.vy) * g;
-    var nx = boat.x + boat.vx * dt, ny = boat.y + boat.vy * dt;
-    if (stuck || free(nx, ny, boat.h)) { boat.x = nx; boat.y = ny; }
-    else if (free(nx, boat.y, boat.h)) { boat.x = nx; boat.vy *= 0.3; boat.speed *= 0.9; }
-    else if (free(boat.x, ny, boat.h)) { boat.y = ny; boat.vx *= 0.3; boat.speed *= 0.9; }
-    else { boat.vx *= 0.2; boat.vy *= 0.2; boat.speed *= 0.5; }
+    Yard.sail(boat, { ix: ix, iy: iy }, dt, free, spec);   // the same physics as the game (src/yard.js)
     var sp = Math.hypot(boat.vx, boat.vy), d = dims();
     wakeT -= dt;
     if (sp > 12 && wakeT <= 0 && spec.wake > 0) { wakeT = 0.07; wakes.push({ x: boat.x - Math.cos(boat.h) * d.L * 0.9, y: boat.y - Math.sin(boat.h) * d.L * 0.9, r: d.W * 0.7, life: 1.3, max: 1.3, v: 6 + sp * 0.05 }); }

@@ -70,6 +70,40 @@ var T = 32, TS = 24, K = 0.75;
   var LINE = '#1d1622', COL = { hull: '#5a3a26', deck: '#b98a5a', trim: '#b83a2e' };
   function shadeHex(hex, d) { var n = parseInt(hex.substr(1), 16), r = Math.max(0, Math.min(255, (n >> 16) + d)), g = Math.max(0, Math.min(255, ((n >> 8) & 255) + d)), b = Math.max(0, Math.min(255, (n & 255) + d)); return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0'); }
   function speedOf(v) { return Math.hypot(v.vx || 0, v.vy || 0); }
+  // How a vessel handles: the Sea Editor's handling sliders, as numbers per kind. steer 0 is Direct (hold a direction
+  // and the hull turns to face it and goes), 1 is Tiller (W drives, S backs, A and D turn). top and accel in units a
+  // second, turn in radians a second, glide how long it keeps moving after you let go, grip how firmly it follows its bow.
+  var HANDLING = { raft: { steer: 0, top: 54, accel: 40, turn: 1.6, glide: 1.4, grip: 0.5 }, boat: { steer: 1, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6 } };
+  function wrapA(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
+  // One step of sailing: v = { x, y, h, speed, vx, vy }, inp = { ix, iy } (-1..1 each), free(x, y, h) says whether the
+  // hull fits there, H the handling. The same physics in the game and the Sea Editor.
+  function sail(v, inp, dt, free, H) {
+    var ix = inp.ix || 0, iy = inp.iy || 0, want = 0, stuck = !free(v.x, v.y, v.h);
+    if (v.speed == null) v.speed = 0;
+    if (!H.steer) {
+      if (ix || iy) {
+        var target = Math.atan2(iy, ix), diff = wrapA(target - v.h), stepA = H.turn * dt;
+        var nh = Math.abs(diff) <= stepA ? target : v.h + (diff > 0 ? stepA : -stepA);
+        if (stuck || free(v.x, v.y, nh)) v.h = nh;
+        want = H.top * Math.max(0.25, Math.cos(Math.min(1.4, Math.abs(diff))));   // ease off while the bow swings round
+      }
+    } else {
+      want = iy < 0 ? H.top : (iy > 0 ? -H.top * 0.4 : 0);
+      var nh2 = v.h + ix * H.turn * dt * Math.min(1, Math.abs(v.speed) / (H.top * 0.35)) * (v.speed < 0 ? -1 : 1);
+      if (stuck || free(v.x, v.y, nh2)) v.h = nh2;
+    }
+    if (want !== 0) { var up = H.accel * dt; v.speed += Math.max(-up, Math.min(up, want - v.speed)); }
+    else v.speed *= Math.exp(-dt / H.glide);
+    var tvx = Math.cos(v.h) * v.speed, tvy = Math.sin(v.h) * v.speed, g = Math.min(1, dt * (1 + H.grip * 11));
+    v.vx += (tvx - v.vx) * g; v.vy += (tvy - v.vy) * g;
+    var nx = v.x + v.vx * dt, ny = v.y + v.vy * dt;
+    if (stuck || free(nx, ny, v.h)) { v.x = nx; v.y = ny; }
+    else if (free(nx, v.y, v.h)) { v.x = nx; v.vy *= 0.3; v.speed *= 0.9; }
+    else if (free(v.x, ny, v.h)) { v.y = ny; v.vx *= 0.3; v.speed *= 0.9; }
+    else { v.vx *= 0.2; v.vy *= 0.2; v.speed *= 0.5; }
+    v.h = wrapA(v.h);
+    return stuck;
+  }
   // the water round a hull: a thin line of foam hugging it, and when it moves a wake of ripples trailing from the stern
   function drawWater(c, v, hl, hw, clock, pr) {
     var sp = speedOf(v), mv = Math.min(1, sp / 60), i;
@@ -320,7 +354,7 @@ var scene = {
   key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
 };
 
-return { scene: scene, wood: wood, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { scene: scene, wood: wood, HANDLING: HANDLING, sail: sail, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullCells: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();

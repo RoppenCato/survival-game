@@ -776,10 +776,18 @@ __COMBAT__
   var roofLater = null;
   /* ---------- the raft (Goal 1, step 9): crafted at the shipwright's bench, boarded with E, paddled with WASD, left with E ----------
      One raft. It floats anywhere that is not land, slowly; stepping ashore on the second island is the goal. */
-  var raft = null, RAFT_SPEED = 54, leftBanner = 0;
-  function raftHull(x, y) {                // the water test follows the hull's own shape, with a little room
+  var raft = null, leftBanner = 0;
+  // how the vessels handle: the Sea Editor's numbers (Yard.HANDLING), or what its "Use in the game" handed over (game.boat);
+  // the raft is a slower, clumsier share of the boat's
+  function handling(kind) {
+    var H = Yard.HANDLING[kind] || Yard.HANDLING.raft, o = {}, k; for (k in H) o[k] = H[k];
+    try { var g = JSON.parse(localStorage.getItem('game.boat')); if (g && g.top) { for (k in g) o[k] = g[k]; if (kind === 'raft') { o.top = g.top * 0.55; o.accel = g.accel * 0.8; o.turn = g.turn * 0.9; } } } catch (e) {}
+    return o;
+  }
+  function raftHull(x, y, h) {             // the water test follows the hull's own shape, with a little room
     if (x < 70 || y < 70 || x > WX - 70 || y > WY - 70) return false;
-    var hw = (raft && raft.hw || 21) * 0.8, hh = (raft && raft.hh || 21) * 0.8, h = raft ? raft.h : 0, ch = Math.cos(h), sh = Math.sin(h);
+    var hw = (raft && raft.hw || 21) * 0.8, hh = (raft && raft.hh || 21) * 0.8, ch, sh;
+    if (h == null) h = raft ? raft.h : 0; ch = Math.cos(h); sh = Math.sin(h);
     for (var k = 0; k < 10; k++) { var a = k * Math.PI / 5, ex = Math.cos(a) * hw, ey = Math.sin(a) * hh; if (isLand(x + ex * ch - ey * sh, y + ex * sh + ey * ch)) return false; }
     return !isLand(x, y);
   }
@@ -787,12 +795,12 @@ __COMBAT__
     for (var r = 36; r < 320; r += 12) for (var a = 0; a < 6.283; a += 0.3) { var x = nx + Math.cos(a) * r, y = ny + Math.sin(a) * r; if (raftHull(x, y)) return { x: x, y: y }; }
     return null;
   }
-  function placeRaft(bench) { var sp = raftSpot(bench.x, bench.y); if (!sp) return false; raft = { x: sp.x, y: sp.y, h: -0.4, vx: 0, vy: 0, aboard: false, kind: 'raft', hw: 21, hh: 21, seat: 0 }; return true; }
+  function placeRaft(bench) { var sp = raftSpot(bench.x, bench.y); if (!sp) return false; raft = { x: sp.x, y: sp.y, h: -0.4, vx: 0, vy: 0, speed: 0, aboard: false, kind: 'raft', hw: 21, hh: 21, seat: 0 }; return true; }
   function raftUsable() { var P = hero(); if (!raft || P.dead || sleep) return false; return raft.aboard || Math.hypot(P.x - raft.x, P.y - raft.y) < 66; }
   function onOtherIsland(x, y) { var q = w.isles[1]; return !!q && Math.hypot(x / T - q.x, y / T - q.y) < q.r * 1.4; }
   function raftUse() {
     var P = hero();
-    if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; toast(raft.kind === 'boat' ? 'In the boat: WASD to row, E to step ashore' : 'On the raft: WASD to paddle, E to step ashore'); sfx('pick'); save(); return; }
+    if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; toast(raft.kind === 'boat' ? (handling('boat').steer ? 'In the boat: W rows, A and D steer, E to step ashore' : 'In the boat: WASD to row, E to step ashore') : 'On the raft: WASD to paddle, E to step ashore'); sfx('pick'); save(); return; }
     var best = null;                       // step ashore: the nearest land, looking ahead first
     for (var d = 26; d < 120 && !best; d += 8) for (var k = 0; k < 16 && !best; k++) {
       var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d;
@@ -806,12 +814,9 @@ __COMBAT__
   function raftTick(dt) {
     if (leftBanner > 0) leftBanner -= dt;
     if (!raft || !raft.aboard) return;
-    var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), ln = Math.hypot(ix, iy);
-    var SPD = raft.kind === 'boat' ? 78 : RAFT_SPEED, tx = ln ? ix / ln * SPD : 0, ty = ln ? iy / ln * SPD : 0, sp = (K2.ShiftLeft || K2.ShiftRight) ? 1.35 : 1;
-    raft.vx += (tx * sp - raft.vx) * Math.min(1, dt * 1.6); raft.vy += (ty * sp - raft.vy) * Math.min(1, dt * 1.6);
-    var nx = raft.x + raft.vx * dt, ny = raft.y + raft.vy * dt;
-    if (raftHull(nx, ny)) { raft.x = nx; raft.y = ny; } else if (raftHull(nx, raft.y)) { raft.x = nx; raft.vy = 0; } else if (raftHull(raft.x, ny)) { raft.y = ny; raft.vx = 0; } else raft.vx = raft.vy = 0;
-    if (Math.hypot(raft.vx, raft.vy) > 5) { var want = Math.atan2(raft.vy, raft.vx), df = ((want - raft.h + Math.PI * 3) % (Math.PI * 2)) - Math.PI; raft.h += df * Math.min(1, dt * 2.2); }
+    var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), H = handling(raft.kind);
+    if (K2.ShiftLeft || K2.ShiftRight) { H.top *= 1.3; H.accel *= 1.3; }   // pulling harder
+    Yard.sail(raft, { ix: ix, iy: iy }, dt, raftHull, H);                   // the Sea Editor's physics (src/yard.js)
   }
   function raftAfter() { if (raft && raft.aboard) { var P = hero(), st = raft.seat || 0; P.x = raft.x + Math.cos(raft.h) * st; P.y = raft.y + Math.sin(raft.h) * st; P.vx = P.vy = 0; P.sprinting = false; } }   // on a boat you stand in the bow
 
@@ -2555,7 +2560,7 @@ __COMBAT__
       decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
       var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; } else toCamp();
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
-      if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null }; raftFit(); if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }
+      if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null }; raftFit(); if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }
     } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
@@ -2564,7 +2569,12 @@ __COMBAT__
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  function giveBoat(kind) {                // a vessel by the hero, for testing: a seven-keel boat with strakes and a seat, or the default raft
+    var P = hero(), sp = raftSpot(P.x, P.y); if (!sp) return false; var parts = [], i;
+    if (kind === 'boat') { for (i = 0; i < 7; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } parts.push({ id: 'thwart', i: 3, j: 3 }); }
+    raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
+  }
+  Combat.api.debug = function () { return { giveBoat: giveBoat, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';

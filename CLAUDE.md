@@ -323,7 +323,12 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   stroking when the boat moves (drawn in `drawVesselFront`); there is no steering oar; the oars are drawn only when there are rowers (`v.crew`, none yet), and then
   he stands halfway from the middle to the bow. The near hull is drawn only below his feet (`drawVesselFront` takes
   the hero's y) and `heroLift` sinks him 3 units into the hull, so he no longer clips.
-  A boat rows at 78 against the raft's 54. **The water test follows the hull** (`raftFit` sets `hw`, `hh` from the parts;
+  **Sailing is the Sea Editor's physics (2026-10-06, Robin: test in the editor, then take it into the game):** `Yard.sail(v, inp,
+  dt, free, H)` in `src/yard.js` is the one sailing step for both pages (Direct or Tiller steering, top speed, acceleration,
+  turn, glide, grip), with `Yard.HANDLING` the numbers per kind (the boat: Tiller, 100; the raft: Direct, 54). **"Use in the
+  game"** under the editor's handling sliders stores `game.boat`, which the game's `handling(kind)` merges over them (the raft
+  gets a slower share). Shift pulls harder. `Combat.api.debug().giveBoat('boat')` puts a test vessel by the hero.
+   **The water test follows the hull** (`raftFit` sets `hw`, `hh` from the parts;
   `raftHull` probes an ellipse of that size, turned with the heading, at 0.8 so there is a little room). The vessel is
   saved with its `kind` and `parts`. One vessel afloat at a time.
 - **The map (M, 2026-10-06):** a board with the whole sea (`drawMap` from the chart), the wreck, your stones with their
