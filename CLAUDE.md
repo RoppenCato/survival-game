@@ -731,7 +731,9 @@ Shipyard** steps the hero into the same grass yard in a wooden frame (`Yard.scen
 the left, Raft and Boat tabs, the build cursor, right click takes back, Enter or Finish launches), with nothing costing
 anything. The launched vessel is moored off the end of the jetty in place of the ship and sailed with the handling sliders
 (`built`, drawn by `Yard.drawVessel`, `dims()` reads its size, you sit at its seat). **Clear the yard**, **Sail a ship
-instead**, and E leaves the yard. The yard and the vessel are kept in `seayard2`; `window.seaDbg` exposes them for checks.
+instead**, and E leaves the yard; the panel sits right under the game view, and you start at the jetty's end next to the
+vessel. The yard and the vessel are kept in `seayard2`; `window.seaDbg` exposes them for checks. **The yard shows a
+preview** at the bottom right: the vessel as it will look afloat, drawn from the parts laid so far.
 
 Ships (faering, karve, longship, knarr) are a top-down hull turned to the heading and squashed by the 0.75 view
 factor, with upright stems, mast and sail. E boards and steps ashore. Handling: top speed, acceleration, turn

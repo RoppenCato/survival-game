@@ -276,6 +276,16 @@ var scene = {
     if (hp >= 0) { var pp = PL[hp], tt = pp.name + '  ' + h.costText(pp.cost) + '.  ' + pp.text; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); c.fillStyle = '#fff'; c.fillText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); }
     if (this.label && ms && hp < 0) { c.font = '600 6.5px system-ui, sans-serif'; var gw = c.measureText(this.label.text).width + 10, gx = Math.max(2, Math.min(398 - gw, ms.x + 8)), gy = Math.max(12, ms.y - 6); c.fillStyle = 'rgba(20,16,30,0.82)'; c.fillRect(gx, gy - 8, gw, 12); c.fillStyle = this.label.bad ? '#ff9a8a' : '#fff'; c.textAlign = 'left'; c.fillText(this.label.text, gx + 5, gy + 1); }
     c.font = '600 5px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText('Right click takes a part back.  E leaves the yard.', 52, 242); c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText('Right click takes a part back.  E leaves the yard.', 52, 242);
+    // a preview: the vessel as it will look afloat, in a small window of water at the bottom right
+    if (hullCells(this.yard.cells).length) {
+      var bx = 292, by = 158, bw = 92, bh = 62, pv = { kind: this.yard.plan, parts: this.yard.cells, x: 0, y: 0, h: -0.35, vx: 0, vy: 0, aboard: false };
+      fitVessel(pv); var sc = Math.min(1, (bw - 14) / (pv.hw * 2 + 16), (bh - 10) / (pv.hh * 2 + 24));
+      wood(c, bx - 4, by - 4, bw + 8, bh + 8);
+      c.save(); c.beginPath(); c.rect(bx, by, bw, bh); c.clip(); c.fillStyle = '#2a7fb0'; c.fillRect(bx, by, bw, bh);
+      c.strokeStyle = 'rgba(235,250,255,0.35)'; c.lineWidth = 0.8; [[8, 12], [60, 20], [30, 50], [78, 46]].forEach(function (q) { c.beginPath(); c.moveTo(bx + q[0], by + q[1]); c.quadraticCurveTo(bx + q[0] + 3, by + q[1] - 2, bx + q[0] + 6, by + q[1]); c.quadraticCurveTo(bx + q[0] + 9, by + q[1] + 2, bx + q[0] + 12, by + q[1]); c.stroke(); });
+      c.translate(bx + bw / 2, by + bh / 2 + 2); c.scale(sc, sc); drawVessel(c, pv, 0); c.restore();
+      c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.fillText('Afloat it will look like this', bx, by - 6);
+    }
     if (this.fade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, this.fade / 0.5) + ')'; c.fillRect(0, 0, 400, 250); }
   },
   mousedown: function (button, mw, ms) {  // the tabs, the parts, Finish, taking back, laying
