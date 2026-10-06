@@ -94,7 +94,6 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `creature-editor.html` | `creature.html` | Creature Editor: the six animals and their behaviour |
 | `object-editor.html` | `objects.html` | Object Editor: tune one world prop |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
-| `grass-editor.html` | `grass.html` | Grass Editor: swaying grass, its colours and the ground |
 | `hird-editor.html` | `hird.html` | Hird Editor: roll a hirdman, tune stats, traits, jobs, food and the claim stone |
 | `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
@@ -132,6 +131,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
   knife, bow. Materials: wood, flint, copper, bronze, iron, silver, gold. Shared by the engine, the game and the
   Item Editor. `Combat.api.items = { held(), tool(i), weapon(kind) }` tells the engine what is in hand; it then
   draws the item instead of its built-in shapes and uses its damage or power.
+- `src/yard.js` (`Yard`): the parts a hull is laid from (`PARTS`: log, lashing, plank for the raft; keel, strake, rowing
+  seat for the boat), the plans and their checks (`PLANS`, `check(yard)`), `connected`, `at`, `partOf`, `hullCells`,
+  `fit(vessel)` (its size on the water and where you sit) and the drawings: `drawPart` (in a yard cell) and `drawVessel`
+  (the raft or the boat on the water, from its parts). Shared by the game's Shipyard and the Sea Editor's Boatyard.
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
   `hollow` drawings for the casting cloth. Thirteen runes so far.
@@ -695,7 +698,8 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
 - Built things use `K.wood`; `K.trunk` is living bark.
 - A new prop must also be added to a category in `CATS` in `templates/objects.html`, or it will not show up there.
 - **Removed 2026-10-06:** the Environment Editor and the Base Editor (superseded by the game's own world and build mode;
-  last in commit `3f526e7`).
+  last in commit `3f526e7`), and the Grass Editor (last in `9d8f68e`; `World.GRASS` and `w.drawGrass`/`drawMeadow` stay in the
+  game, and a `game.grass` look in storage is still honoured).
 
 ## Sea and islands
 
@@ -708,6 +712,12 @@ wet then dry sand (the "Beach width" slider), then grass. `isLand`/`isWater` rea
 are contour lines of it. The tile grid only records sea, beach, grass or jetty for the game.
 Only pieces of sea that touch land are painted, lazily, with the oldest forgotten; open water reuses one piece.
 Props and solids are kept in buckets per map piece. A chart in the corner shows the whole sea.
+
+**The Boatyard (Sea Editor, 2026-10-06):** a panel with the two plans, the parts as buttons, a 9 by 6 yard canvas (click lays
+a part, right click takes one back; no costs), the plan's guidance line, **Launch it** (the built vessel is moored at the
+dock in place of the ship and sailed with the handling sliders; `built`, drawn by `Yard.drawVessel`, `dims()` reads its
+size, you sit at its seat), **Clear the yard** and **Sail a ship instead**. The yard and the built vessel are kept in
+`seayard1`. `window.seaDbg` exposes the boat, the yard and boarding for scripted checks.
 
 Ships (faering, karve, longship, knarr) are a top-down hull turned to the heading and squashed by the 0.75 view
 factor, with upright stems, mast and sail. E boards and steps ashore. Handling: top speed, acceleration, turn

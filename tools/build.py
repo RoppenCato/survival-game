@@ -3,7 +3,7 @@
 
 Usage:  python3 tools/build.py
 Output in dist/: index.html (the start page), the editors (character-editor, creature-editor,
-object-editor, sea-editor, grass-editor, hird-editor) and the playable combat-arena.
+object-editor, sea-editor, hird-editor) and the playable combat-arena.
 Each is a single self-contained file you can open in a browser or host anywhere.
 """
 import os
@@ -19,7 +19,7 @@ def write(path, text):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(text)
 
-SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes.js'), '__HIRD__': read('src', 'hird.js'), '__MUSIC__': read('src', 'music.js'), '__COMBAT__': read('src', 'combat.js')}
+SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes.js'), '__HIRD__': read('src', 'hird.js'), '__YARD__': read('src', 'yard.js'), '__MUSIC__': read('src', 'music.js'), '__COMBAT__': read('src', 'combat.js')}
 
 # page name in dist/  ->  template in templates/
 PAGES = [
@@ -28,7 +28,6 @@ PAGES = [
     ('creature-editor', 'creature'),
     ('object-editor', 'objects'),
     ('sea-editor', 'sea'),
-    ('grass-editor', 'grass'),
     ('hird-editor', 'hird'),
     ('item-editor', 'items'),
     ('song-editor', 'song'),
