@@ -3280,7 +3280,7 @@ var T = 32, TS = 24, K = 0.75;
   function fitVessel(raft) {                     // from its parts: how big the hull is (for the water test) and where you sit
     if (!raft) return; var parts = raft.parts && raft.parts.length ? raft.parts : RAFT_DEFAULT, hull = hullCells(parts), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
     hull.forEach(function (p) { var w = partOf(p.id).w; minI = Math.min(minI, p.i); maxI = Math.max(maxI, p.i + w); minJ = Math.min(minJ, p.j); maxJ = Math.max(maxJ, p.j + 1); });
-    if (raft.kind === 'boat') { var n = maxI - minI, rows = maxJ - minJ; raft.hw = n * CW / 2 + 10; raft.hh = (rows * CH * 0.85 + 4) * 0.6; raft.seat = (raft.crew || 0) > 0 ? raft.hw * 0.5 : -raft.hw * 0.28; }   // alone you sit aft and paddle; with rowers you stand halfway to the bow
+    if (raft.kind === 'boat') { var pr = boatProfile(parts); raft.hw = pr.L + 2; raft.hh = pr.Wmax + 2; raft.seat = (raft.crew || 0) > 0 ? raft.hw * 0.5 : -raft.hw * 0.28; }   // alone you sit aft and paddle; with rowers you stand halfway to the bow
     else { raft.hw = (maxI - minI) * CW / 2 + 4; raft.hh = (maxJ - minJ) * CH / 2 + 4; raft.seat = 0; }
   }
 
@@ -3288,11 +3288,9 @@ var T = 32, TS = 24, K = 0.75;
   function drawOar(c, x, y, ang) { c.save(); c.translate(x, y); c.rotate(ang); c.strokeStyle = '#2e1a10'; c.lineWidth = 3.4; c.beginPath(); c.moveTo(-9, 0); c.lineTo(9, 0); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 1.8; c.stroke(); c.fillStyle = '#c99a66'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.beginPath(); c.ellipse(9, 0, 4, 2.4, 0, 0, 7); c.fill(); c.stroke(); c.restore(); }
   var LINE = '#1d1622', COL = { hull: '#5a3a26', deck: '#b98a5a', trim: '#b83a2e' };
   function shadeHex(hex, d) { var n = parseInt(hex.substr(1), 16), r = Math.max(0, Math.min(255, (n >> 16) + d)), g = Math.max(0, Math.min(255, ((n >> 8) & 255) + d)), b = Math.max(0, Math.min(255, (n & 255) + d)); return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0'); }
-  function hullPath(c, L, W) { c.moveTo(-L, 0); c.quadraticCurveTo(0, -W * 1.9, L, 0); c.quadraticCurveTo(0, W * 1.9, -L, 0); c.closePath(); }   // pointed at both ends
-  function halfW(W, u) { return 0.95 * W * (1 - u * u); }
   function speedOf(v) { return Math.hypot(v.vx || 0, v.vy || 0); }
   // the water round a hull: a thin line of foam hugging it, and when it moves a wake of ripples trailing from the stern
-  function drawWater(c, v, hl, hw, clock) {
+  function drawWater(c, v, hl, hw, clock, pr) {
     var sp = speedOf(v), mv = Math.min(1, sp / 60), i;
     c.save(); c.translate(v.x, v.y * K);
     if (mv > 0.05) {                                        // the wake: ripples behind, spreading and fading
@@ -3305,7 +3303,7 @@ var T = 32, TS = 24, K = 0.75;
       }
     }
     c.scale(1, K); c.rotate(v.h);
-    c.strokeStyle = 'rgba(235,250,255,' + (0.3 + 0.25 * mv).toFixed(2) + ')'; c.lineWidth = 2.2; c.beginPath(); hullPath(c, hl + 5, hw * 1.15 + 3); c.stroke();   // foam at the waterline
+    c.strokeStyle = 'rgba(235,250,255,' + (0.3 + 0.25 * mv).toFixed(2) + ')'; c.lineWidth = 2.2; c.beginPath(); if (pr) shapedPath(c, pr, (hl + 5) / hl, (hw * 1.15 + 3) / hw); else { c.moveTo(-hl - 5, 0); c.quadraticCurveTo(0, -(hw * 1.15 + 3) * 1.9, hl + 5, 0); c.quadraticCurveTo(0, (hw * 1.15 + 3) * 1.9, -hl - 5, 0); } c.stroke();   // foam at the waterline
     c.restore();
   }
   function drawVessel(c, v, clock) {                        // the vessel as it was laid in the yard, on the water
@@ -3333,30 +3331,51 @@ var T = 32, TS = 24, K = 0.75;
     drawOar(c, hw - 8, hh + 2, 0.5);
     c.restore();
   }
-  function boatDims(parts) {                                 // the hull from the keel's length and the strakes' width: L and W as the ships use them
-    var hull = hullCells(parts), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
-    hull.forEach(function (p) { minI = Math.min(minI, p.i); maxI = Math.max(maxI, p.i + 1); minJ = Math.min(minJ, p.j); maxJ = Math.max(maxJ, p.j + 1); });
-    var keel = parts.filter(function (p) { return p.id === 'keel'; });
-    return { L: (maxI - minI) * CW / 2 + 8, W: ((maxJ - minJ) * CH * 0.85 + 4) * 0.6, cx: (minI + maxI) / 2, keelJ: keel.length ? keel[0].j : (minJ + maxJ) / 2 };
+  // the hull's shape follows the strakes: at every keel column the side is as wide as the strakes laid there, each side on
+  // its own, smoothed a little so one strake makes a swell rather than a step; the keel's length sets the length
+  var ROW = CH * 0.85 * 0.6;
+  function boatProfile(parts) {
+    var keel = parts.filter(function (p) { return p.id === 'keel'; }), st = parts.filter(function (p) { return p.id === 'strake'; });
+    if (!keel.length) { var hull = hullCells(parts), mi = 1e9, ma = -1e9; hull.forEach(function (p) { mi = Math.min(mi, p.i); ma = Math.max(ma, p.i + 1); }); keel = hull.length ? [{ i: mi, j: hull[0].j }] : [{ i: 0, j: 0 }]; }
+    var j0 = keel[0].j, i0 = Math.min.apply(null, keel.map(function (p) { return p.i; })), i1 = Math.max.apply(null, keel.map(function (p) { return p.i; })), n = i1 - i0 + 1, k;
+    var top = [], bot = [];
+    for (k = 0; k < n; k++) { var nt = 0, nb = 0; st.forEach(function (p) { if (p.i === i0 + k) { if (p.j < j0) nt++; else if (p.j > j0) nb++; } }); top.push(3 + (1 + nt) * ROW * 0.9); bot.push(3 + (1 + nb) * ROW * 0.9); }
+    function smooth(w) { var o = []; for (k = 0; k < n; k++) { var a = w[Math.max(0, k - 1)], b2 = w[k], c2 = w[Math.min(n - 1, k + 1)]; o.push((a + 2 * b2 + c2) / 4); } return o; }
+    top = smooth(top); bot = smooth(bot);
+    var L = n * CW / 2 + 8, cx = (i0 + i1 + 1) / 2, Wmax = Math.max.apply(null, top.concat(bot));
+    return { L: L, n: n, cx: cx, top: top, bot: bot, Wmax: Wmax, keelJ: j0 };
+  }
+  function profW(pr, x, side) {              // the half-width at x along the hull (bow at +L), on one side, 0 at the ends
+    var u = (x + pr.L) / (2 * pr.L) * pr.n - 0.5, k = Math.max(0, Math.min(pr.n - 1, Math.floor(u))), t = Math.max(0, Math.min(1, u - k)), arr = side < 0 ? pr.top : pr.bot;
+    var w = arr[k] + (arr[Math.min(pr.n - 1, k + 1)] - arr[k]) * t, taper = 1 - Math.pow(Math.abs(x) / pr.L, 3);   // the ends draw in to the stems
+    return Math.max(0, w * Math.max(0, taper));
+  }
+  function shapedPath(c, pr, sx, sw) {       // the hull outline through the profile, scaled along (sx) and across (sw)
+    var L = pr.L * sx, pts = [], k, m = pr.n * 2 + 1;
+    pts.push([-L, 0]); for (k = 1; k < m; k++) { var x = -L + 2 * L * k / m; pts.push([x, -profW(pr, x / sx, -1) * sw]); } pts.push([L, 0]);
+    for (k = m - 1; k >= 1; k--) { var x2 = -L + 2 * L * k / m; pts.push([x2, profW(pr, x2 / sx, 1) * sw]); }
+    c.moveTo(pts[0][0], pts[0][1]);
+    for (k = 1; k < pts.length - 1; k++) { var mx = (pts[k][0] + pts[k + 1][0]) / 2, my = (pts[k][1] + pts[k + 1][1]) / 2; c.quadraticCurveTo(pts[k][0], pts[k][1], mx, my); }
+    c.quadraticCurveTo(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1]); c.closePath();
   }
   // a clinker boat in the look of the Sea Editor's ships: the karve without its sail (a mast and sail come later)
   function drawBoat(c, v, parts, bob, clock) {
-    var d = boatDims(parts), L = d.L, W = d.W, sz = Math.max(0.7, Math.min(1.2, L / 60)), col = COL, h = v.h, i;
+    var pr = boatProfile(parts), L = pr.L, W = pr.Wmax, sz = Math.max(0.7, Math.min(1.2, L / 60)), col = COL, h = v.h, i;
     var sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02, mv = Math.min(1, speedOf(v) / 60);
-    var seats = parts.filter(function (p) { return p.id === 'thwart'; }).map(function (p) { return (p.i + 0.5 - d.cx) * CW; });
-    drawWater(c, v, L, W, clock);
+    var seats = parts.filter(function (p) { return p.id === 'thwart'; }).map(function (p) { return (p.i + 0.5 - pr.cx) * CW; });
+    drawWater(c, v, L, W, clock, pr);
     function inFrame(dy, fn) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(h + roll); fn(); c.restore(); }
     function fillStroke(fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke(); }
     c.fillStyle = 'rgba(8,12,40,0.28)'; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.95, W * 1.05, 0, 0, 7); c.fill();
-    inFrame(4 * sz, function () { c.beginPath(); hullPath(c, L, W); fillStroke(shadeHex(col.hull, -30)); });
+    inFrame(4 * sz, function () { c.beginPath(); shapedPath(c, pr, 1, 1); fillStroke(shadeHex(col.hull, -30)); });
     inFrame(0, function () {
-      c.beginPath(); hullPath(c, L, W); fillStroke(col.hull);
-      c.save(); c.scale(0.9, 0.78); c.beginPath(); hullPath(c, L, W); c.lineWidth = 0.9; c.strokeStyle = 'rgba(20,12,20,0.45)'; c.stroke(); c.restore();   // a line of planking
-      c.save(); c.scale(0.84, 0.62); c.beginPath(); hullPath(c, L, W); fillStroke(col.deck, 1.2); c.restore();
-      seats.forEach(function (x) { var u = x / L, tw = halfW(W, u) * 0.6; c.beginPath(); c.rect(x - 1.3, -tw, 2.6, tw * 2); fillStroke(shadeHex(col.hull, 12), 0.9); });   // the rowing seats as laid
+      c.beginPath(); shapedPath(c, pr, 1, 1); fillStroke(col.hull);
+      c.beginPath(); shapedPath(c, pr, 0.9, 0.78); c.lineWidth = 0.9; c.strokeStyle = 'rgba(20,12,20,0.45)'; c.stroke();   // a line of planking
+      c.beginPath(); shapedPath(c, pr, 0.84, 0.62); fillStroke(col.deck, 1.2);
+      seats.forEach(function (x) { var wt = profW(pr, x, -1) * 0.6, wb = profW(pr, x, 1) * 0.6; c.beginPath(); c.rect(x - 1.3, -wt, 2.6, wt + wb); fillStroke(shadeHex(col.hull, 12), 0.9); });   // the rowing seats as laid
       if ((v.crew || 0) > 0) seats.forEach(function (x, n) { [-1, 1].forEach(function (sd) {          // an oar each side of every seat, pulling when under way (only with rowers)
-        var u = x / L, a = sd * (Math.PI / 2) - Math.sin(clock * (2.6 + mv * 4.5) + n) * 0.55 * mv - 0.2;
-        var ox = x, oy = sd * halfW(W, u), len = W * 1.7 + 7 * sz, ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
+        var a = sd * (Math.PI / 2) - Math.sin(clock * (2.6 + mv * 4.5) + n) * 0.55 * mv - 0.2;
+        var ox = x, oy = sd * profW(pr, x, sd), len = W * 1.7 + 7 * sz, ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
         c.strokeStyle = LINE; c.lineWidth = 2.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
         c.strokeStyle = shadeHex(col.deck, -10); c.lineWidth = 1.3; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
         c.beginPath(); c.ellipse(ex, ey, 3.2, 1.6, a, 0, 7); fillStroke(shadeHex(col.deck, -10), 0.9);
@@ -3372,25 +3391,25 @@ var T = 32, TS = 24, K = 0.75;
     }
     stem(-L * 0.96, -1, 10 * sz); stem(L * 0.96, 1, 11 * sz);
   }
-  // the near side of the hull, drawn again over the hero's feet so he stands in the boat instead of on it
+  // the near side of the hull, drawn again over the hero's legs so he sits in the boat instead of on it; and his paddle
   function drawVesselFront(c, v, clock, heroY) {
     if (v.kind !== 'boat') return;
-    var parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT, d = boatDims(parts), L = d.L, W = d.W, sz = Math.max(0.7, Math.min(1.2, L / 60)), bob = Math.sin(clock * 2 + v.x * 0.01) * 0.8;
+    var parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT, pr = boatProfile(parts), L = pr.L, sz = Math.max(0.7, Math.min(1.2, L / 60)), bob = Math.sin(clock * 2 + v.x * 0.01) * 0.8;
     var sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02;
-    function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(v.h + roll); c.scale(k1, k2); hullPath(c, L, W); c.restore(); }
-    c.save();
+    function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(v.h + roll); shapedPath(c, pr, k1, k2); c.restore(); }
     var cy = heroY != null ? heroY * K - 2 : sy + 1.5, hx0 = v.x + Math.cos(v.h) * (v.seat || 0);
+    c.save();
     c.beginPath(); if (heroY != null) c.rect(hx0 - 10, cy, 20, 40); else c.rect(sx - L * 2, cy, L * 4, L * 3); c.clip();   // only over his legs, whatever the heading
     c.lineJoin = 'round'; c.strokeStyle = LINE;
     c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(COL.hull, -30); c.fill('evenodd'); c.lineWidth = 1.6; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
     c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = COL.hull; c.fill('evenodd');
     c.lineWidth = 1.6; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 1.2; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
     c.restore();
-    if (!(v.crew || 0) && v.aboard && heroY != null) {        // alone: the paddle in his hands, over the near rail and down into the water, stroking as the boat moves
+    if (!(v.crew || 0) && v.aboard && heroY != null) {        // alone: a straight paddle from the near rail down into the water, stroking as the boat moves
       var mv = Math.min(1, speedOf(v) / 60), st = mv > 0.05 ? Math.sin(clock * (3 + mv * 3)) : -1, side = Math.cos(v.h) >= 0 ? 1 : -1;
-      var ch = Math.cos(v.h), sh = Math.sin(v.h), seat = v.seat || 0;
+      var ch = Math.cos(v.h), sh = Math.sin(v.h), seat = v.seat || 0, W = profW(pr, seat, side);
       function toS(bx, by) { return [v.x + bx * ch - by * sh, v.y * K + (bx * sh + by * ch) * K]; }
-      var rail = toS(seat + 2 + st * 3, side * (W * 0.9)), blade = toS(seat + 5 + st * 7, side * (W * 0.9 + 13));   // a straight paddle from the rail down into the water
+      var rail = toS(seat + 2 + st * 3, side * (W * 0.9)), blade = toS(seat + 5 + st * 7, side * (W * 0.9 + 13));
       c.save(); c.lineCap = 'round';
       c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(rail[0], rail[1]); c.lineTo(blade[0], blade[1]); c.stroke(); c.strokeStyle = shadeHex(COL.deck, -10); c.lineWidth = 1.8; c.stroke();
       c.beginPath(); c.ellipse(blade[0], blade[1], 2.6, 4.4, Math.atan2(blade[1] - rail[1], blade[0] - rail[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(COL.deck, -10); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke();

@@ -304,13 +304,20 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   `keel` (wood and copper; three to nine in one straight unbroken row: its length, with the bow and stern shaped on its
   ends by the drawing), `strake`s (wood and copper; beside the keel, at most two rows each side, each against the keel or
   a strake nearer it: its width), and `thwart`s (rowing seats, one at least, oars drawn each side; the first is yours,
-  more are for hirdmen to row later). `drawBoat` draws a clinker lens hull from the keel's length and the rows' width,
+  more are for hirdmen to row later). `drawBoat` draws a clinker hull from the keel's length and the strakes' width,
   with strakes, bottom boards, stem and stern posts, seats and oars; you stand in the bow (`raft.seat`, `raftAfter`).
   **The boat looks like the Sea Editor's karve without its sail** (2026-10-06, Robin): the same clinker hull shape with
   planking, deck, curled stems at bow and stern, the steering oar, the rowing seats where they were laid with an oar each
-  side that pulls when under way (`Yard.drawVessel`, `boatDims`), and the near side of the hull drawn over the hero's feet
+  side that pulls when under way (`Yard.drawVessel`, `boatProfile`), and the near side of the hull drawn over the hero's feet
   so he stands in it (`Yard.drawVesselFront`). The halo is gone: a thin line of foam hugs the hull and a **wake** of
   ripples trails from the stern when moving (`drawWater`, from the vessel's `vx`, `vy`). A mast and sail come later.
+  **The hull's shape follows the strakes (2026-10-06, Robin: "more room for creativity"):** at every keel column each side
+  is as wide as the strakes laid there (`boatProfile`: a bare keel is a narrow canoe, each strake row adds about a cell's
+  width on that side, smoothed with its neighbours so one strake makes a swell and not a step, and the ends draw in to
+  the stems), so strakes at one end make a wide bow or a wide stern, a lone pair amidships a belly, and the two sides can
+  differ. `shapedPath` draws the outline, planking, deck and foam through that profile; seats, oars and the paddle take
+  the width at their own column (`profW`); `fit` takes the longest and widest for the collision ellipse. The rules
+  (strakes within the keel's ends, at most two rows a side, each against the keel or a strake nearer it) are unchanged.
   **Where you sit (Robin):** alone, the hero sits aft (`seat` at -0.45 of the half length), **seated** behind the gunwale
   (the near hull covers him from the hips down) with a **paddle** in his hands going down the near side into the water,
   stroking when the boat moves (drawn in `drawVesselFront`); there is no steering oar; the oars are drawn only when there are rowers (`v.crew`, none yet), and then
