@@ -178,7 +178,13 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/start-loop.md`: the first hour against Valheim, Grounded and Enshrouded, our path from the wreck to the raft, what
   is missing, and the proposed start (smoke and cairn, the steading as the beginner base, finds, the first night, sitting
   and fishing, Brokk at the shore). A proposal, not decided.
-- `docs/runes-ideas.md`: ideas for the rune overhaul (2026-10-06), with what Hades, Dead Cells, Valheim and Stardew do, a proposal and questions for Robin.
+- `docs/arm-ring.md`: **decided 2026-10-06:** the runes become the **arm ring**. Runes are knowledge (never items) cut into the
+  coils of the ring and reddened with blood at the **carver's bench** (five health, a work bar, swap freely); coils are bound
+  to a side (hand, foot, eye, heart); the metal is the rank anyone can read (bronze, silver, twisted silver, gold, dragon)
+  and grows only with biome events (the bronze ring from the dead Viking at the back of the troll's cave); runes come from
+  beasts, stones, deeds, Brokk, later bosses and raids, and must change what you do. The casting cloth is to be scrapped;
+  nothing of the ring is built yet. `docs/roadmap.md` has the ladder of islands and their big events.
+- `docs/runes-ideas.md`: the discussion that led there.
 - `docs/weapons.md`: the weapon concept (2026-10-06, Robin: weapons that fight differently): six melee kinds (sword, axe, club,
   seax, spear, Dane axe) with a motion each (swing, thrust, smash), reach, arc, pace, chain length and one thing of their own
   (parry, guard break, stagger, crit, pierce, heavy), four ranged (bow, sling with stones from the bag, javelin and throwing

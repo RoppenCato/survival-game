@@ -6,6 +6,24 @@ Robin are at the end; where a step depends on an answer, it says so.
 
 ---
 
+# The ladder of islands (Robin, 2026-10-06)
+
+Each new part of the world brings **big events**, and the arm ring (`docs/arm-ring.md`) measures them. Islands of a biome
+mix toward the next, as Valheim's do.
+
+| Part | What it is | The big events |
+| --- | --- | --- |
+| The starter island | the basics: gathering, food, building, the broken steading, the raft | what exists now |
+| The first big island | the first biome in full | **copper**; the **troll and the cave**; building **an actual village** (the claim stone, the hird); **the arm ring** from the dead Viking at the back of the cave, and the carver's bench |
+| Islands around it | the same biome, later filled with different places of interest; they mix toward the next biome | places, people, runes from beasts and stones |
+| The second biome | new things again | **the first Viking ship**; **the first raid** on a nearby island, which everything in this biome revolves round; the silver ring |
+| Beyond | each biome adds its own events and its own ring | twisted silver, gold in the hall of the south, the dragon ring |
+
+The rule for a biome: one easy formula a player understands in a minute (heavier metal beats you, each biome has its ring
+holder), and plenty of curveballs inside it.
+
+---
+
 # Goal 1: leave the island (Robin, 2026-10-05)
 
 > **Note (2026-10-05, Robin): guidance is subtle.** Where the steps below mention hints, a goal line or labels that explain, read
