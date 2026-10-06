@@ -7722,9 +7722,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
       list = grid; nrows = Math.max(1, row); n = nrows * cols; menu.h = 21 + nrows * rowH + 14;
     }
     for (i = 0; i < n; i++) { var e = list[i] || null; menu.items.push({ i: i, piece: menuTab === 'build' ? e : null, r: menuTab === 'hand' || menuTab === 'bench' || menuTab === 'ship' ? e : null, dish: menuTab === 'hearth' ? e : null, x: menu.x + 7 + (i % cols) * (MCELL + 3), y: menu.y + 21 + Math.floor(i / cols) * rowH + (byCat ? 7 : 0) }); }
+    // a tall board scrolls: the wheel moves the rows under a window that ends above the hotbar
+    menu.full = menu.h; menu.h = Math.min(menu.h, 250 - menu.y - 22); menu.scroll = 0; menu.maxScroll = Math.max(0, menu.full - menu.h);
+    menu.items.forEach(function (it) { it.y0 = it.y; }); menu.labels.forEach(function (lb) { lb.y0 = lb.y; });
     var tx = menu.x + 5; menuTabs().forEach(function (t) { var w = t.name.length * 4 + 12; menu.tabs.push({ id: t.id, name: t.name, roofed: t.roofed, x: tx, y: menu.y + 4, w: w, h: 13 }); tx += w + 3; });
   }
-  function menuHit() { if (!menu || !mouseS) return null; for (var i = 0; i < menu.items.length; i++) { var it = menu.items[i]; if (mouseS.x >= it.x && mouseS.x <= it.x + MCELL && mouseS.y >= it.y && mouseS.y <= it.y + MCELL) return it; } return null; }
+  function menuScroll(d) { if (!menu || !menu.maxScroll) return false; menu.scroll = Math.max(0, Math.min(menu.maxScroll, menu.scroll + d * 32)); menu.items.forEach(function (it) { it.y = it.y0 - menu.scroll; }); menu.labels.forEach(function (lb) { lb.y = lb.y0 - menu.scroll; }); return true; }
+  function menuWin() { return { top: menu.y + 19, bot: menu.y + menu.h - 4 }; }
+  function menuHit() { if (!menu || !mouseS) return null; var wn = menuWin(); for (var i = 0; i < menu.items.length; i++) { var it = menu.items[i]; if (it.y + MCELL < wn.top || it.y > wn.bot) continue; if (mouseS.x >= it.x && mouseS.x <= it.x + MCELL && mouseS.y >= it.y && mouseS.y <= it.y + MCELL) return it; } return null; }
+  function overMenu() { return !!menu && !!mouseS && mouseS.x >= menu.x && mouseS.x <= menu.x + menu.w && mouseS.y >= menu.y && mouseS.y <= menu.y + menu.h; }
   function menuTabHit() { if (!menu || !mouseS) return null; for (var i = 0; i < menu.tabs.length; i++) { var t = menu.tabs[i]; if (mouseS.x >= t.x && mouseS.x <= t.x + t.w && mouseS.y >= t.y && mouseS.y <= t.y + t.h) return t; } return null; }
   function drawMenu(c) {
     var P = hero(), hit = menuHit(), th = menuTabHit(), i, bench = benchNear(P), roofed = bench && benchRoofed(bench);
@@ -7733,7 +7739,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var on = t.id === menuTab; c.fillStyle = on ? 'rgba(255,230,180,0.22)' : (th === t ? 'rgba(255,230,180,0.12)' : 'rgba(0,0,0,0.25)'); c.fillRect(t.x, t.y, t.w, t.h);
       c.font = (on ? 'bold ' : '600 ') + '6.5px system-ui, sans-serif'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.textAlign = 'center'; c.fillText(t.name, t.x + t.w / 2, t.y + 9.5);
     });
-    var canHere = menuTab !== 'bench' || roofed;
+    var canHere = menuTab !== 'bench' || roofed, wn = menuWin();
+    c.save(); c.beginPath(); c.rect(menu.x, wn.top, menu.w, wn.bot - wn.top); c.clip();
     menu.labels.forEach(function (lb) { c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText(lb.text, menu.x + 8, lb.y); });
     for (i = 0; i < menu.items.length; i++) {
       var it = menu.items[i], filled = it.piece || it.r || it.dish, on = it.piece && !P.wreck && PIECES[P.piece] === it.piece && P.mode === 'build', hov = hit === it && filled, kn = it.r ? known(it.r) : true, ok = it.r ? (kn && canAfford(it.r.needs) && canHere) : (it.dish ? canAfford(it.dish.needs) : true);
@@ -7746,6 +7753,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
       else if (!kn) { c.fillStyle = 'rgba(246,226,184,0.35)'; c.font = 'bold 12px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('?', 0, 4.5); }
       else { c.globalAlpha = ok ? 1 : 0.4; if (it.r.out.item) Items.icon(c, Items.make(it.r.out.item[0], it.r.out.item[1]), 16); else drawDropIcon(c, it.r.out.raft ? 'raft' : 'arrow', 0, 0, it.r.out.raft ? 1.7 : 1.3); c.globalAlpha = 1; }
       c.restore();
+    }
+    c.restore();
+    if (menu.maxScroll) {                   // the scroll strip at the right edge
+      var sh = wn.bot - wn.top, kh = Math.max(10, sh * menu.h / menu.full), ky = wn.top + (sh - kh) * menu.scroll / menu.maxScroll;
+      c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(menu.x + menu.w - 5, wn.top, 2.5, sh); c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillRect(menu.x + menu.w - 5, ky, 2.5, kh);
     }
     var label = '';
     if (hit && hit.piece) label = hit.piece.name + '  (' + costText(hit.piece.cost) + ')';
@@ -8825,6 +8837,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   cv.addEventListener('mouseleave', function () { mouseW = null; mouseS = null; });
   cv.addEventListener('wheel', function (e) {
     e.preventDefault(); var P = hero(), d = e.deltaY > 0 ? 1 : -1, n;
+    if (menu && overMenu() && menuScroll(d)) return;      // the wheel scrolls a tall board
     if (P.mode === 'gather' || P.mode === 'fight') { hand[P.mode] = (hand[P.mode] + d + 6) % 6; P.atk.ph = 'none'; P.atk.since = 9; }
     else if (inYard) YSCENE.wheel(d);
     else if (P.mode === 'build') { if (!P.wreck && PIECES[P.piece] && PIECES[P.piece].kind === 'item') buildRot = (buildRot + (d > 0 ? 1 : 3)) & 3; else { P.piece = (P.piece + d + PIECES.length) % PIECES.length; P.wreck = false; } }   // the wheel turns what you are placing; the board picks the piece

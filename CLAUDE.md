@@ -299,7 +299,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   and posts at its open sides, and is walked on (`dockAt` in `scene.walk`); the boat is kept off it (`raftHull`). Upstairs the
   stairwell shows as an opening with the top treads and a rail (`slab`), and the floor above fades with its bundle (the bug
   was an alpha set instead of multiplied). The edge ghost marks the edge on the ground with a bright band and its two ends,
-  so east and west walls are easy to aim; F closes the board when it turns on the wreck cursor.
+  so east and west walls are easy to aim; F closes the board when it turns on the wreck cursor. A board taller than the screen **scrolls** with the wheel over it (`menuScroll`, a strip at its right edge; `openMenu` caps `menu.h` and keeps `menu.full`).
 - **Furniture is sized to the hero (2026-10-05):** a hero is about 39 units tall, so the table, bed, cart, well,
   drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
   its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision
