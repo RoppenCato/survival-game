@@ -62,6 +62,27 @@ Pairs (two coils of a side combining into something unlisted) were judged too mu
 Rings extend to the hird: you can give your hirdmen things to wear, rings among them, as the jarls did; a hirdman's ring is
 his rank and his loyalty. Not designed further yet (see `docs/hird.md`).
 
+## The starter runes (Robin chose, 2026-10-06)
+
+The first big island's runes, by side, with how each is learnt. Each changes what you do; none is a plain percentage.
+
+| Side | Rune | Learnt from | What it does |
+| --- | --- | --- | --- |
+| hand | **Riposte** | Brokk teaches it | a parry opens a free heavy hit for a second |
+| hand | **Boar's charge** | ten boars | sprint into a beast to bowl it over: your run becomes an attack |
+| foot | **Sure feet** | a minute of sprinting | sprinting costs half the stamina |
+| foot | **Wolf's run** | ten wolves | at night you run faster and silently, and wolves ignore you unless you strike first |
+| foot | **Roll** | a runestone | the dash becomes a roll: longer, more time untouchable, slower to get up |
+| eye | **Stone sense** | a runestone | copper glints through rock from afar; every third rock bursts and the stone flies to your feet |
+| eye | **Snake's eye** | ten snakes | beasts within earshot show on the chart; a hidden adder shows before it strikes |
+| eye | **Heavy blow** | (Robin: a charge attack for chopping and mining; source to pick, deed: fifteen trees?) | hold the button to wind up a chop or mine that lands for three blows' worth |
+| heart | **Hearty** | five meals | meals last half as long again |
+| heart | **Hearth warmth** | a runestone | you heal by any fire, not only at home; sleeping rough counts as rested for a while |
+| heart | **Long breath** | a runestone by the sea | twice as long under water, swimming costs no stamina (for the second biome) |
+
+Not chosen for now: Hard swing, Bear's rage, Deer's leap, Clean cut, Moose's push, Shield wall. The heart coil opens with
+twisted silver, so the heart runes are known before they can be cut.
+
 ## The build order (agreed 2026-10-06)
 
 Each step is playable on its own. Tests where a step has rules: headless scripts in `tests/` that print and are read, as the
