@@ -1465,6 +1465,27 @@ function stoneHearth(c, K, x, y, seed) {
   shape(c, [[x - 8, y - 25], [x + 8, y - 25], [x + 6, y - 15], [x, y - 13], [x - 6, y - 15]], K.iron, { seed: seed + 14, size: 'S', sh: 1.5, rough: 0.15 });
   addLight(x, y - 10, 100 + 40 * P.glow, 28, 100, 58, 0.9);
 }
+// A fireplace: a hearth built into a stone back with an arched mouth and a fire in it. The chimney above it is drawn by
+// the page (Build.drawChimney), since its height follows the storeys of the house.
+function fireplace(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 20, 5, 0.4);
+  shape(c, rrPts(x - 16, y - 32, 32, 32, 2.5), K.rockC, { seed: seed, size: 'M', sh: 2, rough: 0.35 });
+  for (i = 0; i < 10; i++) { var cx = x - 12 + (i % 5) * 6.2 + (i >= 5 ? 3 : 0), cy = y - 27 + Math.floor(i / 5) * 7; if (i >= 5 && i !== 5 && i !== 9) continue; shape(c, ellPts(cx, cy, 3.4, 2.4, 8), i % 3 ? K.rock : K.rockC, { seed: seed + i, size: 'S', sh: 1, rough: 0.3 }); }
+  shape(c, [[x - 9, y - 1], [x - 9, y - 13], [x - 5, y - 18], [x + 5, y - 18], [x + 9, y - 13], [x + 9, y - 1]], M(20, 18, 9), { seed: seed + 20, size: 'S', flat: true });
+  shape(c, ellPts(x, y - 1, 13, 3.6, 10), K.rock, { seed: seed + 21, size: 'S', sh: 1, rough: 0.3 });
+  shape(c, [[x - 5, y - 3], [x - 6, y - 9], [x - 2, y - 15], [x, y - 9], [x + 3, y - 16], [x + 6, y - 8], [x + 5, y - 3]], M(24, 100, 52), { seed: seed + 22, size: 'S', flat: true, rough: 0.4 });
+  shape(c, [[x - 2.5, y - 3], [x - 3, y - 8], [x, y - 12], [x + 2.5, y - 8], [x + 2.5, y - 3]], M(46, 100, 66), { seed: seed + 23, size: 'S', flat: true, rough: 0.3 });
+  addLight(x, y - 8, 100 + 40 * P.glow, 28, 100, 58, 0.9);
+}
+// A water trough on two trestle feet, for the yard.
+function trough(c, K, x, y, seed) {
+  gshadow(c, x, y, 16, 4, 0.4);
+  shape(c, rrPts(x - 12, y - 6, 4, 6, 1), K.wood, { seed: seed + 1, size: 'S', sh: 1, rough: 0.3 }); shape(c, rrPts(x + 8, y - 6, 4, 6, 1), K.wood, { seed: seed + 2, size: 'S', sh: 1, rough: 0.3 });
+  shape(c, rrPts(x - 15, y - 16, 30, 11, 2), K.wood, { seed: seed, size: 'M', sh: 1.5, rough: 0.3 });
+  shape(c, ellPts(x, y - 13, 12, 2.8, 12), K.waterL, { seed: seed + 3, size: 'S', flat: true });
+  line(c, [[x - 15, y - 16], [x + 15, y - 16]], 1.6, K.wood.hl, false);
+}
 function woodenWell(c, K, x, y, seed) {
   longShadow(c, x, y, 26, 26); gshadow(c, x, y, 18, 5, 0.4);
   var w = shape(c, rrPts(x - 13, y - 15, 26, 15, 1.5), K.wood, { seed: seed, size: 'M', sh: 2, rough: 0.3 });
@@ -1526,6 +1547,8 @@ var PROPS = {
   boathouse: { b: [-58, -66, 96, 16], f: function (c, K, s) { boathouse(c, K, 0, 0, s); } },
   watchtower: { b: [-30, -106, 60, 16], f: function (c, K, s) { watchtower(c, K, 0, 0, s); } },
   stoneHearth: { b: [-26, -44, 26, 10], f: function (c, K, s) { stoneHearth(c, K, 0, 0, s); } },
+  fireplace: { b: [-18, -36, 18, 6], f: function (c, K, s) { fireplace(c, K, 0, 0, s); } },
+  trough: { b: [-17, -19, 17, 4], f: function (c, K, s) { trough(c, K, 0, 0, s); } },
   woodenWell: { b: [-18, -51, 40, 9], f: function (c, K, s) { c.save(); c.scale(0.75, 0.75); woodenWell(c, K, 0, 0, s); c.restore(); } },
   runestone: { b: [-22, -72, 40, 12], f: function (c, K, s) { runestone(c, K, 0, 0, s); } },
   claimStone: { b: [-15, -50, 28, 9], f: function (c, K, s) { c.save(); c.scale(0.68, 0.68); runestone(c, K, 0, 0, s); c.restore(); } },   // a claim stone: a runestone a hirdman's height, raised to claim a place
@@ -1592,7 +1615,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };

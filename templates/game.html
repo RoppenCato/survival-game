@@ -238,7 +238,7 @@ __COMBAT__
     w = World.make(kit, spec);
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets;
-    drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = { floors: {}, H: {}, V: {}, items: [] }; roofA = {}; bDirty = true;
+    drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(700);
     raft = null; leftBanner = 0; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
     villageClear(); caveSetup(); hamletClear();
@@ -256,12 +256,16 @@ __COMBAT__
     { id: 'wall', name: 'Turf wall', m: 4, cost: { stone: 1, fiber: 2 } },
     { id: 'door', name: 'Door', m: 0, cost: { wood: 2 } },
     { id: 'window', name: 'Window', m: 0, cost: { wood: 2 } },
+    { id: 'post', name: 'Post', m: 0, cost: { wood: 1 } },
+    { id: 'stairs', name: 'Stairs', m: 0, cost: { wood: 6 } },
     { id: 'floor', name: 'Plank floor', m: 0, cost: { wood: 1 } },
     { id: 'floor', name: 'Packed earth', m: 1, cost: { fiber: 1 } },
     { id: 'floor', name: 'Stone flags', m: 2, cost: { stone: 1 } },
     { id: 'fence', name: 'Wattle fence', m: 2, cost: { wood: 1 }, yard: true },
     { id: 'gate', name: 'Gate', m: 2, cost: { wood: 2 }, yard: true },
     { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true },
+    { id: 'rail', name: 'Rail fence', m: 1, cost: { wood: 1 }, yard: true },
+    { id: 'drystone', name: 'Dry-stone wall', m: 3, cost: { stone: 2 }, yard: true },
     { id: 'roof', name: 'Turf roof', m: 0, cost: { fiber: 2 } },
     { id: 'roof', name: 'Thatch roof', m: 1, cost: { fiber: 4 } },
     { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 } },
@@ -279,6 +283,7 @@ __COMBAT__
       c.fillStyle = '#e8702a'; c.beginPath(); c.moveTo(-4, 3); c.quadraticCurveTo(-5, -3, 0, -7); c.quadraticCurveTo(5, -3, 4, 3); c.closePath(); c.fill();
       c.fillStyle = '#ffd34d'; c.beginPath(); c.moveTo(-2, 3); c.quadraticCurveTo(-2.5, -1, 0, -3.5); c.quadraticCurveTo(2.5, -1, 2, 3); c.closePath(); c.fill();
     } },
+    { id: 'fireplace', name: 'Fireplace', kind: 'item', prop: 'fireplace', r: 7, hearth: true, chimney: true, cost: { stone: 10, wood: 2 } },
     // outdoor and household things, drawn from the kit's props; their icons are the props shrunk
     { id: 'chair', name: 'Chair', kind: 'item', prop: 'chair', r: 3, cost: { wood: 2 } },
     { id: 'seat', name: 'Bench seat', kind: 'item', prop: 'bench', r: 6, cost: { wood: 3 } },
@@ -296,9 +301,19 @@ __COMBAT__
     { id: 'shields', name: 'Shield rack', kind: 'item', prop: 'shieldRack', r: 5, cost: { wood: 4 } },
     { id: 'skeps', name: 'Bee skeps', kind: 'item', prop: 'beeSkeps', r: 5, cost: { fiber: 6, wood: 1 } },
     { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 7, cost: { wood: 8 } },
-    { id: 'post', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 3, cost: { wood: 4 } }
+    { id: 'dragon', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 3, cost: { wood: 4 } },
+    { id: 'campfire', name: 'Campfire', kind: 'item', prop: 'campfire', r: 5, light: 1, hearth: true, cost: { wood: 4, stone: 2 } },
+    { id: 'trough', name: 'Trough', kind: 'item', prop: 'trough', r: 5, cost: { wood: 4 } },
+    { id: 'scarecrow', name: 'Scarecrow', kind: 'item', prop: 'scarecrow', r: 2, cost: { wood: 2, fiber: 3 } },
+    { id: 'flowers', name: 'Flower bed', kind: 'item', prop: 'flowerBed', r: 0, cost: { fiber: 2 } },
+    { id: 'cairn', name: 'Cairn', kind: 'item', prop: 'cairn', r: 4, cost: { stone: 5 } },
+    { id: 'charcoal', name: 'Charcoal pit', kind: 'item', prop: 'charcoalPit', r: 7, cost: { wood: 8, stone: 2 } }
   ];
-  var ICON_SCALE = { shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
+  var ICON_SCALE = { fireplace: 0.4, campfire: 0.4, trough: 0.5, scarecrow: 0.26, flowerBed: 0.36, cairn: 0.4, charcoalPit: 0.3, shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
+  // the rows of the Building board (a piece's cat): the frame and walls, floors and roofs, the yard, the home, outdoors
+  var BCATS = [['frame', 'Frame and walls'], ['floor', 'Floors and roofs'], ['yard', 'Yard'], ['home', 'Furniture'], ['out', 'Outdoors']];
+  var HOME_IDS = { bench: 1, bed: 1, hearth: 1, fireplace: 1, chair: 1, seat: 1, table: 1, barrel: 1, crate: 1, rug: 1, chest: 1 };
+  PIECES.forEach(function (p) { p.cat = p.yard ? 'yard' : (p.id === 'floor' || p.id === 'roof') ? 'floor' : p.kind === 'item' ? (HOME_IDS[p.id] ? 'home' : 'out') : 'frame'; });
   function propIcon(c, name) {             // a prop's baked sprite, shrunk to fit a board cell
     var s = sprite(name, 0), sc = Math.min(18 / s.w, 18 / s.h, 1.5);
     c.drawImage(s.cv, -s.w * sc / 2, -s.h * sc / 2 + 1, s.w * sc, s.h * sc);
@@ -307,19 +322,31 @@ __COMBAT__
   function costText(cost) { var p = []; for (var k in cost) p.push(cost[k] + ' ' + k); return p.join(', '); }
   var buildSlots0 = PIECES.map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function (c) { Build.icon(c, p.id, p.m); } }; });
   Combat.api.buildSlots = buildSlots0;
-  var B = { floors: {}, H: {}, V: {}, items: [] }, BCFG = Build.cfg({ roof: 0 }), roomInfo = null, roofA = {}, bDirty = true, mouseW = null, mdown = 0, lastPlaced = '';
+  // B holds the ground floor: floors, walls (H and V edges), posts at corners, stairs by tile, roofs by room, and items (with
+  // it.lvl 1 for things upstairs). B.up is the floor above: its floors (auto: laid by the stairs), walls, posts and roofs.
+  function freshB() { return { floors: {}, H: {}, V: {}, posts: {}, stairs: {}, roofs: {}, items: [], up: { floors: {}, auto: {}, H: {}, V: {}, posts: {}, roofs: {} } }; }
+  function ensureB() { var f = freshB(), k; for (k in f) if (B[k] == null) B[k] = f[k]; for (k in f.up) if (B.up[k] == null) B.up[k] = f.up[k]; }
+  var B = freshB(), BCFG = Build.cfg({ roof: 0 }), roomInfo = null, roomInfo1 = null, roofA = {}, roofA1 = {}, bDirty = true, mouseW = null, mdown = 0, lastPlaced = '';
+  var UP = Build.UP;                       // one storey, in screen units
+  function lvl() { return hero().lvl || 0; }
+  function Bl(L) { return (L == null ? lvl() : L) ? B.up : B; }                       // the pieces of the floor you are on
+  function RI(L) { return (L == null ? lvl() : L) ? roomInfo1 : roomInfo; }
+  function upFloorAt(tx, ty) { return B.up && B.up.floors[Build.key(tx, ty)] != null; }
+  function sameLvl(it) { return (it.lvl || 0) === lvl(); }
+  function isHearth(it) { return it.name == 'stoneHearth' || !!it.hearth; }
+  function stairRoomAt(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; return ri >= 0 && roomInfo.rooms[ri].up ? roomInfo.rooms[ri] : null; }
   function canAfford(cost) { if (ADMIN.free) return true; for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
   function pay(cost, sign) { if (ADMIN.free && (sign || -1) < 0) return; for (var k in cost) { if ((sign || -1) > 0) addItem(k, cost[k]); else takeItem(k, cost[k]); } }
   function pieceFor(id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (PIECES[i].m == null || PIECES[i].m === m)) return PIECES[i]; return null; }
   function costOf(e) { var p = pieceFor(e.t, e.m) || pieceFor(e.t, 0); return p ? p.cost : { wood: 2 }; }     // what an edge piece gave for, to give back
   function costOfFloor(m) { var p = pieceFor('floor', m || 0); return p ? p.cost : { wood: 1 }; }
   function costOfItem(name) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].prop === name) return PIECES[i].cost; return {}; }
-  function roofCfg(r) { if (!B.roofs || B.roofs[r.id] == null) return BCFG; var c = roofCfgs[B.roofs[r.id]]; if (!c) c = roofCfgs[B.roofs[r.id]] = Build.cfg({ roof: B.roofs[r.id] }); return c; }
+  function roofCfg(r, L) { var BB = Bl(L || 0); if (!BB.roofs || BB.roofs[r.id] == null) return BCFG; var c = roofCfgs[BB.roofs[r.id]]; if (!c) c = roofCfgs[BB.roofs[r.id]] = Build.cfg({ roof: BB.roofs[r.id] }); return c; }
   var roofCfgs = {};
   // a workbench works only with a roof over it: the first thing a house is for
-  function benchNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bench && Math.hypot(P.x - it.x, P.y - it.y) < 60) return it; } return null; }
-  function benchRoofed(it) { return !!roomInfo && roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0; }
-  function bedNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bed && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
+  function benchNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bench && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 60) return it; } return null; }
+  function benchRoofed(it) { var R = RI(it.lvl || 0); return !!R && R.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0; }
+  function bedNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bed && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
 
   /* ---------- the day: 20 minutes of day and dusk, then a 10 minute night (decided 2026-10-05) ---------- */
   // day.t runs 0..DAY_LEN seconds. light() is 0 by day and 1 at deepest night; dusk() is the warm glow before it.
@@ -328,10 +355,11 @@ __COMBAT__
      furniture (chair, bench seat, table, chest): at most 7. Comfort is how long sleeping there leaves you Rested
      (2 minutes each) and, at 4, what the shipwright's bench asks of your home. */
   var FURN = { chair: 1, bench: 1, table: 1, chest: 1 };
-  function comfortOf(ri) {
-    if (ri < 0 || !roomInfo || !roomInfo.rooms[ri]) return { n: 0, has: {} };
+  function comfortOf(ri, L) {
+    var R = RI(L || 0); L = L || 0;
+    if (ri < 0 || !R || !R.rooms[ri]) return { n: 0, has: {} };
     var has = {}, furn = 0;
-    B.items.forEach(function (it) { if (roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T)) !== ri) return; if (it.name === 'stoneHearth') has.hearth = 1; else if (it.bench) has.bench = 1; else if (it.bed) has.bed = 1; else if (it.name === 'rug') has.rug = 1; else if (FURN[it.name]) furn++; });
+    B.items.forEach(function (it) { if ((it.lvl || 0) !== L || R.at(Math.floor(it.x / T), Math.floor(it.y / T)) !== ri) return; if (isHearth(it)) has.hearth = 1; else if (it.bench) has.bench = 1; else if (it.bed) has.bed = 1; else if (it.name === 'rug') has.rug = 1; else if (FURN[it.name]) furn++; });
     has.furn = Math.min(2, furn);
     return { n: 1 + (has.hearth ? 1 : 0) + (has.bench ? 1 : 0) + (has.bed ? 1 : 0) + (has.rug ? 1 : 0) + has.furn, has: has };
   }
@@ -397,7 +425,7 @@ __COMBAT__
     }
     if (L < 0.3 && nightSpawned) { nightSpawned = false; nightWolves.forEach(function (e) { var k = W.enemies.indexOf(e); if (k >= 0) W.enemies.splice(k, 1); }); nightWolves = []; }
   }
-  function nearestFire(x, y) { var best = null; function q(f) { var d = Math.hypot(x - f.x, y - f.y); if (!best || d < best.d) best = { x: f.x, y: f.y, d: d }; } if (hearth) q(hearth); B.items.forEach(function (it) { if (it.name === 'stoneHearth' || it.light) q(it); }); return best; }
+  function nearestFire(x, y) { var best = null; function q(f) { var d = Math.hypot(x - f.x, y - f.y); if (!best || d < best.d) best = { x: f.x, y: f.y, d: d }; } if (hearth) q(hearth); B.items.forEach(function (it) { if (isHearth(it) || it.light) q(it); }); return best; }
   function drawWolfEyes(c) {               // two red points per wolf, through the dark, from far off
     var L = light(); if (L < 0.3) return;
     c.save(); c.globalCompositeOperation = 'lighter';
@@ -411,7 +439,7 @@ __COMBAT__
   }
   function drawEmbers(c) {                 // sparks drifting up from every fire in view, and from the torch
     var L = light(); if (L < 0.15) return;
-    var fires = []; if (hearth) fires.push(hearth); B.items.forEach(function (it) { if (it.name === 'stoneHearth' || it.light) fires.push(it); });
+    var fires = []; if (hearth) fires.push(hearth); B.items.forEach(function (it) { if (isHearth(it) || it.light) fires.push(it); });
     var P = hero(); if (torchOn) fires.push({ x: P.x + (Math.cos(P.face) >= 0 ? 8 : -8), y: P.y - 24, torch: true });
     c.save(); c.globalCompositeOperation = 'lighter';
     fires.forEach(function (f, fi) {
@@ -432,7 +460,7 @@ __COMBAT__
     n.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')'; n.fillRect(0, 0, 200, 125);
     if (L > 0.05) {                        // fires light their surroundings
       n.globalCompositeOperation = 'lighter'; var fires = [], i;
-      if (hearth) fires.push(hearth); for (i = 0; i < B.items.length; i++) if (B.items[i].name === 'stoneHearth' || B.items[i].light) fires.push(B.items[i]);
+      if (hearth) fires.push(hearth); for (i = 0; i < B.items.length; i++) if (isHearth(B.items[i]) || B.items[i].light) fires.push(B.items[i]);
       for (i = 0; i < fires.length; i++) {
         var f = fires[i], sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (145 + Math.sin(clock * 9 + i) * 5 + Math.sin(clock * 1.7 + i) * 8) * cam.z / 2;
         if (sx < -rad || sx > 200 + rad || sy < -rad || sy > 125 + rad) continue;
@@ -469,7 +497,7 @@ __COMBAT__
     c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.arc(x, y, 9, 0, 7); c.stroke();
     if (rested > 0) { c.strokeStyle = '#9be58b'; c.lineWidth = 1.6; c.beginPath(); c.arc(x, y, 8.2, -Math.PI / 2, -Math.PI / 2 + rested / restedMax * 6.283); c.stroke(); }
     c.restore();
-    var hr = roomInfo ? roomInfo.at(Math.floor(hero().x / T), Math.floor(hero().y / T)) : -1, cf = comfortOf(hr);
+    var hr = RI() ? RI().at(Math.floor(hero().x / T), Math.floor(hero().y / T)) : -1, cf = comfortOf(hr, lvl());
     if (cf.n > 0 && !hov) { var ct = 'Comfort ' + cf.n; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(ct, x, y + 16); c.fillStyle = cf.n >= 4 ? '#9be58b' : '#fff'; c.fillText(ct, x, y + 16); }
     if (hov) { var t = 'Day ' + day.n + ', ' + timeName() + (cf.n ? '. Comfort ' + cf.n : '') + (rested > 0 ? '. Rested: ' + Math.ceil(rested / 60) + ' min' : ''); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(t, x, y + 16); c.fillStyle = '#fff'; c.fillText(t, x, y + 16); }
   }
@@ -521,81 +549,134 @@ __COMBAT__
     toast('Made ' + recipeName(r).toLowerCase()); sfx('craft'); save();
   }
   function nearWater(tx, ty, r) { for (var dy = -r; dy <= r; dy++) for (var dx = -r; dx <= r; dx++) if (code(tx + dx, ty + dy) === 0) return true; return false; }
-  function shipNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.ship && Math.hypot(P.x - it.x, P.y - it.y) < 70) return it; } return null; }
+  function shipNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.ship && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 70) return it; } return null; }
   function edgeMid(ed) { return ed.L === 'H' ? { x: (ed.x + 0.5) * T, y: ed.y * T } : { x: ed.x * T, y: (ed.y + 0.5) * T }; }
   function spotClear(x, y) { var ok = isLand(x, y); if (ok) around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < o.r * o.s + 10) ok = false; }); return ok; }
+  function cornerAt(wx, wy) { var cx = Math.round(wx / T), cy = Math.round(wy / T); return { x: cx, y: cy, d: Math.hypot(wx / T - cx, wy / T - cy) }; }
+  function floorBeside(ed) { return ed.L === 'H' ? (upFloorAt(ed.x, ed.y - 1) || upFloorAt(ed.x, ed.y)) : (upFloorAt(ed.x - 1, ed.y) || upFloorAt(ed.x, ed.y)); }
+  function floorAtCorner(cx, cy) { return upFloorAt(cx, cy) || upFloorAt(cx - 1, cy) || upFloorAt(cx, cy - 1) || upFloorAt(cx - 1, cy - 1); }
+  function upPiecesOver(room) {              // is anything built upstairs over this room (walls, posts, things)?
+    var set = {}, k, p; room.tiles.forEach(function (t) { set[Build.key(t[0], t[1])] = 1; });
+    for (k in B.up.H) { p = k.split(','); if (set[Build.key(+p[0], +p[1])] || set[Build.key(+p[0], +p[1] - 1)]) return true; }
+    for (k in B.up.V) { p = k.split(','); if (set[Build.key(+p[0], +p[1])] || set[Build.key(+p[0] - 1, +p[1])]) return true; }
+    for (k in B.up.posts) { p = k.split(','); if (floorAtCornerIn(set, +p[0], +p[1])) return true; }
+    for (k = 0; k < B.items.length; k++) if (B.items[k].lvl && set[Build.key(Math.floor(B.items[k].x / T), Math.floor(B.items[k].y / T))]) return true;
+    return false;
+  }
+  function floorAtCornerIn(set, cx, cy) { return set[Build.key(cx, cy)] || set[Build.key(cx - 1, cy)] || set[Build.key(cx, cy - 1)] || set[Build.key(cx - 1, cy - 1)]; }
   function buildTarget() {           // what the cursor is over in build mode, and whether the piece may go there
     var P = hero(); if (!mouseW || P.mode !== 'build') return null;
-    var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(mouseW.y / T), far = Math.hypot(mouseW.x - P.x, mouseW.y - P.y) > 150, i;
+    var L = lvl(), BB = Bl(L), R = RI(L), my = mouseW.y + (L ? UP / K : 0);   // upstairs everything is drawn a storey up, so the cursor points a storey lower
+    var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(my / T), far = Math.hypot(mouseW.x - P.x, my - P.y) > 150, i, k;
     if (P.wreck) {
-      for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - mouseW.y) < 16) { var full = B.items[i].store && B.items[i].store.some(function (q) { return !!q; }); return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
-      var ed = Build.edgeAt(mouseW.x, mouseW.y), k = Build.key(ed.x, ed.y);
-      if (ed.d < 0.3 && B[ed.L][k]) return { kind: 'edge', ed: ed, has: B[ed.L][k], ok: !far };
-      var fk = Build.key(tx, ty); return { kind: 'tile', tx: tx, ty: ty, ok: !far && B.floors[fk] != null };
+      for (i = 0; i < B.items.length; i++) if ((B.items[i].lvl || 0) === L && Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - my) < 16) { var full = B.items[i].store && B.items[i].store.some(function (q) { return !!q; }); return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
+      var co = cornerAt(mouseW.x, my), ck = Build.key(co.x, co.y);     // at a corner the post comes first, then the walls on it
+      if (co.d < 0.22 && BB.posts[ck]) { var used = Build.postUsed(BB, co.x, co.y); return { kind: 'post', cx: co.x, cy: co.y, has: BB.posts[ck], ok: !far && !used, why: far ? 'Too far' : used ? 'Walls stand on it' : '' }; }
+      var ed = Build.edgeAt(mouseW.x, my), k0 = Build.key(ed.x, ed.y);
+      if (ed.d < 0.3 && BB[ed.L][k0]) return { kind: 'edge', ed: ed, has: BB[ed.L][k0], ok: !far };
+      if (co.d < 0.3 && BB.posts[ck]) { var used2 = Build.postUsed(BB, co.x, co.y); return { kind: 'post', cx: co.x, cy: co.y, has: BB.posts[ck], ok: !far && !used2, why: far ? 'Too far' : used2 ? 'Walls stand on it' : '' }; }
+      var fk = Build.key(tx, ty);
+      if (!L && B.stairs[fk]) { var sr = stairRoomAt(tx, ty), over = sr && upPiecesOver(sr); return { kind: 'stairs', tx: tx, ty: ty, ok: !far && !over, why: far ? 'Too far' : over ? 'Take down what stands upstairs first' : '' }; }
+      if (L && B.up.auto[fk]) return { kind: 'tile', tx: tx, ty: ty, ok: false, why: 'The stairs hold this floor up' };
+      return { kind: 'tile', tx: tx, ty: ty, ok: !far && BB.floors[fk] != null };
     }
     if (pc.kind === 'item') {
-      var ix = Math.round(mouseW.x / 4) * 4, iy = Math.round(mouseW.y / 4) * 4, wallWhy = '', ft = footOf(pc, buildRot);
-      if (!pc.flat) { var fit = fitItem(ix, iy, ft.hw, ft.hd); if (fit) { ix = fit.x; iy = fit.y; } else wallWhy = 'Too close to a wall'; }
-      var clear = spotClear(ix, iy);
-      for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 24 && (!pc.flat || B.items[i].name === 'rug') && (pc.flat || B.items[i].name !== 'rug')) clear = false;   // a rug lies under furniture, so only rugs block rugs
+      var ix = Math.round(mouseW.x / 4) * 4, iy = Math.round(my / 4) * 4, wallWhy = '', ft = footOf(pc, buildRot);
+      if (!pc.flat) { var fit = fitItem(ix, iy, ft.hw, ft.hd, L); if (fit) { ix = fit.x; iy = fit.y; } else wallWhy = 'Too close to a wall'; }
+      var clear = L ? upFloorAt(Math.floor(ix / T), Math.floor(iy / T)) : spotClear(ix, iy);
+      for (i = 0; i < B.items.length; i++) if ((B.items[i].lvl || 0) === L && Math.hypot(B.items[i].x - ix, B.items[i].y - iy) < 24 && (!pc.flat || B.items[i].name === 'rug') && (pc.flat || B.items[i].name !== 'rug')) clear = false;   // a rug lies under furniture, so only rugs block rugs
+      if (!L && B.stairs[Build.key(Math.floor(ix / T), Math.floor(iy / T))]) clear = false;
       var shipWhy = '';
       if (pc.claim && stones().length && !followerNear(P)) shipWhy = 'A second stone needs a hirdman with you to keep it';
       if (pc.ship) { shipWhy = baseComfort().n < 4 ? 'Your home needs a roof, a fire, a workbench and a rug first (Comfort 4)' : (code(tx, ty) !== 1 ? 'Build it on the sand' : (!nearWater(tx, ty, 4) ? 'Build it at the water’s edge' : '')); }
-      return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && !shipWhy && !wallWhy && canAfford(pc.cost), why: far ? 'Too far' : shipWhy ? shipWhy : wallWhy ? wallWhy : !clear ? 'Blocked, or not on land' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
+      if (L && (pc.ship || pc.claim || pc.id === 'well' || pc.id === 'charcoal')) shipWhy = 'Not up here';
+      return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && !shipWhy && !wallWhy && canAfford(pc.cost), why: far ? 'Too far' : shipWhy ? shipWhy : wallWhy ? wallWhy : !clear ? (L ? 'No floor here' : 'Blocked, or not on land') : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
     }
-    if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), onLand = code(tx, ty) >= 1 && code(tx, ty) !== 255, hasF = B.floors[fk2] != null && B.floors[fk2] === pc.m;
-      return { kind: 'tile', tx: tx, ty: ty, piece: pc, ok: !far && onLand && !hasF && canAfford(pc.cost), why: far ? 'Too far' : !onLand ? 'Not on land' : hasF ? 'Already that floor' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
-    if (pc.id === 'roof') { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; if (ri < 0 && roomInfo) { var ty3 = Math.floor((mouseW.y + 42) / T); ri = roomInfo.at(tx, ty3); if (ri >= 0) ty = ty3; }   // pointing at the drawn roof counts too
-      var room = ri >= 0 ? roomInfo.rooms[ri] : null, same = room && B.roofs && B.roofs[room.id] === pc.m;
-      return { kind: 'roof', tx: tx, ty: ty, room: room, piece: pc, ok: !far && !!room && !same && canAfford(pc.cost), why: far ? 'Too far' : !room ? 'Point at a closed room' : same ? 'Already that roof' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
-    var ed2 = Build.edgeAt(mouseW.x, mouseW.y), m = edgeMid(ed2), k2 = Build.key(ed2.x, ed2.y), taken = !!B[ed2.L][k2], clear2 = spotClear(m.x, m.y);
-    return { kind: 'edge', ed: ed2, piece: pc, ok: !far && Build.edgeOk(ed2, GW, GH) && !taken && clear2 && canAfford(pc.cost), why: far ? 'Too far' : taken ? 'Something stands here already' : !clear2 ? 'Blocked, or not on land' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
+    if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), onLand = L ? (roomInfo && roomInfo.at(tx, ty) >= 0) : (code(tx, ty) >= 1 && code(tx, ty) !== 255), hasF = BB.floors[fk2] != null && BB.floors[fk2] === pc.m, auto = L && B.up.auto[fk2];
+      return { kind: 'tile', tx: tx, ty: ty, piece: pc, ok: !far && onLand && !hasF && !auto && canAfford(pc.cost), why: far ? 'Too far' : !onLand ? (L ? 'Only over a closed room' : 'Not on land') : auto ? 'The stairs hold this floor up' : hasF ? 'Already that floor' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
+    if (pc.id === 'post') { var pco = cornerAt(mouseW.x, my), pk = Build.key(pco.x, pco.y), ptaken = !!BB.posts[pk], pm = { x: pco.x * T, y: pco.y * T }, pclear = L ? floorAtCorner(pco.x, pco.y) : spotClear(pm.x, pm.y), inB = pco.x >= 0 && pco.y >= 0 && pco.x <= GW && pco.y <= GH;
+      return { kind: 'post', cx: pco.x, cy: pco.y, piece: pc, ok: !far && inB && !ptaken && pclear && canAfford(pc.cost), why: far ? 'Too far' : ptaken ? 'A post stands here already' : !pclear ? (L ? 'No floor here' : 'Blocked, or not on land') : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
+    if (pc.id === 'stairs') { var sk = Build.key(tx, ty), inRoom = !L && roomInfo && roomInfo.at(tx, ty) >= 0, hasS = !!B.stairs[sk], item = false;
+      for (i = 0; i < B.items.length; i++) if (!B.items[i].lvl && Math.floor(B.items[i].x / T) === tx && Math.floor(B.items[i].y / T) === ty) item = true;
+      return { kind: 'stairs', tx: tx, ty: ty, piece: pc, ok: !far && inRoom && !hasS && !item && canAfford(pc.cost), why: far ? 'Too far' : L ? 'Not up here' : !inRoom ? 'Build stairs inside a closed room' : hasS ? 'Stairs stand here already' : item ? 'Something stands here already' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
+    if (pc.id === 'roof') { var ri = R ? R.at(tx, ty) : -1; if (ri < 0 && R) { var ty3 = Math.floor((my + 42) / T); ri = R.at(tx, ty3); if (ri >= 0) ty = ty3; }   // pointing at the drawn roof counts too
+      var room = ri >= 0 ? R.rooms[ri] : null, same = room && BB.roofs && BB.roofs[room.id] === pc.m, stair = room && room.up;
+      return { kind: 'roof', tx: tx, ty: ty, room: room, piece: pc, ok: !far && !!room && !same && !stair && canAfford(pc.cost), why: far ? 'Too far' : !room ? 'Point at a closed room' : stair ? 'The stairs lead to a floor above' : same ? 'Already that roof' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' }; }
+    var ed2 = Build.edgeAt(mouseW.x, my), m = edgeMid(ed2), k2 = Build.key(ed2.x, ed2.y), taken = !!BB[ed2.L][k2], clear2 = L ? floorBeside(ed2) : spotClear(m.x, m.y), needPosts = !pc.yard && !Build.postsOk(BB, ed2);
+    return { kind: 'edge', ed: ed2, piece: pc, ok: !far && Build.edgeOk(ed2, GW, GH) && !taken && clear2 && !needPosts && canAfford(pc.cost), why: far ? 'Too far' : taken ? 'Something stands here already' : !clear2 ? (L ? 'No floor here' : 'Blocked, or not on land') : needPosts ? 'Raise a post at each end first' : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
   }
   var buildRot = 0;                          // 0 to 3: the way the next thing faces (the wheel turns it)
   function footOf(pc, rot) {                  // half width and depth of what the thing covers on the ground
     var s = sprite(pc.prop, 0), hw = Math.max(5, Math.min(24, s.w * 0.3)), hd = 6;
     return (rot & 1) ? { hw: Math.max(5, hd + hw * 0.3), hd: Math.max(6, hw * 0.55) } : { hw: hw, hd: hd };
   }
-  function wallHit(x, y, hw, hd) {            // does the footprint touch a wall, door, window or fence?
-    var k, p;
-    for (k in B.H) { p = k.split(','); var ey = p[1] * T, ex0 = p[0] * T, ex1 = ex0 + T; if (Math.abs(ey - y) < hd + 2 && x + hw > ex0 && x - hw < ex1) return true; }
-    for (k in B.V) { p = k.split(','); var vx = p[0] * T, vy0 = p[1] * T, vy1 = vy0 + T; if (Math.abs(vx - x) < hw + 2 && y + hd > vy0 && y - hd < vy1) return true; }
+  function wallHit(x, y, hw, hd, L) {         // does the footprint touch a wall, door, window or fence (on floor L)?
+    var k, p, BB = Bl(L || 0);
+    for (k in BB.H) { p = k.split(','); var ey = p[1] * T, ex0 = p[0] * T, ex1 = ex0 + T; if (Math.abs(ey - y) < hd + 2 && x + hw > ex0 && x - hw < ex1) return true; }
+    for (k in BB.V) { p = k.split(','); var vx = p[0] * T, vy0 = p[1] * T, vy1 = vy0 + T; if (Math.abs(vx - x) < hw + 2 && y + hd > vy0 && y - hd < vy1) return true; }
     return false;
   }
-  function fitItem(x, y, hw, hd) {            // the nearest free spot to where you pointed, within a few steps
-    if (!wallHit(x, y, hw, hd)) return { x: x, y: y };
-    for (var d = 3; d <= 18; d += 3) for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4, fx = x + Math.cos(a) * d, fy = y + Math.sin(a) * d; if (!wallHit(fx, fy, hw, hd)) return { x: fx, y: fy }; }
+  function fitItem(x, y, hw, hd, L) {         // the nearest free spot to where you pointed, within a few steps
+    if (!wallHit(x, y, hw, hd, L)) return { x: x, y: y };
+    for (var d = 3; d <= 18; d += 3) for (var k = 0; k < 8; k++) { var a = k * Math.PI / 4, fx = x + Math.cos(a) * d, fy = y + Math.sin(a) * d; if (!wallHit(fx, fy, hw, hd, L)) return { x: fx, y: fy }; }
     return null;
   }
   function buildAct(first) {
-    var P = hero(), t = buildTarget(); if (!t || !t.ok) return;
+    var P = hero(), t = buildTarget(), L = lvl(), BB = Bl(L); if (!t || !t.ok) return;
     if (P.wreck) {
       if (t.kind === 'item') { pay(costOfItem(t.item.name), 1); if (t.item.hang && t.item.hang.length) drop('hide', t.item.x, t.item.y + 10, t.item.hang.length); B.items.splice(t.idx, 1); }
-      else if (t.kind === 'edge') { pay(costOf(t.has), 1); delete B[t.ed.L][Build.key(t.ed.x, t.ed.y)]; }
-      else { pay(costOfFloor(B.floors[Build.key(t.tx, t.ty)]), 1); delete B.floors[Build.key(t.tx, t.ty)]; }
+      else if (t.kind === 'edge') { pay(costOf(t.has), 1); delete BB[t.ed.L][Build.key(t.ed.x, t.ed.y)]; }
+      else if (t.kind === 'post') { pay(pieceFor('post', 0).cost, 1); delete BB.posts[Build.key(t.cx, t.cy)]; }
+      else if (t.kind === 'stairs') { pay(pieceFor('stairs', 0).cost, 1); delete B.stairs[Build.key(t.tx, t.ty)]; }
+      else { pay(costOfFloor(BB.floors[Build.key(t.tx, t.ty)]), 1); delete BB.floors[Build.key(t.tx, t.ty)]; }
       bDirty = true; save(); return;
     }
-    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: !!t.piece.ship, light: t.piece.light || 0 }; if (t.piece.claim) { nit.claim = true; var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = 'I will hold this stone.'; kp.sayT = 4; } sfx('build'); save(); return; } if (t.piece.chest) { nit.store = []; for (var si = 0; si < STORE_N; si++) nit.store.push(null); } B.items.push(nit); sfx('build'); save(); return; }
-    if (t.kind === 'roof') { if (!first) return; pay(t.piece.cost); if (!B.roofs) B.roofs = {}; B.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
-    var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : 'F' + Build.key(t.tx, t.ty);
-    var drags = t.piece.id === 'floor' || t.piece.id === 'wall' || t.piece.id === 'fence' || t.piece.id === 'palisade';
-    if (!first && (id === lastPlaced || !drags)) return;   // drag lays floors, walls and fences; doors, gates and windows one per click
+    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: !!t.piece.ship, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney }; if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = 'I will keep this stone.'; kp.sayT = 3; } } else B.items.push(nit); if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
+    if (t.kind === 'roof') { if (!first) return; pay(t.piece.cost); if (!BB.roofs) BB.roofs = {}; BB.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
+    if (t.kind === 'stairs') { if (!first) return; pay(t.piece.cost); B.stairs[Build.key(t.tx, t.ty)] = { d: 0 }; bDirty = true; sfx('build'); save(); return; }
+    var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : t.kind === 'post' ? 'P' + Build.key(t.cx, t.cy) : 'F' + Build.key(t.tx, t.ty);
+    var drags = t.piece.id === 'floor' || t.piece.id === 'wall' || t.piece.id === 'fence' || t.piece.id === 'palisade' || t.piece.id === 'rail' || t.piece.id === 'drystone' || t.piece.id === 'post';
+    if (!first && (id === lastPlaced || !drags)) return;   // drag lays floors, walls, fences and posts; doors, gates and windows one per click
     lastPlaced = id;
-    if (t.kind === 'tile') { var old = B.floors[Build.key(t.tx, t.ty)]; if (old != null) pay(costOfFloor(old), 1); pay(t.piece.cost); B.floors[Build.key(t.tx, t.ty)] = t.piece.m; }   // a new floor over an old one gives the old one back
-    else { pay(t.piece.cost); B[t.ed.L][Build.key(t.ed.x, t.ed.y)] = { t: t.piece.id, m: t.piece.m }; }
+    if (t.kind === 'tile') { var old = BB.floors[Build.key(t.tx, t.ty)]; if (old != null) pay(costOfFloor(old), 1); pay(t.piece.cost); BB.floors[Build.key(t.tx, t.ty)] = t.piece.m; }   // a new floor over an old one gives the old one back
+    else if (t.kind === 'post') { pay(t.piece.cost); BB.posts[Build.key(t.cx, t.cy)] = { m: t.piece.m }; }
+    else { pay(t.piece.cost); BB[t.ed.L][Build.key(t.ed.x, t.ed.y)] = { t: t.piece.id, m: t.piece.m }; }
     bDirty = true; sfx('build'); save();
   }
-  function rebuildRooms() {          // only the part of the grid with pieces in it is searched for closed rooms
-    bDirty = false;
-    var keys = Object.keys(B.H).concat(Object.keys(B.V)), x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  function roomsOf(BB) {             // only the part of the grid with pieces in it is searched for closed rooms
+    var keys = Object.keys(BB.H).concat(Object.keys(BB.V)), x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
     keys.forEach(function (k) { var p = k.split(','); x0 = Math.min(x0, +p[0] - 2); y0 = Math.min(y0, +p[1] - 2); x1 = Math.max(x1, +p[0] + 2); y1 = Math.max(y1, +p[1] + 2); });
-    roomInfo = keys.length ? Build.rooms(B, GW, GH, { x0: x0, y0: y0, x1: x1, y1: y1 }) : { rooms: [], solids: [], at: function () { return -1; } };
-    roomInfo.rooms.forEach(function (r) { if (roofA[r.id] == null) roofA[r.id] = 1; });
+    return keys.length ? Build.rooms(BB, GW, GH, { x0: x0, y0: y0, x1: x1, y1: y1 }) : { rooms: [], solids: [], at: function () { return -1; } };
+  }
+  function rebuildRooms() {
+    bDirty = false; ensureB();
+    roomInfo = roomsOf(B);
+    var k, p, auto = {};
+    roomInfo.rooms.forEach(function (r) { if (roofA[r.id] == null) roofA[r.id] = 1; r.up = false; r.tiles.forEach(function (t) { if (B.stairs[Build.key(t[0], t[1])]) r.up = true; }); });
+    // the stairs lay the floor above their room: its tiles become the upper floor (auto), and old auto tiles with no stairs below go
+    for (k in B.up.auto) { delete B.up.floors[k]; } B.up.auto = {};
+    roomInfo.rooms.forEach(function (r) { if (!r.up) return; r.tiles.forEach(function (t) { var tk = Build.key(t[0], t[1]); if (B.up.floors[tk] == null) { B.up.floors[tk] = 0; B.up.auto[tk] = 1; } }); });
+    // upstairs, a closed room counts only where every tile has floor under it
+    var r1 = roomsOf(B.up), kept = [], map = {};
+    r1.rooms.forEach(function (r, i) { var ok = r.tiles.every(function (t) { return upFloorAt(t[0], t[1]); }); if (ok) { map[i] = kept.length; kept.push(r); } });
+    roomInfo1 = { rooms: kept, solids: r1.solids, at: function (tx, ty) { var i = r1.at(tx, ty); return i >= 0 && map[i] != null ? map[i] : -1; } };
+    roomInfo1.rooms.forEach(function (r) { if (roofA1[r.id] == null) roofA1[r.id] = 1; });
+  }
+  // The floor you are on: the stairs' lower half is where you climb (from the south) and come down (to the south).
+  function levelTick() {
+    var P = hero(); if (inCave || inYard || P.dead) { return; }
+    var tx = Math.floor(P.x / T), ty = Math.floor(P.y / T), fy = P.y / T - ty, k = Build.key(tx, ty);
+    if (B.stairs[k]) { if (!P.lvl && fy < 0.58) P.lvl = 1; else if (P.lvl && fy > 0.64) P.lvl = 0; }
+    else if (P.lvl && !upFloorAt(tx, ty)) P.lvl = 0;      // the floor went (wrecked stairs): back on the ground
+    Combat.api.scene.noHeroShadow = !!P.lvl;
   }
   function wreckRect(t) {
-    if (t.kind === 'edge') { var hgt = Build.YARD[t.has.t] ? 14 : BCFG.wallH; return t.ed.L === 'H' ? { x: t.ed.x * T, y: t.ed.y * TS - hgt - 2, w: T, h: hgt + 4 } : { x: t.ed.x * T - 4, y: t.ed.y * TS - hgt, w: 8, h: TS + hgt }; }
-    if (t.kind === 'item') { var s = sprite(t.item.name, 0); return { x: t.item.x + s.l, y: t.item.y * K + s.t, w: s.w, h: s.h }; }
-    return { x: t.tx * T, y: t.ty * TS, w: T, h: TS };
+    var dy = lvl() ? -UP : 0;
+    if (t.kind === 'post') return { x: t.cx * T - 4, y: t.cy * TS - BCFG.wallH - 8 + dy, w: 8, h: BCFG.wallH + 10 };
+    if (t.kind === 'stairs') return { x: t.tx * T, y: t.ty * TS - UP, w: T, h: TS + UP };
+    if (t.kind === 'edge') { var hgt = Build.YARD[t.has.t] ? 14 : BCFG.wallH; return t.ed.L === 'H' ? { x: t.ed.x * T, y: t.ed.y * TS - hgt - 2 + dy, w: T, h: hgt + 4 } : { x: t.ed.x * T - 4, y: t.ed.y * TS - hgt + dy, w: 8, h: TS + hgt }; }
+    if (t.kind === 'item') { var s = sprite(t.item.name, 0); return { x: t.item.x + s.l, y: t.item.y * K + s.t + dy, w: s.w, h: s.h }; }
+    return { x: t.tx * T, y: t.ty * TS + dy, w: T, h: TS };
   }
   var ghostLabel = null;                 // what to say by the cursor, drawn on the HUD after the world
   function drawSpriteAt(c, sp, x, y, flip) {
@@ -617,22 +698,26 @@ __COMBAT__
       return;
     }
     c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+    var gdy = lvl() ? -UP : 0;             // upstairs the grid and the ghost sit a storey up
     // the tile grid round the cursor, faint, so you can see where floors and walls will sit
-    var gx0 = Math.floor(mouseW.x / T) - 3, gy0 = Math.floor(mouseW.y / T) - 3, gi, gj;
+    var gx0 = Math.floor(mouseW.x / T) - 3, gy0 = Math.floor((mouseW.y + (lvl() ? UP / K : 0)) / T) - 3, gi, gj;
+    c.translate(0, gdy);
     c.strokeStyle = 'rgba(255,255,255,0.16)'; c.lineWidth = 0.8; c.setLineDash([2, 3]); c.beginPath();
     for (gi = 0; gi <= 7; gi++) { c.moveTo((gx0 + gi) * T, gy0 * TS); c.lineTo((gx0 + gi) * T, (gy0 + 7) * TS); c.moveTo(gx0 * T, (gy0 + gi) * TS); c.lineTo((gx0 + 7) * T, (gy0 + gi) * TS); }
     c.stroke(); c.setLineDash([]);
     if (P.wreck) {                     // a soft red glow over the piece that would go, and what it gives back
-      var r = wreckRect(t), back = t.kind === 'item' ? costOfItem(t.item.name) : t.kind === 'edge' ? costOf(t.has) : (B.floors[Build.key(t.tx, t.ty)] != null ? costOfFloor(B.floors[Build.key(t.tx, t.ty)]) : null);
+      c.translate(0, -gdy); var r = wreckRect(t), back = t.kind === 'item' ? costOfItem(t.item.name) : t.kind === 'edge' ? costOf(t.has) : t.kind === 'post' ? pieceFor('post', 0).cost : t.kind === 'stairs' ? pieceFor('stairs', 0).cost : (Bl().floors[Build.key(t.tx, t.ty)] != null ? costOfFloor(Bl().floors[Build.key(t.tx, t.ty)]) : null);
       c.shadowColor = 'rgba(255,70,50,0.95)'; c.shadowBlur = 14; c.fillStyle = 'rgba(255,80,60,' + (t.ok ? 0.38 : 0.14) + ')';
       c.fillRect(r.x, r.y, r.w, r.h); c.fillRect(r.x, r.y, r.w, r.h); c.shadowBlur = 0;
       if (t.ok) { c.strokeStyle = 'rgba(255,120,100,0.9)'; c.lineWidth = 1.4; c.strokeRect(r.x, r.y, r.w, r.h); c.beginPath(); c.moveTo(r.x, r.y); c.lineTo(r.x + r.w, r.y + r.h); c.moveTo(r.x + r.w, r.y); c.lineTo(r.x, r.y + r.h); c.stroke(); }
-      if (t.ok && back) ghostLabel = { text: 'Wreck: +' + costText(back), bad: false }; else if (!t.ok && t.kind !== 'tile') ghostLabel = { text: t.why || 'Too far', bad: true };
+      if (t.ok && back) ghostLabel = { text: 'Wreck: +' + costText(back), bad: false }; else if (!t.ok && (t.kind !== 'tile' || t.why)) ghostLabel = { text: t.why || 'Too far', bad: true };
     } else {                           // the piece as it would stand, its footprint, and the reason if it cannot go there
       var col = t.ok ? '120,255,160' : '255,80,60';
       c.globalAlpha = t.ok ? 0.65 : 0.35;
       if (t.kind === 'tile') c.drawImage(w.tile((Build.FLOORS[t.piece.m] || Build.FLOORS[0]).tile, t.tx, t.ty), t.tx * T, t.ty * TS, T, TS);
       else if (t.kind === 'item') { var sp = sprite(t.piece.prop, 0); drawSpriteAt(c, sp, t.x, t.y, buildRot & 1); }
+      else if (t.kind === 'post') Build.drawPost(c, t.cx, t.cy, { m: t.piece.m }, BCFG);
+      else if (t.kind === 'stairs') Build.drawStairs(c, t.tx, t.ty, BCFG);
       else if (t.kind === 'roof') { if (t.room) Build.drawRoof(c, t.room, 0.7, Build.cfg({ roof: t.piece.m })); }
       else { var e = { t: t.piece.id, m: t.piece.m }; if (t.ed.L === 'H') Build.drawH(c, t.ed.x, t.ed.y, e, false, false, BCFG); else Build.drawV(c, t.ed.x, t.ed.y, e, false, false, BCFG); }
       c.globalAlpha = 1;
@@ -642,6 +727,8 @@ __COMBAT__
         if (t.kind === 'tile' || (t.kind === 'roof' && !t.room)) c.rect(t.tx * T, t.ty * TS, T, TS);
         else if (t.kind === 'roof') t.room.tiles.forEach(function (tl) { c.rect(tl[0] * T, tl[1] * TS, T, TS); });
         else if (t.kind === 'item') c.ellipse(t.x, t.y * K, Math.max(12, t.piece.r * 1.6), Math.max(7, t.piece.r), 0, 0, 7);
+        else if (t.kind === 'post') c.arc(t.cx * T, t.cy * TS, 4, 0, 7);
+        else if (t.kind === 'stairs') c.rect(t.tx * T, t.ty * TS, T, TS);
         else { c.moveTo(t.ed.x * T, t.ed.y * TS); if (t.ed.L === 'H') c.lineTo((t.ed.x + 1) * T, t.ed.y * TS); else c.lineTo(t.ed.x * T, (t.ed.y + 1) * TS); }
         c.stroke();
       }
@@ -653,7 +740,7 @@ __COMBAT__
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   var SAVE = 'game.save', gone = {}, saveT = 0;
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -770,7 +857,7 @@ __COMBAT__
     item('woodpile', vx + 2, vy + 6); item('cart', vx + 4, vy + 9); item('dryingRack', vx + 6, vy + 5); item('haystack', vx + 2, vy + 9);
     item('shieldRack', vx + 12, vy + 4); item('crate', vx + 7, vy + 10, { loot: { stone: 6 }, thing: ['sword', 'flint'] }); item('brazier', vx + 7, vy + 3, { light: 1 });
     item('dragonPost', vx + 5, vy + 0.6); item('crate', vx + 1, vy + 4, { loot: { arrows: 10 } });
-    B.roofs = {}; bDirty = true;
+    B.roofs = {}; bDirty = true; Build.ensurePosts(B);
     roofLater = { tx: vx + 9, ty: vy + 1, m: 1 };          // the hut's thatch is set once the rooms are known
   }
   var roofLater = null;
@@ -978,7 +1065,7 @@ __COMBAT__
   }
   function fireNear(x, y, r) {
     if (hearth && Math.hypot(x - hearth.x, y - hearth.y) < r) return true;
-    for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if ((it.name === 'stoneHearth' || it.light) && Math.hypot(x - it.x, y - it.y) < r) return true; }
+    for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if ((isHearth(it) || it.light) && Math.hypot(x - it.x, y - it.y) < r) return true; }
     return false;
   }
   function trollMoveIn() {
@@ -1063,7 +1150,7 @@ __COMBAT__
 
   /* ---------- the drying rack: hang hide on it (E), and it cures into leather while you work ---------- */
   var CURE = 90, RACK_MAX = 4;             // seconds a hide takes to cure; hides a rack holds
-  function rackNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.name === 'dryingRack' && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
+  function rackNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.name === 'dryingRack' && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
   function rackCured(it) { var n = 0; (it.hang || []).forEach(function (t) { if (t <= 0) n++; }); return n; }
   function rackUsable(P) { return null; }   // curing is gone (Robin, 2026-10-05): animals drop leather; the rack is only a thing to build
   function rackUse(it) {
@@ -1147,7 +1234,7 @@ __COMBAT__
     item('barrel', hx + 4, hy + 1, { loot: { berries: 4 } }); item('crate', hx + 7, hy + 1, { loot: { fiber: 6 } });
     for (x = hx; x < hx + hamlet.w; x++) if (R() < 0.85) H(x, hy, 'fence', 2);
     for (y = hy; y < hy + hamlet.h; y++) if (R() < 0.6) V(hx + hamlet.w, y, 'fence', 2);
-    bDirty = true;
+    bDirty = true; Build.ensurePosts(B);
   }
   function folkNear(P) { var best = null; folk.forEach(function (f) { var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
   function folkTalk(f) { f.say = f.lines[f.line % f.lines.length]; f.line++; f.sayT = 5; }
@@ -1192,7 +1279,7 @@ __COMBAT__
   function homeStone() { var ss = stones(); return ss.length ? ss[0] : null; }
   function itemsIn(st) { var r = reachOf(st); return B.items.filter(function (it) { return Math.hypot(it.x - st.x, it.y - st.y) < r; }); }
   function roomFor(st) {                    // what the territory can hold: a bed each, and a roofed fire for every four
-    var beds = 0, fires = 0; itemsIn(st).forEach(function (it) { if (it.bed) beds++; if (it.name === 'stoneHearth' && benchRoofed(it)) fires++; });
+    var beds = 0, fires = 0; itemsIn(st).forEach(function (it) { if (it.bed) beds++; if (isHearth(it) && benchRoofed(it)) fires++; });
     return Math.min(beds, fires * 4);
   }
   function storesIn(st) { return itemsIn(st).filter(function (it) { return it.store; }); }
@@ -1218,8 +1305,8 @@ __COMBAT__
   function assignTo(m, it) { var j = jobOf(it); if (!j) return false; m.job = j; m.at = { x: it.x + (it.name === 'workbench' ? -16 : 0), y: it.y + 18 }; m.workAt = it; m.follow = false; m.mustered = false; m.jobT = 0; return true; }
   function hirdNear(P) { var best = null; hird.forEach(function (m) { var d = Math.hypot(P.x - m.x, P.y - m.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = m; }); return best; }
   function followerNear(P) { var best = null; hird.forEach(function (m) { if (!m.follow) return; var d = Math.hypot(P.x - m.x, P.y - m.y); if (d < 90 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = m; }); return best; }
-  function workplaceNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (jobOf(it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
-  function stoneNearH(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.claim && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
+  function workplaceNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (jobOf(it) && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
+  function stoneNearH(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.claim && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
   function hirdTalk(m) {                    // E at a hirdman: follow, or stay. Brokk's story comes first, through talk()
     if (m === npc && !seen.raft) { talk(); return; }
     if (!inTerritory(m.x, m.y)) { m.say = 'Not out here. Call me at the stone.'; m.sayT = 4; return; }
@@ -1385,7 +1472,7 @@ __COMBAT__
   var STORE_N = 12, store = null;           // store: the open chest (a B.items entry with .store)
   function slotGet(i) { return i >= 100 ? (store ? store.store[i - 100] : null) : slots[i]; }
   function slotSet(i, v) { if (i >= 100) { if (store) store.store[i - 100] = v; } else slots[i] = v; }
-  function storeNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.store && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
+  function storeNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.store && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
   function storeAdd(s) {                   // a stack or thing into the open chest: like kinds first, then an empty slot; returns what did not fit
     if (!store) return s;
     var i, t;
@@ -1434,9 +1521,9 @@ __COMBAT__
   // heal: at once. For time seconds: bonus on top health, regen health a second, stam on top stamina, stamRegen on how fast it returns
   var FOOD = { berries: { heal: 10, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, roastBerries: { heal: 15, regen: 0.5, time: 90, bonus: 5, stam: 10, stamRegen: 1.1 }, cookedMeat: { heal: 30, regen: 1, time: 120, bonus: 15, stam: 15, stamRegen: 1.15 }, stew: { heal: 50, regen: 2, time: 180, bonus: 25, stam: 30, stamRegen: 1.35 } };
   var fed = null, hearth = null, cookOpen = false, menu = null, mouseS = null;   // fed: { kind, left, regen, bonus }
-  function nearHearth(P) { if (hearth && Math.hypot(P.x - hearth.x, P.y - hearth.y) < 46) return true; for (var i = 0; i < B.items.length; i++) if (B.items[i].name === 'stoneHearth' && Math.hypot(P.x - B.items[i].x, P.y - B.items[i].y) < 46) return true; return false; }
+  function nearHearth(P) { if (hearth && Math.hypot(P.x - hearth.x, P.y - hearth.y) < 46) return true; for (var i = 0; i < B.items.length; i++) if (isHearth(B.items[i]) && sameLvl(B.items[i]) && Math.hypot(P.x - B.items[i].x, P.y - B.items[i].y) < 46) return true; return false; }
   var COOK_T = 4, cookFires = [];             // cooking takes COOK_T seconds a piece, at the fire, stacked in a queue (a bar over the fire)
-  function hearthAt(P) { if (hearth && Math.hypot(P.x - hearth.x, P.y - hearth.y) < 46) return hearth; for (var i = 0; i < B.items.length; i++) if (B.items[i].name === 'stoneHearth' && Math.hypot(P.x - B.items[i].x, P.y - B.items[i].y) < 46) return B.items[i]; return null; }
+  function hearthAt(P) { if (hearth && Math.hypot(P.x - hearth.x, P.y - hearth.y) < 46) return hearth; for (var i = 0; i < B.items.length; i++) if (isHearth(B.items[i]) && sameLvl(B.items[i]) && Math.hypot(P.x - B.items[i].x, P.y - B.items[i].y) < 46) return B.items[i]; return null; }
   function cook(r) {
     var h = hearthAt(hero()); if (!h || !canAfford(r.needs)) return; pay(r.needs);
     h.cooking = h.cooking || []; h.cooking.push({ id: r.id, t: 0 }); if (cookFires.indexOf(h) < 0) cookFires.push(h); sfx('pick');
@@ -1504,15 +1591,15 @@ __COMBAT__
     var n = MCOLS * MROWS, i; if (tab) menuTab = tab; if (tab === 'build' || tab === 'hand' && menuFrom !== 'bench') menuFrom = 'B';
     if (menuTab === 'bench' && !benchNear(hero())) menuTab = 'hand';
     if (menuTab === 'hearth' && !nearHearth(hero())) menuTab = 'hand';
-    var byCat = menuTab === 'hand' || menuTab === 'bench', rowH = MCELL + 3 + (byCat ? 7 : 0), nrows = MROWS;
-    menu = { items: [], w: MCOLS * (MCELL + 3) + 11, h: 21 + MROWS * rowH + 14, tabs: [], byCat: byCat, rowH: rowH, labels: [] };
-    menu.x = Math.round((400 - menu.w) / 2); menu.y = 34;
+    var byCat = menuTab === 'hand' || menuTab === 'bench' || menuTab === 'build', rowH = MCELL + 3 + (byCat ? 7 : 0), nrows = MROWS, cols = menuTab === 'build' ? 11 : MCOLS;
+    menu = { items: [], w: cols * (MCELL + 3) + 11, h: 21 + MROWS * rowH + 14, tabs: [], byCat: byCat, rowH: rowH, labels: [] };
+    menu.x = Math.round((400 - menu.w) / 2); menu.y = menuTab === 'build' ? 12 : 34;   // the Building board is tall: it starts near the top
     var list = menuTab === 'build' ? PIECES : (menuTab === 'hearth' ? RECIPES.filter(dishKnown) : RECIPES2.filter(function (r) { return r.at === menuTab && known(r); }));
     if (byCat) {                                            // one row per category, the label over it when the row has something
-      var grid = [], row = 0; CATS2.forEach(function (ct) { var inRow = list.filter(function (r) { return r.cat === ct[0]; }); if (!inRow.length) return; menu.labels.push({ text: ct[1], y: menu.y + 21 + row * rowH + 5 }); for (i = 0; i < MCOLS; i++) grid[row * MCOLS + i] = inRow[i] || null; row++; });
-      list = grid; nrows = Math.max(1, row); n = nrows * MCOLS; menu.h = 21 + nrows * rowH + 14;
+      var grid = [], row = 0; (menuTab === 'build' ? BCATS : CATS2).forEach(function (ct) { var inRow = list.filter(function (r) { return r.cat === ct[0]; }); if (!inRow.length) return; menu.labels.push({ text: ct[1], y: menu.y + 21 + row * rowH + 5 }); for (i = 0; i < inRow.length; i++) { grid[row * cols + (i % cols)] = inRow[i]; if (i % cols === cols - 1 && i < inRow.length - 1) row++; } row++; });   // a long row wraps
+      list = grid; nrows = Math.max(1, row); n = nrows * cols; menu.h = 21 + nrows * rowH + 14;
     }
-    for (i = 0; i < n; i++) { var e = list[i] || null; menu.items.push({ i: i, piece: menuTab === 'build' ? e : null, r: menuTab === 'hand' || menuTab === 'bench' || menuTab === 'ship' ? e : null, dish: menuTab === 'hearth' ? e : null, x: menu.x + 7 + (i % MCOLS) * (MCELL + 3), y: menu.y + 21 + Math.floor(i / MCOLS) * rowH + (byCat ? 7 : 0) }); }
+    for (i = 0; i < n; i++) { var e = list[i] || null; menu.items.push({ i: i, piece: menuTab === 'build' ? e : null, r: menuTab === 'hand' || menuTab === 'bench' || menuTab === 'ship' ? e : null, dish: menuTab === 'hearth' ? e : null, x: menu.x + 7 + (i % cols) * (MCELL + 3), y: menu.y + 21 + Math.floor(i / cols) * rowH + (byCat ? 7 : 0) }); }
     var tx = menu.x + 5; menuTabs().forEach(function (t) { var w = t.name.length * 4 + 12; menu.tabs.push({ id: t.id, name: t.name, roofed: t.roofed, x: tx, y: menu.y + 4, w: w, h: 13 }); tx += w + 3; });
   }
   function menuHit() { if (!menu || !mouseS) return null; for (var i = 0; i < menu.items.length; i++) { var it = menu.items[i]; if (mouseS.x >= it.x && mouseS.x <= it.x + MCELL && mouseS.y >= it.y && mouseS.y <= it.y + MCELL) return it; } return null; }
@@ -1527,7 +1614,7 @@ __COMBAT__
     var canHere = menuTab !== 'bench' || roofed;
     menu.labels.forEach(function (lb) { c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText(lb.text, menu.x + 8, lb.y); });
     for (i = 0; i < menu.items.length; i++) {
-      var it = menu.items[i], filled = it.piece || it.r || it.dish, on = it.piece && !P.wreck && P.piece === it.i && P.mode === 'build', hov = hit === it && filled, kn = it.r ? known(it.r) : true, ok = it.r ? (kn && canAfford(it.r.needs) && canHere) : (it.dish ? canAfford(it.dish.needs) : true);
+      var it = menu.items[i], filled = it.piece || it.r || it.dish, on = it.piece && !P.wreck && PIECES[P.piece] === it.piece && P.mode === 'build', hov = hit === it && filled, kn = it.r ? known(it.r) : true, ok = it.r ? (kn && canAfford(it.r.needs) && canHere) : (it.dish ? canAfford(it.dish.needs) : true);
       c.fillStyle = hov ? '#5c3e2a' : (filled ? '#452c1b' : '#3d2718'); c.fillRect(it.x, it.y, MCELL, MCELL);
       c.strokeStyle = on ? '#ffd34d' : 'rgba(0,0,0,0.45)'; c.lineWidth = on ? 1.4 : 1; c.strokeRect(it.x + 0.5, it.y + 0.5, MCELL - 1, MCELL - 1);
       if (!filled) continue;
@@ -2227,11 +2314,75 @@ __COMBAT__
 
   /* ---------- scene ---------- */
   var cam = { x: 0, y: 0, z: 1 };
+  // The chimneys of a room's fireplaces: drawn after its roof (sort key sy, alpha a) and as tall as the storeys above.
+  function chimneys(room, L, sy, a, dy) {
+    B.items.forEach(function (it) {
+      if (!it.chimney || (it.lvl || 0) !== L) return; var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T), R = RI(L);
+      if (!R || R.rooms[R.at(tx, ty)] !== room) return;
+      var above = (!L && room.up) ? 1 : 0, h = (above + 1) * UP + 6;
+      sceneItems.push({ y: sy, f: function () { Build.drawChimney(ctx, it.x, it.y * K - 24 + dy, h, a, clock); } });
+    });
+  }
+  var sceneItems = null;
+  // The floor above: its tiles drawn a storey up (with a joist edge where the floor ends), then its walls, posts, things,
+  // roofs and chimneys, all lifted by UP. Seen from the ground it is one bundle per stair-room, sorted like a roof and
+  // fading when you stand under it; upstairs the floor slab goes under everything and the rest sorts with the hero.
+  function upperFloor(items, L, here, hw, hh) {
+    if (!roomInfo || !B.up) return;
+    var FAR = -1e8, up = B.up, stairRooms = roomInfo.rooms.filter(function (r) { return r.up; });
+    if (!stairRooms.length && !Object.keys(up.floors).length) return;
+    function owner(tx, ty) {                 // the stair-room a piece upstairs belongs to (for sorting and fading from the ground)
+      var ri = roomInfo.at(tx, ty), r = ri >= 0 ? roomInfo.rooms[ri] : null; if (r && r.up) return r;
+      var best = null, bd = 1e9; stairRooms.forEach(function (q) { var t = q.tiles[0], d = Math.hypot(t[0] - tx, t[1] - ty); if (d < bd) { bd = d; best = q; } }); return best;
+    }
+    var bundles = {}, list = [];
+    function add(tx, ty, y, f) {
+      var r = owner(tx, ty); if (!r) return;
+      if (L) { list.push({ y: y, f: f }); return; }
+      var bd = bundles[r.id]; if (!bd) { bd = bundles[r.id] = { r: r, parts: [] }; } bd.parts.push({ y: y, f: f });
+    }
+    var P = hero();
+    function slab(a) {                         // the floor tiles a storey up, with a dark joist edge on their south side
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(0, -UP);
+      for (var fk in up.floors) { var fp = fk.split(','), tx = +fp[0], ty = +fp[1], fx = tx * T, fy = ty * TS; if (Math.abs(fx - cam.x) > hw + 40 || Math.abs(fy - cam.y) > hh + 60) continue;
+        var fm = Build.FLOORS[up.floors[fk]] || Build.FLOORS[0]; ctx.drawImage(w.tile(fm.tile, tx, ty), fx, fy, T, TS);
+        if (!upFloorAt(tx, ty + 1)) { ctx.fillStyle = '#4a3222'; ctx.fillRect(fx, fy + TS - 1, T, 3.5); ctx.strokeStyle = Build.LINE; ctx.lineWidth = 1; ctx.strokeRect(fx, fy + TS - 1, T, 3.5); }
+        if (!upFloorAt(tx - 1, ty)) { ctx.fillStyle = '#5a3f2a'; ctx.fillRect(fx - 1, fy, 2, TS + 2.5); }
+      }
+      ctx.restore();
+    }
+    if (L) { items.push({ y: FAR + 1, f: function () { slab(1); } }); items.push({ y: P.y - 0.5, f: function () { ctx.fillStyle = 'rgba(30,70,50,0.28)'; ctx.beginPath(); ctx.ellipse(P.x, P.y * K - UP, 9, 4 * K, 0, 0, 7); ctx.fill(); } }); }
+    else stairRooms.forEach(function (r) { var bd = bundles[r.id] = { r: r, parts: [] }; bd.parts.push({ y: FAR, f: function () { slab(1); } }); });
+    function lifted(f) { return function () { ctx.save(); ctx.translate(0, -UP); f(); ctx.restore(); }; }
+    function near(wx, wy) { return L && Math.hypot(P.x - wx, P.y - wy) < 34; }
+    var here1 = roomInfo1 && L ? roomInfo1.at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1;
+    function mine1(ax, ay, bx2, by2) { return here1 >= 0 && (roomInfo1.at(ax, ay) === here1 || roomInfo1.at(bx2, by2) === here1); }
+    Object.keys(up.H).forEach(function (kk) { var q = kk.split(','), x = +q[0], y = +q[1], e = up.H[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return; var low = mine1(x, y - 1, x, y) && y * T > P.y; add(x, y, y * T, lifted(function () { Build.drawH(ctx, x, y, e, low, near((x + 0.5) * T, y * T), BCFG); })); });
+    Object.keys(up.V).forEach(function (kk) { var q = kk.split(','), x = +q[0], y = +q[1], e = up.V[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return; add(x, y, (y + 1) * T - 1, lifted(function () { Build.drawV(ctx, x, y, e, near(x * T, (y + 0.5) * T), up.V[Build.key(x, y + 1)] || false, BCFG); })); });
+    Object.keys(up.posts).forEach(function (kk) { var q = kk.split(','), x = +q[0], y = +q[1], p = up.posts[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
+      add(x, y, y * T + 0.5, lifted(function () { Build.drawPost(ctx, x, y, p, BCFG); }));
+      if (up.posts[Build.key(x + 1, y)] && !up.H[kk]) add(x, y, y * T + 0.4, lifted(function () { Build.drawBeam(ctx, x, y, true, p, BCFG); }));
+      if (up.posts[Build.key(x, y + 1)] && !up.V[kk]) add(x, y, (y + 1) * T - 0.9, lifted(function () { Build.drawBeam(ctx, x, y, false, p, BCFG); })); });
+    B.items.forEach(function (it) { if (!it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return; var s = sprite(it.name, 0); add(Math.floor(it.x / T), Math.floor(it.y / T), it.name === 'rug' ? it.y - 300 : it.y, lifted(function () { drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); })); });
+    if (roomInfo1) roomInfo1.rooms.forEach(function (r, ri) {
+      var target = here1 === ri ? BCFG.seeThrough : 1; roofA1[r.id] += (target - roofA1[r.id]) * 0.18; var t0 = r.tiles[0];
+      add(t0[0], t0[1], (r.maxY + 1) * T + 1, function () { Build.drawRoof(ctx, r, roofA1[r.id], roofCfg(r, 1), -UP); });
+      var keep = sceneItems; sceneItems = []; chimneys(r, 1, (r.maxY + 1) * T + 2, roofA1[r.id], -UP); sceneItems.forEach(function (ci) { add(t0[0], t0[1], ci.y, ci.f); }); sceneItems = keep;
+    });
+    if (L) { list.forEach(function (li) { items.push(li); }); return; }
+    for (var id in bundles) (function (bd) {
+      var r = bd.r, ri = roomInfo.rooms.indexOf(r), target = here === ri ? BCFG.seeThrough : 1; roofA[r.id] += (target - roofA[r.id]) * 0.18;
+      bd.parts.sort(function (p1, p2) { return p1.y - p2.y; });
+      items.push({ y: (r.maxY + 1) * T + 1, f: function () { ctx.save(); ctx.globalAlpha = roofA[r.id]; bd.parts.forEach(function (pt) { pt.f(); }); ctx.restore(); } });
+      var keep = sceneItems; sceneItems = items; chimneys(r, 0, (r.maxY + 1) * T + 1.5, roofA[r.id], 0); sceneItems = keep;
+    })(bundles[id]);
+  }
   Combat.api.scene = {
     noHud: false, noKills: true,
-    heroLift: function () { return raft && raft.aboard && raft.kind === 'boat' ? -3 : 0; },   // feet a little below the rim, inside the hull
+    heroLift: function () { return (hero().lvl ? UP : 0) + (raft && raft.aboard && raft.kind === 'boat' ? -3 : 0); },   // a storey up upstairs   // feet a little below the rim, inside the hull
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
-    walk: function (x, y) { if (ADMIN.fly && !inYard && !inCave) return true; if (inYard) return YSCENE.walk(x, y); if (inCave) return caveFloor(x, y); return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y); },   // the shallows can be waded
+    walk: function (x, y, e) { var PH = hero(); if (!inYard && !inCave && (!e || e === PH)) { var wtx = Math.floor(x / T), wty = Math.floor(y / T); if (PH.lvl) return upFloorAt(wtx, wty); if (B.stairs[Build.key(wtx, wty)] && y / T - wty < 0.5) return false; }   // upstairs only the floor; the stairs' top half is reached by climbing
+      if (ADMIN.fly && !inYard && !inCave) return true; if (inYard) return YSCENE.walk(x, y); if (inCave) return caveFloor(x, y); return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y); },   // the shallows can be waded
     begin: function (c, P) {
       var z = zoom, hw = 200 / z, hh = 125 / z, i;
       cam.z = z;
@@ -2272,21 +2423,33 @@ __COMBAT__
           items.push({ y: o.y, f: function () { drawProp(o, s, px, py, w, h, P); } });
         });
       }
-      var here = roomInfo ? roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1;
+      var L = P.lvl || 0, here = roomInfo ? roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, here1 = roomInfo1 && L ? roomInfo1.at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1;
       function near(wx, wy) { return Math.hypot(P.x - wx, P.y - wy) < 34; }
-      function mine(ax, ay, bx2, by2) { return here >= 0 && (roomInfo.at(ax, ay) === here || roomInfo.at(bx2, by2) === here); }
+      function mine(ax, ay, bx2, by2) { return !L && here >= 0 && (roomInfo.at(ax, ay) === here || roomInfo.at(bx2, by2) === here); }
+      function underMe(tx, ty) { return L && !!stairRoomAt(tx, ty); }    // upstairs, the ground-floor room under your feet is drawn first, under the floor
+      var FAR = -1e8;
       Object.keys(B.H).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.H[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
-        var low = mine(x, y - 1, x, y) && y * T > P.y;      // the walls in front of you drop low while you are inside
-        items.push({ y: y * T, f: function () { Build.drawH(ctx, x, y, e, low, near((x + 0.5) * T, y * T), BCFG); } });
+        var low = mine(x, y - 1, x, y) && y * T > P.y, under = underMe(x, y - 1) || underMe(x, y);      // the walls in front of you drop low while you are inside
+        items.push({ y: under ? FAR : y * T, f: function () { Build.drawH(ctx, x, y, e, low, near((x + 0.5) * T, y * T), BCFG); } });
       });
       Object.keys(B.V).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.V[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
-        items.push({ y: (y + 1) * T - 1, f: function () { Build.drawV(ctx, x, y, e, near(x * T, (y + 0.5) * T), B.V[Build.key(x, y + 1)] || false, BCFG); } });
+        var under = underMe(x - 1, y) || underMe(x, y);
+        items.push({ y: under ? FAR : (y + 1) * T - 1, f: function () { Build.drawV(ctx, x, y, e, near(x * T, (y + 0.5) * T), B.V[Build.key(x, y + 1)] || false, BCFG); } });
       });
+      Object.keys(B.posts).forEach(function (kk) {       // the frame: posts, and beams between neighbouring posts with no wall between
+        var q = kk.split(','), x = +q[0], y = +q[1], p = B.posts[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
+        var under = underMe(x - 1, y - 1) || underMe(x, y - 1) || underMe(x - 1, y) || underMe(x, y);
+        items.push({ y: under ? FAR + 0.5 : y * T + 0.5, f: function () { Build.drawPost(ctx, x, y, p, BCFG); } });
+        if (B.posts[Build.key(x + 1, y)] && !B.H[kk]) items.push({ y: under ? FAR + 0.4 : y * T + 0.4, f: function () { Build.drawBeam(ctx, x, y, true, p, BCFG); } });
+        if (B.posts[Build.key(x, y + 1)] && !B.V[kk]) items.push({ y: under ? FAR + 0.4 : (y + 1) * T - 0.9, f: function () { Build.drawBeam(ctx, x, y, false, p, BCFG); } });
+      });
+      Object.keys(B.stairs).forEach(function (kk) { var q = kk.split(','), x = +q[0], y = +q[1]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return; items.push({ y: L ? FAR + 0.6 : y * T + 2, f: function () { Build.drawStairs(ctx, x, y, BCFG); } }); });
       B.items.forEach(function (it) {
-        if (Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
-        var s = sprite(it.name, 0); items.push({ y: it.name === 'rug' ? it.y - 300 : it.y, f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.loot) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something
+        if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
+        var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
+        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.loot) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       if (raft && raft.aboard && raft.kind === 'boat') items.push({ y: P.y + 0.5, f: function () { Yard.drawVesselFront(ctx, raft, clock, P.y); } });
@@ -2294,10 +2457,13 @@ __COMBAT__
       hird.forEach(function (m) { if (m === npc) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });
       folk.forEach(function (f) { if (Math.abs(f.x - cam.x) < hw + 30 && Math.abs(f.y * K - cam.y) < hh + 50) items.push({ y: f.y, f: function () { drawFolk(ctx, f); } }); });
       if (roomInfo) roomInfo.rooms.forEach(function (r, ri) {
-        var target = here === ri ? BCFG.seeThrough : 1;
+        if (r.up) return;                               // a room with stairs has the floor above instead of a roof
+        var target = here === ri && !L ? BCFG.seeThrough : 1;
         roofA[r.id] += (target - roofA[r.id]) * 0.18;
         items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(ctx, r, roofA[r.id], roofCfg(r)); } });
+        sceneItems = items; chimneys(r, 0, (r.maxY + 1) * T + 2, roofA[r.id], 0);
       });
+      sceneItems = items; upperFloor(items, L, here, hw, hh);
       for (i = 0; i < drops.length; i++) (function (d) { items.push({ y: d.y, f: function () { drawDrop(ctx, d); } }); })(drops[i]);
       for (i = 0; i < bits.length; i++) (function (b) { items.push({ y: b.y + 1, f: function () { ctx.globalAlpha = Math.min(1, b.life / 0.25); ctx.fillStyle = b.col; ctx.beginPath(); ctx.arc(b.x, b.y * K - b.z, b.r, 0, 7); ctx.fill(); ctx.globalAlpha = 1; } }); })(bits[i]);
     },
@@ -2333,7 +2499,7 @@ __COMBAT__
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       drawTorchIcon(c, mx - (SHOW.runes || SHOW.book ? 94 : 54), my + 10);
       (function () {                       // comfort and rest, under the chart: the room you are in, and how long the rest lasts
-        var hr = roomInfo ? roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, cf = hr >= 0 ? comfortOf(hr) : { n: 0 }, parts = [];
+        var hr = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, cf = hr >= 0 ? comfortOf(hr, lvl()) : { n: 0 }, parts = [];
         if (cf.n > 0) parts.push('Comfort ' + cf.n); if (rested > 0) parts.push('Rested ' + Math.floor(rested / 60) + ':' + ('0' + Math.floor(rested % 60)).slice(-2));
         if (!parts.length) return; var txt = parts.join('   '); c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(txt, mx + mw, my + mh + 8); c.fillStyle = cf.n >= 4 ? '#9be58b' : '#fff'; c.fillText(txt, mx + mw, my + mh + 8);
       })();
@@ -2480,7 +2646,7 @@ __COMBAT__
     if (menu) {
       var th = menuTabHit(), hit = menuHit();
       if (th && e.button === 0) { openMenu(th.id); return; }
-      if (hit && hit.piece && e.button === 0) { P.piece = hit.i; P.wreck = false; menu = null; if (P.mode !== 'build') { P.lastMode = P.mode; P.mode = 'build'; lastMode = 'build'; } }
+      if (hit && hit.piece && e.button === 0) { P.piece = PIECES.indexOf(hit.piece); P.wreck = false; menu = null; if (P.mode !== 'build') { P.lastMode = P.mode; P.mode = 'build'; lastMode = 'build'; } }
       else if (hit && hit.r && e.button === 0) { if (menuTab !== 'bench' || benchRoofed(benchNear(P))) craft(hit.r); }
       else if (hit && hit.dish && e.button === 0) cook(hit.dish);
       else if (e.button === 2 || (!hit && !th)) menu = null;
@@ -2553,12 +2719,12 @@ __COMBAT__
       seen = sv.seen || {}; if (!sv.seen) { for (k in inv) if (inv[k] > 0) seen[k] = 1; }
       RS = sv.runes && sv.runes.slots ? sv.runes : freshRunes(); if (!RS.heard) RS.heard = {}; if (!RS.stones) RS.stones = {}; if (!RS.deeds) RS.deeds = freshRunes().deeds;
       (sv.drops || []).forEach(function (d) { drops.push({ kind: d.kind, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0 }); });
-      B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; (sv.gone || []).forEach(function (g) { gone[g] = 1; });
+      B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
       w.eachProp(function (o) { if (o.kind && gone[propKey(o)]) w.removeProp(o); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0;
       decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
-      var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; } else toCamp();
+      var P = hero(); if (sv.hero && isLand(sv.hero.x, sv.hero.y)) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; P.lvl = sv.lvl || 0; } else toCamp();
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null }; raftFit(); if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }
     } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; }   // he wakes in the wreck: the screen opens slowly
@@ -2574,7 +2740,7 @@ __COMBAT__
     if (kind === 'boat') { for (i = 0; i < 7; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } parts.push({ id: 'thwart', i: 3, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { giveBoat: giveBoat, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { giveBoat: giveBoat, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -2588,12 +2754,12 @@ __COMBAT__
     if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
     D.W.pillars = nearSolids(P);
     if (inCave) { cave.ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * o.s, hide: true }); }); if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }
-    if (roomInfo) for (var si = 0; si < roomInfo.solids.length; si++) { var sl = roomInfo.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
-    for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
+    var RIs = RI(); if (RIs) for (var si = 0; si < RIs.solids.length; si++) { var sl = RIs.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
+    for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && sameLvl(bt) && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
-    if (!P.dead && roomInfo && P.hp < P.maxHp) { var hri = roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)); if (hri >= 0 && comfortOf(hri).n >= 1 && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (hri >= 0 && comfortOf(hri, lvl()).n >= 1 && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
+    tick(); levelTick(); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

@@ -75,7 +75,7 @@ function moveCircle(e, dx, dy) {
   else { e.x = clamp(e.x, 24, AW - 24); e.y = clamp(e.y, 40, AH - 20); }
   // a tool page can mark ground as not walkable (the Sea Editor keeps walkers out of the water); slide along it
   var wk = api.scene && api.scene.walk;
-  if (wk && !wk(e.x, e.y)) { if (wk(e.x, oy)) e.y = oy; else if (wk(ox, e.y)) e.x = ox; else { e.x = ox; e.y = oy; } }
+  if (wk && !wk(e.x, e.y, e)) { if (wk(e.x, oy, e)) e.y = oy; else if (wk(ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
   for (var i = 0; i < W.pillars.length; i++) {
     var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
     if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; }

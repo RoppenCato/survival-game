@@ -123,8 +123,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `removeProp`, `around`, `nearSolids`), lazy ground painting (`drawGround`), shore waves (`drawWaves`), `chart`.
   `World.KIND` and `World.HP` say what can be gathered. Island changes go here, once.
 - `src/build.js` (`Build`): building pieces, used by the game (the Base Editor is gone): `WALLS`, `FLOORS`, `ROOFS`,
-  `rooms(B, GW, GH, bounds)` (closed rooms by flood fill, and collision circles), `drawH`, `drawV`, `drawRoof`,
-  `edgeAt`, `icon`. A building is `B = { floors, H, V }` keyed `"x,y"`.
+  `rooms(B, GW, GH, bounds)` (closed rooms by flood fill, and collision circles for walls and posts), `drawH`, `drawV`,
+  `drawRoof` (turf, thatch, shingles), `drawPost`, `drawBeam`, `drawStairs`, `drawChimney`, `postsOk`, `postUsed`,
+  `ensurePosts`, `edgeAt`, `icon`, `UP` (a storey). A building is `B = { floors, H, V, posts, stairs, roofs, items, up }`
+  keyed `"x,y"`; `up` is the floor above with its own floors, walls, posts and roofs.
 - `src/items.js` (`Items`): weapons and tools as specs ({ kind, mat, name, desc, size, width, sharp, glow, twist,
   curl, hue }), with `make`, `name`, `desc` (plain names like "Silver Axe" and a generic tale), `stats` (damage,
   gathering power), `draw` (in the hand, along a direction) and `icon` (in a slot). Kinds: sword, axe, pick,
@@ -254,6 +256,30 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   cart, dragon post. Prop pieces take their board icon from the baked sprite (`propIcon`, `ICON_SCALE`). The
   wreck cursor gives back what the piece cost (`pieceFor`, `costOf`, `costOfFloor`, `costOfItem`); laying a
   floor over another gives the old one back.
+- **Houses with a frame, a floor above, thatch and chimneys (2026-10-06, Robin):** the Building board is laid out in rows
+  by category (`BCATS`: Frame and walls, Floors and roofs, Yard, Furniture, Outdoors; 11 columns, from the top of the screen;
+  a piece's `cat`). **The frame:** a **post** (1 wood) stands at a tile corner (`B.posts` keyed by corner; drag lays a row);
+  a wall, door or window needs a post at each of its ends ("Raise a post at each end first": `Build.postsOk`); beams are
+  drawn between neighbouring posts with no wall between (`drawBeam`), so you raise the frame and then fill the walls; a post
+  carrying walls cannot be wrecked. Fences need no posts. Old saves, the steading and the hamlet get their posts from
+  `Build.ensurePosts`. **Stairs** (6 wood; `B.stairs` by tile, climbing north, `drawStairs`) go on a tile inside a closed
+  room; a room with stairs gets **no roof but a floor above**: its tiles become the upper floor (`B.up.floors`, marked
+  `B.up.auto`, laid again by `rebuildRooms`), seen from outside as a plank slab a storey up (`UP` = `Build.UP`, 30.75) that
+  fades like a roof when you stand under it. Walking onto the stairs' lower half from the south puts you **upstairs**
+  (`P.lvl` 1, `levelTick`; stepping back onto the lower half brings you down): the hero is drawn a storey up (`heroLift`),
+  walks only on upper-floor tiles (`scene.walk` takes the mover, so animals are untouched), and his own shadow is drawn on
+  the floor. Upstairs the build cursor edits `B.up` (walls, posts, roofs; more floor tiles only over a closed room below;
+  the auto floor cannot be wrecked), things go into `B.items` with `it.lvl` 1, and a closed room up there (`roomInfo1`,
+  only where every tile has floor) gets a roof. Wrecking the stairs needs the upper floor emptied first. `Bl()`, `RI()`,
+  `sameLvl(it)` pick the floor you are on (beds, benches, chests, hearths and comfort are per floor; `comfortOf(ri, L)`).
+  Upstairs the mouse points a storey lower (`my = mouseW.y + UP / K` in `buildTarget`), so the debug `place` hook needs
+  `wy - 41` there. **The fireplace** (10 stone, 2 wood; prop `fireplace`, `hearth`, `chimney`) is a hearth built into a
+  stone back; its **chimney** (`Build.drawChimney`: a stone stack with smoke) is drawn after the roof and rises a storey
+  higher when the room has stairs; the **campfire** is a buildable hearth too (`isHearth(it)`: the stone hearth or any
+  `it.hearth`). **Roofs** are drawn as turf (tufts, flowers, a log ridge), **thatch** (rows of straw, a ragged fringe hanging
+  over the eaves, crossed ridge boards) or shingles (`drawRoof`; `dy` lifts it a storey; it fades with the alpha it is drawn
+  under). **Yard:** a split-**rail fence** and a low **dry-stone wall** (`Build.YARD` `rail`, `drystone`); and **outdoors**
+  the campfire, trough (new prop), scarecrow, flower bed, cairn and charcoal pit from the kit. The dragon post's id is `dragon`.
 - **Furniture is sized to the hero (2026-10-05):** a hero is about 39 units tall, so the table, bed, cart, well,
   drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
   its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision
