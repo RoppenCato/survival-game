@@ -178,6 +178,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/start-loop.md`: the first hour against Valheim, Grounded and Enshrouded, our path from the wreck to the raft, what
   is missing, and the proposed start (smoke and cairn, the steading as the beginner base, finds, the first night, sitting
   and fishing, Brokk at the shore). A proposal, not decided.
+- `docs/runes-ideas.md`: ideas for the rune overhaul (2026-10-06), with what Hades, Dead Cells, Valheim and Stardew do, a proposal and questions for Robin.
 - `docs/weapons.md`: the weapon concept (2026-10-06, Robin: weapons that fight differently): six melee kinds (sword, axe, club,
   seax, spear, Dane axe) with a motion each (swing, thrust, smash), reach, arc, pace, chain length and one thing of their own
   (parry, guard break, stagger, crit, pierce, heavy), four ranged (bow, sling with stones from the bag, javelin and throwing
@@ -608,6 +609,16 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   lasts, healing; damage, chop, reach; what a worn thing turns aside), what it takes with have/need boxes, and a **Craft**
   (Cook) button that fills as the first one is made (`infoProgress`); Enter crafts too. Leaving keeps the bars over the fire
   and the hero. Building keeps its grid.
+- **Stations keep what they make (2026-10-06, Robin):** a dish cooked at a fire and a thing made at a workbench or the
+  shipwright's bench wait at that station (`it.out`, up to eight stacks; `stationPut`) until taken from its board (the
+  "Ready: take" strip under the list; `stationTake`), a glint over the station shows there is something; hand crafting still
+  goes to the bag. A crafting job remembers its station (`crafting[].at`). **E picks the station you look at** when a fire
+  and a bench stand together (`stationNear`, `facingScore`: things in front count as nearer), and an open board keeps its
+  station while you turn (`menuStation`). **Thatch** is the roof you get unless you pick another (`CFG.roof` 1) and is
+  straw yellow. **The steading** has gravel and earth paths, a rail fence, a bit of dry-stone wall, a trough, flowers and a
+  scarecrow. The Sea Editor starts you on the jetty's last plank (the jetty can be walked: tile code 4) and every editor
+  draws the hero as the Character Editor set it (`game.hero`). `docs/runes-ideas.md` holds the rune overhaul proposal
+  (tabs, one glow, one line each, quiet places to choose) with questions for Robin; nothing of it is built.
 - **Critters (2026-10-06):** butterflies, small birds and beetles live round the hero by day on open land (`critters`,
   `critterTick`, `drawCritter`): they flutter, hop and crawl, keep away when you come close (a bird flies off for good) and
   cannot be touched or hurt. Nothing of this is in the engine.

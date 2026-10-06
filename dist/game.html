@@ -3375,8 +3375,8 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Gravel trail', tile: 'trail', bare: true }, { name: 'Grass', tile: 'grass', bare: true }, { name: 'Dark grass', tile: 'grassDark', bare: true }, { name: 'Moss', tile: 'moss', bare: true }, { name: 'Bare rock', tile: 'rock', bare: true },
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
-var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a', ridge: '#7a5636' }, { name: 'Thatch', col: '#d9b866', line: '#a3823f', ridge: '#6b4a2e' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a', ridge: '#4a3222' }, { name: 'No roof' }];
-var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 0, seeThrough: 0.12 };
+var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a', ridge: '#7a5636' }, { name: 'Thatch', col: '#e6c95f', line: '#b18f3e', ridge: '#6b4a2e' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a', ridge: '#4a3222' }, { name: 'No roof' }];
+var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12 };   // thatch unless another roof is chosen (Robin, 2026-10-06)
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1 }, OPEN = { door: 1, gate: 1 };
@@ -6582,7 +6582,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function roofCfg(r, L) { var BB = Bl(L || 0); if (!BB.roofs || BB.roofs[r.id] == null) return BCFG; var c = roofCfgs[BB.roofs[r.id]]; if (!c) c = roofCfgs[BB.roofs[r.id]] = Build.cfg({ roof: BB.roofs[r.id] }); return c; }
   var roofCfgs = {};
   // a workbench works only with a roof over it: the first thing a house is for
-  function benchNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bench && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 60) return it; } return null; }
+  function benchNear(P) { var s = stationNear(P); return s && s.kind === 'bench' ? s.it : null; }
   function benchRoofed(it) { var R = RI(it.lvl || 0); return !!R && R.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0; }
   function bedNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bed && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
 
@@ -6767,9 +6767,24 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function needsText(r) { var p = []; for (var k in r.needs) p.push(r.needs[k] + ' ' + NAMES[k].toLowerCase() + ' (' + (inv[k] || 0) + ')'); return p.join(', '); }
   function craft(r) {                      // pay now; the thing comes when the bar fills (craftTick)
     if (!known(r) || !canAfford(r.needs)) return;
-    pay(r.needs); crafting.push({ r: r, t: 0, dur: CRAFT_T[r.at] || 2 }); sfx('pick');
+    pay(r.needs); crafting.push({ r: r, t: 0, dur: CRAFT_T[r.at] || 2, at: (r.at === 'bench' && menuStation) ? menuStation.it : (r.at === 'ship' ? shipNear(hero()) : null) }); sfx('pick');
   }
-  function craftGive(r) {
+  // A station keeps what was made in it (it.out, up to eight stacks) until you take it from its board; the glint shows it
+  function stationPut(st, entry) {
+    if (!st) { if (entry.item) { if (!addThing(entry.item)) dropThing(entry.item, hero().x, hero().y + 10); } else if (addItem(entry.kind, entry.n)) drop(entry.kind, hero().x, hero().y + 10, 1); return; }
+    st.out = st.out || []; var i;
+    if (!entry.item) for (i = 0; i < st.out.length; i++) if (st.out[i].kind === entry.kind && !st.out[i].item && st.out[i].n < STACK) { st.out[i].n += entry.n; lootNote(entry.kind, entry.n); return; }
+    if (st.out.length >= 8) { if (entry.item) dropThing(entry.item, st.x, st.y + 12); else drop(entry.kind, st.x, st.y + 12, entry.n); return; }
+    st.out.push(entry); if (entry.item) toast('Made ' + entry.item.name.toLowerCase()); else lootNote(entry.kind, entry.n);
+  }
+  function stationTake(st, i) {              // from the station's board into the bag (a tool into an empty hand)
+    var e = st.out[i]; if (!e) return;
+    if (e.item) { var where = TOOL_SLOT[e.item.kind]; if (where && !equip[where]) equip[where] = e.item; else if (!barPut(e.item) && !addThing(e.item)) { toast('The bag is full'); return; } }
+    else { var left = addItem(e.kind, e.n); if (left) { e.n = left; recount(); save(); toast('The bag is full'); return; } }
+    st.out.splice(i, 1); recount(); sfx('pick'); save();
+  }
+  function craftGive(r, station) {
+    if (r.out.item && station) { stationPut(station, { item: Items.make(r.out.item[0], r.out.item[1]), n: 1 }); sfx('craft'); save(); return; }
     if (r.out.item) {
       var made = Items.make(r.out.item[0], r.out.item[1]), where = TOOL_SLOT[made.kind];
       if (where && !equip[where]) equip[where] = made;                 // gear made into an empty slot is worn at once
@@ -6781,7 +6796,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (raft) { toast('You already have a raft'); return; }
       if (!bn || !placeRaft(bn)) { toast('No clear water by the bench'); return; }
     }
-    else if (r.out.stack) { var leftS = addItem(r.out.stack[0], r.out.stack[1]); if (leftS) drop(r.out.stack[0], hero().x, hero().y + 10, leftS); }
+    else if (r.out.stack) { if (station) stationPut(station, { kind: r.out.stack[0], n: r.out.stack[1] }); else { var leftS = addItem(r.out.stack[0], r.out.stack[1]); if (leftS) drop(r.out.stack[0], hero().x, hero().y + 10, leftS); } }
     else if (r.out.arrows) { var na = Math.round(r.out.arrows * (1 + 0.5 * runeMul('fletcher'))); if (quiverAdd('arrow', na)) { toast('The quiver is full'); return; } deed('arrows', na); }
     toast('Made ' + recipeName(r).toLowerCase()); sfx('craft'); save();
   }
@@ -7004,7 +7019,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   var SAVE = 'game.save', gone = {}, saveT = 0;
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -7121,6 +7136,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
     item('woodpile', vx + 2, vy + 6); item('cart', vx + 4, vy + 9); item('dryingRack', vx + 6, vy + 5); item('haystack', vx + 2, vy + 9);
     item('shieldRack', vx + 12, vy + 4); item('crate', vx + 7, vy + 10, { loot: { stone: 6 }, thing: ['sword', 'flint'] }); item('brazier', vx + 7, vy + 3, { light: 1 });
     item('dragonPost', vx + 5, vy + 0.6); item('crate', vx + 1, vy + 4, { loot: { arrows: 10 } });
+    // the yard (2026-10-06): a gravel path from the gate past the hall to the well and the huts, a rail fence to the south,
+    // a bit of dry-stone wall by the stone house, a trough by the haystack, flowers by the whole hut
+    var FL = Build.FLOORS.map(function (f) { return f.name; }), gravel = FL.indexOf('Gravel path'), earth = FL.indexOf('Earth path');
+    for (y = vy + 1; y <= vy + 7; y++) B.floors[k(vx + 6, y)] = gravel; for (x = vx + 6; x <= vx + 8; x++) B.floors[k(x, vy + 7)] = gravel;
+    for (x = vx + 4; x <= vx + 6; x++) B.floors[k(x, vy + 4)] = gravel; for (x = vx + 6; x <= vx + 10; x++) B.floors[k(x, vy + 3)] = earth;
+    for (y = vy + 7; y <= vy + 9; y++) B.floors[k(vx + 3, y)] = earth; B.floors[k(vx + 4, vy + 9)] = earth;
+    for (x = vx; x < vx + 5; x++) if (B.H[k(x, vy + village.h)]) B.H[k(x, vy + village.h)] = { t: 'rail', m: 1 };
+    for (y = vy + 5; y < vy + 10; y++) if (R() < 0.8) V(vx + 13, y, 'drystone', 3);
+    item('trough', vx + 4, vy + 8); item('flowerBed', vx + 12.5, vy + 0.6); item('scarecrow', vx + 1.5, vy + 7.5);
     B.roofs = {}; bDirty = true; Build.ensurePosts(B);
     roofLater = { tx: vx + 9, ty: vy + 1, m: 1 };          // the hut's thatch is set once the rooms are known
   }
@@ -7785,9 +7809,21 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // heal: at once. For time seconds: bonus on top health, regen health a second, stam on top stamina, stamRegen on how fast it returns
   var FOOD = { berries: { heal: 10, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, roastBerries: { heal: 15, regen: 0.5, time: 90, bonus: 5, stam: 10, stamRegen: 1.1 }, cookedMeat: { heal: 30, regen: 1, time: 120, bonus: 15, stam: 15, stamRegen: 1.15 }, stew: { heal: 50, regen: 2, time: 180, bonus: 25, stam: 30, stamRegen: 1.35 } };
   var fed = null, hearth = null, cookOpen = false, menu = null, mouseS = null;   // fed: { kind, left, regen, bonus }
-  function nearHearth(P) { if (hearth && Math.hypot(P.x - hearth.x, P.y - hearth.y) < 46) return true; for (var i = 0; i < B.items.length; i++) if (isHearth(B.items[i]) && sameLvl(B.items[i]) && Math.hypot(P.x - B.items[i].x, P.y - B.items[i].y) < 46) return true; return false; }
+  // Which station E means when a fire and a workbench both stand close: the one you look at counts as nearer
+  // (facingScore). While a board is open its station is kept, so turning does not swap it.
+  function facingScore(P, x, y) { var dx = x - P.x, dy = y - P.y, d = Math.hypot(dx, dy); if (d < 1) return 0; return d - 24 * ((Math.cos(P.face) * dx + Math.sin(P.face) * dy) / d); }
+  var menuStation = null;
+  function stationNear(P) {
+    if (menu && menuStation && Math.hypot(P.x - menuStation.it.x, P.y - menuStation.it.y) < 70) return menuStation;
+    var best = null, bs = 1e9;
+    function q(it, kind, r) { var d = Math.hypot(P.x - it.x, P.y - it.y); if (d >= r) return; var sc = facingScore(P, it.x, it.y); if (sc < bs) { bs = sc; best = { kind: kind, it: it }; } }
+    if (hearth) q(hearth, 'hearth', 50);
+    B.items.forEach(function (it) { if (!sameLvl(it)) return; if (isHearth(it)) q(it, 'hearth', 50); else if (it.bench) q(it, 'bench', 56); });
+    return best;
+  }
+  function nearHearth(P) { var s = stationNear(P); return !!s && s.kind === 'hearth'; }
   var COOK_T = 4, cookFires = [];             // cooking takes COOK_T seconds a piece, at the fire, stacked in a queue (a bar over the fire)
-  function hearthAt(P) { if (hearth && Math.hypot(P.x - hearth.x, P.y - hearth.y) < 46) return hearth; for (var i = 0; i < B.items.length; i++) if (isHearth(B.items[i]) && sameLvl(B.items[i]) && Math.hypot(P.x - B.items[i].x, P.y - B.items[i].y) < 46) return B.items[i]; return null; }
+  function hearthAt(P) { var s = stationNear(P); return s && s.kind === 'hearth' ? s.it : null; }
   function cook(r) {
     var h = hearthAt(hero()); if (!h || !canAfford(r.needs)) return; pay(r.needs);
     h.cooking = h.cooking || []; h.cooking.push({ id: r.id, t: 0 }); if (cookFires.indexOf(h) < 0) cookFires.push(h); sfx('pick');
@@ -7795,14 +7831,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function cookTick(dt) {
     cookFires.forEach(function (h) {
       var q = h.cooking; if (!q || !q.length) return; q[0].t += dt;
-      if (q[0].t >= COOK_T) { var id = q.shift().id; if (addItem(id, 1)) drop(id, h.x, h.y + 12, 1); lootNote(id, 1); deed('meals'); sfx('craft'); save(); }
+      if (q[0].t >= COOK_T) { var id = q.shift().id; stationPut(h, { kind: id, n: 1 }); deed('meals'); sfx('craft'); save(); }
     });
     cookFires = cookFires.filter(function (h) { return h.cooking && h.cooking.length; });
   }
   var CRAFT_T = { hand: 2, bench: 3, ship: 3 }, crafting = [];   // crafting takes a moment too (a bar over the hero), stacked
   function craftTick(dt) {
     if (!crafting.length) return; var j = crafting[0]; j.t += dt;
-    if (j.t >= j.dur) { crafting.shift(); craftGive(j.r); }
+    if (j.t >= j.dur) { crafting.shift(); craftGive(j.r, j.at); }
   }
   function drawWorkBars(c) {                // the cooking bars over fires, the crafting bar over the hero
     cookFires.forEach(function (h) { var q = h.cooking; if (!q || !q.length) return; var sx = (h.x - cam.x) * cam.z + 200, sy = (h.y * K - cam.y) * cam.z + 125 - 30 * cam.z; bar2(c, sx, sy, q[0].t / COOK_T, q.length, q[0].id); });
@@ -7879,10 +7915,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return RECIPES2.filter(function (r) { return r.at === menuTab && known(r); }).map(function (r) { return { id: r.id, r: r }; });
   }
   function openInfo() {
+    menuStation = menuTab === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (menuTab === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : null); if (menuStation && !menuStation.it) menuStation = null;
     menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 272, h: 176, list: infoList(), scroll: 0, maxScroll: 0 };
     menu.x = Math.round((400 - menu.w) / 2); menu.y = 30;
     var ids = menu.list.map(function (e) { return e.id; }); if (ids.indexOf(menuSel[menuTab]) < 0) menuSel[menuTab] = ids[0] || null;
-    var rowH = 15, listH = menu.h - 36; menu.rowH = rowH; menu.listH = listH; menu.maxScroll = Math.max(0, menu.list.length * rowH - listH);
+    var rowH = 15, listH = menu.h - 36 - (menuStation ? 26 : 0); menu.rowH = rowH; menu.listH = listH; menu.maxScroll = Math.max(0, menu.list.length * rowH - listH);
     var tx = menu.x + 5; menuTabs().forEach(function (t) { var w = t.name.length * 4 + 12; menu.tabs.push({ id: t.id, name: t.name, roofed: t.roofed, x: tx, y: menu.y + 4, w: w, h: 13 }); tx += w + 3; });
   }
   function infoSel() { if (!menu || !menu.info) return null; for (var i = 0; i < menu.list.length; i++) if (menu.list[i].id === menuSel[menuTab]) return menu.list[i]; return null; }
@@ -7938,6 +7975,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.restore();
     if (menu.maxScroll) { var sh = menu.listH, kh = Math.max(8, sh * sh / (menu.list.length * rowH)), ky = ly + (sh - kh) * menu.scroll / menu.maxScroll; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(lx + lw - 2.5, ly, 2, sh); c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillRect(lx + lw - 2.5, ky, 2, kh); }
     if (!menu.list.length) { c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'left'; c.fillText('Nothing known yet', lx + 6, ly + 12); }
+    menu.takes = [];
+    if (menuStation) {                      // what waits at the station: take it with a click
+      var oy = ly + menu.listH + 3, outs = menuStation.it.out || [];
+      c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText(outs.length ? 'Ready: take' : 'Nothing ready', lx + 1, oy + 5);
+      outs.forEach(function (o, i) { var bx = lx + i * 12, by = oy + 7, hov = mouseS && mouseS.x >= bx && mouseS.x < bx + 12 && mouseS.y >= by && mouseS.y < by + 16; menu.takes.push({ x: bx, y: by, w: 12, h: 16, i: i });
+        c.fillStyle = hov ? 'rgba(255,230,180,0.25)' : 'rgba(20,12,6,0.5)'; c.fillRect(bx, by, 11, 15); c.save(); c.translate(bx + 5.5, by + 6.5); if (o.item) Items.icon(c, o.item, 10); else drawDropIcon(c, o.kind, 0, 0, 0.8); c.restore();
+        if (o.n > 1) { c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = '#fff'; c.fillText(o.n, bx + 10.5, by + 14); } });
+    }
     // the chosen thing
     var rx = lx + lw + 8, rw = menu.w - lw - 20, ry = ly; menu.btn = null;
     if (!sel) return;
@@ -8841,7 +8886,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       B.items.forEach(function (it) {
         if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
-        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.loot) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something
+        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.loot || (it.out && it.out.length)) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       if (raft && raft.aboard && raft.kind === 'boat') items.push({ y: P.y + 0.5, f: function () { Yard.drawVesselFront(ctx, raft, clock, P.y); } });
@@ -9041,7 +9086,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (menu) {
       var th = menuTabHit(), hit = menuHit();
       if (th && e.button === 0) { openMenu(th.id); return; }
-      if (menu.info) { var ie = infoRowHit(); if (ie && e.button === 0) { menuSel[menuTab] = ie.id; return; } if (infoBtnHit() && e.button === 0) { infoMake(infoSel()); return; } if (e.button === 2 || !overMenu()) menu = null; return; }
+      if (menu.info) { var ie = infoRowHit(); if (ie && e.button === 0) { menuSel[menuTab] = ie.id; return; } if (e.button === 0 && menuStation && menu.takes) { for (var tk = 0; tk < menu.takes.length; tk++) { var tq = menu.takes[tk]; if (mouseS.x >= tq.x && mouseS.x < tq.x + tq.w && mouseS.y >= tq.y && mouseS.y < tq.y + tq.h) { stationTake(menuStation.it, tq.i); return; } } } if (infoBtnHit() && e.button === 0) { infoMake(infoSel()); return; } if (e.button === 2 || !overMenu()) menu = null; return; }
       if (hit && hit.piece && e.button === 0) { P.piece = PIECES.indexOf(hit.piece); P.wreck = false; menu = null; if (P.mode !== 'build') { P.lastMode = P.mode; P.mode = 'build'; lastMode = 'build'; } }
       else if (hit && hit.r && e.button === 0) { if (menuTab !== 'bench' || benchRoofed(benchNear(P))) craft(hit.r); }
       else if (hit && hit.dish && e.button === 0) cook(hit.dish);
@@ -9116,7 +9161,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       seen = sv.seen || {}; if (!sv.seen) { for (k in inv) if (inv[k] > 0) seen[k] = 1; }
       RS = sv.runes && sv.runes.slots ? sv.runes : freshRunes(); if (!RS.heard) RS.heard = {}; if (!RS.stones) RS.stones = {}; if (!RS.deeds) RS.deeds = freshRunes().deeds;
       (sv.drops || []).forEach(function (d) { drops.push({ kind: d.kind, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0 }); });
-      B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
+      B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
       w.eachProp(function (o) { if (o.kind && gone[propKey(o)]) w.removeProp(o); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0;

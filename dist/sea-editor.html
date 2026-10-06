@@ -5390,6 +5390,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, TS = kit.TH;
+  try { var gh0 = JSON.parse(localStorage.getItem('game.hero')); if (gh0 && typeof gh0 === 'object') lib.setHero(gh0); } catch (e) {}   // the hero as the Character Editor set it
   Combat.init(lib);
   var S = Combat.S; S.look = 'classic'; S.sound = false;
   Combat.clear();
@@ -5578,7 +5579,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = Combat.dbg().P; if (aboard) return; yardS = YSCENE.enter(yardHost, yardS); inYard = true; yardZoom = view.zoom; view.zoom = YSCENE.ZOOM; syncView();
     var hs = YSCENE.heroSpot(); P.x = hs.x; P.y = hs.y; P.vx = P.vy = 0; releaseWalk(); yui();
   }
-  function yardLeave() { var P = Combat.dbg().P; inYard = false; YSCENE.leave(); view.zoom = yardZoom || 0.7; syncView(); P.x = (dockEnd.x + 8.3) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; yui(); }
+  function yardLeave() { var P = Combat.dbg().P; inYard = false; YSCENE.leave(); view.zoom = yardZoom || 0.7; syncView(); P.x = (dockEnd.x + 7.4) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; yui(); }
   function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + (built.kind === 'boat' ? 'a boat' : 'a raft') + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
   document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { localStorage.setItem('game.boat', JSON.stringify({ steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip })); document.getElementById('usemsg').textContent = 'The game now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ').'; } catch (err) {} };
   document.getElementById('yopen').onclick = function (e) { e.currentTarget.blur(); if (inYard) yardLeave(); else yardEnter(); };
@@ -5603,7 +5604,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function toDock() {
     var P = Combat.dbg().P;
     var m = moor(); aboard = false; boat.x = m.x; boat.y = m.y; boat.h = 0; boat.speed = 0; boat.vx = boat.vy = 0;
-    P.x = (dockEnd.x + 8.3) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; wakes = []; smoke = [];   // you start at the end of the jetty, next to the vessel
+    P.x = (dockEnd.x + 7.4) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; wakes = []; smoke = [];   // you start at the end of the jetty, next to the vessel
   }
   document.getElementById('tohome').addEventListener('click', function (e) { toDock(); e.currentTarget.blur(); });
   document.getElementById('newsea').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; apply(); e.currentTarget.blur(); });
@@ -5762,7 +5763,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.scene = {
     noHud: true, noHotbar: true,
     bounds: { x0: 8, y0: 12, x1: WX + 9000, y1: WY - 8 },
-    walk: function (x, y) { if (inYard) return YSCENE.walk(x, y); return aboard || isLand(x, y); },
+    walk: function (x, y) { if (inYard) return YSCENE.walk(x, y); var tx = Math.floor(x / T), ty = Math.floor(y / T); return aboard || isLand(x, y) || (grid && tx >= 0 && ty >= 0 && tx < GW && ty < GH && grid[ty * GW + tx] === 4); },   // the jetty's planks carry you
     heroLift: function () { return aboard ? -bobY() - 3.5 : 0; },   // feet sit a little below the rim, inside the hull
     begin: function (c, P) {
       hero = P; this.noHeroShadow = aboard;

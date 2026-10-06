@@ -23,8 +23,8 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Gravel trail', tile: 'trail', bare: true }, { name: 'Grass', tile: 'grass', bare: true }, { name: 'Dark grass', tile: 'grassDark', bare: true }, { name: 'Moss', tile: 'moss', bare: true }, { name: 'Bare rock', tile: 'rock', bare: true },
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
-var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a', ridge: '#7a5636' }, { name: 'Thatch', col: '#d9b866', line: '#a3823f', ridge: '#6b4a2e' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a', ridge: '#4a3222' }, { name: 'No roof' }];
-var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 0, seeThrough: 0.12 };
+var ROOFS = [{ name: 'Turf', col: '#6a9a50', line: '#48733a', ridge: '#7a5636' }, { name: 'Thatch', col: '#e6c95f', line: '#b18f3e', ridge: '#6b4a2e' }, { name: 'Wood shingles', col: '#7d5b40', line: '#573c2a', ridge: '#4a3222' }, { name: 'No roof' }];
+var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12 };   // thatch unless another roof is chosen (Robin, 2026-10-06)
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1 }, OPEN = { door: 1, gate: 1 };
