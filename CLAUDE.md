@@ -292,6 +292,20 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   (`it.yard`), saving in the yard saves you at the bench, death leaves it. Until Brokk has taught the raft (`seen.raft`)
   the bench says "You do not know how to lay a hull". A ship with a sail later is more parts (`mast`, `sail`) and a second
   plan with a bigger grid. The old raft recipe is gone.
+- **Raft or boat (2026-10-06):** the Shipyard's top bar has **Raft | Boat** tabs (`YARD_PLANS`; a plan can be changed only
+  while the yard is empty). Parts carry a `plan` (`ALL_PARTS`, `yparts()` is the current plan's set). **The raft's oar is
+  no longer placed**: it is drawn by itself. **The boat** (needs copper for nails, so it comes with the big island): a
+  `keel` (wood and copper; three to nine in one straight unbroken row: its length, with the bow and stern shaped on its
+  ends by the drawing), `strake`s (wood and copper; beside the keel, at most two rows each side, each against the keel or
+  a strake nearer it: its width), and `thwart`s (rowing seats, one at least, oars drawn each side; the first is yours,
+  more are for hirdmen to row later). `drawBoat` draws a clinker lens hull from the keel's length and the rows' width,
+  with strakes, bottom boards, stem and stern posts, seats and oars; you stand in the bow (`raft.seat`, `raftAfter`).
+  A boat rows at 78 against the raft's 54. **The water test follows the hull** (`raftFit` sets `hw`, `hh` from the parts;
+  `raftHull` probes an ellipse of that size, turned with the heading, at 0.8 so there is a little room). The vessel is
+  saved with its `kind` and `parts`. One vessel afloat at a time.
+- **The map (M, 2026-10-06):** a board with the whole sea (`drawMap` from the chart), the wreck, your stones with their
+  reach, the vessel, and the places of interest: known ones named (the steading, the hamlet, the cave), unknown ones a
+  **question mark** at their spot. M or Esc closes. Animals: boar 4 and deer 5 on the starter island (8 and 7 on the big).
 - **One bounds box (2026-10-05):** the engine clamps every mover to `scene.bounds`, so swapping bounds for the cave or the
   yard dragged all the animals in. `worldBounds()` now covers the map, the cave and the yard at once and never changes;
   the `walk` test keeps the hero on the floor he is on.
