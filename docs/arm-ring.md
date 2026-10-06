@@ -62,6 +62,37 @@ Pairs (two coils of a side combining into something unlisted) were judged too mu
 Rings extend to the hird: you can give your hirdmen things to wear, rings among them, as the jarls did; a hirdman's ring is
 his rank and his loyalty. Not designed further yet (see `docs/hird.md`).
 
+## The build order (agreed 2026-10-06)
+
+Each step is playable on its own. Tests where a step has rules: headless scripts in `tests/` that print and are read, as the
+combat tests are.
+
+1. **The ring as data.** `ring = { metal, coils: [{ side, rune }] }` saved with the game; each rune gets a `side` and a
+   `source`; what is alive comes from the coils; the cloth, pouch, hollows and C are removed, the rune drawings and deed
+   counters kept. **No rune can be discovered before the first ring is worn** (Robin): deeds and kills count, but nothing is
+   learnt until the ring is on the arm. Test: coils feed `mods` and `trigger`; nothing learnt without a ring.
+2. **The ring on the character panel.** Drawn on the hero's arm by metal, and a row of coils under the gear; hover for the
+   rune's name and line. Looking only.
+3. **The carver's bench.** A buildable piece for the big island (wood, stone, copper) with its own prop. E opens the ring
+   board (tabs Hand, Foot, Eye, Heart of known runes; the ring large with its coils). Click a rune: the work bar, five health,
+   the coil glows, the old rune fades; filing to change. The hotbar glow for a castable hand rune. Test: cut, file, re-cut,
+   close mid-bar, die mid-bar, a rune of the wrong side.
+4. **Runes from the beasts.** One per animal of the first biome, learnt after enough of them: the boar's charge, the deer's
+   dash (later; the dash stays a base mechanic for now), the wolf's night running, the bear's berserk, the snake's venom
+   edge, the moose's push. The learning moment is a rite: a dim, the rune glowing over the beast, its name. Test: the count,
+   the rite once, nothing before the ring.
+5. **The bronze ring in the cave.** The dead Viking at the back of the troll's cave, past the ore; E takes the ring; the
+   troll is the price. Two coils, hand and foot. Brokk's one taught rune comes after it. Test: the ring appears once, is
+   saved, and discovery opens with it.
+6. **Runestones give runes again,** the odd ones, with the rite of step 4.
+7. **Rings on leaders.** Only leaders wear rings: Brokk bronze, jarls and legendary Vikings by their biome, ordinary people
+   none. Drawn on the arm, said in speech, compared on meeting.
+8. **Growth.** The silver ring from the second biome's jarl or hoard, the eye side; the smith's rework. Waits for the second
+   biome and the raid.
+9. **Hirdmen wear what you give them,** rings among them. Waits for the hird's next step.
+
+Left out until asked for: pairs, cursed rings, rings taken from the dead, the dash as a rune.
+
 ## Status
 
 Nothing of this is built (2026-10-06). The old rune code (`RS`, the casting cloth, C, the pouch icon, `STONE_POOL`,
