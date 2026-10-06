@@ -136,6 +136,7 @@ __COMBAT__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib;
+  try { var gh0 = JSON.parse(localStorage.getItem('game.hero')); if (gh0 && typeof gh0 === 'object') lib.setHero(gh0); } catch (e) {}   // the hero as the Character Editor set it for the game
   Combat.api.roster = [];
   var BASE_R = { boar: 9 };
   Combat.api.dress = function (e) { var sp = lib.animalSpec('boar'); e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = 'WILD BOAR'; e.r = BASE_R.boar * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge }; e.hp = e.maxHp = sp.hp; };

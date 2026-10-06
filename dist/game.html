@@ -3659,11 +3659,20 @@ var Items = (function () {
 'use strict';
 var LN = '#3a2a36';
 var KINDS = {
-  sword: { name: 'Sword', len: 26, w: 3, dmg: 1, tool: null, desc: 'A straight blade for the shield wall.' },
-  axe: { name: 'Axe', len: 15, w: 2.8, dmg: 0.9, tool: 'tree', desc: 'For felling trees, and anything else that stands in the way.' },
+  // melee: how each fights is in Combat's PROFILES (arc, reach, pace, motion); dmg here is the kind's share of the material's power
+  sword: { name: 'Sword', len: 26, w: 3, dmg: 1, tool: null, melee: true, desc: 'A straight blade for the shield wall. Quick chains of three, and the surest parry.' },
+  axe: { name: 'Axe', len: 15, w: 2.8, dmg: 1.2, tool: 'tree', melee: true, desc: 'For felling trees, and anything else that stands in the way. Hits harder than a sword, recovers slower, and breaks through a guard.' },
+  club: { name: 'Club', len: 20, w: 3.4, dmg: 0.85, tool: null, melee: true, desc: 'A knotted length of hardwood. Slow, and it staggers and throws back whatever it lands on.' },
+  seax: { name: 'Seax', len: 16, w: 2.6, dmg: 0.6, tool: null, melee: true, desc: 'The long knife every Norseman carries. Fast stabs, little reach, and it finds the gaps.' },
+  spear: { name: 'Spear', len: 40, w: 2.2, dmg: 1.1, tool: null, melee: true, desc: 'The commonest weapon of the north. Long reach in a narrow line; it runs through one beast into the next.' },
+  greataxe: { name: 'Dane axe', len: 34, w: 2.6, dmg: 2, tool: null, melee: true, desc: 'A great axe swung with both hands. Slow to lift, and nothing stands where it comes down.' },
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: 'bush', desc: 'Cuts fiber, berries and rope.' },
-  bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, desc: 'Bent wood and a string. Arrows come from the quiver.' },
+  // ranged: the bow shoots the quiver, the sling throws stones from the bag, a javelin or throwing axe is thrown itself and lies where it falls
+  bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, ranged: true, desc: 'Bent wood and a string. Arrows come from the quiver.' },
+  sling: { name: 'Sling', len: 7, w: 2, dmg: 0.9, tool: null, ranged: true, ammo: 'stone', desc: 'A cord and a pouch. It throws a stone from the bag hard enough to stun, and never runs out while there are stones.' },
+  javelin: { name: 'Javelin', len: 30, w: 1.9, dmg: 1.8, tool: null, ranged: true, thrown: true, desc: 'A light spear made to be thrown. It flies true and hits hard, then has to be fetched.' },
+  throwaxe: { name: 'Throwing axe', len: 12, w: 2.4, dmg: 1.6, tool: null, ranged: true, thrown: true, desc: 'A small axe balanced for the throw. Short range, a heavy blow, and it lies where it falls.' },
   // gear: worn, not held. armor is the share of a blow it turns aside
   helmet: { name: 'Helmet', len: 10, w: 2, dmg: 0, tool: null, gear: 'head', armor: 0.08, desc: 'Keeps the rain and the blows off your head.' },
   tunic: { name: 'Tunic', len: 10, w: 2, dmg: 0, tool: null, gear: 'chest', armor: 0.14, desc: 'Worn over the shirt.' },
@@ -3684,7 +3693,7 @@ var MATS = {
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
-var ORDER = ['sword', 'axe', 'pick', 'knife', 'bow', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
+var ORDER = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
   var it = { kind: KINDS[kind] ? kind : 'sword', mat: MATS[mat] ? mat : 'iron' }, k;
   for (k in DEF) it[k] = DEF[k];
@@ -3696,12 +3705,14 @@ function make(kind, mat, o) {
 function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
+  if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
   return MATS[it.mat].name + ' ' + KINDS[it.kind].name;
 }
 function desc(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], s = K.desc, bits = [];
   if (it.mat === 'wood' && it.kind === 'sword') bits.push('A branch cut to a point and hardened in the fire. Good enough for a boar.');
   else if (it.mat === 'wood' && it.kind === 'bow') bits.push('A bent stick and a twist of fiber. It will do until something better is found.');
+  else if (it.mat === 'wood' && it.kind === 'club') bits.push('A branch with a knot at the end, hardened in the fire. Good enough for a boar.');
   else if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');
   else if (it.mat === 'copper') bits.push('Soft red copper, the first metal. It bends before it breaks.');
@@ -3716,7 +3727,7 @@ function desc(it) {
 }
 // the numbers: damage and gathering power scale with material and size; sharpness helps the blade kinds
 function stats(it) {
-  var K = KINDS[it.kind], M = MATS[it.mat], sh = it.kind === 'bow' ? 1 : 0.8 + it.sharp * 0.4;
+  var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club') ? 1 : 0.8 + it.sharp * 0.4;
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * 100) / 100;
   return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * M.power * 100) / 100 : 0 };
 }
@@ -3770,6 +3781,39 @@ function draw(c, it, hx, hy, ca, sa, len, mirror) {
       c.fillStyle = P.dark; c.fillRect(-1.6, -3 * s, 3.2, 3.5 * s);
     }
     c.restore();
+  } else if (it.kind === 'club') {
+    // a knotted stick: thicker toward the end, a knob at the tip, bands of bark
+    outlined(c, function () { c.beginPath(); c.moveTo(-6, -w * 0.45); c.quadraticCurveTo(L * 0.5, -w * 0.7 + tw * 0.4, L - 4, -w * 1.1 + tw); c.quadraticCurveTo(L + 1, -w * 0.9 + tw, L + 1, tw); c.quadraticCurveTo(L + 1, w * 0.9 + tw, L - 4, w * 1.1 + tw); c.quadraticCurveTo(L * 0.5, w * 0.7 + tw * 0.4, -6, w * 0.45); c.closePath(); }, it.mat === 'wood' ? '#8a5a3a' : P.face, 1.2);
+    c.strokeStyle = 'rgba(40,25,15,0.45)'; c.lineWidth = 0.8; for (i = 0; i < 3; i++) { var bx = L * (0.35 + i * 0.2); c.beginPath(); c.moveTo(bx, -w * 0.7); c.lineTo(bx + 1, w * 0.7); c.stroke(); }
+    if (it.mat !== 'wood') { c.fillStyle = P.dark; for (i = 0; i < 4; i++) { c.beginPath(); c.arc(L - 3 - i * 2.2, tw + (i % 2 ? 1.2 : -1.2), 0.9, 0, 7); c.fill(); } }   // iron studs on a metal-shod club
+  } else if (it.kind === 'seax') {
+    strokeLn(c, -5, 0, 1, 0, LN, w + 2.2); strokeLn(c, -5, 0, 1, 0, '#8a5a3a', w);
+    var sw = w * 0.8;                        // the broken-back blade: a straight edge, the back angling down to the point
+    outlined(c, function () { c.beginPath(); c.moveTo(0.5, -sw); c.lineTo(L * 0.62, -sw + tw * 0.5); c.lineTo(L, tw + sw * 0.4 - cu * sw); c.lineTo(0.5, sw); c.closePath(); }, P.face, 1.1);
+    c.globalAlpha = 0.35 + it.sharp * 0.6; strokeLn(c, 1.5, sw * 0.55, L - 1.5, tw + sw * 0.3, P.edge, 0.8); c.globalAlpha = 1;
+  } else if (it.kind === 'spear' || it.kind === 'javelin') {
+    // a long shaft with a leaf-shaped head; the javelin is thinner with a small point
+    var jav = it.kind === 'javelin', hl2 = jav ? 6 : 9, hw2 = (jav ? 1.6 : 2.6) * (0.8 + it.width * 0.2);
+    c.strokeStyle = LN; c.lineWidth = w + 2.2; c.beginPath(); c.moveTo(-8, 0); c.quadraticCurveTo(L * 0.5, tw * 0.9, L - hl2, tw); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = w; c.stroke();
+    c.save(); c.translate(L - hl2, tw);
+    outlined(c, function () { c.beginPath(); c.moveTo(-1, 0); c.quadraticCurveTo(hl2 * 0.35, -hw2 - cu, hl2, -cu * hw2 * 0.5); c.quadraticCurveTo(hl2 * 0.35, hw2 - cu * 0.5, -1, 0); c.closePath(); }, P.face, 1.1);
+    c.globalAlpha = 0.35 + it.sharp * 0.6; strokeLn(c, 0, 0, hl2 - 1, -cu * hw2 * 0.4, P.edge, 0.7); c.globalAlpha = 1;
+    c.fillStyle = P.dark; c.fillRect(-2.5, -w * 0.9, 2.2, w * 1.8);
+    c.restore();
+  } else if (it.kind === 'greataxe' || it.kind === 'throwaxe') {
+    // the axe head drawn big on a long haft (the Dane axe), or small on a short one (the throwing axe)
+    var ga = it.kind === 'greataxe', hs = (ga ? 1.35 : 0.8) * (0.75 + it.size * 0.35), ww2 = 0.8 + it.width * 0.3, hx3 = L, hy3 = tw;
+    c.strokeStyle = LN; c.lineWidth = w + 2.2; c.beginPath(); c.moveTo(-6, 0); c.quadraticCurveTo(L * 0.5, tw * 0.9, hx3, hy3); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = w; c.stroke();
+    c.save(); c.translate(hx3 - (ga ? 4 : 2), hy3);
+    outlined(c, function () { c.beginPath(); c.moveTo(-5 * hs, 0); c.lineTo(-2 * hs, -8 * hs * ww2); c.quadraticCurveTo(4 * hs, -9 * hs * ww2, 7 * hs + cu * 2, -4 * hs * ww2); c.quadraticCurveTo(8 * hs + cu * 4, 4 * hs * ww2 + cu * 5 * hs, 2 * hs, 7 * hs * ww2 + cu * 6 * hs); c.lineTo(1.5 * hs, 2 * hs); c.lineTo(-5 * hs, 2 * hs); c.closePath(); }, P.face, 1.2);
+    c.globalAlpha = 0.35 + it.sharp * 0.6; c.strokeStyle = P.edge; c.lineWidth = 1; c.beginPath(); c.moveTo(6 * hs + cu * 2, -4.5 * hs * ww2); c.quadraticCurveTo(7.5 * hs + cu * 4, 3 * hs * ww2 + cu * 5 * hs, 2.5 * hs, 6.5 * hs * ww2 + cu * 6 * hs); c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = P.dark; c.fillRect(-5 * hs, -1.5, 3.5 * hs, 3.5);
+    c.restore();
+  } else if (it.kind === 'sling') {
+    // a cord looped over the hand with a leather pouch hanging at its end
+    c.strokeStyle = LN; c.lineWidth = 2.6; c.beginPath(); c.moveTo(-3, -2); c.quadraticCurveTo(L * 0.5, -4 + tw, L, tw); c.moveTo(-3, 2); c.quadraticCurveTo(L * 0.5, 4 + tw, L, tw); c.stroke();
+    c.strokeStyle = '#d9c9a6'; c.lineWidth = 1; c.stroke();
+    outlined(c, function () { c.beginPath(); c.ellipse(L + 1, tw, 3.2, 2.2, 0.2, 0, 7); }, '#9a6a44', 1);
   } else if (it.kind === 'knife') {
     strokeLn(c, -4.5, 0, 1, 0, LN, w + 2.2); strokeLn(c, -4.5, 0, 1, 0, '#8a5a3a', w);
     var kw = w * 0.75;
@@ -3801,13 +3845,13 @@ function gear(c, it, P, K) {
 }
 // icon(c, it, s): the item in a slot, handle at lower left and tip at upper right, about s wide
 function icon(c, it, s) {
-  var K = KINDS[it.kind], L = K.len * (it.kind === 'bow' ? 1 : it.size), span = it.kind === 'bow' ? L * it.size * 2.2 : L + 7, k = (s || 14) / span;
+  var K = KINDS[it.kind], L = K.len * (it.kind === 'bow' ? 1 : it.size), span = it.kind === 'bow' ? L * it.size * 2.2 : L + 7 + (it.kind === 'greataxe' ? 8 : 0), k = (s || 14) / span;
   c.save(); c.scale(k, k);
   if (K.gear) draw(c, it, 0, 0, 1, 0, null);
   else if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
   c.restore();
 }
-return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon };
+return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon };
 })();
 if (typeof module !== 'undefined') module.exports = Items;
 
@@ -4707,11 +4751,37 @@ var TOOLS = [
   { id: 'knife', name: 'Knife', good: 'bush', dmg: 2 }
 ];
 api.tools = TOOLS;
+api.profiles = function () { return PROFILES; }; api.rangedKinds = function () { return RANGED; }; api.stepData = function () { return stepData(P.atk); };
 var STEPS = [
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
   { wu: 0.10, ac: 0.12, rec: 0.26, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
 ];
+// How each melee weapon fights (2026-10-06, docs/weapons.md): the arc and reach of a hit, its pace (windup, active,
+// recover), damage as a share of the thing's own, knockback, stagger, the step into it, how many hits chain (the last is
+// the heavy one), the motion (a swing, a thrust straight out, or a smash down from over the shoulder), the stamina a
+// swing costs, and what sets it apart: pierce (a thrust hits everything in its line), guardBreak, crit (extra chance),
+// heavy (every hit counts as heavy). The old sword numbers in STEPS are the sword's profile.
+var PROFILES = {
+  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.05, ac: 0.09, rec: 0.12, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5 },
+  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.07, ac: 0.10, rec: 0.18, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true },
+  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.13, ac: 0.09, rec: 0.22, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9 },
+  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.03, ac: 0.06, rec: 0.07, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2 },
+  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.08, ac: 0.10, rec: 0.17, dmg: 1, kb: 130, stag: 12, lunge: 40, chain: 2, motion: 'thrust', st: 7, pierce: true },
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.24, ac: 0.16, rec: 0.42, dmg: 1, kb: 280, stag: 36, lunge: 90, chain: 2, motion: 'swing', st: 13, heavy: true }
+};
+// the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
+var RANGED = {
+  bow:      { proj: 'arrow', speed: 240, r: 3.5, cd: 0.45, st: 6, stag: 8, life: 1.0 },
+  sling:    { proj: 'stone', speed: 210, r: 3, cd: 0.6, st: 5, stag: 26, life: 0.8, kb: 120 },
+  javelin:  { proj: 'javelin', speed: 250, r: 4, cd: 0.5, st: 8, stag: 14, life: 0.9, thrown: true },
+  throwaxe: { proj: 'throwaxe', speed: 200, r: 4, cd: 0.5, st: 7, stag: 22, life: 0.6, thrown: true, kb: 160 }
+};
+function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
+function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
+function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
+function rangedOf() { var it = itemOf('weapon', 'bow'); return { it: it, kind: it ? it.kind : 'bow', R: (it && RANGED[it.kind]) || RANGED.bow }; }
+var critBonus = 0;
 
 function newWorld() {
   W = { ghosts: [], rings: [], slow: { t: 0, s: 1 }, t: 0, enemies: [], projs: [], parts: [], nums: [], lock: null, kills: 0, dustT: 0,
@@ -4888,7 +4958,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
     var toP = Math.atan2(P.y - e.y, P.x - e.x);
     if ((kind === 'melee' || kind === 'heavy') && Math.abs(wrap(toP - e.face)) > 2.3) { mult *= 1.8; weak = true; }
   }
-  var crit = S.crit > 0 && Math.random() < S.crit;
+  var crit = (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
   var dealt = dmg * mult * mod('dmg');          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
@@ -4940,10 +5010,10 @@ function daze(e, dur) { e.state = 'recover'; e.t = 0; e.dur = dur; }
 /* ---------- player ---------- */
 function startAttack() {
   var p = P, a = p.atk;
-  if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % 3; else a.combo = 0;
+  if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % chainLen(); else a.combo = 0;
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
-  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; a.spin = false; a.bash = false;
-  if (p.mode === 'fight') { p.st -= 7; p.stDelay = 0.5; }
+  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; a.spin = false; a.bash = false; a.smashed = false;
+  if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st); p.stDelay = 0.5; }
   p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
 }
 function releaseCharge() {
@@ -4960,10 +5030,16 @@ function stepData(a) {
 function stepData0(a) {
   var s;
   if (a.bash) return { wu: 0.06, ac: 0.1, rec: 0.3, arc: 1.6, reach: 30, blade: 20, dmg: 0.6, kb: 260, lunge: 160, stag: 45 };
-  if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
+  var pf = (P.mode === 'fight' && !bareHanded()) ? meleeProfile() : null;
+  if (pf && pf !== PROFILES.sword) {                     // from the weapon's profile: light hits, then the heavy last one; charged is heavier still
+    var last = a.combo === 3 || a.combo === pf.chain - 1, cc = a.combo === 3 ? (a.chg || 0) : 0, hv = last ? 1 : 0;
+    s = { wu: pf.wu * (1 + hv) * (1 + cc * 0.3), ac: pf.ac * (1 + hv * 0.3), rec: pf.rec * (1 + hv * 1.2), arc: pf.arc * (1 + hv * 0.3) + cc * (pf.motion === 'thrust' ? 0.2 : 1), reach: pf.reach * (1 + hv * 0.2) + cc * 8, blade: pf.blade * (1 + hv * 0.15) + cc * 4,
+      dmg: pf.dmg * (1 + hv) + 1.5 * cc, kb: pf.kb * (1 + hv) + 150 * cc, lunge: pf.lunge * (1 + hv * 0.6) + 60 * cc, stag: pf.stag * (1 + hv * 1.4) + 16 * cc, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak };
+  }
+  else if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
   else s = STEPS[a.combo];
   if (S.juice) return s;
-  return { wu: s.wu * 2.6, ac: s.ac, rec: s.rec * 2.2, arc: s.arc, reach: s.reach, blade: s.blade, dmg: s.dmg, kb: s.kb, lunge: 0, stag: s.stag };
+  return { wu: s.wu * 2.6, ac: s.ac, rec: s.rec * 2.2, arc: s.arc, reach: s.reach, blade: s.blade, dmg: s.dmg, kb: s.kb, lunge: 0, stag: s.stag, motion: s.motion, pierce: s.pierce, guardBreak: s.guardBreak };
 }
 function gapAhead(dir) {
   var g = 999;
@@ -5096,7 +5172,8 @@ function updatePlayer(dt) {
       var u = Math.min(1, a.t / sd.ac);
       var arc = a.spin ? 6.283 : sd.arc, half = arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
       var ang = a.dir - half * sign + arc * sign * u;
-      a.tr = { start: a.dir - half * sign, cur: ang, age: 0, reach: 9 + sd.blade, sign: sign, hot: a.combo === 3 && a.chg > 0.6 };
+      a.tr = { start: a.dir - half * sign, cur: ang, age: 0, reach: 9 + sd.blade, sign: sign, hot: a.combo === 3 && a.chg > 0.6, motion: sd.motion || 'swing', u: u };
+      if (sd.motion === 'smash' && S.juice && u > 0.85 && !a.smashed) { a.smashed = true; dust(p.x + Math.cos(a.dir) * 18, p.y + Math.sin(a.dir) * 18, 5); sfx('slam'); }
       if (p.mode === 'gather') {                      // tools hit trees, rocks and bushes, never enemies
         var hv = api.harvest, tl = TOOLS[p.tool], ti = itemOf('tool', p.tool), tpow = (ti ? Items.stats(ti).power : tl.dmg) * (api.powerMul ? api.powerMul(tl.good) : 1);
         var objs = hv && !(api.items && !ti) ? hv.list(p.x, p.y, 90) : [];   // no tool in the slot, nothing to swing
@@ -5106,10 +5183,10 @@ function updatePlayer(dt) {
           var ox = o.x - p.x, oy = o.y - p.y, od = Math.hypot(ox, oy);
           if (od <= sd.reach + (o.r || 8) + 2 && Math.abs(wrap(Math.atan2(oy, ox) - a.dir)) <= half + 0.12) {
             a.hit.push(o);
-            var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (a.combo >= 2 ? 1.5 : 1);
+            var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (heavyHit(a) ? 1.5 : 1);
             hv.hit(o, pw, right, tl.id);
             var sayWrong = !right && W.t - wrongToolAt > 300; if (sayWrong) wrongToolAt = W.t;
-            num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#d9d0c0', a.combo >= 2, !right);
+            num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#d9d0c0', heavyHit(a), !right);
             sfx(o.kind === 'stone' ? 'clink' : 'chop', right ? 1 : 0);
           }
         }
@@ -5119,7 +5196,10 @@ function updatePlayer(dt) {
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
         if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12)) {
           a.hit.push(e);
-          damageEnemy(e, sd.dmg * dmgMul('sword'), Math.atan2(dy, dx), sd.kb, sd.stag, a.combo >= 2 ? 'heavy' : 'melee');
+          critBonus = (!bareHanded() && meleeProfile().crit) || 0;
+          damageEnemy(e, sd.dmg * dmgMul('sword'), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0;
+          if (sd.guardBreak && e.guard) e.guard = 0;
+          if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
         }
       }
       if (a.t >= sd.ac) { a.ph = 'recover'; a.t = 0; }
@@ -5128,11 +5208,14 @@ function updatePlayer(dt) {
   if (a.tr) { if (a.ph === 'recover' || a.ph === 'none') a.tr.age += dt; if (a.tr.age > 0.18) a.tr = null; }
 
   // ranged
-  if (bow && (IN.lmb || IN.keys.KeyJ) && p.fireCd <= 0 && p.st >= 6 && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {
-    p.fireCd = 0.45; if (api.onShoot) api.onShoot(); p.fireT = 0.2; p.st -= 6; p.stDelay = 0.4;
+  var rg = bow ? rangedOf() : null;
+  if (bow && (IN.lmb || IN.keys.KeyJ) && p.fireCd <= 0 && p.st >= rg.R.st && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {
+    var RR = rg.R, thrownIt = RR.thrown ? rg.it : null;
+    p.fireCd = RR.cd; p.fireT = 0.2; p.st -= RR.st; p.stDelay = 0.4;
     var fa = rangedAngle();
     p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
-    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * 240, vy: Math.sin(fa) * 240, r: 3.5, dmg: dmgMul('bow'), owner: 'player', life: 1.0, ang: fa, pin: !!p.pinNext }); p.pinNext = false;
+    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * RR.speed, vy: Math.sin(fa) * RR.speed, r: RR.r, dmg: dmgMul('bow'), owner: 'player', life: RR.life, ang: fa, pin: !!p.pinNext, kind: RR.proj, stag: RR.stag, kb: RR.kb || 40, thing: thrownIt, spin: 0 }); p.pinNext = false;
+    if (api.onShoot) api.onShoot(thrownIt);                     // the page takes an arrow, a stone, or the thrown thing itself from the hand
     spark(p.x + Math.cos(fa) * 10, p.y + Math.sin(fa) * 10, 3, '#ffe9a0', 60);
     if (S.juice) { p.kx -= Math.cos(fa) * 30; p.ky -= Math.sin(fa) * 30; }
     sfx('shoot');
@@ -5402,11 +5485,12 @@ function updateProjs(dt) {
         for (var j = 0; j < W.enemies.length; j++) {
           var e = W.enemies[j];
           if (e.dead) continue;
-          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), 40, 8, 'proj'); if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, 1.6); e.pkx = e.pky = 0; num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } gone = true; hit = true; break; }
+          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, 1.6); e.pkx = e.pky = 0; num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } gone = true; hit = true; break; }
         }
       }
     }
-    if (gone) { W.projs.splice(i, 1); if (!hit && pr.owner === 'player' && !pr.reflected && api.onArrowLand) api.onArrowLand(pr.x, pr.y); }
+    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y); }
+    else if (pr.kind === 'throwaxe') pr.spin += dt * 22;
   }
 }
 function updateFx(dt) {
@@ -5640,7 +5724,7 @@ function bodyPose() {
     var amt0 = -3.4 * Math.min(1, a.t / 0.3), jit = a.t >= 1 ? Math.sin(W.t * 70) * 0.5 : 0;
     lx = Math.cos(p.face) * amt0 + jit; ly = Math.sin(p.face) * K * amt0 * 0.7; cr = 1.2 * Math.min(1, a.t / 0.3);
   } else if (a.ph !== 'none') {
-    var sd = stepData(a), amt, big = a.combo === 3 ? 1.7 : (a.combo === 2 ? 1.4 : 1);
+    var sd = stepData(a), amt, big = a.combo === 3 ? 1.7 : (heavyHit(a) ? 1.4 : 1);
     if (a.ph === 'windup') amt = -2.6 * big * Math.min(1, a.t / sd.wu);
     else if (a.ph === 'active') amt = (-2.6 + 6.2 * Math.min(1, a.t / sd.ac)) * big;
     else amt = 3.6 * big * Math.max(0, 1 - a.t / sd.rec);
@@ -5661,6 +5745,8 @@ function swordPose(dir) {
   } else if (a.ph !== 'none') {
     if (p.mode === 'gather') return chopPose(dir, a);
     var sd = stepData(a), half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1, u;
+    if (sd.motion === 'thrust') return thrustPose(dir, a, sd);
+    if (sd.motion === 'smash') return chopPose(dir, a, sd);
     var pb = 0.45;
     if (a.ph === 'windup') u = -pb * (a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
     var ang = visAngle(a.dir - half * sign + sd.arc * sign * u, dir);
@@ -5690,8 +5776,17 @@ function swordPose(dir) {
 }
 // Gathering: the axe and pickaxe go up over the shoulder in the windup and come down onto the target; the knife
 // is a short stab forward. Returns the same shape as swordPose.
-function chopPose(dir, a) {
-  var p = P, sd = stepData(a), o = {}, u, sdn = Math.cos(a.dir) >= 0 ? 1 : -1, knife = TOOLS[p.tool].id === 'knife';
+// A thrust: the hand pulls back to the chest in the windup and drives straight out along the aim, the thing pointing the way
+function thrustPose(dir, a, sd) {
+  var o = {}, u, dx = Math.cos(a.dir), dy = Math.sin(a.dir) * K;
+  if (a.ph === 'windup') u = -(a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1 - Math.min(1, a.t / sd.rec) * 0.6;
+  var reach = u < 0 ? -3 * -u : 3 + 11 * Math.sin(Math.min(1, u) * Math.PI * 0.5);
+  o.hx = dx * (5 + reach); o.hy = -13 + dy * (5 + reach) * 0.7; o.ca = dx; o.sa = dy; o.len = sd.blade;
+  o.front = Math.sin(a.dir) >= -0.05; o.side = dx >= 0 ? 1 : -1; o.armSide = o.side; o.atk = true;
+  return o;
+}
+function chopPose(dir, a, smash) {
+  var p = P, sd = stepData(a), o = {}, u, sdn = Math.cos(a.dir) >= 0 ? 1 : -1, knife = !smash && TOOLS[p.tool].id === 'knife';
   if (a.ph === 'windup') u = -(a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
   var raise = u < 0 ? -u : 1, e = u < 0 ? 0 : 1 - (1 - u) * (1 - u), dx = Math.cos(a.dir), dy = Math.sin(a.dir) * K;
   if (knife) {
@@ -5702,7 +5797,7 @@ function chopPose(dir, a) {
     o.hx = u < 0 ? -sdn * 1 + (upX + sdn * 1) * raise : upX + (downX - upX) * e;
     o.hy = u < 0 ? -16 + (upY + 16) * raise : upY + (downY - upY) * e;
     var ang0 = Math.atan2(-0.95, -sdn * 0.3), ang1 = Math.atan2(dy + 0.45, dx * 0.9), ang = u < 0 ? ang0 : ang0 + wrap(ang1 - ang0) * e;
-    o.ca = Math.cos(ang); o.sa = Math.sin(ang); o.len = 15;
+    o.ca = Math.cos(ang); o.sa = Math.sin(ang); o.len = smash ? smash.blade : 15;
   }
   o.front = u < 0 || u < 0.3 || Math.sin(a.dir) >= -0.05; o.side = sdn; o.armSide = sdn; o.atk = true;
   return o;
@@ -5768,7 +5863,7 @@ function atkBody() {
   var sp = lookSpec(), st = ATK_STYLES[Math.round(sp.atkStyle)] || ATK_STYLES[0];
   if (st.spin && S.look !== 'sprite') st = { pull: st.pull, lunge: st.lunge, sq: st.sq, hop: st.hop, spin: 0 };
   if (P.mode === 'gather') st = { pull: 1, lunge: 1.5, sq: 0.12, hop: 0, spin: 0 };   // a chop: a small lean, no lunge or spin
-  var pw = sp.atkPower * (a.combo >= 2 ? 1.5 : 1), off = 0, sq = 0, hop = 0, dir = a.ph === 'charge' ? P.face : a.dir, u;
+  var pw = sp.atkPower * (heavyHit(a) ? 1.5 : 1), off = 0, sq = 0, hop = 0, dir = a.ph === 'charge' ? P.face : a.dir, u;
   if (a.ph === 'charge') { u = Math.min(1, a.t / 0.3); off = -st.pull * u; sq = -st.sq * 0.8 * u; }
   else {
     var sd = stepData(a);
@@ -5872,7 +5967,7 @@ function drawHeroWeapon(c, front) {
     c.lineCap = 'round';
     var heldIt = itemOf('held');
     var rest = a.ph === 'none', restLen = heldIt && rest ? Math.min(Items.KINDS[heldIt.kind].len * heldIt.size, heldIt.kind === 'axe' || heldIt.kind === 'pick' ? 12 : 15) : null;   // carried, a thing hangs short beside the leg
-    if (heldIt) { if (rest) { c.save(); c.translate(hx, hy); c.scale(0.85, 0.85); c.translate(-hx, -hy); } Items.draw(c, heldIt, hx, hy, ca, sa, rest ? restLen : (heldIt.kind === 'sword' ? len * heldIt.size : null), p.mode === 'gather' && a.ph !== 'none'); if (rest) c.restore(); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
+    if (heldIt) { if (rest) { c.save(); c.translate(hx, hy); c.scale(0.85, 0.85); c.translate(-hx, -hy); } Items.draw(c, heldIt, hx, hy, ca, sa, rest ? restLen : ((Items.KINDS[heldIt.kind].melee && p.mode === 'fight') ? len * heldIt.size : null), p.mode === 'gather' && a.ph !== 'none'); if (rest) c.restore(); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (p.mode === 'gather') { if (!api.items) drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (api.items) { if (!rest) { var fx2 = hx + ca * 4, fy2 = hy + sa * 4; c.strokeStyle = '#3a2a36'; c.lineWidth = 6; c.beginPath(); c.moveTo(hx, hy); c.lineTo(fx2, fy2); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3.6; c.stroke(); lib.ell(c, fx2, fy2, 3.4, 3.2, HC.skin, 1.5); } }   // no sword: a fist (at rest the figure's own hands hang)
     else {
@@ -5898,6 +5993,11 @@ function drawHeroWeapon(c, front) {
     }
   }
   if (spr && S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) drawPixSlash(c);
+  else if (S.juice && a.tr && a.tr.motion === 'thrust' && p.mode === 'fight' && front === (Math.sin(a.dir) >= -0.3)) {
+    var tr2 = a.tr, fade2 = 1 - tr2.age / 0.18, ox2 = p.x + bp.lx, oy2 = p.y * K - 13 + bp.ly, ca2 = Math.cos(a.dir), sa2 = Math.sin(a.dir) * K, px2 = -sa2, py2 = ca2, r0 = tr2.reach * 0.35, r1 = tr2.reach * (0.5 + 0.5 * tr2.u) * HH.spec.slashSize, ww = 2.2 * HH.spec.slashWidth + 0.8;
+    c.beginPath(); c.moveTo(ox2 + ca2 * r0 + px2 * ww, oy2 + sa2 * r0 + py2 * ww); c.lineTo(ox2 + ca2 * r1, oy2 + sa2 * r1); c.lineTo(ox2 + ca2 * r0 - px2 * ww, oy2 + sa2 * r0 - py2 * ww); c.closePath();
+    var sh2 = HC.slash; c.fillStyle = 'rgba(' + parseInt(sh2.substr(1, 2), 16) + ',' + parseInt(sh2.substr(3, 2), 16) + ',' + parseInt(sh2.substr(5, 2), 16) + ',' + (0.5 * fade2) + ')'; c.fill();
+  }
   else if (S.juice && a.tr && p.mode === 'fight' && front === (Math.sin(a.dir) >= -0.3)) {
     var tr = a.tr, fade = 1 - tr.age / 0.18, n, steps = 16, reach = tr.reach * HH.spec.slashSize, inner = reach * (1 - HH.spec.slashWidth), ox = p.x + bp.lx, oy = p.y * K - 13 + bp.ly;
     c.beginPath();
@@ -6027,6 +6127,11 @@ function drawProj(c, pr) {
   if (pr.owner === 'enemy') {
     lib.ell(c, x, y, 4.4, 4.4, '#ffe9d0', 1.5, '#8a3a2a'); lib.ell(c, x, y, 2.2, 2.2, '#ff8a5a', 0);
     c.fillStyle = 'rgba(255,255,255,0.5)'; c.beginPath(); c.arc(x - pr.vx * 0.03, y - pr.vy * 0.03 * K, 2.6, 0, Math.PI * 2); c.fill();
+  } else if (pr.kind === 'stone') {
+    lib.ell(c, x, y, 2.8, 2.4, '#8a8c94', 1.2); c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.arc(x - 0.8, y - 0.8, 1, 0, 7); c.fill();
+  } else if (pr.thing && typeof Items !== 'undefined') {
+    var ta = pr.kind === 'throwaxe' ? pr.ang + pr.spin : pr.ang, tca = Math.cos(ta), tsa = Math.sin(ta) * K, tl = Items.KINDS[pr.thing.kind].len * pr.thing.size;
+    Items.draw(c, pr.thing, x - tca * tl * 0.5, y - tsa * tl * 0.5, tca, tsa, null);
   } else {
     // an arrow: shaft, iron head, two feathers
     var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K, px = -sa, py = ca, tx = x + ca * 8, ty = y + sa * 8, bx = x - ca * 8, by = y - sa * 8;
@@ -6641,7 +6746,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'torch', cat: 'supply', out: { stack: ['torch', 2] }, needs: { wood: 1, fiber: 2 }, at: 'hand', key: 'fiber' },
     { id: 'flintKnife', cat: 'tool', out: { item: ['knife', 'flint'] }, needs: { wood: 1, stone: 1 }, at: 'hand', key: 'stone' },
     { id: 'flintPick', cat: 'tool', out: { item: ['pick', 'flint'] }, needs: { wood: 3, stone: 3 }, at: 'hand', key: 'stone' },
-    { id: 'woodSword', cat: 'weapon', out: { item: ['sword', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },
+    { id: 'woodClub', cat: 'weapon', out: { item: ['club', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },
     { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'fiber' },
     { id: 'arrows5', cat: 'supply', out: { arrows: 5 }, needs: { wood: 2, fiber: 1 }, at: 'hand', key: 'fiber' },
     { id: 'flintSword', cat: 'weapon', out: { item: ['sword', 'flint'] }, needs: { wood: 2, stone: 4, fiber: 1 }, at: 'bench', key: 'stone' },
@@ -6910,7 +7015,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // The bag: 30 slots, 6 wide. The top row is the Fight bar and the second the Gather bar: each is the hotbar of its mode,
   // numbered 1 to 6, and `hand` says which slot of each is in the hand. The three rows below are the bag proper.
   var COLS = 6, ROWS = 5, SLOTS = COLS * ROWS, BAG0 = COLS * 2, STACK = 25, slots = [], held = null, pick = null;
-  var hand = { fight: 0, gather: 0 }, BAR_OF = { sword: 'fight', bow: 'fight', axe: 'gather', pick: 'gather', knife: 'gather' };
+  var hand = { fight: 0, gather: 0 }, BAR_OF = { sword: 'fight', axe: 'gather', club: 'fight', seax: 'fight', spear: 'fight', greataxe: 'fight', bow: 'fight', sling: 'fight', javelin: 'fight', throwaxe: 'fight', pick: 'gather', knife: 'gather' };
   function barBase(mode) { return mode === 'gather' ? COLS : 0; }
   function handSlot(mode) { return slots[barBase(mode) + hand[mode]]; }
   function handItem(mode) { var s = handSlot(mode); return s && s.kind === 'item' ? s.item : null; }
@@ -7602,13 +7707,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.items = {                    // what is in the hand: the chosen slot of the mode's bar
     held: function () { var P = hero(); return P.mode === 'fight' || P.mode === 'gather' ? handItem(P.mode) : null; },
     tool: function (i) { var it = handItem('gather'); return it && it.kind === TOOL_IDS[i] ? it : null; },
-    weapon: function (k) { var it = handItem('fight'); return it && it.kind === k ? it : null; }
+    weapon: function (k) { var it = handItem('fight'); if (!it) return null; var K2 = Items.KINDS[it.kind]; return (k === 'bow' ? K2.ranged : K2.melee) ? it : null; }   // 'sword' asks for the melee thing in hand, 'bow' for the ranged one
   };
   Combat.api.barSelect = barPress;
   Combat.api.barSlots = function (mode) { var b = barBase(mode); return { hand: hand[mode], slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, draw: function (c) { if (s.kind === 'item') Items.icon(c, s.item, 18); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; }) }; };
   function handSync() {                   // the engine's tool and weapon follow the hand
     var P = hero(), it = handItem('gather'), ti = it ? TOOL_IDS.indexOf(it.kind) : -1; if (ti >= 0) P.tool = ti;
-    var wf = handItem('fight'); P.weapon = wf && wf.kind === 'bow' ? 'ranged' : 'melee';
+    var wf = handItem('fight'); P.weapon = wf && Items.KINDS[wf.kind].ranged ? 'ranged' : 'melee';
   }
   function addItem(kind, n) {             // fills stacks of the same kind first, then empty slots; returns what did not fit
     var i, s, take; noteSeen(kind);
@@ -7918,6 +8023,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'tpHamlet', name: 'Go to the hamlet', text: 'Stand on its green.' },
     { id: 'tpCave', name: 'Go to the cave', text: 'Stand at its mouth.' },
     { id: 'brokk', name: 'Brokk joins', text: 'Hildir’s stone stands and he is yours.' },
+    { id: 'weapons', name: 'Copper weapons', text: 'One of every kind into the bag: sword, axe, club, seax, spear, Dane axe, bow, sling, javelin, throwing axe.' },
     { id: 'back', name: 'Back', text: '' }
   ];
   function drawAdmin(c) {
@@ -7933,6 +8039,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (id === 'back') { adminOpen = false; return; }
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); return; }
     if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }
+    else if (id === 'weapons') { Items.MELEE.concat(Items.RANGED).forEach(function (k) { var w2 = Items.make(k, 'copper'); if (!addThing(w2)) dropThing(w2, P.x, P.y + 10); }); addItem('stone', 20); toast('Copper weapons, and stones for the sling'); }
     else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; toast('The chart knows the island'); }
     else if (id === 'dusk') { day.t = DUSK_AT + 1; }
     else if (id === 'dawn') { day.t = 0; day.n++; }
@@ -8016,8 +8123,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (i = 0; i < 3 && n > 0; i++) if (!quiver.slots[i]) { quiver.slots[i] = { kind: kind, n: Math.min(n, QCAP) }; n -= QCAP; }
     return Math.max(0, n);
   }
-  Combat.api.canShoot = function () { return quiverCount() > 0; };
-  Combat.api.onShoot = function () {
+  function rangedHand() { var it = handItem('fight'); return it && Items.KINDS[it.kind].ranged ? it : null; }
+  Combat.api.canShoot = function () { var it = rangedHand(); if (!it) return false; if (it.kind === 'bow') return quiverCount() > 0; if (Items.KINDS[it.kind].ammo) return (inv[Items.KINDS[it.kind].ammo] || 0) > 0; return true; };
+  Combat.api.onThrowLand = function (x, y, thing) { if (!isLand(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T))) { toast('The ' + thing.name.toLowerCase() + ' is lost in the water'); return; } dropThing(thing, x, y); };
+  Combat.api.onShoot = function (thrown) {
+    var it = rangedHand(); if (!it) return;
+    if (thrown) { var hs = barBase('fight') + hand.fight; if (slots[hs] && slots[hs].kind === 'item' && slots[hs].item === it) slots[hs] = null; recount(); save(); return; }   // the thing itself flies
+    if (Items.KINDS[it.kind].ammo) { takeItem(Items.KINDS[it.kind].ammo, 1); return; }
+    onShootArrow();
+  };
+  function onShootArrow() {
     var s = quiver.slots[quiver.sel]; if (!s) return; s.n--;
     if (s.n <= 0) { quiver.slots[quiver.sel] = null; for (var i = 0; i < 3; i++) if (quiver.slots[i]) { quiver.sel = i; break; } }
     save();

@@ -96,6 +96,15 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
       <p class="desc" id="optdesc"></p>
     </section>
     <section class="panel">
+      <h2>Weapons</h2>
+      <div class="group" id="melee"></div>
+      <p class="desc" id="meleedesc"></p>
+      <div class="group" id="ranged" style="margin-top:8px"></div>
+      <p class="desc" id="rangeddesc"></p>
+      <div class="group" style="margin-top:8px" id="mats"></div>
+      <p class="desc">F swaps between the melee weapon and the ranged one. Each fights its own way (docs/weapons.md): the arc, reach and pace of a hit, how many chain, and what sets it apart. Thrown things are endless here; in the game they lie where they fall.</p>
+    </section>
+    <section class="panel">
       <h2>Arena</h2>
       <div class="group">
         <button id="sbot">Add wolf</button>
@@ -114,7 +123,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <dt>Hold <kbd>Shift</kbd></dt><dd>Sprint while moving. It drains stamina and stops when you run out</dd>
         <dt><kbd>Space</kbd></dt><dd>Dash. A quick sidestep in the direction you move (a backstep if you stand still), with brief invulnerability. You dash through enemies</dd>
         <dt><kbd>Q</kbd></dt><dd>Switch between fight and gather mode</dd>
-        <dt><kbd>F</kbd></dt><dd>Fight mode: swap between the sword and the bow. With the bow out, the attack button shoots (at the mouse cursor, or automatically)</dd>
+        <dt><kbd>F</kbd></dt><dd>Fight mode: swap between the melee weapon and the ranged one. With the bow out, the attack button shoots (at the mouse cursor, or automatically)</dd>
         <dt><kbd>Ctrl</kbd></dt><dd>Target the nearest enemy; press again for the next nearest, then to let go</dd>
         <dt><kbd>1</kbd> to <kbd>3</kbd></dt><dd>Gather mode: axe, pickaxe, knife. The right tool does full damage, the wrong one half</dd>
         <dt><kbd>H</kbd></dt><dd>Add a wolf or a boar</dd>
@@ -127,6 +136,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 </main>
 <script>
 __ART__
+__ITEMS__
 __COMBAT__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
@@ -141,8 +151,24 @@ __COMBAT__
     e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, atk: e.type === 'bot' ? lib.animalAttack(k) : null };
     if (e.type === 'bot') e.hp = e.maxHp = sp.hp;
   };
+  try { var gh = JSON.parse(localStorage.getItem('game.hero')); if (gh && typeof gh === 'object') lib.setHero(gh); } catch (e) {}   // the Character Editor's hero
   Combat.init(GameArt.lib);
   var S = Combat.S;
+  /* the weapons: one melee and one ranged thing in hand, the copper kinds (2026-10-06); the tools stay copper too */
+  var arm = { melee: 'sword', ranged: 'bow', mat: 'copper' }, held = {};
+  function armed(k) { return Items.make(k, arm.mat); }
+  Combat.api.items = {
+    held: function () { var P = Combat.dbg().P; if (P.mode === 'fight') return P.weapon === 'ranged' ? armed(arm.ranged) : armed(arm.melee); if (P.mode === 'gather') return armed(Combat.api.tools[P.tool].id); return null; },
+    tool: function (i) { return armed(Combat.api.tools[i].id); },
+    weapon: function (k) { return k === 'bow' ? armed(arm.ranged) : armed(arm.melee); }
+  };
+  function armButtons(hostId, kinds, key, descId) {
+    var host = document.getElementById(hostId); host.innerHTML = '';
+    kinds.forEach(function (k) { var b = document.createElement('button'); b.textContent = Items.KINDS[k].name; b.setAttribute('aria-pressed', arm[key] === k); b.addEventListener('click', function () { arm[key] = k; var P = Combat.dbg().P; P.atk.ph = 'none'; P.atk.since = 9; armButtons(hostId, kinds, key, descId); b.blur(); }); host.appendChild(b); });
+    document.getElementById(descId).textContent = Items.KINDS[arm[key]].desc;
+  }
+  function matButtons() { var host = document.getElementById('mats'); host.innerHTML = ''; ['wood', 'flint', 'copper', 'bronze', 'iron'].forEach(function (m) { var b = document.createElement('button'); b.textContent = Items.MATS[m].name; b.setAttribute('aria-pressed', arm.mat === m); b.addEventListener('click', function () { arm.mat = m; matButtons(); b.blur(); }); host.appendChild(b); }); }
+  armButtons('melee', Items.MELEE, 'melee', 'meleedesc'); armButtons('ranged', Items.RANGED, 'ranged', 'rangeddesc'); matButtons();
   var codes = { Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
   var held = {};
 

@@ -10,11 +10,20 @@ var Items = (function () {
 'use strict';
 var LN = '#3a2a36';
 var KINDS = {
-  sword: { name: 'Sword', len: 26, w: 3, dmg: 1, tool: null, desc: 'A straight blade for the shield wall.' },
-  axe: { name: 'Axe', len: 15, w: 2.8, dmg: 0.9, tool: 'tree', desc: 'For felling trees, and anything else that stands in the way.' },
+  // melee: how each fights is in Combat's PROFILES (arc, reach, pace, motion); dmg here is the kind's share of the material's power
+  sword: { name: 'Sword', len: 26, w: 3, dmg: 1, tool: null, melee: true, desc: 'A straight blade for the shield wall. Quick chains of three, and the surest parry.' },
+  axe: { name: 'Axe', len: 15, w: 2.8, dmg: 1.2, tool: 'tree', melee: true, desc: 'For felling trees, and anything else that stands in the way. Hits harder than a sword, recovers slower, and breaks through a guard.' },
+  club: { name: 'Club', len: 20, w: 3.4, dmg: 0.85, tool: null, melee: true, desc: 'A knotted length of hardwood. Slow, and it staggers and throws back whatever it lands on.' },
+  seax: { name: 'Seax', len: 16, w: 2.6, dmg: 0.6, tool: null, melee: true, desc: 'The long knife every Norseman carries. Fast stabs, little reach, and it finds the gaps.' },
+  spear: { name: 'Spear', len: 40, w: 2.2, dmg: 1.1, tool: null, melee: true, desc: 'The commonest weapon of the north. Long reach in a narrow line; it runs through one beast into the next.' },
+  greataxe: { name: 'Dane axe', len: 34, w: 2.6, dmg: 2, tool: null, melee: true, desc: 'A great axe swung with both hands. Slow to lift, and nothing stands where it comes down.' },
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: 'bush', desc: 'Cuts fiber, berries and rope.' },
-  bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, desc: 'Bent wood and a string. Arrows come from the quiver.' },
+  // ranged: the bow shoots the quiver, the sling throws stones from the bag, a javelin or throwing axe is thrown itself and lies where it falls
+  bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, ranged: true, desc: 'Bent wood and a string. Arrows come from the quiver.' },
+  sling: { name: 'Sling', len: 7, w: 2, dmg: 0.9, tool: null, ranged: true, ammo: 'stone', desc: 'A cord and a pouch. It throws a stone from the bag hard enough to stun, and never runs out while there are stones.' },
+  javelin: { name: 'Javelin', len: 30, w: 1.9, dmg: 1.8, tool: null, ranged: true, thrown: true, desc: 'A light spear made to be thrown. It flies true and hits hard, then has to be fetched.' },
+  throwaxe: { name: 'Throwing axe', len: 12, w: 2.4, dmg: 1.6, tool: null, ranged: true, thrown: true, desc: 'A small axe balanced for the throw. Short range, a heavy blow, and it lies where it falls.' },
   // gear: worn, not held. armor is the share of a blow it turns aside
   helmet: { name: 'Helmet', len: 10, w: 2, dmg: 0, tool: null, gear: 'head', armor: 0.08, desc: 'Keeps the rain and the blows off your head.' },
   tunic: { name: 'Tunic', len: 10, w: 2, dmg: 0, tool: null, gear: 'chest', armor: 0.14, desc: 'Worn over the shirt.' },
@@ -35,7 +44,7 @@ var MATS = {
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
-var ORDER = ['sword', 'axe', 'pick', 'knife', 'bow', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
+var ORDER = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
   var it = { kind: KINDS[kind] ? kind : 'sword', mat: MATS[mat] ? mat : 'iron' }, k;
   for (k in DEF) it[k] = DEF[k];
@@ -47,12 +56,14 @@ function make(kind, mat, o) {
 function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
+  if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
   return MATS[it.mat].name + ' ' + KINDS[it.kind].name;
 }
 function desc(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], s = K.desc, bits = [];
   if (it.mat === 'wood' && it.kind === 'sword') bits.push('A branch cut to a point and hardened in the fire. Good enough for a boar.');
   else if (it.mat === 'wood' && it.kind === 'bow') bits.push('A bent stick and a twist of fiber. It will do until something better is found.');
+  else if (it.mat === 'wood' && it.kind === 'club') bits.push('A branch with a knot at the end, hardened in the fire. Good enough for a boar.');
   else if (it.mat === 'wood') bits.push('Wood where there should be metal: it will do until something better is found.');
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');
   else if (it.mat === 'copper') bits.push('Soft red copper, the first metal. It bends before it breaks.');
@@ -67,7 +78,7 @@ function desc(it) {
 }
 // the numbers: damage and gathering power scale with material and size; sharpness helps the blade kinds
 function stats(it) {
-  var K = KINDS[it.kind], M = MATS[it.mat], sh = it.kind === 'bow' ? 1 : 0.8 + it.sharp * 0.4;
+  var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club') ? 1 : 0.8 + it.sharp * 0.4;
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * 100) / 100;
   return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * M.power * 100) / 100 : 0 };
 }
@@ -121,6 +132,39 @@ function draw(c, it, hx, hy, ca, sa, len, mirror) {
       c.fillStyle = P.dark; c.fillRect(-1.6, -3 * s, 3.2, 3.5 * s);
     }
     c.restore();
+  } else if (it.kind === 'club') {
+    // a knotted stick: thicker toward the end, a knob at the tip, bands of bark
+    outlined(c, function () { c.beginPath(); c.moveTo(-6, -w * 0.45); c.quadraticCurveTo(L * 0.5, -w * 0.7 + tw * 0.4, L - 4, -w * 1.1 + tw); c.quadraticCurveTo(L + 1, -w * 0.9 + tw, L + 1, tw); c.quadraticCurveTo(L + 1, w * 0.9 + tw, L - 4, w * 1.1 + tw); c.quadraticCurveTo(L * 0.5, w * 0.7 + tw * 0.4, -6, w * 0.45); c.closePath(); }, it.mat === 'wood' ? '#8a5a3a' : P.face, 1.2);
+    c.strokeStyle = 'rgba(40,25,15,0.45)'; c.lineWidth = 0.8; for (i = 0; i < 3; i++) { var bx = L * (0.35 + i * 0.2); c.beginPath(); c.moveTo(bx, -w * 0.7); c.lineTo(bx + 1, w * 0.7); c.stroke(); }
+    if (it.mat !== 'wood') { c.fillStyle = P.dark; for (i = 0; i < 4; i++) { c.beginPath(); c.arc(L - 3 - i * 2.2, tw + (i % 2 ? 1.2 : -1.2), 0.9, 0, 7); c.fill(); } }   // iron studs on a metal-shod club
+  } else if (it.kind === 'seax') {
+    strokeLn(c, -5, 0, 1, 0, LN, w + 2.2); strokeLn(c, -5, 0, 1, 0, '#8a5a3a', w);
+    var sw = w * 0.8;                        // the broken-back blade: a straight edge, the back angling down to the point
+    outlined(c, function () { c.beginPath(); c.moveTo(0.5, -sw); c.lineTo(L * 0.62, -sw + tw * 0.5); c.lineTo(L, tw + sw * 0.4 - cu * sw); c.lineTo(0.5, sw); c.closePath(); }, P.face, 1.1);
+    c.globalAlpha = 0.35 + it.sharp * 0.6; strokeLn(c, 1.5, sw * 0.55, L - 1.5, tw + sw * 0.3, P.edge, 0.8); c.globalAlpha = 1;
+  } else if (it.kind === 'spear' || it.kind === 'javelin') {
+    // a long shaft with a leaf-shaped head; the javelin is thinner with a small point
+    var jav = it.kind === 'javelin', hl2 = jav ? 6 : 9, hw2 = (jav ? 1.6 : 2.6) * (0.8 + it.width * 0.2);
+    c.strokeStyle = LN; c.lineWidth = w + 2.2; c.beginPath(); c.moveTo(-8, 0); c.quadraticCurveTo(L * 0.5, tw * 0.9, L - hl2, tw); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = w; c.stroke();
+    c.save(); c.translate(L - hl2, tw);
+    outlined(c, function () { c.beginPath(); c.moveTo(-1, 0); c.quadraticCurveTo(hl2 * 0.35, -hw2 - cu, hl2, -cu * hw2 * 0.5); c.quadraticCurveTo(hl2 * 0.35, hw2 - cu * 0.5, -1, 0); c.closePath(); }, P.face, 1.1);
+    c.globalAlpha = 0.35 + it.sharp * 0.6; strokeLn(c, 0, 0, hl2 - 1, -cu * hw2 * 0.4, P.edge, 0.7); c.globalAlpha = 1;
+    c.fillStyle = P.dark; c.fillRect(-2.5, -w * 0.9, 2.2, w * 1.8);
+    c.restore();
+  } else if (it.kind === 'greataxe' || it.kind === 'throwaxe') {
+    // the axe head drawn big on a long haft (the Dane axe), or small on a short one (the throwing axe)
+    var ga = it.kind === 'greataxe', hs = (ga ? 1.35 : 0.8) * (0.75 + it.size * 0.35), ww2 = 0.8 + it.width * 0.3, hx3 = L, hy3 = tw;
+    c.strokeStyle = LN; c.lineWidth = w + 2.2; c.beginPath(); c.moveTo(-6, 0); c.quadraticCurveTo(L * 0.5, tw * 0.9, hx3, hy3); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = w; c.stroke();
+    c.save(); c.translate(hx3 - (ga ? 4 : 2), hy3);
+    outlined(c, function () { c.beginPath(); c.moveTo(-5 * hs, 0); c.lineTo(-2 * hs, -8 * hs * ww2); c.quadraticCurveTo(4 * hs, -9 * hs * ww2, 7 * hs + cu * 2, -4 * hs * ww2); c.quadraticCurveTo(8 * hs + cu * 4, 4 * hs * ww2 + cu * 5 * hs, 2 * hs, 7 * hs * ww2 + cu * 6 * hs); c.lineTo(1.5 * hs, 2 * hs); c.lineTo(-5 * hs, 2 * hs); c.closePath(); }, P.face, 1.2);
+    c.globalAlpha = 0.35 + it.sharp * 0.6; c.strokeStyle = P.edge; c.lineWidth = 1; c.beginPath(); c.moveTo(6 * hs + cu * 2, -4.5 * hs * ww2); c.quadraticCurveTo(7.5 * hs + cu * 4, 3 * hs * ww2 + cu * 5 * hs, 2.5 * hs, 6.5 * hs * ww2 + cu * 6 * hs); c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = P.dark; c.fillRect(-5 * hs, -1.5, 3.5 * hs, 3.5);
+    c.restore();
+  } else if (it.kind === 'sling') {
+    // a cord looped over the hand with a leather pouch hanging at its end
+    c.strokeStyle = LN; c.lineWidth = 2.6; c.beginPath(); c.moveTo(-3, -2); c.quadraticCurveTo(L * 0.5, -4 + tw, L, tw); c.moveTo(-3, 2); c.quadraticCurveTo(L * 0.5, 4 + tw, L, tw); c.stroke();
+    c.strokeStyle = '#d9c9a6'; c.lineWidth = 1; c.stroke();
+    outlined(c, function () { c.beginPath(); c.ellipse(L + 1, tw, 3.2, 2.2, 0.2, 0, 7); }, '#9a6a44', 1);
   } else if (it.kind === 'knife') {
     strokeLn(c, -4.5, 0, 1, 0, LN, w + 2.2); strokeLn(c, -4.5, 0, 1, 0, '#8a5a3a', w);
     var kw = w * 0.75;
@@ -152,12 +196,12 @@ function gear(c, it, P, K) {
 }
 // icon(c, it, s): the item in a slot, handle at lower left and tip at upper right, about s wide
 function icon(c, it, s) {
-  var K = KINDS[it.kind], L = K.len * (it.kind === 'bow' ? 1 : it.size), span = it.kind === 'bow' ? L * it.size * 2.2 : L + 7, k = (s || 14) / span;
+  var K = KINDS[it.kind], L = K.len * (it.kind === 'bow' ? 1 : it.size), span = it.kind === 'bow' ? L * it.size * 2.2 : L + 7 + (it.kind === 'greataxe' ? 8 : 0), k = (s || 14) / span;
   c.save(); c.scale(k, k);
   if (K.gear) draw(c, it, 0, 0, 1, 0, null);
   else if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
   c.restore();
 }
-return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon };
+return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon };
 })();
 if (typeof module !== 'undefined') module.exports = Items;

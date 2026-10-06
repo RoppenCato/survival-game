@@ -101,6 +101,7 @@ __ART__
 __HIRD__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), lib = GameArt.lib;
+  try { var gh0 = JSON.parse(localStorage.getItem('game.hero')); if (gh0 && typeof gh0 === 'object') lib.setHero(gh0); } catch (e) {}   // the hero as the Character Editor set it for the game
   var KEY = 'hirdeditor1', D = JSON.parse(JSON.stringify(Hird.DEF));
   try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && sv.stats) D = Hird.merge(Hird.DEF, sv); } catch (e) {}
   var person = null, fig = null, clock = 0, sliders = [];

@@ -1437,11 +1437,37 @@ var TOOLS = [
   { id: 'knife', name: 'Knife', good: 'bush', dmg: 2 }
 ];
 api.tools = TOOLS;
+api.profiles = function () { return PROFILES; }; api.rangedKinds = function () { return RANGED; }; api.stepData = function () { return stepData(P.atk); };
 var STEPS = [
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
   { wu: 0.10, ac: 0.12, rec: 0.26, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
 ];
+// How each melee weapon fights (2026-10-06, docs/weapons.md): the arc and reach of a hit, its pace (windup, active,
+// recover), damage as a share of the thing's own, knockback, stagger, the step into it, how many hits chain (the last is
+// the heavy one), the motion (a swing, a thrust straight out, or a smash down from over the shoulder), the stamina a
+// swing costs, and what sets it apart: pierce (a thrust hits everything in its line), guardBreak, crit (extra chance),
+// heavy (every hit counts as heavy). The old sword numbers in STEPS are the sword's profile.
+var PROFILES = {
+  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.05, ac: 0.09, rec: 0.12, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5 },
+  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.07, ac: 0.10, rec: 0.18, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true },
+  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.13, ac: 0.09, rec: 0.22, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9 },
+  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.03, ac: 0.06, rec: 0.07, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2 },
+  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.08, ac: 0.10, rec: 0.17, dmg: 1, kb: 130, stag: 12, lunge: 40, chain: 2, motion: 'thrust', st: 7, pierce: true },
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.24, ac: 0.16, rec: 0.42, dmg: 1, kb: 280, stag: 36, lunge: 90, chain: 2, motion: 'swing', st: 13, heavy: true }
+};
+// the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
+var RANGED = {
+  bow:      { proj: 'arrow', speed: 240, r: 3.5, cd: 0.45, st: 6, stag: 8, life: 1.0 },
+  sling:    { proj: 'stone', speed: 210, r: 3, cd: 0.6, st: 5, stag: 26, life: 0.8, kb: 120 },
+  javelin:  { proj: 'javelin', speed: 250, r: 4, cd: 0.5, st: 8, stag: 14, life: 0.9, thrown: true },
+  throwaxe: { proj: 'throwaxe', speed: 200, r: 4, cd: 0.5, st: 7, stag: 22, life: 0.6, thrown: true, kb: 160 }
+};
+function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
+function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
+function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
+function rangedOf() { var it = itemOf('weapon', 'bow'); return { it: it, kind: it ? it.kind : 'bow', R: (it && RANGED[it.kind]) || RANGED.bow }; }
+var critBonus = 0;
 
 function newWorld() {
   W = { ghosts: [], rings: [], slow: { t: 0, s: 1 }, t: 0, enemies: [], projs: [], parts: [], nums: [], lock: null, kills: 0, dustT: 0,
@@ -1618,7 +1644,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
     var toP = Math.atan2(P.y - e.y, P.x - e.x);
     if ((kind === 'melee' || kind === 'heavy') && Math.abs(wrap(toP - e.face)) > 2.3) { mult *= 1.8; weak = true; }
   }
-  var crit = S.crit > 0 && Math.random() < S.crit;
+  var crit = (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
   var dealt = dmg * mult * mod('dmg');          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
@@ -1670,10 +1696,10 @@ function daze(e, dur) { e.state = 'recover'; e.t = 0; e.dur = dur; }
 /* ---------- player ---------- */
 function startAttack() {
   var p = P, a = p.atk;
-  if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % 3; else a.combo = 0;
+  if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % chainLen(); else a.combo = 0;
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
-  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; a.spin = false; a.bash = false;
-  if (p.mode === 'fight') { p.st -= 7; p.stDelay = 0.5; }
+  a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; a.spin = false; a.bash = false; a.smashed = false;
+  if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st); p.stDelay = 0.5; }
   p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
 }
 function releaseCharge() {
@@ -1690,10 +1716,16 @@ function stepData(a) {
 function stepData0(a) {
   var s;
   if (a.bash) return { wu: 0.06, ac: 0.1, rec: 0.3, arc: 1.6, reach: 30, blade: 20, dmg: 0.6, kb: 260, lunge: 160, stag: 45 };
-  if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
+  var pf = (P.mode === 'fight' && !bareHanded()) ? meleeProfile() : null;
+  if (pf && pf !== PROFILES.sword) {                     // from the weapon's profile: light hits, then the heavy last one; charged is heavier still
+    var last = a.combo === 3 || a.combo === pf.chain - 1, cc = a.combo === 3 ? (a.chg || 0) : 0, hv = last ? 1 : 0;
+    s = { wu: pf.wu * (1 + hv) * (1 + cc * 0.3), ac: pf.ac * (1 + hv * 0.3), rec: pf.rec * (1 + hv * 1.2), arc: pf.arc * (1 + hv * 0.3) + cc * (pf.motion === 'thrust' ? 0.2 : 1), reach: pf.reach * (1 + hv * 0.2) + cc * 8, blade: pf.blade * (1 + hv * 0.15) + cc * 4,
+      dmg: pf.dmg * (1 + hv) + 1.5 * cc, kb: pf.kb * (1 + hv) + 150 * cc, lunge: pf.lunge * (1 + hv * 0.6) + 60 * cc, stag: pf.stag * (1 + hv * 1.4) + 16 * cc, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak };
+  }
+  else if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
   else s = STEPS[a.combo];
   if (S.juice) return s;
-  return { wu: s.wu * 2.6, ac: s.ac, rec: s.rec * 2.2, arc: s.arc, reach: s.reach, blade: s.blade, dmg: s.dmg, kb: s.kb, lunge: 0, stag: s.stag };
+  return { wu: s.wu * 2.6, ac: s.ac, rec: s.rec * 2.2, arc: s.arc, reach: s.reach, blade: s.blade, dmg: s.dmg, kb: s.kb, lunge: 0, stag: s.stag, motion: s.motion, pierce: s.pierce, guardBreak: s.guardBreak };
 }
 function gapAhead(dir) {
   var g = 999;
@@ -1826,7 +1858,8 @@ function updatePlayer(dt) {
       var u = Math.min(1, a.t / sd.ac);
       var arc = a.spin ? 6.283 : sd.arc, half = arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
       var ang = a.dir - half * sign + arc * sign * u;
-      a.tr = { start: a.dir - half * sign, cur: ang, age: 0, reach: 9 + sd.blade, sign: sign, hot: a.combo === 3 && a.chg > 0.6 };
+      a.tr = { start: a.dir - half * sign, cur: ang, age: 0, reach: 9 + sd.blade, sign: sign, hot: a.combo === 3 && a.chg > 0.6, motion: sd.motion || 'swing', u: u };
+      if (sd.motion === 'smash' && S.juice && u > 0.85 && !a.smashed) { a.smashed = true; dust(p.x + Math.cos(a.dir) * 18, p.y + Math.sin(a.dir) * 18, 5); sfx('slam'); }
       if (p.mode === 'gather') {                      // tools hit trees, rocks and bushes, never enemies
         var hv = api.harvest, tl = TOOLS[p.tool], ti = itemOf('tool', p.tool), tpow = (ti ? Items.stats(ti).power : tl.dmg) * (api.powerMul ? api.powerMul(tl.good) : 1);
         var objs = hv && !(api.items && !ti) ? hv.list(p.x, p.y, 90) : [];   // no tool in the slot, nothing to swing
@@ -1836,10 +1869,10 @@ function updatePlayer(dt) {
           var ox = o.x - p.x, oy = o.y - p.y, od = Math.hypot(ox, oy);
           if (od <= sd.reach + (o.r || 8) + 2 && Math.abs(wrap(Math.atan2(oy, ox) - a.dir)) <= half + 0.12) {
             a.hit.push(o);
-            var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (a.combo >= 2 ? 1.5 : 1);
+            var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (heavyHit(a) ? 1.5 : 1);
             hv.hit(o, pw, right, tl.id);
             var sayWrong = !right && W.t - wrongToolAt > 300; if (sayWrong) wrongToolAt = W.t;
-            num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#d9d0c0', a.combo >= 2, !right);
+            num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#d9d0c0', heavyHit(a), !right);
             sfx(o.kind === 'stone' ? 'clink' : 'chop', right ? 1 : 0);
           }
         }
@@ -1849,7 +1882,10 @@ function updatePlayer(dt) {
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
         if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12)) {
           a.hit.push(e);
-          damageEnemy(e, sd.dmg * dmgMul('sword'), Math.atan2(dy, dx), sd.kb, sd.stag, a.combo >= 2 ? 'heavy' : 'melee');
+          critBonus = (!bareHanded() && meleeProfile().crit) || 0;
+          damageEnemy(e, sd.dmg * dmgMul('sword'), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0;
+          if (sd.guardBreak && e.guard) e.guard = 0;
+          if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
         }
       }
       if (a.t >= sd.ac) { a.ph = 'recover'; a.t = 0; }
@@ -1858,11 +1894,14 @@ function updatePlayer(dt) {
   if (a.tr) { if (a.ph === 'recover' || a.ph === 'none') a.tr.age += dt; if (a.tr.age > 0.18) a.tr = null; }
 
   // ranged
-  if (bow && (IN.lmb || IN.keys.KeyJ) && p.fireCd <= 0 && p.st >= 6 && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {
-    p.fireCd = 0.45; if (api.onShoot) api.onShoot(); p.fireT = 0.2; p.st -= 6; p.stDelay = 0.4;
+  var rg = bow ? rangedOf() : null;
+  if (bow && (IN.lmb || IN.keys.KeyJ) && p.fireCd <= 0 && p.st >= rg.R.st && p.roll.t <= 0 && p.hurtT <= 0 && a.ph === 'none' && (!api.canShoot || api.canShoot())) {
+    var RR = rg.R, thrownIt = RR.thrown ? rg.it : null;
+    p.fireCd = RR.cd; p.fireT = 0.2; p.st -= RR.st; p.stDelay = 0.4;
     var fa = rangedAngle();
     p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
-    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * 240, vy: Math.sin(fa) * 240, r: 3.5, dmg: dmgMul('bow'), owner: 'player', life: 1.0, ang: fa, pin: !!p.pinNext }); p.pinNext = false;
+    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * RR.speed, vy: Math.sin(fa) * RR.speed, r: RR.r, dmg: dmgMul('bow'), owner: 'player', life: RR.life, ang: fa, pin: !!p.pinNext, kind: RR.proj, stag: RR.stag, kb: RR.kb || 40, thing: thrownIt, spin: 0 }); p.pinNext = false;
+    if (api.onShoot) api.onShoot(thrownIt);                     // the page takes an arrow, a stone, or the thrown thing itself from the hand
     spark(p.x + Math.cos(fa) * 10, p.y + Math.sin(fa) * 10, 3, '#ffe9a0', 60);
     if (S.juice) { p.kx -= Math.cos(fa) * 30; p.ky -= Math.sin(fa) * 30; }
     sfx('shoot');
@@ -2132,11 +2171,12 @@ function updateProjs(dt) {
         for (var j = 0; j < W.enemies.length; j++) {
           var e = W.enemies[j];
           if (e.dead) continue;
-          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), 40, 8, 'proj'); if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, 1.6); e.pkx = e.pky = 0; num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } gone = true; hit = true; break; }
+          if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, 1.6); e.pkx = e.pky = 0; num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } gone = true; hit = true; break; }
         }
       }
     }
-    if (gone) { W.projs.splice(i, 1); if (!hit && pr.owner === 'player' && !pr.reflected && api.onArrowLand) api.onArrowLand(pr.x, pr.y); }
+    if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y); }
+    else if (pr.kind === 'throwaxe') pr.spin += dt * 22;
   }
 }
 function updateFx(dt) {
@@ -2370,7 +2410,7 @@ function bodyPose() {
     var amt0 = -3.4 * Math.min(1, a.t / 0.3), jit = a.t >= 1 ? Math.sin(W.t * 70) * 0.5 : 0;
     lx = Math.cos(p.face) * amt0 + jit; ly = Math.sin(p.face) * K * amt0 * 0.7; cr = 1.2 * Math.min(1, a.t / 0.3);
   } else if (a.ph !== 'none') {
-    var sd = stepData(a), amt, big = a.combo === 3 ? 1.7 : (a.combo === 2 ? 1.4 : 1);
+    var sd = stepData(a), amt, big = a.combo === 3 ? 1.7 : (heavyHit(a) ? 1.4 : 1);
     if (a.ph === 'windup') amt = -2.6 * big * Math.min(1, a.t / sd.wu);
     else if (a.ph === 'active') amt = (-2.6 + 6.2 * Math.min(1, a.t / sd.ac)) * big;
     else amt = 3.6 * big * Math.max(0, 1 - a.t / sd.rec);
@@ -2391,6 +2431,8 @@ function swordPose(dir) {
   } else if (a.ph !== 'none') {
     if (p.mode === 'gather') return chopPose(dir, a);
     var sd = stepData(a), half = sd.arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1, u;
+    if (sd.motion === 'thrust') return thrustPose(dir, a, sd);
+    if (sd.motion === 'smash') return chopPose(dir, a, sd);
     var pb = 0.45;
     if (a.ph === 'windup') u = -pb * (a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
     var ang = visAngle(a.dir - half * sign + sd.arc * sign * u, dir);
@@ -2420,8 +2462,17 @@ function swordPose(dir) {
 }
 // Gathering: the axe and pickaxe go up over the shoulder in the windup and come down onto the target; the knife
 // is a short stab forward. Returns the same shape as swordPose.
-function chopPose(dir, a) {
-  var p = P, sd = stepData(a), o = {}, u, sdn = Math.cos(a.dir) >= 0 ? 1 : -1, knife = TOOLS[p.tool].id === 'knife';
+// A thrust: the hand pulls back to the chest in the windup and drives straight out along the aim, the thing pointing the way
+function thrustPose(dir, a, sd) {
+  var o = {}, u, dx = Math.cos(a.dir), dy = Math.sin(a.dir) * K;
+  if (a.ph === 'windup') u = -(a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1 - Math.min(1, a.t / sd.rec) * 0.6;
+  var reach = u < 0 ? -3 * -u : 3 + 11 * Math.sin(Math.min(1, u) * Math.PI * 0.5);
+  o.hx = dx * (5 + reach); o.hy = -13 + dy * (5 + reach) * 0.7; o.ca = dx; o.sa = dy; o.len = sd.blade;
+  o.front = Math.sin(a.dir) >= -0.05; o.side = dx >= 0 ? 1 : -1; o.armSide = o.side; o.atk = true;
+  return o;
+}
+function chopPose(dir, a, smash) {
+  var p = P, sd = stepData(a), o = {}, u, sdn = Math.cos(a.dir) >= 0 ? 1 : -1, knife = !smash && TOOLS[p.tool].id === 'knife';
   if (a.ph === 'windup') u = -(a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
   var raise = u < 0 ? -u : 1, e = u < 0 ? 0 : 1 - (1 - u) * (1 - u), dx = Math.cos(a.dir), dy = Math.sin(a.dir) * K;
   if (knife) {
@@ -2432,7 +2483,7 @@ function chopPose(dir, a) {
     o.hx = u < 0 ? -sdn * 1 + (upX + sdn * 1) * raise : upX + (downX - upX) * e;
     o.hy = u < 0 ? -16 + (upY + 16) * raise : upY + (downY - upY) * e;
     var ang0 = Math.atan2(-0.95, -sdn * 0.3), ang1 = Math.atan2(dy + 0.45, dx * 0.9), ang = u < 0 ? ang0 : ang0 + wrap(ang1 - ang0) * e;
-    o.ca = Math.cos(ang); o.sa = Math.sin(ang); o.len = 15;
+    o.ca = Math.cos(ang); o.sa = Math.sin(ang); o.len = smash ? smash.blade : 15;
   }
   o.front = u < 0 || u < 0.3 || Math.sin(a.dir) >= -0.05; o.side = sdn; o.armSide = sdn; o.atk = true;
   return o;
@@ -2498,7 +2549,7 @@ function atkBody() {
   var sp = lookSpec(), st = ATK_STYLES[Math.round(sp.atkStyle)] || ATK_STYLES[0];
   if (st.spin && S.look !== 'sprite') st = { pull: st.pull, lunge: st.lunge, sq: st.sq, hop: st.hop, spin: 0 };
   if (P.mode === 'gather') st = { pull: 1, lunge: 1.5, sq: 0.12, hop: 0, spin: 0 };   // a chop: a small lean, no lunge or spin
-  var pw = sp.atkPower * (a.combo >= 2 ? 1.5 : 1), off = 0, sq = 0, hop = 0, dir = a.ph === 'charge' ? P.face : a.dir, u;
+  var pw = sp.atkPower * (heavyHit(a) ? 1.5 : 1), off = 0, sq = 0, hop = 0, dir = a.ph === 'charge' ? P.face : a.dir, u;
   if (a.ph === 'charge') { u = Math.min(1, a.t / 0.3); off = -st.pull * u; sq = -st.sq * 0.8 * u; }
   else {
     var sd = stepData(a);
@@ -2602,7 +2653,7 @@ function drawHeroWeapon(c, front) {
     c.lineCap = 'round';
     var heldIt = itemOf('held');
     var rest = a.ph === 'none', restLen = heldIt && rest ? Math.min(Items.KINDS[heldIt.kind].len * heldIt.size, heldIt.kind === 'axe' || heldIt.kind === 'pick' ? 12 : 15) : null;   // carried, a thing hangs short beside the leg
-    if (heldIt) { if (rest) { c.save(); c.translate(hx, hy); c.scale(0.85, 0.85); c.translate(-hx, -hy); } Items.draw(c, heldIt, hx, hy, ca, sa, rest ? restLen : (heldIt.kind === 'sword' ? len * heldIt.size : null), p.mode === 'gather' && a.ph !== 'none'); if (rest) c.restore(); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
+    if (heldIt) { if (rest) { c.save(); c.translate(hx, hy); c.scale(0.85, 0.85); c.translate(-hx, -hy); } Items.draw(c, heldIt, hx, hy, ca, sa, rest ? restLen : ((Items.KINDS[heldIt.kind].melee && p.mode === 'fight') ? len * heldIt.size : null), p.mode === 'gather' && a.ph !== 'none'); if (rest) c.restore(); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (p.mode === 'gather') { if (!api.items) drawToolShape(c, hx, hy, ca, sa, len, TOOLS[p.tool].id); if (front) lib.ell(c, hx, hy, 2.6, 2.6, HC.skin, 1.5); }
     else if (api.items) { if (!rest) { var fx2 = hx + ca * 4, fy2 = hy + sa * 4; c.strokeStyle = '#3a2a36'; c.lineWidth = 6; c.beginPath(); c.moveTo(hx, hy); c.lineTo(fx2, fy2); c.stroke(); c.strokeStyle = HC.coat; c.lineWidth = 3.6; c.stroke(); lib.ell(c, fx2, fy2, 3.4, 3.2, HC.skin, 1.5); } }   // no sword: a fist (at rest the figure's own hands hang)
     else {
@@ -2628,6 +2679,11 @@ function drawHeroWeapon(c, front) {
     }
   }
   if (spr && S.juice && a.tr && front === (Math.sin(a.dir) >= -0.3)) drawPixSlash(c);
+  else if (S.juice && a.tr && a.tr.motion === 'thrust' && p.mode === 'fight' && front === (Math.sin(a.dir) >= -0.3)) {
+    var tr2 = a.tr, fade2 = 1 - tr2.age / 0.18, ox2 = p.x + bp.lx, oy2 = p.y * K - 13 + bp.ly, ca2 = Math.cos(a.dir), sa2 = Math.sin(a.dir) * K, px2 = -sa2, py2 = ca2, r0 = tr2.reach * 0.35, r1 = tr2.reach * (0.5 + 0.5 * tr2.u) * HH.spec.slashSize, ww = 2.2 * HH.spec.slashWidth + 0.8;
+    c.beginPath(); c.moveTo(ox2 + ca2 * r0 + px2 * ww, oy2 + sa2 * r0 + py2 * ww); c.lineTo(ox2 + ca2 * r1, oy2 + sa2 * r1); c.lineTo(ox2 + ca2 * r0 - px2 * ww, oy2 + sa2 * r0 - py2 * ww); c.closePath();
+    var sh2 = HC.slash; c.fillStyle = 'rgba(' + parseInt(sh2.substr(1, 2), 16) + ',' + parseInt(sh2.substr(3, 2), 16) + ',' + parseInt(sh2.substr(5, 2), 16) + ',' + (0.5 * fade2) + ')'; c.fill();
+  }
   else if (S.juice && a.tr && p.mode === 'fight' && front === (Math.sin(a.dir) >= -0.3)) {
     var tr = a.tr, fade = 1 - tr.age / 0.18, n, steps = 16, reach = tr.reach * HH.spec.slashSize, inner = reach * (1 - HH.spec.slashWidth), ox = p.x + bp.lx, oy = p.y * K - 13 + bp.ly;
     c.beginPath();
@@ -2757,6 +2813,11 @@ function drawProj(c, pr) {
   if (pr.owner === 'enemy') {
     lib.ell(c, x, y, 4.4, 4.4, '#ffe9d0', 1.5, '#8a3a2a'); lib.ell(c, x, y, 2.2, 2.2, '#ff8a5a', 0);
     c.fillStyle = 'rgba(255,255,255,0.5)'; c.beginPath(); c.arc(x - pr.vx * 0.03, y - pr.vy * 0.03 * K, 2.6, 0, Math.PI * 2); c.fill();
+  } else if (pr.kind === 'stone') {
+    lib.ell(c, x, y, 2.8, 2.4, '#8a8c94', 1.2); c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.arc(x - 0.8, y - 0.8, 1, 0, 7); c.fill();
+  } else if (pr.thing && typeof Items !== 'undefined') {
+    var ta = pr.kind === 'throwaxe' ? pr.ang + pr.spin : pr.ang, tca = Math.cos(ta), tsa = Math.sin(ta) * K, tl = Items.KINDS[pr.thing.kind].len * pr.thing.size;
+    Items.draw(c, pr.thing, x - tca * tl * 0.5, y - tsa * tl * 0.5, tca, tsa, null);
   } else {
     // an arrow: shaft, iron head, two feathers
     var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K, px = -sa, py = ca, tx = x + ca * 8, ty = y + sa * 8, bx = x - ca * 8, by = y - sa * 8;

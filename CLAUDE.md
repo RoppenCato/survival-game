@@ -97,7 +97,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `hird-editor.html` | `hird.html` | Hird Editor: roll a hirdman, tune stats, traits, jobs, food and the claim stone |
 | `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
-| `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear |
+| `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
@@ -178,6 +178,16 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/start-loop.md`: the first hour against Valheim, Grounded and Enshrouded, our path from the wreck to the raft, what
   is missing, and the proposed start (smoke and cairn, the steading as the beginner base, finds, the first night, sitting
   and fishing, Brokk at the shore). A proposal, not decided.
+- `docs/weapons.md`: the weapon concept (2026-10-06, Robin: weapons that fight differently): six melee kinds (sword, axe, club,
+  seax, spear, Dane axe) with a motion each (swing, thrust, smash), reach, arc, pace, chain length and one thing of their own
+  (parry, guard break, stagger, crit, pierce, heavy), four ranged (bow, sling with stones from the bag, javelin and throwing
+  axe that are thrown and lie where they fall), and ranged ideas not built (harpoon, fire arrows, bola). `PROFILES` and
+  `RANGED` in `src/combat.js` hold the numbers; `Items.MELEE`/`RANGED` the kinds; the engine asks `api.items.weapon('sword')`
+  for the melee thing in hand and `('bow')` for the ranged one, calls `api.onShoot(thing)` for a thrown thing and
+  `api.onThrowLand(x, y, thing)` when it lands. The Combat Arena has a Weapons panel (kind and material; F swaps melee and
+  ranged); the game's Admin menu gives one copper weapon of each kind; the first hand weapon is the **wooden club** (`woodClub`),
+  not a stick sword. `node tools/visual/weapons.js` renders every swing in four directions; `tests/weapons.js` checks hits,
+  pierce, chains and throws (in `npm test`).
 - `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster); step 1 is built.
 - `docs/roadmap.md`: **Goal 1, "leave the island"** (Robin, 2026-10-05) is at the top: the chain from landing
   with nothing to a raft (tools, gathering, food with stamina, leather, a comfortable house with a rug, Brokk
@@ -466,7 +476,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   listed once you have first picked up its key (`seen`, saved) and not before. **There are no question marks**: an
   unknown recipe is simply absent (`known`, `dishKnown` for the hearth), and a quiet "Something new to make" toast
   marks a discovery.
-  Hand: flint axe, knife, pick, **stick sword** (2 wood), **stick bow** (3 wood, 2 fiber), 5 arrows. Bench: flint
+  Hand: flint axe, knife, pick, **wooden club** (2 wood; the stick sword is gone), **stick bow** (3 wood, 2 fiber), 5 arrows. Bench: flint
   sword, 15 arrows, wooden shield, leather helmet, tunic, trousers, boots, cloak, all made of **leather** (nine
   for the set). A tool made into an empty slot goes straight into your hand. Gear is worn in the
   clothing slots and turns a share of blows aside (`Items.stats().armor`, `Combat.api.armor`), up to 60%.
@@ -592,6 +602,19 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   its left. Tools use a chop (`chopPose`: up over the shoulder, down onto the target; the knife stabs) with no
   lunge, and every tool hit shows a damage number. The bow shoots drawn arrows (visual only; no arrow item yet).
   The meal buff is a round icon by the chart with a timer ring and a mouseover tooltip, not a text line.
+- **The recipe boards (2026-10-06, after Robin's reference):** the hearth, hand, workbench and shipwright boards are one
+  layout (`openInfo`, `drawInfo`): the list of what can be made on the left (scrolls with the wheel; a count of what is on the
+  way), the chosen thing on the right with its icon, tale (`infoText`), numbers (`infoStats`: health, top health, stamina,
+  lasts, healing; damage, chop, reach; what a worn thing turns aside), what it takes with have/need boxes, and a **Craft**
+  (Cook) button that fills as the first one is made (`infoProgress`); Enter crafts too. Leaving keeps the bars over the fire
+  and the hero. Building keeps its grid.
+- **Critters (2026-10-06):** butterflies, small birds and beetles live round the hero by day on open land (`critters`,
+  `critterTick`, `drawCritter`): they flutter, hop and crawl, keep away when you come close (a bird flies off for good) and
+  cannot be touched or hurt. Nothing of this is in the engine.
+- **The wreck cursor** frames what would go in yellow (red when it cannot). **Wolf eyes** at night glow where the animal's eyes
+  were drawn (`animal3D` records `H.eyes`; the engine copies them to `e.eyes`). **In the wild** only things of nature lie about
+  (fallen trees, nests, mushrooms, herbs): no runestones, cairns or dragon posts. **Villagers** (`folkSpec('villager')`) start
+  from the game's own hero look (matte, build, outline) with their own hair, beard, hat, clothes and colours.
 - **Food** (the reward-not-punish rule; stamina added 2026-10-05): `FOOD` gives each dish `heal` at once and, for
   `time` seconds, `bonus` on top health, `regen` health a second, `stam` on top stamina and `stamRegen` on how fast
   it returns (through `Combat.api.mods().stMax` and `.stam`; the engine's `maxSt()` and the longer stamina bar).

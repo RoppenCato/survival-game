@@ -518,7 +518,7 @@ __COMBAT__
     { id: 'torch', cat: 'supply', out: { stack: ['torch', 2] }, needs: { wood: 1, fiber: 2 }, at: 'hand', key: 'fiber' },
     { id: 'flintKnife', cat: 'tool', out: { item: ['knife', 'flint'] }, needs: { wood: 1, stone: 1 }, at: 'hand', key: 'stone' },
     { id: 'flintPick', cat: 'tool', out: { item: ['pick', 'flint'] }, needs: { wood: 3, stone: 3 }, at: 'hand', key: 'stone' },
-    { id: 'woodSword', cat: 'weapon', out: { item: ['sword', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },
+    { id: 'woodClub', cat: 'weapon', out: { item: ['club', 'wood'] }, needs: { wood: 2 }, at: 'hand', key: 'wood' },
     { id: 'woodBow', cat: 'weapon', out: { item: ['bow', 'wood'] }, needs: { wood: 3, fiber: 2 }, at: 'hand', key: 'fiber' },
     { id: 'arrows5', cat: 'supply', out: { arrows: 5 }, needs: { wood: 2, fiber: 1 }, at: 'hand', key: 'fiber' },
     { id: 'flintSword', cat: 'weapon', out: { item: ['sword', 'flint'] }, needs: { wood: 2, stone: 4, fiber: 1 }, at: 'bench', key: 'stone' },
@@ -787,7 +787,7 @@ __COMBAT__
   // The bag: 30 slots, 6 wide. The top row is the Fight bar and the second the Gather bar: each is the hotbar of its mode,
   // numbered 1 to 6, and `hand` says which slot of each is in the hand. The three rows below are the bag proper.
   var COLS = 6, ROWS = 5, SLOTS = COLS * ROWS, BAG0 = COLS * 2, STACK = 25, slots = [], held = null, pick = null;
-  var hand = { fight: 0, gather: 0 }, BAR_OF = { sword: 'fight', bow: 'fight', axe: 'gather', pick: 'gather', knife: 'gather' };
+  var hand = { fight: 0, gather: 0 }, BAR_OF = { sword: 'fight', axe: 'gather', club: 'fight', seax: 'fight', spear: 'fight', greataxe: 'fight', bow: 'fight', sling: 'fight', javelin: 'fight', throwaxe: 'fight', pick: 'gather', knife: 'gather' };
   function barBase(mode) { return mode === 'gather' ? COLS : 0; }
   function handSlot(mode) { return slots[barBase(mode) + hand[mode]]; }
   function handItem(mode) { var s = handSlot(mode); return s && s.kind === 'item' ? s.item : null; }
@@ -1479,13 +1479,13 @@ __COMBAT__
   Combat.api.items = {                    // what is in the hand: the chosen slot of the mode's bar
     held: function () { var P = hero(); return P.mode === 'fight' || P.mode === 'gather' ? handItem(P.mode) : null; },
     tool: function (i) { var it = handItem('gather'); return it && it.kind === TOOL_IDS[i] ? it : null; },
-    weapon: function (k) { var it = handItem('fight'); return it && it.kind === k ? it : null; }
+    weapon: function (k) { var it = handItem('fight'); if (!it) return null; var K2 = Items.KINDS[it.kind]; return (k === 'bow' ? K2.ranged : K2.melee) ? it : null; }   // 'sword' asks for the melee thing in hand, 'bow' for the ranged one
   };
   Combat.api.barSelect = barPress;
   Combat.api.barSlots = function (mode) { var b = barBase(mode); return { hand: hand[mode], slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, draw: function (c) { if (s.kind === 'item') Items.icon(c, s.item, 18); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; }) }; };
   function handSync() {                   // the engine's tool and weapon follow the hand
     var P = hero(), it = handItem('gather'), ti = it ? TOOL_IDS.indexOf(it.kind) : -1; if (ti >= 0) P.tool = ti;
-    var wf = handItem('fight'); P.weapon = wf && wf.kind === 'bow' ? 'ranged' : 'melee';
+    var wf = handItem('fight'); P.weapon = wf && Items.KINDS[wf.kind].ranged ? 'ranged' : 'melee';
   }
   function addItem(kind, n) {             // fills stacks of the same kind first, then empty slots; returns what did not fit
     var i, s, take; noteSeen(kind);
@@ -1795,6 +1795,7 @@ __COMBAT__
     { id: 'tpHamlet', name: 'Go to the hamlet', text: 'Stand on its green.' },
     { id: 'tpCave', name: 'Go to the cave', text: 'Stand at its mouth.' },
     { id: 'brokk', name: 'Brokk joins', text: 'Hildir’s stone stands and he is yours.' },
+    { id: 'weapons', name: 'Copper weapons', text: 'One of every kind into the bag: sword, axe, club, seax, spear, Dane axe, bow, sling, javelin, throwing axe.' },
     { id: 'back', name: 'Back', text: '' }
   ];
   function drawAdmin(c) {
@@ -1810,6 +1811,7 @@ __COMBAT__
     if (id === 'back') { adminOpen = false; return; }
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); return; }
     if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }
+    else if (id === 'weapons') { Items.MELEE.concat(Items.RANGED).forEach(function (k) { var w2 = Items.make(k, 'copper'); if (!addThing(w2)) dropThing(w2, P.x, P.y + 10); }); addItem('stone', 20); toast('Copper weapons, and stones for the sling'); }
     else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; toast('The chart knows the island'); }
     else if (id === 'dusk') { day.t = DUSK_AT + 1; }
     else if (id === 'dawn') { day.t = 0; day.n++; }
@@ -1893,8 +1895,16 @@ __COMBAT__
     for (i = 0; i < 3 && n > 0; i++) if (!quiver.slots[i]) { quiver.slots[i] = { kind: kind, n: Math.min(n, QCAP) }; n -= QCAP; }
     return Math.max(0, n);
   }
-  Combat.api.canShoot = function () { return quiverCount() > 0; };
-  Combat.api.onShoot = function () {
+  function rangedHand() { var it = handItem('fight'); return it && Items.KINDS[it.kind].ranged ? it : null; }
+  Combat.api.canShoot = function () { var it = rangedHand(); if (!it) return false; if (it.kind === 'bow') return quiverCount() > 0; if (Items.KINDS[it.kind].ammo) return (inv[Items.KINDS[it.kind].ammo] || 0) > 0; return true; };
+  Combat.api.onThrowLand = function (x, y, thing) { if (!isLand(x, y) && !dockAt(Math.floor(x / T), Math.floor(y / T))) { toast('The ' + thing.name.toLowerCase() + ' is lost in the water'); return; } dropThing(thing, x, y); };
+  Combat.api.onShoot = function (thrown) {
+    var it = rangedHand(); if (!it) return;
+    if (thrown) { var hs = barBase('fight') + hand.fight; if (slots[hs] && slots[hs].kind === 'item' && slots[hs].item === it) slots[hs] = null; recount(); save(); return; }   // the thing itself flies
+    if (Items.KINDS[it.kind].ammo) { takeItem(Items.KINDS[it.kind].ammo, 1); return; }
+    onShootArrow();
+  };
+  function onShootArrow() {
     var s = quiver.slots[quiver.sel]; if (!s) return; s.n--;
     if (s.n <= 0) { quiver.slots[quiver.sel] = null; for (var i = 0; i < 3; i++) if (quiver.slots[i]) { quiver.sel = i; break; } }
     save();
