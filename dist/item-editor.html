@@ -2737,6 +2737,7 @@ var PROPS = {
   stoneHearth: { b: [-26, -44, 26, 10], f: function (c, K, s) { stoneHearth(c, K, 0, 0, s); } },
   woodenWell: { b: [-18, -51, 40, 9], f: function (c, K, s) { c.save(); c.scale(0.75, 0.75); woodenWell(c, K, 0, 0, s); c.restore(); } },
   runestone: { b: [-22, -72, 40, 12], f: function (c, K, s) { runestone(c, K, 0, 0, s); } },
+  claimStone: { b: [-15, -50, 28, 9], f: function (c, K, s) { c.save(); c.scale(0.68, 0.68); runestone(c, K, 0, 0, s); c.restore(); } },   // a claim stone: a runestone a hirdman's height, raised to claim a place
   longhouse: { b: [-114, -136, 182, 33], f: function (c, K, s) { c.save(); c.scale(1.3, 1.3); longhouse(c, K, 0, 0, s); c.restore(); } },
   vikingTent: { b: [-38, -64, 38, 10], f: function (c, K, s) { vikingTent(c, K, 0, 0, s); } },
   palisade: { b: [-42, -56, 42, 8], f: function (c, K, s) { palisade(c, K, 0, 0, s); } },

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hird Editor</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:76ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto}
+#poses,#sheet{max-width:900px}
+canvas{display:block;width:100%;height:auto;border-radius:8px;background:#20262c;touch-action:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel{margin-top:12px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
+.group{display:flex;flex-wrap:wrap;gap:8px}
+button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
+button:hover{background:var(--btnh)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+.stat{margin:0 2px;font-size:.95rem;font-weight:600}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
+.sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
+textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--ink2)}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">&larr; Back to menu</a>
+  <h1>Hird Editor</h1>
+  <p class="lede">The people who join you. Roll a hirdman and see the figure, the stats and the traits that come out of the numbers; tune the ranges, the jobs, the food and the claim stone's reach; then press "Use in the game".</p>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="A hirdman"></canvas></div>
+      <section class="panel">
+        <div class="group"><button id="reroll">Roll another</button><button id="rollten">Roll ten (text below)</button></div>
+        <p class="stat" id="who"></p>
+        <p class="desc" id="desc"></p>
+        <textarea id="ten" spellcheck="false" aria-label="Ten rolls" style="min-height:70px"></textarea>
+      </section>
+    </div>
+    <div class="right">
+      <section class="panel"><h2>Stats: low and high of each roll</h2><div id="pstats"></div></section>
+      <section class="panel"><h2>Traits and looks</h2><div id="ptraits"></div></section>
+      <section class="panel"><h2>Jobs: seconds between yields</h2><div id="pjobs"></div>
+        <p class="desc">A job takes from the stores and gives to them. Rates are seconds of work; a hungry hirdman works at the hungry pace.</p></section>
+      <section class="panel"><h2>Food and the claim stone</h2><div id="pstead"></div>
+        <p class="desc">Reach is in tiles round the stone; each roofed room inside it adds the per-room figure.</p></section>
+      <section class="panel">
+        <h2>Settings as text</h2>
+        <textarea id="json" spellcheck="false" aria-label="Hird settings as text"></textarea>
+        <div class="group" style="margin-top:8px">
+          <button id="copy">Copy</button>
+          <button id="applyjson">Apply text</button>
+          <button id="give">Use in the game</button>
+          <button id="reset">Reset</button>
+        </div>
+        <p class="desc" id="jsonmsg">Copy this to keep a setup. "Use in the game" hands it to the game page on this browser.</p>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+__ART__
+__HIRD__
+(function () {
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), lib = GameArt.lib;
+  var KEY = 'hirdeditor1', D = JSON.parse(JSON.stringify(Hird.DEF));
+  try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && sv.stats) D = Hird.merge(Hird.DEF, sv); } catch (e) {}
+  var person = null, fig = null, clock = 0, sliders = [];
+  function fit() { var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4; if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); } }
+  fit(); window.addEventListener('resize', fit);
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} document.getElementById('json').value = JSON.stringify(D, null, 1); }
+  function rollOne() { person = Hird.roll(Math.random, D); fig = lib.makeFigure(Hird.figureSpec(person, lib.heroDef)); show(); }
+  function traitText(p) { return p.traits.length ? p.traits.map(function (id) { var t = Hird.traitOf(id, D); return t ? t.name + ' (' + t.text + ')' : id; }).join('; ') : 'No traits'; }
+  function show() { document.getElementById('who').textContent = person.name + ':  ' + Hird.describe(person, D); document.getElementById('desc').textContent = traitText(person); }
+  function slider(host, label, obj, key, min, max, step, idx) {
+    var row = document.createElement('label'); row.className = 'row'; var out = document.createElement('output'), inp = document.createElement('input');
+    var get = function () { return idx == null ? obj[key] : obj[key][idx]; }, set = function (v) { if (idx == null) obj[key] = v; else obj[key][idx] = v; };
+    inp.type = 'range'; inp.min = min; inp.max = max; inp.step = step; inp.value = get(); out.textContent = get();
+    inp.addEventListener('input', function () { set(+inp.value); out.textContent = inp.value; save(); });
+    row.appendChild(document.createTextNode(label)); row.appendChild(inp); row.appendChild(out); document.getElementById(host).appendChild(row);
+  }
+  function ui() {
+    ['pstats', 'ptraits', 'pjobs', 'pstead'].forEach(function (h) { document.getElementById(h).innerHTML = ''; });
+    for (var k in D.stats) { slider('pstats', Hird.STAT_NAMES[k] + ' low', D.stats, k, 1, 60, 1, 0); slider('pstats', Hird.STAT_NAMES[k] + ' high', D.stats, k, 1, 60, 1, 1); }
+    slider('ptraits', 'Trait chance', D, 'traitChance', 0, 1, 0.05); slider('ptraits', 'Two traits', D, 'twoTraits', 0, 1, 0.05); slider('ptraits', 'Beards', D, 'beardChance', 0, 1, 0.05);
+    slider('ptraits', 'Size low', D, 'scale', 0.8, 1.2, 0.01, 0); slider('ptraits', 'Size high', D, 'scale', 0.8, 1.2, 0.01, 1); slider('ptraits', 'Build low', D, 'bodyW', 0.7, 1.4, 0.01, 0); slider('ptraits', 'Build high', D, 'bodyW', 0.7, 1.4, 0.01, 1);
+    for (var j in D.jobs) if (D.jobs[j].rate > 0) slider('pjobs', D.jobs[j].name, D.jobs[j], 'rate', 10, 600, 5);
+    slider('pjobs', 'Hungry pace', D, 'hungryPace', 0, 1, 0.05);
+    slider('pstead', 'Meals a day', D, 'mealsPerDay', 0, 4, 1); slider('pstead', 'Stone reach (tiles)', D, 'territory', 5, 80, 1); slider('pstead', 'Per roofed room', D, 'perRoom', 0, 5, 0.5);
+    slider('pstead', 'Follow speed', D, 'followSpeed', 20, 120, 1); slider('pstead', 'Walk speed', D, 'walkSpeed', 10, 90, 1); slider('pstead', 'Follow gap', D, 'followGap', 10, 80, 1);
+    slider('pstead', 'Stone: stone', D.claimCost, 'stone', 0, 30, 1); slider('pstead', 'Stone: berries', D.claimCost, 'berries', 0, 20, 1);
+  }
+  document.getElementById('reroll').onclick = rollOne;
+  document.getElementById('rollten').onclick = function () { var out = []; for (var i = 0; i < 10; i++) { var p = Hird.roll(Math.random, D); out.push(p.name + ': ' + Hird.describe(p, D) + '. ' + traitText(p)); } document.getElementById('ten').value = out.join('\n'); };
+  document.getElementById('copy').onclick = function () { var t = document.getElementById('json'); t.select(); try { document.execCommand('copy'); document.getElementById('jsonmsg').textContent = 'Copied.'; } catch (e) {} };
+  document.getElementById('applyjson').onclick = function () { try { D = Hird.merge(Hird.DEF, JSON.parse(document.getElementById('json').value)); ui(); save(); rollOne(); document.getElementById('jsonmsg').textContent = 'Loaded.'; } catch (e) { document.getElementById('jsonmsg').textContent = 'That text could not be read.'; } };
+  document.getElementById('give').onclick = function () { try { localStorage.setItem('game.hird', JSON.stringify(D)); document.getElementById('jsonmsg').textContent = 'Given. Open the game (or reload it) to use it.'; } catch (e) {} };
+  document.getElementById('reset').onclick = function () { D = JSON.parse(JSON.stringify(Hird.DEF)); try { localStorage.removeItem('game.hird'); } catch (e) {} ui(); save(); rollOne(); };
+  var last = performance.now();
+  function frame(t) {
+    var dt = Math.min(0.05, (t - last) / 1000); last = t; clock += dt;
+    var ps = cv.width / 400; ctx.setTransform(ps, 0, 0, ps, 0, 0); ctx.fillStyle = '#8fc46a'; ctx.fillRect(0, 0, 400, 250);
+    ctx.fillStyle = 'rgba(20,40,20,0.2)'; ctx.beginPath(); ctx.ellipse(200, 190, 40, 12, 0, 0, 7); ctx.fill();
+    var a = clock * 0.7, vx = Math.cos(a), vy = Math.sin(a), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
+    var an = { phase: clock * 7, amt: 1, t: clock, lx: 0, ly: 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) };
+    ctx.save(); ctx.translate(200, 190); ctx.scale(3.2, 3.2); lib.figureD(ctx, 0, 0, dir, an, null, fig); ctx.restore();
+    // the stats as small bars under the figure
+    var k, i = 0; for (k in D.stats) { var v = person.stats[k], hi = D.stats[k][1], x = 60 + i * 60; ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x, 222, 50, 6); ctx.fillStyle = '#ffd34d'; ctx.fillRect(x, 222, 50 * Math.min(1, v / hi), 6); ctx.font = 'bold 6px system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(Hird.STAT_NAMES[k] + ' ' + v, x, 219); i++; }
+    ctx.font = 'bold 9px system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.lineWidth = 2.6; ctx.strokeStyle = '#2e1a10'; ctx.strokeText(person.name, 200, 24); ctx.fillText(person.name, 200, 24);
+    requestAnimationFrame(frame);
+  }
+  ui(); save(); rollOne(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

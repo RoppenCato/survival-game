@@ -97,6 +97,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `base-editor.html` | `base.html` | Base Editor: free building |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
 | `grass-editor.html` | `grass.html` | Grass Editor: swaying grass, its colours and the ground |
+| `hird-editor.html` | `hird.html` | Hird Editor: roll a hirdman, tune stats, traits, jobs, food and the claim stone |
 | `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
 | `song-editor.html` | `song.html` | Song Editor: the game's music, its instruments and songs; export .mid |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear |
@@ -161,7 +162,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/beasts.md`: the cards and rules for Robin's creatures from Norse myth and folklore (troll, bysen,
   shapeshifter, huldra, tomtar, näcken, draugr, mara, jötunn, valkyrie), and the ore-at-night mining idea. Robin's
   lore and mechanics are marked; the rest are suggestions, not decided.
-- `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster), not built.
+- `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster); step 1 is built.
 - `docs/roadmap.md`: **Goal 1, "leave the island"** (Robin, 2026-10-05) is at the top: the chain from landing
   with nothing to a raft (tools, gathering, food with stamina, leather, a comfortable house with a rug, Brokk
   the survivor who teaches the raft, the shipwright's bench on the shore, the second island), nine steps each
@@ -302,10 +303,25 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   to watch you within 110 units, and E gives one of two lines in their own voice (`FOLK_LINES`: Ragnar's men, the
   east, the troll, the hall in the south). They do not trade or fight. Coming within 420 marks the hamlet on the chart
   (`seen.hamlet`). `bubble(c, who)` and `drawFolk` draw them; Brokk uses the same bubble.
-- **The hird (design only, 2026-10-05):** `docs/hird.md` holds the concept for claiming a town (a claim stone and its
-  territory), how people join (Brokk, helped villagers, kin by boat, freed thralls, yielding raiders), what the town
-  needs (a bed, food in store, a fire), jobs at workplaces, the idle day, muster and crewing, with Robin's open
-  questions and a build order. Nothing of it is built.
+- **The hird (2026-10-06, step 1 built; concept in `docs/hird.md`):** **Robin decided:** a claim stone costs stone and
+  berries (the red for its runes); several stones, to expand and take places, but it must be a decision, so every stone
+  after the first needs a hirdman with you who stays as its **keeper**; no food means slow and sad, never leaving; they
+  can die but never at random (illness and the like later); Brokk is the first hirdman; muster at the stone now and from
+  the Jarl's high seat later (anything with `muster`); **the hird follows and works only inside your territory and on
+  raids, never in the open world** (hard to balance). `src/hird.js` (`Hird.DEF`) holds every number: stat ranges, traits,
+  jobs (`place`, `rate`, `takes`, `gives`), meals a day, the hungry pace, the stone's reach and growth, speeds, the claim
+  cost, names and looks; `Hird.roll(R)` makes a person, `figureSpec` their figure. The **Hird Editor** (`hird-editor.html`)
+  rolls people and tunes it all; "Use in the game" stores `game.hird`, merged over the defaults on load.
+  In the game: the **claim stone** piece (`claimStone` prop, the runestone at 0.68; `it.claim`) and the **toppled stone**
+  by the broken steading's well (`fallen`, drawn lying; E and 6 stone raise it: `raiseStone`). A raised stone has a
+  **reach** (`reachOf`: 25 tiles plus one per roofed room inside) drawn as a dotted ring on the chart, a name, and shows
+  "room for N, food for D days" when you stand near (`roomFor`: beds, and a roofed hearth per four; `foodDays` from
+  meals in chests inside the reach). Raising Hildir's stone makes **Brokk join** (`brokkJoin`: `npc` becomes `hird[0]`
+  with rolled stats). **E at a hirdman** toggles follow (only inside the territory; stepping out stops them), **E at a
+  workplace with a follower** gives the job (`assignTo`: workbench crafter, woodpile woodcutter, hearth cook, a stone its
+  keeper), **E at a stone** opens the **muster** board (click a name: comes or stays). Jobs yield into the chests inside the
+  reach every `rate` seconds, taking what they need (`hirdTick`); at dawn each hirdman eats a meal from the chests or is
+  `hungry` (half pace). A second stone needs a follower, who becomes its keeper. `hird` is saved (Brokk by flag).
 - **Comfort (step 6, 2026-10-05):** a closed room is worth 1 for its roof and 1 each for a hearth, a workbench, a
   bed and a rug in it, and up to 2 for furniture (chair, bench seat, table, chest): at most 7 (`comfortOf`, per room
   index; `baseComfort()` is the best room within 500 units of the camp, so the steading does not count). The dial

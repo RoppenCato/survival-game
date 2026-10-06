@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hird Editor</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:76ch}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto}
+#poses,#sheet{max-width:900px}
+canvas{display:block;width:100%;height:auto;border-radius:8px;background:#20262c;touch-action:none}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel{margin-top:12px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
+.group{display:flex;flex-wrap:wrap;gap:8px}
+button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
+button:hover{background:var(--btnh)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+.stat{margin:0 2px;font-size:.95rem;font-weight:600}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
+.sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
+textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--ink2)}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">&larr; Back to menu</a>
+  <h1>Hird Editor</h1>
+  <p class="lede">The people who join you. Roll a hirdman and see the figure, the stats and the traits that come out of the numbers; tune the ranges, the jobs, the food and the claim stone's reach; then press "Use in the game".</p>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="A hirdman"></canvas></div>
+      <section class="panel">
+        <div class="group"><button id="reroll">Roll another</button><button id="rollten">Roll ten (text below)</button></div>
+        <p class="stat" id="who"></p>
+        <p class="desc" id="desc"></p>
+        <textarea id="ten" spellcheck="false" aria-label="Ten rolls" style="min-height:70px"></textarea>
+      </section>
+    </div>
+    <div class="right">
+      <section class="panel"><h2>Stats: low and high of each roll</h2><div id="pstats"></div></section>
+      <section class="panel"><h2>Traits and looks</h2><div id="ptraits"></div></section>
+      <section class="panel"><h2>Jobs: seconds between yields</h2><div id="pjobs"></div>
+        <p class="desc">A job takes from the stores and gives to them. Rates are seconds of work; a hungry hirdman works at the hungry pace.</p></section>
+      <section class="panel"><h2>Food and the claim stone</h2><div id="pstead"></div>
+        <p class="desc">Reach is in tiles round the stone; each roofed room inside it adds the per-room figure.</p></section>
+      <section class="panel">
+        <h2>Settings as text</h2>
+        <textarea id="json" spellcheck="false" aria-label="Hird settings as text"></textarea>
+        <div class="group" style="margin-top:8px">
+          <button id="copy">Copy</button>
+          <button id="applyjson">Apply text</button>
+          <button id="give">Use in the game</button>
+          <button id="reset">Reset</button>
+        </div>
+        <p class="desc" id="jsonmsg">Copy this to keep a setup. "Use in the game" hands it to the game page on this browser.</p>
+      </section>
+    </div>
+  </div>
+</main>
+<script>
+var GameArt = (function () {
+'use strict';
+var W = 320, H = 200;
+
+function mk(w, h) {
+  if (typeof document !== 'undefined') { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  return global.__mk(w, h);
+}
+function rng(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+var hexCache = {};
+function hex(c) {
+  if (!hexCache[c]) hexCache[c] = [parseInt(c.substr(1, 2), 16), parseInt(c.substr(3, 2), 16), parseInt(c.substr(5, 2), 16)];
+  return hexCache[c];
+}
+
+/* ---------- shared world ---------- */
+var wall = { x0: 34, w: 96, base: 88 };
+var lamp = { x: 176, base: 104 };
+var tree = { x: 240, base: 118 };
+var state = { x: 150, y: 150, dir: 'down', moving: false, t: 0, night: false, moss: 0.55, treeAlpha: 1 };
+
+
+var R0 = rng(7);
+var tufts = [], flowers = [], patches = [], stones = [];
+(function () {
+  var i;
+  for (i = 0; i < 50; i++) tufts.push({ x: R0() * W, y: 24 + R0() * 172, v: R0() < 0.5 ? 0 : 1 });
+  for (i = 0; i < 16; i++) flowers.push({ x: 8 + R0() * 304, y: 36 + R0() * 156, c: (R0() * 3) | 0 });
+  for (i = 0; i < 16; i++) patches.push({ x: R0() * W, y: 30 + R0() * 170, rx: 14 + R0() * 22, ry: 7 + R0() * 10, l: R0() < 0.5 });
+  for (var sx = -4; sx < W + 12; sx += 13) {
+    for (var row = -1; row <= 1; row++) {
+      var cx = sx + (row === 0 ? 6 : 0) + (R0() * 4 - 2);
+      var cy = pathY(cx) + row * 9 + (R0() * 2 - 1);
+      stones.push({ x: cx, y: cy, rx: 5.5 + R0() * 2, ry: 3.6 + R0() * 1.2, v: (R0() * 3) | 0 });
+    }
+  }
+})();
+function pathY(x) { return 160 + 7 * Math.sin(x / 38); }
+
+/* =====================================================
+   STYLE A - chunky pixel art
+   ===================================================== */
+function Spr(w, h) { this.w = w; this.h = h; this.d = new Array(w * h).fill(null); }
+Spr.prototype.set = function (x, y, c) { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.d[y * this.w + x] = c; };
+Spr.prototype.get = function (x, y) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= this.w || y >= this.h) return null; return this.d[y * this.w + x]; };
+Spr.prototype.rect = function (x, y, w, h, c) { for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) this.set(x + i, y + j, c); };
+Spr.prototype.ell = function (cx, cy, rx, ry, c) {
+  for (var y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++)
+    for (var x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
+      var a = (x + 0.5 - cx) / rx, b = (y + 0.5 - cy) / ry;
+      if (a * a + b * b <= 1) this.set(x, y, c);
+    }
+};
+Spr.prototype.outline = function (c) {
+  var o = this.d.slice(), w = this.w, h = this.h;
+  for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+    if (o[y * w + x] !== null) continue;
+    var n = (x > 0 && o[y * w + x - 1] !== null) || (x < w - 1 && o[y * w + x + 1] !== null) ||
+            (y > 0 && o[(y - 1) * w + x] !== null) || (y < h - 1 && o[(y + 1) * w + x] !== null);
+    if (n) this.d[y * w + x] = c;
+  }
+  return this;
+};
+Spr.prototype.flip = function () {
+  var s = new Spr(this.w, this.h);
+  for (var y = 0; y < this.h; y++) for (var x = 0; x < this.w; x++) s.d[y * this.w + (this.w - 1 - x)] = this.d[y * this.w + x];
+  return s;
+};
+Spr.prototype.canvas = function () {
+  var cv = mk(this.w, this.h), cx = cv.getContext('2d'), id = cx.createImageData(this.w, this.h);
+  for (var i = 0; i < this.d.length; i++) {
+    var c = this.d[i];
+    if (c) { var rgb = hex(c); id.data[i * 4] = rgb[0]; id.data[i * 4 + 1] = rgb[1]; id.data[i * 4 + 2] = rgb[2]; id.data[i * 4 + 3] = 255; }
+  }
+  cx.putImageData(id, 0, 0);
+  return cv;
+};
+
+var PA = {
+  line: '#2b1d2e', grass1: '#79c24d', grass2: '#6bb243', grass3: '#93d45e', tuft: '#4a9a36', tuftL: '#9bd96a',
+  path1: '#c9b48e', path2: '#b19a72', path3: '#e0d0ab', pathLine: '#7d6a4a',
+  brass: '#e0a93a', brassD: '#a8741f', brassL: '#f6d878', iron: '#7b7790', ironD: '#55516a', ironL: '#9c98b4', rust: '#b8643a',
+  moss: '#62b43f', mossD: '#3d8a33', mossL: '#a2e460',
+  leaf1: '#58bd4a', leaf2: '#3a9a43', leaf3: '#8be05f', trunk: '#8f603c', trunkD: '#6d4529',
+  stone: '#8b7a68', stoneL: '#a6957f', stoneD: '#6b5b4d'
+};
+var CP = {
+  skin: '#ffd8b0', skinD: '#eeb48a', hair: '#b4602d', hairD: '#8f4a22', hairL: '#e08a4d',
+  coat: '#4fa8a4', coatD: '#3b8a87', vest: '#7a5236', pants: '#55466b', pantsD: '#41345a', boot: '#4a3329',
+  eye: '#2a1c2a', blush: '#ff9aa2', mouth: '#a04a3a', lens: '#a9e6ff', strap: '#6b4a35'
+};
+
+
+var sprA = null, mossA = [];
+
+var pcacheA = {};
+
+/* ---------- sprite-sheet characters (four directions, four-frame walk and attack) ----------
+   Each entry in SPRITES has a default spec (plain numbers and colours) and a build function
+   that turns a spec into one 48 x 48 frame with the feet at (24, 46).
+   pose: 'idle', 'walk' or 'atk'; f: frame 0..3.
+   In 'atk' frames the sword arm is left out (armSide -1 / 1 picks which one in the
+   front and back views) so the caller can draw the arm and blade at any angle.
+   The Sprite test page edits the spec live; setSprite() swaps it in. */
+var SPR_W = 48, SPR_H = 48, SPR_OX = 24, SPR_OY = 46;
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+function toHsl(c) {
+  var q = hex(c), r = q[0] / 255, g = q[1] / 255, b = q[2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), h = 0, s = 0, l = (mx + mn) / 2, d = mx - mn;
+  if (d > 0) {
+    s = d / (1 - Math.abs(2 * l - 1));
+    if (mx === r) h = ((g - b) / d) % 6; else if (mx === g) h = (b - r) / d + 2; else h = (r - g) / d + 4;
+    h *= 60; if (h < 0) h += 360;
+  }
+  return [h, s, l];
+}
+function fromHsl(h, s, l) {
+  h = ((h % 360) + 360) % 360; s = clamp01(s); l = clamp01(l);
+  var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r, g, b;
+  if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; } else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; } else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+  function h2(v) { v = Math.round((v + m) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
+  return '#' + h2(r) + h2(g) + h2(b);
+}
+function shade(c, d) { var q = toHsl(c); return fromHsl(q[0], q[1], q[2] + d); }
+
+var HERO_DEF = {
+  scale: 1, headW: 7.5, headH: 6.5, bodyW: 10, bodyH: 9, legH: 8, legW: 3, armL: 7, armW: 2, eyewear: 0, eyewearSize: 2, eyeH: 2, blush: 1, outline: 1,
+  walkRate: 1, bob: 1, stride: 3, armSwing: 1, lunge: 1, atkStyle: 1, atkPower: 1, bladeLen: 0.9, slashSize: 1.1, slashWidth: 0.2,
+  hue: 0, sat: 1, lum: 1,
+  col: { skin: '#f6cfa6', hair: '#8a4a22', coat: '#2f7f80', vest: '#5c4033', pants: '#27324a', boot: '#1c1a26', trim: '#d9a534',
+    lens: '#7fe3f2', eye: '#2a1a22', line: '#1b1626', blade: '#5fd4f2', slash: '#8fefff' }
+};
+function spritePalette(sp) {
+  function t(k) { var q = toHsl(sp.col[k]); return fromHsl(q[0] + sp.hue, q[1] * sp.sat, q[2] * sp.lum); }
+  var C = { skin: t('skin'), hair: t('hair'), coat: t('coat'), vest: t('vest'), pants: t('pants'), boot: t('boot'), belt: t('trim'),
+    lens: t('lens'), eye: t('eye'), line: sp.col.line, blade: t('blade'), slash: t('slash') };
+  C.skinD = shade(C.skin, -0.12); C.hairD = shade(C.hair, -0.09); C.hairL = shade(C.hair, 0.1); C.strap = shade(C.hair, -0.17);
+  C.coatD = shade(C.coat, -0.08); C.coatL = shade(C.coat, 0.08); C.pantsD = shade(C.pants, -0.06);
+  C.beltL = shade(C.belt, 0.18); C.rim = shade(C.belt, -0.06); C.lensL = shade(C.lens, 0.2);
+  C.bladeL = shade(C.blade, 0.3); C.slashL = shade(C.slash, 0.2); C.slashD = shade(C.slash, -0.2);
+  var sk = toHsl(C.skin); C.blush = fromHsl(8, Math.min(1, sk[1] + 0.1), sk[2] - 0.08); C.mouth = fromHsl(12, 0.45, Math.max(0.2, sk[2] - 0.38));
+  return C;
+}
+function buildHeroP(sp, C, dir, pose, f, armSide) {
+  var s = new Spr(SPR_W, SPR_H), cx = SPR_OX, B = SPR_OY, x, y;
+  var walk = pose === 'walk', atk = pose === 'atk';
+  var rx = sp.headW, ry = sp.headH, bodyW = Math.round(sp.bodyW), bodyH = Math.round(sp.bodyH), legH = Math.round(sp.legH), legW = Math.round(sp.legW);
+  var armL = Math.round(sp.armL), armW = Math.round(sp.armW), ew = Math.round(sp.eyewear), g = Math.round(sp.eyewearSize), eyeH = Math.round(sp.eyeH);
+  var bob = walk ? ((f === 1 || f === 3) ? Math.round(sp.bob) : 0) : (atk && (f === 0 || f === 2) ? -1 : 0);
+  var legTop = B - 2 - legH, bodyTop = legTop + 1 - bodyH - bob, hy = Math.round(legTop + 1 - bodyH - ry + 0.5) - bob;
+  var gy = hy - Math.round(ry * 0.8), eyeX = Math.round(rx * 0.47), mouthY = hy + Math.min(eyeH + 2, Math.round(ry - 2));
+  function headPx(hx, cb) {
+    for (y = Math.floor(hy - ry); y <= Math.ceil(hy + ry); y++) for (x = Math.floor(hx - rx); x <= Math.ceil(hx + rx); x++) {
+      var dx = x + 0.5 - hx, dy = y + 0.5 - hy;
+      if ((dx / rx) * (dx / rx) + (dy / ry) * (dy / ry) <= 1) cb(x, y, dx, dy);
+    }
+  }
+  // eyewear: 0 none, 1 goggles pushed up, 2 goggles worn, 3 round glasses, 4 square glasses, 5 shades, 6 monocle
+  var ecy = hy + 1 + eyeH / 2, erow = Math.round(ecy - 0.5);
+  function goggle(gx, gyy, r) { if (r < 1) return; s.ell(gx, gyy, r, r, C.rim); if (r >= 2) { s.ell(gx, gyy, r - 1, r - 1, C.lens); s.set(gx - 1, Math.round(gyy - 1), C.lensL); } }
+  function ring(gx, gyy, r, col) {
+    for (var yy = Math.floor(gyy - r); yy <= Math.ceil(gyy + r); yy++) for (var xx = Math.floor(gx - r); xx <= Math.ceil(gx + r); xx++) {
+      var dd = Math.hypot(xx + 0.5 - gx, yy + 0.5 - gyy); if (dd <= r && dd > r - 1) s.set(xx, yy, col);
+    }
+  }
+  function box(gx, gyy, r, col) {
+    var x0 = gx - r, x1 = gx + r - 1, y0 = Math.round(gyy - r), y1 = Math.round(gyy + r) - 1;
+    for (var yy = y0; yy <= y1; yy++) for (var xx = x0; xx <= x1; xx++) if (xx === x0 || xx === x1 || yy === y0 || yy === y1) s.set(xx, yy, col);
+  }
+  function band(xa, xb, row, col) { for (var xx = xa; xx <= xb; xx++) if (s.get(xx, row) !== null) s.set(xx, row, col); }
+  function hairCol(dx, dy) { return (dx * 0.5 + dy * 0.6 > ry * 0.43) ? C.hairD : C.hair; }
+
+  if (dir === 'left') {
+    var S = Math.round(sp.stride), st = walk ? (f === 0 ? S : (f === 2 ? -S : 0)) : (atk && f === 2 ? S : 0);
+    var sx = atk ? (f === 1 ? 1 : (f === 2 ? -Math.round(sp.lunge) : 0)) : 0, hx = cx - 1 + sx;
+    var liftB = st > 0 ? 1 : 0, liftF = st < 0 ? 1 : 0, bw = Math.max(4, bodyW - 2), bx0 = cx - Math.floor(bw / 2) + sx;
+    s.rect(cx - 1 + st, legTop, legW, legH - liftB, C.pantsD); s.rect(cx - 2 + st, B - 2 - liftB, legW + 1, 2, C.boot);
+    s.rect(cx - 2 - st, legTop, legW, legH - liftF, C.pants); s.rect(cx - 3 - st, B - 2 - liftF, legW + 1, 2, C.boot);
+    s.rect(bx0, bodyTop, bw, bodyH, C.coat); s.rect(bx0 + bw - 2, bodyTop, 2, bodyH, C.coatD);
+    s.rect(bx0, bodyTop + bodyH - 2, bw, 1, C.belt); s.rect(bx0, bodyTop + bodyH - 1, bw, 1, C.coatD);
+    if (!atk) { var ax = cx - 1 + (walk ? Math.round(st * sp.armSwing / Math.max(1, S)) * 1 : 0); s.rect(ax, bodyTop + 1, armW, armL, C.coatL); s.rect(ax, bodyTop + 1 + armL, armW, 2, C.skin); }
+    headPx(hx, function (px, py, dx, dy) {
+      var fringe = -ry * 0.27 + ((px % 3 === 0) ? 1 : 0);
+      if (dy <= fringe || dx >= 0.5 || (dx >= -2 && dy <= 1)) s.set(px, py, hairCol(dx, dy));
+      else s.set(px, py, dy > ry - 2.5 ? C.skinD : C.skin);
+    });
+    for (x = hx - 3; x <= hx - 1; x++) s.set(x, hy - Math.round(ry * 0.67), C.hairL);
+    var sy = hy - Math.round(ry * 0.53);
+    if (ew === 1) {
+      for (x = hx + 1; x <= hx + Math.ceil(rx); x++) { var qs = s.get(x, sy); if (qs === C.hair || qs === C.hairD) s.set(x, sy, C.strap); }
+      goggle(hx + Math.round(rx * 0.24), gy, g - 1); goggle(hx - eyeX, gy, g);
+    }
+    s.rect(hx - Math.round(rx * 0.6), hy + 1, 2, eyeH, C.eye); s.set(hx - Math.round(rx * 0.6), hy + 1, '#ffffff');
+    if (sp.blush) s.rect(hx - Math.round(rx * 0.82), hy + 1 + eyeH, 2, 1, C.blush);
+    s.set(hx - Math.round(rx * 0.7), mouthY, C.mouth);
+    var exS = hx - Math.round(rx * 0.6) + 1;
+    if (ew === 2) { band(exS, hx + Math.ceil(rx), erow, C.strap); goggle(exS, ecy, g); }
+    if (ew === 3) { band(exS, hx + 2, erow, C.rim); ring(exS, ecy, g + 0.5, C.rim); }
+    if (ew === 4) { band(exS, hx + 2, erow, C.line); box(exS, ecy, g, C.line); }
+    if (ew === 5) { band(exS, hx + 2, hy + 1, C.line); s.rect(exS - 2, hy + 1, 4, Math.max(2, g), C.line); s.set(exS - 1, hy + 1, C.lens); }
+    if (ew === 6) ring(exS, ecy, g + 0.5, C.rim);
+    if (ew === 1 || ew === 2) { s.ell(hx + 2, hy + 2, 2, 2, C.rim); s.set(hx + 1, hy + 1, C.beltL); }
+  } else {
+    var back = dir === 'up', bx = cx - Math.floor(bodyW / 2);
+    var lf = sp.stride > 0 ? 1 : 0, lL = walk && f === 0 ? lf : 0, lR = walk && f === 2 ? lf : 0, spd = atk && f === 2 ? 1 : 0;
+    var lxL = bx + 1, lxR = bx + bodyW - 1 - legW;
+    s.rect(lxL - spd, legTop, legW, legH - lL, C.pants); s.rect(lxL - spd, B - 2 - lL, legW, 2, C.boot);
+    s.rect(lxR + spd, legTop, legW, legH - lR, C.pants); s.rect(lxR + spd, B - 2 - lR, legW, 2, C.boot);
+    if (lxR > lxL + legW) s.rect(lxL + legW, legTop, lxR - lxL - legW, Math.min(2, legH), C.pantsD);
+    s.rect(bx, bodyTop, bodyW, bodyH, C.coat); s.rect(bx + bodyW - 2, bodyTop, 2, bodyH, C.coatD);
+    if (!back) {
+      var vw = Math.max(2, Math.round(bodyW * 0.4)); vw += (bodyW - vw) % 2;
+      s.rect(cx - vw / 2, bodyTop, vw, Math.max(1, bodyH - 2), C.vest);
+      for (y = bodyTop + 2; y < bodyTop + bodyH - 2; y += 2) s.set(cx - 1, y, C.belt);
+    }
+    s.rect(bx, bodyTop + bodyH - 2, bodyW, 1, C.belt); if (!back) s.rect(cx - 1, bodyTop + bodyH - 2, 2, 1, C.beltL);
+    s.rect(bx, bodyTop + bodyH - 1, bodyW, 1, C.coatD);
+    var sw = Math.round(sp.armSwing), aL = walk ? (f === 0 ? -sw : (f === 2 ? sw : 0)) : 0, aR = -aL;
+    if (!(atk && armSide < 0)) { s.rect(bx - armW, bodyTop + 1 + aL, armW, armL, C.coat); s.rect(bx - armW, bodyTop + 1 + armL + aL, armW, 2, C.skin); }
+    if (!(atk && armSide > 0)) { s.rect(bx + bodyW, bodyTop + 1 + aR, armW, armL, C.coatD); s.rect(bx + bodyW, bodyTop + 1 + armL + aR, armW, 2, C.skin); }
+    headPx(cx, function (px, py, dx, dy) {
+      var fringe = -ry * 0.27 + ((px % 4 === 0) ? 2 : ((px % 3 === 0) ? 1 : 0));
+      if (back || dy <= fringe || (Math.abs(dx) >= rx - 2 && dy <= ry * 0.4)) s.set(px, py, hairCol(dx, dy));
+      else s.set(px, py, dy > ry - 2 ? C.skinD : C.skin);
+    });
+    var hlx = cx - Math.round(rx * 0.6);
+    for (x = hlx; x <= hlx + 2; x++) s.set(x, hy - Math.round(ry * 0.67), C.hairL);
+    var by = hy - Math.round(ry * 0.4);
+    if (back && (ew === 1 || ew === 2)) for (x = cx - Math.ceil(rx); x <= cx + Math.ceil(rx); x++) { var qb = s.get(x, by); if (qb === C.hair || qb === C.hairD) s.set(x, by, C.strap); }
+    if (ew === 1) { s.rect(cx - 1, gy - 1, 2, 1, C.strap); goggle(cx - eyeX, gy, g); goggle(cx + eyeX, gy, g); }
+    if (!back) {
+      s.rect(cx - eyeX, hy + 1, 2, eyeH, C.eye); s.rect(cx + eyeX - 2, hy + 1, 2, eyeH, C.eye);
+      s.set(cx - eyeX, hy + 1, '#ffffff'); s.set(cx + eyeX - 2, hy + 1, '#ffffff');
+      if (sp.blush) { s.rect(cx - eyeX - 2, hy + 1 + eyeH, 2, 1, C.blush); s.rect(cx + eyeX, hy + 1 + eyeH, 2, 1, C.blush); }
+      s.set(cx - 1, mouthY, C.mouth); s.set(cx, mouthY, C.mouth);
+      var exL = cx - eyeX + 1, exR = cx + eyeX - 1;
+      if (ew === 2) { band(cx - Math.ceil(rx), cx + Math.ceil(rx), erow, C.strap); goggle(exL, ecy, g); goggle(exR, ecy, g); }
+      if (ew === 3) { band(exL, exR, erow, C.rim); ring(exL, ecy, g + 0.5, C.rim); ring(exR, ecy, g + 0.5, C.rim); }
+      if (ew === 4) { band(exL, exR, erow, C.line); box(exL, ecy, g, C.line); box(exR, ecy, g, C.line); }
+      if (ew === 5) { s.rect(cx - eyeX - 1, hy + 1, 2 * eyeX + 2, Math.max(2, g), C.line); s.set(cx - eyeX, hy + 1, C.lens); s.set(cx + 1, hy + 1, C.lens); }
+      if (ew === 6) { ring(exR, ecy, g + 0.5, C.rim); for (y = Math.round(ecy + g); y <= Math.round(ecy + g) + 3; y++) s.set(exR + g, y, C.rim); }
+    }
+  }
+  return sp.outline ? s.outline(C.line) : s;
+}
+
+var SPRITES = { hero: { name: 'Hero', def: HERO_DEF, build: buildHeroP } };
+var curSpr = null, pcacheP = {};
+function fillSpec(def, spec) {
+  var o = {}, k;
+  for (k in def) if (k !== 'col') o[k] = (spec && typeof spec[k] === 'number' && isFinite(spec[k])) ? spec[k] : def[k];
+  o.col = {};
+  for (k in def.col) o.col[k] = (spec && spec.col && /^#[0-9a-fA-F]{6}$/.test(spec.col[k])) ? spec.col[k].toLowerCase() : def.col[k];
+  return o;
+}
+function setSprite(id, spec) {
+  var e = SPRITES[id] || SPRITES.hero, sp = fillSpec(e.def, spec);
+  curSpr = { id: SPRITES[id] ? id : 'hero', build: e.build, spec: sp, pal: spritePalette(sp) };
+  curSpr.m = { ox: SPR_OX, oy: SPR_OY, w: SPR_W, h: SPR_H, shX: Math.round(sp.bodyW) / 2, shY: Math.round(sp.legH) + Math.round(sp.bodyH) - 1 };
+  pcacheP = {};
+  return sp;
+}
+function sprite() { if (!curSpr) setSprite('hero'); return curSpr; }
+function heroP(dir, pose, f, armSide) {
+  var cur = sprite(), as = pose === 'atk' && dir !== 'left' && dir !== 'right' ? (armSide < 0 ? -1 : 1) : 0;
+  var k = dir + pose + f + as;
+  if (!pcacheP[k]) {
+    var s = cur.build(cur.spec, cur.pal, dir === 'right' ? 'left' : dir, pose, f, as);
+    pcacheP[k] = (dir === 'right' ? s.flip() : s).canvas();
+  }
+  return pcacheP[k];
+}
+
+
+
+var dkA = null, wmA = null;
+
+
+/* =====================================================
+   STYLE B - smooth cartoon
+   ===================================================== */
+var LN = '#3a2a36';
+function pathRR(c, x, y, w, h, r) {
+  c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
+  c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h); c.lineTo(x + r, y + h);
+  c.quadraticCurveTo(x, y + h, x, y + h - r); c.lineTo(x, y + r); c.quadraticCurveTo(x, y, x + r, y); c.closePath();
+}
+function fs(c, fill, lw, stroke) {
+  c.fillStyle = fill; c.fill();
+  if (lw !== 0) { c.lineWidth = lw || 2; c.strokeStyle = stroke || LN; c.lineJoin = 'round'; c.stroke(); }
+}
+function rr(c, x, y, w, h, r, fill, lw, stroke) { pathRR(c, x, y, w, h, r); fs(c, fill, lw, stroke); }
+function ell(c, x, y, rx, ry, fill, lw, stroke) { c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); fs(c, fill, lw, stroke); }
+
+
+
+var mossB = [];
+(function () {
+  var r = rng(21), wx = wall.x0, b = wall.base, x, q, m;
+  for (x = wx + 3; x < wx + wall.w - 1; x += 3.6) {
+    if (r() < 0.3) continue;
+    var n = 0.5 + 0.5 * Math.sin(x * 0.31) * Math.cos(x * 0.11);
+    var len = 4 + n * 13 * (0.45 + r() * 0.8);
+    mossB.push({ k: 'drip', x: x, y: b - 47, len: len, thr: Math.min(0.95, (len / 18) * 0.6 + r() * 0.3) });
+  }
+  for (x = wx + 2; x < wx + wall.w; x += 5) mossB.push({ k: 'blob', x: x + r() * 3, y: b - 1.5 - r() * 2, r: 3 + r() * 3.6, thr: r() * 0.75 });
+  for (q = 0; q < 7; q++) {
+    var cx = wx + 8 + r() * 80, cy = b - 34 + r() * 22, th = 0.2 + r() * 0.7;
+    for (m = 0; m < 5; m++) mossB.push({ k: 'blob', x: cx + (r() - 0.5) * 12, y: cy + (r() - 0.5) * 8, r: 2 + r() * 3, thr: th + m * 0.03 });
+  }
+})();
+
+
+
+var canopyB = null;
+
+
+
+/* ---------- animated hero (smooth walk cycle, lean, squash, follow-through) ----------
+   Drawn from the current hero spec (setHero). Proportions are factors on the original figure,
+   so a spec of all ones is the original hero. The Sprite test page edits the spec live.
+   sway and stance only affect walking toward or away from the camera: sway is the side-to-side rock of the
+   body (1 is the original, which read as a waddle), stance is how far apart the feet land. */
+var HEROD_DEF = {
+  scale: 0.75, headW: 1, headH: 1, bodyW: 0.9, bodyH: 1, legL: 1, legW: 1, armL: 0.9, armW: 0.9, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 1, beard: 0,
+  walkRate: 1.4, bob: 1, stride: 1, armSwing: 1, sway: 0.25, stance: 0.8, lean: 1, atkStyle: 0, atkPower: 1, bladeLen: 1, slashSize: 1, slashWidth: 0.66,
+  hue: 0, sat: 1, lum: 1,
+  col: { skin: '#ffd8b0', hair: '#b4602d', coat: '#4fa8a4', vest: '#7a5236', pants: '#55466b', boot: '#4a3329', trim: '#e0a93a',
+    lens: '#a9e6ff', eye: '#2a1c2a', line: '#3a2a36', blade: '#eef3fb', slash: '#ffffff' }
+};
+var LEG_LEN = 7.3, curHero = null;
+function heroPalette(sp) {
+  function t(k) { var q = toHsl(sp.col[k]); return fromHsl(q[0] + sp.hue, q[1] * sp.sat, q[2] * sp.lum); }
+  var C = { skin: t('skin'), hair: t('hair'), coat: t('coat'), vest: t('vest'), pants: t('pants'), boot: t('boot'), trim: t('trim'),
+    lens: t('lens'), eye: t('eye'), line: sp.col.line, blade: t('blade'), slash: t('slash') };
+  C.skinD = shade(C.skin, -0.08); C.hairD = shade(C.hair, -0.09); C.hairL = shade(C.hair, 0.14); C.strap = shade(C.hair, -0.13);
+  C.coatD = shade(C.coat, -0.07); C.pantsD = shade(C.pants, -0.07); C.rim = shade(C.trim, -0.15); C.trimL = shade(C.trim, 0.17);
+  return C;
+}
+function setHero(spec) {
+  var sp = fillSpec(HEROD_DEF, spec);
+  curHero = { spec: sp, pal: heroPalette(sp), lift: (sp.legL - 1) * LEG_LEN };
+  return sp;
+}
+function hero() { if (!curHero) setHero(); return curHero; }
+// Other people are the same figure with their own spec. makeFigure(spec) gets one ready; figureD draws it like
+// playerD (feet at x, y), at its own scale.
+function makeFigure(spec) { var sp = fillSpec(HEROD_DEF, spec); return { spec: sp, pal: heroPalette(sp), lift: (sp.legL - 1) * LEG_LEN }; }
+function figureD(c, x, y, dir, an, pose, F) {
+  var keep = curHero; curHero = F;
+  c.save(); c.translate(x, y); c.scale(F.spec.scale, F.spec.scale);
+  try { playerD(c, 0, 0, dir, an, pose); } finally { c.restore(); curHero = keep; }
+}
+// People of the world, as changes on top of the hero's spec.
+var FOLK = {
+  dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 1.12, headH: 1.02, bodyW: 1.28, bodyH: 0.9, legL: 0.5, legW: 1.3, armL: 0.78, armW: 1.25, eyeSize: 0.85, blush: 1, beard: 1, walkRate: 1.7, stance: 1 },
+    col: { skin: '#f0c49c', hair: '#c8743a', coat: '#7d4a3a', vest: '#4f3b2c', pants: '#4a4038', boot: '#3a2a22', trim: '#b9b2a6' } }
+};
+function folkSpec(key, R) {
+  if (key === 'villager') {            // one of the people of a village: the hero's figure with its own hair, coat and build, from R
+    R = R || Math.random; var sp2 = fillSpec(HEROD_DEF, null), hair = ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a'], coat = ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a6a4a', '#4f5f7a', '#9a7a5a'], pants = ['#4a4038', '#5a4a3a', '#3f4a5a', '#6a5a48'];
+    sp2.scale = 0.92 + R() * 0.14; sp2.bodyW = 0.9 + R() * 0.3; sp2.headW = 0.95 + R() * 0.1; sp2.beard = R() < 0.4 ? 1 : 0; sp2.walkRate = 1.3;
+    sp2.col.hair = hair[Math.floor(R() * hair.length)]; sp2.col.coat = coat[Math.floor(R() * coat.length)]; sp2.col.pants = pants[Math.floor(R() * pants.length)]; sp2.col.vest = coat[Math.floor(R() * coat.length)]; sp2.col.skin = R() < 0.5 ? '#ffd8b0' : '#f0c49c';
+    return sp2;
+  }
+  var a = FOLK[key], sp = fillSpec(HEROD_DEF, null), k;
+  for (k in a.set) sp[k] = a.set[k];
+  for (k in a.col) sp.col[k] = a.col[k];
+  return sp;
+}
+
+function playerD(c, x, y, dir, an, pose) {
+  an = an || { phase: 0, amt: 0, t: 0, lx: 0, ly: 0, blink: 0, sq: 0 };
+  var H = hero(), sp = H.spec, C = H.pal, lift = H.lift, LN0 = LN;
+  LN = C.line;
+  var ph = an.phase, amt = an.amt, t = an.t;
+  var SK = C.skin, SKS = C.skinD, HAIR = C.hair, COAT = C.coat, VEST = C.vest, PANTS = C.pants, PANTSD = C.pantsD, BOOT = C.boot, BR = C.trim;
+  var run = an.run || 0;
+  var breathe = Math.sin(t * 2.2) * (1 - amt);
+  var bob = -Math.abs(Math.sin(ph)) * 1.0 * amt * (1 + 0.45 * run) * sp.bob + breathe * 0.4;
+  var headBob = -Math.abs(Math.sin(ph - 0.7)) * 0.7 * amt * (1 + 0.45 * run) * sp.bob + breathe * 0.5;
+  var sway = Math.sin(ph) * amt;
+  var side = dir === 'left' || dir === 'right', flip = dir === 'right';
+  var tq = side ? 0 : Math.max(-1, Math.min(1, an.turn || 0));   // three-quarter turn: -1 toward the left, 1 toward the right
+  var L = pose ? [pose.lx, pose.ly] : [an.lx || 0, an.ly || 0];
+  var lxl = (flip ? -L[0] : L[0]), lyl = L[1];
+  if (!side) lxl += Math.sin(ph) * amt * 0.6 * sp.sway;
+  var bw = sp.bodyW * (1 - 0.1 * Math.abs(tq)), bh = sp.bodyH, ew = Math.round(sp.eyewear), es = sp.eyewearSize, hipY = -9 - lift;
+  var legW = 4.4 * sp.legW, armW = 3.8 * sp.armW, armSeg = 5.2 * sp.armL, st = sp.stride;
+  // hand targets arrive in figure space; undo the upper-body lift and stretch so the hand lands on them
+  function loc(h) { return [((flip ? -h[0] : h[0]) - lxl) / bw, -9 + (h[1] - lyl + lift + 9) / bh]; }
+  function capsule(x1, y1, x2, y2, col, w) {
+    c.lineCap = 'round';
+    c.strokeStyle = LN; c.lineWidth = (w || 4.4) + 2.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+    c.strokeStyle = col; c.lineWidth = (w || 4.4); c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+  }
+  function armTo(shx, shy, hx, hy2, px, py) {
+    var dx = hx - shx, dy = hy2 - shy, d = Math.max(0.01, Math.hypot(dx, dy)), Ls = armSeg, ex, ey;
+    if (d >= 2 * Ls - 0.2) { ex = shx + dx / 2; ey = shy + dy / 2; }
+    else {
+      var hh = Math.sqrt(Ls * Ls - d * d / 4), nx = -dy / d, ny = dx / d;
+      if (nx * px + ny * py < 0) { nx = -nx; ny = -ny; }
+      ex = shx + dx / 2 + nx * hh; ey = shy + dy / 2 + ny * hh;
+    }
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = LN; c.lineWidth = armW + 2.2; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
+    c.strokeStyle = COAT; c.lineWidth = armW; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
+    ell(c, hx, hy2, 2.4, 2.4, SK, 1.4);
+  }
+  function armPose(shx, shy, h, px, py) { var q = loc(h); armTo(shx, shy, q[0], q[1], px, py); }
+
+  c.save(); c.translate(x, y);
+  if (flip) c.scale(-1, 1);
+  var sqK = an.sq || 0; c.scale(1 + 0.14 * sqK, 1 - 0.14 * sqK);
+
+  /* legs */
+  if (side) {
+    var legS = function (phi, col) {
+      var sw = Math.sin(phi), lf = Math.max(0, Math.cos(phi)) * amt;
+      var fx = -sw * 3.9 * amt * (1 + 0.3 * run) * st, fy = -1.7 - lf * 3.2 * (1 + 0.3 * run) * Math.min(1.4, st);
+      capsule(0.6, hipY, fx, fy, col, legW);
+      c.save(); c.translate(fx - 1.1, fy + 0.5); c.rotate(-lf * 0.35); ell(c, 0, 0, 3.5, 1.9, BOOT, 1.6); c.restore();
+    };
+    legS(ph + Math.PI, PANTSD); legS(ph, PANTS);
+  } else {
+    var dirS = dir === 'down' ? 1 : -1;
+    var legF = function (sd, phi, col) {
+      var sw = Math.sin(phi), lf = Math.max(0, Math.cos(phi)) * amt;
+      // the lifted foot swings in toward the centre line, like a real step seen from the front
+      var fx = sd * (3.3 * bw * sp.stance - lf * 0.9 * (1 - 0.5 * sp.sway)) + sw * tq * 1.8 * amt * st, fy = -1.7 + sw * dirS * (2.3 + 0.8 * run) * amt * st - lf * (2.6 + 0.8 * run) * Math.min(1.4, st);
+      capsule(sd * 3.2 * bw * (0.5 + 0.5 * sp.stance), hipY, fx, fy, col, legW);
+      ell(c, fx + sd * 0.4, fy + 0.5, 3.3, 1.9, BOOT, 1.6);
+    };
+    var swL = Math.sin(ph) * dirS, swR = Math.sin(ph + Math.PI) * dirS;
+    if (swL <= swR) { legF(-1, ph, PANTS); legF(1, ph + Math.PI, PANTS); } else { legF(1, ph + Math.PI, PANTS); legF(-1, ph, PANTS); }
+  }
+
+  /* upper body: lifted by the leg length, stretched about the hips */
+  c.save();
+  c.translate(lxl, (pose ? lyl : lyl + bob) - lift);
+  c.translate(0, -9);
+  var rot = side ? sway * 0.025 : sway * 0.04 * sp.sway;
+  c.rotate(rot);
+  c.scale((1 - 0.012 * breathe) * bw, (1 + 0.03 * breathe) * bh);
+  c.translate(0, 9);
+  var hy = -26 + (headBob - bob);
+  function head(hairFn, faceFn) {
+    c.save();
+    c.translate(0, hy + 9); c.scale(sp.headW / bw, sp.headH / bh); c.translate(0, -(hy + 9));
+    c.translate(0, hy); c.rotate(-rot * 1.6 + (side ? 0 : sway * 0.02 * sp.sway)); c.translate(0, -hy);
+    c.beginPath(); c.ellipse(0, hy, 10, 9, 0, 0, Math.PI * 2); c.fillStyle = SK; c.fill();
+    c.save(); c.clip();
+    c.fillStyle = SKS; c.fillRect(-12, hy - 12, 24, 24);
+    c.fillStyle = SK; c.beginPath(); c.ellipse(-1.6, hy - 1.6, 10, 9, 0, 0, Math.PI * 2); c.fill();
+    hairFn();
+    c.restore();
+    c.beginPath(); c.ellipse(0, hy, 10, 9, 0, 0, Math.PI * 2); c.lineWidth = 2; c.strokeStyle = LN; c.stroke();
+    faceFn();
+    c.restore();
+  }
+  var gOff = (headBob - bob) * -0.4 + Math.sin(ph - 1.6) * amt * 0.25;
+  function lensAt(gx, gy, r) {
+    ell(c, gx, gy, r, r, C.rim, 1.6);
+    ell(c, gx, gy, r * 0.64, r * 0.64, C.lens, 0);
+    ell(c, gx - r * 0.22, gy - r * 0.22, r * 0.22, r * 0.22, '#ffffff', 0);
+  }
+  function wire(x1, y1, x2, y2, col, w) { c.strokeStyle = col; c.lineWidth = w || 1.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); }
+  // eyewear: 0 none, 1 goggles pushed up, 2 goggles worn, 3 round glasses, 4 square glasses, 5 shades, 6 monocle
+  // xs: eye positions; back: x where the arm or strap ends (null in the front view)
+  function eyewear(xs, upXs, back) {
+    var ey = hy + 2.6, i, r;
+    if (ew === 1) { for (i = 0; i < upXs.length; i++) lensAt(upXs[i], hy - 8.2 + gOff, 3.6 * es); return; }
+    if (ew === 2) {
+      c.fillStyle = C.strap; if (back == null) c.fillRect(-9.3, ey - 1, 18.6, 2); else c.fillRect(xs[0], ey - 1, back - xs[0], 2);
+      for (i = 0; i < xs.length; i++) lensAt(xs[i], ey, 3.5 * es);
+    } else if (ew === 3 || ew === 4) {
+      r = 3.2 * es;
+      var col = ew === 3 ? C.rim : LN;
+      if (back == null) wire(xs[0] + r, ey, xs[1] - r, ey, col); else wire(xs[0] + r, ey, back, ey - 0.6, col);
+      for (i = 0; i < xs.length; i++) {
+        c.beginPath(); if (ew === 3) c.arc(xs[i], ey, r, 0, Math.PI * 2); else pathRR(c, xs[i] - r, ey - r * 0.85, r * 2, r * 1.7, 1);
+        c.fillStyle = 'rgba(255,255,255,0.22)'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = col; c.stroke();
+      }
+    } else if (ew === 5) {
+      r = 2.6 * es;
+      if (back == null) rr(c, -8, ey - r, 16, r * 2, 1.6, LN, 0); else { wire(xs[0], ey - r * 0.4, back, ey - r * 0.6, LN, 1.4); rr(c, xs[0] - 4, ey - r, 7, r * 2, 1.6, LN, 0); }
+      c.fillStyle = C.lens; for (i = 0; i < xs.length; i++) c.fillRect(xs[i] - 2, ey - r * 0.55, 2.2, 1);
+    } else if (ew === 6) {
+      r = 3.2 * es; var mx = xs[xs.length - 1];
+      c.beginPath(); c.arc(mx, ey, r, 0, Math.PI * 2); c.fillStyle = 'rgba(255,255,255,0.22)'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = C.rim; c.stroke();
+      if (back == null) wire(mx + r * 0.7, ey + r * 0.7, mx + r * 0.9, ey + r + 5, C.rim, 0.9);
+    }
+  }
+  var bl = 1 - (an.blink || 0) * 0.88;
+  function eye(ex) {
+    c.fillStyle = C.eye; c.beginPath(); c.ellipse(ex, hy + 2.6, 1.7 * sp.eyeSize, 2.4 * bl * sp.eyeSize, 0, 0, Math.PI * 2); c.fill();
+    if (bl > 0.5) { c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ex - 0.5 * sp.eyeSize, hy + 2.6 - sp.eyeSize, 0.7 * sp.eyeSize, 0, Math.PI * 2); c.fill(); }
+  }
+  function blush(bx) { if (!sp.blush) return; c.fillStyle = 'rgba(255,120,135,0.5)'; c.beginPath(); c.ellipse(bx, hy + 6.2, 2, 1.2, 0, 0, Math.PI * 2); c.fill(); }
+  function strap() { if (ew === 1) { c.fillStyle = C.strap; c.fillRect(-12, hy - 7, 24, 2.2); } else if (ew === 2 && dir === 'up') { c.fillStyle = C.strap; c.fillRect(-12, hy + 1.6, 24, 2); } }
+  function drawSheath() {
+    if (!pose || !pose.sheath) return;
+    var T, Hh;
+    if (side) { T = [-2, -8]; Hh = [8, -19]; } else if (dir === 'down') { T = [-7, -7]; Hh = [7, -23]; } else { T = [5, -8]; Hh = [-8, -19]; }
+    var ux = Hh[0] - T[0], uy = Hh[1] - T[1], ul = Math.hypot(ux, uy); ux /= ul; uy /= ul;
+    var px = -uy, py = ux;
+    capsule(T[0], T[1], Hh[0], Hh[1], '#7a5236', 3.0);
+    ell(c, T[0], T[1], 1.8, 1.8, BR, 1.2);
+    c.lineCap = 'round';
+    c.strokeStyle = LN; c.lineWidth = 4.8; c.beginPath(); c.moveTo(Hh[0] - px * 3.4, Hh[1] - py * 3.4); c.lineTo(Hh[0] + px * 3.4, Hh[1] + py * 3.4); c.stroke();
+    c.strokeStyle = C.trimL; c.lineWidth = 2.6; c.beginPath(); c.moveTo(Hh[0] - px * 3.4, Hh[1] - py * 3.4); c.lineTo(Hh[0] + px * 3.4, Hh[1] + py * 3.4); c.stroke();
+    capsule(Hh[0] + ux * 0.5, Hh[1] + uy * 0.5, Hh[0] + ux * 4.6, Hh[1] + uy * 4.6, '#8a5a3a', 2.8);
+    ell(c, Hh[0] + ux * 5.7, Hh[1] + uy * 5.7, 1.7, 1.7, BR, 1.2);
+  }
+  function flap(fx, ang, w) { c.save(); c.translate(fx, -9); c.rotate(ang); rr(c, -w / 2, -0.5, w, 6.2, 2.2, COAT, 1.5); c.restore(); }
+
+  if (side) {
+    var sw1 = Math.sin(ph) * amt;
+    if (pose && pose.far) armPose(0.8, -17, pose.far, 1, 0.5);
+    drawSheath();
+    flap(2, 0.3 * sw1 - (an.lvx || 0) * 0.004, 6);
+    rr(c, -5.5, -19, 11, 12, 4.5, COAT, 1.8);
+    rr(c, -0.5, -17, 5, 8, 2, VEST, 0);
+    rr(c, -5.5, -12, 11, 2.4, 1, BR, 1.2);
+    if (pose && pose.near) armPose(0, -17, pose.near, 0.6, 1);
+    else {
+      var aa = -Math.sin(ph) * 0.65 * amt * (1 + 0.35 * run) * sp.armSwing;
+      var rr0 = (9.3 - Math.max(0, Math.sin(aa)) * 1.9) * sp.armL;
+      var hx2 = -Math.sin(aa) * rr0, hy3 = -17 + Math.cos(aa) * rr0 - Math.max(0, Math.sin(aa)) * 1.2 - (1 - amt) * 0.4;
+      armTo(0, -17, hx2, hy3, 1, 0.3);
+    }
+    head(function () {
+      c.fillStyle = HAIR; c.fillRect(-12, hy - 12, 24, 11.5);
+      c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy + 1, 6.5, 8.5, 0, 0, Math.PI * 2); c.fill();
+      for (var i = 0; i < 3; i++) { c.beginPath(); c.arc(-8 + i * 3, hy - 1.5, 2.3, 0, Math.PI * 2); c.fill(); }
+      c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-2, hy - 1, 7.5, Math.PI * 1.15, Math.PI * 1.6); c.stroke();
+      strap();
+    }, function () {
+      eye(-4.5); blush(-7);
+      c.strokeStyle = '#9b4a3a'; c.lineWidth = 1.1; c.beginPath(); c.arc(-5.8, hy + 8.2, 1.4, 0.2 * Math.PI, 0.8 * Math.PI); c.stroke();
+      eyewear([-4.5], [3, -1.5], 4);
+      if (sp.beard) { c.beginPath(); c.moveTo(-9.6, hy + 3.4); c.quadraticCurveTo(-11.5, hy + 13, -5.5, hy + 17.5); c.quadraticCurveTo(0.5, hy + 14, 2.5, hy + 5); c.quadraticCurveTo(-3, hy + 7.5, -9.6, hy + 3.4); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = C.hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-6, hy + 9); c.lineTo(-5.4, hy + 14.5); c.moveTo(-2.4, hy + 9); c.lineTo(-3, hy + 13.5); c.stroke(); }
+    });
+  } else {
+    var sw2 = Math.sin(ph) * amt;
+    // arms swing opposite to the legs (same-side arm and leg moving together reads as a waddle)
+    var aL = -Math.sin(ph) * dirS_(dir) * amt * sp.armSwing, aR = -aL;
+    var hx0 = (dir === 'up' ? 8.4 : 9.4) - (1 - Math.min(1, sp.sway)) * 0.9, handY = -17 + 9 * sp.armL;
+    var armLf = function () { if (pose && pose.armL) armPose(-6.5, -17, pose.armL, -0.7, 1); else armTo(-6.5, -17, -hx0 + aL * 0.5 * sp.sway, handY + aL * 1.3 * (1 + 0.4 * run) - Math.max(0, aL) * 0.4, -1, 0.4); };
+    var armRf = function () { if (pose && pose.armR) armPose(6.5, -17, pose.armR, 0.7, 1); else armTo(6.5, -17, hx0 - aR * 0.5 * sp.sway, handY + aR * 1.3 * (1 + 0.4 * run) - Math.max(0, aR) * 0.4, 1, 0.4); };
+    // which arm is behind the body: both from the back, the far one when turned
+    var backL = dir === 'up' ? tq > -0.35 : tq < -0.35, backR = dir === 'up' ? tq < 0.35 : tq > 0.35;
+    if (backL && !(pose && pose.armL)) armLf();
+    if (backR && !(pose && pose.armR)) armRf();
+    if (dir === 'down') drawSheath();
+    var fsw = sw2 * 0.28 * Math.min(1, 0.25 + sp.sway);
+    flap(-5, -0.14 - fsw, 5.4); flap(5, 0.14 + fsw, 5.4);
+    rr(c, -7.5, -19, 15, 12, 4.5, COAT, 1.8);
+    if (dir === 'down') rr(c, -3 + tq * 2.4, -19, 6, 11, 2, VEST, 0);
+    else { rr(c, -5 - tq * 1.6, -18, 10, 8, 2.5, VEST, 1.4); ell(c, -tq * 1.6, -14, 1.6, 1.6, BR, 1); }
+    rr(c, -7.5, -12, 15, 2.5, 1, BR, 1.3);
+    if (dir === 'down') rr(c, -1.6 + tq * 2.8, -12.4, 3.2, 3.2, 1, C.trimL, 1.1);
+    if (dir === 'up') drawSheath();
+    if (!backL || (pose && pose.armL)) armLf();
+    if (!backR || (pose && pose.armR)) armRf();
+    if (dir === 'down') {
+      head(function () {
+        c.fillStyle = HAIR; c.fillRect(-12, hy - 12, 24, 10.5);
+        for (var i = -3; i <= 3; i++) { c.beginPath(); c.arc(i * 3.4, hy - 1.5, 2.3, 0, Math.PI * 2); c.fill(); }
+        c.beginPath(); c.ellipse(-9 - sw2 * 0.4, hy + 1, 2.5 + Math.max(0, tq) * 3.4, 6 + Math.max(0, tq) * 2, 0, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.ellipse(9 - sw2 * 0.4, hy + 1, 2.5 + Math.max(0, -tq) * 3.4, 6 + Math.max(0, -tq) * 2, 0, 0, Math.PI * 2); c.fill();
+        c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy - 1, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
+        strap();
+      }, function () {
+        var fo = tq * 3.3;                       // the face slides toward the side he is turned to
+        eye(-4 + fo); eye(4 + fo); if (tq < 0.3) blush(-6.6 + fo * (tq < 0 ? 0.4 : 1)); if (tq > -0.3) blush(6.6 + fo * (tq > 0 ? 0.4 : 1));
+        c.strokeStyle = '#9b4a3a'; c.lineWidth = 1.1; c.beginPath(); c.arc(fo * 1.15, hy + 7.4, 1.8, 0.1 * Math.PI, 0.9 * Math.PI); c.stroke();
+        eyewear([-4 + fo, 4 + fo], [-5 + fo, 5 + fo], null);
+        if (sp.beard) { c.beginPath(); c.moveTo(-9.2, hy + 3.6); c.quadraticCurveTo(-10, hy + 13, fo * 0.8, hy + 18.5); c.quadraticCurveTo(10, hy + 13, 9.2, hy + 3.6); c.quadraticCurveTo(5 + fo, hy + 7.6, fo, hy + 5.6); c.quadraticCurveTo(-5 + fo, hy + 7.6, -9.2, hy + 3.6); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = C.hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-3 + fo * 0.8, hy + 10); c.lineTo(-2.2 + fo * 0.8, hy + 15.5); c.moveTo(3 + fo * 0.8, hy + 10); c.lineTo(2.2 + fo * 0.8, hy + 15.5); c.stroke(); }
+      });
+    } else {
+      head(function () {
+        c.fillStyle = HAIR; c.fillRect(-12, hy - 12, 24, 24);
+        c.fillStyle = C.hairD; c.beginPath(); c.ellipse(3 + sw2 * 0.5 - tq * 3, hy + 4, 9, 7, 0, 0, Math.PI * 2); c.fill();
+        if (Math.abs(tq) > 0.05) { c.fillStyle = SK; c.beginPath(); c.ellipse((tq > 0 ? 1 : -1) * 10.6, hy + 3.6, 4.4 * Math.abs(tq), 5.2, 0, 0, Math.PI * 2); c.fill(); }   // a glimpse of cheek
+        c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
+        strap();
+      }, function () { if (sp.beard) { for (var bs = -1; bs <= 1; bs += 2) { c.beginPath(); c.ellipse(bs * 8.2, hy + 8.4, 2.6, 3.6, bs * 0.3, 0, Math.PI * 2); fs(c, HAIR, 1.4); } } });
+    }
+  }
+  c.restore();
+  c.restore();
+  LN = LN0;
+}
+function dirS_(dir) { return dir === 'down' ? 1 : -1; }
+
+/* ---------- creatures (monsters, bosses, critters) in the same smooth outlined style as the hero ----------
+   One spec drives five body plans. creatureD(c, x, y, s, H) draws creature H (from makeCreature; the current setCreature one if left out) with its feet at
+   (x, y); s = { t, move 0..1, phase, dir 1 or -1, look [x, y], state, k } where state is an enemy state from
+   src/combat.js ('idle', 'chase', 'windup', 'lunge', 'recover', 'stagger', 'stunned') and k is how far through it.
+   plan: 0 blob, 1 critter (four legs), 2 brute (upright), 3 floater, 4 crawler (many legs), 5 animal and 6 snake (see animal3D)
+   eyeStyle: 0 round, 1 glowing, 2 angry, 3 sleepy    mouth: 0 none, 1 line, 2 fangs, 3 maw
+   top: 0 none, 1 nubs, 2 horns, 3 antennae, 4 spikes, 5 gear    tail: 0 none, 1 stub, 2 long, 3 spiked
+   pattern: 0 none, 1 belly, 2 spots, 3 stripes    tell (how it warns before attacking): 0 swell, 1 shake, 2 rear up, 3 eye glow
+   behave: 0 lunger, 1 brute, 2 shooter, 3 grazer that runs away (which enemy AI drives it in the arena)
+   aggro: how close the hero must come before it reacts */
+var CREATURE_DEF = {
+  plan: 0, size: 1, bodyW: 1, bodyH: 1, head: 1, legLen: 1, legW: 1, legs: 6, armLen: 1,
+  eyes: 2, eyeStyle: 0, eyeSize: 1, mouth: 1, top: 0, tail: 0, pattern: 1,
+  bob: 1, stepRate: 1, wobble: 1, hover: 1, tell: 0, mark: 1,
+  behave: 0, speed: 1, windup: 0.55, lunge: 1, hp: 4, aggro: 80,
+  neck: 1, neckUp: 0.4, snout: 1, snoutW: 1, ears: 1, antlers: 0, antlerSize: 1, tusks: 0, hump: 0, mane: 0, hoof: 0, tailPale: 0, paleMuzzle: 0, snoutFlat: 0, fangs: 0, brow: 0,
+  hue: 0, sat: 1, lum: 1,
+  col: { body: '#7fb86a', belly: '#d9e8a8', accent: '#f1ead6', eye: '#2a1c2a', glow: '#ff6a3a', line: '#4a3326' }
+};
+var curCreature = null;
+function mixHex(a, b, t) {
+  var p = hex(a), q = hex(b), o = '#', i;
+  for (i = 0; i < 3; i++) { var v = Math.round(p[i] + (q[i] - p[i]) * t).toString(16); o += v.length < 2 ? '0' + v : v; }
+  return o;
+}
+// The animals of the first biome. Each is a set of changes on top of CREATURE_DEF.
+var ANIMALS = {
+  boar: { name: 'Wild boar', set: { plan: 5, bodyH: 1.15, head: 1.15, legLen: 0.75, legW: 1.1, neck: 0.6, neckUp: 0.05, snout: 1.25, ears: 1, tusks: 1, hump: 0.8, mane: 1, hoof: 1, snoutFlat: 1, brow: 1, tail: 2, pattern: 0, eyeSize: 0.8, tell: 1, speed: 1.25, lunge: 1.6, windup: 0.6, hp: 12, aggro: 70 },
+    col: { body: '#5b4636', belly: '#7a6350', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
+  deer: { name: 'Deer', set: { plan: 5, size: 1.05, bodyW: 0.95, bodyH: 0.9, head: 0.85, legLen: 1.45, legW: 0.75, neck: 1.3, neckUp: 0.95, snout: 1.05, snoutW: 0.8, ears: 3, antlers: 2, hoof: 1, tail: 1, tailPale: 1, pattern: 1, eyeSize: 0.9, behave: 3, speed: 1.7, stepRate: 1.3, hp: 5, aggro: 95 },
+    col: { body: '#a8713f', belly: '#ead9bd', accent: '#d9c9a6', eye: '#1e1418', glow: '#ffd34d' } },
+  bear: { name: 'Bear', set: { plan: 5, size: 1.5, bodyW: 1.1, bodyH: 1.3, head: 1.2, legLen: 0.8, legW: 1.6, neck: 0.6, neckUp: 0.2, snout: 0.9, snoutW: 1.05, ears: 2, hump: 1, tail: 1, pattern: 0, paleMuzzle: 1, fangs: 1, eyeSize: 0.75, tell: 2, speed: 0.9, lunge: 1.2, windup: 0.75, hp: 30, aggro: 85 },
+    col: { body: '#5a3d28', belly: '#b8946a', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
+  snake: { name: 'Snake', set: { plan: 6, size: 0.9, pattern: 2, fangs: 1, wobble: 1, speed: 0.9, lunge: 1.5, windup: 0.5, hp: 3, aggro: 45 },
+    col: { body: '#8a8f78', belly: '#d9d5bd', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
+  moose: { name: 'Moose', set: { plan: 5, size: 1.6, bodyW: 1.05, bodyH: 1.1, head: 1.1, legLen: 1.7, legW: 0.9, neck: 1, neckUp: 0.55, snout: 1.5, snoutW: 1.2, ears: 3, antlers: 3, antlerSize: 1.15, hump: 1.2, hoof: 1, tail: 1, pattern: 0, eyeSize: 0.75, tell: 1, lunge: 1.3, windup: 0.7, hp: 26, aggro: 70 },
+    col: { body: '#4f3b2c', belly: '#8a7a6a', accent: '#cdbb98', eye: '#1e1418', glow: '#ff5a3a' } },
+  troll: { name: 'Mountain troll', set: { plan: 7, size: 2.05, speed: 0.78, windup: 1.1, lunge: 0, hp: 40, aggro: 130, tell: 1 },
+    col: { body: '#6f7e66', belly: '#92a088', accent: '#5a4636', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824' } },
+  trollStone: { name: 'Stone troll', set: { plan: 7, size: 2.05, speed: 0.78, windup: 1.1, lunge: 0, hp: 40, aggro: 130, tell: 1 },
+    col: { body: '#8c8c92', belly: '#a6a6ac', accent: '#6e6e74', eye: '#8c8c92', glow: '#8c8c92', line: '#3a3a40' } },
+  wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.3, windup: 0.45, hp: 8, aggro: 100 },
+    col: { body: '#727982', belly: '#d3d7dc', accent: '#f1ead6', eye: '#3a2a10', glow: '#ffd34d' } }
+};
+// How each animal fights (read by botAI in combat.js through e.cfg.atk). The boar charges straight past you and turns
+// slowly; wolves circle at a distance and bite in turns; the adder strikes short and its bite lingers; the bear rears,
+// then a heavy swipe in front; the moose lowers its head and gores with a step, and turns slowly. The deer flees.
+var ATTACKS = {
+  boar: { kind: 'charge', windup: 0.6, dur: 0.55, speed: 330, from: 150, recover: 1.1, cd: 1.2, turn: 2.4 },
+  snake: { kind: 'lunge', windup: 0.5, dur: 0.14, speed: 330, near: 34, recover: 1.2, cd: 1.5, venom: 4, venomDmg: 2 },
+  troll: { kind: 'arc', windup: 1.1, dur: 0.4, reach: 36, arc: 2.4, hitAt: 0.35, step: 50, recover: 1.5, cd: 1.7, heavy: true, turn: 1.7 },
+  wolf: { kind: 'lunge', windup: 0.3, dur: 0.2, speed: 280, ring: 60, recover: 0.5, cd: 1.1, pack: true },
+  moose: { kind: 'arc', windup: 0.7, dur: 0.35, reach: 30, arc: 1.7, hitAt: 0.4, step: 120, recover: 0.9, cd: 1.3, turn: 2.6 },
+  bear: { kind: 'arc', windup: 0.9, dur: 0.3, reach: 26, arc: 2.1, hitAt: 0.35, step: 50, recover: 1.0, cd: 1.5, heavy: true }
+};
+function animalAttack(key) { return ATTACKS[key] || null; }
+function animalSpec(key) {
+  var a = ANIMALS[key] || ANIMALS.wolf, sp = fillSpec(CREATURE_DEF, null), k;
+  for (k in a.set) sp[k] = a.set[k];
+  for (k in a.col) sp.col[k] = a.col[k];
+  return sp;
+}
+// A creature ready to draw: its spec plus the colours worked out from it. creatureD takes one of these, so
+// several different animals can be on screen at once; without one it draws the creature set by setCreature.
+function makeCreature(spec) {
+  var sp = fillSpec(CREATURE_DEF, spec), C = {}, k;
+  for (k in sp.col) { var q = toHsl(sp.col[k]); C[k] = k === 'line' ? sp.col[k] : fromHsl(q[0] + sp.hue, q[1] * sp.sat, q[2] * sp.lum); }
+  return { spec: sp, pal: C };
+}
+function setCreature(spec) { curCreature = makeCreature(spec); return curCreature.spec; }
+function creature() { if (!curCreature) setCreature(); return curCreature; }
+
+/* ---------- animals: four-legged beasts and snakes, with real proportions, at any heading ----------
+   Used by creatureD for plan 5 (animal) and plan 6 (snake). Extra spec keys:
+   neck (length), neckUp (0 carried low like a boar, 1 held high like a deer), snout (length), snoutW (thickness),
+   ears: 0 none, 1 pointed, 2 round, 3 long    antlers: 0 none, 1 spikes, 2 deer, 3 moose
+   tusks 0/1, hump (shoulder hump, 0..1.5), mane 0/1 (bristles along the back),
+   tail: 0 none, 1 stub, 2 thin, 3 bushy    pattern: 0 plain, 1 pale belly, 2 spots, 3 stripes */
+/* An animal at any heading (s.ang, radians: 0 faces right, a quarter turn faces the camera). The animal is laid out
+   in its own space: f along its length (forward), sd across it, h up from the ground. pt() turns that to the
+   heading and flattens depth, so one drawing covers every direction and it can turn smoothly, like the ships.
+   Parts are drawn far to near: which legs, ears and antlers are behind the body depends on the heading. */
+function animal3D(c, x, y, s, H) {
+  var sp = H.spec, C = H.pal, LN0 = LN;
+  LN = C.line;
+  var ca = Math.cos(s.ang), sa = Math.sin(s.ang), KD = 0.62;
+  var t = s.t || 0, mv = s.move || 0, ph = s.phase || 0, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
+  var bw = sp.bodyW, bh = sp.bodyH, hd = sp.head, ll = sp.legLen, lw = 3 * sp.legW, T = Math.round(sp.tell), i, sd;
+  var tell = st === 'windup' ? k : 0, down = st === 'recover' || st === 'stunned', lunge = st === 'lunge';
+  var body = down ? mixHex(C.body, '#b6a592', 0.5) : (tell ? mixHex(C.body, C.glow, tell * 0.25) : C.body), bodyD = shade(body, -0.09);
+  function pt(f, d, h) { return [f * ca - d * sa, (f * sa + d * ca) * KD - h]; }
+  function depth(f, d) { return f * sa + d * ca; }          // how far toward the camera
+  function seg(p, q, col, w, bare) {
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    if (!bare) { c.strokeStyle = LN; c.lineWidth = w + 2.2; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1] + 0.01); c.stroke(); }
+    c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1] + 0.01); c.stroke();
+  }
+  function bent(pts, col, w) {
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (var pass = 0; pass < 2; pass++) { c.strokeStyle = pass ? col : LN; c.lineWidth = pass ? w : w + 2.2; c.beginPath(); for (var n = 0; n < pts.length; n++) { if (n) c.lineTo(pts[n][0], pts[n][1]); else c.moveTo(pts[n][0], pts[n][1]); } c.stroke(); }
+  }
+  function poly(pts, col, lwd) { c.beginPath(); for (var n = 0; n < pts.length; n++) { if (n) c.lineTo(pts[n][0], pts[n][1]); else c.moveTo(pts[n][0], pts[n][1]); } c.closePath(); fs(c, col, lwd == null ? 1.3 : lwd); }
+  function eyeAt(ex, ey, r) {
+    if (down) { c.strokeStyle = LN; c.lineWidth = 1.1; c.lineCap = 'round'; c.beginPath(); c.moveTo(ex - r, ey - r); c.lineTo(ex + r, ey + r); c.moveTo(ex + r, ey - r); c.lineTo(ex - r, ey + r); c.stroke(); return; }
+    c.fillStyle = tell ? mixHex(C.eye, C.glow, tell) : C.eye; c.beginPath(); c.ellipse(ex, ey, r, r * 1.1, 0, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ex - r * 0.3, ey - r * 0.4, r * 0.32, 0, Math.PI * 2); c.fill();
+  }
+  c.save(); c.translate(x + (tell && T === 1 ? Math.sin(t * 70) * 1.3 * tell : 0), y); c.scale(sp.size, sp.size);
+
+  if (Math.round(sp.plan) === 6) {
+    /* snake: a winding body on the ground, head raised; it coils back and gapes before it strikes */
+    var n = 16, pts = [], rear = tell * 5 + (lunge ? -2 : 0), reach = lunge ? 7 : -tell * 4, len = 2.5 * bw;
+    for (i = 0; i <= n; i++) {
+      var u = i / n, wv = Math.sin(i * 0.8 - ph * 1.3 - t * (mv ? 0 : 0.6)) * (2.6 + 1.4 * mv) * sp.wobble * (1 - u * 0.5), nk = Math.max(0, u - 0.72) / 0.28;
+      pts.push(pt(-n * len * 0.5 + i * len + nk * reach, wv / KD * 0.8, 2.2 * bh + nk * nk * (7 * sp.neck + rear)));
+    }
+    for (var pass = 0; pass < 2; pass++) for (i = 0; i < n; i++) {
+      var w2 = 4.6 * bh * (0.35 + 0.65 * Math.sin(Math.PI * Math.pow((i + 0.5) / n, 0.8)));
+      c.lineCap = 'round'; c.strokeStyle = pass ? body : LN; c.lineWidth = pass ? w2 : w2 + 2.2;
+      c.beginPath(); c.moveTo(pts[i][0], pts[i][1]); c.lineTo(pts[i + 1][0], pts[i + 1][1]); c.stroke();
+    }
+    var pat = Math.round(sp.pattern);
+    if (pat) { c.fillStyle = pat === 1 ? C.belly : bodyD; for (i = 2; i < n - 2; i++) { var a0 = pts[i]; c.beginPath(); c.ellipse(a0[0], a0[1], 1.4 * bh, 1.1 * bh, 0, 0, Math.PI * 2); c.fill(); } }
+    var hp = pts[n], gape = Math.max(tell, lunge ? 1 : 0);
+    c.save(); c.translate(hp[0], hp[1]); c.rotate(Math.atan2(sa * KD, ca)); if (ca < 0) c.scale(1, -1);
+    if (gape > 0.2) { poly([[1, 0], [6.5 * hd, 1 + 3.2 * gape], [2, 2.4]], '#7a2a34', 1.1); poly([[4.4 * hd, 0.4], [5 * hd, 2.6 * gape], [5.6 * hd, 0.4]], '#ffffff', 0.6); }
+    c.beginPath(); c.ellipse(2.4 * hd, -0.6, 4.4 * hd * sp.snout * 0.8 + 1, 2.8 * hd, 0, 0, Math.PI * 2); fs(c, body, 1.5);
+    if (Math.abs(sa) > 0.75) { eyeAt(3.2 * hd, -1.5, 0.85 * sp.eyeSize); eyeAt(3.2 * hd, 0.5, 0.85 * sp.eyeSize); } else eyeAt(3.2 * hd, -1.4, 0.95 * sp.eyeSize);
+    if (!down && (t * 1.3 % 1 < 0.35 || gape > 0)) { var tx = 6.4 * hd * sp.snout * 0.8 + 2.4; c.strokeStyle = '#c23a3a'; c.lineWidth = 0.9; c.lineCap = 'round'; c.beginPath(); c.moveTo(tx - 1.5, 0); c.lineTo(tx + 1.6, 0.2); c.lineTo(tx + 3.2, -1); c.moveTo(tx + 1.6, 0.2); c.lineTo(tx + 3.2, 1.3); c.stroke(); }
+    c.restore();
+    if (st === 'stunned') for (i = 0; i < 3; i++) { var sa2 = t * 5 + i * 2.09; ell(c, hp[0] + Math.cos(sa2) * 7, hp[1] - 9 + Math.sin(sa2) * 2.2, 1.4, 1.4, '#ffd34d', 0.9); }
+    if (tell && sp.mark) { ell(c, hp[0], hp[1] - 13, 4.4, 4.4, '#ffd34d', 1.5); c.fillStyle = LN; c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('!', hp[0], hp[1] - 10.4); }
+    c.restore(); LN = LN0; return;
+  }
+
+  /* four-legged animal */
+  var L = 9 * ll, rx = 12.5 * bw, ry = 6 * bh, hl = Math.max(2, rx - ry * 0.8), step = Math.abs(Math.sin(ph)) * mv, hum = Math.max(0, sp.hump);
+  var bodyH = L + ry * 0.82 + step * 1.1 * sp.bob - Math.sin(t * 2.2) * 0.25 * sp.wobble, lean = 0, rear = 0;
+  if (tell) { if (T === 2) rear = tell; else if (T === 0) { bodyH -= 2.4 * tell; lean = -2.5 * tell; } else lean = -1.5 * tell; }
+  if (lunge) lean = 4;
+  if (st === 'stagger') bodyH -= 2;
+  var chestH = bodyH + rear * hl * 0.66;                    // a bear rears up before it strikes
+  function leg(front, side, phase) {
+    var sw = Math.sin(ph + phase) * 0.55 * mv, lift = Math.max(0, Math.cos(ph + phase)) * 2.6 * mv, f0 = front ? rx * 0.62 : -rx * 0.66, d0 = side * ry * 0.5;
+    var hipH = (front ? chestH : bodyH) - ry * 0.35, ff = f0 + Math.sin(sw) * L * 0.85 + (lunge ? (front ? 4 : -4) : 0), fh = lift, kf = (f0 + ff) / 2 + (front ? 1.4 : -2.2) * ll, kh = (hipH + fh) / 2 - 0.5;
+    if (rear && front) { ff += 5 * rear; fh += 9 * rear; kf += 4 * rear; kh += 6 * rear; }
+    var far = (Math.abs(ca) > 0.3 ? side * ca : f0 * sa) < 0, foot = pt(ff + 0.7, d0, fh + 0.9);
+    bent([pt(f0, d0, hipH), pt(kf, d0, kh), pt(ff, d0, fh + 1.2)], far ? bodyD : body, lw * (far ? 0.92 : 1));
+    ell(c, foot[0], foot[1], lw * 0.62 + 0.6, 1.5, sp.hoof ? shade(C.eye, 0.05) : bodyD, 1.2);
+  }
+  // a leg is behind the body when it is on the far side of it; seen end-on, when it is at the far end
+  var legs = [[false, -1, Math.PI], [true, -1, 0], [false, 1, 0], [true, 1, Math.PI]].map(function (q) { var f0 = q[0] ? rx * 0.62 : -rx * 0.66; return { q: q, d: depth(f0, q[1] * ry * 0.5), behind: Math.abs(ca) > 0.3 ? q[1] * ca < 0 : f0 * sa < 0 }; });
+  legs.sort(function (p, q) { return p.d - q.d; });
+  function drawLegs(near) { legs.forEach(function (g) { if (g.behind !== near) leg(g.q[0], g.q[1], g.q[2]); }); }
+
+  function tail() {
+    var kind = Math.round(sp.tail), wag = Math.sin(t * 5) * (mv ? 1.2 : 0.6), tf = -hl - ry * 0.7 + lean, th = bodyH + ry * 0.25, p0 = pt(tf, 0, th);
+    if (kind === 1) ell(c, p0[0], p0[1], 2.6, 2.4, sp.tailPale ? C.belly : shade(body, 0.05), 1.3);
+    else if (kind === 2) { var p2 = pt(tf - 5, wag, th - 6); bent([p0, pt(tf - 3.5, wag * 0.5, th - 1), p2], bodyD, 1.5); ell(c, p2[0], p2[1] + 1, 1.5, 2, shade(C.eye, 0.05), 1); }
+    else if (kind === 3) { var p3 = pt(tf - 9, wag * 1.5, th - 8); seg(pt(tf + 2, 0, th), p3, body, 4.2); ell(c, p3[0], p3[1], 1.6, 1.6, C.belly, 0); }
+  }
+  function trunk() {
+    var r0 = pt(-hl + lean, 0, bodyH), c0 = pt(hl + lean, 0, chestH), hw = 2 * ry * (0.62 + 0.3 * hum), h0 = pt(hl * 0.05 + lean, 0, bodyH + ry * 0.42), h1 = pt(hl * 0.8 + lean, 0, chestH + ry * 0.42), pass, pat2 = Math.round(sp.pattern);
+    for (pass = 0; pass < 2; pass++) {                       // outlines first, then the fills, so hump and body merge
+      c.lineCap = 'round'; c.strokeStyle = pass ? body : LN;
+      if (hum > 0.05) { c.lineWidth = hw + (pass ? 0 : 3.6); c.beginPath(); c.moveTo(h0[0], h0[1]); c.lineTo(h1[0], h1[1] + 0.01); c.stroke(); }
+      c.lineWidth = 2 * ry + (pass ? 0 : 3.6); c.beginPath(); c.moveTo(r0[0], r0[1]); c.lineTo(c0[0], c0[1] + 0.01); c.stroke();
+    }
+    if (Math.abs(ca) > 0.5) seg(pt(-hl * 0.85 + lean, 0, bodyH - ry * 0.52), pt(hl * 0.85 + lean, 0, chestH - ry * 0.52), pat2 === 1 ? C.belly : bodyD, ry * 0.78 * Math.abs(ca), true);   // the underside, when seen from the side
+    if (pat2 === 2) { c.fillStyle = C.belly; [[-0.7, 0.35], [-0.3, 0.1], [0.1, 0.4], [0.5, 0.12], [-0.9, -0.05], [0.0, -0.2], [0.8, 0.5]].forEach(function (q) { var p = pt(q[0] * hl + lean, 0, bodyH + q[1] * ry); c.beginPath(); c.ellipse(p[0], p[1], 1.5, 1.2, 0, 0, Math.PI * 2); c.fill(); }); }
+    else if (pat2 === 3) { for (i = -2; i <= 2; i++) seg(pt(i * hl * 0.4 + lean, 0, bodyH + ry * 0.9), pt(i * hl * 0.4 + 1.5 + lean, 0, bodyH - ry * 0.1), bodyD, 1.8, true); }
+    seg(pt(-hl * 0.6 + lean, 0, bodyH + ry * 0.55), pt(hl * 0.35 + lean, 0, chestH + ry * 0.55), 'rgba(255,255,255,0.16)', ry * 0.36, true);
+    if (sp.mane) for (i = 0; i < 8; i++) { var mf = (-0.4 + i * 0.2) * hl + lean, mh = bodyH + ry + (i > 3 ? hum * ry * 0.3 : 0); seg(pt(mf, 0, mh - 1.2), pt(mf - 1.6, 0, mh + 2.6), bodyD, 1.5, true); }
+  }
+  /* neck and head */
+  var up = Math.max(0, Math.min(1, sp.neckUp)), na = -0.12 - up * 1.0 + (tell && T !== 2 ? 0.35 * tell : 0) + (lunge ? 0.3 : 0), nl = 6.5 * sp.neck * (0.7 + 0.5 * up);
+  var nf0 = rx * 0.72 + ry * 0.2 + lean, nh0 = chestH + ry * 0.25, hf = nf0 + Math.cos(na) * nl + 2.2 * hd, hh = nh0 - Math.sin(na) * nl + 1.2 * hd, nw = (6.2 + 2.2 * (1 - up)) * bh * 0.9;
+  var ht = 0.16 + (1 - up) * 0.2 + (tell && T !== 2 ? 0.2 * tell : 0), hr = 4.5 * hd, sl = 5.4 * sp.snout * hd, sw2 = 2.9 * hd * sp.snoutW, ears = Math.round(sp.ears), ant = Math.round(sp.antlers), a2 = sp.antlerSize || 1;
+  var HP = pt(hf, 0, hh), top = Math.min(HP[1] - hr, pt(hl, 0, chestH + ry)[1]) - (ant ? 13 * a2 : 5) - 4;
+  var headFar = sa < -0.3;
+  function out(side) { return [-sa * side, ca * KD * side]; }               // the way "sideways out from the head" points on screen
+  function ear(side) {
+    var b = pt(hf - hr * 0.45, side * hr * 0.6, hh + hr * 0.7), o = out(side), col = depth(0, side) < -0.01 ? bodyD : body;
+    if (ears === 1) poly([[b[0] - 2.2, b[1] + 1.2], [b[0] + o[0] * 1.3, b[1] - 5.6 * hd + o[1]], [b[0] + 2.2, b[1] + 0.8]], col);
+    else if (ears === 2) ell(c, b[0] + o[0] * 0.5, b[1] - 0.4 + o[1] * 0.5, 2.5 * hd, 2.5 * hd, col, 1.3);
+    else if (ears === 3) { var dx = o[0] - ca * 0.75, dy = o[1] - sa * KD * 0.75 - 0.55, dl = Math.hypot(dx, dy) || 1; c.save(); c.translate(b[0] + dx / dl * 3.2 * hd, b[1] + dy / dl * 3.2 * hd); c.rotate(Math.atan2(dy, dx)); ell(c, 0, 0, 4.2 * hd, 1.8 * hd, col, 1.3); c.restore(); }
+  }
+  function antler(side) {
+    if (!ant) return;
+    var b = pt(hf - hr * 0.1, side * hr * 0.45, hh + hr * 0.85), o = out(side), bk = 0.3 + 0.6 * Math.abs(ca), ux = o[0] - ca * bk, uy = o[1] * 0.4 - sa * KD * bk * 0.6, col = depth(0, side) < -0.01 ? shade(C.accent, -0.12) : C.accent;
+    if (Math.abs(ux) < 0.5) ux = (ux < 0 ? -0.5 : 0.5);      // never quite edge-on
+    c.save(); c.translate(b[0], b[1]); c.transform(-ux, -uy, 0, 1, 0, 0);   // the antler is drawn growing to the left, then laid along its own direction
+    if (ant === 1) bent([[0, 0], [-1.5, -6 * a2]], col, 1.4);
+    else if (ant === 2) {
+      bent([[0, 0], [-3 * a2, -6 * a2], [-2 * a2, -12 * a2], [2 * a2, -15 * a2]], col, 1.5);
+      bent([[-2.2 * a2, -4.4 * a2], [2.4 * a2, -7 * a2]], col, 1.3);
+      bent([[-2.8 * a2, -9 * a2], [-6.5 * a2, -12 * a2]], col, 1.3);
+      bent([[-2.1 * a2, -12 * a2], [-4.4 * a2, -16 * a2]], col, 1.2);
+    } else {
+      c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(-4 * a2, -3 * a2, -7 * a2, -2 * a2);
+      c.lineTo(-12 * a2, -5 * a2); c.lineTo(-9.5 * a2, -7 * a2); c.lineTo(-12 * a2, -10.5 * a2); c.lineTo(-8 * a2, -10.5 * a2); c.lineTo(-7.5 * a2, -14 * a2); c.lineTo(-4.6 * a2, -11 * a2); c.lineTo(-2.6 * a2, -13.5 * a2);
+      c.quadraticCurveTo(-1 * a2, -7 * a2, 1.2, -1); c.closePath(); fs(c, col, 1.3);
+    }
+    c.restore();
+  }
+  var ct = Math.cos(ht), stn = Math.sin(ht), sl2 = Math.max(0.5, sl + 1.2 - sw2), mh = hh - hr * 0.22;
+  function snoutBase() {            // the shape of the snout; the skull joins onto it
+    if (ant === 3) { var bl = pt(hf + hr * 0.3, 0, hh - hr * 1.05); ell(c, bl[0], bl[1], hr * 0.36, hr * 0.6, bodyD, 1.2); }          // the bell under a moose's chin
+    seg(pt(hf + hr * 0.4, 0, mh), pt(hf + hr * 0.3 + sl2 * ct, 0, mh - sl2 * stn), body, 2 * sw2);
+  }
+  function snoutFace() {            // what is painted on it: a pale end, nose, mouth, tusks or fangs
+    var tip = pt(hf + hr * 0.3 + sl2 * ct, 0, mh - sl2 * stn);
+    // a pale muzzle is the same shape with its front end coloured, not a separate part
+    if (sp.paleMuzzle) seg(pt(hf + hr * 0.3 + sl2 * ct * 0.5, 0, mh - sl2 * stn * 0.5), tip, C.belly, 2 * sw2 - 0.4, true);
+    var np = pt(hf + hr * 0.3 + (sl + 0.6) * ct, 0, mh + sw2 * 0.3 - (sl + 0.6) * stn);
+    if (sp.snoutFlat) ell(c, np[0], np[1] + sw2 * 0.3, 1.3 * Math.abs(ca) + sw2 * 0.8 * Math.abs(sa), sw2 * 0.8, shade(C.belly, -0.12), 1.2); else ell(c, np[0], np[1], 1.5 * hd, 1.25 * hd, C.eye, 0);
+    if (Math.abs(ca) > 0.45) { var m0 = pt(hf + hr * 0.9, 0, mh - sw2 * 0.55), m1 = pt(hf + hr * 0.3 + sl * 0.75, 0, mh - sw2 * 0.5 - sl * 0.75 * stn - ((tell || lunge) ? 0.8 : 0)); c.strokeStyle = LN; c.lineWidth = 1; c.lineCap = 'round'; c.beginPath(); c.moveTo(m0[0], m0[1]); c.lineTo(m1[0], m1[1]); c.stroke(); }
+    for (sd = -1; sd <= 1; sd += 2) {
+      if (depth(0, sd) < -0.3) continue;
+      var tb = pt(hf + hr * 0.3 + sl * 0.68, sd * sw2 * 0.8, mh - sw2 * 0.45 - sl * 0.68 * stn);
+      if (sp.tusks) poly([[tb[0] - 1.2, tb[1]], [tb[0] + 0.4, tb[1] - sw2 * 1.2], [tb[0] + 1.3, tb[1]]], C.accent, 1);
+      else if ((tell || lunge) && sp.fangs) poly([[tb[0] - 0.9, tb[1]], [tb[0], tb[1] + 2.2], [tb[0] + 0.9, tb[1]]], '#ffffff', 0.7);
+    }
+  }
+  // The neck is drawn before the body, so the body covers the outline at its base and the two join without a line
+  // between them; head() then paints the neck once more without an outline, over the body's own outline.
+  function neck() { seg(pt(nf0 - 2, 0, nh0 - 1), pt(hf - 1.5 * hd, 0, hh - 0.8 * hd), body, nw); }
+  function head() {
+    if (headFar) neck();
+    for (sd = -1; sd <= 1; sd += 2) if (depth(-hr * 0.3, sd * hr * 0.6) <= hr * 0.1) { antler(sd); ear(sd); }
+    if (sa < 0.5) snoutBase();
+    if (sa <= -0.35) snoutFace();
+    ell(c, HP[0], HP[1], hr * 1.04, hr * 0.94, body, 1.5);
+    seg(pt(nf0 - 3, 0, nh0 - 1.5), pt(hf - 0.6 * hd, 0, hh - 0.3 * hd), body, nw - 2.4, true);     // hides the seams where neck meets body and skull
+    if (sa >= 0.5) snoutBase();
+    if (sa > -0.35) {                // skull and snout are one shape: paint over the outline between them, then the face
+      seg(pt(hf + hr * 0.15, 0, mh + hr * 0.05), pt(hf + hr * 0.4 + sl2 * 0.4 * ct, 0, mh - sl2 * 0.4 * stn), body, Math.max(1, 2 * sw2 - 2.6), true);
+      snoutFace();
+    }
+    for (sd = -1; sd <= 1; sd += 2) {
+      if (depth(hr * 0.35, sd * hr * 0.62) <= -hr * 0.22) continue;
+      var e = pt(hf + hr * 0.32, sd * hr * 0.62, hh + hr * 0.5);
+      eyeAt(e[0], e[1], 0.95 * hd * sp.eyeSize);
+      if (sp.brow) { var b0 = pt(hf, sd * hr * 0.8, hh + hr * 1.0), b1 = pt(hf + hr * 0.55, sd * hr * 0.4, hh + hr * 0.68); c.strokeStyle = LN; c.lineWidth = 1.1; c.beginPath(); c.moveTo(b0[0], b0[1]); c.lineTo(b1[0], b1[1]); c.stroke(); }
+    }
+    for (sd = -1; sd <= 1; sd += 2) if (depth(-hr * 0.3, sd * hr * 0.6) > hr * 0.1) { ear(sd); antler(sd); }
+  }
+  if (!headFar) tail();
+  if (headFar) head(); else neck();
+  drawLegs(false);
+  trunk();
+  if (headFar) tail();
+  drawLegs(true);
+  if (!headFar) head();
+
+  if (st === 'stunned') for (i = 0; i < 3; i++) { var a = t * 5 + i * 2.09; ell(c, HP[0] + Math.cos(a) * 8, top + 6 + Math.sin(a) * 2.5, 1.5, 1.5, '#ffd34d', 0.9); }
+  if (tell && sp.mark) { ell(c, HP[0] * 0.6, top, 4.4, 4.4, '#ffd34d', 1.5); c.fillStyle = LN; c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('!', HP[0] * 0.6, top + 2.6); }
+  c.restore();
+  LN = LN0;
+}
+
+// The mountain troll, after the old illustrations: hunched, hairy, heavy, with arms that hang to the knees and a small
+// head sunk between the shoulders. Drawn facing right and turned by s.dir; s.state and s.k (progress) give the pose:
+// arms swing as it walks, rise over its head in the windup, and come down in the slam. Plan 7 of the creature spec.
+function trollD(c, x, y, s, H) {
+  var sp = H.spec, C = H.pal, sz = sp.size * 0.95, dir = s.dir < 0 ? -1 : 1, t = s.t || 0, mv = Math.min(1, s.move || 0), ph = s.phase || 0, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
+  var wind = st === 'windup' ? k : 0, slam = st === 'lunge', down = st === 'recover' || st === 'stunned' || st === 'stagger';
+  var bob = Math.sin(ph * 2) * 1.1 * mv + Math.sin(t * 1.6) * 0.5, lean = slam ? 5 : (wind ? -3 * wind : (down ? 2 : 0)), lw = 1.4 / sz;
+  var skin = C.body, belly = C.belly, hair = C.accent, line = C.line, stone = C.glow === C.body;
+  c.save(); c.translate(x, y); c.scale(sz * dir, sz); c.lineJoin = 'round'; c.lineCap = 'round';
+  c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(1, 1, 17, 5, 0, 0, 7); c.fill();
+  function limb(x0, y0, x1, y1, w, col) { c.strokeStyle = line; c.lineWidth = w + 2 * lw; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.strokeStyle = col; c.lineWidth = w; c.stroke(); }
+  function fist(fx, fy, col) { c.beginPath(); c.arc(fx, fy, 4.2, 0, 7); c.fillStyle = col; c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke(); }
+  function arm(far) {
+    var sx = far ? -1 : 5, sy = -33 + bob + lean * 0.2, sw = Math.sin(ph) * 5 * mv * (far ? -1 : 1), col = far ? mixHex(skin, '#000000', 0.18) : skin, fx, fy;
+    if (slam) { fx = 19 + (far ? -4 : 0); fy = -4; }
+    else if (wind) { fx = 4 + (far ? -5 : 3) + 2 * (1 - wind); fy = -8 - 48 * wind; }
+    else { fx = 13 + sw + (far ? -5 : 0); fy = -9 + (down ? 4 : 0); }
+    var ex = (sx + fx) / 2 + (wind ? -5 : 4), ey = (sy + fy) / 2 + 3;
+    limb(sx, sy, ex, ey, 6, col); limb(ex, ey, fx, fy, 5.4, col); fist(fx, fy, col);
+    c.strokeStyle = hair; c.lineWidth = 1; for (var q = 0; q < 4; q++) { var tt = 0.2 + q * 0.2; c.beginPath(); c.moveTo(sx + (ex - sx) * tt, sy + (ey - sy) * tt); c.lineTo(sx + (ex - sx) * tt - 2, sy + (ey - sy) * tt + 2.6); c.stroke(); }
+  }
+  [[-6, 1], [5, -1]].forEach(function (lg) {                                           // two stumpy legs with shaggy cuffs
+    var sw = Math.sin(ph) * 3.4 * mv * lg[1], lx = lg[0] + sw;
+    limb(lg[0] * 0.8, -14 + bob, lx, -3, 7, mixHex(skin, '#000000', lg[1] > 0 ? 0.12 : 0));
+    c.fillStyle = hair; c.beginPath(); c.moveTo(lx - 5, -2); c.lineTo(lx - 3, -6); c.lineTo(lx - 1, -2); c.lineTo(lx + 1, -6); c.lineTo(lx + 3, -2); c.lineTo(lx + 5, -5); c.lineTo(lx + 5, 1); c.lineTo(lx - 5, 1); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
+  });
+  arm(true);
+  // the hunched torso, a great hump behind the head
+  c.beginPath(); c.moveTo(-9, -13 + bob); c.lineTo(-14, -25 + bob); c.lineTo(-9, -37 + bob + lean * 0.1); c.lineTo(2 + lean * 0.4, -40 + bob); c.lineTo(9 + lean * 0.6, -33 + bob); c.lineTo(10, -21 + bob); c.lineTo(8, -13 + bob); c.closePath();
+  c.fillStyle = skin; c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke();
+  c.fillStyle = belly; c.beginPath(); c.ellipse(5 + lean * 0.3, -22 + bob, 4.2, 8, 0.1, 0, 7); c.fill();
+  c.fillStyle = hair; c.beginPath(); c.moveTo(-14, -25 + bob);                           // the shaggy mane down the back
+  for (var m = 0; m < 6; m++) { c.lineTo(-15 + m * 1.2 - (m % 2 ? 3 : 0), -28 - m * 2.2 + bob); c.lineTo(-11 + m * 1.6, -26 - m * 2.2 + bob); }
+  c.lineTo(-6, -38 + bob); c.lineTo(-9, -37 + bob); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
+  c.fillStyle = mixHex(skin, '#c0c4c8', 0.4); [[-10, -31], [-7, -35], [-12, -24]].forEach(function (p) { c.beginPath(); c.moveTo(p[0] - 2.4, p[1] + 1.6 + bob); c.lineTo(p[0] - 0.4, p[1] - 2.6 + bob); c.lineTo(p[0] + 2.4, p[1] + 1.4 + bob); c.closePath(); c.fill(); c.lineWidth = lw; c.stroke(); });   // stones grown into its back
+  // the head: small, low, with a hooked nose, heavy brow and two tusks
+  var hx = 9 + lean * 0.8, hy = -37 + bob + (wind ? -2 * wind : 0);
+  c.fillStyle = skin; c.beginPath(); c.ellipse(hx, hy, 6, 5.2, 0, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke();
+  c.fillStyle = hair; c.beginPath(); c.moveTo(hx - 6, hy - 1); for (var h = 0; h < 5; h++) { c.lineTo(hx - 6 + h * 2.6, hy - 6 - (h % 2) * 3); c.lineTo(hx - 4.5 + h * 2.6, hy - 3); } c.lineTo(hx + 4, hy - 2); c.closePath(); c.fill(); c.lineWidth = lw; c.stroke();
+  c.beginPath(); c.moveTo(hx + 5, hy - 1); c.lineTo(hx + 11, hy + 2.4); c.lineTo(hx + 5, hy + 3.4); c.closePath(); c.fillStyle = mixHex(skin, '#d09a8a', 0.3); c.fill(); c.stroke();   // the nose
+  c.strokeStyle = line; c.lineWidth = 1.6; c.beginPath(); c.moveTo(hx + 1, hy - 3); c.lineTo(hx + 7, hy - 2); c.stroke();                                                // brow
+  c.fillStyle = stone ? skin : (wind || slam ? C.glow : C.eye); c.beginPath(); c.arc(hx + 4, hy - 0.6, 1.4, 0, 7); c.fill();
+  c.fillStyle = '#efe6cf'; [[2, 4.4], [6, 4.4]].forEach(function (p) { c.beginPath(); c.moveTo(hx + p[0] - 1, hy + 3.6); c.lineTo(hx + p[0], hy + p[1] + 3); c.lineTo(hx + p[0] + 1, hy + 3.6); c.closePath(); c.fill(); });
+  arm(false);
+  c.restore();
+}
+function creatureD(c, x, y, s, H) {
+  H = H || creature();
+  if (Math.round(H.spec.plan) === 7) { trollD(c, x, y, s, H); return; }
+  if (Math.round(H.spec.plan) >= 5) {          // animals: without a heading, face straight left or right
+    if (s.ang == null) { var s3 = {}, k3; for (k3 in s) s3[k3] = s[k3]; s3.ang = s.dir < 0 ? Math.PI : 0; s = s3; }
+    animal3D(c, x, y, s, H); return;
+  }
+  var sp = H.spec, C = H.pal, LN0 = LN;
+  LN = C.line;
+  var t = s.t || 0, mv = s.move || 0, ph = s.phase || 0, dir = s.dir < 0 ? -1 : 1, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
+  var look = s.look || [1, 0], lkx = look[0] * dir, lky = look[1];
+  var plan = Math.round(sp.plan), bw = sp.bodyW, bh = sp.bodyH, hd = sp.head, ll = sp.legLen, lw = 3.4 * sp.legW, T = Math.round(sp.tell);
+  var tell = st === 'windup' ? k : 0, down = st === 'recover' || st === 'stunned', lunge = st === 'lunge';
+  var bodyCol = down ? mixHex(C.body, '#b6a592', 0.55) : (tell ? mixHex(C.body, C.glow, tell * (T === 3 ? 0.12 : 0.55)) : C.body);
+  var bodyD = shade(bodyCol, -0.09), i;
+  var sx = 1, sy = 1 + Math.sin(t * 2.4) * 0.03 * sp.wobble, jx = 0, lift = 0, rot = 0;
+  if (tell) {
+    if (T === 0) { sx *= 1 + 0.24 * tell; sy *= 1 - 0.22 * tell; }
+    else if (T === 1) { jx = Math.sin(t * 70) * 1.5 * tell; sy *= 1 - 0.06 * tell; }
+    else if (T === 2) { lift = 4 * tell; rot = -0.3 * tell; sy *= 1 + 0.1 * tell; }
+    else { sx *= 1 + 0.05 * Math.sin(t * 30) * tell; }
+  }
+  if (lunge) { sx *= 0.84; sy *= 1.2; rot = 0.2; }
+  if (st === 'stagger') { sx *= 1.2; sy *= 0.8; }
+  function capsule(x1, y1, x2, y2, col, w) {
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = LN; c.lineWidth = w + 2.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+    c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+  }
+  function bent(pts, col, w) {
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    for (var pass = 0; pass < 2; pass++) {
+      c.strokeStyle = pass ? col : LN; c.lineWidth = pass ? w : w + 2.2; c.beginPath();
+      for (var n = 0; n < pts.length; n++) { if (n) c.lineTo(pts[n][0], pts[n][1]); else c.moveTo(pts[n][0], pts[n][1]); }
+      c.stroke();
+    }
+  }
+  function tri(x1, y1, x2, y2, x3, y3, col) { c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.lineTo(x3, y3); c.closePath(); fs(c, col, 1.3); }
+
+  c.save(); c.translate(x + jx, y); c.scale(dir * sp.size, sp.size);
+
+  /* body plan: B is the body ellipse, F the face, TOP where horns sit, TL where a tail starts, HD a separate head */
+  var B, F, TOP, TL = null, HD = null, step = Math.abs(Math.sin(ph)) * mv, bobY = step * 1.2 * sp.bob;
+  if (plan === 1) {
+    var hipY = -(5 * ll);
+    B = { x: 0, y: hipY - 5 * bh - bobY, rx: 10 * bw, ry: 6 * bh };
+    HD = { x: B.rx * 0.8 + 2.5 * hd, y: B.y - 2.5 * bh - 1.5 * hd, r: 5.4 * hd };
+    F = { x: HD.x + 1.2, y: HD.y, w: HD.r * 1.1 }; TOP = { x: HD.x - 0.5, y: HD.y - HD.r, w: HD.r * 0.7 }; TL = { x: -B.rx + 1.5, y: B.y - 1 };
+    [[-3.5, Math.PI, 1], [4, 0, 1], [-5.5, 0, 0], [6, Math.PI, 0]].forEach(function (q) {
+      var p2 = ph + q[1], hx = q[0] * bw, fx = hx + Math.sin(p2) * 3.2 * mv, fy = -Math.max(0, Math.cos(p2)) * 2.4 * mv;
+      capsule(hx, hipY + 1 - bobY, fx, fy - 1, q[2] ? bodyD : bodyCol, lw); ell(c, fx + 0.8, fy - 0.6, 2.6, 1.6, bodyD, 1.3);
+    });
+  } else if (plan === 2) {
+    var hip = -(5 * ll);
+    B = { x: 0, y: hip - 7.5 * bh - bobY, rx: 8.6 * bw, ry: 8.6 * bh };
+    HD = { x: 0, y: B.y - B.ry - 3 * hd + 1.5, r: 5.4 * hd };
+    F = { x: 0.8, y: HD.y + 0.4, w: HD.r * 1.15 }; TOP = { x: 0, y: HD.y - HD.r, w: HD.r * 0.75 };
+    [-1, 1].forEach(function (sd) {
+      var p2 = ph + (sd > 0 ? Math.PI : 0), fx = sd * 3.6 * bw + Math.sin(p2) * 1.2 * mv, fy = -Math.max(0, Math.cos(p2)) * 2.6 * mv;
+      capsule(sd * 3.4 * bw, hip - bobY, fx, fy - 1.4, bodyD, lw + 0.8); ell(c, fx + 0.5, fy - 0.8, 3.2, 1.9, bodyD, 1.4);
+    });
+  } else if (plan === 3) {
+    var hov = (10 + Math.sin(t * 2.2) * 3 * sp.bob) * sp.hover;
+    B = { x: 0, y: -8.5 * bh - hov, rx: 8.6 * bw, ry: 8 * bh };
+    F = { x: 1.5, y: B.y - 0.5, w: B.rx }; TOP = { x: 0, y: B.y - B.ry, w: B.rx * 0.55 };
+    for (i = 0; i < 4; i++) {
+      var tx = (i - 1.5) * B.rx * 0.42, pts = [], n;
+      for (n = 0; n <= 4; n++) pts.push([tx + Math.sin(t * 3.4 + i * 1.7 + n * 0.9) * 1.6 * (n / 4) - mv * n * 0.9, B.y + B.ry - 2 + n * 2 * ll]);
+      bent(pts, i % 2 ? bodyD : bodyCol, lw * 0.6);
+    }
+  } else if (plan === 4) {
+    B = { x: 0, y: -(2.6 * ll + 4.6 * bh) - bobY * 0.4, rx: 10 * bw, ry: 5 * bh };
+    F = { x: B.rx * 0.35, y: B.y - 0.6, w: B.rx * 0.7 }; TOP = { x: -1, y: B.y - B.ry, w: B.rx * 0.5 }; TL = { x: -B.rx + 1.5, y: B.y };
+    var nl = Math.max(2, Math.min(4, Math.round(sp.legs / 2)));
+    [-1, 1].forEach(function (sd) {
+      for (var q = 0; q < nl; q++) {
+        var u = nl === 1 ? 0 : q / (nl - 1) - 0.5, p2 = ph * 1.4 + q * Math.PI + (sd > 0 ? Math.PI : 0), up = Math.max(0, Math.sin(p2)) * 2.6 * mv;
+        var bx0 = sd * B.rx * 0.55 + u * 3, kx = sd * (B.rx + 2.6 * ll) + u * 5, fx = sd * (B.rx + 5 * ll) + u * 9 + Math.cos(p2) * 1.6 * mv;
+        bent([[bx0, B.y + 1], [kx, B.y - 3.4 * ll - up], [fx, u * 3.4 - up]], bodyD, lw * 0.62);
+      }
+    });
+  } else {
+    var hop = step * 4 * sp.bob, squ = 1 + Math.cos(ph * 2) * 0.09 * mv * sp.wobble;
+    B = { x: 0, y: -6.6 * bh + 0.8 - hop, rx: 9.6 * bw * squ, ry: 7.2 * bh / squ };
+    F = { x: 1.5, y: B.y - 0.6, w: B.rx }; TOP = { x: 0, y: B.y - B.ry, w: B.rx * 0.55 }; TL = { x: -B.rx + 1.5, y: B.y + B.ry * 0.45 };
+  }
+
+  /* everything above the legs leans, swells and stretches with the state */
+  c.save(); c.translate(0, -lift); c.translate(B.x, B.y + B.ry); c.rotate(rot); c.scale(sx, sy); c.translate(-B.x, -(B.y + B.ry));
+  var tail = Math.round(sp.tail);
+  if (TL && tail) {
+    if (tail === 1) ell(c, TL.x - 1.5, TL.y, 2.6, 2.4, bodyD, 1.4);
+    else {
+      var tp = [], n2;
+      for (n2 = 0; n2 <= 5; n2++) tp.push([TL.x - n2 * 2.3, TL.y - n2 * 0.9 + Math.sin(t * 4 + n2 * 0.9) * 1.3 * (n2 / 5) - n2 * n2 * 0.12]);
+      bent(tp, bodyD, 2.6);
+      if (tail === 3) { var e5 = tp[5]; tri(e5[0] - 3.6, e5[1] - 1.2, e5[0] + 0.6, e5[1] - 3, e5[0] + 0.8, e5[1] + 2, C.accent); }
+    }
+  }
+  var top = Math.round(sp.top);
+  if (top === 4) for (i = 0; i < 4; i++) { var sxp = B.x - B.rx * 0.6 + i * B.rx * 0.4, syp = B.y - B.ry * Math.sqrt(Math.max(0.05, 1 - Math.pow((sxp - B.x) / B.rx, 2))) + 1; tri(sxp - 2, syp + 1, sxp + 0.4, syp - 4.6, sxp + 2.4, syp + 1, C.accent); }
+  if (plan === 2) {
+    var raise = Math.max(tell, lunge ? 1 : 0);
+    [-1, 1].forEach(function (sd) {
+      var sw = Math.sin(ph + (sd > 0 ? 0 : Math.PI)) * 1.6 * mv, shx = sd * (B.rx - 1.4), shy = B.y - 3 * bh;
+      var hx = sd * (B.rx + 2.6 + raise * 2), hy = shy + 8 * sp.armLen * (1 - raise * 1.7) + sw;
+      if (lunge) { hx = sd * (B.rx * 0.5) + 6; hy = B.y - 1; }
+      capsule(shx, shy, hx, hy, bodyD, lw + 0.4); ell(c, hx, hy, 3, 3, bodyCol, 1.4);
+    });
+  }
+  c.beginPath(); c.ellipse(B.x, B.y, B.rx, B.ry, 0, 0, Math.PI * 2); c.fillStyle = bodyCol; c.fill();
+  c.save(); c.clip();
+  c.fillStyle = bodyD; c.beginPath(); c.ellipse(B.x + B.rx * 0.25, B.y + B.ry * 0.9, B.rx * 1.2, B.ry * 0.7, 0, 0, Math.PI * 2); c.fill();
+  var pat = Math.round(sp.pattern);
+  if (pat === 1) { c.fillStyle = C.belly; c.beginPath(); c.ellipse(B.x + 1, B.y + B.ry * 0.55, B.rx * 0.68, B.ry * 0.6, 0, 0, Math.PI * 2); c.fill(); }
+  else if (pat === 2) { c.fillStyle = C.belly; [[-0.55, -0.3, 0.2], [-0.15, 0.35, 0.16], [0.3, -0.45, 0.14], [0.6, 0.2, 0.18], [-0.7, 0.3, 0.12]].forEach(function (q) { c.beginPath(); c.ellipse(B.x + q[0] * B.rx, B.y + q[1] * B.ry, q[2] * B.rx, q[2] * B.rx * 0.8, 0, 0, Math.PI * 2); c.fill(); }); }
+  else if (pat === 3) { c.strokeStyle = C.belly; c.lineWidth = B.rx * 0.16; c.lineCap = 'round'; for (i = -2; i <= 1; i++) { c.beginPath(); c.moveTo(B.x + i * B.rx * 0.42 - 2, B.y - B.ry); c.lineTo(B.x + i * B.rx * 0.42 + 1.5, B.y + B.ry * 0.1); c.stroke(); } }
+  c.fillStyle = 'rgba(255,255,255,0.26)'; c.beginPath(); c.ellipse(B.x - B.rx * 0.35, B.y - B.ry * 0.5, B.rx * 0.4, B.ry * 0.22, -0.3, 0, Math.PI * 2); c.fill();
+  c.restore();
+  c.beginPath(); c.ellipse(B.x, B.y, B.rx, B.ry, 0, 0, Math.PI * 2); c.lineWidth = 1.8; c.strokeStyle = LN; c.stroke();
+  if (HD) {
+    ell(c, HD.x, HD.y, HD.r * 1.04, HD.r, bodyCol, 1.8);
+    c.fillStyle = 'rgba(255,255,255,0.24)'; c.beginPath(); c.ellipse(HD.x - HD.r * 0.3, HD.y - HD.r * 0.5, HD.r * 0.4, HD.r * 0.22, -0.3, 0, Math.PI * 2); c.fill();
+  }
+  if (top === 1) { ell(c, TOP.x - TOP.w, TOP.y + 1, 2.2, 2.6, bodyD, 1.3); ell(c, TOP.x + TOP.w, TOP.y + 1, 2.2, 2.6, bodyD, 1.3); }
+  else if (top === 2) [-1, 1].forEach(function (sd) { var hx2 = TOP.x + sd * TOP.w; c.beginPath(); c.moveTo(hx2 - sd * 1.8, TOP.y + 2); c.quadraticCurveTo(hx2 + sd * 4.5, TOP.y - 1, hx2 + sd * 3.4, TOP.y - 7); c.quadraticCurveTo(hx2 + sd * 0.6, TOP.y - 2.5, hx2 + sd * 1.8, TOP.y + 2.4); c.closePath(); fs(c, C.accent, 1.3); });
+  else if (top === 3) [-1, 1].forEach(function (sd) { var ax = TOP.x + sd * TOP.w * 0.7, tipx = ax + sd * 2.5 + Math.sin(t * 3 + sd) * 0.8, tipy = TOP.y - 7.5; c.strokeStyle = LN; c.lineWidth = 1.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(ax, TOP.y + 1); c.quadraticCurveTo(ax + sd, TOP.y - 4, tipx, tipy); c.stroke(); ell(c, tipx, tipy, 1.9 + tell, 1.9 + tell, C.glow, 1.1); });
+  else if (top === 5) {
+    c.save(); c.translate(TOP.x, TOP.y - 2.2); c.rotate(t * 2);
+    for (i = 0; i < 6; i++) { c.rotate(Math.PI / 3); rr(c, -1.1, -4.6, 2.2, 2.6, 0.5, C.accent, 1.1); }
+    ell(c, 0, 0, 3.1, 3.1, C.accent, 1.3); ell(c, 0, 0, 1.1, 1.1, bodyD, 0.9); c.restore();
+  }
+
+  /* face */
+  var ne = Math.max(1, Math.min(4, Math.round(sp.eyes))), es = Math.round(sp.eyeStyle), er = (ne === 1 ? 3.5 : 2.7 - (ne - 2) * 0.35) * sp.eyeSize * (T === 3 ? 1 + 0.3 * tell : 1);
+  var ey = F.y - (plan === 0 || plan === 3 ? B.ry * 0.12 : 0), my = ey + er + 2.2, open = Math.max(tell, lunge ? 1 : 0);
+  for (i = 0; i < ne; i++) {
+    var ex = F.x + (ne === 1 ? 0 : -F.w * 0.45 + i * F.w * 0.9 / (ne - 1));
+    if (down) { c.strokeStyle = LN; c.lineWidth = 1.3; c.lineCap = 'round'; c.beginPath(); c.moveTo(ex - er * 0.7, ey - er * 0.7); c.lineTo(ex + er * 0.7, ey + er * 0.7); c.moveTo(ex + er * 0.7, ey - er * 0.7); c.lineTo(ex - er * 0.7, ey + er * 0.7); c.stroke(); continue; }
+    if (es === 1) { ell(c, ex, ey, er * 0.85, er * 0.85, C.glow, 1.1); ell(c, ex - er * 0.2, ey - er * 0.2, er * 0.35, er * 0.35, '#ffffff', 0); continue; }
+    ell(c, ex, ey, er, er * 1.08, tell && T === 3 ? mixHex('#fff7e8', C.glow, tell) : '#fff7e8', 1.3);
+    ell(c, ex + lkx * er * 0.38, ey + lky * er * 0.34, er * 0.48, er * 0.54, tell ? mixHex(C.eye, C.glow, tell * 0.7) : C.eye, 0);
+    ell(c, ex + lkx * er * 0.38 - er * 0.18, ey + lky * er * 0.34 - er * 0.22, er * 0.16, er * 0.16, '#ffffff', 0);
+    if (es === 2) { var sl = ne === 1 ? 0 : (ex < F.x ? 1 : -1); c.strokeStyle = LN; c.lineWidth = 1.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(ex - er * 1.1, ey - er * (1.25 + sl * 0.45)); c.lineTo(ex + er * 1.1, ey - er * (1.25 - sl * 0.45)); c.stroke(); }
+    if (es === 3) { c.beginPath(); c.ellipse(ex, ey, er + 0.7, er * 1.08 + 0.7, 0, Math.PI, Math.PI * 2); c.closePath(); c.fillStyle = bodyCol; c.fill(); c.strokeStyle = LN; c.lineWidth = 1.2; c.beginPath(); c.moveTo(ex - er - 0.4, ey); c.lineTo(ex + er + 0.4, ey); c.stroke(); }
+  }
+  var mouth = Math.round(sp.mouth), mw = Math.min(F.w * 0.5, 4.6);
+  if (mouth === 1) { c.strokeStyle = LN; c.lineWidth = 1.2; c.lineCap = 'round'; c.beginPath(); c.arc(F.x, my - 1.2, mw * 0.6, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); }
+  else if (mouth === 2) { c.strokeStyle = LN; c.lineWidth = 1.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(F.x - mw, my); c.lineTo(F.x + mw, my); c.stroke(); tri(F.x - mw * 0.7, my, F.x - mw * 0.25, my, F.x - mw * 0.5, my + 2.8 + open, C.accent); tri(F.x + mw * 0.25, my, F.x + mw * 0.7, my, F.x + mw * 0.5, my + 2.8 + open, C.accent); }
+  else if (mouth === 3) {
+    var mh = 1.6 + open * 2.2;
+    ell(c, F.x, my + mh * 0.5, mw, mh, '#3a1c24', 1.3);
+    c.fillStyle = C.accent; for (i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(F.x + i * mw * 0.55 - 1, my + mh * 0.5 - mh * 0.75); c.lineTo(F.x + i * mw * 0.55 + 1, my + mh * 0.5 - mh * 0.75); c.lineTo(F.x + i * mw * 0.55, my + mh * 0.5 - mh * 0.75 + 1.8); c.closePath(); c.fill(); }
+  }
+  if (tell && T === 3) { c.strokeStyle = C.glow; c.globalAlpha = 0.7 * (1 - (t * 3 % 1)); c.lineWidth = 1.4; c.beginPath(); c.arc(F.x, ey, er * 1.6 + (t * 3 % 1) * 8, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1; }
+  c.restore();
+
+  /* markers stay upright and unflipped */
+  c.scale(dir, 1);
+  var headTop = (HD ? HD.y - HD.r : B.y - B.ry) - lift - 9;
+  if (st === 'stunned') for (i = 0; i < 3; i++) { var a = t * 5 + i * 2.09; ell(c, Math.cos(a) * 8, headTop + 3 + Math.sin(a) * 2.5, 1.5, 1.5, '#ffd34d', 0.9); }
+  if (tell && sp.mark) { ell(c, 0, headTop, 4.4, 4.4, '#ffd34d', 1.5); c.fillStyle = LN; c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('!', 0, headTop + 2.6); }
+  c.restore();
+  LN = LN0;
+}
+
+
+var dkB = null;
+
+
+return { lib: { playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+})();
+if (typeof module !== 'undefined') module.exports = GameArt;
+
+/* The hird: the people who join you, as data. Shared by the game and the Hird Editor.
+   DEF holds every number: the ranges each stat is rolled from, the traits and how likely one is, what each job
+   yields and how often, how much they eat, how far a claim stone reaches, and the looks and names people are made
+   from. roll(R) makes one person from it (stats, traits, a figure spec for lib.makeFigure). Nothing here moves or
+   draws; the game does that. Robin's decisions (2026-10-06): a claim stone costs stone and berries (the red for its
+   runes); several stones, but every stone after the first needs a hirdman to keep it, so each claim costs a person;
+   the hird stays without food but goes slow and sad; they can die, never at random; Brokk is the first; muster at
+   the stone now, from the high seat later (anything with `muster` on it); they follow and work only inside your
+   territory and on raids, never in the open world. */
+var Hird = (function () {
+var DEF = {
+  stats: { health: [20, 40], strength: [2, 6], aim: [2, 6], wits: [2, 6], oar: [2, 6] },   // [low, high], whole numbers
+  traitChance: 0.7, twoTraits: 0.25,
+  traits: [
+    { id: 'hardy', name: 'Hardy', text: 'Shrugs off the cold and the wet.', health: 8 },
+    { id: 'keen', name: 'Keen eyed', text: 'Sees far. Better with a bow.', aim: 2 },
+    { id: 'strong', name: 'Strong', text: 'A back for oars and axes.', strength: 2, oar: 1 },
+    { id: 'slow', name: 'Slow', text: 'Thinks before doing, and then some.', wits: -1 },
+    { id: 'greedy', name: 'Greedy', text: 'Wants a bigger share of every raid.' },
+    { id: 'loyal', name: 'Loyal', text: 'Will not run, whatever comes.' },
+    { id: 'nightfear', name: 'Fears the dark', text: 'Will not work or fight at night.' },
+    { id: 'sworn', name: 'Sworn to another', text: 'Owes an oath elsewhere. Watch them.' }
+  ],
+  jobs: {                                       // what a workplace makes of a person; `rate` is seconds between yields
+    crafter: { name: 'Crafter', place: 'workbench', rate: 120, takes: { wood: 1, fiber: 2 }, gives: { torch: 2 }, text: 'Makes torches from the stores at the bench.' },
+    woodcutter: { name: 'Woodcutter', place: 'woodpile', rate: 60, takes: {}, gives: { wood: 1 }, text: 'Brings wood to the stores, a log at a time.' },
+    cook: { name: 'Cook', place: 'stoneHearth', rate: 90, takes: { meat: 1, berries: 2 }, gives: { stew: 1 }, text: 'Turns meat and berries in the stores into stew.' },
+    keeper: { name: 'Keeper', place: 'claimStone', rate: 0, takes: {}, gives: {}, text: 'Holds a claim stone. Without a keeper a second stone cannot be raised.' }
+  },
+  mealsPerDay: 1,                               // what each hirdman eats from the stores at dawn
+  hungryPace: 0.5,                              // how fast they work with no food in the stores
+  territory: 25, perRoom: 1,                    // a claim stone's reach in tiles, and what each roofed room inside adds
+  followSpeed: 70, walkSpeed: 40, followGap: 34,
+  claimCost: { stone: 6, berries: 4 },
+  names: ['Ulf', 'Sigrid', 'Hakon', 'Astrid', 'Leif', 'Thora', 'Gunnar', 'Ingrid', 'Eirik', 'Helga', 'Bjorn', 'Runa', 'Torstein', 'Gudrun', 'Olaf', 'Ragnhild'],
+  hair: ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a'],
+  coat: ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a6a4a', '#4f5f7a', '#9a7a5a'],
+  pants: ['#4a4038', '#5a4a3a', '#3f4a5a', '#6a5a48'],
+  beardChance: 0.4, scale: [0.92, 1.06], bodyW: [0.9, 1.2]
+};
+var STAT_NAMES = { health: 'Health', strength: 'Strength', aim: 'Aim', wits: 'Wits', oar: 'At the oar' };
+function pick(R, list) { return list[Math.floor(R() * list.length) % list.length]; }
+function between(R, lo, hi) { return lo + Math.floor(R() * (hi - lo + 1)); }
+// one person: stats from the ranges, up to two traits (with their bonuses applied), and a figure spec (looks)
+function roll(R, D) {
+  D = D || DEF; R = R || Math.random;
+  var p = { name: pick(R, D.names), stats: {}, traits: [], look: {} }, k;
+  for (k in D.stats) p.stats[k] = between(R, D.stats[k][0], D.stats[k][1]);
+  if (R() < D.traitChance) {
+    var pool = D.traits.slice(), t1 = pool.splice(Math.floor(R() * pool.length), 1)[0]; p.traits.push(t1.id);
+    if (R() < D.twoTraits && pool.length) p.traits.push(pool.splice(Math.floor(R() * pool.length), 1)[0].id);
+  }
+  p.traits.forEach(function (id) { var t = traitOf(id, D); for (k in D.stats) if (t && t[k]) p.stats[k] = Math.max(1, p.stats[k] + t[k]); });
+  p.look = { hair: pick(R, D.hair), coat: pick(R, D.coat), vest: pick(R, D.coat), pants: pick(R, D.pants), skin: R() < 0.5 ? '#ffd8b0' : '#f0c49c', beard: R() < D.beardChance ? 1 : 0, scale: D.scale[0] + R() * (D.scale[1] - D.scale[0]), bodyW: D.bodyW[0] + R() * (D.bodyW[1] - D.bodyW[0]) };
+  return p;
+}
+function traitOf(id, D) { var ts = (D || DEF).traits; for (var i = 0; i < ts.length; i++) if (ts[i].id === id) return ts[i]; return null; }
+// the figure spec for lib.makeFigure, from a person's look (the hero's figure with these colours and build)
+function figureSpec(p, heroDef) {
+  var sp = { col: {} }, k, L = p.look || {};
+  for (k in heroDef) if (k !== 'col') sp[k] = heroDef[k];
+  for (k in heroDef.col) sp.col[k] = heroDef.col[k];
+  sp.scale = L.scale || 1; sp.bodyW = L.bodyW || 1; sp.beard = L.beard || 0; sp.walkRate = 1.3;
+  if (L.hair) sp.col.hair = L.hair; if (L.coat) sp.col.coat = L.coat; if (L.vest) sp.col.vest = L.vest; if (L.pants) sp.col.pants = L.pants; if (L.skin) sp.col.skin = L.skin;
+  return sp;
+}
+function describe(p, D) { D = D || DEF; var parts = []; for (var k in D.stats) parts.push(STAT_NAMES[k] + ' ' + p.stats[k]); return parts.join(', '); }
+function merge(D, over) { var out = JSON.parse(JSON.stringify(D)); for (var k in over || {}) out[k] = over[k]; return out; }
+return { DEF: DEF, STAT_NAMES: STAT_NAMES, roll: roll, traitOf: traitOf, figureSpec: figureSpec, describe: describe, merge: merge };
+})();
+if (typeof module !== 'undefined') module.exports = Hird;
+
+(function () {
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), lib = GameArt.lib;
+  var KEY = 'hirdeditor1', D = JSON.parse(JSON.stringify(Hird.DEF));
+  try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && sv.stats) D = Hird.merge(Hird.DEF, sv); } catch (e) {}
+  var person = null, fig = null, clock = 0, sliders = [];
+  function fit() { var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4; if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); } }
+  fit(); window.addEventListener('resize', fit);
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} document.getElementById('json').value = JSON.stringify(D, null, 1); }
+  function rollOne() { person = Hird.roll(Math.random, D); fig = lib.makeFigure(Hird.figureSpec(person, lib.heroDef)); show(); }
+  function traitText(p) { return p.traits.length ? p.traits.map(function (id) { var t = Hird.traitOf(id, D); return t ? t.name + ' (' + t.text + ')' : id; }).join('; ') : 'No traits'; }
+  function show() { document.getElementById('who').textContent = person.name + ':  ' + Hird.describe(person, D); document.getElementById('desc').textContent = traitText(person); }
+  function slider(host, label, obj, key, min, max, step, idx) {
+    var row = document.createElement('label'); row.className = 'row'; var out = document.createElement('output'), inp = document.createElement('input');
+    var get = function () { return idx == null ? obj[key] : obj[key][idx]; }, set = function (v) { if (idx == null) obj[key] = v; else obj[key][idx] = v; };
+    inp.type = 'range'; inp.min = min; inp.max = max; inp.step = step; inp.value = get(); out.textContent = get();
+    inp.addEventListener('input', function () { set(+inp.value); out.textContent = inp.value; save(); });
+    row.appendChild(document.createTextNode(label)); row.appendChild(inp); row.appendChild(out); document.getElementById(host).appendChild(row);
+  }
+  function ui() {
+    ['pstats', 'ptraits', 'pjobs', 'pstead'].forEach(function (h) { document.getElementById(h).innerHTML = ''; });
+    for (var k in D.stats) { slider('pstats', Hird.STAT_NAMES[k] + ' low', D.stats, k, 1, 60, 1, 0); slider('pstats', Hird.STAT_NAMES[k] + ' high', D.stats, k, 1, 60, 1, 1); }
+    slider('ptraits', 'Trait chance', D, 'traitChance', 0, 1, 0.05); slider('ptraits', 'Two traits', D, 'twoTraits', 0, 1, 0.05); slider('ptraits', 'Beards', D, 'beardChance', 0, 1, 0.05);
+    slider('ptraits', 'Size low', D, 'scale', 0.8, 1.2, 0.01, 0); slider('ptraits', 'Size high', D, 'scale', 0.8, 1.2, 0.01, 1); slider('ptraits', 'Build low', D, 'bodyW', 0.7, 1.4, 0.01, 0); slider('ptraits', 'Build high', D, 'bodyW', 0.7, 1.4, 0.01, 1);
+    for (var j in D.jobs) if (D.jobs[j].rate > 0) slider('pjobs', D.jobs[j].name, D.jobs[j], 'rate', 10, 600, 5);
+    slider('pjobs', 'Hungry pace', D, 'hungryPace', 0, 1, 0.05);
+    slider('pstead', 'Meals a day', D, 'mealsPerDay', 0, 4, 1); slider('pstead', 'Stone reach (tiles)', D, 'territory', 5, 80, 1); slider('pstead', 'Per roofed room', D, 'perRoom', 0, 5, 0.5);
+    slider('pstead', 'Follow speed', D, 'followSpeed', 20, 120, 1); slider('pstead', 'Walk speed', D, 'walkSpeed', 10, 90, 1); slider('pstead', 'Follow gap', D, 'followGap', 10, 80, 1);
+    slider('pstead', 'Stone: stone', D.claimCost, 'stone', 0, 30, 1); slider('pstead', 'Stone: berries', D.claimCost, 'berries', 0, 20, 1);
+  }
+  document.getElementById('reroll').onclick = rollOne;
+  document.getElementById('rollten').onclick = function () { var out = []; for (var i = 0; i < 10; i++) { var p = Hird.roll(Math.random, D); out.push(p.name + ': ' + Hird.describe(p, D) + '. ' + traitText(p)); } document.getElementById('ten').value = out.join('\n'); };
+  document.getElementById('copy').onclick = function () { var t = document.getElementById('json'); t.select(); try { document.execCommand('copy'); document.getElementById('jsonmsg').textContent = 'Copied.'; } catch (e) {} };
+  document.getElementById('applyjson').onclick = function () { try { D = Hird.merge(Hird.DEF, JSON.parse(document.getElementById('json').value)); ui(); save(); rollOne(); document.getElementById('jsonmsg').textContent = 'Loaded.'; } catch (e) { document.getElementById('jsonmsg').textContent = 'That text could not be read.'; } };
+  document.getElementById('give').onclick = function () { try { localStorage.setItem('game.hird', JSON.stringify(D)); document.getElementById('jsonmsg').textContent = 'Given. Open the game (or reload it) to use it.'; } catch (e) {} };
+  document.getElementById('reset').onclick = function () { D = JSON.parse(JSON.stringify(Hird.DEF)); try { localStorage.removeItem('game.hird'); } catch (e) {} ui(); save(); rollOne(); };
+  var last = performance.now();
+  function frame(t) {
+    var dt = Math.min(0.05, (t - last) / 1000); last = t; clock += dt;
+    var ps = cv.width / 400; ctx.setTransform(ps, 0, 0, ps, 0, 0); ctx.fillStyle = '#8fc46a'; ctx.fillRect(0, 0, 400, 250);
+    ctx.fillStyle = 'rgba(20,40,20,0.2)'; ctx.beginPath(); ctx.ellipse(200, 190, 40, 12, 0, 0, 7); ctx.fill();
+    var a = clock * 0.7, vx = Math.cos(a), vy = Math.sin(a), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
+    var an = { phase: clock * 7, amt: 1, t: clock, lx: 0, ly: 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) };
+    ctx.save(); ctx.translate(200, 190); ctx.scale(3.2, 3.2); lib.figureD(ctx, 0, 0, dir, an, null, fig); ctx.restore();
+    // the stats as small bars under the figure
+    var k, i = 0; for (k in D.stats) { var v = person.stats[k], hi = D.stats[k][1], x = 60 + i * 60; ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(x, 222, 50, 6); ctx.fillStyle = '#ffd34d'; ctx.fillRect(x, 222, 50 * Math.min(1, v / hi), 6); ctx.font = 'bold 6px system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(Hird.STAT_NAMES[k] + ' ' + v, x, 219); i++; }
+    ctx.font = 'bold 9px system-ui, sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.lineWidth = 2.6; ctx.strokeStyle = '#2e1a10'; ctx.strokeText(person.name, 200, 24); ctx.fillText(person.name, 200, 24);
+    requestAnimationFrame(frame);
+  }
+  ui(); save(); rollOne(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

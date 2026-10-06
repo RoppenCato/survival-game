@@ -93,7 +93,22 @@ At the claim stone you **muster**: pick who comes (the rest stay and keep workin
 
 Rowing and sailing times are tuned in the Sea Editor, which already shows them.
 
-## 5. Questions only Robin can answer
+## 5. Robin's answers (2026-10-06)
+
+1. Stone only, and berries for the red of the runes (so the stone is a coloured runestone).
+2. Several stones: the idea is to expand and take places over, but not every island conquered. It must be a decision,
+   so the number of stones is limited: every stone after the first needs a hirdman who stays as its keeper.
+3. Yes: they stay without food, and go slow and sad.
+4. Yes, something like that; never lost at random. Illness and the like can come later.
+5. Brokk is the first hirdman.
+6. Muster at the stone, or a speaking place; later from the Jarl's seat in the main hall, so it must be movable.
+7. The hird is only used at the base and on raids, never in the open world (too hard to balance). They follow you
+   round the base when you talk to them, and you assign them by leading them to a workplace.
+
+Step 1 of the build order is built (the stone, the reach, room and food, Brokk joining, follow, jobs, muster) and the
+numbers live in `src/hird.js`, tuned in the Hird Editor.
+
+## 6. The questions as they were asked
 
 - Should the claim stone cost copper (so a town comes after the cave), or only stone (so it comes with the first
   house)? My suggestion: stone only, and the copper goes to the muster horn later.
@@ -106,7 +121,7 @@ Rowing and sailing times are tuned in the Sea Editor, which already shows them.
   his lines.
 - The muster: at the stone only, or anywhere by calling? My suggestion: the stone, so the stone matters.
 
-## 6. The order to build it in
+## 7. The order to build it in
 
 1. The claim stone piece, the territory on the chart, "Room for N".
 2. Brokk joins when the old stone is raised; he walks to the bench and works there (the first job).
