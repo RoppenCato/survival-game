@@ -98,7 +98,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
-| `game.html` | `game.html` | The game: the first island, gathering, boars, inventory |
+| `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
 template and one line in `PAGES` in `tools/build.py`.
@@ -498,18 +498,24 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   axe, pick and knife. The hotbar's tool and weapon icons are the equipped things; an empty tool slot means no
   gathering with that tool. Hovering a thing shows a leather card with its numbers and tale. The Item Editor's
   "Give to the game" puts a thing in `localStorage` (`game.give`) that the game picks up on load.
-- **Runes (2026-10-05):** skills are runes, learnt and never carried (Robin). State `RS` = { learnt, heard, slots,
-  deeds, stones }. Learnt from **deeds** (`DEEDS`: fifteen trees for Clean cut, fifteen rocks for Hard swing, five
-  meals for Hearty, twenty arrows for Fletcher, a minute of sprinting for Sure feet, thirty dashes for Sprinter,
-  fifteen blocks for Shield wall, five kills for Shield bash), from **runestones** (E near one reads it; the rune
-  is set by the stone's position from `STONE_POOL`; stones in view are "heard of" and show dim), and later from
-  beasts, people and raids. The **casting cloth** (C, or the pouch by the chart): the pouch of learnt runes on the
-  left, the board of hollows on the right (start: attack, utility, mobility; a guard hollow opens with the first
-  guard rune, a second attack hollow at ten kills); drag stones in and out, not in a fight. Slotted attack runes
-  sit on the fight hotbar and are cast with their number (`Combat.api.trigger`: whirlwind is a full-circle
-  heavy swing, bash a short staggering shove, pin holds the next arrow's target); passives work through
-  `Combat.api.mods`, `armor`, `powerMul` and the page (meals, arrows). A rune in use grows with use
-  (`uses`, tier multiplier). Sandbox learns every rune.
+- **The arm ring (2026-10-06, built; design in `docs/arm-ring.md`):** runes (`src/runes.js`: eleven, each with a `side` hand,
+  foot, eye or heart, a `source` and one line) are knowledge, never items. `RS` = { learnt, earned, deeds, kills, stones }.
+  **Nothing is learnt before a ring is worn:** deeds (`DEEDS`: fifteen trees, five meals, a minute of sprinting), kills
+  (`BEAST_RUNES`: ten boars, wolves or adders) and stones (`STONE_POOL`) *earn* a rune (`earnRune`), and the ring brings
+  what was earned (`learnEarned`, one rite each). **The bronze ring** lies on the dead Viking (`cave.body`, prop `deadViking`)
+  behind the troll's lair; E takes it (`takeRing`) with its rite. Brokk shows the riposte once you wear a ring and have heard
+  his story. **The carver's bench** (piece `carver`, prop `carverBench`, 6 wood, 2 stone, 2 copper, under a roof): E opens
+  the ring board (`drawRingBoard`: tabs by side of known runes, the ring with its coils, `Runes.ringD`); click a rune and a
+  four-second bar (`cutting`, `cutTick`) cuts it into its side's coil for five health (`Runes.cut`; filing away what was
+  there); the coil glows. A rune is alive only in a coil (`inUse`); the character panel shows the ring under the gear and the
+  hero wears it on his arm (spec `ring` by metal rank, `armBand` in `playerD`; Brokk bronze). **What the runes do** goes
+  through `Combat.api.mods` (sprintCost, riposte, charge, roll, heavyblow; `modZ` in the engine defaults to off) and the
+  page: riposte (a parry opens a heavy blow, `P.riposteT`), boar's charge (sprinting into a beast, `chargeT`), sure feet,
+  wolf's run (night speed 1.25; wolves calm unless `e.struck`), roll (longer dash, longer invulnerable, slower rise), stone
+  sense (ore glints by day, every third rock to your feet), snake's eye (beasts within 300 on the chart), heavy blow (hold
+  the tool, let go: three blows), hearty, hearth warmth (heal by any fire, a rough night rests 2 minutes), long breath (no
+  swimming yet). No tiers. The casting cloth, the pouch icon and the C key are gone; `SHOW.runes` is true. Debug:
+  `ring()`, `RS()`, `takeRing`, `earnRune`, `cut(id)`, `openRing()`. `tests/ring.js` checks the rules and the hooks.
 - **The Book of Beasts** (L, or the small book by the chart): a leather-bound book over a dimmed screen, two
   parchment pages. Left: the beast drawn live by `creatureD`, turning slowly, its name and folk name, a tab row
   of all beasts. Right: lore, strengths, weaknesses, warning sign, drops, where found. A page is earned the first

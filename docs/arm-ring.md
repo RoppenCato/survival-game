@@ -118,6 +118,15 @@ Left out until asked for: pairs, cursed rings, rings taken from the dead, the da
 
 ## Status
 
+**Steps 1 to 7 are built (2026-10-06)**, with the test `tests/ring.js` (in `npm test`) for the ring's rules and the engine's
+rune hooks, and a play-through from the big island in the browser: the ring taken from the dead Viking behind the lair, the
+owed boar's rune arriving with it, the carver's bench under a roof, cutting (five blood, the bar, the glow), filing one rune
+away with another, the panel, the save and reload, the boar's charge, the wolves' truce at night and their waking when
+struck, healing by a campfire in the open, Brokk's riposte, the roll. Step 8 (growth) and step 9 (hirdmen's rings) wait.
+Long breath is known but does nothing yet (there is no swimming).
+
+## Earlier status
+
 Nothing of this is built (2026-10-06). The old rune code (`RS`, the casting cloth, C, the pouch icon, `STONE_POOL`,
 `DEEDS`) stays hidden behind `SHOW.runes` until the bench replaces it; the rune drawings in `src/runes.js` and the deed
 counters are kept. The biome ladder the ring follows is in `docs/roadmap.md`.

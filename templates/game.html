@@ -188,7 +188,7 @@ __COMBAT__
   /* ---------- music: the meadow by day or evening, with a fight layer that fades in when a beast is awake ---------- */
   // What is shown: the runes (the casting cloth, runestones, skills on the hotbar) and the Book of Beasts are built but
   // not finished, so they are hidden until the basics are right (Robin, 2026-10-05). Flip these to bring them back.
-  var SHOW = { runes: false, book: false };
+  var SHOW = { runes: true, book: false };     // runes: the arm ring (docs/arm-ring.md); book: the Book of Beasts, still hidden
   var OPTS = { music: 0 }, musicOn = false, dangerT = 0, songsLS = null, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
@@ -239,7 +239,7 @@ __COMBAT__
     w = World.make(kit, spec);
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets;
-    drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
+    drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(700);
     raft = null; leftBanner = 0; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
     villageClear(); caveSetup(); hamletClear();
@@ -294,6 +294,7 @@ __COMBAT__
       c.fillStyle = '#ffd34d'; c.beginPath(); c.moveTo(-2, 3); c.quadraticCurveTo(-2.5, -1, 0, -3.5); c.quadraticCurveTo(2.5, -1, 2, 3); c.closePath(); c.fill();
     } },
     { id: 'fireplace', name: 'Fireplace', kind: 'item', prop: 'fireplace', r: 7, hearth: true, chimney: true, cost: { stone: 10, wood: 2 } },
+    { id: 'carver', name: 'Carver’s bench', kind: 'item', prop: 'carverBench', r: 5, carver: true, cost: { wood: 6, stone: 2, copper: 2 } },
     // outdoor and household things, drawn from the kit's props; their icons are the props shrunk
     { id: 'chair', name: 'Chair', kind: 'item', prop: 'chair', r: 3, cost: { wood: 2 } },
     { id: 'seat', name: 'Bench seat', kind: 'item', prop: 'bench', r: 6, cost: { wood: 3 } },
@@ -319,10 +320,10 @@ __COMBAT__
     { id: 'cairn', name: 'Cairn', kind: 'item', prop: 'cairn', r: 4, cost: { stone: 5 } },
     { id: 'charcoal', name: 'Charcoal pit', kind: 'item', prop: 'charcoalPit', r: 7, cost: { wood: 8, stone: 2 } }
   ];
-  var ICON_SCALE = { fireplace: 0.4, campfire: 0.4, trough: 0.5, scarecrow: 0.26, flowerBed: 0.36, cairn: 0.4, charcoalPit: 0.3, shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
+  var ICON_SCALE = { carverBench: 0.5, fireplace: 0.4, campfire: 0.4, trough: 0.5, scarecrow: 0.26, flowerBed: 0.36, cairn: 0.4, charcoalPit: 0.3, shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   // the rows of the Building board (a piece's cat): the frame and walls, floors and roofs, the yard, the home, outdoors
   var BCATS = [['frame', 'Frame and walls'], ['floor', 'Floors and roofs'], ['path', 'Paths'], ['yard', 'Yard'], ['home', 'Furniture'], ['out', 'Outdoors']];
-  var HOME_IDS = { bench: 1, bed: 1, hearth: 1, fireplace: 1, chair: 1, seat: 1, table: 1, barrel: 1, crate: 1, rug: 1, chest: 1 };
+  var HOME_IDS = { bench: 1, bed: 1, hearth: 1, fireplace: 1, carver: 1, chair: 1, seat: 1, table: 1, barrel: 1, crate: 1, rug: 1, chest: 1 };
   PIECES.forEach(function (p) { p.cat = p.yard ? 'yard' : (p.id === 'floor' && (Build.FLOORS[p.m] || {}).path) ? 'path' : (p.id === 'floor' || p.id === 'roof') ? 'floor' : p.kind === 'item' ? (HOME_IDS[p.id] ? 'home' : 'out') : 'frame'; });
   function propIcon(c, name) {             // a prop's baked sprite, shrunk to fit a board cell
     var s = sprite(name, 0), sc = Math.min(18 / s.w, 18 / s.h, 1.5);
@@ -387,7 +388,7 @@ __COMBAT__
   function dayTick(dt) {
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
       sleep.t += dt;
-      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { restedMax = rested = Math.max(120, sleep.comfort * 120); } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
+      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { restedMax = rested = Math.max(120, sleep.comfort * 120); } else if (inUse('hearthwarmth')) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
       if (sleep.t >= 2.6) sleep = null;
       return;
     }
@@ -413,6 +414,7 @@ __COMBAT__
     if (L > 0.5 && !inCave && !inYard) nightWolves.forEach(function (e) {
       if (e.dead) return;
       var nf = nearestFire(e.x, e.y), inFire = nf && nf.d < FIRE_R;
+      if (inUse('wolfsrun') && !e.struck) { e.awake = false; e.heard = 0; e.aggro = 1; e.prowl = 0; return; }   // the wolf's run: they let you be unless you strike first
       if (e.gone) { e.goneT = (e.goneT || 0) + dt; e.awake = false; e.heard = 0; e.aggro = 1; if (e.goneT > 20) { var k = W.enemies.indexOf(e); if (k >= 0) W.enemies.splice(k, 1); e.dead = true; } return; }
       if (inFire) {                         // too close to a fire: it shies back out of the light
         var a = Math.atan2(e.y - nf.y, e.x - nf.x); e.x += Math.cos(a) * 110 * dt; e.y += Math.sin(a) * 110 * dt; e.face = a; e.awake = false; e.heard = 0; e.aggro = 1; e.state = 'idle'; e.t = 0;
@@ -467,7 +469,7 @@ __COMBAT__
     n.globalCompositeOperation = 'source-over';
     var r = Math.round(255 - 222 * L + 0 * D), g = Math.round(255 - 215 * L - 70 * D), b = Math.round(255 - 178 * L - 120 * D);   // dusk goes amber, night goes very dark blue
     n.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')'; n.fillRect(0, 0, 200, 125);
-    if (L > 0.05) {                        // fires light their surroundings
+    if (L > 0.05 || inUse('stonesense')) {  // fires light their surroundings (and ore glints when you have the stone sense)
       n.globalCompositeOperation = 'lighter'; var fires = [], i;
       if (hearth) fires.push(hearth); for (i = 0; i < B.items.length; i++) if (isHearth(B.items[i]) || B.items[i].light) fires.push(B.items[i]);
       for (i = 0; i < fires.length; i++) {
@@ -487,7 +489,7 @@ __COMBAT__
       around(P3.x, P3.y, function (o) {
         if (o.kind !== 'stone' || !o.ore || o.dying != null) return;
         var sx = (o.x - cam.x) * cam.z + 200, sy = (o.y * K - cam.y) * cam.z + 125 - 6 * cam.z; if (sx < -30 || sx > 430 || sy < -30 || sy > 280) return;
-        var rad = 17 * cam.z, a = Math.min(1, L) * (o.trollStone ? 0.7 : 0.45) * (0.8 + 0.2 * Math.sin(clock * 2 + o.x));
+        var rad = 17 * cam.z, a = Math.max(Math.min(1, L) * (o.trollStone ? 0.7 : 0.45), inUse('stonesense') ? 0.35 : 0) * (0.8 + 0.2 * Math.sin(clock * 2 + o.x));
         var g3 = gc.createRadialGradient(sx, sy, 0, sx, sy, rad); g3.addColorStop(0, 'rgba(255,170,100,' + a + ')'); g3.addColorStop(1, 'rgba(255,120,60,0)');
         gc.fillStyle = g3; gc.beginPath(); gc.arc(sx, sy, rad, 0, 7); gc.fill();
       });
@@ -675,7 +677,7 @@ __COMBAT__
       else { pay(costOfFloor(BB.floors[Build.key(t.tx, t.ty)]), 1); delete BB.floors[Build.key(t.tx, t.ty)]; }
       bDirty = true; save(); return;
     }
-    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: !!t.piece.ship, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney }; if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = 'I will keep this stone.'; kp.sayT = 3; } } else B.items.push(nit); if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
+    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: !!t.piece.ship, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver }; if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = 'I will keep this stone.'; kp.sayT = 3; } } else B.items.push(nit); if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
     if (t.kind === 'roof') { if (!first) return; pay(t.piece.cost); if (!BB.roofs) BB.roofs = {}; BB.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
     if (t.kind === 'stairs') { if (!first) return; pay(t.piece.cost); B.stairs[Build.key(t.tx, t.ty)] = { d: 0 }; bDirty = true; sfx('build'); save(); return; }
     var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : t.kind === 'post' ? 'P' + Build.key(t.cx, t.cy) : 'F' + Build.key(t.tx, t.ty);
@@ -791,7 +793,7 @@ __COMBAT__
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   var SAVE = 'game.save', gone = {}, saveT = 0;
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -1048,6 +1050,7 @@ __COMBAT__
     carve(7, 20, 6, 5); carve(64, 20, 9, 8);
     for (i = 0; i < 5; i++) { var pp = path[8 + Math.floor(R() * (path.length - 18))], sd = R() < 0.5 ? -1 : 1; carve(pp.x + (R() - 0.5) * 4, pp.y + sd * (6 + R() * 3), 3.2 + R() * 2, 2.6 + R() * 1.6); }
     cave = { f: f, ores: [], noiseT: 0, entrance: { x: CAVE_X + 4.5 * T, y: CAVE_Y + 20 * T }, lair: { x: CAVE_X + 64 * T, y: CAVE_Y + 20 * T }, exitAt: { x: CAVE_X + 3.2 * T, y: CAVE_Y + 20 * T } };
+    carve(70, 20, 2.2, 2.2); cave.body = { name: 'deadViking', x: CAVE_X + 70.5 * T, y: CAVE_Y + 20.5 * T, s: 1, r: 0, v: 0, cave: true };   // the dead Viking with the bronze ring, behind the lair
     // ore rocks: thick near the opening, thinning as the tunnel goes on
     for (i = 0; i < 18; i++) {
       var tt = Math.pow(R(), 1.6) * 0.88 + 0.03, pt = path[Math.min(path.length - 1, Math.floor(tt * path.length))], k;
@@ -1081,10 +1084,10 @@ __COMBAT__
     }
   }
   function pushCaveItems(items) {
-    cave.ores.forEach(function (o) {
+    cave.ores.concat(cave.body && !seen.ring ? [cave.body] : []).forEach(function (o) {
       if (Math.abs(o.x - cam.x) > 260 || Math.abs(o.y * K - cam.y) > 200) return;
       var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, ww = s.w * o.s, hh = s.h * o.s, P = hero();
-      items.push({ y: o.y, f: function () { drawProp(o, s, px, py, ww, hh, P); } });
+      items.push({ y: o.y, f: function () { drawProp(o, s, px, py, ww, hh, P); if (o === cave.body) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(o.x - 15, o.y * K - 6 + Math.sin(clock * 3) * 1.2, 1.8, 0, 7); ctx.fill(); } } });
     });
   }
   var caveCv = null;
@@ -1439,6 +1442,7 @@ __COMBAT__
     var st = brokkState(), L = brokkLines(st);
     if (npc.st !== st) { npc.st = st; npc.line = 0; }
     npc.say = L[npc.line % L.length]; npc.line++; npc.sayT = 5;
+    if (ring && seen.met && !RS.learnt.riposte && !RS.earned.riposte) { npc.say = 'A ring on your arm, I see. Then take this from me: meet the blow on your shield, and strike while they are still swinging.'; npc.sayT = 6; earnRune('riposte', 'Brokk showed you'); return; }
     if (npc.line >= L.length) {          // heard it all: the story is known; the lesson is learnt
       if (st === 'meet' && !seen.met) { seen.met = 1; save(); }
       else if (st === 'teach' && !seen.raft) { seen.raft = 1; toast('Brokk taught you the raft'); save(); }
@@ -2059,6 +2063,11 @@ __COMBAT__
       else if (s.id === 'axe' || s.id === 'pick' || s.id === 'knife') { c.save(); c.globalAlpha = 0.34; c.translate(mx, my); Items.icon(c, Items.make(s.id, 'wood'), 9.5); c.restore(); }   // an empty tool slot shows its tool, faint
       else glyph(c, s.id, mx, my);
     });
+    // the arm ring, with its coils, under the gear: what is cut shows; hover a coil for its rune
+    var rcx = x0 + CHAR.w / 2, rcy = CHAR.y + CHAR.h - 20, coils = ring ? Runes.ringD(c, rcx, rcy, ring, 13, -1, ringGlow.i, ringGlow.t) : [];
+    if (!ring) { c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(246,226,184,0.45)'; c.fillText('No arm ring', rcx, rcy + 2); }
+    var hcoil = null; coils.forEach(function (q) { if (mouseS && Math.hypot(mouseS.x - q.x, mouseS.y - q.y) < q.r + 1) hcoil = q; });
+    if (hcoil && !hov) { var cid = ring.coils[hcoil.i].id, ct = cid ? Runes.BY[cid].name + ': ' + Runes.BY[cid].text : 'An empty ' + ring.coils[hcoil.i].side + ' coil'; c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(ct, x0, CHAR.y + CHAR.h + 7); c.fillStyle = '#fff'; c.fillText(ct, x0, CHAR.y + CHAR.h + 7); }
     if (hov) {                              // what the slot is
       var txt = hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ' (nothing yet)');
       if (equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
@@ -2172,124 +2181,127 @@ __COMBAT__
       if (busy.indexOf(o) < 0) busy.push(o);
       if (o.hp <= 0) {
         o.dying = 0; deed(o.kind === 'tree' ? 'trees' : (o.kind === 'stone' ? 'rocks' : 'bushes'));
-        if (o.kind === 'stone') { chip(o.x, o.y, 8, '#9d9995', 14, 110); drop('stone', o.x, o.y, ROCK_STONE[o.name] || 3); if (o.trollStone) drop('copper', o.x, o.y, 4); else if (o.ore) { var dark = light() > 0.5 || o.cave; if (dark) drop('copper', o.x, o.y, 2); else if (Math.random() < 1 / 6) drop('copper', o.x, o.y, 1); } }   // ore: a sure find at night, a lucky one by day
+        if (o.kind === 'stone') { chip(o.x, o.y, 8, '#9d9995', 14, 110); var toFeet = inUse('stonesense') && RS.deeds.rocks % 3 === 0, dpx = toFeet ? hero().x : o.x, dpy = toFeet ? hero().y + 6 : o.y; drop('stone', dpx, dpy, ROCK_STONE[o.name] || 3); if (o.trollStone) drop('copper', o.x, o.y, 4); else if (o.ore) { var dark = light() > 0.5 || o.cave; if (dark) drop('copper', o.x, o.y, 2); else if (Math.random() < 1 / 6) drop('copper', o.x, o.y, 1); } }   // ore: a sure find at night, a lucky one by day
         else if (o.kind === 'bush') { if (o.name === 'berryBush') { drop('berries', o.x, o.y, BERRIES); drop('fiber', o.x, o.y, 1); } else drop('fiber', o.x, o.y, BUSH_FIBER); }
       }
     }
   };
-  Combat.api.onDeath = function (e) { var A = ANIMALS[e.kind] || ANIMALS.boar; for (var k in A.drops) { var q = A.drops[k], n = Math.floor(q) + (Math.random() < q - Math.floor(q) ? 1 : 0); if (n) drop(k, e.x, e.y, n); } if (e.kind) learn(e.kind); deed('kills'); };
+  Combat.api.onDeath = function (e) { var A = ANIMALS[e.kind] || ANIMALS.boar; for (var k in A.drops) { var q = A.drops[k], n = Math.floor(q) + (Math.random() < q - Math.floor(q) ? 1 : 0); if (n) drop(k, e.x, e.y, n); } if (e.kind) { learn(e.kind); killDeed(e.kind); } deed('kills'); };
 
   /* ---------- runes: learnt from deeds, runestones and beasts; laid on the casting cloth to work ---------- */
-  var RS = null, cds = {}, clothOpen = false, clothFlash = 0, rpick = null;
-  function freshRunes() { return { learnt: {}, heard: {}, slots: [{ kind: 'attack', id: null }, { kind: 'utility', id: null }, { kind: 'mobility', id: null }], deeds: { trees: 0, rocks: 0, meals: 0, arrows: 0, sprint: 0, dashes: 0, blocks: 0, kills: 0 }, stones: {} }; }
+  /* ---------- the arm ring (docs/arm-ring.md, 2026-10-06): runes are knowledge, cut into the ring's coils at the carver's bench.
+     RS keeps what is known and counted: learnt (known runes), earned (runes owed before the ring was worn), deeds, kills
+     per beast, stones read. ring = { metal, coils } once the bronze ring has been taken from the dead Viking in the cave.
+     Nothing is learnt before the ring is worn: deeds and kills count up, and the ring brings what they earned. ---------- */
+  var RS = null, cds = {}, ring = null, clothOpen = false, rite = null, ringGlow = { i: -1, t: 0 };
+  function freshRunes() { return { learnt: {}, earned: {}, deeds: { trees: 0, rocks: 0, meals: 0, arrows: 0, sprint: 0, dashes: 0, blocks: 0, kills: 0, bushes: 0 }, kills: {}, stones: {} }; }
   RS = freshRunes();
-  var DEEDS = [['trees', 15, 'cleancut', 'fifteen trees felled'], ['rocks', 15, 'hardswing', 'fifteen rocks broken'], ['meals', 5, 'hearty', 'five meals cooked'], ['arrows', 20, 'fletcher', 'twenty arrows made'], ['sprint', 60, 'surefeet', 'a minute of sprinting'], ['dashes', 30, 'sprinter', 'thirty dashes'], ['blocks', 15, 'shieldwall', 'fifteen blows blocked'], ['kills', 5, 'bash', 'five beasts slain']];
-  var STONE_POOL = ['whirlwind', 'pin', 'longwind', 'thickskin', 'riposte', 'hearty', 'hardswing', 'cleancut'];
-  function slotOf(id) { for (var i = 0; i < RS.slots.length; i++) if (RS.slots[i].id === id) return i; return -1; }
-  function inUse(id) { return RS.learnt[id] && slotOf(id) >= 0; }
-  function runeMul(id) { return inUse(id) ? Runes.tier(RS.learnt[id].uses).mul : 0; }
-  function useRune(id, n) { if (inUse(id)) { RS.learnt[id].uses += n || 1; } }
-  function learnRune(id, how) {
-    var r = Runes.BY[id]; if (!r || RS.learnt[id] || !SHOW.runes) return;
-    RS.learnt[id] = { uses: 0 }; delete RS.heard[id]; clothFlash = 6;
-    toast('A rune learnt: ' + r.name + ' (' + r.norse + ')' + (how ? ', ' + how : ''));
-    if (r.kind === 'guard' && !RS.slots.some(function (s) { return s.kind === 'guard'; })) { RS.slots.push({ kind: 'guard', id: null }); toast('A guard hollow opens on your cloth'); }
-    save();
+  var DEEDS = [['trees', 15, 'heavyblow', 'fifteen trees felled'], ['meals', 5, 'hearty', 'five meals cooked'], ['sprint', 60, 'surefeet', 'a minute of sprinting']];
+  var BEAST_RUNES = { boar: 'boarcharge', wolf: 'wolfsrun', snake: 'snakeseye' }, BEAST_N = 10, BEAST_WORD = { boar: 'ten boars', wolf: 'ten wolves', snake: 'ten adders' };
+  var STONE_POOL = ['roll', 'stonesense', 'hearthwarmth', 'longbreath'];
+  function inUse(id) { return !!ring && Runes.alive(ring, id); }
+  function runeMul(id) { return inUse(id) ? 1 : 0; }
+  function useRune(id, n) { if (inUse(id) && RS.learnt[id]) RS.learnt[id].uses += n || 1; }
+  function earnRune(id, how) {             // a rune is owed; it is learnt the moment a ring is on your arm
+    if (!Runes.BY[id] || RS.learnt[id] || RS.earned[id]) return;
+    if (ring) learnRune(id, how); else { RS.earned[id] = how || 'earned'; save(); }
   }
+  function learnRune(id, how) {
+    var r = Runes.BY[id]; if (!ring || !r || RS.learnt[id]) return;
+    RS.learnt[id] = { uses: 0, how: how || '' }; delete RS.earned[id];
+    rite = { id: id, t: 0, how: how || '' }; sfx('craft'); save();
+  }
+  function learnEarned() { var ids = Object.keys(RS.earned); ids.forEach(function (id, k) { setTimeout(function () { learnRune(id, RS.earned[id]); }, 2600 * (k + 1)); }); }
   function deed(kind, n) {
     RS.deeds[kind] = (RS.deeds[kind] || 0) + (n || 1);
-    DEEDS.forEach(function (d) { if (d[0] === kind && RS.deeds[kind] >= d[1]) learnRune(d[2], d[3]); });
-    if (kind === 'kills' && RS.deeds.kills >= 10 && RS.slots.filter(function (s) { return s.kind === 'attack'; }).length < 2) { RS.slots.push({ kind: 'attack', id: null }); toast('A second attack hollow opens on your cloth'); save(); }
-    var grow = { trees: 'cleancut', rocks: 'hardswing', meals: 'hearty', arrows: 'fletcher', dashes: 'sprinter', blocks: 'shieldwall', parry: 'riposte' }[kind];
-    if (grow) useRune(grow, 1);
+    DEEDS.forEach(function (d) { if (d[0] === kind && RS.deeds[kind] >= d[1]) earnRune(d[2], d[3]); });
   }
-  Combat.api.onDeed = function (kind) { if (kind === 'parry' && inUse('riposte')) { var P = hero(); P.st = Math.min(100, P.st + 15 * runeMul('riposte')); P.hp = Math.min(P.maxHp, P.hp + 5 * runeMul('riposte')); } deed(kind === 'block' ? 'blocks' : (kind === 'dash' ? 'dashes' : kind)); };
-  Combat.api.mods = function () { return { dmg: ADMIN.oneshot ? 1000 : 1, speed: ADMIN.fly ? 2.6 : 1, stMax: 100 + (fed ? fed.stam || 0 : 0), sprint: 1 + 0.2 * runeMul('surefeet'), stam: (1 + 0.5 * runeMul('longwind')) * (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: inUse('sprinter') ? 1 - 0.5 * Math.min(1, runeMul('sprinter')) : 1, block: inUse('shieldwall') ? 1 - 0.5 * Math.min(1, runeMul('shieldwall')) : 1 }; };
-  Combat.api.powerMul = function (kind) { if (ADMIN.oneshot) return 1000; if (kind === 'tree' && inUse('cleancut')) return 1 + 0.33 * runeMul('cleancut'); if (kind === 'stone' && inUse('hardswing')) return 1 + 0.33 * runeMul('hardswing'); return 1; };
-  function attackSkills() { return RS.slots.filter(function (s) { return s.kind === 'attack'; }).map(function (s) { return s.id ? Runes.BY[s.id] : null; }); }
-  function castSkill(i) {
-    var sk = attackSkills()[i]; if (!sk) return false; if ((cds[sk.id] || 0) > 0) { toast(sk.name + ' is not ready'); return true; }
-    Combat.api.trigger = sk.id; cds[sk.id] = sk.cd; useRune(sk.id, 1); return true;
-  }
+  function killDeed(kind) { if (!kind) return; RS.kills[kind] = (RS.kills[kind] || 0) + 1; var id = BEAST_RUNES[kind]; if (id && RS.kills[kind] >= BEAST_N) earnRune(id, BEAST_WORD[kind]); }
+  Combat.api.onDeed = function (kind) { deed(kind === 'block' ? 'blocks' : (kind === 'dash' ? 'dashes' : kind)); };
+  Combat.api.mods = function () {
+    var night = light() > 0.5;
+    return { dmg: ADMIN.oneshot ? 1000 : 1, speed: ADMIN.fly ? 2.6 : (inUse('wolfsrun') && night ? 1.25 : 1), stMax: 100 + (fed ? fed.stam || 0 : 0), sprint: 1, sprintCost: inUse('surefeet') ? 0.5 : 1,
+      stam: (rested > 0 ? 1.3 : 1) * (fed ? fed.stamRegen || 1 : 1), dash: 1, block: 1, riposte: inUse('riposte') ? 1 : 0, charge: inUse('boarcharge') ? 1 : 0, roll: inUse('roll') ? 1 : 0, heavyblow: inUse('heavyblow') ? 1 : 0 };
+  };
+  Combat.api.powerMul = function (kind) { return ADMIN.oneshot ? 1000 : 1; };
+  function attackSkills() { return []; }
+  function castSkill(i) { return false; }
   function stoneNear(P) { var best = null; around(P.x, P.y, function (o) { if (o.name === 'runestone' && Math.hypot(o.x - P.x, o.y - P.y) < 44) best = o; }); return best; }
   function stoneRune(o) { return STONE_POOL[Math.floor(hash(Math.round(o.x), Math.round(o.y), 11) * STONE_POOL.length) % STONE_POOL.length]; }
-  function readStone(o) { var key = propKey(o), id = stoneRune(o); if (RS.stones[key]) { toast('You have read this stone'); return; } RS.stones[key] = 1; if (RS.learnt[id]) { toast('The stone speaks of ' + Runes.BY[id].name + ', which you know'); save(); } else learnRune(id, 'read from a runestone'); }
+  function readStone(o) { if (!ring) return; var key = propKey(o), id = stoneRune(o); if (RS.stones[key]) { toast('You have read this stone'); return; } RS.stones[key] = 1; if (RS.learnt[id]) { toast('The stone speaks of ' + Runes.BY[id].name + ', which you know'); save(); } else learnRune(id, 'read from a runestone'); }
   function fighting() { var P = hero(); return Combat.dbg().W.enemies.some(function (e) { return !e.dead && e.awake && Math.hypot(e.x - P.x, e.y - P.y) < 240; }); }
-  function sandboxRunes() { Runes.LIST.forEach(function (r) { if (!RS.learnt[r.id]) RS.learnt[r.id] = { uses: 0 }; }); if (!RS.slots.some(function (s) { return s.kind === 'guard'; })) RS.slots.push({ kind: 'guard', id: null }); if (RS.slots.filter(function (s) { return s.kind === 'attack'; }).length < 2) RS.slots.push({ kind: 'attack', id: null }); }
-
-  /* the casting cloth: the pouch of learnt runes on the left, the hollows on the right; drag stones between them */
-  var CLOTH = { x: 70, y: 30, w: 260, h: 196 };
-  function clothLayout() {
-    var L = { stones: [], hollows: [] }, y = CLOTH.y + 26, i, x0 = CLOTH.x + 12;
-    Runes.KINDS.forEach(function (k) {
-      var list = Runes.LIST.filter(function (r) { return r.kind === k && (RS.learnt[r.id] || RS.heard[r.id]); });
-      if (!list.length) return;
-      L.stones.push({ label: Runes.KIND_NAMES[k], x: x0, y: y }); y += 8;
-      list.forEach(function (r, j) { L.stones.push({ r: r, x: x0 + 10 + j * 22, y: y + 8 }); });
-      y += 24;
-    });
-    for (i = 0; i < RS.slots.length; i++) L.hollows.push({ i: i, kind: RS.slots[i].kind, x: CLOTH.x + 200, y: CLOTH.y + 40 + i * 32 });
-    return L;
+  function sandboxRunes() { if (!ring) takeRing(true); Runes.LIST.forEach(function (r) { if (!RS.learnt[r.id]) RS.learnt[r.id] = { uses: 0, how: 'sandbox' }; }); RS.earned = {}; }
+  function ringRank() { return ring ? (Runes.METALS[ring.metal] || Runes.METALS.bronze).rank : 0; }
+  function heroRingSync() { var hs = lib.hero().spec; if (hs.ring !== ringRank()) hs.ring = ringRank(); }
+  // the bronze ring, from the dead Viking at the back of the cave
+  function takeRing(quiet) {
+    if (ring) return; ring = Runes.newRing('bronze'); seen.ring = 1; heroRingSync();
+    if (!quiet) { rite = { ring: true, t: 0 }; sfx('craft'); }
+    learnEarned(); save();
   }
-  function stoneAt() { if (!mouseS) return null; var L = clothLayout(); for (var i = 0; i < L.stones.length; i++) { var s = L.stones[i]; if (s.r && Math.hypot(mouseS.x - s.x, mouseS.y - s.y) < 10) return s; } return null; }
-  function hollowAt() { if (!mouseS) return null; var L = clothLayout(); for (var i = 0; i < L.hollows.length; i++) { var h = L.hollows[i]; if (Math.hypot(mouseS.x - h.x, mouseS.y - h.y) < 13) return h; } return null; }
-  function drawCloth(c) {
-    var L = clothLayout(), hs = stoneAt(), hh = hollowAt(), i, busy = fighting();
-    c.save();
-    c.fillStyle = 'rgba(10,8,6,0.4)'; c.fillRect(0, 0, 400, 250);
-    leather(c, CLOTH.x, CLOTH.y, CLOTH.w, CLOTH.h);
-    // the cloth itself: a woven square inside the leather
-    c.fillStyle = '#2f2219'; c.fillRect(CLOTH.x + 8, CLOTH.y + 20, CLOTH.w - 16, CLOTH.h - 40);
-    c.strokeStyle = 'rgba(255,225,170,0.06)'; c.lineWidth = 1; for (i = CLOTH.x + 12; i < CLOTH.x + CLOTH.w - 8; i += 6) { c.beginPath(); c.moveTo(i, CLOTH.y + 20); c.lineTo(i, CLOTH.y + CLOTH.h - 20); c.stroke(); } for (i = CLOTH.y + 24; i < CLOTH.y + CLOTH.h - 20; i += 6) { c.beginPath(); c.moveTo(CLOTH.x + 8, i); c.lineTo(CLOTH.x + CLOTH.w - 8, i); c.stroke(); }
-    c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(CLOTH.x + 186, CLOTH.y + 20, 1.5, CLOTH.h - 40);
-    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('The casting cloth', CLOTH.x + 10, CLOTH.y + 13);
-    c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'right'; c.fillText(busy ? 'Not in a fight' : 'C closes', CLOTH.x + CLOTH.w - 10, CLOTH.y + 13);
-    c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.font = '600 6.5px system-ui, sans-serif'; c.fillText('Pouch', CLOTH.x + 12, CLOTH.y + 27 - 8 + 4); c.fillText('Board', CLOTH.x + 192, CLOTH.y + 23);
-    L.stones.forEach(function (s) {
-      if (!s.r) { c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.55)'; c.fillText(s.label.toUpperCase(), s.x, s.y + 5); return; }
-      if (rpick && rpick.drag && rpick.id === s.r.id) return;
-      var st = !RS.learnt[s.r.id] ? 'dim' : (slotOf(s.r.id) >= 0 ? 'slotted' : 'learnt');
-      Runes.stone(c, s.r, s.x, s.y, hs === s ? 9.5 : 8.5, st, RS.learnt[s.r.id] ? Runes.tier(RS.learnt[s.r.id].uses).name : null);
-    });
-    L.hollows.forEach(function (h) {
-      Runes.hollow(c, h.kind, h.x, h.y, 12, hh === h && rpick && rpick.drag);
-      var id = RS.slots[h.i].id;
-      if (id && !(rpick && rpick.drag && rpick.id === id)) Runes.stone(c, Runes.BY[id], h.x, h.y, 8.5, 'slotted', Runes.tier(RS.learnt[id].uses).name);
-      c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'left'; c.fillText(Runes.KIND_NAMES[h.kind], h.x + 16, h.y + 2);
-    });
-    if (rpick && rpick.drag && mouseS) Runes.stone(c, Runes.BY[rpick.id], mouseS.x, mouseS.y, 9.5, 'learnt', Runes.tier(RS.learnt[rpick.id].uses).name);
-    // what the stone says
-    var r = hs ? hs.r : (hh && RS.slots[hh.i].id ? Runes.BY[RS.slots[hh.i].id] : null), txt = '';
-    if (r) { var kn = RS.learnt[r.id], t = kn ? Runes.tier(kn.uses) : null, nx = kn ? Runes.next(kn.uses) : null; txt = r.name + ' (' + r.norse + ', ' + Runes.KIND_NAMES[r.kind].toLowerCase() + '): ' + (kn ? r.text + '  ' + t.name + (nx ? ', ' + kn.uses + '/' + nx + ' uses' : '') : 'heard of, not yet learnt'); }
-    else if (!L.stones.length) txt = 'Nothing yet. Deeds, runestones and beasts teach runes.';
-    c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(txt, CLOTH.x + 10, CLOTH.y + CLOTH.h - 7);
+  function bodyNear(P) { return inCave && cave && cave.body && !seen.ring && Math.hypot(P.x - cave.body.x, P.y - cave.body.y) < 44; }
+  // the rite: a dim, the rune (or the ring) glowing over the hero, its name; drawn on the HUD
+  function drawRite(c) {
+    if (!rite) return; var P = hero(), t = rite.t, a = Math.min(1, t * 2) * Math.min(1, Math.max(0, (2.8 - t) / 0.6));
+    c.save(); c.fillStyle = 'rgba(10,8,6,' + (0.35 * a) + ')'; c.fillRect(0, 0, 400, 250);
+    var sx = (P.x - cam.x) * cam.z + 200, sy = (P.y * K - cam.y) * cam.z + 125 - 60 * cam.z - Math.min(1, t) * 6;
+    c.globalAlpha = a; c.shadowColor = 'rgba(255,214,90,0.9)'; c.shadowBlur = 16;
+    if (rite.ring) { Runes.ringD(c, sx, sy, ring, 15, -1, -1, 0); c.shadowBlur = 0; c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#f6e2b8'; c.fillText('A bronze arm ring', sx, sy + 28); }
+    else { var r = Runes.BY[rite.id]; Runes.stone(c, r, sx, sy, 16, 'alive'); c.shadowBlur = 0; c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#f6e2b8'; c.fillText(r.name + '  (' + r.norse + ')', sx, sy + 28); c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.fillText(rite.how, sx, sy + 37); }
     c.restore();
   }
-  function clothDown(button) {
-    if (button !== 0) return; var s = stoneAt(), h = hollowAt();
-    if (s && RS.learnt[s.r.id]) rpick = { id: s.r.id, x: mouseS.x, y: mouseS.y, drag: false, from: 'pouch' };
-    else if (h && RS.slots[h.i].id) rpick = { id: RS.slots[h.i].id, x: mouseS.x, y: mouseS.y, drag: false, from: h.i };
+  function riteTick(dt) { if (rite) { rite.t += dt; if (rite.t > 2.8) rite = null; } if (ringGlow.t > 0) ringGlow.t -= dt; }
+  /* the carver's bench: E at one (under a roof) opens the ring board: the known runes by side on the left, the ring on the
+     right. Click a rune: a work bar, five health, and it is cut into its side's coil, filing away what was there. */
+  var ringOpen = false, ringTab = 'hand', cutting = null, CUT_T = 4, ringBoard = { x: 64, y: 28, w: 272, h: 180 }, ringStation = null;
+  function carverNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.carver && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 56) return it; } return null; }
+  function openRing(it) { ringOpen = true; ringStation = it; invOpen = false; menu = null; bookOpen = false; mapOpen = false; var first = Runes.LIST.filter(function (r) { return RS.learnt[r.id]; })[0]; if (first && !Runes.LIST.some(function (r) { return r.side === ringTab && RS.learnt[r.id]; })) ringTab = first.side; }
+  function ringRows() { var bx = ringBoard.x, by = ringBoard.y, rows = [], list = Runes.LIST.filter(function (r) { return r.side === ringTab && RS.learnt[r.id]; }); list.forEach(function (r, k) { rows.push({ r: r, x: bx + 8, y: by + 38 + k * 22, w: 118, h: 20 }); }); return rows; }
+  function ringTabs() { var bx = ringBoard.x, by = ringBoard.y; return Runes.SIDES.map(function (sd, k) { return { side: sd, x: bx + 8 + k * 30, y: by + 20, w: 28, h: 12 }; }); }
+  function ringRowHit() { if (!mouseS) return null; var rows = ringRows(); for (var i = 0; i < rows.length; i++) { var r = rows[i]; if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return r; } return null; }
+  function ringTabHit() { if (!mouseS) return null; var tabs = ringTabs(); for (var i = 0; i < tabs.length; i++) { var t = tabs[i]; if (mouseS.x >= t.x && mouseS.x <= t.x + t.w && mouseS.y >= t.y && mouseS.y <= t.y + t.h) return t; } return null; }
+  function startCut(id) { if (cutting || !ring || !Runes.canCut(ring, id, RS.learnt)) return false; if (ringStation && !benchRoofed(ringStation)) { toast('The bench needs a roof over it'); return false; } if (hero().hp <= 6) { toast('Too little blood left for it'); return false; } cutting = { id: id, t: 0 }; sfx('pick'); return true; }
+  function cutTick(dt) {
+    if (!cutting) return; var P = hero();
+    if (!ringOpen || !ringStation || Math.hypot(P.x - ringStation.x, P.y - ringStation.y) > 70 || P.dead) { cutting = null; return; }
+    cutting.t += dt; if (cutting.t < CUT_T) return;
+    var i = Runes.cut(ring, cutting.id, RS.learnt); cutting = null; if (i < 0) return;
+    P.hp = Math.max(1, P.hp - 5); ringGlow = { i: i, t: 1.4 }; sfx('craft'); save();
   }
-  function clothUp() {
-    if (!rpick) return; var p = rpick; rpick = null;
-    if (!p.drag) return;
-    if (fighting()) { toast('Not in a fight'); return; }
-    var h = hollowAt(), r = Runes.BY[p.id];
-    if (h && RS.slots[h.i].kind === r.kind) { var old = slotOf(p.id); if (old >= 0) RS.slots[old].id = null; RS.slots[h.i].id = p.id; save(); }
-    else if (!h && p.from !== 'pouch') { RS.slots[p.from].id = null; save(); }
-  }
-  function drawPouchIcon(c, x, y) {
-    var hov = mouseS && Math.abs(mouseS.x - x) < 9 && Math.abs(mouseS.y - y) < 9;
-    c.save();
-    if (clothFlash > 0) { c.shadowColor = 'rgba(255,214,90,' + Math.min(1, clothFlash / 2) + ')'; c.shadowBlur = 8; }
-    c.fillStyle = '#4e3020'; c.beginPath(); c.moveTo(x - 6, y - 2); c.quadraticCurveTo(x - 8, y + 8, x, y + 8); c.quadraticCurveTo(x + 8, y + 8, x + 6, y - 2); c.closePath(); c.fill(); c.shadowBlur = 0;
-    c.strokeStyle = '#2e1a10'; c.lineWidth = 0.9; c.stroke();
-    c.strokeStyle = '#c9a07a'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x - 6, y - 2); c.quadraticCurveTo(x, y - 5, x + 6, y - 2); c.stroke();
-    c.fillStyle = '#7a7d86'; c.beginPath(); c.ellipse(x - 2, y - 5, 3, 2.4, 0.3, 0, 7); c.fill(); c.beginPath(); c.ellipse(x + 2.5, y - 4.5, 2.6, 2, -0.2, 0, 7); c.fill();
+  function drawRingBoard(c) {
+    var bx = ringBoard.x, by = ringBoard.y, bw = ringBoard.w, bh = ringBoard.h, P = hero(), i;
+    c.save(); c.fillStyle = 'rgba(10,8,6,0.35)'; c.fillRect(0, 0, 400, 250);
+    wood(c, bx, by, bw, bh); leather(c, bx + 134, by + 16, bw - 140, bh - 22);
+    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('The carver’s bench', bx + 8, by + 12);
+    c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'right'; c.fillText(ring ? (Runes.METALS[ring.metal].name + ' ring') : 'No ring on your arm', bx + bw - 8, by + 12);
+    var th = ringTabHit(); ringTabs().forEach(function (t) { var on = t.side === ringTab, has = Runes.LIST.some(function (r) { return r.side === t.side && RS.learnt[r.id]; }); c.fillStyle = on ? 'rgba(255,230,180,0.22)' : (th === t ? 'rgba(255,230,180,0.12)' : 'rgba(0,0,0,0.25)'); c.fillRect(t.x, t.y, t.w, t.h); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.fillStyle = on ? '#f6e2b8' : (has ? 'rgba(246,226,184,0.7)' : 'rgba(246,226,184,0.3)'); c.textAlign = 'center'; c.fillText(Runes.SIDE_NAMES[t.side], t.x + t.w / 2, t.y + 9); });
+    var rows = ringRows(), rh = ringRowHit();
+    c.fillStyle = 'rgba(20,12,6,0.45)'; c.fillRect(bx + 6, by + 36, 122, bh - 50);
+    if (!rows.length) { c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.55)'; c.fillText('Nothing known for this side', bx + 12, by + 50); }
+    rows.forEach(function (row) {
+      var alive = inUse(row.r.id), can = Runes.canCut(ring, row.r.id, RS.learnt), hov = rh === row, busy = cutting && cutting.id === row.r.id;
+      c.fillStyle = alive ? 'rgba(255,214,90,0.16)' : (hov ? 'rgba(255,230,180,0.12)' : 'rgba(0,0,0,0.12)'); c.fillRect(row.x, row.y, row.w, row.h);
+      if (busy) { c.fillStyle = 'rgba(246,196,83,0.45)'; c.fillRect(row.x, row.y, row.w * Math.min(1, cutting.t / CUT_T), row.h); }
+      Runes.stone(c, row.r, row.x + 10, row.y + 10, 7, alive ? 'alive' : 'learnt');
+      c.font = (alive ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = alive ? '#ffd34d' : (can ? '#f6e2b8' : 'rgba(246,226,184,0.5)'); c.fillText(row.r.name, row.x + 20, row.y + 8);
+      c.font = '600 5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillText(alive ? 'cut and reddened' : (can ? 'click to cut it, 5 blood' : 'no coil for it'), row.x + 20, row.y + 15.5);
+    });
+    // the ring
+    var coils = Runes.ringD(c, bx + 202, by + 86, ring, 44, -1, ringGlow.i, ringGlow.t), hc = null;
+    coils.forEach(function (q) { if (mouseS && Math.hypot(mouseS.x - q.x, mouseS.y - q.y) < q.r) hc = q; });
+    var txt = '';
+    if (rh) txt = rh.r.text; else if (hc && ring.coils[hc.i].id) txt = Runes.BY[ring.coils[hc.i].id].name + ': ' + Runes.BY[ring.coils[hc.i].id].text; else if (hc) txt = 'An empty ' + ring.coils[hc.i].side + ' coil';
+    else if (cutting) txt = 'Filing, cutting, reddening…'; else if (ringStation && !benchRoofed(ringStation)) txt = 'The bench needs a roof over it';
+    c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#f6e2b8';
+    wrapText(c, txt, bw - 150).slice(0, 3).forEach(function (ln, k) { c.fillText(ln, bx + 202, by + bh - 30 + k * 7); });
     c.restore();
-    if (hov) { c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText('Runes (C)', x, y + 16); c.fillStyle = '#fff'; c.fillText('Runes (C)', x, y + 16); }
   }
-
+  function ringClick(button) {
+    if (button !== 0) { ringOpen = false; return; }
+    var t = ringTabHit(); if (t) { ringTab = t.side; return; }
+    var row = ringRowHit(); if (row) { startCut(row.r.id); return; }
+    if (mouseS && (mouseS.x < ringBoard.x || mouseS.x > ringBoard.x + ringBoard.w || mouseS.y < ringBoard.y || mouseS.y > ringBoard.y + ringBoard.h)) ringOpen = false;
+  }
   /* ---------- the Book of Beasts: a card for every creature, earned the first time you slay one ----------
      The left page shows the beast itself, turning slowly; the right page what is known: lore, strengths,
      weaknesses, how it warns you, what it drops and where it lives. Unknown beasts are dark shapes. */
@@ -2689,6 +2701,7 @@ __COMBAT__
       var step = Math.max(1, Math.ceil(GW / 700)), cw = mini.width, ch = mini.height, sw = Math.min(cw, VIEW / step), sh = Math.min(ch, sw * mh / mw);
       var sx0 = Math.max(0, Math.min(cw - sw, hpx / T / step - sw / 2)), sy0 = Math.max(0, Math.min(ch - sh, hpy / T / step - sh / 2)), zx = mw / sw, zy = mh / sh;
       function mp(wx, wy) { return { x: mx + (wx / T / step - sx0) * zx, y: my + (wy / T / step - sy0) * zy }; }
+      if (inUse('snakeseye')) Combat.dbg().W.enemies.forEach(function (en) { if (en.dead || Math.hypot(en.x - P.x, en.y - P.y) > 300) return; var q = mp(en.x, en.y); if (q.x < mx || q.x > mx + mw || q.y < my || q.y > my + mh) return; c.fillStyle = '#ff5a4a'; c.beginPath(); c.arc(q.x, q.y, 1.1, 0, 7); c.fill(); });
       c.fillStyle = 'rgba(20,16,30,0.9)'; c.fillRect(mx - 2, my - 2, mw + 4, mh + 4);
       c.save(); c.beginPath(); c.rect(mx, my, mw, mh); c.clip(); c.imageSmoothingEnabled = true; c.drawImage(mini, sx0, sy0, sw, sh, mx, my, mw, mh);
       function mark(wx, wy, kind) {
@@ -2705,19 +2718,20 @@ __COMBAT__
       var hm = mp(hpx, hpy); c.fillStyle = '#ffd34d'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.3; c.beginPath(); c.arc(hm.x, hm.y, 2.7, 0, 7); c.fill(); c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 0.7; c.beginPath(); c.arc(hm.x, hm.y, 4.2, 0, 7); c.stroke();
       c.restore();
       c.imageSmoothingEnabled = true;
-      if (SHOW.book) drawBookIcon(c, mx - 34, my + 10); if (SHOW.runes) drawPouchIcon(c, mx - 54, my + 10); clothFlash = Math.max(0, clothFlash - 0.02);
+      if (SHOW.book) drawBookIcon(c, mx - 34, my + 10);
       if (fed) drawFedIcon(c, mx - 14, my + 10);
-      drawTorchIcon(c, mx - (SHOW.runes || SHOW.book ? 94 : 54), my + 10);
+      drawTorchIcon(c, mx - (SHOW.book ? 94 : 54), my + 10);
       (function () {                       // comfort and rest, under the chart: the room you are in, and how long the rest lasts
         var hr = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, cf = hr >= 0 ? comfortOf(hr, lvl()) : { n: 0 }, parts = [];
         if (cf.n > 0) parts.push('Comfort ' + cf.n); if (rested > 0) parts.push('Rested ' + Math.floor(rested / 60) + ':' + ('0' + Math.floor(rested % 60)).slice(-2));
         if (!parts.length) return; var txt = parts.join('   '); c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(txt, mx + mw, my + mh + 8); c.fillStyle = cf.n >= 4 ? '#9be58b' : '#fff'; c.fillText(txt, mx + mw, my + mh + 8);
       })();
       drawWorkBars(c);
-      var rsn = SHOW.runes && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;   // a stone read once needs no prompt
+      var rsn = ring && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;
+      var cvN = !ringOpen && carverNear(P) && P.mode !== 'build', bdN = bodyNear(P);   // a stone read once needs no prompt
       var stP = stoneNearH(P), asP = !stP && followerNear(P) && workplaceNear(P), hmP = !stP && !asP && hirdNear(P), ydP = !stP && !asP && !hmP && yardUsable(), bnP = !stP && !asP && !hmP && !ydP && !nearHearth(P) && !rsn && benchNear(P), bedP = !nearHearth(P) && !rsn && !bnP && bedNear(P), crP = !nearHearth(P) && !rsn && !bedP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && ((nearNpc(P) && !(npc.sayT > 0)) || (folkNear(P) && !(folkNear(P).sayT > 0))), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P);
-      if ((stP || asP || hmP || ydP || nearHearth(P) || rsn || bnP || bedP || crP || npcP || rkP || rfP || cvP || bbP) && !invOpen && P.mode !== 'build' && !menu && !clothOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
-        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = stP ? (stP.fallen ? 'Raise the stone (6 stone)' : 'Muster') : asP ? (HD.jobs[jobOf(workplaceNear(P))].name + ': ' + followerNear(P).name) : hmP ? (hmP.follow ? 'Stay' : (hmP === npc && !seen.raft ? 'Talk' : 'Follow me')) : ydP ? 'Lay a hull' : bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : (raft.kind === 'boat' ? 'Board the boat' : 'Board the raft')) : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
+      if ((stP || asP || hmP || ydP || nearHearth(P) || rsn || bnP || bedP || crP || npcP || rkP || rfP || cvP || bbP || cvN || bdN) && !invOpen && P.mode !== 'build' && !menu && !ringOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
+        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, pt = bdN ? 'Take the arm ring' : cvN ? 'Cut runes' : stP ? (stP.fallen ? 'Raise the stone (6 stone)' : 'Muster') : asP ? (HD.jobs[jobOf(workplaceNear(P))].name + ': ' + followerNear(P).name) : hmP ? (hmP.follow ? 'Stay' : (hmP === npc && !seen.raft ? 'Talk' : 'Follow me')) : ydP ? 'Lay a hull' : bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : (raft.kind === 'boat' ? 'Board the boat' : 'Board the raft')) : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
         c.font = '600 6px system-ui, sans-serif'; var pw = c.measureText(pt).width + 20, px0 = tx - pw / 2;
         c.fillStyle = 'rgba(20,16,30,0.72)'; c.beginPath(); c.roundRect(px0, ty - 6, pw, 11, 5.5); c.fill();
         c.fillStyle = '#f6e2b8'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.roundRect(px0 + 2.5, ty - 4.3, 7.5, 7.5, 1.5); c.fill(); c.stroke();   // a small key cap
@@ -2744,7 +2758,8 @@ __COMBAT__
       drawPanels(c); drawHint(c);
       bookFlash = Math.max(0, bookFlash - 0.02);
       if (bookOpen) drawBook(c);
-      if (clothOpen) drawCloth(c);
+      if (ringOpen) drawRingBoard(c);
+      drawRite(c);
       if (pauseOpen) { rows = []; if (adminOpen) drawAdmin(c); else drawPause(c); }
       if (menu) drawMenu(c);
       c.restore();
@@ -2823,18 +2838,18 @@ __COMBAT__
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (inYard) yardLeave(); else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); } else { var rs = SHOW.runes && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (musterOpen) musterOpen = false; else if (stoneNearH(hero()) && stoneNearH(hero()).fallen) { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(stoneNearH(hero())); } else toast('It takes 6 stone to raise it'); } else if (hirdAssign(hero())) {} else if (hirdNear(hero())) hirdTalk(hirdNear(hero())); else if (stoneNearH(hero())) { musterOpen = true; invOpen = false; menu = null; } else if (nearNpc(hero())) talk(); else if (folkNear(hero())) folkTalk(folkNear(hero())); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (inYard) yardLeave(); else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (ringOpen) ringOpen = false; else if (bodyNear(hero())) takeRing(); else if (carverNear(hero()) && hero().mode !== 'build') openRing(carverNear(hero())); else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); } else { var rs = ring && stoneNear(hero()); if (rs) readStone(rs); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (musterOpen) musterOpen = false; else if (stoneNearH(hero()) && stoneNearH(hero()).fallen) { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(stoneNearH(hero())); } else toast('It takes 6 stone to raise it'); } else if (hirdAssign(hero())) {} else if (hirdNear(hero())) hirdTalk(hirdNear(hero())); else if (stoneNearH(hero())) { musterOpen = true; invOpen = false; menu = null; } else if (nearNpc(hero())) talk(); else if (folkNear(hero())) folkTalk(folkNear(hero())); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
     if (e.code === 'KeyM') { e.preventDefault(); if (!e.repeat && !inYard) { mapOpen = !mapOpen; if (mapOpen) { invOpen = false; menu = null; bookOpen = false; clothOpen = false; musterOpen = false; } } return; }
-    if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat && SHOW.runes) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
+    if (e.code === 'KeyC') { e.preventDefault(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
-    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || musterOpen || mapOpen) { mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
+    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || ringOpen || musterOpen || mapOpen) { ringOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
     if (inYard && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) YSCENE.key('Enter'); return; }
     if (menu && menu.info && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) infoMake(infoSel()); return; }
     if (inYard && (e.code === 'KeyB' || e.code === 'KeyQ')) { e.preventDefault(); return; }
     if (!codes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
     if (e.code === 'KeyF' && hero().mode === 'build') menu = null;      // the board closes when the wreck cursor comes
-    if (/^Digit[1-6]$/.test(e.code)) { var di = +e.code.slice(5) - 1; if (hero().mode === 'fight' && attackSkills()[di]) castSkill(di); }
+
     heldK[e.code] = true; Combat.key(e.code, true);
   });
   window.addEventListener('keyup', function (e) { if (!codes[e.code] || typing(e)) return; e.preventDefault(); heldK[e.code] = false; Combat.key(e.code, false); });
@@ -2851,10 +2866,10 @@ __COMBAT__
     }
     if (mapOpen) { mapOpen = false; return; }
     if (musterOpen) { if (e.button === 0) musterClick(); else musterOpen = false; return; }
-    if (clothOpen) { clothDown(e.button); return; }
+    if (ringOpen) { ringClick(e.button); return; }
     if (bookOpen) { if (e.button === 0) bookClick(); return; }
     var mxc = 400 - (GW >= GH ? 64 : 64 * GW / GH) - 6 - 34; if (SHOW.book && e.button === 0 && Math.abs(mouseS.x - mxc) < 9 && Math.abs(mouseS.y - 16) < 9) { bookOpen = true; invOpen = false; cookOpen = false; menu = null; return; }
-    if (SHOW.runes && e.button === 0 && Math.abs(mouseS.x - (mxc - 20)) < 9 && Math.abs(mouseS.y - 16) < 9) { clothOpen = true; invOpen = false; cookOpen = false; menu = null; bookOpen = false; return; }
+
     if (menu) {
       var th = menuTabHit(), hit = menuHit();
       if (th && e.button === 0) { openMenu(th.id); return; }
@@ -2886,7 +2901,7 @@ __COMBAT__
   });
   window.addEventListener('mouseup', function (e) {
     mdown = 0; musicDrag = false; Combat.button(e.button, false);
-    if (rpick) { mouseS = toScreen(e); clothUp(); }
+
     if (pick) {
       mouseS = toScreen(e);
       if (pick.drag) {                      // onto another slot: move it; off the boards: it falls to the ground
@@ -2901,7 +2916,7 @@ __COMBAT__
     mouseW = toWorld(e); mouseS = toScreen(e); Combat.mouse(mouseW.x, mouseW.y * K);
     if (musicDrag && pauseOpen) musicSet(mouseS.x, 120, 160);
     if (pick && !pick.drag && Math.hypot(mouseS.x - pick.x, mouseS.y - pick.y) > 4) pick.drag = true;
-    if (rpick && !rpick.drag && Math.hypot(mouseS.x - rpick.x, mouseS.y - rpick.y) > 4) rpick.drag = true;
+
     if (mdown === 1) buildAct(false);
   });
   cv.addEventListener('mouseleave', function () { mouseW = null; mouseS = null; });
@@ -2931,7 +2946,7 @@ __COMBAT__
       hand = sv.hand && sv.hand.fight != null ? sv.hand : { fight: 0, gather: 0 };
       hird = []; hirdDay = sv.hirdDay || 0; (sv.hird || []).forEach(function (h) { var m; if (h.brokk && npc) { m = npc; npc.joined = true; } else { m = { x: h.x, y: h.y, face: Math.PI / 2, say: '', sayT: 0, name: h.name, fig: lib.makeFigure(Hird.figureSpec(h.person || Hird.roll(Math.random, HD), lib.heroDef)) }; } m.person = h.person; m.job = h.job; m.at = h.at; m.workAt = h.workIdx >= 0 ? B.items[h.workIdx] : null; m.follow = h.follow; m.mustered = h.follow; m.hungry = h.hungry; m.ph = 0; m.moving = false; m.x = h.x; m.y = h.y; hird.push(m); });
       seen = sv.seen || {}; if (!sv.seen) { for (k in inv) if (inv[k] > 0) seen[k] = 1; }
-      RS = sv.runes && sv.runes.slots ? sv.runes : freshRunes(); if (!RS.heard) RS.heard = {}; if (!RS.stones) RS.stones = {}; if (!RS.deeds) RS.deeds = freshRunes().deeds;
+      RS = sv.runes && sv.runes.learnt && !sv.runes.slots ? sv.runes : freshRunes(); var fr = freshRunes(); ['earned', 'deeds', 'kills', 'stones'].forEach(function (k) { if (!RS[k]) RS[k] = fr[k]; }); ring = sv.ring && sv.ring.coils ? sv.ring : null; heroRingSync();
       (sv.drops || []).forEach(function (d) { drops.push({ kind: d.kind, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0 }); });
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
@@ -3013,7 +3028,7 @@ __COMBAT__
     if (kind === 'boat') { for (i = 0; i < 7; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } parts.push({ id: 'thwart', i: 3, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { giveBoat: giveBoat, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { giveBoat: giveBoat, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -3031,16 +3046,14 @@ __COMBAT__
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt.r && sameLvl(bt) && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
-    if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (hri >= 0 && comfortOf(hri, lvl()).n >= 1 && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
+    if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
     tick(); levelTick(); critterTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;
-    if (P.sprinting) { RS.deeds.sprint = (RS.deeds.sprint || 0) + dt; if (RS.deeds.sprint >= 60) learnRune('surefeet', 'a minute of sprinting'); if (inUse('surefeet') && Math.random() < dt * 0.2) useRune('surefeet', 1); }
-    if (inUse('longwind') && P.st < 100 && Math.random() < dt * 0.1) useRune('longwind', 1);
-    Combat.api.skills = !SHOW.runes ? [] : attackSkills().map(function (r) { return r ? { id: r.id, name: r.name, cd: Math.max(0, (cds[r.id] || 0) / r.cd), draw: function (c) { Runes.stone(c, r, 0, 0, 13, 'slotted', Runes.tier(RS.learnt[r.id].uses).name); } } : null; });
-    // runestones in view are heard of
-    around(P.x, P.y, function (o) { if (o.name === 'runestone' && Math.abs(o.x - cam.x) < 240 && Math.abs(o.y * K - cam.y) < 160) { var id = stoneRune(o); if (!RS.learnt[id] && !RS.stones[propKey(o)]) RS.heard[id] = 1; } });
+    if (P.sprinting) { RS.deeds.sprint = (RS.deeds.sprint || 0) + dt; if (RS.deeds.sprint >= 60) earnRune('surefeet', 'a minute of sprinting'); }
+    riteTick(dt); cutTick(dt); heroRingSync(); if (ringOpen && ringStation && Math.hypot(P.x - ringStation.x, P.y - ringStation.y) > 70) ringOpen = false;
+    Combat.api.skills = [];
     handSync();
     Combat.api.scene.noHotbar = inYard;
     Combat.api.buildSlots = inYard ? YSCENE.parts().map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function () {} }; }) : buildSlots0; if (inYard) { hero().piece = YSCENE.pick; YSCENE.tick(dt); }

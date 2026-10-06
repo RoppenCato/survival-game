@@ -11,9 +11,10 @@ var WPRE = {
 var DASH_T = 0.18;
 var api = { sfx: function () {}, facings8: true, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
-// mods(): { sprint, stam, dash, block } multipliers from runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
+// mods(): { sprint, sprintCost, stam, dash, block, riposte, charge, roll, heavyblow } from the arm ring's runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
 // trigger: a skill id to cast this frame; powerMul(kind): tool power multiplier; onDeed(kind): 'block', 'parry', 'dash'
 function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null ? m[k] : 1; }
+function modZ(k) { var m = api.mods ? api.mods() : null; return m && m[k] ? m[k] : 0; }   // a rune's switch: 0 unless the page says so
 function maxSt() { var m = api.mods ? api.mods() : null; return m && m.stMax ? m.stMax : 100; }   // food can raise top stamina (mods().stMax)   // armor(): share of a blow the hero's gear turns aside
 // api.items = { held(), tool(i), weapon(kind) } gives the item specs (src/items.js) in the hand, in tool slot i and for 'sword' or 'bow'
 function itemOf(fn, a) { if (!api.items || typeof Items === 'undefined' || !api.items[fn]) return null; return api.items[fn](a) || null; }
@@ -209,7 +210,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
       p.parryFx = 0.35; p.st = Math.min(maxSt(), p.st + 12);
       spark(p.x + Math.cos(p.face) * 10, p.y + Math.sin(p.face) * 10, 14, '#fff6c8', 140);
       lockFor(p, 0.09); lockFor(src, 0.09); slowmo(0.25, 0.14); ring(p.x + Math.cos(p.face) * 10, p.y, 13, 24, 0.2, '255,243,196', true, 2.4); sfx('parry');
-      num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); if (api.onDeed) api.onDeed('parry');
+      num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
       return 'parry';
     }
     var red = kind === 'heavy' ? (S.shield ? 0.4 : 0.8) : (S.shield ? 0.12 : 0.55);
@@ -239,6 +240,7 @@ function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
 function damageEnemy(e, dmg, ang, kb, stag, kind) {
   if (e.aggro) e.awake = true;   // hitting a calm creature rouses it
+  e.struck = true;
   if (e.dead) return;
   var mult = 1, weak = false;
   var bigE = e.type === 'boss' || e.type === 'bossbot';
@@ -301,6 +303,7 @@ function daze(e, dur) { e.state = 'recover'; e.t = 0; e.dur = dur; }
 function startAttack() {
   var p = P, a = p.atk;
   if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % chainLen(); else a.combo = 0;
+  a.riposte = false; if (p.riposteT > 0 && p.mode === 'fight') { a.combo = chainLen() - 1; a.riposte = true; p.riposteT = 0; }
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; a.spin = false; a.bash = false; a.smashed = false;
   if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st); p.stDelay = 0.5; }
@@ -380,14 +383,20 @@ function updatePlayer(dt) {
     if (p.venom.t <= 0) p.venom = null;
   }
   var bowOut = p.mode === 'fight' && p.weapon === 'ranged';
-  if ((IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
+  var hb = p.mode === 'gather' && modZ('heavyblow') > 0;
+  if (hb) {                                     // the heavy blow rune: hold to wind up, let go to land one blow worth three
+    if (IN.lmb || IN.keys.KeyJ) { p.holdG = (p.holdG || 0) + dt; }
+    else if (p.holdG > 0) { p.heavyG = p.holdG >= 0.45 ? 1 : 0; p.holdG = 0; p.atkBuf = S.juice ? 0.2 : 0.02; }
+  }
+  if ((IN.pressed.lmb || IN.pressed.KeyJ || (p.mode === 'gather' && !hb && (IN.lmb || IN.keys.KeyJ))) && !bowOut && p.mode !== 'build' && !hb) p.atkBuf = S.juice ? 0.2 : 0.02;   // buffered during a hit pause, so the swing still comes
   if (IN.pressed.Space) p.dashBuf = 0.18;
   if (p.freezeT > 0) {
     p.freezeT -= dt; p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
     return;
   }
   p.animT += dt;
-  p.invuln = Math.max(0, p.invuln - dt); p.flash = Math.max(0, p.flash - dt * 4); p.hurtT = Math.max(0, p.hurtT - dt);
+  p.invuln = Math.max(0, p.invuln - dt); p.flash = Math.max(0, p.flash - dt * 4); p.hurtT = Math.max(0, p.hurtT - dt); p.riposteT = Math.max(0, (p.riposteT || 0) - dt);
+  for (i = 0; i < W.enemies.length; i++) if (W.enemies[i].chargeT > 0) W.enemies[i].chargeT -= dt;
   p.fireCd = Math.max(0, p.fireCd - dt); p.fireT = Math.max(0, p.fireT - dt); p.roll.cd = Math.max(0, p.roll.cd - dt); p.parryFx = Math.max(0, p.parryFx - dt);
   p.stDelay -= dt; if (p.stDelay <= 0) p.st = Math.min(maxSt(), p.st + 34 * dt * mod('stam')); if (p.st > maxSt()) p.st = maxSt();
   var ix = (IN.keys.KeyD ? 1 : 0) - (IN.keys.KeyA ? 1 : 0), iy = (IN.keys.KeyS ? 1 : 0) - (IN.keys.KeyW ? 1 : 0);
@@ -397,7 +406,7 @@ function updatePlayer(dt) {
 
   p.atkBuf = Math.max(0, p.atkBuf - dt); p.dashBuf = Math.max(0, p.dashBuf - dt);
   var bow = p.mode === 'fight' && p.weapon === 'ranged';
-  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && p.mode !== 'build') p.atkBuf = S.juice ? 0.2 : 0.02;
+  if ((IN.pressed.lmb || IN.pressed.KeyJ) && !bow && p.mode !== 'build' && !(p.mode === 'gather' && modZ('heavyblow') > 0)) p.atkBuf = S.juice ? 0.2 : 0.02;
   if (IN.pressed.Space) p.dashBuf = 0.18;
   // B enters and leaves build mode; Q swaps fight and gather (and leaves build mode for fight)
   if (IN.pressed.KeyB) { if (p.mode === 'build') p.mode = p.lastMode || 'fight'; else { p.lastMode = p.mode; p.mode = 'build'; } p.wreck = false; a.ph = 'none'; a.since = 9; a.tr = null; p.atkBuf = 0; p.holdT = 0; p.guard = false; W.lock = null; sfx('tele'); }
@@ -426,7 +435,8 @@ function updatePlayer(dt) {
     p.dashBuf = 0;
     p.st -= 18 * mod('dash'); p.stDelay = 0.5; p.guard = false; a.ph = 'none'; a.since = 0; p.atkBuf = 0; if (api.onDeed) api.onDeed('dash');
     var rx = il > 0 ? ix : -Math.cos(p.face), ry = il > 0 ? iy : -Math.sin(p.face);
-    p.roll.t = DASH_T; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = 0.08; p.invuln = Math.max(p.invuln, 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0;
+    var rl = modZ('roll') > 0 ? 1 : 0;                           // the roll rune (mods().roll 2): longer, longer untouchable, slower to rise
+    p.roll.t = DASH_T * (rl ? 1.7 : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? 0.35 : 0.08; p.invuln = Math.max(p.invuln, rl ? 0.42 : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0;
     dust(p.x, p.y, 7); sfx('dash');
   }
 
@@ -451,7 +461,7 @@ function updatePlayer(dt) {
   // attack
   if (p.atkBuf > 0 && p.roll.t <= 0 && p.hurtT <= 0 && (p.mode === 'gather' || p.st >= 7)) {
     var can = a.ph === 'none' || (S.juice && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5);
-    if (can) { if (p.mode === 'gather') { p.st = Math.max(0, p.st - 4); p.stDelay = Math.max(p.stDelay, 0.5); } startAttack(); p.atkBuf = 0; }   // chopping and mining cost a little stamina (forgiving: never stops you)
+    if (can) { if (p.mode === 'gather') { p.st = Math.max(0, p.st - 4); p.stDelay = Math.max(p.stDelay, 0.5); } startAttack(); if (p.mode === 'gather' && p.heavyG) { a.heavyG = true; p.heavyG = 0; } else a.heavyG = false; p.atkBuf = 0; }   // chopping and mining cost a little stamina (forgiving: never stops you)
   }
   if (a.ph === 'none') a.since += dt;
   else if (a.ph !== 'charge') {
@@ -473,7 +483,8 @@ function updatePlayer(dt) {
           var ox = o.x - p.x, oy = o.y - p.y, od = Math.hypot(ox, oy);
           if (od <= sd.reach + (o.r || 8) + 2 && Math.abs(wrap(Math.atan2(oy, ox) - a.dir)) <= half + 0.12) {
             a.hit.push(o);
-            var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (heavyHit(a) ? 1.5 : 1);
+            var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (heavyHit(a) ? 1.5 : 1) * (a.heavyG ? 3 : 1);
+            if (a.heavyG && S.juice) { dust(o.x, o.y, 5); }
             hv.hit(o, pw, right, tl.id);
             var sayWrong = !right && W.t - wrongToolAt > 300; if (sayWrong) wrongToolAt = W.t;
             num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + (Math.round(pw * 10) / 10), right ? '#ffffff' : '#d9d0c0', heavyHit(a), !right);
@@ -487,7 +498,7 @@ function updatePlayer(dt) {
         if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12)) {
           a.hit.push(e);
           critBonus = (!bareHanded() && meleeProfile().crit) || 0;
-          damageEnemy(e, sd.dmg * dmgMul('sword'), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0;
+          damageEnemy(e, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0;
           if (sd.guardBreak && e.guard) e.guard = 0;
           if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
         }
@@ -524,14 +535,18 @@ function updatePlayer(dt) {
   if (p.st <= 0.5) p.sprintLock = true; else if (p.st >= 14) p.sprintLock = false;
   p.sprinting = !!sprint;
   var spd = 84 * mod('speed');           // a walk, not a jog (118 was too fast for the world's scale); mods().speed for a page's cheats
-  if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt); p.stDelay = Math.max(p.stDelay, 0.55); }
+  if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt * mod('sprintCost')); p.stDelay = Math.max(p.stDelay, 0.55); }
+  if (sprint && il > 0 && modZ('charge') > 0 && p.mode === 'fight') for (i = 0; i < W.enemies.length; i++) {   // the boar's charge: your run is a blow
+    var ce = W.enemies[i]; if (ce.dead || (ce.chargeT || 0) > 0) continue;
+    if (Math.hypot(ce.x - p.x, ce.y - p.y) < ce.r + p.r + 6) { ce.chargeT = 1.2; var cang = Math.atan2(ce.y - p.y, ce.x - p.x); damageEnemy(ce, 1.2 * dmgMul('sword'), cang, 260, 40, 'heavy'); ring(ce.x, ce.y, 0, 14, 0.25, '255,243,196', false, 2); sfx('slam'); }
+  }
   if (p.guard) spd *= 0.55;
   if (a.ph === 'windup' || a.ph === 'active') spd *= 0.55; else if (a.ph === 'recover') spd *= 0.9; else if (a.ph === 'charge') spd *= 0.6;
   var tvx = ix * spd, tvy = iy * spd;
   if (p.roll.t > 0) {
     p.roll.t -= dt;
     if (p.roll.t <= 0) { p.anim.sq = 0.9; p.anim.sqv = 0; }
-    var rs = 460 * (0.25 + 0.75 * Math.max(0, p.roll.t) / DASH_T);
+    var rs = (p.roll.len > DASH_T * 1.2 ? 330 : 460) * (0.25 + 0.75 * Math.max(0, p.roll.t) / (p.roll.len || DASH_T));
     p.ghostT -= dt; if (p.ghostT <= 0 && S.juice) { p.ghostT = 0.035; W.ghosts.push({ x: p.x, y: p.y, dir: heroDir(), t: p.animT, ph: p.anim.phase, life: 0.22, max: 0.22 }); }
     p.vx = p.roll.dx * rs; p.vy = p.roll.dy * rs;
   } else if (p.hurtT > 0) { p.vx *= Math.exp(-dt * 8); p.vy *= Math.exp(-dt * 8); }

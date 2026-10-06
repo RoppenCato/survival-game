@@ -1486,6 +1486,28 @@ function trough(c, K, x, y, seed) {
   shape(c, ellPts(x, y - 13, 12, 2.8, 12), K.waterL, { seed: seed + 3, size: 'S', flat: true });
   line(c, [[x - 15, y - 16], [x + 15, y - 16]], 1.6, K.wood.hl, false);
 }
+// The carver's bench (the arm ring's runes are cut and reddened here): a low bench with a graver, a file and a bowl.
+function carverBench(c, K, x, y, seed) {
+  gshadow(c, x + 1, y, 16, 4, 0.35);
+  [[-10, 1], [10, 1]].forEach(function (p, k) { shape(c, rrPts(x + p[0] - 2, y - 11, 4, 12, 1), K.wood, { seed: seed + k, size: 'S', flat: true, rough: 0.2 }); });
+  shape(c, [[x - 15, y - 12], [x + 13, y - 12], [x + 17, y - 17], [x - 11, y - 17]], K.trunkL, { seed: seed + 4, size: 'S', sh: 1, rough: 0.2 });
+  shape(c, rrPts(x - 15, y - 12, 28, 4, 1.2), K.wood, { seed: seed + 5, size: 'S', sh: 1.2, rough: 0.2 });
+  line(c, [[x - 9, y - 16], [x - 3, y - 21]], 1.6, K.wood.base, true); shape(c, [[x - 4, y - 21], [x - 1, y - 24], [x, y - 23], [x - 3, y - 20]], K.ironLight, { seed: seed + 6, size: 'S', flat: true, rough: 0.1 });   // the graver
+  shape(c, rrPts(x + 1, y - 19.5, 9, 2.2, 0.8), K.iron, { seed: seed + 7, size: 'S', flat: true, rough: 0.1 }); line(c, [[x + 10, y - 18.4], [x + 13, y - 18.4]], 1.4, K.wood.base, false);   // the file
+  shape(c, ellPts(x + 9, y - 23, 4.2, 2.4, 10), K.rockC, { seed: seed + 8, size: 'S', sh: 0.8, rough: 0.15 }); shape(c, ellPts(x + 9, y - 23.4, 2.8, 1.3, 8), M(0, 70, 32), { seed: seed + 9, size: 'S', flat: true });   // the bowl, with blood in it
+  shape(c, ellPts(x - 12, y - 19, 2.6, 2.6, 10), M(28, 45, 42), { seed: seed + 10, size: 'S', sh: 0.6, rough: 0.1 });   // a ring, being worked
+}
+// A dead Viking of the old days, lying on the cave floor behind the troll's lair: bones in a rotted cloak, an arm ring still on.
+function deadViking(c, K, x, y, seed) {
+  gshadow(c, x, y + 1, 22, 5, 0.35);
+  shape(c, [[x - 20, y - 2], [x - 16, y - 9], [x + 2, y - 11], [x + 16, y - 8], [x + 20, y - 1], [x + 12, y + 3], [x - 12, y + 3]], M(8, 30, 26), { seed: seed, size: 'M', sh: 1, rough: 0.5 });   // the cloak
+  shape(c, ellPts(x + 15, y - 6, 4.6, 4, 10), M(45, 20, 84), { seed: seed + 1, size: 'S', sh: 1, rough: 0.2 });   // the skull
+  line(c, [[x + 12.5, y - 5.5], [x + 13.5, y - 5.5]], 1.4, M(45, 10, 30).base, false); line(c, [[x + 16.5, y - 6], [x + 17.5, y - 6]], 1.4, M(45, 10, 30).base, false);
+  for (var i = 0; i < 4; i++) line(c, [[x - 6 + i * 4, y - 9], [x - 7 + i * 4, y - 3]], 1.2, M(45, 20, 78).base, false);   // ribs through the cloak
+  line(c, [[x - 10, y - 6], [x - 19, y - 3]], 2.2, M(45, 20, 80).base, true);                                            // the arm
+  shape(c, ellPts(x - 15, y - 4.4, 2.2, 1.6, 8), M(28, 50, 48), { seed: seed + 2, size: 'S', sh: 0.5, rough: 0.1 });    // the ring, bronze
+  shape(c, [[x + 3, y - 14], [x + 11, y - 15], [x + 12, y - 10], [x + 4, y - 9]], K.iron, { seed: seed + 3, size: 'S', sh: 1, rough: 0.3 });   // a helmet, fallen
+}
 function woodenWell(c, K, x, y, seed) {
   longShadow(c, x, y, 26, 26); gshadow(c, x, y, 18, 5, 0.4);
   var w = shape(c, rrPts(x - 13, y - 15, 26, 15, 1.5), K.wood, { seed: seed, size: 'M', sh: 2, rough: 0.3 });
@@ -1548,6 +1570,8 @@ var PROPS = {
   watchtower: { b: [-30, -106, 60, 16], f: function (c, K, s) { watchtower(c, K, 0, 0, s); } },
   stoneHearth: { b: [-26, -44, 26, 10], f: function (c, K, s) { stoneHearth(c, K, 0, 0, s); } },
   fireplace: { b: [-18, -36, 18, 6], f: function (c, K, s) { fireplace(c, K, 0, 0, s); } },
+  carverBench: { b: [-18, -28, 20, 4], f: function (c, K, s) { carverBench(c, K, 0, 0, s); } },
+  deadViking: { b: [-22, -17, 22, 5], f: function (c, K, s) { deadViking(c, K, 0, 0, s); } },
   trough: { b: [-17, -19, 17, 4], f: function (c, K, s) { trough(c, K, 0, 0, s); } },
   woodenWell: { b: [-18, -51, 40, 9], f: function (c, K, s) { c.save(); c.scale(0.75, 0.75); woodenWell(c, K, 0, 0, s); c.restore(); } },
   runestone: { b: [-22, -72, 40, 12], f: function (c, K, s) { runestone(c, K, 0, 0, s); } },
@@ -1615,7 +1639,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };

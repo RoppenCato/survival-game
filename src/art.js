@@ -334,7 +334,7 @@ var canopyB = null;
 // matte 0..1 dulls the highlights, softens the colours and browns the outline toward the world's, like the trees.
 var HEROD_DEF = {
   scale: 0.75, headW: 1, headH: 1, bodyW: 0.9, bodyH: 1, legL: 1, legW: 1, armL: 0.9, armW: 0.9, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 1, beard: 0,
-  hair: 0, hat: 0, clothes: 0, matte: 0,
+  hair: 0, hat: 0, clothes: 0, matte: 0, ring: 0,
   walkRate: 1.4, bob: 1, stride: 1, armSwing: 1, sway: 0.25, stance: 0.8, lean: 1, atkStyle: 0, atkPower: 1, bladeLen: 1, slashSize: 1, slashWidth: 0.66,
   hue: 0, sat: 1, lum: 1,
   col: { skin: '#ffd8b0', hair: '#b4602d', coat: '#4fa8a4', vest: '#7a5236', pants: '#55466b', boot: '#4a3329', trim: '#e0a93a',
@@ -370,7 +370,7 @@ function figureD(c, x, y, dir, an, pose, F) {
 }
 // People of the world, as changes on top of the hero's spec.
 var FOLK = {
-  dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 1.12, headH: 1.02, bodyW: 1.28, bodyH: 0.9, legL: 0.5, legW: 1.3, armL: 0.78, armW: 1.25, eyeSize: 0.85, blush: 1, beard: 1, walkRate: 1.7, stance: 1 },
+  dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 1.12, headH: 1.02, bodyW: 1.28, bodyH: 0.9, legL: 0.5, legW: 1.3, armL: 0.78, armW: 1.25, eyeSize: 0.85, blush: 1, beard: 1, walkRate: 1.7, stance: 1, ring: 1 },
     col: { skin: '#f0c49c', hair: '#c8743a', coat: '#7d4a3a', vest: '#4f3b2c', pants: '#4a4038', boot: '#3a2a22', trim: '#b9b2a6' } }
 };
 // Concepts for the people of this world (2026-10-06): whole looks, each a set of spec changes and colours on the hero's
@@ -435,7 +435,12 @@ function playerD(c, x, y, dir, an, pose) {
     c.strokeStyle = LN; c.lineWidth = (w || 4.4) + 2.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
     c.strokeStyle = col; c.lineWidth = (w || 4.4); c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
   }
-  function armTo(shx, shy, hx, hy2, px, py) {
+  var RING_COL = [null, ['#b07a3a', '#6b4420'], ['#c9ced8', '#6f7580'], ['#d6dbe4', '#6f7580'], ['#e2b63a', '#8a6a18'], ['#c8402a', '#6a1e12']], RG = Math.round(sp.ring || 0);
+  function armBand(shx, shy, ex, ey) {                     // the arm ring on the upper arm
+    var rc = RING_COL[RG]; if (!rc) return; var ux = ex - shx, uy = ey - shy, ul = Math.hypot(ux, uy) || 1, bx = shx + ux * 0.52, by = shy + uy * 0.52, px = -uy / ul, py = ux / ul, hw = armW * 0.7 + 0.6;
+    c.lineCap = 'butt'; c.strokeStyle = rc[1]; c.lineWidth = 2.8; c.beginPath(); c.moveTo(bx - px * hw, by - py * hw); c.lineTo(bx + px * hw, by + py * hw); c.stroke(); c.strokeStyle = rc[0]; c.lineWidth = 1.6; c.stroke(); c.lineCap = 'round';
+  }
+  function armTo(shx, shy, hx, hy2, px, py, ringArm) {
     var dx = hx - shx, dy = hy2 - shy, d = Math.max(0.01, Math.hypot(dx, dy)), Ls = armSeg, ex, ey;
     if (d >= 2 * Ls - 0.2) { ex = shx + dx / 2; ey = shy + dy / 2; }
     else {
@@ -446,9 +451,10 @@ function playerD(c, x, y, dir, an, pose) {
     c.lineCap = 'round'; c.lineJoin = 'round';
     c.strokeStyle = LN; c.lineWidth = armW + 2.2; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
     c.strokeStyle = COAT; c.lineWidth = armW; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
+    if (ringArm) armBand(shx, shy, ex, ey);
     ell(c, hx, hy2, 2.4, 2.4, SK, 1.4);
   }
-  function armPose(shx, shy, h, px, py) { var q = loc(h); armTo(shx, shy, q[0], q[1], px, py); }
+  function armPose(shx, shy, h, px, py, ringArm) { var q = loc(h); armTo(shx, shy, q[0], q[1], px, py, ringArm); }
 
   c.save(); c.translate(x, y);
   if (flip) c.scale(-1, 1);
@@ -668,12 +674,12 @@ function playerD(c, x, y, dir, an, pose) {
     if (pose && pose.far) armPose(0.8, -17, pose.far, 1, 0.5);
     drawSheath();
     torsoSide(sw1);
-    if (pose && pose.near) armPose(0, -17, pose.near, 0.6, 1);
+    if (pose && pose.near) armPose(0, -17, pose.near, 0.6, 1, true);
     else {
       var aa = -Math.sin(ph) * 0.65 * amt * (1 + 0.35 * run) * sp.armSwing;
       var rr0 = (9.3 - Math.max(0, Math.sin(aa)) * 1.9) * sp.armL;
       var hx2 = -Math.sin(aa) * rr0, hy3 = -17 + Math.cos(aa) * rr0 - Math.max(0, Math.sin(aa)) * 1.2 - (1 - amt) * 0.4;
-      armTo(0, -17, hx2, hy3, 1, 0.3);
+      armTo(0, -17, hx2, hy3, 1, 0.3, true);
     }
     head(function () {
       c.fillStyle = HAIR;
@@ -697,8 +703,9 @@ function playerD(c, x, y, dir, an, pose) {
     // arms swing opposite to the legs (same-side arm and leg moving together reads as a waddle)
     var aL = -Math.sin(ph) * dirS_(dir) * amt * sp.armSwing, aR = -aL;
     var hx0 = (dir === 'up' ? 8.4 : 9.4) - (1 - Math.min(1, sp.sway)) * 0.9, handY = -17 + 9 * sp.armL;
-    var armLf = function () { if (pose && pose.armL) armPose(-6.5, -17, pose.armL, -0.7, 1); else armTo(-6.5, -17, -hx0 + aL * 0.5 * sp.sway, handY + aL * 1.3 * (1 + 0.4 * run) - Math.max(0, aL) * 0.4, -1, 0.4); };
-    var armRf = function () { if (pose && pose.armR) armPose(6.5, -17, pose.armR, 0.7, 1); else armTo(6.5, -17, hx0 - aR * 0.5 * sp.sway, handY + aR * 1.3 * (1 + 0.4 * run) - Math.max(0, aR) * 0.4, 1, 0.4); };
+    var ringL = dir === 'up', ringR = dir !== 'up';
+    var armLf = function () { if (pose && pose.armL) armPose(-6.5, -17, pose.armL, -0.7, 1, ringL); else armTo(-6.5, -17, -hx0 + aL * 0.5 * sp.sway, handY + aL * 1.3 * (1 + 0.4 * run) - Math.max(0, aL) * 0.4, -1, 0.4, ringL); };
+    var armRf = function () { if (pose && pose.armR) armPose(6.5, -17, pose.armR, 0.7, 1, ringR); else armTo(6.5, -17, hx0 - aR * 0.5 * sp.sway, handY + aR * 1.3 * (1 + 0.4 * run) - Math.max(0, aR) * 0.4, 1, 0.4, ringR); };
     // which arm is behind the body: both from the back, the far one when turned
     var backL = dir === 'up' ? tq > -0.35 : tq < -0.35, backR = dir === 'up' ? tq < 0.35 : tq > 0.35;
     if (backL && !(pose && pose.armL)) armLf();
