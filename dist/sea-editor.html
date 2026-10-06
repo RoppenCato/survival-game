@@ -467,20 +467,30 @@ var canopyB = null;
    so a spec of all ones is the original hero. The Sprite test page edits the spec live.
    sway and stance only affect walking toward or away from the camera: sway is the side-to-side rock of the
    body (1 is the original, which read as a waddle), stance is how far apart the feet land. */
+// Styles (2026-10-06, for the people of this world): hair 0 bowl, 1 cropped, 2 long, 3 braids, 4 knot, 5 bald, 6 shaved sides
+// with a tail; beard 0 none, 1 full, 2 short, 3 long and braided, 4 moustache; hat 0 none, 1 hood, 2 leather cap, 3 nasal
+// helmet, 4 fur hat, 5 headband; clothes 0 the coat and vest, 1 belted tunic, 2 tunic and cloak, 3 apron dress, 4 fur vest.
+// matte 0..1 dulls the highlights, softens the colours and browns the outline toward the world's, like the trees.
 var HEROD_DEF = {
   scale: 0.75, headW: 1, headH: 1, bodyW: 0.9, bodyH: 1, legL: 1, legW: 1, armL: 0.9, armW: 0.9, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 1, beard: 0,
+  hair: 0, hat: 0, clothes: 0, matte: 0,
   walkRate: 1.4, bob: 1, stride: 1, armSwing: 1, sway: 0.25, stance: 0.8, lean: 1, atkStyle: 0, atkPower: 1, bladeLen: 1, slashSize: 1, slashWidth: 0.66,
   hue: 0, sat: 1, lum: 1,
   col: { skin: '#ffd8b0', hair: '#b4602d', coat: '#4fa8a4', vest: '#7a5236', pants: '#55466b', boot: '#4a3329', trim: '#e0a93a',
+    cloak: '#7a3b3b', dress: '#5b6b8a', fur: '#b89a74', iron: '#9aa0aa',
     lens: '#a9e6ff', eye: '#2a1c2a', line: '#3a2a36', blade: '#eef3fb', slash: '#ffffff' }
 };
 var LEG_LEN = 7.3, curHero = null;
 function heroPalette(sp) {
-  function t(k) { var q = toHsl(sp.col[k]); return fromHsl(q[0] + sp.hue, q[1] * sp.sat, q[2] * sp.lum); }
+  var m = Math.max(0, Math.min(1, sp.matte || 0));
+  function t(k) { var q = toHsl(sp.col[k]); return fromHsl(q[0] + sp.hue, q[1] * sp.sat * (1 - 0.22 * m), q[2] * sp.lum); }
   var C = { skin: t('skin'), hair: t('hair'), coat: t('coat'), vest: t('vest'), pants: t('pants'), boot: t('boot'), trim: t('trim'),
-    lens: t('lens'), eye: t('eye'), line: sp.col.line, blade: t('blade'), slash: t('slash') };
-  C.skinD = shade(C.skin, -0.08); C.hairD = shade(C.hair, -0.09); C.hairL = shade(C.hair, 0.14); C.strap = shade(C.hair, -0.13);
-  C.coatD = shade(C.coat, -0.07); C.pantsD = shade(C.pants, -0.07); C.rim = shade(C.trim, -0.15); C.trimL = shade(C.trim, 0.17);
+    cloak: t('cloak'), dress: t('dress'), fur: t('fur'), iron: t('iron'),
+    lens: t('lens'), eye: t('eye'), line: m ? mixHex(sp.col.line, '#4a3f33', m) : sp.col.line, blade: t('blade'), slash: t('slash'), matte: m };
+  var hl = 1 - 0.65 * m;                                       // matte: smaller highlights, softer shades
+  C.skinD = shade(C.skin, -0.08 * (1 - 0.3 * m)); C.hairD = shade(C.hair, -0.09); C.hairL = shade(C.hair, 0.14 * hl); C.strap = shade(C.hair, -0.13);
+  C.coatD = shade(C.coat, -0.07); C.pantsD = shade(C.pants, -0.07); C.rim = shade(C.trim, -0.15); C.trimL = shade(C.trim, 0.17 * hl);
+  C.cloakD = shade(C.cloak, -0.08); C.dressD = shade(C.dress, -0.08); C.furD = shade(C.fur, -0.12); C.ironD = shade(C.iron, -0.12);
   return C;
 }
 function setHero(spec) {
@@ -502,6 +512,26 @@ var FOLK = {
   dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 1.12, headH: 1.02, bodyW: 1.28, bodyH: 0.9, legL: 0.5, legW: 1.3, armL: 0.78, armW: 1.25, eyeSize: 0.85, blush: 1, beard: 1, walkRate: 1.7, stance: 1 },
     col: { skin: '#f0c49c', hair: '#c8743a', coat: '#7d4a3a', vest: '#4f3b2c', pants: '#4a4038', boot: '#3a2a22', trim: '#b9b2a6' } }
 };
+// Concepts for the people of this world (2026-10-06): whole looks, each a set of spec changes and colours on the hero's
+// figure, matte like the world's trees. The Character Editor offers them as templates; later the game will draw its
+// random people from them.
+var CONCEPTS = [
+  { name: 'Karl', note: 'A free farmer: undyed wool tunic, cropped hair, a short beard.', set: { clothes: 1, hair: 1, beard: 2, hat: 0, matte: 1 }, col: { coat: '#8a7a5c', pants: '#4f4336', trim: '#5a3a26', hair: '#a86a3a', skin: '#f0c49c', boot: '#4a3329' } },
+  { name: 'Shieldmaiden', note: 'Braids, a nasal helmet, a red cloak over a blue tunic.', set: { clothes: 2, hair: 3, beard: 0, hat: 3, matte: 1, bodyW: 0.86 }, col: { coat: '#5b6b8a', cloak: '#7a3b3b', pants: '#4a4038', hair: '#d9a35a', trim: '#c9a04a' } },
+  { name: 'Jarl', note: 'Long hair, a braided beard, a gold headband, a red cloak on blue.', set: { clothes: 2, hair: 2, beard: 3, hat: 5, matte: 1, bodyW: 1.02 }, col: { coat: '#3f5a7a', cloak: '#6b2f3a', pants: '#3a3a44', hair: '#5a3a28', trim: '#d9a73a' } },
+  { name: 'Thrall', note: 'Bald, a short beard, faded wool; slight of build.', set: { clothes: 1, hair: 5, beard: 2, hat: 0, matte: 1, bodyW: 0.84, bodyH: 0.96 }, col: { coat: '#9a8d78', pants: '#6a5a48', trim: '#4a3a2a', hair: '#6a5a4a', skin: '#e8b88a' } },
+  { name: 'Völva', note: 'A seeress: hood and dark cloak, an apron dress over linen.', set: { clothes: 3, hair: 2, beard: 0, hat: 1, matte: 1, bodyW: 0.86 }, col: { coat: '#b9ad94', cloak: '#3a3550', dress: '#4a5a78', pants: '#3a3a44', hair: '#3a2a22', trim: '#a9a9b0' } },
+  { name: 'Hunter', note: 'Shaved sides and a tail, a fur hat and fur vest over green.', set: { clothes: 4, hair: 6, beard: 2, hat: 4, matte: 1 }, col: { coat: '#5b6b4a', fur: '#b89a74', pants: '#4a3a2a', hair: '#8a5a3a', trim: '#5a3a26' } },
+  { name: 'Húsfreyja', note: 'The lady of the house: hair in a knot, a red apron dress over linen.', set: { clothes: 3, hair: 4, beard: 0, hat: 0, matte: 1, bodyW: 0.88 }, col: { coat: '#d9c9a6', dress: '#8a4a4a', pants: '#5a4a3a', hair: '#c8743a', trim: '#c9a04a' } },
+  { name: 'Child', note: 'Small, a big head, a plain tunic.', set: { clothes: 1, hair: 1, beard: 0, hat: 0, matte: 1, scale: 0.55, headW: 1.18, headH: 1.12, legL: 0.8, eyeSize: 1.2 }, col: { coat: '#9a8a6a', pants: '#5a4a3a', trim: '#5a3a26', hair: '#e8c070' } },
+  { name: 'Elder', note: 'Grey long hair and a long beard, a grey cloak, a slower walk.', set: { clothes: 2, hair: 2, beard: 3, hat: 0, matte: 1, bodyH: 0.95, walkRate: 0.9, bob: 0.7 }, col: { coat: '#6a6a5a', cloak: '#5a5a5a', pants: '#4a4a44', hair: '#c8c2b8', trim: '#8a7a5a', skin: '#f0c49c' } }
+];
+function conceptSpec(name) {
+  var a = null, i; for (i = 0; i < CONCEPTS.length; i++) if (CONCEPTS[i].name === name) a = CONCEPTS[i];
+  var sp = fillSpec(HEROD_DEF, null), k; if (!a) return sp;
+  for (k in a.set) sp[k] = a.set[k]; for (k in a.col) sp.col[k] = a.col[k];
+  return sp;
+}
 function folkSpec(key, R) {
   if (key === 'villager') {            // one of the people of a village: the hero's figure with its own hair, coat and build, from R
     R = R || Math.random; var sp2 = fillSpec(HEROD_DEF, null), hair = ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a'], coat = ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a6a4a', '#4f5f7a', '#9a7a5a'], pants = ['#4a4038', '#5a4a3a', '#3f4a5a', '#6a5a48'];
@@ -521,6 +551,7 @@ function playerD(c, x, y, dir, an, pose) {
   LN = C.line;
   var ph = an.phase, amt = an.amt, t = an.t;
   var SK = C.skin, SKS = C.skinD, HAIR = C.hair, COAT = C.coat, VEST = C.vest, PANTS = C.pants, PANTSD = C.pantsD, BOOT = C.boot, BR = C.trim;
+  var HS = Math.round(sp.hair || 0), BS = Math.round(sp.beard || 0), HT = Math.round(sp.hat || 0), CL = Math.round(sp.clothes || 0), MT = C.matte || 0;
   var run = an.run || 0;
   var breathe = Math.sin(t * 2.2) * (1 - amt);
   var bob = -Math.abs(Math.sin(ph)) * 1.0 * amt * (1 + 0.45 * run) * sp.bob + breathe * 0.4;
@@ -590,19 +621,118 @@ function playerD(c, x, y, dir, an, pose) {
   c.scale((1 - 0.012 * breathe) * bw, (1 + 0.03 * breathe) * bh);
   c.translate(0, 9);
   var hy = -26 + (headBob - bob);
-  function head(hairFn, faceFn) {
+  function head(hairFn, faceFn, view) {
     c.save();
     c.translate(0, hy + 9); c.scale(sp.headW / bw, sp.headH / bh); c.translate(0, -(hy + 9));
     c.translate(0, hy); c.rotate(-rot * 1.6 + (side ? 0 : sway * 0.02 * sp.sway)); c.translate(0, -hy);
+    if (HS === 2 || HS === 3) longHair(view);                 // long hair and braids hang beside the head, under it
     c.beginPath(); c.ellipse(0, hy, 10, 9, 0, 0, Math.PI * 2); c.fillStyle = SK; c.fill();
     c.save(); c.clip();
     c.fillStyle = SKS; c.fillRect(-12, hy - 12, 24, 24);
     c.fillStyle = SK; c.beginPath(); c.ellipse(-1.6, hy - 1.6, 10, 9, 0, 0, Math.PI * 2); c.fill();
-    hairFn();
+    if (HS !== 5 && HT !== 1) hairFn();
+    if (HS === 5 && view !== 'back') { c.fillStyle = C.hairD; c.globalAlpha = 0.35; c.fillRect(-12, hy - 4, 24, 9); c.globalAlpha = 1; c.fillStyle = SK; c.beginPath(); c.ellipse(view === 'side' ? -4 : 0, hy + 1, 8.5, 8.5, 0, 0, 7); c.fill(); }   // bald: a shadow of stubble round the sides
+    if (HT === 1) hood(view);
     c.restore();
     c.beginPath(); c.ellipse(0, hy, 10, 9, 0, 0, Math.PI * 2); c.lineWidth = 2; c.strokeStyle = LN; c.stroke();
+    if (HT === 1) hoodEdge(view);
     faceFn();
+    if (HS === 4) knot(view); if (HS === 6) tail(view);
+    if (HT >= 2) hat(view);
     c.restore();
+  }
+  // long hair (2) or braids (3): locks beside the head down to the shoulders; from behind one broad mass
+  function longHair(view) {
+    var tqv = side ? 0 : tq, i, k;
+    function lock(lx, braid) {
+      if (!braid) { c.beginPath(); c.ellipse(lx, hy + 8, 3.2, 8, 0, 0, 7); fs(c, HAIR, 1.6); return; }
+      c.strokeStyle = LN; c.lineWidth = 5.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(lx, hy + 1); c.lineTo(lx, hy + 15); c.stroke();
+      c.strokeStyle = HAIR; c.lineWidth = 3.6; c.beginPath(); c.moveTo(lx, hy + 1); c.lineTo(lx, hy + 15); c.stroke();
+      c.strokeStyle = C.hairD; c.lineWidth = 1; for (k = 0; k < 4; k++) { c.beginPath(); c.moveTo(lx - 1.8, hy + 3 + k * 3.2); c.lineTo(lx + 1.8, hy + 4.6 + k * 3.2); c.stroke(); }
+      ell(c, lx, hy + 16.5, 1.6, 1.6, BR, 1);
+    }
+    if (view === 'back') { c.beginPath(); c.moveTo(-9, hy - 2); c.quadraticCurveTo(-11, hy + 10, -7, hy + 16); c.lineTo(7, hy + 16); c.quadraticCurveTo(11, hy + 10, 9, hy - 2); c.closePath(); fs(c, HAIR, 1.6); if (HS === 3) { lock(-4.5, true); lock(4.5, true); } return; }
+    if (view === 'side') { lock(3.5, HS === 3); return; }
+    lock(-9 - tqv * 2, HS === 3); lock(9 - tqv * 2, HS === 3);
+  }
+  function knot(view) {                                       // a knot of hair on top, toward the back
+    var kx = view === 'side' ? 3 : (view === 'back' ? 0 : tq * 2); ell(c, kx, hy - 10, 3.4, 2.8, HAIR, 1.6); c.strokeStyle = C.hairL; c.lineWidth = 1; c.beginPath(); c.arc(kx - 0.5, hy - 10.5, 1.8, Math.PI * 1.2, Math.PI * 1.8); c.stroke();
+  }
+  function tail(view) {                                       // shaved sides: the tail of hair down the back
+    if (view === 'front') return; var tx = view === 'side' ? 4 : 0;
+    c.strokeStyle = LN; c.lineWidth = 5; c.lineCap = 'round'; c.beginPath(); c.moveTo(tx, hy - 1); c.quadraticCurveTo(tx + (view === 'side' ? 4 : 0), hy + 4, tx + (view === 'side' ? 3.5 : 0), hy + 12); c.stroke();
+    c.strokeStyle = HAIR; c.lineWidth = 3; c.stroke(); ell(c, tx + (view === 'side' ? 5 : 0), hy + 13, 1.4, 1.4, BR, 0.9);
+  }
+  function hood(view) {                                       // inside the head's clip: the hood covers the hair, with the face open
+    c.fillStyle = C.cloak; c.fillRect(-12, hy - 12, 24, 24);
+    c.fillStyle = C.cloakD; c.fillRect(-12, hy - 12, 24, 4);
+    if (view === 'back') return;
+    var ox = view === 'side' ? -3.5 : tq * 2.5; c.fillStyle = SK; c.beginPath(); c.ellipse(ox, hy + 2.2, view === 'side' ? 6.5 : 7.6, 7.4, 0, 0, 7); c.fill();
+    c.fillStyle = SKS; c.globalAlpha = 0.5; c.beginPath(); c.ellipse(ox, hy + 2.2, view === 'side' ? 6.5 : 7.6, 7.4, 0, Math.PI * 1.1, Math.PI * 1.9); c.fill(); c.globalAlpha = 1;
+  }
+  function hoodEdge(view) { if (view === 'back') return; var ox = view === 'side' ? -3.5 : tq * 2.5; c.beginPath(); c.ellipse(ox, hy + 2.2, view === 'side' ? 6.5 : 7.6, 7.4, 0, 0, 7); c.lineWidth = 1.4; c.strokeStyle = LN; c.stroke(); }
+  function hat(view) {                                        // over the hair: a leather cap, a nasal helmet, a fur hat or a headband
+    var fx = view === 'side' ? -4 : tq * 3.3;
+    if (HT === 2) { c.beginPath(); c.ellipse(0, hy - 5, 10.6, 6.6, 0, Math.PI, Math.PI * 2); c.closePath(); fs(c, BOOT, 1.6); rr(c, -11, hy - 6, 22, 2.6, 1, shade(BOOT, -0.08), 1.2); }
+    else if (HT === 3) { c.beginPath(); c.ellipse(0, hy - 5, 10.8, 7.2, 0, Math.PI, Math.PI * 2); c.closePath(); fs(c, C.iron, 1.6); rr(c, -11.2, hy - 6.2, 22.4, 2.8, 1, C.ironD, 1.2); if (view !== 'back') rr(c, fx - 1.2, hy - 4.5, 2.4, 8.5, 0.8, C.ironD, 1.1); c.strokeStyle = 'rgba(255,255,255,' + (0.35 * (1 - 0.6 * MT)) + ')'; c.lineWidth = 1.2; c.beginPath(); c.arc(-2, hy - 5, 7, Math.PI * 1.15, Math.PI * 1.55); c.stroke(); }
+    else if (HT === 4) { c.beginPath(); c.ellipse(0, hy - 7, 11.4, 7.6, 0, 0, 7); fs(c, C.fur, 1.6); c.fillStyle = C.furD; for (var i = -10; i <= 10; i += 3) { c.beginPath(); c.moveTo(i, hy - 1.5); c.lineTo(i + 1.5, hy + 1.8); c.lineTo(i + 3, hy - 1.5); c.closePath(); c.fill(); } rr(c, -11, hy - 3.5, 22, 2.6, 1, C.furD, 1.1); }
+    else if (HT === 5) { rr(c, -10.6, hy - 6.5, 21.2, 2.4, 1, BR, 1.1); if (view !== 'back') ell(c, fx, hy - 5.3, 1.3, 1.3, C.trimL, 0.8); }
+  }
+  // the beard, in the face's own space: full (1), short (2), long and braided (3), a moustache (4)
+  function beard(view, fo) {
+    if (!BS) return; var hairD = C.hairD;
+    if (view === 'back') { if (BS === 1 || BS === 3) for (var bs = -1; bs <= 1; bs += 2) { c.beginPath(); c.ellipse(bs * 8.2, hy + 8.4, 2.6, 3.6, bs * 0.3, 0, Math.PI * 2); fs(c, HAIR, 1.4); } return; }
+    if (view === 'side') {
+      if (BS === 4) { c.strokeStyle = hairD; c.lineWidth = 1.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(-8.5, hy + 6.4); c.quadraticCurveTo(-5, hy + 5.4, -2.5, hy + 7); c.stroke(); return; }
+      if (BS === 2) { c.beginPath(); c.moveTo(-9.6, hy + 4.4); c.quadraticCurveTo(-10.5, hy + 11, -5.5, hy + 13); c.quadraticCurveTo(-0.5, hy + 11.5, 1.5, hy + 7); c.quadraticCurveTo(-3, hy + 8.5, -9.6, hy + 4.4); c.closePath(); fs(c, HAIR, 1.6); return; }
+      c.beginPath(); c.moveTo(-9.6, hy + 3.4); c.quadraticCurveTo(-11.5, hy + 13, -5.5, hy + 17.5); c.quadraticCurveTo(0.5, hy + 14, 2.5, hy + 5); c.quadraticCurveTo(-3, hy + 7.5, -9.6, hy + 3.4); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-7, hy + 9); c.lineTo(-6, hy + 14); c.moveTo(-4, hy + 8); c.lineTo(-3, hy + 13); c.stroke();
+      if (BS === 3) braidDown(-5, hy + 16);
+      return;
+    }
+    if (BS === 4) { c.strokeStyle = hairD; c.lineWidth = 1.7; c.lineCap = 'round'; c.beginPath(); c.moveTo(fo - 5.5, hy + 6.6); c.quadraticCurveTo(fo - 2.5, hy + 4.8, fo, hy + 6.4); c.quadraticCurveTo(fo + 2.5, hy + 4.8, fo + 5.5, hy + 6.6); c.stroke(); return; }
+    if (BS === 2) { c.beginPath(); c.moveTo(-9.2, hy + 4.6); c.quadraticCurveTo(-9.5, hy + 11.5, fo * 0.8, hy + 13.5); c.quadraticCurveTo(9.5, hy + 11.5, 9.2, hy + 4.6); c.quadraticCurveTo(5 + fo, hy + 8.4, fo, hy + 6.6); c.quadraticCurveTo(-5 + fo, hy + 8.4, -9.2, hy + 4.6); c.closePath(); fs(c, HAIR, 1.6); return; }
+    c.beginPath(); c.moveTo(-9.2, hy + 3.6); c.quadraticCurveTo(-10, hy + 13, fo * 0.8, hy + 18.5); c.quadraticCurveTo(10, hy + 13, 9.2, hy + 3.6); c.quadraticCurveTo(5 + fo, hy + 7.6, fo, hy + 5.6); c.quadraticCurveTo(-5 + fo, hy + 7.6, -9.2, hy + 3.6); c.closePath(); fs(c, HAIR, 1.6);
+    c.strokeStyle = hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(fo - 4, hy + 9); c.lineTo(fo - 3.5, hy + 15); c.moveTo(fo + 4, hy + 9); c.lineTo(fo + 3.5, hy + 15); c.stroke();
+    if (BS === 3) braidDown(fo * 0.8, hy + 17);
+  }
+  function braidDown(bx0, by0) {
+    c.strokeStyle = LN; c.lineWidth = 4.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(bx0, by0 - 1); c.lineTo(bx0, by0 + 7); c.stroke();
+    c.strokeStyle = HAIR; c.lineWidth = 2.8; c.beginPath(); c.moveTo(bx0, by0 - 1); c.lineTo(bx0, by0 + 7); c.stroke();
+    c.strokeStyle = C.hairD; c.lineWidth = 0.9; for (var k = 0; k < 3; k++) { c.beginPath(); c.moveTo(bx0 - 1.4, by0 + k * 2.4); c.lineTo(bx0 + 1.4, by0 + 1.2 + k * 2.4); c.stroke(); }
+    ell(c, bx0, by0 + 8.2, 1.4, 1.4, BR, 0.9);
+  }
+  // the clothes on the body, side view (sw1 is the walk's sway) and front or back view
+  function torsoSide(sw1) {
+    if (CL === 2) { c.beginPath(); c.moveTo(-2, -19); c.quadraticCurveTo(-10, -12, -9, -3); c.lineTo(1, -3); c.quadraticCurveTo(3, -10, 3, -18); c.closePath(); fs(c, C.cloak, 1.6); }
+    if (CL === 0) { flap(2, 0.3 * sw1 - (an.lvx || 0) * 0.004, 6); rr(c, -5.5, -19, 11, 12, 4.5, COAT, 1.8); rr(c, -0.5, -17, 5, 8, 2, VEST, 0); rr(c, -5.5, -12, 11, 2.4, 1, BR, 1.2); return; }
+    if (CL === 3) { c.beginPath(); c.moveTo(-5.5, -19); c.lineTo(-7.5, -2); c.lineTo(7.5, -2); c.lineTo(5.5, -19); c.closePath(); fs(c, C.dress, 1.8); rr(c, -5.5, -19, 11, 5, 2.5, COAT, 1.4); c.strokeStyle = C.dressD; c.lineWidth = 1; c.beginPath(); c.moveTo(-3, -15); c.lineTo(-4.5, -2); c.stroke(); ell(c, -2.5, -15.5, 1.7, 2.2, C.trimL, 1); return; }
+    rr(c, -5.5, -19, 11, 14, 4, COAT, 1.8); c.strokeStyle = C.coatD; c.lineWidth = 1; c.beginPath(); c.moveTo(-5.5, -8); c.lineTo(5.5, -8); c.stroke();
+    if (CL === 4) { c.beginPath(); c.moveTo(-5.5, -19); c.lineTo(-5.5, -9); c.lineTo(-3.5, -11); c.lineTo(-1.5, -8.5); c.lineTo(0.5, -11); c.lineTo(2.5, -8.5); c.lineTo(4.5, -11); c.lineTo(5.5, -9); c.lineTo(5.5, -19); c.closePath(); fs(c, C.fur, 1.5); }
+    rr(c, -5.5, -11.5, 11, 2.4, 1, BR, 1.2); if (CL === 2) ell(c, -3, -17.5, 1.8, 1.8, C.trimL, 1);
+  }
+  function torsoFront(fsw, back) {
+    if (CL === 2 && !back) { c.beginPath(); c.moveTo(-8, -19); c.quadraticCurveTo(-12, -10, -11, -3); c.lineTo(11, -3); c.quadraticCurveTo(12, -10, 8, -19); c.closePath(); fs(c, C.cloak, 1.6); }
+    if (CL === 0) {
+      flap(-5, -0.14 - fsw, 5.4); flap(5, 0.14 + fsw, 5.4);
+      rr(c, -7.5, -19, 15, 12, 4.5, COAT, 1.8);
+      if (!back) rr(c, -3 + tq * 2.4, -19, 6, 11, 2, VEST, 0); else { rr(c, -5 - tq * 1.6, -18, 10, 8, 2.5, VEST, 1.4); ell(c, -tq * 1.6, -14, 1.6, 1.6, BR, 1); }
+      rr(c, -7.5, -12, 15, 2.5, 1, BR, 1.3);
+      if (!back) rr(c, -1.6 + tq * 2.8, -12.4, 3.2, 3.2, 1, C.trimL, 1.1);
+      return;
+    }
+    if (CL === 3) {
+      c.beginPath(); c.moveTo(-7.5, -19); c.lineTo(-10, -2); c.lineTo(10, -2); c.lineTo(7.5, -19); c.closePath(); fs(c, C.dress, 1.8);
+      rr(c, -7.5, -19, 15, 5, 2.5, COAT, 1.4);
+      c.strokeStyle = C.dressD; c.lineWidth = 1; c.beginPath(); c.moveTo(-4 + tq, -15); c.lineTo(-5.5 + tq, -2); c.moveTo(4 + tq, -15); c.lineTo(5.5 + tq, -2); c.stroke();
+      if (!back) { ell(c, -3.8 + tq * 2, -15.5, 1.8, 2.3, C.trimL, 1); ell(c, 3.8 + tq * 2, -15.5, 1.8, 2.3, C.trimL, 1); c.strokeStyle = BR; c.lineWidth = 1; c.beginPath(); c.moveTo(-2.2 + tq * 2, -14.6); c.quadraticCurveTo(tq * 2, -13.4, 2.2 + tq * 2, -14.6); c.stroke(); }
+      return;
+    }
+    rr(c, -7.5, -19, 15, 14, 4, COAT, 1.8); c.strokeStyle = C.coatD; c.lineWidth = 1; c.beginPath(); c.moveTo(-7.5, -8); c.lineTo(7.5, -8); c.stroke();
+    if (!back) { c.strokeStyle = C.coatD; c.lineWidth = 1.1; c.beginPath(); c.moveTo(-2.5 + tq * 2.4, -19); c.lineTo(tq * 2.4, -15.5); c.lineTo(2.5 + tq * 2.4, -19); c.stroke(); }
+    if (CL === 4) { c.beginPath(); c.moveTo(-7, -19); c.lineTo(-7, -9); c.lineTo(-5, -11); c.lineTo(-3, -8.5); c.lineTo(-1, -11); c.lineTo(1, -8.5); c.lineTo(3, -11); c.lineTo(5, -8.5); c.lineTo(7, -11); c.lineTo(7, -19); c.closePath(); fs(c, C.fur, 1.5); if (!back) { c.strokeStyle = C.furD; c.lineWidth = 1; c.beginPath(); c.moveTo(tq * 2, -18); c.lineTo(tq * 2, -10); c.stroke(); } }
+    if (CL === 2 && back) { c.beginPath(); c.moveTo(-8, -19); c.quadraticCurveTo(-12, -10, -11, -3); c.lineTo(11, -3); c.quadraticCurveTo(12, -10, 8, -19); c.closePath(); fs(c, C.cloak, 1.6); c.strokeStyle = C.cloakD; c.lineWidth = 1; c.beginPath(); c.moveTo(-3, -16); c.lineTo(-5, -3); c.moveTo(3, -16); c.lineTo(5, -3); c.stroke(); return; }
+    rr(c, -7.5, -11.5, 15, 2.5, 1, BR, 1.3); if (!back) rr(c, -1.6 + tq * 2.8, -11.9, 3.2, 3.2, 1, C.trimL, 1.1);
+    if (CL === 2 && !back) ell(c, 5.5 + tq * 1.5, -17.5, 1.9, 1.9, C.trimL, 1);
   }
   var gOff = (headBob - bob) * -0.4 + Math.sin(ph - 1.6) * amt * 0.25;
   function lensAt(gx, gy, r) {
@@ -640,9 +770,9 @@ function playerD(c, x, y, dir, an, pose) {
   var bl = 1 - (an.blink || 0) * 0.88;
   function eye(ex) {
     c.fillStyle = C.eye; c.beginPath(); c.ellipse(ex, hy + 2.6, 1.7 * sp.eyeSize, 2.4 * bl * sp.eyeSize, 0, 0, Math.PI * 2); c.fill();
-    if (bl > 0.5) { c.fillStyle = '#ffffff'; c.beginPath(); c.arc(ex - 0.5 * sp.eyeSize, hy + 2.6 - sp.eyeSize, 0.7 * sp.eyeSize, 0, Math.PI * 2); c.fill(); }
+    if (bl > 0.5) { c.fillStyle = 'rgba(255,255,255,' + (1 - 0.5 * MT) + ')'; c.beginPath(); c.arc(ex - 0.5 * sp.eyeSize, hy + 2.6 - sp.eyeSize, 0.7 * sp.eyeSize * (1 - 0.3 * MT), 0, Math.PI * 2); c.fill(); }
   }
-  function blush(bx) { if (!sp.blush) return; c.fillStyle = 'rgba(255,120,135,0.5)'; c.beginPath(); c.ellipse(bx, hy + 6.2, 2, 1.2, 0, 0, Math.PI * 2); c.fill(); }
+  function blush(bx) { if (!sp.blush) return; c.fillStyle = 'rgba(255,120,135,' + (0.5 - 0.3 * MT) + ')'; c.beginPath(); c.ellipse(bx, hy + 6.2, 2, 1.2, 0, 0, Math.PI * 2); c.fill(); }
   function strap() { if (ew === 1) { c.fillStyle = C.strap; c.fillRect(-12, hy - 7, 24, 2.2); } else if (ew === 2 && dir === 'up') { c.fillStyle = C.strap; c.fillRect(-12, hy + 1.6, 24, 2); } }
   function drawSheath() {
     if (!pose || !pose.sheath) return;
@@ -664,10 +794,7 @@ function playerD(c, x, y, dir, an, pose) {
     var sw1 = Math.sin(ph) * amt;
     if (pose && pose.far) armPose(0.8, -17, pose.far, 1, 0.5);
     drawSheath();
-    flap(2, 0.3 * sw1 - (an.lvx || 0) * 0.004, 6);
-    rr(c, -5.5, -19, 11, 12, 4.5, COAT, 1.8);
-    rr(c, -0.5, -17, 5, 8, 2, VEST, 0);
-    rr(c, -5.5, -12, 11, 2.4, 1, BR, 1.2);
+    torsoSide(sw1);
     if (pose && pose.near) armPose(0, -17, pose.near, 0.6, 1);
     else {
       var aa = -Math.sin(ph) * 0.65 * amt * (1 + 0.35 * run) * sp.armSwing;
@@ -676,17 +803,21 @@ function playerD(c, x, y, dir, an, pose) {
       armTo(0, -17, hx2, hy3, 1, 0.3);
     }
     head(function () {
-      c.fillStyle = HAIR; c.fillRect(-12, hy - 12, 24, 11.5);
-      c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy + 1, 6.5, 8.5, 0, 0, Math.PI * 2); c.fill();
-      for (var i = 0; i < 3; i++) { c.beginPath(); c.arc(-8 + i * 3, hy - 1.5, 2.3, 0, Math.PI * 2); c.fill(); }
+      c.fillStyle = HAIR;
+      if (HS === 1) { c.fillRect(-12, hy - 12, 24, 8.5); c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy - 1, 6.5, 5, 0, 0, Math.PI * 2); c.fill(); }
+      else if (HS === 4) { c.fillRect(-12, hy - 12, 24, 9); c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy, 6.5, 6, 0, 0, Math.PI * 2); c.fill(); }
+      else if (HS === 6) { c.fillRect(-4, hy - 12, 10, 8); c.beginPath(); c.ellipse(3, hy - 6, 6, 5, 0, 0, 7); c.fill(); }
+      else { c.fillRect(-12, hy - 12, 24, 11.5); c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy + 1, 6.5, 8.5, 0, 0, Math.PI * 2); c.fill(); }
+      if (HS !== 6) for (var i = 0; i < 3; i++) { c.beginPath(); c.arc(-8 + i * 3, hy - 1.5 - (HS === 1 ? 2 : 0), 2.3, 0, Math.PI * 2); c.fill(); }
       c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-2, hy - 1, 7.5, Math.PI * 1.15, Math.PI * 1.6); c.stroke();
       strap();
     }, function () {
       eye(-4.5); blush(-7);
       c.strokeStyle = '#9b4a3a'; c.lineWidth = 1.1; c.beginPath(); c.arc(-5.8, hy + 8.2, 1.4, 0.2 * Math.PI, 0.8 * Math.PI); c.stroke();
       eyewear([-4.5], [3, -1.5], 4);
-      if (sp.beard) { c.beginPath(); c.moveTo(-9.6, hy + 3.4); c.quadraticCurveTo(-11.5, hy + 13, -5.5, hy + 17.5); c.quadraticCurveTo(0.5, hy + 14, 2.5, hy + 5); c.quadraticCurveTo(-3, hy + 7.5, -9.6, hy + 3.4); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = C.hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-6, hy + 9); c.lineTo(-5.4, hy + 14.5); c.moveTo(-2.4, hy + 9); c.lineTo(-3, hy + 13.5); c.stroke(); }
-    });
+      beard('side', 0);
+      if (false) { c.beginPath(); c.moveTo(-9.6, hy + 3.4); c.quadraticCurveTo(-11.5, hy + 13, -5.5, hy + 17.5); c.quadraticCurveTo(0.5, hy + 14, 2.5, hy + 5); c.quadraticCurveTo(-3, hy + 7.5, -9.6, hy + 3.4); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = C.hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-6, hy + 9); c.lineTo(-5.4, hy + 14.5); c.moveTo(-2.4, hy + 9); c.lineTo(-3, hy + 13.5); c.stroke(); }
+    }, 'side');
   } else {
     var sw2 = Math.sin(ph) * amt;
     // arms swing opposite to the legs (same-side arm and leg moving together reads as a waddle)
@@ -700,21 +831,21 @@ function playerD(c, x, y, dir, an, pose) {
     if (backR && !(pose && pose.armR)) armRf();
     if (dir === 'down') drawSheath();
     var fsw = sw2 * 0.28 * Math.min(1, 0.25 + sp.sway);
-    flap(-5, -0.14 - fsw, 5.4); flap(5, 0.14 + fsw, 5.4);
-    rr(c, -7.5, -19, 15, 12, 4.5, COAT, 1.8);
-    if (dir === 'down') rr(c, -3 + tq * 2.4, -19, 6, 11, 2, VEST, 0);
-    else { rr(c, -5 - tq * 1.6, -18, 10, 8, 2.5, VEST, 1.4); ell(c, -tq * 1.6, -14, 1.6, 1.6, BR, 1); }
-    rr(c, -7.5, -12, 15, 2.5, 1, BR, 1.3);
-    if (dir === 'down') rr(c, -1.6 + tq * 2.8, -12.4, 3.2, 3.2, 1, C.trimL, 1.1);
+    torsoFront(fsw, dir === 'up');
     if (dir === 'up') drawSheath();
     if (!backL || (pose && pose.armL)) armLf();
     if (!backR || (pose && pose.armR)) armRf();
     if (dir === 'down') {
       head(function () {
-        c.fillStyle = HAIR; c.fillRect(-12, hy - 12, 24, 10.5);
-        for (var i = -3; i <= 3; i++) { c.beginPath(); c.arc(i * 3.4, hy - 1.5, 2.3, 0, Math.PI * 2); c.fill(); }
-        c.beginPath(); c.ellipse(-9 - sw2 * 0.4, hy + 1, 2.5 + Math.max(0, tq) * 3.4, 6 + Math.max(0, tq) * 2, 0, 0, Math.PI * 2); c.fill();
-        c.beginPath(); c.ellipse(9 - sw2 * 0.4, hy + 1, 2.5 + Math.max(0, -tq) * 3.4, 6 + Math.max(0, -tq) * 2, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = HAIR;
+        var top = HS === 1 ? 8.5 : (HS === 4 ? 9 : 10.5);
+        if (HS === 6) { c.fillRect(-4.5 + tq * 2, hy - 12, 9, 8); c.beginPath(); c.ellipse(tq * 2, hy - 5, 5, 3.5, 0, 0, 7); c.fill(); }
+        else {
+          c.fillRect(-12, hy - 12, 24, top);
+          for (var i = -3; i <= 3; i++) { c.beginPath(); c.arc(i * 3.4, hy - 1.5 - (HS === 1 ? 2 : 0), 2.3, 0, Math.PI * 2); c.fill(); }
+          if (HS !== 1 && HS !== 4) { c.beginPath(); c.ellipse(-9 - sw2 * 0.4, hy + 1, 2.5 + Math.max(0, tq) * 3.4, 6 + Math.max(0, tq) * 2, 0, 0, Math.PI * 2); c.fill();
+            c.beginPath(); c.ellipse(9 - sw2 * 0.4, hy + 1, 2.5 + Math.max(0, -tq) * 3.4, 6 + Math.max(0, -tq) * 2, 0, 0, Math.PI * 2); c.fill(); }
+        }
         c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy - 1, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
         strap();
       }, function () {
@@ -722,16 +853,20 @@ function playerD(c, x, y, dir, an, pose) {
         eye(-4 + fo); eye(4 + fo); if (tq < 0.3) blush(-6.6 + fo * (tq < 0 ? 0.4 : 1)); if (tq > -0.3) blush(6.6 + fo * (tq > 0 ? 0.4 : 1));
         c.strokeStyle = '#9b4a3a'; c.lineWidth = 1.1; c.beginPath(); c.arc(fo * 1.15, hy + 7.4, 1.8, 0.1 * Math.PI, 0.9 * Math.PI); c.stroke();
         eyewear([-4 + fo, 4 + fo], [-5 + fo, 5 + fo], null);
-        if (sp.beard) { c.beginPath(); c.moveTo(-9.2, hy + 3.6); c.quadraticCurveTo(-10, hy + 13, fo * 0.8, hy + 18.5); c.quadraticCurveTo(10, hy + 13, 9.2, hy + 3.6); c.quadraticCurveTo(5 + fo, hy + 7.6, fo, hy + 5.6); c.quadraticCurveTo(-5 + fo, hy + 7.6, -9.2, hy + 3.6); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = C.hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-3 + fo * 0.8, hy + 10); c.lineTo(-2.2 + fo * 0.8, hy + 15.5); c.moveTo(3 + fo * 0.8, hy + 10); c.lineTo(2.2 + fo * 0.8, hy + 15.5); c.stroke(); }
-      });
+        beard('front', fo);
+        if (false) { c.beginPath(); c.moveTo(-9.2, hy + 3.6); c.quadraticCurveTo(-10, hy + 13, fo * 0.8, hy + 18.5); c.quadraticCurveTo(10, hy + 13, 9.2, hy + 3.6); c.quadraticCurveTo(5 + fo, hy + 7.6, fo, hy + 5.6); c.quadraticCurveTo(-5 + fo, hy + 7.6, -9.2, hy + 3.6); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = C.hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-3 + fo * 0.8, hy + 10); c.lineTo(-2.2 + fo * 0.8, hy + 15.5); c.moveTo(3 + fo * 0.8, hy + 10); c.lineTo(2.2 + fo * 0.8, hy + 15.5); c.stroke(); }
+      }, 'front');
     } else {
       head(function () {
-        c.fillStyle = HAIR; c.fillRect(-12, hy - 12, 24, 24);
-        c.fillStyle = C.hairD; c.beginPath(); c.ellipse(3 + sw2 * 0.5 - tq * 3, hy + 4, 9, 7, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = HAIR;
+        if (HS === 1 || HS === 4) { c.fillRect(-12, hy - 12, 24, 17); c.fillStyle = SK; c.fillRect(-12, hy + 5, 24, 8); c.fillStyle = HAIR; }
+        else if (HS === 6) { c.fillRect(-4, hy - 12, 8, 24); c.fillStyle = C.hairD; c.fillRect(-12, hy - 12, 24, 3); c.fillStyle = HAIR; }
+        else c.fillRect(-12, hy - 12, 24, 24);
+        if (HS !== 6) { c.fillStyle = C.hairD; c.globalAlpha = 0.55; c.beginPath(); c.ellipse(3 + sw2 * 0.5 - tq * 3, hy + (HS === 1 || HS === 4 ? 1 : 4), 9, HS === 1 || HS === 4 ? 5 : 7, 0, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; }
         if (Math.abs(tq) > 0.05) { c.fillStyle = SK; c.beginPath(); c.ellipse((tq > 0 ? 1 : -1) * 10.6, hy + 3.6, 4.4 * Math.abs(tq), 5.2, 0, 0, Math.PI * 2); c.fill(); }   // a glimpse of cheek
         c.strokeStyle = C.hairL; c.lineWidth = 1.3; c.beginPath(); c.arc(-1, hy, 7.5, Math.PI * 1.1, Math.PI * 1.55); c.stroke();
         strap();
-      }, function () { if (sp.beard) { for (var bs = -1; bs <= 1; bs += 2) { c.beginPath(); c.ellipse(bs * 8.2, hy + 8.4, 2.6, 3.6, bs * 0.3, 0, Math.PI * 2); fs(c, HAIR, 1.4); } } });
+      }, function () { beard('back', 0); }, 'back');
     }
   }
   c.restore();
@@ -1217,7 +1352,7 @@ function creatureD(c, x, y, s, H) {
 var dkB = null;
 
 
-return { lib: { playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 

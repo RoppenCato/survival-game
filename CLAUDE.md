@@ -90,7 +90,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | Page (in `dist/`) | Template | What it is |
 | --- | --- | --- |
 | `index.html` | `index.html` | Start page |
-| `character-editor.html` | `sprite.html` | Character Editor: tune the hero |
+| `character-editor.html` | `sprite.html` | Character Editor: the people of this world; concepts, styles, templates, the matte look |
 | `creature-editor.html` | `creature.html` | Creature Editor: the six animals and their behaviour |
 | `object-editor.html` | `objects.html` | Object Editor: tune one world prop |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
@@ -212,6 +212,19 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - Attack motion is in `ATK_STYLES` / `atkBody()` (spec keys `atkStyle`, `atkPower`). Visual only.
 - A pixel-sprite hero (`heroP`, `SPRITES`, `Combat.S.look = 'sprite'`, V in the Combat Arena) is still in the code
   as a comparison only. Do not build on it.
+- **Styles and the matte look (2026-10-06, Robin: find a style for the humans of this world, matte like the trees):** the
+  spec has `hair` (bowl, cropped, long, braids, knot, bald, shaved sides with a tail), `beard` (none, full, short, long
+  and braided, moustache), `hat` (none, hood, leather cap, nasal helmet, fur hat, headband), `clothes` (the coat and vest,
+  belted tunic, tunic and cloak, apron dress with brooches, fur vest) and `matte` (0..1: smaller highlights, softer
+  colours, the outline browned toward the world's), with colours `cloak`, `dress`, `fur`, `iron`. `playerD` draws them in
+  every view (`longHair`, `knot`, `tail`, `hood`, `hat`, `beard`, `torsoSide`, `torsoFront` inside it). The hero's own
+  default is unchanged (coat and vest, no matte) until Robin picks. **`CONCEPTS`** in `src/art.js` (`lib.concepts`,
+  `lib.conceptSpec(name)`) are nine whole looks: Karl, Shieldmaiden, Jarl, Thrall, Völva, Hunter, Húsfreyja, Child, Elder,
+  all matte; the random people will be drawn from them later. The **Character Editor** lists them as Concepts, has Style
+  rows (hair, beard, headwear, clothes), Builds, a Matte slider, templates saved in this browser (`herotest.templates`),
+  and **"Use as the hero in the game"** (`game.hero`, which the game sets with `lib.setHero` on load). The steampunk
+  eyewear and bot palettes are gone from the editor (the eyewear drawing is still in the code). `node tools/visual/folk.js`
+  renders the concepts in four views and a grid of every style to folk.png (`big` for the concepts large).
 
 ## People
 
