@@ -126,7 +126,7 @@ __HIRD__
     slider('pjobs', 'Hungry pace', D, 'hungryPace', 0, 1, 0.05);
     slider('pstead', 'Meals a day', D, 'mealsPerDay', 0, 4, 1); slider('pstead', 'Stone reach (tiles)', D, 'territory', 5, 80, 1); slider('pstead', 'Per roofed room', D, 'perRoom', 0, 5, 0.5);
     slider('pstead', 'Follow speed', D, 'followSpeed', 20, 120, 1); slider('pstead', 'Walk speed', D, 'walkSpeed', 10, 90, 1); slider('pstead', 'Follow gap', D, 'followGap', 10, 80, 1);
-    slider('pstead', 'Stone: stone', D.claimCost, 'stone', 0, 30, 1); slider('pstead', 'Stone: berries', D.claimCost, 'berries', 0, 20, 1);
+    slider('pstead', 'Stone: stone', D.claimCost, 'stone', 0, 30, 1); slider('pstead', 'Stone: berries', D.claimCost, 'berries', 0, 20, 1); slider('pstead', 'Stone: snake blood', D.claimCost, 'snakeBlood', 0, 10, 1);
   }
   document.getElementById('reroll').onclick = rollOne;
   document.getElementById('rollten').onclick = function () { var out = []; for (var i = 0; i < 10; i++) { var p = Hird.roll(Math.random, D); out.push(p.name + ': ' + Hird.describe(p, D) + '. ' + traitText(p)); } document.getElementById('ten').value = out.join('\n'); };

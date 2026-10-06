@@ -467,6 +467,20 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   at dusk. **Brokk's campfire** (a `stoneHearth` with `light`) burns by the well at the steading, so the first night shows
   what a fire does. **Copper is not on the starter island** (`markOre` skips island 0); it begins on the big island with
   the cave.
+- **Fixes of 2026-10-06 (Robin's second night list):** the turquoise shallows can be waded (`w.isWade`: elevation above
+  -1.1; the walk test allows it). **The Shipyard is free-form:** a 9 by 6 yard at zoom 1.2, parts go anywhere, and the
+  raft's rules leave room for shapes: at least three logs, every log touching another (`yardConnected`), at most eight,
+  a rope lashing on every log, an oar. The launched raft is **drawn from its parts** (`drawRaft` lays each log, lashing,
+  plank and oar in its cell round the hull's centre; old rafts use `RAFT_DEFAULT`). **The claim stone is built** from
+  the Building board (stone, berries and **snake blood**, a new drop from adders: `Hird.DEF.claimCost`); the toppled
+  stone at the steading is gone, and Brokk joins when your first stone stands anywhere, once you have heard his story.
+  **Stamina:** a tool swing costs 4 stamina (never blocks a swing). **Cooking takes time:** a dish is paid at the hearth
+  and cooks 4 seconds a piece in a queue on that fire (`cookTick`, `h.cooking`), with a bar and a count over the fire
+  (`drawWorkBars`); the finished food goes into the bag or drops by the fire. **Crafting takes time:** hand 2 seconds,
+  bench 3 (`CRAFT_T`), queued (`crafting`), a bar with the thing's icon over the hero, then the chime and "Made ...".
+  **Healing by the fire:** inside a room with Comfort 1 or more and within 140 of a fire you heal 0.6 a second. The
+  **comfort and rest line** is back under the chart ("Comfort 4   Rested 3:20"). Death resets the night, so a new pack
+  comes. **Lights reach three times as far** (fires 145, the torch 170; the wolves' fire-fear ring is 230).
 - **Hidden for now (Robin, 2026-10-05):** the runes (casting cloth, C, the pouch icon, runestone reading,
   skills on the hotbar, rune toasts) and the Book of Beasts (L, the book icon, page toasts) are built but not
   finished, so `SHOW = { runes: false, book: false }` in the page hides them until the basics are right. The

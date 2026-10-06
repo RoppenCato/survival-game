@@ -1214,7 +1214,7 @@ var DEF = {
   hungryPace: 0.5,                              // how fast they work with no food in the stores
   territory: 25, perRoom: 1,                    // a claim stone's reach in tiles, and what each roofed room inside adds
   followSpeed: 70, walkSpeed: 40, followGap: 34,
-  claimCost: { stone: 6, berries: 4 },
+  claimCost: { stone: 6, berries: 4, snakeBlood: 2 },   // snake blood for the red of the runes: a reason to hunt adders
   names: ['Ulf', 'Sigrid', 'Hakon', 'Astrid', 'Leif', 'Thora', 'Gunnar', 'Ingrid', 'Eirik', 'Helga', 'Bjorn', 'Runa', 'Torstein', 'Gudrun', 'Olaf', 'Ragnhild'],
   hair: ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a'],
   coat: ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a6a4a', '#4f5f7a', '#9a7a5a'],
@@ -1280,7 +1280,7 @@ if (typeof module !== 'undefined') module.exports = Hird;
     slider('pjobs', 'Hungry pace', D, 'hungryPace', 0, 1, 0.05);
     slider('pstead', 'Meals a day', D, 'mealsPerDay', 0, 4, 1); slider('pstead', 'Stone reach (tiles)', D, 'territory', 5, 80, 1); slider('pstead', 'Per roofed room', D, 'perRoom', 0, 5, 0.5);
     slider('pstead', 'Follow speed', D, 'followSpeed', 20, 120, 1); slider('pstead', 'Walk speed', D, 'walkSpeed', 10, 90, 1); slider('pstead', 'Follow gap', D, 'followGap', 10, 80, 1);
-    slider('pstead', 'Stone: stone', D.claimCost, 'stone', 0, 30, 1); slider('pstead', 'Stone: berries', D.claimCost, 'berries', 0, 20, 1);
+    slider('pstead', 'Stone: stone', D.claimCost, 'stone', 0, 30, 1); slider('pstead', 'Stone: berries', D.claimCost, 'berries', 0, 20, 1); slider('pstead', 'Stone: snake blood', D.claimCost, 'snakeBlood', 0, 10, 1);
   }
   document.getElementById('reroll').onclick = rollOne;
   document.getElementById('rollten').onclick = function () { var out = []; for (var i = 0; i < 10; i++) { var p = Hird.roll(Math.random, D); out.push(p.name + ': ' + Hird.describe(p, D) + '. ' + traitText(p)); } document.getElementById('ten').value = out.join('\n'); };

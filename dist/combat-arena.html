@@ -1631,7 +1631,7 @@ function updatePlayer(dt) {
   // attack
   if (p.atkBuf > 0 && p.roll.t <= 0 && p.hurtT <= 0 && (p.mode === 'gather' || p.st >= 7)) {
     var can = a.ph === 'none' || (S.juice && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5);
-    if (can) { startAttack(); p.atkBuf = 0; }
+    if (can) { if (p.mode === 'gather') { p.st = Math.max(0, p.st - 4); p.stDelay = Math.max(p.stDelay, 0.5); } startAttack(); p.atkBuf = 0; }   // chopping and mining cost a little stamina (forgiving: never stops you)
   }
   if (a.ph === 'none') a.since += dt;
   else if (a.ph !== 'charge') {

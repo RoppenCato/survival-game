@@ -31,7 +31,7 @@ var DEF = {
   hungryPace: 0.5,                              // how fast they work with no food in the stores
   territory: 25, perRoom: 1,                    // a claim stone's reach in tiles, and what each roofed room inside adds
   followSpeed: 70, walkSpeed: 40, followGap: 34,
-  claimCost: { stone: 6, berries: 4 },
+  claimCost: { stone: 6, berries: 4, snakeBlood: 2 },   // snake blood for the red of the runes: a reason to hunt adders
   names: ['Ulf', 'Sigrid', 'Hakon', 'Astrid', 'Leif', 'Thora', 'Gunnar', 'Ingrid', 'Eirik', 'Helga', 'Bjorn', 'Runa', 'Torstein', 'Gudrun', 'Olaf', 'Ragnhild'],
   hair: ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a'],
   coat: ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a6a4a', '#4f5f7a', '#9a7a5a'],
