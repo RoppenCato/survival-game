@@ -286,9 +286,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **One bounds box (2026-10-05):** the engine clamps every mover to `scene.bounds`, so swapping bounds for the cave or the
   yard dragged all the animals in. `worldBounds()` now covers the map, the cave and the yard at once and never changes;
   the `walk` test keeps the hero on the floor he is on.
-- **Crafting on E (2026-10-05):** E at a workbench opens its board (Workbench and "By hand" tabs, `menuFrom`); B keeps
-  Building and Crafting (the hand recipes: first tools, torch, stick weapons, arrows). The bars sit on their own board
-  (`BAR`) above the bag.
+- **Crafting on E (2026-10-05, fixed 2026-10-06):** E at a workbench opens its board (Workbench and "By hand" tabs; the tab
+  set follows `menuFrom`, where the board was opened from, so switching tabs keeps it); B keeps Building and Crafting (the
+  hand recipes: first tools, torch, stick weapons, arrows). **Recipe boards are laid out by category** (`CATS2`: Tools,
+  Weapons, Armour, Supplies; `cat` on each `RECIPES2` entry): one row per category that has something known, a small
+  label over the row, and the board shrinks to the rows it uses. The bars sit on their own board (`BAR`) above the bag.
+  Leaving the yard (or saving in it) lands you on free ground by the bench (`landNear`), never in the water. The E prompt
+  over the hero is a small dark pill with a key cap.
 - **The hamlet (step 5, 2026-10-05):** a living village on the big island (`hamletSite` from the seed, 12 by 10 tiles, away
   from the cave): four wattle huts with thatch round a green, a well, woodpile, haystack, drying rack, a barrel and a
   crate with a little in them, and a fence (`hamletBuild`, a fresh start only, saved in `B`; the roofs via `roofLaters`).
