@@ -3787,7 +3787,118 @@ var T = 32, TS = 24, K = 0.75;
     c.restore();
   }
 
-return { PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+/* ---------- the Shipyard scene: a clear yard of grass in a wooden frame, the parts down the left, the hero in a corner,
+   and the build cursor laying parts. The host (the game, the Sea Editor) gives it a hero, costs, sounds, a grass tile,
+   saving and what happens on Finish; the scene keeps the yard, the pick, the cursor and the frame. ---------- */
+function wood(c, x, y, w, h) {            // a wooden board with planks, a dark rim and iron rivets at the corners
+  c.save();
+  c.fillStyle = '#4a2e1c'; c.beginPath(); c.roundRect(x, y, w, h, 4); c.fill();
+  c.beginPath(); c.roundRect(x + 2.5, y + 2.5, w - 5, h - 5, 3); c.clip();
+  c.fillStyle = '#7a5236'; c.fillRect(x, y, w, h);
+  c.strokeStyle = 'rgba(60,35,20,0.55)'; c.lineWidth = 1;
+  for (var py = y + 2.5 + 9; py < y + h - 3; py += 9) { c.beginPath(); c.moveTo(x, py); c.lineTo(x + w, py); c.stroke(); }
+  c.strokeStyle = 'rgba(255,225,170,0.08)'; for (var gx = x + 6; gx < x + w; gx += 11) { c.beginPath(); c.moveTo(gx, y); c.lineTo(gx + 3, y + h); c.stroke(); }
+  c.restore();
+  c.strokeStyle = '#2e1a10'; c.lineWidth = 1.4; c.beginPath(); c.roundRect(x, y, w, h, 4); c.stroke();
+  c.fillStyle = '#7d8290'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8;
+  [[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 1.7, 0, 7); c.fill(); c.stroke(); });
+}
+var scene = {
+  Y: { X: 0, Y: 400, W: 9, H: 6 }, PAL: { x: 6, y: 34, cell: 30 }, ZOOM: 1.1,
+  yard: null, pick: 0, active: false, host: null, label: null, fade: 0,
+  enter: function (host, yardState) {
+    this.host = host; this.yard = yardState && yardState.cells ? yardState : { plan: 'raft', cells: [] }; if (!this.yard.plan) this.yard.plan = 'raft';
+    this.pick = 0; this.active = true; this.fade = 0.5; this.label = null; return this.yard;
+  },
+  leave: function () { this.active = false; this.fade = 0.5; },
+  parts: function () { return partsFor(this.yard ? this.yard.plan : 'raft'); },
+  cam: function () { var Y = this.Y; return { x: Y.X + Y.W * T / 2 - 4, y: (Y.Y + Y.H * T / 2) * K, z: this.ZOOM }; },
+  heroSpot: function () { var Y = this.Y; return { x: Y.X + Y.W * T + 8, y: Y.Y + Y.H * T + 14 }; },
+  walk: function (x, y) { var Y = this.Y; return x >= Y.X - 18 && x <= Y.X + Y.W * T + 18 && y >= Y.Y - 14 && y <= Y.Y + Y.H * T + 26; },
+  tick: function (dt) { if (this.fade > 0) this.fade = Math.max(0, this.fade - dt); },
+  cell: function (mw) { var Y = this.Y; if (!mw) return null; var i = Math.floor((mw.x - Y.X) / T), j = Math.floor((mw.y - Y.Y) / T); if (i < 0 || j < 0 || i >= Y.W || j >= Y.H) return null; return { i: i, j: j }; },
+  top: function (i, j) {                  // what a right click takes: what lies on a log first, wherever on the log it sits; then the log
+    var y = this.yard; for (var L = LAYERS.length - 1; L >= 0; L--) { var k = yardAt(y, i, j, LAYERS[L]); if (k >= 0) { if (LAYERS[L] === 'hull') { var p = y.cells[k], pt = partOf(p.id); for (var L2 = LAYERS.length - 1; L2 >= 1; L2--) for (var q = 0; q < pt.w; q++) { var k2 = yardAt(y, p.i + q, p.j, LAYERS[L2]); if (k2 >= 0) return k2; } } return k; } } return -1;
+  },
+  target: function (mw, wreck) {          // what the cursor would lay, or take away
+    var c = this.cell(mw), h = this.host; if (!c) return null;
+    if (wreck) { var top = this.top(c.i, c.j); return { kind: 'yard', wreck: true, i: c.i, j: c.j, idx: top, ok: top >= 0, why: '' }; }
+    var PL = this.parts(), pt = PL[this.pick] || PL[0], i = c.i, j = c.j, why = '';
+    if (i + pt.w > this.Y.W) i = this.Y.W - pt.w;
+    for (var k = 0; k < pt.w && !why; k++) {
+      if (yardAt(this.yard, i + k, j, pt.layer) >= 0) why = 'Something lies there already';
+      else if (pt.on && yardAt(this.yard, i + k, j, pt.on) < 0) why = 'It must go on the hull';
+    }
+    if (!why && !h.canAfford(pt.cost)) why = 'Need ' + h.costText(pt.cost);
+    return { kind: 'yard', i: i, j: j, part: pt, ok: !why, why: why };
+  },
+  act: function (mw, first, wreck) {
+    var t = this.target(mw, wreck), h = this.host; if (!t || !t.ok) return false;
+    if (t.wreck) { var p = this.yard.cells[t.idx]; h.pay(partOf(p.id).cost, 1); this.yard.cells.splice(t.idx, 1); h.sfx('build'); h.save(); return true; }
+    if (!first) return false;
+    h.pay(t.part.cost); this.yard.cells.push({ id: t.part.id, i: t.i, j: t.j }); h.sfx('build'); h.save(); return true;
+  },
+  check: function () { return this.yard ? yardCheck(this.yard) : ''; },
+  floor: function (c) {                   // the yard's ground, in world space, with the laid parts
+    var Y = this.Y, i, j;
+    for (j = -2; j < Y.H + 2; j++) for (i = -2; i < Y.W + 2; i++) this.host.tile(c, i + 40, j + 40, Y.X + i * T, (Y.Y + j * T) * K, T + 0.4, TS + 0.4);
+    c.fillStyle = 'rgba(70,50,30,0.16)'; c.fillRect(Y.X, Y.Y * K, Y.W * T, Y.H * TS);
+    c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 0.8; c.setLineDash([2, 3]); c.beginPath();
+    for (i = 0; i <= Y.W; i++) { c.moveTo(Y.X + i * T, Y.Y * K); c.lineTo(Y.X + i * T, (Y.Y + Y.H * T) * K); }
+    for (j = 0; j <= Y.H; j++) { c.moveTo(Y.X, (Y.Y + j * T) * K); c.lineTo(Y.X + Y.W * T, (Y.Y + j * T) * K); }
+    c.stroke(); c.setLineDash([]);
+    var y = this.yard; LAYERS.forEach(function (L) { y.cells.forEach(function (p) { var pt = partOf(p.id); if (pt.layer === L) drawYardPart(c, pt, Y.X + p.i * T, (Y.Y + p.j * T) * K, 1); }); });
+  },
+  ghost: function (c, mw, wreck) {        // the cursor: the part where it would lie, green or red; sets this.label
+    var t = this.target(mw, wreck), Y = this.Y, h = this.host; this.label = null; if (!t) return;
+    var yx = Y.X + t.i * T, yy = (Y.Y + t.j * T) * K, col = t.ok ? '120,255,160' : '255,80,60', yw = t.wreck ? T : t.part.w * T;
+    c.save();
+    if (!t.wreck) { c.globalAlpha = t.ok ? 0.7 : 0.35; drawYardPart(c, t.part, yx, yy, 1); c.globalAlpha = 1; }
+    if (t.wreck && t.ok) { var wp = this.yard.cells[t.idx]; yx = Y.X + wp.i * T; yw = partOf(wp.id).w * T; col = '255,80,60'; }
+    if (!t.wreck || t.ok) { c.shadowColor = 'rgba(' + col + ',0.95)'; c.shadowBlur = 10; c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 2; c.strokeRect(yx + 1, yy + 1, yw - 2, TS - 2); c.strokeRect(yx + 1, yy + 1, yw - 2, TS - 2); }
+    c.restore();
+    this.label = t.wreck ? (t.ok ? { text: 'Take back: +' + h.costText(partOf(this.yard.cells[t.idx].id).cost), bad: false } : null) : (t.ok ? { text: t.part.name + '  ' + h.costText(t.part.cost), bad: false } : { text: t.why, bad: true });
+  },
+  palRect: function (k) { var P = this.PAL; return { x: P.x + 3, y: P.y + 10 + k * (P.cell + 4), w: P.cell, h: P.cell }; },
+  palAt: function (ms) { if (!ms) return -1; for (var k = 0; k < this.parts().length; k++) { var r = this.palRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
+  planRect: function (k) { return { x: 100 + k * 30, y: 6, w: 27, h: 10 }; },
+  planAt: function (ms) { if (!ms) return -1; for (var k = 0; k < YARD_PLANS.length; k++) { var r = this.planRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
+  finishRect: function () { return { x: 320, y: 234, w: 62, h: 12 }; },
+  hud: function (c, ms, wreck) {          // the frame, the parts, the plan tabs, the guidance, Finish, the cursor's label
+    var why = this.check(), hp = this.palAt(ms), PL = this.parts(), P = this.PAL, h = this.host, k, self = this;
+    wood(c, -6, -6, 412, 28); wood(c, -6, 228, 412, 28); wood(c, 388, 0, 18, 250);
+    wood(c, P.x - 4, P.y - 4, P.cell + 14, PL.length * (P.cell + 4) + 20);
+    c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Parts', P.x + 3, P.y + 5);
+    for (k = 0; k < PL.length; k++) {
+      var r = this.palRect(k), pt = PL[k], on = k === this.pick && !wreck, can = h.canAfford(pt.cost);
+      c.fillStyle = hp === k ? '#5c3e2a' : '#3e2718'; c.fillRect(r.x, r.y, r.w, r.h);
+      c.strokeStyle = on ? '#ffd34d' : 'rgba(0,0,0,0.5)'; c.lineWidth = on ? 1.4 : 1; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+      c.globalAlpha = can ? 1 : 0.4; drawYardPart(c, pt, r.x + (pt.w === 2 ? 1 : 7), r.y + 4, pt.w === 2 ? 0.44 : 0.7); c.globalAlpha = 1;
+      c.font = '600 4.2px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.textAlign = 'center'; c.fillText(pt.name, r.x + r.w / 2, r.y + r.h - 2.5);
+    }
+    YARD_PLANS.forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? 'rgba(255,230,180,0.26)' : 'rgba(0,0,0,0.28)'; c.fillRect(r.x, r.y, r.w, r.h); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
+    var line = why || 'The hull is sound. Finish to launch it.';
+    c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 270, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 270, 14);
+    if (!why) { var fr = this.finishRect(), hv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = hv ? '#3f7d2e' : '#2f5f24'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 2); c.fill(); c.strokeStyle = '#1d1622'; c.lineWidth = 1; c.stroke(); c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.5); }
+    if (hp >= 0) { var pp = PL[hp], tt = pp.name + '  ' + h.costText(pp.cost) + '.  ' + pp.text; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); c.fillStyle = '#fff'; c.fillText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); }
+    if (this.label && ms && hp < 0) { c.font = '600 6.5px system-ui, sans-serif'; var gw = c.measureText(this.label.text).width + 10, gx = Math.max(2, Math.min(398 - gw, ms.x + 8)), gy = Math.max(12, ms.y - 6); c.fillStyle = 'rgba(20,16,30,0.82)'; c.fillRect(gx, gy - 8, gw, 12); c.fillStyle = this.label.bad ? '#ff9a8a' : '#fff'; c.textAlign = 'left'; c.fillText(this.label.text, gx + 5, gy + 1); }
+    c.font = '600 5px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText('Right click takes a part back.  E leaves the yard.', 52, 242); c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText('Right click takes a part back.  E leaves the yard.', 52, 242);
+    if (this.fade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, this.fade / 0.5) + ')'; c.fillRect(0, 0, 400, 250); }
+  },
+  mousedown: function (button, mw, ms) {  // the tabs, the parts, Finish, taking back, laying
+    var h = this.host, ypl = this.planAt(ms);
+    if (ypl >= 0) { if (button === 0 && this.yard.plan !== YARD_PLANS[ypl][0]) { if (this.yard.cells.length) h.toast('Take the parts back first'); else { this.yard.plan = YARD_PLANS[ypl][0]; this.pick = 0; h.save(); } } return true; }
+    var ypk = this.palAt(ms); if (ypk >= 0) { if (button === 0) this.pick = ypk; return true; }
+    var fr = this.finishRect(); if (button === 0 && !this.check() && ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h) { h.finish(); return true; }
+    if (button === 2) { this.act(mw, true, true); return true; }
+    if (button === 0) { this.act(mw, true, false); return true; }
+    return false;
+  },
+  wheel: function (d) { var n = this.parts().length; this.pick = (this.pick + d + n) % n; },
+  key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
+};
+
+return { scene: scene, wood: wood, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullCells: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawOar: drawOar };
 })();
@@ -6135,7 +6246,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function spotClear(x, y) { var ok = isLand(x, y); if (ok) around(x, y, function (o) { if (o.r && Math.hypot(o.x - x, o.y - y) < o.r * o.s + 10) ok = false; }); return ok; }
   function buildTarget() {           // what the cursor is over in build mode, and whether the piece may go there
     var P = hero(); if (!mouseW || P.mode !== 'build') return null;
-    if (inYard) return yardTarget();
     var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(mouseW.y / T), far = Math.hypot(mouseW.x - P.x, mouseW.y - P.y) > 150, i;
     if (P.wreck) {
       for (i = 0; i < B.items.length; i++) if (Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - mouseW.y) < 16) { var full = B.items[i].store && B.items[i].store.some(function (q) { return !!q; }); return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
@@ -6178,7 +6288,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return null;
   }
   function buildAct(first) {
-    if (inYard) { yardAct(first); return; }
     var P = hero(), t = buildTarget(); if (!t || !t.ok) return;
     if (P.wreck) {
       if (t.kind === 'item') { pay(costOfItem(t.item.name), 1); if (t.item.hang && t.item.hang.length) drop('hide', t.item.x, t.item.y + 10, t.item.hang.length); B.items.splice(t.idx, 1); }
@@ -6214,8 +6323,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.save(); c.translate(x, 0); c.scale(-1, 1); c.drawImage(sp.cv, sp.l, y * K + sp.t, sp.w, sp.h); c.restore();   // turned: seen from the other side
   }
   function drawGhost(c) {
-    var P = hero(), t = buildTarget(); ghostLabel = null; if (!t) return;
-    if (t.kind === 'yard') {
+    var P = hero(); ghostLabel = null;
+    if (inYard) { YSCENE.ghost(c, mouseW, P.wreck); ghostLabel = YSCENE.label; return; }
+    var t = buildTarget(); if (!t) return;
+    if (false) {
       var yx = YARD.X + t.i * T, yy = (YARD.Y + t.j * T) * K, ycol = t.ok ? '120,255,160' : '255,80,60', yw = t.wreck ? T : t.part.w * T;
       c.save();
       if (!t.wreck) { c.globalAlpha = t.ok ? 0.7 : 0.35; drawYardPart(c, t.part, yx, yy, 1); c.globalAlpha = 1; }
@@ -6435,39 +6546,25 @@ if (typeof module !== 'undefined') module.exports = Combat;
      round it that holds the parts. The build cursor works as it does outside. Parts are data (YPARTS: size in cells, the
      layer they go on, cost), and so is what makes a finished boat (PLANS: a list of checks, each with the line of guidance
      shown while it is unmet). The raft is the first plan; ships with sails are more parts and another plan later. */
-  var YARD = { X: 0, Y: 400, W: 9, H: 6 }, inYard = false, yard = null, yardBench = null, yardZoom = 0, yardPick = 0;
+  var inYard = false, yardBench = null, yardZoom = 0;
   // the parts, the plans and the vessel drawings live in src/yard.js (Yard), shared with the Sea Editor
   var ALL_PARTS = Yard.PARTS, YARD_PLANS = Yard.PLAN_LIST, LAYERS = Yard.LAYERS, PLANS = Yard.PLANS, RAFT_DEFAULT = Yard.RAFT_DEFAULT, CW = Yard.CW, CH = Yard.CH;
-  function yparts() { return Yard.partsFor(yard ? yard.plan : 'raft'); }
   var yardConnected = Yard.connected, yardParts = Yard.parts, yardAt = Yard.at, partOf = Yard.partOf, yardCheck = Yard.check, hullCells = Yard.hullCells;
   function drawYardPart(c, pt, x, y, sc) { Yard.drawPart(c, pt, x, y, sc); }
   function raftFit() { if (raft) Yard.fit(raft); }
   function drawRaft(c) { Yard.drawVessel(c, raft, clock); }
-  function yardCell() { if (!mouseW) return null; var i = Math.floor((mouseW.x - YARD.X) / T), j = Math.floor((mouseW.y - YARD.Y) / T); if (i < 0 || j < 0 || i >= YARD.W || j >= YARD.H) return null; return { i: i, j: j }; }
-  function yardTarget() {                  // what the cursor would lay in the yard, or take away
-    var P = hero(), cell = yardCell(); if (!cell) return null;
-    if (P.wreck) { var top = yardTop(cell.i, cell.j); return { kind: 'yard', wreck: true, i: cell.i, j: cell.j, idx: top, ok: top >= 0, why: top < 0 ? '' : '' }; }
-    var pt = yparts()[yardPick] || yparts()[0], i = cell.i, j = cell.j, why = '';
-    if (i + pt.w > YARD.W) i = YARD.W - pt.w;
-    for (var k = 0; k < pt.w && !why; k++) {
-      if (yardAt(yard, i + k, j, pt.layer) >= 0) why = 'Something lies there already';
-      else if (pt.on && yardAt(yard, i + k, j, pt.on) < 0) why = 'It must go on a log';
-    }
-    if (!why && !canAfford(pt.cost)) why = 'Need ' + costText(pt.cost);
-    return { kind: 'yard', i: i, j: j, part: pt, ok: !why, why: why };
-  }
-  function yardTop(i, j) { for (var L = LAYERS.length - 1; L >= 0; L--) { var k = yardAt(yard, i, j, LAYERS[L]); if (k >= 0) { if (LAYERS[L] === 'hull') { var p = yard.cells[k], pt = partOf(p.id); for (var L2 = LAYERS.length - 1; L2 >= 1; L2--) for (var q = 0; q < pt.w; q++) { var k2 = yardAt(yard, p.i + q, p.j, LAYERS[L2]); if (k2 >= 0) return k2; } } return k; } } return -1; }   // what lies on a log comes up first, wherever on the log it sits; then the log
-  function yardAct(first) {
-    var t = yardTarget(); if (!t || !t.ok) return;
-    if (t.wreck) { var p = yard.cells[t.idx]; pay(partOf(p.id).cost, 1); yard.cells.splice(t.idx, 1); sfx('build'); yardSave(); return; }
-    if (!first) return;
-    pay(t.part.cost); yard.cells.push({ id: t.part.id, i: t.i, j: t.j }); sfx('build'); yardSave();
-  }
-  function yardSave() { if (yardBench) yardBench.yard = yard; save(); }
+  var YSCENE = Yard.scene, YARD = YSCENE.Y;
+  var yardHost = {                        // what the scene needs from the game
+    hero: hero, canAfford: canAfford, pay: pay, costText: costText, sfx: sfx, toast: toast,
+    tile: function (c, gx, gy, x, y, w2, h2) { c.drawImage(w.tile('grass', gx, gy), x, y, w2, h2); },
+    save: function () { if (yardBench) yardBench.yard = YSCENE.yard; save(); },
+    finish: function () { yardFinish(); }
+  };
+  function yardSave() { yardHost.save(); }
   function yardEnter(bench) {
-    var P = hero(); yardBench = bench; yard = bench.yard && bench.yard.cells ? bench.yard : { plan: 'raft', cells: [] }; if (!yard.plan) yard.plan = 'raft'; bench.yard = yard;
-    inYard = true; yardZoom = zoom; zoom = 1.1; caveFade = 0.5; sfx('pick');
-    P.x = YARD.X + YARD.W * T + 8; P.y = YARD.Y + YARD.H * T + 14; P.vx = P.vy = 0; P.mode = 'build'; P.wreck = false; P.lastMode = 'fight'; yardPick = 0;
+    var P = hero(); yardBench = bench; bench.yard = YSCENE.enter(yardHost, bench.yard);
+    inYard = true; yardZoom = zoom; zoom = YSCENE.ZOOM; sfx('pick');
+    var hs = YSCENE.heroSpot(); P.x = hs.x; P.y = hs.y; P.vx = P.vy = 0; P.mode = 'build'; P.wreck = false; P.lastMode = 'fight';
     Combat.api.scene.bounds = worldBounds();
     menu = null; invOpen = false; bookOpen = false; clothOpen = false;
   }
@@ -6478,15 +6575,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return { x: x, y: y };
   }
   function yardLeave() {
-    var P = hero(); inYard = false; zoom = yardZoom || zoom; caveFade = 0.5; sfx('pick');
+    var P = hero(); inYard = false; YSCENE.leave(); zoom = yardZoom || zoom; sfx('pick');
     var spot = landNear(yardBench.x, yardBench.y + 34, yardBench.r || 6); P.x = spot.x; P.y = spot.y; P.vx = P.vy = 0; P.mode = 'fight'; menu = null;
     Combat.api.scene.bounds = worldBounds(); save();
   }
   function yardFinish() {                  // the hull is sound: it goes into the water by the bench, and the yard is cleared
-    if (!inYard || yardCheck(yard)) return;
+    var yard = YSCENE.yard; if (!inYard || !yard || yardCheck(yard)) return;
     if (raft) { toast('You already have a vessel afloat'); return; }
     if (!placeRaft(yardBench)) { toast('No clear water by the bench to launch it'); return; }
-    raft.parts = yard.cells.slice(); raft.kind = yard.plan; raftFit(); yardBench.launched = true; yardBench.yard = null; yard = null;
+    raft.parts = yard.cells.slice(); raft.kind = yard.plan; raftFit(); yardBench.launched = true; yardBench.yard = null;
     yardLeave(); toast(raft.kind === 'boat' ? 'The boat is afloat' : 'The raft is afloat'); sfx('craft'); save();
   }
   function yardUsable() { var P = hero(); if (inYard) return true; if (P.dead || sleep || (raft && raft.aboard) || P.mode === 'build') return false; var b = shipNear(P); return !!b && !(b.launched && raft); }   // a bench whose raft is afloat has nothing more to do
@@ -6497,52 +6594,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (b.launched && raft) { toast('This yard has launched its vessel already'); return; }
     yardEnter(b);
   }
-  // drawing: the yard floor (world space, inside begin), its parts, and the frame with the parts to pick (screen space)
-  function drawYardFloor(c) {
-    var gx0 = -2, gx1 = YARD.W + 2, gy0 = -2, gy1 = YARD.H + 2, i, j;
-    for (j = gy0; j < gy1; j++) for (i = gx0; i < gx1; i++) c.drawImage(w.tile('grass', i + 40, j + 40), YARD.X + i * T, (YARD.Y + j * T) * K, T + 0.4, TS + 0.4);
-    c.fillStyle = 'rgba(70,50,30,0.16)'; c.fillRect(YARD.X, YARD.Y * K, YARD.W * T, YARD.H * TS);       // the worn ground of the yard
-    c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 0.8; c.setLineDash([2, 3]); c.beginPath();
-    for (i = 0; i <= YARD.W; i++) { c.moveTo(YARD.X + i * T, YARD.Y * K); c.lineTo(YARD.X + i * T, (YARD.Y + YARD.H * T) * K); }
-    for (j = 0; j <= YARD.H; j++) { c.moveTo(YARD.X, (YARD.Y + j * T) * K); c.lineTo(YARD.X + YARD.W * T, (YARD.Y + j * T) * K); }
-    c.stroke(); c.setLineDash([]);
-    if (false) {
-    }
-    LAYERS.forEach(function (L) { yard.cells.forEach(function (p) { var pt = partOf(p.id); if (pt.layer === L) drawYardPart(c, pt, YARD.X + p.i * T, (YARD.Y + p.j * T) * K, 1); }); });
-  }
-  var YFRAME = { x: 44, y: 22, w: 344, h: 206 }, YPAL = { x: 6, y: 34, cell: 30 };
-  function yardPalAt() { if (!mouseS) return -1; for (var k = 0; k < yparts().length; k++) { var r = yardPalRect(k); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return k; } return -1; }
-  function yardPalRect(k) { return { x: YPAL.x + 3, y: YPAL.y + 10 + k * (YPAL.cell + 4), w: YPAL.cell, h: YPAL.cell }; }
-  function yardPlanRect(k) { return { x: 100 + k * 30, y: 6, w: 27, h: 10 }; }
-  function yardPlanAt() { if (!mouseS) return -1; for (var k = 0; k < YARD_PLANS.length; k++) { var r = yardPlanRect(k); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return k; } return -1; }
-  function yardFinishRect() { return { x: 320, y: 234, w: 62, h: 12 }; }
-  function drawYardHud(c, P) {
-    var why = yard ? yardCheck(yard) : '', hp = yardPalAt(), k;
-    // the frame: wooden bars round the yard, the parts down the left side
-    wood(c, -6, -6, 412, 28); wood(c, -6, 228, 412, 28); wood(c, 388, 0, 18, 250);
-    var PL = yparts(); wood(c, YPAL.x - 4, YPAL.y - 4, YPAL.cell + 14, PL.length * (YPAL.cell + 4) + 20);
-    c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Parts', YPAL.x + 3, YPAL.y + 5);
-    for (k = 0; k < PL.length; k++) {
-      var r = yardPalRect(k), pt = PL[k], on = k === yardPick && !P.wreck, can = canAfford(pt.cost);
-      c.fillStyle = hp === k ? '#5c3e2a' : '#3e2718'; c.fillRect(r.x, r.y, r.w, r.h);
-      c.strokeStyle = on ? '#ffd34d' : 'rgba(0,0,0,0.5)'; c.lineWidth = on ? 1.4 : 1; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
-      c.globalAlpha = can ? 1 : 0.4; drawYardPart(c, pt, r.x + (pt.w === 2 ? 1 : 7) + (pt.w === 2 ? 0 : 0), r.y + 4, pt.w === 2 ? 0.44 : 0.7); c.globalAlpha = 1;
-      c.font = '600 4.2px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.textAlign = 'center'; c.fillText(pt.name, r.x + r.w / 2, r.y + r.h - 2.5);
-    }
-    // which hull is being laid: Raft or Boat, as tabs in the top bar; then the guidance line, and Finish when the hull is sound
-    YARD_PLANS.forEach(function (pl, k) { var r = yardPlanRect(k), on = yard && yard.plan === pl[0]; c.fillStyle = on ? 'rgba(255,230,180,0.26)' : 'rgba(0,0,0,0.28)'; c.fillRect(r.x, r.y, r.w, r.h); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
-    var line = why || 'The hull is sound. Finish to launch it.';
-    c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 270, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 270, 14);
-    if (!why) { var fr = yardFinishRect(), hv = mouseS && mouseS.x >= fr.x && mouseS.x <= fr.x + fr.w && mouseS.y >= fr.y && mouseS.y <= fr.y + fr.h; c.fillStyle = hv ? '#3f7d2e' : '#2f5f24'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 2); c.fill(); c.strokeStyle = '#1d1622'; c.lineWidth = 1; c.stroke(); c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.5); }
-    if (hp >= 0) { var pp = PL[hp], tt = pp.name + '  ' + costText(pp.cost) + '.  ' + pp.text; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(tt, YPAL.x + YPAL.cell + 16, yardPalRect(hp).y + 8); c.fillStyle = '#fff'; c.fillText(tt, YPAL.x + YPAL.cell + 16, yardPalRect(hp).y + 8); }
-    if (ghostLabel && mouseS && hp < 0) { c.font = '600 6.5px system-ui, sans-serif'; var gw = c.measureText(ghostLabel.text).width + 10, gx = Math.max(2, Math.min(398 - gw, mouseS.x + 8)), gy = Math.max(12, mouseS.y - 6); c.fillStyle = 'rgba(20,16,30,0.82)'; c.fillRect(gx, gy - 8, gw, 12); c.fillStyle = ghostLabel.bad ? '#ff9a8a' : '#fff'; c.textAlign = 'left'; c.fillText(ghostLabel.text, gx + 5, gy + 1); }
-    c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText('Right click takes a part back.  E leaves the yard.', 52, 242); c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText('Right click takes a part back.  E leaves the yard.', 52, 242);
-    if (caveFade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, caveFade / 0.5) + ')'; c.fillRect(0, 0, 400, 250); }
-  }
   var cave = null, inCave = false, caveMouth = null, caveFade = 0, CAVE_GW = 72, CAVE_GH = 40, CAVE_X = 0, CAVE_Y = 400;
   function caveFloor(x, y) { if (!cave) return false; var gx = Math.floor((x - CAVE_X) / T), gy = Math.floor((y - CAVE_Y) / T); return gx >= 0 && gy >= 0 && gx < CAVE_GW && gy < CAVE_GH && cave.f[gy * CAVE_GW + gx] === 1; }
   function caveSetup() {                   // choose the mouth's place on the island and generate the inside
-    cave = null; caveMouth = null; inCave = false; CAVE_X = WX + 4000; YARD.X = WX + 9000; inYard = false; yard = null; yardBench = null;
+    cave = null; caveMouth = null; inCave = false; CAVE_X = WX + 4000; YARD.X = WX + 9000; inYard = false; yardBench = null;
     var R = kit.rng(spec.seed * 31 + 9), tries, i, x, y, tx, ty, site = null;
     for (tries = 0; tries < 800 && !site; tries++) {
       var q1 = w.isles[1] || w.isles[0], a = R() * 6.283, d = R() * q1.r * 0.7 * T; x = q1.x * T + Math.cos(a) * d; y = q1.y * T + Math.sin(a) * d * 0.9; tx = Math.floor(x / T); ty = Math.floor(y / T);
@@ -7890,13 +7945,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.scene = {
     noHud: false, noKills: true,
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
-    walk: function (x, y) { if (ADMIN.fly && !inYard && !inCave) return true; if (inYard) return x >= YARD.X - 18 && x <= YARD.X + YARD.W * T + 18 && y >= YARD.Y - 14 && y <= YARD.Y + YARD.H * T + 26; if (inCave) return caveFloor(x, y); return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y); },   // the shallows can be waded
+    walk: function (x, y) { if (ADMIN.fly && !inYard && !inCave) return true; if (inYard) return YSCENE.walk(x, y); if (inCave) return caveFloor(x, y); return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y); },   // the shallows can be waded
     begin: function (c, P) {
       var z = zoom, hw = 200 / z, hh = 125 / z, i;
       cam.z = z;
       cam.x = hw * 2 >= WX ? WX / 2 : Math.max(hw, Math.min(WX - hw, P.x));
       cam.y = hh * 2 >= WY * K ? WY * K / 2 : Math.max(hh, Math.min(WY * K - hh, P.y * K - 14));
-      if (inYard) { cam.x = YARD.X + YARD.W * T / 2 - 4; cam.y = (YARD.Y + YARD.H * T / 2) * K; c.fillStyle = '#2d4a22'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y); drawYardFloor(c); drawGhost(c); return; }
+      if (inYard) { var yc = YSCENE.cam(); cam.x = yc.x; cam.y = yc.y; c.fillStyle = '#2d4a22'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y); YSCENE.floor(c); drawGhost(c); return; }
       if (inCave) { cam.x = P.x; cam.y = P.y * K - 14; c.fillStyle = '#080606'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y); drawCaveFloor(c, hw, hh); return; }
       c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250);
       c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y);
@@ -7962,7 +8017,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     end: function (c, P) {
       var PSN = Combat.api.pixelScale || 2;
       c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0);
-      if (inYard) { drawYardHud(c, P); drawNotes(c); c.restore(); return; }
+      if (inYard) { YSCENE.hud(c, mouseS, P.wreck); drawNotes(c); c.restore(); return; }
       if (inCave) drawCaveDark(c, P); else drawNight(c);
       if (caveFade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, caveFade / 0.7) + ')'; c.fillRect(0, 0, 400, 250); }
       // the chart: a window of the sea round you (about 110 tiles wide), sharp, with markers you can tell apart
@@ -8110,7 +8165,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat && SHOW.runes) { clothOpen = !clothOpen; rpick = null; if (clothOpen) { invOpen = false; cookOpen = false; menu = null; bookOpen = false; } } return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || musterOpen || mapOpen) { mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
-    if (inYard && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) yardFinish(); return; }
+    if (inYard && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) YSCENE.key('Enter'); return; }
     if (inYard && (e.code === 'KeyB' || e.code === 'KeyQ')) { e.preventDefault(); return; }
     if (!codes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
@@ -8159,7 +8214,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (sl >= 0) { if (e.button === 0 && slots[sl]) pick = { i: sl, x: mouseS.x, y: mouseS.y, drag: false }; else if (e.button === 2 && slots[sl] && slots[sl].kind === 'item') equipFromBag(sl); return; }
       if (mouseS.x > invLeft() - 4 && mouseS.y > BAR.y - 4 && mouseS.y < INV.y + INV.h + 4) return;   // on the boards, nothing behind them
     }
-    if (inYard) { var ypl = yardPlanAt(); if (ypl >= 0) { if (e.button === 0 && yard && yard.plan !== YARD_PLANS[ypl][0]) { if (yard.cells.length) toast('Take the parts back first'); else { yard.plan = YARD_PLANS[ypl][0]; yardPick = 0; yardSave(); } } return; } var ypk = yardPalAt(); if (ypk >= 0) { if (e.button === 0) { yardPick = ypk; P.wreck = false; } return; } var fr = yardFinishRect(); if (e.button === 0 && yard && !yardCheck(yard) && mouseS.x >= fr.x && mouseS.x <= fr.x + fr.w && mouseS.y >= fr.y && mouseS.y <= fr.y + fr.h) { yardFinish(); return; } if (e.button === 2) { P.wreck = true; yardAct(true); P.wreck = false; return; } if (e.button === 0) { mdown = 1; buildAct(true); } return; }
+    if (inYard) { YSCENE.mousedown(e.button, mouseW, mouseS); return; }
     if (P.mode === 'build') { if (e.button === 2) openMenu(); else if (e.button === 0) { mdown = 1; lastPlaced = ''; buildAct(true); } return; }
     Combat.button(e.button, true);
   });
@@ -8187,7 +8242,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   cv.addEventListener('wheel', function (e) {
     e.preventDefault(); var P = hero(), d = e.deltaY > 0 ? 1 : -1, n;
     if (P.mode === 'gather' || P.mode === 'fight') { hand[P.mode] = (hand[P.mode] + d + 6) % 6; P.atk.ph = 'none'; P.atk.since = 9; }
-    else if (inYard) yardPick = (yardPick + d + yparts().length) % yparts().length;
+    else if (inYard) YSCENE.wheel(d);
     else if (P.mode === 'build') { if (!P.wreck && PIECES[P.piece] && PIECES[P.piece].kind === 'item') buildRot = (buildRot + (d > 0 ? 1 : 3)) & 3; else { P.piece = (P.piece + d + PIECES.length) % PIECES.length; P.wreck = false; } }   // the wheel turns what you are placing; the board picks the piece
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
@@ -8227,7 +8282,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
   window.addEventListener('beforeunload', save);
-  Combat.api.debug = function () { return { clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -8257,7 +8312,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     around(P.x, P.y, function (o) { if (o.name === 'runestone' && Math.abs(o.x - cam.x) < 240 && Math.abs(o.y * K - cam.y) < 160) { var id = stoneRune(o); if (!RS.learnt[id] && !RS.stones[propKey(o)]) RS.heard[id] = 1; } });
     handSync();
     Combat.api.scene.noHotbar = inYard;
-    Combat.api.buildSlots = inYard ? yparts().map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function () {} }; }) : buildSlots0; if (inYard) hero().piece = yardPick;
+    Combat.api.buildSlots = inYard ? YSCENE.parts().map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function () {} }; }) : buildSlots0; if (inYard) { hero().piece = YSCENE.pick; YSCENE.tick(dt); }
     saveT += dt; if (saveT > 10) { saveT = 0; save(); }
     if (!pauseOpen) { Combat.update(dt); raftAfter(); }    // the Escape menu holds the world still
     Combat.render(ctx);

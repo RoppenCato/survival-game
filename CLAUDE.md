@@ -134,7 +134,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `src/yard.js` (`Yard`): the parts a hull is laid from (`PARTS`: log, lashing, plank for the raft; keel, strake, rowing
   seat for the boat), the plans and their checks (`PLANS`, `check(yard)`), `connected`, `at`, `partOf`, `hullCells`,
   `fit(vessel)` (its size on the water and where you sit) and the drawings: `drawPart` (in a yard cell) and `drawVessel`
-  (the raft or the boat on the water, from its parts). Shared by the game's Shipyard and the Sea Editor's Boatyard.
+  (the raft or the boat on the water, from its parts), and **`Yard.scene`**: the Shipyard scene itself (the yard's ground and
+  frame, the parts strip, plan tabs, the cursor, Finish; `enter(host, yard)`, `floor`, `ghost`, `hud`, `mousedown`, `wheel`,
+  `key`, `walk`, `cam`, `heroSpot`) driven by a small host object (hero, costs, sounds, a grass tile, save, finish). The game
+  and the Sea Editor both run it; the game pays costs, the editor's host makes everything free.
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
   `hollow` drawings for the casting cloth. Thirteen runes so far.
@@ -713,11 +716,12 @@ are contour lines of it. The tile grid only records sea, beach, grass or jetty f
 Only pieces of sea that touch land are painted, lazily, with the oldest forgotten; open water reuses one piece.
 Props and solids are kept in buckets per map piece. A chart in the corner shows the whole sea.
 
-**The Boatyard (Sea Editor, 2026-10-06):** a panel with the two plans, the parts as buttons, a 9 by 6 yard canvas (click lays
-a part, right click takes one back; no costs), the plan's guidance line, **Launch it** (the built vessel is moored at the
-dock in place of the ship and sailed with the handling sliders; `built`, drawn by `Yard.drawVessel`, `dims()` reads its
-size, you sit at its seat), **Clear the yard** and **Sail a ship instead**. The yard and the built vessel are kept in
-`seayard1`. `window.seaDbg` exposes the boat, the yard and boarding for scripted checks.
+**The Shipyard in the Sea Editor (2026-10-06):** the game's yard scene itself, an editor inside the editor. **Open the
+Shipyard** steps the hero into the same grass yard in a wooden frame (`Yard.scene`, shared with the game: the parts down
+the left, Raft and Boat tabs, the build cursor, right click takes back, Enter or Finish launches), with nothing costing
+anything. The launched vessel is moored off the end of the jetty in place of the ship and sailed with the handling sliders
+(`built`, drawn by `Yard.drawVessel`, `dims()` reads its size, you sit at its seat). **Clear the yard**, **Sail a ship
+instead**, and E leaves the yard. The yard and the vessel are kept in `seayard2`; `window.seaDbg` exposes them for checks.
 
 Ships (faering, karve, longship, knarr) are a top-down hull turned to the heading and squashed by the 0.75 view
 factor, with upright stems, mast and sail. E boards and steps ashore. Handling: top speed, acceleration, turn
