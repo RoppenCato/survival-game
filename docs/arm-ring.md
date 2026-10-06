@@ -73,16 +73,16 @@ combat tests are.
    learnt until the ring is on the arm. Test: coils feed `mods` and `trigger`; nothing learnt without a ring.
 2. **The ring on the character panel.** Drawn on the hero's arm by metal, and a row of coils under the gear; hover for the
    rune's name and line. Looking only.
-3. **The carver's bench.** A buildable piece for the big island (wood, stone, copper) with its own prop. E opens the ring
+3. **The carver's bench.** A buildable piece for the big island (6 wood, 2 stone, 2 copper; it works only under a roof, like the workbench) with its own prop. E opens the ring
    board (tabs Hand, Foot, Eye, Heart of known runes; the ring large with its coils). Click a rune: the work bar, five health,
    the coil glows, the old rune fades; filing to change. The hotbar glow for a castable hand rune. Test: cut, file, re-cut,
    close mid-bar, die mid-bar, a rune of the wrong side.
-4. **Runes from the beasts.** One per animal of the first biome, learnt after enough of them: the boar's charge, the deer's
+4. **Runes from the beasts.** One per animal of the first biome, learnt after **ten** of them (the bear and the troll the same): the boar's charge, the deer's
    dash (later; the dash stays a base mechanic for now), the wolf's night running, the bear's berserk, the snake's venom
    edge, the moose's push. The learning moment is a rite: a dim, the rune glowing over the beast, its name. Test: the count,
    the rite once, nothing before the ring.
-5. **The bronze ring in the cave.** The dead Viking at the back of the troll's cave, past the ore; E takes the ring; the
-   troll is the price. Two coils, hand and foot. Brokk's one taught rune comes after it. Test: the ring appears once, is
+5. **The bronze ring in the cave.** The dead Viking lies at the very back of the troll's cave, **behind the troll's lair**, past the
+   ore; E takes the ring; the troll must be dealt with or slipped past. Two coils, hand and foot. Brokk's one taught rune comes after it. Test: the ring appears once, is
    saved, and discovery opens with it.
 6. **Runestones give runes again,** the odd ones, with the rite of step 4.
 7. **Rings on leaders.** Only leaders wear rings: Brokk bronze, jarls and legendary Vikings by their biome, ordinary people
@@ -90,6 +90,8 @@ combat tests are.
 8. **Growth.** The silver ring from the second biome's jarl or hoard, the eye side; the smith's rework. Waits for the second
    biome and the raid.
 9. **Hirdmen wear what you give them,** rings among them. Waits for the hird's next step.
+
+Deeds keep giving the plain runes (fifteen trees, five meals, a minute of sprinting); beasts and stones give the interesting ones.
 
 Left out until asked for: pairs, cursed rings, rings taken from the dead, the dash as a rune.
 
