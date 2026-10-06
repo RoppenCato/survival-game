@@ -306,6 +306,11 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   a strake nearer it: its width), and `thwart`s (rowing seats, one at least, oars drawn each side; the first is yours,
   more are for hirdmen to row later). `drawBoat` draws a clinker lens hull from the keel's length and the rows' width,
   with strakes, bottom boards, stem and stern posts, seats and oars; you stand in the bow (`raft.seat`, `raftAfter`).
+  **The boat looks like the Sea Editor's karve without its sail** (2026-10-06, Robin): the same clinker hull shape with
+  planking, deck, curled stems at bow and stern, the steering oar, the rowing seats where they were laid with an oar each
+  side that pulls when under way (`Yard.drawVessel`, `boatDims`), and the near side of the hull drawn over the hero's feet
+  so he stands in it (`Yard.drawVesselFront`). The halo is gone: a thin line of foam hugs the hull and a **wake** of
+  ripples trails from the stern when moving (`drawWater`, from the vessel's `vx`, `vy`). A mast and sail come later.
   A boat rows at 78 against the raft's 54. **The water test follows the hull** (`raftFit` sets `hw`, `hh` from the parts;
   `raftHull` probes an ellipse of that size, turned with the heading, at 0.8 so there is a little room). The vessel is
   saved with its `kind` and `parts`. One vessel afloat at a time.

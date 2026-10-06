@@ -328,7 +328,7 @@ __COMBAT__
   YSCENE.Y.X = 0;   // set when the world is made: far east of the map
   try { var ys = JSON.parse(localStorage.getItem(YKEY)); if (ys && ys.yard) { yardS = ys.yard; if (ys.built) { built = ys.built; Yard.fit(built); } } } catch (e) {}
   function ysave() { try { localStorage.setItem(YKEY, JSON.stringify({ yard: yardS, built: built ? { kind: built.kind, parts: built.parts } : null })); } catch (e) {} }
-  function vesselNow() { return { x: boat.x, y: boat.y, h: boat.h, kind: built.kind, parts: built.parts, hw: built.hw, hh: built.hh, seat: built.seat }; }
+  function vesselNow() { return { x: boat.x, y: boat.y, h: boat.h, vx: boat.vx, vy: boat.vy, kind: built.kind, parts: built.parts, hw: built.hw, hh: built.hh, seat: built.seat }; }
   var yardHost = {
     hero: function () { return Combat.dbg().P; }, canAfford: function () { return true; }, pay: function () {}, costText: function () { return 'free'; },
     sfx: function () {}, toast: function (t) { prompt = t; }, tile: function (c, gx, gy, x, y, w2, h2) { c.drawImage(w.tile('grass', gx, gy), x, y, w2, h2); },
@@ -562,7 +562,7 @@ __COMBAT__
       var z = cam.z, hw = 200 / z, hh = 125 / z;
       items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { if (built) Yard.drawVessel(ctx, vesselNow(), clock); else drawBoat(ctx); } });
       if (Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
-      if (aboard && !built) items.push({ y: hero.y + 0.5, f: function () { drawBoatFront(ctx); } });
+      if (aboard) items.push({ y: hero.y + 0.5, f: function () { if (built) Yard.drawVesselFront(ctx, vesselNow(), clock); else drawBoatFront(ctx); } });
       // only the objects in the pieces of map near the view (trees are tall, so look a little further down)
       var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1);
       var by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1);
