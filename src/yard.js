@@ -160,19 +160,22 @@ var T = 32, TS = 24, K = 0.75;
     var sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02;
     function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(v.h + roll); c.scale(k1, k2); hullPath(c, L, W); c.restore(); }
     c.save();
-    var cy = heroY != null ? heroY * K - 7 : sy + 1.5;
-    c.beginPath(); c.rect(sx - L * 2, cy, L * 4, L * 3); c.clip();
+    var cy = heroY != null ? heroY * K - 5 : sy + 1.5, hx0 = v.x + Math.cos(v.h) * (v.seat || 0);
+    c.beginPath(); if (heroY != null) c.rect(hx0 - 13, cy, 26, 40); else c.rect(sx - L * 2, cy, L * 4, L * 3); c.clip();   // only over his legs, whatever the heading
     c.lineJoin = 'round'; c.strokeStyle = LINE;
     c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(COL.hull, -30); c.fill('evenodd'); c.lineWidth = 1.6; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
     c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = COL.hull; c.fill('evenodd');
     c.lineWidth = 1.6; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 1.2; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
     c.restore();
-    if (!(v.crew || 0) && v.aboard && heroY != null) {        // alone: the paddle in his hands, down the near side into the water, stroking as the boat moves
-      var mv = Math.min(1, speedOf(v) / 60), st = mv > 0.05 ? Math.sin(clock * (3 + mv * 3)) : -1, fx = Math.cos(v.h), fy = Math.sin(v.h) * K;
-      var hx = v.x + Math.cos(v.h) * (v.seat || 0), hy = heroY * K - 9, gx = hx + 3, gy = hy, ex = hx + 7 + fx * st * 9, ey = heroY * K + 13 + fy * st * 9 - (st > 0 ? 0 : 3 * (1 - mv));
-      c.save(); c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(gx - 2, gy - 6); c.lineTo(ex, ey); c.stroke(); c.strokeStyle = shadeHex(COL.deck, -10); c.lineWidth = 1.8; c.stroke();
-      c.beginPath(); c.ellipse(ex, ey, 2.6, 4.2, Math.atan2(ey - gy, ex - gx) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(COL.deck, -10); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke();
-      if (mv > 0.05 && st > 0.3) { c.strokeStyle = 'rgba(235,250,255,0.6)'; c.lineWidth = 1.2; c.beginPath(); c.ellipse(ex, ey + 2, 5 + st * 3, 2 + st, 0, 0, 7); c.stroke(); }   // the blade stirs the water
+    if (!(v.crew || 0) && v.aboard && heroY != null) {        // alone: the paddle in his hands, over the near rail and down into the water, stroking as the boat moves
+      var mv = Math.min(1, speedOf(v) / 60), st = mv > 0.05 ? Math.sin(clock * (3 + mv * 3)) : -1, side = Math.cos(v.h) >= 0 ? 1 : -1;
+      var ch = Math.cos(v.h), sh = Math.sin(v.h), seat = v.seat || 0;
+      function toS(bx, by) { return [v.x + bx * ch - by * sh, v.y * K + (bx * sh + by * ch) * K]; }
+      var hand = [v.x + ch * seat + 2, heroY * K - 8], rail = toS(seat + 4 + st * 5, side * (W * 0.95 + 1)), blade = toS(seat + 7 + st * 9, side * (W * 1.05 + 9));
+      c.save(); c.lineCap = 'round';
+      c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(hand[0], hand[1]); c.lineTo(rail[0], rail[1]); c.lineTo(blade[0], blade[1]); c.stroke(); c.strokeStyle = shadeHex(COL.deck, -10); c.lineWidth = 1.8; c.stroke();
+      c.beginPath(); c.ellipse(blade[0], blade[1], 2.6, 4.4, Math.atan2(blade[1] - rail[1], blade[0] - rail[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(COL.deck, -10); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke();
+      if (mv > 0.05 && st > 0.3) { c.strokeStyle = 'rgba(235,250,255,0.6)'; c.lineWidth = 1.2; c.beginPath(); c.ellipse(blade[0], blade[1] + 2, 5 + st * 3, 2 + st, 0, 0, 7); c.stroke(); }
       c.restore();
     }
   }
