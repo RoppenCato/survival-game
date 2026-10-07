@@ -141,7 +141,7 @@ function make(seed, site, opts) {
       p = tile(l.x + 1, l.y + l.h - 1); item('bench', p[0], p[1] - 3); p = tile(l.x + l.w - 2, l.y + l.h - 1); item('bench', p[0], p[1] - 3);
       p = tile(l.x + l.w - 1, l.y + l.h - 1); item('chest', p[0] - 2, p[1] - 2, { store: true, loot: { leather: 2, berries: 3, coin: 2 + Math.floor(wealth * 6) } });
       p = tile(l.x + 2, l.y); item('table', p[0] + 10, p[1] + 4); if (wealth > 0.5) { p = tile(l.x + Math.floor(l.w / 2), l.y); item('shieldRack', p[0], p[1] + 2); }
-      if (A.hall) { p = tile(l.x + l.w - 2, l.y + 1); item('chair', p[0], p[1], { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall) { p = tile(l.x + l.w - 2, l.y); item('chest', p[0], p[1] + 2, { store: true, loot: { coin: 20 + Math.floor(wealth * 30), leather: 3, copper: 2 }, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
+      if (A.hall) { p = tile(l.x + l.w - 2, l.y + 1); item('chair', p[0], p[1], { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall) { p = tile(l.x + l.w - 2, l.y); item('chest', p[0], p[1] + 2, { heavy: { silver: 24 + Math.floor(wealth * 36) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
     } else if (BUILD[l.id].inside === 'home') {
       item('stoneHearth', mid[0] + (l.w > 3 ? 0 : T * 0.3), mid[1] + (l.h > 2 ? 0 : -2), { hearth: true, light: 1 });
       p = tile(l.x, l.y); item('bed', p[0] + 3, p[1] + 2, { bed: true }); if (l.w >= 4 && l.h >= 3) { p = tile(l.x + l.w - 1, l.y); item('bed', p[0] - 3, p[1] + 2, { bed: true }); }
@@ -157,9 +157,13 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'church') {
       p = tile(l.x + Math.floor(l.w / 2), l.y); item('altar', p[0] + (l.w % 2 ? 0 : T / 2), p[1] + 2, { r: 6, altar: true, light: 1, lamp: true });
       for (k = l.y + 2; k < l.y + l.h; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
-      p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { store: true, loot: { coin: 8 + Math.floor(wealth * 16), leather: 1, berries: 2 }, lore: 'The church\u2019s silver, given by the faithful.' });
+      p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: 14 + Math.floor(wealth * 24) }, locked: 1, lore: 'The church\u2019s silver, given by the faithful.' });
       V.finds.push({ kind: 'silver', x: p[0], y: p[1] });
       V.props.push({ name: 'bellTower', x: l.x * T + 9, y: (l.y + l.h) * T + 8, solid: 14 });                                  // the tower at the front corner, like a west tower
+      V.props.push({ name: 'porch', x: (l.dx + 0.5) * T, y: (l.y + l.h) * T + 9 });                                           // the porch over the door
+      V.props.push({ name: 'apse', x: (l.x + l.w / 2) * T, y: (l.y - 1.7) * T });                                                  // the rounded east end beyond the far gable
+      V.props.push({ name: 'gableCross', x: (l.x + l.w / 2) * T, y: (l.y + l.h) * T + 2.5 });                                  // the cross on the gable's peak
+      p = tile(l.x + l.w - 1, l.y + l.h - 1); item('font', p[0] - 2, p[1] + 2, { r: 4 });                                     // the font by the door
       V.props.push({ name: 'wayCross', x: (l.x + l.w) * T + 14, y: (l.y + l.h) * T + 20, solid: 3 });
       var gi, gn = 4 + Math.floor(R() * 5);
       for (gi = 0; gi < gn; gi++) { var gx = (l.x + l.w + 0.25 + R() * 0.7) * T, gy = (l.y + 0.6 + R() * (l.h - 0.8)) * T; V.props.push({ name: 'graveStone', x: gx, y: gy, solid: 2 }); }   // the churchyard along the east side
@@ -183,6 +187,7 @@ function make(seed, site, opts) {
     }
   }
   V.lots.forEach(pieces);
+  V.lots.forEach(function (l) { if (!(A.townwall || A.chapel) || !(l.id === 'church' || l.id === 'hall' || l.id === 'store')) return; var dk = l.door === 's' ? key(l.dx, l.y + l.h) : l.door === 'n' ? key(l.dx, l.y) : l.door === 'w' ? key(l.x, l.dy) : key(l.x + l.w, l.dy), ed = (l.door === 's' || l.door === 'n') ? V.H[dk] : V.V[dk]; if (ed && ed.t === 'door') ed.locked = 1; });   // the raid (2026-10-07): the church, the hall and the store are locked; the axe opens them
   // the well in the yard (a fire pit for the poor), the finds, the fence and gate, the fields, the sacred, the midden
   var wc = tile(yx + Math.floor(yw / 2), yy + Math.floor(yh / 2)), fc = [wc[0] - T * 0.2, wc[1] + T * 0.2];                                                             // the fire in the middle of the yard, the well off to the north-east
   if (wealth > 0.3) item('woodenWell', wc[0] + T * (yw >= 7 ? 1.9 : 1.4), wc[1] - T * (yh >= 5 ? 1.1 : 0.7));
@@ -196,6 +201,7 @@ function make(seed, site, opts) {
   var ex0 = 1e9, ey0 = 1e9, ex1 = -1e9, ey1 = -1e9; V.lots.forEach(function (l) { ex0 = Math.min(ex0, l.x); ey0 = Math.min(ey0, l.y); ex1 = Math.max(ex1, l.x + l.w); ey1 = Math.max(ey1, l.y + l.h); });
   ex0 = Math.max(tx, ex0 - G.fenceGap); ey0 = Math.max(ty, ey0 - G.fenceGap); ex1 = Math.min(tx + w, ex1 + G.fenceGap); ey1 = Math.min(ty + h, ey1 + G.fenceGap);
   var gateX = yx + Math.floor(yw / 2), fk = fenceKind, fm = fk === 'drystone' ? 3 : (fk === 'townwall' ? 6 : 2), x, y;
+  if (A.chapel) V.props.push({ name: 'lychGate', x: (gateX + 0.5) * T, y: (ey1 + 0.02) * T });   // the churchyard's roofed gate
   var roadSide = R() < 0.5 ? 1 : -1, backGateX = null;                                                         // the road bends past the fire on this side and leaves by a back gate beside the longhouse
   if (G.backGate && (!shore || shore === 's') && (A.houses[1] >= 3 || shore === 's')) { backGateX = roadSide > 0 ? L0.x + L0.w + 1 : L0.x - 2; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = roadSide > 0 ? L0.x - 2 : L0.x + L0.w + 1; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = null; }
   if (fk === 'palisade' && !A.townwall) {              // a round wall of sharpened stakes round the whole ring, a gap for the gate on the path, banners either side
@@ -284,7 +290,7 @@ function make(seed, site, opts) {
     var home = homes[hi % homes.length]; hi++;
     var door = home.door === 's' ? tile(home.dx, home.y + home.h + 1) : home.door === 'e' ? tile(home.x + home.w + 1, home.dy) : home.door === 'w' ? tile(home.x - 2, home.dy) : tile(home.dx, home.y - 2);
     var role = shore && R() < 0.4 ? 'fisher' : roles[Math.floor(R() * roles.length)]; if (role === 'smith' && !V.lots.some(function (l) { return l.id === 'smithy'; })) role = 'farmer';
-    if (A.chapel) role = 'priest'; else if (A.church && pi === 0) role = 'priest'; else if (A.townwall && (pi === 1 || pi === 2)) role = 'guard'; else if (A.townwall && pi === 3) role = 'merchant';
+    if (A.chapel) role = 'priest'; else if (A.church && pi === 0) role = 'priest'; else if (A.townwall && (pi === 1 || pi === 2 || (wealth > 0.7 && (pi === 4 || pi === 5)))) role = 'guard'; else if (A.townwall && pi === 3) role = 'merchant';
     var work = role === 'smith' ? V.lots.filter(function (l) { return l.id === 'smithy'; })[0] : role === 'fisher' && shore ? null : V.lots.filter(function (l) { return l.id === 'byre' || l.id === 'store'; })[0];
     var seatsV = V.items.filter(function (it) { return it.name === 'logSeat'; }), seatV = seatsV.length ? seatsV[pi % seatsV.length] : null;
     var spots = [door.concat(['door']), [wc[0] + (R() - 0.5) * 30, wc[1] + 20 + (R() - 0.5) * 20], [wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6]];
@@ -411,7 +417,7 @@ function draw(c, V, env, clock) {
   });
   items.sort(function (a, b) { return a.y - b.y; }).forEach(function (it) { it.f(); });
 }
-var SIZES = { bellTower: 1, altar: 1, graveStone: 1, wayCross: 1, stall: 1, yew: 1, windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
+var SIZES = { porch: 1, apse: 1, gableCross: 1, font: 1, lychGate: 1, bellTower: 1, altar: 1, graveStone: 1, wayCross: 1, stall: 1, yew: 1, windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
 function SIZE_OF(kit, name) { return SIZES[name] || 1; }
 return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, draw: draw, rng: rngOf, SIZES: SIZES };
 })();

@@ -983,6 +983,11 @@ function heldD(c, h) {
     var L = 13; c.strokeStyle = '#6a4a30'; c.lineWidth = 1.7; c.beginPath(); c.moveTo(x - ca * 3, y - sa * 3); c.lineTo(x + ca * L, y + sa * L); c.stroke();
     c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.5; c.stroke();
     var hx = x + ca * (L - 1), hy = y + sa * (L - 1), px = -sa, py = ca; c.fillStyle = '#6e7076'; c.beginPath(); c.moveTo(hx - ca * 2 + px * 0.5, hy - sa * 2 + py * 0.5); c.lineTo(hx + ca * 1.5 + px * 1, hy + sa * 1.5 + py * 1); c.lineTo(hx + ca * 1.2 + px * 5, hy + sa * 1.2 + py * 5); c.lineTo(hx - ca * 2.6 + px * 4.5, hy - sa * 2.6 + py * 4.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
+  } else if (h.kind === 'sword') {
+    var Ls = 15; c.strokeStyle = '#4a3424'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(x - ca * 2.5, y - sa * 2.5); c.lineTo(x + ca * 1.5, y + sa * 1.5); c.stroke();   // the grip
+    c.strokeStyle = '#6e7076'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(x + ca * 1.5 - sa * 3, y + sa * 1.5 + ca * 3); c.lineTo(x + ca * 1.5 + sa * 3, y + sa * 1.5 - ca * 3); c.stroke();   // the guard
+    c.strokeStyle = '#b8bec8'; c.lineWidth = 2.0; c.beginPath(); c.moveTo(x + ca * 2, y + sa * 2); c.lineTo(x + ca * Ls, y + sa * Ls); c.stroke(); c.strokeStyle = 'rgba(35,26,22,0.7)'; c.lineWidth = 0.5; c.stroke();   // the blade
+    c.strokeStyle = 'rgba(255,255,255,0.5)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x + ca * 3 - sa * 0.5, y + sa * 3 + ca * 0.5); c.lineTo(x + ca * (Ls - 1) - sa * 0.5, y + sa * (Ls - 1) + ca * 0.5); c.stroke();
   } else if (h.kind === 'bucket') {
     c.strokeStyle = 'rgba(60,50,40,0.9)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.2); c.stroke();
     c.fillStyle = '#8a6a44'; c.beginPath(); c.moveTo(x - 3, y + 2.2); c.lineTo(x + 3, y + 2.2); c.lineTo(x + 2.5, y + 7.5); c.lineTo(x - 2.5, y + 7.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
@@ -3159,24 +3164,80 @@ function ashlarFill(c, x, y, w, h, seed, base) {         // dressed stone in cou
   for (j = 0; j < ncr; j++) { var cy = y + h - (j + 1) * crs, sx = x - (j % 2 ? 6 : 0) - R() * 2; while (sx < x + w) { var sw = 9 + R() * 6, tn = 58 + (R() - 0.5) * 12; fillPts(c, [[sx + 0.5, cy + 0.5], [sx + sw - 0.5, cy + 0.5], [sx + sw - 0.5, cy + crs - 0.5], [sx + 0.5, cy + crs - 0.5]], M(40, 9, tn).base); fillPts(c, [[sx + 0.5, cy + 0.5], [sx + sw - 0.5, cy + 0.5], [sx + sw - 0.5, cy + 1.4], [sx + 0.5, cy + 1.4]], 'rgba(255,250,236,0.16)'); sx += sw; } }
   c.restore();
 }
-function bellTowerObj(c, K, x, y, seed) {                // a square tower of cut stone, a round-arched opening with the bell, a slate pyramid roof and a small cross
-  gshadow(c, x + 2, y + 1, 24, 7, 0.45); longShadow(c, x, y, 30, 40);
-  var w = 36, h = 86, x0 = x - w / 2, top = y - h;
+function quoins(c, x, y, h, side, seed) {               // long-and-short work: tall and flat stones alternating up a corner (Anglo-Saxon)
+  var R = rng(seed), yy = y + h, k = 0;
+  while (yy > y + 2) { var tall = k % 2 === 0, sh = tall ? 9 + R() * 3 : 4 + R() * 1.5, sw = tall ? 5 : 9; yy -= sh; fillPts(c, [[x - (side < 0 ? sw : 0), yy], [x + (side > 0 ? sw : 0), yy], [x + (side > 0 ? sw : 0), yy + sh - 0.6], [x - (side < 0 ? sw : 0), yy + sh - 0.6]], M(40, 9, 70 + (R() - 0.5) * 10).base); line(c, [[x - (side < 0 ? sw : 0), yy + 0.4], [x + (side > 0 ? sw : 0), yy + 0.4]], 0.5, 'rgba(255,250,236,0.35)', false); k++; }
+  line(c, [[x, y + 1], [x, y + h]], 0.6, 'rgba(35,26,22,0.45)', false);
+}
+function saxonOpening(c, x, y, w, h, tri) {              // a small belfry opening: round-headed or triangular-headed, a baluster shaft down its middle
+  c.beginPath(); c.moveTo(x - w / 2, y + h); c.lineTo(x - w / 2, y + h - (h - w / 2)); if (tri) { c.lineTo(x, y); } else c.arc(x, y + w / 2, w / 2, Math.PI, 0); c.lineTo(x + w / 2, y + h); c.closePath(); c.fillStyle = '#1c1612'; c.fill(); c.strokeStyle = OLC; c.lineWidth = 0.7; c.stroke();
+  fillPts(c, [[x - 1, y + h * 0.3], [x + 1, y + h * 0.3], [x + 1.2, y + h], [x - 1.2, y + h]], M(40, 9, 66).base); fillPts(c, ellPts(x, y + h * 0.5, 1.8, 1.2, 8), M(40, 9, 72).base);
+}
+function bellTowerObj(c, K, x, y, seed) {                // the west tower: cut stone with long-and-short quoins, pilaster strips, a string course, Saxon belfry openings with the bell, a slate pyramid and a cross
+  gshadow(c, x + 2, y + 1, 24, 7, 0.45); longShadow(c, x, y, 30, 44);
+  var w = 38, h = 92, x0 = x - w / 2, top = y - h, R = rng(seed);
   ashlarFill(c, x0, top, w, h, seed);
-  fillPts(c, [[x0, top], [x0 + w, top], [x0 + w, y], [x0, y]], 'rgba(35,26,22,0)');
-  c.save(); c.beginPath(); c.rect(x0 + w * 0.62, top, w * 0.38, h); c.clip(); fillPts(c, [[x0, top], [x0 + w, top], [x0 + w, y], [x0, y]], 'rgba(40,44,60,0.28)'); c.restore();   // the shadow side
-  line(c, [[x0 + 0.5, top + 0.5], [x0 + 0.5, y]], 0.8, 'rgba(255,250,236,0.35)', false);
-  var ox = x, oy = top + 22, ow2 = 11, oh = 20;        // the belfry opening, round-arched, the bell hanging in it
-  c.beginPath(); c.moveTo(ox - ow2 / 2, oy + oh); c.lineTo(ox - ow2 / 2, oy + ow2 / 2); c.arc(ox, oy + ow2 / 2, ow2 / 2, Math.PI, 0); c.lineTo(ox + ow2 / 2, oy + oh); c.closePath(); c.fillStyle = '#1c1612'; c.fill(); c.strokeStyle = OLC; c.lineWidth = 0.8; c.stroke();
-  line(c, [[ox - 5, oy + 7.5], [ox + 5, oy + 7.5]], 1.4, M(30, 20, 30).base, false);
-  shape(c, [[ox - 1.8, oy + 8], [ox + 1.8, oy + 8], [ox + 4.2, oy + 15], [ox + 4.6, oy + 17.5], [ox - 4.6, oy + 17.5], [ox - 4.2, oy + 15]], K.brass, { seed: seed + 3, size: 'S', sh: 1, rough: 0.2 });
-  fillPts(c, ellPts(ox, oy + 18.4, 1.2, 1.0, 6), M(30, 20, 26).base);
-  var sm = M(216, 12, 38), rh = 26, ov = 4;            // the slate pyramid: two faces seen, the right in shadow
+  c.save(); c.beginPath(); c.rect(x0 + w * 0.6, top, w * 0.4, h); c.clip(); fillPts(c, [[x0, top], [x0 + w, top], [x0 + w, y], [x0, y]], 'rgba(40,44,60,0.26)'); c.restore();   // the shadow side
+  quoins(c, x0, top + 4, h - 4, 1, seed + 1); quoins(c, x0 + w, top + 4, h - 4, -1, seed + 2);
+  fillPts(c, [[x0 - 1, top + h * 0.5], [x0 + w + 1, top + h * 0.5], [x0 + w + 1, top + h * 0.5 + 2.4], [x0 - 1, top + h * 0.5 + 2.4]], M(40, 9, 74).base); line(c, [[x0 - 1, top + h * 0.5 + 2.4], [x0 + w + 1, top + h * 0.5 + 2.4]], 0.6, 'rgba(35,26,22,0.45)', false);   // the string course
+  [x - 7, x + 7].forEach(function (px) { fillPts(c, [[px - 1.6, top + h * 0.53], [px + 1.6, top + h * 0.53], [px + 1.6, y - 2], [px - 1.6, y - 2]], M(40, 9, 73).base); line(c, [[px + 1.6, top + h * 0.53], [px + 1.6, y - 2]], 0.5, 'rgba(35,26,22,0.4)', false); });   // pilaster strips on the lower stage
+  var ox = x, oy = top + 14; saxonOpening(c, ox - 7, oy, 7, 16, R() < 0.5); saxonOpening(c, ox + 7, oy, 7, 16, R() < 0.5);   // two belfry openings
+  line(c, [[ox - 10.5, oy + 7], [ox + 10.5, oy + 7]], 1.2, M(30, 20, 30).base, false);
+  shape(c, [[ox - 1.8, oy + 7.5], [ox + 1.8, oy + 7.5], [ox + 4.2, oy + 13.5], [ox + 4.6, oy + 16], [ox - 4.6, oy + 16], [ox - 4.2, oy + 13.5]], K.brass, { seed: seed + 3, size: 'S', sh: 1, rough: 0.2 }); fillPts(c, ellPts(ox, oy + 16.8, 1.2, 1.0, 6), M(30, 20, 26).base);   // the bell between them
+  fillPts(c, [[x0 + 4, y - 30], [x0 + 4, y - 36], [x0 + 7, y - 39], [x0 + 10, y - 36], [x0 + 10, y - 30]], '#1c1612');   // a slit window low down
+  var sm = M(216, 12, 38), rh = 28, ov = 4;              // the slate pyramid: the lit face left, the shadow face right, the slates in rows
   shape(c, [[x0 - ov, top], [x, top - rh], [x0 + w / 2 + 0.5, top - rh], [x0 + w / 2 + 0.5, top]], sm, { seed: seed + 5, size: 'M', sh: 0.5, hl: 1.5, rough: 0.2 });
   shape(c, [[x, top - rh], [x0 + w + ov, top], [x0 + w / 2 - 0.5, top]], M(216, 14, 26), { seed: seed + 6, size: 'M', sh: 0.3, rough: 0.2 });
-  for (var k = 1; k < 6; k++) { var t = k / 6, yy = top - rh + rh * t; line(c, [[x - (w / 2 + ov) * t, yy], [x + (w / 2 + ov) * t, yy]], 0.5, 'rgba(35,26,22,0.35)', false); }
-  fillPts(c, [[x0 - ov - 1, top - 1], [x0 + w + ov + 1, top - 1], [x0 + w + ov + 1, top + 2], [x0 - ov - 1, top + 2]], 'rgba(35,26,22,0.45)');   // the eaves' shadow on the wall
-  line(c, [[x, top - rh - 1], [x, top - rh - 11]], 1.6, M(30, 20, 32).base, false); line(c, [[x - 3.2, top - rh - 8], [x + 3.2, top - rh - 8]], 1.6, M(30, 20, 32).base, false);   // the cross
+  for (var k = 1; k < 7; k++) { var t = k / 7, yy = top - rh + rh * t; line(c, [[x - (w / 2 + ov) * t, yy], [x + (w / 2 + ov) * t, yy]], 0.5, 'rgba(35,26,22,0.35)', false); }
+  fillPts(c, [[x0 - ov - 1, top - 1], [x0 + w + ov + 1, top - 1], [x0 + w + ov + 1, top + 2.5], [x0 - ov - 1, top + 2.5]], 'rgba(35,26,22,0.45)');
+  line(c, [[x, top - rh - 1], [x, top - rh - 12]], 1.8, M(30, 20, 32).base, false); line(c, [[x - 3.5, top - rh - 8.5], [x + 3.5, top - rh - 8.5]], 1.8, M(30, 20, 32).base, false);   // the cross
+}
+function porchObj(c, K, x, y, seed) {                    // a small gabled porch of cut stone over the door: an open round arch, a slate gable, a bench inside
+  gshadow(c, x, y + 1, 18, 4, 0.4);
+  var w = 30, h = 24, x0 = x - w / 2;
+  fillPts(c, [[x0, y], [x0 + w, y], [x0 + w, y - h], [x0, y - h]], '#1c1612');
+  ashlarFill(c, x0, y - h, 6, h, seed); ashlarFill(c, x0 + w - 6, y - h, 6, h, seed + 1);                                // the two jambs
+  c.save(); c.beginPath(); c.rect(x0 + 6, y - h, w - 12, h); c.clip(); ashlarFill(c, x0 + 6, y - h, w - 12, h, seed + 2); c.restore();
+  c.beginPath(); c.moveTo(x0 + 7, y); c.lineTo(x0 + 7, y - h + 12); c.arc(x, y - h + 12, w / 2 - 7, Math.PI, 0); c.lineTo(x0 + w - 7, y); c.closePath(); c.fillStyle = '#1a1410'; c.fill();   // the open arch, dark inside
+  c.strokeStyle = M(40, 9, 76).base; c.lineWidth = 2.4; c.beginPath(); c.moveTo(x0 + 7, y - h + 12); c.arc(x, y - h + 12, w / 2 - 7, Math.PI, 0); c.stroke(); c.strokeStyle = OLC; c.lineWidth = 0.7; c.stroke();
+  quoins(c, x0, y - h + 2, h - 2, 1, seed + 3); quoins(c, x0 + w, y - h + 2, h - 2, -1, seed + 4);
+  var gh = 12, sm = M(216, 12, 38);                        // the gable of slate over it
+  shape(c, [[x0 - 3, y - h], [x, y - h - gh], [x0 + w + 3, y - h], [x0 + w + 3, y - h + 3], [x0 - 3, y - h + 3]], sm, { seed: seed + 5, size: 'M', sh: 1, rough: 0.2 });
+  for (var k = 1; k < 4; k++) { var t = k / 4, yy = y - h - gh + gh * t; line(c, [[x - (w / 2 + 3) * t, yy], [x + (w / 2 + 3) * t, yy]], 0.5, 'rgba(35,26,22,0.35)', false); }
+  line(c, [[x0 - 3, y - h], [x, y - h - gh], [x0 + w + 3, y - h]], 0.9, OLC, false);
+  line(c, [[x, y - h - gh - 1], [x, y - h - gh - 6]], 1.4, M(30, 20, 32).base, false); line(c, [[x - 2, y - h - gh - 4.5], [x + 2, y - h - gh - 4.5]], 1.4, M(30, 20, 32).base, false);
+}
+function apseObj(c, K, x, y, seed) {                     // the rounded east end: a half-drum of cut stone under a half-cone of slate, seen beyond the nave's far gable
+  var w = 44, h = 30, x0 = x - w / 2;
+  gshadow(c, x, y + 2, 24, 6, 0.3);
+  c.save(); c.beginPath(); c.moveTo(x0, y); c.lineTo(x0, y - h); c.lineTo(x0 + w, y - h); c.lineTo(x0 + w, y); c.closePath(); c.clip(); ashlarFill(c, x0, y - h, w, h, seed); c.restore();
+  var g = c.createLinearGradient(x0, 0, x0 + w, 0); g.addColorStop(0, 'rgba(255,250,236,0.18)'); g.addColorStop(0.45, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(40,44,60,0.34)'); c.fillStyle = g; c.fillRect(x0, y - h, w, h);   // the drum's round shading
+  [x - 12, x + 12].forEach(function (px) { fillPts(c, [[px - 2, y - h + 8], [px + 2, y - h + 8], [px + 2, y - h + 16], [px - 2, y - h + 16]], '#1c1612'); c.strokeStyle = OLC; c.lineWidth = 0.6; c.strokeRect(px - 2, y - h + 8, 4, 8); });   // two tiny windows
+  var sm = M(216, 12, 38), rh = 16;
+  shape(c, [[x0 - 3, y - h], [x0 + w * 0.25, y - h - rh], [x0 + w * 0.75, y - h - rh], [x0 + w + 3, y - h]], sm, { seed: seed + 5, size: 'M', sh: 1.2, hl: 1, rough: 0.2 });
+  c.strokeStyle = 'rgba(35,26,22,0.35)'; c.lineWidth = 0.5; for (var k = 1; k < 4; k++) { var t = k / 4; c.beginPath(); c.moveTo(x0 - 3 + (w * 0.25 + 3) * t, y - h - rh * t); c.lineTo(x0 + w + 3 - (w * 0.25 + 3) * t, y - h - rh * t); c.stroke(); }
+  fillPts(c, [[x0 - 4, y - h - 1], [x0 + w + 4, y - h - 1], [x0 + w + 4, y - h + 2], [x0 - 4, y - h + 2]], 'rgba(35,26,22,0.4)');
+}
+function gableCrossObj(c, K, x, y, seed) {               // the stone cross on the gable's peak, drawn up where the roof's ridge ends
+  var top = y - 66; line(c, [[x, top], [x, top - 13]], 2.2, M(40, 9, 60).base, false); line(c, [[x - 4.5, top - 9], [x + 4.5, top - 9]], 2.2, M(40, 9, 60).base, false);
+  c.strokeStyle = OLC; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x - 1.1, top); c.lineTo(x - 1.1, top - 13); c.moveTo(x - 4.5, top - 7.9); c.lineTo(x + 4.5, top - 7.9); c.stroke();
+  c.strokeStyle = 'rgba(35,26,22,0.45)'; c.lineWidth = 0.6; c.beginPath(); c.arc(x, top - 9, 3.2, 0, 7); c.stroke();
+}
+function fontObj(c, K, x, y, seed) {                     // the font by the door: a stone basin on a short stem, water in it
+  gshadow(c, x, y + 1, 8, 2.8, 0.35);
+  shape(c, [[x - 5, y], [x - 4, y - 6], [x + 4, y - 6], [x + 5, y]], M(40, 9, 56), { seed: seed, size: 'S', sh: 1, rough: 0.25 });
+  shape(c, [[x - 8, y - 6], [x - 7, y - 14], [x + 7, y - 14], [x + 8, y - 6]], M(40, 9, 64), { seed: seed + 1, size: 'S', sh: 1.2, rough: 0.25 });
+  fillPts(c, ellPts(x, y - 14, 7.5, 2.6, 12), M(40, 9, 72).base); fillPts(c, ellPts(x, y - 14, 5.5, 1.8, 10), M(205, 30, 50).base); fillPts(c, ellPts(x - 1.5, y - 14.5, 1.6, 0.5, 6), 'rgba(255,255,255,0.5)');
+  c.strokeStyle = 'rgba(35,26,22,0.45)'; c.lineWidth = 0.5; c.beginPath(); c.ellipse(x, y - 14, 7.5, 2.6, 0, 0, 7); c.stroke();
+}
+function lychGateObj(c, K, x, y, seed) {                 // the roofed gate into the churchyard: four posts, a small shingle roof, a low gate between
+  gshadow(c, x, y + 1, 22, 5, 0.35);
+  [[-16, 0], [16, 0], [-16, -14], [16, -14]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.8, y + q[1] - 34, 3.6, 34), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  shape(c, rrPts(x - 11, y - 14, 22, 2.4, 1), K.wood, { seed: seed + 5, size: 'S', sh: 0.8, rough: 0.2 }); shape(c, rrPts(x - 11, y - 7, 22, 2.4, 1), K.wood, { seed: seed + 6, size: 'S', sh: 0.8, rough: 0.2 }); line(c, [[x - 10, y - 5], [x + 10, y - 13]], 2, K.wood.base, false);
+  var rw = 46, rh = 10, sm = M(28, 30, 36);
+  shape(c, [[x - rw / 2, y - 34], [x, y - 34 - rh], [x + rw / 2, y - 34], [x + rw / 2, y - 30], [x - rw / 2, y - 30]], sm, { seed: seed + 7, size: 'M', sh: 1, rough: 0.25 });
+  for (var k = 1; k < 4; k++) { var t = k / 4; line(c, [[x - rw / 2 * t, y - 34 - rh + rh * t], [x + rw / 2 * t, y - 34 - rh + rh * t]], 0.5, 'rgba(35,26,22,0.4)', false); }
+  line(c, [[x - rw / 2, y - 34], [x, y - 34 - rh], [x + rw / 2, y - 34]], 0.9, OLC, false);
 }
 function altarObj(c, K, x, y, seed) {                    // a block of cut stone under a white cloth, two candles burning, a cup
   gshadow(c, x, y + 1, 18, 4, 0.35);
@@ -4431,8 +4492,13 @@ var PROPS = {
   apple: { b: [-80, -150, 80, 20], f: function (c, K, s) { appleTree(c, K, 0, 0, 125, s); } },
   chalkRock: { b: [-36, -40, 36, 10], f: function (c, K, s) { chalkRockObj(c, K, 0, 0, 16, s); } },
   bogIron: { b: [-24, -22, 24, 8], f: function (c, K, s) { bogIronObj(c, K, 0, 0, s); } },
-  bellTower: { b: [-26, -128, 26, 10], f: function (c, K, s) { bellTowerObj(c, K, 0, 0, s); } },
+  bellTower: { b: [-26, -136, 26, 10], f: function (c, K, s) { bellTowerObj(c, K, 0, 0, s); } },
   altar: { b: [-18, -36, 18, 8], f: function (c, K, s) { altarObj(c, K, 0, 0, s); } },
+  porch: { b: [-20, -44, 20, 6], f: function (c, K, s) { porchObj(c, K, 0, 0, s); } },
+  apse: { b: [-28, -52, 28, 8], f: function (c, K, s) { apseObj(c, K, 0, 0, s); } },
+  gableCross: { b: [-6, -84, 6, 2], f: function (c, K, s) { gableCrossObj(c, K, 0, 0, s); } },
+  font: { b: [-10, -18, 10, 4], f: function (c, K, s) { fontObj(c, K, 0, 0, s); } },
+  lychGate: { b: [-26, -48, 26, 6], f: function (c, K, s) { lychGateObj(c, K, 0, 0, s); } },
   graveStone: { b: [-8, -22, 8, 4], f: function (c, K, s) { graveStoneObj(c, K, 0, 0, s); } },
   wayCross: { b: [-12, -48, 12, 4], f: function (c, K, s) { wayCrossObj(c, K, 0, 0, s); } },
   stall: { b: [-26, -48, 26, 8], f: function (c, K, s) { stallObj(c, K, 0, 0, s); } },
@@ -4463,7 +4529,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { bellTower: 1, altar: 0.7, graveStone: 0.75, wayCross: 0.75, stall: 0.7, windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { porch: 1, apse: 1, gableCross: 1, font: 0.8, lychGate: 0.9, bellTower: 1, altar: 0.7, graveStone: 0.75, wayCross: 0.75, stall: 0.7, windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };

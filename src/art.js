@@ -876,6 +876,11 @@ function heldD(c, h) {
     var L = 13; c.strokeStyle = '#6a4a30'; c.lineWidth = 1.7; c.beginPath(); c.moveTo(x - ca * 3, y - sa * 3); c.lineTo(x + ca * L, y + sa * L); c.stroke();
     c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.5; c.stroke();
     var hx = x + ca * (L - 1), hy = y + sa * (L - 1), px = -sa, py = ca; c.fillStyle = '#6e7076'; c.beginPath(); c.moveTo(hx - ca * 2 + px * 0.5, hy - sa * 2 + py * 0.5); c.lineTo(hx + ca * 1.5 + px * 1, hy + sa * 1.5 + py * 1); c.lineTo(hx + ca * 1.2 + px * 5, hy + sa * 1.2 + py * 5); c.lineTo(hx - ca * 2.6 + px * 4.5, hy - sa * 2.6 + py * 4.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
+  } else if (h.kind === 'sword') {
+    var Ls = 15; c.strokeStyle = '#4a3424'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(x - ca * 2.5, y - sa * 2.5); c.lineTo(x + ca * 1.5, y + sa * 1.5); c.stroke();   // the grip
+    c.strokeStyle = '#6e7076'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(x + ca * 1.5 - sa * 3, y + sa * 1.5 + ca * 3); c.lineTo(x + ca * 1.5 + sa * 3, y + sa * 1.5 - ca * 3); c.stroke();   // the guard
+    c.strokeStyle = '#b8bec8'; c.lineWidth = 2.0; c.beginPath(); c.moveTo(x + ca * 2, y + sa * 2); c.lineTo(x + ca * Ls, y + sa * Ls); c.stroke(); c.strokeStyle = 'rgba(35,26,22,0.7)'; c.lineWidth = 0.5; c.stroke();   // the blade
+    c.strokeStyle = 'rgba(255,255,255,0.5)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x + ca * 3 - sa * 0.5, y + sa * 3 + ca * 0.5); c.lineTo(x + ca * (Ls - 1) - sa * 0.5, y + sa * (Ls - 1) + ca * 0.5); c.stroke();
   } else if (h.kind === 'bucket') {
     c.strokeStyle = 'rgba(60,50,40,0.9)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.2); c.stroke();
     c.fillStyle = '#8a6a44'; c.beginPath(); c.moveTo(x - 3, y + 2.2); c.lineTo(x + 3, y + 2.2); c.lineTo(x + 2.5, y + 7.5); c.lineTo(x - 2.5, y + 7.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();

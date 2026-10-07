@@ -1075,6 +1075,11 @@ function heldD(c, h) {
     var L = 13; c.strokeStyle = '#6a4a30'; c.lineWidth = 1.7; c.beginPath(); c.moveTo(x - ca * 3, y - sa * 3); c.lineTo(x + ca * L, y + sa * L); c.stroke();
     c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.5; c.stroke();
     var hx = x + ca * (L - 1), hy = y + sa * (L - 1), px = -sa, py = ca; c.fillStyle = '#6e7076'; c.beginPath(); c.moveTo(hx - ca * 2 + px * 0.5, hy - sa * 2 + py * 0.5); c.lineTo(hx + ca * 1.5 + px * 1, hy + sa * 1.5 + py * 1); c.lineTo(hx + ca * 1.2 + px * 5, hy + sa * 1.2 + py * 5); c.lineTo(hx - ca * 2.6 + px * 4.5, hy - sa * 2.6 + py * 4.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
+  } else if (h.kind === 'sword') {
+    var Ls = 15; c.strokeStyle = '#4a3424'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(x - ca * 2.5, y - sa * 2.5); c.lineTo(x + ca * 1.5, y + sa * 1.5); c.stroke();   // the grip
+    c.strokeStyle = '#6e7076'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(x + ca * 1.5 - sa * 3, y + sa * 1.5 + ca * 3); c.lineTo(x + ca * 1.5 + sa * 3, y + sa * 1.5 - ca * 3); c.stroke();   // the guard
+    c.strokeStyle = '#b8bec8'; c.lineWidth = 2.0; c.beginPath(); c.moveTo(x + ca * 2, y + sa * 2); c.lineTo(x + ca * Ls, y + sa * Ls); c.stroke(); c.strokeStyle = 'rgba(35,26,22,0.7)'; c.lineWidth = 0.5; c.stroke();   // the blade
+    c.strokeStyle = 'rgba(255,255,255,0.5)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x + ca * 3 - sa * 0.5, y + sa * 3 + ca * 0.5); c.lineTo(x + ca * (Ls - 1) - sa * 0.5, y + sa * (Ls - 1) + ca * 0.5); c.stroke();
   } else if (h.kind === 'bucket') {
     c.strokeStyle = 'rgba(60,50,40,0.9)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.2); c.stroke();
     c.fillStyle = '#8a6a44'; c.beginPath(); c.moveTo(x - 3, y + 2.2); c.lineTo(x + 3, y + 2.2); c.lineTo(x + 2.5, y + 7.5); c.lineTo(x - 2.5, y + 7.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
@@ -3377,7 +3382,7 @@ function updateEnemies(dt) {
     if (e.aggro) {                       // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
       if (!e.awake && gd < e.aggro && !P.dead) e.awake = true;
-      else if (e.awake && gd > e.aggro * 2.6 && (e.state === 'chase' || e.state === 'idle')) e.awake = false;
+      else if (e.awake && gd > (e.human ? 900 : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) e.awake = false;   // a guard gives up only when you are far gone
       if (e.heard > 0) { e.heard -= dt; if (!P.dead) e.awake = true; }   // it heard something (mining): it comes
       if (e.flee) {                      // a grazer bolts instead of fighting
         if (e.awake && !P.dead) { var fs2 = (e.cfg ? e.cfg.speed : 58) * 1.5; e.state = 'chase'; e.t += dt; e.face = ga + Math.PI; moveCircle(e, -Math.cos(ga) * fs2 * dt, -Math.sin(ga) * fs2 * dt); }
@@ -4074,8 +4079,25 @@ function drawCreature(c, e) {
     dir: Math.cos(a) >= 0 ? 1 : -1, ang: api.facings8 ? creatureTurn(e, a) : null, look: [dx / dl, dy / dl], state: e.state, k: e.dur ? e.t / e.dur : 0 }, e.skin);
   if (e.skin && e.skin.eyes) e.eyes = e.skin.eyes;                 // where its eyes were just drawn, about (e.x, e.y * K)
 }
+// A human enemy (2026-10-07, the raid's guards): a figure from the page (e.fig, lib.makeFigure) drawn like the villagers, with a sword in
+// the right hand that hangs at rest, rises behind the shoulder in the windup and comes round in the blow. The page gives the figure,
+// the numbers and e.human; the engine's chase-and-lunge does the rest.
+function drawHuman(c, e) {
+  var a = e.face, vx = Math.cos(a), vy = Math.sin(a), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
+  var moving = e.state === 'chase' || e.state === 'lunge', t = W.t + e.seed, k = e.dur ? Math.min(1, e.t / e.dur) : 0, M = lib.inkMetrics(e.fig.spec), fwd = -1, bk = 1, pose = null;
+  var hang = M.sh + 1.2 + M.arm * 1.95 - 0.2;
+  if (e.state === 'windup') pose = { armR: [M.shw + 3, M.sh - 8 - k * 3], near: [bk * 3.5, M.sh - 8 - k * 3], lx: side ? bk * 1.5 : 0, ly: -0.6 };
+  else if (e.state === 'lunge') pose = { armR: [M.shw + 5 - k * 2, M.sh + 2 + k * 4], near: [fwd * (M.arm * 1.9), M.sh + 2 + k * 3], lx: side ? fwd * 2.2 : 0, ly: 1.2 };
+  else if (!moving) pose = { armR: [M.shw + 1.6, hang], near: [fwd * 0.6, hang] };
+  var an = { phase: t * 8, amt: moving ? 1 : 0, t: t, lx: 0, ly: 0, blink: (t % 3.1) < 0.1 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) };
+  c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(0, 0, 9, 4, 0, 0, 7); c.fill();
+  lib.figureD(c, 0, 0, dir, an, pose, e.fig);
+  var hp = pose ? (side ? pose.near : pose.armR) : [side ? fwd * 1.2 : M.shw + 1.6, hang - 1.5];
+  var ang = e.state === 'windup' ? (side ? bk * 1.3 - 2.9 : -1.9) : (e.state === 'lunge' ? (side ? -0.15 : 0.9) : (side ? -1.25 : 1.15));
+  if (lib.figureHeld) lib.figureHeld(c, 0, 0, dir, e.fig, { kind: 'sword', x: hp[0], y: hp[1], ang: ang });
+}
 function drawEnemy(c, e) {
-  var fn = e.creature ? drawCreature : ((e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss));
+  var fn = e.fig ? drawHuman : e.creature ? drawCreature : ((e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss));
   if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
   var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0, A = e.cfg && e.cfg.atk;
   if (A && A.kind === 'arc' && (e.state === 'windup' || (e.state === 'lunge' && !e.hitDone))) {   // the blow to come, marked on the ground

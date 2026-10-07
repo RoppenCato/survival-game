@@ -293,7 +293,7 @@ function drawH(c, x, y, e, low, open, C) {
   cap(c, m, x0, yb - h - cp, T, cp, seed, true);
   path(c, d); c.lineJoin = 'round'; c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8);
   stroke(c, [[x0 + 0.5, yb - h + 0.6], [x0 + T - 0.5, yb - h + 0.6]], INK.lit, 1.0);                                // the lit top of the face
-  if (e.t === 'window' && !low) { if (m.tex === 'ashlar') archWindow(c, x0 + 11, yb - h + 4, 10, h - 13, seed + 5); else shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5); }
+  if (e.t === 'window' && !low) { if (m.tex === 'ashlar') archWindow(c, x0 + 12, yb - h + 3, 8, 12, seed + 5); else shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5); }
 }
 // an edge along the left side of tile (x, y). more: whether the V edge below continues it (no end face then)
 function drawV(c, x, y, e, open, more, C) {

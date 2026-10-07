@@ -925,6 +925,31 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   rich, timber frame for most, clay tiles for the rich, thatch for the rest. Roles `priest`, `guard`, `merchant` with lines.
   `Village.plan` gives the biggest lowland island a town, the others a church or a village and a shore place; a site carries
   `biome`. The Village Editor has a **Lowlands** button. `tools/visual/house.js` draws the new materials and a church-shaped room.
+- **The church, drawn from the references (2026-10-07, Robin: a really nice church that fits the art direction; Anglo-Saxon churches
+  such as Escomb and Earls Barton):** a tall narrow nave with its gable south, **tiny round-arched windows set high** (the cut-stone
+  wall's window is 8 by 12 now), the **west tower** at the front corner (`bellTower`: long-and-short quoins, a string course, pilaster
+  strips on the lower stage, two Saxon belfry openings, round or triangular-headed with a baluster shaft, the bell between them, a
+  slit window, a slate pyramid and a cross), a **porch** of cut stone over the door (`porch`: an open round arch, quoins, a slate
+  gable with a cross), the **apse** (`apse`: a half-drum under a half-cone of slate, set 1.7 tiles north so its roof shows beyond the
+  far gable), the **cross on the gable's peak** (`gableCross`, drawn 66 units up to the ridge's end), a **font** by the door, and the
+  churchyard's **lychgate** (`lychGate`, a roofed gate on four posts) on the chapel's wall. `quoins`, `saxonOpening`, `ashlarFill`
+  are the shared bits. The first biome's gables keep their timbers; a stone gable gets a small arched window instead.
+- **The raid (2026-10-07, built; `docs/raid.md`):** **guards** are the engine's enemies with a figure (`e.fig`, `e.human`, `drawHuman` in
+  `src/combat.js`: the villagers' figure in an iron helm and mail with a sword that hangs, rises behind the shoulder and comes round;
+  `lib.heldD` draws a `sword`), dressed by the game (`guardSpec`, `wantKind` `'guard'`: 24 health, 9 damage, the plain lunge,
+  `aggro` 0.5 so only the alarm or a blow wakes them, and awake they give up only 900 units off, then walk back to `e.post`);
+  `spawnGuards` puts one at each guard spot of every town (the gate, a stall). **The alarm** (`raidAlarm(vi, x, y)`, `raid` = { vi, t,
+  x, y }, `raidTick`): a blow on a locked door or a locked chest, any village box broken, a guard struck or a heavy chest lifted
+  wakes every guard of that village (`e.heard` 30) and sends the folk running home to hide (`f.fleeing`, `f.hidden`); it fades
+  thirty seconds after the last noise, the guards walk back, the folk come out with `RAIDED_LINES`, and `seen.raided[vi]` holds the
+  day ("Word of this will spread" the first time). **Locked doors** (`locked` on the church's, the hall's and the store's door edges,
+  copied into `B`): shut and solid (three circles in the solids) until the axe breaks them (`harvest.list` offers `doorHvOf`, 14 hit
+  points; then `broken`, drawn open for good). **The heavy silver**: the church's and the jarl's chests are `heavy: { silver }` and
+  `locked`; the axe breaks the lock (the box's hit points, then restored), E lifts it (`liftHeavy`, `carrying`: speed 0.7, the chest
+  drawn on the shoulder), E puts it down (`putDown`), E at the vessel stows it (`stowHeavy`, `raft.cargo`), and E at the vessel at
+  home (`atHome`: inside a territory or within 700 of the wreck) unloads it (`unloadCargo`) as **silver** in the bag (a new kind,
+  hack-silver; village coins are silver now; a slain guard drops a coin or two). `carrying` and the cargo are saved. Debug:
+  `Combat.api.debug().raid()`. Not built: fire, hirdmen carrying, traders closing to a known raider.
 - Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch.
 
 
