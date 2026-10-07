@@ -18,9 +18,15 @@ check('rhythm: in the window the blow is x'+G.rhythmBonus,r.rhythm&&Math.abs(r.d
 r=G0.hit(Gr,o,{power:2,right:true,hero:hz,t:10+G.rhythmAfter+G.rhythmWindow/2+0.1,s:s,ev:{}});
 check('too soon after the last: plain',!r.rhythm);
 // the crack on a rock
-const rock={name:'rock',kind:'stone',x:500,y:400,s:1,hp:10,max:10,lastHit:null};const ca=G0.crackAng(rock);
+const rock={name:'rock',kind:'stone',x:500,y:400,s:1,hp:10,max:10,lastHit:null};const ca=G0.crackAng(G,rock);
 r=G0.hit(G,rock,{power:1,right:true,hero:{x:500+Math.cos(ca)*30,y:400+Math.sin(ca)*30/0.75},t:0,s:s,ev:{}});
 check('crack: from the crack’s side the blow is deeper (dealt '+r.dealt+')',r.crack&&r.dealt>=G.crackBonus);
+// the sunny side and the lit facet are fixed; with cracks on a rock has no second sweet spot
+const Gs=G0.cfg({spotLook:4,crackLook:4});o=tree(300,300);
+check('sunny side: the sweet side is the left, and never wanders',G0.spot(Gs,o,0).side===-1&&G0.spot(Gs,o,500).side===-1);
+check('lit facet: the crack is up and left',Math.abs(G0.crackAng(Gs,rock)+Math.PI*0.75)<1e-9);
+check('with cracks on a rock has no glint spot of its own',G0.spot(G,rock,0)===null);
+check('Robin’s settings are the defaults (logsPerTrunk 2, pace 2)',G.logsPerTrunk===2&&G.pace===2);
 // the fall: the trunk fells the tree in its line, hurts the hero there, and lies as a trunk
 const spawned=[],felled=[],hurt=[],drops=[];const ev={spawn:function(t){spawned.push(t);},fell:function(q){felled.push(q);},hurt:function(d){hurt.push(d);},drop:function(k,x,y,n){drops.push([k,n]);},chip:function(){},sfx:function(){},decal:function(){}};
 o=tree(300,300);o.hp=0;o.dying=0;o.leanDir=1;const len=G0.treeLen(s,o);const near=[o,tree(300+len*0.6,305),tree(300-40,300),tree(300+len*0.5,360)];

@@ -154,6 +154,14 @@ the text and it is made the default. When a spec's meaning changes, change the s
   sfx, decal, spawn, fell, hurt, bees, note); `drawProp` draws the lean, the cracks, the glint and the bar. The game's
   `Combat.api.harvest.hit`, its dying tick and `drawProp` go through it (`GT`, `gatherEv`, `trunks` saved, `bees`,
   `growTick`, `regrowTick` on each new day; eggs and honey are food). `tests/gather.js` checks the rules.
+  **Robin's first settings (2026-10-07) are the defaults** (two logs a trunk). **No tag texts:** a sweet-spot or crack blow is a
+  critical hit, its number gold and large, a clean (rhythm) hit a large white number; the page's `harvest.hit` answers
+  `{ dealt, crit, clean }` and the engine draws it. **The swing pace** (`pace`, 2: about two swings a second; the engine's
+  `api.gatherPace()` stretches the windup and recovery in gather mode) because the hero chopped too frantically. **The cue is a
+  choice** (Robin: visual cue and simple positioning, never hitting about to find it): a tree's `spotLook` is a glint, a scar on
+  the bark, the tree leaning toward its sweet side, or the sunny side (always the left, the side the light falls on, fixed), or
+  nothing; a rock's `crackLook` is the crack itself, a pale vein, a patch of moss or the lit facet (fixed, up and left), or
+  nothing; all drawn on the body, not beside it. With cracks on, a rock's sweet spot is its crack (no second glint).
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
   `hollow` drawings for the casting cloth. Thirteen runes so far.

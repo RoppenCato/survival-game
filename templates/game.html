@@ -2181,14 +2181,15 @@ __COMBAT__
       if (o.cave) caveHear(o);
       var r = Gather.hit(GT, o, { power: power, right: right, hero: { x: P.x, y: P.y }, t: clock, s: s, ev: gatherEv });
       if (busy.indexOf(o) < 0) busy.push(o);
-      if (r.spot || r.rhythm || r.crack) Combat.api.num(o.x, o.y, r.spot ? 'sweet spot' : (r.crack ? 'on the crack' : 'clean'), '#ffd34d', r.spot || r.crack, false);
       if (o.hp <= 0 && o.dying != null && o.kind !== 'trunk') {
         deed(o.kind === 'tree' ? 'trees' : (o.kind === 'stone' ? 'rocks' : 'bushes'));
         if (o.kind === 'stone') { if (o.trollStone) drop('copper', o.x, o.y, 4); else if (o.ore) { var dark = light() > 0.5 || o.cave; if (dark) drop('copper', o.x, o.y, 2); else if (Math.random() < 1 / 6) drop('copper', o.x, o.y, 1); }
           if (inUse('stonesense') && RS.deeds.rocks % 3 === 0) drops.forEach(function (d) { if (d.kind === 'stone' && d.t === 0 && Math.hypot(d.x - o.x, d.y - o.y) < 2) { d.x = hero().x; d.y = hero().y + 6; } }); }   // the stone sense: every third rock to your feet
       }
+      return { dealt: r.dealt, crit: !!(r.spot || r.crack), clean: !!r.rhythm };   // the engine shows the number: gold for the sweet spot, large for a clean hit
     }
   };
+  Combat.api.gatherPace = function () { return GT.pace; };
   // what gathering does to the world: chips, drops, stumps, trunks, the chain, the fall on the hero, bees
   var gatherEv = {
     chip: chip, drop: drop, sfx: sfx, note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },

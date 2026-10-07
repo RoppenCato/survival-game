@@ -96,14 +96,18 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
       <section class="panel">
         <h2>Rocks</h2>
         <div class="group" id="trocks"></div>
+        <p class="desc" style="margin:6px 0 2px">How the soft facet shows</p>
+        <div class="group" id="crocks"></div>
         <div id="procks" style="margin-top:8px"></div>
-        <p class="desc">A rock has a crack on one side: a blow from that side bites deeper.</p>
+        <p class="desc">A rock is soft on one facet: a blow from that side bites deeper. The cue is drawn on the rock: the crack itself, a pale vein, a patch of moss, or the facet the light falls on (then it is always the same side, up and left).</p>
       </section>
       <section class="panel">
         <h2>Aiming and rhythm</h2>
         <div class="group" id="taim"></div>
+        <p class="desc" style="margin:6px 0 2px">How a tree's sweet side shows</p>
+        <div class="group" id="ctrees"></div>
         <div id="paim" style="margin-top:8px"></div>
-        <p class="desc">The sweet spot is the glint: on a tree it sits on one side of the trunk, on a rock on one facet, and it wanders now and then. A blow from that side bites deeper. Rhythm: a blow landed just as the last one's recoil settles is a clean hit; holding the button misses the window, tapping in time finds it.</p>
+        <p class="desc">A tree has a sweet side: a blow from there is a critical hit, its number gold and large. The cue: a glint, a scar on the bark, the tree leaning toward it, or the sunny side (always the left, the side the light falls on; no cue to look for, just stand right). The glint and the scar wander now and then if you let them. Rhythm: a blow landed just as the last one's recoil settles is a clean hit (a large number); holding the button misses the window, tapping in time finds it. Swing pace sets how fast the tool swings.</p>
       </section>
       <section class="panel">
         <h2>Toughness and regrowth</h2>
@@ -153,7 +157,11 @@ __COMBAT__
     ptrees: [{ k: 'fallReach', label: 'Fall width', min: 0.4, max: 2, step: 0.1 }, { k: 'fallDamage', label: 'Fall damage', min: 0, max: 40, step: 1 }, { k: 'logsPerTrunk', label: 'Logs in a trunk', min: 1, max: 6, step: 1 }, { k: 'chopsPerLog', label: 'Blows per log', min: 1, max: 5, step: 1 }, { k: 'nestChance', label: 'Nest chance', min: 0, max: 1, step: 0.05 }],
     procks: [{ k: 'crackBonus', label: 'Crack bonus', min: 1, max: 5, step: 0.1 }],
     paim: [{ k: 'spotBonus', label: 'Sweet spot bonus', min: 1, max: 4, step: 0.1 }, { k: 'rhythmAfter', label: 'Rhythm: after', min: 0.2, max: 1, step: 0.05 }, { k: 'rhythmWindow', label: 'Rhythm: window', min: 0.05, max: 0.6, step: 0.05 }, { k: 'rhythmBonus', label: 'Rhythm bonus', min: 1, max: 3, step: 0.1 }],
-    pworld: [{ k: 'treeHp', label: 'Tree toughness', min: 0.3, max: 3, step: 0.1 }, { k: 'rockHp', label: 'Rock toughness', min: 0.3, max: 3, step: 0.1 }, { k: 'bushHp', label: 'Bush toughness', min: 0.3, max: 3, step: 0.1 }, { k: 'chips', label: 'Chips and bits', min: 0, max: 3, step: 0.1 }, { k: 'regrowDays', label: 'Regrow after (days)', min: 1, max: 10, step: 1 }]
+    pworld: [{ k: 'pace', label: 'Swing pace', min: 0.8, max: 4, step: 0.1 }, { k: 'treeHp', label: 'Tree toughness', min: 0.3, max: 3, step: 0.1 }, { k: 'rockHp', label: 'Rock toughness', min: 0.3, max: 3, step: 0.1 }, { k: 'bushHp', label: 'Bush toughness', min: 0.3, max: 3, step: 0.1 }, { k: 'chips', label: 'Chips and bits', min: 0, max: 3, step: 0.1 }, { k: 'regrowDays', label: 'Regrow after (days)', min: 1, max: 10, step: 1 }]
+  };
+  var CH = {
+    ctrees: ['spotLook', [[1, 'Glint'], [2, 'Scar'], [3, 'Lean'], [4, 'Sunny side'], [0, 'Nothing']]],
+    crocks: ['crackLook', [[1, 'Crack'], [2, 'Vein'], [3, 'Moss'], [4, 'Lit facet'], [0, 'Nothing']]]
   };
   var PRESETS = [
     { name: 'Plain', set: { sweetSpot: 0, rhythm: 0, fallFells: 0, fallHurts: 0, trunks: 0, nests: 0, regrow: 0, cracks: 0 } },
@@ -167,10 +175,13 @@ __COMBAT__
     var k;
     for (k in inputs) { inputs[k].value = G[k]; outputs[k].textContent = String(Math.round(G[k] * 100) / 100); }
     for (k in togBtn) togBtn[k].setAttribute('aria-pressed', G[k] ? 'true' : 'false');
+    chBtn.forEach(function (q) { q.b.setAttribute('aria-pressed', G[q.k] === q.v ? 'true' : 'false'); });
     var regrowBtn = togBtn.regrow; if (regrowBtn) regrowBtn.setAttribute('aria-pressed', G.regrow ? 'true' : 'false');
     if (document.activeElement !== json) json.value = JSON.stringify(G);
     try { localStorage.setItem(KEY, JSON.stringify(G)); } catch (e) {}
   }
+  var chBtn = [];
+  function choices(hostId, key, list) { var host = document.getElementById(hostId); list.forEach(function (t) { var b = document.createElement('button'); b.textContent = t[1]; b.addEventListener('click', function () { G[key] = t[0]; apply(); b.blur(); }); host.appendChild(b); chBtn.push({ k: key, v: t[0], b: b }); }); }
   function toggles(hostId, list) { var host = document.getElementById(hostId); list.forEach(function (t) { var b = document.createElement('button'); b.textContent = t[1]; b.addEventListener('click', function () { G[t[0]] = G[t[0]] ? 0 : 1; apply(); b.blur(); }); host.appendChild(b); togBtn[t[0]] = b; }); }
   function sliders(hostId, list) {
     var host = document.getElementById(hostId);
@@ -181,7 +192,7 @@ __COMBAT__
       row.appendChild(name); row.appendChild(inp); row.appendChild(out); host.appendChild(row); inputs[p.k] = inp; outputs[p.k] = out;
     });
   }
-  for (var tk in TOG) toggles(tk, TOG[tk]); for (var sk in SL) sliders(sk, SL[sk]);
+  for (var tk in TOG) toggles(tk, TOG[tk]); for (var sk in SL) sliders(sk, SL[sk]); for (var ck in CH) choices(ck, CH[ck][0], CH[ck][1]);
   (function () { var host = document.getElementById('pworld'); var b = document.createElement('button'); b.textContent = 'Stumps grow back'; b.style.marginTop = '8px'; b.addEventListener('click', function () { G.regrow = G.regrow ? 0 : 1; apply(); b.blur(); }); host.appendChild(b); togBtn.regrow = b; })();
   var ph = document.getElementById('presets'); PRESETS.forEach(function (p) { var b = document.createElement('button'); b.textContent = p.name; b.addEventListener('click', function () { for (var k in p.set) G[k] = p.set[k]; apply(); b.blur(); }); ph.appendChild(b); });
   document.getElementById('copy').addEventListener('click', function (e) { json.value = JSON.stringify(G); var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; }; if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json.value).then(done, fail); else fail(); e.currentTarget.blur(); });
@@ -222,14 +233,15 @@ __COMBAT__
   var tools = { axe: Items.make('axe', 'copper'), pick: Items.make('pick', 'copper'), knife: Items.make('knife', 'copper') }, sword = Items.make('sword', 'copper');
   Combat.api.items = { held: function () { var P = Combat.dbg().P; return P.mode === 'gather' ? tools[['axe', 'pick', 'knife'][P.tool]] : (P.mode === 'fight' ? sword : null); }, tool: function (i) { return tools[['axe', 'pick', 'knife'][i]]; }, weapon: function (k) { return k === 'bow' ? null : sword; } };
   Combat.api.mods = function () { return { heavyblow: 0 }; };
+  Combat.api.gatherPace = function () { return G.pace; };
   Combat.api.harvest = {
     list: function (x, y, rad) { var out = []; around(x, y, rad, function (o) { if (o.kind && o.dying == null) out.push(o); }); return out; },
     hit: function (o, power, right, tool) {
       var P = Combat.dbg().P, s = o.kind === 'trunk' ? null : sprite(o.name, o.v), r = Gather.hit(G, o, { power: power, right: right, hero: { x: P.x, y: P.y }, t: clock, s: s, ev: ev });
       if (busy.indexOf(o) < 0) busy.push(o);
       var tags = []; if (r.spot) tags.push('sweet spot'); if (r.rhythm) tags.push('clean hit'); if (r.crack) tags.push('on the crack'); if (r.log) tags.push('a log');
-      if (tags.length) note(o.x, o.y * K - (s ? -s.t * o.s * 0.5 : 10) - 6, tags.join(', '), r.spot || r.crack ? '#ffd34d' : '#fff');
       document.getElementById('last').textContent = 'Last blow: ' + (r.dealt != null ? Math.round(r.dealt * 10) / 10 + (tags.length ? ' (' + tags.join(', ') + ')' : '') : tags.join(', ')) + (r.felled ? ', felled' : '') + (r.broke ? ', broke' : '');
+      return { dealt: r.dealt, crit: !!(r.spot || r.crack), clean: !!r.rhythm };
     }
   };
   var cam = { x: 400, y: 300, z: 1 };
@@ -315,7 +327,7 @@ __COMBAT__
     Combat.update(dt); Combat.render(ctx);
     requestAnimationFrame(frame);
   }
-  window.gatherDbg = { props: function () { return props; }, G: function () { return G; }, counts: function () { return counts; }, decals: function () { return decals; }, drops: function () { return drops; }, day: function () { return dayN; } };
+  window.gatherDbg = { cam: function () { return cam; }, props: function () { return props; }, G: function () { return G; }, counts: function () { return counts; }, decals: function () { return decals; }, drops: function () { return drops; }, day: function () { return dayN; } };
   requestAnimationFrame(frame);
 })();
 </script>
