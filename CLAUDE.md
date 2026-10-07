@@ -798,6 +798,23 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   *Ore outside:* about a third of the rocks hold copper (`markOre`): a sure 2 at night, one in six by day; they glow
   copper at night. Copper ore is the first metal in the bag; smelting and copper tools are not built. With the tapping
   bot a troll costs 44 to 57 health in leather and kills an unarmoured hero 3 times in 12.
+- **The cave rebuilt (2026-10-07, Robin: it looked square and blocky):** the inside is a **smooth field** (`cave.D`, a quarter-tile
+  grid of how far into the rock the floor reaches, read between cells by `caveD`; `caveFloor` is `caveD >= 0`), carved as circles
+  along a winding passage with a chamber at each end and five pockets, then roughened with noise, so every wall is a curve. It is
+  painted in cached pieces (`caveChunk`, 256 units at 2 px a unit): a mottled floor, damp and dark along the walls, the **face of
+  every wall that looks toward you** shaded by its height with strata and a lit ledge, a dark rim where a wall turns away, deep
+  rock beyond, **stalactites** hanging from the faces, **rubble** at their feet, and a **still pool** in the second pocket with
+  drips rippling on it (`cave.pool`; walkable). **Copper veins** (`cave.veins`, up to nine green malachite streaks on the deeper
+  walls, `left` lumps each, 5 to 7): the pick on one chips green and gives a lump of copper every few blows (`veinHit`); a spent
+  vein greys out and is **gone for good** (the island's copper is a hoard you spend; `veins` saved as what is left). A few loose
+  ore rocks remain near the mouth. **The troll's hoard** (`cave.hoard`, drawn by `drawHoard`: bones, a skull, copper glinting)
+  lies by his lair; E takes it (`hoardTake`) only while he is out, dead, stone or far (`hoardFree`), and he brings two more
+  copper a day (ten at most). **Outside at night he is seen**: amber eyes through the dark like the wolves', and he notices you
+  by a **sneak rule** (`trollSees`: within 70 behind him, 170 in front, sprinting x1.6, a lit torch x1.5) instead of the plain
+  aggro ring. **He walks home**: at morning he comes in at the mouth and walks the passage's middle to the lair (`trollHome(e,
+  true)`, `trollWalk`, `cave.path`), about fifty seconds, and anyone inside hears "Heavy steps echo from the mouth of the cave";
+  if he passes near you he wakes. Debug: `trollOut()`, `trollHome(walk)`, `trollTick`, `trollSees`, `hoardTake`, `hoardFree`,
+  `veinHit`.
 - **The torch (2026-10-05):** two torches from 1 wood and 2 fiber at the Crafting tab (a stackable kind in the bag).
   **T** lights one (taking it from the bag, 6 minutes: `TORCH_TIME`) and puts it out again, keeping what is left; a click
   on the stack in the bag does the same. Lit, the hero carries a flickering torch (`drawTorchHeld`), a round icon by

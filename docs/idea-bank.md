@@ -129,6 +129,22 @@ settings with "Use in the game".
 reeds with a sweet spot of its own, quarrying big stone in blocks, a thing's hit points shown by its look alone (Palworld),
 a log that rolls downhill, tapping birch sap in spring, rings in a stump that tell its age.
 
+## Copper, charcoal and the cave (Robin decided 2026-10-07; being built)
+
+**Decided:** charcoal comes from **morning embers** (a few lumps at any fire that burned through a night), the **charcoal clamp**
+(a mound of logs under turf, lit, smoking for a day, a column of smoke over the trees; tending it when the smoke thins yields
+more, leaving it still yields), and **lightning-struck trees and old fire rings** found in the wild. **The furnace is plain:**
+load ore and charcoal, wait, take the bar; copper tools and weapons are workbench recipes from bars. **Copper** stays rare in
+loose rocks; the real source is **green veins on the cave walls**, mined out for good (an island's cave is a hoard you spend).
+**The troll's hoard** in his lair is open on the nights he walks out; outside he **walks about near the mouth where you can
+see him and sneak past**, so being inside is tense: morning brings him back. **The cave is rebuilt as a smooth field** (no
+square walls): winding passages, pockets, stalactites, rubble, water.
+
+**Not chosen (kept for later):** the burnt hall's charred logs as charcoal; a charcoal burner living at a clamp (a person who
+could join); peat from a bog; bellows pumped in rhythm (Fantasy Life's blacksmith) and stone moulds that choose the tool;
+old workings in the cave (shoring, a ruined furnace at the mouth, a miner's pack); rubble walls opened with the pick; a rope
+drop to a lower level; petrified older trolls as ore; nuggets in a cave stream.
+
 ## Smaller ideas
 
 - **The central trading hub** (Robin: "there was one in history"). The best fits are **Hedeby** (Denmark, the
