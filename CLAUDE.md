@@ -49,8 +49,24 @@ source of truth for the new direction.
   with training to change that. The band is the **hird** (Old Norse hirð, the sworn household band); a member is a
   **hirdman**, and they call each other fellows (decided 2026-10-05). A game day is 20 minutes of real time:
   day and dusk 20 minutes, then a night of 10 minutes (decided 2026-10-05).
-- **Scope for now:** only the starter island and travel to nearby islands, all of the first biome. None of the
+- **Scope for now:** the starter island and travel to the islands round it, all of the first biome. None of the
   raiding, clan or calendar systems are built yet. `game.html` is the playable start (see "The game" below).
+- **Decided 2026-10-07 (Robin's questionnaire, the night of the villages):** **villages across the islands** with generated names
+  ("controlled generation"), the starter island empty of thriving villages (its village was raided; the story comes later), a
+  **jetty by the sea** with a road up to the village and boats moored that cannot be boarded, roads between villages uncommon; the
+  world is meant to grow to **lots of islands, many kinds of places** so each playthrough is new yet familiar, and later raiding and
+  a kingdom across the world. **The map shows nothing until seen**: a place appears with its name once you have come within sight.
+  **The raid** (twenty minutes or so) is built from **loot spread out with doors to break** (the storehouse, the church silver, the
+  hall's chest, a hidden cellar) and **carrying the heavy loot to the ship** one piece at a time with hirdmen helping, the walk to
+  the shore the gamble and the retreat under pursuit; **the defenders gather to the noise** of broken doors and fighting from inside
+  the town (no bell, no castle sending waves, fighting not the biggest part). **The second biome is the south, settled lowlands**
+  (oak, beech and ash, hedgerows, hay meadows and ploughed strips, orchards, chalk; walled towns, churches with priests, a manor),
+  its islands mixing at the edges with the first biome's and starting a bit further from the starter island; it brings **iron**
+  (bog iron, a bloomery, iron tools and weapons, mail, gambeson, an iron helmet, a painted shield), **the karve built in the yard**
+  (mast, sail, more thwarts, iron nails and cloth), **new ground kinds** (ploughed field, chalk, marsh), **raiding** with silver as
+  the second currency, and **a human jarl who holds the silver ring**, won by a raid on his hall; **nothing is off limits** in a raid
+  (reputation is the only brake). The draugr is a side threat for later. The order after this: the biome, then a pass on island and
+  map generation for balance.
 - **Scale:** one tile (32 world units, about the hero's width) is one "unit" of Robin's scale brief, and 100 tiles
   are a kilometre. A normal island is 200 to 400 tiles across, large ones 500 to 700, small ones around 50, and
   tiny skerries (5 to 30 tiles) are common round the coasts. Most gaps between islands are 20 to 80 tiles, some
@@ -846,7 +862,24 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   (`walk` true everywhere, `mods().speed` 2.6); and one-offs: plenty of everything, reveal the chart, skip to dusk or dawn,
   go to the steading, hamlet or cave, Brokk joins. The engine took `mods().dmg` and `mods().speed` for it.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
-- Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch, a village on the second island.
+- **Villages across the islands (2026-10-07, Robin: lots of islands, lots of places):** the world has **six islands** (`spec.sizes`
+  60, 230, 150, 110, 170, 90 tiles; `World.make` takes `sizes`; `layoutKey` includes them, so older saves start fresh; `onOtherIsland`
+  is any island but the first). **`Village.plan(env)`** (in `src/village.js`) lays the villages out: none on the starter island, the
+  big island three (a seat or a village inland, a fishing hamlet or a trading post on a shore, a small place or a farmstead), a middling
+  island two, a small one one or none, a ruin about one in seven, wealth rising with the distance from the wreck, every site on flat
+  grass at least 38 tiles from the next and clear of the cave; each gets a **name** (`Village.nameFor`: a Norse first name, no first
+  name twice in a world, and an ending by kind: shore `vik nes sund havn ey strand`, inland `by stad heim dal tun lund berg mark`, a
+  seat `borg`, a farmstead `gard`) and a **jetty** when a shore is within reach (`Village.jettyFor`: dock planks from the nearest shore
+  in a cardinal direction out into the water, three to six tiles, one or two **moored boats** beside its end). In the game `villages`
+  holds the sites (`hamlet` stays the first), `hamletClear` grows them all and makes their folk (each with `vi`), `hamletBuild` writes
+  them into `B`, plants their props and nature, lays the jetty floors (`8`, the dock) with a barrel and a rack at the root, the road
+  from the village's road end (`V.roadEnds.front`) down to the jetty, and now and then a road between two villages on the same island
+  (`layRoad`: a wandering Catmull-Rom curve laid with the ground brush, never over water, trees and bushes cleared from its line, a
+  trail stone at its start). `moored` boats are drawn by `Yard.drawVessel` near the camera and are solid near the hero; they are never
+  boarded. **Nothing shows on the chart or the map until seen** (`seen.vill[i]`, within 460 units: "<Name>: marked on your chart"),
+  then the name. Folk tick only within 1500 units of the hero. Admin: "Reveal the chart" knows every village, "Go to the next village"
+  cycles through them. `node tools/visual/worlds.js [seeds]` renders the chart of fresh worlds with every village named.
+- Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch.
 
 
 ### The 26-fix batch (2026-10-05, after Robin's play-test)

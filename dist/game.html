@@ -4446,7 +4446,7 @@ function make(kit, opts) {
   function pickGap() { var u = R(), f = u < 0.15 ? rnd(0.1, 0.3) : (u < 0.75 ? rnd(0.5, 1.5) : (u < 0.95 ? rnd(1.6, 3) : rnd(4, 8))); return Math.max(4, o.gap * (1 + (f - 1) * o.gapVar)); }
   var isles = [{ x: 0, y: 0, r: (o.isle0 || o.isle) / 2, gap: 0 }];   // o.isle0: the first island's width (the starter island is small)
   for (i = 1; i < o.count; i++) for (tries = 0; tries < 60; tries++) {
-    var par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(); if (i === 1 && o.big) r = o.big / 2;   // o.big: the second island's width
+    var par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(); if (i === 1 && o.big) r = o.big / 2; if (o.sizes && o.sizes[i]) r = o.sizes[i] / 2;   // o.big: the second island's width; o.sizes: every island's width
     var d0 = 0, d = par.r + r + g;   // o.dir: the second island lies in that direction (0 is east, where the game's camp is)
     var cand = { x: par.x + Math.cos(a) * d, y: par.y + Math.sin(a) * d * 0.9, r: r, gap: g }, ok = true;
     for (k = 0; k < isles.length; k++) if (Math.hypot(isles[k].x - cand.x, isles[k].y - cand.y) < isles[k].r + r + 4) { ok = false; break; }
@@ -6133,7 +6133,7 @@ function pickRange(R, r, jit) { var v = r[0] + Math.floor(R() * (r[1] - r[0] + 1
 // make(seed, site, opts): site { tx, ty, w, h, shore } (shore: 'n', 's', 'e', 'w' or null); opts { arch, wealth, G (DEF overrides) }
 function make(seed, site, opts) {
   opts = opts || {}; var G = cfg(opts.G), R = rngOf(seed), archId = opts.arch || 'small', A = ARCH[archId] || ARCH.small, wealth = opts.wealth == null ? R() : opts.wealth, shore = site.shore || (A.shore ? 's' : null);
-  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
+  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h;
   // materials and roofs by wealth and place
   var wallOf = function (step) { var wv = wealth - step * 0.3; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };
@@ -6300,6 +6300,8 @@ function make(seed, site, opts) {
   pts.push([fc[0] + roadSide * T * 1.6, fc[1] + T * 1.0, rw * 1.1], [fc[0] + roadSide * T * 1.4, fc[1] - T * 1.1, rw * 1.0], [L0d[0], L0d[1] + T * 0.7, rw * 0.7]);
   if (backGateX != null) { var bg = tile(backGateX, ey0); pts.push([bg[0], (L0.y + L0.h + 1) * T, rw * 0.6]); pts.push([bg[0], bg[1], rw * 0.55]); pts.push([bg[0] + roadSide * 8, bg[1] - T * 2.2, rw * 0.5]); }
   road(pts, 2);
+  V.roadEnds = { front: [pts[0][0], pts[0][1]], back: backGateX != null ? [pts[pts.length - 1][0], pts[pts.length - 1][1]] : null };   // where a page can join a road on
+  if (shore === 's') V.roadEnds.front = [pts[0][0], pts[0][1]];
   if (shore && shore !== 's') { var shp = shore === 's' ? [wc[0] - roadSide * T * 2.2, (ty + h) * T + 8] : shore === 'n' ? [wc[0], ty * T - 8] : shore === 'e' ? [(tx + w) * T + 8, wc[1]] : [tx * T - 8, wc[1]]; road([[fc[0] + roadSide * T * 1.6, fc[1] + T * 1.0, rw * 0.9], [fc[0] - roadSide * T * 0.6, fc[1] + T * 1.8, rw * 0.8], shp.concat([rw * 0.6])], 2); }
   if (G.pathGravel) { if (shore !== 's') dab(gate[0], gate[1] + 6, 10, 1); if (backGateX != null) dab(tile(backGateX, ey0)[0], ey0 * T, 8, 1); }
   if (G.mossEdge) { dab(ex0 * T + 10, ey0 * T + 10, 20, 3); dab(ex1 * T - 10, ey0 * T + 16, 16, 3); dab(ex0 * T + 14, ey1 * T - 12, 14, 3); }
@@ -6334,7 +6336,7 @@ function make(seed, site, opts) {
   }
   // the fields outside the fence, the sacred stone at a corner, the midden behind, a grave beyond
   if (G.fields && A.houses[1] > 0 && !V.ruin) { var fx = shore === 'e' ? ex0 - 6 : ex1 + 2, fy0 = ey0 + 1, strips = G.fieldStrips; if (fx > tx && fx + 4 < tx + w) for (var s2 = 0; s2 < strips; s2++) { var sy = fy0 + s2 * 3; if (sy + 2 > ty + h) break; strokeTo([(fx + 0.5) * T, (sy + 1) * T], [(fx + 3.5) * T, (sy + 1) * T], 10, 2); if (s2 === 1) V.props.push({ name: 'scarecrow', x: (fx + 2) * T, y: (sy + 0.3) * T }); } V.props.push({ name: 'haystack', x: (fx + 2) * T, y: (fy0 + strips * 3 + 0.5) * T }); }
-  if (G.sacred) { var sc = tile(ex0 - 1 >= tx ? ex0 - 1 : ex1 + 1, ey0); V.props.push({ name: 'runestone', x: sc[0], y: sc[1], lore: 'Raised by the folk of this place for one who did not come home.' }); V.finds.push({ kind: 'stone', x: sc[0], y: sc[1] }); }
+  if (G.sacred) { var sc = tile(ex0 - 1 >= tx ? ex0 - 1 : ex1 + 1, ey0); V.props.push({ name: 'runestone', x: sc[0], y: sc[1], lore: 'Raised by the folk of ' + (opts.name || 'this place') + ' for one who did not come home.' }); V.finds.push({ kind: 'stone', x: sc[0], y: sc[1] }); }
   if (G.midden) { var mp = tile(ex1 - 1, ey0 - 1 >= ty ? ey0 - 1 : ey0); dab(mp[0], mp[1], 14, 1); V.props.push({ name: 'crate', x: mp[0], y: mp[1], loot: { fiber: 2 } }); }
   if (G.graves && R() < 0.6) { var gp = tile(ex1 + 1 < tx + w ? ex1 + 1 : ex0 - 1, ey1 - 1); V.props.push({ name: 'cairn', x: gp[0], y: gp[1], grave: true }); V.finds.push({ kind: 'grave', x: gp[0], y: gp[1] }); }
   // the people: a household per home, with their spots (their door, the well, the yard, a workplace) and lines by role
@@ -6361,6 +6363,79 @@ function make(seed, site, opts) {
 }
 // a page's site for an archetype: the tiles it needs
 function siteFor(archId) { var A = ARCH[archId] || ARCH.small; return { w: A.site[0], h: A.site[1] }; }
+
+/* Villages across the islands (2026-10-07, Robin): where the villages of a world stand, what kind each is, its name and its jetty.
+   plan(env, opts): env = { isles: [{ x, y, r }] in tiles (the first is the starter island and gets nothing: its village was raided),
+   code(tx, ty) (0 sea, 1 beach, 2 and up grass, 255 off the map), shallow(tx, ty) (water a jetty may stand in), R, home: [tx, ty]
+   (the wreck), avoid: [{ x, y, r }] in tiles (the cave) }. The big island gets three (a seat or a village inland, a fishing hamlet
+   or a trading post on a shore, a small place), a middling island two, a small one one or none; a ruin now and then; wealth rises
+   with the distance from the wreck. Every village gets a name (nameFor: a Norse first name and a place ending by its kind) and,
+   when a shore is within reach, a jetty of planks out into the shallows with a boat or two moored beside it (jettyFor). */
+var FIRST = ['Eirik', 'Orm', 'Hallvard', 'Sigrun', 'Asta', 'Ketil', 'Thorir', 'Gunnar', 'Ingrid', 'Ragna', 'Ulf', 'Bjorn', 'Halla', 'Yngvar', 'Vigdis', 'Hakon', 'Dagny', 'Mundi', 'Nanna', 'Torsten', 'Alvar', 'Solveig', 'Audun', 'Brynja', 'Geir', 'Tova', 'Steinar', 'Hild'];
+var END_SHORE = ['vik', 'nes', 'sund', 'havn', 'ey', 'strand'], END_IN = ['by', 'stad', 'heim', 'dal', 'tun', 'lund', 'berg', 'mark'];
+function nameFor(R, arch, shore, used) {
+  var t, f, e, n; used = used || {};
+  for (t = 0; t < 60; t++) {
+    f = FIRST[Math.floor(R() * FIRST.length)]; if (used['first:' + f] && t < 40) continue;
+    e = arch === 'seat' ? 'borg' : arch === 'farmstead' ? 'gard' : (shore ? END_SHORE[Math.floor(R() * END_SHORE.length)] : END_IN[Math.floor(R() * END_IN.length)]);
+    n = (f.charAt(f.length - 1) === 's' ? f : f + 's') + e;
+    if (!used[n]) { used[n] = 1; used['first:' + f] = 1; return n; }
+  }
+  return 'Ingenstad';
+}
+function jettyFor(site, env, R) {
+  var cx = site.tx + Math.floor(site.w / 2), cy = site.ty + Math.floor(site.h / 2), dirs = [[0, 1], [1, 0], [-1, 0], [0, -1]], best = null, di, k;
+  for (di = 0; di < 4; di++) {
+    var dx = dirs[di][0], dy = dirs[di][1];
+    for (k = 2; k < 48; k++) {
+      var tx = cx + dx * k, ty = cy + dy * k, cd = env.code(tx, ty); if (cd === 255) break;
+      if (cd === 0) { var len = 0; while (len < 6 && env.code(tx + dx * len, ty + dy * len) === 0 && (len < 2 || env.shallow(tx + dx * len, ty + dy * len))) len++; if (len >= 3 && (!best || k < best.k)) best = { k: k, root: [tx - dx, ty - dy], dir: [dx, dy], len: len }; break; }   // the first two planks go out over any water, the rest only over the shallows
+    }
+  }
+  if (!best) return null;
+  var tiles = [], boats = [], side = [best.dir[1], -best.dir[0]], nb = 1 + (R() < 0.5 ? 1 : 0), T2 = 32;
+  for (k = 0; k < best.len; k++) tiles.push([best.root[0] + best.dir[0] * (k + 1), best.root[1] + best.dir[1] * (k + 1)]);
+  for (k = 0; k < nb; k++) {
+    var sgn = k ? -1 : 1, t2 = tiles[Math.max(0, tiles.length - 2 - k)], bx = t2[0] + side[0] * sgn * 1.4, by = t2[1] + side[1] * sgn * 1.4;
+    if (env.code(Math.floor(bx), Math.floor(by)) !== 0) continue;
+    boats.push({ x: (bx + 0.5) * T2, y: (by + 0.5) * T2, h: Math.atan2(best.dir[1], best.dir[0]) + (R() - 0.5) * 0.3, size: R() < 0.6 ? 'small' : 'big' });
+  }
+  return { root: best.root, dir: best.dir, tiles: tiles, boats: boats };
+}
+function plan(env, opts) {
+  opts = opts || {}; var R = env.R, isles = env.isles, sites = [], used = {}, maxD = 1, i;
+  isles.forEach(function (q) { maxD = Math.max(maxD, Math.hypot(q.x - env.home[0], q.y - env.home[1])); });
+  function grassAt(tx, ty) { var cd = env.code(tx, ty); return cd >= 2 && cd !== 255; }
+  function siteOk(cx, cy, sw, sh) { var hw = Math.ceil(sw / 2), hh = Math.ceil(sh / 2), x, y; for (y = cy - hh - 1; y <= cy + hh + 1; y++) for (x = cx - hw - 1; x <= cx + hw + 1; x++) if (!grassAt(x, y)) return false; return true; }
+  function shoreOf(cx, cy, sh) { var x, sy, n; for (sy = cy + Math.ceil(sh / 2) + 2; sy <= cy + Math.ceil(sh / 2) + 10; sy++) { n = 0; for (x = cx - 4; x <= cx + 4; x++) if (env.code(x, sy) === 0) n++; if (n >= 5) return 's'; } return null; }   // the sea within a few tiles past the beach below the site
+  function farEnough(cx, cy) { var k; for (k = 0; k < sites.length; k++) if (Math.hypot(sites[k].cx - cx, sites[k].cy - cy) < 38) return false; for (k = 0; k < (env.avoid || []).length; k++) if (Math.hypot(env.avoid[k].x - cx, env.avoid[k].y - cy) < env.avoid[k].r + 18) return false; return true; }
+  function find(q, arch, wantShore) {                         // a site of the archetype's size on island q, on a shore or not, or null
+    var sz = siteFor(arch), tries;
+    for (tries = 0; tries < 900; tries++) {
+      var a = R() * 6.283, d = (wantShore ? 0.45 + R() * 0.5 : R() * 0.6) * q.r, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d * 0.9);
+      if (!siteOk(cx, cy, sz.w, sz.h) || !farEnough(cx, cy)) continue;
+      var sh = shoreOf(cx, cy, sz.h); if (wantShore && !sh) continue; if (!wantShore && sh) continue;
+      return { cx: cx, cy: cy, tx: cx - Math.ceil(sz.w / 2), ty: cy - Math.ceil(sz.h / 2), w: sz.w, h: sz.h, shore: sh };
+    }
+    return null;
+  }
+  for (i = 1; i < isles.length; i++) {
+    var q = isles[i], wants = [], big = i === 1 || q.r >= 100;
+    if (big) wants = [[R() < 0.45 ? 'seat' : 'village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];
+    else if (q.r >= 65) wants = [[R() < 0.6 ? 'fishing' : 'trading', true], [R() < 0.5 ? 'small' : (R() < 0.5 ? 'village' : 'farmstead'), false]];
+    else if (q.r >= 42) wants = [R() < 0.5 ? ['fishing', true] : ['farmstead', false]];
+    else if (R() < 0.5) wants = [['farmstead', false]];
+    wants.forEach(function (wq) {
+      var arch = wq[0], st = find(q, arch, wq[1]); if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
+      if (arch !== 'seat' && arch !== 'trading' && R() < 0.14) arch = 'ruin';
+      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth);
+      st.arch = arch; st.wealth = wealth; st.isle = i; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
+      st.jetty = jettyFor(st, env, R);
+      sites.push(st);
+    });
+  }
+  return sites;
+}
 // draw a generated village on a canvas in world units (the editor): the ground paints, floors, pieces, props and people.
 // env: { kit, Build, lib, tile(c, tx, ty, x, y) (a floor tile), roomsOf(V) }
 function draw(c, V, env, clock) {
@@ -6392,7 +6467,7 @@ function draw(c, V, env, clock) {
 }
 var SIZES = { windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
 function SIZE_OF(kit, name) { return SIZES[name] || 1; }
-return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, draw: draw, rng: rngOf, SIZES: SIZES };
+return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
 if (typeof module !== 'undefined') module.exports = Village;
 
@@ -8727,7 +8802,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   window.addEventListener('visibilitychange', function () { if (document.hidden) Music.setVolume(0); else Music.setVolume(OPTS.music); });
 
   /* ---------- the island: one island from the shared archipelago code (src/world.js) ---------- */
-  var spec = { isle: 160, isle0: 60, big: 230, noDock: true, count: 2, dir: 0.1, gap: 26, gapVar: 0, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.85;
+  var spec = { isle: 160, isle0: 60, big: 230, sizes: [60, 230, 150, 110, 170, 90], noDock: true, count: 6, dir: 0.1, gap: 26, gapVar: 0.5, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.85;   // six islands (2026-10-07): the starter, the big one, four more round them
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
   // what a felled tree, a broken rock and a cut bush give: a day's work should reach 40 wood, 20 stone and 15 fiber
@@ -9531,7 +9606,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function placeRaft(bench) { var sp = raftSpot(bench.x, bench.y); if (!sp) return false; raft = { x: sp.x, y: sp.y, h: -0.4, vx: 0, vy: 0, speed: 0, aboard: false, kind: 'raft', hw: 21, hh: 21, seat: 0 }; return true; }
   function raftUsable() { var P = hero(); if (!raft || P.dead || sleep) return false; return raft.aboard || Math.hypot(P.x - raft.x, P.y - raft.y) < 66; }
-  function onOtherIsland(x, y) { var q = w.isles[1]; return !!q && Math.hypot(x / T - q.x, y / T - q.y) < q.r * 1.4; }
+  function onOtherIsland(x, y) { for (var i = 1; i < w.isles.length; i++) { var q = w.isles[i]; if (Math.hypot(x / T - q.x, y / T - q.y) < q.r * 1.4) return true; } return false; }
   function raftUse() {
     var P = hero();
     if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; toast(raft.kind === 'boat' ? (handling('boat').steer ? 'In the boat: W rows, A and D steer, E to step ashore' : 'In the boat: WASD to row, E to step ashore') : 'On the raft: WASD to paddle, E to step ashore'); sfx('pick'); save(); return; }
@@ -9966,52 +10041,100 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // The hamlet is grown by Village (src/village.js, docs/villages.md, 2026-10-07): the archetype, the wealth and the seed come
   // from the island's seed; the site is a flat stretch of grass of the size the archetype needs, away from the cave; a shore to
   // the south makes it a fishing hamlet with a boathouse.
-  var hamletV = null, hamletCfg = null;
+  // Villages across the islands (2026-10-07, Robin): Village.plan lays them out over every island but the starter one (its village
+  // was raided), each grown from its own seed by Village.make with a name, a jetty of dock planks out into the shallows at its nearest
+  // shore with a boat or two moored beside it (never boarded), a road from its gate to the jetty, and now and then a road to a
+  // neighbour on the same island. `villages` holds the sites; `hamlet` stays the first for everything that knew it. Nothing shows
+  // on the chart or the map until you have come within sight of a place (Robin); then its name.
+  var villages = [], moored = [], hamletCfg = null, hamletV = null, tpV = 0;
   try { hamletCfg = JSON.parse(localStorage.getItem('game.village')); } catch (e) { hamletCfg = null; }   // the Village Editor's "Use in the game"
-  function hamletSite() {
-    var q = w.isles[1]; if (!q) return null;
-    var R = kit.rng(spec.seed * 23 + 11), arch = ['small', 'small', 'village', 'fishing'][Math.floor(R() * 4)], sz = Village.siteFor(arch), sw = sz.w, sh = sz.h, tries, best = null;
-    for (tries = 0; tries < 1400 && !best; tries++) {
-      var a = R() * 6.283, d = R() * q.r * 0.6, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d), ok = true, x, y, hw2 = Math.ceil(sw / 2), hh2 = Math.ceil(sh / 2);
-      for (y = cy - hh2; y <= cy + hh2 && ok; y++) for (x = cx - hw2; x <= cx + hw2; x++) { var cd = code(x, y); if (cd < 2 || cd === 255) { ok = false; break; } }
-      if (ok && caveMouth && Math.hypot(caveMouth.x - (cx + 0.5) * T, caveMouth.y - (cy + 0.5) * T) < 500) ok = false;
-      if (ok) { var shore = null, sy = cy + hh2 + 3; for (x = cx - 3; x <= cx + 3; x++) if (code(x, sy) === 0) shore = 's'; best = { tx: cx - hw2, ty: cy - hh2, w: sw, h: sh, arch: shore ? 'fishing' : arch, wealth: 0.25 + R() * 0.6, shore: shore }; }
-    }
-    return best;
+  function villagePlan() {
+    var R = kit.rng(spec.seed * 23 + 11), avoid = [];
+    if (caveMouth) avoid.push({ x: caveMouth.x / T, y: caveMouth.y / T, r: 12 });
+    return Village.plan({ isles: w.isles, code: code, shallow: function (tx, ty) { return code(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7; }, R: R, home: [home.x / T, home.y / T], avoid: avoid });
   }
-  function hamletClear() {               // the site is cleared, the village grown and the folk made (every start)
-    hamlet = hamletSite(); folk = []; hamletV = null; if (!hamlet) return;
-    var x0 = hamlet.tx * T, y0 = hamlet.ty * T, x1 = (hamlet.tx + hamlet.w) * T, y1 = (hamlet.ty + hamlet.h) * T, list = [];
-    w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20) list.push(o); });
-    list.forEach(function (o) { w.removeProp(o); });
-    hamletV = Village.make(spec.seed * 29 + 3, { tx: hamlet.tx, ty: hamlet.ty, w: hamlet.w, h: hamlet.h, shore: hamlet.shore }, { arch: hamlet.arch, wealth: hamlet.wealth, G: hamletCfg });
-    var R = kit.rng(spec.seed * 29 + 7), i;
-    for (i = 0; i < hamletV.folk.length; i++) {
-      var fv = hamletV.folk[i], sp = lib.makeFigure(lib.folkSpec('villager', R)), spots = fv.spots.map(function (q) { return { x: q[0], y: q[1], sit: q[2] === 'sit', tag: q[2] || null }; });
-      folk.push({ x: fv.x + (R() - 0.5) * 20, y: fv.y + 6, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: sp, name: fv.name, role: fv.role, lines: fv.lines.concat(FOLK_LINES[i % FOLK_LINES.length]), spots: spots, target: null, wait: R() * 4, ph: 0, moving: false, sitting: false, idle: { id: 'rest', t: R() * 3, dur: 3 + R() * 5, from: null, blend: 1 }, job: null, carrying: false, lastPose: null, child: fv.role === 'child' });
-    }
+  function vSeen(i) { return !!(seen.vill && seen.vill[i]); }
+  function vCentre(v) { return [(v.tx + v.w / 2) * T, (v.ty + v.h / 2) * T]; }
+  function hamletClear() {               // the sites are cleared, every village grown and its folk made (every start)
+    villages = villagePlan(); hamlet = villages[0] || null; folk = []; moored = []; hamletV = null;
+    villages.forEach(function (v, vi) {
+      var x0 = v.tx * T, y0 = v.ty * T, x1 = (v.tx + v.w) * T, y1 = (v.ty + v.h) * T, list = [];
+      w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20) list.push(o); });
+      if (v.jetty) { var jr = v.jetty.root; w.eachProp(function (o) { if (Math.abs(o.x - (jr[0] + 0.5) * T) < 60 && Math.abs(o.y - (jr[1] + 0.5) * T) < 60) list.push(o); }); }
+      list.forEach(function (o) { w.removeProp(o); });
+      v.V = Village.make(v.seed, { tx: v.tx, ty: v.ty, w: v.w, h: v.h, shore: v.shore }, { arch: v.arch, wealth: v.wealth, G: hamletCfg, name: v.name });
+      if (vi === 0) hamletV = v.V;
+      var R = kit.rng(v.seed * 29 + 7), i;
+      for (i = 0; i < v.V.folk.length; i++) {
+        var fv = v.V.folk[i], sp = lib.makeFigure(lib.folkSpec('villager', R)), spots = fv.spots.map(function (q) { return { x: q[0], y: q[1], sit: q[2] === 'sit', tag: q[2] || null }; });
+        folk.push({ x: fv.x + (R() - 0.5) * 20, y: fv.y + 6, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: sp, name: fv.name, role: fv.role, lines: fv.lines.concat(FOLK_LINES[(i + vi) % FOLK_LINES.length]), spots: spots, target: null, wait: R() * 4, ph: 0, moving: false, sitting: false, idle: { id: 'rest', t: R() * 3, dur: 3 + R() * 5, from: null, blend: 1 }, job: null, carrying: false, lastPose: null, child: fv.role === 'child', vi: vi });
+      }
+      (v.jetty ? v.jetty.boats : []).forEach(function (bt) {                    // the boats moored at the jetty: drawn and solid, never boarded
+        var parts = [], k, n = bt.size === 'big' ? 6 : 4;
+        for (k = 0; k < n; k++) parts.push({ id: 'keel', i: k, j: 3 }); for (k = 1; k < n - 1; k++) { parts.push({ id: 'strake', i: k, j: 2 }); parts.push({ id: 'strake', i: k, j: 4 }); } parts.push({ id: 'thwart', i: Math.floor(n / 2), j: 3 });
+        var vs = { x: bt.x, y: bt.y, h: bt.h, vx: 0, vy: 0, speed: 0, aboard: false, kind: 'boat', parts: parts, hw: 21, hh: 21, seat: 0, moored: true }; Yard.fit(vs); moored.push(vs);
+      });
+    });
   }
   function lootSlots(loot) {             // a village chest's loot as the stacks in its slots (the bag's kinds only)
     var slots = [null, null, null, null, null, null, null, null, null, null, null, null], k, n = 0, ok = { wood: 1, stone: 1, fiber: 1, berries: 1, meat: 1, leather: 1, copper: 1, charcoal: 1, honey: 1, eggs: 1 };
     for (k in loot || {}) { var kind = k === 'coin' ? 'copper' : k; if (!ok[kind] || n >= 12) continue; var left = loot[k]; while (left > 0 && n < 12) { var take = Math.min(25, left); slots[n++] = { kind: kind, n: take }; left -= take; } }
     return slots;
   }
-  function hamletBuild() {               // the village's pieces, written into B (a fresh start only), its ground painted, its props planted
-    if (!hamlet || !hamletV) return;
-    var V2 = hamletV, k, q;
-    for (k in V2.floors) B.floors[k] = V2.floors[k];
-    for (k in V2.H) B.H[k] = { t: V2.H[k].t, m: V2.H[k].m }; for (k in V2.V) B.V[k] = { t: V2.V[k].t, m: V2.V[k].m };
-    V2.items.forEach(function (vi) {
-      var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.r != null ? vi.r : (vi.cellar ? 0 : (pc ? pc.r : 8)) };
-      for (q in vi) if (q !== 'x' && q !== 'y' && q !== 'name' && q !== 'store' && q !== 'loot') it[q] = vi[q];
-      if (vi.store) { it.store = lootSlots(vi.loot); if (vi.cellar) it.loot = null; } else if (vi.loot) it.loot = vi.loot;
-      B.items.push(it);
+  function layRoad(pts, r, clear) {      // a wandering earth road through world points (Catmull-Rom), laid with the ground brush; clears trees and bushes from its line
+    var R = kit.rng(Math.round(pts[0][0] * 3 + pts[0][1])), samples = [], i, k, ph0 = R() * 6.28, sAlong = 0;
+    function P(i) { return pts[Math.max(0, Math.min(pts.length - 1, i))]; }
+    for (i = 0; i < pts.length - 1; i++) {
+      var p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2), len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), n = Math.max(2, Math.round(len / 5));
+      for (k = 0; k < n; k++) {
+        var u = k / n, u2 = u * u, u3 = u2 * u;
+        var x = 0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * u + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * u2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * u3);
+        var y = 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * u + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * u2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * u3);
+        var dx = p2[0] - p1[0], dy = p2[1] - p1[1], dl = Math.hypot(dx, dy) || 1, nx = -dy / dl, ny = dx / dl, wnd = Math.sin(sAlong * 0.03 + ph0) * 6; sAlong += len / n;
+        samples.push([x + nx * wnd, y + ny * wnd]);
+      }
+    }
+    for (i = 0; i < samples.length; i++) if (!isLand(samples[i][0], samples[i][1])) return false;   // a road never crosses water
+    var bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9; samples.forEach(function (q) { bx0 = Math.min(bx0, q[0]); by0 = Math.min(by0, q[1]); bx1 = Math.max(bx1, q[0]); by1 = Math.max(by1, q[1]); });
+    if (clear) { var gone2 = []; w.eachProp(function (o) { if (o.x < bx0 - 20 || o.x > bx1 + 20 || o.y < by0 - 20 || o.y > by1 + 20 || !o.kind) return; for (var j = 0; j < samples.length; j += 2) if (Math.hypot(o.x - samples[j][0], o.y - samples[j][1]) < r + 12) { gone2.push(o); return; } }); gone2.forEach(function (o) { w.removeProp(o); }); }
+    samples.forEach(function (q) { w.dabGround(q[0] + (R() - 0.5) * 2, q[1] + (R() - 0.5) * 2, r * (0.8 + R() * 0.35), 2); if (R() < 0.3) { var sd = R() < 0.5 ? 1 : -1; w.dabGround(q[0] + sd * (r + 2), q[1], r * 0.35 + R() * 2, 2); } });
+    w.repaint(bx0 - 20, by0 - 20, bx1 + 20, by1 + 20);
+    return true;
+  }
+  function hamletBuild() {               // every village's pieces written into B (a fresh start only), its ground painted, its props planted, the jetties laid, the roads
+    villages.forEach(function (v) {
+      var V2 = v.V, k, q; if (!V2) return;
+      for (k in V2.floors) B.floors[k] = V2.floors[k];
+      for (k in V2.H) B.H[k] = { t: V2.H[k].t, m: V2.H[k].m }; for (k in V2.V) B.V[k] = { t: V2.V[k].t, m: V2.V[k].m };
+      V2.items.forEach(function (vi) {
+        var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.r != null ? vi.r : (vi.cellar ? 0 : (pc ? pc.r : 8)) };
+        for (q in vi) if (q !== 'x' && q !== 'y' && q !== 'name' && q !== 'store' && q !== 'loot') it[q] = vi[q];
+        if (vi.store) { it.store = lootSlots(vi.loot); if (vi.cellar) it.loot = null; } else if (vi.loot) it.loot = vi.loot;
+        B.items.push(it);
+      });
+      V2.roofs.forEach(function (r) { roofLaters.push({ tx: r.tx, ty: r.ty, m: r.m }); });
+      V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); });
+      w.repaint((v.tx - 2) * T, (v.ty - 2) * T, (v.tx + v.w + 2) * T, (v.ty + v.h + 2) * T);
+      V2.props.forEach(function (pr) { if (!kit.PROPS[pr.name] || !isLand(pr.x, pr.y)) return; var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.solid != null ? pr.solid : (pr.name === 'scarecrow' ? 4 : 8), v: Math.floor(Math.random() * 3) }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
+      (V2.nature || []).forEach(function (n) { if (!kit.PROPS[n.name] || !isLand(n.x, n.y)) return; var o = { name: n.name, x: n.x, y: n.y, s: n.s, r: n.r, v: n.v, kind: World.KIND[n.name] || null }; if (o.kind) { o.max = o.hp = World.HP[n.name] * (0.7 + 0.6 * o.s); o.leanDir = Math.random() < 0.5 ? -1 : 1; } w.addProp(o); });   // the village's own trees, bushes and rocks
+      if (v.jetty) {                                                               // the jetty: dock planks out into the shallows, a barrel and a rack on the root, the road up to the gate
+        var J = v.jetty, rt = J.root, ok = true;
+        J.tiles.forEach(function (t) { if (dockOk(t[0], t[1]) || code(t[0], t[1]) === 0) B.floors[Build.key(t[0], t[1])] = 8; });
+        w.addProp({ name: 'barrel', x: (rt[0] + 0.5) * T + J.dir[1] * 12, y: (rt[1] + 0.5) * T - J.dir[0] * 12 + 4, s: 1, r: 5, v: 0, loot: { fiber: 2 } });
+        if (kit.PROPS.dryingRack) w.addProp({ name: 'dryingRack', x: (rt[0] + 0.5) * T - J.dir[1] * 16, y: (rt[1] + 0.5) * T + J.dir[0] * 16 + 2, s: 1, r: 6, v: 0 });
+        var fr = V2.roadEnds ? V2.roadEnds.front : vCentre(v), root = [(rt[0] + 0.5) * T, (rt[1] + 0.5) * T], mid = [(fr[0] + root[0]) / 2 + (root[1] - fr[1]) * 0.18, (fr[1] + root[1]) / 2 - (root[0] - fr[0]) * 0.18];
+        if (Math.hypot(fr[0] - root[0], fr[1] - root[1]) > 40) layRoad([fr, mid, root], 7, true);
+      }
     });
-    V2.roofs.forEach(function (r) { roofLaters.push({ tx: r.tx, ty: r.ty, m: r.m }); });
-    V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); });
-    w.repaint((hamlet.tx - 2) * T, (hamlet.ty - 2) * T, (hamlet.tx + hamlet.w + 2) * T, (hamlet.ty + hamlet.h + 2) * T);
-    V2.props.forEach(function (pr) { if (!kit.PROPS[pr.name] || !isLand(pr.x, pr.y)) return; var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.solid != null ? pr.solid : (pr.name === 'scarecrow' ? 4 : 8), v: Math.floor(Math.random() * 3) }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
-    (V2.nature || []).forEach(function (n) { if (!kit.PROPS[n.name] || !isLand(n.x, n.y)) return; var o = { name: n.name, x: n.x, y: n.y, s: n.s, r: n.r, v: n.v, kind: World.KIND[n.name] || null }; if (o.kind) { o.max = o.hp = World.HP[n.name] * (0.7 + 0.6 * o.s); o.leanDir = Math.random() < 0.5 ? -1 : 1; } w.addProp(o); });   // the village's own trees, bushes and rocks
+    // a road between two villages on the same island, now and then (Robin: uncommon)
+    var R2 = kit.rng(spec.seed * 41 + 5), i, j;
+    for (i = 0; i < villages.length; i++) for (j = i + 1; j < villages.length; j++) {
+      var a = villages[i], b2 = villages[j]; if (a.isle !== b2.isle || !a.V || !b2.V) continue;
+      var ca = a.V.roadEnds ? (a.V.roadEnds.back || a.V.roadEnds.front) : vCentre(a), cb = b2.V.roadEnds ? b2.V.roadEnds.front : vCentre(b2), d = Math.hypot(ca[0] - cb[0], ca[1] - cb[1]);
+      if (d > 150 * T || R2() > 0.4) continue;
+      var m1 = [ca[0] + (cb[0] - ca[0]) * 0.33 + (cb[1] - ca[1]) * 0.12, ca[1] + (cb[1] - ca[1]) * 0.33 - (cb[0] - ca[0]) * 0.12], m2 = [ca[0] + (cb[0] - ca[0]) * 0.66 - (cb[1] - ca[1]) * 0.1, ca[1] + (cb[1] - ca[1]) * 0.66 + (cb[0] - ca[0]) * 0.1];
+      if (layRoad([ca, m1, m2, cb], 7, true) && kit.PROPS.trailStone) w.addProp({ name: 'trailStone', x: ca[0] + 14, y: ca[1] + 6, s: 1, r: 4, v: 0 });
+    }
     bDirty = true; Build.ensurePosts(B);
   }
   function folkNear(P) { var best = null; folk.forEach(function (f) { var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
@@ -10023,9 +10146,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function pickIdle(f) { var tot = 0, i; IDLE_W.forEach(function (q) { tot += q[1] + (f.child && q[0] === 'look' ? 3 : 0); }); var r = Math.random() * tot; for (i = 0; i < IDLE_W.length; i++) { r -= IDLE_W[i][1] + (f.child && IDLE_W[i][0] === 'look' ? 3 : 0); if (r <= 0) return IDLE_W[i][0]; } return 'rest'; }
   function folkTick(dt) {
     var P = hero(), i;
-    if (hamlet && !seen.hamlet && Math.hypot(P.x - (hamlet.tx + hamlet.w / 2) * T, P.y - (hamlet.ty + hamlet.h / 2) * T) < 420) { seen.hamlet = 1; toast('A hamlet: marked on your chart'); save(); }
+    for (i = 0; i < villages.length; i++) { var vv = villages[i]; if (!vSeen(i) && Math.hypot(P.x - (vv.tx + vv.w / 2) * T, P.y - (vv.ty + vv.h / 2) * T) < 460) { if (!seen.vill) seen.vill = {}; seen.vill[i] = 1; if (i === 0) seen.hamlet = 1; toast(vv.name + ': marked on your chart'); save(); } }
     for (i = 0; i < folk.length; i++) {
       var f = folk[i], d = Math.hypot(P.x - f.x, P.y - f.y);
+      if (Math.abs(P.x - f.x) > 1500 || Math.abs(P.y - f.y) > 1200) continue;                  // only the people near you live; the rest wait
       if (f.sayT > 0) f.sayT -= dt;
       f.idle.t += dt; f.idle.blend = Math.min(1, f.idle.blend + dt / 0.35);
       if (!f.moving && !f.sitting && !f.job && f.idle.t > f.idle.dur) { f.idle.from = f.lastPose; f.idle.id = pickIdle(f); f.idle.t = 0; f.idle.dur = 3 + Math.random() * 6; f.idle.blend = 0; }
@@ -10162,7 +10286,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     stones().forEach(function (st) { var q = at(st.x, st.y), rr = reachOf(st) / T / step * sc; c.strokeStyle = 'rgba(255,230,160,0.6)'; c.lineWidth = 0.8; c.setLineDash([2, 2]); c.beginPath(); c.ellipse(q.x, q.y, rr, rr, 0, 0, 7); c.stroke(); c.setLineDash([]); dot(q, '#f6e2b8', 2); label(q, st.named || 'Stead'); });
     var qh = at(home.x, home.y); dot(qh, '#ff9a3a'); label(qh, 'The wreck');
     if (village) { var qv = at((village.tx + 7) * T, (village.ty + 6) * T); if (seen.village) { dot(qv, '#f0e2b0'); label(qv, 'Hildir\u2019s steading'); } else unknown(qv); }
-    if (hamlet) { var qm = at((hamlet.tx + hamlet.w / 2) * T, (hamlet.ty + hamlet.h / 2) * T); if (seen.hamlet) { dot(qm, '#f0e2b0'); label(qm, 'The hamlet'); } else unknown(qm); }
+    villages.forEach(function (vv, vi) { if (!vSeen(vi)) return; var qm = at((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T); dot(qm, vv.arch === 'ruin' ? '#9a8a7a' : '#f0e2b0'); label(qm, vv.name); });
     if (caveMouth) { var qc = at(caveMouth.x, caveMouth.y); if (seen.cave) { dot(qc, '#a8a8b4'); label(qc, 'The cave'); } else unknown(qc); }
     if (raft) { var qr = at(raft.x, raft.y); dot(qr, '#c99a66'); label(qr, raft.kind === 'boat' ? 'The boat' : 'The raft'); }
     var qp = at(inCave && caveMouth ? caveMouth.x : P.x, inCave && caveMouth ? caveMouth.y : P.y); dot(qp, '#ffd34d', 3); c.strokeStyle = '#fff'; c.lineWidth = 0.8; c.beginPath(); c.arc(qp.x, qp.y, 4.6, 0, 7); c.stroke();
@@ -10603,11 +10727,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'free', name: 'Free building and crafting', text: 'Nothing costs anything.', toggle: true },
     { id: 'fly', name: 'Fly', text: 'Walk over water and through anything, fast.', toggle: true },
     { id: 'stuff', name: 'Plenty of everything', text: '25 of every material into the bag.' },
-    { id: 'reveal', name: 'Reveal the chart', text: 'The steading, the hamlet and the cave known; the raft taught.' },
+    { id: 'reveal', name: 'Reveal the chart', text: 'The steading, every village and the cave known; the raft taught.' },
     { id: 'dusk', name: 'Skip to dusk', text: 'The clock jumps to the evening.' },
     { id: 'dawn', name: 'Skip to dawn', text: 'A new day begins.' },
     { id: 'tpVillage', name: 'Go to the steading', text: 'Stand by Hildir’s well.' },
-    { id: 'tpHamlet', name: 'Go to the hamlet', text: 'Stand on its green.' },
+    { id: 'tpHamlet', name: 'Go to the next village', text: 'Each press, the next one on the chart.' },
     { id: 'tpCave', name: 'Go to the cave', text: 'Stand at its mouth.' },
     { id: 'brokk', name: 'Brokk joins', text: 'Hildir’s stone stands and he is yours.' },
     { id: 'weapons', name: 'Copper weapons', text: 'One of every kind into the bag: sword, axe, club, seax, spear, Dane axe, bow, sling, javelin, throwing axe.' },
@@ -10627,11 +10751,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); return; }
     if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }
     else if (id === 'weapons') { Items.MELEE.concat(Items.RANGED).forEach(function (k) { var w2 = Items.make(k, 'copper'); if (!addThing(w2)) dropThing(w2, P.x, P.y + 10); }); addItem('stone', 20); toast('Copper weapons, and stones for the sling'); }
-    else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; toast('The chart knows the island'); }
+    else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; seen.vill = {}; villages.forEach(function (vv, vi) { seen.vill[vi] = 1; }); toast('The chart knows the islands'); }
     else if (id === 'dusk') { day.t = DUSK_AT + 1; }
     else if (id === 'dawn') { day.t = 0; day.n++; }
     else if (id === 'tpVillage' && village) { P.x = (village.tx + 8) * T; P.y = (village.ty + 8.5) * T; }
-    else if (id === 'tpHamlet' && hamlet) { P.x = (hamlet.tx + hamlet.w / 2) * T; P.y = (hamlet.ty + hamlet.h / 2 + 1) * T; }
+    else if (id === 'tpHamlet' && villages.length) { var tv = villages[tpV % villages.length]; tpV++; P.x = (tv.tx + tv.w / 2) * T; P.y = (tv.ty + tv.h / 2 + 1) * T; toast(tv.name); }
     else if (id === 'tpCave' && caveMouth) { P.x = caveMouth.x; P.y = caveMouth.y + 44; }
     else if (id === 'brokk') { seen.met = 1; seen.raft = 1; if (!stones().length) { var cs = { name: 'claimStone', x: P.x + 30, y: P.y, r: 5, claim: true }; B.items.push(cs); raiseStone(cs); } else if (npc && !npc.joined) brokkJoin(stones()[0]); toast('Brokk is yours'); }
     P.vx = P.vy = 0; save(); pauseOpen = false; adminOpen = false;
@@ -11546,6 +11670,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.loot || (it.out && it.out.length)) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
+      moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 60 && Math.abs(mv.y * K - cam.y) < hh + 60) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });
       if (raft && raft.aboard && raft.kind === 'boat') items.push({ y: P.y + 0.5, f: function () { Yard.drawVesselFront(ctx, raft, clock, P.y); } });
       if (npc && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
       hird.forEach(function (m) { if (m === npc) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });
@@ -11588,7 +11713,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         c.fill(); c.stroke();
       }
       stones().forEach(function (st) { var q = mp(st.x, st.y), rr = reachOf(st) / T / step * zx; c.strokeStyle = 'rgba(255,230,160,0.55)'; c.lineWidth = 0.8; c.setLineDash([2, 2]); c.beginPath(); c.ellipse(q.x, q.y, rr, rr * zy / zx, 0, 0, 7); c.stroke(); c.setLineDash([]); });
-      mark(home.x, home.y, 'boat'); if (caveMouth && seen.cave) mark(caveMouth.x, caveMouth.y, 'cave'); if (hamlet && seen.hamlet) mark((hamlet.tx + 6) * T, (hamlet.ty + 5) * T, 'village'); if (village && seen.village) mark((village.tx + 7) * T, (village.ty + 6) * T, 'village');
+      mark(home.x, home.y, 'boat'); if (caveMouth && seen.cave) mark(caveMouth.x, caveMouth.y, 'cave'); villages.forEach(function (vv, vi) { if (vSeen(vi)) mark((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T, 'village'); }); if (village && seen.village) mark((village.tx + 7) * T, (village.ty + 6) * T, 'village');
       var hm = mp(hpx, hpy); c.fillStyle = '#ffd34d'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.3; c.beginPath(); c.arc(hm.x, hm.y, 2.7, 0, 7); c.fill(); c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 0.7; c.beginPath(); c.arc(hm.x, hm.y, 4.2, 0, 7); c.stroke();
       c.restore();
       c.imageSmoothingEnabled = true;
@@ -11782,11 +11907,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big; }   // a save only fits the same arrangement of islands
+  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + spec.sizes.join('/'); }   // a save only fits the same arrangement of islands
   function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }   // the hero starts in his wrecked boat on the beach
   function start(fresh) {
     var sv = fresh ? null : loadSave(), k;
-    if (sv && sv.layout !== layoutKey()) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The sea was remade with a second island: a fresh start'); }, 500); }
+    if (sv && sv.layout !== layoutKey()) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The sea was remade with more islands: a fresh start'); }, 500); }
     if (sv && sv.isle && sv.isle !== spec.isle) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The island was remade at a new size: a fresh start'); }, 500); }   // a save from an island of another size does not fit
     if (sv) spec.seed = sv.seed;
     buildWorld();
@@ -11888,7 +12013,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var ok = x > 300 && y > 300 && x < WX - 300 && y < WY - 300, dx, dy;
       for (dy = -2; ok && dy <= 4; dy++) for (dx = -2; dx <= 6; dx++) { var cd = code(tx + dx, ty + dy); if (cd < 2 || cd === 255) { ok = false; break; } }
       if (ok && caveMouth && Math.hypot(x - caveMouth.x, y - caveMouth.y) < 300) ok = false;
-      if (ok && hamlet && Math.hypot(x - (hamlet.tx + 6) * T, y - (hamlet.ty + 5) * T) < 400) ok = false;
+      if (ok && villages.some(function (vv) { return Math.hypot(x - (vv.tx + vv.w / 2) * T, y - (vv.ty + vv.h / 2) * T) < 400; })) ok = false;
       if (ok) site = { tx: tx, ty: ty };
     }
     if (!site) { toast('No room for the rune hut'); return; }
@@ -11952,7 +12077,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (kind === 'boat') { for (i = 0; i < 7; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } parts.push({ id: 'thwart', i: 3, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -11973,6 +12098,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     D.W.pillars = nearSolids(P);
     if (inCave) { cave.ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * o.s, hide: true }); }); if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }
     var RIs = RI(); if (RIs) for (var si = 0; si < RIs.solids.length; si++) { var sl = RIs.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
+    for (var mi = 0; mi < moored.length; mi++) { var mv = moored[mi]; if (Math.abs(mv.x - P.x) < 160 && Math.abs(mv.y - P.y) < 160) D.W.pillars.push({ x: mv.x, y: mv.y, r: Math.max(mv.hw || 21, mv.hh || 21) * 0.7, hide: true }); }
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt === sitting) continue; if (bt.r && sameLvl(bt) && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }

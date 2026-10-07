@@ -54,7 +54,7 @@ function pickRange(R, r, jit) { var v = r[0] + Math.floor(R() * (r[1] - r[0] + 1
 // make(seed, site, opts): site { tx, ty, w, h, shore } (shore: 'n', 's', 'e', 'w' or null); opts { arch, wealth, G (DEF overrides) }
 function make(seed, site, opts) {
   opts = opts || {}; var G = cfg(opts.G), R = rngOf(seed), archId = opts.arch || 'small', A = ARCH[archId] || ARCH.small, wealth = opts.wealth == null ? R() : opts.wealth, shore = site.shore || (A.shore ? 's' : null);
-  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
+  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h;
   // materials and roofs by wealth and place
   var wallOf = function (step) { var wv = wealth - step * 0.3; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };
@@ -221,6 +221,8 @@ function make(seed, site, opts) {
   pts.push([fc[0] + roadSide * T * 1.6, fc[1] + T * 1.0, rw * 1.1], [fc[0] + roadSide * T * 1.4, fc[1] - T * 1.1, rw * 1.0], [L0d[0], L0d[1] + T * 0.7, rw * 0.7]);
   if (backGateX != null) { var bg = tile(backGateX, ey0); pts.push([bg[0], (L0.y + L0.h + 1) * T, rw * 0.6]); pts.push([bg[0], bg[1], rw * 0.55]); pts.push([bg[0] + roadSide * 8, bg[1] - T * 2.2, rw * 0.5]); }
   road(pts, 2);
+  V.roadEnds = { front: [pts[0][0], pts[0][1]], back: backGateX != null ? [pts[pts.length - 1][0], pts[pts.length - 1][1]] : null };   // where a page can join a road on
+  if (shore === 's') V.roadEnds.front = [pts[0][0], pts[0][1]];
   if (shore && shore !== 's') { var shp = shore === 's' ? [wc[0] - roadSide * T * 2.2, (ty + h) * T + 8] : shore === 'n' ? [wc[0], ty * T - 8] : shore === 'e' ? [(tx + w) * T + 8, wc[1]] : [tx * T - 8, wc[1]]; road([[fc[0] + roadSide * T * 1.6, fc[1] + T * 1.0, rw * 0.9], [fc[0] - roadSide * T * 0.6, fc[1] + T * 1.8, rw * 0.8], shp.concat([rw * 0.6])], 2); }
   if (G.pathGravel) { if (shore !== 's') dab(gate[0], gate[1] + 6, 10, 1); if (backGateX != null) dab(tile(backGateX, ey0)[0], ey0 * T, 8, 1); }
   if (G.mossEdge) { dab(ex0 * T + 10, ey0 * T + 10, 20, 3); dab(ex1 * T - 10, ey0 * T + 16, 16, 3); dab(ex0 * T + 14, ey1 * T - 12, 14, 3); }
@@ -255,7 +257,7 @@ function make(seed, site, opts) {
   }
   // the fields outside the fence, the sacred stone at a corner, the midden behind, a grave beyond
   if (G.fields && A.houses[1] > 0 && !V.ruin) { var fx = shore === 'e' ? ex0 - 6 : ex1 + 2, fy0 = ey0 + 1, strips = G.fieldStrips; if (fx > tx && fx + 4 < tx + w) for (var s2 = 0; s2 < strips; s2++) { var sy = fy0 + s2 * 3; if (sy + 2 > ty + h) break; strokeTo([(fx + 0.5) * T, (sy + 1) * T], [(fx + 3.5) * T, (sy + 1) * T], 10, 2); if (s2 === 1) V.props.push({ name: 'scarecrow', x: (fx + 2) * T, y: (sy + 0.3) * T }); } V.props.push({ name: 'haystack', x: (fx + 2) * T, y: (fy0 + strips * 3 + 0.5) * T }); }
-  if (G.sacred) { var sc = tile(ex0 - 1 >= tx ? ex0 - 1 : ex1 + 1, ey0); V.props.push({ name: 'runestone', x: sc[0], y: sc[1], lore: 'Raised by the folk of this place for one who did not come home.' }); V.finds.push({ kind: 'stone', x: sc[0], y: sc[1] }); }
+  if (G.sacred) { var sc = tile(ex0 - 1 >= tx ? ex0 - 1 : ex1 + 1, ey0); V.props.push({ name: 'runestone', x: sc[0], y: sc[1], lore: 'Raised by the folk of ' + (opts.name || 'this place') + ' for one who did not come home.' }); V.finds.push({ kind: 'stone', x: sc[0], y: sc[1] }); }
   if (G.midden) { var mp = tile(ex1 - 1, ey0 - 1 >= ty ? ey0 - 1 : ey0); dab(mp[0], mp[1], 14, 1); V.props.push({ name: 'crate', x: mp[0], y: mp[1], loot: { fiber: 2 } }); }
   if (G.graves && R() < 0.6) { var gp = tile(ex1 + 1 < tx + w ? ex1 + 1 : ex0 - 1, ey1 - 1); V.props.push({ name: 'cairn', x: gp[0], y: gp[1], grave: true }); V.finds.push({ kind: 'grave', x: gp[0], y: gp[1] }); }
   // the people: a household per home, with their spots (their door, the well, the yard, a workplace) and lines by role
@@ -282,6 +284,79 @@ function make(seed, site, opts) {
 }
 // a page's site for an archetype: the tiles it needs
 function siteFor(archId) { var A = ARCH[archId] || ARCH.small; return { w: A.site[0], h: A.site[1] }; }
+
+/* Villages across the islands (2026-10-07, Robin): where the villages of a world stand, what kind each is, its name and its jetty.
+   plan(env, opts): env = { isles: [{ x, y, r }] in tiles (the first is the starter island and gets nothing: its village was raided),
+   code(tx, ty) (0 sea, 1 beach, 2 and up grass, 255 off the map), shallow(tx, ty) (water a jetty may stand in), R, home: [tx, ty]
+   (the wreck), avoid: [{ x, y, r }] in tiles (the cave) }. The big island gets three (a seat or a village inland, a fishing hamlet
+   or a trading post on a shore, a small place), a middling island two, a small one one or none; a ruin now and then; wealth rises
+   with the distance from the wreck. Every village gets a name (nameFor: a Norse first name and a place ending by its kind) and,
+   when a shore is within reach, a jetty of planks out into the shallows with a boat or two moored beside it (jettyFor). */
+var FIRST = ['Eirik', 'Orm', 'Hallvard', 'Sigrun', 'Asta', 'Ketil', 'Thorir', 'Gunnar', 'Ingrid', 'Ragna', 'Ulf', 'Bjorn', 'Halla', 'Yngvar', 'Vigdis', 'Hakon', 'Dagny', 'Mundi', 'Nanna', 'Torsten', 'Alvar', 'Solveig', 'Audun', 'Brynja', 'Geir', 'Tova', 'Steinar', 'Hild'];
+var END_SHORE = ['vik', 'nes', 'sund', 'havn', 'ey', 'strand'], END_IN = ['by', 'stad', 'heim', 'dal', 'tun', 'lund', 'berg', 'mark'];
+function nameFor(R, arch, shore, used) {
+  var t, f, e, n; used = used || {};
+  for (t = 0; t < 60; t++) {
+    f = FIRST[Math.floor(R() * FIRST.length)]; if (used['first:' + f] && t < 40) continue;
+    e = arch === 'seat' ? 'borg' : arch === 'farmstead' ? 'gard' : (shore ? END_SHORE[Math.floor(R() * END_SHORE.length)] : END_IN[Math.floor(R() * END_IN.length)]);
+    n = (f.charAt(f.length - 1) === 's' ? f : f + 's') + e;
+    if (!used[n]) { used[n] = 1; used['first:' + f] = 1; return n; }
+  }
+  return 'Ingenstad';
+}
+function jettyFor(site, env, R) {
+  var cx = site.tx + Math.floor(site.w / 2), cy = site.ty + Math.floor(site.h / 2), dirs = [[0, 1], [1, 0], [-1, 0], [0, -1]], best = null, di, k;
+  for (di = 0; di < 4; di++) {
+    var dx = dirs[di][0], dy = dirs[di][1];
+    for (k = 2; k < 48; k++) {
+      var tx = cx + dx * k, ty = cy + dy * k, cd = env.code(tx, ty); if (cd === 255) break;
+      if (cd === 0) { var len = 0; while (len < 6 && env.code(tx + dx * len, ty + dy * len) === 0 && (len < 2 || env.shallow(tx + dx * len, ty + dy * len))) len++; if (len >= 3 && (!best || k < best.k)) best = { k: k, root: [tx - dx, ty - dy], dir: [dx, dy], len: len }; break; }   // the first two planks go out over any water, the rest only over the shallows
+    }
+  }
+  if (!best) return null;
+  var tiles = [], boats = [], side = [best.dir[1], -best.dir[0]], nb = 1 + (R() < 0.5 ? 1 : 0), T2 = 32;
+  for (k = 0; k < best.len; k++) tiles.push([best.root[0] + best.dir[0] * (k + 1), best.root[1] + best.dir[1] * (k + 1)]);
+  for (k = 0; k < nb; k++) {
+    var sgn = k ? -1 : 1, t2 = tiles[Math.max(0, tiles.length - 2 - k)], bx = t2[0] + side[0] * sgn * 1.4, by = t2[1] + side[1] * sgn * 1.4;
+    if (env.code(Math.floor(bx), Math.floor(by)) !== 0) continue;
+    boats.push({ x: (bx + 0.5) * T2, y: (by + 0.5) * T2, h: Math.atan2(best.dir[1], best.dir[0]) + (R() - 0.5) * 0.3, size: R() < 0.6 ? 'small' : 'big' });
+  }
+  return { root: best.root, dir: best.dir, tiles: tiles, boats: boats };
+}
+function plan(env, opts) {
+  opts = opts || {}; var R = env.R, isles = env.isles, sites = [], used = {}, maxD = 1, i;
+  isles.forEach(function (q) { maxD = Math.max(maxD, Math.hypot(q.x - env.home[0], q.y - env.home[1])); });
+  function grassAt(tx, ty) { var cd = env.code(tx, ty); return cd >= 2 && cd !== 255; }
+  function siteOk(cx, cy, sw, sh) { var hw = Math.ceil(sw / 2), hh = Math.ceil(sh / 2), x, y; for (y = cy - hh - 1; y <= cy + hh + 1; y++) for (x = cx - hw - 1; x <= cx + hw + 1; x++) if (!grassAt(x, y)) return false; return true; }
+  function shoreOf(cx, cy, sh) { var x, sy, n; for (sy = cy + Math.ceil(sh / 2) + 2; sy <= cy + Math.ceil(sh / 2) + 10; sy++) { n = 0; for (x = cx - 4; x <= cx + 4; x++) if (env.code(x, sy) === 0) n++; if (n >= 5) return 's'; } return null; }   // the sea within a few tiles past the beach below the site
+  function farEnough(cx, cy) { var k; for (k = 0; k < sites.length; k++) if (Math.hypot(sites[k].cx - cx, sites[k].cy - cy) < 38) return false; for (k = 0; k < (env.avoid || []).length; k++) if (Math.hypot(env.avoid[k].x - cx, env.avoid[k].y - cy) < env.avoid[k].r + 18) return false; return true; }
+  function find(q, arch, wantShore) {                         // a site of the archetype's size on island q, on a shore or not, or null
+    var sz = siteFor(arch), tries;
+    for (tries = 0; tries < 900; tries++) {
+      var a = R() * 6.283, d = (wantShore ? 0.45 + R() * 0.5 : R() * 0.6) * q.r, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d * 0.9);
+      if (!siteOk(cx, cy, sz.w, sz.h) || !farEnough(cx, cy)) continue;
+      var sh = shoreOf(cx, cy, sz.h); if (wantShore && !sh) continue; if (!wantShore && sh) continue;
+      return { cx: cx, cy: cy, tx: cx - Math.ceil(sz.w / 2), ty: cy - Math.ceil(sz.h / 2), w: sz.w, h: sz.h, shore: sh };
+    }
+    return null;
+  }
+  for (i = 1; i < isles.length; i++) {
+    var q = isles[i], wants = [], big = i === 1 || q.r >= 100;
+    if (big) wants = [[R() < 0.45 ? 'seat' : 'village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];
+    else if (q.r >= 65) wants = [[R() < 0.6 ? 'fishing' : 'trading', true], [R() < 0.5 ? 'small' : (R() < 0.5 ? 'village' : 'farmstead'), false]];
+    else if (q.r >= 42) wants = [R() < 0.5 ? ['fishing', true] : ['farmstead', false]];
+    else if (R() < 0.5) wants = [['farmstead', false]];
+    wants.forEach(function (wq) {
+      var arch = wq[0], st = find(q, arch, wq[1]); if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
+      if (arch !== 'seat' && arch !== 'trading' && R() < 0.14) arch = 'ruin';
+      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth);
+      st.arch = arch; st.wealth = wealth; st.isle = i; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
+      st.jetty = jettyFor(st, env, R);
+      sites.push(st);
+    });
+  }
+  return sites;
+}
 // draw a generated village on a canvas in world units (the editor): the ground paints, floors, pieces, props and people.
 // env: { kit, Build, lib, tile(c, tx, ty, x, y) (a floor tile), roomsOf(V) }
 function draw(c, V, env, clock) {
@@ -313,6 +388,6 @@ function draw(c, V, env, clock) {
 }
 var SIZES = { windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
 function SIZE_OF(kit, name) { return SIZES[name] || 1; }
-return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, draw: draw, rng: rngOf, SIZES: SIZES };
+return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
 if (typeof module !== 'undefined') module.exports = Village;

@@ -270,7 +270,7 @@ sail on the horizon are the pointers, neither built.
 2. **Trading at the hamlet**: the basics for goods; a trader; the first currency question (Open: is it silver?).
 3. **A mast and a sail** so the boat leaves the island, and hirdmen at the oars.
 4. **A second väsen** for this chapter (Open: Robin chooses from the cards), so the cave is not the only one.
-5. **Places of interest** on the island and the islands around it: ruins, a shrine, small finds.
+5. **Places of interest** on the island and the islands around it: ruins, a shrine, small finds. (Villages across all six islands with names and jetties: built 2026-10-07, `docs/villages.md` 6.)
 6. **A pointer to Chapter 3**: a name heard, a sail on the horizon, an item that needs something from elsewhere.
 7. **Bronze and the metal ladder**: what tin is and where (idea bank).
 8. **Hazards at sea** as buffs-for-preparation, not punishment.

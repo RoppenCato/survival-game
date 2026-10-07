@@ -141,3 +141,32 @@ A village is fully described by its **seed, archetype, wealth and shore**, so it
 building data (`floors`, `H`, `V`, `items` with `loot` and `store`, `roofs` to lay once the rooms are found, `paints` for the
 ground brush, `props` for the world, `folk` with their spots and lines, `finds`), so the game writes it into `B` exactly as it
 writes the hamlet. The Village Editor (`village-editor.html`) draws a generated village from the same data and tunes `DEF`.
+
+## 6. Where villages stand (2026-10-07, Robin: villages across the islands)
+
+The world has six islands. The starter island gets no thriving village: its steading was raided (the story comes later). The big
+island gets three: a chieftain's seat or a village inland, a fishing hamlet or a trading post on a shore, a small village or a
+farmstead; a middling island two, a small one one or none; a ruin about one in seven. Wealth rises with the distance from the wreck.
+Sites lie on flat grass, at least 38 tiles apart, clear of the cave.
+
+**Names** are generated under rules: a Norse first name (no first name twice in a world) and an ending by kind: on a shore `-vik`,
+`-nes`, `-sund`, `-havn`, `-ey`, `-strand`; inland `-by`, `-stad`, `-heim`, `-dal`, `-tun`, `-lund`, `-berg`, `-mark`; a seat `-borg`;
+a farmstead `-gard`. Ormsvik, Hallvardsborg, Solveigsdal. The runestone names the place.
+
+**The jetty.** When a shore lies within reach, a jetty of dock planks runs from the nearest shore straight out into the water, three
+to six tiles, with a barrel and a drying rack at its root and one or two boats moored beside its end. The boats are drawn as the
+Shipyard's boats and block the way, and they cannot be boarded. A road runs from the village's gate (or its shore side) down to the
+jetty. Now and then a road joins two villages on the same island, wandering, with the trees cleared from its line and a trail stone
+where it starts; most villages have no road but their own.
+
+**The map shows nothing until you have seen a place** (Robin): within sight of a village it appears on the chart and the map with its
+name. `node tools/visual/worlds.js` draws fresh worlds with every village.
+
+## 7. Raids (decided 2026-10-07, to be built with the second biome)
+
+A raid should take about twenty minutes. It is built from **loot spread out** (the storehouse, the church's silver, the hall's chest, a
+hidden cellar) behind **doors that take blows**, and from **carrying** the heavy loot to the ship one piece at a time on the shoulder,
+hirdmen helping, so the walk to the shore is the gamble and the retreat is under pursuit. **The defenders gather to the noise**: guards
+come to broken doors and fighting from inside the town; there is no bell and no castle sending waves, and fighting is not the biggest
+part. Villagers run and hide; fire spreads in thatch; a place remembers you. Nothing is off limits; reputation is the only brake.
+
