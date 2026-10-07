@@ -100,7 +100,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
 | `gathering-editor.html` | `gather.html` | Gathering Editor (2026-10-07): a field of trees, rocks and bushes; the gathering ideas as switches and sliders, presets, settings as text, "Use in the game" (`game.gather`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
-| `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07): the game started on the big island at a carver's bench, a dragon ring on the arm, every rune known; a board on the left to change the ring's metal, know or forget every rune, bring beasts, make it night, go back to the bench, start over. Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()` |
+| `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
 template and one line in `PAGES` in `tools/build.py`.
@@ -484,6 +484,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   in the hotbar: in build mode the bar shows the belt, and the chosen piece is named in the bar's label. The mouse
   wheel steps through tools, pieces or the belt slot (`P.sel`). A hearth is a buildable item (`B.items`, drawn
   as a prop, solid, cookable); the camp hearth stays.
+- **Robin's panel notes (2026-10-07):** the character panel has a third tab, **Ring** (`drawRingTab`): the metal and its hollows,
+  the ring drawn, then every hollow with the rune cut in it and its line, or "Empty hand hollow", and below what is known but not
+  cut. **Things stay inside their slots:** every slot draws a thing's icon through `itemIcon` (clipped to the slot: the bag, the
+  bars, the gear slots, the station strip). **A station's "Ready" strip is an inventory row**: eight boxed slots like the chest's,
+  click to take. **Cancel:** when something is on the way, a Cancel box beside Craft takes the last queued one off (the hearth's,
+  the furnace's or the hero's queue) and gives its materials back into the bag, or onto the ground when it is full (`infoCancel`,
+  `refund`). Queues were already capped by what you can pay (`pay` on every press).
 - **HUD bars and the stats board (2026-10-05):** the health and stamina bars are small (60 units wide, the stamina bar
   longer with a meal) with the numbers beside them ("72 / 100"), drawn in `drawHud` in `src/combat.js`. The character
   panel has two tabs, **Gear | Stats**: the stats page (`statRows`) lists health, stamina (and how fast it comes
