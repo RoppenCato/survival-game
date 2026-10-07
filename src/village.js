@@ -12,7 +12,8 @@ var DEF = {
   peoplePerHouse: 2.6, outsideShare: 0.4,             // people in a household; how many of them are out walking at a time
   wealthStone: 0.85, wealthLogs: 0.55, wealthPlanks: 0.25,   // the longhouse's walls by wealth (below: wattle); the houses one step poorer
   shinglesAt: 0.8, turfInland: 1, thatchShore: 1,     // roofs: shingles for the rich, turf inland, thatch by the sea
-  palisadeAt: 0.7, drystoneAt: 0.5, railAt: 0.2,      // the fence by wealth: rail (poor), wattle, dry stone, palisade
+  palisadeAt: 0.7, drystoneAt: 0.5, railAt: 0.2,      // the fence by wealth: rail (poor), wattle, dry stone; from palisadeAt a round wall of stakes with banners at the gate
+  stakeStep: 11, banners: 2, firePit: 1, logSeats: 4, doorProps: 1.4, pathDoor: 5, pathYard: 9,
   fields: 1, fieldStrips: 3, sacred: 1, midden: 1, graves: 1,
   chestLoot: 1, cellarAt: 0.3, storeLoot: 1,           // finds: a chest in every house, a cellar in one house at this wealth and above
   yardEarth: 1, pathGravel: 1, pathEarth: 1, mossEdge: 1,
@@ -94,11 +95,12 @@ function make(seed, site, opts) {
   var L0 = V.lots[0];
   for (oi = 0; oi < outs.length && placedOut < nOut; oi++) {
     var id = outs[oi], os = size(id), lot2;
+    var rx0 = 1e9, ry0 = 1e9, rx1 = -1e9, ry1 = -1e9; V.lots.forEach(function (l) { rx0 = Math.min(rx0, l.x); ry0 = Math.min(ry0, l.y); rx1 = Math.max(rx1, l.x + l.w); ry1 = Math.max(ry1, l.y + l.h); });   // the ring so far: outbuildings hug it
     if (id === 'store') lot2 = { x: L0.x + L0.w + G.gap + Math.floor(R() * 2), y: L0.y - 1 + Math.floor(R() * 2), door: 's' };
     else if (id === 'byre') { var hh = V.lots.filter(function (l) { return l.id === 'house'; }), nb = hh.length ? hh[Math.floor(R() * hh.length)] : L0; lot2 = { x: nb.x + (nb.slot === 'w' || nb.slot === 'sw' || nb.slot === 'nw' ? -os.w - G.gap : nb.w + G.gap), y: nb.y, door: 's' }; }
-    else if (id === 'smithy') lot2 = { x: R() < 0.5 ? tx + 1 : tx + w - os.w - 1, y: ty + h - os.h - 2, door: 's' };
-    else if (id === 'pit') lot2 = { x: tx + 1 + Math.floor(R() * 2), y: yy + Math.floor(R() * yh), door: 'e' };
-    else if (id === 'bath') lot2 = shore === 'e' ? { x: tx + w - os.w - 1, y: yy + yh + 1, door: 'w' } : { x: tx + w - os.w - 2, y: ty + 1, door: 's' };
+    else if (id === 'smithy') lot2 = { x: R() < 0.5 ? rx0 - os.w - G.gap : rx1 + G.gap, y: ry1 - os.h, door: 's' };
+    else if (id === 'pit') lot2 = { x: rx0 - os.w - G.gap, y: yy + Math.floor(R() * yh), door: 'e' };
+    else if (id === 'bath') lot2 = shore === 'e' ? { x: rx1 + G.gap, y: yy + yh, door: 'w' } : { x: rx1 - os.w, y: ry0 - os.h - G.gap, door: 's' };
     else if (id === 'boathouse') lot2 = shore === 's' ? { x: yx + Math.floor(R() * 3) - 1, y: ty + h - os.h - 1, door: 's' } : shore === 'n' ? { x: yx, y: ty + 1, door: 's' } : shore === 'e' ? { x: tx + w - os.w - 1, y: yy + yh + 2, door: 's' } : { x: tx + 1, y: yy + yh + 2, door: 's' };
     lot2.w = os.w; lot2.h = os.h; lot2.id = id; lot2.slot = 'out';
     if (tryPlace(lot2, 2)) placedOut++;
@@ -146,28 +148,43 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'pit') { p = tile(l.x, l.y); item('campfire', p[0] + 10, p[1] + 6, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('dryingRack', p[0], p[1] - 4); }
     else if (BUILD[l.id].inside === 'boat') { V.finds.push({ kind: 'boat', x: tile(l.x + l.w / 2, l.y + 1)[0], y: tile(l.x, l.y + 1)[1], lot: l }); p = tile(l.x, l.y); item('barrel', p[0] + 6, p[1] + 2, { loot: { fiber: 4 } }); }
     // things by the door: a woodpile, a barrel, a bench, bee skeps, a cart
-    var dp = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1), pool = ['woodpile', 'barrel', 'bench', 'beeSkeps', 'cart', 'dryingRack', 'crate'];
-    if (R() < 0.75) { var by = pool[Math.floor(R() * pool.length)], off = l.door === 's' ? [T * 1.3 * (R() < 0.5 ? 1 : -1), 8] : l.door === 'e' ? [10, T * 1.1] : l.door === 'w' ? [-10, T * 1.1] : [T * 1.3, -8]; V.props.push({ name: by, x: dp[0] + off[0], y: dp[1] + off[1], loot: by === 'barrel' || by === 'crate' ? { berries: 2, fiber: 2 } : null }); }
+    var dp = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1), pool = ['woodpile', 'barrel', 'bench', 'beeSkeps', 'cart', 'dryingRack', 'crate', 'logSeat', 'trough', 'haystack'];
+    V.paints.push({ x: dp[0], y: dp[1] + (l.door === 's' ? 6 : 0), r: 7, kind: 1 });                                        // a worn step at every door
+    var nd = Math.round(G.doorProps + (R() - 0.5)), di2, used = {};
+    for (di2 = 0; di2 < nd; di2++) { var by = pool[Math.floor(R() * pool.length)]; if (used[by]) continue; used[by] = 1; var sideS = di2 % 2 ? 1 : -1, off = l.door === 's' ? [T * (1.2 + 0.5 * di2) * sideS, 6 + R() * 6] : l.door === 'e' ? [10 + R() * 8, T * (1.0 + 0.6 * di2) * sideS] : l.door === 'w' ? [-10 - R() * 8, T * (1.0 + 0.6 * di2) * sideS] : [T * (1.2 + 0.5 * di2) * sideS, -8]; V.props.push({ name: by, x: dp[0] + off[0], y: dp[1] + off[1], loot: by === 'barrel' || by === 'crate' ? { berries: 2, fiber: 2 } : null }); }
+    if (l.id === big) { var wp = l.door === 's' ? tile(l.x + l.w, l.y + l.h) : tile(l.x - 1, l.y + l.h); V.props.push({ name: 'woodpile', x: wp[0] + 6, y: wp[1] + 4 }); V.props.push({ name: 'choppingBlock', x: wp[0] + 30, y: wp[1] + 10 }); }
   }
   V.lots.forEach(pieces);
   // the well in the yard (a fire pit for the poor), the finds, the fence and gate, the fields, the sacred, the midden
-  var wc = tile(yx + Math.floor(yw / 2), yy + Math.floor(yh / 2));
-  if (wealth > 0.3) item('woodenWell', wc[0], wc[1] + 4); else item('campfire', wc[0], wc[1] + 4, { hearth: true, light: 1 });
+  var wc = tile(yx + Math.floor(yw / 2), yy + Math.floor(yh / 2)), fc = [wc[0] - T * 0.2, wc[1] + T * 0.2];                                                             // the fire in the middle of the yard, the well off to the north-east
+  if (wealth > 0.3) item('woodenWell', wc[0] + T * (yw >= 7 ? 1.9 : 1.4), wc[1] - T * (yh >= 5 ? 1.1 : 0.7));
+  if (G.firePit) { item('firePit', fc[0], fc[1], { hearth: true, light: 1, pit: true }); var ns = Math.round(G.logSeats), si2; for (si2 = 0; si2 < ns; si2++) { var sa = -0.9 + si2 * (1.8 / Math.max(1, ns - 1)) + 1.57, sx2 = fc[0] + Math.cos(sa) * 38, sy2 = fc[1] + Math.sin(sa) * 24 + 8; if (Math.abs(Math.cos(sa)) < 0.35 && Math.sin(sa) < 0) continue; item('logSeat', sx2, sy2, { seat: true, fire: true }); } V.finds.push({ kind: 'fire', x: fc[0], y: fc[1] }); }
+  else item('campfire', fc[0], fc[1], { hearth: true, light: 1 });
+  if (yw >= 7 && R() < 0.6) V.props.push({ name: 'cart', x: yx * T + T * 0.9, y: (yy + yh) * T - T * 0.5 });
   var homes = V.lots.filter(function (l) { return l.id === big || l.id === 'house'; });
   if (wealth >= G.cellarAt && homes.length) { var cl = homes[Math.floor(R() * homes.length)], cp = tile(cl.x + Math.floor(cl.w / 2), cl.y + cl.h - 1); item('cellarDoor', cp[0], cp[1] - 2, { cellar: true, store: true, loot: { coin: 6 + Math.floor(wealth * 10), leather: 3, copper: 2 }, lore: 'Someone kept this well hidden.' }); V.finds.push({ kind: 'cellar', x: cp[0], y: cp[1] }); }
   var ex0 = 1e9, ey0 = 1e9, ex1 = -1e9, ey1 = -1e9; V.lots.forEach(function (l) { ex0 = Math.min(ex0, l.x); ey0 = Math.min(ey0, l.y); ex1 = Math.max(ex1, l.x + l.w); ey1 = Math.max(ey1, l.y + l.h); });
   ex0 = Math.max(tx, ex0 - G.fenceGap); ey0 = Math.max(ty, ey0 - G.fenceGap); ex1 = Math.min(tx + w, ex1 + G.fenceGap); ey1 = Math.min(ty + h, ey1 + G.fenceGap);
-  var gateX = yx + Math.floor(yw / 2), fk = fenceKind, fm = fk === 'drystone' ? 3 : (fk === 'palisade' ? 0 : 2), x, y;
-  for (x = ex0; x < ex1; x++) { if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if (x === gateX) H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
-  for (y = ey0; y < ey1; y++) { if (!(V.ruin && R() < 0.4) && shore !== 'w') Vw(ex0, y, fk, fm); if (!(V.ruin && R() < 0.4) && shore !== 'e') Vw(ex1, y, fk, fm); }
-  V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: fk, gate: gateX };
+  var gateX = yx + Math.floor(yw / 2), fk = fenceKind, fm = fk === 'drystone' ? 3 : 2, x, y;
+  if (fk === 'palisade') {                             // a round wall of sharpened stakes round the whole ring, a gap for the gate on the path, banners either side
+    var ecx = (ex0 + ex1) / 2 * T, ecy = (ey0 + ey1) / 2 * T, hw2 = Math.max(1, (ex1 - ex0) / 2 * T), hh2 = Math.max(1, (ey1 - ey0) / 2 * T), kk = 1;
+    V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it
+    var erx = hw2 * kk + T * 0.8, ery = hh2 * kk + T * 0.8, per = 6.283 * Math.sqrt((erx * erx + ery * ery) / 2), nst = Math.max(12, Math.round(per / G.stakeStep)), gpt = tile(gateX, ey1), gateA = Math.atan2((gpt[1] + T - ecy) / ery, (gpt[0] - ecx) / erx), k2;
+    for (k2 = 0; k2 < nst; k2++) { var a2 = k2 / nst * 6.283, px = ecx + Math.cos(a2) * erx, py = ecy + Math.sin(a2) * ery, da = Math.abs(Math.atan2(Math.sin(a2 - gateA), Math.cos(a2 - gateA))); if (da < 0.16) continue; if (shore === 's' && Math.sin(a2) > 0.75) continue; if (V.ruin && R() < 0.35) continue; V.props.push({ name: 'stake', x: px, y: py, solid: 5 }); }
+    for (k2 = 0; k2 < (shore === 's' ? 0 : Math.round(G.banners)); k2++) { var ba = gateA + (k2 % 2 ? 1 : -1) * 0.2; V.props.push({ name: 'banner', x: ecx + Math.cos(ba) * erx, y: ecy + Math.sin(ba) * ery + 2, solid: 3 }); }
+    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery };
+  } else {
+    for (x = ex0; x < ex1; x++) { if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if (x === gateX) H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
+    for (y = ey0; y < ey1; y++) { if (!(V.ruin && R() < 0.4) && shore !== 'w') Vw(ex0, y, fk, fm); if (!(V.ruin && R() < 0.4) && shore !== 'e') Vw(ex1, y, fk, fm); }
+    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: fk, gate: gateX };
+  }
   // the ground: the yard trodden to earth, gravel from the gate to the well and to the shore, earth from every door, moss at the back
   function dab(x, y, r, kind) { V.paints.push({ x: x, y: y, r: r, kind: kind }); }
-  function strokeTo(a, b, r, kind) { var n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / (r * 0.6))), i; for (i = 0; i <= n; i++) { var u = i / n; dab(a[0] + (b[0] - a[0]) * u + (R() - 0.5) * 6, a[1] + (b[1] - a[1]) * u + (R() - 0.5) * 6, r * (0.85 + R() * 0.3), kind); } }
-  if (G.yardEarth) { for (var yi = 0; yi < 7; yi++) dab(wc[0] + (R() - 0.5) * yw * T * 0.7, wc[1] + (R() - 0.5) * yh * T * 0.7, 18 + R() * 14, 2); }
-  var gate = tile(gateX, ey1); if (G.pathGravel) strokeTo([gate[0], gate[1] + 24], wc, 12, 1);
-  if (shore && G.pathGravel) { var sh = shore === 's' ? [wc[0], (ty + h) * T] : shore === 'n' ? [wc[0], ty * T] : shore === 'e' ? [(tx + w) * T, wc[1]] : [tx * T, wc[1]]; strokeTo(wc, sh, 11, 1); }
-  if (G.pathEarth) V.lots.forEach(function (l) { var d = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1); strokeTo(d, wc, 9, 2); });
+  function strokeTo(a, b, r, kind, r2) { var n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / (r * 0.6))), i; for (i = 0; i <= n; i++) { var u = i / n, rr = r2 == null ? r : r + (r2 - r) * u; dab(a[0] + (b[0] - a[0]) * u + (R() - 0.5) * 4, a[1] + (b[1] - a[1]) * u + (R() - 0.5) * 4, rr * (0.85 + R() * 0.3), kind); } }
+  if (G.yardEarth) { for (var yi = 0; yi < 5; yi++) dab(wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6, 12 + R() * 8, 2); }
+  var gate = tile(gateX, ey1); if (G.pathGravel) strokeTo([gate[0], gate[1] + 24], wc, 8, 1, G.pathYard * 0.8);
+  if (shore && G.pathGravel) { var sh = shore === 's' ? [wc[0], (ty + h) * T] : shore === 'n' ? [wc[0], ty * T] : shore === 'e' ? [(tx + w) * T, wc[1]] : [tx * T, wc[1]]; strokeTo(wc, sh, 9, 1, 7); }
+  if (G.pathEarth) V.lots.forEach(function (l) { var d = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1); strokeTo(d, wc, G.pathDoor, 2, G.pathYard); });
   if (G.mossEdge) { dab(ex0 * T + 10, ey0 * T + 10, 20, 3); dab(ex1 * T - 10, ey0 * T + 16, 16, 3); dab(ex0 * T + 14, ey1 * T - 12, 14, 3); }
   // the fields outside the fence, the sacred stone at a corner, the midden behind, a grave beyond
   if (G.fields && A.houses[1] > 0 && !V.ruin) { var fx = shore === 'e' ? ex0 - 6 : ex1 + 2, fy0 = ey0 + 1, strips = G.fieldStrips; if (fx > tx && fx + 4 < tx + w) for (var s2 = 0; s2 < strips; s2++) { var sy = fy0 + s2 * 3; if (sy + 2 > ty + h) break; strokeTo([(fx + 0.5) * T, (sy + 1) * T], [(fx + 3.5) * T, (sy + 1) * T], 10, 2); if (s2 === 1) V.props.push({ name: 'scarecrow', x: (fx + 2) * T, y: (sy + 0.3) * T }); } V.props.push({ name: 'haystack', x: (fx + 2) * T, y: (fy0 + strips * 3 + 0.5) * T }); }
@@ -181,7 +198,9 @@ function make(seed, site, opts) {
     var door = home.door === 's' ? tile(home.dx, home.y + home.h + 1) : home.door === 'e' ? tile(home.x + home.w + 1, home.dy) : home.door === 'w' ? tile(home.x - 2, home.dy) : tile(home.dx, home.y - 2);
     var role = shore && R() < 0.4 ? 'fisher' : roles[Math.floor(R() * roles.length)]; if (role === 'smith' && !V.lots.some(function (l) { return l.id === 'smithy'; })) role = 'farmer';
     var work = role === 'smith' ? V.lots.filter(function (l) { return l.id === 'smithy'; })[0] : role === 'fisher' && shore ? null : V.lots.filter(function (l) { return l.id === 'byre' || l.id === 'store'; })[0];
+    var seatsV = V.items.filter(function (it) { return it.name === 'logSeat'; }), seatV = seatsV.length ? seatsV[pi % seatsV.length] : null;
     var spots = [door, [wc[0] + (R() - 0.5) * 30, wc[1] + 20 + (R() - 0.5) * 20], [wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6]];
+    if (seatV) spots.push([seatV.x, seatV.y + 1.5, 'sit']);
     if (work) spots.push(tile(work.dx >= 0 ? work.dx : work.x, work.y + work.h + 1)); else if (role === 'fisher') spots.push(shore === 's' ? [wc[0], (ty + h - 1) * T] : shore === 'n' ? [wc[0], (ty + 1) * T] : shore === 'e' ? [(tx + w - 1) * T, wc[1]] : [(tx + 1) * T, wc[1]]);
     V.folk.push({ name: NAMES[Math.floor(R() * NAMES.length)], role: role, home: [home.x, home.y], x: door[0], y: door[1], spots: spots, lines: ROLES[role], female: R() < 0.5, out: R() < G.outsideShare });
   }
@@ -204,10 +223,10 @@ function draw(c, V, env, clock) {
   for (k in V.V) { q = k.split(','); (function (x, y, e) { items.push({ y: (y + 1) * T - 1, f: function () { Build.drawV(c, x, y, e, false, V.V[key(x, y + 1)] || false, Build.cfg({})); } }); })(+q[0], +q[1], V.V[k]); }
   ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id] }), 0); } }); });
   V.items.concat(V.props).forEach(function (it) { if (!kit.PROPS[it.name]) return; items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, 3), s = SIZE_OF(kit, it.name); c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } }); });
-  if (env.lib) V.folk.forEach(function (f) { if (!f.out) return; items.push({ y: f.y, f: function () { var F = env.lib.makeFigure(env.lib.folkSpec('villager', rngOf(f.name.length * 7 + f.x))); env.lib.figureD(c, f.x, f.y * K, 'down', { phase: 0, amt: 0, t: clock || 0, lx: 0, ly: 0, blink: 0, sq: 0 }, null, F); } }); });
+  if (env.lib) V.folk.forEach(function (f, fi) { if (!f.out) return; var sitSpot = f.spots.filter(function (q) { return q[2] === 'sit'; })[0], atFire = sitSpot && fi % 3 === 0, px = atFire ? sitSpot[0] : f.x, py = atFire ? sitSpot[1] : f.y; items.push({ y: py, f: function () { var F = env.lib.makeFigure(env.lib.folkSpec('villager', rngOf(f.name.length * 7 + f.x))); env.lib.figureD(c, px, py * K, 'down', { phase: 0, amt: 0, t: clock || 0, lx: 0, ly: 0, blink: 0, sq: 0, sit: atFire ? 1 : 0 }, null, F); } }); });
   items.sort(function (a, b) { return a.y - b.y; }).forEach(function (it) { it.f(); });
 }
-var SIZES = { woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
+var SIZES = { firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
 function SIZE_OF(kit, name) { return SIZES[name] || 1; }
 return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, draw: draw, rng: rngOf, SIZES: SIZES };
 })();

@@ -195,9 +195,17 @@ the text and it is made the default. When a spec's meaning changes, change the s
   palisade, a dry-stone wall, a cellar; fields, the sacred stone, the midden, the grave, the ground paints); `ARCH` the
   archetypes (farmstead, small village, village, chieftain's seat, fishing hamlet, trading post, abandoned) with their counts,
   yard and site sizes; `BUILD` the buildings' inside sizes and what stands in them. `make(seed, site, opts)` grows the ring plan:
-  the yard with the well (a fire pit for the poor), the longhouse (or great hall) north of it facing south, the houses round it
+  the yard with the **fire pit** in its middle (prop `firePit`: a stone ring, a spit, big flames, a hearth and a light) and **log seats**
+  round it (prop `logSeat`, `seat: true`; the villagers sit there, `spots` with `'sit'`, one to a log, and the hero sits with E:
+  `seatFirst` lets a nearer log beat the fire's Cook), the well off to the north-east, the longhouse (or great hall) north of it facing south, the houses round it
   with their doors to the yard (shuffled, some slots open), the outbuildings behind near what they serve (storehouse, byre,
-  smithy, pit-house, bathhouse, a boathouse on the shore), the fence of the wealth's kind with a gate, the fields, the runestone,
+  smithy, pit-house, bathhouse, a boathouse on the shore; hugging the ring so far), **the fence** (Robin, 2026-10-07: a round
+  defensive wall unless the place is small): a low rectangle of rail, wattle or dry stone with a gate for a poor or small place, and
+  from `palisadeAt` (or a seat or trading post) an **oval of sharpened stakes** (prop `stake`, solid, `stakeStep` apart, every
+  building corner inside it, a gap on the path in, open to the sea for a fishing place) with **banner poles** either side of the
+  gate (prop `banner`); a worn gravel step and one or two things (`doorProps`) from a pool at every door, a woodpile with a
+  **chopping block** (prop `choppingBlock`) at the longhouse; paths narrow at the door and wide at the yard (`pathDoor`,
+  `pathYard`); the fields, the runestone,
   the midden, a grave; earth under the yard, gravel from the gate and to the shore, earth from every door, moss at the edges;
   the things inside by building (hearths, beds, chests with loot, crates, benches, a shield rack, a furnace and workbench in the
   smithy, a trough, a hidden **cellar door** in one home with the best stash); the people as households with spots and lines by

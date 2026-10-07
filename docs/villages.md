@@ -21,14 +21,26 @@ outside. The shape comes from how people lived:
 - **Outbuildings** stand back from the yard: a **storehouse on posts** (stabbur; the food up off the ground, away from mice),
   a **byre** with hay, a **smithy** (fire risk: away from the roofs, at the edge), a **bathhouse** by water, a **pit-house**
   sunk half into the ground for weaving and work, a **drying rack** for fish and hides, a **woodpile** under a lean-to.
-- **The well** (or a spring) is in or beside the yard; a **fire pit** stands in the yard of a poorer place.
-- **Fences** mark the infield (tun) from the outfield: a rail or wattle fence with a gate on the path in; a dry-stone wall
-  where stone is near; a **palisade** only for a wealthy or threatened place.
+- **The fire is the middle of the village** (Robin, 2026-10-07: more interesting fires, logs to sit round them). A **fire pit**
+  stands in the middle of every yard: a wide ring of stones, logs laid across, a spit on two forked sticks, and **logs to sit on**
+  round its south side; the villagers come and sit there, and so can you (E on a log; E stands you up; a log beats the fire's
+  Cook when it is the nearer thing). The **well** stands off to the north-east of the yard in any place with some wealth.
+- **Things to live with** (Robin: a village needs things around it to interact with, so it feels like a living space): a worn
+  step of gravel at every door and one or two things beside it from a pool (a woodpile, a barrel or crate with a little in it,
+  a bench, bee skeps, a cart, a drying rack, a log, a trough, a haystack); a **woodpile with a chopping block** (an axe left in
+  the stump, chips about) at the longhouse's corner; a cart in a corner of a big yard.
+- **Fences** mark the infield (tun) from the outfield (Robin, 2026-10-07: a Viking village has a round defensive wall of
+  stakes unless it is a small, defenceless place): a **small or poor place** has a low rail or wattle fence, or a dry-stone
+  wall where stone is near, in a rectangle with a gate on the path in; a **wealthy place, a chieftain's seat or a trading post**
+  has a **round palisade** of sharpened stakes hugging its buildings in an oval (every building corner inside it), a gap for the
+  gate on the path in and **two banner poles** with pennants either side of the gate; a fishing place leaves the oval open to
+  the sea. The stakes are solid; an abandoned place has gaps in its ring.
 - **The shore**: if the village touches water there is a **boathouse** (naust) with the boat drawn up, a **jetty**, racks of
   nets, and the path from the yard to the shore is the most worn one.
 - **Fields** lie outside the fence on the flattest side: long strips of turned earth with a few rows, a scarecrow, a haystack.
 - **The sacred**: a standing stone or a small shrine at the edge, a grove left standing, a grave mound beyond the fields.
-- **Paths**: trodden earth from every door to the yard, gravel on the busiest (the yard to the gate, the yard to the shore).
+- **Paths**: trodden earth from every door to the yard, narrow at the door and widening at the yard, gravel on the busiest
+  (the yard to the gate, the yard to the shore).
 
 So: a yard, a longhouse on its north side, the other houses round it with their doors to the yard, outbuildings behind,
 fences round it all, the fields and the sacred outside, the boathouse at the shore. Random is **which** of these exist and
@@ -92,19 +104,22 @@ belong, so exploring has a logic ("the storehouse must have the food"):
 
 1. Pick the **archetype** (farmstead, small village, village, chieftain's seat, fishing hamlet, trading post, abandoned),
    the **wealth** (0 to 1) and whether a **shore** touches the site. These set the counts, the materials and the finds.
-2. Lay the **yard** in the middle of the site (its size by archetype) and the **well** or fire pit in it.
+2. Lay the **yard** in the middle of the site (its size by archetype), the **fire pit** with its logs in the middle of it and
+   the **well** off to its north-east.
 3. Fill the **ring of slots** round the yard: north (the longhouse, always), then east, west, south-east, south-west, with
    the houses, shuffled by the seed; some slots stay empty so the ring is never the same.
-4. Fill the **outer ring** with the outbuildings, each near what it serves (the storehouse behind the longhouse, the byre by
-   a house, the smithy at the edge, the boathouse on the shore side), and leave gaps.
-5. Draw the **fence** round the whole with a gate on the path in, the **fields** outside on the flattest side, the **sacred**
+4. Fill the **outer ring** with the outbuildings, each near what it serves and hugging the ring so far (the storehouse behind
+   the longhouse, the byre by a house, the smithy and the pit-house at the ring's edge, the boathouse on the shore side).
+5. Draw the **fence** round the whole (a low rectangle for a small place, the oval of stakes with banners for a rich one) with
+   a gate on the path in, the **fields** outside on the flattest side, the **sacred**
    at a corner, the **midden** behind.
 6. Paint the **ground**: an earth yard, gravel on the main paths, trodden earth from every door, moss at the edges.
 7. Place the **people**, one household per house, with their spots and lines, and the **finds**.
 
 **Visually** every knob has a palette, not a value: materials by wealth (wattle, planks, logs, stone), roofs by place (thatch
 by the sea, turf inland, shingles for the rich), fences (rail, wattle, dry stone, palisade), colours of doors and shields,
-the props round each door (a bench, a barrel, a woodpile, a cart, bee skeps), the size of every building plus or minus a tile.
+the props round each door (a bench, a barrel, a woodpile, a cart, bee skeps, a log, a trough, a haystack), the size of every
+building plus or minus a tile.
 A village is fully described by its **seed, archetype, wealth and shore**, so it is saved as four numbers and regrown the same.
 
 **In code** (`src/village.js`): `Village.DEF` holds every number above; `Village.make(seed, site, opts)` returns the game's own

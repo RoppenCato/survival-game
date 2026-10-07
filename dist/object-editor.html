@@ -3267,6 +3267,52 @@ function waterfallObj(c, K, x, y, seed) {
   for (i = 0; i < 5; i++) { c.save(); c.globalAlpha = 0.22; c.fillStyle = '#e8f4ff'; c.beginPath(); c.ellipse(x + (R() - 0.5) * 36, y - 6 - R() * 10, 12 + R() * 8, 6 + R() * 4, 0, 0, 7); c.fill(); c.restore(); }
   addLight(x, y - 10, 50, 196, 80, 70, 0.4);
 }
+function fillPts(c, pts, col) { path(c, pts); c.fillStyle = col; c.fill(); }   // a plain fill with no line, for details too thin for the ink lines
+function stakeObj(c, K, x, y, seed) {                   // one sharpened log of a round palisade: pale split wood, a bark side, the point cut white
+  gshadow(c, x + 1, y, 6, 2.2, 0.35);
+  shape(c, [[x - 3.6, y], [x - 4, y - 20], [x, y - 28], [x + 4, y - 20], [x + 3.6, y]], K.wood, { seed: seed, size: 'S', sh: 1, hl: 1, rough: 0.3 });
+  fillPts(c, [[x - 2.6, y - 1], [x - 2.9, y - 19], [x - 1, y - 23.5], [x - 0.6, y - 1]], K.trunk.base);
+  fillPts(c, [[x - 2.2, y - 20.5], [x, y - 26], [x + 2.2, y - 20.5]], M(40, 26, 76).base);
+}
+function bannerObj(c, K, x, y, seed) {                  // a tall pole by the gate with a pennant of dyed wool
+  gshadow(c, x + 1, y, 5, 2, 0.3);
+  shape(c, rrPts(x - 1.8, y - 56, 3.6, 56, 1.5), K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.2 });
+  shape(c, [[x + 1.5, y - 55], [x + 22, y - 50], [x + 14, y - 44], [x + 20, y - 38], [x + 1.5, y - 41]], M(mixHue(P.accentHue, 10, 0.4), 55, 40), { seed: seed + 1, size: 'S', sh: 1, rough: 0.4 });
+  line(c, [[x + 3, y - 48], [x + 16, y - 46]], 0.7, 'rgba(35,26,22,0.35)', false);
+  shape(c, ellPts(x, y - 57, 2.4, 2.4, 8), K.brass, { seed: seed + 2, size: 'S', sh: 0.8, rough: 0.2 });
+}
+function logSeatObj(c, K, x, y, seed) {                 // a log lying on the ground to sit on: the top split flat and worn pale, bark below, a cut end
+  gshadow(c, x, y + 1, 17, 4, 0.35);
+  shape(c, rrPts(x - 16, y - 10, 32, 10, 4.5), K.trunkL, { seed: seed, size: 'S', sh: 1, hl: 1, rough: 0.3 });
+  fillPts(c, [[x - 14, y - 9], [x + 14, y - 9], [x + 13.5, y - 5.5], [x - 13.5, y - 5.5]], M(36, 30, 64).base);
+  fillPts(c, [[x - 12, y - 7.6], [x + 12, y - 7.6], [x + 12, y - 7], [x - 12, y - 7]], 'rgba(60,40,24,0.3)');
+  fillPts(c, ellPts(x + 16, y - 5, 2.6, 4.6, 10), M(38, 28, 70).base);
+  c.strokeStyle = 'rgba(70,45,25,0.5)'; c.lineWidth = 0.6; c.beginPath(); c.arc(x + 16, y - 5, 1.6, 0, 7); c.stroke();
+}
+function firePitObj(c, K, x, y, seed) {                 // the village fire: a wide ring of stones, logs across, big flames, a spit on two forked sticks
+  var i;
+  gshadow(c, x, y, 30, 8, 0.4);
+  shape(c, ellPts(x, y - 3, 22, 9, 12), K.ashM, { seed: seed + 30, size: 'S', flat: true, rough: 0.4 });
+  for (i = 0; i < 12; i++) { var a = i / 12 * 6.28; shape(c, ellPts(x + Math.cos(a) * 22, y - 3 + Math.sin(a) * 8.5, 4.4, 3.2, 8), K.rockC, { seed: seed + i, size: 'S', sh: 1, rough: 0.3 }); }
+  [[-10, -3, 0.5], [9, -4, -0.45], [0, -2, 2.6]].forEach(function (l, k) { c.save(); c.translate(x + l[0], y + l[1]); c.rotate(l[2]); shape(c, rrPts(-12, -3, 24, 6, 3), K.wood, { seed: seed + 9 + k, size: 'S', sh: 1, rough: 0.3 }); c.restore(); });
+  var fl = [[x - 9, y - 4], [x - 11, y - 16], [x - 4, y - 30], [x + 1, y - 18], [x + 4, y - 36], [x + 9, y - 16], [x + 11, y - 4]];
+  shape(c, fl, M(24, 100, 52), { seed: seed + 20, size: 'S', flat: true, rough: 0.4 });
+  shape(c, [[x - 5, y - 4], [x - 6, y - 13], [x, y - 22], [x + 4, y - 13], [x + 5, y - 4]], M(46, 100, 66), { seed: seed + 21, size: 'S', flat: true, rough: 0.3 });
+  [[-26, 0], [26, 0]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.5, y - 34, 3, 34, 1.2), K.wood, { seed: seed + 40 + k, size: 'S', sh: 1, rough: 0.2 }); line(c, [[x + q[0] - 4, y - 38], [x + q[0], y - 33], [x + q[0] + 4, y - 38]], 2.2, K.wood.base, false); });
+  shape(c, rrPts(x - 27, y - 36, 54, 2.6, 1), K.wood, { seed: seed + 42, size: 'S', sh: 0.5, rough: 0.2 });
+  addLight(x, y - 14, 170 + 60 * P.glow, 28, 100, 58, 1.2);
+}
+function choppingBlockObj(c, K, x, y, seed) {           // a stump to split wood on, an axe stuck in it, chips about
+  gshadow(c, x, y, 12, 4.5, 0.35);
+  shape(c, rrPts(x - 9, y - 15, 18, 15, 2.5), K.trunkL, { seed: seed, size: 'S', sh: 1, hl: 1, rough: 0.3 });
+  fillPts(c, ellPts(x, y - 15, 9, 3.8, 12), M(38, 30, 68).base);
+  c.strokeStyle = 'rgba(70,45,25,0.45)'; c.lineWidth = 0.6; c.beginPath(); c.ellipse(x, y - 15, 5, 2, 0, 0, 7); c.stroke(); c.beginPath(); c.ellipse(x, y - 15, 2.4, 0.9, 0, 0, 7); c.stroke();
+  c.strokeStyle = K.wood.base; c.lineWidth = 2.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(x + 3, y - 16); c.lineTo(x + 12, y - 33); c.stroke();   // the haft
+  c.strokeStyle = OLC; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x + 3, y - 16); c.lineTo(x + 12, y - 33); c.stroke();
+  fillPts(c, [[x - 1, y - 20], [x + 6, y - 22], [x + 7, y - 15], [x + 1, y - 14]], K.iron.base);                                            // the head, bitten into the top
+  fillPts(c, [[x - 1, y - 20], [x + 6, y - 22], [x + 6.5, y - 20], [x - 0.5, y - 18]], K.ironLight.base);
+  [[-13, 2], [-9, 5], [14, 3], [11, 6], [-4, 6]].forEach(function (q, k) { fillPts(c, ellPts(x + q[0], y + q[1], 2.4, 1.2, 6), M(38, 30, 60).base); });
+}
 function campfireObj(c, K, x, y, seed) {
   var i;
   gshadow(c, x, y, 20, 6, 0.4);
@@ -4174,6 +4220,11 @@ var PROPS = {
   scarecrow: { b: [-26, -76, 26, 8], f: function (c, K, s) { scarecrowObj(c, K, 0, 0, s); } },
   waterfall: { b: [-56, -116, 90, 14], f: function (c, K, s) { waterfallObj(c, K, 0, 0, s); } },
   campfire: { b: [-28, -40, 28, 8], f: function (c, K, s) { campfireObj(c, K, 0, 0, s); } },
+  firePit: { b: [-32, -44, 32, 10], f: function (c, K, s) { firePitObj(c, K, 0, 0, s); } },
+  logSeat: { b: [-18, -12, 20, 6], f: function (c, K, s) { logSeatObj(c, K, 0, 0, s); } },
+  stake: { b: [-6, -30, 6, 4], f: function (c, K, s) { stakeObj(c, K, 0, 0, s); } },
+  banner: { b: [-6, -62, 26, 4], f: function (c, K, s) { bannerObj(c, K, 0, 0, s); } },
+  choppingBlock: { b: [-14, -36, 16, 8], f: function (c, K, s) { choppingBlockObj(c, K, 0, 0, s); } },
   dock: { b: [-16, -26, 84, 26], f: function (c, K, s) { dockObj(c, K, 0, 0, s); } },
   flowerBed: { b: [-30, -50, 30, 14], f: function (c, K, s) { flowerBedObj(c, K, 0, 0, s); } },
   tallGrass: { b: [-24, -40, 24, 10], f: function (c, K, s) { tallGrassObj(c, K, 0, 0, s); } },
@@ -4206,7 +4257,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
@@ -5977,7 +6028,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { name: 'Reference set', ground: 'grass', solid: 10, ref: true, list: Object.keys(REF) },
     { name: 'Found in nature', ground: 'grass', solid: 10, list: ['cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
     { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'fireRing', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile'] },
-    { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['longhouse', 'beachedBoat', 'campfire', 'furnace', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'fireplace', 'carverBench', 'deadViking', 'trough', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
+    { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['firePit', 'logSeat', 'stake', 'banner', 'choppingBlock', 'cellarDoor', 'longhouse', 'beachedBoat', 'campfire', 'furnace', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'fireplace', 'carverBench', 'deadViking', 'trough', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
     { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
     { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'flowerBed', 'tallGrass', 'wildHerbs', 'mushrooms', 'mushRing', 'snowBush'] },
     { name: 'Rocks and ground', ground: 'grass', solid: 12, list: ['rock', 'rockFormation', 'cliff', 'rubble', 'log', 'cairn', 'snowRock', 'waterfall'] },
