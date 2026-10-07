@@ -125,6 +125,14 @@ away with another, the panel, the save and reload, the boar's charge, the wolves
 struck, healing by a campfire in the open, Brokk's riposte, the roll. Step 8 (growth) and step 9 (hirdmen's rings) wait.
 Long breath is known but does nothing yet (there is no swimming).
 
+**The bench reworked (2026-10-07, after Robin tried it):** the ring is a flat cuff with knotwork and small round hollows (Robin's
+reference: a flat Viking cuff with patterns, the runes filling the round missing slots), not a horseshoe of beads; a click
+in the list chooses a rune and a "Carve it in" button under the ring does the cutting, so nothing is cut by accident; the
+chosen rune's name, Norse name, side and line sit in a window under the ring; the rite is the blood sacrifice Robin asked
+for (a slash, blood into the bowls at the slab's sides, down the veins, round the band to the hollow, the rune glowing);
+and E picks the carver's bench or the workbench by which one you look at. Robin's "symbols disappeared" was not reproduced;
+the hollows now draw the glyph in the metal's light colour on red, and unknown ids are skipped instead of drawn.
+
 ## Earlier status
 
 Nothing of this is built (2026-10-06). The old rune code (`RS`, the casting cloth, C, the pouch icon, `STONE_POOL`,

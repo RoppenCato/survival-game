@@ -530,6 +530,16 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   the tool, let go: three blows), hearty, hearth warmth (heal by any fire, a rough night rests 2 minutes), long breath (no
   swimming yet). No tiers. The casting cloth, the pouch icon and the C key are gone; `SHOW.runes` is true. Debug:
   `ring()`, `RS()`, `takeRing`, `earnRune`, `cut(id)`, `openRing()`. `tests/ring.js` checks the rules and the hooks.
+  **The bench reworked (2026-10-07, Robin's seven points):** the ring is a **flat cuff** (`Runes.ringD`: a wide band seen a little
+  from above, open at the right, knotwork cut along it, the cut ends showing its thickness) with small **round hollows** for the
+  runes (`Runes.hollowAngle`); a cut rune fills its hollow red with the glyph in the metal, an empty one is a dark recess with
+  its side's letter. The board: tabs and the list on the left (a click **chooses** a rune, nothing is cut by accident), the ring
+  on an **iron slab** with a blood bowl at each side and veins cut from them to the ring's mouth, and under it a **leather window**
+  with the chosen (or hovered) rune's name, Norse name, side and line, the reason it cannot be cut, and a **"Carve it in"**
+  button (Enter too; `ringSel`, `ringBtn`, `cutWhy`). **The rite** (`startCut`, `cutTick`, `ritePh`): the five blood are paid at
+  once with a slash and drops over the slab, the blood runs down both veins to the mouth, round the band
+  (`Runes.ringBloodPath`) to the hollow, fills it, and the rune glows. The carver's bench is a station in `stationNear`
+  (`kind: 'carver'`), so E takes the bench you look at when it stands by a workbench or a fire.
 - **The Book of Beasts** (L, or the small book by the chart): a leather-bound book over a dimmed screen, two
   parchment pages. Left: the beast drawn live by `creatureD`, turning slowly, its name and folk name, a tab row
   of all beasts. Right: lore, strengths, weaknesses, warning sign, drops, where found. A page is earned the first

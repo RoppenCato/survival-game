@@ -3947,29 +3947,55 @@ function stone(c, r, x, y, rad, state) {
   glyph(c, r, rad * 1.15, dim ? 'rgba(200,180,150,0.35)' : (state === 'alive' ? '#7a1e12' : '#2a1c14'));
   c.restore();
 }
-// The ring drawn large: a twisted band, open at the top, its coils as beads along it; a rune cut in a coil shows its glyph
-// reddened, an empty coil is plain, and hov marks one. Returns the coil positions for hit tests.
-function ringD(c, x, y, ring, R, hov, glowIdx, glowT) {
-  var m = METALS[ring ? ring.metal : 'bronze'] || METALS.bronze, n = ring ? ring.coils.length : 0, out = [], i;
-  c.save(); c.translate(x, y); c.lineCap = 'round';
-  var a0 = -Math.PI * 0.32, a1 = Math.PI * 1.32;                       // the band, open at the top
-  c.strokeStyle = m.dark; c.lineWidth = R * 0.34; c.beginPath(); c.arc(0, 0, R, a0, a1); c.stroke();
-  c.strokeStyle = m.col; c.lineWidth = R * 0.24; c.beginPath(); c.arc(0, 0, R, a0, a1); c.stroke();
-  c.strokeStyle = m.dark; c.lineWidth = R * 0.05; c.setLineDash([R * 0.18, R * 0.14]); c.beginPath(); c.arc(0, 0, R * 1.03, a0, a1); c.stroke(); c.setLineDash([]);   // the twist
-  c.strokeStyle = m.light; c.lineWidth = R * 0.04; c.beginPath(); c.arc(0, 0, R * 0.92, a0 + 0.3, a0 + 1.2); c.stroke();
-  [a0, a1].forEach(function (a) { c.fillStyle = m.col; c.beginPath(); c.arc(Math.cos(a) * R, Math.sin(a) * R, R * 0.19, 0, 7); c.fill(); c.strokeStyle = m.dark; c.lineWidth = 1; c.stroke(); });   // the knobbed ends
+// The ring drawn large: a flat cuff seen a little from above, open at the right, with knotwork cut along the band and
+// round hollows for the runes. A rune cut in a hollow fills it, reddened, with its glyph in the metal; an empty hollow is
+// a dark recess with the first letter of its side. hov marks a hollow, glowIdx/glowT make one glow, fill (0..1) shows
+// blood filling one. Returns the hollow positions for hit tests.
+var RING_A0 = Math.PI * 0.22, RING_A1 = Math.PI * 1.78, RING_SQ = 0.72;
+function ringHollowAngle(n, i) { var lo = RING_A0 + 0.42, hi = RING_A1 - 0.42; return n === 1 ? Math.PI * 1.5 : lo + (hi - lo) * i / (n - 1); }
+function ringD(c, x, y, ring, R, hov, glowIdx, glowT, fill) {
+  var m = METALS[ring ? ring.metal : 'bronze'] || METALS.bronze, n = ring ? ring.coils.length : 0, out = [], i, W = R * 0.42, a0 = RING_A0, a1 = RING_A1, SQ = RING_SQ;
+  c.save(); c.translate(x, y);
+  c.save(); c.scale(1, SQ); c.lineCap = 'butt';
+  c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = W + R * 0.1; c.beginPath(); c.arc(0, R * 0.06, R, a0, a1); c.stroke();   // the shadow under it
+  c.strokeStyle = m.dark; c.lineWidth = W + R * 0.07; c.beginPath(); c.arc(0, 0, R, a0, a1); c.stroke();                  // the dark edge
+  c.strokeStyle = m.col; c.lineWidth = W; c.beginPath(); c.arc(0, 0, R, a0, a1); c.stroke();                               // the band
+  c.strokeStyle = m.light; c.lineWidth = R * 0.035; c.beginPath(); c.arc(0, 0, R + W * 0.42, a0 + 0.1, a1 - 0.1); c.stroke();   // the lit outer rim
+  c.strokeStyle = m.dark; c.lineWidth = R * 0.03; c.beginPath(); c.arc(0, 0, R - W * 0.42, a0 + 0.1, a1 - 0.1); c.stroke();     // the inner edge
+  // the knotwork: two waves crossing along the band, cut dark with a lit edge below
+  var k, a, steps = 64; c.lineCap = 'round'; c.lineJoin = 'round';
+  [0, Math.PI].forEach(function (ph) {
+    [[m.light, R * 0.05, 0.9], [m.dark, R * 0.035, 0]].forEach(function (st) {
+      c.strokeStyle = st[0]; c.lineWidth = st[1]; c.beginPath();
+      for (k = 0; k <= steps; k++) { a = a0 + 0.18 + (a1 - a0 - 0.36) * k / steps; var rr = R + Math.sin(a * 7 + ph) * W * 0.24 + st[2] * 0.5; var px = Math.cos(a) * rr, py = Math.sin(a) * rr + st[2]; if (k) c.lineTo(px, py); else c.moveTo(px, py); }
+      c.stroke();
+    });
+  });
+  // the cut ends: the band's thickness shows as a lighter face
+  [a0, a1].forEach(function (ea) { c.save(); c.translate(Math.cos(ea) * R, Math.sin(ea) * R); c.rotate(ea); c.fillStyle = m.light; c.fillRect(-R * 0.03, -W / 2, R * 0.06, W); c.strokeStyle = m.dark; c.lineWidth = 0.8; c.strokeRect(-R * 0.03, -W / 2, R * 0.06, W); c.restore(); });
+  c.restore();
+  // the hollows, round, on the band
   for (i = 0; i < n; i++) {
-    var a = a0 + 0.45 + (a1 - a0 - 0.9) * (n === 1 ? 0.5 : i / (n - 1)), cx = Math.cos(a) * R, cy = Math.sin(a) * R, cr = R * 0.2, cl = ring.coils[i];
-    out.push({ i: i, x: x + cx, y: y + cy, r: cr * 1.4 });
-    if (glowIdx === i && glowT > 0) { c.fillStyle = 'rgba(255,214,90,' + Math.min(0.7, glowT * 0.7) + ')'; c.beginPath(); c.arc(cx, cy, cr * (1.8 + glowT * 0.6), 0, 7); c.fill(); }
-    c.fillStyle = cl.id ? m.light : m.col; c.beginPath(); c.arc(cx, cy, cr, 0, 7); c.fill(); c.strokeStyle = hov === i ? '#ffd34d' : m.dark; c.lineWidth = hov === i ? 1.6 : 1; c.stroke();
-    if (cl.id) { glyph(c, BY[cl.id], cr * 1.3, '#8a1e12', Math.max(0.9, cr * 0.22)); }
-    else { c.font = '600 ' + Math.max(5, cr * 0.9) + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = m.dark; c.fillText(SIDE_NAMES[cl.side][0], cx, cy + cr * 0.33); }
+    a = ringHollowAngle(n, i); var cx = Math.cos(a) * R, cy = Math.sin(a) * R * SQ, cr = W * 0.38, cl = ring.coils[i], on = !!cl.id && !!BY[cl.id];
+    out.push({ i: i, x: x + cx, y: y + cy, r: cr * 1.5 });
+    if (glowIdx === i && glowT > 0) { c.fillStyle = 'rgba(255,214,90,' + Math.min(0.7, glowT * 0.7) + ')'; c.beginPath(); c.arc(cx, cy, cr * (1.9 + glowT * 0.6), 0, 7); c.fill(); }
+    c.fillStyle = m.dark; c.beginPath(); c.arc(cx, cy + 0.4, cr * 1.18, 0, 7); c.fill();                                     // the rim
+    c.fillStyle = on ? '#7a1e12' : '#241610'; c.beginPath(); c.arc(cx, cy, cr, 0, 7); c.fill();                            // the hollow
+    if (!on && glowIdx === i && fill > 0) { c.save(); c.beginPath(); c.arc(cx, cy, cr, 0, 7); c.clip(); c.fillStyle = '#9a2416'; c.fillRect(cx - cr, cy + cr - fill * cr * 2, cr * 2, cr * 2); c.restore(); }
+    c.strokeStyle = hov === i ? '#ffd34d' : m.light; c.lineWidth = hov === i ? 1.4 : Math.max(0.5, cr * 0.1); c.beginPath(); c.arc(cx, cy, cr, 0, 7); c.stroke();
+    if (on) glyph(c, BY[cl.id], cr * 1.35, m.light, Math.max(0.9, cr * 0.2));
+    else { c.font = '600 ' + Math.max(5, cr * 0.95) + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(255,220,170,0.28)'; c.fillText(SIDE_NAMES[cl.side][0], cx, cy + cr * 0.35); }
   }
   c.restore();
   return out;
 }
-return { LIST: LIST, BY: BY, SIDES: SIDES, SIDE_NAMES: SIDE_NAMES, METALS: METALS, METAL_ORDER: METAL_ORDER, newRing: newRing, coilOf: coilOf, alive: alive, coilFor: coilFor, canCut: canCut, cut: cut, file: file, glyph: glyph, stone: stone, ringD: ringD };
+// the points of the path blood takes to a hollow: along the top of the band from the mouth (the ring's top) to the hollow
+function ringBloodPath(x, y, ring, R, idx) {
+  var n = ring ? ring.coils.length : 0, pts = [], top = Math.PI * 1.5, h = ringHollowAngle(n, idx), k, steps = 24;
+  for (k = 0; k <= steps; k++) { var a = top + (h - top) * k / steps; pts.push([x + Math.cos(a) * R, y + Math.sin(a) * R * RING_SQ]); }
+  return pts;
+}
+return { LIST: LIST, BY: BY, SIDES: SIDES, SIDE_NAMES: SIDE_NAMES, METALS: METALS, METAL_ORDER: METAL_ORDER, newRing: newRing, coilOf: coilOf, alive: alive, coilFor: coilFor, canCut: canCut, cut: cut, file: file, glyph: glyph, stone: stone, ringD: ringD, ringBloodPath: ringBloodPath, hollowAngle: ringHollowAngle };
 })();
 if (typeof module !== 'undefined') module.exports = Runes;
 
@@ -8064,7 +8090,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var best = null, bs = 1e9;
     function q(it, kind, r) { var d = Math.hypot(P.x - it.x, P.y - it.y); if (d >= r) return; var sc = facingScore(P, it.x, it.y); if (sc < bs) { bs = sc; best = { kind: kind, it: it }; } }
     if (hearth) q(hearth, 'hearth', 50);
-    B.items.forEach(function (it) { if (!sameLvl(it)) return; if (isHearth(it)) q(it, 'hearth', 50); else if (it.bench) q(it, 'bench', 56); });
+    B.items.forEach(function (it) { if (!sameLvl(it)) return; if (isHearth(it)) q(it, 'hearth', 50); else if (it.bench) q(it, 'bench', 56); else if (it.carver) q(it, 'carver', 56); });
     return best;
   }
   function nearHearth(P) { var s = stationNear(P); return !!s && s.kind === 'hearth'; }
@@ -8735,53 +8761,103 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function riteTick(dt) { if (rite) { rite.t += dt; if (rite.t > 2.8) rite = null; } if (ringGlow.t > 0) ringGlow.t -= dt; }
   /* the carver's bench: E at one (under a roof) opens the ring board: the known runes by side on the left, the ring on the
      right. Click a rune: a work bar, five health, and it is cut into its side's coil, filing away what was there. */
-  var ringOpen = false, ringTab = 'hand', cutting = null, CUT_T = 4, ringBoard = { x: 64, y: 28, w: 272, h: 180 }, ringStation = null;
-  function carverNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.carver && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 56) return it; } return null; }
-  function openRing(it) { ringOpen = true; ringStation = it; invOpen = false; menu = null; bookOpen = false; mapOpen = false; var first = Runes.LIST.filter(function (r) { return RS.learnt[r.id]; })[0]; if (first && !Runes.LIST.some(function (r) { return r.side === ringTab && RS.learnt[r.id]; })) ringTab = first.side; }
+  var ringOpen = false, ringTab = 'hand', ringSel = null, cutting = null, CUT_T = 4, ringBoard = { x: 56, y: 22, w: 288, h: 204 }, ringStation = null;
+  var RING_C = { x: 264, y: 96, R: 46 };                      // where the ring lies on the slab
+  function carverNear(P) { var s = stationNear(P); return s && s.kind === 'carver' ? s.it : null; }
+  function openRing(it) { ringOpen = true; ringStation = it; invOpen = false; menu = null; bookOpen = false; mapOpen = false; var first = Runes.LIST.filter(function (r) { return RS.learnt[r.id]; })[0]; if (first && !Runes.LIST.some(function (r) { return r.side === ringTab && RS.learnt[r.id]; })) ringTab = first.side; ringSelFix(); }
+  function ringSelFix() { var rows = ringRows(); if (!rows.some(function (q) { return q.r.id === ringSel; })) ringSel = rows.length ? rows[0].r.id : null; }
   function ringRows() { var bx = ringBoard.x, by = ringBoard.y, rows = [], list = Runes.LIST.filter(function (r) { return r.side === ringTab && RS.learnt[r.id]; }); list.forEach(function (r, k) { rows.push({ r: r, x: bx + 8, y: by + 38 + k * 22, w: 118, h: 20 }); }); return rows; }
   function ringTabs() { var bx = ringBoard.x, by = ringBoard.y; return Runes.SIDES.map(function (sd, k) { return { side: sd, x: bx + 8 + k * 30, y: by + 20, w: 28, h: 12 }; }); }
-  function ringRowHit() { if (!mouseS) return null; var rows = ringRows(); for (var i = 0; i < rows.length; i++) { var r = rows[i]; if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return r; } return null; }
-  function ringTabHit() { if (!mouseS) return null; var tabs = ringTabs(); for (var i = 0; i < tabs.length; i++) { var t = tabs[i]; if (mouseS.x >= t.x && mouseS.x <= t.x + t.w && mouseS.y >= t.y && mouseS.y <= t.y + t.h) return t; } return null; }
-  function startCut(id) { if (cutting || !ring || !Runes.canCut(ring, id, RS.learnt)) return false; if (ringStation && !benchRoofed(ringStation)) { toast('The bench needs a roof over it'); return false; } if (hero().hp <= 6) { toast('Too little blood left for it'); return false; } cutting = { id: id, t: 0 }; sfx('pick'); return true; }
+  function ringBtn() { var bx = ringBoard.x, by = ringBoard.y; return { x: bx + ringBoard.w - 70, y: by + ringBoard.h - 24, w: 62, h: 14 }; }
+  function inBox(b) { return !!mouseS && mouseS.x >= b.x && mouseS.x <= b.x + b.w && mouseS.y >= b.y && mouseS.y <= b.y + b.h; }
+  function ringRowHit() { var rows = ringRows(); for (var i = 0; i < rows.length; i++) if (inBox(rows[i])) return rows[i]; return null; }
+  function ringTabHit() { var tabs = ringTabs(); for (var i = 0; i < tabs.length; i++) if (inBox(tabs[i])) return tabs[i]; return null; }
+  function ringCoils() { return ring ? ring.coils.map(function (cl, i) { var a = Runes.hollowAngle(ring.coils.length, i); return { i: i, x: RING_C.x + Math.cos(a) * RING_C.R, y: RING_C.y + Math.sin(a) * RING_C.R * 0.72, r: RING_C.R * 0.42 * 0.38 * 1.5 }; }) : []; }
+  function ringCoilHit() { var cs = ringCoils(); for (var i = 0; i < cs.length; i++) if (mouseS && Math.hypot(mouseS.x - cs[i].x, mouseS.y - cs[i].y) < cs[i].r) return cs[i]; return null; }
+  // why the chosen rune cannot be cut now, or '' when it can
+  function cutWhy(id) {
+    if (!ring) return 'No ring on your arm'; if (!id) return ''; if (inUse(id)) return 'On the ring'; if (Runes.coilFor(ring, id) < 0) return 'The ring has no ' + Runes.BY[id].side + ' hollow';
+    if (ringStation && !benchRoofed(ringStation)) return 'The bench needs a roof over it'; if (hero().hp <= 6) return 'Too little blood left for it'; if (cutting) return 'Wait for the blood'; return '';
+  }
+  // the sacrifice is made at once (five blood), then the blood runs down the veins of the slab and round the band to the
+  // hollow, and the rune is cut when it gets there
+  function startCut(id) { if (cutting || !ring || !Runes.canCut(ring, id, RS.learnt) || cutWhy(id)) return false; var P = hero(); P.hp = Math.max(1, P.hp - 5); P.flash = 0.6; cutting = { id: id, t: 0, i: Runes.coilFor(ring, id) }; sfx('hurt'); return true; }
   function cutTick(dt) {
     if (!cutting) return; var P = hero();
     if (!ringOpen || !ringStation || Math.hypot(P.x - ringStation.x, P.y - ringStation.y) > 70 || P.dead) { cutting = null; return; }
-    cutting.t += dt; if (cutting.t < CUT_T) return;
+    var was = cutting.t; cutting.t += dt; if (was < 2.2 && cutting.t >= 2.2) sfx('pick'); if (cutting.t < CUT_T) return;
     var i = Runes.cut(ring, cutting.id, RS.learnt); cutting = null; if (i < 0) return;
-    P.hp = Math.max(1, P.hp - 5); ringGlow = { i: i, t: 1.4 }; sfx('craft'); save();
+    ringGlow = { i: i, t: 1.4 }; sfx('craft'); save();
+  }
+  // the phases of the rite from cutting.t: the slash, the veins filling, the run round the band, the hollow filling
+  function ritePh(t) { return { slash: Math.min(1, t / 0.5), vein: Math.max(0, Math.min(1, (t - 0.3) / 1.9)), band: Math.max(0, Math.min(1, (t - 2.2) / 1.2)), fill: Math.max(0, Math.min(1, (t - 3.4) / 0.6)) }; }
+  function veinPts(x0, y0, x1, y1, bulge) { var pts = [], k, cx = (x0 + x1) / 2, cy = Math.min(y0, y1) - bulge; for (k = 0; k <= 24; k++) { var t = k / 24, u = 1 - t; pts.push([u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1]); } return pts; }
+  function strokePts(c, pts, frac) { var n = Math.max(1, Math.round((pts.length - 1) * frac)); if (frac <= 0) return null; c.beginPath(); for (var k = 0; k <= n; k++) { if (k) c.lineTo(pts[k][0], pts[k][1]); else c.moveTo(pts[k][0], pts[k][1]); } c.stroke(); return pts[n]; }
+  // the slab the ring lies on: dark iron with a rim and rivets, a blood bowl at each side and the veins cut from them to the
+  // ring's mouth at its top
+  function drawSlab(c, sx, sy, sw, sh) {
+    c.fillStyle = '#2e2a28'; c.fillRect(sx, sy, sw, sh); c.strokeStyle = '#5a524c'; c.lineWidth = 1.2; c.strokeRect(sx + 1, sy + 1, sw - 2, sh - 2); c.strokeStyle = 'rgba(0,0,0,0.5)'; c.lineWidth = 0.8; c.strokeRect(sx + 3, sy + 3, sw - 6, sh - 6);
+    [[sx + 4, sy + 4], [sx + sw - 4, sy + 4], [sx + 4, sy + sh - 4], [sx + sw - 4, sy + sh - 4]].forEach(function (q) { c.fillStyle = '#8a8078'; c.beginPath(); c.arc(q[0], q[1], 1.3, 0, 7); c.fill(); });
+    for (var k = 0; k < 14; k++) { c.fillStyle = 'rgba(255,255,255,0.03)'; c.beginPath(); c.ellipse(sx + 10 + ((k * 37) % (sw - 20)), sy + 8 + ((k * 53) % (sh - 16)), 6, 2.5, k * 0.7, 0, 7); c.fill(); }
   }
   function drawRingBoard(c) {
     var bx = ringBoard.x, by = ringBoard.y, bw = ringBoard.w, bh = ringBoard.h, P = hero(), i;
     c.save(); c.fillStyle = 'rgba(10,8,6,0.35)'; c.fillRect(0, 0, 400, 250);
-    wood(c, bx, by, bw, bh); leather(c, bx + 134, by + 16, bw - 140, bh - 22);
+    wood(c, bx, by, bw, bh);
     c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('The carver’s bench', bx + 8, by + 12);
     c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'right'; c.fillText(ring ? (Runes.METALS[ring.metal].name + ' ring') : 'No ring on your arm', bx + bw - 8, by + 12);
     var th = ringTabHit(); ringTabs().forEach(function (t) { var on = t.side === ringTab, has = Runes.LIST.some(function (r) { return r.side === t.side && RS.learnt[r.id]; }); c.fillStyle = on ? 'rgba(255,230,180,0.22)' : (th === t ? 'rgba(255,230,180,0.12)' : 'rgba(0,0,0,0.25)'); c.fillRect(t.x, t.y, t.w, t.h); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.fillStyle = on ? '#f6e2b8' : (has ? 'rgba(246,226,184,0.7)' : 'rgba(246,226,184,0.3)'); c.textAlign = 'center'; c.fillText(Runes.SIDE_NAMES[t.side], t.x + t.w / 2, t.y + 9); });
     var rows = ringRows(), rh = ringRowHit();
-    c.fillStyle = 'rgba(20,12,6,0.45)'; c.fillRect(bx + 6, by + 36, 122, bh - 50);
+    c.fillStyle = 'rgba(20,12,6,0.45)'; c.fillRect(bx + 6, by + 36, 122, bh - 44);
     if (!rows.length) { c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.55)'; c.fillText('Nothing known for this side', bx + 12, by + 50); }
     rows.forEach(function (row) {
-      var alive = inUse(row.r.id), can = Runes.canCut(ring, row.r.id, RS.learnt), hov = rh === row, busy = cutting && cutting.id === row.r.id;
-      c.fillStyle = alive ? 'rgba(255,214,90,0.16)' : (hov ? 'rgba(255,230,180,0.12)' : 'rgba(0,0,0,0.12)'); c.fillRect(row.x, row.y, row.w, row.h);
-      if (busy) { c.fillStyle = 'rgba(246,196,83,0.45)'; c.fillRect(row.x, row.y, row.w * Math.min(1, cutting.t / CUT_T), row.h); }
+      var alive = inUse(row.r.id), sel = ringSel === row.r.id, hov = rh === row;
+      c.fillStyle = sel ? 'rgba(255,230,180,0.2)' : (hov ? 'rgba(255,230,180,0.1)' : 'rgba(0,0,0,0.12)'); c.fillRect(row.x, row.y, row.w, row.h);
+      if (sel) { c.strokeStyle = '#ffd34d'; c.lineWidth = 0.8; c.strokeRect(row.x + 0.5, row.y + 0.5, row.w - 1, row.h - 1); }
       Runes.stone(c, row.r, row.x + 10, row.y + 10, 7, alive ? 'alive' : 'learnt');
-      c.font = (alive ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = alive ? '#ffd34d' : (can ? '#f6e2b8' : 'rgba(246,226,184,0.5)'); c.fillText(row.r.name, row.x + 20, row.y + 8);
-      c.font = '600 5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillText(alive ? 'cut and reddened' : (can ? 'click to cut it, 5 blood' : 'no coil for it'), row.x + 20, row.y + 15.5);
+      c.font = (alive ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = alive ? '#ffd34d' : '#f6e2b8'; c.fillText(row.r.name, row.x + 20, row.y + 8);
+      c.font = '600 5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillText(alive ? 'on the ring' : row.r.norse, row.x + 20, row.y + 15.5);
     });
-    // the ring
-    var coils = Runes.ringD(c, bx + 202, by + 86, ring, 44, -1, ringGlow.i, ringGlow.t), hc = null;
-    coils.forEach(function (q) { if (mouseS && Math.hypot(mouseS.x - q.x, mouseS.y - q.y) < q.r) hc = q; });
-    var txt = '';
-    if (rh) txt = rh.r.text; else if (hc && ring.coils[hc.i].id) txt = Runes.BY[ring.coils[hc.i].id].name + ': ' + Runes.BY[ring.coils[hc.i].id].text; else if (hc) txt = 'An empty ' + ring.coils[hc.i].side + ' coil';
-    else if (cutting) txt = 'Filing, cutting, reddening…'; else if (ringStation && !benchRoofed(ringStation)) txt = 'The bench needs a roof over it';
-    c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#f6e2b8';
-    wrapText(c, txt, bw - 150).slice(0, 3).forEach(function (ln, k) { c.fillText(ln, bx + 202, by + bh - 30 + k * 7); });
+    // the slab with the ring on it
+    var sx = bx + 134, sy = by + 16, sw = bw - 140, sh = 124; drawSlab(c, sx, sy, sw, sh);
+    var ph = cutting ? ritePh(cutting.t) : null, mouth = [RING_C.x, RING_C.y - RING_C.R * 0.72 - RING_C.R * 0.42 * 0.5], bowls = [[sx + 13, sy + 20], [sx + sw - 13, sy + 20]];
+    var veins = bowls.map(function (b) { return veinPts(b[0], b[1] + 3, mouth[0], mouth[1], 6); });
+    c.lineCap = 'round'; c.lineJoin = 'round';
+    bowls.forEach(function (b) { c.fillStyle = '#1c1816'; c.beginPath(); c.ellipse(b[0], b[1], 7, 4.5, 0, 0, 7); c.fill(); c.strokeStyle = '#5a524c'; c.lineWidth = 0.8; c.stroke(); if (ph) { c.fillStyle = '#8a1e12'; c.beginPath(); c.ellipse(b[0], b[1] + 1, 5.5 * ph.slash, 3 * ph.slash, 0, 0, 7); c.fill(); } });
+    veins.forEach(function (v) { c.strokeStyle = '#17120f'; c.lineWidth = 2.4; strokePts(c, v, 1); c.strokeStyle = 'rgba(255,255,255,0.08)'; c.lineWidth = 0.6; c.beginPath(); v.forEach(function (q, k) { if (k) c.lineTo(q[0], q[1] + 1.3); else c.moveTo(q[0], q[1] + 1.3); }); c.stroke(); });
+    var bandPts = cutting && ring ? Runes.ringBloodPath(RING_C.x, RING_C.y, ring, RING_C.R, cutting.i) : null;
+    if (bandPts) { c.strokeStyle = '#17120f'; c.lineWidth = 1.6; strokePts(c, bandPts, 1); }
+    if (ph) {
+      c.strokeStyle = '#9a2416'; c.lineWidth = 1.5; veins.forEach(function (v) { var head = strokePts(c, v, ph.vein); if (head && ph.vein < 1) { c.fillStyle = '#c23a28'; c.beginPath(); c.arc(head[0], head[1], 1.3, 0, 7); c.fill(); } });
+      if (ph.band > 0 && bandPts) { c.strokeStyle = '#9a2416'; c.lineWidth = 1.4; var hd = strokePts(c, bandPts, ph.band); if (hd && ph.band < 1) { c.fillStyle = '#c23a28'; c.beginPath(); c.arc(hd[0], hd[1], 1.2, 0, 7); c.fill(); } }
+      if (cutting.t < 1.2) { var sa = Math.min(1, cutting.t / 0.25), fa = cutting.t < 0.8 ? 1 : Math.max(0, 1 - (cutting.t - 0.8) / 0.4); c.save(); c.globalAlpha = fa; c.strokeStyle = '#e8d8c8'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(RING_C.x - 9, sy + 8); c.lineTo(RING_C.x - 9 + 18 * sa, sy + 8 + 7 * sa); c.stroke(); c.strokeStyle = '#c23a28'; c.lineWidth = 2; c.beginPath(); c.moveTo(RING_C.x - 8, sy + 9); c.lineTo(RING_C.x - 8 + 16 * sa, sy + 9 + 6 * sa); c.stroke(); for (var d = 0; d < 3; d++) { c.fillStyle = '#9a2416'; c.beginPath(); c.arc(RING_C.x - 6 + d * 6, sy + 13 + d * 1.5 + Math.min(6, cutting.t * 10), 0.9, 0, 7); c.fill(); } c.restore(); }
+    }
+    var hc = ringCoilHit(), coils = Runes.ringD(c, RING_C.x, RING_C.y, ring, RING_C.R, hc ? hc.i : -1, cutting ? cutting.i : ringGlow.i, cutting ? 0 : ringGlow.t, ph ? ph.fill : 0);
+    // the window under the ring: the chosen rune, what it does, and the carve button
+    var wx = sx, wy = sy + sh + 6, ww = sw, wh = bh - sh - 28; leather(c, wx, wy, ww, wh);
+    var selR = ringSel ? Runes.BY[ringSel] : null, hovR = rh ? rh.r : (hc && ring && ring.coils[hc.i].id ? Runes.BY[ring.coils[hc.i].id] : null), showR = hovR || selR;
+    c.textAlign = 'left';
+    if (showR) {
+      var on = inUse(showR.id); c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = on ? '#ffd34d' : '#f6e2b8'; c.fillText(showR.name, wx + 8, wy + 11);
+      var nw = c.measureText(showR.name).width; c.font = '600 5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.55)'; c.fillText(showR.norse + ' · ' + Runes.SIDE_NAMES[showR.side] + (on ? ' · on the ring' : ''), wx + 8 + nw + 6, wy + 11);
+      c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; wrapText(c, showR.text, ww - 16).slice(0, 3).forEach(function (ln, k) { c.fillText(ln, wx + 8, wy + 21 + k * 7); });
+    } else if (hc && ring) { c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.fillText('An empty ' + ring.coils[hc.i].side + ' hollow', wx + 8, wy + 11); }
+    else { c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.55)'; c.fillText(ring ? 'Choose a rune' : 'No ring on your arm', wx + 8, wy + 11); }
+    var why = cutting ? (cutting.t < 2.2 ? 'The blood runs…' : 'Cutting and reddening…') : cutWhy(ringSel), b = ringBtn(), canB = !!ringSel && !why;
+    c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = cutting ? '#e0806a' : 'rgba(246,226,184,0.55)'; c.fillText(why || (ringSel ? 'Five blood for it' : ''), wx + 8, b.y + 9.5);
+    if (ringSel && !inUse(ringSel)) {
+      c.fillStyle = canB ? (inBox(b) ? '#a8462e' : '#8a2e1c') : 'rgba(60,40,30,0.6)'; c.fillRect(b.x, b.y, b.w, b.h); c.strokeStyle = canB ? '#ffd34d' : 'rgba(255,211,77,0.25)'; c.lineWidth = 0.8; c.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1);
+      if (cutting) { c.fillStyle = 'rgba(255,214,90,0.35)'; c.fillRect(b.x, b.y, b.w * Math.min(1, cutting.t / CUT_T), b.h); }
+      c.font = 'bold 6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = canB ? '#fff0d0' : 'rgba(246,226,184,0.4)'; c.fillText(cutting ? 'Carving' : 'Carve it in', b.x + b.w / 2, b.y + 9.5);
+    }
     c.restore();
   }
   function ringClick(button) {
     if (button !== 0) { ringOpen = false; return; }
-    var t = ringTabHit(); if (t) { ringTab = t.side; return; }
-    var row = ringRowHit(); if (row) { startCut(row.r.id); return; }
+    var t = ringTabHit(); if (t) { ringTab = t.side; ringSelFix(); return; }
+    var row = ringRowHit(); if (row) { ringSel = row.r.id; return; }
+    var hc = ringCoilHit(); if (hc && ring && ring.coils[hc.i].id) { ringSel = ring.coils[hc.i].id; ringTab = Runes.BY[ringSel].side; return; }
+    if (inBox(ringBtn()) && ringSel) { startCut(ringSel); return; }
     if (mouseS && (mouseS.x < ringBoard.x || mouseS.x > ringBoard.x + ringBoard.w || mouseS.y < ringBoard.y || mouseS.y > ringBoard.y + ringBoard.h)) ringOpen = false;
   }
   /* ---------- the Book of Beasts: a card for every creature, earned the first time you slay one ----------
@@ -9296,6 +9372,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (e.code === 'KeyM') { e.preventDefault(); if (!e.repeat && !inYard) { mapOpen = !mapOpen; if (mapOpen) { invOpen = false; menu = null; bookOpen = false; clothOpen = false; musterOpen = false; } } return; }
     if (e.code === 'KeyC') { e.preventDefault(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
+    if (e.code === 'Enter' && ringOpen && !e.repeat) { e.preventDefault(); if (ringSel) startCut(ringSel); return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || ringOpen || musterOpen || mapOpen) { ringOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
     if (inYard && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) YSCENE.key('Enter'); return; }
     if (menu && menu.info && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) infoMake(infoSel()); return; }

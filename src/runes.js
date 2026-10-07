@@ -59,28 +59,54 @@ function stone(c, r, x, y, rad, state) {
   glyph(c, r, rad * 1.15, dim ? 'rgba(200,180,150,0.35)' : (state === 'alive' ? '#7a1e12' : '#2a1c14'));
   c.restore();
 }
-// The ring drawn large: a twisted band, open at the top, its coils as beads along it; a rune cut in a coil shows its glyph
-// reddened, an empty coil is plain, and hov marks one. Returns the coil positions for hit tests.
-function ringD(c, x, y, ring, R, hov, glowIdx, glowT) {
-  var m = METALS[ring ? ring.metal : 'bronze'] || METALS.bronze, n = ring ? ring.coils.length : 0, out = [], i;
-  c.save(); c.translate(x, y); c.lineCap = 'round';
-  var a0 = -Math.PI * 0.32, a1 = Math.PI * 1.32;                       // the band, open at the top
-  c.strokeStyle = m.dark; c.lineWidth = R * 0.34; c.beginPath(); c.arc(0, 0, R, a0, a1); c.stroke();
-  c.strokeStyle = m.col; c.lineWidth = R * 0.24; c.beginPath(); c.arc(0, 0, R, a0, a1); c.stroke();
-  c.strokeStyle = m.dark; c.lineWidth = R * 0.05; c.setLineDash([R * 0.18, R * 0.14]); c.beginPath(); c.arc(0, 0, R * 1.03, a0, a1); c.stroke(); c.setLineDash([]);   // the twist
-  c.strokeStyle = m.light; c.lineWidth = R * 0.04; c.beginPath(); c.arc(0, 0, R * 0.92, a0 + 0.3, a0 + 1.2); c.stroke();
-  [a0, a1].forEach(function (a) { c.fillStyle = m.col; c.beginPath(); c.arc(Math.cos(a) * R, Math.sin(a) * R, R * 0.19, 0, 7); c.fill(); c.strokeStyle = m.dark; c.lineWidth = 1; c.stroke(); });   // the knobbed ends
+// The ring drawn large: a flat cuff seen a little from above, open at the right, with knotwork cut along the band and
+// round hollows for the runes. A rune cut in a hollow fills it, reddened, with its glyph in the metal; an empty hollow is
+// a dark recess with the first letter of its side. hov marks a hollow, glowIdx/glowT make one glow, fill (0..1) shows
+// blood filling one. Returns the hollow positions for hit tests.
+var RING_A0 = Math.PI * 0.22, RING_A1 = Math.PI * 1.78, RING_SQ = 0.72;
+function ringHollowAngle(n, i) { var lo = RING_A0 + 0.42, hi = RING_A1 - 0.42; return n === 1 ? Math.PI * 1.5 : lo + (hi - lo) * i / (n - 1); }
+function ringD(c, x, y, ring, R, hov, glowIdx, glowT, fill) {
+  var m = METALS[ring ? ring.metal : 'bronze'] || METALS.bronze, n = ring ? ring.coils.length : 0, out = [], i, W = R * 0.42, a0 = RING_A0, a1 = RING_A1, SQ = RING_SQ;
+  c.save(); c.translate(x, y);
+  c.save(); c.scale(1, SQ); c.lineCap = 'butt';
+  c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = W + R * 0.1; c.beginPath(); c.arc(0, R * 0.06, R, a0, a1); c.stroke();   // the shadow under it
+  c.strokeStyle = m.dark; c.lineWidth = W + R * 0.07; c.beginPath(); c.arc(0, 0, R, a0, a1); c.stroke();                  // the dark edge
+  c.strokeStyle = m.col; c.lineWidth = W; c.beginPath(); c.arc(0, 0, R, a0, a1); c.stroke();                               // the band
+  c.strokeStyle = m.light; c.lineWidth = R * 0.035; c.beginPath(); c.arc(0, 0, R + W * 0.42, a0 + 0.1, a1 - 0.1); c.stroke();   // the lit outer rim
+  c.strokeStyle = m.dark; c.lineWidth = R * 0.03; c.beginPath(); c.arc(0, 0, R - W * 0.42, a0 + 0.1, a1 - 0.1); c.stroke();     // the inner edge
+  // the knotwork: two waves crossing along the band, cut dark with a lit edge below
+  var k, a, steps = 64; c.lineCap = 'round'; c.lineJoin = 'round';
+  [0, Math.PI].forEach(function (ph) {
+    [[m.light, R * 0.05, 0.9], [m.dark, R * 0.035, 0]].forEach(function (st) {
+      c.strokeStyle = st[0]; c.lineWidth = st[1]; c.beginPath();
+      for (k = 0; k <= steps; k++) { a = a0 + 0.18 + (a1 - a0 - 0.36) * k / steps; var rr = R + Math.sin(a * 7 + ph) * W * 0.24 + st[2] * 0.5; var px = Math.cos(a) * rr, py = Math.sin(a) * rr + st[2]; if (k) c.lineTo(px, py); else c.moveTo(px, py); }
+      c.stroke();
+    });
+  });
+  // the cut ends: the band's thickness shows as a lighter face
+  [a0, a1].forEach(function (ea) { c.save(); c.translate(Math.cos(ea) * R, Math.sin(ea) * R); c.rotate(ea); c.fillStyle = m.light; c.fillRect(-R * 0.03, -W / 2, R * 0.06, W); c.strokeStyle = m.dark; c.lineWidth = 0.8; c.strokeRect(-R * 0.03, -W / 2, R * 0.06, W); c.restore(); });
+  c.restore();
+  // the hollows, round, on the band
   for (i = 0; i < n; i++) {
-    var a = a0 + 0.45 + (a1 - a0 - 0.9) * (n === 1 ? 0.5 : i / (n - 1)), cx = Math.cos(a) * R, cy = Math.sin(a) * R, cr = R * 0.2, cl = ring.coils[i];
-    out.push({ i: i, x: x + cx, y: y + cy, r: cr * 1.4 });
-    if (glowIdx === i && glowT > 0) { c.fillStyle = 'rgba(255,214,90,' + Math.min(0.7, glowT * 0.7) + ')'; c.beginPath(); c.arc(cx, cy, cr * (1.8 + glowT * 0.6), 0, 7); c.fill(); }
-    c.fillStyle = cl.id ? m.light : m.col; c.beginPath(); c.arc(cx, cy, cr, 0, 7); c.fill(); c.strokeStyle = hov === i ? '#ffd34d' : m.dark; c.lineWidth = hov === i ? 1.6 : 1; c.stroke();
-    if (cl.id) { glyph(c, BY[cl.id], cr * 1.3, '#8a1e12', Math.max(0.9, cr * 0.22)); }
-    else { c.font = '600 ' + Math.max(5, cr * 0.9) + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = m.dark; c.fillText(SIDE_NAMES[cl.side][0], cx, cy + cr * 0.33); }
+    a = ringHollowAngle(n, i); var cx = Math.cos(a) * R, cy = Math.sin(a) * R * SQ, cr = W * 0.38, cl = ring.coils[i], on = !!cl.id && !!BY[cl.id];
+    out.push({ i: i, x: x + cx, y: y + cy, r: cr * 1.5 });
+    if (glowIdx === i && glowT > 0) { c.fillStyle = 'rgba(255,214,90,' + Math.min(0.7, glowT * 0.7) + ')'; c.beginPath(); c.arc(cx, cy, cr * (1.9 + glowT * 0.6), 0, 7); c.fill(); }
+    c.fillStyle = m.dark; c.beginPath(); c.arc(cx, cy + 0.4, cr * 1.18, 0, 7); c.fill();                                     // the rim
+    c.fillStyle = on ? '#7a1e12' : '#241610'; c.beginPath(); c.arc(cx, cy, cr, 0, 7); c.fill();                            // the hollow
+    if (!on && glowIdx === i && fill > 0) { c.save(); c.beginPath(); c.arc(cx, cy, cr, 0, 7); c.clip(); c.fillStyle = '#9a2416'; c.fillRect(cx - cr, cy + cr - fill * cr * 2, cr * 2, cr * 2); c.restore(); }
+    c.strokeStyle = hov === i ? '#ffd34d' : m.light; c.lineWidth = hov === i ? 1.4 : Math.max(0.5, cr * 0.1); c.beginPath(); c.arc(cx, cy, cr, 0, 7); c.stroke();
+    if (on) glyph(c, BY[cl.id], cr * 1.35, m.light, Math.max(0.9, cr * 0.2));
+    else { c.font = '600 ' + Math.max(5, cr * 0.95) + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(255,220,170,0.28)'; c.fillText(SIDE_NAMES[cl.side][0], cx, cy + cr * 0.35); }
   }
   c.restore();
   return out;
 }
-return { LIST: LIST, BY: BY, SIDES: SIDES, SIDE_NAMES: SIDE_NAMES, METALS: METALS, METAL_ORDER: METAL_ORDER, newRing: newRing, coilOf: coilOf, alive: alive, coilFor: coilFor, canCut: canCut, cut: cut, file: file, glyph: glyph, stone: stone, ringD: ringD };
+// the points of the path blood takes to a hollow: along the top of the band from the mouth (the ring's top) to the hollow
+function ringBloodPath(x, y, ring, R, idx) {
+  var n = ring ? ring.coils.length : 0, pts = [], top = Math.PI * 1.5, h = ringHollowAngle(n, idx), k, steps = 24;
+  for (k = 0; k <= steps; k++) { var a = top + (h - top) * k / steps; pts.push([x + Math.cos(a) * R, y + Math.sin(a) * R * RING_SQ]); }
+  return pts;
+}
+return { LIST: LIST, BY: BY, SIDES: SIDES, SIDE_NAMES: SIDE_NAMES, METALS: METALS, METAL_ORDER: METAL_ORDER, newRing: newRing, coilOf: coilOf, alive: alive, coilFor: coilFor, canCut: canCut, cut: cut, file: file, glyph: glyph, stone: stone, ringD: ringD, ringBloodPath: ringBloodPath, hollowAngle: ringHollowAngle };
 })();
 if (typeof module !== 'undefined') module.exports = Runes;
