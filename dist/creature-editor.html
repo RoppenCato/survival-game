@@ -114,7 +114,10 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <p class="desc">Save keeps the design under its name in this browser; New creature starts a variation from what is on screen; Update in game makes the chosen beast of the game look and fight like this design (the game keeps its own counts, damage and drops); Take back restores the game's own.</p>
       </section>
       <section class="panel">
-        <h2>Templates</h2>
+        <h2>Rig</h2>
+        <div class="group" id="rigs"></div>
+        <p class="desc">Views draws each creature in three designed views (side, front, back) like the hero, so nothing clips; Turntable is the old rig, kept for comparison.</p>
+        <h2 class="more">Templates</h2>
         <div class="group" id="models"></div>
         <h2 class="more">Body plan</h2>
         <div class="group" id="c-plan"></div>
@@ -2078,9 +2081,291 @@ function forestTrollD(c, x, y, s, H) {
   trollFinish(c, T, cOut, layers, 0.8);
   c.restore();
 }
+var RIG = { animals: 'views', trolls: 'views' };   // 'views' (quadD, trollViewD) or 'turntable' (animal3D, boulderTrollD, forestTrollD: the old rigs, kept for comparison)
+/* ===== The view rig for trolls (2026-10-07): the boulder troll and the forest troll in three designed views =====
+   Like quadD: a side view (facing left, flipped for right), a front view and a back view, each a 2D construction with its own
+   layering (far arm and far leg, then the body with the head and hair, then the near arm and near leg), through the ink layers.
+   The nose is part of the head's own shape, the beard hangs from the jaw in the same layer, the hands rest on the ground in
+   front: nothing can cut through anything. The sweep: the near arm rises in the windup and swings across in the blow. The boulder
+   troll (plan 8) is a hunched boulder with the head sunk into it; the forest troll (plan 9) is tall and gaunt with a trunk of a
+   body leaning forward. lib.RIG.trolls = 'views' chooses it. */
+function trollViewD(c, x, y, s, H) {
+  var sp = H.spec, C = H.pal, forest = Math.round(sp.plan) === 9, sz = sp.size * 0.95, t = s.t || 0, mv = Math.min(1, s.move || 0), ph = s.phase || 0, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
+  var ang = s.ang == null ? (s.dir < 0 ? Math.PI : 0) : s.ang, sn = Math.sin(ang), cs = Math.cos(ang);
+  var side = Math.abs(sn) < 0.42, flip = side && cs > 0, back = !side && sn < 0, tq = side ? 0 : Math.max(-1, Math.min(1, cs / 0.7));
+  var wind = st === 'windup' ? k : 0, slam = st === 'lunge', down = st === 'recover' || st === 'stunned' || st === 'stagger', sweep = slam ? Math.min(1, k * 1.15) : -1;
+  var stone = C.glow === C.body, skin = C.body, skinDk = mixHex(skin, '#1a1410', 0.2), hairCol = stone ? mixHex(skin, '#ffffff', 0.1) : mixHex(C.accent, '#cfcabd', sp.trollAge * 0.6), hairDk = mixHex(hairCol, '#000000', 0.3), hairLt = mixHex(hairCol, '#ffffff', 0.18), moss = C.moss || '#8fa86a', lich = mixHex(moss, skin, 0.35);
+  var HL = sp.trollHair, NS = sp.trollNose, ER = sp.trollEars, AR = sp.trollArms, MO = stone ? 0 : sp.trollMoss, AGE = sp.trollAge, HU = sp.trollHunch, BE = sp.trollBeads && !stone;
+  var cOut = c, layers = null, curL = null, inkOn = INK_FIG.on && typeof c.getTransform === 'function';
+  var LNc = 'rgba(35,26,22,' + (inkOn ? Math.min(1, INK_FIG.soft + 0.15) : 0.85) + ')', LNs = 'rgba(35,26,22,' + (inkOn ? INK_FIG.soft * 0.8 : 0.5) + ')', LIT = 'rgba(255,238,200,0.34)';
+  function lay(i) { if (!layers) return; curL = inkSwitch(c, layers, curL, i); c = curL.g; }
+  function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
+  H.eyes = [];
+  // the measures: the boulder is wide and low, the forest troll tall and thin
+  var BW = forest ? 10 : 24, BH = forest ? 40 : 36, LEG = forest ? 26 : 8, ARM = forest ? 62 : 38, HEAD = forest ? 8 : 12, bob = Math.sin(ph * 2) * 1.2 * mv + Math.sin(t * 1.3) * 0.5;
+  var lean = slam ? 3 : (wind ? -2.5 * wind : (down ? 1.5 : 0)), eyeCol = stone ? skin : (wind || slam ? C.glow : C.eye), glow = !stone && (wind || slam);
+  c.save(); c.translate(x, y); c.scale(sz, sz);
+  c.fillStyle = 'rgba(20,30,20,0.26)'; c.beginPath(); c.ellipse(0, 1, BW + 6, (BW + 6) * 0.3, 0, 0, 7); c.fill();
+  if (inkOn) { var M0 = c.getTransform(), li; layers = []; for (li = 0; li < 3; li++) layers.push(inkLayerBegin(li, M0, -70, -LEG - BH - HEAD * 2 - 40, 140, LEG + BH + HEAD * 2 + 50)); lay(1); }
+  function strand(p, len, lean2, w, col, i) { var sw = Math.sin(t * 1.1 + i * 1.7) * 0.05, a = 1.57 + lean2 + sw, x1 = p[0] + Math.cos(a) * len, y1 = p[1] + Math.sin(a) * len; c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(p[0], p[1]); c.quadraticCurveTo((p[0] + x1) / 2 + Math.cos(a - 1.57) * len * 0.15, (p[1] + y1) / 2, x1, y1); c.stroke(); }
+  function growth(px, py, seed) {                                           // lichen and a birch sapling on the hump
+    if (MO <= 0) return; var i;
+    c.globalAlpha = 0.85; c.fillStyle = lich; for (i = 0; i < 4; i++) { c.beginPath(); c.ellipse(px + (hs(i, seed) - 0.5) * 7, py + (hs(i, seed + 1) - 0.5) * 3, 1.8 + hs(i, seed + 2) * 1.6, 1.1, hs(i, seed + 3) * 3, 0, 7); c.fill(); } c.globalAlpha = 1;
+    if (hs(seed, 9) < MO) { var qx = px + 2 + Math.sin(t * 0.9 + seed) * 1.2, qy = py - 9; limbD(c, px + 2, py, 0.8, qx, qy, 0.45, '#d9d2c0'); for (i = 0; i < 5; i++) { var u = 0.4 + i * 0.15, sg = i % 2 ? 1 : -1; c.fillStyle = i % 2 ? moss : mixHex(moss, '#fff8d0', 0.3); c.beginPath(); c.ellipse(px + 2 + (qx - px - 2) * u + sg * 1.6, py + (qy - py) * u, 1.25, 0.8, sg * 0.6, 0, 7); c.fill(); } }
+  }
+  function hand(hx, hy, fwd, col, S, up) {                                   // a great hand on the ground (or raised): the palm and four knobbed fingers forward
+    var i, L = (forest ? 9 : 8) * S;
+    c.fillStyle = col; c.beginPath(); c.ellipse(hx, hy - (up ? 0 : 1.2 * S), (forest ? 3 : 5) * S, (forest ? 2.2 : 3.4) * S, 0, 0, 7); c.fill();
+    for (i = 0; i < 4; i++) { var dd = (i - 1.5) * (forest ? 1.8 : 2.4) * S, l = L - Math.abs(i - 1.5) * 1.1 * S, w0 = (forest ? 1.4 : 2.4) * S, w1 = (forest ? 0.8 : 1.8) * S; var x0 = hx + fwd * 1.5 * S + dd * 0.3, y0 = hy + dd * 0.5 * (up ? -0.4 : 1), kx = x0 + fwd * l * 0.55, ky = up ? y0 - l * 0.6 : y0 - 2 * S, x1 = x0 + fwd * l, y1 = up ? y0 - l : y0; limbD(c, x0, y0, w0, kx, ky, w0 * 0.85, i < 2 ? mixHex(col, '#000000', 0.08) : col); limbD(c, kx, ky, w0 * 0.85, x1, y1, w1, i < 2 ? mixHex(col, '#000000', 0.08) : col); if (!forest) { c.fillStyle = mixHex(col, '#000000', 0.12); c.beginPath(); c.arc(kx, ky, w0 * 0.72, 0, 7); c.fill(); } }
+  }
+  function faceSide(hx, hy, hr, fwd) {                                      // the profile: brow, a small deep eye, the nose as part of the head, the sneer, the beard
+    var n0 = [hx + fwd * hr * 0.75, hy - hr * 0.1], tipx = hx + fwd * (hr * 0.9 + 5 + 4 * NS), tipy = hy + hr * 0.25 + 3 * NS;
+    blobD(c, [[hx + fwd * hr * 0.55, hy - hr * 0.35], [tipx, tipy - 2.2], [tipx + fwd * 0.5, tipy + 1.2], [hx + fwd * hr * 0.5, hy + hr * 0.35]], mixHex(skin, '#c08a7a', 0.2));   // the nose, in the head's own layer
+    c.fillStyle = mixHex(skin, '#c08a7a', 0.3); c.beginPath(); c.arc(tipx, tipy, 2.2 + NS, 0, 7); c.fill(); inkLine(c, [[n0[0], n0[1]], [tipx, tipy - 1.5]], LNs, 0.6);
+    if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(tipx - fwd * 2, tipy - 2.5, 0.8, 0, 7); c.fill(); }
+    blobD(c, jagged([[hx - fwd * hr * 0.2, hy - hr * 0.6], [hx + fwd * hr * 0.9, hy - hr * 0.45], [hx + fwd * hr * 0.8, hy - hr * 0.2], [hx - fwd * hr * 0.1, hy - hr * 0.3]], hx, hy - hr * 0.4, 0.8, 71), mixHex(hairDk, '#000000', 0.3), true);   // the brow
+    c.fillStyle = mixHex(skin, '#000000', 0.3); c.beginPath(); c.ellipse(hx + fwd * hr * 0.45, hy - hr * 0.1, 2.2, 1.6, 0, 0, 7); c.fill();
+    if (glow) { c.fillStyle = 'rgba(255,170,60,0.35)'; c.beginPath(); c.arc(hx + fwd * hr * 0.45, hy - hr * 0.1, 3, 0, 7); c.fill(); }
+    c.fillStyle = eyeCol; c.beginPath(); c.ellipse(hx + fwd * hr * 0.45, hy - hr * 0.1, 1.2, 0.9, 0, 0, 7); c.fill(); c.fillStyle = '#1a1410'; c.beginPath(); c.arc(hx + fwd * hr * 0.55, hy - hr * 0.1, 0.45, 0, 7); c.fill(); H.eyes.push([(hx + fwd * hr * 0.45) * sz * (flip ? -1 : 1), (hy - hr * 0.1) * sz]);
+    var m0 = [hx + fwd * hr * 0.1, hy + hr * 0.5], m1 = [hx + fwd * hr * 0.85, hy + hr * 0.45]; c.fillStyle = '#1e1410'; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo((m0[0] + m1[0]) / 2, m0[1] - 2.2, m1[0], m1[1]); c.quadraticCurveTo((m0[0] + m1[0]) / 2, m0[1] + 1.5, m0[0], m0[1]); c.fill();   // the snarl
+    for (var i = 0; i < 4; i++) { var u = 0.15 + i * 0.23, tx = m0[0] + (m1[0] - m0[0]) * u, ty = m0[1] - 1.6; c.fillStyle = '#e6dcc0'; c.beginPath(); c.moveTo(tx - 0.8, ty); c.lineTo(tx + 0.8, ty); c.lineTo(tx + 0.1, ty + 1.6 + (i === 3 ? 1.5 : 0)); c.closePath(); c.fill(); }
+    c.strokeStyle = LNc; c.lineWidth = 0.9; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo((m0[0] + m1[0]) / 2, m0[1] - 2.2, m1[0], m1[1]); c.stroke();
+    blobD(c, jagged([[hx - fwd * hr * 0.3, hy + hr * 0.45], [hx + fwd * hr * 0.75, hy + hr * 0.7], [hx + fwd * hr * (0.5 + 0.2 * HL), hy + hr * (1.4 + 0.6 * HL)], [hx - fwd * hr * 0.1, hy + hr * (1.6 + 0.8 * HL)], [hx - fwd * hr * 0.5, hy + hr * 0.9]], hx, hy + hr, 1.2 + HL * 0.6, 73), hairCol, true);   // the beard
+    for (i = 0; i < 3 + 2 * HL; i++) strand([hx + fwd * hr * (0.1 + 0.5 * hs(i, 160)), hy + hr * 1.1], (5 + 4 * HL) * (0.6 + 0.6 * hs(i, 161)), (hs(i, 162) - 0.5) * 0.7, 1, i % 2 ? hairDk : hairLt, 160 + i);
+    blobD(c, [[hx - fwd * hr * 0.55, hy - hr * 0.3], [hx - fwd * hr * (0.9 + 0.3 * ER), hy - hr * (0.9 + 0.3 * ER)], [hx - fwd * hr * (1.1 + 0.3 * ER), hy - hr * 0.2], [hx - fwd * hr * 0.7, hy + hr * 0.1]], skin);   // the ear
+    if (BE) { c.strokeStyle = '#b08040'; c.lineWidth = 1; c.beginPath(); c.arc(hx - fwd * hr * 0.85, hy + hr * 0.05, 1.4, 0, 7); c.stroke(); }
+  }
+  function faceFront(hx, hy, hr) {                                           // the evil face straight on: sockets, eyes, the brows' V, the nose hanging down, the snarl with fangs, the beard
+    var ex0 = hx - hr * 0.42 + tq * 0.8, ex1 = hx + hr * 0.42 + tq * 0.8, ey = hy - hr * 0.1, i;
+    c.fillStyle = mixHex(skin, '#000000', 0.32); c.beginPath(); c.ellipse(ex0, ey + 0.3, 2.6, 1.9, 0, 0, 7); c.ellipse(ex1, ey + 0.3, 2.6, 1.9, 0, 0, 7); c.fill();
+    [[ex0, 0], [ex1, 1]].forEach(function (e) { if (glow) { c.fillStyle = 'rgba(255,170,60,0.35)'; c.beginPath(); c.arc(e[0], ey, 3, 0, 7); c.fill(); } c.fillStyle = eyeCol; c.beginPath(); c.ellipse(e[0], ey, 1.2, e[1] ? 0.7 : 1.0, 0, 0, 7); c.fill(); c.fillStyle = '#1a1410'; c.beginPath(); c.arc(e[0] + 0.3, ey, 0.45, 0, 7); c.fill(); c.fillStyle = mixHex(skin, '#000000', 0.22); c.beginPath(); c.ellipse(e[0], ey - (e[1] ? 0.9 : 1.3), 1.6, 0.7, 0, 0, 7); c.fill(); H.eyes.push([e[0] * sz, ey * sz]); });
+    var browCol = mixHex(hairDk, '#000000', 0.3);
+    blobD(c, jagged([[hx - hr * 1.05, hy - hr * 0.75], [hx - hr * 0.1, hy - hr * 0.38], [hx - hr * 0.05, hy - hr * 0.2], [hx - hr * 1.05, hy - hr * 0.45]], hx - hr * 0.5, hy - hr * 0.5, 0.9, 71), browCol, true);
+    blobD(c, jagged([[hx + hr * 1.05, hy - hr * 0.75], [hx + hr * 0.1, hy - hr * 0.38], [hx + hr * 0.05, hy - hr * 0.2], [hx + hr * 1.05, hy - hr * 0.45]], hx + hr * 0.5, hy - hr * 0.5, 0.9, 72), browCol, true);
+    inkLine(c, [[hx - 0.9, hy - hr * 0.3], [hx - 1.4, hy - hr * 0.6]], LNc, 0.55); inkLine(c, [[hx + 0.6, hy - hr * 0.3], [hx + 1.1, hy - hr * 0.62]], LNc, 0.55);
+    var nl = 5 + 4 * NS; blobD(c, [[hx - 2.2, hy - hr * 0.25], [hx + 2.2, hy - hr * 0.25], [hx + 2.8 + tq, hy + nl], [hx - 2.8 + tq, hy + nl]], mixHex(skin, '#c08a7a', 0.2)); c.fillStyle = mixHex(skin, '#c08a7a', 0.3); c.beginPath(); c.ellipse(hx + tq, hy + nl + 0.5, 3.2, 2.4, 0, 0, 7); c.fill();   // the nose
+    inkLine(c, [[hx - 1.8, hy - hr * 0.2], [hx - 2.6 + tq, hy + nl - 1]], LNs, 0.55); c.fillStyle = mixHex(skin, '#000000', 0.3); c.beginPath(); c.ellipse(hx - 1.4 + tq, hy + nl + 1.6, 0.9, 0.6, 0, 0, 7); c.ellipse(hx + 1.4 + tq, hy + nl + 1.6, 0.9, 0.6, 0, 0, 7); c.fill();
+    if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(hx + 1.8 + tq, hy + nl - 2.5, 0.8, 0, 7); c.fill(); }
+    var my = hy + nl + 4.5, m0 = [hx - hr * 0.7 + tq * 0.5, my + 1.5], m2 = [hx + hr * 0.7 + tq * 0.5, my + 1.5], cxm = (m0[0] + m2[0]) / 2;
+    c.fillStyle = '#1e1410'; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(cxm, my - 4, m2[0], m2[1]); c.quadraticCurveTo(cxm, my + 4.5, m0[0], m0[1]); c.fill();
+    for (i = 0; i < 7; i++) { var u = (i + 0.5) / 7, tx = (1 - u) * (1 - u) * m0[0] + 2 * (1 - u) * u * cxm + u * u * m2[0], ty = (1 - u) * (1 - u) * m0[1] + 2 * (1 - u) * u * (my - 4) + u * u * m2[1] + 0.3, edge = Math.abs(u - 0.5) * 2, h = 1.4 + 1.0 * hs(i, 202) + 2.4 * edge * edge; c.fillStyle = '#e6dcc0'; c.beginPath(); c.moveTo(tx - 0.9 - 0.4 * edge, ty); c.lineTo(tx + 0.9 + 0.4 * edge, ty); c.lineTo(tx + (hs(i, 203) - 0.5) * 0.6, ty + h); c.closePath(); c.fill(); }
+    [0.22, 0.78].forEach(function (u) { var tx = (1 - u) * (1 - u) * m0[0] + 2 * (1 - u) * u * cxm + u * u * m2[0], ty = my + 3.2; c.fillStyle = '#e6dcc0'; c.beginPath(); c.moveTo(tx - 0.9, ty + 0.4); c.lineTo(tx + 0.1, ty - 2.6); c.lineTo(tx + 1, ty + 0.4); c.closePath(); c.fill(); });
+    c.strokeStyle = LNc; c.lineWidth = 1.1; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(cxm, my - 4, m2[0], m2[1]); c.stroke(); c.lineWidth = 0.9; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(cxm, my + 4.5, m2[0], m2[1]); c.stroke();
+    inkLine(c, [[m0[0], m0[1]], [m0[0] - 0.8, m0[1] + 2]], LNs, 0.6); inkLine(c, [[m2[0], m2[1]], [m2[0] + 0.8, m2[1] + 2]], LNs, 0.6);
+    blobD(c, jagged([[hx - hr * 0.95, my], [hx - hr * 0.5, my + 4], [hx + hr * 0.5, my + 4], [hx + hr * 0.95, my], [hx + hr * (0.6 + 0.2 * HL), my + hr * (0.9 + 0.5 * HL)], [hx + tq, my + hr * (1.3 + 0.7 * HL)], [hx - hr * (0.6 + 0.2 * HL), my + hr * (0.9 + 0.5 * HL)]], hx, my + hr * 0.8, 1.3 + HL * 0.6, 73), hairCol, true);   // the beard
+    for (i = 0; i < 4 + 3 * HL; i++) strand([hx - hr * 0.6 + hr * 1.2 * hs(i, 160), my + 4], (6 + 5 * HL) * (0.6 + 0.6 * hs(i, 161)), (hs(i, 162) - 0.5) * 0.7, 1, i % 2 ? hairDk : hairLt, 160 + i);
+    if (BE) { var b0 = [hx - hr * 0.6, my + 6], b1 = [hx + hr * 0.6, my + 6]; c.strokeStyle = '#5a4a3a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(b0[0], b0[1]); c.quadraticCurveTo(hx, my + 14, b1[0], b1[1]); c.stroke(); ['#c8403a', '#3a6ab8', '#e8e0c8', '#c8403a', '#d8a030'].forEach(function (bc, bi) { var u = (bi + 1) / 6, px = b0[0] + (b1[0] - b0[0]) * u, py = b0[1] + 6.5 * Math.sin(u * 3.14); c.fillStyle = bc; c.beginPath(); c.arc(px, py, 1.1, 0, 7); c.fill(); }); }
+  }
+  function earsFront(hx, hy, hr) { [-1, 1].forEach(function (sd) { blobD(c, [[hx + sd * hr * 0.8, hy - hr * 0.4], [hx + sd * hr * (1.4 + 0.4 * ER), hy - hr * (0.9 + 0.3 * ER)], [hx + sd * hr * (1.5 + 0.4 * ER), hy - hr * 0.1], [hx + sd * hr * 0.9, hy + hr * 0.2]], skin); if (BE && sd === -1) { c.strokeStyle = '#b08040'; c.lineWidth = 1; c.beginPath(); c.arc(hx - hr * 1.2, hy + hr * 0.05, 1.3, 0, 7); c.stroke(); } }); }
+  function crown(hx, hy, hr, sd) {                                           // the forest troll's crown of twigs and hair, with a fir sapling
+    var i, pts = []; for (i = 0; i < 10; i++) { var th = i / 10 * 6.283; pts.push([hx + Math.cos(th) * hr * 1.1, hy - hr * 0.75 + Math.sin(th) * hr * 0.45]); }
+    blobD(c, jagged(pts, hx, hy - hr * 0.75, 2.4 + 1.5 * HL, 91), hairCol, true);
+    for (i = 0; i < 4 + 2 * HL; i++) { var tx = hx + (hs(i, 92) - 0.5) * hr * 2, ty = hy - hr * 0.8, tl = 5 + 6 * hs(i, 94), ta = -1.57 + (hs(i, 95) - 0.5) * 1.4; inkLine(c, [[tx, ty], [tx + Math.cos(ta) * tl * 0.6, ty + Math.sin(ta) * tl * 0.6], [tx + Math.cos(ta) * tl * 0.6 + Math.cos(ta - 0.6) * tl * 0.4, ty + Math.sin(ta) * tl * 0.6 + Math.sin(ta - 0.6) * tl * 0.4]], hairDk, 1.1); }
+    if (MO > 0) { var sx0 = hx - hr * 0.3, sy0 = hy - hr * 0.9; limbD(c, sx0, sy0, 0.9, sx0 + 1, sy0 - 9, 0.5, '#6a5a44'); blobD(c, [[sx0 + 1, sy0 - 12], [sx0 + 3.6, sy0 - 6], [sx0 + 2.4, sy0 - 6.5], [sx0 + 4.2, sy0 - 2.5], [sx0 - 2.2, sy0 - 2.5], [sx0 - 0.4, sy0 - 6.5], [sx0 - 1.6, sy0 - 6]], moss, true); }
+  }
+  function hairCap(hx, hy, hr) { var i, pts = []; for (i = 0; i < 12; i++) { var th = i / 12 * 6.283; pts.push([hx + Math.cos(th) * hr * 1.15, hy - hr * 0.7 + Math.sin(th) * hr * 0.5]); } blobD(c, jagged(pts, hx, hy - hr * 0.7, 2.4 + 1.5 * HL, 61), hairCol, true); for (i = 0; i < 5; i++) strand([hx + (hs(i, 62) - 0.5) * hr * 2, hy - hr * 0.5], 5 + 4 * HL, (hs(i, 63) - 0.5) * 0.9, 1.1, i % 2 ? hairDk : hairLt, 62 + i); }
+  var S = forest ? 0.85 : 1.15;
+  if (side) {
+    var fwd = -1; if (flip) c.scale(-1, 1);
+    // the measures of the side view: feet on the ground, the body a boulder (or a leaning trunk), the head at its front
+    var hipY = -LEG + bob, topY = hipY - BH, frontX = fwd * (forest ? 6 : BW * 0.75), backX = -fwd * (forest ? 7 : BW * 0.85), hx = frontX + fwd * (forest ? 6 + HU * 4 : HEAD * 0.8 + 2) + fwd * lean, hy = forest ? topY - HEAD * 0.4 : topY + HEAD * 0.8, hr = HEAD;
+    var shX = frontX - fwd * (forest ? 2 : 7), shY = forest ? topY + 4 : topY + 8, legF = fwd * (forest ? 3 : 6), legB = -fwd * (forest ? 3 : 6);
+    function legSide(lx, phi, near, col) { var sw = Math.sin(phi) * (forest ? 5 : 2.5) * mv, lf = Math.max(0, Math.cos(phi)) * 3 * mv, kk = ik2(lx, hipY, lx + fwd * sw, -lf, LEG * 0.55, LEG * 0.55, -fwd); limbD(c, lx, hipY, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); if (forest) { c.fillStyle = mixHex(col, '#000000', 0.1); c.beginPath(); c.arc(kk[0], kk[1], 3.6, 0, 7); c.fill(); } blobD(c, [[kk[2] - fwd * 3, kk[3]], [kk[2] + fwd * (forest ? 9 : 8), kk[3] - 0.5], [kk[2] + fwd * (forest ? 11 : 9.5), kk[3] + 1.5], [kk[2] - fwd * 3, kk[3] + 1.5]], col); }
+    function armSide(sx, sy, near, col) {
+      var hxH, hyH, up = false;
+      if (near && slam) { var u = sweep, a = -1.9 + u * 3.6; hxH = sx + fwd * Math.cos(a) * ARM * 0.9; hyH = sy + Math.sin(a) * ARM * 0.9 * 0.5 - (1 - Math.abs(u - 0.5) * 2) * 6; up = u < 0.4; }
+      else if (near && wind) { hxH = sx - fwd * 6; hyH = sy - Math.min(ARM * 0.9, 34) * (0.7 + 0.3 * wind); up = true; }
+      else { hxH = sx + fwd * (ARM * (forest ? 0.42 : 0.6) * (0.9 + 0.1 * AR) + Math.sin(ph) * 2 * mv * (near ? 1 : -1)); hyH = -1; }
+      var kk = ik2(sx, sy, hxH, hyH, ARM * 0.52, ARM * 0.52, near ? -fwd : fwd);
+      limbD(c, sx, sy, forest ? 4.6 : 8, kk[0], kk[1], forest ? 3.6 : 6.6, col); limbD(c, kk[0], kk[1], forest ? 3.6 : 6.6, kk[2], kk[3], forest ? 2.6 : 5.6, col); c.fillStyle = mixHex(col, '#000000', 0.1); c.beginPath(); c.arc(kk[0], kk[1], forest ? 3.8 : 6, 0, 7); c.fill();
+      hand(kk[2], kk[3], fwd, col, S, up);
+    }
+    lay(0);
+    legSide(legB - fwd * 2, ph + Math.PI, false, skinDk); armSide(shX - fwd * 3 + backX * 0.3, shY + 2, false, skinDk);
+    lay(1);
+    legSide(legF - fwd * 1, ph, true, skin);
+    if (forest) { var tp = [[backX, hipY + 2], [frontX, hipY + 2], [frontX + fwd * (HU * 6 + 2), topY + 10], [frontX + fwd * (HU * 8 + 4), topY], [backX + fwd * (HU * 7), topY - 2], [backX - fwd * 2, topY + 12]]; blobD(c, tp, skin); inkLine(c, [[frontX + fwd * 2, hipY - 4], [frontX + fwd * (HU * 6), topY + 8]], LIT, 1.2); }
+    else { var bp = [[frontX, hipY + 3], [frontX + fwd * 2, topY + 14], [frontX - fwd * 2, topY + 3], [frontX - fwd * BW * 0.5, topY - 2], [backX + fwd * 3, topY - 1], [backX, topY + 10], [backX + fwd * 1, hipY + 3]]; blobD(c, bp, skin); inkLine(c, [[frontX + fwd * 1, hipY - 6], [frontX - fwd * 1, topY + 6]], LIT, 1.3); for (var si = 0; si < 3; si++) { c.fillStyle = mixHex(skin, '#000000', 0.14); c.beginPath(); c.ellipse(frontX - fwd * (4 + si * 6), topY + 8 + si * 5, 2.2, 1.4, 0, 0, 7); c.fill(); } }
+    // the hair down the back, the head with its face, the ear and the hair over the head
+    blobD(c, jagged([[frontX - fwd * 4, topY - 3], [backX + fwd * 3, topY - 4], [backX - fwd * 4, topY + BH * 0.5], [backX - fwd * (3 + 2 * HL), hipY + 6 + 3 * HL], [backX + fwd * 4, hipY + 2], [backX + fwd * 2, topY + 8]], backX, topY + 10, 1.5 + HL, 50), hairCol, true);
+    for (var hi = 0; hi < 4 + 3 * HL; hi++) strand([backX - fwd * 2 + fwd * hs(hi, 51) * 6, hipY + 2 + hs(hi, 52) * 3], (6 + 5 * HL) * (0.6 + 0.6 * hs(hi, 53)), (hs(hi, 54) - 0.5) * 0.5 + fwd * 0.3, 1.1, hi % 2 ? hairDk : hairLt, 50 + hi);
+    if (!forest) growth(backX + fwd * 6, topY, 5);
+    blobD(c, [[hx + fwd * hr * 0.9, hy - hr * 0.55], [hx + fwd * hr * 0.3, hy - hr * 0.95], [hx - fwd * hr * 0.8, hy - hr * 0.7], [hx - fwd * hr * 0.95, hy + hr * 0.2], [hx - fwd * hr * 0.5, hy + hr * 0.8], [hx + fwd * hr * 0.6, hy + hr * 0.75]], skin);
+    if (forest) limbD(c, frontX + fwd * (HU * 7 + 2), topY + 2, 3.6, hx - fwd * 2, hy + hr * 0.6, 3.2, skin);
+    faceSide(hx, hy, hr, fwd);
+    if (forest) crown(hx, hy, hr, fwd); else hairCap(hx, hy, hr);
+    lay(2);
+    legSide(legF + fwd * 1, ph + Math.PI, true, skin); armSide(shX + fwd * 2, shY, true, skin);
+  } else {
+    var dS = back ? -1 : 1, hipY2 = -LEG + bob, topY2 = hipY2 - BH, cx = -tq * BW * 0.15, hx2 = cx + tq * BW * 0.35 + (forest ? tq * 6 : 0), hy2 = forest ? topY2 - HEAD * 0.4 + lean : topY2 + HEAD * 0.75 + lean, hr2 = HEAD, W = forest ? BW : BW * 1.1;
+    function legFront(lx, phi, near, col) { var l = Math.max(0, Math.cos(phi)) * 2.5 * mv, d = Math.sin(phi) * 2 * mv * dS, kk = ik2(lx, hipY2, lx + (lx < cx ? -1 : 1) * 0.5, -l + d + (near ? 0 : -3), LEG * 0.55, LEG * 0.55, lx < cx ? -1 : 1); limbD(c, lx, hipY2, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); blobD(c, [[kk[2] - (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.6 : 5), kk[3] + 2], [kk[2], kk[3] + 2.8], [kk[2] - (forest ? 3.6 : 5), kk[3] + 2]], col); }
+    function armFront(sd, sx, sy, near, col) {
+      var hxH, hyH, up = false, swinging = sd === 1 && !back && (wind > 0 || slam);
+      if (swinging && slam) { var u = sweep, a = -0.63 + u * 4.4; hxH = cx + Math.cos(a) * ARM * 0.8; hyH = sy + 10 - Math.sin(a) * Math.min(ARM * 0.7, 30); up = u < 0.4; }
+      else if (swinging) { hxH = sx + sd * 8; hyH = sy - Math.min(ARM * 0.9, 34) * (0.7 + 0.3 * wind); up = true; }
+      else { hxH = sx + sd * (W * 0.5 + (forest ? 7 : 9)) + sd * Math.sin(ph) * 1.5 * mv; hyH = -1 + (near ? 0 : -2); }
+      var kk = ik2(sx, sy, hxH, hyH, ARM * 0.52, ARM * 0.52, -sd);
+      limbD(c, sx, sy, forest ? 4.6 : 8, kk[0], kk[1], forest ? 3.6 : 6.6, col); limbD(c, kk[0], kk[1], forest ? 3.6 : 6.6, kk[2], kk[3], forest ? 2.6 : 5.6, col); c.fillStyle = mixHex(col, '#000000', 0.1); c.beginPath(); c.arc(kk[0], kk[1], forest ? 3.8 : 6, 0, 7); c.fill();
+      hand(kk[2], kk[3], 0, col, S, up);
+    }
+    var shY2 = forest ? topY2 + 4 : topY2 + 12, shL = cx - W * 0.5 + 3, shR = cx + W * 0.5 - 3;
+    lay(0);
+    legFront(cx - (forest ? 5 : 9), ph + Math.PI, false, skinDk); legFront(cx + (forest ? 5 : 9), ph, false, skinDk);
+    if (back) { armFront(-1, shL, shY2, false, skinDk); armFront(1, shR, shY2, false, skinDk); }
+    if (back) { blobD(c, [[hx2 - hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.95, hy2 + hr2 * 0.5], [hx2 - hr2 * 0.95, hy2 + hr2 * 0.5]], skin); earsFront(hx2, hy2, hr2); }
+    lay(1);
+    if (forest) { blobD(c, [[cx - 6, hipY2 + 2], [cx + 6, hipY2 + 2], [cx + 8 + tq * 2, topY2 + 12], [cx + 10 + tq * 2, topY2], [cx - 10 + tq * 2, topY2], [cx - 8 + tq * 2, topY2 + 12]], skin); inkLine(c, [[cx - 7, hipY2 - 4], [cx - 9 + tq * 2, topY2 + 4]], LIT, 1.2); }
+    else { blobD(c, [[cx - W * 0.5, hipY2 + 2], [cx - W * 0.55, topY2 + 14], [cx - W * 0.4 + tq * 3, topY2 + 2], [cx + tq * 3, topY2 - 2], [cx + W * 0.4 + tq * 3, topY2 + 2], [cx + W * 0.55, topY2 + 14], [cx + W * 0.5, hipY2 + 2], [cx, hipY2 + 4]], skin); inkLine(c, [[cx - W * 0.45, hipY2 - 5], [cx - W * 0.35 + tq * 2, topY2 + 5]], LIT, 1.3); }
+    if (back) { blobD(c, jagged([[cx - W * 0.45, topY2 + 2], [cx + tq * 2, topY2 - 4], [cx + W * 0.45, topY2 + 2], [cx + W * (0.5 + 0.1 * HL), hipY2 + 2 + 3 * HL], [cx, hipY2 + 6 + 4 * HL], [cx - W * (0.5 + 0.1 * HL), hipY2 + 2 + 3 * HL]], cx, topY2 + BH * 0.5, 1.6 + HL, 50), hairCol, true); for (var hb = 0; hb < 5 + 3 * HL; hb++) strand([cx - W * 0.4 + W * 0.8 * hs(hb, 51), hipY2 + 2 * hs(hb, 52)], (6 + 5 * HL) * (0.6 + 0.6 * hs(hb, 53)), (hs(hb, 54) - 0.5) * 0.5, 1.1, hb % 2 ? hairDk : hairLt, 50 + hb); if (!forest) growth(cx - 4, topY2 + 2, 5); if (forest) crown(hx2, hy2, hr2, 1); else hairCap(hx2, hy2 - 2, hr2); }
+    else {
+      if (!forest) growth(cx - W * 0.2 + tq * 2, topY2 + 1, 5);
+      if (forest) limbD(c, cx + tq * 2, topY2 + 2, 3.6, hx2, hy2 + hr2 * 0.6, 3.2, skin);
+      earsFront(hx2, hy2, hr2);
+      blobD(c, [[hx2 - hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 - hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 + hr2 * 0.75, hy2 + hr2 * 0.75], [hx2 - hr2 * 0.75, hy2 + hr2 * 0.75]], skin);
+      faceFront(hx2, hy2, hr2);
+      if (forest) crown(hx2, hy2, hr2, 1); else hairCap(hx2, hy2, hr2);
+    }
+    lay(2);
+    legFront(cx - (forest ? 6 : 10), ph, true, skin); legFront(cx + (forest ? 6 : 10), ph + Math.PI, true, skin);
+    if (!back) { armFront(-1, shL, shY2, true, skin); armFront(1, shR, shY2, true, skin); }
+  }
+  if (layers) { var lj; for (lj = 0; lj < 3; lj++) inkLayerEnd(cOut, layers[lj], lj, INK_FIG.line, { w: INK_FIG.w * 0.8, grain: INK_FIG.grain, shade: INK_FIG.shade }); c = cOut; }
+  c.restore();
+}
+/* ===== The view rig for animals (2026-10-07, Robin: the turntable clipped everywhere; a new way to make creatures) =====
+   The turntable (animal3D, trollD) laid parts out in 3D and sorted each by one depth, so an arm reaching from the back to the
+   front, or a nose in front of a hand, clipped. quadD draws an animal the way the hero is drawn: three designed views (the side,
+   facing left and flipped for right; the front; the back), each a 2D construction with its own layering (far legs, then the body
+   with the neck and head, then the near legs), through the ink layers so every band is one silhouette with one ink line. Between
+   the front and back views the heading turns the figure (tq, as the hero): the head slides to the side it looks toward and the
+   flank comes into view. Legs are two-bone limbs placed by ik2 (the front knee bends forward, the hock back). The spec is the old
+   animal spec (bodyW, bodyH, head, legLen, legW, neck, neckUp, snout, snoutW, ears, antlers, antlerSize, tusks, hump, mane, hoof,
+   tail, tailPale, paleMuzzle, snoutFlat, fangs, brow, pattern, eyeSize, size, colours). lib.RIG = 'views' chooses it for plan 5. */
+function quadD(c, x, y, s, H) {
+  var sp = H.spec, C = H.pal, sz = sp.size, t = s.t || 0, mv = Math.min(1, s.move || 0), ph = s.phase || 0, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
+  var ang = s.ang == null ? (s.dir < 0 ? Math.PI : 0) : s.ang, sn = Math.sin(ang), cs = Math.cos(ang);
+  var side = Math.abs(sn) < 0.42, flip = side && cs > 0, back = !side && sn < 0, tq = side ? 0 : Math.max(-1, Math.min(1, cs / 0.7));
+  var tell = st === 'windup' ? k : 0, down = st === 'recover' || st === 'stunned', lunge = st === 'lunge', stag = st === 'stagger', T = Math.round(sp.tell);
+  var bw = sp.bodyW, bh = sp.bodyH, hd = sp.head, ll = 10 * sp.legLen, lw = 2.6 * sp.legW, nk = 8 * sp.neck, up = sp.neckUp, sl = 6 * sp.snout, sw = 3.6 * sp.snoutW, EAR = Math.round(sp.ears), ANT = Math.round(sp.antlers), TL = Math.round(sp.tail), PAT = Math.round(sp.pattern);
+  var body = down ? mixHex(C.body, '#b6a592', 0.4) : (tell ? mixHex(C.body, C.glow, tell * 0.18) : C.body), bodyD = shade(body, -0.09), belly = C.belly, acc = C.accent, eyeCol = tell ? mixHex(C.eye, C.glow, tell) : C.eye;
+  var cOut = c, layers = null, curL = null, inkOn = INK_FIG.on && typeof c.getTransform === 'function';
+  var LNc = 'rgba(35,26,22,' + (inkOn ? Math.min(1, INK_FIG.soft + 0.15) : 0.85) + ')', LNs = 'rgba(35,26,22,' + (inkOn ? INK_FIG.soft * 0.8 : 0.5) + ')', LIT = 'rgba(255,238,200,0.36)';
+  function lay(i) { if (!layers) return; curL = inkSwitch(c, layers, curL, i); c = curL.g; }
+  function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
+  H.eyes = [];
+  var L = 26 * bw, Hb = 13 * bh, bob = Math.abs(Math.sin(ph)) * 0.8 * mv + Math.sin(t * 2.2) * 0.3 * (1 - mv);
+  var stretch = lunge ? 1.12 : (tell ? 1 - 0.08 * tell : 1), crouch = tell * 2.5 * (T === 2 ? -1 : 1) + (down ? 2 : 0);
+  var jit = tell && T === 1 ? Math.sin(t * 70) * 1.2 * tell : 0;
+  c.save(); c.translate(x + jit, y); c.scale(sz, sz);
+  if (inkOn) { var M0 = c.getTransform(), li; layers = []; for (li = 0; li < 3; li++) layers.push(inkLayerBegin(li, M0, -L * 0.9 - 14, -ll - Hb - nk - 26, L * 1.8 + 28, ll + Hb + nk + 34)); lay(1); }
+  function eye(ex, ey, r) {
+    if (down) { inkLine(c, [[ex - r, ey - r], [ex + r, ey + r]], LNc, 0.8); inkLine(c, [[ex + r, ey - r], [ex - r, ey + r]], LNc, 0.8); return; }
+    c.fillStyle = eyeCol; c.beginPath(); c.ellipse(ex, ey, r, r * 1.1, 0, 0, 7); c.fill(); c.fillStyle = '#1a1410'; c.beginPath(); c.arc(ex + r * 0.15, ey, r * 0.45, 0, 7); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.8)'; c.beginPath(); c.arc(ex - r * 0.3, ey - r * 0.4, r * 0.28, 0, 7); c.fill();
+    H.eyes.push([ex * sz, ey * sz]);
+  }
+  function hoofAt(fx, fy, dirx, col) {                                   // a hoof (dark wedge) or a paw (rounded, with toes)
+    if (sp.hoof) blobD(c, [[fx - 2.2 * sp.legW, fy - 2.2], [fx + 2.2 * sp.legW, fy - 2.2], [fx + 2.0 * sp.legW + dirx * 0.6, fy], [fx - 2.0 * sp.legW + dirx * 0.6, fy]], '#2e2420', true);
+    else { blobD(c, [[fx - 2.6 * sp.legW, fy - 1.8], [fx + 2.6 * sp.legW + dirx * 1.2, fy - 1.8], [fx + 2.8 * sp.legW + dirx * 1.6, fy], [fx - 2.6 * sp.legW, fy]], col); inkLine(c, [[fx - 0.8, fy - 1.2], [fx - 0.6, fy - 0.2]], LNs, 0.4); inkLine(c, [[fx + 0.9, fy - 1.2], [fx + 1.1, fy - 0.2]], LNs, 0.4); }
+  }
+  function legS(hx, hy, phi, front, near, fwd) {                           // a leg in the side view: hip or shoulder to the foot, bent by ik2
+    var swg = Math.sin(phi) * 4.2 * mv, lift = Math.max(0, Math.cos(phi)) * 3.2 * mv, fx = hx + fwd * swg + (lunge ? fwd * (front ? 5 : -4) : 0), fy = -lift - (front && T === 2 && tell ? 9 * tell : 0);
+    var l1 = ll * 0.55 + Hb * 0.25, l2 = ll * 0.52, kk = ik2(hx, hy, fx, fy, l1, l2, front ? fwd : -fwd), col = near ? body : bodyD;
+    limbD(c, hx, hy, lw * 1.25, kk[0], kk[1], lw * 0.95, col); limbD(c, kk[0], kk[1], lw * 0.95, kk[2], kk[3], lw * 0.75, col);
+    hoofAt(kk[2], kk[3], fwd, near ? bodyD : shade(bodyD, -0.06));
+  }
+  function antlers(ax, ay, fwd, both) {                                     // deer: branching tines; moose: a palm with points
+    var A = sp.antlerSize, col = '#8a7a62', i, sides = both ? [-1, 1] : [fwd];
+    sides.forEach(function (sd) {
+      if (ANT === 3) { blobD(c, jagged([[ax + sd * 1.5, ay], [ax + sd * (5 + 4 * A), ay - 3 * A], [ax + sd * (8 + 6 * A), ay - 7 * A], [ax + sd * (6 + 4 * A), ay - 10 * A], [ax + sd * (2 + 2 * A), ay - 6 * A]], ax + sd * 5, ay - 5, 1.2, 31), col, true); }
+      else { var beam = [[ax + sd * 1, ay], [ax + sd * (3 + 2 * A), ay - 4 * A], [ax + sd * (4 + 3 * A), ay - 9 * A]]; inkLine(c, beam, col, 1.6 * A); for (i = 1; i <= ANT; i++) { var u = i / (ANT + 1), bx = ax + sd * (1 + (3 + 2 * A) * u * 1.3), by = ay - 9 * A * u; inkLine(c, [[bx, by], [bx - sd * 2 * A, by - 4 * A]], col, 1.2 * A); } }
+    });
+  }
+  function earS(ex, ey, fwd, col) {
+    if (EAR === 2) { c.fillStyle = col; c.beginPath(); c.ellipse(ex, ey, 2.4 * hd, 2.2 * hd, 0, 0, 7); c.fill(); c.fillStyle = mixHex(col, '#000000', 0.2); c.beginPath(); c.ellipse(ex, ey + 0.3, 1.2 * hd, 1.1 * hd, 0, 0, 7); c.fill(); }
+    else if (EAR === 3) { blobD(c, [[ex + fwd * 1.2, ey + 1], [ex - fwd * 3.5 * hd, ey - 2.5 * hd], [ex - fwd * 5.5 * hd, ey - 5 * hd], [ex - fwd * 2 * hd, ey - 4 * hd]], col); }
+    else { blobD(c, [[ex + fwd * 1.5, ey + 1], [ex - fwd * 2.2 * hd, ey - 4.5 * hd], [ex - fwd * 3.2 * hd, ey - 1], [ex - fwd * 1, ey + 1.2]], col, true); c.fillStyle = mixHex(col, '#000000', 0.25); blobD(c, [[ex + fwd * 0.5, ey + 0.3], [ex - fwd * 2.0 * hd, ey - 3.2 * hd], [ex - fwd * 2.4 * hd, ey - 0.6]], mixHex(col, '#000000', 0.25), true); }
+  }
+  if (side) {
+    var fwd = -1; if (flip) c.scale(-1, 1);
+    var top = -ll - Hb + bob, bot = -ll + bob, mid = (top + bot) / 2, fr = -L / 2 * stretch, bk = L / 2 * stretch;
+    var shx = fr + L * 0.18, hpx = bk - L * 0.2, shy = bot - Hb * 0.25 + crouch, hpy = bot - Hb * 0.25;
+    lay(0);
+    legS(shx - 1, shy, ph + Math.PI, true, false, fwd); legS(hpx + 1, hpy, ph, false, false, fwd);
+    if (TL === 3) { var tx0 = bk - 2, ty0 = mid - 1, tsw = Math.sin(t * 2 + ph) * 1.5; blobD(c, jagged([[tx0, ty0 - 2], [tx0 + 6, ty0 - 4 + tsw], [tx0 + 12, ty0 - 2 + tsw * 2], [tx0 + 14, ty0 + 2 + tsw * 2], [tx0 + 8, ty0 + 4 + tsw], [tx0 + 1, ty0 + 2]], tx0 + 7, ty0, 1.1, 41), body, true); if (sp.tailPale) { c.fillStyle = belly; c.beginPath(); c.arc(tx0 + 12.5, ty0 + tsw * 2, 1.8, 0, 7); c.fill(); } }
+    else if (TL === 2) { var tc = [[bk - 1, top + 3], [bk + 3, top + 1 + Math.sin(t * 3) * 0.8], [bk + 5, top + 4], [bk + 3, top + 6]]; inkLine(c, tc, bodyD, 1.1); }
+    else if (TL === 1) { blobD(c, [[bk - 1.5, mid - 2], [bk + 2.5, mid - 1], [bk + 2, mid + 3], [bk - 1, mid + 2]], sp.tailPale ? belly : bodyD); }
+    lay(1);
+    // the body: chest, a hump at the shoulders, the back, the rump, the belly sagging a little; bristles along the back
+    var hump = sp.hump * 3.5;
+    var bp = [[fr, mid + crouch * 0.5], [fr + 2, top + 1.5 + crouch], [fr + L * 0.22, top - hump + crouch * 0.6], [fr + L * 0.5, top - hump * 0.3], [bk - L * 0.18, top + 0.5], [bk - 1, mid - 2], [bk, mid + 2], [bk - 3, bot - 1], [fr + L * 0.5, bot + 1.5], [fr + 3, bot - 0.5 + crouch * 0.5]];
+    blobD(c, bp, body);
+    if (PAT === 1 || sp.paleMuzzle === 2) blobD(c, [[fr + 4, bot - Hb * 0.3], [bk - 4, bot - Hb * 0.25], [bk - 3, bot - 0.5], [fr + L * 0.5, bot + 1.2], [fr + 3, bot - 0.2]], belly);
+    inkLine(c, [[fr + 3, top + 2 - hump * 0.5 + crouch], [fr + L * 0.45, top - hump * 0.8]], LIT, 1.1);
+    if (sp.mane) blobD(c, jagged([[fr + 2, top + 1 + crouch], [fr + L * 0.2, top - hump - 2.5 + crouch * 0.6], [fr + L * 0.55, top - hump * 0.3 - 1.5], [bk - L * 0.2, top - 0.5], [bk - L * 0.2, top + 2], [fr + L * 0.5, top + 1 - hump * 0.3], [fr + 3, top + 3 + crouch]], fr + L * 0.4, top + 3, 1.4, 43), bodyD, true);
+    // the neck and the head: the neck from the shoulder, raised by neckUp; the head with the snout, the eye, the ear, horns and tusks
+    var nx0 = fr + 3, ny0 = top + 3 + crouch, headDown = tell * (T === 1 ? 4 : 1.5) + (lunge ? 2 : 0), hx = nx0 + fwd * nk * (0.9 - 0.4 * up) * stretch, hy = ny0 - nk * (0.1 + 0.9 * up) + headDown;
+    limbD(c, nx0, ny0 + 1, 3.6 * bh, hx, hy, 3.0 * hd, body);
+    var hr = 4.2 * hd;
+    blobD(c, [[hx + fwd * hr * 0.9, hy - hr * 0.6], [hx + fwd * hr * 0.2, hy - hr], [hx - fwd * hr * 0.9, hy - hr * 0.5], [hx - fwd * hr * 0.8, hy + hr * 0.5], [hx + fwd * hr * 0.5, hy + hr * 0.9]], body);
+    var snx = hx + fwd * (hr * 0.7 + sl), sny = hy + 0.8 + (sp.snoutFlat ? 0 : 0.6);
+    blobD(c, [[hx + fwd * hr * 0.6, hy - sw * 0.8], [snx, sny - sw * 0.55], [snx + fwd * 0.6, sny + sw * 0.45], [hx + fwd * hr * 0.5, hy + sw * 0.9]], sp.paleMuzzle ? mixHex(body, belly, 0.5) : body);
+    c.fillStyle = '#2a211c'; c.beginPath(); c.ellipse(snx + fwd * 0.3, sny - sw * 0.1, sp.snoutFlat ? 1.6 : 1.1, sp.snoutFlat ? 1.4 : 0.9, 0, 0, 7); c.fill();
+    inkLine(c, [[snx - fwd * 1, sny + sw * 0.35], [hx + fwd * hr * 0.4, hy + sw * 0.8]], LNs, 0.5);
+    if (sp.tusks) { c.fillStyle = '#efe6cf'; blobD(c, [[snx - fwd * 2, sny + sw * 0.3], [snx - fwd * 1, sny - sw * 0.9], [snx - fwd * 0.2, sny + sw * 0.35]], '#efe6cf', true); }
+    if (sp.fangs && (tell || lunge)) { blobD(c, [[snx - fwd * 1.5, sny + sw * 0.4], [snx - fwd * 1.0, sny + sw * 0.4 + 2.2], [snx - fwd * 0.5, sny + sw * 0.4]], '#efe6cf', true); }
+    eye(hx + fwd * hr * 0.35, hy - hr * 0.2, 0.9 * sp.eyeSize * hd);
+    if (sp.brow) inkLine(c, [[hx + fwd * hr * 0.75, hy - hr * 0.5], [hx - fwd * hr * 0.1, hy - hr * 0.62]], LNc, 0.9);
+    if (ANT) antlers(hx - fwd * hr * 0.3, hy - hr * 0.8, fwd, false);
+    earS(hx - fwd * hr * 0.5, hy - hr * 0.7, fwd, body);
+    lay(2);
+    legS(shx + 1, shy, ph, true, true, fwd); legS(hpx - 1, hpy, ph + Math.PI, false, true, fwd);
+  } else {
+    // the front and back views: the body seen end-on, the legs in two pairs, the head over the chest or beyond the rump
+    var dS = back ? -1 : 1, W = 14 * bw * (1 + 0.45 * Math.abs(tq)), top2 = -ll - Hb + bob, bot2 = -ll + bob, cx = -tq * W * 0.2, shift = tq * W * 0.42;
+    var legX = W * 0.3, lift = function (phi) { return Math.max(0, Math.cos(phi)) * 2.6 * mv; }, dep = function (phi) { return Math.sin(phi) * 2.0 * mv * dS; };
+    function legF(x0, phi, near, col) { var l = lift(phi), d = dep(phi), hy2 = bot2 - Hb * 0.2 + crouch, fy = -l + d + (near ? 0 : -3), fx = x0 + (near ? 0 : -tq * 2); var kk = ik2(x0, hy2, fx, fy, ll * 0.6 + Hb * 0.2, ll * 0.5, x0 < cx ? -1 : 1); limbD(c, x0, hy2, lw * 1.2, kk[0], kk[1], lw * 0.9, col); limbD(c, kk[0], kk[1], lw * 0.9, kk[2], kk[3], lw * 0.72, col); hoofAt(kk[2], kk[3], 0, shade(col, -0.06)); }
+    lay(0);
+    if (!back) { legF(cx - legX * 1.1 - shift * 0.6, ph, false, bodyD); legF(cx + legX * 1.1 - shift * 0.6, ph + Math.PI, false, bodyD); }
+    else { legF(cx - legX * 0.95 + shift * 0.6, ph + Math.PI, false, bodyD); legF(cx + legX * 0.95 + shift * 0.6, ph, false, bodyD); }
+    if (back && TL === 3) blobD(c, jagged([[cx - 2, bot2 - Hb * 0.5], [cx + 2, bot2 - Hb * 0.5], [cx + 3 + Math.sin(t * 2) * 1.5, bot2 + 4], [cx - 3 + Math.sin(t * 2) * 1.5, bot2 + 4]], cx, bot2, 1.1, 41), body, true);
+    // the head in the back view sits beyond the body, so it goes first
+    var hr2 = 4.2 * hd, hx2 = cx + shift + (back ? -shift * 0.4 : 0), hy2 = top2 + (back ? 2 : Hb * 0.35) - nk * up * 0.7 + tell * (T === 1 ? 3 : 1) + (lunge ? 2 : 0);
+    function headF() {
+      blobD(c, [[hx2 - hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 - hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 + hr2 * 0.6, hy2 + hr2 * 0.8], [hx2 - hr2 * 0.6, hy2 + hr2 * 0.8]], body);
+      [-1, 1].forEach(function (sd) { var ex = hx2 + sd * hr2 * 0.7 + tq * 0.6, ey = hy2 - hr2 * 0.75; if (EAR === 2) { c.fillStyle = body; c.beginPath(); c.ellipse(ex, ey, 2.2 * hd, 2 * hd, 0, 0, 7); c.fill(); } else if (EAR === 3) blobD(c, [[ex - sd * 1, ey + 1.5], [ex + sd * 4 * hd, ey - 2.5 * hd], [ex + sd * 5.5 * hd, ey - 1], [ex + sd * 1.5, ey + 2]], body); else blobD(c, [[ex - sd * 1.2, ey + 1.5], [ex + sd * 1.5 * hd, ey - 4.2 * hd], [ex + sd * 3 * hd, ey - 0.5], [ex + sd * 0.8, ey + 1.8]], body, true); });
+      if (ANT) antlers(hx2, hy2 - hr2 * 0.9, 1, true);
+      if (!back) {
+        var sx = hx2 + tq * hr2 * 0.3, sy = hy2 + hr2 * 0.35, swf = sw * (0.9 + 0.3 * sp.snout);
+        blobD(c, [[sx - swf, sy - 1], [sx + swf, sy - 1], [sx + swf * 0.9, sy + sl * 0.5 + 1.5], [sx - swf * 0.9, sy + sl * 0.5 + 1.5]], sp.paleMuzzle ? mixHex(body, belly, 0.5) : body);
+        c.fillStyle = '#2a211c'; c.beginPath(); c.ellipse(sx, sy + sl * 0.5 - 0.2, sp.snoutFlat ? 2.2 : 1.6, sp.snoutFlat ? 1.4 : 1.1, 0, 0, 7); c.fill();
+        if (sp.tusks) { blobD(c, [[sx - swf * 0.8, sy + sl * 0.5 + 1], [sx - swf * 1.1, sy + sl * 0.5 - 2.5], [sx - swf * 0.4, sy + sl * 0.5 + 0.5]], '#efe6cf', true); blobD(c, [[sx + swf * 0.8, sy + sl * 0.5 + 1], [sx + swf * 1.1, sy + sl * 0.5 - 2.5], [sx + swf * 0.4, sy + sl * 0.5 + 0.5]], '#efe6cf', true); }
+        if (sp.fangs && (tell || lunge)) { blobD(c, [[sx - 1.6, sy + sl * 0.5 + 1], [sx - 1.1, sy + sl * 0.5 + 3.2], [sx - 0.6, sy + sl * 0.5 + 1]], '#efe6cf', true); blobD(c, [[sx + 0.6, sy + sl * 0.5 + 1], [sx + 1.1, sy + sl * 0.5 + 3.2], [sx + 1.6, sy + sl * 0.5 + 1]], '#efe6cf', true); }
+        eye(hx2 - hr2 * 0.42 + tq * 0.8, hy2 - hr2 * 0.15, 0.85 * sp.eyeSize * hd); eye(hx2 + hr2 * 0.42 + tq * 0.8, hy2 - hr2 * 0.15, 0.85 * sp.eyeSize * hd);
+        if (sp.brow) { inkLine(c, [[hx2 - hr2 * 0.8, hy2 - hr2 * 0.5], [hx2 - hr2 * 0.1, hy2 - hr2 * 0.38]], LNc, 0.9); inkLine(c, [[hx2 + hr2 * 0.8, hy2 - hr2 * 0.5], [hx2 + hr2 * 0.1, hy2 - hr2 * 0.38]], LNc, 0.9); }
+      } else { inkLine(c, [[hx2 - hr2 * 0.5, hy2 - hr2 * 0.2], [hx2 + hr2 * 0.5, hy2 - hr2 * 0.2]], LIT, 0.9); }
+    }
+    if (back) headF();
+    lay(1);
+    var hump2 = sp.hump * 3;
+    blobD(c, [[cx - W * 0.5, bot2 - Hb * 0.45], [cx - W * 0.45 + tq * 2, top2 + 1 - hump2 * (back ? 0.3 : 0.6)], [cx + tq * W * 0.1, top2 - hump2 * (back ? 0.4 : 1) + crouch * 0.5], [cx + W * 0.45 + tq * 2, top2 + 1 - hump2 * (back ? 0.3 : 0.6)], [cx + W * 0.5, bot2 - Hb * 0.45], [cx + W * 0.4, bot2 + 1], [cx, bot2 + 2], [cx - W * 0.4, bot2 + 1]], body);
+    if (!back && (PAT === 1 || sp.paleMuzzle === 2)) blobD(c, [[cx - W * 0.3, bot2 - Hb * 0.4], [cx + W * 0.3, bot2 - Hb * 0.4], [cx + W * 0.35, bot2 + 1], [cx, bot2 + 2], [cx - W * 0.35, bot2 + 1]], belly);
+    if (sp.mane) blobD(c, jagged([[cx - W * 0.2, top2 - hump2 + 1], [cx, top2 - hump2 - 2.5], [cx + W * 0.2, top2 - hump2 + 1], [cx, top2 - hump2 + 3]], cx, top2, 1.2, 43), bodyD, true);
+    inkLine(c, [[cx - W * 0.4, bot2 - Hb * 0.5], [cx - W * 0.2, top2 + 1]], LIT, 1.1);
+    if (!back) { limbD(c, cx + shift * 0.5, top2 + Hb * 0.3 + crouch * 0.5, 3.2 * bh, hx2, hy2 + 2, 2.6 * hd, body); }
+    lay(2);
+    if (!back) headF();
+    if (!back) { legF(cx - legX + shift * 0.3, ph + Math.PI, true, body); legF(cx + legX + shift * 0.3, ph, true, body); }
+    else { legF(cx - legX - shift * 0.3, ph, true, body); legF(cx + legX - shift * 0.3, ph + Math.PI, true, body); }
+  }
+  if (layers) { var lj; for (lj = 0; lj < 3; lj++) inkLayerEnd(cOut, layers[lj], lj, INK_FIG.line, INK_FIG); c = cOut; }
+  c.restore();
+}
 function creatureD(c, x, y, s, H) {
   H = H || creature();
+  if (Math.round(H.spec.plan) === 5 && RIG.animals === 'views') { if (s.ang == null) { var s5 = {}, k5; for (k5 in s) s5[k5] = s[k5]; s5.ang = s.dir < 0 ? Math.PI : 0; s = s5; } quadD(c, x, y, s, H); return; }
   if (Math.round(H.spec.plan) === 7) { trollD(c, x, y, s, H); return; }
+  if ((Math.round(H.spec.plan) === 8 || Math.round(H.spec.plan) === 9) && RIG.trolls === 'views') { trollViewD(c, x, y, s, H); return; }
   if (Math.round(H.spec.plan) === 8) { boulderTrollD(c, x, y, s, H); return; }
   if (Math.round(H.spec.plan) === 9) { forestTrollD(c, x, y, s, H); return; }
   if (Math.round(H.spec.plan) >= 5) {          // animals: without a heading, face straight left or right
@@ -2250,7 +2535,7 @@ function creatureD(c, x, y, s, H) {
 var dkB = null;
 
 
-return { lib: { INK_FIG: INK_FIG, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { INK_FIG: INK_FIG, RIG: RIG, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 
@@ -4097,6 +4382,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
     inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); });
     lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
   });
+  var rigHost = document.getElementById('rigs');
+  [['Views', 'views'], ['Turntable (old)', 'turntable']].forEach(function (rg) {
+    var b = document.createElement('button'); b.textContent = rg[0]; b.id = 'rig-' + rg[1];
+    b.addEventListener('click', function () { lib.RIG.animals = rg[1]; lib.RIG.trolls = rg[1]; try { localStorage.setItem('creature.rig', rg[1]); } catch (e) {} rigUi(); b.blur(); });
+    rigHost.appendChild(b);
+  });
+  function rigUi() { document.getElementById('rig-views').setAttribute('aria-pressed', lib.RIG.animals === 'views' ? 'true' : 'false'); document.getElementById('rig-turntable').setAttribute('aria-pressed', lib.RIG.animals === 'views' ? 'false' : 'true'); }
+  try { var rg0 = localStorage.getItem('creature.rig'); if (rg0 === 'turntable') { lib.RIG.animals = 'turntable'; lib.RIG.trolls = 'turntable'; } } catch (e) {}
+  rigUi();
   var modelHost = document.getElementById('models');
   MODELS.forEach(function (m, mi) {
     var b = document.createElement('button'); b.textContent = m.name;

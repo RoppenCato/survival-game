@@ -114,7 +114,10 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <p class="desc">Save keeps the design under its name in this browser; New creature starts a variation from what is on screen; Update in game makes the chosen beast of the game look and fight like this design (the game keeps its own counts, damage and drops); Take back restores the game's own.</p>
       </section>
       <section class="panel">
-        <h2>Templates</h2>
+        <h2>Rig</h2>
+        <div class="group" id="rigs"></div>
+        <p class="desc">Views draws each creature in three designed views (side, front, back) like the hero, so nothing clips; Turntable is the old rig, kept for comparison.</p>
+        <h2 class="more">Templates</h2>
         <div class="group" id="models"></div>
         <h2 class="more">Body plan</h2>
         <div class="group" id="c-plan"></div>
@@ -390,6 +393,15 @@ __COMBAT__
     inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); });
     lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
   });
+  var rigHost = document.getElementById('rigs');
+  [['Views', 'views'], ['Turntable (old)', 'turntable']].forEach(function (rg) {
+    var b = document.createElement('button'); b.textContent = rg[0]; b.id = 'rig-' + rg[1];
+    b.addEventListener('click', function () { lib.RIG.animals = rg[1]; lib.RIG.trolls = rg[1]; try { localStorage.setItem('creature.rig', rg[1]); } catch (e) {} rigUi(); b.blur(); });
+    rigHost.appendChild(b);
+  });
+  function rigUi() { document.getElementById('rig-views').setAttribute('aria-pressed', lib.RIG.animals === 'views' ? 'true' : 'false'); document.getElementById('rig-turntable').setAttribute('aria-pressed', lib.RIG.animals === 'views' ? 'false' : 'true'); }
+  try { var rg0 = localStorage.getItem('creature.rig'); if (rg0 === 'turntable') { lib.RIG.animals = 'turntable'; lib.RIG.trolls = 'turntable'; } } catch (e) {}
+  rigUi();
   var modelHost = document.getElementById('models');
   MODELS.forEach(function (m, mi) {
     var b = document.createElement('button'); b.textContent = m.name;

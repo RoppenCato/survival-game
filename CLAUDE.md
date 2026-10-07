@@ -859,6 +859,15 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
 - In the arena an enemy with `e.creature = true` is drawn this way (`e.skin` for its own creature). `e.cfg`
   overrides the bot AI speeds, `e.hold` freezes it, `e.aggro` keeps it calm until the hero is near, `e.flee` makes
   it run away instead of fighting (the deer).
+- **The view rig (2026-10-07, Robin: the turntable clipped everywhere, "a new car"; `docs/creatures.md`):** animals (plan 5,
+  `quadD`) and the trolls (plans 8 and 9, `trollViewD`) are drawn like the hero, in three designed views (the side facing left and
+  flipped for right, the front, the back; the front and back turned by `tq` on the diagonals), each a 2D construction with its
+  own layering (far limbs, the body with the head and hair, near limbs) through the ink layers, so nothing cuts through anything
+  and every band is one silhouette with one ink line. Legs and arms are two-bone limbs placed by `ik2`; the nose is part of the
+  head's own shape; attack poses by state. The same specs drive them. `lib.RIG` (`animals`, `trolls`: `'views'` or
+  `'turntable'`) keeps the old rigs for comparison (the Creature Editor's **Rig** switch, kept in `creature.rig`); the snake is
+  still `animal3D`. `node tools/visual/animals.js` renders the five animals at five headings with the walk and the attack;
+  `trolls.js` the trolls.
 - **Facings (decided 2026-10-04):** things turn smoothly, "like the ship". Animals (plans 5 and 6) are drawn by
   `animal3D` at any heading (`s.ang`): the body is laid out in its own space (forward, sideways, up) and turned
   before drawing, with parts ordered far to near. Without `s.ang` they face straight left or right (`s.dir`).
