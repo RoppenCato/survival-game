@@ -786,6 +786,16 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   The arena passes a heading that eases toward the true facing (`creatureTurn`). The hero uses the side view only
   when facing nearly straight left or right; otherwise the front or back view turned by `an.turn` (-1..1).
   `Combat.api.facings8` (on by default) switches both. `node tools/visual/facings.js` renders them all.
+- **The troll redrawn after John Bauer (2026-10-07, Robin: scarier, hairier, old and ancient):** `trollD` in `src/art.js` (plan 7)
+  is a boulder of a body hunched under its own hump, a **mane** in rows of shaggy strokes down the back with long strands at
+  the hem and from the head, gone grey with age, **lichen** grown on the hump, arms so long the **knuckles rest on the ground**
+  with four long fingers laid flat, great flat feet with toes, a tufted tail, a small low head with a heavy brow and tufted
+  eyebrows, tiny eyes that light when he means harm, a long drooping nose with a wart, big pointed ears, a beard, and the
+  trinkets trolls hoard: a string of beads and a bronze ring in the ear. Spec keys `trollHair`, `trollAge`, `trollHunch`,
+  `trollArms`, `trollNose`, `trollEars`, `trollBelly`, `trollMoss`, and flags `trollBeads`, `trollSack`, `trollTail`; a new
+  colour `moss`. The **Creature Editor** has the Troll body plan, the Mountain troll and Stone troll models, a Troll panel with
+  those sliders and details, and the moss swatch under Colours. The stone troll is the same drawing in grey (glow equal to
+  body: no lichen, no beads, no eye light).
 - **The cave and the mountain troll (2026-10-05, from `docs/beasts.md`):**
   *The mouth:* `caveSetup` picks a clear spot on grass 700 to 1600 units from camp (not near the steading), clears
   the props round it and plants a `cave` prop (`caveMouth`); E beside it enters (a short black fade), E near the

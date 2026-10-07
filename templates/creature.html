@@ -121,6 +121,13 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <p class="desc">These apply to the Animal body plan (and neck and snout to the Snake). Head carried: 0 is low like a boar, 1 is high like a deer.</p>
       </section>
       <section class="panel">
+        <h2>Troll</h2>
+        <div id="ptroll"></div>
+        <h2 class="more">Details</h2>
+        <div class="group chips" id="tflags"></div>
+        <p class="desc">The Troll body plan, after John Bauer: an old boulder of a thing, hunched, with hair down its back gone grey, lichen growing on it, knuckles on the ground, a long nose and great ears. Age greys the hair and adds warts. The moss colour is under Colours.</p>
+      </section>
+      <section class="panel">
         <h2>Eyes</h2>
         <div class="group chips" id="c-eyeStyle"></div>
         <div id="peyes" style="margin-top:8px"></div>
@@ -242,15 +249,26 @@ __COMBAT__
     { k: 'antlerSize', label: 'Antler size', min: 0.5, max: 1.8, step: 0.05 }
   ];
   var FLAGS = [['tusks', 'Tusks'], ['fangs', 'Fangs'], ['mane', 'Bristles'], ['hoof', 'Hooves'], ['brow', 'Heavy brow'], ['paleMuzzle', 'Pale muzzle'], ['snoutFlat', 'Flat nose'], ['tailPale', 'Pale tail']];
+  var TROLL = [
+    { k: 'trollHair', label: 'Hair length', min: 0, max: 2.5, step: 0.05 },
+    { k: 'trollAge', label: 'Age (grey, warts)', min: 0, max: 1, step: 0.05 },
+    { k: 'trollHunch', label: 'Hunch', min: 0, max: 1.6, step: 0.05 },
+    { k: 'trollArms', label: 'Arm length', min: 0.5, max: 1.8, step: 0.05 },
+    { k: 'trollNose', label: 'Nose length', min: 0.3, max: 2.2, step: 0.05 },
+    { k: 'trollEars', label: 'Ear size', min: 0, max: 2.2, step: 0.05 },
+    { k: 'trollBelly', label: 'Belly', min: 0.5, max: 1.6, step: 0.05 },
+    { k: 'trollMoss', label: 'Moss and lichen', min: 0, max: 1, step: 0.05 }
+  ];
+  var TFLAGS = [['trollBeads', 'Beads and ring'], ['trollSack', 'A sack on the back'], ['trollTail', 'Tail']];
   var TONE = [
     { k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 },
     { k: 'sat', label: 'Saturation', min: 0, max: 2, step: 0.05 },
     { k: 'lum', label: 'Brightness', min: 0.5, max: 1.5, step: 0.05 }
   ];
-  var NUM = SHAPE.concat(EYES, MOVE, BEHAVE, TONE, ANIMAL);
-  var COLS = [['body', 'Body'], ['belly', 'Belly and markings'], ['accent', 'Horns and teeth'], ['eye', 'Pupils'], ['glow', 'Glow and warning'], ['line', 'Outline']];
+  var NUM = SHAPE.concat(EYES, MOVE, BEHAVE, TONE, ANIMAL, TROLL);
+  var COLS = [['body', 'Body'], ['belly', 'Belly and markings'], ['accent', 'Horns, teeth and hair'], ['moss', 'Moss and lichen'], ['eye', 'Pupils'], ['glow', 'Glow and warning'], ['line', 'Outline']];
   var CHOICES = {
-    plan: ['Blob', 'Critter', 'Brute', 'Floater', 'Crawler', 'Animal', 'Snake'],
+    plan: ['Blob', 'Critter', 'Brute', 'Floater', 'Crawler', 'Animal', 'Snake', 'Troll'],
     ears: ['None', 'Pointed', 'Round', 'Long'],
     antlers: ['None', 'Spikes', 'Deer', 'Moose'],
     eyeStyle: ['Round', 'Glowing', 'Angry', 'Sleepy'],
@@ -263,7 +281,7 @@ __COMBAT__
   };
   var TELLTXT = ['Swell: it squashes wide and flushes with its warning colour.', 'Shake: it trembles on the spot and flushes with its warning colour.', 'Rear up: it lifts and tips back before it strikes.', 'Eye glow: the eyes grow and light up, with a pulse ring.'];
   var BEHAVETXT = ['Lunger: chases you, circles, then lunges in a straight line. It can be parried.', 'Brute: the Bossbot\'s moves, with a lunge, a chain of hits and a spin. It has a stagger bar.', 'Shooter: stands still and fires a shot along a marked line.', 'Grazer: never attacks. It runs away when you come close.'];
-  var MODELS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf'].map(function (k) { return lib.animals[k]; });   // defined in src/art.js
+  var MODELS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollStone'].map(function (k) { return lib.animals[k]; });   // defined in src/art.js
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var spec = clone(lib.creatureDef), inputs = {}, outputs = {}, swatch = {}, hold = false, noDmg = true;
@@ -277,13 +295,13 @@ __COMBAT__
     for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : d[p.k]); }
     for (k in CHOICES) { var c = Math.round(Number(spec[k])); spec[k] = isFinite(c) ? Math.max(0, Math.min(CHOICES[k].length - 1, c)) : d[k]; }
     spec.mark = spec.mark === 0 ? 0 : 1;
-    FLAGS.forEach(function (f) { spec[f[0]] = spec[f[0]] ? 1 : 0; });
+    FLAGS.concat(TFLAGS).forEach(function (f) { spec[f[0]] = spec[f[0]] ? 1 : 0; });
     spec = lib.setCreature(spec);
     for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
     for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
     for (k in CHOICES) choice(k);
     document.getElementById('mark').setAttribute('aria-pressed', spec.mark ? 'true' : 'false');
-    FLAGS.forEach(function (f) { flagBtn[f[0]].setAttribute('aria-pressed', spec[f[0]] ? 'true' : 'false'); });
+    FLAGS.concat(TFLAGS).forEach(function (f) { flagBtn[f[0]].setAttribute('aria-pressed', spec[f[0]] ? 'true' : 'false'); });
     document.getElementById('telldesc').textContent = TELLTXT[spec.tell];
     document.getElementById('behavedesc').textContent = BEHAVETXT[spec.behave];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
@@ -310,7 +328,9 @@ __COMBAT__
     b.addEventListener('click', function () { spec[f[0]] = spec[f[0]] ? 0 : 1; apply(); b.blur(); });
     flagHost.appendChild(b); flagBtn[f[0]] = b;
   });
-  sliders('pshape', SHAPE); sliders('peyes', EYES); sliders('pmove', MOVE); sliders('pbehave', BEHAVE); sliders('ptone', TONE);
+  sliders('pshape', SHAPE); sliders('peyes', EYES); sliders('pmove', MOVE); sliders('pbehave', BEHAVE); sliders('ptone', TONE); sliders('ptroll', TROLL);
+  var tflagHost = document.getElementById('tflags');
+  TFLAGS.forEach(function (f) { var b = document.createElement('button'); b.textContent = f[1]; b.addEventListener('click', function () { spec[f[0]] = spec[f[0]] ? 0 : 1; apply(); b.blur(); }); tflagHost.appendChild(b); flagBtn[f[0]] = b; });
 
   Object.keys(CHOICES).forEach(function (key) {
     var host = document.getElementById('c-' + key);
