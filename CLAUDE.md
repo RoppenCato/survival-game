@@ -408,6 +408,23 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   stairwell shows as an opening with the top treads and a rail (`slab`), and the floor above fades with its bundle (the bug
   was an alpha set instead of multiplied). The edge ghost marks the edge on the ground with a bright band and its two ends,
   so east and west walls are easy to aim; F closes the board when it turns on the wreck cursor. A board taller than the screen **scrolls** with the wheel over it (`menuScroll`, a strip at its right edge; `openMenu` caps `menu.h` and keeps `menu.full`).
+- **The big-house test (2026-10-07, Robin: build a house four times larger, fill it, try to clip, stairs everywhere, several floors):**
+  a 6 by 4 house with a hearth, workbench, bed, chest, table, chair and bench seat was built and walked by script (`tick(dt)` on
+  `Combat.api.debug()` runs one step of the page and the engine without rendering: the solids near the hero, every page tick,
+  then `Combat.update`; the key codes are `KeyW` and so on). Found and fixed: **the clip at the west wall**: upstairs the hero
+  could stand on the very edge of the floor above (x on the wall line), and coming down the stairs there put him inside the
+  wall's collision circle, which pushed him out of the house; now the upstairs walk test keeps him 7 units inside the floor's
+  edge (`UM` in `scene.walk`), so he lands inside. **Stairs climb north**, so the tile south of them must be free floor of the
+  same room ("Stairs climb north: leave a free tile south of them"); stairs in a south row were unreachable. **Nothing stands in
+  a doorway** ("Keep the doorway clear"; a rug may). Several stairs in one house all work (three were tried: west wall, east wall,
+  north row). **Floors: a house has one floor above and that is the limit** (stairs upstairs say "A house has one floor above"):
+  Viking-age houses were single-storey with a loft at most, and more storeys would mean generalising `B.up` into a list of
+  levels with the roof, fade and camera logic for each; not worth it.
+- **Sitting (2026-10-07, Robin: do the chairs behave as they should?):** they did nothing. Now **E at a chair or a bench seat sits
+  you on it** facing the room ("E Sit"; `sitting`, `seatNear`, `sitDown`, `standUp`, `sitTick`): you rest there, health 0.4 and
+  stamina 12 a second coming back, the seat's own solid skipped while you sit; E again or any movement key stands you up a step
+  in front of it ("E Stand up"). The ink figure has a seated pose (`an.sit`: the body drops onto the seat, thighs forward, shins
+  down; `node tools/visual/sit.js`); the engine's `P.anim.sit` carries it.
 - **Furniture is sized to the hero (2026-10-05):** a hero is about 39 units tall, so the table, bed, cart, well,
   drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
   its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision
