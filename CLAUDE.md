@@ -1099,6 +1099,17 @@ are contour lines of it. The tile grid only records sea, beach, grass or jetty f
 Only pieces of sea that touch land are painted, lazily, with the oldest forgotten; open water reuses one piece.
 Props and solids are kept in buckets per map piece. A chart in the corner shows the whole sea.
 
+**The vessels and the yard in the art direction (2026-10-07, Robin: an overhaul of the boat building):** `src/yard.js` has its
+own ink toolkit (as build.js: `ink`, `inkPath` for the hull outlines, `heavy`, `stroke`, `logEnd`, the grain) and the earth
+palette (`COL`: hull, deck, rope, iron). The parts in the yard are real things: a log with bark grain and a cut end with rings,
+a rope lashing in twists, a grained plank, a dark keel timber with a lit edge, a strake with iron nails, a thwart, an oar. The
+raft afloat is those logs and ropes; the boat's hull gets grain, a cool shade, the strakes as soft lines overlapping toward
+the rail, a lit rail, bottom boards, the seats as laid, and the ink line heavy on the shadow side; the near hull over the hero
+the same. The yard itself is trodden earth inside a frame of timbers with a faint grid, the boards are the game's planks, the
+parts strip has grained slots, the plan tabs and Finish are carved, the preview sits in grained water. Checked in the Sea
+Editor by script: a seven-keel boat with strakes and seats laid, launched, boarded, sailed and left, no errors.
+`node tools/visual/boats.js` renders the raft and two boats at four headings with the parts.
+
 **The Shipyard in the Sea Editor (2026-10-06):** the game's yard scene itself, an editor inside the editor. **Open the
 Shipyard** steps the hero into the same grass yard in a wooden frame (`Yard.scene`, shared with the game: the parts down
 the left, Raft and Boat tabs, the build cursor, right click takes back, Enter or Finish launches), with nothing costing

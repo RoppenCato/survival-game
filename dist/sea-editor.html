@@ -4706,14 +4706,14 @@ var T = 32, TS = 24, K = 0.75;
   function yardCheck(y) { var cs = PLANS[y.plan].checks; for (var k = 0; k < cs.length; k++) { var why = cs[k](y); if (why) return why; } return ''; }
 
   function drawYardPart(c, pt, x, y, s) {              // a part lying in its cell(s): x, y is the cell's top left on screen
-    c.save(); c.translate(x, y); c.scale(s, s); c.lineJoin = 'round'; c.lineCap = 'round';
-    if (pt.id === 'log') { c.fillStyle = '#b98a5a'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.5; c.beginPath(); c.roundRect(2, 5, 2 * T - 4, TS - 10, 6); c.fill(); c.stroke(); c.fillStyle = '#e3c58f'; c.beginPath(); c.ellipse(2 * T - 3, TS / 2, 2.2, (TS - 10) / 2 - 1, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(60,35,15,0.35)'; c.lineWidth = 1; c.beginPath(); c.moveTo(8, 9); c.lineTo(2 * T - 12, 9); c.moveTo(12, TS - 9); c.lineTo(2 * T - 16, TS - 9); c.stroke(); }
-    else if (pt.id === 'lash') { c.strokeStyle = '#e8d8a8'; c.lineWidth = 3; c.beginPath(); c.moveTo(T / 2, 1); c.lineTo(T / 2, TS - 1); c.stroke(); c.strokeStyle = '#6a4a2a'; c.lineWidth = 0.9; for (var k = 3; k < TS - 2; k += 4) { c.beginPath(); c.moveTo(T / 2 - 1.8, k); c.lineTo(T / 2 + 1.8, k + 2.4); c.stroke(); } }
-    else if (pt.id === 'plank') { c.fillStyle = '#d9b27a'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.2; c.beginPath(); c.roundRect(3, TS / 2 - 3.5, T - 6, 7, 1.5); c.fill(); c.stroke(); }
-    else if (pt.id === 'keel') { c.fillStyle = '#6a4a2a'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.4; c.beginPath(); c.roundRect(1, TS / 2 - 4, T - 2, 8, 2); c.fill(); c.stroke(); c.strokeStyle = 'rgba(255,220,170,0.35)'; c.lineWidth = 1; c.beginPath(); c.moveTo(3, TS / 2 - 1.5); c.lineTo(T - 3, TS / 2 - 1.5); c.stroke(); }
-    else if (pt.id === 'strake') { c.fillStyle = '#b98a5a'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.2; c.beginPath(); c.roundRect(1, TS / 2 - 3.5, T - 2, 7, 2); c.fill(); c.stroke(); c.fillStyle = '#d9b27a'; c.fillRect(3, TS / 2 - 2.5, T - 6, 2); c.fillStyle = '#8a8a8e'; [6, T - 6].forEach(function (nx) { c.beginPath(); c.arc(nx, TS / 2 + 1, 1, 0, 7); c.fill(); }); }
-    else if (pt.id === 'thwart') { c.fillStyle = '#d9b27a'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.2; c.beginPath(); c.roundRect(4, 3, T - 8, 5, 1.5); c.fill(); c.stroke(); c.strokeStyle = '#2e1a10'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(6, 7); c.lineTo(2, TS - 3); c.moveTo(T - 6, 7); c.lineTo(T - 2, TS - 3); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 1.4; c.stroke(); }
-    else if (pt.id === 'oar') { c.strokeStyle = '#2e1a10'; c.lineWidth = 4; c.beginPath(); c.moveTo(5, TS - 4); c.lineTo(T - 8, 5); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 2.2; c.stroke(); c.fillStyle = '#c99a66'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.2; c.beginPath(); c.ellipse(T - 7, 6, 3.2, 5.5, 0.8, 0, 7); c.fill(); c.stroke(); }
+    c.save(); c.translate(x, y); c.scale(s, s); c.lineJoin = 'round'; c.lineCap = 'round'; var k;
+    if (pt.id === 'log') { ink(c, [[3, 6], [2 * T - 6, 5.5], [2 * T - 6, TS - 5.5], [3, TS - 6]], '#7a5a40', { wob: 0.8, seed: 3, lw: 0.9, heavy: 1.8 }); for (k = 0; k < 3; k++) stroke(c, [[6 + k * 3, 8 + k * 3.2 + (k % 2) * 1.5], [2 * T - 12 - k * 5, 8.5 + k * 3.2 + (k % 2) * 1.5]], INK.faint, 0.6); stroke(c, [[5, 7.2], [2 * T - 9, 7]], INK.lit, 0.9); logEnd(c, 2 * T - 6, TS / 2, 2.6, (TS - 11) / 2, '#c9ab7a'); c.fillStyle = INK.faint; c.beginPath(); c.ellipse(14, TS / 2 + 2, 1.8, 1.1, 0, 0, 7); c.fill(); }
+    else if (pt.id === 'lash') { for (k = 0; k < 5; k++) { var yy = 2 + k * (TS - 4) / 4.5; stroke(c, [[T / 2 - 2.2, yy], [T / 2 + 2.2, yy + 2.6]], INK.line, 2.6); stroke(c, [[T / 2 - 2.2, yy], [T / 2 + 2.2, yy + 2.6]], COL.rope, 1.6); } stroke(c, [[T / 2, 1], [T / 2, TS - 1]], INK.faint, 0.5); }
+    else if (pt.id === 'plank') { ink(c, rect(3, TS / 2 - 3.5, T - 6, 7), COL.deck, { wob: 0.5, seed: 5, lw: 0.8, heavy: 1.4 }); stroke(c, [[6, TS / 2 + 0.3], [T - 6, TS / 2 - 0.2]], INK.faint, 0.5); c.fillStyle = INK.line; c.globalAlpha = 0.5; c.fillRect(5.5, TS / 2 - 0.5, 1, 1); c.fillRect(T - 6.5, TS / 2 - 0.5, 1, 1); c.globalAlpha = 1; }
+    else if (pt.id === 'keel') { ink(c, [[1, TS / 2 - 4], [T - 1, TS / 2 - 4.4], [T - 1, TS / 2 + 4.4], [1, TS / 2 + 4]], mix(COL.hull, '#000000', 0.15), { wob: 0.5, seed: 7, lw: 0.9, heavy: 1.8 }); stroke(c, [[3, TS / 2 - 1.8], [T - 3, TS / 2 - 2]], INK.lit, 0.9); stroke(c, [[4, TS / 2 + 1.5], [T - 4, TS / 2 + 1.2]], INK.faint, 0.5); }
+    else if (pt.id === 'strake') { ink(c, rect(1, TS / 2 - 3.6, T - 2, 7.2), COL.deck, { wob: 0.5, seed: 9, lw: 0.8, heavy: 1.5 }); stroke(c, [[3, TS / 2 - 1.6], [T - 3, TS / 2 - 1.8]], INK.lit, 0.8); [6, T - 6].forEach(function (nx) { c.fillStyle = COL.iron; c.beginPath(); c.arc(nx, TS / 2 + 0.6, 1.1, 0, 7); c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.5; c.stroke(); }); }
+    else if (pt.id === 'thwart') { ink(c, rect(4, 3, T - 8, 5), COL.deck, { wob: 0.4, seed: 11, lw: 0.8, heavy: 1.3 }); stroke(c, [[6, 7], [2, TS - 3]], INK.line, 3.2); stroke(c, [[6, 7], [2, TS - 3]], mix(COL.deck, '#000000', 0.15), 1.8); stroke(c, [[T - 6, 7], [T - 2, TS - 3]], INK.line, 3.2); stroke(c, [[T - 6, 7], [T - 2, TS - 3]], mix(COL.deck, '#000000', 0.15), 1.8); }
+    else if (pt.id === 'oar') { stroke(c, [[5, TS - 4], [T - 8, 5]], INK.line, 4); stroke(c, [[5, TS - 4], [T - 8, 5]], mix(COL.deck, '#000000', 0.1), 2.2); c.save(); c.translate(T - 7, 6); c.rotate(0.8); ink(c, [[-3.2, -5.5], [3.2, -5.5], [3.2, 5.5], [-3.2, 5.5]], mix(COL.deck, '#000000', 0.05), { wob: 0.6, seed: 13, lw: 0.7, heavy: 1.2 }); c.restore(); }
     c.restore();
   }
 
@@ -4728,7 +4728,51 @@ var T = 32, TS = 24, K = 0.75;
 
   var RAFT_DEFAULT = [{ id: 'log', i: 0, j: 0 }, { id: 'log', i: 0, j: 1 }, { id: 'log', i: 0, j: 2 }, { id: 'log', i: 0, j: 3 }, { id: 'log', i: 0, j: 4 }, { id: 'lash', i: 0, j: 0 }, { id: 'lash', i: 1, j: 0 }, { id: 'lash', i: 0, j: 4 }, { id: 'lash', i: 1, j: 4 }];
   function drawOar(c, x, y, ang) { c.save(); c.translate(x, y); c.rotate(ang); c.strokeStyle = '#2e1a10'; c.lineWidth = 3.4; c.beginPath(); c.moveTo(-9, 0); c.lineTo(9, 0); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 1.8; c.stroke(); c.fillStyle = '#c99a66'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.beginPath(); c.ellipse(9, 0, 4, 2.4, 0, 0, 7); c.fill(); c.stroke(); c.restore(); }
-  var LINE = '#1d1622', COL = { hull: '#5a3a26', deck: '#b98a5a', trim: '#b83a2e' };
+  var LINE = '#231a16', COL = { hull: '#5e4430', deck: '#9a7c5c', trim: '#8a3a34', rope: '#c9b48a', iron: '#4a4a50' };   // the earth palette (docs/art-direction.md, 2026-10-07)
+  /* the ink toolkit (as in build.js): a fill with grain and a cool shade toward the lower right, a lit edge, a thin hand-made line
+     all round and the heavy line on the shadow side */
+  var INK = { line: '#231a16', lit: 'rgba(255,238,200,0.4)', soft: 'rgba(35,26,22,0.55)', faint: 'rgba(35,26,22,0.32)', grain: 0.2 }, grainCv = null;
+  function mkCv(w, h) { if (typeof document !== 'undefined') { var cv = document.createElement('canvas'); cv.width = w; cv.height = h; return cv; } if (global.__mk) return global.__mk(w, h); return require('@napi-rs/canvas').createCanvas(w, h); }
+  function grainPat(c) {
+    if (!grainCv) { grainCv = mkCv(64, 64); var g = grainCv.getContext('2d'), i, Rn = 0.41; for (i = 0; i < 900; i++) { Rn = (Rn * 9301 + 49297) % 233280; var x = Rn / 233280 * 64; Rn = (Rn * 9301 + 49297) % 233280; var y = Rn / 233280 * 64; Rn = (Rn * 9301 + 49297) % 233280; var d = Rn / 233280; g.fillStyle = d < 0.55 ? 'rgba(20,14,10,' + (0.25 + d * 0.5).toFixed(2) + ')' : 'rgba(255,245,225,' + (0.2 + (1 - d) * 0.6).toFixed(2) + ')'; g.fillRect(x, y, 1 + (d < 0.2 ? 1 : 0), 1); } }
+    if (!c.__inkPat) c.__inkPat = c.createPattern(grainCv, 'repeat'); return c.__inkPat;
+  }
+  function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
+  function mix(a, b, t) { function hx(q) { return [parseInt(q.slice(1, 3), 16), parseInt(q.slice(3, 5), 16), parseInt(q.slice(5, 7), 16)]; } var p = hx(a), q = hx(b), o = '#', i; for (i = 0; i < 3; i++) { var v = Math.round(p[i] + (q[i] - p[i]) * t).toString(16); o += v.length < 2 ? '0' + v : v; } return o; }
+  function rect(x, y, w, h) { return [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]; }
+  function wob(pts, amp, seed) { if (!amp) return pts; var out = [], n = pts.length, i; for (i = 0; i < n; i++) { var p = pts[i], q = pts[(i + 1) % n], ex = q[0] - p[0], ey = q[1] - p[1], L = Math.hypot(ex, ey) || 1, k = (hs(seed, i) - 0.5) * amp; out.push(p); if (L > 6) out.push([p[0] + ex * 0.5 - ey / L * k, p[1] + ey * 0.5 + ex / L * k]); } return out; }
+  function path(c, d) { var i; c.beginPath(); c.moveTo(d[0][0], d[0][1]); for (i = 1; i < d.length; i++) c.lineTo(d[i][0], d[i][1]); c.closePath(); }
+  function heavy(c, d, w) {
+    var n = d.length, area = 0, i; if (n < 3) return;
+    for (i = 0; i < n; i++) { var p = d[i], q = d[(i + 1) % n]; area += p[0] * q[1] - q[0] * p[1]; }
+    var sgn = area > 0 ? 1 : -1, lx = -0.6, ly = -0.8;
+    c.save(); c.lineCap = 'round'; c.lineWidth = w; c.strokeStyle = INK.line;
+    for (i = 0; i < n; i++) { var a = d[i], b = d[(i + 1) % n], ex = b[0] - a[0], ey = b[1] - a[1], L = Math.hypot(ex, ey) || 1, nx = ey / L * sgn, ny = -ex / L * sgn, k = Math.max(0, Math.min(1, (-(nx * lx + ny * ly) + 0.15) / 0.9)); if (k < 0.04) continue; c.globalAlpha = k * k; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke(); }
+    c.restore();
+  }
+  function ink(c, pts, fill, o) {
+    o = o || {}; var d = wob(pts, o.wob == null ? 0.8 : o.wob, o.seed || 1), i, x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (i = 0; i < d.length; i++) { x0 = Math.min(x0, d[i][0]); y0 = Math.min(y0, d[i][1]); x1 = Math.max(x1, d[i][0]); y1 = Math.max(y1, d[i][1]); }
+    c.save(); path(c, d); c.fillStyle = fill; c.fill(); path(c, d); c.clip();
+    c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(x0, y0, x1 - x0, y1 - y0);
+    if (!o.flat) { c.globalAlpha = o.shade == null ? 0.16 : o.shade; var g = c.createLinearGradient(x0, y0, x0 + (x1 - x0) * 0.7, y1); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'hsla(222,40%,15%,1)'); c.fillStyle = g; c.fillRect(x0, y0, x1 - x0, y1 - y0); }
+    c.globalAlpha = 1;
+    if (!o.flat && o.lit !== false) { c.translate(-0.6, -0.6); path(c, d); c.lineWidth = 1.1; c.strokeStyle = INK.lit; c.stroke(); }
+    c.restore();
+    if (!o.noLine) { path(c, d); c.lineJoin = 'round'; c.lineWidth = o.lw || 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, o.heavy || 1.8); }
+    return d;
+  }
+  function inkPath(c, fill, o, trace) {       // the same finish round a path drawn by trace(): the hull outlines
+    o = o || {}; c.save(); c.beginPath(); trace(); c.fillStyle = fill; c.fill(); c.beginPath(); trace(); c.clip();
+    var b = o.box || [-200, -200, 400, 400]; c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(b[0], b[1], b[2], b[3]);
+    if (!o.flat) { c.globalAlpha = o.shade == null ? 0.18 : o.shade; var g = c.createLinearGradient(b[0], b[1], b[0] + b[2] * 0.7, b[1] + b[3]); g.addColorStop(0, 'rgba(255,240,200,0.5)'); g.addColorStop(0.45, 'rgba(0,0,0,0)'); g.addColorStop(1, 'hsla(222,40%,15%,1)'); c.fillStyle = g; c.fillRect(b[0], b[1], b[2], b[3]); }
+    c.globalAlpha = 1; c.restore();
+    if (!o.noLine) { c.beginPath(); trace(); c.lineJoin = 'round'; c.lineWidth = o.lw || 1.1; c.strokeStyle = INK.line; c.stroke(); c.save(); c.translate(0.9, 1.1); c.beginPath(); trace(); c.globalAlpha = 0.45; c.lineWidth = (o.lw || 1.1) * 1.6; c.stroke(); c.restore(); }   // the heavy side: the line laid again a little down and right
+  }
+  function stroke(c, pts, col, w, a) { var i; c.save(); c.globalAlpha = a == null ? 1 : a; c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.stroke(); c.restore(); }
+  function logEnd(c, x, y, rx, ry, col) {     // the cut end of a log: pale wood with rings
+    c.fillStyle = '#c9ab7a'; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, 7); c.fill(); c.strokeStyle = INK.faint; c.lineWidth = 0.5; c.beginPath(); c.ellipse(x, y, rx * 0.6, ry * 0.6, 0, 0, 7); c.stroke(); c.beginPath(); c.ellipse(x, y, rx * 0.25, ry * 0.25, 0, 0, 7); c.stroke(); c.strokeStyle = INK.line; c.lineWidth = 0.7; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, 7); c.stroke();
+  }
   function shadeHex(hex, d) { var n = parseInt(hex.substr(1), 16), r = Math.max(0, Math.min(255, (n >> 16) + d)), g = Math.max(0, Math.min(255, ((n >> 8) & 255) + d)), b = Math.max(0, Math.min(255, (n & 255) + d)); return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0'); }
   function speedOf(v) { return Math.hypot(v.vx || 0, v.vy || 0); }
   // How a vessel handles: the Sea Editor's handling sliders, as numbers per kind. steer 0 is Direct (hold a direction
@@ -4791,20 +4835,20 @@ var T = 32, TS = 24, K = 0.75;
     drawWater(c, v, hw, hh * 0.55, clock);
     c.save(); c.translate(v.x, v.y * K + bob);
     c.scale(1, K); c.rotate(v.h);
-    c.fillStyle = 'rgba(10,40,70,0.28)'; c.beginPath(); c.ellipse(1, 3, hw + 2, hh + 6, 0, 0, 7); c.fill();
+    c.fillStyle = 'rgba(10,30,50,0.28)'; c.beginPath(); c.ellipse(1, 3, hw + 2, hh + 6, 0, 0, 7); c.fill();
     c.lineJoin = 'round'; c.lineCap = 'round';
     logs.slice().sort(function (p, q) { return p.j - q.j; }).forEach(function (p) {
-      var x0 = (p.i - cx) * CW, oy = (p.j + 0.5 - cy) * CH, len = 2 * CW - 2;
-      c.fillStyle = (p.i + p.j) % 2 ? '#a8794a' : '#b98a5a'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.5;
-      c.beginPath(); c.roundRect(x0 + 1, oy - 3.6, len, 7.2, 3.4); c.fill(); c.stroke();
-      c.fillStyle = '#e3c58f'; c.beginPath(); c.ellipse(x0 + len + 1, oy, 1.8, 3.2, 0, 0, 7); c.fill();
+      var x0 = (p.i - cx) * CW, oy = (p.j + 0.5 - cy) * CH, len = 2 * CW - 2, tone = ((p.i * 7 + p.j * 13) % 5) / 5 - 0.5;
+      ink(c, [[x0 + 1, oy - 3.4], [x0 + len - 1, oy - 3.6], [x0 + len - 1, oy + 3.6], [x0 + 1, oy + 3.4]], mix('#7a5a40', tone > 0 ? '#ffffff' : '#000000', Math.abs(tone) * 0.2), { wob: 0.7, seed: p.i * 3 + p.j, lw: 0.8, heavy: 1.6 });
+      stroke(c, [[x0 + 4, oy - 1.8], [x0 + len - 6, oy - 2]], INK.lit, 0.8); stroke(c, [[x0 + 6, oy + 1.2], [x0 + len - 8, oy + 1.5]], INK.faint, 0.5);
+      logEnd(c, x0 + len, oy, 1.8, 3.2, '#c9ab7a');
     });
     parts.forEach(function (p) {
-      var x0 = (p.i + 0.5 - cx) * CW, oy = (p.j + 0.5 - cy) * CH;
-      if (p.id === 'lash') { c.strokeStyle = '#e8d8a8'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(x0, oy - 4.6); c.lineTo(x0, oy + 4.6); c.stroke(); c.strokeStyle = '#6a4a2a'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(x0 - 1.6, oy - 3); c.lineTo(x0 + 1.6, oy + 3); c.stroke(); }
-      else if (p.id === 'plank') { c.fillStyle = '#d9b27a'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.beginPath(); c.roundRect(x0 - 10, oy - 2.6, 20, 5.2, 1.5); c.fill(); c.stroke(); }
+      var x0 = (p.i + 0.5 - cx) * CW, oy = (p.j + 0.5 - cy) * CH, k;
+      if (p.id === 'lash') { for (k = 0; k < 3; k++) { var ly = oy - 3.6 + k * 2.6; stroke(c, [[x0 - 1.6, ly], [x0 + 1.6, ly + 1.8]], INK.line, 2.2); stroke(c, [[x0 - 1.6, ly], [x0 + 1.6, ly + 1.8]], COL.rope, 1.3); } }
+      else if (p.id === 'plank') { ink(c, rect(x0 - 10, oy - 2.6, 20, 5.2), COL.deck, { wob: 0.4, seed: p.i + p.j * 5, lw: 0.7, heavy: 1.2 }); stroke(c, [[x0 - 8, oy + 0.2], [x0 + 8, oy - 0.1]], INK.faint, 0.45); }
     });
-    drawOar(c, hw - 8, hh + 2, 0.5);
+    drawOar(c, hw - 16, hh - 4, 0.5);
     c.restore();
   }
   // the hull's shape follows the strakes: at every keel column the side is as wide as the strakes laid there, each side on
@@ -4842,13 +4886,16 @@ var T = 32, TS = 24, K = 0.75;
     drawWater(c, v, L, W, clock, pr);
     function inFrame(dy, fn) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(h + roll); fn(); c.restore(); }
     function fillStroke(fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke(); }
+    var box = [-L - 12, -W - 12, 2 * L + 24, 2 * W + 24];
     c.fillStyle = 'rgba(8,12,40,0.28)'; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.95, W * 1.05, 0, 0, 7); c.fill();
-    inFrame(4 * sz, function () { c.beginPath(); shapedPath(c, pr, 1, 1); fillStroke(shadeHex(col.hull, -30)); });
+    inFrame(4 * sz, function () { inkPath(c, shadeHex(col.hull, -30), { box: box, flat: true, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); }); });   // the hull's depth below the rail
     inFrame(0, function () {
-      c.beginPath(); shapedPath(c, pr, 1, 1); fillStroke(col.hull);
-      c.beginPath(); shapedPath(c, pr, 0.9, 0.78); c.lineWidth = 0.9; c.strokeStyle = 'rgba(20,12,20,0.45)'; c.stroke();   // a line of planking
-      c.beginPath(); shapedPath(c, pr, 0.84, 0.62); fillStroke(col.deck, 1.2);
-      seats.forEach(function (x) { var wt = profW(pr, x, -1) * 0.6, wb = profW(pr, x, 1) * 0.6; c.beginPath(); c.rect(x - 1.3, -wt, 2.6, wt + wb); fillStroke(shadeHex(col.hull, 12), 0.9); });   // the rowing seats as laid
+      inkPath(c, col.hull, { box: box, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); });
+      [0.95, 0.9].forEach(function (k, n) { c.beginPath(); shapedPath(c, pr, k, 0.9 - n * 0.12); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); });   // the strakes, overlapping toward the rail
+      c.beginPath(); shapedPath(c, pr, 0.92, 0.95); c.lineWidth = 0.9; c.strokeStyle = INK.lit; c.stroke();
+      inkPath(c, col.deck, { box: box, lw: 0.9, shade: 0.1 }, function () { shapedPath(c, pr, 0.84, 0.62); });   // the bottom boards
+      for (var bi = -2; bi <= 2; bi++) { c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.lineWidth = 0.5; c.strokeStyle = INK.faint; c.save(); c.beginPath(); shapedPath(c, pr, 0.84, 0.62); c.clip(); c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.stroke(); c.restore(); }
+      seats.forEach(function (x, si) { var wt = profW(pr, x, -1) * 0.6, wb = profW(pr, x, 1) * 0.6; ink(c, [[x - 1.4, -wt], [x + 1.4, -wt], [x + 1.4, wb], [x - 1.4, wb]], shadeHex(col.hull, 12), { wob: 0.3, seed: si, lw: 0.7, heavy: 1.1 }); });   // the rowing seats as laid
       if ((v.crew || 0) > 0) seats.forEach(function (x, n) { [-1, 1].forEach(function (sd) {          // an oar each side of every seat, pulling when under way (only with rowers)
         var a = sd * (Math.PI / 2) - Math.sin(clock * (2.6 + mv * 4.5) + n) * 0.55 * mv - 0.2;
         var ox = x, oy = sd * profW(pr, x, sd), len = W * 1.7 + 7 * sz, ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
@@ -4877,9 +4924,10 @@ var T = 32, TS = 24, K = 0.75;
     c.save();
     c.beginPath(); if (heroY != null) c.rect(hx0 - 10, cy, 20, 40); else c.rect(sx - L * 2, cy, L * 4, L * 3); c.clip();   // only over his legs, whatever the heading
     c.lineJoin = 'round'; c.strokeStyle = LINE;
-    c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(COL.hull, -30); c.fill('evenodd'); c.lineWidth = 1.6; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
+    c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(COL.hull, -30); c.fill('evenodd'); c.lineWidth = 1.2; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
     c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = COL.hull; c.fill('evenodd');
-    c.lineWidth = 1.6; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 1.2; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
+    c.save(); c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.clip('evenodd'); c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(sx - L * 2, cy, L * 4, L * 3); c.globalAlpha = 1; c.beginPath(); sub(0, 0.95, 0.9); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); c.restore();
+    c.lineWidth = 1.2; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 0.9; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
     c.restore();
     if (!(v.crew || 0) && v.aboard && heroY != null) {        // alone: a straight paddle from the near rail down into the water, stroking as the boat moves
       var mv = Math.min(1, speedOf(v) / 60), st = mv > 0.05 ? Math.sin(clock * (3 + mv * 3)) : -1, side = Math.cos(v.h) >= 0 ? 1 : -1;
@@ -4897,19 +4945,19 @@ var T = 32, TS = 24, K = 0.75;
 /* ---------- the Shipyard scene: a clear yard of grass in a wooden frame, the parts down the left, the hero in a corner,
    and the build cursor laying parts. The host (the game, the Sea Editor) gives it a hero, costs, sounds, a grass tile,
    saving and what happens on Finish; the scene keeps the yard, the pick, the cursor and the frame. ---------- */
-function wood(c, x, y, w, h) {            // a wooden board with planks, a dark rim and iron rivets at the corners
-  c.save();
-  c.fillStyle = '#4a2e1c'; c.beginPath(); c.roundRect(x, y, w, h, 4); c.fill();
-  c.beginPath(); c.roundRect(x + 2.5, y + 2.5, w - 5, h - 5, 3); c.clip();
-  c.fillStyle = '#7a5236'; c.fillRect(x, y, w, h);
-  c.strokeStyle = 'rgba(60,35,20,0.55)'; c.lineWidth = 1;
-  for (var py = y + 2.5 + 9; py < y + h - 3; py += 9) { c.beginPath(); c.moveTo(x, py); c.lineTo(x + w, py); c.stroke(); }
-  c.strokeStyle = 'rgba(255,225,170,0.08)'; for (var gx = x + 6; gx < x + w; gx += 11) { c.beginPath(); c.moveTo(gx, y); c.lineTo(gx + 3, y + h); c.stroke(); }
-  c.restore();
-  c.strokeStyle = '#2e1a10'; c.lineWidth = 1.4; c.beginPath(); c.roundRect(x, y, w, h, 4); c.stroke();
-  c.fillStyle = '#7d8290'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8;
-  [[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 1.7, 0, 7); c.fill(); c.stroke(); });
-}
+function wood(c, x, y, w, h) {            // a wooden board: planks across with grain, the ink frame heavy below and to the right, iron nails
+    c.save();
+    c.fillStyle = '#5c4535'; c.beginPath(); c.roundRect(x, y, w, h, 4); c.fill();
+    c.save(); c.beginPath(); c.roundRect(x + 1, y + 1, w - 2, h - 2, 3); c.clip();
+    var py, i = 0; for (py = y; py < y + h; py += 9, i++) { c.fillStyle = ((i * 37) % 7) / 7 > 0.5 ? '#66503e' : '#59433a'; c.fillRect(x, py, w, 9); c.strokeStyle = 'rgba(35,26,22,0.35)'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x, py + 8.6); c.lineTo(x + w, py + 9); c.stroke(); c.strokeStyle = 'rgba(255,238,200,0.08)'; c.beginPath(); c.moveTo(x, py + 0.8); c.lineTo(x + w, py + 0.8); c.stroke(); }
+    c.globalAlpha = 0.2; c.fillStyle = grainPat(c); c.fillRect(x, y, w, h); c.globalAlpha = 1;
+    var sg = c.createLinearGradient(x, y, x + w * 0.7, y + h); sg.addColorStop(0, 'rgba(255,240,200,0.06)'); sg.addColorStop(1, 'hsla(222,40%,15%,0.22)'); c.fillStyle = sg; c.fillRect(x, y, w, h);
+    c.restore();
+    c.strokeStyle = INK.line; c.lineWidth = 1.1; c.beginPath(); c.roundRect(x, y, w, h, 4); c.stroke(); c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x + 4, y + h); c.lineTo(x + w - 4, y + h); c.moveTo(x + w, y + 4); c.lineTo(x + w, y + h - 4); c.stroke();
+    c.strokeStyle = INK.lit; c.lineWidth = 1; c.beginPath(); c.moveTo(x + 5, y + 1.2); c.lineTo(x + w - 5, y + 1.2); c.moveTo(x + 1.2, y + 5); c.lineTo(x + 1.2, y + h - 5); c.stroke();
+    c.fillStyle = '#3a3a40'; [[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 1.8, 0, 7); c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.7; c.stroke(); });
+    c.restore();
+  }
 var scene = {
   Y: { X: 0, Y: 400, W: 9, H: 6 }, PAL: { x: 6, y: 34, cell: 30 }, ZOOM: 1.1,
   yard: null, pick: 0, active: false, host: null, label: null, fade: 0,
@@ -4946,11 +4994,13 @@ var scene = {
     h.pay(t.part.cost); this.yard.cells.push({ id: t.part.id, i: t.i, j: t.j }); h.sfx('build'); h.save(); return true;
   },
   check: function () { return this.yard ? yardCheck(this.yard) : ''; },
-  floor: function (c) {                   // the yard's ground, in world space, with the laid parts
+  floor: function (c) {                   // the yard's ground, in world space, with the laid parts: trodden earth inside a frame of timbers
     var Y = this.Y, i, j;
     for (j = -2; j < Y.H + 2; j++) for (i = -2; i < Y.W + 2; i++) this.host.tile(c, i + 40, j + 40, Y.X + i * T, (Y.Y + j * T) * K, T + 0.4, TS + 0.4);
-    c.fillStyle = 'rgba(70,50,30,0.16)'; c.fillRect(Y.X, Y.Y * K, Y.W * T, Y.H * TS);
-    c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = 0.8; c.setLineDash([2, 3]); c.beginPath();
+    ink(c, rect(Y.X, Y.Y * K, Y.W * T, Y.H * TS), '#8a7250', { wob: 2.5, seed: 21, lw: 0, noLine: true, shade: 0.12 });
+    ink(c, rect(Y.X - 4, Y.Y * K - 3, Y.W * T + 8, 3), '#6e5540', { wob: 0.6, seed: 22, lw: 0.8, heavy: 1.6 }); ink(c, rect(Y.X - 4, Y.Y * K + Y.H * TS, Y.W * T + 8, 3), '#6e5540', { wob: 0.6, seed: 23, lw: 0.8, heavy: 1.6 });
+    ink(c, rect(Y.X - 4, Y.Y * K - 3, 3, Y.H * TS + 6), '#6e5540', { wob: 0.6, seed: 24, lw: 0.8, heavy: 1.6 }); ink(c, rect(Y.X + Y.W * T + 1, Y.Y * K - 3, 3, Y.H * TS + 6), '#6e5540', { wob: 0.6, seed: 25, lw: 0.8, heavy: 1.6 });
+    c.strokeStyle = 'rgba(35,26,22,0.16)'; c.lineWidth = 0.7; c.setLineDash([2, 4]); c.beginPath();
     for (i = 0; i <= Y.W; i++) { c.moveTo(Y.X + i * T, Y.Y * K); c.lineTo(Y.X + i * T, (Y.Y + Y.H * T) * K); }
     for (j = 0; j <= Y.H; j++) { c.moveTo(Y.X, (Y.Y + j * T) * K); c.lineTo(Y.X + Y.W * T, (Y.Y + j * T) * K); }
     c.stroke(); c.setLineDash([]);
@@ -4978,15 +5028,15 @@ var scene = {
     c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Parts', P.x + 3, P.y + 5);
     for (k = 0; k < PL.length; k++) {
       var r = this.palRect(k), pt = PL[k], on = k === this.pick && !wreck, can = h.canAfford(pt.cost);
-      c.fillStyle = hp === k ? '#5c3e2a' : '#3e2718'; c.fillRect(r.x, r.y, r.w, r.h);
-      c.strokeStyle = on ? '#ffd34d' : 'rgba(0,0,0,0.5)'; c.lineWidth = on ? 1.4 : 1; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1);
+      c.fillStyle = hp === k ? '#4a3626' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(r.x, r.y, r.w, r.h); c.restore();
+      c.strokeStyle = on ? '#d9a73a' : INK.line; c.lineWidth = on ? 1.3 : 0.9; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.strokeStyle = 'rgba(255,238,200,0.14)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(r.x + 1.5, r.y + r.h - 1.2); c.lineTo(r.x + r.w - 1.5, r.y + r.h - 1.2); c.lineTo(r.x + r.w - 1.2, r.y + 1.5); c.stroke();
       c.globalAlpha = can ? 1 : 0.4; drawYardPart(c, pt, r.x + (pt.w === 2 ? 1 : 7), r.y + 4, pt.w === 2 ? 0.44 : 0.7); c.globalAlpha = 1;
       c.font = '600 4.2px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.textAlign = 'center'; c.fillText(pt.name, r.x + r.w / 2, r.y + r.h - 2.5);
     }
-    YARD_PLANS.forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? 'rgba(255,230,180,0.26)' : 'rgba(0,0,0,0.28)'; c.fillRect(r.x, r.y, r.w, r.h); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
+    YARD_PLANS.forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? '#a8702c' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
     var line = why || 'The hull is sound. Finish to launch it.';
     c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 270, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 270, 14);
-    if (!why) { var fr = this.finishRect(), hv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = hv ? '#3f7d2e' : '#2f5f24'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 2); c.fill(); c.strokeStyle = '#1d1622'; c.lineWidth = 1; c.stroke(); c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.5); }
+    if (!why) { var fr = this.finishRect(), hv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = hv ? '#6a4e38' : '#5a4232'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 3); c.fill(); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(fr.x, fr.y, fr.w, fr.h); c.restore(); c.strokeStyle = '#c99a3a'; c.lineWidth = 1; c.beginPath(); c.roundRect(fr.x + 0.5, fr.y + 0.5, fr.w - 1, fr.h - 1, 3); c.stroke(); c.strokeStyle = INK.line; c.lineWidth = 1.6; c.beginPath(); c.moveTo(fr.x + 3, fr.y + fr.h); c.lineTo(fr.x + fr.w - 3, fr.y + fr.h); c.moveTo(fr.x + fr.w, fr.y + 3); c.lineTo(fr.x + fr.w, fr.y + fr.h - 3); c.stroke(); c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.5); }
     if (hp >= 0) { var pp = PL[hp], tt = pp.name + '  ' + h.costText(pp.cost) + '.  ' + pp.text; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); c.fillStyle = '#fff'; c.fillText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); }
     if (this.label && ms && hp < 0) { c.font = '600 6.5px system-ui, sans-serif'; var gw = c.measureText(this.label.text).width + 10, gx = Math.max(2, Math.min(398 - gw, ms.x + 8)), gy = Math.max(12, ms.y - 6); c.fillStyle = 'rgba(20,16,30,0.82)'; c.fillRect(gx, gy - 8, gw, 12); c.fillStyle = this.label.bad ? '#ff9a8a' : '#fff'; c.textAlign = 'left'; c.fillText(this.label.text, gx + 5, gy + 1); }
     c.font = '600 5px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText('Right click takes a part back.  E leaves the yard.', 52, 242); c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText('Right click takes a part back.  E leaves the yard.', 52, 242);
@@ -4995,7 +5045,7 @@ var scene = {
       var bx = 292, by = 158, bw = 92, bh = 62, pv = { kind: this.yard.plan, parts: this.yard.cells, x: 0, y: 0, h: -0.35, vx: 0, vy: 0, aboard: false };
       fitVessel(pv); var sc = Math.min(1, (bw - 14) / (pv.hw * 2 + 16), (bh - 10) / (pv.hh * 2 + 24));
       wood(c, bx - 4, by - 4, bw + 8, bh + 8);
-      c.save(); c.beginPath(); c.rect(bx, by, bw, bh); c.clip(); c.fillStyle = '#2a7fb0'; c.fillRect(bx, by, bw, bh);
+      c.save(); c.beginPath(); c.rect(bx, by, bw, bh); c.clip(); c.fillStyle = '#3a6f8e'; c.fillRect(bx, by, bw, bh); c.globalAlpha = 0.16; c.fillStyle = grainPat(c); c.fillRect(bx, by, bw, bh); c.globalAlpha = 1;
       c.strokeStyle = 'rgba(235,250,255,0.35)'; c.lineWidth = 0.8; [[8, 12], [60, 20], [30, 50], [78, 46]].forEach(function (q) { c.beginPath(); c.moveTo(bx + q[0], by + q[1]); c.quadraticCurveTo(bx + q[0] + 3, by + q[1] - 2, bx + q[0] + 6, by + q[1]); c.quadraticCurveTo(bx + q[0] + 9, by + q[1] + 2, bx + q[0] + 12, by + q[1]); c.stroke(); });
       c.translate(bx + bw / 2, by + bh / 2 + 2); c.scale(sc, sc); drawVessel(c, pv, 0); c.restore();
       c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.fillText('Afloat it will look like this', bx, by - 6);
