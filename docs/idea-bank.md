@@ -116,8 +116,18 @@ up** when gathering, crafting, the hird's jobs or progression are discussed agai
 ## Gathering: making chopping, mining and picking satisfying (Robin, 2026-10-07; ideas, not decided)
 
 Robin's brief: more satisfying and interesting, never bothersome or complicated. References: Valheim's falling trees that
-fell other trees; Dragonwilds' magic that fells many; Palworld's hit points on a thing. The ideas are in the chat of
-2026-10-07 and will be moved here when chosen.
+fell other trees; Dragonwilds' magic that fells many; Palworld's hit points on a thing.
+
+**Built in the Gathering Editor (2026-10-07, each a switch, none decided yet):** the sweet spot (a glint on one side of a
+tree or one facet of a rock that wanders; a blow from there bites deeper), rhythm (a blow in the window after the last is
+clean; mashing misses it), the fall (a tree falls away from you, fells the trees it lands on, hurts you if you stand
+there), trunks (a felled tree lies as a trunk and gives its wood a log at a time), nests (eggs, or honey and angry
+bees), stumps growing back after some days, cracks on rocks, and toughness sliders. Robin tries them and hands over the
+settings with "Use in the game".
+
+**Not built, for later:** a special stroke (a heavy blow that splits a trunk at once), the knife's cutting of herbs and
+reeds with a sweet spot of its own, quarrying big stone in blocks, a thing's hit points shown by its look alone (Palworld),
+a log that rolls downhill, tapping birch sap in spring, rings in a stump that tell its age.
 
 ## Smaller ideas
 

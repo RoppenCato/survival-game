@@ -98,6 +98,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
+| `gathering-editor.html` | `gather.html` | Gathering Editor (2026-10-07): a field of trees, rocks and bushes; the gathering ideas as switches and sliders, presets, settings as text, "Use in the game" (`game.gather`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07): the game started on the big island at a carver's bench, a dragon ring on the arm, every rune known; a board on the left to change the ring's metal, know or forget every rune, bring beasts, make it night, go back to the bench, start over. Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()` |
 
@@ -141,6 +142,18 @@ the text and it is made the default. When a spec's meaning changes, change the s
   frame, the parts strip, plan tabs, the cursor, Finish; `enter(host, yard)`, `floor`, `ghost`, `hud`, `mousedown`, `wheel`,
   `key`, `walk`, `cam`, `heroSpot`) driven by a small host object (hero, costs, sounds, a grass tile, save, finish). The game
   and the Sea Editor both run it; the game pays costs, the editor's host makes everything free.
+- `src/gather.js` (`Gather`): chopping, mining and cutting as a small game (Robin, 2026-10-07). `DEF` is the spec (`cfg`
+  merges `game.gather` over it): the **sweet spot** (a glint on one side of a tree, one facet of a rock, wandering every seven
+  seconds; a blow from that side bites `spotBonus` deeper), **rhythm** (a blow `rhythmAfter`..`+rhythmWindow` seconds after
+  the last is clean, `rhythmBonus`; holding the button misses it), the **fall** (a felled tree fells the trees in its line,
+  `fallFells`/`fallReach`, and hurts the hero standing there, `fallHurts`/`fallDamage`), **trunks** (a felled tree lies as a
+  trunk, `kind: 'trunk'`, drawn by `drawTrunk`; every `chopsPerLog` blows a log of wood rolls out, `logsPerTrunk` logs), **nests**
+  (`nestChance`: eggs, or honey with bees that chase you until a fire), **regrow** (stumps keep `day`; `regrowTick` turns them
+  into saplings after `regrowDays` that grow up, `o.grow`), **cracks** (a crack on one facet of a rock, `crackBonus`), and
+  toughness. `hit(G, o, ctx)` and `tick(G, o, dt, ctx)` take the hero, the clock, the sprite bounds and callbacks (chip, drop,
+  sfx, decal, spawn, fell, hurt, bees, note); `drawProp` draws the lean, the cracks, the glint and the bar. The game's
+  `Combat.api.harvest.hit`, its dying tick and `drawProp` go through it (`GT`, `gatherEv`, `trunks` saved, `bees`,
+  `growTick`, `regrowTick` on each new day; eggs and honey are food). `tests/gather.js` checks the rules.
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
   `hollow` drawings for the casting cloth. Thirteen runes so far.
