@@ -1736,6 +1736,8 @@ var scratch = null;
 var cacheF = null, cacheO = null, cacheM = null;
 var pbuf = null;
 
-return { DEF: DEF, kit: { STYLE: STYLE, STYLE_INK: STYLE_INK, STYLE_FLAT: STYLE_FLAT, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
+// the look the Art Direction page handed over (game.look) merged into STYLE, from one place
+function applyStored(st) { try { var lk = JSON.parse(st.getItem('game.look')); if (lk && typeof lk === 'object') { var k; for (k in lk) if (STYLE[k] != null) STYLE[k] = lk[k]; } return lk; } catch (e) { return null; } }
+return { DEF: DEF, kit: { applyStored: applyStored, STYLE: STYLE, STYLE_INK: STYLE_INK, STYLE_FLAT: STYLE_FLAT, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = StyleLab;

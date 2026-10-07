@@ -153,7 +153,7 @@ __COMBAT__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, TS = kit.TH;
-  try { var gh0 = JSON.parse(localStorage.getItem('game.hero2')); if (gh0 && typeof gh0 === 'object') lib.setHero(gh0); } catch (e) {}   // the hero as the Character Editor set it
+  lib.applyStored(localStorage); kit.applyStored(localStorage);   // the hero, the creatures, the rig and the look the editors handed to the game, from one place
   Combat.init(lib);
   var S = Combat.S; S.look = 'classic'; S.sound = false;
   Combat.clear();

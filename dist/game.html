@@ -2432,7 +2432,15 @@ function creatureD(c, x, y, s, H) {
 var dkB = null;
 
 
-return { lib: { INK_FIG: INK_FIG, RIG: RIG, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+// Every page applies the game's stored choices from one place (2026-10-07, Robin: the editors should pull from the same
+// source): the hero the Character Editor handed over (game.hero2), the creatures the Creature Editor handed over
+// (game.creatures), the rig to draw them with (creature.rig).
+function applyStored(st) {
+  try { var gh = JSON.parse(st.getItem('game.hero2')); if (gh && typeof gh === 'object') setHero(gh); } catch (e) {}
+  try { var gc = JSON.parse(st.getItem('game.creatures')); if (gc && typeof gc === 'object') { var k; for (k in gc) if (ANIMALS[k] && gc[k] && typeof gc[k] === 'object') useAnimal(k, gc[k]); } } catch (e) {}
+  try { var rg = st.getItem('creature.rig'); if (rg === 'turntable' || rg === 'views') { RIG.animals = rg; RIG.trolls = rg; } } catch (e) {}
+}
+return { lib: { INK_FIG: INK_FIG, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 
@@ -4174,7 +4182,9 @@ var scratch = null;
 var cacheF = null, cacheO = null, cacheM = null;
 var pbuf = null;
 
-return { DEF: DEF, kit: { STYLE: STYLE, STYLE_INK: STYLE_INK, STYLE_FLAT: STYLE_FLAT, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
+// the look the Art Direction page handed over (game.look) merged into STYLE, from one place
+function applyStored(st) { try { var lk = JSON.parse(st.getItem('game.look')); if (lk && typeof lk === 'object') { var k; for (k in lk) if (STYLE[k] != null) STYLE[k] = lk[k]; } return lk; } catch (e) { return null; } }
+return { DEF: DEF, kit: { applyStored: applyStored, STYLE: STYLE, STYLE_INK: STYLE_INK, STYLE_FLAT: STYLE_FLAT, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = StyleLab;
 
@@ -4312,9 +4322,9 @@ function make(kit, opts) {
   var GQ = 8; w.ground = {};
   w.repaint = function (x0, y0, x1, y1) {
     var pw = CT * T, qx0 = Math.max(0, Math.floor(x0 / pw)), qx1 = Math.min(CW - 1, Math.floor(x1 / pw)), qy0 = Math.max(0, Math.floor(y0 / pw)), qy1 = Math.min(CH - 1, Math.floor(y1 / pw)), qx, qy;
-    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) { delete chunkCv[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); if (w.chunk) w.chunk(qx, qy); } }   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
+    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) { delete chunkCv[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); chunkCv[ck] = bakeChunk(qx, qy); chunkOrder.push(ck); } }   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
   };
-  w.paintGround = function (x, y, r, kind) {              // kind 1 gravel, 2 earth, 0 back to grass; true if anything changed
+  w.paintGround = function (x, y, r, kind) {              // kind 1 gravel, 2 earth, 3 moss, 0 back to grass; true if anything changed
     var changed = false, qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy;
     for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) {
       if (Math.hypot((qx + 0.5) * GQ - x, (qy + 0.5) * GQ - y) > r) continue; var kk = qx + ',' + qy;
@@ -4334,9 +4344,10 @@ function make(kit, opts) {
     var gv = kit.mk(W2, H2), gc = gv.getContext('2d'), img = gc.createImageData(W2, H2), d = img.data, pp = 0, py, px;
     for (py = 0; py < H2; py++) for (px = 0; px < W2; px++, pp += 4) {
       var wx = cx * W2 + px, wys = cy * H2 + py, wy = wys / K, n1v = noise[((wys & 127) << 7) | (wx & 127)], n2v = noise[(((wys * 2) & 127) << 7) | ((wx * 2) & 127)];
-      var fg = groundField(1, wx, wy) + (n1v - 0.5) * 0.55, fe = groundField(2, wx, wy) + (n1v - 0.5) * 0.55, r = 0, g = 0, b = 0, a = 0, f = 0;
+      var fg = groundField(1, wx, wy) + (n1v - 0.5) * 0.55, fe = groundField(2, wx, wy) + (n1v - 0.5) * 0.55, fm = groundField(3, wx, wy) + (n1v - 0.5) * 0.6, r = 0, g = 0, b = 0, a = 0, f = 0;
       if (fg > 0.5) { f = fg; r = 150 + (n2v - 0.5) * 44; g = 138 + (n2v - 0.5) * 40; b = 118 + (n2v - 0.5) * 34; }
       else if (fe > 0.5) { f = fe; r = 126 + (n2v - 0.5) * 30; g = 98 + (n2v - 0.5) * 26; b = 62 + (n2v - 0.5) * 20; }
+      else if (fm > 0.5) { f = fm; r = 92 + (n2v - 0.5) * 26; g = 128 + (n2v - 0.5) * 30; b = 70 + (n2v - 0.5) * 22; }   // moss: a deeper, bluer green
       if (f > 0.5) { var edge = Math.min(1, (f - 0.5) / 0.28); r -= (1 - edge) * 26; g -= (1 - edge) * 24; b -= (1 - edge) * 18; a = Math.min(1, (f - 0.5) / 0.1) * 255; }
       d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
     }
@@ -4563,6 +4574,20 @@ function make(kit, opts) {
       w.addProp(p);
     }
     return w.stats;
+  };
+  // 6. the ground dresses itself with the brush (2026-10-07, Robin: use the brush to make the ground more natural): bare earth
+  // in the heart of the thickest groves, moss round the pines, gravel at the feet of the rock outcrops; cells only, no repaint
+  w.dress = function () {
+    function dab(x, y, r, kind) { var qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy; for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var dx = (qx + 0.5) * GQ - x, dy = (qy + 0.5) * GQ - y; if (dx * dx + dy * dy * 1.6 > r * r) continue; if (!w.isLand((qx + 0.5) * GQ, (qy + 0.5) * GQ)) continue; w.ground[qx + ',' + qy] = kind; } }
+    var n = 0;
+    for (y = 4; y < GH - 4; y++) for (x = 4; x < GW - 4; x++) {
+      if (grid[y * GW + x] < 2) continue;
+      var gv = vnoise(x / 7, y / 7, s + 20);
+      if (gv > 0.76 && R() < 0.22) { dab((x + 0.5) * T, (y + 0.5) * T, 18 + R() * 16, 2); n++; }            // earth under the thickest canopy
+      else if (gv > 0.62 && gv < 0.7 && R() < 0.1) { dab((x + 0.5) * T, (y + 0.5) * T, 12 + R() * 12, 3); n++; }   // moss at a grove's edge
+    }
+    var k; for (k in w.buckets) { var bk = w.buckets[k]; if (!bk || !bk.length) continue; for (var i = 0; i < bk.length; i++) { var p = bk[i]; if (p.name === 'rockFormation') { dab(p.x, p.y + 4, 14 + R() * 6, 1); n++; } else if (p.name === 'pine' && R() < 0.35) { dab(p.x, p.y + 6, 10 + R() * 8, 3); n++; } } }
+    return n;
   };
   w.camp = function (list) {
     (list || CAMP).forEach(function (q) {
@@ -7984,7 +8009,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, TS = kit.TH, BASE = kit.STYLE;
-  try { var lookSv = JSON.parse(localStorage.getItem('game.look')); if (lookSv && typeof lookSv === 'object') { for (var lkk in lookSv) if (kit.STYLE[lkk] != null) kit.STYLE[lkk] = lookSv[lkk]; if (lookSv.figGrain != null) lib.INK_FIG.grain = lookSv.figGrain; if (lookSv.figShade != null) lib.INK_FIG.shade = lookSv.figShade; } } catch (e) {}   // the Art Direction page's "Use in the game"
+  (function () { var lookSv = kit.applyStored(localStorage); if (lookSv) { if (lookSv.figGrain != null) lib.INK_FIG.grain = lookSv.figGrain; if (lookSv.figShade != null) lib.INK_FIG.shade = lookSv.figShade; } })();   // the Art Direction page's "Use in the game"
 
   /* ---------- the engine: nobody starts in the world; boars are placed by hand ---------- */
   Combat.api.roster = [];
@@ -8104,7 +8129,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function nearSolids(P) { return w.nearSolids(P); }
   function removeProp(o) { if (o.cave) { var ci = cave.ores.indexOf(o); if (ci >= 0) cave.ores.splice(ci, 1); return; } w.removeProp(o); if (o.kind) { gone[propKey(o)] = 1; save(); } }
   var grassLook = kit.STYLE.look === 3 ? World.GRASS_INK : World.GRASS;   // the Grass Editor's "Use in the game" look, if there is one; the ink look's grass otherwise
-  try { var ghs = JSON.parse(localStorage.getItem('game.hero2')); if (ghs && typeof ghs === 'object') lib.setHero(ghs); } catch (e) {}   // the Character Editor's "Use as the hero"
+  lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   try { var cg = JSON.parse(localStorage.getItem('game.creatures')); if (cg) for (var ck in cg) if (cg[ck]) lib.useAnimal(ck, cg[ck]); } catch (e) {}   // the Creature Editor's "Update in game"
   try { var gg = JSON.parse(localStorage.getItem('game.grass')); if (gg && gg.g) { grassLook = JSON.parse(JSON.stringify(World.GRASS)); for (var gk in gg.g) grassLook[gk] = gg.g[gk]; for (var gs in (gg.st || {})) kit.STYLE[gs] = gg.st[gs]; } } catch (e) {}
   // one box for everything that moves: the map, and the cave and the yard that lie east of it. The engine clamps every
@@ -8113,7 +8138,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function buildWorld() {
     w = World.make(kit, spec);
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
-    w.plant(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets;
+    w.plant(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress();
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(700);
     raft = null; leftBanner = 0; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
@@ -8139,6 +8164,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'floor', name: 'Stone flags', m: 2, cost: { stone: 1 } },
     { id: 'brush', name: 'Gravel', k: 1, cost: {}, icon: function (c) { c.fillStyle = '#8f877a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#c9c2b4'; [[-4, 0], [1, -1.5], [3, 2], [-1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.4, 0.9, 0, 0, 7); c.fill(); }); } },
     { id: 'brush', name: 'Earth', k: 2, cost: {}, icon: function (c) { c.fillStyle = '#7e623e'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#5a4228'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.fillRect(q[0], q[1], 2, 1.2); }); } },
+    { id: 'brush', name: 'Moss', k: 3, cost: {}, icon: function (c) { c.fillStyle = '#5c8046'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#7fa062'; [[-4, 0], [1, -1.5], [3, 2], [-1, 2.5]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 1.1, 0, 0, 7); c.fill(); }); } },
     { id: 'brush', name: 'Grass back', k: 0, cost: {}, icon: function (c) { c.fillStyle = '#5f8a44'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#8aa65a'; c.lineWidth = 1; [[-4, 2], [0, 1], [4, 2]].forEach(function (q) { c.beginPath(); c.moveTo(q[0], q[1] + 2); c.lineTo(q[0] + 1, q[1] - 3); c.stroke(); }); } },
     { id: 'floor', name: 'Grass', m: 4, cost: { fiber: 1 } },
     { id: 'floor', name: 'Dark grass', m: 5, cost: { fiber: 1 } },
@@ -8697,7 +8723,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     } else {                           // the piece as it would stand, its footprint, and the reason if it cannot go there
       var col = t.ok ? '120,255,160' : '255,80,60';
       c.globalAlpha = t.ok ? 0.65 : 0.35;
-      if (t.kind === 'brush') { c.fillStyle = t.piece.k === 1 ? 'rgba(150,138,118,0.5)' : t.piece.k === 2 ? 'rgba(126,98,62,0.5)' : 'rgba(95,138,68,0.5)'; c.beginPath(); c.ellipse(t.x, t.y * K, BRUSH_R, BRUSH_R * K, 0, 0, 7); c.fill(); }
+      if (t.kind === 'brush') { c.fillStyle = t.piece.k === 1 ? 'rgba(150,138,118,0.5)' : t.piece.k === 2 ? 'rgba(126,98,62,0.5)' : t.piece.k === 3 ? 'rgba(92,128,70,0.55)' : 'rgba(95,138,68,0.5)'; c.beginPath(); c.ellipse(t.x, t.y * K, BRUSH_R, BRUSH_R * K, 0, 0, 7); c.fill(); }
       else if (t.kind === 'tile') c.drawImage(w.tile((Build.FLOORS[t.piece.m] || Build.FLOORS[0]).tile, t.tx, t.ty), t.tx * T, t.ty * TS, T, TS);
       else if (t.kind === 'item') { var sp = sprite(t.piece.prop, 0); drawSpriteAt(c, sp, t.x, t.y, buildRot & 1); }
       else if (t.kind === 'post') Build.drawPost(c, t.cx, t.cy, { m: t.piece.m }, BCFG);
@@ -8733,7 +8759,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var SCENE = (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
   var SAVE = SCENE === 'runes' ? 'game.save.runes' : 'game.save', gone = {}, saveT = 0;
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -11123,7 +11149,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
       w.eachProp(function (o) { if ((o.kind || o.name === 'fireRing') && gone[propKey(o)]) w.removeProp(o); }); B.items.forEach(function (it) { if (it.cooking && it.cooking.length && cookFires.indexOf(it) < 0) cookFires.push(it); });
-      day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; }); if (sv.ground && typeof sv.ground === 'object') w.ground = sv.ground;
+      day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; }); if (sv.ground && typeof sv.ground === 'object') { if (sv.groundDressed) w.ground = sv.ground; else { var gk; for (gk in sv.ground) w.ground[gk] = sv.ground[gk]; } }   // a save from before the world dressed itself keeps the dressing under its own strokes
       if (cave && sv.veins && sv.veins.length === cave.veins.length) sv.veins.forEach(function (lf, vi) { cave.veins[vi].left = lf; }); if (cave && cave.hoard && sv.hoard) { cave.hoard.n = sv.hoard.n; cave.hoard.day = sv.hoard.day; }
       decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
       var P = hero(); if (sv.hero && (isLand(sv.hero.x, sv.hero.y) || dockAt(Math.floor(sv.hero.x / T), Math.floor(sv.hero.y / T)))) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; P.lvl = sv.lvl || 0; } else toCamp();

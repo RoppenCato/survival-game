@@ -132,9 +132,9 @@ function make(kit, opts) {
   var GQ = 8; w.ground = {};
   w.repaint = function (x0, y0, x1, y1) {
     var pw = CT * T, qx0 = Math.max(0, Math.floor(x0 / pw)), qx1 = Math.min(CW - 1, Math.floor(x1 / pw)), qy0 = Math.max(0, Math.floor(y0 / pw)), qy1 = Math.min(CH - 1, Math.floor(y1 / pw)), qx, qy;
-    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) { delete chunkCv[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); if (w.chunk) w.chunk(qx, qy); } }   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
+    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) { delete chunkCv[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); chunkCv[ck] = bakeChunk(qx, qy); chunkOrder.push(ck); } }   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
   };
-  w.paintGround = function (x, y, r, kind) {              // kind 1 gravel, 2 earth, 0 back to grass; true if anything changed
+  w.paintGround = function (x, y, r, kind) {              // kind 1 gravel, 2 earth, 3 moss, 0 back to grass; true if anything changed
     var changed = false, qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy;
     for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) {
       if (Math.hypot((qx + 0.5) * GQ - x, (qy + 0.5) * GQ - y) > r) continue; var kk = qx + ',' + qy;
@@ -154,9 +154,10 @@ function make(kit, opts) {
     var gv = kit.mk(W2, H2), gc = gv.getContext('2d'), img = gc.createImageData(W2, H2), d = img.data, pp = 0, py, px;
     for (py = 0; py < H2; py++) for (px = 0; px < W2; px++, pp += 4) {
       var wx = cx * W2 + px, wys = cy * H2 + py, wy = wys / K, n1v = noise[((wys & 127) << 7) | (wx & 127)], n2v = noise[(((wys * 2) & 127) << 7) | ((wx * 2) & 127)];
-      var fg = groundField(1, wx, wy) + (n1v - 0.5) * 0.55, fe = groundField(2, wx, wy) + (n1v - 0.5) * 0.55, r = 0, g = 0, b = 0, a = 0, f = 0;
+      var fg = groundField(1, wx, wy) + (n1v - 0.5) * 0.55, fe = groundField(2, wx, wy) + (n1v - 0.5) * 0.55, fm = groundField(3, wx, wy) + (n1v - 0.5) * 0.6, r = 0, g = 0, b = 0, a = 0, f = 0;
       if (fg > 0.5) { f = fg; r = 150 + (n2v - 0.5) * 44; g = 138 + (n2v - 0.5) * 40; b = 118 + (n2v - 0.5) * 34; }
       else if (fe > 0.5) { f = fe; r = 126 + (n2v - 0.5) * 30; g = 98 + (n2v - 0.5) * 26; b = 62 + (n2v - 0.5) * 20; }
+      else if (fm > 0.5) { f = fm; r = 92 + (n2v - 0.5) * 26; g = 128 + (n2v - 0.5) * 30; b = 70 + (n2v - 0.5) * 22; }   // moss: a deeper, bluer green
       if (f > 0.5) { var edge = Math.min(1, (f - 0.5) / 0.28); r -= (1 - edge) * 26; g -= (1 - edge) * 24; b -= (1 - edge) * 18; a = Math.min(1, (f - 0.5) / 0.1) * 255; }
       d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
     }
@@ -383,6 +384,20 @@ function make(kit, opts) {
       w.addProp(p);
     }
     return w.stats;
+  };
+  // 6. the ground dresses itself with the brush (2026-10-07, Robin: use the brush to make the ground more natural): bare earth
+  // in the heart of the thickest groves, moss round the pines, gravel at the feet of the rock outcrops; cells only, no repaint
+  w.dress = function () {
+    function dab(x, y, r, kind) { var qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy; for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var dx = (qx + 0.5) * GQ - x, dy = (qy + 0.5) * GQ - y; if (dx * dx + dy * dy * 1.6 > r * r) continue; if (!w.isLand((qx + 0.5) * GQ, (qy + 0.5) * GQ)) continue; w.ground[qx + ',' + qy] = kind; } }
+    var n = 0;
+    for (y = 4; y < GH - 4; y++) for (x = 4; x < GW - 4; x++) {
+      if (grid[y * GW + x] < 2) continue;
+      var gv = vnoise(x / 7, y / 7, s + 20);
+      if (gv > 0.76 && R() < 0.22) { dab((x + 0.5) * T, (y + 0.5) * T, 18 + R() * 16, 2); n++; }            // earth under the thickest canopy
+      else if (gv > 0.62 && gv < 0.7 && R() < 0.1) { dab((x + 0.5) * T, (y + 0.5) * T, 12 + R() * 12, 3); n++; }   // moss at a grove's edge
+    }
+    var k; for (k in w.buckets) { var bk = w.buckets[k]; if (!bk || !bk.length) continue; for (var i = 0; i < bk.length; i++) { var p = bk[i]; if (p.name === 'rockFormation') { dab(p.x, p.y + 4, 14 + R() * 6, 1); n++; } else if (p.name === 'pine' && R() < 0.35) { dab(p.x, p.y + 6, 10 + R() * 8, 3); n++; } } }
+    return n;
   };
   w.camp = function (list) {
     (list || CAMP).forEach(function (q) {

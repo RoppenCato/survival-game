@@ -2336,6 +2336,14 @@ function creatureD(c, x, y, s, H) {
 var dkB = null;
 
 
-return { lib: { INK_FIG: INK_FIG, RIG: RIG, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+// Every page applies the game's stored choices from one place (2026-10-07, Robin: the editors should pull from the same
+// source): the hero the Character Editor handed over (game.hero2), the creatures the Creature Editor handed over
+// (game.creatures), the rig to draw them with (creature.rig).
+function applyStored(st) {
+  try { var gh = JSON.parse(st.getItem('game.hero2')); if (gh && typeof gh === 'object') setHero(gh); } catch (e) {}
+  try { var gc = JSON.parse(st.getItem('game.creatures')); if (gc && typeof gc === 'object') { var k; for (k in gc) if (ANIMALS[k] && gc[k] && typeof gc[k] === 'object') useAnimal(k, gc[k]); } } catch (e) {}
+  try { var rg = st.getItem('creature.rig'); if (rg === 'turntable' || rg === 'views') { RIG.animals = rg; RIG.trolls = rg; } } catch (e) {}
+}
+return { lib: { INK_FIG: INK_FIG, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;

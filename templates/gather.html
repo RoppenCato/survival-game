@@ -143,7 +143,7 @@ __COMBAT__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = 32, TS = 24;
-  try { var gh0 = JSON.parse(localStorage.getItem('game.hero2')); if (gh0 && typeof gh0 === 'object') lib.setHero(gh0); } catch (e) {}
+  lib.applyStored(localStorage); kit.applyStored(localStorage);   // the hero, the creatures, the rig and the look the editors handed to the game, from one place
   kit.setup(kit.STYLE);
   /* the spec */
   var KEY = 'gather1', G = Gather.cfg(null);

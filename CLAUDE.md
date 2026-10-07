@@ -1057,7 +1057,14 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   `w.ground` (cells a quarter tile wide, `w.paintGround(x, y, r, kind)`, `w.groundKind`, saved as `ground`) and bakes it into the
   ground pieces (`paintGroundInto`: the cells read as a smooth field with noise on top, so edges are ragged, a darker shoulder at
   the edge, pebbles on gravel), forgetting the pieces a stroke touches (`w.repaint`). The steading's paths are painted strokes
-  that wander a little (`stroke` in `villageBuild`). A stroke saves a moment after the mouse stops (`groundDirtyT`).
+  that wander a little (`stroke` in `villageBuild`). A stroke saves a moment after the mouse stops (`groundDirtyT`). **The world
+  dresses itself with the same brush (2026-10-07, Robin):** `w.dress()` after planting paints bare earth in the heart of the
+  thickest groves, **moss** (a third ground, kind 3, a deeper bluer green; a Moss brush on the board too) at a grove's edge
+  and round pines, and gravel at the feet of rock outcrops, from the seed; the save marks `groundDressed` so an older save's
+  strokes are laid over the dressing. The brush shows no grid, and a repainted piece is baked again at once (no blue flash).
+  **One source for what the pages share:** every page calls `lib.applyStored(localStorage)` (the hero `game.hero2`, the
+  creatures `game.creatures`, the rig `creature.rig`) and, where it has the kit, `kit.applyStored(localStorage)` (the look
+  `game.look`) instead of its own lines, so an editor always shows what the game shows.
 - **The reference set** (Object Editor, first category, starred): oak, pine, bush, rock, cliff, longhouse, woodpile,
   tallGrass, flower, runestone. Each settles one family's drawing rules (canopy, tiers, stone, wood and roofs,
   blades, small bright things, carved stone), and the rest of the props are then restyled to match. The notes

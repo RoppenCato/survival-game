@@ -114,7 +114,7 @@ __LIB__
 (function () {
   'use strict';
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, KEY = 'lookeditor2';
-  try { var hs = JSON.parse(localStorage.getItem('game.hero2')); if (hs && typeof hs === 'object') lib.setHero(hs); } catch (e) {}
+  lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   var STYLE_KEYS = ['look', 'shadowHue', 'sat', 'bright', 'contrast', 'shade', 'outlineW', 'outlineDark', 'texture', 'rough', 'vignette'];
   var DEF = {}; STYLE_KEYS.forEach(function (k) { DEF[k] = kit.STYLE_INK[k] != null ? kit.STYLE_INK[k] : kit.STYLE[k]; }); DEF.figGrain = 0.22; DEF.figShade = 0.41; DEF.sunWarm = 0.18;   // Robin's numbers, 2026-10-07
   var G = JSON.parse(JSON.stringify(DEF));
