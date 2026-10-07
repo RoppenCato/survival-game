@@ -1495,6 +1495,14 @@ var DEF = {
 var STYLE = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 100, sat: 0.92, bright: 14, contrast: 0.96, shade: 0.34,
   round: 1, spindly: 0.05, lush: 1, twist: 0.08, sparkle: 0, texture: 0, outlineW: 0.6, outlineDark: 0.6, rough: 0.03,
   light: 0.8, fog: 0, glow: 0.2, vignette: 0, look: 0, seed: 7, scaleRef: 0, fruit: 0 };
+// The ink look (2026-10-07, docs/art-direction.md): Egerkrans's line, Bauer's light. look 3 in shape(): a cool shadow crescent,
+// grain in every fill, a warm lit edge, a thin line all round and a heavy line fading in on the shadow side, warm brown-black ink.
+var STYLE_INK = { look: 3, shadowHue: 222, outsideHue: 92, sat: 0.66, bright: -2, contrast: 1.04, shade: 0.52, outlineW: 1.05, outlineDark: 1, texture: 1.3, rough: 0.05, vignette: 0.2, round: 1, lush: 1, sparkle: 0, fog: 0, glow: 0.15 };
+var grainCv = null;
+function grain(c) {                                  // paper and pencil: a small pattern of dark and light specks, tiled
+  if (!grainCv) { grainCv = mk(96, 96); var g = grainCv.getContext('2d'), R = rng(77), i; for (i = 0; i < 1500; i++) { var x = R() * 96, y = R() * 96, d = R(); g.fillStyle = d < 0.55 ? 'rgba(20,14,10,' + (0.25 + R() * 0.45).toFixed(2) + ')' : 'rgba(255,245,225,' + (0.2 + R() * 0.4).toFixed(2) + ')'; g.fillRect(x, y, 1 + (R() < 0.3 ? 1 : 0), 1); } }
+  return c.createPattern(grainCv, 'repeat');
+}
 var PRESETS = [
   { name: 'Night Forest', note: 'Blue-violet Factory, deep teal-green outside, warm amber lanterns. Cozy and a little mysterious, like a MapleStory forest at night.',
     p: { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, twist: 0.12, spindly: 0.12, rough: 0.08, lush: 0.95, round: 0.85, sparkle: 0.8, outlineW: 1.1, outlineDark: 0.86, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4 } },
@@ -1522,9 +1530,9 @@ function setup(params) {
   P = {}; var k;
   for (k in DEF) P[k] = DEF[k];
   for (k in params) P[k] = params[k];
-  OLC = 'hsl(' + P.shadowHue.toFixed(0) + ',28%,' + (6 + (1 - P.outlineDark) * 30).toFixed(0) + '%)';
+  OLC = P.look === 3 ? 'hsl(18,30%,' + (8 + (1 - P.outlineDark) * 20).toFixed(0) + '%)' : 'hsl(' + P.shadowHue.toFixed(0) + ',28%,' + (6 + (1 - P.outlineDark) * 30).toFixed(0) + '%)';   // ink: warm brown-black
 }
-function ow(size) { var f = size === 'S' ? 0.7 : size === 'L' ? 1.35 : size === 'XL' ? 1.7 : 1; return 1.9 * P.outlineW * f * (P.look === 2 ? 0.4 : (P.look === 1 ? 0.35 : 1)); }
+function ow(size) { var f = size === 'S' ? 0.7 : size === 'L' ? 1.35 : size === 'XL' ? 1.7 : 1; return 1.9 * P.outlineW * f * (P.look === 2 ? 0.4 : (P.look === 1 ? 0.35 : (P.look === 3 ? 0.55 : 1))); }
 
 /* ---------------- geometry helpers ---------------- */
 function wn(x, y, s) { return Math.sin(x * 0.23 + s) * 0.55 + Math.sin(y * 0.19 + s * 1.7) * 0.45 + Math.sin((x - y) * 0.37 + s * 2.3) * 0.3; }
@@ -1600,6 +1608,18 @@ function shape(c, pts, m, o) {
     if (!o.flat) { c.translate(-0.9, -0.9); path(c, d); c.lineWidth = 1.5; c.strokeStyle = m.hl; c.globalAlpha = 0.55; c.stroke(); }
     c.restore();
     path(c, d); c.lineWidth = 0.9 + ow(o.size) * 0.5; c.strokeStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',45%,9%,' + (0.35 + 0.45 * P.outlineDark) + ')'; c.lineJoin = 'round'; c.stroke();
+    return d;
+  }
+  if (look === 3) {                                    // ink: base, a cool shadow crescent, grain, a warm lit edge, the two lines
+    c.save(); path(c, d); c.fillStyle = m.base; c.fill();
+    path(c, d); c.clip();
+    if (!o.flat) { var sx3 = (o.sh || 3) * (0.5 + P.shade); crescent(c, d, -sx3, -sx3 * 0.9, m.shade, bb); c.globalAlpha = 0.7; var hx3 = (o.hl || 2) * (0.5 + P.shade * 0.5); crescent(c, d, hx3, hx3 * 0.9, m.hl, bb); c.globalAlpha = 1; }
+    if (P.texture > 0) { c.globalAlpha = 0.16 * P.texture; c.fillStyle = grain(c); c.fillRect(bb.x, bb.y, bb.w, bb.h); c.globalAlpha = 0.14 * P.texture; var gs = c.createLinearGradient(bb.x, bb.y, bb.x + bb.w * 0.7, bb.y + bb.h); gs.addColorStop(0, 'rgba(0,0,0,0)'); gs.addColorStop(1, 'hsla(' + P.shadowHue.toFixed(0) + ',40%,15%,1)'); c.fillStyle = gs; c.fillRect(bb.x, bb.y, bb.w, bb.h); c.globalAlpha = 1; }
+    if (!o.flat) { c.translate(-0.7, -0.7); path(c, d); c.lineWidth = 1.1; c.strokeStyle = m.hl; c.globalAlpha = 0.5; c.stroke(); c.globalAlpha = 1; }
+    c.restore();
+    path(c, d); c.lineJoin = 'round'; c.lineWidth = ow(o.size) * 0.8; c.strokeStyle = OLC; c.stroke();
+    var gl = c.createLinearGradient(bb.x, bb.y, bb.x + bb.w * 0.9, bb.y + bb.h * 0.9); gl.addColorStop(0, 'rgba(35,26,22,0)'); gl.addColorStop(0.45, 'rgba(35,26,22,0)'); gl.addColorStop(1, OLC);
+    path(c, d); c.lineWidth = ow(o.size) * 2.1; c.strokeStyle = gl; c.stroke();   // the heavy line on the shadow side
     return d;
   }
   c.save(); path(c, d); c.fillStyle = m.base; c.fill();
@@ -3164,7 +3184,7 @@ var scratch = null;
 var cacheF = null, cacheO = null, cacheM = null;
 var pbuf = null;
 
-return { DEF: DEF, kit: { STYLE: STYLE, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
+return { DEF: DEF, kit: { STYLE: STYLE, STYLE_INK: STYLE_INK, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = StyleLab;
 

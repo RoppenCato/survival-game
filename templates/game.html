@@ -114,6 +114,7 @@ __COMBAT__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, TS = kit.TH, BASE = kit.STYLE;
+  try { var lookSv = JSON.parse(localStorage.getItem('game.look')); if (lookSv && typeof lookSv === 'object') for (var lkk in lookSv) if (kit.STYLE[lkk] != null) kit.STYLE[lkk] = lookSv[lkk]; } catch (e) {}   // the Art Direction page's "Use in the game"
 
   /* ---------- the engine: nobody starts in the world; boars are placed by hand ---------- */
   Combat.api.roster = [];

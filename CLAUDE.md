@@ -99,6 +99,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
 | `gathering-editor.html` | `gather.html` | Gathering Editor (2026-10-07): a field of trees, rocks and bushes; the gathering ideas as switches and sliders, presets, settings as text, "Use in the game" (`game.gather`) |
+| `look-editor.html` | `look.html` | Art Direction (2026-10-07): the same scene twice, the flat look above and the ink look below (`docs/art-direction.md`), the rules as sliders, settings as text, "Use in the game" (`game.look`, merged into `kit.STYLE` on load) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
@@ -220,6 +221,12 @@ the text and it is made the default. When a spec's meaning changes, change the s
   not a stick sword. `node tools/visual/weapons.js` renders every swing in four directions; `tests/weapons.js` checks hits,
   pierce, chains and throws (in `npm test`).
 - `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster); step 1 is built.
+- `docs/art-direction.md` (**decided 2026-10-07**, Robin: the flat look felt like a mobile game): **the ink of Egerkrans, the light of
+  Bauer**. One colour key per scene with one hot accent; shadows cooler and bluer than the light; an earth-and-bone palette; a
+  hand-made warm brown-black line, thin toward the light and heavy on the shadow side; figures whole (two-pass outline); one sun
+  upper left; grain in every fill; lean figures; trolls Bauer's. `docs/reference/` holds the board (Bauer and Kittelsen, public
+  domain) and notes on Egerkrans pages from Robin's own book (the photos stay local). In the kit it is **`look: 3`** (`STYLE_INK`,
+  `grain`): see "World look and props".
 - `docs/chapters.md` (**read first when planning**, 2026-10-07): the world as **chapters** (Robin): 1 the starter island, 2 the
   first big island, 3 the second biome and the first raid, 4 and beyond by the compass. It holds the rules every chapter keeps,
   **the template** (ten headings in six groups: the place, the events, the living world, what you make and gain, travel, making
@@ -904,6 +911,13 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   lower with a dark underside and a lit top; the grass tile is a calm mottled green with a few tufts. The hero is
   to be redrawn later; the troll and other väsen should look like the classic old illustrations (hairy, heavy,
   long-armed), not cute. Editors add per-page overrides on top (hue, saturation and so on).
+- **The ink look (2026-10-07, `look: 3`, `kit.STYLE_INK`):** `shape()` fills the base, lays a cool shadow crescent (`shadowHue` 222
+  mixes into every shade through `M()`), a warm highlight crescent, a **grain** pattern (`grain(c)`, a tiled canvas of dark and
+  light specks) and a cool gradient toward the shadow side inside the clip, a warm lit edge, then **two lines**: a thin one all
+  round in warm brown-black ink (`OLC` for look 3) and a heavy one whose stroke is a gradient fading in toward the lower right.
+  `ow()` scales the line for look 3. The game merges `game.look` into `kit.STYLE` on load, so the whole world bakes in it;
+  figures (hero, folk, animals, troll) keep their own drawing until the two-pass outline is built. `node tools/visual/look.js`
+  renders the Art Direction scene both ways to look.png.
 - **The reference set** (Object Editor, first category, starred): oak, pine, bush, rock, cliff, longhouse, woodpile,
   tallGrass, flower, runestone. Each settles one family's drawing rules (canopy, tiers, stone, wood and roofs,
   blades, small bright things, carved stone), and the rest of the props are then restyled to match. The notes

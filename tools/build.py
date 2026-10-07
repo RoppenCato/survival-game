@@ -31,7 +31,7 @@ PAGES = [
     ('hird-editor', 'hird'),
     ('item-editor', 'items'),
     ('song-editor', 'song'),
-    ('combat-arena', 'combat'), ('gathering-editor', 'gather'), ('game', 'game'),
+    ('combat-arena', 'combat'), ('gathering-editor', 'gather'), ('look-editor', 'look'), ('game', 'game'),
 ]
 for page, template in PAGES:
     html = read('templates', template + '.html')
