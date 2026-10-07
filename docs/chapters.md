@@ -288,16 +288,16 @@ the template's headings with questions.
 
 | Heading | What is decided or implied | What is open |
 | --- | --- | --- |
-| A1 The world | The second biome; its islands mix toward the next; direction on the compass sets its kind | Which direction and what kind (north cold? south settled?) |
+| A1 The world | **Decided 2026-10-07: the south, settled lowlands** (oak, beech, ash, hedgerows, hay meadows, ploughed strips, orchards, chalk; walled towns, churches with priests, a manor); its islands lie further south and mix at the edges with the first biome's. **Built:** biome-marked islands placed south, the biome field, the warm ground, the lowland trees and chalk, marsh, field and chalk ground kinds | How many islands and how far (the balance pass) |
 | A2 Places | Villages, castles and churches stand here and can be raided; some villages trade | Which and how many; the church as the "lucky strike" with only friendly priests and a bell that may call an army |
-| B1 Big events | **The first Viking ship; the first raid**; the silver ring | The third and fourth events; how the raid is fought and what "revolves round it" means in play |
+| B1 Big events | **The first Viking ship; the first raid**; the silver ring. **Decided 2026-10-07:** the raid is loot spread out behind doors that take blows, carried to the ship piece by piece, the defenders gathering to the noise (no bell, no waves from a castle, fighting not the biggest part); **a human jarl holds the silver ring**, won by a raid on his hall; nothing off limits, reputation the brake | The third and fourth events |
 | B2 Way on | Heavier metal beats you, each chapter has its ring-holder | What points beyond |
 | C1 Beasts | Harder than Chapter 2 | Which animals and väsen (`docs/beasts.md` cards) |
 | C2 People | Villagers with guards, captives who may join, the ring-holder | The legend; reputation (decided: risk and reward, a village remembers) |
-| D1 Materials | Silver and goods as loot; smelting beyond copper | Iron, tin, silver sources |
+| D1 Materials | Silver and goods as loot; **iron (decided 2026-10-07):** bog iron from the marsh, a bloomery, iron tools and weapons, mail, gambeson, an iron helmet, a painted shield; silver by weight as the second currency | Where the bog iron lies exactly; silver sources |
 | D3 Power | Silver ring, the eye side; the smith's rework | The runes for this chapter (bosses, raids, fishing, quests, hirdmen) |
 | D3 Currency | A second currency is allowed "about every third biome" | Whether Chapter 3 adds one |
-| E1 Travel | The first Viking ship: sail and crew; the more aboard, the faster | Mast, sail, wind, crewing rules |
+| E1 Travel | The first Viking ship: **the karve, built in the yard (decided 2026-10-07)**: a longer keel, more strakes, a mast, a sail, a steering oar, iron nails and cloth; the more aboard, the faster | Wind as a buff only; the crewing rules |
 
 **Chapter 3 needs the mast and sail, hird crewing, trading and a raid system before it can start** (Chapter 2 gaps 1 to 3).
 Raiding, reputation, recruiting from raids, and the year (spring to winter, repopulation of unclaimed places) are the

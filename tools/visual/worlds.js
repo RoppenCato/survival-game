@@ -9,7 +9,7 @@ const T = 32, CW = 520, CH = 400, cv = createCanvas(CW * 2, CH * Math.ceil(seeds
 c.fillStyle = '#2a3a4a'; c.fillRect(0, 0, cv.width, cv.height);
 const COL = { seat: '#ffd34d', village: '#f0e2b0', small: '#d8c8a0', farmstead: '#b8d8a0', fishing: '#9ad0e8', trading: '#e8a060', ruin: '#9a8a7a' };
 seeds.forEach((seed, i) => {
-  const spec = { isle: 160, isle0: 60, big: 230, sizes: [60, 230, 150, 110, 170, 90], noDock: true, count: 6, dir: 0.1, gap: 26, gapVar: 0.5, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed };
+  const spec = { isle: 160, isle0: 60, big: 230, sizes: [60, 230, 150, 110, 170, 90], biomes: [0, 0, 0, 0, 1, 1], noDock: true, count: 6, dir: 0.1, gap: 26, gapVar: 0.5, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed };
   const w = World.make(kit, spec), ch = w.chart(CW - 20), sc = (CW - 20) / Math.max(w.GW, w.GH * 0.75 / 0.75), ox = (i % 2) * CW + 10, oy = Math.floor(i / 2) * CH + 10;
   c.drawImage(ch, ox, oy);
   const kx = ch.width / w.GW, ky = ch.height / w.GH;

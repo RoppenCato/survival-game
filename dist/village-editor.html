@@ -3086,6 +3086,14 @@ function birch(c, K, x, y, h, seed) {
   for (i = 0; i < 6; i++) leafBlobs(c, K, top[0] + (R() - 0.5) * h * 0.42, top[1] + (R() - 0.2) * h * 0.2, h * (0.09 + R() * 0.06), seed * 3 + i, 3, K.birchLeaf);
   for (i = 0; i < 2; i++) glowFruit(c, top[0] + (R() - 0.5) * h * 0.3, top[1] + R() * h * 0.15, 2.8);
 }
+// The southern lowlands' trees and stones (2026-10-07): a beech (smooth grey trunk, a broad pale crown), an ash (tall, grey-brown,
+// a feathery lighter crown), an apple tree (small, round, red fruit), a chalk rock (pale, almost white) and a hedge (bushes in a row)
+function lowK(K, o) { var K2 = Object.create(K), k; for (k in o) K2[k] = o[k]; return K2; }
+function beechTree(c, K, x, y, h, seed) { oakTree(c, lowK(K, { trunk: M(30, 9, 56), trunkL: M(30, 8, 64), leaf: M(P.outsideHue + 10, 54, 52), leafD: M(P.outsideHue + 14, 48, 40) }), x, y, h, seed); }
+function ashTree(c, K, x, y, h, seed) { birch(c, lowK(K, { birch: M(28, 10, 46), birchLeaf: M(P.outsideHue - 2, 48, 50) }), x, y, h, seed); }
+function appleTree(c, K, x, y, h, seed) { var f = P.fruit, a = P.accentHue; P.fruit = 1; P.accentHue = 4; oakTree(c, lowK(K, { leaf: M(P.outsideHue + 6, 52, 46), leafD: M(P.outsideHue + 10, 46, 36) }), x, y, h, seed); P.fruit = f; P.accentHue = a; }
+function chalkRockObj(c, K, x, y, s, seed) { rock(c, lowK(K, { rock: M(42, 12, 82), rockC: M(42, 12, 80), rockD: M(40, 10, 62) }), x, y, s, seed, false); }
+function hedgeObj(c, K, x, y, seed) { bush(c, K, x - 24, y + 2, 15, seed, false); bush(c, K, x + 24, y + 2, 15, seed + 2, false); bush(c, K, x, y, 16, seed + 1, false); }
 function cypress(c, K, x, y, h, seed) {
   var R = rng(seed), i, n = 9, sw = (R() - 0.5) * P.twist * 10;
   longShadow(c, x, y, 20, h * 0.5); gshadow(c, x, y + 1, 16, 5, 0.4);
@@ -4298,6 +4306,11 @@ var PROPS = {
   chair: { b: [-14, -36, 14, 6], f: function (c, K, s) { chairObj(c, K, 0, 0, s); } },
   table: { b: [-23, -29, 29, 6], f: function (c, K, s) { c.save(); c.scale(0.62, 0.62); tableObj(c, K, 0, 0, s); c.restore(); } },
   oak: { b: [-120, -230, 120, 26], f: function (c, K, s) { oakTree(c, K, 0, 0, 200, s); } },
+  beech: { b: [-120, -236, 120, 26], f: function (c, K, s) { beechTree(c, K, 0, 0, 205, s); } },
+  ash: { b: [-92, -280, 118, 20], f: function (c, K, s) { ashTree(c, K, 0, 0, 215, s); } },
+  apple: { b: [-80, -150, 80, 20], f: function (c, K, s) { appleTree(c, K, 0, 0, 125, s); } },
+  chalkRock: { b: [-36, -40, 36, 10], f: function (c, K, s) { chalkRockObj(c, K, 0, 0, 16, s); } },
+  hedge: { b: [-42, -44, 42, 12], f: function (c, K, s) { hedgeObj(c, K, 0, 0, s); } },
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
   willow: { b: [-120, -210, 150, 22], f: function (c, K, s) { willow(c, K, 0, 0, 190, s); } },
@@ -5163,7 +5176,7 @@ function plan(env, opts) {
     wants.forEach(function (wq) {
       var arch = wq[0], st = find(q, arch, wq[1]); if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
       if (arch !== 'seat' && arch !== 'trading' && R() < 0.14) arch = 'ruin';
-      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth);
+      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
       st.arch = arch; st.wealth = wealth; st.isle = i; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
       sites.push(st);

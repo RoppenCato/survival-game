@@ -349,7 +349,7 @@ function plan(env, opts) {
     wants.forEach(function (wq) {
       var arch = wq[0], st = find(q, arch, wq[1]); if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
       if (arch !== 'seat' && arch !== 'trading' && R() < 0.14) arch = 'ruin';
-      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth);
+      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
       st.arch = arch; st.wealth = wealth; st.isle = i; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
       sites.push(st);

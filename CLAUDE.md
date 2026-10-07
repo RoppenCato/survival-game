@@ -879,6 +879,21 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   boarded. **Nothing shows on the chart or the map until seen** (`seen.vill[i]`, within 460 units: "<Name>: marked on your chart"),
   then the name. Folk tick only within 1500 units of the hero. Admin: "Reveal the chart" knows every village, "Go to the next village"
   cycles through them. `node tools/visual/worlds.js [seeds]` renders the chart of fresh worlds with every village named.
+- **The southern lowlands, the foundations (2026-10-07, the second biome; the decisions are above under 2026-10-07):** `World.make`
+  takes `biomes` (one per island; the game's spec: `[0, 0, 0, 0, 1, 1]`, in `layoutKey`): a lowland island is placed **south** of the
+  southernmost islands and further off (its gap 1.7 times plus 18 tiles); `q.biome` on every island. **The biome field** `w.BM` (a
+  byte per tile: the nearest island's biome mixed with noise so a lowland island keeps pine groves and the first biome gets a warm
+  patch or two; `w.biomeAt(tx, ty)`, `w.biome(wx, wy)`) tints the baked ground a **warmer, yellower green** where it is high (and the
+  chart), makes `w.plant` choose **oak, beech, ash and the apple tree** (`beech`, `ash`, `apple` props: the oak and birch drawings in
+  the lowlands' materials, `lowK`; `KIND` tree, `HP` 20, 17, 10; `TREE_WOOD` 13, 11, 6) and the **chalk rock** (`chalkRock`, pale)
+  instead of pines, birches and grey rock, and makes `w.dress` paint **three new ground kinds**: **marsh** (6, dark olive with glints
+  of standing water, on the low ground by the water), **ploughed field** (4, dark furrows east to west, strips in the open) and
+  **chalk** (5, almost white, at the lowland outcrops); the Building board's Ground row has Field, Chalk and Marsh brushes. A
+  `hedge` prop (bushes in a row) is in the kit for the lowland villages to come. `Village.plan` makes lowland villages richer. **Not
+  built yet** (next): the lowland towns and churches with their pieces (timber framing, cut stone, tiles, arches, a bell tower), iron
+  (bog iron in the marsh, the bloomery, iron tools and arms, mail), the karve (mast, sail, rowers, wind), raiding (loot behind doors,
+  carrying to the ship, guards gathering to the noise), silver, the jarl with the silver ring, reputation, and the balance pass on
+  island and map generation (Robin: the lowlands a bit further out; bigger seas).
 - Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch.
 
 

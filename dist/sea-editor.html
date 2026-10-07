@@ -3164,6 +3164,14 @@ function birch(c, K, x, y, h, seed) {
   for (i = 0; i < 6; i++) leafBlobs(c, K, top[0] + (R() - 0.5) * h * 0.42, top[1] + (R() - 0.2) * h * 0.2, h * (0.09 + R() * 0.06), seed * 3 + i, 3, K.birchLeaf);
   for (i = 0; i < 2; i++) glowFruit(c, top[0] + (R() - 0.5) * h * 0.3, top[1] + R() * h * 0.15, 2.8);
 }
+// The southern lowlands' trees and stones (2026-10-07): a beech (smooth grey trunk, a broad pale crown), an ash (tall, grey-brown,
+// a feathery lighter crown), an apple tree (small, round, red fruit), a chalk rock (pale, almost white) and a hedge (bushes in a row)
+function lowK(K, o) { var K2 = Object.create(K), k; for (k in o) K2[k] = o[k]; return K2; }
+function beechTree(c, K, x, y, h, seed) { oakTree(c, lowK(K, { trunk: M(30, 9, 56), trunkL: M(30, 8, 64), leaf: M(P.outsideHue + 10, 54, 52), leafD: M(P.outsideHue + 14, 48, 40) }), x, y, h, seed); }
+function ashTree(c, K, x, y, h, seed) { birch(c, lowK(K, { birch: M(28, 10, 46), birchLeaf: M(P.outsideHue - 2, 48, 50) }), x, y, h, seed); }
+function appleTree(c, K, x, y, h, seed) { var f = P.fruit, a = P.accentHue; P.fruit = 1; P.accentHue = 4; oakTree(c, lowK(K, { leaf: M(P.outsideHue + 6, 52, 46), leafD: M(P.outsideHue + 10, 46, 36) }), x, y, h, seed); P.fruit = f; P.accentHue = a; }
+function chalkRockObj(c, K, x, y, s, seed) { rock(c, lowK(K, { rock: M(42, 12, 82), rockC: M(42, 12, 80), rockD: M(40, 10, 62) }), x, y, s, seed, false); }
+function hedgeObj(c, K, x, y, seed) { bush(c, K, x - 24, y + 2, 15, seed, false); bush(c, K, x + 24, y + 2, 15, seed + 2, false); bush(c, K, x, y, 16, seed + 1, false); }
 function cypress(c, K, x, y, h, seed) {
   var R = rng(seed), i, n = 9, sw = (R() - 0.5) * P.twist * 10;
   longShadow(c, x, y, 20, h * 0.5); gshadow(c, x, y + 1, 16, 5, 0.4);
@@ -4376,6 +4384,11 @@ var PROPS = {
   chair: { b: [-14, -36, 14, 6], f: function (c, K, s) { chairObj(c, K, 0, 0, s); } },
   table: { b: [-23, -29, 29, 6], f: function (c, K, s) { c.save(); c.scale(0.62, 0.62); tableObj(c, K, 0, 0, s); c.restore(); } },
   oak: { b: [-120, -230, 120, 26], f: function (c, K, s) { oakTree(c, K, 0, 0, 200, s); } },
+  beech: { b: [-120, -236, 120, 26], f: function (c, K, s) { beechTree(c, K, 0, 0, 205, s); } },
+  ash: { b: [-92, -280, 118, 20], f: function (c, K, s) { ashTree(c, K, 0, 0, 215, s); } },
+  apple: { b: [-80, -150, 80, 20], f: function (c, K, s) { appleTree(c, K, 0, 0, 125, s); } },
+  chalkRock: { b: [-36, -40, 36, 10], f: function (c, K, s) { chalkRockObj(c, K, 0, 0, 16, s); } },
+  hedge: { b: [-42, -44, 42, 12], f: function (c, K, s) { hedgeObj(c, K, 0, 0, s); } },
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
   willow: { b: [-120, -210, 150, 22], f: function (c, K, s) { willow(c, K, 0, 0, 190, s); } },
@@ -4453,8 +4466,8 @@ var T = 32, TS = 24, K = 0.75, CT = 16;
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
-var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush' };
-var HP = { birch: 14, pine: 18, oak: 22, struckTree: 9, rock: 11, rockFormation: 18, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1 };
+var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
+var HP = { birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
@@ -4487,11 +4500,12 @@ function make(kit, opts) {
   /* 1. place the islands: the home island first, then each new one beside an earlier one */
   function pickR() { var u = R(), f = u < 0.25 ? rnd(0.15, 0.45) : (u < 0.78 ? rnd(0.7, 1.3) : rnd(1.5, 2.2)); return Math.max(5, o.isle / 2 * (1 + (f - 1) * o.sizeVar)); }
   function pickGap() { var u = R(), f = u < 0.15 ? rnd(0.1, 0.3) : (u < 0.75 ? rnd(0.5, 1.5) : (u < 0.95 ? rnd(1.6, 3) : rnd(4, 8))); return Math.max(4, o.gap * (1 + (f - 1) * o.gapVar)); }
-  var isles = [{ x: 0, y: 0, r: (o.isle0 || o.isle) / 2, gap: 0 }];   // o.isle0: the first island's width (the starter island is small)
+  var isles = [{ x: 0, y: 0, r: (o.isle0 || o.isle) / 2, gap: 0, biome: 0 }];   // o.isle0: the first island's width (the starter island is small)
   for (i = 1; i < o.count; i++) for (tries = 0; tries < 60; tries++) {
-    var par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(); if (i === 1 && o.big) r = o.big / 2; if (o.sizes && o.sizes[i]) r = o.sizes[i] / 2;   // o.big: the second island's width; o.sizes: every island's width
+    var bm = o.biomes ? (o.biomes[i] || 0) : 0, par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(); if (i === 1 && o.big) r = o.big / 2; if (o.sizes && o.sizes[i]) r = o.sizes[i] / 2;   // o.big: the second island's width; o.sizes: every island's width
+    if (bm) { var south = isles.slice().sort(function (p1, p2) { return p2.y - p1.y; }); par = south[Math.floor(R() * Math.min(2, south.length))]; a = 0.95 + R() * 1.25; g = g * 1.7 + 18; }   // o.biomes: the second biome's islands lie to the south, a bit further off (Robin)
     var d0 = 0, d = par.r + r + g;   // o.dir: the second island lies in that direction (0 is east, where the game's camp is)
-    var cand = { x: par.x + Math.cos(a) * d, y: par.y + Math.sin(a) * d * 0.9, r: r, gap: g }, ok = true;
+    var cand = { x: par.x + Math.cos(a) * d, y: par.y + Math.sin(a) * d * 0.9, r: r, gap: g, biome: bm }, ok = true;
     for (k = 0; k < isles.length; k++) if (Math.hypot(isles[k].x - cand.x, isles[k].y - cand.y) < isles[k].r + r + 4) { ok = false; break; }
     if (ok) { isles.push(cand); break; }
   }
@@ -4526,6 +4540,16 @@ function make(kit, opts) {
     for (var j = 0; j < ns; j++) { var sa = R() * 6.283, sdist = q.r * rnd(1.1, 1.42) + rnd(3, 12); blob(q.x + Math.cos(sa) * sdist, q.y + Math.sin(sa) * sdist * 0.9, rnd(1.8, 5.5), s + idx * 31 + j, 0.8); skerries++; }
   });
   w.E = E;
+  /* 3b. the biome of every tile (2026-10-07, Robin: the second biome, the southern lowlands, mixing at the edges like Valheim's):
+     the nearest island's biome, with noise on top so a lowland island keeps pine groves and the first biome gets a warm patch or two */
+  var BM = new Uint8Array(GW * GH);
+  for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
+    var bq = null, bd = 1e9, bi;
+    for (bi = 0; bi < isles.length; bi++) { var dq = Math.hypot(x - isles[bi].x, (y - isles[bi].y) / 0.9) - isles[bi].r; if (dq < bd) { bd = dq; bq = isles[bi]; } }
+    var base = bq && bq.biome ? 1 : 0, bv = base * 0.9 + (fbm(x / 22, y / 22, s + 90) - 0.5) * 1.1 + (base ? 0.12 : -0.32);
+    BM[y * GW + x] = Math.round(Math.max(0, Math.min(1, bv)) * 255);
+  }
+  w.BM = BM; w.biomeAt = function (tx, ty) { return (tx < 0 || ty < 0 || tx >= GW || ty >= GH) ? 0 : BM[ty * GW + tx] / 255; }; w.biome = function (wx, wy) { return w.biomeAt(Math.floor(wx / T), Math.floor(wy / T)); };
   function beachAt(tx, ty) { return o.beach * (0.55 + 0.9 * vnoise(tx / 8, ty / 8, s + 50)); }   // the beach is wider in some places than others
   /* 4. what each tile is for the game: 0 sea, 1 beach, 2 grass, 3 dark grass, 4 jetty. The jetty runs east from the home island. */
   var grid = new Uint8Array(GW * GH), landChunk = new Uint8Array(CW * CH), landTiles = 0;
@@ -4594,10 +4618,13 @@ function make(kit, opts) {
     var gv = kit.mk(W2, H2), gc = gv.getContext('2d'), img = gc.createImageData(W2, H2), d = img.data, pp = 0, py, px;
     for (py = 0; py < H2; py++) for (px = 0; px < W2; px++, pp += 4) {
       var wx = cx * W2 + px, wys = cy * H2 + py, wy = wys / K, n1v = noise[((wys & 127) << 7) | (wx & 127)], n2v = noise[(((wys * 2) & 127) << 7) | ((wx * 2) & 127)];
-      var fg = groundField(1, wx, wy) + (n1v - 0.5) * 0.55, fe = groundField(2, wx, wy) + (n1v - 0.5) * 0.55, fm = groundField(3, wx, wy) + (n1v - 0.5) * 0.6, r = 0, g = 0, b = 0, a = 0, f = 0;
+      var fg = groundField(1, wx, wy) + (n1v - 0.5) * 0.55, fe = groundField(2, wx, wy) + (n1v - 0.5) * 0.55, fm = groundField(3, wx, wy) + (n1v - 0.5) * 0.6, ff = groundField(4, wx, wy) + (n1v - 0.5) * 0.4, fc = groundField(5, wx, wy) + (n1v - 0.5) * 0.5, fw = groundField(6, wx, wy) + (n1v - 0.5) * 0.6, r = 0, g = 0, b = 0, a = 0, f = 0;
       if (fg > 0.5) { f = fg; r = 150 + (n2v - 0.5) * 44; g = 138 + (n2v - 0.5) * 40; b = 118 + (n2v - 0.5) * 34; }
       else if (fe > 0.5) { f = fe; r = 126 + (n2v - 0.5) * 30; g = 98 + (n2v - 0.5) * 26; b = 62 + (n2v - 0.5) * 20; }
       else if (fm > 0.5) { f = fm; r = 92 + (n2v - 0.5) * 26; g = 128 + (n2v - 0.5) * 30; b = 70 + (n2v - 0.5) * 22; }   // moss: a deeper, bluer green
+      else if (ff > 0.5) { f = ff; var fur = Math.sin(wy * 0.9) * 0.5 + 0.5; r = 118 + (n2v - 0.5) * 24 - fur * 26; g = 88 + (n2v - 0.5) * 20 - fur * 22; b = 56 + (n2v - 0.5) * 16 - fur * 14; }   // a ploughed field: dark furrows east to west
+      else if (fc > 0.5) { f = fc; r = 214 + (n2v - 0.5) * 30; g = 210 + (n2v - 0.5) * 28; b = 196 + (n2v - 0.5) * 26; }   // chalk: pale, almost white
+      else if (fw > 0.5) { f = fw; var gl = n2v > 0.82 ? 1 : 0; r = 70 + (n2v - 0.5) * 20 + gl * 60; g = 96 + (n2v - 0.5) * 24 + gl * 70; b = 64 + (n2v - 0.5) * 20 + gl * 90; }   // marsh: dark olive with glints of standing water
       if (f > 0.5) { var edge = Math.min(1, (f - 0.5) / 0.28); r -= (1 - edge) * 26; g -= (1 - edge) * 24; b -= (1 - edge) * 18; a = Math.min(1, (f - 0.5) / 0.1) * 255; }
       d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
     }
@@ -4609,8 +4636,8 @@ function make(kit, opts) {
     var W2 = CT * T, H2 = CT * TS, ccv = kit.mk(W2 * 2, H2 * 2), c = ccv.getContext('2d'), xx, yy, ii, jj;
     c.setTransform(2, 0, 0, 2, 0, 0);
     for (yy = 0; yy < CT; yy++) for (xx = 0; xx < CT; xx++) c.drawImage(tile('grass', cx * CT + xx, cy * CT + yy), xx * T, yy * TS, T + 0.3, TS + 0.3);
-    var n1 = CT + 2, EE = new Float32Array(n1 * n1), BW = new Float32Array(n1 * n1), DK = new Float32Array(n1 * n1);
-    for (jj = 0; jj < n1; jj++) for (ii = 0; ii < n1; ii++) { var gx = cx * CT + ii - 1, gy = cy * CT + jj - 1; EE[jj * n1 + ii] = eTile(gx, gy); BW[jj * n1 + ii] = beachAt(gx, gy); DK[jj * n1 + ii] = fbm(gx / 9, gy / 9, s + 70); }
+    var n1 = CT + 2, EE = new Float32Array(n1 * n1), BW = new Float32Array(n1 * n1), DK = new Float32Array(n1 * n1), BMv = new Float32Array(n1 * n1);
+    for (jj = 0; jj < n1; jj++) for (ii = 0; ii < n1; ii++) { var gx = cx * CT + ii - 1, gy = cy * CT + jj - 1; EE[jj * n1 + ii] = eTile(gx, gy); BW[jj * n1 + ii] = beachAt(gx, gy); DK[jj * n1 + ii] = fbm(gx / 9, gy / 9, s + 70); BMv[jj * n1 + ii] = w.biomeAt(gx, gy); }
     var ov = kit.mk(W2, H2), oc = ov.getContext('2d'), img = oc.createImageData(W2, H2), d = img.data, P = PAL, pp = 0;
     for (var py = 0; py < H2; py++) {
       var v = py / TS + 0.5, j0 = Math.floor(v), tv = v - j0, wy = cy * H2 + py;
@@ -4637,6 +4664,7 @@ function make(kit, opts) {
           } else {                                          // grass: darker by the beach and in soft patches, never in squares
             var dk = DK[q] * w00 + DK[q + 1] * w10 + DK[q + n1] * w01 + DK[q + n1 + 1] * w11, rim = Math.max(0, 1 - (eg - bw) / 0.4);
             r = 22; g = 84; b = 40; a = Math.min(120, Math.max(0, (dk - 0.54) * 5) * 62 + rim * 70);
+            var bmv = BMv[q] * w00 + BMv[q + 1] * w10 + BMv[q + n1] * w01 + BMv[q + n1 + 1] * w11; if (bmv > 0.05) { var bt = bmv * 95, at = a + bt; r = (r * a + 196 * bt) / at; g = (g * a + 176 * bt) / at; b = (b * a + 62 * bt) / at; a = Math.min(255, at); }   // the lowlands: a warmer, yellower green
           }
         }
         d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
@@ -4807,15 +4835,16 @@ function make(kit, opts) {
   w.eachProp = function (fn) { buckets.forEach(function (b) { if (b) b.slice().forEach(fn); }); };
   // 5. what grows there: the first biome only. Trees stand in groves with open ground between them; the beach stays bare.
   w.plant = function () {
-    var TREES = ['birch', 'pine', 'birch', 'pine', 'oak'].filter(function (nm) { return !!kit.PROPS[nm]; }), home = w.home;
+    var TREES = ['birch', 'pine', 'birch', 'pine', 'oak'].filter(function (nm) { return !!kit.PROPS[nm]; }), LOW = ['oak', 'beech', 'ash', 'beech', 'oak', 'apple'].filter(function (nm) { return !!kit.PROPS[nm]; }), home = w.home;   // the lowlands: oak, beech, ash, an apple tree now and then
     for (y = 3; y < GH - 3; y++) for (x = 3; x < GW - 3; x++) {
       var t3 = grid[y * GW + x]; if (t3 === 0 || t3 === 4) continue;
       var roll = R(), wx = (x + 0.2 + R() * 0.6) * T, wy = (y + 0.3 + R() * 0.5) * T, p = null;
       if (Math.hypot(wx - home.x, wy - home.y) < 130) continue;
       if (t3 >= 2) {
-        if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tn = TREES[Math.floor(R() * TREES.length) % TREES.length]; if (R() < 0.02 && kit.PROPS.struckTree) tn = 'struckTree'; p = { name: tn, s: (tn === 'pine' ? 0.54 : (tn === 'struckTree' ? 0.6 : 0.49)) + R() * 0.1, r: 11 }; w.stats.trees++; }   // now and then a tree struck by lightning: charcoal
+        var bmp = w.biomeAt(x, y);
+        if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tl = bmp > R() && LOW.length ? LOW : TREES, tn = tl[Math.floor(R() * tl.length) % tl.length]; if (R() < 0.02 && kit.PROPS.struckTree) tn = 'struckTree'; p = { name: tn, s: (tn === 'pine' ? 0.54 : (tn === 'struckTree' ? 0.6 : 0.49)) + R() * 0.1, r: 11 }; w.stats.trees++; }   // now and then a tree struck by lightning: charcoal
         else if (roll > 0.955) p = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
-        else if (roll > 0.948) { p = { name: R() < 0.6 ? 'rock' : 'rockFormation', s: 0.9, r: 10 }; w.stats.rocks++; }
+        else if (roll > 0.948) { p = { name: bmp > 0.5 && kit.PROPS.chalkRock && R() < 0.7 ? 'chalkRock' : (R() < 0.6 ? 'rock' : 'rockFormation'), s: 0.9, r: 10 }; w.stats.rocks++; }
         else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs', 'fireRing'][Math.floor(R() * 6)], s: 1, r: 10 };   // things of nature, and an old fire ring someone left: no carved stones or posts lie about
       } else if (roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
@@ -4833,10 +4862,13 @@ function make(kit, opts) {
     for (y = 4; y < GH - 4; y++) for (x = 4; x < GW - 4; x++) {
       if (grid[y * GW + x] < 2) continue;
       var gv = vnoise(x / 7, y / 7, s + 20);
+      var bmd = w.biomeAt(x, y);
+      if (bmd > 0.55 && eTile(x, y) < beachAt(x, y) + 2.2 && gv < 0.55 && R() < 0.14) { dab((x + 0.5) * T, (y + 0.5) * T, 16 + R() * 18, 6); n++; continue; }   // the lowlands: marsh on the low ground by the water
+      if (bmd > 0.6 && gv < 0.42 && eTile(x, y) > 2 && R() < 0.012) { for (var fi = -2; fi <= 2; fi++) dab((x + 0.5 + fi * 0.9) * T, (y + 0.5) * T, 13 + R() * 4, 4); n++; continue; }   // a strip of ploughed field in the open
       if (gv > 0.76 && R() < 0.22) { dab((x + 0.5) * T, (y + 0.5) * T, 18 + R() * 16, 2); n++; }            // earth under the thickest canopy
       else if (gv > 0.62 && gv < 0.7 && R() < 0.1) { dab((x + 0.5) * T, (y + 0.5) * T, 12 + R() * 12, 3); n++; }   // moss at a grove's edge
     }
-    var k; for (k in w.buckets) { var bk = w.buckets[k]; if (!bk || !bk.length) continue; for (var i = 0; i < bk.length; i++) { var p = bk[i]; if (p.name === 'rockFormation') { dab(p.x, p.y + 4, 14 + R() * 6, 1); n++; } else if (p.name === 'pine' && R() < 0.35) { dab(p.x, p.y + 6, 10 + R() * 8, 3); n++; } } }
+    var k; for (k in w.buckets) { var bk = w.buckets[k]; if (!bk || !bk.length) continue; for (var i = 0; i < bk.length; i++) { var p = bk[i]; if (p.name === 'rockFormation' || p.name === 'chalkRock') { dab(p.x, p.y + 4, 14 + R() * 6, p.name === 'chalkRock' || w.biome(p.x, p.y) > 0.5 ? 5 : 1); n++; } else if (p.name === 'pine' && R() < 0.35) { dab(p.x, p.y + 6, 10 + R() * 8, 3); n++; } } }
     return n;
   };
   w.camp = function (list) {
@@ -4849,7 +4881,7 @@ function make(kit, opts) {
   w.chart = function (maxPx) {
     var step = Math.max(1, Math.ceil(GW / maxPx)), mw = Math.floor(GW / step), mh = Math.floor(GH / step), cv = kit.mk(mw, mh);
     var mc = cv.getContext('2d'), img = mc.createImageData(mw, mh), COL = [[33, 96, 122], [232, 204, 140], [96, 168, 84], [78, 146, 76], [140, 106, 72]];
-    for (var yy = 0; yy < mh; yy++) for (var xx = 0; xx < mw; xx++) { var cc = COL[grid[yy * step * GW + xx * step]], ip = (yy * mw + xx) * 4; img.data[ip] = cc[0]; img.data[ip + 1] = cc[1]; img.data[ip + 2] = cc[2]; img.data[ip + 3] = 255; }
+    for (var yy = 0; yy < mh; yy++) for (var xx = 0; xx < mw; xx++) { var gi = yy * step * GW + xx * step, cc = COL[grid[gi]], ip = (yy * mw + xx) * 4, bmc = grid[gi] >= 2 && grid[gi] !== 4 ? BM[gi] / 255 : 0; img.data[ip] = cc[0] + (150 - cc[0]) * bmc; img.data[ip + 1] = cc[1] + (176 - cc[1]) * bmc; img.data[ip + 2] = cc[2] + (70 - cc[2]) * bmc; img.data[ip + 3] = 255; }   // the lowlands warmer on the chart
     mc.putImageData(img, 0, 0);
     return cv;
   };

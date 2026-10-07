@@ -220,11 +220,11 @@ __COMBAT__
   window.addEventListener('visibilitychange', function () { if (document.hidden) Music.setVolume(0); else Music.setVolume(OPTS.music); });
 
   /* ---------- the island: one island from the shared archipelago code (src/world.js) ---------- */
-  var spec = { isle: 160, isle0: 60, big: 230, sizes: [60, 230, 150, 110, 170, 90], noDock: true, count: 6, dir: 0.1, gap: 26, gapVar: 0.5, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.85;   // six islands (2026-10-07): the starter, the big one, four more round them
+  var spec = { isle: 160, isle0: 60, big: 230, sizes: [60, 230, 150, 110, 170, 90], biomes: [0, 0, 0, 0, 1, 1], noDock: true, count: 6, dir: 0.1, gap: 26, gapVar: 0.5, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.85;   // six islands (2026-10-07): the starter, the big one, four more round them
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
   // what a felled tree, a broken rock and a cut bush give: a day's work should reach 40 wood, 20 stone and 15 fiber
-  var TREE_WOOD = { oak: 14, pine: 11, birch: 9 }, ROCK_STONE = { rock: 3, rockFormation: 6 }, BUSH_FIBER = 2, BERRIES = 3;
+  var TREE_WOOD = { oak: 14, pine: 11, birch: 9, beech: 13, ash: 11, apple: 6 }, ROCK_STONE = { rock: 3, rockFormation: 6, chalkRock: 3 }, BUSH_FIBER = 2, BERRIES = 3;
   var GT = Gather.cfg(null); try { var gg0 = JSON.parse(localStorage.getItem('game.gather')); if (gg0) GT = Gather.cfg(gg0); } catch (e) {}   // the Gathering Editor's tuning (src/gather.js)
   var trunks = [];                          // felled trunks lying about, waiting for the axe (saved)
   function hash(x, y, s) { return World.hash(x, y, s); }
@@ -271,6 +271,9 @@ __COMBAT__
     { id: 'brush', name: 'Gravel', k: 1, cost: {}, icon: function (c) { c.fillStyle = '#8f877a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#c9c2b4'; [[-4, 0], [1, -1.5], [3, 2], [-1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.4, 0.9, 0, 0, 7); c.fill(); }); } },
     { id: 'brush', name: 'Earth', k: 2, cost: {}, icon: function (c) { c.fillStyle = '#7e623e'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#5a4228'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.fillRect(q[0], q[1], 2, 1.2); }); } },
     { id: 'brush', name: 'Moss', k: 3, cost: {}, icon: function (c) { c.fillStyle = '#5c8046'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#7fa062'; [[-4, 0], [1, -1.5], [3, 2], [-1, 2.5]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 1.1, 0, 0, 7); c.fill(); }); } },
+    { id: 'brush', name: 'Field', k: 4, cost: {}, icon: function (c) { c.fillStyle = '#76583a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#4e3a26'; c.lineWidth = 1; [-2, 0, 2].forEach(function (q) { c.beginPath(); c.moveTo(-6, q + 1); c.lineTo(6, q + 1); c.stroke(); }); } },
+    { id: 'brush', name: 'Chalk', k: 5, cost: {}, icon: function (c) { c.fillStyle = '#d6d2c4'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#b8b4a6'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.5, 1, 0, 0, 7); c.fill(); }); } },
+    { id: 'brush', name: 'Marsh', k: 6, cost: {}, icon: function (c) { c.fillStyle = '#465f40'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#8fb0d0'; [[-3, 1], [2, -1], [1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 0.9, 0, 0, 7); c.fill(); }); } },
     { id: 'brush', name: 'Grass back', k: 0, cost: {}, icon: function (c) { c.fillStyle = '#5f8a44'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#8aa65a'; c.lineWidth = 1; [[-4, 2], [0, 1], [4, 2]].forEach(function (q) { c.beginPath(); c.moveTo(q[0], q[1] + 2); c.lineTo(q[0] + 1, q[1] - 3); c.stroke(); }); } },
     { id: 'floor', name: 'Grass', m: 4, cost: { fiber: 1 } },
     { id: 'floor', name: 'Dark grass', m: 5, cost: { fiber: 1 } },
@@ -3325,7 +3328,7 @@ __COMBAT__
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + spec.sizes.join('/'); }   // a save only fits the same arrangement of islands
+  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + spec.sizes.join('/') + ':' + (spec.biomes || []).join(''); }   // a save only fits the same arrangement of islands
   function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }   // the hero starts in his wrecked boat on the beach
   function start(fresh) {
     var sv = fresh ? null : loadSave(), k;
