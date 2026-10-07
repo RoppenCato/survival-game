@@ -5,11 +5,18 @@ function check(name,ok){console.log((ok?'ok  ':'BAD ')+name);if(!ok)bad++;}
 const G=G0.cfg(null);
 function tree(x,y){return {name:'oak',kind:'tree',x:x,y:y,s:0.5,hp:20,max:20,leanDir:1,lastHit:null,shake:0};}
 const s={t:-80,h:90,l:-20,w:40};
-// the sweet spot: from its side a blow bites spotBonus times
-let o=tree(300,300),sp=G0.spot(G,o,0);const hero={x:300+sp.side*30,y:300};
-let r=G0.hit(G,o,{power:2,right:true,hero:hero,t:0,s:s,ev:{}});
-check('sweet spot: from the glint side the blow is x'+G.spotBonus+' (dealt '+r.dealt+')',r.spot&&r.dealt===2*G.spotBonus);
-o=tree(300,300);r=G0.hit(G,o,{power:2,right:true,hero:{x:300-sp.side*30,y:300},t:0,s:s,ev:{}});
+// the notch (the default): the first blow cuts a notch on its side with no bonus; the back cut from the other side bites spotBonus times
+let o=tree(300,300);let r=G0.hit(G,o,{power:2,right:true,hero:{x:270,y:300},t:0,s:s,ev:{}});
+check('notch: the first blow is plain and notches the west side (dealt '+r.dealt+', notch '+o.notch+')',!r.spot&&r.dealt===2&&o.notch===-1);
+r=G0.hit(G,o,{power:2,right:true,hero:{x:270,y:300},t:3,s:s,ev:{}});
+check('from the notched side it stays plain (dealt '+r.dealt+')',!r.spot&&r.dealt===2);
+r=G0.hit(G,o,{power:2,right:true,hero:{x:330,y:300},t:6,s:s,ev:{}});
+check('the back cut from the other side is x'+G.spotBonus+' (dealt '+r.dealt+')',r.spot&&r.dealt===2*G.spotBonus);
+// the glint look: from its side a blow bites spotBonus times
+const Gg=G0.cfg({spotLook:1});o=tree(300,300);let sp=G0.spot(Gg,o,0);const hero={x:300+sp.side*30,y:300};
+r=G0.hit(Gg,o,{power:2,right:true,hero:hero,t:0,s:s,ev:{}});
+check('glint: from the glint side the blow is x'+G.spotBonus+' (dealt '+r.dealt+')',r.spot&&r.dealt===2*G.spotBonus);
+o=tree(300,300);r=G0.hit(Gg,o,{power:2,right:true,hero:{x:300-sp.side*30,y:300},t:0,s:s,ev:{}});
 check('from the other side it is plain (dealt '+r.dealt+')',!r.spot&&r.dealt===2);
 // the rhythm: a blow in the window after the last one is clean
 const Gr=G0.cfg({sweetSpot:0});o=tree(300,300);const hz={x:300-sp.side*30,y:300};G0.hit(Gr,o,{power:2,right:true,hero:hz,t:10,s:s,ev:{}});
