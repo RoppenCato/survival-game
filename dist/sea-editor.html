@@ -3172,6 +3172,15 @@ function ashTree(c, K, x, y, h, seed) { birch(c, lowK(K, { birch: M(28, 10, 46),
 function appleTree(c, K, x, y, h, seed) { var f = P.fruit, a = P.accentHue; P.fruit = 1; P.accentHue = 4; oakTree(c, lowK(K, { leaf: M(P.outsideHue + 6, 52, 46), leafD: M(P.outsideHue + 10, 46, 36) }), x, y, h, seed); P.fruit = f; P.accentHue = a; }
 function chalkRockObj(c, K, x, y, s, seed) { rock(c, lowK(K, { rock: M(42, 12, 82), rockC: M(42, 12, 80), rockD: M(40, 10, 62) }), x, y, s, seed, false); }
 function hedgeObj(c, K, x, y, seed) { bush(c, K, x - 24, y + 2, 15, seed, false); bush(c, K, x + 24, y + 2, 15, seed + 2, false); bush(c, K, x, y, 16, seed + 1, false); }
+function bogIronObj(c, K, x, y, seed) {                 // a lump of bog ore: rust-brown, an ochre crust, half sunk in dark marsh water
+  var R = rng(seed);
+  fillPts(c, ellPts(x, y - 1, 22, 7, 14), 'rgba(40,52,44,0.55)'); fillPts(c, ellPts(x - 4, y - 2, 14, 4.5, 12), 'rgba(110,140,150,0.35)');
+  shape(c, [[x - 12, y - 1], [x - 13, y - 7], [x - 7, y - 14], [x + 1, y - 16], [x + 9, y - 12], [x + 13, y - 5], [x + 11, y - 1]], M(18, 52, 34), { seed: seed, size: 'M', sh: 2, rough: 0.5 });
+  fillPts(c, [[x - 8, y - 9], [x - 3, y - 13], [x + 4, y - 12], [x + 7, y - 8], [x + 2, y - 6], [x - 5, y - 6]], M(34, 70, 48).base);
+  fillPts(c, ellPts(x + 3, y - 10, 2.2, 1.4, 7), M(40, 80, 60).base); fillPts(c, ellPts(x - 5, y - 8, 1.6, 1.1, 7), M(40, 80, 60).base);
+  shape(c, [[x + 8, y], [x + 7, y - 4], [x + 12, y - 7], [x + 17, y - 4], [x + 16, y]], M(16, 48, 30), { seed: seed + 3, size: 'S', sh: 1, rough: 0.4 });
+  for (var i = 0; i < 5; i++) { var rx = x + (R() - 0.5) * 36, ry = y + (R() - 0.3) * 6; line(c, [[rx, ry], [rx + (R() - 0.5) * 2, ry - 6 - R() * 5]], 0.9, M(70, 30, 38).base, false); }   // reeds round it
+}
 function cypress(c, K, x, y, h, seed) {
   var R = rng(seed), i, n = 9, sw = (R() - 0.5) * P.twist * 10;
   longShadow(c, x, y, 20, h * 0.5); gshadow(c, x, y + 1, 16, 5, 0.4);
@@ -4388,6 +4397,7 @@ var PROPS = {
   ash: { b: [-92, -280, 118, 20], f: function (c, K, s) { ashTree(c, K, 0, 0, 215, s); } },
   apple: { b: [-80, -150, 80, 20], f: function (c, K, s) { appleTree(c, K, 0, 0, 125, s); } },
   chalkRock: { b: [-36, -40, 36, 10], f: function (c, K, s) { chalkRockObj(c, K, 0, 0, 16, s); } },
+  bogIron: { b: [-24, -22, 24, 8], f: function (c, K, s) { bogIronObj(c, K, 0, 0, s); } },
   hedge: { b: [-42, -44, 42, 12], f: function (c, K, s) { hedgeObj(c, K, 0, 0, s); } },
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
@@ -4466,8 +4476,8 @@ var T = 32, TS = 24, K = 0.75, CT = 16;
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
-var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
-var HP = { birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
+var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
+var HP = { birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
@@ -4869,6 +4879,19 @@ function make(kit, opts) {
       else if (gv > 0.62 && gv < 0.7 && R() < 0.1) { dab((x + 0.5) * T, (y + 0.5) * T, 12 + R() * 12, 3); n++; }   // moss at a grove's edge
     }
     var k; for (k in w.buckets) { var bk = w.buckets[k]; if (!bk || !bk.length) continue; for (var i = 0; i < bk.length; i++) { var p = bk[i]; if (p.name === 'rockFormation' || p.name === 'chalkRock') { dab(p.x, p.y + 4, 14 + R() * 6, p.name === 'chalkRock' || w.biome(p.x, p.y) > 0.5 ? 5 : 1); n++; } else if (p.name === 'pine' && R() < 0.35) { dab(p.x, p.y + 6, 10 + R() * 8, 3); n++; } } }
+    return n;
+  };
+  // bog iron (2026-10-07, the lowlands' metal): rusty lumps in the marsh, a few to a bog, planted on the marsh cells after dressing
+  w.plantBog = function () {
+    var k, n = 0, placed = [];
+    for (k in w.ground) {
+      if (w.ground[k] !== 6 || R() > 0.035) continue;
+      var q = k.split(','), x = (+q[0] + 0.5) * GQ + (R() - 0.5) * 6, y = (+q[1] + 0.5) * GQ + (R() - 0.5) * 6, i, ok = w.isLand(x, y);
+      for (i = 0; ok && i < placed.length; i++) if (Math.hypot(placed[i][0] - x, placed[i][1] - y) < 44) ok = false;
+      if (!ok || !kit.PROPS.bogIron) continue;
+      var p = { name: 'bogIron', x: x, y: y, s: 0.85 + R() * 0.2, r: 7, v: Math.floor(R() * 3), kind: 'stone', bog: true }; p.max = p.hp = HP.bogIron * (0.7 + 0.6 * p.s); p.leanDir = 1;
+      w.addProp(p); placed.push([x, y]); n++;
+    }
     return n;
   };
   w.camp = function (list) {

@@ -244,7 +244,7 @@ __COMBAT__
   function buildWorld() {
     w = World.make(kit, spec);
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
-    w.plant(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress();
+    w.plant(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(700);
     raft = null; leftBanner = 0; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
@@ -587,6 +587,19 @@ __COMBAT__
     { id: 'copperSeax', cat: 'weapon', out: { item: ['seax', 'copper'] }, needs: { copperBar: 2, wood: 1 }, at: 'bench', key: 'copperBar' },
     { id: 'copperSpear', cat: 'weapon', out: { item: ['spear', 'copper'] }, needs: { copperBar: 2, wood: 3 }, at: 'bench', key: 'copperBar' },
     { id: 'copperGreataxe', cat: 'weapon', out: { item: ['greataxe', 'copper'] }, needs: { copperBar: 5, wood: 2 }, at: 'bench', key: 'copperBar' },
+    // iron (2026-10-07, the lowlands): bog iron from the marsh and charcoal in the furnace make a bar; the bar makes the tools and arms
+    { id: 'ironBar', cat: 'supply', out: { stack: ['ironBar', 1] }, needs: { bogIron: 3, charcoal: 3 }, at: 'furnace', key: 'bogIron', dur: 12 },
+    { id: 'ironAxe', cat: 'tool', out: { item: ['axe', 'iron'] }, needs: { ironBar: 3, wood: 2 }, at: 'bench', key: 'ironBar' },
+    { id: 'ironPick', cat: 'tool', out: { item: ['pick', 'iron'] }, needs: { ironBar: 3, wood: 2 }, at: 'bench', key: 'ironBar' },
+    { id: 'ironKnife', cat: 'tool', out: { item: ['knife', 'iron'] }, needs: { ironBar: 1, wood: 1 }, at: 'bench', key: 'ironBar' },
+    { id: 'ironSword', cat: 'weapon', out: { item: ['sword', 'iron'] }, needs: { ironBar: 4, wood: 1, leather: 1 }, at: 'bench', key: 'ironBar' },
+    { id: 'ironSeax', cat: 'weapon', out: { item: ['seax', 'iron'] }, needs: { ironBar: 2, wood: 1 }, at: 'bench', key: 'ironBar' },
+    { id: 'ironSpear', cat: 'weapon', out: { item: ['spear', 'iron'] }, needs: { ironBar: 2, wood: 3 }, at: 'bench', key: 'ironBar' },
+    { id: 'ironGreataxe', cat: 'weapon', out: { item: ['greataxe', 'iron'] }, needs: { ironBar: 5, wood: 2 }, at: 'bench', key: 'ironBar' },
+    { id: 'paintedShield', cat: 'weapon', out: { item: ['shield', 'iron'] }, needs: { ironBar: 1, wood: 5, leather: 1 }, at: 'bench', key: 'ironBar' },
+    { id: 'gambeson', cat: 'armour', out: { item: ['tunic', 'wool'] }, needs: { fiber: 8, leather: 1 }, at: 'bench', key: 'leather' },
+    { id: 'mailShirt', cat: 'armour', out: { item: ['tunic', 'iron'] }, needs: { ironBar: 6, leather: 2 }, at: 'bench', key: 'ironBar' },
+    { id: 'ironHelm', cat: 'armour', out: { item: ['helmet', 'iron'] }, needs: { ironBar: 2, leather: 1 }, at: 'bench', key: 'ironBar' },
     { id: 'flintAxe', cat: 'tool', out: { item: ['axe', 'flint'] }, needs: { wood: 3, stone: 2 }, at: 'hand', key: 'stone' },
     { id: 'torch', cat: 'supply', out: { stack: ['torch', 2] }, needs: { wood: 1, fiber: 2 }, at: 'hand', key: 'fiber' },
     { id: 'flintKnife', cat: 'tool', out: { item: ['knife', 'flint'] }, needs: { wood: 1, stone: 1 }, at: 'hand', key: 'stone' },
@@ -878,8 +891,8 @@ __COMBAT__
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
-  var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
-  var NAMES = { charcoal: 'Charcoal', copperBar: 'Copper bar', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
+  var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
+  var NAMES = { charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
   function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; var n = RECIPES2.filter(function (r) { return known(r) && !r._told; }).length; if (n) toast('Something new to make'); RECIPES2.forEach(function (r) { if (known(r)) r._told = true; }); } }
   // The bag: 30 slots, 6 wide. The top row is the Fight bar and the second the Gather bar: each is the hotbar of its mode,
@@ -1772,7 +1785,7 @@ __COMBAT__
 
   function sandbox() {                   // a state to try things out in: full kit, plenty of everything, every recipe known
     for (var k = 0; k < SLOTS; k++) slots[k] = null;
-    [['wood', 25], ['stone', 25], ['fiber', 25], ['leather', 12], ['torch', 6], ['berries', 10], ['meat', 5], ['copper', 12], ['charcoal', 12], ['copperBar', 6]].forEach(function (q) { addItem(q[0], q[1]); });
+    [['wood', 25], ['stone', 25], ['fiber', 25], ['leather', 12], ['torch', 6], ['berries', 10], ['meat', 5], ['copper', 12], ['charcoal', 12], ['copperBar', 6], ['bogIron', 9], ['ironBar', 6]].forEach(function (q) { addItem(q[0], q[1]); });
     barPut(Items.make('sword', 'iron')); barPut(Items.make('bow', 'wood')); barPut(Items.make('axe', 'iron')); barPut(Items.make('pick', 'iron')); barPut(Items.make('knife', 'iron')); equip.shield = Items.make('shield', 'wood'); hand = { fight: 0, gather: 0 };
     ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, 'leather'); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
@@ -2003,7 +2016,7 @@ __COMBAT__
     else drawDropIcon(c, e.r.out.stack ? e.r.out.stack[0] : (e.r.out.raft ? 'raft' : 'arrow'), 0, 0, 1.3);
     c.restore();
   }
-  var STACK_TALE = { torch: 'A branch wound with fiber. Lit with T, it burns for a few minutes and lights the way.', copperBar: 'Ore and charcoal in the furnace, and a dull red bar comes out. Soft, but it holds an edge longer than flint.' };
+  var STACK_TALE = { torch: 'A branch wound with fiber. Lit with T, it burns for a few minutes and lights the way.', copperBar: 'Ore and charcoal in the furnace, and a dull red bar comes out. Soft, but it holds an edge longer than flint.', bogIron: 'A rusty lump dug from the marsh, where the iron settles out of the water year by year. Three of these and charcoal make a bar.', ironBar: 'A bloom of iron, hammered free of slag and drawn into a bar. Harder than copper and holds its edge: the metal of the south.' };
   function infoText(e) {                    // the tale: a dish's line, a thing's own description
     if (e.dish) return e.dish.text + '.';
     if (e.r.out.item) return Items.make(e.r.out.item[0], e.r.out.item[1]).desc;
@@ -2534,7 +2547,7 @@ __COMBAT__
       if (busy.indexOf(o) < 0) busy.push(o);
       if (o.hp <= 0 && o.dying != null && o.kind !== 'trunk') {
         deed(o.kind === 'tree' ? 'trees' : (o.kind === 'stone' ? 'rocks' : 'bushes'));
-        if (o.kind === 'stone') { if (o.trollStone) drop('copper', o.x, o.y, 4); else if (o.ore) { var dark = light() > 0.5 || o.cave; if (dark) drop('copper', o.x, o.y, 2); else if (Math.random() < 1 / 6) drop('copper', o.x, o.y, 1); }
+        if (o.kind === 'stone') { if (o.bog) drop('bogIron', o.x, o.y, 2 + (Math.random() < 0.5 ? 1 : 0)); if (o.trollStone) drop('copper', o.x, o.y, 4); else if (o.ore) { var dark = light() > 0.5 || o.cave; if (dark) drop('copper', o.x, o.y, 2); else if (Math.random() < 1 / 6) drop('copper', o.x, o.y, 1); }
           if (inUse('stonesense') && RS.deeds.rocks % 3 === 0) drops.forEach(function (d) { if (d.kind === 'stone' && d.t === 0 && Math.hypot(d.x - o.x, d.y - o.y) < 2) { d.x = hero().x; d.y = hero().y + 6; } }); }   // the stone sense: every third rock to your feet
       }
       return { dealt: r.dealt, crit: !!(r.spot || r.crack), clean: !!r.rhythm };   // the engine shows the number: gold for the sweet spot, large for a clean hit
@@ -2602,6 +2615,12 @@ __COMBAT__
   function sandboxRunes() { if (!ring) takeRing(true); Runes.LIST.forEach(function (r) { if (!RS.learnt[r.id]) RS.learnt[r.id] = { uses: 0, how: 'sandbox' }; }); RS.earned = {}; }
   function ringRank() { return ring ? (Runes.METALS[ring.metal] || Runes.METALS.bronze).rank : 0; }
   function heroRingSync() { var hs = lib.hero().spec; if (hs.ring !== ringRank()) hs.ring = ringRank(); }
+  var heroBase = null;                       // the hero's own look, kept so worn gear can change it and give it back (2026-10-07)
+  function heroGearSync() {
+    var hs = lib.hero().spec; if (!heroBase) heroBase = { hat: hs.hat, coat: hs.col.coat, clothes: hs.clothes };
+    var head = equip.head, chest = equip.chest, wantHat = head && head.mat === 'iron' ? 3 : heroBase.hat, wantCoat = chest && chest.mat === 'iron' ? '#8a9099' : (chest && chest.mat === 'wool' ? '#c9bfa8' : heroBase.coat);
+    if (hs.hat !== wantHat) hs.hat = wantHat; if (hs.col.coat !== wantCoat) hs.col.coat = wantCoat;
+  }
   // the bronze ring, from the dead Viking at the back of the cave
   function takeRing(quiet) {
     if (ring) return; ring = Runes.newRing('bronze'); seen.ring = 1; heroRingSync();
@@ -3191,6 +3210,8 @@ __COMBAT__
   function drawDropIcon(c, kind, x, y, sc) {
     c.save(); c.translate(x, y); c.scale(sc, sc); c.lineCap = 'round'; c.lineJoin = 'round';
     if (kind === 'charcoal') { c.beginPath(); c.moveTo(-4.5, 1.5); c.lineTo(-3, -2.5); c.lineTo(1, -3.5); c.lineTo(4.5, -0.5); c.lineTo(3, 3); c.lineTo(-1.5, 3.5); c.closePath(); c.fillStyle = '#242022'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = 'rgba(200,196,190,0.35)'; c.beginPath(); c.moveTo(-2.5, -1.5); c.lineTo(0.5, -2.5); c.lineTo(1.5, 0); c.closePath(); c.fill(); }
+    else if (kind === 'bogIron') { c.beginPath(); c.moveTo(-4.5, 2); c.lineTo(-4, -2); c.lineTo(-1, -4); c.lineTo(3, -3.5); c.lineTo(5, 0); c.lineTo(3.5, 3); c.lineTo(-1.5, 3.5); c.closePath(); c.fillStyle = '#7a4a2a'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#c0803a'; c.beginPath(); c.ellipse(0.5, -1, 2.2, 1.4, 0.3, 0, 7); c.fill(); }
+    else if (kind === 'ironBar') { c.beginPath(); c.moveTo(-5, 2.5); c.lineTo(-3.5, -2); c.lineTo(3.5, -2); c.lineTo(5, 2.5); c.closePath(); c.fillStyle = '#8c939d'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#d8dde6'; c.fillRect(-2.5, -1.2, 5, 1.2); }
     else if (kind === 'copperBar') { c.beginPath(); c.moveTo(-5, 2.5); c.lineTo(-3.5, -2); c.lineTo(3.5, -2); c.lineTo(5, 2.5); c.closePath(); c.fillStyle = '#c8784a'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#f0b48a'; c.fillRect(-3, -1.5, 5, 1.2); }
     else if (kind === 'wood') { c.strokeStyle = '#3a2a36'; c.lineWidth = 5.6; c.beginPath(); c.moveTo(-4.5, 1.5); c.lineTo(4.5, -1.5); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 3.6; c.stroke(); c.fillStyle = '#d9b37a'; c.beginPath(); c.ellipse(4.5, -1.5, 1.6, 1.8, -0.3, 0, 7); c.fill(); }
     else if (kind === 'stone') { c.beginPath(); c.moveTo(-4, 2); c.lineTo(-2.5, -2.5); c.lineTo(2, -3); c.lineTo(4.5, 0.5); c.lineTo(2.5, 3); c.closePath(); c.fillStyle = '#9d9995'; c.fill(); c.lineWidth = 1.3; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = 'rgba(255,255,255,0.35)'; c.beginPath(); c.ellipse(-0.5, -1, 1.8, 1, 0, 0, 7); c.fill(); }
@@ -3448,7 +3469,7 @@ __COMBAT__
     item('carverBench', site.tx + 2.5, site.ty + 0.5, { carver: true }); item('workbench', site.tx + 0.6, site.ty + 0.5, { bench: true }); item('fireplace', site.tx + 3.4, site.ty + 2.2, { hearth: true, chimney: true }); item('bed', site.tx + 0.6, site.ty + 2.2, { bed: true }); item('chest', site.tx + 1.6, site.ty + 2.4, { store: [null, null, null, null, null, null, null, null, null, null, null, null] });
     bDirty = true;
     P.x = (site.tx + 2.5) * T; P.y = (site.ty + 1.6) * T; P.face = -Math.PI / 2; P.lvl = 0; P.mode = 'fight';
-    ['wood', 'stone', 'fiber', 'copper', 'leather', 'berries', 'meat', 'charcoal', 'copperBar'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
+    ['wood', 'stone', 'fiber', 'copper', 'leather', 'berries', 'meat', 'charcoal', 'copperBar', 'bogIron', 'ironBar'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
     [Items.make('sword', 'copper'), Items.make('bow', 'wood'), Items.make('axe', 'copper'), Items.make('pick', 'copper'), Items.make('knife', 'copper')].forEach(function (it) { if (!barPut(it)) addThing(it); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 300; caveFade = 0;
     seen.met = 1; seen.village = 1; seen.hamlet = 1; seen.cave = 1;
@@ -3525,7 +3546,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); sitTick(dt); critterTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); sitTick(dt); critterTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

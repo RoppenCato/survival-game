@@ -3175,6 +3175,15 @@ function ashTree(c, K, x, y, h, seed) { birch(c, lowK(K, { birch: M(28, 10, 46),
 function appleTree(c, K, x, y, h, seed) { var f = P.fruit, a = P.accentHue; P.fruit = 1; P.accentHue = 4; oakTree(c, lowK(K, { leaf: M(P.outsideHue + 6, 52, 46), leafD: M(P.outsideHue + 10, 46, 36) }), x, y, h, seed); P.fruit = f; P.accentHue = a; }
 function chalkRockObj(c, K, x, y, s, seed) { rock(c, lowK(K, { rock: M(42, 12, 82), rockC: M(42, 12, 80), rockD: M(40, 10, 62) }), x, y, s, seed, false); }
 function hedgeObj(c, K, x, y, seed) { bush(c, K, x - 24, y + 2, 15, seed, false); bush(c, K, x + 24, y + 2, 15, seed + 2, false); bush(c, K, x, y, 16, seed + 1, false); }
+function bogIronObj(c, K, x, y, seed) {                 // a lump of bog ore: rust-brown, an ochre crust, half sunk in dark marsh water
+  var R = rng(seed);
+  fillPts(c, ellPts(x, y - 1, 22, 7, 14), 'rgba(40,52,44,0.55)'); fillPts(c, ellPts(x - 4, y - 2, 14, 4.5, 12), 'rgba(110,140,150,0.35)');
+  shape(c, [[x - 12, y - 1], [x - 13, y - 7], [x - 7, y - 14], [x + 1, y - 16], [x + 9, y - 12], [x + 13, y - 5], [x + 11, y - 1]], M(18, 52, 34), { seed: seed, size: 'M', sh: 2, rough: 0.5 });
+  fillPts(c, [[x - 8, y - 9], [x - 3, y - 13], [x + 4, y - 12], [x + 7, y - 8], [x + 2, y - 6], [x - 5, y - 6]], M(34, 70, 48).base);
+  fillPts(c, ellPts(x + 3, y - 10, 2.2, 1.4, 7), M(40, 80, 60).base); fillPts(c, ellPts(x - 5, y - 8, 1.6, 1.1, 7), M(40, 80, 60).base);
+  shape(c, [[x + 8, y], [x + 7, y - 4], [x + 12, y - 7], [x + 17, y - 4], [x + 16, y]], M(16, 48, 30), { seed: seed + 3, size: 'S', sh: 1, rough: 0.4 });
+  for (var i = 0; i < 5; i++) { var rx = x + (R() - 0.5) * 36, ry = y + (R() - 0.3) * 6; line(c, [[rx, ry], [rx + (R() - 0.5) * 2, ry - 6 - R() * 5]], 0.9, M(70, 30, 38).base, false); }   // reeds round it
+}
 function cypress(c, K, x, y, h, seed) {
   var R = rng(seed), i, n = 9, sw = (R() - 0.5) * P.twist * 10;
   longShadow(c, x, y, 20, h * 0.5); gshadow(c, x, y + 1, 16, 5, 0.4);
@@ -4391,6 +4400,7 @@ var PROPS = {
   ash: { b: [-92, -280, 118, 20], f: function (c, K, s) { ashTree(c, K, 0, 0, 215, s); } },
   apple: { b: [-80, -150, 80, 20], f: function (c, K, s) { appleTree(c, K, 0, 0, 125, s); } },
   chalkRock: { b: [-36, -40, 36, 10], f: function (c, K, s) { chalkRockObj(c, K, 0, 0, 16, s); } },
+  bogIron: { b: [-24, -22, 24, 8], f: function (c, K, s) { bogIronObj(c, K, 0, 0, s); } },
   hedge: { b: [-42, -44, 42, 12], f: function (c, K, s) { hedgeObj(c, K, 0, 0, s); } },
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
@@ -6186,7 +6196,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   };
   var CATS = [
     { name: 'Reference set', ground: 'grass', solid: 10, ref: true, list: Object.keys(REF) },
-    { name: 'Found in nature', ground: 'grass', solid: 10, list: ['beech', 'ash', 'apple', 'chalkRock', 'hedge', 'cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
+    { name: 'Found in nature', ground: 'grass', solid: 10, list: ['beech', 'ash', 'apple', 'chalkRock', 'hedge', 'bogIron', 'cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
     { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'fireRing', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile'] },
     { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['firePit', 'logSeat', 'stake', 'banner', 'choppingBlock', 'cellarDoor', 'windowBox', 'lantern', 'awning', 'sign', 'woodshed', 'foodTable', 'longhouse', 'beachedBoat', 'campfire', 'furnace', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'fireplace', 'carverBench', 'deadViking', 'trough', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
     { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },

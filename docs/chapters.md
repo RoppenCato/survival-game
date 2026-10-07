@@ -294,7 +294,7 @@ the template's headings with questions.
 | B2 Way on | Heavier metal beats you, each chapter has its ring-holder | What points beyond |
 | C1 Beasts | Harder than Chapter 2 | Which animals and väsen (`docs/beasts.md` cards) |
 | C2 People | Villagers with guards, captives who may join, the ring-holder | The legend; reputation (decided: risk and reward, a village remembers) |
-| D1 Materials | Silver and goods as loot; **iron (decided 2026-10-07):** bog iron from the marsh, a bloomery, iron tools and weapons, mail, gambeson, an iron helmet, a painted shield; silver by weight as the second currency | Where the bog iron lies exactly; silver sources |
+| D1 Materials | Silver and goods as loot; **iron (decided 2026-10-07):** bog iron from the marsh, a bloomery, iron tools and weapons, mail, gambeson, an iron helmet, a painted shield; silver by weight as the second currency. **Built 2026-10-07:** bog iron in the marsh, the bar at the furnace, iron tools and arms, the gambeson, the mail shirt, the iron helm, the painted shield | Silver sources |
 | D3 Power | Silver ring, the eye side; the smith's rework | The runes for this chapter (bosses, raids, fishing, quests, hirdmen) |
 | D3 Currency | A second currency is allowed "about every third biome" | Whether Chapter 3 adds one |
 | E1 Travel | The first Viking ship: **the karve, built in the yard (decided 2026-10-07)**: a longer keel, more strakes, a mast, a sail, a steering oar, iron nails and cloth; the more aboard, the faster | Wind as a buff only; the crewing rules |

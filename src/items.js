@@ -37,10 +37,11 @@ var MATS = {
   flint: { name: 'Flint', face: '#6e6a6a', dark: '#3f3b3c', edge: '#b9b4b0', glow: '220,220,230', power: 0.85 },
   copper: { name: 'Copper', face: '#c8784a', dark: '#8a4a2a', edge: '#f0b48a', glow: '255,170,110', power: 1 },
   bronze: { name: 'Bronze', face: '#b8903f', dark: '#7a5a22', edge: '#efd27a', glow: '255,210,120', power: 1.15 },
-  iron: { name: 'Iron', face: '#9ca3ad', dark: '#5c636c', edge: '#e6ebf2', glow: '200,220,255', power: 1.3 },
+  iron: { name: 'Iron', face: '#9ca3ad', dark: '#5c636c', edge: '#e6ebf2', glow: '200,220,255', power: 1.3, armor: 2.2 },   // armor: how much more a worn piece of it turns aside than leather (2026-10-07)
   silver: { name: 'Silver', face: '#d6dbe4', dark: '#8d94a0', edge: '#ffffff', glow: '220,235,255', power: 1.45 },
   gold: { name: 'Golden', face: '#e2b63a', dark: '#9a7418', edge: '#fff0a8', glow: '255,220,100', power: 1.6 },
-  leather: { name: 'Leather', face: '#9a6a44', dark: '#5e3d26', edge: '#c9a07a', glow: '255,220,170', power: 0.9, grain: true },
+  leather: { name: 'Leather', face: '#9a6a44', dark: '#5e3d26', edge: '#c9a07a', glow: '255,220,170', power: 0.9, grain: true, armor: 1 },
+  wool: { name: 'Padded', face: '#c9bfa8', dark: '#8c8270', edge: '#ece6d6', glow: '255,240,220', power: 0.9, grain: true, armor: 1.35 },   // the gambeson: quilted wool and linen
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
@@ -57,6 +58,10 @@ function name(it) {
   if (it.mat === 'wood' && it.kind === 'sword') return 'Stick Sword';     // the first weapon: a sharpened branch
   if (it.mat === 'wood' && it.kind === 'bow') return 'Stick Bow';
   if (it.mat === 'wood' && it.kind === 'club') return 'Wooden Club';
+  if (it.mat === 'iron' && it.kind === 'tunic') return 'Mail Shirt';           // the iron gear of the lowlands (2026-10-07)
+  if (it.mat === 'iron' && it.kind === 'helmet') return 'Iron Helm';
+  if (it.mat === 'iron' && it.kind === 'shield') return 'Painted Shield';
+  if (it.mat === 'wool' && it.kind === 'tunic') return 'Gambeson';
   return MATS[it.mat].name + ' ' + KINDS[it.kind].name;
 }
 function desc(it) {
@@ -68,7 +73,11 @@ function desc(it) {
   else if (it.mat === 'flint') bits.push('Knapped flint bound to a haft, the way the first people made them.');
   else if (it.mat === 'copper') bits.push('Soft red copper, the first metal. It bends before it breaks.');
   else if (it.mat === 'bronze') bits.push('Bronze, the metal of the old heroes. Heavy and sure.');
-  else if (it.mat === 'iron') bits.push('Honest iron from a Norse forge.');
+  else if (it.mat === 'iron' && it.kind === 'tunic') bits.push('Thousands of iron rings, each riveted to four others, over a padded shirt. A spear point slides off it; a blow still bruises.');
+  else if (it.mat === 'iron' && it.kind === 'helmet') bits.push('A spangenhelm of four iron plates on a frame, with a bar down over the nose.');
+  else if (it.mat === 'iron' && it.kind === 'shield') bits.push('Limewood boards behind an iron rim and boss, painted in your colours so the shield wall knows you.');
+  else if (it.mat === 'wool' && it.kind === 'tunic') bits.push('Layers of wool and linen quilted thick. Warm, and it takes the sting out of a blow.');
+  else if (it.mat === 'iron') bits.push('Honest iron from a bloomery: bog ore and charcoal, hammered into a bar and then into this.');
   else if (it.mat === 'silver') bits.push('Silver-bright. Made for a chieftain, or taken from one.');
   else bits.push('Gold does not hold an edge, but no one who sees it forgets it.');
   if (it.size >= 1.3) bits.push('Larger than most.'); else if (it.size <= 0.75) bits.push('Small enough to hide.');
@@ -80,7 +89,7 @@ function desc(it) {
 function stats(it) {
   var K = KINDS[it.kind], M = MATS[it.mat], sh = (K.ranged || it.kind === 'club') ? 1 : 0.8 + it.sharp * 0.4;
   var dmg = Math.round(K.dmg * M.power * (0.7 + it.size * 0.3) * sh * 100) / 100;
-  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * M.power * 100) / 100 : 0 };
+  return { dmg: dmg, power: Math.round(2 * M.power * (0.7 + it.size * 0.3) * sh * 10) / 10, tool: K.tool, reach: K.len * it.size, gear: K.gear || null, armor: K.gear ? Math.round(K.armor * (M.armor || M.power) * 100) / 100 : 0 };
 }
 function hsl(hex, dh) {                 // shift a colour's hue a little (hue is a small personal tint)
   if (!dh) return hex;

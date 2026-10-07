@@ -894,6 +894,17 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   (bog iron in the marsh, the bloomery, iron tools and arms, mail), the karve (mast, sail, rowers, wind), raiding (loot behind doors,
   carrying to the ship, guards gathering to the noise), silver, the jarl with the silver ring, reputation, and the balance pass on
   island and map generation (Robin: the lowlands a bit further out; bigger seas).
+- **Iron (2026-10-07, the lowlands' metal; decided in the questionnaire):** **bog iron** lies in the marsh (`bogIron` prop, a rusty lump
+  with an ochre crust half sunk in dark water, reeds round it; `w.plantBog` plants a few on the marsh cells after the dressing; kind
+  stone, 8 hp; mined with the pick it drops 2 or 3 bog iron and a little stone, `o.bog`). **The bloomery** is the furnace: an **iron
+  bar** from 3 bog iron and 3 charcoal, 12 seconds (`ironBar` recipe, revealed by bog iron). **Iron tools and arms** at the workbench
+  from bars, revealed by the first bar: axe, pick, knife, sword, seax, spear, Dane axe (iron's power 1.3 against copper's 1), and the
+  **painted shield** (a bar, wood, leather). **Armour:** the **gambeson** (a tunic of `wool`, fiber and leather, revealed by leather),
+  the **mail shirt** (a tunic of iron, 6 bars and leather) and the **iron helm** (2 bars, leather); `Items` names them (Mail Shirt,
+  Gambeson, Iron Helm, Painted Shield) with their own tales, and a material's `armor` factor (leather 1, wool 1.35, iron 2.2) sets how
+  much a worn piece turns aside (mail 0.31, helm 0.18, shield 0.22; a full iron set passes the 0.6 cap, the leather set stays at
+  0.47). **The hero wears it** (`heroGearSync`, every frame): an iron helm shows as the nasal helmet, mail greys the tunic, the
+  gambeson makes it pale, and the hero's own look comes back when they are taken off. `tests/iron.js` checks it (in `npm test`).
 - Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch.
 
 
