@@ -44,3 +44,9 @@ path) are the ones that started this; the first is *Look at them, troll mother s
 - **Bauer:** one warm sun and cool blue-grey shadows, ochre and moss and bone, the forest deep and old behind the open ground,
   mist low in the valleys, small people under big trolls and bigger trees, the trolls' knobbed hands, long noses, beads and rings.
 - **Kittelsen:** the trolls that are half landscape (moss, trees and rock growing on them), the night pictures, the näcken in the tarn.
+
+## From Robin's own copy of *Nordiska gudar* (2026-10-07)
+
+Robin photographed six pages (Hel, Thor fishing for Jörmungandr, Tyr and Fenrir, a warrior with a shield, Thor on the rock,
+Odin with Gungnir). They are in `egerkrans/` on his machine only, with `egerkrans/README.md` saying what each one teaches;
+the pictures are not in the repository because the artist is alive and the book is his.
