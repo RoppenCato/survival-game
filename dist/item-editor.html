@@ -669,8 +669,8 @@ function inkHero(c, x, y, dir, an, pose) {
   function lay(i) { if (!layers) return; curL = inkSwitch(c, layers, curL, i); c = curL.g; }
   var ph = an.phase, amt = an.amt, t = an.t, run = an.run || 0;
   var side = dir === 'left' || dir === 'right', flip = dir === 'right', back = dir === 'up';
-  var tq = side ? 0 : Math.max(-1, Math.min(1, an.turn || 0));
-  var L = pose ? [pose.lx, pose.ly] : [an.lx || 0, an.ly || 0];
+  var tq = side ? 0 : Math.max(-1, Math.min(1, (an.turn || 0) + (pose && pose.turn ? (flip ? -pose.turn : pose.turn) : 0)));
+  var L = pose ? [pose.lx || 0, pose.ly || 0] : [an.lx || 0, an.ly || 0];
   var lx = (flip ? -L[0] : L[0]), ly = L[1];
   var HS = Math.round(sp.hair || 0), BS = Math.round(sp.beard || 0), HT = Math.round(sp.hat || 0), CL = Math.round(sp.clothes || 0), RG = Math.round(sp.ring || 0);
   var breathe = Math.sin(t * 2.2) * (1 - amt) * 0.35;
@@ -935,6 +935,92 @@ function inkHero(c, x, y, dir, an, pose) {
   c.restore();
 }
 
+/* Idle poses and jobs for the people of the world (2026-10-07, Robin: every villager stood the same way with the same bent arm).
+   A pose is the ink figure's pose contract: hand targets in the figure's own space (armL/armR for the front and back views,
+   near/far for the side view), the lean (lx, ly) and a turn for the head and body. idlePose(F, id, t, dir) gives the pose of an
+   idle at time t; jobPose(F, kind, t, dir) the pose of a job with the thing in hand (held: kind, x, y, ang in figure space),
+   drawn by figureHeld after the figure. The page blends between poses itself. IDLES are the idles a person cycles through. */
+var IDLES = ['rest', 'hips', 'crossed', 'scratch', 'look', 'stretch', 'lean'];
+var JOBS = ['chop', 'carry', 'sweep', 'hang', 'fish', 'smith'];
+function poseLerp(a, b, k) {                                          // a blend of two poses (every key present in both)
+  if (!a) return b; if (!b) return a; var o = {}, q;
+  for (q in b) { var va = a[q], vb = b[q]; if (vb == null) continue; if (typeof vb === 'number') o[q] = (va == null ? vb : va + (vb - va) * k); else if (vb.length === 2) o[q] = va ? [va[0] + (vb[0] - va[0]) * k, va[1] + (vb[1] - va[1]) * k] : vb; else o[q] = vb; }
+  return o;
+}
+function idlePose(F, id, t, dir) {
+  var M = inkMetrics(F.spec), side = dir === 'left' || dir === 'right', fwd = -1, bk = 1, rx = M.headW / 2 * 1.16, ry = M.headH / 2;
+  var shy = M.sh + 1.2, hang = shy + M.arm * 1.95 - 0.2, shw = M.shw - 0.5, cx = fwd * 1.4, nsx = fwd * 0.4, fsx = bk * 2.0;
+  var o = { lx: 0, ly: 0, turn: 0, armL: [-shw - 1.2, hang], armR: [M.waist * 0.9 + 0.3, M.belt - 0.6], near: [fwd * 3.0, M.belt - 0.4], far: [fsx + bk * 0.4, shy + M.arm * 1.93] };   // rest: one hand on the belt
+  var k = Math.min(1, t / 0.6), w = Math.sin(t * 1.3);
+  if (id === 'hips') { o.armL = [-(M.waist + 1.4), M.belt - 0.8]; o.armR = [M.waist + 1.4, M.belt - 0.8]; o.near = [bk * 0.6, M.belt - 0.6]; o.far = [bk * 2.8, M.belt - 0.4]; }
+  else if (id === 'crossed') { o.armL = [2.4, M.sh + 6.0]; o.armR = [-2.4, M.sh + 6.8]; o.near = [fwd * 2.8, M.sh + 6.2]; o.far = [fwd * 1.0, M.sh + 6.9]; }
+  else if (id === 'scratch') { var sc = Math.sin(t * 7) * 0.5; o.armR = [rx + 1.6, M.cy - 1.5 + sc]; o.armL = [-shw - 1.2, hang]; o.near = [cx + bk * rx * 0.95, M.cy - ry * 0.55 + sc]; o.far = [fsx + bk * 0.4, shy + M.arm * 1.93]; o.turn = 0.25; }
+  else if (id === 'look') { o.armL = [-shw - 1.2, hang]; o.armR = [shw + 1.2, hang]; o.near = [nsx + fwd * 0.6, shy + M.arm * 1.93]; o.far = [fsx + bk * 0.4, shy + M.arm * 1.93]; o.turn = w * 0.85; o.lx = w * 0.5; }
+  else if (id === 'stretch') { var up = M.sh - M.arm * 1.8 + 2 + (1 - k) * 12; o.armL = [-2.6, up]; o.armR = [2.6, up]; o.near = [fwd * 1.6, up]; o.far = [bk * 0.6, up + 0.6]; o.ly = -0.9 * k; o.lx = 0; }
+  else if (id === 'lean') { o.armR = [shw + M.arm * 1.85, M.sh + 2.5]; o.armL = [-shw - 1.0, hang]; o.lx = 1.4; o.near = [fwd * (M.arm * 1.85 + 0.5), M.sh + 2.5]; o.far = [fsx + bk * 0.4, shy + M.arm * 1.93]; o.lx = side ? fwd * 1.4 : 1.4; }
+  return o;
+}
+function jobPose(F, kind, t, dir) {
+  var M = inkMetrics(F.spec), side = dir === 'left' || dir === 'right', fwd = -1, bk = 1, shy = M.sh + 1.2, shw = M.shw - 0.5, hang = shy + M.arm * 1.95 - 0.2;
+  var o = { lx: 0, ly: 0, turn: 0, held: null };
+  if (kind === 'chop') {                                               // a two-handed chop: up behind the head, fast down onto the block in front, a pause, up again
+    var per = 1.5, u = (t % per) / per, k = u < 0.5 ? 1 - Math.pow(1 - u / 0.5, 2) * 1 : (u < 0.62 ? 1 - (u - 0.5) / 0.12 : 0);   // 1 = up, 0 = down
+    var hi = M.sh - 9, lo = M.hip + 4;
+    o.armL = [-1.5 + k * 1.0, lo + (hi - lo) * k]; o.armR = [1.5 + k * 1.0, lo + (hi - lo) * k + 1.2]; o.ly = (1 - k) * 2.2; o.lx = 0;
+    o.near = [fwd * (7 - k * 10), lo + (hi - lo) * k]; o.far = [fwd * (5 - k * 9), lo + (hi - lo) * k + 1.5]; if (side) o.lx = fwd * ((1 - k) * 2.2);
+    o.held = { kind: 'axe', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: side ? (k > 0.5 ? -2.1 : 2.0) : (k > 0.5 ? -1.45 : 1.4) };
+  } else if (kind === 'carry') {                                       // a bucket in the right hand, the arm straight down, the other free
+    o.armR = [shw + 1.4, hang + 1.0]; o.near = [nsxOf(fwd) + 0.2, shy + M.arm * 1.93 + 0.8]; o.ly = 0.3;
+    o.held = { kind: 'bucket', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: 0 };
+  } else if (kind === 'sweep') {                                       // both hands on a broom, bent forward, the head of it swishing over the ground
+    var sw = Math.sin(t * 3.2) * 3.5;
+    o.armL = [-2.2 + sw * 0.5, M.sh + 7.5]; o.armR = [2.0 + sw * 0.8, M.belt + 1.5]; o.ly = 1.5; o.lx = sw * 0.15;
+    o.near = [fwd * 4.5 + sw * 0.3, M.belt + 1.2]; o.far = [fwd * 1.5, M.sh + 6.5]; if (side) o.lx = fwd * 1.6;
+    o.held = { kind: 'broom', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: side ? 2.2 : 1.95, sw: sw };
+  } else if (kind === 'hang') {                                        // arms up to the rack, hanging something, a small lift now and then
+    var lift = Math.max(0, Math.sin(t * 1.4)) * 2;
+    o.armL = [-3.2, M.sh - M.arm * 1.5 - lift]; o.armR = [3.4, M.sh - M.arm * 1.55 - lift]; o.near = [fwd * 3.5, M.sh - M.arm * 1.5 - lift]; o.far = [fwd * 2.0, M.sh - M.arm * 1.4 - lift]; o.ly = -0.3;
+  } else if (kind === 'fish') {                                        // a rod held out over the water in both hands
+    var bob = Math.sin(t * 1.1) * 0.6;
+    o.armL = [-1.8, M.sh + 5.5 + bob]; o.armR = [1.6, M.sh + 4.5 + bob]; o.near = [fwd * 5.5, M.sh + 5 + bob]; o.far = [fwd * 3.5, M.sh + 4 + bob];
+    o.held = { kind: 'rod', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: side ? -0.35 : 1.25 };
+  } else if (kind === 'smith') {                                       // one-handed hammering: up by the shoulder, down onto the work
+    var per2 = 0.9, u2 = (t % per2) / per2, k2 = u2 < 0.55 ? u2 / 0.55 : 1 - (u2 - 0.55) / 0.45;
+    var hi2 = M.sh - 3, lo2 = M.belt + 2;
+    o.armR = [3.0 + k2 * 1.5, lo2 + (hi2 - lo2) * k2]; o.armL = [-2.5, M.belt + 1]; o.near = [fwd * (6 - k2 * 6), lo2 + (hi2 - lo2) * k2]; o.far = [fwd * 3, M.belt + 1]; o.ly = (1 - k2) * 1.2;
+    o.held = { kind: 'hammer', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: side ? (k2 > 0.5 ? -1.9 : 1.6) : (k2 > 0.5 ? -1.2 : 1.3) };
+  }
+  function nsxOf(f) { return f * 0.4; }
+  return o;
+}
+// the thing in a person's hand, drawn in the figure's own space after the figure (the page hands over the same x, y, dir, F)
+function heldD(c, h) {
+  var ca = Math.cos(h.ang), sa = Math.sin(h.ang), x = h.x, y = h.y;
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  if (h.kind === 'axe') {
+    var L = 13; c.strokeStyle = '#6a4a30'; c.lineWidth = 1.7; c.beginPath(); c.moveTo(x - ca * 3, y - sa * 3); c.lineTo(x + ca * L, y + sa * L); c.stroke();
+    c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.5; c.stroke();
+    var hx = x + ca * (L - 1), hy = y + sa * (L - 1), px = -sa, py = ca; c.fillStyle = '#6e7076'; c.beginPath(); c.moveTo(hx - ca * 2 + px * 0.5, hy - sa * 2 + py * 0.5); c.lineTo(hx + ca * 1.5 + px * 1, hy + sa * 1.5 + py * 1); c.lineTo(hx + ca * 1.2 + px * 5, hy + sa * 1.2 + py * 5); c.lineTo(hx - ca * 2.6 + px * 4.5, hy - sa * 2.6 + py * 4.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
+  } else if (h.kind === 'bucket') {
+    c.strokeStyle = 'rgba(60,50,40,0.9)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.2); c.stroke();
+    c.fillStyle = '#8a6a44'; c.beginPath(); c.moveTo(x - 3, y + 2.2); c.lineTo(x + 3, y + 2.2); c.lineTo(x + 2.5, y + 7.5); c.lineTo(x - 2.5, y + 7.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
+    c.strokeStyle = 'rgba(35,26,22,0.4)'; c.lineWidth = 0.4; c.beginPath(); c.moveTo(x - 1, y + 2.4); c.lineTo(x - 0.8, y + 7.3); c.moveTo(x + 1, y + 2.4); c.lineTo(x + 0.8, y + 7.3); c.stroke();
+    c.strokeStyle = '#5a5a60'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x - 3, y + 4); c.lineTo(x + 3, y + 4); c.stroke();
+  } else if (h.kind === 'broom') {
+    var L2 = 20; c.strokeStyle = '#8a6a44'; c.lineWidth = 1.3; c.beginPath(); c.moveTo(x - ca * 8, y - sa * 8); c.lineTo(x + ca * L2, y + sa * L2); c.stroke(); c.strokeStyle = 'rgba(35,26,22,0.5)'; c.lineWidth = 0.4; c.stroke();
+    var bx = x + ca * L2, by = y + sa * L2, i; c.strokeStyle = '#c9a85c'; c.lineWidth = 0.9; c.beginPath(); for (i = -3; i <= 3; i++) { c.moveTo(bx - ca * 2, by - sa * 2); c.lineTo(bx + ca * 4 + (-sa) * i * 1.1 + (h.sw || 0) * 0.1, by + sa * 4 + ca * i * 1.1 + 0.5); } c.stroke();
+    c.strokeStyle = 'rgba(35,26,22,0.5)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(bx - ca * 1.5 - sa * 2, by - sa * 1.5 + ca * 2); c.lineTo(bx - ca * 1.5 + sa * 2, by - sa * 1.5 - ca * 2); c.stroke();
+  } else if (h.kind === 'rod') {
+    var L3 = 26; c.strokeStyle = '#7a5a3a'; c.lineWidth = 1.0; c.beginPath(); c.moveTo(x - ca * 4, y - sa * 4); c.lineTo(x + ca * L3, y + sa * L3); c.stroke();
+    var tx = x + ca * L3, ty = y + sa * L3; c.strokeStyle = 'rgba(240,236,220,0.7)'; c.lineWidth = 0.45; c.beginPath(); c.moveTo(tx, ty); c.quadraticCurveTo(tx + 1, ty + 6, tx + 0.5, ty + 12); c.stroke();
+  } else if (h.kind === 'hammer') {
+    var L4 = 9; c.strokeStyle = '#6a4a30'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x - ca * 2, y - sa * 2); c.lineTo(x + ca * L4, y + sa * L4); c.stroke();
+    var hx2 = x + ca * L4, hy2 = y + sa * L4, px2 = -sa, py2 = ca; c.fillStyle = '#5e6066'; c.beginPath(); c.moveTo(hx2 - ca * 1.6 - px2 * 2.4, hy2 - sa * 1.6 - py2 * 2.4); c.lineTo(hx2 + ca * 1.6 - px2 * 2.4, hy2 + sa * 1.6 - py2 * 2.4); c.lineTo(hx2 + ca * 1.6 + px2 * 2.4, hy2 + sa * 1.6 + py2 * 2.4); c.lineTo(hx2 - ca * 1.6 + px2 * 2.4, hy2 - sa * 1.6 + py2 * 2.4); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.5; c.stroke();
+  }
+}
+function figureHeld(c, x, y, dir, F, held) {                           // draw a person's held thing over the figure drawn at x, y
+  if (!held) return; c.save(); c.translate(x, y); c.scale(F.spec.scale, F.spec.scale); if (dir === 'right') c.scale(-1, 1); heldD(c, held); c.restore();
+}
 function playerD(c, x, y, dir, an, pose) {
   if (hero().spec.figure >= 1) return inkHero(c, x, y, dir, an, pose);
   an = an || { phase: 0, amt: 0, t: 0, lx: 0, ly: 0, blink: 0, sq: 0 };
@@ -2469,7 +2555,7 @@ function applyStored(st) {
   try { var gc = JSON.parse(st.getItem('game.creatures')); if (gc && typeof gc === 'object') { var k; for (k in gc) if (ANIMALS[k] && gc[k] && typeof gc[k] === 'object') useAnimal(k, gc[k]); } } catch (e) {}
   try { var rg = st.getItem('creature.rig'); if (rg === 'turntable' || rg === 'views') { RIG.animals = rg; RIG.trolls = rg; } } catch (e) {}
 }
-return { lib: { INK_FIG: INK_FIG, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { INK_FIG: INK_FIG, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, IDLES: IDLES, JOBS: JOBS, idlePose: idlePose, jobPose: jobPose, poseLerp: poseLerp, heldD: heldD, figureHeld: figureHeld, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 
@@ -3295,6 +3381,61 @@ function choppingBlockObj(c, K, x, y, seed) {           // a stump to split wood
   fillPts(c, [[x - 1, y - 20], [x + 6, y - 22], [x + 7, y - 15], [x + 1, y - 14]], K.iron.base);                                            // the head, bitten into the top
   fillPts(c, [[x - 1, y - 20], [x + 6, y - 22], [x + 6.5, y - 20], [x - 0.5, y - 18]], K.ironLight.base);
   [[-13, 2], [-9, 5], [14, 3], [11, 6], [-4, 6]].forEach(function (q, k) { fillPts(c, ellPts(x + q[0], y + q[1], 2.4, 1.2, 6), M(38, 30, 60).base); });
+}
+// Things against the walls of a village (2026-10-07, Robin: lived-in like the reference): a window box, a lantern on a bracket,
+// an awning on two posts, a hanging sign, a lean-to over the woodpile, a table laid with food
+function windowBoxObj(c, K, x, y, seed) {                // a plank box of flowers under a window, flat against the wall
+  var R = rng(seed), i;
+  shape(c, [[x - 12, y - 7], [x + 12, y - 7], [x + 11, y], [x - 11, y]], K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.25 });
+  fillPts(c, [[x - 11, y - 6.5], [x + 11, y - 6.5], [x + 10.5, y - 4.5], [x - 10.5, y - 4.5]], 'rgba(60,40,24,0.25)');
+  for (i = 0; i < 7; i++) { var fx = x - 10 + i * 3.4 + (R() - 0.5) * 1.5, fy = y - 8 - R() * 2; fillPts(c, ellPts(fx, fy, 2.4 + R(), 1.8, 7), M(P.outsideHue + 6, 48, 36).base); }
+  for (i = 0; i < 6; i++) { var gx = x - 9 + i * 3.6 + (R() - 0.5) * 2, gy = y - 10 - R() * 2.5; fillPts(c, ellPts(gx, gy, 1.2, 1.2, 6), [M(mixHue(P.accentHue, 0, 0.3), 80, 62), M(50, 85, 66), M(340, 60, 72)][i % 3].base); }
+}
+function lanternObj(c, K, x, y, seed) {                  // an iron bracket out from the wall with a lantern of horn panes hanging from it, lit at night
+  c.strokeStyle = K.iron.base; c.lineWidth = 1.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 5, y - 30); c.lineTo(x + 5, y - 30); c.moveTo(x - 5, y - 30); c.lineTo(x - 1, y - 26); c.stroke();
+  c.strokeStyle = OLC; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x - 5, y - 30); c.lineTo(x + 5, y - 30); c.stroke();
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x + 4.5, y - 30); c.lineTo(x + 4.5, y - 27); c.stroke();
+  shape(c, [[x + 1.5, y - 27], [x + 7.5, y - 27], [x + 8.5, y - 18], [x + 0.5, y - 18]], K.iron, { seed: seed, size: 'S', sh: 0.8, rough: 0.2 });
+  fillPts(c, [[x + 2.6, y - 25.8], [x + 6.4, y - 25.8], [x + 7.2, y - 19.2], [x + 1.8, y - 19.2]], M(42, 70, 64).base);
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x + 4.5, y - 25.8); c.lineTo(x + 4.5, y - 19.2); c.stroke();
+  fillPts(c, ellPts(x + 4.5, y - 22.5, 1.2, 1.6, 6), M(44, 95, 82).base);
+  addLight(x + 4.5, y - 22, 60, 42, 90, 62, 0.8);
+}
+function awningObj(c, K, x, y, seed) {                   // a striped cloth on two posts leaning out from the wall, seen from above
+  var i;
+  gshadow(c, x, y + 2, 17, 4, 0.3);
+  [[-15, 0], [15, 0]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.5, y - 26, 3, 26, 1.2), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  var cl = [[x - 18, y - 36], [x + 18, y - 36], [x + 17, y - 25], [x - 17, y - 25]];
+  shape(c, cl, M(40, 30, 78), { seed: seed + 5, size: 'M', sh: 1, rough: 0.3 });
+  c.save(); path(c, cl); c.clip(); for (i = -16; i < 18; i += 8) { fillPts(c, [[x + i, y - 36], [x + i + 4, y - 36], [x + i + 3.8, y - 25], [x + i - 0.2, y - 25]], M(mixHue(P.accentHue, 10, 0.4), 50, 46).base); } c.restore();
+  line(c, [[x - 17.5, y - 25.5], [x - 16, y - 23], [x - 14, y - 25.5], [x - 12, y - 23], [x - 10, y - 25.5], [x - 8, y - 23], [x - 6, y - 25.5], [x - 4, y - 23], [x - 2, y - 25.5], [x, y - 23], [x + 2, y - 25.5], [x + 4, y - 23], [x + 6, y - 25.5], [x + 8, y - 23], [x + 10, y - 25.5], [x + 12, y - 23], [x + 14, y - 25.5], [x + 16, y - 23], [x + 17.5, y - 25.5]], 0.6, 'rgba(35,26,22,0.45)', false);
+}
+function signObj(c, K, x, y, seed) {                     // a bracket out from the wall with a board hanging on two chains, a drinking horn painted on it
+  c.strokeStyle = K.iron.base; c.lineWidth = 1.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 6, y - 36); c.lineTo(x + 8, y - 36); c.moveTo(x - 6, y - 36); c.lineTo(x - 2, y - 31); c.stroke();
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x - 1, y - 36); c.lineTo(x - 1, y - 31); c.moveTo(x + 7, y - 36); c.lineTo(x + 7, y - 31); c.stroke();
+  shape(c, [[x - 4, y - 31], [x + 10, y - 31], [x + 10, y - 20], [x - 4, y - 20]], K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.25 });
+  c.strokeStyle = M(mixHue(P.accentHue, 10, 0.4), 55, 40).base; c.lineWidth = 1.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 1, y - 23); c.quadraticCurveTo(x + 3, y - 30, x + 8, y - 27); c.stroke();
+  c.strokeStyle = 'rgba(35,26,22,0.5)'; c.lineWidth = 0.5; c.beginPath(); c.rect(x - 3, y - 30, 12, 9); c.stroke();
+}
+function woodshedObj(c, K, x, y, seed) {                 // a lean-to: two posts and a slanting plank roof with the firewood stacked under it, cut ends toward you
+  var i, j, R = rng(seed);
+  gshadow(c, x, y + 1, 20, 5, 0.35);
+  [[-16, 0], [16, 0]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.6, y - 22, 3.2, 22, 1.2), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  for (j = 0; j < 3; j++) for (i = 0; i < 6; i++) { var ex = x - 14 + i * 5.2 + (j % 2) * 2.4, ey = y - 3 - j * 4.4; if (ex > x + 14) continue; shape(c, ellPts(ex, ey, 2.6, 2.3, 8), K.trunk, { seed: seed + 10 + i + j * 7, size: 'S', sh: 1, rough: 0.3 }); fillPts(c, ellPts(ex, ey, 1.7, 1.5, 8), M(36, 30, 62).base); c.strokeStyle = 'rgba(70,45,25,0.5)'; c.lineWidth = 0.4; c.beginPath(); c.arc(ex, ey, 0.8, 0, 7); c.stroke(); }
+  var rf = [[x - 20, y - 30], [x + 20, y - 30], [x + 20, y - 21], [x - 20, y - 21]];
+  shape(c, rf, K.wood, { seed: seed + 30, size: 'M', sh: 1.2, rough: 0.3 });
+  for (i = -16; i < 20; i += 6) line(c, [[x + i, y - 29.5], [x + i + 0.3, y - 21.5]], 0.5, 'rgba(35,26,22,0.4)', false);
+  fillPts(c, [[x - 20, y - 21], [x + 20, y - 21], [x + 20, y - 19.5], [x - 20, y - 19.5]], 'rgba(35,26,22,0.35)');
+}
+function foodTableObj(c, K, x, y, seed) {                // a trestle table under a cloth with a round loaf, a mug and a bowl on it
+  gshadow(c, x, y + 1, 18, 4, 0.35);
+  [[-12, 0], [12, 0]].forEach(function (q, k) { shape(c, [[x + q[0] - 3, y - 1], [x + q[0] - 1, y - 11], [x + q[0] + 1, y - 11], [x + q[0] + 3, y - 1]], K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  shape(c, [[x - 17, y - 15], [x + 17, y - 15], [x + 16, y - 10], [x - 16, y - 10]], K.wood, { seed: seed + 3, size: 'M', sh: 1, rough: 0.25 });
+  fillPts(c, [[x - 12, y - 15], [x + 4, y - 15], [x + 4.5, y - 8], [x - 11.5, y - 8]], M(40, 22, 84).base);
+  fillPts(c, [[x - 12, y - 12.5], [x + 4, y - 12.5], [x + 4.2, y - 11.2], [x - 11.8, y - 11.2]], 'rgba(70,90,140,0.35)');
+  shape(c, ellPts(x - 5, y - 14, 3.6, 2.4, 10), M(34, 50, 56), { seed: seed + 5, size: 'S', sh: 1, rough: 0.3 }); line(c, [[x - 7, y - 14.6], [x - 3, y - 14.6]], 0.5, 'rgba(35,26,22,0.45)', false);
+  shape(c, rrPts(x + 8, y - 19, 4, 5.5, 1), K.wood, { seed: seed + 6, size: 'S', sh: 0.8, rough: 0.2 }); c.strokeStyle = K.wood.base; c.lineWidth = 0.9; c.beginPath(); c.arc(x + 12.8, y - 16.3, 1.6, -1.4, 1.4); c.stroke();
+  shape(c, ellPts(x + 1, y - 16.5, 3, 1.6, 10), K.rockC, { seed: seed + 7, size: 'S', sh: 0.6, rough: 0.2 }); fillPts(c, ellPts(x + 1, y - 17, 2, 0.9, 8), M(8, 60, 42).base);
 }
 function campfireObj(c, K, x, y, seed) {
   var i;
@@ -4204,6 +4345,12 @@ var PROPS = {
   waterfall: { b: [-56, -116, 90, 14], f: function (c, K, s) { waterfallObj(c, K, 0, 0, s); } },
   campfire: { b: [-28, -40, 28, 8], f: function (c, K, s) { campfireObj(c, K, 0, 0, s); } },
   firePit: { b: [-32, -44, 32, 10], f: function (c, K, s) { firePitObj(c, K, 0, 0, s); } },
+  windowBox: { b: [-14, -16, 14, 2], f: function (c, K, s) { windowBoxObj(c, K, 0, 0, s); } },
+  lantern: { b: [-8, -34, 12, 2], f: function (c, K, s) { lanternObj(c, K, 0, 0, s); } },
+  awning: { b: [-20, -40, 20, 6], f: function (c, K, s) { awningObj(c, K, 0, 0, s); } },
+  sign: { b: [-8, -40, 12, 2], f: function (c, K, s) { signObj(c, K, 0, 0, s); } },
+  woodshed: { b: [-22, -34, 22, 8], f: function (c, K, s) { woodshedObj(c, K, 0, 0, s); } },
+  foodTable: { b: [-19, -22, 19, 6], f: function (c, K, s) { foodTableObj(c, K, 0, 0, s); } },
   logSeat: { b: [-18, -12, 20, 6], f: function (c, K, s) { logSeatObj(c, K, 0, 0, s); } },
   stake: { b: [-6, -30, 6, 4], f: function (c, K, s) { stakeObj(c, K, 0, 0, s); } },
   banner: { b: [-6, -62, 26, 4], f: function (c, K, s) { bannerObj(c, K, 0, 0, s); } },
@@ -4240,7 +4387,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };

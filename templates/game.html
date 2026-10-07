@@ -361,7 +361,7 @@ __COMBAT__
   function costOf(e) { var p = pieceFor(e.t, e.m) || pieceFor(e.t, 0); return p ? p.cost : { wood: 2 }; }     // what an edge piece gave for, to give back
   function costOfFloor(m) { var p = pieceFor('floor', m || 0); return p ? p.cost : { wood: 1 }; }
   function costOfItem(name) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].prop === name) return PIECES[i].cost; return {}; }
-  function roofCfg(r, L) { var BB = Bl(L || 0); if (!BB.roofs || BB.roofs[r.id] == null) return BCFG; var c = roofCfgs[BB.roofs[r.id]]; if (!c) c = roofCfgs[BB.roofs[r.id]] = Build.cfg({ roof: BB.roofs[r.id] }); return c; }
+  function roofCfg(r, L) { var BB = Bl(L || 0); if (!BB.roofs || BB.roofs[r.id] == null) return BCFG; var m = Build.roomWallM(BB, r), ck = BB.roofs[r.id] + ':' + m, c = roofCfgs[ck]; if (!c) c = roofCfgs[ck] = Build.cfg({ roof: BB.roofs[r.id], wallM: m }); return c; }   // the gable end in the room's own wall material
   var roofCfgs = {};
   // a workbench works only with a roof over it: the first thing a house is for
   function benchNear(P) { var s = stationNear(P); return s && s.kind === 'bench' ? s.it : null; }
@@ -493,7 +493,7 @@ __COMBAT__
     }
     if (L < 0.3 && nightSpawned) { nightSpawned = false; nightWolves.forEach(function (e) { var k = W.enemies.indexOf(e); if (k >= 0) W.enemies.splice(k, 1); }); nightWolves = []; }
   }
-  function nearestFire(x, y) { var best = null; function q(f) { var d = Math.hypot(x - f.x, y - f.y); if (!best || d < best.d) best = { x: f.x, y: f.y, d: d }; } if (hearth) q(hearth); B.items.forEach(function (it) { if (isHearth(it) || it.light) q(it); }); return best; }
+  function nearestFire(x, y) { var best = null; function q(f) { var d = Math.hypot(x - f.x, y - f.y); if (!best || d < best.d) best = { x: f.x, y: f.y, d: d }; } if (hearth) q(hearth); B.items.forEach(function (it) { if (isHearth(it) || (it.light && !it.lamp)) q(it); }); return best; }
   function drawWolfEyes(c) {               // two red points per wolf, through the dark, from far off
     var L = light(); if (L < 0.3) return;
     c.save(); c.globalCompositeOperation = 'lighter';
@@ -510,7 +510,7 @@ __COMBAT__
   }
   function drawEmbers(c) {                 // sparks drifting up from every fire in view, and from the torch
     var L = light(); if (L < 0.15) return;
-    var fires = []; if (hearth) fires.push(hearth); B.items.forEach(function (it) { if (isHearth(it) || it.light) fires.push(it); });
+    var fires = []; if (hearth) fires.push(hearth); B.items.forEach(function (it) { if (isHearth(it) || (it.light && !it.lamp)) fires.push(it); });
     var P = hero(); if (torchOn) fires.push({ x: P.x + (Math.cos(P.face) >= 0 ? 8 : -8), y: P.y - 24, torch: true });
     c.save(); c.globalCompositeOperation = 'lighter';
     fires.forEach(function (f, fi) {
@@ -533,7 +533,7 @@ __COMBAT__
       n.globalCompositeOperation = 'lighter'; var fires = [], i;
       if (hearth) fires.push(hearth); for (i = 0; i < B.items.length; i++) if (isHearth(B.items[i]) || B.items[i].light) fires.push(B.items[i]);
       for (i = 0; i < fires.length; i++) {
-        var f = fires[i], sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (145 + Math.sin(clock * 9 + i) * 5 + Math.sin(clock * 1.7 + i) * 8) * cam.z / 2;
+        var f = fires[i], sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (145 + Math.sin(clock * 9 + i) * 5 + Math.sin(clock * 1.7 + i) * 8) * (f.lamp ? 0.4 : 1) * cam.z / 2;
         if (sx < -rad || sx > 200 + rad || sy < -rad || sy > 125 + rad) continue;
         var gr = n.createRadialGradient(sx, sy, 0, sx, sy, rad); gr.addColorStop(0, 'rgba(' + Math.round(190 * L) + ',' + Math.round(150 * L) + ',' + Math.round(70 * L) + ',1)'); gr.addColorStop(0.35, 'rgba(' + Math.round(130 * L) + ',' + Math.round(90 * L) + ',' + Math.round(30 * L) + ',1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
         n.fillStyle = gr; n.beginPath(); n.arc(sx, sy, rad, 0, 7); n.fill();
@@ -1312,7 +1312,7 @@ __COMBAT__
   }
   function fireNear(x, y, r) {
     if (hearth && Math.hypot(x - hearth.x, y - hearth.y) < r) return true;
-    for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if ((isHearth(it) || it.light) && Math.hypot(x - it.x, y - it.y) < r) return true; }
+    for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if ((isHearth(it) || (it.light && !it.lamp)) && Math.hypot(x - it.x, y - it.y) < r) return true; }
     return false;
   }
   function trollMoveIn() {
@@ -1480,8 +1480,8 @@ __COMBAT__
     hamletV = Village.make(spec.seed * 29 + 3, { tx: hamlet.tx, ty: hamlet.ty, w: hamlet.w, h: hamlet.h, shore: hamlet.shore }, { arch: hamlet.arch, wealth: hamlet.wealth, G: hamletCfg });
     var R = kit.rng(spec.seed * 29 + 7), i;
     for (i = 0; i < hamletV.folk.length; i++) {
-      var fv = hamletV.folk[i], sp = lib.makeFigure(lib.folkSpec('villager', R)), spots = fv.spots.map(function (q) { return { x: q[0], y: q[1], sit: q[2] === 'sit' }; });
-      folk.push({ x: fv.x + (R() - 0.5) * 20, y: fv.y + 6, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: sp, name: fv.name, role: fv.role, lines: fv.lines.concat(FOLK_LINES[i % FOLK_LINES.length]), spots: spots, target: null, wait: R() * 4, ph: 0, moving: false, sitting: false });
+      var fv = hamletV.folk[i], sp = lib.makeFigure(lib.folkSpec('villager', R)), spots = fv.spots.map(function (q) { return { x: q[0], y: q[1], sit: q[2] === 'sit', tag: q[2] || null }; });
+      folk.push({ x: fv.x + (R() - 0.5) * 20, y: fv.y + 6, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: sp, name: fv.name, role: fv.role, lines: fv.lines.concat(FOLK_LINES[i % FOLK_LINES.length]), spots: spots, target: null, wait: R() * 4, ph: 0, moving: false, sitting: false, idle: { id: 'rest', t: R() * 3, dur: 3 + R() * 5, from: null, blend: 1 }, job: null, carrying: false, lastPose: null, child: fv.role === 'child' });
     }
   }
   function lootSlots(loot) {             // a village chest's loot as the stacks in its slots (the bag's kinds only)
@@ -1495,7 +1495,7 @@ __COMBAT__
     for (k in V2.floors) B.floors[k] = V2.floors[k];
     for (k in V2.H) B.H[k] = { t: V2.H[k].t, m: V2.H[k].m }; for (k in V2.V) B.V[k] = { t: V2.V[k].t, m: V2.V[k].m };
     V2.items.forEach(function (vi) {
-      var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.cellar ? 0 : (pc ? pc.r : 8) };
+      var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.r != null ? vi.r : (vi.cellar ? 0 : (pc ? pc.r : 8)) };
       for (q in vi) if (q !== 'x' && q !== 'y' && q !== 'name' && q !== 'store' && q !== 'loot') it[q] = vi[q];
       if (vi.store) { it.store = lootSlots(vi.loot); if (vi.cellar) it.loot = null; } else if (vi.loot) it.loot = vi.loot;
       B.items.push(it);
@@ -1504,32 +1504,62 @@ __COMBAT__
     V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); });
     w.repaint((hamlet.tx - 2) * T, (hamlet.ty - 2) * T, (hamlet.tx + hamlet.w + 2) * T, (hamlet.ty + hamlet.h + 2) * T);
     V2.props.forEach(function (pr) { if (!kit.PROPS[pr.name] || !isLand(pr.x, pr.y)) return; var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.solid != null ? pr.solid : (pr.name === 'scarecrow' ? 4 : 8), v: Math.floor(Math.random() * 3) }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
+    (V2.nature || []).forEach(function (n) { if (!kit.PROPS[n.name] || !isLand(n.x, n.y)) return; var o = { name: n.name, x: n.x, y: n.y, s: n.s, r: n.r, v: n.v, kind: World.KIND[n.name] || null }; if (o.kind) { o.max = o.hp = World.HP[n.name] * (0.7 + 0.6 * o.s); o.leanDir = Math.random() < 0.5 ? -1 : 1; } w.addProp(o); });   // the village's own trees, bushes and rocks
     bDirty = true; Build.ensurePosts(B);
   }
   function folkNear(P) { var best = null; folk.forEach(function (f) { var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
   function folkTalk(f) { f.say = f.lines[f.line % f.lines.length]; f.line++; f.sayT = 5; }
+  // the villagers' life (2026-10-07, Robin: they all stood the same way): each idles their own way (an idle from lib.IDLES, a new one every
+  // few seconds, blended over a third of a second), sits at the fire, and works at the spots their role gave them (chop at the block,
+  // carry water from the well home, sweep the doorstep, hang the catch, fish at the shore, hammer by the smithy; lib.jobPose)
+  var IDLE_W = [['rest', 5], ['hips', 2], ['crossed', 2], ['scratch', 1], ['look', 3], ['stretch', 1]];
+  function pickIdle(f) { var tot = 0, i; IDLE_W.forEach(function (q) { tot += q[1] + (f.child && q[0] === 'look' ? 3 : 0); }); var r = Math.random() * tot; for (i = 0; i < IDLE_W.length; i++) { r -= IDLE_W[i][1] + (f.child && IDLE_W[i][0] === 'look' ? 3 : 0); if (r <= 0) return IDLE_W[i][0]; } return 'rest'; }
   function folkTick(dt) {
     var P = hero(), i;
     if (hamlet && !seen.hamlet && Math.hypot(P.x - (hamlet.tx + hamlet.w / 2) * T, P.y - (hamlet.ty + hamlet.h / 2) * T) < 420) { seen.hamlet = 1; toast('A hamlet: marked on your chart'); save(); }
     for (i = 0; i < folk.length; i++) {
       var f = folk[i], d = Math.hypot(P.x - f.x, P.y - f.y);
       if (f.sayT > 0) f.sayT -= dt;
-      if (d < 110 || f.sayT > 0) {                                 // someone near: stop and watch
-        f.moving = false; f.wait = Math.max(f.wait, 1.5);
+      f.idle.t += dt; f.idle.blend = Math.min(1, f.idle.blend + dt / 0.35);
+      if (!f.moving && !f.sitting && !f.job && f.idle.t > f.idle.dur) { f.idle.from = f.lastPose; f.idle.id = pickIdle(f); f.idle.t = 0; f.idle.dur = 3 + Math.random() * 6; f.idle.blend = 0; }
+      if (f.job) { f.job.t += dt; }
+      if ((d < 110 && !f.job) || f.sayT > 0) {                   // someone near: stop and watch (unless busy at a job)
+        f.moving = false; f.wait = Math.max(f.wait, 1.5); if (f.job && f.sayT > 0) f.job = null;
         var want = Math.atan2(P.y - f.y, P.x - f.x), diff = ((want - f.face + Math.PI * 3) % (Math.PI * 2)) - Math.PI; f.face += diff * Math.min(1, dt * 4);
         continue;
       }
-      if (!f.target) { f.wait -= dt; if (f.wait > 0) { f.moving = false; continue; } f.sitting = false; var tg = f.spots[Math.floor(Math.random() * f.spots.length)]; if (tg.sit && folk.some(function (g) { return g !== f && ((g.target === tg) || (g.sitting && Math.abs(g.x - tg.x) < 2 && Math.abs(g.y - tg.y) < 2)); })) tg = f.spots[0]; f.target = tg; }   // one on a log at a time
+      if (!f.target) {
+        f.wait -= dt; if (f.wait > 0) { f.moving = false; continue; }
+        if (f.job && f.job.kind === 'carry') { f.carrying = true; }                                               // water drawn: carry it home
+        f.job = null; f.sitting = false;
+        var tg = f.carrying ? f.spots[0] : f.spots[Math.floor(Math.random() * f.spots.length)];
+        if (tg.sit && folk.some(function (g) { return g !== f && ((g.target === tg) || (g.sitting && Math.abs(g.x - tg.x) < 2 && Math.abs(g.y - tg.y) < 2)); })) tg = f.spots[0];   // one on a log at a time
+        if (tg.tag && tg.tag !== 'sit' && tg.tag !== 'door' && folk.some(function (g) { return g !== f && g.target === tg; })) tg = f.spots[1];   // one at a job spot at a time
+        f.target = tg;
+      }
       var dx = f.target.x - f.x, dy = f.target.y - f.y, dist = Math.hypot(dx, dy);
-      if (dist < 6) { f.sitting = !!f.target.sit; if (f.sitting) { f.x = f.target.x; f.y = f.target.y; f.face = Math.PI / 2; } f.target = null; f.wait = (f.sitting ? 12 : 3) + Math.random() * 6; f.moving = false; continue; }
-      var sp = 38 * dt; f.x += dx / dist * sp; f.y += dy / dist * sp; f.face = Math.atan2(dy, dx); f.moving = true; f.ph += dt * 7;
+      if (dist < 6) {
+        var tag = f.target.tag; f.sitting = !!f.target.sit;
+        if (f.sitting) { f.x = f.target.x; f.y = f.target.y; f.face = Math.PI / 2; }
+        if (f.carrying) f.carrying = false;
+        if (tag && tag !== 'sit' && tag !== 'door') { f.job = { kind: tag, t: 0 }; f.x = f.target.x; f.y = f.target.y; f.face = tag === 'hang' ? -Math.PI / 2 : Math.PI / 2; f.wait = (tag === 'carry' ? 3 : 8) + Math.random() * 8; }
+        else f.wait = (f.sitting ? 12 : 3) + Math.random() * 6;
+        f.target = null; f.moving = false; f.idle.t = 0; f.idle.dur = 2 + Math.random() * 4; continue;
+      }
+      var sp = (f.carrying ? 30 : 38) * dt; f.x += dx / dist * sp; f.y += dy / dist * sp; f.face = Math.atan2(dy, dx); f.moving = true; f.ph += dt * 7;
     }
   }
   function drawFolk(c, f) {
     var vx = Math.cos(f.face), vy = Math.sin(f.face), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
     var talking = f.sayT > 0, an = { phase: f.moving ? f.ph : 0, amt: f.moving ? 1 : 0, t: clock * (talking ? 2.2 : 1), lx: 0, ly: talking ? Math.sin(clock * 9) * 0.5 : 0, blink: ((clock + f.ph) % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)), sit: f.sitting && !f.moving ? 1 : 0 };
+    var pose = null;                                                 // the pose: a job, the bucket carried home, or the idle of the moment
+    if (f.job && !f.moving) pose = lib.jobPose(f.fig, f.job.kind, f.job.t, dir);
+    else if (f.carrying) { pose = lib.jobPose(f.fig, 'carry', clock, dir); pose.ly += (Math.abs(Math.sin(f.ph)) - 0.5) * 1.5 * an.amt; }
+    else if (!f.moving && !f.sitting && !talking) { pose = lib.idlePose(f.fig, f.idle.id, f.idle.t, dir); if (f.idle.blend < 1 && f.idle.from) { var kb = f.idle.blend, ke = kb * kb * (3 - 2 * kb); pose = lib.poseLerp(f.idle.from, pose, ke); } }
+    f.lastPose = pose;
     c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(f.x, f.y * K, 9, 4, 0, 0, 7); c.fill();
-    lib.figureD(c, f.x, f.y * K, dir, an, null, f.fig);
+    lib.figureD(c, f.x, f.y * K, dir, an, pose, f.fig);
+    if (pose && pose.held) lib.figureHeld(c, f.x, f.y * K, dir, f.fig, pose.held);
   }
 
   /* ---------- the hird: a claim stone, a territory, and the people who join you (step 1 of docs/hird.md, 2026-10-06) ----------

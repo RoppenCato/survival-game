@@ -603,8 +603,8 @@ function inkHero(c, x, y, dir, an, pose) {
   function lay(i) { if (!layers) return; curL = inkSwitch(c, layers, curL, i); c = curL.g; }
   var ph = an.phase, amt = an.amt, t = an.t, run = an.run || 0;
   var side = dir === 'left' || dir === 'right', flip = dir === 'right', back = dir === 'up';
-  var tq = side ? 0 : Math.max(-1, Math.min(1, an.turn || 0));
-  var L = pose ? [pose.lx, pose.ly] : [an.lx || 0, an.ly || 0];
+  var tq = side ? 0 : Math.max(-1, Math.min(1, (an.turn || 0) + (pose && pose.turn ? (flip ? -pose.turn : pose.turn) : 0)));
+  var L = pose ? [pose.lx || 0, pose.ly || 0] : [an.lx || 0, an.ly || 0];
   var lx = (flip ? -L[0] : L[0]), ly = L[1];
   var HS = Math.round(sp.hair || 0), BS = Math.round(sp.beard || 0), HT = Math.round(sp.hat || 0), CL = Math.round(sp.clothes || 0), RG = Math.round(sp.ring || 0);
   var breathe = Math.sin(t * 2.2) * (1 - amt) * 0.35;
@@ -869,6 +869,92 @@ function inkHero(c, x, y, dir, an, pose) {
   c.restore();
 }
 
+/* Idle poses and jobs for the people of the world (2026-10-07, Robin: every villager stood the same way with the same bent arm).
+   A pose is the ink figure's pose contract: hand targets in the figure's own space (armL/armR for the front and back views,
+   near/far for the side view), the lean (lx, ly) and a turn for the head and body. idlePose(F, id, t, dir) gives the pose of an
+   idle at time t; jobPose(F, kind, t, dir) the pose of a job with the thing in hand (held: kind, x, y, ang in figure space),
+   drawn by figureHeld after the figure. The page blends between poses itself. IDLES are the idles a person cycles through. */
+var IDLES = ['rest', 'hips', 'crossed', 'scratch', 'look', 'stretch', 'lean'];
+var JOBS = ['chop', 'carry', 'sweep', 'hang', 'fish', 'smith'];
+function poseLerp(a, b, k) {                                          // a blend of two poses (every key present in both)
+  if (!a) return b; if (!b) return a; var o = {}, q;
+  for (q in b) { var va = a[q], vb = b[q]; if (vb == null) continue; if (typeof vb === 'number') o[q] = (va == null ? vb : va + (vb - va) * k); else if (vb.length === 2) o[q] = va ? [va[0] + (vb[0] - va[0]) * k, va[1] + (vb[1] - va[1]) * k] : vb; else o[q] = vb; }
+  return o;
+}
+function idlePose(F, id, t, dir) {
+  var M = inkMetrics(F.spec), side = dir === 'left' || dir === 'right', fwd = -1, bk = 1, rx = M.headW / 2 * 1.16, ry = M.headH / 2;
+  var shy = M.sh + 1.2, hang = shy + M.arm * 1.95 - 0.2, shw = M.shw - 0.5, cx = fwd * 1.4, nsx = fwd * 0.4, fsx = bk * 2.0;
+  var o = { lx: 0, ly: 0, turn: 0, armL: [-shw - 1.2, hang], armR: [M.waist * 0.9 + 0.3, M.belt - 0.6], near: [fwd * 3.0, M.belt - 0.4], far: [fsx + bk * 0.4, shy + M.arm * 1.93] };   // rest: one hand on the belt
+  var k = Math.min(1, t / 0.6), w = Math.sin(t * 1.3);
+  if (id === 'hips') { o.armL = [-(M.waist + 1.4), M.belt - 0.8]; o.armR = [M.waist + 1.4, M.belt - 0.8]; o.near = [bk * 0.6, M.belt - 0.6]; o.far = [bk * 2.8, M.belt - 0.4]; }
+  else if (id === 'crossed') { o.armL = [2.4, M.sh + 6.0]; o.armR = [-2.4, M.sh + 6.8]; o.near = [fwd * 2.8, M.sh + 6.2]; o.far = [fwd * 1.0, M.sh + 6.9]; }
+  else if (id === 'scratch') { var sc = Math.sin(t * 7) * 0.5; o.armR = [rx + 1.6, M.cy - 1.5 + sc]; o.armL = [-shw - 1.2, hang]; o.near = [cx + bk * rx * 0.95, M.cy - ry * 0.55 + sc]; o.far = [fsx + bk * 0.4, shy + M.arm * 1.93]; o.turn = 0.25; }
+  else if (id === 'look') { o.armL = [-shw - 1.2, hang]; o.armR = [shw + 1.2, hang]; o.near = [nsx + fwd * 0.6, shy + M.arm * 1.93]; o.far = [fsx + bk * 0.4, shy + M.arm * 1.93]; o.turn = w * 0.85; o.lx = w * 0.5; }
+  else if (id === 'stretch') { var up = M.sh - M.arm * 1.8 + 2 + (1 - k) * 12; o.armL = [-2.6, up]; o.armR = [2.6, up]; o.near = [fwd * 1.6, up]; o.far = [bk * 0.6, up + 0.6]; o.ly = -0.9 * k; o.lx = 0; }
+  else if (id === 'lean') { o.armR = [shw + M.arm * 1.85, M.sh + 2.5]; o.armL = [-shw - 1.0, hang]; o.lx = 1.4; o.near = [fwd * (M.arm * 1.85 + 0.5), M.sh + 2.5]; o.far = [fsx + bk * 0.4, shy + M.arm * 1.93]; o.lx = side ? fwd * 1.4 : 1.4; }
+  return o;
+}
+function jobPose(F, kind, t, dir) {
+  var M = inkMetrics(F.spec), side = dir === 'left' || dir === 'right', fwd = -1, bk = 1, shy = M.sh + 1.2, shw = M.shw - 0.5, hang = shy + M.arm * 1.95 - 0.2;
+  var o = { lx: 0, ly: 0, turn: 0, held: null };
+  if (kind === 'chop') {                                               // a two-handed chop: up behind the head, fast down onto the block in front, a pause, up again
+    var per = 1.5, u = (t % per) / per, k = u < 0.5 ? 1 - Math.pow(1 - u / 0.5, 2) * 1 : (u < 0.62 ? 1 - (u - 0.5) / 0.12 : 0);   // 1 = up, 0 = down
+    var hi = M.sh - 9, lo = M.hip + 4;
+    o.armL = [-1.5 + k * 1.0, lo + (hi - lo) * k]; o.armR = [1.5 + k * 1.0, lo + (hi - lo) * k + 1.2]; o.ly = (1 - k) * 2.2; o.lx = 0;
+    o.near = [fwd * (7 - k * 10), lo + (hi - lo) * k]; o.far = [fwd * (5 - k * 9), lo + (hi - lo) * k + 1.5]; if (side) o.lx = fwd * ((1 - k) * 2.2);
+    o.held = { kind: 'axe', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: side ? (k > 0.5 ? -2.1 : 2.0) : (k > 0.5 ? -1.45 : 1.4) };
+  } else if (kind === 'carry') {                                       // a bucket in the right hand, the arm straight down, the other free
+    o.armR = [shw + 1.4, hang + 1.0]; o.near = [nsxOf(fwd) + 0.2, shy + M.arm * 1.93 + 0.8]; o.ly = 0.3;
+    o.held = { kind: 'bucket', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: 0 };
+  } else if (kind === 'sweep') {                                       // both hands on a broom, bent forward, the head of it swishing over the ground
+    var sw = Math.sin(t * 3.2) * 3.5;
+    o.armL = [-2.2 + sw * 0.5, M.sh + 7.5]; o.armR = [2.0 + sw * 0.8, M.belt + 1.5]; o.ly = 1.5; o.lx = sw * 0.15;
+    o.near = [fwd * 4.5 + sw * 0.3, M.belt + 1.2]; o.far = [fwd * 1.5, M.sh + 6.5]; if (side) o.lx = fwd * 1.6;
+    o.held = { kind: 'broom', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: side ? 2.2 : 1.95, sw: sw };
+  } else if (kind === 'hang') {                                        // arms up to the rack, hanging something, a small lift now and then
+    var lift = Math.max(0, Math.sin(t * 1.4)) * 2;
+    o.armL = [-3.2, M.sh - M.arm * 1.5 - lift]; o.armR = [3.4, M.sh - M.arm * 1.55 - lift]; o.near = [fwd * 3.5, M.sh - M.arm * 1.5 - lift]; o.far = [fwd * 2.0, M.sh - M.arm * 1.4 - lift]; o.ly = -0.3;
+  } else if (kind === 'fish') {                                        // a rod held out over the water in both hands
+    var bob = Math.sin(t * 1.1) * 0.6;
+    o.armL = [-1.8, M.sh + 5.5 + bob]; o.armR = [1.6, M.sh + 4.5 + bob]; o.near = [fwd * 5.5, M.sh + 5 + bob]; o.far = [fwd * 3.5, M.sh + 4 + bob];
+    o.held = { kind: 'rod', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: side ? -0.35 : 1.25 };
+  } else if (kind === 'smith') {                                       // one-handed hammering: up by the shoulder, down onto the work
+    var per2 = 0.9, u2 = (t % per2) / per2, k2 = u2 < 0.55 ? u2 / 0.55 : 1 - (u2 - 0.55) / 0.45;
+    var hi2 = M.sh - 3, lo2 = M.belt + 2;
+    o.armR = [3.0 + k2 * 1.5, lo2 + (hi2 - lo2) * k2]; o.armL = [-2.5, M.belt + 1]; o.near = [fwd * (6 - k2 * 6), lo2 + (hi2 - lo2) * k2]; o.far = [fwd * 3, M.belt + 1]; o.ly = (1 - k2) * 1.2;
+    o.held = { kind: 'hammer', x: side ? o.near[0] : o.armR[0], y: side ? o.near[1] : o.armR[1], ang: side ? (k2 > 0.5 ? -1.9 : 1.6) : (k2 > 0.5 ? -1.2 : 1.3) };
+  }
+  function nsxOf(f) { return f * 0.4; }
+  return o;
+}
+// the thing in a person's hand, drawn in the figure's own space after the figure (the page hands over the same x, y, dir, F)
+function heldD(c, h) {
+  var ca = Math.cos(h.ang), sa = Math.sin(h.ang), x = h.x, y = h.y;
+  c.lineCap = 'round'; c.lineJoin = 'round';
+  if (h.kind === 'axe') {
+    var L = 13; c.strokeStyle = '#6a4a30'; c.lineWidth = 1.7; c.beginPath(); c.moveTo(x - ca * 3, y - sa * 3); c.lineTo(x + ca * L, y + sa * L); c.stroke();
+    c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.5; c.stroke();
+    var hx = x + ca * (L - 1), hy = y + sa * (L - 1), px = -sa, py = ca; c.fillStyle = '#6e7076'; c.beginPath(); c.moveTo(hx - ca * 2 + px * 0.5, hy - sa * 2 + py * 0.5); c.lineTo(hx + ca * 1.5 + px * 1, hy + sa * 1.5 + py * 1); c.lineTo(hx + ca * 1.2 + px * 5, hy + sa * 1.2 + py * 5); c.lineTo(hx - ca * 2.6 + px * 4.5, hy - sa * 2.6 + py * 4.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
+  } else if (h.kind === 'bucket') {
+    c.strokeStyle = 'rgba(60,50,40,0.9)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 2.2); c.stroke();
+    c.fillStyle = '#8a6a44'; c.beginPath(); c.moveTo(x - 3, y + 2.2); c.lineTo(x + 3, y + 2.2); c.lineTo(x + 2.5, y + 7.5); c.lineTo(x - 2.5, y + 7.5); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.55; c.stroke();
+    c.strokeStyle = 'rgba(35,26,22,0.4)'; c.lineWidth = 0.4; c.beginPath(); c.moveTo(x - 1, y + 2.4); c.lineTo(x - 0.8, y + 7.3); c.moveTo(x + 1, y + 2.4); c.lineTo(x + 0.8, y + 7.3); c.stroke();
+    c.strokeStyle = '#5a5a60'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x - 3, y + 4); c.lineTo(x + 3, y + 4); c.stroke();
+  } else if (h.kind === 'broom') {
+    var L2 = 20; c.strokeStyle = '#8a6a44'; c.lineWidth = 1.3; c.beginPath(); c.moveTo(x - ca * 8, y - sa * 8); c.lineTo(x + ca * L2, y + sa * L2); c.stroke(); c.strokeStyle = 'rgba(35,26,22,0.5)'; c.lineWidth = 0.4; c.stroke();
+    var bx = x + ca * L2, by = y + sa * L2, i; c.strokeStyle = '#c9a85c'; c.lineWidth = 0.9; c.beginPath(); for (i = -3; i <= 3; i++) { c.moveTo(bx - ca * 2, by - sa * 2); c.lineTo(bx + ca * 4 + (-sa) * i * 1.1 + (h.sw || 0) * 0.1, by + sa * 4 + ca * i * 1.1 + 0.5); } c.stroke();
+    c.strokeStyle = 'rgba(35,26,22,0.5)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(bx - ca * 1.5 - sa * 2, by - sa * 1.5 + ca * 2); c.lineTo(bx - ca * 1.5 + sa * 2, by - sa * 1.5 - ca * 2); c.stroke();
+  } else if (h.kind === 'rod') {
+    var L3 = 26; c.strokeStyle = '#7a5a3a'; c.lineWidth = 1.0; c.beginPath(); c.moveTo(x - ca * 4, y - sa * 4); c.lineTo(x + ca * L3, y + sa * L3); c.stroke();
+    var tx = x + ca * L3, ty = y + sa * L3; c.strokeStyle = 'rgba(240,236,220,0.7)'; c.lineWidth = 0.45; c.beginPath(); c.moveTo(tx, ty); c.quadraticCurveTo(tx + 1, ty + 6, tx + 0.5, ty + 12); c.stroke();
+  } else if (h.kind === 'hammer') {
+    var L4 = 9; c.strokeStyle = '#6a4a30'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x - ca * 2, y - sa * 2); c.lineTo(x + ca * L4, y + sa * L4); c.stroke();
+    var hx2 = x + ca * L4, hy2 = y + sa * L4, px2 = -sa, py2 = ca; c.fillStyle = '#5e6066'; c.beginPath(); c.moveTo(hx2 - ca * 1.6 - px2 * 2.4, hy2 - sa * 1.6 - py2 * 2.4); c.lineTo(hx2 + ca * 1.6 - px2 * 2.4, hy2 + sa * 1.6 - py2 * 2.4); c.lineTo(hx2 + ca * 1.6 + px2 * 2.4, hy2 + sa * 1.6 + py2 * 2.4); c.lineTo(hx2 - ca * 1.6 + px2 * 2.4, hy2 - sa * 1.6 + py2 * 2.4); c.closePath(); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.75)'; c.lineWidth = 0.5; c.stroke();
+  }
+}
+function figureHeld(c, x, y, dir, F, held) {                           // draw a person's held thing over the figure drawn at x, y
+  if (!held) return; c.save(); c.translate(x, y); c.scale(F.spec.scale, F.spec.scale); if (dir === 'right') c.scale(-1, 1); heldD(c, held); c.restore();
+}
 function playerD(c, x, y, dir, an, pose) {
   if (hero().spec.figure >= 1) return inkHero(c, x, y, dir, an, pose);
   an = an || { phase: 0, amt: 0, t: 0, lx: 0, ly: 0, blink: 0, sq: 0 };
@@ -2403,7 +2489,7 @@ function applyStored(st) {
   try { var gc = JSON.parse(st.getItem('game.creatures')); if (gc && typeof gc === 'object') { var k; for (k in gc) if (ANIMALS[k] && gc[k] && typeof gc[k] === 'object') useAnimal(k, gc[k]); } } catch (e) {}
   try { var rg = st.getItem('creature.rig'); if (rg === 'turntable' || rg === 'views') { RIG.animals = rg; RIG.trolls = rg; } } catch (e) {}
 }
-return { lib: { INK_FIG: INK_FIG, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { INK_FIG: INK_FIG, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, IDLES: IDLES, JOBS: JOBS, idlePose: idlePose, jobPose: jobPose, poseLerp: poseLerp, heldD: heldD, figureHeld: figureHeld, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 
@@ -3231,6 +3317,61 @@ function choppingBlockObj(c, K, x, y, seed) {           // a stump to split wood
   fillPts(c, [[x - 1, y - 20], [x + 6, y - 22], [x + 7, y - 15], [x + 1, y - 14]], K.iron.base);                                            // the head, bitten into the top
   fillPts(c, [[x - 1, y - 20], [x + 6, y - 22], [x + 6.5, y - 20], [x - 0.5, y - 18]], K.ironLight.base);
   [[-13, 2], [-9, 5], [14, 3], [11, 6], [-4, 6]].forEach(function (q, k) { fillPts(c, ellPts(x + q[0], y + q[1], 2.4, 1.2, 6), M(38, 30, 60).base); });
+}
+// Things against the walls of a village (2026-10-07, Robin: lived-in like the reference): a window box, a lantern on a bracket,
+// an awning on two posts, a hanging sign, a lean-to over the woodpile, a table laid with food
+function windowBoxObj(c, K, x, y, seed) {                // a plank box of flowers under a window, flat against the wall
+  var R = rng(seed), i;
+  shape(c, [[x - 12, y - 7], [x + 12, y - 7], [x + 11, y], [x - 11, y]], K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.25 });
+  fillPts(c, [[x - 11, y - 6.5], [x + 11, y - 6.5], [x + 10.5, y - 4.5], [x - 10.5, y - 4.5]], 'rgba(60,40,24,0.25)');
+  for (i = 0; i < 7; i++) { var fx = x - 10 + i * 3.4 + (R() - 0.5) * 1.5, fy = y - 8 - R() * 2; fillPts(c, ellPts(fx, fy, 2.4 + R(), 1.8, 7), M(P.outsideHue + 6, 48, 36).base); }
+  for (i = 0; i < 6; i++) { var gx = x - 9 + i * 3.6 + (R() - 0.5) * 2, gy = y - 10 - R() * 2.5; fillPts(c, ellPts(gx, gy, 1.2, 1.2, 6), [M(mixHue(P.accentHue, 0, 0.3), 80, 62), M(50, 85, 66), M(340, 60, 72)][i % 3].base); }
+}
+function lanternObj(c, K, x, y, seed) {                  // an iron bracket out from the wall with a lantern of horn panes hanging from it, lit at night
+  c.strokeStyle = K.iron.base; c.lineWidth = 1.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 5, y - 30); c.lineTo(x + 5, y - 30); c.moveTo(x - 5, y - 30); c.lineTo(x - 1, y - 26); c.stroke();
+  c.strokeStyle = OLC; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x - 5, y - 30); c.lineTo(x + 5, y - 30); c.stroke();
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x + 4.5, y - 30); c.lineTo(x + 4.5, y - 27); c.stroke();
+  shape(c, [[x + 1.5, y - 27], [x + 7.5, y - 27], [x + 8.5, y - 18], [x + 0.5, y - 18]], K.iron, { seed: seed, size: 'S', sh: 0.8, rough: 0.2 });
+  fillPts(c, [[x + 2.6, y - 25.8], [x + 6.4, y - 25.8], [x + 7.2, y - 19.2], [x + 1.8, y - 19.2]], M(42, 70, 64).base);
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x + 4.5, y - 25.8); c.lineTo(x + 4.5, y - 19.2); c.stroke();
+  fillPts(c, ellPts(x + 4.5, y - 22.5, 1.2, 1.6, 6), M(44, 95, 82).base);
+  addLight(x + 4.5, y - 22, 60, 42, 90, 62, 0.8);
+}
+function awningObj(c, K, x, y, seed) {                   // a striped cloth on two posts leaning out from the wall, seen from above
+  var i;
+  gshadow(c, x, y + 2, 17, 4, 0.3);
+  [[-15, 0], [15, 0]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.5, y - 26, 3, 26, 1.2), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  var cl = [[x - 18, y - 36], [x + 18, y - 36], [x + 17, y - 25], [x - 17, y - 25]];
+  shape(c, cl, M(40, 30, 78), { seed: seed + 5, size: 'M', sh: 1, rough: 0.3 });
+  c.save(); path(c, cl); c.clip(); for (i = -16; i < 18; i += 8) { fillPts(c, [[x + i, y - 36], [x + i + 4, y - 36], [x + i + 3.8, y - 25], [x + i - 0.2, y - 25]], M(mixHue(P.accentHue, 10, 0.4), 50, 46).base); } c.restore();
+  line(c, [[x - 17.5, y - 25.5], [x - 16, y - 23], [x - 14, y - 25.5], [x - 12, y - 23], [x - 10, y - 25.5], [x - 8, y - 23], [x - 6, y - 25.5], [x - 4, y - 23], [x - 2, y - 25.5], [x, y - 23], [x + 2, y - 25.5], [x + 4, y - 23], [x + 6, y - 25.5], [x + 8, y - 23], [x + 10, y - 25.5], [x + 12, y - 23], [x + 14, y - 25.5], [x + 16, y - 23], [x + 17.5, y - 25.5]], 0.6, 'rgba(35,26,22,0.45)', false);
+}
+function signObj(c, K, x, y, seed) {                     // a bracket out from the wall with a board hanging on two chains, a drinking horn painted on it
+  c.strokeStyle = K.iron.base; c.lineWidth = 1.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 6, y - 36); c.lineTo(x + 8, y - 36); c.moveTo(x - 6, y - 36); c.lineTo(x - 2, y - 31); c.stroke();
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x - 1, y - 36); c.lineTo(x - 1, y - 31); c.moveTo(x + 7, y - 36); c.lineTo(x + 7, y - 31); c.stroke();
+  shape(c, [[x - 4, y - 31], [x + 10, y - 31], [x + 10, y - 20], [x - 4, y - 20]], K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.25 });
+  c.strokeStyle = M(mixHue(P.accentHue, 10, 0.4), 55, 40).base; c.lineWidth = 1.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 1, y - 23); c.quadraticCurveTo(x + 3, y - 30, x + 8, y - 27); c.stroke();
+  c.strokeStyle = 'rgba(35,26,22,0.5)'; c.lineWidth = 0.5; c.beginPath(); c.rect(x - 3, y - 30, 12, 9); c.stroke();
+}
+function woodshedObj(c, K, x, y, seed) {                 // a lean-to: two posts and a slanting plank roof with the firewood stacked under it, cut ends toward you
+  var i, j, R = rng(seed);
+  gshadow(c, x, y + 1, 20, 5, 0.35);
+  [[-16, 0], [16, 0]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.6, y - 22, 3.2, 22, 1.2), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  for (j = 0; j < 3; j++) for (i = 0; i < 6; i++) { var ex = x - 14 + i * 5.2 + (j % 2) * 2.4, ey = y - 3 - j * 4.4; if (ex > x + 14) continue; shape(c, ellPts(ex, ey, 2.6, 2.3, 8), K.trunk, { seed: seed + 10 + i + j * 7, size: 'S', sh: 1, rough: 0.3 }); fillPts(c, ellPts(ex, ey, 1.7, 1.5, 8), M(36, 30, 62).base); c.strokeStyle = 'rgba(70,45,25,0.5)'; c.lineWidth = 0.4; c.beginPath(); c.arc(ex, ey, 0.8, 0, 7); c.stroke(); }
+  var rf = [[x - 20, y - 30], [x + 20, y - 30], [x + 20, y - 21], [x - 20, y - 21]];
+  shape(c, rf, K.wood, { seed: seed + 30, size: 'M', sh: 1.2, rough: 0.3 });
+  for (i = -16; i < 20; i += 6) line(c, [[x + i, y - 29.5], [x + i + 0.3, y - 21.5]], 0.5, 'rgba(35,26,22,0.4)', false);
+  fillPts(c, [[x - 20, y - 21], [x + 20, y - 21], [x + 20, y - 19.5], [x - 20, y - 19.5]], 'rgba(35,26,22,0.35)');
+}
+function foodTableObj(c, K, x, y, seed) {                // a trestle table under a cloth with a round loaf, a mug and a bowl on it
+  gshadow(c, x, y + 1, 18, 4, 0.35);
+  [[-12, 0], [12, 0]].forEach(function (q, k) { shape(c, [[x + q[0] - 3, y - 1], [x + q[0] - 1, y - 11], [x + q[0] + 1, y - 11], [x + q[0] + 3, y - 1]], K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  shape(c, [[x - 17, y - 15], [x + 17, y - 15], [x + 16, y - 10], [x - 16, y - 10]], K.wood, { seed: seed + 3, size: 'M', sh: 1, rough: 0.25 });
+  fillPts(c, [[x - 12, y - 15], [x + 4, y - 15], [x + 4.5, y - 8], [x - 11.5, y - 8]], M(40, 22, 84).base);
+  fillPts(c, [[x - 12, y - 12.5], [x + 4, y - 12.5], [x + 4.2, y - 11.2], [x - 11.8, y - 11.2]], 'rgba(70,90,140,0.35)');
+  shape(c, ellPts(x - 5, y - 14, 3.6, 2.4, 10), M(34, 50, 56), { seed: seed + 5, size: 'S', sh: 1, rough: 0.3 }); line(c, [[x - 7, y - 14.6], [x - 3, y - 14.6]], 0.5, 'rgba(35,26,22,0.45)', false);
+  shape(c, rrPts(x + 8, y - 19, 4, 5.5, 1), K.wood, { seed: seed + 6, size: 'S', sh: 0.8, rough: 0.2 }); c.strokeStyle = K.wood.base; c.lineWidth = 0.9; c.beginPath(); c.arc(x + 12.8, y - 16.3, 1.6, -1.4, 1.4); c.stroke();
+  shape(c, ellPts(x + 1, y - 16.5, 3, 1.6, 10), K.rockC, { seed: seed + 7, size: 'S', sh: 0.6, rough: 0.2 }); fillPts(c, ellPts(x + 1, y - 17, 2, 0.9, 8), M(8, 60, 42).base);
 }
 function campfireObj(c, K, x, y, seed) {
   var i;
@@ -4140,6 +4281,12 @@ var PROPS = {
   waterfall: { b: [-56, -116, 90, 14], f: function (c, K, s) { waterfallObj(c, K, 0, 0, s); } },
   campfire: { b: [-28, -40, 28, 8], f: function (c, K, s) { campfireObj(c, K, 0, 0, s); } },
   firePit: { b: [-32, -44, 32, 10], f: function (c, K, s) { firePitObj(c, K, 0, 0, s); } },
+  windowBox: { b: [-14, -16, 14, 2], f: function (c, K, s) { windowBoxObj(c, K, 0, 0, s); } },
+  lantern: { b: [-8, -34, 12, 2], f: function (c, K, s) { lanternObj(c, K, 0, 0, s); } },
+  awning: { b: [-20, -40, 20, 6], f: function (c, K, s) { awningObj(c, K, 0, 0, s); } },
+  sign: { b: [-8, -40, 12, 2], f: function (c, K, s) { signObj(c, K, 0, 0, s); } },
+  woodshed: { b: [-22, -34, 22, 8], f: function (c, K, s) { woodshedObj(c, K, 0, 0, s); } },
+  foodTable: { b: [-19, -22, 19, 6], f: function (c, K, s) { foodTableObj(c, K, 0, 0, s); } },
   logSeat: { b: [-18, -12, 20, 6], f: function (c, K, s) { logSeatObj(c, K, 0, 0, s); } },
   stake: { b: [-6, -30, 6, 4], f: function (c, K, s) { stakeObj(c, K, 0, 0, s); } },
   banner: { b: [-6, -62, 26, 4], f: function (c, K, s) { bannerObj(c, K, 0, 0, s); } },
@@ -4176,7 +4323,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
@@ -4240,7 +4387,7 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'No roof' }];
-var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12 };   // thatch unless another roof is chosen (Robin, 2026-10-06)
+var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1 };   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1 }, OPEN = { door: 1, gate: 1 };
@@ -4543,32 +4690,36 @@ function roofRects(tiles) {
   out.sort(function (a, b) { return a.y1 - b.y1; });
   return out;
 }
+function roomWallM(B, room) {                                            // the material of the room's walls (the first wall found round its tiles), for the gable
+  var i, t, e; if (!room || !room.tiles) return 1;
+  for (i = 0; i < room.tiles.length; i++) {
+    t = room.tiles[i];
+    e = B.H[key(t[0], t[1] + 1)] || B.H[key(t[0], t[1])] || B.V[key(t[0], t[1])] || B.V[key(t[0] + 1, t[1])];
+    if (e && !YARD[e.t] && e.m != null) return e.m;
+  }
+  return 1;
+}
 function drawRoof(c, room, a, C, dy) {
   C = C || CFG; dy = dy || 0;
   var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
-  var ov = C.overhang + 1.5, up = C.wallH + C.thick * K + 1, kind = C.roof;
+  var ov = C.overhang + 1.5, up = C.wallH + C.thick * K + 1, kind = C.roof, wm = WALLS[C.wallM] || WALLS[1];
   var lineCol = r.line, hl = mix(r.col, '#fff4d0', 0.25), dk = mix(r.col, '#1a1410', 0.3), edgeCol = mix(r.col, '#1a1410', 0.45);
   c.save(); a *= c.globalAlpha; c.globalAlpha = a; c.translate(0, dy); c.lineCap = 'round'; c.lineJoin = 'round';
   roofRects(room.tiles).forEach(function (rc) {
     var top = rc.y0 * TS - up - ov * K, bot = (rc.y1 + 1) * TS - up + ov * K, left = rc.x0 * T - ov, right = (rc.x1 + 1) * T + ov, D = bot - top, Wd = right - left;
-    var rise = Math.min(16, D * 0.32), ridgeY = (top + bot) / 2 - rise, hip = Math.min(D * 0.55, Wd * 0.28), seed = rc.x0 * 7 + rc.y0 * 3, i, j;
-    var far = [[left, top], [right, top], [right - hip, ridgeY], [left + hip, ridgeY]], near = [[left + hip, ridgeY], [right - hip, ridgeY], [right, bot], [left, bot]];
-    var hipL = [[left, top], [left + hip, ridgeY], [left, bot]], hipR = [[right, top], [right, bot], [right - hip, ridgeY]], outline = [[left, top], [right, top], [right, bot], [left, bot]];
-    // the shadow the eaves cast on the walls below, and the thickness of the roof at the eaves
+    var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT);   // the ridge along the long side: a gable facing south when the room is deep
+    var seed = rc.x0 * 7 + rc.y0 * 3, i, j, cx = (left + right) / 2;
+    // the shadow the eaves cast on the walls below, and down the right side
     var sg = c.createLinearGradient(0, bot, 0, bot + 7); sg.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.42)'); sg.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg; c.fillRect(left, bot, Wd, 7);
     var sg2 = c.createLinearGradient(right, 0, right + 5, 0); sg2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.3)'); sg2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg2; c.fillRect(right, top + 2, 5, D);
-    if (kind === 1) {                                        // thatch: the fringe hangs below the eaves and down the sides
-      for (i = left + 1; i < right; i += 2.1) { var len = 4 + hs(i, 1) * 5, dark = hs(i, 2) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(i, bot - 3); c.lineTo(i + (hs(i, 3) - 0.5) * 1.5, bot + len); c.stroke(); }
-      for (j = top + 3; j < bot; j += 2.4) { c.strokeStyle = hs(j, 2) < 0.4 ? dk : r.col; c.lineWidth = 1.3; c.beginPath(); c.moveTo(right - 2, j); c.lineTo(right + 2.5 + hs(j, 4) * 2, j + 1.5); c.moveTo(left + 2, j); c.lineTo(left - 2.5 - hs(j, 5) * 2, j + 1.5); c.stroke(); }
-      c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(left, bot + 1.5); c.lineTo(right, bot + 1.5); c.stroke();
-    } else if (kind === 0) {                                 // turf: the sod's edge shows at the eaves, dark soil and grass hanging over
-      ink(c, [[left - 1, bot - 1], [right + 1, bot - 1], [right + 1, bot + 2.6], [left - 1, bot + 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 });
-      for (i = left + 2; i < right; i += 3) { if (hs(i, 4) > 0.55) continue; c.strokeStyle = hs(i, 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(i, bot - 1); c.lineTo(i + (hs(i, 6) - 0.5) * 2, bot + 3 + hs(i, 7) * 2.5); c.stroke(); }
-    } else {                                                 // shingles: the ends of the last row show under the eaves
-      ink(c, [[left - 0.5, bot - 1], [right + 0.5, bot - 1], [right + 0.5, bot + 2.2], [left - 0.5, bot + 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 });
-      for (i = left + 4; i < right; i += 8) stroke(c, [[i, bot - 0.5], [i, bot + 2]], INK.soft, 0.6);
+    function eaveEdge(x0, y0, x1, y1) {                       // the thickness of the roof at an eave or a bargeboard: sod, straw ends or shingle ends along the line
+      var dx = x1 - x0, dy2 = y1 - y0, len = Math.hypot(dx, dy2) || 1, nx = -dy2 / len, ny = dx / len, k;   // (nx, ny): outward, below the line
+      if (ny < 0) { nx = -nx; ny = -ny; }
+      if (kind === 1) { for (k = 1; k < len; k += 2.1) { var u = k / len, px = x0 + dx * u, py = y0 + dy2 * u, ln = 4 + hs(px, py) * 5, dark = hs(px + 1, py) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(px - nx * 3, py - ny * 3); c.lineTo(px + nx * ln + (hs(px, py + 3) - 0.5) * 1.5, py + ny * ln); c.stroke(); } c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 + nx * 1.5, y0 + ny * 1.5); c.lineTo(x1 + nx * 1.5, y1 + ny * 1.5); c.stroke(); }
+      else if (kind === 0) { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.6, y1 + ny * 2.6], [x0 + nx * 2.6, y0 + ny * 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 2; k < len; k += 3) { var u2 = k / len, qx = x0 + dx * u2, qy = y0 + dy2 * u2; if (hs(qx, qy + 4) > 0.55) continue; c.strokeStyle = hs(qx, qy + 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(qx - nx, qy - ny); c.lineTo(qx + nx * (3 + hs(qx, qy + 7) * 2.5) + (hs(qx, qy + 6) - 0.5) * 2, qy + ny * (3 + hs(qx, qy + 7) * 2.5)); c.stroke(); } }
+      else { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.2, y1 + ny * 2.2], [x0 + nx * 2.2, y0 + ny * 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 4; k < len; k += 8) { var u3 = k / len; stroke(c, [[x0 + dx * u3, y0 + dy2 * u3], [x0 + dx * u3 + nx * 2, y0 + dy2 * u3 + ny * 2]], INK.soft, 0.6); } }
     }
-    // the four facets: fill, grain, the material's rows following each facet, a soft line between them
+    // a facet of the roof: fill, the material's rows following it, grain
     function facet(pts, tone, rows) {
       var d = ink(c, pts, mix(r.col, tone > 0 ? '#fff4d0' : '#1a1410', Math.abs(tone)), { wob: 0, flat: true, noLine: true });
       c.save(); path(c, d); c.clip();
@@ -4591,13 +4742,46 @@ function drawRoof(c, room, a, C, dy) {
       c.globalAlpha = a * INK.grain; c.fillStyle = grainPat(c); c.fillRect(bx0, by0, bx1 - bx0, by1 - by0); c.globalAlpha = a;
       c.restore();
     }
-    facet(far, 0.14, 'h'); facet(hipL, 0.04, 'v'); facet(hipR, -0.3, 'v'); facet(near, -0.12, 'h');
-    // the hips and the ridge in ink, the thin line all round, the heavy line along the eaves and the right side
-    stroke(c, [[left, top], [left + hip, ridgeY]], INK.soft, 0.9); stroke(c, [[left, bot], [left + hip, ridgeY]], INK.line, 1.1);
-    stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
-    path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
-    ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
-    if (kind !== 0) [left + hip + 4, right - hip - 4].forEach(function (cx, ci) { [[cx - 4, ridgeY + 3, cx + 4, ridgeY - 9], [cx + 4, ridgeY + 3, cx - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
+    function ridgeBoards(x0, y0, dirY) {                      // crossed boards at a north-south ridge's end
+      [[-1, 1], [1, -1]].forEach(function (sgn, bi) { var ax = x0 + 4 * sgn[0], ay = y0 + 3 * dirY, bx = x0 + 4 * sgn[1], by = y0 - 9 * dirY; ink(c, [[ax - 1, ay], [bx - 1, by], [bx + 1, by], [ax + 1, ay]], r.ridge, { wob: 0.3, seed: seed + bi, flat: true, lw: 0.6, heavy: 1.1 }); });
+    }
+    if (ns) {
+      // a gable roof with the ridge north to south: the west slope lit, the east in shadow, and the south gable end facing you:
+      // the end wall in the walls' material with its timbers (a tie beam, a king post, two struts), the bargeboards over it
+      var rh = Math.min(34, Wd * 0.46), slopeL = [[left, top], [cx, top - rh], [cx, bot - rh], [left, bot]], slopeR = [[cx, top - rh], [right, top], [right, bot], [cx, bot - rh]];
+      var ga = [[left, bot], [cx, bot - rh], [right, bot]], gw = [[left + ov, bot - ov * K], [cx, bot - rh + 1.2], [right - ov, bot - ov * K]];
+      ink(c, ga, '#2b221c', { wob: 0, flat: true, noLine: true });                                                        // the dark underside of the eaves
+      var gd = ink(c, gw, wm.face, { wob: 0.5, seed: seed + 9, noLine: true, flat: true });
+      c.save(); path(c, gd); c.clip(); face(c, wm, left + ov, bot - rh, right - left - 2 * ov, rh, seed + 9); c.restore();
+      var gl = mix(wm.top, '#1a1410', 0.1), tb = bot - ov * K;
+      ink(c, rect(left + ov, tb - 3.2, right - left - 2 * ov, 3.2), gl, { wob: 0.4, seed: seed + 10, lw: 0.7, heavy: 1.2 });                        // the tie beam
+      ink(c, rect(cx - 1.6, bot - rh + 2, 3.2, rh - ov * K - 2), gl, { wob: 0.4, seed: seed + 11, lw: 0.7, heavy: 1.2 });                          // the king post
+      ink(c, [[left + ov + 3, tb - 3.2], [left + ov + 6, tb - 3.2], [cx - 1, bot - rh * 0.52], [cx - 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 12, lw: 0.6, heavy: 1.1 });   // the struts
+      ink(c, [[right - ov - 3, tb - 3.2], [right - ov - 6, tb - 3.2], [cx + 1, bot - rh * 0.52], [cx + 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 13, lw: 0.6, heavy: 1.1 });
+      var g2 = c.createLinearGradient(0, bot - rh, 0, bot - rh + 9); g2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.35)'); g2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.save(); path(c, gd); c.clip(); c.fillStyle = g2; c.fillRect(left, bot - rh, Wd, 10); c.restore();   // the shade under the ridge
+      path(c, gd); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke();
+      facet(slopeL, 0.14, 'v'); facet(slopeR, -0.26, 'v');
+      eaveEdge(left, bot, cx, bot - rh); eaveEdge(cx, bot - rh, right, bot);                                                // the bargeboards' edge over the gable
+      stroke(c, [[left, bot], [cx, bot - rh], [right, bot]], r.ridge, 2.6); stroke(c, [[left, bot], [cx, bot - rh], [right, bot]], INK.line, 0.8);
+      stroke(c, [[cx, top - rh], [cx, bot - rh]], INK.soft, 0.9);
+      var sil = [[left, top], [cx, top - rh], [right, top], [right, bot], [cx, bot - rh], [left, bot]];
+      path(c, sil); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, sil, 2.4);
+      ink(c, [[cx - 2.2, top - rh - 1], [cx + 2.2, top - rh - 1], [cx + 2, bot - rh + 1], [cx - 2, bot - rh + 1]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
+      if (kind !== 0) { ridgeBoards(cx, top - rh + 2, 1); ridgeBoards(cx, bot - rh - 1, -1); }
+    } else {
+      // a hipped roof with the ridge east to west: the far slope lit, the near slope in shadow, the hips between, the ridge raised high
+      var rise = Math.min(26, D * 0.42), ridgeY = (top + bot) / 2 - rise, hip = Math.min(D * 0.5, Wd * 0.22);
+      var far = [[left, top], [right, top], [right - hip, ridgeY], [left + hip, ridgeY]], near = [[left + hip, ridgeY], [right - hip, ridgeY], [right, bot], [left, bot]];
+      var hipL = [[left, top], [left + hip, ridgeY], [left, bot]], hipR = [[right, top], [right, bot], [right - hip, ridgeY]], outline = [[left, top], [right, top], [right, bot], [left, bot]];
+      eaveEdge(left, bot, right, bot);
+      if (kind === 1) { for (j = top + 3; j < bot; j += 2.4) { c.strokeStyle = hs(j, 2) < 0.4 ? dk : r.col; c.lineWidth = 1.3; c.beginPath(); c.moveTo(right - 2, j); c.lineTo(right + 2.5 + hs(j, 4) * 2, j + 1.5); c.moveTo(left + 2, j); c.lineTo(left - 2.5 - hs(j, 5) * 2, j + 1.5); c.stroke(); } }
+      facet(far, 0.14, 'h'); facet(hipL, 0.04, 'v'); facet(hipR, -0.3, 'v'); facet(near, -0.12, 'h');
+      stroke(c, [[left, top], [left + hip, ridgeY]], INK.soft, 0.9); stroke(c, [[left, bot], [left + hip, ridgeY]], INK.line, 1.1);
+      stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
+      path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
+      ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
+      if (kind !== 0) [left + hip + 4, right - hip - 4].forEach(function (cx2, ci) { [[cx2 - 4, ridgeY + 3, cx2 + 4, ridgeY - 9], [cx2 + 4, ridgeY + 3, cx2 - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
+    }
   });
   c.restore();
 }
@@ -4622,7 +4806,7 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon };
+return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon };
 })();
 if (typeof module !== 'undefined') module.exports = Build;
 
@@ -4643,10 +4827,12 @@ var DEF = {
   wealthStone: 0.85, wealthLogs: 0.55, wealthPlanks: 0.25,   // the longhouse's walls by wealth (below: wattle); the houses one step poorer
   shinglesAt: 0.8, turfInland: 1, thatchShore: 1,     // roofs: shingles for the rich, turf inland, thatch by the sea
   palisadeAt: 0.7, drystoneAt: 0.5, railAt: 0.2,      // the fence by wealth: rail (poor), wattle, dry stone; from palisadeAt a round wall of stakes with banners at the gate
-  stakeStep: 11, banners: 2, firePit: 1, logSeats: 4, doorProps: 1.4, pathDoor: 5, pathYard: 9,
+  stakeStep: 11, banners: 2, firePit: 1, logSeats: 4, doorProps: 1.4,
+  roadW: 10, backGate: 1,                             // the one winding road (Robin, 2026-10-07): its width in the yard; a back gate for the road to leave by
+  nature: 1, clutter: 1,                              // trees, bushes and rocks kept in and round the village; things against the walls (window boxes, lanterns, awnings, signs)
   fields: 1, fieldStrips: 3, sacred: 1, midden: 1, graves: 1,
   chestLoot: 1, cellarAt: 0.3, storeLoot: 1,           // finds: a chest in every house, a cellar in one house at this wealth and above
-  yardEarth: 1, pathGravel: 1, pathEarth: 1, mossEdge: 1,
+  yardEarth: 1, pathGravel: 1, mossEdge: 1,
   emptySlots: 0.25,                                   // the share of ring slots left open, so no two rings are alike
   sizeJitter: 1                                       // buildings vary by this many tiles
 };
@@ -4702,7 +4888,7 @@ function make(seed, site, opts) {
     var k, best = null; for (k = 0; k < 12; k++) { var dx = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, dy = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot }; if (fits(l)) { best = l; break; } }
     if (best) V.lots.push(best); return best;
   }
-  function size(id) { var b = BUILD[id]; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }
+  function size(id) { var b = BUILD[id]; if (id === 'house' && R() < 0.5) return { w: pickRange(R, [2, 3], 0), h: 3 }; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }   // half the houses stand deep: a gable end facing south
   // the ring: the longhouse north of the yard facing it; the houses east, west, south-east and south-west, shuffled; some slots left open
   var big = A.hall ? 'hall' : 'longhouse', bs = size(big);
   tryPlace({ id: big, x: yx + Math.floor((yw - bs.w) / 2) + Math.round((R() - 0.5) * 2), y: yy - G.yardGap - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'n' }, 1);
@@ -4743,9 +4929,9 @@ function make(seed, site, opts) {
     if (l.id === 'smithy') m = 3; if (l.id === 'pit') m = 4;
     var dx = l.door === 's' || l.door === 'n' ? l.x + 1 + Math.floor(R() * Math.max(1, l.w - 2)) : -1, dy = l.door === 'e' || l.door === 'w' ? l.y + Math.floor(R() * l.h) : -1;
     var gaps = V.ruin ? Math.max(1, Math.floor((l.w + l.h) * 0.35)) : 0, gapAt = {}; if (gaps) for (var g = 0; g < gaps; g++) gapAt[Math.floor(R() * (l.w * 2 + l.h * 2))] = 1;
-    var n = 0;
+    var n = 0; l.wins = [];
     for (x = l.x; x < l.x + l.w; x++) { if (!gapAt[n++] && !(b.open && l.door === 's' && false)) H(x, l.y, l.door === 'n' && x === dx ? 'door' : 'wall', m); }
-    for (x = l.x; x < l.x + l.w; x++) { var south = l.door === 's' && x === dx ? 'door' : (x === l.x + l.w - 1 && l.w > 2 && R() < 0.6 ? 'window' : 'wall'); if (b.open && l.door === 's') south = x === dx ? 'door' : (x === l.x || x === l.x + l.w - 1 ? 'wall' : 'door'); if (!gapAt[n++]) H(x, l.y + l.h, south, m); }
+    for (x = l.x; x < l.x + l.w; x++) { var south = l.door === 's' && x === dx ? 'door' : ((x === l.x + l.w - 1 || (l.door !== 's' && x === l.x)) && l.w > 1 && R() < 0.6 ? 'window' : 'wall'); if (b.open && l.door === 's') south = x === dx ? 'door' : (x === l.x || x === l.x + l.w - 1 ? 'wall' : 'door'); if (!gapAt[n++]) { H(x, l.y + l.h, south, m); if (south === 'window') l.wins.push(x); } }
     for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x, y, l.door === 'w' && y === dy ? 'door' : 'wall', m); }
     for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : (y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e' ? 'window' : 'wall'), m); }
     for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) V.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0);
@@ -4782,7 +4968,16 @@ function make(seed, site, opts) {
     V.paints.push({ x: dp[0], y: dp[1] + (l.door === 's' ? 6 : 0), r: 7, kind: 1 });                                        // a worn step at every door
     var nd = Math.round(G.doorProps + (R() - 0.5)), di2, used = {};
     for (di2 = 0; di2 < nd; di2++) { var by = pool[Math.floor(R() * pool.length)]; if (used[by]) continue; used[by] = 1; var sideS = di2 % 2 ? 1 : -1, off = l.door === 's' ? [T * (1.2 + 0.5 * di2) * sideS, 6 + R() * 6] : l.door === 'e' ? [10 + R() * 8, T * (1.0 + 0.6 * di2) * sideS] : l.door === 'w' ? [-10 - R() * 8, T * (1.0 + 0.6 * di2) * sideS] : [T * (1.2 + 0.5 * di2) * sideS, -8]; V.props.push({ name: by, x: dp[0] + off[0], y: dp[1] + off[1], loot: by === 'barrel' || by === 'crate' ? { berries: 2, fiber: 2 } : null }); }
-    if (l.id === big) { var wp = l.door === 's' ? tile(l.x + l.w, l.y + l.h) : tile(l.x - 1, l.y + l.h); V.props.push({ name: 'woodpile', x: wp[0] + 6, y: wp[1] + 4 }); V.props.push({ name: 'choppingBlock', x: wp[0] + 30, y: wp[1] + 10 }); }
+    if (l.id === big) { var wp = l.door === 's' ? tile(l.x + l.w, l.y + l.h) : tile(l.x - 1, l.y + l.h); V.props.push({ name: G.clutter ? 'woodshed' : 'woodpile', x: wp[0] + 8, y: wp[1] + 4, solid: 9 }); V.props.push({ name: 'choppingBlock', x: wp[0] + 36, y: wp[1] + 12, block: true }); }
+    // things against the walls (Robin, 2026-10-07: lived-in like the reference): a window box under every south window, a lantern by
+    // the door that is lit at night, an awning on the open-fronted buildings, a sign on the hall and the trading stores
+    if (G.clutter && !V.ruin) {
+      var wy = (l.y + l.h) * T;
+      l.wins.forEach(function (wx) { item('windowBox', (wx + 0.5) * T, wy + 4, { r: 0, wall: true }); });
+      if (l.door === 's' && (l.id === big || l.id === 'house' || l.id === 'bath')) item('lantern', l.dx * T - 6, wy + 2, { r: 0, wall: true, light: 1, lamp: true });
+      if (l.door === 's' && (l.id === 'store' || l.id === 'smithy' || l.id === 'boathouse')) item('awning', (l.dx < l.x + l.w / 2 ? (l.x + l.w - 0.6) : (l.x + 0.6)) * T, wy + 9, { r: 2 });
+      if (l.door === 's' && ((A.hall && l.id === big) || (A.stores && l.id === 'store'))) item('sign', l.dx * T + T + 7, wy + 2, { r: 0, wall: true });
+    }
   }
   V.lots.forEach(pieces);
   // the well in the yard (a fire pit for the poor), the finds, the fence and gate, the fields, the sacred, the midden
@@ -4791,20 +4986,24 @@ function make(seed, site, opts) {
   if (G.firePit) { item('firePit', fc[0], fc[1], { hearth: true, light: 1, pit: true }); var ns = Math.round(G.logSeats), si2; for (si2 = 0; si2 < ns; si2++) { var sa = -0.9 + si2 * (1.8 / Math.max(1, ns - 1)) + 1.57, sx2 = fc[0] + Math.cos(sa) * 38, sy2 = fc[1] + Math.sin(sa) * 24 + 8; if (Math.abs(Math.cos(sa)) < 0.35 && Math.sin(sa) < 0) continue; item('logSeat', sx2, sy2, { seat: true, fire: true }); } V.finds.push({ kind: 'fire', x: fc[0], y: fc[1] }); }
   else item('campfire', fc[0], fc[1], { hearth: true, light: 1 });
   if (yw >= 7 && R() < 0.6) V.props.push({ name: 'cart', x: yx * T + T * 0.9, y: (yy + yh) * T - T * 0.5 });
+  if (G.clutter && !V.ruin && yw >= 7) { item('foodTable', wc[0] + T * 2.4, wc[1] + T * 1.2, { r: 7 }); item('bench', wc[0] + T * 2.4, wc[1] + T * 1.2 + 15, { seat: true }); }
   var homes = V.lots.filter(function (l) { return l.id === big || l.id === 'house'; });
   if (wealth >= G.cellarAt && homes.length) { var cl = homes[Math.floor(R() * homes.length)], cp = tile(cl.x + Math.floor(cl.w / 2), cl.y + cl.h - 1); item('cellarDoor', cp[0], cp[1] - 2, { cellar: true, store: true, loot: { coin: 6 + Math.floor(wealth * 10), leather: 3, copper: 2 }, lore: 'Someone kept this well hidden.' }); V.finds.push({ kind: 'cellar', x: cp[0], y: cp[1] }); }
   var ex0 = 1e9, ey0 = 1e9, ex1 = -1e9, ey1 = -1e9; V.lots.forEach(function (l) { ex0 = Math.min(ex0, l.x); ey0 = Math.min(ey0, l.y); ex1 = Math.max(ex1, l.x + l.w); ey1 = Math.max(ey1, l.y + l.h); });
   ex0 = Math.max(tx, ex0 - G.fenceGap); ey0 = Math.max(ty, ey0 - G.fenceGap); ex1 = Math.min(tx + w, ex1 + G.fenceGap); ey1 = Math.min(ty + h, ey1 + G.fenceGap);
   var gateX = yx + Math.floor(yw / 2), fk = fenceKind, fm = fk === 'drystone' ? 3 : 2, x, y;
+  var roadSide = R() < 0.5 ? 1 : -1, backGateX = null;                                                         // the road bends past the fire on this side and leaves by a back gate beside the longhouse
+  if (G.backGate && (!shore || shore === 's') && (A.houses[1] >= 3 || shore === 's')) { backGateX = roadSide > 0 ? L0.x + L0.w + 1 : L0.x - 2; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = roadSide > 0 ? L0.x - 2 : L0.x + L0.w + 1; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = null; }
   if (fk === 'palisade') {                             // a round wall of sharpened stakes round the whole ring, a gap for the gate on the path, banners either side
     var ecx = (ex0 + ex1) / 2 * T, ecy = (ey0 + ey1) / 2 * T, hw2 = Math.max(1, (ex1 - ex0) / 2 * T), hh2 = Math.max(1, (ey1 - ey0) / 2 * T), kk = 1;
     V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it
     var erx = hw2 * kk + T * 0.8, ery = hh2 * kk + T * 0.8, per = 6.283 * Math.sqrt((erx * erx + ery * ery) / 2), nst = Math.max(12, Math.round(per / G.stakeStep)), gpt = tile(gateX, ey1), gateA = Math.atan2((gpt[1] + T - ecy) / ery, (gpt[0] - ecx) / erx), k2;
-    for (k2 = 0; k2 < nst; k2++) { var a2 = k2 / nst * 6.283, px = ecx + Math.cos(a2) * erx, py = ecy + Math.sin(a2) * ery, da = Math.abs(Math.atan2(Math.sin(a2 - gateA), Math.cos(a2 - gateA))); if (da < 0.16) continue; if (shore === 's' && Math.sin(a2) > 0.75) continue; if (V.ruin && R() < 0.35) continue; V.props.push({ name: 'stake', x: px, y: py, solid: 5 }); }
+    var gpt2 = backGateX != null ? tile(backGateX, ey0) : null, gate2A = gpt2 ? Math.atan2((gpt2[1] - T - ecy) / ery, (gpt2[0] - ecx) / erx) : null;
+    for (k2 = 0; k2 < nst; k2++) { var a2 = k2 / nst * 6.283, px = ecx + Math.cos(a2) * erx, py = ecy + Math.sin(a2) * ery, da = Math.abs(Math.atan2(Math.sin(a2 - gateA), Math.cos(a2 - gateA))); if (da < 0.16) continue; if (gate2A != null && Math.abs(Math.atan2(Math.sin(a2 - gate2A), Math.cos(a2 - gate2A))) < 0.14) continue; if (shore === 's' && Math.sin(a2) > 0.75) continue; if (V.ruin && R() < 0.35) continue; V.props.push({ name: 'stake', x: px, y: py, solid: 5 }); }
     for (k2 = 0; k2 < (shore === 's' ? 0 : Math.round(G.banners)); k2++) { var ba = gateA + (k2 % 2 ? 1 : -1) * 0.2; V.props.push({ name: 'banner', x: ecx + Math.cos(ba) * erx, y: ecy + Math.sin(ba) * ery + 2, solid: 3 }); }
     V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery };
   } else {
-    for (x = ex0; x < ex1; x++) { if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if (x === gateX) H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
+    for (x = ex0; x < ex1; x++) { if (x === backGateX) H(x, ey0, 'gate', 2); else if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if (x === gateX && shore !== 's') H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
     for (y = ey0; y < ey1; y++) { if (!(V.ruin && R() < 0.4) && shore !== 'w') Vw(ex0, y, fk, fm); if (!(V.ruin && R() < 0.4) && shore !== 'e') Vw(ex1, y, fk, fm); }
     V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: fk, gate: gateX };
   }
@@ -4812,10 +5011,62 @@ function make(seed, site, opts) {
   function dab(x, y, r, kind) { V.paints.push({ x: x, y: y, r: r, kind: kind }); }
   function strokeTo(a, b, r, kind, r2) { var n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / (r * 0.6))), i; for (i = 0; i <= n; i++) { var u = i / n, rr = r2 == null ? r : r + (r2 - r) * u; dab(a[0] + (b[0] - a[0]) * u + (R() - 0.5) * 4, a[1] + (b[1] - a[1]) * u + (R() - 0.5) * 4, rr * (0.85 + R() * 0.3), kind); } }
   if (G.yardEarth) { for (var yi = 0; yi < 5; yi++) dab(wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6, 12 + R() * 8, 2); }
-  var gate = tile(gateX, ey1); if (G.pathGravel) strokeTo([gate[0], gate[1] + 24], wc, 8, 1, G.pathYard * 0.8);
-  if (shore && G.pathGravel) { var sh = shore === 's' ? [wc[0], (ty + h) * T] : shore === 'n' ? [wc[0], ty * T] : shore === 'e' ? [(tx + w) * T, wc[1]] : [tx * T, wc[1]]; strokeTo(wc, sh, 9, 1, 7); }
-  if (G.pathEarth) V.lots.forEach(function (l) { var d = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1); strokeTo(d, wc, G.pathDoor, 2, G.pathYard); });
+  // the road (Robin, 2026-10-07: one winding road, not spokes to every door): in at the gate, bending through the yard past the
+  // fire, on to the longhouse door, and out by the back gate or down to the shore; narrow at the gates, wide in the yard; it
+  // wanders a little and its edges are ragged with small dabs; the doors keep only their worn step
+  function road(pts, kind) {                        // a smooth curve through [x, y, r] points (Catmull-Rom), laid as dabs
+    var i, sAlong = 0, ph0 = R() * 6.28;
+    function P(i) { return pts[Math.max(0, Math.min(pts.length - 1, i))]; }
+    for (i = 0; i < pts.length - 1; i++) {
+      var p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2), len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), n = Math.max(2, Math.round(len / 4)), k;
+      for (k = 0; k < n; k++) {
+        var u = k / n, u2 = u * u, u3 = u2 * u;
+        var x = 0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * u + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * u2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * u3);
+        var y = 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * u + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * u2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * u3);
+        var r = p1[2] + (p2[2] - p1[2]) * u, dx = p2[0] - p1[0], dy = p2[1] - p1[1], dl = Math.hypot(dx, dy) || 1, nx = -dy / dl, ny = dx / dl, wnd = Math.sin(sAlong * 0.04 + ph0) * 4;
+        sAlong += len / n;
+        dab(x + nx * wnd + (R() - 0.5) * 2, y + ny * wnd + (R() - 0.5) * 2, r * (0.8 + R() * 0.35), kind);
+        if (R() < 0.3) { var sd = R() < 0.5 ? 1 : -1; dab(x + nx * (wnd + sd * (r + 2)), y + ny * (wnd + sd * (r + 2)), r * 0.35 + R() * 2, kind); }
+      }
+    }
+  }
+  var gate = tile(gateX, ey1), rw = G.roadW, L0d = L0.door === 's' ? tile(L0.dx, L0.y + L0.h) : tile(L0.x + L0.w / 2, L0.y + L0.h);
+  var pts = shore === 's' ? [[wc[0] - roadSide * T * 2.2, (ty + h) * T + 10, rw * 0.6], [wc[0] - roadSide * T * 1.6, (ty + h - 1.2) * T, rw * 0.7]] : [[gate[0] + roadSide * 12, gate[1] + T * 2.6, rw * 0.6], [gate[0], gate[1] + T * 0.4, rw * 0.7]];
+  pts.push([fc[0] + roadSide * T * 1.6, fc[1] + T * 1.0, rw * 1.1], [fc[0] + roadSide * T * 1.4, fc[1] - T * 1.1, rw * 1.0], [L0d[0], L0d[1] + T * 0.7, rw * 0.7]);
+  if (backGateX != null) { var bg = tile(backGateX, ey0); pts.push([bg[0], (L0.y + L0.h + 1) * T, rw * 0.6]); pts.push([bg[0], bg[1], rw * 0.55]); pts.push([bg[0] + roadSide * 8, bg[1] - T * 2.2, rw * 0.5]); }
+  road(pts, 2);
+  if (shore && shore !== 's') { var shp = shore === 's' ? [wc[0] - roadSide * T * 2.2, (ty + h) * T + 8] : shore === 'n' ? [wc[0], ty * T - 8] : shore === 'e' ? [(tx + w) * T + 8, wc[1]] : [tx * T - 8, wc[1]]; road([[fc[0] + roadSide * T * 1.6, fc[1] + T * 1.0, rw * 0.9], [fc[0] - roadSide * T * 0.6, fc[1] + T * 1.8, rw * 0.8], shp.concat([rw * 0.6])], 2); }
+  if (G.pathGravel) { if (shore !== 's') dab(gate[0], gate[1] + 6, 10, 1); if (backGateX != null) dab(tile(backGateX, ey0)[0], ey0 * T, 8, 1); }
   if (G.mossEdge) { dab(ex0 * T + 10, ey0 * T + 10, 20, 3); dab(ex1 * T - 10, ey0 * T + 16, 16, 3); dab(ex0 * T + 14, ey1 * T - 12, 14, 3); }
+  // trees, bushes and rocks kept in and round the village (Robin, 2026-10-07: lived-in like the reference, not a cleared green);
+  // a page plants them as the world's own props (gatherable), the editor draws them
+  V.nature = [];
+  function freeAt(x2, y2, r, skipLots) {
+    var i, l;
+    for (i = 0; i < V.lots.length; i++) { l = V.lots[i]; var mg = skipLots ? 0 : T; if (x2 > l.x * T - mg - r && x2 < (l.x + l.w) * T + mg + r && y2 > l.y * T - mg - r && y2 < (l.y + l.h) * T + mg + r) return false; }
+    if (x2 > (yx - 0.5) * T - r && x2 < (yx + yw + 0.5) * T + r && y2 > (yy - 0.5) * T - r && y2 < (yy + yh + 0.5) * T + r) return false;
+    for (i = 0; i < V.paints.length; i++) { var pa = V.paints[i]; if (pa.r >= 5 && Math.hypot(pa.x - x2, pa.y - y2) < pa.r + r + 8) return false; }
+    for (i = 0; i < V.items.length; i++) if (Math.hypot(V.items[i].x - x2, V.items[i].y - y2) < r + 20) return false;
+    for (i = 0; i < V.props.length; i++) if (Math.hypot(V.props[i].x - x2, V.props[i].y - y2) < r + 14) return false;
+    for (i = 0; i < V.nature.length; i++) if (Math.hypot(V.nature[i].x - x2, V.nature[i].y - y2) < r + V.nature[i].r + 12) return false;
+    if (V.folk.length) for (i = 0; i < V.folk.length; i++) if (Math.hypot(V.folk[i].x - x2, V.folk[i].y - y2) < r + 16) return false;
+    return true;
+  }
+  if (G.nature) {
+    for (y = ey0 - 2; y <= ey1 + 1; y++) for (x = ex0 - 2; x <= ex1 + 1; x++) {
+      var inside = x >= ex0 && x < ex1 && y >= ey0 && y < ey1, px3 = (x + 0.2 + R() * 0.6) * T, py3 = (y + 0.3 + R() * 0.5) * T, roll = R(), nm = null, ns3 = 1, nr = 0;
+      if (x < tx || y < ty || x >= tx + w || y >= ty + h) continue;
+      if (!inside && (x === ex0 - 1 || x === ex1 || y === ey0 - 1 || y === ey1)) continue;   // nothing on the fence line itself
+      if (inside) { if (roll < 0.05) { nm = R() < 0.6 ? 'birch' : 'oak'; ns3 = 0.5 + R() * 0.08; nr = 11; } else if (roll < 0.11) { nm = R() < 0.6 ? 'bush' : 'flower'; ns3 = 0.6 + R() * 0.15; } }
+      else { if (roll < 0.1) { nm = R() < 0.7 ? 'rock' : 'rockFormation'; ns3 = 0.8 + R() * 0.2; nr = 10; } else if (roll < 0.17) { nm = 'bush'; ns3 = 0.65 + R() * 0.15; } else if (roll < 0.3) { nm = R() < 0.5 ? 'birch' : 'pine'; ns3 = 0.52 + R() * 0.08; nr = 11; } }
+      if (!nm || !freeAt(px3, py3, nr + 6)) continue;
+      V.nature.push({ name: nm, x: px3, y: py3, s: ns3, r: nr, v: Math.floor(R() * 3) });
+    }
+    V.lots.forEach(function (l) {                      // a bush against a side wall now and then
+      if (R() > 0.55) return; var sideB = R() < 0.5 ? -1 : 1, bx = sideB < 0 ? l.x * T - 10 : (l.x + l.w) * T + 10, by = (l.y + 0.3 + R() * (l.h - 0.6)) * T;
+      if (!freeAt(bx, by, 4, true)) return; V.nature.push({ name: 'bush', x: bx, y: by, s: 0.6, r: 0, v: Math.floor(R() * 3) });
+    });
+  }
   // the fields outside the fence, the sacred stone at a corner, the midden behind, a grave beyond
   if (G.fields && A.houses[1] > 0 && !V.ruin) { var fx = shore === 'e' ? ex0 - 6 : ex1 + 2, fy0 = ey0 + 1, strips = G.fieldStrips; if (fx > tx && fx + 4 < tx + w) for (var s2 = 0; s2 < strips; s2++) { var sy = fy0 + s2 * 3; if (sy + 2 > ty + h) break; strokeTo([(fx + 0.5) * T, (sy + 1) * T], [(fx + 3.5) * T, (sy + 1) * T], 10, 2); if (s2 === 1) V.props.push({ name: 'scarecrow', x: (fx + 2) * T, y: (sy + 0.3) * T }); } V.props.push({ name: 'haystack', x: (fx + 2) * T, y: (fy0 + strips * 3 + 0.5) * T }); }
   if (G.sacred) { var sc = tile(ex0 - 1 >= tx ? ex0 - 1 : ex1 + 1, ey0); V.props.push({ name: 'runestone', x: sc[0], y: sc[1], lore: 'Raised by the folk of this place for one who did not come home.' }); V.finds.push({ kind: 'stone', x: sc[0], y: sc[1] }); }
@@ -4829,9 +5080,16 @@ function make(seed, site, opts) {
     var role = shore && R() < 0.4 ? 'fisher' : roles[Math.floor(R() * roles.length)]; if (role === 'smith' && !V.lots.some(function (l) { return l.id === 'smithy'; })) role = 'farmer';
     var work = role === 'smith' ? V.lots.filter(function (l) { return l.id === 'smithy'; })[0] : role === 'fisher' && shore ? null : V.lots.filter(function (l) { return l.id === 'byre' || l.id === 'store'; })[0];
     var seatsV = V.items.filter(function (it) { return it.name === 'logSeat'; }), seatV = seatsV.length ? seatsV[pi % seatsV.length] : null;
-    var spots = [door, [wc[0] + (R() - 0.5) * 30, wc[1] + 20 + (R() - 0.5) * 20], [wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6]];
+    var spots = [door.concat(['door']), [wc[0] + (R() - 0.5) * 30, wc[1] + 20 + (R() - 0.5) * 20], [wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6]];
     if (seatV) spots.push([seatV.x, seatV.y + 1.5, 'sit']);
-    if (work) spots.push(tile(work.dx >= 0 ? work.dx : work.x, work.y + work.h + 1)); else if (role === 'fisher') spots.push(shore === 's' ? [wc[0], (ty + h - 1) * T] : shore === 'n' ? [wc[0], (ty + 1) * T] : shore === 'e' ? [(tx + w - 1) * T, wc[1]] : [(tx + 1) * T, wc[1]]);
+    // the jobs (Robin, 2026-10-07: people with something to do): a farmer or thrall chops at the block and carries water, a fisher fishes
+    // at the shore or hangs the catch, the smith hammers by the smithy, the weaver and the elder sweep the doorstep; a child only plays
+    var block = V.props.filter(function (pr) { return pr.block; })[0], wellIt = V.items.filter(function (it) { return it.name === 'woodenWell'; })[0], rackIt = V.props.filter(function (pr) { return pr.name === 'dryingRack'; })[0];
+    if (role === 'smith' && work) spots.push([tile(work.dx, work.y + work.h)[0] + 18, (work.y + work.h) * T + 18, 'smith']);
+    else if (role === 'fisher') { if (shore) spots.push((shore === 's' ? [wc[0] + (R() - 0.5) * 80, (ty + h - 1) * T + 6] : shore === 'n' ? [wc[0], (ty + 1) * T] : shore === 'e' ? [(tx + w - 1) * T, wc[1]] : [(tx + 1) * T, wc[1]]).concat(['fish'])); if (rackIt) spots.push([rackIt.x, rackIt.y + 12, 'hang']); }
+    else if (role === 'farmer' || role === 'thrall') { if (block && R() < 0.7) spots.push([block.x, block.y - 16, 'chop']); if (wellIt) spots.push([wellIt.x, wellIt.y + 16, 'carry']); }
+    else if (role === 'weaver' || role === 'elder') { spots.push([door[0] + 12, door[1] + 2, 'sweep']); if (wellIt && R() < 0.5) spots.push([wellIt.x, wellIt.y + 16, 'carry']); }
+    else if (work) spots.push(tile(work.dx >= 0 ? work.dx : work.x, work.y + work.h + 1));
     V.folk.push({ name: NAMES[Math.floor(R() * NAMES.length)], role: role, home: [home.x, home.y], x: door[0], y: door[1], spots: spots, lines: ROLES[role], female: R() < 0.5, out: R() < G.outsideShare });
   }
   return V;
@@ -4853,10 +5111,21 @@ function draw(c, V, env, clock) {
   for (k in V.V) { q = k.split(','); (function (x, y, e) { items.push({ y: (y + 1) * T - 1, f: function () { Build.drawV(c, x, y, e, false, V.V[key(x, y + 1)] || false, Build.cfg({})); } }); })(+q[0], +q[1], V.V[k]); }
   ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id] }), 0); } }); });
   V.items.concat(V.props).forEach(function (it) { if (!kit.PROPS[it.name]) return; items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, 3), s = SIZE_OF(kit, it.name); c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } }); });
-  if (env.lib) V.folk.forEach(function (f, fi) { if (!f.out) return; var sitSpot = f.spots.filter(function (q) { return q[2] === 'sit'; })[0], atFire = sitSpot && fi % 3 === 0, px = atFire ? sitSpot[0] : f.x, py = atFire ? sitSpot[1] : f.y; items.push({ y: py, f: function () { var F = env.lib.makeFigure(env.lib.folkSpec('villager', rngOf(f.name.length * 7 + f.x))); env.lib.figureD(c, px, py * K, 'down', { phase: 0, amt: 0, t: clock || 0, lx: 0, ly: 0, blink: 0, sq: 0, sit: atFire ? 1 : 0 }, null, F); } }); });
+  (V.nature || []).forEach(function (it) { if (!kit.PROPS[it.name]) return; items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, it.v || 0), s = it.s; c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } }); });
+  if (env.lib) V.folk.forEach(function (f, fi) {                   // the people out of doors: some at the fire, some at their jobs, the rest idling each their own way
+    if (!f.out) return; var lib = env.lib, sitSpot = f.spots.filter(function (q) { return q[2] === 'sit'; })[0], jobSpot = f.spots.filter(function (q) { return q[2] && q[2] !== 'sit' && q[2] !== 'door'; })[0];
+    var mode = sitSpot && fi % 3 === 0 ? 'sit' : (jobSpot && fi % 3 === 1 ? 'job' : 'idle'), px = mode === 'sit' ? sitSpot[0] : (mode === 'job' ? jobSpot[0] : f.x), py = mode === 'sit' ? sitSpot[1] : (mode === 'job' ? jobSpot[1] : f.y);
+    var dir = mode === 'job' && (jobSpot[2] === 'hang') ? 'up' : (mode === 'idle' && fi % 4 === 2 ? 'left' : 'down');
+    items.push({ y: py, f: function () {
+      var F = lib.makeFigure(lib.folkSpec('villager', rngOf(f.name.length * 7 + f.x))), t = (clock || 0) + fi * 1.7, pose = null;
+      if (mode === 'job') pose = lib.jobPose(F, jobSpot[2], t, dir); else if (mode === 'idle') pose = lib.idlePose(F, lib.IDLES[fi % (lib.IDLES.length - 1)], t, dir);
+      lib.figureD(c, px, py * K, dir, { phase: 0, amt: 0, t: t, lx: 0, ly: 0, blink: 0, sq: 0, sit: mode === 'sit' ? 1 : 0 }, pose, F);
+      if (pose && pose.held) lib.figureHeld(c, px, py * K, dir, F, pose.held);
+    } });
+  });
   items.sort(function (a, b) { return a.y - b.y; }).forEach(function (it) { it.f(); });
 }
-var SIZES = { firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
+var SIZES = { windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
 function SIZE_OF(kit, name) { return SIZES[name] || 1; }
 return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
@@ -4873,7 +5142,7 @@ if (typeof module !== 'undefined') module.exports = Village;
   try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && typeof sv === 'object') { for (var k in sv) st[k] = sv[k]; } } catch (e) {}
   var RULES = [['gap', 'Gap between buildings', 1, 4, 1], ['yardGap', 'Wall to yard', 0, 3, 1], ['fenceGap', 'Ring to fence', 0, 3, 1], ['emptySlots', 'Slots left open', 0, 0.8, 0.05], ['sizeJitter', 'Size varies by', 0, 2, 1],
     ['peoplePerHouse', 'People per house', 1, 5, 0.1], ['outsideShare', 'Share outside', 0, 1, 0.05], ['cellarAt', 'A cellar from wealth', 0, 1, 0.05], ['palisadeAt', 'A palisade from wealth', 0, 1, 0.05], ['drystoneAt', 'Dry stone from wealth', 0, 1, 0.05], ['railAt', 'A rail fence from wealth', 0, 1, 0.05],
-    ['wealthStone', 'Stone walls from', 0, 1, 0.05], ['wealthLogs', 'Log walls from', 0, 1, 0.05], ['wealthPlanks', 'Plank walls from', 0, 1, 0.05], ['shinglesAt', 'Shingles from', 0, 1, 0.05], ['fieldStrips', 'Field strips', 0, 6, 1], ['fields', 'Fields', 0, 1, 1], ['sacred', 'A stone', 0, 1, 1], ['midden', 'A midden', 0, 1, 1], ['graves', 'A grave', 0, 1, 1], ['yardEarth', 'Earth yard', 0, 1, 1], ['pathGravel', 'Gravel paths', 0, 1, 1], ['pathEarth', 'Earth paths', 0, 1, 1], ['mossEdge', 'Moss at the edges', 0, 1, 1]];
+    ['wealthStone', 'Stone walls from', 0, 1, 0.05], ['wealthLogs', 'Log walls from', 0, 1, 0.05], ['wealthPlanks', 'Plank walls from', 0, 1, 0.05], ['shinglesAt', 'Shingles from', 0, 1, 0.05], ['fieldStrips', 'Field strips', 0, 6, 1], ['fields', 'Fields', 0, 1, 1], ['sacred', 'A stone', 0, 1, 1], ['roadW', 'Road width', 4, 18, 1], ['backGate', 'A back gate', 0, 1, 1], ['nature', 'Trees and bushes kept', 0, 1, 1], ['clutter', 'Things against the walls', 0, 1, 1], ['midden', 'A midden', 0, 1, 1], ['graves', 'A grave', 0, 1, 1], ['yardEarth', 'Earth yard', 0, 1, 1], ['pathGravel', 'Gravel paths', 0, 1, 1], ['pathEarth', 'Earth paths', 0, 1, 1], ['mossEdge', 'Moss at the edges', 0, 1, 1]];
   var inputs = {}, outs = {};
   var rulesHost = document.getElementById('rules');
   RULES.forEach(function (r) {

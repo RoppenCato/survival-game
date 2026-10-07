@@ -24,7 +24,7 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'No roof' }];
-var CFG = { wallH: 26, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12 };   // thatch unless another roof is chosen (Robin, 2026-10-06)
+var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1 };   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1 }, OPEN = { door: 1, gate: 1 };
@@ -327,32 +327,36 @@ function roofRects(tiles) {
   out.sort(function (a, b) { return a.y1 - b.y1; });
   return out;
 }
+function roomWallM(B, room) {                                            // the material of the room's walls (the first wall found round its tiles), for the gable
+  var i, t, e; if (!room || !room.tiles) return 1;
+  for (i = 0; i < room.tiles.length; i++) {
+    t = room.tiles[i];
+    e = B.H[key(t[0], t[1] + 1)] || B.H[key(t[0], t[1])] || B.V[key(t[0], t[1])] || B.V[key(t[0] + 1, t[1])];
+    if (e && !YARD[e.t] && e.m != null) return e.m;
+  }
+  return 1;
+}
 function drawRoof(c, room, a, C, dy) {
   C = C || CFG; dy = dy || 0;
   var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
-  var ov = C.overhang + 1.5, up = C.wallH + C.thick * K + 1, kind = C.roof;
+  var ov = C.overhang + 1.5, up = C.wallH + C.thick * K + 1, kind = C.roof, wm = WALLS[C.wallM] || WALLS[1];
   var lineCol = r.line, hl = mix(r.col, '#fff4d0', 0.25), dk = mix(r.col, '#1a1410', 0.3), edgeCol = mix(r.col, '#1a1410', 0.45);
   c.save(); a *= c.globalAlpha; c.globalAlpha = a; c.translate(0, dy); c.lineCap = 'round'; c.lineJoin = 'round';
   roofRects(room.tiles).forEach(function (rc) {
     var top = rc.y0 * TS - up - ov * K, bot = (rc.y1 + 1) * TS - up + ov * K, left = rc.x0 * T - ov, right = (rc.x1 + 1) * T + ov, D = bot - top, Wd = right - left;
-    var rise = Math.min(16, D * 0.32), ridgeY = (top + bot) / 2 - rise, hip = Math.min(D * 0.55, Wd * 0.28), seed = rc.x0 * 7 + rc.y0 * 3, i, j;
-    var far = [[left, top], [right, top], [right - hip, ridgeY], [left + hip, ridgeY]], near = [[left + hip, ridgeY], [right - hip, ridgeY], [right, bot], [left, bot]];
-    var hipL = [[left, top], [left + hip, ridgeY], [left, bot]], hipR = [[right, top], [right, bot], [right - hip, ridgeY]], outline = [[left, top], [right, top], [right, bot], [left, bot]];
-    // the shadow the eaves cast on the walls below, and the thickness of the roof at the eaves
+    var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT);   // the ridge along the long side: a gable facing south when the room is deep
+    var seed = rc.x0 * 7 + rc.y0 * 3, i, j, cx = (left + right) / 2;
+    // the shadow the eaves cast on the walls below, and down the right side
     var sg = c.createLinearGradient(0, bot, 0, bot + 7); sg.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.42)'); sg.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg; c.fillRect(left, bot, Wd, 7);
     var sg2 = c.createLinearGradient(right, 0, right + 5, 0); sg2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.3)'); sg2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg2; c.fillRect(right, top + 2, 5, D);
-    if (kind === 1) {                                        // thatch: the fringe hangs below the eaves and down the sides
-      for (i = left + 1; i < right; i += 2.1) { var len = 4 + hs(i, 1) * 5, dark = hs(i, 2) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(i, bot - 3); c.lineTo(i + (hs(i, 3) - 0.5) * 1.5, bot + len); c.stroke(); }
-      for (j = top + 3; j < bot; j += 2.4) { c.strokeStyle = hs(j, 2) < 0.4 ? dk : r.col; c.lineWidth = 1.3; c.beginPath(); c.moveTo(right - 2, j); c.lineTo(right + 2.5 + hs(j, 4) * 2, j + 1.5); c.moveTo(left + 2, j); c.lineTo(left - 2.5 - hs(j, 5) * 2, j + 1.5); c.stroke(); }
-      c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(left, bot + 1.5); c.lineTo(right, bot + 1.5); c.stroke();
-    } else if (kind === 0) {                                 // turf: the sod's edge shows at the eaves, dark soil and grass hanging over
-      ink(c, [[left - 1, bot - 1], [right + 1, bot - 1], [right + 1, bot + 2.6], [left - 1, bot + 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 });
-      for (i = left + 2; i < right; i += 3) { if (hs(i, 4) > 0.55) continue; c.strokeStyle = hs(i, 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(i, bot - 1); c.lineTo(i + (hs(i, 6) - 0.5) * 2, bot + 3 + hs(i, 7) * 2.5); c.stroke(); }
-    } else {                                                 // shingles: the ends of the last row show under the eaves
-      ink(c, [[left - 0.5, bot - 1], [right + 0.5, bot - 1], [right + 0.5, bot + 2.2], [left - 0.5, bot + 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 });
-      for (i = left + 4; i < right; i += 8) stroke(c, [[i, bot - 0.5], [i, bot + 2]], INK.soft, 0.6);
+    function eaveEdge(x0, y0, x1, y1) {                       // the thickness of the roof at an eave or a bargeboard: sod, straw ends or shingle ends along the line
+      var dx = x1 - x0, dy2 = y1 - y0, len = Math.hypot(dx, dy2) || 1, nx = -dy2 / len, ny = dx / len, k;   // (nx, ny): outward, below the line
+      if (ny < 0) { nx = -nx; ny = -ny; }
+      if (kind === 1) { for (k = 1; k < len; k += 2.1) { var u = k / len, px = x0 + dx * u, py = y0 + dy2 * u, ln = 4 + hs(px, py) * 5, dark = hs(px + 1, py) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(px - nx * 3, py - ny * 3); c.lineTo(px + nx * ln + (hs(px, py + 3) - 0.5) * 1.5, py + ny * ln); c.stroke(); } c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 + nx * 1.5, y0 + ny * 1.5); c.lineTo(x1 + nx * 1.5, y1 + ny * 1.5); c.stroke(); }
+      else if (kind === 0) { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.6, y1 + ny * 2.6], [x0 + nx * 2.6, y0 + ny * 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 2; k < len; k += 3) { var u2 = k / len, qx = x0 + dx * u2, qy = y0 + dy2 * u2; if (hs(qx, qy + 4) > 0.55) continue; c.strokeStyle = hs(qx, qy + 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(qx - nx, qy - ny); c.lineTo(qx + nx * (3 + hs(qx, qy + 7) * 2.5) + (hs(qx, qy + 6) - 0.5) * 2, qy + ny * (3 + hs(qx, qy + 7) * 2.5)); c.stroke(); } }
+      else { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.2, y1 + ny * 2.2], [x0 + nx * 2.2, y0 + ny * 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 4; k < len; k += 8) { var u3 = k / len; stroke(c, [[x0 + dx * u3, y0 + dy2 * u3], [x0 + dx * u3 + nx * 2, y0 + dy2 * u3 + ny * 2]], INK.soft, 0.6); } }
     }
-    // the four facets: fill, grain, the material's rows following each facet, a soft line between them
+    // a facet of the roof: fill, the material's rows following it, grain
     function facet(pts, tone, rows) {
       var d = ink(c, pts, mix(r.col, tone > 0 ? '#fff4d0' : '#1a1410', Math.abs(tone)), { wob: 0, flat: true, noLine: true });
       c.save(); path(c, d); c.clip();
@@ -375,13 +379,46 @@ function drawRoof(c, room, a, C, dy) {
       c.globalAlpha = a * INK.grain; c.fillStyle = grainPat(c); c.fillRect(bx0, by0, bx1 - bx0, by1 - by0); c.globalAlpha = a;
       c.restore();
     }
-    facet(far, 0.14, 'h'); facet(hipL, 0.04, 'v'); facet(hipR, -0.3, 'v'); facet(near, -0.12, 'h');
-    // the hips and the ridge in ink, the thin line all round, the heavy line along the eaves and the right side
-    stroke(c, [[left, top], [left + hip, ridgeY]], INK.soft, 0.9); stroke(c, [[left, bot], [left + hip, ridgeY]], INK.line, 1.1);
-    stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
-    path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
-    ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
-    if (kind !== 0) [left + hip + 4, right - hip - 4].forEach(function (cx, ci) { [[cx - 4, ridgeY + 3, cx + 4, ridgeY - 9], [cx + 4, ridgeY + 3, cx - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
+    function ridgeBoards(x0, y0, dirY) {                      // crossed boards at a north-south ridge's end
+      [[-1, 1], [1, -1]].forEach(function (sgn, bi) { var ax = x0 + 4 * sgn[0], ay = y0 + 3 * dirY, bx = x0 + 4 * sgn[1], by = y0 - 9 * dirY; ink(c, [[ax - 1, ay], [bx - 1, by], [bx + 1, by], [ax + 1, ay]], r.ridge, { wob: 0.3, seed: seed + bi, flat: true, lw: 0.6, heavy: 1.1 }); });
+    }
+    if (ns) {
+      // a gable roof with the ridge north to south: the west slope lit, the east in shadow, and the south gable end facing you:
+      // the end wall in the walls' material with its timbers (a tie beam, a king post, two struts), the bargeboards over it
+      var rh = Math.min(34, Wd * 0.46), slopeL = [[left, top], [cx, top - rh], [cx, bot - rh], [left, bot]], slopeR = [[cx, top - rh], [right, top], [right, bot], [cx, bot - rh]];
+      var ga = [[left, bot], [cx, bot - rh], [right, bot]], gw = [[left + ov, bot - ov * K], [cx, bot - rh + 1.2], [right - ov, bot - ov * K]];
+      ink(c, ga, '#2b221c', { wob: 0, flat: true, noLine: true });                                                        // the dark underside of the eaves
+      var gd = ink(c, gw, wm.face, { wob: 0.5, seed: seed + 9, noLine: true, flat: true });
+      c.save(); path(c, gd); c.clip(); face(c, wm, left + ov, bot - rh, right - left - 2 * ov, rh, seed + 9); c.restore();
+      var gl = mix(wm.top, '#1a1410', 0.1), tb = bot - ov * K;
+      ink(c, rect(left + ov, tb - 3.2, right - left - 2 * ov, 3.2), gl, { wob: 0.4, seed: seed + 10, lw: 0.7, heavy: 1.2 });                        // the tie beam
+      ink(c, rect(cx - 1.6, bot - rh + 2, 3.2, rh - ov * K - 2), gl, { wob: 0.4, seed: seed + 11, lw: 0.7, heavy: 1.2 });                          // the king post
+      ink(c, [[left + ov + 3, tb - 3.2], [left + ov + 6, tb - 3.2], [cx - 1, bot - rh * 0.52], [cx - 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 12, lw: 0.6, heavy: 1.1 });   // the struts
+      ink(c, [[right - ov - 3, tb - 3.2], [right - ov - 6, tb - 3.2], [cx + 1, bot - rh * 0.52], [cx + 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 13, lw: 0.6, heavy: 1.1 });
+      var g2 = c.createLinearGradient(0, bot - rh, 0, bot - rh + 9); g2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.35)'); g2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.save(); path(c, gd); c.clip(); c.fillStyle = g2; c.fillRect(left, bot - rh, Wd, 10); c.restore();   // the shade under the ridge
+      path(c, gd); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke();
+      facet(slopeL, 0.14, 'v'); facet(slopeR, -0.26, 'v');
+      eaveEdge(left, bot, cx, bot - rh); eaveEdge(cx, bot - rh, right, bot);                                                // the bargeboards' edge over the gable
+      stroke(c, [[left, bot], [cx, bot - rh], [right, bot]], r.ridge, 2.6); stroke(c, [[left, bot], [cx, bot - rh], [right, bot]], INK.line, 0.8);
+      stroke(c, [[cx, top - rh], [cx, bot - rh]], INK.soft, 0.9);
+      var sil = [[left, top], [cx, top - rh], [right, top], [right, bot], [cx, bot - rh], [left, bot]];
+      path(c, sil); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, sil, 2.4);
+      ink(c, [[cx - 2.2, top - rh - 1], [cx + 2.2, top - rh - 1], [cx + 2, bot - rh + 1], [cx - 2, bot - rh + 1]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
+      if (kind !== 0) { ridgeBoards(cx, top - rh + 2, 1); ridgeBoards(cx, bot - rh - 1, -1); }
+    } else {
+      // a hipped roof with the ridge east to west: the far slope lit, the near slope in shadow, the hips between, the ridge raised high
+      var rise = Math.min(26, D * 0.42), ridgeY = (top + bot) / 2 - rise, hip = Math.min(D * 0.5, Wd * 0.22);
+      var far = [[left, top], [right, top], [right - hip, ridgeY], [left + hip, ridgeY]], near = [[left + hip, ridgeY], [right - hip, ridgeY], [right, bot], [left, bot]];
+      var hipL = [[left, top], [left + hip, ridgeY], [left, bot]], hipR = [[right, top], [right, bot], [right - hip, ridgeY]], outline = [[left, top], [right, top], [right, bot], [left, bot]];
+      eaveEdge(left, bot, right, bot);
+      if (kind === 1) { for (j = top + 3; j < bot; j += 2.4) { c.strokeStyle = hs(j, 2) < 0.4 ? dk : r.col; c.lineWidth = 1.3; c.beginPath(); c.moveTo(right - 2, j); c.lineTo(right + 2.5 + hs(j, 4) * 2, j + 1.5); c.moveTo(left + 2, j); c.lineTo(left - 2.5 - hs(j, 5) * 2, j + 1.5); c.stroke(); } }
+      facet(far, 0.14, 'h'); facet(hipL, 0.04, 'v'); facet(hipR, -0.3, 'v'); facet(near, -0.12, 'h');
+      stroke(c, [[left, top], [left + hip, ridgeY]], INK.soft, 0.9); stroke(c, [[left, bot], [left + hip, ridgeY]], INK.line, 1.1);
+      stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
+      path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
+      ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
+      if (kind !== 0) [left + hip + 4, right - hip - 4].forEach(function (cx2, ci) { [[cx2 - 4, ridgeY + 3, cx2 + 4, ridgeY - 9], [cx2 + 4, ridgeY + 3, cx2 - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
+    }
   });
   c.restore();
 }
@@ -406,6 +443,6 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon };
+return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon };
 })();
 if (typeof module !== 'undefined') module.exports = Build;

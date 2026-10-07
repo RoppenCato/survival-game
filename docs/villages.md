@@ -39,8 +39,20 @@ outside. The shape comes from how people lived:
   nets, and the path from the yard to the shore is the most worn one.
 - **Fields** lie outside the fence on the flattest side: long strips of turned earth with a few rows, a scarecrow, a haystack.
 - **The sacred**: a standing stone or a small shrine at the edge, a grove left standing, a grave mound beyond the fields.
-- **Paths**: trodden earth from every door to the yard, narrow at the door and widening at the yard, gravel on the busiest
-  (the yard to the gate, the yard to the shore).
+- **The road** (Robin, 2026-10-07: the spokes from every door looked mathematical): **one winding road**. It comes in at the gate
+  (or up from the water in a shore village), bends through the yard past the fire, runs on to the longhouse door and leaves by a
+  **back gate** beside the longhouse (a village or larger; the stake ring and the fence both open there). It is narrow at the gates
+  and wide in the yard, wanders a little, and its edges are ragged with small dabs. Doors keep only a worn step.
+- **Trees, bushes and rocks stay** (Robin: lived-in like the reference, not a cleared green): a few birches and oaks and small bushes
+  inside the fence where nothing stands, a bush against a side wall now and then, and rocks, bushes and trees in the ring just
+  outside the fence. The game plants them as its own trees and rocks, so they can be felled and mined.
+- **Against the walls**: a window box of flowers under every south window, a lantern on a bracket by the door (lit at night: a small
+  light, not a fire), an awning of striped cloth on the open-fronted storehouse, smithy and boathouse, a hanging sign on the
+  chieftain's hall and the trading stores, a lean-to woodshed with the chopping block at the longhouse, and a table laid with food
+  by a bench in a big yard.
+- **Roofs** (Robin: pitched roofs with a gable end like the reference): half the houses stand deep (two or three tiles wide, three
+  deep) and get a **gable roof** with the ridge north to south and the gable facing south, its end wall in the house's own material
+  with a tie beam, a king post and struts; the wide buildings keep a high hipped roof. The walls are a storey and a half.
 
 So: a yard, a longhouse on its north side, the other houses round it with their doors to the yard, outbuildings behind,
 fences round it all, the fields and the sacred outside, the boathouse at the shore. Random is **which** of these exist and
@@ -113,8 +125,11 @@ belong, so exploring has a logic ("the storehouse must have the food"):
 5. Draw the **fence** round the whole (a low rectangle for a small place, the oval of stakes with banners for a rich one) with
    a gate on the path in, the **fields** outside on the flattest side, the **sacred**
    at a corner, the **midden** behind.
-6. Paint the **ground**: an earth yard, gravel on the main paths, trodden earth from every door, moss at the edges.
-7. Place the **people**, one household per house, with their spots and lines, and the **finds**.
+6. Paint the **ground**: the one winding road, an earth yard, a worn step at every door, moss at the edges; then keep **nature**
+   (trees, bushes, rocks) wherever there is room.
+7. Place the **people**, one household per house, with their spots, their **jobs** (the farmer and the thrall chop at the block and
+   carry water from the well, the fisher fishes at the shore and hangs the catch, the smith hammers by the smithy, the weaver and the
+   elder sweep the doorstep, a child only looks about) and lines, and the **finds**.
 
 **Visually** every knob has a palette, not a value: materials by wealth (wattle, planks, logs, stone), roofs by place (thatch
 by the sea, turf inland, shingles for the rich), fences (rail, wattle, dry stone, palisade), colours of doors and shields,

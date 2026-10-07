@@ -821,6 +821,61 @@ function choppingBlockObj(c, K, x, y, seed) {           // a stump to split wood
   fillPts(c, [[x - 1, y - 20], [x + 6, y - 22], [x + 6.5, y - 20], [x - 0.5, y - 18]], K.ironLight.base);
   [[-13, 2], [-9, 5], [14, 3], [11, 6], [-4, 6]].forEach(function (q, k) { fillPts(c, ellPts(x + q[0], y + q[1], 2.4, 1.2, 6), M(38, 30, 60).base); });
 }
+// Things against the walls of a village (2026-10-07, Robin: lived-in like the reference): a window box, a lantern on a bracket,
+// an awning on two posts, a hanging sign, a lean-to over the woodpile, a table laid with food
+function windowBoxObj(c, K, x, y, seed) {                // a plank box of flowers under a window, flat against the wall
+  var R = rng(seed), i;
+  shape(c, [[x - 12, y - 7], [x + 12, y - 7], [x + 11, y], [x - 11, y]], K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.25 });
+  fillPts(c, [[x - 11, y - 6.5], [x + 11, y - 6.5], [x + 10.5, y - 4.5], [x - 10.5, y - 4.5]], 'rgba(60,40,24,0.25)');
+  for (i = 0; i < 7; i++) { var fx = x - 10 + i * 3.4 + (R() - 0.5) * 1.5, fy = y - 8 - R() * 2; fillPts(c, ellPts(fx, fy, 2.4 + R(), 1.8, 7), M(P.outsideHue + 6, 48, 36).base); }
+  for (i = 0; i < 6; i++) { var gx = x - 9 + i * 3.6 + (R() - 0.5) * 2, gy = y - 10 - R() * 2.5; fillPts(c, ellPts(gx, gy, 1.2, 1.2, 6), [M(mixHue(P.accentHue, 0, 0.3), 80, 62), M(50, 85, 66), M(340, 60, 72)][i % 3].base); }
+}
+function lanternObj(c, K, x, y, seed) {                  // an iron bracket out from the wall with a lantern of horn panes hanging from it, lit at night
+  c.strokeStyle = K.iron.base; c.lineWidth = 1.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 5, y - 30); c.lineTo(x + 5, y - 30); c.moveTo(x - 5, y - 30); c.lineTo(x - 1, y - 26); c.stroke();
+  c.strokeStyle = OLC; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x - 5, y - 30); c.lineTo(x + 5, y - 30); c.stroke();
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x + 4.5, y - 30); c.lineTo(x + 4.5, y - 27); c.stroke();
+  shape(c, [[x + 1.5, y - 27], [x + 7.5, y - 27], [x + 8.5, y - 18], [x + 0.5, y - 18]], K.iron, { seed: seed, size: 'S', sh: 0.8, rough: 0.2 });
+  fillPts(c, [[x + 2.6, y - 25.8], [x + 6.4, y - 25.8], [x + 7.2, y - 19.2], [x + 1.8, y - 19.2]], M(42, 70, 64).base);
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.5; c.beginPath(); c.moveTo(x + 4.5, y - 25.8); c.lineTo(x + 4.5, y - 19.2); c.stroke();
+  fillPts(c, ellPts(x + 4.5, y - 22.5, 1.2, 1.6, 6), M(44, 95, 82).base);
+  addLight(x + 4.5, y - 22, 60, 42, 90, 62, 0.8);
+}
+function awningObj(c, K, x, y, seed) {                   // a striped cloth on two posts leaning out from the wall, seen from above
+  var i;
+  gshadow(c, x, y + 2, 17, 4, 0.3);
+  [[-15, 0], [15, 0]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.5, y - 26, 3, 26, 1.2), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  var cl = [[x - 18, y - 36], [x + 18, y - 36], [x + 17, y - 25], [x - 17, y - 25]];
+  shape(c, cl, M(40, 30, 78), { seed: seed + 5, size: 'M', sh: 1, rough: 0.3 });
+  c.save(); path(c, cl); c.clip(); for (i = -16; i < 18; i += 8) { fillPts(c, [[x + i, y - 36], [x + i + 4, y - 36], [x + i + 3.8, y - 25], [x + i - 0.2, y - 25]], M(mixHue(P.accentHue, 10, 0.4), 50, 46).base); } c.restore();
+  line(c, [[x - 17.5, y - 25.5], [x - 16, y - 23], [x - 14, y - 25.5], [x - 12, y - 23], [x - 10, y - 25.5], [x - 8, y - 23], [x - 6, y - 25.5], [x - 4, y - 23], [x - 2, y - 25.5], [x, y - 23], [x + 2, y - 25.5], [x + 4, y - 23], [x + 6, y - 25.5], [x + 8, y - 23], [x + 10, y - 25.5], [x + 12, y - 23], [x + 14, y - 25.5], [x + 16, y - 23], [x + 17.5, y - 25.5]], 0.6, 'rgba(35,26,22,0.45)', false);
+}
+function signObj(c, K, x, y, seed) {                     // a bracket out from the wall with a board hanging on two chains, a drinking horn painted on it
+  c.strokeStyle = K.iron.base; c.lineWidth = 1.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 6, y - 36); c.lineTo(x + 8, y - 36); c.moveTo(x - 6, y - 36); c.lineTo(x - 2, y - 31); c.stroke();
+  c.strokeStyle = K.iron.base; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x - 1, y - 36); c.lineTo(x - 1, y - 31); c.moveTo(x + 7, y - 36); c.lineTo(x + 7, y - 31); c.stroke();
+  shape(c, [[x - 4, y - 31], [x + 10, y - 31], [x + 10, y - 20], [x - 4, y - 20]], K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.25 });
+  c.strokeStyle = M(mixHue(P.accentHue, 10, 0.4), 55, 40).base; c.lineWidth = 1.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(x - 1, y - 23); c.quadraticCurveTo(x + 3, y - 30, x + 8, y - 27); c.stroke();
+  c.strokeStyle = 'rgba(35,26,22,0.5)'; c.lineWidth = 0.5; c.beginPath(); c.rect(x - 3, y - 30, 12, 9); c.stroke();
+}
+function woodshedObj(c, K, x, y, seed) {                 // a lean-to: two posts and a slanting plank roof with the firewood stacked under it, cut ends toward you
+  var i, j, R = rng(seed);
+  gshadow(c, x, y + 1, 20, 5, 0.35);
+  [[-16, 0], [16, 0]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.6, y - 22, 3.2, 22, 1.2), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  for (j = 0; j < 3; j++) for (i = 0; i < 6; i++) { var ex = x - 14 + i * 5.2 + (j % 2) * 2.4, ey = y - 3 - j * 4.4; if (ex > x + 14) continue; shape(c, ellPts(ex, ey, 2.6, 2.3, 8), K.trunk, { seed: seed + 10 + i + j * 7, size: 'S', sh: 1, rough: 0.3 }); fillPts(c, ellPts(ex, ey, 1.7, 1.5, 8), M(36, 30, 62).base); c.strokeStyle = 'rgba(70,45,25,0.5)'; c.lineWidth = 0.4; c.beginPath(); c.arc(ex, ey, 0.8, 0, 7); c.stroke(); }
+  var rf = [[x - 20, y - 30], [x + 20, y - 30], [x + 20, y - 21], [x - 20, y - 21]];
+  shape(c, rf, K.wood, { seed: seed + 30, size: 'M', sh: 1.2, rough: 0.3 });
+  for (i = -16; i < 20; i += 6) line(c, [[x + i, y - 29.5], [x + i + 0.3, y - 21.5]], 0.5, 'rgba(35,26,22,0.4)', false);
+  fillPts(c, [[x - 20, y - 21], [x + 20, y - 21], [x + 20, y - 19.5], [x - 20, y - 19.5]], 'rgba(35,26,22,0.35)');
+}
+function foodTableObj(c, K, x, y, seed) {                // a trestle table under a cloth with a round loaf, a mug and a bowl on it
+  gshadow(c, x, y + 1, 18, 4, 0.35);
+  [[-12, 0], [12, 0]].forEach(function (q, k) { shape(c, [[x + q[0] - 3, y - 1], [x + q[0] - 1, y - 11], [x + q[0] + 1, y - 11], [x + q[0] + 3, y - 1]], K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  shape(c, [[x - 17, y - 15], [x + 17, y - 15], [x + 16, y - 10], [x - 16, y - 10]], K.wood, { seed: seed + 3, size: 'M', sh: 1, rough: 0.25 });
+  fillPts(c, [[x - 12, y - 15], [x + 4, y - 15], [x + 4.5, y - 8], [x - 11.5, y - 8]], M(40, 22, 84).base);
+  fillPts(c, [[x - 12, y - 12.5], [x + 4, y - 12.5], [x + 4.2, y - 11.2], [x - 11.8, y - 11.2]], 'rgba(70,90,140,0.35)');
+  shape(c, ellPts(x - 5, y - 14, 3.6, 2.4, 10), M(34, 50, 56), { seed: seed + 5, size: 'S', sh: 1, rough: 0.3 }); line(c, [[x - 7, y - 14.6], [x - 3, y - 14.6]], 0.5, 'rgba(35,26,22,0.45)', false);
+  shape(c, rrPts(x + 8, y - 19, 4, 5.5, 1), K.wood, { seed: seed + 6, size: 'S', sh: 0.8, rough: 0.2 }); c.strokeStyle = K.wood.base; c.lineWidth = 0.9; c.beginPath(); c.arc(x + 12.8, y - 16.3, 1.6, -1.4, 1.4); c.stroke();
+  shape(c, ellPts(x + 1, y - 16.5, 3, 1.6, 10), K.rockC, { seed: seed + 7, size: 'S', sh: 0.6, rough: 0.2 }); fillPts(c, ellPts(x + 1, y - 17, 2, 0.9, 8), M(8, 60, 42).base);
+}
 function campfireObj(c, K, x, y, seed) {
   var i;
   gshadow(c, x, y, 20, 6, 0.4);
@@ -1729,6 +1784,12 @@ var PROPS = {
   waterfall: { b: [-56, -116, 90, 14], f: function (c, K, s) { waterfallObj(c, K, 0, 0, s); } },
   campfire: { b: [-28, -40, 28, 8], f: function (c, K, s) { campfireObj(c, K, 0, 0, s); } },
   firePit: { b: [-32, -44, 32, 10], f: function (c, K, s) { firePitObj(c, K, 0, 0, s); } },
+  windowBox: { b: [-14, -16, 14, 2], f: function (c, K, s) { windowBoxObj(c, K, 0, 0, s); } },
+  lantern: { b: [-8, -34, 12, 2], f: function (c, K, s) { lanternObj(c, K, 0, 0, s); } },
+  awning: { b: [-20, -40, 20, 6], f: function (c, K, s) { awningObj(c, K, 0, 0, s); } },
+  sign: { b: [-8, -40, 12, 2], f: function (c, K, s) { signObj(c, K, 0, 0, s); } },
+  woodshed: { b: [-22, -34, 22, 8], f: function (c, K, s) { woodshedObj(c, K, 0, 0, s); } },
+  foodTable: { b: [-19, -22, 19, 6], f: function (c, K, s) { foodTableObj(c, K, 0, 0, s); } },
   logSeat: { b: [-18, -12, 20, 6], f: function (c, K, s) { logSeatObj(c, K, 0, 0, s); } },
   stake: { b: [-6, -30, 6, 4], f: function (c, K, s) { stakeObj(c, K, 0, 0, s); } },
   banner: { b: [-6, -62, 26, 4], f: function (c, K, s) { bannerObj(c, K, 0, 0, s); } },
@@ -1765,7 +1826,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };

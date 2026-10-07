@@ -149,6 +149,14 @@ the text and it is made the default. When a spec's meaning changes, change the s
   capstones set on edge. The board icons follow the palettes. `node tools/visual/house.js` renders a house in every material under
   every roof with the yard pieces and the icons to house.png. The old `texture` and `box` helpers are gone. `WALLS`, `FLOORS`, `ROOFS`,
   `rooms(B, GW, GH, bounds)` (closed rooms by flood fill, and collision circles for walls and posts), `drawH`, `drawV`,
+  **Gable roofs and taller walls (2026-10-07, Robin: pitched roofs with a gable end like his references):** `CFG.wallH` is 32 (a storey
+  and a half; `UP` 36.75 follows it). `drawRoof` lays the ridge along a rectangle's long side: a room **as deep as it is wide** gets a
+  **gable roof** with the ridge north to south, the west slope lit and the east in shadow, and the **south gable end facing you**: the
+  end wall in the room's own material (`C.wallM`, from `Build.roomWallM(B, room)`; the game's `roofCfg` and the editor pass it) with a
+  tie beam, a king post and two struts, the dark underside of the eaves above it, the bargeboards with the roof's thickness along
+  them (`eaveEdge`: straw ends, sod or shingle ends along any line), the ridge pole and crossed boards at both ends; a **wide room**
+  keeps the hipped roof, its ridge raised higher (`rise` up to 26). `C.gable` forces `'ns'` or `'ew'`. `tools/visual/house.js` draws
+  deep houses too.
   `drawRoof` (turf, thatch, shingles), `drawPost`, `drawBeam`, `drawStairs`, `drawChimney`, `postsOk`, `postUsed`,
   `ensurePosts`, `edgeAt`, `icon`, `UP` (a storey). A building is `B = { floors, H, V, posts, stairs, roofs, items, up }`
   keyed `"x,y"`; `up` is the floor above with its own floors, walls, posts and roofs.
@@ -206,6 +214,15 @@ the text and it is made the default. When a spec's meaning changes, change the s
   gate (prop `banner`); a worn gravel step and one or two things (`doorProps`) from a pool at every door, a woodpile with a
   **chopping block** (prop `choppingBlock`) at the longhouse; paths narrow at the door and wide at the yard (`pathDoor`,
   `pathYard`); the fields, the runestone,
+  **the second pass (2026-10-07, Robin's two references: a winding road, gables, villagers who live):** **one winding road** (`road`,
+  a Catmull-Rom curve laid as dabs, wandering, ragged; `roadW`) in at the gate or up from the water, through the yard past the fire,
+  to the longhouse door and out by a **back gate** (`backGate`, the fence and the stake ring open there) instead of spokes to every
+  door; **nature kept** (`V.nature`: birches, oaks, small bushes and flowers inside, rocks, bushes and trees in the ring outside, a
+  bush against a side wall; `freeAt`; the game plants them as gatherable props); **things against the walls** (`clutter`: `windowBox`
+  under every south window, `lantern` by the door with `lamp: true` (a small night light, no embers, no wolf fear: `drawNight`
+  radius 0.4), `awning` on open-fronted buildings, `sign` on the hall and trading stores, `woodshed` at the longhouse, `foodTable`
+  and a bench in a big yard); half the houses **deep** (`size('house')`: 2 to 3 wide, 3 deep) for a gable; **job spots** by role
+  (`chop` at the block, `carry` at the well, `sweep` at the door, `fish`, `hang`, `smith`; the door spot is tagged `door`).
   the midden, a grave; earth under the yard, gravel from the gate and to the shore, earth from every door, moss at the edges;
   the things inside by building (hearths, beds, chests with loot, crates, benches, a shield rack, a furnace and workbench in the
   smithy, a trough, a hidden **cellar door** in one home with the best stash); the people as households with spots and lines by
@@ -364,6 +381,16 @@ the text and it is made the default. When a spec's meaning changes, change the s
   renders the concepts in four views and a grid of every style to folk.png (`big` for the concepts large).
 
 ## People
+
+- **Idles and jobs (2026-10-07, Robin: every villager stood the same way with the same bent arm):** `lib.IDLES` (rest, hips, crossed,
+  scratch, look, stretch, lean) and `lib.idlePose(F, id, t, dir)` give a pose in the ink figure's pose contract (hand targets `armL`,
+  `armR` for the front and back, `near`, `far` for the side, `lx`, `ly`, `turn`); `lib.JOBS` (chop, carry, sweep, hang, fish, smith)
+  and `lib.jobPose(F, kind, t, dir)` the pose of a job over time with the thing in hand (`held`: an axe, a bucket, a broom, a rod, a
+  hammer, drawn by `lib.figureHeld(c, x, y, dir, F, held)` after the figure); `lib.poseLerp(a, b, k)` blends two poses. `pose.turn` adds
+  to `an.turn` in `inkHero`. **In the game** each villager has `idle` ({ id, t, dur, from, blend }: a new idle every three to nine
+  seconds, blended over a third of a second from the last pose), `job` ({ kind, t } at a tagged spot, facing it, eight to sixteen
+  seconds; one person at a job spot at a time) and `carrying` (after the well, the bucket is carried home at a slower walk; the bob
+  is added to the pose); `pickIdle` weights them (a child looks about more). The Village Editor shows the same poses.
 
 - Other people are the hero's figure with their own spec: `lib.makeFigure(spec)` then `lib.figureD(c, x, y, dir, an,
   pose, F)`. `FOLK` in `src/art.js` holds them (`lib.folkSpec(key)`); spec key `beard` adds a beard.
