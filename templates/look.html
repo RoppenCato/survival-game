@@ -116,7 +116,7 @@ __LIB__
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, KEY = 'lookeditor2';
   try { var hs = JSON.parse(localStorage.getItem('game.hero')); if (hs && typeof hs === 'object') lib.setHero(hs); } catch (e) {}
   var STYLE_KEYS = ['look', 'shadowHue', 'sat', 'bright', 'contrast', 'shade', 'outlineW', 'outlineDark', 'texture', 'rough', 'vignette'];
-  var DEF = {}; STYLE_KEYS.forEach(function (k) { DEF[k] = kit.STYLE_INK[k] != null ? kit.STYLE_INK[k] : kit.STYLE[k]; }); DEF.figGrain = 0.3; DEF.figShade = 0.32; DEF.sunWarm = 0.18;
+  var DEF = {}; STYLE_KEYS.forEach(function (k) { DEF[k] = kit.STYLE_INK[k] != null ? kit.STYLE_INK[k] : kit.STYLE[k]; }); DEF.figGrain = 0.22; DEF.figShade = 0.41; DEF.sunWarm = 0.18;   // Robin's numbers, 2026-10-07
   var G = JSON.parse(JSON.stringify(DEF));
   var SL = {
     pcolour: [{ k: 'shadowHue', label: 'Shadow hue', min: 60, max: 280, step: 2 }, { k: 'shade', label: 'Shadow depth', min: 0.15, max: 0.7, step: 0.01 }, { k: 'sat', label: 'Saturation', min: 0.5, max: 1.2, step: 0.01 }, { k: 'bright', label: 'Brightness', min: -12, max: 24, step: 1 }, { k: 'sunWarm', label: 'Sun warmth', min: 0, max: 0.5, step: 0.01 }, { k: 'vignette', label: 'Vignette', min: 0, max: 0.7, step: 0.01 }],

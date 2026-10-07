@@ -39,6 +39,6 @@ function scene(c, style, isInk, fig) {
 }
 const cv = createCanvas(W * Z, H * Z * 2), c = cv.getContext('2d');
 c.setTransform(Z, 0, 0, Z, 0, 0); c.__oy = 0; scene(c, kit.STYLE, false, { grain: 0, shade: 0 });
-c.setTransform(Z, 0, 0, Z, 0, H * Z); c.__oy = H * Z; scene(c, ink, true, { grain: 0.3, shade: 0.32 });
+c.setTransform(Z, 0, 0, Z, 0, H * Z); c.__oy = H * Z; scene(c, ink, true, { grain: 0.22, shade: 0.41 });
 fs.writeFileSync('look.png', cv.toBuffer('image/png'));
 console.log('wrote look.png');

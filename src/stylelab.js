@@ -35,7 +35,7 @@ var STYLE = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 100, s
   light: 0.8, fog: 0, glow: 0.2, vignette: 0, look: 0, seed: 7, scaleRef: 0, fruit: 0 };
 // The ink look (2026-10-07, docs/art-direction.md): Egerkrans's line, Bauer's light. look 3 in shape(): a cool shadow crescent,
 // grain in every fill, a warm lit edge, a thin line all round and a heavy line fading in on the shadow side, warm brown-black ink.
-var STYLE_INK = { look: 3, shadowHue: 222, outsideHue: 92, sat: 0.66, bright: -2, contrast: 1.04, shade: 0.52, outlineW: 1.05, outlineDark: 1, texture: 1.3, rough: 0.05, vignette: 0.2, round: 1, lush: 1, sparkle: 0, fog: 0, glow: 0.15 };
+var STYLE_INK = { look: 3, shadowHue: 222, outsideHue: 92, sat: 0.66, bright: -2, contrast: 1.04, shade: 0.52, outlineW: 1.6, outlineDark: 1, texture: 1.1, rough: 0.08, vignette: 0.2, round: 1, lush: 1, sparkle: 0, fog: 0, glow: 0.15 };   // Robin's numbers, 2026-10-07
 var grainCv = null;
 function grain(c) {                                  // paper and pencil: a small pattern of dark and light specks, tiled
   if (!grainCv) { grainCv = mk(96, 96); var g = grainCv.getContext('2d'), R = rng(77), i; for (i = 0; i < 1500; i++) { var x = R() * 96, y = R() * 96, d = R(); g.fillStyle = d < 0.55 ? 'rgba(20,14,10,' + (0.25 + R() * 0.45).toFixed(2) + ')' : 'rgba(255,245,225,' + (0.2 + R() * 0.4).toFixed(2) + ')'; g.fillRect(x, y, 1 + (R() < 0.3 ? 1 : 0), 1); } }

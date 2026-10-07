@@ -364,6 +364,10 @@ function make(kit, opts) {
 var GRASS = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shimmer: 0.6, shade: 0.8, flowers: 0.05,
   patches: 1, patchSize: 70, patchLight: '#c8e07a', patchDark: '#4a8a3a', earth: 0.3, earthCol: '#b08a56', earthLight: '#d2b078', earthEdge: '#7a9a40', drifts: 0.55,
   dark: '#3f8a3c', mid: '#6cb84a', light: '#a6d85c', glow: '#f4ffb0', bloom: ['#ffffff', '#ffe36b', '#ff9fc2', '#ff8a4a'] };   // the default living-grass look (the Grass Editor tunes it)
-return { make: make, DEF: DEF, GRASS: GRASS, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
+// the living grass in the ink look (docs/art-direction.md): moss and ochre, muted blooms, the same drawing
+var GRASS_INK = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shimmer: 0.35, shade: 0.9, flowers: 0.04,
+  patches: 1, patchSize: 70, patchLight: '#a9b96a', patchDark: '#4b6b3a', earth: 0.3, earthCol: '#9a7f55', earthLight: '#b89a68', earthEdge: '#6e7f40', drifts: 0.45,
+  dark: '#3d6a33', mid: '#5f8a44', light: '#8aa65a', glow: '#d6d690', bloom: ['#efe6cf', '#dfc45e', '#d99aa8', '#d88a5a'] };
+return { make: make, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
 })();
 if (typeof module !== 'undefined') module.exports = World;

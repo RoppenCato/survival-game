@@ -916,8 +916,11 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   light specks) and a cool gradient toward the shadow side inside the clip, a warm lit edge, then **two lines**: a thin one all
   round in warm brown-black ink (`OLC` for look 3) and a heavy one whose stroke is a gradient fading in toward the lower right.
   `ow()` scales the line for look 3. The game merges `game.look` into `kit.STYLE` on load, so the whole world bakes in it;
-  figures (hero, folk, animals, troll) keep their own drawing until the two-pass outline is built. `node tools/visual/look.js`
-  renders the Art Direction scene both ways to look.png.
+  figures (hero, folk, animals, troll) keep their own drawing until the two-pass outline is built. With the look on, the game uses
+  **`World.GRASS_INK`** for the living grass (moss and ochre, muted blooms) unless a Grass Editor look is stored, and lays **grain and
+  a vignette over the world** each frame before the night overlay. **Robin's numbers (2026-10-07: line 1.6, grain 1.1, wobble 0.08,
+  figure grain 0.22, figure shadow 0.41) are the ink defaults**; he said the palette "is going more towards old drawings in books".
+  `node tools/visual/look.js` renders the Art Direction scene both ways to look.png.
 - **The reference set** (Object Editor, first category, starred): oak, pine, bush, rock, cliff, longhouse, woodpile,
   tallGrass, flower, runestone. Each settles one family's drawing rules (canopy, tiers, stone, wood and roofs,
   blades, small bright things, carved stone), and the rest of the props are then restyled to match. The notes
