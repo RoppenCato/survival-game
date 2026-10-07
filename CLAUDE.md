@@ -871,7 +871,13 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   `H.eyes`. `ANIMALS`: **`troll` is now the boulder troll** (the game's cave troll), `trollStone` its stone, `trollForest` the
   forest troll (not in the game yet), `trollOld` the first troll (plan 7, `trollD`) for comparison; `animalAttack` gives any
   `troll*` key the troll's sweep. The Creature Editor lists them as Templates and its Troll panel shows for plans 7, 8 and 9.
-  `node tools/visual/trolls.js` renders the three at four headings with the windup and the blow.
+  `node tools/visual/trolls.js` renders the three at four headings with the windup and the blow; `trollface.js` the faces large.
+  **The evil face (Robin, 2026-10-07: they looked too happy; evil and careless, the hero is nothing to them):** `trollEvilFace` and
+  `trollSneer` are shared by both: brows as two heavy black wedges slanting down to the root of the nose, eyes small and deep in
+  dark sockets under a heavy lid, one squinting, a pinpoint pupil, furrows between the brows and folds on the forehead, a wide
+  sneer climbing to one side with a dark mouth, a row of crooked teeth no two alike, a tusk from the jaw and a crease at the
+  sneer's corner; the boulder's face is big on its front and its beard starts under the mouth. References: Egerkrans's Fenrir and
+  the classic troll and goblin masks Robin sent.
 - **The cave and the mountain troll (2026-10-05, from `docs/beasts.md`):**
   *The mouth:* `caveSetup` picks a clear spot on grass 700 to 1600 units from camp (not near the steading), clears
   the props round it and plants a `cave` prop (`caveMouth`); E beside it enters (a short black fade), E near the
