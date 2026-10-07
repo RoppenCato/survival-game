@@ -24,7 +24,7 @@ check('crack: from the crack’s side the blow is deeper (dealt '+r.dealt+')',r.
 // the sunny side and the lit facet are fixed; with cracks on a rock has no second sweet spot
 const Gs=G0.cfg({spotLook:4,crackLook:4});o=tree(300,300);
 check('sunny side: the sweet side is the left, and never wanders',G0.spot(Gs,o,0).side===-1&&G0.spot(Gs,o,500).side===-1);
-check('lit facet: the crack is up and left',Math.abs(G0.crackAng(Gs,rock)+Math.PI*0.75)<1e-9);
+check('sunny side: a rock’s sweet facet is the left',Math.abs(G0.crackAng(Gs,rock)-Math.PI)<1e-9);
 check('with cracks on a rock has no glint spot of its own',G0.spot(G,rock,0)===null);
 check('Robin’s settings are the defaults (logsPerTrunk 2, pace 2)',G.logsPerTrunk===2&&G.pace===2);
 // the fall: the trunk fells the tree in its line, hurts the hero there, and lies as a trunk

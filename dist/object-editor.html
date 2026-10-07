@@ -3542,7 +3542,7 @@ function updatePlayer(dt) {
           var ox = o.x - p.x, oy = o.y - p.y, od = Math.hypot(ox, oy);
           if (od <= sd.reach + (o.r || 8) + 2 && Math.abs(wrap(Math.atan2(oy, ox) - a.dir)) <= half + 0.12) {
             a.hit.push(o);
-            var right = o.kind === tl.good, pw = tpow * (right ? 1 : 0.5) * (heavyHit(a) ? 1.5 : 1) * (a.heavyG ? 3 : 1);
+            var right = o.kind === tl.good || (o.kind === 'trunk' && tl.good === 'tree'), pw = tpow * (right ? 1 : 0.5) * (heavyHit(a) ? 1.5 : 1) * (a.heavyG ? 3 : 1);
             if (a.heavyG && S.juice) { dust(o.x, o.y, 5); }
             var hr = hv.hit(o, pw, right, tl.id) || {}, shown = hr.dealt != null ? hr.dealt : pw;   // the page may answer { dealt, crit, clean }: a sweet spot is a crit, gold
             var sayWrong = !right && W.t - wrongToolAt > 300; if (sayWrong) wrongToolAt = W.t;

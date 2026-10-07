@@ -160,8 +160,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `api.gatherPace()` stretches the windup and recovery in gather mode) because the hero chopped too frantically. **The cue is a
   choice** (Robin: visual cue and simple positioning, never hitting about to find it): a tree's `spotLook` is a glint, a scar on
   the bark, the tree leaning toward its sweet side, or the sunny side (always the left, the side the light falls on, fixed), or
-  nothing; a rock's `crackLook` is the crack itself, a pale vein, a patch of moss or the lit facet (fixed, up and left), or
-  nothing; all drawn on the body, not beside it. With cracks on, a rock's sweet spot is its crack (no second glint).
+  nothing; a rock's `crackLook` is the crack itself, a pale vein, a patch of moss or the sunny side (the left, fixed), or
+  nothing; all drawn on the body, not beside it (the trunk cues sit a couple of units off the trunk's middle, because the
+  sprite's width is the crown's). With cracks on, a rock's sweet spot is its crack (no second glint). **The sunny side is the
+  default for both** (Robin, 2026-10-07). A trunk is the axe's right target (no "wrong tool").
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
   `hollow` drawings for the casting cloth. Thirteen runes so far.
