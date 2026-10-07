@@ -905,6 +905,26 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   much a worn piece turns aside (mail 0.31, helm 0.18, shield 0.22; a full iron set passes the 0.6 cap, the leather set stays at
   0.47). **The hero wears it** (`heroGearSync`, every frame): an iron helm shows as the nasal helmet, mail greys the tunic, the
   gambeson makes it pale, and the hero's own look comes back when they are taken off. `tests/iron.js` checks it (in `npm test`).
+- **The lowland town and the church (2026-10-07, Robin: a really nice church and assets that fit the biome):** **two wall
+  materials** in `Build.WALLS`: **timber frame** (5: plaster panels between dark timbers with braces, `tex: 'frame'`) and **cut
+  stone** (6: dressed blocks in courses, `tex: 'ashlar'`), and **two roofs** in `ROOFS`: **clay tiles** (3) and **slate** (4), drawn in
+  offset rows with a lip on every tile ('No roof' is 5 now). A cut-stone wall gets a **round-arched door** with iron bands and a
+  **round-arched window** with a lattice (`archDoor`, `archWindow`); a stone gable has no timbers but a small arched window high up.
+  The **town wall** (`YARD` `townwall`, `TOWNWALL_H` 34: cut stone a storey high with a coping) is a yard piece. On the Building board:
+  Timber frame, Cut stone, Tile roof, Slate roof, Town wall, and the Altar, Grave marker, Stone cross, Market stall and Bell tower
+  pieces. **Props:** `bellTower` (a square tower of cut stone, a round-arched belfry with the bell, a slate pyramid, a small cross),
+  `altar` (a block of cut stone under a white cloth, two candles that are a small night light, a cup), `graveStone` (an upright slab
+  or a wooden cross), `wayCross` (a tall stone cross on steps), `stall` (a trestle under a striped awning with baskets of apples and
+  fish), `yew` (the cypress drawing in the yew's dark green). **Villages:** `ARCH.town` (a walled town round the jarl's hall with a
+  church, five to seven houses, market stalls in the yard, guards at the gate and a merchant at a stall, the jarl's chest in the hall
+  (`find` `jarl`), `townwall`) and `ARCH.church` (a lone church with the priest's house inside a dry-stone wall: the lucky strike);
+  `BUILD.church` (three or four wide, five or six deep, so its gable faces south; cut stone under slate, arched windows along its
+  sides, a flagged floor, the **altar** at the north end, **pews** along the walls, the church's silver in a chest by the altar
+  (`find` `silver`), the **bell tower at the front corner** like a west tower, the churchyard along the east side with grave markers,
+  a yew and a wayside cross by the door). **The lowland materials** (`opts.biome` or an archetype's `lowland`): cut stone for the
+  rich, timber frame for most, clay tiles for the rich, thatch for the rest. Roles `priest`, `guard`, `merchant` with lines.
+  `Village.plan` gives the biggest lowland island a town, the others a church or a village and a shore place; a site carries
+  `biome`. The Village Editor has a **Lowlands** button. `tools/visual/house.js` draws the new materials and a church-shaped room.
 - Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch.
 
 

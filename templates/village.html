@@ -87,6 +87,7 @@ __VILLAGE__
     row.appendChild(lab); row.appendChild(inp); row.appendChild(out); rulesHost.appendChild(row); inputs[r[0]] = inp; outs[r[0]] = out;
   });
   var archHost = document.getElementById('archs'), archBtns = {};
+  var lowBtn = document.createElement('button'); lowBtn.textContent = 'Lowlands'; lowBtn.addEventListener('click', function () { st.lowland = !st.lowland; lowBtn.style.fontWeight = st.lowland ? 'bold' : 'normal'; draw(); save(); lowBtn.blur(); }); archHost.appendChild(lowBtn); lowBtn.style.fontWeight = st.lowland ? 'bold' : 'normal';
   Object.keys(Village.ARCH).forEach(function (a) { var b = document.createElement('button'); b.textContent = Village.ARCH[a].name; b.addEventListener('click', function () { st.arch = a; ui(); draw(); save(); b.blur(); }); archHost.appendChild(b); archBtns[a] = b; });
   var shoreHost = document.getElementById('shores'), shoreBtns = {};
   [['None', ''], ['South', 's'], ['East', 'e'], ['West', 'w'], ['North', 'n']].forEach(function (s) { var b = document.createElement('button'); b.textContent = s[0]; b.addEventListener('click', function () { st.shore = s[1]; ui(); draw(); save(); b.blur(); }); shoreHost.appendChild(b); shoreBtns[s[1]] = b; });
@@ -112,7 +113,7 @@ __VILLAGE__
   var V = null, clock = 0;
   function draw() {
     var site = Village.siteFor(st.arch), T = 32, TS = 24, K = 0.75;
-    V = Village.make(st.seed, { tx: 2, ty: 2, w: site.w, h: site.h, shore: st.shore || null }, { arch: st.arch, wealth: st.wealth, G: st.G });
+    V = Village.make(st.seed, { tx: 2, ty: 2, w: site.w, h: site.h, shore: st.shore || null }, { arch: st.arch, biome: st.lowland ? 1 : 0, wealth: st.wealth, G: st.G });
     var W = (site.w + 4) * T, H = (site.h + 4) * TS, sc = Math.min(cv.width / W, cv.height / H);
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#5f8a44'; ctx.fillRect(0, 0, cv.width, cv.height);
     ctx.setTransform(sc, 0, 0, sc, (cv.width - W * sc) / 2, (cv.height - H * sc) / 2); ctx.lineJoin = 'round'; ctx.lineCap = 'round';

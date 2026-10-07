@@ -3184,6 +3184,69 @@ function bogIronObj(c, K, x, y, seed) {                 // a lump of bog ore: ru
   shape(c, [[x + 8, y], [x + 7, y - 4], [x + 12, y - 7], [x + 17, y - 4], [x + 16, y]], M(16, 48, 30), { seed: seed + 3, size: 'S', sh: 1, rough: 0.4 });
   for (var i = 0; i < 5; i++) { var rx = x + (R() - 0.5) * 36, ry = y + (R() - 0.3) * 6; line(c, [[rx, ry], [rx + (R() - 0.5) * 2, ry - 6 - R() * 5]], 0.9, M(70, 30, 38).base, false); }   // reeds round it
 }
+// The church and the town (2026-10-07, the lowlands): a bell tower, an altar, grave markers, a wayside cross, a market stall, a yew
+function ashlarFill(c, x, y, w, h, seed, base) {         // dressed stone in courses, for the props built of it
+  var R = rng(seed), j, crs = 6, ncr = Math.ceil(h / crs);
+  fillPts(c, [[x, y], [x + w, y], [x + w, y + h], [x, y + h]], M(40, 8, 48).base);
+  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+  for (j = 0; j < ncr; j++) { var cy = y + h - (j + 1) * crs, sx = x - (j % 2 ? 6 : 0) - R() * 2; while (sx < x + w) { var sw = 9 + R() * 6, tn = 58 + (R() - 0.5) * 12; fillPts(c, [[sx + 0.5, cy + 0.5], [sx + sw - 0.5, cy + 0.5], [sx + sw - 0.5, cy + crs - 0.5], [sx + 0.5, cy + crs - 0.5]], M(40, 9, tn).base); fillPts(c, [[sx + 0.5, cy + 0.5], [sx + sw - 0.5, cy + 0.5], [sx + sw - 0.5, cy + 1.4], [sx + 0.5, cy + 1.4]], 'rgba(255,250,236,0.16)'); sx += sw; } }
+  c.restore();
+}
+function bellTowerObj(c, K, x, y, seed) {                // a square tower of cut stone, a round-arched opening with the bell, a slate pyramid roof and a small cross
+  gshadow(c, x + 2, y + 1, 24, 7, 0.45); longShadow(c, x, y, 30, 40);
+  var w = 36, h = 86, x0 = x - w / 2, top = y - h;
+  ashlarFill(c, x0, top, w, h, seed);
+  fillPts(c, [[x0, top], [x0 + w, top], [x0 + w, y], [x0, y]], 'rgba(35,26,22,0)');
+  c.save(); c.beginPath(); c.rect(x0 + w * 0.62, top, w * 0.38, h); c.clip(); fillPts(c, [[x0, top], [x0 + w, top], [x0 + w, y], [x0, y]], 'rgba(40,44,60,0.28)'); c.restore();   // the shadow side
+  line(c, [[x0 + 0.5, top + 0.5], [x0 + 0.5, y]], 0.8, 'rgba(255,250,236,0.35)', false);
+  var ox = x, oy = top + 22, ow2 = 11, oh = 20;        // the belfry opening, round-arched, the bell hanging in it
+  c.beginPath(); c.moveTo(ox - ow2 / 2, oy + oh); c.lineTo(ox - ow2 / 2, oy + ow2 / 2); c.arc(ox, oy + ow2 / 2, ow2 / 2, Math.PI, 0); c.lineTo(ox + ow2 / 2, oy + oh); c.closePath(); c.fillStyle = '#1c1612'; c.fill(); c.strokeStyle = OLC; c.lineWidth = 0.8; c.stroke();
+  line(c, [[ox - 5, oy + 7.5], [ox + 5, oy + 7.5]], 1.4, M(30, 20, 30).base, false);
+  shape(c, [[ox - 1.8, oy + 8], [ox + 1.8, oy + 8], [ox + 4.2, oy + 15], [ox + 4.6, oy + 17.5], [ox - 4.6, oy + 17.5], [ox - 4.2, oy + 15]], K.brass, { seed: seed + 3, size: 'S', sh: 1, rough: 0.2 });
+  fillPts(c, ellPts(ox, oy + 18.4, 1.2, 1.0, 6), M(30, 20, 26).base);
+  var sm = M(216, 12, 38), rh = 26, ov = 4;            // the slate pyramid: two faces seen, the right in shadow
+  shape(c, [[x0 - ov, top], [x, top - rh], [x0 + w / 2 + 0.5, top - rh], [x0 + w / 2 + 0.5, top]], sm, { seed: seed + 5, size: 'M', sh: 0.5, hl: 1.5, rough: 0.2 });
+  shape(c, [[x, top - rh], [x0 + w + ov, top], [x0 + w / 2 - 0.5, top]], M(216, 14, 26), { seed: seed + 6, size: 'M', sh: 0.3, rough: 0.2 });
+  for (var k = 1; k < 6; k++) { var t = k / 6, yy = top - rh + rh * t; line(c, [[x - (w / 2 + ov) * t, yy], [x + (w / 2 + ov) * t, yy]], 0.5, 'rgba(35,26,22,0.35)', false); }
+  fillPts(c, [[x0 - ov - 1, top - 1], [x0 + w + ov + 1, top - 1], [x0 + w + ov + 1, top + 2], [x0 - ov - 1, top + 2]], 'rgba(35,26,22,0.45)');   // the eaves' shadow on the wall
+  line(c, [[x, top - rh - 1], [x, top - rh - 11]], 1.6, M(30, 20, 32).base, false); line(c, [[x - 3.2, top - rh - 8], [x + 3.2, top - rh - 8]], 1.6, M(30, 20, 32).base, false);   // the cross
+}
+function altarObj(c, K, x, y, seed) {                    // a block of cut stone under a white cloth, two candles burning, a cup
+  gshadow(c, x, y + 1, 18, 4, 0.35);
+  ashlarFill(c, x - 15, y - 17, 30, 17, seed);
+  c.strokeStyle = OLC; c.lineWidth = 0.8; c.strokeRect(x - 15, y - 17, 30, 17);
+  fillPts(c, [[x - 16, y - 20], [x + 16, y - 20], [x + 16, y - 15], [x - 16, y - 15]], M(44, 20, 90).base); fillPts(c, [[x - 16, y - 15.5], [x + 16, y - 15.5], [x + 16, y - 10], [x - 16, y - 10]], M(44, 18, 80).base);
+  line(c, [[x - 16, y - 20], [x + 16, y - 20], [x + 16, y - 10], [x - 16, y - 10]], 0.6, 'rgba(35,26,22,0.5)', true);
+  fillPts(c, [[x - 12, y - 18], [x + 12, y - 18], [x + 12, y - 17.2], [x - 12, y - 17.2]], M(mixHue(P.accentHue, 10, 0.4), 55, 40).base);
+  [[-9, 0], [9, 0]].forEach(function (q, i) { line(c, [[x + q[0], y - 20], [x + q[0], y - 29]], 2.2, M(44, 30, 86).base, false); fillPts(c, [[x + q[0] - 1.6, y - 32.5], [x + q[0] + 1.6, y - 32.5], [x + q[0] + 0.4, y - 27.5], [x + q[0] - 0.4, y - 27.5]], M(42, 100, 62).base); fillPts(c, ellPts(x + q[0], y - 30.5, 0.7, 1.3, 6), M(48, 100, 88).base); addLight(x + q[0], y - 30, 44, 42, 90, 62, 0.6); });
+  shape(c, [[x - 2.5, y - 21], [x + 2.5, y - 21], [x + 3.2, y - 25], [x - 3.2, y - 25]], K.brass, { seed: seed + 2, size: 'S', sh: 0.8, rough: 0.2 }); fillPts(c, ellPts(x, y - 25, 3.2, 1.0, 8), M(42, 50, 62).base);
+}
+function graveStoneObj(c, K, x, y, seed) {               // a grave marker: an upright slab with a rounded top and cut lines, or a wooden cross
+  gshadow(c, x + 1, y, 7, 2.4, 0.35);
+  if (seed % 2) { shape(c, [[x - 5, y], [x - 5.4, y - 12], [x - 3, y - 16], [x + 3, y - 16], [x + 5.4, y - 12], [x + 5, y]], M(40, 8, 60), { seed: seed, size: 'S', sh: 1.2, rough: 0.35 }); line(c, [[x - 2.5, y - 10], [x + 2.5, y - 10]], 0.6, 'rgba(35,26,22,0.45)', false); line(c, [[x - 2, y - 7.5], [x + 2, y - 7.5]], 0.6, 'rgba(35,26,22,0.45)', false); fillPts(c, ellPts(x - 2, y - 4, 2, 1.4, 6), M(P.outsideHue + 10, 40, 42).base); }
+  else { shape(c, rrPts(x - 1.6, y - 18, 3.2, 18, 1), K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.25 }); shape(c, rrPts(x - 6, y - 14, 12, 3, 1), K.wood, { seed: seed + 1, size: 'S', sh: 1, rough: 0.25 }); }
+  for (var i = 0; i < 3; i++) line(c, [[x - 6 + i * 5, y + 1], [x - 6 + i * 5 + 0.6, y - 3 - (seed + i) % 3]], 0.8, M(P.outsideHue, 42, 36).base, false);
+}
+function wayCrossObj(c, K, x, y, seed) {                 // a tall stone cross on two steps at the churchyard gate
+  gshadow(c, x + 1, y, 11, 3.5, 0.4);
+  shape(c, [[x - 11, y], [x - 11, y - 4], [x + 11, y - 4], [x + 11, y]], M(40, 8, 52), { seed: seed, size: 'S', sh: 1, rough: 0.3 });
+  shape(c, [[x - 7, y - 4], [x - 7, y - 8], [x + 7, y - 8], [x + 7, y - 4]], M(40, 8, 58), { seed: seed + 1, size: 'S', sh: 1, rough: 0.3 });
+  shape(c, [[x - 2.2, y - 8], [x - 2.2, y - 44], [x + 2.2, y - 44], [x + 2.2, y - 8]], M(40, 8, 62), { seed: seed + 2, size: 'S', sh: 1, rough: 0.25 });
+  shape(c, [[x - 9, y - 38], [x - 9, y - 34], [x + 9, y - 34], [x + 9, y - 38]], M(40, 8, 62), { seed: seed + 3, size: 'S', sh: 1, rough: 0.25 });
+  c.strokeStyle = 'rgba(35,26,22,0.4)'; c.lineWidth = 0.6; c.beginPath(); c.arc(x, y - 36, 4.5, 0, 7); c.stroke();
+}
+function stallObj(c, K, x, y, seed) {                    // a market stall: a trestle table under a striped awning on four posts, baskets of apples and fish
+  var R = rng(seed), i;
+  gshadow(c, x, y + 1, 24, 5, 0.35);
+  [[-20, 2], [20, 2], [-20, -16], [20, -16]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.5, y + q[1] - 40, 3, 40 - (k >= 2 ? 10 : 0)), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  shape(c, [[x - 19, y - 12], [x + 19, y - 12], [x + 18, y - 6], [x - 18, y - 6]], K.wood, { seed: seed + 5, size: 'M', sh: 1, rough: 0.25 });
+  for (i = 0; i < 2; i++) { var bx = x - 10 + i * 20; shape(c, ellPts(bx, y - 13, 7, 3.6, 10), M(36, 40, 56), { seed: seed + 8 + i, size: 'S', sh: 1, rough: 0.3 }); for (var k = 0; k < 5; k++) fillPts(c, ellPts(bx + (R() - 0.5) * 8, y - 15 - R() * 2, 1.7, 1.4, 6), i ? M(6, 70, 48).base : M(200, 14, 66).base); }
+  var cl = [[x - 24, y - 44], [x + 24, y - 44], [x + 23, y - 34], [x - 23, y - 34]];
+  shape(c, cl, M(40, 30, 78), { seed: seed + 12, size: 'M', sh: 1, rough: 0.3 });
+  c.save(); path(c, cl); c.clip(); for (i = -22; i < 24; i += 8) fillPts(c, [[x + i, y - 44], [x + i + 4, y - 44], [x + i + 3.8, y - 34], [x + i - 0.2, y - 34]], M(mixHue(P.accentHue, 10, 0.4), 50, 46).base); c.restore();
+  for (i = -22; i < 24; i += 4) line(c, [[x + i, y - 34.5], [x + i + 2, y - 31.5], [x + i + 4, y - 34.5]], 0.6, 'rgba(35,26,22,0.45)', false);
+}
+function yewTree(c, K, x, y, h, seed) { cypress(c, lowK(K, { pine: M(P.outsideHue + 30, 30, 30), pineL: M(P.outsideHue + 26, 32, 38), leaf: M(P.outsideHue + 30, 32, 32), leafD: M(P.outsideHue + 34, 28, 24), cypress: M(P.outsideHue + 30, 30, 30) }), x, y, h, seed); }
 function cypress(c, K, x, y, h, seed) {
   var R = rng(seed), i, n = 9, sw = (R() - 0.5) * P.twist * 10;
   longShadow(c, x, y, 20, h * 0.5); gshadow(c, x, y + 1, 16, 5, 0.4);
@@ -4401,6 +4464,12 @@ var PROPS = {
   apple: { b: [-80, -150, 80, 20], f: function (c, K, s) { appleTree(c, K, 0, 0, 125, s); } },
   chalkRock: { b: [-36, -40, 36, 10], f: function (c, K, s) { chalkRockObj(c, K, 0, 0, 16, s); } },
   bogIron: { b: [-24, -22, 24, 8], f: function (c, K, s) { bogIronObj(c, K, 0, 0, s); } },
+  bellTower: { b: [-26, -128, 26, 10], f: function (c, K, s) { bellTowerObj(c, K, 0, 0, s); } },
+  altar: { b: [-18, -36, 18, 8], f: function (c, K, s) { altarObj(c, K, 0, 0, s); } },
+  graveStone: { b: [-8, -22, 8, 4], f: function (c, K, s) { graveStoneObj(c, K, 0, 0, s); } },
+  wayCross: { b: [-12, -48, 12, 4], f: function (c, K, s) { wayCrossObj(c, K, 0, 0, s); } },
+  stall: { b: [-26, -48, 26, 8], f: function (c, K, s) { stallObj(c, K, 0, 0, s); } },
+  yew: { b: [-50, -230, 80, 14], f: function (c, K, s) { yewTree(c, K, 0, 0, 150, s); } },
   hedge: { b: [-42, -44, 42, 12], f: function (c, K, s) { hedgeObj(c, K, 0, 0, s); } },
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
@@ -4427,7 +4496,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { bellTower: 1, altar: 0.7, graveStone: 0.75, wayCross: 0.75, stall: 0.7, windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
@@ -6196,9 +6265,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   };
   var CATS = [
     { name: 'Reference set', ground: 'grass', solid: 10, ref: true, list: Object.keys(REF) },
-    { name: 'Found in nature', ground: 'grass', solid: 10, list: ['beech', 'ash', 'apple', 'chalkRock', 'hedge', 'bogIron', 'cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
+    { name: 'Found in nature', ground: 'grass', solid: 10, list: ['beech', 'ash', 'apple', 'chalkRock', 'hedge', 'bogIron', 'yew', 'cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
     { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'fireRing', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile'] },
-    { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['firePit', 'logSeat', 'stake', 'banner', 'choppingBlock', 'cellarDoor', 'windowBox', 'lantern', 'awning', 'sign', 'woodshed', 'foodTable', 'longhouse', 'beachedBoat', 'campfire', 'furnace', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'fireplace', 'carverBench', 'deadViking', 'trough', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
+    { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['bellTower', 'altar', 'graveStone', 'wayCross', 'stall', 'firePit', 'logSeat', 'stake', 'banner', 'choppingBlock', 'cellarDoor', 'windowBox', 'lantern', 'awning', 'sign', 'woodshed', 'foodTable', 'longhouse', 'beachedBoat', 'campfire', 'furnace', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'fireplace', 'carverBench', 'deadViking', 'trough', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
     { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
     { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'flowerBed', 'tallGrass', 'wildHerbs', 'mushrooms', 'mushRing', 'snowBush'] },
     { name: 'Rocks and ground', ground: 'grass', solid: 12, list: ['rock', 'rockFormation', 'cliff', 'rubble', 'log', 'cairn', 'snowRock', 'waterfall'] },

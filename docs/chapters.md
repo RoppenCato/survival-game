@@ -289,7 +289,7 @@ the template's headings with questions.
 | Heading | What is decided or implied | What is open |
 | --- | --- | --- |
 | A1 The world | **Decided 2026-10-07: the south, settled lowlands** (oak, beech, ash, hedgerows, hay meadows, ploughed strips, orchards, chalk; walled towns, churches with priests, a manor); its islands lie further south and mix at the edges with the first biome's. **Built:** biome-marked islands placed south, the biome field, the warm ground, the lowland trees and chalk, marsh, field and chalk ground kinds | How many islands and how far (the balance pass) |
-| A2 Places | Villages, castles and churches stand here and can be raided; some villages trade | Which and how many; the church as the "lucky strike" with only friendly priests and a bell that may call an army |
+| A2 Places | Villages, castles and churches stand here and can be raided; some villages trade. **Built 2026-10-07:** the walled town with the jarl's hall, its church and market; the lone church with its priest (the lucky strike, no guards); timber framing, cut stone, tiles, slate | Castles; how many towns a world has |
 | B1 Big events | **The first Viking ship; the first raid**; the silver ring. **Decided 2026-10-07:** the raid is loot spread out behind doors that take blows, carried to the ship piece by piece, the defenders gathering to the noise (no bell, no waves from a castle, fighting not the biggest part); **a human jarl holds the silver ring**, won by a raid on his hall; nothing off limits, reputation the brake | The third and fourth events |
 | B2 Way on | Heavier metal beats you, each chapter has its ring-holder | What points beyond |
 | C1 Beasts | Harder than Chapter 2 | Which animals and väsen (`docs/beasts.md` cards) |

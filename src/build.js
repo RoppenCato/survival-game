@@ -15,7 +15,9 @@ var WALLS = [
   { name: 'Planks', face: '#7d634a', top: '#9a7c5c', dark: '#4a3626', tex: 'planks' },
   { name: 'Wattle', face: '#a89474', top: '#bfab88', dark: '#5e4e36', tex: 'wattle' },
   { name: 'Stone', face: '#7e7f84', top: '#9a9ba0', dark: '#4f5058', tex: 'blocks' },
-  { name: 'Turf', face: '#5d7a48', top: '#72915a', dark: '#3b5230', tex: 'turf' }
+  { name: 'Turf', face: '#5d7a48', top: '#72915a', dark: '#3b5230', tex: 'turf' },
+  { name: 'Timber frame', face: '#d8cfb8', top: '#6a5238', dark: '#4a3626', tex: 'frame' },     // the lowlands (2026-10-07): plaster panels between dark timbers
+  { name: 'Cut stone', face: '#a9a39a', top: '#c2bcb2', dark: '#6b655c', tex: 'ashlar' }        // dressed blocks in courses, the church's and the hall's
 ];
 // Floors go on any land tile, so they make paths, yards and decks round a house as well as the floor in it. The dock
 // (water: true) also goes on water beside land or another dock, and can be walked on.
@@ -23,13 +25,13 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Gravel trail', tile: 'trail', bare: true }, { name: 'Grass', tile: 'grass', bare: true }, { name: 'Dark grass', tile: 'grassDark', bare: true }, { name: 'Moss', tile: 'moss', bare: true }, { name: 'Bare rock', tile: 'rock', bare: true },
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
-var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'No roof' }];
+var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
 var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1 };   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
-var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1 }, OPEN = { door: 1, gate: 1 };
+var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 }, OPEN = { door: 1, gate: 1 };
 var UP = CFG.wallH + CFG.thick * K + 1;      // one storey: how far up the floor above (or the roof) sits, in screen units
-var FENCE_H = 12, PALISADE_H = 30;
+var FENCE_H = 12, PALISADE_H = 30, TOWNWALL_H = 34;
 function key(x, y) { return x + ',' + y; }
 function cfg(c) { var o = {}, k; for (k in CFG) o[k] = CFG[k]; for (k in c || {}) if (c[k] != null) o[k] = c[k]; return o; }
 
@@ -166,6 +168,18 @@ function face(c, m, x, y, w, h, seed, vertical) {
     c.fillStyle = m.dark; c.fillRect(x, y, w, h);
     var rh = 5.2, nr = Math.ceil(h / rh);
     for (j = 0; j < nr; j++) { var by = y + h - (j + 1) * rh, cx2 = x - (j % 2 ? 4 : 0) - hs(seed, j) * 3; while (cx2 < x + w) { var bw = 5 + hs(seed + j, cx2) * 6, tone3 = (hs(seed, j * 7 + cx2) - 0.5) * 0.18; ink(c, [[cx2 + 0.5, by + 0.6], [cx2 + bw - 0.4, by + 0.4], [cx2 + bw - 0.6, by + rh - 0.5], [cx2 + 0.6, by + rh - 0.3]], mix(m.face, tone3 > 0 ? '#ffffff' : '#000000', Math.abs(tone3)), { wob: 0.8, seed: seed + j * 13 + Math.round(cx2), flat: true, lw: 0.55, heavy: 0.9 }); cx2 += bw; } }
+  } else if (m.tex === 'frame') {                        // plaster panels, the timbers dark: posts, a sill and a head beam, a brace in every other bay
+    c.fillStyle = m.face; c.fillRect(x, y, w, h);
+    for (j = 0; j < 14; j++) { var qx = x + hs(seed, j) * w, qy = y + hs(seed + 3, j) * h; c.fillStyle = hs(seed, j + 7) < 0.5 ? 'rgba(90,70,50,0.08)' : 'rgba(255,250,236,0.18)'; c.beginPath(); c.ellipse(qx, qy, 2 + hs(seed, j + 9) * 3, 1.2 + hs(seed, j + 11) * 2, 0, 0, 7); c.fill(); }
+    var bay = vertical ? 7 : 10.5, nb = Math.max(1, Math.round(w / bay)), bw2 = w / nb, tw = 2.6;
+    for (i = 0; i <= nb; i++) { var bx = x + i * bw2 - (i === nb ? tw : (i === 0 ? 0 : tw / 2)); c.fillStyle = m.top; c.fillRect(bx, y, tw, h); stroke(c, [[bx + 0.3, y + 1], [bx + 0.4, y + h - 1]], INK.faint, 0.5); }
+    c.fillStyle = m.top; c.fillRect(x, y, w, tw); c.fillRect(x, y + h - tw, w, tw);
+    for (i = 0; i < nb; i++) { if (hs(seed, i + 20) < 0.5) continue; var ax = x + i * bw2 + tw / 2, bx2 = x + (i + 1) * bw2 - tw / 2, up = hs(seed, i + 30) < 0.5; c.strokeStyle = m.top; c.lineWidth = tw * 0.85; c.beginPath(); c.moveTo(ax, up ? y + h - tw : y + tw); c.lineTo(bx2, up ? y + tw : y + h - tw); c.stroke(); }
+    if (h > 14) { c.fillStyle = m.top; c.fillRect(x, y + h * 0.5 - 1, w, 2); }
+  } else if (m.tex === 'ashlar') {                       // dressed stone in even courses, the joints fine, every block its own tone
+    c.fillStyle = m.dark; c.fillRect(x, y, w, h);
+    var crs = 6.4, ncr = Math.ceil(h / crs);
+    for (j = 0; j < ncr; j++) { var cy2 = y + h - (j + 1) * crs, sx2 = x - (j % 2 ? 7 : 0) - hs(seed, j) * 2; while (sx2 < x + w) { var sw2 = 11 + hs(seed + j, sx2) * 6, tn = (hs(seed, j * 5 + sx2) - 0.5) * 0.14; c.fillStyle = mix(m.face, tn > 0 ? '#ffffff' : '#000000', Math.abs(tn)); c.fillRect(sx2 + 0.5, cy2 + 0.5, sw2 - 1, crs - 1); c.fillStyle = 'rgba(255,250,236,0.16)'; c.fillRect(sx2 + 0.5, cy2 + 0.5, sw2 - 1, 1); sx2 += sw2; } }
   } else if (m.tex === 'turf') {
     var th2 = 4.6, nt = Math.ceil(h / th2);
     for (i = 0; i < nt; i++) { var ty = y + h - (i + 1) * th2, tone4 = (hs(seed, i) - 0.5) * 0.14, pts = [[x - 1, ty + th2]], k; for (k = 0; k <= 8; k++) pts.push([x - 1 + (w + 2) * k / 8, ty + 0.8 + (hs(seed + i, k) - 0.5) * 1.6]); pts.push([x + w + 1, ty + th2]); ink(c, pts, mix(i % 2 ? m.face : m.top, tone4 > 0 ? '#ffffff' : '#000000', Math.abs(tone4)), { wob: 0, flat: true, noLine: true }); stroke(c, [[x, ty + th2 - 0.3], [x + w, ty + th2 - 0.3]], INK.faint, 0.6); for (k = 0; k < 4; k++) { var gx = x + 2 + hs(seed + i + 3, k) * (w - 4); stroke(c, [[gx, ty + 2], [gx + (hs(seed, k + i) - 0.5) * 2, ty - 1.5]], m.dark, 0.7, 0.8); } }
@@ -188,6 +202,13 @@ function drawFenceH(c, x, y, e, open, C) {
   if (e.t === 'palisade') {
     for (i = 0; i < 4; i++) { var px = x0 + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4, col = mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08); ink(c, [[px + 0.3, yb], [px, yb - ph + 4], [px + 4, yb - ph], [px + 8, yb - ph + 4], [px + 7.7, yb]], col, { wob: 0.7, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[px + 2.5, yb - 3], [px + 2.2, yb - ph + 6]], INK.faint, 0.6); stroke(c, [[px + 5.5, yb - 2], [px + 5.8, yb - ph + 7]], INK.faint, 0.5); }
     ink(c, rect(x0, yb - 11, T, 2.4), m.dark, { wob: 0.4, seed: seed + 9, flat: true, lw: 0.6, heavy: 1 }); ink(c, rect(x0, yb - 22, T, 2.4), m.dark, { wob: 0.4, seed: seed + 10, flat: true, lw: 0.6, heavy: 1 });
+    return;
+  }
+  if (e.t === 'townwall') {               // the town's wall: cut stone a storey high with a coping of flat slabs and a shadow at its foot
+    var am = WALLS[6], d = ink(c, rect(x0, yb - TOWNWALL_H, T, TOWNWALL_H), am.face, { wob: 0.5, seed: seed, noLine: true, flat: true }); face(c, am, x0, yb - TOWNWALL_H, T, TOWNWALL_H, seed);
+    path(c, d); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8);
+    for (i = 0; i < 3; i++) ink(c, rect(x0 + i * (T / 3) - 0.5, yb - TOWNWALL_H - 3, T / 3 + 1, 3.4), am.top, { wob: 0.4, seed: seed + 20 + i, lw: 0.7, heavy: 1.2 });
+    stroke(c, [[x0 + 0.5, yb - TOWNWALL_H + 0.8], [x0 + T - 0.5, yb - TOWNWALL_H + 0.8]], INK.lit, 1.0);
     return;
   }
   var h = FENCE_H;
@@ -218,6 +239,7 @@ function drawFenceV(c, x, y, e, open, more, C) {
     for (i = 0; i < 3; i++) { var py = yt + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4; ink(c, [[xl - 3, py + 8], [xl - 3, py + 8 - ph + 3], [xl, py + 8 - ph], [xl + 3, py + 8 - ph + 3], [xl + 3, py + 8]], mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08), { wob: 0.6, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[xl - 1, py + 6], [xl - 1.2, py + 8 - ph + 6]], INK.faint, 0.55); }
     return;
   }
+  if (e.t === 'townwall') { var am = WALLS[6]; cap(c, am, xl - 3.5, yt - TOWNWALL_H, 7, TS, seed, false); if (!more) { var d2 = ink(c, rect(xl - 3.5, yt + TS - TOWNWALL_H, 7, TOWNWALL_H), am.face, { wob: 0.4, seed: seed + 1, noLine: true, flat: true }); face(c, am, xl - 3.5, yt + TS - TOWNWALL_H, 7, TOWNWALL_H, seed + 1, true); path(c, d2); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d2, 1.6); } return; }
   var h = FENCE_H;
   if (e.t === 'rail') { post(c, xl, yt, 3, h + 3, m, seed); if (!more) post(c, xl, yt + TS, 3, h + 3, m, seed + 1); ink(c, rect(xl - 1.3, yt - h + 1, 2.6, TS + 5), m.face, { wob: 0.4, seed: seed + 2, lw: 0.6, heavy: 1.1 }); return; }
   if (e.t === 'drystone') { var sm = WALLS[3]; c.save(); c.beginPath(); c.rect(xl - 3.5, yt - 14, 7, TS + 14); c.clip(); face(c, sm, xl - 3, yt - 11, 6, TS + 11, seed); var cy = yt - 12; while (cy < yt + TS) { var ch = 3 + hs(seed, cy) * 2.5; ink(c, [[xl - 2.8, cy], [xl + 2.8, cy + 0.3], [xl + 2.6, cy + ch], [xl - 2.6, cy + ch - 0.3]], mix(sm.top, '#000000', hs(seed, cy + 2) * 0.12), { wob: 0.4, seed: seed + Math.round(cy), flat: true, lw: 0.5, heavy: 0.8 }); cy += ch; } c.restore(); stroke(c, [[xl + 3, yt - 11], [xl + 3, yt + TS]], INK.line, 0.9); return; }
@@ -231,6 +253,22 @@ function door(c, x, y, w, h, open, seed) {
   ink(c, rect(x, y, w, h), '#5e4430', { wob: 0.6, seed: seed, lw: 0.7, heavy: 1.4 }); face(c, { face: '#5e4430', dark: '#3a2a1c', tex: 'planks' }, x, y, w, h, seed, true);
   ink(c, rect(x + 1, y + h * 0.22, w - 2, 2.6), '#4a3424', { wob: 0.3, seed: seed + 1, flat: true, lw: 0.5, heavy: 0.9 }); ink(c, rect(x + 1, y + h * 0.68, w - 2, 2.6), '#4a3424', { wob: 0.3, seed: seed + 2, flat: true, lw: 0.5, heavy: 0.9 });
   c.strokeStyle = '#3a3a40'; c.lineWidth = 1.1; c.beginPath(); c.arc(x + w - 5, y + h * 0.48, 1.9, 0, 7); c.stroke(); c.fillStyle = '#2a2a30'; c.beginPath(); c.arc(x + w - 5, y + h * 0.4, 0.8, 0, 7); c.fill();
+}
+// the church's and the hall's openings in cut stone: a round-arched door of planks with iron bands, a round-arched window with a lattice
+function archDoor(c, x, y, w, h, open, seed) {
+  var r = w / 2, cx = x + r;
+  c.save(); c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + r); c.arc(cx, y + r, r, Math.PI, 0); c.lineTo(x + w, y + h); c.closePath(); c.clip();
+  if (open) { c.fillStyle = '#1e1612'; c.fillRect(x, y, w, h); ink(c, rect(x, y, 3.2, h), '#4e3826', { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.2 }); }
+  else { c.fillStyle = '#5e4430'; c.fillRect(x, y, w, h); face(c, { face: '#5e4430', dark: '#3a2a1c', tex: 'planks' }, x, y, w, h, seed, true); [0.3, 0.62].forEach(function (t, i) { ink(c, rect(x + 0.5, y + h * t, w - 1, 2.4), '#3a3a40', { wob: 0.2, seed: seed + i, flat: true, lw: 0.5, heavy: 0.8 }); }); c.strokeStyle = '#3a3a40'; c.lineWidth = 1.1; c.beginPath(); c.arc(x + w - 5, y + h * 0.48, 1.9, 0, 7); c.stroke(); }
+  c.restore();
+  c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + r); c.arc(cx, y + r, r, Math.PI, 0); c.lineTo(x + w, y + h); c.strokeStyle = INK.line; c.lineWidth = 0.9; c.stroke();
+  c.beginPath(); c.moveTo(x - 2, y + r); c.arc(cx, y + r, r + 2, Math.PI, 0); c.strokeStyle = '#c2bcb2'; c.lineWidth = 2.2; c.stroke(); c.strokeStyle = INK.soft; c.lineWidth = 0.6; c.stroke();   // the voussoirs' ring
+}
+function archWindow(c, x, y, w, h, seed) {
+  var r = w / 2, cx = x + r;
+  c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + r); c.arc(cx, y + r, r, Math.PI, 0); c.lineTo(x + w, y + h); c.closePath(); c.fillStyle = '#241a14'; c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.9; c.stroke();
+  c.save(); c.clip(); c.fillStyle = 'rgba(255,220,150,0.14)'; c.fillRect(x + 1, y + 1, w - 2, h - 2); c.strokeStyle = 'rgba(120,110,96,0.9)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(cx, y); c.lineTo(cx, y + h); c.moveTo(x, y + h * 0.55); c.lineTo(x + w, y + h * 0.55); c.stroke(); c.restore();
+  ink(c, rect(x - 1.5, y + h, w + 3, 1.8), '#c2bcb2', { wob: 0.3, seed: seed + 2, flat: true, lw: 0.5, heavy: 0.9 });
 }
 // a window: a hole in the wall with a shutter swung open beside it (no glass in this age), a sill below
 function shutterWindow(c, x, y, w, h, seed) {
@@ -246,7 +284,7 @@ function drawH(c, x, y, e, low, open, C) {
   if (e.t === 'door' && !low) {
     ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.3 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.7, heavy: 1.3 });
     ink(c, rect(x0 - 0.5, yb - h - cp, T + 1, cp + 4), m.top, { wob: 0.4, seed: seed + 2, lw: 0.7, heavy: 1.3 });   // the lintel
-    door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3);
+    if (m.tex === 'ashlar') archDoor(c, x0 + 5, yb - h + 2, T - 10, h - 2, open, seed + 3); else door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3);
     return;
   }
   if (e.t === 'door') { ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.6, heavy: 1.1 }); return; }
@@ -255,7 +293,7 @@ function drawH(c, x, y, e, low, open, C) {
   cap(c, m, x0, yb - h - cp, T, cp, seed, true);
   path(c, d); c.lineJoin = 'round'; c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8);
   stroke(c, [[x0 + 0.5, yb - h + 0.6], [x0 + T - 0.5, yb - h + 0.6]], INK.lit, 1.0);                                // the lit top of the face
-  if (e.t === 'window' && !low) shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5);
+  if (e.t === 'window' && !low) { if (m.tex === 'ashlar') archWindow(c, x0 + 11, yb - h + 4, 10, h - 13, seed + 5); else shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5); }
 }
 // an edge along the left side of tile (x, y). more: whether the V edge below continues it (no end face then)
 function drawV(c, x, y, e, open, more, C) {
@@ -354,7 +392,7 @@ function drawRoof(c, room, a, C, dy) {
       if (ny < 0) { nx = -nx; ny = -ny; }
       if (kind === 1) { for (k = 1; k < len; k += 2.1) { var u = k / len, px = x0 + dx * u, py = y0 + dy2 * u, ln = 4 + hs(px, py) * 5, dark = hs(px + 1, py) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(px - nx * 3, py - ny * 3); c.lineTo(px + nx * ln + (hs(px, py + 3) - 0.5) * 1.5, py + ny * ln); c.stroke(); } c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 + nx * 1.5, y0 + ny * 1.5); c.lineTo(x1 + nx * 1.5, y1 + ny * 1.5); c.stroke(); }
       else if (kind === 0) { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.6, y1 + ny * 2.6], [x0 + nx * 2.6, y0 + ny * 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 2; k < len; k += 3) { var u2 = k / len, qx = x0 + dx * u2, qy = y0 + dy2 * u2; if (hs(qx, qy + 4) > 0.55) continue; c.strokeStyle = hs(qx, qy + 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(qx - nx, qy - ny); c.lineTo(qx + nx * (3 + hs(qx, qy + 7) * 2.5) + (hs(qx, qy + 6) - 0.5) * 2, qy + ny * (3 + hs(qx, qy + 7) * 2.5)); c.stroke(); } }
-      else { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.2, y1 + ny * 2.2], [x0 + nx * 2.2, y0 + ny * 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 4; k < len; k += 8) { var u3 = k / len; stroke(c, [[x0 + dx * u3, y0 + dy2 * u3], [x0 + dx * u3 + nx * 2, y0 + dy2 * u3 + ny * 2]], INK.soft, 0.6); } }
+      else { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.2, y1 + ny * 2.2], [x0 + nx * 2.2, y0 + ny * 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 4; k < len; k += (kind === 3 ? 6 : 8)) { var u3 = k / len; stroke(c, [[x0 + dx * u3, y0 + dy2 * u3], [x0 + dx * u3 + nx * 2, y0 + dy2 * u3 + ny * 2]], INK.soft, 0.6); } }
     }
     // a facet of the roof: fill, the material's rows following it, grain
     function facet(pts, tone, rows) {
@@ -371,6 +409,11 @@ function drawRoof(c, room, a, C, dy) {
       } else if (kind === 0) {                               // sod with grass blades in two greens, a few flowers
         for (j = by0 + 2; j < by1; j += 2.6) for (i = bx0 + 1; i < bx1; i += 3.2) { var q = hs(i, j); if (q > 0.6) continue; c.strokeStyle = q < 0.25 ? hl : (q < 0.45 ? dk : lineCol); c.lineWidth = 0.9; c.beginPath(); c.moveTo(i + q * 2, j + 1.5); c.lineTo(i + q * 2 + (hs(i, j + 2) - 0.5) * 2, j - 2 - hs(i, j + 3) * 2); c.stroke(); }
         for (j = by0 + 4; j < by1; j += 9) for (i = bx0 + 3; i < bx1; i += 11) if (hs(i, j) < 0.1) { c.fillStyle = hs(i, j + 1) < 0.5 ? '#d8c26a' : '#c9d2d8'; c.beginPath(); c.arc(i, j, 1.1, 0, 7); c.fill(); }
+      } else if (kind === 3 || kind === 4) {                 // clay tiles (a curved lip on every tile) or slate (flat slabs) in offset rows, each its own tone
+        var row2 = 0, tw2 = kind === 3 ? 6 : 9, th2 = kind === 3 ? 4.5 : 5.5, lip = kind === 3;
+        if (rows === 'h') { for (j = by0 + th2; j < by1 + th2; j += th2, row2++) for (i = bx0 + (row2 % 2 ? tw2 / 2 : 0) - tw2; i < bx1; i += tw2) { var t4 = (hs(i, j) - 0.5) * (lip ? 0.2 : 0.14); c.fillStyle = mix(r.col, t4 > 0 ? '#ffffff' : '#000000', Math.abs(t4) + Math.max(0, -tone) * 0.5); c.fillRect(i, j - th2, tw2 - 0.6, th2 - 0.4); if (lip) { c.fillStyle = 'rgba(255,236,210,0.22)'; c.fillRect(i + 1, j - th2 + 0.6, tw2 - 2.4, 1.2); } c.fillStyle = 'rgba(30,20,16,0.28)'; c.fillRect(i, j - 1.3, tw2 - 0.6, 0.9); } }
+        else { for (i = bx0 + tw2; i < bx1 + tw2; i += tw2, row2++) for (j = by0 + (row2 % 2 ? th2 / 2 : 0) - th2; j < by1; j += th2) { var t5 = (hs(i, j) - 0.5) * (lip ? 0.2 : 0.14); c.fillStyle = mix(r.col, t5 > 0 ? '#ffffff' : '#000000', Math.abs(t5) + Math.max(0, -tone) * 0.5); c.fillRect(i - tw2, j, tw2 - 0.4, th2 - 0.6); if (lip) { c.fillStyle = 'rgba(255,236,210,0.22)'; c.fillRect(i - tw2 + 0.6, j + 1, 1.2, th2 - 2.4); } c.fillStyle = 'rgba(30,20,16,0.28)'; c.fillRect(i - 1.3, j, 0.9, th2 - 0.6); } }
+        c.strokeStyle = lineCol; c.lineWidth = 0.5; c.globalAlpha = a * 0.5; if (rows === 'h') { for (j = by0 + th2; j < by1; j += th2) { c.beginPath(); c.moveTo(bx0, j); c.lineTo(bx1, j); c.stroke(); } } else { for (i = bx0 + tw2; i < bx1; i += tw2) { c.beginPath(); c.moveTo(i, by0); c.lineTo(i, by1); c.stroke(); } } c.globalAlpha = a;
       } else {                                               // shingles in scalloped rows, offset, each a shade of its own; down the hips they turn
         var row = 0;
         if (rows === 'h') { for (j = by0 + 5; j < by1 + 5; j += 5, row++) for (i = bx0 + (row % 2 ? 4 : 0) - 8; i < bx1; i += 8) { var t2 = (hs(i, j) - 0.5) * 0.16; c.fillStyle = mix(r.col, t2 > 0 ? '#ffffff' : '#000000', Math.abs(t2) + Math.max(0, -tone) * 0.5); c.beginPath(); c.moveTo(i, j - 5); c.lineTo(i + 8, j - 5); c.lineTo(i + 8, j - 1.5); c.quadraticCurveTo(i + 4, j + 1.2, i, j - 1.5); c.closePath(); c.fill(); c.strokeStyle = lineCol; c.lineWidth = 0.7; c.globalAlpha = a * 0.75; c.stroke(); c.globalAlpha = a; } }
@@ -390,11 +433,14 @@ function drawRoof(c, room, a, C, dy) {
       ink(c, ga, '#2b221c', { wob: 0, flat: true, noLine: true });                                                        // the dark underside of the eaves
       var gd = ink(c, gw, wm.face, { wob: 0.5, seed: seed + 9, noLine: true, flat: true });
       c.save(); path(c, gd); c.clip(); face(c, wm, left + ov, bot - rh, right - left - 2 * ov, rh, seed + 9); c.restore();
-      var gl = mix(wm.top, '#1a1410', 0.1), tb = bot - ov * K;
+      var gl = mix(wm.top, '#1a1410', 0.1), tb = bot - ov * K, stoneG = wm.tex === 'ashlar' || wm.tex === 'blocks';
+      if (stoneG) { var gwy = bot - rh * 0.55, gww = Math.min(9, rh * 0.22); archWindow(c, cx - gww / 2, gwy, gww, gww * 1.5, seed + 14); }   // a stone gable: no timbers, a small arched window high up
+      else {
       ink(c, rect(left + ov, tb - 3.2, right - left - 2 * ov, 3.2), gl, { wob: 0.4, seed: seed + 10, lw: 0.7, heavy: 1.2 });                        // the tie beam
       ink(c, rect(cx - 1.6, bot - rh + 2, 3.2, rh - ov * K - 2), gl, { wob: 0.4, seed: seed + 11, lw: 0.7, heavy: 1.2 });                          // the king post
       ink(c, [[left + ov + 3, tb - 3.2], [left + ov + 6, tb - 3.2], [cx - 1, bot - rh * 0.52], [cx - 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 12, lw: 0.6, heavy: 1.1 });   // the struts
       ink(c, [[right - ov - 3, tb - 3.2], [right - ov - 6, tb - 3.2], [cx + 1, bot - rh * 0.52], [cx + 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 13, lw: 0.6, heavy: 1.1 });
+      }
       var g2 = c.createLinearGradient(0, bot - rh, 0, bot - rh + 9); g2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.35)'); g2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.save(); path(c, gd); c.clip(); c.fillStyle = g2; c.fillRect(left, bot - rh, Wd, 10); c.restore();   // the shade under the ridge
       path(c, gd); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke();
       facet(slopeL, 0.14, 'v'); facet(slopeR, -0.26, 'v');
@@ -436,6 +482,7 @@ function icon(c, id, m) {
   else if (id === 'palisade') { for (var pi = 0; pi < 3; pi++) { var px = -6 + pi * 4.5; c.fillStyle = pi % 2 ? w.face : w.top; c.beginPath(); c.moveTo(px, 7); c.lineTo(px, -5); c.lineTo(px + 2, -8); c.lineTo(px + 4, -5); c.lineTo(px + 4, 7); c.closePath(); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.9; c.stroke(); } }
   else if (id === 'post') { c.fillStyle = w.dark; c.fillRect(-2, -7, 4, 15); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-2, -7, 4, 15); c.fillStyle = w.top; c.fillRect(-3.5, -9, 7, 2.5); c.strokeRect(-3.5, -9, 7, 2.5); }
   else if (id === 'stairs') { for (var si = 0; si < 4; si++) { c.fillStyle = si % 2 ? '#b98a5a' : '#c4955f'; c.fillRect(-7, 5 - si * 3.5, 14, 2); c.fillStyle = '#6b4a35'; c.fillRect(-7, 7 - si * 3.5, 14, 1.6); } c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-7, -6, 14, 14); }
+  else if (id === 'townwall') { var am2 = WALLS[6]; c.fillStyle = am2.face; c.fillRect(-7, -6, 14, 13); c.strokeStyle = am2.dark; c.lineWidth = 0.7; c.beginPath(); for (var ti = -3; ti <= 5; ti += 4) { c.moveTo(-7, ti); c.lineTo(7, ti); } c.stroke(); c.fillStyle = am2.top; c.fillRect(-7.5, -8, 15, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-7, -6, 14, 13); }
   else if (id === 'rail') { c.fillStyle = w.dark; c.fillRect(-7.5, -5, 2.5, 10); c.fillRect(5, -5, 2.5, 10); c.fillStyle = w.face; c.fillRect(-6, -3, 12, 2); c.fillRect(-6, 2, 12, 2); c.strokeStyle = LINE; c.lineWidth = 0.8; c.strokeRect(-6, -3, 12, 2); c.strokeRect(-6, 2, 12, 2); }
   else if (id === 'drystone') { var sm = WALLS[3]; c.fillStyle = sm.face; c.fillRect(-7, -3, 14, 8); c.strokeStyle = sm.dark; c.lineWidth = 0.8; c.beginPath(); c.moveTo(-7, 0); c.lineTo(7, 0); c.moveTo(-7, 2.5); c.lineTo(7, 2.5); c.moveTo(-2, -3); c.lineTo(-2, 0); c.moveTo(3, 0); c.lineTo(3, 2.5); c.moveTo(-4, 2.5); c.lineTo(-4, 5); c.stroke(); c.fillStyle = sm.top; c.fillRect(-7, -5, 14, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-7, -5, 14, 10); }
   else if (id === 'door') { c.fillStyle = w.dark; c.fillRect(-6, -7, 12, 14); c.fillStyle = '#6b4a35'; c.fillRect(-4, -5, 8, 12); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -7, 12, 14); c.fillStyle = '#e0a93a'; c.beginPath(); c.arc(2, 1, 1, 0, 7); c.fill(); }

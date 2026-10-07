@@ -4,8 +4,8 @@ const { createCanvas } = require('@napi-rs/canvas'); const fs = require('fs');
 global.__mk = (w, h) => createCanvas(w, h);
 const G = require('../../src/art.js'), S = require('../../src/stylelab.js'), Build = require('../../src/build.js'), Village = require('../../src/village.js');
 const lib = G.lib, kit = S.kit; kit.setup(kit.STYLE);
-const seed = +process.argv[2] || 4321, archs = ['farmstead', 'small', 'village', 'fishing', 'trading', 'seat', 'ruin'], T = 32, TS = 24, Z = 2;
-const cellW = 36 * T, cellH = 30 * TS, cols = 3, rows = Math.ceil(archs.length / cols), cv = createCanvas(cellW * cols * Z, cellH * rows * Z), c = cv.getContext('2d');
+const seed = +process.argv[2] || 4321, archs = ['farmstead', 'small', 'village', 'fishing', 'trading', 'seat', 'ruin', 'town', 'church'], T = 32, TS = 24, Z = 2;
+const cellW = 40 * T, cellH = 34 * TS, cols = 3, rows = Math.ceil(archs.length / cols), cv = createCanvas(cellW * cols * Z, cellH * rows * Z), c = cv.getContext('2d');
 const tiles = {}; function tileCv(n) { if (!tiles[n]) tiles[n] = kit.bakeTile(n, 0); return tiles[n]; }
 archs.forEach((a, i) => {
   const site = Village.siteFor(a), ox = (i % cols) * cellW, oy = Math.floor(i / cols) * cellH, shore = Village.ARCH[a].shore ? 's' : null;

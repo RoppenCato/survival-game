@@ -261,6 +261,8 @@ __COMBAT__
     { id: 'wall', name: 'Wattle wall', m: 2, cost: { wood: 1, fiber: 2 } },
     { id: 'wall', name: 'Stone wall', m: 3, cost: { stone: 2 } },
     { id: 'wall', name: 'Turf wall', m: 4, cost: { stone: 1, fiber: 2 } },
+    { id: 'wall', name: 'Timber frame', m: 5, cost: { wood: 2, fiber: 1 } },
+    { id: 'wall', name: 'Cut stone', m: 6, cost: { stone: 3 } },
     { id: 'door', name: 'Door', m: 0, cost: { wood: 2 } },
     { id: 'window', name: 'Window', m: 0, cost: { wood: 2 } },
     { id: 'post', name: 'Post', m: 0, cost: { wood: 1 } },
@@ -285,9 +287,12 @@ __COMBAT__
     { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true },
     { id: 'rail', name: 'Rail fence', m: 1, cost: { wood: 1 }, yard: true },
     { id: 'drystone', name: 'Dry-stone wall', m: 3, cost: { stone: 2 }, yard: true },
+    { id: 'townwall', name: 'Town wall', m: 6, cost: { stone: 4 }, yard: true },
     { id: 'roof', name: 'Turf roof', m: 0, cost: { fiber: 2 } },
     { id: 'roof', name: 'Thatch roof', m: 1, cost: { fiber: 4 } },
     { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 } },
+    { id: 'roof', name: 'Tile roof', m: 3, cost: { stone: 3 } },
+    { id: 'roof', name: 'Slate roof', m: 4, cost: { stone: 4 } },
     { id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 4, cost: { wood: 6, stone: 1 }, icon: function (c) {
       c.fillStyle = '#b98a5a'; c.fillRect(-7, -3, 14, 3); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-7, -3, 14, 3); c.fillStyle = '#8a5a3a'; c.fillRect(-6, 0, 2, 6); c.fillRect(4, 0, 2, 6);
       c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(-3, -4); c.lineTo(1, -8); c.lineTo(3, -6); c.lineTo(-1, -3); c.closePath(); c.fill(); c.stroke();
@@ -330,9 +335,14 @@ __COMBAT__
     { id: 'flowers', name: 'Flower bed', kind: 'item', prop: 'flowerBed', r: 0, cost: { fiber: 2 } },
     { id: 'cairn', name: 'Cairn', kind: 'item', prop: 'cairn', r: 4, cost: { stone: 5 } },
     { id: 'charcoal', name: 'Charcoal clamp', kind: 'item', prop: 'charcoalPit', r: 7, clamp: true, cost: { wood: 8, stone: 2 } },
-    { id: 'furnace', name: 'Furnace', kind: 'item', prop: 'furnace', r: 9, furnace: true, cost: { stone: 12, wood: 2 } }
+    { id: 'furnace', name: 'Furnace', kind: 'item', prop: 'furnace', r: 9, furnace: true, cost: { stone: 12, wood: 2 } },
+    { id: 'altar', name: 'Altar', kind: 'item', prop: 'altar', r: 6, light: 1, lamp: true, cost: { stone: 6, fiber: 2 } },
+    { id: 'graveStone', name: 'Grave marker', kind: 'item', prop: 'graveStone', r: 2, cost: { stone: 2 } },
+    { id: 'wayCross', name: 'Stone cross', kind: 'item', prop: 'wayCross', r: 3, cost: { stone: 5 } },
+    { id: 'stall', name: 'Market stall', kind: 'item', prop: 'stall', r: 8, cost: { wood: 6, fiber: 4 } },
+    { id: 'bellTower', name: 'Bell tower', kind: 'item', prop: 'bellTower', r: 14, cost: { stone: 24, wood: 6, copper: 2 } }
   ];
-  var ICON_SCALE = { firePit: 0.34, logSeat: 0.55, furnace: 0.36, carverBench: 0.5, fireplace: 0.4, campfire: 0.4, trough: 0.5, scarecrow: 0.26, flowerBed: 0.36, cairn: 0.4, charcoalPit: 0.3, shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
+  var ICON_SCALE = { bellTower: 0.17, altar: 0.5, graveStone: 0.7, wayCross: 0.4, stall: 0.36, firePit: 0.34, logSeat: 0.55, furnace: 0.36, carverBench: 0.5, fireplace: 0.4, campfire: 0.4, trough: 0.5, scarecrow: 0.26, flowerBed: 0.36, cairn: 0.4, charcoalPit: 0.3, shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   // the rows of the Building board (a piece's cat): the frame and walls, floors and roofs, the yard, the home, outdoors
   var BCATS = [['frame', 'Frame and walls'], ['floor', 'Floors and roofs'], ['path', 'Ground'], ['yard', 'Yard'], ['home', 'Furniture'], ['out', 'Outdoors']];
   var HOME_IDS = { bench: 1, bed: 1, hearth: 1, fireplace: 1, carver: 1, chair: 1, seat: 1, table: 1, barrel: 1, crate: 1, rug: 1, chest: 1 };
@@ -1496,7 +1506,7 @@ __COMBAT__
       w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20) list.push(o); });
       if (v.jetty) { var jr = v.jetty.root; w.eachProp(function (o) { if (Math.abs(o.x - (jr[0] + 0.5) * T) < 60 && Math.abs(o.y - (jr[1] + 0.5) * T) < 60) list.push(o); }); }
       list.forEach(function (o) { w.removeProp(o); });
-      v.V = Village.make(v.seed, { tx: v.tx, ty: v.ty, w: v.w, h: v.h, shore: v.shore }, { arch: v.arch, wealth: v.wealth, G: hamletCfg, name: v.name });
+      v.V = Village.make(v.seed, { tx: v.tx, ty: v.ty, w: v.w, h: v.h, shore: v.shore }, { arch: v.arch, wealth: v.wealth, G: hamletCfg, name: v.name, biome: v.biome });
       if (vi === 0) hamletV = v.V;
       var R = kit.rng(v.seed * 29 + 7), i;
       for (i = 0; i < v.V.folk.length; i++) {

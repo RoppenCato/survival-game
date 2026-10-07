@@ -3103,6 +3103,69 @@ function bogIronObj(c, K, x, y, seed) {                 // a lump of bog ore: ru
   shape(c, [[x + 8, y], [x + 7, y - 4], [x + 12, y - 7], [x + 17, y - 4], [x + 16, y]], M(16, 48, 30), { seed: seed + 3, size: 'S', sh: 1, rough: 0.4 });
   for (var i = 0; i < 5; i++) { var rx = x + (R() - 0.5) * 36, ry = y + (R() - 0.3) * 6; line(c, [[rx, ry], [rx + (R() - 0.5) * 2, ry - 6 - R() * 5]], 0.9, M(70, 30, 38).base, false); }   // reeds round it
 }
+// The church and the town (2026-10-07, the lowlands): a bell tower, an altar, grave markers, a wayside cross, a market stall, a yew
+function ashlarFill(c, x, y, w, h, seed, base) {         // dressed stone in courses, for the props built of it
+  var R = rng(seed), j, crs = 6, ncr = Math.ceil(h / crs);
+  fillPts(c, [[x, y], [x + w, y], [x + w, y + h], [x, y + h]], M(40, 8, 48).base);
+  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+  for (j = 0; j < ncr; j++) { var cy = y + h - (j + 1) * crs, sx = x - (j % 2 ? 6 : 0) - R() * 2; while (sx < x + w) { var sw = 9 + R() * 6, tn = 58 + (R() - 0.5) * 12; fillPts(c, [[sx + 0.5, cy + 0.5], [sx + sw - 0.5, cy + 0.5], [sx + sw - 0.5, cy + crs - 0.5], [sx + 0.5, cy + crs - 0.5]], M(40, 9, tn).base); fillPts(c, [[sx + 0.5, cy + 0.5], [sx + sw - 0.5, cy + 0.5], [sx + sw - 0.5, cy + 1.4], [sx + 0.5, cy + 1.4]], 'rgba(255,250,236,0.16)'); sx += sw; } }
+  c.restore();
+}
+function bellTowerObj(c, K, x, y, seed) {                // a square tower of cut stone, a round-arched opening with the bell, a slate pyramid roof and a small cross
+  gshadow(c, x + 2, y + 1, 24, 7, 0.45); longShadow(c, x, y, 30, 40);
+  var w = 36, h = 86, x0 = x - w / 2, top = y - h;
+  ashlarFill(c, x0, top, w, h, seed);
+  fillPts(c, [[x0, top], [x0 + w, top], [x0 + w, y], [x0, y]], 'rgba(35,26,22,0)');
+  c.save(); c.beginPath(); c.rect(x0 + w * 0.62, top, w * 0.38, h); c.clip(); fillPts(c, [[x0, top], [x0 + w, top], [x0 + w, y], [x0, y]], 'rgba(40,44,60,0.28)'); c.restore();   // the shadow side
+  line(c, [[x0 + 0.5, top + 0.5], [x0 + 0.5, y]], 0.8, 'rgba(255,250,236,0.35)', false);
+  var ox = x, oy = top + 22, ow2 = 11, oh = 20;        // the belfry opening, round-arched, the bell hanging in it
+  c.beginPath(); c.moveTo(ox - ow2 / 2, oy + oh); c.lineTo(ox - ow2 / 2, oy + ow2 / 2); c.arc(ox, oy + ow2 / 2, ow2 / 2, Math.PI, 0); c.lineTo(ox + ow2 / 2, oy + oh); c.closePath(); c.fillStyle = '#1c1612'; c.fill(); c.strokeStyle = OLC; c.lineWidth = 0.8; c.stroke();
+  line(c, [[ox - 5, oy + 7.5], [ox + 5, oy + 7.5]], 1.4, M(30, 20, 30).base, false);
+  shape(c, [[ox - 1.8, oy + 8], [ox + 1.8, oy + 8], [ox + 4.2, oy + 15], [ox + 4.6, oy + 17.5], [ox - 4.6, oy + 17.5], [ox - 4.2, oy + 15]], K.brass, { seed: seed + 3, size: 'S', sh: 1, rough: 0.2 });
+  fillPts(c, ellPts(ox, oy + 18.4, 1.2, 1.0, 6), M(30, 20, 26).base);
+  var sm = M(216, 12, 38), rh = 26, ov = 4;            // the slate pyramid: two faces seen, the right in shadow
+  shape(c, [[x0 - ov, top], [x, top - rh], [x0 + w / 2 + 0.5, top - rh], [x0 + w / 2 + 0.5, top]], sm, { seed: seed + 5, size: 'M', sh: 0.5, hl: 1.5, rough: 0.2 });
+  shape(c, [[x, top - rh], [x0 + w + ov, top], [x0 + w / 2 - 0.5, top]], M(216, 14, 26), { seed: seed + 6, size: 'M', sh: 0.3, rough: 0.2 });
+  for (var k = 1; k < 6; k++) { var t = k / 6, yy = top - rh + rh * t; line(c, [[x - (w / 2 + ov) * t, yy], [x + (w / 2 + ov) * t, yy]], 0.5, 'rgba(35,26,22,0.35)', false); }
+  fillPts(c, [[x0 - ov - 1, top - 1], [x0 + w + ov + 1, top - 1], [x0 + w + ov + 1, top + 2], [x0 - ov - 1, top + 2]], 'rgba(35,26,22,0.45)');   // the eaves' shadow on the wall
+  line(c, [[x, top - rh - 1], [x, top - rh - 11]], 1.6, M(30, 20, 32).base, false); line(c, [[x - 3.2, top - rh - 8], [x + 3.2, top - rh - 8]], 1.6, M(30, 20, 32).base, false);   // the cross
+}
+function altarObj(c, K, x, y, seed) {                    // a block of cut stone under a white cloth, two candles burning, a cup
+  gshadow(c, x, y + 1, 18, 4, 0.35);
+  ashlarFill(c, x - 15, y - 17, 30, 17, seed);
+  c.strokeStyle = OLC; c.lineWidth = 0.8; c.strokeRect(x - 15, y - 17, 30, 17);
+  fillPts(c, [[x - 16, y - 20], [x + 16, y - 20], [x + 16, y - 15], [x - 16, y - 15]], M(44, 20, 90).base); fillPts(c, [[x - 16, y - 15.5], [x + 16, y - 15.5], [x + 16, y - 10], [x - 16, y - 10]], M(44, 18, 80).base);
+  line(c, [[x - 16, y - 20], [x + 16, y - 20], [x + 16, y - 10], [x - 16, y - 10]], 0.6, 'rgba(35,26,22,0.5)', true);
+  fillPts(c, [[x - 12, y - 18], [x + 12, y - 18], [x + 12, y - 17.2], [x - 12, y - 17.2]], M(mixHue(P.accentHue, 10, 0.4), 55, 40).base);
+  [[-9, 0], [9, 0]].forEach(function (q, i) { line(c, [[x + q[0], y - 20], [x + q[0], y - 29]], 2.2, M(44, 30, 86).base, false); fillPts(c, [[x + q[0] - 1.6, y - 32.5], [x + q[0] + 1.6, y - 32.5], [x + q[0] + 0.4, y - 27.5], [x + q[0] - 0.4, y - 27.5]], M(42, 100, 62).base); fillPts(c, ellPts(x + q[0], y - 30.5, 0.7, 1.3, 6), M(48, 100, 88).base); addLight(x + q[0], y - 30, 44, 42, 90, 62, 0.6); });
+  shape(c, [[x - 2.5, y - 21], [x + 2.5, y - 21], [x + 3.2, y - 25], [x - 3.2, y - 25]], K.brass, { seed: seed + 2, size: 'S', sh: 0.8, rough: 0.2 }); fillPts(c, ellPts(x, y - 25, 3.2, 1.0, 8), M(42, 50, 62).base);
+}
+function graveStoneObj(c, K, x, y, seed) {               // a grave marker: an upright slab with a rounded top and cut lines, or a wooden cross
+  gshadow(c, x + 1, y, 7, 2.4, 0.35);
+  if (seed % 2) { shape(c, [[x - 5, y], [x - 5.4, y - 12], [x - 3, y - 16], [x + 3, y - 16], [x + 5.4, y - 12], [x + 5, y]], M(40, 8, 60), { seed: seed, size: 'S', sh: 1.2, rough: 0.35 }); line(c, [[x - 2.5, y - 10], [x + 2.5, y - 10]], 0.6, 'rgba(35,26,22,0.45)', false); line(c, [[x - 2, y - 7.5], [x + 2, y - 7.5]], 0.6, 'rgba(35,26,22,0.45)', false); fillPts(c, ellPts(x - 2, y - 4, 2, 1.4, 6), M(P.outsideHue + 10, 40, 42).base); }
+  else { shape(c, rrPts(x - 1.6, y - 18, 3.2, 18, 1), K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.25 }); shape(c, rrPts(x - 6, y - 14, 12, 3, 1), K.wood, { seed: seed + 1, size: 'S', sh: 1, rough: 0.25 }); }
+  for (var i = 0; i < 3; i++) line(c, [[x - 6 + i * 5, y + 1], [x - 6 + i * 5 + 0.6, y - 3 - (seed + i) % 3]], 0.8, M(P.outsideHue, 42, 36).base, false);
+}
+function wayCrossObj(c, K, x, y, seed) {                 // a tall stone cross on two steps at the churchyard gate
+  gshadow(c, x + 1, y, 11, 3.5, 0.4);
+  shape(c, [[x - 11, y], [x - 11, y - 4], [x + 11, y - 4], [x + 11, y]], M(40, 8, 52), { seed: seed, size: 'S', sh: 1, rough: 0.3 });
+  shape(c, [[x - 7, y - 4], [x - 7, y - 8], [x + 7, y - 8], [x + 7, y - 4]], M(40, 8, 58), { seed: seed + 1, size: 'S', sh: 1, rough: 0.3 });
+  shape(c, [[x - 2.2, y - 8], [x - 2.2, y - 44], [x + 2.2, y - 44], [x + 2.2, y - 8]], M(40, 8, 62), { seed: seed + 2, size: 'S', sh: 1, rough: 0.25 });
+  shape(c, [[x - 9, y - 38], [x - 9, y - 34], [x + 9, y - 34], [x + 9, y - 38]], M(40, 8, 62), { seed: seed + 3, size: 'S', sh: 1, rough: 0.25 });
+  c.strokeStyle = 'rgba(35,26,22,0.4)'; c.lineWidth = 0.6; c.beginPath(); c.arc(x, y - 36, 4.5, 0, 7); c.stroke();
+}
+function stallObj(c, K, x, y, seed) {                    // a market stall: a trestle table under a striped awning on four posts, baskets of apples and fish
+  var R = rng(seed), i;
+  gshadow(c, x, y + 1, 24, 5, 0.35);
+  [[-20, 2], [20, 2], [-20, -16], [20, -16]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 1.5, y + q[1] - 40, 3, 40 - (k >= 2 ? 10 : 0)), K.wood, { seed: seed + k, size: 'S', sh: 1, rough: 0.2 }); });
+  shape(c, [[x - 19, y - 12], [x + 19, y - 12], [x + 18, y - 6], [x - 18, y - 6]], K.wood, { seed: seed + 5, size: 'M', sh: 1, rough: 0.25 });
+  for (i = 0; i < 2; i++) { var bx = x - 10 + i * 20; shape(c, ellPts(bx, y - 13, 7, 3.6, 10), M(36, 40, 56), { seed: seed + 8 + i, size: 'S', sh: 1, rough: 0.3 }); for (var k = 0; k < 5; k++) fillPts(c, ellPts(bx + (R() - 0.5) * 8, y - 15 - R() * 2, 1.7, 1.4, 6), i ? M(6, 70, 48).base : M(200, 14, 66).base); }
+  var cl = [[x - 24, y - 44], [x + 24, y - 44], [x + 23, y - 34], [x - 23, y - 34]];
+  shape(c, cl, M(40, 30, 78), { seed: seed + 12, size: 'M', sh: 1, rough: 0.3 });
+  c.save(); path(c, cl); c.clip(); for (i = -22; i < 24; i += 8) fillPts(c, [[x + i, y - 44], [x + i + 4, y - 44], [x + i + 3.8, y - 34], [x + i - 0.2, y - 34]], M(mixHue(P.accentHue, 10, 0.4), 50, 46).base); c.restore();
+  for (i = -22; i < 24; i += 4) line(c, [[x + i, y - 34.5], [x + i + 2, y - 31.5], [x + i + 4, y - 34.5]], 0.6, 'rgba(35,26,22,0.45)', false);
+}
+function yewTree(c, K, x, y, h, seed) { cypress(c, lowK(K, { pine: M(P.outsideHue + 30, 30, 30), pineL: M(P.outsideHue + 26, 32, 38), leaf: M(P.outsideHue + 30, 32, 32), leafD: M(P.outsideHue + 34, 28, 24), cypress: M(P.outsideHue + 30, 30, 30) }), x, y, h, seed); }
 function cypress(c, K, x, y, h, seed) {
   var R = rng(seed), i, n = 9, sw = (R() - 0.5) * P.twist * 10;
   longShadow(c, x, y, 20, h * 0.5); gshadow(c, x, y + 1, 16, 5, 0.4);
@@ -4320,6 +4383,12 @@ var PROPS = {
   apple: { b: [-80, -150, 80, 20], f: function (c, K, s) { appleTree(c, K, 0, 0, 125, s); } },
   chalkRock: { b: [-36, -40, 36, 10], f: function (c, K, s) { chalkRockObj(c, K, 0, 0, 16, s); } },
   bogIron: { b: [-24, -22, 24, 8], f: function (c, K, s) { bogIronObj(c, K, 0, 0, s); } },
+  bellTower: { b: [-26, -128, 26, 10], f: function (c, K, s) { bellTowerObj(c, K, 0, 0, s); } },
+  altar: { b: [-18, -36, 18, 8], f: function (c, K, s) { altarObj(c, K, 0, 0, s); } },
+  graveStone: { b: [-8, -22, 8, 4], f: function (c, K, s) { graveStoneObj(c, K, 0, 0, s); } },
+  wayCross: { b: [-12, -48, 12, 4], f: function (c, K, s) { wayCrossObj(c, K, 0, 0, s); } },
+  stall: { b: [-26, -48, 26, 8], f: function (c, K, s) { stallObj(c, K, 0, 0, s); } },
+  yew: { b: [-50, -230, 80, 14], f: function (c, K, s) { yewTree(c, K, 0, 0, 150, s); } },
   hedge: { b: [-42, -44, 42, 12], f: function (c, K, s) { hedgeObj(c, K, 0, 0, s); } },
   pine: { b: [-84, -224, 140, 25], f: function (c, K, s) { pine(c, K, 0, 0, 180, s); } },   // Robin: the pine at 1.4 (2026-10-05)
   pineBig: { b: [-80, -230, 140, 20], f: function (c, K, s) { pine(c, K, 0, 0, 190, s); } },
@@ -4346,7 +4415,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { bellTower: 1, altar: 0.7, graveStone: 0.75, wayCross: 0.75, stall: 0.7, windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
@@ -4401,7 +4470,9 @@ var WALLS = [
   { name: 'Planks', face: '#7d634a', top: '#9a7c5c', dark: '#4a3626', tex: 'planks' },
   { name: 'Wattle', face: '#a89474', top: '#bfab88', dark: '#5e4e36', tex: 'wattle' },
   { name: 'Stone', face: '#7e7f84', top: '#9a9ba0', dark: '#4f5058', tex: 'blocks' },
-  { name: 'Turf', face: '#5d7a48', top: '#72915a', dark: '#3b5230', tex: 'turf' }
+  { name: 'Turf', face: '#5d7a48', top: '#72915a', dark: '#3b5230', tex: 'turf' },
+  { name: 'Timber frame', face: '#d8cfb8', top: '#6a5238', dark: '#4a3626', tex: 'frame' },     // the lowlands (2026-10-07): plaster panels between dark timbers
+  { name: 'Cut stone', face: '#a9a39a', top: '#c2bcb2', dark: '#6b655c', tex: 'ashlar' }        // dressed blocks in courses, the church's and the hall's
 ];
 // Floors go on any land tile, so they make paths, yards and decks round a house as well as the floor in it. The dock
 // (water: true) also goes on water beside land or another dock, and can be walked on.
@@ -4409,13 +4480,13 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Gravel trail', tile: 'trail', bare: true }, { name: 'Grass', tile: 'grass', bare: true }, { name: 'Dark grass', tile: 'grassDark', bare: true }, { name: 'Moss', tile: 'moss', bare: true }, { name: 'Bare rock', tile: 'rock', bare: true },
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
-var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'No roof' }];
+var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
 var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1 };   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
-var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1 }, OPEN = { door: 1, gate: 1 };
+var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 }, OPEN = { door: 1, gate: 1 };
 var UP = CFG.wallH + CFG.thick * K + 1;      // one storey: how far up the floor above (or the roof) sits, in screen units
-var FENCE_H = 12, PALISADE_H = 30;
+var FENCE_H = 12, PALISADE_H = 30, TOWNWALL_H = 34;
 function key(x, y) { return x + ',' + y; }
 function cfg(c) { var o = {}, k; for (k in CFG) o[k] = CFG[k]; for (k in c || {}) if (c[k] != null) o[k] = c[k]; return o; }
 
@@ -4552,6 +4623,18 @@ function face(c, m, x, y, w, h, seed, vertical) {
     c.fillStyle = m.dark; c.fillRect(x, y, w, h);
     var rh = 5.2, nr = Math.ceil(h / rh);
     for (j = 0; j < nr; j++) { var by = y + h - (j + 1) * rh, cx2 = x - (j % 2 ? 4 : 0) - hs(seed, j) * 3; while (cx2 < x + w) { var bw = 5 + hs(seed + j, cx2) * 6, tone3 = (hs(seed, j * 7 + cx2) - 0.5) * 0.18; ink(c, [[cx2 + 0.5, by + 0.6], [cx2 + bw - 0.4, by + 0.4], [cx2 + bw - 0.6, by + rh - 0.5], [cx2 + 0.6, by + rh - 0.3]], mix(m.face, tone3 > 0 ? '#ffffff' : '#000000', Math.abs(tone3)), { wob: 0.8, seed: seed + j * 13 + Math.round(cx2), flat: true, lw: 0.55, heavy: 0.9 }); cx2 += bw; } }
+  } else if (m.tex === 'frame') {                        // plaster panels, the timbers dark: posts, a sill and a head beam, a brace in every other bay
+    c.fillStyle = m.face; c.fillRect(x, y, w, h);
+    for (j = 0; j < 14; j++) { var qx = x + hs(seed, j) * w, qy = y + hs(seed + 3, j) * h; c.fillStyle = hs(seed, j + 7) < 0.5 ? 'rgba(90,70,50,0.08)' : 'rgba(255,250,236,0.18)'; c.beginPath(); c.ellipse(qx, qy, 2 + hs(seed, j + 9) * 3, 1.2 + hs(seed, j + 11) * 2, 0, 0, 7); c.fill(); }
+    var bay = vertical ? 7 : 10.5, nb = Math.max(1, Math.round(w / bay)), bw2 = w / nb, tw = 2.6;
+    for (i = 0; i <= nb; i++) { var bx = x + i * bw2 - (i === nb ? tw : (i === 0 ? 0 : tw / 2)); c.fillStyle = m.top; c.fillRect(bx, y, tw, h); stroke(c, [[bx + 0.3, y + 1], [bx + 0.4, y + h - 1]], INK.faint, 0.5); }
+    c.fillStyle = m.top; c.fillRect(x, y, w, tw); c.fillRect(x, y + h - tw, w, tw);
+    for (i = 0; i < nb; i++) { if (hs(seed, i + 20) < 0.5) continue; var ax = x + i * bw2 + tw / 2, bx2 = x + (i + 1) * bw2 - tw / 2, up = hs(seed, i + 30) < 0.5; c.strokeStyle = m.top; c.lineWidth = tw * 0.85; c.beginPath(); c.moveTo(ax, up ? y + h - tw : y + tw); c.lineTo(bx2, up ? y + tw : y + h - tw); c.stroke(); }
+    if (h > 14) { c.fillStyle = m.top; c.fillRect(x, y + h * 0.5 - 1, w, 2); }
+  } else if (m.tex === 'ashlar') {                       // dressed stone in even courses, the joints fine, every block its own tone
+    c.fillStyle = m.dark; c.fillRect(x, y, w, h);
+    var crs = 6.4, ncr = Math.ceil(h / crs);
+    for (j = 0; j < ncr; j++) { var cy2 = y + h - (j + 1) * crs, sx2 = x - (j % 2 ? 7 : 0) - hs(seed, j) * 2; while (sx2 < x + w) { var sw2 = 11 + hs(seed + j, sx2) * 6, tn = (hs(seed, j * 5 + sx2) - 0.5) * 0.14; c.fillStyle = mix(m.face, tn > 0 ? '#ffffff' : '#000000', Math.abs(tn)); c.fillRect(sx2 + 0.5, cy2 + 0.5, sw2 - 1, crs - 1); c.fillStyle = 'rgba(255,250,236,0.16)'; c.fillRect(sx2 + 0.5, cy2 + 0.5, sw2 - 1, 1); sx2 += sw2; } }
   } else if (m.tex === 'turf') {
     var th2 = 4.6, nt = Math.ceil(h / th2);
     for (i = 0; i < nt; i++) { var ty = y + h - (i + 1) * th2, tone4 = (hs(seed, i) - 0.5) * 0.14, pts = [[x - 1, ty + th2]], k; for (k = 0; k <= 8; k++) pts.push([x - 1 + (w + 2) * k / 8, ty + 0.8 + (hs(seed + i, k) - 0.5) * 1.6]); pts.push([x + w + 1, ty + th2]); ink(c, pts, mix(i % 2 ? m.face : m.top, tone4 > 0 ? '#ffffff' : '#000000', Math.abs(tone4)), { wob: 0, flat: true, noLine: true }); stroke(c, [[x, ty + th2 - 0.3], [x + w, ty + th2 - 0.3]], INK.faint, 0.6); for (k = 0; k < 4; k++) { var gx = x + 2 + hs(seed + i + 3, k) * (w - 4); stroke(c, [[gx, ty + 2], [gx + (hs(seed, k + i) - 0.5) * 2, ty - 1.5]], m.dark, 0.7, 0.8); } }
@@ -4574,6 +4657,13 @@ function drawFenceH(c, x, y, e, open, C) {
   if (e.t === 'palisade') {
     for (i = 0; i < 4; i++) { var px = x0 + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4, col = mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08); ink(c, [[px + 0.3, yb], [px, yb - ph + 4], [px + 4, yb - ph], [px + 8, yb - ph + 4], [px + 7.7, yb]], col, { wob: 0.7, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[px + 2.5, yb - 3], [px + 2.2, yb - ph + 6]], INK.faint, 0.6); stroke(c, [[px + 5.5, yb - 2], [px + 5.8, yb - ph + 7]], INK.faint, 0.5); }
     ink(c, rect(x0, yb - 11, T, 2.4), m.dark, { wob: 0.4, seed: seed + 9, flat: true, lw: 0.6, heavy: 1 }); ink(c, rect(x0, yb - 22, T, 2.4), m.dark, { wob: 0.4, seed: seed + 10, flat: true, lw: 0.6, heavy: 1 });
+    return;
+  }
+  if (e.t === 'townwall') {               // the town's wall: cut stone a storey high with a coping of flat slabs and a shadow at its foot
+    var am = WALLS[6], d = ink(c, rect(x0, yb - TOWNWALL_H, T, TOWNWALL_H), am.face, { wob: 0.5, seed: seed, noLine: true, flat: true }); face(c, am, x0, yb - TOWNWALL_H, T, TOWNWALL_H, seed);
+    path(c, d); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8);
+    for (i = 0; i < 3; i++) ink(c, rect(x0 + i * (T / 3) - 0.5, yb - TOWNWALL_H - 3, T / 3 + 1, 3.4), am.top, { wob: 0.4, seed: seed + 20 + i, lw: 0.7, heavy: 1.2 });
+    stroke(c, [[x0 + 0.5, yb - TOWNWALL_H + 0.8], [x0 + T - 0.5, yb - TOWNWALL_H + 0.8]], INK.lit, 1.0);
     return;
   }
   var h = FENCE_H;
@@ -4604,6 +4694,7 @@ function drawFenceV(c, x, y, e, open, more, C) {
     for (i = 0; i < 3; i++) { var py = yt + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4; ink(c, [[xl - 3, py + 8], [xl - 3, py + 8 - ph + 3], [xl, py + 8 - ph], [xl + 3, py + 8 - ph + 3], [xl + 3, py + 8]], mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08), { wob: 0.6, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[xl - 1, py + 6], [xl - 1.2, py + 8 - ph + 6]], INK.faint, 0.55); }
     return;
   }
+  if (e.t === 'townwall') { var am = WALLS[6]; cap(c, am, xl - 3.5, yt - TOWNWALL_H, 7, TS, seed, false); if (!more) { var d2 = ink(c, rect(xl - 3.5, yt + TS - TOWNWALL_H, 7, TOWNWALL_H), am.face, { wob: 0.4, seed: seed + 1, noLine: true, flat: true }); face(c, am, xl - 3.5, yt + TS - TOWNWALL_H, 7, TOWNWALL_H, seed + 1, true); path(c, d2); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d2, 1.6); } return; }
   var h = FENCE_H;
   if (e.t === 'rail') { post(c, xl, yt, 3, h + 3, m, seed); if (!more) post(c, xl, yt + TS, 3, h + 3, m, seed + 1); ink(c, rect(xl - 1.3, yt - h + 1, 2.6, TS + 5), m.face, { wob: 0.4, seed: seed + 2, lw: 0.6, heavy: 1.1 }); return; }
   if (e.t === 'drystone') { var sm = WALLS[3]; c.save(); c.beginPath(); c.rect(xl - 3.5, yt - 14, 7, TS + 14); c.clip(); face(c, sm, xl - 3, yt - 11, 6, TS + 11, seed); var cy = yt - 12; while (cy < yt + TS) { var ch = 3 + hs(seed, cy) * 2.5; ink(c, [[xl - 2.8, cy], [xl + 2.8, cy + 0.3], [xl + 2.6, cy + ch], [xl - 2.6, cy + ch - 0.3]], mix(sm.top, '#000000', hs(seed, cy + 2) * 0.12), { wob: 0.4, seed: seed + Math.round(cy), flat: true, lw: 0.5, heavy: 0.8 }); cy += ch; } c.restore(); stroke(c, [[xl + 3, yt - 11], [xl + 3, yt + TS]], INK.line, 0.9); return; }
@@ -4617,6 +4708,22 @@ function door(c, x, y, w, h, open, seed) {
   ink(c, rect(x, y, w, h), '#5e4430', { wob: 0.6, seed: seed, lw: 0.7, heavy: 1.4 }); face(c, { face: '#5e4430', dark: '#3a2a1c', tex: 'planks' }, x, y, w, h, seed, true);
   ink(c, rect(x + 1, y + h * 0.22, w - 2, 2.6), '#4a3424', { wob: 0.3, seed: seed + 1, flat: true, lw: 0.5, heavy: 0.9 }); ink(c, rect(x + 1, y + h * 0.68, w - 2, 2.6), '#4a3424', { wob: 0.3, seed: seed + 2, flat: true, lw: 0.5, heavy: 0.9 });
   c.strokeStyle = '#3a3a40'; c.lineWidth = 1.1; c.beginPath(); c.arc(x + w - 5, y + h * 0.48, 1.9, 0, 7); c.stroke(); c.fillStyle = '#2a2a30'; c.beginPath(); c.arc(x + w - 5, y + h * 0.4, 0.8, 0, 7); c.fill();
+}
+// the church's and the hall's openings in cut stone: a round-arched door of planks with iron bands, a round-arched window with a lattice
+function archDoor(c, x, y, w, h, open, seed) {
+  var r = w / 2, cx = x + r;
+  c.save(); c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + r); c.arc(cx, y + r, r, Math.PI, 0); c.lineTo(x + w, y + h); c.closePath(); c.clip();
+  if (open) { c.fillStyle = '#1e1612'; c.fillRect(x, y, w, h); ink(c, rect(x, y, 3.2, h), '#4e3826', { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.2 }); }
+  else { c.fillStyle = '#5e4430'; c.fillRect(x, y, w, h); face(c, { face: '#5e4430', dark: '#3a2a1c', tex: 'planks' }, x, y, w, h, seed, true); [0.3, 0.62].forEach(function (t, i) { ink(c, rect(x + 0.5, y + h * t, w - 1, 2.4), '#3a3a40', { wob: 0.2, seed: seed + i, flat: true, lw: 0.5, heavy: 0.8 }); }); c.strokeStyle = '#3a3a40'; c.lineWidth = 1.1; c.beginPath(); c.arc(x + w - 5, y + h * 0.48, 1.9, 0, 7); c.stroke(); }
+  c.restore();
+  c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + r); c.arc(cx, y + r, r, Math.PI, 0); c.lineTo(x + w, y + h); c.strokeStyle = INK.line; c.lineWidth = 0.9; c.stroke();
+  c.beginPath(); c.moveTo(x - 2, y + r); c.arc(cx, y + r, r + 2, Math.PI, 0); c.strokeStyle = '#c2bcb2'; c.lineWidth = 2.2; c.stroke(); c.strokeStyle = INK.soft; c.lineWidth = 0.6; c.stroke();   // the voussoirs' ring
+}
+function archWindow(c, x, y, w, h, seed) {
+  var r = w / 2, cx = x + r;
+  c.beginPath(); c.moveTo(x, y + h); c.lineTo(x, y + r); c.arc(cx, y + r, r, Math.PI, 0); c.lineTo(x + w, y + h); c.closePath(); c.fillStyle = '#241a14'; c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.9; c.stroke();
+  c.save(); c.clip(); c.fillStyle = 'rgba(255,220,150,0.14)'; c.fillRect(x + 1, y + 1, w - 2, h - 2); c.strokeStyle = 'rgba(120,110,96,0.9)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(cx, y); c.lineTo(cx, y + h); c.moveTo(x, y + h * 0.55); c.lineTo(x + w, y + h * 0.55); c.stroke(); c.restore();
+  ink(c, rect(x - 1.5, y + h, w + 3, 1.8), '#c2bcb2', { wob: 0.3, seed: seed + 2, flat: true, lw: 0.5, heavy: 0.9 });
 }
 // a window: a hole in the wall with a shutter swung open beside it (no glass in this age), a sill below
 function shutterWindow(c, x, y, w, h, seed) {
@@ -4632,7 +4739,7 @@ function drawH(c, x, y, e, low, open, C) {
   if (e.t === 'door' && !low) {
     ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.3 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.7, heavy: 1.3 });
     ink(c, rect(x0 - 0.5, yb - h - cp, T + 1, cp + 4), m.top, { wob: 0.4, seed: seed + 2, lw: 0.7, heavy: 1.3 });   // the lintel
-    door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3);
+    if (m.tex === 'ashlar') archDoor(c, x0 + 5, yb - h + 2, T - 10, h - 2, open, seed + 3); else door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3);
     return;
   }
   if (e.t === 'door') { ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.6, heavy: 1.1 }); return; }
@@ -4641,7 +4748,7 @@ function drawH(c, x, y, e, low, open, C) {
   cap(c, m, x0, yb - h - cp, T, cp, seed, true);
   path(c, d); c.lineJoin = 'round'; c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8);
   stroke(c, [[x0 + 0.5, yb - h + 0.6], [x0 + T - 0.5, yb - h + 0.6]], INK.lit, 1.0);                                // the lit top of the face
-  if (e.t === 'window' && !low) shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5);
+  if (e.t === 'window' && !low) { if (m.tex === 'ashlar') archWindow(c, x0 + 11, yb - h + 4, 10, h - 13, seed + 5); else shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5); }
 }
 // an edge along the left side of tile (x, y). more: whether the V edge below continues it (no end face then)
 function drawV(c, x, y, e, open, more, C) {
@@ -4740,7 +4847,7 @@ function drawRoof(c, room, a, C, dy) {
       if (ny < 0) { nx = -nx; ny = -ny; }
       if (kind === 1) { for (k = 1; k < len; k += 2.1) { var u = k / len, px = x0 + dx * u, py = y0 + dy2 * u, ln = 4 + hs(px, py) * 5, dark = hs(px + 1, py) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(px - nx * 3, py - ny * 3); c.lineTo(px + nx * ln + (hs(px, py + 3) - 0.5) * 1.5, py + ny * ln); c.stroke(); } c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 + nx * 1.5, y0 + ny * 1.5); c.lineTo(x1 + nx * 1.5, y1 + ny * 1.5); c.stroke(); }
       else if (kind === 0) { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.6, y1 + ny * 2.6], [x0 + nx * 2.6, y0 + ny * 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 2; k < len; k += 3) { var u2 = k / len, qx = x0 + dx * u2, qy = y0 + dy2 * u2; if (hs(qx, qy + 4) > 0.55) continue; c.strokeStyle = hs(qx, qy + 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(qx - nx, qy - ny); c.lineTo(qx + nx * (3 + hs(qx, qy + 7) * 2.5) + (hs(qx, qy + 6) - 0.5) * 2, qy + ny * (3 + hs(qx, qy + 7) * 2.5)); c.stroke(); } }
-      else { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.2, y1 + ny * 2.2], [x0 + nx * 2.2, y0 + ny * 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 4; k < len; k += 8) { var u3 = k / len; stroke(c, [[x0 + dx * u3, y0 + dy2 * u3], [x0 + dx * u3 + nx * 2, y0 + dy2 * u3 + ny * 2]], INK.soft, 0.6); } }
+      else { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.2, y1 + ny * 2.2], [x0 + nx * 2.2, y0 + ny * 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 4; k < len; k += (kind === 3 ? 6 : 8)) { var u3 = k / len; stroke(c, [[x0 + dx * u3, y0 + dy2 * u3], [x0 + dx * u3 + nx * 2, y0 + dy2 * u3 + ny * 2]], INK.soft, 0.6); } }
     }
     // a facet of the roof: fill, the material's rows following it, grain
     function facet(pts, tone, rows) {
@@ -4757,6 +4864,11 @@ function drawRoof(c, room, a, C, dy) {
       } else if (kind === 0) {                               // sod with grass blades in two greens, a few flowers
         for (j = by0 + 2; j < by1; j += 2.6) for (i = bx0 + 1; i < bx1; i += 3.2) { var q = hs(i, j); if (q > 0.6) continue; c.strokeStyle = q < 0.25 ? hl : (q < 0.45 ? dk : lineCol); c.lineWidth = 0.9; c.beginPath(); c.moveTo(i + q * 2, j + 1.5); c.lineTo(i + q * 2 + (hs(i, j + 2) - 0.5) * 2, j - 2 - hs(i, j + 3) * 2); c.stroke(); }
         for (j = by0 + 4; j < by1; j += 9) for (i = bx0 + 3; i < bx1; i += 11) if (hs(i, j) < 0.1) { c.fillStyle = hs(i, j + 1) < 0.5 ? '#d8c26a' : '#c9d2d8'; c.beginPath(); c.arc(i, j, 1.1, 0, 7); c.fill(); }
+      } else if (kind === 3 || kind === 4) {                 // clay tiles (a curved lip on every tile) or slate (flat slabs) in offset rows, each its own tone
+        var row2 = 0, tw2 = kind === 3 ? 6 : 9, th2 = kind === 3 ? 4.5 : 5.5, lip = kind === 3;
+        if (rows === 'h') { for (j = by0 + th2; j < by1 + th2; j += th2, row2++) for (i = bx0 + (row2 % 2 ? tw2 / 2 : 0) - tw2; i < bx1; i += tw2) { var t4 = (hs(i, j) - 0.5) * (lip ? 0.2 : 0.14); c.fillStyle = mix(r.col, t4 > 0 ? '#ffffff' : '#000000', Math.abs(t4) + Math.max(0, -tone) * 0.5); c.fillRect(i, j - th2, tw2 - 0.6, th2 - 0.4); if (lip) { c.fillStyle = 'rgba(255,236,210,0.22)'; c.fillRect(i + 1, j - th2 + 0.6, tw2 - 2.4, 1.2); } c.fillStyle = 'rgba(30,20,16,0.28)'; c.fillRect(i, j - 1.3, tw2 - 0.6, 0.9); } }
+        else { for (i = bx0 + tw2; i < bx1 + tw2; i += tw2, row2++) for (j = by0 + (row2 % 2 ? th2 / 2 : 0) - th2; j < by1; j += th2) { var t5 = (hs(i, j) - 0.5) * (lip ? 0.2 : 0.14); c.fillStyle = mix(r.col, t5 > 0 ? '#ffffff' : '#000000', Math.abs(t5) + Math.max(0, -tone) * 0.5); c.fillRect(i - tw2, j, tw2 - 0.4, th2 - 0.6); if (lip) { c.fillStyle = 'rgba(255,236,210,0.22)'; c.fillRect(i - tw2 + 0.6, j + 1, 1.2, th2 - 2.4); } c.fillStyle = 'rgba(30,20,16,0.28)'; c.fillRect(i - 1.3, j, 0.9, th2 - 0.6); } }
+        c.strokeStyle = lineCol; c.lineWidth = 0.5; c.globalAlpha = a * 0.5; if (rows === 'h') { for (j = by0 + th2; j < by1; j += th2) { c.beginPath(); c.moveTo(bx0, j); c.lineTo(bx1, j); c.stroke(); } } else { for (i = bx0 + tw2; i < bx1; i += tw2) { c.beginPath(); c.moveTo(i, by0); c.lineTo(i, by1); c.stroke(); } } c.globalAlpha = a;
       } else {                                               // shingles in scalloped rows, offset, each a shade of its own; down the hips they turn
         var row = 0;
         if (rows === 'h') { for (j = by0 + 5; j < by1 + 5; j += 5, row++) for (i = bx0 + (row % 2 ? 4 : 0) - 8; i < bx1; i += 8) { var t2 = (hs(i, j) - 0.5) * 0.16; c.fillStyle = mix(r.col, t2 > 0 ? '#ffffff' : '#000000', Math.abs(t2) + Math.max(0, -tone) * 0.5); c.beginPath(); c.moveTo(i, j - 5); c.lineTo(i + 8, j - 5); c.lineTo(i + 8, j - 1.5); c.quadraticCurveTo(i + 4, j + 1.2, i, j - 1.5); c.closePath(); c.fill(); c.strokeStyle = lineCol; c.lineWidth = 0.7; c.globalAlpha = a * 0.75; c.stroke(); c.globalAlpha = a; } }
@@ -4776,11 +4888,14 @@ function drawRoof(c, room, a, C, dy) {
       ink(c, ga, '#2b221c', { wob: 0, flat: true, noLine: true });                                                        // the dark underside of the eaves
       var gd = ink(c, gw, wm.face, { wob: 0.5, seed: seed + 9, noLine: true, flat: true });
       c.save(); path(c, gd); c.clip(); face(c, wm, left + ov, bot - rh, right - left - 2 * ov, rh, seed + 9); c.restore();
-      var gl = mix(wm.top, '#1a1410', 0.1), tb = bot - ov * K;
+      var gl = mix(wm.top, '#1a1410', 0.1), tb = bot - ov * K, stoneG = wm.tex === 'ashlar' || wm.tex === 'blocks';
+      if (stoneG) { var gwy = bot - rh * 0.55, gww = Math.min(9, rh * 0.22); archWindow(c, cx - gww / 2, gwy, gww, gww * 1.5, seed + 14); }   // a stone gable: no timbers, a small arched window high up
+      else {
       ink(c, rect(left + ov, tb - 3.2, right - left - 2 * ov, 3.2), gl, { wob: 0.4, seed: seed + 10, lw: 0.7, heavy: 1.2 });                        // the tie beam
       ink(c, rect(cx - 1.6, bot - rh + 2, 3.2, rh - ov * K - 2), gl, { wob: 0.4, seed: seed + 11, lw: 0.7, heavy: 1.2 });                          // the king post
       ink(c, [[left + ov + 3, tb - 3.2], [left + ov + 6, tb - 3.2], [cx - 1, bot - rh * 0.52], [cx - 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 12, lw: 0.6, heavy: 1.1 });   // the struts
       ink(c, [[right - ov - 3, tb - 3.2], [right - ov - 6, tb - 3.2], [cx + 1, bot - rh * 0.52], [cx + 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 13, lw: 0.6, heavy: 1.1 });
+      }
       var g2 = c.createLinearGradient(0, bot - rh, 0, bot - rh + 9); g2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.35)'); g2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.save(); path(c, gd); c.clip(); c.fillStyle = g2; c.fillRect(left, bot - rh, Wd, 10); c.restore();   // the shade under the ridge
       path(c, gd); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke();
       facet(slopeL, 0.14, 'v'); facet(slopeR, -0.26, 'v');
@@ -4822,6 +4937,7 @@ function icon(c, id, m) {
   else if (id === 'palisade') { for (var pi = 0; pi < 3; pi++) { var px = -6 + pi * 4.5; c.fillStyle = pi % 2 ? w.face : w.top; c.beginPath(); c.moveTo(px, 7); c.lineTo(px, -5); c.lineTo(px + 2, -8); c.lineTo(px + 4, -5); c.lineTo(px + 4, 7); c.closePath(); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.9; c.stroke(); } }
   else if (id === 'post') { c.fillStyle = w.dark; c.fillRect(-2, -7, 4, 15); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-2, -7, 4, 15); c.fillStyle = w.top; c.fillRect(-3.5, -9, 7, 2.5); c.strokeRect(-3.5, -9, 7, 2.5); }
   else if (id === 'stairs') { for (var si = 0; si < 4; si++) { c.fillStyle = si % 2 ? '#b98a5a' : '#c4955f'; c.fillRect(-7, 5 - si * 3.5, 14, 2); c.fillStyle = '#6b4a35'; c.fillRect(-7, 7 - si * 3.5, 14, 1.6); } c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-7, -6, 14, 14); }
+  else if (id === 'townwall') { var am2 = WALLS[6]; c.fillStyle = am2.face; c.fillRect(-7, -6, 14, 13); c.strokeStyle = am2.dark; c.lineWidth = 0.7; c.beginPath(); for (var ti = -3; ti <= 5; ti += 4) { c.moveTo(-7, ti); c.lineTo(7, ti); } c.stroke(); c.fillStyle = am2.top; c.fillRect(-7.5, -8, 15, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-7, -6, 14, 13); }
   else if (id === 'rail') { c.fillStyle = w.dark; c.fillRect(-7.5, -5, 2.5, 10); c.fillRect(5, -5, 2.5, 10); c.fillStyle = w.face; c.fillRect(-6, -3, 12, 2); c.fillRect(-6, 2, 12, 2); c.strokeStyle = LINE; c.lineWidth = 0.8; c.strokeRect(-6, -3, 12, 2); c.strokeRect(-6, 2, 12, 2); }
   else if (id === 'drystone') { var sm = WALLS[3]; c.fillStyle = sm.face; c.fillRect(-7, -3, 14, 8); c.strokeStyle = sm.dark; c.lineWidth = 0.8; c.beginPath(); c.moveTo(-7, 0); c.lineTo(7, 0); c.moveTo(-7, 2.5); c.lineTo(7, 2.5); c.moveTo(-2, -3); c.lineTo(-2, 0); c.moveTo(3, 0); c.lineTo(3, 2.5); c.moveTo(-4, 2.5); c.lineTo(-4, 5); c.stroke(); c.fillStyle = sm.top; c.fillRect(-7, -5, 14, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-7, -5, 14, 10); }
   else if (id === 'door') { c.fillStyle = w.dark; c.fillRect(-6, -7, 12, 14); c.fillStyle = '#6b4a35'; c.fillRect(-4, -5, 8, 12); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -7, 12, 14); c.fillStyle = '#e0a93a'; c.beginPath(); c.arc(2, 1, 1, 0, 7); c.fill(); }
@@ -4867,7 +4983,10 @@ var ARCH = {
   seat: { name: "Chieftain's seat", houses: [5, 7], out: [7, 8], yard: [9, 7], site: [30, 24], people: [16, 24], hall: true, palisade: true },
   fishing: { name: 'Fishing hamlet', houses: [1, 2], out: [3, 4], yard: [6, 5], site: [18, 15], people: [5, 8], shore: true, racks: 2 },
   trading: { name: 'Trading post', houses: [2, 3], out: [5, 6], yard: [8, 6], site: [24, 18], people: [8, 12], shore: true, stores: 2 },
-  ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [6, 5], site: [18, 15], people: [0, 0], ruin: true }
+  ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [6, 5], site: [18, 15], people: [0, 0], ruin: true },
+  // the lowlands (2026-10-07): a walled town round the jarl's hall with a church, and a lone church with its priest's house (the lucky strike)
+  town: { name: 'Town', houses: [5, 7], out: [5, 7], yard: [9, 7], site: [34, 28], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },
+  church: { name: 'Church', houses: [1, 1], out: [0, 1], yard: [5, 4], site: [18, 16], people: [2, 3], church: true, chapel: true, lowland: true }
 };
 // the buildings: inside size in tiles [w range, h range], what stands inside, where the door goes (toward the yard)
 var BUILD = {
@@ -4879,10 +4998,11 @@ var BUILD = {
   smithy: { name: 'Smithy', w: [3, 3], h: [2, 2], roofed: true, inside: 'smithy', open: true },
   bath: { name: 'Bathhouse', w: [2, 2], h: [2, 2], roofed: true, inside: 'bath' },
   pit: { name: 'Pit-house', w: [2, 2], h: [2, 2], roofed: true, inside: 'pit', floor: 1 },
-  boathouse: { name: 'Boathouse', w: [5, 7], h: [2, 2], roofed: true, inside: 'boat', open: true }
+  boathouse: { name: 'Boathouse', w: [5, 7], h: [2, 2], roofed: true, inside: 'boat', open: true },
+  church: { name: 'Church', w: [3, 4], h: [5, 6], roofed: true, inside: 'church', floor: 2 }   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side
 };
 var NAMES = ['Arnfinn', 'Bera', 'Dagny', 'Eyvind', 'Frida', 'Gorm', 'Halla', 'Ingolf', 'Jorunn', 'Ketil', 'Liv', 'Mundi', 'Nanna', 'Orm', 'Ragna', 'Sigrun', 'Thorir', 'Ulf', 'Vigdis', 'Yngvar', 'Asa', 'Bjorn', 'Gunnhild', 'Hakon'];
-var ROLES = { farmer: ['The barley came in well this year.', 'Mind the goat: she butts.'], fisher: ['The herring run at dawn, out past the skerry.', 'That boat has crossed worse water than this.'], smith: ['Copper is soft. Bring me bog iron and I will show you steel.', 'My bench is yours if you leave it as you found it.'], weaver: ['Wool from our own sheep. Feel it.', 'The loom took a winter to build.'], elder: ['Ragnar\'s men came once. They will come again.', 'My father raised the stone by the gate.'], child: ['Are you a Viking?', 'I found a bird\'s nest with four eggs!'], thrall: ['...', 'I was taken from the south. This is home now.'] };
+var ROLES = { priest: ['Peace be upon this house, stranger.', 'The silver on the altar is God\u2019s, not mine. He will know who took it.'], guard: ['Keep your blade sheathed inside the walls.', 'The jarl sees everything from his hall.'], merchant: ['Wool, salt, iron. What have you got?', 'Silver by weight, friend. We take no promises.'], farmer: ['The barley came in well this year.', 'Mind the goat: she butts.'], fisher: ['The herring run at dawn, out past the skerry.', 'That boat has crossed worse water than this.'], smith: ['Copper is soft. Bring me bog iron and I will show you steel.', 'My bench is yours if you leave it as you found it.'], weaver: ['Wool from our own sheep. Feel it.', 'The loom took a winter to build.'], elder: ['Ragnar\'s men came once. They will come again.', 'My father raised the stone by the gate.'], child: ['Are you a Viking?', 'I found a bird\'s nest with four eggs!'], thrall: ['...', 'I was taken from the south. This is home now.'] };
 function rngOf(seed) { var s = (seed >>> 0) || 1; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 function cfg(o) { var out = {}, k; for (k in DEF) out[k] = DEF[k]; for (k in o || {}) if (o[k] != null && DEF[k] != null) out[k] = +o[k]; return out; }
 function key(x, y) { return x + ',' + y; }
@@ -4894,9 +5014,10 @@ function make(seed, site, opts) {
   var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h;
   // materials and roofs by wealth and place
-  var wallOf = function (step) { var wv = wealth - step * 0.3; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };
-  var roofOf = function (big) { if (big && wealth >= G.shinglesAt) return 2; return shore ? 1 : 0; };
-  var fenceKind = A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : wealth >= G.railAt ? 'fence' : 'rail';
+  var lowland = !!(opts.biome || A.lowland);
+  var wallOf = function (step) { var wv = wealth - step * 0.3; if (lowland) return wv >= G.wealthStone ? 6 : wv >= G.wealthLogs - 0.15 ? 5 : wv >= G.wealthPlanks ? 1 : 2; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };   // the lowlands: cut stone for the rich, timber framing for most
+  var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return shore ? 1 : 0; };   // the lowlands: clay tiles for the rich, thatch for the rest
+  var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : wealth >= G.railAt ? 'fence' : 'rail'; if (A.chapel) fenceKind = 'drystone';
   // the yard
   var yw = A.yard[0], yh = A.yard[1], yx = tx + Math.floor((w - yw) / 2), yy = ty + Math.floor((h - yh) / 2) + 1;
   V.yard = { x: yx, y: yy, w: yw, h: yh };
@@ -4913,8 +5034,9 @@ function make(seed, site, opts) {
   }
   function size(id) { var b = BUILD[id]; if (id === 'house' && R() < 0.5) return { w: pickRange(R, [2, 3], 0), h: 3 }; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }   // half the houses stand deep: a gable end facing south
   // the ring: the longhouse north of the yard facing it; the houses east, west, south-east and south-west, shuffled; some slots left open
-  var big = A.hall ? 'hall' : 'longhouse', bs = size(big);
+  var big = A.chapel ? 'church' : (A.hall ? 'hall' : 'longhouse'), bs = size(big);
   tryPlace({ id: big, x: yx + Math.floor((yw - bs.w) / 2) + Math.round((R() - 0.5) * 2), y: yy - G.yardGap - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'n' }, 1);
+  if (A.church && !A.chapel) { var cs = size('church'), L00 = V.lots[0], cTries = [[L00.x + L00.w + G.gap, L00.y + L00.h - cs.h], [L00.x - cs.w - G.gap, L00.y + L00.h - cs.h], [yx + yw + G.yardGap + 1, yy - cs.h - 1], [yx - G.yardGap - cs.w - 1, yy - cs.h - 1], [yx + yw + G.yardGap + 2, yy], [yx - G.yardGap - cs.w - 2, yy]], ci; for (ci = 0; ci < cTries.length; ci++) if (tryPlace({ id: 'church', x: cTries[ci][0], y: cTries[ci][1], w: cs.w, h: cs.h, door: 's', slot: 'church' }, 2)) break; }   // the town's church: beside the hall, else at a corner of the yard
   var nHouses = pickRange(R, A.houses, 0), slots = ['e', 'w', 'se', 'sw', 'ne', 'nw'], order = slots.slice().sort(function () { return R() - 0.5; }), placedHouses = 0, si;
   for (si = 0; si < order.length && placedHouses < nHouses; si++) {
     if (R() < G.emptySlots && si < order.length - 1) continue;
@@ -4949,13 +5071,13 @@ function make(seed, site, opts) {
   function item(name, x, y, extra) { var it = { name: name, x: x, y: y }; for (var q in extra || {}) it[q] = extra[q]; V.items.push(it); return it; }
   function pieces(l) {
     var b = BUILD[l.id], m = l.id === big ? wallOf(0) : (l.id === 'house' ? wallOf(1) : (l.id === 'store' || l.id === 'bath' ? 1 : 2)), roof = roofOf(l.id === big), x, y;
-    if (l.id === 'smithy') m = 3; if (l.id === 'pit') m = 4;
+    if (l.id === 'smithy') m = 3; if (l.id === 'pit') m = 4; if (l.id === 'church') { m = 6; roof = 4; }
     var dx = l.door === 's' || l.door === 'n' ? l.x + 1 + Math.floor(R() * Math.max(1, l.w - 2)) : -1, dy = l.door === 'e' || l.door === 'w' ? l.y + Math.floor(R() * l.h) : -1;
     var gaps = V.ruin ? Math.max(1, Math.floor((l.w + l.h) * 0.35)) : 0, gapAt = {}; if (gaps) for (var g = 0; g < gaps; g++) gapAt[Math.floor(R() * (l.w * 2 + l.h * 2))] = 1;
     var n = 0; l.wins = [];
     for (x = l.x; x < l.x + l.w; x++) { if (!gapAt[n++] && !(b.open && l.door === 's' && false)) H(x, l.y, l.door === 'n' && x === dx ? 'door' : 'wall', m); }
     for (x = l.x; x < l.x + l.w; x++) { var south = l.door === 's' && x === dx ? 'door' : ((x === l.x + l.w - 1 || (l.door !== 's' && x === l.x)) && l.w > 1 && R() < 0.6 ? 'window' : 'wall'); if (b.open && l.door === 's') south = x === dx ? 'door' : (x === l.x || x === l.x + l.w - 1 ? 'wall' : 'door'); if (!gapAt[n++]) { H(x, l.y + l.h, south, m); if (south === 'window') l.wins.push(x); } }
-    for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x, y, l.door === 'w' && y === dy ? 'door' : 'wall', m); }
+    for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x, y, l.door === 'w' && y === dy ? 'door' : (l.id === 'church' && y > l.y && y % 2 ? 'window' : 'wall'), m); }
     for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : (y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e' ? 'window' : 'wall'), m); }
     for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) V.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0);
     if (!V.ruin || R() < 0.5) V.roofs.push({ tx: l.x, ty: l.y, m: roof });
@@ -4972,7 +5094,7 @@ function make(seed, site, opts) {
       p = tile(l.x + 1, l.y + l.h - 1); item('bench', p[0], p[1] - 3); p = tile(l.x + l.w - 2, l.y + l.h - 1); item('bench', p[0], p[1] - 3);
       p = tile(l.x + l.w - 1, l.y + l.h - 1); item('chest', p[0] - 2, p[1] - 2, { store: true, loot: { leather: 2, berries: 3, coin: 2 + Math.floor(wealth * 6) } });
       p = tile(l.x + 2, l.y); item('table', p[0] + 10, p[1] + 4); if (wealth > 0.5) { p = tile(l.x + Math.floor(l.w / 2), l.y); item('shieldRack', p[0], p[1] + 2); }
-      if (A.hall) { p = tile(l.x + l.w - 2, l.y + 1); item('chair', p[0], p[1], { seat: true, muster: true }); }
+      if (A.hall) { p = tile(l.x + l.w - 2, l.y + 1); item('chair', p[0], p[1], { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall) { p = tile(l.x + l.w - 2, l.y); item('chest', p[0], p[1] + 2, { store: true, loot: { coin: 20 + Math.floor(wealth * 30), leather: 3, copper: 2 }, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
     } else if (BUILD[l.id].inside === 'home') {
       item('stoneHearth', mid[0] + (l.w > 3 ? 0 : T * 0.3), mid[1] + (l.h > 2 ? 0 : -2), { hearth: true, light: 1 });
       p = tile(l.x, l.y); item('bed', p[0] + 3, p[1] + 2, { bed: true }); if (l.w >= 4 && l.h >= 3) { p = tile(l.x + l.w - 1, l.y); item('bed', p[0] - 3, p[1] + 2, { bed: true }); }
@@ -4985,6 +5107,17 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'smithy') { p = tile(l.x, l.y); item('furnace', p[0] + 8, p[1] + 2, { furnace: true, light: 1 }); p = tile(l.x + l.w - 1, l.y); item('workbench', p[0] - 6, p[1] + 2, { bench: true }); p = tile(l.x + 1, l.y + l.h - 1); item('trough', p[0], p[1]); }
     else if (BUILD[l.id].inside === 'bath') { p = tile(l.x, l.y); item('stoneHearth', p[0] + 8, p[1] + 4, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('bench', p[0], p[1] - 4, { seat: true }); }
     else if (BUILD[l.id].inside === 'pit') { p = tile(l.x, l.y); item('campfire', p[0] + 10, p[1] + 6, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('dryingRack', p[0], p[1] - 4); }
+    else if (BUILD[l.id].inside === 'church') {
+      p = tile(l.x + Math.floor(l.w / 2), l.y); item('altar', p[0] + (l.w % 2 ? 0 : T / 2), p[1] + 2, { r: 6, altar: true, light: 1, lamp: true });
+      for (k = l.y + 2; k < l.y + l.h; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
+      p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { store: true, loot: { coin: 8 + Math.floor(wealth * 16), leather: 1, berries: 2 }, lore: 'The church\u2019s silver, given by the faithful.' });
+      V.finds.push({ kind: 'silver', x: p[0], y: p[1] });
+      V.props.push({ name: 'bellTower', x: l.x * T + 9, y: (l.y + l.h) * T + 8, solid: 14 });                                  // the tower at the front corner, like a west tower
+      V.props.push({ name: 'wayCross', x: (l.x + l.w) * T + 14, y: (l.y + l.h) * T + 20, solid: 3 });
+      var gi, gn = 4 + Math.floor(R() * 5);
+      for (gi = 0; gi < gn; gi++) { var gx = (l.x + l.w + 0.25 + R() * 0.7) * T, gy = (l.y + 0.6 + R() * (l.h - 0.8)) * T; V.props.push({ name: 'graveStone', x: gx, y: gy, solid: 2 }); }   // the churchyard along the east side
+      V.props.push({ name: 'yew', x: (l.x + l.w + 1.3) * T, y: (l.y + 0.9) * T, solid: 7 });
+    }
     else if (BUILD[l.id].inside === 'boat') { V.finds.push({ kind: 'boat', x: tile(l.x + l.w / 2, l.y + 1)[0], y: tile(l.x, l.y + 1)[1], lot: l }); p = tile(l.x, l.y); item('barrel', p[0] + 6, p[1] + 2, { loot: { fiber: 4 } }); }
     // things by the door: a woodpile, a barrel, a bench, bee skeps, a cart
     var dp = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1), pool = ['woodpile', 'barrel', 'bench', 'beeSkeps', 'cart', 'dryingRack', 'crate', 'logSeat', 'trough', 'haystack'];
@@ -5010,14 +5143,15 @@ function make(seed, site, opts) {
   else item('campfire', fc[0], fc[1], { hearth: true, light: 1 });
   if (yw >= 7 && R() < 0.6) V.props.push({ name: 'cart', x: yx * T + T * 0.9, y: (yy + yh) * T - T * 0.5 });
   if (G.clutter && !V.ruin && yw >= 7) { item('foodTable', wc[0] + T * 2.4, wc[1] + T * 1.2, { r: 7 }); item('bench', wc[0] + T * 2.4, wc[1] + T * 1.2 + 15, { seat: true }); }
+  if (A.townwall && !V.ruin) { item('stall', wc[0] - T * 2.6, wc[1] - T * 1.4, { r: 8 }); item('stall', wc[0] + T * 2.8, wc[1] - T * 1.6, { r: 8 }); }   // the town's market
   var homes = V.lots.filter(function (l) { return l.id === big || l.id === 'house'; });
   if (wealth >= G.cellarAt && homes.length) { var cl = homes[Math.floor(R() * homes.length)], cp = tile(cl.x + Math.floor(cl.w / 2), cl.y + cl.h - 1); item('cellarDoor', cp[0], cp[1] - 2, { cellar: true, store: true, loot: { coin: 6 + Math.floor(wealth * 10), leather: 3, copper: 2 }, lore: 'Someone kept this well hidden.' }); V.finds.push({ kind: 'cellar', x: cp[0], y: cp[1] }); }
   var ex0 = 1e9, ey0 = 1e9, ex1 = -1e9, ey1 = -1e9; V.lots.forEach(function (l) { ex0 = Math.min(ex0, l.x); ey0 = Math.min(ey0, l.y); ex1 = Math.max(ex1, l.x + l.w); ey1 = Math.max(ey1, l.y + l.h); });
   ex0 = Math.max(tx, ex0 - G.fenceGap); ey0 = Math.max(ty, ey0 - G.fenceGap); ex1 = Math.min(tx + w, ex1 + G.fenceGap); ey1 = Math.min(ty + h, ey1 + G.fenceGap);
-  var gateX = yx + Math.floor(yw / 2), fk = fenceKind, fm = fk === 'drystone' ? 3 : 2, x, y;
+  var gateX = yx + Math.floor(yw / 2), fk = fenceKind, fm = fk === 'drystone' ? 3 : (fk === 'townwall' ? 6 : 2), x, y;
   var roadSide = R() < 0.5 ? 1 : -1, backGateX = null;                                                         // the road bends past the fire on this side and leaves by a back gate beside the longhouse
   if (G.backGate && (!shore || shore === 's') && (A.houses[1] >= 3 || shore === 's')) { backGateX = roadSide > 0 ? L0.x + L0.w + 1 : L0.x - 2; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = roadSide > 0 ? L0.x - 2 : L0.x + L0.w + 1; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = null; }
-  if (fk === 'palisade') {                             // a round wall of sharpened stakes round the whole ring, a gap for the gate on the path, banners either side
+  if (fk === 'palisade' && !A.townwall) {              // a round wall of sharpened stakes round the whole ring, a gap for the gate on the path, banners either side
     var ecx = (ex0 + ex1) / 2 * T, ecy = (ey0 + ey1) / 2 * T, hw2 = Math.max(1, (ex1 - ex0) / 2 * T), hh2 = Math.max(1, (ey1 - ey0) / 2 * T), kk = 1;
     V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it
     var erx = hw2 * kk + T * 0.8, ery = hh2 * kk + T * 0.8, per = 6.283 * Math.sqrt((erx * erx + ery * ery) / 2), nst = Math.max(12, Math.round(per / G.stakeStep)), gpt = tile(gateX, ey1), gateA = Math.atan2((gpt[1] + T - ecy) / ery, (gpt[0] - ecx) / erx), k2;
@@ -5103,6 +5237,7 @@ function make(seed, site, opts) {
     var home = homes[hi % homes.length]; hi++;
     var door = home.door === 's' ? tile(home.dx, home.y + home.h + 1) : home.door === 'e' ? tile(home.x + home.w + 1, home.dy) : home.door === 'w' ? tile(home.x - 2, home.dy) : tile(home.dx, home.y - 2);
     var role = shore && R() < 0.4 ? 'fisher' : roles[Math.floor(R() * roles.length)]; if (role === 'smith' && !V.lots.some(function (l) { return l.id === 'smithy'; })) role = 'farmer';
+    if (A.chapel) role = 'priest'; else if (A.church && pi === 0) role = 'priest'; else if (A.townwall && (pi === 1 || pi === 2)) role = 'guard'; else if (A.townwall && pi === 3) role = 'merchant';
     var work = role === 'smith' ? V.lots.filter(function (l) { return l.id === 'smithy'; })[0] : role === 'fisher' && shore ? null : V.lots.filter(function (l) { return l.id === 'byre' || l.id === 'store'; })[0];
     var seatsV = V.items.filter(function (it) { return it.name === 'logSeat'; }), seatV = seatsV.length ? seatsV[pi % seatsV.length] : null;
     var spots = [door.concat(['door']), [wc[0] + (R() - 0.5) * 30, wc[1] + 20 + (R() - 0.5) * 20], [wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6]];
@@ -5114,6 +5249,9 @@ function make(seed, site, opts) {
     else if (role === 'fisher') { if (shore) spots.push((shore === 's' ? [wc[0] + (R() - 0.5) * 80, (ty + h - 1) * T + 6] : shore === 'n' ? [wc[0], (ty + 1) * T] : shore === 'e' ? [(tx + w - 1) * T, wc[1]] : [(tx + 1) * T, wc[1]]).concat(['fish'])); if (rackIt) spots.push([rackIt.x, rackIt.y + 12, 'hang']); }
     else if (role === 'farmer' || role === 'thrall') { if (block && R() < 0.7) spots.push([block.x, block.y - 16, 'chop']); if (wellIt) spots.push([wellIt.x, wellIt.y + 16, 'carry']); }
     else if (role === 'weaver' || role === 'elder') { spots.push([door[0] + 12, door[1] + 2, 'sweep']); if (wellIt && R() < 0.5) spots.push([wellIt.x, wellIt.y + 16, 'carry']); }
+    else if (role === 'priest') { var chl = V.lots.filter(function (l) { return l.id === 'church'; })[0]; if (chl) spots.push([(chl.dx + 0.5) * T, (chl.y + chl.h + 1.2) * T, 'door']); }
+    else if (role === 'guard') { var gt = tile(gateX, ey1); spots.push([gt[0] + (pi === 1 ? -14 : 14), gt[1] - 18, 'guard']); }
+    else if (role === 'merchant') { var stl = V.items.filter(function (it) { return it.name === 'stall'; })[0]; if (stl) spots.push([stl.x, stl.y + 14, 'guard']); }
     else if (work) spots.push(tile(work.dx >= 0 ? work.dx : work.x, work.y + work.h + 1));
     V.folk.push({ name: NAMES[Math.floor(R() * NAMES.length)], role: role, home: [home.x, home.y], x: door[0], y: door[1], spots: spots, lines: ROLES[role], female: R() < 0.5, out: R() < G.outsideShare });
   }
@@ -5177,17 +5315,20 @@ function plan(env, opts) {
     }
     return null;
   }
+  var maxLow = 0; isles.forEach(function (q) { if (q.biome) maxLow = Math.max(maxLow, q.r); });
   for (i = 1; i < isles.length; i++) {
-    var q = isles[i], wants = [], big = i === 1 || q.r >= 100;
-    if (big) wants = [[R() < 0.45 ? 'seat' : 'village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];
+    var q = isles[i], wants = [], big = i === 1 || q.r >= 100 || (q.biome && q.r === maxLow);   // the biggest lowland island always has the town
+    if (q.biome && big) wants = [['town', false], [R() < 0.4 ? 'trading' : 'fishing', true], [R() < 0.6 ? 'church' : 'farmstead', false]];
+    else if (q.biome && q.r >= 42) wants = [[R() < 0.5 ? 'church' : 'village', false], [R() < 0.6 ? 'fishing' : 'trading', true]];
+    else if (big) wants = [[R() < 0.45 ? 'seat' : 'village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];
     else if (q.r >= 65) wants = [[R() < 0.6 ? 'fishing' : 'trading', true], [R() < 0.5 ? 'small' : (R() < 0.5 ? 'village' : 'farmstead'), false]];
     else if (q.r >= 42) wants = [R() < 0.5 ? ['fishing', true] : ['farmstead', false]];
     else if (R() < 0.5) wants = [['farmstead', false]];
     wants.forEach(function (wq) {
       var arch = wq[0], st = find(q, arch, wq[1]); if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
-      if (arch !== 'seat' && arch !== 'trading' && R() < 0.14) arch = 'ruin';
+      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && R() < 0.14) arch = 'ruin';
       var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
-      st.arch = arch; st.wealth = wealth; st.isle = i; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
+      st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
       sites.push(st);
     });
@@ -5207,7 +5348,7 @@ function draw(c, V, env, clock) {
   var items = [];
   for (k in V.H) { q = k.split(','); (function (x, y, e) { items.push({ y: y * T, f: function () { Build.drawH(c, x, y, e, false, false, Build.cfg({})); } }); })(+q[0], +q[1], V.H[k]); }
   for (k in V.V) { q = k.split(','); (function (x, y, e) { items.push({ y: (y + 1) * T - 1, f: function () { Build.drawV(c, x, y, e, false, V.V[key(x, y + 1)] || false, Build.cfg({})); } }); })(+q[0], +q[1], V.V[k]); }
-  ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id] }), 0); } }); });
+  ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id], wallM: Build.roomWallM(B, r) }), 0); } }); });
   V.items.concat(V.props).forEach(function (it) { if (!kit.PROPS[it.name]) return; items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, 3), s = SIZE_OF(kit, it.name); c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } }); });
   (V.nature || []).forEach(function (it) { if (!kit.PROPS[it.name]) return; items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, it.v || 0), s = it.s; c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } }); });
   if (env.lib) V.folk.forEach(function (f, fi) {                   // the people out of doors: some at the fire, some at their jobs, the rest idling each their own way
@@ -5223,7 +5364,7 @@ function draw(c, V, env, clock) {
   });
   items.sort(function (a, b) { return a.y - b.y; }).forEach(function (it) { it.f(); });
 }
-var SIZES = { windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
+var SIZES = { bellTower: 1, altar: 1, graveStone: 1, wayCross: 1, stall: 1, yew: 1, windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
 function SIZE_OF(kit, name) { return SIZES[name] || 1; }
 return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
@@ -5249,6 +5390,7 @@ if (typeof module !== 'undefined') module.exports = Village;
     row.appendChild(lab); row.appendChild(inp); row.appendChild(out); rulesHost.appendChild(row); inputs[r[0]] = inp; outs[r[0]] = out;
   });
   var archHost = document.getElementById('archs'), archBtns = {};
+  var lowBtn = document.createElement('button'); lowBtn.textContent = 'Lowlands'; lowBtn.addEventListener('click', function () { st.lowland = !st.lowland; lowBtn.style.fontWeight = st.lowland ? 'bold' : 'normal'; draw(); save(); lowBtn.blur(); }); archHost.appendChild(lowBtn); lowBtn.style.fontWeight = st.lowland ? 'bold' : 'normal';
   Object.keys(Village.ARCH).forEach(function (a) { var b = document.createElement('button'); b.textContent = Village.ARCH[a].name; b.addEventListener('click', function () { st.arch = a; ui(); draw(); save(); b.blur(); }); archHost.appendChild(b); archBtns[a] = b; });
   var shoreHost = document.getElementById('shores'), shoreBtns = {};
   [['None', ''], ['South', 's'], ['East', 'e'], ['West', 'w'], ['North', 'n']].forEach(function (s) { var b = document.createElement('button'); b.textContent = s[0]; b.addEventListener('click', function () { st.shore = s[1]; ui(); draw(); save(); b.blur(); }); shoreHost.appendChild(b); shoreBtns[s[1]] = b; });
@@ -5274,7 +5416,7 @@ if (typeof module !== 'undefined') module.exports = Village;
   var V = null, clock = 0;
   function draw() {
     var site = Village.siteFor(st.arch), T = 32, TS = 24, K = 0.75;
-    V = Village.make(st.seed, { tx: 2, ty: 2, w: site.w, h: site.h, shore: st.shore || null }, { arch: st.arch, wealth: st.wealth, G: st.G });
+    V = Village.make(st.seed, { tx: 2, ty: 2, w: site.w, h: site.h, shore: st.shore || null }, { arch: st.arch, biome: st.lowland ? 1 : 0, wealth: st.wealth, G: st.G });
     var W = (site.w + 4) * T, H = (site.h + 4) * TS, sc = Math.min(cv.width / W, cv.height / H);
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#5f8a44'; ctx.fillRect(0, 0, cv.width, cv.height);
     ctx.setTransform(sc, 0, 0, sc, (cv.width - W * sc) / 2, (cv.height - H * sc) / 2); ctx.lineJoin = 'round'; ctx.lineCap = 'round';

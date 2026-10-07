@@ -3,7 +3,7 @@
 const { createCanvas } = require('../../node_modules/@napi-rs/canvas'); const fs = require('fs');
 global.__mk = (w, h) => createCanvas(w, h);
 const Build = require('../../src/build.js');
-const Z = 4, W = 760, H = 480, cv = createCanvas(W * Z, H * Z), c = cv.getContext('2d');
+const Z = 4, W = 760, H = 640, cv = createCanvas(W * Z, H * Z), c = cv.getContext('2d');
 c.setTransform(Z, 0, 0, Z, 0, 0); c.fillStyle = '#7f945c'; c.fillRect(0, 0, W, H);
 const T = Build.T, TS = Build.TS;
 function house(ox, oy, m, roof, W, Hh) {                 // a W by Hh tile house at tile (ox, oy): walls, a door and a window in the south wall, a roof (a gable when deep)
@@ -24,9 +24,10 @@ function house(ox, oy, m, roof, W, Hh) {                 // a W by Hh tile house
 [[0, 0], [1, 1], [2, 2], [3, 3], [4, 1]].forEach((v, i) => house(1 + i * 4, 2, v[0], v[1]));
 house(1, 7, 0, 1); house(5, 7, 3, 0); house(9, 7, 1, 2);
 house(1, 12, 2, 1, 2, 3); house(4, 12, 1, 0, 2, 3); house(7, 12, 3, 2, 3, 3); house(11, 12, 0, 1, 2, 2); house(14, 12, 4, 0, 3, 3);   // deep rooms: a gable facing south
+house(1, 17, 5, 3); house(5, 17, 6, 4); house(9, 17, 5, 1, 2, 3); house(12, 17, 6, 4, 3, 5); house(17, 17, 5, 4, 2, 2);   // the lowlands: timber framing and cut stone under tiles and slate; a church-shaped room
 const cfg = Build.cfg({});
-[['fence', 2], ['rail', 0], ['drystone', 3], ['palisade', 0], ['gate', 2]].forEach((f, i) => { const e = { t: f[0], m: f[1] }; Build.drawH(c, 14 + i * 1.6, 7, e, false, false, cfg); Build.drawV(c, 14 + i * 1.6, 7, e, false, false, cfg); });
+[['fence', 2], ['rail', 0], ['drystone', 3], ['palisade', 0], ['gate', 2], ['townwall', 6]].forEach((f, i) => { const e = { t: f[0], m: f[1] }; Build.drawH(c, 14 + i * 1.6, 7, e, false, false, cfg); Build.drawV(c, 14 + i * 1.6, 7, e, false, false, cfg); });
 Build.drawH(c, 14, 9.5, { t: 'gate', m: 2 }, false, true, cfg);
 Build.drawStairs(c, 16, 9.2, cfg); Build.drawPost(c, 18, 10.2, { m: 0 }, cfg); Build.drawPost(c, 19, 10.2, { m: 3 }, cfg); Build.drawBeam(c, 18, 10.2, true, { m: 0 }, cfg);
-['wall', 'door', 'window', 'floor', 'roof', 'fence', 'gate', 'palisade', 'post', 'stairs', 'rail', 'drystone'].forEach((id, i) => { c.save(); c.translate(20 + i * 18, 450); c.scale(1.4, 1.4); Build.icon(c, id, id === 'roof' ? 1 : 0); c.restore(); });
+['wall', 'door', 'window', 'floor', 'roof', 'fence', 'gate', 'palisade', 'post', 'stairs', 'rail', 'drystone'].forEach((id, i) => { c.save(); c.translate(20 + i * 18, 610); c.scale(1.4, 1.4); Build.icon(c, id, id === 'roof' ? 1 : 0); c.restore(); });
 fs.writeFileSync('house.png', cv.toBuffer('image/png')); console.log('wrote house.png');

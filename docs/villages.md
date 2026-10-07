@@ -170,3 +170,16 @@ hirdmen helping, so the walk to the shore is the gamble and the retreat is under
 come to broken doors and fighting from inside the town; there is no bell and no castle sending waves, and fighting is not the biggest
 part. Villagers run and hide; fire spreads in thatch; a place remembers you. Nothing is off limits; reputation is the only brake.
 
+## 8. The lowland town and the church (2026-10-07)
+
+**The town** is a walled place round the jarl's hall: a wall of cut stone a storey high with a gate on the road and a back gate, the
+hall in cut stone under clay tiles with the jarl's chair and his chest of silver, a church beside it, five to seven houses of timber
+framing (plaster between dark timbers, braces in the bays) under tiles or thatch, market stalls in the yard with baskets of apples and
+fish, guards at the gate, a merchant at a stall, a priest at the church door. It is the raid target of the second biome.
+
+**The church** stands with its gable to the south and its door in it, cut stone under slate, round-arched windows along the sides,
+a bell tower of cut stone at its front corner with the bell in a round-arched belfry under a slate pyramid and a small cross, the
+altar at the north end with two candles burning, pews along the walls, the church's silver in a chest by the altar. The churchyard
+lies along its east side: grave markers, a yew, a wayside cross by the door. A lone church with the priest's house inside a
+dry-stone wall is its own archetype, the lucky strike: priests only, no guards.
+
