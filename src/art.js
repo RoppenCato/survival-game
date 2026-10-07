@@ -795,9 +795,9 @@ var ANIMALS = {
     col: { body: '#8a8f78', belly: '#d9d5bd', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
   moose: { name: 'Moose', set: { plan: 5, size: 1.6, bodyW: 1.05, bodyH: 1.1, head: 1.1, legLen: 1.7, legW: 0.9, neck: 1, neckUp: 0.55, snout: 1.5, snoutW: 1.2, ears: 3, antlers: 3, antlerSize: 1.15, hump: 1.2, hoof: 1, tail: 1, pattern: 0, eyeSize: 0.75, tell: 1, lunge: 1.3, windup: 0.7, hp: 26, aggro: 70 },
     col: { body: '#4f3b2c', belly: '#8a7a6a', accent: '#cdbb98', eye: '#1e1418', glow: '#ff5a3a' } },
-  troll: { name: 'Mountain troll', set: { plan: 7, size: 2.05, speed: 0.78, windup: 1.1, lunge: 0, hp: 40, aggro: 130, tell: 1, trollHair: 1.2, trollMoss: 0.7, trollAge: 0.75 },
+  troll: { name: 'Mountain troll', set: { plan: 7, size: 2.05, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.2, trollMoss: 0.7, trollAge: 0.75 },
     col: { body: '#7a7064', belly: '#9a9082', accent: '#5a4636', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824', moss: '#8fa86a' } },
-  trollStone: { name: 'Stone troll', set: { plan: 7, size: 2.05, speed: 0.78, windup: 1.1, lunge: 0, hp: 40, aggro: 130, tell: 1, trollHair: 1.2, trollAge: 0.75 },
+  trollStone: { name: 'Stone troll', set: { plan: 7, size: 2.05, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.2, trollAge: 0.75 },
     col: { body: '#8c8c92', belly: '#a6a6ac', accent: '#6e6e74', eye: '#8c8c92', glow: '#8c8c92', line: '#3a3a40', moss: '#8c8c92' } },
   wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.4, windup: 0.35, hp: 22, aggro: 220 },
     col: { body: '#727982', belly: '#d3d7dc', accent: '#f1ead6', eye: '#3a2a10', glow: '#ffd34d' } }
@@ -808,12 +808,19 @@ var ANIMALS = {
 var ATTACKS = {
   boar: { kind: 'charge', windup: 0.6, dur: 0.55, speed: 330, from: 150, recover: 1.1, cd: 1.2, turn: 2.4 },
   snake: { kind: 'lunge', windup: 0.5, dur: 0.14, speed: 330, near: 34, recover: 1.2, cd: 1.5, venom: 4, venomDmg: 2 },
-  troll: { kind: 'arc', windup: 1.1, dur: 0.4, reach: 36, arc: 2.4, hitAt: 0.35, step: 50, recover: 1.5, cd: 1.7, heavy: true, turn: 1.7 },
+  troll: { kind: 'arc', windup: 1.6, dur: 0.6, reach: 62, arc: 3.8, hitAt: 0.45, step: 30, recover: 2.2, cd: 2.6, heavy: true, turn: 1.4 },   // a great slow sweep of the arm, wide as he is
   wolf: { kind: 'lunge', windup: 0.25, dur: 0.2, speed: 320, ring: 70, recover: 0.4, cd: 0.8, pack: true },
   moose: { kind: 'arc', windup: 0.7, dur: 0.35, reach: 30, arc: 1.7, hitAt: 0.4, step: 120, recover: 0.9, cd: 1.3, turn: 2.6 },
   bear: { kind: 'arc', windup: 0.9, dur: 0.3, reach: 26, arc: 2.1, hitAt: 0.35, step: 50, recover: 1.0, cd: 1.5, heavy: true }
 };
 function animalAttack(key) { return ATTACKS[key] || null; }
+// The Creature Editor's "Update in game": an animal's look and numbers replaced by a spec (the game's ANIMALS table keeps its
+// own counts, damage and drops). Keys the drawing does not know are dropped.
+function useAnimal(key, spec) {
+  var a = ANIMALS[key]; if (!a || !spec) return false; var set = {}, k;
+  for (k in spec) if (k !== 'col' && CREATURE_DEF[k] != null) set[k] = spec[k];
+  a.set = set; a.col = {}; for (k in spec.col || {}) a.col[k] = spec.col[k]; return true;
+}
 function animalSpec(key) {
   var a = ANIMALS[key] || ANIMALS.wolf, sp = fillSpec(CREATURE_DEF, null), k;
   for (k in a.set) sp[k] = a.set[k];
@@ -1038,8 +1045,9 @@ function trollD(c, x, y, s, H) {
   var HL = sp.trollHair, NS = sp.trollNose, ER = sp.trollEars, HU = sp.trollHunch, AR = sp.trollArms, MO = stone ? 0 : sp.trollMoss, BE = sp.trollBeads && !stone, SK = sp.trollSack, TL = sp.trollTail, BL = sp.trollBelly, AGE = sp.trollAge;
   var hairCol = stone ? mixHex(skin, '#ffffff', 0.12) : mixHex(C.accent, '#d9d4c8', AGE * 0.75), hairDk = mixHex(hairCol, '#000000', 0.32), hairLt = mixHex(hairCol, '#ffffff', 0.25), moss = C.moss || '#8fa86a';
   function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
-  c.save(); c.translate(x, y); c.scale(sz * dir, sz); c.lineJoin = 'round'; c.lineCap = 'round';
-  c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(2, 1, 20, 5.5, 0, 0, 7); c.fill();
+  var ang = s.ang, ca = ang == null ? dir : Math.cos(ang), sa = ang == null ? 0 : Math.sin(ang), aca = Math.abs(ca), sideA = ang == null ? 1 : Math.max(0, Math.min(1, (aca - 0.34) / 0.18));
+  if (ang != null) dir = ca >= 0 ? 1 : -1;
+  var sweep = slam ? Math.min(1, k * 1.15) : -1;   // the sweep of the arm through the blow, 0 raised behind to 1 landed in front
   function strand(x0, y0, len, ang, w, col, i) {       // one hanging hair: a little curve, a little sway
     var sw = Math.sin(t * 1.1 + i * 1.7) * 0.05, a = ang + sw, x1 = x0 + Math.cos(a) * len, y1 = y0 + Math.sin(a) * len, cx = (x0 + x1) / 2 + Math.cos(a - 1.57) * len * (0.1 + 0.1 * hs(i, 3)), cy = (y0 + y1) / 2 + Math.sin(a - 1.57) * len * 0.1;
     c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(cx, cy, x1, y1); c.stroke();
@@ -1057,13 +1065,17 @@ function trollD(c, x, y, s, H) {
   }
   function arm(far) {
     var sx = (far ? -2 : 4) + lean * 0.3, sy = -36 + bob - 2 * HU, sw = Math.sin(ph) * 4 * mv * (far ? -1 : 1), col = far ? skinDk : skin, fx, fy, up = false;
-    if (slam) { fx = 21 + (far ? -5 : 0); fy = -3; }
+    if (slam && !far) { var u0 = sweep, swA = -2.3 + u0 * 2.9; fx = sx + Math.cos(swA) * 42 * (0.6 + 0.4 * Math.sin(u0 * 3.14)); fy = sy + Math.sin(swA) * 42 * (0.6 + 0.4 * Math.sin(u0 * 3.14)) + 8; up = u0 < 0.5; if (!stone) { c.save(); c.globalAlpha = 0.28 * (1 - u0); c.strokeStyle = '#f6e2b8'; c.lineWidth = 7; c.beginPath(); c.arc(sx, sy + 8, 40, -2.3, swA); c.stroke(); c.restore(); } }
+    else if (slam) { fx = 21 - 5; fy = -3; }
     else if (wind) { fx = 6 + (far ? -6 : 3); fy = -6 - 50 * wind; up = true; }
     else { fx = 8 + 10 * AR + sw + (far ? -6 : 0); fy = -1 + (down ? 2 : 0); }
     var ex = sx + (fx - sx) * 0.5 + (wind ? -6 : 3), ey = sy + (fy - sy) * 0.55 + (wind ? 0 : 4);
     limb(sx, sy, ex, ey, 7, col); limb(ex, ey, fx, fy, 6, col); hand(fx, fy, col, up);
     for (var q = 0; q < 4 * HL; q++) { var tt = 0.15 + q * 0.18, hx0 = sx + (ex - sx) * tt, hy0 = sy + (ey - sy) * tt; strand(hx0, hy0 + 2, 5 + 4 * HL, 1.75 + (hs(q, 9) - 0.5) * 0.5, 1, q % 2 ? hairDk : hairCol, q + 40); }
   }
+  function sideView() {
+  c.save(); c.translate(x, y); c.scale(sz * dir * Math.max(0.5, aca), sz); c.lineJoin = 'round'; c.lineCap = 'round';
+  c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(2, 1, 20, 5.5, 0, 0, 7); c.fill();
   // the tail, behind everything
   if (TL) { c.strokeStyle = line; c.lineWidth = 2.6 + 2 * lw; c.beginPath(); c.moveTo(-9, -11 + bob); c.quadraticCurveTo(-22, -2 + bob, -27, -9 + bob + Math.sin(t * 1.4) * 1.5); c.stroke(); c.strokeStyle = skinDk; c.lineWidth = 2.6; c.stroke(); tuft(-27, -9 + bob + Math.sin(t * 1.4) * 1.5, 6, 6, 3.6, 1.6, 1.2, 70); }
   // the sack on the back
@@ -1120,6 +1132,65 @@ function trollD(c, x, y, s, H) {
   if (BE) { var bx0 = hx - 3, by0 = hy + 4; c.strokeStyle = '#5a4a3a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(bx0, by0); c.quadraticCurveTo(bx0 - 1, by0 + 7, bx0 + 2, by0 + 12); c.stroke(); ['#c8403a', '#3a6ab8', '#e8e0c8', '#c8403a', '#d8a030'].forEach(function (bc, bi) { var u = (bi + 1) / 6, px = bx0 + (bx0 + 2 - bx0) * u - Math.sin(u * 3.14) * 1, py = by0 + 12 * u; c.fillStyle = bc; c.beginPath(); c.arc(px, py, 1.05, 0, 7); c.fill(); c.lineWidth = 0.4; c.strokeStyle = line; c.stroke(); }); }
   arm(false);
   c.restore();
+  }
+  // facing you (south) or away (north): the mound seen head on, both arms down to the ground, the head low in front or the
+  // mane and the hump behind; the sweep goes across from one side to the other
+  function frontView(back) {
+    c.save(); c.translate(x, y); c.scale(sz * Math.max(0.6, 1 - aca * 0.5), sz); c.lineJoin = 'round'; c.lineCap = 'round';
+    c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(0, 1, 22, 5.5, 0, 0, 7); c.fill();
+    var hump = -46 - 6 * HU + bob, i, q;
+    if (back && TL) { c.strokeStyle = line; c.lineWidth = 2.6 + 2 * lw; c.beginPath(); c.moveTo(0, -12 + bob); c.quadraticCurveTo(3 + Math.sin(t * 1.4) * 2, -4 + bob, 1, 4 + bob); c.stroke(); c.strokeStyle = skinDk; c.lineWidth = 2.6; c.stroke(); tuft(1, 4 + bob, 6, 5, 1.57, 1.8, 1.2, 70); }
+    [[-7, 1], [7, -1]].forEach(function (lg) {                                      // the feet and short legs
+      var sw = Math.sin(ph) * 2.5 * mv * lg[1], lx = lg[0], col = skin;
+      limb(lx * 0.85, -15 + bob, lx, -5 + sw * 0.4, 7.5, col);
+      c.fillStyle = col; c.beginPath(); c.ellipse(lx, -1.5 + sw * 0.4, 5.5, 3.4, 0, 0, 7); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
+      if (!back) [[-3, 1.6], [0, 2.2], [3, 1.6]].forEach(function (tz) { c.beginPath(); c.arc(lx + tz[0], tz[1] + sw * 0.4, 1.3, 0, 7); c.fillStyle = col; c.fill(); c.stroke(); });
+      tuft(lx, -9 + bob, Math.round(3 * HL), 5, 1.57, 1.2, 1.1, 80 + lg[0]);
+    });
+    function armF(sg) {                                                             // sg -1 left, 1 right of the screen
+      var sx0 = sg * 12, sy0 = -36 + bob - 2 * HU, col = sg < 0 ? skinDk : skin, fx, fy, up = false, sw = Math.sin(ph) * 3 * mv * sg;
+      if (slam && sg > 0) { var u0 = sweep, a0 = -2.2 + u0 * 4.2; fx = Math.cos(a0) * 30; fy = sy0 + 12 + Math.sin(a0) * 30; up = u0 < 0.35; if (!stone) { c.save(); c.globalAlpha = 0.28 * (1 - u0); c.strokeStyle = '#f6e2b8'; c.lineWidth = 7; c.beginPath(); c.arc(0, sy0 + 12, 30, -2.2, a0); c.stroke(); c.restore(); } }
+      else if (wind && sg > 0) { fx = 8; fy = -8 - 52 * wind; up = true; }
+      else { fx = sg * (17 + 8 * AR) + sw; fy = -1 + (down ? 2 : 0); }
+      var ex = (sx0 + fx) / 2 + sg * 4 * (up ? 0.3 : 1), ey = (sy0 + fy) / 2 + (up ? -2 : 5);
+      limb(sx0, sy0, ex, ey, 7, col); limb(ex, ey, fx, fy, 6, col); hand(fx, fy, col, up);
+      for (q = 0; q < 3 * HL; q++) { var tt = 0.2 + q * 0.22; strand(sx0 + (ex - sx0) * tt + sg * 2, sy0 + (ey - sy0) * tt + 2, 5 + 4 * HL, 1.7 + sg * 0.2, 1, q % 2 ? hairDk : hairCol, q + 40); }
+    }
+    armF(-1); if (back) armF(1);
+    // the mound of a body, the hump at the top
+    c.beginPath(); c.moveTo(-15, -10 + bob); c.quadraticCurveTo(-21, -30 + bob, -12, hump + 2); c.quadraticCurveTo(0, hump - 4, 12, hump + 2); c.quadraticCurveTo(21, -30 + bob, 15, -10 + bob); c.closePath();
+    c.fillStyle = skin; c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke();
+    if (!back) { c.fillStyle = belly; c.beginPath(); c.ellipse(0, -21 + bob, 6 * BL + 1, 8, 0, 0, 7); c.fill(); }
+    if (back && SK) { c.fillStyle = mixHex(skin, '#b8a484', 0.55); c.beginPath(); c.ellipse(0, hump - 4, 13, 10, 0, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke(); c.fillStyle = mixHex(skin, '#b8a484', 0.4); c.beginPath(); c.arc(0, hump - 13, 2.4, 0, 7); c.fill(); c.stroke(); }
+    // the mane: all over the back, or down the sides and over the shoulders from the front
+    for (i = 0; i < 6; i++) { var ry = hump + 3 + i * 6, half = 13 + Math.min(i, 3) * 2; for (q = -half; q <= half; q += 3) { if (!back && Math.abs(q) < 8 && i > 0) continue; var n0 = q + i * 31; strand(q + (hs(n0, 2) - 0.5) * 2, ry + (hs(n0, 3) - 0.5) * 3, (5 + 4 * HL) * (0.7 + 0.5 * hs(n0, 4)), 1.57 + (q / half) * 0.35 + (hs(n0, 5) - 0.5) * 0.4, 1.15, (q / 3 + i) % 3 === 0 ? hairDk : ((q / 3 + i) % 3 === 1 ? hairCol : hairLt), n0); } }
+    [[-16, -18], [16, -18], [-13, -12], [13, -12]].forEach(function (a, ai) { tuft(a[0], a[1] + bob, Math.round(2 + 2 * HL), 8 + 8 * HL, 1.57 + (a[0] < 0 ? 0.25 : -0.25), 0.5, 1.2, 100 + ai * 7); });
+    if (MO > 0) { var lich = mixHex(moss, skin, 0.3); [[-6, hump + 4, 3], [5, hump + 2, 2.6], [-12, hump + 12, 2.2], [11, hump + 10, 2]].forEach(function (m, mi) { if (hs(mi, 5) > MO) return; c.save(); c.globalAlpha = 0.8; c.fillStyle = lich; for (var d = 0; d < 4; d++) { c.beginPath(); c.ellipse(m[0] + (hs(d, mi) - 0.5) * m[2] * 1.6, m[1] + (hs(d, mi + 1) - 0.5) * m[2] * 0.9, m[2] * (0.45 + 0.35 * hs(d, mi + 2)), m[2] * 0.4, hs(d, mi + 3) * 3, 0, 7); c.fill(); } c.restore(); }); }
+    // the head: low in front, or the back of the skull under its hair
+    var hy = -34 + bob + (wind ? -2 * wind : 0) + 1.5 * (1 - HU);
+    [[-1, skinDk], [1, skin]].forEach(function (eq) { var sg = eq[0]; c.fillStyle = eq[1]; c.beginPath(); c.moveTo(sg * 5, hy - 2); c.lineTo(sg * (10 + 5 * ER), hy - 9 - 7 * ER); c.lineTo(sg * 2.5, hy - 6.5); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke(); if (!back) { c.fillStyle = mixHex(skin, '#d09a8a', 0.3); c.beginPath(); c.moveTo(sg * 5.5, hy - 3); c.lineTo(sg * (8.5 + 3.5 * ER), hy - 7.5 - 5 * ER); c.lineTo(sg * 3.5, hy - 5.5); c.closePath(); c.fill(); } });
+    if (BE && !back) { c.strokeStyle = '#b08040'; c.lineWidth = 1.1; c.beginPath(); c.arc(-5.5, hy - 1, 1.7, 0, 7); c.stroke(); }
+    c.fillStyle = skin; c.beginPath(); c.ellipse(0, hy, 8, 7, 0, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke();
+    if (back) { var nb = Math.round(9 + 6 * HL); for (i = 0; i < nb; i++) strand(-7 + (14 * i) / (nb - 1), hy - 6 + hs(i, 9) * 3, 12 + 8 * HL, 1.57 + ((i / (nb - 1)) - 0.5) * 0.5, 1.3, i % 3 === 0 ? hairDk : (i % 3 === 1 ? hairCol : hairLt), 130 + i); }
+    else {
+      tuft(-6, hy - 6.5, Math.round(3 + 3 * HL), 10 + 8 * HL, 1.95, 0.5, 1.3, 130); tuft(6, hy - 6.5, Math.round(3 + 3 * HL), 10 + 8 * HL, 1.2, 0.5, 1.3, 135); tuft(0, hy - 7.5, Math.round(2 + 2 * HL), 4 + 2 * HL, -1.57, 1.4, 1.1, 145);
+      c.strokeStyle = line; c.lineWidth = 2.2; c.beginPath(); c.moveTo(-6, hy - 3.6); c.lineTo(-1, hy - 2.4); c.moveTo(1, hy - 2.4); c.lineTo(6, hy - 3.6); c.stroke();
+      var eyeCol = stone ? skin : (wind || slam ? C.glow : C.eye);
+      if (!stone && (wind || slam)) { c.fillStyle = 'rgba(255,170,60,0.35)'; [-3.2, 3.2].forEach(function (ex) { c.beginPath(); c.arc(ex, hy - 0.8, 3, 0, 7); c.fill(); }); }
+      c.fillStyle = eyeCol; [-3.2, 3.2].forEach(function (ex) { c.beginPath(); c.arc(ex, hy - 0.8, 1.15, 0, 7); c.fill(); });
+      var ny = hy + 2 + 4 * NS; c.fillStyle = mixHex(skin, '#d09a8a', 0.25); c.beginPath(); c.moveTo(-1.6, hy - 2.5); c.quadraticCurveTo(-3.2, ny - 1, 0, ny + 1.5); c.quadraticCurveTo(3.2, ny - 1, 1.6, hy - 2.5); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
+      if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(1.2, ny - 2 - NS, 0.8, 0, 7); c.fill(); }
+      c.strokeStyle = line; c.lineWidth = 1.1; c.beginPath(); c.moveTo(-4, hy + 4.8); c.quadraticCurveTo(0, hy + 6.2, 4, hy + 4.8); c.stroke(); c.fillStyle = '#efe6cf'; c.beginPath(); c.moveTo(1.5, hy + 5.3); c.lineTo(2.3, hy + 7.4); c.lineTo(3.1, hy + 5.3); c.closePath(); c.fill();
+      tuft(-4, hy + 5, Math.round(3 + 3 * HL), 7 + 8 * HL, 1.7, 0.6, 1.2, 160); tuft(4, hy + 5, Math.round(3 + 3 * HL), 7 + 8 * HL, 1.45, 0.6, 1.2, 165);
+      if (BE) { c.strokeStyle = '#5a4a3a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(-5, hy + 5); c.quadraticCurveTo(0, hy + 16, 5, hy + 5); c.stroke(); ['#c8403a', '#3a6ab8', '#e8e0c8', '#c8403a', '#d8a030'].forEach(function (bc, bi) { var u = (bi + 1) / 6, px = -5 + 10 * u, py = hy + 5 + 11 * Math.sin(u * 3.14) * 0.8; c.fillStyle = bc; c.beginPath(); c.arc(px, py, 1.05, 0, 7); c.fill(); c.lineWidth = 0.4; c.strokeStyle = line; c.stroke(); }); }
+    }
+    if (!back) armF(1);
+    c.restore();
+  }
+  var frontA = 1 - sideA, a0 = c.globalAlpha;
+  if (frontA > 0.01) { c.globalAlpha = a0 * frontA; frontView(sa < 0); }
+  if (sideA > 0.01) { c.globalAlpha = a0 * sideA; sideView(); }
+  c.globalAlpha = a0;
 }
 function creatureD(c, x, y, s, H) {
   H = H || creature();
@@ -1291,6 +1362,6 @@ function creatureD(c, x, y, s, H) {
 var dkB = null;
 
 
-return { lib: { playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;

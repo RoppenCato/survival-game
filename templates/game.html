@@ -127,7 +127,7 @@ __COMBAT__
     snake: { start: 3, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: { snakeBlood: 1 } },
     wolf: { n: 0, ground: 'grass', r: 8, dmg: 22, aggro: 220, range: 260, drops: { meat: 1, leather: 0.5 } },   // only at night, in packs of three: see nightTick
     moose: { n: 2, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, leather: 2, antler: 1 } },
-    troll: { n: 0, ground: 'dark', r: 9, dmg: 28, aggro: 100, range: 120, minHome: 600, drops: { copper: 3, stone: 3 } },
+    troll: { n: 0, ground: 'dark', r: 9, dmg: 40, aggro: 100, range: 120, minHome: 600, drops: { copper: 3, stone: 3 } },
     bear: { n: 1, ground: 'far', r: 12, dmg: 30, aggro: 85, range: 90, drops: { meat: 3, leather: 2 } }
   };
   var wantKind = 'boar';
@@ -234,6 +234,7 @@ __COMBAT__
   function removeProp(o) { if (o.cave) { var ci = cave.ores.indexOf(o); if (ci >= 0) cave.ores.splice(ci, 1); return; } w.removeProp(o); if (o.kind) { gone[propKey(o)] = 1; save(); } }
   var grassLook = World.GRASS;   // the Grass Editor's "Use in the game" look, if there is one
   try { var ghs = JSON.parse(localStorage.getItem('game.hero')); if (ghs && typeof ghs === 'object') lib.setHero(ghs); } catch (e) {}   // the Character Editor's "Use as the hero"
+  try { var cg = JSON.parse(localStorage.getItem('game.creatures')); if (cg) for (var ck in cg) if (cg[ck]) lib.useAnimal(ck, cg[ck]); } catch (e) {}   // the Creature Editor's "Update in game"
   try { var gg = JSON.parse(localStorage.getItem('game.grass')); if (gg && gg.g) { grassLook = JSON.parse(JSON.stringify(World.GRASS)); for (var gk in gg.g) grassLook[gk] = gg.g[gk]; for (var gs in (gg.st || {})) kit.STYLE[gs] = gg.st[gs]; } } catch (e) {}
   // one box for everything that moves: the map, and the cave and the yard that lie east of it. The engine clamps every
   // mover to it, so it never changes; the walk test keeps the hero on the floor he is on

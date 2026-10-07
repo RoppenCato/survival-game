@@ -95,21 +95,40 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 
     <div class="right">
       <section class="panel">
-        <h2>Base models</h2>
+        <h2>Creature</h2>
+        <div class="group">
+          <input id="cname" type="text" placeholder="Name" aria-label="The creature's name" style="width:150px">
+          <button id="savec">Save</button>
+          <button id="newc">New creature</button>
+          <button id="delc">Delete</button>
+        </div>
+        <h2 class="more">Saved creatures</h2>
+        <div class="group" id="library"></div>
+        <h2 class="more">In the game</h2>
+        <div class="group">
+          <select id="slot" aria-label="Which beast of the game this design replaces"></select>
+          <button id="useGame">Update in game</button>
+          <button id="takeBack">Take back</button>
+        </div>
+        <p class="desc" id="gameStatus"></p>
+        <p class="desc">Save keeps the design under its name in this browser; New creature starts a variation from what is on screen; Update in game makes the chosen beast of the game look and fight like this design (the game keeps its own counts, damage and drops); Take back restores the game's own.</p>
+      </section>
+      <section class="panel">
+        <h2>Templates</h2>
         <div class="group" id="models"></div>
         <h2 class="more">Body plan</h2>
         <div class="group" id="c-plan"></div>
         <div class="group" style="margin-top:12px">
           <button id="random">Randomise</button>
         </div>
-        <p class="desc">A base model is a complete starting creature. Changing the body plan keeps the colours and features.</p>
+        <p class="desc">A template is a complete starting creature. Changing the body plan keeps the colours and features, and the panels below follow the plan.</p>
       </section>
       <section class="panel">
         <h2>Shape</h2>
         <div id="pshape"></div>
         <p class="desc">Head size applies to the Critter and Brute. Leg count applies to the Crawler, arm length to the Brute.</p>
       </section>
-      <section class="panel">
+      <section class="panel" id="sec-animal">
         <h2>Animal</h2>
         <div id="panimal"></div>
         <h2 class="more">Ears</h2>
@@ -120,7 +139,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div class="group chips" id="flags"></div>
         <p class="desc">These apply to the Animal body plan (and neck and snout to the Snake). Head carried: 0 is low like a boar, 1 is high like a deer.</p>
       </section>
-      <section class="panel">
+      <section class="panel" id="sec-troll">
         <h2>Troll</h2>
         <div id="ptroll"></div>
         <h2 class="more">Details</h2>
@@ -235,9 +254,9 @@ __COMBAT__
   ];
   var BEHAVE = [
     { k: 'speed', label: 'Move speed', min: 0.3, max: 2.5, step: 0.05 },
-    { k: 'windup', label: 'Warning time', min: 0.2, max: 1.5, step: 0.05 },
+    { k: 'windup', label: 'Warning time', min: 0.2, max: 2.5, step: 0.05 },
     { k: 'lunge', label: 'Lunge speed', min: 0.4, max: 2, step: 0.05 },
-    { k: 'hp', label: 'Health', min: 1, max: 60, step: 1 },
+    { k: 'hp', label: 'Health', min: 1, max: 200, step: 1 },
     { k: 'aggro', label: 'Notice distance', min: 30, max: 200, step: 5 }
   ];
   var ANIMAL = [
@@ -281,7 +300,9 @@ __COMBAT__
   };
   var TELLTXT = ['Swell: it squashes wide and flushes with its warning colour.', 'Shake: it trembles on the spot and flushes with its warning colour.', 'Rear up: it lifts and tips back before it strikes.', 'Eye glow: the eyes grow and light up, with a pulse ring.'];
   var BEHAVETXT = ['Lunger: chases you, circles, then lunges in a straight line. It can be parried.', 'Brute: the Bossbot\'s moves, with a lunge, a chain of hits and a spin. It has a stagger bar.', 'Shooter: stands still and fires a shot along a marked line.', 'Grazer: never attacks. It runs away when you come close.'];
-  var MODELS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollStone'].map(function (k) { return lib.animals[k]; });   // defined in src/art.js
+  var MODEL_KEYS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollStone'], MODELS = MODEL_KEYS.map(function (k) { return lib.animals[k]; });
+  var LIB_KEY = 'creature.library', GAME_KEY = 'game.creatures', META_KEY = 'creatureeditor2.meta', library = {}, meta = { name: '', slot: 'troll' };
+  try { library = JSON.parse(localStorage.getItem(LIB_KEY)) || {}; } catch (e) { library = {}; } try { var mt = JSON.parse(localStorage.getItem(META_KEY)); if (mt && typeof mt === 'object') meta = mt; } catch (e) {}   // defined in src/art.js
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var spec = clone(lib.creatureDef), inputs = {}, outputs = {}, swatch = {}, hold = false, noDmg = true;
@@ -306,7 +327,28 @@ __COMBAT__
     document.getElementById('behavedesc').textContent = BEHAVETXT[spec.behave];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
     try { localStorage.setItem('creatureeditor2', JSON.stringify(spec)); } catch (e) {}
+    var pl = Math.round(spec.plan); document.getElementById('sec-animal').hidden = !(pl === 5 || pl === 6); document.getElementById('sec-troll').hidden = pl !== 7;   // the panels follow the plan
   }
+  function gameOverrides() { try { return JSON.parse(localStorage.getItem(GAME_KEY)) || {}; } catch (e) { return {}; } }
+  function refreshLibrary() {
+    var host = document.getElementById('library'); host.innerHTML = ''; var names = Object.keys(library).sort();
+    if (!names.length) { var em = document.createElement('span'); em.className = 'desc'; em.textContent = 'Nothing saved yet'; host.appendChild(em); }
+    names.forEach(function (nm) { var b = document.createElement('button'); b.textContent = nm; b.setAttribute('aria-pressed', nm === meta.name ? 'true' : 'false'); b.addEventListener('click', function () { spec = clone(library[nm]); meta.name = nm; if (library[nm].__slot) meta.slot = library[nm].__slot; saveMeta(); apply(); respawn(); refreshLibrary(); b.blur(); }); host.appendChild(b); });
+    document.getElementById('cname').value = meta.name; document.getElementById('slot').value = meta.slot;
+    var g = gameOverrides(), lines = MODEL_KEYS.filter(function (k) { return g[k]; }).map(function (k) { return lib.animals[k].name + ': ' + (g[k].__name || 'a design from here'); });
+    document.getElementById('gameStatus').textContent = lines.length ? 'In the game: ' + lines.join('; ') : 'The game uses its own beasts.';
+  }
+  function saveMeta() { try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {} }
+  (function () {
+    var sel = document.getElementById('slot'); MODEL_KEYS.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = lib.animals[k].name; sel.appendChild(o); });
+    sel.addEventListener('change', function () { meta.slot = sel.value; saveMeta(); refreshLibrary(); });
+    document.getElementById('cname').addEventListener('change', function (e) { meta.name = e.target.value.trim(); saveMeta(); });
+    document.getElementById('savec').addEventListener('click', function (e) { var nm = document.getElementById('cname').value.trim(); if (!nm) { document.getElementById('cname').focus(); return; } var sp = clone(spec); sp.__slot = meta.slot; library[nm] = sp; meta.name = nm; saveMeta(); try { localStorage.setItem(LIB_KEY, JSON.stringify(library)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
+    document.getElementById('newc').addEventListener('click', function (e) { meta.name = ''; saveMeta(); document.getElementById('cname').value = ''; refreshLibrary(); document.getElementById('cname').focus(); e.currentTarget.blur(); });
+    document.getElementById('delc').addEventListener('click', function (e) { if (meta.name && library[meta.name]) { delete library[meta.name]; try { localStorage.setItem(LIB_KEY, JSON.stringify(library)); } catch (err) {} } meta.name = ''; saveMeta(); refreshLibrary(); e.currentTarget.blur(); });
+    document.getElementById('useGame').addEventListener('click', function (e) { var g = gameOverrides(), sp = clone(spec); sp.__name = meta.name || null; g[meta.slot] = sp; try { localStorage.setItem(GAME_KEY, JSON.stringify(g)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
+    document.getElementById('takeBack').addEventListener('click', function (e) { var g = gameOverrides(); delete g[meta.slot]; try { localStorage.setItem(GAME_KEY, JSON.stringify(g)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
+  })();
 
   function sliders(hostId, list) {
     var host = document.getElementById(hostId);
@@ -349,12 +391,13 @@ __COMBAT__
     lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
   });
   var modelHost = document.getElementById('models');
-  MODELS.forEach(function (m) {
+  MODELS.forEach(function (m, mi) {
     var b = document.createElement('button'); b.textContent = m.name;
     b.addEventListener('click', function () {
       var k; spec = clone(lib.creatureDef);
       for (k in m.set) spec[k] = m.set[k];
       for (k in m.col) spec.col[k] = m.col[k];
+      meta.slot = MODEL_KEYS[mi]; meta.name = ''; saveMeta(); refreshLibrary();
       apply(); respawn(); b.blur();
     });
     modelHost.appendChild(b);
@@ -430,7 +473,7 @@ __COMBAT__
   var saved = null;
   try { saved = JSON.parse(localStorage.getItem('creatureeditor2')); if (saved && typeof saved === 'object') spec = saved; else saved = null; } catch (e) { saved = null; }
   apply(); if (spec === lib.creature().spec && !saved) { MODELS[0].set && (function () { var k; spec = clone(lib.creatureDef); for (k in MODELS[0].set) spec[k] = MODELS[0].set[k]; for (k in MODELS[0].col) spec.col[k] = MODELS[0].col[k]; apply(); })(); }
-  addOne();
+  refreshLibrary(); addOne();
 
   var last = performance.now(), clock = 0;
   function frame(now) {

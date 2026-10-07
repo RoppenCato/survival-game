@@ -795,7 +795,17 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   `trollArms`, `trollNose`, `trollEars`, `trollBelly`, `trollMoss`, and flags `trollBeads`, `trollSack`, `trollTail`; a new
   colour `moss`. The **Creature Editor** has the Troll body plan, the Mountain troll and Stone troll models, a Troll panel with
   those sliders and details, and the moss swatch under Colours. The stone troll is the same drawing in grey (glow equal to
-  body: no lichen, no beads, no eye light).
+  body: no lichen, no beads, no eye light). **He turns (Robin):** `s.ang` picks a side view that narrows as he turns, a
+  **front view** (facing south: both arms down to the ground, the face, the beads) and a **back view** (the mane and the hump,
+  the ears and the back of the skull under its hair, the tail hanging), cross-faded over a short arc. **His blow is a great
+  slow sweep** (Robin: very slow, very hard, a lot of health): `ATTACKS.troll` windup 1.6, a 62-unit reach over a 3.8-radian
+  arc, recover 2.2, cd 2.6, heavy; 80 health, speed 0.6; the game's troll does 40. The arm swings through the sweep in the
+  drawing (`sweep` from the lunge's `k`) with a pale trail. **The Creature Editor (Robin, 2026-10-07):** a **Creature** panel on
+  top with a name, Save (into `creature.library` in this browser), New creature (a variation of what is on screen), Delete, the
+  saved creatures as buttons, and **In the game**: pick which beast of the game the design replaces (`game.creatures`, applied
+  on load by `lib.useAnimal(key, spec)`: the look and the spec's numbers; the game keeps its own counts, damage and drops) with
+  Update in game and Take back; the base models are **Templates** and set the slot; the **Animal and Troll panels show only
+  for their body plan**.
 - **The cave and the mountain troll (2026-10-05, from `docs/beasts.md`):**
   *The mouth:* `caveSetup` picks a clear spot on grass 700 to 1600 units from camp (not near the steading), clears
   the props round it and plants a `cave` prop (`caveMouth`); E beside it enters (a short black fade), E near the
