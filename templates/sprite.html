@@ -98,9 +98,15 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 
     <div class="right">
       <section class="panel">
-        <h2>Concepts</h2>
+        <h2>Heroes</h2>
+        <div class="group" id="heroes"></div>
+        <p class="desc" id="heronote">Three heroes drawn from scratch on the ink figure (2026-10-07). Pick one, change anything below, then "Use as the hero in the game".</p>
+        <h2 class="more">Figure</h2>
+        <div class="group" id="figures"></div>
+        <p class="desc">The ink figure is the new drawing; the old figure is the rounded trial figure before it, kept for comparison. Both take the same styles, builds and colours.</p>
+        <h2 class="more">Concepts</h2>
         <div class="group" id="concepts"></div>
-        <p class="desc" id="conceptnote">Whole looks for the people of this world, matte like the trees. Pick one, then change it below.</p>
+        <p class="desc" id="conceptnote">Whole looks for the people of this world. Pick one, then change it below.</p>
         <h2 class="more">Your templates</h2>
         <div class="group" id="templates"></div>
         <div class="group" style="margin-top:8px">
@@ -292,13 +298,12 @@ __COMBAT__
 
   var SHAPES = [
     { name: 'Default', set: {} },
-    { name: 'Slight', set: { bodyW: 0.76, bodyH: 1.1, armW: 0.7, legW: 0.72 } },
-    { name: 'Stocky', set: { bodyW: 1.08, bodyH: 1.0, legL: 1.7, legW: 1.1, armW: 1.05 } },
-    { name: 'Lean', set: { headW: 0.52, headH: 0.52, bodyW: 0.78, bodyH: 1.2, legL: 2.5, armL: 1.55, stride: 1.3 } },
-    { name: 'Tall', set: { headW: 0.52, headH: 0.52, bodyH: 1.3, legL: 2.8, armL: 1.6, stride: 1.4 } },
-    { name: 'Brute', set: { scale: 1.1, headW: 0.6, headH: 0.6, bodyW: 1.3, bodyH: 1.2, legL: 1.7, legW: 1.3, armL: 1.5, armW: 1.4, walkRate: 0.8, bladeLen: 1.3, slashSize: 1.3 } },
-    { name: 'Child', set: { scale: 0.55, headW: 0.8, headH: 0.78, legL: 1.3, eyeSize: 1.1, walkRate: 1.5 } },
-    { name: 'Old figure', set: { headW: 1, headH: 1, bodyW: 0.9, bodyH: 1, legL: 1, legW: 1, armL: 0.9, armW: 0.9, eyeSize: 1 } }
+    { name: 'Slight', set: { bodyW: 0.86, bodyH: 1.02, armW: 0.82, legW: 0.85 } },
+    { name: 'Stocky', set: { bodyW: 1.15, bodyH: 0.96, legL: 0.9, legW: 1.2, armW: 1.15 } },
+    { name: 'Lean', set: { headW: 0.95, headH: 0.95, bodyW: 0.9, bodyH: 1.05, legL: 1.1, armL: 1.08, stride: 1.2 } },
+    { name: 'Tall', set: { headW: 0.92, headH: 0.92, bodyH: 1.1, legL: 1.2, armL: 1.12, stride: 1.3 } },
+    { name: 'Brute', set: { scale: 1.08, headW: 1.0, headH: 1.0, bodyW: 1.35, bodyH: 1.08, legL: 0.9, legW: 1.35, armL: 1.08, armW: 1.5, walkRate: 0.8, bladeLen: 1.3, slashSize: 1.3 } },
+    { name: 'Child', set: { scale: 0.55, headW: 1.25, headH: 1.2, legL: 0.8, bodyH: 0.85, eyeSize: 1.2, walkRate: 1.5 } }
   ];
   var PALETTES = [
     { name: 'Night', set: { sat: 0.6, lum: 0.75 }, col: { coat: '#2b4a6b' } },
@@ -328,6 +333,7 @@ __COMBAT__
     for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
     for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
     for (i = 0; i < TOGGLES.length; i++) toggleBtn[TOGGLES[i].k].setAttribute('aria-pressed', spec[TOGGLES[i].k] ? 'true' : 'false');
+    document.getElementById('fig1').setAttribute('aria-pressed', spec.figure >= 1 ? 'true' : 'false'); document.getElementById('fig0').setAttribute('aria-pressed', spec.figure >= 1 ? 'false' : 'true');
     choice('eyewear', spec.eyewear); choice('attacks', spec.atkStyle); choice('hairs', spec.hair); choice('beards', spec.beard); choice('hats', spec.hat); choice('clothes', spec.clothes);
     document.getElementById('atkdesc').textContent = ATTACKS[spec.atkStyle][1];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
@@ -404,6 +410,18 @@ __COMBAT__
   var TKEY = 'herotest.templates', templates = {};
   try { templates = JSON.parse(localStorage.getItem(TKEY)) || {}; } catch (e) { templates = {}; }
   function tsave() { try { localStorage.setItem(TKEY, JSON.stringify(templates)); } catch (e) {} }
+  var heroHost = document.getElementById('heroes');
+  lib.heroes.forEach(function (hn) {
+    var b = document.createElement('button'); b.textContent = hn.name; b.title = hn.note;
+    b.addEventListener('click', function () { spec = lib.heroSpec(hn.name); document.getElementById('heronote').textContent = hn.name + ': ' + hn.note; apply(); b.blur(); });
+    heroHost.appendChild(b);
+  });
+  var figHost = document.getElementById('figures');
+  [['Ink figure', 1], ['Old figure', 0]].forEach(function (fg) {
+    var b = document.createElement('button'); b.textContent = fg[0]; b.id = 'fig' + fg[1];
+    b.addEventListener('click', function () { spec.figure = fg[1]; if (fg[1] === 0 && spec.legL < 1.5) { var o = lib.conceptSpec('Old figure'), k; for (k in o) if (k !== 'col' && k !== 'hair' && k !== 'beard' && k !== 'hat' && k !== 'clothes') spec[k] = o[k]; } if (fg[1] === 1 && spec.legL > 1.5) { var e = lib.heroSpec('Eirik'); ['scale', 'headW', 'headH', 'bodyW', 'bodyH', 'legL', 'legW', 'armL', 'armW', 'eyeSize'].forEach(function (k2) { spec[k2] = e[k2]; }); } apply(); b.blur(); });
+    figHost.appendChild(b);
+  });
   var conHost = document.getElementById('concepts');
   lib.concepts.forEach(function (cn) {
     var b = document.createElement('button'); b.textContent = cn.name; b.title = cn.note;

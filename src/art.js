@@ -375,15 +375,19 @@ var canopyB = null;
 // with a tail, 7 wavy (with volume), 8 a mane (volume and long); beard 0 none, 1 full, 2 short, 3 long and braided, 4 moustache; hat 0 none, 1 hood, 2 leather cap, 3 nasal
 // helmet, 4 fur hat, 5 headband; clothes 0 the coat and vest, 1 belted tunic, 2 tunic and cloak, 3 apron dress, 4 fur vest.
 // matte 0..1 dulls the highlights, softens the colours and browns the outline toward the world's, like the trees.
+// The hero is Eirik on the ink figure (figure 1, inkHero) since 2026-10-07; HEROD_OLD is the rounded trial figure before it,
+// kept for comparison (the "Old figure" concept).
 var HEROD_DEF = {
-  scale: 0.78, headW: 0.55, headH: 0.55, bodyW: 0.84, bodyH: 1.15, legL: 2.2, legW: 0.82, armL: 1.4, armW: 0.78, eyewear: 0, eyewearSize: 1, eyeSize: 0.85, blush: 0.5, beard: 0,   // a clear step leaner (Robin, 2026-10-07): the head a quarter of the height
-  hair: 0, hat: 0, clothes: 0, matte: 0.6, ring: 0,
+  scale: 0.8, headW: 1, headH: 1, bodyW: 1, bodyH: 1, legL: 1, legW: 1, armL: 1, armW: 1, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 0.4, beard: 2,
+  hair: 6, hat: 0, clothes: 2, matte: 0.6, ring: 0, figure: 1,
   walkRate: 1.4, bob: 1, stride: 1, armSwing: 1, sway: 0.25, stance: 0.8, lean: 1, atkStyle: 0, atkPower: 1, bladeLen: 1, slashSize: 1, slashWidth: 0.66,
   hue: 0, sat: 1, lum: 1,
-  col: { skin: '#ebc9a2', hair: '#a85a2a', coat: '#4f7a74', vest: '#6a4a32', pants: '#56505e', boot: '#3e2c24', trim: '#c99a3a',   // the earth palette (docs/art-direction.md)
-    cloak: '#7a3b3b', dress: '#5b6b8a', fur: '#b89a74', iron: '#9aa0aa',
+  col: { skin: '#e9c4a0', hair: '#a8522a', coat: '#857a62', vest: '#6a4a32', pants: '#4e4a52', boot: '#3e2c24', trim: '#c99a3a',   // the earth palette (docs/art-direction.md)
+    cloak: '#8a3a34', dress: '#5b6b8a', fur: '#b89a74', iron: '#9aa0aa',
     lens: '#a9e6ff', eye: '#2a1c2a', line: '#231a16', blade: '#eef3fb', slash: '#ffffff' }
 };
+var HEROD_OLD = { scale: 0.78, headW: 0.55, headH: 0.55, bodyW: 0.84, bodyH: 1.15, legL: 2.2, legW: 0.82, armL: 1.4, armW: 0.78, eyeSize: 0.85, blush: 0.5, beard: 0, hair: 0, hat: 0, clothes: 0, figure: 0,
+  col: { skin: '#ebc9a2', hair: '#a85a2a', coat: '#4f7a74', vest: '#6a4a32', pants: '#56505e', cloak: '#7a3b3b' } };
 var LEG_LEN = 7.3, curHero = null;
 function heroPalette(sp) {
   var m = Math.max(0, Math.min(1, sp.matte || 0));
@@ -399,13 +403,14 @@ function heroPalette(sp) {
 }
 function setHero(spec) {
   var sp = fillSpec(HEROD_DEF, spec);
-  curHero = { spec: sp, pal: heroPalette(sp), lift: (sp.legL - 1) * LEG_LEN };
+  curHero = { spec: sp, pal: heroPalette(sp), lift: liftOf(sp) };
   return sp;
 }
 function hero() { if (!curHero) setHero(); return curHero; }
 // Other people are the same figure with their own spec. makeFigure(spec) gets one ready; figureD draws it like
 // playerD (feet at x, y), at its own scale.
-function makeFigure(spec) { var sp = fillSpec(HEROD_DEF, spec); return { spec: sp, pal: heroPalette(sp), lift: (sp.legL - 1) * LEG_LEN }; }
+function liftOf(sp) { return sp.figure >= 1 ? inkMetrics(sp).lift : (sp.legL - 1) * LEG_LEN; }
+function makeFigure(spec) { var sp = fillSpec(HEROD_DEF, spec); return { spec: sp, pal: heroPalette(sp), lift: liftOf(sp) }; }
 function figureD(c, x, y, dir, an, pose, F) {
   var keep = curHero; curHero = F;
   c.save(); c.translate(x, y); c.scale(F.spec.scale, F.spec.scale);
@@ -413,7 +418,7 @@ function figureD(c, x, y, dir, an, pose, F) {
 }
 // People of the world, as changes on top of the hero's spec.
 var FOLK = {
-  dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 0.8, headH: 0.74, bodyW: 1.28, bodyH: 0.9, legL: 1.0, legW: 1.3, armL: 1.0, armW: 1.25, eyeSize: 0.85, blush: 1, beard: 1, walkRate: 1.7, stance: 1, ring: 1 },
+  dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 1.15, headH: 1.05, bodyW: 1.3, bodyH: 0.85, legL: 0.55, legW: 1.35, armL: 0.95, armW: 1.3, eyeSize: 0.9, blush: 1, beard: 1, hair: 2, clothes: 1, hat: 0, walkRate: 1.7, stance: 1, ring: 1 },
     col: { skin: '#f0c49c', hair: '#c8743a', coat: '#7d4a3a', vest: '#4f3b2c', pants: '#4a4038', boot: '#3a2a22', trim: '#b9b2a6' } }
 };
 // Concepts for the people of this world (2026-10-06): whole looks, each a set of spec changes and colours on the hero's
@@ -427,13 +432,32 @@ var CONCEPTS = [
   { name: 'Völva', note: 'A seeress: hood and dark cloak, an apron dress over linen.', set: { clothes: 3, hair: 2, beard: 0, hat: 1, matte: 1, bodyW: 0.86 }, col: { coat: '#b9ad94', cloak: '#3a3550', dress: '#4a5a78', pants: '#3a3a44', hair: '#3a2a22', trim: '#a9a9b0' } },
   { name: 'Hunter', note: 'Shaved sides and a tail, a fur hat and fur vest over green.', set: { clothes: 4, hair: 6, beard: 2, hat: 4, matte: 1 }, col: { coat: '#5b6b4a', fur: '#b89a74', pants: '#4a3a2a', hair: '#8a5a3a', trim: '#5a3a26' } },
   { name: 'Húsfreyja', note: 'The lady of the house: hair in a knot, a red apron dress over linen.', set: { clothes: 3, hair: 4, beard: 0, hat: 0, matte: 1, bodyW: 0.88 }, col: { coat: '#d9c9a6', dress: '#8a4a4a', pants: '#5a4a3a', hair: '#c8743a', trim: '#c9a04a' } },
-  { name: 'Child', note: 'Small, a big head, a plain tunic.', set: { clothes: 1, hair: 1, beard: 0, hat: 0, matte: 1, scale: 0.55, headW: 0.8, headH: 0.78, legL: 1.3, eyeSize: 1.1 }, col: { coat: '#9a8a6a', pants: '#5a4a3a', trim: '#5a3a26', hair: '#e8c070' } },
-  { name: 'Elder', note: 'Grey long hair and a long beard, a grey cloak, a slower walk.', set: { clothes: 2, hair: 2, beard: 3, hat: 0, matte: 1, bodyH: 0.95, walkRate: 0.9, bob: 0.7 }, col: { coat: '#6a6a5a', cloak: '#5a5a5a', pants: '#4a4a44', hair: '#c8c2b8', trim: '#8a7a5a', skin: '#f0c49c' } }
+  { name: 'Child', note: 'Small, a big head, a plain tunic.', set: { clothes: 1, hair: 1, beard: 0, hat: 0, matte: 1, scale: 0.55, headW: 1.25, headH: 1.2, legL: 0.8, bodyH: 0.85, eyeSize: 1.2 }, col: { coat: '#9a8a6a', pants: '#5a4a3a', trim: '#5a3a26', hair: '#e8c070' } },
+  { name: 'Elder', note: 'Grey long hair and a long beard, a grey cloak, a slower walk.', set: { clothes: 2, hair: 2, beard: 3, hat: 0, matte: 1, bodyH: 0.95, walkRate: 0.9, bob: 0.7 }, col: { coat: '#6a6a5a', cloak: '#5a5a5a', pants: '#4a4a44', hair: '#c8c2b8', trim: '#8a7a5a', skin: '#f0c49c' } },
+  { name: 'Old figure', note: 'The rounded trial figure from before the art direction, kept for comparison.', set: HEROD_OLD, col: HEROD_OLD.col }
 ];
+// The new heroes (2026-10-07, Robin: a new hero from scratch, several to pick from): whole designs on the ink figure (figure 1).
+var HEROES = [
+  { name: 'Eirik', note: 'A young karl of the coast: red hair tied back, a short beard, a grey wool tunic, a red cloak pinned at the shoulder.',
+    set: { figure: 1, headW: 1, headH: 1, bodyW: 1, bodyH: 1, legL: 1, legW: 1, armL: 1, armW: 1, eyeSize: 1, blush: 0.4, hair: 6, beard: 2, hat: 0, clothes: 2, matte: 0.6 },
+    col: { skin: '#e9c4a0', hair: '#a8522a', coat: '#857a62', vest: '#6a4a32', pants: '#4e4a52', boot: '#3e2c24', trim: '#c99a3a', cloak: '#8a3a34' } },
+  { name: 'Ásta', note: 'A shieldmaiden: a long fair braid, a blue-grey tunic, a green cloak and a leather cap.',
+    set: { figure: 1, headW: 0.98, headH: 1, bodyW: 0.9, bodyH: 1, legL: 1.02, legW: 0.92, armL: 1, armW: 0.9, eyeSize: 1, blush: 0.6, hair: 3, beard: 0, hat: 2, clothes: 2, matte: 0.6 },
+    col: { skin: '#eccfae', hair: '#d8b268', coat: '#5a6b80', vest: '#6a4a32', pants: '#4a4038', boot: '#4a3329', trim: '#b9b2a6', cloak: '#4f6a46' } },
+  { name: 'Hallvard', note: 'A weathered hunter: dark hair in a knot, a long braided beard, a fur vest over an ochre tunic, a headband.',
+    set: { figure: 1, headW: 1, headH: 1, bodyW: 1.08, bodyH: 1, legL: 0.98, legW: 1.05, armL: 1.02, armW: 1.08, eyeSize: 0.9, blush: 0.2, hair: 4, beard: 3, hat: 5, clothes: 4, matte: 0.6 },
+    col: { skin: '#dcb48c', hair: '#3f2c22', coat: '#a88a4e', vest: '#5a4030', pants: '#3f3a36', boot: '#3a2a22', trim: '#8a6a3a', fur: '#b8a07a' } }
+];
+function heroSpec(name) {
+  var a = null, i; for (i = 0; i < HEROES.length; i++) if (HEROES[i].name === name) a = HEROES[i];
+  var sp = fillSpec(HEROD_DEF, null), k; if (!a) return sp;
+  for (k in a.set) sp[k] = a.set[k]; for (k in a.col) sp.col[k] = a.col[k];
+  return sp;
+}
 function conceptSpec(name) {
   var a = null, i; for (i = 0; i < CONCEPTS.length; i++) if (CONCEPTS[i].name === name) a = CONCEPTS[i];
   var sp = fillSpec(HEROD_DEF, null), k; if (!a) return sp;
-  for (k in a.set) sp[k] = a.set[k]; for (k in a.col) sp.col[k] = a.col[k];
+  for (k in a.set) if (k !== 'col') sp[k] = a.set[k]; for (k in a.col) sp.col[k] = a.col[k];
   return sp;
 }
 function folkSpec(key, R) {
@@ -452,7 +476,339 @@ function folkSpec(key, R) {
   return sp;
 }
 
+/* ===== The ink hero (2026-10-07, Robin: a new hero from scratch for the art direction, not the rounded trial figure) =====
+   A lean figure about five and a half heads tall (docs/art-direction.md: Egerkrans's line, people lean and long): a skeleton
+   of joints with two-bone legs and arms (ik2 bends the knees forward and the elbows back), a belted tunic, a small head with
+   a few ink marks for the face, hair and beard as jagged silhouettes, hats and a cloak, in the side view (facing left, flipped
+   for right) and the front and back views turned by an.turn. Everything is drawn through the ink layers (far limbs, the body,
+   near limbs), so limbs flow into the body and the silhouette gets one ink line. The same spec as playerD: the style keys
+   (hair, beard, hat, clothes) mean the same things, the build keys are factors on INK_BASE, and `figure: 1` chooses it.
+   The pose contract is playerD's: hand targets in figure space with the lift, pose.lx/ly the lean of the upper body. */
+var INK_BASE = { head: 9.2, headW: 7.3, leg: 20.5, foot: 1.8, torso: 14, shoulder: 5.1, hip: 3.8, waist: 3.3, arm: 7.7, hand: 1.7 };
+function inkMetrics(sp) {
+  var B = INK_BASE, m = {};
+  m.headH = B.head * sp.headH; m.headW = B.headW * sp.headW;
+  m.leg = B.leg * sp.legL; m.ankle = -B.foot; m.hip = m.ankle - m.leg;
+  m.torso = B.torso * sp.bodyH; m.sh = m.hip - m.torso; m.belt = m.sh + m.torso * 0.64;
+  m.chin = m.sh - 1.4; m.cy = m.chin - m.headH / 2; m.top = m.chin - m.headH;
+  m.shw = B.shoulder * sp.bodyW; m.hipw = B.hip * sp.bodyW; m.waist = B.waist * sp.bodyW;
+  m.arm = B.arm * sp.armL; m.hand = B.hand;
+  m.thighW = 3.0 * sp.legW; m.shinW = 2.2 * sp.legW; m.uarmW = 2.45 * sp.armW; m.farmW = 1.75 * sp.armW;
+  m.thigh = m.leg * 0.52; m.shin = m.leg * 0.49;
+  m.lift = -m.sh - 17;                       // the engine puts the shoulders 17 above the feet plus the lift
+  return m;
+}
+// the middle joint of a two-bone limb from (hx,hy) to (ax,ay); bend +1 or -1 picks the side the joint goes to; also the end,
+// pulled in when the target is out of reach
+function ik2(hx, hy, ax, ay, l1, l2, bend) {
+  var dx = ax - hx, dy = ay - hy, d = Math.hypot(dx, dy) || 0.001, dm = Math.min(d, (l1 + l2) * 0.985);
+  dx *= dm / d; dy *= dm / d; d = dm;
+  var a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+  return [hx + dx * a / d - dy / d * h * bend, hy + dy * a / d + dx / d * h * bend, hx + dx, hy + dy];
+}
+function limbD(c, x0, y0, w0, x1, y1, w1, col) {                     // a tapered segment with round ends
+  var dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy) || 1, nx = -dy / d, ny = dx / d, an = Math.atan2(ny, nx);
+  c.fillStyle = col; c.beginPath();
+  c.moveTo(x0 + nx * w0, y0 + ny * w0); c.lineTo(x1 + nx * w1, y1 + ny * w1); c.arc(x1, y1, w1, an, an - Math.PI, true);
+  c.lineTo(x0 - nx * w0, y0 - ny * w0); c.arc(x0, y0, w0, an - Math.PI, an - Math.PI * 2, true); c.closePath(); c.fill();
+}
+function blobD(c, pts, col, sharp) {                                  // a closed shape: rounded through its points, or straight (sharp)
+  var n = pts.length, i; c.beginPath();
+  if (sharp) { c.moveTo(pts[0][0], pts[0][1]); for (i = 1; i < n; i++) c.lineTo(pts[i][0], pts[i][1]); }
+  else {
+    c.moveTo((pts[0][0] + pts[n - 1][0]) / 2, (pts[0][1] + pts[n - 1][1]) / 2);
+    for (i = 0; i < n; i++) { var p = pts[i], q = pts[(i + 1) % n]; c.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2); }
+  }
+  c.closePath(); if (col) { c.fillStyle = col; c.fill(); }
+}
+function inkLine(c, pts, col, w, close) { var i; c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); if (close) c.closePath(); c.stroke(); }
+function h01(a, b) { var v = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return v - Math.floor(v); }
+// a jagged version of a closed outline: every edge gets a point pushed out and one pulled in, away from the centre (cx, cy)
+function jagged(pts, cx, cy, amp, seed) {
+  var out = [], n = pts.length, i;
+  for (i = 0; i < n; i++) {
+    var p = pts[i], q = pts[(i + 1) % n], ex = q[0] - p[0], ey = q[1] - p[1];
+    var mx = p[0] + ex * 0.4, my = p[1] + ey * 0.4, ox = mx - cx, oy = my - cy, ol = Math.hypot(ox, oy) || 1;
+    out.push(p); out.push([mx + ox / ol * amp * (0.5 + h01(seed, i)), my + oy / ol * amp * (0.5 + h01(seed, i))]);
+    var mx2 = p[0] + ex * 0.72, my2 = p[1] + ey * 0.72, ox2 = mx2 - cx, oy2 = my2 - cy, ol2 = Math.hypot(ox2, oy2) || 1;
+    out.push([mx2 - ox2 / ol2 * amp * 0.35 * h01(seed, i + 50), my2 - oy2 / ol2 * amp * 0.35 * h01(seed, i + 50)]);
+  }
+  return out;
+}
+var RING_COLS = [null, ['#b07a3a', '#6b4420'], ['#c9ced8', '#6f7580'], ['#d6dbe4', '#6f7580'], ['#e2b63a', '#8a6a18'], ['#c8402a', '#6a1e12']];
+function inkHero(c, x, y, dir, an, pose) {
+  an = an || { phase: 0, amt: 0, t: 0, lx: 0, ly: 0, blink: 0, sq: 0 };
+  var H = hero(), sp = H.spec, C = H.pal, M = inkMetrics(sp);
+  var cOut = c, layers = null, curL = null, inkOn = INK_FIG.on && typeof c.getTransform === 'function';
+  var LNc = 'rgba(35,26,22,' + (inkOn ? Math.min(1, INK_FIG.soft + 0.15) : 0.85) + ')', LNs = 'rgba(35,26,22,' + (inkOn ? INK_FIG.soft * 0.9 : 0.5) + ')', LIT = 'rgba(255,238,200,0.38)';
+  function lay(i) { if (!layers) return; curL = inkSwitch(c, layers, curL, i); c = curL.g; }
+  var ph = an.phase, amt = an.amt, t = an.t, run = an.run || 0;
+  var side = dir === 'left' || dir === 'right', flip = dir === 'right', back = dir === 'up';
+  var tq = side ? 0 : Math.max(-1, Math.min(1, an.turn || 0));
+  var L = pose ? [pose.lx, pose.ly] : [an.lx || 0, an.ly || 0];
+  var lx = (flip ? -L[0] : L[0]), ly = L[1];
+  var HS = Math.round(sp.hair || 0), BS = Math.round(sp.beard || 0), HT = Math.round(sp.hat || 0), CL = Math.round(sp.clothes || 0), RG = Math.round(sp.ring || 0);
+  var breathe = Math.sin(t * 2.2) * (1 - amt) * 0.35;
+  var bob = (Math.abs(Math.sin(ph)) - 0.5) * 1.5 * amt * (1 + 0.4 * run) * sp.bob + breathe * 0.5;   // highest when the legs pass each other
+  var ux = lx, uy = pose ? ly : ly + bob;                              // the upper body's lean and bob (the engine's own bob rides in pose.ly)
+  var hipY = M.hip + uy * 0.85, shY = M.sh + uy, beltY = M.belt + uy * 0.95;
+  var dress = CL === 3, coatLong = CL === 0, hemY = hipY + (dress ? M.leg - 2.2 : (coatLong ? 10.5 : 6.5));
+  var SKIN = C.skin, HAIR = C.hair, TUN = CL === 3 ? C.dress : C.coat, PANTS = C.pants, BOOT = C.boot, TRIM = C.trim, CLOAK = C.cloak, FUR = C.fur, IRON = C.iron;
+  var hasCloak = CL === 2 || HT === 1, blink = an.blink > 0.5;
+  var seed = Math.round((sp.hue || 0) * 0.1) + HS * 3;
+  c.save(); c.translate(x, y); if (flip) c.scale(-1, 1);
+  var sqK = an.sq || 0; c.scale(1 + 0.14 * sqK, 1 - 0.14 * sqK);
+  if (inkOn) { var M0 = c.getTransform(), li; layers = []; for (li = 0; li < 3; li++) layers.push(inkLayerBegin(li, M0, -38, M.top - 18, 76, -M.top + 24)); lay(1); }
+  function hand(h) { return h ? [(flip ? -h[0] : h[0]), h[1]] : null; }
+  function ringBand(x0, y0, x1, y1, w) {                             // the arm ring on an upper arm
+    var rc = RING_COLS[RG]; if (!rc) return; var dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy) || 1, bx = x0 + dx * 0.5, by = y0 + dy * 0.5, px = -dy / d, py = dx / d, hw = w + 0.45;
+    c.lineCap = 'butt'; c.strokeStyle = rc[1]; c.lineWidth = 2.2; c.beginPath(); c.moveTo(bx - px * hw, by - py * hw); c.lineTo(bx + px * hw, by + py * hw); c.stroke(); c.strokeStyle = rc[0]; c.lineWidth = 1.2; c.stroke(); c.lineCap = 'round';
+  }
+  function armD(sx, sy, tx, ty, bend, sleeve, ring) {               // an arm from the shoulder to a hand point: the elbow by ik2, the sleeve, the hand
+    var k = ik2(sx, sy, tx, ty, M.arm, M.arm, bend), col = sleeve || TUN;
+    limbD(c, sx, sy, M.uarmW, k[0], k[1], M.uarmW * 0.82, col); limbD(c, k[0], k[1], M.uarmW * 0.82, k[2], k[3], M.farmW * 0.95, col);
+    var cfx = k[2] - (k[2] - k[0]) * 0.16, cfy = k[3] - (k[3] - k[1]) * 0.16, cdx = k[2] - k[0], cdy = k[3] - k[1], cdl = Math.hypot(cdx, cdy) || 1, cpx = -cdy / cdl * M.farmW * 0.9, cpy = cdx / cdl * M.farmW * 0.9;
+    inkLine(c, [[cfx - cpx, cfy - cpy], [cfx + cpx, cfy + cpy]], LNs, 0.5);                                                        // the cuff
+    c.fillStyle = SKIN; c.beginPath(); c.arc(k[2], k[3], M.hand, 0, 7); c.fill();
+    if (ring) ringBand(sx, sy, k[0], k[1], M.uarmW * 0.82);
+    return k;
+  }
+  function boot(ax, ay, fwd, tilt, col) {                             // a boot in the side view: toe forward, a heel, tilted when the foot is up
+    c.save(); c.translate(ax, ay); c.rotate(fwd * tilt);
+    blobD(c, [[-fwd * 2.0, -2.3], [fwd * 1.2, -2.5], [fwd * 4.3, -1.3], [fwd * 4.9, 0.3], [fwd * 3.6, 1.3], [-fwd * 2.2, 1.3], [-fwd * 2.7, -0.4]], col);
+    inkLine(c, [[-fwd * 2.0, -2.2], [fwd * 1.3, -2.3]], LNs, 0.5); c.restore();
+  }
+  function bootF(ax, ay, lf, col) {                                  // a boot seen from the front or back
+    blobD(c, [[ax - 1.9, ay - 2.0 - lf * 0.4], [ax + 1.9, ay - 2.0 - lf * 0.4], [ax + 2.2, ay + 0.6 + lf * 0.9], [ax, ay + 1.5 + lf * 1.2], [ax - 2.2, ay + 0.6 + lf * 0.9]], col);
+    inkLine(c, [[ax - 1.8, ay - 1.8 - lf * 0.4], [ax + 1.8, ay - 1.8 - lf * 0.4]], LNs, 0.45);
+  }
+  function headShape(cx, cy, rx, ry, col) {                          // an egg: round above, a narrower jaw
+    blobD(c, [[cx, cy - ry], [cx + rx * 0.98, cy - ry * 0.38], [cx + rx * 0.9, cy + ry * 0.28], [cx + rx * 0.5, cy + ry * 0.9], [cx, cy + ry], [cx - rx * 0.5, cy + ry * 0.9], [cx - rx * 0.9, cy + ry * 0.28], [cx - rx * 0.98, cy - ry * 0.38]], col);
+  }
+  function hairSide(cx, cy, rx, ry, fwd, nape) {                     // the hair in the side view, by style
+    var bk = -fwd, amp = HS === 7 || HS === 8 ? 1.5 : 0.95, vol = HS === 7 || HS === 8 ? 1.45 : 1.15;
+    if (HS === 5) return;
+    if (HS === 6) {                                                  // shaved sides: a crest on top and a tail from the crown
+      blobD(c, jagged([[cx + fwd * 2.6, cy - ry * 0.75], [cx + fwd * 1.0, cy - ry - 1.2], [cx - fwd * 1.2, cy - ry - 1.6], [cx + bk * 3.0, cy - ry * 0.6], [cx + bk * 2.2, cy - ry * 0.2], [cx, cy - ry * 0.6]], cx, cy, 0.7, seed), HAIR, true);
+      tail(cx + bk * 2.6, cy - ry * 0.5, bk); return;
+    }
+    var pts = [[cx + fwd * (rx * 0.98), cy - ry * 0.55], [cx + fwd * rx * 0.6, cy - ry - 0.9 * vol], [cx, cy - ry - 1.3 * vol], [cx + bk * rx * 0.9, cy - ry * 0.7 - 0.8 * vol], [cx + bk * (rx * 1.15), cy + 0.2], [cx + bk * rx * 0.95, cy + ry * 0.55 + nape], [cx + bk * rx * 0.4, cy + ry * 0.35], [cx + fwd * rx * 0.3, cy - ry * 0.25]];
+    if (HS === 1) pts[0] = [cx + fwd * rx * 0.9, cy - ry * 0.7];      // cropped: the hairline higher
+    blobD(c, jagged(pts, cx, cy - 1, amp, seed), HAIR, true);
+    if (HS === 2 || HS === 8) longSide(cx, cy, rx, ry, bk);
+    if (HS === 3) braidSide(cx, cy, rx, ry, bk);
+    if (HS === 4) { c.fillStyle = HAIR; c.beginPath(); c.ellipse(cx + bk * rx * 0.9, cy - ry * 0.75, 1.9, 1.7, 0, 0, 7); c.fill(); }
+  }
+  function longSide(cx, cy, rx, ry, bk) {                            // long hair falling down the back of the neck
+    blobD(c, jagged([[cx + bk * rx * 0.5, cy - ry * 0.3], [cx + bk * rx * 1.15, cy + 0.5], [cx + bk * (rx * 1.3 + 0.8), cy + ry + 5.5], [cx + bk * rx * 0.3, cy + ry + 6.5], [cx + bk * rx * 0.2, cy + ry * 0.5]], cx + bk * 2, cy + 3, 0.9, seed + 3), HAIR, true);
+  }
+  function braidSide(cx, cy, rx, ry, bk) {
+    var x0 = cx + bk * rx * 0.8, y0 = cy + ry * 0.3, x1 = x0 + bk * 1.2 + bk * Math.sin(ph) * 0.6 * amt, y1 = y0 + 9.5, i;
+    limbD(c, x0, y0, 1.3, x1, y1, 0.8, HAIR); for (i = 1; i < 5; i++) inkLine(c, [[x0 + (x1 - x0) * i / 5 - 1, y0 + (y1 - y0) * i / 5], [x0 + (x1 - x0) * i / 5 + 1, y0 + (y1 - y0) * i / 5]], LNs, 0.5);
+  }
+  function tail(x0, y0, bk) { var sw = Math.sin(ph) * 0.9 * amt; limbD(c, x0, y0, 1.1, x0 + bk * (2.4 + sw), y0 + 7.5, 0.5, HAIR); }
+  function beardSide(cx, cy, rx, ry, fwd) {
+    var bk = -fwd; if (!BS) return;
+    if (BS === 2) { c.globalAlpha = 0.55; blobD(c, [[cx + bk * rx * 0.75, cy + ry * 0.25], [cx + fwd * rx * 0.7, cy + ry * 0.45], [cx + fwd * rx * 0.55, cy + ry * 0.95], [cx - fwd * rx * 0.2, cy + ry * 1.02], [cx + bk * rx * 0.7, cy + ry * 0.6]], C.hairD); c.globalAlpha = 1; return; }
+    if (BS === 4) { blobD(c, [[cx + fwd * rx * 0.95, cy + ry * 0.15], [cx + fwd * rx * 1.35, cy + ry * 0.4], [cx + fwd * rx * 0.9, cy + ry * 0.5], [cx + fwd * rx * 0.4, cy + ry * 0.38]], HAIR); return; }
+    var lon = BS === 3, pts = [[cx + bk * rx * 0.7, cy + ry * 0.3], [cx + fwd * rx * 0.5, cy + ry * 0.4], [cx + fwd * rx * 1.15, cy + ry * 0.75], [cx + fwd * rx * (lon ? 0.9 : 0.95), cy + ry * (lon ? 1.9 : 1.45)], [cx + fwd * rx * (lon ? 0.3 : 0.2), cy + ry * (lon ? 2.6 : 1.55)], [cx + bk * rx * 0.3, cy + ry * (lon ? 1.6 : 1.15)], [cx + bk * rx * 0.75, cy + ry * 0.7]];
+    blobD(c, jagged(pts, cx + fwd * 1, cy + ry, 0.7, seed + 7), HAIR, true);
+    if (lon) { var i; for (i = 1; i < 4; i++) inkLine(c, [[cx + fwd * rx * 0.9 - fwd * 0.4 * i, cy + ry * (1.0 + 0.35 * i)], [cx + fwd * rx * 0.1, cy + ry * (1.05 + 0.35 * i)]], LNs, 0.5); }
+  }
+  function hatSide(cx, cy, rx, ry, fwd, shx, shy) {
+    var bk = -fwd;
+    if (HT === 1) blobD(c, [[cx + fwd * rx * 0.75, cy + ry * 0.85], [cx + fwd * rx * 1.05, cy - ry * 0.2], [cx + fwd * rx * 0.6, cy - ry - 1.4], [cx + bk * rx * 0.6, cy - ry - 1.1], [cx + bk * rx * 1.55, cy - ry * 0.1], [cx + bk * rx * 1.5, cy + ry * 0.9], [cx + bk * rx * 1.1, shy + 2.5], [cx + fwd * rx * 0.3, shy + 1.0]], CLOAK);
+    else if (HT === 2) { blobD(c, [[cx + fwd * rx * 1.02, cy - ry * 0.35], [cx + fwd * rx * 0.7, cy - ry - 0.5], [cx, cy - ry - 0.9], [cx + bk * rx * 0.8, cy - ry - 0.3], [cx + bk * rx * 1.05, cy - ry * 0.25]], BOOT); inkLine(c, [[cx + fwd * rx * 1.02, cy - ry * 0.35], [cx + bk * rx * 1.05, cy - ry * 0.25]], LNs, 0.6); }
+    else if (HT === 3) { blobD(c, [[cx + fwd * rx * 1.08, cy - ry * 0.25], [cx + fwd * rx * 0.75, cy - ry - 0.8], [cx, cy - ry - 1.4], [cx + bk * rx * 0.85, cy - ry - 0.6], [cx + bk * rx * 1.1, cy - ry * 0.2]], IRON); inkLine(c, [[cx + fwd * rx * 1.08, cy - ry * 0.25], [cx + bk * rx * 1.1, cy - ry * 0.2]], LNc, 0.7); c.fillStyle = IRON; c.fillRect(cx + fwd * rx * 1.0 - 0.5, cy - ry * 0.3, 1.0, ry * 0.9); }
+    else if (HT === 4) { blobD(c, [[cx + fwd * rx * 0.95, cy - ry * 0.3], [cx + fwd * rx * 0.6, cy - ry - 1.6], [cx, cy - ry - 2.1], [cx + bk * rx * 0.75, cy - ry - 1.3], [cx + bk * rx * 1.0, cy - ry * 0.3]], C.vest); blobD(c, jagged([[cx + fwd * rx * 1.1, cy - ry * 0.55], [cx + fwd * rx * 1.05, cy - ry * 0.1], [cx + bk * rx * 1.12, cy], [cx + bk * rx * 1.1, cy - ry * 0.55]], cx, cy - ry * 0.3, 0.6, seed + 9), FUR, true); }
+    else if (HT === 5) inkLine(c, [[cx + fwd * rx * 1.0, cy - ry * 0.5], [cx + bk * rx * 0.95, cy - ry * 0.45]], TRIM, 1.0);
+  }
+  function cloakSide(shx, shy, fwd) {
+    var bk = -fwd, hem = M.hip + 15.5 + uy * 0.9, sw = amt * (2.2 + 1.5 * run);
+    blobD(c, [[shx + fwd * 1.8, shy - 0.3], [shx + bk * 2.9, shy - 0.7], [shx + bk * 4.8, shy + 8], [shx + bk * (5.6 + sw), hem], [shx + bk * 1.2, hem + 0.4], [shx + bk * 1.6, beltY], [shx + fwd * 1.0, shy + 3]], CLOAK);
+    inkLine(c, [[shx + bk * 3.4, shy + 6], [shx + bk * (3.6 + sw * 0.5), hem - 2]], LNs, 0.5);
+  }
+  function torsoSide(shx, shy, fwd) {
+    var bk = -fwd, hx = 0, f = function (yy) { return (hipY - yy) / (hipY - shy); };
+    var pts = [[shx + bk * 2.6, shy - 0.2], [shx + fwd * 3.0, shy], [shx * f(shy + 4.5) + fwd * 4.4, shy + 4.5], [shx * f(beltY) + fwd * 3.3, beltY], [fwd * (dress ? 4.4 : 4.2), hemY], [bk * (dress ? 4.6 : 3.6), hemY], [shx * f(beltY) + bk * 2.8, beltY], [shx * f(shy + 5) + bk * 3.6, shy + 5]];
+    blobD(c, pts, TUN);
+    inkLine(c, [[shx + fwd * 2.9, shy + 1.0], [shx * f(shy + 4.5) + fwd * 3.9, shy + 4.5], [shx * f(beltY) + fwd * 3.0, beltY - 1.5]], LIT, 0.8);     // the lit front
+    inkLine(c, [[shx * f(beltY) + bk * 1.2, beltY + 2], [bk * 1.6, hemY - 0.8]], LNs, 0.45); inkLine(c, [[shx * f(beltY) + fwd * 0.6, beltY + 2.5], [fwd * 1.0, hemY - 0.8]], LNs, 0.45);   // folds
+    if (dress) blobD(c, [[fwd * 4.1, hemY - 1.6], [bk * 4.3, hemY - 1.6], [bk * 4.4, hemY], [fwd * 4.2, hemY]], C.coat);
+    if (CL === 4) blobD(c, jagged([[shx + bk * 2.4, shy + 0.3], [shx + fwd * 1.2, shy + 0.2], [shx * f(shy + 5) + fwd * 2.6, shy + 5], [shx * f(beltY) + fwd * 1.8, beltY + 0.5], [shx * f(beltY) + bk * 2.6, beltY + 0.5], [shx * f(shy + 5) + bk * 3.3, shy + 5]], shx, (shy + beltY) / 2, 0.7, seed + 11), FUR, true);
+    if (coatLong) blobD(c, [[shx + fwd * 2.2, shy + 0.4], [shx * f(shy + 4.5) + fwd * 3.4, shy + 4.5], [shx * f(beltY) + fwd * 2.9, beltY], [shx * f(beltY) + fwd * 0.4, beltY], [shx * f(shy + 3) + fwd * 0.2, shy + 3]], C.vest);
+    // the belt with its buckle, and the hem of the tunic over the legs
+    if (!dress) { var bx = shx * f(beltY); blobD(c, [[bx + fwd * 3.2, beltY - 0.9], [bx + bk * 3.0, beltY - 0.9], [bx + bk * 3.0, beltY + 0.9], [bx + fwd * 3.2, beltY + 0.9]], BOOT, true); c.fillStyle = TRIM; c.fillRect(bx + fwd * 2.9 - 0.6, beltY - 0.7, 1.2, 1.4); }
+    inkLine(c, [[fwd * 3.8, hemY - 0.2], [bk * 3.6, hemY - 0.2]], LNs, 0.5);
+    if (hasCloak) { c.fillStyle = TRIM; c.beginPath(); c.arc(shx + fwd * 1.5, shy + 0.8, 0.9, 0, 7); c.fill(); }
+  }
+  function torsoFront(shx, shy) {
+    var f = function (yy) { return (hipY - yy) / (hipY - shy); }, nw = 1 - 0.1 * Math.abs(tq), w0 = M.shw * nw, w1 = (M.shw + 0.2) * nw, wb = M.waist * nw, wh = (dress ? M.hipw + 1.8 : M.hipw + 0.6) * nw;
+    var pts = [[shx - w0, shy], [shx + w0, shy], [shx * f(shy + 3.5) + w1, shy + 3.5], [shx * f(beltY) + wb, beltY], [wh, hemY], [-wh, hemY], [shx * f(beltY) - wb, beltY], [shx * f(shy + 3.5) - w1, shy + 3.5]];
+    blobD(c, pts, TUN);
+    inkLine(c, [[shx - w0 * 0.92, shy + 0.8], [shx * f(shy + 3.5) - w1 * 0.95, shy + 3.5], [shx * f(beltY) - wb * 0.95, beltY - 1.5]], LIT, 0.8);   // the lit side
+    inkLine(c, [[shx * f(beltY) - wb * 0.55, beltY + 2.2], [-wh * 0.6, hemY - 0.8]], LNs, 0.45); inkLine(c, [[shx * f(beltY) + wb * 0.5, beltY + 2.5], [wh * 0.5, hemY - 0.8]], LNs, 0.45);   // folds
+    inkLine(c, [[shx - w0 * 0.98, shy + 0.3], [shx * f(shy + 3.5) - w1 * 0.9, shy + 3.8]], LNs, 0.45); inkLine(c, [[shx + w0 * 0.98, shy + 0.3], [shx * f(shy + 3.5) + w1 * 0.9, shy + 3.8]], LNs, 0.45);   // the sleeve seams
+    if (dress) { blobD(c, [[-wh + 0.1, hemY - 1.6], [wh - 0.1, hemY - 1.6], [wh, hemY], [-wh, hemY]], C.coat); if (!back) { c.fillStyle = C.coat; blobD(c, [[shx - w0 * 0.75, shy], [shx + w0 * 0.75, shy], [shx * f(shy + 4) + w1 * 0.55, shy + 4], [shx * f(shy + 4) - w1 * 0.55, shy + 4]], C.coat); inkLine(c, [[shx - w0 * 0.45, shy + 0.3], [shx * f(shy + 5) - w1 * 0.3, shy + 5]], LNs, 0.6); inkLine(c, [[shx + w0 * 0.45, shy + 0.3], [shx * f(shy + 5) + w1 * 0.3, shy + 5]], LNs, 0.6); c.fillStyle = TRIM; c.beginPath(); c.arc(shx * f(shy + 5) - w1 * 0.3, shy + 5, 0.9, 0, 7); c.arc(shx * f(shy + 5) + w1 * 0.3, shy + 5, 0.9, 0, 7); c.fill(); } }
+    if (CL === 4) blobD(c, jagged([[shx - w0 * 0.95, shy + 0.2], [shx + w0 * 0.95, shy + 0.2], [shx * f(beltY) + wb * 1.05, beltY + 0.6], [shx * f(beltY) - wb * 1.05, beltY + 0.6]], shx, (shy + beltY) / 2, 0.7, seed + 11), FUR, true);
+    if (CL === 4 && !back) blobD(c, [[shx - w0 * 0.3, shy + 0.3], [shx + w0 * 0.3, shy + 0.3], [shx * f(beltY) + wb * 0.25, beltY], [shx * f(beltY) - wb * 0.25, beltY]], TUN);
+    if (coatLong && !back) { blobD(c, [[shx - w0 * 0.72, shy + 0.3], [shx + w0 * 0.72, shy + 0.3], [shx * f(beltY) + wb * 0.75, beltY], [shx * f(beltY) - wb * 0.75, beltY]], C.vest); inkLine(c, [[shx, shy + 2.2], [shx * f(beltY), beltY]], LNs, 0.5); }
+    if (!back && !dress && CL !== 4 && !coatLong) { c.fillStyle = C.coatD; blobD(c, [[shx - 1.1, shy + 0.2], [shx + 1.1, shy + 0.2], [shx + 0.6, shy + 2.6], [shx - 0.6, shy + 2.6]], C.coatD); inkLine(c, [[shx, shy + 1.2], [shx * f(shy + 4.5), shy + 4.5]], LNs, 0.5); }
+    if (hasCloak && back) { var hem = M.hip + 15.5 + uy * 0.9; blobD(c, [[shx - w0 - 0.8, shy - 0.6], [shx + w0 + 0.8, shy - 0.6], [wh + 2.4, hem - 3], [wh + 1.0, hem + 0.6], [wh * 0.3, hem - 0.5], [-wh * 0.5, hem + 0.7], [-wh - 1.2, hem - 0.2], [-wh - 2.4, hem - 3.5]], CLOAK); c.strokeStyle = LNs; c.lineWidth = 0.5; c.beginPath(); c.moveTo(shx - w0 * 0.35, shy + 3); c.quadraticCurveTo(-wh * 0.9, beltY + 4, -wh * 0.5, hem - 2); c.moveTo(shx + w0 * 0.45, shy + 2.5); c.quadraticCurveTo(wh * 0.9, beltY + 2, wh * 0.7, hem - 3); c.stroke(); inkLine(c, [[shx - w0 - 0.6, shy + 1], [-wh - 1.6, hem - 4]], LIT, 0.8); }
+    if (!dress) { var bx = shx * f(beltY); blobD(c, [[bx - wb - 0.3, beltY - 0.9], [bx + wb + 0.3, beltY - 0.9], [bx + wb + 0.3, beltY + 0.9], [bx - wb - 0.3, beltY + 0.9]], BOOT, true); if (!back) { c.fillStyle = TRIM; c.fillRect(bx + tq * 1.2 - 0.7, beltY - 0.75, 1.4, 1.5); blobD(c, [[bx + wb * 0.45, beltY + 1.0], [bx + wb * 0.45 + 2.2, beltY + 1.0], [bx + wb * 0.45 + 2.0, beltY + 3.4], [bx + wb * 0.45 + 0.2, beltY + 3.4]], shade(BOOT, -0.05)); } }
+    inkLine(c, [[-wh + 0.3, hemY - 0.2], [wh - 0.3, hemY - 0.2]], LNs, 0.5);
+    if (hasCloak && !back) { c.fillStyle = TRIM; c.beginPath(); c.arc(shx + w0 * 0.62 + tq * 0.5, shy + 1.0, 0.95, 0, 7); c.fill(); }
+  }
+  function hairFront(cx, cy, rx, ry) {                               // the hair in the front and back views
+    var amp = HS === 7 || HS === 8 ? 1.4 : 0.9, vol = HS === 7 || HS === 8 ? 1.5 : 1.15, i;
+    if (HS === 5) return;
+    if (HS === 2 || HS === 8) {                                      // long: masses beside the face (or over the back) to the shoulders
+      blobD(c, jagged([[cx - rx * 0.95, cy - ry * 0.4], [cx + rx * 0.95, cy - ry * 0.4], [cx + rx * 1.25, cy + ry * 1.3], [cx + rx * 0.9, cy + ry * 1.75], [cx, cy + ry * (back ? 1.9 : 1.1)], [cx - rx * 0.9, cy + ry * 1.75], [cx - rx * 1.25, cy + ry * 1.3]], cx, cy + 2, amp, seed + 3), HAIR, true);
+    }
+    if (HS === 3) { var bl = [[cx - rx * 0.75 + tq * 1.5, cy + ry * 0.35], [cx + rx * 0.75 + tq * 1.5, cy + ry * 0.35]]; for (i = 0; i < 2; i++) { var sd = i ? 1 : -1, x0 = bl[i][0], y0 = bl[i][1], x1 = x0 + sd * 0.8, y1 = y0 + 9.5, k; limbD(c, x0, y0, 1.3, x1, y1, 0.8, HAIR); for (k = 1; k < 5; k++) inkLine(c, [[x0 + (x1 - x0) * k / 5 - 0.9, y0 + (y1 - y0) * k / 5], [x0 + (x1 - x0) * k / 5 + 0.9, y0 + (y1 - y0) * k / 5]], LNs, 0.5); } }
+    if (HS === 6) { if (back) tail(cx, cy - ry * 0.4, 1); blobD(c, jagged([[cx - 1.6 + tq, cy - ry * 0.65], [cx - 1.2 + tq * 0.5, cy - ry - 1.4], [cx + 1.2 + tq * 0.5, cy - ry - 1.4], [cx + 1.6 + tq, cy - ry * 0.65]], cx, cy, 0.6, seed), HAIR, true); return; }
+    if (back) blobD(c, jagged([[cx - rx * 1.02, cy - ry * 0.35], [cx - rx * 0.7, cy - ry - 0.9 * vol], [cx, cy - ry - 1.3 * vol], [cx + rx * 0.7, cy - ry - 0.9 * vol], [cx + rx * 1.02, cy - ry * 0.35], [cx + rx * 0.9, cy + ry * 0.45], [cx, cy + ry * 0.75], [cx - rx * 0.9, cy + ry * 0.45]], cx, cy, amp, seed), HAIR, true);
+    else {
+      var fr = HS === 1 ? -0.72 : -0.42;                             // the fringe: cropped sits higher
+      blobD(c, jagged([[cx - rx * 1.05, cy - ry * 0.3], [cx - rx * 0.75, cy - ry - 0.9 * vol], [cx, cy - ry - 1.3 * vol], [cx + rx * 0.75, cy - ry - 0.9 * vol], [cx + rx * 1.05, cy - ry * 0.3], [cx + rx * 0.9 + tq * 0.8, cy + ry * fr], [cx + tq * 1.4, cy + ry * (fr + 0.08)], [cx - rx * 0.9 + tq * 0.8, cy + ry * fr]], cx, cy, amp, seed), HAIR, true);
+    }
+    if (HS === 4 && back) { c.fillStyle = HAIR; c.beginPath(); c.ellipse(cx, cy - ry * 0.55, 2.0, 1.8, 0, 0, 7); c.fill(); }
+    if (HS === 4 && !back) { c.fillStyle = HAIR; c.beginPath(); c.ellipse(cx - tq * 2.5, cy - ry - 0.8, 1.6 * Math.max(0.3, Math.abs(tq)) + 0.6, 1.3, 0, 0, 7); c.fill(); }
+  }
+  function beardFront(cx, cy, rx, ry) {
+    if (!BS || back) return;
+    if (BS === 2) { c.globalAlpha = 0.5; blobD(c, [[cx - rx * 0.88, cy + ry * 0.2], [cx + rx * 0.88, cy + ry * 0.2], [cx + rx * 0.5, cy + ry * 0.95], [cx, cy + ry * 1.04], [cx - rx * 0.5, cy + ry * 0.95]], C.hairD); c.globalAlpha = 1; return; }
+    if (BS === 4) { blobD(c, [[cx - rx * 0.55 + tq, cy + ry * 0.4], [cx + tq * 1.3, cy + ry * 0.3], [cx + rx * 0.55 + tq * 1.6, cy + ry * 0.4], [cx + rx * 0.35 + tq * 1.3, cy + ry * 0.55], [cx + tq * 1.3, cy + ry * 0.5], [cx - rx * 0.35 + tq, cy + ry * 0.55]], HAIR); return; }
+    var lon = BS === 3, pts = [[cx - rx * 0.9, cy + ry * 0.15], [cx - rx * 0.45 + tq * 1.0, cy + ry * 0.45], [cx + tq * 1.3, cy + ry * 0.4], [cx + rx * 0.45 + tq * 1.0, cy + ry * 0.45], [cx + rx * 0.9, cy + ry * 0.15], [cx + rx * (lon ? 0.55 : 0.7), cy + ry * (lon ? 1.6 : 1.35)], [cx + tq * 0.6, cy + ry * (lon ? 2.7 : 1.6)], [cx - rx * (lon ? 0.55 : 0.7), cy + ry * (lon ? 1.6 : 1.35)]];
+    blobD(c, jagged(pts, cx, cy + ry, 0.7, seed + 7), HAIR, true);
+    if (lon) { var i; for (i = 1; i < 4; i++) inkLine(c, [[cx - rx * 0.35 + tq * 0.4, cy + ry * (1.0 + 0.4 * i)], [cx + rx * 0.35 + tq * 0.4, cy + ry * (1.0 + 0.4 * i)]], LNs, 0.5); }
+  }
+  function hatFront(cx, cy, rx, ry, shy) {
+    if (HT === 1) { blobD(c, [[cx - rx * 1.5, shy + 1.5], [cx - rx * 1.45, cy - ry * 0.2], [cx - rx * 0.7, cy - ry - 1.6], [cx + rx * 0.7, cy - ry - 1.6], [cx + rx * 1.45, cy - ry * 0.2], [cx + rx * 1.5, shy + 1.5]], CLOAK); if (!back) { c.save(); c.beginPath(); c.ellipse(cx + tq * 0.6, cy + 0.3, rx * 1.0, ry * 1.02, 0, 0, 7); c.clip(); headAndFace(cx, cy, rx, ry); c.restore(); } }
+    else if (HT === 2) { blobD(c, [[cx - rx * 1.03, cy - ry * 0.32], [cx - rx * 0.75, cy - ry - 0.5], [cx, cy - ry - 0.9], [cx + rx * 0.75, cy - ry - 0.5], [cx + rx * 1.03, cy - ry * 0.32]], BOOT); inkLine(c, [[cx - rx * 1.03, cy - ry * 0.32], [cx + rx * 1.03, cy - ry * 0.32]], LNs, 0.6); }
+    else if (HT === 3) { blobD(c, [[cx - rx * 1.1, cy - ry * 0.25], [cx - rx * 0.8, cy - ry - 0.8], [cx, cy - ry - 1.4], [cx + rx * 0.8, cy - ry - 0.8], [cx + rx * 1.1, cy - ry * 0.25]], IRON); inkLine(c, [[cx - rx * 1.1, cy - ry * 0.25], [cx + rx * 1.1, cy - ry * 0.25]], LNc, 0.7); if (!back) { c.fillStyle = IRON; c.fillRect(cx + tq * 1.6 - 0.55, cy - ry * 0.3, 1.1, ry * 0.95); } }
+    else if (HT === 4) { blobD(c, [[cx - rx * 0.95, cy - ry * 0.3], [cx - rx * 0.65, cy - ry - 1.6], [cx, cy - ry - 2.1], [cx + rx * 0.65, cy - ry - 1.6], [cx + rx * 0.95, cy - ry * 0.3]], C.vest); blobD(c, jagged([[cx - rx * 1.12, cy - ry * 0.55], [cx + rx * 1.12, cy - ry * 0.55], [cx + rx * 1.1, cy - ry * 0.05], [cx - rx * 1.1, cy - ry * 0.05]], cx, cy - ry * 0.3, 0.6, seed + 9), FUR, true); }
+    else if (HT === 5) inkLine(c, [[cx - rx * 1.0, cy - ry * 0.45], [cx + rx * 1.0, cy - ry * 0.45]], TRIM, 1.0);
+  }
+  function headAndFace(cx, cy, rx, ry) {
+    headShape(cx, cy, rx, ry, SKIN);
+    inkLine(c, [[cx - rx * 0.8, cy - ry * 0.55], [cx - rx * 0.95, cy], [cx - rx * 0.7, cy + ry * 0.65]], LIT, 0.8);
+    c.fillStyle = SKIN; c.beginPath(); c.ellipse(cx - rx * 0.98 - tq * 0.3, cy + 0.4, 0.8, 1.15, 0, 0, 7); c.ellipse(cx + rx * 0.98 - tq * 0.3, cy + 0.4, 0.8, 1.15, 0, 0, 7); c.fill();
+    if (back) return;
+    var ex = cx + tq * 1.4, es = 1.3 * sp.headW, er = 0.52 * sp.eyeSize, i;
+    for (i = -1; i <= 1; i += 2) {
+      var x0 = ex + i * es;
+      if (blink) inkLine(c, [[x0 - 0.6, cy - 0.3], [x0 + 0.6, cy - 0.3]], C.eye, 0.5);
+      else { c.fillStyle = C.eye; c.beginPath(); c.ellipse(x0, cy - 0.3, er * 0.8, er, 0, 0, 7); c.fill(); }
+      inkLine(c, [[x0 - 0.9 - i * 0.2, cy - 1.5 + 0.15], [x0 + 0.9 - i * 0.2, cy - 1.5 - 0.15]], LNc, 0.55);   // a brow, the inner end a little lower
+    }
+    inkLine(c, [[ex + 0.1, cy - 0.2], [ex + 0.35 - tq * 0.4, cy + 1.1], [ex - 0.3, cy + 1.2]], LNs, 0.5);                   // the nose
+    if (!BS || BS === 2 || BS === 4) inkLine(c, [[ex - 0.7 + tq * 0.2, cy + 2.2], [ex + 0.7 + tq * 0.2, cy + 2.2]], LNs, 0.45);
+    if (sp.blush) { c.globalAlpha = 0.18 * sp.blush; c.fillStyle = '#c0503a'; c.beginPath(); c.ellipse(ex - es * 1.1, cy + 1.2, 0.9, 0.55, 0, 0, 7); c.ellipse(ex + es * 1.1, cy + 1.2, 0.9, 0.55, 0, 0, 7); c.fill(); c.globalAlpha = 1; }
+  }
+
+  if (side) {
+    var fwd = -1, bk = 1;
+    var shx = ux + fwd * (0.5 + 0.9 * run * amt), shy = shY;
+    var headBob = -Math.abs(Math.sin(ph - 0.6)) * 0.5 * amt * sp.bob;
+    var legS = function (phi, near) {
+      var sw = Math.sin(phi), lf = Math.max(0, Math.cos(phi)) * amt;
+      var ax = fwd * sw * 4.4 * amt * (1 + 0.35 * run) * sp.stride + (near ? 0.3 : -0.5), ay = M.ankle - lf * (3.2 + 1.3 * run) * Math.min(1.4, sp.stride);
+      var hx = near ? 0.5 : -0.7, hy = hipY, k = ik2(hx, hy, ax, ay, M.thigh, M.shin, 1), col = near ? PANTS : C.pantsD, bcol = near ? BOOT : shade(BOOT, -0.07);
+      limbD(c, hx, hy, M.thighW * 1.12, k[0], k[1], M.thighW * 0.8, col); limbD(c, k[0], k[1], M.thighW * 0.8, k[2], k[3], M.shinW * 0.82, col);
+      inkLine(c, [[k[2] + fwd * 0.9, k[3] - 5.5], [k[2] - fwd * 1.3, k[3] - 4.0]], LNs, 0.45);                              // a leg wrap
+      inkLine(c, [[k[2] + fwd * 1.1, k[3] - 3.6], [k[2] - fwd * 1.2, k[3] - 2.4]], LNs, 0.45);
+      boot(k[2], k[3], fwd, lf * 0.45, bcol);
+    };
+    lay(0);
+    if (hasCloak) cloakSide(shx, shy, fwd);
+    legS(ph + Math.PI, false);
+    // the far arm
+    var farT = hand(pose && pose.far), aFar = Math.sin(ph + Math.PI) * 0.6 * amt * (1 + 0.35 * run) * sp.armSwing;
+    var fsx = shx + bk * 2.0, fsy = shy + 1.4;
+    if (!farT) farT = [fsx + fwd * Math.sin(aFar) * M.arm * 1.9 + bk * 0.4, fsy + Math.cos(aFar) * M.arm * 1.93];
+    armD(fsx, fsy, farT[0], farT[1], -1, C.coatD === TUN ? TUN : (dress ? C.coat : shade(TUN, -0.06)), false);
+    lay(1);
+    legS(ph, true);
+    torsoSide(shx, shy, fwd);
+    limbD(c, shx + fwd * 0.2, shy + 0.6, 1.25, shx + fwd * 0.9, M.chin + uy + 0.6 + headBob, 1.1, SKIN);                   // the neck
+    var cx = shx + fwd * 1.4, cy = M.cy + uy + headBob, rx = M.headW / 2 * 1.16, ry = M.headH / 2;
+    c.save(); c.translate(cx, cy); c.rotate(fwd * (0.06 * run * amt)); c.translate(-cx, -cy);
+    if (HS === 2 || HS === 8) { /* long hair behind the head goes first */ }
+    headShape(cx, cy, rx, ry, SKIN);
+    blobD(c, [[cx + fwd * rx * 0.8, cy - 1.2], [cx + fwd * (rx * 1.3), cy + 0.5], [cx + fwd * rx * 0.95, cy + 1.6], [cx + fwd * rx * 0.6, cy + 1.6]], SKIN, true);                    // the nose
+    inkLine(c, [[cx + fwd * rx * 0.88, cy - 0.9], [cx + fwd * (rx * 1.28), cy + 0.5], [cx + fwd * rx * 0.95, cy + 1.5]], LNc, 0.5);
+    inkLine(c, [[cx + fwd * rx * 0.75, cy + ry * 0.5], [cx + fwd * rx * 0.55, cy + ry * 0.88]], LNs, 0.45);                     // the chin
+    inkLine(c, [[cx + fwd * rx * 0.55, cy - ry * 0.85], [cx + fwd * rx * 0.85, cy - ry * 0.3]], LIT, 0.8);
+    c.fillStyle = SKIN; c.beginPath(); c.ellipse(cx + bk * rx * 0.72, cy + 0.4, 0.85, 1.2, 0, 0, 7); c.fill(); inkLine(c, [[cx + bk * rx * 0.72, cy - 0.6], [cx + bk * rx * 0.72 + 0.6, cy + 0.3], [cx + bk * rx * 0.72, cy + 1.3]], LNs, 0.4);   // the ear
+    if (blink) inkLine(c, [[cx + fwd * rx * 0.3, cy - 0.3], [cx + fwd * rx * 0.75, cy - 0.3]], C.eye, 0.5);
+    else { c.fillStyle = C.eye; c.beginPath(); c.ellipse(cx + fwd * rx * 0.55, cy - 0.3, 0.42 * sp.eyeSize, 0.52 * sp.eyeSize, 0, 0, 7); c.fill(); }
+    inkLine(c, [[cx + fwd * rx * 0.25, cy - 1.4], [cx + fwd * rx * 0.9, cy - 1.7]], LNc, 0.55);                                                  // the brow
+    if (sp.blush) { c.globalAlpha = 0.18 * sp.blush; c.fillStyle = '#c0503a'; c.beginPath(); c.ellipse(cx + fwd * rx * 0.45, cy + 1.3, 1.0, 0.55, 0, 0, 7); c.fill(); c.globalAlpha = 1; }
+    hairSide(cx, cy, rx, ry, fwd, 0);
+    beardSide(cx, cy, rx, ry, fwd);
+    hatSide(cx, cy, rx, ry, fwd, shx, shy);
+    c.restore();
+    lay(2);
+    var nearT = hand(pose && pose.near), aNear = Math.sin(ph) * 0.6 * amt * (1 + 0.35 * run) * sp.armSwing;
+    var nsx = shx + fwd * 0.4, nsy = shy + 1.4;
+    if (!nearT) nearT = amt < 0.25 ? [shx * 0.4 + fwd * 3.0, beltY - 0.4] : [nsx + fwd * Math.sin(aNear) * M.arm * 1.9 + fwd * 0.8, nsy + Math.cos(aNear) * M.arm * 1.95];
+    armD(nsx, nsy, nearT[0], nearT[1], -1, dress ? C.coat : TUN, RG > 0);
+  } else {
+    var dS = back ? -1 : 1, shx2 = ux, shy2 = shY, restHand = amt < 0.25 && !back, restSide = 1;
+    var headBob2 = -Math.abs(Math.sin(ph - 0.6)) * 0.5 * amt * sp.bob, sway = Math.sin(ph) * amt * sp.sway * 0.8;
+    var legF = function (sd, phi) {
+      var sw = Math.sin(phi) * dS, lf = Math.max(0, Math.cos(phi)) * amt;
+      var hx = sd * M.hipw * 0.5 + ux * 0.1 + sway * 0.3, hy = hipY;
+      var ax = sd * (2.3 * sp.stance + 0.5) * (1 - 0.08 * Math.abs(tq)) + tq * sw * 2.0 * amt - lf * sd * 0.5, ay = M.ankle + sw * (2.3 + 0.8 * run) * amt * sp.stride - lf * (2.4 + 0.9 * run);
+      var kx = (hx + ax) / 2 + sd * 0.35, ky = (hy + ay) / 2 + lf * 1.4;
+      var col = PANTS, bcol = BOOT;
+      limbD(c, hx, hy, M.thighW, kx, ky, M.thighW * 0.8, col); limbD(c, kx, ky, M.thighW * 0.8, ax, ay, M.shinW * 0.85, col);
+      inkLine(c, [[ax - 1.5, ay - 5.2], [ax + 1.5, ay - 4.2]], LNs, 0.45); inkLine(c, [[ax - 1.5, ay - 3.4], [ax + 1.5, ay - 2.5]], LNs, 0.45);
+      bootF(ax, ay, lf, bcol);
+      return ay;
+    };
+    var armFn = function (sd, target, swing, ring) {
+      var sx = shx2 + sd * (M.shw - 0.5) * (1 - 0.1 * Math.abs(tq)) + tq * 0.4, sy = shy2 + 1.2, tx, ty;
+      if (target) { tx = target[0]; ty = target[1]; }
+      else if (restHand && sd === restSide) { tx = shx2 * 0.4 + sd * (M.waist * 0.9 + 0.3) + tq * 0.3; ty = beltY - 0.6; }                      // at rest the hand rests on the belt
+      else { var a = swing; tx = sx + sd * (1.1 - Math.abs(a) * 0.5) + ux * 0.25; ty = sy + M.arm * 1.95 * Math.cos(a * 0.9) - 0.2; }
+      armD(sx, sy, tx, ty, -sd, dress ? C.coat : TUN, ring);
+    };
+    var aL = Math.sin(ph) * 0.6 * amt * (1 + 0.35 * run) * sp.armSwing * dS, aR = -aL;
+    var backL = back ? tq > -0.35 : tq < -0.35, backR = back ? tq < 0.35 : tq > 0.35;
+    var tL = hand(pose && pose.armL), tR = hand(pose && pose.armR);
+    lay(0);
+    if (hasCloak && !back) { var hem = M.hip + 15.5 + uy * 0.9, cw = M.shw + 1.0; blobD(c, [[shx2 - cw, shy2 - 0.8], [shx2 + cw, shy2 - 0.8], [M.hipw + 2.6 + sway * 0.6, hem - 3], [M.hipw + 1.2, hem + 0.5], [sway * 0.5, hem - 0.6], [-M.hipw - 1.4, hem + 0.5], [-M.hipw - 2.6 + sway * 0.6, hem - 3]], CLOAK); }
+    if (backL && !tL) armFn(-1, null, aL, false);
+    if (backR && !tR) armFn(1, null, aR, false);
+    lay(1);
+    var yl = legF(-1, ph), yr = legF(1, ph + Math.PI);
+    if (yl > yr) legF(-1, ph); else legF(1, ph + Math.PI);                   // the nearer leg drawn last
+    if (!dress) inkLine(c, [[sway * 0.3, hemY + 0.5], [sway * 0.3, hemY + 3.5]], LNs, 0.35);
+    torsoFront(shx2, shy2);
+    limbD(c, shx2 * 0.95, shy2 + 0.6, 1.3, shx2 + tq * 0.4, M.chin + uy + 0.6 + headBob2, 1.15, SKIN);                       // the neck
+    var cx2 = shx2 + tq * 0.35, cy2 = M.cy + uy + headBob2, rx2 = M.headW / 2, ry2 = M.headH / 2;
+    c.save(); c.translate(cx2, cy2); c.rotate(sway * 0.025); c.translate(-cx2, -cy2);
+    if (!back && (HS === 2 || HS === 8)) hairFront(cx2, cy2, rx2, ry2);        // long hair behind the face first
+    if (HT === 1) hatFront(cx2, cy2, rx2, ry2, shy2);                         // the hood frames the face, the face inside it
+    else {
+      headAndFace(cx2, cy2, rx2, ry2);
+      if (back || !(HS === 2 || HS === 8)) hairFront(cx2, cy2, rx2, ry2); else blobD(c, jagged([[cx2 - rx2 * 1.05, cy2 - ry2 * 0.3], [cx2 - rx2 * 0.75, cy2 - ry2 - 0.9], [cx2, cy2 - ry2 - 1.3], [cx2 + rx2 * 0.75, cy2 - ry2 - 0.9], [cx2 + rx2 * 1.05, cy2 - ry2 * 0.3], [cx2 + rx2 * 0.9 + tq * 0.8, cy2 - ry2 * 0.42], [cx2 + tq * 1.4, cy2 - ry2 * 0.34], [cx2 - rx2 * 0.9 + tq * 0.8, cy2 - ry2 * 0.42]], cx2, cy2, 0.75, seed), HAIR, true);
+      hatFront(cx2, cy2, rx2, ry2, shy2);
+    }
+    beardFront(cx2, cy2, rx2, ry2);
+    c.restore();
+    lay(2);
+    if (!backL || tL) armFn(-1, tL, aL, false);
+    if (!backR || tR) armFn(1, tR, aR, RG > 0 && !back);
+  }
+  if (layers) { var lj; for (lj = 0; lj < 3; lj++) inkLayerEnd(cOut, layers[lj], lj, INK_FIG.line, INK_FIG); c = cOut; }
+  c.restore();
+}
+
 function playerD(c, x, y, dir, an, pose) {
+  if (hero().spec.figure >= 1) return inkHero(c, x, y, dir, an, pose);
   an = an || { phase: 0, amt: 0, t: 0, lx: 0, ly: 0, blink: 0, sq: 0 };
   var H = hero(), sp = H.spec, C = H.pal, lift = H.lift, LN0 = LN;
   var cOut = c, layers = null, curL = null, inkOn = INK_FIG.on && typeof c.getTransform === 'function';
@@ -1374,6 +1730,6 @@ function creatureD(c, x, y, s, H) {
 var dkB = null;
 
 
-return { lib: { INK_FIG: INK_FIG, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { INK_FIG: INK_FIG, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;

@@ -6,7 +6,7 @@ var big = process.argv[2] === 'big', dirs = ['down', 'left', 'right', 'up'], cel
 var W = Math.max(cons.length, 7) * cell, H = big ? 4 * cell : (4 + 8) * cell;
 var cv = createCanvas(W * S, H * S), c = cv.getContext('2d'); c.scale(S, S);
 c.fillStyle = '#8fd66d'; c.fillRect(0, 0, W, H);
-function draw(sp, x, y, dir) { lib.setHero(sp); c.save(); c.translate(x, y); c.scale(1.1, 1.1); lib.playerD(c, 0, 0, dir, { phase: 0, amt: 0, t: 0.7, lx: 0, ly: 0, blink: 0, sq: 0 }, null); c.restore(); }
+function draw(sp, x, y, dir) { lib.setHero(sp); c.save(); c.translate(x, y); c.scale(0.95, 0.95); lib.playerD(c, 0, 0, dir, { phase: 0, amt: 0, t: 0.7, lx: 0, ly: 0, blink: 0, sq: 0 }, null); c.restore(); }
 cons.forEach(function (cn, i) { var sp = lib.conceptSpec(cn.name); dirs.forEach(function (d, r) { draw(sp, i * cell + 30, r * cell + 52, d); }); c.fillStyle = '#243018'; c.font = '9px sans-serif'; c.textAlign = 'center'; c.fillText(cn.name, i * cell + 30, 10); });
 if (big) { fs.writeFileSync('folk.png', cv.toBuffer('image/png')); console.log('wrote folk.png (big)'); process.exit(0); }
 // the styles: rows of hair, beard, hat, clothes (front view), each over a matte base
