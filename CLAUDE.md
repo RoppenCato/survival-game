@@ -90,7 +90,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | Page (in `dist/`) | Template | What it is |
 | --- | --- | --- |
 | `index.html` | `index.html` | Start page |
-| `character-editor.html` | `sprite.html` | Character Editor: the people of this world; concepts, styles, templates, the matte look |
+| `character-editor.html` | `sprite.html` | Character Editor: the heroes (Eirik, Ásta, Hallvard on the ink figure), the Figure switch, concepts, styles, builds, templates |
 | `creature-editor.html` | `creature.html` | Creature Editor: the six animals and their behaviour |
 | `object-editor.html` | `objects.html` | Object Editor: tune one world prop |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
@@ -272,12 +272,27 @@ the text and it is made the default. When a spec's meaning changes, change the s
   colour), grain, shade, soft }: the Art Direction page's "Grain on figures" and "Shadow side" set `grain` and `shade`
   (saved in `game.look` as `figGrain`, `figShade`); `on: false` gives the old per-part drawing (the page's before canvas). Needs
   `getTransform` (every browser; `@napi-rs/canvas` too). About 0.13 ms a hero, 0.4 ms a troll.
-- **Lean (2026-10-07, Robin: "a clear step", the head a quarter of the height, his clothes and colours kept):** `HEROD_DEF` is
-  headW/headH 0.55, bodyW 0.84, bodyH 1.15, legL 2.2, legW 0.82, armL 1.4, armW 0.78, eyeSize 0.85, matte 0.6, the palette
-  toward earth (`#4f7a74` coat, `#6a4a32` vest, `#56505e` trousers, ink `#231a16`). The hero is about 37 units tall. Brokk, the
-  Child concept and the villagers were rebased on it. **Storage keys changed** so old looks are ignored: the Character Editor
-  keeps its work in `herotest2.*` and hands the hero over as `game.hero2` (every page reads that key); its Builds are
-  rebased, with an "Old figure" build for comparison, and its sheet is paper with grain.
+- **The hero drawn from scratch (2026-10-07, Robin: the leaned old figure "looks weird", make a new good-looking hero, keep the old
+  for comparison):** `inkHero` in `src/art.js` is a new figure, chosen by spec key **`figure: 1`** (`playerD` hands over to it; 0 is
+  the old rounded figure). About five and a half heads tall (Robin's pick: Hollow Knight and Egerkrans lean): `INK_BASE` and
+  `inkMetrics(sp)` give the joints (the build keys headW, bodyW, legL and so on are factors on it; `lift` is what puts the
+  shoulders where the engine expects them, `liftOf`); two-bone legs and arms with `ik2` (knees forward, elbows back, outward in
+  the front view), `limbD` tapered segments, `blobD` rounded or sharp shapes, `jagged` edges for hair, beards and fur, `inkLine`
+  detail strokes in soft ink and a warm lit edge (`LIT`) on the left. A belted tunic with a buckle and a pouch, leg wraps, boots,
+  a neck, an egg of a head with brows, dot eyes (blink), a nose stroke and a mouth. All the style keys work on it: hair (crop,
+  cropped, long, braids, knot, bald, shaved with a tail, wavy, mane), beard (full, short stubble, long braided, moustache), hat
+  (hood framing the face, leather cap, nasal helmet, fur hat, headband), clothes (coat and vest, tunic, tunic and cloak with a
+  brooch, apron dress with straps and brooches, fur vest). Side view (facing left, flipped for right) and front and back views
+  turned by `an.turn`; the walk has a real knee bend, the body is highest when the legs pass, at rest one hand sits on the belt;
+  the pose contract is playerD's (hand targets in figure space with the lift, `pose.lx/ly` the lean), so carried things, chops
+  and swings land in the hands (`tools/visual/poses.js`). **Three heroes to pick from** (`HEROES`, `lib.heroes`,
+  `lib.heroSpec(name)`; the Character Editor's **Heroes** group): **Eirik** (red hair tied back, a short beard, grey tunic, red
+  cloak), **Ásta** (a fair braid, blue-grey tunic, green cloak, leather cap), **Hallvard** (dark knot, long braided beard, fur vest,
+  headband). **Eirik is `HEROD_DEF`** until Robin picks; `HEROD_OLD` is the old figure's build, the **"Old figure"** concept and
+  the editor's **Figure** switch (Ink figure | Old figure). Brokk, the Child concept and the villagers are rebased on it. **Storage
+  keys changed** so old looks are ignored: the Character Editor keeps its work in `herotest2.*` and hands the hero over as
+  `game.hero2` (every page reads that key); its Builds are factors round 1 and its sheet is paper with grain. Renders:
+  `tools/visual/heroes.js` (the three, four directions, standing and walking), `herobig.js [name]` (one, large), `folk.js`.
 - Drawn from a spec: `HEROD_DEF`, swapped with `lib.setHero(spec)`, read with `lib.hero()` (`{ spec, pal, lift }`).
   Proportions are factors on the original figure. The Character Editor edits it.
 - `src/combat.js` compensates for longer legs (`heroLift()`) so weapons stay in the hands.
@@ -840,6 +855,23 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   on load by `lib.useAnimal(key, spec)`: the look and the spec's numbers; the game keeps its own counts, damage and drops) with
   Update in game and Take back; the base models are **Templates** and set the slot; the **Animal and Troll panels show only
   for their body plan**.
+- **The trolls drawn from scratch (2026-10-07, Robin: both kinds, keep the old for comparison):** two turntable models on the ink
+  layers in `src/art.js`, sharing `trollParts` (heading, clock, colours, the `pt`/`depth` projection, the `at(dep, fn)` list),
+  `trollFinish` (sort far to near, draw into the layers by depth band, lay them down), `trollHand` (a palm, knuckles and four
+  fingers, knobbed or twig), `trollStrand`, `trollCape` (a jagged cape of hair hanging from a ring of points, in overlapping
+  segments each sorted by its own depth, a hem of strands) and `trollGrowth` (lichen patches and birch saplings). **The boulder
+  troll** (`boulderTrollD`, plan 8, Bauer): a boulder of a body (the turned ellipsoid, a flat foot, embedded stones, a lit side),
+  a tent of hair from the crown down the whole back and a jagged cap on top, moss and saplings growing on it, the face sunk into
+  the front (a darker hollow, sockets, small bright eyes that glow when he means harm, a heavy tufted brow, a long drooping nose
+  with a bulb, nostrils and a wart, a grim mouth with a tooth, a beard to the ground, beads), big round ears with a ring, arms from
+  high on the sides to enormous hands flat on the ground, great flat feet. **The forest troll** (`forestTrollD`, plan 9, Kittelsen):
+  tall and gaunt, a trunk of a body leaning forward from the hips (`trollHunch`), bark lines, a shorter mane, long thin legs with
+  knee knobs and long-toed feet, arms past the knees with twig fingers trailing on the ground, a long skull on a neck with a branch
+  of a nose, pointed ears, a crown of tangled hair with twigs standing up and a fir sapling. Both keep the sweep attack and
+  `H.eyes`. `ANIMALS`: **`troll` is now the boulder troll** (the game's cave troll), `trollStone` its stone, `trollForest` the
+  forest troll (not in the game yet), `trollOld` the first troll (plan 7, `trollD`) for comparison; `animalAttack` gives any
+  `troll*` key the troll's sweep. The Creature Editor lists them as Templates and its Troll panel shows for plans 7, 8 and 9.
+  `node tools/visual/trolls.js` renders the three at four headings with the windup and the blow.
 - **The cave and the mountain troll (2026-10-05, from `docs/beasts.md`):**
   *The mouth:* `caveSetup` picks a clear spot on grass 700 to 1600 units from camp (not near the steading), clears
   the props round it and plants a `cave` prop (`caveMouth`); E beside it enters (a short black fade), E near the

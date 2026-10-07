@@ -144,7 +144,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div id="ptroll"></div>
         <h2 class="more">Details</h2>
         <div class="group chips" id="tflags"></div>
-        <p class="desc">The Troll body plan, after John Bauer: an old boulder of a thing, hunched, with hair down its back gone grey, lichen growing on it, knuckles on the ground, a long nose and great ears. Age greys the hair and adds warts. The moss colour is under Colours.</p>
+        <p class="desc">The troll body plans (2026-10-07): the Boulder troll after John Bauer (a boulder of a body with the head sunk into it, a beard to the ground, hair over the whole back, moss and birch saplings growing on it, knuckles on the ground) and the Forest troll after Theodor Kittelsen (tall and gaunt, bark for skin, a branch of a nose, twigs and a fir in its hair). Troll (old) is the first troll, kept for comparison. Hair, nose, ears, arms, moss and age work on all three; hunch leans the forest troll. The moss colour is under Colours.</p>
       </section>
       <section class="panel">
         <h2>Eyes</h2>
@@ -287,7 +287,7 @@ __COMBAT__
   var NUM = SHAPE.concat(EYES, MOVE, BEHAVE, TONE, ANIMAL, TROLL);
   var COLS = [['body', 'Body'], ['belly', 'Belly and markings'], ['accent', 'Horns, teeth and hair'], ['moss', 'Moss and lichen'], ['eye', 'Pupils'], ['glow', 'Glow and warning'], ['line', 'Outline']];
   var CHOICES = {
-    plan: ['Blob', 'Critter', 'Brute', 'Floater', 'Crawler', 'Animal', 'Snake', 'Troll'],
+    plan: ['Blob', 'Critter', 'Brute', 'Floater', 'Crawler', 'Animal', 'Snake', 'Troll (old)', 'Boulder troll', 'Forest troll'],
     ears: ['None', 'Pointed', 'Round', 'Long'],
     antlers: ['None', 'Spikes', 'Deer', 'Moose'],
     eyeStyle: ['Round', 'Glowing', 'Angry', 'Sleepy'],
@@ -300,7 +300,7 @@ __COMBAT__
   };
   var TELLTXT = ['Swell: it squashes wide and flushes with its warning colour.', 'Shake: it trembles on the spot and flushes with its warning colour.', 'Rear up: it lifts and tips back before it strikes.', 'Eye glow: the eyes grow and light up, with a pulse ring.'];
   var BEHAVETXT = ['Lunger: chases you, circles, then lunges in a straight line. It can be parried.', 'Brute: the Bossbot\'s moves, with a lunge, a chain of hits and a spin. It has a stagger bar.', 'Shooter: stands still and fires a shot along a marked line.', 'Grazer: never attacks. It runs away when you come close.'];
-  var MODEL_KEYS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollStone'], MODELS = MODEL_KEYS.map(function (k) { return lib.animals[k]; });
+  var MODEL_KEYS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollForest', 'trollStone', 'trollOld'], MODELS = MODEL_KEYS.map(function (k) { return lib.animals[k]; });
   var LIB_KEY = 'creature.library', GAME_KEY = 'game.creatures', META_KEY = 'creatureeditor2.meta', library = {}, meta = { name: '', slot: 'troll' };
   try { library = JSON.parse(localStorage.getItem(LIB_KEY)) || {}; } catch (e) { library = {}; } try { var mt = JSON.parse(localStorage.getItem(META_KEY)); if (mt && typeof mt === 'object') meta = mt; } catch (e) {}   // defined in src/art.js
 
@@ -327,7 +327,7 @@ __COMBAT__
     document.getElementById('behavedesc').textContent = BEHAVETXT[spec.behave];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
     try { localStorage.setItem('creatureeditor2', JSON.stringify(spec)); } catch (e) {}
-    var pl = Math.round(spec.plan); document.getElementById('sec-animal').hidden = !(pl === 5 || pl === 6); document.getElementById('sec-troll').hidden = pl !== 7;   // the panels follow the plan
+    var pl = Math.round(spec.plan); document.getElementById('sec-animal').hidden = !(pl === 5 || pl === 6); document.getElementById('sec-troll').hidden = !(pl === 7 || pl === 8 || pl === 9);   // the panels follow the plan
   }
   function gameOverrides() { try { return JSON.parse(localStorage.getItem(GAME_KEY)) || {}; } catch (e) { return {}; } }
   function refreshLibrary() {

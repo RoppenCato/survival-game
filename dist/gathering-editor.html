@@ -1335,10 +1335,14 @@ var ANIMALS = {
     col: { body: '#8a8f78', belly: '#d9d5bd', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
   moose: { name: 'Moose', set: { plan: 5, size: 1.6, bodyW: 1.05, bodyH: 1.1, head: 1.1, legLen: 1.7, legW: 0.9, neck: 1, neckUp: 0.55, snout: 1.5, snoutW: 1.2, ears: 3, antlers: 3, antlerSize: 1.15, hump: 1.2, hoof: 1, tail: 1, pattern: 0, eyeSize: 0.75, tell: 1, lunge: 1.3, windup: 0.7, hp: 26, aggro: 70 },
     col: { body: '#4f3b2c', belly: '#8a7a6a', accent: '#cdbb98', eye: '#1e1418', glow: '#ff5a3a' } },
-  troll: { name: 'Mountain troll', set: { plan: 7, size: 2.05, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.2, trollMoss: 0.7, trollAge: 0.75 },
-    col: { body: '#7a7064', belly: '#9a9082', accent: '#5a4636', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824', moss: '#8fa86a' } },
-  trollStone: { name: 'Stone troll', set: { plan: 7, size: 2.05, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.2, trollAge: 0.75 },
+  troll: { name: 'Mountain troll', set: { plan: 8, size: 2.2, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.1, trollMoss: 0.8, trollAge: 0.75 },   // the boulder troll after Bauer (2026-10-07)
+    col: { body: '#776c60', belly: '#9a9082', accent: '#5a4a3a', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824', moss: '#86a062' } },
+  trollStone: { name: 'Stone troll', set: { plan: 8, size: 2.2, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.1, trollAge: 0.75 },
     col: { body: '#8c8c92', belly: '#a6a6ac', accent: '#6e6e74', eye: '#8c8c92', glow: '#8c8c92', line: '#3a3a40', moss: '#8c8c92' } },
+  trollForest: { name: 'Forest troll', set: { plan: 9, size: 2.1, speed: 0.75, windup: 1.4, lunge: 0, hp: 60, aggro: 150, tell: 1, trollHair: 1.0, trollMoss: 0.7, trollAge: 0.25, trollHunch: 1 },   // after Kittelsen (2026-10-07)
+    col: { body: '#5a5046', belly: '#6e6658', accent: '#3e3630', eye: '#e8e0a0', glow: '#ffb040', line: '#241e1a', moss: '#7a9a5a' } },
+  trollOld: { name: 'Mountain troll (old)', set: { plan: 7, size: 2.05, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.2, trollMoss: 0.7, trollAge: 0.75 },   // the first troll, kept for comparison
+    col: { body: '#7a7064', belly: '#9a9082', accent: '#5a4636', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824', moss: '#8fa86a' } },
   wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.4, windup: 0.35, hp: 22, aggro: 220 },
     col: { body: '#727982', belly: '#d3d7dc', accent: '#f1ead6', eye: '#3a2a10', glow: '#ffd34d' } }
 };
@@ -1353,7 +1357,7 @@ var ATTACKS = {
   moose: { kind: 'arc', windup: 0.7, dur: 0.35, reach: 30, arc: 1.7, hitAt: 0.4, step: 120, recover: 0.9, cd: 1.3, turn: 2.6 },
   bear: { kind: 'arc', windup: 0.9, dur: 0.3, reach: 26, arc: 2.1, hitAt: 0.35, step: 50, recover: 1.0, cd: 1.5, heavy: true }
 };
-function animalAttack(key) { return ATTACKS[key] || null; }
+function animalAttack(key) { return ATTACKS[key] || (key && key.slice(0, 5) === 'troll' ? ATTACKS.troll : null); }
 // The Creature Editor's "Update in game": an animal's look and numbers replaced by a spec (the game's ANIMALS table keeps its
 // own counts, damage and drops). Keys the drawing does not know are dropped.
 function useAnimal(key, spec) {
@@ -1691,9 +1695,292 @@ function trollD(c, x, y, s, H) {
   if (layers) { var li; for (li = 0; li < 3; li++) inkLayerEnd(cOut, layers[li], li, INK_FIG.line, { w: INK_FIG.w * 0.75, grain: INK_FIG.grain, shade: INK_FIG.shade }); c = cOut; }
   c.restore();
 }
+/* ===== The trolls drawn from scratch (2026-10-07, Robin: better than the first troll; both kinds) =====
+   Two turntable models like trollD (every part laid out in body space: f forward, d sideways, h up; projected with the heading
+   and sorted far to near), drawn through the ink layers so each depth band is one silhouette with one ink line.
+   boulderTrollD (plan 8) is Bauer's troll: a boulder of a body with the head sunk into it, a heavy brow, a great drooping nose,
+   a beard to the ground, hair hanging over the whole back like a hillside, moss and lichen and birch saplings growing on it,
+   arms to the ground with enormous knobbed hands. forestTrollD (plan 9) is Kittelsen's: tall, gaunt and tree-like, bark for
+   skin, a long branch of a nose, twigs and a fir sapling in its hair, twig fingers trailing on the ground. Both keep the
+   troll spec keys (trollHair, trollNose, trollEars, trollArms, trollMoss, trollAge, trollBeads) and the sweep attack. */
+function trollParts(c, s, sp, C) {                                    // what both trolls share: the heading, the clock, colours, helpers
+  var T = {};
+  T.sz = sp.size * 0.95; T.t = s.t || 0; T.mv = Math.min(1, s.move || 0); T.ph = s.phase || 0; T.st = s.state || 'idle'; T.k = Math.max(0, Math.min(1, s.k || 0));
+  T.ang = s.ang == null ? (s.dir < 0 ? Math.PI : 0) : s.ang; T.ca = Math.cos(T.ang); T.sa = Math.sin(T.ang); T.KD = 0.62;
+  T.wind = T.st === 'windup' ? T.k : 0; T.slam = T.st === 'lunge'; T.down = T.st === 'recover' || T.st === 'stunned' || T.st === 'stagger'; T.sweep = T.slam ? Math.min(1, T.k * 1.15) : -1;
+  T.stone = C.glow === C.body; T.skin = C.body; T.skinDk = mixHex(C.body, '#1a1410', 0.2); T.skinLt = mixHex(C.body, '#fff2d0', 0.1);
+  T.hairCol = T.stone ? mixHex(C.body, '#ffffff', 0.1) : mixHex(C.accent, '#cfcabd', sp.trollAge * 0.6); T.hairDk = mixHex(T.hairCol, '#000000', 0.3); T.hairLt = mixHex(T.hairCol, '#ffffff', 0.18);
+  T.moss = C.moss || '#8fa86a'; T.lich = mixHex(T.moss, C.body, 0.35); T.mossLt = mixHex(T.moss, '#fff8d0', 0.3);
+  T.pt = function (f, d, h) { return [f * T.ca - d * T.sa, (f * T.sa + d * T.ca) * T.KD - h]; };
+  T.depth = function (f, d) { return f * T.sa + d * T.ca; };
+  T.hs = function (i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); };
+  T.items = []; T.at = function (dep, fn) { T.items.push({ dep: dep, fn: fn }); };
+  T.inkOn = INK_FIG.on && typeof c.getTransform === 'function';
+  T.LN = 'rgba(35,26,22,' + (T.inkOn ? Math.min(1, INK_FIG.soft + 0.15) : 0.85) + ')'; T.LNs = 'rgba(35,26,22,' + (T.inkOn ? INK_FIG.soft * 0.8 : 0.5) + ')';
+  return T;
+}
+function trollFinish(c, T, cOut, layers, wMul) {                     // sort the parts, draw them into the layers, lay the layers down
+  var items = T.items, i, cur = null;
+  items.sort(function (a, b) { return a.dep - b.dep; });
+  for (i = 0; i < items.length; i++) {
+    if (layers) { var li = items[i].dep < -1.5 ? 0 : (items[i].dep > 1.5 ? 2 : 1); cur = inkSwitch(T.c, layers, cur, li); T.c = cur.g; }
+    items[i].fn(T.c);
+  }
+  if (layers) { var lj; for (lj = 0; lj < 3; lj++) inkLayerEnd(cOut, layers[lj], lj, INK_FIG.line, { w: INK_FIG.w * wMul, grain: INK_FIG.grain, shade: INK_FIG.shade }); }
+}
+// a hand with four fingers laid on the ground (or raised): the palm, the knuckles, the fingers as tapered limbs
+function trollHand(c, T, f, d, h, col, up, sg, scale, twig) {
+  var pt = T.pt, p = pt(f, d, h), i, S = scale || 1;
+  if (!twig) { c.fillStyle = col; c.beginPath(); c.ellipse(p[0], p[1] - (up ? 0 : 1.2 * S), 5.2 * S, 3.6 * S, 0, 0, 7); c.fill(); }
+  else { c.fillStyle = col; c.beginPath(); c.ellipse(p[0], p[1] - (up ? 0 : 0.8), 3.2 * S, 2.2 * S, 0, 0, 7); c.fill(); }
+  for (i = 0; i < 4; i++) {
+    var dd = d + (i - 1.5) * (twig ? 1.9 : 2.5) * S * (sg || 1), L = ((twig ? 10 : 8.5) - Math.abs(i - 1.5) * 1.1) * S, w0 = (twig ? 1.5 : 2.6) * S, w1 = (twig ? 0.8 : 1.9) * S;
+    var p0 = pt(f + 1.5 * S, dd, h), pk = up ? pt(f + 2 * S, dd, h + L * 0.6) : pt(f + 1.5 * S + L * 0.55, dd, h + (twig ? 3 : 2.6) * S), p1 = up ? pt(f + 3 * S, dd, h + L) : pt(f + 1.5 * S + L, dd, h);
+    limbD(c, p0[0], p0[1], w0, pk[0], pk[1], w0 * 0.85, i < 2 ? mixHex(col, '#000000', 0.08) : col); limbD(c, pk[0], pk[1], w0 * 0.85, p1[0], p1[1], w1, i < 2 ? mixHex(col, '#000000', 0.08) : col);
+    if (!twig) { c.fillStyle = mixHex(col, '#000000', 0.12); c.beginPath(); c.arc(pk[0], pk[1], w0 * 0.75, 0, 7); c.fill(); }   // the knuckle
+    inkLine(c, [[pk[0], pk[1]], [p1[0], p1[1]]], T.LNs, 0.5);
+  }
+}
+// a hanging strand of hair from a screen point
+function trollStrand(c, T, p, len, lean, w, col, i) {
+  var sw = Math.sin(T.t * 1.1 + i * 1.7) * 0.05, a = 1.57 + lean + sw, x1 = p[0] + Math.cos(a) * len, y1 = p[1] + Math.sin(a) * len, cx = (p[0] + x1) / 2 + Math.cos(a - 1.57) * len * (0.1 + 0.1 * T.hs(i, 3)), cy = (p[1] + y1) / 2 + Math.sin(a - 1.57) * len * 0.1;
+  c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(p[0], p[1]); c.quadraticCurveTo(cx, cy, x1, y1); c.stroke();
+}
+// a jagged cape of hair hanging from a ring of points on the body: segments round the back half, each sorted by its own depth
+function trollCape(T, fC, rimF, rimD, hTop, hHem, hemVar, from, to, segs, lenMul, seedBase, hemMul) {
+  var i, j, HM = hemMul || 1.08;
+  for (i = 0; i < segs; i++) (function (i) {
+    var w = (to - from) / segs, a0 = from + w * i - w * 0.18, a1 = from + w * (i + 1) + w * 0.18, am = (a0 + a1) / 2, n = 4, pts = [], k;
+    for (k = 0; k <= n; k++) { var th = a0 + (a1 - a0) * k / n; pts.push(T.pt(fC + rimF * Math.cos(th), rimD * Math.sin(th), hTop)); }
+    for (k = n; k >= 0; k--) { var th2 = a0 + (a1 - a0) * k / n, hv = hHem + hemVar * (0.3 + T.hs(i * 7 + k, seedBase)) * (k % 2 ? 1 : 0.2); pts.push(T.pt(fC + rimF * HM * Math.cos(th2), rimD * HM * Math.sin(th2), hv)); }
+    var dep = T.depth(fC + rimF * Math.cos(am), rimD * Math.sin(am));
+    T.at(dep + (dep > 0 ? 0.3 : -0.3), function (c) {
+      blobD(c, pts, T.hairCol, true);
+      for (j = 0; j < 3; j++) { var th3 = a0 + (a1 - a0) * (0.2 + 0.3 * j), p = T.pt(fC + rimF * 1.05 * Math.cos(th3), rimD * 1.05 * Math.sin(th3), hHem + hemVar * 0.5); trollStrand(c, T, p, (6 + 5 * T.hs(j, i + seedBase)) * lenMul, (T.hs(j, i + 2) - 0.5) * 0.6, 1.1, j % 2 ? T.hairLt : T.hairDk, i * 9 + j + seedBase); }
+    });
+  })(i);
+}
+function trollGrowth(T, spots, hTop, MO, seedBase) {                  // lichen patches and birch saplings growing on the hump
+  if (MO <= 0) return;
+  spots.forEach(function (m, mi) {
+    if (T.hs(mi, seedBase) > MO) return;
+    var dep = T.depth(m[0], m[1]);
+    T.at(dep + 0.35, function (c) {
+      var p = T.pt(m[0], m[1], hTop + (m[3] || 0)), d2;
+      c.globalAlpha = 0.85; c.fillStyle = T.lich; for (d2 = 0; d2 < 4; d2++) { c.beginPath(); c.ellipse(p[0] + (T.hs(d2, mi) - 0.5) * m[2] * 1.6, p[1] + (T.hs(d2, mi + 1) - 0.5) * m[2] * 0.9, m[2] * (0.45 + 0.35 * T.hs(d2, mi + 2)), m[2] * 0.42, T.hs(d2, mi + 3) * 3, 0, 7); c.fill(); }
+      c.fillStyle = T.mossLt; for (d2 = 0; d2 < 3; d2++) { c.beginPath(); c.arc(p[0] + (T.hs(d2, mi + 4) - 0.5) * m[2] * 1.2, p[1] + (T.hs(d2, mi + 5) - 0.5) * m[2] * 0.6, 0.5, 0, 7); c.fill(); }
+      c.globalAlpha = 1;
+      if (m[4]) {                                                     // a birch sapling: a thin trunk and a few leaves
+        var hgt = m[4], q = T.pt(m[0], m[1], hTop + (m[3] || 0) + hgt), lx = Math.sin(T.t * 0.9 + mi) * 1.2;
+        limbD(c, p[0], p[1], 0.8, q[0] + lx, q[1], 0.45, '#d9d2c0'); var li;
+        for (li = 0; li < 5; li++) { var u = 0.4 + li * 0.15, sgn = li % 2 ? 1 : -1, lxp = p[0] + (q[0] + lx - p[0]) * u + sgn * 1.6, lyp = p[1] + (q[1] - p[1]) * u - 0.4; c.fillStyle = li % 2 ? T.moss : T.mossLt; c.beginPath(); c.ellipse(lxp, lyp, 1.25, 0.8, sgn * 0.6, 0, 7); c.fill(); }
+      }
+    });
+  });
+}
+function boulderTrollD(c, x, y, s, H) {
+  var sp = H.spec, C = H.pal, T = trollParts(c, s, sp, C), pt = T.pt, depth = T.depth, hs = T.hs, at = T.at, sz = T.sz, t = T.t, mv = T.mv, ph = T.ph, wind = T.wind, slam = T.slam, down = T.down, sweep = T.sweep, stone = T.stone;
+  var skin = T.skin, skinDk = T.skinDk, LN = T.LN, LNs = T.LNs, hairCol = T.hairCol, hairDk = T.hairDk;
+  var HL = sp.trollHair, NS = sp.trollNose, ER = sp.trollEars, AR = sp.trollArms, MO = stone ? 0 : sp.trollMoss, AGE = sp.trollAge, BE = sp.trollBeads && !stone;
+  var bob = Math.sin(ph * 2) * 1.2 * mv + Math.sin(t * 1.3) * 0.5, lean = slam ? 3 : (wind ? -2.5 * wind : (down ? 1 : 0));
+  var RF = 21, RD = 19, RH = 24, BH = 23 + bob, headF = RF - 3 + lean, i;
+  c.save(); c.translate(x, y); c.scale(sz, sz); c.lineJoin = 'round'; c.lineCap = 'round';
+  c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(0, 1, 27, 7, 0, 0, 7); c.fill();
+  var cOut = c, layers = null; T.c = c;
+  if (T.inkOn) { var M0 = c.getTransform(); layers = [inkLayerBegin(0, M0, -70, -110, 140, 124), inkLayerBegin(1, M0, -70, -110, 140, 124), inkLayerBegin(2, M0, -70, -110, 140, 124)]; }
+  // the feet: great flat feet under the body, three toes
+  [-1, 1].forEach(function (sg) {
+    var sw = Math.sin(ph) * 3 * mv * sg, fd = sg * 10;
+    at(depth(6, fd) - 1, function (c) {
+      var col = depth(6, fd) > 0 ? skin : skinDk, a = pt(2 + sw, fd, 9), b = pt(5 + sw, fd, 2);
+      limbD(c, a[0], a[1], 5.5, b[0], b[1], 5, col);
+      var f0 = 1 + sw, p = [pt(f0 - 2, fd - 4, 0), pt(f0 + 7, fd - 4.5, 0), pt(f0 + 9, fd, 0), pt(f0 + 7, fd + 4.5, 0), pt(f0 - 2, fd + 4, 0)]; blobD(c, p, col);
+      for (var i2 = 0; i2 < 3; i2++) { var tp = pt(f0 + 10.5, fd + (i2 - 1) * 3.0, 0); c.fillStyle = col; c.beginPath(); c.arc(tp[0], tp[1] - 0.8, 1.6, 0, 7); c.fill(); }
+      inkLine(c, [[a[0] - 2, a[1] + 1], [b[0] - 1.5, b[1] - 1]], LNs, 0.5);
+    });
+  });
+  // the arms: shoulders high on the boulder's sides, elbows out, knuckles on the ground in front; the right arm swings the blow
+  [1, -1].forEach(function (sg) {
+    var swinging = sg === 1 && (wind > 0 || slam), sw = Math.sin(ph) * 3 * mv * sg, hf, hd, hh, up = false, ef, ed, eh;
+    var sf = -1 + lean * 0.3, sd = sg * (RD - 1), sh = BH + 11;
+    if (swinging && slam) { var u = sweep, phi = 1.35 - u * 2.7; hf = 6 + 24 * Math.cos(phi); hd = 24 * Math.sin(phi); hh = 46 - 38 * u + 8 * Math.sin(u * 3.14); up = u < 0.35; }
+    else if (swinging) { hf = -3; hd = 15 + 2 * wind; hh = 52 + 14 * wind; up = true; }
+    else { hf = 17 + 8 * AR + sw; hd = sg * (RD - 2); hh = (down ? -1 : 0) + 1.2; }
+    ef = up ? (sf + hf) / 2 - 2 : (sf + hf) / 2 + 3; ed = (sd + hd) / 2 + sg * 5; eh = up ? (sh + hh) / 2 + 3 : (sh + hh) / 2 - 5;
+    var dep = depth(ef, ed) + (up ? 2 : 0);
+    at(dep, function (c) {
+      var col = depth(sf, sd) >= 0 ? skin : skinDk, P0 = pt(sf, sd, sh), P1 = pt(ef, ed, eh), P2 = pt(hf, hd, hh);
+      if (swinging && slam && !stone) { c.save(); c.globalAlpha = 0.3 * (1 - sweep); c.strokeStyle = '#f6e2b8'; c.lineWidth = 8; c.beginPath(); for (var j = 0; j <= 10; j++) { var uu = sweep * j / 10, ph2 = 1.35 - uu * 2.7, q = pt(6 + 24 * Math.cos(ph2), 24 * Math.sin(ph2), 46 - 38 * uu + 8 * Math.sin(uu * 3.14)); if (j) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); } c.stroke(); c.restore(); }
+      limbD(c, P0[0], P0[1], 8.5, P1[0], P1[1], 7, col); limbD(c, P1[0], P1[1], 7, P2[0], P2[1], 6, col);
+      c.fillStyle = mixHex(col, '#000000', 0.1); c.beginPath(); c.arc(P1[0], P1[1], 6.2, 0, 7); c.fill();                      // the elbow knob
+      inkLine(c, [[P1[0] + (P2[0] - P1[0]) * 0.2, P1[1] + (P2[1] - P1[1]) * 0.2 + 3], [P1[0] + (P2[0] - P1[0]) * 0.7, P1[1] + (P2[1] - P1[1]) * 0.7 + 2.5]], LNs, 0.5);
+      trollHand(c, T, hf, hd, hh, col, up, sg, 1.15, false);
+      for (var i3 = 0; i3 < 3 * HL; i3++) { var tt = 0.2 + i3 * 0.22; trollStrand(c, T, [P0[0] + (P1[0] - P0[0]) * tt, P0[1] + (P1[1] - P0[1]) * tt + 3], 6 + 4 * HL, (hs(i3, 9) - 0.5) * 0.5, 1.1, i3 % 2 ? hairDk : hairCol, i3 + 40); }
+    });
+  });
+  // the body: a boulder, the turned ellipsoid's outline with a flat foot and a round back
+  at(-0.5, function (c) {
+    var ca = T.ca, sa = T.sa, ex = Math.sqrt(RF * RF * ca * ca + RD * RD * sa * sa), ep = Math.sqrt(RF * RF * sa * sa + RD * RD * ca * ca), ey = Math.sqrt(RH * RH + (T.KD * ep) * (T.KD * ep)), cb = pt(-2, 0, BH);
+    var pts = [[cb[0], cb[1] - ey], [cb[0] + ex * 0.72, cb[1] - ey * 0.7], [cb[0] + ex * 1.0, cb[1] - ey * 0.05], [cb[0] + ex * 0.92, cb[1] + ey * 0.6], [cb[0] + ex * 0.55, cb[1] + ey * 0.92], [cb[0], cb[1] + ey * 0.98], [cb[0] - ex * 0.55, cb[1] + ey * 0.92], [cb[0] - ex * 0.92, cb[1] + ey * 0.6], [cb[0] - ex * 1.0, cb[1] - ey * 0.05], [cb[0] - ex * 0.72, cb[1] - ey * 0.7]];
+    blobD(c, pts, skin);
+    inkLine(c, [[cb[0] - ex * 0.72, cb[1] - ey * 0.55], [cb[0] - ex * 0.95, cb[1] - ey * 0.05], [cb[0] - ex * 0.85, cb[1] + ey * 0.55]], 'rgba(255,238,200,0.3)', 1.4);   // the lit side
+    // embedded stones and a few cracks on the near side
+    for (var si = 0; si < 4; si++) { var ux = (hs(si, 21) - 0.5) * 1.3, uy = (hs(si, 22) - 0.4) * 0.9; c.fillStyle = mixHex(skin, '#000000', 0.14); c.beginPath(); c.ellipse(cb[0] + ux * ex * 0.7, cb[1] + uy * ey * 0.6, 2.2 + 1.5 * hs(si, 23), 1.5 + hs(si, 24), hs(si, 25) * 3, 0, 7); c.fill(); }
+    inkLine(c, [[cb[0] + ex * 0.3, cb[1] + ey * 0.1], [cb[0] + ex * 0.45, cb[1] + ey * 0.35], [cb[0] + ex * 0.4, cb[1] + ey * 0.55]], LNs, 0.6);
+  });
+  // the hair: a cape over the whole back, a cap on top, a hem of strands
+  trollCape(T, -2, RF * 0.28, RD * 0.28, BH + RH * 0.96, 8, 9 + 6 * HL, 1.25, 5.03, 5, 1 + 0.4 * HL, 50, 3.7);   // a tent of hair from the crown down the whole back
+  at(-0.3, function (c) {
+    var ca = T.ca, sa = T.sa, ex = Math.sqrt(RF * RF * ca * ca + RD * RD * sa * sa) * 0.8, ct = pt(-4, 0, BH + RH * 0.86), i2, pts = [];
+    for (i2 = 0; i2 < 12; i2++) { var th = i2 / 12 * 6.283; pts.push([ct[0] + Math.cos(th) * ex, ct[1] + Math.sin(th) * ex * 0.55 + (Math.sin(th) > 0 ? 3 : 0)]); }
+    blobD(c, jagged(pts, ct[0], ct[1], 2.6 + 1.5 * HL, 61), hairCol, true);
+    for (i2 = 0; i2 < 5; i2++) trollStrand(c, T, [ct[0] + (hs(i2, 62) - 0.5) * ex * 1.4, ct[1] + 2], 5 + 4 * HL, (hs(i2, 63) - 0.5) * 0.9, 1.1, i2 % 2 ? hairDk : T.hairLt, 62 + i2);
+  });
+  trollGrowth(T, [[-6, -6, 3.2, 0, 11], [-4, 7, 2.8, -1, 0], [-10, 2, 2.4, -2, 8], [-1, -9, 2.2, -2, 0], [-12, -3, 1.9, -3, 0], [3, 10, 2.0, -3, 0]], BH + RH * 0.78, MO, 5);
+  // the ears, big and pointed, behind the face
+  [-1, 1].forEach(function (sg) {
+    var ed = depth(headF - 8, sg * (RD - 1)), hd0 = depth(headF, 0);
+    at(ed < hd0 ? hd0 - 0.2 : hd0 + 0.2, function (c) {
+      var col = ed >= hd0 ? skin : skinDk, a0 = pt(headF - 7, sg * (RD - 4), BH + 13), a1 = pt(headF - 9, sg * (RD + 3 + 3 * ER), BH + 15 + 3 * ER), a3 = pt(headF - 8, sg * (RD + 4 + 3 * ER), BH + 9), a2 = pt(headF - 3, sg * (RD - 3), BH + 6);
+      blobD(c, [a0, a1, a3, a2], col);
+      if (ed >= hd0) { var b1 = pt(headF - 8, sg * (RD + 1.5 + 2.5 * ER), BH + 13.5 + 2.5 * ER), b0 = pt(headF - 6.5, sg * (RD - 3), BH + 12), b3 = pt(headF - 7.5, sg * (RD + 2.5 + 2.5 * ER), BH + 9.5), b2 = pt(headF - 4, sg * (RD - 2.5), BH + 7.5); blobD(c, [b0, b1, b3, b2], mixHex(skin, '#c08a7a', 0.3)); }
+      if (BE && sg === -1 && ed >= hd0 - 2) { var rp = pt(headF - 6, -(RD - 3), BH + 9); c.strokeStyle = '#b08040'; c.lineWidth = 1.2; c.beginPath(); c.arc(rp[0], rp[1], 1.9, 0, 7); c.stroke(); }
+    });
+  });
+  // the face, sunk into the front of the boulder: the brow, the eyes, the nose, the mouth and the beard; shown as it turns to you
+  var hdep = depth(headF, 0), faceDep = depth(headF + 8, 0) - hdep;
+  at(hdep + 0.6, function (c) {
+    if (faceDep < -3) return;
+    c.save(); c.globalAlpha = Math.min(1, (faceDep + 3) / 4);
+    var fy = BH + 5;
+    c.fillStyle = mixHex(skin, '#000000', 0.07); c.beginPath(); var fp = pt(headF + 1, 0, fy); c.ellipse(fp[0], fp[1], 12 * (0.55 + 0.45 * Math.abs(T.sa)) + 1, 10, 0, 0, 7); c.fill();   // the face a shade darker, under the brow
+    var ey0 = pt(headF + 2.5, -4.5, fy + 2.5), ey1 = pt(headF + 2.5, 4.5, fy + 2.5);
+    c.fillStyle = mixHex(skin, '#000000', 0.22); c.beginPath(); c.ellipse(ey0[0], ey0[1], 2.6, 1.8, 0, 0, 7); c.ellipse(ey1[0], ey1[1], 2.6, 1.8, 0, 0, 7); c.fill();                        // the sockets
+    var eyeCol = stone ? skin : (wind || slam ? C.glow : C.eye), eyes = [ey0, ey1];
+    eyes.forEach(function (ep) { if (!stone && (wind || slam)) { c.fillStyle = 'rgba(255,170,60,0.35)'; c.beginPath(); c.arc(ep[0], ep[1], 3.4, 0, 7); c.fill(); } c.fillStyle = eyeCol; c.beginPath(); c.arc(ep[0], ep[1], 1.2, 0, 7); c.fill(); });
+    H.eyes = eyes.map(function (ep) { return [ep[0] * sz, ep[1] * sz]; });
+    // the brow: a heavy ridge of hair over the eyes, tufted
+    var bl = pt(headF - 1, -11, fy + 8), bm = pt(headF + 4, 0, fy + 9.5), br = pt(headF - 1, 11, fy + 8), bl2 = pt(headF, -10, fy + 5.5), bm2 = pt(headF + 4.5, 0, fy + 6.5), br2 = pt(headF, 10, fy + 5.5);
+    blobD(c, jagged([bl, bm, br, br2, bm2, bl2], bm[0], bm[1] + 2, 1.2, 71), hairDk, true);
+    // the nose: long and drooping, bulbous at the end
+    var n0 = pt(headF + 3, 0, fy + 6), n1 = pt(headF + 11 + 6 * NS, 0, fy - 1 - 4 * NS), nw = 3.2;
+    limbD(c, n0[0], n0[1], nw, n1[0], n1[1], nw * 1.1, mixHex(skin, '#c08a7a', 0.25)); c.fillStyle = mixHex(skin, '#c08a7a', 0.3); c.beginPath(); c.arc(n1[0], n1[1] + 1, nw * 1.25, 0, 7); c.fill();
+    inkLine(c, [[n0[0] - nw * 0.6, n0[1] + 1], [n1[0] - nw * 1.1, n1[1] + 1.5]], LN, 0.6); c.fillStyle = mixHex(skin, '#000000', 0.3); c.beginPath(); c.ellipse(n1[0] - 1.2, n1[1] + 2.6, 0.9, 0.6, 0, 0, 7); c.ellipse(n1[0] + 1.2, n1[1] + 2.6, 0.9, 0.6, 0, 0, 7); c.fill();
+    if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(n1[0] + 1.5, n1[1] - 1.5, 0.9, 0, 7); c.fill(); }
+    // the mouth: wide and grim, a tooth up from the lip
+    var m0 = pt(headF + 2, -7, fy - 5), m1 = pt(headF + 4, 0, fy - 6.5), m2 = pt(headF + 2, 7, fy - 5); c.strokeStyle = LN; c.lineWidth = 1.3; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(m1[0], m1[1] + 1, m2[0], m2[1]); c.stroke();
+    var tp = pt(headF + 3, 3, fy - 6); c.fillStyle = '#efe6cf'; c.beginPath(); c.moveTo(tp[0] - 1, tp[1] + 0.5); c.lineTo(tp[0], tp[1] - 2.4); c.lineTo(tp[0] + 1, tp[1] + 0.5); c.closePath(); c.fill();
+    // the beard: a jagged mass from the jaw to the ground, between the hands
+    var bpts = [pt(headF - 1, -9, fy - 4), pt(headF + 2, 0, fy - 7), pt(headF - 1, 9, fy - 4), pt(headF + 3, 7 + 2 * HL, 8), pt(headF + 5, 2, 1.5), pt(headF + 5, -3, 2.5), pt(headF + 3, -7 - 2 * HL, 9)];
+    blobD(c, jagged(bpts, pt(headF + 2, 0, fy - 10)[0], pt(headF + 2, 0, fy - 10)[1], 1.6 + HL, 73), hairCol, true);
+    for (var bi = 0; bi < 4 + 3 * HL; bi++) trollStrand(c, T, pt(headF + 1, -6 + 12 * hs(bi, 160), fy - 9), (8 + 6 * HL) * (0.6 + 0.6 * hs(bi, 161)), (hs(bi, 162) - 0.5) * 0.7, 1.1, bi % 2 ? hairDk : T.hairLt, 160 + bi);
+    if (BE) { var b0 = pt(headF + 1, -7, fy - 9), b1 = pt(headF + 1, 7, fy - 9); c.strokeStyle = '#5a4a3a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(b0[0], b0[1]); c.quadraticCurveTo((b0[0] + b1[0]) / 2, b0[1] + 12, b1[0], b1[1]); c.stroke(); ['#c8403a', '#3a6ab8', '#e8e0c8', '#c8403a', '#d8a030'].forEach(function (bc, bi2) { var u = (bi2 + 1) / 6, px = b0[0] + (b1[0] - b0[0]) * u, py = b0[1] + 9.6 * Math.sin(u * 3.14); c.fillStyle = bc; c.beginPath(); c.arc(px, py, 1.15, 0, 7); c.fill(); }); }
+    c.restore();
+  });
+  trollFinish(c, T, cOut, layers, 0.8);
+  c.restore();
+}
+function forestTrollD(c, x, y, s, H) {
+  var sp = H.spec, C = H.pal, T = trollParts(c, s, sp, C), pt = T.pt, depth = T.depth, hs = T.hs, at = T.at, sz = T.sz, t = T.t, mv = T.mv, ph = T.ph, wind = T.wind, slam = T.slam, down = T.down, sweep = T.sweep, stone = T.stone;
+  var skin = T.skin, skinDk = T.skinDk, LN = T.LN, LNs = T.LNs, hairCol = T.hairCol, hairDk = T.hairDk;
+  var HL = sp.trollHair, NS = sp.trollNose, ER = sp.trollEars, AR = sp.trollArms, MO = stone ? 0 : sp.trollMoss, AGE = sp.trollAge, HU = sp.trollHunch;
+  var bob = Math.sin(ph * 2) * 1.5 * mv + Math.sin(t * 1.1) * 0.6, lean = slam ? 4 : (wind ? -3 * wind : (down ? 2 : 0));
+  var HIP = 30, SH = 74 + bob, LEAN = 8 + 6 * HU + lean;                                      // the body leans forward from the hips to the shoulders
+  function fAt(h) { return Math.max(0, (h - HIP) / (SH - HIP)) * LEAN; }
+  var headF = fAt(SH) + 4, headH = SH + 10, i;
+  c.save(); c.translate(x, y); c.scale(sz, sz); c.lineJoin = 'round'; c.lineCap = 'round';
+  c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(2, 1, 17, 5, 0, 0, 7); c.fill();
+  var cOut = c, layers = null; T.c = c;
+  if (T.inkOn) { var M0 = c.getTransform(); layers = [inkLayerBegin(0, M0, -60, -125, 120, 140), inkLayerBegin(1, M0, -60, -125, 120, 140), inkLayerBegin(2, M0, -60, -125, 120, 140)]; }
+  // the legs: long and thin with knobby knees, long flat feet with long toes
+  [-1, 1].forEach(function (sg) {
+    var sw = Math.sin(ph) * 4 * mv * sg, lf = Math.max(0, Math.cos(ph) * sg) * 3 * mv, fd = sg * 6;
+    at(depth(3, fd) - 1.2, function (c) {
+      var col = depth(3, fd) > 0 ? skin : skinDk, hip = pt(0, sg * 4.5, HIP + 2), knee = pt(4 + sw * 0.5, fd, 15 + lf * 0.5), ank = pt(4 + sw, fd, 2 + lf);
+      limbD(c, hip[0], hip[1], 4.6, knee[0], knee[1], 3.6, col); limbD(c, knee[0], knee[1], 3.6, ank[0], ank[1], 2.8, col);
+      c.fillStyle = mixHex(col, '#000000', 0.1); c.beginPath(); c.arc(knee[0], knee[1], 3.9, 0, 7); c.fill();                   // the knee knob
+      var f0 = 3 + sw, p = [pt(f0 - 3, fd - 2.6, lf), pt(f0 + 7, fd - 3, lf), pt(f0 + 9, fd, lf), pt(f0 + 7, fd + 3, lf), pt(f0 - 3, fd + 2.6, lf)]; blobD(c, p, col);
+      for (var i2 = 0; i2 < 3; i2++) { var a = pt(f0 + 8.5, fd + (i2 - 1) * 2.4, lf), b = pt(f0 + 14 - Math.abs(i2 - 1) * 1.5, fd + (i2 - 1) * 3.2, lf); limbD(c, a[0], a[1], 1.3, b[0], b[1], 0.7, col); }
+      inkLine(c, [[hip[0] + (knee[0] - hip[0]) * 0.3 - 1.5, hip[1] + (knee[1] - hip[1]) * 0.3], [hip[0] + (knee[0] - hip[0]) * 0.75 - 1.2, hip[1] + (knee[1] - hip[1]) * 0.75]], LNs, 0.5);   // bark
+    });
+  });
+  // the arms: thin and long, from the shoulders down past the knees, twig fingers trailing on the ground; the right arm sweeps
+  [1, -1].forEach(function (sg) {
+    var swinging = sg === 1 && (wind > 0 || slam), sw = Math.sin(ph) * 4 * mv * sg, hf, hd, hh, up = false, ef, ed, eh;
+    var sf = fAt(SH) - 1, sd = sg * 9.5, sh = SH;
+    if (swinging && slam) { var u = sweep, phi = 1.35 - u * 2.7; hf = 8 + 30 * Math.cos(phi); hd = 30 * Math.sin(phi); hh = 70 - 60 * u + 10 * Math.sin(u * 3.14); up = u < 0.35; }
+    else if (swinging) { hf = -4; hd = 14 + 2 * wind; hh = 84 + 14 * wind; up = true; }
+    else { hf = 16 + 8 * AR + sw; hd = sg * 10; hh = (down ? -1 : 0) + 1; }
+    ef = up ? (sf + hf) / 2 - 3 : (sf + hf) / 2 + 4; ed = (sd + hd) / 2 + sg * 5; eh = up ? (sh + hh) / 2 + 4 : (sh + hh) / 2 - 4;
+    var dep = depth(ef, ed) + (up ? 2 : 0);
+    at(dep, function (c) {
+      var col = depth(sf, sd) >= 0 ? skin : skinDk, P0 = pt(sf, sd, sh), P1 = pt(ef, ed, eh), P2 = pt(hf, hd, hh);
+      if (swinging && slam && !stone) { c.save(); c.globalAlpha = 0.3 * (1 - sweep); c.strokeStyle = '#f6e2b8'; c.lineWidth = 7; c.beginPath(); for (var j = 0; j <= 10; j++) { var uu = sweep * j / 10, ph2 = 1.35 - uu * 2.7, q = pt(8 + 30 * Math.cos(ph2), 30 * Math.sin(ph2), 70 - 60 * uu + 10 * Math.sin(uu * 3.14)); if (j) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); } c.stroke(); c.restore(); }
+      limbD(c, P0[0], P0[1], 4.6, P1[0], P1[1], 3.6, col); limbD(c, P1[0], P1[1], 3.6, P2[0], P2[1], 2.6, col);
+      c.fillStyle = mixHex(col, '#000000', 0.1); c.beginPath(); c.arc(P1[0], P1[1], 3.8, 0, 7); c.fill();
+      inkLine(c, [[P0[0] + (P1[0] - P0[0]) * 0.25 + 1.2, P0[1] + (P1[1] - P0[1]) * 0.25], [P0[0] + (P1[0] - P0[0]) * 0.7 + 1.0, P0[1] + (P1[1] - P0[1]) * 0.7]], LNs, 0.5);
+      trollHand(c, T, hf, hd, hh, col, up, sg, 1.1, true);
+      for (var i3 = 0; i3 < 2 * HL; i3++) { var tt = 0.3 + i3 * 0.3; trollStrand(c, T, [P0[0] + (P1[0] - P0[0]) * tt, P0[1] + (P1[1] - P0[1]) * tt + 2], 5 + 3 * HL, (hs(i3, 9) - 0.5) * 0.5, 1, i3 % 2 ? hairDk : hairCol, i3 + 40); }
+    });
+  });
+  // the body: a trunk, narrow at the hips, broader at the chest, leaning forward; bark lines
+  at(-0.5, function (c) {
+    var secs = [[HIP - 2, 7.5], [HIP + 10, 7.0], [SH - 18, 7.8], [SH - 6, 9.8], [SH + 1, 9.2]], L = [], R = [], k;
+    for (k = 0; k < secs.length; k++) { var h = secs[k][0], r = secs[k][1], cpt = pt(fAt(h), 0, h); L.push([cpt[0] - r, cpt[1]]); R.push([cpt[0] + r, cpt[1]]); }
+    var top = pt(fAt(SH + 1), 0, SH + 1), bot = pt(fAt(HIP - 2), 0, HIP - 2), pts = L.concat([[top[0], top[1] - 9.2 * T.KD * 0.9]], R.reverse(), [[bot[0], bot[1] + 7.5 * T.KD]]);
+    blobD(c, pts, skin);
+    inkLine(c, [[L[0][0] + 1.5, L[0][1] - 2], [L[2][0] + 1.2, L[2][1]], [L[3][0] + 1.5, L[3][1] + 2]], 'rgba(255,238,200,0.3)', 1.3);     // the lit side
+    for (k = 0; k < 3; k++) { var u0 = 0.2 + k * 0.25, a = pt(fAt(HIP + (SH - HIP) * u0) + 2 + k, (k - 1) * 3, HIP + (SH - HIP) * u0), b = pt(fAt(HIP + (SH - HIP) * (u0 + 0.22)) + 2 + k, (k - 1) * 3 + 1, HIP + (SH - HIP) * (u0 + 0.22)); inkLine(c, [[a[0], a[1]], [b[0], b[1]]], LNs, 0.6); }   // bark
+    var belly = pt(fAt(SH - 14) + 6, 0, SH - 14); if (depth(10, 0) > 0) { c.save(); c.globalAlpha = Math.min(1, depth(10, 0) / 10) * 0.8; c.fillStyle = C.belly; c.beginPath(); c.ellipse(belly[0], belly[1], 4.5, 9, 0, 0, 7); c.fill(); c.restore(); }
+  });
+  // the mane: a shorter cape of hair down the back from the shoulders
+  trollCape(T, fAt(SH - 4), 7.5, 7.0, SH - 1, SH - 30, 8 + 6 * HL, 1.35, 4.93, 4, 0.8 + 0.4 * HL, 80, 1.45);
+  trollGrowth(T, [[fAt(SH) - 4, -6, 2.4, 0, 0], [fAt(SH) - 3, 7, 2.2, -1, 0], [fAt(SH - 20) - 4, -2, 2.0, 0, 0]], SH, MO, 9);
+  // the neck and the head: a long skull with a branch of a nose, pointed ears, a crown of twigs and a fir sapling
+  var hdep = depth(headF, 0);
+  [-1, 1].forEach(function (sg) {
+    var ed = depth(headF - 4, sg * 7);
+    at(ed < hdep ? hdep - 0.2 : hdep + 0.2, function (c) {
+      var col = ed >= hdep ? skin : skinDk, a0 = pt(headF - 3, sg * 5, headH + 1), a1 = pt(headF - 5, sg * (8 + 4 * ER), headH + 8 + 5 * ER), a2 = pt(headF, sg * 3.5, headH + 5);
+      blobD(c, [a0, a1, a2], col, true);
+      if (ed >= hdep) blobD(c, [pt(headF - 2.5, sg * 5, headH + 2), pt(headF - 4.5, sg * (7 + 3 * ER), headH + 7 + 3.6 * ER), pt(headF - 0.5, sg * 4, headH + 4.5)], mixHex(skin, '#c08a7a', 0.3), true);
+    });
+  });
+  at(hdep, function (c) {
+    var n0 = pt(fAt(SH), 0, SH + 1), n1 = pt(headF - 1, 0, headH - 4); limbD(c, n0[0], n0[1], 3.6, n1[0], n1[1], 3.2, skin);           // the neck
+    var hp = pt(headF, 0, headH); c.fillStyle = skin; c.beginPath(); c.ellipse(hp[0], hp[1], 6.5, 8.5, 0, 0, 7); c.fill();
+    var jaw = pt(headF + 3, 0, headH - 6); c.fillStyle = skin; c.beginPath(); c.ellipse(jaw[0], jaw[1], 5, 3.5, 0, 0, 7); c.fill();
+    inkLine(c, [[hp[0] - 5, hp[1] - 5], [hp[0] - 6.3, hp[1]], [hp[0] - 5, hp[1] + 5]], 'rgba(255,238,200,0.3)', 1.1);
+    var faceDep = depth(headF + 6, 0) - hdep;
+    if (faceDep > -2) {
+      c.save(); c.globalAlpha = Math.min(1, (faceDep + 2) / 3);
+      var bl = pt(headF + 4, -5, headH + 3.5), br = pt(headF + 4, 5, headH + 3.5), bm = pt(headF + 6.5, 0, headH + 2.8); c.strokeStyle = hairDk; c.lineWidth = 2.4; c.beginPath(); c.moveTo(bl[0], bl[1]); c.lineTo(bm[0], bm[1]); c.lineTo(br[0], br[1]); c.stroke();
+      var eyeCol = stone ? skin : (wind || slam ? C.glow : C.eye), eyes = [pt(headF + 5.5, -3, headH + 1), pt(headF + 5.5, 3, headH + 1)];
+      eyes.forEach(function (ep) { c.fillStyle = mixHex(skin, '#000000', 0.25); c.beginPath(); c.ellipse(ep[0], ep[1], 1.9, 1.3, 0, 0, 7); c.fill(); if (!stone && (wind || slam)) { c.fillStyle = 'rgba(255,170,60,0.35)'; c.beginPath(); c.arc(ep[0], ep[1], 2.8, 0, 7); c.fill(); } c.fillStyle = eyeCol; c.beginPath(); c.arc(ep[0], ep[1], 0.95, 0, 7); c.fill(); });
+      H.eyes = eyes.map(function (ep) { return [ep[0] * sz, ep[1] * sz]; });
+      var q0 = pt(headF + 6, 0, headH + 1), q1 = pt(headF + 14 + 7 * NS, 0, headH - 4 - 5 * NS); limbD(c, q0[0], q0[1], 2.4, q1[0], q1[1], 1.5, mixHex(skin, '#c08a7a', 0.2));   // the nose, a branch
+      c.fillStyle = mixHex(skin, '#c08a7a', 0.3); c.beginPath(); c.arc(q1[0], q1[1] + 0.5, 1.7, 0, 7); c.fill(); inkLine(c, [[q0[0], q0[1] + 1.5], [q1[0] - 1, q1[1] + 1.5]], LN, 0.55);
+      if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(q0[0] + (q1[0] - q0[0]) * 0.5, q0[1] + (q1[1] - q0[1]) * 0.5 - 1.6, 0.7, 0, 7); c.fill(); }
+      var m0 = pt(headF + 5, -3, headH - 5), m1 = pt(headF + 6.5, 0, headH - 6), m2 = pt(headF + 5, 3, headH - 5); c.strokeStyle = LN; c.lineWidth = 1; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(m1[0], m1[1] + 0.5, m2[0], m2[1]); c.stroke();
+      for (var bi = 0; bi < 3 + 3 * HL; bi++) trollStrand(c, T, pt(headF + 4, -3.5 + 7 * hs(bi, 160), headH - 6.5), (6 + 5 * HL) * (0.5 + 0.6 * hs(bi, 161)), (hs(bi, 162) - 0.5) * 0.8, 1, bi % 2 ? hairDk : hairCol, 160 + bi);   // the beard
+      c.restore();
+    }
+    // the crown: a jagged tangle of hair on the top and back of the skull, twigs standing up, and a fir sapling
+    var ct = pt(headF - 2, 0, headH + 6), i2, pts = [];
+    for (i2 = 0; i2 < 10; i2++) { var th = i2 / 10 * 6.283; pts.push([ct[0] + Math.cos(th) * 7.5, ct[1] + Math.sin(th) * 3.2]); }
+    blobD(c, jagged(pts, ct[0], ct[1], 2.6 + 1.5 * HL, 91), hairCol, true);
+    for (i2 = 0; i2 < 4 + 2 * HL; i2++) { var tx = ct[0] + (hs(i2, 92) - 0.5) * 12, ty = ct[1] + (hs(i2, 93) - 0.5) * 3, tl = 5 + 6 * hs(i2, 94), ta = -1.57 + (hs(i2, 95) - 0.5) * 1.4; inkLine(c, [[tx, ty], [tx + Math.cos(ta) * tl * 0.6, ty + Math.sin(ta) * tl * 0.6], [tx + Math.cos(ta) * tl * 0.6 + Math.cos(ta - 0.6) * tl * 0.4, ty + Math.sin(ta) * tl * 0.6 + Math.sin(ta - 0.6) * tl * 0.4]], hairDk, 1.1); }   // twigs
+    if (MO > 0) { var sx0 = ct[0] - 3, sy0 = ct[1] - 1; limbD(c, sx0, sy0, 0.9, sx0 + 1, sy0 - 9, 0.5, '#6a5a44'); c.fillStyle = T.moss; blobD(c, [[sx0 + 1, sy0 - 12], [sx0 + 3.6, sy0 - 6], [sx0 + 2.4, sy0 - 6.5], [sx0 + 4.2, sy0 - 2.5], [sx0 - 2.2, sy0 - 2.5], [sx0 - 0.4, sy0 - 6.5], [sx0 - 1.6, sy0 - 6]], T.moss, true); }   // the fir sapling
+    for (i2 = 0; i2 < 4 + 3 * HL; i2++) trollStrand(c, T, [ct[0] + (hs(i2, 96) - 0.5) * 12, ct[1] + 2], (7 + 5 * HL) * (0.6 + 0.5 * hs(i2, 97)), (hs(i2, 98) - 0.5) * 0.7, 1.1, i2 % 2 ? hairDk : T.hairLt, 96 + i2);
+  });
+  trollFinish(c, T, cOut, layers, 0.8);
+  c.restore();
+}
 function creatureD(c, x, y, s, H) {
   H = H || creature();
   if (Math.round(H.spec.plan) === 7) { trollD(c, x, y, s, H); return; }
+  if (Math.round(H.spec.plan) === 8) { boulderTrollD(c, x, y, s, H); return; }
+  if (Math.round(H.spec.plan) === 9) { forestTrollD(c, x, y, s, H); return; }
   if (Math.round(H.spec.plan) >= 5) {          // animals: without a heading, face straight left or right
     if (s.ang == null) { var s3 = {}, k3; for (k3 in s) s3[k3] = s[k3]; s3.ang = s.dir < 0 ? Math.PI : 0; s = s3; }
     animal3D(c, x, y, s, H); return;
