@@ -102,6 +102,7 @@ __ITEMS__
 __RUNES__
 __HIRD__
 __YARD__
+__VILLAGE__
 __GATHER__
 __MUSIC__
 __COMBAT__
@@ -1449,55 +1450,61 @@ __COMBAT__
     ['You built that raft yourself? It floats, so it is a boat.', 'A keel next. Then you can go somewhere.'],
     ['There is a troll in the hill cave. We leave it be and it leaves us be.', 'Do not mine there at night.']
   ];
-  function hamletSite() {                // a flat stretch of grass 12 by 10 tiles on the big island, from the seed, away from the cave
+  // The hamlet is grown by Village (src/village.js, docs/villages.md, 2026-10-07): the archetype, the wealth and the seed come
+  // from the island's seed; the site is a flat stretch of grass of the size the archetype needs, away from the cave; a shore to
+  // the south makes it a fishing hamlet with a boathouse.
+  var hamletV = null, hamletCfg = null;
+  try { hamletCfg = JSON.parse(localStorage.getItem('game.village')); } catch (e) { hamletCfg = null; }   // the Village Editor's "Use in the game"
+  function hamletSite() {
     var q = w.isles[1]; if (!q) return null;
-    var R = kit.rng(spec.seed * 23 + 11), tries, best = null;
-    for (tries = 0; tries < 900 && !best; tries++) {
-      var a = R() * 6.283, d = R() * q.r * 0.6, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d), ok = true, x, y;
-      for (y = cy - 5; y <= cy + 5 && ok; y++) for (x = cx - 6; x <= cx + 6; x++) { var cd = code(x, y); if (cd < 2 || cd === 255) { ok = false; break; } }
+    var R = kit.rng(spec.seed * 23 + 11), arch = ['small', 'small', 'village', 'fishing'][Math.floor(R() * 4)], sz = Village.siteFor(arch), sw = sz.w, sh = sz.h, tries, best = null;
+    for (tries = 0; tries < 1400 && !best; tries++) {
+      var a = R() * 6.283, d = R() * q.r * 0.6, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d), ok = true, x, y, hw2 = Math.ceil(sw / 2), hh2 = Math.ceil(sh / 2);
+      for (y = cy - hh2; y <= cy + hh2 && ok; y++) for (x = cx - hw2; x <= cx + hw2; x++) { var cd = code(x, y); if (cd < 2 || cd === 255) { ok = false; break; } }
       if (ok && caveMouth && Math.hypot(caveMouth.x - (cx + 0.5) * T, caveMouth.y - (cy + 0.5) * T) < 500) ok = false;
-      if (ok) best = { tx: cx - 6, ty: cy - 5, w: 12, h: 10 };
+      if (ok) { var shore = null, sy = cy + hh2 + 3; for (x = cx - 3; x <= cx + 3; x++) if (code(x, sy) === 0) shore = 's'; best = { tx: cx - hw2, ty: cy - hh2, w: sw, h: sh, arch: shore ? 'fishing' : arch, wealth: 0.25 + R() * 0.6, shore: shore }; }
     }
     return best;
   }
-  function hamletClear() {               // the site is cleared and the folk made (every start)
-    hamlet = hamletSite(); folk = []; if (!hamlet) return;
+  function hamletClear() {               // the site is cleared, the village grown and the folk made (every start)
+    hamlet = hamletSite(); folk = []; hamletV = null; if (!hamlet) return;
     var x0 = hamlet.tx * T, y0 = hamlet.ty * T, x1 = (hamlet.tx + hamlet.w) * T, y1 = (hamlet.ty + hamlet.h) * T, list = [];
     w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20) list.push(o); });
     list.forEach(function (o) { w.removeProp(o); });
-    var R = kit.rng(spec.seed * 29 + 3), n = 7 + Math.floor(R() * 3), nameOff = Math.floor(R() * FOLK_NAMES.length), hx = hamlet.tx, hy = hamlet.ty, i;
-    var green = { x: (hx + 6) * T, y: (hy + 5) * T }, well = { x: (hx + 6) * T, y: (hy + 4.2) * T }, pile = { x: (hx + 2) * T, y: (hy + 8) * T };
-    var doors = [[hx + 2.5, hy + 3.1], [hx + 9.5, hy + 3.1], [hx + 2.5, hy + 8.1], [hx + 9.5, hy + 8.1]];
-    for (i = 0; i < n; i++) {
-      var sp = lib.makeFigure(lib.folkSpec('villager', R)), d = doors[i % doors.length], home = { x: d[0] * T, y: d[1] * T + 12 };
-      var spots = [home, well, pile, { x: green.x + (R() - 0.5) * 120, y: green.y + (R() - 0.5) * 60 }, { x: green.x + (R() - 0.5) * 120, y: green.y + (R() - 0.5) * 60 }];
-      folk.push({ x: home.x + (R() - 0.5) * 20, y: home.y + 10, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: sp, name: FOLK_NAMES[(nameOff + i) % FOLK_NAMES.length], lines: FOLK_LINES[i % FOLK_LINES.length], spots: spots, target: null, wait: R() * 4, ph: 0, moving: false });
+    hamletV = Village.make(spec.seed * 29 + 3, { tx: hamlet.tx, ty: hamlet.ty, w: hamlet.w, h: hamlet.h, shore: hamlet.shore }, { arch: hamlet.arch, wealth: hamlet.wealth, G: hamletCfg });
+    var R = kit.rng(spec.seed * 29 + 7), i;
+    for (i = 0; i < hamletV.folk.length; i++) {
+      var fv = hamletV.folk[i], sp = lib.makeFigure(lib.folkSpec('villager', R)), spots = fv.spots.map(function (q) { return { x: q[0], y: q[1] }; });
+      folk.push({ x: fv.x + (R() - 0.5) * 20, y: fv.y + 6, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: sp, name: fv.name, role: fv.role, lines: fv.lines.concat(FOLK_LINES[i % FOLK_LINES.length]), spots: spots, target: null, wait: R() * 4, ph: 0, moving: false });
     }
   }
-  function hamletBuild() {               // the pieces: four wattle huts with thatch round a green, written into B (a fresh start only)
-    if (!hamlet) return;
-    var R = kit.rng(spec.seed * 31 + 5), hx = hamlet.tx, hy = hamlet.ty, x, y, k = Build.key;
-    function H(x, y, t, m) { B.H[k(x, y)] = { t: t, m: m }; } function V(x, y, t, m) { B.V[k(x, y)] = { t: t, m: m }; }
-    function item(name, tx, ty, extra) { var it = { name: name, x: (tx + 0.5) * T, y: (ty + 0.5) * T, r: (PIECES.filter(function (p) { return p.prop === name; })[0] || { r: 8 }).r }; for (var q in extra || {}) it[q] = extra[q]; B.items.push(it); return it; }
-    function hut(x0, y0, w, h, door) {
-      for (x = x0; x < x0 + w; x++) { H(x, y0, 'wall', 2); H(x, y0 + h, x === door ? 'door' : 'wall', 2); }
-      for (y = y0; y < y0 + h; y++) { V(x0, y, y === y0 ? 'window' : 'wall', 2); V(x0 + w, y, 'wall', 2); }
-      for (y = y0; y < y0 + h; y++) for (x = x0; x < x0 + w; x++) B.floors[k(x, y)] = 1;
-      roofLaters.push({ tx: x0, ty: y0, m: 1 });
-    }
-    hut(hx + 1, hy + 1, 3, 2, hx + 2); hut(hx + 8, hy + 1, 3, 2, hx + 9); hut(hx + 1, hy + 6, 3, 2, hx + 2); hut(hx + 8, hy + 6, 3, 2, hx + 9);
-    item('bed', hx + 1, hy + 1, { bed: true }); item('bed', hx + 10, hy + 1, { bed: true }); item('bed', hx + 1, hy + 6, { bed: true }); item('bed', hx + 10, hy + 6, { bed: true });
-    item('woodenWell', hx + 6, hy + 4); item('woodpile', hx + 2, hy + 8); item('haystack', hx + 9, hy + 9); item('dryingRack', hx + 5, hy + 9);
-    item('barrel', hx + 4, hy + 1, { loot: { berries: 4 } }); item('crate', hx + 7, hy + 1, { loot: { fiber: 6 } });
-    for (x = hx; x < hx + hamlet.w; x++) if (R() < 0.85) H(x, hy, 'fence', 2);
-    for (y = hy; y < hy + hamlet.h; y++) if (R() < 0.6) V(hx + hamlet.w, y, 'fence', 2);
+  function lootSlots(loot) {             // a village chest's loot as the stacks in its slots (the bag's kinds only)
+    var slots = [null, null, null, null, null, null, null, null, null, null, null, null], k, n = 0, ok = { wood: 1, stone: 1, fiber: 1, berries: 1, meat: 1, leather: 1, copper: 1, charcoal: 1, honey: 1, eggs: 1 };
+    for (k in loot || {}) { var kind = k === 'coin' ? 'copper' : k; if (!ok[kind] || n >= 12) continue; var left = loot[k]; while (left > 0 && n < 12) { var take = Math.min(25, left); slots[n++] = { kind: kind, n: take }; left -= take; } }
+    return slots;
+  }
+  function hamletBuild() {               // the village's pieces, written into B (a fresh start only), its ground painted, its props planted
+    if (!hamlet || !hamletV) return;
+    var V2 = hamletV, k, q;
+    for (k in V2.floors) B.floors[k] = V2.floors[k];
+    for (k in V2.H) B.H[k] = { t: V2.H[k].t, m: V2.H[k].m }; for (k in V2.V) B.V[k] = { t: V2.V[k].t, m: V2.V[k].m };
+    V2.items.forEach(function (vi) {
+      var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.cellar ? 0 : (pc ? pc.r : 8) };
+      for (q in vi) if (q !== 'x' && q !== 'y' && q !== 'name' && q !== 'store' && q !== 'loot') it[q] = vi[q];
+      if (vi.store) { it.store = lootSlots(vi.loot); if (vi.cellar) it.loot = null; } else if (vi.loot) it.loot = vi.loot;
+      B.items.push(it);
+    });
+    V2.roofs.forEach(function (r) { roofLaters.push({ tx: r.tx, ty: r.ty, m: r.m }); });
+    V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); });
+    w.repaint((hamlet.tx - 2) * T, (hamlet.ty - 2) * T, (hamlet.tx + hamlet.w + 2) * T, (hamlet.ty + hamlet.h + 2) * T);
+    V2.props.forEach(function (pr) { if (!kit.PROPS[pr.name] || !isLand(pr.x, pr.y)) return; var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.name === 'scarecrow' ? 4 : 8, v: 0 }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
     bDirty = true; Build.ensurePosts(B);
   }
   function folkNear(P) { var best = null; folk.forEach(function (f) { var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
   function folkTalk(f) { f.say = f.lines[f.line % f.lines.length]; f.line++; f.sayT = 5; }
   function folkTick(dt) {
     var P = hero(), i;
-    if (hamlet && !seen.hamlet && Math.hypot(P.x - (hamlet.tx + 6) * T, P.y - (hamlet.ty + 5) * T) < 420) { seen.hamlet = 1; toast('A hamlet: marked on your chart'); save(); }
+    if (hamlet && !seen.hamlet && Math.hypot(P.x - (hamlet.tx + hamlet.w / 2) * T, P.y - (hamlet.ty + hamlet.h / 2) * T) < 420) { seen.hamlet = 1; toast('A hamlet: marked on your chart'); save(); }
     for (i = 0; i < folk.length; i++) {
       var f = folk[i], d = Math.hypot(P.x - f.x, P.y - f.y);
       if (f.sayT > 0) f.sayT -= dt;
@@ -1612,7 +1619,7 @@ __COMBAT__
     stones().forEach(function (st) { var q = at(st.x, st.y), rr = reachOf(st) / T / step * sc; c.strokeStyle = 'rgba(255,230,160,0.6)'; c.lineWidth = 0.8; c.setLineDash([2, 2]); c.beginPath(); c.ellipse(q.x, q.y, rr, rr, 0, 0, 7); c.stroke(); c.setLineDash([]); dot(q, '#f6e2b8', 2); label(q, st.named || 'Stead'); });
     var qh = at(home.x, home.y); dot(qh, '#ff9a3a'); label(qh, 'The wreck');
     if (village) { var qv = at((village.tx + 7) * T, (village.ty + 6) * T); if (seen.village) { dot(qv, '#f0e2b0'); label(qv, 'Hildir\u2019s steading'); } else unknown(qv); }
-    if (hamlet) { var qm = at((hamlet.tx + 6) * T, (hamlet.ty + 5) * T); if (seen.hamlet) { dot(qm, '#f0e2b0'); label(qm, 'The hamlet'); } else unknown(qm); }
+    if (hamlet) { var qm = at((hamlet.tx + hamlet.w / 2) * T, (hamlet.ty + hamlet.h / 2) * T); if (seen.hamlet) { dot(qm, '#f0e2b0'); label(qm, 'The hamlet'); } else unknown(qm); }
     if (caveMouth) { var qc = at(caveMouth.x, caveMouth.y); if (seen.cave) { dot(qc, '#a8a8b4'); label(qc, 'The cave'); } else unknown(qc); }
     if (raft) { var qr = at(raft.x, raft.y); dot(qr, '#c99a66'); label(qr, raft.kind === 'boat' ? 'The boat' : 'The raft'); }
     var qp = at(inCave && caveMouth ? caveMouth.x : P.x, inCave && caveMouth ? caveMouth.y : P.y); dot(qp, '#ffd34d', 3); c.strokeStyle = '#fff'; c.lineWidth = 0.8; c.beginPath(); c.arc(qp.x, qp.y, 4.6, 0, 7); c.stroke();
@@ -2081,7 +2088,7 @@ __COMBAT__
     else if (id === 'dusk') { day.t = DUSK_AT + 1; }
     else if (id === 'dawn') { day.t = 0; day.n++; }
     else if (id === 'tpVillage' && village) { P.x = (village.tx + 8) * T; P.y = (village.ty + 8.5) * T; }
-    else if (id === 'tpHamlet' && hamlet) { P.x = (hamlet.tx + 6) * T; P.y = (hamlet.ty + 5.5) * T; }
+    else if (id === 'tpHamlet' && hamlet) { P.x = (hamlet.tx + hamlet.w / 2) * T; P.y = (hamlet.ty + hamlet.h / 2 + 1) * T; }
     else if (id === 'tpCave' && caveMouth) { P.x = caveMouth.x; P.y = caveMouth.y + 44; }
     else if (id === 'brokk') { seen.met = 1; seen.raft = 1; if (!stones().length) { var cs = { name: 'claimStone', x: P.x + 30, y: P.y, r: 5, claim: true }; B.items.push(cs); raiseStone(cs); } else if (npc && !npc.joined) brokkJoin(stones()[0]); toast('Brokk is yours'); }
     P.vx = P.vy = 0; save(); pauseOpen = false; adminOpen = false;

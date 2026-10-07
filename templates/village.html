@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Village Editor</title>
+<style>
+  :root { --bg: #171a1f; --panel: #20242b; --ink: #e8e4da; --muted: #a9a399; --line: #3a3f48; --btn: #2a2f38; --on: #4caf7d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; }
+  .wrap { max-width: 2400px; margin: 0 auto; padding: 18px 24px 40px; }
+  h1 { margin: 0 0 6px; font-size: 22px; } h2 { margin: 18px 0 8px; font-size: 15px; } h2.more { margin-top: 22px; }
+  .lede { color: var(--muted); margin: 0 0 14px; max-width: 900px; }
+  .cols { display: grid; grid-template-columns: minmax(640px, 1fr) 420px; gap: 20px; align-items: start; }
+  .view { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  canvas { width: 100%; height: auto; display: block; border-radius: 8px; image-rendering: auto; background: #5f8a44; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .group { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { background: var(--btn); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font: inherit; cursor: pointer; min-height: 40px; }
+  button[aria-pressed="true"] { background: var(--on); color: #10231a; border-color: var(--on); }
+  .row { display: grid; grid-template-columns: 150px 1fr 54px; gap: 10px; align-items: center; margin: 4px 0; }
+  .row span:last-child { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; }
+  textarea { width: 100%; min-height: 110px; background: #14171c; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: 12px/1.4 ui-monospace, monospace; }
+  .desc { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  a { color: #9fd8ff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p><a href="index.html">&larr; Back to menu</a></p>
+  <h1>Village Editor</h1>
+  <p class="lede">The rules that grow a village (docs/villages.md): pick an archetype, roll a seed, set the wealth and the shore, and tune the numbers. Every village is its seed, archetype, wealth and shore, grown the same each time. "Use in the game" hands the numbers to the game's villages.</p>
+  <div class="cols">
+    <div>
+      <div class="view"><canvas id="cv" width="1600" height="1000"></canvas></div>
+      <p class="desc" id="note"></p>
+    </div>
+    <div>
+      <section class="panel">
+        <h2>Archetype</h2>
+        <div class="group" id="archs"></div>
+        <h2 class="more">Village</h2>
+        <div class="group"><button id="reroll">Reroll (new seed)</button><button id="prev">Previous seed</button></div>
+        <div class="row"><span>Seed</span><input id="seed" type="range" min="1" max="9999" step="1"><span id="seedv"></span></div>
+        <div class="row"><span>Wealth</span><input id="wealth" type="range" min="0" max="1" step="0.05"><span id="wealthv"></span></div>
+        <h2 class="more">Shore</h2>
+        <div class="group" id="shores"></div>
+        <h2 class="more">The rules</h2>
+        <div id="rules"></div>
+        <h2 class="more">Settings as text</h2>
+        <textarea id="json" spellcheck="false"></textarea>
+        <div class="group" style="margin-top:8px"><button id="apply">Apply text</button><button id="usegame">Use in the game</button><button id="reset">Reset to default</button></div>
+        <p class="desc" id="msg">The game grows its villages from these numbers (game.village).</p>
+      </section>
+    </div>
+  </div>
+</div>
+<script>
+__ART__
+</script>
+<script>
+__LIB__
+</script>
+<script>
+__BUILD__
+</script>
+<script>
+__VILLAGE__
+</script>
+<script>
+(function () {
+  var lib = GameArt.lib, kit = StyleLab.kit, KEY = 'villageeditor1';
+  lib.applyStored(localStorage); kit.applyStored(localStorage);
+  kit.setup(kit.STYLE);
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var st = { arch: 'small', seed: 1234, wealth: 0.5, shore: 's', G: {} }, history = [];
+  try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && typeof sv === 'object') { for (var k in sv) st[k] = sv[k]; } } catch (e) {}
+  var RULES = [['gap', 'Gap between buildings', 1, 4, 1], ['yardGap', 'Wall to yard', 0, 3, 1], ['fenceGap', 'Ring to fence', 0, 3, 1], ['emptySlots', 'Slots left open', 0, 0.8, 0.05], ['sizeJitter', 'Size varies by', 0, 2, 1],
+    ['peoplePerHouse', 'People per house', 1, 5, 0.1], ['outsideShare', 'Share outside', 0, 1, 0.05], ['cellarAt', 'A cellar from wealth', 0, 1, 0.05], ['palisadeAt', 'A palisade from wealth', 0, 1, 0.05], ['drystoneAt', 'Dry stone from wealth', 0, 1, 0.05], ['railAt', 'A rail fence from wealth', 0, 1, 0.05],
+    ['wealthStone', 'Stone walls from', 0, 1, 0.05], ['wealthLogs', 'Log walls from', 0, 1, 0.05], ['wealthPlanks', 'Plank walls from', 0, 1, 0.05], ['shinglesAt', 'Shingles from', 0, 1, 0.05], ['fieldStrips', 'Field strips', 0, 6, 1], ['fields', 'Fields', 0, 1, 1], ['sacred', 'A stone', 0, 1, 1], ['midden', 'A midden', 0, 1, 1], ['graves', 'A grave', 0, 1, 1], ['yardEarth', 'Earth yard', 0, 1, 1], ['pathGravel', 'Gravel paths', 0, 1, 1], ['pathEarth', 'Earth paths', 0, 1, 1], ['mossEdge', 'Moss at the edges', 0, 1, 1]];
+  var inputs = {}, outs = {};
+  var rulesHost = document.getElementById('rules');
+  RULES.forEach(function (r) {
+    var row = document.createElement('label'); row.className = 'row'; var lab = document.createElement('span'); lab.textContent = r[1]; var inp = document.createElement('input'); inp.type = 'range'; inp.min = r[2]; inp.max = r[3]; inp.step = r[4]; var out = document.createElement('span');
+    inp.addEventListener('input', function () { st.G[r[0]] = +inp.value; out.textContent = inp.value; draw(); save(); });
+    row.appendChild(lab); row.appendChild(inp); row.appendChild(out); rulesHost.appendChild(row); inputs[r[0]] = inp; outs[r[0]] = out;
+  });
+  var archHost = document.getElementById('archs'), archBtns = {};
+  Object.keys(Village.ARCH).forEach(function (a) { var b = document.createElement('button'); b.textContent = Village.ARCH[a].name; b.addEventListener('click', function () { st.arch = a; ui(); draw(); save(); b.blur(); }); archHost.appendChild(b); archBtns[a] = b; });
+  var shoreHost = document.getElementById('shores'), shoreBtns = {};
+  [['None', ''], ['South', 's'], ['East', 'e'], ['West', 'w'], ['North', 'n']].forEach(function (s) { var b = document.createElement('button'); b.textContent = s[0]; b.addEventListener('click', function () { st.shore = s[1]; ui(); draw(); save(); b.blur(); }); shoreHost.appendChild(b); shoreBtns[s[1]] = b; });
+  var seedIn = document.getElementById('seed'), wealthIn = document.getElementById('wealth'), json = document.getElementById('json'), msg = document.getElementById('msg');
+  seedIn.addEventListener('input', function () { st.seed = +seedIn.value; ui(); draw(); save(); });
+  wealthIn.addEventListener('input', function () { st.wealth = +wealthIn.value; ui(); draw(); save(); });
+  document.getElementById('reroll').addEventListener('click', function (e) { history.push(st.seed); st.seed = 1 + Math.floor(Math.random() * 9998); ui(); draw(); save(); e.currentTarget.blur(); });
+  document.getElementById('prev').addEventListener('click', function (e) { if (history.length) { st.seed = history.pop(); ui(); draw(); save(); } e.currentTarget.blur(); });
+  document.getElementById('apply').addEventListener('click', function (e) { try { var o = JSON.parse(json.value); if (o && typeof o === 'object') { for (var k in o) st[k] = o[k]; } ui(); draw(); save(); msg.textContent = 'Applied.'; } catch (err) { msg.textContent = 'That is not settings text.'; } e.currentTarget.blur(); });
+  document.getElementById('usegame').addEventListener('click', function (e) { try { localStorage.setItem('game.village', JSON.stringify(st.G)); msg.textContent = 'The game now grows its villages from these numbers.'; } catch (err) {} e.currentTarget.blur(); });
+  document.getElementById('reset').addEventListener('click', function (e) { st.G = {}; ui(); draw(); save(); e.currentTarget.blur(); });
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  function ui() {
+    var G = Village.cfg(st.G);
+    RULES.forEach(function (r) { inputs[r[0]].value = G[r[0]]; outs[r[0]].textContent = G[r[0]]; });
+    Object.keys(archBtns).forEach(function (a) { archBtns[a].setAttribute('aria-pressed', a === st.arch ? 'true' : 'false'); });
+    Object.keys(shoreBtns).forEach(function (s) { shoreBtns[s].setAttribute('aria-pressed', s === (st.shore || '') ? 'true' : 'false'); });
+    seedIn.value = st.seed; document.getElementById('seedv').textContent = st.seed; wealthIn.value = st.wealth; document.getElementById('wealthv').textContent = st.wealth.toFixed(2);
+    if (document.activeElement !== json) json.value = JSON.stringify(st);
+  }
+  var tiles = {};
+  function tileCv(name) { if (!tiles[name]) tiles[name] = kit.bakeTile(name, 0); return tiles[name]; }
+  var V = null, clock = 0;
+  function draw() {
+    var site = Village.siteFor(st.arch), T = 32, TS = 24, K = 0.75;
+    V = Village.make(st.seed, { tx: 2, ty: 2, w: site.w, h: site.h, shore: st.shore || null }, { arch: st.arch, wealth: st.wealth, G: st.G });
+    var W = (site.w + 4) * T, H = (site.h + 4) * TS, sc = Math.min(cv.width / W, cv.height / H);
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#5f8a44'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.setTransform(sc, 0, 0, sc, (cv.width - W * sc) / 2, (cv.height - H * sc) / 2); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    var g = tileCv('grass'); for (var y = 0; y < site.h + 4; y++) for (var x = 0; x < site.w + 4; x++) ctx.drawImage(g, x * T, y * TS, T + 0.4, TS + 0.4);
+    if (st.shore) { ctx.fillStyle = '#4a7f9e'; if (st.shore === 's') ctx.fillRect(0, (site.h + 2) * TS, W, 2 * TS); else if (st.shore === 'n') ctx.fillRect(0, 0, W, 2 * TS); else if (st.shore === 'e') ctx.fillRect((site.w + 2) * T, 0, 2 * T, H); else ctx.fillRect(0, 0, 2 * T, H); }
+    Village.draw(ctx, V, { kit: kit, Build: Build, lib: lib, tile: function (c, tx, ty, x, yy, w, h) { c.drawImage(tileCv(V.floors[tx + ',' + ty] === 1 ? 'dirt' : 'plank'), x, yy, w, h); } }, clock);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    document.getElementById('note').textContent = Village.ARCH[st.arch].name + ', seed ' + st.seed + ': ' + V.lots.length + ' buildings (' + V.lots.map(function (l) { return Village.BUILD[l.id].name.toLowerCase(); }).join(', ') + '), ' + V.folk.length + ' people, ' + V.items.length + ' things inside, finds: ' + (V.finds.map(function (f) { return f.kind; }).join(', ') || 'none') + '. Fence: ' + (V.fence ? V.fence.kind : 'none') + '.';
+  }
+  ui(); draw();
+  window.villageDbg = { st: st, V: function () { return V; }, draw: draw };
+})();
+</script>
+</body>
+</html>

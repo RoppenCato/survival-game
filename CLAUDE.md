@@ -100,6 +100,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
 | `gathering-editor.html` | `gather.html` | Gathering Editor (2026-10-07): a field of trees, rocks and bushes; the gathering ideas as switches and sliders, presets, settings as text, "Use in the game" (`game.gather`) |
 | `look-editor.html` | `look.html` | Art Direction (2026-10-07): the same scene twice, the flat look above and the ink look below (`docs/art-direction.md`), the rules as sliders, settings as text, "Use in the game" (`game.look`, merged into `kit.STYLE` on load) |
+| `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
@@ -189,6 +190,23 @@ the text and it is made the default. When a spec's meaning changes, change the s
   into the trunk on the side it came from (`o.notch`, drawn as a wedge with pale wood inside, part of the trunk); from then
   on blows from the **other side** are the back cut, bite `spotBonus` deep and fell the tree toward the notch, as a woodcutter
   does. Nothing to find: only where you stand. The sunny side stays the rocks' default. A trunk is the axe's right target (no "wrong tool").
+- `src/village.js` (`Village`): **the rules that grow a village (2026-10-07, Robin's brief; `docs/villages.md`)**. `DEF` holds every
+  number (gaps, the share of ring slots left open, people per house, the wealth that brings stone, logs, planks, shingles, a
+  palisade, a dry-stone wall, a cellar; fields, the sacred stone, the midden, the grave, the ground paints); `ARCH` the
+  archetypes (farmstead, small village, village, chieftain's seat, fishing hamlet, trading post, abandoned) with their counts,
+  yard and site sizes; `BUILD` the buildings' inside sizes and what stands in them. `make(seed, site, opts)` grows the ring plan:
+  the yard with the well (a fire pit for the poor), the longhouse (or great hall) north of it facing south, the houses round it
+  with their doors to the yard (shuffled, some slots open), the outbuildings behind near what they serve (storehouse, byre,
+  smithy, pit-house, bathhouse, a boathouse on the shore), the fence of the wealth's kind with a gate, the fields, the runestone,
+  the midden, a grave; earth under the yard, gravel from the gate and to the shore, earth from every door, moss at the edges;
+  the things inside by building (hearths, beds, chests with loot, crates, benches, a shield rack, a furnace and workbench in the
+  smithy, a trough, a hidden **cellar door** in one home with the best stash); the people as households with spots and lines by
+  role. It returns the game's own data (`floors`, `H`, `V`, `items`, `roofs` to lay once the rooms are found, `paints`, `props`,
+  `folk`, `finds`). `draw(c, V, env)` draws it for the editor; `siteFor(arch)` says what site to find. **The game's hamlet is
+  grown by it** (`hamletSite` finds a site of the archetype's size, `hamletClear` grows it and makes the folk, `hamletBuild`
+  writes it into `B`, paints the ground with `w.dabGround` and one `w.repaint`, plants the props; chests get their loot as
+  stacks, `lootSlots`); `game.village` holds the editor's numbers. `cellarDoor` is a flat prop in the kit (a trapdoor with an
+  iron ring). `node tools/visual/villages.js [seed]` renders one village of each archetype.
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
   `hollow` drawings for the casting cloth. Thirteen runes so far.

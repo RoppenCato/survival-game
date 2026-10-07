@@ -143,6 +143,7 @@ function make(kit, opts) {
     if (changed) w.repaint(x - r - GQ * 3, y - r - GQ * 3, x + r + GQ * 3, y + r + GQ * 3);
     return changed;
   };
+  w.dabGround = function (x, y, r, kind) { var qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy; for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var dx = (qx + 0.5) * GQ - x, dy = (qy + 0.5) * GQ - y; if (dx * dx + dy * dy * 1.6 > r * r) continue; if (!w.isLand((qx + 0.5) * GQ, (qy + 0.5) * GQ)) continue; if (kind) w.ground[qx + ',' + qy] = kind; else delete w.ground[qx + ',' + qy]; } };   // cells only, no repaint: call w.repaint over the area after many
   w.groundKind = function (x, y) { return w.ground[Math.floor(x / GQ) + ',' + Math.floor(y / GQ)] || 0; };
   function groundField(kind, wx, wy) {                     // 0..1, read between the cells
     var fx = wx / GQ - 0.5, fy = wy / GQ - 0.5, i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j;

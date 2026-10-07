@@ -1409,6 +1409,13 @@ function struckTree(c, K, x, y, seed) {
   for (i = 0; i < 6; i++) { c.fillStyle = 'rgba(190,186,180,0.55)'; c.beginPath(); c.ellipse(x - 5 + (i * 7) % 11, y - 8 - i * 7, 1.3, 0.8, 0.4, 0, 7); c.fill(); }
 }
 // An old fire ring left by someone passing: a ring of stones round grey ash with black lumps of charcoal still in it.
+function cellarDoor(c, K, x, y, seed) {                 // a trapdoor in the floor: planks with a batten and an iron ring, flat
+  var i;
+  shape(c, [[x - 14, y - 9], [x + 14, y - 9], [x + 14, y + 7], [x - 14, y + 7]], K.wood, { seed: seed, size: 'M', flat: true, rough: 0.2 });
+  for (i = 1; i < 4; i++) line(c, [[x - 14 + i * 7, y - 8.5], [x - 14 + i * 7 + 0.3, y + 6.5]], 0.8, K.wood.shade, false);
+  shape(c, [[x - 12, y - 2], [x + 12, y - 2], [x + 12, y + 1], [x - 12, y + 1]], K.wood, { seed: seed + 1, size: 'S', flat: true, rough: 0.2 });
+  c.strokeStyle = '#3a3a40'; c.lineWidth = 1.6; c.beginPath(); c.arc(x + 6, y - 0.5, 2.6, 0, 7); c.stroke(); c.fillStyle = '#2a2a30'; c.beginPath(); c.arc(x + 6, y - 3, 0.9, 0, 7); c.fill();
+}
 function fireRing(c, K, x, y, seed) {
   var i;
   gshadow(c, x, y, 16, 5, 0.3);
@@ -1627,6 +1634,7 @@ var PROPS = {
   furnace: { b: [-28, -48, 28, 8], f: function (c, K, s) { furnaceObj(c, K, 0, 0, s); } },
   struckTree: { b: [-20, -64, 22, 6], f: function (c, K, s) { struckTree(c, K, 0, 0, s); } },
   fireRing: { b: [-17, -10, 17, 8], f: function (c, K, s) { fireRing(c, K, 0, 0, s); } },
+  cellarDoor: { b: [-15, -10, 15, 8], f: function (c, K, s) { cellarDoor(c, K, 0, 0, s); } },
   beeSkeps: { b: [-29, -41, 29, 8], f: function (c, K, s) { c.save(); c.scale(0.85, 0.85); beeSkeps(c, K, 0, 0, s); c.restore(); } },
   woodenBridge: { b: [-52, -34, 52, 16], f: function (c, K, s) { woodenBridge(c, K, 0, 0, s); } },
   farmland: { b: [-58, -28, 58, 12], f: function (c, K, s) { farmland(c, K, 0, 0, s); } },
@@ -1706,7 +1714,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };

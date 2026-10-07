@@ -19,7 +19,7 @@ def write(path, text):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(text)
 
-SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes.js'), '__HIRD__': read('src', 'hird.js'), '__YARD__': read('src', 'yard.js'), '__GATHER__': read('src', 'gather.js'), '__MUSIC__': read('src', 'music.js'), '__COMBAT__': read('src', 'combat.js')}
+SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes.js'), '__HIRD__': read('src', 'hird.js'), '__YARD__': read('src', 'yard.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__MUSIC__': read('src', 'music.js'), '__COMBAT__': read('src', 'combat.js')}
 
 # page name in dist/  ->  template in templates/
 PAGES = [
@@ -31,7 +31,7 @@ PAGES = [
     ('hird-editor', 'hird'),
     ('item-editor', 'items'),
     ('song-editor', 'song'),
-    ('combat-arena', 'combat'), ('gathering-editor', 'gather'), ('look-editor', 'look'), ('game', 'game'),
+    ('combat-arena', 'combat'), ('gathering-editor', 'gather'), ('look-editor', 'look'), ('village-editor', 'village'), ('game', 'game'),
 ]
 for page, template in PAGES:
     html = read('templates', template + '.html')
