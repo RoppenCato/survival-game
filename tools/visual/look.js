@@ -38,7 +38,7 @@ function scene(c, style, isInk, fig) {
   if (isInk && style.vignette > 0) { const vg = c.createRadialGradient(W / 2, H / 2, H * 0.5, W / 2, H / 2, W * 0.75); vg.addColorStop(0, 'rgba(20,16,12,0)'); vg.addColorStop(1, `rgba(20,16,12,${style.vignette})`); c.fillStyle = vg; c.fillRect(0, 0, W, H); }
 }
 const cv = createCanvas(W * Z, H * Z * 2), c = cv.getContext('2d');
-c.setTransform(Z, 0, 0, Z, 0, 0); c.__oy = 0; scene(c, kit.STYLE, false, { grain: 0, shade: 0 });
+c.setTransform(Z, 0, 0, Z, 0, 0); c.__oy = 0; scene(c, kit.STYLE_FLAT, false, { grain: 0, shade: 0 });
 c.setTransform(Z, 0, 0, Z, 0, H * Z); c.__oy = H * Z; scene(c, ink, true, { grain: 0.22, shade: 0.41 });
 fs.writeFileSync('look.png', cv.toBuffer('image/png'));
 console.log('wrote look.png');

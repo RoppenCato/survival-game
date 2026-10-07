@@ -56,11 +56,11 @@ textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px sol
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
   <h1>Art Direction</h1>
-  <p class="lede">The same scene twice: above as the game draws it now, below in the new look from <code>docs/art-direction.md</code>: Egerkrans’s ink line (thin toward the light, heavy on the shadow side), Bauer’s light (one sun, cool blue-grey shadows, warm edges), grain in every fill, a muted earth palette. The sliders change the new look; hand it to the game when it is right.</p>
+  <p class="lede">The same scene twice: above as the game draws it now, below in the new look from <code>docs/art-direction.md</code>: Egerkrans’s ink line (thin toward the light, heavy on the shadow side), Bauer’s light (one sun, cool blue-grey shadows, warm edges), grain in every fill, a muted earth palette. The ink look is the game’s look now; the sliders retune it, and Use in the game hands a retuned version over (Take back returns to the defaults).</p>
   <div class="wrap">
     <div class="left">
-      <div class="stage"><h3>Now: the flat look</h3><canvas id="cvA" width="1600" height="600" aria-label="The scene in the current look"></canvas></div>
-      <div class="stage"><h3>New: ink and light</h3><canvas id="cvB" width="1600" height="600" aria-label="The scene in the new look"></canvas></div>
+      <div class="stage"><h3>Before: the flat look</h3><canvas id="cvA" width="1600" height="600" aria-label="The scene in the current look"></canvas></div>
+      <div class="stage"><h3>Now: ink and light (the game’s look)</h3><canvas id="cvB" width="1600" height="600" aria-label="The scene in the new look"></canvas></div>
       <section class="panel">
         <div class="group">
           <button id="turn">Turn the figures</button>
@@ -74,7 +74,7 @@ textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px sol
       <section class="panel">
         <h2>Presets</h2>
         <div class="group" id="presets"></div>
-        <p class="desc">Ink and light is the art direction as written. Flat is the game today, for comparison on the lower canvas.</p>
+        <p class="desc">Ink and light is the art direction as written and the game’s default. Flat is the look before it, for comparison.</p>
       </section>
       <section class="panel">
         <h2>Light and colour</h2>
@@ -99,7 +99,7 @@ textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px sol
           <button id="takeback">Take back</button>
           <button id="reset">Reset</button>
         </div>
-        <p class="desc" id="jsonmsg">Use in the game makes the game bake its props and tiles with this look (game.look); Take back restores the flat look.</p>
+        <p class="desc" id="jsonmsg">Use in the game makes the game bake its props and tiles with this retuned look (game.look); Take back restores the defaults.</p>
       </section>
     </div>
   </div>
@@ -1462,7 +1462,7 @@ var DEF = {
 // fruit: 0 switches off the glowing lantern fruit the old night style hung in the trees.
 // The look (2026-10-05): flat, clean shapes in two or three tones, thin olive outlines, no texture strokes, round
 // forms. Look 0 is the flat renderer; shadowHue 100 makes shades and outlines olive instead of teal.
-var STYLE = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 100, sat: 0.92, bright: 14, contrast: 0.96, shade: 0.34,
+var STYLE_FLAT = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 100, sat: 0.92, bright: 14, contrast: 0.96, shade: 0.34,
   round: 1, spindly: 0.05, lush: 1, twist: 0.08, sparkle: 0, texture: 0, outlineW: 0.6, outlineDark: 0.6, rough: 0.03,
   light: 0.8, fog: 0, glow: 0.2, vignette: 0, look: 0, seed: 7, scaleRef: 0, fruit: 0 };
 // The ink look (2026-10-07, docs/art-direction.md): Egerkrans's line, Bauer's light. look 3 in shape(): a cool shadow crescent,
@@ -1473,6 +1473,7 @@ function grain(c) {                                  // paper and pencil: a smal
   if (!grainCv) { grainCv = mk(96, 96); var g = grainCv.getContext('2d'), R = rng(77), i; for (i = 0; i < 1500; i++) { var x = R() * 96, y = R() * 96, d = R(); g.fillStyle = d < 0.55 ? 'rgba(20,14,10,' + (0.25 + R() * 0.45).toFixed(2) + ')' : 'rgba(255,245,225,' + (0.2 + R() * 0.4).toFixed(2) + ')'; g.fillRect(x, y, 1 + (R() < 0.3 ? 1 : 0), 1); } }
   return c.createPattern(grainCv, 'repeat');
 }
+var STYLE = {}; (function () { var k; for (k in STYLE_FLAT) STYLE[k] = STYLE_FLAT[k]; for (k in STYLE_INK) STYLE[k] = STYLE_INK[k]; })();   // the game's look is the ink look (Robin, 2026-10-07); STYLE_FLAT is the look before it
 var PRESETS = [
   { name: 'Night Forest', note: 'Blue-violet Factory, deep teal-green outside, warm amber lanterns. Cozy and a little mysterious, like a MapleStory forest at night.',
     p: { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, twist: 0.12, spindly: 0.12, rough: 0.08, lush: 0.95, round: 0.85, sparkle: 0.8, outlineW: 1.1, outlineDark: 0.86, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4 } },
@@ -3154,7 +3155,7 @@ var scratch = null;
 var cacheF = null, cacheO = null, cacheM = null;
 var pbuf = null;
 
-return { DEF: DEF, kit: { STYLE: STYLE, STYLE_INK: STYLE_INK, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
+return { DEF: DEF, kit: { STYLE: STYLE, STYLE_INK: STYLE_INK, STYLE_FLAT: STYLE_FLAT, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = StyleLab;
 
@@ -3176,7 +3177,7 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
     { name: 'Ink and light', set: JSON.parse(JSON.stringify(DEF)) },
     { name: 'Softer', set: { outlineW: 0.7, outlineDark: 0.75, texture: 0.6, shade: 0.34, figGrain: 0.2, figShade: 0.22, vignette: 0.15 } },
     { name: 'Bolder ink', set: { outlineW: 1.3, outlineDark: 1, texture: 1.1, shade: 0.5, figGrain: 0.4, figShade: 0.4, rough: 0.07 } },
-    { name: 'Flat (now)', set: { look: 0, shadowHue: kit.STYLE.shadowHue, sat: kit.STYLE.sat, bright: kit.STYLE.bright, contrast: kit.STYLE.contrast, shade: kit.STYLE.shade, outlineW: kit.STYLE.outlineW, outlineDark: kit.STYLE.outlineDark, texture: 0, rough: kit.STYLE.rough, vignette: 0, figGrain: 0, figShade: 0, sunWarm: 0 } }
+    { name: 'Flat (before)', set: { look: 0, shadowHue: kit.STYLE_FLAT.shadowHue, sat: kit.STYLE_FLAT.sat, bright: kit.STYLE_FLAT.bright, contrast: kit.STYLE_FLAT.contrast, shade: kit.STYLE_FLAT.shade, outlineW: kit.STYLE_FLAT.outlineW, outlineDark: kit.STYLE_FLAT.outlineDark, texture: 0, rough: kit.STYLE_FLAT.rough, vignette: 0, figGrain: 0, figShade: 0, sunWarm: 0 } }
   ];
   var inputs = {}, outputs = {}, json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg'), dirty = true;
   function styleOf(g) { var st = {}, k; for (k in kit.STYLE) st[k] = kit.STYLE[k]; STYLE_KEYS.forEach(function (k2) { if (g[k2] != null) st[k2] = g[k2]; }); return st; }
@@ -3200,7 +3201,7 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
   document.getElementById('copy').addEventListener('click', function (e) { json.value = JSON.stringify(G); var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Select the text and copy it.'; }; if (navigator.clipboard) navigator.clipboard.writeText(json.value).then(done, fail); else fail(); e.currentTarget.blur(); });
   document.getElementById('applyjson').addEventListener('click', function (e) { var o = null; try { o = JSON.parse(json.value); } catch (err) {} if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing changed.'; return; } for (var k in o) if (DEF[k] != null) G[k] = o[k]; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur(); });
   document.getElementById('usegame').addEventListener('click', function (e) { var st = {}; STYLE_KEYS.forEach(function (k) { st[k] = G[k]; }); try { localStorage.setItem('game.look', JSON.stringify(st)); jsonmsg.textContent = 'The game now draws its world in this look (figures keep their own drawing for now).'; } catch (err) {} e.currentTarget.blur(); });
-  document.getElementById('takeback').addEventListener('click', function (e) { try { localStorage.removeItem('game.look'); } catch (err) {} jsonmsg.textContent = 'The game draws the flat look again.'; e.currentTarget.blur(); });
+  document.getElementById('takeback').addEventListener('click', function (e) { try { localStorage.removeItem('game.look'); } catch (err) {} jsonmsg.textContent = 'The game draws the default ink look again.'; e.currentTarget.blur(); });
   document.getElementById('reset').addEventListener('click', function (e) { G = JSON.parse(JSON.stringify(DEF)); apply(); e.currentTarget.blur(); });
   try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && typeof sv === 'object') for (var k0 in sv) if (DEF[k0] != null) G[k0] = sv[k0]; } catch (e) {}
   apply();
@@ -3255,7 +3256,7 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
     if (dusk) { var dk = c.createLinearGradient(0, 0, W, H); dk.addColorStop(0, 'rgba(255,170,90,0.12)'); dk.addColorStop(1, 'rgba(40,30,80,0.22)'); c.fillStyle = dk; c.fillRect(0, 0, W, H); }
   }
   var cvA = document.getElementById('cvA'), cvB = document.getElementById('cvB');
-  function render() { clock += 0.05; drawScene(cvA, kit.STYLE, false); drawScene(cvB, styleOf(G), G.look === 3 || G.look === 2 || G.look === 1); dirty = false; }
+  function render() { clock += 0.05; drawScene(cvA, kit.STYLE_FLAT, false); drawScene(cvB, styleOf(G), G.look === 3 || G.look === 2 || G.look === 1); dirty = false; }
   document.getElementById('turn').addEventListener('click', function (e) { turn++; dirty = true; e.currentTarget.blur(); });
   document.getElementById('night').addEventListener('click', function (e) { dusk = !dusk; e.currentTarget.setAttribute('aria-pressed', dusk ? 'true' : 'false'); dirty = true; e.currentTarget.blur(); });
   document.getElementById('reseed').addEventListener('click', function (e) { seed++; spritesA = {}; spritesB = {}; dirty = true; e.currentTarget.blur(); });

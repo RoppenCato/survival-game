@@ -1492,7 +1492,7 @@ var DEF = {
 // fruit: 0 switches off the glowing lantern fruit the old night style hung in the trees.
 // The look (2026-10-05): flat, clean shapes in two or three tones, thin olive outlines, no texture strokes, round
 // forms. Look 0 is the flat renderer; shadowHue 100 makes shades and outlines olive instead of teal.
-var STYLE = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 100, sat: 0.92, bright: 14, contrast: 0.96, shade: 0.34,
+var STYLE_FLAT = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 100, sat: 0.92, bright: 14, contrast: 0.96, shade: 0.34,
   round: 1, spindly: 0.05, lush: 1, twist: 0.08, sparkle: 0, texture: 0, outlineW: 0.6, outlineDark: 0.6, rough: 0.03,
   light: 0.8, fog: 0, glow: 0.2, vignette: 0, look: 0, seed: 7, scaleRef: 0, fruit: 0 };
 // The ink look (2026-10-07, docs/art-direction.md): Egerkrans's line, Bauer's light. look 3 in shape(): a cool shadow crescent,
@@ -1503,6 +1503,7 @@ function grain(c) {                                  // paper and pencil: a smal
   if (!grainCv) { grainCv = mk(96, 96); var g = grainCv.getContext('2d'), R = rng(77), i; for (i = 0; i < 1500; i++) { var x = R() * 96, y = R() * 96, d = R(); g.fillStyle = d < 0.55 ? 'rgba(20,14,10,' + (0.25 + R() * 0.45).toFixed(2) + ')' : 'rgba(255,245,225,' + (0.2 + R() * 0.4).toFixed(2) + ')'; g.fillRect(x, y, 1 + (R() < 0.3 ? 1 : 0), 1); } }
   return c.createPattern(grainCv, 'repeat');
 }
+var STYLE = {}; (function () { var k; for (k in STYLE_FLAT) STYLE[k] = STYLE_FLAT[k]; for (k in STYLE_INK) STYLE[k] = STYLE_INK[k]; })();   // the game's look is the ink look (Robin, 2026-10-07); STYLE_FLAT is the look before it
 var PRESETS = [
   { name: 'Night Forest', note: 'Blue-violet Factory, deep teal-green outside, warm amber lanterns. Cozy and a little mysterious, like a MapleStory forest at night.',
     p: { factoryHue: 238, outsideHue: 152, accentHue: 42, shadowHue: 250, sat: 1.1, bright: -1, contrast: 1.12, shade: 0.55, twist: 0.12, spindly: 0.12, rough: 0.08, lush: 0.95, round: 0.85, sparkle: 0.8, outlineW: 1.1, outlineDark: 0.86, light: 0.5, fog: 0.3, glow: 0.9, vignette: 0.4 } },
@@ -3184,7 +3185,7 @@ var scratch = null;
 var cacheF = null, cacheO = null, cacheM = null;
 var pbuf = null;
 
-return { DEF: DEF, kit: { STYLE: STYLE, STYLE_INK: STYLE_INK, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
+return { DEF: DEF, kit: { STYLE: STYLE, STYLE_INK: STYLE_INK, STYLE_FLAT: STYLE_FLAT, grain: grain, TW: TW, TH: TH, TILES: TILES, PROPS: PROPS, setup: kitSetup, bakeTile: bakeTile, blendTile: blendTile, bakeProp: bakeProp, mats: mats, rng: rng, clamp: clamp, lerp: lerp, mixHue: mixHue, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = StyleLab;
 
