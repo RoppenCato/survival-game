@@ -4,6 +4,9 @@ Written 2026-10-05 from `CLAUDE.md` (the decided design) and `docs/idea-bank.md`
 build order. When a step is done, mark it here and move anything it decided into `CLAUDE.md`. Questions for
 Robin are at the end; where a step depends on an answer, it says so.
 
+> **2026-10-07:** the ladder below is now written out as chapters, each with a template, a status table and a gap list, in
+> `docs/chapters.md`. Read that first when planning; this file keeps the build steps behind them.
+
 ---
 
 # The ladder of islands (Robin, 2026-10-06)

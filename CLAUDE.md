@@ -220,6 +220,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
   not a stick sword. `node tools/visual/weapons.js` renders every swing in four directions; `tests/weapons.js` checks hits,
   pierce, chains and throws (in `npm test`).
 - `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster); step 1 is built.
+- `docs/chapters.md` (**read first when planning**, 2026-10-07): the world as **chapters** (Robin): 1 the starter island, 2 the
+  first big island, 3 the second biome and the first raid, 4 and beyond by the compass. It holds the rules every chapter keeps,
+  **the template** (ten headings in six groups: the place, the events, the living world, what you make and gain, travel, making
+  and checking it), each chapter's status table (Built, Partly, Not started, Idea, Open) with its gap list, and the checklist
+  to copy for a new chapter. Update its tables when a feature is built.
 - `docs/roadmap.md`: **Goal 1, "leave the island"** (Robin, 2026-10-05) is at the top: the chain from landing
   with nothing to a raft (tools, gathering, food with stamina, leather, a comfortable house with a rug, Brokk
   the survivor who teaches the raft, the shipwright's bench on the shore, the second island), nine steps each
