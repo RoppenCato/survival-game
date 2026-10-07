@@ -575,6 +575,17 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   click to take. **Cancel:** when something is on the way, a Cancel box beside Craft takes the last queued one off (the hearth's,
   the furnace's or the hero's queue) and gives its materials back into the bag, or onto the ground when it is full (`infoCancel`,
   `refund`). Queues were already capped by what you can pay (`pay` on every press).
+- **The boards in the art direction (2026-10-07, Robin: the bars, the toolbars, the bag, the windows and the cooking panel):**
+  `wood` is planks across with grain, a thin ink line all round and a heavy one below and to the right (`uiLines`), a warm lit
+  edge and iron nails; `leather` an even hide with grain and a vignette, no smudges, a stitched edge and brass rivets;
+  `parchment` cream with grain and a worn edge; `slotUi` a recessed grained slot with an ink line, gold when chosen; `buttonUi` a
+  carved button with a brass edge that fills with progress. The bag, the bars' board, the character panel's slots, the recipe
+  boards (the list on a dark strip, the chosen thing on a parchment page with dark ink text, carved Craft, Cook and Cancel
+  buttons, carved tabs) and the Ready strip use them. The engine's `bar` is a dark recess with an ink line and a lit top edge in
+  muted red and green; `slotBox` and `roundIcon` (the hotbar) are dark wooden recesses with ink, gold in hand. **The gear
+  slots:** helmet, cloak, tunic, trousers, boots on the left; shield, **necklace, two rings, two trinkets** on the right
+  (`EQUIP`, `equip` keys `neck`, `ring1`, `ring2`, `trinket`, `trinket2`, each with its glyph); hovering a slot names it
+  ("Ring: empty"). Nothing fills the new slots yet.
 - **HUD bars and the stats board (2026-10-05):** the health and stamina bars are small (60 units wide, the stamina bar
   longer with a meal) with the numbers beside them ("72 / 100"), drawn in `drawHud` in `src/combat.js`. The character
   panel has two tabs, **Gear | Stats**: the stats page (`statRows`) lists health, stamina (and how fast it comes

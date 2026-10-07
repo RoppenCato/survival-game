@@ -1486,10 +1486,14 @@ function drawPart(c, q) {
   else if (q.k === 'bit') { c.fillStyle = q.c; c.strokeStyle = '#3a2a36'; c.lineWidth = 0.9; c.beginPath(); c.arc(x, y, q.s, 0, Math.PI * 2); c.fill(); c.stroke(); }
   else { c.fillStyle = q.c; c.globalAlpha = a; c.beginPath(); c.arc(x, y, q.s, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; }
 }
+// a bar in the art direction (2026-10-07): a dark recess with an ink line, heavier below, the fill with a lit top edge
 function bar(c, x, y, w, h, v, fill, back) {
-  c.fillStyle = '#3a2a36'; c.fillRect(x - 1.5, y - 1.5, w + 3, h + 3);
-  c.fillStyle = back || '#5b4a58'; c.fillRect(x, y, w, h);
-  c.fillStyle = fill; c.fillRect(x, y, Math.max(0, w * clamp(v, 0, 1)), h);
+  var r = Math.min(2.5, h / 2);
+  c.fillStyle = '#231a16'; c.beginPath(); c.roundRect(x - 1.6, y - 1.6, w + 3.2, h + 3.2, r + 1); c.fill();
+  c.fillStyle = back || '#3b2d26'; c.beginPath(); c.roundRect(x, y, w, h, r); c.fill();
+  var fw = Math.max(0, w * clamp(v, 0, 1));
+  if (fw > 0.5) { c.save(); c.beginPath(); c.roundRect(x, y, w, h, r); c.clip(); c.fillStyle = fill; c.fillRect(x, y, fw, h); c.fillStyle = 'rgba(255,240,200,0.28)'; c.fillRect(x, y, fw, Math.max(1, h * 0.3)); c.fillStyle = 'rgba(35,26,22,0.25)'; c.fillRect(x, y + h - Math.max(1, h * 0.22), fw, Math.max(1, h * 0.22)); c.restore(); }
+  c.strokeStyle = '#231a16'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x - 1, y + h + 1); c.lineTo(x + w + 1, y + h + 1); c.stroke();
 }
 // damage numbers and pickups float up from where they happened; a page with a camera draws them inside it
 function drawNums(c) {
@@ -1511,8 +1515,8 @@ function drawNums(c) {
 function drawHud(c) {
   var i, bigRow = 0;
   var mst = maxSt(), bw = 60, stw = bw * mst / 100;       // small bars with the numbers beside them
-  bar(c, 10, 8, bw, 7, P.hp / P.maxHp, '#e8584a');
-  bar(c, 10, 18, stw, 6, P.st / mst, P.st < 22 ? '#d6b54a' : '#7fd66d');
+  bar(c, 10, 8, bw, 7, P.hp / P.maxHp, '#b8432f');
+  bar(c, 10, 18, stw, 6, P.st / mst, P.st < 22 ? '#c9a63a' : '#6f9a4a');
   c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.6; c.strokeStyle = '#3a2a36'; c.fillStyle = '#fff';   // the number sits inside its bar
   var hpTxt = String(Math.ceil(Math.max(0, P.hp))), stTxt = String(Math.round(Math.max(0, P.st)));
   c.strokeText(hpTxt, 13, 13.2); c.fillText(hpTxt, 13, 13.2); c.strokeText(stTxt, 13, 22.8); c.fillText(stTxt, 13, 22.8);
@@ -1566,14 +1570,16 @@ function neutralIcon(c, id) {            // what is in your hand when nothing is
     c.lineWidth = 0.9; c.beginPath(); c.moveTo(-3 + 8 * Math.cos(1.1), -8 * Math.sin(1.1)); c.lineTo(-3 + 8 * Math.cos(1.1), 8 * Math.sin(1.1)); c.stroke();
   }
 }
-function slotBox(c, x, y, on, sz) {
-  c.fillStyle = 'rgba(20,16,30,0.78)'; c.fillRect(x, y, sz, sz);
-  c.strokeStyle = on ? '#ffd34d' : 'rgba(255,255,255,0.28)'; c.lineWidth = on ? 1.2 : 0.8; c.strokeRect(x + 0.5, y + 0.5, sz - 1, sz - 1);
+function slotBox(c, x, y, on, sz) {     // a hotbar slot: a dark wooden recess with an ink line, gold when it is the one in hand
+  c.fillStyle = 'rgba(45,32,24,0.9)'; c.fillRect(x, y, sz, sz);
+  c.strokeStyle = on ? '#d9a73a' : '#231a16'; c.lineWidth = on ? 1.2 : 0.9; c.strokeRect(x + 0.5, y + 0.5, sz - 1, sz - 1);
+  c.strokeStyle = 'rgba(255,238,200,0.14)'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x + 1.2, y + sz - 1); c.lineTo(x + sz - 1, y + sz - 1); c.lineTo(x + sz - 1, y + 1.2); c.stroke();
+  if (on) { c.strokeStyle = 'rgba(217,167,58,0.35)'; c.lineWidth = 2; c.strokeRect(x - 0.5, y - 0.5, sz + 1, sz + 1); }
 }
 function roundIcon(c, id, x, y, r, on, dim) {
   c.globalAlpha = dim ? 0.45 : 1;
-  c.fillStyle = 'rgba(20,16,30,0.82)'; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
-  c.strokeStyle = on ? '#ffd34d' : 'rgba(255,255,255,0.35)'; c.lineWidth = on ? 1.3 : 0.8; c.stroke();
+  c.fillStyle = 'rgba(45,32,24,0.9)'; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+  c.strokeStyle = on ? '#d9a73a' : '#231a16'; c.lineWidth = on ? 1.3 : 0.9; c.stroke();
   var wi = itemOf('weapon', id);
   c.save(); c.translate(x, y); if (wi) Items.icon(c, wi, r * 1.6); else if (api.items) { c.scale(r / 10, r / 10); neutralIcon(c, id); } else { c.scale(r / 10, r / 10); slotIcon(c, id, 0, 0); } c.restore();
   c.globalAlpha = 1;
@@ -1608,8 +1614,8 @@ function drawHotbar(c) {
   }
   c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36';
   var pc = slots[P.piece], label = build ? (P.wreck ? 'WRECK  (F to build, B to leave)' : 'BUILD: ' + (pc ? pc.name + (pc.cost ? ' (' + pc.cost + ')' : '') : '') + '   (right click: pieces, F: wreck, B: leave)') : (gather ? 'GATHER  (Q to fight, B to build)' : 'FIGHT  (Q to gather, B to build)');
-  var col = build ? (P.wreck ? '#ff8a7a' : '#9fd8ff') : (gather ? '#9be58b' : '#ffd34d');
-  c.strokeText(label, SW / 2, y0 - 3); c.fillStyle = col; c.fillText(label, SW / 2, y0 - 3);
+  var col = build ? (P.wreck ? '#e08a7a' : '#a9c8d8') : (gather ? '#a9cf8a' : '#e6c46a');
+  c.strokeStyle = '#231a16'; c.strokeText(label, SW / 2, y0 - 3); c.fillStyle = col; c.fillText(label, SW / 2, y0 - 3);
   c.restore();
 }
 
