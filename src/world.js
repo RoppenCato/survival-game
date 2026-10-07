@@ -14,8 +14,8 @@ var T = 32, TS = 24, K = 0.75, CT = 16;
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
-var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', rock: 'stone', rockFormation: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush' };
-var HP = { birch: 14, pine: 18, oak: 22, rock: 11, rockFormation: 18, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1 };
+var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush' };
+var HP = { birch: 14, pine: 18, oak: 22, struckTree: 9, rock: 11, rockFormation: 18, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1 };
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
@@ -333,10 +333,10 @@ function make(kit, opts) {
       var roll = R(), wx = (x + 0.2 + R() * 0.6) * T, wy = (y + 0.3 + R() * 0.5) * T, p = null;
       if (Math.hypot(wx - home.x, wy - home.y) < 130) continue;
       if (t3 >= 2) {
-        if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tn = TREES[Math.floor(R() * TREES.length) % TREES.length]; p = { name: tn, s: (tn === 'pine' ? 0.54 : 0.49) + R() * 0.1, r: 11 }; w.stats.trees++; }
+        if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tn = TREES[Math.floor(R() * TREES.length) % TREES.length]; if (R() < 0.02 && kit.PROPS.struckTree) tn = 'struckTree'; p = { name: tn, s: (tn === 'pine' ? 0.54 : (tn === 'struckTree' ? 0.6 : 0.49)) + R() * 0.1, r: 11 }; w.stats.trees++; }   // now and then a tree struck by lightning: charcoal
         else if (roll > 0.955) p = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
         else if (roll > 0.948) { p = { name: R() < 0.6 ? 'rock' : 'rockFormation', s: 0.9, r: 10 }; w.stats.rocks++; }
-        else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs'][Math.floor(R() * 5)], s: 1, r: 10 };   // things of nature only: no carved stones or posts lie about
+        else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs', 'fireRing'][Math.floor(R() * 6)], s: 1, r: 10 };   // things of nature, and an old fire ring someone left: no carved stones or posts lie about
       } else if (roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
       p.x = wx; p.y = wy; p.v = Math.floor(R() * 3);

@@ -815,6 +815,22 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   true)`, `trollWalk`, `cave.path`), about fifty seconds, and anyone inside hears "Heavy steps echo from the mouth of the cave";
   if he passes near you he wakes. Debug: `trollOut()`, `trollHome(walk)`, `trollTick`, `trollSees`, `hoardTake`, `hoardFree`,
   `veinHit`.
+- **Charcoal, the furnace and copper tools (2026-10-07, Robin decided):** charcoal is never made in the furnace. **Morning embers:**
+  at every dawn each fire that burned through the night (the camp hearth, campfires, hearths, braziers) drops two lumps of
+  charcoal beside it (`morningEmbers`, from `dayTick` and waking). **The charcoal clamp** (the `charcoal` piece, prop `charcoalPit`,
+  `it.clamp`): E with eight wood lights it (`clampUse`, `it.burn`), it smokes for `CLAMP_T` 300 seconds (`drawSmoke` over it, thin in
+  the last third), then ten charcoal lie round it; when the smoke thins E can **"Seal the vent"** for five more (`clampPrompt`:
+  "Light the clamp (8 wood)" / "Seal the vent"). **In the wild** (`src/world.js`): one tree in fifty is a **lightning-struck tree**
+  (prop `struckTree`, kind tree, 9 hp; felled it gives 4 charcoal and no trunk: `Gather.CHAR_TREE`) and an **old fire ring** (prop
+  `fireRing`) lies among the things left about; E takes its two lumps and the ring is gone (`ringNear`, `ringTake`). **The furnace**
+  (piece `furnace`, prop `furnace`, 12 stone 2 wood, `it.furnace`; a clay dome on a stone foot) is a station like the hearth
+  (`stationNear` kind `furnace`, `furnaceAt`): E opens its board (tab Furnace) with the **copper bar** (2 copper ore, 2 charcoal,
+  `at: 'furnace'`, `dur` 8 seconds, revealed by charcoal); Craft or Enter pays and queues it on the furnace like a dish on a fire
+  (`smelt`; `cookTick` and the work bar take a per-job `dur` and `kind`), smoke rises while it works, and the bar waits in "Ready:
+  take". Robin chose the plain furnace (load, wait, take): no bellows, no moulds. **Copper tools and weapons** are workbench
+  recipes from bars, revealed by the first bar: axe and pick (3 bars, 2 wood), knife (1, 1), sword (4 bars, wood, leather), seax
+  (2), spear (2 bars, 3 wood), Dane axe (5 bars, 2 wood). `STACK_TALE` holds the tales of stackable things. The sandbox gives ore,
+  charcoal and bars; "Plenty of everything" too. The copper on loose rocks stays as it was: the cave's veins are the real source.
 - **The torch (2026-10-05):** two torches from 1 wood and 2 fiber at the Crafting tab (a stackable kind in the bag).
   **T** lights one (taking it from the bag, 6 minutes: `TORCH_TIME`) and puts it out again, keeping what is left; a click
   on the stack in the bag does the same. Lit, the hero carries a flickering torch (`drawTorchHeld`), a round icon by

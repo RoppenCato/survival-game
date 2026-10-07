@@ -138,7 +138,7 @@ load ore and charcoal, wait, take the bar; copper tools and weapons are workbenc
 loose rocks; the real source is **green veins on the cave walls**, mined out for good (an island's cave is a hoard you spend).
 **The troll's hoard** in his lair is open on the nights he walks out; outside he **walks about near the mouth where you can
 see him and sneak past**, so being inside is tense: morning brings him back. **The cave is rebuilt as a smooth field** (no
-square walls): winding passages, pockets, stalactites, rubble, water.
+square walls): winding passages, pockets, stalactites, rubble, water. **All of this is built (2026-10-07); see `CLAUDE.md`.**
 
 **Not chosen (kept for later):** the burnt hall's charred logs as charcoal; a charcoal burner living at a clamp (a person who
 could join); peat from a bog; bellows pumped in rhythm (Fantasy Life's blacksmith) and stone moulds that choose the tool;

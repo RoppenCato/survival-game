@@ -2725,6 +2725,36 @@ function charcoalPit(c, K, x, y, seed) {
   for (i = 0; i < 3; i++) { shape(c, ellPts(x + 36 + i * 0, y - 4 - i * 6, 4.4, 4.4, 10), K.wood, { seed: seed + 6 + i, size: 'S', sh: 1, rough: 0.2 }); }
   addLight(x - 2, y - 8, 46, 22, 100, 56, 0.45);
 }
+// The furnace (2026-10-07): a clay dome on a stone foot, a dark mouth low in front, a vent on top, soot round the mouth.
+// Ore and charcoal go in, a copper bar comes out. Smoke is drawn by the game while it works.
+function furnaceObj(c, K, x, y, seed) {
+  gshadow(c, x, y, 26, 7, 0.4);
+  shape(c, ellPts(x, y - 2, 25, 8, 12), K.rockC, { seed: seed, size: 'M', sh: 2, rough: 0.4 });
+  shape(c, [[x - 20, y - 5], [x - 19, y - 22], [x - 13, y - 36], [x, y - 43], [x + 13, y - 36], [x + 19, y - 22], [x + 20, y - 5]], M(22, 36, 44), { seed: seed + 1, size: 'M', sh: 4, rough: 0.35 });
+  [[-11, -15], [7, -27], [13, -13], [-4, -33], [10, -20]].forEach(function (q, k) { shape(c, ellPts(x + q[0], y + q[1], 4, 2.8, 8), K.rockC, { seed: seed + 5 + k, size: 'S', sh: 1, rough: 0.3 }); });
+  c.fillStyle = C(14, 20, 8); c.beginPath(); c.ellipse(x, y - 9, 7, 6, 0, Math.PI, 0); c.fill(); c.fillRect(x - 7, y - 9, 14, 6);
+  c.fillStyle = 'rgba(20,14,12,0.45)'; c.beginPath(); c.ellipse(x, y - 15, 10, 4, 0, 0, 7); c.fill();
+  c.fillStyle = C(14, 20, 8); c.beginPath(); c.ellipse(x, y - 42, 3.6, 1.6, 0, 0, 7); c.fill();
+  addLight(x, y - 9, 60, 28, 100, 56, 0.5);
+}
+// A tree struck by lightning: the top gone, the trunk split and charred black, grey ash in the cracks, two burnt stubs.
+// Felled with the axe it gives charcoal, not wood.
+function struckTree(c, K, x, y, seed) {
+  var ch = M(20, 12, 15), i;
+  gshadow(c, x, y, 15, 5, 0.4);
+  shape(c, [[x - 9, y], [x - 8, y - 30], [x - 11, y - 50], [x - 4, y - 44], [x - 1, y - 20], [x + 2, y - 60], [x + 9, y - 48], [x + 9, y - 28], [x + 8, y]], ch, { seed: seed, size: 'M', sh: 3, rough: 0.55 });
+  line(c, [[x + 6, y - 34], [x + 19, y - 44]], 2.6, ch.base, true); line(c, [[x - 7, y - 26], [x - 17, y - 30]], 2.2, ch.base, true);
+  line(c, [[x - 2, y - 6], [x - 1, y - 40]], 1.2, C(22, 8, 30), true);
+  for (i = 0; i < 6; i++) { c.fillStyle = 'rgba(190,186,180,0.55)'; c.beginPath(); c.ellipse(x - 5 + (i * 7) % 11, y - 8 - i * 7, 1.3, 0.8, 0.4, 0, 7); c.fill(); }
+}
+// An old fire ring left by someone passing: a ring of stones round grey ash with black lumps of charcoal still in it.
+function fireRing(c, K, x, y, seed) {
+  var i;
+  gshadow(c, x, y, 16, 5, 0.3);
+  shape(c, ellPts(x, y - 3, 9, 4, 10), K.ashM, { seed: seed, size: 'S', flat: true, rough: 0.4 });
+  for (i = 0; i < 8; i++) { var a = i / 8 * 6.28; shape(c, ellPts(x + Math.cos(a) * 12, y - 3 + Math.sin(a) * 5, 3.6, 2.6, 8), K.rockC, { seed: seed + 1 + i, size: 'S', sh: 1, rough: 0.3 }); }
+  [[-3, -4], [2, -2], [-1, -1]].forEach(function (q, k) { shape(c, ellPts(x + q[0], y + q[1], 2.6, 1.6, 8), K.charM, { seed: seed + 12 + k, size: 'S', sh: 1, rough: 0.3 }); });
+}
 function beeSkeps(c, K, x, y, seed) {
   var R = rng(seed), i;
   gshadow(c, x, y, 26, 5, 0.35);
@@ -2933,6 +2963,9 @@ var PROPS = {
   fishWeir: { b: [-48, -30, 48, 14], f: function (c, K, s) { fishWeir(c, K, 0, 0, s); } },
   trailStone: { b: [-16, -32, 18, 6], f: function (c, K, s) { trailStone(c, K, 0, 0, s); } },
   charcoalPit: { b: [-42, -72, 48, 10], f: function (c, K, s) { charcoalPit(c, K, 0, 0, s); } },
+  furnace: { b: [-28, -48, 28, 8], f: function (c, K, s) { furnaceObj(c, K, 0, 0, s); } },
+  struckTree: { b: [-20, -64, 22, 6], f: function (c, K, s) { struckTree(c, K, 0, 0, s); } },
+  fireRing: { b: [-17, -10, 17, 8], f: function (c, K, s) { fireRing(c, K, 0, 0, s); } },
   beeSkeps: { b: [-29, -41, 29, 8], f: function (c, K, s) { c.save(); c.scale(0.85, 0.85); beeSkeps(c, K, 0, 0, s); c.restore(); } },
   woodenBridge: { b: [-52, -34, 52, 16], f: function (c, K, s) { woodenBridge(c, K, 0, 0, s); } },
   farmland: { b: [-58, -28, 58, 12], f: function (c, K, s) { farmland(c, K, 0, 0, s); } },
@@ -3012,7 +3045,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
@@ -3303,7 +3336,7 @@ function spotHit(G, o, t, hero) {              // does a blow from where the her
 function crackAng(G, o) { return G && G.crackLook === 4 ? LIT_ANG : hash(Math.round(o.x) + 1, Math.round(o.y), 4) * 6.283; }
 function crackHit(G, o, hero) { if (!G.cracks || o.kind !== 'stone') return false; var ca = crackAng(G, o), a = Math.atan2((hero.y - o.y) * K, hero.x - o.x), d = Math.atan2(Math.sin(a - ca), Math.cos(a - ca)); return Math.abs(d) < 0.75; }
 function rhythmHit(G, o, t) { if (!G.rhythm || o.lastHit == null) return false; var dt = t - o.lastHit; return dt >= G.rhythmAfter && dt <= G.rhythmAfter + G.rhythmWindow; }
-var TREE_WOOD = { oak: 14, pine: 11, birch: 9 }, ROCK_STONE = { rock: 3, rockFormation: 6 };
+var TREE_WOOD = { oak: 14, pine: 11, birch: 9 }, ROCK_STONE = { rock: 3, rockFormation: 6 }, CHAR_TREE = { struckTree: 4 };   // a lightning-struck tree gives charcoal, no trunk
 function treeLen(s, o) { return -s.t * o.s * 0.8; }   // how far along the ground the trunk reaches when it lies
 // One blow. ctx: { power, right, hero, t, s (sprite bounds), ev }. Returns what happened: { mult, spot, rhythm, crack, felled }.
 function hit(G, o, ctx) {
@@ -3337,9 +3370,10 @@ function tick(G, o, dt, ctx) {
     o.dropped = true; var s = ctx.s, len = s ? treeLen(s, o) : 60, dir = o.leanDir || 1, wood = TREE_WOOD[o.name] || 4;
     if (ev.sfx) ev.sfx('fall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
-    if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
+    if (CHAR_TREE[o.name]) { if (ev.drop) ev.drop('charcoal', o.x + dir * len * 0.6, o.y, CHAR_TREE[o.name]); }
+    else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
     else if (ev.drop) ev.drop('wood', o.x + dir * len * 0.6, o.y, wood);
-    if (G.nests && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
+    if (G.nests && !CHAR_TREE[o.name] && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
     // what lies in the line it fell along: trees come down after it, the hero is struck
     var x0 = o.x + dir * 12, x1 = o.x + dir * len, lo = Math.min(x0, x1), hi = Math.max(x0, x1);
     if (G.fallFells && ctx.trees) ctx.trees.forEach(function (q) { if (q === o || q.kind !== 'tree' || q.dying != null) return; if (q.x >= lo - 4 && q.x <= hi + 4 && Math.abs(q.y - o.y) < 22 * G.fallReach) { q.hp = 0; q.dying = 0; q.leanDir = dir; q.chained = true; if (ev.fell) ev.fell(q); } });

@@ -47,7 +47,7 @@ function spotHit(G, o, t, hero) {              // does a blow from where the her
 function crackAng(G, o) { return G && G.crackLook === 4 ? LIT_ANG : hash(Math.round(o.x) + 1, Math.round(o.y), 4) * 6.283; }
 function crackHit(G, o, hero) { if (!G.cracks || o.kind !== 'stone') return false; var ca = crackAng(G, o), a = Math.atan2((hero.y - o.y) * K, hero.x - o.x), d = Math.atan2(Math.sin(a - ca), Math.cos(a - ca)); return Math.abs(d) < 0.75; }
 function rhythmHit(G, o, t) { if (!G.rhythm || o.lastHit == null) return false; var dt = t - o.lastHit; return dt >= G.rhythmAfter && dt <= G.rhythmAfter + G.rhythmWindow; }
-var TREE_WOOD = { oak: 14, pine: 11, birch: 9 }, ROCK_STONE = { rock: 3, rockFormation: 6 };
+var TREE_WOOD = { oak: 14, pine: 11, birch: 9 }, ROCK_STONE = { rock: 3, rockFormation: 6 }, CHAR_TREE = { struckTree: 4 };   // a lightning-struck tree gives charcoal, no trunk
 function treeLen(s, o) { return -s.t * o.s * 0.8; }   // how far along the ground the trunk reaches when it lies
 // One blow. ctx: { power, right, hero, t, s (sprite bounds), ev }. Returns what happened: { mult, spot, rhythm, crack, felled }.
 function hit(G, o, ctx) {
@@ -81,9 +81,10 @@ function tick(G, o, dt, ctx) {
     o.dropped = true; var s = ctx.s, len = s ? treeLen(s, o) : 60, dir = o.leanDir || 1, wood = TREE_WOOD[o.name] || 4;
     if (ev.sfx) ev.sfx('fall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
-    if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
+    if (CHAR_TREE[o.name]) { if (ev.drop) ev.drop('charcoal', o.x + dir * len * 0.6, o.y, CHAR_TREE[o.name]); }
+    else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
     else if (ev.drop) ev.drop('wood', o.x + dir * len * 0.6, o.y, wood);
-    if (G.nests && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
+    if (G.nests && !CHAR_TREE[o.name] && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
     // what lies in the line it fell along: trees come down after it, the hero is struck
     var x0 = o.x + dir * 12, x1 = o.x + dir * len, lo = Math.min(x0, x1), hi = Math.max(x0, x1);
     if (G.fallFells && ctx.trees) ctx.trees.forEach(function (q) { if (q === o || q.kind !== 'tree' || q.dying != null) return; if (q.x >= lo - 4 && q.x <= hi + 4 && Math.abs(q.y - o.y) < 22 * G.fallReach) { q.hp = 0; q.dying = 0; q.leanDir = dir; q.chained = true; if (ev.fell) ev.fell(q); } });
