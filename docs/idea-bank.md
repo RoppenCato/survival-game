@@ -107,6 +107,18 @@ At home and in your own lands:
 
 Natural places: fjords, glaciers, sea ice, bird cliffs, whale and walrus grounds, hot springs.
 
+## Reminder: Fantasy Life (Robin, 2026-10-07)
+
+Robin wants to take inspiration from the **Fantasy Life** games for the idea bank and come back to it: the lives (jobs) with
+their own tools, ranks and tasks, the way gathering and crafting are little games of their own, the cheerful tone. **Bring it
+up** when gathering, crafting, the hird's jobs or progression are discussed again. Not discussed yet.
+
+## Gathering: making chopping, mining and picking satisfying (Robin, 2026-10-07; ideas, not decided)
+
+Robin's brief: more satisfying and interesting, never bothersome or complicated. References: Valheim's falling trees that
+fell other trees; Dragonwilds' magic that fells many; Palworld's hit points on a thing. The ideas are in the chat of
+2026-10-07 and will be moved here when chosen.
+
 ## Smaller ideas
 
 - **The central trading hub** (Robin: "there was one in history"). The best fits are **Hedeby** (Denmark, the
