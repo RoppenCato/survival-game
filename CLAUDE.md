@@ -99,6 +99,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
+| `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07): the game started on the big island at a carver's bench, a dragon ring on the arm, every rune known; a board on the left to change the ring's metal, know or forget every rune, bring beasts, make it night, go back to the bench, start over. Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
 template and one line in `PAGES` in `tools/build.py`.

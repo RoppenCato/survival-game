@@ -791,7 +791,9 @@ __COMBAT__
   }
 
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
-  var SAVE = 'game.save', gone = {}, saveT = 0;
+  // ?scene=runes is the Rune Editor (2026-10-07): the game itself with its own save, started on the big island at a carver's bench
+  var SCENE = (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
+  var SAVE = SCENE === 'runes' ? 'game.save.runes' : 'game.save', gone = {}, saveT = 0;
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
   function save() { try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
@@ -2760,6 +2762,7 @@ __COMBAT__
       if (bookOpen) drawBook(c);
       if (ringOpen) drawRingBoard(c);
       drawRite(c);
+      if (SCENE === 'runes' && !pauseOpen && !invOpen && !ringOpen && !menu) drawRunePanel(c);
       if (pauseOpen) { rows = []; if (adminOpen) drawAdmin(c); else drawPause(c); }
       if (menu) drawMenu(c);
       c.restore();
@@ -2864,6 +2867,7 @@ __COMBAT__
       if (pr && e.button === 0) { var id = pr.p.id; if (id === 'admin') { adminOpen = true; return; } if (id === 'music') { musicDrag = true; musicSet(mouseS.x, 120, 160); return; } pauseOpen = false; if (id === 'sandbox') sandbox(); else if (id === 'restart') start(true); else if (id === 'newisle') { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); } }
       return;
     }
+    if (SCENE === 'runes' && !pauseOpen && !invOpen && !ringOpen && !menu && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
     if (mapOpen) { mapOpen = false; return; }
     if (musterOpen) { if (e.button === 0) musterClick(); else musterOpen = false; return; }
     if (ringOpen) { ringClick(e.button); return; }
@@ -2956,7 +2960,7 @@ __COMBAT__
       var P = hero(); if (sv.hero && (isLand(sv.hero.x, sv.hero.y) || dockAt(Math.floor(sv.hero.x / T), Math.floor(sv.hero.y / T)))) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; P.lvl = sv.lvl || 0; } else toCamp();
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null }; raftFit(); if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }
-    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; }   // he wakes in the wreck: the screen opens slowly
+    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
     spawnBoars(); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Press Tab for your inventory, B to build.'; save();
@@ -3023,6 +3027,64 @@ __COMBAT__
     }
     c.restore();
   }
+  /* ---------- the Rune Editor (game.html?scene=runes): a hut with a carver's bench, a workbench and a fireplace on the big
+     island, every rune known, a ring on the arm, the hero at the bench; a small board on the left to change the ring's
+     metal, bring beasts, turn the night on and start over. Its save is game.save.runes, so the real game is untouched. */
+  var runePanel = { x: 6, y: 92, w: 92, rows: [] }, runeSite = null;
+  function runesScene() {
+    var q = w.isles[1] || w.isles[0], R2 = kit.rng(spec.seed * 7 + 3), P = hero(), site = null, tries, x, y, tx, ty, kk = Build.key;
+    for (tries = 0; tries < 900 && !site; tries++) {
+      var a = R2() * 6.283, d = R2() * q.r * 0.55 * T; x = q.x * T + Math.cos(a) * d; y = q.y * T + Math.sin(a) * d * 0.9; tx = Math.floor(x / T); ty = Math.floor(y / T);
+      var ok = x > 300 && y > 300 && x < WX - 300 && y < WY - 300, dx, dy;
+      for (dy = -2; ok && dy <= 4; dy++) for (dx = -2; dx <= 6; dx++) { var cd = code(tx + dx, ty + dy); if (cd < 2 || cd === 255) { ok = false; break; } }
+      if (ok && caveMouth && Math.hypot(x - caveMouth.x, y - caveMouth.y) < 300) ok = false;
+      if (ok && hamlet && Math.hypot(x - (hamlet.tx + 6) * T, y - (hamlet.ty + 5) * T) < 400) ok = false;
+      if (ok) site = { tx: tx, ty: ty };
+    }
+    if (!site) { toast('No room for the rune hut'); return; }
+    var near = []; w.eachProp(function (o) { if (Math.abs(o.x - (site.tx + 2) * T) < 160 && Math.abs(o.y - (site.ty + 1.5) * T) < 130) near.push(o); }); near.forEach(function (o) { w.removeProp(o); });
+    for (x = site.tx; x < site.tx + 4; x++) { B.H[kk(x, site.ty)] = { t: 'wall', m: 0 }; B.H[kk(x, site.ty + 3)] = { t: x === site.tx + 1 ? 'door' : 'wall', m: 0 }; }
+    for (y = site.ty; y < site.ty + 3; y++) { B.V[kk(site.tx, y)] = { t: y === site.ty + 1 ? 'window' : 'wall', m: 0 }; B.V[kk(site.tx + 4, y)] = { t: 'wall', m: 0 }; }
+    for (y = site.ty; y < site.ty + 3; y++) for (x = site.tx; x < site.tx + 4; x++) B.floors[kk(x, y)] = 0;
+    Build.ensurePosts(B);
+    function item(name, tx2, ty2, extra) { var it = { name: name, x: (tx2 + 0.5) * T, y: (ty2 + 0.5) * T, r: (PIECES.filter(function (p) { return p.prop === name; })[0] || { r: 6 }).r }; for (var k in extra || {}) it[k] = extra[k]; B.items.push(it); return it; }
+    item('carverBench', site.tx + 2.5, site.ty + 0.5, { carver: true }); item('workbench', site.tx + 0.6, site.ty + 0.5, { bench: true }); item('fireplace', site.tx + 3.4, site.ty + 2.2, { hearth: true, chimney: true }); item('bed', site.tx + 0.6, site.ty + 2.2, { bed: true }); item('chest', site.tx + 1.6, site.ty + 2.4, { store: [null, null, null, null, null, null, null, null, null, null, null, null] });
+    bDirty = true;
+    P.x = (site.tx + 2.5) * T; P.y = (site.ty + 1.6) * T; P.face = -Math.PI / 2; P.lvl = 0; P.mode = 'fight';
+    ['wood', 'stone', 'fiber', 'copper', 'leather', 'berries', 'meat'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
+    [Items.make('sword', 'copper'), Items.make('bow', 'wood'), Items.make('axe', 'copper'), Items.make('pick', 'copper'), Items.make('knife', 'copper')].forEach(function (it) { if (!barPut(it)) addThing(it); });
+    quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 300; caveFade = 0;
+    seen.met = 1; seen.village = 1; seen.hamlet = 1; seen.cave = 1;
+    ring = Runes.newRing('dragon'); seen.ring = 1; heroRingSync(); Runes.LIST.forEach(function (r) { RS.learnt[r.id] = { uses: 0, how: 'the editor' }; });
+    runeSite = site; recount(); save();
+  }
+  function runeRows() {
+    return [{ id: 'bronze', name: 'Bronze ring' }, { id: 'silver', name: 'Silver ring' }, { id: 'twisted', name: 'Twisted silver' }, { id: 'gold', name: 'Gold ring' }, { id: 'dragon', name: 'Dragon ring' }, { id: 'learn', name: 'Know every rune' }, { id: 'forget', name: 'Forget them all' }, { id: 'beasts', name: 'Beasts: boar, wolf, adder' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'home', name: 'Back to the bench' }, { id: 'reset', name: 'Start the scene over' }];
+  }
+  function runeAct(id) {
+    var P = hero();
+    if (Runes.METALS[id]) { var old = ring; ring = Runes.newRing(id); if (old) old.coils.forEach(function (c0) { if (c0.id) Runes.cut(ring, c0.id, RS.learnt); }); heroRingSync(); toast(Runes.METALS[id].name + ' ring: ' + ring.coils.length + ' coils'); }
+    else if (id === 'learn') { Runes.LIST.forEach(function (r) { if (!RS.learnt[r.id]) RS.learnt[r.id] = { uses: 0, how: 'the editor' }; }); toast('Every rune known'); }
+    else if (id === 'forget') { RS.learnt = {}; RS.earned = {}; if (ring) ring.coils.forEach(function (c0) { c0.id = null; }); toast('Nothing known'); }
+    else if (id === 'beasts') { ['boar', 'wolf', 'snake'].forEach(function (k, i) { var e = placeAnimal(k, 0, { x: P.x + 90 + i * 40, y: P.y + 70 }, false); if (e) { e.awake = false; e.aggro = 60; } }); toast('Beasts, south of you'); }
+    else if (id === 'night') { day.t = light() > 0.5 ? 300 : 1300; }
+    else if (id === 'home') { if (runeSite) { P.x = (runeSite.tx + 2.5) * T; P.y = (runeSite.ty + 1.6) * T; P.lvl = 0; } }
+    else if (id === 'reset') { try { localStorage.removeItem(SAVE); } catch (e) {} location.reload(); return; }
+    save();
+  }
+  function drawRunePanel(c) {
+    var rows = runeRows(), rh = 11, x0 = runePanel.x, y0 = runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [];
+    c.save(); c.globalAlpha = 0.92; wood(c, x0, y0, w0, h0);
+    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Rune editor', x0 + 6, y0 + 10);
+    rows.forEach(function (r, i) {
+      var yy = y0 + 16 + i * rh, hov = mouseS && mouseS.x > x0 + 3 && mouseS.x < x0 + w0 - 3 && mouseS.y >= yy && mouseS.y < yy + rh, on = ring && ring.metal === r.id;
+      runePanel.rows.push({ id: r.id, x: x0 + 3, y: yy, w: w0 - 6, h: rh });
+      c.fillStyle = on ? 'rgba(255,214,90,0.22)' : (hov ? 'rgba(255,230,180,0.16)' : 'rgba(0,0,0,0.22)'); c.fillRect(x0 + 3, yy, w0 - 6, rh - 1);
+      c.font = (on ? 'bold ' : '600 ') + '5.5px system-ui, sans-serif'; c.fillStyle = on ? '#ffd34d' : '#f6e2b8'; c.fillText(r.name, x0 + 7, yy + 7.5);
+    });
+    c.restore();
+  }
+  function runePanelHit() { if (!mouseS) return null; for (var i = 0; i < runePanel.rows.length; i++) { var r = runePanel.rows[i]; if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y < r.y + r.h) return r.id; } return null; }
   function giveBoat(kind) {                // a vessel by the hero, for testing: a seven-keel boat with strakes and a seat, or the default raft
     var P = hero(), sp = raftSpot(P.x, P.y); if (!sp) return false; var parts = [], i;
     if (kind === 'boat') { for (i = 0; i < 7; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } parts.push({ id: 'thwart', i: 3, j: 3 }); }
