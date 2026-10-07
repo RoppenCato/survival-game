@@ -1418,7 +1418,15 @@ function drawCreature(c, e) {
 function drawEnemy(c, e) {
   var fn = e.creature ? drawCreature : ((e.type === 'bot' || e.type === 'bossbot') ? drawBot : (e.type === 'turret' ? drawTurret : drawBoss));
   if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
-  var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0;
+  var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0, A = e.cfg && e.cfg.atk;
+  if (A && A.kind === 'arc' && (e.state === 'windup' || (e.state === 'lunge' && !e.hitDone))) {   // the blow to come, marked on the ground
+    var k2 = e.state === 'windup' ? e.t / e.dur : 1, R2 = e.r + (A.reach || 20) + 6, a0 = e.dirLock - (A.arc || 1.6) / 2, a1 = e.dirLock + (A.arc || 1.6) / 2;
+    c.save(); c.translate(e.x, e.y * K); c.scale(1, K);
+    c.fillStyle = 'rgba(220,40,30,' + (0.08 + 0.16 * k2) + ')'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R2, a0, a1); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(255,70,50,' + (0.35 + 0.4 * k2) + ')'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R2, a0, a1); c.closePath(); c.stroke();
+    if (e.state === 'lunge') { var u = Math.min(1, e.t / (e.dur * (A.hitAt || 0.4))), sa2 = a0 + (a1 - a0) * u; c.strokeStyle = 'rgba(255,120,80,0.9)'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(sa2) * R2, Math.sin(sa2) * R2); c.stroke(); c.fillStyle = 'rgba(255,90,60,0.25)'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R2, a0, sa2); c.closePath(); c.fill(); }
+    c.restore();
+  }
   flashDraw(c, e.x + jx, e.y * K, function (s) {
     if (e.sq > 0.01) {
       var k = e.sq, f = 0.3 * k * Math.cos((1 - k) * 7), ax = Math.abs(Math.cos(e.sqAng)), ay = Math.abs(Math.sin(e.sqAng)) * K;

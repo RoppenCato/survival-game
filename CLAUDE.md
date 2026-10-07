@@ -795,12 +795,18 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   `trollArms`, `trollNose`, `trollEars`, `trollBelly`, `trollMoss`, and flags `trollBeads`, `trollSack`, `trollTail`; a new
   colour `moss`. The **Creature Editor** has the Troll body plan, the Mountain troll and Stone troll models, a Troll panel with
   those sliders and details, and the moss swatch under Colours. The stone troll is the same drawing in grey (glow equal to
-  body: no lichen, no beads, no eye light). **He turns (Robin):** `s.ang` picks a side view that narrows as he turns, a
-  **front view** (facing south: both arms down to the ground, the face, the beads) and a **back view** (the mane and the hump,
-  the ears and the back of the skull under its hair, the tail hanging), cross-faded over a short arc. **His blow is a great
+  body: no lichen, no beads, no eye light). **He turns like the animals (Robin, second pass):** every part is laid out in his
+  own space (forward, sideways, up) and projected with the heading `s.ang` the way `animal3D` does (`pt`, `depth`, `KD` 0.62),
+  the parts sorted far to near (`items`, `at(dep, fn)`): the body is the turned ellipsoid's outline with the hump at the back,
+  the mane hangs from rings round the body (longer on the back half and at the hem), the face shows as the head turns toward
+  you and the hair over the head falls behind, the ears sort against the head, the tail sorts behind. No squash, no crossfade.
+  `H.eyes` records the eyes for the night glow. **His blow is a great
   slow sweep** (Robin: very slow, very hard, a lot of health): `ATTACKS.troll` windup 1.6, a 62-unit reach over a 3.8-radian
   arc, recover 2.2, cd 2.6, heavy; 80 health, speed 0.6; the game's troll does 40. The arm swings through the sweep in the
-  drawing (`sweep` from the lunge's `k`) with a pale trail. **The Creature Editor (Robin, 2026-10-07):** a **Creature** panel on
+  drawing (`sweep` from the lunge's `k`) with a pale trail, **and the engine marks an arc attack on the ground** (`drawEnemy`
+  in `src/combat.js`): a red wedge of the reach and arc fills through the windup, and a bright edge sweeps across it through the
+  blow until it lands. The Creature Editor's arena gives a creature the attack of the beast its slot names (`lib.animalAttack`)
+  when the behaviour is the plain one, so the troll sweeps there too. **The Creature Editor (Robin, 2026-10-07):** a **Creature** panel on
   top with a name, Save (into `creature.library` in this browser), New creature (a variation of what is on screen), Delete, the
   saved creatures as buttons, and **In the game**: pick which beast of the game the design replaces (`game.creatures`, applied
   on load by `lib.useAnimal(key, spec)`: the look and the spec's numbers; the game keeps its own counts, damage and drops) with

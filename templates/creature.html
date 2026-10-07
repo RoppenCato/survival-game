@@ -482,7 +482,7 @@ __COMBAT__
     D.W.enemies.forEach(function (e) {
       if (!e.creature) return;
       e.hold = hold; e.r = Math.max(4, Math.min(40, BASE_R[e.kind || 0] * spec.size)); e.aggro = spec.aggro; e.flee = spec.behave === 3;
-      e.cfg = { speed: 58 * spec.speed, windup: spec.windup, lunge: 175 * spec.lunge };
+      var A2 = (spec.behave === 0 || spec.behave === 3) && lib.animalAttack(meta.slot); e.cfg = { speed: 58 * spec.speed, windup: spec.windup, lunge: 175 * spec.lunge, dmg: 12, atk: A2 || undefined };   // the slot's own attack (the troll's sweep) with the plain behaviour
     });
     if (noDmg && !D.P.dead) D.P.hp = D.P.maxHp;
     if (D.P.dead) { Combat.reset(); Combat.clear(); addOne(); }

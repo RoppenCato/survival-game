@@ -1031,166 +1031,121 @@ function animal3D(c, x, y, s, H) {
 // The mountain troll, after the old illustrations: hunched, hairy, heavy, with arms that hang to the knees and a small
 // head sunk between the shoulders. Drawn facing right and turned by s.dir; s.state and s.k (progress) give the pose:
 // arms swing as it walks, rise over its head in the windup, and come down in the slam. Plan 7 of the creature spec.
-/* The mountain troll, after John Bauer (2026-10-07, Robin: scarier, hairier, old and ancient): a boulder of a body hunched
-   under its own hump, long shaggy hair down the back gone grey with age, lichen and moss growing on it, arms so long the
-   knuckles rest on the ground, big flat feet, a long tufted tail, a small low head with a heavy brow, tiny eyes, a long
-   drooping nose and great pointed ears, a beard of strands, and the trinkets trolls hoard hanging in the hair: beads and a
-   ring. Spec keys (all troll-): hair (length), nose, ears, hunch, arms, moss, age (grey), belly, beads, sack, tail. Colours:
-   body (skin), belly, accent (hair), moss, eye, glow (the warning), line. A stone troll has glow equal to its body. */
+/* The mountain troll, after John Bauer (2026-10-07, Robin: scarier, hairier, old and ancient; and he turns like the animals):
+   a boulder of a body hunched under its own hump, long shaggy hair down the back gone grey with age, lichen and moss growing
+   on it, arms so long the knuckles rest on the ground, big flat feet, a long tufted tail, a small low head with a heavy brow,
+   tiny eyes, a long drooping nose and great pointed ears, a beard of strands, and the trinkets trolls hoard hanging in the
+   hair: beads and a ring. Every part is laid out in his own space (forward, sideways, up) and turned to the heading s.ang
+   the way animal3D does, with the parts sorted far to near, so he faces any way and turns smoothly. His blow is a great slow
+   sweep of the arm across the front. Spec keys (all troll-): hair, nose, ears, hunch, arms, moss, age, belly, beads, sack, tail.
+   Colours: body (skin), belly, accent (hair), moss, eye, glow (the warning), line. A stone troll has glow equal to its body. */
 function trollD(c, x, y, s, H) {
-  var sp = H.spec, C = H.pal, sz = sp.size * 0.95, dir = s.dir < 0 ? -1 : 1, t = s.t || 0, mv = Math.min(1, s.move || 0), ph = s.phase || 0, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
-  var wind = st === 'windup' ? k : 0, slam = st === 'lunge', down = st === 'recover' || st === 'stunned' || st === 'stagger';
-  var bob = Math.sin(ph * 2) * 1.1 * mv + Math.sin(t * 1.6) * 0.5, lean = slam ? 5 : (wind ? -3 * wind : (down ? 2 : 0)), lw = 1.4 / sz;
+  var sp = H.spec, C = H.pal, sz = sp.size * 0.95, t = s.t || 0, mv = Math.min(1, s.move || 0), ph = s.phase || 0, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
+  var ang = s.ang == null ? (s.dir < 0 ? Math.PI : 0) : s.ang, ca = Math.cos(ang), sa = Math.sin(ang), KD = 0.62;
+  var wind = st === 'windup' ? k : 0, slam = st === 'lunge', down = st === 'recover' || st === 'stunned' || st === 'stagger', sweep = slam ? Math.min(1, k * 1.15) : -1;
+  var bob = Math.sin(ph * 2) * 1.1 * mv + Math.sin(t * 1.6) * 0.5, lean = slam ? 3 : (wind ? -2 * wind : (down ? 1 : 0)), lw = 1.4 / sz;
   var skin = C.body, belly = C.belly, line = C.line, stone = C.glow === C.body, skinDk = mixHex(skin, '#000000', 0.18);
   var HL = sp.trollHair, NS = sp.trollNose, ER = sp.trollEars, HU = sp.trollHunch, AR = sp.trollArms, MO = stone ? 0 : sp.trollMoss, BE = sp.trollBeads && !stone, SK = sp.trollSack, TL = sp.trollTail, BL = sp.trollBelly, AGE = sp.trollAge;
-  var hairCol = stone ? mixHex(skin, '#ffffff', 0.12) : mixHex(C.accent, '#d9d4c8', AGE * 0.75), hairDk = mixHex(hairCol, '#000000', 0.32), hairLt = mixHex(hairCol, '#ffffff', 0.25), moss = C.moss || '#8fa86a';
+  var hairCol = stone ? mixHex(skin, '#ffffff', 0.12) : mixHex(C.accent, '#d9d4c8', AGE * 0.75), hairDk = mixHex(hairCol, '#000000', 0.32), hairLt = mixHex(hairCol, '#ffffff', 0.25), moss = C.moss || '#8fa86a', lich = mixHex(moss, skin, 0.3);
   function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
-  var ang = s.ang, ca = ang == null ? dir : Math.cos(ang), sa = ang == null ? 0 : Math.sin(ang), aca = Math.abs(ca), sideA = ang == null ? 1 : Math.max(0, Math.min(1, (aca - 0.34) / 0.18));
-  if (ang != null) dir = ca >= 0 ? 1 : -1;
-  var sweep = slam ? Math.min(1, k * 1.15) : -1;   // the sweep of the arm through the blow, 0 raised behind to 1 landed in front
-  function strand(x0, y0, len, ang, w, col, i) {       // one hanging hair: a little curve, a little sway
-    var sw = Math.sin(t * 1.1 + i * 1.7) * 0.05, a = ang + sw, x1 = x0 + Math.cos(a) * len, y1 = y0 + Math.sin(a) * len, cx = (x0 + x1) / 2 + Math.cos(a - 1.57) * len * (0.1 + 0.1 * hs(i, 3)), cy = (y0 + y1) / 2 + Math.sin(a - 1.57) * len * 0.1;
-    c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(cx, cy, x1, y1); c.stroke();
+  function pt(f, d, h) { return [f * ca - d * sa, (f * sa + d * ca) * KD - h]; }     // body space to the screen
+  function depth(f, d) { return f * sa + d * ca; }                                    // toward the camera
+  var items = [];
+  function at(dep, fn) { items.push({ dep: dep, fn: fn }); }
+  function strandAt(p, len, lean2, w, col, i) {                                      // a hanging hair from a screen point, swaying
+    var sw = Math.sin(t * 1.1 + i * 1.7) * 0.05, a = 1.57 + lean2 + sw, x1 = p[0] + Math.cos(a) * len, y1 = p[1] + Math.sin(a) * len, cx = (p[0] + x1) / 2 + Math.cos(a - 1.57) * len * (0.1 + 0.1 * hs(i, 3)), cy = (p[1] + y1) / 2 + Math.sin(a - 1.57) * len * 0.1;
+    c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(p[0], p[1]); c.quadraticCurveTo(cx, cy, x1, y1); c.stroke();
   }
-  function tuft(x0, y0, n, len, ang, spread, w, seed) { for (var i = 0; i < n; i++) { var a = ang + (hs(i, seed) - 0.5) * spread, L = len * (0.6 + 0.6 * hs(i, seed + 1)); strand(x0 + (hs(i, seed + 2) - 0.5) * 3, y0, L, a, w, i % 3 === 0 ? hairDk : (i % 3 === 1 ? hairCol : hairLt), i + seed); } }
-  function limb(x0, y0, x1, y1, w, col) { c.strokeStyle = line; c.lineWidth = w + 2 * lw; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.strokeStyle = col; c.lineWidth = w; c.stroke(); }
-  function hand(fx, fy, col, up) {                     // a great knobby hand: a wide palm and four long fingers, knuckles up
-    c.beginPath(); c.ellipse(fx, fy - (up ? 0 : 1), 4.6, 3, up ? -0.7 : 0.1, 0, 7); c.fillStyle = col; c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
-    for (var f = 0; f < 4; f++) {
-      var a = up ? -2.1 + f * 0.4 : (-0.12 + f * 0.1), L = (up ? 5 : 7.5) - Math.abs(f - 1.5) * 0.9, x0 = fx + (up ? 0 : 1.5) + (f - 1.5) * (up ? 1.4 : -0.9), y0 = fy - (up ? 0 : 1) + (up ? 0 : (f - 1.5) * 1.9), kx = x0 + Math.cos(a) * L * 0.5, ky = y0 + Math.sin(a) * L * 0.5 - (up ? 0 : 2), x1 = x0 + Math.cos(a) * L, y1 = y0 + Math.sin(a) * L + (up ? 0 : 0.6);
-      c.strokeStyle = line; c.lineWidth = 2 + 2 * lw; c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(kx, ky, x1, y1); c.stroke(); c.strokeStyle = f < 2 ? mixHex(col, '#000000', 0.12) : col; c.lineWidth = 2; c.stroke();
-      c.strokeStyle = skinDk; c.lineWidth = 0.7; c.beginPath(); c.arc(kx, ky + 0.3, 1.1, 3.6, 5.8); c.stroke();   // the knuckle
-      c.fillStyle = mixHex(col, '#000000', 0.45); c.beginPath(); c.arc(x1 + Math.cos(a) * 0.6, y1 + 0.3, 0.8, 0, 7); c.fill();   // a dark nail
+  function hairOf(i) { return i % 3 === 0 ? hairDk : (i % 3 === 1 ? hairCol : hairLt); }
+  function limb(p, q, w, col) { c.lineCap = 'round'; c.strokeStyle = line; c.lineWidth = w + 2 * lw; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); c.stroke(); c.strokeStyle = col; c.lineWidth = w; c.stroke(); }
+  function hand(f, d, h, col, up, sg) {                                              // a great knobby hand: the palm and four long fingers
+    var p = pt(f, d, h); c.beginPath(); c.ellipse(p[0], p[1] - (up ? 0 : 1), 4.6, 3.2, 0, 0, 7); c.fillStyle = col; c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
+    for (var i = 0; i < 4; i++) {
+      var dd = d + (i - 1.5) * 2.2 * (sg || 1), L = 7.5 - Math.abs(i - 1.5) * 0.9, p0 = pt(f + 1.5, dd, h), pk = up ? pt(f + 2, dd, h + L * 0.6) : pt(f + 1.5 + L * 0.5, dd, h + 2), p1 = up ? pt(f + 3, dd, h + L) : pt(f + 1.5 + L, dd, h);
+      c.strokeStyle = line; c.lineWidth = 2 + 2 * lw; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(pk[0], pk[1], p1[0], p1[1]); c.stroke(); c.strokeStyle = i < 2 ? mixHex(col, '#000000', 0.1) : col; c.lineWidth = 2; c.stroke();
+      c.fillStyle = mixHex(col, '#000000', 0.45); c.beginPath(); c.arc(p1[0], p1[1], 0.8, 0, 7); c.fill();
     }
   }
-  function arm(far) {
-    var sx = (far ? -2 : 4) + lean * 0.3, sy = -36 + bob - 2 * HU, sw = Math.sin(ph) * 4 * mv * (far ? -1 : 1), col = far ? skinDk : skin, fx, fy, up = false;
-    if (slam && !far) { var u0 = sweep, swA = -2.3 + u0 * 2.9; fx = sx + Math.cos(swA) * 42 * (0.6 + 0.4 * Math.sin(u0 * 3.14)); fy = sy + Math.sin(swA) * 42 * (0.6 + 0.4 * Math.sin(u0 * 3.14)) + 8; up = u0 < 0.5; if (!stone) { c.save(); c.globalAlpha = 0.28 * (1 - u0); c.strokeStyle = '#f6e2b8'; c.lineWidth = 7; c.beginPath(); c.arc(sx, sy + 8, 40, -2.3, swA); c.stroke(); c.restore(); } }
-    else if (slam) { fx = 21 - 5; fy = -3; }
-    else if (wind) { fx = 6 + (far ? -6 : 3); fy = -6 - 50 * wind; up = true; }
-    else { fx = 8 + 10 * AR + sw + (far ? -6 : 0); fy = -1 + (down ? 2 : 0); }
-    var ex = sx + (fx - sx) * 0.5 + (wind ? -6 : 3), ey = sy + (fy - sy) * 0.55 + (wind ? 0 : 4);
-    limb(sx, sy, ex, ey, 7, col); limb(ex, ey, fx, fy, 6, col); hand(fx, fy, col, up);
-    for (var q = 0; q < 4 * HL; q++) { var tt = 0.15 + q * 0.18, hx0 = sx + (ex - sx) * tt, hy0 = sy + (ey - sy) * tt; strand(hx0, hy0 + 2, 5 + 4 * HL, 1.75 + (hs(q, 9) - 0.5) * 0.5, 1, q % 2 ? hairDk : hairCol, q + 40); }
-  }
-  function sideView() {
-  c.save(); c.translate(x, y); c.scale(sz * dir * Math.max(0.5, aca), sz); c.lineJoin = 'round'; c.lineCap = 'round';
-  c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(2, 1, 20, 5.5, 0, 0, 7); c.fill();
-  // the tail, behind everything
-  if (TL) { c.strokeStyle = line; c.lineWidth = 2.6 + 2 * lw; c.beginPath(); c.moveTo(-9, -11 + bob); c.quadraticCurveTo(-22, -2 + bob, -27, -9 + bob + Math.sin(t * 1.4) * 1.5); c.stroke(); c.strokeStyle = skinDk; c.lineWidth = 2.6; c.stroke(); tuft(-27, -9 + bob + Math.sin(t * 1.4) * 1.5, 6, 6, 3.6, 1.6, 1.2, 70); }
+  var hump = 46 + 6 * HU, headF = 12 + lean, headH = 34 + (wind ? 2 * wind : 0) - 1.5 * (1 - HU) + bob;
+  c.save(); c.translate(x, y); c.scale(sz, sz); c.lineJoin = 'round'; c.lineCap = 'round';
+  c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(0, 1, 21, 6, 0, 0, 7); c.fill();
+  // the tail: from the back of the body, trailing behind
+  if (TL) at(depth(-20, 2), function () { var p0 = pt(-12, 0, 12 + bob), p1 = pt(-24, 3, 3 + bob), p2 = pt(-29, 2, 7 + bob + Math.sin(t * 1.4) * 1.5); c.strokeStyle = line; c.lineWidth = 2.6 + 2 * lw; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke(); c.strokeStyle = skinDk; c.lineWidth = 2.6; c.stroke(); for (var i = 0; i < 6; i++) strandAt(p2, 4 + 3 * hs(i, 70), (hs(i, 71) - 0.5) * 2.2 + 0.4, 1.2, hairOf(i), 70 + i); });
   // the sack on the back
-  if (SK) { var skx = -9, sky = -50 - 6 * HU + bob; c.fillStyle = mixHex(skin, '#b8a484', 0.55); c.beginPath(); c.ellipse(skx, sky, 12, 10, -0.3, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke(); c.strokeStyle = mixHex(skin, '#000000', 0.3); c.lineWidth = 1; c.beginPath(); c.moveTo(skx - 6, sky - 3); c.quadraticCurveTo(skx, sky + 1, skx + 7, sky - 4); c.stroke(); c.fillStyle = mixHex(skin, '#b8a484', 0.4); c.beginPath(); c.arc(skx + 9, sky - 6, 2.4, 0, 7); c.fill(); c.stroke(); }
-  // the legs: short and thick, hairy shins, great flat feet with long toes
-  [[-5, 1], [5, -1]].forEach(function (lg) {
-    var sw = Math.sin(ph) * 3.4 * mv * lg[1], lx = lg[0] + sw, col = lg[1] > 0 ? skin : skinDk;
-    limb(lg[0] * 0.6, -15 + bob, lx, -5, 7.5, col);
-    c.fillStyle = col; c.beginPath(); c.ellipse(lx + 3, -1.5, 8, 3, 0, 0, 7); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
-    [[9.5, -1.2], [10, 0.4], [9, 1.8]].forEach(function (tz) { c.beginPath(); c.arc(lx + tz[0], tz[1] - 1, 1.3, 0, 7); c.fillStyle = col; c.fill(); c.stroke(); });
-    tuft(lx - 1, -9, Math.round(3 * HL), 5, 1.4, 1.2, 1.1, 80 + lg[0]);
-  });
-  arm(true);
-  // the body: a boulder, hunched, the hump high behind the head
-  var hump = -46 - 6 * HU + bob, nape = -40 - 3 * HU + bob;
-  c.beginPath(); c.moveTo(-6, -12 + bob); c.quadraticCurveTo(-19, -22 + bob, -15, -35 + bob); c.quadraticCurveTo(-13, hump - 2, -1, hump); c.quadraticCurveTo(8, hump + 1, 10 + lean * 0.3, nape); c.lineTo(11 + lean * 0.4, -29 + bob); c.quadraticCurveTo(6 + 8 * BL, -18 + bob, 8, -10 + bob); c.closePath();
-  c.fillStyle = skin; c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke();
-  c.fillStyle = belly; c.beginPath(); c.ellipse(7 + lean * 0.3, -21 + bob, 3.6 * BL + 1, 8, 0.1, 0, 7); c.fill();
-  // the hair down the back: anchors along the hump, strands hanging and swaying
-  var back = [[-7, -13], [-14, -20], [-17, -27], [-16, -35], [-13, -42 - 3 * HU], [-7, hump - bob - 0.5], [0, hump - bob - 1], [6, hump - bob + 1], [10, nape - bob - 1]], row, bi;
-  c.fillStyle = mixHex(skin, '#ffffff', 0.08); c.beginPath(); c.moveTo(-10, hump + 6); c.quadraticCurveTo(-6, hump - 3, 4, hump + 2); c.quadraticCurveTo(0, hump + 5, -10, hump + 6); c.fill();   // light on the top of the hump
-  for (row = 0; row < 4; row++) {                      // the mane in rows down the back, each row a little further in
-    for (bi = 0; bi < back.length - 1; bi++) {
-      var p0 = back[bi], p1 = back[bi + 1], n = Math.round(2 + 1.5 * HL), q;
-      for (q = 0; q < n; q++) { var u = (q + 0.3 + 0.4 * hs(q, bi + row * 9)) / n, ax = p0[0] + (p1[0] - p0[0]) * u + row * 3.2 * (bi < 4 ? 1 : 0.4), ay = p0[1] + (p1[1] - p0[1]) * u + bob + row * (bi >= 4 ? 3.5 : 1.2); if (row > 0 && bi >= 6) continue;
-        strand(ax, ay, (5 + 4 * HL) * (0.7 + 0.5 * hs(q, bi * 3 + row)), 1.62 + (bi < 3 ? 0.25 : 0.05) + (hs(q, bi + 5) - 0.5) * 0.5, 1.15, (q + bi + row) % 3 === 0 ? hairDk : ((q + bi + row) % 3 === 1 ? hairCol : hairLt), q + bi * 11 + row * 101); }
-    }
-  }
-  [[-15, -22], [-17, -28], [-15, -16], [-10, -14]].forEach(function (a, ai) { tuft(a[0], a[1] + bob, Math.round(2 + 2 * HL), 8 + 9 * HL, 1.85, 0.5, 1.2, 100 + ai * 7); });   // the hem: long strands hanging below the back
-  tuft(6, -16 + bob, Math.round(2 + 2 * HL), 6 + 5 * HL, 1.6, 0.6, 1.1, 190);   // a little on the belly
-  // lichen and moss grown on the old back
-  if (MO > 0) { var lich = mixHex(moss, skin, 0.3); [[-9, -39 - 3 * HU, 3.2], [-3, hump - bob + 1, 2.8], [4, hump - bob + 2.5, 2.2], [-14, -31, 2.4], [-7, -28, 2], [-12, -44 - 3 * HU, 1.8]].forEach(function (m, mi) { if (hs(mi, 5) > MO) return; c.save(); c.globalAlpha = 0.8; c.fillStyle = lich; for (var d = 0; d < 4; d++) { c.beginPath(); c.ellipse(m[0] + (hs(d, mi) - 0.5) * m[2] * 1.6, m[1] + bob + (hs(d, mi + 1) - 0.5) * m[2] * 0.9, m[2] * (0.45 + 0.35 * hs(d, mi + 2)), m[2] * 0.4, hs(d, mi + 3) * 3, 0, 7); c.fill(); } c.fillStyle = mixHex(lich, '#ffffff', 0.3); for (d = 0; d < 3; d++) { c.beginPath(); c.arc(m[0] + (hs(d, mi + 4) - 0.5) * m[2] * 1.2, m[1] + bob + (hs(d, mi + 5) - 0.5) * m[2] * 0.6, 0.45, 0, 7); c.fill(); } c.restore(); }); }
-  // the head: small and low in front of the hump
-  var hx = 13 + lean * 0.6, hy = -36 + bob + (wind ? -2 * wind : 0) + 1.5 * (1 - HU);
-  // the ears, behind the head: big and pointed
-  [[-1, skinDk], [0, skin]].forEach(function (eq) { var ox = eq[0] * 2.5; c.fillStyle = eq[1]; c.beginPath(); c.moveTo(hx - 4 + ox, hy - 2); c.lineTo(hx - 9 - 5 * ER + ox, hy - 9 - 7 * ER); c.lineTo(hx - 1 + ox, hy - 6); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke(); if (eq[0] === 0) { c.fillStyle = mixHex(skin, '#d09a8a', 0.3); c.beginPath(); c.moveTo(hx - 4.5, hy - 3); c.lineTo(hx - 7.5 - 3.5 * ER, hy - 7.5 - 5 * ER); c.lineTo(hx - 2.5, hy - 5); c.closePath(); c.fill(); } });
-  if (BE) { c.strokeStyle = '#b08040'; c.lineWidth = 1.1; c.beginPath(); c.arc(hx - 4.5, hy - 1, 1.7, 0, 7); c.stroke(); }   // a bronze ring in the ear
-  c.fillStyle = skin; c.beginPath(); c.ellipse(hx, hy, 8, 7, 0, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke(); c.fillStyle = skinDk; c.beginPath(); c.ellipse(hx - 1, hy + 4, 6, 2.2, 0, 0, 7); c.fill();
-  // the hair over the head, falling down the back of the neck; the eyebrows
-  tuft(hx - 4, hy - 6.5, Math.round(5 + 4 * HL), 11 + 8 * HL, 2.4, 0.7, 1.3, 130); tuft(hx - 1, hy - 7.2, Math.round(3 + 3 * HL), 7 + 5 * HL, 2.05, 0.6, 1.2, 140); tuft(hx + 3, hy - 6.8, Math.round(2 + 2 * HL), 4 + 3 * HL, 1.3, 0.8, 1.1, 145);
-  c.strokeStyle = line; c.lineWidth = 2.2; c.beginPath(); c.moveTo(hx - 1, hy - 3.2); c.lineTo(hx + 6.5, hy - 2.2); c.stroke(); tuft(hx + 2.5, hy - 3.4, 3, 3, 3.3, 0.6, 1, 150);   // the heavy brow and its tufts
-  // the eyes: tiny, deep under the brow; they light when he means harm
-  var eyeCol = stone ? skin : (wind || slam ? C.glow : C.eye);
-  if (!stone && (wind || slam)) { c.fillStyle = 'rgba(255,170,60,0.35)'; c.beginPath(); c.arc(hx + 4, hy - 0.8, 3.2, 0, 7); c.fill(); }
-  c.fillStyle = eyeCol; c.beginPath(); c.arc(hx + 4.6, hy - 0.6, 1.2, 0, 7); c.fill(); c.beginPath(); c.arc(hx + 0.6, hy - 0.8, 0.8, 0, 7); c.fill();
-  // the nose: long and drooping, a wart on it
-  var nx = hx + 8 + 5 * NS, ny = hy + 2 + 4 * NS; c.fillStyle = mixHex(skin, '#d09a8a', 0.25); c.beginPath(); c.moveTo(hx + 4.5, hy - 2.6); c.quadraticCurveTo(nx + 2, hy - 1.5, nx, ny); c.quadraticCurveTo(nx - 1.5, ny + 2.2, hx + 5.5, hy + 3.4); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
-  if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(nx - 1.5 - NS, ny - 2 - NS, 0.8, 0, 7); c.fill(); c.beginPath(); c.arc(hx - 1, hy + 2.5, 0.6, 0, 7); c.fill(); }
-  // the mouth, a thin wide line turned down, one old tooth
-  c.strokeStyle = line; c.lineWidth = 1.1; c.beginPath(); c.moveTo(hx + 0.5, hy + 4.2); c.quadraticCurveTo(hx + 3.5, hy + 5.6, hx + 6.5, hy + 4.6); c.stroke(); c.fillStyle = '#efe6cf'; c.beginPath(); c.moveTo(hx + 3, hy + 4.9); c.lineTo(hx + 3.8, hy + 7); c.lineTo(hx + 4.6, hy + 4.9); c.closePath(); c.fill();
-  // the beard: grey strands from the jaw and cheeks
-  tuft(hx + 1, hy + 5, Math.round(4 + 4 * HL), 7 + 8 * HL, 1.75, 1.0, 1.2, 160); tuft(hx - 4, hy + 2, Math.round(2 + 2 * HL), 6 + 6 * HL, 1.9, 0.6, 1.1, 170);
-  // the trinkets: a string of beads hanging from the hair
-  if (BE) { var bx0 = hx - 3, by0 = hy + 4; c.strokeStyle = '#5a4a3a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(bx0, by0); c.quadraticCurveTo(bx0 - 1, by0 + 7, bx0 + 2, by0 + 12); c.stroke(); ['#c8403a', '#3a6ab8', '#e8e0c8', '#c8403a', '#d8a030'].forEach(function (bc, bi) { var u = (bi + 1) / 6, px = bx0 + (bx0 + 2 - bx0) * u - Math.sin(u * 3.14) * 1, py = by0 + 12 * u; c.fillStyle = bc; c.beginPath(); c.arc(px, py, 1.05, 0, 7); c.fill(); c.lineWidth = 0.4; c.strokeStyle = line; c.stroke(); }); }
-  arm(false);
-  c.restore();
-  }
-  // facing you (south) or away (north): the mound seen head on, both arms down to the ground, the head low in front or the
-  // mane and the hump behind; the sweep goes across from one side to the other
-  function frontView(back) {
-    c.save(); c.translate(x, y); c.scale(sz * Math.max(0.6, 1 - aca * 0.5), sz); c.lineJoin = 'round'; c.lineCap = 'round';
-    c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(0, 1, 22, 5.5, 0, 0, 7); c.fill();
-    var hump = -46 - 6 * HU + bob, i, q;
-    if (back && TL) { c.strokeStyle = line; c.lineWidth = 2.6 + 2 * lw; c.beginPath(); c.moveTo(0, -12 + bob); c.quadraticCurveTo(3 + Math.sin(t * 1.4) * 2, -4 + bob, 1, 4 + bob); c.stroke(); c.strokeStyle = skinDk; c.lineWidth = 2.6; c.stroke(); tuft(1, 4 + bob, 6, 5, 1.57, 1.8, 1.2, 70); }
-    [[-7, 1], [7, -1]].forEach(function (lg) {                                      // the feet and short legs
-      var sw = Math.sin(ph) * 2.5 * mv * lg[1], lx = lg[0], col = skin;
-      limb(lx * 0.85, -15 + bob, lx, -5 + sw * 0.4, 7.5, col);
-      c.fillStyle = col; c.beginPath(); c.ellipse(lx, -1.5 + sw * 0.4, 5.5, 3.4, 0, 0, 7); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
-      if (!back) [[-3, 1.6], [0, 2.2], [3, 1.6]].forEach(function (tz) { c.beginPath(); c.arc(lx + tz[0], tz[1] + sw * 0.4, 1.3, 0, 7); c.fillStyle = col; c.fill(); c.stroke(); });
-      tuft(lx, -9 + bob, Math.round(3 * HL), 5, 1.57, 1.2, 1.1, 80 + lg[0]);
+  if (SK) at(depth(-9, 0), function () { var p = pt(-9, 0, hump + 4 + bob); c.fillStyle = mixHex(skin, '#b8a484', 0.55); c.beginPath(); c.ellipse(p[0], p[1], 12, 10, -0.2 * ca, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke(); var q = pt(-6, 0, hump + 13 + bob); c.fillStyle = mixHex(skin, '#b8a484', 0.4); c.beginPath(); c.arc(q[0], q[1], 2.4, 0, 7); c.fill(); c.stroke(); });
+  // the legs and the great flat feet
+  [-1, 1].forEach(function (sg) {
+    var sw = Math.sin(ph) * 3 * mv * sg;
+    at(depth(2, sg * 6.5) - 2, function () {
+      var col = depth(2, sg * 6.5) > 0 ? skin : skinDk, hip = pt(-2, sg * 6, 15 + bob), knee = pt(1 + sw * 0.4, sg * 6.5, 6), foot = pt(4 + sw, sg * 7, 0);
+      limb(hip, knee, 7.5, col);
+      c.fillStyle = col; c.beginPath(); c.ellipse(foot[0], foot[1] - 1.5, 7, 3.2, ang, 0, 7); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
+      for (var i = 0; i < 3; i++) { var tp = pt(10 + sw, sg * 7 + (i - 1) * 2.4, 0); c.beginPath(); c.arc(tp[0], tp[1] - 1, 1.3, 0, 7); c.fillStyle = col; c.fill(); c.stroke(); }
+      for (i = 0; i < 3 * HL; i++) strandAt(pt(0, sg * 7 + (hs(i, 80 + sg) - 0.5) * 4, 10), 5, (hs(i, 81) - 0.5) * 1.2, 1.1, hairOf(i), 80 + i);
     });
-    function armF(sg) {                                                             // sg -1 left, 1 right of the screen
-      var sx0 = sg * 12, sy0 = -36 + bob - 2 * HU, col = sg < 0 ? skinDk : skin, fx, fy, up = false, sw = Math.sin(ph) * 3 * mv * sg;
-      if (slam && sg > 0) { var u0 = sweep, a0 = -2.2 + u0 * 4.2; fx = Math.cos(a0) * 30; fy = sy0 + 12 + Math.sin(a0) * 30; up = u0 < 0.35; if (!stone) { c.save(); c.globalAlpha = 0.28 * (1 - u0); c.strokeStyle = '#f6e2b8'; c.lineWidth = 7; c.beginPath(); c.arc(0, sy0 + 12, 30, -2.2, a0); c.stroke(); c.restore(); } }
-      else if (wind && sg > 0) { fx = 8; fy = -8 - 52 * wind; up = true; }
-      else { fx = sg * (17 + 8 * AR) + sw; fy = -1 + (down ? 2 : 0); }
-      var ex = (sx0 + fx) / 2 + sg * 4 * (up ? 0.3 : 1), ey = (sy0 + fy) / 2 + (up ? -2 : 5);
-      limb(sx0, sy0, ex, ey, 7, col); limb(ex, ey, fx, fy, 6, col); hand(fx, fy, col, up);
-      for (q = 0; q < 3 * HL; q++) { var tt = 0.2 + q * 0.22; strand(sx0 + (ex - sx0) * tt + sg * 2, sy0 + (ey - sy0) * tt + 2, 5 + 4 * HL, 1.7 + sg * 0.2, 1, q % 2 ? hairDk : hairCol, q + 40); }
-    }
-    armF(-1); if (back) armF(1);
-    // the mound of a body, the hump at the top
-    c.beginPath(); c.moveTo(-15, -10 + bob); c.quadraticCurveTo(-21, -30 + bob, -12, hump + 2); c.quadraticCurveTo(0, hump - 4, 12, hump + 2); c.quadraticCurveTo(21, -30 + bob, 15, -10 + bob); c.closePath();
+  });
+  // the arms: shoulders high on the hump, knuckles on the ground in front; the right arm swings the blow
+  [1, -1].forEach(function (sg) {
+    var swinging = sg === 1 && (wind > 0 || slam), sw = Math.sin(ph) * 3 * mv * sg, hf, hd, hh, up = false, ef, ed, eh;
+    var sf = 3 + lean * 0.3, sd = sg * 11, sh = 36 + bob - 2 * HU;
+    if (swinging && slam) { var u = sweep, phi = 1.35 - u * 2.7; hf = 4 + 20 * Math.cos(phi); hd = 20 * Math.sin(phi); hh = 42 - 36 * Math.sin(u * 3.14) * 0 - 34 * u + 8 * Math.sin(u * 3.14); up = u < 0.35; }
+    else if (swinging) { hf = -2; hd = 12 + 2 * wind; hh = 48 + 12 * wind; up = true; }
+    else { hf = 16 + 8 * AR + sw; hd = sg * 10; hh = (down ? -1 : 0) + 1; }
+    ef = up ? (sf + hf) / 2 - 2 : (sf + hf) / 2 + 2; ed = (sd + hd) / 2 + sg * 3; eh = up ? (sh + hh) / 2 + 2 : (sh + hh) / 2 - 6;
+    var dep = depth(ef, ed) + (up ? 2 : 0);
+    at(dep, function () {
+      var col = depth(sf, sd) >= 0 ? skin : skinDk, P0 = pt(sf, sd, sh), P1 = pt(ef, ed, eh), P2 = pt(hf, hd, hh);
+      if (swinging && slam && !stone) { c.save(); c.globalAlpha = 0.3 * (1 - sweep); c.strokeStyle = '#f6e2b8'; c.lineWidth = 7; c.beginPath(); for (var j = 0; j <= 10; j++) { var uu = sweep * j / 10, ph2 = 1.35 - uu * 2.7, q = pt(4 + 20 * Math.cos(ph2), 20 * Math.sin(ph2), 42 - 34 * uu + 8 * Math.sin(uu * 3.14)); if (j) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); } c.stroke(); c.restore(); }
+      limb(P0, P1, 7, col); limb(P1, P2, 6, col); hand(hf, hd, hh, col, up, sg);
+      for (var i = 0; i < 4 * HL; i++) { var tt = 0.15 + i * 0.18; strandAt([P0[0] + (P1[0] - P0[0]) * tt, P0[1] + (P1[1] - P0[1]) * tt + 2], 5 + 4 * HL, (hs(i, 9) - 0.5) * 0.5, 1, i % 2 ? hairDk : hairCol, i + 40); }
+    });
+  });
+  // the body: a mound, its outline the turned ellipsoid, the hump high at the back
+  at(-0.5, function () {
+    var rf = 15, rd = 14, ex = Math.sqrt(rf * rf * ca * ca + rd * rd * sa * sa), ey = KD * Math.sqrt(rf * rf * sa * sa + rd * rd * ca * ca), cb = pt(-1, 0, 0), ch = pt(-5, 0, hump + bob);
+    c.beginPath(); c.moveTo(cb[0] - ex, cb[1] - 9 - ey * 0.3); c.quadraticCurveTo(cb[0] - ex - 2, ch[1] + 10, ch[0] - ex * 0.55, ch[1]); c.quadraticCurveTo(ch[0], ch[1] - 5, ch[0] + ex * 0.6, ch[1] + 1); c.quadraticCurveTo(cb[0] + ex + 2, ch[1] + 12, cb[0] + ex, cb[1] - 9 - ey * 0.3); c.quadraticCurveTo(cb[0], cb[1] - 6 + ey * 0.4, cb[0] - ex, cb[1] - 9 - ey * 0.3); c.closePath();
     c.fillStyle = skin; c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke();
-    if (!back) { c.fillStyle = belly; c.beginPath(); c.ellipse(0, -21 + bob, 6 * BL + 1, 8, 0, 0, 7); c.fill(); }
-    if (back && SK) { c.fillStyle = mixHex(skin, '#b8a484', 0.55); c.beginPath(); c.ellipse(0, hump - 4, 13, 10, 0, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke(); c.fillStyle = mixHex(skin, '#b8a484', 0.4); c.beginPath(); c.arc(0, hump - 13, 2.4, 0, 7); c.fill(); c.stroke(); }
-    // the mane: all over the back, or down the sides and over the shoulders from the front
-    for (i = 0; i < 6; i++) { var ry = hump + 3 + i * 6, half = 13 + Math.min(i, 3) * 2; for (q = -half; q <= half; q += 3) { if (!back && Math.abs(q) < 8 && i > 0) continue; var n0 = q + i * 31; strand(q + (hs(n0, 2) - 0.5) * 2, ry + (hs(n0, 3) - 0.5) * 3, (5 + 4 * HL) * (0.7 + 0.5 * hs(n0, 4)), 1.57 + (q / half) * 0.35 + (hs(n0, 5) - 0.5) * 0.4, 1.15, (q / 3 + i) % 3 === 0 ? hairDk : ((q / 3 + i) % 3 === 1 ? hairCol : hairLt), n0); } }
-    [[-16, -18], [16, -18], [-13, -12], [13, -12]].forEach(function (a, ai) { tuft(a[0], a[1] + bob, Math.round(2 + 2 * HL), 8 + 8 * HL, 1.57 + (a[0] < 0 ? 0.25 : -0.25), 0.5, 1.2, 100 + ai * 7); });
-    if (MO > 0) { var lich = mixHex(moss, skin, 0.3); [[-6, hump + 4, 3], [5, hump + 2, 2.6], [-12, hump + 12, 2.2], [11, hump + 10, 2]].forEach(function (m, mi) { if (hs(mi, 5) > MO) return; c.save(); c.globalAlpha = 0.8; c.fillStyle = lich; for (var d = 0; d < 4; d++) { c.beginPath(); c.ellipse(m[0] + (hs(d, mi) - 0.5) * m[2] * 1.6, m[1] + (hs(d, mi + 1) - 0.5) * m[2] * 0.9, m[2] * (0.45 + 0.35 * hs(d, mi + 2)), m[2] * 0.4, hs(d, mi + 3) * 3, 0, 7); c.fill(); } c.restore(); }); }
-    // the head: low in front, or the back of the skull under its hair
-    var hy = -34 + bob + (wind ? -2 * wind : 0) + 1.5 * (1 - HU);
-    [[-1, skinDk], [1, skin]].forEach(function (eq) { var sg = eq[0]; c.fillStyle = eq[1]; c.beginPath(); c.moveTo(sg * 5, hy - 2); c.lineTo(sg * (10 + 5 * ER), hy - 9 - 7 * ER); c.lineTo(sg * 2.5, hy - 6.5); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke(); if (!back) { c.fillStyle = mixHex(skin, '#d09a8a', 0.3); c.beginPath(); c.moveTo(sg * 5.5, hy - 3); c.lineTo(sg * (8.5 + 3.5 * ER), hy - 7.5 - 5 * ER); c.lineTo(sg * 3.5, hy - 5.5); c.closePath(); c.fill(); } });
-    if (BE && !back) { c.strokeStyle = '#b08040'; c.lineWidth = 1.1; c.beginPath(); c.arc(-5.5, hy - 1, 1.7, 0, 7); c.stroke(); }
-    c.fillStyle = skin; c.beginPath(); c.ellipse(0, hy, 8, 7, 0, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke();
-    if (back) { var nb = Math.round(9 + 6 * HL); for (i = 0; i < nb; i++) strand(-7 + (14 * i) / (nb - 1), hy - 6 + hs(i, 9) * 3, 12 + 8 * HL, 1.57 + ((i / (nb - 1)) - 0.5) * 0.5, 1.3, i % 3 === 0 ? hairDk : (i % 3 === 1 ? hairCol : hairLt), 130 + i); }
-    else {
-      tuft(-6, hy - 6.5, Math.round(3 + 3 * HL), 10 + 8 * HL, 1.95, 0.5, 1.3, 130); tuft(6, hy - 6.5, Math.round(3 + 3 * HL), 10 + 8 * HL, 1.2, 0.5, 1.3, 135); tuft(0, hy - 7.5, Math.round(2 + 2 * HL), 4 + 2 * HL, -1.57, 1.4, 1.1, 145);
-      c.strokeStyle = line; c.lineWidth = 2.2; c.beginPath(); c.moveTo(-6, hy - 3.6); c.lineTo(-1, hy - 2.4); c.moveTo(1, hy - 2.4); c.lineTo(6, hy - 3.6); c.stroke();
-      var eyeCol = stone ? skin : (wind || slam ? C.glow : C.eye);
-      if (!stone && (wind || slam)) { c.fillStyle = 'rgba(255,170,60,0.35)'; [-3.2, 3.2].forEach(function (ex) { c.beginPath(); c.arc(ex, hy - 0.8, 3, 0, 7); c.fill(); }); }
-      c.fillStyle = eyeCol; [-3.2, 3.2].forEach(function (ex) { c.beginPath(); c.arc(ex, hy - 0.8, 1.15, 0, 7); c.fill(); });
-      var ny = hy + 2 + 4 * NS; c.fillStyle = mixHex(skin, '#d09a8a', 0.25); c.beginPath(); c.moveTo(-1.6, hy - 2.5); c.quadraticCurveTo(-3.2, ny - 1, 0, ny + 1.5); c.quadraticCurveTo(3.2, ny - 1, 1.6, hy - 2.5); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
-      if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(1.2, ny - 2 - NS, 0.8, 0, 7); c.fill(); }
-      c.strokeStyle = line; c.lineWidth = 1.1; c.beginPath(); c.moveTo(-4, hy + 4.8); c.quadraticCurveTo(0, hy + 6.2, 4, hy + 4.8); c.stroke(); c.fillStyle = '#efe6cf'; c.beginPath(); c.moveTo(1.5, hy + 5.3); c.lineTo(2.3, hy + 7.4); c.lineTo(3.1, hy + 5.3); c.closePath(); c.fill();
-      tuft(-4, hy + 5, Math.round(3 + 3 * HL), 7 + 8 * HL, 1.7, 0.6, 1.2, 160); tuft(4, hy + 5, Math.round(3 + 3 * HL), 7 + 8 * HL, 1.45, 0.6, 1.2, 165);
-      if (BE) { c.strokeStyle = '#5a4a3a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(-5, hy + 5); c.quadraticCurveTo(0, hy + 16, 5, hy + 5); c.stroke(); ['#c8403a', '#3a6ab8', '#e8e0c8', '#c8403a', '#d8a030'].forEach(function (bc, bi) { var u = (bi + 1) / 6, px = -5 + 10 * u, py = hy + 5 + 11 * Math.sin(u * 3.14) * 0.8; c.fillStyle = bc; c.beginPath(); c.arc(px, py, 1.05, 0, 7); c.fill(); c.lineWidth = 0.4; c.strokeStyle = line; c.stroke(); }); }
-    }
-    if (!back) armF(1);
-    c.restore();
+    var front = depth(14, 0) / 14; if (front > 0) { c.save(); c.globalAlpha = Math.min(1, front); var bp = pt(8, 0, 22 + bob); c.fillStyle = belly; c.beginPath(); c.ellipse(bp[0], bp[1], (5 * BL + 1) * (0.5 + 0.5 * Math.abs(sa)) + 1, 8, 0, 0, 7); c.fill(); c.restore(); }
+    c.fillStyle = mixHex(skin, '#ffffff', 0.08); c.beginPath(); c.ellipse(ch[0], ch[1] + 3, ex * 0.45, 3, 0, 0, 7); c.fill();   // light on the top of the hump
+  });
+  // the mane: strands anchored round the body at four heights, longer on the back half and at the hem
+  var ring, n, i;
+  for (ring = 0; ring < 4; ring++) {
+    var h0 = hump - 2 - ring * 8, rr = 0.86 + ring * 0.05; n = Math.round(9 + 4 * HL);
+    for (i = 0; i < n; i++) (function (i, ring) {
+      var th = (i + 0.5 * hs(i, ring)) / n * 6.283, f = -3 + 15 * rr * Math.cos(th), d = 14 * rr * Math.sin(th), back = Math.cos(th) < -0.2, len = (back ? 8 + 7 * HL : 5 + 4 * HL) * (0.7 + 0.5 * hs(i, ring + 7)), dep = depth(f, d);
+      at(dep + (dep > 0 ? 0.4 : -0.4), function () { strandAt(pt(f, d, h0 + bob), len, (hs(i, ring + 11) - 0.5) * 0.5 + (pt(f, d, 0)[0]) * 0.012, 1.15, hairOf(i + ring), i + ring * 31); });
+    })(i, ring);
   }
-  var frontA = 1 - sideA, a0 = c.globalAlpha;
-  if (frontA > 0.01) { c.globalAlpha = a0 * frontA; frontView(sa < 0); }
-  if (sideA > 0.01) { c.globalAlpha = a0 * sideA; sideView(); }
-  c.globalAlpha = a0;
+  [[-14, -5], [-14, 5], [-11, -10], [-11, 10]].forEach(function (a, ai) { var dep = depth(a[0], a[1]); for (i = 0; i < 2 + 2 * HL; i++) (function (i) { at(dep + (dep > 0 ? 0.4 : -0.4), function () { strandAt(pt(a[0], a[1], 18 + bob), (8 + 9 * HL) * (0.6 + 0.6 * hs(i, 100 + ai)), (hs(i, 101 + ai) - 0.5) * 0.5 + a[1] * 0.02, 1.2, hairOf(i + ai), 100 + ai * 7 + i); }); })(i); });   // the hem
+  // lichen on the old hump
+  if (MO > 0) [[-7, -4, 3], [-3, 5, 2.6], [-10, 4, 2.2], [-1, -7, 2], [-12, -2, 1.8]].forEach(function (m, mi) { if (hs(mi, 5) > MO) return; var dep = depth(m[0], m[1]); at(dep + 0.3, function () { var p = pt(m[0], m[1], hump - 2 + bob); c.save(); c.globalAlpha = 0.8; c.fillStyle = lich; for (var d2 = 0; d2 < 4; d2++) { c.beginPath(); c.ellipse(p[0] + (hs(d2, mi) - 0.5) * m[2] * 1.6, p[1] + (hs(d2, mi + 1) - 0.5) * m[2] * 0.9, m[2] * (0.45 + 0.35 * hs(d2, mi + 2)), m[2] * 0.4, hs(d2, mi + 3) * 3, 0, 7); c.fill(); } c.fillStyle = mixHex(lich, '#ffffff', 0.3); for (d2 = 0; d2 < 3; d2++) { c.beginPath(); c.arc(p[0] + (hs(d2, mi + 4) - 0.5) * m[2] * 1.2, p[1] + (hs(d2, mi + 5) - 0.5) * m[2] * 0.6, 0.45, 0, 7); c.fill(); } c.restore(); }); });
+  // the head: low in front of the hump; the ears behind it, the hair over it, the face on its front
+  var hdep = depth(headF, 0);
+  [-1, 1].forEach(function (sg) { var ed = depth(headF - 4, sg * 9); at(ed < hdep ? hdep - 0.2 : hdep + 0.2, function () { var col = ed >= hdep ? skin : skinDk, a0 = pt(headF - 5, sg * 6, headH + 1), a1 = pt(headF - 6, sg * (9 + 4 * ER), headH + 7 + 5 * ER), a2 = pt(headF - 0.5, sg * 4, headH + 6); c.fillStyle = col; c.beginPath(); c.moveTo(a0[0], a0[1]); c.lineTo(a1[0], a1[1]); c.lineTo(a2[0], a2[1]); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke(); if (ed >= hdep) { var b0 = pt(headF - 4.5, sg * 6, headH + 2), b1 = pt(headF - 5.5, sg * (8 + 3 * ER), headH + 6 + 3.6 * ER), b2 = pt(headF - 1.5, sg * 4.5, headH + 5); c.fillStyle = mixHex(skin, '#d09a8a', 0.3); c.beginPath(); c.moveTo(b0[0], b0[1]); c.lineTo(b1[0], b1[1]); c.lineTo(b2[0], b2[1]); c.closePath(); c.fill(); } if (BE && sg === -1 && ed >= hdep - 2) { var rp = pt(headF - 4.5, -5.5, headH + 1); c.strokeStyle = '#b08040'; c.lineWidth = 1.1; c.beginPath(); c.arc(rp[0], rp[1], 1.7, 0, 7); c.stroke(); } }); });
+  at(hdep, function () {
+    var hp = pt(headF, 0, headH); c.fillStyle = skin; c.beginPath(); c.ellipse(hp[0], hp[1], 8, 7, 0, 0, 7); c.fill(); c.lineWidth = lw * 1.2; c.strokeStyle = line; c.stroke();
+    c.fillStyle = skinDk; c.beginPath(); c.ellipse(hp[0], hp[1] + 4, 6, 2.2, 0, 0, 7); c.fill();
+    var faceDep = depth(headF + 6, 0) - hdep;                                    // the face shows as the head turns toward you
+    if (faceDep > -2) {
+      c.save(); c.globalAlpha = Math.min(1, (faceDep + 2) / 3);
+      var bl = pt(headF + 5, -5, headH + 3.4), br = pt(headF + 5, 5, headH + 3.4), bm = pt(headF + 7.5, 0, headH + 2.6); c.strokeStyle = line; c.lineWidth = 2.2; c.beginPath(); c.moveTo(bl[0], bl[1]); c.lineTo(bm[0], bm[1]); c.lineTo(br[0], br[1]); c.stroke();
+      var eyeCol = stone ? skin : (wind || slam ? C.glow : C.eye), eyes = [pt(headF + 6.5, -3.2, headH + 0.8), pt(headF + 6.5, 3.2, headH + 0.8)];
+      eyes.forEach(function (ep) { if (!stone && (wind || slam)) { c.fillStyle = 'rgba(255,170,60,0.35)'; c.beginPath(); c.arc(ep[0], ep[1], 3, 0, 7); c.fill(); } c.fillStyle = eyeCol; c.beginPath(); c.arc(ep[0], ep[1], 1.15, 0, 7); c.fill(); });
+      H.eyes = eyes.map(function (ep) { return [ep[0] * sz, ep[1] * sz]; });
+      var n0 = pt(headF + 7, 0, headH + 2.5), n1 = pt(headF + 10 + 5 * NS, 0, headH - 2 - 4 * NS), n2 = pt(headF + 7.5, 0, headH - 3.4), nl = pt(headF + 7, -1.6, headH + 2), nr = pt(headF + 7, 1.6, headH + 2);
+      c.fillStyle = mixHex(skin, '#d09a8a', 0.25); c.beginPath(); c.moveTo(nl[0], nl[1]); c.quadraticCurveTo(n1[0] - 1, n1[1] - 2, n1[0], n1[1] + 1.5); c.quadraticCurveTo(n1[0] + 1, n1[1] - 2, nr[0], nr[1]); c.quadraticCurveTo(n0[0], n2[1], nl[0], nl[1]); c.closePath(); c.fill(); c.lineWidth = lw; c.strokeStyle = line; c.stroke();
+      if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(n1[0] - 1, n1[1] - 1.5 - NS, 0.8, 0, 7); c.fill(); }
+      var m0 = pt(headF + 6.5, -4, headH - 4.8), m1 = pt(headF + 7.5, 0, headH - 6), m2 = pt(headF + 6.5, 4, headH - 4.8); c.strokeStyle = line; c.lineWidth = 1.1; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(m1[0], m1[1], m2[0], m2[1]); c.stroke();
+      var tp = pt(headF + 7, 1.5, headH - 5.3); c.fillStyle = '#efe6cf'; c.beginPath(); c.moveTo(tp[0] - 0.8, tp[1]); c.lineTo(tp[0], tp[1] + 2.1); c.lineTo(tp[0] + 0.8, tp[1]); c.closePath(); c.fill();
+      for (var i = 0; i < 6 + 6 * HL; i++) strandAt(pt(headF + 5.5, -4 + 8 * hs(i, 160), headH - 5), (7 + 8 * HL) * (0.6 + 0.6 * hs(i, 161)), (hs(i, 162) - 0.5) * 0.8, 1.2, hairOf(i), 160 + i);   // the beard
+      if (BE) { var b0 = pt(headF + 4, -4.5, headH - 5), b1 = pt(headF + 4, 4.5, headH - 5); c.strokeStyle = '#5a4a3a'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(b0[0], b0[1]); c.quadraticCurveTo((b0[0] + b1[0]) / 2, b0[1] + 11, b1[0], b1[1]); c.stroke(); ['#c8403a', '#3a6ab8', '#e8e0c8', '#c8403a', '#d8a030'].forEach(function (bc, bi) { var u = (bi + 1) / 6, px = b0[0] + (b1[0] - b0[0]) * u, py = b0[1] + 8.8 * Math.sin(u * 3.14); c.fillStyle = bc; c.beginPath(); c.arc(px, py, 1.05, 0, 7); c.fill(); c.lineWidth = 0.4; c.strokeStyle = line; c.stroke(); }); }
+      c.restore();
+    }
+    for (var j = 0; j < 7 + 5 * HL; j++) { var th = (j / (7 + 5 * HL)) * 6.283, f = headF - 2 + 6 * Math.cos(th), d = 6 * Math.sin(th); if (Math.cos(th) > 0.6) continue; strandAt(pt(f, d, headH + 6), (9 + 8 * HL) * (0.6 + 0.6 * hs(j, 130)), (hs(j, 131) - 0.5) * 0.5 + pt(f, d, 0)[0] * 0.02, 1.3, hairOf(j), 130 + j); }   // the hair over the head, falling behind
+  });
+  items.sort(function (a, b) { return a.dep - b.dep; }); for (i = 0; i < items.length; i++) items[i].fn();
+  c.restore();
 }
 function creatureD(c, x, y, s, H) {
   H = H || creature();
