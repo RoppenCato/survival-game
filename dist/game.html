@@ -6935,7 +6935,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var CLAMP_T = 300, CLAMP_WOOD = 8, CLAMP_OUT = 10, CLAMP_SEAL = 5;
   function morningEmbers() {
     var fires = []; if (hearth) fires.push(hearth); B.items.forEach(function (it) { if ((isHearth(it) || it.light) && !it.lvl) fires.push(it); });
-    fires.forEach(function (f, k) { drop('charcoal', f.x + (k % 2 ? 14 : -14), f.y + 12, 2); });
+    fires.forEach(function (f, k) { var lying = drops.filter(function (d) { return d.kind === 'charcoal' && Math.hypot(d.x - f.x, d.y - f.y) < 50; }).length; if (lying < 4) drop('charcoal', f.x + (k % 2 ? 14 : -14), f.y + 12, 2); });   // never more than a few lying there
   }
   function clampNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.clamp && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 48) return it; } return null; }
   function clampPrompt(it) { if (!it.burn) return 'Light the clamp (' + CLAMP_WOOD + ' wood)'; if (it.burn.t > CLAMP_T * 0.66 && !it.burn.sealed) return 'Seal the vent'; return null; }
@@ -7196,7 +7196,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var L = lvl(), BB = Bl(L), R = RI(L), my = mouseW.y + (L ? UP / K : 0);   // upstairs everything is drawn a storey up, so the cursor points a storey lower
     var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(my / T), far = Math.hypot(mouseW.x - P.x, my - P.y) > 150, i, k;
     if (P.wreck) {
-      for (i = 0; i < B.items.length; i++) if ((B.items[i].lvl || 0) === L && Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - my) < 16) { var full = B.items[i].store && B.items[i].store.some(function (q) { return !!q; }); return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
+      for (i = 0; i < B.items.length; i++) if ((B.items[i].lvl || 0) === L && Math.hypot(B.items[i].x - mouseW.x, B.items[i].y - my) < 16) { var full = (B.items[i].store && B.items[i].store.some(function (q) { return !!q; })) || (B.items[i].out && B.items[i].out.length) || (B.items[i].cooking && B.items[i].cooking.length) || !!B.items[i].burn; return { kind: 'item', item: B.items[i], idx: i, ok: !far && !full, why: far ? 'Too far' : full ? 'Empty it first' : '' }; }
       var co = cornerAt(mouseW.x, my), ck = Build.key(co.x, co.y);     // at a corner the post comes first, then the walls on it
       if (co.d < 0.22 && BB.posts[ck]) { var used = Build.postUsed(BB, co.x, co.y); return { kind: 'post', cx: co.x, cy: co.y, has: BB.posts[ck], ok: !far && !used, why: far ? 'Too far' : used ? 'Walls stand on it' : '' }; }
       var ed = Build.edgeAt(mouseW.x, my), k0 = Build.key(ed.x, ed.y);
@@ -8912,7 +8912,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var bees = [];
   function beesTick(dt) { var P = hero(); for (var i = bees.length - 1; i >= 0; i--) { var be = bees[i]; be.t += dt; be.life -= dt; var tx = P.x - be.x, ty = P.y - be.y, dl = Math.hypot(tx, ty) || 1; be.x += (tx / dl * 70 + Math.cos(be.t * 7 + be.a) * 40) * dt; be.y += (ty / dl * 50 + Math.sin(be.t * 6 + be.a) * 30) * dt; be.cd = (be.cd || 0) - dt; if (dl < 12 && be.cd <= 0) { if (!ADMIN.immortal) P.hp = Math.max(1, P.hp - 1); P.flash = 0.5; be.cd = 2; } if (be.life <= 0 || fireNear(be.x, be.y, 60)) bees.splice(i, 1); } }
   function regrowTick() {                   // each new day the stumps old enough become saplings that grow up
-    Gather.regrowTick(GT, decals, day.n, function (st) { if (!st.name || !kit.PROPS[st.name]) return null; var clear = true; around(st.x, st.y, function (o) { if (Math.hypot(o.x - st.x, o.y - st.y) < 20) clear = false; }); if (!clear) return null; var p = { name: st.name, x: st.x, y: st.y, s: st.s || 0.5, r: 11, v: Math.floor(Math.random() * 3), kind: 'tree', leanDir: Math.random() < 0.5 ? -1 : 1, grow: 0 }; p.max = p.hp = World.HP[st.name] * (0.7 + 0.6 * p.s); w.addProp(p); delete gone[propKey(p)]; return p; });
+    Gather.regrowTick(GT, decals, day.n, function (st) { if (!st.name || !kit.PROPS[st.name]) return null; var clear = true; around(st.x, st.y, function (o) { if (Math.hypot(o.x - st.x, o.y - st.y) < 20) clear = false; }); if (!clear) return null; var p = { name: st.name === 'struckTree' ? 'birch' : st.name, x: st.x, y: st.y, s: st.s || 0.5, r: 11, v: Math.floor(Math.random() * 3), kind: 'tree', leanDir: Math.random() < 0.5 ? -1 : 1, grow: 0 }; p.max = p.hp = World.HP[st.name] * (0.7 + 0.6 * p.s); w.addProp(p); delete gone[propKey(p)]; return p; });
   }
   Combat.api.onDeath = function (e) { var A = ANIMALS[e.kind] || ANIMALS.boar; for (var k in A.drops) { var q = A.drops[k], n = Math.floor(q) + (Math.random() < q - Math.floor(q) ? 1 : 0); if (n) drop(k, e.x, e.y, n); } if (e.kind) { learn(e.kind); killDeed(e.kind); } deed('kills'); };
 
@@ -9704,7 +9704,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       (sv.drops || []).forEach(function (d) { drops.push({ kind: d.kind, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0 }); });
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
-      w.eachProp(function (o) { if (o.kind && gone[propKey(o)]) w.removeProp(o); });
+      w.eachProp(function (o) { if ((o.kind || o.name === 'fireRing') && gone[propKey(o)]) w.removeProp(o); }); B.items.forEach(function (it) { if (it.cooking && it.cooking.length && cookFires.indexOf(it) < 0) cookFires.push(it); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; });
       if (cave && sv.veins && sv.veins.length === cave.veins.length) sv.veins.forEach(function (lf, vi) { cave.veins[vi].left = lf; }); if (cave && cave.hoard && sv.hoard) { cave.hoard.n = sv.hoard.n; cave.hoard.day = sv.hoard.day; }
       decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
@@ -9781,7 +9781,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* ---------- the Rune Editor (game.html?scene=runes): a hut with a carver's bench, a workbench and a fireplace on the big
      island, every rune known, a ring on the arm, the hero at the bench; a small board on the left to change the ring's
      metal, bring beasts, turn the night on and start over. Its save is game.save.runes, so the real game is untouched. */
-  var runePanel = { x: 6, y: 92, w: 92, rows: [] }, runeSite = null;
+  var runePanel = { x: 6, y: 40, w: 92, rows: [] }, runeSite = null;
   function runesScene() {
     var q = w.isles[1] || w.isles[0], R2 = kit.rng(spec.seed * 7 + 3), P = hero(), site = null, tries, x, y, tx, ty, kk = Build.key;
     for (tries = 0; tries < 900 && !site; tries++) {
@@ -9799,10 +9799,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (y = site.ty; y < site.ty + 3; y++) for (x = site.tx; x < site.tx + 4; x++) B.floors[kk(x, y)] = 0;
     Build.ensurePosts(B);
     function item(name, tx2, ty2, extra) { var it = { name: name, x: (tx2 + 0.5) * T, y: (ty2 + 0.5) * T, r: (PIECES.filter(function (p) { return p.prop === name; })[0] || { r: 6 }).r }; for (var k in extra || {}) it[k] = extra[k]; B.items.push(it); return it; }
+    item('furnace', site.tx + 0.6, site.ty + 5.4, { furnace: true }); item('charcoalPit', site.tx + 3.2, site.ty + 5.6, { clamp: true }); item('campfire', site.tx + 5.6, site.ty + 4.2, { hearth: true, light: 1 });
     item('carverBench', site.tx + 2.5, site.ty + 0.5, { carver: true }); item('workbench', site.tx + 0.6, site.ty + 0.5, { bench: true }); item('fireplace', site.tx + 3.4, site.ty + 2.2, { hearth: true, chimney: true }); item('bed', site.tx + 0.6, site.ty + 2.2, { bed: true }); item('chest', site.tx + 1.6, site.ty + 2.4, { store: [null, null, null, null, null, null, null, null, null, null, null, null] });
     bDirty = true;
     P.x = (site.tx + 2.5) * T; P.y = (site.ty + 1.6) * T; P.face = -Math.PI / 2; P.lvl = 0; P.mode = 'fight';
-    ['wood', 'stone', 'fiber', 'copper', 'leather', 'berries', 'meat'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
+    ['wood', 'stone', 'fiber', 'copper', 'leather', 'berries', 'meat', 'charcoal', 'copperBar'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
     [Items.make('sword', 'copper'), Items.make('bow', 'wood'), Items.make('axe', 'copper'), Items.make('pick', 'copper'), Items.make('knife', 'copper')].forEach(function (it) { if (!barPut(it)) addThing(it); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 300; caveFade = 0;
     seen.met = 1; seen.village = 1; seen.hamlet = 1; seen.cave = 1;
@@ -9810,7 +9811,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     runeSite = site; recount(); save();
   }
   function runeRows() {
-    return [{ id: 'bronze', name: 'Bronze ring' }, { id: 'silver', name: 'Silver ring' }, { id: 'twisted', name: 'Twisted silver' }, { id: 'gold', name: 'Gold ring' }, { id: 'dragon', name: 'Dragon ring' }, { id: 'learn', name: 'Know every rune' }, { id: 'forget', name: 'Forget them all' }, { id: 'beasts', name: 'Beasts: boar, wolf, adder' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'home', name: 'Back to the bench' }, { id: 'reset', name: 'Start the scene over' }];
+    return [{ id: 'bronze', name: 'Bronze ring' }, { id: 'silver', name: 'Silver ring' }, { id: 'twisted', name: 'Twisted silver' }, { id: 'gold', name: 'Gold ring' }, { id: 'dragon', name: 'Dragon ring' }, { id: 'learn', name: 'Know every rune' }, { id: 'forget', name: 'Forget them all' }, { id: 'beasts', name: 'Beasts: boar, wolf, adder' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'dawn', name: 'Skip to dawn' }, { id: 'cave', name: 'To the cave mouth' }, { id: 'cavein', name: 'Into the cave' }, { id: 'lair', name: 'To the troll’s lair' }, { id: 'trollout', name: 'Troll: walk out' }, { id: 'trollhome', name: 'Troll: walk home' }, { id: 'veins', name: 'Veins and hoard full' }, { id: 'stuff', name: 'Ore, charcoal, wood' }, { id: 'home', name: 'Back to the bench' }, { id: 'reset', name: 'Start the scene over' }];
   }
   function runeAct(id) {
     var P = hero();
@@ -9819,19 +9820,27 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (id === 'forget') { RS.learnt = {}; RS.earned = {}; if (ring) ring.coils.forEach(function (c0) { c0.id = null; }); toast('Nothing known'); }
     else if (id === 'beasts') { ['boar', 'wolf', 'snake'].forEach(function (k, i) { var e = placeAnimal(k, 0, { x: P.x + 90 + i * 40, y: P.y + 70 }, false); if (e) { e.awake = false; e.aggro = 60; } }); toast('Beasts, south of you'); }
     else if (id === 'night') { day.t = light() > 0.5 ? 300 : 1300; }
-    else if (id === 'home') { if (runeSite) { P.x = (runeSite.tx + 2.5) * T; P.y = (runeSite.ty + 1.6) * T; P.lvl = 0; } }
+    else if (id === 'home') { if (inCave) caveSwap(false); if (runeSite) { P.x = (runeSite.tx + 2.5) * T; P.y = (runeSite.ty + 1.6) * T; P.lvl = 0; } }
+    else if (id === 'dawn') { day.t = 0; day.n++; regrowTick(); morningEmbers(); }
+    else if (id === 'cave') { if (inCave) caveSwap(false); if (caveMouth) { P.x = caveMouth.x; P.y = caveMouth.y + 60; P.lvl = 0; } }
+    else if (id === 'cavein') { if (!inCave) caveSwap(true); }
+    else if (id === 'lair') { if (!inCave) caveSwap(true); if (cave) { P.x = cave.lair.x - 80; P.y = cave.lair.y; } }
+    else if (id === 'trollout') { if (light() < 0.5) day.t = 1300; if (!troll) trollMoveIn(); if (troll && caveMouth) { var e = troll; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.going = null; e.stoneT = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; toast('The troll walks out'); } }
+    else if (id === 'trollhome') { if (troll && cave) { trollHome(troll, true); toast('The troll walks home'); } }
+    else if (id === 'veins') { if (cave) { cave.veins.forEach(function (v) { v.left = 5 + (v.s % 3); v.hp = v.max; }); cave.chunks = {}; cave.chunkN = 0; if (cave.hoard) cave.hoard.n = 10; toast('The veins are green again'); } }
+    else if (id === 'stuff') { ['copper', 'charcoal', 'wood', 'stone'].forEach(function (k) { addItem(k, 25); seen[k] = 1; }); }
     else if (id === 'reset') { try { localStorage.removeItem(SAVE); } catch (e) {} location.reload(); return; }
     save();
   }
   function drawRunePanel(c) {
-    var rows = runeRows(), rh = 11, x0 = runePanel.x, y0 = runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [];
+    var rows = runeRows(), rh = 9, x0 = runePanel.x, y0 = runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [];
     c.save(); c.globalAlpha = 0.92; wood(c, x0, y0, w0, h0);
     c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Rune editor', x0 + 6, y0 + 10);
     rows.forEach(function (r, i) {
       var yy = y0 + 16 + i * rh, hov = mouseS && mouseS.x > x0 + 3 && mouseS.x < x0 + w0 - 3 && mouseS.y >= yy && mouseS.y < yy + rh, on = ring && ring.metal === r.id;
       runePanel.rows.push({ id: r.id, x: x0 + 3, y: yy, w: w0 - 6, h: rh });
       c.fillStyle = on ? 'rgba(255,214,90,0.22)' : (hov ? 'rgba(255,230,180,0.16)' : 'rgba(0,0,0,0.22)'); c.fillRect(x0 + 3, yy, w0 - 6, rh - 1);
-      c.font = (on ? 'bold ' : '600 ') + '5.5px system-ui, sans-serif'; c.fillStyle = on ? '#ffd34d' : '#f6e2b8'; c.fillText(r.name, x0 + 7, yy + 7.5);
+      c.font = (on ? 'bold ' : '600 ') + '5px system-ui, sans-serif'; c.fillStyle = on ? '#ffd34d' : '#f6e2b8'; c.fillText(r.name, x0 + 7, yy + 6.5);
     });
     c.restore();
   }

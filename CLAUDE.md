@@ -814,7 +814,10 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   aggro ring. **He walks home**: at morning he comes in at the mouth and walks the passage's middle to the lair (`trollHome(e,
   true)`, `trollWalk`, `cave.path`), about fifty seconds, and anyone inside hears "Heavy steps echo from the mouth of the cave";
   if he passes near you he wakes. Debug: `trollOut()`, `trollHome(walk)`, `trollTick`, `trollSees`, `hoardTake`, `hoardFree`,
-  `veinHit`.
+  `veinHit`. **Tried to break it (2026-10-07), fixed:** a fire ring taken came back on reload (`gone` now also removes it); a
+  furnace's or hearth's queue stood still after a reload (`cookFires` rebuilt on load); a struck tree's stump regrew as a struck tree
+  (now a birch); embers piled up at fires over days (at most four lumps lying); a station with a queue, things ready or a burning
+  clamp cannot be wrecked ("Empty it first"); the troll sent out by day walked straight back in (the test row brings night).
 - **Charcoal, the furnace and copper tools (2026-10-07, Robin decided):** charcoal is never made in the furnace. **Morning embers:**
   at every dawn each fire that burned through the night (the camp hearth, campfires, hearths, braziers) drops two lumps of
   charcoal beside it (`morningEmbers`, from `dayTick` and waking). **The charcoal clamp** (the `charcoal` piece, prop `charcoalPit`,
