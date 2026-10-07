@@ -1468,6 +1468,20 @@ var STYLE_FLAT = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 1
 // The ink look (2026-10-07, docs/art-direction.md): Egerkrans's line, Bauer's light. look 3 in shape(): a cool shadow crescent,
 // grain in every fill, a warm lit edge, a thin line all round and a heavy line fading in on the shadow side, warm brown-black ink.
 var STYLE_INK = { look: 3, shadowHue: 222, outsideHue: 92, sat: 0.66, bright: -2, contrast: 1.04, shade: 0.52, outlineW: 1.6, outlineDark: 1, texture: 1.1, rough: 0.08, vignette: 0.2, round: 1, lush: 1, sparkle: 0, fog: 0, glow: 0.15 };   // Robin's numbers, 2026-10-07
+// The heavy ink line: each edge segment is stroked as dark as its outward normal faces away from the light (upper left), so
+// the line thickens on a shape's shadow side and thins toward the light whatever the shape, and always lies on its edge.
+function inkEdge(c, d, w) {
+  var n = d.length, area = 0, i; if (n < 3) return;
+  for (i = 0; i < n; i++) { var p = d[i], q = d[(i + 1) % n]; area += p[0] * q[1] - q[0] * p[1]; }
+  var sgn = area > 0 ? 1 : -1, lx = -0.6, ly = -0.8;                                  // the light from the upper left
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = w;
+  for (i = 0; i < n; i++) {
+    var a = d[i], b = d[(i + 1) % n], ex = b[0] - a[0], ey = b[1] - a[1], L = Math.hypot(ex, ey) || 1, nx = ey / L * sgn, ny = -ex / L * sgn;
+    var k = Math.max(0, Math.min(1, (-(nx * lx + ny * ly) + 0.15) / 0.9)); if (k < 0.03) continue;
+    c.globalAlpha = k * k; c.strokeStyle = OLC; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+  }
+  c.restore();
+}
 var grainCv = null;
 function grain(c) {                                  // paper and pencil: a small pattern of dark and light specks, tiled
   if (!grainCv) { grainCv = mk(96, 96); var g = grainCv.getContext('2d'), R = rng(77), i; for (i = 0; i < 1500; i++) { var x = R() * 96, y = R() * 96, d = R(); g.fillStyle = d < 0.55 ? 'rgba(20,14,10,' + (0.25 + R() * 0.45).toFixed(2) + ')' : 'rgba(255,245,225,' + (0.2 + R() * 0.4).toFixed(2) + ')'; g.fillRect(x, y, 1 + (R() < 0.3 ? 1 : 0), 1); } }
@@ -1589,8 +1603,7 @@ function shape(c, pts, m, o) {
     if (!o.flat) { c.translate(-0.7, -0.7); path(c, d); c.lineWidth = 1.1; c.strokeStyle = m.hl; c.globalAlpha = 0.5; c.stroke(); c.globalAlpha = 1; }
     c.restore();
     path(c, d); c.lineJoin = 'round'; c.lineWidth = ow(o.size) * 0.8; c.strokeStyle = OLC; c.stroke();
-    var gl = c.createLinearGradient(bb.x, bb.y, bb.x + bb.w * 0.9, bb.y + bb.h * 0.9); gl.addColorStop(0, 'rgba(35,26,22,0)'); gl.addColorStop(0.45, 'rgba(35,26,22,0)'); gl.addColorStop(1, OLC);
-    path(c, d); c.lineWidth = ow(o.size) * 2.1; c.strokeStyle = gl; c.stroke();   // the heavy line on the shadow side
+    inkEdge(c, d, ow(o.size) * 2.1);                      // the heavy line on the shadow side, following the edge
     return d;
   }
   c.save(); path(c, d); c.fillStyle = m.base; c.fill();

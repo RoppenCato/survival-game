@@ -922,7 +922,17 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   **`World.GRASS_INK`** for the living grass (moss and ochre, muted blooms) unless a Grass Editor look is stored, and lays **grain and
   a vignette over the world** each frame before the night overlay. **Robin's numbers (2026-10-07: line 1.6, grain 1.1, wobble 0.08,
   figure grain 0.22, figure shadow 0.41) are the ink defaults**; he said the palette "is going more towards old drawings in books".
-  `node tools/visual/look.js` renders the Art Direction scene both ways to look.png.
+  `node tools/visual/look.js` renders the Art Direction scene both ways to look.png. **Fixes after Robin's first look (2026-10-07):**
+  the heavy line is drawn per edge segment, as dark as the segment's outward normal faces away from the light (`inkEdge`), so it
+  lies on the shadow side of any shape instead of a position gradient that left a pale oval inside tree trunks; the game's grain
+  overlay is drawn inside the camera transform so it is locked to the world, not to the screen.
+- **The ground brush (2026-10-07, Robin: the tile paths were too mechanical and perfect):** the tile paths are gone from the
+  Building board (their floor entries stay in `Build.FLOORS` for old saves). The board's **Ground** row has three brushes, Gravel,
+  Earth and Grass back, all free: drag to paint a stroke 15 units wide anywhere on land within reach. The world keeps the paint in
+  `w.ground` (cells a quarter tile wide, `w.paintGround(x, y, r, kind)`, `w.groundKind`, saved as `ground`) and bakes it into the
+  ground pieces (`paintGroundInto`: the cells read as a smooth field with noise on top, so edges are ragged, a darker shoulder at
+  the edge, pebbles on gravel), forgetting the pieces a stroke touches (`w.repaint`). The steading's paths are painted strokes
+  that wander a little (`stroke` in `villageBuild`). A stroke saves a moment after the mouse stops (`groundDirtyT`).
 - **The reference set** (Object Editor, first category, starred): oak, pine, bush, rock, cliff, longhouse, woodpile,
   tallGrass, flower, runestone. Each settles one family's drawing rules (canopy, tiers, stone, wood and roofs,
   blades, small bright things, carved stone), and the rest of the props are then restyled to match. The notes
