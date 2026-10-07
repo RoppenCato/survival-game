@@ -127,7 +127,22 @@ the text and it is made the default. When a spec's meaning changes, change the s
   world: height field `E`, tile `grid`, `isLand`/`isWater`/`elevAt`, props in `buckets` (`plant`, `camp`, `addProp`,
   `removeProp`, `around`, `nearSolids`), lazy ground painting (`drawGround`), shore waves (`drawWaves`), `chart`.
   `World.KIND` and `World.HP` say what can be gathered. Island changes go here, once.
-- `src/build.js` (`Build`): building pieces, used by the game (the Base Editor is gone): `WALLS`, `FLOORS`, `ROOFS`,
+- `src/build.js` (`Build`): building pieces, used by the game (the Base Editor is gone). **Redrawn for the art direction (Robin,
+  2026-10-07):** build.js has its own small ink toolkit (`INK`, `ink(c, pts, fill, o)`: the fill, grain and a cool shade toward the
+  lower right inside it, a warm lit edge up and left, a thin hand-made line all round, `wob`, and the heavy line on the shadow side
+  per edge, `heavy`; `stroke`, `knot`, `face` for the material inside a face, `cap` for a wall's top seen from above; exported as
+  `Build.ink`, `Build.INK`, `Build.face`, `Build.stroke`). Every piece is a real material in the earth palette: **logs** (stacked
+  rounded logs with a lit top and a dark seam, knots), **planks** (upright boards of varied tone with nail dots and a batten),
+  **wattle** (withies woven over and under upright stakes), **stone** (irregular blocks of varied tone in mortar, never a grid),
+  **turf** (sod strips with a ragged grassy top and tufts); a **door** of planks with two battens and an iron ring (edge-on when
+  open); a **window** is a dark hole with a wooden shutter swung open beside it and a sill (no glass in this age); posts are timbers
+  with a cap and grain lines; stairs, beams and the **chimney** (irregular stones) likewise. **Roofs:** turf is sod with grass blades
+  in two greens, flowers and grass hanging over the eaves; thatch is rows of straw with lit loose straws and the ragged fringe;
+  shingles are scalloped rows, each a shade of its own; all get grain, the near slope in shadow, a thin line all round and a heavy
+  line along the eaves and the right side, a ridge pole and crossed ridge boards. **Yard:** wattle fence, split rails with knots
+  and a slight bend, a palisade of pointed logs with bark lines, a gate with a brace, and a dry-stone wall of irregular stones with
+  capstones set on edge. The board icons follow the palettes. `node tools/visual/house.js` renders a house in every material under
+  every roof with the yard pieces and the icons to house.png. The old `texture` and `box` helpers are gone. `WALLS`, `FLOORS`, `ROOFS`,
   `rooms(B, GW, GH, bounds)` (closed rooms by flood fill, and collision circles for walls and posts), `drawH`, `drawV`,
   `drawRoof` (turf, thatch, shingles), `drawPost`, `drawBeam`, `drawStairs`, `drawChimney`, `postsOk`, `postUsed`,
   `ensurePosts`, `edgeAt`, `icon`, `UP` (a storey). A building is `B = { floors, H, V, posts, stairs, roofs, items, up }`

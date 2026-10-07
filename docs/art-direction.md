@@ -78,6 +78,8 @@ Everything is still drawn in code. The look is a renderer and a palette, not a s
 3. **The page**: `look-editor.html` draws one scene twice, old and new, with the rules as sliders and "Use in the game".
 4. **Then the palette pass** over the game: the night overlay, the cave, the boards, the water and beaches (kept as Robin
    likes them, retuned only for the shadow hue).
+5. **The building pieces (built 2026-10-07):** walls, doors, windows, posts, beams, stairs, chimneys, roofs and the yard pieces
+   in `src/build.js` are drawn as real materials in ink and grain (see CLAUDE.md, Source layout).
 
 ## 7. The check
 
