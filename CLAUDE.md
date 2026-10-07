@@ -801,6 +801,15 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Panels:** the character panel hero always faces south; the bag is aligned right with the same margin (8) as the
   character panel; Sort is a small button on top of the bag (three small rectangles); tooltips draw above boards;
   Brokk's bubble draws on top of roofs.
+- **The swing and the chop reworked (2026-10-07, Robin: clipping and unnatural; put effort in):** `arcSwing` in `src/combat.js`:
+  the hand rides a circle round the shoulder (radius 10.5 at -17), from the carry at the hip up behind the head in the windup
+  (eased), over the top and fast down in front to the target in the stroke, then eased back to the carry; the haft continues the
+  arm and lags back in the windup so the axe head hangs behind the shoulder. The chop (`chopPose`, axe and pick, and smashes) is
+  **two-handed**: `hand2` lies further up the haft and `heroPose` sends the other arm to it (`pose.far`, or the other of
+  `armL`/`armR`). The sword seen from the side uses the same overhead arc (`swordPose`), facing the camera or away it keeps the
+  wide sweep across the body (pivot raised to the chest, radius 10.5). The knife still stabs. **The carry** at rest is at the
+  side with the arm hanging and the thing pointing forward and down. `node tools/visual/swing.js` renders the chop and the swing
+  as eight-frame sequences in the side, front and back views.
 - **Carrying things (2026-10-05):** at rest a tool or sword is carried up at the shoulder (hand at the hip, the thing pointing up and outward past the chin, behind the body when facing away), **held**: `heroPose` sends the
   figure's arm on that side to the grip (`carried`), and the thing is drawn there at 0.85 (`swordPose` rest branch in
   `src/combat.js`; axes and picks 11 units long, swords 15), in every direction. The sheath is not drawn when a page holds

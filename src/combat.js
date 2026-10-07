@@ -1058,12 +1058,16 @@ function swordPose(dir) {
     var ang = visAngle(a.dir - half * sign + sd.arc * sign * u, dir);
     var upv = Math.max(0, -Math.sin(ang)), sdn = Math.cos(a.dir) >= 0 ? 1 : -1, sb = Math.cos(ang) >= 0 ? 1 : -1;
     o.len = sd.blade;
+    if (dir === 'left' || dir === 'right') {                            // seen from the side a swing reads as an overhead cut (2026-10-07)
+      var us; if (a.ph === 'windup') us = -(a.t / sd.wu); else if (a.ph === 'active') us = Math.min(1, a.t / sd.ac); else us = 1 + Math.min(1, a.t / sd.rec);
+      arcSwing(o, us, dir, a, sdn, sd.blade, sd.hands === 2, false); if (S.look === 'classic') o.len *= lib.hero().spec.bladeLen; return o;
+    }
     if (dir === 'up' || dir === 'down') {
     // a wide side-to-side swing: the hand sweeps across in front of the body, or over the head when facing away
     var startAng = a.dir - half * sign, armSide = Math.cos(startAng) >= 0 ? 1 : -1;
     o.hx = armSide * 2.5 + Math.cos(ang) * 8; o.hy = -14 + Math.sin(ang) * 8 * K - 4 * upv; o.armSide = armSide; o.lift = upv;
   } else {
-      o.hx = Math.cos(ang) * 9 + sdn * 10 * upv * upv; o.hy = -13 + Math.sin(ang) * 9 * K - 5 * upv;
+      o.hx = Math.cos(ang) * 10.5 + sdn * 8 * upv * upv; o.hy = -16 + Math.sin(ang) * 10.5 * K - 5 * upv;
     }
     o.ca = Math.cos(ang); o.sa = Math.sin(ang) * (K + (1 - K) * (o.lift || 0));
     if (o.tilt) { var nn = Math.hypot(o.ca, o.sa); o.ca /= nn; o.sa /= nn; }
@@ -1093,21 +1097,39 @@ function thrustPose(dir, a, sd) {
   return o;
 }
 function chopPose(dir, a, smash) {
-  var p = P, sd = stepData(a), o = {}, u, sdn = Math.cos(a.dir) >= 0 ? 1 : -1, knife = !smash && TOOLS[p.tool].id === 'knife';
-  if (a.ph === 'windup') u = -(a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1;
-  var raise = u < 0 ? -u : 1, e = u < 0 ? 0 : 1 - (1 - u) * (1 - u), dx = Math.cos(a.dir), dy = Math.sin(a.dir) * K;
+  // The chop (reworked 2026-10-07, Robin: it clipped and looked unnatural): the hand rides a circle round the shoulder, from
+  // up behind the head in the windup, over the top and down in front to the target, and the haft continues the arm, lagging
+  // back in the windup so the axe head hangs behind the shoulder. Both hands are on the haft (hand2). The knife is a short stab.
+  var p = P, sd = stepData(a), o = {}, u, sdn = Math.cos(a.dir) >= 0 ? 1 : -1, knife = !smash && TOOLS[p.tool].id === 'knife', side = dir === 'left' || dir === 'right';
+  if (a.ph === 'windup') u = -(a.t / sd.wu); else if (a.ph === 'active') u = Math.min(1, a.t / sd.ac); else u = 1 + Math.min(1, a.t / sd.rec);   // -1..0 the windup, 0..1 the stroke, 1..2 the recovery
+  var dx = Math.cos(a.dir), dy = Math.sin(a.dir) * K;
   if (knife) {
-    var reach = u < 0 ? -2 * raise : 9 * Math.sin(Math.min(1, u) * Math.PI);
+    var raise = u < 0 ? -u : 1, reach = u < 0 ? -2 * raise : (u <= 1 ? 9 * Math.sin(u * Math.PI) : 0);
     o.hx = dx * (6 + reach); o.hy = -13 + dy * (6 + reach) * 0.6; o.ca = dx; o.sa = dy; o.len = 10;
-  } else {
-    var upX = -sdn * 4, upY = -31, downX = dx * 12, downY = -8 + dy * 7;
-    o.hx = u < 0 ? -sdn * 1 + (upX + sdn * 1) * raise : upX + (downX - upX) * e;
-    o.hy = u < 0 ? -16 + (upY + 16) * raise : upY + (downY - upY) * e;
-    var ang0 = Math.atan2(-0.95, -sdn * 0.3), ang1 = Math.atan2(dy + 0.45, dx * 0.9), ang = u < 0 ? ang0 : ang0 + wrap(ang1 - ang0) * e;
-    o.ca = Math.cos(ang); o.sa = Math.sin(ang); o.len = smash ? smash.blade : 15;
+    o.front = u < 0 || u < 0.3 || Math.sin(a.dir) >= -0.05; o.side = sdn; o.armSide = sdn; o.atk = true;
+    return o;
   }
-  o.front = u < 0 || u < 0.3 || Math.sin(a.dir) >= -0.05; o.side = sdn; o.armSide = sdn; o.atk = true;
+  arcSwing(o, u, dir, a, sdn, smash ? smash.blade : 15, true, false);
   return o;
+}
+// The overhead arc: the hand rides a circle round the shoulder, up behind the head in the windup, over the top and down in
+// front to the target; the haft continues the arm, lagging back in the windup; then back to the carry. rising: the arc the
+// other way (a rising cut). twoHanded: the other hand further up the haft (hand2).
+function arcSwing(o, u, dir, a, sdn, len, twoHanded, rising) {
+  var side = dir === 'left' || dir === 'right', A0 = 1.35, AUP = -2.1, AEND = 1.0, ang, lag, e, R = 10.5;
+  if (rising) { var tmp = AUP; AUP = AEND + 0.25; AEND = tmp + 0.3; }
+  if (u < 0) { e = 1 - (1 + u) * (1 + u); ang = A0 + (AUP - A0) * e; lag = -1.1 * e * (rising ? -0.5 : 1); }                       // the windup eases up and back
+  else if (u <= 1) { e = u * u * (3 - 2 * u); ang = AUP + (AEND - AUP) * Math.min(1, u * 1.25); lag = -1.1 * (1 - e) * (1 - e) * (rising ? -0.5 : 1); }   // the stroke, fast
+  else { e = u - 1; var ee = e * e * (3 - 2 * e); ang = AEND + (A0 - AEND) * ee; lag = 0.25 * (1 - ee); }                  // back to the carry
+  var ta = ang + lag;
+  if (side) { o.hx = sdn * Math.cos(ang) * R; o.hy = -17 + Math.sin(ang) * R; o.ca = sdn * Math.cos(ta); o.sa = Math.sin(ta); }
+  else {                                                                // facing the camera or away: the arc shows as over the head and down in front
+    var up = Math.sin(a.dir) < -0.05;
+    o.hx = sdn * (4 + 3 * Math.max(0, Math.cos(ang))); o.hy = -17 + Math.sin(ang) * R * 1.25;
+    o.ca = sdn * 0.3 * Math.cos(ta); o.sa = (up ? -1 : 1) * Math.sin(ta);
+  }
+  o.len = len; if (twoHanded) o.hand2 = [o.hx + o.ca * len * 0.38, o.hy + o.sa * len * 0.38];
+  o.front = Math.sin(a.dir) >= -0.05 || u < 0; o.side = sdn; o.armSide = sdn; o.atk = true;
 }
 function shieldBehind() { return Math.sin(P.face) < -0.05; }
 function shieldPose() {
@@ -1128,13 +1150,13 @@ function heroPose(dir) {
   } else {
     var sh = shieldPose(), shieldHand = [sh[0] + bp.lx, sh[1] + bp.ly];
     if (shieldBehind() && !side) shieldHand = [guardSide() * 9 + bp.lx, -16 + bp.ly];
-    var useSword = drawn || p.fireT > 0 || carried;
+    var useSword = drawn || p.fireT > 0 || carried, hand2 = sp.hand2 ? [sp.hand2[0] + bp.lx, sp.hand2[1] + bp.ly] : null;   // the other hand on the haft of a two-handed thing
     if (side) {
-      if (useSword) pose.near = swordHand;
+      if (useSword) pose.near = swordHand; if (hand2 && !p.guard) pose.far = hand2;
       if (p.guard) { if (useSword) pose.far = shieldHand; else pose.near = shieldHand; }
     } else {
       var ss = useSword ? (((dir === 'up' || dir === 'down') && drawn && sp.armSide) ? sp.armSide : sp.side) : -guardSide();
-      if (useSword) pose[ss < 0 ? 'armL' : 'armR'] = swordHand;
+      if (useSword) pose[ss < 0 ? 'armL' : 'armR'] = swordHand; if (hand2 && !p.guard) pose[ss < 0 ? 'armR' : 'armL'] = hand2;
       if (p.guard) pose[guardSide() < 0 ? 'armL' : 'armR'] = shieldHand;
     }
   }
