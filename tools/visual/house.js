@@ -16,8 +16,8 @@ function house(ox, oy, m, roof) {                      // a 3 by 2 tile house at
   for (let x = ox; x < ox + 3; x++) Build.drawH(c, x, oy, B.H[Build.key(x, oy)], false, false, cfg);
   for (let y = oy; y < oy + 2; y++) { Build.drawV(c, ox, y, B.V[Build.key(ox, y)], false, B.V[Build.key(ox, y + 1)] || false, cfg); Build.drawV(c, ox + 3, y, B.V[Build.key(ox + 3, y)], false, B.V[Build.key(ox + 3, y + 1)] || false, cfg); }
   Build.drawPost(c, ox, oy + 2, { m }, cfg);
+  for (let x = ox; x < ox + 3; x++) Build.drawH(c, x, oy + 2, B.H[Build.key(x, oy + 2)], false, false, cfg);   // the south wall first: the roof's eave hangs over its top, as the game sorts them
   if (ri.rooms[0]) Build.drawRoof(c, ri.rooms[0], 1, cfg, 0);
-  for (let x = ox; x < ox + 3; x++) Build.drawH(c, x, oy + 2, B.H[Build.key(x, oy + 2)], false, false, cfg);
   Build.drawChimney(c, (ox + 2.5) * T, oy * TS - 10, 22, 1, 1.3);
 }
 [[0, 0], [1, 1], [2, 2], [3, 3], [4, 1]].forEach((v, i) => house(1 + i * 4, 2, v[0], v[1]));
