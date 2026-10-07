@@ -4614,54 +4614,83 @@ function drawChimney(c, x, yBase, h, a, t) {
   for (i = 0; i < 5; i++) { var u = ((t * 0.3 + i * 0.2) % 1), px = x + Math.sin(t * 0.9 + i * 1.7) * 2 + u * 9, py = yBase - h - 5 - u * 24, r = 2 + u * 4.5; c.fillStyle = 'rgba(226,222,214,' + ((1 - u) * 0.42 * a).toFixed(2) + ')'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill(); }
   c.restore();
 }
-// The roof of a closed room, up one storey over its tiles (dy lifts it a storey more for a room upstairs). Turf is sod
-// with grass and a few flowers; thatch is rows of straw with a ragged fringe hanging over the eaves and crossed boards at
-// the ridge; shingles overlap in scalloped rows. The near slope lies in shadow; a pole runs along the ridge; the ink line
-// is heavy along the eaves and the right side, the shadow side.
+// The roof of a closed room, up one storey over its tiles (dy lifts it a storey more for a room upstairs). A hipped roof
+// with real form (Robin, 2026-10-07: more depth and volume, an overhang): the ridge raised above the eaves, four facets (the far
+// slope lit, the near slope in shadow, the hips between), the eaves hanging past the walls with their thickness showing and a
+// shadow cast on the wall below, the hip lines and the heavy line along the eaves. Turf is sod with grass and flowers; thatch is
+// rows of straw with a ragged fringe hanging over the eaves and crossed boards at the ridge; shingles overlap in scalloped rows.
+// A room that is not a rectangle gets a roof over each rectangle it is made of, far to near.
+function roofRects(tiles) {
+  var has = {}, left = [], i; tiles.forEach(function (t) { has[t[0] + ',' + t[1]] = 1; left.push([t[0], t[1]]); });
+  var out = [];
+  while (left.length) {
+    left.sort(function (a, b) { return a[1] - b[1] || a[0] - b[0]; });
+    var t0 = left[0], x0 = t0[0], y0 = t0[1], x1 = x0, y1 = y0, x, y, ok;
+    while (has[(x1 + 1) + ',' + y0]) x1++;
+    for (;;) { ok = true; for (x = x0; x <= x1; x++) if (!has[x + ',' + (y1 + 1)]) { ok = false; break; } if (!ok) break; y1++; }
+    for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) delete has[x + ',' + y];
+    left = left.filter(function (t) { return has[t[0] + ',' + t[1]]; });
+    out.push({ x0: x0, y0: y0, x1: x1, y1: y1 });
+  }
+  out.sort(function (a, b) { return a.y1 - b.y1; });
+  return out;
+}
 function drawRoof(c, room, a, C, dy) {
   C = C || CFG; dy = dy || 0;
   var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
-  var ov = C.overhang, up = C.wallH + C.thick * K + 1, i, j, y0 = 1e9, y1 = -1e9, x0 = 1e9, x1 = -1e9, kind = C.roof, has = {};
-  room.tiles.forEach(function (t) { y0 = Math.min(y0, t[1]); y1 = Math.max(y1, t[1]); x0 = Math.min(x0, t[0]); x1 = Math.max(x1, t[0]); has[t[0] + ',' + t[1]] = 1; });
-  function rects(pad) { c.beginPath(); room.tiles.forEach(function (t) { c.rect(t[0] * T - ov - pad, t[1] * TS - up - ov * K - pad, T + (ov + pad) * 2, TS + (ov * K + pad) * 2); }); }
-  var top = y0 * TS - up - ov * K, bot = (y1 + 1) * TS - up + ov * K, left = x0 * T - ov, right = (x1 + 1) * T + ov, mid = (top + bot) / 2, seed = x0 * 7 + y0 * 3;
-  var lineCol = r.line, hl = mix(r.col, '#fff4d0', 0.25), dk = mix(r.col, '#1a1410', 0.3);
-  c.save(); a *= c.globalAlpha; c.globalAlpha = a; c.translate(0, dy); c.lineCap = 'round';
-  if (kind === 1) {                                        // the fringe hangs below the eaves, so it goes under the roof
-    for (i = left + 1; i < right; i += 2.1) { var len = 4 + hs(i, 1) * 5, dark = hs(i, 2) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(i, bot - 3); c.lineTo(i + (hs(i, 3) - 0.5) * 1.5, bot + len); c.stroke(); }
-    c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(left, bot + 1.5); c.lineTo(right, bot + 1.5); c.stroke();
-  }
-  if (kind === 0) { for (i = left + 2; i < right; i += 3.5) { if (hs(i, 4) > 0.5) continue; c.strokeStyle = hs(i, 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(i, bot - 2); c.lineTo(i + (hs(i, 6) - 0.5) * 2, bot + 2 + hs(i, 7) * 2.5); c.stroke(); } }   // grass hanging over the eaves of a turf roof
-  rects(0); c.fillStyle = r.col; c.fill(); c.save(); c.clip();
-  c.fillStyle = 'rgba(0,0,0,0.16)'; c.fillRect(left, mid, right - left, bot - mid);                                   // the near slope in shadow
-  c.globalAlpha = a * INK.grain; c.fillStyle = grainPat(c); c.fillRect(left, top, right - left, bot - top); c.globalAlpha = a;
-  var g = c.createLinearGradient(left, top, right, bot); g.addColorStop(0, 'rgba(255,240,200,0.12)'); g.addColorStop(0.5, 'rgba(0,0,0,0)'); g.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,15%,0.22)'); c.fillStyle = g; c.fillRect(left, top, right - left, bot - top);
-  if (kind === 1) {                                        // thatch: rows of straw, a few loose straws lit
-    for (j = top + 4; j < bot; j += 5.2) {
-      c.strokeStyle = lineCol; c.globalAlpha = a * 0.6; c.lineWidth = 1; c.beginPath(); c.moveTo(left, j);
-      for (i = left; i < right; i += 4) c.quadraticCurveTo(i + 2, j + 1.2 + hs(i, j) * 2.2, i + 4, j);
-      c.stroke();
-      c.strokeStyle = j > mid ? 'rgba(255,245,210,0.16)' : 'rgba(255,245,210,0.34)'; c.lineWidth = 1.1; c.beginPath();
-      for (i = left + 2; i < right; i += 6.5) { var o = hs(i, j + 1); if (o < 0.6) { c.moveTo(i + o * 3, j - 3.5); c.lineTo(i + o * 3 + 0.6, j - 0.5); } }
-      c.stroke(); c.globalAlpha = a;
+  var ov = C.overhang + 1.5, up = C.wallH + C.thick * K + 1, kind = C.roof;
+  var lineCol = r.line, hl = mix(r.col, '#fff4d0', 0.25), dk = mix(r.col, '#1a1410', 0.3), edgeCol = mix(r.col, '#1a1410', 0.45);
+  c.save(); a *= c.globalAlpha; c.globalAlpha = a; c.translate(0, dy); c.lineCap = 'round'; c.lineJoin = 'round';
+  roofRects(room.tiles).forEach(function (rc) {
+    var top = rc.y0 * TS - up - ov * K, bot = (rc.y1 + 1) * TS - up + ov * K, left = rc.x0 * T - ov, right = (rc.x1 + 1) * T + ov, D = bot - top, Wd = right - left;
+    var rise = Math.min(16, D * 0.32), ridgeY = (top + bot) / 2 - rise, hip = Math.min(D * 0.55, Wd * 0.28), seed = rc.x0 * 7 + rc.y0 * 3, i, j;
+    var far = [[left, top], [right, top], [right - hip, ridgeY], [left + hip, ridgeY]], near = [[left + hip, ridgeY], [right - hip, ridgeY], [right, bot], [left, bot]];
+    var hipL = [[left, top], [left + hip, ridgeY], [left, bot]], hipR = [[right, top], [right, bot], [right - hip, ridgeY]], outline = [[left, top], [right, top], [right, bot], [left, bot]];
+    // the shadow the eaves cast on the walls below, and the thickness of the roof at the eaves
+    var sg = c.createLinearGradient(0, bot, 0, bot + 7); sg.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.42)'); sg.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg; c.fillRect(left, bot, Wd, 7);
+    var sg2 = c.createLinearGradient(right, 0, right + 5, 0); sg2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.3)'); sg2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg2; c.fillRect(right, top + 2, 5, D);
+    if (kind === 1) {                                        // thatch: the fringe hangs below the eaves and down the sides
+      for (i = left + 1; i < right; i += 2.1) { var len = 4 + hs(i, 1) * 5, dark = hs(i, 2) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(i, bot - 3); c.lineTo(i + (hs(i, 3) - 0.5) * 1.5, bot + len); c.stroke(); }
+      for (j = top + 3; j < bot; j += 2.4) { c.strokeStyle = hs(j, 2) < 0.4 ? dk : r.col; c.lineWidth = 1.3; c.beginPath(); c.moveTo(right - 2, j); c.lineTo(right + 2.5 + hs(j, 4) * 2, j + 1.5); c.moveTo(left + 2, j); c.lineTo(left - 2.5 - hs(j, 5) * 2, j + 1.5); c.stroke(); }
+      c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(left, bot + 1.5); c.lineTo(right, bot + 1.5); c.stroke();
+    } else if (kind === 0) {                                 // turf: the sod's edge shows at the eaves, dark soil and grass hanging over
+      ink(c, [[left - 1, bot - 1], [right + 1, bot - 1], [right + 1, bot + 2.6], [left - 1, bot + 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 });
+      for (i = left + 2; i < right; i += 3) { if (hs(i, 4) > 0.55) continue; c.strokeStyle = hs(i, 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(i, bot - 1); c.lineTo(i + (hs(i, 6) - 0.5) * 2, bot + 3 + hs(i, 7) * 2.5); c.stroke(); }
+    } else {                                                 // shingles: the ends of the last row show under the eaves
+      ink(c, [[left - 0.5, bot - 1], [right + 0.5, bot - 1], [right + 0.5, bot + 2.2], [left - 0.5, bot + 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 });
+      for (i = left + 4; i < right; i += 8) stroke(c, [[i, bot - 0.5], [i, bot + 2]], INK.soft, 0.6);
     }
-  } else if (kind === 0) {                                 // turf: sod with grass blades in two greens, a few flowers
-    for (j = top + 2; j < bot; j += 2.6) for (i = left + 1; i < right; i += 3.2) { var q = hs(i, j); if (q > 0.6) continue; c.strokeStyle = q < 0.25 ? hl : (q < 0.45 ? dk : lineCol); c.lineWidth = 0.9; c.beginPath(); c.moveTo(i + q * 2, j + 1.5); c.lineTo(i + q * 2 + (hs(i, j + 2) - 0.5) * 2, j - 2 - hs(i, j + 3) * 2); c.stroke(); }
-    for (j = top + 4; j < bot; j += 9) for (i = left + 3; i < right; i += 11) if (hs(i, j) < 0.1) { c.fillStyle = hs(i, j + 1) < 0.5 ? '#d8c26a' : '#c9d2d8'; c.beginPath(); c.arc(i, j, 1.1, 0, 7); c.fill(); }
-  } else {                                                 // shingles: scalloped rows, offset, each a shade of its own
-    var row = 0; for (j = top + 5; j < bot + 5; j += 5, row++) { for (i = left + (row % 2 ? 4 : 0) - 8; i < right; i += 8) { var tone = (hs(i, j) - 0.5) * 0.16; c.fillStyle = mix(r.col, tone > 0 ? '#ffffff' : '#000000', Math.abs(tone)); c.beginPath(); c.moveTo(i, j - 5); c.lineTo(i + 8, j - 5); c.lineTo(i + 8, j - 1.5); c.quadraticCurveTo(i + 4, j + 1.2, i, j - 1.5); c.closePath(); c.fill(); c.strokeStyle = lineCol; c.lineWidth = 0.7; c.globalAlpha = a * 0.75; c.stroke(); c.globalAlpha = a; } }
-  }
-  c.restore();
-  // the outline: thin all round, heavy along the eaves and the right side (the shadow side)
-  c.strokeStyle = INK.line; c.lineWidth = 0.9; c.lineJoin = 'round';
-  room.tiles.forEach(function (t) {
-    var tx = t[0] * T - ov, ty = t[1] * TS - up - ov * K, tw = T + ov * 2, th = TS + ov * K * 2, L = !has[(t[0] - 1) + ',' + t[1]], R = !has[(t[0] + 1) + ',' + t[1]], U = !has[t[0] + ',' + (t[1] - 1)], D = !has[t[0] + ',' + (t[1] + 1)];
-    c.lineWidth = 0.9; c.beginPath(); if (U) { c.moveTo(tx, ty); c.lineTo(tx + tw, ty); } if (L) { c.moveTo(tx, ty); c.lineTo(tx, ty + th); } c.stroke();
-    c.lineWidth = 2.2; c.beginPath(); if (D) { c.moveTo(tx - (L ? 0 : ov), ty + th); c.lineTo(tx + tw + (R ? 0 : ov), ty + th); } if (R) { c.moveTo(tx + tw, ty - (U ? 0 : ov * K)); c.lineTo(tx + tw, ty + th); } c.stroke();
+    // the four facets: fill, grain, the material's rows following each facet, a soft line between them
+    function facet(pts, tone, rows) {
+      var d = ink(c, pts, mix(r.col, tone > 0 ? '#fff4d0' : '#1a1410', Math.abs(tone)), { wob: 0, flat: true, noLine: true });
+      c.save(); path(c, d); c.clip();
+      var bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9; d.forEach(function (p) { bx0 = Math.min(bx0, p[0]); by0 = Math.min(by0, p[1]); bx1 = Math.max(bx1, p[0]); by1 = Math.max(by1, p[1]); });
+      if (kind === 1) {                                      // straw in rows along the eave: level on the slopes, down the hips
+        c.strokeStyle = lineCol; c.globalAlpha = a * 0.55; c.lineWidth = 1;
+        if (rows === 'h') { for (j = by0 + 3; j < by1; j += 5) { c.beginPath(); c.moveTo(bx0, j); for (i = bx0; i < bx1; i += 4) c.quadraticCurveTo(i + 2, j + 1.2 + hs(i, j) * 2.2, i + 4, j); c.stroke(); } }
+        else { for (i = bx0 + 2; i < bx1; i += 4.5) { c.beginPath(); c.moveTo(i, by0); for (j = by0; j < by1; j += 4) c.quadraticCurveTo(i + 1.2 + hs(i, j) * 2, j + 2, i, j + 4); c.stroke(); } }
+        c.strokeStyle = tone > 0 ? 'rgba(255,245,210,0.36)' : 'rgba(255,245,210,0.16)'; c.lineWidth = 1.1; c.beginPath();
+        for (j = by0 + 2; j < by1; j += 5) for (i = bx0 + 2; i < bx1; i += 6.5) { var o = hs(i, j + 1); if (o < 0.5) { if (rows === 'h') { c.moveTo(i + o * 3, j + 3.5); c.lineTo(i + o * 3 + 0.6, j + 0.5); } else { c.moveTo(i + 0.5, j + o * 3); c.lineTo(i + 3.5, j + o * 3 + 0.6); } } }
+        c.stroke(); c.globalAlpha = a;
+      } else if (kind === 0) {                               // sod with grass blades in two greens, a few flowers
+        for (j = by0 + 2; j < by1; j += 2.6) for (i = bx0 + 1; i < bx1; i += 3.2) { var q = hs(i, j); if (q > 0.6) continue; c.strokeStyle = q < 0.25 ? hl : (q < 0.45 ? dk : lineCol); c.lineWidth = 0.9; c.beginPath(); c.moveTo(i + q * 2, j + 1.5); c.lineTo(i + q * 2 + (hs(i, j + 2) - 0.5) * 2, j - 2 - hs(i, j + 3) * 2); c.stroke(); }
+        for (j = by0 + 4; j < by1; j += 9) for (i = bx0 + 3; i < bx1; i += 11) if (hs(i, j) < 0.1) { c.fillStyle = hs(i, j + 1) < 0.5 ? '#d8c26a' : '#c9d2d8'; c.beginPath(); c.arc(i, j, 1.1, 0, 7); c.fill(); }
+      } else {                                               // shingles in scalloped rows, offset, each a shade of its own; down the hips they turn
+        var row = 0;
+        if (rows === 'h') { for (j = by0 + 5; j < by1 + 5; j += 5, row++) for (i = bx0 + (row % 2 ? 4 : 0) - 8; i < bx1; i += 8) { var t2 = (hs(i, j) - 0.5) * 0.16; c.fillStyle = mix(r.col, t2 > 0 ? '#ffffff' : '#000000', Math.abs(t2) + Math.max(0, -tone) * 0.5); c.beginPath(); c.moveTo(i, j - 5); c.lineTo(i + 8, j - 5); c.lineTo(i + 8, j - 1.5); c.quadraticCurveTo(i + 4, j + 1.2, i, j - 1.5); c.closePath(); c.fill(); c.strokeStyle = lineCol; c.lineWidth = 0.7; c.globalAlpha = a * 0.75; c.stroke(); c.globalAlpha = a; } }
+        else { for (i = bx0 + 5; i < bx1 + 5; i += 5, row++) for (j = by0 + (row % 2 ? 4 : 0) - 8; j < by1; j += 8) { var t3 = (hs(i, j) - 0.5) * 0.16; c.fillStyle = mix(r.col, t3 > 0 ? '#ffffff' : '#000000', Math.abs(t3) + Math.max(0, -tone) * 0.5); c.beginPath(); c.moveTo(i - 5, j); c.lineTo(i - 5, j + 8); c.lineTo(i - 1.5, j + 8); c.quadraticCurveTo(i + 1.2, j + 4, i - 1.5, j); c.closePath(); c.fill(); c.strokeStyle = lineCol; c.lineWidth = 0.7; c.globalAlpha = a * 0.75; c.stroke(); c.globalAlpha = a; } }
+      }
+      c.globalAlpha = a * INK.grain; c.fillStyle = grainPat(c); c.fillRect(bx0, by0, bx1 - bx0, by1 - by0); c.globalAlpha = a;
+      c.restore();
+    }
+    facet(far, 0.14, 'h'); facet(hipL, 0.04, 'v'); facet(hipR, -0.3, 'v'); facet(near, -0.12, 'h');
+    // the hips and the ridge in ink, the thin line all round, the heavy line along the eaves and the right side
+    stroke(c, [[left, top], [left + hip, ridgeY]], INK.soft, 0.9); stroke(c, [[left, bot], [left + hip, ridgeY]], INK.line, 1.1);
+    stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
+    path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
+    ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
+    if (kind !== 0) [left + hip + 4, right - hip - 4].forEach(function (cx, ci) { [[cx - 4, ridgeY + 3, cx + 4, ridgeY - 9], [cx + 4, ridgeY + 3, cx - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
   });
-  ink(c, [[left + 1, mid - 2], [right - 1, mid - 2.4], [right - 1, mid + 2], [left + 1, mid + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
-  stroke(c, [[left + 6, mid - 0.2], [right - 6, mid + 0.2]], INK.faint, 0.5);
-  if (kind !== 0) [left + 7, right - 7].forEach(function (cx, ci) { [[cx - 4, mid + 3, cx + 4, mid - 9], [cx + 4, mid + 3, cx - 4, mid - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
   c.restore();
 }
 // a small icon of a piece, for a hotbar slot (centred on 0, 0, about 14 wide)

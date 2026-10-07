@@ -136,10 +136,14 @@ the text and it is made the default. When a spec's meaning changes, change the s
   **wattle** (withies woven over and under upright stakes), **stone** (irregular blocks of varied tone in mortar, never a grid),
   **turf** (sod strips with a ragged grassy top and tufts); a **door** of planks with two battens and an iron ring (edge-on when
   open); a **window** is a dark hole with a wooden shutter swung open beside it and a sill (no glass in this age); posts are timbers
-  with a cap and grain lines; stairs, beams and the **chimney** (irregular stones) likewise. **Roofs:** turf is sod with grass blades
-  in two greens, flowers and grass hanging over the eaves; thatch is rows of straw with lit loose straws and the ragged fringe;
-  shingles are scalloped rows, each a shade of its own; all get grain, the near slope in shadow, a thin line all round and a heavy
-  line along the eaves and the right side, a ridge pole and crossed ridge boards. **Yard:** wattle fence, split rails with knots
+  with a cap and grain lines; stairs, beams and the **chimney** (irregular stones) likewise. **Roofs are hipped, with real form** (Robin, 2026-10-07: more depth and volume, an
+  overhang): `roofRects` splits a room into rectangles (far to near) and each gets a roof whose ridge is raised above the eaves
+  (`rise`), four facets (the far slope lit, the near slope in shadow, the left hip lit a little, the right hip dark; `facet`), the
+  eaves hanging past the walls (`overhang` + 1.5) with their thickness showing (the sod's soil edge, the shingle ends, the straw
+  fringe down the sides too) and a shadow cast on the wall below and down the right side, hip lines in ink, the thin line all
+  round and the heavy line along the eaves and the right side, a ridge pole and crossed ridge boards at the ridge's ends. Turf is
+  sod with grass blades in two greens and flowers; thatch is rows of straw (level on the slopes, down the hips) with lit loose
+  straws; shingles are scalloped rows that turn down the hips, each a shade of its own; all get grain. **Yard:** wattle fence, split rails with knots
   and a slight bend, a palisade of pointed logs with bark lines, a gate with a brace, and a dry-stone wall of irregular stones with
   capstones set on edge. The board icons follow the palettes. `node tools/visual/house.js` renders a house in every material under
   every roof with the yard pieces and the icons to house.png. The old `texture` and `box` helpers are gone. `WALLS`, `FLOORS`, `ROOFS`,
