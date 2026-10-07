@@ -476,12 +476,12 @@ var canopyB = null;
 // matte 0..1 dulls the highlights, softens the colours and browns the outline toward the world's, like the trees.
 // The hero is Eirik on the ink figure (figure 1, inkHero) since 2026-10-07; HEROD_OLD is the rounded trial figure before it,
 // kept for comparison (the "Old figure" concept).
-var HEROD_DEF = {
-  scale: 0.8, headW: 1, headH: 1, bodyW: 1, bodyH: 1, legL: 1, legW: 1, armL: 1, armW: 1, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 0.4, beard: 2,
-  hair: 6, hat: 0, clothes: 2, matte: 0.6, ring: 0, figure: 1,
+var HEROD_DEF = {                                  // Robin's pick (2026-10-07): cropped hair, no beard, a belted tunic, matte, thin arms
+  scale: 0.8, headW: 1, headH: 1, bodyW: 1, bodyH: 1, legL: 1, legW: 1, armL: 1, armW: 0.7, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 0.4, beard: 0,
+  hair: 1, hat: 0, clothes: 1, matte: 1, ring: 0, figure: 1,
   walkRate: 1.4, bob: 1, stride: 1, armSwing: 1, sway: 0.25, stance: 0.8, lean: 1, atkStyle: 0, atkPower: 1, bladeLen: 1, slashSize: 1, slashWidth: 0.66,
   hue: 0, sat: 1, lum: 1,
-  col: { skin: '#e9c4a0', hair: '#a8522a', coat: '#857a62', vest: '#6a4a32', pants: '#4e4a52', boot: '#3e2c24', trim: '#c99a3a',   // the earth palette (docs/art-direction.md)
+  col: { skin: '#f0c49c', hair: '#a86a3a', coat: '#8a7a5c', vest: '#6a4a32', pants: '#4f4336', boot: '#4a3329', trim: '#5a3a26',
     cloak: '#8a3a34', dress: '#5b6b8a', fur: '#b89a74', iron: '#9aa0aa',
     lens: '#a9e6ff', eye: '#2a1c2a', line: '#231a16', blade: '#eef3fb', slash: '#ffffff' }
 };
@@ -809,7 +809,7 @@ function inkHero(c, x, y, dir, an, pose) {
 
   if (side) {
     var fwd = -1, bk = 1;
-    var shx = ux + fwd * (0.5 + 0.9 * run * amt), shy = shY;
+    var shx = ux + fwd * (0.5 + 3.2 * run * amt), shy = shY + 0.8 * run * amt;
     var headBob = -Math.abs(Math.sin(ph - 0.6)) * 0.5 * amt * sp.bob;
     var legS = function (phi, near) {
       var sw = Math.sin(phi), lf = Math.max(0, Math.cos(phi)) * amt;
@@ -856,7 +856,7 @@ function inkHero(c, x, y, dir, an, pose) {
     if (!nearT) nearT = amt < 0.25 ? [shx * 0.4 + fwd * 3.0, beltY - 0.4] : [nsx + fwd * Math.sin(aNear) * M.arm * 1.9 + fwd * 0.8, nsy + Math.cos(aNear) * M.arm * 1.95];
     armD(nsx, nsy, nearT[0], nearT[1], -1, dress ? C.coat : TUN, RG > 0);
   } else {
-    var dS = back ? -1 : 1, shx2 = ux, shy2 = shY, restHand = amt < 0.25 && !back, restSide = 1;
+    var dS = back ? -1 : 1, shx2 = ux, shy2 = shY + 1.2 * run * amt, restHand = amt < 0.25 && !back, restSide = 1;
     var headBob2 = -Math.abs(Math.sin(ph - 0.6)) * 0.5 * amt * sp.bob, sway = Math.sin(ph) * amt * sp.sway * 0.8;
     var legF = function (sd, phi) {
       var sw = Math.sin(phi) * dS, lf = Math.max(0, Math.cos(phi)) * amt;
@@ -874,7 +874,7 @@ function inkHero(c, x, y, dir, an, pose) {
       var sx = shx2 + sd * (M.shw - 0.5) * (1 - 0.1 * Math.abs(tq)) + tq * 0.4, sy = shy2 + 1.2, tx, ty;
       if (target) { tx = target[0]; ty = target[1]; }
       else if (restHand && sd === restSide) { tx = shx2 * 0.4 + sd * (M.waist * 0.9 + 0.3) + tq * 0.3; ty = beltY - 0.6; }                      // at rest the hand rests on the belt
-      else { var a = swing; tx = sx + sd * (1.1 - Math.abs(a) * 0.5) + ux * 0.25; ty = sy + M.arm * 1.95 * Math.cos(a * 0.9) - 0.2; }
+      else { var a = swing; tx = sx + sd * 1.2 + a * 1.6 * sd + ux * 0.25; ty = sy + M.arm * 1.95 - Math.abs(a) * 1.4 - 0.2; }   // a light sway with the step, not a pump (Robin)
       armD(sx, sy, tx, ty, -sd, dress ? C.coat : TUN, ring);
     };
     var aL = Math.sin(ph) * 0.6 * amt * (1 + 0.35 * run) * sp.armSwing * dS, aR = -aL;

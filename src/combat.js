@@ -534,6 +534,7 @@ function updatePlayer(dt) {
   var sprint = (IN.keys.ShiftLeft || IN.keys.ShiftRight) && il > 0 && a.ph === 'none' && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && !p.sprintLock && p.st > 0;
   if (p.st <= 0.5) p.sprintLock = true; else if (p.st >= 14) p.sprintLock = false;
   p.sprinting = !!sprint;
+  p.anim.run = Math.max(0, Math.min(1, (p.anim.run || 0) + (sprint ? dt / 0.7 : -dt / 0.35)));   // the lean into a run builds up over 0.7 s (Robin, 2026-10-07)
   var spd = 84 * mod('speed');           // a walk, not a jog (118 was too fast for the world's scale); mods().speed for a page's cheats
   if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt * mod('sprintCost')); p.stDelay = Math.max(p.stDelay, 0.55); }
   if (sprint && il > 0 && modZ('charge') > 0 && p.mode === 'fight') for (i = 0; i < W.enemies.length; i++) {   // the boar's charge: your run is a blow
@@ -1071,9 +1072,10 @@ function swordPose(dir) {
     var side = (p.guard && S.shield) ? -guardSide() : 1;
     // at rest the thing hangs down at the side from a straight arm, the way you carry an axe when you walk
     // carried: the hand at the hip and the thing pointing up past the shoulder, resting on it, so it stays short and clear
-    if (dir === 'left') { o.hx = -4; o.hy = -9; o.ca = -0.66; o.sa = -0.75; }      // up and forward past the chin, clear of the face
-    else if (dir === 'right') { o.hx = 4; o.hy = -9; o.ca = 0.66; o.sa = -0.75; }
-    else { o.hx = side * 6.5; o.hy = -9; o.ca = side * 0.55; o.sa = -0.84; }        // leaning outward, clear of the face
+    // at the side with the arm hanging, the thing pointing forward and down, the way a sword or an axe is carried (Robin, 2026-10-07)
+    if (dir === 'left') { o.hx = -1.6; o.hy = -3; o.ca = -0.72; o.sa = 0.69; }
+    else if (dir === 'right') { o.hx = 1.6; o.hy = -3; o.ca = 0.72; o.sa = 0.69; }
+    else { o.hx = side * 7.2; o.hy = -3; o.ca = side * 0.42; o.sa = 0.9; }
     o.len = 13; o.front = dir !== 'up'; o.side = side; o.atk = false;
   }
   if (o.atk && S.look === 'classic') o.len *= lib.hero().spec.bladeLen;

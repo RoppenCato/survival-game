@@ -812,9 +812,11 @@ __COMBAT__
     // the tile grid round the cursor, faint, so you can see where floors and walls will sit
     var gx0 = Math.floor(mouseW.x / T) - 3, gy0 = Math.floor((mouseW.y + (lvl() ? UP / K : 0)) / T) - 3, gi, gj;
     c.translate(0, gdy);
+    if (t.kind !== 'brush') {          // the brush paints free-hand: no grid under it
     c.strokeStyle = 'rgba(255,255,255,0.16)'; c.lineWidth = 0.8; c.setLineDash([2, 3]); c.beginPath();
     for (gi = 0; gi <= 7; gi++) { c.moveTo((gx0 + gi) * T, gy0 * TS); c.lineTo((gx0 + gi) * T, (gy0 + 7) * TS); c.moveTo(gx0 * T, (gy0 + gi) * TS); c.lineTo((gx0 + 7) * T, (gy0 + gi) * TS); }
     c.stroke(); c.setLineDash([]);
+    }
     if (P.wreck) {                     // a soft red glow over the piece that would go, and what it gives back
       c.translate(0, -gdy); var r = wreckRect(t), back = t.kind === 'item' ? costOfItem(t.item.name) : t.kind === 'edge' ? costOf(t.has) : t.kind === 'post' ? pieceFor('post', 0).cost : t.kind === 'stairs' ? pieceFor('stairs', 0).cost : (Bl().floors[Build.key(t.tx, t.ty)] != null ? costOfFloor(Bl().floors[Build.key(t.tx, t.ty)]) : null);
       c.fillStyle = t.ok ? 'rgba(255,214,80,0.16)' : 'rgba(255,80,60,0.12)'; c.fillRect(r.x, r.y, r.w, r.h);
@@ -3368,7 +3370,7 @@ __COMBAT__
       var yy = y0 + 16 + i * rh, hov = mouseS && mouseS.x > x0 + 3 && mouseS.x < x0 + w0 - 3 && mouseS.y >= yy && mouseS.y < yy + rh, on = ring && ring.metal === r.id;
       runePanel.rows.push({ id: r.id, x: x0 + 3, y: yy, w: w0 - 6, h: rh });
       c.fillStyle = on ? 'rgba(255,214,90,0.22)' : (hov ? 'rgba(255,230,180,0.16)' : 'rgba(0,0,0,0.22)'); c.fillRect(x0 + 3, yy, w0 - 6, rh - 1);
-      c.font = (on ? 'bold ' : '600 ') + '5px system-ui, sans-serif'; c.fillStyle = on ? '#ffd34d' : '#f6e2b8'; c.fillText(r.name, x0 + 7, yy + 6.5);
+      c.font = (on ? 'bold ' : '600 ') + '5px system-ui, sans-serif'; c.fillStyle = on ? '#ffd34d' : '#f6e2b8'; c.textAlign = 'left'; c.fillText(r.name, x0 + 7, yy + 6.5);
     });
     c.restore();
   }

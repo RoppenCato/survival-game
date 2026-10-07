@@ -132,7 +132,7 @@ function make(kit, opts) {
   var GQ = 8; w.ground = {};
   w.repaint = function (x0, y0, x1, y1) {
     var pw = CT * T, qx0 = Math.max(0, Math.floor(x0 / pw)), qx1 = Math.min(CW - 1, Math.floor(x1 / pw)), qy0 = Math.max(0, Math.floor(y0 / pw)), qy1 = Math.min(CH - 1, Math.floor(y1 / pw)), qx, qy;
-    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) { delete chunkCv[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); } }
+    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) { delete chunkCv[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); if (w.chunk) w.chunk(qx, qy); } }   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
   };
   w.paintGround = function (x, y, r, kind) {              // kind 1 gravel, 2 earth, 0 back to grass; true if anything changed
     var changed = false, qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy;
