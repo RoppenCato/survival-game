@@ -1810,18 +1810,21 @@ function trollEvilFace(c, T, H, F, eyeCol, glow, skin, skinDk, hairDk, sz) {
   var rx = (b[1][0] + b[2][0]) / 2, ry = (b[1][1] + b[2][1]) / 2;
   inkLine(c, [[rx - 0.9 * S, ry - 0.5 * S], [rx - 1.4 * S, ry - 3.2 * S]], LN, 0.55 * S); inkLine(c, [[rx + 0.6 * S, ry - 0.6 * S], [rx + 1.1 * S, ry - 3.4 * S]], LN, 0.55 * S); inkLine(c, [[rx - 0.2 * S, ry - 1.5 * S], [rx - 0.1 * S, ry - 4.0 * S]], T.LNs, 0.5 * S);
 }
-function trollSneer(c, T, F, skin, boneCol) {                       // the mouth: a sneer climbing to one side, crooked teeth, a tusk
-  var S = F.S || 1, m0 = F.mouth[0], m1 = F.mouth[1], m2 = F.mouth[2], i, n = F.teeth || 6;
-  c.fillStyle = '#1e1410'; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(m1[0], m1[1] - 1.2 * S, m2[0], m2[1]); c.quadraticCurveTo(m1[0], m1[1] + 3.6 * S, m0[0], m0[1]); c.closePath(); c.fill();   // the dark of the mouth
-  for (i = 0; i < n; i++) {                                           // teeth hanging from the upper lip, no two alike
-    var u = (i + 0.5) / n, x = (1 - u) * (1 - u) * m0[0] + 2 * (1 - u) * u * m1[0] + u * u * m2[0], y = (1 - u) * (1 - u) * m0[1] + 2 * (1 - u) * u * (m1[1] - 1.2 * S) + u * u * m2[1];
-    var w = (0.9 + 0.5 * T.hs(i, 201)) * S, h = (1.3 + 1.6 * T.hs(i, 202)) * S, tilt = (T.hs(i, 203) - 0.5) * 0.8 * S;
-    c.fillStyle = boneCol; c.beginPath(); c.moveTo(x - w, y - 0.2 * S); c.lineTo(x + w, y - 0.2 * S); c.lineTo(x + tilt, y + h); c.closePath(); c.fill();
+function trollSneer(c, T, F, skin, boneCol) {                       // the mouth: a snarl, the corners pulled down, the upper lip lifted in an arch, fangs hanging from it
+  var S = F.S || 1, m0 = F.mouth[0], m2 = F.mouth[2], i, n = F.teeth || 6, cx = (m0[0] + m2[0]) / 2, cy = (m0[1] + m2[1]) / 2, lift = 3.2 * S, drop = 1.6 * S;
+  var upY = function (u) { return (1 - u) * (1 - u) * m0[1] + 2 * (1 - u) * u * (cy - lift * 2) + u * u * m2[1]; }, upX = function (u) { return (1 - u) * (1 - u) * m0[0] + 2 * (1 - u) * u * cx + u * u * m2[0]; };
+  c.fillStyle = '#1e1410'; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(cx, cy - lift * 2, m2[0], m2[1]); c.quadraticCurveTo(cx, cy + drop * 2, m0[0], m0[1]); c.closePath(); c.fill();   // the dark of the mouth
+  for (i = 0; i < n; i++) {                                           // fangs hanging from the lifted lip, the ones nearest the corners the longest
+    var u = (i + 0.5) / n, x = upX(u), y = upY(u) + 0.3 * S, edge = Math.abs(u - 0.5) * 2, w = (0.8 + 0.4 * T.hs(i, 201) + 0.5 * edge) * S, h = (1.4 + 1.0 * T.hs(i, 202) + 2.6 * edge * edge) * S, tilt = (T.hs(i, 203) - 0.5) * 0.6 * S;
+    c.fillStyle = boneCol; c.beginPath(); c.moveTo(x - w, y - 0.3 * S); c.lineTo(x + w, y - 0.3 * S); c.lineTo(x + tilt, y + h); c.closePath(); c.fill();
   }
-  var tx = m0[0] + (m2[0] - m0[0]) * 0.72, ty = m0[1] + (m2[1] - m0[1]) * 0.72 + 2.2 * S;                                  // a tusk up from the jaw
-  c.fillStyle = boneCol; c.beginPath(); c.moveTo(tx - 1.1 * S, ty + 0.6 * S); c.lineTo(tx + 0.2 * S, ty - 3.4 * S); c.lineTo(tx + 1.2 * S, ty + 0.6 * S); c.closePath(); c.fill();
-  c.strokeStyle = T.LN; c.lineWidth = 1.1 * S; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(m1[0], m1[1] - 1.2 * S, m2[0], m2[1]); c.stroke();   // the lip line
-  inkLine(c, [[m2[0], m2[1]], [m2[0] + 1.2 * S, m2[1] - 2.2 * S]], T.LNs, 0.6 * S);                                             // the sneer's crease
+  [0.22, 0.78].forEach(function (u) {                                 // two tusks up from the lower jaw
+    var x = upX(u), y = cy + drop * 1.2 + 0.4 * S; c.fillStyle = boneCol; c.beginPath(); c.moveTo(x - 0.9 * S, y + 0.4 * S); c.lineTo(x + 0.1 * S, y - 2.6 * S); c.lineTo(x + 1.0 * S, y + 0.4 * S); c.closePath(); c.fill();
+  });
+  c.strokeStyle = T.LN; c.lineWidth = 1.1 * S; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(cx, cy - lift * 2, m2[0], m2[1]); c.stroke();     // the lifted lip
+  c.lineWidth = 0.9 * S; c.beginPath(); c.moveTo(m0[0], m0[1]); c.quadraticCurveTo(cx, cy + drop * 2, m2[0], m2[1]); c.stroke();                            // the lower lip
+  inkLine(c, [[m0[0], m0[1]], [m0[0] - 0.8 * S, m0[1] + 2.0 * S]], T.LNs, 0.6 * S); inkLine(c, [[m2[0], m2[1]], [m2[0] + 0.8 * S, m2[1] + 2.0 * S]], T.LNs, 0.6 * S);   // the corners dragged down
+  inkLine(c, [[upX(0.35), upY(0.35) - 2.2 * S], [upX(0.5), upY(0.5) - 3.4 * S], [upX(0.65), upY(0.65) - 2.2 * S]], T.LNs, 0.6 * S);                      // the lip curled under the nose
 }
 function boulderTrollD(c, x, y, s, H) {
   var sp = H.spec, C = H.pal, T = trollParts(c, s, sp, C), pt = T.pt, depth = T.depth, hs = T.hs, at = T.at, sz = T.sz, t = T.t, mv = T.mv, ph = T.ph, wind = T.wind, slam = T.slam, down = T.down, sweep = T.sweep, stone = T.stone;
@@ -1908,7 +1911,7 @@ function boulderTrollD(c, x, y, s, H) {
     inkLine(c, [[n0[0] - nw * 0.6, n0[1] + 1], [n1[0] - nw * 1.1, n1[1] + 1.5]], LN, 0.6); c.fillStyle = mixHex(skin, '#000000', 0.3); c.beginPath(); c.ellipse(n1[0] - 1.2, n1[1] + 2.6, 0.9, 0.6, 0, 0, 7); c.ellipse(n1[0] + 1.2, n1[1] + 2.6, 0.9, 0.6, 0, 0, 7); c.fill();
     if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(n1[0] + 1.5, n1[1] - 1.5, 0.9, 0, 7); c.fill(); }
     // the mouth: a wide sneer with crooked teeth
-    trollSneer(c, T, { S: 1.3, mouth: [pt(headF + 2, -10.5, fy - 8.5), pt(headF + 5, 0, fy - 9), pt(headF + 2, 10.5, fy - 5.5)], teeth: 8 }, skin, '#e6dcc0');
+    trollSneer(c, T, { S: 1.3, mouth: [pt(headF + 2, -10.5, fy - 9.5), pt(headF + 5, 0, fy - 9), pt(headF + 2, 10.5, fy - 9.5)], teeth: 8 }, skin, '#e6dcc0');
     // the beard: a jagged mass from the jaw to the ground, between the hands
     var bpts = [pt(headF - 1, -12, fy - 8), pt(headF + 1, -6, fy - 11.5), pt(headF + 2, 0, fy - 12.5), pt(headF + 1, 6, fy - 11.5), pt(headF - 1, 12, fy - 8), pt(headF + 3, 8 + 2 * HL, 6), pt(headF + 5, 2, 1.5), pt(headF + 5, -3, 2.5), pt(headF + 3, -8 - 2 * HL, 7)];
     blobD(c, jagged(bpts, pt(headF + 2, 0, fy - 14)[0], pt(headF + 2, 0, fy - 14)[1], 1.6 + HL, 73), hairCol, true);
@@ -1998,7 +2001,7 @@ function forestTrollD(c, x, y, s, H) {
       var q0 = pt(headF + 6, 0, headH + 1), q1 = pt(headF + 14 + 7 * NS, 0, headH - 4 - 5 * NS); limbD(c, q0[0], q0[1], 2.4, q1[0], q1[1], 1.5, mixHex(skin, '#c08a7a', 0.2));   // the nose, a branch
       c.fillStyle = mixHex(skin, '#c08a7a', 0.3); c.beginPath(); c.arc(q1[0], q1[1] + 0.5, 1.7, 0, 7); c.fill(); inkLine(c, [[q0[0], q0[1] + 1.5], [q1[0] - 1, q1[1] + 1.5]], LN, 0.55);
       if (AGE > 0.3) { c.fillStyle = skinDk; c.beginPath(); c.arc(q0[0] + (q1[0] - q0[0]) * 0.5, q0[1] + (q1[1] - q0[1]) * 0.5 - 1.6, 0.7, 0, 7); c.fill(); }
-      trollSneer(c, T, { S: 0.72, mouth: [pt(headF + 4.5, -4.5, headH - 4), pt(headF + 6.5, 0, headH - 5.5), pt(headF + 4.5, 4.5, headH - 6)], teeth: 6 }, skin, '#d9cfae');
+      trollSneer(c, T, { S: 0.72, mouth: [pt(headF + 4.5, -4.5, headH - 6), pt(headF + 6.5, 0, headH - 5.5), pt(headF + 4.5, 4.5, headH - 6)], teeth: 6 }, skin, '#d9cfae');
       for (var bi = 0; bi < 3 + 3 * HL; bi++) trollStrand(c, T, pt(headF + 4, -3.5 + 7 * hs(bi, 160), headH - 8.5), (6 + 5 * HL) * (0.5 + 0.6 * hs(bi, 161)), (hs(bi, 162) - 0.5) * 0.8, 1, bi % 2 ? hairDk : hairCol, 160 + bi);   // the beard
       c.restore();
     }

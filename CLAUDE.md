@@ -874,9 +874,9 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   `node tools/visual/trolls.js` renders the three at four headings with the windup and the blow; `trollface.js` the faces large.
   **The evil face (Robin, 2026-10-07: they looked too happy; evil and careless, the hero is nothing to them):** `trollEvilFace` and
   `trollSneer` are shared by both: brows as two heavy black wedges slanting down to the root of the nose, eyes small and deep in
-  dark sockets under a heavy lid, one squinting, a pinpoint pupil, furrows between the brows and folds on the forehead, a wide
-  sneer climbing to one side with a dark mouth, a row of crooked teeth no two alike, a tusk from the jaw and a crease at the
-  sneer's corner; the boulder's face is big on its front and its beard starts under the mouth. References: Egerkrans's Fenrir and
+  dark sockets under a heavy lid, one squinting, a pinpoint pupil, furrows between the brows and folds on the forehead, a **snarl,
+  never a grin** (Robin: they looked goofy, they should not smile): the corners of the mouth dragged down, the upper lip lifted in an
+  arch with fangs hanging from it, the longest at the corners, two tusks up from the lower jaw, the lip curled under the nose; the boulder's face is big on its front and its beard starts under the mouth. References: Egerkrans's Fenrir and
   the classic troll and goblin masks Robin sent.
 - **The cave and the mountain troll (2026-10-05, from `docs/beasts.md`):**
   *The mouth:* `caveSetup` picks a clear spot on grass 700 to 1600 units from camp (not near the steading), clears
