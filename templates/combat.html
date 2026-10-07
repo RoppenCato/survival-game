@@ -151,7 +151,7 @@ __COMBAT__
     e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, atk: e.type === 'bot' ? lib.animalAttack(k) : null };
     if (e.type === 'bot') e.hp = e.maxHp = sp.hp;
   };
-  try { var gh = JSON.parse(localStorage.getItem('game.hero')); if (gh && typeof gh === 'object') lib.setHero(gh); } catch (e) {}   // the Character Editor's hero
+  try { var gh = JSON.parse(localStorage.getItem('game.hero2')); if (gh && typeof gh === 'object') lib.setHero(gh); } catch (e) {}   // the Character Editor's hero
   Combat.init(GameArt.lib);
   var S = Combat.S;
   /* the weapons: one melee and one ranged thing in hand, the copper kinds (2026-10-06); the tools stay copper too */

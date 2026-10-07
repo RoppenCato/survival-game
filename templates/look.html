@@ -114,7 +114,7 @@ __LIB__
 (function () {
   'use strict';
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, KEY = 'lookeditor2';
-  try { var hs = JSON.parse(localStorage.getItem('game.hero')); if (hs && typeof hs === 'object') lib.setHero(hs); } catch (e) {}
+  try { var hs = JSON.parse(localStorage.getItem('game.hero2')); if (hs && typeof hs === 'object') lib.setHero(hs); } catch (e) {}
   var STYLE_KEYS = ['look', 'shadowHue', 'sat', 'bright', 'contrast', 'shade', 'outlineW', 'outlineDark', 'texture', 'rough', 'vignette'];
   var DEF = {}; STYLE_KEYS.forEach(function (k) { DEF[k] = kit.STYLE_INK[k] != null ? kit.STYLE_INK[k] : kit.STYLE[k]; }); DEF.figGrain = 0.22; DEF.figShade = 0.41; DEF.sunWarm = 0.18;   // Robin's numbers, 2026-10-07
   var G = JSON.parse(JSON.stringify(DEF));
@@ -150,7 +150,7 @@ __LIB__
   var ph = document.getElementById('presets'); PRESETS.forEach(function (p) { var b = document.createElement('button'); b.textContent = p.name; b.addEventListener('click', function () { for (var k in p.set) G[k] = p.set[k]; if (p.set.look == null) G.look = 3; apply(); b.blur(); }); ph.appendChild(b); });
   document.getElementById('copy').addEventListener('click', function (e) { json.value = JSON.stringify(G); var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Select the text and copy it.'; }; if (navigator.clipboard) navigator.clipboard.writeText(json.value).then(done, fail); else fail(); e.currentTarget.blur(); });
   document.getElementById('applyjson').addEventListener('click', function (e) { var o = null; try { o = JSON.parse(json.value); } catch (err) {} if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing changed.'; return; } for (var k in o) if (DEF[k] != null) G[k] = o[k]; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur(); });
-  document.getElementById('usegame').addEventListener('click', function (e) { var st = {}; STYLE_KEYS.forEach(function (k) { st[k] = G[k]; }); try { localStorage.setItem('game.look', JSON.stringify(st)); jsonmsg.textContent = 'The game now draws its world in this look (figures keep their own drawing for now).'; } catch (err) {} e.currentTarget.blur(); });
+  document.getElementById('usegame').addEventListener('click', function (e) { var st = {}; STYLE_KEYS.forEach(function (k) { st[k] = G[k]; }); st.figGrain = G.figGrain; st.figShade = G.figShade; try { localStorage.setItem('game.look', JSON.stringify(st)); jsonmsg.textContent = 'The game now draws its world and its figures in this look.'; } catch (err) {} e.currentTarget.blur(); });
   document.getElementById('takeback').addEventListener('click', function (e) { try { localStorage.removeItem('game.look'); } catch (err) {} jsonmsg.textContent = 'The game draws the default ink look again.'; e.currentTarget.blur(); });
   document.getElementById('reset').addEventListener('click', function (e) { G = JSON.parse(JSON.stringify(DEF)); apply(); e.currentTarget.blur(); });
   try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && typeof sv === 'object') for (var k0 in sv) if (DEF[k0] != null) G[k0] = sv[k0]; } catch (e) {}
@@ -179,17 +179,9 @@ __LIB__
     if (dusk) { c.fillStyle = 'rgba(214,120,60,' + (ink ? 0.22 : 0.18) + ')'; c.fillRect(0, 0, W, H); }
   }
   function foot(c, x, y, rx, ink) { c.fillStyle = ink ? 'hsla(' + G.shadowHue + ',40%,12%,0.3)' : 'rgba(20,30,20,0.25)'; c.beginPath(); c.ellipse(x, y, rx, rx * 0.35, 0, 0, 7); c.fill(); }
-  var figCv = null;
-  function figure(c, x, y, draw, ink, wide) {                   // a figure, drawn to its own canvas and finished in the new look
-    if (!ink) { draw(c, x, y); return; }
-    var fw = wide || 160, fh = 160; if (!figCv) figCv = kit.mk(fw * Z, fh * Z); figCv.width = fw * Z; figCv.height = fh * Z;
-    var f = figCv.getContext('2d'); f.setTransform(Z, 0, 0, Z, fw / 2 * Z, (fh - 12) * Z); f.clearRect(-fw / 2, -(fh - 12), fw, fh);
-    draw(f, 0, 0);
-    f.globalCompositeOperation = 'source-atop';
-    if (G.figGrain > 0) { f.globalAlpha = G.figGrain; f.fillStyle = kit.grain(f); f.fillRect(-fw / 2, -(fh - 12), fw, fh); }
-    if (G.figShade > 0) { var gs = f.createLinearGradient(-fw * 0.3, -fh * 0.9, fw * 0.3, 0); gs.addColorStop(0, 'rgba(255,240,200,' + (G.figShade * 0.35) + ')'); gs.addColorStop(0.45, 'rgba(0,0,0,0)'); gs.addColorStop(1, 'hsla(' + G.shadowHue + ',45%,18%,' + G.figShade + ')'); f.globalAlpha = 1; f.fillStyle = gs; f.fillRect(-fw / 2, -(fh - 12), fw, fh); }
-    f.globalAlpha = 1; f.globalCompositeOperation = 'source-over';
-    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(figCv, (x - fw / 2) * Z, (y - (fh - 12)) * Z); c.restore();
+  function figure(c, x, y, draw, ink, wide) {                   // a figure: the ink figure (src/art.js INK_FIG) with this page's grain and shadow side, or the old drawing
+    lib.INK_FIG.on = !!ink; lib.INK_FIG.grain = G.figGrain; lib.INK_FIG.shade = G.figShade;
+    try { draw(c, x, y); } finally { lib.INK_FIG.on = true; }
   }
   var boarH = lib.makeCreature(lib.animalSpec('boar')), trollH = lib.makeCreature(lib.animalSpec('troll')), clock = 0;
   function drawScene(cv, style, ink) {

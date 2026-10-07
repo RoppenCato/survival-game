@@ -70,6 +70,8 @@ Everything is still drawn in code. The look is a renderer and a palette, not a s
    setting.
 2. **Figures** (the hero, the folk, the animals, the troll) get the same treatment in two steps: first a finish pass on the
    drawn figure (grain and a cool shadow side over the silhouette), then the structural two-pass outline so they are whole.
+   **Built 2026-10-07 for the hero, the folk and the troll** (`INK_FIG` and the depth layers in `src/art.js`; the hero is lean,
+   the head a quarter of the height); the animals (`animal3D`) still draw their old per-part lines.
 3. **The page**: `look-editor.html` draws one scene twice, old and new, with the rules as sliders and "Use in the game".
 4. **Then the palette pass** over the game: the night overlay, the cave, the boards, the water and beaches (kept as Robin
    likes them, retuned only for the shadow hue).

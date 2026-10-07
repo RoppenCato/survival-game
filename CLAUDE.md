@@ -197,6 +197,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `templates/`: one HTML shell per page with `__ART__`, `__LIB__`, `__WORLD__`, `__BUILD__`, `__COMBAT__` placeholders.
 - `tools/build.py`: plain string substitution. `tools/open.js`: opens the start page. `tools/visual/`: scripts that
   render things to PNG for checking (`props.js`, `creatures.js`, `walkcycle.js`, `swingdirs.js`, `attackstyles.js`).
+- `tools/visual/figures.js` renders the ink figures (the hero in four directions standing and walking, the troll, a boar) to
+  figures.png; `folk.js` the concepts.
 - `tests/`: headless combat checks (table in `tests/README.md`).
 - `docs/idea-bank.md`: ideas and open design questions that are not decided yet.
 - `docs/beasts.md`: the cards and rules for Robin's creatures from Norse myth and folklore (troll, bysen,
@@ -259,6 +261,23 @@ the text and it is made the default. When a spec's meaning changes, change the s
 
 ## Hero
 
+- **The ink figure (2026-10-07, Robin: a visual overhaul in the art direction, the body fully connected):** `playerD` and
+  `trollD` draw in **depth layers** (far limbs, the body with its legs and head, near limbs; `lay(i)` in `playerD`, the troll's
+  parts by their `dep`). Each layer goes to its own canvas (`inkLayerBegin`, `inkSwitch`, `inkLayerEnd` in `src/art.js`), gets
+  the finish over its silhouette (the grain and a cool shadow side) and **one outline round the whole silhouette by dilation**
+  (a tinted copy at a ring of offsets, thin all round, more and farther toward the lower right so the line is heavy on the
+  shadow side), then is laid on the page. So an arm flows into the shoulder and a leg into the hip with no seam; only a real
+  overlap (the near arm over the coat) keeps an edge. The parts' own lines (`LN`, the troll's `line`) are soft inner details
+  in this mode; the per-part capsule and arm outlines are skipped. `lib.INK_FIG` = { on, w (the line, 0.62), line (the ink
+  colour), grain, shade, soft }: the Art Direction page's "Grain on figures" and "Shadow side" set `grain` and `shade`
+  (saved in `game.look` as `figGrain`, `figShade`); `on: false` gives the old per-part drawing (the page's before canvas). Needs
+  `getTransform` (every browser; `@napi-rs/canvas` too). About 0.13 ms a hero, 0.4 ms a troll.
+- **Lean (2026-10-07, Robin: "a clear step", the head a quarter of the height, his clothes and colours kept):** `HEROD_DEF` is
+  headW/headH 0.55, bodyW 0.84, bodyH 1.15, legL 2.2, legW 0.82, armL 1.4, armW 0.78, eyeSize 0.85, matte 0.6, the palette
+  toward earth (`#4f7a74` coat, `#6a4a32` vest, `#56505e` trousers, ink `#231a16`). The hero is about 37 units tall. Brokk, the
+  Child concept and the villagers were rebased on it. **Storage keys changed** so old looks are ignored: the Character Editor
+  keeps its work in `herotest2.*` and hands the hero over as `game.hero2` (every page reads that key); its Builds are
+  rebased, with an "Old figure" build for comparison, and its sheet is paper with grain.
 - Drawn from a spec: `HEROD_DEF`, swapped with `lib.setHero(spec)`, read with `lib.hero()` (`{ spec, pal, lift }`).
   Proportions are factors on the original figure. The Character Editor edits it.
 - `src/combat.js` compensates for longer legs (`heroLift()`) so weapons stay in the hands.
@@ -277,7 +296,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `lib.conceptSpec(name)`) are nine whole looks: Karl, Shieldmaiden, Jarl, Thrall, Völva, Hunter, Húsfreyja, Child, Elder,
   all matte; the random people will be drawn from them later. The **Character Editor** lists them as Concepts, has Style
   rows (hair, beard, headwear, clothes), Builds, a Matte slider, templates saved in this browser (`herotest.templates`),
-  and **"Use as the hero in the game"** (`game.hero`, which the game sets with `lib.setHero` on load). The steampunk
+  and **"Use as the hero in the game"** (`game.hero2`, which the game sets with `lib.setHero` on load). The steampunk
   eyewear and bot palettes are gone from the editor (the eyewear drawing is still in the code). `node tools/visual/folk.js`
   renders the concepts in four views and a grid of every style to folk.png (`big` for the concepts large).
 

@@ -160,6 +160,11 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 </main>
 <script>
 __ART__
+</script>
+<script>
+__LIB__
+</script>
+<script>
 __COMBAT__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
@@ -171,7 +176,7 @@ __COMBAT__
     Combat.api.pixelScale = ps;
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
-  var lib = GameArt.lib;
+  var lib = GameArt.lib, kit = StyleLab.kit;
   Combat.init(lib);
   var S = Combat.S; S.look = 'classic';
   Combat.clear();
@@ -243,13 +248,13 @@ __COMBAT__
   /* ---------- sprite settings ---------- */
   var BODY = [
     { k: 'scale', label: 'Overall size', min: 0.5, max: 2, step: 0.05 },
-    { k: 'headW', label: 'Head width', min: 0.7, max: 1.4, step: 0.02 },
-    { k: 'headH', label: 'Head height', min: 0.7, max: 1.4, step: 0.02 },
+    { k: 'headW', label: 'Head width', min: 0.4, max: 1.4, step: 0.02 },
+    { k: 'headH', label: 'Head height', min: 0.4, max: 1.4, step: 0.02 },
     { k: 'bodyW', label: 'Body width', min: 0.7, max: 1.5, step: 0.02 },
     { k: 'bodyH', label: 'Body height', min: 0.7, max: 1.5, step: 0.02 },
-    { k: 'legL', label: 'Leg length', min: 0.6, max: 2, step: 0.05 },
+    { k: 'legL', label: 'Leg length', min: 0.6, max: 3, step: 0.05 },
     { k: 'legW', label: 'Leg width', min: 0.6, max: 1.6, step: 0.05 },
-    { k: 'armL', label: 'Arm length', min: 0.7, max: 1.5, step: 0.05 },
+    { k: 'armL', label: 'Arm length', min: 0.7, max: 2, step: 0.05 },
     { k: 'armW', label: 'Arm width', min: 0.6, max: 1.6, step: 0.05 },
     { k: 'eyeSize', label: 'Eye size', min: 0.5, max: 1.6, step: 0.05 }
   ];
@@ -287,12 +292,13 @@ __COMBAT__
 
   var SHAPES = [
     { name: 'Default', set: {} },
-    { name: 'Slight', set: { bodyW: 0.82, bodyH: 0.96, armW: 0.8, legW: 0.85 } },
-    { name: 'Stocky', set: { bodyW: 1.15, bodyH: 0.95, legL: 0.9, legW: 1.2, armW: 1.15 } },
-    { name: 'Lean', set: { headW: 0.9, headH: 0.88, bodyH: 1.1, legL: 1.45, armL: 1.2, eyeSize: 0.8, stride: 1.3 } },
-    { name: 'Tall', set: { headW: 0.85, headH: 0.85, bodyH: 1.2, legL: 1.7, armL: 1.3, eyeSize: 0.8, stride: 1.4 } },
-    { name: 'Brute', set: { scale: 1.1, headW: 0.85, headH: 0.85, bodyW: 1.4, bodyH: 1.15, legL: 0.8, legW: 1.4, armL: 1.2, armW: 1.5, walkRate: 0.8, bladeLen: 1.3, slashSize: 1.3 } },
-    { name: 'Child', set: { scale: 0.55, headW: 1.18, headH: 1.12, legL: 0.8, eyeSize: 1.2, walkRate: 1.5 } }
+    { name: 'Slight', set: { bodyW: 0.76, bodyH: 1.1, armW: 0.7, legW: 0.72 } },
+    { name: 'Stocky', set: { bodyW: 1.08, bodyH: 1.0, legL: 1.7, legW: 1.1, armW: 1.05 } },
+    { name: 'Lean', set: { headW: 0.52, headH: 0.52, bodyW: 0.78, bodyH: 1.2, legL: 2.5, armL: 1.55, stride: 1.3 } },
+    { name: 'Tall', set: { headW: 0.52, headH: 0.52, bodyH: 1.3, legL: 2.8, armL: 1.6, stride: 1.4 } },
+    { name: 'Brute', set: { scale: 1.1, headW: 0.6, headH: 0.6, bodyW: 1.3, bodyH: 1.2, legL: 1.7, legW: 1.3, armL: 1.5, armW: 1.4, walkRate: 0.8, bladeLen: 1.3, slashSize: 1.3 } },
+    { name: 'Child', set: { scale: 0.55, headW: 0.8, headH: 0.78, legL: 1.3, eyeSize: 1.1, walkRate: 1.5 } },
+    { name: 'Old figure', set: { headW: 1, headH: 1, bodyW: 0.9, bodyH: 1, legL: 1, legW: 1, armL: 0.9, armW: 0.9, eyeSize: 1 } }
   ];
   var PALETTES = [
     { name: 'Night', set: { sat: 0.6, lum: 0.75 }, col: { coat: '#2b4a6b' } },
@@ -326,7 +332,7 @@ __COMBAT__
     document.getElementById('atkdesc').textContent = ATTACKS[spec.atkStyle][1];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
     drawSheet();
-    try { localStorage.setItem('herotest.' + curId, JSON.stringify(spec)); } catch (e) {}
+    try { localStorage.setItem('herotest2.' + curId, JSON.stringify(spec)); } catch (e) {}
   }
 
   function sliders(hostId, list) {
@@ -413,7 +419,7 @@ __COMBAT__
   tui();
   document.getElementById('tsave').addEventListener('click', function (e) { var nm = tname.value.trim(); if (!nm) { tname.focus(); return; } templates[nm] = clone(spec); tsave(); tui(); document.getElementById('usemsg').textContent = 'Saved "' + nm + '".'; e.currentTarget.blur(); });
   document.getElementById('tdelete').addEventListener('click', function (e) { var nm = tname.value.trim(); if (nm && templates[nm]) { delete templates[nm]; tsave(); tui(); document.getElementById('usemsg').textContent = 'Deleted "' + nm + '".'; } e.currentTarget.blur(); });
-  document.getElementById('usegame').addEventListener('click', function (e) { try { localStorage.setItem('game.hero', JSON.stringify(spec)); document.getElementById('usemsg').textContent = 'The game now draws its hero like this.'; } catch (err) {} e.currentTarget.blur(); });
+  document.getElementById('usegame').addEventListener('click', function (e) { try { localStorage.setItem('game.hero2', JSON.stringify(spec)); document.getElementById('usemsg').textContent = 'The game now draws its hero like this.'; } catch (err) {} e.currentTarget.blur(); });
   function rnd(a, b) { return a + Math.random() * (b - a); }
   function hsl(h, s, l) {
     h = ((h % 360) + 360) % 360; var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r, g, b;
@@ -460,7 +466,7 @@ __COMBAT__
   function drawSheet() {
     var dirs = ['down', 'left', 'right', 'up'], r, f;
     sctx.setTransform(1, 0, 0, 1, 0, 0);
-    sctx.fillStyle = '#d9c9a0'; sctx.fillRect(0, 0, 500, 400);
+    sctx.fillStyle = '#cfc19c'; sctx.fillRect(0, 0, 500, 400); sctx.globalAlpha = 0.18; sctx.fillStyle = kit.grain(sctx); sctx.fillRect(0, 0, 500, 400); sctx.globalAlpha = 1;
     sctx.fillStyle = 'rgba(60,40,20,0.12)'; sctx.fillRect(100, 0, 2, 400);
     sctx.setTransform(2, 0, 0, 2, 0, 0); sctx.lineJoin = 'round'; sctx.lineCap = 'round';
     for (r = 0; r < 4; r++) for (f = 0; f < 5; f++) {
@@ -475,7 +481,7 @@ __COMBAT__
   /* the look being edited is kept in this browser */
   function pick(id) {
     curId = id; spec = null;
-    try { spec = JSON.parse(localStorage.getItem('herotest.' + id)); } catch (e) {}
+    try { spec = JSON.parse(localStorage.getItem('herotest2.' + id)); } catch (e) {}
     if (!spec || typeof spec !== 'object') spec = defOf();
     apply();
   }

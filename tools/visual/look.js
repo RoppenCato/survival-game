@@ -23,13 +23,7 @@ function scene(c, style, isInk, fig) {
   if (isInk) { c.globalAlpha = 0.2 * style.texture; c.fillStyle = kit.grain(c); c.fillRect(0, 0, W, H); c.globalAlpha = 1; const sun = c.createLinearGradient(0, 0, W * 0.8, H); sun.addColorStop(0, 'rgba(255,236,190,0.18)'); sun.addColorStop(0.5, 'rgba(255,236,190,0)'); sun.addColorStop(1, `hsla(${style.shadowHue},45%,20%,0.16)`); c.fillStyle = sun; c.fillRect(0, 0, W, H); }
   const items = [];
   things.forEach(t => { kit.setup(style); const sp = kit.bakeProp(t[0], 3); items.push({ y: t[2], f: () => c.drawImage(sp.cv, t[1] + sp.l * t[3], t[2] * K + sp.t * t[3], sp.w * t[3], sp.h * t[3]) }); });
-  function figure(x, y, draw, wide) {
-    if (!isInk) { draw(c, x, y); return; }
-    const fw = wide, fh = 160, cv = createCanvas(fw * Z, fh * Z), f = cv.getContext('2d'); f.setTransform(Z, 0, 0, Z, fw / 2 * Z, (fh - 12) * Z); draw(f, 0, 0);
-    f.globalCompositeOperation = 'source-atop'; f.globalAlpha = fig.grain; f.fillStyle = kit.grain(f); f.fillRect(-fw / 2, -(fh - 12), fw, fh);
-    const gs = f.createLinearGradient(-fw * 0.3, -fh * 0.9, fw * 0.3, 0); gs.addColorStop(0, `rgba(255,240,200,${fig.shade * 0.35})`); gs.addColorStop(0.45, 'rgba(0,0,0,0)'); gs.addColorStop(1, `hsla(${style.shadowHue},45%,18%,${fig.shade})`); f.globalAlpha = 1; f.fillStyle = gs; f.fillRect(-fw / 2, -(fh - 12), fw, fh);
-    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(cv, (x - fw / 2) * Z, (y - (fh - 12)) * Z + c.__oy); c.restore();
-  }
+  function figure(x, y, draw) { lib.INK_FIG.on = isInk; lib.INK_FIG.grain = fig.grain; lib.INK_FIG.shade = fig.shade; draw(c, x, y); lib.INK_FIG.on = true; }
   function foot(x, y, rx) { c.fillStyle = isInk ? `hsla(${style.shadowHue},40%,12%,0.3)` : 'rgba(20,30,20,0.25)'; c.beginPath(); c.ellipse(x, y, rx, rx * 0.35, 0, 0, 7); c.fill(); }
   items.push({ y: 300, f: () => { foot(450, 226, 9); figure(450, 225, (cc, x, y) => lib.playerD(cc, x, y, 'down', { phase: 0, amt: 0, t: 1, lx: 0, ly: 0, blink: 0, sq: 0 }, null), 120); } });
   items.push({ y: 330, f: () => { foot(660, 248, 24); figure(660, 247, (cc, x, y) => lib.creatureD(cc, x, y, { t: 1.3, move: 0, phase: 0, dir: 1, ang: 1.57, state: 'idle', k: 0 }, trollH), 200); } });

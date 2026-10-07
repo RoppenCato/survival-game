@@ -424,6 +424,49 @@ var dkA = null, wmA = null;
    STYLE B - smooth cartoon
    ===================================================== */
 var LN = '#3a2a36';
+/* The ink figure (2026-10-07, docs/art-direction.md): a figure is drawn in depth layers (far limbs, the body with its legs and
+   head, near limbs). Each layer goes to its own canvas, gets the finish (grain and a cool shadow side over its silhouette) and
+   ONE outline round its whole silhouette, drawn by dilation: a tinted copy laid down at a ring of offsets, more and farther on
+   the shadow side, so the line is thin toward the light and heavy away from it. Parts inside a layer therefore have no seams
+   between them: an arm flows into a shoulder, a leg into the hip. Only real overlaps (a near arm over the coat) keep an edge.
+   INK_FIG holds the numbers; the Character and Creature Editors may change them. */
+var INK_FIG = { on: true, w: 0.62, line: '#231a16', grain: 0.22, shade: 0.41, soft: 0.5 }, inkCvs = [], grainFig = null;
+function mkCv(w, h) { if (typeof document !== 'undefined') { var cv = document.createElement('canvas'); cv.width = w; cv.height = h; return cv; } if (global.__mk) return global.__mk(w, h); return require('@napi-rs/canvas').createCanvas(w, h); }   // in Node the scripts set global.__mk, or the fake canvas is found by itself
+function figGrain(c) {
+  if (!grainFig) { grainFig = mkCv(96, 96); var g = grainFig.getContext('2d'), i, R = 0.37; for (i = 0; i < 1500; i++) { R = (R * 9301 + 49297) % 233280; var x = R / 233280 * 96; R = (R * 9301 + 49297) % 233280; var y = R / 233280 * 96; R = (R * 9301 + 49297) % 233280; var d = R / 233280; g.fillStyle = d < 0.55 ? 'rgba(20,14,10,' + (0.25 + d * 0.5).toFixed(2) + ')' : 'rgba(255,245,225,' + (0.2 + (1 - d) * 0.6).toFixed(2) + ')'; g.fillRect(x, y, 1 + (d < 0.2 ? 1 : 0), 1); } }
+  return c.createPattern(grainFig, 'repeat');
+}
+// begin a layer: a canvas covering the figure rectangle (figure space) under the device transform M
+function inkLayerBegin(i, M, bx, by, bw, bh) {
+  var xs = [], ys = [], k, cs = [[bx, by], [bx + bw, by], [bx, by + bh], [bx + bw, by + bh]];
+  for (k = 0; k < 4; k++) { xs.push(M.a * cs[k][0] + M.c * cs[k][1] + M.e); ys.push(M.b * cs[k][0] + M.d * cs[k][1] + M.f); }
+  var sc = Math.sqrt(Math.abs(M.a * M.d - M.b * M.c)), pad = Math.ceil(INK_FIG.w * sc * 2.6 + 3), x0 = Math.floor(Math.min.apply(null, xs)) - pad, y0 = Math.floor(Math.min.apply(null, ys)) - pad, w = Math.ceil(Math.max.apply(null, xs)) + pad - x0, h = Math.ceil(Math.max.apply(null, ys)) + pad - y0;
+  w = Math.max(4, Math.min(4096, w)); h = Math.max(4, Math.min(4096, h));
+  var cv = inkCvs[i]; if (!cv) cv = inkCvs[i] = mkCv(w, h); else if (cv.width < w || cv.height < h) { cv.width = Math.max(cv.width, w); cv.height = Math.max(cv.height, h); }
+  var g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.lineCap = 'round'; g.lineJoin = 'round';
+  return { g: g, cv: cv, x0: x0, y0: y0, w: w, h: h, sc: sc, used: false };
+}
+// finish a layer and lay it on the target: the grain and the shadow side over its silhouette, the outline by dilation, then itself
+function inkLayerEnd(cOut, L, i, lineCol, opts) {
+  if (!L || !L.used) return; var g = L.g, w = L.w, h = L.h, k;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-atop';
+  if (opts.grain > 0) { g.globalAlpha = opts.grain; g.fillStyle = figGrain(g); g.fillRect(0, 0, w, h); }
+  if (opts.shade > 0) { var gs = g.createLinearGradient(w * 0.15, 0, w * 0.85, h); gs.addColorStop(0, 'rgba(255,240,200,' + (opts.shade * 0.3) + ')'); gs.addColorStop(0.45, 'rgba(0,0,0,0)'); gs.addColorStop(1, 'rgba(40,52,80,' + opts.shade + ')'); g.globalAlpha = 1; g.fillStyle = gs; g.fillRect(0, 0, w, h); }
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  var tcv = inkCvs[i + 8]; if (!tcv) tcv = inkCvs[i + 8] = mkCv(L.cv.width, L.cv.height); else if (tcv.width < L.cv.width || tcv.height < L.cv.height) { tcv.width = L.cv.width; tcv.height = L.cv.height; }
+  var t = tcv.getContext('2d'); t.setTransform(1, 0, 0, 1, 0, 0); t.clearRect(0, 0, tcv.width, tcv.height); t.drawImage(L.cv, 0, 0); t.globalCompositeOperation = 'source-in'; t.fillStyle = lineCol; t.fillRect(0, 0, w, h); t.globalCompositeOperation = 'source-over';
+  cOut.save(); cOut.setTransform(1, 0, 0, 1, 0, 0);
+  var r = Math.max(0.8, opts.w * L.sc);
+  for (k = 0; k < 12; k++) { var a = k / 12 * 6.283; cOut.drawImage(tcv, 0, 0, w, h, L.x0 + Math.cos(a) * r, L.y0 + Math.sin(a) * r, w, h); }                 // the thin line all round
+  cOut.globalAlpha = 0.6; for (k = 0; k < 7; k++) { var a2 = -0.15 + k / 6 * 1.85; cOut.drawImage(tcv, 0, 0, w, h, L.x0 + Math.cos(a2) * r * 2.1, L.y0 + Math.sin(a2) * r * 2.1, w, h); } cOut.globalAlpha = 1;   // heavy toward the lower right, away from the light
+  cOut.drawImage(L.cv, 0, 0, w, h, L.x0, L.y0, w, h);
+  cOut.restore();
+}
+// switch drawing into layer i, keeping the device transform the drawing is at; returns the layer's context
+function inkSwitch(c, layers, cur, i) {
+  var M = c.getTransform(), L = layers[i], ex = M.e + (cur ? cur.x0 : 0), fy = M.f + (cur ? cur.y0 : 0);
+  L.g.setTransform(M.a, M.b, M.c, M.d, ex - L.x0, fy - L.y0); L.used = true; return L;
+}
 function pathRR(c, x, y, w, h, r) {
   c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
   c.lineTo(x + w, y + h - r); c.quadraticCurveTo(x + w, y + h, x + w - r, y + h); c.lineTo(x + r, y + h);
@@ -470,13 +513,13 @@ var canopyB = null;
 // helmet, 4 fur hat, 5 headband; clothes 0 the coat and vest, 1 belted tunic, 2 tunic and cloak, 3 apron dress, 4 fur vest.
 // matte 0..1 dulls the highlights, softens the colours and browns the outline toward the world's, like the trees.
 var HEROD_DEF = {
-  scale: 0.75, headW: 1, headH: 1, bodyW: 0.9, bodyH: 1, legL: 1, legW: 1, armL: 0.9, armW: 0.9, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 1, beard: 0,
-  hair: 0, hat: 0, clothes: 0, matte: 0, ring: 0,
+  scale: 0.78, headW: 0.55, headH: 0.55, bodyW: 0.84, bodyH: 1.15, legL: 2.2, legW: 0.82, armL: 1.4, armW: 0.78, eyewear: 0, eyewearSize: 1, eyeSize: 0.85, blush: 0.5, beard: 0,   // a clear step leaner (Robin, 2026-10-07): the head a quarter of the height
+  hair: 0, hat: 0, clothes: 0, matte: 0.6, ring: 0,
   walkRate: 1.4, bob: 1, stride: 1, armSwing: 1, sway: 0.25, stance: 0.8, lean: 1, atkStyle: 0, atkPower: 1, bladeLen: 1, slashSize: 1, slashWidth: 0.66,
   hue: 0, sat: 1, lum: 1,
-  col: { skin: '#ffd8b0', hair: '#b4602d', coat: '#4fa8a4', vest: '#7a5236', pants: '#55466b', boot: '#4a3329', trim: '#e0a93a',
+  col: { skin: '#ebc9a2', hair: '#a85a2a', coat: '#4f7a74', vest: '#6a4a32', pants: '#56505e', boot: '#3e2c24', trim: '#c99a3a',   // the earth palette (docs/art-direction.md)
     cloak: '#7a3b3b', dress: '#5b6b8a', fur: '#b89a74', iron: '#9aa0aa',
-    lens: '#a9e6ff', eye: '#2a1c2a', line: '#3a2a36', blade: '#eef3fb', slash: '#ffffff' }
+    lens: '#a9e6ff', eye: '#2a1c2a', line: '#231a16', blade: '#eef3fb', slash: '#ffffff' }
 };
 var LEG_LEN = 7.3, curHero = null;
 function heroPalette(sp) {
@@ -507,7 +550,7 @@ function figureD(c, x, y, dir, an, pose, F) {
 }
 // People of the world, as changes on top of the hero's spec.
 var FOLK = {
-  dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 1.12, headH: 1.02, bodyW: 1.28, bodyH: 0.9, legL: 0.5, legW: 1.3, armL: 0.78, armW: 1.25, eyeSize: 0.85, blush: 1, beard: 1, walkRate: 1.7, stance: 1, ring: 1 },
+  dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 0.8, headH: 0.74, bodyW: 1.28, bodyH: 0.9, legL: 1.0, legW: 1.3, armL: 1.0, armW: 1.25, eyeSize: 0.85, blush: 1, beard: 1, walkRate: 1.7, stance: 1, ring: 1 },
     col: { skin: '#f0c49c', hair: '#c8743a', coat: '#7d4a3a', vest: '#4f3b2c', pants: '#4a4038', boot: '#3a2a22', trim: '#b9b2a6' } }
 };
 // Concepts for the people of this world (2026-10-06): whole looks, each a set of spec changes and colours on the hero's
@@ -521,7 +564,7 @@ var CONCEPTS = [
   { name: 'Völva', note: 'A seeress: hood and dark cloak, an apron dress over linen.', set: { clothes: 3, hair: 2, beard: 0, hat: 1, matte: 1, bodyW: 0.86 }, col: { coat: '#b9ad94', cloak: '#3a3550', dress: '#4a5a78', pants: '#3a3a44', hair: '#3a2a22', trim: '#a9a9b0' } },
   { name: 'Hunter', note: 'Shaved sides and a tail, a fur hat and fur vest over green.', set: { clothes: 4, hair: 6, beard: 2, hat: 4, matte: 1 }, col: { coat: '#5b6b4a', fur: '#b89a74', pants: '#4a3a2a', hair: '#8a5a3a', trim: '#5a3a26' } },
   { name: 'Húsfreyja', note: 'The lady of the house: hair in a knot, a red apron dress over linen.', set: { clothes: 3, hair: 4, beard: 0, hat: 0, matte: 1, bodyW: 0.88 }, col: { coat: '#d9c9a6', dress: '#8a4a4a', pants: '#5a4a3a', hair: '#c8743a', trim: '#c9a04a' } },
-  { name: 'Child', note: 'Small, a big head, a plain tunic.', set: { clothes: 1, hair: 1, beard: 0, hat: 0, matte: 1, scale: 0.55, headW: 1.18, headH: 1.12, legL: 0.8, eyeSize: 1.2 }, col: { coat: '#9a8a6a', pants: '#5a4a3a', trim: '#5a3a26', hair: '#e8c070' } },
+  { name: 'Child', note: 'Small, a big head, a plain tunic.', set: { clothes: 1, hair: 1, beard: 0, hat: 0, matte: 1, scale: 0.55, headW: 0.8, headH: 0.78, legL: 1.3, eyeSize: 1.1 }, col: { coat: '#9a8a6a', pants: '#5a4a3a', trim: '#5a3a26', hair: '#e8c070' } },
   { name: 'Elder', note: 'Grey long hair and a long beard, a grey cloak, a slower walk.', set: { clothes: 2, hair: 2, beard: 3, hat: 0, matte: 1, bodyH: 0.95, walkRate: 0.9, bob: 0.7 }, col: { coat: '#6a6a5a', cloak: '#5a5a5a', pants: '#4a4a44', hair: '#c8c2b8', trim: '#8a7a5a', skin: '#f0c49c' } }
 ];
 function conceptSpec(name) {
@@ -535,7 +578,7 @@ function folkSpec(key, R) {
     R = R || Math.random; var base = hero().spec, sp2 = fillSpec(HEROD_DEF, base), k2;
     var hair = ['#b4602d', '#e8c070', '#5a3a28', '#c8743a', '#3a2a22', '#d9a35a', '#8a5a3a'], coat = ['#6b7d8a', '#7d4a3a', '#5b6b4a', '#8a7a5c', '#4f5f7a', '#9a7a5a', '#b9ad94'], pants = ['#4a4038', '#5a4a3a', '#3f4a5a', '#6a5a48'], cloak = ['#7a3b3b', '#3a3550', '#5a5a5a', '#6b4a2e'], dress = ['#8a4a4a', '#4a5a78', '#6b5a3a'];
     function pick(a) { return a[Math.floor(R() * a.length)]; }
-    sp2.scale = base.scale * (0.96 + R() * 0.1); sp2.bodyW = base.bodyW * (0.95 + R() * 0.14); sp2.headW = 0.95 + R() * 0.1; sp2.walkRate = 1.3;
+    sp2.scale = base.scale * (0.96 + R() * 0.1); sp2.bodyW = base.bodyW * (0.95 + R() * 0.14); sp2.headW = base.headW * (0.95 + R() * 0.1); sp2.walkRate = 1.3;
     sp2.hair = pick([0, 1, 1, 2, 3, 4, 6, 7, 7, 8]); sp2.beard = R() < 0.45 ? pick([1, 2, 2, 3, 4]) : 0; sp2.hat = R() < 0.3 ? pick([1, 2, 4, 5]) : 0; sp2.clothes = pick([1, 1, 2, 3, 4]); sp2.eyewear = 0;
     sp2.col.hair = pick(hair); sp2.col.coat = pick(coat); sp2.col.pants = pick(pants); sp2.col.vest = pick(coat); sp2.col.cloak = pick(cloak); sp2.col.dress = pick(dress); sp2.col.skin = R() < 0.5 ? '#ffd8b0' : '#f0c49c';
     return sp2;
@@ -549,7 +592,9 @@ function folkSpec(key, R) {
 function playerD(c, x, y, dir, an, pose) {
   an = an || { phase: 0, amt: 0, t: 0, lx: 0, ly: 0, blink: 0, sq: 0 };
   var H = hero(), sp = H.spec, C = H.pal, lift = H.lift, LN0 = LN;
-  LN = C.line;
+  var cOut = c, layers = null, curL = null, inkOn = INK_FIG.on && typeof c.getTransform === 'function';
+  LN = inkOn ? 'rgba(35,26,22,' + INK_FIG.soft + ')' : C.line;                       // layered: inner lines are soft details, the silhouette gets the ink
+  function lay(i) { if (!layers) return; curL = inkSwitch(c, layers, curL, i); c = curL.g; }
   var ph = an.phase, amt = an.amt, t = an.t;
   var SK = C.skin, SKS = C.skinD, HAIR = C.hair, COAT = C.coat, VEST = C.vest, PANTS = C.pants, PANTSD = C.pantsD, BOOT = C.boot, BR = C.trim;
   var HS = Math.round(sp.hair || 0), BS = Math.round(sp.beard || 0), HT = Math.round(sp.hat || 0), CL = Math.round(sp.clothes || 0), MT = C.matte || 0;
@@ -569,7 +614,7 @@ function playerD(c, x, y, dir, an, pose) {
   function loc(h) { return [((flip ? -h[0] : h[0]) - lxl) / bw, -9 + (h[1] - lyl + lift + 9) / bh]; }
   function capsule(x1, y1, x2, y2, col, w) {
     c.lineCap = 'round';
-    c.strokeStyle = LN; c.lineWidth = (w || 4.4) + 2.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+    if (!inkOn) { c.strokeStyle = LN; c.lineWidth = (w || 4.4) + 2.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); }
     c.strokeStyle = col; c.lineWidth = (w || 4.4); c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
   }
   var RING_COL = [null, ['#b07a3a', '#6b4420'], ['#c9ced8', '#6f7580'], ['#d6dbe4', '#6f7580'], ['#e2b63a', '#8a6a18'], ['#c8402a', '#6a1e12']], RG = Math.round(sp.ring || 0);
@@ -586,7 +631,7 @@ function playerD(c, x, y, dir, an, pose) {
       ex = shx + dx / 2 + nx * hh; ey = shy + dy / 2 + ny * hh;
     }
     c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = LN; c.lineWidth = armW + 2.2; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
+    if (!inkOn) { c.strokeStyle = LN; c.lineWidth = armW + 2.2; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke(); }
     c.strokeStyle = COAT; c.lineWidth = armW; c.beginPath(); c.moveTo(shx, shy); c.lineTo(ex, ey); c.lineTo(hx, hy2); c.stroke();
     if (ringArm) armBand(shx, shy, ex, ey);
     ell(c, hx, hy2, 2.4, 2.4, SK, 1.4);
@@ -596,6 +641,7 @@ function playerD(c, x, y, dir, an, pose) {
   c.save(); c.translate(x, y);
   if (flip) c.scale(-1, 1);
   var sqK = an.sq || 0; c.scale(1 + 0.14 * sqK, 1 - 0.14 * sqK);
+  if (inkOn) { var M0 = c.getTransform(), fb = 26 + 10 * sp.armL; layers = [inkLayerBegin(0, M0, -fb, -62 - lift, fb * 2, 70 + lift), inkLayerBegin(1, M0, -fb, -62 - lift, fb * 2, 70 + lift), inkLayerBegin(2, M0, -fb, -62 - lift, fb * 2, 70 + lift)]; lay(1); }
 
   /* legs */
   if (side) {
@@ -808,9 +854,10 @@ function playerD(c, x, y, dir, an, pose) {
 
   if (side) {
     var sw1 = Math.sin(ph) * amt;
-    if (pose && pose.far) armPose(0.8, -17, pose.far, 1, 0.5);
-    drawSheath();
+    lay(0); if (pose && pose.far) armPose(0.8, -17, pose.far, 1, 0.5);
+    lay(1); drawSheath();
     torsoSide(sw1);
+    lay(2);
     if (pose && pose.near) armPose(0, -17, pose.near, 0.6, 1, true);
     else {
       var aa = -Math.sin(ph) * 0.65 * amt * (1 + 0.35 * run) * sp.armSwing;
@@ -818,6 +865,7 @@ function playerD(c, x, y, dir, an, pose) {
       var hx2 = -Math.sin(aa) * rr0, hy3 = -17 + Math.cos(aa) * rr0 - Math.max(0, Math.sin(aa)) * 1.2 - (1 - amt) * 0.4;
       armTo(0, -17, hx2, hy3, 1, 0.3, true);
     }
+    lay(1);
     head(function () {
       c.fillStyle = HAIR;
       if (HS === 1) { c.fillRect(-12, hy - 12, 24, 8.5); c.beginPath(); c.ellipse(5 + sw1 * 0.6, hy - 1, 6.5, 5, 0, 0, Math.PI * 2); c.fill(); }
@@ -845,14 +893,18 @@ function playerD(c, x, y, dir, an, pose) {
     var armRf = function () { if (pose && pose.armR) armPose(6.5, -17, pose.armR, 0.7, 1, ringR); else armTo(6.5, -17, hx0 - aR * 0.5 * sp.sway, handY + aR * 1.3 * (1 + 0.4 * run) - Math.max(0, aR) * 0.4, 1, 0.4, ringR); };
     // which arm is behind the body: both from the back, the far one when turned
     var backL = dir === 'up' ? tq > -0.35 : tq < -0.35, backR = dir === 'up' ? tq < 0.35 : tq > 0.35;
+    lay(0);
     if (backL && !(pose && pose.armL)) armLf();
     if (backR && !(pose && pose.armR)) armRf();
+    lay(1);
     if (dir === 'down') drawSheath();
     var fsw = sw2 * 0.28 * Math.min(1, 0.25 + sp.sway);
     torsoFront(fsw, dir === 'up');
     if (dir === 'up') drawSheath();
+    lay(2);
     if (!backL || (pose && pose.armL)) armLf();
     if (!backR || (pose && pose.armR)) armRf();
+    lay(1);
     if (dir === 'down') {
       head(function () {
         c.fillStyle = HAIR;
@@ -889,6 +941,7 @@ function playerD(c, x, y, dir, an, pose) {
     }
   }
   c.restore();
+  if (layers) { var li; for (li = 0; li < 3; li++) inkLayerEnd(cOut, layers[li], li, INK_FIG.line, INK_FIG); c = cOut; }
   c.restore();
   LN = LN0;
 }
@@ -1187,7 +1240,8 @@ function trollD(c, x, y, s, H) {
   function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
   function pt(f, d, h) { return [f * ca - d * sa, (f * sa + d * ca) * KD - h]; }     // body space to the screen
   function depth(f, d) { return f * sa + d * ca; }                                    // toward the camera
-  var items = [];
+  var items = [], cOut = c, layers = null, curL = null, inkOn = INK_FIG.on && typeof c.getTransform === 'function';
+  if (inkOn) line = 'rgba(35,26,22,' + INK_FIG.soft + ')';                              // layered: the parts' own lines are soft details; the silhouette gets the ink
   function at(dep, fn) { items.push({ dep: dep, fn: fn }); }
   function strandAt(p, len, lean2, w, col, i) {                                      // a hanging hair from a screen point, swaying
     var sw = Math.sin(t * 1.1 + i * 1.7) * 0.05, a = 1.57 + lean2 + sw, x1 = p[0] + Math.cos(a) * len, y1 = p[1] + Math.sin(a) * len, cx = (p[0] + x1) / 2 + Math.cos(a - 1.57) * len * (0.1 + 0.1 * hs(i, 3)), cy = (p[1] + y1) / 2 + Math.sin(a - 1.57) * len * 0.1;
@@ -1206,6 +1260,8 @@ function trollD(c, x, y, s, H) {
   var hump = 46 + 6 * HU, headF = 12 + lean, headH = 34 + (wind ? 2 * wind : 0) - 1.5 * (1 - HU) + bob;
   c.save(); c.translate(x, y); c.scale(sz, sz); c.lineJoin = 'round'; c.lineCap = 'round';
   c.fillStyle = 'rgba(20,30,20,0.28)'; c.beginPath(); c.ellipse(0, 1, 21, 6, 0, 0, 7); c.fill();
+  if (inkOn) { var M0 = c.getTransform(); layers = [inkLayerBegin(0, M0, -62, -118, 124, 132), inkLayerBegin(1, M0, -62, -118, 124, 132), inkLayerBegin(2, M0, -62, -118, 124, 132)]; }
+  function lay(i) { if (!layers) return; curL = inkSwitch(c, layers, curL, i); c = curL.g; }
   // the tail: from the back of the body, trailing behind
   if (TL) at(depth(-20, 2), function () { var p0 = pt(-12, 0, 12 + bob), p1 = pt(-24, 3, 3 + bob), p2 = pt(-29, 2, 7 + bob + Math.sin(t * 1.4) * 1.5); c.strokeStyle = line; c.lineWidth = 2.6 + 2 * lw; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke(); c.strokeStyle = skinDk; c.lineWidth = 2.6; c.stroke(); for (var i = 0; i < 6; i++) strandAt(p2, 4 + 3 * hs(i, 70), (hs(i, 71) - 0.5) * 2.2 + 0.4, 1.2, hairOf(i), 70 + i); });
   // the sack on the back
@@ -1281,7 +1337,8 @@ function trollD(c, x, y, s, H) {
     }
     for (var j = 0; j < 7 + 5 * HL; j++) { var th = (j / (7 + 5 * HL)) * 6.283, f = headF - 2 + 6 * Math.cos(th), d = 6 * Math.sin(th); if (Math.cos(th) > 0.6) continue; strandAt(pt(f, d, headH + 6), (9 + 8 * HL) * (0.6 + 0.6 * hs(j, 130)), (hs(j, 131) - 0.5) * 0.5 + pt(f, d, 0)[0] * 0.02, 1.3, hairOf(j), 130 + j); }   // the hair over the head, falling behind
   });
-  items.sort(function (a, b) { return a.dep - b.dep; }); for (i = 0; i < items.length; i++) items[i].fn();
+  items.sort(function (a, b) { return a.dep - b.dep; }); for (i = 0; i < items.length; i++) { lay(items[i].dep < -1.5 ? 0 : (items[i].dep > 1.5 ? 2 : 1)); items[i].fn(); }
+  if (layers) { var li; for (li = 0; li < 3; li++) inkLayerEnd(cOut, layers[li], li, INK_FIG.line, { w: INK_FIG.w * 0.75, grain: INK_FIG.grain, shade: INK_FIG.shade }); c = cOut; }
   c.restore();
 }
 function creatureD(c, x, y, s, H) {
@@ -1454,7 +1511,7 @@ function creatureD(c, x, y, s, H) {
 var dkB = null;
 
 
-return { lib: { playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { INK_FIG: INK_FIG, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 
@@ -3326,7 +3383,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, atk: e.type === 'bot' ? lib.animalAttack(k) : null };
     if (e.type === 'bot') e.hp = e.maxHp = sp.hp;
   };
-  try { var gh = JSON.parse(localStorage.getItem('game.hero')); if (gh && typeof gh === 'object') lib.setHero(gh); } catch (e) {}   // the Character Editor's hero
+  try { var gh = JSON.parse(localStorage.getItem('game.hero2')); if (gh && typeof gh === 'object') lib.setHero(gh); } catch (e) {}   // the Character Editor's hero
   Combat.init(GameArt.lib);
   var S = Combat.S;
   /* the weapons: one melee and one ranged thing in hand, the copper kinds (2026-10-06); the tools stay copper too */
