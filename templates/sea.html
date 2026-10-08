@@ -108,7 +108,8 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <p class="desc" id="steerdesc"></p>
         <div id="phandle" style="margin-top:8px"></div>
         <div class="group" style="margin-top:8px"><button id="usehandling">Use in the game</button></div>
-        <p class="desc" id="usemsg">The game's boat takes this steering, speed, acceleration, turn, glide and grip; its raft a slower share of them.</p>
+        <p class="desc" id="usemsg">The game's vessel of the kind afloat here (the boat unless the yard launched a karve) takes this steering, speed, acceleration, turn, glide, grip and wind strength; the raft a slower share of the boat's.</p>
+        <p class="desc">The wind is a buff only: a karve's sail with the wind behind goes up to (1 + strength) times its top speed, a wind ahead costs nothing. Each rower adds 7% while the seats last.</p>
         <p class="desc">Glide is how long the boat keeps moving after you let go. Grip is how firmly it follows its bow; low grip lets it slide sideways in turns.</p>
       </section>
       <section class="panel">
@@ -176,7 +177,10 @@ __COMBAT__
   var HANDLE = [
     { k: 'turn', label: 'Turn speed', min: 0.5, max: 5, step: 0.1 },
     { k: 'glide', label: 'Glide', min: 0.2, max: 4, step: 0.1 },
-    { k: 'grip', label: 'Grip', min: 0, max: 1, step: 0.05 }
+    { k: 'grip', label: 'Grip', min: 0, max: 1, step: 0.05 },
+    { k: 'windK', label: 'Wind strength', min: 0, max: 1.5, step: 0.05 },
+    { k: 'windA', label: 'Wind blows toward', min: -3.1, max: 3.1, step: 0.1 },
+    { k: 'rowers', label: 'Rowers aboard', min: 0, max: 12, step: 1 }
   ];
   var SEA = [
     { k: 'hue', label: 'Water colour', min: -60, max: 60, step: 2 },
@@ -199,7 +203,7 @@ __COMBAT__
   var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.3, max: 2, step: 0.05 }];
   var NUM = BOAT.concat(HANDLE, SEA, LAND);
   var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Stripes and shields']];
-  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
+  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, windK: 0.5, windA: 0.6, rowers: 0, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
     isle: 160, sizeVar: 0.8, count: 7, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, seed: 25,
     col: { hull: '#5a3a26', deck: '#b98a5a', sail: '#efe6cf', trim: '#b83a2e' } };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -331,20 +335,20 @@ __COMBAT__
   YSCENE.Y.X = 0;   // set when the world is made: far east of the map
   try { var ys = JSON.parse(localStorage.getItem(YKEY)); if (ys && ys.yard) { yardS = ys.yard; if (ys.built) { built = ys.built; Yard.fit(built); } } } catch (e) {}
   function ysave() { try { localStorage.setItem(YKEY, JSON.stringify({ yard: yardS, built: built ? { kind: built.kind, parts: built.parts } : null })); } catch (e) {} }
-  function vesselNow() { return { x: boat.x, y: boat.y, h: boat.h, vx: boat.vx, vy: boat.vy, aboard: aboard, kind: built.kind, parts: built.parts, hw: built.hw, hh: built.hh, seat: built.seat }; }
+  function vesselNow() { return { x: boat.x, y: boat.y, h: boat.h, vx: boat.vx, vy: boat.vy, aboard: aboard, kind: built.kind, parts: built.parts, hw: built.hw, hh: built.hh, seat: built.seat, seats: built.seats, rowers: built.rowers, mastX: built.mastX, sail: built.sail, crew: boat.crew, sailFill: boat.sailFill, rud: boat.rud }; }
   var yardHost = {
     hero: function () { return Combat.dbg().P; }, canAfford: function () { return true; }, pay: function () {}, costText: function () { return 'free'; },
     sfx: function () {}, toast: function (t) { prompt = t; }, tile: function (c, gx, gy, x, y, w2, h2) { c.drawImage(w.tile('grass', gx, gy), x, y, w2, h2); },
     save: function () { ysave(); yui(); },
-    finish: function () { if (YSCENE.check()) return; built = { kind: yardS.plan, parts: yardS.cells.slice() }; Yard.fit(built); ysave(); yardLeave(); toDock(); yui(); }
+    finish: function () { if (YSCENE.check()) return; built = { kind: yardS.plan, parts: yardS.cells.slice() }; Yard.fit(built); var HK = Yard.HANDLING[built.kind]; if (HK) { for (var k in HK) spec[k] = HK[k]; apply(); } ysave(); yardLeave(); toDock(); yui(); }   // a launched vessel brings its own handling to the sliders
   };
   function yardEnter() {
     var P = Combat.dbg().P; if (aboard) return; yardS = YSCENE.enter(yardHost, yardS); inYard = true; yardZoom = view.zoom; view.zoom = YSCENE.ZOOM; syncView();
     var hs = YSCENE.heroSpot(); P.x = hs.x; P.y = hs.y; P.vx = P.vy = 0; releaseWalk(); yui();
   }
   function yardLeave() { var P = Combat.dbg().P; inYard = false; YSCENE.leave(); view.zoom = yardZoom || 0.7; syncView(); P.x = (dockEnd.x + 7.4) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; yui(); }
-  function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + (built.kind === 'boat' ? 'a boat' : 'a raft') + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
-  document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { localStorage.setItem('game.boat', JSON.stringify({ steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip })); document.getElementById('usemsg').textContent = 'The game now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ').'; } catch (err) {} };
+  function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + (built.kind === 'karve' ? 'a karve' : built.kind === 'boat' ? 'a boat' : 'a raft') + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
+  document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { var kind = built ? built.kind : 'boat'; localStorage.setItem('game.boat', JSON.stringify({ kind: kind, steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip, windK: spec.windK })); document.getElementById('usemsg').textContent = 'The game\'s ' + kind + ' now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ', wind ' + spec.windK + ').'; } catch (err) {} };
   document.getElementById('yopen').onclick = function (e) { e.currentTarget.blur(); if (inYard) yardLeave(); else yardEnter(); };
   document.getElementById('yclear').onclick = function (e) { e.currentTarget.blur(); yardS.cells = []; ysave(); yui(); };
   document.getElementById('yship').onclick = function (e) { e.currentTarget.blur(); built = null; ysave(); yui(); if (!inYard) toDock(); };
@@ -417,7 +421,8 @@ __COMBAT__
   function sail(dt) {
     var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), iy = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0);
     if (!aboard) ix = iy = 0;
-    Yard.sail(boat, { ix: ix, iy: iy }, dt, free, spec);   // the same physics as the game (src/yard.js)
+    boat.sail = !!(built && built.kind === 'karve' && built.sail); boat.crew = spec.rowers; boat.rowers = built && built.rowers != null ? built.rowers : 99;
+    Yard.sail(boat, { ix: ix, iy: iy }, dt, free, spec, { a: spec.windA, k: spec.windK });   // the same physics as the game (src/yard.js); the wind fills a karve's sail
     var sp = Math.hypot(boat.vx, boat.vy), d = dims();
     wakeT -= dt;
     if (sp > 12 && wakeT <= 0 && spec.wake > 0) { wakeT = 0.07; wakes.push({ x: boat.x - Math.cos(boat.h) * d.L * 0.9, y: boat.y - Math.sin(boat.h) * d.L * 0.9, r: d.W * 0.7, life: 1.3, max: 1.3, v: 6 + sp * 0.05 }); }

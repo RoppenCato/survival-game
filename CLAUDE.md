@@ -571,6 +571,31 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   turn, glide, grip), with `Yard.HANDLING` the numbers per kind (the boat: Tiller, 100; the raft: Direct, 54). **"Use in the
   game"** under the editor's handling sliders stores `game.boat`, which the game's `handling(kind)` merges over them (the raft
   gets a slower share). Shift pulls harder. `Combat.api.debug().giveBoat('boat')` puts a test vessel by the hero.
+  **The karve (2026-10-08, built; the first ship, Robin: built in the yard):** a third plan in the Shipyard (`YARD_PLANS` `karve`;
+  `Yard.partsFor(plan)` gives a plan's parts with their costs for that plan, `Yard.costFor`: the keel, strake and rowing seat are shared
+  with the boat but cost **iron bars** for nails instead of copper) and three parts of its own: the **mast** (5 wood, 4 fiber; layer deck,
+  on the keel), the **sail** (18 fiber; layer fit, on the mast) and the **steering oar** (3 wood, 1 iron bar; layer fit). `PLANS.karve`:
+  a keel of **five to nine** in one row, the strake rules of the boat, **two seats at least**, one mast on the keel amidships (within one
+  cell of the middle), one sail on the mast's cell, one steering oar at the keel's **stern (its left end)**. `fit` gives a boat or karve
+  `seats` (the thwarts' x along the keel), `rowers` (two a seat), `mastX` and `sail`; on the karve you stand **at the stern by the steering
+  oar** (`seat` -0.62 of the half length) and there is no paddle. `drawRig` draws the steering oar on the right-hand side aft (it turns
+  with the tiller, `v.rud`), the mast with a pennant, and the **square striped sail**: full and bellied toward the bow when `v.sailFill`
+  is up (the Sea Editor karve's trapezoid, stripes, grain, a lit side and folds, sheets down to the rails), else **furled** along the yard
+  with ties. **Wind and rowers in `Yard.sail(v, inp, dt, free, H, wind)`:** `wind = { a, k }` (the way it blows and its strength);
+  a vessel with `v.sail` gets `top * (1 + k * max(0, cos(a - h)))` while driving forward, so a wind behind is up to 1.5 times the speed
+  and a wind ahead costs **nothing** (a buff only, the reward rule); each rower (`v.crew`, capped by `v.rowers`) adds `Yard.WIND.rowK`
+  (7%) to top speed and acceleration. `Yard.HANDLING.karve` (Tiller, 115, accel 42, turn 1.3, glide 3.2, grip 0.72). **In the game:**
+  `wind` wanders slowly through the day (`windTick`: a new target every 70 to 150 seconds), a small **arrow on the chart** shows its way
+  while a karve is afloat, `handling(kind)` takes `game.boat` only for the kind it was stored for (`kind` in the stored object; the raft
+  still takes a slower share of the boat's) and its `windK`. **The crew:** hirdmen following you within 150 units step aboard when you
+  board a boat or karve, as many as the seats take (`crewBoard`; `m.aboard`, saved), sit two to a seat facing aft (`raftAfter` seats
+  them; `an.sit` through `drawFolk`), and row (`raft.crew`); **stepping ashore inside your territory they step off with you**
+  (`crewAshore`), on any other shore they **keep the boat and wait** (the hird never walks the open world; the territory rule rests
+  while aboard, and E does not offer them). The finish toast and the chart label name the karve; `giveBoat('karve')` gives an
+  eight-keel karve with three seats. **The Sea Editor:** the Karve tab in its yard, a launched vessel brings its own handling to the
+  sliders, three more sliders (Wind strength, Wind blows toward, Rowers aboard), and "Use in the game" stores the kind afloat and the
+  wind strength. `tests/karve.js` (in `npm test`) checks the rules, the fit and the speeds; `node tools/visual/boats.js` renders the
+  karve furled and under sail with rowers. `drawFolk` skips the idle pose for a figure without an idle (a hirdman has none yet).
    **The water test follows the hull** (`raftFit` sets `hw`, `hh` from the parts;
   `raftHull` probes an ellipse of that size, turned with the heading, at 0.8 so there is a little room). The vessel is
   saved with its `kind` and `parts`. One vessel afloat at a time.
@@ -891,7 +916,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   **chalk** (5, almost white, at the lowland outcrops); the Building board's Ground row has Field, Chalk and Marsh brushes. A
   `hedge` prop (bushes in a row) is in the kit for the lowland villages to come. `Village.plan` makes lowland villages richer. **Not
   built yet** (next): the lowland towns and churches with their pieces (timber framing, cut stone, tiles, arches, a bell tower), iron
-  (bog iron in the marsh, the bloomery, iron tools and arms, mail), the karve (mast, sail, rowers, wind), raiding (loot behind doors,
+  (bog iron in the marsh, the bloomery, iron tools and arms, mail), ~~the karve (mast, sail, rowers, wind)~~ (built 2026-10-08), raiding (loot behind doors,
   carrying to the ship, guards gathering to the noise), silver, the jarl with the silver ring, reputation, and the balance pass on
   island and map generation (Robin: the lowlands a bit further out; bigger seas).
 - **Iron (2026-10-07, the lowlands' metal; decided in the questionnaire):** **bog iron** lies in the marsh (`bogIron` prop, a rusty lump

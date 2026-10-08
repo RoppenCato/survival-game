@@ -297,9 +297,9 @@ the template's headings with questions.
 | D1 Materials | Silver and goods as loot; **iron (decided 2026-10-07):** bog iron from the marsh, a bloomery, iron tools and weapons, mail, gambeson, an iron helmet, a painted shield; silver by weight as the second currency. **Built 2026-10-07:** bog iron in the marsh, the bar at the furnace, iron tools and arms, the gambeson, the mail shirt, the iron helm, the painted shield | Silver sources |
 | D3 Power | Silver ring, the eye side; the smith's rework | The runes for this chapter (bosses, raids, fishing, quests, hirdmen) |
 | D3 Currency | A second currency is allowed "about every third biome" | Whether Chapter 3 adds one |
-| E1 Travel | The first Viking ship: **the karve, built in the yard (decided 2026-10-07)**: a longer keel, more strakes, a mast, a sail, a steering oar, iron nails and cloth; the more aboard, the faster | Wind as a buff only; the crewing rules |
+| E1 Travel | **Built (2026-10-08):** the karve, laid in the yard: a keel of five to nine with iron nails, strakes, two seats or more, a mast amidships, a striped square sail, a steering oar at the stern; the wind a buff only (behind: up to 1.5x), each rower 7% more; followers board as rowers, step off at home, wait with the ship elsewhere | A hirdman's death at sea; cargo beyond the one chest |
 
-**Chapter 3 needs the mast and sail, hird crewing, trading and a raid system before it can start** (Chapter 2 gaps 1 to 3).
+**Chapter 3 needs trading before it can start** (the mast and sail, hird crewing and the raid system are built; Chapter 2 gaps 1 to 3).
 Raiding, reputation, recruiting from raids, and the year (spring to winter, repopulation of unclaimed places) are the
 systems this chapter introduces (`docs/roadmap.md`, steps 7 to 9; `docs/idea-bank.md`, 1 to 4).
 

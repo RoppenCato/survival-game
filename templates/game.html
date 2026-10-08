@@ -915,7 +915,7 @@ __COMBAT__
   var SCENE = (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
   var SAVE = SCENE === 'runes' ? 'game.save.runes' : 'game.save', gone = {}, saveT = 0;
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, carrying: carrying || null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, carrying: carrying || null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -1052,8 +1052,15 @@ __COMBAT__
   // the raft is a slower, clumsier share of the boat's
   function handling(kind) {
     var H = Yard.HANDLING[kind] || Yard.HANDLING.raft, o = {}, k; for (k in H) o[k] = H[k];
-    try { var g = JSON.parse(localStorage.getItem('game.boat')); if (g && g.top) { for (k in g) o[k] = g[k]; if (kind === 'raft') { o.top = g.top * 0.55; o.accel = g.accel * 0.8; o.turn = g.turn * 0.9; } } } catch (e) {}
+    try { var g = JSON.parse(localStorage.getItem('game.boat')); if (g && g.top && (!g.kind || g.kind === kind || (kind === 'raft' && g.kind === 'boat'))) { for (k in g) if (k !== 'kind' && k !== 'windK') o[k] = g[k]; if (kind === 'raft') { o.top = g.top * 0.55; o.accel = g.accel * 0.8; o.turn = g.turn * 0.9; } } } catch (e) {}   // the editor's numbers for the kind they were set for
     return o;
+  }
+  // The wind (2026-10-08, the karve): a direction that wanders slowly through the day; a sail with it behind goes faster (never slower: a buff only).
+  var wind = { a: 0.6, k: Yard.WIND.k, to: 0.6, t: 0 };
+  function windTick(dt) {
+    wind.t -= dt; if (wind.t <= 0) { wind.t = 70 + Math.random() * 80; wind.to = wind.a + (Math.random() - 0.5) * 1.6; }
+    var d = ((wind.to - wind.a + Math.PI * 3) % (Math.PI * 2)) - Math.PI; wind.a += d * Math.min(1, dt * 0.05);
+    try { var g = JSON.parse(localStorage.getItem('game.boat')); wind.k = g && g.windK != null ? g.windK : Yard.WIND.k; } catch (e) { wind.k = Yard.WIND.k; }
   }
   function raftHull(x, y, h) {             // the water test follows the hull's own shape, with a little room
     if (x < 70 || y < 70 || x > WX - 70 || y > WY - 70) return false;
@@ -1071,25 +1078,46 @@ __COMBAT__
   function onOtherIsland(x, y) { for (var i = 1; i < w.isles.length; i++) { var q = w.isles[i]; if (Math.hypot(x / T - q.x, y / T - q.y) < q.r * 1.4) return true; } return false; }
   function raftUse() {
     var P = hero();
-    if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; toast(raft.kind === 'boat' ? (handling('boat').steer ? 'In the boat: W rows, A and D steer, E to step ashore' : 'In the boat: WASD to row, E to step ashore') : 'On the raft: WASD to paddle, E to step ashore'); sfx('pick'); save(); return; }
+    if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; crewBoard(P); toast(raft.kind === 'karve' ? 'In the karve: W rows, A and D steer, the sail takes a wind from behind, E to step ashore' : raft.kind === 'boat' ? (handling('boat').steer ? 'In the boat: W rows, A and D steer, E to step ashore' : 'In the boat: WASD to row, E to step ashore') : 'On the raft: WASD to paddle, E to step ashore'); sfx('pick'); save(); return; }
     var best = null;                       // step ashore: the nearest land, looking ahead first
     for (var d = 26; d < 120 && !best; d += 8) for (var k = 0; k < 16 && !best; k++) {
       var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d;
       if (isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) best = { x: x, y: y };
     }
     if (!best) { toast('No shore close enough'); return; }
-    raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; sfx('pick');
+    raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; sfx('pick'); crewAshore(best);
     if (!seen.left && onOtherIsland(best.x, best.y)) { seen.left = 1; leftBanner = 9; sfx('craft'); }
     save();
   }
   function raftTick(dt) {
     if (leftBanner > 0) leftBanner -= dt;
+    windTick(dt);
     if (!raft || !raft.aboard) return;
+    raft.crew = hird.filter(function (m) { return m.aboard; }).length;
     var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), H = handling(raft.kind);
     if (K2.ShiftLeft || K2.ShiftRight) { H.top *= 1.3; H.accel *= 1.3; }   // pulling harder
-    Yard.sail(raft, { ix: ix, iy: iy }, dt, raftHull, H);                   // the Sea Editor's physics (src/yard.js)
+    Yard.sail(raft, { ix: ix, iy: iy }, dt, raftHull, H, raft.kind === 'karve' ? wind : null);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail
   }
-  function raftAfter() { if (raft && raft.aboard) { var P = hero(), st = raft.seat || 0; P.x = raft.x + Math.cos(raft.h) * st; P.y = raft.y + Math.sin(raft.h) * st; P.vx = P.vy = 0; P.sprinting = false; } }   // on a boat you stand in the bow
+  function raftAfter() {
+    if (raft && raft.aboard) { var P = hero(), st = raft.seat || 0; P.x = raft.x + Math.cos(raft.h) * st; P.y = raft.y + Math.sin(raft.h) * st; P.vx = P.vy = 0; P.sprinting = false; }   // on a boat you stand in the bow; on the karve at the stern by the steering oar
+    var k = 0; hird.forEach(function (m) {                                                  // the rowers sit two to a seat, facing aft, and ride along
+      if (!m.aboard) return; if (!raft) { m.aboard = false; m.sitting = false; return; }
+      var seats = raft.seats && raft.seats.length ? raft.seats : [0], sx = seats[Math.floor(k / 2) % seats.length], lat = (k % 2 ? 1 : -1) * (raft.hh || 20) * 0.26, ch = Math.cos(raft.h), sh = Math.sin(raft.h); k++;
+      m.x = raft.x + ch * sx - sh * lat; m.y = raft.y + sh * sx + ch * lat; m.face = raft.h + Math.PI; m.sitting = true; m.moving = false; m.ph = (m.ph || 0) + 0.016 * Math.min(1, Math.hypot(raft.vx, raft.vy) / 40) * 6;
+    });
+  }
+  // The crew (2026-10-08): hirdmen following you step aboard when you board (as many as the seats take, two a seat) and row: each adds to
+  // the speed. Stepping ashore inside your territory they step off with you; on another shore they keep the boat and wait for you.
+  function crewBoard(P) {
+    if (!raft || (raft.kind !== 'boat' && raft.kind !== 'karve')) return; var n = hird.filter(function (m) { return m.aboard; }).length, cap = raft.rowers || 0;
+    hird.forEach(function (m) { if (m.aboard || !m.follow || n >= cap) return; if (Math.hypot(P.x - m.x, P.y - m.y) > 150) return; m.aboard = true; m.sitting = true; m.say = n === 0 ? 'To the oars.' : ''; m.sayT = m.say ? 3 : 0; n++; });
+    raft.crew = n;
+  }
+  function crewAshore(spot) {
+    if (!inTerritory(spot.x, spot.y)) return; var k = 0;
+    hird.forEach(function (m) { if (!m.aboard) return; m.aboard = false; m.sitting = false; var sp = landNear(spot.x + 10 + (k % 3) * 10, spot.y + 8 + Math.floor(k / 3) * 10, 6); m.x = sp.x; m.y = sp.y; k++; });
+    if (raft) raft.crew = 0;
+  }
 
   /* ---------- the cave: a mouth on the island, a big dark cave behind it ----------
      The inside is a generated tunnel (about 70 by 40 tiles) laid out in its own coordinates far off the map's east
@@ -1140,7 +1168,7 @@ __COMBAT__
     if (raft) { toast('You already have a vessel afloat'); return; }
     if (!placeRaft(yardBench)) { toast('No clear water by the bench to launch it'); return; }
     raft.parts = yard.cells.slice(); raft.kind = yard.plan; raftFit(); yardBench.launched = true; yardBench.yard = null;
-    yardLeave(); toast(raft.kind === 'boat' ? 'The boat is afloat' : 'The raft is afloat'); sfx('craft'); save();
+    yardLeave(); toast(raft.kind === 'karve' ? 'The karve is afloat' : raft.kind === 'boat' ? 'The boat is afloat' : 'The raft is afloat'); sfx('craft'); save();
   }
   function yardUsable() { var P = hero(); if (inYard) return true; if (P.dead || sleep || (raft && raft.aboard) || P.mode === 'build') return false; var b = shipNear(P); return !!b && !(b.launched && raft); }   // a bench whose raft is afloat has nothing more to do
   function yardUse() {
@@ -1651,7 +1679,7 @@ __COMBAT__
     var pose = null;                                                 // the pose: a job, the bucket carried home, or the idle of the moment
     if (f.job && !f.moving) pose = lib.jobPose(f.fig, f.job.kind, f.job.t, dir);
     else if (f.carrying) { pose = lib.jobPose(f.fig, 'carry', clock, dir); pose.ly += (Math.abs(Math.sin(f.ph)) - 0.5) * 1.5 * an.amt; }
-    else if (!f.moving && !f.sitting && !talking) { pose = lib.idlePose(f.fig, f.idle.id, f.idle.t, dir); if (f.idle.blend < 1 && f.idle.from) { var kb = f.idle.blend, ke = kb * kb * (3 - 2 * kb); pose = lib.poseLerp(f.idle.from, pose, ke); } }
+    else if (!f.moving && !f.sitting && !talking && f.idle) { pose = lib.idlePose(f.fig, f.idle.id, f.idle.t, dir); if (f.idle.blend < 1 && f.idle.from) { var kb = f.idle.blend, ke = kb * kb * (3 - 2 * kb); pose = lib.poseLerp(f.idle.from, pose, ke); } }
     f.lastPose = pose;
     c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(f.x, f.y * K, 9, 4, 0, 0, 7); c.fill();
     lib.figureD(c, f.x, f.y * K, dir, an, pose, f.fig);
@@ -1699,8 +1727,8 @@ __COMBAT__
   }
   function jobOf(it) { for (var j in HD.jobs) if (HD.jobs[j].place === it.name && !(j === 'keeper' && !it.claim)) return j; return null; }
   function assignTo(m, it) { var j = jobOf(it); if (!j) return false; m.job = j; m.at = { x: it.x + (it.name === 'workbench' ? -16 : 0), y: it.y + 18 }; m.workAt = it; m.follow = false; m.mustered = false; m.jobT = 0; return true; }
-  function hirdNear(P) { var best = null; hird.forEach(function (m) { var d = Math.hypot(P.x - m.x, P.y - m.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = m; }); return best; }
-  function followerNear(P) { var best = null; hird.forEach(function (m) { if (!m.follow) return; var d = Math.hypot(P.x - m.x, P.y - m.y); if (d < 90 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = m; }); return best; }
+  function hirdNear(P) { var best = null; hird.forEach(function (m) { if (m.aboard) return; var d = Math.hypot(P.x - m.x, P.y - m.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = m; }); return best; }
+  function followerNear(P) { var best = null; hird.forEach(function (m) { if (!m.follow || m.aboard) return; var d = Math.hypot(P.x - m.x, P.y - m.y); if (d < 90 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = m; }); return best; }
   function workplaceNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (jobOf(it) && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
   function stoneNearH(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.claim && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
   function hirdTalk(m) {                    // E at a hirdman: follow, or stay. Brokk's story comes first, through talk()
@@ -1716,7 +1744,8 @@ __COMBAT__
     for (i = 0; i < hird.length; i++) {
       var m = hird[i], pace = m.hungry ? HD.hungryPace : 1, tx = null, ty = null, speed = HD.walkSpeed;
       if (m.sayT > 0) m.sayT -= dt;
-      if (m.follow) {
+      if (m.aboard) { if (!raft) { m.aboard = false; m.sitting = false; } }                                  // at the oars: raftAfter seats them, the territory rule rests (they crew the ship)
+      else if (m.follow) {
         if (!inTerritory(P.x, P.y)) { m.follow = false; m.mustered = false; m.say = 'This is where I stop.'; m.sayT = 4; }
         else { var d0 = Math.hypot(P.x - m.x, P.y - m.y); if (d0 > HD.followGap) { tx = P.x; ty = P.y; speed = HD.followSpeed * pace; } }
       } else if (m.job && m.at) {
@@ -1753,7 +1782,7 @@ __COMBAT__
     if (village) { var qv = at((village.tx + 7) * T, (village.ty + 6) * T); if (seen.village) { dot(qv, '#f0e2b0'); label(qv, 'Hildir\u2019s steading'); } else unknown(qv); }
     villages.forEach(function (vv, vi) { if (!vSeen(vi)) return; var qm = at((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T); dot(qm, vv.arch === 'ruin' ? '#9a8a7a' : '#f0e2b0'); label(qm, vv.name); });
     if (caveMouth) { var qc = at(caveMouth.x, caveMouth.y); if (seen.cave) { dot(qc, '#a8a8b4'); label(qc, 'The cave'); } else unknown(qc); }
-    if (raft) { var qr = at(raft.x, raft.y); dot(qr, '#c99a66'); label(qr, raft.kind === 'boat' ? 'The boat' : 'The raft'); }
+    if (raft) { var qr = at(raft.x, raft.y); dot(qr, '#c99a66'); label(qr, raft.kind === 'karve' ? 'The karve' : raft.kind === 'boat' ? 'The boat' : 'The raft'); }
     var qp = at(inCave && caveMouth ? caveMouth.x : P.x, inCave && caveMouth ? caveMouth.y : P.y); dot(qp, '#ffd34d', 3); c.strokeStyle = '#fff'; c.lineWidth = 0.8; c.beginPath(); c.arc(qp.x, qp.y, 4.6, 0, 7); c.stroke();
   }
   function drawMuster(c) {                  // the muster board at a stone: who comes and who stays
@@ -3122,7 +3151,7 @@ __COMBAT__
   Combat.api.scene = {
     visible: function (x, y, r) { var z = cam.z || 1, hw = 200 / z, hh = 125 / z, m = (r || 0) + 90, v = Math.abs(x - cam.x) < hw + m && Math.abs(y * K - cam.y) < hh + m; if (v) figsInView++; return v; },   // beasts out of view are not drawn
     noHud: false, noKills: true,
-    heroLift: function () { return (hero().lvl ? UP : 0) + (raft && raft.aboard && raft.kind === 'boat' ? -3 : 0); },   // a storey up upstairs   // feet a little below the rim, inside the hull
+    heroLift: function () { return (hero().lvl ? UP : 0) + (raft && raft.aboard && (raft.kind === 'boat' || raft.kind === 'karve') ? -3 : 0); },   // a storey up upstairs   // feet a little below the rim, inside the hull
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
     walk: function (x, y, e) { var PH = hero(); if (!inYard && !inCave && (!e || e === PH)) { var wtx = Math.floor(x / T), wty = Math.floor(y / T); if (PH.lvl) { var UM = 7; return upFloorAt(wtx, wty) && upFloorAt(Math.floor((x - UM) / T), wty) && upFloorAt(Math.floor((x + UM) / T), wty) && upFloorAt(wtx, Math.floor((y - UM) / T)) && upFloorAt(wtx, Math.floor((y + UM) / T)); } if (B.stairs[Build.key(wtx, wty)] && y / T - wty < 0.5) return false; }   // upstairs only the floor, and never its very edge (UM inside it): coming down by a wall you must land inside the wall, not in it (Robin's clip, 2026-10-07)
       if (!inYard && !inCave && dockAt(Math.floor(x / T), Math.floor(y / T))) return true;
@@ -3203,7 +3232,7 @@ __COMBAT__
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 60 && Math.abs(mv.y * K - cam.y) < hh + 60) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });
-      if (raft && raft.aboard && raft.kind === 'boat') items.push({ y: P.y + 0.5, f: function () { Yard.drawVesselFront(ctx, raft, clock, P.y); } });
+      if (raft && raft.aboard && (raft.kind === 'boat' || raft.kind === 'karve')) items.push({ y: P.y + 0.5, f: function () { Yard.drawVesselFront(ctx, raft, clock, P.y); } });
       if (carrying) items.push({ y: P.y + 0.6, f: function () { var s2 = sprite('chest', 0); ctx.save(); ctx.translate(P.x + (Math.cos(P.face) >= 0 ? -3 : 3), P.y * K - 30 - (hero().lvl ? UP : 0)); ctx.scale(0.9, 0.9); ctx.drawImage(s2.cv, s2.l, s2.t); ctx.restore(); } });   // the heavy chest on the shoulder
       if (npc && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
       hird.forEach(function (m) { if (m === npc) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });
@@ -3250,6 +3279,7 @@ __COMBAT__
       stones().forEach(function (st) { var q = mp(st.x, st.y), rr = reachOf(st) / T / step * zx; c.strokeStyle = 'rgba(255,230,160,0.55)'; c.lineWidth = 0.8; c.setLineDash([2, 2]); c.beginPath(); c.ellipse(q.x, q.y, rr, rr * zy / zx, 0, 0, 7); c.stroke(); c.setLineDash([]); });
       mark(home.x, home.y, 'boat'); if (caveMouth && seen.cave) mark(caveMouth.x, caveMouth.y, 'cave'); villages.forEach(function (vv, vi) { if (vSeen(vi)) mark((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T, 'village'); }); if (village && seen.village) mark((village.tx + 7) * T, (village.ty + 6) * T, 'village');
       var hm = mp(hpx, hpy); c.fillStyle = '#ffd34d'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.3; c.beginPath(); c.arc(hm.x, hm.y, 2.7, 0, 7); c.fill(); c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 0.7; c.beginPath(); c.arc(hm.x, hm.y, 4.2, 0, 7); c.stroke();
+      if (raft && raft.kind === 'karve') { var wa = wind.a, wx0 = mx + 6, wy0 = my + 6, wl = 4; c.save(); c.translate(wx0, wy0); c.rotate(wa); c.strokeStyle = '#2e1a10'; c.lineWidth = 2.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(-wl, 0); c.lineTo(wl, 0); c.moveTo(wl - 2, -2); c.lineTo(wl, 0); c.lineTo(wl - 2, 2); c.stroke(); c.strokeStyle = '#eef3ff'; c.lineWidth = 1; c.stroke(); c.restore(); }   // the wind's way
       c.restore();
       c.imageSmoothingEnabled = true;
       if (SHOW.book) drawBookIcon(c, mx - 34, my + 10);
@@ -3460,7 +3490,7 @@ __COMBAT__
       else for (k in sv.inv || {}) addItem(k, sv.inv[k]);
       if (sv.equip) { for (k in equip) equip[k] = sv.equip[k] ? Items.make(sv.equip[k].kind, sv.equip[k].mat, sv.equip[k]) : null; ['weapon', 'bow', 'axe', 'pick', 'knife'].forEach(function (ok) { if (sv.equip[ok]) { var oi = Items.make(sv.equip[ok].kind, sv.equip[ok].mat, sv.equip[ok]); if (!barPut(oi)) addThing(oi); } }); } else startKit();   // older saves kept weapons and tools in equipment slots
       hand = sv.hand && sv.hand.fight != null ? sv.hand : { fight: 0, gather: 0 };
-      hird = []; hirdDay = sv.hirdDay || 0; (sv.hird || []).forEach(function (h) { var m; if (h.brokk && npc) { m = npc; npc.joined = true; } else { m = { x: h.x, y: h.y, face: Math.PI / 2, say: '', sayT: 0, name: h.name, fig: lib.makeFigure(Hird.figureSpec(h.person || Hird.roll(Math.random, HD), lib.heroDef)) }; } m.person = h.person; m.job = h.job; m.at = h.at; m.workAt = h.workIdx >= 0 ? B.items[h.workIdx] : null; m.follow = h.follow; m.mustered = h.follow; m.hungry = h.hungry; m.ph = 0; m.moving = false; m.x = h.x; m.y = h.y; hird.push(m); });
+      hird = []; hirdDay = sv.hirdDay || 0; (sv.hird || []).forEach(function (h) { var m; if (h.brokk && npc) { m = npc; npc.joined = true; } else { m = { x: h.x, y: h.y, face: Math.PI / 2, say: '', sayT: 0, name: h.name, fig: lib.makeFigure(Hird.figureSpec(h.person || Hird.roll(Math.random, HD), lib.heroDef)) }; } m.person = h.person; m.job = h.job; m.at = h.at; m.workAt = h.workIdx >= 0 ? B.items[h.workIdx] : null; m.follow = h.follow; m.mustered = h.follow; m.aboard = !!h.aboard; m.sitting = m.aboard; m.hungry = h.hungry; m.ph = 0; m.moving = false; m.x = h.x; m.y = h.y; hird.push(m); });
       seen = sv.seen || {}; if (!sv.seen) { for (k in inv) if (inv[k] > 0) seen[k] = 1; }
       RS = sv.runes && sv.runes.learnt && !sv.runes.slots ? sv.runes : freshRunes(); var fr = freshRunes(); ['earned', 'deeds', 'kills', 'stones'].forEach(function (k) { if (!RS[k]) RS[k] = fr[k]; }); ring = sv.ring && sv.ring.coils ? sv.ring : null; heroRingSync();
       (sv.drops || []).forEach(function (d) { drops.push({ kind: d.kind, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0 }); });
@@ -3614,9 +3644,10 @@ __COMBAT__
   function giveBoat(kind) {                // a vessel by the hero, for testing: a seven-keel boat with strakes and a seat, or the default raft
     var P = hero(), sp = raftSpot(P.x, P.y); if (!sp) return false; var parts = [], i;
     if (kind === 'boat') { for (i = 0; i < 7; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } parts.push({ id: 'thwart', i: 3, j: 3 }); }
+    if (kind === 'karve') { for (i = 0; i < 8; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 7; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } for (i = 2; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 1 }); parts.push({ id: 'strake', i: i, j: 5 }); } parts.push({ id: 'thwart', i: 2, j: 3 }, { id: 'thwart', i: 5, j: 3 }, { id: 'thwart', i: 6, j: 3 }, { id: 'mast', i: 4, j: 3 }, { id: 'sail', i: 4, j: 3 }, { id: 'rudder', i: 0, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';

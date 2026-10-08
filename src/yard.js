@@ -8,12 +8,17 @@ var T = 32, TS = 24, K = 0.75;
     { id: 'log', plan: 'raft', name: 'Log', cost: { wood: 2 }, w: 2, layer: 'hull', text: 'A log for the hull. Logs lie side by side, any shape, as long as they touch.' },
     { id: 'lash', plan: 'raft', name: 'Rope lashing', cost: { fiber: 2 }, w: 1, layer: 'bind', on: 'hull', text: 'Rope across a log. Every log needs one.' },
     { id: 'plank', plan: 'raft', name: 'Deck plank', cost: { wood: 1 }, w: 1, layer: 'deck', on: 'hull', text: 'A plank over the logs: a drier deck.' },
-    { id: 'keel', plan: 'boat', name: 'Keel', cost: { wood: 2, copper: 1 }, w: 1, layer: 'hull', text: 'The spine of the boat: a straight run of three to nine. The bow and the stern are shaped on its ends.' },
-    { id: 'strake', plan: 'boat', name: 'Strake', cost: { wood: 1, copper: 1 }, w: 1, layer: 'hull', text: 'A plank of the side, nailed on. Lay strakes beside the keel to make the boat wider.' },
-    { id: 'thwart', plan: 'boat', name: 'Rowing seat', cost: { wood: 1 }, w: 1, layer: 'deck', on: 'hull', text: 'A seat with an oar each side. The first is yours; more need hirdmen to row.' }
+    { id: 'keel', plan: ['boat', 'karve'], name: 'Keel', cost: { wood: 2, copper: 1 }, costs: { karve: { wood: 2, ironBar: 1 } }, w: 1, layer: 'hull', text: 'The spine of the boat: a straight run of three to nine. The bow and the stern are shaped on its ends.' },
+    { id: 'strake', plan: ['boat', 'karve'], name: 'Strake', cost: { wood: 1, copper: 1 }, costs: { karve: { wood: 1, ironBar: 1 } }, w: 1, layer: 'hull', text: 'A plank of the side, nailed on. Lay strakes beside the keel to make the boat wider.' },
+    { id: 'thwart', plan: ['boat', 'karve'], name: 'Rowing seat', cost: { wood: 1 }, w: 1, layer: 'deck', on: 'hull', text: 'A seat with an oar each side. The first is yours; more need hirdmen to row.' },
+    { id: 'mast', plan: 'karve', name: 'Mast', cost: { wood: 5, fiber: 4 }, w: 1, layer: 'deck', on: 'hull', text: 'A tall pine stepped on the keel amidships. The sail hangs from its yard.' },
+    { id: 'sail', plan: 'karve', name: 'Sail', cost: { fiber: 18 }, w: 1, layer: 'fit', on: 'deck', text: 'A square sail of woven cloth, striped. It goes on the mast. A wind from behind is speed for nothing.' },
+    { id: 'rudder', plan: 'karve', name: 'Steering oar', cost: { wood: 3, ironBar: 1 }, w: 1, layer: 'fit', on: 'hull', text: 'The side rudder, bound at the stern on the right-hand side. You stand by it and steer.' }
   ];
-  function partsFor(plan) { return ALL_PARTS.filter(function (p) { return p.plan === plan; }); }
-  var YARD_PLANS = [['raft', 'Raft'], ['boat', 'Boat']];
+  function inPlan(p, plan) { return Array.isArray(p.plan) ? p.plan.indexOf(plan) >= 0 : p.plan === plan; }
+  function costFor(pt, plan) { return pt.costs && pt.costs[plan] ? pt.costs[plan] : pt.cost; }       // a part shared by two plans can cost differently in each (the karve's nails are iron)
+  function partsFor(plan) { return ALL_PARTS.filter(function (p) { return inPlan(p, plan); }).map(function (p) { var o = {}, k; for (k in p) o[k] = p[k]; o.cost = costFor(p, plan); return o; }); }
+  var YARD_PLANS = [['raft', 'Raft'], ['boat', 'Boat'], ['karve', 'Karve']];
   var LAYERS = ['hull', 'bind', 'deck', 'fit'];
   var PLANS = {
     raft: { name: 'Raft', checks: [
@@ -30,8 +35,21 @@ var T = 32, TS = 24, K = 0.75;
         for (var q = 0; q < st.length; q++) { var p = st[q]; if (p.i < i0 || p.i > i1) return 'A strake cannot reach past the ends of the keel'; if (Math.abs(p.j - j0) > 2) return 'The sides can be at most two strakes wide'; }
         var hull = k.concat(st), ok = st.every(function (p) { return hull.some(function (h) { return h !== p && Math.abs(h.i - p.i) + Math.abs(h.j - p.j) === 1 && Math.abs(h.j - j0) < Math.abs(p.j - j0) + (h.j === p.j ? 1 : 0); }); }); if (!ok) return 'A strake must lie against the keel or a strake nearer the keel'; return ''; },
       function (y) { if (!yardParts(y, 'thwart').length) return 'A rowing seat, at least one'; return ''; }
+    ] },
+    karve: { name: 'Karve', checks: [                     // the first ship: a longer keel, a mast on the keel amidships, a sail on the mast, a steering oar at the stern, seats for the rowers (2026-10-08)
+      function (y) { if (yardParts(y, 'keel').length < 5) return 'Lay a keel: at least five keel pieces in a row'; return ''; },
+      function (y) { var k = yardParts(y, 'keel'), js = {}; k.forEach(function (p) { js[p.j] = 1; }); if (Object.keys(js).length > 1) return 'The keel must lie in one straight row'; var is = k.map(function (p) { return p.i; }).sort(function (a, b) { return a - b; }); for (var q = 1; q < is.length; q++) if (is[q] !== is[q - 1] + 1) return 'The keel must be one unbroken run'; return ''; },
+      function (y) { if (yardParts(y, 'keel').length > 9) return 'Nine keel pieces is as long as the yard'; return ''; },
+      function (y) { var k = yardParts(y, 'keel'), st = yardParts(y, 'strake'); if (!k.length) return ''; var j0 = k[0].j, i0 = Math.min.apply(null, k.map(function (p) { return p.i; })), i1 = Math.max.apply(null, k.map(function (p) { return p.i; }));
+        for (var q = 0; q < st.length; q++) { var p = st[q]; if (p.i < i0 || p.i > i1) return 'A strake cannot reach past the ends of the keel'; if (Math.abs(p.j - j0) > 2) return 'The sides can be at most two strakes wide'; }
+        var hull = k.concat(st), ok = st.every(function (p) { return hull.some(function (h) { return h !== p && Math.abs(h.i - p.i) + Math.abs(h.j - p.j) === 1 && Math.abs(h.j - j0) < Math.abs(p.j - j0) + (h.j === p.j ? 1 : 0); }); }); if (!ok) return 'A strake must lie against the keel or a strake nearer the keel'; return ''; },
+      function (y) { if (yardParts(y, 'thwart').length < 2) return 'Rowing seats, two at least'; return ''; },
+      function (y) { var m = yardParts(y, 'mast'), k = keelSpan(y); if (m.length !== 1) return m.length ? 'One mast is enough' : 'Step a mast on the keel, amidships'; if (!k || m[0].j !== k.j || Math.abs(m[0].i - (k.i0 + k.i1) / 2) > 1) return 'The mast stands on the keel, amidships'; return ''; },
+      function (y) { var sl = yardParts(y, 'sail'), m = yardParts(y, 'mast'); if (sl.length !== 1) return sl.length ? 'One sail' : 'A sail on the mast'; if (!m.length || sl[0].i !== m[0].i || sl[0].j !== m[0].j) return 'The sail goes on the mast'; return ''; },
+      function (y) { var r = yardParts(y, 'rudder'), k = keelSpan(y); if (r.length !== 1) return r.length ? 'One steering oar' : 'A steering oar at the stern'; if (!k || r[0].j !== k.j || r[0].i !== k.i0) return 'The steering oar is bound at the stern: the left end of the keel'; return ''; }
     ] }
   };
+  function keelSpan(y) { var k = yardParts(y, 'keel'); if (!k.length) return null; var is = k.map(function (p) { return p.i; }); return { j: k[0].j, i0: Math.min.apply(null, is), i1: Math.max.apply(null, is) }; }
   function yardConnected(y) {              // every log reaches every other through touching logs (free shapes, one hull)
     var logs = yardParts(y, 'log'); if (logs.length < 2) return true;
     function touch(a, b) { if (a.j === b.j) return Math.abs(a.i - b.i) <= 2; if (Math.abs(a.j - b.j) === 1) return a.i < b.i + 2 && b.i < a.i + 2; return false; }
@@ -52,6 +70,9 @@ var T = 32, TS = 24, K = 0.75;
     else if (pt.id === 'keel') { ink(c, [[1, TS / 2 - 4], [T - 1, TS / 2 - 4.4], [T - 1, TS / 2 + 4.4], [1, TS / 2 + 4]], mix(COL.hull, '#000000', 0.15), { wob: 0.5, seed: 7, lw: 0.9, heavy: 1.8 }); stroke(c, [[3, TS / 2 - 1.8], [T - 3, TS / 2 - 2]], INK.lit, 0.9); stroke(c, [[4, TS / 2 + 1.5], [T - 4, TS / 2 + 1.2]], INK.faint, 0.5); }
     else if (pt.id === 'strake') { ink(c, rect(1, TS / 2 - 3.6, T - 2, 7.2), COL.deck, { wob: 0.5, seed: 9, lw: 0.8, heavy: 1.5 }); stroke(c, [[3, TS / 2 - 1.6], [T - 3, TS / 2 - 1.8]], INK.lit, 0.8); [6, T - 6].forEach(function (nx) { c.fillStyle = COL.iron; c.beginPath(); c.arc(nx, TS / 2 + 0.6, 1.1, 0, 7); c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.5; c.stroke(); }); }
     else if (pt.id === 'thwart') { ink(c, rect(4, 3, T - 8, 5), COL.deck, { wob: 0.4, seed: 11, lw: 0.8, heavy: 1.3 }); stroke(c, [[6, 7], [2, TS - 3]], INK.line, 3.2); stroke(c, [[6, 7], [2, TS - 3]], mix(COL.deck, '#000000', 0.15), 1.8); stroke(c, [[T - 6, 7], [T - 2, TS - 3]], INK.line, 3.2); stroke(c, [[T - 6, 7], [T - 2, TS - 3]], mix(COL.deck, '#000000', 0.15), 1.8); }
+    else if (pt.id === 'mast') { ink(c, [[2, TS / 2 - 2.6], [T - 6, TS / 2 - 2.2], [T - 6, TS / 2 + 2.2], [2, TS / 2 + 2.6]], mix(COL.hull, '#ffffff', 0.08), { wob: 0.4, seed: 13, lw: 0.8, heavy: 1.5 }); stroke(c, [[5, TS / 2 - 0.8], [T - 9, TS / 2 - 1]], INK.lit, 0.7); c.fillStyle = COL.iron; c.beginPath(); c.arc(T - 6, TS / 2, 2.6, 0, 7); c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.7; c.stroke(); }   // the mast lying ready, its iron-bound head
+    else if (pt.id === 'sail') { ink(c, rect(3, 4, T - 6, TS - 8), COL.sail, { wob: 0.4, seed: 17, lw: 0.8, heavy: 1.3 }); c.fillStyle = COL.trim; c.globalAlpha = 0.85; [7, 15, 23].forEach(function (sx) { c.fillRect(sx, 5, 3.4, TS - 10); }); c.globalAlpha = 1; [10, T - 10].forEach(function (tx) { stroke(c, [[tx, 3], [tx, TS - 3]], INK.line, 2.2); stroke(c, [[tx, 3], [tx, TS - 3]], COL.rope, 1.2); }); }   // the sail folded, tied with two ropes
+    else if (pt.id === 'rudder') { stroke(c, [[4, TS - 3], [T - 9, 4]], INK.line, 4); stroke(c, [[4, TS - 3], [T - 9, 4]], mix(COL.deck, '#000000', 0.1), 2.2); c.save(); c.translate(7, TS - 6); c.rotate(0.95); ink(c, [[-3.6, -8], [3.6, -8], [4.2, 7], [-4.2, 7]], mix(COL.deck, '#000000', 0.05), { wob: 0.4, seed: 19, lw: 0.8, heavy: 1.2 }); c.restore(); stroke(c, [[T - 9, 4], [T - 3, 8]], INK.line, 3); stroke(c, [[T - 9, 4], [T - 3, 8]], COL.deck, 1.6); }   // the steering oar: a broad blade and the tiller
     else if (pt.id === 'oar') { stroke(c, [[5, TS - 4], [T - 8, 5]], INK.line, 4); stroke(c, [[5, TS - 4], [T - 8, 5]], mix(COL.deck, '#000000', 0.1), 2.2); c.save(); c.translate(T - 7, 6); c.rotate(0.8); ink(c, [[-3.2, -5.5], [3.2, -5.5], [3.2, 5.5], [-3.2, 5.5]], mix(COL.deck, '#000000', 0.05), { wob: 0.6, seed: 13, lw: 0.7, heavy: 1.2 }); c.restore(); }
     c.restore();
   }
@@ -61,13 +82,20 @@ var T = 32, TS = 24, K = 0.75;
   function fitVessel(raft) {                     // from its parts: how big the hull is (for the water test) and where you sit
     if (!raft) return; var parts = raft.parts && raft.parts.length ? raft.parts : RAFT_DEFAULT, hull = hullCells(parts), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
     hull.forEach(function (p) { var w = partOf(p.id).w; minI = Math.min(minI, p.i); maxI = Math.max(maxI, p.i + w); minJ = Math.min(minJ, p.j); maxJ = Math.max(maxJ, p.j + 1); });
-    if (raft.kind === 'boat') { var pr = boatProfile(parts); raft.hw = pr.L + 2; raft.hh = pr.Wmax + 2; raft.seat = (raft.crew || 0) > 0 ? raft.hw * 0.5 : -raft.hw * 0.28; }   // alone you sit aft and paddle; with rowers you stand halfway to the bow
+    if (raft.kind === 'boat' || raft.kind === 'karve') {
+      var pr = boatProfile(parts); raft.hw = pr.L + 2; raft.hh = pr.Wmax + 2;
+      raft.seats = parts.filter(function (p) { return p.id === 'thwart'; }).map(function (p) { return (p.i + 0.5 - pr.cx) * CW; }).sort(function (a, b) { return a - b; });   // the rowing seats along the keel (bow at +)
+      raft.rowers = raft.seats.length * 2;                                                                   // two to a seat
+      var mast = parts.filter(function (p) { return p.id === 'mast'; })[0]; raft.mastX = mast ? (mast.i + 0.5 - pr.cx) * CW : null;
+      if (raft.kind === 'karve') { raft.sail = !!parts.some(function (p) { return p.id === 'sail'; }); raft.seat = -raft.hw * 0.62; }   // on the karve you stand at the stern by the steering oar
+      else raft.seat = (raft.crew || 0) > 0 ? raft.hw * 0.5 : -raft.hw * 0.28;                                // alone you sit aft and paddle; with rowers you stand halfway to the bow
+    }
     else { raft.hw = (maxI - minI) * CW / 2 + 4; raft.hh = (maxJ - minJ) * CH / 2 + 4; raft.seat = 0; }
   }
 
   var RAFT_DEFAULT = [{ id: 'log', i: 0, j: 0 }, { id: 'log', i: 0, j: 1 }, { id: 'log', i: 0, j: 2 }, { id: 'log', i: 0, j: 3 }, { id: 'log', i: 0, j: 4 }, { id: 'lash', i: 0, j: 0 }, { id: 'lash', i: 1, j: 0 }, { id: 'lash', i: 0, j: 4 }, { id: 'lash', i: 1, j: 4 }];
   function drawOar(c, x, y, ang) { c.save(); c.translate(x, y); c.rotate(ang); c.strokeStyle = '#2e1a10'; c.lineWidth = 3.4; c.beginPath(); c.moveTo(-9, 0); c.lineTo(9, 0); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 1.8; c.stroke(); c.fillStyle = '#c99a66'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.beginPath(); c.ellipse(9, 0, 4, 2.4, 0, 0, 7); c.fill(); c.stroke(); c.restore(); }
-  var LINE = '#231a16', COL = { hull: '#5e4430', deck: '#9a7c5c', trim: '#8a3a34', rope: '#c9b48a', iron: '#4a4a50' };   // the earth palette (docs/art-direction.md, 2026-10-07)
+  var LINE = '#231a16', COL = { hull: '#5e4430', deck: '#9a7c5c', trim: '#8a3a34', rope: '#c9b48a', iron: '#4a4a50', sail: '#e9dfc4' };   // the earth palette (docs/art-direction.md, 2026-10-07)
   /* the ink toolkit (as in build.js): a fill with grain and a cool shade toward the lower right, a lit edge, a thin hand-made line
      all round and the heavy line on the shadow side */
   var INK = { line: '#231a16', lit: 'rgba(255,238,200,0.4)', soft: 'rgba(35,26,22,0.55)', faint: 'rgba(35,26,22,0.32)', grain: 0.2 }, grainCv = null;
@@ -117,13 +145,21 @@ var T = 32, TS = 24, K = 0.75;
   // How a vessel handles: the Sea Editor's handling sliders, as numbers per kind. steer 0 is Direct (hold a direction
   // and the hull turns to face it and goes), 1 is Tiller (W drives, S backs, A and D turn). top and accel in units a
   // second, turn in radians a second, glide how long it keeps moving after you let go, grip how firmly it follows its bow.
-  var HANDLING = { raft: { steer: 0, top: 54, accel: 40, turn: 1.6, glide: 1.4, grip: 0.5 }, boat: { steer: 1, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6 } };
+  var HANDLING = { raft: { steer: 0, top: 54, accel: 40, turn: 1.6, glide: 1.4, grip: 0.5 }, boat: { steer: 1, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6 }, karve: { steer: 1, top: 115, accel: 42, turn: 1.3, glide: 3.2, grip: 0.72 } };
+  // The wind is a buff only (reward, never punishment): a sail with the wind behind it goes up to (1 + k) times the top speed, and a wind
+  // ahead costs nothing. Each rower aboard (v.crew, capped by the seats) adds rowK to the top speed and the acceleration.
+  var WIND = { k: 0.5, rowK: 0.07 };
   function wrapA(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
   // One step of sailing: v = { x, y, h, speed, vx, vy }, inp = { ix, iy } (-1..1 each), free(x, y, h) says whether the
   // hull fits there, H the handling. The same physics in the game and the Sea Editor.
-  function sail(v, inp, dt, free, H) {
+  function sail(v, inp, dt, free, H, wind) {
     var ix = inp.ix || 0, iy = inp.iy || 0, want = 0, stuck = !free(v.x, v.y, v.h);
     if (v.speed == null) v.speed = 0;
+    var crew = Math.min(v.crew || 0, v.rowers != null ? v.rowers : 99), rowK = 1 + (WIND.rowK || 0) * crew, sailK = 1, fill = 0;
+    if (v.sail && wind && wind.k > 0) { fill = Math.max(0, Math.cos(wind.a - v.h)); sailK = 1 + wind.k * fill; }      // the share of the wind that fills the sail
+    v.sailFill += ((iy < 0 || (!H.steer && (ix || iy)) ? fill : 0) - (v.sailFill || 0)) * Math.min(1, dt * 2); if (!(v.sailFill > 0)) v.sailFill = 0;   // the sail fills as it is set and the wind comes behind
+    v.rud = (v.rud || 0) + (ix - (v.rud || 0)) * Math.min(1, dt * 6);                                                                          // the steering oar follows the tiller
+    H = { steer: H.steer, top: H.top * rowK * sailK, accel: H.accel * rowK * (1 + (sailK - 1) * 0.5), turn: H.turn, glide: H.glide, grip: H.grip };
     if (!H.steer) {
       if (ix || iy) {
         var target = Math.atan2(iy, ix), diff = wrapA(target - v.h), stepA = H.turn * dt;
@@ -167,7 +203,7 @@ var T = 32, TS = 24, K = 0.75;
   }
   function drawVessel(c, v, clock) {                        // the vessel as it was laid in the yard, on the water
     var bob = Math.sin(clock * 2 + v.x * 0.01) * 0.8, parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT;
-    if (v.kind === 'boat') { drawBoat(c, v, parts, bob, clock); return; }
+    if (v.kind === 'boat' || v.kind === 'karve') { drawBoat(c, v, parts, bob, clock); return; }
     var logs = parts.filter(function (p) { return p.id === 'log'; }), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
     logs.forEach(function (p) { minI = Math.min(minI, p.i); maxI = Math.max(maxI, p.i + 2); minJ = Math.min(minJ, p.j); maxJ = Math.max(maxJ, p.j + 1); });
     var cx = (minI + maxI) / 2, cy = (minJ + maxJ) / 2, hw = (maxI - minI) / 2 * CW + 4, hh = (maxJ - minJ) / 2 * CH + 4;
@@ -252,10 +288,45 @@ var T = 32, TS = 24, K = 0.75;
       curve(tip, [tip[0] + fx * dir * 3.5 * sz, tip[1] - 3 * sz], [tip[0] + fx * dir * 1.5 * sz, tip[1] + 2.4 * sz], w * 0.55, wood);
     }
     stem(-L * 0.96, -1, 10 * sz); stem(L * 0.96, 1, 11 * sz);
+    if (v.kind === 'karve') drawRig(c, v, pr, sz, bob, clock, at, curve);
+  }
+  // The karve's rig (2026-10-08): the steering oar at the stern on the right-hand side, the mast amidships with its yard, and the
+  // square striped sail hanging from the yard: full and bellied toward the bow when the wind is behind (v.sailFill), else furled on the yard.
+  function drawRig(c, v, pr, sz, bob, clock, at, curve) {
+    var h = v.h, L = pr.L, W = pr.Wmax, col = COL, fx = Math.cos(h), fy = Math.sin(h) * K, k;
+    var rx = -L * 0.78, rw = profW(pr, rx, 1), rud = v.rud || 0;                                   // the steering oar: a broad blade in the water aft, the tiller inboard
+    var piv = at(rx, rw * 0.95), blade = at(rx - 6 * sz - rud * 2, rw * 0.95 + 7 * sz + rud * 3), till = at(rx + 7 * sz, rw * 0.3);
+    c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(till[0], till[1]); c.lineTo(piv[0], piv[1]); c.lineTo(blade[0], blade[1]); c.stroke();
+    c.strokeStyle = shadeHex(col.deck, -12); c.lineWidth = 1.8; c.stroke();
+    c.beginPath(); c.ellipse(blade[0], blade[1], 2.4 * sz, 4.6 * sz, Math.atan2(blade[1] - piv[1], blade[0] - piv[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(col.deck, -12); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke();
+    if (v.mastX == null) return;
+    var mx = v.mastX, m = at(mx, 0), mh = (24 + L * 0.14) * sz, yl = W * 1.25 + 7 * sz, fill = v.sailFill || 0, full = fill > 0.12;   // the mast's height, the yard's half length
+    var a1 = at(mx, -yl), b1 = at(mx, yl), TA = [a1[0], a1[1] - mh], TB = [b1[0], b1[1] - mh], foot = mh * 0.28, bl = (3 + fill * 9) * sz;
+    c.strokeStyle = LINE; c.lineWidth = 2.2 * sz + 1.8; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();   // the mast, its foot on the keel
+    c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 2.2 * sz; c.stroke();
+    if (full) {                                                                                         // the sail set: hanging from the yard to the foot, bellied toward the bow
+      var TM = [m[0] + fx * bl * 0.35, m[1] - mh + fy * bl * 0.35], BA = [a1[0], a1[1] - foot], BB = [b1[0], b1[1] - foot], BM = [m[0] + fx * bl, m[1] - foot + fy * bl];
+      function topAt(s) { return s < 0.5 ? [TA[0] + (TM[0] - TA[0]) * s * 2, TA[1] + (TM[1] - TA[1]) * s * 2] : [TM[0] + (TB[0] - TM[0]) * (s - 0.5) * 2, TM[1] + (TB[1] - TM[1]) * (s - 0.5) * 2]; }
+      function botAt(s) { return s < 0.5 ? [BA[0] + (BM[0] - BA[0]) * s * 2, BA[1] + (BM[1] - BA[1]) * s * 2] : [BM[0] + (BB[0] - BM[0]) * (s - 0.5) * 2, BM[1] + (BB[1] - BM[1]) * (s - 0.5) * 2]; }
+      function outline() { c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.lineTo(BB[0], BB[1]); c.lineTo(BM[0], BM[1]); c.lineTo(BA[0], BA[1]); c.closePath(); }
+      outline(); c.fillStyle = col.sail; c.fill();
+      c.fillStyle = col.trim; for (k = 0; k < 7; k += 2) { var s0 = k / 7, s1 = (k + 1) / 7, mid = s0 < 0.5 && s1 > 0.5, q; c.beginPath(); q = topAt(s0); c.moveTo(q[0], q[1]); if (mid) c.lineTo(TM[0], TM[1]); q = topAt(s1); c.lineTo(q[0], q[1]); q = botAt(s1); c.lineTo(q[0], q[1]); if (mid) c.lineTo(BM[0], BM[1]); q = botAt(s0); c.lineTo(q[0], q[1]); c.closePath(); c.fill(); }   // the stripes
+      c.save(); outline(); c.clip(); c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(Math.min(TA[0], TB[0]) - 20, TA[1] - 20, Math.abs(TB[0] - TA[0]) + 40, mh + 40); c.globalAlpha = 1;
+      var sg = c.createLinearGradient(TA[0], 0, TB[0], 0); sg.addColorStop(0, 'rgba(255,250,230,0.18)'); sg.addColorStop(1, 'rgba(40,50,90,0.22)'); c.fillStyle = sg; c.fillRect(Math.min(TA[0], TB[0]) - 20, TA[1] - 20, Math.abs(TB[0] - TA[0]) + 40, mh + 40);   // lit from the left, cool toward the right
+      c.strokeStyle = INK.faint; c.lineWidth = 0.6; for (k = 1; k < 4; k++) { var sy0 = k / 4; c.beginPath(); c.moveTo(TA[0] + (BA[0] - TA[0]) * sy0, TA[1] + (BA[1] - TA[1]) * sy0); c.quadraticCurveTo(TM[0] + (BM[0] - TM[0]) * sy0 + fx * 2, TM[1] + (BM[1] - TM[1]) * sy0 + fy * 2, TB[0] + (BB[0] - TB[0]) * sy0, TB[1] + (BB[1] - TB[1]) * sy0); c.stroke(); }   // the folds
+      c.restore(); outline(); c.lineWidth = 1.1; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke();
+      c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(BA[0], BA[1]); c.lineTo(at(mx - 4 * sz, -profW(pr, mx - 4 * sz, -1))[0], at(mx - 4 * sz, -profW(pr, mx - 4 * sz, -1))[1]); c.moveTo(BB[0], BB[1]); c.lineTo(at(mx - 4 * sz, profW(pr, mx - 4 * sz, 1))[0], at(mx - 4 * sz, profW(pr, mx - 4 * sz, 1))[1]); c.stroke();   // the sheets down to the rails
+      c.strokeStyle = LINE; c.lineWidth = 1.8 * sz + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke(); c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 1.8 * sz; c.stroke();   // the yard
+    } else {                                                                                            // furled: the cloth bundled along the yard and tied
+      c.strokeStyle = LINE; c.lineWidth = 1.8 * sz + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TB[0], TB[1]); c.stroke(); c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 1.8 * sz; c.stroke();
+      c.strokeStyle = LINE; c.lineWidth = 4.2 * sz + 1.6; c.beginPath(); c.moveTo(TA[0] + (TB[0] - TA[0]) * 0.06, TA[1] + 1.5 + (TB[1] - TA[1]) * 0.06); c.lineTo(TB[0] - (TB[0] - TA[0]) * 0.06, TB[1] + 1.5 - (TB[1] - TA[1]) * 0.06); c.stroke(); c.strokeStyle = col.sail; c.lineWidth = 4.2 * sz; c.stroke();
+      c.strokeStyle = col.trim; c.lineWidth = 1.3; [0.25, 0.5, 0.75].forEach(function (t) { var px = TA[0] + (TB[0] - TA[0]) * t, py = TA[1] + 1.5 + (TB[1] - TA[1]) * t; c.beginPath(); c.moveTo(px, py - 2.6 * sz); c.lineTo(px, py + 2.6 * sz); c.stroke(); });   // the ties
+    }
+    c.fillStyle = col.trim; c.beginPath(); c.moveTo(m[0], m[1] - mh - 1); c.lineTo(m[0] + 6 * sz, m[1] - mh + 1.2); c.lineTo(m[0], m[1] - mh + 3.2); c.closePath(); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke();   // a pennant at the masthead
   }
   // the near side of the hull, drawn again over the hero's legs so he sits in the boat instead of on it; and his paddle
   function drawVesselFront(c, v, clock, heroY) {
-    if (v.kind !== 'boat') return;
+    if (v.kind !== 'boat' && v.kind !== 'karve') return;
     var parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT, pr = boatProfile(parts), L = pr.L, sz = Math.max(0.7, Math.min(1.2, L / 60)), bob = Math.sin(clock * 2 + v.x * 0.01) * 0.8;
     var sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02;
     function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(v.h + roll); shapedPath(c, pr, k1, k2); c.restore(); }
@@ -268,7 +339,7 @@ var T = 32, TS = 24, K = 0.75;
     c.save(); c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.clip('evenodd'); c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(sx - L * 2, cy, L * 4, L * 3); c.globalAlpha = 1; c.beginPath(); sub(0, 0.95, 0.9); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); c.restore();
     c.lineWidth = 1.2; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 0.9; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
     c.restore();
-    if (!(v.crew || 0) && v.aboard && heroY != null) {        // alone: a straight paddle from the near rail down into the water, stroking as the boat moves
+    if (v.kind === 'boat' && !(v.crew || 0) && v.aboard && heroY != null) {        // alone: a straight paddle from the near rail down into the water, stroking as the boat moves
       var mv = Math.min(1, speedOf(v) / 60), st = mv > 0.05 ? Math.sin(clock * (3 + mv * 3)) : -1, side = Math.cos(v.h) >= 0 ? 1 : -1;
       var ch = Math.cos(v.h), sh = Math.sin(v.h), seat = v.seat || 0, W = profW(pr, seat, side);
       function toS(bx, by) { return [v.x + bx * ch - by * sh, v.y * K + (bx * sh + by * ch) * K]; }
@@ -328,7 +399,7 @@ var scene = {
   },
   act: function (mw, first, wreck) {
     var t = this.target(mw, wreck), h = this.host; if (!t || !t.ok) return false;
-    if (t.wreck) { var p = this.yard.cells[t.idx]; h.pay(partOf(p.id).cost, 1); this.yard.cells.splice(t.idx, 1); h.sfx('build'); h.save(); return true; }
+    if (t.wreck) { var p = this.yard.cells[t.idx]; h.pay(costFor(partOf(p.id), this.yard.plan), 1); this.yard.cells.splice(t.idx, 1); h.sfx('build'); h.save(); return true; }
     if (!first) return false;
     h.pay(t.part.cost); this.yard.cells.push({ id: t.part.id, i: t.i, j: t.j }); h.sfx('build'); h.save(); return true;
   },
@@ -404,7 +475,7 @@ var scene = {
   key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
 };
 
-return { scene: scene, wood: wood, HANDLING: HANDLING, sail: sail, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullCells: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();
