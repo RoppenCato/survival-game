@@ -1271,6 +1271,20 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
 
 ## Sea and islands
 
+**The game's world in the Sea Editor (2026-10-08, the balance pass; Robin: the lowlands a bit further out, bigger seas):** the editor's
+panel **The game's world** has two layouts (`spec.layout`): **Free archipelago** (the editor's own sea, as before) and **The game's layout**
+(the default): `worldSpec()` builds the options the game hands `World.make` (`isle0` the **Starter island** slider, `big` the **Big island**,
+`sizes` every island's width from the sliders with the size variety, `biomes` 1 from **Lowlands from island** on, with the **Lowland island
+width**, `dir` 0.1), so the editor's sea is laid out as the game's. The village rules come along (`__VILLAGE__` in `templates/sea.html`):
+`planSites()` runs `Village.plan` on the sea as the game does and a **big chart** (`#bigchart`, `drawBigChart`) shows the whole sea with the
+islands numbered (home, lowland), every village named and coloured by kind (a town or seat a square), the jetties, and home; under it a line
+counts the villages by kind and says how many lowland islands there are and how far the nearest is from home (metres of water, seconds by
+karve and by boat). **"Use in the game"** stores `game.world` (count, gap, gapVar, skerries, rough, beach, seed, isle, isle0, big, sizes,
+biomes, dir, sizeVar; a free layout stores no sizes); the game merges it over its `spec` on load, so the next fresh start (Esc, New island)
+builds that sea; `layoutKey` includes the sizes, so a running save of another arrangement is dropped. The game's own spec stays the
+six-island one until Robin picks.
+
+
 The archipelago code is `src/world.js` (`World`), used by `templates/sea.html` and `templates/game.html`. Islands are placed one after another, each beside an
 earlier one at a random gap, so they cluster and chain. Each is a rough blob from noise, with skerries round it.
 The map grows to fit (capped at nine million tiles; islands that do not fit are left out and the readout says so).

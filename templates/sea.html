@@ -117,6 +117,16 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div id="psea"></div>
       </section>
       <section class="panel">
+        <h2>The game's world</h2>
+        <div class="group" id="layouts"></div>
+        <p class="desc" id="layoutdesc"></p>
+        <div id="pgame" style="margin-top:8px"></div>
+        <canvas id="bigchart" width="520" height="400" style="width:100%;height:auto;display:block;margin-top:8px;border-radius:6px;background:#1d2a38"></canvas>
+        <p class="desc" id="villages"></p>
+        <div class="group" style="margin-top:8px"><button id="useworld">Use in the game</button></div>
+        <p class="desc" id="worldmsg">The game builds its sea from these numbers on its next fresh start (a running save is kept until New island or Restart). The chart shows every village the plan gives this sea, by kind, and where the lowlands begin.</p>
+      </section>
+      <section class="panel">
         <h2>Archipelago</h2>
         <div id="pland"></div>
         <p class="desc">Sizes and gaps are in tiles: 100 tiles is one kilometre, and the hero is about one tile wide. Island width is the normal island; Size variety mixes in small and large ones. Most gaps are near the typical gap; Gap variety adds narrow straits and the occasional long crossing. Skerries are the tiny rocky islets around the coasts.</p>
@@ -141,6 +151,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 __ART__
 __LIB__
 __WORLD__
+__VILLAGE__
 __YARD__
 __COMBAT__
 (function () {
@@ -200,11 +211,18 @@ __COMBAT__
     { k: 'beach', label: 'Beach width', min: 1, max: 9, step: 0.5 },
     { k: 'seed', label: 'Sea number', min: 1, max: 99, step: 1 }
   ];
+  var GAME = [                             // the game's layout (2026-10-08): the starter island, the big one, where the lowlands begin and how big they are
+    { k: 'starter', label: 'Starter island', min: 40, max: 120, step: 5 },
+    { k: 'big', label: 'Big island', min: 120, max: 400, step: 10 },
+    { k: 'lowFrom', label: 'Lowlands from island', min: 2, max: 13, step: 1 },
+    { k: 'lowSize', label: 'Lowland island width', min: 60, max: 300, step: 10 }
+  ];
+  var LAYOUTS = [['Free archipelago', 'Islands of the normal width with the size variety, placed freely: the editor\'s own sea.'], ['The game\'s layout', 'The game\'s arrangement: a small starter island, the big island east of it, then the other islands, and from a chosen one on the southern lowlands, a bit further off. The village plan is drawn on the chart.']];
   var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.3, max: 2, step: 0.05 }];
-  var NUM = BOAT.concat(HANDLE, SEA, LAND);
+  var NUM = BOAT.concat(HANDLE, SEA, LAND, GAME);
   var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Stripes and shields']];
   var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, windK: 0.5, windA: 0.6, rowers: 0, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
-    isle: 160, sizeVar: 0.8, count: 7, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, seed: 25,
+    isle: 160, sizeVar: 0.8, count: 7, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, seed: 25, layout: 1, starter: 60, big: 230, lowFrom: 4, lowSize: 130,
     col: { hull: '#5a3a26', deck: '#b98a5a', sail: '#efe6cf', trim: '#b83a2e' } };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var spec = clone(DEF), view = { zoom: 0.7 }, inputs = {}, outputs = {}, swatch = {};
@@ -218,18 +236,18 @@ __COMBAT__
     var i;
     for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : DEF[p.k]); }
     spec.type = Math.max(0, Math.min(TYPES.length - 1, Math.round(Number(spec.type)) || 0));
-    spec.steer = spec.steer === 1 ? 1 : 0;
+    spec.steer = spec.steer === 1 ? 1 : 0; spec.layout = spec.layout === 0 ? 0 : 1;
     if (!spec.col || typeof spec.col !== 'object') spec.col = {};
     COLS.forEach(function (c) { if (!/^#[0-9a-fA-F]{6}$/.test(spec.col[c[0]])) spec.col[c[0]] = DEF.col[c[0]]; });
     var clean = {}; for (var k in DEF) clean[k] = spec[k]; spec = clean;
     for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
     COLS.forEach(function (c) { swatch[c[0]].value = spec.col[c[0]]; });
-    pressed('types', spec.type); pressed('steers', spec.steer);
+    pressed('types', spec.type); pressed('steers', spec.steer); pressed('layouts', spec.layout); document.getElementById('layoutdesc').textContent = LAYOUTS[spec.layout][1];
     document.getElementById('typedesc').textContent = TYPES[spec.type].note;
     document.getElementById('steerdesc').textContent = STEER[spec.steer][1];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
     try { localStorage.setItem('seaeditor4', JSON.stringify(spec)); } catch (e) {}
-    var wk = [spec.isle, spec.sizeVar, spec.count, spec.gap, spec.gapVar, spec.skerries, spec.rough, spec.beach, spec.seed, spec.hue].join('|');
+    var wk = [spec.isle, spec.sizeVar, spec.count, spec.gap, spec.gapVar, spec.skerries, spec.rough, spec.beach, spec.seed, spec.hue, spec.layout, spec.starter, spec.big, spec.lowFrom, spec.lowSize].join('|');
     if (wk === worldKey) showStat();
     if (wk !== worldKey) { var relocate = wk.split('|').slice(0, 9).join('|') !== worldKey.split('|').slice(0, 9).join('|'); worldKey = wk; buildWorld(relocate); }
   }
@@ -248,8 +266,8 @@ __COMBAT__
     });
   }
   function getSpec() { return spec; }
-  LAND.forEach(function (p) { p.slow = true; }); SEA[0].slow = true;   // these rebuild the map, so wait until the slider is let go
-  sliders('pboat', BOAT, getSpec, apply); sliders('phandle', HANDLE, getSpec, apply); sliders('psea', SEA, getSpec, apply); sliders('pland', LAND, getSpec, apply);
+  LAND.forEach(function (p) { p.slow = true; }); GAME.forEach(function (p) { p.slow = true; }); SEA[0].slow = true;   // these rebuild the map, so wait until the slider is let go
+  sliders('pboat', BOAT, getSpec, apply); sliders('phandle', HANDLE, getSpec, apply); sliders('psea', SEA, getSpec, apply); sliders('pland', LAND, getSpec, apply); sliders('pgame', GAME, getSpec, apply);
   function syncView() { inputs.zoom.value = view.zoom; outputs.zoom.textContent = view.zoom.toFixed(2); }
   sliders('pview', VIEW, function () { return view; }, syncView); syncView();
   function buttons(hostId, list, text, fn) {
@@ -258,6 +276,7 @@ __COMBAT__
   }
   buttons('types', TYPES, function (t) { return t.name; }, function (t, i) { spec.type = i; for (var k in t.set) spec[k] = t.set[k]; apply(); });
   buttons('steers', STEER, function (s) { return s[0]; }, function (s, i) { spec.steer = i; apply(); });
+  buttons('layouts', LAYOUTS, function (s) { return s[0]; }, function (s, i) { spec.layout = i; apply(); });
   var swHost = document.getElementById('swatches');
   COLS.forEach(function (cdef) {
     var lab = document.createElement('label'); lab.className = 'sw';
@@ -276,8 +295,32 @@ __COMBAT__
   function sprite(name, v) { return w.sprite(name, v); }
   function nearSolids(P) { return w.nearSolids(P); }
 
+  // The game's layout (2026-10-08): the options the game hands World.make, from the sliders: every island's width (the starter, the big
+  // one, the normal ones with the size variety, the lowland ones from lowFrom on) and which are lowland. The game takes the same object.
+  function worldSpec() {
+    var o = {}, k; for (k in spec) o[k] = spec[k]; if (!spec.layout) return o;
+    var R2 = kit.rng(spec.seed * 7 + 3), sizes = [], biomes = [], i;
+    for (i = 0; i < spec.count; i++) { var low = i >= spec.lowFrom, base = i === 0 ? spec.starter : i === 1 ? spec.big : (low ? spec.lowSize : spec.isle) * (1 + (R2() - 0.5) * spec.sizeVar * 0.6); sizes.push(Math.max(30, Math.round(base / 10) * 10)); biomes.push(low ? 1 : 0); }
+    o.isle0 = spec.starter; o.big = spec.big; o.sizes = sizes; o.biomes = biomes; o.dir = 0.1; return o;
+  }
+  var sites = [], SITE_COL = { town: '#ffffff', seat: '#ffd34d', church: '#f8f0ff', village: '#f0e2b0', small: '#d8c8a0', farmstead: '#b8d8a0', fishing: '#9ad0e8', trading: '#e8a060', ruin: '#9a8a7a' };
+  function planSites() {                   // the villages the plan gives this sea, as the game would lay them
+    try { var R = kit.rng(spec.seed * 23 + 11); return Village.plan({ isles: w.isles, code: w.code, shallow: function (tx, ty) { return w.code(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7; }, R: R, home: [home.x / T, home.y / T], avoid: [] }); } catch (e) { return []; }
+  }
+  function drawBigChart() {                // the whole sea with every village named, the lowlands tinted, home marked
+    var cvb = document.getElementById('bigchart'), c2 = cvb.getContext('2d'), Wb = cvb.width, Hb = cvb.height, sc = Math.min((Wb - 16) / mini.width, (Hb - 16) / mini.height), ox = (Wb - mini.width * sc) / 2, oy = (Hb - mini.height * sc) / 2, kx = mini.width * sc / GW, ky = mini.height * sc / GH;
+    c2.fillStyle = '#1d2a38'; c2.fillRect(0, 0, Wb, Hb); c2.imageSmoothingEnabled = false; c2.drawImage(mini, ox, oy, mini.width * sc, mini.height * sc); c2.imageSmoothingEnabled = true;
+    w.isles.forEach(function (q, i) { var x = ox + q.x * kx, y = oy + q.y * ky; c2.font = 'bold 11px system-ui, sans-serif'; c2.textAlign = 'center'; c2.lineWidth = 3; c2.strokeStyle = 'rgba(20,16,30,0.8)'; c2.fillStyle = q.biome ? '#ffe9a8' : '#dfe8f0'; var t = (i === 0 ? 'home' : String(i)) + (q.biome ? ' lowland' : ''); c2.strokeText(t, x, y - 10); c2.fillText(t, x, y - 10); });
+    sites.forEach(function (st) { var x = ox + (st.tx + st.w / 2) * kx, y = oy + (st.ty + st.h / 2) * ky; c2.fillStyle = SITE_COL[st.arch] || '#fff'; c2.strokeStyle = '#1a1410'; c2.lineWidth = 1; c2.beginPath(); if (st.arch === 'town' || st.arch === 'seat') c2.rect(x - 4, y - 4, 8, 8); else c2.arc(x, y, 3.2, 0, 7); c2.fill(); c2.stroke();
+      if (st.jetty && st.jetty.root) { c2.fillStyle = '#6a4a30'; c2.fillRect(ox + st.jetty.root[0] * kx - 1.5, oy + st.jetty.root[1] * ky - 1.5, 3, 3); }
+      c2.font = '10px system-ui, sans-serif'; c2.textAlign = 'center'; c2.lineWidth = 3; c2.strokeStyle = 'rgba(20,16,30,0.8)'; c2.strokeText(st.name + ' (' + st.arch + ')', x, y + 14); c2.fillStyle = '#fff'; c2.fillText(st.name + ' (' + st.arch + ')', x, y + 14); });
+    var hx = ox + home.x / T * kx, hy = oy + home.y / T * ky; c2.fillStyle = '#ffd34d'; c2.strokeStyle = '#1a1410'; c2.lineWidth = 1.2; c2.beginPath(); c2.arc(hx, hy, 4, 0, 7); c2.fill(); c2.stroke();
+    var counts = {}; sites.forEach(function (st) { counts[st.arch] = (counts[st.arch] || 0) + 1; }); var parts = []; for (var k in counts) parts.push(counts[k] + ' ' + k); var low = w.isles.filter(function (q) { return q.biome; }), nearLow = 1e9;
+    low.forEach(function (q) { nearLow = Math.min(nearLow, Math.hypot(q.x - w.isles[0].x, q.y - w.isles[0].y) - q.r - w.isles[0].r); });
+    document.getElementById('villages').textContent = sites.length + ' villages: ' + (parts.join(', ') || 'none') + '. ' + (low.length ? low.length + ' lowland island' + (low.length > 1 ? 's' : '') + ', the nearest ' + Math.max(0, Math.round(nearLow * 10)) + ' m of water from home (about ' + Math.max(1, Math.round(Math.max(0, nearLow) * T / (Yard.HANDLING.karve.top))) + ' s by karve, ' + Math.max(1, Math.round(Math.max(0, nearLow) * T / Yard.HANDLING.boat.top)) + ' s by boat).' : 'No lowland islands: lower Lowlands from island or add islands.');
+  }
   function buildWorld(relocate) {
-    w = World.make(kit, spec);
+    w = World.make(kit, worldSpec());
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; E = w.E; grid = w.grid; home = w.home; dockEnd = w.dockEnd;
     w.plant(); w.camp(); w.sortBuckets(); YSCENE.Y.X = WX + 6000; Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX + 9000, y1: WY - 8 };
     buckets = w.buckets; solidB = w.solidB;
@@ -286,7 +329,7 @@ __COMBAT__
     [[-95, 8], [-80, 30], [-60, 0], [-40, -20], [-20, 0]].some(function (q) { if (!isLand(home.x + q[0], home.y + q[1])) return false; npc.x = home.x + q[0]; npc.y = home.y + q[1]; return true; });
     npc.say = ''; npc.line = 0;
 
-    mini = w.chart(260);
+    mini = w.chart(260); sites = planSites(); drawBigChart();
 
     // 7. what the numbers come to, in kilometres and seconds
     var near = 1e9, big = 0, mid = 0, small = 0;
@@ -349,6 +392,7 @@ __COMBAT__
   function yardLeave() { var P = Combat.dbg().P; inYard = false; YSCENE.leave(); view.zoom = yardZoom || 0.7; syncView(); P.x = (dockEnd.x + 7.4) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; yui(); }
   function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + (built.kind === 'karve' ? 'a karve' : built.kind === 'boat' ? 'a boat' : 'a raft') + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
   document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { var kind = built ? built.kind : 'boat'; localStorage.setItem('game.boat', JSON.stringify({ kind: kind, steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip, windK: spec.windK })); document.getElementById('usemsg').textContent = 'The game\'s ' + kind + ' now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ', wind ' + spec.windK + ').'; } catch (err) {} };
+  document.getElementById('useworld').onclick = function (e) { e.currentTarget.blur(); try { var o = worldSpec(), g = {}; ['count', 'gap', 'gapVar', 'skerries', 'rough', 'beach', 'seed', 'isle', 'isle0', 'big', 'sizes', 'biomes', 'dir', 'sizeVar'].forEach(function (k) { if (o[k] != null) g[k] = o[k]; }); if (!spec.layout) { g.sizes = null; g.biomes = null; } localStorage.setItem('game.world', JSON.stringify(g)); document.getElementById('worldmsg').textContent = 'The game now builds this sea on its next fresh start: ' + g.count + ' islands, sea number ' + g.seed + (g.biomes ? ', lowlands from island ' + spec.lowFrom : '') + '. Esc, New island in the game starts it.'; } catch (err) {} };
   document.getElementById('yopen').onclick = function (e) { e.currentTarget.blur(); if (inYard) yardLeave(); else yardEnter(); };
   document.getElementById('yclear').onclick = function (e) { e.currentTarget.blur(); yardS.cells = []; ysave(); yui(); };
   document.getElementById('yship').onclick = function (e) { e.currentTarget.blur(); built = null; ysave(); yui(); if (!inYard) toDock(); };
