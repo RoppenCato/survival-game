@@ -2239,11 +2239,11 @@ __COMBAT__
   ];
   function drawAdmin(c) {
     c.fillStyle = 'rgba(10,8,6,0.45)'; c.fillRect(0, 0, 400, 250);
-    panel(c, 100, 2, 200, 'Admin', 'For testing. Toggles stay on until turned off, across reloads.', ADMIN_ROWS.map(function (p) { return { p: p, can: true }; }), function (it, x0, yy, w0) {
-      c.font = '600 7px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(it.p.name, x0 + 14, yy);
-      c.font = '600 4.8px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText(it.p.text, x0 + 14, yy + 6);
-      if (it.p.toggle) { var on = ADMIN[it.p.id]; c.font = 'bold 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = on ? '#9be58b' : 'rgba(255,255,255,0.45)'; c.fillText(on ? 'ON' : 'off', x0 + w0 - 14, yy + 3); }
-    }, 15);
+    panel(c, 30, 2, 340, 'Admin', 'For testing. Toggles stay on until turned off, across reloads.', ADMIN_ROWS.map(function (p) { return { p: p, can: true }; }), function (it, x0, yy, w0) {   // one line a row, wide, so every row fits the screen (2026-10-08)
+      c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(it.p.name, x0 + 14, yy + 2.2);
+      c.font = '600 4.6px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,0.65)'; var tx = it.p.text; while (tx.length > 1 && c.measureText(tx).width > w0 - 150) tx = tx.slice(0, -1); c.fillText(tx === it.p.text ? tx : tx.replace(/\s*$/, '') + '…', x0 + 110, yy + 2);
+      if (it.p.toggle) { var on = ADMIN[it.p.id]; c.font = 'bold 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = on ? '#9be58b' : 'rgba(255,255,255,0.45)'; c.fillText(on ? 'ON' : 'off', x0 + w0 - 14, yy + 2.2); }
+    }, 11);
   }
   function adminAct(id) {
     var P = hero(), row = ADMIN_ROWS.filter(function (r) { return r.id === id; })[0];
@@ -2343,7 +2343,7 @@ __COMBAT__
     c.font = 'bold 9px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(title, x0 + 10, y0 + 13);
     for (i = 0; i < list.length; i++) {
       var yy = y0 + 29 + i * rowH, hov = mouseS && mouseS.x > x0 + 8 && mouseS.x < x0 + w0 - 8 && Math.abs(mouseS.y - yy) < rowH / 2 - 1;
-      rows.push({ x0: x0 + 8, x1: x0 + w0 - 8, y: yy, item: list[i] });
+      rows.push({ x0: x0 + 8, x1: x0 + w0 - 8, y: yy, h: rowH, item: list[i] });
       c.fillStyle = hov && list[i].can ? 'rgba(255,230,180,0.22)' : 'rgba(30,16,8,0.45)'; c.fillRect(x0 + 8, yy - rowH / 2 + 1, w0 - 16, rowH - 2);
       draw(list[i], x0, yy, w0);
     }
@@ -2585,7 +2585,7 @@ __COMBAT__
     if (pendingCard) { itemCard(c, pendingCard.it, pendingCard.x, pendingCard.y); pendingCard = null; }   // over both boards
 
   }
-  function rowAt() { if (!mouseS) return null; for (var i = 0; i < rows.length; i++) { var r = rows[i]; if (mouseS.x > r.x0 && mouseS.x < r.x1 && Math.abs(mouseS.y - r.y) < 9) return r.item; } return null; }
+  function rowAt() { if (!mouseS) return null; for (var i = 0; i < rows.length; i++) { var r = rows[i]; if (mouseS.x > r.x0 && mouseS.x < r.x1 && Math.abs(mouseS.y - r.y) < (r.h ? r.h / 2 : 9)) return r.item; } return null; }
   function hero() { return Combat.dbg().P; }
   function chip(x, y, z, col, n, spd) {
     for (var i = 0; i < n; i++) { var a = Math.random() * 6.283, v = spd * (0.4 + Math.random() * 0.8); bits.push({ x: x, y: y, z: z, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.6, vz: 60 + Math.random() * 90, life: 0.5 + Math.random() * 0.4, max: 0.9, col: col, r: 1.2 + Math.random() * 1.4 }); }
@@ -3727,7 +3727,7 @@ __COMBAT__
     Combat.render(ctx); var tf2 = performance.now(); PERF.parts.draw = Math.max(0, tf2 - tf1 - PERF.parts.ground - PERF.parts.items - PERF.parts.end);
     if (PERF.test) perfTestTick(now);
     if (now - PERF.gpuT > 1000) { PERF.gpuT = now; var tg = performance.now(); ctx.getImageData(0, 0, 1, 1); PERF.gpu = performance.now() - tg; }   // the GPU's backlog: how long the frame's drawing really took after the commands were queued
-    perfFrame(now, tf2 - tf0); drawPerf(ctx);
+    perfFrame(now, tf2 - tf0); if (!pauseOpen) drawPerf(ctx);
     if (ADMIN.fps) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.font = 'bold 14px monospace'; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(8, cv.height - 30, 150, 22); ctx.fillStyle = '#fff'; ctx.fillText(frameAvg.toFixed(1) + ' ms  ' + Math.round(1000 / Math.max(1, frameAvg)) + ' fps  ' + cv.width + 'x' + cv.height, 14, cv.height - 14); ctx.restore(); }   // the frame time, for reports (Admin)
     requestAnimationFrame(frame);
   }
