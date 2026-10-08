@@ -4759,12 +4759,20 @@ function make(kit, opts) {
     function g(a, b) { return w.ground[a + ',' + b] === kind ? 1 : 0; }
     return g(i, j) * (1 - u) * (1 - v) + g(i + 1, j) * u * (1 - v) + g(i, j + 1) * (1 - u) * v + g(i + 1, j + 1) * u * v;
   }
-  function groundInChunk(cx, cy) { var x0 = cx * CT * T - GQ * 2, x1 = (cx + 1) * CT * T + GQ * 2, y0 = cy * CT * T - GQ * 2, y1 = (cy + 1) * CT * T + GQ * 2, k; for (k in w.ground) { var q = k.split(','), gx = (+q[0] + 0.5) * GQ, gy = (+q[1] + 0.5) * GQ; if (gx >= x0 && gx <= x1 && gy >= y0 && gy <= y1) return true; } return false; }
+  function groundInChunk(cx, cy) {                        // any painted cell in the chunk (with a margin): the chunk's own cells are looked up, never the whole world's (2026-10-08: the bake took 80 ms a piece)
+    var qx0 = Math.floor((cx * CT * T - GQ * 2) / GQ), qx1 = Math.floor(((cx + 1) * CT * T + GQ * 2) / GQ), qy0 = Math.floor((cy * CT * T - GQ * 2) / GQ), qy1 = Math.floor(((cy + 1) * CT * T + GQ * 2) / GQ), qx, qy;
+    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) if (w.ground[qx + ',' + qy]) return true;
+    return false;
+  }
   function paintGroundInto(c, cx, cy, W2, H2) {
     var gv = kit.mk(W2, H2), gc = gv.getContext('2d'), img = gc.createImageData(W2, H2), d = img.data, pp = 0, py, px;
+    var ox = Math.floor((cx * W2) / GQ) - 3, oy = Math.floor((cy * H2 / K) / GQ) - 3, nx = Math.ceil(W2 / GQ) + 7, ny = Math.ceil(H2 / K / GQ) + 7, G = new Uint8Array(nx * ny), gi, gj, wk = new Float32Array(8);
+    for (gj = 0; gj < ny; gj++) for (gi = 0; gi < nx; gi++) G[gj * nx + gi] = w.ground[(ox + gi) + ',' + (oy + gj)] || 0;   // the chunk's painted cells, once
     for (py = 0; py < H2; py++) for (px = 0; px < W2; px++, pp += 4) {
       var wx = cx * W2 + px, wys = cy * H2 + py, wy = wys / K, n1v = noise[((wys & 127) << 7) | (wx & 127)], n2v = noise[(((wys * 2) & 127) << 7) | ((wx * 2) & 127)];
-      var fg = groundField(1, wx, wy) + (n1v - 0.5) * 0.55, fe = groundField(2, wx, wy) + (n1v - 0.5) * 0.55, fm = groundField(3, wx, wy) + (n1v - 0.5) * 0.6, ff = groundField(4, wx, wy) + (n1v - 0.5) * 0.4, fc = groundField(5, wx, wy) + (n1v - 0.5) * 0.5, fw = groundField(6, wx, wy) + (n1v - 0.5) * 0.6, r = 0, g = 0, b = 0, a = 0, f = 0;
+      var fx = wx / GQ - 0.5, fy = wy / GQ - 0.5, ci = Math.floor(fx), cj = Math.floor(fy), u = fx - ci, v = fy - cj, li = ci - ox, lj = cj - oy, b0 = lj * nx + li;
+      wk[0] = wk[1] = wk[2] = wk[3] = wk[4] = wk[5] = wk[6] = 0; wk[G[b0]] += (1 - u) * (1 - v); wk[G[b0 + 1]] += u * (1 - v); wk[G[b0 + nx]] += (1 - u) * v; wk[G[b0 + nx + 1]] += u * v;   // the field of each kind, read between the cells
+      var fg = wk[1] + (n1v - 0.5) * 0.55, fe = wk[2] + (n1v - 0.5) * 0.55, fm = wk[3] + (n1v - 0.5) * 0.6, ff = wk[4] + (n1v - 0.5) * 0.4, fc = wk[5] + (n1v - 0.5) * 0.5, fw = wk[6] + (n1v - 0.5) * 0.6, r = 0, g = 0, b = 0, a = 0, f = 0;
       if (fg > 0.5) { f = fg; r = 150 + (n2v - 0.5) * 44; g = 138 + (n2v - 0.5) * 40; b = 118 + (n2v - 0.5) * 34; }
       else if (fe > 0.5) { f = fe; r = 126 + (n2v - 0.5) * 30; g = 98 + (n2v - 0.5) * 26; b = 62 + (n2v - 0.5) * 20; }
       else if (fm > 0.5) { f = fm; r = 92 + (n2v - 0.5) * 26; g = 128 + (n2v - 0.5) * 30; b = 70 + (n2v - 0.5) * 22; }   // moss: a deeper, bluer green
