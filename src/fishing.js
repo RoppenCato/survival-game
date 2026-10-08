@@ -63,7 +63,7 @@ var Fishing = (function () {
       if (st.run > 0) { st.run -= dt; if (st.run <= 0) { st.run = 0; st.runIn = (1.2 + st.R() * 2.8) / Math.max(0.3, f.runs); } }
       else if (f.runs > 0) { st.runIn -= dt; if (st.runIn <= 0) { st.run = (0.5 + st.R() * 0.9) * (0.6 + f.runs * 0.5); ev = 'run'; } }
       var running = st.run > 0, pull = running ? f.fight * 1.6 : f.fight * 0.2;
-      if (held) { st.tension += dt * (0.12 + pull); st.dist -= dt * 24 * (running ? 0.3 : 1) / (0.7 + f.fight * 0.45); }
+      if (held) { st.tension += dt * (0.12 + pull) * (st.patience || 1); st.dist -= dt * 24 * (running ? 0.3 : 1) / (0.7 + f.fight * 0.45); }
       else { st.tension -= dt * (1.0 - pull * 0.3); st.dist += dt * (running ? 11 * f.fight : 2) * (f.id === 'chest' ? 0.3 : 1); }
       st.tension = Math.max(0, Math.min(1, st.tension)); st.dist = Math.max(0, Math.min(160, st.dist));
       st.bob = running ? Math.sin(st.time * 16) * 2.5 : Math.sin(st.time * 5) * 1;

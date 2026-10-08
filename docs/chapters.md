@@ -216,7 +216,7 @@ copper and the ring.
 | **Copper** | Veins on the cave walls mined out for good, a little on loose rocks, charcoal from embers, the clamp and finds in the wild, the furnace, copper bars, copper tools and weapons at the workbench | Built |
 | **The troll and the cave** | Mining is loud; he walks out some nights within sight and you can sneak past; his hoard is open while he is out; his walk home at morning; stone at dawn if provoked | Built |
 | **The village** | The claim stone (stone, berries, snake blood), territory on the chart, room for N and food for D days, Brokk joins, muster, jobs yielding into chests | Partly (see gaps) |
-| **The arm ring** | The bronze ring from the dead Viking, the carver's bench (blood rite), eleven runes from deeds, ten beasts, stones and Brokk, the Ring tab | Built |
+| **The arm ring** | The bronze ring from the dead Viking, the carver's bench (blood rite), thirty runes (2026-10-08) from deeds, ten beasts, stones and Brokk, the Ring tab | Built |
 | **The first real boat** | The Shipyard's boat plan (keel, strakes, thwarts), copper nails, sailing like the Sea Editor | Partly (no mast or sail) |
 
 **The way in:** the raft from Chapter 1, copper tools being the key preparation. **The way on:** a sail. The boat can
@@ -244,7 +244,7 @@ sail on the horizon are the pointers, neither built.
 | D1 Trading | The hamlet trades the basics (food, materials) | Not started |
 | D2 Building | Claim stone, the carver's bench, furnace, clamp, chests, stairs and upper floor | Built |
 | D2 The hird at home | Jobs: crafter, woodcutter, cook, keeper; they eat at dawn; Brokk walking to the bench | Partly (Brokk does not yet walk to the bench; idle day, chatter, fighting beside you not built) |
-| D3 Power | Bronze ring, eleven runes; copper weapons | Built |
+| D3 Power | Bronze ring, thirty runes (2026-10-08); copper weapons | Built |
 | D3 Currency | The first island trades in the basics | Not started |
 
 ### E. Travel

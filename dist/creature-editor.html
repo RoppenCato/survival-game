@@ -3154,7 +3154,7 @@ function updatePlayer(dt) {
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
         if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12)) {
           a.hit.push(e);
-          critBonus = (!bareHanded() && meleeProfile().crit) || 0;
+          critBonus = ((!bareHanded() && meleeProfile().crit) || 0) + modZ('crit');   // the keen edge adds to the chance
           damageEnemy(e, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0;
           if (sd.guardBreak && e.guard) e.guard = 0;
           if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
@@ -3172,7 +3172,7 @@ function updatePlayer(dt) {
     p.fireCd = RR.cd; p.fireT = 0.2; p.st -= RR.st; p.stDelay = 0.4;
     var fa = rangedAngle();
     p.face = fa; p.fireAng = fa; if (!S.juice) p.faceVis = fa;
-    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * RR.speed, vy: Math.sin(fa) * RR.speed, r: RR.r, dmg: dmgMul('bow'), owner: 'player', life: RR.life, ang: fa, pin: !!p.pinNext, kind: RR.proj, stag: RR.stag, kb: RR.kb || 40, thing: thrownIt, spin: 0 }); p.pinNext = false;
+    W.projs.push({ x: p.x + Math.cos(fa) * 8, y: p.y + Math.sin(fa) * 8, vx: Math.cos(fa) * RR.speed, vy: Math.sin(fa) * RR.speed, r: RR.r, dmg: dmgMul('bow') * (api.mods && api.mods().arrow ? api.mods().arrow : 1), owner: 'player', life: RR.life, ang: fa, pin: !!p.pinNext, kind: RR.proj, stag: RR.stag, kb: RR.kb || 40, thing: thrownIt, spin: 0 }); p.pinNext = false;
     if (api.onShoot) api.onShoot(thrownIt);                     // the page takes an arrow, a stone, or the thrown thing itself from the hand
     spark(p.x + Math.cos(fa) * 10, p.y + Math.sin(fa) * 10, 3, '#ffe9a0', 60);
     if (S.juice) { p.kx -= Math.cos(fa) * 30; p.ky -= Math.sin(fa) * 30; }
@@ -3398,7 +3398,7 @@ function updateEnemies(dt) {
     if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
     if (e.aggro) {                       // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
-      if (!e.awake && gd < e.aggro && !P.dead) e.awake = true;
+      if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) && !P.dead) e.awake = true;   // the light step shortens the noticing
       else if (e.awake && gd > (e.human ? 900 : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) e.awake = false;   // a guard gives up only when you are far gone
       if (e.heard > 0) { e.heard -= dt; if (!P.dead) e.awake = true; }   // it heard something (mining): it comes
       if (e.flee) {                      // a grazer bolts instead of fighting

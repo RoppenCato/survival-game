@@ -275,7 +275,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   iron ring). `node tools/visual/villages.js [seed]` renders one village of each archetype.
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
-  `hollow` drawings for the casting cloth. Thirteen runes so far.
+  `hollow` drawings for the casting cloth. **Thirty runes since 2026-10-08** (see "The thirty runes" under the arm ring).
 - `src/music.js` (`Music`): the music, with no sound files. Songs are data (`Music.SONGS`: `birchGrove`,
   `oakAndWell`, `seaWind`, `meadowDay`, `meadowEvening`; the first four are day-theme candidates for Robin to
   choose between, each built round a short repeating hook): `bpm`, `chords` one per bar, `tracks` that are either written notes (`'F5:q. E5:e r:e'`:
@@ -774,7 +774,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   axe, pick and knife. The hotbar's tool and weapon icons are the equipped things; an empty tool slot means no
   gathering with that tool. Hovering a thing shows a leather card with its numbers and tale. The Item Editor's
   "Give to the game" puts a thing in `localStorage` (`game.give`) that the game picks up on load.
-- **The arm ring (2026-10-06, built; design in `docs/arm-ring.md`):** runes (`src/runes.js`: eleven, each with a `side` hand,
+- **The arm ring (2026-10-06, built; design in `docs/arm-ring.md`):** runes (`src/runes.js`: eleven at first, thirty since 2026-10-08, each with a `side` hand,
   foot, eye or heart, a `source` and one line) are knowledge, never items. `RS` = { learnt, earned, deeds, kills, stones }.
   **Nothing is learnt before a ring is worn:** deeds (`DEEDS`: fifteen trees, five meals, a minute of sprinting), kills
   (`BEAST_RUNES`: ten boars, wolves or adders) and stones (`STONE_POOL`) *earn* a rune (`earnRune`), and the ring brings
@@ -792,6 +792,22 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   the tool, let go: three blows), hearty, hearth warmth (heal by any fire, a rough night rests 2 minutes), long breath (no
   swimming yet). No tiers. The casting cloth, the pouch icon and the C key are gone; `SHOW.runes` is true. Debug:
   `ring()`, `RS()`, `takeRing`, `earnRune`, `cut(id)`, `openRing()`. `tests/ring.js` checks the rules and the hooks.
+  **The thirty runes (2026-10-08, Robin: expand the rune system, thirty runes):** nineteen more in `src/runes.js`, each
+  with a source and one effect, all earned the way the first eleven are (`DEEDS`, `BEAST_RUNES`, `STONE_POOL` or a meeting) and alive
+  only in a coil (`inUse`; `runeMul(id)` is 1 or 0). **Hand:** keen edge (twenty-five beasts slain: crit chance +10%, `mods().crit`,
+  `modZ('crit')` in the engine), wolf's hunger (ten deer: a kill heals 8), bowman's eye (twenty-five arrows loosed: arrows bite a third
+  harder, `mods().arrow` on the projectile, and every batch fletched is half again as many). **Foot:** light step (a stone: beasts
+  notice you at 0.7 of their aggro ring, `mods().stealth`, and the troll's sneak rule at 0.6), long stride (three hundred seconds
+  walked: speed 1.1), sea legs (leaving the island: the vessel's handling 1.2), night eyes (ten days lived: you see 42 units in the
+  dark instead of 14). **Eye:** woodsman (fifty trees: `powerMul('tree')` 1.25), quarryman (thirty rocks: 1.25 and an extra stone a
+  rock), quick hands (thirty things made: crafting in half the time, cooking twice as fast), deep pockets (the bag full once: stacks of
+  40, `STACK`), fisher's patience (ten fish: the line's tension rises 0.7 as fast, `st.patience`), ember keeper (twenty charcoal: a
+  torch burns twice as long, four embers a fire at dawn), bee friend (five honey: bees never chase you), builder's hand (fifty pieces
+  built: every piece costs 0.75, `buildCost`). **Heart:** thick skin (a stone: 10% more turned aside), deep sleep (ten nights slept:
+  rested twice as long), iron stomach (twenty raw things eaten: raw food heals double), fellowship (Brokk joins: the hird works 1.3
+  as fast, `jobT`). Long breath now does something: you wade where others must swim (`scene.walk` allows elevation above -2.6 with it).
+  `tests/runes30.js` (in `npm test`) checks the list, that every rune the game names exists, that every rune is used and can be earned,
+  and the engine's new mods; the Rune Editor knows all thirty.
   **The bench reworked (2026-10-07, Robin's seven points):** the ring is a **flat cuff** (`Runes.ringD`: a wide band seen a little
   from above, open at the right, knotwork cut along it, the cut ends showing its thickness) with small **round hollows** for the
   runes (`Runes.hollowAngle`); a cut rune fills its hollow red with the glyph in the metal, an empty one is a dark recess with
