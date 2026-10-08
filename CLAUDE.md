@@ -116,6 +116,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
 | `gathering-editor.html` | `gather.html` | Gathering Editor (2026-10-07): a field of trees, rocks and bushes; the gathering ideas as switches and sliders, presets, settings as text, "Use in the game" (`game.gather`) |
 | `look-editor.html` | `look.html` | Art Direction (2026-10-07): the same scene twice, the flat look above and the ink look below (`docs/art-direction.md`), the rules as sliders, settings as text, "Use in the game" (`game.look`, merged into `kit.STYLE` on load) |
+| `light-editor.html` | `light.html` | Light Editor (2026-10-08): lighting for a flat world, each technique a switch: cast shadows that stretch with the hour, the colour of the hour, sun rays, rim light, the fire's light at night, head form on the trolls; "Use in the game" (`game.light`) |
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
@@ -497,6 +498,21 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   stamina 12 a second coming back, the seat's own solid skipped while you sit; E again or any movement key stands you up a step
   in front of it ("E Stand up"). The ink figure has a seated pose (`an.sit`: the body drops onto the seat, thighs forward, shins
   down; `node tools/visual/sit.js`); the engine's `P.anim.sit` carries it.
+- **Lighting (2026-10-08, Robin: the troll's face was flat like a painting; try lighting techniques in an editor):** the **Light Editor**
+  (`templates/light.html`) draws a scene (trees, rocks, a woodpile, a campfire, the hero, the troll end on, a boar) through a lighting
+  pipeline, each step a switch with sliders and an hour-of-day slider (or the day running): **cast shadows** (`castShadow`: a sprite's
+  silhouette, cached in one colour by `silh`, laid on the ground with the transform `[1, 0, -sx, -sy]` so a point h above the base lands
+  at base + (sx h, sy h); the sun's lean and the length from the hour (`sun(h)`: morning west, noon short and to the lower right, evening
+  east), cool blue-black, soft by three offset passes), **the colour of the hour** (`GRADE` keyframes: a multiply tint and an overlay
+  warmth by hour, blue at night; and the vignette), **rim light** (the pale silhouette offset toward the light under the thing),
+  **sun rays** (soft wedges and a glow from the upper left, 'lighter'), **the fire's light** (a breathing warm circle over the night's
+  tint, a lit rim and shadows cast away from the fire for what stands within 150 units) and **head form**. Figures are drawn into their
+  own canvas each frame (`figure`) so they take shadows and rims like props. "Use in the game" stores `game.light`; the game takes only
+  `faceShade` so far (`lib.applyStored`); the shadows and the colour of the hour are the next thing to wire into the game.
+  **Head form** (`formShade` in `src/art.js`, `lib.FACE_SHADE.k`, 0.6): inside a head's or body's clip, a light from the upper left
+  (a warm highlight), the far side turning cool and dark, and for a head the brow's shadow over the eyes, a shadow beside the nose on
+  the shadow side, a lit cheekbone and the jaw turning under; `trollViewD` lays it on the head in every view and on the boulder's body
+  (`blobPath` builds the same rounded path `blobD` fills).
 - **The bed and the workbench redrawn (2026-10-08, Robin: weird and boring):** `bedObj` is a **Viking box bed**: a plank box with its
   foot end receding, four knobbed corner posts (the head's taller), a straw mattress with straw hanging over the rim, a **red wool
   blanket** with a cream folded hem and two woven stripes, a fleece at the head. `workbenchObj` is a **joiner's bench**: a thick planed

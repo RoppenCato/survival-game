@@ -664,6 +664,25 @@ function limbD(c, x0, y0, w0, x1, y1, w1, col) {                     // a tapere
   c.moveTo(x0 + nx * w0, y0 + ny * w0); c.lineTo(x1 + nx * w1, y1 + ny * w1); c.arc(x1, y1, w1, an, an - Math.PI, true);
   c.lineTo(x0 - nx * w0, y0 - ny * w0); c.arc(x0, y0, w0, an - Math.PI, an - Math.PI * 2, true); c.closePath(); c.fill();
 }
+var FACE_SHADE = { k: 0.6 };                                          // how much form the trolls' heads and bodies get (2026-10-08, Robin: the face looked flat, like a painting); the Light Editor sets it
+function blobPath(c, pts, sharp) { var n = pts.length, i; c.beginPath(); if (sharp) { c.moveTo(pts[0][0], pts[0][1]); for (i = 1; i < n; i++) c.lineTo(pts[i][0], pts[i][1]); } else { c.moveTo((pts[0][0] + pts[n - 1][0]) / 2, (pts[0][1] + pts[n - 1][1]) / 2); for (i = 0; i < n; i++) { var p = pts[i], q = pts[(i + 1) % n]; c.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2); } } c.closePath(); }
+// Form on a rounded mass: inside the shape's clip, a light falling from the upper left (a warm highlight), the far side turning cool and
+// dark, and for a head a band of shadow under the brow, a shadow beside the nose and a lit cheekbone, so the face reads as a head.
+function formShade(c, pts, cx, cy, r, k, head, fwd) {
+  if (!(k > 0)) return; c.save(); blobPath(c, pts); c.clip();
+  var g = c.createRadialGradient(cx - r * 0.45, cy - r * 0.55, r * 0.1, cx + r * 0.1, cy + r * 0.1, r * 1.5);
+  g.addColorStop(0, 'rgba(255,240,205,' + (0.3 * k).toFixed(3) + ')'); g.addColorStop(0.45, 'rgba(255,240,205,0)'); g.addColorStop(0.7, 'rgba(40,36,70,' + (0.12 * k).toFixed(3) + ')'); g.addColorStop(1, 'rgba(30,26,60,' + (0.42 * k).toFixed(3) + ')');
+  c.fillStyle = g; c.fillRect(cx - r * 3, cy - r * 3, r * 6, r * 6);
+  if (head) {
+    var bg = c.createLinearGradient(0, cy - r * 0.5, 0, cy + r * 0.05); bg.addColorStop(0, 'rgba(30,22,40,' + (0.3 * k).toFixed(3) + ')'); bg.addColorStop(1, 'rgba(30,22,40,0)');   // the brow's shadow over the eyes
+    c.fillStyle = bg; c.fillRect(cx - r * 1.1, cy - r * 0.5, r * 2.2, r * 0.55);
+    c.fillStyle = 'rgba(30,22,40,' + (0.22 * k).toFixed(3) + ')'; c.beginPath(); c.ellipse(cx + (fwd || 1) * r * 0.22, cy + r * 0.25, r * 0.22, r * 0.4, 0, 0, 7); c.fill();            // beside the nose, on the shadow side
+    c.fillStyle = 'rgba(255,240,205,' + (0.16 * k).toFixed(3) + ')'; c.beginPath(); c.ellipse(cx - r * 0.5, cy + r * 0.1, r * 0.22, r * 0.16, -0.5, 0, 7); c.fill();                     // the lit cheekbone
+    var jg = c.createLinearGradient(0, cy + r * 0.45, 0, cy + r * 0.95); jg.addColorStop(0, 'rgba(30,22,40,0)'); jg.addColorStop(1, 'rgba(30,22,40,' + (0.28 * k).toFixed(3) + ')');     // the jaw turning under
+    c.fillStyle = jg; c.fillRect(cx - r * 1.1, cy + r * 0.45, r * 2.2, r * 0.6);
+  }
+  c.restore();
+}
 function blobD(c, pts, col, sharp) {                                  // a closed shape: rounded through its points, or straight (sharp)
   var n = pts.length, i; c.beginPath();
   if (sharp) { c.moveTo(pts[0][0], pts[0][1]); for (i = 1; i < n; i++) c.lineTo(pts[i][0], pts[i][1]); }
@@ -2229,12 +2248,13 @@ function trollViewD(c, x, y, s, H) {
     lay(1);
     legSide(legF - fwd * 1, ph, true, skin);
     if (forest) { var tp = [[backX, hipY + 2], [frontX, hipY + 2], [frontX + fwd * (HU * 6 + 2), topY + 10], [frontX + fwd * (HU * 8 + 4), topY], [backX + fwd * (HU * 7), topY - 2], [backX - fwd * 2, topY + 12]]; blobD(c, tp, skin); inkLine(c, [[frontX + fwd * 2, hipY - 4], [frontX + fwd * (HU * 6), topY + 8]], LIT, 1.2); }
-    else { var bp = [[frontX, hipY + 3], [frontX + fwd * 2, topY + 14], [frontX - fwd * 2, topY + 3], [frontX - fwd * BW * 0.5, topY - 2], [backX + fwd * 3, topY - 1], [backX, topY + 10], [backX + fwd * 1, hipY + 3]]; blobD(c, bp, skin); inkLine(c, [[frontX + fwd * 1, hipY - 6], [frontX - fwd * 1, topY + 6]], LIT, 1.3); for (var si = 0; si < 3; si++) { c.fillStyle = mixHex(skin, '#000000', 0.14); c.beginPath(); c.ellipse(frontX - fwd * (4 + si * 6), topY + 8 + si * 5, 2.2, 1.4, 0, 0, 7); c.fill(); } }
+    else { var bp = [[frontX, hipY + 3], [frontX + fwd * 2, topY + 14], [frontX - fwd * 2, topY + 3], [frontX - fwd * BW * 0.5, topY - 2], [backX + fwd * 3, topY - 1], [backX, topY + 10], [backX + fwd * 1, hipY + 3]]; blobD(c, bp, skin); formShade(c, bp, (frontX + backX) / 2, (hipY + topY) / 2, BW * 0.9, FACE_SHADE.k * 0.7, false, fwd); inkLine(c, [[frontX + fwd * 1, hipY - 6], [frontX - fwd * 1, topY + 6]], LIT, 1.3); for (var si = 0; si < 3; si++) { c.fillStyle = mixHex(skin, '#000000', 0.14); c.beginPath(); c.ellipse(frontX - fwd * (4 + si * 6), topY + 8 + si * 5, 2.2, 1.4, 0, 0, 7); c.fill(); } }
     // the hair down the back, the head with its face, the ear and the hair over the head
     blobD(c, jagged([[frontX - fwd * 4, topY - 3], [backX + fwd * 3, topY - 4], [backX - fwd * 4, topY + BH * 0.5], [backX - fwd * (3 + 2 * HL), hipY + 6 + 3 * HL], [backX + fwd * 4, hipY + 2], [backX + fwd * 2, topY + 8]], backX, topY + 10, 1.5 + HL, 50), hairCol, true);
     for (var hi = 0; hi < 4 + 3 * HL; hi++) strand([backX - fwd * 2 + fwd * hs(hi, 51) * 6, hipY + 2 + hs(hi, 52) * 3], (6 + 5 * HL) * (0.6 + 0.6 * hs(hi, 53)), (hs(hi, 54) - 0.5) * 0.5 + fwd * 0.3, 1.1, hi % 2 ? hairDk : hairLt, 50 + hi);
     if (!forest) growth(backX + fwd * 6, topY, 5);
-    blobD(c, [[hx + fwd * hr * 0.9, hy - hr * 0.55], [hx + fwd * hr * 0.3, hy - hr * 0.95], [hx - fwd * hr * 0.8, hy - hr * 0.7], [hx - fwd * hr * 0.95, hy + hr * 0.2], [hx - fwd * hr * 0.5, hy + hr * 0.8], [hx + fwd * hr * 0.6, hy + hr * 0.75]], skin);
+    var hpS = [[hx + fwd * hr * 0.9, hy - hr * 0.55], [hx + fwd * hr * 0.3, hy - hr * 0.95], [hx - fwd * hr * 0.8, hy - hr * 0.7], [hx - fwd * hr * 0.95, hy + hr * 0.2], [hx - fwd * hr * 0.5, hy + hr * 0.8], [hx + fwd * hr * 0.6, hy + hr * 0.75]];
+    blobD(c, hpS, skin); formShade(c, hpS, hx, hy, hr, FACE_SHADE.k, true, fwd);
     if (forest) limbD(c, frontX + fwd * (HU * 7 + 2), topY + 2, 3.6, hx - fwd * 2, hy + hr * 0.6, 3.2, skin);
     faceSide(hx, hy, hr, fwd);
     if (forest) crown(hx, hy, hr, fwd); else hairCap(hx, hy, hr);
@@ -2260,13 +2280,14 @@ function trollViewD(c, x, y, s, H) {
     if (back) { blobD(c, [[hx2 - hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.95, hy2 + hr2 * 0.5], [hx2 - hr2 * 0.95, hy2 + hr2 * 0.5]], skin); earsFront(hx2, hy2, hr2); }
     lay(1);
     if (forest) { blobD(c, [[cx - 6, hipY2 + 2], [cx + 6, hipY2 + 2], [cx + 8 + tq * 2, topY2 + 12], [cx + 10 + tq * 2, topY2], [cx - 10 + tq * 2, topY2], [cx - 8 + tq * 2, topY2 + 12]], skin); inkLine(c, [[cx - 7, hipY2 - 4], [cx - 9 + tq * 2, topY2 + 4]], LIT, 1.2); }
-    else { blobD(c, [[cx - W * 0.5, hipY2 + 2], [cx - W * 0.55, topY2 + 14], [cx - W * 0.4 + tq * 3, topY2 + 2], [cx + tq * 3, topY2 - 2], [cx + W * 0.4 + tq * 3, topY2 + 2], [cx + W * 0.55, topY2 + 14], [cx + W * 0.5, hipY2 + 2], [cx, hipY2 + 4]], skin); inkLine(c, [[cx - W * 0.45, hipY2 - 5], [cx - W * 0.35 + tq * 2, topY2 + 5]], LIT, 1.3); }
+    else { var bpF = [[cx - W * 0.5, hipY2 + 2], [cx - W * 0.55, topY2 + 14], [cx - W * 0.4 + tq * 3, topY2 + 2], [cx + tq * 3, topY2 - 2], [cx + W * 0.4 + tq * 3, topY2 + 2], [cx + W * 0.55, topY2 + 14], [cx + W * 0.5, hipY2 + 2], [cx, hipY2 + 4]]; blobD(c, bpF, skin); formShade(c, bpF, cx, (hipY2 + topY2) / 2, W * 0.6, FACE_SHADE.k * 0.7, false, 1); inkLine(c, [[cx - W * 0.45, hipY2 - 5], [cx - W * 0.35 + tq * 2, topY2 + 5]], LIT, 1.3); }
     if (back) { blobD(c, jagged([[cx - W * 0.45, topY2 + 2], [cx + tq * 2, topY2 - 4], [cx + W * 0.45, topY2 + 2], [cx + W * (0.5 + 0.1 * HL), hipY2 + 2 + 3 * HL], [cx, hipY2 + 6 + 4 * HL], [cx - W * (0.5 + 0.1 * HL), hipY2 + 2 + 3 * HL]], cx, topY2 + BH * 0.5, 1.6 + HL, 50), hairCol, true); for (var hb = 0; hb < 5 + 3 * HL; hb++) strand([cx - W * 0.4 + W * 0.8 * hs(hb, 51), hipY2 + 2 * hs(hb, 52)], (6 + 5 * HL) * (0.6 + 0.6 * hs(hb, 53)), (hs(hb, 54) - 0.5) * 0.5, 1.1, hb % 2 ? hairDk : hairLt, 50 + hb); if (!forest) growth(cx - 4, topY2 + 2, 5); if (forest) crown(hx2, hy2, hr2, 1); else hairCap(hx2, hy2 - 2, hr2); }
     else {
       if (!forest) growth(cx - W * 0.2 + tq * 2, topY2 + 1, 5);
       if (forest) limbD(c, cx + tq * 2, topY2 + 2, 3.6, hx2, hy2 + hr2 * 0.6, 3.2, skin);
       earsFront(hx2, hy2, hr2);
-      blobD(c, [[hx2 - hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 - hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 + hr2 * 0.75, hy2 + hr2 * 0.75], [hx2 - hr2 * 0.75, hy2 + hr2 * 0.75]], skin);
+      var hpF = [[hx2 - hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 - hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 + hr2 * 0.75, hy2 + hr2 * 0.75], [hx2 - hr2 * 0.75, hy2 + hr2 * 0.75]];
+      blobD(c, hpF, skin); formShade(c, hpF, hx2, hy2, hr2, FACE_SHADE.k, true, 1);
       faceFront(hx2, hy2, hr2);
       if (forest) crown(hx2, hy2, hr2, 1); else hairCap(hx2, hy2, hr2);
     }
@@ -2587,9 +2608,10 @@ var dkB = null;
 function applyStored(st) {
   try { var gh = JSON.parse(st.getItem('game.hero2')); if (gh && typeof gh === 'object') setHero(gh); } catch (e) {}
   try { var gc = JSON.parse(st.getItem('game.creatures')); if (gc && typeof gc === 'object') { var k; for (k in gc) if (ANIMALS[k] && gc[k] && typeof gc[k] === 'object') useAnimal(k, gc[k]); } } catch (e) {}
+  try { var gl = JSON.parse(st.getItem('game.light')); if (gl && gl.faceShade != null) FACE_SHADE.k = +gl.faceShade; } catch (e) {}
   RIG.animals = 'views'; RIG.trolls = 'views';          // the game always draws the view rig; the Creature Editor's Rig switch (creature.rig) is its own (2026-10-08: a stored 'turntable' kept the clipping trolls in the game)
 }
-return { lib: { INK_FIG: INK_FIG, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, IDLES: IDLES, JOBS: JOBS, idlePose: idlePose, jobPose: jobPose, poseLerp: poseLerp, heldD: heldD, figureHeld: figureHeld, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { INK_FIG: INK_FIG, FACE_SHADE: FACE_SHADE, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, IDLES: IDLES, JOBS: JOBS, idlePose: idlePose, jobPose: jobPose, poseLerp: poseLerp, heldD: heldD, figureHeld: figureHeld, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 
