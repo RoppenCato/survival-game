@@ -1153,7 +1153,11 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   column** (0.85 of `lw` at the hip, 0.55 at the hoof), not the side view's thigh. In `trollViewD` the end-on body is wider (`W` 1.5 of
   the boulder's `BW`, 1.3 of the forest troll's), the **shoulders sit at its edges below the head** (they sat inside the head's width,
   so both arms crossed the face), the hanging arm is nearly straight (`seg` from the reach, no elbow bowing out), the hands rest a
-  little outside the shoulders, the legs stand apart. `node tools/visual/views.js [trolls]` renders every animal (or the trolls) end on,
+  little outside the shoulders, the legs stand apart. **One body in every view (Robin: he looked like four different creatures as he
+  turned, the boar keeps its shape):** the boulder's front and back are built on the side view's proportions: the head hangs **low in
+  front of the hump** (`hy2` = `topY2 + HEAD * 0.8 + 4`, as the side view's), the mane rises over the hump behind it, the shoulders
+  sit high on the hump's sides and the arms come down to **hands on the ground in front** (nearer the viewer, `hyH` 3), and from
+  behind the head is hidden by the hump with only the ears showing. `node tools/visual/views.js [trolls]` renders every animal (or the trolls) end on,
   standing and through a walk, large.
 - **Facings (decided 2026-10-04):** things turn smoothly, "like the ship". Animals (plans 5 and 6) are drawn by
   `animal3D` at any heading (`s.ang`): the body is laid out in its own space (forward, sideways, up) and turned

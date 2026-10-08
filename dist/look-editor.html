@@ -2218,29 +2218,29 @@ function trollViewD(c, x, y, s, H) {
     lay(2);
     legSide(legF + fwd * 1, ph + Math.PI, true, skin); armSide(shX + fwd * 2, shY, true, skin);
   } else {
-    var dS = back ? -1 : 1, hipY2 = -LEG + bob, topY2 = hipY2 - BH, cx = -tq * BW * 0.15, W = forest ? BW * 1.3 : BW * 1.5, hr2 = forest ? HEAD : HEAD * 0.85, hx2 = cx + tq * BW * 0.3 + (forest ? tq * 6 : 0), hy2 = forest ? topY2 - HEAD * 0.4 + lean : topY2 + hr2 * 0.55 + lean;   // end on the boulder is wide and the head sits on top of it (2026-10-08, Robin: the arms crossed the face)
+    var dS = back ? -1 : 1, hipY2 = -LEG + bob, topY2 = hipY2 - BH, cx = -tq * BW * 0.15, W = forest ? BW * 1.3 : BW * 1.5, hr2 = forest ? HEAD : HEAD * 0.95, hx2 = cx + tq * BW * 0.3 + (forest ? tq * 6 : 0), hy2 = forest ? topY2 - HEAD * 0.4 + lean : topY2 + HEAD * 0.8 + 4 + lean;   // the boulder's head hangs low in front of the hump, as in the side view (2026-10-08, Robin: the views looked like two creatures)   // end on the boulder is wide and the head sits on top of it (2026-10-08, Robin: the arms crossed the face)
     function legFront(lx, phi, near, col) { var l = Math.max(0, Math.cos(phi)) * 2.5 * mv, d = Math.sin(phi) * 2 * mv * dS, out = lx < cx ? -1 : 1, kk = ik2(lx, hipY2, lx + out * 1.0, -l + d + (near ? 0 : -2.5), LEG * 0.49, LEG * 0.49, -out); limbD(c, lx, hipY2, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); blobD(c, [[kk[2] - (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.6 : 5), kk[3] + 2], [kk[2], kk[3] + 2.8], [kk[2] - (forest ? 3.6 : 5), kk[3] + 2]], col); }
     function armFront(sd, sx, sy, near, col) {
       var hxH, hyH, up = false, swinging = sd === 1 && !back && (wind > 0 || slam);
       if (swinging && slam) { var u = sweep, a = -0.63 + u * 4.4; hxH = cx + Math.cos(a) * ARM * 0.8; hyH = sy + 10 - Math.sin(a) * Math.min(ARM * 0.7, 30); up = u < 0.4; }
       else if (swinging) { hxH = sx + sd * 8; hyH = sy - Math.min(ARM * 0.9, 34) * (0.7 + 0.3 * wind); up = true; }
-      else { hxH = sx + sd * (forest ? 5 : 7) + sd * Math.sin(ph) * 1.5 * mv; hyH = -1 + (near ? 0 : -2); }   // the hand on the ground a little outside the shoulder
+      else { hxH = sx + sd * (forest ? 5 : 6) + sd * Math.sin(ph) * 1.5 * mv; hyH = (forest ? -1 : 3) + (near ? 0 : -5); }   // the hands on the ground in front of the boulder (nearer the viewer), beside the thin troll
       var reach = Math.hypot(hxH - sx, hyH - sy), seg = up || swinging ? ARM * 0.52 : Math.max(ARM * 0.36, reach * 0.515);   // hanging to the ground the arm is nearly straight: no elbow bowing out
       var kk = ik2(sx, sy, hxH, hyH, seg, seg, -sd);
       limbD(c, sx, sy, forest ? 4.6 : 8, kk[0], kk[1], forest ? 3.6 : 6.6, col); limbD(c, kk[0], kk[1], forest ? 3.6 : 6.6, kk[2], kk[3], forest ? 2.6 : 5.6, col); c.fillStyle = mixHex(col, '#000000', 0.1); c.beginPath(); c.arc(kk[0], kk[1], forest ? 3.8 : 6, 0, 7); c.fill();
       hand(kk[2], kk[3], 0, col, S, up);
     }
-    var shY2 = forest ? topY2 + 8 : topY2 + BH * 0.42, shL = cx - (forest ? hr2 + 3 : W * 0.5 - 1), shR = cx + (forest ? hr2 + 3 : W * 0.5 - 1);   // the shoulders at the body's edges, below the head
+    var shY2 = forest ? topY2 + 8 : topY2 + BH * 0.26, shL = cx - (forest ? hr2 + 3 : W * 0.5 - 2), shR = cx + (forest ? hr2 + 3 : W * 0.5 - 2);   // the shoulders high on the hump's sides   // the shoulders at the body's edges, below the head
     lay(0);
     legFront(cx - (forest ? 4 : 7) - tq * 3, ph + Math.PI, false, skinDk); legFront(cx + (forest ? 4 : 7) - tq * 3, ph, false, skinDk);
     if (back) { armFront(-1, shL, shY2, false, skinDk); armFront(1, shR, shY2, false, skinDk); }
-    if (back) { blobD(c, [[hx2 - hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.95, hy2 + hr2 * 0.5], [hx2 - hr2 * 0.95, hy2 + hr2 * 0.5]], skin); earsFront(hx2, hy2, hr2); }
+    if (back) { if (forest) blobD(c, [[hx2 - hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.95, hy2 + hr2 * 0.5], [hx2 - hr2 * 0.95, hy2 + hr2 * 0.5]], skin); earsFront(forest ? hx2 : cx, forest ? hy2 : hy2 - 2, forest ? hr2 : W * 0.42); }   // the boulder's head hides in front of the hump: only the ears show
     lay(1);
     if (forest) { blobD(c, [[cx - 6, hipY2 + 2], [cx + 6, hipY2 + 2], [cx + 8 + tq * 2, topY2 + 12], [cx + 10 + tq * 2, topY2], [cx - 10 + tq * 2, topY2], [cx - 8 + tq * 2, topY2 + 12]], skin); inkLine(c, [[cx - 7, hipY2 - 4], [cx - 9 + tq * 2, topY2 + 4]], LIT, 1.2); }
     else { var bpF = [[cx - W * 0.5, hipY2 + 2], [cx - W * 0.55, topY2 + 14], [cx - W * 0.4 + tq * 3, topY2 + 2], [cx + tq * 3, topY2 - 2], [cx + W * 0.4 + tq * 3, topY2 + 2], [cx + W * 0.55, topY2 + 14], [cx + W * 0.5, hipY2 + 2], [cx, hipY2 + 4]]; blobD(c, bpF, skin); formShade(c, bpF, cx, (hipY2 + topY2) / 2, W * 0.6, FACE_SHADE.k * 0.7, false, 1); inkLine(c, [[cx - W * 0.45, hipY2 - 5], [cx - W * 0.35 + tq * 2, topY2 + 5]], LIT, 1.3); }
     if (back) { blobD(c, jagged([[cx - W * 0.45, topY2 + 2], [cx + tq * 2, topY2 - 4], [cx + W * 0.45, topY2 + 2], [cx + W * (0.5 + 0.1 * HL), hipY2 + 2 + 3 * HL], [cx, hipY2 + 6 + 4 * HL], [cx - W * (0.5 + 0.1 * HL), hipY2 + 2 + 3 * HL]], cx, topY2 + BH * 0.5, 1.6 + HL, 50), hairCol, true); for (var hb = 0; hb < 5 + 3 * HL; hb++) strand([cx - W * 0.4 + W * 0.8 * hs(hb, 51), hipY2 + 2 * hs(hb, 52)], (6 + 5 * HL) * (0.6 + 0.6 * hs(hb, 53)), (hs(hb, 54) - 0.5) * 0.5, 1.1, hb % 2 ? hairDk : hairLt, 50 + hb); if (!forest) growth(cx - 4, topY2 + 2, 5); if (forest) crown(hx2, hy2, hr2, 1); else hairCap(hx2, hy2 - 2, hr2); }
     else {
-      if (!forest) growth(cx - W * 0.2 + tq * 2, topY2 + 1, 5);
+      if (!forest) { blobD(c, jagged([[cx - W * 0.52, topY2 + 10], [cx - W * 0.3 + tq * 2, topY2 - 4], [cx + tq * 3, topY2 - 8], [cx + W * 0.3 + tq * 2, topY2 - 4], [cx + W * 0.52, topY2 + 10], [cx, topY2 + 6]], cx, topY2 + 2, 2.4 + HL, 55), hairCol, true); growth(cx - W * 0.2 + tq * 2, topY2 - 2, 5); }   // the mane over the hump, behind the head
       if (forest) limbD(c, cx + tq * 2, topY2 + 2, 3.6, hx2, hy2 + hr2 * 0.6, 3.2, skin);
       earsFront(hx2, hy2, hr2);
       var hpF = [[hx2 - hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 - hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.5, hy2 - hr2 * 0.95], [hx2 + hr2 * 0.95, hy2 - hr2 * 0.3], [hx2 + hr2 * 0.75, hy2 + hr2 * 0.75], [hx2 - hr2 * 0.75, hy2 + hr2 * 0.75]];
