@@ -280,16 +280,27 @@ function rugObj(c, K, x, y, seed) {
 }
 
 // the workbench: a low trestle bench of thick planks, with a hammer, a saw and a split log on it (about as wide as the hero is tall)
-function workbenchObj(c, K, x, y, seed) {
-  gshadow(c, x + 1, y, 18, 4, 0.35);
-  [[-12, 1], [12, 1]].forEach(function (p, k) { shape(c, rrPts(x + p[0] - 2, y - 13, 4, 14, 1), K.wood, { seed: seed + k, size: 'S', flat: true, rough: 0.2 }); });
-  shape(c, rrPts(x - 12, y - 7, 24, 3, 1), K.wood, { seed: seed + 3, size: 'S', flat: true, rough: 0.2 });
-  shape(c, [[x - 17, y - 14], [x + 15, y - 14], [x + 19, y - 19], [x - 13, y - 19]], K.trunkL, { seed: seed + 4, size: 'S', sh: 1, rough: 0.2 });
-  shape(c, rrPts(x - 17, y - 14, 32, 4.5, 1.2), K.wood, { seed: seed + 5, size: 'S', sh: 1.2, rough: 0.2 });
-  line(c, [[x - 9, y - 18], [x - 4, y - 23]], 1.8, K.wood.base, true);                       // hammer: a haft and an iron head
-  shape(c, rrPts(x - 6.5, y - 26, 6, 3.4, 1), K.iron, { seed: seed + 6, size: 'S', flat: true, rough: 0.1 });
-  shape(c, [[x + 1, y - 18], [x + 11, y - 18.6], [x + 10, y - 21], [x + 2, y - 20.4]], K.ironLight, { seed: seed + 7, size: 'S', flat: true, rough: 0.1 });   // saw blade
-  shape(c, ellPts(x + 12, y - 20, 3.2, 2.2, 10), K.trunkL, { seed: seed + 8, size: 'S', sh: 0.8, rough: 0.15 });   // a split log
+function workbenchObj(c, K, x, y, seed) {                // a joiner's bench (2026-10-08, redrawn): a thick planed slab on two splayed trestles with a stretcher,
+  var k;                                                 // an adze, a mallet and chisels on it, a plank leaning against a leg, shavings on the floor
+  gshadow(c, x + 2, y + 1, 30, 5, 0.35);
+  [[-18, 1], [14, 1]].forEach(function (p, i) {                                                                                   // the trestles
+    var tx = x + p[0];
+    line(c, [[tx - 7, y], [tx - 1, y - 17]], 3.2, K.wood.base, true); line(c, [[tx + 7, y], [tx + 1, y - 17]], 3.2, K.wood.base, true);
+    line(c, [[tx - 4.5, y - 8], [tx + 4.5, y - 8]], 2.4, K.wood.shade, true);
+  });
+  line(c, [[x - 18, y - 9], [x + 14, y - 9]], 2, K.wood.shade, true);                                                            // the stretcher between them
+  shape(c, [[x + 27, y - 24], [x + 32, y - 29], [x + 32, y - 23], [x + 27, y - 18]], K.wallDark, { seed: seed + 1, size: 'S', flat: true, rough: 0.25 });   // the slab's end grain
+  for (k = 0; k < 3; k++) line(c, [[x + 28, y - 23.5 + k * 1.6], [x + 31, y - 26.5 + k * 1.6]], 0.5, 'rgba(35,26,22,0.3)', false);
+  shape(c, [[x - 27, y - 24], [x - 22, y - 29], [x + 32, y - 29], [x + 27, y - 24]], K.trunkL, { seed: seed + 2, size: 'M', sh: 1, rough: 0.2 });          // the planed top
+  for (k = 0; k < 4; k++) line(c, [[x - 20 + k * 12, y - 28], [x + 24 - (3 - k) * 12 + 2, y - 25]], 0.5, 'rgba(35,26,22,0.18)', false);
+  shape(c, rrPts(x - 27, y - 24, 54, 6, 1), K.wood, { seed: seed + 3, size: 'M', sh: 1.3, rough: 0.25 });                                                 // the slab's front
+  line(c, [[x - 23, y - 21], [x + 23, y - 20.6]], 0.6, 'rgba(255,238,200,0.2)', false);
+  line(c, [[x - 22, y - 26.5], [x - 8, y - 31]], 2, K.wood.base, true); shape(c, [[x - 9, y - 32.5], [x - 3, y - 31], [x - 2, y - 28.5], [x - 7, y - 29.5]], K.iron, { seed: seed + 4, size: 'S', flat: true, rough: 0.15 });   // the adze
+  line(c, [[x + 6, y - 26], [x + 6, y - 32]], 1.8, K.wood.base, true); shape(c, rrPts(x + 2, y - 36, 8, 4.2, 1.5), K.trunk, { seed: seed + 5, size: 'S', sh: 1, rough: 0.25 });   // the mallet, head up
+  [[12, 0], [16, 0.8]].forEach(function (p, i) { line(c, [[x + p[0], y - 26 - p[1]], [x + p[0] + 8, y - 27.5 - p[1]]], 1.4, K.wood.base, true); line(c, [[x + p[0] + 8, y - 27.5 - p[1]], [x + p[0] + 12, y - 28.2 - p[1]]], 1, K.ironLight.base, false); });   // two chisels
+  shape(c, [[x + 22, y], [x + 32, y - 16], [x + 35, y - 15], [x + 25, y + 1]], K.trunkL, { seed: seed + 6, size: 'S', sh: 0.8, rough: 0.2 });                // a plank leaning on the leg
+  c.strokeStyle = K.trunkL.base; c.lineWidth = 0.9; c.lineCap = 'round';                                                                                  // shavings
+  [[-10, 1], [-2, 2.5], [6, 1.5], [-16, 3]].forEach(function (p, i) { c.beginPath(); c.moveTo(x + p[0], y + p[1]); c.quadraticCurveTo(x + p[0] + 2, y + p[1] - 3.5, x + p[0] + 4.5, y + p[1] - 0.5); c.quadraticCurveTo(x + p[0] + 5.5, y + p[1] + 1.5, x + p[0] + 3, y + p[1] + 1); c.stroke(); });
 }
 
 // the shipwright's bench: two trestles carrying a keel timber with its upturned stem, and the first ribs standing on it
@@ -874,13 +885,26 @@ function cliffObj(c, K, x, y, seed) {
 
 
 /* ---------------- Factory rooms and Commons landmarks ---------------- */
-function bedObj(c, K, x, y, seed) {
-  gshadow(c, x, y, 26, 5, 0.35);
-  [[-20, 0], [20, 0]].forEach(function (p, k) { shape(c, rrPts(x + p[0] - 2.5, y - 8, 5, 10, 1.5), K.iron, { seed: seed + k, size: 'S', rough: 0.2 }); });
-  shape(c, rrPts(x - 24, y - 16, 48, 12, 3), K.iron, { seed: seed + 2, size: 'M', sh: 2, rough: 0.2 });
-  shape(c, rrPts(x - 22, y - 22, 44, 9, 4), M(mixHue(P.factoryHue, 200, 0.4), 34, 52), { seed: seed + 3, size: 'S', sh: 1.5, rough: 0.2 });
-  shape(c, rrPts(x - 22, y - 26, 14, 8, 4), M(48, 25, 80), { seed: seed + 4, size: 'S', sh: 1, rough: 0.2 });
+function bedObj(c, K, x, y, seed) {                      // a Viking box bed (2026-10-08, redrawn: the old one was an iron bedstead): a plank box with
+  var straw = M(40, 48, 64), wool = M(8, 46, 38), cream = M(42, 32, 84), fleece = M(40, 22, 88), k;   // knobbed corner posts, a straw mattress, a red wool blanket, a fleece at the head
+  gshadow(c, x + 4, y + 1, 38, 6, 0.35);
+  shape(c, [[x + 30, y - 13], [x + 39, y - 19], [x + 39, y - 7], [x + 30, y]], K.wallDark, { seed: seed + 1, size: 'M', flat: true, rough: 0.25 });             // the foot end, receding
+  shape(c, rrPts(x - 30, y - 13, 60, 13, 1.2), K.wood, { seed: seed, size: 'M', sh: 1.2, rough: 0.25 });                                                      // the front board
+  line(c, [[x - 27, y - 6.5], [x + 27, y - 6.8]], 0.7, 'rgba(35,26,22,0.35)', false);                                                                       // two planks
+  for (k = 0; k < 4; k++) line(c, [[x - 26 + k * 14, y - 11], [x - 14 + k * 14, y - 10.4]], 0.5, 'rgba(255,238,200,0.18)', false);
+  shape(c, [[x - 30, y - 13], [x - 22, y - 19], [x + 39, y - 19], [x + 30, y - 13]], straw, { seed: seed + 2, size: 'M', sh: 1, rough: 0.35 });               // the straw mattress inside the box
+  for (k = 0; k < 9; k++) line(c, [[x - 24 + k * 6, y - 13.5], [x - 25.5 + k * 6 + (k % 2), y - 10.5 - (k % 3)]], 0.7, straw.shade, false);                  // straw hanging over the front rim
+  shape(c, [[x - 6, y - 14], [x - 1, y - 19.5], [x + 38, y - 19.5], [x + 29.5, y - 13.5], [x + 29, y - 9], [x - 6, y - 9]], wool, { seed: seed + 3, size: 'M', sh: 1.3, rough: 0.35 });   // the blanket, hanging a little over the rim
+  shape(c, [[x - 6, y - 14], [x - 1, y - 19.5], [x + 4, y - 19.5], [x - 1, y - 14], [x - 1, y - 9], [x - 6, y - 9]], cream, { seed: seed + 4, size: 'S', flat: true, rough: 0.3 });   // the folded hem, cream
+  line(c, [[x + 9, y - 19], [x + 4, y - 9.5]], 1.4, cream.base, false); line(c, [[x + 22, y - 19], [x + 17, y - 9.5]], 1.4, cream.base, false);                 // two woven stripes
+  shape(c, jaggedPts(x - 15, y - 21, 11, 5, seed + 5), fleece, { seed: seed + 5, size: 'S', sh: 0.8, rough: 0.5 });                                           // the fleece at the head
+  [[-30, 0, 26], [-22, -6, 30], [30, 0, 22], [39, -6, 26]].forEach(function (p, i) {                                                                        // the posts: the head's taller, each with a knob
+    var px = x + p[0], py = y + p[1], h = p[2];
+    shape(c, rrPts(px - 2, py - h, 4, h, 1), K.wood, { seed: seed + 10 + i, size: 'S', sh: 1, rough: 0.2 });
+    shape(c, ellPts(px, py - h - 1.5, 2.6, 2.2, 10), K.wood, { seed: seed + 20 + i, size: 'S', sh: 1.2, rough: 0.2 });
+  });
 }
+function jaggedPts(cx, cy, rx, ry, seed) { var R = rng(seed), pts = [], i; for (i = 0; i < 12; i++) { var a = i / 12 * 6.283, r = 1 + (R() - 0.5) * 0.35; pts.push([cx + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r]); } return pts; }
 function rubbleObj(c, K, x, y, seed) {
   var R = rng(seed), i;
   gshadow(c, x, y, 26, 6, 0.4);
@@ -1946,7 +1970,7 @@ var PROPS = {
   emberRock: { b: [-34, -50, 34, 10], f: function (c, K, s) { emberRock(c, K, 0, 0, 16, s); } },
   emberBush: { b: [-34, -60, 34, 10], f: function (c, K, s) { emberBush(c, K, 0, 0, 22, s); } },
   cliff: { b: [-48, -64, 52, 12], f: function (c, K, s) { cliffObj(c, K, 0, 0, s); } },
-  bed: { b: [-25, -30, 25, 8], f: function (c, K, s) { c.save(); c.scale(0.8, 0.8); bedObj(c, K, 0, 0, s); c.restore(); } },
+  bed: { b: [-30, -36, 36, 8], f: function (c, K, s) { c.save(); c.scale(0.8, 0.8); bedObj(c, K, 0, 0, s); c.restore(); } },
   rubble: { b: [-34, -34, 34, 10], f: function (c, K, s) { rubbleObj(c, K, 0, 0, s); } },
   bench: { b: [-30, -44, 30, 8], f: function (c, K, s) { benchObj(c, K, 0, 0, s); } },
   well: { b: [-24, -58, 24, 7], f: function (c, K, s) { c.save(); c.scale(0.75, 0.75); wellObj(c, K, 0, 0, s); c.restore(); } },
@@ -2009,7 +2033,7 @@ var PROPS = {
   rug: { b: [-30, -24, 30, 4], f: function (c, K, s) { rugObj(c, K, 0, 0, s); } },
   crate: { b: [-30, -50, 40, 10], f: function (c, K, s) { crate(c, K, 0, 0, 28, s, 0); } },
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
-  workbench: { b: [-22, -32, 24, 4], f: function (c, K, s) { workbenchObj(c, K, 0, 0, s); } },
+  workbench: { b: [-30, -40, 38, 5], f: function (c, K, s) { workbenchObj(c, K, 0, 0, s); } },
   shipwright: { b: [-42, -44, 44, 4], f: function (c, K, s) { shipwrightObj(c, K, 0, 0, s); } },
   shipwright1: { b: [-38, -32, 30, 4], f: function (c, K, s) { shipwright1Obj(c, K, 0, 0, s); } },
   shipwright3: { b: [-54, -90, 54, 6], f: function (c, K, s) { shipwright3Obj(c, K, 0, 0, s); } },

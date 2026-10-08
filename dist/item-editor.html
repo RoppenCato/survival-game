@@ -2216,20 +2216,21 @@ function trollViewD(c, x, y, s, H) {
     lay(2);
     legSide(legF + fwd * 1, ph + Math.PI, true, skin); armSide(shX + fwd * 2, shY, true, skin);
   } else {
-    var dS = back ? -1 : 1, hipY2 = -LEG + bob, topY2 = hipY2 - BH, cx = -tq * BW * 0.15, hx2 = cx + tq * BW * 0.35 + (forest ? tq * 6 : 0), hy2 = forest ? topY2 - HEAD * 0.4 + lean : topY2 + HEAD * 0.75 + lean, hr2 = HEAD, W = forest ? BW : BW * 1.1;
-    function legFront(lx, phi, near, col) { var l = Math.max(0, Math.cos(phi)) * 2.5 * mv, d = Math.sin(phi) * 2 * mv * dS, out = lx < cx ? -1 : 1, kk = ik2(lx, hipY2, lx + out * 1.5, -l + d + (near ? 0 : -3), LEG * 0.49, LEG * 0.49, -out); limbD(c, lx, hipY2, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); blobD(c, [[kk[2] - (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.6 : 5), kk[3] + 2], [kk[2], kk[3] + 2.8], [kk[2] - (forest ? 3.6 : 5), kk[3] + 2]], col); }
+    var dS = back ? -1 : 1, hipY2 = -LEG + bob, topY2 = hipY2 - BH, cx = -tq * BW * 0.15, W = forest ? BW * 1.3 : BW * 1.5, hr2 = forest ? HEAD : HEAD * 0.85, hx2 = cx + tq * BW * 0.3 + (forest ? tq * 6 : 0), hy2 = forest ? topY2 - HEAD * 0.4 + lean : topY2 + hr2 * 0.55 + lean;   // end on the boulder is wide and the head sits on top of it (2026-10-08, Robin: the arms crossed the face)
+    function legFront(lx, phi, near, col) { var l = Math.max(0, Math.cos(phi)) * 2.5 * mv, d = Math.sin(phi) * 2 * mv * dS, out = lx < cx ? -1 : 1, kk = ik2(lx, hipY2, lx + out * 1.0, -l + d + (near ? 0 : -2.5), LEG * 0.49, LEG * 0.49, -out); limbD(c, lx, hipY2, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); blobD(c, [[kk[2] - (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.6 : 5), kk[3] + 2], [kk[2], kk[3] + 2.8], [kk[2] - (forest ? 3.6 : 5), kk[3] + 2]], col); }
     function armFront(sd, sx, sy, near, col) {
       var hxH, hyH, up = false, swinging = sd === 1 && !back && (wind > 0 || slam);
       if (swinging && slam) { var u = sweep, a = -0.63 + u * 4.4; hxH = cx + Math.cos(a) * ARM * 0.8; hyH = sy + 10 - Math.sin(a) * Math.min(ARM * 0.7, 30); up = u < 0.4; }
       else if (swinging) { hxH = sx + sd * 8; hyH = sy - Math.min(ARM * 0.9, 34) * (0.7 + 0.3 * wind); up = true; }
-      else { hxH = sx + sd * (W * 0.5 + (forest ? 7 : 9)) + sd * Math.sin(ph) * 1.5 * mv; hyH = -1 + (near ? 0 : -2); }
-      var kk = ik2(sx, sy, hxH, hyH, ARM * 0.52, ARM * 0.52, -sd);
+      else { hxH = sx + sd * (forest ? 5 : 7) + sd * Math.sin(ph) * 1.5 * mv; hyH = -1 + (near ? 0 : -2); }   // the hand on the ground a little outside the shoulder
+      var reach = Math.hypot(hxH - sx, hyH - sy), seg = up || swinging ? ARM * 0.52 : Math.max(ARM * 0.36, reach * 0.515);   // hanging to the ground the arm is nearly straight: no elbow bowing out
+      var kk = ik2(sx, sy, hxH, hyH, seg, seg, -sd);
       limbD(c, sx, sy, forest ? 4.6 : 8, kk[0], kk[1], forest ? 3.6 : 6.6, col); limbD(c, kk[0], kk[1], forest ? 3.6 : 6.6, kk[2], kk[3], forest ? 2.6 : 5.6, col); c.fillStyle = mixHex(col, '#000000', 0.1); c.beginPath(); c.arc(kk[0], kk[1], forest ? 3.8 : 6, 0, 7); c.fill();
       hand(kk[2], kk[3], 0, col, S, up);
     }
-    var shY2 = forest ? topY2 + 4 : topY2 + 12, shL = cx - W * 0.5 + 3, shR = cx + W * 0.5 - 3;
+    var shY2 = forest ? topY2 + 8 : topY2 + BH * 0.42, shL = cx - (forest ? hr2 + 3 : W * 0.5 - 1), shR = cx + (forest ? hr2 + 3 : W * 0.5 - 1);   // the shoulders at the body's edges, below the head
     lay(0);
-    legFront(cx - (forest ? 5 : 9), ph + Math.PI, false, skinDk); legFront(cx + (forest ? 5 : 9), ph, false, skinDk);
+    legFront(cx - (forest ? 4 : 7) - tq * 3, ph + Math.PI, false, skinDk); legFront(cx + (forest ? 4 : 7) - tq * 3, ph, false, skinDk);
     if (back) { armFront(-1, shL, shY2, false, skinDk); armFront(1, shR, shY2, false, skinDk); }
     if (back) { blobD(c, [[hx2 - hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.9, hy2 - hr2 * 0.6], [hx2 + hr2 * 0.95, hy2 + hr2 * 0.5], [hx2 - hr2 * 0.95, hy2 + hr2 * 0.5]], skin); earsFront(hx2, hy2, hr2); }
     lay(1);
@@ -2245,7 +2246,7 @@ function trollViewD(c, x, y, s, H) {
       if (forest) crown(hx2, hy2, hr2, 1); else hairCap(hx2, hy2, hr2);
     }
     lay(2);
-    legFront(cx - (forest ? 6 : 10), ph, true, skin); legFront(cx + (forest ? 6 : 10), ph + Math.PI, true, skin);
+    legFront(cx - (forest ? 7 : 12) + tq * 2, ph, true, skin); legFront(cx + (forest ? 7 : 12) + tq * 2, ph + Math.PI, true, skin);
     if (!back) { armFront(-1, shL, shY2, true, skin); armFront(1, shR, shY2, true, skin); }
   }
   if (layers) { var lj; for (lj = 0; lj < 3; lj++) inkLayerEnd(cOut, layers[lj], lj, INK_FIG.line, { w: INK_FIG.w * 0.8, grain: INK_FIG.grain, shade: INK_FIG.shade }); c = cOut; }
@@ -2342,12 +2343,12 @@ function quadD(c, x, y, s, H) {
   } else {
     // the front and back views: the body seen end-on, the legs in two pairs, the head over the chest or beyond the rump
     var dS = back ? -1 : 1, W = 14 * bw * (1 + 0.45 * Math.abs(tq)), top2 = -ll - Hb + bob, bot2 = -ll + bob, cx = -tq * W * 0.2, shift = tq * W * 0.42;
-    var legX = W * 0.3, lift = function (phi) { return Math.max(0, Math.cos(phi)) * 2.6 * mv; }, dep = function (phi) { return Math.sin(phi) * 2.0 * mv * dS; };
+    var legX = W * 0.34, legXf = W * 0.17, lift = function (phi) { return Math.max(0, Math.cos(phi)) * 2.6 * mv; }, dep = function (phi) { return Math.sin(phi) * 2.0 * mv * dS; };   // the near pair at the body's edges, the far pair inside them (2026-10-08, Robin: the legs overlapped and clipped)
     // the knee bends outward and the foot stands a little out, so a standing leg is straight and bends only when lifted (2026-10-08, Robin: the legs crossed)
-    function legF(x0, phi, near, col) { var l = lift(phi), d = dep(phi), hy2 = bot2 - Hb * 0.2 + crouch, fy = -l + d + (near ? 0 : -3), out = x0 < cx ? -1 : 1, fx = x0 + out * 1.2 + (near ? 0 : -tq * 2); var kk = ik2(x0, hy2, fx, fy, ll * 0.5 + Hb * 0.1, ll * 0.46, -out); limbD(c, x0, hy2, lw * 1.2, kk[0], kk[1], lw * 0.9, col); limbD(c, kk[0], kk[1], lw * 0.9, kk[2], kk[3], lw * 0.72, col); hoofAt(kk[2], kk[3], 0, shade(col, -0.06)); }
+    function legF(x0, phi, near, col) { var l = lift(phi), d = dep(phi), hy2 = bot2 - Hb * (near ? 0.2 : 0.35) + crouch, fy = -l + d + (near ? 0 : -2.5), out = x0 < cx ? -1 : 1, fx = x0 + out * 0.8, wk = near ? 1 : 0.8; var kk = ik2(x0, hy2, fx, fy, ll * 0.5 + Hb * 0.1, ll * 0.46, -out); limbD(c, x0, hy2, lw * 0.85 * wk, kk[0], kk[1], lw * 0.68 * wk, col); limbD(c, kk[0], kk[1], lw * 0.68 * wk, kk[2], kk[3], lw * 0.55 * wk, col); hoofAt(kk[2], kk[3], 0, shade(col, -0.06)); }   // end on a leg is slim: a column, not the side view's thigh
     lay(0);
-    if (!back) { legF(cx - legX * 1.1 - shift * 0.6, ph, false, bodyD); legF(cx + legX * 1.1 - shift * 0.6, ph + Math.PI, false, bodyD); }
-    else { legF(cx - legX * 0.95 + shift * 0.6, ph + Math.PI, false, bodyD); legF(cx + legX * 0.95 + shift * 0.6, ph, false, bodyD); }
+    if (!back) { legF(cx - legXf - shift * 0.7, ph, false, bodyD); legF(cx + legXf - shift * 0.7, ph + Math.PI, false, bodyD); }
+    else { legF(cx - legXf + shift * 0.7, ph + Math.PI, false, bodyD); legF(cx + legXf + shift * 0.7, ph, false, bodyD); }
     if (back && TL === 3) blobD(c, jagged([[cx - 2, bot2 - Hb * 0.5], [cx + 2, bot2 - Hb * 0.5], [cx + 3 + Math.sin(t * 2) * 1.5, bot2 + 4], [cx - 3 + Math.sin(t * 2) * 1.5, bot2 + 4]], cx, bot2, 1.1, 41), body, true);
     // the head in the back view sits beyond the body, so it goes first
     var hr2 = 4.2 * hd, hx2 = cx + shift + (back ? -shift * 0.4 : 0), hy2 = top2 + (back ? 2 : Hb * 0.35) - nk * up * 0.7 + tell * (T === 1 ? 3 : 1) + (lunge ? 2 : 0);
@@ -2375,8 +2376,8 @@ function quadD(c, x, y, s, H) {
     if (!back) { limbD(c, cx + shift * 0.5, top2 + Hb * 0.3 + crouch * 0.5, 3.2 * bh, hx2, hy2 + 2, 2.6 * hd, body); }
     lay(2);
     if (!back) headF();
-    if (!back) { legF(cx - legX + shift * 0.3, ph + Math.PI, true, body); legF(cx + legX + shift * 0.3, ph, true, body); }
-    else { legF(cx - legX - shift * 0.3, ph, true, body); legF(cx + legX - shift * 0.3, ph + Math.PI, true, body); }
+    if (!back) { legF(cx - legX + shift * 0.25, ph + Math.PI, true, body); legF(cx + legX + shift * 0.25, ph, true, body); }
+    else { legF(cx - legX - shift * 0.25, ph, true, body); legF(cx + legX - shift * 0.25, ph + Math.PI, true, body); }
   }
   if (layers) { var lj; for (lj = 0; lj < 3; lj++) inkLayerEnd(cOut, layers[lj], lj, INK_FIG.line, INK_FIG); c = cOut; }
   c.restore();
@@ -2849,16 +2850,27 @@ function rugObj(c, K, x, y, seed) {
 }
 
 // the workbench: a low trestle bench of thick planks, with a hammer, a saw and a split log on it (about as wide as the hero is tall)
-function workbenchObj(c, K, x, y, seed) {
-  gshadow(c, x + 1, y, 18, 4, 0.35);
-  [[-12, 1], [12, 1]].forEach(function (p, k) { shape(c, rrPts(x + p[0] - 2, y - 13, 4, 14, 1), K.wood, { seed: seed + k, size: 'S', flat: true, rough: 0.2 }); });
-  shape(c, rrPts(x - 12, y - 7, 24, 3, 1), K.wood, { seed: seed + 3, size: 'S', flat: true, rough: 0.2 });
-  shape(c, [[x - 17, y - 14], [x + 15, y - 14], [x + 19, y - 19], [x - 13, y - 19]], K.trunkL, { seed: seed + 4, size: 'S', sh: 1, rough: 0.2 });
-  shape(c, rrPts(x - 17, y - 14, 32, 4.5, 1.2), K.wood, { seed: seed + 5, size: 'S', sh: 1.2, rough: 0.2 });
-  line(c, [[x - 9, y - 18], [x - 4, y - 23]], 1.8, K.wood.base, true);                       // hammer: a haft and an iron head
-  shape(c, rrPts(x - 6.5, y - 26, 6, 3.4, 1), K.iron, { seed: seed + 6, size: 'S', flat: true, rough: 0.1 });
-  shape(c, [[x + 1, y - 18], [x + 11, y - 18.6], [x + 10, y - 21], [x + 2, y - 20.4]], K.ironLight, { seed: seed + 7, size: 'S', flat: true, rough: 0.1 });   // saw blade
-  shape(c, ellPts(x + 12, y - 20, 3.2, 2.2, 10), K.trunkL, { seed: seed + 8, size: 'S', sh: 0.8, rough: 0.15 });   // a split log
+function workbenchObj(c, K, x, y, seed) {                // a joiner's bench (2026-10-08, redrawn): a thick planed slab on two splayed trestles with a stretcher,
+  var k;                                                 // an adze, a mallet and chisels on it, a plank leaning against a leg, shavings on the floor
+  gshadow(c, x + 2, y + 1, 30, 5, 0.35);
+  [[-18, 1], [14, 1]].forEach(function (p, i) {                                                                                   // the trestles
+    var tx = x + p[0];
+    line(c, [[tx - 7, y], [tx - 1, y - 17]], 3.2, K.wood.base, true); line(c, [[tx + 7, y], [tx + 1, y - 17]], 3.2, K.wood.base, true);
+    line(c, [[tx - 4.5, y - 8], [tx + 4.5, y - 8]], 2.4, K.wood.shade, true);
+  });
+  line(c, [[x - 18, y - 9], [x + 14, y - 9]], 2, K.wood.shade, true);                                                            // the stretcher between them
+  shape(c, [[x + 27, y - 24], [x + 32, y - 29], [x + 32, y - 23], [x + 27, y - 18]], K.wallDark, { seed: seed + 1, size: 'S', flat: true, rough: 0.25 });   // the slab's end grain
+  for (k = 0; k < 3; k++) line(c, [[x + 28, y - 23.5 + k * 1.6], [x + 31, y - 26.5 + k * 1.6]], 0.5, 'rgba(35,26,22,0.3)', false);
+  shape(c, [[x - 27, y - 24], [x - 22, y - 29], [x + 32, y - 29], [x + 27, y - 24]], K.trunkL, { seed: seed + 2, size: 'M', sh: 1, rough: 0.2 });          // the planed top
+  for (k = 0; k < 4; k++) line(c, [[x - 20 + k * 12, y - 28], [x + 24 - (3 - k) * 12 + 2, y - 25]], 0.5, 'rgba(35,26,22,0.18)', false);
+  shape(c, rrPts(x - 27, y - 24, 54, 6, 1), K.wood, { seed: seed + 3, size: 'M', sh: 1.3, rough: 0.25 });                                                 // the slab's front
+  line(c, [[x - 23, y - 21], [x + 23, y - 20.6]], 0.6, 'rgba(255,238,200,0.2)', false);
+  line(c, [[x - 22, y - 26.5], [x - 8, y - 31]], 2, K.wood.base, true); shape(c, [[x - 9, y - 32.5], [x - 3, y - 31], [x - 2, y - 28.5], [x - 7, y - 29.5]], K.iron, { seed: seed + 4, size: 'S', flat: true, rough: 0.15 });   // the adze
+  line(c, [[x + 6, y - 26], [x + 6, y - 32]], 1.8, K.wood.base, true); shape(c, rrPts(x + 2, y - 36, 8, 4.2, 1.5), K.trunk, { seed: seed + 5, size: 'S', sh: 1, rough: 0.25 });   // the mallet, head up
+  [[12, 0], [16, 0.8]].forEach(function (p, i) { line(c, [[x + p[0], y - 26 - p[1]], [x + p[0] + 8, y - 27.5 - p[1]]], 1.4, K.wood.base, true); line(c, [[x + p[0] + 8, y - 27.5 - p[1]], [x + p[0] + 12, y - 28.2 - p[1]]], 1, K.ironLight.base, false); });   // two chisels
+  shape(c, [[x + 22, y], [x + 32, y - 16], [x + 35, y - 15], [x + 25, y + 1]], K.trunkL, { seed: seed + 6, size: 'S', sh: 0.8, rough: 0.2 });                // a plank leaning on the leg
+  c.strokeStyle = K.trunkL.base; c.lineWidth = 0.9; c.lineCap = 'round';                                                                                  // shavings
+  [[-10, 1], [-2, 2.5], [6, 1.5], [-16, 3]].forEach(function (p, i) { c.beginPath(); c.moveTo(x + p[0], y + p[1]); c.quadraticCurveTo(x + p[0] + 2, y + p[1] - 3.5, x + p[0] + 4.5, y + p[1] - 0.5); c.quadraticCurveTo(x + p[0] + 5.5, y + p[1] + 1.5, x + p[0] + 3, y + p[1] + 1); c.stroke(); });
 }
 
 // the shipwright's bench: two trestles carrying a keel timber with its upturned stem, and the first ribs standing on it
@@ -3443,13 +3455,26 @@ function cliffObj(c, K, x, y, seed) {
 
 
 /* ---------------- Factory rooms and Commons landmarks ---------------- */
-function bedObj(c, K, x, y, seed) {
-  gshadow(c, x, y, 26, 5, 0.35);
-  [[-20, 0], [20, 0]].forEach(function (p, k) { shape(c, rrPts(x + p[0] - 2.5, y - 8, 5, 10, 1.5), K.iron, { seed: seed + k, size: 'S', rough: 0.2 }); });
-  shape(c, rrPts(x - 24, y - 16, 48, 12, 3), K.iron, { seed: seed + 2, size: 'M', sh: 2, rough: 0.2 });
-  shape(c, rrPts(x - 22, y - 22, 44, 9, 4), M(mixHue(P.factoryHue, 200, 0.4), 34, 52), { seed: seed + 3, size: 'S', sh: 1.5, rough: 0.2 });
-  shape(c, rrPts(x - 22, y - 26, 14, 8, 4), M(48, 25, 80), { seed: seed + 4, size: 'S', sh: 1, rough: 0.2 });
+function bedObj(c, K, x, y, seed) {                      // a Viking box bed (2026-10-08, redrawn: the old one was an iron bedstead): a plank box with
+  var straw = M(40, 48, 64), wool = M(8, 46, 38), cream = M(42, 32, 84), fleece = M(40, 22, 88), k;   // knobbed corner posts, a straw mattress, a red wool blanket, a fleece at the head
+  gshadow(c, x + 4, y + 1, 38, 6, 0.35);
+  shape(c, [[x + 30, y - 13], [x + 39, y - 19], [x + 39, y - 7], [x + 30, y]], K.wallDark, { seed: seed + 1, size: 'M', flat: true, rough: 0.25 });             // the foot end, receding
+  shape(c, rrPts(x - 30, y - 13, 60, 13, 1.2), K.wood, { seed: seed, size: 'M', sh: 1.2, rough: 0.25 });                                                      // the front board
+  line(c, [[x - 27, y - 6.5], [x + 27, y - 6.8]], 0.7, 'rgba(35,26,22,0.35)', false);                                                                       // two planks
+  for (k = 0; k < 4; k++) line(c, [[x - 26 + k * 14, y - 11], [x - 14 + k * 14, y - 10.4]], 0.5, 'rgba(255,238,200,0.18)', false);
+  shape(c, [[x - 30, y - 13], [x - 22, y - 19], [x + 39, y - 19], [x + 30, y - 13]], straw, { seed: seed + 2, size: 'M', sh: 1, rough: 0.35 });               // the straw mattress inside the box
+  for (k = 0; k < 9; k++) line(c, [[x - 24 + k * 6, y - 13.5], [x - 25.5 + k * 6 + (k % 2), y - 10.5 - (k % 3)]], 0.7, straw.shade, false);                  // straw hanging over the front rim
+  shape(c, [[x - 6, y - 14], [x - 1, y - 19.5], [x + 38, y - 19.5], [x + 29.5, y - 13.5], [x + 29, y - 9], [x - 6, y - 9]], wool, { seed: seed + 3, size: 'M', sh: 1.3, rough: 0.35 });   // the blanket, hanging a little over the rim
+  shape(c, [[x - 6, y - 14], [x - 1, y - 19.5], [x + 4, y - 19.5], [x - 1, y - 14], [x - 1, y - 9], [x - 6, y - 9]], cream, { seed: seed + 4, size: 'S', flat: true, rough: 0.3 });   // the folded hem, cream
+  line(c, [[x + 9, y - 19], [x + 4, y - 9.5]], 1.4, cream.base, false); line(c, [[x + 22, y - 19], [x + 17, y - 9.5]], 1.4, cream.base, false);                 // two woven stripes
+  shape(c, jaggedPts(x - 15, y - 21, 11, 5, seed + 5), fleece, { seed: seed + 5, size: 'S', sh: 0.8, rough: 0.5 });                                           // the fleece at the head
+  [[-30, 0, 26], [-22, -6, 30], [30, 0, 22], [39, -6, 26]].forEach(function (p, i) {                                                                        // the posts: the head's taller, each with a knob
+    var px = x + p[0], py = y + p[1], h = p[2];
+    shape(c, rrPts(px - 2, py - h, 4, h, 1), K.wood, { seed: seed + 10 + i, size: 'S', sh: 1, rough: 0.2 });
+    shape(c, ellPts(px, py - h - 1.5, 2.6, 2.2, 10), K.wood, { seed: seed + 20 + i, size: 'S', sh: 1.2, rough: 0.2 });
+  });
 }
+function jaggedPts(cx, cy, rx, ry, seed) { var R = rng(seed), pts = [], i; for (i = 0; i < 12; i++) { var a = i / 12 * 6.283, r = 1 + (R() - 0.5) * 0.35; pts.push([cx + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r]); } return pts; }
 function rubbleObj(c, K, x, y, seed) {
   var R = rng(seed), i;
   gshadow(c, x, y, 26, 6, 0.4);
@@ -4515,7 +4540,7 @@ var PROPS = {
   emberRock: { b: [-34, -50, 34, 10], f: function (c, K, s) { emberRock(c, K, 0, 0, 16, s); } },
   emberBush: { b: [-34, -60, 34, 10], f: function (c, K, s) { emberBush(c, K, 0, 0, 22, s); } },
   cliff: { b: [-48, -64, 52, 12], f: function (c, K, s) { cliffObj(c, K, 0, 0, s); } },
-  bed: { b: [-25, -30, 25, 8], f: function (c, K, s) { c.save(); c.scale(0.8, 0.8); bedObj(c, K, 0, 0, s); c.restore(); } },
+  bed: { b: [-30, -36, 36, 8], f: function (c, K, s) { c.save(); c.scale(0.8, 0.8); bedObj(c, K, 0, 0, s); c.restore(); } },
   rubble: { b: [-34, -34, 34, 10], f: function (c, K, s) { rubbleObj(c, K, 0, 0, s); } },
   bench: { b: [-30, -44, 30, 8], f: function (c, K, s) { benchObj(c, K, 0, 0, s); } },
   well: { b: [-24, -58, 24, 7], f: function (c, K, s) { c.save(); c.scale(0.75, 0.75); wellObj(c, K, 0, 0, s); c.restore(); } },
@@ -4578,7 +4603,7 @@ var PROPS = {
   rug: { b: [-30, -24, 30, 4], f: function (c, K, s) { rugObj(c, K, 0, 0, s); } },
   crate: { b: [-30, -50, 40, 10], f: function (c, K, s) { crate(c, K, 0, 0, 28, s, 0); } },
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
-  workbench: { b: [-22, -32, 24, 4], f: function (c, K, s) { workbenchObj(c, K, 0, 0, s); } },
+  workbench: { b: [-30, -40, 38, 5], f: function (c, K, s) { workbenchObj(c, K, 0, 0, s); } },
   shipwright: { b: [-42, -44, 44, 4], f: function (c, K, s) { shipwrightObj(c, K, 0, 0, s); } },
   shipwright1: { b: [-38, -32, 30, 4], f: function (c, K, s) { shipwright1Obj(c, K, 0, 0, s); } },
   shipwright3: { b: [-54, -90, 54, 6], f: function (c, K, s) { shipwright3Obj(c, K, 0, 0, s); } },
