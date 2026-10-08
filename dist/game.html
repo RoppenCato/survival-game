@@ -2186,7 +2186,7 @@ function trollViewD(c, x, y, s, H) {
     legSide(legF + fwd * 1, ph + Math.PI, true, skin); armSide(shX + fwd * 2, shY, true, skin);
   } else {
     var dS = back ? -1 : 1, hipY2 = -LEG + bob, topY2 = hipY2 - BH, cx = -tq * BW * 0.15, hx2 = cx + tq * BW * 0.35 + (forest ? tq * 6 : 0), hy2 = forest ? topY2 - HEAD * 0.4 + lean : topY2 + HEAD * 0.75 + lean, hr2 = HEAD, W = forest ? BW : BW * 1.1;
-    function legFront(lx, phi, near, col) { var l = Math.max(0, Math.cos(phi)) * 2.5 * mv, d = Math.sin(phi) * 2 * mv * dS, kk = ik2(lx, hipY2, lx + (lx < cx ? -1 : 1) * 0.5, -l + d + (near ? 0 : -3), LEG * 0.55, LEG * 0.55, lx < cx ? -1 : 1); limbD(c, lx, hipY2, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); blobD(c, [[kk[2] - (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.6 : 5), kk[3] + 2], [kk[2], kk[3] + 2.8], [kk[2] - (forest ? 3.6 : 5), kk[3] + 2]], col); }
+    function legFront(lx, phi, near, col) { var l = Math.max(0, Math.cos(phi)) * 2.5 * mv, d = Math.sin(phi) * 2 * mv * dS, out = lx < cx ? -1 : 1, kk = ik2(lx, hipY2, lx + out * 1.5, -l + d + (near ? 0 : -3), LEG * 0.49, LEG * 0.49, -out); limbD(c, lx, hipY2, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); blobD(c, [[kk[2] - (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.6 : 5), kk[3] + 2], [kk[2], kk[3] + 2.8], [kk[2] - (forest ? 3.6 : 5), kk[3] + 2]], col); }
     function armFront(sd, sx, sy, near, col) {
       var hxH, hyH, up = false, swinging = sd === 1 && !back && (wind > 0 || slam);
       if (swinging && slam) { var u = sweep, a = -0.63 + u * 4.4; hxH = cx + Math.cos(a) * ARM * 0.8; hyH = sy + 10 - Math.sin(a) * Math.min(ARM * 0.7, 30); up = u < 0.4; }
@@ -2312,7 +2312,8 @@ function quadD(c, x, y, s, H) {
     // the front and back views: the body seen end-on, the legs in two pairs, the head over the chest or beyond the rump
     var dS = back ? -1 : 1, W = 14 * bw * (1 + 0.45 * Math.abs(tq)), top2 = -ll - Hb + bob, bot2 = -ll + bob, cx = -tq * W * 0.2, shift = tq * W * 0.42;
     var legX = W * 0.3, lift = function (phi) { return Math.max(0, Math.cos(phi)) * 2.6 * mv; }, dep = function (phi) { return Math.sin(phi) * 2.0 * mv * dS; };
-    function legF(x0, phi, near, col) { var l = lift(phi), d = dep(phi), hy2 = bot2 - Hb * 0.2 + crouch, fy = -l + d + (near ? 0 : -3), fx = x0 + (near ? 0 : -tq * 2); var kk = ik2(x0, hy2, fx, fy, ll * 0.6 + Hb * 0.2, ll * 0.5, x0 < cx ? -1 : 1); limbD(c, x0, hy2, lw * 1.2, kk[0], kk[1], lw * 0.9, col); limbD(c, kk[0], kk[1], lw * 0.9, kk[2], kk[3], lw * 0.72, col); hoofAt(kk[2], kk[3], 0, shade(col, -0.06)); }
+    // the knee bends outward and the foot stands a little out, so a standing leg is straight and bends only when lifted (2026-10-08, Robin: the legs crossed)
+    function legF(x0, phi, near, col) { var l = lift(phi), d = dep(phi), hy2 = bot2 - Hb * 0.2 + crouch, fy = -l + d + (near ? 0 : -3), out = x0 < cx ? -1 : 1, fx = x0 + out * 1.2 + (near ? 0 : -tq * 2); var kk = ik2(x0, hy2, fx, fy, ll * 0.5 + Hb * 0.1, ll * 0.46, -out); limbD(c, x0, hy2, lw * 1.2, kk[0], kk[1], lw * 0.9, col); limbD(c, kk[0], kk[1], lw * 0.9, kk[2], kk[3], lw * 0.72, col); hoofAt(kk[2], kk[3], 0, shade(col, -0.06)); }
     lay(0);
     if (!back) { legF(cx - legX * 1.1 - shift * 0.6, ph, false, bodyD); legF(cx + legX * 1.1 - shift * 0.6, ph + Math.PI, false, bodyD); }
     else { legF(cx - legX * 0.95 + shift * 0.6, ph + Math.PI, false, bodyD); legF(cx + legX * 0.95 + shift * 0.6, ph, false, bodyD); }
@@ -9254,6 +9255,19 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function costOf(e) { var p = pieceFor(e.t, e.m) || pieceFor(e.t, 0); return p ? p.cost : { wood: 2 }; }     // what an edge piece gave for, to give back
   function costOfFloor(m) { var p = pieceFor('floor', m || 0); return p ? p.cost : { wood: 1 }; }
   function costOfItem(name) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].prop === name) return PIECES[i].cost; return {}; }
+  // Roofs are cached (2026-10-08: ninety roofs drawn from scratch every frame made the world crawl): each room's roof is drawn once
+  // into its own canvas at twice the world scale and blitted with the fade's alpha; the cache empties when the rooms are rebuilt.
+  var roofCache = {};
+  function roofBox(r) { var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; r.tiles.forEach(function (t) { x0 = Math.min(x0, t[0]); y0 = Math.min(y0, t[1]); x1 = Math.max(x1, t[0]); y1 = Math.max(y1, t[1]); }); return { x0: x0, y0: y0, x1: x1, y1: y1 }; }
+  function roofSprite(r, cfg) {
+    var key = r.id + ':' + r.tiles.length + ':' + cfg.roof + ':' + cfg.wallM, sp = roofCache[key]; if (sp) return sp;
+    var bb = roofBox(r), ov = Build.CFG.overhang + 1.5, left = bb.x0 * T - ov - 6, right = (bb.x1 + 1) * T + ov + 6, top = bb.y0 * TS - UP - ov * K - 52, bottom = (bb.y1 + 1) * TS - UP + ov * K + 14;
+    var w2 = Math.ceil(right - left), h2 = Math.ceil(bottom - top), cv = document.createElement('canvas'); cv.width = w2 * 2; cv.height = h2 * 2;
+    var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -left * 2, -top * 2); c2.lineCap = 'round'; c2.lineJoin = 'round'; Build.drawRoof(c2, r, 1, cfg, 0);
+    sp = roofCache[key] = { cv: cv, x: left, y: top, w: w2, h: h2 }; return sp;
+  }
+  function drawRoofCached(c, r, a, cfg, dy) { if (a <= 0.01) return; var sp = roofSprite(r, cfg); c.save(); c.globalAlpha *= a; c.drawImage(sp.cv, sp.x, sp.y + (dy || 0), sp.w, sp.h); c.restore(); }
+  function roofInView(r, hw, hh) { var bb = roofBox(r); return !((bb.x1 + 1) * T < cam.x - hw - 60 || bb.x0 * T > cam.x + hw + 60 || (bb.y1 + 1) * TS < cam.y - hh - 120 || bb.y0 * TS > cam.y + hh + 60); }
   function roofCfg(r, L) { var BB = Bl(L || 0); if (!BB.roofs || BB.roofs[r.id] == null) return BCFG; var m = Build.roomWallM(BB, r), ck = BB.roofs[r.id] + ':' + m, c = roofCfgs[ck]; if (!c) c = roofCfgs[ck] = Build.cfg({ roof: BB.roofs[r.id], wallM: m }); return c; }   // the gable end in the room's own wall material
   var roofCfgs = {};
   // a workbench works only with a roof over it: the first thing a house is for
@@ -9676,6 +9690,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     bDirty = false; ensureB();
     roomInfo = roomsOf(B);
     var k, p, auto = {};
+    roofCache = {};
     roomInfo.rooms.forEach(function (r) { if (roofA[r.id] == null) roofA[r.id] = 1; r.up = false; r.tiles.forEach(function (t) { if (B.stairs[Build.key(t[0], t[1])]) r.up = true; }); });
     // the stairs lay the floor above their room: its tiles become the upper floor (auto), and old auto tiles with no stairs below go
     for (k in B.up.auto) { delete B.up.floors[k]; } B.up.auto = {};
@@ -11968,7 +11983,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     B.items.forEach(function (it) { if (!it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return; var s = sprite(it.name, 0); add(Math.floor(it.x / T), Math.floor(it.y / T), it.name === 'rug' ? it.y - 300 : it.y, lifted(function () { drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); })); });
     if (roomInfo1) roomInfo1.rooms.forEach(function (r, ri) {
       var target = here1 === ri ? BCFG.seeThrough : 1; roofA1[r.id] += (target - roofA1[r.id]) * 0.18; var t0 = r.tiles[0];
-      add(t0[0], t0[1], (r.maxY + 1) * T + 1, function () { Build.drawRoof(ctx, r, roofA1[r.id], roofCfg(r, 1), -UP); });
+      if (!roofInView(r, hw, hh)) return;
+      add(t0[0], t0[1], (r.maxY + 1) * T + 1, function () { drawRoofCached(ctx, r, roofA1[r.id], roofCfg(r, 1), -UP); });
       var keep = sceneItems; sceneItems = []; chimneys(r, 1, (r.maxY + 1) * T + 2, roofA1[r.id], -UP); sceneItems.forEach(function (ci) { add(t0[0], t0[1], ci.y, ci.f); }); sceneItems = keep;
     });
     if (L) { list.forEach(function (li) { items.push(li); }); return; }
@@ -12071,7 +12087,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
         if (r.up) return;                               // a room with stairs has the floor above instead of a roof
         var target = here === ri && !L ? BCFG.seeThrough : 1;
         roofA[r.id] += (target - roofA[r.id]) * 0.18;
-        items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(ctx, r, roofA[r.id], roofCfg(r)); } });
+        if (!roofInView(r, hw, hh)) return;              // only the roofs in view are drawn, from the cache
+        items.push({ y: (r.maxY + 1) * T + 1, f: function () { drawRoofCached(ctx, r, roofA[r.id], roofCfg(r), 0); } });
         sceneItems = items; chimneys(r, 0, (r.maxY + 1) * T + 2, roofA[r.id], 0);
       });
       sceneItems = items; upperFloor(items, L, here, hw, hh);
@@ -12119,7 +12136,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       })();
       drawWorkBars(c);
       var rsn = ring && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;
-      var cvN = !ringOpen && carverNear(P) && P.mode !== 'build', bdN = bodyNear(P), hdN = !bdN && hoardNear(P), fuN = !!furnaceAt(P), clN = !fuN && clampNear(P), frN = !fuN && !clN && ringNear(P);   // a stone read once needs no prompt
+      var cvN = !ringOpen && carverNear(P) && P.mode !== 'build', bdN = bodyNear(P), hdN = !bdN && hoardNear(P), fuN = !!furnaceAt(P), clN = !fuN && clampNear(P) && clampPrompt(clampNear(P)) ? clampNear(P) : null, frN = !fuN && !clN && ringNear(P);   // a stone read once needs no prompt
       var stP = stoneNearH(P), asP = !stP && followerNear(P) && workplaceNear(P), hmP = !stP && !asP && hirdNear(P), ydP = !stP && !asP && !hmP && yardUsable(), bnP = !stP && !asP && !hmP && !ydP && !nearHearth(P) && !rsn && benchNear(P), bedP = !nearHearth(P) && !rsn && !bnP && bedNear(P), seatP = sitting || (!stP && !asP && !hmP && !ydP && !rsn && seatFirst(P)) || (!nearHearth(P) && !rsn && !bnP && !bedP && seatNear(P)), crP = !nearHearth(P) && !rsn && !bedP && !seatP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && ((nearNpc(P) && !(npc.sayT > 0)) || (folkNear(P) && !(folkNear(P).sayT > 0))), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P);
       if ((carrying || heavyNear(P) || cargoHome() || stP || asP || hmP || ydP || nearHearth(P) || rsn || bnP || bedP || seatP || crP || npcP || rkP || rfP || cvP || bbP || cvN || bdN || hdN || fuN || clN || frN) && !invOpen && P.mode !== 'build' && !menu && !ringOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
         var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, hvN = !carrying && heavyNear(P), pt = carrying ? (raftUsable() && !raft.aboard ? 'Stow it aboard' : 'Put it down') : (cargoHome() && raftUsable() && !raft.aboard) ? 'Unload the silver' : hvN ? (hvN.locked ? 'Locked: break it open' : 'Lift the chest') : bdN ? 'Take the arm ring' : hdN ? 'Take from the hoard' : cvN ? 'Cut runes' : fuN ? 'Smelt' : clN ? clampPrompt(clN) : frN ? 'Take the charcoal' : stP ? (stP.fallen ? 'Raise the stone (6 stone)' : 'Muster') : asP ? (HD.jobs[jobOf(workplaceNear(P))].name + ': ' + followerNear(P).name) : hmP ? (hmP.follow ? 'Stay' : (hmP === npc && !seen.raft ? 'Talk' : 'Follow me')) : ydP ? 'Lay a hull' : bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : (raft.kind === 'boat' ? 'Board the boat' : 'Board the raft')) : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : seatP ? (sitting ? 'Stand up' : 'Sit') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';

@@ -2149,7 +2149,7 @@ function trollViewD(c, x, y, s, H) {
     legSide(legF + fwd * 1, ph + Math.PI, true, skin); armSide(shX + fwd * 2, shY, true, skin);
   } else {
     var dS = back ? -1 : 1, hipY2 = -LEG + bob, topY2 = hipY2 - BH, cx = -tq * BW * 0.15, hx2 = cx + tq * BW * 0.35 + (forest ? tq * 6 : 0), hy2 = forest ? topY2 - HEAD * 0.4 + lean : topY2 + HEAD * 0.75 + lean, hr2 = HEAD, W = forest ? BW : BW * 1.1;
-    function legFront(lx, phi, near, col) { var l = Math.max(0, Math.cos(phi)) * 2.5 * mv, d = Math.sin(phi) * 2 * mv * dS, kk = ik2(lx, hipY2, lx + (lx < cx ? -1 : 1) * 0.5, -l + d + (near ? 0 : -3), LEG * 0.55, LEG * 0.55, lx < cx ? -1 : 1); limbD(c, lx, hipY2, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); blobD(c, [[kk[2] - (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.6 : 5), kk[3] + 2], [kk[2], kk[3] + 2.8], [kk[2] - (forest ? 3.6 : 5), kk[3] + 2]], col); }
+    function legFront(lx, phi, near, col) { var l = Math.max(0, Math.cos(phi)) * 2.5 * mv, d = Math.sin(phi) * 2 * mv * dS, out = lx < cx ? -1 : 1, kk = ik2(lx, hipY2, lx + out * 1.5, -l + d + (near ? 0 : -3), LEG * 0.49, LEG * 0.49, -out); limbD(c, lx, hipY2, forest ? 4.4 : 6.5, kk[0], kk[1], forest ? 3.4 : 5.5, col); limbD(c, kk[0], kk[1], forest ? 3.4 : 5.5, kk[2], kk[3], forest ? 2.8 : 4.8, col); blobD(c, [[kk[2] - (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.2 : 4.5), kk[3] - 1], [kk[2] + (forest ? 3.6 : 5), kk[3] + 2], [kk[2], kk[3] + 2.8], [kk[2] - (forest ? 3.6 : 5), kk[3] + 2]], col); }
     function armFront(sd, sx, sy, near, col) {
       var hxH, hyH, up = false, swinging = sd === 1 && !back && (wind > 0 || slam);
       if (swinging && slam) { var u = sweep, a = -0.63 + u * 4.4; hxH = cx + Math.cos(a) * ARM * 0.8; hyH = sy + 10 - Math.sin(a) * Math.min(ARM * 0.7, 30); up = u < 0.4; }
@@ -2275,7 +2275,8 @@ function quadD(c, x, y, s, H) {
     // the front and back views: the body seen end-on, the legs in two pairs, the head over the chest or beyond the rump
     var dS = back ? -1 : 1, W = 14 * bw * (1 + 0.45 * Math.abs(tq)), top2 = -ll - Hb + bob, bot2 = -ll + bob, cx = -tq * W * 0.2, shift = tq * W * 0.42;
     var legX = W * 0.3, lift = function (phi) { return Math.max(0, Math.cos(phi)) * 2.6 * mv; }, dep = function (phi) { return Math.sin(phi) * 2.0 * mv * dS; };
-    function legF(x0, phi, near, col) { var l = lift(phi), d = dep(phi), hy2 = bot2 - Hb * 0.2 + crouch, fy = -l + d + (near ? 0 : -3), fx = x0 + (near ? 0 : -tq * 2); var kk = ik2(x0, hy2, fx, fy, ll * 0.6 + Hb * 0.2, ll * 0.5, x0 < cx ? -1 : 1); limbD(c, x0, hy2, lw * 1.2, kk[0], kk[1], lw * 0.9, col); limbD(c, kk[0], kk[1], lw * 0.9, kk[2], kk[3], lw * 0.72, col); hoofAt(kk[2], kk[3], 0, shade(col, -0.06)); }
+    // the knee bends outward and the foot stands a little out, so a standing leg is straight and bends only when lifted (2026-10-08, Robin: the legs crossed)
+    function legF(x0, phi, near, col) { var l = lift(phi), d = dep(phi), hy2 = bot2 - Hb * 0.2 + crouch, fy = -l + d + (near ? 0 : -3), out = x0 < cx ? -1 : 1, fx = x0 + out * 1.2 + (near ? 0 : -tq * 2); var kk = ik2(x0, hy2, fx, fy, ll * 0.5 + Hb * 0.1, ll * 0.46, -out); limbD(c, x0, hy2, lw * 1.2, kk[0], kk[1], lw * 0.9, col); limbD(c, kk[0], kk[1], lw * 0.9, kk[2], kk[3], lw * 0.72, col); hoofAt(kk[2], kk[3], 0, shade(col, -0.06)); }
     lay(0);
     if (!back) { legF(cx - legX * 1.1 - shift * 0.6, ph, false, bodyD); legF(cx + legX * 1.1 - shift * 0.6, ph + Math.PI, false, bodyD); }
     else { legF(cx - legX * 0.95 + shift * 0.6, ph + Math.PI, false, bodyD); legF(cx + legX * 0.95 + shift * 0.6, ph, false, bodyD); }
