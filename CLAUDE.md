@@ -899,7 +899,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   **Robin's first log (2026-10-08):** standing still at 1800 by 1125 the frame's CPU work was 3.5 ms but the game ran at 47 fps, so the
   cost is on the **GPU** (the drawing queued by canvas 2D); the log line now carries `gpu Nms` (once a second the canvas is read back
   with `getImageData`, which waits for the GPU to finish the frame; the readout shows it too) and the Admin board has **Lower
-  resolution** (`ADMIN.lowres`: `fitCanvas` caps the pixel scale at 3; the props are baked at 2 a unit anyway) to try against it.
+  resolution** (then `ADMIN.lowres`, now the default: see the third log below) to try against it.
   `PERF.skip` (ground, waves, grass, grain, night, things) turns layers off for measuring (`Combat.api.debug().perf.skip`). The
   browser pane renders in software, so its numbers only compare layers; they say nothing about Robin's GPU.
   **Robin's second log (2026-10-08):** at 1800 by 1125 the GPU wait was 25 to 60 ms and the game sat at the edge of 60 fps (47 to 60,
@@ -910,6 +910,14 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   bakes one piece a call and a stale one no sooner than 60 ms after the last, so a brush stroke no longer bakes every touched piece
   at once); and the Admin board's **"Run the layer test"** (`PERF_TESTS`, `perfTestTick`: twelve seconds, each layer off in turn
   with the GPU read back every frame, `layertest` lines in the log) says what each layer costs on Robin's card.
+  **Robin's third log (2026-10-08): never read the canvas back.** The test's per-frame `getImageData` made Chrome drop the game's
+  canvas to software rendering for good (3 fps until reload; Chrome does this after a few readbacks), so there are **no readbacks
+  anywhere now** (the `gpu` number is gone): the layer test draws the frame four times over instead (`PERF_K`), so the fps falls
+  under 60 and the drawing's cost shows (a `layertest` line gives the ms a render and the share on the card). What the readable part
+  said: at the steading (168 things drawn) the card was at about 28 ms a frame and the grass about 6 of them. Done for it:
+  **3 pixels a unit is the default** (`fitCanvas` caps the pixel scale at 3; Admin **Full resolution** (`ADMIN.fullres`) allows 5;
+  the props are baked at 2 a unit anyway) and **baked sprites are trimmed to their drawn pixels** (`trimSprite` in `src/stylelab.js`
+  at the end of `bakeProp`, `opts.noTrim` to keep the box; l, t, w, h move with the cut) so the card paints no transparent margins.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
 - **Villages across the islands (2026-10-07, Robin: lots of islands, lots of places):** the world has **six islands** (`spec.sizes`
   60, 230, 150, 110, 170, 90 tiles; `World.make` takes `sizes`; `layoutKey` includes them, so older saves start fresh; `onOtherIsland`

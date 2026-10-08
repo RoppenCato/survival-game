@@ -4505,7 +4505,22 @@ function bakeProp(name, seed, opts) {
   lights.length = 0; def.f(c, mats(), seed);
   var L = lights.map(function (l) { return { x: l.x * sx, y: l.y * sy, r: l.r * Math.max(sx, sy), h: l.h, s: l.s, l: l.l, a: l.a }; });
   if (sv) { P.bright = sv.b; P.sat = sv.s; P.noShadow = sv.ns; P.outsideHue = sv.oh; P.factoryHue = sv.fh; }
-  return { cv: cv, l: b[0] * sx, t: b[1] * sy, w: w * sx, h: h * sy, lights: L };
+  var out = { cv: cv, l: b[0] * sx, t: b[1] * sy, w: w * sx, h: h * sy, lights: L };
+  if (!opts.noTrim) trimSprite(out, 2 * sx, 2 * sy);
+  return out;
+}
+// The sprite's canvas cut down to the pixels actually drawn (2026-10-08, the lag): a prop's box is generous, and the graphics card
+// pays for every pixel of a texture it draws, transparent or not. l, t, w, h move with the cut, so the sprite lands where it did.
+function trimSprite(sp, kx, ky) {
+  try {
+    var cv = sp.cv, W = cv.width, H = cv.height, d = cv.getContext('2d').getImageData(0, 0, W, H).data, x0 = W, y0 = H, x1 = -1, y1 = -1, x, y, i;
+    for (y = 0; y < H; y++) { var row = y * W * 4 + 3, any = false; for (x = 0; x < W; x++) if (d[row + x * 4] > 2) { any = true; if (x < x0) x0 = x; if (x > x1) x1 = x; } if (any) { if (y < y0) y0 = y; y1 = y; } }
+    if (x1 < 0) return;
+    x0 = Math.max(0, x0 - 2); y0 = Math.max(0, y0 - 2); x1 = Math.min(W - 1, x1 + 2); y1 = Math.min(H - 1, y1 + 2);
+    var nw = x1 - x0 + 1, nh = y1 - y0 + 1; if (nw * nh > W * H * 0.9) return;
+    var cv2 = mk(nw, nh); cv2.getContext('2d').drawImage(cv, x0, y0, nw, nh, 0, 0, nw, nh);
+    sp.cv = cv2; sp.l += x0 / kx; sp.t += y0 / ky; sp.w = nw / kx; sp.h = nh / ky;
+  } catch (e) {}
 }
 
 
