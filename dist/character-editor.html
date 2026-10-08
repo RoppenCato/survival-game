@@ -101,9 +101,6 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <h2>Heroes</h2>
         <div class="group" id="heroes"></div>
         <p class="desc" id="heronote">Three heroes drawn from scratch on the ink figure (2026-10-07). Pick one, change anything below, then "Use as the hero in the game".</p>
-        <h2 class="more">Figure</h2>
-        <div class="group" id="figures"></div>
-        <p class="desc">The ink figure is the new drawing; the old figure is the rounded trial figure before it, kept for comparison. Both take the same styles, builds and colours.</p>
         <h2 class="more">Concepts</h2>
         <div class="group" id="concepts"></div>
         <p class="desc" id="conceptnote">Whole looks for the people of this world. Pick one, then change it below.</p>
@@ -6588,7 +6585,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
     for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
     for (i = 0; i < TOGGLES.length; i++) toggleBtn[TOGGLES[i].k].setAttribute('aria-pressed', spec[TOGGLES[i].k] ? 'true' : 'false');
-    document.getElementById('fig1').setAttribute('aria-pressed', spec.figure >= 1 ? 'true' : 'false'); document.getElementById('fig0').setAttribute('aria-pressed', spec.figure >= 1 ? 'false' : 'true');
+    spec.figure = 1;                                       // the ink figure is the figure (the old rounded one is gone from the page, 2026-10-08)
     choice('eyewear', spec.eyewear); choice('attacks', spec.atkStyle); choice('hairs', spec.hair); choice('beards', spec.beard); choice('hats', spec.hat); choice('clothes', spec.clothes);
     document.getElementById('atkdesc').textContent = ATTACKS[spec.atkStyle][1];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
@@ -6671,14 +6668,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     b.addEventListener('click', function () { spec = lib.heroSpec(hn.name); document.getElementById('heronote').textContent = hn.name + ': ' + hn.note; apply(); b.blur(); });
     heroHost.appendChild(b);
   });
-  var figHost = document.getElementById('figures');
-  [['Ink figure', 1], ['Old figure', 0]].forEach(function (fg) {
-    var b = document.createElement('button'); b.textContent = fg[0]; b.id = 'fig' + fg[1];
-    b.addEventListener('click', function () { spec.figure = fg[1]; if (fg[1] === 0 && spec.legL < 1.5) { var o = lib.conceptSpec('Old figure'), k; for (k in o) if (k !== 'col' && k !== 'hair' && k !== 'beard' && k !== 'hat' && k !== 'clothes') spec[k] = o[k]; } if (fg[1] === 1 && spec.legL > 1.5) { var e = lib.heroSpec('Eirik'); ['scale', 'headW', 'headH', 'bodyW', 'bodyH', 'legL', 'legW', 'armL', 'armW', 'eyeSize'].forEach(function (k2) { spec[k2] = e[k2]; }); } apply(); b.blur(); });
-    figHost.appendChild(b);
-  });
   var conHost = document.getElementById('concepts');
   lib.concepts.forEach(function (cn) {
+    if (cn.name === 'Old figure') return;
     var b = document.createElement('button'); b.textContent = cn.name; b.title = cn.note;
     b.addEventListener('click', function () { spec = lib.conceptSpec(cn.name); document.getElementById('conceptnote').textContent = cn.name + ': ' + cn.note; apply(); b.blur(); });
     conHost.appendChild(b);

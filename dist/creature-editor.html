@@ -114,22 +114,19 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <p class="desc">Save keeps the design under its name in this browser; New creature starts a variation from what is on screen; Update in game makes the chosen beast of the game look and fight like this design (the game keeps its own counts, damage and drops); Take back restores the game's own.</p>
       </section>
       <section class="panel">
-        <h2>Rig</h2>
-        <div class="group" id="rigs"></div>
-        <p class="desc">Views draws each creature in three designed views (side, front, back) like the hero, so nothing clips; Turntable is the old rig, kept for comparison.</p>
-        <h2 class="more">Templates</h2>
+        <h2>Templates</h2>
         <div class="group" id="models"></div>
         <h2 class="more">Body plan</h2>
         <div class="group" id="c-plan"></div>
         <div class="group" style="margin-top:12px">
           <button id="random">Randomise</button>
         </div>
-        <p class="desc">A template is a complete starting creature. Changing the body plan keeps the colours and features, and the panels below follow the plan.</p>
+        <p class="desc">A template is a complete starting creature: the six animals of the first biome and the two trolls. The body plan is Animal, Snake, Boulder troll or Forest troll; the panels below follow it.</p>
       </section>
       <section class="panel">
         <h2>Shape</h2>
         <div id="pshape"></div>
-        <p class="desc">Head size applies to the Critter and Brute. Leg count applies to the Crawler, arm length to the Brute.</p>
+        <p class="desc">The trolls’ arm length is in the Troll panel.</p>
       </section>
       <section class="panel" id="sec-animal">
         <h2>Animal</h2>
@@ -153,15 +150,11 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <h2>Eyes</h2>
         <div class="group chips" id="c-eyeStyle"></div>
         <div id="peyes" style="margin-top:8px"></div>
-        <h2 class="more">Mouth</h2>
-        <div class="group chips" id="c-mouth"></div>
-        <h2 class="more">On top</h2>
-        <div class="group chips" id="c-top"></div>
         <h2 class="more">Tail</h2>
         <div class="group chips" id="c-tail"></div>
         <h2 class="more">Pattern</h2>
         <div class="group chips" id="c-pattern"></div>
-        <p class="desc">Eye style, mouth and On top apply to the Blob, Critter, Brute, Floater and Crawler. Tails show on all but the Brute and Floater.</p>
+        <p class="desc">The tail and the pattern apply to the animals.</p>
       </section>
       <section class="panel">
         <h2>Attack warning</h2>
@@ -174,10 +167,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div id="pbehave" style="margin-top:8px"></div>
         <p class="desc">Speed, warning time and lunge speed apply to the Lunger. Health applies to newly added creatures. Notice distance is how close you must come before it reacts; hitting it also rouses it.</p>
       </section>
-      <section class="panel">
-        <h2>Movement</h2>
-        <div id="pmove"></div>
-      </section>
+
       <section class="panel">
         <h2>Colours</h2>
         <div class="swatches" id="swatches"></div>
@@ -4401,12 +4391,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { k: 'bodyH', label: 'Body height', min: 0.6, max: 1.6, step: 0.02 },
     { k: 'head', label: 'Head size', min: 0.6, max: 1.6, step: 0.02 },
     { k: 'legLen', label: 'Leg length', min: 0.5, max: 2, step: 0.05 },
-    { k: 'legW', label: 'Leg thickness', min: 0.6, max: 1.8, step: 0.05 },
-    { k: 'legs', label: 'Leg count', min: 4, max: 8, step: 2 },
-    { k: 'armLen', label: 'Arm length', min: 0.6, max: 1.6, step: 0.05 }
+    { k: 'legW', label: 'Leg thickness', min: 0.6, max: 1.8, step: 0.05 }
   ];
   var EYES = [
-    { k: 'eyes', label: 'Eye count', min: 1, max: 4, step: 1 },
     { k: 'eyeSize', label: 'Eye size', min: 0.5, max: 1.8, step: 0.05 }
   ];
   var MOVE = [
@@ -4447,7 +4434,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { k: 'sat', label: 'Saturation', min: 0, max: 2, step: 0.05 },
     { k: 'lum', label: 'Brightness', min: 0.5, max: 1.5, step: 0.05 }
   ];
-  var NUM = SHAPE.concat(EYES, MOVE, BEHAVE, TONE, ANIMAL, TROLL);
+  var NUM = SHAPE.concat(EYES, BEHAVE, TONE, ANIMAL, TROLL);
   var COLS = [['body', 'Body'], ['belly', 'Belly and markings'], ['accent', 'Horns, teeth and hair'], ['moss', 'Moss and lichen'], ['eye', 'Pupils'], ['glow', 'Glow and warning'], ['line', 'Outline']];
   var CHOICES = {
     plan: ['Blob', 'Critter', 'Brute', 'Floater', 'Crawler', 'Animal', 'Snake', 'Troll (old)', 'Boulder troll', 'Forest troll'],
@@ -4463,7 +4450,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   };
   var TELLTXT = ['Swell: it squashes wide and flushes with its warning colour.', 'Shake: it trembles on the spot and flushes with its warning colour.', 'Rear up: it lifts and tips back before it strikes.', 'Eye glow: the eyes grow and light up, with a pulse ring.'];
   var BEHAVETXT = ['Lunger: chases you, circles, then lunges in a straight line. It can be parried.', 'Brute: the Bossbot\'s moves, with a lunge, a chain of hits and a spin. It has a stagger bar.', 'Shooter: stands still and fires a shot along a marked line.', 'Grazer: never attacks. It runs away when you come close.'];
-  var MODEL_KEYS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollForest', 'trollStone', 'trollOld'], MODELS = MODEL_KEYS.map(function (k) { return lib.animals[k]; });
+  var MODEL_KEYS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollForest', 'trollStone'], MODELS = MODEL_KEYS.map(function (k) { return lib.animals[k]; });
   var LIB_KEY = 'creature.library', GAME_KEY = 'game.creatures', META_KEY = 'creatureeditor2.meta', library = {}, meta = { name: '', slot: 'troll' };
   try { library = JSON.parse(localStorage.getItem(LIB_KEY)) || {}; } catch (e) { library = {}; } try { var mt = JSON.parse(localStorage.getItem(META_KEY)); if (mt && typeof mt === 'object') meta = mt; } catch (e) {}   // defined in src/art.js
 
@@ -4472,7 +4459,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg');
   function snap(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
   function fmt(p, v) { return p.step < 1 ? v.toFixed(2) : String(v); }
-  function choice(key) { var b = document.querySelectorAll('#c-' + key + ' button'); for (var n = 0; n < b.length; n++) b[n].setAttribute('aria-pressed', n === spec[key] ? 'true' : 'false'); }
+  function choice(key) { var b = document.querySelectorAll('#c-' + key + ' button'); for (var n = 0; n < b.length; n++) { var idx = b[n].hasAttribute('data-n') ? +b[n].getAttribute('data-n') : n; b[n].setAttribute('aria-pressed', idx === spec[key] ? 'true' : 'false'); } }
 
   function apply() {
     var d = lib.creatureDef, i, k;
@@ -4533,14 +4520,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
     b.addEventListener('click', function () { spec[f[0]] = spec[f[0]] ? 0 : 1; apply(); b.blur(); });
     flagHost.appendChild(b); flagBtn[f[0]] = b;
   });
-  sliders('pshape', SHAPE); sliders('peyes', EYES); sliders('pmove', MOVE); sliders('pbehave', BEHAVE); sliders('ptone', TONE); sliders('ptroll', TROLL);
+  sliders('pshape', SHAPE); sliders('peyes', EYES); sliders('pbehave', BEHAVE); sliders('ptone', TONE); sliders('ptroll', TROLL);
   var tflagHost = document.getElementById('tflags');
   TFLAGS.forEach(function (f) { var b = document.createElement('button'); b.textContent = f[1]; b.addEventListener('click', function () { spec[f[0]] = spec[f[0]] ? 0 : 1; apply(); b.blur(); }); tflagHost.appendChild(b); flagBtn[f[0]] = b; });
 
+  var PLAN_SHOWN = { 5: 1, 6: 1, 8: 1, 9: 1 };                     // the plans the game draws: Animal, Snake, Boulder troll, Forest troll (the steampunk blobs and the first troll are gone from the board, 2026-10-08)
   Object.keys(CHOICES).forEach(function (key) {
-    var host = document.getElementById('c-' + key);
+    var host = document.getElementById('c-' + key); if (!host) return;
     CHOICES[key].forEach(function (nm, n) {
-      var b = document.createElement('button'); b.textContent = nm;
+      if (key === 'plan' && !PLAN_SHOWN[n]) return;
+      var b = document.createElement('button'); b.textContent = nm; if (key === 'plan') b.setAttribute('data-n', n);
       b.addEventListener('click', function () { var was = spec.behave; spec[key] = n; apply(); if (key === 'behave' && was !== n) respawn(); b.blur(); });
       host.appendChild(b);
     });
@@ -4553,15 +4542,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); });
     lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
   });
-  var rigHost = document.getElementById('rigs');
-  [['Views', 'views'], ['Turntable (old)', 'turntable']].forEach(function (rg) {
-    var b = document.createElement('button'); b.textContent = rg[0]; b.id = 'rig-' + rg[1];
-    b.addEventListener('click', function () { lib.RIG.animals = rg[1]; lib.RIG.trolls = rg[1]; rigUi(); b.blur(); });
-    rigHost.appendChild(b);
-  });
-  function rigUi() { document.getElementById('rig-views').setAttribute('aria-pressed', lib.RIG.animals === 'views' ? 'true' : 'false'); document.getElementById('rig-turntable').setAttribute('aria-pressed', lib.RIG.animals === 'views' ? 'false' : 'true'); }
   try { localStorage.removeItem('creature.rig'); } catch (e) {}
-  rigUi();
   var modelHost = document.getElementById('models');
   MODELS.forEach(function (m, mi) {
     var b = document.createElement('button'); b.textContent = m.name;
@@ -4588,7 +4569,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   document.getElementById('random').addEventListener('click', function (e) {
     var keep = spec.behave, h = rnd(0, 360);
     spec = clone(lib.creatureDef); spec.behave = keep;
-    ['plan', 'eyeStyle', 'mouth', 'top', 'tail', 'pattern', 'tell'].forEach(function (k) { spec[k] = pickN(CHOICES[k].length); });
+    ['eyeStyle', 'tail', 'pattern', 'tell'].forEach(function (k) { spec[k] = pickN(CHOICES[k].length); }); spec.plan = [5, 5, 6, 8, 9][pickN(5)];
     SHAPE.forEach(function (p) { if (p.k !== 'size') spec[p.k] = rnd(p.min + (p.max - p.min) * 0.2, p.max - (p.max - p.min) * 0.25); });
     spec.size = [0.8, 1, 1, 1.2, 1.5][pickN(5)]; spec.eyes = 1 + pickN(4); spec.eyeSize = rnd(0.8, 1.4);
     spec.col.body = hsl(h, rnd(0.25, 0.6), rnd(0.32, 0.55)); spec.col.belly = hsl(h + rnd(-30, 30), rnd(0.3, 0.6), rnd(0.7, 0.85));
@@ -4643,7 +4624,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
 
   var saved = null;
-  try { saved = JSON.parse(localStorage.getItem('creatureeditor2')); if (saved && typeof saved === 'object') spec = saved; else saved = null; } catch (e) { saved = null; }
+  try { saved = JSON.parse(localStorage.getItem('creatureeditor2')); if (saved && typeof saved === 'object' && PLAN_SHOWN[Math.round(saved.plan)]) spec = saved; else saved = null; } catch (e) { saved = null; }
   apply(); if (spec === lib.creature().spec && !saved) { MODELS[0].set && (function () { var k; spec = clone(lib.creatureDef); for (k in MODELS[0].set) spec[k] = MODELS[0].set[k]; for (k in MODELS[0].col) spec.col[k] = MODELS[0].col[k]; apply(); })(); }
   refreshLibrary(); addOne();
 

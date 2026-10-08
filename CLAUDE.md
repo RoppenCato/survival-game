@@ -518,6 +518,14 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   blanket** with a cream folded hem and two woven stripes, a fleece at the head. `workbenchObj` is a **joiner's bench**: a thick planed
   slab (its end grain showing) on two splayed trestles with a stretcher, an adze, a mallet head up and two chisels on it, a plank
   leaning against a leg, shavings on the floor. Both through `shape` (ink line, grain, the cool shade).
+- **The editors cleaned up (2026-10-08, Robin: a lot of bloat; remove what we do not need):** the **Creature Editor** lost the Rig switch
+  (the game draws the view rig and so does the editor, always), the steampunk body plans (Blob, Critter, Brute, Floater, Crawler) and
+  the first troll (plan 7, "Troll (old)", the `trollOld` template) from the board (`PLAN_SHOWN`: Animal, Snake, Boulder troll, Forest
+  troll; a restored working design of another plan starts over), the Mouth and On top chips, the eye count, leg count and arm length
+  sliders and the Movement panel (bounce, wobble, hover: the blobs' moves). The drawing code for those plans stays in `src/art.js`
+  (the Combat Arena's undressed fallbacks and the tests use plans 0 to 4) but no page offers them. The **Combat Arena** lost the
+  Classic | Sprite hero switch and the V key (`S.look` is classic). The **Character Editor** lost the Figure switch and the "Old
+  figure" concept (`spec.figure` is 1). `lib.useAnimal` ignores a stored design of another body plan.
 - **Furniture is sized to the hero (2026-10-05):** a hero is about 39 units tall, so the table, bed, cart, well,
   drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
   its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision

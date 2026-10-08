@@ -53,13 +53,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 
   <div class="cols">
     <section class="panel">
-      <h2>Hero look</h2>
-      <div class="group" id="look">
-        <button data-l="classic" aria-pressed="false">Classic</button>
-        <button data-l="sprite" aria-pressed="true">Sprite</button>
-      </div>
-      <p class="desc" id="lookdesc"></p>
-      <h2 style="margin-top:14px">Melee aiming</h2>
+      <h2>Melee aiming</h2>
       <div class="group" id="aim">
         <button data-aim="facing" aria-pressed="false">Facing</button>
         <button data-aim="soft" aria-pressed="true">Soft aim</button>
@@ -128,7 +122,6 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <dt><kbd>1</kbd> to <kbd>3</kbd></dt><dd>Gather mode: axe, pickaxe, knife. The right tool does full damage, the wrong one half</dd>
         <dt><kbd>H</kbd></dt><dd>Add a wolf or a boar</dd>
         <dt><kbd>R</kbd></dt><dd>Restart after you are scrapped</dd>
-        <dt><kbd>V</kbd></dt><dd>Switch the hero look between Classic and Sprite</dd>
       </dl>
     </section>
   </div>
@@ -4590,7 +4583,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
 
   /* input */
   window.addEventListener('keydown', function (e) {
-    if (e.code === 'KeyV' && !e.repeat) { setLook(S.look === 'sprite' ? 'classic' : 'sprite'); return; }
     if (!codes[e.code]) return;
     e.preventDefault(); ac();
     if (e.repeat) return;
@@ -4624,15 +4616,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   for (var i = 0; i < aimBtns.length; i++) aimBtns[i].addEventListener('click', function (e) { setAim(e.currentTarget.getAttribute('data-aim')); e.currentTarget.blur(); });
   setAim('soft');
-  var lookBtns = document.querySelectorAll('#look button'), lookdesc = document.getElementById('lookdesc');
-  var lookTxt = { classic: 'The smooth hero: flowing walk cycle, lean and follow-through, white swing trail.', sprite: 'Sprite-sheet hero: four directions, four-frame walk and attack, and a big cyan slash. Press V to switch.' };
-  function setLook(m) {
-    S.look = m;
-    for (var i = 0; i < lookBtns.length; i++) lookBtns[i].setAttribute('aria-pressed', lookBtns[i].getAttribute('data-l') === m ? 'true' : 'false');
-    lookdesc.textContent = lookTxt[m];
-  }
-  for (var lk = 0; lk < lookBtns.length; lk++) lookBtns[lk].addEventListener('click', function (e) { setLook(e.currentTarget.getAttribute('data-l')); e.currentTarget.blur(); });
-  setLook(S.look);
+  S.look = 'classic';                                   // the hero is the ink figure; the pixel-sprite look is gone from the page (2026-10-08)
   var rngBtns = document.querySelectorAll('#rng button'), rngdesc = document.getElementById('rngdesc');
   var rngTxt = { mouse: 'F fires toward the mouse cursor.', auto: 'F fires at the nearest enemy in front of you, or straight ahead. No mouse needed.' };
   function setRng(m) {
