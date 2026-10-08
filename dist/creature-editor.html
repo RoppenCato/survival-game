@@ -492,7 +492,7 @@ var LN = '#3a2a36';
    the shadow side, so the line is thin toward the light and heavy away from it. Parts inside a layer therefore have no seams
    between them: an arm flows into a shoulder, a leg into the hip. Only real overlaps (a near arm over the coat) keep an edge.
    INK_FIG holds the numbers; the Character and Creature Editors may change them. */
-var INK_FIG = { on: true, w: 0.62, line: '#231a16', grain: 0.22, shade: 0.41, soft: 0.5 }, inkCvs = [], grainFig = null;
+var INK_FIG = { on: true, w: 0.62, line: '#231a16', grain: 0.22, shade: 0.41, soft: 0.5, passes: 8, heavyPasses: 4, maxScale: 3 }, inkCvs = [], grainFig = null;   // passes: how many offsets make the thin line (8; 12 is finer, 6 faster), heavyPasses the shadow side (2026-10-08: the outline was the frame's cost on a big screen)
 function mkCv(w, h) { if (typeof document !== 'undefined') { var cv = document.createElement('canvas'); cv.width = w; cv.height = h; return cv; } if (global.__mk) return global.__mk(w, h); return require('@napi-rs/canvas').createCanvas(w, h); }   // in Node the scripts set global.__mk, or the fake canvas is found by itself
 function figGrain(c) {
   if (!grainFig) { grainFig = mkCv(96, 96); var g = grainFig.getContext('2d'), i, R = 0.37; for (i = 0; i < 1500; i++) { R = (R * 9301 + 49297) % 233280; var x = R / 233280 * 96; R = (R * 9301 + 49297) % 233280; var y = R / 233280 * 96; R = (R * 9301 + 49297) % 233280; var d = R / 233280; g.fillStyle = d < 0.55 ? 'rgba(20,14,10,' + (0.25 + d * 0.5).toFixed(2) + ')' : 'rgba(255,245,225,' + (0.2 + (1 - d) * 0.6).toFixed(2) + ')'; g.fillRect(x, y, 1 + (d < 0.2 ? 1 : 0), 1); } }
@@ -504,30 +504,32 @@ function inkLayerBegin(i, M, bx, by, bw, bh) {
   for (k = 0; k < 4; k++) { xs.push(M.a * cs[k][0] + M.c * cs[k][1] + M.e); ys.push(M.b * cs[k][0] + M.d * cs[k][1] + M.f); }
   var sc = Math.sqrt(Math.abs(M.a * M.d - M.b * M.c)), pad = Math.ceil(INK_FIG.w * sc * 2.6 + 3), x0 = Math.floor(Math.min.apply(null, xs)) - pad, y0 = Math.floor(Math.min.apply(null, ys)) - pad, w = Math.ceil(Math.max.apply(null, xs)) + pad - x0, h = Math.ceil(Math.max.apply(null, ys)) + pad - y0;
   w = Math.max(4, Math.min(4096, w)); h = Math.max(4, Math.min(4096, h));
-  var cv = inkCvs[i]; if (!cv) cv = inkCvs[i] = mkCv(w, h); else if (cv.width < w || cv.height < h) { cv.width = Math.max(cv.width, w); cv.height = Math.max(cv.height, h); }
+  var q = Math.min(1, (INK_FIG.maxScale || 3) / Math.max(0.01, sc)), wq = Math.ceil(w * q), hq = Math.ceil(h * q);   // the layer's own pixels: never more than maxScale a unit (2026-10-08: the outline passes cost by the pixel)
+  var cv = inkCvs[i]; if (!cv) cv = inkCvs[i] = mkCv(wq, hq); else if (cv.width < wq || cv.height < hq) { cv.width = Math.max(cv.width, wq); cv.height = Math.max(cv.height, hq); }
   var g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.lineCap = 'round'; g.lineJoin = 'round';
-  return { g: g, cv: cv, x0: x0, y0: y0, w: w, h: h, sc: sc, used: false };
+  return { g: g, cv: cv, x0: x0, y0: y0, w: w, h: h, wq: wq, hq: hq, q: q, sc: sc, used: false };
 }
 // finish a layer and lay it on the target: the grain and the shadow side over its silhouette, the outline by dilation, then itself
 function inkLayerEnd(cOut, L, i, lineCol, opts) {
-  if (!L || !L.used) return; var g = L.g, w = L.w, h = L.h, k;
+  if (!L || !L.used) return; var g = L.g, w = L.w, h = L.h, wq = L.wq || w, hq = L.hq || h, k;
   g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-atop';
-  if (opts.grain > 0) { g.globalAlpha = opts.grain; g.fillStyle = figGrain(g); g.fillRect(0, 0, w, h); }
-  if (opts.shade > 0) { var gs = g.createLinearGradient(w * 0.15, 0, w * 0.85, h); gs.addColorStop(0, 'rgba(255,240,200,' + (opts.shade * 0.3) + ')'); gs.addColorStop(0.45, 'rgba(0,0,0,0)'); gs.addColorStop(1, 'rgba(40,52,80,' + opts.shade + ')'); g.globalAlpha = 1; g.fillStyle = gs; g.fillRect(0, 0, w, h); }
+  if (opts.grain > 0) { g.globalAlpha = opts.grain; g.fillStyle = figGrain(g); g.fillRect(0, 0, wq, hq); }
+  if (opts.shade > 0) { var gs = g.createLinearGradient(wq * 0.15, 0, wq * 0.85, hq); gs.addColorStop(0, 'rgba(255,240,200,' + (opts.shade * 0.3) + ')'); gs.addColorStop(0.45, 'rgba(0,0,0,0)'); gs.addColorStop(1, 'rgba(40,52,80,' + opts.shade + ')'); g.globalAlpha = 1; g.fillStyle = gs; g.fillRect(0, 0, wq, hq); }
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   var tcv = inkCvs[i + 8]; if (!tcv) tcv = inkCvs[i + 8] = mkCv(L.cv.width, L.cv.height); else if (tcv.width < L.cv.width || tcv.height < L.cv.height) { tcv.width = L.cv.width; tcv.height = L.cv.height; }
-  var t = tcv.getContext('2d'); t.setTransform(1, 0, 0, 1, 0, 0); t.clearRect(0, 0, tcv.width, tcv.height); t.drawImage(L.cv, 0, 0); t.globalCompositeOperation = 'source-in'; t.fillStyle = lineCol; t.fillRect(0, 0, w, h); t.globalCompositeOperation = 'source-over';
+  var t = tcv.getContext('2d'); t.setTransform(1, 0, 0, 1, 0, 0); t.clearRect(0, 0, tcv.width, tcv.height); t.drawImage(L.cv, 0, 0); t.globalCompositeOperation = 'source-in'; t.fillStyle = lineCol; t.fillRect(0, 0, wq, hq); t.globalCompositeOperation = 'source-over';
   cOut.save(); cOut.setTransform(1, 0, 0, 1, 0, 0);
   var r = Math.max(0.8, opts.w * L.sc);
-  for (k = 0; k < 12; k++) { var a = k / 12 * 6.283; cOut.drawImage(tcv, 0, 0, w, h, L.x0 + Math.cos(a) * r, L.y0 + Math.sin(a) * r, w, h); }                 // the thin line all round
-  cOut.globalAlpha = 0.6; for (k = 0; k < 7; k++) { var a2 = -0.15 + k / 6 * 1.85; cOut.drawImage(tcv, 0, 0, w, h, L.x0 + Math.cos(a2) * r * 2.1, L.y0 + Math.sin(a2) * r * 2.1, w, h); } cOut.globalAlpha = 1;   // heavy toward the lower right, away from the light
-  cOut.drawImage(L.cv, 0, 0, w, h, L.x0, L.y0, w, h);
+  var np = opts.passes || 8, nh = opts.heavyPasses || 4;
+  for (k = 0; k < np; k++) { var a = k / np * 6.283 + 0.2; cOut.drawImage(tcv, 0, 0, wq, hq, L.x0 + Math.cos(a) * r, L.y0 + Math.sin(a) * r, w, h); }                 // the thin line all round
+  cOut.globalAlpha = 0.6; for (k = 0; k < nh; k++) { var a2 = -0.15 + k / Math.max(1, nh - 1) * 1.85; cOut.drawImage(tcv, 0, 0, wq, hq, L.x0 + Math.cos(a2) * r * 2.1, L.y0 + Math.sin(a2) * r * 2.1, w, h); } cOut.globalAlpha = 1;   // heavy toward the lower right, away from the light
+  cOut.drawImage(L.cv, 0, 0, wq, hq, L.x0, L.y0, w, h);
   cOut.restore();
 }
 // switch drawing into layer i, keeping the device transform the drawing is at; returns the layer's context
 function inkSwitch(c, layers, cur, i) {
-  var M = c.getTransform(), L = layers[i], ex = M.e + (cur ? cur.x0 : 0), fy = M.f + (cur ? cur.y0 : 0);
-  L.g.setTransform(M.a, M.b, M.c, M.d, ex - L.x0, fy - L.y0); L.used = true; return L;
+  var M = c.getTransform(), L = layers[i], qc = cur ? (cur.q || 1) : 1, ex = M.e / qc + (cur ? cur.x0 : 0), fy = M.f / qc + (cur ? cur.y0 : 0);   // read back in the page's pixels (the layer's own may be scaled down)
+  var q = L.q || 1; L.g.setTransform(M.a / qc * q, M.b / qc * q, M.c / qc * q, M.d / qc * q, (ex - L.x0) * q, (fy - L.y0) * q); L.used = true; return L;
 }
 function pathRR(c, x, y, w, h, r) {
   c.beginPath(); c.moveTo(x + r, y); c.lineTo(x + w - r, y); c.quadraticCurveTo(x + w, y, x + w, y + r);
@@ -2633,7 +2635,7 @@ var dkB = null;
 function applyStored(st) {
   try { var gh = JSON.parse(st.getItem('game.hero2')); if (gh && typeof gh === 'object') setHero(gh); } catch (e) {}
   try { var gc = JSON.parse(st.getItem('game.creatures')); if (gc && typeof gc === 'object') { var k; for (k in gc) if (ANIMALS[k] && gc[k] && typeof gc[k] === 'object') useAnimal(k, gc[k]); } } catch (e) {}
-  try { var rg = st.getItem('creature.rig'); if (rg === 'turntable' || rg === 'views') { RIG.animals = rg; RIG.trolls = rg; } } catch (e) {}
+  RIG.animals = 'views'; RIG.trolls = 'views';          // the game always draws the view rig; the Creature Editor's Rig switch (creature.rig) is its own (2026-10-08: a stored 'turntable' kept the clipping trolls in the game)
 }
 return { lib: { INK_FIG: INK_FIG, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, IDLES: IDLES, JOBS: JOBS, idlePose: idlePose, jobPose: jobPose, poseLerp: poseLerp, heldD: heldD, figureHeld: figureHeld, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
@@ -4304,7 +4306,7 @@ function render(c) {
       lib.rr(c, pl.x - 8, pl.y * K - 30, 16, 6, 2.5, '#a9a5bb', 1.8);
     } });
   });
-  W.enemies.forEach(function (e) { items.push({ y: e.y, f: function () { drawEnemy(c, e); } }); });
+  W.enemies.forEach(function (e) { if (api.scene && api.scene.visible && !api.scene.visible(e.x, e.y, e.r)) return; items.push({ y: e.y, f: function () { drawEnemy(c, e); } }); });   // a page can say what is in view (2026-10-08: every beast in the world was drawn each frame)
   W.projs.forEach(function (pr) { items.push({ y: pr.y + 1, f: function () { drawProj(c, pr); } }); });
   W.parts.forEach(function (q) { if (q.k === 'dust') items.push({ y: q.y, f: function () { drawPart(c, q); } }); });
   if (!P.dead) items.push({ y: P.y, f: function () { drawHero(c); } });
@@ -4344,7 +4346,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib;
-  lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
+  lib.applyStored(localStorage); try { var rg0 = localStorage.getItem('creature.rig'); if (rg0 === 'turntable' || rg0 === 'views') { lib.RIG.animals = rg0; lib.RIG.trolls = rg0; } } catch (e) {}                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(lib);
   var S = Combat.S; S.look = 'classic'; S.sound = false;
   Combat.clear();

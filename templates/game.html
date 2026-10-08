@@ -380,7 +380,7 @@ __COMBAT__
   function costOfItem(name) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].prop === name) return PIECES[i].cost; return {}; }
   // Roofs are cached (2026-10-08: ninety roofs drawn from scratch every frame made the world crawl): each room's roof is drawn once
   // into its own canvas at twice the world scale and blitted with the fade's alpha; the cache empties when the rooms are rebuilt.
-  var roofCache = {};
+  var roofCache = {}, figsInView = 0;
   function roofBox(r) { var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; r.tiles.forEach(function (t) { x0 = Math.min(x0, t[0]); y0 = Math.min(y0, t[1]); x1 = Math.max(x1, t[0]); y1 = Math.max(y1, t[1]); }); return { x0: x0, y0: y0, x1: x1, y1: y1 }; }
   function roofSprite(r, cfg) {
     var key = r.id + ':' + r.tiles.length + ':' + cfg.roof + ':' + cfg.wallM, sp = roofCache[key]; if (sp) return sp;
@@ -3119,6 +3119,7 @@ __COMBAT__
     })(bundles[id]);
   }
   Combat.api.scene = {
+    visible: function (x, y, r) { var z = cam.z || 1, hw = 200 / z, hh = 125 / z, m = (r || 0) + 90, v = Math.abs(x - cam.x) < hw + m && Math.abs(y * K - cam.y) < hh + m; if (v) figsInView++; return v; },   // beasts out of view are not drawn
     noHud: false, noKills: true,
     heroLift: function () { return (hero().lvl ? UP : 0) + (raft && raft.aboard && raft.kind === 'boat' ? -3 : 0); },   // a storey up upstairs   // feet a little below the rim, inside the hull
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
@@ -3205,7 +3206,8 @@ __COMBAT__
       if (carrying) items.push({ y: P.y + 0.6, f: function () { var s2 = sprite('chest', 0); ctx.save(); ctx.translate(P.x + (Math.cos(P.face) >= 0 ? -3 : 3), P.y * K - 30 - (hero().lvl ? UP : 0)); ctx.scale(0.9, 0.9); ctx.drawImage(s2.cv, s2.l, s2.t); ctx.restore(); } });   // the heavy chest on the shoulder
       if (npc && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
       hird.forEach(function (m) { if (m === npc) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });
-      folk.forEach(function (f) { if (!f.hidden && Math.abs(f.x - cam.x) < hw + 30 && Math.abs(f.y * K - cam.y) < hh + 50) items.push({ y: f.y, f: function () { drawFolk(ctx, f); } }); });
+      folk.forEach(function (f) { if (!f.hidden && Math.abs(f.x - cam.x) < hw + 30 && Math.abs(f.y * K - cam.y) < hh + 50) { figsInView++; items.push({ y: f.y, f: function () { drawFolk(ctx, f); } }); } });
+      var IF = lib.INK_FIG; IF.passes = figsInView > 14 ? 6 : 8; IF.heavyPasses = figsInView > 14 ? 2 : 4; figsInView = 0;   // a crowd gets a lighter outline so the frame keeps up (2026-10-08)
       if (roomInfo) roomInfo.rooms.forEach(function (r, ri) {
         if (r.up) return;                               // a room with stairs has the floor above instead of a roof
         var target = here === ri && !L ? BCFG.seeThrough : 1;

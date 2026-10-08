@@ -210,7 +210,7 @@ __COMBAT__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib;
-  lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
+  lib.applyStored(localStorage); try { var rg0 = localStorage.getItem('creature.rig'); if (rg0 === 'turntable' || rg0 === 'views') { lib.RIG.animals = rg0; lib.RIG.trolls = rg0; } } catch (e) {}                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(lib);
   var S = Combat.S; S.look = 'classic'; S.sound = false;
   Combat.clear();

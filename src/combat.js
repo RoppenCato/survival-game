@@ -1663,7 +1663,7 @@ function render(c) {
       lib.rr(c, pl.x - 8, pl.y * K - 30, 16, 6, 2.5, '#a9a5bb', 1.8);
     } });
   });
-  W.enemies.forEach(function (e) { items.push({ y: e.y, f: function () { drawEnemy(c, e); } }); });
+  W.enemies.forEach(function (e) { if (api.scene && api.scene.visible && !api.scene.visible(e.x, e.y, e.r)) return; items.push({ y: e.y, f: function () { drawEnemy(c, e); } }); });   // a page can say what is in view (2026-10-08: every beast in the world was drawn each frame)
   W.projs.forEach(function (pr) { items.push({ y: pr.y + 1, f: function () { drawProj(c, pr); } }); });
   W.parts.forEach(function (q) { if (q.k === 'dust') items.push({ y: q.y, f: function () { drawPart(c, q); } }); });
   if (!P.dead) items.push({ y: P.y, f: function () { drawHero(c); } });
