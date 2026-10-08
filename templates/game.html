@@ -987,10 +987,10 @@ __COMBAT__
     if (st === 'teach') return ['Now that is a home. Sit. I will show you something.', 'Logs, bound with rope, and a hide or two. A shipwright’s bench on the sand to lay it on. That is how we crossed the first time.', 'They sailed east, Ragnar’s crew.'];
     return ['The sea is wide. Mind it.'];
   }
-  function villageSite() {               // a flat stretch of grass 10 by 12 tiles, 350 to 800 from the camp, from the island seed
+  function villageSite() {               // a flat stretch of grass 14 by 12 tiles, far from the camp (900 to 1600 units: a wander first, Robin 2026-10-08; nearer only if the island has no room), from the island seed
     var R = kit.rng(spec.seed * 13 + 5), tries, best = null;
     for (tries = 0; tries < 900 && !best; tries++) {
-      var a = R() * 6.283, d = (tries < 500 ? 330 : 220) + R() * 420, cx = Math.floor((home.x + Math.cos(a) * d) / T), cy = Math.floor((home.y + Math.sin(a) * d) / T), ok = true, x, y;
+      var a = R() * 6.283, d = tries < 400 ? 900 + R() * 700 : tries < 700 ? 600 + R() * 600 : 330 + R() * 420, cx = Math.floor((home.x + Math.cos(a) * d) / T), cy = Math.floor((home.y + Math.sin(a) * d) / T), ok = true, x, y;
       for (y = cy - 6; y <= cy + 6 && ok; y++) for (x = cx - 7; x <= cx + 7; x++) { var cd = code(x, y); if (cd < 2 || cd === 255) { ok = false; break; } }
       if (ok && isleAt((cx + 0.5) * T, (cy + 0.5) * T) !== 0) ok = false;   // on the starter island
       if (ok) best = { tx: cx - 7, ty: cy - 6, w: 14, h: 12 };
@@ -1025,7 +1025,8 @@ __COMBAT__
     house(vx + 9, vy + 1, 3, 2, 2, 1, vx + 10, 0);         // the hut still whole: wattle, packed earth, a thatch roof, a bed and a crate
     item('bed', vx + 9, vy + 1, { bed: true }); item('crate', vx + 11, vy + 2, { loot: { wood: 8, fiber: 4 } });
     house(vx + 9, vy + 6, 4, 3, 3, 2, vx + 11, 6);         // the stone house, half gone
-    item('woodenWell', vx + 8, vy + 7); item('stoneHearth', vx + 6.2, vy + 6.4, { light: 1 });   // Brokk's fire: light, and a hint that you will want one item('barrel', vx + 12, vy + 7, { loot: { berries: 5, meat: 2 } });
+    item('woodenWell', vx + 8, vy + 7); item('stoneHearth', vx + 4.6, vy + 7.6, { light: 1 });   // Brokk's fire: light, and a hint that you will want one; a step away from him so E does not muddle them (2026-10-08)
+    item('barrel', vx + 12, vy + 7, { loot: { berries: 5, meat: 2 } });
     for (x = vx; x < vx + village.w; x++) if (!(x >= vx + 6 && x <= vx + 7) && R() < 0.8) H(x, vy, 'palisade', 0);   // the palisade: a gate in the north, gaps all round
     H(vx + 6, vy, 'gate', 2);
     for (y = vy; y < vy + village.h; y++) if (R() < 0.75) V(vx, y, 'palisade', 0);
@@ -1946,7 +1947,7 @@ __COMBAT__
     { id: 'stew', needs: { meat: 1, berries: 2 }, text: 'Meat and berries stewed together: the best meal on the island' }
   ];
   // heal: at once. For time seconds: bonus on top health, regen health a second, stam on top stamina, stamRegen on how fast it returns
-  var FOOD = { eggs: { heal: 12, regen: 0, time: 0, bonus: 0, stam: 5, stamRegen: 1 }, honey: { heal: 20, regen: 0.5, time: 60, bonus: 5, stam: 15, stamRegen: 1.2 }, berries: { heal: 10, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, roastBerries: { heal: 15, regen: 0.5, time: 90, bonus: 5, stam: 10, stamRegen: 1.1 }, cookedMeat: { heal: 30, regen: 1, time: 120, bonus: 15, stam: 15, stamRegen: 1.15 }, stew: { heal: 50, regen: 2, time: 180, bonus: 25, stam: 30, stamRegen: 1.35 } };
+  var FOOD = { eggs: { heal: 12, regen: 0, time: 0, bonus: 0, stam: 5, stamRegen: 1 }, honey: { heal: 20, regen: 0.5, time: 600, bonus: 5, stam: 15, stamRegen: 1.2 }, berries: { heal: 10, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, roastBerries: { heal: 15, regen: 0.5, time: 600, bonus: 5, stam: 10, stamRegen: 1.1 }, cookedMeat: { heal: 30, regen: 1, time: 720, bonus: 15, stam: 15, stamRegen: 1.15 }, stew: { heal: 50, regen: 2, time: 900, bonus: 25, stam: 30, stamRegen: 1.35 } };   // a meal lasts ten minutes at least (Robin, 2026-10-08)
   var fed = null, hearth = null, cookOpen = false, menu = null, mouseS = null;   // fed: { kind, left, regen, bonus }
   // Which station E means when a fire and a workbench both stand close: the one you look at counts as nearer
   // (facingScore). While a board is open its station is kept, so turning does not swap it.

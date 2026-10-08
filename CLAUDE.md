@@ -756,7 +756,8 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   silhouettes with "?". `BESTIARY` holds the cards (all six animals written, only boars exist in the game yet);
   `book` (slain counts) is saved. Creature ideas (Norse myth and nordiska väsen) are in `docs/idea-bank.md`.
 - **The broken village (step 6, 2026-10-05):** Hildir's steading, abandoned, on the home island. `villageSite`
-  finds a flat 14 by 12 tile stretch of grass 350 to 800 from camp from the island seed; `villageClear` (every
+  finds a flat 14 by 12 tile stretch of grass **900 to 1600 from camp** (Robin, 2026-10-08: a wander first; nearer only when the island
+  has no room) from the island seed; Brokk's campfire stands a step away from him so E does not muddle the two; `villageClear` (every
   start) clears its trees and bushes, scatters rubble and places Brokk; `villageBuild` (a fresh start only)
   writes the pieces into `B`, so they are saved and can be wrecked for their wood and stone: a burnt log hall
   with five gaps knocked out and a hearth inside, a small wattle hut still whole with a thatch roof, a bed and a
@@ -874,7 +875,8 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Food** (the reward-not-punish rule; stamina added 2026-10-05): `FOOD` gives each dish `heal` at once and, for
   `time` seconds, `bonus` on top health, `regen` health a second, `stam` on top stamina and `stamRegen` on how fast
   it returns (through `Combat.api.mods().stMax` and `.stam`; the engine's `maxSt()` and the longer stamina bar).
-  Roast berries (3 berries: small), roast meat, berry stew (the best: +25 health, +30 stamina, 35% faster).
+  Roast berries (3 berries: small), roast meat, berry stew (the best: +25 health, +30 stamina, 35% faster). **A meal lasts
+  ten minutes at least** (Robin, 2026-10-08: roast berries and honey 600 s, meat 720, stew 900).
   A number key uses a belt food in any mode (`Combat.api.beltUse`). Berry bushes drop berries, boars drop meat. **E** at the camp hearth opens
   a cooking panel: roast boar (1 meat), boar and berry stew (1 meat, 2 berries). Click food in the inventory to
   eat it: berries heal 10; a meal heals and, for minutes, raises top health and gives health a second (`FOOD`,
