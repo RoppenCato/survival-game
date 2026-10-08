@@ -3016,7 +3016,7 @@ __COMBAT__
       raid.t -= dt;
       if (raid.t <= 0) { var vi = raid.vi; raid = null; guards.forEach(function (e) { if (e.vi === vi) { e.heard = 0; e.awake = false; } }); folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = false; f.hidden = false; f.lines = RAIDED_LINES.slice(); f.line = 0; } }); }
     }
-    if (carrying) { carrying.x = P.x; carrying.y = P.y; }
+    if (carrying) { carrying.x = P.x; carrying.y = P.y; if (P.dead) { carrying.carried = false; carrying.r = 6; B.items.push(carrying); carrying = null; save(); } }   // a fallen raider drops the chest where he fell (2026-10-08)
   }
   var RAIDED_LINES = ['You again. Take what you want and go.', 'We have nothing left. You saw to that.', 'The jarl will hear of this. Everyone will.'];
   // doors that take blows
