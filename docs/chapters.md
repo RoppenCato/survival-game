@@ -157,7 +157,7 @@ there yet (see the gap list).
 | --- | --- | --- |
 | D1 Materials | Wood, stone, fiber, hide, leather, berries, meat, eggs and honey from nests; trunks, sweet spot and rhythm in gathering | Built |
 | D1 Crafting | Hand and workbench recipes revealed by key ingredient; flint, stick and wood tools, the wooden club and bow; leather armour; the hearth and the dishes; boards for crafting, cooking and the shipwright | Built |
-| D1 Fishing | A slow verb with a reward | Not started (`docs/start-loop.md`) |
+| D1 Fishing | A slow verb with a reward | **Built (2026-10-08):** the rod (iron, so the lowlands), cast and hook and reel on E, five fish by water, the sunken chest, three dishes, the fisherman's hut on the smallest island who teaches them |
 | D2 Building | Walls in five materials, floors, paths, roofs (thatch, turf, shingles), stairs and an upper floor, fences, docks, furniture, comfort | Built |
 | D3 Power | No ring on this island. Deeds count underneath (trees, meals, sprinting) | Built (hidden until a ring) |
 

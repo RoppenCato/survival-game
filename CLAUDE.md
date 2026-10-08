@@ -215,6 +215,30 @@ the text and it is made the default. When a spec's meaning changes, change the s
   into the trunk on the side it came from (`o.notch`, drawn as a wedge with pale wood inside, part of the trunk); from then
   on blows from the **other side** are the back cut, bite `spotBonus` deep and fell the tree toward the notch, as a woodcutter
   does. Nothing to find: only where you stand. The sunny side stays the rocks' default. A trunk is the axe's right target (no "wrong tool").
+- `src/fishing.js` (`Fishing`): **fishing (2026-10-08, Robin: a rod of iron in the lowlands, a fisherman who teaches the dishes, a fun
+  minigame, a few fishes, a sunken chest now and then).** The round with no drawing: `start(R, depth, lowland)` rolls what bites
+  (`roll`, `table`: herring everywhere in the sea, perch in the shallows, cod and salmon deep, pike in the lowland shallows, a
+  **sunken chest** 3% of deep bites, `CHEST_CHANCE`) and begins the WAIT (3 to 9 s), then a NIBBLE (about a second of small dips: a
+  press scares it, `'scared'`), the BITE (a window of about 0.9 s less the fish's fight: `press` hooks, else `'missed'`), then the
+  FIGHT: `tick(st, dt, held)` with the reel button held lowers the fish's distance (60 to 120) and raises the line's tension, faster
+  during a RUN (`st.run`, bursts every few seconds, rarer for lazy fish: `runs`); released, the tension falls and the fish takes line;
+  tension 1 is `'lost'` (the line snaps), distance 0 `'landed'`. `FISH` holds each fish's name, weight range (`kg`, the roll squared
+  so most are small), `fight`, `runs`, water and line; the chest never runs but is heavy. **Tuned by bots (`tests/fishing.js`, in
+  `npm test`):** a careful bot (reel when calm and under 0.72 tension) lands everything, a greedy bot that never lets go lands most
+  herring, a few perch and cod, and no pike or salmon; the lazy bot lands nothing. **In the game:** the **fishing rod** is an item
+  kind (`Items.KINDS.rod`, a hazel taper with a line and a forged hook; a workbench recipe of 1 iron bar, 4 wood, 6 fiber, key
+  `ironBar`; it goes to the Gather bar); with it in hand in gather mode, **E at the water casts** (`castSpot`: the first open water
+  40 to 130 units along the way you face, deeper than wading), a cork float lands and the line hangs from the rod's tip
+  (`drawFishing`); the prompt reads Waiting, Wait, **Hook it**, Hold to reel, Let it run; `fishTick` runs the round with `eHeld`
+  (E down, tracked on keydown and keyup), the float comes in with the fish, its shadow shows under the surface, splashes ring, and
+  a tension bar and a distance bar sit over the hero; walking off or putting the rod away ends the round. A landed fish goes into
+  the bag as its own kind (`FISH_KINDS`: herring, perch, cod, pike, salmon, each with an icon and a tale; `inv.fish` counts them all
+  and `takeItem('fish', n)` takes any) with "Perch, 1.2 kg"; the chest gives 4 to 12 silver and sometimes a weapon. `fishLog` (count
+  and best weight per fish) is saved. **Dishes at the hearth:** grilled fish (1 fish, known once a fish is held), **fish soup** (2 fish,
+  2 berries) and **smoked fish** (3 fish, 1 charcoal; lasts 20 minutes), the last two `taught: 'fishTaught'` by the fisherman. **The
+  fisherman's hut** (`ARCH.fisher`, `lone: true`): `Village.plan` puts it on the smallest island (60 tiles or less, never a ruin), one
+  old fisherman (role `fisherman`, four lines: where the fish are, the dishes, let the pike run) who teaches the dishes after his
+  lines (`folkTalk`). The sandbox has a rod and the teaching. Debug: `Combat.api.debug().fishing()` (st, fl, log, cast, press, spot, hold).
 - `src/village.js` (`Village`): **the rules that grow a village (2026-10-07, Robin's brief; `docs/villages.md`)**. `DEF` holds every
   number (gaps, the share of ring slots left open, people per house, the wealth that brings stone, logs, planks, shingles, a
   palisade, a dry-stone wall, a cellar; fields, the sacred stone, the midden, the grave, the ground paints); `ARCH` the

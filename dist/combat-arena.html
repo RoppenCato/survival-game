@@ -2617,6 +2617,7 @@ var KINDS = {
   greataxe: { name: 'Dane axe', len: 34, w: 2.6, dmg: 2, tool: null, melee: true, desc: 'A great axe swung with both hands. Slow to lift, and nothing stands where it comes down.' },
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
   knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: 'bush', desc: 'Cuts fiber, berries and rope.' },
+  rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod, a line of twisted fiber and a forged hook. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
   // ranged: the bow shoots the quiver, the sling throws stones from the bag, a javelin or throwing axe is thrown itself and lies where it falls
   bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, ranged: true, desc: 'Bent wood and a string. Arrows come from the quiver.' },
   sling: { name: 'Sling', len: 7, w: 2, dmg: 0.9, tool: null, ranged: true, ammo: 'stone', desc: 'A cord and a pouch. It throws a stone from the bag hard enough to stun, and never runs out while there are stones.' },
@@ -2710,6 +2711,14 @@ function draw(c, it, hx, hy, ca, sa, len, mirror) {
   if (it.glow > 0) { c.shadowColor = 'rgba(' + P.glow + ',' + (0.5 + it.glow * 0.5) + ')'; c.shadowBlur = 4 + it.glow * 10; }
   var tw = it.twist * L * 0.25, cu = it.curl;
   if (K.gear) { gear(c, it, P, K); c.restore(); return; }
+  if (it.kind === 'rod') {                                         // the rod: a long taper of hazel from the grip, a line hanging from the tip with the hook
+    c.strokeStyle = LN; c.lineWidth = w + 2; c.lineCap = 'round'; c.beginPath(); c.moveTo(-5, 0); c.quadraticCurveTo(L * 0.55, -tw * 0.5, L, -tw - 1.5); c.stroke();
+    var rg = c.createLinearGradient(-5, 0, L, 0); rg.addColorStop(0, '#8a5a3a'); rg.addColorStop(1, '#c9a06a'); c.strokeStyle = rg; c.lineWidth = w; c.beginPath(); c.moveTo(-5, 0); c.quadraticCurveTo(L * 0.55, -tw * 0.5, L, -tw - 1.5); c.stroke();
+    c.strokeStyle = 'rgba(60,35,20,0.45)'; c.lineWidth = 0.8; for (i = 1; i < 4; i++) { c.beginPath(); c.moveTo(-3 + i * 3, -w * 0.6); c.lineTo(-3 + i * 3, w * 0.6); c.stroke(); }   // the grip's binding
+    c.strokeStyle = 'rgba(240,230,200,0.85)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(L, -tw - 1.5); c.quadraticCurveTo(L + 2, -tw + 4, L - 1, -tw + 9); c.stroke();   // the line
+    c.strokeStyle = P.dark; c.lineWidth = 1; c.beginPath(); c.arc(L - 1.6, -tw + 9.6, 1.4, -1.2, 2.6); c.stroke();                                      // the hook
+    c.restore(); return;
+  }
   if (it.kind === 'sword') {
     // grip behind the hand, guard, then the blade: a tapered shape bent by twist, its point curled by curl
     strokeLn(c, -6, 0, 1, 0, LN, w + 2.4); strokeLn(c, -6, 0, 1, 0, '#8a5a3a', w);

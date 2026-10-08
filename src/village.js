@@ -29,6 +29,7 @@ var ARCH = {
   village: { name: 'Village', houses: [3, 4], out: [5, 6], yard: [8, 6], site: [24, 18], people: [10, 15] },
   seat: { name: "Chieftain's seat", houses: [5, 7], out: [7, 8], yard: [9, 7], site: [30, 24], people: [16, 24], hall: true, palisade: true },
   fishing: { name: 'Fishing hamlet', houses: [1, 2], out: [3, 4], yard: [6, 5], site: [18, 15], people: [5, 8], shore: true, racks: 2 },
+  fisher: { name: 'Fisherman\u2019s hut', houses: [1, 1], out: [1, 1], yard: [5, 4], site: [12, 10], people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
   trading: { name: 'Trading post', houses: [2, 3], out: [5, 6], yard: [8, 6], site: [24, 18], people: [8, 12], shore: true, stores: 2 },
   ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [6, 5], site: [18, 15], people: [0, 0], ruin: true },
   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church, and a lone church with its priest's house (the lucky strike)
@@ -49,7 +50,7 @@ var BUILD = {
   church: { name: 'Church', w: [3, 4], h: [5, 6], roofed: true, inside: 'church', floor: 2 }   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side
 };
 var NAMES = ['Arnfinn', 'Bera', 'Dagny', 'Eyvind', 'Frida', 'Gorm', 'Halla', 'Ingolf', 'Jorunn', 'Ketil', 'Liv', 'Mundi', 'Nanna', 'Orm', 'Ragna', 'Sigrun', 'Thorir', 'Ulf', 'Vigdis', 'Yngvar', 'Asa', 'Bjorn', 'Gunnhild', 'Hakon'];
-var ROLES = { priest: ['Peace be upon this house, stranger.', 'The silver on the altar is God\u2019s, not mine. He will know who took it.'], guard: ['Keep your blade sheathed inside the walls.', 'The jarl sees everything from his hall.'], merchant: ['Wool, salt, iron. What have you got?', 'Silver by weight, friend. We take no promises.'], farmer: ['The barley came in well this year.', 'Mind the goat: she butts.'], fisher: ['The herring run at dawn, out past the skerry.', 'That boat has crossed worse water than this.'], smith: ['Copper is soft. Bring me bog iron and I will show you steel.', 'My bench is yours if you leave it as you found it.'], weaver: ['Wool from our own sheep. Feel it.', 'The loom took a winter to build.'], elder: ['Ragnar\'s men came once. They will come again.', 'My father raised the stone by the gate.'], child: ['Are you a Viking?', 'I found a bird\'s nest with four eggs!'], thrall: ['...', 'I was taken from the south. This is home now.'] };
+var ROLES = { fisherman: ['Sit, sit. The sea has been feeding me for sixty years and it has not run dry yet.', 'Perch in the shallows, cod and salmon out where the water turns dark. Cast past the weed and wait: the float tells you everything.', 'Grill a fish on a flat stone, or boil two with berries: a soup that warms the whole night. Three on the rack over a charcoal smoke, and they keep till spring.', 'Mind the pike. Let him run when he runs, and reel when he rests, or he takes your line with him.'], priest: ['Peace be upon this house, stranger.', 'The silver on the altar is God\u2019s, not mine. He will know who took it.'], guard: ['Keep your blade sheathed inside the walls.', 'The jarl sees everything from his hall.'], merchant: ['Wool, salt, iron. What have you got?', 'Silver by weight, friend. We take no promises.'], farmer: ['The barley came in well this year.', 'Mind the goat: she butts.'], fisher: ['The herring run at dawn, out past the skerry.', 'That boat has crossed worse water than this.'], smith: ['Copper is soft. Bring me bog iron and I will show you steel.', 'My bench is yours if you leave it as you found it.'], weaver: ['Wool from our own sheep. Feel it.', 'The loom took a winter to build.'], elder: ['Ragnar\'s men came once. They will come again.', 'My father raised the stone by the gate.'], child: ['Are you a Viking?', 'I found a bird\'s nest with four eggs!'], thrall: ['...', 'I was taken from the south. This is home now.'] };
 function rngOf(seed) { var s = (seed >>> 0) || 1; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 function cfg(o) { var out = {}, k; for (k in DEF) out[k] = DEF[k]; for (k in o || {}) if (o[k] != null && DEF[k] != null) out[k] = +o[k]; return out; }
 function key(x, y) { return x + ',' + y; }
@@ -289,7 +290,7 @@ function make(seed, site, opts) {
   for (var pi = 0; pi < nPeople && homes.length; pi++) {
     var home = homes[hi % homes.length]; hi++;
     var door = home.door === 's' ? tile(home.dx, home.y + home.h + 1) : home.door === 'e' ? tile(home.x + home.w + 1, home.dy) : home.door === 'w' ? tile(home.x - 2, home.dy) : tile(home.dx, home.y - 2);
-    var role = shore && R() < 0.4 ? 'fisher' : roles[Math.floor(R() * roles.length)]; if (role === 'smith' && !V.lots.some(function (l) { return l.id === 'smithy'; })) role = 'farmer';
+    var role = A.lone ? 'fisherman' : shore && R() < 0.4 ? 'fisher' : roles[Math.floor(R() * roles.length)]; if (role === 'smith' && !V.lots.some(function (l) { return l.id === 'smithy'; })) role = 'farmer';
     if (A.chapel) role = 'priest'; else if (A.church && pi === 0) role = 'priest'; else if (A.townwall && (pi === 1 || pi === 2 || (wealth > 0.7 && (pi === 4 || pi === 5)))) role = 'guard'; else if (A.townwall && pi === 3) role = 'merchant';
     var work = role === 'smith' ? V.lots.filter(function (l) { return l.id === 'smithy'; })[0] : role === 'fisher' && shore ? null : V.lots.filter(function (l) { return l.id === 'byre' || l.id === 'store'; })[0];
     var seatsV = V.items.filter(function (it) { return it.name === 'logSeat'; }), seatV = seatsV.length ? seatsV[pi % seatsV.length] : null;
@@ -299,7 +300,7 @@ function make(seed, site, opts) {
     // at the shore or hangs the catch, the smith hammers by the smithy, the weaver and the elder sweep the doorstep; a child only plays
     var block = V.props.filter(function (pr) { return pr.block; })[0], wellIt = V.items.filter(function (it) { return it.name === 'woodenWell'; })[0], rackIt = V.props.filter(function (pr) { return pr.name === 'dryingRack'; })[0];
     if (role === 'smith' && work) spots.push([tile(work.dx, work.y + work.h)[0] + 18, (work.y + work.h) * T + 18, 'smith']);
-    else if (role === 'fisher') { if (shore) spots.push((shore === 's' ? [wc[0] + (R() - 0.5) * 80, (ty + h - 1) * T + 6] : shore === 'n' ? [wc[0], (ty + 1) * T] : shore === 'e' ? [(tx + w - 1) * T, wc[1]] : [(tx + 1) * T, wc[1]]).concat(['fish'])); if (rackIt) spots.push([rackIt.x, rackIt.y + 12, 'hang']); }
+    else if (role === 'fisher' || role === 'fisherman') { if (shore) spots.push((shore === 's' ? [wc[0] + (R() - 0.5) * 80, (ty + h - 1) * T + 6] : shore === 'n' ? [wc[0], (ty + 1) * T] : shore === 'e' ? [(tx + w - 1) * T, wc[1]] : [(tx + 1) * T, wc[1]]).concat(['fish'])); if (rackIt) spots.push([rackIt.x, rackIt.y + 12, 'hang']); }
     else if (role === 'farmer' || role === 'thrall') { if (block && R() < 0.7) spots.push([block.x, block.y - 16, 'chop']); if (wellIt) spots.push([wellIt.x, wellIt.y + 16, 'carry']); }
     else if (role === 'weaver' || role === 'elder') { spots.push([door[0] + 12, door[1] + 2, 'sweep']); if (wellIt && R() < 0.5) spots.push([wellIt.x, wellIt.y + 16, 'carry']); }
     else if (role === 'priest') { var chl = V.lots.filter(function (l) { return l.id === 'church'; })[0]; if (chl) spots.push([(chl.dx + 0.5) * T, (chl.y + chl.h + 1.2) * T, 'door']); }
@@ -369,9 +370,11 @@ function plan(env, opts) {
     return null;
   }
   var maxLow = 0; isles.forEach(function (q) { if (q.biome) maxLow = Math.max(maxLow, q.r); });
+  var fisherIsle = -1; (function () { var best = -1; for (var fi = 1; fi < isles.length; fi++) if (isles[fi].r <= 60 && (best < 0 || isles[fi].r < isles[best].r)) best = fi; fisherIsle = best; })();   // the fisherman lives alone on the smallest island
   for (i = 1; i < isles.length; i++) {
     var q = isles[i], wants = [], big = i === 1 || q.r >= 100 || (q.biome && q.r === maxLow);   // the biggest lowland island always has the town
-    if (q.biome && big) wants = [['town', false], [R() < 0.4 ? 'trading' : 'fishing', true], [R() < 0.6 ? 'church' : 'farmstead', false]];
+    if (i === fisherIsle) wants = [['fisher', true]];
+    else if (q.biome && big) wants = [['town', false], [R() < 0.4 ? 'trading' : 'fishing', true], [R() < 0.6 ? 'church' : 'farmstead', false]];
     else if (q.biome && q.r >= 42) wants = [[R() < 0.5 ? 'church' : 'village', false], [R() < 0.6 ? 'fishing' : 'trading', true]];
     else if (big) wants = [[R() < 0.45 ? 'seat' : 'village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];
     else if (q.r >= 65) wants = [[R() < 0.6 ? 'fishing' : 'trading', true], [R() < 0.5 ? 'small' : (R() < 0.5 ? 'village' : 'farmstead'), false]];
@@ -379,7 +382,7 @@ function plan(env, opts) {
     else if (R() < 0.5) wants = [['farmstead', false]];
     wants.forEach(function (wq) {
       var arch = wq[0], st = find(q, arch, wq[1]); if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
-      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && R() < 0.14) arch = 'ruin';
+      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && R() < 0.14) arch = 'ruin';
       var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
       st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
