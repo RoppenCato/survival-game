@@ -896,6 +896,12 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   writes a **SPIKE** line at once, and every toast is an **event** line. The log is kept in `game.perflog` (the last 1200 lines),
   the Admin board's **"Download the frame log"** saves it as `framelog.txt` (Robin puts it in the project folder for me to read),
   and `Combat.api.debug().perflog()` returns it.
+  **Robin's first log (2026-10-08):** standing still at 1800 by 1125 the frame's CPU work was 3.5 ms but the game ran at 47 fps, so the
+  cost is on the **GPU** (the drawing queued by canvas 2D); the log line now carries `gpu Nms` (once a second the canvas is read back
+  with `getImageData`, which waits for the GPU to finish the frame; the readout shows it too) and the Admin board has **Lower
+  resolution** (`ADMIN.lowres`: `fitCanvas` caps the pixel scale at 3; the props are baked at 2 a unit anyway) to try against it.
+  `PERF.skip` (ground, waves, grass, grain, night, things) turns layers off for measuring (`Combat.api.debug().perf.skip`). The
+  browser pane renders in software, so its numbers only compare layers; they say nothing about Robin's GPU.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
 - **Villages across the islands (2026-10-07, Robin: lots of islands, lots of places):** the world has **six islands** (`spec.sizes`
   60, 230, 150, 110, 170, 90 tiles; `World.make` takes `sizes`; `layoutKey` includes them, so older saves start fresh; `onOtherIsland`
