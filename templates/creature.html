@@ -210,7 +210,7 @@ __COMBAT__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib;
-  lib.applyStored(localStorage); try { var rg0 = localStorage.getItem('creature.rig'); if (rg0 === 'turntable' || rg0 === 'views') { lib.RIG.animals = rg0; lib.RIG.trolls = rg0; } } catch (e) {}                            // the hero, the creatures and the rig the editors handed to the game, from one place
+  lib.applyStored(localStorage);   // the rig is Views on every load, as the game draws it; Turntable is only for a look within the session (2026-10-08: a stored turntable hid every change to the trolls)                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(lib);
   var S = Combat.S; S.look = 'classic'; S.sound = false;
   Combat.clear();
@@ -396,11 +396,11 @@ __COMBAT__
   var rigHost = document.getElementById('rigs');
   [['Views', 'views'], ['Turntable (old)', 'turntable']].forEach(function (rg) {
     var b = document.createElement('button'); b.textContent = rg[0]; b.id = 'rig-' + rg[1];
-    b.addEventListener('click', function () { lib.RIG.animals = rg[1]; lib.RIG.trolls = rg[1]; try { localStorage.setItem('creature.rig', rg[1]); } catch (e) {} rigUi(); b.blur(); });
+    b.addEventListener('click', function () { lib.RIG.animals = rg[1]; lib.RIG.trolls = rg[1]; rigUi(); b.blur(); });
     rigHost.appendChild(b);
   });
   function rigUi() { document.getElementById('rig-views').setAttribute('aria-pressed', lib.RIG.animals === 'views' ? 'true' : 'false'); document.getElementById('rig-turntable').setAttribute('aria-pressed', lib.RIG.animals === 'views' ? 'false' : 'true'); }
-  try { var rg0 = localStorage.getItem('creature.rig'); if (rg0 === 'turntable') { lib.RIG.animals = 'turntable'; lib.RIG.trolls = 'turntable'; } } catch (e) {}
+  try { localStorage.removeItem('creature.rig'); } catch (e) {}
   rigUi();
   var modelHost = document.getElementById('models');
   MODELS.forEach(function (m, mi) {
