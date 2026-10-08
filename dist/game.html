@@ -2846,6 +2846,42 @@ function shipwrightObj(c, K, x, y, seed) {
   line(c, [[x - 36, y - 2], [x - 30, y - 8]], 2, K.wood.base, true); shape(c, rrPts(x - 34, y - 11, 6, 3.4, 1), K.iron, { seed: seed + 4, size: 'S', flat: true, rough: 0.1 });   // a mallet on the ground
 }
 
+// The shipwright's three tiers (2026-10-08, Robin: bigger and better as the tier goes up). Tier 1 is a raft bench: two low
+// trestles with the first log across, a coil of rope, an adze in the log. Tier 2 is the shipwright's bench above (the keel on
+// its trestles with the first ribs). Tier 3 is a yard: the same bench under a plank shelter on posts, with a rack of strakes.
+function shipwright1Obj(c, K, x, y, seed) {
+  gshadow(c, x + 2, y, 24, 4, 0.35);
+  [-12, 12].forEach(function (dx) { line(c, [[x + dx - 6, y], [x + dx, y - 10]], 2.6, K.wood.base, true); line(c, [[x + dx + 6, y], [x + dx, y - 10]], 2.6, K.wood.base, true); line(c, [[x + dx - 3, y - 4], [x + dx + 3, y - 4]], 1.8, K.wood.base, true); });
+  shape(c, [[x - 24, y - 14], [x + 24, y - 15], [x + 24, y - 8.5], [x - 24, y - 7.5]], K.trunkL, { seed: seed, size: 'M', sh: 1.2, rough: 0.25 });   // the first log across the trestles
+  shape(c, ellPts(x + 24, y - 11.8, 2.2, 3.2, 10), K.wood, { seed: seed + 1, size: 'S', flat: true });                                             // its cut end
+  line(c, [[x - 4, y - 15], [x + 2, y - 26]], 2, K.wood.base, true); shape(c, [[x, y - 28], [x + 7, y - 25], [x + 4, y - 21], [x - 2, y - 24]], K.iron, { seed: seed + 2, size: 'S', flat: true, rough: 0.1 });   // an adze stuck in the log
+  for (var k = 0; k < 3; k++) shape(c, ellPts(x - 30 + k * 0.4, y - 2 - k * 1.6, 6.5, 2.6, 12), K.rust, { seed: seed + 5 + k, size: 'S', flat: true, rough: 0.2 });   // a coil of rope
+}
+function shipwright3Obj(c, K, x, y, seed) {
+  gshadow(c, x + 2, y, 46, 6, 0.3);
+  [[-44, -40], [44, -40], [-40, -14], [40, -14]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 2, y + q[1] - 44, 4, 44 + (k < 2 ? 0 : 0), 1.4), K.wood, { seed: seed + 10 + k, size: 'S', sh: 1, rough: 0.2 }); });   // four posts
+  shape(c, [[x - 50, y - 86], [x + 50, y - 86], [x + 46, y - 60], [x - 46, y - 60]], K.trunk, { seed: seed + 20, size: 'L', sh: 1.4, rough: 0.3 });                 // the plank roof, slanting toward you
+  for (var k = 0; k < 7; k++) line(c, [[x - 48 + k * 16, y - 85], [x - 44 + k * 15.5, y - 61]], 0.7, 'rgba(35,26,22,0.35)', false);                                 // the planks' seams
+  shape(c, [[x - 51, y - 61], [x + 51, y - 61], [x + 51, y - 57], [x - 51, y - 57]], K.wood, { seed: seed + 21, size: 'S', flat: true });                            // the eave board
+  for (var r2 = 0; r2 < 3; r2++) shape(c, [[x + 30 + r2 * 4, y - 52], [x + 48, y - 56 - r2 * 3], [x + 49, y - 52 - r2 * 3], [x + 31 + r2 * 4, y - 48]], K.wood, { seed: seed + 30 + r2, size: 'S', flat: true, rough: 0.2 });   // strakes leaning on a rack
+  shipwrightObj(c, K, x - 4, y, seed);
+}
+function masonBenchObj(c, K, x, y, seed) {                 // a stout plank bench on two blocks, a stone being dressed on it, mallet and chisel, finished blocks beside
+  gshadow(c, x + 2, y, 24, 4, 0.35);
+  [-13, 13].forEach(function (dx, k) { shape(c, rrPts(x + dx - 4, y - 11, 8, 11, 1), K.rock, { seed: seed + k, size: 'S', sh: 1.2, rough: 0.35 }); });
+  shape(c, [[x - 20, y - 15], [x + 20, y - 15], [x + 20, y - 10], [x - 20, y - 10]], K.wood, { seed: seed + 2, size: 'M', sh: 1, rough: 0.2 });
+  shape(c, [[x - 10, y - 26], [x + 2, y - 27], [x + 4, y - 15], [x - 9, y - 15]], K.rock, { seed: seed + 3, size: 'M', sh: 1.4, rough: 0.3 });     // the block being dressed
+  line(c, [[x + 6, y - 24], [x + 14, y - 18]], 2.4, K.wood.base, true); shape(c, rrPts(x + 12, y - 21, 6, 4, 1), K.wood, { seed: seed + 4, size: 'S', flat: true });   // the mallet
+  line(c, [[x + 3, y - 17], [x + 9, y - 16]], 1.4, K.iron.base, true);                                                                              // the chisel
+  shape(c, rrPts(x + 20, y - 8, 10, 8, 1), K.rock, { seed: seed + 5, size: 'S', sh: 1.2, rough: 0.3 }); shape(c, rrPts(x + 22, y - 15, 9, 7, 1), K.rock, { seed: seed + 6, size: 'S', sh: 1.2, rough: 0.3 });   // finished blocks stacked
+}
+function signPostObj(c, K, x, y, seed) {                  // a post with a board on top; the game writes the owner's words on it in charcoal
+  gshadow(c, x + 1, y, 5, 2, 0.3);
+  shape(c, rrPts(x - 1.6, y - 24, 3.2, 24, 1), K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.2 });
+  shape(c, [[x - 11, y - 35], [x + 11, y - 36], [x + 11.5, y - 22], [x - 10.5, y - 21]], K.wood, { seed: seed + 1, size: 'S', sh: 1, rough: 0.3 });
+  c.strokeStyle = 'rgba(35,26,22,0.45)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x - 9, y - 33); c.lineTo(x + 9, y - 33.5); c.stroke();
+}
+
 function barrel(c, K, x, y, s, seed) {
   var w = s * 0.62, h = s;
   gshadow(c, x + 2, y + 1, w * 0.7, 4);
@@ -4515,6 +4551,10 @@ var PROPS = {
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
   workbench: { b: [-22, -32, 24, 4], f: function (c, K, s) { workbenchObj(c, K, 0, 0, s); } },
   shipwright: { b: [-42, -44, 44, 4], f: function (c, K, s) { shipwrightObj(c, K, 0, 0, s); } },
+  shipwright1: { b: [-38, -32, 30, 4], f: function (c, K, s) { shipwright1Obj(c, K, 0, 0, s); } },
+  shipwright3: { b: [-54, -90, 54, 6], f: function (c, K, s) { shipwright3Obj(c, K, 0, 0, s); } },
+  masonBench: { b: [-24, -30, 32, 4], f: function (c, K, s) { masonBenchObj(c, K, 0, 0, s); } },
+  signPost: { b: [-13, -38, 13, 2], f: function (c, K, s) { signPostObj(c, K, 0, 0, s); } },
   chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
@@ -5964,7 +6004,7 @@ var T = 32, TS = 24, K = 0.75;
   function inPlan(p, plan) { return Array.isArray(p.plan) ? p.plan.indexOf(plan) >= 0 : p.plan === plan; }
   function costFor(pt, plan) { return pt.costs && pt.costs[plan] ? pt.costs[plan] : pt.cost; }       // a part shared by two plans can cost differently in each (the karve's nails are iron)
   function partsFor(plan) { return ALL_PARTS.filter(function (p) { return inPlan(p, plan); }).map(function (p) { var o = {}, k; for (k in p) o[k] = p[k]; o.cost = costFor(p, plan); return o; }); }
-  var YARD_PLANS = [['raft', 'Raft'], ['boat', 'Boat'], ['karve', 'Karve']];
+  var YARD_PLANS = [['raft', 'Raft'], ['boat', 'Boat'], ['karve', 'Karve']], PLAN_TIER = { raft: 1, boat: 2, karve: 3 };   // the bench's tier a plan needs (2026-10-08: the raft bench, the boat bench, the shipwright's yard)
   var LAYERS = ['hull', 'bind', 'deck', 'fit'];
   var PLANS = {
     raft: { name: 'Raft', checks: [
@@ -6319,8 +6359,11 @@ var scene = {
   yard: null, pick: 0, active: false, host: null, label: null, fade: 0,
   enter: function (host, yardState) {
     this.host = host; this.yard = yardState && yardState.cells ? yardState : { plan: 'raft', cells: [] }; if (!this.yard.plan) this.yard.plan = 'raft';
-    this.pick = 0; this.active = true; this.fade = 0.5; this.label = null; return this.yard;
+    this.pick = 0; this.active = true; this.fade = 0.5; this.label = null;
+    if (!this.yard.cells.length && !this.planList().some(function (pl) { return pl[0] === this.yard.plan; }, this)) this.yard.plan = 'raft';   // a plan above the bench's tier is not kept
+    return this.yard;
   },
+  planList: function () { var t = this.host && this.host.tier ? this.host.tier() : 3; return YARD_PLANS.filter(function (pl) { return (PLAN_TIER[pl[0]] || 1) <= t; }); },
   leave: function () { this.active = false; this.fade = 0.5; },
   parts: function () { return partsFor(this.yard ? this.yard.plan : 'raft'); },
   cam: function () { var Y = this.Y; return { x: Y.X + Y.W * T / 2 - 4, y: (Y.Y + Y.H * T / 2) * K, z: this.ZOOM }; },
@@ -6375,7 +6418,7 @@ var scene = {
   palRect: function (k) { var P = this.PAL; return { x: P.x + 3, y: P.y + 10 + k * (P.cell + 4), w: P.cell, h: P.cell }; },
   palAt: function (ms) { if (!ms) return -1; for (var k = 0; k < this.parts().length; k++) { var r = this.palRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
   planRect: function (k) { return { x: 100 + k * 30, y: 6, w: 27, h: 10 }; },
-  planAt: function (ms) { if (!ms) return -1; for (var k = 0; k < YARD_PLANS.length; k++) { var r = this.planRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
+  planAt: function (ms) { if (!ms) return -1; var PLs = this.planList(); for (var k = 0; k < PLs.length; k++) { var r = this.planRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
   finishRect: function () { return { x: 320, y: 234, w: 62, h: 12 }; },
   hud: function (c, ms, wreck) {          // the frame, the parts, the plan tabs, the guidance, Finish, the cursor's label
     var why = this.check(), hp = this.palAt(ms), PL = this.parts(), P = this.PAL, h = this.host, k, self = this;
@@ -6389,7 +6432,7 @@ var scene = {
       c.globalAlpha = can ? 1 : 0.4; drawYardPart(c, pt, r.x + (pt.w === 2 ? 1 : 7), r.y + 4, pt.w === 2 ? 0.44 : 0.7); c.globalAlpha = 1;
       c.font = '600 4.2px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.textAlign = 'center'; c.fillText(pt.name, r.x + r.w / 2, r.y + r.h - 2.5);
     }
-    YARD_PLANS.forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? '#a8702c' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
+    self.planList().forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? '#a8702c' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
     var line = why || 'The hull is sound. Finish to launch it.';
     c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 270, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 270, 14);
     if (!why) { var fr = this.finishRect(), hv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = hv ? '#6a4e38' : '#5a4232'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 3); c.fill(); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(fr.x, fr.y, fr.w, fr.h); c.restore(); c.strokeStyle = '#c99a3a'; c.lineWidth = 1; c.beginPath(); c.roundRect(fr.x + 0.5, fr.y + 0.5, fr.w - 1, fr.h - 1, 3); c.stroke(); c.strokeStyle = INK.line; c.lineWidth = 1.6; c.beginPath(); c.moveTo(fr.x + 3, fr.y + fr.h); c.lineTo(fr.x + fr.w - 3, fr.y + fr.h); c.moveTo(fr.x + fr.w, fr.y + 3); c.lineTo(fr.x + fr.w, fr.y + fr.h - 3); c.stroke(); c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.5); }
@@ -6410,7 +6453,7 @@ var scene = {
   },
   mousedown: function (button, mw, ms) {  // the tabs, the parts, Finish, taking back, laying
     var h = this.host, ypl = this.planAt(ms);
-    if (ypl >= 0) { if (button === 0 && this.yard.plan !== YARD_PLANS[ypl][0]) { if (this.yard.cells.length) h.toast('Take the parts back first'); else { this.yard.plan = YARD_PLANS[ypl][0]; this.pick = 0; h.save(); } } return true; }
+    if (ypl >= 0) { var PLs2 = this.planList(); if (button === 0 && this.yard.plan !== PLs2[ypl][0]) { if (this.yard.cells.length) h.toast('Take the parts back first'); else { this.yard.plan = PLs2[ypl][0]; this.pick = 0; h.save(); } } return true; }
     var ypk = this.palAt(ms); if (ypk >= 0) { if (button === 0) this.pick = ypk; return true; }
     var fr = this.finishRect(); if (button === 0 && !this.check() && ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h) { h.finish(); return true; }
     if (button === 2) { this.act(mw, true, true); return true; }
@@ -6421,7 +6464,7 @@ var scene = {
   key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
 };
 
-return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullCells: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();
@@ -9244,40 +9287,40 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'wall', name: 'Log wall', m: 0, cost: { wood: 2 } },
     { id: 'wall', name: 'Plank wall', m: 1, cost: { wood: 2 } },
     { id: 'wall', name: 'Wattle wall', m: 2, cost: { wood: 1, fiber: 2 } },
-    { id: 'wall', name: 'Stone wall', m: 3, cost: { stone: 2 } },
+    { id: 'wall', name: 'Stone wall', m: 3, cost: { stone: 2 }, key: 'mason' },
     { id: 'wall', name: 'Turf wall', m: 4, cost: { stone: 1, fiber: 2 } },
-    { id: 'wall', name: 'Timber frame', m: 5, cost: { wood: 2, fiber: 1 } },
-    { id: 'wall', name: 'Cut stone', m: 6, cost: { stone: 3 } },
+    { id: 'wall', name: 'Timber frame', m: 5, cost: { wood: 2, fiber: 1 }, key: 'ironBar' },
+    { id: 'wall', name: 'Cut stone', m: 6, cost: { stone: 3 }, key: 'ironBar' },
     { id: 'door', name: 'Door', m: 0, cost: { wood: 2 } },
     { id: 'window', name: 'Window', m: 0, cost: { wood: 2 } },
     { id: 'post', name: 'Post', m: 0, cost: { wood: 1 } },
     { id: 'stairs', name: 'Stairs', m: 0, cost: { wood: 6 } },
     { id: 'floor', name: 'Plank floor', m: 0, cost: { wood: 1 } },
     { id: 'floor', name: 'Packed earth', m: 1, cost: { fiber: 1 } },
-    { id: 'floor', name: 'Stone flags', m: 2, cost: { stone: 1 } },
+    { id: 'floor', name: 'Stone flags', m: 2, cost: { stone: 1 }, key: 'mason' },
     { id: 'brush', name: 'Gravel', k: 1, cost: {}, icon: function (c) { c.fillStyle = '#8f877a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#c9c2b4'; [[-4, 0], [1, -1.5], [3, 2], [-1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.4, 0.9, 0, 0, 7); c.fill(); }); } },
     { id: 'brush', name: 'Earth', k: 2, cost: {}, icon: function (c) { c.fillStyle = '#7e623e'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#5a4228'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.fillRect(q[0], q[1], 2, 1.2); }); } },
     { id: 'brush', name: 'Moss', k: 3, cost: {}, icon: function (c) { c.fillStyle = '#5c8046'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#7fa062'; [[-4, 0], [1, -1.5], [3, 2], [-1, 2.5]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 1.1, 0, 0, 7); c.fill(); }); } },
-    { id: 'brush', name: 'Field', k: 4, cost: {}, icon: function (c) { c.fillStyle = '#76583a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#4e3a26'; c.lineWidth = 1; [-2, 0, 2].forEach(function (q) { c.beginPath(); c.moveTo(-6, q + 1); c.lineTo(6, q + 1); c.stroke(); }); } },
-    { id: 'brush', name: 'Chalk', k: 5, cost: {}, icon: function (c) { c.fillStyle = '#d6d2c4'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#b8b4a6'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.5, 1, 0, 0, 7); c.fill(); }); } },
-    { id: 'brush', name: 'Marsh', k: 6, cost: {}, icon: function (c) { c.fillStyle = '#465f40'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#8fb0d0'; [[-3, 1], [2, -1], [1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 0.9, 0, 0, 7); c.fill(); }); } },
+    { id: 'brush', key: 'bogIron', name: 'Field', k: 4, cost: {}, icon: function (c) { c.fillStyle = '#76583a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#4e3a26'; c.lineWidth = 1; [-2, 0, 2].forEach(function (q) { c.beginPath(); c.moveTo(-6, q + 1); c.lineTo(6, q + 1); c.stroke(); }); } },
+    { id: 'brush', key: 'bogIron', name: 'Chalk', k: 5, cost: {}, icon: function (c) { c.fillStyle = '#d6d2c4'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#b8b4a6'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.5, 1, 0, 0, 7); c.fill(); }); } },
+    { id: 'brush', key: 'bogIron', name: 'Marsh', k: 6, cost: {}, icon: function (c) { c.fillStyle = '#465f40'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#8fb0d0'; [[-3, 1], [2, -1], [1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 0.9, 0, 0, 7); c.fill(); }); } },
     { id: 'brush', name: 'Grass back', k: 0, cost: {}, icon: function (c) { c.fillStyle = '#5f8a44'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#8aa65a'; c.lineWidth = 1; [[-4, 2], [0, 1], [4, 2]].forEach(function (q) { c.beginPath(); c.moveTo(q[0], q[1] + 2); c.lineTo(q[0] + 1, q[1] - 3); c.stroke(); }); } },
-    { id: 'floor', name: 'Grass', m: 4, cost: { fiber: 1 } },
-    { id: 'floor', name: 'Dark grass', m: 5, cost: { fiber: 1 } },
-    { id: 'floor', name: 'Moss', m: 6, cost: { fiber: 1 } },
-    { id: 'floor', name: 'Bare rock', m: 7, cost: { stone: 1 } },
-    { id: 'floor', name: 'Dock', m: 8, cost: { wood: 2 } },
+    { id: 'floor', name: 'Grass', m: 4, cost: { fiber: 1 }, key: 'mason' },
+    { id: 'floor', name: 'Dark grass', m: 5, cost: { fiber: 1 }, key: 'mason' },
+    { id: 'floor', name: 'Moss', m: 6, cost: { fiber: 1 }, key: 'mason' },
+    { id: 'floor', name: 'Bare rock', m: 7, cost: { stone: 1 }, key: 'mason' },
+    { id: 'floor', name: 'Dock', m: 8, cost: { wood: 2 }, key: 'ship1' },
     { id: 'fence', name: 'Wattle fence', m: 2, cost: { wood: 1 }, yard: true },
     { id: 'gate', name: 'Gate', m: 2, cost: { wood: 2 }, yard: true },
-    { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true },
+    { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true, key: 'copper' },
     { id: 'rail', name: 'Rail fence', m: 1, cost: { wood: 1 }, yard: true },
-    { id: 'drystone', name: 'Dry-stone wall', m: 3, cost: { stone: 2 }, yard: true },
-    { id: 'townwall', name: 'Town wall', m: 6, cost: { stone: 4 }, yard: true },
+    { id: 'drystone', name: 'Dry-stone wall', m: 3, cost: { stone: 2 }, yard: true, key: 'mason' },
+    { id: 'townwall', name: 'Town wall', m: 6, cost: { stone: 4 }, yard: true, key: 'ironBar' },
     { id: 'roof', name: 'Turf roof', m: 0, cost: { fiber: 2 } },
     { id: 'roof', name: 'Thatch roof', m: 1, cost: { fiber: 4 } },
-    { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 } },
-    { id: 'roof', name: 'Tile roof', m: 3, cost: { stone: 3 } },
-    { id: 'roof', name: 'Slate roof', m: 4, cost: { stone: 4 } },
+    { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 }, key: 'copper' },
+    { id: 'roof', name: 'Tile roof', m: 3, cost: { stone: 3 }, key: 'ironBar' },
+    { id: 'roof', name: 'Slate roof', m: 4, cost: { stone: 4 }, key: 'ironBar' },
     { id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 4, cost: { wood: 6, stone: 1 }, icon: function (c) {
       c.fillStyle = '#b98a5a'; c.fillRect(-7, -3, 14, 3); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-7, -3, 14, 3); c.fillStyle = '#8a5a3a'; c.fillRect(-6, 0, 2, 6); c.fillRect(4, 0, 2, 6);
       c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(-3, -4); c.lineTo(1, -8); c.lineTo(3, -6); c.lineTo(-1, -3); c.closePath(); c.fill(); c.stroke();
@@ -9286,46 +9329,51 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.fillStyle = '#8a5a3a'; c.fillRect(-8, -2, 16, 7); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-8, -2, 16, 7);
       c.fillStyle = '#d9c9a6'; c.fillRect(-7, -4, 14, 4); c.strokeRect(-7, -4, 14, 4); c.fillStyle = '#c96a4a'; c.fillRect(-2, -4, 9, 4); c.fillStyle = '#f1e6cf'; c.beginPath(); c.ellipse(-4.5, -2, 2.2, 1.4, 0, 0, 7); c.fill();
     } },
-    { id: 'ship', name: 'Shipwright’s bench', kind: 'item', prop: 'shipwright', ship: true, r: 7, cost: { wood: 12, stone: 2 } },
-    { id: 'hearth', name: 'Hearth', kind: 'item', prop: 'stoneHearth', r: 8, cost: { stone: 4, wood: 2 }, icon: function (c) {
+    // the shipwright's three tiers (2026-10-08, Robin): the raft bench once Brokk has taught the raft, the boat bench with copper, the yard with iron; each opens its plans in the Shipyard (Yard.PLAN_TIER)
+    { id: 'ship1', name: 'Raft bench', kind: 'item', prop: 'shipwright1', ship: 1, r: 6, cost: { wood: 12, fiber: 4 }, key: 'raft', gives: 'ship1' },
+    { id: 'ship', name: 'Boat bench', kind: 'item', prop: 'shipwright', ship: 2, r: 7, cost: { wood: 16, copper: 4, stone: 4 }, key: 'copper', gives: 'ship2' },
+    { id: 'ship3', name: 'Shipwright’s yard', kind: 'item', prop: 'shipwright3', ship: 3, r: 11, cost: { wood: 20, ironBar: 6, stone: 8 }, key: 'ironBar', gives: 'ship3' },
+    { id: 'mason', name: 'Mason’s bench', kind: 'item', prop: 'masonBench', r: 5, cost: { wood: 6, copper: 3, stone: 4 }, key: 'copper', gives: 'mason' },   // building in stone begins here (2026-10-08, Robin)
+    { id: 'signpost', name: 'Wooden sign', kind: 'item', prop: 'signPost', r: 2, sign: true, cost: { wood: 3, charcoal: 1 }, key: 'charcoal' },   // E writes on it in charcoal
+    { id: 'hearth', name: 'Hearth', kind: 'item', prop: 'stoneHearth', r: 8, cost: { stone: 4, wood: 2 }, key: 'mason', icon: function (c) {
       c.fillStyle = '#7d8290'; [[-6, 4], [0, 5.5], [6, 4]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 3.2, 2, 0, 0, 7); c.fill(); });
       c.fillStyle = '#e8702a'; c.beginPath(); c.moveTo(-4, 3); c.quadraticCurveTo(-5, -3, 0, -7); c.quadraticCurveTo(5, -3, 4, 3); c.closePath(); c.fill();
       c.fillStyle = '#ffd34d'; c.beginPath(); c.moveTo(-2, 3); c.quadraticCurveTo(-2.5, -1, 0, -3.5); c.quadraticCurveTo(2.5, -1, 2, 3); c.closePath(); c.fill();
     } },
-    { id: 'fireplace', name: 'Fireplace', kind: 'item', prop: 'fireplace', r: 7, hearth: true, chimney: true, cost: { stone: 10, wood: 2 } },
-    { id: 'carver', name: 'Carver’s bench', kind: 'item', prop: 'carverBench', r: 5, carver: true, cost: { wood: 6, stone: 2, copper: 2 } },
+    { id: 'fireplace', name: 'Fireplace', kind: 'item', prop: 'fireplace', r: 7, hearth: true, chimney: true, cost: { stone: 10, wood: 2 }, key: 'mason' },
+    { id: 'carver', name: 'Carver’s bench', kind: 'item', prop: 'carverBench', r: 5, carver: true, cost: { wood: 6, stone: 2, copper: 2 }, key: 'copper' },
     // outdoor and household things, drawn from the kit's props; their icons are the props shrunk
     { id: 'chair', name: 'Chair', kind: 'item', prop: 'chair', r: 3, cost: { wood: 2 } },
     { id: 'seat', name: 'Bench seat', kind: 'item', prop: 'bench', r: 6, cost: { wood: 3 } },
     { id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 5, cost: { wood: 4 } },
     { id: 'barrel', name: 'Barrel', kind: 'item', prop: 'barrel', r: 4, cost: { wood: 3 } },
     { id: 'crate', name: 'Crate', kind: 'item', prop: 'crate', r: 4, cost: { wood: 3 } },
-    { id: 'rug', name: 'Rug', kind: 'item', prop: 'rug', r: 0, flat: true, cost: { leather: 2, fiber: 4 } },
+    { id: 'rug', name: 'Rug', kind: 'item', prop: 'rug', r: 0, flat: true, cost: { leather: 2, fiber: 4 }, key: 'leather' },
     { id: 'chest', name: 'Chest', kind: 'item', prop: 'chest', r: 5, chest: true, cost: { wood: 8 } },
-    { id: 'claim', name: 'Claim stone', kind: 'item', prop: 'claimStone', r: 5, claim: true, cost: Hird.DEF.claimCost },
+    { id: 'claim', name: 'Claim stone', kind: 'item', prop: 'claimStone', r: 5, claim: true, cost: Hird.DEF.claimCost, key: 'snakeBlood' },
     { id: 'woodpile', name: 'Woodpile', kind: 'item', prop: 'woodpile', r: 6, cost: { wood: 5 } },
     { id: 'rack', name: 'Drying rack', kind: 'item', prop: 'dryingRack', r: 6, cost: { wood: 4, fiber: 2 } },
-    { id: 'brazier', name: 'Brazier', kind: 'item', prop: 'brazier', r: 3, light: 1, cost: { stone: 2, wood: 2 } },
-    { id: 'well', name: 'Well', kind: 'item', prop: 'woodenWell', r: 6, cost: { stone: 6, wood: 4 } },
-    { id: 'hay', name: 'Haystack', kind: 'item', prop: 'haystack', r: 6, cost: { fiber: 8 } },
-    { id: 'shields', name: 'Shield rack', kind: 'item', prop: 'shieldRack', r: 5, cost: { wood: 4 } },
-    { id: 'skeps', name: 'Bee skeps', kind: 'item', prop: 'beeSkeps', r: 5, cost: { fiber: 6, wood: 1 } },
-    { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 7, cost: { wood: 8 } },
-    { id: 'dragon', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 3, cost: { wood: 4 } },
+    { id: 'brazier', name: 'Brazier', kind: 'item', prop: 'brazier', r: 3, light: 1, cost: { stone: 2, wood: 2 }, key: 'copper' },
+    { id: 'well', name: 'Well', kind: 'item', prop: 'woodenWell', r: 6, cost: { stone: 6, wood: 4 }, key: 'mason' },
+    { id: 'hay', name: 'Haystack', kind: 'item', prop: 'haystack', r: 6, cost: { fiber: 8 }, key: 'leather' },
+    { id: 'shields', name: 'Shield rack', kind: 'item', prop: 'shieldRack', r: 5, cost: { wood: 4 }, key: 'leather' },
+    { id: 'skeps', name: 'Bee skeps', kind: 'item', prop: 'beeSkeps', r: 5, cost: { fiber: 6, wood: 1 }, key: 'honey' },
+    { id: 'cart', name: 'Cart', kind: 'item', prop: 'cart', r: 7, cost: { wood: 8 }, key: 'copper' },
+    { id: 'dragon', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 3, cost: { wood: 4 }, key: 'silver' },
     { id: 'campfire', name: 'Campfire', kind: 'item', prop: 'campfire', r: 5, light: 1, hearth: true, cost: { wood: 4, stone: 2 } },
-    { id: 'firePit', name: 'Fire pit', kind: 'item', prop: 'firePit', r: 11, light: 1, hearth: true, cost: { stone: 8, wood: 4 } },
+    { id: 'firePit', name: 'Fire pit', kind: 'item', prop: 'firePit', r: 11, light: 1, hearth: true, cost: { stone: 8, wood: 4 }, key: 'mason' },
     { id: 'logSeat', name: 'Log seat', kind: 'item', prop: 'logSeat', r: 5, cost: { wood: 2 } },
-    { id: 'trough', name: 'Trough', kind: 'item', prop: 'trough', r: 5, cost: { wood: 4 } },
-    { id: 'scarecrow', name: 'Scarecrow', kind: 'item', prop: 'scarecrow', r: 2, cost: { wood: 2, fiber: 3 } },
-    { id: 'flowers', name: 'Flower bed', kind: 'item', prop: 'flowerBed', r: 0, cost: { fiber: 2 } },
-    { id: 'cairn', name: 'Cairn', kind: 'item', prop: 'cairn', r: 4, cost: { stone: 5 } },
-    { id: 'charcoal', name: 'Charcoal clamp', kind: 'item', prop: 'charcoalPit', r: 7, clamp: true, cost: { wood: 8, stone: 2 } },
-    { id: 'furnace', name: 'Furnace', kind: 'item', prop: 'furnace', r: 9, furnace: true, cost: { stone: 12, wood: 2 } },
-    { id: 'altar', name: 'Altar', kind: 'item', prop: 'altar', r: 6, light: 1, lamp: true, cost: { stone: 6, fiber: 2 } },
-    { id: 'graveStone', name: 'Grave marker', kind: 'item', prop: 'graveStone', r: 2, cost: { stone: 2 } },
-    { id: 'wayCross', name: 'Stone cross', kind: 'item', prop: 'wayCross', r: 3, cost: { stone: 5 } },
-    { id: 'stall', name: 'Market stall', kind: 'item', prop: 'stall', r: 8, cost: { wood: 6, fiber: 4 } },
-    { id: 'bellTower', name: 'Bell tower', kind: 'item', prop: 'bellTower', r: 14, cost: { stone: 24, wood: 6, copper: 2 } }
+    { id: 'trough', name: 'Trough', kind: 'item', prop: 'trough', r: 5, cost: { wood: 4 }, key: 'leather' },
+    { id: 'scarecrow', name: 'Scarecrow', kind: 'item', prop: 'scarecrow', r: 2, cost: { wood: 2, fiber: 3 }, key: 'leather' },
+    { id: 'flowers', name: 'Flower bed', kind: 'item', prop: 'flowerBed', r: 0, cost: { fiber: 2 }, key: 'honey' },
+    { id: 'cairn', name: 'Cairn', kind: 'item', prop: 'cairn', r: 4, cost: { stone: 5 }, key: 'mason' },
+    { id: 'charcoal', name: 'Charcoal clamp', kind: 'item', prop: 'charcoalPit', r: 7, clamp: true, cost: { wood: 8, stone: 2 }, key: 'charcoal' },
+    { id: 'furnace', name: 'Furnace', kind: 'item', prop: 'furnace', r: 9, furnace: true, cost: { stone: 12, wood: 2 }, key: 'mason' },
+    { id: 'altar', name: 'Altar', kind: 'item', prop: 'altar', r: 6, light: 1, lamp: true, cost: { stone: 6, fiber: 2 }, key: 'ironBar' },
+    { id: 'graveStone', name: 'Grave marker', kind: 'item', prop: 'graveStone', r: 2, cost: { stone: 2 }, key: 'ironBar' },
+    { id: 'wayCross', name: 'Stone cross', kind: 'item', prop: 'wayCross', r: 3, cost: { stone: 5 }, key: 'ironBar' },
+    { id: 'stall', name: 'Market stall', kind: 'item', prop: 'stall', r: 8, cost: { wood: 6, fiber: 4 }, key: 'ironBar' },
+    { id: 'bellTower', name: 'Bell tower', kind: 'item', prop: 'bellTower', r: 14, cost: { stone: 24, wood: 6, copper: 2 }, key: 'ironBar' }
   ];
   var ICON_SCALE = { bellTower: 0.17, altar: 0.5, graveStone: 0.7, wayCross: 0.4, stall: 0.36, firePit: 0.34, logSeat: 0.55, furnace: 0.36, carverBench: 0.5, fireplace: 0.4, campfire: 0.4, trough: 0.5, scarecrow: 0.26, flowerBed: 0.36, cairn: 0.4, charcoalPit: 0.3, shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   // the rows of the Building board (a piece's cat): the frame and walls, floors and roofs, the yard, the home, outdoors
@@ -9337,6 +9385,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.drawImage(s.cv, -s.w * sc / 2, -s.h * sc / 2 + 1, s.w * sc, s.h * sc);
   }
   PIECES.forEach(function (p) { if (p.kind === 'item' && !p.icon) p.icon = function (c) { propIcon(c, p.prop); }; });
+  // A piece is on the board once its key has been found (a kind picked up: copper, leather, honey, charcoal, iron, silver, snake blood)
+  // or built (the mason's bench opens stone, the shipwright's benches open the dock) or taught (Brokk's raft). 2026-10-08, Robin: the
+  // start was overwhelming; wood first, stone with copper, the lowland pieces with iron, finds open the rest.
+  function pieceKnown(p) { return !p.key || !!seen[p.key]; }
+  function stepPiece(d) { var P = hero(), n = 0; do { stepPiece(d); } while (!pieceKnown(PIECES[P.piece]) && n++ < PIECES.length); }
   function costText(cost) { var p = []; for (var k in cost) p.push(cost[k] + ' ' + k); return p.join(', '); }
   var buildSlots0 = PIECES.map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function (c) { if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); } }; });
   Combat.api.buildSlots = buildSlots0;
@@ -9773,7 +9826,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       bDirty = true; save(); return;
     }
     if (t.kind === 'brush') { if (w.paintGround(t.x, t.y, BRUSH_R, t.piece.k)) { if (first) sfx('build'); groundDirtyT = clock; } return; }
-    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: !!t.piece.ship, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver, clamp: !!t.piece.clamp, furnace: !!t.piece.furnace }; if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = 'I will keep this stone.'; kp.sayT = 3; } } else B.items.push(nit); if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
+    if (t.kind === 'item') { if (!first) return; pay(t.piece.cost); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: t.piece.ship || false, sign: !!t.piece.sign, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver, clamp: !!t.piece.clamp, furnace: !!t.piece.furnace }; if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = 'I will keep this stone.'; kp.sayT = 3; } } else B.items.push(nit); if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
     if (t.kind === 'roof') { if (!first) return; pay(t.piece.cost); if (!BB.roofs) BB.roofs = {}; BB.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
     if (t.kind === 'stairs') { if (!first) return; pay(t.piece.cost); B.stairs[Build.key(t.tx, t.ty)] = { d: 0 }; bDirty = true; sfx('build'); save(); return; }
     var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : t.kind === 'post' ? 'P' + Build.key(t.cx, t.cy) : 'F' + Build.key(t.tx, t.ty);
@@ -9903,7 +9956,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, silver: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
   var NAMES = { charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
-  function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; var n = RECIPES2.filter(function (r) { return known(r) && !r._told; }).length; if (n) toast('Something new to make'); RECIPES2.forEach(function (r) { if (known(r)) r._told = true; }); } }
+  function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; var n = RECIPES2.filter(function (r) { return known(r) && !r._told; }).length; if (n) toast('Something new to make'); if (PIECES.some(function (p) { return p.key === kind; })) toast('Something new to build'); RECIPES2.forEach(function (r) { if (known(r)) r._told = true; }); } }
   // The bag: 30 slots, 6 wide. The top row is the Fight bar and the second the Gather bar: each is the hotbar of its mode,
   // numbered 1 to 6, and `hand` says which slot of each is in the hand. The three rows below are the bag proper.
   var COLS = 6, ROWS = 5, SLOTS = COLS * ROWS, BAG0 = COLS * 2, STACK = 25, slots = [], held = null, pick = null;
@@ -10004,7 +10057,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     item('stoneHearth', vx + 4, vy + 2);
     house(vx + 9, vy + 1, 3, 2, 2, 1, vx + 10, 0);         // the hut still whole: wattle, packed earth, a thatch roof, a bed and a crate
     item('bed', vx + 9, vy + 1, { bed: true }); item('crate', vx + 11, vy + 2, { loot: { wood: 8, fiber: 4 } });
-    house(vx + 9, vy + 6, 4, 3, 3, 2, vx + 11, 6);         // the stone house, half gone
+    house(vx + 9, vy + 6, 4, 3, 1, 0, vx + 11, 6);         // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces)
     item('woodenWell', vx + 8, vy + 7); item('stoneHearth', vx + 4.6, vy + 7.6, { light: 1 });   // Brokk's fire: light, and a hint that you will want one; a step away from him so E does not muddle them (2026-10-08)
     item('barrel', vx + 12, vy + 7, { loot: { berries: 5, meat: 2 } });
     for (x = vx; x < vx + village.w; x++) if (!(x >= vx + 6 && x <= vx + 7) && R() < 0.8) H(x, vy, 'palisade', 0);   // the palisade: a gate in the north, gaps all round
@@ -10124,11 +10177,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
     hero: hero, canAfford: canAfford, pay: pay, costText: costText, sfx: sfx, toast: toast,
     tile: function (c, gx, gy, x, y, w2, h2) { c.drawImage(w.tile('grass', gx, gy), x, y, w2, h2); },
     save: function () { if (yardBench) yardBench.yard = YSCENE.yard; save(); },
-    finish: function () { yardFinish(); }
+    finish: function () { yardFinish(); },
+    tier: function () { return yardBench ? tierOf(yardBench) : 1; }
   };
+  function signNear(P) { if (P.mode === 'build') return null; for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.sign && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 36) return it; } return null; }
+  function signWrite(it) { var t = window.prompt('What should the sign say?', it.text || ''); if (t != null) { it.text = t.slice(0, 28); save(); } }
+  function drawSignText(c, it) { var t = it.text, a = t, b = ''; if (t.length > 12) { var cut = t.lastIndexOf(' ', 14); if (cut < 4) cut = 12; a = t.slice(0, cut); b = t.slice(cut).trim(); } c.save(); c.font = '600 3.4px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#2a2220'; c.fillText(a, it.x, it.y * K - (b ? 30.5 : 28)); if (b) c.fillText(b, it.x, it.y * K - 25.5); c.restore(); }
+  function tierOf(it) { return it.ship === true ? 2 : (it.ship || 0); }   // an older save's bench (ship: true) was the boat bench
   function yardSave() { yardHost.save(); }
   function yardEnter(bench) {
-    var P = hero(); yardBench = bench; bench.yard = YSCENE.enter(yardHost, bench.yard);
+    var P = hero(); yardBench = bench; bench.yard = YSCENE.enter(yardHost, bench.yard);   // the bench's tier (tierOf) limits the plans
     inYard = true; yardZoom = zoom; zoom = YSCENE.ZOOM; sfx('pick');
     var hs = YSCENE.heroSpot(); P.x = hs.x; P.y = hs.y; P.vx = P.vy = 0; P.mode = 'build'; P.wreck = false; P.lastMode = 'fight';
     Combat.api.scene.bounds = worldBounds();
@@ -10831,7 +10889,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     barPut(Items.make('sword', 'iron')); barPut(Items.make('bow', 'wood')); barPut(Items.make('axe', 'iron')); barPut(Items.make('pick', 'iron')); barPut(Items.make('knife', 'iron')); equip.shield = Items.make('shield', 'wood'); hand = { fight: 0, gather: 0 };
     ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, 'leather'); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
-    ORDER.forEach(function (k) { seen[k] = 1; });
+    ORDER.forEach(function (k) { seen[k] = 1; }); ['raft', 'mason', 'ship1', 'ship2', 'ship3'].forEach(function (k) { seen[k] = 1; });
     if (SHOW.runes) sandboxRunes(); recount(); save(); toast('Sandbox: everything to try things out with');
   }
   Combat.api.armor = function () { var a = 0; for (var k in equip) if (equip[k] && Items.KINDS[equip[k].kind].gear) a += Items.stats(equip[k]).armor; if (inUse('thickskin')) a += 0.1 * runeMul('thickskin'); return Math.min(0.6, a); };
@@ -11021,7 +11079,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var byCat = menuTab === 'build', rowH = MCELL + 3 + (byCat ? 7 : 0), nrows = MROWS, cols = menuTab === 'build' ? 11 : MCOLS;
     menu = { items: [], w: cols * (MCELL + 3) + 11, h: 21 + MROWS * rowH + 14, tabs: [], byCat: byCat, rowH: rowH, labels: [] };
     menu.x = Math.round((400 - menu.w) / 2); menu.y = menuTab === 'build' ? 12 : 34;   // the Building board is tall: it starts near the top
-    var list = menuTab === 'build' ? PIECES : (menuTab === 'hearth' ? RECIPES.filter(dishKnown) : RECIPES2.filter(function (r) { return r.at === menuTab && known(r); }));
+    var list = menuTab === 'build' ? PIECES.filter(pieceKnown) : (menuTab === 'hearth' ? RECIPES.filter(dishKnown) : RECIPES2.filter(function (r) { return r.at === menuTab && known(r); }));
     if (byCat) {                                            // one row per category, the label over it when the row has something
       var grid = [], row = 0; (menuTab === 'build' ? BCATS : CATS2).forEach(function (ct) { var inRow = list.filter(function (r) { return r.cat === ct[0]; }); if (!inRow.length) return; menu.labels.push({ text: ct[1], y: menu.y + 21 + row * rowH + 5 }); for (i = 0; i < inRow.length; i++) { grid[row * cols + (i % cols)] = inRow[i]; if (i % cols === cols - 1 && i < inRow.length - 1) row++; } row++; });   // a long row wraps
       list = grid; nrows = Math.max(1, row); n = nrows * cols; menu.h = 21 + nrows * rowH + 14;
@@ -12216,7 +12274,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       B.items.forEach(function (it) {
         if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
-        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.loot || (it.out && it.out.length)) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
+        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.loot || (it.out && it.out.length)) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 60 && Math.abs(mv.y * K - cam.y) < hh + 60) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });
@@ -12282,8 +12340,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var rsn = ring && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;
       var cvN = !ringOpen && carverNear(P) && P.mode !== 'build', bdN = bodyNear(P), hdN = !bdN && hoardNear(P), fuN = !!furnaceAt(P), clN = !fuN && clampNear(P) && clampPrompt(clampNear(P)) ? clampNear(P) : null, frN = !fuN && !clN && ringNear(P);   // a stone read once needs no prompt
       var stP = stoneNearH(P), asP = !stP && followerNear(P) && workplaceNear(P), hmP = !stP && !asP && hirdNear(P), ydP = !stP && !asP && !hmP && yardUsable(), bnP = !stP && !asP && !hmP && !ydP && !nearHearth(P) && !rsn && benchNear(P), bedP = !nearHearth(P) && !rsn && !bnP && bedNear(P), seatP = sitting || (!stP && !asP && !hmP && !ydP && !rsn && seatFirst(P)) || (!nearHearth(P) && !rsn && !bnP && !bedP && seatNear(P)), crP = !nearHearth(P) && !rsn && !bedP && !seatP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && ((nearNpc(P) && !(npc.sayT > 0)) || (folkNear(P) && !(folkNear(P).sayT > 0))), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P);
-      if ((carrying || heavyNear(P) || cargoHome() || stP || asP || hmP || ydP || nearHearth(P) || rsn || bnP || bedP || seatP || crP || npcP || rkP || rfP || cvP || bbP || cvN || bdN || hdN || fuN || clN || frN) && !invOpen && P.mode !== 'build' && !menu && !ringOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
-        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, hvN = !carrying && heavyNear(P), pt = carrying ? (raftUsable() && !raft.aboard ? 'Stow it aboard' : 'Put it down') : (cargoHome() && raftUsable() && !raft.aboard) ? 'Unload the silver' : hvN ? (hvN.locked ? 'Locked: break it open' : 'Lift the chest') : bdN ? 'Take the arm ring' : hdN ? 'Take from the hoard' : cvN ? 'Cut runes' : fuN ? 'Smelt' : clN ? clampPrompt(clN) : frN ? 'Take the charcoal' : stP ? (stP.fallen ? 'Raise the stone (6 stone)' : 'Muster') : asP ? (HD.jobs[jobOf(workplaceNear(P))].name + ': ' + followerNear(P).name) : hmP ? (hmP.follow ? 'Stay' : (hmP === npc && !seen.raft ? 'Talk' : 'Follow me')) : ydP ? 'Lay a hull' : bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : (raft.kind === 'boat' ? 'Board the boat' : 'Board the raft')) : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : seatP ? (sitting ? 'Stand up' : 'Sit') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
+      if ((signNear(P) || carrying || heavyNear(P) || cargoHome() || stP || asP || hmP || ydP || nearHearth(P) || rsn || bnP || bedP || seatP || crP || npcP || rkP || rfP || cvP || bbP || cvN || bdN || hdN || fuN || clN || frN) && !invOpen && P.mode !== 'build' && !menu && !ringOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
+        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, hvN = !carrying && heavyNear(P), pt = signNear(P) ? 'Write' : carrying ? (raftUsable() && !raft.aboard ? 'Stow it aboard' : 'Put it down') : (cargoHome() && raftUsable() && !raft.aboard) ? 'Unload the silver' : hvN ? (hvN.locked ? 'Locked: break it open' : 'Lift the chest') : bdN ? 'Take the arm ring' : hdN ? 'Take from the hoard' : cvN ? 'Cut runes' : fuN ? 'Smelt' : clN ? clampPrompt(clN) : frN ? 'Take the charcoal' : stP ? (stP.fallen ? 'Raise the stone (6 stone)' : 'Muster') : asP ? (HD.jobs[jobOf(workplaceNear(P))].name + ': ' + followerNear(P).name) : hmP ? (hmP.follow ? 'Stay' : (hmP === npc && !seen.raft ? 'Talk' : 'Follow me')) : ydP ? 'Lay a hull' : bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : (raft.kind === 'boat' ? 'Board the boat' : 'Board the raft')) : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : seatP ? (sitting ? 'Stand up' : 'Sit') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : 'Cook';
         c.font = '600 6px system-ui, sans-serif'; var pw = c.measureText(pt).width + 20, px0 = tx - pw / 2;
         c.fillStyle = 'rgba(20,16,30,0.72)'; c.beginPath(); c.roundRect(px0, ty - 6, pw, 11, 5.5); c.fill();
         c.fillStyle = '#f6e2b8'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.roundRect(px0 + 2.5, ty - 4.3, 7.5, 7.5, 1.5); c.fill(); c.stroke();   // a small key cap
@@ -12370,7 +12428,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (inYard) yardLeave(); else if (carrying && raftUsable() && !raft.aboard) stowHeavy(); else if (carrying) putDown(); else if (cargoHome() && raftUsable() && !raft.aboard) unloadCargo(); else if (heavyNear(hero()) && !heavyNear(hero()).locked) liftHeavy(heavyNear(hero())); else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (ringOpen) ringOpen = false; else if (bodyNear(hero())) takeRing(); else if (hoardNear(hero())) hoardTake(); else if (carverNear(hero()) && hero().mode !== 'build') openRing(carverNear(hero())); else if (sitting) standUp(); else if (seatFirst(hero()) && hero().mode !== 'build' && !bedNear(hero())) sitDown(seatFirst(hero())); else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (furnaceAt(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('furnace'); } else if (clampNear(hero())) clampUse(clampNear(hero())); else if (ringNear(hero())) ringTake(ringNear(hero())); else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); } else { var rs = ring && stoneNear(hero()); if (rs) readStone(rs); else if (sitting) standUp(); else if (seatNear(hero()) && !bedNear(hero())) sitDown(seatNear(hero())); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (musterOpen) musterOpen = false; else if (stoneNearH(hero()) && stoneNearH(hero()).fallen) { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(stoneNearH(hero())); } else toast('It takes 6 stone to raise it'); } else if (hirdAssign(hero())) {} else if (hirdNear(hero())) hirdTalk(hirdNear(hero())); else if (stoneNearH(hero())) { musterOpen = true; invOpen = false; menu = null; } else if (nearNpc(hero())) talk(); else if (folkNear(hero())) folkTalk(folkNear(hero())); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (inYard) yardLeave(); else if (carrying && raftUsable() && !raft.aboard) stowHeavy(); else if (carrying) putDown(); else if (cargoHome() && raftUsable() && !raft.aboard) unloadCargo(); else if (heavyNear(hero()) && !heavyNear(hero()).locked) liftHeavy(heavyNear(hero())); else if (signNear(hero())) signWrite(signNear(hero())); else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (ringOpen) ringOpen = false; else if (bodyNear(hero())) takeRing(); else if (hoardNear(hero())) hoardTake(); else if (carverNear(hero()) && hero().mode !== 'build') openRing(carverNear(hero())); else if (sitting) standUp(); else if (seatFirst(hero()) && hero().mode !== 'build' && !bedNear(hero())) sitDown(seatFirst(hero())); else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (furnaceAt(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('furnace'); } else if (clampNear(hero())) clampUse(clampNear(hero())); else if (ringNear(hero())) ringTake(ringNear(hero())); else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); } else { var rs = ring && stoneNear(hero()); if (rs) readStone(rs); else if (sitting) standUp(); else if (seatNear(hero()) && !bedNear(hero())) sitDown(seatNear(hero())); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (musterOpen) musterOpen = false; else if (stoneNearH(hero()) && stoneNearH(hero()).fallen) { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(stoneNearH(hero())); } else toast('It takes 6 stone to raise it'); } else if (hirdAssign(hero())) {} else if (hirdNear(hero())) hirdTalk(hirdNear(hero())); else if (stoneNearH(hero())) { musterOpen = true; invOpen = false; menu = null; } else if (nearNpc(hero())) talk(); else if (folkNear(hero())) folkTalk(folkNear(hero())); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
     if (e.code === 'KeyM') { e.preventDefault(); if (!e.repeat && !inYard) { mapOpen = !mapOpen; if (mapOpen) { invOpen = false; menu = null; bookOpen = false; clothOpen = false; musterOpen = false; } } return; }
     if (e.code === 'KeyC') { e.preventDefault(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
@@ -12720,7 +12778,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var D = Combat.dbg(), P = D.P;
     if (P !== lastP) { lastP = P; nightSpawned = false; nightWolves = []; crafting = []; if (inYard) { inYard = false; zoom = yardZoom || zoom; Combat.api.scene.bounds = worldBounds(); } if (inCave) { inCave = false; Combat.api.scene.bounds = worldBounds(); } toCamp(); spawnBoars(); if (raft && raft.aboard) { raft.aboard = false; var drift = raftSpot(home.x, home.y); if (drift) { raft.x = drift.x; raft.y = drift.y; } } }   // the raft drifts back to the camp shore     // R after falling: the engine made a new hero
     if (inYard) { P.mode = 'build'; menu = null; }
-    else if (P.mode === 'build' && lastMode !== 'build') openMenu(!hasTool() ? 'hand' : 'build');   // the first B opens on Crafting: until you hold a tool you have things to make before anything to build
+    else if (P.mode === 'build' && PIECES[P.piece] && !pieceKnown(PIECES[P.piece])) stepPiece(1);
+    if (!inYard && P.mode === 'build' && lastMode !== 'build') openMenu(!hasTool() ? 'hand' : 'build');   // the first B opens on Crafting: until you hold a tool you have things to make before anything to build
     if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
     D.W.pillars = nearSolids(P);
     if (inCave) { cave.ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * o.s, hide: true }); }); if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }

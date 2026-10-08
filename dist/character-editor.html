@@ -2919,6 +2919,42 @@ function shipwrightObj(c, K, x, y, seed) {
   line(c, [[x - 36, y - 2], [x - 30, y - 8]], 2, K.wood.base, true); shape(c, rrPts(x - 34, y - 11, 6, 3.4, 1), K.iron, { seed: seed + 4, size: 'S', flat: true, rough: 0.1 });   // a mallet on the ground
 }
 
+// The shipwright's three tiers (2026-10-08, Robin: bigger and better as the tier goes up). Tier 1 is a raft bench: two low
+// trestles with the first log across, a coil of rope, an adze in the log. Tier 2 is the shipwright's bench above (the keel on
+// its trestles with the first ribs). Tier 3 is a yard: the same bench under a plank shelter on posts, with a rack of strakes.
+function shipwright1Obj(c, K, x, y, seed) {
+  gshadow(c, x + 2, y, 24, 4, 0.35);
+  [-12, 12].forEach(function (dx) { line(c, [[x + dx - 6, y], [x + dx, y - 10]], 2.6, K.wood.base, true); line(c, [[x + dx + 6, y], [x + dx, y - 10]], 2.6, K.wood.base, true); line(c, [[x + dx - 3, y - 4], [x + dx + 3, y - 4]], 1.8, K.wood.base, true); });
+  shape(c, [[x - 24, y - 14], [x + 24, y - 15], [x + 24, y - 8.5], [x - 24, y - 7.5]], K.trunkL, { seed: seed, size: 'M', sh: 1.2, rough: 0.25 });   // the first log across the trestles
+  shape(c, ellPts(x + 24, y - 11.8, 2.2, 3.2, 10), K.wood, { seed: seed + 1, size: 'S', flat: true });                                             // its cut end
+  line(c, [[x - 4, y - 15], [x + 2, y - 26]], 2, K.wood.base, true); shape(c, [[x, y - 28], [x + 7, y - 25], [x + 4, y - 21], [x - 2, y - 24]], K.iron, { seed: seed + 2, size: 'S', flat: true, rough: 0.1 });   // an adze stuck in the log
+  for (var k = 0; k < 3; k++) shape(c, ellPts(x - 30 + k * 0.4, y - 2 - k * 1.6, 6.5, 2.6, 12), K.rust, { seed: seed + 5 + k, size: 'S', flat: true, rough: 0.2 });   // a coil of rope
+}
+function shipwright3Obj(c, K, x, y, seed) {
+  gshadow(c, x + 2, y, 46, 6, 0.3);
+  [[-44, -40], [44, -40], [-40, -14], [40, -14]].forEach(function (q, k) { shape(c, rrPts(x + q[0] - 2, y + q[1] - 44, 4, 44 + (k < 2 ? 0 : 0), 1.4), K.wood, { seed: seed + 10 + k, size: 'S', sh: 1, rough: 0.2 }); });   // four posts
+  shape(c, [[x - 50, y - 86], [x + 50, y - 86], [x + 46, y - 60], [x - 46, y - 60]], K.trunk, { seed: seed + 20, size: 'L', sh: 1.4, rough: 0.3 });                 // the plank roof, slanting toward you
+  for (var k = 0; k < 7; k++) line(c, [[x - 48 + k * 16, y - 85], [x - 44 + k * 15.5, y - 61]], 0.7, 'rgba(35,26,22,0.35)', false);                                 // the planks' seams
+  shape(c, [[x - 51, y - 61], [x + 51, y - 61], [x + 51, y - 57], [x - 51, y - 57]], K.wood, { seed: seed + 21, size: 'S', flat: true });                            // the eave board
+  for (var r2 = 0; r2 < 3; r2++) shape(c, [[x + 30 + r2 * 4, y - 52], [x + 48, y - 56 - r2 * 3], [x + 49, y - 52 - r2 * 3], [x + 31 + r2 * 4, y - 48]], K.wood, { seed: seed + 30 + r2, size: 'S', flat: true, rough: 0.2 });   // strakes leaning on a rack
+  shipwrightObj(c, K, x - 4, y, seed);
+}
+function masonBenchObj(c, K, x, y, seed) {                 // a stout plank bench on two blocks, a stone being dressed on it, mallet and chisel, finished blocks beside
+  gshadow(c, x + 2, y, 24, 4, 0.35);
+  [-13, 13].forEach(function (dx, k) { shape(c, rrPts(x + dx - 4, y - 11, 8, 11, 1), K.rock, { seed: seed + k, size: 'S', sh: 1.2, rough: 0.35 }); });
+  shape(c, [[x - 20, y - 15], [x + 20, y - 15], [x + 20, y - 10], [x - 20, y - 10]], K.wood, { seed: seed + 2, size: 'M', sh: 1, rough: 0.2 });
+  shape(c, [[x - 10, y - 26], [x + 2, y - 27], [x + 4, y - 15], [x - 9, y - 15]], K.rock, { seed: seed + 3, size: 'M', sh: 1.4, rough: 0.3 });     // the block being dressed
+  line(c, [[x + 6, y - 24], [x + 14, y - 18]], 2.4, K.wood.base, true); shape(c, rrPts(x + 12, y - 21, 6, 4, 1), K.wood, { seed: seed + 4, size: 'S', flat: true });   // the mallet
+  line(c, [[x + 3, y - 17], [x + 9, y - 16]], 1.4, K.iron.base, true);                                                                              // the chisel
+  shape(c, rrPts(x + 20, y - 8, 10, 8, 1), K.rock, { seed: seed + 5, size: 'S', sh: 1.2, rough: 0.3 }); shape(c, rrPts(x + 22, y - 15, 9, 7, 1), K.rock, { seed: seed + 6, size: 'S', sh: 1.2, rough: 0.3 });   // finished blocks stacked
+}
+function signPostObj(c, K, x, y, seed) {                  // a post with a board on top; the game writes the owner's words on it in charcoal
+  gshadow(c, x + 1, y, 5, 2, 0.3);
+  shape(c, rrPts(x - 1.6, y - 24, 3.2, 24, 1), K.wood, { seed: seed, size: 'S', sh: 1, rough: 0.2 });
+  shape(c, [[x - 11, y - 35], [x + 11, y - 36], [x + 11.5, y - 22], [x - 10.5, y - 21]], K.wood, { seed: seed + 1, size: 'S', sh: 1, rough: 0.3 });
+  c.strokeStyle = 'rgba(35,26,22,0.45)'; c.lineWidth = 0.6; c.beginPath(); c.moveTo(x - 9, y - 33); c.lineTo(x + 9, y - 33.5); c.stroke();
+}
+
 function barrel(c, K, x, y, s, seed) {
   var w = s * 0.62, h = s;
   gshadow(c, x + 2, y + 1, w * 0.7, 4);
@@ -4588,6 +4624,10 @@ var PROPS = {
   barrel: { b: [-24, -44, 26, 10], f: function (c, K, s) { barrel(c, K, 0, 0, 26, s); } },
   workbench: { b: [-22, -32, 24, 4], f: function (c, K, s) { workbenchObj(c, K, 0, 0, s); } },
   shipwright: { b: [-42, -44, 44, 4], f: function (c, K, s) { shipwrightObj(c, K, 0, 0, s); } },
+  shipwright1: { b: [-38, -32, 30, 4], f: function (c, K, s) { shipwright1Obj(c, K, 0, 0, s); } },
+  shipwright3: { b: [-54, -90, 54, 6], f: function (c, K, s) { shipwright3Obj(c, K, 0, 0, s); } },
+  masonBench: { b: [-24, -30, 32, 4], f: function (c, K, s) { masonBenchObj(c, K, 0, 0, s); } },
+  signPost: { b: [-13, -38, 13, 2], f: function (c, K, s) { signPostObj(c, K, 0, 0, s); } },
   chest: { b: [-28, -42, 36, 10], f: function (c, K, s) { chestObj(c, K, 0, 0, 30, s); } },
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was

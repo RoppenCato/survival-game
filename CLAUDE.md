@@ -888,6 +888,26 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   toggles Immortal, One-shot hits (`mods().dmg` and `powerMul` 1000), Free building and crafting (`canAfford`/`pay`), Fly
   (`walk` true everywhere, `mods().speed` 2.6); and one-offs: plenty of everything, reveal the chart, skip to dusk or dawn,
   go to the steading, hamlet or cave, Brokk joins. The engine took `mods().dmg` and `mods().speed` for it.
+- **The Building board starts small (2026-10-08, Robin: overwhelming at the start; finds should open things up):** every piece can carry a
+  `key` (`pieceKnown`: the key is a kind picked up and noted in `seen`, a thing built, or Brokk's teaching), and the board lists only the
+  known pieces (`stepPiece` skips the rest on the wheel; a piece in hand that is unknown after a reload steps on). **At the start:** log,
+  plank, wattle and turf walls, door, window, post, stairs, plank and earth floors, turf and thatch, the gravel, earth, moss and grass
+  brushes, wattle fence, gate and rail fence, workbench, bed, chair, bench seat, table, barrel, crate, chest, woodpile, drying rack,
+  campfire, log seat. **Keys:** `leather` the rug, haystack, trough, scarecrow, shield rack; `honey` bee skeps and the flower bed;
+  `copper` the **mason's bench**, the carver's bench, the boat bench, palisade, shingles, brazier, cart; **`mason`** (built: the mason's
+  bench, `gives: 'mason'`; prop `masonBench`, 6 wood 3 copper 4 stone) opens **everything of stone**: stone wall, flags, hearth, fireplace,
+  furnace, well, fire pit, cairn, dry-stone wall and the grass, dark grass, moss and bare-rock floors; `charcoal` the charcoal clamp and
+  the **wooden sign** (prop `signPost`, 3 wood 1 charcoal; E "Write" opens a prompt, `it.text` up to 28 letters, drawn on the board in
+  charcoal by `drawSignText`, saved with the building); `ironBar` the lowland set (timber frame, cut stone, tiles, slate, town wall,
+  altar, grave marker, stone cross, stall, bell tower); `bogIron` the field, chalk and marsh brushes; `silver` the dragon post;
+  `snakeBlood` the claim stone. A new key toasts "Something new to build" (`noteSeen`, and `gives` on placing). The sandbox knows them
+  all. **The shipwright's three tiers** (`ship: 1|2|3` on the piece and the item; `tierOf(it)`, an old save's `ship: true` is tier 2):
+  the **raft bench** (prop `shipwright1`: two low trestles with the first log, a rope coil, an adze; 12 wood 4 fiber; key `raft`, Brokk's
+  teaching; `gives: 'ship1'`, which opens the **dock**), the **boat bench** (the old shipwright's bench; 16 wood 4 copper 4 stone; key
+  `copper`), the **shipwright's yard** (prop `shipwright3`: the bench under a plank shelter on posts with a rack of strakes; 20 wood
+  6 iron bars 8 stone; key `ironBar`). The Shipyard shows only the plans the bench's tier allows (`Yard.PLAN_TIER` raft 1, boat 2, karve 3;
+  `scene.planList()` from `host.tier()`; the Sea Editor's host has no tier and shows all). **The steading's half-gone house by the
+  well is of planks** now, so wood mends it (Robin: the player should want to fix it with wooden pieces).
 - **The frame log (2026-10-08, Robin: it lags when I walk):** a readout on the **left of the screen, in the middle**, always on
   (`drawPerf`: frames a second in green, amber or red, the milliseconds, the things drawn, and the frame's parts: t tick, u update,
   g ground, d draw, e end). `PERF` times every frame in parts (the page's tick, the engine's update, the render split into the

@@ -18,7 +18,7 @@ var T = 32, TS = 24, K = 0.75;
   function inPlan(p, plan) { return Array.isArray(p.plan) ? p.plan.indexOf(plan) >= 0 : p.plan === plan; }
   function costFor(pt, plan) { return pt.costs && pt.costs[plan] ? pt.costs[plan] : pt.cost; }       // a part shared by two plans can cost differently in each (the karve's nails are iron)
   function partsFor(plan) { return ALL_PARTS.filter(function (p) { return inPlan(p, plan); }).map(function (p) { var o = {}, k; for (k in p) o[k] = p[k]; o.cost = costFor(p, plan); return o; }); }
-  var YARD_PLANS = [['raft', 'Raft'], ['boat', 'Boat'], ['karve', 'Karve']];
+  var YARD_PLANS = [['raft', 'Raft'], ['boat', 'Boat'], ['karve', 'Karve']], PLAN_TIER = { raft: 1, boat: 2, karve: 3 };   // the bench's tier a plan needs (2026-10-08: the raft bench, the boat bench, the shipwright's yard)
   var LAYERS = ['hull', 'bind', 'deck', 'fit'];
   var PLANS = {
     raft: { name: 'Raft', checks: [
@@ -373,8 +373,11 @@ var scene = {
   yard: null, pick: 0, active: false, host: null, label: null, fade: 0,
   enter: function (host, yardState) {
     this.host = host; this.yard = yardState && yardState.cells ? yardState : { plan: 'raft', cells: [] }; if (!this.yard.plan) this.yard.plan = 'raft';
-    this.pick = 0; this.active = true; this.fade = 0.5; this.label = null; return this.yard;
+    this.pick = 0; this.active = true; this.fade = 0.5; this.label = null;
+    if (!this.yard.cells.length && !this.planList().some(function (pl) { return pl[0] === this.yard.plan; }, this)) this.yard.plan = 'raft';   // a plan above the bench's tier is not kept
+    return this.yard;
   },
+  planList: function () { var t = this.host && this.host.tier ? this.host.tier() : 3; return YARD_PLANS.filter(function (pl) { return (PLAN_TIER[pl[0]] || 1) <= t; }); },
   leave: function () { this.active = false; this.fade = 0.5; },
   parts: function () { return partsFor(this.yard ? this.yard.plan : 'raft'); },
   cam: function () { var Y = this.Y; return { x: Y.X + Y.W * T / 2 - 4, y: (Y.Y + Y.H * T / 2) * K, z: this.ZOOM }; },
@@ -429,7 +432,7 @@ var scene = {
   palRect: function (k) { var P = this.PAL; return { x: P.x + 3, y: P.y + 10 + k * (P.cell + 4), w: P.cell, h: P.cell }; },
   palAt: function (ms) { if (!ms) return -1; for (var k = 0; k < this.parts().length; k++) { var r = this.palRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
   planRect: function (k) { return { x: 100 + k * 30, y: 6, w: 27, h: 10 }; },
-  planAt: function (ms) { if (!ms) return -1; for (var k = 0; k < YARD_PLANS.length; k++) { var r = this.planRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
+  planAt: function (ms) { if (!ms) return -1; var PLs = this.planList(); for (var k = 0; k < PLs.length; k++) { var r = this.planRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
   finishRect: function () { return { x: 320, y: 234, w: 62, h: 12 }; },
   hud: function (c, ms, wreck) {          // the frame, the parts, the plan tabs, the guidance, Finish, the cursor's label
     var why = this.check(), hp = this.palAt(ms), PL = this.parts(), P = this.PAL, h = this.host, k, self = this;
@@ -443,7 +446,7 @@ var scene = {
       c.globalAlpha = can ? 1 : 0.4; drawYardPart(c, pt, r.x + (pt.w === 2 ? 1 : 7), r.y + 4, pt.w === 2 ? 0.44 : 0.7); c.globalAlpha = 1;
       c.font = '600 4.2px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.textAlign = 'center'; c.fillText(pt.name, r.x + r.w / 2, r.y + r.h - 2.5);
     }
-    YARD_PLANS.forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? '#a8702c' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
+    self.planList().forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? '#a8702c' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
     var line = why || 'The hull is sound. Finish to launch it.';
     c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 270, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 270, 14);
     if (!why) { var fr = this.finishRect(), hv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = hv ? '#6a4e38' : '#5a4232'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 3); c.fill(); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(fr.x, fr.y, fr.w, fr.h); c.restore(); c.strokeStyle = '#c99a3a'; c.lineWidth = 1; c.beginPath(); c.roundRect(fr.x + 0.5, fr.y + 0.5, fr.w - 1, fr.h - 1, 3); c.stroke(); c.strokeStyle = INK.line; c.lineWidth = 1.6; c.beginPath(); c.moveTo(fr.x + 3, fr.y + fr.h); c.lineTo(fr.x + fr.w - 3, fr.y + fr.h); c.moveTo(fr.x + fr.w, fr.y + 3); c.lineTo(fr.x + fr.w, fr.y + fr.h - 3); c.stroke(); c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.5); }
@@ -464,7 +467,7 @@ var scene = {
   },
   mousedown: function (button, mw, ms) {  // the tabs, the parts, Finish, taking back, laying
     var h = this.host, ypl = this.planAt(ms);
-    if (ypl >= 0) { if (button === 0 && this.yard.plan !== YARD_PLANS[ypl][0]) { if (this.yard.cells.length) h.toast('Take the parts back first'); else { this.yard.plan = YARD_PLANS[ypl][0]; this.pick = 0; h.save(); } } return true; }
+    if (ypl >= 0) { var PLs2 = this.planList(); if (button === 0 && this.yard.plan !== PLs2[ypl][0]) { if (this.yard.cells.length) h.toast('Take the parts back first'); else { this.yard.plan = PLs2[ypl][0]; this.pick = 0; h.save(); } } return true; }
     var ypk = this.palAt(ms); if (ypk >= 0) { if (button === 0) this.pick = ypk; return true; }
     var fr = this.finishRect(); if (button === 0 && !this.check() && ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h) { h.finish(); return true; }
     if (button === 2) { this.act(mw, true, true); return true; }
@@ -475,7 +478,7 @@ var scene = {
   key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
 };
 
-return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullCells: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();
