@@ -902,6 +902,14 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   resolution** (`ADMIN.lowres`: `fitCanvas` caps the pixel scale at 3; the props are baked at 2 a unit anyway) to try against it.
   `PERF.skip` (ground, waves, grass, grain, night, things) turns layers off for measuring (`Combat.api.debug().perf.skip`). The
   browser pane renders in software, so its numbers only compare layers; they say nothing about Robin's GPU.
+  **Robin's second log (2026-10-08):** at 1800 by 1125 the GPU wait was 25 to 60 ms and the game sat at the edge of 60 fps (47 to 60,
+  the vsync flipping); at 1200 by 750 (Lower resolution) 21 to 30 ms and a steady 60; painting paths stuttered only at full size. Done
+  for it: **the meadow is baked into the ground pieces** (`w.meadowLook`, set by the game to its grass look: `bakeChunk` draws
+  `drawMeadow` over the piece and `drawGrass` skips it; the Sea Editor still draws it live) instead of its gradients and flower
+  drifts every frame; **a repainted piece stays on screen until its new bake is ready** (`w.repaint` marks it `stale`, `drawGround`
+  bakes one piece a call and a stale one no sooner than 60 ms after the last, so a brush stroke no longer bakes every touched piece
+  at once); and the Admin board's **"Run the layer test"** (`PERF_TESTS`, `perfTestTick`: twelve seconds, each layer off in turn
+  with the GPU read back every frame, `layertest` lines in the log) says what each layer costs on Robin's card.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
 - **Villages across the islands (2026-10-07, Robin: lots of islands, lots of places):** the world has **six islands** (`spec.sizes`
   60, 230, 150, 110, 170, 90 tiles; `World.make` takes `sizes`; `layoutKey` includes them, so older saves start fresh; `onOtherIsland`

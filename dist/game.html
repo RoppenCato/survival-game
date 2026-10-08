@@ -4700,7 +4700,7 @@ function make(kit, opts) {
   var GQ = 8; w.ground = {};
   w.repaint = function (x0, y0, x1, y1) {
     var pw = CT * T, qx0 = Math.max(0, Math.floor(x0 / pw)), qx1 = Math.min(CW - 1, Math.floor(x1 / pw)), qy0 = Math.max(0, Math.floor(y0 / pw)), qy1 = Math.min(CH - 1, Math.floor(y1 / pw)), qx, qy;
-    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) { delete chunkCv[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); chunkCv[ck] = bakeChunk(qx, qy); chunkOrder.push(ck); } }   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
+    for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) stale[ck] = 1; }   // the old piece stays on screen until drawGround has baked the new one (2026-10-08: baking every touched piece at once made painting stutter)   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
   };
   w.paintGround = function (x, y, r, kind) {              // kind 1 gravel, 2 earth, 3 moss, 0 back to grass; true if anything changed
     var changed = false, qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy;
@@ -4786,6 +4786,7 @@ function make(kit, opts) {
     oc.putImageData(img, 0, 0);
     c.imageSmoothingEnabled = true; c.drawImage(ov, 0, 0, W2, H2);
     if (groundInChunk(cx, cy)) paintGroundInto(c, cx, cy, W2, H2);
+    if (w.meadowLook) { c.save(); c.setTransform(2, 0, 0, 2, -cx * W2 * 2, -cy * H2 * 2); w.drawMeadow(c, { x: cx * W2 + W2 / 2, y: cy * H2 + H2 / 2 }, W2 / 2 + 4, H2 / 2 + 4, w.meadowLook); c.restore(); }   // the meadow is still, so it is baked here, not drawn every frame (2026-10-08, the lag)
     var R2 = kit.rng(cx * 7919 + cy * 104729 + s);           // grains, pebbles and shells on the dry sand
     for (ii = 0; ii < 260; ii++) {
       var sx = R2() * W2, sy = R2() * H2, kind = R2(), wxx = cx * W2 + sx, wyy = (cy * H2 + sy) / K, e2 = elevAt(wxx, wyy);
@@ -4803,6 +4804,7 @@ function make(kit, opts) {
   w.bakeChunk = bakeChunk;
   w.waterCv = bakeChunk(-64, -64);                      // far outside the map: nothing but deep sea
   // the pieces of the map in view; at most one new piece is painted per call, and the oldest are forgotten
+  var stale = {}, lastBake = -1e9;
   w.bakes = 0; w.bakeMs = 0;                               // how many ground pieces were baked and how long it took (the frame log reads and clears them)
   function pnow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
   w.drawGround = function (c, cam, hw, hh) {
@@ -4810,7 +4812,10 @@ function make(kit, opts) {
     for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
       var ck = qy * CW + qx, piece = w.waterCv;
       if (landChunk[ck]) {
-        if (!chunkCv[ck] && baked < 1) { var tb0 = pnow(); chunkCv[ck] = bakeChunk(qx, qy); w.bakes++; w.bakeMs += pnow() - tb0; chunkOrder.push(ck); baked++; if (chunkOrder.length > 60) delete chunkCv[chunkOrder.shift()]; }
+        if ((!chunkCv[ck] || (stale[ck] && pnow() - lastBake > 60)) && baked < 1) {   // one bake a call; a repainted piece waits a few frames between bakes so painting keeps up
+          var tb0 = pnow(); if (stale[ck]) { delete stale[ck]; var ci = chunkOrder.indexOf(ck); if (ci >= 0) chunkOrder.splice(ci, 1); }
+          chunkCv[ck] = bakeChunk(qx, qy); w.bakes++; w.bakeMs += pnow() - tb0; lastBake = pnow(); chunkOrder.push(ck); baked++; if (chunkOrder.length > 60) { var old = chunkOrder.shift(); delete chunkCv[old]; delete stale[old]; }
+        }
         if (chunkCv[ck]) piece = chunkCv[ck];
       }
       c.drawImage(piece, qx * pw, qy * phh, pw + 0.5, phh + 0.5);
@@ -4859,7 +4864,7 @@ function make(kit, opts) {
   // living grass: tufts of blades on the open ground that sway in a wind, with slow bands of light rolling over the meadow
   // like the glints on the water. G is a World.GRASS-style spec (palette, density, sway); nothing is drawn on sand or water.
   w.drawGrass = function (c, cam, hw, hh, clock, G) {
-    G = G || GRASS; w.drawMeadow(c, cam, hw, hh, G); if (!(G.density > 0)) return;
+    G = G || GRASS; if (!w.meadowLook) w.drawMeadow(c, cam, hw, hh, G); if (!(G.density > 0)) return;   // a page that sets w.meadowLook has the meadow baked into the ground
     var sp = G.spacing, gx0 = Math.floor((cam.x - hw) / sp) - 1, gx1 = Math.ceil((cam.x + hw) / sp), gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 1, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1;
     var cols = [G.dark, G.mid, G.light], sp0 = G.speed;
     c.lineCap = 'round';
@@ -9207,7 +9212,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // mover to it, so it never changes; the walk test keeps the hero on the floor he is on
   function worldBounds() { return { x0: 8, y0: 12, x1: WX + 12000, y1: WY - 8 }; }
   function buildWorld() {
-    w = World.make(kit, spec);
+    w = World.make(kit, spec); w.meadowLook = grassLook;
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
@@ -11192,6 +11197,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'tpHamlet', name: 'Go to the next village', text: 'Each press, the next one on the chart.' },
     { id: 'tpCave', name: 'Go to the cave', text: 'Stand at its mouth.' },
     { id: 'brokk', name: 'Brokk joins', text: 'Hildir’s stone stands and he is yours.' },
+    { id: 'layertest', name: 'Run the layer test', text: 'Twelve seconds: each layer off in turn (grass, grain, waves, ground, night, things) while the graphics card is measured every frame. The results go into the frame log.' },
     { id: 'perflog', name: 'Download the frame log', text: 'Saves framelog.txt: a line a second with the frame time, its parts and what was happening, for finding the lag.' },
     { id: 'weapons', name: 'Copper weapons', text: 'One of every kind into the bag: sword, axe, club, seax, spear, Dane axe, bow, sling, javelin, throwing axe.' },
     { id: 'back', name: 'Back', text: '' }
@@ -11209,6 +11215,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (id === 'back') { adminOpen = false; return; }
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'lowres') fitCanvas(); return; }
     if (id === 'perflog') { perfDownload(); return; }
+    if (id === 'layertest') { perfTestStart(); pauseOpen = false; adminOpen = false; toast('Layer test running'); return; }
     if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }
     else if (id === 'weapons') { Items.MELEE.concat(Items.RANGED).forEach(function (k) { var w2 = Items.make(k, 'copper'); if (!addThing(w2)) dropThing(w2, P.x, P.y + 10); }); addItem('stone', 20); toast('Copper weapons, and stones for the sling'); }
     else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; seen.vill = {}; villages.forEach(function (vv, vi) { seen.vill[vi] = 1; }); toast('The chart knows the islands'); }
@@ -12647,6 +12654,18 @@ if (typeof module !== 'undefined') module.exports = Combat;
       p.saveT++; if (p.saveT >= 5) { p.saveT = 0; try { localStorage.setItem('game.perflog', PERF.lines.join('\n')); } catch (e) {} }
     }
   }
+  // The layer test (2026-10-08): each layer off in turn for a second and a half, the GPU read back every frame, so the log says what
+  // each layer costs on Robin's own card. Admin: "Run the layer test".
+  var PERF_TESTS = [['everything', {}], ['no grass', { grass: 1 }], ['no grain', { grain: 1 }], ['no waves', { waves: 1 }], ['no ground', { ground: 1 }], ['no night', { night: 1 }], ['no things', { things: 1 }], ['nothing', { grass: 1, grain: 1, waves: 1, ground: 1, night: 1, things: 1 }]];
+  function perfTestStart() { PERF.test = { i: 0, t0: performance.now(), n: 0, sum: 0, fr: 0 }; PERF.skip = PERF_TESTS[0][1]; perfLine('t ' + clock.toFixed(1) + ' layer test: ' + perfState()); }
+  function perfTestTick(now) {
+    var ts = PERF.test, cfg = PERF_TESTS[ts.i]; var tg = performance.now(); ctx.getImageData(0, 0, 1, 1); ts.sum += performance.now() - tg; ts.n++; ts.fr++;
+    if (now - ts.t0 < 1500) return;
+    perfLine('t ' + clock.toFixed(1) + ' layertest ' + cfg[0] + ': gpu ' + (ts.sum / Math.max(1, ts.n)).toFixed(1) + 'ms a frame, ' + (ts.fr / ((now - ts.t0) / 1000)).toFixed(0) + ' fps while reading back');
+    ts.i++; ts.t0 = now; ts.n = 0; ts.sum = 0; ts.fr = 0;
+    if (ts.i >= PERF_TESTS.length) { PERF.test = null; PERF.skip = {}; toast('Layer test done: download the frame log'); return; }
+    PERF.skip = PERF_TESTS[ts.i][1];
+  }
   function perfDownload() {
     var txt = 'Frame log, ' + new Date().toISOString() + ', ' + navigator.userAgent + '\n' + PERF.lines.join('\n'), a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' })); a.download = 'framelog.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast('framelog.txt saved: put it in the project folder');
@@ -12671,6 +12690,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var tf0 = performance.now(); PERF.parts.ground = PERF.parts.items = PERF.parts.end = PERF.parts.update = 0;
     simTick(dt); var tf1 = performance.now(); PERF.parts.tick = tf1 - tf0 - PERF.parts.update;
     Combat.render(ctx); var tf2 = performance.now(); PERF.parts.draw = Math.max(0, tf2 - tf1 - PERF.parts.ground - PERF.parts.items - PERF.parts.end);
+    if (PERF.test) perfTestTick(now);
     if (now - PERF.gpuT > 1000) { PERF.gpuT = now; var tg = performance.now(); ctx.getImageData(0, 0, 1, 1); PERF.gpu = performance.now() - tg; }   // the GPU's backlog: how long the frame's drawing really took after the commands were queued
     perfFrame(now, tf2 - tf0); drawPerf(ctx);
     if (ADMIN.fps) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.font = 'bold 14px monospace'; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(8, cv.height - 30, 150, 22); ctx.fillStyle = '#fff'; ctx.fillText(frameAvg.toFixed(1) + ' ms  ' + Math.round(1000 / Math.max(1, frameAvg)) + ' fps  ' + cv.width + 'x' + cv.height, 14, cv.height - 14); ctx.restore(); }   // the frame time, for reports (Admin)
