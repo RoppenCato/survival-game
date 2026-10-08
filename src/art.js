@@ -1346,6 +1346,7 @@ function animalAttack(key) { return ATTACKS[key] || (key && key.slice(0, 5) === 
 // own counts, damage and drops). Keys the drawing does not know are dropped.
 function useAnimal(key, spec) {
   var a = ANIMALS[key]; if (!a || !spec) return false; var set = {}, k;
+  if (spec.plan != null && a.set && a.set.plan != null && Math.round(spec.plan) !== Math.round(a.set.plan)) return false;   // a design from an older model (another body plan) is not taken: the game draws the built-in (2026-10-08)
   for (k in spec) if (k !== 'col' && CREATURE_DEF[k] != null) set[k] = spec[k];
   a.set = set; a.col = {}; for (k in spec.col || {}) a.col[k] = spec.col[k]; return true;
 }
