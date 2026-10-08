@@ -11078,6 +11078,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'oneshot', name: 'One-shot hits', text: 'Every blow kills, every chop fells.', toggle: true },
     { id: 'free', name: 'Free building and crafting', text: 'Nothing costs anything.', toggle: true },
     { id: 'fly', name: 'Fly', text: 'Walk over water and through anything, fast.', toggle: true },
+    { id: 'fps', name: 'Show frame time', text: 'Milliseconds a frame, frames a second and the canvas size, bottom left.', toggle: true },
     { id: 'stuff', name: 'Plenty of everything', text: '25 of every material into the bag.' },
     { id: 'reveal', name: 'Reveal the chart', text: 'The steading, every village and the cave known; the raft taught.' },
     { id: 'dusk', name: 'Skip to dusk', text: 'The clock jumps to the evening.' },
@@ -12507,10 +12508,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
   start();
   var lastP = hero(), lastMode = 'fight';
   var lastF = performance.now();
+  var frameAvg = 16;
   function frame(now) {
-    var dt = pauseOpen ? 0 : Math.min(0.05, (now - lastF) / 1000); lastF = now;
+    var dt = pauseOpen ? 0 : Math.min(0.05, (now - lastF) / 1000); frameAvg += ((now - lastF) - frameAvg) * 0.05; lastF = now;
     simTick(dt);
     Combat.render(ctx);
+    if (ADMIN.fps) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.font = 'bold 14px monospace'; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(8, cv.height - 30, 150, 22); ctx.fillStyle = '#fff'; ctx.fillText(frameAvg.toFixed(1) + ' ms  ' + Math.round(1000 / Math.max(1, frameAvg)) + ' fps  ' + cv.width + 'x' + cv.height, 14, cv.height - 14); ctx.restore(); }   // the frame time, for reports (Admin)
     requestAnimationFrame(frame);
   }
   // one step of the world: the solids near the hero, every tick of the page, then the engine (also the debug hook `tick`, so checks can run it without rendering)
