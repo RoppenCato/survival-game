@@ -497,6 +497,11 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   stamina 12 a second coming back, the seat's own solid skipped while you sit; E again or any movement key stands you up a step
   in front of it ("E Stand up"). The ink figure has a seated pose (`an.sit`: the body drops onto the seat, thighs forward, shins
   down; `node tools/visual/sit.js`); the engine's `P.anim.sit` carries it.
+- **The bed and the workbench redrawn (2026-10-08, Robin: weird and boring):** `bedObj` is a **Viking box bed**: a plank box with its
+  foot end receding, four knobbed corner posts (the head's taller), a straw mattress with straw hanging over the rim, a **red wool
+  blanket** with a cream folded hem and two woven stripes, a fleece at the head. `workbenchObj` is a **joiner's bench**: a thick planed
+  slab (its end grain showing) on two splayed trestles with a stretcher, an adze, a mallet head up and two chisels on it, a plank
+  leaning against a leg, shavings on the floor. Both through `shape` (ink line, grain, the cool shade).
 - **Furniture is sized to the hero (2026-10-05):** a hero is about 39 units tall, so the table, bed, cart, well,
   drying rack, shield rack, bee skeps and haystack are scaled down in `PROPS` (0.62 to 0.85), and the workbench is
   its own small trestle prop (`workbench`: planks, a hammer, a saw, a split log), no longer the table. Collision
@@ -1126,7 +1131,14 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   head's own shape; attack poses by state. The same specs drive them. `lib.RIG` (`animals`, `trolls`: `'views'` or
   `'turntable'`) keeps the old rigs for comparison (the Creature Editor's **Rig** switch, kept in `creature.rig`); the snake is
   still `animal3D`. `node tools/visual/animals.js` renders the five animals at five headings with the walk and the attack;
-  `trolls.js` the trolls.
+  `trolls.js` the trolls. **End on (2026-10-08, Robin: the limbs overlapped and clipped facing north and south):** in `quadD`'s
+  front and back views the **near pair of legs stands at the body's edges** (`legX` 0.34 of the end-on width) and the **far pair inside
+  them** (`legXf` 0.17, a little higher and thinner), never at the same x, so a step never crosses a leg; end on a leg is a **slim
+  column** (0.85 of `lw` at the hip, 0.55 at the hoof), not the side view's thigh. In `trollViewD` the end-on body is wider (`W` 1.5 of
+  the boulder's `BW`, 1.3 of the forest troll's), the **shoulders sit at its edges below the head** (they sat inside the head's width,
+  so both arms crossed the face), the hanging arm is nearly straight (`seg` from the reach, no elbow bowing out), the hands rest a
+  little outside the shoulders, the legs stand apart. `node tools/visual/views.js [trolls]` renders every animal (or the trolls) end on,
+  standing and through a walk, large.
 - **Facings (decided 2026-10-04):** things turn smoothly, "like the ship". Animals (plans 5 and 6) are drawn by
   `animal3D` at any heading (`s.ang`): the body is laid out in its own space (forward, sideways, up) and turned
   before drawing, with parts ordered far to near. Without `s.ang` they face straight left or right (`s.dir`).
