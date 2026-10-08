@@ -4803,12 +4803,14 @@ function make(kit, opts) {
   w.bakeChunk = bakeChunk;
   w.waterCv = bakeChunk(-64, -64);                      // far outside the map: nothing but deep sea
   // the pieces of the map in view; at most one new piece is painted per call, and the oldest are forgotten
+  w.bakes = 0; w.bakeMs = 0;                               // how many ground pieces were baked and how long it took (the frame log reads and clears them)
+  function pnow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
   w.drawGround = function (c, cam, hw, hh) {
     var pw = CT * T, phh = CT * TS, baked = 0;
     for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
       var ck = qy * CW + qx, piece = w.waterCv;
       if (landChunk[ck]) {
-        if (!chunkCv[ck] && baked < 1) { chunkCv[ck] = bakeChunk(qx, qy); chunkOrder.push(ck); baked++; if (chunkOrder.length > 60) delete chunkCv[chunkOrder.shift()]; }
+        if (!chunkCv[ck] && baked < 1) { var tb0 = pnow(); chunkCv[ck] = bakeChunk(qx, qy); w.bakes++; w.bakeMs += pnow() - tb0; chunkOrder.push(ck); baked++; if (chunkOrder.length > 60) delete chunkCv[chunkOrder.shift()]; }
         if (chunkCv[ck]) piece = chunkCv[ck];
       }
       c.drawImage(piece, qx * pw, qy * phh, pw + 0.5, phh + 0.5);
@@ -9339,7 +9341,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function costOfItem(name) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].prop === name) return PIECES[i].cost; return {}; }
   // Roofs are cached (2026-10-08: ninety roofs drawn from scratch every frame made the world crawl): each room's roof is drawn once
   // into its own canvas at twice the world scale and blitted with the fade's alpha; the cache empties when the rooms are rebuilt.
-  var roofCache = {}, figsInView = 0;
+  var roofCache = {}, figsInView = 0, figsLast = 0;
   function roofBox(r) { var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; r.tiles.forEach(function (t) { x0 = Math.min(x0, t[0]); y0 = Math.min(y0, t[1]); x1 = Math.max(x1, t[0]); y1 = Math.max(y1, t[1]); }); return { x0: x0, y0: y0, x1: x1, y1: y1 }; }
   function roofSprite(r, cfg) {
     var key = r.id + ':' + r.tiles.length + ':' + cfg.roof + ':' + cfg.wallM, sp = roofCache[key]; if (sp) return sp;
@@ -10884,7 +10886,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var notes = [];
   function note(txt) { for (var i = 0; i < notes.length; i++) if (notes[i].txt === txt && clock - notes[i].born < 2.4) { notes[i].born = clock - 0.4; return; } notes.push({ txt: txt, born: clock }); if (notes.length > 6) notes.shift(); }
   function lootNote(kind, n) { for (var i = 0; i < notes.length; i++) if (notes[i].loot === kind && clock - notes[i].born < 2.8) { notes[i].n += n; notes[i].born = clock - 0.5; return; } notes.push({ loot: kind, n: n, born: clock }); if (notes.length > 6) notes.shift(); }
-  function toast(txt) { note(txt); }
+  function toast(txt) { note(txt); if (typeof PERF !== 'undefined') perfLine('t ' + clock.toFixed(1) + ' event: ' + txt); }
   function drawNotes(c) {
     var P = hero(), sx = (P.x - cam.x) * cam.z + 200 + 15, sy = (P.y * K - cam.y) * cam.z + 125 - 24, k = 0, i;
     notes = notes.filter(function (q) { return clock - q.born < 3.6; });
@@ -11188,6 +11190,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'tpHamlet', name: 'Go to the next village', text: 'Each press, the next one on the chart.' },
     { id: 'tpCave', name: 'Go to the cave', text: 'Stand at its mouth.' },
     { id: 'brokk', name: 'Brokk joins', text: 'Hildir’s stone stands and he is yours.' },
+    { id: 'perflog', name: 'Download the frame log', text: 'Saves framelog.txt: a line a second with the frame time, its parts and what was happening, for finding the lag.' },
     { id: 'weapons', name: 'Copper weapons', text: 'One of every kind into the bag: sword, axe, club, seax, spear, Dane axe, bow, sling, javelin, throwing axe.' },
     { id: 'back', name: 'Back', text: '' }
   ];
@@ -11203,6 +11206,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(), row = ADMIN_ROWS.filter(function (r) { return r.id === id; })[0];
     if (id === 'back') { adminOpen = false; return; }
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); return; }
+    if (id === 'perflog') { perfDownload(); return; }
     if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }
     else if (id === 'weapons') { Items.MELEE.concat(Items.RANGED).forEach(function (k) { var w2 = Items.make(k, 'copper'); if (!addThing(w2)) dropThing(w2, P.x, P.y + 10); }); addItem('stone', 20); toast('Copper weapons, and stones for the sling'); }
     else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; seen.vill = {}; villages.forEach(function (vv, vi) { seen.vill[vi] = 1; }); toast('The chart knows the islands'); }
@@ -12196,7 +12200,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (npc && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
       hird.forEach(function (m) { if (m === npc) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });
       folk.forEach(function (f) { if (!f.hidden && Math.abs(f.x - cam.x) < hw + 30 && Math.abs(f.y * K - cam.y) < hh + 50) { figsInView++; items.push({ y: f.y, f: function () { drawFolk(ctx, f); } }); } });
-      var IF = lib.INK_FIG; IF.passes = figsInView > 14 ? 6 : 8; IF.heavyPasses = figsInView > 14 ? 2 : 4; figsInView = 0;   // a crowd gets a lighter outline so the frame keeps up (2026-10-08)
+      var IF = lib.INK_FIG; IF.passes = figsInView > 14 ? 6 : 8; IF.heavyPasses = figsInView > 14 ? 2 : 4; figsLast = figsInView; figsInView = 0;   // a crowd gets a lighter outline so the frame keeps up (2026-10-08)
       if (roomInfo) roomInfo.rooms.forEach(function (r, ri) {
         if (r.up) return;                               // a room with stairs has the floor above instead of a roof
         var target = here === ri && !L ? BCFG.seeThrough : 1;
@@ -12606,16 +12610,66 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (kind === 'karve') { for (i = 0; i < 8; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 7; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } for (i = 2; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 1 }); parts.push({ id: 'strake', i: i, j: 5 }); } parts.push({ id: 'thwart', i: 2, j: 3 }, { id: 'thwart', i: 5, j: 3 }, { id: 'thwart', i: 6, j: 3 }, { id: 'mast', i: 4, j: 3 }, { id: 'sail', i: 4, j: 3 }, { id: 'rudder', i: 0, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
   var lastF = performance.now();
   var frameAvg = 16;
+  /* ---------- the frame log (2026-10-08, Robin: it lags when I walk; show the fps and keep a log of what happens) ----------
+     Every frame is timed in parts: the page's tick, the engine's update, and the render split into the ground (scene.begin: the
+     ground pieces, meadow, grass, waves), the list of things (scene.items), the engine's own y-sorted drawing of everything, and
+     the end (night, grain, boards, HUD). Each second a line goes into the log with the average and worst frame, the parts, what
+     was in view (things, figures, beasts), the ground pieces baked, and where the hero was and what he was doing; a frame over
+     50 ms writes its own "spike" line at once, and every toast is written as an event. The log is kept in this browser
+     (game.perflog, the last 1200 lines) and the Admin board downloads it as framelog.txt. Combat.api.debug().perflog() reads it. */
+  var PERF = { lines: [], sec: null, t0: 0, frames: 0, sum: 0, worst: 0, worstParts: null, parts: { tick: 0, update: 0, ground: 0, items: 0, draw: 0, end: 0 }, acc: { tick: 0, update: 0, ground: 0, items: 0, draw: 0, end: 0 }, things: 0, beasts: 0, figs: 0, fps: 0, ms: 0, saveT: 0 };
+  function perfLine(txt) { PERF.lines.push(txt); if (PERF.lines.length > 1200) PERF.lines.splice(0, PERF.lines.length - 1200); }
+  function perfState() {
+    var P = hero(), K2 = Combat.dbg().IN.keys, moving = K2.KeyW || K2.KeyA || K2.KeyS || K2.KeyD, st = [];
+    if (moving) st.push(P.sprinting ? 'sprint' : 'walk'); if (raft && raft.aboard) st.push('aboard ' + raft.kind); if (inCave) st.push('cave'); if (inYard) st.push('yard'); if (P.mode === 'build') st.push('build');
+    if (menu) st.push('menu'); if (invOpen) st.push('bag'); if (mapOpen) st.push('map'); if (pauseOpen) st.push('paused'); if (light() > 0.05) st.push('night ' + light().toFixed(2)); if (torchOn) st.push('torch');
+    return 'hero ' + Math.round(P.x) + ',' + Math.round(P.y) + ' isle ' + isleAt(P.x, P.y) + ' z ' + (cam.z || zoom).toFixed(2) + (st.length ? ' ' + st.join(' ') : '') + ' canvas ' + cv.width + 'x' + cv.height;
+  }
+  function isleAt(x, y) { var best = -1, bd = 1e9; (w && w.isles || []).forEach(function (q, i) { var d = Math.hypot(q.x * T - x, q.y * T - y) - q.r * T; if (d < bd) { bd = d; best = i; } }); return best; }
+  function perfParts(pp) { return 'tick ' + pp.tick.toFixed(1) + ' update ' + pp.update.toFixed(1) + ' ground ' + pp.ground.toFixed(1) + ' items ' + pp.items.toFixed(1) + ' draw ' + pp.draw.toFixed(1) + ' end ' + pp.end.toFixed(1); }
+  function perfFrame(now, total) {
+    var p = PERF, k; p.frames++; p.sum += total; for (k in p.parts) p.acc[k] += p.parts[k];
+    if (total > p.worst) { p.worst = total; p.worstParts = perfParts(p.parts); }
+    if (total > 50) perfLine('t ' + (clock).toFixed(1) + ' SPIKE ' + total.toFixed(0) + 'ms | ' + perfParts(p.parts) + ' | bakes ' + w.bakes + ' (' + w.bakeMs.toFixed(0) + 'ms) things ' + p.things + ' figs ' + p.figs + ' beasts(all) ' + p.beasts + ' | ' + perfState());
+    if (now - p.t0 >= 1000) {
+      var n = Math.max(1, p.frames), secs = (now - p.t0) / 1000, avg = p.sum / n, acc = {}; for (k in p.acc) acc[k] = p.acc[k] / n;
+      p.fps = n / secs; p.ms = avg;
+      perfLine('t ' + (clock).toFixed(0) + ' fps ' + p.fps.toFixed(0) + ' avg ' + avg.toFixed(1) + 'ms worst ' + p.worst.toFixed(0) + 'ms | ' + perfParts(acc) + ' | bakes ' + w.bakes + ' (' + w.bakeMs.toFixed(0) + 'ms) things ' + p.things + ' figs ' + p.figs + ' beasts(all) ' + p.beasts + ' | ' + perfState());
+      w.bakes = 0; w.bakeMs = 0; p.t0 = now; p.frames = 0; p.sum = 0; p.worst = 0; for (k in p.acc) p.acc[k] = 0;
+      p.saveT++; if (p.saveT >= 5) { p.saveT = 0; try { localStorage.setItem('game.perflog', PERF.lines.join('\n')); } catch (e) {} }
+    }
+  }
+  function perfDownload() {
+    var txt = 'Frame log, ' + new Date().toISOString() + ', ' + navigator.userAgent + '\n' + PERF.lines.join('\n'), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' })); a.download = 'framelog.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast('framelog.txt saved: put it in the project folder');
+  }
+  function drawPerf(c) {                   // the readout on the left, in the middle of the screen: frames a second, milliseconds, the parts of the frame
+    var p = PERF, y0 = Math.round(cv.height / 2) - 26, good = p.fps >= 50 ? '#9ee493' : p.fps >= 30 ? '#ffd34d' : '#ff6a5a';
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(6, y0, 118, 52);
+    c.font = 'bold 20px monospace'; c.fillStyle = good; c.fillText(p.fps.toFixed(0) + ' fps', 12, y0 + 22);
+    c.font = '11px monospace'; c.fillStyle = '#fff'; c.fillText(p.ms.toFixed(1) + ' ms  ' + p.things + ' things', 12, y0 + 36);
+    c.fillText('t' + p.parts.tick.toFixed(0) + ' u' + p.parts.update.toFixed(0) + ' g' + p.parts.ground.toFixed(0) + ' d' + p.parts.draw.toFixed(0) + ' e' + p.parts.end.toFixed(0), 12, y0 + 48);
+    c.restore();
+  }
+  (function () {                           // the scene hooks timed, and the engine's update
+    var S0 = Combat.api.scene, b0 = S0.begin, i0 = S0.items, e0 = S0.end, u0 = Combat.update;
+    S0.begin = function (c, P) { var t = performance.now(); b0.call(S0, c, P); PERF.parts.ground = performance.now() - t; };
+    S0.items = function (list) { var t = performance.now(); i0.call(S0, list); PERF.parts.items = performance.now() - t; PERF.things = list.length; PERF.beasts = Combat.dbg().W.enemies.length; PERF.figs = figsLast; };
+    S0.end = function (c, P) { var t = performance.now(); e0.call(S0, c, P); PERF.parts.end = performance.now() - t; };
+    Combat.update = function (dt) { var t = performance.now(); u0(dt); PERF.parts.update = performance.now() - t; };
+  })();
   function frame(now) {
     var dt = pauseOpen ? 0 : Math.min(0.05, (now - lastF) / 1000); frameAvg += ((now - lastF) - frameAvg) * 0.05; lastF = now;
-    simTick(dt);
-    Combat.render(ctx);
+    var tf0 = performance.now(); PERF.parts.ground = PERF.parts.items = PERF.parts.end = PERF.parts.update = 0;
+    simTick(dt); var tf1 = performance.now(); PERF.parts.tick = tf1 - tf0 - PERF.parts.update;
+    Combat.render(ctx); var tf2 = performance.now(); PERF.parts.draw = Math.max(0, tf2 - tf1 - PERF.parts.ground - PERF.parts.items - PERF.parts.end);
+    perfFrame(now, tf2 - tf0); drawPerf(ctx);
     if (ADMIN.fps) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.font = 'bold 14px monospace'; ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(8, cv.height - 30, 150, 22); ctx.fillStyle = '#fff'; ctx.fillText(frameAvg.toFixed(1) + ' ms  ' + Math.round(1000 / Math.max(1, frameAvg)) + ' fps  ' + cv.width + 'x' + cv.height, 14, cv.height - 14); ctx.restore(); }   // the frame time, for reports (Admin)
     requestAnimationFrame(frame);
   }

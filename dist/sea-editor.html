@@ -4857,12 +4857,14 @@ function make(kit, opts) {
   w.bakeChunk = bakeChunk;
   w.waterCv = bakeChunk(-64, -64);                      // far outside the map: nothing but deep sea
   // the pieces of the map in view; at most one new piece is painted per call, and the oldest are forgotten
+  w.bakes = 0; w.bakeMs = 0;                               // how many ground pieces were baked and how long it took (the frame log reads and clears them)
+  function pnow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
   w.drawGround = function (c, cam, hw, hh) {
     var pw = CT * T, phh = CT * TS, baked = 0;
     for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
       var ck = qy * CW + qx, piece = w.waterCv;
       if (landChunk[ck]) {
-        if (!chunkCv[ck] && baked < 1) { chunkCv[ck] = bakeChunk(qx, qy); chunkOrder.push(ck); baked++; if (chunkOrder.length > 60) delete chunkCv[chunkOrder.shift()]; }
+        if (!chunkCv[ck] && baked < 1) { var tb0 = pnow(); chunkCv[ck] = bakeChunk(qx, qy); w.bakes++; w.bakeMs += pnow() - tb0; chunkOrder.push(ck); baked++; if (chunkOrder.length > 60) delete chunkCv[chunkOrder.shift()]; }
         if (chunkCv[ck]) piece = chunkCv[ck];
       }
       c.drawImage(piece, qx * pw, qy * phh, pw + 0.5, phh + 0.5);

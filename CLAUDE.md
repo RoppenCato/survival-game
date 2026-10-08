@@ -886,6 +886,16 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   toggles Immortal, One-shot hits (`mods().dmg` and `powerMul` 1000), Free building and crafting (`canAfford`/`pay`), Fly
   (`walk` true everywhere, `mods().speed` 2.6); and one-offs: plenty of everything, reveal the chart, skip to dusk or dawn,
   go to the steading, hamlet or cave, Brokk joins. The engine took `mods().dmg` and `mods().speed` for it.
+- **The frame log (2026-10-08, Robin: it lags when I walk):** a readout on the **left of the screen, in the middle**, always on
+  (`drawPerf`: frames a second in green, amber or red, the milliseconds, the things drawn, and the frame's parts: t tick, u update,
+  g ground, d draw, e end). `PERF` times every frame in parts (the page's tick, the engine's update, the render split into the
+  ground (`scene.begin`), the list of things (`scene.items`), the engine's own y-sorted drawing, and the end overlays), and each
+  second writes a line to the log (`perfLine`): fps, average and worst frame, the parts, the ground pieces baked and their time
+  (`w.bakes`, `w.bakeMs` in `src/world.js`), things, figures and beasts, the hero's position and island, the zoom, what he was
+  doing (walk, sprint, aboard, cave, yard, build, menu, bag, map, paused, night, torch) and the canvas size; a frame over 50 ms
+  writes a **SPIKE** line at once, and every toast is an **event** line. The log is kept in `game.perflog` (the last 1200 lines),
+  the Admin board's **"Download the frame log"** saves it as `framelog.txt` (Robin puts it in the project folder for me to read),
+  and `Combat.api.debug().perflog()` returns it.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
 - **Villages across the islands (2026-10-07, Robin: lots of islands, lots of places):** the world has **six islands** (`spec.sizes`
   60, 230, 150, 110, 170, 90 tiles; `World.make` takes `sizes`; `layoutKey` includes them, so older saves start fresh; `onOtherIsland`
