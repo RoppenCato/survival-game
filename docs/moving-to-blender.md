@@ -40,7 +40,7 @@ Blender Editor and in the game, a before/after image, and a note in the status t
 
 ### 0. The foundations (first, small, everything rests on it)
 
-- **`src/sprites.js`**: one module shared by the game and the editors for loading a sheet, picking a clip and frame from a state
+- **`src/sprites.js`** (done 2026-10-09): one module shared by the game and the editors for loading a sheet, picking a clip and frame from a state
   (the game's `sprPick`, generalised: moving, sprinting, attack phases, tool, hurt, sit, dead, plus a one-shot queue), drawing the
   layers, and the **cast shadow** (the silhouette sheet, the props' lean). The game's and the Blender Editor's copies of this code
   fold into it. Hooks beside `heroSprite`: `api.enemySprite(e)` for beasts and `drawFolk` for people.
@@ -108,7 +108,7 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 
 | Model | Blend | Rig | Clips | Sheets | In the editor | In the game | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Hero 2 (cel, fitted) | `hero2.blend`, `hero2_mixamo.blend` | Mixamo | 18 | `hero2-mixamo` | yes | trial (Use in the game) | no gear or weapon layers yet |
+| Hero 2 (cel, fitted) | `hero2.blend`, `hero2_mixamo.blend` | Mixamo | 18 | `hero2-mixamo` | yes | **the hero** everywhere (since 2026-10-09 evening, `src/sprites.js`) | no gear or weapon layers yet; the drawn hero retired to `art/backup/` |
 | Hero 1 (first trial) | `hero.blend` | own | idle, walk | `hero` | yes | Character Editor only | superseded |
 | Villagers, Brokk, child, elder, guard | | | | | | | step 2 |
 | Boulder troll, stone, forest troll | | | | | | | step 3 |

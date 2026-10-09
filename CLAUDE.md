@@ -91,8 +91,10 @@ gone from the code, and no new work may bring any of it back. This file is the s
   near the trees, small detail is scattered in the open, and there is room to build a base.
 - **Environment objects** come in three groups, from Robin's lists: found in nature, left by people in the wild,
   and built by Vikings. Keep new props in one of the three.
-- **Hero:** the smooth vector figure. Robin rejected a pixel-sprite look ("doesn't fit with the other graphics"). Since
-  2026-10-09 a Blender-rendered hero exists beside it as a trial (`art/`); Robin has not chosen between them.
+- **Hero: the Blender model** (Robin, 2026-10-09: the new character model in every editor and the game, the old one kept as a
+  backup). `src/sprites.js` draws him from the sheets in `assets/sprites/hero2-mixamo` in the game, the Art Editor, the Sea Editor
+  and the Combat Arena. The drawn ink figure (`playerD`, `inkHero` in `src/art.js`) still draws the villagers, Brokk and the guards
+  until they are modelled; the old Character Editor is in `art/backup/`. Robin rejected a pixel-sprite look long ago.
 
 ## Commands
 
@@ -112,7 +114,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | Page (in `dist/`) | Template | What it is |
 | --- | --- | --- |
 | `index.html` | `index.html` | Start page |
-| `art-editor.html` | `art.html` | **Art Editor (2026-10-09, the cleanup):** the Character, Creature, Object and Blender editors as one page with four tabs, **Characters** (the drawn ink figure: heroes, concepts, templates, style, build, colours, "Use as the hero in the game"), **Creatures** (the drawn animals and trolls: templates, body plan, shape, behaviour, the library, "Update in game"), **Objects** (one world prop at a time: category, variations, size, shape, surface, colour) and **Models** (the Blender sheets: model, gear layers, Height, "Use in the game", the starter island, arena or night forest, the Clips keys). One canvas and one engine: each tab is an object in `TABS` with `enter` (sets `Combat.api.scene`, `roster`, `heroSprite` and resets the arena), `leave`, `tick` and `after`; a tab's elements are found by `data-id` inside its own containers (`scope(name)`), so the tabs share names; the open tab is kept in `arteditor.tab` and `?tab=` opens one. The storage keys of the old pages are unchanged. |
+| `art-editor.html` | `art.html` | **Art Editor (2026-10-09, the cleanup):** the Creature, Object and Blender editors as one page with three tabs, **Models** (the Blender sheets: model, gear layers, Height, "Use in the game" picks which model is the hero, the starter island, arena or night forest, the Clips keys), **Creatures** (the drawn animals and trolls: templates, body plan, shape, behaviour, the library, "Update in game") and **Objects** (one world prop at a time: category, variations, size, shape, surface, colour). The hero in every tab is the Blender model (`Sprites.attach`). One canvas and one engine: each tab is an object in `TABS` with `enter` (sets `Combat.api.scene`, `roster` and resets the arena), `leave`, `tick` and `after`; a tab's elements are found by `data-id` inside its own containers (`scope(name)`), so the tabs share names; the open tab is kept in `arteditor.tab` and `?tab=` opens one. The Characters tab (the drawn hero's editor) was retired the same day to `art/backup/character-editor.html`. |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
@@ -217,6 +219,13 @@ the text and it is made the default. When a spec's meaning changes, change the s
   into the trunk on the side it came from (`o.notch`, drawn as a wedge with pale wood inside, part of the trunk); from then
   on blows from the **other side** are the back cut, bite `spotBonus` deep and fell the tree toward the notch, as a woodcutter
   does. Nothing to find: only where you stand. The sunny side stays the rocks' default. A trunk is the axe's right target (no "wrong tool").
+- `src/sprites.js` (`Sprites`, 2026-10-09): the Blender models' sheets drawn in the game and the editors: `hero(SP, storage)` loads the
+  game's hero model (`game.blenderHero`, else `hero2-mixamo`), `attach(Combat, H, opts)` makes it the engine's hero through
+  `Combat.api.heroSprite` (opts: `scale()`, `tool()`, `shadow()`, `shadowHue`, `layers()`), `pick` chooses the clip and frame from the
+  engine's state (walk and run; the attack's phases spread over attack1 and attack2, or chop and mine by the tool; the hit; `anim.sit`;
+  death from the moment of death), `play(H, name, then)` queues a one-shot clip (the bow's shot comes from `fireT` in `tick`), `cast`
+  lays the frame's silhouette on the ground as the props' long shadows lie, `drawDead` draws the fallen hero where a page lists it.
+  Loads in Node too. Every page gets it as `__SPRITES_JS__` and the sheets' numbers as `__SPRITES__`.
 - `src/fishing.js` (`Fishing`): **fishing (2026-10-08, Robin: a rod of iron in the lowlands, a fisherman who teaches the dishes, a fun
   minigame, a few fishes, a sunken chest now and then).** The round with no drawing: `start(R, depth, lowland)` rolls what bites
   (`roll`, `table`: herring everywhere in the sea, perch in the shallows, cod and salmon deep, pike in the lowland shallows, a
@@ -436,10 +445,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
   starter island and plays its clips on the Clips keys: a clip runs once (`clip` = { name, t0, then }: the bow's draw hands over to
   the shot) and the idle returns; X sits (`seated` keeps the sit idle) and X again stands up. Because the sheets are no longer
   inlined, `tools/build.py` writes their paths and the workbench server serves the repo root.
-  **In the game, as a trial (2026-10-09, Robin: test it in the game, walking, building, the sword and the bow):** the Blender Editor's
-  **Use in the game** (and **Take back**) under the Model list stores the model's name in `game.blenderHero`; the game inlines every
-  sheet's numbers (`__SPRITES__` in `templates/game.html`) and, when a stored model exists, draws its hero from the sheets through
-  `Combat.api.heroSprite` (`sprDraw`, `sprPick`, `sprTick` near the top of the page). **The clips follow the game's actions:** walk and
+  **In the game (2026-10-09, first as a trial, since the evening of the same day the hero everywhere):** the game inlines every
+  sheet's numbers (`__SPRITES__`) and draws its hero from the sheets through `Sprites.attach` (`src/sprites.js`); the Models tab's
+  **Use in the game** picks which model (`game.blenderHero`, `hero2-mixamo` by default). **The clips follow the game's actions:** walk and
   run (Shift) by the engine's `anim.amt` and `sprinting`; the sword's two slashes by the attack's phases (the clip's frames spread
   over the windup, the blow and the recovery from `Combat.api.stepData`, alternating by the combo; fists the same), chop and mine in
   gather mode by the tool in hand (the pick mines, everything else chops), the bow's shot (`fireT` rising plays `bow_shoot` once;
