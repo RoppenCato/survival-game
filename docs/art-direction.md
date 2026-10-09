@@ -83,28 +83,32 @@ Everything is still drawn in code. The look is a renderer and a palette, not a s
 
 ## 7. Rendered characters: the values (2026-10-09)
 
-Robin chose the **cel style** of the Blender style test (`art/build/toon.py`, `--style cel`) and had the hero fitted to the world
-with the Night Forest scene as the reference (`tools/visual/nightforest.js`: the kit at hue 152 with blue-violet shadows, a deep
-blue-green night multiply `rgb(96,132,138)`, one amber campfire; its mean colours: canopy `#11211e`, trunks `#111e1b`, ground
-`#1a271d`). Every future rendered asset uses these values:
+Robin chose the **cel style** of the Blender style test (`art/build/toon.py`, `--style cel`) and had the hero fitted to the world.
+**The reference is the starter island by day as the game draws it** (Robin, 2026-10-09, after a night-forest fit came out far too
+dark): `tools/visual/dayisland.js` paints it from `World` exactly as the game does (the ink look, the living grass, the props); its
+mean colour round the camp is about `#598d8c` (the grass `#6fae4e`-ish under the ink look's muting). The night forest stays as a
+second scene (`--scene night`: `tools/visual/nightforest.js`). Every future rendered asset uses these values (`toon.SCENES`):
 
-- **Palette** (`COL` in `art/build/hero2_build.py`): skin `#bf9a74`, hair `#a0502a` and beard `#8a4322` (the one warm accent), tunic
-  `#625d47`, trousers `#363d49`, boots `#261c16`, belt `#3f2b1d`, buckle and trim `#8a7340` / `#7d6a3a`, leather `#4e3826`, hood
-  `#34473a` (moss, so the red stays the only accent), neck trim `#2c3a44`. No light beige, nothing brighter than the hair.
-- **Ambient:** every fill is multiplied by the cool green air `AMBIENT_TINT (0.84, 0.95, 0.90)`; the world background is the same
-  green-tinted grey (`world()`: r 0.85, g 1.05, b 1.0 of the ambient level 0.10).
+- **Palette** (`COL` in `art/build/hero2_build.py`): **the game's own hero**, Eirik in `HEROES` (`src/art.js`): skin `#e3bd98`,
+  hair `#a8522a`, beard `#8e4424`, the grey-green wool tunic `#857a62`, trousers `#4e4a52`, boots `#3e2c24`, belt `#5a3d2a`, buckle
+  `#c99a3a`, trim `#b08a3a`, leather `#6a4a32`, the hood in the cloak's red `#8a3a34`, the neck trim `#4e4a52`. The same colours
+  the drawn figure wears, so the two stand side by side without a jump.
+- **Ambient (day):** every fill is multiplied by `AMBIENT_TINT (1.0, 0.99, 0.95)`, a faintly warm daylight; the world's air is a
+  neutral grey (`air (0.12, 0.12, 0.115)`). The night scene's values are `(0.84, 0.95, 0.90)` and `(0.085, 0.105, 0.10)`.
 - **Light:** one sun, upper left and in front, travelling `(0.55, 0.45, -0.70)`, energy 1.15 (the kit's props are lit the same way).
-  The toon cut: shadow under 0.66 of the light, highlight over 0.9. The **shadow side** is the base times `SHADOW_TINT_FIT
-  (0.52, 0.66, 0.70)` (cool blue-green, never the same hue darkened); the **highlight** is the base mixed 16% toward the warm
-  `LIGHT_TINT (1.0, 0.95, 0.80)`. A **rim** of `RIM_COL (1.0, 0.80, 0.52)` at `RIM_K` 0.45 where the surface turns away from the
-  camera on the sun's side, so the figure separates from the dark ground without being the brightest thing on screen.
+  The toon cut: shadow under 0.66 of the light, highlight over 0.9. The **shadow side** is the base times the art direction's cool
+  blue `(0.60, 0.66, 0.86)` by day (`(0.52, 0.66, 0.70)` at night), never the same hue darkened; the **highlight** is the base mixed
+  16% toward the warm `LIGHT_TINT (1.0, 0.95, 0.80)`. A **rim** of `RIM_COL (1.0, 0.80, 0.52)` at 0.3 by day (0.45 at night) where
+  the surface turns away from the camera on the sun's side, so the figure separates from the ground without being the brightest
+  thing on screen.
 - **Line:** Freestyle, the warm brown-black `#231a16` (never pure black); the whole-silhouette contour 1.9 px at game scale with a
   calligraphy thickness 0.5 to 1.3 of that (heavy toward the lower right); a 0.9 px line at silhouettes inside and creases over
   100 degrees. Rendered at double size and halved with a smooth filter.
 - **Grain:** fine specks in every fill, `GRAIN_K` 0.075 at noise scale 320 (about the kit's grain at the 0.14 the scene lays over
   everything); in a composite the kit's grain is laid over the figure too at that 0.14, after it is placed.
-- **Contact shadow:** a cool dark ellipse under the feet fading out (`nightforest.js` `contactShadow`: `rgba(8,14,18)` 0.55 at the
-  centre, 0.3 at 0.6, 0 at the edge; about 30 by 12 units at game scale), as the kit's props sit on the ground.
+- **Contact shadow:** a soft ellipse under the feet fading out, in the ground's own shadow colour (`dayisland.js` `contactShadow`:
+  `rgba(30,70,50)` 0.4 at the centre, 0.22 at 0.6, 0 at the edge, about 30 by 12 units at game scale; the night scene's is
+  `rgba(8,14,18)` 0.55), as the kit's props sit on the ground.
 - **The face** is a painted decal, not modelling (`_paint_face`, `_decal`): a 256 px RGBA image projected onto the front half of the
   head from its Generated coordinates; two dark eyes `#2a1a14` set a little high (0.575 of the head's height, 0.19 either side of
   the middle), short thick brows `#6b3418` above them, no mouth (the beard covers it), no white round the eyes. Three eye styles

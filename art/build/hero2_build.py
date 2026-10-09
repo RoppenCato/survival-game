@@ -14,10 +14,12 @@ SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'source')
 OUT = os.path.abspath(os.path.join(SRC, 'hero2.blend')); FBX = os.path.abspath(os.path.join(SRC, 'hero2_tpose.fbx'))
 FPS = 24
 
+# the palette is the game's own hero (Eirik in src/art.js HEROES, as the game draws him on the starter island by day; 2026-10-09):
+# a grey-green wool tunic, dark trousers, dark boots, warm skin, red hair and beard, the red cloak's colour on the hood, ochre trim
 COL = {
-    'skin': '#bf9a74', 'face': '#bf9a74', 'hair': '#a0502a', 'beard': '#8a4322', 'ink': '#231a16',
-    'tunic': '#625d47', 'pants': '#363d49', 'boot': '#261c16', 'belt': '#3f2b1d', 'buckle': '#8a7340', 'leather': '#4e3826',
-    'hood': '#34473a', 'trim': '#7d6a3a', 'trimX': '#7d6a3a', 'trim2': '#2c3a44',
+    'skin': '#e3bd98', 'face': '#e3bd98', 'hair': '#a8522a', 'beard': '#8e4424', 'ink': '#231a16',
+    'tunic': '#857a62', 'pants': '#4e4a52', 'boot': '#3e2c24', 'belt': '#5a3d2a', 'buckle': '#c99a3a', 'leather': '#6a4a32',
+    'hood': '#8a3a34', 'trim': '#b08a3a', 'trimX': '#b08a3a', 'trim2': '#4e4a52',
 }
 PATTERN = {'trim': 'knot:z', 'trimX': 'knot:x', 'trim2': 'woven:z'}          # the folk style draws these; the others show plain bands
 

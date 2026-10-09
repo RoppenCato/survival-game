@@ -20,10 +20,20 @@ PAINT_MUTE = (0.42, 0.40, 0.30)       # the painted style pulls every colour tow
 SUN_DIR = Vector((0.55, 0.45, -0.70)).normalized()   # the light travels down, to the right and away: it comes from upper left, in front
 # the fit with the world (2026-10-09, Robin: match the Night Forest): a cool green ambient over every fill, the shadow side toward
 # the scene's blue-green, a subtle rim, the grain as fine specks at the strength of the kit's grain
-AMBIENT_TINT = (0.84, 0.95, 0.90)
-SHADOW_TINT_FIT = (0.52, 0.66, 0.70)
-RIM_K = 0.45
+# Two scenes to fit (2026-10-09): 'day', the starter island by daylight as the game shows it (Robin: the reference), and 'night',
+# the Night Forest. The scene sets the ambient over every fill, the shadow side's tint, the rim's strength and the world's air.
+SCENES = {
+    'day': {'ambient': (1.0, 0.99, 0.95), 'shadow': (0.60, 0.66, 0.86), 'rim': 0.3, 'air': (0.12, 0.12, 0.115)},
+    'night': {'ambient': (0.84, 0.95, 0.90), 'shadow': (0.52, 0.66, 0.70), 'rim': 0.45, 'air': (0.085, 0.105, 0.10)},
+}
+SCENE = 'day'
+AMBIENT_TINT = SCENES[SCENE]['ambient']
+SHADOW_TINT_FIT = SCENES[SCENE]['shadow']
+RIM_K = SCENES[SCENE]['rim']
 GRAIN_K = 0.075
+def set_scene(name):
+    global SCENE, AMBIENT_TINT, SHADOW_TINT_FIT, RIM_K
+    SCENE = name if name in SCENES else 'day'; sc = SCENES[SCENE]; AMBIENT_TINT = sc['ambient']; SHADOW_TINT_FIT = sc['shadow']; RIM_K = sc['rim']
 FACE = 'neutral'                      # the face texture drawn on a material with the 'face' property: <eyes>-<expression> or neutral
 EYES = 'dot'
 
@@ -228,7 +238,8 @@ def camera(scene, elev_deg=35, ortho=1.75, aim_z=0.85):
 def world(scene, ambient=None, style='cel'):
     if ambient is None: ambient = 0.14 if style == 'painted' else 0.10
     w = bpy.data.worlds.get('World') or bpy.data.worlds.new('World'); scene.world = w; w.use_nodes = True
-    bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (ambient * 0.85, ambient * 1.05, ambient, 1); bg.inputs[1].default_value = 1.0   # the night forest's cool green air
+    air = SCENES[SCENE]['air']; k = ambient / 0.10
+    bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (air[0] * k, air[1] * k, air[2] * k, 1); bg.inputs[1].default_value = 1.0   # the scene's air
 
 def freestyle(scene, view_layer, px, collection=None, style='cel'):
     """The line per style: cel, a whole-silhouette contour heavy toward the lower right and a thinner line at overlaps;

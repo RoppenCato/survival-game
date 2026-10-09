@@ -399,10 +399,15 @@ the text and it is made the default. When a spec's meaning changes, change the s
   materials refer to them; `_decal` projects it onto the front half of the head from the Generated coordinates; `render.py --eyes
   dot|oval|highlight --face neutral|blink|angry|hurt`); the modelled eyes, brows and mouth are gone, the nose bump and the beard
   stay. The **palette, ambient, light, line, grain and contact shadow values are in `docs/art-direction.md` section 7** and in
-  `toon.py` (`AMBIENT_TINT`, `SHADOW_TINT_FIT`, `RIM_K`, `GRAIN_K`). `tools/visual/nightforest.js` is the shared Night Forest painter
-  (`paint`, `grainOver`, `contactShadow`, `sample`); `tools/visual/herofit.js` writes herofit.png (the eye styles and expressions, before
-  and after at game scale and 4x). `assets/sprites/hero2-fit` is the fitted hero's eight-direction sheet for the Blender Editor.
-  **Nothing in the game changed.**
+  `toon.py` (`SCENES`: `day` and `night`, `set_scene`; `AMBIENT_TINT`, `SHADOW_TINT_FIT`, `RIM_K`, `GRAIN_K`). **The night fit came out
+  far too dark (Robin, 2026-10-09, with a screenshot of the game): the reference is the starter island by day**, so the palette is
+  now the game's own hero's (Eirik's colours) and `--scene day` is the default; `tools/visual/dayisland.js` paints the starter island
+  from `World` as the game draws it (`make`, `paint`, `contactShadow`, `sample`), `tools/visual/nightforest.js` the Night Forest;
+  `tools/visual/herofit.js` writes herofit.png on the island (the drawn Eirik beside the first cel render and the fitted hero at game
+  scale, the eye styles and expressions at 2x, 4x zooms of both). `assets/sprites/hero2-fit` is the fitted hero's eight-direction
+  sheet. **The Blender Editor's default scene is the starter island** (`World.make` with one island of 60 tiles and the wreck,
+  `__WORLD__` in the page; the Sea Editor's ground, waves, grass and bucket drawing; `nearSolids` for collision), with Arena and Night
+  forest as the other two. **Nothing in the game changed.**
 
 ## Things to know before changing code
 

@@ -3,7 +3,7 @@ transparent PNGs at double size for tools/sprites.js to crop, halve and pack. Th
 line come from toon.py, so every character renders alike.
 
   node tools/blender.js art/build/render.py -- art/source/hero.blend art/render/hero [--anims idle,walk] [--dirs 8]
-      [--frames 8] [--walkframes 6] [--layers body,helm,mail] [--size 160] [--px 2] [--elev 35] [--ortho 1.75] [--style cel|painted|folk] [--eyes dot|oval|highlight] [--face neutral|blink|angry|hurt]
+      [--frames 8] [--walkframes 6] [--layers body,helm,mail] [--size 160] [--px 2] [--elev 35] [--ortho 1.75] [--style cel|painted|folk] [--eyes dot|oval|highlight] [--face neutral|blink|angry|hurt] [--scene day|night]
 
 The frame is size by size at 1x (px times that in the render); the figure's origin (between the feet) projects to the pixel
 written in meta.json as the foot anchor. A layer is 'body' (the Body collection alone) or the name of a gear piece: its meshes
@@ -17,7 +17,7 @@ from bpy_extras.object_utils import world_to_camera_view
 
 argv = sys.argv[sys.argv.index('--') + 1:]
 blend, out = os.path.abspath(argv[0]), os.path.abspath(argv[1])
-opt = {'anims': 'idle,walk', 'dirs': '8', 'frames': '8', 'layers': 'body,helm,mail', 'size': '160', 'px': '2', 'elev': '35', 'ortho': '1.75', 'samples': '16', 'style': 'cel', 'walkframes': '', 'face': 'neutral', 'eyes': 'dot'}
+opt = {'anims': 'idle,walk', 'dirs': '8', 'frames': '8', 'layers': 'body,helm,mail', 'size': '160', 'px': '2', 'elev': '35', 'ortho': '1.75', 'samples': '16', 'style': 'cel', 'walkframes': '', 'face': 'neutral', 'eyes': 'dot', 'scene': 'day'}
 i = 2
 while i < len(argv):
     k = argv[i].lstrip('-'); opt[k] = argv[i + 1]; i += 2
@@ -25,7 +25,7 @@ ANIMS = opt['anims'].split(','); NDIR = int(opt['dirs']); NFR = int(opt['frames'
 SIZE, PX = int(opt['size']), int(opt['px'])
 DIRS8 = ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se']
 dir_names = DIRS8 if NDIR == 8 else ['s', 'w', 'n', 'e'] if NDIR == 4 else [('d%d' % d) for d in range(NDIR)]
-STYLE = opt['style']; toon.FACE = opt['face']; toon.EYES = opt['eyes']
+STYLE = opt['style']; toon.FACE = opt['face']; toon.EYES = opt['eyes']; toon.set_scene(opt['scene'])
 
 bpy.ops.wm.open_mainfile(filepath=blend)
 sc = bpy.context.scene; vl = bpy.context.view_layer
@@ -50,7 +50,7 @@ bpy.context.view_layer.update()
 a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
 anchor = {'x': a.x * SIZE * PX, 'y': (1 - a.y) * SIZE * PX}
 top = world_to_camera_view(sc, cam, Vector((0, 0, 1.8)))
-meta = {'style': STYLE, 'face': toon.FACE, 'eyes': toon.EYES, 'size': SIZE, 'px': PX, 'anchor': anchor, 'dirs': dir_names, 'frames': NFR, 'anims': {}, 'layers': LAYERS,
+meta = {'style': STYLE, 'scene': toon.SCENE, 'face': toon.FACE, 'eyes': toon.EYES, 'size': SIZE, 'px': PX, 'anchor': anchor, 'dirs': dir_names, 'frames': NFR, 'anims': {}, 'layers': LAYERS,
         'figure_px': (top.y - a.y) * SIZE * PX, 'elev': float(opt['elev']), 'ortho': float(opt['ortho'])}
 os.makedirs(out, exist_ok=True)
 n = 0

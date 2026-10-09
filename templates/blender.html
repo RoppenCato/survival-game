@@ -94,14 +94,15 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
       <section class="panel">
         <h2>Scene</h2>
         <div class="group">
-          <button id="scArena" aria-pressed="true">Arena</button>
+          <button id="scIsland" aria-pressed="true">Starter island</button>
+          <button id="scArena" aria-pressed="false">Arena</button>
           <button id="scNight" aria-pressed="false">Night forest</button>
           <button id="sbeast">Add beast</button>
           <button id="sclear">Clear</button>
           <button id="nodmg" aria-pressed="true">No damage</button>
         </div>
         <div class="row" style="margin-top:10px"><label for="zoom">Zoom</label><input id="zoom" type="range" min="1" max="3" step="0.25" value="1"><output id="zoomo">1</output></div>
-        <p class="desc">Zoom enlarges the drawing only: at 1 the figure is the game's size. The night forest is the kit's props in the Night Forest key with one campfire.</p>
+        <p class="desc">Zoom enlarges the drawing only: at 1 the figure is the game's size. The starter island is the game's own world (one island of 60 tiles with the wreck) drawn as the game draws it; the night forest is the kit's props in the Night Forest key with one campfire.</p>
       </section>
       <section class="panel">
         <h2>Numbers</h2>
@@ -115,6 +116,9 @@ __ART__
 </script>
 <script>
 __LIB__
+</script>
+<script>
+__WORLD__
 </script>
 <script>
 __COMBAT__
@@ -146,7 +150,7 @@ __COMBAT__
     'hero2-cel': 'The second hero in the cel style: two or three tones, a warm rim light, a line heavy on the shadow side.',
     'hero2-painted': 'The second hero painted after Bauer: soft shading, muted greens and browns, a wobbling line.',
     'hero2-folk': 'The second hero in the folk-art style: flat fills, a bold even line, knotwork and woven trim.',
-    'hero2-fit': 'The cel hero fitted to the Night Forest (2026-10-09): the painted face, the palette from the scene, the cool green ambient, the subtle rim, the grain. Walk him in the night forest.' };
+    'hero2-fit': 'The cel hero fitted to the world (2026-10-09): the painted face, the game’s own palette (Eirik’s colours), daylight with the art direction’s cool shadow, a subtle rim, the grain. Walk him round the starter island beside the drawn hero’s world.' };
   var SPR_PX = 3, cur = null, gear = {}, zoom = 1, night = false, anim = 'idle';
   function meta() { return SP[cur] && SP[cur].meta; }
   function layersOn() { var M = meta(), out = ['body']; if (!M) return out; M.layers.forEach(function (l) { if (l !== 'body' && gear[l]) out.push(l); }); return out; }
@@ -160,7 +164,7 @@ __COMBAT__
     var moving = an.amt > 0.35, a = moving && M.anims.walk ? 'walk' : 'idle', A = M.anims[a], t = performance.now() / 1000;
     var f = Math.floor(t * A.fps) % A.frames, d = spriteDir(face), fw = M.frame.w, fh = M.frame.h, s = zoom / SPR_PX;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
-    c.fillStyle = 'rgba(20,30,20,0.25)'; c.beginPath(); c.ellipse(0, 0, 9 * zoom, 4 * zoom, 0, 0, 7); c.fill();
+    var g = c.createRadialGradient(0, 0, 0, 0, 0, 11 * zoom); g.addColorStop(0, 'rgba(30,70,50,0.4)'); g.addColorStop(0.6, 'rgba(30,70,50,0.22)'); g.addColorStop(1, 'rgba(30,70,50,0)'); c.save(); c.scale(1, 0.4); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 11 * zoom, 0, 7); c.fill(); c.restore();
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     layersOn().forEach(function (l) { var im = IMG[cur][A.sheets[l]]; if (!im || !im.complete || !im.naturalWidth) return; c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); });
     c.restore();
@@ -239,26 +243,75 @@ __COMBAT__
     items: function (items) {},
     end: function (c, P) {}
   };
-  function setScene(isNight) {
-    night = isNight; Combat.api.scene = night ? nightScene : null;
-    Combat.dbg().W.pillars.forEach(function (p) { p.hide = night; });
-    pressed(document.getElementById('scArena'), !night); pressed(document.getElementById('scNight'), night);
+  /* ---------- the starter island: the game's own world, one island of 60 tiles with the wreck, drawn as the game draws it ---------- */
+  var T = kit.TW, CT, CW, CH, island = null, icam = { x: 0, y: 0 }, clock = 0, grassLook = World.GRASS_INK;
+  function makeIsland() {
+    island = World.make(kit, { isle: 60, isle0: 60, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11 });
+    island.meadowLook = grassLook; island.plant(); island.camp(); island.sortBuckets(); CT = island.CT; CW = island.CW; CH = island.CH;
   }
-  document.getElementById('scArena').addEventListener('click', function (e) { setScene(false); e.currentTarget.blur(); });
-  document.getElementById('scNight').addEventListener('click', function (e) { setScene(true); e.currentTarget.blur(); });
+  var islandScene = {
+    noKills: true,
+    bounds: null,
+    walk: function (x, y) { return island.isLand(x, y); },
+    begin: function (c, P) {
+      var hw = 200, hh = 125, WX = island.GW * T, WY = island.GH * T;
+      icam.x = Math.max(hw, Math.min(WX - hw, P.x)); icam.y = Math.max(hh, Math.min(WY * K - hh, P.y * K - 14));
+      c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.translate(-icam.x, -icam.y);
+      island.drawGround(c, icam, hw, hh); island.drawWaves(c, icam, hw, hh, clock, 0.75, 1.05); island.drawGrass(c, icam, hw, hh, clock, grassLook);
+    },
+    items: function (items) {
+      var hw = 200, hh = 125, TS = T * K, hero = Combat.dbg().P;
+      var bx0 = Math.max(0, Math.floor((icam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((icam.x + hw) / T / CT) + 1);
+      var by0 = Math.max(0, Math.floor((icam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((icam.y + hh) / TS / CT) + 1);
+      for (var by = by0; by <= by1; by++) for (var bx = bx0; bx <= bx1; bx++) {
+        var list = island.buckets[by * CW + bx]; if (!list) continue;
+        list.forEach(function (o) {
+          var s = island.sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
+          if (px + w < icam.x - hw || px > icam.x + hw || py + h < icam.y - hh || py > icam.y + hh) return;
+          items.push({ y: o.y, f: function () {
+            var behind = o.r === 8 && hero.y < o.y && hero.y * K > py + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3;
+            if (behind) ctx.globalAlpha = 0.45; ctx.drawImage(s.cv, px, py, w, h); ctx.globalAlpha = 1;
+          } });
+        });
+      }
+    },
+    end: function (c, P) {
+      var PSN = Combat.api.pixelScale || 2; c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0); c.globalAlpha = 0.12; c.fillStyle = kit.grain(c); c.fillRect(0, 0, 400 * PSN, 250 * PSN); c.globalAlpha = 1; c.restore();
+    }
+  };
+  var sceneName = 'island';
+  function setScene(nm) {
+    sceneName = nm; night = nm === 'night';
+    if (nm === 'island') {
+      if (!island) makeIsland();
+      islandScene.bounds = { x0: 8, y0: 12, x1: island.GW * T - 8, y1: island.GH * T - 8 }; Combat.api.scene = islandScene;
+      var P = Combat.dbg().P; if (!P.onIsland) { P.x = island.home.x + 100; P.y = island.home.y - 30; P.onIsland = true; }
+      if (!island.isLand(P.x, P.y)) { P.x = island.home.x + 100; P.y = island.home.y - 30; }
+    } else {
+      Combat.api.scene = night ? nightScene : null;
+      var Q = Combat.dbg().P; if (Q.onIsland) { Q.x = 200; Q.y = 200; Q.onIsland = false; }
+    }
+    Combat.dbg().W.pillars.forEach(function (p) { p.hide = nm !== 'arena'; });
+    pressed(document.getElementById('scIsland'), nm === 'island'); pressed(document.getElementById('scArena'), nm === 'arena'); pressed(document.getElementById('scNight'), night);
+  }
+  document.getElementById('scIsland').addEventListener('click', function (e) { setScene('island'); e.currentTarget.blur(); });
+  document.getElementById('scArena').addEventListener('click', function (e) { setScene('arena'); e.currentTarget.blur(); });
+  document.getElementById('scNight').addEventListener('click', function (e) { setScene('night'); e.currentTarget.blur(); });
   var noDmg = true;
   document.getElementById('sbeast').addEventListener('click', function (e) { Combat.spawn('beast'); e.currentTarget.blur(); });
-  document.getElementById('sclear').addEventListener('click', function (e) { Combat.clear(); setScene(night); e.currentTarget.blur(); });
+  document.getElementById('sclear').addEventListener('click', function (e) { Combat.clear(); var Q = Combat.dbg().P; Q.onIsland = false; setScene(sceneName); e.currentTarget.blur(); });
   document.getElementById('nodmg').addEventListener('click', function (e) { noDmg = !noDmg; pressed(e.currentTarget, noDmg); e.currentTarget.blur(); });
   var zoomEl = document.getElementById('zoom'); zoomEl.addEventListener('input', function () { zoom = +zoomEl.value; document.getElementById('zoomo').textContent = zoom; });
 
   var first = localStorage.getItem('blendereditor.model'); if (!SP[first]) first = names[0];
   if (first) pick(first);
+  setScene('island');
 
   var last = performance.now();
   function frame(now) {
-    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    var dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
     if (noDmg) { var P = Combat.dbg().P; if (!P.dead) P.hp = P.maxHp; }
+    if (sceneName === 'island' && island) { var D = Combat.dbg(); D.W.pillars = island.nearSolids(D.P); }
     Combat.update(dt); Combat.render(ctx);
     requestAnimationFrame(frame);
   }
