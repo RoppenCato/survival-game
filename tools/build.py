@@ -33,11 +33,26 @@ def hero_sprites():
             with open(os.path.join(d, f), 'rb') as fh: imgs[f] = 'data:image/png;base64,' + base64.b64encode(fh.read()).decode('ascii')
     return json.dumps({'meta': j, 'images': imgs})
 SRC['__HERO_SPRITES__'] = hero_sprites()
+def all_sprites():
+    """every packed sheet under assets/sprites/<name>/<name>.json, for the Blender Editor"""
+    root = os.path.join(ROOT, 'assets', 'sprites'); out = {}
+    if not os.path.isdir(root): return 'null'
+    for name in sorted(os.listdir(root)):
+        jp = os.path.join(root, name, name + '.json')
+        if not os.path.exists(jp): continue
+        j = json.load(open(jp, encoding='utf-8')); imgs = {}
+        for a in j['anims'].values():
+            for f in a['sheets'].values():
+                with open(os.path.join(root, name, f), 'rb') as fh: imgs[f] = 'data:image/png;base64,' + base64.b64encode(fh.read()).decode('ascii')
+        out[name] = {'meta': j, 'images': imgs}
+    return json.dumps(out)
+SRC['__SPRITES__'] = all_sprites()
 
 # page name in dist/  ->  template in templates/
 PAGES = [
     ('index', 'index'),
     ('character-editor', 'sprite'),
+    ('blender-editor', 'blender'),
     ('creature-editor', 'creature'),
     ('object-editor', 'objects'),
     ('sea-editor', 'sea'),

@@ -108,6 +108,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | --- | --- | --- |
 | `index.html` | `index.html` | Start page |
 | `character-editor.html` | `sprite.html` | Character Editor: the heroes (Eirik, Ásta, Hallvard on the ink figure), the Figure switch, concepts, styles, builds, templates |
+| `blender-editor.html` | `blender.html` | Blender Editor (2026-10-09): the characters modelled in Blender and rendered to sheets (every `assets/sprites/<name>/` the build found, inlined as data URIs through `__SPRITES__` in `tools/build.py`): a Model picker (the first hero, the second in cel, painted and folk), its gear layers as toggles, Arena or **Night forest** (the kit's props in the Night Forest key with a campfire, painted once as the arena ground through `api.scene`), Add beast, Zoom (the drawing only), the sheet panel (a row per direction, a column per frame, idle or walk) and the sheet's numbers; walk with WASD. Draws the hero through `Combat.api.heroSprite`; the chosen model is kept in `blendereditor.model` |
 | `creature-editor.html` | `creature.html` | Creature Editor: the six animals and their behaviour |
 | `object-editor.html` | `objects.html` | Object Editor: tune one world prop |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |

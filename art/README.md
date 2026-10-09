@@ -27,3 +27,6 @@ three styles, `--style cel | painted | folk`, rebuilding every material from its
 `tools/visual/herostyles.js` puts the three side by side over a Night Forest painted from the game's own props.
 
 Directions go clockwise from facing the camera: s, sw, w, nw, n, ne, e, se. The frame's anchor is the point between the feet.
+
+The **Blender Editor** page (`npm start`, then Blender Editor) shows every packed sheet: pick a model and its gear, walk round the arena or
+the night forest with it, and see the sheet. Rebuild the page after new sheets: `npm run build`.
