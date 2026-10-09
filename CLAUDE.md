@@ -372,7 +372,12 @@ the text and it is made the default. When a spec's meaning changes, change the s
   drawn figure) and packs a sheet per animation and layer (a row per direction, a column per frame) into `assets/sprites/hero/` with
   `hero.json`. `npm run art:hero` does all three; `npm run art:compare` writes herocompare.png (`tools/visual/herocompare.js`), the
   drawn Eirik beside the rendered hero. The raw frames in `art/render/` are not committed. **Nothing in the game reads the sheets
-  yet**; the first batch of renders took about 0.4 s a frame.
+  yet**; the first batch of renders took about 0.4 s a frame. **In the Character Editor** (same day): a **Figure** group at the top
+  of the right column, Drawn figure | Blender hero (trial), with Helmet and Mail toggles; the build inlines the sheets into that page
+  as data URIs (`__HERO_SPRITES__` in `tools/build.py`, about 2 MB, so the single file still opens from disk) and the page draws him
+  through **`Combat.api.heroSprite(c, x, y, face, anim, dashing)`**, a hook in `drawHero` that replaces the drawn figure (no weapon
+  or shield drawn with it): the direction from the facing angle (clockwise from south in eighths), idle or walk by `anim.amt`, the
+  frame by the clock at the sheet's fps, the layers stacked body, mail, helmet; the Frames panel shows his sheet too.
 
 ## Things to know before changing code
 

@@ -2666,7 +2666,7 @@ var WPRE = {
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
 var DASH_T = 0.18;
-var api = { sfx: function () {}, facings8: true, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
+var api = { sfx: function () {}, facings8: true, heroSprite: null, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
 // mods(): { sprint, sprintCost, stam, dash, block, riposte, charge, roll, heavyblow } from the arm ring's runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
 // trigger: a skill id to cast this frame; powerMul(kind): tool power multiplier; onDeed(kind): 'block', 'parry', 'dash'
@@ -4068,6 +4068,10 @@ function drawHero(c) {
     if (spr) flashDraw(c, Math.round(g.x), Math.round(g.y * K), heroSprFn(false, g.dir, 'walk', walkFrame(g.ph), 1), 0.75, '110,200,255');
     else flashDraw(c, g.x, g.y * K, heroFn(false, g.dir, { phase: g.ph, amt: 1, t: g.t, lx: 0, ly: 0, blink: 0, sq: 0 }, null), 0.75, '110,200,255');
     c.globalAlpha = 1;
+  }
+  if (api.heroSprite) {                                           // a page draws the hero from a sprite sheet (the Blender trial, 2026-10-09)
+    var liftS = api.scene && api.scene.heroLift ? api.scene.heroLift() : 0;
+    c.save(); c.globalAlpha = amt > 0 ? 1 - amt * 0.5 : 1; api.heroSprite(c, p.x, p.y * K - liftS, p.faceVis, p.anim, dashing); c.restore(); return;
   }
   if (!spr) {
     var ab0 = atkBody(), hsc = lib.hero().spec.scale;

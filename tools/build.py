@@ -21,6 +21,19 @@ def write(path, text):
 
 SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes.js'), '__HIRD__': read('src', 'hird.js'), '__YARD__': read('src', 'yard.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__COMBAT__': read('src', 'combat.js')}
 
+# The Blender hero's sprite sheets (assets/sprites/hero, 2026-10-09) inlined into the Character Editor as data URIs, so the
+# single-file page can show them when opened from disk. Nothing else reads them yet.
+import base64, json
+def hero_sprites():
+    d = os.path.join(ROOT, 'assets', 'sprites', 'hero')
+    if not os.path.exists(os.path.join(d, 'hero.json')): return 'null'
+    j = json.load(open(os.path.join(d, 'hero.json'), encoding='utf-8')); imgs = {}
+    for a in j['anims'].values():
+        for f in a['sheets'].values():
+            with open(os.path.join(d, f), 'rb') as fh: imgs[f] = 'data:image/png;base64,' + base64.b64encode(fh.read()).decode('ascii')
+    return json.dumps({'meta': j, 'images': imgs})
+SRC['__HERO_SPRITES__'] = hero_sprites()
+
 # page name in dist/  ->  template in templates/
 PAGES = [
     ('index', 'index'),

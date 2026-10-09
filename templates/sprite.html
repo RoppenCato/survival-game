@@ -98,6 +98,16 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 
     <div class="right">
       <section class="panel">
+        <h2>Figure</h2>
+        <div class="group">
+          <button id="figDrawn" aria-pressed="true">Drawn figure</button>
+          <button id="figBlender" aria-pressed="false">Blender hero (trial)</button>
+          <button id="gearHelm" aria-pressed="false">Helmet</button>
+          <button id="gearMail" aria-pressed="false">Mail</button>
+        </div>
+        <p class="desc" id="fignote">The Blender hero (2026-10-09, art/) is rendered sprite sheets: eight directions, idle and walk, the helmet and the mail as layers over the body. Walk him round the arena. The sliders below change only the drawn figure.</p>
+      </section>
+      <section class="panel">
         <h2>Heroes</h2>
         <div class="group" id="heroes"></div>
         <p class="desc" id="heronote">Three heroes drawn from scratch on the ink figure (2026-10-07). Pick one, change anything below, then "Use as the hero in the game".</p>
@@ -472,8 +482,38 @@ __COMBAT__
   });
 
   /* frame sheet */
+  /* the Blender hero: sprite sheets inlined by the build (__HERO_SPRITES__ in tools/build.py), drawn through Combat.api.heroSprite */
+  var HS = __HERO_SPRITES__, hsImg = {}, useBlender = false, gear = { helm: false, mail: false };
+  if (HS) { for (var hk in HS.images) { var im = new Image(); im.src = HS.images[hk]; hsImg[hk] = im; } }
+  var SPR_PX = 3;                                                   // the sheets were rendered at the game's 3 px a unit
+  function spriteDir(face) { var i = Math.round((face - Math.PI / 2) / (Math.PI / 4)); return ((i % 8) + 8) % 8; }
+  function drawHeroSprite(c, x, y, face, anim, dashing) {
+    var M = HS.meta, moving = anim.amt > 0.35, a = moving ? 'walk' : 'idle', A = M.anims[a], t = performance.now() / 1000;
+    var f = Math.floor(t * A.fps) % A.frames, d = spriteDir(face), fw = M.frame.w, fh = M.frame.h, layers = ['body'];
+    if (gear.mail) layers.push('mail'); if (gear.helm) layers.push('helm');
+    c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
+    c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(0, 0, 9, 4, 0, 0, 7); c.fill();
+    c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    for (var i = 0; i < layers.length; i++) {
+      var im = hsImg[A.sheets[layers[i]]]; if (!im || !im.complete || !im.naturalWidth) continue;
+      c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x / SPR_PX, -M.anchor.y / SPR_PX, fw / SPR_PX, fh / SPR_PX);
+    }
+    c.restore();
+  }
+  function figureMode(blender) {
+    useBlender = blender && !!HS; Combat.api.heroSprite = useBlender ? drawHeroSprite : null;
+    document.getElementById('figDrawn').setAttribute('aria-pressed', useBlender ? 'false' : 'true');
+    document.getElementById('figBlender').setAttribute('aria-pressed', useBlender ? 'true' : 'false');
+    if (blender && !HS) document.getElementById('fignote').textContent = 'No sheets in this build: run npm run art:hero, then npm run build.';
+    drawSheet();
+  }
+  document.getElementById('figDrawn').addEventListener('click', function (e) { figureMode(false); e.currentTarget.blur(); });
+  document.getElementById('figBlender').addEventListener('click', function (e) { figureMode(true); e.currentTarget.blur(); });
+  ['helm', 'mail'].forEach(function (g) { var b = document.getElementById(g === 'helm' ? 'gearHelm' : 'gearMail'); b.addEventListener('click', function () { gear[g] = !gear[g]; b.setAttribute('aria-pressed', gear[g] ? 'true' : 'false'); b.blur(); if (useBlender) drawSheet(); }); });
+
   var sheet = document.getElementById('sheet'), sctx = sheet.getContext('2d');
   function drawSheet() {
+    if (useBlender) { drawSpriteSheet(); return; }
     var dirs = ['down', 'left', 'right', 'up'], r, f;
     sctx.setTransform(1, 0, 0, 1, 0, 0);
     sctx.fillStyle = '#cfc19c'; sctx.fillRect(0, 0, 500, 400); sctx.globalAlpha = 0.18; sctx.fillStyle = kit.grain(sctx); sctx.fillRect(0, 0, 500, 400); sctx.globalAlpha = 1;
@@ -487,6 +527,25 @@ __COMBAT__
       sctx.restore();
     }
   }
+
+  // the Frames panel for the Blender hero: standing, then four moments of the walk; rows south, west, east, north
+  function drawSpriteSheet() {
+    var M = HS.meta, rows = ['s', 'w', 'e', 'n'], r, f;
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.fillStyle = '#cfc19c'; sctx.fillRect(0, 0, 500, 400); sctx.globalAlpha = 0.18; sctx.fillStyle = kit.grain(sctx); sctx.fillRect(0, 0, 500, 400); sctx.globalAlpha = 1;
+    sctx.fillStyle = 'rgba(60,40,20,0.12)'; sctx.fillRect(100, 0, 2, 400);
+    sctx.setTransform(2, 0, 0, 2, 0, 0);
+    for (r = 0; r < 4; r++) for (f = 0; f < 5; f++) {
+      var a = f === 0 ? 'idle' : 'walk', A = M.anims[a], fr = f === 0 ? 0 : Math.round((f - 1) * A.frames / 4) % A.frames, d = M.dirs.indexOf(rows[r]);
+      sctx.save(); sctx.beginPath(); sctx.rect(f * 50, r * 50, 50, 50); sctx.clip();
+      sctx.translate(f * 50 + 25, r * 50 + 46); sctx.scale(0.72, 0.72); sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = 'high';
+      var layers = ['body']; if (gear.mail) layers.push('mail'); if (gear.helm) layers.push('helm');
+      for (var i = 0; i < layers.length; i++) { var im = hsImg[A.sheets[layers[i]]]; if (!im || !im.complete || !im.naturalWidth) continue;
+        sctx.drawImage(im, fr * M.frame.w, d * M.frame.h, M.frame.w, M.frame.h, -M.anchor.x / SPR_PX, -M.anchor.y / SPR_PX, M.frame.w / SPR_PX, M.frame.h / SPR_PX); }
+      sctx.restore();
+    }
+  }
+  if (HS) { var pending = 0; for (var ik in hsImg) { pending++; hsImg[ik].onload = function () { if (--pending === 0 && useBlender) drawSheet(); }; } }
 
   /* the look being edited is kept in this browser */
   function pick(id) {
