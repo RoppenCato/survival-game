@@ -101,9 +101,9 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
     <section class="panel">
       <h2>Arena</h2>
       <div class="group">
-        <button id="sbot">Add wolf</button>
-        <button id="sturret">Add boar</button>
-        <button id="sbossbot">Add bear</button>
+        <button id="sbeast">Add wolf</button>
+        <button id="sshooter">Add boar</button>
+        <button id="sbrute">Add bear</button>
         <button id="sboss">Add snake</button>
         <button id="sclear">Clear</button>
         <button id="sreset">Reset</button>
@@ -135,14 +135,14 @@ __COMBAT__
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   // Every enemy in this arena wears an animal: the plain attacker is a wolf, boar or snake, the big one is the bear.
   var lib = GameArt.lib, want = null, BASE_R = { wolf: 7, boar: 8, snake: 5, bear: 9 };
-  Combat.api.roster = ['bot', 'bot'];
+  Combat.api.roster = ['beast', 'beast'];
   Combat.api.dress = function (e) {
-    if (e.type !== 'bot' && e.type !== 'bossbot') return;
-    var k = e.type === 'bossbot' ? 'bear' : (want || (Math.random() < 0.5 ? 'wolf' : 'boar')), sp = lib.animalSpec(k);
+    if (e.type !== 'beast' && e.type !== 'brute') return;
+    var k = e.type === 'brute' ? 'bear' : (want || (Math.random() < 0.5 ? 'wolf' : 'boar')), sp = lib.animalSpec(k);
     want = null;
     e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase();
     e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, atk: e.type === 'bot' ? lib.animalAttack(k) : null };
-    if (e.type === 'bot') e.hp = e.maxHp = sp.hp;
+    if (e.type === 'beast') e.hp = e.maxHp = sp.hp;
   };
   lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(GameArt.lib);
@@ -240,7 +240,7 @@ __COMBAT__
   }
   for (var i = 0; i < aimBtns.length; i++) aimBtns[i].addEventListener('click', function (e) { setAim(e.currentTarget.getAttribute('data-aim')); e.currentTarget.blur(); });
   setAim('soft');
-  S.look = 'classic';                                   // the hero is the ink figure; the pixel-sprite look is gone from the page (2026-10-08)
+                                    // the hero is the ink figure; the pixel-sprite look is gone from the page (2026-10-08)
   var rngBtns = document.querySelectorAll('#rng button'), rngdesc = document.getElementById('rngdesc');
   var rngTxt = { mouse: 'F fires toward the mouse cursor.', auto: 'F fires at the nearest enemy in front of you, or straight ahead. No mouse needed.' };
   function setRng(m) {
@@ -280,10 +280,10 @@ __COMBAT__
   }
   upd();
   function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(); b.blur(); }); }
-  act('sbot', function () { want = 'wolf'; Combat.spawn('bot'); });
-  act('sturret', function () { want = 'boar'; Combat.spawn('bot'); });
-  act('sbossbot', function () { Combat.spawn('bossbot'); });
-  act('sboss', function () { want = 'snake'; Combat.spawn('bot'); });
+  act('sbeast', function () { want = 'wolf'; Combat.spawn('beast'); });
+  act('sshooter', function () { want = 'boar'; Combat.spawn('beast'); });
+  act('sbrute', function () { Combat.spawn('brute'); });
+  act('sboss', function () { want = 'snake'; Combat.spawn('beast'); });
   act('sclear', function () { Combat.clear(); });
   act('sreset', function () { Combat.reset(); });
 

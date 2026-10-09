@@ -156,7 +156,7 @@ __COMBAT__
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75;
   lib.applyStored(localStorage); kit.applyStored(localStorage);   // the hero, the creatures, the rig and the look the editors handed to the game, from one place
   Combat.init(lib);
-  var S = Combat.S; S.look = 'classic'; S.sound = false;
+  var S = Combat.S; S.sound = false;
   Combat.clear();
   var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyJ: 1, KeyK: 1, ShiftLeft: 1, ShiftRight: 1 };
   var held = {};

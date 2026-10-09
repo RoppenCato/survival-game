@@ -145,7 +145,7 @@ __COMBAT__
     e.hp = e.maxHp = sp.hp; e.aggro = A.aggro; if (A.flee) e.flee = true;
   };
   Combat.init(lib);
-  var S = Combat.S; S.look = 'classic'; S.sound = true;
+  var S = Combat.S; S.sound = true;
   Combat.clear();
 
   /* ---------- sound: synthesized, as in the Combat Arena ---------- */
@@ -1467,7 +1467,7 @@ __COMBAT__
   }
   function trollMoveIn() {
     if (!cave) return null;
-    wantKind = 'troll'; var e = Combat.spawn('bot'); wantKind = 'boar';
+    wantKind = 'troll'; var e = Combat.spawn('beast'); wantKind = 'boar';
     e.x = cave.lair.x; e.y = cave.lair.y; e.face = Math.PI; e.wander = { x0: e.x, y0: e.y, r: 150, wait: Math.random() * 3 }; e.stoneT = null; e.lightCd = 0; e.place = 'in'; troll = e; return e;
   }
   function trollReset() { troll = null; trollOutNight = 0; if (cave && day.n - trollDeadDay >= 3) trollMoveIn(); }
@@ -3096,7 +3096,7 @@ __COMBAT__
   }
   function placeAnimal(kind, minFromHero, at, near) {
     var A = ANIMALS[kind], sp = at || (near ? landSpot(A.ground, minFromHero, 300, A.nearMax) : null) || landSpot(A.ground, minFromHero, A.minHome || 220); if (!sp) return null;
-    wantKind = kind; var e = Combat.spawn('bot'); wantKind = 'boar';
+    wantKind = kind; var e = Combat.spawn('beast'); wantKind = 'boar';
     e.x = sp.x + (at ? (Math.random() - 0.5) * 30 : 0); e.y = sp.y + (at ? (Math.random() - 0.5) * 30 : 0);
     e.wander = { x0: sp.x, y0: sp.y, r: A.range, wait: Math.random() * 3 }; e.face = Math.random() * 6.283;
     return e;
@@ -3116,7 +3116,7 @@ __COMBAT__
       if (!v.V) return;
       v.V.folk.forEach(function (fv) {
         if (fv.role !== 'guard') return; var post = fv.spots.filter(function (q) { return q[2] === 'guard'; })[0] || fv.spots[0];
-        wantKind = 'guard'; var e = Combat.spawn('bot'); wantKind = 'boar';
+        wantKind = 'guard'; var e = Combat.spawn('beast'); wantKind = 'boar';
         e.x = post[0]; e.y = post[1]; e.post = { x: post[0], y: post[1] }; e.vi = vi; e.face = Math.PI / 2; e.isle = v.isle; guards.push(e);
       });
     });

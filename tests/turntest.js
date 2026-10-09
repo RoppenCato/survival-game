@@ -4,7 +4,7 @@ const G=require('../src/art.js');const C=require('../src/combat.js');C.init(G.li
 const dd=()=>C.dbg();
 function step(n){for(let i=0;i<n;i++)C.update(1/60);}
 C.S.crit=0;
-function setup(face,ex,ey){C.reset();C.clear();const P=dd().P;P.x=200;P.y=200;P.face=face;P.faceVis=face;const e=C.spawn('bot');e.hp=e.maxHp=99;e.x=ex;e.y=ey;e.state='idle';e.cd=99;return e;}
+function setup(face,ex,ey){C.reset();C.clear();const P=dd().P;P.x=200;P.y=200;P.face=face;P.faceVis=face;const e=C.spawn('beast');e.hp=e.maxHp=99;e.x=ex;e.y=ey;e.state='idle';e.cd=99;return e;}
 // A: facing right, enemy directly behind (left) at 36
 for(const mode of ['soft','facing']){
   C.S.aim=mode;

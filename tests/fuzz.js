@@ -8,12 +8,12 @@ let bad=0,kills=0;
 ['facing','soft','lock'].forEach(mode=>{
   C.S.aim=mode;
   [true,false].forEach(j=>{
-    C.S.juice=j;C.S.shield=j;C.reset();C.spawn('boss');
+    C.S.juice=j;C.S.shield=j;C.reset();C.spawn('brute');
     for(let f=0;f<2400;f++){
       if(f%7===0){const k=keys[(rnd()*keys.length)|0];C.key(k,rnd()<0.5);}
       if(f%11===0){C.button(0,rnd()<0.4);C.button(2,rnd()<0.2);}
       C.mouse(rnd()*400,rnd()*250);
-      if(f%600===599){C.spawn('bot');C.spawn('turret');}
+      if(f%600===599){C.spawn('beast');C.spawn('shooter');}
       if(C.dbg().P.dead&&f%300===0)C.key('KeyR',true);
       C.update(1/60);C.key('KeyR',false);
       if(f%60===0)C.render(c);

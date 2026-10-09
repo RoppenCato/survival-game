@@ -4,8 +4,8 @@ A 2D top-down survival crafting game set in Viking-age Scandinavia: an archipela
 between them, seen through a three-quarter camera with a cartoon look. Everything (art, animation, sound) is drawn
 or synthesized in code.
 
-This folder holds the editors and playable prototypes built so far. The game was a post-apocalyptic steampunk
-game until October 2026; `main` is now the Viking game, and commit `59f5dd6` is the last steampunk state.
+This folder holds the editors and playable prototypes built so far. (The game had another setting until October 2026;
+commit `59f5dd6` is the last of it, and nothing of it remains in the code.)
 
 ## Run it
 
@@ -96,9 +96,7 @@ thing (cold north, rich south, trade to the east, open ocean to the west) but ev
 Ideas that are not decided yet are in
 `docs/idea-bank.md`, the build order with its tests in `docs/roadmap.md`, and the creatures' cards in `docs/beasts.md`.
 
-`CLAUDE.md` has the full, current design notes and the conventions for the code. An older design document for
-the steampunk version exists (https://claude.ai/code/artifact/3b87f164-5988-46e9-9044-d0914e1a2131); it is out of
-date and has not been rewritten for the Viking game.
+`CLAUDE.md` has the full, current design notes and the conventions for the code.
 
 ## Conventions that matter
 

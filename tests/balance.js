@@ -16,7 +16,7 @@ function fight(kind, weapon, armour, trials) {
     Combat.api.dress = function (e) { const sp = lib.animalSpec(kind); e.creature = true; e.kind = kind; e.r = DMG.r[kind] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, dmg: DMG.aggro[kind], atk: lib.animalAttack(kind) }; e.hp = e.maxHp = sp.hp; };
     Combat.init(lib); Combat.clear();
     const D = Combat.dbg(), P = D.P; P.x = 200; P.y = 250; P.mode = 'fight'; P.weapon = 'melee';
-    const es = []; for (let i = 0; i < DMG.n[kind]; i++) { const e = Combat.spawn('bot'); e.x = 200 + 90 + i * 22; e.y = 250 + i * 14; es.push(e); }
+    const es = []; for (let i = 0; i < DMG.n[kind]; i++) { const e = Combat.spawn('beast'); e.x = 200 + 90 + i * 22; e.y = 250 + i * 14; es.push(e); }
     let time = 0; const hp0 = P.hp;
     while (time < 40 && !P.dead && es.some((e) => !e.dead)) {
       const tgt = es.filter((e) => !e.dead).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y))[0];

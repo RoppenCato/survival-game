@@ -5,7 +5,7 @@ const G=require('../src/art.js');const C=require('../src/combat.js');C.init(G.li
 const dd=()=>C.dbg();
 function step(n){for(let i=0;i<n;i++)C.update(1/60);}
 function shot(name){const cv=createCanvas(800,500),c=cv.getContext('2d');C.render(c);fs.writeFileSync(name,cv.toBuffer('image/png'));}
-function setup(hp){C.reset();C.clear();const P=dd().P;P.x=200;P.y=200;P.face=0;P.faceVis=0;const e=C.spawn('bot');e.hp=e.maxHp=hp;e.x=232;e.y=200;e.state='idle';e.cd=99;return e;}
+function setup(hp){C.reset();C.clear();const P=dd().P;P.x=200;P.y=200;P.face=0;P.faceVis=0;const e=C.spawn('beast');e.hp=e.maxHp=hp;e.x=232;e.y=200;e.state='idle';e.cd=99;return e;}
 // crit rate with 15%
 C.S.crit=0.15;let crits=0,hits=0;
 for(let n=0;n<300;n++){const e=setup(99);const before=e.hp;C.key('KeyJ',true);step(1);C.key('KeyJ',false);step(20);const dealt=before-e.hp;if(dealt>0){hits++;if(dealt>1.2&&dealt<1.6)crits++;}}

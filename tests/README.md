@@ -9,8 +9,8 @@ Run everything: `npm install` once, then `npm test` from the project root.
 | --- | --- |
 | ctest2.js | melee reach, body collision, enemy spacing, move speed, parry, auto ranged |
 | ctest4.js | dash distance, backstep, dash i-frames, turn speed |
-| btest3.js | bossbot lunge can be parried, spin can be dashed |
-| btest.js | charge attack timing, bossbot attack mix |
+| btest3.js | brute lunge can be parried, spin can be dashed |
+| btest.js | charge attack timing, brute attack mix |
 | ktest.js | crit rate and damage, rattle effect, light kill slow-mo |
 | turntest.js | attacking enemies behind you, held-direction aim, turning in recovery |
 | sprinttest.js | sprint speed and stamina drain |

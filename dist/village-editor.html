@@ -59,7 +59,6 @@
 <script>
 var GameArt = (function () {
 'use strict';
-var W = 320, H = 200;
 
 function mk(w, h) {
   if (typeof document !== 'undefined') { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
@@ -79,96 +78,6 @@ function hex(c) {
   return hexCache[c];
 }
 
-/* ---------- shared world ---------- */
-var wall = { x0: 34, w: 96, base: 88 };
-var lamp = { x: 176, base: 104 };
-var tree = { x: 240, base: 118 };
-var state = { x: 150, y: 150, dir: 'down', moving: false, t: 0, night: false, moss: 0.55, treeAlpha: 1 };
-
-
-var R0 = rng(7);
-var tufts = [], flowers = [], patches = [], stones = [];
-(function () {
-  var i;
-  for (i = 0; i < 50; i++) tufts.push({ x: R0() * W, y: 24 + R0() * 172, v: R0() < 0.5 ? 0 : 1 });
-  for (i = 0; i < 16; i++) flowers.push({ x: 8 + R0() * 304, y: 36 + R0() * 156, c: (R0() * 3) | 0 });
-  for (i = 0; i < 16; i++) patches.push({ x: R0() * W, y: 30 + R0() * 170, rx: 14 + R0() * 22, ry: 7 + R0() * 10, l: R0() < 0.5 });
-  for (var sx = -4; sx < W + 12; sx += 13) {
-    for (var row = -1; row <= 1; row++) {
-      var cx = sx + (row === 0 ? 6 : 0) + (R0() * 4 - 2);
-      var cy = pathY(cx) + row * 9 + (R0() * 2 - 1);
-      stones.push({ x: cx, y: cy, rx: 5.5 + R0() * 2, ry: 3.6 + R0() * 1.2, v: (R0() * 3) | 0 });
-    }
-  }
-})();
-function pathY(x) { return 160 + 7 * Math.sin(x / 38); }
-
-/* =====================================================
-   STYLE A - chunky pixel art
-   ===================================================== */
-function Spr(w, h) { this.w = w; this.h = h; this.d = new Array(w * h).fill(null); }
-Spr.prototype.set = function (x, y, c) { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.d[y * this.w + x] = c; };
-Spr.prototype.get = function (x, y) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= this.w || y >= this.h) return null; return this.d[y * this.w + x]; };
-Spr.prototype.rect = function (x, y, w, h, c) { for (var j = 0; j < h; j++) for (var i = 0; i < w; i++) this.set(x + i, y + j, c); };
-Spr.prototype.ell = function (cx, cy, rx, ry, c) {
-  for (var y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++)
-    for (var x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) {
-      var a = (x + 0.5 - cx) / rx, b = (y + 0.5 - cy) / ry;
-      if (a * a + b * b <= 1) this.set(x, y, c);
-    }
-};
-Spr.prototype.outline = function (c) {
-  var o = this.d.slice(), w = this.w, h = this.h;
-  for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
-    if (o[y * w + x] !== null) continue;
-    var n = (x > 0 && o[y * w + x - 1] !== null) || (x < w - 1 && o[y * w + x + 1] !== null) ||
-            (y > 0 && o[(y - 1) * w + x] !== null) || (y < h - 1 && o[(y + 1) * w + x] !== null);
-    if (n) this.d[y * w + x] = c;
-  }
-  return this;
-};
-Spr.prototype.flip = function () {
-  var s = new Spr(this.w, this.h);
-  for (var y = 0; y < this.h; y++) for (var x = 0; x < this.w; x++) s.d[y * this.w + (this.w - 1 - x)] = this.d[y * this.w + x];
-  return s;
-};
-Spr.prototype.canvas = function () {
-  var cv = mk(this.w, this.h), cx = cv.getContext('2d'), id = cx.createImageData(this.w, this.h);
-  for (var i = 0; i < this.d.length; i++) {
-    var c = this.d[i];
-    if (c) { var rgb = hex(c); id.data[i * 4] = rgb[0]; id.data[i * 4 + 1] = rgb[1]; id.data[i * 4 + 2] = rgb[2]; id.data[i * 4 + 3] = 255; }
-  }
-  cx.putImageData(id, 0, 0);
-  return cv;
-};
-
-var PA = {
-  line: '#2b1d2e', grass1: '#79c24d', grass2: '#6bb243', grass3: '#93d45e', tuft: '#4a9a36', tuftL: '#9bd96a',
-  path1: '#c9b48e', path2: '#b19a72', path3: '#e0d0ab', pathLine: '#7d6a4a',
-  brass: '#e0a93a', brassD: '#a8741f', brassL: '#f6d878', iron: '#7b7790', ironD: '#55516a', ironL: '#9c98b4', rust: '#b8643a',
-  moss: '#62b43f', mossD: '#3d8a33', mossL: '#a2e460',
-  leaf1: '#58bd4a', leaf2: '#3a9a43', leaf3: '#8be05f', trunk: '#8f603c', trunkD: '#6d4529',
-  stone: '#8b7a68', stoneL: '#a6957f', stoneD: '#6b5b4d'
-};
-var CP = {
-  skin: '#ffd8b0', skinD: '#eeb48a', hair: '#b4602d', hairD: '#8f4a22', hairL: '#e08a4d',
-  coat: '#4fa8a4', coatD: '#3b8a87', vest: '#7a5236', pants: '#55466b', pantsD: '#41345a', boot: '#4a3329',
-  eye: '#2a1c2a', blush: '#ff9aa2', mouth: '#a04a3a', lens: '#a9e6ff', strap: '#6b4a35'
-};
-
-
-var sprA = null, mossA = [];
-
-var pcacheA = {};
-
-/* ---------- sprite-sheet characters (four directions, four-frame walk and attack) ----------
-   Each entry in SPRITES has a default spec (plain numbers and colours) and a build function
-   that turns a spec into one 48 x 48 frame with the feet at (24, 46).
-   pose: 'idle', 'walk' or 'atk'; f: frame 0..3.
-   In 'atk' frames the sword arm is left out (armSide -1 / 1 picks which one in the
-   front and back views) so the caller can draw the arm and blade at any angle.
-   The Sprite test page edits the spec live; setSprite() swaps it in. */
-var SPR_W = 48, SPR_H = 48, SPR_OX = 24, SPR_OY = 46;
 function clamp01(v) { return Math.max(0, Math.min(1, v)); }
 function toHsl(c) {
   var q = hex(c), r = q[0] / 255, g = q[1] / 255, b = q[2] / 255, mx = Math.max(r, g, b), mn = Math.min(r, g, b), h = 0, s = 0, l = (mx + mn) / 2, d = mx - mn;
@@ -189,129 +98,6 @@ function fromHsl(h, s, l) {
 }
 function shade(c, d) { var q = toHsl(c); return fromHsl(q[0], q[1], q[2] + d); }
 
-var HERO_DEF = {
-  scale: 1, headW: 7.5, headH: 6.5, bodyW: 10, bodyH: 9, legH: 8, legW: 3, armL: 7, armW: 2, eyewear: 0, eyewearSize: 2, eyeH: 2, blush: 1, outline: 1,
-  walkRate: 1, bob: 1, stride: 3, armSwing: 1, lunge: 1, atkStyle: 1, atkPower: 1, bladeLen: 0.9, slashSize: 1.1, slashWidth: 0.2,
-  hue: 0, sat: 1, lum: 1,
-  col: { skin: '#f6cfa6', hair: '#8a4a22', coat: '#2f7f80', vest: '#5c4033', pants: '#27324a', boot: '#1c1a26', trim: '#d9a534',
-    lens: '#7fe3f2', eye: '#2a1a22', line: '#1b1626', blade: '#5fd4f2', slash: '#8fefff' }
-};
-function spritePalette(sp) {
-  function t(k) { var q = toHsl(sp.col[k]); return fromHsl(q[0] + sp.hue, q[1] * sp.sat, q[2] * sp.lum); }
-  var C = { skin: t('skin'), hair: t('hair'), coat: t('coat'), vest: t('vest'), pants: t('pants'), boot: t('boot'), belt: t('trim'),
-    lens: t('lens'), eye: t('eye'), line: sp.col.line, blade: t('blade'), slash: t('slash') };
-  C.skinD = shade(C.skin, -0.12); C.hairD = shade(C.hair, -0.09); C.hairL = shade(C.hair, 0.1); C.strap = shade(C.hair, -0.17);
-  C.coatD = shade(C.coat, -0.08); C.coatL = shade(C.coat, 0.08); C.pantsD = shade(C.pants, -0.06);
-  C.beltL = shade(C.belt, 0.18); C.rim = shade(C.belt, -0.06); C.lensL = shade(C.lens, 0.2);
-  C.bladeL = shade(C.blade, 0.3); C.slashL = shade(C.slash, 0.2); C.slashD = shade(C.slash, -0.2);
-  var sk = toHsl(C.skin); C.blush = fromHsl(8, Math.min(1, sk[1] + 0.1), sk[2] - 0.08); C.mouth = fromHsl(12, 0.45, Math.max(0.2, sk[2] - 0.38));
-  return C;
-}
-function buildHeroP(sp, C, dir, pose, f, armSide) {
-  var s = new Spr(SPR_W, SPR_H), cx = SPR_OX, B = SPR_OY, x, y;
-  var walk = pose === 'walk', atk = pose === 'atk';
-  var rx = sp.headW, ry = sp.headH, bodyW = Math.round(sp.bodyW), bodyH = Math.round(sp.bodyH), legH = Math.round(sp.legH), legW = Math.round(sp.legW);
-  var armL = Math.round(sp.armL), armW = Math.round(sp.armW), ew = Math.round(sp.eyewear), g = Math.round(sp.eyewearSize), eyeH = Math.round(sp.eyeH);
-  var bob = walk ? ((f === 1 || f === 3) ? Math.round(sp.bob) : 0) : (atk && (f === 0 || f === 2) ? -1 : 0);
-  var legTop = B - 2 - legH, bodyTop = legTop + 1 - bodyH - bob, hy = Math.round(legTop + 1 - bodyH - ry + 0.5) - bob;
-  var gy = hy - Math.round(ry * 0.8), eyeX = Math.round(rx * 0.47), mouthY = hy + Math.min(eyeH + 2, Math.round(ry - 2));
-  function headPx(hx, cb) {
-    for (y = Math.floor(hy - ry); y <= Math.ceil(hy + ry); y++) for (x = Math.floor(hx - rx); x <= Math.ceil(hx + rx); x++) {
-      var dx = x + 0.5 - hx, dy = y + 0.5 - hy;
-      if ((dx / rx) * (dx / rx) + (dy / ry) * (dy / ry) <= 1) cb(x, y, dx, dy);
-    }
-  }
-  // eyewear: 0 none, 1 goggles pushed up, 2 goggles worn, 3 round glasses, 4 square glasses, 5 shades, 6 monocle
-  var ecy = hy + 1 + eyeH / 2, erow = Math.round(ecy - 0.5);
-  function goggle(gx, gyy, r) { if (r < 1) return; s.ell(gx, gyy, r, r, C.rim); if (r >= 2) { s.ell(gx, gyy, r - 1, r - 1, C.lens); s.set(gx - 1, Math.round(gyy - 1), C.lensL); } }
-  function ring(gx, gyy, r, col) {
-    for (var yy = Math.floor(gyy - r); yy <= Math.ceil(gyy + r); yy++) for (var xx = Math.floor(gx - r); xx <= Math.ceil(gx + r); xx++) {
-      var dd = Math.hypot(xx + 0.5 - gx, yy + 0.5 - gyy); if (dd <= r && dd > r - 1) s.set(xx, yy, col);
-    }
-  }
-  function box(gx, gyy, r, col) {
-    var x0 = gx - r, x1 = gx + r - 1, y0 = Math.round(gyy - r), y1 = Math.round(gyy + r) - 1;
-    for (var yy = y0; yy <= y1; yy++) for (var xx = x0; xx <= x1; xx++) if (xx === x0 || xx === x1 || yy === y0 || yy === y1) s.set(xx, yy, col);
-  }
-  function band(xa, xb, row, col) { for (var xx = xa; xx <= xb; xx++) if (s.get(xx, row) !== null) s.set(xx, row, col); }
-  function hairCol(dx, dy) { return (dx * 0.5 + dy * 0.6 > ry * 0.43) ? C.hairD : C.hair; }
-
-  if (dir === 'left') {
-    var S = Math.round(sp.stride), st = walk ? (f === 0 ? S : (f === 2 ? -S : 0)) : (atk && f === 2 ? S : 0);
-    var sx = atk ? (f === 1 ? 1 : (f === 2 ? -Math.round(sp.lunge) : 0)) : 0, hx = cx - 1 + sx;
-    var liftB = st > 0 ? 1 : 0, liftF = st < 0 ? 1 : 0, bw = Math.max(4, bodyW - 2), bx0 = cx - Math.floor(bw / 2) + sx;
-    s.rect(cx - 1 + st, legTop, legW, legH - liftB, C.pantsD); s.rect(cx - 2 + st, B - 2 - liftB, legW + 1, 2, C.boot);
-    s.rect(cx - 2 - st, legTop, legW, legH - liftF, C.pants); s.rect(cx - 3 - st, B - 2 - liftF, legW + 1, 2, C.boot);
-    s.rect(bx0, bodyTop, bw, bodyH, C.coat); s.rect(bx0 + bw - 2, bodyTop, 2, bodyH, C.coatD);
-    s.rect(bx0, bodyTop + bodyH - 2, bw, 1, C.belt); s.rect(bx0, bodyTop + bodyH - 1, bw, 1, C.coatD);
-    if (!atk) { var ax = cx - 1 + (walk ? Math.round(st * sp.armSwing / Math.max(1, S)) * 1 : 0); s.rect(ax, bodyTop + 1, armW, armL, C.coatL); s.rect(ax, bodyTop + 1 + armL, armW, 2, C.skin); }
-    headPx(hx, function (px, py, dx, dy) {
-      var fringe = -ry * 0.27 + ((px % 3 === 0) ? 1 : 0);
-      if (dy <= fringe || dx >= 0.5 || (dx >= -2 && dy <= 1)) s.set(px, py, hairCol(dx, dy));
-      else s.set(px, py, dy > ry - 2.5 ? C.skinD : C.skin);
-    });
-    for (x = hx - 3; x <= hx - 1; x++) s.set(x, hy - Math.round(ry * 0.67), C.hairL);
-    var sy = hy - Math.round(ry * 0.53);
-    if (ew === 1) {
-      for (x = hx + 1; x <= hx + Math.ceil(rx); x++) { var qs = s.get(x, sy); if (qs === C.hair || qs === C.hairD) s.set(x, sy, C.strap); }
-      goggle(hx + Math.round(rx * 0.24), gy, g - 1); goggle(hx - eyeX, gy, g);
-    }
-    s.rect(hx - Math.round(rx * 0.6), hy + 1, 2, eyeH, C.eye); s.set(hx - Math.round(rx * 0.6), hy + 1, '#ffffff');
-    if (sp.blush) s.rect(hx - Math.round(rx * 0.82), hy + 1 + eyeH, 2, 1, C.blush);
-    s.set(hx - Math.round(rx * 0.7), mouthY, C.mouth);
-    var exS = hx - Math.round(rx * 0.6) + 1;
-    if (ew === 2) { band(exS, hx + Math.ceil(rx), erow, C.strap); goggle(exS, ecy, g); }
-    if (ew === 3) { band(exS, hx + 2, erow, C.rim); ring(exS, ecy, g + 0.5, C.rim); }
-    if (ew === 4) { band(exS, hx + 2, erow, C.line); box(exS, ecy, g, C.line); }
-    if (ew === 5) { band(exS, hx + 2, hy + 1, C.line); s.rect(exS - 2, hy + 1, 4, Math.max(2, g), C.line); s.set(exS - 1, hy + 1, C.lens); }
-    if (ew === 6) ring(exS, ecy, g + 0.5, C.rim);
-    if (ew === 1 || ew === 2) { s.ell(hx + 2, hy + 2, 2, 2, C.rim); s.set(hx + 1, hy + 1, C.beltL); }
-  } else {
-    var back = dir === 'up', bx = cx - Math.floor(bodyW / 2);
-    var lf = sp.stride > 0 ? 1 : 0, lL = walk && f === 0 ? lf : 0, lR = walk && f === 2 ? lf : 0, spd = atk && f === 2 ? 1 : 0;
-    var lxL = bx + 1, lxR = bx + bodyW - 1 - legW;
-    s.rect(lxL - spd, legTop, legW, legH - lL, C.pants); s.rect(lxL - spd, B - 2 - lL, legW, 2, C.boot);
-    s.rect(lxR + spd, legTop, legW, legH - lR, C.pants); s.rect(lxR + spd, B - 2 - lR, legW, 2, C.boot);
-    if (lxR > lxL + legW) s.rect(lxL + legW, legTop, lxR - lxL - legW, Math.min(2, legH), C.pantsD);
-    s.rect(bx, bodyTop, bodyW, bodyH, C.coat); s.rect(bx + bodyW - 2, bodyTop, 2, bodyH, C.coatD);
-    if (!back) {
-      var vw = Math.max(2, Math.round(bodyW * 0.4)); vw += (bodyW - vw) % 2;
-      s.rect(cx - vw / 2, bodyTop, vw, Math.max(1, bodyH - 2), C.vest);
-      for (y = bodyTop + 2; y < bodyTop + bodyH - 2; y += 2) s.set(cx - 1, y, C.belt);
-    }
-    s.rect(bx, bodyTop + bodyH - 2, bodyW, 1, C.belt); if (!back) s.rect(cx - 1, bodyTop + bodyH - 2, 2, 1, C.beltL);
-    s.rect(bx, bodyTop + bodyH - 1, bodyW, 1, C.coatD);
-    var sw = Math.round(sp.armSwing), aL = walk ? (f === 0 ? -sw : (f === 2 ? sw : 0)) : 0, aR = -aL;
-    if (!(atk && armSide < 0)) { s.rect(bx - armW, bodyTop + 1 + aL, armW, armL, C.coat); s.rect(bx - armW, bodyTop + 1 + armL + aL, armW, 2, C.skin); }
-    if (!(atk && armSide > 0)) { s.rect(bx + bodyW, bodyTop + 1 + aR, armW, armL, C.coatD); s.rect(bx + bodyW, bodyTop + 1 + armL + aR, armW, 2, C.skin); }
-    headPx(cx, function (px, py, dx, dy) {
-      var fringe = -ry * 0.27 + ((px % 4 === 0) ? 2 : ((px % 3 === 0) ? 1 : 0));
-      if (back || dy <= fringe || (Math.abs(dx) >= rx - 2 && dy <= ry * 0.4)) s.set(px, py, hairCol(dx, dy));
-      else s.set(px, py, dy > ry - 2 ? C.skinD : C.skin);
-    });
-    var hlx = cx - Math.round(rx * 0.6);
-    for (x = hlx; x <= hlx + 2; x++) s.set(x, hy - Math.round(ry * 0.67), C.hairL);
-    var by = hy - Math.round(ry * 0.4);
-    if (back && (ew === 1 || ew === 2)) for (x = cx - Math.ceil(rx); x <= cx + Math.ceil(rx); x++) { var qb = s.get(x, by); if (qb === C.hair || qb === C.hairD) s.set(x, by, C.strap); }
-    if (ew === 1) { s.rect(cx - 1, gy - 1, 2, 1, C.strap); goggle(cx - eyeX, gy, g); goggle(cx + eyeX, gy, g); }
-    if (!back) {
-      s.rect(cx - eyeX, hy + 1, 2, eyeH, C.eye); s.rect(cx + eyeX - 2, hy + 1, 2, eyeH, C.eye);
-      s.set(cx - eyeX, hy + 1, '#ffffff'); s.set(cx + eyeX - 2, hy + 1, '#ffffff');
-      if (sp.blush) { s.rect(cx - eyeX - 2, hy + 1 + eyeH, 2, 1, C.blush); s.rect(cx + eyeX, hy + 1 + eyeH, 2, 1, C.blush); }
-      s.set(cx - 1, mouthY, C.mouth); s.set(cx, mouthY, C.mouth);
-      var exL = cx - eyeX + 1, exR = cx + eyeX - 1;
-      if (ew === 2) { band(cx - Math.ceil(rx), cx + Math.ceil(rx), erow, C.strap); goggle(exL, ecy, g); goggle(exR, ecy, g); }
-      if (ew === 3) { band(exL, exR, erow, C.rim); ring(exL, ecy, g + 0.5, C.rim); ring(exR, ecy, g + 0.5, C.rim); }
-      if (ew === 4) { band(exL, exR, erow, C.line); box(exL, ecy, g, C.line); box(exR, ecy, g, C.line); }
-      if (ew === 5) { s.rect(cx - eyeX - 1, hy + 1, 2 * eyeX + 2, Math.max(2, g), C.line); s.set(cx - eyeX, hy + 1, C.lens); s.set(cx + 1, hy + 1, C.lens); }
-      if (ew === 6) { ring(exR, ecy, g + 0.5, C.rim); for (y = Math.round(ecy + g); y <= Math.round(ecy + g) + 3; y++) s.set(exR + g, y, C.rim); }
-    }
-  }
-  return sp.outline ? s.outline(C.line) : s;
-}
-
-var SPRITES = { hero: { name: 'Hero', def: HERO_DEF, build: buildHeroP } };
-var curSpr = null, pcacheP = {};
 function fillSpec(def, spec) {
   var o = {}, k;
   for (k in def) if (k !== 'col') o[k] = (spec && typeof spec[k] === 'number' && isFinite(spec[k])) ? spec[k] : def[k];
@@ -319,32 +105,7 @@ function fillSpec(def, spec) {
   for (k in def.col) o.col[k] = (spec && spec.col && /^#[0-9a-fA-F]{6}$/.test(spec.col[k])) ? spec.col[k].toLowerCase() : def.col[k];
   return o;
 }
-function setSprite(id, spec) {
-  var e = SPRITES[id] || SPRITES.hero, sp = fillSpec(e.def, spec);
-  curSpr = { id: SPRITES[id] ? id : 'hero', build: e.build, spec: sp, pal: spritePalette(sp) };
-  curSpr.m = { ox: SPR_OX, oy: SPR_OY, w: SPR_W, h: SPR_H, shX: Math.round(sp.bodyW) / 2, shY: Math.round(sp.legH) + Math.round(sp.bodyH) - 1 };
-  pcacheP = {};
-  return sp;
-}
-function sprite() { if (!curSpr) setSprite('hero'); return curSpr; }
-function heroP(dir, pose, f, armSide) {
-  var cur = sprite(), as = pose === 'atk' && dir !== 'left' && dir !== 'right' ? (armSide < 0 ? -1 : 1) : 0;
-  var k = dir + pose + f + as;
-  if (!pcacheP[k]) {
-    var s = cur.build(cur.spec, cur.pal, dir === 'right' ? 'left' : dir, pose, f, as);
-    pcacheP[k] = (dir === 'right' ? s.flip() : s).canvas();
-  }
-  return pcacheP[k];
-}
-
-
-
-var dkA = null, wmA = null;
-
-
-/* =====================================================
-   STYLE B - smooth cartoon
-   ===================================================== */
+/* ---------- the figures ---------- */
 var LN = '#3a2a36';
 /* The ink figure (2026-10-07, docs/art-direction.md): a figure is drawn in depth layers (far limbs, the body with its legs and
    head, near limbs). Each layer goes to its own canvas, gets the finish (grain and a cool shadow side over its silhouette) and
@@ -405,25 +166,6 @@ function ell(c, x, y, rx, ry, fill, lw, stroke) { c.beginPath(); c.ellipse(x, y,
 
 
 
-var mossB = [];
-(function () {
-  var r = rng(21), wx = wall.x0, b = wall.base, x, q, m;
-  for (x = wx + 3; x < wx + wall.w - 1; x += 3.6) {
-    if (r() < 0.3) continue;
-    var n = 0.5 + 0.5 * Math.sin(x * 0.31) * Math.cos(x * 0.11);
-    var len = 4 + n * 13 * (0.45 + r() * 0.8);
-    mossB.push({ k: 'drip', x: x, y: b - 47, len: len, thr: Math.min(0.95, (len / 18) * 0.6 + r() * 0.3) });
-  }
-  for (x = wx + 2; x < wx + wall.w; x += 5) mossB.push({ k: 'blob', x: x + r() * 3, y: b - 1.5 - r() * 2, r: 3 + r() * 3.6, thr: r() * 0.75 });
-  for (q = 0; q < 7; q++) {
-    var cx = wx + 8 + r() * 80, cy = b - 34 + r() * 22, th = 0.2 + r() * 0.7;
-    for (m = 0; m < 5; m++) mossB.push({ k: 'blob', x: cx + (r() - 0.5) * 12, y: cy + (r() - 0.5) * 8, r: 2 + r() * 3, thr: th + m * 0.03 });
-  }
-})();
-
-
-
-var canopyB = null;
 
 
 
@@ -439,7 +181,7 @@ var canopyB = null;
 // The hero is Eirik on the ink figure (figure 1, inkHero) since 2026-10-07; HEROD_OLD is the rounded trial figure before it,
 // kept for comparison (the "Old figure" concept).
 var HEROD_DEF = {                                  // Robin's pick (2026-10-07): cropped hair, no beard, a belted tunic, matte, thin arms
-  scale: 0.8, headW: 1, headH: 1, bodyW: 1, bodyH: 1, legL: 1, legW: 1, armL: 1, armW: 0.7, eyewear: 0, eyewearSize: 1, eyeSize: 1, blush: 0.4, beard: 0,
+  scale: 0.8, headW: 1, headH: 1, bodyW: 1, bodyH: 1, legL: 1, legW: 1, armL: 1, armW: 0.7, eyeSize: 1, blush: 0.4, beard: 0,
   hair: 1, hat: 0, clothes: 1, matte: 1, ring: 0, figure: 1,
   walkRate: 1.4, bob: 1, stride: 1, armSwing: 1, sway: 0.25, stance: 0.8, lean: 1, atkStyle: 0, atkPower: 1, bladeLen: 1, slashSize: 1, slashWidth: 0.66,
   hue: 0, sat: 1, lum: 1,
@@ -1001,7 +743,7 @@ function playerD(c, x, y, dir, an, pose) {
   var L = pose ? [pose.lx, pose.ly] : [an.lx || 0, an.ly || 0];
   var lxl = (flip ? -L[0] : L[0]), lyl = L[1];
   if (!side) lxl += Math.sin(ph) * amt * 0.6 * sp.sway;
-  var bw = sp.bodyW * (1 - 0.1 * Math.abs(tq)), bh = sp.bodyH, ew = Math.round(sp.eyewear), es = sp.eyewearSize, hipY = -9 - lift;
+  var bw = sp.bodyW * (1 - 0.1 * Math.abs(tq)), bh = sp.bodyH, hipY = -9 - lift;
   var legW = 4.4 * sp.legW, armW = 3.8 * sp.armW, armSeg = 5.2 * sp.armL, st = sp.stride;
   // hand targets arrive in figure space; undo the upper-body lift and stretch so the hand lands on them
   function loc(h) { return [((flip ? -h[0] : h[0]) - lxl) / bw, -9 + (h[1] - lyl + lift + 9) / bh]; }
@@ -1190,39 +932,7 @@ function playerD(c, x, y, dir, an, pose) {
     if (CL === 2 && !back) ell(c, 5.5 + tq * 1.5, -17.5, 1.9, 1.9, C.trimL, 1);
   }
   var gOff = (headBob - bob) * -0.4 + Math.sin(ph - 1.6) * amt * 0.25;
-  function lensAt(gx, gy, r) {
-    ell(c, gx, gy, r, r, C.rim, 1.6);
-    ell(c, gx, gy, r * 0.64, r * 0.64, C.lens, 0);
-    ell(c, gx - r * 0.22, gy - r * 0.22, r * 0.22, r * 0.22, '#ffffff', 0);
-  }
   function wire(x1, y1, x2, y2, col, w) { c.strokeStyle = col; c.lineWidth = w || 1.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); }
-  // eyewear: 0 none, 1 goggles pushed up, 2 goggles worn, 3 round glasses, 4 square glasses, 5 shades, 6 monocle
-  // xs: eye positions; back: x where the arm or strap ends (null in the front view)
-  function eyewear(xs, upXs, back) {
-    var ey = hy + 2.6, i, r;
-    if (ew === 1) { for (i = 0; i < upXs.length; i++) lensAt(upXs[i], hy - 8.2 + gOff, 3.6 * es); return; }
-    if (ew === 2) {
-      c.fillStyle = C.strap; if (back == null) c.fillRect(-9.3, ey - 1, 18.6, 2); else c.fillRect(xs[0], ey - 1, back - xs[0], 2);
-      for (i = 0; i < xs.length; i++) lensAt(xs[i], ey, 3.5 * es);
-    } else if (ew === 3 || ew === 4) {
-      r = 3.2 * es;
-      var col = ew === 3 ? C.rim : LN;
-      if (back == null) wire(xs[0] + r, ey, xs[1] - r, ey, col); else wire(xs[0] + r, ey, back, ey - 0.6, col);
-      for (i = 0; i < xs.length; i++) {
-        c.beginPath(); if (ew === 3) c.arc(xs[i], ey, r, 0, Math.PI * 2); else pathRR(c, xs[i] - r, ey - r * 0.85, r * 2, r * 1.7, 1);
-        c.fillStyle = 'rgba(255,255,255,0.22)'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = col; c.stroke();
-      }
-    } else if (ew === 5) {
-      r = 2.6 * es;
-      if (back == null) rr(c, -8, ey - r, 16, r * 2, 1.6, LN, 0); else { wire(xs[0], ey - r * 0.4, back, ey - r * 0.6, LN, 1.4); rr(c, xs[0] - 4, ey - r, 7, r * 2, 1.6, LN, 0); }
-      c.fillStyle = C.lens; for (i = 0; i < xs.length; i++) c.fillRect(xs[i] - 2, ey - r * 0.55, 2.2, 1);
-    } else if (ew === 6) {
-      r = 3.2 * es; var mx = xs[xs.length - 1];
-      c.beginPath(); c.arc(mx, ey, r, 0, Math.PI * 2); c.fillStyle = 'rgba(255,255,255,0.22)'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = C.rim; c.stroke();
-      if (back == null) wire(mx + r * 0.7, ey + r * 0.7, mx + r * 0.9, ey + r + 5, C.rim, 0.9);
-    }
-  }
-  var bl = 1 - (an.blink || 0) * 0.88;
   function eye(ex) {
     c.fillStyle = C.eye; c.beginPath(); c.ellipse(ex, hy + 2.6, 1.7 * sp.eyeSize, 2.4 * bl * sp.eyeSize, 0, 0, Math.PI * 2); c.fill();
     if (bl > 0.5) { c.fillStyle = 'rgba(255,255,255,' + (1 - 0.5 * MT) + ')'; c.beginPath(); c.arc(ex - 0.5 * sp.eyeSize, hy + 2.6 - sp.eyeSize, 0.7 * sp.eyeSize * (1 - 0.3 * MT), 0, Math.PI * 2); c.fill(); }
@@ -1272,7 +982,6 @@ function playerD(c, x, y, dir, an, pose) {
     }, function () {
       eye(-4.5); blush(-7);
       c.strokeStyle = '#9b4a3a'; c.lineWidth = 1.1; c.beginPath(); c.arc(-5.8, hy + 8.2, 1.4, 0.2 * Math.PI, 0.8 * Math.PI); c.stroke();
-      eyewear([-4.5], [3, -1.5], 4);
       beard('side', 0);
       if (false) { c.beginPath(); c.moveTo(-9.6, hy + 3.4); c.quadraticCurveTo(-11.5, hy + 13, -5.5, hy + 17.5); c.quadraticCurveTo(0.5, hy + 14, 2.5, hy + 5); c.quadraticCurveTo(-3, hy + 7.5, -9.6, hy + 3.4); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = C.hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-6, hy + 9); c.lineTo(-5.4, hy + 14.5); c.moveTo(-2.4, hy + 9); c.lineTo(-3, hy + 13.5); c.stroke(); }
     }, 'side');
@@ -1316,7 +1025,6 @@ function playerD(c, x, y, dir, an, pose) {
         var fo = tq * 3.3;                       // the face slides toward the side he is turned to
         eye(-4 + fo); eye(4 + fo); if (tq < 0.3) blush(-6.6 + fo * (tq < 0 ? 0.4 : 1)); if (tq > -0.3) blush(6.6 + fo * (tq > 0 ? 0.4 : 1));
         c.strokeStyle = '#9b4a3a'; c.lineWidth = 1.1; c.beginPath(); c.arc(fo * 1.15, hy + 7.4, 1.8, 0.1 * Math.PI, 0.9 * Math.PI); c.stroke();
-        eyewear([-4 + fo, 4 + fo], [-5 + fo, 5 + fo], null);
         beard('front', fo);
         if (false) { c.beginPath(); c.moveTo(-9.2, hy + 3.6); c.quadraticCurveTo(-10, hy + 13, fo * 0.8, hy + 18.5); c.quadraticCurveTo(10, hy + 13, 9.2, hy + 3.6); c.quadraticCurveTo(5 + fo, hy + 7.6, fo, hy + 5.6); c.quadraticCurveTo(-5 + fo, hy + 7.6, -9.2, hy + 3.6); c.closePath(); fs(c, HAIR, 1.6); c.strokeStyle = C.hairD; c.lineWidth = 1; c.beginPath(); c.moveTo(-3 + fo * 0.8, hy + 10); c.lineTo(-2.2 + fo * 0.8, hy + 15.5); c.moveTo(3 + fo * 0.8, hy + 10); c.lineTo(2.2 + fo * 0.8, hy + 15.5); c.stroke(); }
       }, 'front');
@@ -1344,16 +1052,16 @@ function dirS_(dir) { return dir === 'down' ? 1 : -1; }
    One spec drives five body plans. creatureD(c, x, y, s, H) draws creature H (from makeCreature; the current setCreature one if left out) with its feet at
    (x, y); s = { t, move 0..1, phase, dir 1 or -1, look [x, y], state, k } where state is an enemy state from
    src/combat.js ('idle', 'chase', 'windup', 'lunge', 'recover', 'stagger', 'stunned') and k is how far through it.
-   plan: 0 blob, 1 critter (four legs), 2 brute (upright), 3 floater, 4 crawler (many legs), 5 animal and 6 snake (see animal3D)
+   plan: 5 animal and 6 snake (animal3D), 7 the first troll, 8 the boulder troll, 9 the forest troll
    eyeStyle: 0 round, 1 glowing, 2 angry, 3 sleepy    mouth: 0 none, 1 line, 2 fangs, 3 maw
    top: 0 none, 1 nubs, 2 horns, 3 antennae, 4 spikes, 5 gear    tail: 0 none, 1 stub, 2 long, 3 spiked
    pattern: 0 none, 1 belly, 2 spots, 3 stripes    tell (how it warns before attacking): 0 swell, 1 shake, 2 rear up, 3 eye glow
    behave: 0 lunger, 1 brute, 2 shooter, 3 grazer that runs away (which enemy AI drives it in the arena)
    aggro: how close the hero must come before it reacts */
 var CREATURE_DEF = {
-  plan: 0, size: 1, bodyW: 1, bodyH: 1, head: 1, legLen: 1, legW: 1, legs: 6, armLen: 1,
-  eyes: 2, eyeStyle: 0, eyeSize: 1, mouth: 1, top: 0, tail: 0, pattern: 1,
-  bob: 1, stepRate: 1, wobble: 1, hover: 1, tell: 0, mark: 1,
+  plan: 5, size: 1, bodyW: 1, bodyH: 1, head: 1, legLen: 1, legW: 1,
+  eyes: 2, eyeStyle: 0, eyeSize: 1, mouth: 1, tail: 0, pattern: 1,
+  bob: 1, stepRate: 1, wobble: 1, tell: 0, mark: 1,
   behave: 0, speed: 1, windup: 0.55, lunge: 1, hp: 4, aggro: 80,
   neck: 1, neckUp: 0.4, snout: 1, snoutW: 1, ears: 1, antlers: 0, antlerSize: 1, tusks: 0, hump: 0, mane: 0, hoof: 0, tailPale: 0, paleMuzzle: 0, snoutFlat: 0, fangs: 0, brow: 0,
   trollHair: 1, trollNose: 1, trollEars: 1, trollHunch: 1, trollArms: 1, trollMoss: 0.6, trollAge: 0.7, trollBelly: 1, trollBeads: 1, trollSack: 0, trollTail: 1,
@@ -2340,176 +2048,16 @@ function quadD(c, x, y, s, H) {
 }
 function creatureD(c, x, y, s, H) {
   H = H || creature();
-  if (Math.round(H.spec.plan) === 5 && RIG.animals === 'views') { if (s.ang == null) { var s5 = {}, k5; for (k5 in s) s5[k5] = s[k5]; s5.ang = s.dir < 0 ? Math.PI : 0; s = s5; } quadD(c, x, y, s, H); return; }
-  if (Math.round(H.spec.plan) === 7) { trollD(c, x, y, s, H); return; }
-  if ((Math.round(H.spec.plan) === 8 || Math.round(H.spec.plan) === 9) && RIG.trolls === 'views') { trollViewD(c, x, y, s, H); return; }
-  if (Math.round(H.spec.plan) === 8) { boulderTrollD(c, x, y, s, H); return; }
-  if (Math.round(H.spec.plan) === 9) { forestTrollD(c, x, y, s, H); return; }
-  if (Math.round(H.spec.plan) >= 5) {          // animals: without a heading, face straight left or right
-    if (s.ang == null) { var s3 = {}, k3; for (k3 in s) s3[k3] = s[k3]; s3.ang = s.dir < 0 ? Math.PI : 0; s = s3; }
-    animal3D(c, x, y, s, H); return;
-  }
-  var sp = H.spec, C = H.pal, LN0 = LN;
-  LN = C.line;
-  var t = s.t || 0, mv = s.move || 0, ph = s.phase || 0, dir = s.dir < 0 ? -1 : 1, st = s.state || 'idle', k = Math.max(0, Math.min(1, s.k || 0));
-  var look = s.look || [1, 0], lkx = look[0] * dir, lky = look[1];
-  var plan = Math.round(sp.plan), bw = sp.bodyW, bh = sp.bodyH, hd = sp.head, ll = sp.legLen, lw = 3.4 * sp.legW, T = Math.round(sp.tell);
-  var tell = st === 'windup' ? k : 0, down = st === 'recover' || st === 'stunned', lunge = st === 'lunge';
-  var bodyCol = down ? mixHex(C.body, '#b6a592', 0.55) : (tell ? mixHex(C.body, C.glow, tell * (T === 3 ? 0.12 : 0.55)) : C.body);
-  var bodyD = shade(bodyCol, -0.09), i;
-  var sx = 1, sy = 1 + Math.sin(t * 2.4) * 0.03 * sp.wobble, jx = 0, lift = 0, rot = 0;
-  if (tell) {
-    if (T === 0) { sx *= 1 + 0.24 * tell; sy *= 1 - 0.22 * tell; }
-    else if (T === 1) { jx = Math.sin(t * 70) * 1.5 * tell; sy *= 1 - 0.06 * tell; }
-    else if (T === 2) { lift = 4 * tell; rot = -0.3 * tell; sy *= 1 + 0.1 * tell; }
-    else { sx *= 1 + 0.05 * Math.sin(t * 30) * tell; }
-  }
-  if (lunge) { sx *= 0.84; sy *= 1.2; rot = 0.2; }
-  if (st === 'stagger') { sx *= 1.2; sy *= 0.8; }
-  function capsule(x1, y1, x2, y2, col, w) {
-    c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = LN; c.lineWidth = w + 2.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
-    c.strokeStyle = col; c.lineWidth = w; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
-  }
-  function bent(pts, col, w) {
-    c.lineCap = 'round'; c.lineJoin = 'round';
-    for (var pass = 0; pass < 2; pass++) {
-      c.strokeStyle = pass ? col : LN; c.lineWidth = pass ? w : w + 2.2; c.beginPath();
-      for (var n = 0; n < pts.length; n++) { if (n) c.lineTo(pts[n][0], pts[n][1]); else c.moveTo(pts[n][0], pts[n][1]); }
-      c.stroke();
-    }
-  }
-  function tri(x1, y1, x2, y2, x3, y3, col) { c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.lineTo(x3, y3); c.closePath(); fs(c, col, 1.3); }
-
-  c.save(); c.translate(x + jx, y); c.scale(dir * sp.size, sp.size);
-
-  /* body plan: B is the body ellipse, F the face, TOP where horns sit, TL where a tail starts, HD a separate head */
-  var B, F, TOP, TL = null, HD = null, step = Math.abs(Math.sin(ph)) * mv, bobY = step * 1.2 * sp.bob;
-  if (plan === 1) {
-    var hipY = -(5 * ll);
-    B = { x: 0, y: hipY - 5 * bh - bobY, rx: 10 * bw, ry: 6 * bh };
-    HD = { x: B.rx * 0.8 + 2.5 * hd, y: B.y - 2.5 * bh - 1.5 * hd, r: 5.4 * hd };
-    F = { x: HD.x + 1.2, y: HD.y, w: HD.r * 1.1 }; TOP = { x: HD.x - 0.5, y: HD.y - HD.r, w: HD.r * 0.7 }; TL = { x: -B.rx + 1.5, y: B.y - 1 };
-    [[-3.5, Math.PI, 1], [4, 0, 1], [-5.5, 0, 0], [6, Math.PI, 0]].forEach(function (q) {
-      var p2 = ph + q[1], hx = q[0] * bw, fx = hx + Math.sin(p2) * 3.2 * mv, fy = -Math.max(0, Math.cos(p2)) * 2.4 * mv;
-      capsule(hx, hipY + 1 - bobY, fx, fy - 1, q[2] ? bodyD : bodyCol, lw); ell(c, fx + 0.8, fy - 0.6, 2.6, 1.6, bodyD, 1.3);
-    });
-  } else if (plan === 2) {
-    var hip = -(5 * ll);
-    B = { x: 0, y: hip - 7.5 * bh - bobY, rx: 8.6 * bw, ry: 8.6 * bh };
-    HD = { x: 0, y: B.y - B.ry - 3 * hd + 1.5, r: 5.4 * hd };
-    F = { x: 0.8, y: HD.y + 0.4, w: HD.r * 1.15 }; TOP = { x: 0, y: HD.y - HD.r, w: HD.r * 0.75 };
-    [-1, 1].forEach(function (sd) {
-      var p2 = ph + (sd > 0 ? Math.PI : 0), fx = sd * 3.6 * bw + Math.sin(p2) * 1.2 * mv, fy = -Math.max(0, Math.cos(p2)) * 2.6 * mv;
-      capsule(sd * 3.4 * bw, hip - bobY, fx, fy - 1.4, bodyD, lw + 0.8); ell(c, fx + 0.5, fy - 0.8, 3.2, 1.9, bodyD, 1.4);
-    });
-  } else if (plan === 3) {
-    var hov = (10 + Math.sin(t * 2.2) * 3 * sp.bob) * sp.hover;
-    B = { x: 0, y: -8.5 * bh - hov, rx: 8.6 * bw, ry: 8 * bh };
-    F = { x: 1.5, y: B.y - 0.5, w: B.rx }; TOP = { x: 0, y: B.y - B.ry, w: B.rx * 0.55 };
-    for (i = 0; i < 4; i++) {
-      var tx = (i - 1.5) * B.rx * 0.42, pts = [], n;
-      for (n = 0; n <= 4; n++) pts.push([tx + Math.sin(t * 3.4 + i * 1.7 + n * 0.9) * 1.6 * (n / 4) - mv * n * 0.9, B.y + B.ry - 2 + n * 2 * ll]);
-      bent(pts, i % 2 ? bodyD : bodyCol, lw * 0.6);
-    }
-  } else if (plan === 4) {
-    B = { x: 0, y: -(2.6 * ll + 4.6 * bh) - bobY * 0.4, rx: 10 * bw, ry: 5 * bh };
-    F = { x: B.rx * 0.35, y: B.y - 0.6, w: B.rx * 0.7 }; TOP = { x: -1, y: B.y - B.ry, w: B.rx * 0.5 }; TL = { x: -B.rx + 1.5, y: B.y };
-    var nl = Math.max(2, Math.min(4, Math.round(sp.legs / 2)));
-    [-1, 1].forEach(function (sd) {
-      for (var q = 0; q < nl; q++) {
-        var u = nl === 1 ? 0 : q / (nl - 1) - 0.5, p2 = ph * 1.4 + q * Math.PI + (sd > 0 ? Math.PI : 0), up = Math.max(0, Math.sin(p2)) * 2.6 * mv;
-        var bx0 = sd * B.rx * 0.55 + u * 3, kx = sd * (B.rx + 2.6 * ll) + u * 5, fx = sd * (B.rx + 5 * ll) + u * 9 + Math.cos(p2) * 1.6 * mv;
-        bent([[bx0, B.y + 1], [kx, B.y - 3.4 * ll - up], [fx, u * 3.4 - up]], bodyD, lw * 0.62);
-      }
-    });
-  } else {
-    var hop = step * 4 * sp.bob, squ = 1 + Math.cos(ph * 2) * 0.09 * mv * sp.wobble;
-    B = { x: 0, y: -6.6 * bh + 0.8 - hop, rx: 9.6 * bw * squ, ry: 7.2 * bh / squ };
-    F = { x: 1.5, y: B.y - 0.6, w: B.rx }; TOP = { x: 0, y: B.y - B.ry, w: B.rx * 0.55 }; TL = { x: -B.rx + 1.5, y: B.y + B.ry * 0.45 };
-  }
-
-  /* everything above the legs leans, swells and stretches with the state */
-  c.save(); c.translate(0, -lift); c.translate(B.x, B.y + B.ry); c.rotate(rot); c.scale(sx, sy); c.translate(-B.x, -(B.y + B.ry));
-  var tail = Math.round(sp.tail);
-  if (TL && tail) {
-    if (tail === 1) ell(c, TL.x - 1.5, TL.y, 2.6, 2.4, bodyD, 1.4);
-    else {
-      var tp = [], n2;
-      for (n2 = 0; n2 <= 5; n2++) tp.push([TL.x - n2 * 2.3, TL.y - n2 * 0.9 + Math.sin(t * 4 + n2 * 0.9) * 1.3 * (n2 / 5) - n2 * n2 * 0.12]);
-      bent(tp, bodyD, 2.6);
-      if (tail === 3) { var e5 = tp[5]; tri(e5[0] - 3.6, e5[1] - 1.2, e5[0] + 0.6, e5[1] - 3, e5[0] + 0.8, e5[1] + 2, C.accent); }
-    }
-  }
-  var top = Math.round(sp.top);
-  if (top === 4) for (i = 0; i < 4; i++) { var sxp = B.x - B.rx * 0.6 + i * B.rx * 0.4, syp = B.y - B.ry * Math.sqrt(Math.max(0.05, 1 - Math.pow((sxp - B.x) / B.rx, 2))) + 1; tri(sxp - 2, syp + 1, sxp + 0.4, syp - 4.6, sxp + 2.4, syp + 1, C.accent); }
-  if (plan === 2) {
-    var raise = Math.max(tell, lunge ? 1 : 0);
-    [-1, 1].forEach(function (sd) {
-      var sw = Math.sin(ph + (sd > 0 ? 0 : Math.PI)) * 1.6 * mv, shx = sd * (B.rx - 1.4), shy = B.y - 3 * bh;
-      var hx = sd * (B.rx + 2.6 + raise * 2), hy = shy + 8 * sp.armLen * (1 - raise * 1.7) + sw;
-      if (lunge) { hx = sd * (B.rx * 0.5) + 6; hy = B.y - 1; }
-      capsule(shx, shy, hx, hy, bodyD, lw + 0.4); ell(c, hx, hy, 3, 3, bodyCol, 1.4);
-    });
-  }
-  c.beginPath(); c.ellipse(B.x, B.y, B.rx, B.ry, 0, 0, Math.PI * 2); c.fillStyle = bodyCol; c.fill();
-  c.save(); c.clip();
-  c.fillStyle = bodyD; c.beginPath(); c.ellipse(B.x + B.rx * 0.25, B.y + B.ry * 0.9, B.rx * 1.2, B.ry * 0.7, 0, 0, Math.PI * 2); c.fill();
-  var pat = Math.round(sp.pattern);
-  if (pat === 1) { c.fillStyle = C.belly; c.beginPath(); c.ellipse(B.x + 1, B.y + B.ry * 0.55, B.rx * 0.68, B.ry * 0.6, 0, 0, Math.PI * 2); c.fill(); }
-  else if (pat === 2) { c.fillStyle = C.belly; [[-0.55, -0.3, 0.2], [-0.15, 0.35, 0.16], [0.3, -0.45, 0.14], [0.6, 0.2, 0.18], [-0.7, 0.3, 0.12]].forEach(function (q) { c.beginPath(); c.ellipse(B.x + q[0] * B.rx, B.y + q[1] * B.ry, q[2] * B.rx, q[2] * B.rx * 0.8, 0, 0, Math.PI * 2); c.fill(); }); }
-  else if (pat === 3) { c.strokeStyle = C.belly; c.lineWidth = B.rx * 0.16; c.lineCap = 'round'; for (i = -2; i <= 1; i++) { c.beginPath(); c.moveTo(B.x + i * B.rx * 0.42 - 2, B.y - B.ry); c.lineTo(B.x + i * B.rx * 0.42 + 1.5, B.y + B.ry * 0.1); c.stroke(); } }
-  c.fillStyle = 'rgba(255,255,255,0.26)'; c.beginPath(); c.ellipse(B.x - B.rx * 0.35, B.y - B.ry * 0.5, B.rx * 0.4, B.ry * 0.22, -0.3, 0, Math.PI * 2); c.fill();
-  c.restore();
-  c.beginPath(); c.ellipse(B.x, B.y, B.rx, B.ry, 0, 0, Math.PI * 2); c.lineWidth = 1.8; c.strokeStyle = LN; c.stroke();
-  if (HD) {
-    ell(c, HD.x, HD.y, HD.r * 1.04, HD.r, bodyCol, 1.8);
-    c.fillStyle = 'rgba(255,255,255,0.24)'; c.beginPath(); c.ellipse(HD.x - HD.r * 0.3, HD.y - HD.r * 0.5, HD.r * 0.4, HD.r * 0.22, -0.3, 0, Math.PI * 2); c.fill();
-  }
-  if (top === 1) { ell(c, TOP.x - TOP.w, TOP.y + 1, 2.2, 2.6, bodyD, 1.3); ell(c, TOP.x + TOP.w, TOP.y + 1, 2.2, 2.6, bodyD, 1.3); }
-  else if (top === 2) [-1, 1].forEach(function (sd) { var hx2 = TOP.x + sd * TOP.w; c.beginPath(); c.moveTo(hx2 - sd * 1.8, TOP.y + 2); c.quadraticCurveTo(hx2 + sd * 4.5, TOP.y - 1, hx2 + sd * 3.4, TOP.y - 7); c.quadraticCurveTo(hx2 + sd * 0.6, TOP.y - 2.5, hx2 + sd * 1.8, TOP.y + 2.4); c.closePath(); fs(c, C.accent, 1.3); });
-  else if (top === 3) [-1, 1].forEach(function (sd) { var ax = TOP.x + sd * TOP.w * 0.7, tipx = ax + sd * 2.5 + Math.sin(t * 3 + sd) * 0.8, tipy = TOP.y - 7.5; c.strokeStyle = LN; c.lineWidth = 1.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(ax, TOP.y + 1); c.quadraticCurveTo(ax + sd, TOP.y - 4, tipx, tipy); c.stroke(); ell(c, tipx, tipy, 1.9 + tell, 1.9 + tell, C.glow, 1.1); });
-  else if (top === 5) {
-    c.save(); c.translate(TOP.x, TOP.y - 2.2); c.rotate(t * 2);
-    for (i = 0; i < 6; i++) { c.rotate(Math.PI / 3); rr(c, -1.1, -4.6, 2.2, 2.6, 0.5, C.accent, 1.1); }
-    ell(c, 0, 0, 3.1, 3.1, C.accent, 1.3); ell(c, 0, 0, 1.1, 1.1, bodyD, 0.9); c.restore();
-  }
-
-  /* face */
-  var ne = Math.max(1, Math.min(4, Math.round(sp.eyes))), es = Math.round(sp.eyeStyle), er = (ne === 1 ? 3.5 : 2.7 - (ne - 2) * 0.35) * sp.eyeSize * (T === 3 ? 1 + 0.3 * tell : 1);
-  var ey = F.y - (plan === 0 || plan === 3 ? B.ry * 0.12 : 0), my = ey + er + 2.2, open = Math.max(tell, lunge ? 1 : 0);
-  for (i = 0; i < ne; i++) {
-    var ex = F.x + (ne === 1 ? 0 : -F.w * 0.45 + i * F.w * 0.9 / (ne - 1));
-    if (down) { c.strokeStyle = LN; c.lineWidth = 1.3; c.lineCap = 'round'; c.beginPath(); c.moveTo(ex - er * 0.7, ey - er * 0.7); c.lineTo(ex + er * 0.7, ey + er * 0.7); c.moveTo(ex + er * 0.7, ey - er * 0.7); c.lineTo(ex - er * 0.7, ey + er * 0.7); c.stroke(); continue; }
-    if (es === 1) { ell(c, ex, ey, er * 0.85, er * 0.85, C.glow, 1.1); ell(c, ex - er * 0.2, ey - er * 0.2, er * 0.35, er * 0.35, '#ffffff', 0); continue; }
-    ell(c, ex, ey, er, er * 1.08, tell && T === 3 ? mixHex('#fff7e8', C.glow, tell) : '#fff7e8', 1.3);
-    ell(c, ex + lkx * er * 0.38, ey + lky * er * 0.34, er * 0.48, er * 0.54, tell ? mixHex(C.eye, C.glow, tell * 0.7) : C.eye, 0);
-    ell(c, ex + lkx * er * 0.38 - er * 0.18, ey + lky * er * 0.34 - er * 0.22, er * 0.16, er * 0.16, '#ffffff', 0);
-    if (es === 2) { var sl = ne === 1 ? 0 : (ex < F.x ? 1 : -1); c.strokeStyle = LN; c.lineWidth = 1.5; c.lineCap = 'round'; c.beginPath(); c.moveTo(ex - er * 1.1, ey - er * (1.25 + sl * 0.45)); c.lineTo(ex + er * 1.1, ey - er * (1.25 - sl * 0.45)); c.stroke(); }
-    if (es === 3) { c.beginPath(); c.ellipse(ex, ey, er + 0.7, er * 1.08 + 0.7, 0, Math.PI, Math.PI * 2); c.closePath(); c.fillStyle = bodyCol; c.fill(); c.strokeStyle = LN; c.lineWidth = 1.2; c.beginPath(); c.moveTo(ex - er - 0.4, ey); c.lineTo(ex + er + 0.4, ey); c.stroke(); }
-  }
-  var mouth = Math.round(sp.mouth), mw = Math.min(F.w * 0.5, 4.6);
-  if (mouth === 1) { c.strokeStyle = LN; c.lineWidth = 1.2; c.lineCap = 'round'; c.beginPath(); c.arc(F.x, my - 1.2, mw * 0.6, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke(); }
-  else if (mouth === 2) { c.strokeStyle = LN; c.lineWidth = 1.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(F.x - mw, my); c.lineTo(F.x + mw, my); c.stroke(); tri(F.x - mw * 0.7, my, F.x - mw * 0.25, my, F.x - mw * 0.5, my + 2.8 + open, C.accent); tri(F.x + mw * 0.25, my, F.x + mw * 0.7, my, F.x + mw * 0.5, my + 2.8 + open, C.accent); }
-  else if (mouth === 3) {
-    var mh = 1.6 + open * 2.2;
-    ell(c, F.x, my + mh * 0.5, mw, mh, '#3a1c24', 1.3);
-    c.fillStyle = C.accent; for (i = -1; i <= 1; i++) { c.beginPath(); c.moveTo(F.x + i * mw * 0.55 - 1, my + mh * 0.5 - mh * 0.75); c.lineTo(F.x + i * mw * 0.55 + 1, my + mh * 0.5 - mh * 0.75); c.lineTo(F.x + i * mw * 0.55, my + mh * 0.5 - mh * 0.75 + 1.8); c.closePath(); c.fill(); }
-  }
-  if (tell && T === 3) { c.strokeStyle = C.glow; c.globalAlpha = 0.7 * (1 - (t * 3 % 1)); c.lineWidth = 1.4; c.beginPath(); c.arc(F.x, ey, er * 1.6 + (t * 3 % 1) * 8, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1; }
-  c.restore();
-
-  /* markers stay upright and unflipped */
-  c.scale(dir, 1);
-  var headTop = (HD ? HD.y - HD.r : B.y - B.ry) - lift - 9;
-  if (st === 'stunned') for (i = 0; i < 3; i++) { var a = t * 5 + i * 2.09; ell(c, Math.cos(a) * 8, headTop + 3 + Math.sin(a) * 2.5, 1.5, 1.5, '#ffd34d', 0.9); }
-  if (tell && sp.mark) { ell(c, 0, headTop, 4.4, 4.4, '#ffd34d', 1.5); c.fillStyle = LN; c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'center'; c.fillText('!', 0, headTop + 2.6); }
-  c.restore();
-  LN = LN0;
+  var plan = Math.round(H.spec.plan); if (plan < 5) plan = 5;       // plans 0 to 4 were the steampunk blobs, gone 2026-10-09: anything else is an animal
+  if (plan === 5 && RIG.animals === 'views') { if (s.ang == null) { var s5 = {}, k5; for (k5 in s) s5[k5] = s[k5]; s5.ang = s.dir < 0 ? Math.PI : 0; s = s5; } quadD(c, x, y, s, H); return; }
+  if (plan === 7) { trollD(c, x, y, s, H); return; }
+  if ((plan === 8 || plan === 9) && RIG.trolls === 'views') { trollViewD(c, x, y, s, H); return; }
+  if (plan === 8) { boulderTrollD(c, x, y, s, H); return; }
+  if (plan === 9) { forestTrollD(c, x, y, s, H); return; }
+  // animals and the snake: without a heading, face straight left or right
+  if (s.ang == null) { var s3 = {}, k3; for (k3 in s) s3[k3] = s[k3]; s3.ang = s.dir < 0 ? Math.PI : 0; s = s3; }
+  animal3D(c, x, y, s, H);
 }
-
-
-var dkB = null;
 
 
 // Every page applies the game's stored choices from one place (2026-10-07, Robin: the editors should pull from the same
@@ -2521,7 +2069,7 @@ function applyStored(st) {
   try { var gl = JSON.parse(st.getItem('game.light')); if (gl && gl.faceShade != null) FACE_SHADE.k = +gl.faceShade; } catch (e) {}
   RIG.animals = 'views'; RIG.trolls = 'views';          // the game always draws the view rig; the Creature Editor's Rig switch (creature.rig) is its own (2026-10-08: a stored 'turntable' kept the clipping trolls in the game)
 }
-return { lib: { INK_FIG: INK_FIG, FACE_SHADE: FACE_SHADE, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, IDLES: IDLES, JOBS: JOBS, idlePose: idlePose, jobPose: jobPose, poseLerp: poseLerp, heldD: heldD, figureHeld: figureHeld, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, heroP: heroP, setSprite: setSprite, sprite: sprite, sprites: SPRITES, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
+return { lib: { INK_FIG: INK_FIG, FACE_SHADE: FACE_SHADE, RIG: RIG, applyStored: applyStored, quadD: quadD, trollViewD: trollViewD, playerD: playerD, heroDef: HEROD_DEF, setHero: setHero, hero: hero, makeFigure: makeFigure, figureD: figureD, concepts: CONCEPTS, conceptSpec: conceptSpec, heroes: HEROES, heroSpec: heroSpec, inkMetrics: inkMetrics, IDLES: IDLES, JOBS: JOBS, idlePose: idlePose, jobPose: jobPose, poseLerp: poseLerp, heldD: heldD, figureHeld: figureHeld, folk: FOLK, folkSpec: folkSpec, creatureDef: CREATURE_DEF, setCreature: setCreature, creature: creature, makeCreature: makeCreature, animals: ANIMALS, useAnimal: useAnimal, animalSpec: animalSpec, animalAttack: animalAttack, attacks: ATTACKS, creatureD: creatureD, rr: rr, ell: ell, fs: fs, pathRR: pathRR, LN: LN, rng: rng, mk: mk } };
 })();
 if (typeof module !== 'undefined') module.exports = GameArt;
 

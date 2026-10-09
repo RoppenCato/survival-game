@@ -24,7 +24,7 @@ C.init(G.lib);C.S.sound=false;C.S.juice=true;C.S.crit=0;C.api.scene={noHud:true,
 const D=C.dbg(),P=D.P,W=D.W;W.pillars=[];
 let mods={};C.api.mods=function(){return mods;};
 C.api.items={held:function(){return P.mode==='gather'?I.make('axe','copper'):I.make('sword','copper');},tool:function(){return I.make('axe','copper');},weapon:function(k){return k==='bow'?I.make('bow','wood'):I.make('sword','copper');}};
-function beast(x,y){const e=C.spawn('bot');e.x=x;e.y=y;e.hp=e.maxHp=100;e.hold=true;e.state='idle';e.r=8;return e;}
+function beast(x,y){const e=C.spawn('beast');e.x=x;e.y=y;e.hp=e.maxHp=100;e.hold=true;e.state='idle';e.r=8;return e;}
 function run(n,dt){for(let i=0;i<n;i++)C.update(dt||0.016);}
 // sprint cost
 P.mode='fight';P.x=200;P.y=170;P.st=100;mods={};C.key('KeyD',true);C.key('ShiftLeft',true);run(30);const st1=P.st;P.st=100;mods={sprintCost:0.5};run(30);const st2=P.st;C.key('KeyD',false);C.key('ShiftLeft',false);run(5);

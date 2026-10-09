@@ -5,11 +5,10 @@ animation and sound is drawn or synthesized in code, with one exception since 20
 Blender and rendered to sprite sheets** (`art/`, `assets/sprites/`; a trial Robin wants to judge before it spreads). This repo
 holds browser prototypes and editors, not a full game yet.
 
-The game was post-apocalyptic steampunk until 2026-10-04. Robin changed it to a Viking game, and `main`
-is now the Viking game (merged from the `viking` branch on 2026-10-04). The last steampunk state is commit
-`59f5dd6`. All steampunk content has been removed. The old
-linked design doc (see `README.md`) still describes the steampunk game and is out of date: this file is the
-source of truth for the new direction.
+The game had another setting until 2026-10-04 (commit `59f5dd6` is the last of it; `main` has been the Viking game since the
+`viking` branch was merged that day). **Nothing of it remains (Robin, 2026-10-09: remove every idea and concept of it):** the
+pixel-sprite hero, its eyewear, the first prototype's scene, the blob body plans, the robot enemies and the Guardian boss are
+gone from the code, and no new work may bring any of it back. This file is the source of truth for the direction.
 
 ## The game design, as decided so far
 
@@ -304,7 +303,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   - Collision is circles only: `W.pillars` holds `{ x, y, r, hide }`. Big maps pass only the solids near the hero.
 - `templates/`: one HTML shell per page with `__ART__`, `__LIB__`, `__WORLD__`, `__BUILD__`, `__COMBAT__` placeholders.
 - `tools/build.py`: plain string substitution. `tools/open.js`: opens the start page. `tools/visual/`: scripts that
-  render things to PNG for checking (`props.js`, `creatures.js`, `walkcycle.js`, `swingdirs.js`, `attackstyles.js`).
+  render things to PNG for checking (`props.js`, `creatures.js`, `walkcycle.js`, `swingdirs.js`, `attackstyles.js`: the attack styles).
 - `tools/visual/figures.js` renders the ink figures (the hero in four directions standing and walking, the troll, a boar) to
   figures.png; `folk.js` the concepts.
 - `tests/`: headless combat checks (table in `tests/README.md`).
@@ -391,9 +390,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - Tests and render scripts write throwaway PNGs into the current directory; `.gitignore` covers PNGs in the root.
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
-- The engine's enemy types are still called `bot`, `bossbot`, `turret` and `boss` internally, and the tests use
-  them. They are AI behaviours now, not robots: pages dress them as animals with `api.dress`. The plain robot
-  drawings (`drawBot` and friends) remain only as the undressed fallback the tests render.
+- The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,
+  with a stagger bar; the bear in the Combat Arena) and **`shooter`** (stands and shoots); `beastAI`, `bruteAI`, `shooterAI`
+  (renamed 2026-10-09 from the old names). Pages dress them as animals with `api.dress`; undressed (the tests, the Character
+  Editor's arena) they draw as a plain ink beast (`drawPlain`). There is no boss type.
 
 ## Hero
 
@@ -435,8 +435,6 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - North and south walking: arms swing opposite the legs; `sway` and `stance` control the side-to-side rock.
 - Sword swings are drawn at their true angle in every direction (`visAngle` is the identity).
 - Attack motion is in `ATK_STYLES` / `atkBody()` (spec keys `atkStyle`, `atkPower`). Visual only.
-- A pixel-sprite hero (`heroP`, `SPRITES`, `Combat.S.look = 'sprite'`, V in the Combat Arena) is still in the code
-  as a comparison only. Do not build on it.
 - **Styles and the matte look (2026-10-06, Robin: find a style for the humans of this world, matte like the trees):** the
   spec has `hair` (bowl, cropped, long, braids, knot, bald, shaved sides with a tail), `beard` (none, full, short, long
   and braided, moustache), `hat` (none, hood, leather cap, nasal helmet, fur hat, headband), `clothes` (the coat and vest,
@@ -448,7 +446,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   all matte; the random people will be drawn from them later. The **Character Editor** lists them as Concepts, has Style
   rows (hair, beard, headwear, clothes), Builds, a Matte slider, templates saved in this browser (`herotest.templates`),
   and **"Use as the hero in the game"** (`game.hero2`, which the game sets with `lib.setHero` on load). The steampunk
-  eyewear and bot palettes are gone from the editor (the eyewear drawing is still in the code). `node tools/visual/folk.js`
+  eyewear is gone (2026-10-09: from the code too). `node tools/visual/folk.js`
   renders the concepts in four views and a grid of every style to folk.png (`big` for the concepts large).
 
 ## People

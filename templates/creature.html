@@ -202,7 +202,7 @@ __COMBAT__
   var lib = GameArt.lib;
   lib.applyStored(localStorage);   // the rig is Views on every load, as the game draws it; Turntable is only for a look within the session (2026-10-08: a stored turntable hid every change to the trolls)                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(lib);
-  var S = Combat.S; S.look = 'classic'; S.sound = false;
+  var S = Combat.S; S.sound = false;
   Combat.clear();
   var codes = { KeyQ: 1, Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyJ: 1, KeyK: 1, ShiftLeft: 1, ShiftRight: 1 };
   var held = {};
@@ -239,8 +239,7 @@ __COMBAT__
   var MOVE = [
     { k: 'bob', label: 'Bounce', min: 0, max: 2.5, step: 0.05 },
     { k: 'stepRate', label: 'Step speed', min: 0.4, max: 2.5, step: 0.05 },
-    { k: 'wobble', label: 'Wobble', min: 0, max: 3, step: 0.05 },
-    { k: 'hover', label: 'Hover height', min: 0.3, max: 2, step: 0.05 }
+    { k: 'wobble', label: 'Wobble', min: 0, max: 3, step: 0.05 }
   ];
   var BEHAVE = [
     { k: 'speed', label: 'Move speed', min: 0.3, max: 2.5, step: 0.05 },
@@ -289,7 +288,7 @@ __COMBAT__
     behave: ['Lunger', 'Brute', 'Shooter', 'Grazer']
   };
   var TELLTXT = ['Swell: it squashes wide and flushes with its warning colour.', 'Shake: it trembles on the spot and flushes with its warning colour.', 'Rear up: it lifts and tips back before it strikes.', 'Eye glow: the eyes grow and light up, with a pulse ring.'];
-  var BEHAVETXT = ['Lunger: chases you, circles, then lunges in a straight line. It can be parried.', 'Brute: the Bossbot\'s moves, with a lunge, a chain of hits and a spin. It has a stagger bar.', 'Shooter: stands still and fires a shot along a marked line.', 'Grazer: never attacks. It runs away when you come close.'];
+  var BEHAVETXT = ['Lunger: chases you, circles, then lunges in a straight line. It can be parried.', 'Brute: the engine\'s brute, with a lunge, a chain of hits and a spin. It has a stagger bar.', 'Shooter: stands still and fires a shot along a marked line.', 'Grazer: never attacks. It runs away when you come close.'];
   var MODEL_KEYS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollForest', 'trollStone'], MODELS = MODEL_KEYS.map(function (k) { return lib.animals[k]; });
   var LIB_KEY = 'creature.library', GAME_KEY = 'game.creatures', META_KEY = 'creatureeditor2.meta', library = {}, meta = { name: '', slot: 'troll' };
   try { library = JSON.parse(localStorage.getItem(LIB_KEY)) || {}; } catch (e) { library = {}; } try { var mt = JSON.parse(localStorage.getItem(META_KEY)); if (mt && typeof mt === 'object') meta = mt; } catch (e) {}   // defined in src/art.js
@@ -432,7 +431,7 @@ __COMBAT__
   });
 
   /* ---------- arena ---------- */
-  var TYPES = ['bot', 'bossbot', 'turret', 'bot'], BASE_R = [7, 9, 8, 7];
+  var TYPES = ['beast', 'brute', 'shooter', 'beast'], BASE_R = [7, 9, 8, 7];
   function addOne() {                  // creatures start between the two pillars at the top of the arena, and stay calm
     var n = Combat.dbg().W.enemies.filter(function (q) { return q.creature && !q.dead; }).length, e = Combat.spawn(TYPES[spec.behave]);
     e.creature = true; e.size = 1; e.hp = e.maxHp = spec.hp; e.kind = spec.behave;

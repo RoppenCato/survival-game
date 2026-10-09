@@ -2,7 +2,7 @@ const {createCanvas}=require('@napi-rs/canvas');
 global.__mk=(w,h)=>createCanvas(w,h);
 const G=require('../src/art.js');const C=require('../src/combat.js');C.init(G.lib);
 const dd=()=>C.dbg();
-function setup(){C.reset();C.clear();const P=dd().P;P.x=200;P.y=200;P.face=0;P.faceVis=0;const e=C.spawn('bot');e.hp=e.maxHp=99;e.x=232;e.y=200;e.state='idle';e.cd=99;return e;}
+function setup(){C.reset();C.clear();const P=dd().P;P.x=200;P.y=200;P.face=0;P.faceVis=0;const e=C.spawn('beast');e.hp=e.maxHp=99;e.x=232;e.y=200;e.state='idle';e.cd=99;return e;}
 C.S.crit=0;
 for(const w of ['snappy','normal','heavy']){
   C.S.weight=w;

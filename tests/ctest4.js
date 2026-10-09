@@ -15,7 +15,7 @@ C.reset();C.clear();P=dd().P;P.x=200;P.y=200;P.face=-Math.PI/2;P.faceVis=P.face;
 C.key('Space',true);C.update(1/60);C.key('Space',false);step(14);
 console.log('backstep moved y by',(P.y-200).toFixed(1),'(positive = backward/down)');
 // i-frames vs bot lunge
-C.reset();C.clear();let e=C.spawn('bot');e.x=200;e.y=225;e.state='windup';e.t=0;e.dur=0.5;e.dirLock=Math.PI/2;e.cd=0;P=dd().P;P.x=200;P.y=245;
+C.reset();C.clear();let e=C.spawn('beast');e.x=200;e.y=225;e.state='windup';e.t=0;e.dur=0.5;e.dirLock=Math.PI/2;e.cd=0;P=dd().P;P.x=200;P.y=245;
 step(24);C.key('KeyD',true);C.key('Space',true);C.update(1/60);C.key('Space',false);step(60);C.key('KeyD',false);
 console.log('dash dodge hp',dd().P.hp);
 // turn speed

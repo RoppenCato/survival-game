@@ -76,10 +76,9 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
       <section class="panel">
         <h2>Arena</h2>
         <div class="group">
-          <button id="sbot">Add bot</button>
-          <button id="sturret">Add turret</button>
-          <button id="sbossbot">Add Bossbot</button>
-          <button id="sboss">Add Guardian</button>
+          <button id="sbeast">Add beast</button>
+          <button id="sshooter">Add shooter</button>
+          <button id="sbrute">Add brute</button>
           <button id="sclear">Clear</button>
           <button id="nodmg" aria-pressed="true">No damage</button>
           <button id="sound" aria-pressed="true">Sound</button>
@@ -141,7 +140,6 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <div id="pbody"></div>
         <h2 class="more">Builds</h2>
         <div class="group" id="shapes"></div>
-        <div class="group" id="eyewear" hidden></div>
         <div class="group" id="palettes" hidden></div>
       </section>
       <section class="panel">
@@ -191,7 +189,7 @@ __COMBAT__
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit;
   Combat.init(lib);
-  var S = Combat.S; S.look = 'classic';
+  var S = Combat.S; 
   Combat.clear();
   var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
   var held = {};
@@ -295,7 +293,6 @@ __COMBAT__
     ['cloak', 'Cloak and hood'], ['dress', 'Apron dress'], ['fur', 'Fur'], ['iron', 'Helmet'], ['eye', 'Eyes'], ['line', 'Outline'], ['blade', 'Blade'], ['slash', 'Slash']];
   var HAIRS = ['Bowl', 'Cropped', 'Long', 'Braids', 'Knot', 'Bald', 'Shaved sides', 'Wavy', 'Mane'], BEARDS = ['None', 'Full', 'Short', 'Long, braided', 'Moustache'];
   var HATS = ['None', 'Hood', 'Leather cap', 'Nasal helmet', 'Fur hat', 'Headband'], CLOTHES = ['Coat and vest', 'Tunic', 'Tunic and cloak', 'Apron dress', 'Fur vest'];
-  var EYEWEAR = ['None', 'Goggles up', 'Goggles on', 'Round glasses', 'Square glasses', 'Shades', 'Monocle'];
   var ATTACKS = [['Arm only', 'The old version: the body stands still and only the arm swings.'],
     ['Step-in', 'A small step back, then a step into the swing with a little stretch. Light and quick.'],
     ['Lunge', 'A deeper pull back and a long lunge forward, a held pose at full reach, then a slide back. The most forward drive.'],
@@ -330,9 +327,7 @@ __COMBAT__
   function apply() {
     for (var i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : lib.heroDef[p.k]); }
     var dflt = lib.heroDef;
-    if (!isFinite(Number(spec.eyewear))) spec.eyewear = dflt.eyewear;
     if (!isFinite(Number(spec.atkStyle))) spec.atkStyle = dflt.atkStyle;
-    spec.eyewear = Math.max(0, Math.min(EYEWEAR.length - 1, Math.round(Number(spec.eyewear)) || 0));
     spec.hair = Math.max(0, Math.min(HAIRS.length - 1, Math.round(Number(spec.hair)) || 0)); spec.beard = Math.max(0, Math.min(BEARDS.length - 1, Math.round(Number(spec.beard)) || 0));
     spec.hat = Math.max(0, Math.min(HATS.length - 1, Math.round(Number(spec.hat)) || 0)); spec.clothes = Math.max(0, Math.min(CLOTHES.length - 1, Math.round(Number(spec.clothes)) || 0));
     spec.atkStyle = Math.max(0, Math.min(ATTACKS.length - 1, Math.round(Number(spec.atkStyle)) || 0));
@@ -341,7 +336,7 @@ __COMBAT__
     for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
     for (i = 0; i < TOGGLES.length; i++) toggleBtn[TOGGLES[i].k].setAttribute('aria-pressed', spec[TOGGLES[i].k] ? 'true' : 'false');
     spec.figure = 1;                                       // the ink figure is the figure (the old rounded one is gone from the page, 2026-10-08)
-    choice('eyewear', spec.eyewear); choice('attacks', spec.atkStyle); choice('hairs', spec.hair); choice('beards', spec.beard); choice('hats', spec.hat); choice('clothes', spec.clothes);
+    choice('attacks', spec.atkStyle); choice('hairs', spec.hair); choice('beards', spec.beard); choice('hats', spec.hat); choice('clothes', spec.clothes);
     document.getElementById('atkdesc').textContent = ATTACKS[spec.atkStyle][1];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
     drawSheet();
@@ -379,7 +374,7 @@ __COMBAT__
       host.appendChild(b);
     });
   }
-  choices('eyewear', EYEWEAR, 'eyewear'); choices('attacks', ATTACKS.map(function (q) { return q[0]; }), 'atkStyle');
+  choices('attacks', ATTACKS.map(function (q) { return q[0]; }), 'atkStyle');
   choices('hairs', HAIRS, 'hair'); choices('beards', BEARDS, 'beard'); choices('hats', HATS, 'hat'); choices('clothes', CLOTHES, 'clothes');
 
   var swHost = document.getElementById('swatches');
@@ -559,10 +554,9 @@ __COMBAT__
   /* arena */
   var noDmg = true;
   function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(b); b.blur(); }); }
-  act('sbot', function () { Combat.spawn('bot'); });
-  act('sturret', function () { Combat.spawn('turret'); });
-  act('sbossbot', function () { Combat.spawn('bossbot'); });
-  act('sboss', function () { Combat.spawn('boss'); });
+  act('sbeast', function () { Combat.spawn('beast'); });
+  act('sshooter', function () { Combat.spawn('shooter'); });
+  act('sbrute', function () { Combat.spawn('brute'); });
   act('sclear', function () { Combat.clear(); });
   act('nodmg', function (b) { noDmg = !noDmg; b.setAttribute('aria-pressed', noDmg ? 'true' : 'false'); });
   act('sound', function (b) { S.sound = !S.sound; b.setAttribute('aria-pressed', S.sound ? 'true' : 'false'); });

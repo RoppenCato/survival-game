@@ -11,7 +11,7 @@ const steps=[1,2,4,6,8,10,13,16];
 const cv=createCanvas(170*steps.length,170*8),c=cv.getContext('2d');
 const one=createCanvas(800,500),oc=one.getContext('2d');
 function swing(row,face,second){
-  C.reset();C.clear();C.S.look='classic';C.S.aim='facing';
+  C.reset();C.clear();C.S.aim='facing';
   const P=C.dbg().P;P.x=200;P.y=170;P.face=face;P.faceVis=face;
   if(second){C.key('KeyJ',true);C.update(1/60);C.key('KeyJ',false);for(let i=0;i<17;i++)C.update(1/60);}
   C.key('KeyJ',true);C.update(1/60);C.key('KeyJ',false);

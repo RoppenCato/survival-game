@@ -8,7 +8,7 @@ const D=C.dbg(),P=D.P,W=D.W;W.pillars=[];
 let arm={melee:'sword',ranged:'bow'},shot=[],landed=[];
 C.api.items={held:function(){return P.mode==='fight'?(P.weapon==='ranged'?I.make(arm.ranged,'copper'):I.make(arm.melee,'copper')):null;},tool:function(){return null;},weapon:function(k){return I.make(k==='bow'?arm.ranged:arm.melee,'copper');}};
 C.api.onShoot=function(thing){shot.push(thing?thing.kind:'ammo');};C.api.onThrowLand=function(x,y,thing){landed.push(thing.kind);};
-function beast(x,y){const e=C.spawn('bot');e.x=x;e.y=y;e.hp=e.maxHp=100;e.hold=true;e.state='idle';e.r=8;return e;}
+function beast(x,y){const e=C.spawn('beast');e.x=x;e.y=y;e.hp=e.maxHp=100;e.hold=true;e.state='idle';e.r=8;return e;}
 function clear(){W.enemies.length=0;W.projs.length=0;}
 let bad=0;
 P.mode='fight';P.weapon='melee';

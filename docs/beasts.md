@@ -247,7 +247,7 @@ and he fears it. Cut off his head (a finishing blow when he is down) or he rises
 page. The mound can then be claimed as a place.
 
 **In the game (suggestion):** the treasure-guardian. A mound is a prop with a door; E opens it and he rises (a big
-figure with a weapon, `bossbot` AI with the chain-of-hits). The ring of stones round the mound is his bound: a
+figure with a weapon, `brute` AI with the chain-of-hits). The ring of stones round the mound is his bound: a
 `bounds` for the enemy. He swells with damage (size and `dmg` scale with lost health). Fire: a torch or brazier near
 him makes him recover slower and flinch. When his health is gone he lies down; a heavy swing within three seconds
 "takes the head" (the deed rune Clean cut grows from it); without it he rises again next full moon with his goods

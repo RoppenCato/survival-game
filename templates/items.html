@@ -141,7 +141,7 @@ __COMBAT__
   var BASE_R = { boar: 9 };
   Combat.api.dress = function (e) { var sp = lib.animalSpec('boar'); e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = 'WILD BOAR'; e.r = BASE_R.boar * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge }; e.hp = e.maxHp = sp.hp; };
   Combat.init(lib);
-  var S = Combat.S; S.look = 'classic'; S.sound = false; S.ranged = 'auto';
+  var S = Combat.S; S.sound = false; S.ranged = 'auto';
   Combat.clear();
 
   /* ---------- the item ---------- */
@@ -200,7 +200,7 @@ __COMBAT__
   function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(b); b.blur(); }); }
   act('gen', function () { custom.name = false; custom.desc = false; item.name = Items.name(item); item.desc = Items.desc(item); sync(); });
   act('give', function () { try { localStorage.setItem('game.give', JSON.stringify(item)); givemsg.textContent = item.name + ' is waiting in the game: open The game and it will be in the bag.'; } catch (e) { givemsg.textContent = 'Could not store it.'; } });
-  act('spawn', function () { Combat.spawn('bot'); });
+  act('spawn', function () { Combat.spawn('beast'); });
   act('clear', function () { Combat.clear(); });
   act('copy', function () {
     var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; };
