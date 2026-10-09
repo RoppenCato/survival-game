@@ -112,24 +112,19 @@ pane has a tab limit: close old tabs if a page will not open).
 | Page (in `dist/`) | Template | What it is |
 | --- | --- | --- |
 | `index.html` | `index.html` | Start page |
-| `character-editor.html` | `sprite.html` | Character Editor: the heroes (Eirik, Ásta, Hallvard on the ink figure), the Figure switch, concepts, styles, builds, templates |
-| `blender-editor.html` | `blender.html` | Blender Editor (2026-10-09): the characters modelled in Blender and rendered to sheets (every `assets/sprites/<name>/` the build found, its JSON inlined through `__SPRITES__` in `tools/build.py` and the sheets loaded by path, `../assets/sprites/<name>/<file>`, since the Mixamo sheets grew to 22 MB): a Model picker (the first hero, the second in cel, painted and folk), its gear layers as toggles, Arena or **Night forest** (the kit's props in the Night Forest key with a campfire, painted once as the arena ground through `api.scene`), Add beast, Zoom (the drawing only), the sheet panel (a row per direction, a column per frame, idle or walk) and the sheet's numbers; walk with WASD, run with Shift, and the **Clips** keys (J sword, K bow, E lid, G pick up, C chop, M mine, V drink, X sit and stand, T hit, B die, L look) play the Mixamo hero's one-shot clips (`play`, `clip`, `seated`, `CLIPKEYS`). Draws the hero through `Combat.api.heroSprite`; the chosen model is kept in `blendereditor.model` |
-| `creature-editor.html` | `creature.html` | Creature Editor: the six animals and their behaviour |
-| `object-editor.html` | `objects.html` | Object Editor: tune one world prop |
+| `art-editor.html` | `art.html` | **Art Editor (2026-10-09, the cleanup):** the Character, Creature, Object and Blender editors as one page with four tabs, **Characters** (the drawn ink figure: heroes, concepts, templates, style, build, colours, "Use as the hero in the game"), **Creatures** (the drawn animals and trolls: templates, body plan, shape, behaviour, the library, "Update in game"), **Objects** (one world prop at a time: category, variations, size, shape, surface, colour) and **Models** (the Blender sheets: model, gear layers, Height, "Use in the game", the starter island, arena or night forest, the Clips keys). One canvas and one engine: each tab is an object in `TABS` with `enter` (sets `Combat.api.scene`, `roster`, `heroSprite` and resets the arena), `leave`, `tick` and `after`; a tab's elements are found by `data-id` inside its own containers (`scope(name)`), so the tabs share names; the open tab is kept in `arteditor.tab` and `?tab=` opens one. The storage keys of the old pages are unchanged. |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
-| `hird-editor.html` | `hird.html` | Hird Editor: roll a hirdman, tune stats, traits, jobs, food and the claim stone |
-| `item-editor.html` | `items.html` | Item Editor: make a weapon or tool and give it to the game |
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
-| `gathering-editor.html` | `gather.html` | Gathering Editor (2026-10-07): a field of trees, rocks and bushes; the gathering ideas as switches and sliders, presets, settings as text, "Use in the game" (`game.gather`) |
-| `look-editor.html` | `look.html` | Art Direction (2026-10-07): the same scene twice, the flat look above and the ink look below (`docs/art-direction.md`), the rules as sliders, settings as text, "Use in the game" (`game.look`, merged into `kit.STYLE` on load) |
-| `light-editor.html` | `light.html` | Light Editor (2026-10-08): lighting for a flat world, each technique a switch: cast shadows that stretch with the hour, the colour of the hour, sun rays, rim light, the fire's light at night, head form on the trolls; "Use in the game" (`game.light`) |
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
-template and one line in `PAGES` in `tools/build.py`.
+template and one line in `PAGES` in `tools/build.py`. **Removed in the cleanup of 2026-10-09** (Robin: too much on the site; prepare for
+Blender and the first island): the Light Editor, the Gathering Editor, the Hird Editor, the Item Editor and the Art Direction page
+(their numbers are the defaults in `src/`; the game still honours `game.gather`, `game.hird`, `game.look`, `game.light` and
+`game.give` in storage), and the Character, Creature, Object and Blender editors became the Art Editor's tabs.
 
 Robin works on a 34 inch ultrawide. The editors use a wide layout: content centred up to 2400px, a large game view
 on the left (as big as the window height allows) and a settings column on the right. Each editor calls
@@ -532,7 +527,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   every view (`longHair`, `knot`, `tail`, `hood`, `hat`, `beard`, `torsoSide`, `torsoFront` inside it). The hero's own
   default is unchanged (coat and vest, no matte) until Robin picks. **`CONCEPTS`** in `src/art.js` (`lib.concepts`,
   `lib.conceptSpec(name)`) are nine whole looks: Karl, Shieldmaiden, Jarl, Thrall, Völva, Hunter, Húsfreyja, Child, Elder,
-  all matte; the random people will be drawn from them later. The **Character Editor** lists them as Concepts, has Style
+  all matte; the random people will be drawn from them later. The Art Editor's Characters tab lists them as Concepts, has Style
   rows (hair, beard, headwear, clothes), Builds, a Matte slider, templates saved in this browser (`herotest.templates`),
   and **"Use as the hero in the game"** (`game.hero2`, which the game sets with `lib.setHero` on load). The steampunk
   eyewear is gone (2026-10-09: from the code too). `node tools/visual/folk.js`
@@ -806,7 +801,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   the Jarl's high seat later (anything with `muster`); **the hird follows and works only inside your territory and on
   raids, never in the open world** (hard to balance). `src/hird.js` (`Hird.DEF`) holds every number: stat ranges, traits,
   jobs (`place`, `rate`, `takes`, `gives`), meals a day, the hungry pace, the stone's reach and growth, speeds, the claim
-  cost, names and looks; `Hird.roll(R)` makes a person, `figureSpec` their figure. The **Hird Editor** (`hird-editor.html`)
+  cost, names and looks; `Hird.roll(R)` makes a person, `figureSpec` their figure. The Hird Editor (removed 2026-10-09)
   rolls people and tunes it all; "Use in the game" stores `game.hird`, merged over the defaults on load.
   In the game: the **claim stone** piece (`claimStone` prop, the runestone at 0.68; `it.claim`) and the **toppled stone**
   by the broken steading's well (`fallen`, drawn lying; E and 6 stone raise it: `raiseStone`). A raised stone has a

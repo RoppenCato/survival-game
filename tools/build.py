@@ -2,8 +2,8 @@
 """Build the pages from the source files.
 
 Usage:  python3 tools/build.py
-Output in dist/: index.html (the start page), the editors (character-editor, creature-editor,
-object-editor, sea-editor, hird-editor) and the playable combat-arena.
+Output in dist/: index.html (the start page), the editors (art-editor, sea-editor, song-editor,
+village-editor), the combat-arena and the game.
 Each is a single self-contained file you can open in a browser or host anywhere.
 """
 import os
@@ -25,14 +25,6 @@ SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), 
 # metadata inlined and the PNGs as paths beside dist/ (../assets/sprites/...), which load from file:// and from the workbench
 # server rooted at the repo. (They were data URIs until 2026-10-09; eighteen Mixamo clips made that 25 MB of page.)
 import base64, json
-def hero_sprites():
-    d = os.path.join(ROOT, 'assets', 'sprites', 'hero')
-    if not os.path.exists(os.path.join(d, 'hero.json')): return 'null'
-    j = json.load(open(os.path.join(d, 'hero.json'), encoding='utf-8')); imgs = {}
-    for a in j['anims'].values():
-        for f in a['sheets'].values(): imgs[f] = '../assets/sprites/hero/' + f        # a path beside dist/ (works from file:// and from a server rooted at the repo)
-    return json.dumps({'meta': j, 'images': imgs})
-SRC['__HERO_SPRITES__'] = hero_sprites()
 def all_sprites():
     """every packed sheet under assets/sprites/<name>/<name>.json, for the Blender Editor"""
     root = os.path.join(ROOT, 'assets', 'sprites'); out = {}
@@ -50,15 +42,10 @@ SRC['__SPRITES__'] = all_sprites()
 # page name in dist/  ->  template in templates/
 PAGES = [
     ('index', 'index'),
-    ('character-editor', 'sprite'),
-    ('blender-editor', 'blender'),
-    ('creature-editor', 'creature'),
-    ('object-editor', 'objects'),
+    ('art-editor', 'art'),          # the Character, Creature, Object and Blender editors as one page (2026-10-09, the cleanup)
     ('sea-editor', 'sea'),
-    ('hird-editor', 'hird'),
-    ('item-editor', 'items'),
     ('song-editor', 'song'),
-    ('combat-arena', 'combat'), ('gathering-editor', 'gather'), ('look-editor', 'look'), ('light-editor', 'light'), ('village-editor', 'village'), ('game', 'game'),
+    ('combat-arena', 'combat'), ('village-editor', 'village'), ('game', 'game'),
 ]
 for page, template in PAGES:
     html = read('templates', template + '.html')

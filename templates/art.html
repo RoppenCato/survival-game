@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Art Editor</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
+main{max-width:2400px;margin:0 auto}
+.back{display:inline-block;margin:0 0 6px;color:var(--ink2);font-size:.9rem;text-decoration:none}
+.back:hover{color:var(--accent)}
+h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
+.lede{margin:0 0 10px;color:var(--ink2);max-width:80ch}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.tabs button{min-height:42px;padding:0 18px;font-weight:600}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
+  .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
+}
+.stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto;background:#8fd66d;cursor:crosshair;touch-action:none}
+#cv.dark{background:#20262c}
+canvas{display:block;width:100%;height:auto;border-radius:8px}
+.sheetcv{max-width:900px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel + .panel,.stage + .panel,.tab > .panel + .panel{margin-top:12px}
+.tab[hidden]{display:none}
+.left .tab > .panel:first-child{margin-top:12px}
+.panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
+.panel h2.more{margin-top:14px}
+.group{display:flex;flex-wrap:wrap;gap:8px}
+button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;font-size:.93rem;cursor:pointer}
+button:hover{background:var(--btnh)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chips button,.objs button{min-height:34px;padding:0 10px;font-size:.87rem}
+.desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
+.row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
+.row input{width:100%;accent-color:var(--accent);margin:0}
+.row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
+.sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
+textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
+input[type=text]{min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--btn);color:var(--ink);font:inherit}
+select{min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--btn);color:var(--ink);font:inherit}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
+kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.keys dt{white-space:nowrap}
+.keys dd{margin:0;color:var(--ink2)}
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="index.html">&larr; Back to menu</a>
+  <h1>Art Editor</h1>
+  <p class="lede">Everything that is drawn or modelled, in one place: the people (the drawn ink figure), the creatures, the world's objects, and the models made in Blender. One arena, one engine; the tabs change what stands in it and what the panels on the right tune.</p>
+  <div class="tabs" id="tabs">
+    <button data-tab="chars">Characters</button>
+    <button data-tab="creatures">Creatures</button>
+    <button data-tab="objects">Objects</button>
+    <button data-tab="models">Models</button>
+  </div>
+  <div class="wrap">
+    <div class="left">
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Arena"></canvas></div>
+
+      <div class="tab" id="left-chars" hidden>
+        <section class="panel">
+          <h2>Frames</h2>
+          <canvas class="sheetcv" data-id="sheet" width="500" height="400" aria-label="Poses of the character"></canvas>
+          <p class="desc">Columns: standing, then four moments of the walk. Rows: south, west, east, north. Attacks are best judged in the arena.</p>
+        </section>
+        <section class="panel">
+          <h2>Arena</h2>
+          <div class="group">
+            <button data-id="sbeast">Add beast</button>
+            <button data-id="sshooter">Add shooter</button>
+            <button data-id="sbrute">Add brute</button>
+            <button data-id="sclear">Clear</button>
+            <button data-id="nodmg" aria-pressed="true">No damage</button>
+            <button data-id="sound" aria-pressed="true">Sound</button>
+          </div>
+          <h2 class="more">Controls</h2>
+          <dl class="keys">
+            <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
+            <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack (three-hit combo). Hold to charge a heavy swing</dd>
+            <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block</dd>
+            <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+            <dt><kbd>F</kbd></dt><dd>Ranged shot</dd>
+            <dt><kbd>H</kbd></dt><dd>Spawn a beast</dd>
+          </dl>
+        </section>
+      </div>
+
+      <div class="tab" id="left-creatures" hidden>
+        <section class="panel">
+          <h2>Poses</h2>
+          <canvas class="sheetcv" data-id="poses" width="800" height="210" aria-label="The creature in each state"></canvas>
+          <p class="desc">Standing, moving, warning before an attack, attacking, and stunned.</p>
+        </section>
+        <section class="panel">
+          <h2>Arena</h2>
+          <div class="group">
+            <button data-id="spawn">Add one</button>
+            <button data-id="clear">Clear</button>
+            <button data-id="hold" aria-pressed="false">Hold still</button>
+            <button data-id="nodmg" aria-pressed="true">No damage</button>
+          </div>
+          <p class="desc">Every creature in the arena shows the current design. Hold still freezes them so you can look closely.</p>
+          <h2 class="more">Controls</h2>
+          <dl class="keys">
+            <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
+            <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack</dd>
+            <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block. Press just before a hit to parry</dd>
+            <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+          </dl>
+        </section>
+      </div>
+
+      <div class="tab" id="left-objects" hidden>
+        <section class="panel">
+          <h2>View</h2>
+          <div data-id="pview"></div>
+          <div class="group" style="margin-top:8px">
+            <button data-id="fit">Fit to view</button>
+            <button data-id="night" aria-pressed="false">Night lighting</button>
+            <button data-id="foot" aria-pressed="false">Show footprint</button>
+          </div>
+          <h2 class="more">Copies side by side</h2>
+          <div class="group" data-id="copies"></div>
+          <h2 class="more">Ground</h2>
+          <div class="group" data-id="grounds"></div>
+          <p class="desc" data-id="info"></p>
+          <h2 class="more">Controls</h2>
+          <dl class="keys">
+            <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
+            <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+            <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack</dd>
+            <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block</dd>
+          </dl>
+        </section>
+      </div>
+
+      <div class="tab" id="left-models" hidden>
+        <section class="panel">
+          <h2>The sheet</h2>
+          <div class="group" data-id="anims"></div>
+          <canvas data-id="sheet" width="1000" height="500" aria-label="The sprite sheet"></canvas>
+          <p class="desc">A row per direction, a column per frame, at 1x (the game's 3 px a unit).</p>
+        </section>
+        <section class="panel">
+          <h2>Controls</h2>
+          <dl class="keys">
+            <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk. Hold <kbd>Shift</kbd> to run (the run clip, when the model has one)</dd>
+            <dt><kbd>Space</kbd></dt><dd>Dash</dd>
+            <dt><kbd>H</kbd></dt><dd>Spawn a beast</dd>
+          </dl>
+          <h2 class="more">Clips</h2>
+          <p class="desc">A model with more clips than idle and walk plays them on these keys (Mixamo, 2026-10-09). A clip plays once and the idle comes back; sitting stays until you stand.</p>
+          <dl class="keys">
+            <dt><kbd>J</kbd></dt><dd>Sword: the outward and the inward slash in turn</dd>
+            <dt><kbd>K</kbd></dt><dd>Bow: draw, then shoot</dd>
+            <dt><kbd>E</kbd></dt><dd>Open a lid (interact)</dd>
+            <dt><kbd>G</kbd></dt><dd>Pick up</dd>
+            <dt><kbd>C</kbd> <kbd>M</kbd></dt><dd>Chop, mine</dd>
+            <dt><kbd>V</kbd></dt><dd>Drink</dd>
+            <dt><kbd>X</kbd></dt><dd>Sit down; again to stand up</dd>
+            <dt><kbd>T</kbd> <kbd>B</kbd></dt><dd>Take a hit, die (the idle returns after)</dd>
+            <dt><kbd>L</kbd></dt><dd>Look around</dd>
+          </dl>
+        </section>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="tab" id="right-chars" hidden>
+        <section class="panel">
+          <h2>Heroes</h2>
+          <div class="group" data-id="heroes"></div>
+          <p class="desc" data-id="heronote">Three heroes drawn from scratch on the ink figure (2026-10-07). Pick one, change anything below, then "Use as the hero in the game". The Blender models are under the Models tab.</p>
+          <h2 class="more">Concepts</h2>
+          <div class="group" data-id="concepts"></div>
+          <p class="desc" data-id="conceptnote">Whole looks for the people of this world. Pick one, then change it below.</p>
+          <h2 class="more">Your templates</h2>
+          <div class="group" data-id="templates"></div>
+          <div class="group" style="margin-top:8px">
+            <input data-id="tname" type="text" placeholder="Name" aria-label="Template name" style="width:12em">
+            <button data-id="tsave">Save as template</button>
+            <button data-id="tdelete">Delete template</button>
+          </div>
+          <div class="group" style="margin-top:8px">
+            <button data-id="usegame">Use as the hero in the game</button>
+            <button data-id="random">Randomise</button>
+            <button data-id="resetall">Reset to default</button>
+          </div>
+          <p class="desc" data-id="usemsg">Templates are kept in this browser. "Use as the hero" hands this look to the game.</p>
+        </section>
+        <section class="panel">
+          <h2>Style</h2>
+          <div class="row" style="grid-template-columns:5.5em 1fr"><span>Hair</span><div class="group" data-id="hairs"></div></div>
+          <div class="row" style="grid-template-columns:5.5em 1fr"><span>Beard</span><div class="group" data-id="beards"></div></div>
+          <div class="row" style="grid-template-columns:5.5em 1fr"><span>Headwear</span><div class="group" data-id="hats"></div></div>
+          <div class="row" style="grid-template-columns:5.5em 1fr"><span>Clothes</span><div class="group" data-id="clothes"></div></div>
+          <div class="group" data-id="toggles" style="margin-top:8px"></div>
+        </section>
+        <section class="panel">
+          <h2>Body</h2>
+          <div data-id="pbody"></div>
+          <h2 class="more">Builds</h2>
+          <div class="group" data-id="shapes"></div>
+        </section>
+        <section class="panel">
+          <h2>Attack style</h2>
+          <div class="group" data-id="attacks"></div>
+          <p class="desc" data-id="atkdesc"></p>
+          <h2 class="more">Animation</h2>
+          <div data-id="panim"></div>
+          <p class="desc">Side-to-side sway and Stance width only show when walking north or south. Sway at 1 is the old waddle.</p>
+        </section>
+        <section class="panel">
+          <h2>Colours</h2>
+          <div class="swatches" data-id="swatches"></div>
+          <h2 class="more">Look and tone</h2>
+          <div data-id="ptone"></div>
+          <p class="desc">Matte dulls the highlights, softens the colours and browns the outline toward the world's, like the trees.</p>
+        </section>
+        <section class="panel">
+          <h2>Settings as text</h2>
+          <textarea data-id="json" spellcheck="false" aria-label="Character settings as text"></textarea>
+          <div class="group" style="margin-top:8px">
+            <button data-id="copy">Copy</button>
+            <button data-id="applyjson">Apply text</button>
+          </div>
+          <p class="desc" data-id="jsonmsg">Copy this to keep a look. Paste one in and press Apply text to load it.</p>
+        </section>
+      </div>
+
+      <div class="tab" id="right-creatures" hidden>
+        <section class="panel">
+          <h2>Creature</h2>
+          <div class="group">
+            <input data-id="cname" type="text" placeholder="Name" aria-label="The creature's name" style="width:150px">
+            <button data-id="savec">Save</button>
+            <button data-id="newc">New creature</button>
+            <button data-id="delc">Delete</button>
+          </div>
+          <h2 class="more">Saved creatures</h2>
+          <div class="group" data-id="library"></div>
+          <h2 class="more">In the game</h2>
+          <div class="group">
+            <select data-id="slot" aria-label="Which beast of the game this design replaces"></select>
+            <button data-id="useGame">Update in game</button>
+            <button data-id="takeBack">Take back</button>
+          </div>
+          <p class="desc" data-id="gameStatus"></p>
+          <p class="desc">Save keeps the design under its name in this browser; New creature starts a variation from what is on screen; Update in game makes the chosen beast of the game look and fight like this design (the game keeps its own counts, damage and drops); Take back restores the game's own.</p>
+        </section>
+        <section class="panel">
+          <h2>Templates</h2>
+          <div class="group" data-id="models"></div>
+          <h2 class="more">Body plan</h2>
+          <div class="group" data-id="c-plan"></div>
+          <div class="group" style="margin-top:12px">
+            <button data-id="random">Randomise</button>
+          </div>
+          <p class="desc">A template is a complete starting creature: the six animals of the first biome and the two trolls. The body plan is Animal, Snake, Boulder troll or Forest troll; the panels below follow it.</p>
+        </section>
+        <section class="panel">
+          <h2>Shape</h2>
+          <div data-id="pshape"></div>
+          <p class="desc">The trolls’ arm length is in the Troll panel.</p>
+        </section>
+        <section class="panel" data-id="sec-animal">
+          <h2>Animal</h2>
+          <div data-id="panimal"></div>
+          <h2 class="more">Ears</h2>
+          <div class="group chips" data-id="c-ears"></div>
+          <h2 class="more">Antlers</h2>
+          <div class="group chips" data-id="c-antlers"></div>
+          <h2 class="more">Details</h2>
+          <div class="group chips" data-id="flags"></div>
+          <p class="desc">These apply to the Animal body plan (and neck and snout to the Snake). Head carried: 0 is low like a boar, 1 is high like a deer.</p>
+        </section>
+        <section class="panel" data-id="sec-troll">
+          <h2>Troll</h2>
+          <div data-id="ptroll"></div>
+          <h2 class="more">Details</h2>
+          <div class="group chips" data-id="tflags"></div>
+          <p class="desc">The Boulder troll after John Bauer and the Forest troll after Theodor Kittelsen. Hair, nose, ears, arms, moss and age work on both; hunch leans the forest troll. The moss colour is under Colours.</p>
+        </section>
+        <section class="panel">
+          <h2>Eyes</h2>
+          <div class="group chips" data-id="c-eyeStyle"></div>
+          <div data-id="peyes" style="margin-top:8px"></div>
+          <h2 class="more">Tail</h2>
+          <div class="group chips" data-id="c-tail"></div>
+          <h2 class="more">Pattern</h2>
+          <div class="group chips" data-id="c-pattern"></div>
+          <p class="desc">The tail and the pattern apply to the animals.</p>
+        </section>
+        <section class="panel">
+          <h2>Attack warning</h2>
+          <div class="group chips" data-id="c-tell"></div>
+          <div class="group" style="margin-top:8px"><button data-id="mark" aria-pressed="true">Warning mark</button></div>
+          <p class="desc" data-id="telldesc"></p>
+          <h2 class="more">Behaviour</h2>
+          <div class="group chips" data-id="c-behave"></div>
+          <p class="desc" data-id="behavedesc"></p>
+          <div data-id="pbehave" style="margin-top:8px"></div>
+          <p class="desc">Speed, warning time and lunge speed apply to the Lunger. Health applies to newly added creatures. Notice distance is how close you must come before it reacts; hitting it also rouses it.</p>
+        </section>
+        <section class="panel">
+          <h2>Colours</h2>
+          <div class="swatches" data-id="swatches"></div>
+          <h2 class="more">Tone (all colours at once)</h2>
+          <div data-id="ptone"></div>
+        </section>
+        <section class="panel">
+          <h2>Settings as text</h2>
+          <textarea data-id="json" spellcheck="false" aria-label="Creature settings as text"></textarea>
+          <div class="group" style="margin-top:8px">
+            <button data-id="copy">Copy</button>
+            <button data-id="applyjson">Apply text</button>
+          </div>
+          <p class="desc" data-id="jsonmsg">Copy this to keep a creature. Paste one in and press Apply text to load it.</p>
+        </section>
+      </div>
+
+      <div class="tab" id="right-objects" hidden>
+        <section class="panel">
+          <h2>Category</h2>
+          <div class="group" data-id="cats"></div>
+          <h2 class="more">Object</h2>
+          <div class="group objs" data-id="objs"></div>
+          <p class="desc" data-id="refnote"></p>
+        </section>
+        <section class="panel">
+          <h2>Shape variations</h2>
+          <div class="group" data-id="shapes"></div>
+          <h2 class="more">Colour variations</h2>
+          <div class="group" data-id="palettes"></div>
+          <h2 class="more">Drawing style</h2>
+          <div class="group" data-id="looks"></div>
+          <div class="group" style="margin-top:12px">
+            <button data-id="nextvar">Next variation</button>
+            <button data-id="resetall">Reset this object</button>
+          </div>
+          <p class="desc">Shape and colour variations are independent, so you can combine one of each. Next variation redraws the same object with different random details.</p>
+        </section>
+        <section class="panel">
+          <h2>Size</h2>
+          <div data-id="psize"></div>
+          <div class="group" style="margin-top:8px"><button data-id="flip" aria-pressed="false">Mirror</button></div>
+        </section>
+        <section class="panel">
+          <h2>Shape</h2>
+          <div data-id="pshape"></div>
+          <p class="desc">Wonkiness, Thinness and Fullness mostly affect trees and plants. Roughness affects every outline.</p>
+        </section>
+        <section class="panel">
+          <h2>Surface</h2>
+          <div data-id="psurf"></div>
+        </section>
+        <section class="panel">
+          <h2>Colour</h2>
+          <div data-id="pcol"></div>
+        </section>
+        <section class="panel">
+          <h2>Settings as text</h2>
+          <textarea data-id="json" spellcheck="false" aria-label="Object settings as text"></textarea>
+          <div class="group" style="margin-top:8px">
+            <button data-id="copy">Copy</button>
+            <button data-id="applyjson">Apply text</button>
+          </div>
+          <p class="desc" data-id="jsonmsg">Copy this to keep a look. Paste one in and press Apply text to load it.</p>
+        </section>
+      </div>
+
+      <div class="tab" id="right-models" hidden>
+        <section class="panel">
+          <h2>Model</h2>
+          <div class="group" data-id="models"></div>
+          <p class="desc" data-id="modelnote"></p>
+          <label class="row"><span>Height</span><input data-id="hscale" type="range" min="0.6" max="1.2" step="0.01" value="1"><output data-id="hscaleo">1</output></label>
+          <p class="desc">The figure's size on the ground, here and in the game (game.blenderScale): 1 is the render's own size, which since 2026-10-09 is the drawn hero's height for the Mixamo sheets (the older sheets render larger: 0.85 fits them).</p>
+          <div class="group"><button data-id="useGame">Use in the game</button><button data-id="takeBack">Take back</button></div>
+          <p class="desc" data-id="usenote"></p>
+          <h2 class="more">Gear</h2>
+          <div class="group" data-id="gear"></div>
+          <p class="desc">Each piece is its own layer, rendered over the body as a holdout, so they stack in any order.</p>
+        </section>
+        <section class="panel">
+          <h2>Scene</h2>
+          <div class="group">
+            <button data-id="scIsland" aria-pressed="true">Starter island</button>
+            <button data-id="scArena" aria-pressed="false">Arena</button>
+            <button data-id="scNight" aria-pressed="false">Night forest</button>
+            <button data-id="sbeast">Add beast</button>
+            <button data-id="sclear">Clear</button>
+            <button data-id="nodmg" aria-pressed="true">No damage</button>
+          </div>
+          <label class="row" style="margin-top:10px"><span>Zoom</span><input data-id="zoom" type="range" min="1" max="3" step="0.25" value="1"><output data-id="zoomo">1</output></label>
+          <p class="desc">Zoom enlarges the drawing only: at 1 the figure is the game's size. The starter island is the game's own world (one island of 60 tiles with the wreck) drawn as the game draws it; the night forest is the kit's props in the Night Forest key with one campfire. New sheets: <code>npm run art:mixamo:sheets</code>, then <code>npm run build</code>.</p>
+        </section>
+        <section class="panel">
+          <h2>Numbers</h2>
+          <p class="desc" data-id="numbers"></p>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+__ART__
+</script>
+<script>
+__LIB__
+</script>
+<script>
+__WORLD__
+</script>
+<script>
+__COMBAT__
+(function () {
+  /* ---------- shared: the canvas, the engine, the input, the tabs (the Art Editor, 2026-10-09: the Character, Creature, Object and Blender editors folded into one page) ---------- */
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  function fitCanvas() {
+    var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4;
+    if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); }
+    Combat.api.pixelScale = ps;
+  }
+  fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
+  var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75;
+  lib.applyStored(localStorage); kit.applyStored(localStorage); kit.setup(kit.STYLE);
+  Combat.init(lib);
+  var S = Combat.S; S.sound = false;
+  Combat.clear();
+  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1, Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1 }, held = {};
+  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range') || t.tagName === 'SELECT'); }
+  window.addEventListener('keydown', function (e) { if (!codes[e.code] || typing(e)) return; e.preventDefault(); ac(); if (e.repeat) return; held[e.code] = true; Combat.key(e.code, true); });
+  window.addEventListener('keyup', function (e) { if (!codes[e.code] || typing(e)) return; e.preventDefault(); held[e.code] = false; Combat.key(e.code, false); });
+  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
+  function pos(e) { var r = cv.getBoundingClientRect(); Combat.mouse((e.clientX - r.left) / r.width * 400, (e.clientY - r.top) / r.height * 250); }
+  cv.addEventListener('mousemove', pos);
+  cv.addEventListener('mousedown', function (e) { ac(); pos(e); Combat.button(e.button, true); e.preventDefault(); });
+  window.addEventListener('mouseup', function (e) { Combat.button(e.button, false); });
+  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function snapTo(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
+  function hsl(h, s, l) {
+    h = ((h % 360) + 360) % 360; var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r, g, b;
+    if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; } else if (h < 180) { r = 0; g = c; b = x; }
+    else if (h < 240) { r = 0; g = x; b = c; } else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
+    function h2(v) { v = Math.round((v + m) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
+    return '#' + h2(r) + h2(g) + h2(b);
+  }
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  // every tab's elements are found inside its own containers, by data-id, so the tabs may share names
+  function scope(name) {
+    var roots = [document.getElementById('left-' + name), document.getElementById('right-' + name)];
+    function $(id) { for (var i = 0; i < roots.length; i++) { var el = roots[i].querySelector('[data-id="' + id + '"]'); if (el) return el; } return null; }
+    function $$(id, sel) { var el = $(id); return el ? el.querySelectorAll(sel) : []; }
+    return { $: $, $$: $$, roots: roots };
+  }
+  // the usual slider rows, buttons and the settings text, shared by the tabs
+  function sliders(host, list, target, onChange, inputs, outputs) {
+    list.forEach(function (p) {
+      var row = document.createElement('label'); row.className = 'row';
+      var name = document.createElement('span'); name.textContent = p.label;
+      var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step;
+      var out = document.createElement('output');
+      inp.addEventListener('input', function () { target()[p.k] = parseFloat(inp.value); onChange(); });
+      inp.addEventListener('change', function () { inp.blur(); });
+      row.appendChild(name); row.appendChild(inp); row.appendChild(out); host.appendChild(row);
+      inputs[p.k] = inp; outputs[p.k] = out;
+    });
+  }
+  function fmt(p, v) { return p.step < 1 ? v.toFixed(p.step < 0.1 || (p.step * 100) % 10 ? 2 : 1) : String(v); }
+  function copyText(json, jsonmsg, text) {
+    json.value = text;
+    var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json.value).then(done, fail); else fail();
+  }
+  function parseText(json, jsonmsg) {
+    var o = null; try { o = JSON.parse(json.value); } catch (err) {}
+    if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing was changed.'; return null; }
+    json.blur(); jsonmsg.textContent = 'Applied.'; return o;
+  }
+
+  /* sound (the Characters tab's arena) */
+  var AC = null;
+  function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
+  function tone(f, d, type, v, to) {
+    var a = ac(); if (!a) return; var t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + d);
+    g.gain.setValueAtTime(v || 0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+  }
+  function noise(d, v, fc, q) {
+    var a = ac(); if (!a) return; var n = Math.floor(a.sampleRate * d), b = a.createBuffer(1, n, a.sampleRate), ch = b.getChannelData(0);
+    for (var i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    var s = a.createBufferSource(); s.buffer = b; var f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fc; f.Q.value = q || 1;
+    var g = a.createGain(); g.gain.value = v; s.connect(f); f.connect(g); g.connect(a.destination); s.start();
+  }
+  var SFX = {
+    swing: function (v) { noise(0.12, 0.2, 1500 + (v || 0) * 400, 0.8); },
+    hit: function (v) { var m = 1 + (v || 0) * 0.16; tone(200 * m, 0.1, 'square', 0.09, 70); tone(90, 0.12, 'sine', 0.16, 45); noise(0.05, 0.28, 2600, 1); },
+    heavyhit: function () { tone(130, 0.2, 'sawtooth', 0.12, 38); tone(70, 0.3, 'sine', 0.26, 32); noise(0.1, 0.32, 1400, 0.8); tone(900, 0.08, 'triangle', 0.05, 400); },
+    parry: function () { tone(1320, 0.35, 'triangle', 0.12); tone(1980, 0.28, 'sine', 0.08); noise(0.04, 0.2, 5000, 2); },
+    block: function () { tone(220, 0.1, 'square', 0.08, 120); noise(0.06, 0.2, 900, 1); },
+    dash: function () { noise(0.13, 0.16, 1400, 0.9); tone(760, 0.1, 'triangle', 0.05, 320); },
+    shoot: function () { tone(520, 0.1, 'square', 0.06, 180); },
+    hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
+    tele: function () { tone(880, 0.07, 'square', 0.04); },
+    die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
+    crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
+    stagger: function () { tone(260, 0.3, 'triangle', 0.1, 520); },
+    slam: function () { tone(70, 0.35, 'sine', 0.25, 35); noise(0.25, 0.3, 300, 0.6); },
+    raise: function () { tone(420, 0.04, 'triangle', 0.03); },
+    charge: function (v) { tone(420 + (v || 0) * 220, 0.12, 'triangle', 0.05); if (v === 3) tone(1400, 0.2, 'sine', 0.06); }
+  };
+  Combat.api.sfx = function (n, v) { if (S.sound && SFX[n]) SFX[n](v); };
+
+  var TABS = {};
+
+  /* ================= Characters: the drawn ink figure (the old Character Editor) ================= */
+  TABS.chars = (function () {
+    var sc = scope('chars'), $ = sc.$;
+    var BODY = [
+      { k: 'scale', label: 'Overall size', min: 0.5, max: 2, step: 0.05 }, { k: 'headW', label: 'Head width', min: 0.4, max: 1.4, step: 0.02 }, { k: 'headH', label: 'Head height', min: 0.4, max: 1.4, step: 0.02 },
+      { k: 'bodyW', label: 'Body width', min: 0.7, max: 1.5, step: 0.02 }, { k: 'bodyH', label: 'Body height', min: 0.7, max: 1.5, step: 0.02 }, { k: 'legL', label: 'Leg length', min: 0.6, max: 3, step: 0.05 },
+      { k: 'legW', label: 'Leg width', min: 0.6, max: 1.6, step: 0.05 }, { k: 'armL', label: 'Arm length', min: 0.7, max: 2, step: 0.05 }, { k: 'armW', label: 'Arm width', min: 0.6, max: 1.6, step: 0.05 }, { k: 'eyeSize', label: 'Eye size', min: 0.5, max: 1.6, step: 0.05 }];
+    var ANIM = [
+      { k: 'walkRate', label: 'Walk speed', min: 0.5, max: 2, step: 0.05 }, { k: 'bob', label: 'Walk bob', min: 0, max: 2.5, step: 0.05 }, { k: 'stride', label: 'Stride', min: 0, max: 2, step: 0.05 },
+      { k: 'armSwing', label: 'Arm swing', min: 0, max: 2.5, step: 0.05 }, { k: 'sway', label: 'Side-to-side sway', min: 0, max: 1.5, step: 0.05 }, { k: 'stance', label: 'Stance width', min: 0.4, max: 1.3, step: 0.05 },
+      { k: 'lean', label: 'Attack lean', min: 0, max: 2.5, step: 0.05 }, { k: 'atkPower', label: 'Attack power', min: 0, max: 2, step: 0.1 }, { k: 'bladeLen', label: 'Blade length', min: 0.5, max: 1.8, step: 0.05 },
+      { k: 'slashSize', label: 'Slash size', min: 0.6, max: 2, step: 0.05 }, { k: 'slashWidth', label: 'Slash thickness', min: 0.15, max: 0.9, step: 0.01 }];
+    var TONE = [{ k: 'matte', label: 'Matte', min: 0, max: 1, step: 0.05 }, { k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 }, { k: 'sat', label: 'Saturation', min: 0, max: 2, step: 0.05 }, { k: 'lum', label: 'Brightness', min: 0.5, max: 1.5, step: 0.05 }];
+    var TOGGLES = [{ k: 'blush', label: 'Blush' }];
+    var COLS = [['skin', 'Skin'], ['hair', 'Hair and beard'], ['coat', 'Tunic or coat'], ['vest', 'Vest'], ['pants', 'Trousers'], ['boot', 'Boots and cap'], ['trim', 'Belt and brooches'],
+      ['cloak', 'Cloak and hood'], ['dress', 'Apron dress'], ['fur', 'Fur'], ['iron', 'Helmet'], ['eye', 'Eyes'], ['line', 'Outline'], ['blade', 'Blade'], ['slash', 'Slash']];
+    var HAIRS = ['Bowl', 'Cropped', 'Long', 'Braids', 'Knot', 'Bald', 'Shaved sides', 'Wavy', 'Mane'], BEARDS = ['None', 'Full', 'Short', 'Long, braided', 'Moustache'];
+    var HATS = ['None', 'Hood', 'Leather cap', 'Nasal helmet', 'Fur hat', 'Headband'], CLOTHES = ['Coat and vest', 'Tunic', 'Tunic and cloak', 'Apron dress', 'Fur vest'];
+    var ATTACKS = [['Arm only', 'The old version: the body stands still and only the arm swings.'], ['Step-in', 'A small step back, then a step into the swing with a little stretch. Light and quick.'],
+      ['Lunge', 'A deeper pull back and a long lunge forward, a held pose at full reach, then a slide back. The most forward drive.'], ['Hop chop', 'A short hop in the wind-up and a hard landing that squashes the body. Feels heavy.']];
+    var NUM = BODY.concat(ANIM, TONE), SHAPE_KEYS = BODY.concat(ANIM).map(function (p) { return p.k; });
+    var SHAPES = [
+      { name: 'Default', set: {} }, { name: 'Slight', set: { bodyW: 0.86, bodyH: 1.02, armW: 0.82, legW: 0.85 } }, { name: 'Stocky', set: { bodyW: 1.15, bodyH: 0.96, legL: 0.9, legW: 1.2, armW: 1.15 } },
+      { name: 'Lean', set: { headW: 0.95, headH: 0.95, bodyW: 0.9, bodyH: 1.05, legL: 1.1, armL: 1.08, stride: 1.2 } }, { name: 'Tall', set: { headW: 0.92, headH: 0.92, bodyH: 1.1, legL: 1.2, armL: 1.12, stride: 1.3 } },
+      { name: 'Brute', set: { scale: 1.08, headW: 1.0, headH: 1.0, bodyW: 1.35, bodyH: 1.08, legL: 0.9, legW: 1.35, armL: 1.08, armW: 1.5, walkRate: 0.8, bladeLen: 1.3, slashSize: 1.3 } },
+      { name: 'Child', set: { scale: 0.55, headW: 1.25, headH: 1.2, legL: 0.8, bodyH: 0.85, eyeSize: 1.2, walkRate: 1.5 } }];
+    var curId = 'hero', spec = null, inputs = {}, outputs = {}, swatch = {}, toggleBtn = {};
+    function defOf() { return clone(lib.heroDef); }
+    var json = $('json'), jsonmsg = $('jsonmsg');
+    function choice(hostId, v) { var b = sc.$$(hostId, 'button'); for (var n = 0; n < b.length; n++) b[n].setAttribute('aria-pressed', n === v ? 'true' : 'false'); }
+    function apply() {
+      for (var i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snapTo(p, isFinite(v) ? v : lib.heroDef[p.k]); }
+      var dflt = lib.heroDef;
+      if (!isFinite(Number(spec.atkStyle))) spec.atkStyle = dflt.atkStyle;
+      spec.hair = Math.max(0, Math.min(HAIRS.length - 1, Math.round(Number(spec.hair)) || 0)); spec.beard = Math.max(0, Math.min(BEARDS.length - 1, Math.round(Number(spec.beard)) || 0));
+      spec.hat = Math.max(0, Math.min(HATS.length - 1, Math.round(Number(spec.hat)) || 0)); spec.clothes = Math.max(0, Math.min(CLOTHES.length - 1, Math.round(Number(spec.clothes)) || 0));
+      spec.atkStyle = Math.max(0, Math.min(ATTACKS.length - 1, Math.round(Number(spec.atkStyle)) || 0));
+      spec = lib.setHero(spec);
+      for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
+      for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
+      for (i = 0; i < TOGGLES.length; i++) toggleBtn[TOGGLES[i].k].setAttribute('aria-pressed', spec[TOGGLES[i].k] ? 'true' : 'false');
+      spec.figure = 1;
+      choice('attacks', spec.atkStyle); choice('hairs', spec.hair); choice('beards', spec.beard); choice('hats', spec.hat); choice('clothes', spec.clothes);
+      $('atkdesc').textContent = ATTACKS[spec.atkStyle][1];
+      if (document.activeElement !== json) json.value = JSON.stringify(spec);
+      drawSheet();
+      try { localStorage.setItem('herotest2.' + curId, JSON.stringify(spec)); } catch (e) {}
+    }
+    function getSpec() { return spec; }
+    sliders($('pbody'), BODY, getSpec, apply, inputs, outputs); sliders($('panim'), ANIM, getSpec, apply, inputs, outputs); sliders($('ptone'), TONE, getSpec, apply, inputs, outputs);
+    TOGGLES.forEach(function (t) { var b = document.createElement('button'); b.textContent = t.label; b.addEventListener('click', function () { spec[t.k] = spec[t.k] ? 0 : 1; apply(); b.blur(); }); $('toggles').appendChild(b); toggleBtn[t.k] = b; });
+    function choices(hostId, names, key) { var host = $(hostId); names.forEach(function (nm, n) { var b = document.createElement('button'); b.textContent = nm; b.addEventListener('click', function () { spec[key] = n; apply(); b.blur(); }); host.appendChild(b); }); }
+    choices('attacks', ATTACKS.map(function (q) { return q[0]; }), 'atkStyle'); choices('hairs', HAIRS, 'hair'); choices('beards', BEARDS, 'beard'); choices('hats', HATS, 'hat'); choices('clothes', CLOTHES, 'clothes');
+    COLS.forEach(function (cdef) {
+      var lab = document.createElement('label'); lab.className = 'sw'; var inp = document.createElement('input'); inp.type = 'color'; var name = document.createElement('span'); name.textContent = cdef[1];
+      inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); }); lab.appendChild(inp); lab.appendChild(name); $('swatches').appendChild(lab); swatch[cdef[0]] = inp;
+    });
+    SHAPES.forEach(function (v) { var b = document.createElement('button'); b.textContent = v.name; b.addEventListener('click', function () { var d = defOf(), k; SHAPE_KEYS.forEach(function (key) { spec[key] = d[key]; }); for (k in v.set) spec[k] = v.set[k]; apply(); b.blur(); }); $('shapes').appendChild(b); });
+    /* the heroes and concepts (src/art.js) and the templates kept in this browser */
+    var TKEY = 'herotest.templates', templates = {};
+    try { templates = JSON.parse(localStorage.getItem(TKEY)) || {}; } catch (e) { templates = {}; }
+    function tsave() { try { localStorage.setItem(TKEY, JSON.stringify(templates)); } catch (e) {} }
+    lib.heroes.forEach(function (hn) { var b = document.createElement('button'); b.textContent = hn.name; b.title = hn.note; b.addEventListener('click', function () { spec = lib.heroSpec(hn.name); $('heronote').textContent = hn.name + ': ' + hn.note; apply(); b.blur(); }); $('heroes').appendChild(b); });
+    lib.concepts.forEach(function (cn) { if (cn.name === 'Old figure') return; var b = document.createElement('button'); b.textContent = cn.name; b.title = cn.note; b.addEventListener('click', function () { spec = lib.conceptSpec(cn.name); $('conceptnote').textContent = cn.name + ': ' + cn.note; apply(); b.blur(); }); $('concepts').appendChild(b); });
+    var tHost = $('templates'), tname = $('tname');
+    function tui() {
+      tHost.innerHTML = ''; var names = Object.keys(templates).sort();
+      if (!names.length) { var p = document.createElement('span'); p.className = 'desc'; p.style.margin = '0'; p.textContent = 'None saved yet.'; tHost.appendChild(p); }
+      names.forEach(function (nm) { var b = document.createElement('button'); b.textContent = nm; b.addEventListener('click', function () { spec = clone(templates[nm]); tname.value = nm; apply(); b.blur(); }); tHost.appendChild(b); });
+    }
+    tui();
+    $('tsave').addEventListener('click', function (e) { var nm = tname.value.trim(); if (!nm) { tname.focus(); return; } templates[nm] = clone(spec); tsave(); tui(); $('usemsg').textContent = 'Saved "' + nm + '".'; e.currentTarget.blur(); });
+    $('tdelete').addEventListener('click', function (e) { var nm = tname.value.trim(); if (nm && templates[nm]) { delete templates[nm]; tsave(); tui(); $('usemsg').textContent = 'Deleted "' + nm + '".'; } e.currentTarget.blur(); });
+    $('usegame').addEventListener('click', function (e) { try { localStorage.setItem('game.hero2', JSON.stringify(spec)); $('usemsg').textContent = 'The game now draws its hero like this.'; } catch (err) {} e.currentTarget.blur(); });
+    $('random').addEventListener('click', function (e) {
+      var d = defOf();
+      BODY.forEach(function (p) { if (p.k !== 'scale') spec[p.k] = rnd(p.min + (p.max - p.min) * 0.15, p.max - (p.max - p.min) * 0.15); });
+      spec.scale = [0.75, 1, 1, 1, 1.25, 1.5][Math.floor(Math.random() * 6)]; spec.hue = 0; spec.sat = 1; spec.lum = 1; spec.matte = 1;
+      var coat = [30, 40, 200, 210, 90, 350, 20][Math.floor(Math.random() * 7)];
+      spec.col = d.col; spec.col.coat = hsl(coat, rnd(0.18, 0.45), rnd(0.3, 0.5)); spec.col.pants = hsl(rnd(20, 45), rnd(0.12, 0.3), rnd(0.18, 0.3)); spec.col.hair = hsl(rnd(10, 45), rnd(0.3, 0.7), rnd(0.15, 0.65));
+      spec.col.cloak = hsl([350, 210, 30, 0][Math.floor(Math.random() * 4)], rnd(0.2, 0.45), rnd(0.22, 0.35)); spec.col.dress = hsl([350, 210, 40][Math.floor(Math.random() * 3)], rnd(0.2, 0.45), rnd(0.28, 0.45));
+      spec.col.skin = ['#ffd8b0', '#f0c49c', '#e8b88a', '#fbe0c8'][Math.floor(Math.random() * 4)];
+      spec.hair = Math.floor(Math.random() * HAIRS.length); spec.beard = Math.random() < 0.5 ? 0 : Math.floor(Math.random() * BEARDS.length);
+      spec.hat = Math.random() < 0.5 ? 0 : Math.floor(Math.random() * HATS.length); spec.clothes = 1 + Math.floor(Math.random() * (CLOTHES.length - 1));
+      apply(); e.currentTarget.blur();
+    });
+    $('resetall').addEventListener('click', function (e) { spec = defOf(); apply(); e.currentTarget.blur(); });
+    $('copy').addEventListener('click', function (e) { copyText(json, jsonmsg, JSON.stringify(spec)); e.currentTarget.blur(); });
+    $('applyjson').addEventListener('click', function (e) { var o = parseText(json, jsonmsg); if (o) { spec = o; apply(); } e.currentTarget.blur(); });
+    /* the frame sheet */
+    var sheet = $('sheet'), sctx = sheet.getContext('2d');
+    function drawSheet() {
+      var dirs = ['down', 'left', 'right', 'up'], r, f;
+      sctx.setTransform(1, 0, 0, 1, 0, 0);
+      sctx.fillStyle = '#cfc19c'; sctx.fillRect(0, 0, 500, 400); sctx.globalAlpha = 0.18; sctx.fillStyle = kit.grain(sctx); sctx.fillRect(0, 0, 500, 400); sctx.globalAlpha = 1;
+      sctx.fillStyle = 'rgba(60,40,20,0.12)'; sctx.fillRect(100, 0, 2, 400);
+      sctx.setTransform(2, 0, 0, 2, 0, 0); sctx.lineJoin = 'round'; sctx.lineCap = 'round';
+      for (r = 0; r < 4; r++) for (f = 0; f < 5; f++) {
+        var an = { phase: f === 0 ? 0 : (f - 1) * Math.PI / 2 + 0.5, amt: f === 0 ? 0 : 1, t: 0.7, lx: 0, ly: 0, blink: 0, sq: 0 };
+        sctx.save(); sctx.beginPath(); sctx.rect(f * 50, r * 50, 50, 50); sctx.clip(); sctx.translate(f * 50 + 25, r * 50 + 46); sctx.scale(0.72, 0.72); lib.playerD(sctx, 0, 0, dirs[r], an, null); sctx.restore();
+      }
+    }
+    function pick(id) { curId = id; spec = null; try { spec = JSON.parse(localStorage.getItem('herotest2.' + id)); } catch (e) {} if (!spec || typeof spec !== 'object') spec = defOf(); apply(); }
+    /* the arena */
+    var noDmg = true;
+    function act(id, fn) { var b = $(id); b.addEventListener('click', function () { fn(b); b.blur(); }); }
+    act('sbeast', function () { Combat.spawn('beast'); }); act('sshooter', function () { Combat.spawn('shooter'); }); act('sbrute', function () { Combat.spawn('brute'); });
+    act('sclear', function () { Combat.clear(); });
+    act('nodmg', function (b) { noDmg = !noDmg; b.setAttribute('aria-pressed', noDmg ? 'true' : 'false'); });
+    act('sound', function (b) { S.sound = !S.sound; b.setAttribute('aria-pressed', S.sound ? 'true' : 'false'); });
+    pick('hero');
+    return {
+      enter: function () { cv.classList.remove('dark'); Combat.api.roster = undefined; Combat.reset(); Combat.api.scene = null; Combat.api.heroSprite = null; Combat.api.noHud = false; S.sound = $('sound').getAttribute('aria-pressed') === 'true'; apply(); },
+      leave: function () { S.sound = false; },
+      tick: function () { if (noDmg) { var P = Combat.dbg().P; if (!P.dead) P.hp = P.maxHp; } }
+    };
+  })();
+
+  /* ================= Creatures: the drawn animals and trolls (the old Creature Editor) ================= */
+  TABS.creatures = (function () {
+    var sc = scope('creatures'), $ = sc.$;
+    var SHAPE = [{ k: 'size', label: 'Overall size', min: 0.5, max: 3, step: 0.05 }, { k: 'bodyW', label: 'Body width', min: 0.6, max: 1.6, step: 0.02 }, { k: 'bodyH', label: 'Body height', min: 0.6, max: 1.6, step: 0.02 },
+      { k: 'head', label: 'Head size', min: 0.6, max: 1.6, step: 0.02 }, { k: 'legLen', label: 'Leg length', min: 0.5, max: 2, step: 0.05 }, { k: 'legW', label: 'Leg thickness', min: 0.6, max: 1.8, step: 0.05 }];
+    var EYES = [{ k: 'eyeSize', label: 'Eye size', min: 0.5, max: 1.8, step: 0.05 }];
+    var BEHAVE = [{ k: 'speed', label: 'Move speed', min: 0.3, max: 2.5, step: 0.05 }, { k: 'windup', label: 'Warning time', min: 0.2, max: 2.5, step: 0.05 }, { k: 'lunge', label: 'Lunge speed', min: 0.4, max: 2, step: 0.05 },
+      { k: 'hp', label: 'Health', min: 1, max: 200, step: 1 }, { k: 'aggro', label: 'Notice distance', min: 30, max: 200, step: 5 }];
+    var ANIMAL = [{ k: 'neck', label: 'Neck length', min: 0.4, max: 2, step: 0.05 }, { k: 'neckUp', label: 'Head carried', min: 0, max: 1, step: 0.05 }, { k: 'snout', label: 'Snout length', min: 0.5, max: 2, step: 0.05 },
+      { k: 'snoutW', label: 'Snout thickness', min: 0.5, max: 1.6, step: 0.05 }, { k: 'hump', label: 'Shoulder hump', min: 0, max: 1.5, step: 0.05 }, { k: 'antlerSize', label: 'Antler size', min: 0.5, max: 1.8, step: 0.05 }];
+    var FLAGS = [['tusks', 'Tusks'], ['fangs', 'Fangs'], ['mane', 'Bristles'], ['hoof', 'Hooves'], ['brow', 'Heavy brow'], ['paleMuzzle', 'Pale muzzle'], ['snoutFlat', 'Flat nose'], ['tailPale', 'Pale tail']];
+    var TROLL = [{ k: 'trollHair', label: 'Hair length', min: 0, max: 2.5, step: 0.05 }, { k: 'trollAge', label: 'Age (grey, warts)', min: 0, max: 1, step: 0.05 }, { k: 'trollHunch', label: 'Hunch', min: 0, max: 1.6, step: 0.05 },
+      { k: 'trollArms', label: 'Arm length', min: 0.5, max: 1.8, step: 0.05 }, { k: 'trollNose', label: 'Nose length', min: 0.3, max: 2.2, step: 0.05 }, { k: 'trollEars', label: 'Ear size', min: 0, max: 2.2, step: 0.05 },
+      { k: 'trollBelly', label: 'Belly', min: 0.5, max: 1.6, step: 0.05 }, { k: 'trollMoss', label: 'Moss and lichen', min: 0, max: 1, step: 0.05 }];
+    var TFLAGS = [['trollBeads', 'Beads and ring'], ['trollSack', 'A sack on the back'], ['trollTail', 'Tail']];
+    var TONE = [{ k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 }, { k: 'sat', label: 'Saturation', min: 0, max: 2, step: 0.05 }, { k: 'lum', label: 'Brightness', min: 0.5, max: 1.5, step: 0.05 }];
+    var NUM = SHAPE.concat(EYES, BEHAVE, TONE, ANIMAL, TROLL);
+    var COLS = [['body', 'Body'], ['belly', 'Belly and markings'], ['accent', 'Horns, teeth and hair'], ['moss', 'Moss and lichen'], ['eye', 'Pupils'], ['glow', 'Glow and warning'], ['line', 'Outline']];
+    var CHOICES = {
+      plan: ['Blob', 'Critter', 'Brute', 'Floater', 'Crawler', 'Animal', 'Snake', 'Troll (old)', 'Boulder troll', 'Forest troll'],
+      ears: ['None', 'Pointed', 'Round', 'Long'], antlers: ['None', 'Spikes', 'Deer', 'Moose'], eyeStyle: ['Round', 'Glowing', 'Angry', 'Sleepy'], mouth: ['None', 'Line', 'Fangs', 'Maw'], top: ['Nothing', 'Nubs', 'Horns', 'Antennae', 'Spikes'],
+      tail: ['None', 'Stub', 'Long', 'Spiked or bushy'], pattern: ['Plain', 'Belly', 'Spots', 'Stripes'], tell: ['Swell', 'Shake', 'Rear up', 'Eye glow'], behave: ['Lunger', 'Brute', 'Shooter', 'Grazer']
+    };
+    var TELLTXT = ['Swell: it squashes wide and flushes with its warning colour.', 'Shake: it trembles on the spot and flushes with its warning colour.', 'Rear up: it lifts and tips back before it strikes.', 'Eye glow: the eyes grow and light up, with a pulse ring.'];
+    var BEHAVETXT = ['Lunger: chases you, circles, then lunges in a straight line. It can be parried.', 'Brute: the engine\'s brute, with a lunge, a chain of hits and a spin. It has a stagger bar.', 'Shooter: stands still and fires a shot along a marked line.', 'Grazer: never attacks. It runs away when you come close.'];
+    var MODEL_KEYS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollForest', 'trollStone'], MODELS = MODEL_KEYS.map(function (k) { return lib.animals[k]; });
+    var LIB_KEY = 'creature.library', GAME_KEY = 'game.creatures', META_KEY = 'creatureeditor2.meta', library = {}, meta = { name: '', slot: 'troll' };
+    try { library = JSON.parse(localStorage.getItem(LIB_KEY)) || {}; } catch (e) { library = {}; } try { var mt = JSON.parse(localStorage.getItem(META_KEY)); if (mt && typeof mt === 'object') meta = mt; } catch (e) {}
+    var spec = clone(lib.creatureDef), inputs = {}, outputs = {}, swatch = {}, hold = false, noDmg = true, flagBtn = {};
+    var json = $('json'), jsonmsg = $('jsonmsg');
+    function choice(key) { var b = sc.$$('c-' + key, 'button'); for (var n = 0; n < b.length; n++) { var idx = b[n].hasAttribute('data-n') ? +b[n].getAttribute('data-n') : n; b[n].setAttribute('aria-pressed', idx === spec[key] ? 'true' : 'false'); } }
+    function apply() {
+      var d = lib.creatureDef, i, k;
+      for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snapTo(p, isFinite(v) ? v : d[p.k]); }
+      for (k in CHOICES) { var c = Math.round(Number(spec[k])); spec[k] = isFinite(c) ? Math.max(0, Math.min(CHOICES[k].length - 1, c)) : d[k]; }
+      spec.mark = spec.mark === 0 ? 0 : 1;
+      FLAGS.concat(TFLAGS).forEach(function (f) { spec[f[0]] = spec[f[0]] ? 1 : 0; });
+      spec = lib.setCreature(spec);
+      for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
+      for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
+      for (k in CHOICES) choice(k);
+      $('mark').setAttribute('aria-pressed', spec.mark ? 'true' : 'false');
+      FLAGS.concat(TFLAGS).forEach(function (f) { flagBtn[f[0]].setAttribute('aria-pressed', spec[f[0]] ? 'true' : 'false'); });
+      $('telldesc').textContent = TELLTXT[spec.tell]; $('behavedesc').textContent = BEHAVETXT[spec.behave];
+      if (document.activeElement !== json) json.value = JSON.stringify(spec);
+      try { localStorage.setItem('creatureeditor2', JSON.stringify(spec)); } catch (e) {}
+      var pl = Math.round(spec.plan); $('sec-animal').hidden = !(pl === 5 || pl === 6); $('sec-troll').hidden = !(pl === 7 || pl === 8 || pl === 9);
+    }
+    function gameOverrides() { try { return JSON.parse(localStorage.getItem(GAME_KEY)) || {}; } catch (e) { return {}; } }
+    function refreshLibrary() {
+      var host = $('library'); host.innerHTML = ''; var names = Object.keys(library).sort();
+      if (!names.length) { var em = document.createElement('span'); em.className = 'desc'; em.textContent = 'Nothing saved yet'; host.appendChild(em); }
+      names.forEach(function (nm) { var b = document.createElement('button'); b.textContent = nm; b.setAttribute('aria-pressed', nm === meta.name ? 'true' : 'false'); b.addEventListener('click', function () { spec = clone(library[nm]); meta.name = nm; if (library[nm].__slot) meta.slot = library[nm].__slot; saveMeta(); apply(); respawn(); refreshLibrary(); b.blur(); }); host.appendChild(b); });
+      $('cname').value = meta.name; $('slot').value = meta.slot;
+      var g = gameOverrides(), lines = MODEL_KEYS.filter(function (k) { return g[k]; }).map(function (k) { return lib.animals[k].name + ': ' + (g[k].__name || 'a design from here'); });
+      $('gameStatus').textContent = lines.length ? 'In the game: ' + lines.join('; ') : 'The game uses its own beasts.';
+    }
+    function saveMeta() { try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {} }
+    var sel = $('slot'); MODEL_KEYS.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = lib.animals[k].name; sel.appendChild(o); });
+    sel.addEventListener('change', function () { meta.slot = sel.value; saveMeta(); refreshLibrary(); });
+    $('cname').addEventListener('change', function (e) { meta.name = e.target.value.trim(); saveMeta(); });
+    $('savec').addEventListener('click', function (e) { var nm = $('cname').value.trim(); if (!nm) { $('cname').focus(); return; } var sp = clone(spec); sp.__slot = meta.slot; library[nm] = sp; meta.name = nm; saveMeta(); try { localStorage.setItem(LIB_KEY, JSON.stringify(library)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
+    $('newc').addEventListener('click', function (e) { meta.name = ''; saveMeta(); $('cname').value = ''; refreshLibrary(); $('cname').focus(); e.currentTarget.blur(); });
+    $('delc').addEventListener('click', function (e) { if (meta.name && library[meta.name]) { delete library[meta.name]; try { localStorage.setItem(LIB_KEY, JSON.stringify(library)); } catch (err) {} } meta.name = ''; saveMeta(); refreshLibrary(); e.currentTarget.blur(); });
+    $('useGame').addEventListener('click', function (e) { var g = gameOverrides(), sp = clone(spec); sp.__name = meta.name || null; g[meta.slot] = sp; try { localStorage.setItem(GAME_KEY, JSON.stringify(g)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
+    $('takeBack').addEventListener('click', function (e) { var g = gameOverrides(); delete g[meta.slot]; try { localStorage.setItem(GAME_KEY, JSON.stringify(g)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
+    function getSpec() { return spec; }
+    sliders($('panimal'), ANIMAL, getSpec, apply, inputs, outputs);
+    FLAGS.forEach(function (f) { var b = document.createElement('button'); b.textContent = f[1]; b.addEventListener('click', function () { spec[f[0]] = spec[f[0]] ? 0 : 1; apply(); b.blur(); }); $('flags').appendChild(b); flagBtn[f[0]] = b; });
+    sliders($('pshape'), SHAPE, getSpec, apply, inputs, outputs); sliders($('peyes'), EYES, getSpec, apply, inputs, outputs); sliders($('pbehave'), BEHAVE, getSpec, apply, inputs, outputs); sliders($('ptone'), TONE, getSpec, apply, inputs, outputs); sliders($('ptroll'), TROLL, getSpec, apply, inputs, outputs);
+    TFLAGS.forEach(function (f) { var b = document.createElement('button'); b.textContent = f[1]; b.addEventListener('click', function () { spec[f[0]] = spec[f[0]] ? 0 : 1; apply(); b.blur(); }); $('tflags').appendChild(b); flagBtn[f[0]] = b; });
+    var PLAN_SHOWN = { 5: 1, 6: 1, 8: 1, 9: 1 };
+    Object.keys(CHOICES).forEach(function (key) {
+      var host = $('c-' + key); if (!host) return;
+      CHOICES[key].forEach(function (nm, n) {
+        if (key === 'plan' && !PLAN_SHOWN[n]) return;
+        var b = document.createElement('button'); b.textContent = nm; if (key === 'plan') b.setAttribute('data-n', n);
+        b.addEventListener('click', function () { var was = spec.behave; spec[key] = n; apply(); if (key === 'behave' && was !== n) respawn(); b.blur(); }); host.appendChild(b);
+      });
+    });
+    COLS.forEach(function (cdef) {
+      var lab = document.createElement('label'); lab.className = 'sw'; var inp = document.createElement('input'); inp.type = 'color'; var name = document.createElement('span'); name.textContent = cdef[1];
+      inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); }); lab.appendChild(inp); lab.appendChild(name); $('swatches').appendChild(lab); swatch[cdef[0]] = inp;
+    });
+    try { localStorage.removeItem('creature.rig'); } catch (e) {}
+    MODELS.forEach(function (m, mi) {
+      var b = document.createElement('button'); b.textContent = m.name;
+      b.addEventListener('click', function () { var k; spec = clone(lib.creatureDef); for (k in m.set) spec[k] = m.set[k]; for (k in m.col) spec.col[k] = m.col[k]; meta.slot = MODEL_KEYS[mi]; meta.name = ''; saveMeta(); refreshLibrary(); apply(); respawn(); b.blur(); });
+      $('models').appendChild(b);
+    });
+    $('mark').addEventListener('click', function (e) { spec.mark = spec.mark ? 0 : 1; apply(); e.currentTarget.blur(); });
+    function pickN(n) { return Math.floor(Math.random() * n); }
+    $('random').addEventListener('click', function (e) {
+      var keep = spec.behave, h = rnd(0, 360);
+      spec = clone(lib.creatureDef); spec.behave = keep;
+      ['eyeStyle', 'tail', 'pattern', 'tell'].forEach(function (k) { spec[k] = pickN(CHOICES[k].length); }); spec.plan = [5, 5, 6, 8, 9][pickN(5)];
+      SHAPE.forEach(function (p) { if (p.k !== 'size') spec[p.k] = rnd(p.min + (p.max - p.min) * 0.2, p.max - (p.max - p.min) * 0.25); });
+      spec.size = [0.8, 1, 1, 1.2, 1.5][pickN(5)]; spec.eyes = 1 + pickN(4); spec.eyeSize = rnd(0.8, 1.4);
+      spec.col.body = hsl(h, rnd(0.25, 0.6), rnd(0.32, 0.55)); spec.col.belly = hsl(h + rnd(-30, 30), rnd(0.3, 0.6), rnd(0.7, 0.85)); spec.col.glow = hsl(h + 180 + rnd(-50, 50), 0.95, 0.6);
+      apply(); e.currentTarget.blur();
+    });
+    $('copy').addEventListener('click', function (e) { copyText(json, jsonmsg, JSON.stringify(spec)); e.currentTarget.blur(); });
+    $('applyjson').addEventListener('click', function (e) { var o = parseText(json, jsonmsg); if (o) { spec = o; apply(); respawn(); } e.currentTarget.blur(); });
+    /* the arena */
+    var TYPES = ['beast', 'brute', 'shooter', 'beast'], BASE_R = [7, 9, 8, 7];
+    function addOne() {
+      var n = Combat.dbg().W.enemies.filter(function (q) { return q.creature && !q.dead; }).length, e = Combat.spawn(TYPES[spec.behave]);
+      e.creature = true; e.size = 1; e.hp = e.maxHp = spec.hp; e.kind = spec.behave;
+      e.x = 200 + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 34; e.y = 92; e.state = 'idle'; e.awake = false; e.face = Math.PI / 2;
+      return e;
+    }
+    function respawn() { var n = Combat.dbg().W.enemies.filter(function (e) { return e.creature && !e.dead; }).length || 1; Combat.clear(); for (var i = 0; i < n; i++) addOne(); }
+    function act(id, fn) { var b = $(id); b.addEventListener('click', function () { fn(b); b.blur(); }); }
+    act('spawn', function () { addOne(); }); act('clear', function () { Combat.clear(); });
+    act('hold', function (b) { hold = !hold; b.setAttribute('aria-pressed', hold ? 'true' : 'false'); });
+    act('nodmg', function (b) { noDmg = !noDmg; b.setAttribute('aria-pressed', noDmg ? 'true' : 'false'); });
+    var poses = $('poses'), pctx = poses.getContext('2d');
+    var POSES = [['Standing', 'idle', 0], ['Moving', 'chase', 1], ['Warning', 'windup', 0], ['Attacking', 'lunge', 1], ['Stunned', 'stunned', 0]];
+    function drawPoses(t) {
+      var z = Math.min(3.2, 2.6 / Math.max(0.6, spec.size * 0.75));
+      pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = '#d9c9a0'; pctx.fillRect(0, 0, 800, 210); pctx.lineJoin = 'round'; pctx.lineCap = 'round';
+      POSES.forEach(function (p, i) {
+        var cx = 80 + i * 160;
+        pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = 'rgba(60,40,20,0.16)'; pctx.beginPath(); pctx.ellipse(cx, 172, 34, 9, 0, 0, Math.PI * 2); pctx.fill();
+        pctx.fillStyle = '#5b4a3a'; pctx.font = '600 15px system-ui, sans-serif'; pctx.textAlign = 'center'; pctx.fillText(p[0], cx, 200);
+        pctx.setTransform(z, 0, 0, z, cx, 172);
+        lib.creatureD(pctx, 0, 0, { t: t, move: p[2], phase: t * 9 * spec.stepRate, dir: 1, look: [1, 0.2], state: p[1], k: p[1] === 'windup' ? (t / Math.max(0.2, spec.windup)) % 1 : 0.5 });
+      });
+    }
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('creatureeditor2')); if (saved && typeof saved === 'object' && PLAN_SHOWN[Math.round(saved.plan)]) spec = saved; else saved = null; } catch (e) { saved = null; }
+    if (!saved) { var k0; spec = clone(lib.creatureDef); for (k0 in MODELS[0].set) spec[k0] = MODELS[0].set[k0]; for (k0 in MODELS[0].col) spec.col[k0] = MODELS[0].col[k0]; }
+    apply(); refreshLibrary();
+    var clock = 0;
+    return {
+      enter: function () { cv.classList.remove('dark'); Combat.api.roster = []; Combat.reset(); Combat.api.scene = null; Combat.api.heroSprite = null; apply(); addOne(); },
+      leave: function () {},
+      tick: function (dt) {
+        clock += dt; var D = Combat.dbg();
+        D.W.enemies.forEach(function (e) {
+          if (!e.creature) return;
+          e.hold = hold; e.r = Math.max(4, Math.min(40, BASE_R[e.kind || 0] * spec.size)); e.aggro = spec.aggro; e.flee = spec.behave === 3;
+          var A2 = (spec.behave === 0 || spec.behave === 3) && lib.animalAttack(meta.slot); e.cfg = { speed: 58 * spec.speed, windup: spec.windup, lunge: 175 * spec.lunge, dmg: 12, atk: A2 || undefined };
+        });
+        if (noDmg && !D.P.dead) D.P.hp = D.P.maxHp;
+        if (D.P.dead) { Combat.reset(); Combat.clear(); addOne(); }
+      },
+      after: function () { drawPoses(clock); }
+    };
+  })();
+
+  /* ================= Objects: one world prop at a time (the old Object Editor) ================= */
+  TABS.objects = (function () {
+    var sc = scope('objects'), $ = sc.$;
+    var BASE = kit.STYLE;
+    var REF = {
+      oak: 'The round tree. Settles the canopy: how many lobes, the scalloped edge, the dark underside, the lit top, how short and wide the trunk is.',
+      pine: 'The pointed tree. Settles tiers and their edges, and how the pines differ from the round trees.',
+      bush: 'The small plant mass. Same canopy rules as the oak at bush size; the berry bush follows it.',
+      rock: 'The boulder. Settles the rock: facets or smooth, the highlight, the moss, the outline weight.',
+      cliff: 'The big rock. Settles how stone reads at the size of a wall, and the layered strata of the first reference.',
+      longhouse: 'The house. Settles wood, thatch or turf, the horned gable, doors and windows; the hut and boathouse follow it.',
+      woodpile: 'The small built thing. Settles planks and logs in the same hand as the house.',
+      tallGrass: 'The ground plant. Settles blades: how few, how soft, how they sit on the grass.',
+      flower: 'The flower. Settles the tiny bright things: petals, the dot of a centre, how much outline a small thing gets.',
+      runestone: 'The landmark. Settles carved stone and the marks on it; cairns and burial mounds follow it.'
+    };
+    var CATS = [
+      { name: 'Reference set', ground: 'grass', solid: 10, ref: true, list: Object.keys(REF) },
+      { name: 'Found in nature', ground: 'grass', solid: 10, list: ['beech', 'ash', 'apple', 'chalkRock', 'hedge', 'bogIron', 'yew', 'cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
+      { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'fireRing', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile'] },
+      { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['bellTower', 'porch', 'apse', 'gableCross', 'font', 'lychGate', 'altar', 'graveStone', 'wayCross', 'stall', 'firePit', 'logSeat', 'stake', 'banner', 'choppingBlock', 'cellarDoor', 'windowBox', 'lantern', 'awning', 'sign', 'woodshed', 'foodTable', 'longhouse', 'beachedBoat', 'campfire', 'furnace', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'fireplace', 'carverBench', 'deadViking', 'trough', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
+      { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
+      { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'flowerBed', 'tallGrass', 'wildHerbs', 'mushrooms', 'mushRing', 'snowBush'] },
+      { name: 'Rocks and ground', ground: 'grass', solid: 12, list: ['rock', 'rockFormation', 'cliff', 'rubble', 'log', 'cairn', 'snowRock', 'waterfall'] },
+      { name: 'Household', ground: 'plank', solid: 10, list: ['bench', 'chair', 'table', 'bed', 'crate', 'barrel', 'chest', 'rug', 'workbench', 'shipwright', 'shipwright1', 'shipwright3', 'masonBench', 'signPost', 'haystack', 'cart', 'well', 'scarecrow', 'dock'] }
+    ];
+    var GROUND_FOR = { snowPine: 'snow', snowPineBig: 'snow', snowRock: 'snow', snowBush: 'snow', deadTree: 'ash', emberRock: 'ash', emberBush: 'ash', vent: 'ash', ventBig: 'ash', cliff: 'rock' };
+    var NO_SOLID = { dock: 1 };
+    var GROUNDS = [['grass', 'Grass'], ['grassDark', 'Dark grass'], ['path', 'Path'], ['plank', 'Planks'], ['snow', 'Snow'], ['ash', 'Ash'], ['rock', 'Rock'], ['flat', 'Plain grey']];
+    CATS.forEach(function (cat) { cat.list = cat.list.filter(function (n) { return !!kit.PROPS[n]; }); });
+    function label(n) { var s = n.replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
+    function catOf(name) { for (var i = 1; i < CATS.length; i++) if (CATS[i].list.indexOf(name) >= 0) return CATS[i]; return CATS[1]; }
+    var SIZE = [{ k: 'scale', label: 'Overall size', min: 0.4, max: 2.5, step: 0.05 }, { k: 'wide', label: 'Width', min: 0.5, max: 1.8, step: 0.05 }, { k: 'tall', label: 'Height', min: 0.5, max: 1.8, step: 0.05 }, { k: 'solid', label: 'Footprint', min: 0, max: 40, step: 1 }];
+    var SHAPE = [{ k: 'rough', label: 'Roughness', min: 0, max: 0.6, step: 0.01 }, { k: 'twist', label: 'Wonkiness', min: 0, max: 1, step: 0.01 }, { k: 'spindly', label: 'Thinness', min: 0, max: 1, step: 0.01 }, { k: 'lush', label: 'Fullness', min: 0.2, max: 1.4, step: 0.01 }, { k: 'round', label: 'Roundness', min: 0, max: 1.2, step: 0.01 }, { k: 'seed', label: 'Variation number', min: 1, max: 60, step: 1 }];
+    var SURF = [{ k: 'texture', label: 'Brush texture', min: 0, max: 1.5, step: 0.01 }, { k: 'shade', label: 'Shading depth', min: 0, max: 1, step: 0.01 }, { k: 'outlineW', label: 'Outline width', min: 0.4, max: 2.5, step: 0.05 }, { k: 'outlineDark', label: 'Outline darkness', min: 0, max: 1, step: 0.01 }, { k: 'glow', label: 'Glow', min: 0, max: 1.5, step: 0.05 }];
+    var COL = [{ k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 }, { k: 'accentHue', label: 'Glow colour', min: 0, max: 360, step: 2 }, { k: 'sat', label: 'Saturation', min: 0, max: 1.8, step: 0.05 }, { k: 'bright', label: 'Brightness', min: -15, max: 15, step: 1 }, { k: 'contrast', label: 'Contrast', min: 0.7, max: 1.4, step: 0.02 }];
+    var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.4, max: 3, step: 0.05 }];
+    var NUM = SIZE.concat(SHAPE, SURF, COL), SHAPE_KEYS = ['scale', 'wide', 'tall', 'rough', 'twist', 'spindly', 'lush', 'round', 'texture'], COLOUR_KEYS = ['hue', 'accentHue', 'sat', 'bright', 'contrast'];
+    var SHAPES = [{ name: 'Default', set: {} }, { name: 'Small', set: { scale: 0.7 } }, { name: 'Large', set: { scale: 1.4 } }, { name: 'Giant', set: { scale: 2 } }, { name: 'Wide', set: { wide: 1.3 } }, { name: 'Tall', set: { tall: 1.3 } }, { name: 'Squat', set: { wide: 1.2, tall: 0.75 } }, { name: 'Slender', set: { wide: 0.8, tall: 1.2 } },
+      { name: 'Rough', set: { rough: 0.3, texture: 1.1 } }, { name: 'Smooth', set: { rough: 0, texture: 0.2, round: 1.1 } }, { name: 'Gnarled', set: { twist: 0.6, spindly: 0.45, rough: 0.18 } }, { name: 'Lush', set: { lush: 1.3, round: 1 } }, { name: 'Sparse', set: { lush: 0.4, spindly: 0.5 } }];
+    var PALETTES = [{ name: 'Default', set: {} }, { name: 'Autumn', set: { hue: -115, sat: 1.1 } }, { name: 'Frosted', set: { hue: 45, sat: 0.55, bright: 8 } }, { name: 'Withered', set: { hue: -95, sat: 0.45, bright: -3 } }, { name: 'Vivid', set: { sat: 1.35, contrast: 1.2 } },
+      { name: 'Faded', set: { sat: 0.6, contrast: 0.9, bright: 4 } }, { name: 'Gloomy', set: { sat: 0.75, bright: -7, contrast: 1.16 } }, { name: 'Alien', set: { hue: 140, accentHue: 300 } }];
+    var LOOKS = [[1, 'Painted'], [0, 'Cartoon'], [2, 'Ink']];
+    function defSpec(name) {
+      return { scale: 1, wide: 1, tall: 1, solid: NO_SOLID[name] ? 0 : catOf(name).solid, flip: 0, seed: 3, look: BASE.look, rough: BASE.rough, twist: BASE.twist, spindly: BASE.spindly, lush: BASE.lush, round: BASE.round,
+        texture: BASE.texture, shade: BASE.shade, outlineW: BASE.outlineW, outlineDark: BASE.outlineDark, glow: BASE.glow, hue: 0, accentHue: BASE.accentHue, sat: 1, bright: 0, contrast: 1 };
+    }
+    function styleFor(sp) {
+      var p = {}, k; for (k in BASE) p[k] = BASE[k];
+      ['rough', 'twist', 'spindly', 'lush', 'round', 'texture', 'shade', 'outlineW', 'outlineDark', 'glow', 'look', 'accentHue'].forEach(function (key) { p[key] = sp[key]; });
+      p.outsideHue = BASE.outsideHue + sp.hue; p.factoryHue = BASE.factoryHue + sp.hue; p.sat = BASE.sat * sp.sat; p.bright = BASE.bright + sp.bright; p.contrast = BASE.contrast * sp.contrast;
+      return p;
+    }
+    var cur = 'longhouse', spec = defSpec('longhouse'), copies = 1, ground = 'grass', night = false, showFoot = false, view = { zoom: 1 };
+    var baked = [], dirty = true, OBJ_X = 200, OBJ_Y = 170, inputs = {}, outputs = {};
+    var json = $('json'), jsonmsg = $('jsonmsg'), info = $('info');
+    function pressed(hostId, test) { var b = sc.$$(hostId, 'button'); for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', test(b[i]) ? 'true' : 'false'); }
+    function apply() {
+      var d = defSpec(cur), i, k;
+      for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snapTo(p, isFinite(v) ? v : d[p.k]); }
+      spec.flip = spec.flip ? 1 : 0; spec.look = (spec.look === 0 || spec.look === 1 || spec.look === 2 || spec.look === 3) ? spec.look : BASE.look;
+      var clean = {}; for (k in d) clean[k] = spec[k]; spec = clean;
+      for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
+      $('flip').setAttribute('aria-pressed', spec.flip ? 'true' : 'false');
+      pressed('looks', function (b) { return Number(b.getAttribute('data-v')) === spec.look; });
+      var out = { object: cur }; for (k in spec) out[k] = spec[k];
+      if (document.activeElement !== json) json.value = JSON.stringify(out);
+      dirty = true;
+      try { localStorage.setItem('objecteditor3.' + cur, JSON.stringify(spec)); } catch (e) {}
+    }
+    function getSpec() { return spec; }
+    sliders($('psize'), SIZE, getSpec, apply, inputs, outputs); sliders($('pshape'), SHAPE, getSpec, apply, inputs, outputs); sliders($('psurf'), SURF, getSpec, apply, inputs, outputs); sliders($('pcol'), COL, getSpec, apply, inputs, outputs);
+    function syncView() { inputs.zoom.value = view.zoom; outputs.zoom.textContent = view.zoom.toFixed(2); }
+    sliders($('pview'), VIEW, function () { return view; }, syncView, inputs, outputs);
+    function buttons(hostId, list, text, fn, attr) {
+      var host = $(hostId); host.textContent = '';
+      list.forEach(function (item) { var b = document.createElement('button'); b.textContent = text(item); if (attr) b.setAttribute('data-v', attr(item)); b.addEventListener('click', function () { fn(item); b.blur(); }); host.appendChild(b); });
+    }
+    buttons('shapes', SHAPES, function (v) { return v.name; }, function (v) { var d = defSpec(cur), k; SHAPE_KEYS.forEach(function (key) { spec[key] = d[key]; }); for (k in v.set) spec[k] = v.set[k]; apply(); fit(); });
+    buttons('palettes', PALETTES, function (v) { return v.name; }, function (v) { var d = defSpec(cur), k; COLOUR_KEYS.forEach(function (key) { spec[key] = d[key]; }); for (k in v.set) spec[k] = v.set[k]; apply(); });
+    buttons('looks', LOOKS, function (v) { return v[1]; }, function (v) { spec.look = v[0]; apply(); }, function (v) { return v[0]; });
+    buttons('copies', [1, 3, 5], function (v) { return String(v); }, function (v) { copies = v; pressed('copies', function (b) { return Number(b.getAttribute('data-v')) === copies; }); dirty = true; bake(); fit(); }, function (v) { return v; });
+    buttons('grounds', GROUNDS, function (v) { return v[1]; }, function (v) { setGround(v[0]); }, function (v) { return v[0]; });
+    pressed('copies', function (b) { return Number(b.getAttribute('data-v')) === copies; });
+    function toggle(id, fn) { var b = $(id); b.addEventListener('click', function () { b.setAttribute('aria-pressed', fn() ? 'true' : 'false'); b.blur(); }); }
+    toggle('night', function () { night = !night; return night; }); toggle('foot', function () { showFoot = !showFoot; return showFoot; });
+    $('flip').addEventListener('click', function (e) { spec.flip = spec.flip ? 0 : 1; apply(); e.currentTarget.blur(); });
+    $('nextvar').addEventListener('click', function (e) { spec.seed = spec.seed >= 60 ? 1 : spec.seed + 1; apply(); e.currentTarget.blur(); });
+    $('resetall').addEventListener('click', function (e) { spec = defSpec(cur); apply(); bake(); fit(); e.currentTarget.blur(); });
+    $('fit').addEventListener('click', function (e) { bake(); fit(); e.currentTarget.blur(); });
+    function bake() {
+      if (!dirty) return;
+      dirty = false; baked = [];
+      kit.setup(styleFor(spec));
+      var b0 = kit.PROPS[cur].b, corner = b0[0] === 0 && b0[1] === 0, i;
+      for (i = 0; i < copies; i++) { var s = kit.bakeProp(cur, spec.seed + i * 7, { sx: spec.scale * spec.wide, sy: spec.scale * spec.tall }); if (corner) { s.lights.forEach(function (l) { l.x -= s.w / 2; l.y -= s.h; }); s.l = -s.w / 2; s.t = -s.h; } baked.push(s); }
+      kit.setup(BASE);
+      var s0 = baked[0], gap = Math.max(44, s0.w * 0.8);
+      baked.forEach(function (s2, n) { s2.x = OBJ_X + (n - (copies - 1) / 2) * gap; });
+      info.textContent = label(cur) + ': ' + Math.round(s0.w) + ' wide and ' + Math.round(s0.h) + ' tall. The hero is 39 tall. Footprint is the solid circle the hero cannot walk through (0 means walk-through).';
+    }
+    function fit() { if (!baked.length) return; var s0 = baked[0], spanW = (baked[baked.length - 1].x - baked[0].x) + s0.w + 70, spanH = -s0.t + 110; view.zoom = snapTo(VIEW[0], Math.min(1.5, 400 / spanW, 250 / spanH)); syncView(); }
+    var GT = 16, groundCv = null, groundKey = '';
+    function hash(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+    function bakeGround() {
+      if (groundKey === ground) return;
+      groundKey = ground; var w = GT * kit.TW, h = GT * kit.TH, x, y;
+      groundCv = kit.mk(w * 2, h * 2); var g = groundCv.getContext('2d'); g.setTransform(2, 0, 0, 2, 0, 0);
+      if (ground === 'flat') { g.fillStyle = '#6b6f7a'; g.fillRect(0, 0, w, h); return; }
+      kit.setup(BASE); var n = kit.TILES[ground].n, tiles = [];
+      for (x = 0; x < n; x++) tiles.push(kit.bakeTile(ground, x));
+      for (y = 0; y < GT; y++) for (x = 0; x < GT; x++) g.drawImage(tiles[Math.floor(hash(x, y) * n) % n], x * kit.TW, y * kit.TH, kit.TW, kit.TH);
+    }
+    function setGround(t) { ground = t; pressed('grounds', function (b) { return b.getAttribute('data-v') === ground; }); }
+    var cam = { x: 200, y: 125, z: 1 }, dark = null;
+    function camera(P) {
+      var z = view.zoom, s0 = baked[0], bottom = OBJ_Y * K + 95, top = OBJ_Y * K + (s0 ? s0.t : -60) - 12, vh = 250 / z;
+      var cy = (bottom - top <= vh) ? (top + bottom) / 2 : bottom - vh / 2, cx = OBJ_X, f = Math.max(0, Math.min(1, z - 1));
+      cam.x = cx + (P.x - cx) * f; cam.y = cy + (P.y * K - 16 - cy) * f; cam.z = z;
+    }
+    var scene = {
+      noHud: true, noHotbar: true,
+      begin: function (c, P) {
+        bake(); bakeGround(); camera(P);
+        c.fillStyle = '#20262c'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y);
+        var w = GT * kit.TW, h = GT * kit.TH, hw = 200 / cam.z, hh = 125 / cam.z, gx, gy;
+        for (gy = Math.floor((cam.y - hh) / h); gy * h < cam.y + hh; gy++) for (gx = Math.floor((cam.x - hw) / w); gx * w < cam.x + hw; gx++) c.drawImage(groundCv, gx * w, gy * h, w + 0.5, h + 0.5);
+        if (showFoot && spec.solid > 0) { var r = spec.solid * spec.scale; baked.forEach(function (s) { c.fillStyle = 'rgba(255,90,70,0.28)'; c.strokeStyle = 'rgba(255,120,90,0.9)'; c.lineWidth = 1; c.beginPath(); c.ellipse(s.x, OBJ_Y * K, r, r * K, 0, 0, Math.PI * 2); c.fill(); c.stroke(); }); }
+      },
+      items: function (items) { baked.forEach(function (s) { items.push({ y: OBJ_Y, f: function () { ctx.save(); ctx.translate(s.x, OBJ_Y * K); if (spec.flip) ctx.scale(-1, 1); ctx.drawImage(s.cv, s.l, s.t, s.w, s.h); ctx.restore(); } }); }); },
+      end: function (c, P) {
+        if (!night) return;
+        if (!dark || dark.width !== cv.width) dark = kit.mk(cv.width, cv.height);
+        var d = dark.getContext('2d'), lights = [{ x: P.x, y: P.y * K - 14, r: 46, h: 40, s: 60, l: 70, a: 0.55 }];
+        baked.forEach(function (s) { s.lights.forEach(function (l) { lights.push({ x: s.x + (spec.flip ? -l.x : l.x), y: OBJ_Y * K + l.y, r: l.r, h: l.h, s: l.s, l: l.l, a: l.a }); }); });
+        var PSN = Combat.api.pixelScale || 2;
+        function px(l) { return [((l.x - cam.x) * cam.z + 200) * PSN, ((l.y - cam.y) * cam.z + 125) * PSN, l.r * cam.z * PSN]; }
+        d.globalCompositeOperation = 'source-over'; d.clearRect(0, 0, cv.width, cv.height); d.fillStyle = 'rgba(10,9,34,0.66)'; d.fillRect(0, 0, cv.width, cv.height); d.globalCompositeOperation = 'destination-out';
+        lights.forEach(function (l) { var q = px(l), g = d.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); g.addColorStop(0, 'rgba(0,0,0,' + Math.min(1, l.a) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = g; d.fillRect(q[0] - q[2], q[1] - q[2], q[2] * 2, q[2] * 2); });
+        c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(dark, 0, 0); c.globalCompositeOperation = 'lighter';
+        lights.forEach(function (l) { var q = px(l), g = c.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); g.addColorStop(0, 'hsla(' + l.h + ',' + l.s + '%,' + l.l + '%,' + (0.22 * l.a) + ')'); g.addColorStop(1, 'hsla(' + l.h + ',' + l.s + '%,' + l.l + '%,0)'); c.fillStyle = g; c.fillRect(q[0] - q[2], q[1] - q[2], q[2] * 2, q[2] * 2); });
+        c.restore();
+      }
+    };
+    var curCat = CATS[0];
+    function showCat(cat) { curCat = cat; pressed('cats', function (b) { return b.textContent === cat.name; }); buttons('objs', cat.list, function (n) { return (REF[n] ? '★ ' : '') + label(n); }, pick, function (n) { return n; }); pressed('objs', function (b) { return b.getAttribute('data-v') === cur; }); }
+    function pick(name) {
+      cur = name; spec = null; try { spec = JSON.parse(localStorage.getItem('objecteditor3.' + name)); } catch (e) {}
+      if (!spec || typeof spec !== 'object') spec = defSpec(name);
+      var cat = curCat && curCat.list.indexOf(name) >= 0 ? curCat : catOf(name); if (cat !== curCat) showCat(cat);
+      pressed('objs', function (b) { return b.getAttribute('data-v') === cur; });
+      $('refnote').textContent = REF[name] ? '★ Reference object. ' + REF[name] : '';
+      setGround(GROUND_FOR[name] || cat.ground); apply(); bake(); fit();
+    }
+    buttons('cats', CATS, function (cat) { return cat.name; }, function (cat) { showCat(cat); pick(cat.list[0]); });
+    $('copy').addEventListener('click', function (e) { copyText(json, jsonmsg, json.value); e.currentTarget.blur(); });
+    $('applyjson').addEventListener('click', function (e) {
+      var o = parseText(json, jsonmsg); if (!o) return;
+      if (typeof o.object === 'string' && kit.PROPS[o.object] && o.object !== cur) { cur = o.object; var cat = catOf(cur); showCat(cat); setGround(GROUND_FOR[cur] || cat.ground); }
+      spec = o; apply(); bake(); fit(); pressed('objs', function (b) { return b.getAttribute('data-v') === cur; }); e.currentTarget.blur();
+    });
+    showCat(CATS[0]); pick('oak');
+    return {
+      enter: function () { cv.classList.add('dark'); Combat.api.roster = []; Combat.reset(); Combat.api.scene = scene; Combat.api.heroSprite = null; dirty = true; var P = Combat.dbg().P; P.x = 200; P.y = 215; },
+      leave: function () { Combat.api.scene = null; },
+      tick: function () { var D = Combat.dbg(), r = spec.solid * spec.scale; D.W.pillars = r > 0 ? baked.map(function (s) { return { x: s.x, y: OBJ_Y, r: r, hide: true }; }) : []; if (!D.P.dead) D.P.hp = D.P.maxHp; }
+    };
+  })();
+
+  /* ================= Models: the Blender sheets (the old Blender Editor) ================= */
+  TABS.models = (function () {
+    var sc = scope('models'), $ = sc.$;
+    var SP = __SPRITES__ || {}, IMG = {}, names = Object.keys(SP);
+    names.forEach(function (nm) { IMG[nm] = {}; for (var f in SP[nm].images) { var im = new Image(); im.src = SP[nm].images[f]; IMG[nm][f] = im; } });
+    var LABEL = { 'hero': 'Hero (first, ink)', 'hero2-cel': 'Hero 2, cel', 'hero2-painted': 'Hero 2, painted', 'hero2-folk': 'Hero 2, folk art', 'hero2-fit': 'Hero 2, cel, fitted to the world', 'hero2-mixamo': 'Hero 2 with the Mixamo clips' };
+    var NOTE = { 'hero': 'The first Blender hero (2026-10-09): the ink figure’s proportions, a red cloak, eight directions, a helmet and a mail shirt as layers.',
+      'hero2-cel': 'The second hero in the cel style: two or three tones, a warm rim light, a line heavy on the shadow side.',
+      'hero2-painted': 'The second hero painted after Bauer: soft shading, muted greens and browns, a wobbling line.',
+      'hero2-folk': 'The second hero in the folk-art style: flat fills, a bold even line, knotwork and woven trim.',
+      'hero2-fit': 'The cel hero fitted to the world (2026-10-09): the painted face, the game’s own palette (Eirik’s colours), daylight with the art direction’s cool shadow, a subtle rim, the grain.',
+      'hero2-mixamo': 'The fitted hero on the Mixamo skeleton with eighteen Mixamo clips (2026-10-09): idle, looking around, walk, run, two sword slashes, bow draw and shot, hit, death, chop, mine, pick up, open a lid, drink, sit down, sit, stand up. Walk and run from the keys; the rest on the keys under Clips.' };
+    var SPR_PX = 3, cur = null, gear = {}, zoom = 1, night = false, anim = 'idle', clip = null, seated = false, swingNext = 0, active = false;
+    var hscale = 1; try { var hs0 = parseFloat(localStorage.getItem('game.blenderScale')); if (hs0 > 0) hscale = hs0; } catch (e) {}
+    var hscaleEl = $('hscale'); hscaleEl.value = hscale; $('hscaleo').textContent = hscale;
+    hscaleEl.addEventListener('input', function () { hscale = +hscaleEl.value; $('hscaleo').textContent = hscale; localStorage.setItem('game.blenderScale', String(hscale)); });
+    function meta() { return SP[cur] && SP[cur].meta; }
+    function layersOn() { var M = meta(), out = ['body']; if (!M) return out; M.layers.forEach(function (l) { if (l !== 'body' && gear[l]) out.push(l); }); return out; }
+    function spriteDir(face) {
+      var M = meta(), n = M.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
+      var want = n === 8 ? ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'][i] : ['s', 'w', 'n', 'e'][i], k = M.dirs.indexOf(want); return k < 0 ? 0 : k;
+    }
+    var sprSil = {};
+    function sprSilOf(im, file) { var cv2 = sprSil[file]; if (cv2) return cv2; cv2 = document.createElement('canvas'); cv2.width = im.naturalWidth; cv2.height = im.naturalHeight; var g = cv2.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = 'hsl(' + (kit.STYLE.shadowHue || 222) + ',40%,8%)'; g.fillRect(0, 0, cv2.width, cv2.height); sprSil[file] = cv2; return cv2; }
+    function sprCast(c, im, file, sx0, sy0, sw, sh, dx, dy, dw, dh) { var sil = sprSilOf(im, file); c.save(); c.globalAlpha = 0.3; c.beginPath(); c.rect(-200, -400, 400, 400); c.clip(); c.transform(1, 0, -0.5, -0.14, 0, 0); c.drawImage(sil, sx0, sy0, sw, sh, dx, dy, dw, dh); c.restore(); }
+    function play(name, then) { var M = meta(); if (!M || !M.anims[name]) return false; clip = { name: name, t0: performance.now() / 1000, then: then || null }; return true; }
+    function drawHeroSprite(c, x, y, face, an, dashing) {
+      var M = meta(); if (!M) return;
+      var P0 = Combat.dbg().P, moving = an.amt > 0.35, t = performance.now() / 1000, a, f;
+      if (clip) { var C = M.anims[clip.name], cf = Math.floor((t - clip.t0) * C.fps); if (cf >= C.frames) { var nx = clip.then; clip = null; if (nx) play(nx.name, nx.then); } else { a = clip.name; f = cf; } }
+      if (!clip && !a && seated && M.anims.sit) { a = 'sit'; f = Math.floor(t * M.anims.sit.fps) % M.anims.sit.frames; }
+      if (!a) { a = moving ? (P0.sprinting && M.anims.run ? 'run' : (M.anims.walk ? 'walk' : 'idle')) : 'idle'; var A0 = M.anims[a]; f = Math.floor(t * A0.fps) % A0.frames; }
+      var A = M.anims[a], d = spriteDir(face), fw = M.frame.w, fh = M.frame.h, s = zoom * hscale / SPR_PX;
+      c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
+      var g = c.createRadialGradient(0, 0, 0, 0, 0, 11 * zoom); g.addColorStop(0, 'rgba(30,70,50,0.4)'); g.addColorStop(0.6, 'rgba(30,70,50,0.22)'); g.addColorStop(1, 'rgba(30,70,50,0)'); c.save(); c.scale(1, 0.4); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 11 * zoom, 0, 7); c.fill(); c.restore();
+      c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+      var bim = IMG[cur][A.sheets.body]; if (bim && bim.complete && bim.naturalWidth && !night) sprCast(c, bim, cur + '/' + A.sheets.body, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+      layersOn().forEach(function (l) { var im = IMG[cur][A.sheets[l]]; if (!im || !im.complete || !im.naturalWidth) return; c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); });
+      c.restore();
+    }
+    var CLIPKEYS = { KeyJ: function () { play(swingNext++ % 2 ? 'attack2' : 'attack1') || play('attack1'); }, KeyK: function () { play('bow_draw', { name: 'bow_shoot' }); },
+      KeyE: function () { play('interact'); }, KeyG: function () { play('pickup'); }, KeyC: function () { play('chop'); }, KeyM: function () { play('mine'); }, KeyV: function () { play('drink'); },
+      KeyX: function () { if (seated) { seated = false; play('standup'); } else if (play('sitdown')) seated = true; }, KeyT: function () { play('hit'); }, KeyB: function () { play('death'); }, KeyL: function () { play('idle_look'); } };
+    window.addEventListener('keydown', function (e) { if (!active || !CLIPKEYS[e.code] || typing(e) || e.repeat) return; var M = meta(); if (!M || Object.keys(M.anims).length <= 2) return; if (clip) return; CLIPKEYS[e.code](); e.preventDefault(); });
+    function useNote() { var u = localStorage.getItem('game.blenderHero'); $('usenote').textContent = u ? 'The game draws its hero from ' + (LABEL[u] || u) + ' until it is taken back. A trial: no weapon, torch or ring is drawn on him; the clips follow the game’s own actions.' : 'The game draws its own hero. Use in the game hands this model over (game.blenderHero); its clips then follow the game’s actions.'; }
+    $('useGame').addEventListener('click', function (e) { if (cur) localStorage.setItem('game.blenderHero', cur); useNote(); e.currentTarget.blur(); });
+    $('takeBack').addEventListener('click', function (e) { localStorage.removeItem('game.blenderHero'); useNote(); e.currentTarget.blur(); });
+    useNote();
+    var modelsEl = $('models'), gearEl = $('gear'), animsEl = $('anims');
+    function pressed(el, on) { el.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    function pick(nm) {
+      cur = nm; gear = {}; clip = null; seated = false; localStorage.setItem('blendereditor.model', nm);
+      Array.prototype.forEach.call(modelsEl.children, function (b) { pressed(b, b.dataset.nm === nm); });
+      $('modelnote').textContent = NOTE[nm] || ('Sheets from assets/sprites/' + nm + '.');
+      gearEl.innerHTML = ''; var M = meta();
+      M.layers.forEach(function (l) { if (l === 'body') return; var b = document.createElement('button'); b.textContent = l.charAt(0).toUpperCase() + l.slice(1); pressed(b, false); b.addEventListener('click', function () { gear[l] = !gear[l]; pressed(b, gear[l]); b.blur(); drawSheet(); }); gearEl.appendChild(b); });
+      if (gearEl.children.length === 0) { var p = document.createElement('span'); p.className = 'desc'; p.textContent = 'This model has no gear layers.'; gearEl.appendChild(p); }
+      animsEl.innerHTML = '';
+      Object.keys(M.anims).forEach(function (a) { var b = document.createElement('button'); b.textContent = a + ' (' + M.anims[a].frames + ' frames, ' + M.anims[a].fps + ' fps)'; pressed(b, a === anim); b.addEventListener('click', function () { anim = a; Array.prototype.forEach.call(animsEl.children, function (q) { pressed(q, q === b); }); b.blur(); drawSheet(); }); animsEl.appendChild(b); });
+      if (!M.anims[anim]) anim = Object.keys(M.anims)[0];
+      $('numbers').textContent = 'Frame ' + M.frame.w + ' by ' + M.frame.h + ' px, the figure about ' + Math.round(M.figure_px) + ' px tall at 1x, the foot anchor at ' + M.anchor.x.toFixed(1) + ', ' + M.anchor.y.toFixed(1) + '; ' + M.dirs.length + ' directions (' + M.dirs.join(' ') + '); layers ' + M.layers.join(', ') + '; camera ' + M.elev + ' degrees above the ground; source ' + M.source + '.';
+      drawSheet();
+    }
+    names.forEach(function (nm) { var b = document.createElement('button'); b.textContent = LABEL[nm] || nm; b.dataset.nm = nm; b.addEventListener('click', function () { pick(nm); b.blur(); }); modelsEl.appendChild(b); });
+    if (!names.length) { modelsEl.innerHTML = '<span class="desc">No sheets in this build: run npm run art:mixamo:sheets, then npm run build.</span>'; }
+    var sheet = $('sheet'), sctx = sheet.getContext('2d');
+    function drawSheet() {
+      var M = meta(); sctx.setTransform(1, 0, 0, 1, 0, 0); sctx.fillStyle = '#cfc19c'; sctx.fillRect(0, 0, sheet.width, sheet.height);
+      sctx.globalAlpha = 0.18; sctx.fillStyle = kit.grain(sctx); sctx.fillRect(0, 0, sheet.width, sheet.height); sctx.globalAlpha = 1;
+      if (!M) return;
+      var A = M.anims[anim], fw = M.frame.w, fh = M.frame.h, cols = A.frames, rows = M.dirs.length, s = Math.min(sheet.width / (cols * fw / SPR_PX * 2), sheet.height / (rows * fh / SPR_PX * 2)) * 2 / SPR_PX;
+      sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = 'high';
+      for (var r = 0; r < rows; r++) for (var f = 0; f < cols; f++) {
+        layersOn().forEach(function (l) { var im = IMG[cur][A.sheets[l]]; if (!im || !im.complete || !im.naturalWidth) return; sctx.drawImage(im, f * fw, r * fh, fw, fh, f * fw * s, r * fh * s, fw * s, fh * s); });
+        if (f === 0) { sctx.fillStyle = '#231a16'; sctx.font = '11px sans-serif'; sctx.fillText(M.dirs[r], 4, r * fh * s + 14); }
+      }
+    }
+    var pending = 0; names.forEach(function (nm) { for (var f in IMG[nm]) { pending++; IMG[nm][f].onload = function () { if (--pending === 0 && cur) drawSheet(); }; } });
+    /* the night forest */
+    var forest = null;
+    function hash(a, b, c) { var v = Math.sin(a * 12.9898 + b * 78.233 + (c || 0) * 37.719) * 43758.5453; return v - Math.floor(v); }
+    function paintForest() {
+      var W = 400, H = 250, Z = 2, fc = document.createElement('canvas'); fc.width = W * Z; fc.height = H * Z; var c = fc.getContext('2d');
+      kit.setup(Object.assign({}, kit.STYLE, { outsideHue: 152, shadowHue: 250, sat: 0.72, bright: -8 }));
+      c.setTransform(Z, 0, 0, Z, 0, 0); c.fillStyle = '#2f4a3e'; c.fillRect(0, 0, W, H);
+      for (var i = 0; i < 400; i++) { var x = hash(i, 1, 3) * W, y = hash(i, 2, 3) * H, r = 3 + hash(i, 3, 3) * 16; c.fillStyle = i % 3 ? 'rgba(40,78,60,0.35)' : 'rgba(70,110,80,0.25)'; c.beginPath(); c.ellipse(x, y, r, r * 0.45, 0, 0, 7); c.fill(); }
+      var things = [], back = ['pine', 'birch', 'pine', 'deadTree', 'pine', 'birch', 'pine', 'pine', 'birch', 'pine', 'deadTree'];
+      back.forEach(function (n, i) { things.push([n, 5 + i * 40 + hash(i, 5) * 14, 70 + hash(i, 6) * 30, 0.55 + hash(i, 7) * 0.25, i]); });
+      for (i = 0; i < 6; i++) things.push([i % 3 === 0 ? 'rockFormation' : i % 3 === 1 ? 'bush' : 'rock', 20 + i * 70 + hash(i, 8) * 30, 95 + hash(i, 9) * 15, 0.6 + hash(i, 10) * 0.4, i + 20]);
+      for (i = 0; i < 12; i++) things.push([i % 2 ? 'fern' : i % 3 ? 'tallGrass' : 'mushrooms', hash(i, 11) * W, 120 + hash(i, 12) * 120, 0.6 + hash(i, 13) * 0.4, i + 40]);
+      things.push(['campfire', 200, 232, 0.8, 99]);
+      things.sort(function (a, b) { return a[2] - b[2]; }).forEach(function (t) { var sp = kit.bakeProp(t[0], t[4]); c.drawImage(sp.cv, t[1] + sp.l * t[3], t[2] + sp.t * t[3], sp.w * t[3], sp.h * t[3]); });
+      var nc = document.createElement('canvas'); nc.width = W * Z; nc.height = H * Z; var n = nc.getContext('2d');
+      n.fillStyle = 'rgb(96,132,138)'; n.fillRect(0, 0, W * Z, H * Z);
+      var g = n.createRadialGradient(200 * Z, 222 * Z, 0, 200 * Z, 222 * Z, 260 * Z); g.addColorStop(0, 'rgba(255,200,120,1)'); g.addColorStop(0.4, 'rgba(230,170,90,0.6)'); g.addColorStop(1, 'rgba(96,132,138,0)');
+      n.fillStyle = g; n.beginPath(); n.arc(200 * Z, 222 * Z, 260 * Z, 0, 7); n.fill();
+      c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'multiply'; c.drawImage(nc, 0, 0); c.globalCompositeOperation = 'source-over';
+      c.globalAlpha = 0.14; c.fillStyle = kit.grain(c); c.fillRect(0, 0, W * Z, H * Z); c.globalAlpha = 1;
+      kit.setup(kit.STYLE); return fc;
+    }
+    var nightScene = { noKills: true, begin: function (c) { if (!forest) forest = paintForest(); c.drawImage(forest, 0, 0, 400, 250); }, items: function () {}, end: function () {} };
+    /* the starter island */
+    var T = kit.TW, CT, CW, CH, island = null, icam = { x: 0, y: 0 }, clock = 0, grassLook = World.GRASS_INK;
+    function makeIsland() { island = World.make(kit, { isle: 60, isle0: 60, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11 }); island.meadowLook = grassLook; island.plant(); island.camp(); island.sortBuckets(); CT = island.CT; CW = island.CW; CH = island.CH; }
+    var islandScene = {
+      noKills: true, bounds: null,
+      walk: function (x, y) { return island.isLand(x, y); },
+      begin: function (c, P) {
+        var hw = 200, hh = 125, WX = island.GW * T, WY = island.GH * T;
+        icam.x = Math.max(hw, Math.min(WX - hw, P.x)); icam.y = Math.max(hh, Math.min(WY * K - hh, P.y * K - 14));
+        c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.translate(-icam.x, -icam.y);
+        island.drawGround(c, icam, hw, hh); island.drawWaves(c, icam, hw, hh, clock, 0.75, 1.05); island.drawGrass(c, icam, hw, hh, clock, grassLook);
+      },
+      items: function (items) {
+        var hw = 200, hh = 125, TS = T * K, hero = Combat.dbg().P;
+        var bx0 = Math.max(0, Math.floor((icam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((icam.x + hw) / T / CT) + 1);
+        var by0 = Math.max(0, Math.floor((icam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((icam.y + hh) / TS / CT) + 1);
+        for (var by = by0; by <= by1; by++) for (var bx = bx0; bx <= bx1; bx++) {
+          var list = island.buckets[by * CW + bx]; if (!list) continue;
+          list.forEach(function (o) {
+            var s = island.sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
+            if (px + w < icam.x - hw || px > icam.x + hw || py + h < icam.y - hh || py > icam.y + hh) return;
+            items.push({ y: o.y, f: function () { var behind = o.r === 8 && hero.y < o.y && hero.y * K > py + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3; if (behind) ctx.globalAlpha = 0.45; ctx.drawImage(s.cv, px, py, w, h); ctx.globalAlpha = 1; } });
+          });
+        }
+      },
+      end: function (c) { var PSN = Combat.api.pixelScale || 2; c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0); c.globalAlpha = 0.12; c.fillStyle = kit.grain(c); c.fillRect(0, 0, 400 * PSN, 250 * PSN); c.globalAlpha = 1; c.restore(); }
+    };
+    var sceneName = 'island';
+    function setScene(nm) {
+      sceneName = nm; night = nm === 'night';
+      if (nm === 'island') {
+        if (!island) makeIsland();
+        islandScene.bounds = { x0: 8, y0: 12, x1: island.GW * T - 8, y1: island.GH * T - 8 }; Combat.api.scene = islandScene;
+        var P = Combat.dbg().P; if (!P.onIsland) { P.x = island.home.x + 100; P.y = island.home.y - 30; P.onIsland = true; }
+        if (!island.isLand(P.x, P.y)) { P.x = island.home.x + 100; P.y = island.home.y - 30; }
+      } else { Combat.api.scene = night ? nightScene : null; var Q = Combat.dbg().P; if (Q.onIsland) { Q.x = 200; Q.y = 200; Q.onIsland = false; } }
+      Combat.dbg().W.pillars.forEach(function (p) { p.hide = nm !== 'arena'; });
+      pressed($('scIsland'), nm === 'island'); pressed($('scArena'), nm === 'arena'); pressed($('scNight'), night);
+    }
+    $('scIsland').addEventListener('click', function (e) { setScene('island'); e.currentTarget.blur(); });
+    $('scArena').addEventListener('click', function (e) { setScene('arena'); e.currentTarget.blur(); });
+    $('scNight').addEventListener('click', function (e) { setScene('night'); e.currentTarget.blur(); });
+    var noDmg = true;
+    $('sbeast').addEventListener('click', function (e) { Combat.spawn('beast'); e.currentTarget.blur(); });
+    $('sclear').addEventListener('click', function (e) { Combat.clear(); var Q = Combat.dbg().P; Q.onIsland = false; setScene(sceneName); e.currentTarget.blur(); });
+    $('nodmg').addEventListener('click', function (e) { noDmg = !noDmg; pressed(e.currentTarget, noDmg); e.currentTarget.blur(); });
+    var zoomEl = $('zoom'); zoomEl.addEventListener('input', function () { zoom = +zoomEl.value; $('zoomo').textContent = zoom; });
+    var first = localStorage.getItem('blendereditor.model'); if (!SP[first]) first = names[0];
+    if (first) pick(first);
+    return {
+      enter: function () { active = true; cv.classList.remove('dark'); Combat.api.roster = []; Combat.reset(); Combat.api.heroSprite = drawHeroSprite; var P = Combat.dbg().P; P.onIsland = false; setScene(sceneName); },
+      leave: function () { active = false; Combat.api.scene = null; Combat.api.heroSprite = null; },
+      tick: function (dt) { clock += dt; if (noDmg) { var P = Combat.dbg().P; if (!P.dead) P.hp = P.maxHp; } if (sceneName === 'island' && island) { var D = Combat.dbg(); D.W.pillars = island.nearSolids(D.P); } }
+    };
+  })();
+
+  /* ---------- the tabs ---------- */
+  var curTab = null, tabBtns = document.querySelectorAll('#tabs button');
+  function show(name) {
+    if (!TABS[name]) name = 'chars';
+    if (curTab && TABS[curTab].leave) TABS[curTab].leave();
+    ['chars', 'creatures', 'objects', 'models'].forEach(function (n) { document.getElementById('left-' + n).hidden = n !== name; document.getElementById('right-' + n).hidden = n !== name; });
+    Array.prototype.forEach.call(tabBtns, function (b) { b.setAttribute('aria-pressed', b.dataset.tab === name ? 'true' : 'false'); });
+    curTab = name; TABS[name].enter(); try { localStorage.setItem('arteditor.tab', name); } catch (e) {}
+  }
+  Array.prototype.forEach.call(tabBtns, function (b) { b.addEventListener('click', function () { show(b.dataset.tab); b.blur(); }); });
+  var startTab = 'chars'; try { startTab = localStorage.getItem('arteditor.tab') || 'chars'; } catch (e) {}
+  if (/[?&]tab=(\w+)/.test(location.search)) startTab = RegExp.$1;
+  show(startTab);
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    var tab = TABS[curTab];
+    if (tab.tick) tab.tick(dt);
+    Combat.update(dt); Combat.render(ctx);
+    if (tab.after) tab.after(dt);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 Decided with Robin on 2026-10-07, after he found the flat pastel look "a bit of a mobile game, it lacks character and art
 direction". The references are in `docs/reference/` (Bauer and Kittelsen, public domain, with a contact sheet) and in the
 notes on six pages of Egerkrans's *Nordiska gudar* from Robin's own copy (`docs/reference/egerkrans/README.md`). Everything
-below is a rule to check new art against. The **Art Direction page** (`look-editor.html`) shows the same scene in the old look
+below is a rule to check new art against. The Art Direction page (`look-editor.html`, removed in the cleanup of 2026-10-09; its values are the kit's defaults) shows the same scene in the old look
 and the new, with the rules as sliders, and hands the chosen look to the game (`game.look`).
 
 ## The sentence
@@ -75,7 +75,7 @@ Everything is still drawn in code. The look is a renderer and a palette, not a s
    knee and elbow IK, a tunic, a small head with a few ink marks, jagged hair and beards; three designs, Eirik, Ásta and Hallvard,
    for Robin to pick from) and **two trolls drawn from scratch** (the boulder troll after Bauer, the forest troll after Kittelsen).
    The animals (`animal3D`) still draw their old per-part lines; they are the next family.
-3. **The page**: `look-editor.html` draws one scene twice, old and new, with the rules as sliders and "Use in the game".
+3. **The page** (removed 2026-10-09): `look-editor.html` drew one scene twice, old and new, with the rules as sliders and "Use in the game".
 4. **Then the palette pass** over the game: the night overlay, the cave, the boards, the water and beaches (kept as Robin
    likes them, retuned only for the shadow hue).
 5. **The building pieces (built 2026-10-07):** walls, doors, windows, posts, beams, stairs, chimneys, roofs and the yard pieces

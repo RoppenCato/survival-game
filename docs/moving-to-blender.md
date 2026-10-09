@@ -1,7 +1,7 @@
 # Moving to Blender
 
 Robin decided on 2026-10-09 to move the game's graphics to Blender models rendered to sprite sheets, after the trial with the
-second hero (`art/`, `assets/sprites/`, the Blender Editor, the Mixamo clips, the in-game trial). This is the plan: what to model,
+second hero (`art/`, `assets/sprites/`, the Blender Editor (since the cleanup of 2026-10-09 the Art Editor's Models tab), the Mixamo clips, the in-game trial). This is the plan: what to model,
 in what order, what stays in code, and what has to be decided. It replaces "all art is drawn in code" as the rule for characters
 and creatures; the rest is decided below. **Status is kept in the tables; update them as models land.**
 
