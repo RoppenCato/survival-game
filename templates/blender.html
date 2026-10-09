@@ -100,6 +100,8 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <h2>Model</h2>
         <div class="group" id="models"></div>
         <p class="desc" id="modelnote"></p>
+        <div class="row"><label for="hscale">Height</label><input id="hscale" type="range" min="0.6" max="1.2" step="0.01" value="0.85"><output id="hscaleo">0.85</output></div>
+        <p class="desc">The figure's size on the ground, here and in the game (game.blenderScale): 1 is the render's own size, 0.85 makes him the drawn hero's height (Robin, 2026-10-09: a bit tall).</p>
         <div class="group"><button id="useGame">Use in the game</button><button id="takeBack">Take back</button></div>
         <p class="desc" id="usenote">The game draws its hero from this model's sheets (game.blenderHero) until it is taken back; its clips follow the game's own actions. A trial: no weapon, torch or ring is drawn on him.</p>
         <h2 class="more">Gear</h2>
@@ -168,7 +170,10 @@ __COMBAT__
     'hero2-fit': 'The cel hero fitted to the world (2026-10-09): the painted face, the game’s own palette (Eirik’s colours), daylight with the art direction’s cool shadow, a subtle rim, the grain. Walk him round the starter island beside the drawn hero’s world.',
     'hero2-mixamo': 'The fitted hero on the Mixamo skeleton with eighteen Mixamo clips (2026-10-09): idle, looking around, walk, run, two sword slashes, bow draw and shot, hit, death, chop, mine, pick up, open a lid, drink, sit down, sit, stand up. Walk and run from the keys; the rest on the keys under Clips.' };
   var SPR_PX = 3, cur = null, gear = {}, zoom = 1, night = false, anim = 'idle';
-  var clip = null, seated = false, swingNext = 0;              // a one-shot clip: { name, t0, then }; seated keeps the sit idle until X
+  var clip = null, seated = false, swingNext = 0;
+  var hscale = 0.85; try { var hs0 = parseFloat(localStorage.getItem('game.blenderScale')); if (hs0 > 0) hscale = hs0; } catch (e) {}
+  var hscaleEl = document.getElementById('hscale'); hscaleEl.value = hscale; document.getElementById('hscaleo').textContent = hscale;
+  hscaleEl.addEventListener('input', function () { hscale = +hscaleEl.value; document.getElementById('hscaleo').textContent = hscale; localStorage.setItem('game.blenderScale', String(hscale)); });              // a one-shot clip: { name, t0, then }; seated keeps the sit idle until X
   function meta() { return SP[cur] && SP[cur].meta; }
   function layersOn() { var M = meta(), out = ['body']; if (!M) return out; M.layers.forEach(function (l) { if (l !== 'body' && gear[l]) out.push(l); }); return out; }
   function spriteDir(face) {
@@ -187,7 +192,7 @@ __COMBAT__
     }
     if (!clip && !a && seated && M.anims.sit) { a = 'sit'; f = Math.floor(t * M.anims.sit.fps) % M.anims.sit.frames; }
     if (!a) { a = moving ? (P0.sprinting && M.anims.run ? 'run' : (M.anims.walk ? 'walk' : 'idle')) : 'idle'; var A0 = M.anims[a]; f = Math.floor(t * A0.fps) % A0.frames; }
-    var A = M.anims[a], d = spriteDir(face), fw = M.frame.w, fh = M.frame.h, s = zoom / SPR_PX;
+    var A = M.anims[a], d = spriteDir(face), fw = M.frame.w, fh = M.frame.h, s = zoom * hscale / SPR_PX;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     var g = c.createRadialGradient(0, 0, 0, 0, 0, 11 * zoom); g.addColorStop(0, 'rgba(30,70,50,0.4)'); g.addColorStop(0.6, 'rgba(30,70,50,0.22)'); g.addColorStop(1, 'rgba(30,70,50,0)'); c.save(); c.scale(1, 0.4); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 11 * zoom, 0, 7); c.fill(); c.restore();
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';

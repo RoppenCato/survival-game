@@ -248,7 +248,8 @@ __COMBAT__
      two slashes and the fists by the attack's phases (the clip runs with the windup, the blow and the recovery), chop and mine in gather
      mode by the tool, the bow's shot, the hit, sitting, and the fallen hero (the death clip, then its last frame). No weapon, torch or
      ring is drawn on him; the engine's own drawing is unchanged and returns when the model is taken back. */
-  var SPR = __SPRITES__ || {}, sprHero = null, sprImg = {}, sprClip = null, sprFireT = 0, sprDeadT = 0, sprLast = null, SPR_PX = 3;
+  var SPR = __SPRITES__ || {}, sprHero = null, sprImg = {}, sprClip = null, sprFireT = 0, sprDeadT = 0, sprLast = null, SPR_PX = 3, sprScale = 0.85;
+  try { var sprS0 = parseFloat(localStorage.getItem('game.blenderScale')); if (sprS0 > 0) sprScale = sprS0; } catch (e) {}   // the editor's Height slider
   try { var sprName = localStorage.getItem('game.blenderHero'); if (sprName && SPR[sprName]) { sprHero = SPR[sprName].meta; for (var sf in SPR[sprName].images) { var sim = new Image(); sim.src = SPR[sprName].images[sf]; sprImg[sf] = sim; } } } catch (e) {}
   function sprDir(face) {
     var n = sprHero.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
@@ -273,7 +274,7 @@ __COMBAT__
   }
   function sprDraw(c, x, y, face, an, dashing, P) {
     var M = sprHero, pk = sprPick(P, an); sprLast = pk; if (!pk) return;
-    var A = M.anims[pk.a], d = sprDir(face), fw = M.frame.w, fh = M.frame.h, s = 1 / SPR_PX, im = sprImg[A.sheets.body];
+    var A = M.anims[pk.a], d = sprDir(face), fw = M.frame.w, fh = M.frame.h, s = sprScale / SPR_PX, im = sprImg[A.sheets.body];
     if (!im || !im.complete || !im.naturalWidth) return;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';

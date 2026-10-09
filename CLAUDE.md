@@ -445,7 +445,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
   Nothing else changes: building, the bag, E and the world are the engine's. **Limits of the trial:** no weapon, tool, torch, shield
   or ring is drawn on him (the clips swing empty hands), the pick-up, lid, drink and look-around clips are not wired (the game has no
   such moments), and all eighteen sheets (22 MB) load with the page. Debug: `Combat.api.debug().spr()` (hero, last, clip, deadT,
-  pick, draw, img). Played through in the pane: walk, sprint, both slashes, the bow, chop, mine, a hit, sit and stand on a placed
+  pick, draw, img). **Robin's first look (2026-10-09): a bit tall, and the idle "hacky":** the idle was a ten-second clip sampled at
+  sixteen frames (1.6 a second), so it is now rendered at **100 frames (10 a second)** (rendered alone into `art/render/mx_idle` and
+  merged into the main render folder before packing; `idle=100` in `art:mixamo:sheets`); and the editor's Model panel has a
+  **Height** slider (`game.blenderScale`, 0.85 by default: 137 px at 3 px a unit is 46 units, the drawn hero is 39) that the editor
+  and the game both draw with (`hscale`, `sprScale`). Played through in the pane: walk, sprint, both slashes, the bow, chop, mine, a hit, sit and stand on a placed
   chair, death and R, the Building board; no console errors. With the model taken back the game is exactly as before.
 
 ## Things to know before changing code
