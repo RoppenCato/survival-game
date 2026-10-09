@@ -377,6 +377,23 @@ the text and it is made the default. When a spec's meaning changes, change the s
   through **`Combat.api.heroSprite(c, x, y, face, anim, dashing)`**, a hook in `drawHero` that replaces the drawn figure (no weapon
   or shield drawn with it): the direction from the facing angle (clockwise from south in eighths), idle or walk by `anim.amt`, the
   frame by the clock at the sheet's fps, the layers stacked body, mail, helmet; the Frames panel shows his sheet too.
+  **The style test (2026-10-09, Robin: the Blender hero works but looks bland; redesign at 3.5 to 4 heads, three styles side by side
+  over the Night Forest, do not change the game):** `art/build/hero2_build.py` is **the second hero**: about 3.75 heads, a big readable
+  face (eye whites and pupils, brows, a nose, a mouth, a short beard), mitten hands and heavy boots, a strong silhouette (the red
+  hood worn down as a cowl round the shoulders, a thick braid over the left shoulder, two belt pouches, trim bands at the hem, the
+  cuffs and the neck), built in a **T-pose** for Mixamo (`art/source/hero2_tpose.fbx`, the joined body mesh); its own rig is rigid
+  parts, **calibrated at build time** (`measure`: which local axis and sign swings each bone down, forward or outward, the forearms
+  measured with the arm hanging), so `key()` takes `{down, fwd, out}` degrees; a basic 6-frame walk and a 4-frame idle (Mixamo is
+  to replace them). `art/build/toon.py` has **three styles** (`restyle(style)` rebuilds every material from its stored `hex` and
+  `pattern`): **cel** (two or three tones, the cool shadow, a warm rim where the surface turns from the camera on the sun's side,
+  grain, the calligraphy line), **painted** (Bauer: smooth-stepped shading with no hard cut, colours pulled toward olive-brown, a
+  mottled noise, pigment pooling at the edges, a thin brown line with a Perlin wobble) and **folk** (flat emission, a bold even
+  line, **knotwork and woven patterns** on the trim from the mesh's Generated coordinates: the angle round the band and the position
+  across it, `_pattern`). `render.py` takes `--style`, `--walkframes` and four directions (`s w n e`). `tools/visual/herostyles.js`
+  paints a **Night Forest** from the game's props (the kit at hue 152 with blue-violet shadows, pines, birches, dead trees, hummocks,
+  ferns, one campfire, a deep blue-green multiply with the fire's amber cut into it) and puts the three heroes over it at game scale:
+  a 1.7x idle, the four idle directions at 1x, the walk at 1x; `npm run art:styles` does the whole thing (herostyles.png). Robin has
+  not picked a style; nothing in the game changed.
 
 ## Things to know before changing code
 

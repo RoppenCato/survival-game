@@ -17,6 +17,13 @@ the game was drawn in code; this folder is the first place where a model lives i
 ```
 npm run art:hero       # build the .blend, render every frame, pack the sheets
 npm run art:compare    # herocompare.png: the drawn hero beside the rendered one
+npm run art:styles     # the style test: hero2 in the three styles over the Night Forest, herostyles.png
 ```
+
+**The style test (2026-10-09):** `build/hero2_build.py` is the second hero, about 3.75 heads, chunky, built in a **T-pose** so Mixamo
+can auto-rig it (`source/hero2_tpose.fbx` is the joined body mesh); its rig is calibrated at build time (which local axis swings a
+bone down, forward or outward is measured, so the animations are written in those words). `toon.py` renders any character in
+three styles, `--style cel | painted | folk`, rebuilding every material from its stored colour and pattern (`restyle`).
+`tools/visual/herostyles.js` puts the three side by side over a Night Forest painted from the game's own props.
 
 Directions go clockwise from facing the camera: s, sw, w, nw, n, ne, e, se. The frame's anchor is the point between the feet.

@@ -8,7 +8,8 @@
     "start": "python3 tools/build.py && node tools/open.js",
     "test": "node tests/ctest2.js && node tests/ctest4.js && node tests/btest3.js && node tests/ktest.js && node tests/turntest.js && node tests/wtest2.js && node tests/sprinttest.js && node tests/fuzz.js && node tests/weapons.js && node tests/ring.js && node tests/gather.js && node tests/iron.js && node tests/karve.js && node tests/fishing.js && node tests/runes30.js",
     "art:hero": "node tools/blender.js art/build/hero_build.py && node tools/blender.js art/build/render.py -- art/source/hero.blend art/render/hero && node tools/sprites.js hero",
-    "art:compare": "node tools/visual/herocompare.js"
+    "art:compare": "node tools/visual/herocompare.js",
+    "art:styles": "node tools/blender.js art/build/hero2_build.py && node tools/blender.js art/build/render.py -- art/source/hero2.blend art/render/hero2_cel --dirs 4 --frames 4 --walkframes 6 --layers body --ortho 1.72 --style cel && node tools/blender.js art/build/render.py -- art/source/hero2.blend art/render/hero2_painted --dirs 4 --frames 4 --walkframes 6 --layers body --ortho 1.72 --style painted && node tools/blender.js art/build/render.py -- art/source/hero2.blend art/render/hero2_folk --dirs 4 --frames 4 --walkframes 6 --layers body --ortho 1.72 --style folk && node tools/visual/herostyles.js"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^0.1.0"
