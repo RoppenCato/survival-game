@@ -24,7 +24,7 @@ SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), 
 # The Blender hero's sprite sheets (assets/sprites/hero, 2026-10-09): the Character Editor and the Blender Editor get each sheet's
 # metadata inlined and the PNGs as paths beside dist/ (../assets/sprites/...), which load from file:// and from the workbench
 # server rooted at the repo. (They were data URIs until 2026-10-09; eighteen Mixamo clips made that 25 MB of page.)
-import base64, json
+import base64, json, re
 def all_sprites():
     """every packed sheet under assets/sprites/<name>/<name>.json, for the Blender Editor"""
     root = os.path.join(ROOT, 'assets', 'sprites'); out = {}
@@ -38,6 +38,15 @@ def all_sprites():
         out[name] = {'meta': j, 'images': imgs}
     return json.dumps(out)
 SRC['__SPRITES__'] = all_sprites()
+def item_icons():
+    """the things in the hand as icons (art/build/items_icons.py), assets/sprites/items/<kind>_wood.png and _metal.png"""
+    d = os.path.join(ROOT, 'assets', 'sprites', 'items'); out = {}
+    if not os.path.isdir(d): return 'null'
+    for fn in sorted(os.listdir(d)):
+        m = re.match(r'^(\w+?)_(wood|metal)\.png$', fn)
+        if m: out.setdefault(m.group(1), {})[m.group(2)] = '../assets/sprites/items/' + fn
+    return json.dumps(out)
+SRC['__ICONS__'] = item_icons()
 
 # page name in dist/  ->  template in templates/
 PAGES = [

@@ -41,9 +41,10 @@ toon.setup_render(sc, SIZE, PX, int(opt['samples']))
 
 def layer_setup(layer):
     """Show the right meshes: the body alone, one gear piece over the body as a holdout, or 'all' (everything, for checking)."""
-    for o in body_c.objects: o.hide_render = False; o.is_holdout = layer not in ('body', 'all')
-    for o in gear_c.objects: o.hide_render = not (layer == 'all' or (layer != 'body' and o.name.startswith(layer))); o.is_holdout = False
-    toon.freestyle(sc, vl, PX, body_c if layer == 'body' else gear_c if layer != 'all' else None, STYLE)
+    show = layer.startswith('+'); name = layer[1:] if show else layer           # '+axe': the body and that gear together, for checking (2026-10-09)
+    for o in body_c.objects: o.hide_render = False; o.is_holdout = not show and layer not in ('body', 'all')
+    for o in gear_c.objects: o.hide_render = not (layer == 'all' or (name != 'body' and o.name.startswith(name))); o.is_holdout = False
+    toon.freestyle(sc, vl, PX, body_c if layer == 'body' else gear_c if (layer != 'all' and not show) else None, STYLE)
 
 def set_action(name):
     act = bpy.data.actions[name]; ad = rig.animation_data; ad.action = act
@@ -62,7 +63,18 @@ n = 0
 for anim in ANIMS:
     act = set_action(anim); length = int(act.frame_end - act.frame_start + 1) if act.use_frame_range else int(act.frame_range[1] - act.frame_range[0] + 1)
     nfr = FR.get(anim, int(opt['walkframes']) if (anim == 'walk' and opt['walkframes']) else NFR)
-    meta['anims'][anim] = {'frames': nfr, 'fps': nfr / (length / sc.render.fps)}
+    meta['anims'][anim] = {'frames': nfr, 'fps': nfr / (length / sc.render.fps), 'hands': {}}
+    # the wrists per direction and frame (2026-10-09, for the things in the hands): render pixels [x, y] and the depth toward the camera, right then left
+    HANDS = [b for b in ('mixamorig:RightForeArm', 'mixamorig:LeftForeArm', 'hand.R', 'hand.L') if b in rig.pose.bones]
+    for d in range(NDIR):
+        (rig.parent or rig).rotation_euler = (0, 0, -2 * math.pi * d / NDIR); rows = []
+        for f in range(nfr):
+            sc.frame_set(int(round(1 + f * length / nfr))); bpy.context.view_layer.update(); row = []
+            for bn in HANDS[:2]:
+                wp = rig.matrix_world @ rig.pose.bones[bn].tail; cv2 = world_to_camera_view(sc, cam, wp)
+                row.append([round(cv2.x * SIZE * PX, 1), round((1 - cv2.y) * SIZE * PX, 1), round(cv2.z, 3)])
+            rows.append(row)
+        meta['anims'][anim]['hands'][dir_names[d]] = rows
     for layer in LAYERS:
         layer_setup(layer)
         for d in range(NDIR):

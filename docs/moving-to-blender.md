@@ -48,7 +48,7 @@ Blender Editor and in the game, a before/after image, and a note in the status t
   directions, the layers, the height), rendered by one script (`npm run art:model <name>`). Rules: eight directions for things that
   turn freely (people, beasts), four for small things; the idle at 10 frames a second and the rest at the game's pace; sheets
   trimmed to the figure; a target of about 10 MB a character, 1 MB a beast.
-- **Things in the hand**: the sword, axe, pick, knife, bow, torch, rod and the carried chest drawn as **separate layers** rendered on
+- **Things in the hand** (done 2026-10-09 for the sword, axe, pick, knife, club and bow; the seax, spear and rod are modelled but not rendered; the torch and the chest are still drawn): the sword, axe, pick, knife, bow, torch, rod and the carried chest drawn as **separate layers** rendered on
   the same clips (a child of the hand bone, rendered as a holdout layer like the helmet), so the game stacks "body + sword" from the
   Fight bar. This is the one piece of the trial Robin saw missing ("swings empty hands").
 - **The lighting hooks**: the cast shadow's lean and length from the hour (the Light Editor's `sun(h)`) once the game takes the
@@ -108,7 +108,7 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 
 | Model | Blend | Rig | Clips | Sheets | In the editor | In the game | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Hero 2 (cel, fitted) | `hero2.blend`, `hero2_mixamo.blend` | Mixamo | 18 | `hero2-mixamo` | yes | **the hero** everywhere (since 2026-10-09 evening, `src/sprites.js`) | no gear or weapon layers yet; the drawn hero retired to `art/backup/` |
+| Hero 2 (cel, fitted) | `hero2.blend`, `hero2_mixamo.blend` | Mixamo | 18 | `hero2-mixamo` | yes | **the hero** everywhere (since 2026-10-09 evening, `src/sprites.js`) | the sword, axe, pick, knife, club and bow as layers in the hand (2026-10-09); no gear layers yet; the drawn hero retired to `art/backup/` |
 | Hero 1 (first trial) | `hero.blend` | own | idle, walk | `hero` | yes | Character Editor only | superseded |
 | Villagers, Brokk, child, elder, guard | | | | | | | step 2 |
 | Boulder troll, stone, forest troll | | | | | | | step 3 |

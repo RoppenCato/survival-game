@@ -47,6 +47,18 @@
     var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (A.walk ? 'walk' : 'idle')) : 'idle';
     return { a: nm2, f: loopFrame(A[nm2], t) };
   }
+  // a sheet recoloured once per tint (the metal of a thing in the hand, by its material): the colour laid over the pixels at 0.6
+  function tinted(H, im, file, tint) {
+    var key = file + '|' + tint, cv2 = H.sil[key]; if (cv2) return cv2;
+    cv2 = document.createElement('canvas'); cv2.width = im.naturalWidth; cv2.height = im.naturalHeight; var g = cv2.getContext('2d');
+    g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = 0.6; g.fillStyle = tint; g.fillRect(0, 0, cv2.width, cv2.height);
+    g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.35; g.drawImage(im, 0, 0); H.sil[key] = cv2; return cv2;
+  }
+  // where a hand is for a drawn frame: [dx, dy, depth] from the feet in world units (null when the sheet has no hands); which is 0 right, 1 left
+  function hand(H, pk, face, which, scale) {
+    var M = H.meta, A = M.anims[pk.a]; if (!A.hands) return null; var d = M.dirs[dirOf(M, face)], rows = A.hands[d]; if (!rows || !rows[pk.f]) return null;
+    var h = rows[pk.f][which || 0], s = (scale || 1) / PX; return h ? [(h[0] - M.anchor.x) * s, (h[1] - M.anchor.y) * s, h[2]] : null;
+  }
   function silOf(H, im, file, hue) {
     var cv2 = H.sil[file]; if (cv2) return cv2;
     cv2 = document.createElement('canvas'); cv2.width = im.naturalWidth; cv2.height = im.naturalHeight; var g = cv2.getContext('2d');
@@ -64,7 +76,12 @@
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (opts.shadow !== false && !P.dead) cast(c, H, im, A.sheets.body, opts.shadowHue, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
-    for (var i = 0; i < layers.length; i++) { var li = H.img[A.sheets[layers[i]]]; if (!li || !li.complete || !li.naturalWidth) continue; c.drawImage(li, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); }
+    for (var i = 0; i < layers.length; i++) {                     // a layer is a name, or { layer, tint } for a recoloured one
+      var L = layers[i], ln = typeof L === 'string' ? L : L.layer, file = A.sheets[ln]; if (!file) continue;
+      var li = H.img[file]; if (!li || !li.complete || !li.naturalWidth) continue;
+      var src = typeof L === 'string' || !L.tint ? li : tinted(H, li, file, L.tint);
+      c.drawImage(src, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    }
     c.restore();
   }
   // once a frame: the one-shot clips the engine's state does not carry (the bow's shot) and the moment of death
@@ -84,5 +101,5 @@
     return H;
   }
   function drawDead(c, H, x, y, face, an, P, opts) { if (H) { tick(H, P); draw(c, H, x, y, face, an, false, P, opts || {}); } }
-  return { PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast };
+  return { PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted };
 });

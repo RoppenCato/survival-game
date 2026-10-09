@@ -438,6 +438,26 @@ the text and it is made the default. When a spec's meaning changes, change the s
   do not move them), gathers every clip's action (the hand-made idle and walk removed first) and saves `art/source/hero2_mixamo.blend`
   with the armature under a 'Turn' empty that `render.py` rotates; it prints a check per clip (length, hips travel, lowest foot).
   `tools/visual/mixamocompare.js` (`npm run art:mixamo`) puts the hand-keyed idle and walk over the Mixamo idle, walk and run.
+  **The things in the hand (2026-10-09, Robin: weapons and tools from Blender too):** `art/build/items_build.py` models the sword,
+  axe, pick, knife, club, seax, spear, rod and bow as low-poly parts in the Gear collection of `hero2_mixamo.blend`, bone-parented to
+  the right forearm (the bow to the left) with the fist as origin (`GRIP` 8.5 cm along the forearm); each kind is two layers,
+  `<kind>Wood` (haft, grip, stave) and `<kind>Metal` (head, blade, guard, in a neutral grey the game tints by the material), so one
+  render serves every material. **The grip axis is the forearm's own +Y** (the blade continues the arm, the way Mixamo's sword and
+  axe clips hold a weapon; chosen from a test of all six axes, `probe_grip.py`), the pommel toward the elbow, a head set off the
+  haft toward +Z (up when the axe is raised, down as the blow lands); the bow alone stands across the arm on Z. `render.py` takes
+  `+axe` (the body and that gear together, not a holdout) for checking, and writes every animation's **hands** (the two wrists per
+  direction and frame: render pixels and depth) into meta.json; `tools/sprites.js` carries them into the sheet's numbers and packs
+  a layer only for the animations it was rendered for. `npm run art:items` builds the items, renders their layers for the clips
+  they show in (idle, walk, run, hit, and the slashes, chop and mine or the bow's draw and shot), merges them into the hero's render
+  (`items_merge.py`) and packs; `npm run art:icons` renders each kind alone, laid on its side from a nearly level camera, as
+  `assets/sprites/items/<kind>_wood.png` and `_metal.png` (`items_icons.py`), which the build inlines as `__ICONS__` and `Items.icon`
+  draws (`Items.setIcons`, the metal tinted by the material, laid diagonally in the slot; the drawn icon is the fallback).
+  **In the game** the thing in the hand is the hero's layers (`handLayers`: the kind of the Fight or Gather bar's hand slot, its
+  metal tinted `Items.MATS[mat].face`; nothing while carrying the chest or with the torch lit), in the Combat Arena the weapon panel's
+  kinds (`arenaLayers`), in the Art Editor's Models tab the **In the hand** chooser. `Sprites.draw` takes a layer as a name or
+  `{ layer, tint }` (`tinted`: the sheet recoloured once per tint) and `Sprites.hand(H, pk, face, which, scale)` gives a hand's
+  offset from the feet for a drawn frame. The character panel draws the Blender hero with the thing in hand too. Items are now a
+  kind and a material: the size, twist and curl of the old drawn items no longer show on the hero.
   **In the Blender Editor (2026-10-09, Robin: fix it so I can try it out):** `npm run art:mixamo:sheets` renders all eighteen clips in
   eight directions with a frame count per clip (`render.py --frames idle=16,walk=12,run=10,...`; `tools/sprites.js` reads each
   animation's count from meta.json) and packs them into `assets/sprites/hero2-mixamo` (one 164 by 164 frame, 22 MB of sheets: the

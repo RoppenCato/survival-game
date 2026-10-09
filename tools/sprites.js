@@ -11,9 +11,9 @@ const { createCanvas, loadImage } = require('../node_modules/@napi-rs/canvas'); 
   const PX = meta.px, S = meta.size * PX, anims = Object.keys(meta.anims), dirs = meta.dirs, layers = meta.layers, NF = meta.frames;
   const files = {}, imgs = {};
   const nf = a => meta.anims[a].frames;
-  for (const a of anims) for (const l of layers) for (const d of dirs) for (let f = 0; f < nf(a); f++) {
-    const k = `${a}_${l}_${d}_${String(f).padStart(2, '0')}`; files[k] = path.join(inDir, k + '.png'); imgs[k] = await loadImage(files[k]);
-  }
+  const has = {};                                                     // a layer rendered only for some animations (a thing in the hand) is packed only there (2026-10-09)
+  for (const a of anims) for (const l of layers) { has[a + '|' + l] = fs.existsSync(path.join(inDir, `${a}_${l}_${dirs[0]}_00.png`)); if (!has[a + '|' + l]) continue;
+    for (const d of dirs) for (let f = 0; f < nf(a); f++) { const k = `${a}_${l}_${d}_${String(f).padStart(2, '0')}`; files[k] = path.join(inDir, k + '.png'); imgs[k] = await loadImage(files[k]); } }
   // the union of the drawn pixels over every frame, at render size
   let x0 = S, y0 = S, x1 = 0, y1 = 0; const cv = createCanvas(S, S), c = cv.getContext('2d');
   for (const k in imgs) {
@@ -30,7 +30,9 @@ const { createCanvas, loadImage } = require('../node_modules/@napi-rs/canvas'); 
   const out = { name, frame: { w: fw, h: fh }, anchor, dirs, layers, anims: {}, figure_px: meta.figure_px / PX, elev: meta.elev, source: 'art/source/' + name + '.blend' };
   for (const a of anims) {
     const NA = nf(a); out.anims[a] = { frames: NA, fps: Math.round(meta.anims[a].fps * 100) / 100, sheets: {} };
+    if (meta.anims[a].hands) { out.anims[a].hands = {}; for (const d of dirs) out.anims[a].hands[d] = (meta.anims[a].hands[d] || []).map(row => row.map(h => [Math.round((h[0] - bx) / PX * 10) / 10, Math.round((h[1] - by) / PX * 10) / 10, h[2]])); }   // the wrists in frame pixels at 1x (2026-10-09)
     for (const l of layers) {
+      if (!has[a + '|' + l]) continue;
       const sheet = createCanvas(fw * NA, fh * dirs.length), sc = sheet.getContext('2d'); sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = 'high';
       dirs.forEach((d, r) => { for (let f = 0; f < NA; f++) {
         const im = imgs[`${a}_${l}_${d}_${String(f).padStart(2, '0')}`];

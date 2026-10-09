@@ -213,13 +213,31 @@ function gear(c, it, P, K) {
   c.restore();
 }
 // icon(c, it, s): the item in a slot, handle at lower left and tip at upper right, about s wide
+var SPR = { imgs: null, cache: {} };                          // the rendered icons (2026-10-09): a page sets Items.setIcons({ kind: { wood: Image, metal: Image } })
+function setIcons(imgs) { SPR.imgs = imgs; SPR.cache = {}; }
+function tintCanvas(im, tint) {
+  var cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight; var g = cv.getContext('2d');
+  g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = 0.6; g.fillStyle = tint; g.fillRect(0, 0, cv.width, cv.height);
+  g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.35; g.drawImage(im, 0, 0); return cv;
+}
+function iconImage(c, it, s) {
+  var set = SPR.imgs && SPR.imgs[it.kind]; if (!set) return false;
+  var wood = set.wood, metal = set.metal, ok = function (im) { return im && im.complete && im.naturalWidth; };
+  if (!ok(wood) && !ok(metal)) return false;
+  var side = (s || 14) * 1.9, M = MATS[it.mat] || MATS.iron;
+  c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';   // laid diagonally in the slot, as the drawn icons were
+  if (ok(wood)) c.drawImage(wood, -side / 2, -side / 2, side, side);
+  if (ok(metal)) { var key = it.kind + '|' + it.mat, cv = SPR.cache[key]; if (!cv) { cv = tintCanvas(metal, hsl(M.face, it.hue || 0)); SPR.cache[key] = cv; } c.drawImage(cv, -side / 2, -side / 2, side, side); }
+  c.restore(); return true;
+}
 function icon(c, it, s) {
+  if (iconImage(c, it, s)) return;
   var K = KINDS[it.kind], L = K.len * (it.kind === 'bow' ? 1 : it.size), span = it.kind === 'bow' ? L * it.size * 2.2 : L + 7 + (it.kind === 'greataxe' ? 8 : 0), k = (s || 14) / span;
   c.save(); c.scale(k, k);
   if (K.gear) draw(c, it, 0, 0, 1, 0, null);
   else if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
   c.restore();
 }
-return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon };
+return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons };
 })();
 if (typeof module !== 'undefined') module.exports = Items;

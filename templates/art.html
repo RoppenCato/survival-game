@@ -312,6 +312,9 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <p class="desc">The figure's size on the ground, here and in the game (game.blenderScale): 1 is the render's own size, which since 2026-10-09 is the drawn hero's height for the Mixamo sheets (the older sheets render larger: 0.85 fits them).</p>
           <div class="group"><button data-id="useGame">Use in the game</button></div>
           <p class="desc" data-id="usenote"></p>
+          <h2 class="more">In the hand</h2>
+          <div class="group" data-id="hand"></div>
+          <p class="desc">The things modelled for the hand (2026-10-09): each is its wood and its metal as layers over the body, the metal tinted by the material in the game; here iron. They show in the clips they were rendered for.</p>
           <h2 class="more">Gear</h2>
           <div class="group" data-id="gear"></div>
           <p class="desc">Each piece is its own layer, rendered over the body as a holdout, so they stack in any order.</p>
@@ -790,7 +793,14 @@ __SPRITES_JS__
     var hscaleEl = $('hscale'); hscaleEl.value = hscale; $('hscaleo').textContent = hscale;
     hscaleEl.addEventListener('input', function () { hscale = +hscaleEl.value; $('hscaleo').textContent = hscale; localStorage.setItem('game.blenderScale', String(hscale)); });
     function meta() { return SP[cur] && SP[cur].meta; }
-    function layersOn() { var M = meta(), out = ['body']; if (!M) return out; M.layers.forEach(function (l) { if (l !== 'body' && gear[l]) out.push(l); }); return out; }
+    var handKind = null;
+    function isHandLayer(l) { return /^(\w+?)(Wood|Metal)$/.test(l); }
+    function layersOn() {
+      var M = meta(), out = ['body']; if (!M) return out;
+      M.layers.forEach(function (l) { if (l !== 'body' && !isHandLayer(l) && gear[l]) out.push(l); });
+      if (handKind) { if (M.layers.indexOf(handKind + 'Wood') >= 0) out.push(handKind + 'Wood'); if (M.layers.indexOf(handKind + 'Metal') >= 0) out.push({ layer: handKind + 'Metal', tint: '#9ca3ad' }); }
+      return out;
+    }
     function spriteDir(face) {
       var M = meta(), n = M.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
       var want = n === 8 ? ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'][i] : ['s', 'w', 'n', 'e'][i], k = M.dirs.indexOf(want); return k < 0 ? 0 : k;
@@ -811,9 +821,13 @@ __SPRITES_JS__
       cur = nm; gear = {}; sit(false); if (H()) H().clip = null; localStorage.setItem('blendereditor.model', nm); if (active) attachModel();
       Array.prototype.forEach.call(modelsEl.children, function (b) { pressed(b, b.dataset.nm === nm); });
       $('modelnote').textContent = NOTE[nm] || ('Sheets from assets/sprites/' + nm + '.');
-      gearEl.innerHTML = ''; var M = meta();
-      M.layers.forEach(function (l) { if (l === 'body') return; var b = document.createElement('button'); b.textContent = l.charAt(0).toUpperCase() + l.slice(1); pressed(b, false); b.addEventListener('click', function () { gear[l] = !gear[l]; pressed(b, gear[l]); b.blur(); drawSheet(); }); gearEl.appendChild(b); });
+      gearEl.innerHTML = ''; var M = meta(); handKind = null;
+      M.layers.forEach(function (l) { if (l === 'body' || isHandLayer(l)) return; var b = document.createElement('button'); b.textContent = l.charAt(0).toUpperCase() + l.slice(1); pressed(b, false); b.addEventListener('click', function () { gear[l] = !gear[l]; pressed(b, gear[l]); b.blur(); drawSheet(); }); gearEl.appendChild(b); });
       if (gearEl.children.length === 0) { var p = document.createElement('span'); p.className = 'desc'; p.textContent = 'This model has no gear layers.'; gearEl.appendChild(p); }
+      var handEl = $('hand'); handEl.innerHTML = ''; var kinds = [];
+      M.layers.forEach(function (l) { var mk = /^(\w+?)(Wood|Metal)$/.exec(l); if (mk && kinds.indexOf(mk[1]) < 0) kinds.push(mk[1]); });
+      ['none'].concat(kinds).forEach(function (k) { var b = document.createElement('button'); b.textContent = k === 'none' ? 'Empty hands' : k.charAt(0).toUpperCase() + k.slice(1); pressed(b, k === 'none'); b.addEventListener('click', function () { handKind = k === 'none' ? null : k; Array.prototype.forEach.call(handEl.children, function (q) { pressed(q, q === b); }); b.blur(); drawSheet(); }); handEl.appendChild(b); });
+      if (!kinds.length) { var p2 = document.createElement('span'); p2.className = 'desc'; p2.textContent = 'Nothing modelled for this hand yet.'; handEl.appendChild(p2); }
       animsEl.innerHTML = '';
       Object.keys(M.anims).forEach(function (a) { var b = document.createElement('button'); b.textContent = a + ' (' + M.anims[a].frames + ' frames, ' + M.anims[a].fps + ' fps)'; pressed(b, a === anim); b.addEventListener('click', function () { anim = a; Array.prototype.forEach.call(animsEl.children, function (q) { pressed(q, q === b); }); b.blur(); drawSheet(); }); animsEl.appendChild(b); });
       if (!M.anims[anim]) anim = Object.keys(M.anims)[0];
@@ -830,7 +844,7 @@ __SPRITES_JS__
       var A = M.anims[anim], fw = M.frame.w, fh = M.frame.h, cols = A.frames, rows = M.dirs.length, s = Math.min(sheet.width / (cols * fw / SPR_PX * 2), sheet.height / (rows * fh / SPR_PX * 2)) * 2 / SPR_PX;
       sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = 'high';
       for (var r = 0; r < rows; r++) for (var f = 0; f < cols; f++) {
-        layersOn().forEach(function (l) { var im = H().img[A.sheets[l]]; if (!im || !im.complete || !im.naturalWidth) return; sctx.drawImage(im, f * fw, r * fh, fw, fh, f * fw * s, r * fh * s, fw * s, fh * s); });
+        layersOn().forEach(function (l) { var ln = typeof l === 'string' ? l : l.layer, file = A.sheets[ln], im = file && H().img[file]; if (!im || !im.complete || !im.naturalWidth) return; var src = typeof l === 'string' ? im : Sprites.tinted(H(), im, file, l.tint); sctx.drawImage(src, f * fw, r * fh, fw, fh, f * fw * s, r * fh * s, fw * s, fh * s); });
         if (f === 0) { sctx.fillStyle = '#231a16'; sctx.font = '11px sans-serif'; sctx.fillText(M.dirs[r], 4, r * fh * s + 14); }
       }
     }

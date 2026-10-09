@@ -147,7 +147,16 @@ __SPRITES_JS__
   };
   lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(GameArt.lib);
-  Sprites.attach(Combat, Sprites.hero(__SPRITES__ || {}, localStorage), { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var P = Combat.dbg().P, t = Combat.api.tools && Combat.api.tools[P.tool]; return t ? t.id : null; }, shadowHue: 222 });   // the Blender hero (2026-10-09; the arena has no kit, so the shadow hue is the ink look's 222)
+  var ARENA_HERO = Sprites.hero(__SPRITES__ || {}, localStorage);
+  function arenaLayers() {
+    var P = Combat.dbg().P, M = ARENA_HERO && ARENA_HERO.meta, out = ['body']; if (!M) return out;
+    var kind = P.mode === 'fight' ? (P.weapon === 'ranged' ? arm.ranged : arm.melee) : P.mode === 'gather' ? (Combat.api.tools[P.tool] || {}).id : null; if (!kind) return out;
+    if (M.layers.indexOf(kind + 'Wood') >= 0) out.push(kind + 'Wood');
+    if (M.layers.indexOf(kind + 'Metal') >= 0) out.push({ layer: kind + 'Metal', tint: (Items.MATS[arm.mat] || Items.MATS.iron).face });
+    return out;
+  }
+  Sprites.attach(Combat, ARENA_HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var P = Combat.dbg().P, t = Combat.api.tools && Combat.api.tools[P.tool]; return t ? t.id : null; }, shadowHue: 222, layers: arenaLayers });
+  (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the Blender hero (2026-10-09; the arena has no kit, so the shadow hue is the ink look's 222)
   var S = Combat.S;
   /* the weapons: one melee and one ranged thing in hand, the copper kinds (2026-10-06); the tools stay copper too */
   var arm = { melee: 'sword', ranged: 'bow', mat: 'copper' }, held = {};

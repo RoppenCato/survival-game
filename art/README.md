@@ -19,7 +19,9 @@ npm run art:hero       # build the .blend, render every frame, pack the sheets
 npm run art:compare    # herocompare.png: the drawn hero beside the rendered one
 npm run art:styles     # the style test: hero2 in the three styles over the Night Forest, herostyles.png
 npm run art:mixamo     # bind hero2 to the Mixamo skeleton, render idle, walk and run, mixamocompare.png
-npm run art:mixamo:sheets  # every Mixamo clip in eight directions into assets/sprites/hero2-mixamo (the Blender Editor's model)
+npm run art:mixamo:sheets  # every Mixamo clip in eight directions into assets/sprites/hero2-mixamo (the hero)
+npm run art:items      # the things in the hand modelled and rendered as layers over the hero's clips, merged and packed
+npm run art:icons      # each thing alone as an icon for the bag (assets/sprites/items)
 ```
 
 **Mixamo (2026-10-09):** the hero's animations come from Mixamo (`source/mixamo/`, its README lists every file and its source
