@@ -225,8 +225,12 @@ __COMBAT__
   window.addEventListener('visibilitychange', function () { if (document.hidden) Music.setVolume(0); else Music.setVolume(OPTS.music); });
 
   /* ---------- the island: one island from the shared archipelago code (src/world.js) ---------- */
-  var spec = { isle: 160, isle0: 60, big: 230, sizes: [60, 230, 150, 110, 170, 90], biomes: [0, 0, 0, 0, 1, 1], noDock: true, count: 6, dir: 0.1, gap: 26, gapVar: 0.5, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.85;   // six islands (2026-10-07): the starter, the big one, four more round them
-  try { var gwS = JSON.parse(localStorage.getItem('game.world')); if (gwS && gwS.count) { for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
+  // Two islands and the camera out (2026-10-09, Robin: the hero should feel small to the world; the starter island and the big island
+  // until they feel great, the further biomes later): the starter 120 tiles, the big island 400, about 85 tiles of water between
+  // (50 s by raft, 27 s by boat), no lowland island; the view 390 units tall (zoom 0.65) so the hero is a tenth of the screen's height.
+  // The canon: the hero is 1.8 m and 39 units tall, so a unit is 4.6 cm and a tile 1.5 m.
+  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.65;
+  try { var gwS = JSON.parse(localStorage.getItem('game.world2')); if (gwS && gwS.count) { for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
   // what a felled tree, a broken rock and a cut bush give: a day's work should reach 40 wood, 20 stone and 15 fiber

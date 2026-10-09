@@ -49,8 +49,10 @@ gone from the code, and no new work may bring any of it back. This file is the s
   with training to change that. The band is the **hird** (Old Norse hirð, the sworn household band); a member is a
   **hirdman**, and they call each other fellows (decided 2026-10-05). A game day is 20 minutes of real time:
   day and dusk 20 minutes, then a night of 10 minutes (decided 2026-10-05).
-- **Scope for now:** the starter island and travel to the islands round it, all of the first biome. None of the
-  raiding, clan or calendar systems are built yet. `game.html` is the playable start (see "The game" below).
+- **Scope for now (Robin, 2026-10-09):** **the starter island and the big island only**, until they feel great: everything the
+  starter island needs, getting to the big island, and all there is to do there. The lowlands, the further islands and the later
+  progress stay built in the code but are not spawned (`spec.sizes` [120, 400], `biomes` [0, 0], `count` 2). None of the
+  raiding, clan or calendar systems are played yet. `game.html` is the playable start (see "The game" below).
 - **Decided 2026-10-07 (Robin's questionnaire, the night of the villages):** **villages across the islands** with generated names
   ("controlled generation"), the starter island empty of thriving villages (its village was raided; the story comes later), a
   **jetty by the sea** with a road up to the village and boats moored that cannot be boarded, roads between villages uncommon; the
@@ -67,13 +69,15 @@ gone from the code, and no new work may bring any of it back. This file is the s
   the second currency, and **a human jarl who holds the silver ring**, won by a raid on his hall; **nothing is off limits** in a raid
   (reputation is the only brake). The draugr is a side threat for later. The order after this: the biome, then a pass on island and
   map generation for balance.
-- **Scale:** one tile (32 world units, about the hero's width) is one "unit" of Robin's scale brief, and 100 tiles
-  are a kilometre. A normal island is 200 to 400 tiles across, large ones 500 to 700, small ones around 50, and
-  tiny skerries (5 to 30 tiles) are common round the coasts. Most gaps between islands are 20 to 80 tiles, some
-  only 5 to 15, some 80 to 150, and rarely 200 to 400. Islands cluster and form chains; coasts are irregular.
-  The brief also says a normal island should take 20 to 60 minutes to walk across, which contradicts its own
-  numbers (300 tiles takes about 80 seconds at the hero's speed). Robin has not resolved that; the Sea Editor
-  shows walking and sailing times so it can be tuned.
+- **Scale (the canon, decided 2026-10-09; Robin: the hero should feel small to the world, villages big, the boat big, the ocean
+  huge, an island an adventure):** the hero is 1.8 m and 39 units tall, so **one unit is 4.6 cm and a tile (32 units) is 1.5 m**;
+  the old brief's "100 tiles are a kilometre" is dropped (it made the hero 10 m wide). Two levers, both pulled: **the camera** sits
+  out at zoom 0.65 (the view 390 units tall, the hero a tenth of the screen's height; it was 16%), and **the world grew relative
+  to him**: houses 3 to 5 by 3 to 4 tiles, longhouses 9 to 12 by 3 to 4, halls 13 to 16 by 4 to 5, village yards and sites about 1.4
+  times (`Village.ARCH`, `BUILD`, `DEF.gap` 3), the starter island 120 tiles, the big island 400, about 100 tiles of water between
+  (the raft takes a minute, the boat half that). The karve at 7 heroes long already fits a real 15 m karve. **The hero's speed stays**
+  at 84 units a second (a 4 m/s jog): a bigger world with the same jog feels big; a slower hero feels tedious. Islands feel large
+  through obstacles (groves, cliffs, water) more than through distance. The Sea Editor shows walking and sailing times.
 - **Look:** happy, lush, green Scandinavia in daylight. No dark, shady scenes and no glowing "weird lights".
 - **Ground:** never looks square. Outdoor ground must not show tile edges, stair-stepped borders or per-tile
   gradients: kinds of ground meet along smooth, ragged curves, and coasts curve. Sand is warm (no green or grey
@@ -1123,8 +1127,8 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   the props are baked at 2 a unit anyway) and **baked sprites are trimmed to their drawn pixels** (`trimSprite` in `src/stylelab.js`
   at the end of `bakeProp`, `opts.noTrim` to keep the box; l, t, w, h move with the cut) so the card paints no transparent margins.
 - **R** after falling: the engine makes a new hero, the page notices (`P` changed) and puts him back at camp.
-- **Villages across the islands (2026-10-07, Robin: lots of islands, lots of places):** the world has **six islands** (`spec.sizes`
-  60, 230, 150, 110, 170, 90 tiles; `World.make` takes `sizes`; `layoutKey` includes them, so older saves start fresh; `onOtherIsland`
+- **Villages across the islands (2026-10-07, Robin: lots of islands, lots of places; since 2026-10-09 the game spawns only the starter
+  island and the big island, see Scope):** the world had **six islands** (`spec.sizes` 60, 230, 150, 110, 170, 90 tiles; `World.make` takes `sizes`; `layoutKey` includes them, so older saves start fresh; `onOtherIsland`
   is any island but the first). **`Village.plan(env)`** (in `src/village.js`) lays the villages out: none on the starter island, the
   big island three (a seat or a village inland, a fishing hamlet or a trading post on a shore, a small place or a farmstead), a middling
   island two, a small one one or none, a ruin about one in seven, wealth rising with the distance from the wreck, every site on flat
@@ -1526,10 +1530,11 @@ width**, `dir` 0.1), so the editor's sea is laid out as the game's. The village 
 `planSites()` runs `Village.plan` on the sea as the game does and a **big chart** (`#bigchart`, `drawBigChart`) shows the whole sea with the
 islands numbered (home, lowland), every village named and coloured by kind (a town or seat a square), the jetties, and home; under it a line
 counts the villages by kind and says how many lowland islands there are and how far the nearest is from home (metres of water, seconds by
-karve and by boat). **"Use in the game"** stores `game.world` (count, gap, gapVar, skerries, rough, beach, seed, isle, isle0, big, sizes,
+karve and by boat). **"Use in the game"** stores `game.world2` (since 2026-10-09; `game.world` is ignored: count, gap, gapVar, skerries, rough, beach, seed, isle, isle0, big, sizes,
 biomes, dir, sizeVar; a free layout stores no sizes); the game merges it over its `spec` on load, so the next fresh start (Esc, New island)
-builds that sea; `layoutKey` includes the sizes, so a running save of another arrangement is dropped. The game's own spec stays the
-six-island one until Robin picks.
+builds that sea; `layoutKey` includes the sizes, so a running save of another arrangement is dropped. The game's own spec and the
+editor's default game layout are the **two islands** of 2026-10-09 (starter 120, big 400, gap 150, no lowlands; the chart script
+`tools/visual/worlds.js` the same).
 
 
 The archipelago code is `src/world.js` (`World`), used by `templates/sea.html` and `templates/game.html`. Islands are placed one after another, each beside an

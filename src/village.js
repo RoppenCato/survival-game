@@ -8,7 +8,7 @@ var Village = (function () {
 'use strict';
 var T = 32;
 var DEF = {
-  gap: 2, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
+  gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   peoplePerHouse: 2.6, outsideShare: 0.4,             // people in a household; how many of them are out walking at a time
   wealthStone: 0.85, wealthLogs: 0.55, wealthPlanks: 0.25,   // the longhouse's walls by wealth (below: wattle); the houses one step poorer
   shinglesAt: 0.8, turfInland: 1, thatchShore: 1,     // roofs: shingles for the rich, turf inland, thatch by the sea
@@ -24,23 +24,25 @@ var DEF = {
 };
 // the archetypes: how many of what, the yard, the site a page should find for it
 var ARCH = {
-  farmstead: { name: 'Farmstead', houses: [0, 0], out: [2, 3], yard: [5, 4], site: [14, 12], people: [3, 5] },
-  small: { name: 'Small village', houses: [1, 2], out: [3, 4], yard: [6, 5], site: [18, 15], people: [6, 9] },
-  village: { name: 'Village', houses: [3, 4], out: [5, 6], yard: [8, 6], site: [24, 18], people: [10, 15] },
-  seat: { name: "Chieftain's seat", houses: [5, 7], out: [7, 8], yard: [9, 7], site: [30, 24], people: [16, 24], hall: true, palisade: true },
-  fishing: { name: 'Fishing hamlet', houses: [1, 2], out: [3, 4], yard: [6, 5], site: [18, 15], people: [5, 8], shore: true, racks: 2 },
+  // The sizes grown on 2026-10-09 (Robin: the hero should feel small to the world; a village bigger than a screen): yards and sites
+  // about 1.4 times, buildings below likewise
+  farmstead: { name: 'Farmstead', houses: [0, 0], out: [2, 3], yard: [7, 6], site: [20, 16], people: [3, 5] },
+  small: { name: 'Small village', houses: [1, 2], out: [3, 4], yard: [8, 7], site: [26, 20], people: [6, 9] },
+  village: { name: 'Village', houses: [3, 4], out: [5, 6], yard: [11, 8], site: [36, 28], people: [10, 15] },
+  seat: { name: "Chieftain's seat", houses: [5, 7], out: [7, 8], yard: [13, 10], site: [46, 36], people: [16, 24], hall: true, palisade: true },
+  fishing: { name: 'Fishing hamlet', houses: [1, 2], out: [3, 4], yard: [8, 7], site: [26, 20], people: [5, 8], shore: true, racks: 2 },
   fisher: { name: 'Fisherman\u2019s hut', houses: [1, 1], out: [1, 1], yard: [5, 4], site: [12, 10], people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
-  trading: { name: 'Trading post', houses: [2, 3], out: [5, 6], yard: [8, 6], site: [24, 18], people: [8, 12], shore: true, stores: 2 },
-  ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [6, 5], site: [18, 15], people: [0, 0], ruin: true },
+  trading: { name: 'Trading post', houses: [2, 3], out: [5, 6], yard: [11, 8], site: [36, 28], people: [8, 12], shore: true, stores: 2 },
+  ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [8, 7], site: [26, 20], people: [0, 0], ruin: true },
   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church, and a lone church with its priest's house (the lucky strike)
-  town: { name: 'Town', houses: [5, 7], out: [5, 7], yard: [9, 7], site: [34, 28], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },
+  town: { name: 'Town', houses: [5, 7], out: [5, 7], yard: [13, 10], site: [50, 40], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },
   church: { name: 'Church', houses: [1, 1], out: [0, 1], yard: [5, 4], site: [18, 16], people: [2, 3], church: true, chapel: true, lowland: true }
 };
 // the buildings: inside size in tiles [w range, h range], what stands inside, where the door goes (toward the yard)
 var BUILD = {
-  longhouse: { name: 'Longhouse', w: [7, 9], h: [3, 3], roofed: true, inside: 'hall' },
-  hall: { name: 'Great hall', w: [10, 12], h: [4, 4], roofed: true, inside: 'hall' },
-  house: { name: 'House', w: [3, 4], h: [2, 3], roofed: true, inside: 'home' },
+  longhouse: { name: 'Longhouse', w: [9, 12], h: [3, 4], roofed: true, inside: 'hall' },      // a real longhouse is three men wide and twelve long (2026-10-09)
+  hall: { name: 'Great hall', w: [13, 16], h: [4, 5], roofed: true, inside: 'hall' },
+  house: { name: 'House', w: [3, 5], h: [3, 4], roofed: true, inside: 'home' },
   store: { name: 'Storehouse', w: [2, 2], h: [2, 2], roofed: true, inside: 'store', posts: true },
   byre: { name: 'Byre', w: [3, 4], h: [2, 2], roofed: true, inside: 'byre' },
   smithy: { name: 'Smithy', w: [3, 3], h: [2, 2], roofed: true, inside: 'smithy', open: true },
