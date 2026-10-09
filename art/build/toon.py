@@ -23,14 +23,14 @@ SUN_DIR = Vector((0.55, 0.45, -0.70)).normalized()   # the light travels down, t
 # Two scenes to fit (2026-10-09): 'day', the starter island by daylight as the game shows it (Robin: the reference), and 'night',
 # the Night Forest. The scene sets the ambient over every fill, the shadow side's tint, the rim's strength and the world's air.
 SCENES = {
-    'day': {'ambient': (1.0, 0.99, 0.95), 'shadow': (0.60, 0.66, 0.86), 'rim': 0.3, 'air': (0.12, 0.12, 0.115)},
+    'day': {'ambient': (1.0, 0.99, 0.95), 'shadow': (0.54, 0.61, 0.84), 'rim': 0.14, 'air': (0.12, 0.12, 0.115)},   # 2026-10-09, Robin's second look: a deeper shadow step, a smaller rim
     'night': {'ambient': (0.84, 0.95, 0.90), 'shadow': (0.52, 0.66, 0.70), 'rim': 0.45, 'air': (0.085, 0.105, 0.10)},
 }
 SCENE = 'day'
 AMBIENT_TINT = SCENES[SCENE]['ambient']
 SHADOW_TINT_FIT = SCENES[SCENE]['shadow']
 RIM_K = SCENES[SCENE]['rim']
-GRAIN_K = 0.075
+GRAIN_K = 0.16                        # the world's grain is stronger than the first fit (2026-10-09)
 def set_scene(name):
     global SCENE, AMBIENT_TINT, SHADOW_TINT_FIT, RIM_K
     SCENE = name if name in SCENES else 'day'; sc = SCENES[SCENE]; AMBIENT_TINT = sc['ambient']; SHADOW_TINT_FIT = sc['shadow']; RIM_K = sc['rim']
@@ -143,7 +143,7 @@ def build_nodes(m, style):
         if m.get('face'):             # the painted face laid over the skin before the shading: a decal projected from the front
             bsock = _decal(n, L, base_t)
         col = _mix(n, L, 'MIX', lit, _mix(n, L, 'MIX', dark, bsock, _mix(n, L, 'MULTIPLY', 1.0, bsock, SHADOW_TINT_FIT)), _mix(n, L, 'MIX', 0.16, bsock, LIGHT_TINT))
-        col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _rim(n, L), RIM_K), col, RIM_COL)
+        col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _math(n, L, 'GREATER_THAN', _rim(n, L), 0.55), RIM_K), col, RIM_COL)   # the rim as a hard step, not a gradient (2026-10-09: the soft rim read as gloss)
         col = _grain(n, L, col, GRAIN_K, 320)
         L.new(col, em.inputs['Color'])
     L.new(em.outputs[0], out.inputs['Surface'])
@@ -248,7 +248,8 @@ def freestyle(scene, view_layer, px, collection=None, style='cel'):
     view_layer.use_freestyle = True
     fs = view_layer.freestyle_settings; fs.crease_angle = math.radians(100); fs.as_render_pass = False
     for ls in list(fs.linesets): fs.linesets.remove(ls)
-    cfg = {'cel': ('#231a16', 1.0, 1.9, 0.9, True, 0), 'painted': ('#33231a', 1.0, 1.5, 0.9, False, 1.2), 'folk': ('#1e1612', 1.0, 2.4, 1.6, False, 0)}[style]
+    # 2026-10-09: the cel line brought up to the props' weight
+    cfg = {'cel': ('#231a16', 1.0, 2.6, 1.1, True, 0), 'painted': ('#33231a', 1.0, 1.5, 0.9, False, 1.2), 'folk': ('#1e1612', 1.0, 2.4, 1.6, False, 0)}[style]
     ink, alpha, heavy, thin, calligraphy, wobble = cfg
     def lineset(name, thick, outer):
         ls = fs.linesets.new(name)
@@ -261,7 +262,7 @@ def freestyle(scene, view_layer, px, collection=None, style='cel'):
         return st
     st = lineset('contour', heavy, True)
     if calligraphy:
-        cal = st.thickness_modifiers.new('calligraphy', 'CALLIGRAPHY'); cal.orientation = math.radians(45); cal.thickness_min = heavy * 0.5 * px; cal.thickness_max = heavy * 1.3 * px
+        cal = st.thickness_modifiers.new('calligraphy', 'CALLIGRAPHY'); cal.orientation = math.radians(45); cal.thickness_min = heavy * 0.5 * px; cal.thickness_max = heavy * 1.55 * px
     lineset('inner', thin, False)
     return fs
 

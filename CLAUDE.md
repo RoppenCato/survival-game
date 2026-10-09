@@ -453,7 +453,14 @@ the text and it is made the default. When a spec's meaning changes, change the s
   sixteen frames (1.6 a second), so it is now rendered at **100 frames (10 a second)** (rendered alone into `art/render/mx_idle` and
   merged into the main render folder before packing; `idle=100` in `art:mixamo:sheets`); and the editor's Model panel has a
   **Height** slider (`game.blenderScale`, 0.85 by default: 137 px at 3 px a unit is 46 units, the drawn hero is 39) that the editor
-  and the game both draw with (`hscale`, `sprScale`). Played through in the pane: walk, sprint, both slashes, the bow, chop, mine, a hit, sit and stand on a placed
+  and the game both draw with (`hscale`, `sprScale`). **The second fit (2026-10-09, Robin: does he look out of place?):** he read as a
+  glossy figure on a painted page, so the cel style now has the **props' line weight** (contour 2.6, the calligraphy up to 1.55 on the
+  shadow side, the inner line 1.1), a **deeper shadow step** (day shadow 0.54, 0.61, 0.84), the **rim as a hard step** (greater than
+  0.55, strength 0.14) instead of a gradient, **grain at 0.16**, and the **height baked into the render** (`--ortho 2.02`: 117 px at
+  3 px a unit, the drawn hero's 39 units; the Height slider defaults to 1, 0.85 fits the older sheets), so he is no longer scaled
+  down twice. **The cast shadow:** the game and the editor lay the frame's silhouette on the ground as the props' long shadows lie
+  (`sprCast`, `sprSilOf`: a sheet tinted once in the shadow hue, drawn through the transform `[1, 0, -0.5, -0.14]` at 0.3, clipped to
+  the ground). `node tools/visual/heroseat.js <before dir>` writes heroseat.png, before and after on the island. Played through in the pane: walk, sprint, both slashes, the bow, chop, mine, a hit, sit and stand on a placed
   chair, death and R, the Building board; no console errors. With the model taken back the game is exactly as before.
 
 ## Things to know before changing code
