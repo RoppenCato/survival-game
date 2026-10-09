@@ -15,9 +15,9 @@ OUT = os.path.abspath(os.path.join(SRC, 'hero2.blend')); FBX = os.path.abspath(o
 FPS = 24
 
 COL = {
-    'skin': '#e6c29c', 'hair': '#9a5530', 'beard': '#80421f', 'ink': '#231a16', 'white': '#f4ecdc',
-    'tunic': '#a99a7c', 'pants': '#4f5668', 'boot': '#3e2b22', 'belt': '#5a3d2a', 'buckle': '#c9a04a', 'leather': '#6a4a32',
-    'hood': '#8a3a34', 'trim': '#c9a04a', 'trimX': '#c9a04a', 'trim2': '#3a4a5a',
+    'skin': '#bf9a74', 'face': '#bf9a74', 'hair': '#a0502a', 'beard': '#8a4322', 'ink': '#231a16',
+    'tunic': '#625d47', 'pants': '#363d49', 'boot': '#261c16', 'belt': '#3f2b1d', 'buckle': '#8a7340', 'leather': '#4e3826',
+    'hood': '#34473a', 'trim': '#7d6a3a', 'trimX': '#7d6a3a', 'trim2': '#2c3a44',
 }
 PATTERN = {'trim': 'knot:z', 'trimX': 'knot:x', 'trim2': 'woven:z'}          # the folk style draws these; the others show plain bands
 
@@ -74,7 +74,11 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene; sc.render.fps = FPS
 body_c = bpy.data.collections.new('Body'); gear_c = bpy.data.collections.new('Gear')
 sc.collection.children.link(body_c); sc.collection.children.link(gear_c)
-M = {k: toon.material(k, v, PATTERN.get(k)) for k, v in COL.items()}
+toon.face_images()                                      # the painted faces, packed into the file before any material refers to them
+M = {}
+for k, v in COL.items():
+    if k == 'face': M[k] = toon.material(k, v, None, 'cel', face=True)
+    else: M[k] = toon.material(k, v, PATTERN.get(k))
 
 # ---- the rig, in a T-pose ----
 arm_data = bpy.data.armatures.new('HeroRig'); rig = bpy.data.objects.new('HeroRig', arm_data); sc.collection.objects.link(rig)
@@ -118,18 +122,13 @@ part(cone('neck', body_c, M['skin'], 'neck', (0, 0, SH - 0.02), (0, 0, CHIN + 0.
 part(cone('cowl', body_c, M['hood'], 'chest', (0, 0.03, SH - 0.05), (0, 0.03, SH + 0.045), SHW * 0.92, SHW * 0.7, 10, 1.0, 0.8))
 part(ball('hoodback', body_c, M['hood'], 'chest', (0, 0.13, SH + 0.02), 0.12, 10, 7, 1.15, 0.7, 0.55))
 # the head: an egg with a cap of hair, a braid over the left shoulder, big eyes, brows, a nose, a mouth, a short beard
-part(ball('head', body_c, M['skin'], 'head', (0, 0, hz), HEAD * 0.5, 12, 9, 0.90, 0.95, 1.02))
-part(cap('hair', body_c, M['hair'], 'head', (0, 0.01, hz + 0.02), HEAD * 0.5, (0, -0.17, hz + 0.1), (0, 0.6, 1), 12, 9, 0.95, 1.04, 1.04))
+part(ball('head', body_c, M['face'], 'head', (0, 0, hz), HEAD * 0.5, 16, 12, 0.90, 0.95, 1.02))
+part(cap('hair', body_c, M['hair'], 'head', (0, 0.01, hz + 0.02), HEAD * 0.5, (0, -0.17, hz + 0.125), (0, 0.6, 1), 12, 9, 0.95, 1.04, 1.04))
 bx, bz = 0.15, hz - 0.02
 for i in range(5):
     part(ball('braid%d' % i, body_c, M['hair'], 'head', (bx + 0.012 * i, 0.06 - 0.03 * i, bz - 0.085 * i), 0.052 - 0.004 * i, 8, 6, 1.0, 0.9, 1.0))
 part(ball('braidtie', body_c, M['trim'], 'head', (bx + 0.06, -0.09, bz - 0.43), 0.03, 8, 6))
-for sx in (1, -1):
-    part(ball('eyeW' + ('L' if sx > 0 else 'R'), body_c, M['white'], 'head', (sx * 0.074, -0.163, hz - 0.005), 0.04, 8, 6, 1.0, 0.7, 1.1))
-    part(ball('eye' + ('L' if sx > 0 else 'R'), body_c, M['ink'], 'head', (sx * 0.07, -0.192, hz - 0.01), 0.014, 8, 6))
-    part(box('brow' + ('L' if sx > 0 else 'R'), body_c, M['beard'], 'head', (sx * 0.076, -0.168, hz + 0.065), (0.065, 0.018, 0.012)))
 part(cone('nose', body_c, M['skin'], 'head', (0, -0.15, hz - 0.02), (0, -0.215, hz - 0.06), 0.03, 0.016, 8))
-part(box('mouth', body_c, M['beard'], 'head', (0, -0.182, hz - 0.1), (0.04, 0.012, 0.008)))
 part(wedge('beard', body_c, M['beard'], 'head', [
     [(-0.05, -0.14, CHIN - 0.03), (0.05, -0.14, CHIN - 0.03), (0.045, -0.06, CHIN - 0.025), (-0.045, -0.06, CHIN - 0.025)],
     [(-0.14, -0.14, hz - 0.06), (0.14, -0.14, hz - 0.06), (0.15, 0.0, hz - 0.04), (-0.15, 0.0, hz - 0.04)]]))

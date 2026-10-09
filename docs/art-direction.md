@@ -81,7 +81,38 @@ Everything is still drawn in code. The look is a renderer and a palette, not a s
 5. **The building pieces (built 2026-10-07):** walls, doors, windows, posts, beams, stairs, chimneys, roofs and the yard pieces
    in `src/build.js` are drawn as real materials in ink and grain (see CLAUDE.md, Source layout).
 
-## 7. The check
+## 7. Rendered characters: the values (2026-10-09)
+
+Robin chose the **cel style** of the Blender style test (`art/build/toon.py`, `--style cel`) and had the hero fitted to the world
+with the Night Forest scene as the reference (`tools/visual/nightforest.js`: the kit at hue 152 with blue-violet shadows, a deep
+blue-green night multiply `rgb(96,132,138)`, one amber campfire; its mean colours: canopy `#11211e`, trunks `#111e1b`, ground
+`#1a271d`). Every future rendered asset uses these values:
+
+- **Palette** (`COL` in `art/build/hero2_build.py`): skin `#bf9a74`, hair `#a0502a` and beard `#8a4322` (the one warm accent), tunic
+  `#625d47`, trousers `#363d49`, boots `#261c16`, belt `#3f2b1d`, buckle and trim `#8a7340` / `#7d6a3a`, leather `#4e3826`, hood
+  `#34473a` (moss, so the red stays the only accent), neck trim `#2c3a44`. No light beige, nothing brighter than the hair.
+- **Ambient:** every fill is multiplied by the cool green air `AMBIENT_TINT (0.84, 0.95, 0.90)`; the world background is the same
+  green-tinted grey (`world()`: r 0.85, g 1.05, b 1.0 of the ambient level 0.10).
+- **Light:** one sun, upper left and in front, travelling `(0.55, 0.45, -0.70)`, energy 1.15 (the kit's props are lit the same way).
+  The toon cut: shadow under 0.66 of the light, highlight over 0.9. The **shadow side** is the base times `SHADOW_TINT_FIT
+  (0.52, 0.66, 0.70)` (cool blue-green, never the same hue darkened); the **highlight** is the base mixed 16% toward the warm
+  `LIGHT_TINT (1.0, 0.95, 0.80)`. A **rim** of `RIM_COL (1.0, 0.80, 0.52)` at `RIM_K` 0.45 where the surface turns away from the
+  camera on the sun's side, so the figure separates from the dark ground without being the brightest thing on screen.
+- **Line:** Freestyle, the warm brown-black `#231a16` (never pure black); the whole-silhouette contour 1.9 px at game scale with a
+  calligraphy thickness 0.5 to 1.3 of that (heavy toward the lower right); a 0.9 px line at silhouettes inside and creases over
+  100 degrees. Rendered at double size and halved with a smooth filter.
+- **Grain:** fine specks in every fill, `GRAIN_K` 0.075 at noise scale 320 (about the kit's grain at the 0.14 the scene lays over
+  everything); in a composite the kit's grain is laid over the figure too at that 0.14, after it is placed.
+- **Contact shadow:** a cool dark ellipse under the feet fading out (`nightforest.js` `contactShadow`: `rgba(8,14,18)` 0.55 at the
+  centre, 0.3 at 0.6, 0 at the edge; about 30 by 12 units at game scale), as the kit's props sit on the ground.
+- **The face** is a painted decal, not modelling (`_paint_face`, `_decal`): a 256 px RGBA image projected onto the front half of the
+  head from its Generated coordinates; two dark eyes `#2a1a14` set a little high (0.575 of the head's height, 0.19 either side of
+  the middle), short thick brows `#6b3418` above them, no mouth (the beard covers it), no white round the eyes. Three eye styles
+  (`dot`, `oval`, `highlight`) by four expressions (`neutral`, `blink`, `angry`, `hurt`), picked at render time (`--eyes`, `--face`).
+  The nose bump and the beard volume stay modelled, so the side view has one eye, a nose profile and the beard's silhouette, and
+  the back view no face.
+
+## 8. The check
 
 A new thing is right when: it reads as one silhouette at thumbnail size; its line is heavier on the shadow side; its shadow
 is cooler than its light; its fill has grain; it sits in the scene's key with no colour burning but the one allowed; and it

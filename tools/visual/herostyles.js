@@ -4,34 +4,13 @@
 // Writes herostyles.png.  node tools/visual/herostyles.js
 const { createCanvas, loadImage } = require('../../node_modules/@napi-rs/canvas'); const fs = require('fs'); const path = require('path');
 global.__mk = (w, h) => createCanvas(w, h);
-const S = require('../../src/stylelab.js'), kit = S.kit;
+const S = require('../../src/stylelab.js'), kit = S.kit, NF = require('./nightforest.js');
 const STYLES = [['cel', 'A  Cel: two or three tones, a warm rim light, a line heavy on the shadow side'], ['painted', 'B  Painted: Bauer, soft shading, muted greens and browns, a wobbling line'], ['folk', 'C  Folk art: flat fills, a bold even line, knotwork and woven trim']];
 const W = 1500, H = 620, COL = 500, Z = 3;
-function hash(a, b, c) { const v = Math.sin(a * 12.9898 + b * 78.233 + (c || 0) * 37.719) * 43758.5453; return v - Math.floor(v); }
 (async () => {
   const cv = createCanvas(W, H), c = cv.getContext('2d');
-  // ---- the Night Forest: the kit's props in a deep teal-green key with blue-violet shadows, one amber fire ----
-  kit.setup(Object.assign({}, kit.STYLE, { outsideHue: 152, shadowHue: 250, sat: 0.72, bright: -8 }));
-  const M = kit.mats();
-  c.fillStyle = '#2f4a3e'; c.fillRect(0, 0, W, H);
-  for (let i = 0; i < 900; i++) { const x = hash(i, 1, 3) * W, y = hash(i, 2, 3) * H, r = 6 + hash(i, 3, 3) * 40; c.fillStyle = i % 3 ? 'rgba(40,78,60,0.35)' : 'rgba(70,110,80,0.25)'; c.beginPath(); c.ellipse(x, y, r, r * 0.45, 0, 0, 7); c.fill(); }
-  const things = [];
-  const back = ['pine', 'birch', 'pine', 'deadTree', 'pine', 'birch', 'pine', 'pine', 'birch', 'pine', 'deadTree', 'pine', 'birch', 'pine'];
-  back.forEach((n, i) => things.push([n, 20 + i * 36 + hash(i, 5) * 14, 95 + hash(i, 6) * 40, 0.75 + hash(i, 7) * 0.35, i]));
-  for (let i = 0; i < 9; i++) things.push([i % 3 === 0 ? 'rockFormation' : i % 3 === 1 ? 'bush' : 'rock', 10 + i * 56 + hash(i, 8) * 30, 150 + hash(i, 9) * 20, 0.8 + hash(i, 10) * 0.5, i + 20]);
-  for (let i = 0; i < 14; i++) things.push([i % 2 ? 'fern' : i % 3 ? 'tallGrass' : 'mushrooms', hash(i, 11) * 500, 165 + hash(i, 12) * 40, 0.7 + hash(i, 13) * 0.4, i + 40]);
-  things.push(['campfire', 250, 198, 0.9, 99]);
-  c.save(); c.setTransform(Z, 0, 0, Z, 0, 0);
-  things.sort((a, b) => a[2] - b[2]).forEach(t => { const sp = kit.bakeProp(t[0], t[4]); c.drawImage(sp.cv, t[1] + sp.l * t[3], t[2] + sp.t * t[3], sp.w * t[3], sp.h * t[3]); });
-  c.restore();
-  // the night: a deep blue-green multiply, the fire's amber glow cut into it, grain and a vignette
-  const night = createCanvas(W, H), n = night.getContext('2d');
-  n.fillStyle = 'rgb(96,132,138)'; n.fillRect(0, 0, W, H);
-  const fx = 250 * Z, fy = 198 * Z, g = n.createRadialGradient(fx, fy - 20, 0, fx, fy - 20, 520); g.addColorStop(0, 'rgba(255,200,120,1)'); g.addColorStop(0.35, 'rgba(230,170,90,0.6)'); g.addColorStop(1, 'rgba(96,132,138,0)');
-  n.fillStyle = g; n.beginPath(); n.arc(fx, fy - 20, 520, 0, 7); n.fill();
-  c.save(); c.globalCompositeOperation = 'multiply'; c.drawImage(night, 0, 0); c.restore();
-  c.globalAlpha = 0.14; c.fillStyle = kit.grain(c); c.fillRect(0, 0, W, H); c.globalAlpha = 1;
-  const vg = c.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, W * 0.7); vg.addColorStop(0, 'rgba(10,16,20,0)'); vg.addColorStop(1, 'rgba(10,16,20,0.45)'); c.fillStyle = vg; c.fillRect(0, 0, W, H);
+  // ---- the Night Forest (tools/visual/nightforest.js) ----
+  c.drawImage(NF.paint(kit, W, H, Z, { fire: [250, 198] }), 0, 0);
   // ---- the three heroes ----
   c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
   for (let si = 0; si < STYLES.length; si++) {

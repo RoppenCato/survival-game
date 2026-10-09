@@ -18,6 +18,14 @@ LIGHT_TINT = (1.0, 0.95, 0.80)        # the small warm highlight
 RIM_COL = (1.0, 0.80, 0.52)           # the warm rim
 PAINT_MUTE = (0.42, 0.40, 0.30)       # the painted style pulls every colour toward this olive-brown
 SUN_DIR = Vector((0.55, 0.45, -0.70)).normalized()   # the light travels down, to the right and away: it comes from upper left, in front
+# the fit with the world (2026-10-09, Robin: match the Night Forest): a cool green ambient over every fill, the shadow side toward
+# the scene's blue-green, a subtle rim, the grain as fine specks at the strength of the kit's grain
+AMBIENT_TINT = (0.84, 0.95, 0.90)
+SHADOW_TINT_FIT = (0.52, 0.66, 0.70)
+RIM_K = 0.45
+GRAIN_K = 0.075
+FACE = 'neutral'                      # the face texture drawn on a material with the 'face' property: <eyes>-<expression> or neutral
+EYES = 'dot'
 
 def srgb(hexs):
     h = hexs.lstrip('#'); v = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
@@ -118,18 +126,84 @@ def build_nodes(m, style):
         L.new(col, em.inputs['Color'])
     else:   # cel
         v = _light(n, L)
+        base_t = tuple(base[i] * AMBIENT_TINT[i] for i in range(3))
         dark = _math(n, L, 'LESS_THAN', v, 0.66); lit = _math(n, L, 'GREATER_THAN', v, 0.9)
-        shadow = tuple(base[i] * SHADOW_TINT[i] for i in range(3)); light = tuple(base[i] * 0.78 + LIGHT_TINT[i] * 0.22 for i in range(3))
-        col = _mix(n, L, 'MIX', lit, _mix(n, L, 'MIX', dark, base, shadow), light)
-        col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _rim(n, L), 0.75), col, RIM_COL)
-        col = _grain(n, L, col, 0.045)
+        shadow = tuple(base_t[i] * SHADOW_TINT_FIT[i] for i in range(3)); light = tuple(base_t[i] * 0.8 + LIGHT_TINT[i] * 0.16 for i in range(3))
+        bsock = base_t
+        if m.get('face'):             # the painted face laid over the skin before the shading: a decal projected from the front
+            bsock = _decal(n, L, base_t)
+        col = _mix(n, L, 'MIX', lit, _mix(n, L, 'MIX', dark, bsock, _mix(n, L, 'MULTIPLY', 1.0, bsock, SHADOW_TINT_FIT)), _mix(n, L, 'MIX', 0.16, bsock, LIGHT_TINT))
+        col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _rim(n, L), RIM_K), col, RIM_COL)
+        col = _grain(n, L, col, GRAIN_K, 320)
         L.new(col, em.inputs['Color'])
     L.new(em.outputs[0], out.inputs['Surface'])
 
-def material(name, hexs, pattern=None, style='cel'):
+def _decal(n, L, base):
+    """The face image (FACE) projected onto the front of the head from the mesh's Generated coordinates (its box, 0..1): u across,
+    v up; only the front half (y under 0.5) shows it; the image's alpha lays it over the skin."""
+    img = bpy.data.images.get('face_' + EYES + '_' + FACE) or bpy.data.images.get('face_dot_neutral')
+    tc = n.new('ShaderNodeTexCoord'); sep = n.new('ShaderNodeSeparateXYZ'); L.new(tc.outputs['Generated'], sep.inputs[0])
+    cmb = n.new('ShaderNodeCombineXYZ'); L.new(sep.outputs['X'], cmb.inputs[0]); L.new(sep.outputs['Z'], cmb.inputs[1])
+    tex = n.new('ShaderNodeTexImage'); tex.image = img; tex.extension = 'CLIP'; tex.interpolation = 'Linear'; L.new(cmb.outputs[0], tex.inputs['Vector'])
+    front = _math(n, L, 'LESS_THAN', sep.outputs['Y'], 0.5)
+    a = _math(n, L, 'MULTIPLY', tex.outputs['Alpha'], front)
+    return _mix(n, L, 'MIX', a, base, tex.outputs['Color'])
+
+def _paint_face(name, eyes, expr, size=256):
+    """A face as an RGBA image: two dark eyes set a little high, short thick brows, no mouth (the beard covers it). eyes: dot
+    (a solid round eye), oval (a small upright oval), highlight (a dot with a tiny light in its upper left). expr: neutral,
+    blink (two lines), angry (brows down toward the nose, eyes narrowed), hurt (eyes shut tight, brows up)."""
+    import math as _m
+    px = [0.0] * (size * size * 4)
+    ink = srgb('#2a1a14'); brow = srgb('#6b3418'); hi = (0.95, 0.9, 0.82)
+    def put(x, y, col, a=1.0):
+        if 0 <= x < size and 0 <= y < size:
+            i = (y * size + x) * 4; px[i] = col[0]; px[i + 1] = col[1]; px[i + 2] = col[2]; px[i + 3] = max(px[i + 3], a)
+    def ellipse(cx, cy, rx, ry, col, rot=0.0):
+        for y in range(int(cy - ry - rx) - 1, int(cy + ry + rx) + 2):
+            for x in range(int(cx - rx - ry) - 1, int(cx + rx + ry) + 2):
+                dx, dy = x + 0.5 - cx, y + 0.5 - cy; c, s_ = _m.cos(rot), _m.sin(rot); u, v = dx * c + dy * s_, -dx * s_ + dy * c
+                d = (u / rx) ** 2 + (v / ry) ** 2
+                if d <= 1: put(x, y, col, 1.0)
+                elif d <= 1.35: put(x, y, col, max(0.0, 1 - (d - 1) / 0.35))
+    # positions in the head box: u across (0 left .. 1 right), v up (0 chin .. 1 crown); the image's v axis is flipped on write
+    ex, ey = 0.19, 0.575; es = size
+    for sx in (-1, 1):
+        cx, cy = (0.5 + sx * ex) * es, (1 - ey) * es
+        if expr == 'blink': ellipse(cx, cy, 0.05 * es, 0.009 * es, ink)
+        elif expr == 'hurt': ellipse(cx, cy, 0.045 * es, 0.01 * es, ink, rot=sx * 0.5); ellipse(cx, cy, 0.045 * es, 0.01 * es, ink, rot=-sx * 0.5)
+        else:
+            if eyes == 'oval': ellipse(cx, cy, 0.03 * es, 0.048 * es, ink)
+            else: ellipse(cx, cy, 0.044 * es, 0.044 * es, ink)
+            if expr == 'angry': ellipse(cx, cy - 0.03 * es, 0.05 * es, 0.022 * es, (0, 0, 0), rot=0)   # a lid cut from above (made transparent below)
+            if eyes == 'highlight' and expr != 'angry': ellipse(cx - 0.012 * es, cy - 0.012 * es, 0.009 * es, 0.009 * es, hi)
+        # the brow: a short thick bar; angry slants it down toward the nose, hurt lifts it
+        by = cy - (0.085 if expr != 'hurt' else 0.11) * es; rot = 0.0
+        if expr == 'angry': rot = -sx * 0.45; by += 0.02 * es
+        if expr == 'hurt': rot = sx * 0.3
+        ellipse(cx + (0.01 * sx if expr == 'angry' else 0) * es, by, 0.065 * es, 0.018 * es, brow, rot=rot)
+    if expr == 'angry':               # the lid: skin-coloured alpha 0 cannot be drawn with put, so punch it: clear the lid region
+        for sx in (-1, 1):
+            cx, cy = (0.5 + sx * ex) * es, (1 - ey) * es
+            for y in range(int(cy - 0.06 * es), int(cy - 0.012 * es)):
+                for x in range(int(cx - 0.05 * es), int(cx + 0.05 * es) + 1):
+                    if 0 <= x < size and 0 <= y < size: i = (y * size + x) * 4; px[i + 3] = 0.0
+    img = bpy.data.images.get(name) or bpy.data.images.new(name, size, size, alpha=True)
+    flipped = []
+    for row in range(size - 1, -1, -1): flipped.extend(px[row * size * 4:(row + 1) * size * 4])
+    img.pixels = flipped; img.alpha_mode = 'STRAIGHT'; img.pack(); img.use_fake_user = True
+    return img
+
+def face_images():
+    """Every face image the renders can pick: three eye styles by four expressions, packed into the .blend."""
+    for eyes in ('dot', 'oval', 'highlight'):
+        for expr in ('neutral', 'blink', 'angry', 'hurt'): _paint_face('face_%s_%s' % (eyes, expr), eyes, expr)
+
+def material(name, hexs, pattern=None, style='cel', face=False):
     m = bpy.data.materials.get(name)
     if m: return m
     m = bpy.data.materials.new(name); m['hex'] = hexs; m['pattern'] = pattern or ''
+    if face: m['face'] = 1
     build_nodes(m, style); m.diffuse_color = (*srgb(hexs), 1)
     return m
 
@@ -154,7 +228,7 @@ def camera(scene, elev_deg=35, ortho=1.75, aim_z=0.85):
 def world(scene, ambient=None, style='cel'):
     if ambient is None: ambient = 0.14 if style == 'painted' else 0.10
     w = bpy.data.worlds.get('World') or bpy.data.worlds.new('World'); scene.world = w; w.use_nodes = True
-    bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (ambient, ambient, ambient, 1); bg.inputs[1].default_value = 1.0
+    bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (ambient * 0.85, ambient * 1.05, ambient, 1); bg.inputs[1].default_value = 1.0   # the night forest's cool green air
 
 def freestyle(scene, view_layer, px, collection=None, style='cel'):
     """The line per style: cel, a whole-silhouette contour heavy toward the lower right and a thinner line at overlaps;

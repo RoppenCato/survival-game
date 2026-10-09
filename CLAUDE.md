@@ -393,8 +393,16 @@ the text and it is made the default. When a spec's meaning changes, change the s
   across it, `_pattern`). `render.py` takes `--style`, `--walkframes` and four directions (`s w n e`). `tools/visual/herostyles.js`
   paints a **Night Forest** from the game's props (the kit at hue 152 with blue-violet shadows, pines, birches, dead trees, hummocks,
   ferns, one campfire, a deep blue-green multiply with the fire's amber cut into it) and puts the three heroes over it at game scale:
-  a 1.7x idle, the four idle directions at 1x, the walk at 1x; `npm run art:styles` does the whole thing (herostyles.png). Robin has
-  not picked a style; nothing in the game changed.
+  a 1.7x idle, the four idle directions at 1x, the walk at 1x; `npm run art:styles` does the whole thing (herostyles.png).
+  **Robin picked the cel style (2026-10-09) and had the hero fitted to the world:** the face is a **painted decal** (`toon._paint_face`
+  draws a 256 px RGBA image in Python, three eye styles by four expressions, packed into the .blend with a fake user before the
+  materials refer to them; `_decal` projects it onto the front half of the head from the Generated coordinates; `render.py --eyes
+  dot|oval|highlight --face neutral|blink|angry|hurt`); the modelled eyes, brows and mouth are gone, the nose bump and the beard
+  stay. The **palette, ambient, light, line, grain and contact shadow values are in `docs/art-direction.md` section 7** and in
+  `toon.py` (`AMBIENT_TINT`, `SHADOW_TINT_FIT`, `RIM_K`, `GRAIN_K`). `tools/visual/nightforest.js` is the shared Night Forest painter
+  (`paint`, `grainOver`, `contactShadow`, `sample`); `tools/visual/herofit.js` writes herofit.png (the eye styles and expressions, before
+  and after at game scale and 4x). `assets/sprites/hero2-fit` is the fitted hero's eight-direction sheet for the Blender Editor.
+  **Nothing in the game changed.**
 
 ## Things to know before changing code
 
