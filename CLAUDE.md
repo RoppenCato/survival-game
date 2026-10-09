@@ -1,8 +1,9 @@
 # Viking survival game: prototypes
 
 2D top-down survival crafting game set in Viking-age Scandinavia (three-quarter camera, cartoon look). All art,
-animation and sound is drawn or synthesized in code: there are no asset files. This repo holds browser
-prototypes and editors, not a full game yet.
+animation and sound is drawn or synthesized in code, with one exception since 2026-10-09: **characters may be modelled in
+Blender and rendered to sprite sheets** (`art/`, `assets/sprites/`; a trial Robin wants to judge before it spreads). This repo
+holds browser prototypes and editors, not a full game yet.
 
 The game was post-apocalyptic steampunk until 2026-10-04. Robin changed it to a Viking game, and `main`
 is now the Viking game (merged from the `viking` branch on 2026-10-04). The last steampunk state is commit
@@ -87,7 +88,8 @@ source of truth for the new direction.
   near the trees, small detail is scattered in the open, and there is room to build a base.
 - **Environment objects** come in three groups, from Robin's lists: found in nature, left by people in the wild,
   and built by Vikings. Keep new props in one of the three.
-- **Hero:** the smooth vector figure. Robin rejected a pixel-sprite look ("doesn't fit with the other graphics").
+- **Hero:** the smooth vector figure. Robin rejected a pixel-sprite look ("doesn't fit with the other graphics"). Since
+  2026-10-09 a Blender-rendered hero exists beside it as a trial (`art/`); Robin has not chosen between them.
 
 ## Commands
 
@@ -348,6 +350,29 @@ the text and it is made the default. When a spec's meaning changes, change the s
   with Have / Build / Test, and the order of work. Below it the older build order (steps 1 to 10) and open
   questions. Update it when a step is done.
 - `dist/`: built single-file pages, committed to git.
+- `art/` (**2026-10-09, the Blender trial**; `art/README.md`): characters modelled, rigged and animated by script in Blender 5.2 (on
+  Robin's machine under Program Files; `tools/blender.js` finds it or takes `BLENDER`) and rendered headless to sprite sheets.
+  `art/build/toon.py` is the shared look in the art direction (a toon node group: base tone, a cool shadow side under 0.66 of the
+  light, a small warm light over 0.9, grain; one sun upper left; an orthographic camera 35 degrees above the ground looking north;
+  Freestyle: a whole-silhouette contour in warm brown-black heavy toward the lower right by a calligraphy thickness, a thinner line
+  at silhouettes inside and creases). `art/build/hero_build.py` builds **the new hero from scratch**: the ink figure's proportions
+  (`INK_BASE` in metres, 1.8 m tall), rigid low-poly parts (tapered tubes, balls, wedges, a cut sphere for the hair) each bound to
+  one bone of a basic rig (root, hips, spine, chest, neck, head, two-bone arms and legs with hands and feet), a belted bone-coloured
+  tunic, trousers, boots, hair tied back in a tail, a short beard, dot eyes and brows, and the one hot colour, **the red cloak
+  pinned at the left shoulder**; two actions, `idle` (48 frames: a breath, the right hand on the belt) and `walk` (24 frames, the
+  legs and arms in opposite phase, a knee bend, a bob); gear as separate meshes in the Gear collection (`helm`: a cut-sphere bowl,
+  a brim, a nasal, a spike; `mail`: a shirt, skirt and sleeves a little outside the tunic). The animations speak in (forward,
+  twist, outward) degrees and `key()` converts to Blender's axes as `art/build/probe.py` measured them (on the hanging limbs +X
+  swings backward, on the spine forward, +Z moves every tail toward world -X). `art/build/render.py` renders any character: every
+  animation, eight directions clockwise from facing the camera (`s sw w nw n ne e se`, the rig turned about Z), eight frames, and
+  the layers: `body` alone, each gear piece over the body as a **holdout** (so what the body hides stays hidden and the game can
+  stack the layers), or `all` for checking; at double size (160 px frames at 1x, the figure about 135 px, the game's 3 px a unit),
+  with `meta.json` (the foot anchor: where the origin lands). `tools/sprites.js` finds one crop box over every frame of every layer,
+  keeps the anchor at a fixed pixel, **halves the frames with a smooth filter** (no nearest-neighbour: the line stays soft like the
+  drawn figure) and packs a sheet per animation and layer (a row per direction, a column per frame) into `assets/sprites/hero/` with
+  `hero.json`. `npm run art:hero` does all three; `npm run art:compare` writes herocompare.png (`tools/visual/herocompare.js`), the
+  drawn Eirik beside the rendered hero. The raw frames in `art/render/` are not committed. **Nothing in the game reads the sheets
+  yet**; the first batch of renders took about 0.4 s a frame.
 
 ## Things to know before changing code
 
