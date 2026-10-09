@@ -634,6 +634,14 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   north row). **Floors: a house has one floor above and that is the limit** (stairs upstairs say "A house has one floor above"):
   Viking-age houses were single-storey with a loft at most, and more storeys would mean generalising `B.up` into a list of
   levels with the roof, fade and camera logic for each; not worth it.
+- **Houses, doorways and reach (2026-10-09, Robin's three notes: the hut was tiny beside the hero, things stood in front of doors, E
+  worked through walls):** **the standard for a generated house is 4 by 3 tiles inside at least** (`BUILD.house` w 4 to 5, h 3 to 4;
+  a deep house for a gable is 4 wide and 4 to 5 deep, `size('house')`), the steading's hut is 4 by 3 and its burnt hall 6 by 4.
+  **Doorways are kept clear:** after a village's props and nature are planted, `hamletBuild` removes every solid prop within a tile
+  and a half of the tile outside each door and the one beyond (`V2.lots`, the door side and `dx`/`dy`). **E never works through a
+  wall:** `canReach(P, it)` asks that the hero's tile and the thing's tile lie in the same room of `roomInfo`, or both outside; the
+  bed, seats, chests, racks, the charcoal clamp and every station (`stationNear`) check it. Checked in the pane: a chair inside a
+  village house answers E from inside and not from outside its wall.
 - **Sitting (2026-10-07, Robin: do the chairs behave as they should?):** they did nothing. Now **E at a chair or a bench seat sits
   you on it** facing the room ("E Sit"; `sitting`, `seatNear`, `sitDown`, `standUp`, `sitTick`): you rest there, health 0.4 and
   stamina 12 a second coming back, the seat's own solid skipped while you sit; E again or any movement key stands you up a step

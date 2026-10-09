@@ -4715,7 +4715,7 @@ var ARCH = {
 var BUILD = {
   longhouse: { name: 'Longhouse', w: [9, 12], h: [3, 4], roofed: true, inside: 'hall' },      // a real longhouse is three men wide and twelve long (2026-10-09)
   hall: { name: 'Great hall', w: [13, 16], h: [4, 5], roofed: true, inside: 'hall' },
-  house: { name: 'House', w: [3, 5], h: [3, 4], roofed: true, inside: 'home' },
+  house: { name: 'House', w: [4, 5], h: [3, 4], roofed: true, inside: 'home' },          // the standard (Robin, 2026-10-09): a house people live in is 4 by 3 tiles inside at least
   store: { name: 'Storehouse', w: [2, 2], h: [2, 2], roofed: true, inside: 'store', posts: true },
   byre: { name: 'Byre', w: [3, 4], h: [2, 2], roofed: true, inside: 'byre' },
   smithy: { name: 'Smithy', w: [3, 3], h: [2, 2], roofed: true, inside: 'smithy', open: true },
@@ -4755,7 +4755,7 @@ function make(seed, site, opts) {
     var k, best = null; for (k = 0; k < 12; k++) { var dx = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, dy = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot }; if (fits(l)) { best = l; break; } }
     if (best) V.lots.push(best); return best;
   }
-  function size(id) { var b = BUILD[id]; if (id === 'house' && R() < 0.5) return { w: pickRange(R, [2, 3], 0), h: 3 }; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }   // half the houses stand deep: a gable end facing south
+  function size(id) { var b = BUILD[id]; if (id === 'house' && R() < 0.5) return { w: 4, h: pickRange(R, [4, 5], 0) }; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }   // half the houses stand deep: a gable end facing south
   // the ring: the longhouse north of the yard facing it; the houses east, west, south-east and south-west, shuffled; some slots left open
   var big = A.chapel ? 'church' : (A.hall ? 'hall' : 'longhouse'), bs = size(big);
   tryPlace({ id: big, x: yx + Math.floor((yw - bs.w) / 2) + Math.round((R() - 0.5) * 2), y: yy - G.yardGap - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'n' }, 1);

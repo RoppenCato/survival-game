@@ -6139,7 +6139,7 @@ var ARCH = {
 var BUILD = {
   longhouse: { name: 'Longhouse', w: [9, 12], h: [3, 4], roofed: true, inside: 'hall' },      // a real longhouse is three men wide and twelve long (2026-10-09)
   hall: { name: 'Great hall', w: [13, 16], h: [4, 5], roofed: true, inside: 'hall' },
-  house: { name: 'House', w: [3, 5], h: [3, 4], roofed: true, inside: 'home' },
+  house: { name: 'House', w: [4, 5], h: [3, 4], roofed: true, inside: 'home' },          // the standard (Robin, 2026-10-09): a house people live in is 4 by 3 tiles inside at least
   store: { name: 'Storehouse', w: [2, 2], h: [2, 2], roofed: true, inside: 'store', posts: true },
   byre: { name: 'Byre', w: [3, 4], h: [2, 2], roofed: true, inside: 'byre' },
   smithy: { name: 'Smithy', w: [3, 3], h: [2, 2], roofed: true, inside: 'smithy', open: true },
@@ -6179,7 +6179,7 @@ function make(seed, site, opts) {
     var k, best = null; for (k = 0; k < 12; k++) { var dx = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, dy = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot }; if (fits(l)) { best = l; break; } }
     if (best) V.lots.push(best); return best;
   }
-  function size(id) { var b = BUILD[id]; if (id === 'house' && R() < 0.5) return { w: pickRange(R, [2, 3], 0), h: 3 }; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }   // half the houses stand deep: a gable end facing south
+  function size(id) { var b = BUILD[id]; if (id === 'house' && R() < 0.5) return { w: 4, h: pickRange(R, [4, 5], 0) }; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }   // half the houses stand deep: a gable end facing south
   // the ring: the longhouse north of the yard facing it; the houses east, west, south-east and south-west, shuffled; some slots left open
   var big = A.chapel ? 'church' : (A.hall ? 'hall' : 'longhouse'), bs = size(big);
   tryPlace({ id: big, x: yx + Math.floor((yw - bs.w) / 2) + Math.round((R() - 0.5) * 2), y: yy - G.yardGap - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'n' }, 1);
@@ -8947,6 +8947,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function RI(L) { return (L == null ? lvl() : L) ? roomInfo1 : roomInfo; }
   function upFloorAt(tx, ty) { return B.up && B.up.floors[Build.key(tx, ty)] != null; }
   function sameLvl(it) { return (it.lvl || 0) === lvl(); }
+  function canReach(P, it) {              // E never works through a wall (Robin, 2026-10-09): the hero and the thing must be in the same room, or both outside
+    if (!roomInfo) return true; var ra = roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)), rb = roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T));
+    return ra === rb;
+  }
   function isHearth(it) { return it.name == 'stoneHearth' || !!it.hearth; }
   function stairRoomAt(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; return ri >= 0 && roomInfo.rooms[ri].up ? roomInfo.rooms[ri] : null; }
   function canAfford(cost) { if (ADMIN.free) return true; for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
@@ -8974,12 +8978,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // a workbench works only with a roof over it: the first thing a house is for
   function benchNear(P) { var s = stationNear(P); return s && s.kind === 'bench' ? s.it : null; }
   function benchRoofed(it) { var R = RI(it.lvl || 0); return !!R && R.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0; }
-  function bedNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bed && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
+  function bedNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bed && sameLvl(it) && canReach(P, it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
   // Sitting (2026-10-07, Robin: chairs should do something): E at a chair or a bench seat sits you on it, facing the room; you rest
   // there (health and stamina come back) until you press E again or a movement key. The seat's own solid is skipped while you sit.
   var sitting = null;
   function isSeat(it) { return it.name === 'chair' || it.name === 'bench' || it.name === 'logSeat'; }
-  function seatNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (isSeat(it) && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 34) return it; } return null; }
+  function seatNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (isSeat(it) && sameLvl(it) && canReach(P, it) && Math.hypot(P.x - it.x, P.y - it.y) < 34) return it; } return null; }
   function seatFirst(P) {               // a seat beats the fire's Cook when it is the nearer thing (the logs round a fire pit)
     var st = seatNear(P); if (!st) return null; var h = stationNear(P); if (!h || h.kind !== 'hearth') return st;
     return Math.hypot(P.x - st.x, P.y - st.y) + 8 < Math.hypot(P.x - h.it.x, P.y - h.it.y) ? st : null;
@@ -9032,7 +9036,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var fires = []; if (hearth) fires.push(hearth); B.items.forEach(function (it) { if ((isHearth(it) || it.light) && !it.lvl) fires.push(it); });
     fires.forEach(function (f, k) { var lying = drops.filter(function (d) { return d.kind === 'charcoal' && Math.hypot(d.x - f.x, d.y - f.y) < 50; }).length; if (lying < 4) drop('charcoal', f.x + (k % 2 ? 14 : -14), f.y + 12, inUse('emberkeeper') ? 4 : 2); });   // never more than a few lying there
   }
-  function clampNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.clamp && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 48) return it; } return null; }
+  function clampNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.clamp && sameLvl(it) && canReach(P, it) && Math.hypot(P.x - it.x, P.y - it.y) < 48) return it; } return null; }
   function clampPrompt(it) { if (!it.burn) return 'Light the clamp (' + CLAMP_WOOD + ' wood)'; if (it.burn.t > CLAMP_T * 0.66 && !it.burn.sealed) return 'Seal the vent'; return null; }
   function clampUse(it) {
     if (!it.burn) { if (!canAfford({ wood: CLAMP_WOOD })) { toast('It takes ' + CLAMP_WOOD + ' wood to fill it'); return; } pay({ wood: CLAMP_WOOD }); it.burn = { t: 0, sealed: false }; sfx('craft'); save(); return; }
@@ -9599,9 +9603,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
       for (y = y0; y < y0 + h; y++) for (x = x0; x < x0 + w; x++) B.floors[k(x, y)] = floor;
       for (var n = 0; n < breakN && edges.length; n++) { var e = edges.splice(Math.floor(R() * edges.length), 1)[0]; delete B[e[0]][k(e[1], e[2])]; if (R() < 0.5) delete B.floors[k(e[1] + (e[0] === 'V' ? 0 : 0), e[2] - (e[0] === 'H' ? 1 : 0))]; }
     }
-    house(vx + 1, vy + 1, 6, 3, 0, 0, vx + 3, 5);          // the burnt hall: logs, planks, five gaps
+    house(vx + 1, vy + 1, 6, 4, 0, 0, vx + 3, 5);          // the burnt hall: logs, planks, five gaps (6 by 4 since 2026-10-09)
     item('stoneHearth', vx + 4, vy + 2);
-    house(vx + 9, vy + 1, 3, 2, 2, 1, vx + 10, 0);         // the hut still whole: wattle, packed earth, a thatch roof, a bed and a crate
+    house(vx + 9, vy + 1, 4, 3, 2, 1, vx + 10, 0);         // the hut still whole: wattle, packed earth, a thatch roof, a bed and a crate (4 by 3 inside, the standard minimum for a house, Robin 2026-10-09)
     item('bed', vx + 9, vy + 1, { bed: true }); item('crate', vx + 11, vy + 2, { loot: { wood: 8, fiber: 4 } });
     house(vx + 9, vy + 6, 4, 3, 1, 0, vx + 11, 6);         // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces)
     item('woodenWell', vx + 8, vy + 7); item('stoneHearth', vx + 4.6, vy + 7.6, { light: 1 });   // Brokk's fire: light, and a hint that you will want one; a step away from him so E does not muddle them (2026-10-08)
@@ -10129,7 +10133,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
 
   /* ---------- the drying rack: hang hide on it (E), and it cures into leather while you work ---------- */
   var CURE = 90, RACK_MAX = 4;             // seconds a hide takes to cure; hides a rack holds
-  function rackNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.name === 'dryingRack' && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
+  function rackNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.name === 'dryingRack' && sameLvl(it) && canReach(P, it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
   function rackCured(it) { var n = 0; (it.hang || []).forEach(function (t) { if (t <= 0) n++; }); return n; }
   function rackUsable(P) { return null; }   // curing is gone (Robin, 2026-10-05): animals drop leather; the rack is only a thing to build
   function rackUse(it) {
@@ -10251,6 +10255,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
       w.repaint((v.tx - 2) * T, (v.ty - 2) * T, (v.tx + v.w + 2) * T, (v.ty + v.h + 2) * T);
       V2.props.forEach(function (pr) { if (!kit.PROPS[pr.name] || !isLand(pr.x, pr.y)) return; var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.solid != null ? pr.solid : (pr.name === 'scarecrow' ? 4 : 8), v: Math.floor(Math.random() * 3) }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
       (V2.nature || []).forEach(function (n) { if (!kit.PROPS[n.name] || !isLand(n.x, n.y)) return; var o = { name: n.name, x: n.x, y: n.y, s: n.s, r: n.r, v: n.v, kind: World.KIND[n.name] || null }; if (o.kind) { o.max = o.hp = World.HP[n.name] * (0.7 + 0.6 * o.s); o.leanDir = Math.random() < 0.5 ? -1 : 1; } w.addProp(o); });   // the village's own trees, bushes and rocks
+      (V2.lots || []).forEach(function (l) {                                   // the doorways kept clear (Robin, 2026-10-09: things stood in front of doors): no prop within a tile and a half of the tile outside a door, nor the one beyond
+        var pts = l.door === 's' ? [[l.dx, l.y + l.h], [l.dx, l.y + l.h + 1]] : l.door === 'n' ? [[l.dx, l.y - 1], [l.dx, l.y - 2]] : l.door === 'e' ? [[l.x + l.w, l.dy], [l.x + l.w + 1, l.dy]] : [[l.x - 1, l.dy], [l.x - 2, l.dy]], gone2 = [];
+        pts.forEach(function (pt) { var cx = (pt[0] + 0.5) * T, cy = (pt[1] + 0.5) * T; w.around(cx, cy, function (o) { if (o.r > 0 && Math.hypot(o.x - cx, o.y - cy) < T * 1.5 && gone2.indexOf(o) < 0) gone2.push(o); }); });
+        gone2.forEach(function (o) { w.removeProp(o); });
+      });
       if (v.jetty) {                                                               // the jetty: dock planks out into the shallows, a barrel and a rack on the root, the road up to the gate
         var J = v.jetty, rt = J.root, ok = true;
         J.tiles.forEach(function (t) { if (dockOk(t[0], t[1]) || code(t[0], t[1]) === 0) B.floors[Build.key(t[0], t[1])] = 8; });
@@ -10543,7 +10552,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var STORE_N = 12, store = null;           // store: the open chest (a B.items entry with .store)
   function slotGet(i) { return i >= 100 ? (store ? store.store[i - 100] : null) : slots[i]; }
   function slotSet(i, v) { if (i >= 100) { if (store) store.store[i - 100] = v; } else slots[i] = v; }
-  function storeNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.store && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
+  function storeNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.store && sameLvl(it) && canReach(P, it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
   function storeAdd(s) {                   // a stack or thing into the open chest: like kinds first, then an empty slot; returns what did not fit
     if (!store) return s;
     var i, t;
@@ -10602,7 +10611,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function stationNear(P) {
     if (menu && menuStation && Math.hypot(P.x - menuStation.it.x, P.y - menuStation.it.y) < 70) return menuStation;
     var best = null, bs = 1e9;
-    function q(it, kind, r) { var d = Math.hypot(P.x - it.x, P.y - it.y); if (d >= r) return; var sc = facingScore(P, it.x, it.y); if (sc < bs) { bs = sc; best = { kind: kind, it: it }; } }
+    function q(it, kind, r) { var d = Math.hypot(P.x - it.x, P.y - it.y); if (d >= r || !canReach(P, it)) return; var sc = facingScore(P, it.x, it.y); if (sc < bs) { bs = sc; best = { kind: kind, it: it }; } }
     if (hearth) q(hearth, 'hearth', 50);
     B.items.forEach(function (it) { if (!sameLvl(it)) return; if (isHearth(it)) q(it, 'hearth', 50); else if (it.bench) q(it, 'bench', 56); else if (it.carver) q(it, 'carver', 56); else if (it.furnace) q(it, 'furnace', 56); });
     return best;
