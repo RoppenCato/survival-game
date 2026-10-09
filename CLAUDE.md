@@ -1,8 +1,8 @@
 # Viking survival game: prototypes
 
 2D top-down survival crafting game set in Viking-age Scandinavia (three-quarter camera, cartoon look). All art,
-animation and sound is drawn or synthesized in code, with one exception since 2026-10-09: **characters may be modelled in
-Blender and rendered to sprite sheets** (`art/`, `assets/sprites/`; a trial Robin wants to judge before it spreads). This repo
+animation and sound is drawn or synthesized in code, except that since 2026-10-09 **characters and creatures are modelled in Blender and
+rendered to sprite sheets** (`art/`, `assets/sprites/`; the plan and the order are in `docs/moving-to-blender.md`). This repo
 holds browser prototypes and editors, not a full game yet.
 
 The game had another setting until 2026-10-04 (commit `59f5dd6` is the last of it; `main` has been the Viking game since the
@@ -340,6 +340,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
   upper left; grain in every fill; lean figures; trolls Bauer's. `docs/reference/` holds the board (Bauer and Kittelsen, public
   domain) and notes on Egerkrans pages from Robin's own book (the photos stay local). In the kit it is **`look: 3`** (`STYLE_INK`,
   `grain`): see "World look and props".
+- `docs/moving-to-blender.md` (**decided 2026-10-09, Robin: the graphics move to Blender models**): what moves (characters, creatures, later
+  some props), what stays in code (ground, water, building, vessels, UI), the order of work (foundations: `src/sprites.js`, a model
+  manifest and sheet budget, things in the hand as layers; then the hero finished, people, trolls, animals, props where needed), the
+  decisions for Robin and a status table to keep up to date. Read it before modelling anything.
 - `docs/chapters.md` (**read first when planning**, 2026-10-07): the world as **chapters** (Robin): 1 the starter island, 2 the
   first big island, 3 the second biome and the first raid, 4 and beyond by the compass. It holds the rules every chapter keeps,
   **the template** (ten headings in six groups: the place, the events, the living world, what you make and gain, travel, making
