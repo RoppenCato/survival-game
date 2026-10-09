@@ -99,8 +99,9 @@ npm install       # once; only dependency is @napi-rs/canvas (fake canvas for he
 npm test          # runs eight combat scripts in tests/ in sequence
 ```
 
-There is no bundler, linter or type checker. `.claude/launch.json` has a `workbench` entry that serves `dist/` on
-port 8765 for the browser pane (the pane has a tab limit: close old tabs if a page will not open).
+There is no bundler, linter or type checker. `.claude/launch.json` has a `workbench` entry that serves the **repo root** on
+port 8765 for the browser pane (since 2026-10-09, so the pages reach `assets/`: open `http://localhost:8765/dist/<page>.html`; the
+pane has a tab limit: close old tabs if a page will not open).
 
 ## Pages
 
@@ -108,7 +109,7 @@ port 8765 for the browser pane (the pane has a tab limit: close old tabs if a pa
 | --- | --- | --- |
 | `index.html` | `index.html` | Start page |
 | `character-editor.html` | `sprite.html` | Character Editor: the heroes (Eirik, Ásta, Hallvard on the ink figure), the Figure switch, concepts, styles, builds, templates |
-| `blender-editor.html` | `blender.html` | Blender Editor (2026-10-09): the characters modelled in Blender and rendered to sheets (every `assets/sprites/<name>/` the build found, inlined as data URIs through `__SPRITES__` in `tools/build.py`): a Model picker (the first hero, the second in cel, painted and folk), its gear layers as toggles, Arena or **Night forest** (the kit's props in the Night Forest key with a campfire, painted once as the arena ground through `api.scene`), Add beast, Zoom (the drawing only), the sheet panel (a row per direction, a column per frame, idle or walk) and the sheet's numbers; walk with WASD. Draws the hero through `Combat.api.heroSprite`; the chosen model is kept in `blendereditor.model` |
+| `blender-editor.html` | `blender.html` | Blender Editor (2026-10-09): the characters modelled in Blender and rendered to sheets (every `assets/sprites/<name>/` the build found, its JSON inlined through `__SPRITES__` in `tools/build.py` and the sheets loaded by path, `../assets/sprites/<name>/<file>`, since the Mixamo sheets grew to 22 MB): a Model picker (the first hero, the second in cel, painted and folk), its gear layers as toggles, Arena or **Night forest** (the kit's props in the Night Forest key with a campfire, painted once as the arena ground through `api.scene`), Add beast, Zoom (the drawing only), the sheet panel (a row per direction, a column per frame, idle or walk) and the sheet's numbers; walk with WASD, run with Shift, and the **Clips** keys (J sword, K bow, E lid, G pick up, C chop, M mine, V drink, X sit and stand, T hit, B die, L look) play the Mixamo hero's one-shot clips (`play`, `clip`, `seated`, `CLIPKEYS`). Draws the hero through `Combat.api.heroSprite`; the chosen model is kept in `blendereditor.model` |
 | `creature-editor.html` | `creature.html` | Creature Editor: the six animals and their behaviour |
 | `object-editor.html` | `objects.html` | Object Editor: tune one world prop |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
@@ -374,7 +375,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
   drawn Eirik beside the rendered hero. The raw frames in `art/render/` are not committed. **Nothing in the game reads the sheets
   yet**; the first batch of renders took about 0.4 s a frame. **In the Character Editor** (same day): a **Figure** group at the top
   of the right column, Drawn figure | Blender hero (trial), with Helmet and Mail toggles; the build inlines the sheets into that page
-  as data URIs (`__HERO_SPRITES__` in `tools/build.py`, about 2 MB, so the single file still opens from disk) and the page draws him
+  (`__HERO_SPRITES__` in `tools/build.py`; data URIs at first, since 2026-10-09 the sheets' paths, which work from disk and from the
+  server alike) and the page draws him
   through **`Combat.api.heroSprite(c, x, y, face, anim, dashing)`**, a hook in `drawHero` that replaces the drawn figure (no weapon
   or shield drawn with it): the direction from the facing angle (clockwise from south in eighths), idle or walk by `anim.amt`, the
   frame by the clock at the sheet's fps, the layers stacked body, mail, helmet; the Frames panel shows his sheet too.
@@ -424,6 +426,13 @@ the text and it is made the default. When a spec's meaning changes, change the s
   do not move them), gathers every clip's action (the hand-made idle and walk removed first) and saves `art/source/hero2_mixamo.blend`
   with the armature under a 'Turn' empty that `render.py` rotates; it prints a check per clip (length, hips travel, lowest foot).
   `tools/visual/mixamocompare.js` (`npm run art:mixamo`) puts the hand-keyed idle and walk over the Mixamo idle, walk and run.
+  **In the Blender Editor (2026-10-09, Robin: fix it so I can try it out):** `npm run art:mixamo:sheets` renders all eighteen clips in
+  eight directions with a frame count per clip (`render.py --frames idle=16,walk=12,run=10,...`; `tools/sprites.js` reads each
+  animation's count from meta.json) and packs them into `assets/sprites/hero2-mixamo` (one 164 by 164 frame, 22 MB of sheets: the
+  frame box holds the death lying down and the hit's step back). The model **"Hero 2 with the Mixamo clips"** walks and runs on the
+  starter island and plays its clips on the Clips keys: a clip runs once (`clip` = { name, t0, then }: the bow's draw hands over to
+  the shot) and the idle returns; X sits (`seated` keeps the sit idle) and X again stands up. Because the sheets are no longer
+  inlined, `tools/build.py` writes their paths and the workbench server serves the repo root.
 
 ## Things to know before changing code
 

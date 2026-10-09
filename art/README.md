@@ -19,6 +19,7 @@ npm run art:hero       # build the .blend, render every frame, pack the sheets
 npm run art:compare    # herocompare.png: the drawn hero beside the rendered one
 npm run art:styles     # the style test: hero2 in the three styles over the Night Forest, herostyles.png
 npm run art:mixamo     # bind hero2 to the Mixamo skeleton, render idle, walk and run, mixamocompare.png
+npm run art:mixamo:sheets  # every Mixamo clip in eight directions into assets/sprites/hero2-mixamo (the Blender Editor's model)
 ```
 
 **Mixamo (2026-10-09):** the hero's animations come from Mixamo (`source/mixamo/`, its README lists every file and its source
@@ -27,7 +28,9 @@ joined and voxel-remeshed into one watertight surface, `source/hero2_rigproxy.fb
 then binds the real parts to that skeleton (each part already named by its bone, the hands on the forearms since the No Fingers
 skeleton has no hand bones), collects every clip's action and saves `source/hero2_mixamo.blend`, which `build/render.py` renders
 like any other (the armature sits under a 'Turn' empty for the directions). The downloads land in Downloads under temporary
-names; `node tools/sprites.js` and the renderer work the same as before.
+names. `render.py --frames` takes a count per clip (`idle=16,walk=12,8`) and `tools/sprites.js` packs each at its own count;
+`assets/sprites/hero2-mixamo` holds all eighteen clips for the Blender Editor, whose Clips keys play them. The sheets are loaded by
+path from the pages (not inlined), so the workbench server serves the repo root.
 
 **The style test (2026-10-09):** `build/hero2_build.py` is the second hero, about 3.75 heads, chunky, built in a **T-pose** so Mixamo
 can auto-rig it (`source/hero2_tpose.fbx` is the joined body mesh); its rig is calibrated at build time (which local axis swings a

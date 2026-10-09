@@ -76,9 +76,22 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
       <section class="panel">
         <h2>Controls</h2>
         <dl class="keys">
-          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk. Hold <kbd>Shift</kbd> to sprint</dd>
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk. Hold <kbd>Shift</kbd> to run (the run clip, when the model has one)</dd>
           <dt><kbd>Space</kbd></dt><dd>Dash</dd>
           <dt><kbd>H</kbd></dt><dd>Spawn a beast</dd>
+        </dl>
+        <h2 class="more">Clips</h2>
+        <p class="desc">A model with more clips than idle and walk plays them on these keys (Mixamo, 2026-10-09). A clip plays once and the idle comes back; sitting stays until you stand.</p>
+        <dl class="keys">
+          <dt><kbd>J</kbd></dt><dd>Sword: the outward and the inward slash in turn</dd>
+          <dt><kbd>K</kbd></dt><dd>Bow: draw, then shoot</dd>
+          <dt><kbd>E</kbd></dt><dd>Open a lid (interact)</dd>
+          <dt><kbd>G</kbd></dt><dd>Pick up</dd>
+          <dt><kbd>C</kbd> <kbd>M</kbd></dt><dd>Chop, mine</dd>
+          <dt><kbd>V</kbd></dt><dd>Drink</dd>
+          <dt><kbd>X</kbd></dt><dd>Sit down; again to stand up</dd>
+          <dt><kbd>T</kbd> <kbd>B</kbd></dt><dd>Take a hit, die (the idle returns after)</dd>
+          <dt><kbd>L</kbd></dt><dd>Look around</dd>
         </dl>
       </section>
     </div>
@@ -145,13 +158,15 @@ __COMBAT__
   /* ---------- the sheets, inlined by the build (__SPRITES__ in tools/build.py) ---------- */
   var SP = __SPRITES__ || {}, IMG = {}, names = Object.keys(SP);
   names.forEach(function (nm) { IMG[nm] = {}; for (var f in SP[nm].images) { var im = new Image(); im.src = SP[nm].images[f]; IMG[nm][f] = im; } });
-  var LABEL = { 'hero': 'Hero (first, ink)', 'hero2-cel': 'Hero 2, cel', 'hero2-painted': 'Hero 2, painted', 'hero2-folk': 'Hero 2, folk art', 'hero2-fit': 'Hero 2, cel, fitted to the world' };
+  var LABEL = { 'hero': 'Hero (first, ink)', 'hero2-cel': 'Hero 2, cel', 'hero2-painted': 'Hero 2, painted', 'hero2-folk': 'Hero 2, folk art', 'hero2-fit': 'Hero 2, cel, fitted to the world', 'hero2-mixamo': 'Hero 2 with the Mixamo clips' };
   var NOTE = { 'hero': 'The first Blender hero (2026-10-09): the ink figure’s proportions, a red cloak, eight directions, a helmet and a mail shirt as layers.',
     'hero2-cel': 'The second hero in the cel style: two or three tones, a warm rim light, a line heavy on the shadow side.',
     'hero2-painted': 'The second hero painted after Bauer: soft shading, muted greens and browns, a wobbling line.',
     'hero2-folk': 'The second hero in the folk-art style: flat fills, a bold even line, knotwork and woven trim.',
-    'hero2-fit': 'The cel hero fitted to the world (2026-10-09): the painted face, the game’s own palette (Eirik’s colours), daylight with the art direction’s cool shadow, a subtle rim, the grain. Walk him round the starter island beside the drawn hero’s world.' };
+    'hero2-fit': 'The cel hero fitted to the world (2026-10-09): the painted face, the game’s own palette (Eirik’s colours), daylight with the art direction’s cool shadow, a subtle rim, the grain. Walk him round the starter island beside the drawn hero’s world.',
+    'hero2-mixamo': 'The fitted hero on the Mixamo skeleton with eighteen Mixamo clips (2026-10-09): idle, looking around, walk, run, two sword slashes, bow draw and shot, hit, death, chop, mine, pick up, open a lid, drink, sit down, sit, stand up. Walk and run from the keys; the rest on the keys under Clips.' };
   var SPR_PX = 3, cur = null, gear = {}, zoom = 1, night = false, anim = 'idle';
+  var clip = null, seated = false, swingNext = 0;              // a one-shot clip: { name, t0, then }; seated keeps the sit idle until X
   function meta() { return SP[cur] && SP[cur].meta; }
   function layersOn() { var M = meta(), out = ['body']; if (!M) return out; M.layers.forEach(function (l) { if (l !== 'body' && gear[l]) out.push(l); }); return out; }
   function spriteDir(face) {
@@ -159,10 +174,18 @@ __COMBAT__
     var want = n === 8 ? ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'][i] : ['s', 'w', 'n', 'e'][i];
     var k = M.dirs.indexOf(want); return k < 0 ? 0 : k;
   }
+  function play(name, then) { var M = meta(); if (!M || !M.anims[name]) return false; clip = { name: name, t0: performance.now() / 1000, then: then || null }; return true; }
   function drawHeroSprite(c, x, y, face, an, dashing) {
     var M = meta(); if (!M) return;
-    var moving = an.amt > 0.35, a = moving && M.anims.walk ? 'walk' : 'idle', A = M.anims[a], t = performance.now() / 1000;
-    var f = Math.floor(t * A.fps) % A.frames, d = spriteDir(face), fw = M.frame.w, fh = M.frame.h, s = zoom / SPR_PX;
+    var P0 = Combat.dbg().P, moving = an.amt > 0.35, t = performance.now() / 1000, a, f;
+    if (clip) {                                                   // a one-shot clip runs to its end, then hands over
+      var C = M.anims[clip.name], cf = Math.floor((t - clip.t0) * C.fps);
+      if (cf >= C.frames) { var nx = clip.then; clip = null; if (nx) play(nx.name, nx.then); }
+      else { a = clip.name; f = cf; }
+    }
+    if (!clip && !a && seated && M.anims.sit) { a = 'sit'; f = Math.floor(t * M.anims.sit.fps) % M.anims.sit.frames; }
+    if (!a) { a = moving ? (P0.sprinting && M.anims.run ? 'run' : (M.anims.walk ? 'walk' : 'idle')) : 'idle'; var A0 = M.anims[a]; f = Math.floor(t * A0.fps) % A0.frames; }
+    var A = M.anims[a], d = spriteDir(face), fw = M.frame.w, fh = M.frame.h, s = zoom / SPR_PX;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     var g = c.createRadialGradient(0, 0, 0, 0, 0, 11 * zoom); g.addColorStop(0, 'rgba(30,70,50,0.4)'); g.addColorStop(0.6, 'rgba(30,70,50,0.22)'); g.addColorStop(1, 'rgba(30,70,50,0)'); c.save(); c.scale(1, 0.4); c.fillStyle = g; c.beginPath(); c.arc(0, 0, 11 * zoom, 0, 7); c.fill(); c.restore();
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
@@ -170,12 +193,16 @@ __COMBAT__
     c.restore();
   }
   Combat.api.heroSprite = drawHeroSprite;
+  var CLIPKEYS = { KeyJ: function () { play(swingNext++ % 2 ? 'attack2' : 'attack1') || play('attack1'); }, KeyK: function () { play('bow_draw', { name: 'bow_shoot' }); },
+    KeyE: function () { play('interact'); }, KeyG: function () { play('pickup'); }, KeyC: function () { play('chop'); }, KeyM: function () { play('mine'); }, KeyV: function () { play('drink'); },
+    KeyX: function () { if (seated) { seated = false; play('standup'); } else if (play('sitdown')) seated = true; }, KeyT: function () { play('hit'); }, KeyB: function () { play('death'); }, KeyL: function () { play('idle_look'); } };
+  window.addEventListener('keydown', function (e) { if (!CLIPKEYS[e.code] || typing(e) || e.repeat) return; var M = meta(); if (!M || Object.keys(M.anims).length <= 2) return; if (clip) return; CLIPKEYS[e.code](); e.preventDefault(); });
 
   /* ---------- the panels ---------- */
   var modelsEl = document.getElementById('models'), gearEl = document.getElementById('gear'), animsEl = document.getElementById('anims');
   function pressed(el, on) { el.setAttribute('aria-pressed', on ? 'true' : 'false'); }
   function pick(nm) {
-    cur = nm; gear = {}; localStorage.setItem('blendereditor.model', nm);
+    cur = nm; gear = {}; clip = null; seated = false; localStorage.setItem('blendereditor.model', nm);
     Array.prototype.forEach.call(modelsEl.children, function (b) { pressed(b, b.dataset.nm === nm); });
     document.getElementById('modelnote').textContent = NOTE[nm] || ('Sheets from assets/sprites/' + nm + '.');
     gearEl.innerHTML = '';

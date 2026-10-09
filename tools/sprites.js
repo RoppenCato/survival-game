@@ -10,7 +10,8 @@ const { createCanvas, loadImage } = require('../node_modules/@napi-rs/canvas'); 
   const meta = JSON.parse(fs.readFileSync(path.join(inDir, 'meta.json'), 'utf8'));
   const PX = meta.px, S = meta.size * PX, anims = Object.keys(meta.anims), dirs = meta.dirs, layers = meta.layers, NF = meta.frames;
   const files = {}, imgs = {};
-  for (const a of anims) for (const l of layers) for (const d of dirs) for (let f = 0; f < NF; f++) {
+  const nf = a => meta.anims[a].frames;
+  for (const a of anims) for (const l of layers) for (const d of dirs) for (let f = 0; f < nf(a); f++) {
     const k = `${a}_${l}_${d}_${String(f).padStart(2, '0')}`; files[k] = path.join(inDir, k + '.png'); imgs[k] = await loadImage(files[k]);
   }
   // the union of the drawn pixels over every frame, at render size
@@ -28,10 +29,10 @@ const { createCanvas, loadImage } = require('../node_modules/@napi-rs/canvas'); 
   fs.mkdirSync(outDir, { recursive: true });
   const out = { name, frame: { w: fw, h: fh }, anchor, dirs, layers, anims: {}, figure_px: meta.figure_px / PX, elev: meta.elev, source: 'art/source/' + name + '.blend' };
   for (const a of anims) {
-    out.anims[a] = { frames: NF, fps: Math.round(meta.anims[a].fps * 100) / 100, sheets: {} };
+    const NA = nf(a); out.anims[a] = { frames: NA, fps: Math.round(meta.anims[a].fps * 100) / 100, sheets: {} };
     for (const l of layers) {
-      const sheet = createCanvas(fw * NF, fh * dirs.length), sc = sheet.getContext('2d'); sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = 'high';
-      dirs.forEach((d, r) => { for (let f = 0; f < NF; f++) {
+      const sheet = createCanvas(fw * NA, fh * dirs.length), sc = sheet.getContext('2d'); sc.imageSmoothingEnabled = true; sc.imageSmoothingQuality = 'high';
+      dirs.forEach((d, r) => { for (let f = 0; f < NA; f++) {
         const im = imgs[`${a}_${l}_${d}_${String(f).padStart(2, '0')}`];
         sc.drawImage(im, bx, by, bw, bh, f * fw, r * fh, fw, fh);
       } });
