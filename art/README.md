@@ -30,7 +30,10 @@ skeleton has no hand bones), collects every clip's action and saves `source/hero
 like any other (the armature sits under a 'Turn' empty for the directions). The downloads land in Downloads under temporary
 names. `render.py --frames` takes a count per clip (`idle=16,walk=12,8`) and `tools/sprites.js` packs each at its own count;
 `assets/sprites/hero2-mixamo` holds all eighteen clips for the Blender Editor, whose Clips keys play them. The sheets are loaded by
-path from the pages (not inlined), so the workbench server serves the repo root.
+path from the pages (not inlined), so the workbench server serves the repo root. The editor's **Use in the game** hands a model
+to the game (`game.blenderHero`): the game then draws its hero from the sheets and plays the clips on its own actions (walk, run,
+the slashes, chop, mine, the shot, the hit, sitting, death); **Take back** returns the drawn hero. A trial: nothing is drawn in his
+hands yet.
 
 **The style test (2026-10-09):** `build/hero2_build.py` is the second hero, about 3.75 heads, chunky, built in a **T-pose** so Mixamo
 can auto-rig it (`source/hero2_tpose.fbx` is the joined body mesh); its rig is calibrated at build time (which local axis swings a

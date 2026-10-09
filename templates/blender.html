@@ -100,6 +100,8 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <h2>Model</h2>
         <div class="group" id="models"></div>
         <p class="desc" id="modelnote"></p>
+        <div class="group"><button id="useGame">Use in the game</button><button id="takeBack">Take back</button></div>
+        <p class="desc" id="usenote">The game draws its hero from this model's sheets (game.blenderHero) until it is taken back; its clips follow the game's own actions. A trial: no weapon, torch or ring is drawn on him.</p>
         <h2 class="more">Gear</h2>
         <div class="group" id="gear"></div>
         <p class="desc">Each piece is its own layer, rendered over the body as a holdout, so they stack in any order.</p>
@@ -198,6 +200,11 @@ __COMBAT__
     KeyX: function () { if (seated) { seated = false; play('standup'); } else if (play('sitdown')) seated = true; }, KeyT: function () { play('hit'); }, KeyB: function () { play('death'); }, KeyL: function () { play('idle_look'); } };
   window.addEventListener('keydown', function (e) { if (!CLIPKEYS[e.code] || typing(e) || e.repeat) return; var M = meta(); if (!M || Object.keys(M.anims).length <= 2) return; if (clip) return; CLIPKEYS[e.code](); e.preventDefault(); });
 
+  /* Use in the game (2026-10-09, Robin: test it in the game): the model's name goes to game.blenderHero, the game draws its hero from it */
+  function useNote() { var u = localStorage.getItem('game.blenderHero'); document.getElementById('usenote').textContent = u ? 'The game draws its hero from ' + (LABEL[u] || u) + ' until it is taken back. A trial: no weapon, torch or ring is drawn on him; the clips follow the game’s own actions.' : 'The game draws its own hero. Use in the game hands this model over (game.blenderHero); its clips then follow the game’s actions.'; }
+  document.getElementById('useGame').addEventListener('click', function (e) { if (cur) localStorage.setItem('game.blenderHero', cur); useNote(); e.currentTarget.blur(); });
+  document.getElementById('takeBack').addEventListener('click', function (e) { localStorage.removeItem('game.blenderHero'); useNote(); e.currentTarget.blur(); });
+  useNote();
   /* ---------- the panels ---------- */
   var modelsEl = document.getElementById('models'), gearEl = document.getElementById('gear'), animsEl = document.getElementById('anims');
   function pressed(el, on) { el.setAttribute('aria-pressed', on ? 'true' : 'false'); }

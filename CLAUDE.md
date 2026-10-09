@@ -433,6 +433,20 @@ the text and it is made the default. When a spec's meaning changes, change the s
   starter island and plays its clips on the Clips keys: a clip runs once (`clip` = { name, t0, then }: the bow's draw hands over to
   the shot) and the idle returns; X sits (`seated` keeps the sit idle) and X again stands up. Because the sheets are no longer
   inlined, `tools/build.py` writes their paths and the workbench server serves the repo root.
+  **In the game, as a trial (2026-10-09, Robin: test it in the game, walking, building, the sword and the bow):** the Blender Editor's
+  **Use in the game** (and **Take back**) under the Model list stores the model's name in `game.blenderHero`; the game inlines every
+  sheet's numbers (`__SPRITES__` in `templates/game.html`) and, when a stored model exists, draws its hero from the sheets through
+  `Combat.api.heroSprite` (`sprDraw`, `sprPick`, `sprTick` near the top of the page). **The clips follow the game's actions:** walk and
+  run (Shift) by the engine's `anim.amt` and `sprinting`; the sword's two slashes by the attack's phases (the clip's frames spread
+  over the windup, the blow and the recovery from `Combat.api.stepData`, alternating by the combo; fists the same), chop and mine in
+  gather mode by the tool in hand (the pick mines, everything else chops), the bow's shot (`fireT` rising plays `bow_shoot` once;
+  the engine has no draw phase), the hit (`hurtT`), sitting (`anim.sit`), and the fallen hero (the death clip once, then its last
+  frame, pushed from `scene.items` since the engine draws no hero when dead; it lies behind the engine's "You have fallen" banner).
+  Nothing else changes: building, the bag, E and the world are the engine's. **Limits of the trial:** no weapon, tool, torch, shield
+  or ring is drawn on him (the clips swing empty hands), the pick-up, lid, drink and look-around clips are not wired (the game has no
+  such moments), and all eighteen sheets (22 MB) load with the page. Debug: `Combat.api.debug().spr()` (hero, last, clip, deadT,
+  pick, draw, img). Played through in the pane: walk, sprint, both slashes, the bow, chop, mine, a hit, sit and stand on a placed
+  chair, death and R, the Building board; no console errors. With the model taken back the game is exactly as before.
 
 ## Things to know before changing code
 
