@@ -61,7 +61,7 @@ for anim in ANIMS:
     for layer in LAYERS:
         layer_setup(layer)
         for d in range(NDIR):
-            rig.rotation_euler = (0, 0, -2 * math.pi * d / NDIR)
+            (rig.parent or rig).rotation_euler = (0, 0, -2 * math.pi * d / NDIR)      # a Mixamo rig sits under a 'Turn' empty (mixamo_bind.py)
             for f in range(nfr):
                 sc.frame_set(int(round(1 + f * length / nfr)))
                 sc.render.filepath = os.path.join(out, '%s_%s_%s_%02d.png' % (anim, layer, dir_names[d], f))

@@ -124,7 +124,17 @@ part(cone('neck', body_c, M['skin'], 'neck', (0, 0, SH - 0.02), (0, 0, CHIN + 0.
 part(cone('cowl', body_c, M['hood'], 'chest', (0, 0.03, SH - 0.05), (0, 0.03, SH + 0.045), SHW * 0.92, SHW * 0.7, 10, 1.0, 0.8))
 part(ball('hoodback', body_c, M['hood'], 'chest', (0, 0.13, SH + 0.02), 0.12, 10, 7, 1.15, 0.7, 0.55))
 # the head: an egg with a cap of hair, a braid over the left shoulder, big eyes, brows, a nose, a mouth, a short beard
-part(ball('head', body_c, M['face'], 'head', (0, 0, hz), HEAD * 0.5, 16, 12, 0.90, 0.95, 1.02))
+head = part(ball('head', body_c, M['face'], 'head', (0, 0, hz), HEAD * 0.5, 16, 12, 0.90, 0.95, 1.02))
+def face_uvs(o):
+    """Two UV maps on the head for the painted face, so the decal survives joining and skinning (Mixamo returns one mesh): 'face'
+    is the head's own box seen from the front (u across, v up), 'facefront' puts the depth in u (0 front .. 1 back) for the mask."""
+    me = o.data; xs = [v.co.x for v in me.vertices]; ys = [v.co.y for v in me.vertices]; zs = [v.co.z for v in me.vertices]
+    x0, x1, y0, y1, z0, z1 = min(xs), max(xs), min(ys), max(ys), min(zs), max(zs)
+    uf = me.uv_layers.new(name='face'); ub = me.uv_layers.new(name='facefront')
+    for lp in me.loops:
+        v = me.vertices[lp.vertex_index].co
+        uf.data[lp.index].uv = ((v.x - x0) / (x1 - x0), (v.z - z0) / (z1 - z0)); ub.data[lp.index].uv = ((v.y - y0) / (y1 - y0), 0.0)
+face_uvs(head)
 part(cap('hair', body_c, M['hair'], 'head', (0, 0.01, hz + 0.02), HEAD * 0.5, (0, -0.17, hz + 0.125), (0, 0.6, 1), 12, 9, 0.95, 1.04, 1.04))
 bx, bz = 0.15, hz - 0.02
 for i in range(5):

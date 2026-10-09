@@ -18,7 +18,16 @@ the game was drawn in code; this folder is the first place where a model lives i
 npm run art:hero       # build the .blend, render every frame, pack the sheets
 npm run art:compare    # herocompare.png: the drawn hero beside the rendered one
 npm run art:styles     # the style test: hero2 in the three styles over the Night Forest, herostyles.png
+npm run art:mixamo     # bind hero2 to the Mixamo skeleton, render idle, walk and run, mixamocompare.png
 ```
+
+**Mixamo (2026-10-09):** the hero's animations come from Mixamo (`source/mixamo/`, its README lists every file and its source
+animation). Mixamo's auto-rigger could not rig the hero's own mesh, so `build/hero2_proxy.py` makes a **rigging proxy** (the body
+joined and voxel-remeshed into one watertight surface, `source/hero2_rigproxy.fbx`) that Mixamo rigs instead; `build/mixamo_bind.py`
+then binds the real parts to that skeleton (each part already named by its bone, the hands on the forearms since the No Fingers
+skeleton has no hand bones), collects every clip's action and saves `source/hero2_mixamo.blend`, which `build/render.py` renders
+like any other (the armature sits under a 'Turn' empty for the directions). The downloads land in Downloads under temporary
+names; `node tools/sprites.js` and the renderer work the same as before.
 
 **The style test (2026-10-09):** `build/hero2_build.py` is the second hero, about 3.75 heads, chunky, built in a **T-pose** so Mixamo
 can auto-rig it (`source/hero2_tpose.fbx` is the joined body mesh); its rig is calibrated at build time (which local axis swings a

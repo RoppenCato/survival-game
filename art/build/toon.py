@@ -149,13 +149,13 @@ def build_nodes(m, style):
     L.new(em.outputs[0], out.inputs['Surface'])
 
 def _decal(n, L, base):
-    """The face image (FACE) projected onto the front of the head from the mesh's Generated coordinates (its box, 0..1): u across,
-    v up; only the front half (y under 0.5) shows it; the image's alpha lays it over the skin."""
+    """The face image (FACE) laid on the head through its 'face' UV map (the head's box seen from the front, u across, v up);
+    only the front half ('facefront' u under 0.5) shows it; the image's alpha lays it over the skin."""
     img = bpy.data.images.get('face_' + EYES + '_' + FACE) or bpy.data.images.get('face_dot_neutral')
-    tc = n.new('ShaderNodeTexCoord'); sep = n.new('ShaderNodeSeparateXYZ'); L.new(tc.outputs['Generated'], sep.inputs[0])
-    cmb = n.new('ShaderNodeCombineXYZ'); L.new(sep.outputs['X'], cmb.inputs[0]); L.new(sep.outputs['Z'], cmb.inputs[1])
-    tex = n.new('ShaderNodeTexImage'); tex.image = img; tex.extension = 'CLIP'; tex.interpolation = 'Linear'; L.new(cmb.outputs[0], tex.inputs['Vector'])
-    front = _math(n, L, 'LESS_THAN', sep.outputs['Y'], 0.5)
+    uv = n.new('ShaderNodeUVMap'); uv.uv_map = 'face'                       # the head's UV maps (hero2_build face_uvs): the face seen from the front, and the depth
+    tex = n.new('ShaderNodeTexImage'); tex.image = img; tex.extension = 'CLIP'; tex.interpolation = 'Linear'; L.new(uv.outputs['UV'], tex.inputs['Vector'])
+    uvf = n.new('ShaderNodeUVMap'); uvf.uv_map = 'facefront'; sep = n.new('ShaderNodeSeparateXYZ'); L.new(uvf.outputs['UV'], sep.inputs[0])
+    front = _math(n, L, 'LESS_THAN', sep.outputs['X'], 0.5)
     a = _math(n, L, 'MULTIPLY', tex.outputs['Alpha'], front)
     return _mix(n, L, 'MIX', a, base, tex.outputs['Color'])
 

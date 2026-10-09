@@ -408,6 +408,22 @@ the text and it is made the default. When a spec's meaning changes, change the s
   sheet. **The Blender Editor's default scene is the starter island** (`World.make` with one island of 60 tiles and the wreck,
   `__WORLD__` in the page; the Sea Editor's ground, waves, grass and bucket drawing; `nearSolids` for collision), with Arena and Night
   forest as the other two. **Nothing in the game changed.**
+  **Mixamo (2026-10-09, Robin: get animations from Mixamo for the hero, in the built-in browser):** Robin signed in to mixamo.com in
+  the browser pane and dragged the files into Mixamo's upload dialog (the pane has no upload tool). **Mixamo's auto-rigger fails on
+  the hero's own mesh** ("Unknown error while generating motion": many separate shells with n-gon caps), so `art/build/hero2_proxy.py`
+  makes a **rigging proxy** (`art/source/hero2_rigproxy.fbx`: the body joined, voxel-remeshed at 0.012 m into one watertight
+  surface, decimated to 12,000 triangles, in the T-pose) that Mixamo rigs instead, markers at chin, wrists, elbows, knees and groin,
+  skeleton **No Fingers (25)** for the mitten hands. Eighteen clips were downloaded (FBX Binary, 30 fps, no keyframe reduction, the
+  idle With Skin, the rest Without Skin, walk and run In Place) into `art/source/mixamo/` with a README naming each file's Mixamo
+  animation (Breathing Idle, Looking Around, Male Standard Walk, Running Forward Quickly, the two Stable Sword slashes, Standing
+  Draw Arrow and Standing Aim Recoil for the bow, Standing React Large From Front, Death From Standing Idle, the axe's horizontal
+  and downward strikes for chopping and mining, Picking Up, Opening A Lid, Male Drinking, the sit-down, Sitting Idle and
+  Standing Up; Mixamo has no chopping, pickaxe or eating motion). The pane saves downloads to Downloads under temporary names
+  (`mvfbx.sh` in the session moved each one). `art/build/mixamo_bind.py` binds the real parts to the Mixamo skeleton (the parts'
+  vertex groups renamed to the mixamorig bones, hands on the forearms, `matrix_parent_inverse` so the FBX rotation and 0.01 scale
+  do not move them), gathers every clip's action (the hand-made idle and walk removed first) and saves `art/source/hero2_mixamo.blend`
+  with the armature under a 'Turn' empty that `render.py` rotates; it prints a check per clip (length, hips travel, lowest foot).
+  `tools/visual/mixamocompare.js` (`npm run art:mixamo`) puts the hand-keyed idle and walk over the Mixamo idle, walk and run.
 
 ## Things to know before changing code
 
