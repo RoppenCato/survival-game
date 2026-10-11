@@ -22,6 +22,7 @@ npm run art:mixamo     # bind hero2 to the Mixamo skeleton, render idle, walk an
 npm run art:mixamo:sheets  # every Mixamo clip in eight directions into assets/sprites/hero2-mixamo (the hero)
 npm run art:items      # the things in the hand modelled and rendered as layers over the hero's clips, merged and packed
 npm run art:icons      # each thing alone as an icon for the bag (assets/sprites/items)
+npm run art:beasts     # the boar, the deer and the wolf: modelled, rigged, animated, rendered and packed (art:boar, art:deer, art:wolf for one)
 ```
 
 **Mixamo (2026-10-09):** the hero's animations come from Mixamo (`source/mixamo/`, its README lists every file and its source

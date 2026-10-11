@@ -458,6 +458,36 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `{ layer, tint }` (`tinted`: the sheet recoloured once per tint) and `Sprites.hand(H, pk, face, which, scale)` gives a hand's
   offset from the feet for a drawn frame. The character panel draws the Blender hero with the thing in hand too. Items are now a
   kind and a material: the size, twist and curl of the old drawn items no longer show on the hero.
+  **The animals (2026-10-11, Robin: the boar, the deer, then the wolf, eight directions; no Mixamo for four legs):**
+  `art/build/quad_build.py -- <boar|deer|wolf>` models, rigs and animates a four-legged animal by script and saves
+  `art/source/<name>.blend`. **One rig for every species:** `body` (bob, pitch, roll), `hips` and `chest` (the spine flexes between
+  them), `neck`, `head`, `tail`, and four legs of three bones (`hL_up`, `hL_lo`, `hL_ft`, `fL_...`, `...R`). The animal faces -Y. A
+  species is a `SPECS` entry: a hind and a front leg's joints in the side view, the torso as rings along the spine, pivots, neck,
+  head and tail lines, colours and leg radii. The torso is one lofted mesh weighted between hips and chest by where a ring lies;
+  everything else is rigid parts on one bone (cones, balls, the boar's bristle ridge and tusks, the stag's antlers, the wolf's ruff
+  and brush). **The clips are baked on every frame from functions of the phase**, not keyed pose by pose: a foot follows a path
+  (planted and sliding back in the stance, lifted and carried forward in the swing; `step`, `WALK_OFF`, `RUN_OFF`, `GAIT`) and a
+  two-bone solver in the leg's own plane finds the upper and lower leg (`solve`: a hoof given in the world, in the body's space, or
+  plain turns), so feet stay planted through a crouch, a pitch or a bob; a rotation about a world axis becomes a bone's own by
+  conjugating with its rest matrix (`set_rot`), so no axis is guessed. Clips: `idle`, `walk` (four-beat), `run` (a gallop with the
+  spine gathering and stretching), `windup` (the boar scrapes a hoof with its head down; the wolf sinks into a crouch), `attack` (the
+  boar's charge is the gallop with the head low, looped; the wolf's is a leap), `hit`, `death` (a stagger, then over onto its side);
+  the deer has no windup or attack. **Bright base colours:** a flank facing the camera takes the cel's shadow tone, so the bases are
+  lighter than the animal should read. Rendered at `--size 224 --ortho 2.828` (the hero's pixels a metre in a bigger frame, so a
+  stag's antlers and a leap fit) in eight directions; `npm run art:boar`, `art:deer`, `art:wolf`, `art:beasts`; about 4.5 MB of sheets
+  each. `tools/visual/beastsheet.js <render dir> <out.png>` is the contact sheet looked at before packing; `tools/visual/beasts.js`
+  puts the packed animals on the starter island beside the hero (beasts.png). A rig may name points to export per frame
+  (`rig['marks']`: the wolf's `eye.L,eye.R`), which `render.py` writes where the hero's hands go.
+  **In the game:** `Sprites.beast(c, H, e, K, opts)` draws an enemy from its kind's sheets and `Combat.api.enemySprite(c, e)` is the
+  engine's hook at the top of `drawEnemy` (true means drawn). The clip follows the engine: `death` by `e.deadT` (a sprite beast lies
+  1.5 s, `e.deadFor`, fading at the end), `windup` and `attack` in those states (looped for the boar, spread over the state for the
+  wolf: `BEAST_OPT`), `hit` while the flash is fresh or it is stunned, otherwise idle, walk or run by its **real speed** (kept on
+  `e._bs`, with a little hold between gaits), the heading eased; the flash is a white-tinted copy over it, the cast shadow the
+  hero's, and the wolf's eyes land on `e.eyes` for the night glow. The game and the Combat Arena load `boar`, `deer` and `wolf`
+  (`BEASTS`, `ARENA_BEASTS` by `e.kind` and `e.kindA`); the snake, bear, moose and troll are still drawn, and so is any of the three
+  until its sheets have loaded. The Art Editor's Models tab lists the animals too (walk one about; J plays the attack, K the windup).
+  **Animal counts scale with an island's area** (`animalN(k, isle)`: the table's numbers were tuned for islands of 60 and 230 tiles).
+  The workbench server's port may be taken by another chat: `.claude/launch.json` has `workbench-alt` on 8766.
   **In the Blender Editor (2026-10-09, Robin: fix it so I can try it out):** `npm run art:mixamo:sheets` renders all eighteen clips in
   eight directions with a frame count per clip (`render.py --frames idle=16,walk=12,run=10,...`; `tools/sprites.js` reads each
   animation's count from meta.json) and packs them into `assets/sprites/hero2-mixamo` (one 164 by 164 frame, 22 MB of sheets: the

@@ -100,6 +100,38 @@
     };
     return H;
   }
+  /* The beasts (2026-10-11, the animals as Blender models: boar, deer, wolf). One sheet set per kind, shared by every animal of it;
+     what one animal is doing is kept on the enemy itself (e._bs). The clip comes from the engine's state: death by the time since
+     it fell, the windup and the lunge (looped for a charge, or spread over the state's length for a leap), the hit while the flash
+     is fresh, and otherwise idle, walk or run by how fast it is really moving. The heading eases round as the drawn creatures' did.
+     opts: scale, shadow, shadowHue, windupLoop, attackLoop. Returns false while the sheets are still loading (the page then draws
+     the old creature). A sheet's marked points (a wolf's eyes) are left on e.eyes, about (e.x, e.y * K), for the night glow. */
+  function ready(H) { var A = H && H.meta.anims.idle, im = A && H.img[A.sheets.body]; return !!(im && im.complete && im.naturalWidth); }
+  function beast(c, H, e, K, opts) {
+    if (!ready(H)) return false; opts = opts || {};
+    var M = H.meta, A = M.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null }), dt = t - st.t;
+    if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; }
+    var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.22, Math.min(0.22, dA));
+    var nm, f, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, ph = t + (e.seed || 0);
+    if (e.dead && A.death) { e.deadFor = 1.5; nm = 'death'; f = Math.min(A.death.frames - 1, Math.floor(e.deadT * A.death.fps)); }
+    else if (e.state === 'windup' && A.windup) { nm = 'windup'; f = opts.windupLoop ? loopFrame(A.windup, ph) : frameAt(A.windup, k); }
+    else if (e.state === 'lunge' && A.attack) { nm = 'attack'; f = opts.attackLoop ? loopFrame(A.attack, ph) : frameAt(A.attack, k); }
+    else if ((e.state === 'stunned' || e.flash > 0.3) && A.hit) { nm = 'hit'; f = e.state === 'stunned' ? loopFrame(A.hit, ph * 0.5) : frameAt(A.hit, 1 - e.flash); }
+    else {                                                           // the gait by the real speed, with a little hold so it does not flicker at the edge
+      st.run = st.run ? st.spd > 28 : st.spd > 40; st.walk = st.walk ? st.spd > 3 : st.spd > 7;
+      nm = st.run && A.run ? 'run' : st.walk && A.walk ? 'walk' : 'idle'; f = loopFrame(A[nm], ph);
+    }
+    var An = A[nm], d = dirOf(M, st.face), fw = M.frame.w, fh = M.frame.h, s = (opts.scale || 1) / PX, file = An.sheets.body, im = H.img[file];
+    if (!im || !im.complete || !im.naturalWidth) return false;
+    c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (1.5 - e.deadT) / 0.4));
+    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); }
+    c.restore();
+    if (An.hands) { var rows = An.hands[M.dirs[d]], row = rows && rows[f]; if (row && row.length) e.eyes = row.map(function (h) { return [(h[0] - M.anchor.x) * s, (h[1] - M.anchor.y) * s]; }); }
+    return true;
+  }
   function drawDead(c, H, x, y, face, an, P, opts) { if (H) { tick(H, P); draw(c, H, x, y, face, an, false, P, opts || {}); } }
-  return { PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted };
+  return { PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, beast: beast, ready: ready };
 });

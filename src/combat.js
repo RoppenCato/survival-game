@@ -9,7 +9,7 @@ var WPRE = {
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
 var DASH_T = 0.18;
-var api = { sfx: function () {}, facings8: true, heroSprite: null, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
+var api = { sfx: function () {}, facings8: true, heroSprite: null, enemySprite: null, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
 // mods(): { sprint, sprintCost, stam, dash, block, riposte, charge, roll, heavyblow } from the arm ring's runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
 // trigger: a skill id to cast this frame; powerMul(kind): tool power multiplier; onDeed(kind): 'block', 'parry', 'dash'
@@ -726,7 +726,7 @@ function updateEnemies(dt) {
     if (P.dead) { if (e.state !== 'idle' && e.state !== 'recover') { e.state = 'idle'; } if (e.state === 'idle') continue; }
     if (e.type === 'brute') bruteAI(e, adt, d, ang); else if (e.type === 'shooter') shooterAI(e, adt, d, ang); else beastAI(e, adt, d, ang);
   }
-  W.enemies = W.enemies.filter(function (e) { return !(e.dead && e.deadT > 0.5); });
+  W.enemies = W.enemies.filter(function (e) { return !(e.dead && e.deadT > (e.deadFor || 0.5)); });   // a sprite beast lies a moment longer (its death clip)
   // soft separation
   for (var a = 0; a < W.enemies.length; a++) for (var b = a + 1; b < W.enemies.length; b++) {
     var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.type === 'shooter' || B.type === 'shooter') continue;
@@ -1236,6 +1236,7 @@ function drawHuman(c, e) {
   if (lib.figureHeld) lib.figureHeld(c, 0, 0, dir, e.fig, { kind: 'sword', x: hp[0], y: hp[1], ang: ang });
 }
 function drawEnemy(c, e) {
+  if (api.enemySprite && api.enemySprite(c, e)) return;        // a page draws this one from a sprite sheet (the Blender animals, 2026-10-11)
   var fn = e.fig ? drawHuman : e.creature ? drawCreature : drawPlain;
   if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
   var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0, A = e.cfg && e.cfg.atk;

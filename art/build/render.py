@@ -66,6 +66,7 @@ for anim in ANIMS:
     meta['anims'][anim] = {'frames': nfr, 'fps': nfr / (length / sc.render.fps), 'hands': {}}
     # the wrists per direction and frame (2026-10-09, for the things in the hands): render pixels [x, y] and the depth toward the camera, right then left
     HANDS = [b for b in ('mixamorig:RightForeArm', 'mixamorig:LeftForeArm', 'hand.R', 'hand.L') if b in rig.pose.bones]
+    if rig.get('marks'): HANDS = [b for b in rig['marks'].split(',') if b in rig.pose.bones]     # a rig may name its own points (a wolf's eyes for the night glow, 2026-10-11)
     for d in range(NDIR):
         (rig.parent or rig).rotation_euler = (0, 0, -2 * math.pi * d / NDIR); rows = []
         for f in range(nfr):

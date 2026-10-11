@@ -141,13 +141,16 @@ __SPRITES_JS__
     if (e.type !== 'beast' && e.type !== 'brute') return;
     var k = e.type === 'brute' ? 'bear' : (want || (Math.random() < 0.5 ? 'wolf' : 'boar')), sp = lib.animalSpec(k);
     want = null;
-    e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase();
+    e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase(); e.kindA = k;
     e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, atk: e.type === 'bot' ? lib.animalAttack(k) : null };
     if (e.type === 'beast') e.hp = e.maxHp = sp.hp;
   };
   lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(GameArt.lib);
   var ARENA_HERO = Sprites.hero(__SPRITES__ || {}, localStorage);
+  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {} };   // the animals modelled in Blender (2026-10-11)
+  ['boar', 'deer', 'wolf'].forEach(function (bk) { var SPA = __SPRITES__ || {}; if (SPA[bk]) ARENA_BEASTS[bk] = Sprites.load(SPA, bk); });
+  Combat.api.enemySprite = function (c, e) { var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop }); };
   function arenaLayers() {
     var P = Combat.dbg().P, M = ARENA_HERO && ARENA_HERO.meta, out = ['body']; if (!M) return out;
     var kind = P.mode === 'fight' ? (P.weapon === 'ranged' ? arm.ranged : arm.melee) : P.mode === 'gather' ? (Combat.api.tools[P.tool] || {}).id : null; if (!kind) return out;

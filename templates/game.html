@@ -260,6 +260,9 @@ __COMBAT__
     return out;
   }
   Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, shadowHue: kit.STYLE.shadowHue, layers: handLayers });
+  var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {} };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
+  ['boar', 'deer', 'wolf'].forEach(function (bk) { if (SPR[bk]) BEASTS[bk] = Sprites.load(SPR, bk); });
+  Combat.api.enemySprite = function (c, e) { var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind]; return Sprites.beast(c, BH, e, K, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop }); };
   (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the rendered icons for the bag, the bars and the drops
   try { var cg = JSON.parse(localStorage.getItem('game.creatures')); if (cg) for (var ck in cg) if (cg[ck]) lib.useAnimal(ck, cg[ck]); } catch (e) {}   // the Creature Editor's "Update in game"
   try { var gg = JSON.parse(localStorage.getItem('game.grass')); if (gg && gg.g) { grassLook = JSON.parse(JSON.stringify(World.GRASS)); for (var gk in gg.g) grassLook[gk] = gg.g[gk]; for (var gs in (gg.st || {})) kit.STYLE[gs] = gg.st[gs]; } } catch (e) {}
@@ -3186,18 +3189,21 @@ __COMBAT__
   function atHome(x, y) { return !!inTerritory(x, y) || Math.hypot(x - home.x, y - home.y) < 700; }
   function cargoHome() { return !!(raft && raft.cargo && raft.cargo.length && !raft.aboard && atHome(raft.x, raft.y)); }
   function unloadCargo() { var n = 0; (raft.cargo || []).forEach(function (cg) { n += cg.silver || 0; }); raft.cargo = []; if (n) { var left = addItem('silver', n); if (left) drop('silver', raft.x, raft.y, left); toast(n + ' silver, home'); } sfx('craft'); save(); }
+  // The counts in ANIMALS were tuned for a starter island of 60 tiles and a big island of 230; they scale with the island's area
+  // (2026-10-11: the islands grew to 120 and 400 and the animals were a quarter and a third as dense)
+  function animalN(k, isle) { var q = w.isles[isle], ref = isle === 0 ? 60 : 230, base = isle === 0 ? (ANIMALS[k].start || 0) : ANIMALS[k].n; if (!q || !base) return base || 0; var ak = Math.pow(q.r * 2 / ref, 2); return Math.max(base, Math.round(base * ak)); }
   function spawnBoars() {                 // all the animals, by kind; wolves in pairs
     Combat.clear();
-    for (var k in ANIMALS) { placeIsle = 0; for (var i0 = 0; i0 < (ANIMALS[k].start || 0); i0++) { var e0 = placeAnimal(k, 260, null, false); if (e0) e0.isle = 0; } placeIsle = null; }   // a few on the starter island
-    for (var k in ANIMALS) for (var i = 0; i < ANIMALS[k].n; i++) { placeIsle = 1; var e = placeAnimal(k, 260, null, false); placeIsle = null; if (e) e.isle = 1; if (e && ANIMALS[k].pair && i % 2 === 0) placeAnimal(k, 260, { x: e.wander.x0, y: e.wander.y0 }); }
+    for (var k in ANIMALS) { placeIsle = 0; for (var i0 = 0, n0 = animalN(k, 0); i0 < n0; i0++) { var e0 = placeAnimal(k, 260, null, false); if (e0) e0.isle = 0; } placeIsle = null; }   // a few on the starter island
+    for (var k in ANIMALS) for (var i = 0, n1 = animalN(k, 1); i < n1; i++) { placeIsle = 1; var e = placeAnimal(k, 260, null, false); placeIsle = null; if (e) e.isle = 1; if (e && ANIMALS[k].pair && i % 2 === 0) placeAnimal(k, 260, { x: e.wander.x0, y: e.wander.y0 }); }
     trollReset();
   }
   function keepBoars(dt) {                // a missing animal wanders back in after a while, far from the hero
     respawnT -= dt; if (respawnT > 0) return; respawnT = 4;
     var alive = {}, aliveStart = {}; Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead) { alive[e.kind] = (alive[e.kind] || 0) + 1; if (e.isle === 0) aliveStart[e.kind] = (aliveStart[e.kind] || 0) + 1; } });
     for (var k in ANIMALS) {
-      if ((ANIMALS[k].start || 0) > (aliveStart[k] || 0)) { placeIsle = 0; var e0 = placeAnimal(k, 520); placeIsle = null; if (e0) { e0.isle = 0; return; } }
-      if (ANIMALS[k].n && (alive[k] || 0) - (aliveStart[k] || 0) < ANIMALS[k].n * (ANIMALS[k].pair ? 2 : 1)) { placeIsle = 1; var e1 = placeAnimal(k, 520); placeIsle = null; if (e1) { e1.isle = 1; return; } }
+      if (animalN(k, 0) > (aliveStart[k] || 0)) { placeIsle = 0; var e0 = placeAnimal(k, 520); placeIsle = null; if (e0) { e0.isle = 0; return; } }
+      if (ANIMALS[k].n && (alive[k] || 0) - (aliveStart[k] || 0) < animalN(k, 1) * (ANIMALS[k].pair ? 2 : 1)) { placeIsle = 1; var e1 = placeAnimal(k, 520); placeIsle = null; if (e1) { e1.isle = 1; return; } }
     }
   }
 

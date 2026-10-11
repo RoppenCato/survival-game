@@ -112,5 +112,8 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | Hero 1 (first trial) | `hero.blend` | own | idle, walk | `hero` | yes | Character Editor only | superseded |
 | Villagers, Brokk, child, elder, guard | | | | | | | step 2 |
 | Boulder troll, stone, forest troll | | | | | | | step 3 |
-| Boar, deer, wolf, snake, bear, moose | | | | | | | step 4 |
+| Boar | `boar.blend` | own (`quad_build.py`) | 7 | `boar` | Models tab | **yes** (2026-10-11) | |
+| Deer | `deer.blend` | the same rig | 5 (no attack) | `deer` | Models tab | **yes** (2026-10-11) | a stag; the death lies stiff-legged |
+| Wolf | `wolf.blend` | the same rig | 7 | `wolf` | Models tab | **yes** (2026-10-11) | eyes exported for the night glow |
+| Snake, bear, moose | | | | | | | next: bear and moose on the same rig, the snake needs its own |
 | Trees, rocks, the wreck | | | | | | | step 5, if judged needed |
