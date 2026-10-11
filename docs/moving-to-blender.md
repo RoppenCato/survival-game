@@ -115,5 +115,7 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | Boar | `boar.blend` | own (`quad_build.py`) | 7 | `boar` | Models tab | **yes** (2026-10-11) | |
 | Deer | `deer.blend` | the same rig | 5 (no attack) | `deer` | Models tab | **yes** (2026-10-11) | a stag; the death lies stiff-legged |
 | Wolf | `wolf.blend` | the same rig | 7 | `wolf` | Models tab | **yes** (2026-10-11) | eyes exported for the night glow |
-| Snake, bear, moose | | | | | | | next: bear and moose on the same rig, the snake needs its own |
+| Bear | `bear.blend` | the same rig | 7 | `bear` | Models tab | **yes** (2026-10-11) | rears to strike; 9 MB |
+| Moose | `moose.blend` | the same rig | 7 | `moose` | Models tab | **yes** (2026-10-11) | a 324 px frame, 17 MB: the heaviest sheet set |
+| Adder | `snake.blend` | own chain (`snake_build.py`) | 7 | `snake` | Models tab | **yes** (2026-10-11) | twice life size so it reads |
 | Trees, rocks, the wreck | | | | | | | step 5, if judged needed |

@@ -484,10 +484,23 @@ the text and it is made the default. When a spec's meaning changes, change the s
   wolf: `BEAST_OPT`), `hit` while the flash is fresh or it is stunned, otherwise idle, walk or run by its **real speed** (kept on
   `e._bs`, with a little hold between gaits), the heading eased; the flash is a white-tinted copy over it, the cast shadow the
   hero's, and the wolf's eyes land on `e.eyes` for the night glow. The game and the Combat Arena load `boar`, `deer` and `wolf`
-  (`BEASTS`, `ARENA_BEASTS` by `e.kind` and `e.kindA`); the snake, bear, moose and troll are still drawn, and so is any of the three
+  (`BEASTS`, `ARENA_BEASTS` by `e.kind` and `e.kindA`); the troll is still drawn, and so is any animal
   until its sheets have loaded. The Art Editor's Models tab lists the animals too (walk one about; J plays the attack, K the windup).
   **Animal counts scale with an island's area** (`animalN(k, isle)`: the table's numbers were tuned for islands of 60 and 230 tiles).
   The workbench server's port may be taken by another chat: `.claude/launch.json` has `workbench-alt` on 8766.
+  **The bear, the moose and the adder (2026-10-11, Robin: those three next):** `bear` and `moose` are two more `SPECS` on the same rig.
+  The bear has a hump, a pale muzzle, round ears, flat paws with claws; its windup **rears onto the hind legs** with the forepaws
+  raised and its attack comes down with both. The bull moose is tall on pale legs with a hump and a mane, a drooping nose, a bell
+  under the chin and palmate antlers (a flat blade with tines); its windup drops the antlers and stamps, its attack drives them
+  forward and throws them up. Bigger frames at the same pixels a metre: the bear `--size 280 --ortho 3.535` (9 MB of sheets), the
+  moose `--size 320 --ortho 4.04` (17 MB). **The adder has its own script, `art/build/snake_build.py`:** a chain of sixteen bones
+  from the tail to the head and a tongue bone; the body one lofted tube with a flat pale belly, each ring shared by the two bones it
+  lies on, a dark lozenge on every segment left and right in turn (the zigzag), a broad flat head with red eyes and a forked tongue.
+  A clip gives every segment a heading, a rise and a roll; the segments are laid end to end (it never stretches), a chosen stretch
+  of the body is held where it lies, and each bone gets the turn from its parent. idle (a loose S, the tongue flicking), walk and
+  run (a travelling wave), windup (the front third stands up and folds back into an S), attack (the S thrown straight), hit, death
+  (it writhes and rolls belly up). 1.5 m long, twice a real adder, so it reads; `--size 176 --ortho 2.222`, 2 MB. `npm run art:bear`,
+  `art:moose`, `art:snake`. All six animals of the first biome are now sheets in the game and the Combat Arena.
   **In the Blender Editor (2026-10-09, Robin: fix it so I can try it out):** `npm run art:mixamo:sheets` renders all eighteen clips in
   eight directions with a frame count per clip (`render.py --frames idle=16,walk=12,run=10,...`; `tools/sprites.js` reads each
   animation's count from meta.json) and packs them into `assets/sprites/hero2-mixamo` (one 164 by 164 frame, 22 MB of sheets: the

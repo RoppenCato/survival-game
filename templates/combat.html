@@ -148,8 +148,8 @@ __SPRITES_JS__
   lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(GameArt.lib);
   var ARENA_HERO = Sprites.hero(__SPRITES__ || {}, localStorage);
-  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {} };   // the animals modelled in Blender (2026-10-11)
-  ['boar', 'deer', 'wolf'].forEach(function (bk) { var SPA = __SPRITES__ || {}; if (SPA[bk]) ARENA_BEASTS[bk] = Sprites.load(SPA, bk); });
+  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {} };   // the animals modelled in Blender (2026-10-11)
+  ['boar', 'deer', 'wolf', 'bear', 'moose', 'snake'].forEach(function (bk) { var SPA = __SPRITES__ || {}; if (SPA[bk]) ARENA_BEASTS[bk] = Sprites.load(SPA, bk); });
   Combat.api.enemySprite = function (c, e) { var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop }); };
   function arenaLayers() {
     var P = Combat.dbg().P, M = ARENA_HERO && ARENA_HERO.meta, out = ['body']; if (!M) return out;

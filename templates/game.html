@@ -260,8 +260,8 @@ __COMBAT__
     return out;
   }
   Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, shadowHue: kit.STYLE.shadowHue, layers: handLayers });
-  var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {} };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
-  ['boar', 'deer', 'wolf'].forEach(function (bk) { if (SPR[bk]) BEASTS[bk] = Sprites.load(SPR, bk); });
+  var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {} };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
+  ['boar', 'deer', 'wolf', 'bear', 'moose', 'snake'].forEach(function (bk) { if (SPR[bk]) BEASTS[bk] = Sprites.load(SPR, bk); });
   Combat.api.enemySprite = function (c, e) { var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind]; return Sprites.beast(c, BH, e, K, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop }); };
   (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the rendered icons for the bag, the bars and the drops
   try { var cg = JSON.parse(localStorage.getItem('game.creatures')); if (cg) for (var ck in cg) if (cg[ck]) lib.useAnimal(ck, cg[ck]); } catch (e) {}   // the Creature Editor's "Update in game"

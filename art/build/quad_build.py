@@ -50,6 +50,24 @@ SPECS = {
         'col': {'body': '#b5ac9c', 'belly': '#ded6c6', 'leg': '#cbc3b3', 'hoof': '#4a433c', 'snout': '#1f1a17', 'tusk': '#f0ead8', 'mane': '#7c7468', 'eye': '#e2b338', 'ear': '#8f8779'},
         'leg_r': (0.07, 0.045, 0.03, 0.03),
     },
+    # the brown bear: heavy, a hump over the shoulders, a dished face, flat paws; it rears to strike
+    'bear': {
+        'hind': [(0.55, 0.80), (0.42, 0.50), (0.60, 0.22), (0.52, 0.035)], 'hx': 0.20, 'front': [(-0.45, 0.78), (-0.38, 0.48), (-0.42, 0.20), (-0.46, 0.035)], 'fx': 0.22,
+        'torso': [(0.86, 0.82, 0.05, 0.06), (0.78, 0.84, 0.24, 0.26), (0.55, 0.88, 0.33, 0.34), (0.20, 0.90, 0.35, 0.36), (-0.15, 0.95, 0.36, 0.40), (-0.45, 0.99, 0.34, 0.41), (-0.65, 0.92, 0.27, 0.31), (-0.76, 0.86, 0.18, 0.21)],
+        'piv': {'body': (0, 0.05, 0.88), 'hips': (0, 0.22, 0.88), 'chest': (0, -0.08, 0.90)},
+        'neck': [(-0.62, 0.90), (-0.86, 0.84)], 'head': [(-0.86, 0.84), (-1.26, 0.70)], 'tail': [(0.84, 0.86), (0.91, 0.78)],
+        'col': {'body': '#a8754a', 'belly': '#855a38', 'leg': '#7d5434', 'hoof': '#2a211c', 'snout': '#d9b88c', 'tusk': '#efe6d2', 'mane': '#8f6240', 'eye': '#120e0c', 'ear': '#8f6240'},
+        'leg_r': (0.17, 0.115, 0.09, 0.085),
+    },
+    # the bull moose: tall on pale legs, a hump, a drooping nose, a bell under the chin, palmate antlers; it lowers them and gores
+    'moose': {
+        'hind': [(0.80, 1.55), (0.66, 1.10), (0.92, 0.66), (0.86, 0.035)], 'hx': 0.17, 'front': [(-0.62, 1.50), (-0.54, 1.08), (-0.57, 0.55), (-0.60, 0.035)], 'fx': 0.16,
+        'torso': [(1.10, 1.62, 0.05, 0.06), (1.02, 1.62, 0.20, 0.24), (0.75, 1.64, 0.34, 0.37), (0.30, 1.62, 0.36, 0.41), (-0.20, 1.68, 0.37, 0.47), (-0.58, 1.78, 0.35, 0.51), (-0.82, 1.72, 0.25, 0.35), (-0.94, 1.70, 0.13, 0.18)],
+        'piv': {'body': (0, 0.08, 1.66), 'hips': (0, 0.32, 1.66), 'chest': (0, -0.15, 1.68)},
+        'neck': [(-0.80, 1.74), (-1.16, 1.96)], 'head': [(-1.16, 1.96), (-1.78, 1.72)], 'tail': [(1.08, 1.64), (1.13, 1.52)],
+        'col': {'body': '#a67c56', 'belly': '#7a5a40', 'leg': '#d6c8ae', 'hoof': '#2a211c', 'snout': '#7d5c48', 'tusk': '#d9c7a0', 'mane': '#6e5040', 'eye': '#120e0c', 'ear': '#8a6650'},
+        'leg_r': (0.16, 0.095, 0.058, 0.05),
+    },
 }
 S = SPECS[NAME]
 
@@ -150,7 +168,7 @@ for n, L in LEGS.items():
     cone(n + '_lower', C['leg'], n + '_lo', J[1], J[2], r_lo, r_ft * 1.1)
     ball(n + '_ankle', C['leg'], n + '_ft', J[2], r_ft * 1.15)
     cone(n + '_cannon', C['leg'], n + '_ft', J[2], J[3] + Vector((0, 0, 0.03)), r_ft, r_hoof)
-    if NAME == 'wolf': ball(n + '_paw', C['leg'], n + '_ft', J[3] + Vector((0, -0.025, 0.015)), 0.042, sx=0.95, sy=1.35, sz=0.6)
+    if NAME in ('wolf', 'bear'): ball(n + '_paw', C['leg'], n + '_ft', J[3] + Vector((0, -0.025, 0.015)), 0.042 if NAME == 'wolf' else 0.105, sx=0.95, sy=1.35, sz=0.6)
     else: cone(n + '_hoof', C['hoof'], n + '_ft', J[3] + Vector((0, 0, 0.045)), J[3] + Vector((0, -0.012, -0.022)), r_hoof * 1.05, r_hoof * 1.5, seg=8)
 n0, n1 = V3(S['neck'][0]), V3(S['neck'][1]); h0, h1 = V3(S['head'][0]), V3(S['head'][1]); hd = (h1 - h0).normalized(); up = Vector((0, -hd.z, hd.y)) * -1
 def headp(along, upw=0.0, side=0.0): return h0 + hd * along + up * upw + Vector((side, 0, 0))   # a point on the head: along the muzzle, above it, to the side
@@ -188,6 +206,35 @@ elif NAME == 'deer':
         cone('tine2' + str(sx), C['tusk'], 'head', a2, a2 + Vector((sx * 0.08, -0.07, 0.11)), 0.011, 0.004, seg=6)
     cone('tail', C['mane'], 'tail', V3(S['tail'][0]), V3(S['tail'][1]), 0.045, 0.02, seg=8, sy=0.7)
     ball('rump', C['mane'], 'hips', (0, 0.70, 0.96), 0.115, sy=0.45, sz=1.1)
+elif NAME == 'bear':
+    cone('neck', C['body'], 'neck', n0 + Vector((0, 0.14, 0.0)), n1 + Vector((0, -0.02, 0)), 0.33, 0.25, sy=1.1)
+    cone('skull', C['body'], 'head', headp(-0.10), headp(HL * 0.52), 0.25, 0.165, sy=0.95)
+    cone('muzzle', C['snout'], 'head', headp(HL * 0.46, -0.03), headp(HL * 0.96, -0.045), 0.125, 0.085)
+    ball('nose', C['hoof'], 'head', headp(HL * 0.99, -0.03), 0.05, sz=0.8)
+    for sx in (1, -1):
+        ball('ear' + str(sx), C['ear'], 'head', headp(-0.02, 0.21, sx * 0.17), 0.075, sy=0.5)
+        ball('eye' + str(sx), C['eye'], 'head', headp(HL * 0.36, 0.085, sx * 0.105), 0.022)
+    ball('tail', C['body'], 'tail', V3(S['tail'][1]), 0.07)
+    for n, L in LEGS.items():                          # claws on every paw
+        for cx in (-0.05, 0.0, 0.05): cone(n + '_claw%d' % int(cx * 100), C['tusk'], n + '_ft', V3(L['J'][3], L['x'] + cx) + Vector((0, -0.11, 0.03)), V3(L['J'][3], L['x'] + cx) + Vector((0, -0.19, 0.0)), 0.016, 0.003, seg=5)
+elif NAME == 'moose':
+    cone('neck', C['body'], 'neck', n0 + Vector((0, 0.14, -0.10)), n1 + Vector((0, 0.0, -0.03)), 0.27, 0.16, sy=1.3)
+    cone('skull', C['body'], 'head', headp(-0.10), headp(HL * 0.45), 0.16, 0.125, sy=1.15)
+    cone('muzzle', C['snout'], 'head', headp(HL * 0.42, -0.01), headp(HL * 0.86, -0.045), 0.125, 0.115, sy=1.1)
+    ball('nose', C['snout'], 'head', headp(HL * 0.93, -0.075), 0.125, sy=1.0, sz=1.05)                       # the heavy drooping nose
+    cone('bell', C['mane'], 'head', headp(HL * 0.30, -0.13), headp(HL * 0.24, -0.34), 0.055, 0.02, seg=7)       # the bell under the chin
+    for i in range(5):                                 # the mane over the hump
+        y = -0.80 + i * 0.13; ring = min(torso, key=lambda r: abs(r[0] - y)); cone('mane%d' % i, C['mane'], 'chest', (0, y, ring[1] + ring[3] - 0.03), (0, y + 0.08, ring[1] + ring[3] + 0.09), 0.06, 0.006, seg=5, sx=0.5)
+    for sx in (1, -1):
+        cone('ear' + str(sx), C['ear'], 'head', headp(-0.05, 0.10, sx * 0.11), headp(-0.14, 0.22, sx * 0.30), 0.07, 0.015, seg=6, sx=1.0, sy=0.4)
+        ball('eye' + str(sx), C['eye'], 'head', headp(HL * 0.22, 0.075, sx * 0.118), 0.026)
+        # a palm of an antler: a short beam out to the side, a broad flat blade, tines along its front and outer edge
+        a0 = headp(-0.02, 0.13, sx * 0.08); a1 = a0 + Vector((sx * 0.20, 0.03, 0.03)); pc = a1 + Vector((sx * 0.27, 0.06, 0.07))
+        cone('beam' + str(sx), C['tusk'], 'head', a0, a1, 0.04, 0.035, seg=6)
+        ball('palm' + str(sx), C['tusk'], 'head', pc, 0.30, sx=1.0, sy=0.8, sz=0.10)
+        for (dx, dy, dz) in ((0.10, -0.24, 0.06), (0.24, -0.22, 0.10), (0.36, -0.12, 0.13), (0.40, 0.04, 0.15), (0.34, 0.20, 0.14), (-0.06, -0.26, 0.02)):
+            b = pc + Vector((sx * dx * 0.75, dy * 0.75, dz * 0.4)); cone('tine%d%d' % (sx, int(dx * 100)), C['tusk'], 'head', b, pc + Vector((sx * dx * 1.35, dy * 1.4, dz + 0.08)), 0.05, 0.014, seg=5)
+    cone('tail', C['body'], 'tail', V3(S['tail'][0]), V3(S['tail'][1]), 0.05, 0.02, seg=6)
 else:   # wolf
     cone('neck', C['body'], 'neck', n0 + Vector((0, 0.10, -0.04)), n1 + Vector((0, 0.0, -0.01)), 0.15, 0.105, sy=1.2)
     cone('ruff', C['belly'], 'neck', n0 + Vector((0, 0.02, -0.10)), n1 + Vector((0, -0.03, -0.07)), 0.10, 0.07, seg=8)
@@ -259,6 +306,8 @@ GAIT = {
     'boar': {'walk': dict(S=0.30, h=0.07, beta=0.62, bob=0.012, lift=38), 'run': dict(S=0.56, h=0.15, beta=0.36, bob=0.045, pitch=4, flex=7, lift=60)},
     'deer': {'walk': dict(S=0.40, h=0.10, beta=0.62, bob=0.014, lift=26), 'run': dict(S=0.92, h=0.26, beta=0.30, bob=0.11, pitch=6, flex=11, lift=75)},
     'wolf': {'walk': dict(S=0.40, h=0.07, beta=0.58, bob=0.012, lift=40), 'run': dict(S=0.80, h=0.17, beta=0.32, bob=0.055, pitch=5, flex=13, lift=70)},
+    'bear': {'walk': dict(S=0.50, h=0.10, beta=0.62, bob=0.02, lift=30), 'run': dict(S=0.95, h=0.20, beta=0.36, bob=0.07, pitch=5, flex=9, lift=50)},
+    'moose': {'walk': dict(S=0.75, h=0.18, beta=0.62, bob=0.02, lift=30), 'run': dict(S=1.30, h=0.34, beta=0.45, bob=0.07, pitch=2, flex=4, lift=60)},
 }[NAME]
 WALK_OFF = {'hL': 0.0, 'fL': 0.25, 'hR': 0.5, 'fR': 0.75}          # the four-beat walk: each hind foot, then the front foot on its side
 RUN_OFF = {'hL': 0.0, 'hR': 0.10, 'fL': 0.47, 'fR': 0.57}          # the gallop: the hind pair, a moment in the air, the front pair
@@ -268,7 +317,6 @@ def step(n, u, G, yoff=0.0):
     v = (u - beta) / (1 - beta); e = 0.5 - 0.5 * math.cos(math.pi * v)
     return ('w', y0 + Sx / 2 - Sx * e, z0 + G['h'] * math.sin(math.pi * v), rest - G['lift'] * math.sin(math.pi * v))
 TWO = 2 * math.pi
-HEAD_LOW = {'boar': 0, 'deer': 0, 'wolf': 0}[NAME]
 def walk(p):
     G = GAIT['walk']; w = TWO * p
     return {'loc': (0, 0, -G['bob'] * (0.5 + 0.5 * math.cos(2 * w))), 'pitch': 0.6 * math.sin(2 * w), 'hips_yaw': 2.5 * math.sin(w), 'chest_yaw': -2.5 * math.sin(w),
@@ -289,10 +337,23 @@ def windup(p):
     if NAME == 'boar':                              # head down, a front hoof scraping the ground
         u = (2 * p) % 1.0; L = LEGS['fL']; y0, z0 = L['J'][3]; scrape = ('w', y0 - 0.10 + 0.22 * u, z0 + 0.07 * math.sin(math.pi * min(1, u * 1.6)) * (1 if u < 0.62 else 0), -30 * math.sin(math.pi * u))
         return {'loc': (0, 0.03, -0.03), 'pitch': 5, 'neck': 24 + 4 * math.sin(2 * w), 'head': 10, 'tail': -25, 'wag': 20 * math.sin(4 * w), 'legs': {'fL': scrape}}
+    if NAME == 'bear':                              # the bear rears up onto its hind legs, forepaws raised
+        k = 0.5 - 0.5 * math.cos(math.pi * min(1.0, p * 1.3)); fr = lambda n, o: ('l', LEGS[n]['J'][3][0] - 0.10 * k, LEGS[n]['J'][3][1] + (0.30 + o) * k, 30 * k)
+        return {'loc': (0, 0.22 * k, 0.34 * k), 'pitch': -52 * k, 'hips': 14 * k, 'neck': 26 * k, 'head': 16 * k, 'legs': {'fL': fr('fL', 0.10), 'fR': fr('fR', 0.0)} if k > 0.05 else {}}
+    if NAME == 'moose':                             # the moose drops its antlers and stamps
+        k = 0.5 - 0.5 * math.cos(math.pi * min(1.0, p * 1.5)); u = (2 * p) % 1.0; L = LEGS['fR']; y0, z0 = L['J'][3]
+        return {'loc': (0, 0.06 * k, -0.04 * k), 'pitch': 4 * k, 'neck': 46 * k, 'head': 26 * k, 'tail': -20 * k, 'legs': {'fR': ('w', y0 - 0.08, z0 + 0.16 * math.sin(math.pi * u) * k, -30 * math.sin(math.pi * u) * k)}}
     k = 0.5 - 0.5 * math.cos(math.pi * min(1.0, p * 1.4))     # the wolf sinks into a crouch, its weight back, its head low and level
     return {'loc': (0, 0.07 * k, -0.15 * k), 'pitch': 7 * k, 'hips': -8 * k, 'neck': 26 * k, 'head': -18 * k, 'tail': -10 * k, 'wag': 4 * math.sin(3 * w)}
 def attack(p):
     if NAME == 'boar': return run(p, low=1.0)        # the charge: the gallop with the head down
+    if NAME == 'bear':                              # down from the rear with both forepaws: a heavy swipe, then all four on the ground
+        d = min(1.0, p / 0.45); k = 1 - (d * d * (3 - 2 * d)); fr = lambda n, o: ('l', LEGS[n]['J'][3][0] - 0.10 * k - 0.30 * math.sin(math.pi * d) * (1 - k * 0.3), LEGS[n]['J'][3][1] + (0.30 + o) * k, 30 * k - 40 * math.sin(math.pi * d))
+        return {'loc': (0, 0.22 * k - 0.16 * math.sin(math.pi * min(1.0, p / 0.7)), 0.34 * k - 0.05 * math.sin(math.pi * min(1.0, max(0.0, (p - 0.4) / 0.4)))), 'pitch': -52 * k + 8 * math.sin(math.pi * min(1.0, p / 0.8)), 'hips': 14 * k, 'neck': 26 * k - 6 * math.sin(math.pi * p), 'head': 16 * k,
+                'legs': {'fL': fr('fL', 0.10), 'fR': fr('fR', 0.0)} if k > 0.05 else {}}
+    if NAME == 'moose':                             # the gore: the lowered antlers driven forward and thrown up
+        k = math.sin(math.pi * min(1.0, p * 1.15)); up = max(0.0, math.sin(math.pi * (p - 0.25) / 0.75)) if p > 0.25 else 0.0
+        return {'loc': (0, -0.28 * k, -0.04 + 0.05 * up), 'pitch': 5 - 9 * up, 'neck': 46 - 64 * up, 'head': 26 - 30 * up, 'hips': -4 * k, 'tail': -25}
     k = math.sin(math.pi * p); e = 0.5 - 0.5 * math.cos(math.pi * p)                          # the wolf's leap: up and forward, forelegs reaching, then the landing
     fr = lambda n: ('l', LEGS[n]['J'][3][0] - 0.30 * k + 0.10 * e, LEGS[n]['J'][3][1] + 0.26 * k * (1 - 0.5 * e), 25 * k)
     hn = lambda n: ('l', LEGS[n]['J'][3][0] + 0.30 * k, LEGS[n]['J'][3][1] + 0.10 * k, -45 * k)
@@ -310,7 +371,7 @@ def death(p):
     return {'loc': (0.10 * f, 0.04 * stagger, -drop * f + settle), 'roll': 86 * f + 7 * stagger, 'pitch': -4 * stagger, 'neck': 14 * f, 'neck_yaw': -10 * f, 'head': 8 * f, 'tail': -30 * f, 'legs': legs}
 
 clip('idle', 48, idle); clip('walk', 24, walk); clip('run', 12, run); clip('hit', 8, hit); clip('death', 20, death)
-if NAME != 'deer': clip('windup', 24 if NAME == 'boar' else 12, windup); clip('attack', 12, attack)
+if NAME != 'deer': clip('windup', 24 if NAME == 'boar' else 16 if NAME in ('bear', 'moose') else 12, windup); clip('attack', 16 if NAME in ('bear', 'moose') else 12, attack)
 ad = rig.animation_data; ad.action = bpy.data.actions['idle']
 if hasattr(ad, 'action_slot') and len(ad.action.slots): ad.action_slot = ad.action.slots[0]
 sc.frame_set(1)
