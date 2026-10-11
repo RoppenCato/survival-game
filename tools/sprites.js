@@ -28,6 +28,7 @@ const { createCanvas, loadImage } = require('../node_modules/@napi-rs/canvas'); 
   const anchor = { x: (ax - bx) / PX, y: (ay - by) / PX };
   fs.mkdirSync(outDir, { recursive: true });
   const out = { name, frame: { w: fw, h: fh }, anchor, dirs, layers, anims: {}, figure_px: meta.figure_px / PX, elev: meta.elev, source: 'art/source/' + name + '.blend' };
+  if (parseFloat(process.argv[5]) > 0) out.scale = parseFloat(process.argv[5]);   // a sheet rendered at fewer pixels a metre is drawn this much larger (the trolls: 1.333)
   for (const a of anims) {
     const NA = nf(a); out.anims[a] = { frames: NA, fps: Math.round(meta.anims[a].fps * 100) / 100, sheets: {} };
     if (meta.anims[a].hands) { out.anims[a].hands = {}; for (const d of dirs) out.anims[a].hands[d] = (meta.anims[a].hands[d] || []).map(row => row.map(h => [Math.round((h[0] - bx) / PX * 10) / 10, Math.round((h[1] - by) / PX * 10) / 10, h[2]])); }   // the wrists in frame pixels at 1x (2026-10-09)

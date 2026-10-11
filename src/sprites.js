@@ -71,7 +71,7 @@
   // draws the hero at (x, y) (the feet, in the camera's space). opts: scale (1 is the render's size), shadow (true), shadowHue, layers (['body'] plus gear)
   function draw(c, H, x, y, face, an, dashing, P, opts) {
     opts = opts || {}; var M = H.meta, pk = pick(H, P, an, opts); H.last = pk; if (!pk) return;
-    var A = M.anims[pk.a], d = dirOf(M, face), fw = M.frame.w, fh = M.frame.h, s = (opts.scale || 1) / PX, layers = opts.layers || ['body'];
+    var A = M.anims[pk.a], d = dirOf(M, face), fw = M.frame.w, fh = M.frame.h, s = (opts.scale || 1) * (M.scale || 1) / PX, layers = opts.layers || ['body'];
     var im = H.img[A.sheets.body]; if (!im || !im.complete || !im.naturalWidth) return;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
@@ -104,7 +104,8 @@
      what one animal is doing is kept on the enemy itself (e._bs). The clip comes from the engine's state: death by the time since
      it fell, the windup and the lunge (looped for a charge, or spread over the state's length for a leap), the hit while the flash
      is fresh, and otherwise idle, walk or run by how fast it is really moving. The heading eases round as the drawn creatures' did.
-     opts: scale, shadow, shadowHue, windupLoop, attackLoop. Returns false while the sheets are still loading (the page then draws
+     opts: scale, shadow, shadowHue, windupLoop, attackLoop; clip and clipK (a clip the page asks for and how far through it: the
+     troll shielding its eyes), tint { color, a } (laid over the frame: the troll turned to stone), deadFor (how long it lies). Returns false while the sheets are still loading (the page then draws
      the old creature). A sheet's marked points (a wolf's eyes) are left on e.eyes, about (e.x, e.y * K), for the night glow. */
   function ready(H) { var A = H && H.meta.anims.idle, im = A && H.img[A.sheets.body]; return !!(im && im.complete && im.naturalWidth); }
   function beast(c, H, e, K, opts) {
@@ -113,7 +114,9 @@
     if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; }
     var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.22, Math.min(0.22, dA));
     var nm, f, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, ph = t + (e.seed || 0);
-    if (e.dead && A.death) { e.deadFor = 1.5; nm = 'death'; f = Math.min(A.death.frames - 1, Math.floor(e.deadT * A.death.fps)); }
+    var lie = opts.deadFor || 1.5;
+    if (e.dead && A.death) { e.deadFor = lie; nm = 'death'; f = opts.deadFor ? Math.min(A.death.frames - 1, Math.floor(e.deadT / (lie * 0.6) * A.death.frames)) : Math.min(A.death.frames - 1, Math.floor(e.deadT * A.death.fps)); }
+    else if (opts.clip && A[opts.clip]) { nm = opts.clip; f = opts.clipK != null ? frameAt(A[nm], Math.max(0, Math.min(0.999, opts.clipK))) : loopFrame(A[nm], ph); }
     else if (e.state === 'windup' && A.windup) { nm = 'windup'; f = opts.windupLoop ? loopFrame(A.windup, ph) : frameAt(A.windup, k); }
     else if (e.state === 'lunge' && A.attack) { nm = 'attack'; f = opts.attackLoop ? loopFrame(A.attack, ph) : frameAt(A.attack, k); }
     else if ((e.state === 'stunned' || e.flash > 0.3) && A.hit) { nm = 'hit'; f = e.state === 'stunned' ? loopFrame(A.hit, ph * 0.5) : frameAt(A.hit, 1 - e.flash); }
@@ -121,12 +124,13 @@
       st.run = st.run ? st.spd > 28 : st.spd > 40; st.walk = st.walk ? st.spd > 3 : st.spd > 7;
       nm = st.run && A.run ? 'run' : st.walk && A.walk ? 'walk' : 'idle'; f = loopFrame(A[nm], ph);
     }
-    var An = A[nm], d = dirOf(M, st.face), fw = M.frame.w, fh = M.frame.h, s = (opts.scale || 1) / PX, file = An.sheets.body, im = H.img[file];
+    var An = A[nm], d = dirOf(M, st.face), fw = M.frame.w, fh = M.frame.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.img[file];
     if (!im || !im.complete || !im.naturalWidth) return false;
     c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
-    if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (1.5 - e.deadT) / 0.4));
+    if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (lie - e.deadT) / 0.4));
     if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    if (opts.tint) { var ga = c.globalAlpha; c.globalAlpha = ga * opts.tint.a; c.drawImage(tinted(H, im, file, opts.tint.color), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); c.globalAlpha = ga; }
     if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); }
     c.restore();
     if (An.hands) { var rows = An.hands[M.dirs[d]], row = rows && rows[f]; if (row && row.length) e.eyes = row.map(function (h) { return [(h[0] - M.anchor.x) * s, (h[1] - M.anchor.y) * s]; }); }

@@ -484,7 +484,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   wolf: `BEAST_OPT`), `hit` while the flash is fresh or it is stunned, otherwise idle, walk or run by its **real speed** (kept on
   `e._bs`, with a little hold between gaits), the heading eased; the flash is a white-tinted copy over it, the cast shadow the
   hero's, and the wolf's eyes land on `e.eyes` for the night glow. The game and the Combat Arena load `boar`, `deer` and `wolf`
-  (`BEASTS`, `ARENA_BEASTS` by `e.kind` and `e.kindA`); the troll is still drawn, and so is any animal
+  (`BEASTS`, `ARENA_BEASTS` by `e.kind` and `e.kindA`); any of them is still drawn
   until its sheets have loaded. The Art Editor's Models tab lists the animals too (walk one about; J plays the attack, K the windup).
   **Animal counts scale with an island's area** (`animalN(k, isle)`: the table's numbers were tuned for islands of 60 and 230 tiles).
   The workbench server's port may be taken by another chat: `.claude/launch.json` has `workbench-alt` on 8766.
@@ -501,6 +501,39 @@ the text and it is made the default. When a spec's meaning changes, change the s
   run (a travelling wave), windup (the front third stands up and folds back into an S), attack (the S thrown straight), hit, death
   (it writhes and rolls belly up). 1.5 m long, twice a real adder, so it reads; `--size 176 --ortho 2.222`, 2 MB. `npm run art:bear`,
   `art:moose`, `art:snake`. All six animals of the first biome are now sheets in the game and the Combat Arena.
+  **The trolls (2026-10-12, Robin: the trolls after the animals, and two new ones from scratch, horrifyingly evil and scary):**
+  `art/build/troll_build.py -- <boulder|forest|maw|three>` models, rigs and animates a troll by script (no Mixamo: Robin was away
+  for the rigging) and saves `art/source/troll_<kind>.blend`. **One rig for all four**, facing -Y: `body` (the pelvis: place,
+  pitch, roll, yaw), `spine`, `chest`, `neck`, `head`, `jaw`, `tail`, two arms and two legs of three bones (`aL_up`, `aL_lo`,
+  `aL_ft`, `lL_...`), and for the three-headed one `neckL`, `headL`, `jawL`, `neckR`, `headR`, `jawR`. A kind is a `SPECS` entry
+  (the leg and arm joints in the side view, the pivots, the neck, head and jaw lines, colours, the walk's numbers, `knuckle`,
+  `hs` the head's scale about its base) and a `build_<kind>()` that lays rigid low-poly parts on single bones (`cone`, `ball`,
+  `hang` for hair, manes, kelp and beards, `limb`, `hand`, `foot`). Posing is the animals': feet (and a knuckle-walker's hands)
+  follow a planted path and the two-bone solver finds the limb; arms in the air are turned by angles (`('fk', swing, out, bend,
+  round, wrist)`). Clips: `idle`, `walk`, `windup` (the right arm drawn far back while the body winds), `attack` (the sweep across
+  at arm's length), `hit`, `shield` (an arm thrown up before the eyes, the head turned away), `death` (the knees go and it comes
+  down on its face). The eyes are exported as marks for the glow in the dark.
+  **The four:** the **mountain troll** after Bauer (`boulder`: a boulder under a hump, a mane to the ground, moss, stones and a
+  birch sapling on him, the head hung low in front with one heavy brow, amber eyes, a drooping nose, tusks, a beard and beads; he
+  walks on his knuckles); the **forest troll** after Kittelsen (`forest`: gaunt, bark-coloured, a branch of a nose, twig fingers,
+  a crown of twigs with a fir sapling). **The two new ones** (cards in `docs/beasts.md`, suggestions until Robin decides where
+  they live): **the Gape** (`maw`, Gapet: a drowned thing of the sea caves that is nearly all mouth; the whole top of it lifts
+  like a lid on two rows of needle teeth and red gums, one great bloodshot eye with a slit pupil under a heavy lid, the other
+  socket torn shut, kelp down its back, spines, barnacles, hooked arms, and the bones of an arm hanging between its teeth; its
+  windup sits back with the lid all the way up and its attack is a lunge and a bite) and the **three-headed troll** (`three`,
+  Trehodet, the many-headed troll of the folk tales, starved: a ribcage on stilts, a rope of skulls, bone claws and blood to the
+  elbows, and three heads on three necks that never look the same way: a skull with red pinpoints in the sockets, a hag hung low
+  with her jaw unhinged and hair to the ground, and a small shrivelled one sewn shut that screams).
+  **Sheets at three quarters of the animals' pixels a metre** so four big creatures stay affordable: `--size 428 --ortho 7.2`,
+  and `tools/sprites.js <name> <in> <out> 1.333` writes `scale` into the sheet's numbers, which `Sprites.draw` and `Sprites.beast`
+  multiply in (a troll's line is a little heavier than an animal's, which suits it). `npm run art:troll:boulder` (`:forest`,
+  `:maw`, `:three`), `npm run art:trolls`; `node tools/visual/trollsheet.js` puts all four on the island beside the hero
+  (trolls3d.png). **In the game the cave troll is the boulder troll's sheets** (`BEAST_OPT.troll.sheet`): `Sprites.beast` takes
+  `clip` and `clipK` (the page asks for a clip: `shield` while `e.holdT` runs), `tint` (the troll turned to stone is the shield
+  pose under a grey tint) and `deadFor` (he lies three seconds). **The Combat Arena** has buttons for the moose, the deer and all
+  four trolls (`trollForest`, `trollMaw`, `trollThree` in `ANIMALS` with their numbers; the Gape's attack is a lunge,
+  `ATTACKS.trollMaw`), and its animals fight their own way again (`atk` was asked of a type name that no longer exists). The two
+  new trolls and the forest troll are **not spawned in the game**.
   **In the Blender Editor (2026-10-09, Robin: fix it so I can try it out):** `npm run art:mixamo:sheets` renders all eighteen clips in
   eight directions with a frame count per clip (`render.py --frames idle=16,walk=12,run=10,...`; `tools/sprites.js` reads each
   animation's count from meta.json) and packs them into `assets/sprites/hero2-mixamo` (one 164 by 164 frame, 22 MB of sheets: the

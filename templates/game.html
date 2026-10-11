@@ -260,9 +260,12 @@ __COMBAT__
     return out;
   }
   Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, shadowHue: kit.STYLE.shadowHue, layers: handLayers });
-  var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {} };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
-  ['boar', 'deer', 'wolf', 'bear', 'moose', 'snake'].forEach(function (bk) { if (SPR[bk]) BEASTS[bk] = Sprites.load(SPR, bk); });
-  Combat.api.enemySprite = function (c, e) { var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind]; return Sprites.beast(c, BH, e, K, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop }); };
+  var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 } };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
+  ['boar', 'deer', 'wolf', 'bear', 'moose', 'snake', 'troll'].forEach(function (bk) { var sh = BEAST_OPT[bk].sheet || bk; if (SPR[sh]) BEASTS[bk] = Sprites.load(SPR, sh); });
+  Combat.api.enemySprite = function (c, e) { var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind]; var o = { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: bo.scale, deadFor: bo.deadFor };
+    if (e.stoneT != null) { o.clip = 'shield'; o.clipK = 0.999; o.tint = { color: '#a3a29a', a: 0.86 }; }        // the troll caught by the dawn: stone in the pose he threw up against it
+    else if (e.holdT > 0) { o.clip = 'shield'; o.clipK = Math.min(0.999, (4 - e.holdT) / 0.6, e.holdT / 0.4); }   // shielding his eyes from a fire
+    return Sprites.beast(c, BH, e, K, o); };
   (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the rendered icons for the bag, the bars and the drops
   try { var cg = JSON.parse(localStorage.getItem('game.creatures')); if (cg) for (var ck in cg) if (cg[ck]) lib.useAnimal(ck, cg[ck]); } catch (e) {}   // the Creature Editor's "Update in game"
   try { var gg = JSON.parse(localStorage.getItem('game.grass')); if (gg && gg.g) { grassLook = JSON.parse(JSON.stringify(World.GRASS)); for (var gk in gg.g) grassLook[gk] = gg.g[gk]; for (var gs in (gg.st || {})) kit.STYLE[gs] = gg.st[gs]; } } catch (e) {}

@@ -54,6 +54,34 @@ troll leaves a loot pile or just the stone.
 
 ---
 
+## The Gape (Gapet)  (MODELLED 2026-10-12, a suggestion: Robin asked for two new trolls, horrifyingly evil; nothing here is decided)
+
+**What it is.** A troll of the sea caves and the tide line, drowned so long that it is nearly all mouth. Inspiration: Kittelsen's
+sea troll, the anglerfish, and the folk fear of what the tide leaves in a cave. The whole top of it lifts like a lid on two rows of
+needle teeth. One great bloodshot eye with a slit of a pupil; the other socket torn and healed shut. Kelp for hair, spines and
+barnacles on its back, thin arms ending in hooks, and what is left of the last one it met still hanging between its teeth.
+
+**How it fights (built in the Combat Arena).** It sits back on its haunches and the lid comes all the way up (a long tell), then
+throws itself forward and bites. Slow to turn. 110 health.
+
+**Suggestions, not decided.** Where: a sea cave reached only by boat, or the tide line of a far island at night. Sign: wet drag
+marks up the beach, bones above the tide line. Weakness: it sees only on one side (approach from the blind socket and it notices
+you later). Reward: something from its gullet (what it swallowed whole). It should not chase far from water.
+
+## The three-headed troll (Trehodet)  (MODELLED 2026-10-12, a suggestion; nothing here is decided)
+
+**What it is.** The many-headed troll of the Norwegian folk tales (three heads, six, nine), drawn as if it had starved for a
+hundred years. A ribcage on stilts, a rope of skulls across its chest, bone claws and blood to the elbows. Three heads on three
+necks that never look the same way: a skull with the skin still on it and red pinpoints deep in the sockets; a hag hung low on a
+long neck, her jaw unhinged and her hair to the ground; and a small shrivelled one, sewn shut, that screams.
+
+**How it fights (built in the Combat Arena).** The mountain troll's great sweep, faster, with longer arms. 130 health.
+
+**Suggestions, not decided.** In the tales each head must be dealt with, so it could take three kills (a head hangs limp after
+each, and it gets faster and wilder), or the heads could quarrel: the hag sees you first, the skull decides, the small one gives
+it away by screaming at night, so you hear it long before you see it. Where: a later island, as a big event of its own. It does
+not turn to stone at dawn like the mountain troll unless Robin wants every troll to.
+
 ## Bysen
 
 **Found:** deep forest, where the paths are few. Looks like a tree stump or a small grey old man, and you will not

@@ -111,7 +111,10 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | Hero 2 (cel, fitted) | `hero2.blend`, `hero2_mixamo.blend` | Mixamo | 18 | `hero2-mixamo` | yes | **the hero** everywhere (since 2026-10-09 evening, `src/sprites.js`) | the sword, axe, pick, knife, club and bow as layers in the hand (2026-10-09); no gear layers yet; the drawn hero retired to `art/backup/` |
 | Hero 1 (first trial) | `hero.blend` | own | idle, walk | `hero` | yes | Character Editor only | superseded |
 | Villagers, Brokk, child, elder, guard | | | | | | | step 2 |
-| Boulder troll, stone, forest troll | | | | | | | step 3 |
+| Mountain troll (boulder) | `troll_boulder.blend` | own (`troll_build.py`), no Mixamo | 7 | `troll_boulder` | Models tab | **yes**, the cave troll (2026-10-12) | stone is the shield pose under a grey tint |
+| Forest troll | `troll_forest.blend` | the same rig | 7 | `troll_forest` | Models tab | arena only | not spawned in the game |
+| The Gape (new) | `troll_maw.blend` | the same rig | 7 | `troll_maw` | Models tab | arena only | Robin to decide where it lives |
+| Three-headed troll (new) | `troll_three.blend` | the same rig, two more necks and heads | 7 | `troll_three` | Models tab | arena only | Robin to decide where it lives |
 | Boar | `boar.blend` | own (`quad_build.py`) | 7 | `boar` | Models tab | **yes** (2026-10-11) | |
 | Deer | `deer.blend` | the same rig | 5 (no attack) | `deer` | Models tab | **yes** (2026-10-11) | a stag; the death lies stiff-legged |
 | Wolf | `wolf.blend` | the same rig | 7 | `wolf` | Models tab | **yes** (2026-10-11) | eyes exported for the night glow |
