@@ -39,12 +39,45 @@ body_c = bpy.data.collections['Body']; gear_c = bpy.data.collections['Gear']
 toon.restyle(STYLE); toon.world(sc, style=STYLE); toon.sun(STYLE); cam = toon.camera(sc, float(opt['elev']), float(opt['ortho']))
 toon.setup_render(sc, SIZE, PX, int(opt['samples']))
 
+PARTS = {c.name[4:].lower(): c for c in bpy.data.collections if c.name.startswith('Part')}   # layers of the body itself (the people's tunic and legs, 2026-10-12): a 'Part...' collection
+def base_objects(): return list(body_c.objects) + [o for c in PARTS.values() for o in c.objects]
+def lines_of(objs):
+    """A collection of just these objects, for the ink: the line is drawn for the layer's own meshes and for nothing that is only there to hide them."""
+    c = bpy.data.collections.get('_layer') or bpy.data.collections.new('_layer')
+    if c.name not in [k.name for k in sc.collection.children]: sc.collection.children.link(c)
+    for o in list(c.objects): c.objects.unlink(o)
+    for o in objs: c.objects.link(o)
+    return c
+HOLD = {"mat": None, "orig": {}}
+def hold(o, on):
+    """Hide what is behind this mesh without showing it: its materials are swapped for one that is a hole in the picture.
+    (An object's own holdout switch does the same for the surface, but Freestyle then leaves the object out of what can hide
+    a line, and every line behind a body showed through it: a beard's outline on the back of a head, the far arm through a chest.)"""
+    if HOLD["mat"] is None:
+        m = bpy.data.materials.new("_holdout"); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
+        out = nt.nodes.new("ShaderNodeOutputMaterial"); h = nt.nodes.new("ShaderNodeHoldout"); nt.links.new(h.outputs[0], out.inputs[0]); HOLD["mat"] = m
+    o.is_holdout = False
+    if o.type != "MESH": return
+    if o.name not in HOLD["orig"]: HOLD["orig"][o.name] = [sl.material for sl in o.material_slots]
+    for i, sl in enumerate(o.material_slots): sl.material = HOLD["mat"] if on else HOLD["orig"][o.name][i]
 def layer_setup(layer):
-    """Show the right meshes: the body alone, one gear piece over the body as a holdout, or 'all' (everything, for checking)."""
+    """Show the right meshes: the body alone, one gear piece over the body as a holdout, or 'all' (everything, for checking).
+    A model with 'Part...' collections (the people): 'body' is the Body collection with the parts as holdouts, and each part
+    is a layer of its own with the rest of the body as its holdout. A gear mesh may name, in its 'under' property, other gear
+    that is to hide it too (a shield's face under its boss and rim)."""
     show = layer.startswith('+'); name = layer[1:] if show else layer           # '+axe': the body and that gear together, for checking (2026-10-09)
-    for o in body_c.objects: o.hide_render = False; o.is_holdout = not show and layer not in ('body', 'all')
-    for o in gear_c.objects: o.hide_render = not (layer == 'all' or (name != 'body' and o.name.startswith(name))); o.is_holdout = False
-    toon.freestyle(sc, vl, PX, body_c if layer == 'body' else gear_c if (layer != 'all' and not show) else None, STYLE)
+    if not show and PARTS and (name == 'body' or name in PARTS):
+        col = PARTS.get(name, body_c); mine = set(o.name for o in col.objects)
+        for o in base_objects(): o.hide_render = False; hold(o, o.name not in mine)
+        for o in gear_c.objects: o.hide_render = True; hold(o, False)
+        toon.freestyle(sc, vl, PX, col, STYLE); return
+    for o in base_objects(): o.hide_render = False; hold(o, not show and layer not in ('body', 'all'))
+    own = [o for o in gear_c.objects if name != 'body' and o.name.startswith(name)]
+    under = set(o['under'] for o in own if o.get('under'))
+    for o in gear_c.objects:
+        mine = layer == 'all' or o in own; hold_it = (not mine) and not show and any(o.name.startswith(u) for u in under)
+        o.hide_render = not (mine or hold_it); hold(o, hold_it)
+    toon.freestyle(sc, vl, PX, body_c if layer == 'body' else (lines_of(own) if under else gear_c) if (layer != 'all' and not show) else None, STYLE)
 
 def set_action(name):
     act = bpy.data.actions[name]; ad = rig.animation_data; ad.action = act
@@ -85,5 +118,5 @@ for anim in ANIMS:
                 sc.render.filepath = os.path.join(out, '%s_%s_%s_%02d.png' % (anim, layer, dir_names[d], f))
                 if not (opt.get('keep') == '1' and os.path.exists(sc.render.filepath)): bpy.ops.render.render(write_still=True)   # --keep 1: a frame already on disk is left as it is (re-render one clip by deleting its frames; the numbers are written for every clip named)
                 n += 1
-with open(os.path.join(out, 'meta.json'), 'w') as fh: json.dump(meta, fh, indent=1)
+with open(os.path.join(out, opt.get('meta', 'meta.json')), 'w') as fh: json.dump(meta, fh, indent=1)   # --meta name.json: several renders into one folder at once each keep their own numbers (tools/peoplerender.js joins them)
 print('rendered', n, 'frames to', out, 'anchor', anchor, 'figure px', round(meta['figure_px'], 1))

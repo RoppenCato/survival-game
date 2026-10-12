@@ -320,6 +320,17 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <p class="desc">Each piece is its own layer, rendered over the body as a holdout, so they stack in any order.</p>
         </section>
         <section class="panel">
+          <h2>People</h2>
+          <div class="group"><button data-id="pRoll">Roll twelve people</button><button data-id="pNone">Send them away</button><button data-id="pTurn" aria-pressed="false">Turn slowly</button></div>
+          <h2 class="more">What they do</h2>
+          <div class="group" data-id="pClips"></div>
+          <h2 class="more">In the hand</h2>
+          <div class="group" data-id="pHand"></div>
+          <h2 class="more">Worn by all</h2>
+          <div class="group" data-id="pGear"></div>
+          <p class="desc" data-id="pNote">The people of the world (2026-10-12): one modelled body that every villager, hirdman and guard shares, with the tunic and trousers coloured when drawn and hair, beards, hats, mail, a cloak, a dress, a shield and the things for the hand as layers. Roll twelve and walk among them: each is the look the game would roll for a villager. They face you unless Turn slowly is on.</p>
+        </section>
+        <section class="panel">
           <h2>Scene</h2>
           <div class="group">
             <button data-id="scIsland" aria-pressed="true">Starter island</button>
@@ -778,7 +789,7 @@ __SPRITES_JS__
   /* ================= Models: the Blender sheets (the old Blender Editor) ================= */
   TABS.models = (function () {
     var sc = scope('models'), $ = sc.$;
-    var names = Object.keys(SP), MODELS = {};
+    var names = Object.keys(SP).filter(function (nm) { return !SP[nm].meta.boxed; }), MODELS = {};   // the people's sheets are layers in boxes of their own (Sprites.person): not a model of this kind
     names.forEach(function (nm) { MODELS[nm] = Sprites.load(SP, nm); });
     function H() { return MODELS[cur]; }
     var LABEL = { 'hero': 'Hero (first, ink)', 'hero2-cel': 'Hero 2, cel', 'hero2-painted': 'Hero 2, painted', 'hero2-folk': 'Hero 2, folk art', 'hero2-fit': 'Hero 2, cel, fitted to the world', 'hero2-mixamo': 'Hero 2 with the Mixamo clips', 'boar': 'Wild boar', 'deer': 'Deer', 'wolf': 'Wolf', 'bear': 'Bear', 'moose': 'Moose', 'snake': 'Adder', 'troll_boulder': 'Mountain troll (Bauer)', 'troll_forest': 'Forest troll (Kittelsen)', 'troll_maw': 'The Gape (new)', 'troll_three': 'Three-headed troll (new)', 'draugr': 'Draugr', 'huldra': 'Huldra', 'nacken': 'Näcken', 'bysen': 'Bysen' };
@@ -871,7 +882,7 @@ __SPRITES_JS__
       c.globalAlpha = 0.14; c.fillStyle = kit.grain(c); c.fillRect(0, 0, W * Z, H * Z); c.globalAlpha = 1;
       kit.setup(kit.STYLE); return fc;
     }
-    var nightScene = { noKills: true, begin: function (c) { if (!forest) forest = paintForest(); c.drawImage(forest, 0, 0, 400, 250); }, items: function () {}, end: function () {} };
+    var nightScene = { noKills: true, begin: function (c) { if (!forest) forest = paintForest(); c.drawImage(forest, 0, 0, 400, 250); }, items: function (items) { crowdItems(items); }, end: function () {} };
     /* the starter island */
     var T = kit.TW, CT, CW, CH, island = null, icam = { x: 0, y: 0 }, clock = 0, grassLook = World.GRASS_INK;
     function makeIsland() { island = World.make(kit, { isle: 60, isle0: 60, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11 }); island.meadowLook = grassLook; island.plant(); island.camp(); island.sortBuckets(); CT = island.CT; CW = island.CW; CH = island.CH; }
@@ -885,6 +896,7 @@ __SPRITES_JS__
         island.drawGround(c, icam, hw, hh); island.drawWaves(c, icam, hw, hh, clock, 0.75, 1.05); island.drawGrass(c, icam, hw, hh, clock, grassLook);
       },
       items: function (items) {
+        crowdItems(items);
         var hw = 200, hh = 125, TS = T * K, hero = Combat.dbg().P;
         var bx0 = Math.max(0, Math.floor((icam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((icam.x + hw) / T / CT) + 1);
         var by0 = Math.max(0, Math.floor((icam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((icam.y + hh) / TS / CT) + 1);
@@ -920,6 +932,32 @@ __SPRITES_JS__
     $('scIsland').addEventListener('click', function (e) { setScene('island'); e.currentTarget.blur(); });
     $('scArena').addEventListener('click', function (e) { setScene('arena'); e.currentTarget.blur(); });
     $('scNight').addEventListener('click', function (e) { setScene('night'); e.currentTarget.blur(); });
+    /* the people (2026-10-12): rolled villagers standing about the hero, from the sheets every person shares (Sprites.person) */
+    var PEOPLE = SP.people ? Sprites.loadLazy(SP, 'people') : null, crowd = [], pClip = 'idle', pHand = null, pGear = { mail: false, helm: false, shield: false, cloak: false }, pTurn = false;
+    function crowdRoll() {
+      var P = Combat.dbg().P, R = kit.rng(Math.floor(Math.random() * 1e9)), i; crowd = [];
+      for (i = 0; i < 12; i++) { var row = i < 6 ? 0 : 1, col = i % 6, sp = lib.folkSpec('villager', R); if (i === 10) { sp.scale = 0.55; sp.beard = 0; } crowd.push({ x: P.x - 80 + col * 32 + (R() - 0.5) * 8, y: P.y + (row ? 46 : -52) + (R() - 0.5) * 8, spec: sp, ph: R() * 10, look: null, key: '' }); }
+      if (sceneName === 'island' && island) crowd = crowd.filter(function (q) { return island.isLand(q.x, q.y); });
+    }
+    function crowdLook(q) {
+      var key = (pGear.mail ? 'm' : '') + (pGear.helm ? 'h' : '') + (pGear.shield ? 's' : '') + (pGear.cloak ? 'c' : '') + '|' + (pHand || '');
+      if (q.key !== key) { q.key = key; q.look = Sprites.lookOf(q.spec, { mail: pGear.mail, helm: pGear.helm, shield: pGear.shield ? '#8a3a34' : null, cloak: pGear.cloak ? '#8a3a34' : null, hand: pHand ? { kind: pHand, tint: '#9ca3ad' } : null }); }
+      return q.look;
+    }
+    function crowdItems(items) {
+      if (!PEOPLE || !crowd.length) return; var P = Combat.dbg().P, t = performance.now() / 1000;
+      crowd.forEach(function (q) { items.push({ y: q.y, f: function () { Sprites.person(ctx, PEOPLE, crowdLook(q), { clip: pClip, face: pTurn ? t * 0.6 + q.ph : Math.atan2(P.y - q.y, P.x - q.x), t: t + q.ph }, q.x, q.y * K, { shadow: !night, shadowHue: kit.STYLE.shadowHue }); } }); });
+    }
+    (function () {
+      if (!PEOPLE) { $('pNote').textContent = 'No people in this build: run npm run art:people, then npm run build.'; return; }
+      var clipsEl = $('pClips'), handEl = $('pHand'), gearEl2 = $('pGear'), A = PEOPLE.meta.anims;
+      Object.keys(A).forEach(function (a) { var b = document.createElement('button'); b.textContent = a; pressed(b, a === pClip); b.addEventListener('click', function () { pClip = a; Array.prototype.forEach.call(clipsEl.children, function (q) { pressed(q, q === b); }); b.blur(); }); clipsEl.appendChild(b); });
+      [null, 'sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'].forEach(function (k) { var b = document.createElement('button'); b.textContent = k ? (k === 'greataxe' ? 'Dane axe' : k.charAt(0).toUpperCase() + k.slice(1)) : 'Empty hands'; pressed(b, k === pHand); b.addEventListener('click', function () { pHand = k; Array.prototype.forEach.call(handEl.children, function (q) { pressed(q, q === b); }); b.blur(); }); handEl.appendChild(b); });
+      ['mail', 'helm', 'shield', 'cloak'].forEach(function (g) { var b = document.createElement('button'); b.textContent = g === 'helm' ? 'Helmet' : g.charAt(0).toUpperCase() + g.slice(1); pressed(b, false); b.addEventListener('click', function () { pGear[g] = !pGear[g]; pressed(b, pGear[g]); b.blur(); }); gearEl2.appendChild(b); });
+      $('pRoll').addEventListener('click', function (e) { crowdRoll(); e.currentTarget.blur(); });
+      $('pNone').addEventListener('click', function (e) { crowd = []; e.currentTarget.blur(); });
+      $('pTurn').addEventListener('click', function (e) { pTurn = !pTurn; pressed(e.currentTarget, pTurn); e.currentTarget.blur(); });
+    })();
     var noDmg = true;
     $('sbeast').addEventListener('click', function (e) { Combat.spawn('beast'); e.currentTarget.blur(); });
     $('sclear').addEventListener('click', function (e) { Combat.clear(); var Q = Combat.dbg().P; Q.onIsland = false; setScene(sceneName); e.currentTarget.blur(); });

@@ -265,7 +265,37 @@ __COMBAT__
   Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers });
   var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 } };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
   ['boar', 'deer', 'wolf', 'bear', 'moose', 'snake', 'troll'].forEach(function (bk) { var sh = BEAST_OPT[bk].sheet || bk; if (SPR[sh]) BEASTS[bk] = Sprites.load(SPR, sh); });
-  Combat.api.enemySprite = function (c, e) { var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind]; var o = { shadow: !inCave, lit: figLit(e.x, e.y, true, 34), shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: bo.deadFor };
+  /* The people from Blender (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans, one body with
+     layers). Villagers, the hird, Brokk and the guards are drawn from the one sheet set every person shares (Sprites.person):
+     a look is made once from the figure spec each of them already has (hair, beard, hat, clothes, colours) and kept on them;
+     the clip comes from what they are doing. The drawn ink figure stays for the moment the sheets are still loading. */
+  var PEOPLE = SPR.people ? Sprites.loadLazy(SPR, 'people') : null;
+  var YOURS = "#8a3a34";                    // the colour of your own people: the cloak the hero wears, on every one of them, and on their shields
+  function personLook(m, x) {              // a hirdman is rolled with colours and a build but no style of hair: his name gives him one, and your colour his cloak
+    if (m.look) return m.look; var sp = m.fig ? m.fig.spec : {};
+    if (m === npc) { if (m.joined) x = x || { cloak: YOURS }; }               // Brokk keeps his own head; the cloak when he is yours
+    else if (m.person) { var h = 0, nm = m.name || "", i; for (i = 0; i < nm.length; i++) h = (h * 31 + nm.charCodeAt(i)) >>> 0; sp = Object.assign({}, sp, { hair: [1, 2, 6, 4, 7, 0][h % 6], beard: sp.beard ? [1, 3, 2][(h >> 3) % 3] : 0 }); x = x || { cloak: YOURS }; }
+    return (m.look = Sprites.lookOf(sp, x));
+  }
+  var JOB_CLIP = { chop: ['chop', 0.8, { kind: 'axe', tint: '#9ca3ad' }], smith: ['mine', 0.9, { kind: 'club' }], sweep: ['idle_look', 1], hang: ['interact', 0.7], fish: ['idle', 1], carry: ['interact', 0.6] }, HIRD_CLIP = { woodcutter: JOB_CLIP.chop, crafter: JOB_CLIP.smith, cook: ['interact', 0.6] };
+  function drawPerson(c, m) {
+    if (!PEOPLE || !Sprites.peopleReady(PEOPLE)) { m.spr = false; return false; }
+    var look = personLook(m), ph0 = m.ph0 || (m.ph0 = 1 + Math.random() * 9), st = { face: m.face, clip: 'idle', t: clock + ph0 }, J = null;
+    if (m.fleeing) { st.clip = 'run'; st.t = (m.ph || 0) / 9 + ph0; }
+    else if (m.moving) { st.clip = 'walk'; st.t = (m.ph || 0) / 7 + ph0; }
+    else if (m.sitting) st.clip = 'sit';
+    else if (m.job && (J = typeof m.job === 'string' ? (m.at && Math.hypot(m.at.x - m.x, m.at.y - m.y) < 6 ? HIRD_CLIP[m.job] : null) : JOB_CLIP[m.job.kind])) { st.clip = J[0]; st.t = (m.job.t != null ? m.job.t : clock) * J[1]; if (J[2]) look = Sprites.withHand(look, J[2]); }
+    else if (!(m.sayT > 0) && m.idle && m.idle.id === 'look') { st.clip = 'idle_look'; st.t = m.idle.t; }
+    m.spr = Sprites.person(c, PEOPLE, look, st, m.x, m.y * K, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, lit: figLit(m.x, m.y, true, 40) });
+    return m.spr;
+  }
+  function drawFighter(c, e) {             // one of the engine's men (a guard today)
+    if (!PEOPLE || !e.fig) return false;
+    var look = e.look || (e.look = Sprites.lookOf(e.fig.spec, e.lookX || { mail: true, helm: true }));
+    if (!e.wpn) e.wpn = { kind: 'sword', tint: '#9ca3ad' };
+    return Sprites.fighter(c, PEOPLE, e, K, look, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, lit: figLit(e.x, e.y, true, 40) });
+  }
+  Combat.api.enemySprite = function (c, e) { if (e.human) return drawFighter(c, e); var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind]; var o = { shadow: !inCave, lit: figLit(e.x, e.y, true, 34), shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: bo.deadFor };
     if (e.stoneT != null) { o.clip = 'shield'; o.clipK = 0.999; o.tint = { color: '#a3a29a', a: 0.86 }; }        // the troll caught by the dawn: stone in the pose he threw up against it
     else if (e.holdT > 0) { o.clip = 'shield'; o.clipK = Math.min(0.999, (4 - e.holdT) / 0.6, e.holdT / 0.4); }   // shielding his eyes from a fire
     return Sprites.beast(c, BH, e, K, o); };
@@ -672,7 +702,7 @@ __COMBAT__
     var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1), by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT) - 1), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1), bx, by;
     for (by = by0; by <= by1; by++) for (bx = bx0; bx <= bx1; bx++) { var list = buckets[by * CW + bx]; if (!list) continue; list.forEach(function (o) { if (o.peak || o.inFace || o.shelter || o.ledge || o.dying != null) return; shadowOf(c, o, sprite(o.name, o.v), o.s); }); }
     B.items.forEach(function (it) { if (it.lvl || it.flat || isHearth(it) || it.light || !kit.PROPS[it.name]) return; shadowOf(c, it, sprite(it.name, it.v || 0), it.s || 1); });
-    folk.concat(hird, npc ? [npc] : []).forEach(function (m) { if (!m || m.hidden || m.aboard) return; var q = figLit(m.x, m.y, true, 40); if (!q || !q.cast) return;   // people: a long soft shape (they are drawn afresh every frame, with no shape kept to lay down)
+    folk.concat(hird, npc ? [npc] : []).forEach(function (m) { if (!m || m.hidden || m.aboard || m.spr) return; var q = figLit(m.x, m.y, true, 40); if (!q || !q.cast) return;   // people: a long soft shape (they are drawn afresh every frame, with no shape kept to lay down)
       c.save(); c.globalAlpha = q.cast.a * 0.85; c.translate(m.x, m.y * K); c.transform(1, 0, -q.cast.kx, -q.cast.ky, 0, 0); c.fillStyle = '#070a1a'; c.beginPath(); c.ellipse(0, -19, 6.5, 19, 0, 0, 7); c.fill(); c.restore(); });
   }
   function drawMoths(c) {                  // a few moths round every fire at night: pale flecks that circle, rise and fall, and blink as their wings turn
@@ -2041,6 +2071,7 @@ __COMBAT__
     }
   }
   function drawFolk(c, f) {
+    if (drawPerson(c, f)) return;
     var vx = Math.cos(f.face), vy = Math.sin(f.face), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
     var talking = f.sayT > 0, an = { phase: f.moving ? f.ph : 0, amt: f.moving ? 1 : 0, t: clock * (talking ? 2.2 : 1), lx: 0, ly: talking ? Math.sin(clock * 9) * 0.5 : 0, blink: ((clock + f.ph) % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)), sit: f.sitting && !f.moving ? 1 : 0 };
     var pose = null;                                                 // the pose: a job, the bucket carried home, or the idle of the moment
@@ -2088,7 +2119,7 @@ __COMBAT__
   function brokkJoin(st) {                  // Brokk is the first hirdman: he takes the steading's bench as his
     earnRune('fellowship', 'the first hirdman');
     var p = Hird.roll(kit.rng(spec.seed * 37 + 1), HD); p.name = 'Brokk'; p.traits = ['hardy']; p.stats.wits += 2;
-    npc.joined = true; npc.person = p; npc.job = null; npc.at = null; npc.follow = false; npc.ph = 0; npc.moving = false; npc.hungry = false; npc.jobT = 0;
+    npc.joined = true; npc.look = null; npc.person = p; npc.job = null; npc.at = null; npc.follow = false; npc.ph = 0; npc.moving = false; npc.hungry = false; npc.jobT = 0;
     hird.push(npc); npc.say = 'A stone stands again at Hildir’s. Then I am yours, and this bench is mine.'; npc.sayT = 6;
     var bench = itemsIn(st).filter(function (it) { return it.bench; })[0]; if (bench) assignTo(npc, bench);
     save();
@@ -2198,6 +2229,7 @@ __COMBAT__
     }
   }
   function drawNpc(c) {
+    if (drawPerson(c, npc)) return;
     var vx = Math.cos(npc.face), vy = Math.sin(npc.face), side = Math.abs(vy) < 0.4, dir = side ? (vx > 0 ? 'right' : 'left') : (vy > 0 ? 'down' : 'up');
     var talking = npc.sayT > 0, an = { phase: npc.moving ? npc.ph : 0, amt: npc.moving ? 1 : 0, t: clock * (talking ? 2.2 : 1), lx: 0, ly: talking ? Math.sin(clock * 9) * 0.5 : 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) };
     c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(npc.x, npc.y * K, 9, 4, 0, 0, 7); c.fill();

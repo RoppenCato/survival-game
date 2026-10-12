@@ -180,5 +180,162 @@
     return true;
   }
   function drawDead(c, H, x, y, face, an, P, opts) { if (H) { tick(H, P); draw(c, H, x, y, face, an, false, P, opts || {}); } }
-  return { loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, beast: beast, ready: ready };
+  /* The people (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
+     Everybody is the one sheet set (assets/sprites/people, packed by tools/people.js: a sheet is an atlas, every frame of
+     every layer trimmed to its own pixels; rectsOf lays the pieces out again by the packer's own shelf rule): a body, a tunic and trousers in near white that are coloured here, and hair, beards, a hood, a cap, a helmet,
+     mail, a cloak, a dress, a shield and the things for the hand as layers. A LOOK is a short list of layers and colours
+     (lookOf turns the figure specs the game already rolls into one), so thirty different people cost thirty short lists and
+     the same sheets. A person's frame is put together once (the layers in the order they lie for that direction, the
+     colours multiplied in) and kept in a small store of finished frames, so a crowd standing about is one picture a head
+     a frame; the oldest are forgotten. The sheets are fetched when a look first asks for them (loadLazy).
+       person(c, H, look, st, x, y, opts): st = { clip, face, and k (0..1 through the clip) or t (a clock for a loop) };
+         opts: scale, sx, sy, alpha, shadow, shadowHue, lit, flash, tint, blend. False while the sheets it needs are
+         still loading (the page draws the old figure meanwhile). */
+  function loadLazy(SP, name) { var set = SP && SP[name]; if (!set) return null; return { name: name, meta: set.meta, img: {}, src: set.images, sil: {}, lazy: true, ubox: {}, rc: {} }; }
+  function b64(s) { var i, a; if (typeof atob === 'function') { var bin = atob(s); a = new Uint8Array(bin.length); for (i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; } return new Uint8Array(Buffer.from(s, 'base64')); }
+  // where every frame's piece lies: six numbers a frame (its place in the sheet, its size, its place in the frame), a row of directions after another
+  function rectsOf(H, A, clip, layer) {
+    var key = clip + '|' + layer, R = H.rc[key]; if (R) return R;
+    var s = A.rects && A.rects[layer]; if (!s) return null;
+    var u = b64(s), n = u.length >> 2, out = new Int16Array(n * 6), x = 0, y = 0, sh = 0, MAXW = H.meta.shelf || 1024, i, w, h;
+    for (i = 0; i < n; i++) { w = u[i * 4]; h = u[i * 4 + 1]; if (w && x + w > MAXW && x > 0) { x = 0; y += sh; sh = 0; } out[i * 6] = x; out[i * 6 + 1] = y; out[i * 6 + 2] = w; out[i * 6 + 3] = h; out[i * 6 + 4] = u[i * 4 + 2]; out[i * 6 + 5] = u[i * 4 + 3]; if (w) { x += w; if (h > sh) sh = h; } }
+    return (H.rc[key] = out);
+  }
+  function imgOf(H, file) { var im = H.img[file]; if (!im && H.src && H.src[file] && typeof Image !== 'undefined') { im = new Image(); im.src = H.src[file]; H.img[file] = im; } return im && im.complete && im.naturalWidth ? im : null; }
+  var HAIRS = { 0: 'hairA', 1: 'hairA', 2: 'hairB', 3: 'hairB', 4: 'hairC', 5: null, 6: 'hairC', 7: 'hairB', 8: 'hairB' }, BEARDS = { 0: null, 1: 'beardA', 2: 'beardA', 3: 'beardB', 4: null }, HATS = { 0: null, 1: 'hood', 2: 'cap', 3: 'helm', 4: 'cap', 5: null };
+  function idOf(look) { look.id = look.L.map(function (q) { return q.l + (q.t || ''); }).join(','); return look; }
+  // spec: a figure spec (hair, beard, hat, clothes, scale, bodyW, legL and col, as lib.folkSpec and Hird.figureSpec give them);
+  // x: { mail, helm, shield (its paint), cloak (a colour: everybody of one band wears it), hand: { kind, tint } }
+  function lookOf(spec, x) {
+    x = x || {}; spec = spec || {}; var col = spec.col || {}, L = [{ l: 'body' }, { l: 'legs', t: col.pants || '#4a4038' }, { l: 'tunic', t: col.coat || '#6b7d8a' }];
+    var hat = x.helm ? 'helm' : HATS[spec.hat || 0], hair = HAIRS[spec.hair == null ? 0 : spec.hair], beard = BEARDS[spec.beard || 0];
+    if (hat === 'hood') hair = null;                                 // a hood is over everything
+    if (spec.clothes === 3 && !x.mail && !beard) L.push({ l: 'dress', t: col.dress || '#8a4a4a' });   // the apron dress (the looks are rolled apart: never on a bearded man)
+    if (x.mail) L.push({ l: 'mail' });
+    if (x.cloak || spec.clothes === 2) L.push({ l: 'cloak', t: x.cloak || col.cloak || '#7a3b3b' });
+    if (beard) L.push({ l: beard, t: col.hair || '#5a3a28' });
+    if (hair) L.push({ l: hair, t: col.hair || '#5a3a28' });
+    if (hat) L.push(hat === 'hood' ? { l: 'hood', t: x.cloak || col.cloak || '#6b4a2e' } : { l: hat });
+    if (x.shield) { L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: x.shield }); }
+    var dwarf = spec.legL != null && spec.legL < 0.8;              // Brokk: the same man made short and broad (a body of his own is for later)
+    var look = { L: L, s: Math.max(0.62, Math.min(1.12, (spec.scale || 0.8) / 0.8)) * (dwarf ? 0.8 : 1), sx: dwarf ? 1.24 : Math.max(0.9, Math.min(1.2, spec.bodyW || 1)), sy: 1 };
+    idOf(look); return x.hand ? withHand(look, x.hand) : look;
+  }
+  function withHand(look, hand) {            // the same person with another thing in the hand (or none); kept, so asking every frame costs nothing
+    var key = hand && hand.kind ? hand.kind + (hand.tint || '') : '', hit = look._h && look._h[key]; if (hit) return hit;
+    var L = look.L.filter(function (q) { return !q.hand; });
+    if (hand && hand.kind) { L.push({ l: hand.kind + 'Wood', hand: 1 }); L.push({ l: hand.kind + 'Metal', t: hand.tint || null, metal: 1, hand: 1 }); }
+    var o = idOf({ L: L, s: look.s, sx: look.sx, sy: look.sy }); (look._h || (look._h = {}))[key] = o; o._h = look._h; return o;
+  }
+  var RANK = { body: 0, legs: 1, tunic: 2, dress: 3, mail: 4, cloak: 5, beardA: 6, beardB: 6, hairA: 7, hairB: 7, hairC: 7, hood: 8, cap: 8, helm: 8, shieldRim: 9, shieldFace: 9.1 };
+  // Where a layer lies in the pile. The body hides what is behind it already (every layer was rendered with the body held
+  // out); this is only about a layer against another: an arm on the far side carries its shield or weapon under the
+  // cloak and the mail, an arm on the near side over them. dirs: s sw w nw n ne e se.
+  function rankOf(q, d) {
+    var r = RANK[q.l];
+    if (q.hand) { var left = q.l.charAt(0) === 'b' && q.l.charAt(1) === 'o'; return (left ? d <= 3 : d === 0 || d >= 5) ? 11 : 4.5; }      // the bow is in the left hand
+    if (r == null) return 11;
+    if (r >= 9) return d <= 3 ? r : 4.3 + (r - 9);
+    return r;
+  }
+  var PC = { map: new Map(), max: 700, pool: {}, made: 0 };
+  function cvOf(w, h) { var k = w + 'x' + h, a = PC.pool[k], cv2 = a && a.length ? a.pop() : null; if (!cv2) { cv2 = document.createElement('canvas'); cv2.width = w; cv2.height = h; } else cv2.getContext('2d').clearRect(0, 0, w, h); return cv2; }
+  function scratch(name, w, h) { var cv2 = PC[name]; if (!cv2) { cv2 = PC[name] = document.createElement('canvas'); cv2.width = 8; cv2.height = 8; } if (cv2.width < w || cv2.height < h) { cv2.width = Math.max(cv2.width, w); cv2.height = Math.max(cv2.height, h); } return cv2; }
+  function personFrame(H, look, clip, d, f) {
+    var key = look.id + '|' + clip + '|' + d + '|' + f, e = PC.map.get(key);
+    if (e) { PC.map.delete(key); PC.map.set(key, e); return e; }
+    var A = H.meta.anims[clip]; if (!A || !A.rects) return null;
+    var uk = look.id + '|' + clip + '|' + d, U = H.ubox[uk], i, j, q, R, im, n = A.frames, o;
+    if (!U) {                                                        // the box this look needs for this clip seen from this side: every layer's pieces over every frame
+      var x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
+      for (i = 0; i < look.L.length; i++) { R = rectsOf(H, A, clip, look.L[i].l); if (!R) continue; for (j = 0; j < n; j++) { o = (d * n + j) * 6; if (!R[o + 2]) continue; x0 = Math.min(x0, R[o + 4]); y0 = Math.min(y0, R[o + 5]); x1 = Math.max(x1, R[o + 4] + R[o + 2]); y1 = Math.max(y1, R[o + 5] + R[o + 3]); } }
+      if (x1 < 0) return null; U = H.ubox[uk] = { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    }
+    var ord = [], ok = true;
+    for (i = 0; i < look.L.length; i++) { q = look.L[i]; if (!A.sheets[q.l]) continue; if (!imgOf(H, A.sheets[q.l])) ok = false; ord.push({ z: q, r: rankOf(q, d) + i * 0.001 }); }
+    if (!ok) return null;                                            // still loading (every sheet has been asked for now): nothing is kept
+    ord.sort(function (m, k) { return m.r - k.r; });
+    var cv2 = cvOf(U.w, U.h), g = cv2.getContext('2d');
+    for (i = 0; i < ord.length; i++) {
+      q = ord[i].z; R = rectsOf(H, A, clip, q.l); o = (d * n + f) * 6; var w = R[o + 2], h = R[o + 3]; if (!w) continue;
+      im = H.img[A.sheets[q.l]]; var sx = R[o], sy = R[o + 1], dx = R[o + 4] - U.x, dy = R[o + 5] - U.y;
+      if (!q.t) { g.drawImage(im, sx, sy, w, h, dx, dy, w, h); continue; }
+      var sc = scratch('scratch', w, h), tg = sc.getContext('2d');                                             // the colour: multiplied into cloth, hair and paint; laid over metal as on the things the hero holds
+      tg.globalCompositeOperation = 'source-over'; tg.globalAlpha = 1; tg.clearRect(0, 0, w, h); tg.drawImage(im, sx, sy, w, h, 0, 0, w, h);
+      if (q.metal) { tg.globalCompositeOperation = 'source-atop'; tg.globalAlpha = 0.6; tg.fillStyle = q.t; tg.fillRect(0, 0, w, h); tg.globalCompositeOperation = 'multiply'; tg.globalAlpha = 0.35; tg.drawImage(im, sx, sy, w, h, 0, 0, w, h); }
+      else { tg.globalCompositeOperation = 'multiply'; tg.fillStyle = q.t; tg.fillRect(0, 0, w, h); tg.globalCompositeOperation = 'destination-in'; tg.drawImage(im, sx, sy, w, h, 0, 0, w, h); }
+      tg.globalCompositeOperation = 'source-over'; tg.globalAlpha = 1;
+      g.drawImage(sc, 0, 0, w, h, dx, dy, w, h);
+    }
+    e = { cv: cv2, x: U.x, y: U.y, w: U.w, h: U.h, sil: null }; PC.map.set(key, e); PC.made++;
+    if (PC.map.size > PC.max) { var old = PC.map.keys().next().value, oe = PC.map.get(old); PC.map.delete(old); var pk = oe.w + 'x' + oe.h; (PC.pool[pk] || (PC.pool[pk] = [])).push(oe.cv); }
+    return e;
+  }
+  function silP(e, hue) {                    // the frame's shape, dark, at half size: for the shadow it throws
+    if (e.sil) return e.sil; var w = Math.ceil(e.w / 2), h = Math.ceil(e.h / 2), cv2 = document.createElement('canvas'); cv2.width = w; cv2.height = h; var g = cv2.getContext('2d');
+    g.drawImage(e.cv, 0, 0, e.w, e.h, 0, 0, w, h); g.globalCompositeOperation = 'source-in'; g.fillStyle = 'hsl(' + (hue || 222) + ',40%,8%)'; g.fillRect(0, 0, w, h); e.sil = cv2; return cv2;
+  }
+  function silCol(e, col) {                  // the same shape in a colour (the side a fire lights or does not, a flash, a tint): made when asked for, in one shared sheet
+    var s0 = silP(e), sc = scratch('mix2', s0.width, s0.height), g = sc.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; g.clearRect(0, 0, sc.width, sc.height); g.drawImage(s0, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, s0.width, s0.height); g.globalCompositeOperation = 'source-over'; return sc;
+  }
+  function person(c, H, look, st, x, y, opts) {
+    opts = opts || {}; var M = H.meta, clip = M.anims[st.clip] ? st.clip : 'idle', A = M.anims[clip]; if (!A) return false;
+    var d = dirOf(M, st.face || 0), f, f2 = -1, w = 0;
+    if (st.k != null) f = frameAt(A, Math.max(0, Math.min(0.999, st.k)));
+    else { var lp = loopAt(A, st.t || 0); f = lp.f; if (opts.blend !== false && blends(clip, A)) { if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) { f2 = lp.f2; w = lp.w; } } }
+    var e = personFrame(H, look, clip, d, f); if (!e) return false;
+    var s = (opts.scale || 1) * (look.s || 1) / PX, dx = (e.x - M.anchor.x) * s, dy = (e.y - M.anchor.y) * s, dw = e.w * s, dh = e.h * s, lit = opts.lit || null, src = e.cv, hw, hh;
+    if (f2 >= 0) { var e2 = personFrame(H, look, clip, d, f2); if (e2) { var mx = scratch('mix', e.w, e.h), mg = mx.getContext('2d'); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; mg.clearRect(0, 0, mx.width, mx.height); mg.globalAlpha = 1 - w; mg.drawImage(e.cv, 0, 0); mg.globalCompositeOperation = 'lighter'; mg.globalAlpha = w; mg.drawImage(e2.cv, 0, 0); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; src = mx; } }
+    c.save(); c.translate(x, y); c.scale((look.sx || 1) * (opts.sx || 1), (look.sy || 1) * (opts.sy || 1)); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    if (opts.alpha != null) c.globalAlpha *= opts.alpha;
+    var ga = c.globalAlpha;
+    if (opts.shadow !== false) {              // the shadow: laid as the props' long shadows lie, or thrown away from a fire
+      var sl = silP(e, opts.shadowHue); c.save();
+      if (lit && lit.cast) { c.globalAlpha = ga * lit.cast.a; c.transform(1, 0, -lit.cast.kx, -lit.cast.ky, 0, 0); }
+      else { c.globalAlpha = ga * 0.3; c.beginPath(); c.rect(-200, -400, 400, 400); c.clip(); c.transform(1, 0, -0.5, -0.14, 0, 0); }
+      c.drawImage(sl, 0, 0, sl.width, sl.height, dx, dy, dw, dh); c.restore();
+    }
+    hw = Math.ceil(e.w / 2); hh = Math.ceil(e.h / 2);
+    if (lit && lit.rim) { c.globalAlpha = ga * lit.rim.a; c.drawImage(silCol(e, '#ffb45e'), 0, 0, hw, hh, dx + lit.rim.ox, dy + lit.rim.oy, dw, dh); c.globalAlpha = ga; }
+    c.drawImage(src, 0, 0, e.w, e.h, dx, dy, dw, dh);
+    if (lit && lit.dark) { c.globalAlpha = ga * lit.dark; c.drawImage(silCol(e, '#060a1c'), 0, 0, hw, hh, dx, dy, dw, dh); c.globalAlpha = ga; }
+    else if (lit && lit.warm) { c.globalCompositeOperation = 'lighter'; c.globalAlpha = ga * lit.warm; c.drawImage(silCol(e, '#ff8a2a'), 0, 0, hw, hh, dx, dy, dw, dh); c.globalCompositeOperation = 'source-over'; c.globalAlpha = ga; }
+    if (opts.tint) { c.globalAlpha = ga * opts.tint.a; c.drawImage(silCol(e, opts.tint.color), 0, 0, hw, hh, dx, dy, dw, dh); c.globalAlpha = ga; }
+    if (opts.flash > 0.02) { c.globalAlpha = ga * Math.min(1, opts.flash) * 0.7; c.drawImage(silCol(e, '#ffffff'), 0, 0, hw, hh, dx, dy, dw, dh); c.globalAlpha = ga; }
+    c.restore(); return true;
+  }
+  /* A fighting man from the people's sheets: the engine's human enemies and the hero's own men (docs/battle-plan.md).
+     The clip follows the engine's state as a beast's does: the death by the time since he fell (he lies as long as
+     e.deadFor says), getting up again (e.riseT), on his knees (state 'yield'), the blow spread over its windup, strike
+     and recovery (e.sw = { wu, ac, rec, clip }, set by the engine when a soldier begins a blow; a plain guard's lunge
+     without it), the shield up (e.guard), a flinch, and otherwise idle, walk or run by how fast he is really moving.
+     The thing in his hand is e.wpn = { kind, tint }. */
+  function fighter(c, H, e, K, look, opts) {
+    if (!peopleReady(H)) return false; opts = opts || {};
+    var A = H.meta.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null, ph: Math.random() * 10, wp: 0 }), dt = t - st.t;
+    if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; } else dt = 0;
+    var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.3, Math.min(0.3, dA));
+    var s = { face: st.face, clip: 'idle', t: t + st.ph }, hand = e.wpn || opts.hand || null, sw = e.sw, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, alpha = 1, flash = e.flash || 0;
+    if (e.dead || e.down) { var lie = e.deadFor || 1.5; s.clip = 'death'; s.k = Math.min(0.999, (e.deadT || 0) / 0.9); hand = null; if (e.dead) alpha = Math.max(0, Math.min(1, (lie - e.deadT) / 1.2)); flash = 0; }
+    else if (e.riseT > 0) { s.clip = 'death'; s.k = Math.max(0, Math.min(0.999, e.riseT / 0.8)); hand = null; }
+    else if (e.state === 'yield') { s.clip = 'pickup'; s.k = Math.min(0.42, e.t / 0.6 * 0.42); hand = null; }
+    else if (sw && (e.state === 'windup' || e.state === 'lunge' || (e.state === 'recover' && e.swung))) {      // the clip's own beats: the blow lands a little before its middle
+      s.clip = sw.clip; s.k = e.state === 'windup' ? 0.3 * Math.min(1, e.t / sw.wu) : e.state === 'lunge' ? 0.3 + 0.25 * Math.min(1, e.t / sw.ac) : 0.55 + 0.44 * Math.min(1, e.t / sw.rec);
+    }
+    else if (!sw && e.state === 'windup') { s.clip = 'attack1'; s.k = 0.3 * k; }
+    else if (!sw && e.state === 'lunge') { s.clip = 'attack1'; s.k = 0.3 + 0.35 * k; }
+    else if (e.guard > 0) { s.clip = 'block'; s.k = Math.min(0.999, (e.guardAge || 0) / 0.16); }
+    else if (e.state === 'stagger' || e.state === 'stunned' || flash > 0.35) { s.clip = 'hit'; s.k = e.state === 'stagger' ? 0.15 + 0.6 * k : Math.min(0.999, (1 - flash) * 0.8); }
+    else {
+      st.run = st.run ? st.spd > 50 : st.spd > 62; st.walk = st.walk ? st.spd > 3 : st.spd > 7;
+      if (st.run) { st.wp += dt * Math.max(0.8, Math.min(1.4, st.spd / 100)); s.clip = 'run'; s.t = st.wp; }
+      else if (st.walk) { st.wp += dt * Math.max(0.7, Math.min(1.9, st.spd / 36)); s.clip = 'walk'; s.t = st.wp; }
+    }
+    if (!A[s.clip]) s.clip = 'idle';
+    return person(c, H, withHand(look, hand), s, e.x, e.y * K, { scale: opts.scale, shadow: opts.shadow !== false && !(e.dead || e.down), shadowHue: opts.shadowHue, lit: opts.lit, flash: flash, alpha: alpha, tint: opts.tint });
+  }
+  function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
+  function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
+  function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
+  return { loadLazy: loadLazy, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, beast: beast, ready: ready };
 });

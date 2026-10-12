@@ -386,3 +386,29 @@ does not hold anything up.
 | 4 | Five against five | equal sides are an even coin over a thousand fights; no knot, no endless chase; the frame holds |
 | 5 | A town, attacked | nobody ever stuck in a dozen towns; the town's answer builds, it does not arrive |
 | 6 | The raid | Robin wants to do it again |
+
+## 13. How it went
+
+Robin's answers (2026-10-12): the looks left for now; **one body, with layers**; the Mixamo sitting saved for later; how hard
+one man is, "not sure, try how it feels"; a friend who falls, "what you decide" (down until the fight is over; dead only if
+left behind or the fight is lost). Then: go through the whole plan, and by that, do it.
+
+### Rung 0, the people (2026-10-13): done, without the Mixamo sitting
+
+- **What was measured, and what it changed.** Packed the way the hero is (one box a clip and layer) the people were 62 MB of
+  PNG and 1166 MB decoded: twelve times the plan's target. A box a direction would have halved it; **a box a frame** cut it
+  to a sixth, so the sheets are atlases of trimmed frames, and WebP instead of PNG. **22.8 MB on disk, 324 MB if every
+  sheet were decoded; a village loads a fraction.** The plan's "under 15 MB in git" is missed by half; the idle's 32 frames
+  (to stop a ghost weapon between two frames) are four of those megabytes.
+- **What went wrong on the way, as the plan guessed:** layers poking through each other, but for a reason it did not guess:
+  Blender's holdout switch takes an object out of what can hide an ink line, so every outline behind a body showed through
+  it. The first hair hid the faces and the first beards were beaks; both redone. A tint does turn the line with it (the
+  line is in the same picture); at the game's size it reads as a darker line of the cloth's own colour and was left.
+- **The gate:** thirty rolled people beside the hero (`docs/people-crowd.jpg`); the clips on contact sheets
+  (`node tools/visual/people.js clips|blows`); a village by day and by night with only sheets in it once they have loaded
+  (`docs/people-village.jpg`, `people-night.jpg`); forty in view at 15 ms a frame against 27 ms drawn (the pane's software
+  drawing: a comparison, not Robin's card).
+- **Left for the sitting with Robin signed in to Mixamo:** a thrust, a two-handed swing, a stagger, yielding, a second death,
+  and the jobs. Until then: a spear is swung, a Dane axe uses the wood-chopping swing, a club the pick's, a man on his knees
+  is a held frame of picking something up.
+

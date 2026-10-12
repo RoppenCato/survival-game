@@ -63,6 +63,11 @@ raft paddle and the karve's tiller, sleep). The old drawn hero stays until Robin
 
 ### 2. People
 
+**Done 2026-10-13 as rung 0 of `docs/battle-plan.md`**, not quite as written below: the hair, beards, hats and clothes are
+layers over **one neutral body whose tunic and trousers are coloured when drawn**, every layer an atlas of trimmed frames
+(the first pack, at the hero's fixed frame, was 62 MB and over a gigabyte decoded). The idles and jobs are still the
+hero's own clips; the Mixamo sitting for more is to come.
+
 The villagers are the hero's body with the concepts' hair, beards, hats and clothes as layers and a small palette of colours
 (`FOLK`, `CONCEPTS`), so one render set covers the hamlet, the towns and the hird. Then the ones with their own build: **Brokk**
 (the dwarf: a shorter, broader body on the same skeleton), the **child** and the **elder**, the **guard** (helm, mail, the sword
@@ -110,7 +115,7 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Hero 2 (cel, fitted) | `hero2.blend`, `hero2_mixamo.blend` | Mixamo | 18 | `hero2-mixamo` | yes | **the hero** everywhere (since 2026-10-09 evening, `src/sprites.js`) | the sword, axe, pick, knife, club and bow as layers in the hand (2026-10-09); no gear layers yet; the drawn hero retired to `art/backup/` |
 | Hero 1 (first trial) | `hero.blend` | own | idle, walk | `hero` | yes | Character Editor only | superseded |
-| Villagers, Brokk, child, elder, guard | | | | | | | step 2 |
+| The people: villagers, the hird, guards (and Brokk and a child as the same body scaled) | `people.blend` (`people_build.py`, from the hero's file) | Mixamo (the hero's) | 16 (the hero's, and `block` made by script) | `people`: 28 layers as atlases, WebP, 22.8 MB | Models tab, the People panel | **yes** (2026-10-13): `drawPerson`, `drawFighter` | one neutral body, the tunic and trousers coloured at draw time, hair, beards, hats, mail, cloak, dress, shield and weapons as layers; no Mixamo sitting yet for the missing clips; Brokk's own body, the elder's stoop and the priest's dress are still to do |
 | Mountain troll (boulder) | `troll_boulder.blend` | own (`troll_build.py`), no Mixamo | 7 | `troll_boulder` | Models tab | **yes**, the cave troll (2026-10-12) | stone is the shield pose under a grey tint |
 | Forest troll | `troll_forest.blend` | the same rig | 7 | `troll_forest` | Models tab | arena only | not spawned in the game |
 | The Gape (new) | `troll_maw.blend` | the same rig | 7 | `troll_maw` | Models tab | arena only | Robin to decide where it lives |

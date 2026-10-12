@@ -100,8 +100,10 @@ gone from the code, and no new work may bring any of it back. This file is the s
   and built by Vikings. Keep new props in one of the three.
 - **Hero: the Blender model** (Robin, 2026-10-09: the new character model in every editor and the game, the old one kept as a
   backup). `src/sprites.js` draws him from the sheets in `assets/sprites/hero2-mixamo` in the game, the Art Editor, the Sea Editor
-  and the Combat Arena. The drawn ink figure (`playerD`, `inkHero` in `src/art.js`) still draws the villagers, Brokk and the guards
-  until they are modelled; the old Character Editor is in `art/backup/`. Robin rejected a pixel-sprite look long ago.
+  and the Combat Arena. **The villagers, Brokk, the hird and the guards are Blender sheets too since 2026-10-13** (one body
+  every person shares, with layers: see "The people" under `art/`); the drawn ink figure (`playerD`, `inkHero` in
+  `src/art.js`) is only what is shown for the moment their sheets are still loading. The old Character Editor is in
+  `art/backup/`. Robin rejected a pixel-sprite look long ago.
 
 ## Commands
 
@@ -121,7 +123,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | Page (in `dist/`) | Template | What it is |
 | --- | --- | --- |
 | `index.html` | `index.html` | Start page |
-| `art-editor.html` | `art.html` | **Art Editor (2026-10-09, the cleanup):** the Creature, Object and Blender editors as one page with three tabs, **Models** (the Blender sheets: model, gear layers, Height, "Use in the game" picks which model is the hero, the starter island, arena or night forest, the Clips keys), **Creatures** (the drawn animals and trolls: templates, body plan, shape, behaviour, the library, "Update in game") and **Objects** (one world prop at a time: category, variations, size, shape, surface, colour). The hero in every tab is the Blender model (`Sprites.attach`). One canvas and one engine: each tab is an object in `TABS` with `enter` (sets `Combat.api.scene`, `roster` and resets the arena), `leave`, `tick` and `after`; a tab's elements are found by `data-id` inside its own containers (`scope(name)`), so the tabs share names; the open tab is kept in `arteditor.tab` and `?tab=` opens one. The Characters tab (the drawn hero's editor) was retired the same day to `art/backup/character-editor.html`. |
+| `art-editor.html` | `art.html` | **Art Editor (2026-10-09, the cleanup):** the Creature, Object and Blender editors as one page with three tabs, **Models** (the Blender sheets: model, gear layers, Height, "Use in the game" picks which model is the hero, the starter island, arena or night forest, the Clips keys), **Creatures** (the drawn animals and trolls: templates, body plan, shape, behaviour, the library, "Update in game") and **Objects** (one world prop at a time: category, variations, size, shape, surface, colour). The hero in every tab is the Blender model (`Sprites.attach`). One canvas and one engine: each tab is an object in `TABS` with `enter` (sets `Combat.api.scene`, `roster` and resets the arena), `leave`, `tick` and `after`; a tab's elements are found by `data-id` inside its own containers (`scope(name)`), so the tabs share names; the open tab is kept in `arteditor.tab` and `?tab=` opens one. The Characters tab (the drawn hero's editor) was retired the same day to `art/backup/character-editor.html`. **Since 2026-10-13 the Models tab has a People panel** (rolled villagers from the one body every person shares: the clip, the thing in the hand, mail, helmet, shield and cloak for all; `crowdRoll`, `crowdItems`). |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
 | `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
@@ -247,6 +249,13 @@ the text and it is made the default. When a spec's meaning changes, change the s
   (`BLEND`, or a clip with `blend` in its numbers) are drawn as the true in-between of the two frames the clock lies between
   (`loopAt`, `mixTo`: both frames into a small canvas, each at its share, added); a walk is not (two sets of legs). Checked in
   the pane: a standing moose's picture changes on every one of twenty-four frames. Loads in Node too. Every page gets it as `__SPRITES_JS__` and the sheets' numbers as `__SPRITES__`.
+  **The people (2026-10-13)** are drawn by the same module from one sheet set, `assets/sprites/people`: `loadLazy(SP, 'people')`
+  (a sheet is fetched when a look first asks for it), `lookOf(spec, x)` (a figure spec's hair, beard, hat, clothes, colours
+  and build, plus `x` = `{ mail, helm, shield (its paint), cloak (a colour), hand: { kind, tint } }`, turned into a short
+  list of layers and colours), `withHand(look, hand)`, `person(c, H, look, st, x, y, opts)` (`st` = `{ clip, face, k or t }`)
+  and `fighter(c, H, e, K, look, opts)` (an engine enemy who is a man: the clip from his state). A frame is put together
+  once (the layers in their order for that direction, the colours multiplied in) and kept in a store of 700 finished
+  frames (`personFrame`, `peopleStats()`); `rectsOf` reads where each piece lies in its sheet (see `tools/people.js`).
 - `src/fishing.js` (`Fishing`): **fishing (2026-10-08, Robin: a rod of iron in the lowlands, a fisherman who teaches the dishes, a fun
   minigame, a few fishes, a sunken chest now and then).** The round with no drawing: `start(R, depth, lowland)` rolls what bites
   (`roll`, `table`: herring everywhere in the sea, perch in the shallows, cod and salmon deep, pike in the lowland shallows, a
@@ -609,6 +618,47 @@ the text and it is made the default. When a spec's meaning changes, change the s
   hidden, so `tools/visual/drive.js` (load it in the page, then reload the page's own HTML with `document.write`) takes over
   `requestAnimationFrame` and the clock: `H2.step(n)` runs n frames, `H2.snap` tiles crops of the canvas into a sheet and
   `H2.part` hands it back as a JPEG.
+  **The people (2026-10-13, rung 0 of `docs/battle-plan.md`; Robin: Blender the hirdmen and other humans; one body, with
+  layers).** `art/build/people_build.py` makes `art/source/people.blend` from the hero's own file (his parts on Mixamo's
+  skeleton, his clips, his things for the hand): **one neutral body** in three collections, `Body` (the head with its face,
+  the hands, boots and belt: never coloured), `PartTunic` and `PartLegs` (near white: **the game multiplies the colour in when
+  it draws**), and the `Gear` layers: `hairA` (tied back), `hairB` (long, with braids), `hairC` (cropped with a knot),
+  `beardA` (short: a shell round the jaw with the chin's bulk), `beardB` (long, tied), `hood`, `cap`, `helm` (a bowl, a brim,
+  a nasal), `mail`, `cloak`, `dress` (the apron dress), `shieldRim` and `shieldFace` (on the left forearm; the face takes the
+  paint), and the things for the hand (sword, axe, club, seax, spear, bow, and a **Dane axe**, `greataxe`). One clip is made
+  there: **`block`** (the left arm brings the shield across; bones aimed at directions in the world). `render.py` knows a
+  `Part...` collection as a layer of the body itself and lets gear name other gear that hides it (`under`).
+  **A trap in the renderer, closed:** an object's own holdout switch hides the surface behind it but **Freestyle then leaves
+  that object out of what can hide a line**, so every line behind a body showed through it (a beard's outline on the back of
+  a head, the far arm through the chest, a hair cap's rim across the eyes). `render.py` now holds out by **material**
+  (`hold(o, on)`: a Holdout shader swapped in), and the lines are hidden as they should be. The hero's own weapon layers
+  were rendered the old way; a re-render would tidy the few lines that show through him.
+  **The sheets** (`npm run art:people`: the build, `tools/peoplerender.js` (the layers rendered several Blender processes at
+  a time, each with its own numbers file, `render.py --meta`; a frame on disk is kept), `tools/people.js`): 28 layers, 16
+  clips (idle 32 frames, idle_look 36, walk 10, run 8, attack1, attack2, chop, mine 10 each, hit 5, death 10, block 3, sit 4,
+  pickup 8, interact 6, bow_draw 5, bow_shoot 4), eight directions, 30,984 rendered frames. **Measured before going on, as
+  the plan asked:** packed like the hero (a box a clip and layer) they were 62 MB of PNG and 1166 MB if every sheet were
+  decoded. So a sheet is now an **atlas**: every frame of every layer trimmed to its own pixels and laid on shelves, the
+  numbers four bytes a frame (`anims[clip].rects[layer]`, base64; `Sprites.rectsOf` lays them out again by the same shelf
+  rule: keep the two alike), saved as **WebP at quality 88** (a third of the PNG, no difference to be seen at the game's
+  size; AVIF from the canvas library lost the skin's colour). **22.8 MB on disk, 324 MB if everything were decoded, and a
+  village in sight loads a fraction of it.** The idles are melted between frames like the beasts', and at 16 frames the
+  idle showed a second, ghostly weapon between two frames, so it has 32 (and the look-about 36).
+  **In the game** (`templates/game.html`: `PEOPLE`, `personLook`, `drawPerson`, `drawFighter`): villagers, Brokk, the hird
+  and the guards. The clip comes from what they do: walk, run when they flee, sit, `chop` with an axe at the block and
+  `mine` with a mallet at the smithy (`JOB_CLIP`; a hirdman at his work the same, `HIRD_CLIP`), `interact`, the look-about.
+  A hirdman gets a style of hair from his name and **your colour as his cloak** (`YOURS`, the hero's red); Brokk is the
+  same man made short and broad until he has a body of his own; a child is the body scaled; a bearded man is never put in
+  the apron dress. Fire lights them and they throw shadows as the hero does. **Measured in the pane** (software drawing,
+  so only the comparison counts): forty people in view cost 15 ms a frame from the sheets and 27 ms as drawn figures.
+  **The Art Editor's Models tab** has a **People** panel: roll twelve, choose the clip, what is in the hand and what all
+  wear, and walk among them. `node tools/visual/people.js crowd|clips|blows` draws them with the game's own code outside
+  a browser (thirty rolled people beside the hero at Robin's size; every clip; the blows frame by frame);
+  `tools/visual/peoplelooks.js` puts the raw renders together large, to judge shapes before packing.
+  `docs/people-crowd.jpg`, `people-looks.jpg`, `people-village.jpg`, `people-night.jpg`. **Not done:** the Mixamo sitting
+  for the clips a fight and a village still lack (a thrust, a two-handed swing, a stagger, yielding, sweeping, hammering,
+  carrying, rowing): the spear is swung like a sword and a job is the nearest clip there is; a fur vest and a fur hat
+  (both draw as the plain tunic and the leather cap); the priest, the merchant and the fisherman have no dress of their own.
   **In the Blender Editor (2026-10-09, Robin: fix it so I can try it out):** `npm run art:mixamo:sheets` renders all eighteen clips in
   eight directions with a frame count per clip (`render.py --frames idle=16,walk=12,run=10,...`; `tools/sprites.js` reads each
   animation's count from meta.json) and packs them into `assets/sprites/hero2-mixamo` (one 164 by 164 frame, 22 MB of sheets: the
@@ -723,6 +773,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
 
 ## People
 
+- **They are Blender sheets since 2026-10-13** (see "The people" under `art/`): what follows about idles and jobs as poses
+  is the drawn figure's, which the game now shows only while a person's sheets are loading. Their life (the spots, the
+  jobs, the waiting, who watches you) is unchanged; the sheets take the clip from it.
 - **Idles and jobs (2026-10-07, Robin: every villager stood the same way with the same bent arm):** `lib.IDLES` (rest, hips, crossed,
   scratch, look, stretch, lean) and `lib.idlePose(F, id, t, dir)` give a pose in the ink figure's pose contract (hand targets `armL`,
   `armR` for the front and back, `near`, `far` for the side, `lx`, `ly`, `turn`); `lib.JOBS` (chop, carry, sweep, hang, fish, smith)
