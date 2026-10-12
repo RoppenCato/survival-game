@@ -124,10 +124,11 @@ are fine; night is dangerous and home with a fire is safe.
 
 | Part | What it is | Status |
 | --- | --- | --- |
-| A1 The world | A 60-tile island (`isle0`), grass, groves of oak, pine and birch, beaches, a neighbour island 26 tiles east. Day and night over a 30-minute cycle | Built |
-| A1 Look | Flat clean look, painterly meadow, wide warm beaches, critters (butterflies, birds, beetles) by day | Built |
+| A1 The world | A 120-tile island (`isle0`; 60 until the scale pass of 2026-10-09), grass, groves of oak, pine and birch, beaches, the big island about a minute east by raft. Day and night over a 30-minute cycle | Built |
+| A1 Look | The ink look (2026-10-07), painterly meadow, wide warm beaches, critters (butterflies, birds, beetles) by day; the hero and the animals are Blender models (2026-10-09 to 11) | Built |
 | A2 Places | The wreck on the beach, the broken steading (Hildir's, a burnt hall, a hut, a half stone house, a well, a palisade), loose finds (nests, fallen trees, herbs, mushrooms) | Built |
-| A2 Small finds with a story | A hunter's camp, a cairn, a fish weir, a dead man by a cold fire | Not started (`docs/start-loop.md` proposal) |
+| A2 Small finds with a story | A fish weir on the shore with a net to take down (4 fiber) | **Built (2026-10-12)**, Robin's pick |
+| A2 More finds | A hunter's camp, a cairn, a dead man by a cold fire | Not picked (`docs/start-loop.md` proposal; Robin chose the weir alone) |
 
 ### B. The events
 
@@ -139,17 +140,18 @@ are fine; night is dangerous and home with a fire is safe.
 | **The home** | Walls, roof, hearth, bench, bed, rug: Comfort 4 | Built |
 | **The shipwright's bench and the raft** | The Shipyard, the raft from logs and lashings, the crossing and the banner "You have left the island" | Built |
 
-**The way in:** the wreck. **The way on:** the neighbouring island, ten seconds off by raft. Nothing on the horizon says go
+**The way in:** the wreck. **The way on:** the big island, about a minute off by raft (68 s in the play-through). Nothing on the horizon says go
 there yet (see the gap list).
 
 ### C. The living world
 
 | Part | What it is | Status |
 | --- | --- | --- |
-| C1 Day beasts | A few boar, deer and adders (`start`), all six animals exist on the map with their own attacks | Built |
+| C1 Day beasts | Boar, deer and adders; the counts scale with the island's area, so at 120 tiles that is 16 boars, about 20 deer and 12 adders. **The boars here are young** (6 health, 7 a blow, smaller; 2026-10-12) so a wooden club can win | Built (the numbers are Robin's to judge) |
 | C1 Night | One wolf pack a night, fire-shy, glowing red eyes | Built |
 | C2 People | Brokk (the dwarf smith), the first hirdman | Built |
 | C2 The first legendary Viking heard of | Decided to be heard on the home island; Brokk's tale names Ragnar Ironside; the legend system itself is not built | Partly |
+| C2 Who you are | Robin, 2026-10-12: "kid survives raid then works for revenge". `docs/the-beginning.md` expands it | **Proposal, with questions for Robin** |
 
 ### D. What you make and gain
 
@@ -157,7 +159,7 @@ there yet (see the gap list).
 | --- | --- | --- |
 | D1 Materials | Wood, stone, fiber, hide, leather, berries, meat, eggs and honey from nests; trunks, sweet spot and rhythm in gathering | Built |
 | D1 Crafting | Hand and workbench recipes revealed by key ingredient; flint, stick and wood tools, the wooden club and bow; leather armour; the hearth and the dishes; boards for crafting, cooking and the shipwright | Built |
-| D1 Fishing | A slow verb with a reward | **Built (2026-10-08):** the rod (iron, so the lowlands), cast and hook and reel on E, five fish by water, the sunken chest, three dishes, the fisherman's hut on the smallest island who teaches them |
+| D1 Fishing | A slow verb with a reward. **Not on this island** (Robin, 2026-10-12: leave it for the lowlands) | **Built (2026-10-08):** the rod (iron, so the lowlands), cast and hook and reel on E, five fish by water, the sunken chest, three dishes, the fisherman's hut on the smallest island who teaches them |
 | D2 Building | Walls in five materials, floors, paths, roofs (thatch, turf, shingles), stairs and an upper floor, fences, docks, furniture, comfort | Built |
 | D3 Power | No ring on this island. Deeds count underneath (trees, meals, sprinting) | Built (hidden until a ring) |
 
@@ -172,20 +174,26 @@ there yet (see the gap list).
 
 | Part | What it is | Status |
 | --- | --- | --- |
-| F1 Editors | Gathering Editor, Character Editor, Object Editor, Item Editor, Combat Arena, the game's Admin and Sandbox | Built |
-| F2 Tests | `npm test` covers combat, weapons, gather and ring; fresh-start play-through done 2026-10-05; the day-of-gathering test (40 wood, 20 stone, 15 fiber, 6 hide in a day) | Partly: the hand-played day test is still to do |
+| F1 Editors | The Art Editor (models, creatures, objects), the Village Editor, the Sea Editor, the Combat Arena, the game's Admin and Sandbox (the Gathering, Character and Item editors went in the cleanup of 2026-10-09) | Built |
+| F2 Tests | `npm test` covers combat, weapons, gather and ring. **Played from the wreck to the raft by script on 2026-10-12** (`tools/visual/startplay.js`; the first was 2026-10-05): the chain holds after four fixes (a home anywhere on the island counts, young boars, Brokk's raft line, E at a bench just set down) | Built by script; a play by hand, for the feel of it, is Robin's |
 
 ### Gap list for Chapter 1 (the work)
 
-1. **A landmark on the horizon**: smoke over the trees and a cairn on a rise, so the steading and the far island are
-   *seen* (`docs/start-loop.md`, 1 and 2 of its order).
-2. **The steading as the beginner base**: move the camp, patch the hall's gaps, the hut's furniture (`start-loop.md`, 2).
-3. **A few small finds with a story** between the wreck and the steading (`start-loop.md`, 3).
-4. **The first night as a moment**: sound and sight that make home feel better than the field (`start-loop.md`, 4). The means are built (2026-10-12: the ambient sound, and the fire techniques of `docs/lighting.md`); what is left is the staging of the night itself.
-5. **Slow verbs**: sitting by the fire, fishing (`start-loop.md`, 5).
-6. **Leaving as a scene**: Brokk at the shore (`start-loop.md`, 6).
-7. **The legend**: how a name is heard (Open, idea bank 3).
-8. **Play the day-of-gathering test by hand** with the new gathering settings.
+1. **Who you are** (`docs/the-beginning.md`): Robin's "kid survives raid then works for revenge". A proposal with six
+   questions; the cheap version (the place knows you) is a few days, the played memory two to three weeks.
+2. **A landmark on the horizon**: smoke over the trees and a cairn on a rise, so the steading and the far island are
+   *seen* (`docs/start-loop.md`, 1 and 2 of its order). The play-through of 2026-10-12 confirms it: the steading lay 1255
+   units from the wreck with nothing pointing to it.
+3. **The steading as the beginner base**: move the camp, patch the hall's gaps, the hut's furniture (`start-loop.md`, 2).
+   Since 2026-10-12 a home there counts as yours.
+4. **The first night as a moment**: the means are built (the ambient sound and the firelight of 2026-10-12) and the rules
+   hold (wolves come, the fire sends them off, you heal and wake rested); what is left is the staging.
+5. **Leaving as a scene**: Brokk at the shore (`start-loop.md`, 6).
+6. **The legend**: how a name is heard (Open, idea bank 3; `the-beginning.md` section 5 makes Ragnar the first).
+7. **Numbers for Robin to judge** (measured 2026-10-12, in CLAUDE.md under "The start played again"): how fast wood comes
+   (a pine's 12 wood in 15 s), what a first home costs (44 wood), how many animals the island holds (16 boars, about 20
+   deer, 12 adders), and that **death costs nothing** (you rise at the wreck with everything).
+8. **Slow verbs**: sitting is built; fishing waits for the lowlands (Robin).
 
 ---
 

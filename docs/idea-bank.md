@@ -520,3 +520,24 @@ The walls and the peaks are painted in one hand now (`rockTone`, `paintPeaks`). 
 - **The cave mouths and the shelter** are still pictures from Blender with a heavy line. They are small and stand like props,
   but if they too read as pasted on, the answer is the same: paint them with the ground.
 - **Weather on the tops:** cloud caught on a summit, snow blowing off a ridge (if there is ever weather).
+
+## The beginning: who the hero is (Robin, 2026-10-12; not decided)
+
+Robin: *"Let's make the beginning more immersive. Maybe it should be the classic 'kid survives raid then works for revenge'?"*
+The expansion is its own document, **`docs/the-beginning.md`**: three ways to tell it, who the hero is, what revenge means in
+play, what it costs, six questions. Nothing is decided.
+
+## The starter island: what the play-through left open (2026-10-12)
+
+Measured by script (`tools/visual/startplay.js`); Robin has not ruled on any of these.
+
+- **Pace.** A pine gives 12 wood in fifteen seconds and a furnished hut costs 44: the first home is a few minutes' work. Good
+  for a first hour, or too quick to feel earned?
+- **How many animals.** Counts scale with area, so the 120-tile island holds 16 boars, about 20 deer and 12 adders. It was
+  tuned at 60 tiles with 4 and 5.
+- **Young boars.** My call, so that a wooden club can win a first fight (6 health, 7 a blow). The other way would be a
+  stronger club, or a boar that leaves you alone unless you come close.
+- **Death costs nothing.** You rise at the wreck with everything you carried. Fits "reward, not punish"; but then a wolf pack
+  is no threat either.
+- **The bow.** The scripted hunter lost a deer to ten arrows. A hand on the mouse will do better; worth a try by Robin.
+

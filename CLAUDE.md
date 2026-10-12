@@ -345,6 +345,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `docs/start-loop.md`: the first hour against Valheim, Grounded and Enshrouded, our path from the wreck to the raft, what
   is missing, and the proposed start (smoke and cairn, the steading as the beginner base, finds, the first night, sitting
   and fishing, Brokk at the shore). A proposal, not decided.
+- `docs/the-beginning.md` (**a proposal, 2026-10-12**; Robin: make the beginning more immersive, "kid survives raid then works
+  for revenge"): three ways to tell it (the place knows you; a played memory at the burnt hall; a prologue), who the hero is
+  and how they came to the wreck, what revenge means in play (Ragnar Ironside as the first legendary Viking, the ones who went
+  with him, the ones taken as thralls, the ring), what the memory would take to build, and six questions for Robin. **Nothing
+  of it is decided or built.**
 - `docs/arm-ring.md`: **decided 2026-10-06:** the runes become the **arm ring**. Runes are knowledge (never items) cut into the
   coils of the ring and reddened with blood at the **carver's bench** (five health, a work bar, swap freely); coils are bound
   to a side (hand, foot, eye, heart); the metal is the rank anyone can read (bronze, silver, twisted silver, gold, dragon)
@@ -860,6 +865,34 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   build mode (a comment swallowed the reset line) and a stick bow could not kill even a deer (0.7 an arrow; bows now
   do 2 x the material: 1.4). Console hooks used for this are on `Combat.api.debug()` (`place`, `pieceIndex`, `raftObj`,
   `raftUse`, `comfort`, `brokk`, `isles`, `dirty`).
+- **The start played again (2026-10-12, Robin: work on the starter island; play it through first):**
+  `tools/visual/startplay.js` plays a fresh game from the wreck to the raft in the page (load `tools/visual/drive.js`, write the
+  page again, load the script, then **one step a call**: `ST.land()`, `tools`, `wood`, `stoneAndFiber`, `arms`, `boar`, `deer`,
+  `home`, `brokk`, `bench`, `raft`, `cross`, `night`). It walks and swings by the keys, ticks walking and waiting without a
+  picture (`debug().tick`) and draws what falls or dies (**a felled tree becomes a trunk only in a drawn frame**); where it jumps
+  the hero to a place or adds to the bag, its line says so. **The browser tool cuts a script off after about half a minute, and
+  one cut off in mid-frame leaves the game's loop dead** (`H2.ready()` false; no error is thrown: reload and go on from the save).
+  **Found and fixed:** (1) **"your home" was only a room within 500 units of the wreck**, so a home by the steading (1255 units
+  off in that world) never counted and **Brokk never taught the raft**: `baseComfort()` takes the best room anywhere on the
+  starter island (`homeIsle(x, y)`: the island whose shore is nearest). (2) **A boar killed a new hero**: 12 health and 14 a blow
+  against a wooden club's 0.6 to 1. **The starter island's boars are young** (`ANIMALS.boar.young`: 6 health, 7 damage, drawn at
+  0.84; `youngOne(e, k)` at both places a boar is put on island 0; `e.young`, `e.sizeK` in the sprite's scale): two test fights
+  left the hero at 30 and at 65 health. The big island's boars are as before. (3) Brokk's raft line spoke of "a hide or two" that
+  the raft never took. (4) **E did nothing at a raft bench just set down** (`yardUsable` refused in build mode, though a
+  workbench and a bed answer there). **The numbers, for Robin to judge:** landing, 12 wood and 9 stone in 12 s; a pine felled in
+  4 s and its 12 wood in the bag in 15, a birch by the back cut in 3 s (10 wood); a rock's 3 stone in a second, five bushes 9
+  fiber; a furnished hut (Comfort 5) costs 44 wood, 3 stone, 8 fiber, 2 leather, the raft bench 12 wood and 4 fiber, the raft 6
+  wood and 6 fiber; the crossing 68 s; "You have left the island" at day 1, 7:08 of a run that jumped to Brokk and to the beach.
+  The first night: three wolves; forty seconds by the fire in the hut gained 24 health and the pack gave up; sleep gave day 2 and
+  ten minutes rested. **Seen and left alone:** animal counts scale with area, so the starter island has 16 boars, about 20 deer
+  and 12 adders; nothing points from the wreck to the steading; death costs nothing (you rise at the wreck with everything); the
+  deer got away from the bot's ten arrows (the bow aims by the mouse). `docs/chapters.md` chapter 1 lists them.
+- **The fish weir (2026-10-12, Robin's pick of the finds for the starter island):** `weirPlace()` (every start, after
+  `villageClear`) walks out from the island's middle along every bearing to the shore and takes shallow water off a beach 320 to
+  1500 units from the wreck, by choice nearest the way from the wreck to the steading: a `fishWeir` (stakes and wattle) in the
+  shallows and a `fishingNet` hung on the beach beside it (`weirNet`). **E "Take down the net"** (`weirNear`, `weirTake`) gives 4
+  fiber and the net is gone for good (`gone`). Left by people: the first sign that somebody lived here, and the fiber for the
+  first lashings. It gives no fish (fishing stays in the lowlands, Robin). `Combat.api.debug().weir()`; `docs/fish-weir.jpg`.
 - **The shipwright’s bench (step 8, 2026-10-05):** a board piece (12 wood, 2 stone; prop `shipwright`: two trestles carrying
   a keel timber with its curled stem and the first ribs; `it.ship`). It only goes on **sand** (`code` 1) within 4 tiles
   of the sea (`nearWater`), and only when your home has **Comfort 4** (`baseComfort`); the cursor says which is
@@ -982,7 +1015,8 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   `hungry` (half pace). A second stone needs a follower, who becomes its keeper. `hird` is saved (Brokk by flag).
 - **Comfort (step 6, 2026-10-05):** a closed room is worth 1 for its roof and 1 each for a hearth, a workbench, a
   bed and a rug in it, and up to 2 for furniture (chair, bench seat, table, chest): at most 7 (`comfortOf`, per room
-  index; `baseComfort()` is the best room within 500 units of the camp, so the steading does not count). The dial
+  index; `baseComfort()` is the best room anywhere on the starter island, `homeIsle`, since 2026-10-12; it was the best within
+  500 units of the wreck, so a home built by the steading never counted and Brokk never taught the raft). The dial
   by the chart shows "Comfort N" while you stand in a room (green from 4); sleeping there leaves you **Rested for
   N x 2 minutes** (`restedMax`); 4 is what the shipwright's bench will ask of your home. The **rug** is a flat
   piece (leather 2, fiber 4; `PIECES` `flat`, prop `rug`, drawn under everything, only rugs block rugs). The hints
