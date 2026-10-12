@@ -1919,8 +1919,11 @@ all land as before).
   piece still takes two to three times a lowland one (`w.prof` says where: `lev`, `sweep`, `paint`, `pen`; about 25 ms against 10 in
   the browser pane). **The noise sheet is smooth, not speckled**: a threshold on it draws blots.
 - **The waterfall alive** (`w.drawFalls(c, cam, hw, hh, clock)`, drawn with the waves): streaks running down the still water painted
-  on the face, the water bending over the lip, foam and mist where it lands, rings going out over the pool, glints running down the
-  stream and the brook.
+  on the face, a band of light across the stream where the water turns over the lip (**not an ellipse**: Robin, 2026-10-12, found
+  the white ellipse that lay there weird, like a lid), foam and mist where it lands, rings going out over the pool, glints
+  running down the stream and the brook. **The brook leaves the pool with no shore across it** (the pool's ring of wet gravel
+  and its dark edge are left out where the brook runs out, `outD`: there was a gap of gravel between the two), and nothing
+  grows across the fall's lip.
 - **What grows** (`w.plant`): sparse pine, birch and **mountain birch** on the foothills with **juniper**, **heather** and
   **boulders**; the plateau all but bare of trees; boulders by the pool, reeds in the bog, the ledges' trees, and the **varde** on
   the lookout. Props in the kit: `dwarfBirch` (tree, 4 wood), `juniper` and `heather` (bushes), `boulder` (stone, 5), `varde` (the
@@ -1940,6 +1943,17 @@ all land as before).
   the ink at a north edge are lines and not stairs; the grain that roughened the edges is gone. **No specks:** the plateau's
   gravel, the heather's flowers, the scree, the snow's edge, the foam and the moss are soft shapes, not a pixel of white noise
   each. **Side walls are still whole pixels** (their slanted outline steps; tried by coverage, it came out dotted).
+  **Then broken into slabs (the same day, Robin's next look: "a very nice 3d effect so i love that. It just its too smooth and
+  looks almost like manmade cement wall").** `rockTone` alone is the big forms; over it **`slab(u, v, sd)`** cuts a wall into
+  slabs of uneven size and shape (a point to a cell of 27 by 60, a pixel belonging to the nearest point; the wall bent first,
+  so no joint runs straight for long and nothing lines up into courses; `ih` is a quick whole-number hash, the nine cells
+  round a pixel kept until it leaves them) and **`slabTone`** gives every slab its own shade, lights the edge of a slab
+  that looks up or west and darkens the one that looks down or east (so the wall steps in ledges and corners), and says how
+  much of a crack lies on a pixel: a joint is an open crack, a hairline or grown shut, by its own number, and a crack comes and
+  goes along its joint. Stone grain under it all, lichen in pale drifts, the lit lip broken instead of one bright kerb, a
+  boulder fallen at the foot now and then. Side walls take the slabs too; the peaks' faces do not (they are planes already).
+  **So the three things a wall must not be:** courses of blocks (masonry), one smooth surface (cement), a net of even cells
+  (paving): slabs must differ in size, most joints must be shut, and cracks must break off.
   **The peaks: `paintPeaks`** (after the pixel loop, into the same rock layer). A peak is a summit with six or seven flat faces
   falling away from it (`peakAt(i, j)`: one to a cell of 126 by 94, from the seed; its height by how deep in the peaks' ground
   it stands and never more than that ground runs on north of it: nothing walks behind a mountain); the height anywhere is the

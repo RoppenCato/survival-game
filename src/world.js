@@ -713,12 +713,11 @@ function make(kit, opts) {
       var wob = (nsm(u * 0.6 + sd * 13, v * 0.5 + 40, 4) - 0.5) * 30, x0 = u + wob + sd * 71, y0 = v * 0.3 + sd * 37;
       var a0 = nsm(x0, y0, 2.2), a1 = nsm(x0 + 3, y0, 2.2), a2 = nsm(x0, y0 + 1.2, 2.2);
       var c0 = nsm(u + 300 + sd * 11, v * 0.36 + 90, 0.8), c1 = nsm(u + 302.5 + sd * 11, v * 0.36 + 90, 0.8);
-      var l0 = nsm(u * 0.3 + 500 + sd * 5, v + sd * 19, 0.5), l1 = nsm(u * 0.3 + 500 + sd * 5, v + 2.5 + sd * 19, 0.5);
-      var sh = (a1 - a0) * 19 + (c1 - c0) * 3.4 + (l1 - l0) * 1.5 + (a2 - a0) * 8;
-      var lit = sstep(0.14, 0.26, sh), dark = sstep(0.1, 0.22, -sh), deep = sstep(0.46, 0.6, -sh), hi = sstep(0.56, 0.7, sh);
-      var t = 0.03 + 0.15 * lit + 0.09 * hi - 0.14 * dark - 0.13 * deep + (a0 - 0.5) * 0.22 + (nsm(u + 900, v + sd * 3, 5) - 0.5) * 0.1 + (nsm(u * 1.0 + sd * 3, v * 0.06, 0.4) - 0.5) * 0.07;
-      var ck = Math.abs(nsm(x0 + 800, v * 0.15 + sd * 5, 1.6) - 0.5), pres = sstep(0.42, 0.52, nsm(u + 77, v * 0.5 + sd * 9, 3));
-      return t - 0.34 * (1 - sstep(0.005, 0.019, ck)) * pres;
+      var sh = (a1 - a0) * 19 + (c1 - c0) * 2.2 + (a2 - a0) * 8;
+      var lit = sstep(0.14, 0.24, sh), dark = sstep(0.1, 0.2, -sh), deep = sstep(0.46, 0.58, -sh), hi = sstep(0.56, 0.68, sh);
+      var t = 0.03 + 0.15 * lit + 0.09 * hi - 0.14 * dark - 0.13 * deep + (a0 - 0.5) * 0.22 + (nsm(u + 900, v + sd * 3, 5) - 0.5) * 0.08;
+      var ck = Math.abs(nsm(x0 + 800, v * 0.15 + sd * 5, 1.6) - 0.5), pres = sstep(0.4, 0.5, nsm(u + 77, v * 0.5 + sd * 9, 3));
+      return t - 0.3 * (1 - sstep(0.005, 0.017, ck)) * pres;
     }
     /* The peaks (2026-10-12, Robin: the rocky tops did not look smooth and natural, they looked pasted on. They were pictures
        from Blender, fifty to two hundred cones each in its own heavy outline with boulders at its foot, stamped on the
@@ -807,6 +806,30 @@ function make(kit, opts) {
         if ((ib > 0 && ib !== ia) || (ic2 > 0 && ic2 !== ia)) { var kd = ((ib > 0 && ib !== ia && (ib >> 3) !== (ia >> 3)) || (ic2 > 0 && ic2 !== ia && (ic2 >> 3) !== (ia >> 3))) ? 0.6 : 0.74; o = (r * W2 + x) * 4; d2[o] *= kd; d2[o + 1] *= kd; d2[o + 2] *= kd; }
       }
     }
+    /* The rock's joints (2026-10-12, Robin, of the smooth walls: "a very nice 3d effect so i love that. It just its too smooth
+       and looks almost like manmade cement wall"). Rock stands broken: slabs between joints, each slab a plane of its own
+       shade, the joints open cracks, hairlines or grown shut, a slab's edge lit where it looks up or west and dark where it
+       looks down or east, so the wall steps in ledges and corners. slab(u, v, sd) cuts the wall into slabs of uneven size and
+       shape (a point to a cell of 30 by 46, a pixel belonging to the nearest; the wall bent first, so no joint runs straight
+       for long, and nothing lines up into courses) and leaves in SLB: [0] how far the nearest joint is, in pixels; [1] the
+       slab's own number; [2], [3] the way to the slab across that joint; [4] the joint's own number (the same from both sides). */
+    var SLB = new Float32Array(5), SLC = { ci: 1e9, cj: 1e9, sd: -1, x: new Float32Array(9), y: new Float32Array(9), h: new Float32Array(9) }, SLW = 27, SLH = 60;
+    function ih(a, b, c3) { var h = (Math.imul(a, 374761393) + Math.imul(b, 668265263) + Math.imul(c3, 1274126177)) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+    function slab(u, v, sd) {
+      var fx = (u + (nsm(u, v + sd * 31, 1.7) - 0.5) * 36) / SLW, fy = (v + (nsm(u + 211, v + sd * 17, 1.7) - 0.5) * 30) / SLH, ci = Math.floor(fx), cj = Math.floor(fy), C = SLC, k, a, b;
+      if (ci !== C.ci || cj !== C.cj || sd !== C.sd) { C.ci = ci; C.cj = cj; C.sd = sd; k = 0; for (b = -1; b <= 1; b++) for (a = -1; a <= 1; a++, k++) { C.x[k] = ci + a + 0.5 + (ih(ci + a, cj + b, sd * 7 + 1) - 0.5) * 0.86; C.y[k] = cj + b + 0.5 + (ih(ci + a, cj + b, sd * 7 + 2) - 0.5) * 0.86; C.h[k] = ih(ci + a, cj + b, sd * 7 + 3); } }
+      var d1 = 1e9, d2 = 1e9, k1 = 0, k2 = 0;
+      for (k = 0; k < 9; k++) { var dx = fx - C.x[k], dy = fy - C.y[k], dd = dx * dx + dy * dy; if (dd < d1) { d2 = d1; k2 = k1; d1 = dd; k1 = k; } else if (dd < d2) { d2 = dd; k2 = k; } }
+      var px2 = C.x[k2] - C.x[k1], py2 = C.y[k2] - C.y[k1], ln = Math.sqrt(px2 * px2 + py2 * py2) || 1, qx = px2 / ln * SLW, qy = py2 / ln * SLH, ql = Math.sqrt(qx * qx + qy * qy), ha = C.h[k1], hb = C.h[k2];
+      SLB[0] = (d2 - d1) / (2 * ln) * ql; SLB[1] = ha; SLB[2] = qx / ql; SLB[3] = qy / ql; SLB[4] = ((ha + hb) * 7.31 + ha * hb * 13.7) % 1;
+    }
+    // the slabs' part of a wall's tone, and (in SLB[0], afterwards) how much of a crack lies on this pixel
+    function slabTone(u, v, sd, k) {
+      slab(u, v, sd); var bdj = SLB[0], jn = SLB[4], jy = SLB[3], open = jn > 0.62 ? 1 : (jn > 0.36 ? 0.55 : 0), t = (SLB[1] - 0.5) * 0.2 * k + (nsm(u + 3, v + sd * 7, 0.21) - 0.5) * 0.07 + (nsm(u + 50, v + 9, 0.45) - 0.5) * 0.05;   // (and the stone's own grain: nothing in rock is quite even)
+      var edge = 1 - sstep(0.9, 4.6, bdj); if (edge > 0) { var facing = -(SLB[2] * 0.75 + jy * 0.66), ek = 0.35 + 0.65 * open; t += ek * edge * k * (facing > 0 ? 0.18 * facing : 0.26 * facing); }   // every slab's edge takes the light or loses it, whether its joint gapes or not
+      if (open > 0) open *= sstep(0.3, 0.5, nsm(u + 55, v * 0.7 + sd * 3, 1.1)) * (jy > 0.72 || jy < -0.72 ? 0.5 : 1);   // a crack comes and goes along its joint, and a ledge is more a step of tone than a line
+      SLB[0] = open * (1 - sstep(0.4, 1.5, bdj)); return t;
+    }
     function lineD(pts, wx, wy) {                            // how far a point is from a line of points
       var best = 1e9, kk; for (kk = 0; kk < pts.length - 1; kk++) { var p = pts[kk], q = pts[kk + 1], ax = q[0] - p[0], ay = q[1] - p[1], t = Math.max(0, Math.min(1, ((wx - p[0]) * ax + (wy - p[1]) * ay) / (ax * ax + ay * ay || 1))), dd = Math.hypot(wx - p[0] - ax * t, wy - p[1] - ay * t); if (dd < best) best = dd; }
       return best;
@@ -887,11 +910,13 @@ function make(kit, opts) {
         var fdf = fd - fr, ey = wy - fd, fa = FN[qe - 4] === fn ? FD[qe - 4] : -1, fb2 = FN[qe + 4] === fn ? FD[qe + 4] : -1, sl = fa >= 0 && fb2 >= 0 ? (fa - fb2) / 8 : (fa >= 0 ? (fa - fd) / 4 : (fb2 >= 0 ? (fd - fb2) / 4 : 0));
         sl = Math.max(-1.1, Math.min(1.1, sl));              // how the edge runs over this pixel: falling to the right the wall turns west (lit), rising it turns east (dark)
         var kk = Math.min(1, fdf / (HF * 1.5)), fm = fdf % HF;
-        var tone = 1.08 - 0.27 * kk + sl * 0.19 + rockTone(wx, fdf, fn * 7 + 1);
+        var tone = 1.08 - 0.27 * kk + sl * 0.19 + rockTone(wx, fdf, fn * 7 + 1) + slabTone(wx, fdf, fn * 7 + 1, 1), crk = SLB[0];
         var cvi = fn * W2 + px, ovs = OVS[cvi];
         if (ovs > 0) { var dfo = fm - OVY[cvi]; tone += 0.2 * ovs * sstep(-4.5, -2.5, dfo) * (1 - sstep(-1, 0.5, dfo)); if (dfo > -0.5 && dfo < 20) tone -= 0.42 * ovs * sstep(-0.5, 1.5, dfo) * (1 - dfo / 20) * (1 - dfo / 20); }   // an overhang: a jutting bed and the dark under it
         if (tone < 0.3) tone = 0.3;
         rr = R0[0] * tone; gg = R0[1] * tone; bb = R0[2] * (tone + 0.02);
+        if (crk > 0) { var ck2 = crk * 0.86; rr += (40 - rr) * ck2; gg += (34 - gg) * ck2; bb += (36 - bb) * ck2; }   // a crack: ink
+        var lic = sstep(0.64, 0.71, nsm(wx + 31, wy * 1.2 + 77, 0.3)) * sstep(0.42, 0.56, nsm(wx + 400, wy + 90, 4)); if (lic > 0) { rr += (176 - rr) * lic * 0.42; gg += (180 - gg) * lic * 0.42; bb += (150 - bb) * lic * 0.42; }   // lichen: pale flecks, in drifts
         var wet = WET[cvi]; if (wet > 0.05) { var wk = wet * (1 - kk * 0.35) * 0.46, gln = wet > 0.6 ? sstep(0.66, 0.76, nsm(wx, fdf * 0.3 + fn * 60, 0.16)) : 0; rr = rr * (1 - wk) + 24 * gln; gg = gg * (1 - wk * 0.9) + 28 * gln; bb = bb * (1 - wk * 0.72) + 34 * gln; }   // water running down the rock: a dark streak that glints
         var mossN = nsm(wx + 91, wy + fn * 517, 3.2) + wet * 0.1 - kk * 0.08;
         if (mossN > 0.58) { var mk = sstep(0.58, 0.66, mossN) * 0.82, ml = sstep(0.42, 0.58, nsm(wx + 5, wy * 1.3 + 9, 0.4)); rr += (68 + 32 * ml - rr) * mk; gg += (100 + 32 * ml - gg) * mk; bb += (46 + 14 * ml - bb) * mk; }   // moss in big patches
@@ -902,7 +927,7 @@ function make(kit, opts) {
           else if (dq > 0 && dq < 11) { var sh2 = 0.52 * (1 - dq / 11) * Math.min(1, (lg.hw + 3 - ldx) / 5); rr *= 1 - sh2; gg *= 1 - sh2; bb *= 1 - sh2 * 0.8; }
         }
         var footD = tot - fdf, inSea = e < 0.45, cont = false; if (footD < 34) { var blw = qe + Math.max(0, tot - fd + 1) * LW; if (EN[blw] !== 0 || WN[blw] !== 0) cont = true; }   // the wall goes on below this face (the foot of a wall that turns): no foot here
-        var lipL = sstep(1.9, 2.9, fdf) * (1 - sstep(5.2, 7.8, fdf));                           // the lit lip, grass hanging over it here and there
+        var lipL = sstep(1.9, 2.9, fdf) * (1 - sstep(4.4 + 3.4 * nsm(wx, fn * 9 + 3, 0.45), 7.2 + 3.4 * nsm(wx, fn * 9 + 3, 0.45), fdf)) * (0.3 + 0.7 * sstep(0.36, 0.56, nsm(wx + 90, fn * 9 + 3, 0.6))) * (1 - crk);                           // the lit lip, grass hanging over it here and there
         if (lipL > 0) { var gfr = sstep(0.5, 0.62, nsm(wx * 1.3, fn * 40 + 7, 0.5)) * (1 - sstep(2.6, 5, fdf)); rr += (R2[0] - rr) * lipL * 0.9; gg += (R2[1] - gg) * lipL * 0.9; bb += (R2[2] - bb) * lipL * 0.9; if (gfr > 0) { rr += (96 - rr) * gfr; gg += (140 - gg) * gfr; bb += (62 - bb) * gfr; } }
         if (inSea && footD < 30 && !cont) {                  // where the wall stands in the sea: wet and dark, weed on it, foam at its foot
           var wz = 1 - Math.max(0, footD) / 30; rr *= 1 - 0.46 * wz; gg *= 1 - 0.36 * wz; bb *= 1 - 0.26 * wz;
@@ -923,8 +948,9 @@ function make(kit, opts) {
       if (en || wn) {                                        // a side wall: dark where it faces east, lit where it faces west; the same rock seen along the wall
         var east = en !== 0 && (wn === 0 || ED[qe] <= WD[qe]), sn = east ? en : wn, sd = east ? ED[qe] : WD[qe], stot = HF * (sn - L), al = wy - sd;
         var offS = Math.ceil(sd * SIDE / HF) + 2, proper = lev[east ? qe - offS : qe + offS] >= sn;   // a true side wall has the high ground beside it; without, this is the foot of a south wall that turns a little, and takes that wall's own tone
-        var toneS = (proper ? (east ? 0.64 : 1.2) : 0.86) - 0.14 * Math.min(1, sd / (HF * 1.5)) + rockTone(al + (east ? 4000 : 9000), sd, sn * 5 + (east ? 2 : 3)) * (east && proper ? 0.75 : 1);
+        var toneS = (proper ? (east ? 0.64 : 1.2) : 0.86) - 0.14 * Math.min(1, sd / (HF * 1.5)) + rockTone(al + (east ? 4000 : 9000), sd, sn * 5 + (east ? 2 : 3)) * (east && proper ? 0.75 : 1) + slabTone(al + (east ? 4000 : 9000), sd, sn * 5 + (east ? 2 : 3), east && proper ? 0.7 : 1), crkS = SLB[0];
         rr = R0[0] * toneS; gg = R0[1] * toneS; bb = R0[2] * (toneS + (east && proper ? 0.05 : 0.01));
+        if (crkS > 0) { rr += (40 - rr) * crkS * 0.8; gg += (34 - gg) * crkS * 0.8; bb += (36 - bb) * crkS * 0.8; }
         var outer = east ? (EN[qe + 1] === 0 && FN[qe + 1] === 0) : (WN[qe - 1] === 0 && FN[qe - 1] === 0);
         if ((sd <= 1 && proper) || outer) { rr = INK0; gg = INK1; bb = INK2; }
         else if (sd <= 4 && proper) { rr += (R2[0] - rr) * 0.85; gg += (R2[1] - gg) * 0.85; bb += (R2[2] - bb) * 0.85; }
@@ -941,11 +967,12 @@ function make(kit, opts) {
       if (fallsHere.length) for (k = 0; k < fallsHere.length; k++) {                           // the waterfall's water on the ground: the pool, the stream above, the brook out of it and the bog it sinks into
         var f = fallsHere[k], wyw = wy / K; if (wx < f.box[0] || wx > f.box[2] || wyw < f.box[1] || wyw > f.box[3]) continue;
         var pd = Math.hypot((wx - f.pool.x) / f.pool.rx, (wyw - f.pool.y) / f.pool.ry) + (n1v - 0.5) * 0.14 + (big - 0.5) * 0.1;
-        if (pd < 1.14 && L === f.lvl) {
+        var outD = L === f.lvl && pd > 0.86 && pd < 1.2 ? lineD(f.out, wx, wyw) : 99;                 // where the brook runs out of the pool there is no shore: the water goes on
+        if (pd < 1.14 && L === f.lvl && !(outD < 5.2 && pd > 0.93)) {
           if (pd > 1.0) { rr = 150 + (n2v - 0.5) * 36; gg = 142 + (n2v - 0.5) * 32; bb = 124 + (n2v - 0.5) * 26; d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255 * Math.min(1, (1.14 - pd) / 0.06); return; }   // wet gravel round it
           var dp = Math.min(1, (1 - pd / 0.95) * 1.5); if (dp < 0) dp = 0; dp = dp * dp * (3 - 2 * dp);
           rr = 124 + (30 - 124) * dp + (n2v - 0.5) * 10; gg = 184 + (86 - 184) * dp + (n2v - 0.5) * 10; bb = 176 + (106 - 176) * dp + (n2v - 0.5) * 10;
-          if (pd > 0.95) { rr = 62; gg = 88; bb = 90; } else if (big > 0.66 && n2v > 0.6) { rr += 16; gg += 16; bb += 14; }
+          if (pd > 0.95 && outD > 8.5) { rr = 62; gg = 88; bb = 90; } else if (big > 0.66 && n2v > 0.6) { rr += 16; gg += 16; bb += 14; }
           d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255; return;
         }
         var onUp = L === f.n, sdw = onUp ? lineD(f.stream, wx, wyw) : (L === f.lvl ? lineD(f.out, wx, wyw) : 99), shw = (onUp ? 7.6 : 6.4) + (n1v - 0.5) * 2.6;
@@ -1006,12 +1033,14 @@ function make(kit, opts) {
         if (fnq) {
           if (hf > 0.2 && hf < 0.86) continue;
           if (mtn.ramps.length && (cellAt(wxf, wyf / K) & M_RAMP)) continue;
+          if (FD[qf] === 2 && fallsHere.length && fallsHere.some(function (fq) { return fq.n === fnq && Math.abs(wxf - fq.x) < fq.w * 0.5 + 4; })) continue;   // (nothing grows across the waterfall's lip)
           if (FD[qf] === 2 && hf < 0.2) {                     // a tuft over the lip
             var nb = 2 + Math.floor(hf * 20); c.lineWidth = 0.9;
             for (bi = 0; bi < nb; bi++) { var hb = hash(wxf + bi, wyf, s + 62), down = hb < 0.45; c.strokeStyle = hb > 0.6 ? '#86b450' : '#5d8a3a'; c.beginPath(); c.moveTo(fxp + (bi - nb / 2) * 1.3, fyp - 1.5); c.quadraticCurveTo(fxp + (bi - nb / 2) * 1.8, fyp - (down ? 0 : 5), fxp + (bi - nb / 2) * 2.4 + (hb - 0.5) * 3, fyp + (down ? 3.5 + hb * 4 : -5 - hb * 3)); c.stroke(); }
           } else if (FD[qf] === 2 && hf > 0.955) stoneAt(fxp, fyp - 1.5, 3 + hf * 2, 2.2, HL, wxf + wyf);   // a stone standing proud of the edge
-          if (hf > 0.86 && !FN[qf + LW] && !EN[qf + LW] && !WN[qf + LW] && elevAt(wxf, (wyf + 4) / K) > 0.5) {   // scree at the foot (not where the foot is in the sea)
-            var ns = 1 + Math.floor((hf - 0.86) * 28); for (si = 0; si < ns; si++) { var hs = hash(wxf, wyf + si, s + 63); stoneAt(fxp + (hs - 0.5) * 9, fyp + 1 + hash(wxf + si, wyf, s + 64) * 6, 1.2 + hs * 2.4, 0.9 + hs * 1.6, hs > 0.5 ? HL : BS, wxf + si * 7); }
+          if (hf > 0.86 && !FN[qf + LW] && !EN[qf + LW] && !WN[qf + LW] && elevAt(wxf, (wyf + 4) / K) > 0.5) {   // scree at the foot (not where the foot is in the sea), a boulder fallen from the wall now and then
+            if (hf > 0.988) stoneAt(fxp, fyp + 2.5, 5.5 + hash(wxf, wyf, s + 91) * 4, 3.4 + hash(wxf, wyf, s + 92) * 2, hf > 0.994 ? HL : BS, wxf * 5 + wyf);
+            var ns = 1 + Math.floor((hf - 0.86) * 34); for (si = 0; si < ns; si++) { var hs = hash(wxf, wyf + si, s + 63); stoneAt(fxp + (hs - 0.5) * 9, fyp + 1 + hash(wxf + si, wyf, s + 64) * 6, 1.2 + hs * 2.4, 0.9 + hs * 1.6, hs > 0.5 ? HL : BS, wxf + si * 7); }
             if (hf > 0.95) blades(fxp, fyp + 3, 3, 5, GRN, wxf);
           }
         } else if (!EN[qf] && !WN[qf] && lev[qf] < 3 && hf < 0.2) {   // the crest of an edge that faces away or runs north to south: stones standing on it, grass over it (what is on the high ground overlaps the low)
@@ -1238,7 +1267,8 @@ function make(kit, opts) {
         }
       });
       c.globalAlpha = 1;
-      c.fillStyle = 'rgba(236,248,252,0.9)'; c.beginPath(); c.ellipse(x, y0 + 1.5, wd * 0.5 + 1, 2.6 + Math.sin(clock * 7) * 0.5, 0, 0, 7); c.fill();   // the water bending over the lip
+      var lg2 = c.createLinearGradient(0, y0 - 3, 0, y0 + 6); lg2.addColorStop(0, 'rgba(236,248,252,0)'); lg2.addColorStop(0.42, 'rgba(236,248,252,' + (0.62 + Math.sin(clock * 6) * 0.08).toFixed(2) + ')'); lg2.addColorStop(1, 'rgba(236,248,252,0)');   // the water turning over the lip: a band of light across the stream where it bends (a white ellipse lay there before, like a lid)
+      c.fillStyle = lg2; c.fillRect(x - wd * 0.5 + 0.6, y0 - 3, wd - 1.2, 9);
       for (i = 0; i < 30; i++) {                             // the fall: streaks of white running down, quicker as they go
         var hx = hash(i, 1, s + 201), fall = ((clock * (0.9 + hash(i, 2, s + 202) * 0.5) + hash(i, 3, s + 203)) % 1), ph2 = fall * fall * 0.55 + fall * 0.45, yy = y0 + 2 + ph2 * (H - 2), len = 7 + ph2 * 16 + hash(i, 4, s + 204) * 8, xx = x + (hx - 0.5) * (wd - 2 + ph2 * H * 0.055);
         c.strokeStyle = 'rgba(255,255,255,' + (0.3 + hx * 0.5).toFixed(2) + ')'; c.lineWidth = 0.9 + hash(i, 5, s + 205) * 1.3; c.beginPath(); c.moveTo(xx, yy); c.lineTo(xx + (hx - 0.5) * 0.8, Math.min(y1 + 1, yy + len)); c.stroke();
