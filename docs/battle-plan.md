@@ -477,3 +477,24 @@ left behind or the fight is lost). Then: go through the whole plan, and by that,
   the Dane axe, the Dane axe beats the axe and the club). Not tuned to be even; tuned until no duel failed to end and
   until nothing but the seax lost to everything.
 
+### Rung 4, five against five (2026-10-13): built and tried by script
+
+- **Built:** targets spread over the foes, the band's heart (the last man among several and a hurt man of a band half
+  gone may yield or run; never the hero's own), a held line (shields up and covering the neighbour, nobody hopping out of
+  it), thinned sounds, the view drawn back in a fight of six or more.
+- **Bugs of this rung:** equal sides were **not an even coin**: the side whose men were thought of first each frame won
+  53 to 47, and turn and turn about made it 59 to 41 the other way (the men are now thought of in a new order every
+  frame: 51 over a thousand fights); a friend with nobody in sight **walked off to a hero who was not there** in the
+  tests with no hero (the cause of every "never ended"); a downed friend **got up while the fight had only moved off**
+  (he now waits until no foe is within 480 units); mirror duels of guard-breaking weapons ran past two minutes because
+  **each stepped out of every blow of the other** (stepping out is now a matter of wits, once a blow, with a longer rest
+  after it).
+- **Where it stands** (a thousand fights a line): equal sides 51%, **38 s** a fight (62 at most): **shorter than the one
+  to two minutes aimed at.** Making blows between men lighter got it to 51 s but made single duels a minute and mirror
+  duels of clubs over two; I kept the duels. A side in mail 95%; five spears against five swords 13%; a hero who stands
+  by with four friends against five loses (he is the one cut down), the careful bot wins 83%, the skilled 95%.
+- **The line is not yet worth holding in the open** (41% against equal numbers; against seven it takes 0.3 with it,
+  men fighting as they like 0.5). In the open its ends are turned. Its test is the gate of rung 5.
+- **Seen in the page:** ten men at 18 ms a frame in the pane's software drawing; red cloaks against blue shields tell the
+  sides apart from most angles; a knot of five round the hero is a knot.
+

@@ -847,6 +847,21 @@ left as "not sure, try how it feels", so the numbers below are a first setting, 
   comes to them). The nearest answers in his own voice ("With you.", "We hold."); a man who yields says so. Your own men
   wear your colour (a red cloak, a red shield), the others blue shields; a friend's name shows when you are near and no
   fight is on; a hurt friend has a green bar.
+- **Groups (rung 4).** Each man takes a foe nobody has, then the least beset (`onTarget` in `pickTarget`). **The men are
+  thought of in a new order every frame** (`updateEnemies` shuffles): whoever is thought of first has an edge, and with a
+  fixed order the side spawned first won 53 to 47 of equal fights (plain turn and turn about made it worse, 59 to 41).
+  **The band's heart** (`bandHeart`, twice a second; never the hero's own, never a loyal man): the last of his band among
+  several foes may yield or run, and so may a hurt man when more of his band are down than standing (`e.nerve` is the
+  chance he does neither; `breakMan`). **A held line** (`e.inLine`: told to hold, at his place, one of his own at his
+  shoulder): the shield stays up until he strikes and is back at once after, it covers 2.7 radians instead of 1.7 (his
+  neighbour's side), and he does not hop out of the line. Men's sounds are thinned (the same sound from a man not twice
+  within 0.07 s); the page draws the view back by a fifth while six or more are fighting round the hero (`fightK`).
+  **Where it stands** (`node tests/battle.js five 1000`): equal sides are a coin (51%), a fight of ten takes 38 s (62 at
+  most; the plan aimed at one to two minutes); a side in mail wins 95%; five spears lose to five swords (13%); **a line in
+  the open is no advantage** (41%, and against seven it takes fewer with it than men fighting as they like: its ends are
+  turned; its place is a gate, rung 5); rolled men with mixed weapons: your side 69%, because theirs may break and yours
+  never do. With the hero and four friends against five: the careful bot wins 83%, the skilled 95%, the tapper 6%, and a
+  hero who stands by 1% (he is cut down).
 - **Man against man** is not balanced weapon by weapon, and was not meant to be even: it makes cycles. `node
   tests/battle.js duels 200` (even men in leather with shields; the share the row wins):
 

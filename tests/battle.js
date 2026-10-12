@@ -15,7 +15,7 @@ global.__mk = (w, h) => createCanvas(w, h);
 global.GameArt = require('../src/art.js'); global.Items = require('../src/items.js');
 const lib = GameArt.lib, Combat = require(process.env.ENGINE || '../src/combat.js'), Hird = require('../src/hird.js');
 Combat.api.roster = []; Combat.init(lib);
-const FPS = 60, DT = 1 / FPS, LIMIT = 120;
+const FPS = 60, DT = 1 / FPS, LIMIT = 180;
 const LEATHER = ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].reduce((s, k) => s + Items.stats(Items.make(k, 'leather')).armor, 0);
 const GEAR = { cloth: { armor: 0, shield: false }, leather: { armor: 0.2, shield: true }, mail: { armor: 0.4, shield: true } };
 const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
@@ -38,6 +38,7 @@ function meets(st, th, who) {
   st.seen += DT; return !st.blind && st.seen >= H.react;
 }
 const BOTS = {
+  idle() { keys(0, false); Combat.key('KeyK', false); Combat.button(0, false); },           // he stands by
   tapper(D, st, foes) {
     const P = D.P, t = foes[0], d = Math.hypot(t.x - P.x, t.y - P.y), ang = Math.atan2(t.y - P.y, t.x - P.x);
     keys(ang, d > 34); Combat.key('KeyK', false); Combat.button(0, d < 60 && st.frame % 14 < 3);
@@ -72,7 +73,8 @@ function fight(S) {
   let st = { frame: 0 };
   if (S.hero) Object.assign(st, hero(S.hero.weapon, S.hero.armour)); else { P.hidden = true; P.x = -4000; Combat.api.items = null; }
   Combat.api.scene = { begin() {}, items() {}, bounds: { x0: -5000, y0: -5000, x1: 5000, y1: 5000 } };
-  const foes = S.foes.map((f, i) => man(0, f[0], f[1], 330 + (i % 2) * 26, 250 + (i - (S.foes.length - 1) / 2) * 34, f[2])), friends = (S.friends || []).map((f, i) => { const m = man(1, f[0], f[1], 170 - (i % 2) * 26, 250 + (i - ((S.friends.length - 1) / 2)) * 34 + (S.hero ? 30 : 0), f[2]); m.leash = 1e9; return m; });
+  const line = S.line;
+  const foes = S.foes.map((f, i) => { const m = man(0, f[0], f[1], 330 + (i % 2) * 26, 250 + (i - (S.foes.length - 1) / 2) * 34, f[2]); if (!S.hero) m.sight = 3000; return m; }), friends = (S.friends || []).map((f, i) => { const m = man(1, f[0], f[1], 170 - (i % 2) * 26, 250 + (i - ((S.friends.length - 1) / 2)) * 34 + (S.hero ? 30 : 0), f[2]); m.leash = 1e9; if (!S.hero) m.sight = 3000; if (line) { m.x = 170; m.y = 250 + (i - (S.friends.length - 1) / 2) * 17; m.order = 'hold'; m.holdAt = { x: m.x, y: m.y, face: 0 }; } return m; });
   let t = 0, hp0 = P.hp, worstChain = 0, chain = 0, lastHp = P.hp, lastHurtT = -9, stuck = 0, stuckMax = 0, nan = false, held = 0, heldMax = 0, closest = 9; const pos = foes.concat(friends).map(e => [e.x, e.y]);
   const alive = L => L.filter(e => !e.dead && !e.down && !e.fled && !e.out);
   while (t < LIMIT) {
@@ -86,11 +88,11 @@ function fight(S) {
   }
   ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyK', 'Space'].forEach(k => Combat.key(k, false)); Combat.button(0, false);
   const F2 = alive(foes), A2 = alive(friends), won = !F2.length && (S.hero ? !P.dead : true);
-  return { won, lost: S.hero ? P.dead : (!A2.length && F2.length > 0), time: t, left: P.hp, lostHp: hp0 - P.hp, timeout: t >= LIMIT, worstChain, heldMax, closest, stuck: stuckMax, nan, yielded: foes.filter(e => e.out && !e.dead).length, friendsUp: A2.length, friendsDown: friends.filter(e => e.down || e.dead).length, friendsLeft: friends.reduce((q, e) => q + Math.max(0, e.hp) / e.maxHp, 0) / Math.max(1, friends.length), foesOnHero: foes.filter(e => e.tgt === P).length };
+  return { won, lost: S.hero ? P.dead : (!A2.length && F2.length > 0), time: t, left: P.hp, lostHp: hp0 - P.hp, timeout: t >= LIMIT, worstChain, heldMax, closest, stuck: stuckMax, nan, yielded: foes.filter(e => e.out && !e.dead).length, friendsUp: A2.length, friendsDown: friends.filter(e => e.down || e.dead).length, friendsLeft: friends.reduce((q, e) => q + Math.max(0, e.hp) / e.maxHp, 0) / Math.max(1, friends.length), foesOnHero: foes.filter(e => e.tgt === P).length, foesDead: foes.filter(e => e.dead || e.out).length };
 }
 function run(S, n) {
-  const R = { won: 0, lost: 0, timeout: 0, time: 0, left: 0, chain: 0, held: 0, closest: 9, stuck: 0, nan: 0, longest: 0, yielded: 0, friendsDown: 0, friendsLeft: 0 };
-  for (let i = 0; i < n; i++) { const r = fight(typeof S === 'function' ? S() : S); if (r.won) { R.won++; R.time += r.time; R.left += r.left; } if (r.lost) R.lost++; if (r.timeout) R.timeout++; R.chain = Math.max(R.chain, r.worstChain); R.held = Math.max(R.held, r.heldMax); R.closest = Math.min(R.closest, r.closest); R.stuck = Math.max(R.stuck, r.stuck); if (r.nan) R.nan++; R.longest = Math.max(R.longest, r.time); R.yielded += r.yielded; R.friendsDown += r.friendsDown; R.friendsLeft += r.friendsLeft / n; }
+  const R = { won: 0, lost: 0, timeout: 0, time: 0, left: 0, chain: 0, held: 0, closest: 9, stuck: 0, nan: 0, longest: 0, yielded: 0, friendsDown: 0, friendsLeft: 0, foesDead: 0 };
+  for (let i = 0; i < n; i++) { const r = fight(typeof S === 'function' ? S() : S); if (r.won) { R.won++; R.time += r.time; R.left += r.left; } if (r.lost) R.lost++; if (r.timeout) R.timeout++; R.chain = Math.max(R.chain, r.worstChain); R.held = Math.max(R.held, r.heldMax); R.closest = Math.min(R.closest, r.closest); R.stuck = Math.max(R.stuck, r.stuck); if (r.nan) R.nan++; R.longest = Math.max(R.longest, r.time); R.yielded += r.yielded; R.friendsDown += r.friendsDown; R.friendsLeft += r.friendsLeft / n; R.foesDead += r.foesDead / n; }
   R.n = n; R.pct = Math.round(R.won / n * 100); R.secs = R.won ? (R.time / R.won).toFixed(0) : '-'; R.hp = R.won ? Math.round(R.left / R.won) : '-'; return R;
 }
 const pad = (s, n) => String(s).padEnd(n), lpad = (s, n) => String(s).padStart(n);
@@ -175,6 +177,13 @@ function five(n) {
   line('rolled men on both sides, mixed weapons', run(() => { const W = ['sword', 'axe', 'spear', 'club', 'seax']; return { foes: W.map(w => [w, 'leather', rolled()]), friends: W.map(w => [w, 'leather', rolled()]) }; }, n));
   line('your side in mail', run({ foes: side('sword', 'leather'), friends: side('sword', 'mail') }, n));
   line('your side with spears', run({ foes: side('sword', 'leather'), friends: side('spear', 'leather') }, n));
+  line('equal sides, yours told to hold a line (shoulder to shoulder, shields up)', run({ foes: side('sword', 'leather'), friends: side('sword', 'leather'), line: true }, n));
+  const seven = [0, 1, 2, 3, 4, 5, 6].map(() => ['sword', 'leather']);
+  const free7 = run({ foes: seven, friends: side('sword', 'leather') }, n), line7 = run({ foes: seven, friends: side('sword', 'leather'), line: true }, n);
+  line('five against seven, yours fighting as they like', free7, ' they took ' + free7.foesDead.toFixed(1) + ' of the seven with them, and lasted ' + (free7.longest).toFixed(0) + ' s at most');
+  line('five against seven, yours in a line', line7, ' they took ' + line7.foesDead.toFixed(1) + ' of the seven with them');
+  line('spears in a line against swords', run({ foes: side('sword', 'leather'), friends: side('spear', 'leather'), line: true }, n));
+  line('the hero standing by (he does nothing) with four friends against five', run({ hero: { bot: 'idle', weapon: ['sword', 'iron'], armour: LEATHER }, foes: side('sword', 'leather'), friends: side('sword', 'leather').slice(0, 4) }, Math.max(4, Math.round(n / 2))));
   HEROES.forEach(([bot]) => line('with the hero (' + bot + ', iron sword) and four friends against five', run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: side('sword', 'leather'), friends: side('sword', 'leather').slice(0, 4) }, Math.max(4, Math.round(n / 2)))));
 }
 const t0 = Date.now();

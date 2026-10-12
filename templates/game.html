@@ -3741,7 +3741,7 @@ __COMBAT__
       if (!inYard && !inCave && dockAt(Math.floor(x / T), Math.floor(y / T))) return true;
       if (ADMIN.fly && !inYard && !inCave) return true; if (inYard) return YSCENE.walk(x, y); if (inCave) return caveFloor(x, y); return (raft && raft.aboard) || isLand(x, y) || w.isWade(x, y) || (inUse('longbreath') && w.elevAt(x, y) > -2.6); },   // the shallows can be waded; with the long breath, water twice as deep
     begin: function (c, P) {
-      var lookE = lookK * lookK * (3 - 2 * lookK), z = zoom * (1 - 0.5 * lookE), hw = 200 / z, hh = 125 / z, i;   // looking out from the beacon cairn: the view pulls back to twice as far
+      var lookE = lookK * lookK * (3 - 2 * lookK), fightE = fightK * fightK * (3 - 2 * fightK), z = zoom * (1 - 0.5 * lookE) * (1 - 0.2 * fightE), hw = 200 / z, hh = 125 / z, i;   // looking out from the beacon cairn: the view pulls back to twice as far; a fight of more than six: back by a fifth, so its edges are seen
       cam.z = z;
       cam.x = hw * 2 >= WX ? WX / 2 : Math.max(hw, Math.min(WX - hw, P.x));
       cam.y = hh * 2 >= WY * K ? WY * K / 2 : Math.max(hh, Math.min(WY * K - hh, P.y * K - 14 + hh * 0.4 * lookE));   // (and looks south, over the land below)
@@ -4253,7 +4253,7 @@ __COMBAT__
   /* The hero's word to his own men (rung 3; my choice of key and of two orders, Robin left both to me): G tapped calls them
      to him (they break off and come), G held sets them in a line abreast where he stands, facing where he faces. No menu:
      the nearest of them answers in his own voice. A man who yields says so. */
-  var gKey = { down: false, t: 0, done: false };
+  var gKey = { down: false, t: 0, done: false }, fightK = 0;
   function orderMen(kind) {
     var L = Combat.order(kind), P = hero(); if (!L.length) return; var m = L[0];
     L.forEach(function (e) { if (Math.hypot(e.x - P.x, e.y - P.y) < Math.hypot(m.x - P.x, m.y - P.y)) m = e; });
@@ -4261,7 +4261,8 @@ __COMBAT__
   }
   function menTick(dt) {
     if (gKey.down && !gKey.done) { gKey.t += dt; if (gKey.t >= 0.35) { gKey.done = true; orderMen('hold'); } }
-    var E = Combat.dbg().W.enemies, i; for (i = 0; i < E.length; i++) if (E[i].sayT > 0) E[i].sayT -= dt;
+    var E = Combat.dbg().W.enemies, i, P = hero(), n = 0; for (i = 0; i < E.length; i++) { if (E[i].sayT > 0) E[i].sayT -= dt; if (E[i].type === 'soldier' && !E[i].dead && !E[i].down && !E[i].out && E[i].awake !== false && Math.abs(E[i].x - P.x) < 420 && Math.abs(E[i].y - P.y) < 420) n++; }
+    fightK += ((n >= 6 && !inCave && !inYard ? 1 : 0) - fightK) * Math.min(1, dt * 1.2); if (fightK < 0.002) fightK = 0;   // six men and more fighting round the hero: the view draws back
   }
   Combat.api.onYield = function (e) { e.say = 'I yield.'; e.sayT = 3.5; };
   function battleClear() { var W = Combat.dbg().W, f = BT.field; W.enemies = W.enemies.filter(function (e) { return e.type !== 'soldier' && !(f && Math.hypot(e.x - f.x, e.y - f.y) < 700); }); W.lock = null; }   // the men go, and any beast that has wandered onto the field
