@@ -117,15 +117,84 @@ peak('peak_b', 8, (6.4, 11.0, (-0.6, 0.0), 0.5), [((5.4, 0.4), 5.0, 8.4, 0.58)])
 peak('peak_c', 14, (5.0, 8.2, (0.3, 0.0), 0.62), [((-4.4, 0.8), 3.8, 5.6, 0.8), ((4.2, 0.6), 3.2, 4.6, 0.9)])
 peak('peak_d', 21, (6.0, 12.5, (0.4, 0.0), 0.5), [((-6.6, 0.5), 5.0, 9.6, 0.56), ((6.4, 0.8), 4.6, 7.8, 0.64), ((-11.8, 1.0), 3.8, 5.4, 0.82)])   # a long ridge of four tops
 
+EXTRA = {}                                            # what is rendered with a piece but takes no ink line and is left out of its frame's fitting: the inside of the cave
+def lin(col): return tuple(((v / 255 + 0.055) / 1.055) ** 2.4 if v / 255 > 0.04045 else v / 255 / 12.92 for v in col) + (1.0,)
+def ramp(stops, t):
+    t = max(0.0, min(1.0, t)); n = len(stops) - 1; i = min(n - 1, int(t * n)); f = t * n - i
+    return tuple(stops[i][k] + (stops[i + 1][k] - stops[i][k]) * f for k in range(3))
+def inside_material():
+    # a colour painted on every point of a mesh and shown as it is: no sun, no cel step (the inside of the cave is lit by what falls in at its mouth, worked out below)
+    m = bpy.data.materials.new('rk_inside'); m.use_nodes = True; nt = m.node_tree; nt.nodes.clear()
+    out = nt.nodes.new('ShaderNodeOutputMaterial'); em = nt.nodes.new('ShaderNodeEmission'); at = nt.nodes.new('ShaderNodeVertexColor'); at.layer_name = 'Col'
+    nt.links.new(at.outputs['Color'], em.inputs['Color']); nt.links.new(em.outputs[0], out.inputs['Surface']); return m
+def painted(c, name, verts, faces, colour, mat):
+    me = bpy.data.meshes.new(name); me.from_pydata(verts, [], faces); me.update(); o = bpy.data.objects.new(name, me); c.objects.link(o); me.materials.append(mat)
+    at = me.color_attributes.new(name='Col', type='FLOAT_COLOR', domain='POINT')
+    for i, v in enumerate(me.vertices): at.data[i].color = lin(colour(tuple(v.co)))
+    return o
+
+def cave_inside(W_, H_, Z0):
+    '''The inside of the cave, seen through its mouth (2026-10-12, Robin: more look of depth, with colour). The opening was one
+    flat black shape. From the game's camera, 35 degrees above the ground, what shows through a mouth is mostly the FLOOR
+    running back (a point further in lies higher on the screen) and the walls where the passage narrows. So there is a real
+    passage behind the mouth: a floor, a left wall that sweeps across to the right as it goes in and a rib of rock on the
+    right, the whole turning out of sight to the right. Depth is told by colour: warm earth and sunlit rock at the mouth,
+    through violet-grey to deep blue and black at the back, the roof's dark coming down the walls, the sun falling in through
+    the arch as one bright patch on the floor with the warm light it throws up the wall beside it, and stones on the floor
+    that are paler than the dark behind them. The cliff itself is a holdout with the mouth cut in it, so nothing of the inside
+    shows except through the mouth.'''
+    ic = bpy.data.collections.new('cave_mouth_in'); sc.collection.children.link(ic); EXTRA['cave_mouth'] = ic; MI = inside_material()
+    SUN = (0.45, 0.30, -0.84); DEEP = 5.2                                                    # (a higher sun than the world's: the patch it throws in stays at the threshold)
+    FLO = [(112, 88, 64), (84, 68, 60), (56, 48, 56), (34, 31, 46), (18, 17, 30), (8, 8, 14)]      # the floor by how far in: earth in shade, violet-brown, blue, black
+    WAL = [(70, 78, 96), (50, 56, 76), (34, 38, 56), (21, 23, 38), (12, 13, 22), (6, 6, 10)]      # the rock the same way, cooler: the shadow tone of the rock outside, then down to black
+    def arch_top(x): u = max(-1.0, min(1.0, x / W_)); return Z0 + math.sin(math.acos(u)) ** 0.85 * (H_ - Z0)
+    def xl(y): return -2.7 + 0.2 * y ** 1.75                                               # the left wall: it comes across as the passage turns right
+    def xr(y): return (2.7 - 1.05 * math.sin(math.pi * y / 3.2) ** 1.3) if y <= 3.2 else 2.7 + 0.35 * (y - 3.2)   # the right wall: a rib of rock just inside, then away out of sight
+    def sun1(pt):                                     # does the sun reach this point through the arch?
+        t = (pt[1] - 0.1) / SUN[1]
+        if t <= 0: return 1.0
+        x0 = pt[0] - SUN[0] * t; z0 = pt[2] - SUN[2] * t
+        return 1.0 if abs(x0) < W_ * 0.98 and 0 <= z0 < arch_top(x0) - 0.05 else 0.0
+    def sunlit(pt):                                   # 0..1, a little soft at the shadow's edge (five tries a hand apart)
+        return sum(sun1((pt[0] + dx, pt[1] + dy, pt[2])) for dx, dy in ((0, 0), (0.05, 0), (-0.05, 0), (0, 0.05), (0, -0.05))) / 5
+    def floor_col(pt):
+        x, y, z = pt; d = y / DEEP; edge = min(x - xl(y), xr(y) - x); k = 0.68 + 0.32 * max(0.0, min(1.0, edge / 0.7))   # darker along the foot of a wall
+        sh = tuple(v * k for v in ramp(FLO, d)); lit = sunlit((x, y, 0.0)) if edge > 0 else 0.0; f = 1 - 0.5 * d
+        return tuple(a + (b * f - a) * lit for a, b in zip(sh, (160, 124, 84)))                                          # the sun's patch: the threshold's own earth, lit
+    def wall_col(side):
+        def f(pt):
+            x, y, z = pt; d = y / DEEP; k = 1.0 - 0.5 * min(1.0, z / 3.0)                                               # the roof's dark comes down the wall
+            bounce = max(0.0, 1 - math.sqrt((x - 0.9) ** 2 + (y - 0.6) ** 2 + z * z) / 2.4) ** 1.5                      # warm light thrown up off the sunlit floor
+            col = tuple(v * k + b * bounce for v, b in zip(ramp(WAL, d), (40, 26, 10)))
+            if side > 0: lit = sunlit(pt); g = 1 - 0.3 * d - 0.12 * min(1.0, z / 3.0); col = tuple(a + (b * g - a) * lit for a, b in zip(col, (150, 142, 124)))   # the rib on the right catches the sun
+            return col
+        return f
+    NY, NX, NZ = 110, 96, 16; ys = [0.2 + (DEEP + 0.3) * j / NY for j in range(NY + 1)]; xs = [-3.4 + 7.4 * i / NX for i in range(NX + 1)]
+    painted(ic, 'in_floor', [(x, y, 0.0) for y in ys for x in xs], [(j * (NX + 1) + i, j * (NX + 1) + i + 1, (j + 1) * (NX + 1) + i + 1, (j + 1) * (NX + 1) + i) for j in range(NY) for i in range(NX)], floor_col, MI)
+    for side, fx in ((-1, xl), (1, xr)):
+        painted(ic, 'in_wall%d' % side, [(fx(y), y, 4.4 * k / NZ) for y in ys for k in range(NZ + 1)], [(j * (NZ + 1) + k, j * (NZ + 1) + k + 1, (j + 1) * (NZ + 1) + k + 1, (j + 1) * (NZ + 1) + k) for j in range(NY) for k in range(NZ)], wall_col(side), MI)
+    painted(ic, 'in_back', [(-6, DEEP + 0.5, -0.6), (7, DEEP + 0.5, -0.6), (7, DEEP + 0.5, 8), (-6, DEEP + 0.5, 8)], [(0, 1, 2, 3)], lambda pt: (9, 8, 15), MI)
+    for i, (x, y, s3) in enumerate(((-1.0, 1.5, 0.46), (0.55, 2.7, 0.5), (0.2, 3.9, 0.42), (1.1, 1.9, 0.3), (-0.35, 3.1, 0.26), (0.9, 4.4, 0.3))):   # stones on the floor, each paler than the dark behind it
+        o = block(ic, 'in_stone%d' % i, (x, y, s3 * 0.36), (s3 * 1.5, s3 * 1.1, s3), 90 + i); o.data.materials.clear(); o.data.materials.append(MI)
+        at = o.data.color_attributes.new(name='Col', type='FLOAT_COLOR', domain='POINT'); zc = s3 * 0.36
+        for vi, v in enumerate(o.data.vertices):
+            top = v.co.z > zc; g = ramp(WAL, v.co.y / DEEP * 0.9); grey = (g[0] + g[1] + g[2]) / 3
+            col = tuple(min(255, (b * 0.55 + grey * 0.45) * (1.4 if top else 0.7)) for b in g)                           # paler than the dark behind it, and greyer: not a blue thing
+            if top and sunlit(tuple(v.co)) > 0.5: col = (150, 140, 120)
+            at.data[vi].color = lin(col)
+    # the cliff: everything round the mouth, as a holdout a hand behind the wall line
+    out = [(W_ * 1.36, -1.0), (W_ * 1.3, Z0 * 0.55)] + [(math.cos(math.pi * i / 24) * W_ * 1.1, Z0 + math.sin(math.pi * i / 24) ** 0.85 * (H_ - Z0) * 1.08) for i in range(25)] + [(-W_ * 1.3, Z0 * 0.55), (-W_ * 1.36, -1.0)]   # (wider at the foot: the jambs' rocks do not close it there)
+    sv = []; sf = []
+    for (x, z) in out: sv.append((x, 0.22, z)); sv.append((x * 10, 0.22, Z0 + (z - Z0) * 10))
+    for i in range(len(out) - 1): sf.append((2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2))
+    sh = painted(ic, 'in_cliff', sv, sf, lambda pt: (0, 0, 0), MI); sh.is_holdout = True
+    return ic
+
 def cave_mouth():
     c = coll('cave_mouth'); R = random.Random(5); W_, H_, Z0 = 1.9, 3.55, 1.1
-    # the dark inside: a rough arch set back a hand from the wall line, so the rock round it stands proud
-    bm = bmesh.new(); vs = [bm.verts.new((W_ * 1.02, 0.3, -0.3))]
-    for i in range(19):
-        a = math.pi * i / 18; k = 1 + (R.random() - 0.5) * 0.10
-        vs.append(bm.verts.new((math.cos(a) * W_ * k, 0.3, Z0 + math.sin(a) ** 0.85 * (H_ - Z0) * k)))
-    vs.append(bm.verts.new((-W_ * 1.02, 0.3, -0.3))); bm.faces.new(vs); obj(c, 'hole', bm, [M['hole']])
-    ball(c, 'floor', (0.0, -0.35, 0.0), 1.7, 'earth', sx=1.15, sy=0.55, sz=0.04, sub=2)       # trodden earth on the threshold
+    for i in range(19): R.random()                    # (the flat black shape that stood here drew these: the rocks keep the places they had)
+    cave_inside(W_, H_, Z0)
+    ball(EXTRA['cave_mouth'], 'floor', (0.0, -0.35, 0.0), 1.7, 'earth', sx=1.15, sy=0.55, sz=0.04, sub=2)       # trodden earth on the threshold (with the inside: it takes no ink line of its own, its far edge drew a bar across the mouth)
     # the rock round it: blocks set along the arch, bigger at the foot, a great one over the top; a second, rougher course outside
     ring = [(-8, 1.9, 2.0), (22, 1.5, 1.5), (48, 1.5, 1.3), (72, 1.7, 1.2), (96, 2.3, 1.35), (120, 1.6, 1.2), (142, 1.5, 1.35), (164, 1.6, 1.6), (188, 1.9, 2.0)]
     for i, (deg, sx, sz) in enumerate(ring):
@@ -164,6 +233,8 @@ for name, c in PIECES.items():
     if ONLY and name not in ONLY: continue
     for other in PIECES.values():
         for o in other.objects: o.hide_render = other is not c
+    for nm, ec in EXTRA.items():
+        for o in ec.objects: o.hide_render = nm != name
     pts = [o.matrix_world @ Vector(b) for o in c.objects for b in o.bound_box]
     xs = [p.dot(right) for p in pts]; ys = [p.dot(upv) for p in pts]
     cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2; span = max(max(xs) - min(xs), max(ys) - min(ys)) * 1.08 + 0.6

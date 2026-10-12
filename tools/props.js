@@ -23,7 +23,11 @@ const INK = '#261e1a', PAD = 5, GRAIN = 0.4, SHADE = 0.2;
     x0 = Math.max(0, x0 - 2); y0 = Math.max(0, y0 - 2); x1 = Math.min(W - 1, x1 + 2); y1 = Math.min(H - 1, y1 + 2);
     const tw = x1 - x0 + 1 + PAD * 2, th = y1 - y0 + 1 + PAD * 2, t = createCanvas(tw, th), tc = t.getContext('2d'); tc.drawImage(cv, x0, y0, tw - PAD * 2, th - PAD * 2, PAD, PAD, tw - PAD * 2, th - PAD * 2);
     // the finish, inside the piece's own shape: grain, then a cool shade toward the lower right
+    const before = tc.getImageData(0, 0, tw, th);
     tc.globalCompositeOperation = 'source-atop'; tc.globalAlpha = GRAIN; tc.fillStyle = kit.grain(tc); tc.fillRect(0, 0, tw, th);
+    { const after = tc.getImageData(0, 0, tw, th), a = after.data, b = before.data;         // less grain the darker the pixel: a pale speck in a deep shadow sits on the picture's surface and flattens it (the cave's inside)
+      for (let i = 0; i < a.length; i += 4) { const lum = (b[i] * 0.3 + b[i + 1] * 0.59 + b[i + 2] * 0.11) / 255, k = Math.min(1, Math.max(0.12, lum * 2.6)); a[i] = b[i] + (a[i] - b[i]) * k; a[i + 1] = b[i + 1] + (a[i + 1] - b[i + 1]) * k; a[i + 2] = b[i + 2] + (a[i + 2] - b[i + 2]) * k; }
+      tc.globalCompositeOperation = 'copy'; tc.globalAlpha = 1; tc.putImageData(after, 0, 0); tc.globalCompositeOperation = 'source-atop'; }
     const g = tc.createLinearGradient(tw * 0.25, th * 0.2, tw * 0.8, th * 0.95); g.addColorStop(0, 'rgba(24,34,70,0)'); g.addColorStop(1, 'rgba(24,34,70,' + SHADE + ')'); tc.globalAlpha = 1; tc.fillStyle = g; tc.fillRect(0, 0, tw, th);
     tc.globalCompositeOperation = 'source-over';
     // the ink: the silhouette in one colour, under the piece, a hair out all round and further out to the lower right

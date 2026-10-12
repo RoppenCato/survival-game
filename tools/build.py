@@ -6,6 +6,7 @@ Output in dist/: index.html (the start page), the editors (art-editor, sea-edito
 village-editor), the combat-arena and the game.
 Each is a single self-contained file you can open in a browser or host anywhere.
 """
+import hashlib
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -52,7 +53,9 @@ def prop_images():
     jp = os.path.join(ROOT, 'assets', 'props', 'props.json')
     if not os.path.exists(jp): return 'null'
     j = json.load(open(jp, encoding='utf-8'))
-    for name in j: j[name]['src'] = '../assets/props/' + name + '.png'
+    for name in j:                                    # a tag from the picture's own bytes: a browser that has the old picture cached fetches the new one (2026-10-12: the cave mouth was redone and the old one kept showing)
+        fp = os.path.join(ROOT, 'assets', 'props', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
+        j[name]['src'] = '../assets/props/' + name + '.png?v=' + tag
     return json.dumps(j)
 SRC['__PROPIMG__'] = prop_images()
 

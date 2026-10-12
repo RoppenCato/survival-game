@@ -146,3 +146,14 @@ so the cel shader gives two or three big shapes and not a mosaic), **a rough out
 all round, heavy toward the lower right), **the kit's own grain** over it, **a cool shade** toward the shadow side, and **a shadow
 at its foot** so it stands on the ground. The same finish is there for any later set piece (`tools/props.js` does it to
 everything it packs). A thing nobody can walk behind is best **painted into the ground** and not drawn every frame.
+
+## Looking into a hole (2026-10-12, the cave mouth)
+
+A dark opening painted as one flat shape reads as a sticker on the wall. From the game's camera (35 degrees above the ground) what
+shows through an opening is mostly the floor running back, so the cave has a real passage behind its mouth and the depth is told by
+colour: warm and lit at the threshold, cooler and darker further in, black at the back, with one patch of sun on the floor and
+things standing on the floor that are paler than what lies behind them. Three things made it work: the inside is **painted, not
+lit** (a colour on every point of the mesh, worked out from how far in the point lies and whether the sun reaches it through the
+arch), it takes **no ink line** (soft against the inked rocks, so it sits behind them), and **the cliff is a holdout** with the
+opening cut in it (the inside can be as deep as it likes and shows only through the mouth). The same would serve a doorway, a
+well or a cellar hatch.

@@ -1752,6 +1752,19 @@ beyond arrows, whether the chart should hide land you have not seen (the lookout
   near): a peak goes only where everything under it is peak ground or cliff, so nothing can ever stand behind one, and close enough
   to overlap (a range, 56 to 200 of them on an island) they would have been heavy to draw every frame. A piece baked before the
   pictures have loaded is baked again when they have (`imgWait`). The cave mouth is still a prop (`World.setImages`, `w.sprite`).
+  **The cave mouth has an inside (2026-10-12, Robin: more look of depth, with colour; the opening was one flat black shape):**
+  from the game's camera what shows through a mouth is mostly the **floor running back** (a point further in lies higher on the
+  screen) and the walls where the passage narrows, so `cave_inside` builds a real passage behind the mouth: a floor, a left wall
+  that sweeps across to the right as it goes in, a rib of rock on the right, the whole turning out of sight. **Depth is told by
+  colour**, painted on every point of the meshes (`painted`, a colour attribute shown as it is: no sun, no cel step): warm earth
+  at the threshold, through violet-brown to deep blue and black at the back (`FLO`, `WAL`), the roof's dark coming down the
+  walls, **the sun falling in through the arch as one soft-edged patch** on the floor with the warm light it throws up the wall
+  beside it, and stones on the floor each paler than the dark behind it. The inside takes **no ink line** (it is in its own
+  collection, `EXTRA`, left out of Freestyle and of the frame's fitting), which sets it back behind the inked rocks, and **the
+  cliff is a holdout** with the mouth cut in it, so nothing of the inside shows except through the mouth. The packer keeps the
+  grain's pale specks out of the dark (they sat on the picture's surface and flattened a deep shadow). **A changed picture is
+  always fetched:** `tools/build.py` tags every set piece's path with a few letters of its own bytes (`?v=`), because a browser
+  kept showing the old cave mouth. `docs/cave-mouth.png` is before and after.
   **The sun for these renders is 3.0**: at the characters' 1.15 no face passes the cel shader's light step (found 2026-10-12;
   **every character so far was rendered that way**; whether to re-render them with a lit side is Robin's call).
 - **In the game:** `fellOk`, `fellSame`, `edgeFell`, `tileFell`, `fellWhy` keep building to level dry ground ("Not on a cliff", "Not
