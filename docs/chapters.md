@@ -205,7 +205,7 @@ copper and the ring.
 | --- | --- | --- |
 | A1 The world | A 230-tile island east of the first; the cave is 700 to 1600 units from the start, the hamlet is away from it | Built |
 | A1 Islands around it | Same biome, mixing toward the next, later filled with different places | Not started |
-| A2 The cave | A smooth-field cave: winding passage, pockets, stalactites, rubble, a still pool, copper veins, the troll's hoard | Built |
+| A2 The cave | One way through from a tunnel of daylight: a hall, a hollow under a hole in the roof, a still pool, a cavern split by a chasm, a gallery of copper veins, the lair; tall wall faces fading into the dark, light from holes in the roof, the troll's worn path, a chart of what your light has shown (`src/cave.js`, reworked 2026-10-12) | Built |
 | A2 The hamlet | A living village: four huts, a well, folk who walk and talk (seven to nine), a fence | Built |
 | A2 Other places | A hunter's shelter, a ruined fort, a shrine, a standing-stone ring, a fish weir, a charcoal burner's clamp | Idea |
 

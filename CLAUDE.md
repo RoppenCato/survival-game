@@ -102,7 +102,7 @@ gone from the code, and no new work may bring any of it back. This file is the s
 npm start         # rebuild, then open dist/index.html (the start page)
 npm run build     # python3 tools/build.py: stitches templates/ + src/ into dist/*.html
 npm install       # once; only dependency is @napi-rs/canvas (fake canvas for headless tests)
-npm test          # runs eight combat scripts in tests/ in sequence
+npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the cave)
 ```
 
 There is no bundler, linter or type checker. `.claude/launch.json` has a `workbench` entry that serves the **repo root** on
@@ -150,6 +150,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
   world: height field `E`, tile `grid`, `isLand`/`isWater`/`elevAt`, props in `buckets` (`plant`, `camp`, `addProp`,
   `removeProp`, `around`, `nearSolids`), lazy ground painting (`drawGround`), shore waves (`drawWaves`), `chart`.
   `World.KIND` and `World.HP` say what can be gathered. Island changes go here, once.
+- `src/cave.js` (`Cave`, 2026-10-12): the inside of the troll's cave: its layout from a seed (`make`), the painting of its walls
+  and floor by the mountains' technique turned inside out (`prepare`, `chunk`, `drawFloor`), the dark with the light let into it
+  (`dark`), and the cave's own chart (`see`, `drawChart`). See "The cave's inside reworked" under Creatures. The game keeps what
+  lives in it (the troll, the hoard, mining, the dead Viking).
 - `src/build.js` (`Build`): building pieces, used by the game (the Base Editor is gone). **Redrawn for the art direction (Robin,
   2026-10-07):** build.js has its own small ink toolkit (`INK`, `ink(c, pts, fill, o)`: the fill, grain and a cool shade toward the
   lower right inside it, a warm lit edge up and left, a thin hand-made line all round, `wob`, and the heavy line on the shadow side
@@ -1565,6 +1569,57 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   furnace's or hearth's queue stood still after a reload (`cookFires` rebuilt on load); a struck tree's stump regrew as a struck tree
   (now a birch); embers piled up at fires over days (at most four lumps lying); a station with a queue, things ready or a burning
   clamp cannot be wrecked ("Empty it first"); the troll sent out by day walked straight back in (the test row brings night).
+- **The cave's inside reworked (2026-10-12, Robin: way more immersive, with depth; the mountain technique; a scary adventure you do
+  not get lost in too much; light coming in through holes in the mountain, yet still a dark cave; a better floor).** The inside is
+  now **`src/cave.js` (`Cave`)**, loaded by the game as `__CAVE__` and by Node. What the paragraphs above say about the troll, the
+  veins, the hoard, the torch and mining still holds; **the layout and the painting are new**, and `caveChunk`, the five pockets
+  and "the pool in the second pocket" are gone.
+  **The layout** (`Cave.make(seed, { x, y, rockHp })`, 72 by 40 tiles, far east of the map as before): you come in **northward up a
+  tunnel of daylight** (`cave.entrance`; the way out is E at `cave.exitAt`, the tunnel's foot, which is the south edge) into a
+  **hall**, and **one way through** winds from there past a **hollow under a hole in the roof** (`cave.fern`), a chamber with the
+  **still pool** (`cave.poolC`, `cave.pool`), a **cavern split by a chasm** that the way skirts along a ledge (`cave.ledge`,
+  `cave.pit`), a **gallery of copper veins** (`cave.gallery`) to the **troll's lair** (`cave.lair`) and the nook behind it with the
+  dead Viking (`cave.body`); **four pockets** lead off it and end (an ore rock or two in each). In half the worlds the whole cave
+  is laid the other way round (`cave.flip`, by the seed: the lair in the west). Two smooth fields, cells 8 units wide: `D` (how far
+  inside the floor a point is, in tiles) and `P` (the chasm); `Cave.floor(cave, x, y)` is `D >= 0` and not in the chasm, and the
+  page's `caveFloor`/`caveD` wrap it. `cave.path` is the way through (the troll walks it home), `TR` the distance from it,
+  `RC` the floor reached on foot from the way in (nothing is put on floor the chasm cuts off).
+  **Depth, by the mountains' technique turned inside out:** the rock is the high ground. Every edge of floor with rock north of
+  it carries a **wall face 64 pixels tall** (`WALLH`: panels of rock between fissures, beds and thin strata, water running down,
+  rust, a lit ledge at its foot) that **fades up into the dark of the roof**; a wall east or west of the floor **stands back as
+  it rises** (`SIDE` 16, the leaning column sweep of the mountains' side walls: lit where it faces west, dark where it faces
+  east); the near wall, turned away from you, is a rim of rock with black beyond. **The chasm is the same thing downward**: the
+  floor is the high ground and the wall under its edge falls 120 pixels (`PITH`) into black. All of it is worked out once over
+  the whole cave on sheets a pixel a unit (`Cave.prepare`, about 70 ms) and painted in pieces of 256 units at 2 pixels a unit
+  (`Cave.chunk`, one new piece a frame and the one under the view's middle at once; `Cave.dirty(cave)` when a vein is spent).
+  **The floor:** bare grey rock mottled and damp along the walls, patches of grit and gravel, **the troll's own path worn pale
+  down the middle of the way through** with his **footprints** in it going in, stones in clusters, cracks, **puddles** (a drop
+  rings on one now and then), **moss and fern under every hole in the roof**, and **bones thicker the nearer his lair**.
+  **Stalagmites and columns** stand on it (`cave.props`: props `stalagmite` and `caveColumn` in the kit, in the cave's own rock
+  colours, `caveRock()`; solid, and you walk behind them).
+  **Light** (`Cave.dark(c, cave, { cam, P, torch, clock, sun, W, H })`, called by the page's `drawCaveDark`, which adds the troll's
+  eyes): a deep blue-black over everything with holes cut in it: your own circle (96 units, 190 with a torch), **the daylight up
+  the tunnel**, **six holes in the roof** (`cave.shafts`: three big ones at the hollow, the pool and the chasm's ledge, three
+  small ones between), the copper's glow at ore rocks and a glimpse of green at a vein. Over each hole a **beam** slants down
+  from the upper left in narrow streaks with dust turning in it, fading into its pool of light. **The holes follow the sun**
+  (`sun` is `1 - 0.85 * light()`): at night they give only moonlight. The cave stays dark: between two lights there are 290 to
+  540 units of black along the way through (the screen is about 616 wide), so the next light is usually just in sight as you
+  leave one.
+  **Not getting lost (my choices; Robin has not ruled on them, and any can go):** one way through and pockets that end at once;
+  walking from light to light; the worn path and the footprints; bones toward the lair; the daylight tunnel as the way out, seen
+  from across the hall; and **a chart of the cave**: the corner chart and the M map show the cave as far as your light has shown
+  it while you are inside (`Cave.see` each frame, 120 units or 200 with a torch; `Cave.drawChart`; saved as `caveSeen` with
+  `Cave.seenStr`/`seenLoad`). No hint lines, no labels. A drop falls somewhere now and then (a quiet tone in `caveTick`).
+  **In the game:** `caveSetup` ends with `Cave.make`; `caveTick`, `drawCaveFloor`, `drawCaveDark` and `pushCaveItems` go through
+  the module; entering faces you north. The test boards have **To the cave's pool**, **To the chasm** and (the mountain board
+  too) **To the troll's lair**; `Combat.api.debug().cave()` returns the cave. **Checked in the pane on both test scenes (a cave
+  laid west):** in by E at the mouth, the whole way through by the keys in 28 s and back, out by E, the troll's walk home 75 s
+  with no frame off the floor, the chart surviving a save and a reload, no console errors. **Checking it:** `tests/cave.js` (in
+  `npm test`): twelve seeds, each line says whether the lair, the dead man, the pool, the ledge, the pockets, every ore rock and
+  every standing thing can be walked to from the way in, and the light-to-light distances; `node tools/visual/cave.js [seed]
+  [map|lit|dark|all]` (`npm run cave`) writes cave_map.png (the whole cave, the holes ringed), cave_lit.png (six places evenly
+  lit, to judge the painting) and cave_dark.png (the same as the game shows them, by torch and by night too).
+  `docs/cave-lit.jpg`, `docs/cave-dark.jpg` and `docs/cave-game.jpg` are the pictures of 2026-10-12.
 - **Charcoal, the furnace and copper tools (2026-10-07, Robin decided):** charcoal is never made in the furnace. **Morning embers:**
   at every dawn each fire that burned through the night (the camp hearth, campfires, hearths, braziers) drops two lumps of
   charcoal beside it (`morningEmbers`, from `dayTick` and waking). **The charcoal clamp** (the `charcoal` piece, prop `charcoalPit`,

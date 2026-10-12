@@ -3636,6 +3636,40 @@ function cairnObj(c, K, x, y, seed) {
     shape(c, blobPts(x + s[0], y + s[1], s[2], s[3], seed + i, 8, 0.2), i % 2 ? K.rockC : K.rock, { seed: seed + 10 + i, size: 'S', sh: 2, rough: 0.4 });
   });
 }
+// cave things (2026-10-12, the cave's rework): a stalagmite (three builds by seed: one tall, a pair, a low cluster), lit on its
+// left flank and dark on its right, the rings the drip built it in; and a column, where one has met what hangs from the roof:
+// it stands taller than the hero and the roof's dark comes down it. Both stand on the cave's floor and you walk behind them.
+function caveRock() { return M(mixHue(P.outsideHue, 270, 0.78), 9, 57); }   // the cave's own stone: paler and more violet than the rock outside (it stands in the dark and must still be read)
+function stalagmiteObj(c, K, x, y, seed) {
+  var R = rng(seed), kind = seed % 3, KR = caveRock();
+  function spike(sx, sy, w, h, sd) {
+    var lean = (R() - 0.5) * w * 0.6, i;
+    var pts = [[sx - w, sy], [sx - w * 0.72, sy - h * 0.3], [sx - w * 0.42, sy - h * 0.62], [sx - w * 0.14 + lean, sy - h * 0.9], [sx + lean, sy - h], [sx + w * 0.16 + lean, sy - h * 0.86], [sx + w * 0.46, sy - h * 0.55], [sx + w * 0.8, sy - h * 0.24], [sx + w, sy]];
+    gshadow(c, sx + w * 0.3, sy + 1, w * 1.25, w * 0.42, 0.45);
+    var d = shape(c, pts, KR, { seed: sd, size: 'M', flat: true, rough: 0.35 });
+    c.save(); path(c, d); c.clip();
+    c.fillStyle = KR.hl; c.globalAlpha = 0.85; c.beginPath(); c.moveTo(sx - w, sy); c.lineTo(sx - w * 0.72, sy - h * 0.3); c.lineTo(sx - w * 0.42, sy - h * 0.62); c.lineTo(sx - w * 0.14 + lean, sy - h * 0.9); c.lineTo(sx + lean, sy - h); c.lineTo(sx - w * 0.1 + lean * 0.5, sy - h * 0.5); c.lineTo(sx - w * 0.38, sy); c.closePath(); c.fill();
+    c.fillStyle = KR.shade; c.globalAlpha = 0.5; c.beginPath(); c.moveTo(sx + lean, sy - h); c.lineTo(sx + w * 0.46, sy - h * 0.55); c.lineTo(sx + w, sy); c.lineTo(sx + w * 0.3, sy); c.lineTo(sx + w * 0.14 + lean * 0.5, sy - h * 0.5); c.closePath(); c.fill(); c.globalAlpha = 1;
+    c.restore();
+    for (i = 1; i <= 3; i++) line(c, [[sx - w * (1 - i * 0.22) * 0.82, sy - h * i * 0.2], [sx + w * (1 - i * 0.22) * 0.7, sy - h * i * 0.2 + 1.4]], 0.8, KR.shade, false);
+  }
+  if (kind === 0) spike(x, y, 8, 38, seed);
+  else if (kind === 1) { spike(x + 9, y - 2, 6, 22, seed + 3); spike(x - 4, y, 8, 32, seed); }
+  else { spike(x - 9, y - 1, 5.5, 16, seed + 5); spike(x + 3, y, 9, 25, seed); spike(x + 14, y + 1, 4.5, 12, seed + 7); }
+}
+function caveColumnObj(c, K, x, y, seed) {
+  var R = rng(seed), h = 70 + R() * 18, w = 10 + R() * 2, wa = 5 + R() * 2, lean = (R() - 0.5) * 6, i, KR = caveRock();
+  gshadow(c, x + 3, y + 1, w * 1.35, 4.6, 0.45);
+  var L = [[x - w, y], [x - w * 0.8, y - h * 0.16], [x - wa - 1, y - h * 0.36], [x - wa + lean * 0.3, y - h * 0.52], [x - wa - 1.5 + lean * 0.6, y - h * 0.7], [x - w * 0.85 + lean, y - h * 0.88], [x - w * 1.1 + lean, y - h]];
+  var Rr = [[x + w * 1.1 + lean, y - h], [x + w * 0.8 + lean, y - h * 0.88], [x + wa + 1 + lean * 0.6, y - h * 0.7], [x + wa + lean * 0.3, y - h * 0.52], [x + wa + 1.5, y - h * 0.36], [x + w * 0.8, y - h * 0.16], [x + w, y]];
+  var d = shape(c, L.concat(Rr), KR, { seed: seed, size: 'M', flat: true, rough: 0.3 });
+  c.save(); path(c, d); c.clip();
+  c.fillStyle = KR.hl; c.globalAlpha = 0.8; c.beginPath(); L.forEach(function (p, k) { if (k) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); L.slice().reverse().forEach(function (p) { c.lineTo(p[0] + (x + lean * 0.4 - p[0]) * 0.42, p[1]); }); c.closePath(); c.fill();
+  c.fillStyle = KR.shade; c.globalAlpha = 0.5; c.beginPath(); Rr.forEach(function (p, k) { if (k) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); Rr.slice().reverse().forEach(function (p) { c.lineTo(p[0] + (x + lean * 0.4 - p[0]) * 0.45, p[1]); }); c.closePath(); c.fill(); c.globalAlpha = 1;
+  var g = c.createLinearGradient(0, y - h, 0, y - h * 0.5); g.addColorStop(0, 'rgba(8,8,16,0.8)'); g.addColorStop(1, 'rgba(8,8,16,0)'); c.fillStyle = g; c.fillRect(x - 34, y - h - 3, 68, h * 0.55);   // the roof's dark comes down it
+  c.restore();
+  for (i = 1; i <= 4; i++) { var yy = y - h * (0.08 + i * 0.07), ww = w * (1 - i * 0.12); line(c, [[x - ww * 0.8, yy], [x + ww * 0.75, yy + 1.4]], 0.8, KR.shade, false); }
+}
 // the varde (2026-10-12): a beacon cairn on a high point, a man and a half tall, three weathered poles leaned together over
 // it (the frame a beacon fire is stacked in): the mark men built on the fells to find their way and to watch the sea from
 function vardeObj(c, K, x, y, seed) {
@@ -4089,6 +4123,8 @@ var PROPS = {
   forge: { b: [-44, -46, 44, 10], f: function (c, K, s) { forgeObj(c, K, 0, 0, s); } },
   brazier: { b: [-18, -50, 18, 8], f: function (c, K, s) { brazierObj(c, K, 0, 0, s); } },
   cairn: { b: [-26, -44, 26, 8], f: function (c, K, s) { cairnObj(c, K, 0, 0, s); } },
+  stalagmite: { b: [-28, -46, 32, 10], f: function (c, K, s) { stalagmiteObj(c, K, 0, 0, s); } },
+  caveColumn: { b: [-26, -94, 28, 10], f: function (c, K, s) { caveColumnObj(c, K, 0, 0, s); } },
   varde: { b: [-36, -100, 38, 12], f: function (c, K, s) { vardeObj(c, K, 0, 0, s); } },
   stoneShip: { b: [-52, -30, 52, 18], f: function (c, K, s) { stoneShip(c, K, 0, 0, s); } },
   woodpile: { b: [-30, -46, 42, 10], f: function (c, K, s) { woodpile(c, K, 0, 0, s); } },

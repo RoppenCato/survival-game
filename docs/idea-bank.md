@@ -431,3 +431,25 @@ Built: terraces, cliffs with side walls, sea cliffs and a bay, peaks, slopes, a 
 - **Mountains in the real game:** a mountain on the big island with the troll's cave in its side; Sea Editor sliders for how much
   mountain an island has, which side its sea cliffs are on and where the bay is cut.
 - **Animals and cliffs:** a beast chasing you walks at a cliff instead of going round to a slope.
+
+## The cave: what is left to think about (2026-10-12, after the rework)
+
+Built: one way through from a tunnel of daylight to the lair, walls with height, a chasm, a pool, light from holes in the roof,
+the troll's worn path, a chart of what your light has shown (see "The cave's inside reworked" in `CLAUDE.md`). Ideas, none decided:
+
+- **How lost should you be?** The wayfinding is my choice, not Robin's: light to light, the worn path, bones toward the lair,
+  and the cave's chart. If it is too kind, the chart is the first thing to take away (or it needs a torch, or a rune).
+- **The chasm:** it is only a view now. A rope down to a lower floor, something glinting on a ledge below, a log across it as a
+  short cut once you have wood with you, or the troll's old bones at the bottom.
+- **The pool:** blind cave fish for the rod, something dropped in it, or the brook that feeds it coming in through a crack.
+- **A second way out:** a crack high in the far end that comes out on the fell above, found from inside, so the cave is also a
+  way up the mountain.
+- **Bats** that burst out past you when your torch reaches their roost (harmless, a fright), and that leave at dusk through
+  the holes in the roof, which you could see from outside.
+- **The holes from above:** each hole in the roof as a real pit on the mountain you can look down, with the light of your own
+  campfire below showing through it at night.
+- **Sound:** the drip is one tone now. An echo on your own steps and blows, wind in the tunnel, the troll breathing in his sleep
+  from two chambers off.
+- **A cave of its own for each island:** the same module with other numbers (a long sea cave for the Gape, entered by boat at
+  low water; a burial cave for the draugr).
+- **Building inside** is off. A torch in a wall bracket, or a fire you can lay in the hall, would let you make a camp of it.
