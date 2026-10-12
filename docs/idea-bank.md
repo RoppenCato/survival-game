@@ -422,14 +422,21 @@ village pieces; music by place once the island has places.
 Built: terraces, cliffs with side walls, sea cliffs and a bay, peaks, slopes, a waterfall, a lookout, the fells' own ground (see
 "Mountains" in `CLAUDE.md`). Ideas, none decided:
 
-- **Ore in the cliff faces:** copper or iron veins you mine from the foot of a wall (the cave's veins are the model).
+- **Ore in the cliff faces:** built 2026-10-12 for copper (the first copper). Iron or silver veins the same way, later.
 - **The chart hides what you have not seen:** the lookout marks places within sight, but all land is drawn on the chart from the
   start. A chart that fills in as you walk, with a lookout filling in a wide ring at once, would make a lookout worth the climb.
 - **More to find up there:** a pass through the peaks to ground you reach no other way, a cairn trail, a runestone on a summit, a
   ruined shieling to shelter in, an eagle overhead, goats on the ledges, the bear's den.
 - **The pool:** fishing in it (mountain trout), or the brook running on to the sea in a second, smaller fall.
-- **Mountains in the real game:** a mountain on the big island with the troll's cave in its side; Sea Editor sliders for how much
-  mountain an island has, which side its sea cliffs are on and where the bay is cut.
+- **Mountains in the real game:** the big island has its small mountain since 2026-10-12. Still to do: a real mountain island in
+  the north with the mine and the sea cave; Sea Editor sliders for how much mountain an island has, which side its sea cliffs
+  are on and where the bay is cut.
+- **The other caves (built 2026-10-12: the old mine, the sea cave, the rock shelter):** what they could still get. *The mine:*
+  the miner's pick as bronze (the first bronze thing, before tin exists), a second level down a winze, a cave-in you start
+  yourself by cutting a prop, bats. *The sea cave:* seals hauled out on the shingle that slip into the water as you come, amber
+  on the beach (a thing to trade), the tide (the pocket only reached at low water), rowing the boat right in, the Gape. *The
+  shelter:* a hunter's leavings (arrows, a hide), a carving on the back wall that is the first thing a stranger tells you about,
+  hirdmen resting there on a march. *A bear's den* was offered and not chosen.
 - **Animals and cliffs:** a beast chasing you walks at a cliff instead of going round to a slope.
 
 ## The cave: what is left to think about (2026-10-12, after the rework)

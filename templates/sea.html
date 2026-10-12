@@ -299,15 +299,16 @@ __SPRITES_JS__
 
   // The game's layout (2026-10-08): the options the game hands World.make, from the sliders: every island's width (the starter, the big
   // one, the normal ones with the size variety, the lowland ones from lowFrom on) and which are lowland. The game takes the same object.
+  (function () { var PI = __PROPIMG__; if (!PI) return; var map = {}; for (var k in PI) { var im = new Image(); im.src = PI[k].src; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } World.setImages(map); })();   // the Blender set pieces (the big island's peaks)
   function worldSpec() {
     var o = {}, k; for (k in spec) o[k] = spec[k]; if (!spec.layout) return o;
     var R2 = kit.rng(spec.seed * 7 + 3), sizes = [], biomes = [], i;
     for (i = 0; i < spec.count; i++) { var low = i >= spec.lowFrom, base = i === 0 ? spec.starter : i === 1 ? spec.big : (low ? spec.lowSize : spec.isle) * (1 + (R2() - 0.5) * spec.sizeVar * 0.6); sizes.push(Math.max(30, Math.round(base / 10) * 10)); biomes.push(low ? 1 : 0); }
-    o.isle0 = spec.starter; o.big = spec.big; o.sizes = sizes; o.biomes = biomes; o.dir = 0.1; return o;
+    o.isle0 = spec.starter; o.big = spec.big; o.sizes = sizes; o.biomes = biomes; o.dir = 0.1; if (spec.count > 1) { o.mountain = 1; o.mountainOpts = World.BIG_MOUNTAIN; } return o;   // (the big island's small mountain, as in the game)
   }
   var sites = [], SITE_COL = { town: '#ffffff', seat: '#ffd34d', church: '#f8f0ff', village: '#f0e2b0', small: '#d8c8a0', farmstead: '#b8d8a0', fishing: '#9ad0e8', trading: '#e8a060', ruin: '#9a8a7a' };
   function planSites() {                   // the villages the plan gives this sea, as the game would lay them
-    try { var R = kit.rng(spec.seed * 23 + 11); return Village.plan({ isles: w.isles, code: w.code, shallow: function (tx, ty) { return w.code(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7; }, R: R, home: [home.x / T, home.y / T], avoid: [] }); } catch (e) { return []; }
+    try { var R = kit.rng(spec.seed * 23 + 11); return Village.plan({ isles: w.isles, code: w.siteCode || w.code, shallow: function (tx, ty) { return w.code(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7; }, R: R, home: [home.x / T, home.y / T], avoid: [] }); } catch (e) { return []; }
   }
   function drawBigChart() {                // the whole sea with every village named, the lowlands tinted, home marked
     var cvb = document.getElementById('bigchart'), c2 = cvb.getContext('2d'), Wb = cvb.width, Hb = cvb.height, sc = Math.min((Wb - 16) / mini.width, (Hb - 16) / mini.height), ox = (Wb - mini.width * sc) / 2, oy = (Hb - mini.height * sc) / 2, kx = mini.width * sc / GW, ky = mini.height * sc / GH;
@@ -324,7 +325,7 @@ __SPRITES_JS__
   function buildWorld(relocate) {
     w = World.make(kit, worldSpec());
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; E = w.E; grid = w.grid; home = w.home; dockEnd = w.dockEnd;
-    w.plant(); w.camp(); w.sortBuckets(); YSCENE.Y.X = WX + 6000; Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX + 9000, y1: WY - 8 };
+    w.plant(); if (w.peaks) w.peaks(); w.camp(); w.sortBuckets(); YSCENE.Y.X = WX + 6000; Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX + 9000, y1: WY - 8 };
     buckets = w.buckets; solidB = w.solidB;
     var isles = w.isles, n = isles.length, skerries = w.stats.skerries, landTiles = w.stats.landTiles;
     // Brokk the dwarf stands by the hearth at the camp, on the first bit of clear land found there

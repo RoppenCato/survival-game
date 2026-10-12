@@ -4443,6 +4443,12 @@ function make(kit, opts) {
     var tx0 = Math.max(2, Math.floor(mq.x - mq.r * 1.5)), tx1 = Math.min(GW - 3, Math.ceil(mq.x + mq.r * 1.5)), ty0 = Math.max(2, Math.floor(mq.y - mq.r * 1.5)), ty1 = Math.min(GH - 3, Math.ceil(mq.y + mq.r * 1.5));
     var south = mo.south != null ? mo.south : 0.3, top = mo.top != null ? mo.top : 0.8, shore = mo.shore != null ? mo.shore : 7, rise = mo.rise != null ? mo.rise : 12, high = mo.high != null ? mo.high : 4.0;
     var sea = mo.sea !== false, seaSide = mo.seaSide === -1 ? -1 : 1;
+    // where the mountain is: across the island's north (how far north a tile lies on its own land), or, with mo.at = [x, y] in
+    // island radii from its middle, round one place, mo.r island radii across: its height by how far out a tile lies is mo.prof
+    // (pairs of [how far out 0..1, height]): by default a wide ring of foothills, a plateau inside it, a peak or two in the middle
+    var atC = mo.at ? [mq.x + mo.at[0] * mq.r, mq.y + mo.at[1] * mq.r] : null, atR = (mo.r || 0.45) * mq.r, PROF = mo.prof || [[0, 3.5], [0.1, 3.0], [0.28, 2.45], [0.44, 2.0], [0.6, 1.5], [0.82, 1.0], [1, 0]];
+    function profAt(dn) { var k; if (dn >= 1) return 0; for (k = 1; k < PROF.length; k++) if (dn <= PROF[k][0]) return PROF[k - 1][1] + (PROF[k][1] - PROF[k - 1][1]) * (dn - PROF[k - 1][0]) / (PROF[k][0] - PROF[k - 1][0]); return 0; }
+    function northOf(ax, ay) { if (atC) return profAt(Math.hypot(ax - atC[0], ay - atC[1]) / atR * (0.88 + 0.24 * fbm(ax / 17, ay / 17, s + 145))) / high; return sstep(south, top, (yS - ay) / Math.max(1, yS - yN)); }
     // how far every tile is from the sea, in tiles (two sweeps), and the island's own northernmost and southernmost land
     var DS = new Float32Array(GW * GH), yN = 1e9, yS = -1e9, dv;
     function seaDist() {
@@ -4470,11 +4476,11 @@ function make(kit, opts) {
     // straight south to the sea from every tile, read between the tiles: a sea cliff's top lies one face north of the waterline
     var DSo = null;
     if (sea) { DSo = new Float32Array(GW * GH); for (tx = tx0; tx <= tx1; tx++) { var run = 0; for (ty = ty1; ty >= ty0; ty--) { i = ty * GW + tx; if (E[i] <= 0) { run = 0; continue; } var eb = ty < ty1 ? E[i + GW] : -100; run = eb <= 0 ? E[i] / (E[i] - eb) : Math.min(40, run + 1); DSo[i] = run; } } }
-    function capAt(ax, ay) { return high * sstep(south, top, (yS - ay) / Math.max(1, yS - yN)) * (0.78 + 0.5 * fbm(ax / 30, ay / 30, s + 140)); }
+    function capAt(ax, ay) { return high * northOf(ax, ay) * (atC ? 0.9 + 0.2 * fbm(ax / 30, ay / 30, s + 140) : 0.78 + 0.5 * fbm(ax / 30, ay / 30, s + 140)); }
     for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) {
       var d0 = DS[ty * GW + tx]; if (d0 <= 0) continue;
-      var north = sstep(south, top, (yS - ty) / Math.max(1, yS - yN)), inland = sstep(shore, shore + rise, d0), base = north * inland;   // how far north on the island's own land, and how far from the sea: the mountains leave a shore all round
-      MT[ty * GW + tx] = high * base * (0.78 + 0.5 * fbm(tx / 30, ty / 30, s + 140)) + (fbm(tx / 10, ty / 10, s + 150) - 0.5) * 0.6 * base;
+      var north = northOf(tx, ty), inland = sstep(shore, shore + rise, d0), base = north * inland;   // how far north on the island's own land, and how far from the sea: the mountains leave a shore all round
+      MT[ty * GW + tx] = high * base * (atC ? 0.9 + 0.2 * fbm(tx / 30, ty / 30, s + 140) : 0.78 + 0.5 * fbm(tx / 30, ty / 30, s + 140)) + (fbm(tx / 10, ty / 10, s + 150) - 0.5) * (atC ? 0.34 : 0.6) * Math.min(1, base * (atC ? 3 : 1));
     }
     for (pass = 0; pass < 2; pass++) {                       // smoothed twice, so no terrace is a speck
       var M2 = new Float32Array(MT.length);
@@ -4575,13 +4581,24 @@ function make(kit, opts) {
     function flood(st) {
       while (st.length) { var q3 = st.pop(), qi = q3 % cw, qj = (q3 - qi) / cw, d4; for (d4 = 0; d4 < 4; d4++) { var a3 = qi + (d4 === 0 ? 1 : (d4 === 1 ? -1 : 0)), b3 = qj + (d4 === 2 ? 1 : (d4 === 3 ? -1 : 0)); if (a3 < 0 || b3 < 0 || a3 >= cw || b3 >= ch) continue; var i3 = b3 * cw + a3; if (reach[i3] || !LANDC[i3] || (CL[i3] & M_BLOCK)) continue; reach[i3] = 1; st.push(i3); } }
     }
-    for (ix = 0; ix < cw * ch; ix++) if (LANDC[ix] && !(CL[ix] & (M_BLOCK | M_RAMP)) && (CL[ix] & 3) === 0) { reach[ix] = 1; seeds.push(ix); }
+    // the flood starts from the lowland itself: the largest piece of low ground. A hollow the fells close round (a tarn in its
+    // bowl) is low ground too, but nobody has walked into it yet: it is joined on like any other piece (2026-10-12)
+    (function lowland() {
+      var lab = new Int32Array(cw * ch), qv = new Int32Array(cw * ch), nl2 = 0, bestN = 0, bestL = 0, h2, t2, a2;
+      for (ix = 0; ix < cw * ch; ix++) {
+        if (lab[ix] || !LANDC[ix] || (CL[ix] & (M_BLOCK | M_RAMP)) || (CL[ix] & 3) !== 0) continue;
+        nl2++; h2 = 0; t2 = 0; qv[t2++] = ix; lab[ix] = nl2;
+        while (h2 < t2) { var c8 = qv[h2++], x8 = c8 % cw; for (a2 = 0; a2 < 4; a2++) { var n8 = a2 === 0 ? (x8 < cw - 1 ? c8 + 1 : -1) : (a2 === 1 ? (x8 > 0 ? c8 - 1 : -1) : (a2 === 2 ? c8 + cw : c8 - cw)); if (n8 < 0 || n8 >= cw * ch || lab[n8] || !LANDC[n8] || (CL[n8] & (M_BLOCK | M_RAMP)) || (CL[n8] & 3) !== 0) continue; lab[n8] = nl2; qv[t2++] = n8; } }
+        if (t2 > bestN) { bestN = t2; bestL = nl2; }
+      }
+      for (ix = 0; ix < cw * ch; ix++) if (lab[ix] === bestL && bestL) { reach[ix] = 1; seeds.push(ix); }
+    })();
     flood(seeds);
     var MINC = mo.minReach || 1400, DIRS = [[0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
     for (tries = 0; tries < 16; tries++) {
       var bestComp = null, baseId = cid;
       for (ix = 0; ix < cw * ch; ix++) {
-        if (reach[ix] || !LANDC[ix] || (CL[ix] & M_BLOCK) || (CL[ix] & 3) === 0 || cm[ix] > baseId) continue;
+        if (reach[ix] || !LANDC[ix] || (CL[ix] & M_BLOCK) || cm[ix] > baseId) continue;
         var comp = [ix], qn; cid++; cm[ix] = cid;
         for (qn = 0; qn < comp.length; qn++) { var c5 = comp[qn], ci5 = c5 % cw, cj5 = (c5 - ci5) / cw, d5; for (d5 = 0; d5 < 4; d5++) { var a5 = ci5 + (d5 === 0 ? 1 : (d5 === 1 ? -1 : 0)), b5 = cj5 + (d5 === 2 ? 1 : (d5 === 3 ? -1 : 0)); if (a5 < 0 || b5 < 0 || a5 >= cw || b5 >= ch) continue; var i5 = b5 * cw + a5; if (cm[i5] > baseId || reach[i5] || !LANDC[i5] || (CL[i5] & M_BLOCK)) continue; cm[i5] = cid; comp.push(i5); } }
         if (comp.length >= MINC && !gave[comp[0]] && (!bestComp || comp.length > bestComp.length)) { bestComp = comp; bestComp.id = cid; }
@@ -4590,7 +4607,7 @@ function make(kit, opts) {
       var made = null, nn2, kq;
       for (nn2 = 1; nn2 <= 2 && !made; nn2++) for (kq = 0; kq < candAll[nn2].length; kq++) {     // a slope up a face
         var cq = candAll[nn2][kq], topI = (cq[1] - 2) * cw + cq[0], footI = (cq[1] + FH + 4) * cw + cq[0];
-        if (cm[topI] === bestComp.id && reach[footI] && !ramps.some(function (g) { return Math.abs(g.ex - (cx0 + cq[0] + 0.5) * MC) < 200 && Math.abs(g.ey - (cy0 + cq[1] + 1) * MC) < 200; })) { made = faceRamp(nn2, cq); break; }
+        if (((cm[topI] === bestComp.id && reach[footI]) || (cm[footI] === bestComp.id && reach[topI])) && !ramps.some(function (g) { return Math.abs(g.ex - (cx0 + cq[0] + 0.5) * MC) < 200 && Math.abs(g.ey - (cy0 + cq[1] + 1) * MC) < 200; })) { made = faceRamp(nn2, cq); break; }
       }
       for (kq = 0; kq < bestComp.length && !made; kq += 3) {                                    // a gap in a rim or a side wall
         var c6 = bestComp[kq], ci6 = c6 % cw, cj6 = (c6 - ci6) / cw, dq, ds;
@@ -4622,6 +4639,11 @@ function make(kit, opts) {
         var ct = cv(i2 + df, j2 - FH - 3); if (!(cv(i2 + df, j2 - 1) & M_FACE) || !(cv(i2 + df, j2 - FH + 2) & M_FACE) || (ct & 3) !== wantL + 1 || (ct & (M_FACE | M_SIDE))) return false;
         for (kf = 0; kf <= front; kf += 2) { var cg = cv(i2 + df, j2 + kf); if ((cg & (M_BLOCK | M_RAMP)) || (cg & 3) !== wantL || !dry(i2 + df, j2 + kf)) return false; }
       }
+      return true;
+    }
+    function footLoose(i2, j2, wantL, half, front) {       // the same asked less strictly: a wall over the foot that may curve, open level ground before its middle
+      var c0f = cv(i2, j2), df, kf; if ((c0f & (M_BLOCK | M_RAMP)) || (c0f & 3) !== wantL || !(cv(i2, j2 - 1) & M_FACE) || !(cv(i2, j2 - 5) & M_FACE)) return false;
+      for (df = -half; df <= half; df += half) { if (!(cv(i2 + df, j2 - 2) & M_FACE)) return false; for (kf = 1; kf <= front; kf += 2) { var cg = cv(i2 + (df > 0 ? 2 : (df < 0 ? -2 : 0)), j2 + kf); if ((cg & (M_BLOCK | M_RAMP)) || (cg & 3) !== wantL || !dry(i2, j2 + kf)) return false; } }
       return true;
     }
     function farFromRamps(x, y, d) { return !ramps.some(function (rm) { return Math.hypot(rm.ex - x, rm.ey - y) < d || Math.hypot(rm.x1 - x, rm.y1 - y) < d || Math.hypot(rm.x0 - x, rm.y0 - y) < d; }); }
@@ -4673,15 +4695,75 @@ function make(kit, opts) {
     var caveAt = null;
     (function cavePlace() {                                  // the cave's mouth: the foot of a straight wall you can walk to (the foothills by choice), clear of the slopes and the waterfall; strict first, then less so, so every island has a place
       var wantL, tol, cands, x, y;
-      for (wantL = 1; wantL >= 0 && !caveAt; wantL--) for (tol = 0; tol < 3 && !caveAt; tol++) {
-        var halfC = [12, 9, 6][tol], rd = [300, 190, 120][tol]; cands = [];
+      for (tol = 0; tol < 5 && !caveAt; tol++) for (wantL = 1; wantL >= 0 && !caveAt; wantL--) { if (tol < 3 && wantL === 0 && tol !== 2) continue;   // (the foothills by choice through three tries, then the low ground, then anything)
+        var halfC = [12, 9, 6, 5, 4][tol], rd = [300, 190, 120, 100, 80][tol]; cands = [];
         for (j = FH + 4; j < ch - 20; j += 2) for (i = 16; i < cw - 16; i += 2) {
-          if (!reach[j * cw + i] || !footOk(i, j, wantL, halfC, 16)) continue;
+          if (!reach[j * cw + i] || !(tol < 4 ? footOk(i, j, wantL, halfC, 16) : footLoose(i, j, wantL, 7, 10))) continue;
           x = (cx0 + i + 0.5) * MC; y = (cy0 + j) * MC; if (!farFromRamps(x, y, rd) || falls.some(function (f) { return Math.abs(f.x - x) < rd + 40 && Math.abs(f.foot - y) < 300; }) || lookouts.some(function (lo) { return Math.abs(lo.x - x) < rd && Math.abs(lo.y - y) < 320; })) continue;   // (and not under the lookout)
           cands.push([x, y]);
         }
         if (cands.length) { var cq2 = cands[Math.floor(hash(cands.length, wantL, s + 181) * cands.length) % cands.length]; caveAt = { x: cq2[0], y: cq2[1] }; }
       }
+    })();
+    /* More than the troll's cave (2026-10-12, Robin: there needs to be more to the mountains than troll caves; an old copper
+       mine, a rock shelter, a sea cave; and the first copper as veins in the open cliffs). Each is a place at the foot of a
+       wall, found like the cave's and kept apart from the others: THE MINE's adit (the low ground by choice: the troll's is up
+       on the foothills), THE ROCK SHELTER (a heller: an overhang with a floor you can stand on, cut into the face as a pocket of
+       walking cells; by choice near the foot of a way up, where a traveller would look for one), THE SEA CAVE (in a wall that
+       stands in the sea and faces south, where the water at its foot can be waded) and THE VEINS (green streaks of copper in
+       south faces whose foot you can walk to, spread along the mountain). */
+    var mineAt = null, seaAt = null, shelters = [], veins = [];
+    function awayFrom(x, y, d) { return !(caveAt && Math.hypot(caveAt.x - x, caveAt.y - y) < d) && !(mineAt && Math.hypot(mineAt.x - x, mineAt.y - y) < d) && !(seaAt && Math.hypot(seaAt.x - x, seaAt.y - y) < d) && !shelters.some(function (sh) { return Math.hypot(sh.x - x, sh.y - y) < d; }) && !falls.some(function (f) { return Math.abs(f.x - x) < d * 0.6 && Math.abs(f.foot - y) < d; }); }
+    if (mo.mine !== false) (function minePlace() {
+      var wantL, tol, cands, x, y;
+      for (tol = 0; tol < 4 && !mineAt; tol++) for (wantL = 0; wantL <= 1 && !mineAt; wantL++) {
+        var halfC = [12, 9, 6, 4][tol], rd = [300, 190, 120, 90][tol]; cands = [];
+        for (j = FH + 4; j < ch - 20; j += 2) for (i = 16; i < cw - 16; i += 2) {
+          if (!reach[j * cw + i] || !footOk(i, j, wantL, halfC, 16)) continue;
+          x = (cx0 + i + 0.5) * MC; y = (cy0 + j) * MC; if (!farFromRamps(x, y, rd) || !awayFrom(x, y, [620, 460, 320, 230][tol]) || lookouts.some(function (lo) { return Math.abs(lo.x - x) < rd && Math.abs(lo.y - y) < 320; })) continue;
+          cands.push([x, y]);
+        }
+        if (cands.length) { var mq2 = cands[Math.floor(hash(cands.length, wantL, s + 183) * cands.length) % cands.length]; mineAt = { x: mq2[0], y: mq2[1], lvl: wantL }; }
+      }
+    })();
+    if (mo.shelter !== false) (function shelterPlace() {
+      var wantL, tol, best = null, x, y, HWS = 78, DS2 = 62;
+      for (tol = 0; tol < 6 && !best; tol++) for (wantL = 0; wantL <= 1 && !best; wantL++) for (j = FH + 4; j < ch - 20; j += 2) for (i = 20; i < cw - 20; i += 2) {
+        if (!reach[j * cw + i] || !(tol < 5 ? footOk(i, j, wantL, [11, 10, 10, 9, 5][tol], [18, 12, 8, 8, 6][tol]) : footLoose(i, j, wantL, 7, 8))) continue;
+        x = (cx0 + i + 0.5) * MC; y = (cy0 + j) * MC; if (!farFromRamps(x, y, [150, 120, 100, 90, 80, 80][tol]) || !awayFrom(x, y, [330, 250, 190, 150, 140, 140][tol])) continue;
+        var dr = 1e9; ramps.forEach(function (rm) { var dd = Math.hypot(rm.x1 - x, rm.y1 - y); if (dd < dr) dr = dd; });
+        var sc = dr + hash(i, j, s + 184) * 90; if (!best || sc < best.sc) best = { x: x, y: y, sc: sc, lvl: wantL };
+      }
+      if (!best) return;
+      var sh = { x: best.x, y: best.y, hw: HWS, d: DS2, lvl: best.lvl }, a, b2; shelters.push(sh);
+      for (b2 = Math.floor((sh.y - sh.d) / MC - cy0) - 1; b2 <= Math.floor(sh.y / MC - cy0); b2++) for (a = Math.floor((sh.x - sh.hw) / MC - cx0) - 1; a <= Math.ceil((sh.x + sh.hw) / MC - cx0); a++) {
+        if (a < 0 || b2 < 0 || a >= cw || b2 >= ch) continue; var wx = (cx0 + a + 0.5) * MC, wy = (cy0 + b2 + 0.5) * MC, dy3 = sh.y - wy; if (dy3 < 0 || dy3 > sh.d) continue;
+        if ((CL[b2 * cw + a] & M_FACE) && (CL[b2 * cw + a] & 3) === sh.lvl && Math.pow(Math.abs(wx - sh.x) / sh.hw, 2.6) + Math.pow(dy3 / sh.d, 2.6) < 1) CL[b2 * cw + a] &= 3;   // the pocket: the face's cells become ground you can stand on (their level is the low ground's already)
+      }
+    })();
+    if (sea && mo.seaCave !== false) (function seaCavePlace() {
+      var best = null, bs = 1e9, d, k2, x, y, tol;
+      for (tol = 0; tol < 4 && !best; tol++) for (j = FH + 2; j < ch - 14; j++) for (i = 14; i < cw - 14; i++) {   // (the last try takes a wall that runs at a slant: one jamb of the mouth then stands out in the water)
+        if ((cv(i, j) & M_BLOCK) || !(cv(i, j - 1) & M_FACE)) continue;
+        x = (cx0 + i + 0.5) * MC; y = (cy0 + j) * MC; var e0 = elevAt(x, y + 6); if (e0 > [-0.06, 0.12, 0.25, 0.25][tol] || e0 < [-2.4, -3.2, -4, -4][tol]) continue;
+        var ok = true, hw3 = [6, 6, 3, 0][tol], up = [FH - 3, 6, 4, 5][tol], fr = [6, 4, 4, 4][tol];
+        for (d = -hw3; ok && d <= hw3; d += 3) { if (!(cv(i + d, j - 1) & M_FACE) || !(cv(i + d, j - up) & M_FACE)) ok = false; for (k2 = 0; ok && k2 <= fr; k2 += 2) if ((cv(i + d, j + k2) & M_BLOCK) || elevAt((cx0 + i + d + 0.5) * MC, (cy0 + j + k2 + 0.5) * MC) > [0.1, 0.3, 0.45, 0.45][tol]) ok = false; }
+        if (!ok) continue;
+        var sc = (bay ? Math.hypot(x - (bay.x + 0.5) * T, (y - (bay.y + 0.5) * T) * 2) : 0) + hash(i, j, s + 185) * 60 + (e0 < -0.9 ? 500 : 0);   // by choice where its foot can be waded; else it is reached by boat alone
+        if (sc < bs) { bs = sc; best = [x, y, e0]; }
+      }
+      if (best) seaAt = { x: best[0], y: best[1], wade: best[2] > -0.9 };
+    })();
+    if (mo.veins !== 0) (function cliffVeins() {
+      var want = mo.veins != null ? mo.veins : Math.max(3, Math.min(9, Math.round(cw * MC / 800))), cands = [], x, y, k;
+      for (j = FH + 2; j < ch - 6; j++) for (i = 8; i < cw - 8; i += 2) {
+        var q = j * cw + i; if (!reach[q] || (CL[q] & (M_BLOCK | M_RAMP | M_WATER)) || !(cv(i, j - 1) & M_FACE) || !(cv(i - 3, j - 1) & M_FACE) || !(cv(i + 3, j - 1) & M_FACE) || !(cv(i, j - 6) & M_FACE) || !dry(i, j) || !dry(i, j + 3)) continue;
+        x = (cx0 + i + 0.5) * MC; y = (cy0 + j) * MC; if (!farFromRamps(x, y, 80) || !awayFrom(x, y, 230)) continue;
+        cands.push([x, y, hash(i, j, s + 186)]);
+      }
+      cands.sort(function (p, q2) { return p[2] - q2[2]; });
+      for (k = 0; k < cands.length && veins.length < want; k++) { var cq = cands[k]; if (veins.some(function (v) { return Math.hypot(v.x - cq[0], v.y - cq[1]) < 240; })) continue;
+        var hv = hash(Math.round(cq[0]), Math.round(cq[1]), s + 187), hp = HP.rock * 0.8; veins.push({ name: 'vein', kind: 'stone', vein: true, cliff: true, x: cq[0], y: cq[1], h: 40 + hv * 30, s: Math.floor(hv * 97), r: 0, left: 2 + (hv > 0.5 ? 1 : 0), hp: hp, max: hp }); }
     })();
     (function shelves() {                                    // ledges in the faces: a grassy shelf part-way down a one-level south wall, a small tree or a bush on it
       var k, n2, d3, k3;
@@ -4692,13 +4774,13 @@ function make(kit, opts) {
           if (hash(k, n2 * 31 + j, s + 177) > 0.36) continue;
           var okL = !(cv(ci, j + FH + 2) & M_BLOCK) && dry(ci, j + FH + 2); for (d3 = -4; okL && d3 <= 4; d3 += 2) for (k3 = 1; okL && k3 <= FH - 1; k3 += 2) { var cl = cv(ci + d3, j + k3); if (!(cl & M_FACE) || (cl & 3) !== n2 - 1) okL = false; }
           if (!okL) continue;
-          var ly = lipY(lx, (cy0 + j - 1) * MC, n2); if (!farFromRamps(lx, ly + 50, 100) || falls.some(function (f) { return Math.abs(f.x - lx) < 70 && Math.abs(f.ye - ly) < 60; }) || (caveAt && Math.abs(caveAt.x - lx) < 150 && Math.abs(caveAt.y - ly - HFW) < 70)) continue;
+          var ly = lipY(lx, (cy0 + j - 1) * MC, n2); if (!farFromRamps(lx, ly + 50, 100) || falls.some(function (f) { return Math.abs(f.x - lx) < 70 && Math.abs(f.ye - ly) < 60; }) || (caveAt && Math.abs(caveAt.x - lx) < 150 && Math.abs(caveAt.y - ly - HFW) < 70) || [mineAt, seaAt].concat(shelters).some(function (pl) { return pl && Math.abs(pl.x - lx) < 170 && Math.abs(pl.y - ly - HFW) < 70; }) || veins.some(function (v) { return Math.abs(v.x - lx) < 40 && Math.abs(v.y - ly - HFW) < 70; })) continue;
           var hl = hash(k, j, s + 178);
           ledges.push({ x: lx, ye: ly, n: n2, f: 30 + Math.floor(hl * 22), hw: 15 + hash(k, j, s + 179) * 11, kind: hl < 0.42 ? 'dwarfBirch' : (hl < 0.72 ? 'juniper' : 'heather') });
         }
       }
     })();
-    mtn = { MC: MC, x0: cx0, y0: cy0, w: cw, h: ch, CL: CL, HF: HF, HFW: HFW, SIDE: SIDE, ramps: ramps, falls: falls, lookouts: lookouts, ledges: ledges, cave: caveAt, peaks: [], bay: bay ? { x: (bay.x + 0.5) * T, y: (bay.y + 0.5) * T, a: bay.a * T, b: bay.b * T } : null, seaSide: sea ? seaSide : 0, isle: isles.indexOf(mq), rampD: rampD, bx0: tx0 * T, by0: ty0 * T, bx1: (tx1 + 1) * T, by1: (ty1 + 1) * T };
+    mtn = { MC: MC, x0: cx0, y0: cy0, w: cw, h: ch, CL: CL, HF: HF, HFW: HFW, SIDE: SIDE, ramps: ramps, falls: falls, lookouts: lookouts, ledges: ledges, cave: caveAt, mine: mineAt, seaCave: seaAt, shelters: shelters, veins: veins, inlays: shelters.map(function (sh) { return { name: 'shelter_in', x: sh.x, y: sh.y, s: 1 }; }), peaks: [], bay: bay ? { x: (bay.x + 0.5) * T, y: (bay.y + 0.5) * T, a: bay.a * T, b: bay.b * T } : null, seaSide: sea ? seaSide : 0, isle: isles.indexOf(mq), rampD: rampD, bx0: tx0 * T, by0: ty0 * T, bx1: (tx1 + 1) * T, by1: (ty1 + 1) * T };
   })();
   w.mt = mtn; w.MT = MT; w.mAt = MT ? mAt : function () { return 0; };
   function cellAt(wx, wy) { if (!mtn) return 0; var ci = Math.floor(wx / MC) - mtn.x0, cj = Math.floor(wy / MC) - mtn.y0; return (ci < 0 || cj < 0 || ci >= mtn.w || cj >= mtn.h) ? 0 : mtn.CL[cj * mtn.w + ci]; }
@@ -4707,6 +4789,23 @@ function make(kit, opts) {
   w.cliffAt = function (wx, wy) { return (cellAt(wx, wy) & M_BLOCK) !== 0; };   // a face, a side wall, a rim or a peak: nothing walks, stands or grows here
   w.rampAt = function (wx, wy) { return (cellAt(wx, wy) & M_RAMP) !== 0; };
   w.waterAt = function (wx, wy) { return (cellAt(wx, wy) & M_WATER) !== 0; };
+  /* THE APPROACH (2026-10-12, Robin: the mountains must go seamlessly with the other biomes). The field is smooth, so on the low
+     ground it already says how near the first rise is: w.fellNear is 0 out in the lowland and 1 at the foot of the first wall.
+     Over that stretch the ground dries toward the foothills' turf, stones and sedge come up through it, the trees thin and
+     turn to pine, birch and mountain birch, juniper and heather appear, and boulders lie about: whatever biome lies below. */
+  w.siteCode = function (tx, ty) { var c5 = code(tx, ty); return c5 === 5 || (MT && mTile(tx, ty) > 0.06) ? 255 : c5; };   // the tile's code for whoever looks for a place to build a village: the mountains and the ground before them are no place for one
+  w.fellNear = function (wx, wy) { if (!MT) return 0; var m0 = mAt(wx, wy); return m0 >= 1 ? 1 : sstep(0.03, 0.6, m0); };   // (the field is already down to a half at a wall's foot: its face covers the ground where it runs from 1 to there)
+  w.shelterAt = function (wx, wy, pad) {                                   // under the rock shelter's overhang? (a roof over your head: the page counts it as one)
+    if (!mtn) return null; var k8; pad = pad || 0;
+    for (k8 = 0; k8 < mtn.shelters.length; k8++) { var sh = mtn.shelters[k8], dy8 = sh.y - wy; if (dy8 >= -pad && dy8 <= sh.d + 4 && Math.abs(wx - sh.x) <= sh.hw + pad) return sh; }
+    return null;
+  };
+  function bySet(wx, wy) {                                                 // the ground kept open before the mine, the shelter and the veins
+    if (!mtn) return false;
+    if (mtn.mine && Math.abs(wx - mtn.mine.x) < 120 && wy > mtn.mine.y - 40 && wy < mtn.mine.y + 150) return true;
+    if (mtn.shelters.some(function (sh) { return Math.abs(wx - sh.x) < sh.hw + 40 && wy > sh.y - sh.d - 10 && wy < sh.y + 120; })) return true;
+    return mtn.veins.some(function (v) { return Math.abs(wx - v.x) < 34 && wy > v.y - 10 && wy < v.y + 46; });
+  }
   function byFalls(wx, wy) {                                               // the ground kept open round the waterfall: before the pool, along the stream and the brook
     if (!mtn) return false; var k9, f, q9;
     for (k9 = 0; k9 < mtn.falls.length; k9++) { f = mtn.falls[k9]; if (wx < f.box[0] || wx > f.box[2] || wy < f.box[1] || wy > f.box[3]) continue;
@@ -4940,6 +5039,7 @@ function make(kit, opts) {
             var bmv = BMv[q] * w00 + BMv[q + 1] * w10 + BMv[q + n1] * w01 + BMv[q + n1 + 1] * w11; if (bmv > 0.05) { var bt = bmv * 95, at = a + bt; r = (r * a + 196 * bt) / at; g = (g * a + 176 * bt) / at; b = (b * a + 62 * bt) / at; a = Math.min(255, at); }   // the lowlands: a warmer, yellower green
           }
         }
+        if (mfr && !Lp && a < 200) { var ma0 = mfr[(py + PADR) * LW + px + MG]; if (ma0 > 2) { var apk = (ma0 - 2) / 36; if (apk > 1) apk = 1; apk = apk * apk * (3 - 2 * apk); var sf0 = SFt[q] * w00 + SFt[q + 1] * w10 + SFt[q + n1] * w01 + SFt[q + n1 + 1] * w11, ta0 = (58 + sf0 * 70) * apk * (0.55 + n1v * 0.9), at0 = a + ta0; r = (r * a + 168 * ta0) / at0; g = (g * a + 164 * ta0) / at0; b = (b * a + 96 * ta0) / at0; a = Math.min(255, at0); } }   // the approach: the low ground dries toward the foothills' turf as it nears them
         if (lev && (Lp || FN[qe] || EN[qe] || WN[qe] || HN[qe] || BD[qe] < 110 || rampsHere.length || fallsHere.length)) { if (Lp) { sfv = SFt[q] * w00 + SFt[q + 1] * w10 + SFt[q + n1] * w01 + SFt[q + n1 + 1] * w11; htv = HTt[q] * w00 + HTt[q + 1] * w10 + HTt[q + n1] * w01 + HTt[q + n1 + 1] * w11; snv = SNt[q] * w00 + SNt[q + 1] * w10 + SNt[q + n1] * w01 + SNt[q + n1 + 1] * w11; } mountainPixel(px, py, wx, wy, n1v, n2v, e, qe, Lp); }
         d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
       }
@@ -5138,9 +5238,15 @@ function make(kit, opts) {
       for (gy = Math.floor((Y0p - 10) / CS); gy <= Math.floor((Y0p + H2 + 10) / CS); gy++) for (gx = Math.floor((X0p - 10) / CS); gx <= Math.floor((X0p + W2 + 10) / CS); gx++) {
         var h0 = hash(gx, gy, s + 65); if (h0 > 0.5) continue;
         var dxp = (gx + hash(gx, gy, s + 66)) * CS - X0p, dyp = (gy + hash(gx, gy, s + 67)) * CS - Y0p; if (dxp < -9 || dyp < -9 || dxp >= W2 + 9 || dyp >= H2 + 9) continue;
-        var qd = (Math.round(dyp) + PADR) * LW + Math.round(dxp) + MG, Ld = lev[qd]; if (!Ld || FN[qd] || EN[qd] || WN[qd] || BD[qd] < (Ld === 3 ? 10 : 18)) continue;
+        var qd = (Math.round(dyp) + PADR) * LW + Math.round(dxp) + MG, Ld = lev[qd]; if (FN[qd] || EN[qd] || WN[qd] || BD[qd] < (Ld === 3 ? 10 : 18)) continue;
         if (cellAt(X0p + dxp, (Y0p + dyp) / K) & (M_RAMP | M_WATER)) continue;
         var hz = hash(gx, gy, s + 71), clu = nsm(X0p + dxp + 900, Y0p + dyp + 300, 2.6) > 0.55 ? 2.4 : 0.3;
+        if (!Ld) {                                            // the approach: a stone, a tuft of sedge, more of them the nearer the first rise
+          var apd = (mfr[qd] - 2) / 36; if (apd <= 0.1 || elevAt(X0p + dxp, (Y0p + dyp) / K) < 0.6) continue; if (apd > 1) apd = 1;
+          if (h0 < 0.05 * apd * clu) stoneAt(dxp, dyp, 1.8 + hz * 3.2, 1.3 + hz * 2, hz > 0.5 ? HL : BS, gx * 31 + gy);
+          else if (h0 > 0.24 && h0 < 0.24 + 0.08 * apd) blades(dxp, dyp, 3 + Math.floor(hz * 3), 4 + hz * 2.5, SEDGE, gx * 17 + gy, 1.3);
+          continue;
+        }
         if (Ld === 3) { if (h0 < 0.05 && (mfr[qd] < 215 || hz > 0.7)) stoneAt(dxp, dyp, 4 + hz * 6, 2.8 + hz * 3.6, hz > 0.5 ? BS : HL, gx * 31 + gy, mfr[qd] > 205 && hz > 0.3); continue; }
         if (h0 < (Ld === 2 ? 0.1 : 0.06) * clu) { if (hz > 0.72 && Ld === 2) { stoneAt(dxp, dyp, 6 + hz * 5, 2.6 + hz * 2, HL, gx * 31 + gy); c.fillStyle = 'rgba(150,160,84,0.7)'; for (si = 0; si < 4; si++) { c.beginPath(); c.arc(dxp + (hash(gx + si, gy, 73) - 0.5) * 8, dyp + (hash(gx, gy + si, 74) - 0.5) * 3, 0.9, 0, 7); c.fill(); } } else stoneAt(dxp, dyp, 1.8 + hz * 3.2, 1.3 + hz * 2, hz > 0.5 ? HL : BS, gx * 31 + gy); }   // a stone; on the plateau now and then a flat slab with lichen on it
         else if (h0 > 0.24 && h0 < (Ld === 2 ? 0.37 : 0.35)) blades(dxp, dyp, 3 + Math.floor(hz * 3), 4 + hz * 2.5, SEDGE, gx * 17 + gy, 1.3);   // a tuft of dry sedge
@@ -5152,6 +5258,17 @@ function make(kit, opts) {
       ledgesHere.forEach(function (lg) {                      // grass on a ledge, a strand or two hanging off it
         var i5; for (i5 = 0; i5 < 6; i5++) { var lx = lg.x + (i5 / 5 - 0.5) * lg.hw * 1.6, th = 6.5 * (1 - Math.pow((lx - lg.x) / lg.hw, 2)); blades(lx - X0p, lg.ye * K + lg.f - th - Y0p, 2, 5, GRN, Math.round(lg.x) + i5 * 13); }
         c.strokeStyle = '#5d8a3a'; c.lineWidth = 0.9; for (i5 = 0; i5 < 3; i5++) { var hx5 = lg.x + (hash(i5, Math.round(lg.x), s + 78) - 0.5) * lg.hw * 1.5 - X0p, hy5 = lg.ye * K + lg.f - Y0p; c.beginPath(); c.moveTo(hx5, hy5 - 1); c.quadraticCurveTo(hx5 + 1.5, hy5 + 3, hx5 + 0.5, hy5 + 5 + i5 * 2); c.stroke(); }
+      });
+      mtn.veins.forEach(function (v) {                        // copper in the cliff: a green streak up the face from its foot, flecks beside it, green-stained spoil below
+        var vx = v.x - X0p, vy = v.y * K - Y0p; if (vx < -30 || vx > W2 + 30 || vy < -10 || vy > H2 + 70) return;
+        var seg = 3 + (v.s % 3), hh = v.h * K, spent = v.left <= 0, k7;
+        if (!spent) { var gs = c.createRadialGradient(vx, vy - hh * 0.5, 2, vx, vy - hh * 0.5, hh * 0.75); gs.addColorStop(0, 'rgba(70,170,120,0.42)'); gs.addColorStop(1, 'rgba(70,170,120,0)'); c.save(); c.translate(vx, vy - hh * 0.5); c.scale(0.6, 1); c.translate(-vx, -(vy - hh * 0.5)); c.fillStyle = gs; c.beginPath(); c.arc(vx, vy - hh * 0.5, hh * 0.75, 0, 7); c.fill(); c.restore(); }   // the rock stained green round it
+        c.strokeStyle = spent ? '#5a554e' : '#1f6a4a'; c.lineWidth = 4.2; c.beginPath(); c.moveTo(vx - 6, vy - 2);
+        for (k7 = 1; k7 <= seg; k7++) c.lineTo(vx - 6 + (12 / seg) * k7 + (hash(k7, v.s, 1) - 0.5) * 6, vy - 2 - (hh - 5) * k7 / seg + (hash(k7, v.s, 2) - 0.5) * 4);
+        c.stroke(); c.strokeStyle = spent ? '#7c766d' : '#62c792'; c.lineWidth = 2; c.stroke();
+        if (!spent) { c.strokeStyle = '#1f6a4a'; c.lineWidth = 2.6; c.beginPath(); c.moveTo(vx - 1, vy - hh * 0.45); c.lineTo(vx + 10 + (v.s % 5), vy - hh * 0.64); c.moveTo(vx - 3, vy - hh * 0.2); c.lineTo(vx - 11 - (v.s % 4), vy - hh * 0.36); c.stroke(); c.strokeStyle = '#62c792'; c.lineWidth = 1.1; c.stroke(); }
+        for (k7 = 0; k7 < 9 && !spent; k7++) { c.fillStyle = k7 % 2 ? 'rgba(98,199,146,0.9)' : 'rgba(42,125,88,0.9)'; c.beginPath(); c.arc(vx + (hash(k7, v.s, 3) - 0.5) * 26, vy - 3 - hash(k7, v.s, 4) * (hh - 6), 1.1 + hash(k7, v.s, 5) * 1.1, 0, 7); c.fill(); }
+        for (k7 = 0; k7 < 4; k7++) { var hq7 = hash(k7, v.s, 6); stoneAt(vx + (hq7 - 0.5) * 26, vy + 3 + hash(k7, v.s, 7) * 7, 1.6 + hq7 * 2.2, 1.2 + hq7 * 1.3, !spent && k7 < 2 ? '#5fa585' : BS, v.s * 9 + k7); }
       });
       fallsHere.forEach(function (f) {                        // rocks round the pool, stones on the banks, reeds in the bog
         var i6, pl = f.pool, o0 = f.out[0];
@@ -5165,10 +5282,10 @@ function make(kit, opts) {
       });
       w.prof.pen += pnow() - tP;
     }
-    if (mtn && mtn.peaks.length) {                           // the peaks that reach into this piece, far to near (the list is kept in that order)
-      var pki, ck0 = cy * CW + cx;
-      for (pki = 0; pki < mtn.peaks.length; pki++) {
-        var pkq = mtn.peaks[pki], pim = IMAGES[pkq.name]; if (!pim) continue;
+    if (mtn && (mtn.peaks.length || mtn.inlays.length)) {    // the peaks that reach into this piece, far to near (the list is kept in that order); then what is set into a face (the rock shelter's inside)
+      var pki, ck0 = cy * CW + cx, pics = mtn.inlays.length ? mtn.peaks.concat(mtn.inlays) : mtn.peaks;
+      for (pki = 0; pki < pics.length; pki++) {
+        var pkq = pics[pki], pim = IMAGES[pkq.name]; if (!pim) continue;
         var pl = pkq.x - pim.ax * pim.upp * pkq.s, pt = pkq.y * K - pim.ay * pim.upp * pkq.s, pw2 = pim.w * pim.upp * pkq.s, ph2 = pim.h * pim.upp * pkq.s;
         if (pl > (cx + 1) * W2 || pl + pw2 < cx * W2 || pt > (cy + 1) * H2 || pt + ph2 < cy * H2) continue;
         if (!imgReady(pim.img)) { if (!imgWait[ck0]) { imgWait[ck0] = 1; imgWaitN++; } continue; }   // not loaded yet: this piece is painted again when they are
@@ -5190,7 +5307,7 @@ function make(kit, opts) {
   function pnow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
   w.drawGround = function (c, cam, hw, hh) {
     var pw = CT * T, phh = CT * TS, baked = 0;
-    if (imgWaitN && mtn && !mtn.peaks.some(function (pq) { return IMAGES[pq.name] && !imgReady(IMAGES[pq.name].img); })) { for (var wk in imgWait) if (chunkCv[wk]) stale[wk] = 1; imgWait = {}; imgWaitN = 0; }   // the peaks' pictures have come: the pieces painted without them are painted again
+    if (imgWaitN && mtn && !mtn.peaks.concat(mtn.inlays).some(function (pq) { return IMAGES[pq.name] && !imgReady(IMAGES[pq.name].img); })) { for (var wk in imgWait) if (chunkCv[wk]) stale[wk] = 1; imgWait = {}; imgWaitN = 0; }   // the peaks' pictures have come: the pieces painted without them are painted again
     for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
       var ck = qy * CW + qx, piece = w.waterCv;
       if (landChunk[ck]) {
@@ -5205,7 +5322,7 @@ function make(kit, opts) {
   };
   // the meadow under the blades (painted first, still): soft lighter and darker patches of grass, bare earth, and drifts of
   // tiny flowers in several colours, the way a real meadow is blotchy and flecked rather than one green
-  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
+  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mtn.shelters.length && w.shelterAt(x, y / K, 4)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
   function fellOf(x, y) { return mtn ? cellAt(x, y / K) & 3 : 0; }   // 0 the low ground, 1 the foothills, 2 the high plateau (a screen position)
   w.drawMeadow = function (c, cam, hw, hh, G) {
     var sp = G.patchSize || 70, gx0 = Math.floor((cam.x - hw) / sp) - 2, gx1 = Math.ceil((cam.x + hw) / sp) + 1, gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 2, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1, gx, gy;
@@ -5386,6 +5503,7 @@ function make(kit, opts) {
       var mcell = mtn ? cellAt(wx, wy) : 0, mlv = mcell & 3;
       if (mcell & (M_BLOCK | M_RAMP | M_WATER)) continue;                    // a cliff, a peak, a slope or the stream: nothing grows there
       if (mtn && mtn.falls.length && byFalls(wx, wy)) continue;               // and the waterfall is kept in the open
+      if (mtn && bySet(wx, wy)) continue;                                     // as are the mine's mouth, the shelter and the veins
       if (mlv && t3 >= 2) {                                                  // the fells: sparse pine and dwarf birch on the foothills, juniper, heather and boulders; the high plateau all but bare of trees
         var grove = vnoise(x / 7, y / 7, s + 20), has = function (nm) { return !!kit.PROPS[nm]; };
         if (mlv === 1) {
@@ -5398,8 +5516,10 @@ function make(kit, opts) {
           else if (roll > 0.9) { p = { name: R() < 0.6 && has('boulder') ? 'boulder' : (R() < 0.5 ? 'rock' : 'rockFormation'), s: 0.85 + R() * 0.45, r: 12 }; w.stats.rocks++; }
         }
       } else if (t3 >= 2 && t3 !== 5) {
-        var bmp = w.biomeAt(x, y);
-        if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tl = bmp > R() && LOW.length ? LOW : TREES, tn = tl[Math.floor(R() * tl.length) % tl.length]; if (R() < 0.02 && kit.PROPS.struckTree) tn = 'struckTree'; p = { name: tn, s: (tn === 'pine' ? 0.54 : (tn === 'struckTree' ? 0.6 : 0.49)) + R() * 0.1, r: 11 }; w.stats.trees++; }   // now and then a tree struck by lightning: charcoal
+        var bmp = w.biomeAt(x, y), apr = mtn ? w.fellNear(wx, wy) : 0, hasP = function (nm) { return !!kit.PROPS[nm]; };
+        if (apr > 0.08 && roll > 0.9 && roll < 0.9 + 0.034 * apr) { p = { name: R() < 0.45 && hasP('boulder') ? 'boulder' : (R() < 0.6 ? 'rock' : 'rockFormation'), s: 0.8 + R() * 0.35, r: 11 }; w.stats.rocks++; }   // the approach to the mountains: boulders and rock in the grass
+        else if (apr > 0.08 && roll > 0.86 && roll < 0.86 + 0.03 * apr) p = { name: ['juniper', 'heather', 'juniper', 'tallGrass'].filter(hasP)[Math.floor(R() * 4) % ['juniper', 'heather', 'juniper', 'tallGrass'].filter(hasP).length], s: 0.9, r: 0 };   // juniper and heather before the first rise
+        else if (roll < 0.15 * (1 - 0.5 * apr) && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tl = bmp > R() && LOW.length ? LOW : TREES, tn = tl[Math.floor(R() * tl.length) % tl.length]; if (apr > R() * 1.1) tn = R() < 0.3 * apr && hasP('dwarfBirch') ? 'dwarfBirch' : (R() < 0.6 ? 'pine' : 'birch'); if (R() < 0.02 && kit.PROPS.struckTree) tn = 'struckTree'; p = { name: tn, s: (tn === 'pine' ? 0.54 : (tn === 'struckTree' ? 0.6 : (tn === 'dwarfBirch' ? 0.85 : 0.49))) + R() * 0.1, r: tn === 'dwarfBirch' ? 7 : 11 }; w.stats.trees++; }   // now and then a tree struck by lightning: charcoal
         else if (roll > 0.955) p = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
         else if (roll > 0.948) { p = { name: bmp > 0.5 && kit.PROPS.chalkRock && R() < 0.7 ? 'chalkRock' : (R() < 0.6 ? 'rock' : 'rockFormation'), s: 0.9, r: 10 }; w.stats.rocks++; }
         else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs', 'fireRing'][Math.floor(R() * 6)], s: 1, r: 10 };   // things of nature, and an old fire ring someone left: no carved stones or posts lie about
@@ -5413,6 +5533,10 @@ function make(kit, opts) {
       mtn.ledges.forEach(function (lg) {                                      // a small tree or a bush on every ledge: it stands in the face, nobody reaches it (no kind: it is not gathered)
         if (!kit.PROPS[lg.kind]) return; var tree = lg.kind === 'dwarfBirch';
         w.addProp({ name: lg.kind, x: lg.x, y: lg.ye + (lg.f - 2) / K, s: tree ? 0.5 + R() * 0.14 : 0.62 + R() * 0.2, r: 0, v: Math.floor(R() * 3), ledge: true });
+      });
+      mtn.shelters.forEach(function (sh) {                                    // the rock shelter: its overhang stands before whoever is under it; an old fire ring on its floor
+        if (IMAGES.shelter) w.addProp({ name: 'shelter', x: sh.x, y: sh.y + 1, s: 1, r: 0, v: 0, shelter: true });
+        if (kit.PROPS.fireRing) w.addProp({ name: 'fireRing', x: sh.x - 22, y: sh.y - 20, s: 1, r: 10, v: 0 });
       });
       mtn.lookouts.forEach(function (lo) { if (kit.PROPS.varde) w.addProp({ name: 'varde', x: lo.x, y: lo.y, s: 1, r: 13, v: 0, lookout: true }); });   // the beacon cairn on the high point
       mtn.falls.forEach(function (f) {                                        // boulders by the pool, reeds where the brook sinks away
@@ -5454,6 +5578,7 @@ function make(kit, opts) {
   // before it is level, open and dry, away from the slopes and the waterfall. Found with the world (mountains(), cavePlace),
   // so the ledges in the faces keep clear of it. Returns { x, y } (the foot of the face) or null.
   w.caveSite = function () { return mtn && mtn.cave ? { x: mtn.cave.x, y: mtn.cave.y } : null; };
+  w.veinSpent = function (v) { w.repaint(v.x - 30, v.y - v.h - 16, v.x + 30, v.y + 16); };   // a vein worked out: its face is painted again, grey
   // the nearest level ground to a point, on a given level, with room round it (for placing things and for the test scene)
   w.nearFlat = function (x, y, lvl, room) {
     var d, a; room = room || 26;
@@ -5515,7 +5640,12 @@ var GRASS = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shimmer
 var GRASS_INK = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shimmer: 0.35, shade: 0.9, flowers: 0.04,
   patches: 1, patchSize: 70, patchLight: '#a9b96a', patchDark: '#4b6b3a', earth: 0.3, earthCol: '#9a7f55', earthLight: '#b89a68', earthEdge: '#6e7f40', drifts: 0.45,
   dark: '#3d6a33', mid: '#5f8a44', light: '#8aa65a', glow: '#d6d690', bloom: ['#efe6cf', '#dfc45e', '#d99aa8', '#d88a5a'] };
-return { make: make, setImages: setImages, IMAGES: IMAGES, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
+/* The first big island's own small mountain (2026-10-12, Robin: a small version of the biome there, to introduce mountains and
+   give the first copper): in its north-west, the side you come to it from: foothills, a small plateau with a peak or two, the
+   troll's cave in a wall, a rock shelter, a few veins of copper in the open cliffs. No sea cliffs, no mine, no sea cave: those
+   are for a real mountain island. spec.mountain = 1 with these options. */
+var BIG_MOUNTAIN = { at: [-0.3, -0.5], r: 0.56, high: 3.5, shore: 6, rise: 9, sea: false, mine: false, seaCave: false, veins: 4, minPatch: 60 };
+return { make: make, setImages: setImages, IMAGES: IMAGES, BIG_MOUNTAIN: BIG_MOUNTAIN, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, mountainOpts: null, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
 })();
 if (typeof module !== 'undefined') module.exports = World;
 
@@ -5572,8 +5702,166 @@ function pAt(cave, x, y) { return fieldAt(cave.P, cave, x, y); }                
 function trailAt(cave, x, y) { var v = fieldAt(cave.TR, cave, x, y); return v < -8 ? 999 : v; }   // units from the middle of the way through
 function floor(cave, x, y) { return dAt(cave, x, y) >= 0 && pAt(cave, x, y) < -0.2; } // where you can stand: floor, and a step back from the chasm
 
+/* THE OTHER CAVES (2026-10-12, Robin: there needs to be more to the mountains than troll caves; an old copper mine, a sea cave).
+   The same sheets and the same painter, another lay-out. base() makes the fields from a list of shapes (ellipses, and boxes
+   for what people dug: straight walls) and the cave with what every kind has; makeMine and makeSea fill it.
+   THE MINE: an adit straight in from the daylight, a main drift east or west with crosscuts to worked-out stopes, timber
+   sets in the adit and posts along the drift, soot on the walls where they set fires to crack the rock (charcoal still
+   lies there), a fall of rock across the drift that the pick clears, and beyond it the deep stope with the best veins and
+   the man who never came out. Nobody lives in it: it is quiet, and darker than the troll's (one hole in the roof).
+   THE SEA CAVE: the sea comes in at the mouth (S, the water's depth in tiles, read like D: you wade it) and fills the south
+   of a great hall; at its back a beach of shingle with a wreck on it under a hole in the roof, driftwood, and a passage up
+   to a dry pocket where somebody hid a chest. The daylight carries far in over the water (glows). */
+function base(seed, o, L) {
+  var ox = o.x || 0, oy = o.y || 0, D = new Float32Array(FW * FH), P = new Float32Array(FW * FH).fill(-9), S = L.sea ? new Float32Array(FW * FH) : null, ns = seed * 7 + 3 + (L.salt || 0), i2, j2, ci, k, TX = L.TX, tw = L.tunW || 2.2;
+  for (j2 = 0; j2 < FH; j2++) for (i2 = 0; i2 < FW; i2++) {
+    var tx = (i2 + 0.5) * FS / T, ty = (j2 + 0.5) * FS / T, best = -9;
+    for (ci = 0; ci < L.shapes.length; ci++) { var cc = L.shapes[ci], dd;
+      if (cc.box) { var bx = cc.hw - Math.abs(tx - cc.x), by = cc.hh - Math.abs(ty - cc.y); if (bx < -2 || by < -2) continue; dd = Math.min(bx, by); }
+      else { var ux = (tx - cc.x) / cc.rx, uy = (ty - cc.y) / cc.ry; if (ux > 2 || ux < -2 || uy > 2 || uy < -2) continue; dd = (1 - Math.sqrt(ux * ux + uy * uy)) * Math.min(cc.rx, cc.ry); }
+      if (dd > best) best = dd; }
+    best += (fbm(tx * 1.1, ty * 1.1, ns) - 0.5) * (L.rough != null ? L.rough : 1.3);
+    var inTunnel = Math.abs(tx - TX) < tw && ty > 33, edge = Math.min(tx - 1.5, GW - 1.5 - tx, ty - 3.2, inTunnel ? 9 : GH - 1.2 - ty); if (edge < best) best = edge;
+    D[j2 * FW + i2] = best;
+    if (S) S[j2 * FW + i2] = L.sea(tx, ty) + (fbm(tx * 0.8, ty * 0.8, ns + 11) - 0.5) * 0.4;
+  }
+  var cave = { kind: L.kind, ox: ox, oy: oy, seed: seed, D: D, P: P, S: S, TR: null, chunks: {}, chunkN: 0, noiseT: 0, px: null, ores: [], veins: [], props: [], shafts: [], puddles: [], pockets: [], sets: [], posts: [], soot: [], finds: [], glows: [], seen: new Uint8Array(SW * SH), seenDirty: true, pool: null, lair: null, hoard: null, body: null, pit: null, flip: L.flip, tintF: L.tintF || null, tintW: L.tintW || null, tunW: (tw + 0.3) * T };
+  function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
+  cave.path = L.path.map(W); cave.entrance = W([TX, 34.3]); cave.exitAt = W([TX, 36.9]); cave.tunnelY = oy + 35.2 * T;
+  var TR = new Float32Array(FW * FH).fill(-9), cp = cave.path;
+  if (L.trail) for (j2 = 0; j2 < FH; j2++) for (i2 = 0; i2 < FW; i2++) {
+    if (D[j2 * FW + i2] < -1.2) continue; var wx = ox + (i2 + 0.5) * FS, wy = oy + (j2 + 0.5) * FS, bd = 1e9;
+    for (k = 0; k < cp.length - 1; k++) { var pa = cp[k], pb = cp[k + 1], ax = pb.x - pa.x, ay = pb.y - pa.y, tt = Math.max(0, Math.min(1, ((wx - pa.x) * ax + (wy - pa.y) * ay) / (ax * ax + ay * ay))), ds = Math.hypot(wx - pa.x - ax * tt, wy - pa.y - ay * tt); if (ds < bd) bd = ds; }
+    var dt2 = Math.abs(wx - cave.entrance.x) < 30 && wy > cave.entrance.y - 40 ? Math.abs(wx - cave.entrance.x) : 1e9; TR[j2 * FW + i2] = Math.min(bd, dt2);
+  }
+  cave.TR = TR;
+  return cave;
+}
+function reachOf(cave) {                                 // the floor you can walk to from the way in (a flood over the fields' cells)
+  var ox = cave.ox, oy = cave.oy, RC = new Uint8Array(FW * FH), st = [Math.floor((cave.entrance.y - oy) / FS) * FW + Math.floor((cave.entrance.x - ox) / FS)]; RC[st[0]] = 1;
+  while (st.length) { var c0 = st.pop(), ci2 = c0 % FW, cj2 = (c0 - ci2) / FW, d4; for (d4 = 0; d4 < 4; d4++) { var na = ci2 + (d4 === 0 ? 1 : (d4 === 1 ? -1 : 0)), nb = cj2 + (d4 === 2 ? 1 : (d4 === 3 ? -1 : 0)); if (na < 0 || nb < 0 || na >= FW || nb >= FH || RC[nb * FW + na] || !floor(cave, ox + (na + 0.5) * FS, oy + (nb + 0.5) * FS)) continue; RC[nb * FW + na] = 1; st.push(nb * FW + na); } }
+  return (cave.RC = RC);
+}
+function tools(cave, R, o) {                             // what the lay-outs share: is a spot clear, the foot of the wall north of a point, a vein, an ore rock, a thing that stands
+  var ox = cave.ox, oy = cave.oy, hp0 = o.rockHp || 11, keep = [];
+  function footN(x, y) { var k; for (k = 0; k < 90; k++) if (dAt(cave, x, y - k * 3) < 0) return y - k * 3 + 3; return null; }
+  function clearAt(px, py, room, trail) {
+    var a; if (!floor(cave, px, py) || trailAt(cave, px, py) < (trail == null ? 34 : trail) || !cave.RC[Math.floor((py - oy) / FS) * FW + Math.floor((px - ox) / FS)]) return false;
+    for (a = 0; a < 6; a++) if (!floor(cave, px + Math.cos(a * 1.047) * room, py + Math.sin(a * 1.047) * room)) return false;
+    if (Math.hypot(px - cave.entrance.x, py - cave.entrance.y) < 100 || keep.some(function (q) { return Math.hypot(q.x - px, q.y - py) < q.r; })) return false;
+    return !cave.ores.concat(cave.props, cave.finds).some(function (q) { return Math.hypot(q.x - px, q.y - py) < 40; });
+  }
+  function vein(x, y0, left) {
+    var k, fh = 0, WU = WALLH / K, found = footN(x, y0); if (found == null) return false;
+    for (k = 2; k <= WU; k += 2) { if (dAt(cave, x, found - k) < 0) fh = k; else break; }
+    if (fh < 30 || !floor(cave, x, found + 8) || cave.veins.some(function (q) { return Math.abs(q.x - x) < 40 && Math.abs(q.y - found) < 60; })) return false;
+    cave.veins.push({ name: 'vein', kind: 'stone', vein: true, cave: true, x: x, y: found, h: Math.min(fh, 46), s: Math.floor(R() * 7), r: 0, left: left, hp: hp0 * 0.8, max: hp0 * 0.8 }); return true;
+  }
+  function ore(cx, cy, rx, ry) { var t2; for (t2 = 0; t2 < 40; t2++) { var ex = cx + (R() - 0.5) * 2 * rx, ey = cy + (R() - 0.5) * 2 * ry; if (!clearAt(ex, ey, 14)) continue; var s2 = 0.85 + R() * 0.3, hp = hp0 * (0.7 + 0.6 * s2); cave.ores.push({ name: 'rock', kind: 'stone', ore: true, cave: true, x: ex, y: ey, s: s2, r: 8, v: Math.floor(R() * 3), hp: hp, max: hp, leanDir: 1 }); return true; } return false; }
+  function stand(cx, cy, rx, ry, n2, names) { var t3, got = 0; for (t3 = 0; t3 < n2 * 16 && got < n2; t3++) { var sx = cx + (R() - 0.5) * 2 * rx, sy = cy + (R() - 0.5) * 2 * ry; if (!clearAt(sx, sy, 9)) continue; var big = R() < 0.13, nm = names ? names[Math.floor(R() * names.length)] : (big ? 'caveColumn' : 'stalagmite'); cave.props.push({ name: nm, x: sx, y: sy, s: nm === 'caveColumn' ? 0.9 + R() * 0.25 : 0.7 + R() * 0.5, r: nm === 'caveColumn' ? 9 : 6, v: Math.floor(R() * 3), cave: true }); got++; } }
+  function across(x, y) { var k, xl = x, xr = x; for (k = 0; k < 40 && dAt(cave, xl - 3, y) >= 0; k++) xl -= 3; for (k = 0; k < 40 && dAt(cave, xr + 3, y) >= 0; k++) xr += 3; return [xl, xr]; }
+  return { footN: footN, clearAt: clearAt, vein: vein, ore: ore, stand: stand, across: across, keep: keep };
+}
+function makeMine(seed, o) {
+  var R = rng(seed * 53 + 17), flip = hash(seed, 5, 9) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 8 : 8, i, k;
+  function jit(a) { return (R() - 0.5) * 2 * a; }
+  var y0 = 25.4 + jit(0.6), xA = TX + sg * (8 + jit(0.8)), xB = TX + sg * (17.5 + jit(1)), xC = TX + sg * (12.5 + jit(0.8)), xBlock = TX + sg * 25.6, xDeep = TX + sg * 32.5, yA = y0 - 8.2 + jit(0.6), yB = y0 - 11.4 + jit(0.6), yC = y0 + 6.6, shapes = [];
+  function box(x, y, hw, hh) { shapes.push({ box: 1, x: x, y: y, hw: hw, hh: hh }); } function oval(x, y, rx, ry) { shapes.push({ x: x, y: y, rx: rx, ry: ry || rx }); }
+  box(TX, 34, 1.3, 8.6);                                                  // the adit, straight in from the daylight
+  oval(TX, y0, 2.5, 2.2);                                                 // where it meets the drift
+  var x1 = TX + sg * 9, x2 = TX + sg * 18, x3 = xBlock - sg * 1.2;         // the main drift, in three reaches that do not quite line up
+  box((TX + x1) / 2, y0, Math.abs(x1 - TX) / 2 + 0.6, 1.3); box((x1 + x2) / 2, y0 - 0.7, Math.abs(x2 - x1) / 2 + 0.6, 1.3); box((x2 + x3) / 2, y0 + 0.2, Math.abs(x3 - x2) / 2 + 0.6, 1.3);
+  box(xBlock, y0 + 0.2, 1.6, 0.92);                                       // it narrows where the roof came down
+  box((xBlock + xDeep) / 2 + sg * 0.6, y0 + 0.1, Math.abs(xDeep - xBlock) / 2, 1.25); oval(xDeep, y0 - 1.6, 5.6, 4.3);   // and beyond: the deep stope
+  box(xA, (y0 + yA) / 2, 1.2, Math.abs(y0 - yA) / 2 + 0.4); oval(xA - sg * 0.6, yA, 3.7, 2.8);    // the first crosscut and its stope
+  box(xB, (y0 + yB) / 2 - 0.3, 1.2, Math.abs(y0 - yB) / 2 + 0.4); oval(xB + sg * 0.8, yB, 4.6, 3.3);   // the second, longer, to the big stope
+  box(xC, (y0 + yC) / 2, 1.15, Math.abs(yC - y0) / 2 + 0.3); oval(xC, yC, 2.9, 2.3);              // and one that goes south to a dead end
+  var path = [[TX, 33.4], [TX, 30], [TX, y0 + 0.2], [x1, y0 - 0.2], [x2, y0 - 0.5], [x3, y0 + 0.2]];
+  var cave = base(seed, o, { kind: 'mine', shapes: shapes, rough: 0.42, TX: TX, tunW: 1.9, path: path, trail: true, flip: flip, salt: 40, tintF: [1.12, 0.99, 0.84], tintW: [1.14, 0.98, 0.8] });
+  var ox = cave.ox, oy = cave.oy; function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
+  cave.name = 'The old mine'; cave.junction = W([TX, y0]); cave.stopeA = W([xA - sg * 0.6, yA]); cave.stopeB = W([xB + sg * 0.8, yB]); cave.deadEnd = W([xC, yC]); cave.block = W([xBlock, y0 + 0.2]); cave.deep = W([xDeep, y0 - 1.6]);
+  cave.pool = { x: cave.stopeA.x - sg * 30, y: cave.stopeA.y + 34, rx: 1.5 * T, ry: 0.85 * T };   // water has gathered in the first stope
+  reachOf(cave); var U = tools(cave, R, o);
+  // the fall of rock across the drift: two great stones, wall to wall; the pick takes either
+  [-14, 15].forEach(function (dx, bi) { var hp = (o.rockHp || 11) * 3; cave.ores.push({ name: 'rockFormation', kind: 'stone', ore: false, block: true, cave: true, x: cave.block.x + sg * 4 * bi, y: cave.block.y + dx, s: 0.82, r: 17, v: bi, hp: hp, max: hp, leanDir: 1 }); });
+  U.keep.push({ x: cave.block.x, y: cave.block.y, r: 70 });
+  // the man who never came out, at the back of the deep stope: his pick, and what he had cut
+  var mfy = U.footN(cave.deep.x + sg * 60, cave.deep.y) || (cave.deep.y - 60);
+  cave.finds.push({ id: 'miner', prop: 'deadViking', x: cave.deep.x + sg * 60, y: mfy + 26, s: 1, v: 0, r: 0, say: 'Search', give: { copper: 3 }, thing: { kind: 'pick', mat: 'copper' }, note: 'A miner\'s pick, and the ore he had cut' });
+  U.keep.push({ x: cave.finds[0].x, y: cave.finds[0].y, r: 46 });
+  // where they set fires against the rock to crack it: soot up the wall, and charcoal still lying
+  [[cave.stopeA.x + sg * 34, cave.stopeA.y], [cave.stopeB.x - sg * 44, cave.stopeB.y], [cave.deadEnd.x, cave.deadEnd.y - 20], [cave.deep.x - sg * 70, cave.deep.y - 20]].forEach(function (q, qi) {
+    var fy = U.footN(q[0], q[1]); if (fy == null || !floor(cave, q[0], fy + 14)) return; cave.soot.push({ x: q[0], y: fy });
+    cave.finds.push({ id: 'ash' + qi, prop: 'fireRing', x: q[0], y: fy + 15, s: 0.8, v: 0, r: 0, say: 'Take', give: { charcoal: qi === 3 ? 3 : 2 }, gone: true }); U.keep.push({ x: q[0], y: fy + 15, r: 34 });
+  });
+  // the veins: a few thin ones in the stopes and along the drift, the good ones past the fall
+  [[cave.stopeA.x - sg * 46, cave.stopeA.y, 3], [cave.stopeB.x + sg * 30, cave.stopeB.y, 3], [cave.stopeB.x + sg * 96, cave.stopeB.y, 4], [ox + (x1 + sg * 4) * T, cave.junction.y, 2], [cave.deep.x - sg * 20, cave.deep.y, 5], [cave.deep.x + sg * 30, cave.deep.y, 6], [cave.deep.x + sg * 110, cave.deep.y, 5]].forEach(function (q) { var t; for (t = 0; t < 6; t++) if (U.vein(q[0] + (t ? jit(24) : 0), q[1], q[2])) break; });
+  // timber: sets across the adit and the crosscuts, posts along the drift's far wall
+  function setAt(x, y) { var a = U.across(x, y); if (a[1] - a[0] < 40 || a[1] - a[0] > 130) return; cave.sets.push({ x: (a[0] + a[1]) / 2, y: y, w: a[1] - a[0] - 5, s: Math.floor(R() * 99) }); }
+  for (k = 0; k < 4; k++) setAt(cave.entrance.x, cave.entrance.y - 30 - k * 78);
+  [[xA, y0, yA], [xB, y0, yB]].forEach(function (q) { var yy0 = oy + (q[1] - 2.4) * T, yy1 = oy + (q[2] + 3.6) * T, n = Math.max(1, Math.round((yy0 - yy1) / 84)), t; for (t = 0; t <= n; t++) setAt(ox + q[0] * T, yy0 + (yy1 - yy0) * t / n); });
+  setAt(ox + xC * T, oy + (y0 + 3.2) * T);
+  for (i = 2; i < 30; i++) { var px = cave.junction.x + sg * i * 86; if (sg * (px - cave.deep.x) > -150) break; if ([xA, xB, xC].some(function (xx) { return Math.abs(px - (ox + xx * T)) < 60; }) || Math.abs(px - cave.block.x) < 70) continue; var fy2 = U.footN(px, cave.junction.y + 6); if (fy2 != null && cave.junction.y - fy2 < 90) cave.posts.push({ x: px, y: fy2, s: Math.floor(R() * 99) }); }
+  // loose ore where it was dropped, one hole in the roof over the big stope, a little water
+  U.ore(cave.stopeA.x, cave.stopeA.y, 80, 50); U.ore(cave.deadEnd.x, cave.deadEnd.y, 60, 44); U.ore(cave.deep.x, cave.deep.y, 130, 90); U.ore(cave.deep.x, cave.deep.y, 130, 90);
+  cave.shafts.push({ x: cave.stopeB.x, y: cave.stopeB.y + 10, rx: 50, ry: 34, k: 0.8 });
+  cave.things = [{ kind: 'ladder', x: cave.stopeB.x - sg * 96, y: U.footN(cave.stopeB.x - sg * 96, cave.stopeB.y) }, { kind: 'bucket', x: cave.stopeA.x + sg * 70, y: cave.stopeA.y + 30 }, { kind: 'sledge', x: cave.junction.x + sg * 60, y: cave.junction.y + 22 }, { kind: 'bucket', x: cave.deep.x - sg * 40, y: cave.deep.y + 60 }].filter(function (q) { return q.y != null && floor(cave, q.x, q.y + 6); });
+  for (i = 0; i < 80 && cave.puddles.length < 6; i++) { var ux2 = cave.pool.x + jit(150), uy2 = cave.pool.y + jit(90); if (!U.clearAt(ux2, uy2, 14, 0) || Math.hypot((ux2 - cave.pool.x) / (cave.pool.rx + 12), (uy2 - cave.pool.y) / (cave.pool.ry + 12)) < 1 || cave.puddles.some(function (q) { return Math.hypot(q.x - ux2, q.y - uy2) < 44; })) continue; cave.puddles.push({ x: ux2, y: uy2, rx: 6 + R() * 7, ry: 3.5 + R() * 3, a: jit(0.3) }); }
+  return cave;
+}
+function makeSea(seed, o) {
+  var R = rng(seed * 71 + 29), flip = hash(seed, 7, 11) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 10 : 10, i;
+  function jit(a) { return (R() - 0.5) * 2 * a; }
+  var hall = [TX + sg * (10 + jit(0.8)), 20.6 + jit(0.5)], pk = [TX + sg * (27 + jit(1)), 10.6 + jit(0.6)], shapes = [];
+  function oval(x, y, rx, ry) { shapes.push({ x: x, y: y, rx: rx, ry: ry || rx }); }
+  for (i = 0; i <= 16; i++) oval(TX + Math.sin(i * 0.7) * 0.3, 41 - i * 0.9, 2.5 + 0.3 * Math.sin(i * 1.1), 2.2);      // the channel in from the sea
+  oval(TX + sg * 2.6, 24.6, 4.8, 4.0); oval(hall[0], hall[1], 11.6, 7.4); oval(hall[0] + sg * 7, hall[1] + 3.6, 5.2, 3.8);  // the hall, and a lobe of it that is all water
+  var p0 = [hall[0] + sg * 7.4, hall[1] - 5.4], n = 10; for (i = 0; i <= n; i++) { var t = i / n; oval(p0[0] + (pk[0] - p0[0]) * t + Math.sin(t * 5) * 0.8, p0[1] + (pk[1] - p0[1]) * t, 1.9, 1.8); }   // the passage up from the beach
+  oval(pk[0], pk[1], 3.8, 2.9);                                                                                            // the dry pocket
+  var shoreY = function (tx) { return hall[1] - 1.5 + 1.1 * Math.sin(tx * 0.42 + seed) + 0.5 * Math.sin(tx * 1.1); };
+  var sea = function (tx, ty) { return Math.min(1.5, (ty - shoreY(tx)) * 0.34); };
+  var path = [[TX, 33.4], [TX, 28.5], [TX + sg * 3, 24], [hall[0] - sg * 2, hall[1] - 3.4], [hall[0] + sg * 4, hall[1] - 4.6], p0, [(p0[0] + pk[0]) / 2, (p0[1] + pk[1]) / 2], pk];
+  var cave = base(seed, o, { kind: 'sea', shapes: shapes, rough: 1.2, TX: TX, tunW: 3.1, path: path, trail: false, flip: flip, salt: 80, sea: sea, tintF: [0.9, 0.98, 1.04], tintW: [0.84, 0.98, 1.03] });
+  var ox = cave.ox, oy = cave.oy; function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
+  cave.name = 'The sea cave'; cave.hall = W(hall); cave.pocket = W(pk); cave.beach = W([hall[0] - sg * 1, hall[1] - 4.2]);
+  reachOf(cave); var U = tools(cave, R, o);
+  // the wreck on the shingle under the hole in the roof; what the sea brought in round it; the chest somebody carried up to the dry pocket
+  cave.wreck = { name: 'wreckedBoat', x: cave.beach.x, y: cave.beach.y, s: 0.9, r: 20, v: 0, cave: true }; cave.props.push(cave.wreck); U.keep.push({ x: cave.wreck.x, y: cave.wreck.y, r: 80 });
+  cave.shafts.push({ x: cave.beach.x + sg * 10, y: cave.beach.y + 16, rx: 78, ry: 50, k: 1 });
+  cave.finds.push({ id: 'chest', prop: 'chest', x: cave.pocket.x + sg * 40, y: cave.pocket.y - 16, s: 1, v: 0, r: 12, say: 'Open', chest: true, note: 'Somebody hid this here, and never came back for it' }); U.keep.push({ x: cave.finds[0].x, y: cave.finds[0].y, r: 40 });
+  for (i = 0; i < 60 && cave.finds.length < 5; i++) { var dx = cave.beach.x + jit(260), dy = cave.beach.y + jit(70) + 20; if (!U.clearAt(dx, dy, 16, 0) || sAt(cave, dx, dy) > -0.05) continue; cave.finds.push({ id: 'drift' + cave.finds.length, prop: 'drift', x: dx, y: dy, s: 0.9, v: Math.floor(R() * 3), r: 0, say: 'Take', give: { wood: 3 }, gone: true }); }
+  U.stand(cave.beach.x, cave.beach.y - 20, 260, 60, 4); U.stand(cave.pocket.x, cave.pocket.y, 90, 60, 3);
+  // the daylight over the water: it carries up the channel and into the hall
+  [[TX, 31, 150, 0.5], [TX, 27, 130, 0.38], [TX + sg * 2.6, 24, 130, 0.3], [hall[0] - sg * 3, hall[1] + 1.5, 150, 0.2], [hall[0] + sg * 4, hall[1] + 2.5, 150, 0.13]].forEach(function (q) { var p = W(q); cave.glows.push({ x: p.x, y: p.y, r: q[2], a: q[3], sea: true }); });
+  return cave;
+}
+function drawDrift(c, f) {                               // driftwood: a bleached bough the sea threw up, a stub of a branch on it
+  var x = f.x, y = f.y * K, a = (hash(f.v, Math.round(f.x), 3) - 0.5) * 0.7, INK = 'rgba(22,16,14,0.95)';
+  c.save(); c.translate(x, y); c.fillStyle = 'rgba(4,6,12,0.35)'; c.beginPath(); c.ellipse(2, 2, 19, 4, a * 0.4, 0, 7); c.fill(); c.rotate(a * 0.4); c.lineCap = 'round';
+  [[INK, 7.2], ['#b9b2a2', 5.4]].forEach(function (q) { c.strokeStyle = q[0]; c.lineWidth = q[1]; c.beginPath(); c.moveTo(-17, 0); c.quadraticCurveTo(0, -3, 17, -1); c.stroke(); c.lineWidth = q[1] * 0.55; c.beginPath(); c.moveTo(4, -2); c.lineTo(10, -9); c.stroke(); });
+  c.strokeStyle = '#dcd6c8'; c.lineWidth = 1.3; c.beginPath(); c.moveTo(-14, -1.6); c.quadraticCurveTo(0, -4.4, 14, -2.6); c.stroke(); c.strokeStyle = 'rgba(90,84,74,0.7)'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(-8, 0.6); c.lineTo(2, -0.4); c.moveTo(6, 0.4); c.lineTo(13, 0); c.stroke();
+  c.restore();
+}
+function sAt(cave, x, y) { return cave.S ? fieldAt(cave.S, cave, x, y) : -9; }       // tiles of water over the floor (the sea cave): above zero you wade
+function release(cave) { cave.px = null; cave.chunks = {}; cave.chunkN = 0; }          // the sheets are big: let them go when the cave is left
+/* A timber set across a passage that runs north to south: two posts and a cap. It is drawn with the things that stand
+   (the page sorts it by its line on the floor), so the cap passes over whoever has walked on through it. */
+function drawSet(c, st) {
+  var x = st.x, y = st.y * K, hw = st.w / 2, H = 44, INK = 'rgba(22,16,14,0.95)', k;
+  function log(x0, y0, x1, y1, wd, col, lit) { c.lineCap = 'butt'; c.strokeStyle = INK; c.lineWidth = wd + 1.6; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.strokeStyle = col; c.lineWidth = wd; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.strokeStyle = lit; c.lineWidth = wd * 0.28; var ox2 = x1 === x0 ? -wd * 0.22 : 0, oy2 = x1 === x0 ? 0 : -wd * 0.22; c.beginPath(); c.moveTo(x0 + ox2, y0 + oy2); c.lineTo(x1 + ox2, y1 + oy2); c.stroke(); }
+  c.save();
+  c.fillStyle = 'rgba(4,5,10,0.35)'; c.beginPath(); c.ellipse(x - hw + 2, y + 1, 6, 2.6, 0, 0, 7); c.ellipse(x + hw + 2, y + 1, 6, 2.6, 0, 0, 7); c.fill();
+  log(x - hw, y, x - hw + 1.5, y - H, 6, '#6b4c33', '#93704c'); log(x + hw, y, x + hw - 1.5, y - H, 6, '#5d412c', '#7f5f41');
+  var sag = 1.5 + hash(st.s, 1, 3) * 2; c.strokeStyle = INK; c.lineWidth = 8.6; c.lineCap = 'butt'; c.beginPath(); c.moveTo(x - hw - 6, y - H - 1); c.quadraticCurveTo(x, y - H - 1 + sag, x + hw + 6, y - H - 1); c.stroke();
+  c.strokeStyle = '#5a3f2a'; c.lineWidth = 7; c.beginPath(); c.moveTo(x - hw - 5.2, y - H - 1); c.quadraticCurveTo(x, y - H - 1 + sag, x + hw + 5.2, y - H - 1); c.stroke();
+  c.strokeStyle = '#8a6846'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x - hw - 5, y - H - 3); c.quadraticCurveTo(x, y - H - 3 + sag, x + hw + 5, y - H - 3); c.stroke();
+  c.strokeStyle = 'rgba(30,20,14,0.5)'; c.lineWidth = 0.6; for (k = 0; k < 3; k++) { var gx = x - hw + (k + 0.6) * st.w / 3.4 + hash(st.s, k, 5) * 6; c.beginPath(); c.moveTo(gx, y - H); c.lineTo(gx + 9 + hash(st.s, k, 6) * 8, y - H + 0.6); c.stroke(); }
+  c.restore();
+}
+
 function make(seed, o) {
   o = o || {}; sheets();
+  if (o.kind === 'mine') return makeMine(seed, o); if (o.kind === 'sea') return makeSea(seed, o);
   var ox = o.x || 0, oy = o.y || 0, R = rng(seed * 31 + 9), i, k, x, y;
   function jit(a) { return (R() - 0.5) * 2 * a; }
   // the way through: the tunnel's head, the hall, then east to the lair
@@ -5609,7 +5897,7 @@ function make(seed, o) {
     D[j2 * FW + i2] = best;
     var px2 = (tx - pit.x) / pit.rx, py2 = ty > pit.y ? 0 : (ty - pit.y) / pit.ry; P[j2 * FW + i2] = (1 - Math.sqrt(px2 * px2 + py2 * py2)) * pit.ry + (fbm(tx * 0.9, ty * 0.9, ns + 5) - 0.5) * 1.0;
   }
-  var cave = { ox: ox, oy: oy, seed: seed, D: D, P: P, TR: null, chunks: {}, chunkN: 0, noiseT: 0, px: null, ores: [], veins: [], props: [], shafts: [], puddles: [], pockets: [], seen: new Uint8Array(SW * SH), seenDirty: true };
+  var cave = { kind: 'troll', name: 'The cave', S: null, sets: [], posts: [], soot: [], finds: [], glows: [], tintF: null, tintW: null, tunW: 80, ox: ox, oy: oy, seed: seed, D: D, P: P, TR: null, chunks: {}, chunkN: 0, noiseT: 0, px: null, ores: [], veins: [], props: [], shafts: [], puddles: [], pockets: [], seen: new Uint8Array(SW * SH), seenDirty: true };
   function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
   cave.path = path.map(function (q) { return { x: ox + q.x * T, y: oy + q.y * T }; });     // the middle of the way through, a point a tile: the troll walks it home
   cave.entrance = W([TX, 34.3]); cave.exitAt = W([TX, 36.9]); cave.flip = flip; cave.tunnelY = oy + 35.2 * T;   // where you come in, where E takes you out, where the daylight begins
@@ -5677,12 +5965,12 @@ function make(seed, o) {
 function prepare(cave) {
   if (cave.px) return cave.px; sheets();
   var N = PW * PH, KD = new Uint8Array(N), A1 = new Uint8Array(N), A2 = new Uint8Array(N), A3 = new Uint8Array(N), BD = new Uint8Array(N), BO = new Uint8Array(N), x, r, q, i, D = cave.D, P = cave.P;
-  var IX = new Int32Array(PW), UU = new Float32Array(PW), cd = new Float32Array(FW), cp = new Float32Array(FW);
+  var IX = new Int32Array(PW), UU = new Float32Array(PW), cd = new Float32Array(FW), cp = new Float32Array(FW), cs = new Float32Array(FW), Sf = cave.S;
   for (x = 0; x < PW; x++) { var fx = (x + 0.5) / FS - 0.5, ix = Math.floor(fx); IX[x] = Math.max(0, Math.min(FW - 2, ix)); UU[x] = Math.max(0, Math.min(1, fx - IX[x])); }
   for (r = 0; r < PH; r++) {
     var fy = (r + 0.5) / K / FS - 0.5, j = Math.max(0, Math.min(FH - 2, Math.floor(fy))), v = Math.max(0, Math.min(1, fy - j)), nrow = (r & 127) << 7;
-    for (i = 0; i < FW; i++) { cd[i] = D[j * FW + i] * (1 - v) + D[(j + 1) * FW + i] * v; cp[i] = P[j * FW + i] * (1 - v) + P[(j + 1) * FW + i] * v; }
-    for (x = 0; x < PW; x++) { var a = IX[x], u = UU[x], dv = cd[a] * (1 - u) + cd[a + 1] * u + (NS[nrow | (x & 127)] - 0.5) * 0.07; if (dv < 0) continue; var pv = cp[a] * (1 - u) + cp[a + 1] * u + (NS[nrow | ((x + 40) & 127)] - 0.5) * 0.07; KD[r * PW + x] = pv > 0 ? 2 : 1; }
+    for (i = 0; i < FW; i++) { cd[i] = D[j * FW + i] * (1 - v) + D[(j + 1) * FW + i] * v; cp[i] = P[j * FW + i] * (1 - v) + P[(j + 1) * FW + i] * v; if (Sf) cs[i] = Sf[j * FW + i] * (1 - v) + Sf[(j + 1) * FW + i] * v; }
+    for (x = 0; x < PW; x++) { var a = IX[x], u = UU[x], dv = cd[a] * (1 - u) + cd[a + 1] * u + (NS[nrow | (x & 127)] - 0.5) * 0.07; if (dv < 0) continue; var pv = cp[a] * (1 - u) + cp[a + 1] * u + (NS[nrow | ((x + 40) & 127)] - 0.5) * 0.07; KD[r * PW + x] = pv > 0 ? 2 : (Sf && cs[a] * (1 - u) + cs[a + 1] * u + (NS[nrow | ((x + 77) & 127)] - 0.5) * 0.1 > 0 ? 3 : 1); }   // 3: the sea over the floor
   }
   for (x = 0; x < PW; x++) {                              // straight up from every foot: the walls that face you; straight down from every lip: the chasm's far wall
     var lastF = 1e9, lastN = -1e9;
@@ -5725,12 +6013,12 @@ function chunk(cave, cx, cy) {
   var S = prepare(cave), KD = S.KD, A1 = S.A1, A2 = S.A2, A3 = S.A3, BD = S.BD, BO = S.BO, W2 = CS, H2 = Math.round(CS * K), X0 = cx * CS, Y0 = cy * H2;
   var small = mkCanvas(W2, H2), sg = small.getContext('2d'), img = sg.createImageData(W2, H2), d = img.data, pp = 0, px, py, k, pool = cave.pool, ox = cave.ox, oy = cave.oy;
   var shafts = cave.shafts.filter(function (s) { return s.x - ox + s.rx * 1.4 > X0 && s.x - ox - s.rx * 1.4 < X0 + W2 && (s.y - oy + s.ry * 1.4) * K > Y0 && (s.y - oy - s.ry * 1.4) * K < Y0 + H2; });
-  var lairX = cave.lair.x - ox, lairY = cave.lair.y - oy, tunY = (cave.tunnelY - oy) * K, tunX = cave.entrance.x - ox;
+  var tunY = (cave.tunnelY - oy) * K, tunX = cave.entrance.x - ox, tunW = cave.tunW || 80, TF = cave.tintF, TW = cave.tintW, sea = cave.kind === 'sea';
   for (py = 0; py < H2; py++) for (px = 0; px < W2; px++, pp += 4) {
     var gx = X0 + px, gy = Y0 + py, rr = 6, gg = 6, bb = 10;
     if (gx >= 0 && gy >= 0 && gx < PW && gy < PH) {
       var q = gy * PW + gx, kd = KD[q], n1 = NS[((gy & 127) << 7) | (gx & 127)], n2 = NS[(((gy * 2) & 127) << 7) | ((gx * 2) & 127)], wh = WS[((gy & 255) << 8) | (gx & 255)], bd = BD[q] * 0.5, bo = BO[q], oth = (bo >> 2) === kd ? (bo & 3) : (bo >> 2), a1 = A1[q], wx = gx + 0.5, wy = (gy + 0.5) / K;
-      if (kd === 1) {                                     // the floor
+      if (kd === 1 || kd === 3) {                         // the floor (and under the water)
         var soft = nsm(gx, gy * 1.3, 3.1), warm = nsm(gx + 300, gy * 1.3 + 170, 4.3), tr = trailAt(cave, ox + wx, oy + wy);
         rr = 86 + (soft - 0.5) * 30 + (n2 - 0.5) * 12; gg = 86 + (soft - 0.5) * 28 + (n2 - 0.5) * 12; bb = 98 + (soft - 0.5) * 26 + (n2 - 0.5) * 12;   // cool grey rock
         if (warm > 0.46) { var wk = sm(0.46, 0.56, warm) * 0.8; rr += (112 - rr) * wk; gg += (97 - gg) * wk; bb += (80 - bb) * wk; if (wh > 0.9) { rr += 20; gg += 18; bb += 14; } else if (wh < 0.08) { rr -= 16; gg -= 15; bb -= 12; } }   // earth and gravel in it, a speck a pebble
@@ -5739,19 +6027,30 @@ function chunk(cave, cx, cy) {
         if (oth === 0 && bd < 22) { var ao = 1 - bd / 22; ao *= ao; rr *= 1 - 0.5 * ao; gg *= 1 - 0.47 * ao; bb *= 1 - 0.36 * ao; }   // the dark at a wall's foot
         if (oth === 2 && bd < 7) { if (bd < 1.3) { rr = 18; gg = 16; bb = 20; } else { var lp = 1 - bd / 7; rr += 30 * lp; gg += 28 * lp; bb += 26 * lp; } }   // the lip of the chasm: a pale edge, an ink line at the drop
         if (pool) { var pu = (ox + wx - pool.x) / pool.rx, pvv = (oy + wy - pool.y) / pool.ry, pd = Math.sqrt(pu * pu + pvv * pvv) + (n1 - 0.5) * 0.12; if (pd < 1.1) { if (pd > 1) { rr = rr * 0.72; gg = gg * 0.74; bb = bb * 0.8; } else { var dp = sm(1, 0.25, pd); rr = 70 - dp * 46 + (n2 - 0.5) * 6; gg = 104 - dp * 54 + (n2 - 0.5) * 6; bb = 112 - dp * 44 + (n2 - 0.5) * 6; if (pd > 0.93) { rr = 30; gg = 44; bb = 52; } else if (nsm(gx, gy * 2, 2) > 0.66) { rr += 14; gg += 18; bb += 20; } } } }   // the still pool: clear at its rim, dark in its middle
-        if (gy > tunY && Math.abs(gx - tunX) < 80) { var dl2 = sm(tunY, tunY + 110, gy); rr += (255 - rr) * dl2; gg += (246 - gg) * dl2; bb += (216 - bb) * dl2; }   // the daylight at the foot of the tunnel
+        if (TF) { rr *= TF[0]; gg *= TF[1]; bb *= TF[2]; }
+        if (sea && kd === 1 && oth === 3 && bd < 12) { var wk3 = 1 - bd / 12; rr *= 1 - 0.34 * wk3; gg *= 1 - 0.28 * wk3; bb *= 1 - 0.2 * wk3; if (wh > 0.93 && bd > 3) { rr += 26; gg += 30; bb += 30; } }   // wet shingle at the water's edge, a pale pebble in it
+        if (kd === 3) {                                   // the sea over the floor: clear at its edge, green then dark where it deepens; a pale line where it laps
+          var dpt = sAt(cave, ox + wx, oy + wy), dk = sm(0, 1.1, dpt), band = nsm(gx * 0.7, gy * 2.6, 3.4);
+          var wr = 58 - dk * 44 + (band - 0.5) * 14, wg = 132 - dk * 78 + (band - 0.5) * 16, wb = 138 - dk * 66 + (band - 0.5) * 14, mixw = 0.5 + dk * 0.5;
+          rr += (wr - rr) * mixw; gg += (wg - gg) * mixw; bb += (wb - bb) * mixw;
+          if (oth === 1 && bd < 2.4) { rr = 196; gg = 222; bb = 222; } else if (oth === 1 && bd < 5 && n2 > 0.5) { rr += 30; gg += 36; bb += 34; }
+          else if (oth === 0 && bd < 3) { rr += 40; gg += 50; bb += 50; }
+        }
+        if (gy > tunY && Math.abs(gx - tunX) < tunW) { var dl2 = sm(tunY, tunY + 110, gy) * (sea ? 0.6 : 1); rr += (255 - rr) * dl2; gg += (246 - gg) * dl2; bb += (216 - bb) * dl2; }   // the daylight at the foot of the tunnel
       } else if (kd === 0) {
         if (a1) {                                         // a wall that faces you
           var f = a1 / WALLH, tone = rockTone(gx, gy, a1, 1) + (n2 - 0.5) * 0.1, lt = Math.pow(1 - f, 1.35) * 0.96 + 0.03;
           var wet = sm(0.6, 0.72, vnoise(gx / 120, 7.7, 51)) * sm(0.5, 0.7, vnoise(gx / 6, 3.1, 50)); if (wet > 0.05) { tone *= 1 - wet * 0.36; if (n2 > 0.8 && wet > 0.6) tone += 0.3; }   // water running down
           rr = 100 * tone * lt; gg = 94 * tone * lt; bb = 108 * tone * lt + 14 * f;
           var rust = sm(0.62, 0.74, vnoise(gx / 70, 2.2, 53)) * sm(0.45, 0.7, vnoise(gx / 5, 9.9, 54)) * (1 - f); if (rust > 0.05) { rr += (128 * lt - rr) * rust * 0.6; gg += (88 * lt - gg) * rust * 0.6; bb += (58 * lt - bb) * rust * 0.6; }   // rust bled out of the rock
+          if (TW) { rr *= TW[0]; gg *= TW[1]; bb *= TW[2]; }
           if (a1 <= 1) { rr = 16; gg = 14; bb = 18; } else if (a1 <= 5 && KD[q + a1 * PW] === 1) { rr *= 1.16; gg *= 1.14; bb *= 1.1; }   // the line where it meets the floor, the floor's light on its foot
-          if (gy + a1 > tunY && Math.abs(gx - tunX) < 90) { var dl3 = sm(tunY, tunY + 110, gy + a1) * (1 - f * 0.6); rr += (255 - rr) * dl3 * 0.7; gg += (240 - gg) * dl3 * 0.7; bb += (200 - bb) * dl3 * 0.7; }
+          if (sea && a1 < 18 && KD[q + a1 * PW] === 3) { var wt2 = 1 - a1 / 18; rr *= 1 - 0.42 * wt2; gg *= 1 - 0.3 * wt2; bb *= 1 - 0.26 * wt2; if (wh > 0.86 && a1 > 3) { rr += 8; gg += 34; bb += 10; } else if (wh < 0.07) { rr += 60; gg += 62; bb += 60; } if (a1 <= 2) { rr = 150; gg = 180; bb = 180; } }   // a wall that stands in the sea: wet and dark at its foot, weed and barnacles on it, a pale line where the water laps
+          if (gy + a1 > tunY && Math.abs(gx - tunX) < tunW + 10) { var dl3 = sm(tunY, tunY + 110, gy + a1) * (1 - f * 0.6); rr += (255 - rr) * dl3 * 0.7; gg += (240 - gg) * dl3 * 0.7; bb += (200 - bb) * dl3 * 0.7; }
         } else if (A2[q] || A3[q]) {                      // a side wall: lit where it faces west, dark where it faces east
           var west = A2[q] !== 0 && (A3[q] === 0 || A2[q] <= A3[q]), sd = west ? A2[q] : A3[q], fs = sd / WALLH, ts = (west ? 1.12 : 0.72) * (0.86 + (hash(Math.floor((sd + 4) / 11), west ? 3 : 4, 36) - 0.5) * 0.2 + (n2 - 0.5) * 0.12), ls = Math.pow(1 - fs, 1.35) * 0.96 + 0.03;
           if ((sd + 4) % 11 < 1.4) ts *= 0.78;
-          rr = 100 * ts * ls; gg = 94 * ts * ls; bb = 108 * ts * ls + 14 * fs; if (sd <= 1) { rr = 16; gg = 14; bb = 18; }
+          rr = 100 * ts * ls; gg = 94 * ts * ls; bb = 108 * ts * ls + 14 * fs; if (TW) { rr *= TW[0]; gg *= TW[1]; bb *= TW[2]; } if (sd <= 1) { rr = 16; gg = 14; bb = 18; }
         } else if (oth !== 0 && bd <= 7.5) {              // the near wall, its face turned away: a rim of rock, an ink line at the floor
           if (bd <= 1.4) { rr = 16; gg = 14; bb = 18; } else { var rim = (n1 > 0.5 ? 1.08 : 0.9) * (1 - (bd - 1.4) / 9); rr = 74 * rim; gg = 72 * rim; bb = 84 * rim; }
         } else { var fr = oth !== 0 ? Math.max(0, 1 - bd / 46) : 0, rk = 12 + fr * 22 + (n1 - 0.5) * (5 + fr * 8) + (n2 - 0.5) * fr * 6; rr = rk; gg = rk - 1; bb = rk + 6; }   // the rock itself, seen from above: dark stone by the floor, nothing further in (black is kept for the chasm)
@@ -5796,10 +6095,16 @@ function pen(g, cave, S, X0, Y0, W2, H2) {
     else if (KD[q] === 0 && !A1[q] && !S.A2[q] && !S.A3[q] && kd(x, y - 2) === 1 && wh < 0.05) stone(x, y + 2.5, 2.4 + wh * 50, 1.6 + wh * 26, wh < 0.025 ? '#787684' : '#5d5b69', x * 3 + y);
   }
   // on the floor: stones in clusters, cracks in the bare rock, bones thicker the nearer his lair
-  var CL = 15, gx, gy, lx = cave.lair.x - ox, ly = (cave.lair.y - oy) * K;
+  var CL = 15, gx, gy, lx = cave.lair ? cave.lair.x - ox : -1e6, ly = cave.lair ? (cave.lair.y - oy) * K : -1e6, pl0 = cave.pool || { x: -1e6, y: -1e6, rx: 1, ry: 1 }, sea = cave.kind === 'sea';
   for (gy = Math.floor((Y0 - M) / CL); gy <= Math.floor((Y0 + H2 + M) / CL); gy++) for (gx = Math.floor((X0 - M) / CL); gx <= Math.floor((X0 + W2 + M) / CL); gx++) {
     var h0 = hash(gx, gy, 65), sx = (gx + hash(gx, gy, 66)) * CL, sy = (gy + hash(gx, gy, 67)) * CL; if (kd(sx, sy) !== 1 || bdAt(sx, sy) < 7) continue;
-    var wxx = ox + sx, wyy = oy + sy / K, tr = trailAt(cave, wxx, wyy), hz = hash(gx, gy, 71); if (Math.hypot((wxx - cave.pool.x) / cave.pool.rx, (wyy - cave.pool.y) / cave.pool.ry) < 1.05) continue;
+    var wxx = ox + sx, wyy = oy + sy / K, tr = trailAt(cave, wxx, wyy), hz = hash(gx, gy, 71); if (Math.hypot((wxx - pl0.x) / pl0.rx, (wyy - pl0.y) / pl0.ry) < 1.05) continue;
+    if (sea) {                                            // the shingle: far more stones than a dry cave has, weed thrown up along the water's edge, a shell
+      var sdp = sAt(cave, wxx, wyy);
+      if (sdp > -0.5 && h0 > 0.62 && h0 < 0.8) { g.fillStyle = 'rgba(52,60,34,0.9)'; g.beginPath(); g.ellipse(sx, sy, 5 + hz * 5, 2.2 + hz * 1.6, hz * 3, 0, 7); g.fill(); g.strokeStyle = '#6f7a3a'; g.lineWidth = 0.8; for (k = 0; k < 4; k++) { g.beginPath(); g.moveTo(sx + (hash(gx + k, gy, 74) - 0.5) * 9, sy); g.quadraticCurveTo(sx + (hash(gx, gy + k, 75) - 0.5) * 14, sy - 2, sx + (hash(gx + k, gy + k, 76) - 0.5) * 16, sy + (hash(gx - k, gy, 77) - 0.5) * 5); g.stroke(); } continue; }
+      if (h0 < 0.3) { stone(sx, sy, 1.4 + hz * 2.6, 1 + hz * 1.6, ['#9aa0a8', '#7c848e', '#b4b6b2', '#8d8478'][Math.floor(hz * 4)], gx * 31 + gy); continue; }
+      if (h0 > 0.97) { g.fillStyle = '#e6dfd0'; g.strokeStyle = INK; g.lineWidth = 0.5; g.beginPath(); g.ellipse(sx, sy, 2.2, 1.5, hz * 3, 0, 7); g.fill(); g.stroke(); continue; }
+    }
     var near = Math.max(0, 1 - Math.hypot(sx - lx, (sy - ly) / K) / (11 * T));
     if (near > 0 && h0 > 1 - near * (nsm(sx + 500, sy + 900, 1.9) > 0.52 ? 0.5 : 0.06) && tr > 12) {   // a bone, now and then a skull: in heaps, few between
       g.save(); g.translate(sx, sy); g.rotate(hz * 6.283);
@@ -5822,16 +6127,35 @@ function pen(g, cave, S, X0, Y0, W2, H2) {
   // moss and fern under the holes in the roof
   cave.shafts.forEach(function (s, si) { var sx = s.x - ox, sy = (s.y - oy) * K; if (sx < X0 - 120 || sx > X0 + W2 + 120 || sy < Y0 - 90 || sy > Y0 + H2 + 90) return;
     var n = Math.round(s.rx * 0.5), i2;
-    for (i2 = 0; i2 < n; i2++) { var a = hash(i2, si, 81) * 6.283, rd = Math.sqrt(hash(i2, si, 82)), bx = sx + Math.cos(a) * rd * s.rx * 0.95, by = sy + Math.sin(a) * rd * s.ry * K * 0.95, hb = hash(i2, si, 83); if (kd(bx, by) !== 1 || trailAt(cave, ox + bx, oy + by / K) < 16 || Math.hypot((ox + bx - cave.pool.x) / (cave.pool.rx + 4), (oy + by / K - cave.pool.y) / (cave.pool.ry + 4)) < 1) continue;
+    for (i2 = 0; i2 < n; i2++) { var a = hash(i2, si, 81) * 6.283, rd = Math.sqrt(hash(i2, si, 82)), bx = sx + Math.cos(a) * rd * s.rx * 0.95, by = sy + Math.sin(a) * rd * s.ry * K * 0.95, hb = hash(i2, si, 83); if (kd(bx, by) !== 1 || trailAt(cave, ox + bx, oy + by / K) < 16 || Math.hypot((ox + bx - pl0.x) / (pl0.rx + 4), (oy + by / K - pl0.y) / (pl0.ry + 4)) < 1) continue;
       if (hb > 0.8) { g.strokeStyle = '#4f7a36'; g.lineWidth = 0.9; var fr; for (fr = -2; fr <= 2; fr++) { var ex = bx + fr * 4.4, ey = by - 9 + Math.abs(fr) * 2.2; g.beginPath(); g.moveTo(bx, by); g.quadraticCurveTo(bx + fr * 1.6, by - 7, ex, ey); g.stroke(); for (k = 1; k <= 3; k++) { var t = k / 4, mx = bx + (ex - bx) * t + fr * 0.5, my = by + (ey - by) * t - 2 * Math.sin(t * 3.14); g.beginPath(); g.moveTo(mx - 1.6, my + 0.6); g.lineTo(mx + 1.6, my - 0.6); g.stroke(); } } }   // a fern
       else { g.lineWidth = 0.9; for (k = 0; k < 3; k++) { g.strokeStyle = (k + i2) % 2 ? '#86b450' : '#5d8a3a'; g.beginPath(); g.moveTo(bx + (k - 1) * 1.4, by); g.quadraticCurveTo(bx + (k - 1) * 2, by - 3, bx + (k - 1) * 2.6 + (hb - 0.5) * 2, by - 4.5 - hb * 3); g.stroke(); } }
     } });
+  if (cave.kind === 'mine') penMine(g, cave, X0, Y0, W2, H2);
   // the copper veins: green streaks up the walls that face you
   cave.veins.forEach(function (v) { var vx = v.x - ox, vy = (v.y - oy) * K; if (vx < X0 - 30 || vx > X0 + W2 + 30 || vy < Y0 - 60 || vy > Y0 + H2 + 10) return;
     var seg = 3 + (v.s % 3), hh = v.h * K, spent = v.left <= 0; g.strokeStyle = spent ? '#4a4540' : '#2f8a62'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(vx - 6, vy - 2);
     for (k = 1; k <= seg; k++) g.lineTo(vx - 6 + (12 / seg) * k + (hash(k, v.s, 1) - 0.5) * 5, vy - 2 - (hh - 5) * k / seg + (hash(k, v.s, 2) - 0.5) * 4);
     g.stroke(); g.strokeStyle = spent ? '#6a645e' : '#6fd19a'; g.lineWidth = 0.9; g.stroke();
     for (k = 0; k < 4 && !spent; k++) { g.fillStyle = 'rgba(80,190,130,0.7)'; g.beginPath(); g.arc(vx + (hash(k, v.s, 3) - 0.5) * 16, vy - hash(k, v.s, 4) * (hh - 4), 0.9 + hash(k, v.s, 5), 0, 7); g.fill(); } });
+}
+function penMine(g, cave, X0, Y0, W2, H2) {                // what people left in the mine: soot where they set fires, posts along the drift, a ladder, a bucket, a sledge
+  var ox = cave.ox, oy = cave.oy, INK = 'rgba(22,16,14,0.95)', k;
+  function vis(x, y, m) { return x > X0 - m && x < X0 + W2 + m && y > Y0 - m && y < Y0 + H2 + m; }
+  cave.soot.forEach(function (s) { var x = s.x - ox, y = (s.y - oy) * K; if (!vis(x, y, 70)) return;
+    var gr = g.createRadialGradient(x, y - 14, 2, x, y - 14, 44); gr.addColorStop(0, 'rgba(8,6,8,0.8)'); gr.addColorStop(0.6, 'rgba(10,8,10,0.45)'); gr.addColorStop(1, 'rgba(10,8,10,0)');
+    g.save(); g.beginPath(); g.rect(x - 50, y - 64, 100, 64); g.clip(); g.translate(x, y - 14); g.scale(0.62, 1.25); g.translate(-x, -(y - 14)); g.fillStyle = gr; g.beginPath(); g.arc(x, y - 14, 44, 0, 7); g.fill(); g.restore();
+    g.fillStyle = 'rgba(190,186,180,0.5)'; g.beginPath(); g.ellipse(x, y + 9, 15, 5.5, 0, 0, 7); g.fill(); g.fillStyle = 'rgba(24,20,22,0.8)'; g.beginPath(); g.ellipse(x, y + 9, 10, 3.6, 0, 0, 7); g.fill();
+    g.fillStyle = '#16131a'; for (k = 0; k < 6; k++) { g.beginPath(); g.ellipse(x + (hash(k, s.x | 0, 3) - 0.5) * 18, y + 8 + (hash(k, s.x | 0, 4) - 0.5) * 6, 2 + hash(k, 2, 5) * 1.6, 1.3, hash(k, 6, 7) * 3, 0, 7); g.fill(); } });
+  cave.posts.forEach(function (p) { var x = p.x - ox, y = (p.y - oy) * K; if (!vis(x, y, 60)) return;
+    g.fillStyle = 'rgba(4,5,10,0.4)'; g.beginPath(); g.ellipse(x + 3, y + 1, 6, 2.4, 0, 0, 7); g.fill();
+    g.strokeStyle = INK; g.lineWidth = 7.4; g.lineCap = 'butt'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 0.8, y - 42); g.stroke(); g.strokeStyle = '#64462f'; g.lineWidth = 5.8; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 0.8, y - 42); g.stroke(); g.strokeStyle = '#8d6a48'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 1.6, y - 1); g.lineTo(x - 0.8, y - 41); g.stroke();
+    g.fillStyle = INK; g.fillRect(x - 12, y - 49, 25, 8); g.fillStyle = '#5a3f2a'; g.fillRect(x - 11, y - 48, 23, 6); g.fillStyle = '#8a6846'; g.fillRect(x - 11, y - 48, 23, 1.5);   // the cap's end, the lagging over it
+    g.fillStyle = INK; g.beginPath(); g.arc(x + 0.8, y - 45, 3.6, 0, 7); g.fill(); g.fillStyle = '#a3825c'; g.beginPath(); g.arc(x + 0.8, y - 45, 2.6, 0, 7); g.fill(); g.strokeStyle = 'rgba(60,40,26,0.7)'; g.lineWidth = 0.5; g.beginPath(); g.arc(x + 0.8, y - 45, 1.3, 0, 7); g.stroke(); });
+  (cave.things || []).forEach(function (t) { var x = t.x - ox, y = (t.y - oy) * K; if (!vis(x, y, 50)) return;
+    if (t.kind === 'ladder') { g.strokeStyle = INK; g.lineWidth = 3.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 7, y + 3); g.lineTo(x - 3, y - 50); g.moveTo(x + 7, y + 3); g.lineTo(x + 5, y - 50); g.stroke(); g.strokeStyle = '#7a5a3c'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(x - 7, y + 3); g.lineTo(x - 3, y - 50); g.moveTo(x + 7, y + 3); g.lineTo(x + 5, y - 50); g.stroke(); for (k = 0; k < 6; k++) { var ry = y - 3 - k * 8.4; if (k === 3) continue; g.strokeStyle = INK; g.lineWidth = 2.6; g.beginPath(); g.moveTo(x - 6.6 + k * 0.6, ry); g.lineTo(x + 6.8 - k * 0.3, ry - 0.6); g.stroke(); g.strokeStyle = '#8f6c49'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(x - 6.6 + k * 0.6, ry); g.lineTo(x + 6.8 - k * 0.3, ry - 0.6); g.stroke(); } }
+    else if (t.kind === 'bucket') { g.fillStyle = 'rgba(4,5,10,0.4)'; g.beginPath(); g.ellipse(x + 2, y + 1, 7, 2.6, 0, 0, 7); g.fill(); g.fillStyle = '#6a4b32'; g.strokeStyle = INK; g.lineWidth = 0.8; g.beginPath(); g.moveTo(x - 5, y - 9); g.lineTo(x + 5, y - 9); g.lineTo(x + 4, y); g.lineTo(x - 4, y); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#2a2018'; g.beginPath(); g.ellipse(x, y - 9, 5, 1.8, 0, 0, 7); g.fill(); g.stroke(); g.strokeStyle = '#3a3a40'; g.lineWidth = 1; g.beginPath(); g.moveTo(x - 4.8, y - 5); g.lineTo(x + 4.8, y - 5); g.stroke(); g.fillStyle = '#5fa585'; g.beginPath(); g.arc(x - 1, y - 9.6, 1.5, 0, 7); g.arc(x + 2, y - 9.2, 1.2, 0, 7); g.fill(); }
+    else { g.fillStyle = 'rgba(4,5,10,0.4)'; g.beginPath(); g.ellipse(x + 2, y + 2, 17, 4, 0, 0, 7); g.fill(); g.strokeStyle = INK; g.lineWidth = 3.4; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 16, y - 1); g.quadraticCurveTo(x - 20, y - 5, x - 17, y - 8); g.moveTo(x - 16, y - 1); g.lineTo(x + 15, y - 1); g.moveTo(x - 14, y + 3); g.lineTo(x + 17, y + 3); g.stroke(); g.strokeStyle = '#7a5a3c'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#5a3f2a'; g.strokeStyle = INK; g.lineWidth = 0.8; g.beginPath(); g.rect(x - 11, y - 8, 22, 7); g.fill(); g.stroke(); g.fillStyle = '#6c7078'; [-6, 0, 6].forEach(function (dx, di) { g.beginPath(); g.arc(x + dx, y - 9 - (di === 1 ? 1.5 : 0), 3, 0, 7); g.fill(); g.stroke(); }); } });
 }
 function dirty(cave) { cave.chunks = {}; cave.chunkN = 0; }
 
@@ -5847,7 +6171,11 @@ function drawFloor(c, cave, cam, hw, hh, clock) {
     if (pc) c.drawImage(pc, cave.ox + cx * CS, cave.oy * K + cy * H2, CS + 0.5, H2 + 0.5); else { c.fillStyle = '#06060a'; c.fillRect(cave.ox + cx * CS, cave.oy * K + cy * H2, CS, H2); }
   }
   var pl = cave.pool, k;
-  for (k = 0; k < 3; k++) { var ph = (clock * 0.45 + k * 0.37) % 1, st = Math.floor(clock * 0.45 + k * 0.37), dx = (hash(k, st, 8) - 0.5) * pl.rx * 1.2, dy = (hash(k, st, 9) - 0.5) * pl.ry * 1.2; c.strokeStyle = 'rgba(190,220,230,' + (0.5 * (1 - ph)).toFixed(3) + ')'; c.lineWidth = 0.7; c.beginPath(); c.ellipse(pl.x + dx, (pl.y + dy) * K, 2 + ph * 12, (2 + ph * 12) * K, 0, 0, 7); c.stroke(); }
+  if (cave.S) {                                           // the sea in the cave: short pale lines that drift in from the mouth and fade
+    var WG = 30, wx0 = Math.floor((cam.x - hw) / WG), wx1 = Math.floor((cam.x + hw) / WG), wy0 = Math.floor((cam.y - hh) / K / WG), wy1 = Math.floor((cam.y + hh) / K / WG), wxi, wyi; c.lineCap = 'round';
+    for (wyi = wy0; wyi <= wy1; wyi++) for (wxi = wx0; wxi <= wx1; wxi++) { var hw0 = hash(wxi, wyi, 21); if (hw0 > 0.42) continue; var ph0 = (clock * (0.16 + hw0 * 0.2) + hash(wxi, wyi, 22)) % 1, wxp = (wxi + hash(wxi, wyi, 23)) * WG, wyp = (wyi + hash(wxi, wyi, 24)) * WG - ph0 * 22; if (sAt(cave, wxp, wyp) < 0.12 || sAt(cave, wxp, wyp + 8) < 0.1) continue; var wl = 5 + hw0 * 22; c.strokeStyle = 'rgba(200,236,236,' + (0.34 * Math.sin(ph0 * Math.PI)).toFixed(3) + ')'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(wxp - wl, wyp * K); c.quadraticCurveTo(wxp, wyp * K - 1.6, wxp + wl, wyp * K); c.stroke(); }
+  }
+  if (pl) for (k = 0; k < 3; k++) { var ph = (clock * 0.45 + k * 0.37) % 1, st = Math.floor(clock * 0.45 + k * 0.37), dx = (hash(k, st, 8) - 0.5) * pl.rx * 1.2, dy = (hash(k, st, 9) - 0.5) * pl.ry * 1.2; c.strokeStyle = 'rgba(190,220,230,' + (0.5 * (1 - ph)).toFixed(3) + ')'; c.lineWidth = 0.7; c.beginPath(); c.ellipse(pl.x + dx, (pl.y + dy) * K, 2 + ph * 12, (2 + ph * 12) * K, 0, 0, 7); c.stroke(); }
   cave.puddles.forEach(function (p, i) { if (Math.abs(p.x - cam.x) > hw + 20 || Math.abs(p.y * K - cam.y) > hh + 20) return; var per = 2.6 + hash(i, 1, 90) * 3, ph2 = ((clock + hash(i, 2, 91) * 9) % per) / 1.1; if (ph2 > 1) return; c.strokeStyle = 'rgba(190,220,230,' + (0.45 * (1 - ph2)).toFixed(3) + ')'; c.lineWidth = 0.6; c.beginPath(); c.ellipse(p.x, p.y * K, 1 + ph2 * p.rx * 0.7, (1 + ph2 * p.rx * 0.7) * K * 0.8, 0, 0, 7); c.stroke(); });
 }
 
@@ -5869,7 +6197,8 @@ function dark(c, cave, o) {
   hole(sx(P.x), sy(P.y) - 6 * z2, hr, hr, 1);
   hole(sx(cave.exitAt.x), sy(cave.exitAt.y + 30), 150 * z2, 190 * z2, 0.5 + 0.45 * sun);                 // the daylight up the tunnel
   cave.shafts.forEach(function (s) { var x = sx(s.x), y = sy(s.y); if (x < -80 || x > W / 2 + 80 || y < -80 || y > H / 2 + 80) return; var a = Math.min(0.93, s.k * (0.14 + 0.8 * sun)); hole(x, y, s.rx * 1.9 * z2, s.ry * 1.9 * K2 * z2, a * 0.55); hole(x, y, s.rx * 1.1 * z2, s.ry * 1.1 * K2 * z2, a); });
-  cave.ores.forEach(function (q) { if (q.dying == null) { var x = sx(q.x), y = sy(q.y) - 5 * z2; if (x > -30 && x < W / 2 + 30 && y > -30 && y < H / 2 + 30) hole(x, y, 34 * z2, 34 * z2, 0.62); } });
+  (cave.glows || []).forEach(function (g2) { var x = sx(g2.x), y = sy(g2.y); if (x < -160 || x > W / 2 + 160 || y < -160 || y > H / 2 + 160) return; hole(x, y, g2.r * 1.5 * z2, g2.r * 1.1 * K2 * z2, g2.a * (0.3 + 0.7 * sun)); });   // daylight carried in over water
+  cave.ores.forEach(function (q) { if (q.dying == null && q.ore !== false) { var x = sx(q.x), y = sy(q.y) - 5 * z2; if (x > -30 && x < W / 2 + 30 && y > -30 && y < H / 2 + 30) hole(x, y, 34 * z2, 34 * z2, 0.62); } });
   cave.veins.forEach(function (v) { if (v.left > 0) { var x = sx(v.x), y = sy(v.y) - 10 * z2; if (x > -30 && x < W / 2 + 30 && y > -30 && y < H / 2 + 30) hole(x, y, 26 * z2, 26 * z2, 0.3); } });
   c.save(); c.imageSmoothingEnabled = true; c.drawImage(darkCv, 0, 0, W, H);
   c.globalCompositeOperation = 'lighter';
@@ -5884,9 +6213,13 @@ function dark(c, cave, o) {
     var pg = c.createRadialGradient(x, y, 0, x, y, rx * 1.15); pg.addColorStop(0, 'rgba(' + col + ',' + (0.16 * a + 0.02).toFixed(3) + ')'); pg.addColorStop(1, 'rgba(' + col + ',0)'); c.save(); c.translate(x, y); c.scale(1, ry / rx); c.translate(-x, -y); c.fillStyle = pg; c.beginPath(); c.arc(x, y, rx * 1.15, 0, 7); c.fill(); c.restore();
     var m; for (m = 0; m < 12; m++) { var hm = hash(m, si, 95), tm = ((clock * (0.03 + hm * 0.04) + hash(m, si, 96)) % 1), my = y - tm * 110 * cam.z, mx2 = x + (hash(m, si, 97) - 0.5) * rx * 1.2 + (my - y) * lx + Math.sin(clock * 0.7 + m) * 3; c.fillStyle = 'rgba(' + col + ',' + ((0.3 + 0.3 * Math.sin(clock * 1.3 + m * 2)) * a * Math.sin(tm * Math.PI)).toFixed(3) + ')'; c.fillRect(mx2, my, 1.1, 1.1); }
   });
+  (cave.glows || []).forEach(function (g2, gi) {           // the water's own light: a green-blue shimmer where the daylight comes in under it
+    if (!g2.sea) return; var x = px(g2.x), y = py(g2.y), r = g2.r * cam.z; if (x < -r || x > W + r || y < -r || y > H + r) return;
+    var a = g2.a * (0.3 + 0.7 * sun) * (0.2 + 0.05 * Math.sin(clock * 1.7 + gi * 2)), gg2 = c.createRadialGradient(x, y, 0, x, y, r); gg2.addColorStop(0, 'rgba(90,220,210,' + a.toFixed(3) + ')'); gg2.addColorStop(1, 'rgba(60,180,200,0)');
+    c.save(); c.translate(x, y); c.scale(1, K2); c.translate(-x, -y); c.fillStyle = gg2; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); });
   if (o.torch) { var tx = px(P.x), ty = py(P.y) - 10 * cam.z, tg = c.createRadialGradient(tx, ty, 0, tx, ty, 150 * cam.z); tg.addColorStop(0, 'rgba(255,170,80,' + (0.22 + 0.03 * Math.sin(clock * 13)).toFixed(3) + ')'); tg.addColorStop(1, 'rgba(255,110,40,0)'); c.fillStyle = tg; c.beginPath(); c.arc(tx, ty, 150 * cam.z, 0, 7); c.fill(); }
   cave.ores.forEach(function (q) {                         // the copper in the rock shows warm
-    if (q.dying != null) return; var x = px(q.x), y = py(q.y) - 6 * cam.z; if (x < -30 || x > W + 30 || y < -30 || y > H + 30) return;
+    if (q.dying != null || q.ore === false) return; var x = px(q.x), y = py(q.y) - 6 * cam.z; if (x < -30 || x > W + 30 || y < -30 || y > H + 30) return;
     var g = c.createRadialGradient(x, y, 0, x, y, 15 * cam.z), a = 0.5 + 0.12 * Math.sin(clock * 2 + q.x); g.addColorStop(0, 'rgba(255,170,100,' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,110,50,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, 15 * cam.z, 0, 7); c.fill();
   });
   c.restore();
@@ -5897,7 +6230,7 @@ function dark(c, cave, o) {
    and of the holes in the roof once seen) with the hero on it. */
 function see(cave, x, y, r) {
   var i0 = Math.max(0, Math.floor((x - r - cave.ox) / SEEN)), i1 = Math.min(SW - 1, Math.floor((x + r - cave.ox) / SEEN)), j0 = Math.max(0, Math.floor((y - r - cave.oy) / SEEN)), j1 = Math.min(SH - 1, Math.floor((y + r - cave.oy) / SEEN)), i, j;
-  for (j = j0; j <= j1; j++) for (i = i0; i <= i1; i++) { if (cave.seen[j * SW + i]) continue; var cx = cave.ox + (i + 0.5) * SEEN, cy = cave.oy + (j + 0.5) * SEEN; if (Math.hypot(cx - x, cy - y) > r) continue; var dv = dAt(cave, cx, cy); if (dv < -0.5) continue; cave.seen[j * SW + i] = pAt(cave, cx, cy) > 0 ? 3 : (dv < 0 ? 2 : 1); cave.seenDirty = true; }
+  for (j = j0; j <= j1; j++) for (i = i0; i <= i1; i++) { if (cave.seen[j * SW + i]) continue; var cx = cave.ox + (i + 0.5) * SEEN, cy = cave.oy + (j + 0.5) * SEEN; if (Math.hypot(cx - x, cy - y) > r) continue; var dv = dAt(cave, cx, cy); if (dv < -0.5) continue; cave.seen[j * SW + i] = pAt(cave, cx, cy) > 0 ? 3 : (dv < 0 ? 2 : (cave.S && sAt(cave, cx, cy) > 0 ? 4 : 1)); cave.seenDirty = true; }
 }
 function drawChart(c, cave, x, y, w, h, P) {
   if (!cave.chartCv) cave.chartCv = mkCanvas(SW, SH);
@@ -5905,7 +6238,8 @@ function drawChart(c, cave, x, y, w, h, P) {
   if (cave.seenDirty) {
     var g = cave.chartCv.getContext('2d'), img = g.createImageData(SW, SH), d = img.data, pl = cave.pool;
     for (i = 0; i < SW * SH; i++) { var s = cave.seen[i], cx = cave.ox + (i % SW + 0.5) * SEEN, cy = cave.oy + (Math.floor(i / SW) + 0.5) * SEEN, r = 0, gg = 0, b = 0, a = 0;
-      if (s === 1) { r = 206; gg = 190; b = 150; a = 255; if (Math.hypot((cx - pl.x) / pl.rx, (cy - pl.y) / pl.ry) < 1) { r = 96; gg = 156; b = 176; } else if (cave.shafts.some(function (sh) { return Math.hypot((cx - sh.x) / sh.rx, (cy - sh.y) / sh.ry) < 0.8; }) || cy > cave.tunnelY) { r = 255; gg = 244; b = 196; } }
+      if (s === 4) { r = 86; gg = 150; b = 170; a = 255; if (cy > cave.tunnelY) { r = 190; gg = 226; b = 214; } }
+      else if (s === 1) { r = 206; gg = 190; b = 150; a = 255; if (pl && Math.hypot((cx - pl.x) / pl.rx, (cy - pl.y) / pl.ry) < 1) { r = 96; gg = 156; b = 176; } else if (cave.shafts.some(function (sh) { return Math.hypot((cx - sh.x) / sh.rx, (cy - sh.y) / sh.ry) < 0.8; }) || cy > cave.tunnelY) { r = 255; gg = 244; b = 196; } }
       else if (s === 2) { r = 116; gg = 104; b = 86; a = 255; } else if (s === 3) { r = 20; gg = 22; b = 36; a = 255; }
       d[i * 4] = r; d[i * 4 + 1] = gg; d[i * 4 + 2] = b; d[i * 4 + 3] = a; }
     g.putImageData(img, 0, 0); cave.seenDirty = false;
@@ -5917,7 +6251,7 @@ function drawChart(c, cave, x, y, w, h, P) {
 function seenStr(cave) { var out = [], i = 0, n = cave.seen.length; while (i < n) { var v = cave.seen[i], j = i; while (j < n && cave.seen[j] === v && j - i < 4000) j++; out.push(v + ':' + (j - i)); i = j; } return out.join(','); }   // the seen cells as runs, for the save
 function seenLoad(cave, str) { if (!str) return; var i = 0; String(str).split(',').forEach(function (run) { var q = run.split(':'), v = +q[0], n = +q[1]; while (n-- > 0 && i < cave.seen.length) cave.seen[i++] = v; }); cave.seenDirty = true; }
 
-return { make: make, prepare: prepare, chunk: chunk, dirty: dirty, dAt: dAt, pAt: pAt, floor: floor, trailAt: trailAt, drawFloor: drawFloor, dark: dark, see: see, drawChart: drawChart, seenStr: seenStr, seenLoad: seenLoad,
+return { make: make, prepare: prepare, chunk: chunk, dirty: dirty, release: release, drawSet: drawSet, drawDrift: drawDrift, sAt: sAt, dAt: dAt, pAt: pAt, floor: floor, trailAt: trailAt, drawFloor: drawFloor, dark: dark, see: see, drawChart: drawChart, seenStr: seenStr, seenLoad: seenLoad,
   T: T, K: K, GW: GW, GH: GH, FS: FS, PW: PW, PH: PH, CS: CS, WALLH: WALLH, PITH: PITH };
 })();
 if (typeof module !== 'undefined') module.exports = Cave;
@@ -10148,7 +10482,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // until they feel great, the further biomes later): the starter 120 tiles, the big island 400, about 85 tiles of water between
   // (50 s by raft, 27 s by boat), no lowland island; the view 390 units tall (zoom 0.65) so the hero is a tenth of the screen's height.
   // The canon: the hero is 1.8 m and 39 units tall, so a unit is 4.6 cm and a tile 1.5 m.
-  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11 }, zoom = 0.65;
+  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN }, zoom = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12)
   try { var gwS = JSON.parse(localStorage.getItem('game.world2')); if (gwS && gwS.count) { for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
@@ -10162,7 +10496,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function sprite(name, v) { return w.sprite(name, v); }
   function around(x, y, fn) { w.around(x, y, fn); }
   function nearSolids(P) { return w.nearSolids(P); }
-  function removeProp(o) { if (o.cave) { var ci = cave.ores.indexOf(o); if (ci >= 0) cave.ores.splice(ci, 1); return; } w.removeProp(o); if (o.kind) { gone[propKey(o)] = 1; save(); } }
+  function removeProp(o) { if (o.cave) { caves.forEach(function (cv) { var ci = cv.cave.ores.indexOf(o); if (ci >= 0) { cv.cave.ores.splice(ci, 1); cv.cave.mined.push(o.id); save(); } }); return; } w.removeProp(o); if (o.kind) { gone[propKey(o)] = 1; save(); } }
   var grassLook = kit.STYLE.look === 3 ? World.GRASS_INK : World.GRASS;   // the Grass Editor's "Use in the game" look, if there is one; the ink look's grass otherwise
   lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   /* The hero is the Blender model (2026-10-09, Robin: the new character model in every editor and the game): src/sprites.js draws him
@@ -10184,7 +10518,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (e.stoneT != null) { o.clip = 'shield'; o.clipK = 0.999; o.tint = { color: '#a3a29a', a: 0.86 }; }        // the troll caught by the dawn: stone in the pose he threw up against it
     else if (e.holdT > 0) { o.clip = 'shield'; o.clipK = Math.min(0.999, (4 - e.holdT) / 0.6, e.holdT / 0.4); }   // shielding his eyes from a fire
     return Sprites.beast(c, BH, e, K, o); };
-  (function () { var PI = {"peak_a": {"w": 883, "h": 726, "ax": 474.7, "ay": 541.3, "upp": 0.5, "src": "../assets/props/peak_a.png?v=1f4d28d2"}, "peak_b": {"w": 801, "h": 581, "ax": 386.9, "ay": 399, "upp": 0.5, "src": "../assets/props/peak_b.png?v=d396dec1"}, "peak_c": {"w": 627, "h": 453, "ax": 335.2, "ay": 299.8, "upp": 0.5, "src": "../assets/props/peak_c.png?v=30837639"}, "cave_mouth": {"w": 420, "h": 279, "ax": 212, "ay": 197.6, "upp": 0.5, "src": "../assets/props/cave_mouth.png?v=0b78823e"}, "peak_d": {"w": 1087, "h": 618, "ax": 649.7, "ay": 452.8, "upp": 0.5, "src": "../assets/props/peak_d.png?v=0d4e7180"}}; if (!PI) return; var map = {}; for (var k in PI) { var im = new Image(); im.src = PI[k].src; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } World.setImages(map); })();   // the Blender set pieces (2026-10-12): the peaks and the cave mouth, drawn as props
+  (function () { var PI = {"peak_a": {"w": 883, "h": 726, "ax": 474.7, "ay": 541.3, "upp": 0.5, "src": "../assets/props/peak_a.png?v=1f4d28d2"}, "peak_b": {"w": 801, "h": 581, "ax": 386.9, "ay": 399, "upp": 0.5, "src": "../assets/props/peak_b.png?v=d396dec1"}, "peak_c": {"w": 627, "h": 453, "ax": 335.2, "ay": 299.8, "upp": 0.5, "src": "../assets/props/peak_c.png?v=30837639"}, "cave_mouth": {"w": 420, "h": 279, "ax": 212, "ay": 197.6, "upp": 0.5, "src": "../assets/props/cave_mouth.png?v=0b78823e"}, "peak_d": {"w": 1087, "h": 618, "ax": 649.7, "ay": 452.8, "upp": 0.5, "src": "../assets/props/peak_d.png?v=0d4e7180"}, "mine_mouth": {"w": 381, "h": 266, "ax": 192.6, "ay": 188.6, "upp": 0.5, "src": "../assets/props/mine_mouth.png?v=0906b9d8"}, "sea_mouth": {"w": 488, "h": 263, "ax": 241.3, "ay": 183, "upp": 0.5, "src": "../assets/props/sea_mouth.png?v=415be92a"}, "shelter": {"w": 644, "h": 349, "ax": 318.8, "ay": 287.3, "upp": 0.5, "src": "../assets/props/shelter.png?v=08a7c938"}, "shelter_in": {"w": 331, "h": 205, "ax": 166, "ay": 194.1, "upp": 0.5, "src": "../assets/props/shelter_in.png?v=f4cd4cdd"}}; if (!PI) return; var map = {}; for (var k in PI) { var im = new Image(); im.src = PI[k].src; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } World.setImages(map); })();   // the Blender set pieces (2026-10-12): the peaks and the cave mouth, drawn as props
   (function () { var IC = {"axe": {"metal": "../assets/sprites/items/axe_metal.png", "wood": "../assets/sprites/items/axe_wood.png"}, "bow": {"wood": "../assets/sprites/items/bow_wood.png"}, "club": {"wood": "../assets/sprites/items/club_wood.png"}, "knife": {"metal": "../assets/sprites/items/knife_metal.png", "wood": "../assets/sprites/items/knife_wood.png"}, "pick": {"metal": "../assets/sprites/items/pick_metal.png", "wood": "../assets/sprites/items/pick_wood.png"}, "rod": {"wood": "../assets/sprites/items/rod_wood.png"}, "seax": {"metal": "../assets/sprites/items/seax_metal.png", "wood": "../assets/sprites/items/seax_wood.png"}, "spear": {"metal": "../assets/sprites/items/spear_metal.png", "wood": "../assets/sprites/items/spear_wood.png"}, "sword": {"metal": "../assets/sprites/items/sword_metal.png", "wood": "../assets/sprites/items/sword_wood.png"}}; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the rendered icons for the bag, the bars and the drops
   try { var cg = JSON.parse(localStorage.getItem('game.creatures')); if (cg) for (var ck in cg) if (cg[ck]) lib.useAnimal(ck, cg[ck]); } catch (e) {}   // the Creature Editor's "Update in game"
   try { var gg = JSON.parse(localStorage.getItem('game.grass')); if (gg && gg.g) { grassLook = JSON.parse(JSON.stringify(World.GRASS)); for (var gk in gg.g) grassLook[gk] = gg.g[gk]; for (var gs in (gg.st || {})) kit.STYLE[gs] = gg.st[gs]; } } catch (e) {}
@@ -10356,7 +10690,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var roofCfgs = {};
   // a workbench works only with a roof over it: the first thing a house is for
   function benchNear(P) { var s = stationNear(P); return s && s.kind === 'bench' ? s.it : null; }
-  function benchRoofed(it) { var R = RI(it.lvl || 0); return !!R && R.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0; }
+  function benchRoofed(it) { var R = RI(it.lvl || 0); return (!!R && R.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0) || !!(w.shelterAt && !it.lvl && w.shelterAt(it.x, it.y)); }   // a room, or the rock shelter's overhang
+  function shelterComfort(x, y) { return w.shelterAt && !inCave && !inYard && w.shelterAt(x, y) ? 1 + (fireNear(x, y, 110) ? 1 : 0) : 0; }   // a roof of rock: comfort 1, and 2 with a fire under it
   function bedNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.bed && sameLvl(it) && canReach(P, it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
   // Sitting (2026-10-07, Robin: chairs should do something): E at a chair or a bench seat sits you on it, facing the room; you rest
   // there (health and stamina come back) until you press E again or a movement key. The seat's own solid is skipped while you sit.
@@ -10442,7 +10777,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     day.t += dt; if (day.t >= DAY_LEN) { day.t -= DAY_LEN; day.n++; if (day.n >= 10) earnRune('nighteyes', 'ten days lived'); morningEmbers(); save(); }
     if (rested > 0) { rested -= dt; var P2 = hero(); if (!P2.dead) P2.hp = Math.min(P2.maxHp, P2.hp + 0.3 * dt); }
   }
-  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening()) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: comfortOf(roomInfo ? roomInfo.at(Math.floor(bd.x / T), Math.floor(bd.y / T)) : -1).n }; invOpen = false; menu = null; }
+  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening()) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: Math.max(comfortOf(roomInfo ? roomInfo.at(Math.floor(bd.x / T), Math.floor(bd.y / T)) : -1).n, shelterComfort(bd.x, bd.y)) }; invOpen = false; menu = null; }
 
   /* ---------- the night (Robin, 2026-10-06): dark, and the wolves come. Home, with its fire, is where you are safe ----------
      Wolves live nowhere by day. When the light has mostly gone a pack of three comes in from the edge of your view, on
@@ -10559,7 +10894,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.arc(x, y, 9, 0, 7); c.stroke();
     if (rested > 0) { c.strokeStyle = '#9be58b'; c.lineWidth = 1.6; c.beginPath(); c.arc(x, y, 8.2, -Math.PI / 2, -Math.PI / 2 + rested / restedMax * 6.283); c.stroke(); }
     c.restore();
-    var hr = RI() ? RI().at(Math.floor(hero().x / T), Math.floor(hero().y / T)) : -1, cf = comfortOf(hr, lvl());
+    var hr = RI() ? RI().at(Math.floor(hero().x / T), Math.floor(hero().y / T)) : -1, cf = comfortOf(hr, lvl()); if (!cf.n && shelterComfort(hero().x, hero().y)) cf = { n: shelterComfort(hero().x, hero().y), has: {} };
     if (cf.n > 0 && !hov) { var ct = 'Comfort ' + cf.n; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(ct, x, y + 16); c.fillStyle = cf.n >= 4 ? '#9be58b' : '#fff'; c.fillText(ct, x, y + 16); }
     if (hov) { var t = 'Day ' + day.n + ', ' + timeName() + (cf.n ? '. Comfort ' + cf.n : '') + (rested > 0 ? '. Rested: ' + Math.ceil(rested / 60) + ' min' : ''); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(t, x, y + 16); c.fillStyle = '#fff'; c.fillText(t, x, y + 16); }
   }
@@ -10887,7 +11222,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // test it out): game.html?scene=mountain is the game on one island of its own (World.MOUNTAIN_SPEC), with its own save.
   if (SCENE === 'mountain') { for (var msk in World.MOUNTAIN_SPEC) spec[msk] = World.MOUNTAIN_SPEC[msk]; }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying || null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, caveSeen: cave ? Cave.seenStr(cave) : null, hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && caveMouth ? { x: Math.round(caveMouth.x), y: Math.round(caveMouth.y + 44) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying || null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -11215,14 +11550,21 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (b.launched && raft) { toast('This yard has launched its vessel already'); return; }
     yardEnter(b);
   }
-  var cave = null, inCave = false, caveMouth = null, caveFade = 0, CAVE_X = 0, CAVE_Y = 400;
+  var cave = null, inCave = false, caveMouth = null, caveFade = 0, CAVE_X = 0, CAVE_Y = 400, caves = [], cur = null;
+  /* More than one cave (2026-10-12, Robin: more to the mountains than troll caves): `cave` and `caveMouth` are still the troll's;
+     `caves` holds every cave of the world ({ kind: 'troll' | 'mine' | 'sea', cave, mouth }), `cur` the one you are in, and
+     here() its inside. The others lie in their own stretches of the same far-off ground, one below the other. */
+  function here() { return cur ? cur.cave : cave; }
+  function placeSeen(id) { return !!(seen.places && seen.places[id]); }
+  function placeMark(id) { if (!seen.places) seen.places = {}; seen.places[id] = 1; }
+  var CAVE_NAME = { troll: ['the cave', 'A cave', 'The cave'], mine: ['the mine', 'An old mine', 'The old mine'], sea: ['the sea cave', 'A sea cave', 'The sea cave'] };
   /* The inside of the cave is src/cave.js (2026-10-12, the rework: Robin wanted it far more immersive, with depth, the
      mountains' technique, light from holes in the roof, a better floor, and not to get lost in it too much). Cave.make lays it
      out and paints it; this page keeps what lives in it (the troll, the hoard, mining, the dead Viking) and lays the dark over it. */
-  function caveD(x, y) { return cave ? Cave.dAt(cave, x, y) : -9; }
-  function caveFloor(x, y) { return !!cave && Cave.floor(cave, x, y); }
+  function caveD(x, y) { var hc = here(); return hc ? Cave.dAt(hc, x, y) : -9; }
+  function caveFloor(x, y) { var hc = here(); return !!hc && Cave.floor(hc, x, y); }
   function caveSetup() {                   // choose the mouth's place on the island and generate the inside
-    cave = null; caveMouth = null; inCave = false; CAVE_X = WX + 4000; YARD.X = WX + 9000; inYard = false; yardBench = null;
+    cave = null; caveMouth = null; inCave = false; caves = []; cur = null; CAVE_X = WX + 4000; YARD.X = WX + 9000; inYard = false; yardBench = null;
     var R = kit.rng(spec.seed * 31 + 9), tries, i, x, y, tx, ty, site = null;
     for (tries = 0; tries < 800 && !site; tries++) {
       var q1 = w.isles[1] || w.isles[0], a = R() * 6.283, d = R() * q1.r * 0.7 * T; x = q1.x * T + Math.cos(a) * d; y = q1.y * T + Math.sin(a) * d * 0.9; tx = Math.floor(x / T); ty = Math.floor(y / T);
@@ -11236,9 +11578,26 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var near = []; w.eachProp(function (o) { if (!o.peak && Math.abs(o.x - site.x) < (inFace ? 130 : 80) && o.y > site.y - 80 && o.y < site.y + (inFace ? 150 : 80)) near.push(o); }); near.forEach(function (o) { w.removeProp(o); });
     caveMouth = inFace && World.IMAGES.cave_mouth ? { name: 'cave_mouth', x: site.x, y: site.y, s: 1, r: 0, v: 0, inFace: true } : { name: 'cave', x: site.x, y: site.y, s: 0.85, r: 14, v: 0 }; w.addProp(caveMouth);
     cave = Cave.make(spec.seed, { x: CAVE_X, y: CAVE_Y, rockHp: World.HP.rock });   // the inside: src/cave.js
+    caves.push({ kind: 'troll', cave: cave, mouth: caveMouth });
+    if (w.mt) [['mine', w.mt.mine, 'mine_mouth', 1500], ['sea', w.mt.seaCave, 'sea_mouth', 3000]].forEach(function (q) {     // the old mine and the sea cave, where the mountains have a place for them
+      if (!q[1]) return; var m = { name: World.IMAGES[q[2]] ? q[2] : 'cave_mouth', x: q[1].x, y: q[1].y + 2, s: 1, r: 0, v: 0, inFace: true }, nr = [];
+      w.eachProp(function (o) { if (!o.peak && !o.shelter && Math.abs(o.x - m.x) < 120 && o.y > m.y - 80 && o.y < m.y + 140) nr.push(o); }); nr.forEach(function (o) { w.removeProp(o); });
+      w.addProp(m); caves.push({ kind: q[0], cave: Cave.make(spec.seed, { kind: q[0], x: CAVE_X, y: CAVE_Y + q[3], rockHp: World.HP.rock }), mouth: m });
+    });
+    caves.forEach(function (cv) { cv.cave.ores.forEach(function (o, oi) { o.id = oi; }); cv.cave.mined = []; });
+  }
+  /* What lies in a cave to be taken (cave.finds): the miner's pick and his ore, charcoal at the old fire-settings, driftwood, the
+     chest somebody hid. E takes it once; a find marked `gone` is then gone from the floor, the others stay as they are. */
+  function findNear(P) { if (!inCave || !cur) return null; var best = null, bd = 46; cur.cave.finds.forEach(function (f) { if (f.taken) return; var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < bd) { bd = d; best = f; } }); return best; }
+  function findTake(f) {
+    var k, P = hero(); f.taken = true; sfx('pick');
+    if (f.give) for (k in f.give) drop(k, f.x, f.y + 8, f.give[k]);
+    if (f.thing) { var th = Items.make(f.thing.kind, f.thing.mat); dropThing(th, f.x + 12, f.y + 10); }
+    if (f.chest) { var R2 = kit.rng(spec.seed * 13 + 5), n = 7 + Math.floor(R2() * 8), th2 = Items.make(['sword', 'seax', 'axe'][Math.floor(R2() * 3)], 'iron'); drop('silver', f.x, f.y + 10, n); dropThing(th2, f.x + 14, f.y + 12); }
+    if (f.note) note(f.note); save();
   }
   function caveTick(dt) {                  // what your light has shown goes onto the cave's chart; somewhere a drop falls
-    if (!inCave || !cave) return; var P = hero(); Cave.see(cave, P.x, P.y, torchOn ? 200 : 120);
+    if (!inCave || !here()) return; var P = hero(); Cave.see(here(), P.x, P.y, torchOn ? 200 : 120);
     if (S.sound && AC && Math.random() < dt * 0.22) tone(900 + Math.random() * 700, 0.07, 'sine', 0.014 + Math.random() * 0.02, 380);
   }
   /* The lookout (2026-10-12, Robin: a high point that reveals part of the chart when you stand on it). A beacon cairn (the
@@ -11250,6 +11609,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function lookReveal(lo) {
     var names = [], near = function (x, y) { return Math.hypot(x - lo.x, y - lo.y) < LOOK_R; };
     if (caveMouth && !seen.cave && near(caveMouth.x, caveMouth.y)) { seen.cave = 1; names.push('A cave'); }
+    caves.forEach(function (cv) { if (cv.kind !== 'troll' && !placeSeen(cv.kind) && near(cv.mouth.x, cv.mouth.y)) { placeMark(cv.kind); names.push(CAVE_NAME[cv.kind][1]); } });
+    w.mt.shelters.forEach(function (sh, si) { if (!placeSeen('sh' + si) && near(sh.x, sh.y)) { placeMark('sh' + si); names.push('A rock shelter'); } });
     if (village && !seen.village && near((village.tx + 7) * T, (village.ty + 6) * T)) { seen.village = 1; names.push('A steading'); }
     villages.forEach(function (vv, vi) { if (!vSeen(vi) && near((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T)) { if (!seen.vill) seen.vill = {}; seen.vill[vi] = 1; if (vi === 0) seen.hamlet = 1; names.push(vv.name); } });
     w.mt.falls.forEach(function (f, fi) { if (!fallSeen(fi) && near(f.x, f.foot)) { if (!seen.falls) seen.falls = {}; seen.falls[fi] = 1; names.push('A waterfall'); } });
@@ -11265,6 +11626,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (looking && (P.dead || inCave || inYard || sleep || Math.hypot(P.x - looking.x, P.y - looking.y) > 5)) looking = null;
     lookK += ((looking ? 1 : 0) - lookK) * Math.min(1, dt * 2.4); if (lookK < 0.002 && !looking) lookK = 0;
     if (w.mt && !inCave) w.mt.falls.forEach(function (f, fi) { if (!fallSeen(fi) && Math.hypot(P.x - f.x, P.y - f.foot) < 420) { if (!seen.falls) seen.falls = {}; seen.falls[fi] = 1; toast('A waterfall: marked on your chart'); save(); } });
+    if (w.mt && !inCave) { caves.forEach(function (cv) { if (cv.kind !== 'troll' && !placeSeen(cv.kind) && Math.hypot(P.x - cv.mouth.x, P.y - cv.mouth.y) < 380) { placeMark(cv.kind); toast(CAVE_NAME[cv.kind][1] + ': marked on your chart'); save(); } });
+      w.mt.shelters.forEach(function (sh, si) { if (!placeSeen('sh' + si) && Math.hypot(P.x - sh.x, P.y - sh.y) < 300) { placeMark('sh' + si); toast('A rock shelter: marked on your chart'); save(); } }); }
     fallsSound();
   }
   // the waterfall's voice: a steady rush that grows as you come near (filtered noise, looped; made once a sound has been played, so the browser allows it)
@@ -11281,16 +11644,33 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     fallSnd.g.gain.setTargetAtTime(vol, AC.currentTime, 0.25); fallSnd.lp.frequency.setTargetAtTime(900 + 2600 * Math.max(0, 1 - d / 300), AC.currentTime, 0.3);   // brighter close to
   }
-  function caveUsable() { var P = hero(); if (!cave || P.dead || sleep || (raft && raft.aboard)) return false; if (inCave) return Math.hypot(P.x - cave.exitAt.x, P.y - cave.exitAt.y) < 80; return !!caveMouth && Math.hypot(P.x - caveMouth.x, P.y - (caveMouth.y + 28)) < 60; }
-  function caveSwap(into) {
+  function caveAtHand() {                  // the cave you could step into, or out of, from where you stand (the sea cave from the boat too)
+    var P = hero(), best = null; if (!cave || P.dead || sleep) return null;
+    if (inCave) return cur && Math.hypot(P.x - cur.cave.exitAt.x, P.y - cur.cave.exitAt.y) < 80 ? cur : null;
+    caves.forEach(function (cv) { var d = Math.hypot(P.x - cv.mouth.x, P.y - (cv.mouth.y + 28)); if (raft && raft.aboard ? (cv.kind === 'sea' && d < 150) : d < (cv.kind === 'sea' ? 90 : 60)) best = cv; });
+    return best;
+  }
+  function caveUsable() { return !!caveAtHand(); }
+  function mouthSpot(cv) {                 // where you stand when you come out: before the mouth; at the sea cave the nearest water you can wade
+    var m = cv.mouth, d, a; if (cv.kind !== 'sea') return { x: m.x, y: m.y + 44 };
+    for (d = 0; d < 160; d += 10) for (a = 0; a < 8; a++) { var x = m.x + Math.cos(a * 0.785 + 1.571) * d, y = m.y + 40 + Math.sin(a * 0.785 + 1.571) * d * 0.7; if (w.isWade(x, y) && !w.cliffAt(x, y)) return { x: x, y: y }; }
+    return { x: m.x, y: m.y + 44 };
+  }
+  function caveSwap(into, which) {
     var P = hero(); caveFade = 0.7; sfx('pick');
-    if (into) { inCave = true; P.x = cave.entrance.x; P.y = cave.entrance.y; P.face = -Math.PI / 2; Combat.api.scene.bounds = worldBounds(); P.mode = 'fight'; menu = null; invOpen = false; }   // you come in northward, the daylight behind you
-    else { inCave = false; P.x = caveMouth.x; P.y = caveMouth.y + 44; Combat.api.scene.bounds = worldBounds(); }
+    if (into) {
+      cur = which || caves[0]; cur.byBoat = !!(raft && raft.aboard); if (cur.byBoat) { raft.aboard = false; raft.vx = raft.vy = 0; }   // the boat lies at the mouth while you are in
+      inCave = true; P.x = cur.cave.entrance.x; P.y = cur.cave.entrance.y; P.face = -Math.PI / 2; Combat.api.scene.bounds = worldBounds(); P.mode = 'fight'; menu = null; invOpen = false;   // you come in northward, the daylight behind you
+    } else {
+      var was = cur || caves[0]; inCave = false; cur = null; if (was.kind !== 'troll') Cave.release(was.cave);
+      if (was.byBoat && raft && Math.hypot(raft.x - was.mouth.x, raft.y - was.mouth.y) < 400) { raft.aboard = true; P.x = raft.x; P.y = raft.y; } else { var ms = mouthSpot(was); P.x = ms.x; P.y = ms.y; }
+      was.byBoat = false; Combat.api.scene.bounds = worldBounds();
+    }
     P.vx = P.vy = 0; save();
   }
-  function caveUse() { caveSwap(!inCave); }
-  function caveHear(o) { cave.noiseT = 14; if (troll && troll.place === 'in' && Math.hypot(troll.x - o.x, troll.y - o.y) < 1300) troll.heard = 14; }   // mining is loud
-  function drawCaveFloor(c, hw, hh) { Cave.drawFloor(c, cave, cam, hw, hh, clock); }
+  function caveUse() { if (inCave) caveSwap(false); else caveSwap(true, caveAtHand()); }
+  function caveHear(o) { if (here() !== cave) return; cave.noiseT = 14; if (troll && troll.place === 'in' && Math.hypot(troll.x - o.x, troll.y - o.y) < 1300) troll.heard = 14; }   // mining is loud
+  function drawCaveFloor(c, hw, hh) { Cave.drawFloor(c, here(), cam, hw, hh, clock); }
   function drawHoard(c, h) {                // the troll's bed: a mound of bones and what the mountain gave him, copper glinting in it
     var x = h.x, y = h.y * K, k;
     c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(x, y + 2, 26, 9, 0, 0, 7); c.fill();
@@ -11301,24 +11681,32 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (k = 0; k < Math.min(8, h.n); k++) { var gx = x + (World.hash(k, 1, 2) - 0.5) * 30, gy = y - 2 - World.hash(k, 3, 4) * 12; c.fillStyle = '#c8763a'; c.beginPath(); c.ellipse(gx, gy, 2.4, 1.6, World.hash(k, 5, 6), 0, 7); c.fill(); c.fillStyle = 'rgba(255,220,150,' + (0.5 + 0.5 * Math.sin(clock * 3 + k)) + ')'; c.beginPath(); c.arc(gx - 0.6, gy - 0.6, 0.7, 0, 7); c.fill(); }
   }
   function hoardFree() { if (!cave || !cave.hoard || cave.hoard.n <= 0) return false; if (!troll || troll.dead || troll.stoneT != null || troll.place === 'out') return true; return Math.hypot(troll.x - cave.hoard.x, troll.y - cave.hoard.y) > 320; }
-  function hoardNear(P) { return inCave && cave && cave.hoard && Math.hypot(P.x - cave.hoard.x, P.y - cave.hoard.y) < 48 && hoardFree(); }
+  function hoardNear(P) { return inCave && here() === cave && cave && cave.hoard && Math.hypot(P.x - cave.hoard.x, P.y - cave.hoard.y) < 48 && hoardFree(); }
   function hoardTake() { var h = cave.hoard, n = h.n; if (n <= 0) return; h.n = 0; h.day = day.n; drop('copper', h.x, h.y + 8, n); sfx('pick'); save(); }
   function veinHit(o, power) {               // a blow on a vein: chips of green stone; every so many blows a lump of copper, until it is spent
-    o.hp -= power; chip(o.x, o.y - 8, 6, '#5fb08a', 5, 70); caveHear(o);
-    if (o.hp <= 0) { o.hp = o.max; o.left--; drop('copper', o.x, o.y + 6, 1); sfx('clink'); if (o.left <= 0) Cave.dirty(cave); save(); }
+    o.hp -= power; chip(o.x, o.y - 8, 6, '#5fb08a', 5, 70); if (!o.cliff) caveHear(o);
+    if (o.hp <= 0) { o.hp = o.max; o.left--; drop('copper', o.x, o.y + 6, 1); sfx('clink'); if (o.left <= 0) { if (o.cliff) w.veinSpent(o); else Cave.dirty(here()); } save(); }   // (a vein in an open cliff is the world's: its face is painted again)
   }
   function pushCaveItems(items) {
-    if (cave.hoard) items.push({ y: cave.hoard.y - 2, f: function () { drawHoard(ctx, cave.hoard); } });
-    cave.ores.concat(cave.props, cave.body && !seen.ring ? [cave.body] : []).forEach(function (o) {   // the ore rocks, the stalagmites and columns (you walk behind them), the dead man
+    var hc = here(), trolls = hc === cave;
+    if (trolls && cave.hoard) items.push({ y: cave.hoard.y - 2, f: function () { drawHoard(ctx, cave.hoard); } });
+    hc.finds.forEach(function (f) {                       // what lies there to be taken, a glint on it until it is
+      if ((f.taken && f.gone) || Math.abs(f.x - cam.x) > 260 || Math.abs(f.y * K - cam.y) > 200) return;
+      if (f.prop === 'drift') { items.push({ y: f.y, f: function () { Cave.drawDrift(ctx, f); } }); return; }
+      var s = sprite(f.prop, f.v);
+      items.push({ y: f.y, f: function () { ctx.drawImage(s.cv, f.x + s.l * f.s, f.y * K + s.t * f.s, s.w * f.s, s.h * f.s); if (!f.taken && !f.gone) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(f.x - 10, f.y * K - 8 + Math.sin(clock * 3) * 1.2, 1.8, 0, 7); ctx.fill(); } } });
+    });
+    hc.sets.forEach(function (st) { if (Math.abs(st.x - cam.x) > 300 || Math.abs(st.y * K - cam.y) > 220) return; items.push({ y: st.y, f: function () { Cave.drawSet(ctx, st); } }); });   // the mine's timber: you walk under its caps
+    hc.ores.concat(hc.props, trolls && cave.body && !seen.ring ? [cave.body] : []).forEach(function (o) {   // the ore rocks, the stalagmites and columns (you walk behind them), the dead man
       if (Math.abs(o.x - cam.x) > 260 || Math.abs(o.y * K - cam.y) > 200) return;
       var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, ww = s.w * o.s, hh = s.h * o.s, P = hero();
       items.push({ y: o.y, f: function () { drawProp(o, s, px, py, ww, hh, P); if (o === cave.body) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(o.x - 15, o.y * K - 6 + Math.sin(clock * 3) * 1.2, 1.8, 0, 7); ctx.fill(); } } });
     });
   }
   function drawCaveDark(c, P) {            // the dark and the light in it (Cave.dark: your own circle, the tunnel's daylight, the holes in the roof by the sun, the copper), then the troll's eyes
-    Cave.dark(c, cave, { cam: cam, P: P, torch: torchOn, clock: clock, sun: 1 - 0.85 * light(), W: 400, H: 250 });
+    Cave.dark(c, here(), { cam: cam, P: P, torch: torchOn, clock: clock, sun: 1 - 0.85 * light(), W: 400, H: 250 });
     c.save(); c.globalCompositeOperation = 'lighter';
-    if (troll && troll.place === 'in' && !troll.dead && Math.hypot(troll.x - P.x, troll.y - P.y) < 640) {   // his eyes, from far off
+    if (here() === cave && troll && troll.place === 'in' && !troll.dead && Math.hypot(troll.x - P.x, troll.y - P.y) < 640) {   // his eyes, from far off
       var dir = Math.cos(troll.face) >= 0 ? 1 : -1, ex = (troll.x + dir * 24 - cam.x) * cam.z + 200, ey = (troll.y * K - 70 - cam.y) * cam.z + 125, pulse = 0.55 + 0.25 * Math.sin(clock * 3);
       [0, -dir * 4.5].forEach(function (o, k) { var gx2 = ex + o * cam.z, g = c.createRadialGradient(gx2, ey, 0, gx2, ey, 6 * cam.z); g.addColorStop(0, 'rgba(255,200,80,' + pulse + ')'); g.addColorStop(0.4, 'rgba(255,150,40,' + pulse * 0.5 + ')'); g.addColorStop(1, 'rgba(255,120,20,0)'); c.fillStyle = g; c.beginPath(); c.arc(gx2, ey, 6 * cam.z, 0, 7); c.fill(); });
     }
@@ -11356,7 +11744,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function trollHome(e, walk) {               // walk: in at the mouth and along the passage to the lair (heard from inside), else straight to the lair
     e.place = 'in'; e.aggro = 130; e.awake = false; e.state = 'idle'; e.wander = { x0: cave.lair.x, y0: cave.lair.y, r: 150, wait: 2 };
-    if (walk && cave.path) { e.x = cave.entrance.x + 30; e.y = cave.entrance.y; e.going = 2; e.wander = null; if (inCave) { note('Heavy steps echo from the mouth of the cave'); sfx('fall'); } }
+    if (walk && cave.path) { e.x = cave.entrance.x + 30; e.y = cave.entrance.y; e.going = 2; e.wander = null; if (inCave && here() === cave) { note('Heavy steps echo from the mouth of the cave'); sfx('fall'); } }
     else { e.x = cave.lair.x; e.y = cave.lair.y; e.going = null; }
   }
   function trollWalk(e, dt) {                 // the walk home: waypoint to waypoint along the passage's middle, slowly
@@ -11494,7 +11882,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function villagePlan() {
     var R = kit.rng(spec.seed * 23 + 11), avoid = [];
     if (caveMouth) avoid.push({ x: caveMouth.x / T, y: caveMouth.y / T, r: 12 });
-    return Village.plan({ isles: w.isles, code: code, shallow: function (tx, ty) { return code(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7; }, R: R, home: [home.x / T, home.y / T], avoid: avoid });
+    return Village.plan({ isles: w.isles, code: w.siteCode, shallow: function (tx, ty) { return code(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7; }, R: R, home: [home.x / T, home.y / T], avoid: avoid });
   }
   function vSeen(i) { return !!(seen.vill && seen.vill[i]); }
   function vCentre(v) { return [(v.tx + v.w / 2) * T, (v.ty + v.h / 2) * T]; }
@@ -11728,9 +12116,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var w0 = 372, h0 = 236, x0 = 14, y0 = 7, iw = mini.width, ih = mini.height, sc = Math.min((w0 - 16) / iw, (h0 - 26) / ih), mw = iw * sc, mh = ih * sc, mx = x0 + (w0 - mw) / 2, my = y0 + 18, step = Math.max(1, Math.ceil(GW / 700)), P = hero();
     c.fillStyle = 'rgba(10,8,6,0.55)'; c.fillRect(0, 0, 400, 250);
     wood(c, x0, y0, w0, h0);
-    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(inCave ? 'The cave' : 'The sea', x0 + 10, y0 + 12);
+    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(inCave ? CAVE_NAME[cur ? cur.kind : 'troll'][2] : 'The sea', x0 + 10, y0 + 12);
     c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'right'; c.fillText('M or Esc closes', x0 + w0 - 10, y0 + 12);
-    if (inCave && cave) { Cave.drawChart(c, cave, x0 + 8, y0 + 18, w0 - 16, h0 - 26, P); c.strokeStyle = '#2e1a10'; c.lineWidth = 1.2; c.strokeRect(x0 + 8, y0 + 18, w0 - 16, h0 - 26); c.textAlign = 'left'; return; }   // inside, the map is the cave as far as your light has shown it
+    if (inCave && here()) { Cave.drawChart(c, here(), x0 + 8, y0 + 18, w0 - 16, h0 - 26, P); c.strokeStyle = '#2e1a10'; c.lineWidth = 1.2; c.strokeRect(x0 + 8, y0 + 18, w0 - 16, h0 - 26); c.textAlign = 'left'; return; }   // inside, the map is the cave as far as your light has shown it
     c.save(); c.beginPath(); c.rect(mx, my, mw, mh); c.clip(); c.imageSmoothingEnabled = true; c.drawImage(mini, mx, my, mw, mh); c.restore();
     c.strokeStyle = '#2e1a10'; c.lineWidth = 1.2; c.strokeRect(mx, my, mw, mh);
     function at(wx, wy) { return { x: mx + wx / T / step * sc, y: my + wy / T / step * sc }; }
@@ -11742,9 +12130,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (village) { var qv = at((village.tx + 7) * T, (village.ty + 6) * T); if (seen.village) { dot(qv, '#f0e2b0'); label(qv, 'Hildir\u2019s steading'); } else unknown(qv); }
     villages.forEach(function (vv, vi) { if (!vSeen(vi)) return; var qm = at((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T); dot(qm, vv.arch === 'ruin' ? '#9a8a7a' : '#f0e2b0'); label(qm, vv.name); });
     if (caveMouth) { var qc = at(caveMouth.x, caveMouth.y); if (seen.cave) { dot(qc, '#a8a8b4'); label(qc, 'The cave'); } else unknown(qc); }
+    caves.forEach(function (cv) { if (cv.kind !== 'troll' && placeSeen(cv.kind)) { var qo = at(cv.mouth.x, cv.mouth.y); dot(qo, cv.kind === 'sea' ? '#8fc0c8' : '#b89a78'); label(qo, CAVE_NAME[cv.kind][2]); } });
+    if (w.mt) w.mt.shelters.forEach(function (sh, si) { if (placeSeen('sh' + si)) { var qs = at(sh.x, sh.y); dot(qs, '#c9b28a'); label(qs, 'The rock shelter'); } });
     if (w.mt) { w.mt.falls.forEach(function (f, fi) { if (fallSeen(fi)) { var qf = at(f.x, f.foot); dot(qf, '#8fd4ea'); label(qf, 'The waterfall'); } }); w.mt.lookouts.forEach(function (lo, li) { if (lookSeen(li)) { var ql = at(lo.x, lo.y); dot(ql, '#d8d2c4'); label(ql, 'The lookout'); } }); }
     if (raft) { var qr = at(raft.x, raft.y); dot(qr, '#c99a66'); label(qr, raft.kind === 'karve' ? 'The karve' : raft.kind === 'boat' ? 'The boat' : 'The raft'); }
-    var qp = at(inCave && caveMouth ? caveMouth.x : P.x, inCave && caveMouth ? caveMouth.y : P.y); dot(qp, '#ffd34d', 3); c.strokeStyle = '#fff'; c.lineWidth = 0.8; c.beginPath(); c.arc(qp.x, qp.y, 4.6, 0, 7); c.stroke();
+    var qp = at(inCave && cur ? cur.mouth.x : P.x, inCave && cur ? cur.mouth.y : P.y); dot(qp, '#ffd34d', 3); c.strokeStyle = '#fff'; c.lineWidth = 0.8; c.beginPath(); c.arc(qp.x, qp.y, 4.6, 0, 7); c.stroke();
   }
   function drawMuster(c) {                  // the muster board at a stone: who comes and who stays
     var w0 = 150, h0 = 26 + Math.max(1, hird.length) * 14 + 10, x0 = Math.round((400 - w0) / 2), y0 = 60;
@@ -12571,7 +12961,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
   }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; if (!inCave) lockedDoorsNear(x, y, rad, function (k, L, e, dx, dy) { out.push(doorHvOf(k, L, e, dx, dy)); }); if (inCave) { cave.ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); cave.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + 20 && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad) out.push(hvOf(it)); }); return out; },
+    list: function (x, y, rad) { var out = []; if (!inCave) lockedDoorsNear(x, y, rad, function (k, L, e, dx, dy) { out.push(doorHvOf(k, L, e, dx, dy)); }); if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + 20 && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad) out.push(hvOf(it)); }); return out; },
     hit: function (o, power, right, tool) {
       if (o.door) { o.hp -= power; chip(o.x, o.y, 8, '#8a6a4a', right ? 4 : 2, 70); sfx('chop'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.door.locked = 0; o.door.broken = 1; sfx('fall'); toast('The door gives'); save(); } return { dealt: power }; }
       if (o.box && o.box.heavy) { o.hp -= power; chip(o.x, o.y, 6, '#8a8f98', right ? 3 : 2, 60); sfx('clink'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.box.locked = 0; o.hp = o.max; toast('The lock breaks'); sfx('fall'); save(); } return { dealt: power }; }
@@ -12668,7 +13058,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (!quiet) { rite = { ring: true, t: 0 }; sfx('craft'); }
     learnEarned(); save();
   }
-  function bodyNear(P) { return inCave && cave && cave.body && !seen.ring && Math.hypot(P.x - cave.body.x, P.y - cave.body.y) < 44; }
+  function bodyNear(P) { return inCave && here() === cave && cave && cave.body && !seen.ring && Math.hypot(P.x - cave.body.x, P.y - cave.body.y) < 44; }
   // the rite: a dim, the rune (or the ring) glowing over the hero, its name; drawn on the HUD
   function drawRite(c) {
     if (!rite) return; var P = hero(), t = rite.t, a = Math.min(1, t * 2) * Math.min(1, Math.max(0, (2.8 - t) / 0.6));
@@ -13246,7 +13636,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (caveFade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, caveFade / 0.7) + ')'; c.fillRect(0, 0, 400, 250); }
       // the chart: a window of the sea round you (about 110 tiles wide), sharp, with markers you can tell apart
       var mw = 48, mh = 32, mx = 400 - mw - 8, my = 6, VIEW = 110;
-      var hpx = inCave && caveMouth ? caveMouth.x : P.x, hpy = inCave && caveMouth ? caveMouth.y : P.y;
+      var hpx = inCave && cur ? cur.mouth.x : P.x, hpy = inCave && cur ? cur.mouth.y : P.y;
       var step = Math.max(1, Math.ceil(GW / 700)), cw = mini.width, ch = mini.height, sw = Math.min(cw, VIEW / step), sh = Math.min(ch, sw * mh / mw);
       var sx0 = Math.max(0, Math.min(cw - sw, hpx / T / step - sw / 2)), sy0 = Math.max(0, Math.min(ch - sh, hpy / T / step - sh / 2)), zx = mw / sw, zy = mh / sh;
       function mp(wx, wy) { return { x: mx + (wx / T / step - sx0) * zx, y: my + (wy / T / step - sy0) * zy }; }
@@ -13265,26 +13655,26 @@ if (typeof module !== 'undefined') module.exports = Combat;
         c.fill(); c.stroke();
       }
       stones().forEach(function (st) { var q = mp(st.x, st.y), rr = reachOf(st) / T / step * zx; c.strokeStyle = 'rgba(255,230,160,0.55)'; c.lineWidth = 0.8; c.setLineDash([2, 2]); c.beginPath(); c.ellipse(q.x, q.y, rr, rr * zy / zx, 0, 0, 7); c.stroke(); c.setLineDash([]); });
-      mark(home.x, home.y, 'boat'); if (caveMouth && seen.cave) mark(caveMouth.x, caveMouth.y, 'cave'); if (w.mt) { w.mt.falls.forEach(function (f, fi) { if (fallSeen(fi)) mark(f.x, f.foot, 'fall'); }); w.mt.lookouts.forEach(function (lo, li) { if (lookSeen(li)) mark(lo.x, lo.y, 'look'); }); } villages.forEach(function (vv, vi) { if (vSeen(vi)) mark((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T, 'village'); }); if (village && seen.village) mark((village.tx + 7) * T, (village.ty + 6) * T, 'village');
+      mark(home.x, home.y, 'boat'); if (caveMouth && seen.cave) mark(caveMouth.x, caveMouth.y, 'cave'); caves.forEach(function (cv) { if (cv.kind !== 'troll' && placeSeen(cv.kind)) mark(cv.mouth.x, cv.mouth.y, 'cave'); }); if (w.mt) w.mt.shelters.forEach(function (sh, si) { if (placeSeen('sh' + si)) mark(sh.x, sh.y, 'cave'); }); if (w.mt) { w.mt.falls.forEach(function (f, fi) { if (fallSeen(fi)) mark(f.x, f.foot, 'fall'); }); w.mt.lookouts.forEach(function (lo, li) { if (lookSeen(li)) mark(lo.x, lo.y, 'look'); }); } villages.forEach(function (vv, vi) { if (vSeen(vi)) mark((vv.tx + vv.w / 2) * T, (vv.ty + vv.h / 2) * T, 'village'); }); if (village && seen.village) mark((village.tx + 7) * T, (village.ty + 6) * T, 'village');
       var hm = mp(hpx, hpy); c.fillStyle = '#ffd34d'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1.3; c.beginPath(); c.arc(hm.x, hm.y, 2.7, 0, 7); c.fill(); c.stroke(); c.strokeStyle = '#fff'; c.lineWidth = 0.7; c.beginPath(); c.arc(hm.x, hm.y, 4.2, 0, 7); c.stroke();
       if (raft && raft.kind === 'karve') { var wa = wind.a, wx0 = mx + 6, wy0 = my + 6, wl = 4; c.save(); c.translate(wx0, wy0); c.rotate(wa); c.strokeStyle = '#2e1a10'; c.lineWidth = 2.4; c.lineCap = 'round'; c.beginPath(); c.moveTo(-wl, 0); c.lineTo(wl, 0); c.moveTo(wl - 2, -2); c.lineTo(wl, 0); c.lineTo(wl - 2, 2); c.stroke(); c.strokeStyle = '#eef3ff'; c.lineWidth = 1; c.stroke(); c.restore(); }   // the wind's way
       c.restore();
-      if (inCave && cave) { c.fillStyle = 'rgba(20,16,30,0.95)'; c.fillRect(mx - 2, my - 2, mw + 4, mh + 4); Cave.drawChart(c, cave, mx, my, mw, mh, P); }   // inside, the chart is the cave as far as your light has shown it
+      if (inCave && here()) { c.fillStyle = 'rgba(20,16,30,0.95)'; c.fillRect(mx - 2, my - 2, mw + 4, mh + 4); Cave.drawChart(c, here(), mx, my, mw, mh, P); }   // inside, the chart is the cave as far as your light has shown it
       c.imageSmoothingEnabled = true;
       if (SHOW.book) drawBookIcon(c, mx - 34, my + 10);
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       drawTorchIcon(c, mx - (SHOW.book ? 94 : 54), my + 10);
       (function () {                       // comfort and rest, under the chart: the room you are in, and how long the rest lasts
-        var hr = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, cf = hr >= 0 ? comfortOf(hr, lvl()) : { n: 0 }, parts = [];
+        var hr = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, cf = hr >= 0 ? comfortOf(hr, lvl()) : { n: shelterComfort(P.x, P.y) }, parts = [];
         if (cf.n > 0) parts.push('Comfort ' + cf.n); if (rested > 0) parts.push('Rested ' + Math.floor(rested / 60) + ':' + ('0' + Math.floor(rested % 60)).slice(-2));
         if (!parts.length) return; var txt = parts.join('   '); c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText(txt, mx + mw, my + mh + 8); c.fillStyle = cf.n >= 4 ? '#9be58b' : '#fff'; c.fillText(txt, mx + mw, my + mh + 8);
       })();
       drawWorkBars(c);
       var rsn = ring && !nearHearth(P) && stoneNear(P); if (rsn && RS.stones[propKey(rsn)]) rsn = null;
       var cvN = !ringOpen && carverNear(P) && P.mode !== 'build', bdN = bodyNear(P), hdN = !bdN && hoardNear(P), fuN = !!furnaceAt(P), clN = !fuN && clampNear(P) && clampPrompt(clampNear(P)) ? clampNear(P) : null, frN = !fuN && !clN && ringNear(P);   // a stone read once needs no prompt
-      var stP = stoneNearH(P), asP = !stP && followerNear(P) && workplaceNear(P), hmP = !stP && !asP && hirdNear(P), ydP = !stP && !asP && !hmP && yardUsable(), bnP = !stP && !asP && !hmP && !ydP && !nearHearth(P) && !rsn && benchNear(P), bedP = !nearHearth(P) && !rsn && !bnP && bedNear(P), seatP = sitting || (!stP && !asP && !hmP && !ydP && !rsn && seatFirst(P)) || (!nearHearth(P) && !rsn && !bnP && !bedP && seatNear(P)), crP = !nearHearth(P) && !rsn && !bedP && !seatP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && ((nearNpc(P) && !(npc.sayT > 0)) || (folkNear(P) && !(folkNear(P).sayT > 0))), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), rfP = raftUsable(), cvP = !rfP && caveUsable(), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P), loP = !nearHearth(P) && !rsn && !bedP && !seatP && !crP && !npcP && !rkP && !rfP && !cvP && !bbP && !stP && !hmP && (looking ? looking.lo : lookoutNear(P));
-      if ((fishing || canCast(P) || signNear(P) || carrying || heavyNear(P) || cargoHome() || stP || asP || hmP || ydP || nearHearth(P) || rsn || bnP || bedP || seatP || crP || npcP || rkP || rfP || cvP || bbP || cvN || bdN || hdN || fuN || clN || frN || loP) && !invOpen && P.mode !== 'build' && !menu && !ringOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
-        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, hvN = !carrying && heavyNear(P), pt = fishing ? fishPrompt() : canCast(P) ? 'Cast' : signNear(P) ? 'Write' : carrying ? (raftUsable() && !raft.aboard ? 'Stow it aboard' : 'Put it down') : (cargoHome() && raftUsable() && !raft.aboard) ? 'Unload the silver' : hvN ? (hvN.locked ? 'Locked: break it open' : 'Lift the chest') : bdN ? 'Take the arm ring' : hdN ? 'Take from the hoard' : cvN ? 'Cut runes' : fuN ? 'Smelt' : clN ? clampPrompt(clN) : frN ? 'Take the charcoal' : stP ? (stP.fallen ? 'Raise the stone (6 stone)' : 'Muster') : asP ? (HD.jobs[jobOf(workplaceNear(P))].name + ': ' + followerNear(P).name) : hmP ? (hmP.follow ? 'Stay' : (hmP === npc && !seen.raft ? 'Talk' : 'Follow me')) : ydP ? 'Lay a hull' : bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : (raft.kind === 'boat' ? 'Board the boat' : 'Board the raft')) : cvP ? (inCave ? 'Leave the cave' : 'Enter the cave') : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : seatP ? (sitting ? 'Stand up' : 'Sit') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : loP ? (looking ? 'Turn back' : 'Look out') : 'Cook';
+      var stP = stoneNearH(P), asP = !stP && followerNear(P) && workplaceNear(P), hmP = !stP && !asP && hirdNear(P), ydP = !stP && !asP && !hmP && yardUsable(), bnP = !stP && !asP && !hmP && !ydP && !nearHearth(P) && !rsn && benchNear(P), bedP = !nearHearth(P) && !rsn && !bnP && bedNear(P), seatP = sitting || (!stP && !asP && !hmP && !ydP && !rsn && seatFirst(P)) || (!nearHearth(P) && !rsn && !bnP && !bedP && seatNear(P)), crP = !nearHearth(P) && !rsn && !bedP && !seatP && storeNear(P), npcP = !nearHearth(P) && !rsn && !bedP && !crP && ((nearNpc(P) && !(npc.sayT > 0)) || (folkNear(P) && !(folkNear(P).sayT > 0))), rkP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && rackUsable(P), cvB = !!(raft && raft.aboard && caveAtHand()), rfP = !cvB && raftUsable(), cvP = cvB || (!rfP && caveUsable()), fdP = !cvP && findNear(P), bbP = !nearHearth(P) && !rsn && !bedP && !crP && !npcP && !rkP && !rfP && !cvP && berryNear(P), loP = !nearHearth(P) && !rsn && !bedP && !seatP && !crP && !npcP && !rkP && !rfP && !cvP && !bbP && !stP && !hmP && (looking ? looking.lo : lookoutNear(P));
+      if ((fishing || canCast(P) || signNear(P) || carrying || heavyNear(P) || cargoHome() || stP || asP || hmP || ydP || nearHearth(P) || rsn || bnP || bedP || seatP || crP || npcP || rkP || rfP || cvP || bbP || cvN || bdN || hdN || fuN || clN || frN || loP || fdP) && !invOpen && P.mode !== 'build' && !menu && !ringOpen && !sleep) {       // E to cook, read, sleep, open, talk or hang hide, over the hero
+        var tx = (P.x - cam.x) * cam.z + 200, ty = (P.y * K - cam.y) * cam.z + 125 - 44 * cam.z, hvN = !carrying && heavyNear(P), pt = fishing ? fishPrompt() : canCast(P) ? 'Cast' : signNear(P) ? 'Write' : carrying ? (raftUsable() && !raft.aboard ? 'Stow it aboard' : 'Put it down') : (cargoHome() && raftUsable() && !raft.aboard) ? 'Unload the silver' : hvN ? (hvN.locked ? 'Locked: break it open' : 'Lift the chest') : bdN ? 'Take the arm ring' : hdN ? 'Take from the hoard' : fdP ? fdP.say : cvN ? 'Cut runes' : fuN ? 'Smelt' : clN ? clampPrompt(clN) : frN ? 'Take the charcoal' : stP ? (stP.fallen ? 'Raise the stone (6 stone)' : 'Muster') : asP ? (HD.jobs[jobOf(workplaceNear(P))].name + ': ' + followerNear(P).name) : hmP ? (hmP.follow ? 'Stay' : (hmP === npc && !seen.raft ? 'Talk' : 'Follow me')) : ydP ? 'Lay a hull' : bbP ? 'Pick berries' : rfP ? (raft.aboard ? 'Step ashore' : (raft.kind === 'boat' ? 'Board the boat' : 'Board the raft')) : cvP ? ((inCave ? 'Leave ' : 'Enter ') + CAVE_NAME[caveAtHand().kind][0]) : rsn ? 'Read the stone' : bnP ? 'Craft' : bedP ? (isEvening() ? 'Sleep' : 'Sleep (when it gets dark)') : seatP ? (sitting ? 'Stand up' : 'Sit') : crP ? 'Open' : npcP ? 'Talk' : rkP ? (rackCured(rkP) ? 'Collect leather' : 'Hang hide') : loP ? (looking ? 'Turn back' : 'Look out') : 'Cook';
         c.font = '600 6px system-ui, sans-serif'; var pw = c.measureText(pt).width + 20, px0 = tx - pw / 2;
         c.fillStyle = 'rgba(20,16,30,0.72)'; c.beginPath(); c.roundRect(px0, ty - 6, pw, 11, 5.5); c.fill();
         c.fillStyle = '#f6e2b8'; c.strokeStyle = '#2e1a10'; c.lineWidth = 0.8; c.beginPath(); c.roundRect(px0 + 2.5, ty - 4.3, 7.5, 7.5, 1.5); c.fill(); c.stroke();   // a small key cap
@@ -13373,7 +13763,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (typing(e)) return;
     if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
-    if (e.code === 'KeyE') { e.preventDefault(); eHeld = true; if (!e.repeat) { if (fishing) fishPress(); else if (canCast(hero())) castLine(); else if (inYard) yardLeave(); else if (carrying && raftUsable() && !raft.aboard) stowHeavy(); else if (carrying) putDown(); else if (cargoHome() && raftUsable() && !raft.aboard) unloadCargo(); else if (heavyNear(hero()) && !heavyNear(hero()).locked) liftHeavy(heavyNear(hero())); else if (signNear(hero())) signWrite(signNear(hero())); else if (looking) looking = null; else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (ringOpen) ringOpen = false; else if (bodyNear(hero())) takeRing(); else if (hoardNear(hero())) hoardTake(); else if (carverNear(hero()) && hero().mode !== 'build') openRing(carverNear(hero())); else if (sitting) standUp(); else if (seatFirst(hero()) && hero().mode !== 'build' && !bedNear(hero())) sitDown(seatFirst(hero())); else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (furnaceAt(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('furnace'); } else if (clampNear(hero())) clampUse(clampNear(hero())); else if (ringNear(hero())) ringTake(ringNear(hero())); else if (lookoutNear(hero()) && hero().mode !== 'build' && !nearHearth(hero()) && !benchNear(hero()) && !bedNear(hero()) && !storeNear(hero()) && !seatNear(hero())) lookOut(lookoutNear(hero())); else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); } else { var rs = ring && stoneNear(hero()); if (rs) readStone(rs); else if (sitting) standUp(); else if (seatNear(hero()) && !bedNear(hero())) sitDown(seatNear(hero())); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (musterOpen) musterOpen = false; else if (stoneNearH(hero()) && stoneNearH(hero()).fallen) { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(stoneNearH(hero())); } else toast('It takes 6 stone to raise it'); } else if (hirdAssign(hero())) {} else if (hirdNear(hero())) hirdTalk(hirdNear(hero())); else if (stoneNearH(hero())) { musterOpen = true; invOpen = false; menu = null; } else if (nearNpc(hero())) talk(); else if (folkNear(hero())) folkTalk(folkNear(hero())); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); eHeld = true; if (!e.repeat) { if (fishing) fishPress(); else if (canCast(hero())) castLine(); else if (inYard) yardLeave(); else if (carrying && raftUsable() && !raft.aboard) stowHeavy(); else if (carrying) putDown(); else if (cargoHome() && raftUsable() && !raft.aboard) unloadCargo(); else if (heavyNear(hero()) && !heavyNear(hero()).locked) liftHeavy(heavyNear(hero())); else if (signNear(hero())) signWrite(signNear(hero())); else if (looking) looking = null; else if (raft && raft.aboard && caveAtHand()) caveUse(); else if (raftUsable()) raftUse(); else if (yardUsable()) yardUse(); else if (caveUsable()) caveUse(); else if (menu && (menuTab === 'hearth' || menuTab === 'bench' || menuTab === 'hand' && menuFrom === 'bench')) menu = null; else if (ringOpen) ringOpen = false; else if (bodyNear(hero())) takeRing(); else if (hoardNear(hero())) hoardTake(); else if (findNear(hero())) findTake(findNear(hero())); else if (carverNear(hero()) && hero().mode !== 'build') openRing(carverNear(hero())); else if (sitting) standUp(); else if (seatFirst(hero()) && hero().mode !== 'build' && !bedNear(hero())) sitDown(seatFirst(hero())); else if (nearHearth(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('hearth'); } else if (furnaceAt(hero())) { invOpen = false; bookOpen = false; clothOpen = false; openMenu('furnace'); } else if (clampNear(hero())) clampUse(clampNear(hero())); else if (ringNear(hero())) ringTake(ringNear(hero())); else if (lookoutNear(hero()) && hero().mode !== 'build' && !nearHearth(hero()) && !benchNear(hero()) && !bedNear(hero()) && !storeNear(hero()) && !seatNear(hero())) lookOut(lookoutNear(hero())); else if (benchNear(hero()) && hero().mode !== 'build') { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); } else { var rs = ring && stoneNear(hero()); if (rs) readStone(rs); else if (sitting) standUp(); else if (seatNear(hero()) && !bedNear(hero())) sitDown(seatNear(hero())); else if (bedNear(hero())) { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); } else if (storeNear(hero())) { store = storeNear(hero()); invOpen = true; bookOpen = false; clothOpen = false; } else if (musterOpen) musterOpen = false; else if (stoneNearH(hero()) && stoneNearH(hero()).fallen) { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(stoneNearH(hero())); } else toast('It takes 6 stone to raise it'); } else if (hirdAssign(hero())) {} else if (hirdNear(hero())) hirdTalk(hirdNear(hero())); else if (stoneNearH(hero())) { musterOpen = true; invOpen = false; menu = null; } else if (nearNpc(hero())) talk(); else if (folkNear(hero())) folkTalk(folkNear(hero())); else if (rackUsable(hero())) rackUse(rackNear(hero())); else if (berryNear(hero())) pickBerries(berryNear(hero())); } } return; }
     if (e.code === 'KeyM') { e.preventDefault(); if (!e.repeat && !inYard) { mapOpen = !mapOpen; if (mapOpen) { invOpen = false; menu = null; bookOpen = false; clothOpen = false; musterOpen = false; } } return; }
     if (e.code === 'KeyC') { e.preventDefault(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
@@ -13466,7 +13856,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m4' : ''); }   // a save only fits the same arrangement of islands
+  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m5' + (spec.mountainOpts ? 'b' : '') : ''); }   // a save only fits the same arrangement of islands
   function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }   // the hero starts in his wrecked boat on the beach
   function start(fresh) {
     var sv = fresh ? null : loadSave(), k;
@@ -13489,12 +13879,17 @@ if (typeof module !== 'undefined') module.exports = Combat;
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
       w.eachProp(function (o) { if ((o.kind || o.name === 'fireRing') && gone[propKey(o)]) w.removeProp(o); }); B.items.forEach(function (it) { if (it.cooking && it.cooking.length && cookFires.indexOf(it) < 0) cookFires.push(it); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; }); if (sv.ground && typeof sv.ground === 'object') { if (sv.groundDressed) w.ground = sv.ground; else { var gk; for (gk in sv.ground) w.ground[gk] = sv.ground[gk]; } }   // a save from before the world dressed itself keeps the dressing under its own strokes
-      if (cave && sv.veins && sv.veins.length === cave.veins.length) sv.veins.forEach(function (lf, vi) { cave.veins[vi].left = lf; }); if (cave && sv.caveSeen) Cave.seenLoad(cave, sv.caveSeen); if (cave && cave.hoard && sv.hoard) { cave.hoard.n = sv.hoard.n; cave.hoard.day = sv.hoard.day; }
+      if (cave && sv.veins && sv.veins.length === cave.veins.length) sv.veins.forEach(function (lf, vi) { cave.veins[vi].left = lf; }); if (cave && sv.caveSeen) Cave.seenLoad(cave, sv.caveSeen);
+      (sv.caves2 || []).forEach(function (q) { var cv = caves.filter(function (c2) { return c2.kind === q.kind; })[0]; if (!cv) return;
+        (q.mined || []).forEach(function (id) { var oi = -1; cv.cave.ores.forEach(function (o, k2) { if (o.id === id) oi = k2; }); if (oi >= 0) cv.cave.ores.splice(oi, 1); cv.cave.mined.push(id); });
+        if (q.veins && q.veins.length === cv.cave.veins.length) q.veins.forEach(function (lf, vi) { cv.cave.veins[vi].left = lf; }); if (q.seen) Cave.seenLoad(cv.cave, q.seen);
+        (q.taken || []).forEach(function (id) { cv.cave.finds.forEach(function (f) { if (f.id === id) f.taken = true; }); }); });
+      if (w.mt && sv.cliffVeins && sv.cliffVeins.length === w.mt.veins.length) sv.cliffVeins.forEach(function (lf, vi) { w.mt.veins[vi].left = lf; }); if (cave && cave.hoard && sv.hoard) { cave.hoard.n = sv.hoard.n; cave.hoard.day = sv.hoard.day; }
       decals = sv.stumps || []; bDirty = true; fed = sv.fed && FOOD[sv.fed.kind] ? sv.fed : null; fishLog = sv.fishLog || {}; book = sv.book || {}; if (sv.quiver && sv.quiver.slots) quiver = sv.quiver;
-      var P = hero(); if (sv.hero && (isLand(sv.hero.x, sv.hero.y) || dockAt(Math.floor(sv.hero.x / T), Math.floor(sv.hero.y / T)))) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; P.lvl = sv.lvl || 0; } else toCamp();
+      var P = hero(); if (sv.hero && (isLand(sv.hero.x, sv.hero.y) || w.isWade(sv.hero.x, sv.hero.y) || dockAt(Math.floor(sv.hero.x / T), Math.floor(sv.hero.y / T)))) { P.x = sv.hero.x; P.y = sv.hero.y; P.vx = P.vy = 0; P.lvl = sv.lvl || 0; } else toCamp();
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.carrying && sv.carrying.heavy) { carrying = sv.carrying; carrying.carried = true; }
-      if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null, cargo: sv.raft.cargo || [] }; raftFit(); if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }
+      if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null, cargo: sv.raft.cargo || [] }; raftFit(); if (sv.seaBoat) raft.aboard = true; if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }   // (saved inside the sea cave, come by boat: you wake in the boat at its mouth)
     } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
@@ -13571,7 +13966,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (tries = 0; tries < 900 && !site; tries++) {
       var a = R2() * 6.283, d = R2() * q.r * 0.55 * T; x = q.x * T + Math.cos(a) * d; y = q.y * T + Math.sin(a) * d * 0.9; tx = Math.floor(x / T); ty = Math.floor(y / T);
       var ok = x > 300 && y > 300 && x < WX - 300 && y < WY - 300, dx, dy;
-      for (dy = -2; ok && dy <= 4; dy++) for (dx = -2; dx <= 6; dx++) { var cd = code(tx + dx, ty + dy); if (cd < 2 || cd === 255) { ok = false; break; } }
+      for (dy = -2; ok && dy <= 4; dy++) for (dx = -2; dx <= 6; dx++) { var cd = w.siteCode(tx + dx, ty + dy); if (cd < 2 || cd === 255) { ok = false; break; } }
       if (ok && caveMouth && Math.hypot(x - caveMouth.x, y - caveMouth.y) < 300) ok = false;
       if (ok && villages.some(function (vv) { return Math.hypot(x - (vv.tx + vv.w / 2) * T, y - (vv.ty + vv.h / 2) * T) < 400; })) ok = false;
       if (ok) site = { tx: tx, ty: ty };
@@ -13608,7 +14003,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     recount(); save();
   }
   function mountainRows() {
-    return [{ id: 'slope1', name: 'To a slope (foothills)' }, { id: 'slope2', name: 'To a slope (plateau)' }, { id: 'foot', name: 'Onto the foothills' }, { id: 'plateau', name: 'Onto the high plateau' }, { id: 'peaks', name: 'Under the peaks' }, { id: 'northrim', name: 'North of the fells' }, { id: 'fall', name: 'To the waterfall' }, { id: 'look', name: 'To the lookout' }, { id: 'seaboat', name: 'A boat under the sea cliffs' }, { id: 'cave', name: 'To the cave mouth' }, { id: 'cavein', name: 'Into the cave' }, { id: 'pool', name: 'To the cave’s pool' }, { id: 'chasm', name: 'To the chasm' }, { id: 'lair', name: 'To the troll’s lair' }, { id: 'trollout', name: 'Troll: walk out' }, { id: 'trollhome', name: 'Troll: walk home' }, { id: 'mbeasts', name: 'Beasts: bear, wolf, boar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'dawn', name: 'Skip to dawn' }, { id: 'stuff', name: 'More to build with' }, { id: 'wreck', name: 'To the wreck' }, { id: 'reset', name: 'Start the scene over' }];
+    return [{ id: 'slope1', name: 'To a slope (foothills)' }, { id: 'slope2', name: 'To a slope (plateau)' }, { id: 'foot', name: 'Onto the foothills' }, { id: 'plateau', name: 'Onto the high plateau' }, { id: 'peaks', name: 'Under the peaks' }, { id: 'northrim', name: 'North of the fells' }, { id: 'fall', name: 'To the waterfall' }, { id: 'look', name: 'To the lookout' }, { id: 'seaboat', name: 'A boat under the sea cliffs' }, { id: 'cave', name: 'To the cave mouth' }, { id: 'cavein', name: 'Into the cave' }, { id: 'pool', name: 'To the cave’s pool' }, { id: 'chasm', name: 'To the chasm' }, { id: 'lair', name: 'To the troll’s lair' }, { id: 'mine', name: 'To the old mine' }, { id: 'minein', name: 'Into the mine' }, { id: 'minedeep', name: 'To the fall of rock' }, { id: 'shelter', name: 'To the rock shelter' }, { id: 'vein', name: 'To a copper vein' }, { id: 'seacave', name: 'A boat at the sea cave' }, { id: 'seain', name: 'Into the sea cave' }, { id: 'seabeach', name: 'To the cave’s beach' }, { id: 'trollout', name: 'Troll: walk out' }, { id: 'trollhome', name: 'Troll: walk home' }, { id: 'mbeasts', name: 'Beasts: bear, wolf, boar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'dawn', name: 'Skip to dawn' }, { id: 'stuff', name: 'More to build with' }, { id: 'wreck', name: 'To the wreck' }, { id: 'reset', name: 'Start the scene over' }];
   }
   var slopeI = 0;
   function mountainAct(id) {
@@ -13621,16 +14016,22 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (id === 'fall') { var f0 = w.mt.falls[0]; go(f0 ? (w.nearFlat(f0.x + f0.pool.rx + 26, f0.pool.y + 26, f0.lvl, 10) || { x: f0.x + f0.pool.rx + 26, y: f0.pool.y + 26 }) : null); return true; }
     if (id === 'look') { var l0 = w.mt.lookouts[0]; go(l0 ? { x: l0.x + 30, y: l0.y + 12 } : null); return true; }
     if (id === 'seaboat') { var by0 = w.mt.bay; if (!by0) { toast('No bay on this island'); return true; } if (inCave) caveSwap(false); if (raft && raft.aboard) raft.aboard = false; P.x = by0.x - w.mt.seaSide * by0.a * 0.45; P.y = by0.y - by0.b * 0.1; P.lvl = 0; if (giveBoat('boat')) raftUse(); return true; }
+    var cvOf = function (k) { return caves.filter(function (c2) { return c2.kind === k; })[0]; };
+    if (id === 'mine' || id === 'minein' || id === 'minedeep') { var cm2 = cvOf('mine'); if (!cm2) { toast('No mine on this island'); return true; } if (inCave) caveSwap(false); if (id === 'mine') { P.x = cm2.mouth.x; P.y = cm2.mouth.y + 60; P.lvl = 0; } else { caveSwap(true, cm2); if (id === 'minedeep') { P.x = cm2.cave.block.x - (cm2.cave.flip ? -70 : 70); P.y = cm2.cave.block.y; } } return true; }
+    if (id === 'seain' || id === 'seabeach') { var cs2 = cvOf('sea'); if (!cs2) { toast('No sea cave on this island'); return true; } if (inCave) caveSwap(false); if (raft && raft.aboard) raft.aboard = false; caveSwap(true, cs2); if (id === 'seabeach') { P.x = cs2.cave.beach.x; P.y = cs2.cave.beach.y + 40; } return true; }
+    if (id === 'seacave') { var cs3 = cvOf('sea'); if (!cs3) { toast('No sea cave on this island'); return true; } if (inCave) caveSwap(false); if (raft && raft.aboard) raft.aboard = false; P.x = cs3.mouth.x; P.y = cs3.mouth.y + 130; P.lvl = 0; if (giveBoat('boat')) raftUse(); return true; }
+    if (id === 'shelter') { var sh0 = w.mt.shelters[0]; go(sh0 ? { x: sh0.x + 30, y: sh0.y + 50 } : null); return true; }
+    if (id === 'vein') { var vs = w.mt.veins.filter(function (v) { return v.left > 0; }); if (!vs.length) { toast('Every vein is worked out'); return true; } var v0 = vs[slopeI++ % vs.length]; go({ x: v0.x, y: v0.y + 26 }); return true; }
     if (id === 'mbeasts') { ['bear', 'wolf', 'boar'].forEach(function (k, i) { var at = w.nearFlat(P.x + 110 + i * 50, P.y + 90, w.levelAt(P.x, P.y)) || { x: P.x + 110, y: P.y + 90 }, e = placeAnimal(k, 0, at, false); if (e) { e.awake = false; e.aggro = 70; } }); toast('Beasts, south-east of you'); return true; }
     return false;
   }
   function runeRows() {
-    return [{ id: 'bronze', name: 'Bronze ring' }, { id: 'silver', name: 'Silver ring' }, { id: 'twisted', name: 'Twisted silver' }, { id: 'gold', name: 'Gold ring' }, { id: 'dragon', name: 'Dragon ring' }, { id: 'learn', name: 'Know every rune' }, { id: 'forget', name: 'Forget them all' }, { id: 'beasts', name: 'Beasts: boar, wolf, adder' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'dawn', name: 'Skip to dawn' }, { id: 'cave', name: 'To the cave mouth' }, { id: 'cavein', name: 'Into the cave' }, { id: 'pool', name: 'To the cave’s pool' }, { id: 'chasm', name: 'To the chasm' }, { id: 'lair', name: 'To the troll’s lair' }, { id: 'trollout', name: 'Troll: walk out' }, { id: 'trollhome', name: 'Troll: walk home' }, { id: 'veins', name: 'Veins and hoard full' }, { id: 'stuff', name: 'Ore, charcoal, wood' }, { id: 'home', name: 'Back to the bench' }, { id: 'reset', name: 'Start the scene over' }];
+    return [{ id: 'bronze', name: 'Bronze ring' }, { id: 'silver', name: 'Silver ring' }, { id: 'twisted', name: 'Twisted silver' }, { id: 'gold', name: 'Gold ring' }, { id: 'dragon', name: 'Dragon ring' }, { id: 'learn', name: 'Know every rune' }, { id: 'forget', name: 'Forget them all' }, { id: 'beasts', name: 'Beasts: boar, wolf, adder' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'dawn', name: 'Skip to dawn' }, { id: 'slope1', name: 'To the mountain’s foot' }, { id: 'plateau', name: 'Onto the plateau' }, { id: 'look', name: 'To the lookout' }, { id: 'shelter', name: 'To the rock shelter' }, { id: 'vein', name: 'To a copper vein' }, { id: 'cave', name: 'To the cave mouth' }, { id: 'cavein', name: 'Into the cave' }, { id: 'pool', name: 'To the cave’s pool' }, { id: 'chasm', name: 'To the chasm' }, { id: 'lair', name: 'To the troll’s lair' }, { id: 'trollout', name: 'Troll: walk out' }, { id: 'trollhome', name: 'Troll: walk home' }, { id: 'veins', name: 'Veins and hoard full' }, { id: 'stuff', name: 'Ore, charcoal, wood' }, { id: 'home', name: 'Back to the bench' }, { id: 'reset', name: 'Start the scene over' }];
   }
   function runeAct(id) {
     var P = hero();
     if (id === 'fold') { runePanel.folded = !runePanel.folded; return; }
-    if (SCENE === 'mountain' && mountainAct(id)) { save(); return; }
+    if ((SCENE === 'mountain' || ['slope1', 'slope2', 'foot', 'plateau', 'look', 'shelter', 'vein'].indexOf(id) >= 0) && w.mt && mountainAct(id)) { save(); return; }
     if (Runes.METALS[id]) { var old = ring; ring = Runes.newRing(id); if (old) old.coils.forEach(function (c0) { if (c0.id) Runes.cut(ring, c0.id, RS.learnt); }); heroRingSync(); toast(Runes.METALS[id].name + ' ring: ' + ring.coils.length + ' coils'); }
     else if (id === 'learn') { Runes.LIST.forEach(function (r) { if (!RS.learnt[r.id]) RS.learnt[r.id] = { uses: 0, how: 'the editor' }; }); toast('Every rune known'); }
     else if (id === 'forget') { RS.learnt = {}; RS.earned = {}; if (ring) ring.coils.forEach(function (c0) { c0.id = null; }); toast('Nothing known'); }
@@ -13670,7 +14071,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (kind === 'karve') { for (i = 0; i < 8; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 7; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } for (i = 2; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 1 }); parts.push({ id: 'strake', i: i, j: 5 }); } parts.push({ id: 'thwart', i: 2, j: 3 }, { id: 'thwart', i: 5, j: 3 }, { id: 'thwart', i: 6, j: 3 }, { id: 'mast', i: 4, j: 3 }, { id: 'sail', i: 4, j: 3 }, { id: 'rudder', i: 0, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, cave: function () { return cave; }, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -13754,13 +14155,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // one step of the world: the solids near the hero, every tick of the page, then the engine (also the debug hook `tick`, so checks can run it without rendering)
   function simTick(dt) {
     var D = Combat.dbg(), P = D.P;
-    if (P !== lastP) { lastP = P; nightSpawned = false; nightWolves = []; crafting = []; if (inYard) { inYard = false; zoom = yardZoom || zoom; Combat.api.scene.bounds = worldBounds(); } if (inCave) { inCave = false; Combat.api.scene.bounds = worldBounds(); } toCamp(); spawnBoars(); if (raft && raft.aboard) { raft.aboard = false; var drift = raftSpot(home.x, home.y); if (drift) { raft.x = drift.x; raft.y = drift.y; } } }   // the raft drifts back to the camp shore     // R after falling: the engine made a new hero
+    if (P !== lastP) { lastP = P; nightSpawned = false; nightWolves = []; crafting = []; if (inYard) { inYard = false; zoom = yardZoom || zoom; Combat.api.scene.bounds = worldBounds(); } if (inCave) { inCave = false; cur = null; Combat.api.scene.bounds = worldBounds(); } toCamp(); spawnBoars(); if (raft && raft.aboard) { raft.aboard = false; var drift = raftSpot(home.x, home.y); if (drift) { raft.x = drift.x; raft.y = drift.y; } } }   // the raft drifts back to the camp shore     // R after falling: the engine made a new hero
     if (inYard) { P.mode = 'build'; menu = null; }
     else if (P.mode === 'build' && PIECES[P.piece] && !pieceKnown(PIECES[P.piece])) stepPiece(1);
     if (!inYard && P.mode === 'build' && lastMode !== 'build') openMenu(!hasTool() ? 'hand' : 'build');   // the first B opens on Crafting: until you hold a tool you have things to make before anything to build
     if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
     D.W.pillars = nearSolids(P);
-    if (inCave) { cave.ores.concat(cave.props).forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * o.s, hide: true }); }); if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }
+    if (inCave) { var hcv = here(); hcv.ores.concat(hcv.props, hcv.finds.filter(function (f) { return f.r && !(f.taken && f.gone); })).forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * o.s, hide: true }); });
+      hcv.sets.forEach(function (st) { if (Math.abs(st.x - P.x) < 200 && Math.abs(st.y - P.y) < 200) D.W.pillars.push({ x: st.x - st.w / 2, y: st.y, r: 4, hide: true }, { x: st.x + st.w / 2, y: st.y, r: 4, hide: true }); }); if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }
     var RIs = RI(); if (RIs) for (var si = 0; si < RIs.solids.length; si++) { var sl = RIs.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
     lockedDoorsNear(P.x, P.y, 160, function (k, L, e, dx, dy) { D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true }); if (L === 'H') D.W.pillars.push({ x: dx - 10, y: dy, r: 7, hide: true }, { x: dx + 10, y: dy, r: 7, hide: true }); else D.W.pillars.push({ x: dx, y: dy - 8, r: 7, hide: true }, { x: dx, y: dy + 8, r: 7, hide: true }); });   // a locked door is a wall until it breaks
     for (var mi = 0; mi < moored.length; mi++) { var mv = moored[mi]; if (Math.abs(mv.x - P.x) < 160 && Math.abs(mv.y - P.y) < 160) D.W.pillars.push({ x: mv.x, y: mv.y, r: Math.max(mv.hw || 21, mv.hh || 21) * 0.7, hide: true }); }
@@ -13768,7 +14170,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
-    if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
+    if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
     tick(); levelTick(); heroGearSync(); raidTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();

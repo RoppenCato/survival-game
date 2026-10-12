@@ -203,7 +203,7 @@ copper and the ring.
 
 | Part | What it is | Status |
 | --- | --- | --- |
-| A1 The world | A 230-tile island east of the first; the cave is 700 to 1600 units from the start, the hamlet is away from it | Built |
+| A1 The world | A 400-tile island east of the first with **a small mountain in its north-west** (2026-10-12: foothills, a small plateau, a peak or two, a lookout, a rock shelter, a tarn in a bowl now and then), the lowland drying and thinning toward it; the troll's cave is in one of its walls | Built |
 | A1 Islands around it | Same biome, mixing toward the next, later filled with different places | Not started |
 | A2 The cave | One way through from a tunnel of daylight: a hall, a hollow under a hole in the roof, a still pool, a cavern split by a chasm, a gallery of copper veins, the lair; tall wall faces fading into the dark, light from holes in the roof, the troll's worn path, a chart of what your light has shown (`src/cave.js`, reworked 2026-10-12) | Built |
 | A2 The hamlet | A living village: four huts, a well, folk who walk and talk (seven to nine), a fence | Built |
@@ -213,7 +213,7 @@ copper and the ring.
 
 | Event | What it is | Status |
 | --- | --- | --- |
-| **Copper** | Veins on the cave walls mined out for good, a little on loose rocks, charcoal from embers, the clamp and finds in the wild, the furnace, copper bars, copper tools and weapons at the workbench | Built |
+| **Copper** | **First as veins in the open cliffs of the mountain** (four, two or three lumps each, 2026-10-12), then veins on the cave walls mined out for good, a little on loose rocks, charcoal from embers, the clamp and finds in the wild, the furnace, copper bars, copper tools and weapons at the workbench | Built |
 | **The troll and the cave** | Mining is loud; he walks out some nights within sight and you can sneak past; his hoard is open while he is out; his walk home at morning; stone at dawn if provoked | Built |
 | **The village** | The claim stone (stone, berries, snake blood), territory on the chart, room for N and food for D days, Brokk joins, muster, jobs yielding into chests | Partly (see gaps) |
 | **The arm ring** | The bronze ring from the dead Viking, the carver's bench (blood rite), thirty runes (2026-10-08) from deeds, ten beasts, stones and Brokk, the Ring tab | Built |

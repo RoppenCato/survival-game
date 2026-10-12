@@ -20,7 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); SRC = os.path.join(HERE, '..'
 UNIT = 39 / 1.8                                    # game units a metre
 PPM = 2 * UNIT                                     # pixels a metre: 2 px a unit, as the props are baked
 PX = 2                                             # rendered at twice that and halved by the packer
-COL = {'rock': '#66737a', 'rock2': '#5a676e', 'dark': '#4a565e', 'snow': '#f4f7fb', 'snow2': '#dfe7f2', 'hole': '#0d0b10', 'hole2': '#1a161c', 'bone': '#ece4cc', 'moss': '#7d9e4c', 'grass': '#86b450', 'root': '#6b5a40', 'earth': '#8a6e50'}
+COL = {'rock': '#66737a', 'rock2': '#5a676e', 'dark': '#4a565e', 'snow': '#f4f7fb', 'snow2': '#dfe7f2', 'hole': '#0d0b10', 'hole2': '#1a161c', 'bone': '#ece4cc', 'moss': '#7d9e4c', 'grass': '#86b450', 'root': '#6b5a40', 'earth': '#8a6e50', 'wood': '#8a6540', 'wood2': '#6b4c33', 'ore': '#5fa585', 'weed': '#3f5a34'}
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene; vl = bpy.context.view_layer
@@ -221,6 +221,172 @@ def cave_mouth():
     cone(c, 'bone0', (-0.4, -2.1, 0.05), (0.3, -1.95, 0.06), 0.045, 0.04, 'bone', seg=5); ball(c, 'bone0a', (-0.42, -2.1, 0.05), 0.07, 'bone'); ball(c, 'bone0b', (0.32, -1.95, 0.06), 0.07, 'bone')
     return c
 cave_mouth()
+
+# ---------------- more than the troll's cave (2026-10-12, Robin: an old copper mine, a rock shelter, a sea cave) ----------------
+def inside2(piece, W_, H_, opt):
+    """The inside of a mouth, like cave_inside but told what to be: xl(y) and xr(y) the walls, top(x) the opening's upper edge,
+    FLO and WAL the colours by how far in, DEEP how far it goes, water (the floor is the sea: it takes the sky at the mouth and
+    goes green then black), sets (timber sets standing in the passage, a metre and a half apart), stones, and the outline of the
+    hole in the cliff (a holdout, so nothing of the inside shows except through the mouth)."""
+    ic = bpy.data.collections.new(piece + '_in'); sc.collection.children.link(ic); EXTRA[piece] = ic; MI = inside_material()
+    SUN = (0.45, 0.30, -0.84); DEEP = opt['DEEP']; FLO = opt['FLO']; WAL = opt['WAL']; xl = opt['xl']; xr = opt['xr']; top = opt['top']; water = opt.get('water'); lit_floor = opt.get('lit', (160, 124, 84))
+    def sun1(pt):
+        t = (pt[1] - 0.1) / SUN[1]
+        if t <= 0: return 1.0
+        x0 = pt[0] - SUN[0] * t; z0 = pt[2] - SUN[2] * t
+        return 1.0 if abs(x0) < W_ * 0.98 and 0 <= z0 < top(x0) - 0.05 else 0.0
+    def sunlit(pt): return sum(sun1((pt[0] + dx, pt[1] + dy, pt[2])) for dx, dy in ((0, 0), (0.05, 0), (-0.05, 0), (0, 0.05), (0, -0.05))) / 5
+    def floor_col(pt):
+        x, y, z = pt; d = y / DEEP; edge = min(x - xl(y), xr(y) - x); k = 0.68 + 0.32 * max(0.0, min(1.0, edge / 0.7))
+        if water: k = 0.86 + 0.14 * max(0.0, min(1.0, edge / 0.5)) + 0.06 * math.sin(x * 5.0 + y * 3.1) * math.sin(y * 7.3)      # the sea: paler along the walls where it laps, a slow swell in it
+        sh = tuple(v * k for v in ramp(FLO, d)); lit = sunlit((x, y, 0.0)) if edge > 0 else 0.0; f = 1 - 0.5 * d
+        return tuple(a + (b * f - a) * lit * (0.75 if water else 1.0) for a, b in zip(sh, lit_floor))
+    def wall_col(side):
+        def f(pt):
+            x, y, z = pt; d = y / DEEP; k = 1.0 - 0.5 * min(1.0, z / 3.0)
+            bounce = max(0.0, 1 - math.sqrt((x - 0.9) ** 2 + (y - 0.6) ** 2 + z * z) / 2.4) ** 1.5
+            col = tuple(v * k + b * bounce for v, b in zip(ramp(WAL, d), (10, 30, 34) if water else (40, 26, 10)))
+            if water and z < 0.5: wet = 1 - z / 0.5; col = tuple(c2 * (1 - 0.45 * wet) for c2 in col)                              # wet and dark where the sea reaches
+            if side > 0: lit = sunlit(pt); g = 1 - 0.3 * d - 0.12 * min(1.0, z / 3.0); col = tuple(a + (b * g - a) * lit for a, b in zip(col, (150, 142, 124)))
+            return col
+        return f
+    NY, NX, NZ = 110, 96, 16; ys = [0.2 + (DEEP + 0.3) * j / NY for j in range(NY + 1)]; x0f = -W_ - 1.4; xs = [x0f + (2 * W_ + 2.8) * i / NX for i in range(NX + 1)]
+    painted(ic, piece + '_floor', [(x, y, 0.0) for y in ys for x in xs], [(j * (NX + 1) + i, j * (NX + 1) + i + 1, (j + 1) * (NX + 1) + i + 1, (j + 1) * (NX + 1) + i) for j in range(NY) for i in range(NX)], floor_col, MI)
+    for side, fx in ((-1, xl), (1, xr)):
+        painted(ic, piece + '_wall%d' % side, [(fx(y), y, (H_ + 1.2) * k / NZ) for y in ys for k in range(NZ + 1)], [(j * (NZ + 1) + k, j * (NZ + 1) + k + 1, (j + 1) * (NZ + 1) + k + 1, (j + 1) * (NZ + 1) + k) for j in range(NY) for k in range(NZ)], wall_col(side), MI)
+    painted(ic, piece + '_back', [(-W_ - 5, DEEP + 0.5, -0.6), (W_ + 5, DEEP + 0.5, -0.6), (W_ + 5, DEEP + 0.5, H_ + 5), (-W_ - 5, DEEP + 0.5, H_ + 5)], [(0, 1, 2, 3)], lambda pt: opt.get('back', (9, 8, 15)), MI)
+    for si, ys2 in enumerate(opt.get('sets', [])):       # timber standing in the passage: two posts and a cap, darker the further in
+        d = ys2 / DEEP; wc = tuple(v * (1 - 0.86 * d) for v in (124, 94, 60)); wd = tuple(v * 0.62 for v in wc); a, b = xl(ys2), xr(ys2); zt = H_ - 0.28
+        quads = [((a, ys2, 0), (a + 0.24, ys2, 0), (a + 0.24, ys2, zt), (a, ys2, zt)), ((b - 0.24, ys2, 0), (b, ys2, 0), (b, ys2, zt), (b - 0.24, ys2, zt)), ((a - 0.1, ys2, zt - 0.3), (b + 0.1, ys2, zt - 0.3), (b + 0.1, ys2, zt), (a - 0.1, ys2, zt))]
+        for qi, q in enumerate(quads): painted(ic, '%s_set%d_%d' % (piece, si, qi), list(q), [(0, 1, 2, 3)], (lambda col: (lambda pt: col))(wd if qi == 2 else wc), MI)
+    for i, (x, y, s3) in enumerate(opt.get('stones', [])):
+        o = block(ic, '%s_stone%d' % (piece, i), (x, y, s3 * 0.36), (s3 * 1.5, s3 * 1.1, s3), 90 + i); o.data.materials.clear(); o.data.materials.append(MI)
+        at = o.data.color_attributes.new(name='Col', type='FLOAT_COLOR', domain='POINT'); zc = s3 * 0.36
+        for vi, v in enumerate(o.data.vertices):
+            topv = v.co.z > zc; g = ramp(WAL, v.co.y / DEEP * 0.9); grey = (g[0] + g[1] + g[2]) / 3
+            col = tuple(min(255, (b2 * 0.55 + grey * 0.45) * (1.4 if topv else 0.7)) for b2 in g)
+            if topv and sunlit(tuple(v.co)) > 0.5: col = (150, 140, 120)
+            at.data[vi].color = lin(col)
+    out = opt['hole']; sv = []; sf = []; zc2 = H_ * 0.45
+    for (x, z) in out: sv.append((x, 0.22, z)); sv.append((x * 10, 0.22, zc2 + (z - zc2) * 10))
+    for i in range(len(out) - 1): sf.append((2 * i, 2 * i + 1, 2 * i + 3, 2 * i + 2))
+    sh = painted(ic, piece + '_cliff', sv, sf, lambda pt: (0, 0, 0), MI); sh.is_holdout = True
+    return ic
+def log(c, name, p0, p1, r, mat='wood', seg=7): return cone(c, name, p0, p1, r, r * 0.94, mat, seg=seg)
+
+def mine_mouth():
+    """The old mine's adit: a square mouth in the rock held open by timber, two posts and a cap with the lagging's log ends
+    over it, more sets going back into the dark; the spoil thrown out in front, a little green in it."""
+    c = coll('mine_mouth'); R = random.Random(11); W_, H_ = 1.2, 2.55
+    inside2('mine_mouth', W_, H_, {'DEEP': 6.2, 'xl': lambda y: -W_ + 0.02 * y, 'xr': lambda y: W_ - 0.02 * y, 'top': lambda x: H_,
+        'FLO': [(132, 104, 72), (98, 78, 58), (64, 52, 44), (38, 32, 32), (19, 17, 20), (8, 7, 10)], 'WAL': [(104, 88, 70), (74, 62, 52), (48, 42, 38), (27, 24, 26), (13, 12, 15), (6, 6, 8)],
+        'sets': [1.5, 3.0, 4.6], 'stones': [(-0.5, 1.2, 0.3), (0.6, 2.4, 0.28), (0.2, 3.8, 0.3)], 'back': (7, 6, 9),
+        'hole': [(W_ * 1.03, -1.0), (W_ * 1.03, H_ * 0.98), (W_ * 0.9, H_ * 1.03), (-W_ * 0.9, H_ * 1.03), (-W_ * 1.03, H_ * 0.98), (-W_ * 1.03, -1.0)]})
+    ball(EXTRA['mine_mouth'], 'mfloor', (0.0, -0.4, 0.0), 1.5, 'earth', sx=1.1, sy=0.6, sz=0.04, sub=2)
+    # the timber: two posts leaning a hand inward, the cap over them, the lagging laid back into the hill (its ends showing)
+    log(c, 'postL', (-W_ - 0.2, -0.3, 0.0), (-W_ - 0.12, -0.3, H_ + 0.12), 0.17); log(c, 'postR', (W_ + 0.2, -0.3, 0.0), (W_ + 0.12, -0.3, H_ + 0.12), 0.17, 'wood2')
+    log(c, 'cap', (-W_ - 0.72, -0.32, H_ + 0.3), (W_ + 0.72, -0.32, H_ + 0.26), 0.2)
+    for i in range(7): x = -W_ - 0.3 + i * (2 * W_ + 0.6) / 6 + (R.random() - 0.5) * 0.08; log(c, 'lag%d' % i, (x, -0.62, H_ + 0.66 + (R.random() - 0.5) * 0.06), (x, 0.4, H_ + 0.7), 0.13, 'wood' if i % 2 else 'wood2')
+    log(c, 'prop', (-W_ - 0.95, -0.9, 0.0), (-W_ - 0.3, -0.36, H_ - 0.5), 0.1, 'wood2')                    # a raking prop against the left post
+    # the rock it is set in: a pier each side, great stones over the lagging, a rougher course outside them
+    for i, (x, z, sx, sz) in enumerate(((-2.45, 1.5, 1.7, 3.2), (2.45, 1.4, 1.7, 3.0), (-1.9, 3.75, 2.0, 1.4), (0.1, 4.0, 2.2, 1.5), (2.0, 3.7, 2.0, 1.4), (-3.5, 0.9, 1.4, 1.9), (3.5, 0.8, 1.4, 1.7), (-3.3, 2.9, 1.5, 1.5), (3.3, 2.8, 1.5, 1.5))):
+        block(c, 'mrock%d' % i, (x, -0.05 + (0.25 if i > 4 else 0), z), (sx, 1.5 if i < 5 else 1.1, sz), 30 + i, mat='rock' if i % 2 else 'rock2', jit=0.22)
+    for i in range(9):
+        x = -2.8 + i * 0.7 + (R.random() - 0.5) * 0.3; zt = 4.75 - 0.5 * (abs(x) / 3.0) ** 2
+        cone(c, 'mtuft%d' % i, (x, -0.4 + (R.random() - 0.5) * 0.4, zt), (x + (R.random() - 0.5) * 0.3, -0.5, zt + 0.4 + R.random() * 0.3), 0.11, 0.01, 'grass', seg=4)
+    for (x, z, r) in ((-2.6, 3.5, 0.4), (2.9, 3.3, 0.36), (0.6, 4.7, 0.5)): ball(c, 'mmoss', (x, -0.9, z), r, 'moss', sx=1.3, sy=0.5, sz=0.4)
+    # the spoil: broken rock thrown out to the right of the way, green ore among it; a plank left lying
+    for i in range(16):
+        a = R.random() * math.pi * 0.9; r = 0.5 + R.random() * 1.5; sz = 0.2 + R.random() * 0.34; x = 2.2 + math.cos(a) * r * 0.9; y = -1.5 - math.sin(a) * r * 0.5
+        block(c, 'spoil%d' % i, (x, y, sz * 0.3 + (0.25 if r < 0.9 else 0)), (sz * 1.5, sz * 1.2, sz), 110 + i, mat='ore' if i % 5 == 0 else ('rock2' if i % 3 else 'rock'))
+    for i in range(5):
+        a = R.random() * math.pi; r = 1.2 + R.random() * 1.6; sz = 0.18 + R.random() * 0.25
+        block(c, 'mscree%d' % i, (-1.6 + math.cos(a) * r * 0.8, -1.2 - math.sin(a) * r * 0.5, sz * 0.3), (sz * 1.5, sz * 1.2, sz), 140 + i, mat='rock2')
+    log(c, 'plank', (-2.3, -1.9, 0.06), (-0.9, -2.3, 0.07), 0.07, 'wood2', seg=4)
+    return c
+
+def sea_mouth():
+    """The sea cave's mouth: a wide low arch with the sea running in under it. The rocks of its foot are wet and dark, weed
+    and barnacles on them; inside the water takes the light at the mouth and goes green, then black."""
+    c = coll('sea_mouth'); R = random.Random(23); W_, H_, Z0 = 2.3, 3.1, 0.7
+    def arch_top(x): u = max(-1.0, min(1.0, x / W_)); return Z0 + math.sin(math.acos(u)) ** 0.8 * (H_ - Z0)
+    inside2('sea_mouth', W_, H_, {'DEEP': 6.0, 'water': True, 'lit': (176, 226, 214), 'xl': lambda y: -2.9 + 0.16 * y ** 1.6, 'xr': lambda y: (2.9 - 0.8 * math.sin(math.pi * y / 3.6) ** 1.3) if y <= 3.6 else 2.9 + 0.3 * (y - 3.6), 'top': arch_top,
+        'FLO': [(74, 158, 156), (46, 118, 132), (26, 84, 106), (14, 52, 74), (7, 26, 42), (3, 9, 16)], 'WAL': [(64, 80, 92), (46, 60, 74), (30, 42, 56), (18, 26, 38), (10, 14, 22), (5, 6, 10)], 'back': (4, 8, 14),
+        'hole': [(W_ * 1.34, -1.0), (W_ * 1.28, Z0 * 0.55)] + [(math.cos(math.pi * i / 24) * W_ * 1.08, Z0 + math.sin(math.pi * i / 24) ** 0.8 * (H_ - Z0) * 1.07) for i in range(25)] + [(-W_ * 1.28, Z0 * 0.55), (-W_ * 1.34, -1.0)]})
+    ring = [(-8, 2.0, 2.1), (20, 1.6, 1.5), (46, 1.6, 1.3), (70, 1.9, 1.2), (96, 2.5, 1.3), (122, 1.8, 1.2), (144, 1.6, 1.4), (166, 1.7, 1.6), (188, 2.0, 2.1)]
+    for i, (deg, sx, sz) in enumerate(ring):
+        a = math.radians(deg); rx = W_ + 0.75 + (R.random() - 0.5) * 0.2; rz = H_ - Z0 + 0.6
+        block(c, 'sarch%d' % i, (math.cos(a) * rx, -0.35 - 0.12 * math.sin(a), max(0.8, Z0 + math.sin(a) * rz)), (sx, 1.6, sz), 210 + i, mat='rock' if i % 2 else 'rock2', jit=0.22)
+    for i, (deg, sx, sz) in enumerate([(-4, 1.7, 2.2), (32, 1.5, 1.5), (64, 1.7, 1.3), (116, 1.8, 1.3), (148, 1.5, 1.5), (184, 1.7, 2.2)]):
+        a = math.radians(deg); rx = W_ + 2.0; rz = H_ - Z0 + 1.4
+        block(c, 'souter%d' % i, (math.cos(a) * rx, 0.0, max(1.0, Z0 + math.sin(a) * rz)), (sx, 1.1, sz), 240 + i, mat='rock2' if i % 2 else 'rock', jit=0.24)
+    # the foot of it stands in the sea: dark wet stones, weed hanging on them, barnacles; a rock or two out in the water
+    for i, (x, sx, sz) in enumerate(((-3.2, 1.9, 0.9), (3.3, 2.0, 0.95), (-4.6, 1.5, 0.7), (4.7, 1.5, 0.75))): block(c, 'swet%d' % i, (x, -0.75, sz * 0.42), (sx, 1.3, sz), 260 + i, mat='dark', jit=0.2)
+    for i in range(10):
+        sd = -1 if i % 2 else 1; x = sd * (2.6 + R.random() * 2.2); z = 0.25 + R.random() * 0.75
+        ball(c, 'sweed%d' % i, (x, -1.25 - R.random() * 0.2, z), 0.26 + R.random() * 0.16, 'weed', sx=1.5, sy=0.4, sz=0.55)
+    for i in range(22):
+        sd = -1 if i % 2 else 1; x = sd * (2.5 + R.random() * 2.4); ball(c, 'sbarn%d' % i, (x, -1.36 - R.random() * 0.1, 0.5 + R.random() * 0.9), 0.045, 'bone')
+    for i, (x, y, s3) in enumerate(((-3.9, -2.1, 0.7), (2.6, -2.5, 0.55), (4.4, -1.9, 0.5))): block(c, 'sskerry%d' % i, (x, y, s3 * 0.3), (s3 * 1.7, s3 * 1.3, s3 * 0.8), 280 + i, mat='dark')
+    for i in range(8):
+        x = -3.0 + i * 0.85 + (R.random() - 0.5) * 0.3; zt = 4.55 - 0.5 * (abs(x) / 3.2) ** 2
+        cone(c, 'stuft%d' % i, (x, -0.4 + (R.random() - 0.5) * 0.4, zt), (x + (R.random() - 0.5) * 0.3, -0.5, zt + 0.4 + R.random() * 0.3), 0.11, 0.01, 'grass', seg=4)
+    return c
+
+def rock_shelter():
+    """The rock shelter (a heller): a great slab of an overhang on two piers, open in front, with room under it for a fire and
+    a bed. Two pieces: 'shelter' is what stands before whoever is under it (the piers, the slab, what grows on it), 'shelter_in'
+    is the floor and the back wall, painted into the ground under the hero. One screen unit is 1 / 12.43 m of ground depth in
+    these renders (the camera stands 35 degrees up) but 1 / 16.25 in the game, so the floor is made 3.74 m deep to lie over the
+    game's pocket of 62 units; the back wall's top is kept under the slab everywhere."""
+    c = coll('shelter'); R = random.Random(31); HW, DEPTH = 3.6, 3.74
+    for i, (x, z, sx, sz, sy) in enumerate(((-4.75, 2.5, 2.4, 5.1, 1.7), (4.8, 2.45, 2.5, 5.0, 1.7), (-6.3, 1.5, 1.7, 3.1, 1.3), (6.4, 1.4, 1.7, 2.9, 1.3))):
+        block(c, 'pier%d' % i, (x, -0.1 + (0.2 if i > 1 else 0), z), (sx, sy, sz), 310 + i, mat='rock' if i % 2 else 'rock2', jit=0.2)
+    for i, (x, z, sx, sz) in enumerate(((-3.7, 5.85, 4.6, 1.5), (0.2, 6.0, 4.9, 1.8), (3.9, 5.8, 4.4, 1.45))):    # the overhang: three great stones butted together (one flat slab read as a table)
+        block(c, 'slab%d' % i, (x, 0.05, z), (sx, 2.0, sz), 320 + i, mat='rock' if i != 1 else 'rock2', jit=0.2, square=0.5)
+    for i, (x, z, sx, sz) in enumerate(((-3.6, 6.75, 2.6, 0.95), (0.4, 6.9, 3.0, 1.0), (3.9, 6.7, 2.4, 0.9), (-6.0, 4.3, 1.5, 1.4), (6.1, 4.2, 1.5, 1.4))):
+        block(c, 'over%d' % i, (x, 0.3, z), (sx, 1.3, sz), 330 + i, mat='rock2' if i % 2 else 'rock', jit=0.22)
+    for i in range(14):
+        x = -5.2 + i * 0.8 + (R.random() - 0.5) * 0.3; zt = 7.25 - 0.55 * (abs(x) / 5.4) ** 2
+        cone(c, 'htuft%d' % i, (x, -0.2 + (R.random() - 0.5) * 0.5, zt), (x + (R.random() - 0.5) * 0.3, -0.3, zt + 0.4 + R.random() * 0.35), 0.11, 0.01, 'grass', seg=4)
+    for (x, z, r) in ((-3.2, 6.1, 0.5), (2.2, 6.25, 0.6), (5.0, 5.2, 0.45), (-5.6, 3.6, 0.4)): ball(c, 'hmoss', (x, -0.95, z), r, 'moss', sx=1.4, sy=0.5, sz=0.4)
+    for i, (x, r) in enumerate(((-2.4, 0.32), (0.9, 0.4), (2.9, 0.3))): ball(c, 'hlip%d' % i, (x, -0.95, 5.12), r, 'moss', sx=1.6, sy=0.5, sz=0.5)   # moss hanging at the lip (thin roots took the ink as black sticks)
+    for i in range(8):
+        sd = -1 if i % 2 else 1; r = R.random(); sz = 0.22 + R.random() * 0.36
+        block(c, 'hscree%d' % i, (sd * (3.9 + r * 2.6), -1.1 - R.random() * 0.9, sz * 0.3), (sz * 1.5, sz * 1.2, sz), 350 + i, mat='rock2' if i % 3 else 'rock')
+    # the inside: its own piece
+    ci = coll('shelter_in'); MI = inside_material(); NX, NY, NZ = 80, 40, 14
+    def back(x): u = min(1.0, abs(x) / HW); return DEPTH * max(0.0, 1 - u ** 2.6) ** (1 / 2.6)                # how far back the floor goes at x: the game's pocket, in these renders' depth
+    def lit(x, y): return max(0.0, min(1.0, (1.15 + 0.22 * x - y) / 0.5))                                      # the sun comes in low from the front and the left: a band along the threshold, deeper on the right
+    FLO = [(156, 128, 92), (118, 96, 72), (88, 72, 60), (64, 54, 50), (46, 40, 42)]; WAL = [(86, 88, 96), (64, 66, 78), (46, 48, 62), (32, 33, 46), (22, 22, 32)]
+    def floor_col(pt):
+        x, y, z = pt; d = y / DEPTH; e = (back(x) - y); k = 0.7 + 0.3 * max(0.0, min(1.0, e / 0.6)); sh = tuple(v * k for v in ramp(FLO[1:], d)); l = lit(x, y)
+        ash = max(0.0, 1 - math.hypot((x + 1.0) / 0.55, (y - 1.2) / 0.4)); col = tuple(a + (b - a) * l for a, b in zip(sh, FLO[0])); return tuple(v * (1 - 0.5 * ash) for v in col)   # ash where fires were lit
+    fv = []; ff = []
+    for j in range(NY + 1):
+        for i in range(NX + 1): x = -HW + 2 * HW * i / NX; fv.append((x, -0.05 + (back(x) + 0.05) * j / NY, 0.0))
+    for j in range(NY):
+        for i in range(NX): ff.append((j * (NX + 1) + i, j * (NX + 1) + i + 1, (j + 1) * (NX + 1) + i + 1, (j + 1) * (NX + 1) + i))
+    painted(ci, 'sh_floor', fv, ff, floor_col, MI)
+    def wall_top(x): return (92.0 - back(x) * 12.43) / 17.7                                                    # so that its top lies 92 units above the foot line on the screen: under the slab
+    def wall_col(pt):
+        x, y, z = pt; h = z / max(0.1, wall_top(x)); d = y / DEPTH; base = ramp(WAL, 0.25 + 0.75 * h * (0.6 + 0.4 * d)); beds = 0.9 + 0.12 * math.sin(z * 9 + math.sin(x * 2) * 2)
+        soot = max(0.0, 1 - math.hypot((x + 1.0) / 0.8, (z - 1.0) / 1.5)) * 0.6; warm = max(0.0, 1 - h * 2.2) * lit(x, 0.6) * 0.5
+        return tuple((v * beds + w2 * warm) * (1 - soot) for v, w2 in zip(base, (60, 44, 24)))
+    wv = []; wf = []
+    for i in range(NX + 1):
+        x = -HW + 2 * HW * i / NX
+        for k in range(NZ + 1): wv.append((x, back(x), wall_top(x) * k / NZ))
+    for i in range(NX):
+        for k in range(NZ): wf.append((i * (NZ + 1) + k, (i + 1) * (NZ + 1) + k, (i + 1) * (NZ + 1) + k + 1, i * (NZ + 1) + k + 1))
+    painted(ci, 'sh_wall', wv, wf, wall_col, MI)
+    for i, (x, y, s3) in enumerate(((-2.6, 1.9, 0.4), (2.4, 2.3, 0.46), (0.9, 3.1, 0.34), (-3.1, 0.6, 0.3), (3.0, 0.9, 0.3))):
+        if y > back(x) - 0.3: y = back(x) - 0.3
+        o = block(ci, 'sh_stone%d' % i, (x, y, s3 * 0.36), (s3 * 1.5, s3 * 1.1, s3), 370 + i); o.data.materials.clear(); o.data.materials.append(MI)
+        at = o.data.color_attributes.new(name='Col', type='FLOAT_COLOR', domain='POINT')
+        for vi, v in enumerate(o.data.vertices): topv = v.co.z > s3 * 0.36; g = ramp(WAL, 0.3 + 0.5 * y / DEPTH); at.data[vi].color = lin(tuple(min(255, b2 * (1.5 if topv else 0.8)) for b2 in g))
+    return c
+mine_mouth(); sea_mouth(); rock_shelter()
 
 # ---------------- render: one piece at a time, the frame fitted to it ----------------
 toon.world(sc, style='cel'); sun = toon.sun('cel'); sun.data.energy = 3.0; sun.data.use_shadow = False; toon.set_scene('day')   # the sun strong enough to light a face: at the characters' 1.15 nothing passes the cel step and every face takes the shadow tone (found 2026-10-12); no cast shadows

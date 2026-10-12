@@ -53,6 +53,13 @@ gone from the code, and no new work may bring any of it back. This file is the s
   starter island needs, getting to the big island, and all there is to do there. The lowlands, the further islands and the later
   progress stay built in the code but are not spawned (`spec.sizes` [120, 400], `biomes` [0, 0], `count` 2). None of the
   raiding, clan or calendar systems are played yet. `game.html` is the playable start (see "The game" below).
+  **The big island has a small mountain since 2026-10-12** (Robin: a small version of the mountain biome there, mainly to
+  introduce the player to mountains and to get the first copper): see "Mountains".
+- **Decided 2026-10-12 (Robin's questionnaire before the mountain biome):** besides the troll's cave the mountains have **an old
+  copper mine, a rock shelter and a sea cave** (not a bear's den); **the first copper is veins in the open cliffs, then the
+  cave** (a little safely, the real amount behind the troll); the big island gets **foothills and a small plateau** (about a
+  sixth of it); **ambient sound is synthesized in code** like all the sound; better lighting should do **fire and torch at
+  night** and **atmosphere** first; lighting techniques are compared **in pictures, then as switches on the Admin board**.
 - **Decided 2026-10-07 (Robin's questionnaire, the night of the villages):** **villages across the islands** with generated names
   ("controlled generation"), the starter island empty of thriving villages (its village was raided; the story comes later), a
   **jetty by the sea** with a road up to the village and boats moored that cannot be boarded, roads between villages uncommon; the
@@ -120,8 +127,8 @@ pane has a tab limit: close old tabs if a page will not open).
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
-| `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
-| `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
+| `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, **to the old mine, into it, to its fall of rock, to the rock shelter, to a copper vein, a boat at the sea cave, into it, to its beach**, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
+| `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the mountain's foot, onto the plateau, to the lookout, the rock shelter and a copper vein (the big island has a small mountain since 2026-10-12)**, **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
 template and one line in `PAGES` in `tools/build.py`. **Removed in the cleanup of 2026-10-09** (Robin: too much on the site; prepare for
@@ -150,7 +157,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   world: height field `E`, tile `grid`, `isLand`/`isWater`/`elevAt`, props in `buckets` (`plant`, `camp`, `addProp`,
   `removeProp`, `around`, `nearSolids`), lazy ground painting (`drawGround`), shore waves (`drawWaves`), `chart`.
   `World.KIND` and `World.HP` say what can be gathered. Island changes go here, once.
-- `src/cave.js` (`Cave`, 2026-10-12): the inside of the troll's cave: its layout from a seed (`make`), the painting of its walls
+- `src/cave.js` (`Cave`, 2026-10-12): the insides of the caves (the troll's, the old mine, the sea cave: `make(seed, { kind })`): the layout from a seed (`make`), the painting of its walls
   and floor by the mountains' technique turned inside out (`prepare`, `chunk`, `drawFloor`), the dark with the light let into it
   (`dark`), and the cave's own chart (`see`, `drawChart`). See "The cave's inside reworked" under Creatures. The game keeps what
   lives in it (the troll, the hoard, mining, the dead Viking).
@@ -1142,7 +1149,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   outside it (`e.prowl`, `e.ringT`) and after about sixteen seconds gives up and runs off into the dark (`e.gone`, removed
   twenty seconds later). So running to a fire is safety. The clock's sun-and-moon icon is gone; a note says "The light is going"
   at dusk. **Brokk's campfire** (a `stoneHearth` with `light`) burns by the well at the steading, so the first night shows
-  what a fire does. **Copper is not on the starter island** (`markOre` skips island 0); it begins on the big island with
+  what a fire does. **Copper is not on the starter island** (`markOre` skips island 0); it begins on the big island (since 2026-10-12 as veins in the open cliffs of its small mountain, then) with
   the cave.
 - **Fixes of 2026-10-06 (Robin's second night list):** the turquoise shallows can be waded (`w.isWade`: elevation above
   -1.1; the walk test allows it). **The Shipyard is free-form:** a 9 by 6 yard at zoom 1.2, parts go anywhere, and the
@@ -1620,6 +1627,46 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   [map|lit|dark|all]` (`npm run cave`) writes cave_map.png (the whole cave, the holes ringed), cave_lit.png (six places evenly
   lit, to judge the painting) and cave_dark.png (the same as the game shows them, by torch and by night too).
   `docs/cave-lit.jpg`, `docs/cave-dark.jpg` and `docs/cave-game.jpg` are the pictures of 2026-10-12.
+  **The other caves (2026-10-12, Robin: more than troll caves; an old copper mine, a sea cave).** `Cave.make(seed, { kind })`:
+  `'troll'` (the cave above, the default), `'mine'`, `'sea'`. The same sheets and painter, another lay-out: `base()` makes the
+  fields from a list of shapes (ellipses, and **boxes for what people dug: straight walls**, with a third of the roughness) and
+  `tools()` gives what lay-outs share (the foot of the wall north of a point, a vein, an ore rock, a clear spot). A kind has a
+  tint for its floor and its walls (`tintF`, `tintW`).
+  **The old mine** (`makeMine`; warm brown rock): an **adit** straight in from the daylight, a **main drift** in three reaches
+  with crosscuts to **two worked-out stopes** and a dead end, **timber**: sets across the adit and the crosscuts (`cave.sets`,
+  drawn by `Cave.drawSet` with the things that stand, so a cap passes over whoever has walked on through it; their posts are
+  solid) and posts with a cap's end along the drift's far wall (`cave.posts`, painted); **soot up the walls where they set
+  fires to crack the rock**, charcoal still lying there (`cave.soot`); a ladder, a bucket of ore, a sledge; water gathered in
+  the first stope; one hole in the roof over the big stope, so it is **darker than the troll's cave and a torch matters**; a
+  **fall of rock across the drift** (two great stones, `block: true`, three times a rock's toughness: the pick clears it) and
+  beyond it **the deep stope** with the best veins (five to six lumps each) and **the man who never came out**. Seven veins,
+  about 28 lumps of copper; nobody lives there.
+  **The sea cave** (`makeSea`; blue-grey rock): **the sea comes in at the mouth** and fills the south of a great hall (`cave.S`,
+  the water's depth in tiles, read like `D`; `Cave.sAt`; the sheets' kind 3; you wade all of it), painted clear at its edge,
+  green then dark where it deepens, a pale line where it laps, the walls that stand in it wet and dark with weed and barnacles,
+  short pale lines drifting in from the mouth; at the hall's back **a beach of shingle with a wreck on it under a hole in the
+  roof**, weed thrown up along the water's edge, shells, **driftwood**, and a passage up to **a dry pocket where somebody hid a
+  chest**. **The daylight carries far in over the water** (`cave.glows`: holes in the dark up the channel and into the hall,
+  and the water's own green-blue shimmer there).
+  **What lies there to be taken** (`cave.finds`; the game's `findNear`, `findTake`, E): the miner (Search: his copper pick and
+  three lumps of ore), charcoal at the four fire-settings (Take), driftwood (Take: three wood, then gone from the floor), the
+  chest (Open: seven to fourteen silver and an iron weapon, by the world's seed). A glint marks what is not yet taken.
+  **In the game:** `cave` and `caveMouth` are still the troll's; **`caves`** holds every cave of the world (`{ kind, cave,
+  mouth }`: the mine and the sea cave where the mountains have a place for them, their insides laid 1500 and 3000 units below
+  the troll's in the same far-off ground), **`cur`** the one you are in and `here()` its inside: the floor, the dark, the things,
+  mining, the solids and the chart all ask `here()`, and the troll's own (his eyes, the hoard, the dead Viking, `caveHear`) ask
+  that it is his. `caveAtHand()` is the cave you could step into or out of; **the sea cave takes E from the boat** (within 150
+  units of its mouth: the boat lies there while you are in, and you come out aboard), or on foot where its foot can be waded
+  (`mouthSpot`). The prompt names it ("Enter the mine"), the map's title is the cave's name, the other caves and the shelter
+  are marked on the chart when you come within sight of them (`seen.places`) or look out from the lookout. Leaving a cave lets
+  its sheets go (`Cave.release`). Saved: `caves2` (per cave: the ore rocks mined, by id, so **a mined rock stays mined**; the
+  veins; what has been seen; what has been taken), `seaBoat` (saved inside the sea cave, come by boat: you wake in the boat).
+  **Checked in the pane on the mountain scene:** the mine by E, the adit and the drift walked, the fall of rock stops you and
+  the pick clears it, the miner searched, a vein and a fire-setting worked, out again, and all of it there after a reload; the
+  sea cave by E from the boat, waded and walked to the pocket, the chest and driftwood taken, out and aboard again; the shelter
+  walked into, a bed under it slept in (rested); a vein in the open cliff worked out. `tests/cave.js` lays both out for twelve
+  seeds; `node tools/visual/cave.js [seed] [what] mine|sea` writes `cave_mine_*.png` and `cave_sea_*.png`.
+  `docs/cave-mine.jpg`, `docs/cave-sea.jpg`.
 - **Charcoal, the furnace and copper tools (2026-10-07, Robin decided):** charcoal is never made in the furnace. **Morning embers:**
   at every dawn each fire that burned through the night (the camp hearth, campfires, hearths, braziers) drops two lumps of
   charcoal beside it (`morningEmbers`, from `dayTick` and waking). **The charcoal clamp** (the `charcoal` piece, prop `charcoalPit`,
@@ -1726,8 +1773,10 @@ never across a change of level. **Arrows fly over a cliff both ways** (Robin: ei
 makes more sense); a blow does not reach across one. The mountain island is a **test scene** (`game.html?scene=mountain`); the real
 game's islands have no mountains yet. **The look pass (2026-10-12, Robin's list, all seven built):** edges that face away, the
 peaks against the ink world, variety in the cliffs, the fells' own ground, sea cliffs, a lookout, a waterfall (**not Näcken's**:
-Robin wants him in a lush forest). **Not decided:** where mountains go in the real world, ore in the faces, height in a fight
-beyond arrows, whether the chart should hide land you have not seen (the lookout marks places; the chart shows all land as before).
+Robin wants him in a lush forest). **Since 2026-10-12 the real game's big island has a small mountain, and the mountains have more than the troll's cave** (the
+three bullets after this one). **Not decided:** where the full mountain biome goes in the world (a mountain island in the north),
+height in a fight beyond arrows, whether the chart should hide land you have not seen (the lookout marks places; the chart shows
+all land as before).
 
 - **The field** (`src/world.js`, in `World.make`, `o.mountain` names an island, `o.mountainOpts` the numbers): `MT` is a smooth value per
   tile read between the tiles like the coast's (`w.mAt`), from **how far north** a tile lies on the island's own land and **how far it
@@ -1833,7 +1882,63 @@ beyond arrows, whether the chart should hide land you have not seen (the lookout
 - **Found by the playtest and fixed in the engine (`src/combat.js`):** a solid (a tree, a wall) could **push a mover onto ground it
   cannot walk**: `moveCircle` now puts it back. A calm creature with no aggro ring never wandered: `e.strolls`. `wanderStep` picks
   a place the creature can stand.
-- **Checking it:** `node tools/visual/mountain.js [seed]` (`npm run mountain`) prints the share of the land each level takes, the
+- **More than the troll's cave (2026-10-12, Robin: work on a "mountain biome", there needs to be more to it than troll caves,
+  maybe other types of caves; his answers: an old copper mine, a rock shelter and a sea cave, not a bear's den; the first copper
+  as veins in the open cliffs, then the cave).** Four kinds of place, each at the foot of a wall, found in `mountains()` like the
+  cave's and kept apart from one another (`awayFrom`), strict first and then less so (the last try, `footLoose`, takes a wall
+  that curves), so every mountain has them: checked on twelve seeds.
+  **Copper in the cliffs** (`w.mt.veins`, `cliffVeins`; `mountainOpts.veins`, by default one for every 800 units of mountain,
+  three to nine): a green streak up a south face from its foot, flecks and a stain of green in the rock round it, green-stained
+  spoil below, **painted into the ground** by the mountain's pen. Each is two or three lumps: the pick on it chips green and
+  gives a lump every few blows (the game's `veinHit`, as the cave's veins; `harvest.list` offers the veins near), and a vein
+  worked out is **painted again grey and is gone for good** (`w.veinSpent`; saved as `cliffVeins`). They are the first copper:
+  a little, got safely, and they teach what a vein looks like before the cave shows the rest.
+  **The rock shelter** (a heller; `w.mt.shelters`, `shelterPlace`, by choice near the foot of a way up): an overhang with a
+  **floor you walk in under**. The face's cells in a pocket 156 units wide and 62 deep become ground (`CL &= 3`), the inside
+  (`shelter_in`: the floor, the back wall dark with soot where fires were lit, the sun in along the threshold) is **painted
+  into the ground** with the peaks (`w.mt.inlays`), and the overhang (`shelter`: three great stones on two piers) is a prop that
+  stands at the foot line, so it is drawn **in front of whoever is under it**. Nothing grows under it (`meadowOk`), an old fire
+  ring lies there, and it is **a roof**: `w.shelterAt(x, y)`; the game's `benchRoofed` counts it, a bed under it gives a rested
+  night, `shelterComfort` is 1 (2 with a fire within 110 units: the comfort line shows it, and you heal by the fire there).
+  **The old mine** (`w.mt.mine`, `minePlace`, the low ground by choice, well away from the troll's) and **the sea cave**
+  (`w.mt.seaCave`, `seaCavePlace`: a wall that stands in the sea and faces south, where its foot can be waded if there is such
+  a place, else it is reached by boat alone) are two more caves: see "The other caves" under the cave's rework. Trees and rocks
+  keep off the ground before all of these (`bySet`).
+  **Set pieces** (`art/build/rocks_build.py`, `inside2`: the cave mouth's inside told what to be): `mine_mouth` (a square mouth
+  held open by two posts and a cap with the lagging's log ends over it, more sets going back into the dark, a raking prop, the
+  spoil thrown out with green ore in it), `sea_mouth` (a wide low arch with the sea running in under it, wet dark stones at its
+  foot with weed and barnacles), `shelter` and `shelter_in`. The render's ground depth is not the game's (a camera 35 degrees up
+  shows a metre of ground as 12.4 screen units, the game's 0.75 makes it 16.3), so the shelter's floor is modelled 3.74 m deep
+  to lie over the 62-unit pocket. **Thin things take the ink as black sticks** (hanging roots did): use moss, not twigs.
+  `docs/mountain-places.jpg` (the adit, the shelter, the sea cave's mouth, a vein).
+- **A mountain in one part of an island, and the big island's own (2026-10-12, Robin: put a small version of the biome on the
+  first big island, to introduce the player to mountains and get the first copper; his answer: foothills and a small plateau).**
+  `mountainOpts.at = [x, y]` (island radii from the island's middle) with `r` puts the mountain round one place instead of across
+  the island's north: its height by how far out a tile lies is `prof` (pairs of how far out and how high; by default **a wide
+  ring of foothills, a plateau inside it, a peak or two in the middle**). **`World.BIG_MOUNTAIN`** is the big island's:
+  `{ at: [-0.3, -0.5], r: 0.56, high: 3.5, shore: 6, rise: 9, sea: false, mine: false, seaCave: false, veins: 4 }`: in its
+  **north-west** (the side you come to it from; the north is the cold side), about a sixth of the island, with no sea cliffs, no
+  mine and no sea cave (those are for a real mountain island), the troll's cave in one of its walls, a rock shelter, a lookout
+  and four veins. The game's `spec` has `mountain: 1, mountainOpts: World.BIG_MOUNTAIN` (the layout key ends `:m5b`, so older
+  saves start fresh), the Sea Editor's game layout and `tools/visual/worlds.js` the same; the rune test scene is therefore on
+  the big island with its mountain (its board: to the mountain's foot, onto the plateau, the lookout, the shelter, a vein).
+  **Villages keep off it**: `w.siteCode(tx, ty)` answers 255 for the mountains and the ground before them, and `Village.plan`
+  and the rune hut ask it. **A hollow the fells close round** (a tarn in its bowl: the mountains keep a shore round a lake too)
+  **is given a way in**: the flood now starts from the largest piece of low ground, and any other piece, low or high, is joined
+  on (a slope down a face, a gap in a rim). `docs/big-island-mountain.jpg` is four worlds' charts (ways up ringed, the cave red,
+  veins green).
+- **The approach (2026-10-12, Robin: find a good way to make the mountains go seamlessly with other biomes).** The field is
+  smooth, so on the low ground it already says how near the first rise is: **`w.fellNear(x, y)`** runs from 0 out in the lowland
+  to 1 at the foot of the first wall (the field from 0.03 to 0.6: it is already down to a half at a wall's foot, because the
+  face covers the ground where it runs from 1 to there), a band about 300 units wide. Over it, whatever biome lies below:
+  **the ground dries toward the foothills' turf** (the fells' tint laid on by how near, in `bakeChunk`), **stones and sedge come
+  up through the grass** (the pen), **the trees thin and turn to pine, birch and mountain birch**, **juniper and heather
+  appear**, and **boulders and rock lie about** (`w.plant`). The cliffs themselves stay hard edges: that is the terraces'
+  nature. `docs/mountain-approach.jpg`.
+- **Checking it:** `node tools/visual/mountainlook.js` has shots `mine`, `shelter`, `seacave`, `vein`, `approach` and `over`,
+  `MSPEC=big` paints the game's own two islands (the big one with its small mountain) and `MAT=tx,ty,zoom` any place;
+  `node tools/visual/worlds.js` prints the big island's mountain (the share of each level, the ways up, the cave, the shelter,
+  the veins). `node tools/visual/mountain.js [seed]` (`npm run mountain`) prints the share of the land each level takes, the
   slopes, the waterfall, the lookout, the bay and the cave, and whether every level is reached on foot, and writes mountain.png
   (the chart and eight close-ups painted as the game paints them); checked on seeds 11, 3, 25, 42 and 7: every one has a way to
   every level, a waterfall, a lookout, a bay and a cave. `node tools/visual/mountainlook.js [seed] [shots] [zoom]` writes one

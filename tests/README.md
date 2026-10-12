@@ -16,7 +16,7 @@ Run everything: `npm install` once, then `npm test` from the project root.
 | sprinttest.js | sprint speed and stamina drain |
 | wtest2.js | hit weight presets (pause lengths and knockback) |
 | fuzz.js | random inputs across aim modes: no crashes, no NaNs |
-| cave.js | the cave laid out for twelve seeds: every part walked to from the way in (a NO is a fault), what stands in it, the distance from light to light |
+| cave.js | the troll's cave, the old mine and the sea cave laid out for twelve seeds: every part and every find walked to from the way in (a NO is a fault), what stands in them, the distance from light to light, the mine's timber and its fall of rock, how much of the sea cave is under water |
 | balance.js | (not in `npm test`) a tap-swinging bot against each animal, with stick or flint sword, with and without leather: time, health lost, deaths |
 
 Some scripts also write PNG images into the current folder. Delete them any time.
