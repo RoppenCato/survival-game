@@ -88,7 +88,9 @@ not turn to stone at dawn like the mountain troll unless Robin wants every troll
   dweller of the card below; whether he still guards a mound, a wreck or walks out of the sea is open).
 - **Huldra:** beautiful, in brighter colours (a red dress, fair hair), and the back of a hollowed rotten tree trunk. No tail.
 - **Nacken:** forest clothes and an instrument: a river-pale man with a lyre. This is also the way instruments come into the
-  game (Viking-age ones: lyre, bone flute, horn, lur; the fiddle is later than the age).
+  game (Viking-age ones: lyre, bone flute, horn, lur; the fiddle is later than the age). **He belongs in a lush forest**
+  (Robin, 2026-10-12, when the mountain waterfall was built: "not for Näcken, he should be in a lush forest"): a forest
+  stream or pool, not the fells.
 - **Bysen:** small, tomte-like. He chops slowly at trees; come near and he turns into a wooden stump. Axe the stump and you get
   a larger amount of wood and some sort of magic piece of wood. (Open: what the piece does; whether he is harmed or only
   runs off; whether he still makes you lose the way home.)

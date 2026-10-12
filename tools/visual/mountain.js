@@ -1,8 +1,10 @@
 // The mountain island (2026-10-12): the world the mountain test scene makes, checked and drawn.
 //   node tools/visual/mountain.js [seed]
-// Prints how much of the island each level takes, the slopes, and whether every level can be reached on foot from the wreck
-// (a flood over the walking cells). Writes mountain.png: the whole island's chart with the slopes ringed, and close-ups painted
-// as the game paints them (a slope up a face, the high plateau, a rim that faces away, the peaks) with the hero for size.
+// Prints how much of the island each level takes, the slopes, the waterfall, the lookout and the bay, and whether every level
+// can be reached on foot from the wreck (a flood over the walking cells). Writes mountain.png: the whole island's chart with the
+// slopes ringed, and close-ups painted as the game paints them (the sea cliffs, the waterfall, the lookout, an edge that faces
+// away, a wall, the peaks, a slope, the plateau's ground) with the hero for size. tools/visual/mountainlook.js writes the same
+// places one picture each, larger.
 const { createCanvas, loadImage } = require('../../node_modules/@napi-rs/canvas'); const fs = require('fs'); const path = require('path');
 global.__mk = (w, h) => createCanvas(w, h);
 const S = require('../../src/stylelab.js'), World = require('../../src/world.js'), DI = require('./dayisland.js'); const kit = S.kit; kit.setup(kit.STYLE);
@@ -14,10 +16,11 @@ const seed = +(process.argv[2] || 11), SPEC = World.MOUNTAIN_SPEC ? Object.assig
   const m = w.mt, T = w.T, K = 0.75; if (!m) { console.log('no mountains in this world'); return; }
   console.log('world made in', Date.now() - t0, 'ms;', w.GW + 'x' + w.GH, 'tiles; island r', w.isles[0].r);
   // how much of what
-  const n = { lvl: [0, 0, 0, 0], face: 0, rim: 0, ramp: 0, block: 0 }; let land = 0;
-  for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++) { const x = (m.x0 + i + 0.5) * m.MC, y = (m.y0 + j + 0.5) * m.MC; if (w.elevAt(x, y) <= 0.05) continue; land++; const c = m.CL[j * m.w + i]; if (c & w.M_FACE) n.face++; else if (c & w.M_RIM) n.rim++; else if (c & w.M_RAMP) n.ramp++; else n.lvl[c & 3]++; }
+  const n = { lvl: [0, 0, 0, 0], face: 0, side: 0, rim: 0, ramp: 0, water: 0, block: 0 }; let land = 0;
+  for (let j = 0; j < m.h; j++) for (let i = 0; i < m.w; i++) { const x = (m.x0 + i + 0.5) * m.MC, y = (m.y0 + j + 0.5) * m.MC; if (w.elevAt(x, y) <= 0.05) continue; land++; const c = m.CL[j * m.w + i]; if (c & w.M_FACE) n.face++; else if (c & w.M_SIDE) n.side++; else if (c & w.M_RIM) n.rim++; else if (c & w.M_RAMP) n.ramp++; else { n.lvl[c & 3]++; if (c & w.M_WATER) n.water++; } }
   const pc = v => (v / land * 100).toFixed(1) + '%';
-  console.log('of the land: low ground', pc(n.lvl[0]), ' foothills', pc(n.lvl[1]), ' high plateau', pc(n.lvl[2]), ' peaks', pc(n.lvl[3]), ' faces', pc(n.face), ' rims', pc(n.rim), ' slopes', pc(n.ramp));
+  console.log('of the land: low ground', pc(n.lvl[0]), ' foothills', pc(n.lvl[1]), ' high plateau', pc(n.lvl[2]), ' peaks', pc(n.lvl[3]), ' south faces', pc(n.face), ' side walls', pc(n.side), ' rims', pc(n.rim), ' slopes', pc(n.ramp), ' stream and pool', pc(n.water));
+  console.log('the waterfall:', m.falls.length ? m.falls.map(f => 'off level ' + f.n + ' at ' + Math.round(f.x / T) + ',' + Math.round(f.ye / T) + (f.snow ? ', its stream from the snow' : '') + ', the brook ' + Math.round(f.out[f.out.length - 1][1] - f.out[0][1]) + ' long').join('; ') : 'NONE', ' the lookout:', m.lookouts.length ? m.lookouts.map(l => 'level ' + l.lvl + ' at ' + Math.round(l.x / T) + ',' + Math.round(l.y / T)).join('; ') : 'NONE', ' ledges:', m.ledges.length, ' the bay:', m.bay ? Math.round(m.bay.x / T) + ',' + Math.round(m.bay.y / T) : 'none');
   console.log('peaks stood:', nPeaks, ' the cave:', caveAt ? Math.round(caveAt.x / w.T) + ',' + Math.round(caveAt.y / w.T) + ' on level ' + w.levelAt(caveAt.x, caveAt.y + 12) : 'NO PLACE FOUND');
   console.log('slopes:', m.ramps.map(r => 'to level ' + r.n + ' at ' + Math.round(r.ex / T) + ',' + Math.round(r.ey / T)).join('; ') || 'NONE');
   // can every level be walked to from the wreck? a flood over the walking cells
@@ -34,26 +37,28 @@ const seed = +(process.argv[2] || 11), SPEC = World.MOUNTAIN_SPEC ? Object.assig
   c.strokeStyle = '#ffd34d'; c.lineWidth = 2; m.ramps.forEach(r => { c.beginPath(); c.arc(cx(r.ex), cyy(r.ey), 9, 0, 7); c.stroke(); });
   c.fillStyle = '#ff5a3a'; c.beginPath(); c.arc(cx(w.home.x), cyy(w.home.y), 5, 0, 7); c.fill();
   const label = (t, x, y) => { c.fillStyle = 'rgba(20,16,12,0.7)'; c.font = 'bold 14px sans-serif'; const tw = c.measureText(t).width; c.fillRect(x - 4, y - 15, tw + 8, 20); c.fillStyle = '#f0e6cc'; c.fillText(t, x, y); };
-  label('The mountain island, seed ' + seed + ': slopes ringed, the wreck red', 14, 26);
+  label('The mountain island, seed ' + seed + ': slopes ringed yellow, the waterfall blue, the lookout a white square, the cave and the wreck red', 14, 26);
   let hero = null; try { const J = JSON.parse(fs.readFileSync('assets/sprites/hero2-mixamo/hero2-mixamo.json', 'utf8')); hero = { J, im: await loadImage(path.join('assets/sprites/hero2-mixamo', J.anims.idle.sheets.body)) }; } catch (e) {}
   function shot(title, at, x, y, ww, hh, Z, heroAt) {
     const r = DI.paint(kit, World, ww, hh, Z, { world: w, at }); c.drawImage(r.cv, x, y);
     if (hero && heroAt) { const p = r.toScreen(heroAt.x, heroAt.y), J = hero.J, k = Z / 3; c.drawImage(hero.im, 0, 0, J.frame.w, J.frame.h, x + p.x - J.anchor.x * k, y + p.y - J.anchor.y * k, J.frame.w * k, J.frame.h * k); }
     label(title, x + 8, y + 22);
   }
-  const r1 = m.ramps.filter(r => r.n === 1)[0], r2 = m.ramps.filter(r => r.n === 2)[0];
-  // a place on the plateau, a rim that faces north, and the peaks: found from the cells
-  function find(test) { for (let j = 4; j < m.h - 4; j += 3) for (let i = 4; i < m.w - 4; i += 3) if (test(i, j)) return { x: (m.x0 + i + 0.5) * m.MC, y: (m.y0 + j + 0.5) * m.MC }; return null; }
-  const cell = (i, j) => (i < 0 || j < 0 || i >= m.w || j >= m.h) ? 0 : m.CL[j * m.w + i];
-  const plat = find((i, j) => { for (let b = -10; b <= 10; b += 5) for (let a = -14; a <= 14; a += 7) if (cell(i + a, j + b) !== 2) return false; return true; });
-  const north = find((i, j) => (cell(i, j) & 3) === 0 && !(cell(i, j) & 60) && (cell(i, j + 3) & 3) >= 1 && (cell(i - 12, j + 3) & 3) >= 1 && (cell(i + 12, j + 3) & 3) >= 1);
-  const peak = find((i, j) => (cell(i, j) & 3) === 3 && (cell(i, j + 16) & 3) === 2 && !(cell(i, j + 30) & 60) && (cell(i - 14, j) & 3) === 3 && (cell(i + 14, j) & 3) === 3);
-  if (r1) shot('A slope up to the foothills', { x: r1.ex, y: r1.ey + 40 }, 790, 40, 780, 700, 2.4, { x: r1.x1, y: r1.y1 + 20 });
-  if (r2) shot('A slope up to the high plateau', { x: r2.ex, y: r2.ey + 40 }, 1580, 40, 770, 700, 2.4, { x: r2.x1 + 60, y: r2.y1 + 10 });
-  if (plat) shot('On the high plateau', plat, 10, 760, 770, 700, 2.4, plat);
-  if (peak) shot('Under the peaks', { x: peak.x, y: peak.y + 150 }, 790, 760, 780, 700, 1.7, w.nearFlat(peak.x, peak.y + 290, 2));
-  if (north) shot('A rim that faces away (north of the fells)', { x: north.x, y: north.y + 20 }, 1580, 760, 770, 700, 2.4, north);
-  if (caveAt) { shot('The cave mouth in the face', { x: caveAt.x, y: caveAt.y - 10 }, 10, 1480, 1160, 700, 3, { x: caveAt.x + 70, y: caveAt.y + 40 }); c.strokeStyle = '#ff5a3a'; c.lineWidth = 3; c.beginPath(); c.arc(cx(caveAt.x), cyy(caveAt.y), 7, 0, 7); c.stroke(); }
-  const pk = []; w.eachProp(o => { if (o.peak) pk.push(o); }); if (pk.length) { const p0 = pk[Math.floor(pk.length / 2)]; shot('The peaks from the plateau below them (' + pk.length + ' stood)', { x: p0.x, y: p0.y + 60 }, 1180, 1480, 1170, 700, 1.3, w.nearFlat(p0.x, p0.y + 200, 2) || null); }
+  const r2 = m.ramps.filter(r => r.n === 2 && !r.gap)[0];
+  function find(test, st) { const out = []; for (let j = 6; j < m.h - 6; j += st || 3) for (let i = 6; i < m.w - 6; i += st || 3) if (test(i, j)) out.push({ x: (m.x0 + i + 0.5) * m.MC, y: (m.y0 + j + 0.5) * m.MC }); return out; }
+  const cell = (i, j) => (i < 0 || j < 0 || i >= m.w || j >= m.h) ? 0 : m.CL[j * m.w + i], mid = l => l.length ? l[Math.floor(l.length / 2)] : null, dryc = (i, j) => w.elevAt((m.x0 + i + 0.5) * m.MC, (m.y0 + j + 0.5) * m.MC) > 0.6;
+  const plat = mid(find((i, j) => { for (let b = -10; b <= 10; b += 5) for (let a = -14; a <= 14; a += 7) if (cell(i + a, j + b) !== 2) return false; return true; }));
+  const north = mid(find((i, j) => (cell(i, j) & 3) === 0 && !(cell(i, j) & w.M_BLOCK) && dryc(i, j) && dryc(i, j - 12) && (cell(i, j + 4) & 3) >= 1 && !(cell(i, j + 2) & (w.M_FACE | w.M_SIDE)) && (cell(i - 14, j + 5) & 3) >= 1 && (cell(i + 14, j + 5) & 3) >= 1));
+  const faces = find((i, j) => (cell(i, j) & w.M_FACE) && (cell(i, j - 8) & 3) === 2 && !(cell(i, j + 8) & w.M_BLOCK) && (cell(i, j + 8) & 3) === 1 && dryc(i, j + 8), 9), face = faces.length ? faces[Math.floor(faces.length * 0.7)] : null;
+  const fl = m.falls[0], lo = m.lookouts[0], pk = m.peaks || [];
+  if (m.bay) shot('The sea cliffs: the plateau comes down to the bay in one wall', { x: m.bay.x - m.seaSide * 150, y: m.bay.y - 640 }, 790, 40, 1560, 700, 0.62, null);
+  if (fl) shot('The waterfall off the plateau, its pool and the brook', { x: fl.x, y: fl.foot - 20 }, 10, 760, 770, 700, 1.7, { x: fl.x + fl.pool.rx + 26, y: fl.pool.y + 30 });
+  if (lo) shot('The lookout: the beacon cairn on the high point', { x: lo.x, y: lo.y + 60 }, 790, 760, 780, 700, 1.7, { x: lo.x + 34, y: lo.y + 14 });
+  if (north) shot('An edge that faces away: rock along its crest, the dark under it', { x: north.x, y: north.y + 30 }, 1580, 760, 770, 700, 2, { x: north.x, y: north.y - 30 });
+  if (face) shot('A wall: strata, great blocks and beds between fissures, a ledge', face, 10, 1480, 780, 700, 2.4, null);
+  if (pk.length) { const p0 = pk[Math.floor(pk.length / 2)]; shot('The peaks (' + pk.length + ' stand)', { x: p0.x, y: p0.y + 60 }, 800, 1480, 770, 700, 1.1, w.nearFlat(p0.x, p0.y + 260, 2) || null); }
+  if (plat) shot('The high plateau: heath, heather, stone', plat, 1580, 1480, 770, 700, 2, plat);
+  if (caveAt) { c.strokeStyle = '#ff5a3a'; c.lineWidth = 3; c.beginPath(); c.arc(cx(caveAt.x), cyy(caveAt.y), 7, 0, 7); c.stroke(); }
+  if (fl) { c.strokeStyle = '#7fe0ff'; c.lineWidth = 2; c.beginPath(); c.arc(cx(fl.x), cyy(fl.foot), 8, 0, 7); c.stroke(); } if (lo) { c.strokeStyle = '#ffffff'; c.strokeRect(cx(lo.x) - 5, cyy(lo.y) - 5, 10, 10); }
   fs.writeFileSync('mountain.png', cv.toBuffer('image/png')); console.log('wrote mountain.png in', Date.now() - t0, 'ms');
 })();

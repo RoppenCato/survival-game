@@ -3725,6 +3725,17 @@ function cairnObj(c, K, x, y, seed) {
     shape(c, blobPts(x + s[0], y + s[1], s[2], s[3], seed + i, 8, 0.2), i % 2 ? K.rockC : K.rock, { seed: seed + 10 + i, size: 'S', sh: 2, rough: 0.4 });
   });
 }
+// the varde (2026-10-12): a beacon cairn on a high point, a man and a half tall, three weathered poles leaned together over
+// it (the frame a beacon fire is stacked in): the mark men built on the fells to find their way and to watch the sea from
+function vardeObj(c, K, x, y, seed) {
+  gshadow(c, x + 4, y, 30, 7, 0.42);
+  line(c, [[x - 19, y - 9], [x + 3, y - 90]], 2.6, K.wood.shade, true); line(c, [[x + 20, y - 10], [x - 1, y - 91]], 2.6, K.wood.shade, true);
+  [[0, -7, 25, 9], [-13, -16, 14, 8], [12, -17, 14, 8], [0, -25, 17, 8], [-9, -34, 11, 7], [9, -35, 11, 7], [0, -43, 13, 7], [-4, -51, 9, 6], [5, -53, 8, 5], [0, -60, 7, 5]].forEach(function (s, i) {
+    shape(c, blobPts(x + s[0], y + s[1], s[2], s[3], seed + i, 8, 0.22), i % 3 === 1 ? K.rockC : K.rock, { seed: seed + 10 + i, size: 'S', sh: 2, rough: 0.4 });
+  });
+  line(c, [[x + 3, y + 3], [x + 1, y - 93]], 3, K.wood.base, true); line(c, [[x - 3, y - 82], [x + 5, y - 83]], 1.6, K.trunk.shade, false);   // the pole toward you, and the lashing where the three meet
+  shape(c, blobPts(x - 21, y + 1, 7, 4, seed + 31, 7, 0.25), K.rockC, { seed: seed + 41, size: 'S', sh: 1.5, rough: 0.4 }); shape(c, blobPts(x + 24, y + 2, 6, 3.5, seed + 32, 7, 0.25), K.rock, { seed: seed + 42, size: 'S', sh: 1.5, rough: 0.4 });
+}
 function stoneShip(c, K, x, y, seed) {
   var n = 16, i, list = [];
   for (i = 0; i < n; i++) { var a = i / n * Math.PI * 2, e = Math.abs(Math.cos(a)); list.push({ x: x + Math.cos(a) * 42, y: y + Math.sin(a) * 11 * (1 - e * e * 0.55), h: 8 + 11 * e * e * e, k: i }); }
@@ -4167,6 +4178,7 @@ var PROPS = {
   forge: { b: [-44, -46, 44, 10], f: function (c, K, s) { forgeObj(c, K, 0, 0, s); } },
   brazier: { b: [-18, -50, 18, 8], f: function (c, K, s) { brazierObj(c, K, 0, 0, s); } },
   cairn: { b: [-26, -44, 26, 8], f: function (c, K, s) { cairnObj(c, K, 0, 0, s); } },
+  varde: { b: [-36, -100, 38, 12], f: function (c, K, s) { vardeObj(c, K, 0, 0, s); } },
   stoneShip: { b: [-52, -30, 52, 18], f: function (c, K, s) { stoneShip(c, K, 0, 0, s); } },
   woodpile: { b: [-30, -46, 42, 10], f: function (c, K, s) { woodpile(c, K, 0, 0, s); } },
   snowPine: { b: [-60, -170, 100, 18], f: function (c, K, s) { snowPine(c, K, 0, 0, 128, s); } },
@@ -4347,6 +4359,10 @@ function noiseSheet() {
   return (noiseT = o);
 }
 
+// a sheet of white noise, 256 pixels square: a speck a pixel (pebbles, flecks) without a sine a pixel
+var WSN = 256, whiteT = null;
+function whiteSheet() { if (whiteT) return whiteT; var o = new Float32Array(WSN * WSN), i; for (i = 0; i < WSN * WSN; i++) o[i] = hash(i % WSN, (i / WSN) | 0, 77); return (whiteT = o); }
+
 /* The Blender set pieces (2026-10-12: the peaks, the cave mouth; art/build/rocks_build.py, tools/props.js): a prop whose
    sprite is a rendered image and not a drawing of the kit's. setImages({ name: { img, w, h, ax, ay, upp } }) names them: the
    image, its size in pixels, the pixel it stands on, and the game units a pixel. A world's sprite(name) hands the image back
@@ -4359,7 +4375,7 @@ function make(kit, opts) {
   var w = { T: T, TS: TS, K: K, CT: CT, o: o, hash: hash, vnoise: vnoise, fbm: fbm };
   var s = o.seed, R = kit.rng(s * 53 + 9), i, x, y, tries;
   function rnd(a, b) { return a + R() * (b - a); }
-  var BASE = kit.STYLE, tiles = {}, sprites = {}, chunkCv = {}, chunkOrder = [], noise = noiseSheet();
+  var BASE = kit.STYLE, tiles = {}, sprites = {}, chunkCv = {}, chunkOrder = [], noise = noiseSheet(), white = whiteSheet(), MB = null;
 
   /* 1. place the islands: the home island first, then each new one beside an earlier one */
   function pickR() { var u = R(), f = u < 0.25 ? rnd(0.15, 0.45) : (u < 0.78 ? rnd(0.7, 1.3) : rnd(1.5, 2.2)); return Math.max(5, o.isle / 2 * (1 + (f - 1) * o.sizeVar)); }
@@ -4420,12 +4436,16 @@ function make(kit, opts) {
      Nothing is lifted on the screen: height is drawn the way the old top-down games draw it. MT is a smooth field per tile, read
      between the tiles like the coast's; its whole numbers are the levels (0 low ground, 1, 2, 3 the peaks). A level's edge is a
      contour of the field, so every cliff is a curve. South of an edge the lower ground is covered by the cliff's FACE for HFW
-     units a level (HF pixels on the screen): rock you cannot walk on, painted as a wall. Where an edge faces away (north) or
-     runs north to south there is only a RIM, a lip of rock a cell wide on each side. The peaks (level 3) cannot be walked.
-     SLOPES are the ways up: a strip cut through a south face where the edge runs straight, found from the field and spread
-     along the island. Everything the game asks (walking, building, planting) reads a grid of cells 8 units wide (w.cellAt:
-     the level in two bits, FACE 4, RIM 8, RAMP 16, BLOCK 32), so w.isLand is false on a face, a rim and a peak. */
-  var MT = null, mtn = null, HF = 84, HFW = HF / K, MC = 8, M_FACE = 4, M_RIM = 8, M_RAMP = 16, M_BLOCK = 32;
+     units a level (HF pixels on the screen): rock you cannot walk on, painted as a wall. An edge that faces east or west stands
+     on a battered foot: its SIDE wall leans SIDE units out a level and, like every wall, HFW down the screen, so a plateau has
+     a lit west side and a dark east side. Where an edge faces away (north) there is only a RIM, a lip of rock a cell wide on
+     each side. The peaks (level 3) cannot be walked. SLOPES are the ways up: a strip cut through a south face where the edge
+     runs straight, found from the field and spread along the island. On one side of the island (o.mountainOpts.seaSide) the
+     mountains come down to the water: SEA CLIFFS whose foot stands in the sea, and a bay cut in under them. A WATERFALL comes
+     off the plateau into a pool (cells marked WATER: waded, never built on), and a LOOKOUT stands on a high point. Everything
+     the game asks (walking, building, planting) reads a grid of cells 8 units wide (w.cellAt: the level in two bits, FACE 4,
+     RIM 8, RAMP 16, BLOCK 32, SIDE 64, WATER 128), so w.isLand is false on a face, a side wall, a rim and a peak. */
+  var MT = null, mtn = null, HF = 84, HFW = HF / K, MC = 8, SIDE = 24, M_FACE = 4, M_RIM = 8, M_RAMP = 16, M_BLOCK = 32, M_SIDE = 64, M_WATER = 128;
   function sstep(a, b, v) { var t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
   function mTile(tx, ty) { return (tx < 0 || ty < 0 || tx >= GW || ty >= GH) ? 0 : MT[ty * GW + tx]; }
   function mAt(wx, wy) {
@@ -4440,11 +4460,35 @@ function make(kit, opts) {
     MT = new Float32Array(GW * GH);
     var tx0 = Math.max(2, Math.floor(mq.x - mq.r * 1.5)), tx1 = Math.min(GW - 3, Math.ceil(mq.x + mq.r * 1.5)), ty0 = Math.max(2, Math.floor(mq.y - mq.r * 1.5)), ty1 = Math.min(GH - 3, Math.ceil(mq.y + mq.r * 1.5));
     var south = mo.south != null ? mo.south : 0.3, top = mo.top != null ? mo.top : 0.8, shore = mo.shore != null ? mo.shore : 7, rise = mo.rise != null ? mo.rise : 12, high = mo.high != null ? mo.high : 4.0;
+    var sea = mo.sea !== false, seaSide = mo.seaSide === -1 ? -1 : 1;
     // how far every tile is from the sea, in tiles (two sweeps), and the island's own northernmost and southernmost land
     var DS = new Float32Array(GW * GH), yN = 1e9, yS = -1e9, dv;
-    for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) DS[ty * GW + tx] = E[ty * GW + tx] > 0 ? 1e6 : 0;
-    for (ty = ty0 + 1; ty <= ty1; ty++) for (tx = tx0 + 1; tx < tx1; tx++) { i = ty * GW + tx; dv = Math.min(DS[i], DS[i - 1] + 1, DS[i - GW] + 1, DS[i - GW - 1] + 1.414, DS[i - GW + 1] + 1.414); DS[i] = dv; }
-    for (ty = ty1 - 1; ty >= ty0; ty--) for (tx = tx1 - 1; tx > tx0; tx--) { i = ty * GW + tx; dv = Math.min(DS[i], DS[i + 1] + 1, DS[i + GW] + 1, DS[i + GW + 1] + 1.414, DS[i + GW - 1] + 1.414); DS[i] = dv; if (dv > 5) { if (ty < yN) yN = ty; if (ty > yS) yS = ty; } }
+    function seaDist() {
+      yN = 1e9; yS = -1e9;
+      for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) DS[ty * GW + tx] = E[ty * GW + tx] > 0 ? 1e6 : 0;
+      for (ty = ty0 + 1; ty <= ty1; ty++) for (tx = tx0 + 1; tx < tx1; tx++) { i = ty * GW + tx; dv = Math.min(DS[i], DS[i - 1] + 1, DS[i - GW] + 1, DS[i - GW - 1] + 1.414, DS[i - GW + 1] + 1.414); DS[i] = dv; }
+      for (ty = ty1 - 1; ty >= ty0; ty--) for (tx = tx1 - 1; tx > tx0; tx--) { i = ty * GW + tx; dv = Math.min(DS[i], DS[i + 1] + 1, DS[i + GW] + 1, DS[i + GW + 1] + 1.414, DS[i + GW - 1] + 1.414); DS[i] = dv; if (dv > 5) { if (ty < yN) yN = ty; if (ty > yS) yS = ty; } }
+    }
+    seaDist();
+    // the bay under the sea cliffs: a bite out of the coast on the cliffs' side, so there is a wall that faces south over water
+    var bay = null;
+    if (sea && mo.bay !== false) {
+      var yb = Math.round(yS - (mo.bayAt != null ? mo.bayAt : 0.62) * (yS - yN)), xe = -1, bx;
+      for (bx = seaSide > 0 ? tx1 : tx0; bx >= tx0 && bx <= tx1; bx -= seaSide) if (DS[yb * GW + bx] > 2.5) { xe = bx; break; }
+      if (xe >= 0) {
+        var ba = mo.bayLen || Math.max(12, mq.r * 0.2), bb = mo.bayWide || Math.max(6, mq.r * 0.08);
+        bay = { x: xe + seaSide * 4, y: yb, a: ba + 4, b: bb };
+        for (ty = Math.max(ty0, Math.floor(yb - bb * 1.9)); ty <= Math.min(ty1, Math.ceil(yb + bb * 1.9)); ty++) for (tx = tx0; tx <= tx1; tx++) {
+          var bk = 1 + (fbm(tx / 8, ty / 8, s + 160) - 0.5) * 0.5, sdb = (Math.hypot((tx - bay.x) / bay.a, (ty - bay.y) / bay.b) - bk) * bb; if (sdb > 3) continue;
+          i = ty * GW + tx; var en = Math.max(-1000, Math.round(sdb * 90)); if (en < E[i]) E[i] = en;
+        }
+        seaDist();
+      }
+    }
+    // straight south to the sea from every tile, read between the tiles: a sea cliff's top lies one face north of the waterline
+    var DSo = null;
+    if (sea) { DSo = new Float32Array(GW * GH); for (tx = tx0; tx <= tx1; tx++) { var run = 0; for (ty = ty1; ty >= ty0; ty--) { i = ty * GW + tx; if (E[i] <= 0) { run = 0; continue; } var eb = ty < ty1 ? E[i + GW] : -100; run = eb <= 0 ? E[i] / (E[i] - eb) : Math.min(40, run + 1); DSo[i] = run; } } }
+    function capAt(ax, ay) { return high * sstep(south, top, (yS - ay) / Math.max(1, yS - yN)) * (0.78 + 0.5 * fbm(ax / 30, ay / 30, s + 140)); }
     for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) {
       var d0 = DS[ty * GW + tx]; if (d0 <= 0) continue;
       var north = sstep(south, top, (yS - ty) / Math.max(1, yS - yN)), inland = sstep(shore, shore + rise, d0), base = north * inland;   // how far north on the island's own land, and how far from the sea: the mountains leave a shore all round
@@ -4454,6 +4498,15 @@ function make(kit, opts) {
       var M2 = new Float32Array(MT.length);
       for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) { var sm = 0, dy2, dx2; for (dy2 = -1; dy2 <= 1; dy2++) for (dx2 = -1; dx2 <= 1; dx2++) sm += MT[(ty + dy2) * GW + tx + dx2]; M2[ty * GW + tx] = sm / 9; }
       MT = M2;
+    }
+    // the sea cliffs (2026-10-12): on one side of the island, north of the bay's middle, the mountains keep no shore. The ground
+    // rises a level for every 3.25 tiles of land straight south of it (a face is 3.5 tiles deep, so the wall's foot stands a
+    // little way out in the water) and for every 0.8 tiles from any sea (a side wall's foot), as high as the mountain is there
+    if (sea) for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) {
+      i = ty * GW + tx; var ds0 = DS[i]; if (ds0 <= 0) continue;
+      var zone = sstep(0.1, 0.32, seaSide * (tx - mq.x) / mq.r) * (bay ? sstep(bay.y + 4, bay.y, ty) : 1); if (zone <= 0) continue;
+      var seaT = Math.min(DSo[i] / 3.25, ds0 / 0.8, 2.55), ms = Math.min(capAt(tx, ty), Math.max(MT[i], seaT));
+      if (ms > MT[i]) MT[i] += (ms - MT[i]) * zone;
     }
     // no specks: a patch of higher ground too small to stand a cliff round is taken down, a pit too small is filled (its
     // face would be a pillar or a slot); found as joined tiles at or above each level, and joined tiles below it
@@ -4471,19 +4524,30 @@ function make(kit, opts) {
     })();
     var cx0 = tx0 * T / MC, cy0 = ty0 * T / MC, cw = (tx1 - tx0 + 1) * T / MC, ch = (ty1 - ty0 + 1) * T / MC, CL = new Uint8Array(cw * ch), FH = Math.round(HFW / MC);
     function cv(ci, cj) { return (ci < 0 || cj < 0 || ci >= cw || cj >= ch) ? 0 : CL[cj * cw + ci]; }
+    function dry(ci, cj) { return elevAt((cx0 + ci + 0.5) * MC, (cy0 + cj + 0.5) * MC) > 0.4; }
     for (j = 0; j < ch; j++) for (i = 0; i < cw; i++) CL[j * cw + i] = mLevel(mAt((cx0 + i + 0.5) * MC, (cy0 + j + 0.5) * MC));
     for (i = 0; i < cw; i++) {                               // the faces: down every column, the ground south of a higher edge
       var last = [-1e9, -1e9, -1e9, -1e9];
       for (j = 0; j < ch; j++) { var L = CL[j * cw + i] & 3; for (n = 1; n <= 3; n++) if (L >= n) last[n] = j; for (n = 3; n > L; n--) if ((j - last[n]) * MC <= HFW * (n - L)) { CL[j * cw + i] |= M_FACE | M_BLOCK; break; } }
     }
+    var SC = SIDE / HFW, dirS, i0, mxs = Math.ceil(SC * ch) + 1;   // the side walls: the same sweep down columns that lean, east and west
+    for (dirS = -1; dirS <= 1; dirS += 2) for (i0 = -mxs; i0 < cw + mxs; i0++) {
+      var lastS = [-1e9, -1e9, -1e9, -1e9];
+      for (j = 0; j < ch; j++) {
+        var ii = i0 + dirS * Math.round(SC * j); if (ii < 0 || ii >= cw) continue;
+        var qs = j * cw + ii, cs = CL[qs], Ls = cs & 3; for (n = 1; n <= 3; n++) if (Ls >= n) lastS[n] = j;
+        if (cs & M_FACE) continue;
+        for (n = 3; n > Ls; n--) if ((j - lastS[n]) * MC <= HFW * (n - Ls)) { CL[qs] |= M_SIDE | M_BLOCK; break; }
+      }
+    }
     var RIMS = [];
     for (j = 1; j < ch - 1; j++) for (i = 1; i < cw - 1; i++) {   // the rims: wherever the level changes next door; and the peaks
-      var c0 = CL[j * cw + i], L0 = c0 & 3; if (L0 === 3) { CL[j * cw + i] |= M_BLOCK; continue; } if (c0 & M_FACE) continue;
+      var c0 = CL[j * cw + i], L0 = c0 & 3; if (L0 === 3) { CL[j * cw + i] |= M_BLOCK; continue; } if (c0 & (M_FACE | M_SIDE)) continue;
       var dif = false, di, dj; for (dj = -1; dj <= 1 && !dif; dj++) for (di = -1; di <= 1; di++) if ((CL[(j + dj) * cw + i + di] & 3) !== L0) { dif = true; break; }
       if (dif) RIMS.push(j * cw + i);
     }
     RIMS.forEach(function (q) { CL[q] |= M_RIM | M_BLOCK; });
-    // the slopes: a straight stretch of south-facing edge, one level high, with level ground above it and below its foot
+    // the slopes: a straight stretch of south-facing edge, one level high, with level dry ground above it and below its foot
     var ramps = [], candAll = { 1: [], 2: [] };
     for (n = 1; n <= 2; n++) {
       var cands = candAll[n];
@@ -4491,10 +4555,10 @@ function make(kit, opts) {
         if ((cv(i, j) & 3) !== n || (cv(i, j + 1) & 3) !== n - 1) continue;
         var ok = true, d2, k2;
         for (d2 = -4; ok && d2 <= 4; d2 += 2) {
-          for (k2 = 1; ok && k2 <= 8; k2++) { var ca = cv(i + d2, j - k2); if ((ca & 3) !== n || (ca & M_FACE)) ok = false; }
+          for (k2 = 1; ok && k2 <= 8; k2++) { var ca = cv(i + d2, j - k2); if ((ca & 3) !== n || (ca & (M_FACE | M_SIDE))) ok = false; }
           if (ok && (cv(i + d2, j + 3) & 3) !== n - 1) ok = false;
           for (k2 = 2; ok && k2 <= FH; k2 += 3) if ((cv(i + d2, j + k2) & 3) !== n - 1) ok = false;
-          for (k2 = FH + 2; ok && k2 <= FH + 8; k2++) { var cb = cv(i + d2, j + k2); if ((cb & 3) !== n - 1 || (cb & (M_FACE | M_RIM))) ok = false; }
+          for (k2 = FH + 2; ok && k2 <= FH + 8; k2++) { var cb = cv(i + d2, j + k2); if ((cb & 3) !== n - 1 || (cb & (M_FACE | M_RIM | M_SIDE)) || !dry(i + d2, j + k2)) ok = false; }
         }
         if (ok) cands.push([i, j]);
       }
@@ -4517,13 +4581,13 @@ function make(kit, opts) {
     }
     function markRamp(rm) {
       rm.len = Math.hypot(rm.x1 - rm.x0, rm.y1 - rm.y0);
-      var i0 = Math.floor((Math.min(rm.x0, rm.x1) - rm.r) / MC - cx0), i1 = Math.ceil((Math.max(rm.x0, rm.x1) + rm.r) / MC - cx0), j0 = Math.floor((Math.min(rm.y0, rm.y1) - rm.r) / MC - cy0), j1 = Math.ceil((Math.max(rm.y0, rm.y1) + rm.r) / MC - cy0), a2, b2;
-      for (b2 = j0; b2 <= j1; b2++) for (a2 = i0; a2 <= i1; a2++) { if (a2 < 0 || b2 < 0 || a2 >= cw || b2 >= ch) continue; if (rampD(rm, (cx0 + a2 + 0.5) * MC, (cy0 + b2 + 0.5) * MC)[0] < rm.r - 7) CL[b2 * cw + a2] = (CL[b2 * cw + a2] & 3) | M_RAMP; }
+      var i0r = Math.floor((Math.min(rm.x0, rm.x1) - rm.r) / MC - cx0), i1r = Math.ceil((Math.max(rm.x0, rm.x1) + rm.r) / MC - cx0), j0r = Math.floor((Math.min(rm.y0, rm.y1) - rm.r) / MC - cy0), j1r = Math.ceil((Math.max(rm.y0, rm.y1) + rm.r) / MC - cy0), a2, b2;
+      for (b2 = j0r; b2 <= j1r; b2++) for (a2 = i0r; a2 <= i1r; a2++) { if (a2 < 0 || b2 < 0 || a2 >= cw || b2 >= ch) continue; if (rampD(rm, (cx0 + a2 + 0.5) * MC, (cy0 + b2 + 0.5) * MC)[0] < rm.r - 7) CL[b2 * cw + a2] = (CL[b2 * cw + a2] & 3) | M_RAMP; }
     }
     ramps.forEach(markRamp);
     /* Every sizeable piece of high ground gets a way up. A flood from the low ground over the walking cells; the largest piece
        of fell it did not reach is joined on, by a slope up a south face if one of the found places touches it, else by a gap
-       in a rim (a short slope across an edge that faces away or runs north to south); then the flood goes on. */
+       in a rim or a side wall (a short slope across an edge that faces away or runs north to south); then the flood goes on. */
     var LANDC = new Uint8Array(cw * ch), reach = new Uint8Array(cw * ch), cm = new Int32Array(cw * ch), cid = 0, gave = {}, seeds = [], ix, tries;
     for (j = 0; j < ch; j++) for (i = 0; i < cw; i++) LANDC[j * cw + i] = elevAt((cx0 + i + 0.5) * MC, (cy0 + j + 0.5) * MC) > 0.05 ? 1 : 0;
     function flood(st) {
@@ -4533,11 +4597,11 @@ function make(kit, opts) {
     flood(seeds);
     var MINC = mo.minReach || 1400, DIRS = [[0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
     for (tries = 0; tries < 16; tries++) {
-      var bestComp = null, base = cid;
+      var bestComp = null, baseId = cid;
       for (ix = 0; ix < cw * ch; ix++) {
-        if (reach[ix] || !LANDC[ix] || (CL[ix] & M_BLOCK) || (CL[ix] & 3) === 0 || cm[ix] > base) continue;
+        if (reach[ix] || !LANDC[ix] || (CL[ix] & M_BLOCK) || (CL[ix] & 3) === 0 || cm[ix] > baseId) continue;
         var comp = [ix], qn; cid++; cm[ix] = cid;
-        for (qn = 0; qn < comp.length; qn++) { var c5 = comp[qn], ci5 = c5 % cw, cj5 = (c5 - ci5) / cw, d5; for (d5 = 0; d5 < 4; d5++) { var a5 = ci5 + (d5 === 0 ? 1 : (d5 === 1 ? -1 : 0)), b5 = cj5 + (d5 === 2 ? 1 : (d5 === 3 ? -1 : 0)); if (a5 < 0 || b5 < 0 || a5 >= cw || b5 >= ch) continue; var i5 = b5 * cw + a5; if (cm[i5] > base || reach[i5] || !LANDC[i5] || (CL[i5] & M_BLOCK)) continue; cm[i5] = cid; comp.push(i5); } }
+        for (qn = 0; qn < comp.length; qn++) { var c5 = comp[qn], ci5 = c5 % cw, cj5 = (c5 - ci5) / cw, d5; for (d5 = 0; d5 < 4; d5++) { var a5 = ci5 + (d5 === 0 ? 1 : (d5 === 1 ? -1 : 0)), b5 = cj5 + (d5 === 2 ? 1 : (d5 === 3 ? -1 : 0)); if (a5 < 0 || b5 < 0 || a5 >= cw || b5 >= ch) continue; var i5 = b5 * cw + a5; if (cm[i5] > baseId || reach[i5] || !LANDC[i5] || (CL[i5] & M_BLOCK)) continue; cm[i5] = cid; comp.push(i5); } }
         if (comp.length >= MINC && !gave[comp[0]] && (!bestComp || comp.length > bestComp.length)) { bestComp = comp; bestComp.id = cid; }
       }
       if (!bestComp) break;
@@ -4546,11 +4610,11 @@ function make(kit, opts) {
         var cq = candAll[nn2][kq], topI = (cq[1] - 2) * cw + cq[0], footI = (cq[1] + FH + 4) * cw + cq[0];
         if (cm[topI] === bestComp.id && reach[footI] && !ramps.some(function (g) { return Math.abs(g.ex - (cx0 + cq[0] + 0.5) * MC) < 200 && Math.abs(g.ey - (cy0 + cq[1] + 1) * MC) < 200; })) { made = faceRamp(nn2, cq); break; }
       }
-      for (kq = 0; kq < bestComp.length && !made; kq += 3) {                                    // a gap in a rim
+      for (kq = 0; kq < bestComp.length && !made; kq += 3) {                                    // a gap in a rim or a side wall
         var c6 = bestComp[kq], ci6 = c6 % cw, cj6 = (c6 - ci6) / cw, dq, ds;
-        for (dq = 0; dq < 8 && !made; dq++) for (ds = 2; ds <= 6; ds++) {
+        for (dq = 0; dq < 8 && !made; dq++) for (ds = 2; ds <= 8; ds++) {
           var a6 = ci6 + DIRS[dq][0] * ds, b6 = cj6 + DIRS[dq][1] * ds; if (a6 < 0 || b6 < 0 || a6 >= cw || b6 >= ch) break;
-          var t6 = b6 * cw + a6; if (!reach[t6]) { if (!(CL[t6] & M_RIM) || (CL[t6] & M_FACE)) break; continue; }
+          var t6 = b6 * cw + a6; if (!reach[t6]) { if (!(CL[t6] & (M_RIM | M_SIDE)) || (CL[t6] & M_FACE)) break; continue; }
           var ux = DIRS[dq][0], uy = DIRS[dq][1], ul = Math.hypot(ux, uy), hx2 = (cx0 + ci6 + 0.5) * MC, hy2 = (cy0 + cj6 + 0.5) * MC, lx2 = (cx0 + a6 + 0.5) * MC, ly2 = (cy0 + b6 + 0.5) * MC, upper = (CL[c6] & 3) >= (CL[t6] & 3);
           made = upper ? { n: CL[c6] & 3, x0: hx2 - ux / ul * 20, y0: hy2 - uy / ul * 20, x1: lx2 + ux / ul * 20, y1: ly2 + uy / ul * 20, r: 24, gap: true } : { n: CL[t6] & 3, x0: lx2 + ux / ul * 20, y0: ly2 + uy / ul * 20, x1: hx2 - ux / ul * 20, y1: hy2 - uy / ul * 20, r: 24, gap: true };
           made.ex = (hx2 + lx2) / 2; made.ey = (hy2 + ly2) / 2; break;
@@ -4566,17 +4630,111 @@ function make(kit, opts) {
       var st2 = []; for (ix = 0; ix < cw * ch; ix++) if (reach[ix]) { var xi = ix % cw; if ((xi > 0 && !reach[ix - 1]) || (xi < cw - 1 && !reach[ix + 1]) || (ix >= cw && !reach[ix - cw]) || (ix < cw * (ch - 1) && !reach[ix + cw])) st2.push(ix); }
       flood(st2);
     }
-    mtn = { MC: MC, x0: cx0, y0: cy0, w: cw, h: ch, CL: CL, HF: HF, HFW: HFW, ramps: ramps, isle: isles.indexOf(mq), rampD: rampD, bx0: tx0 * T, by0: ty0 * T, bx1: (tx1 + 1) * T, by1: (ty1 + 1) * T };
+    /* What stands in the mountains (2026-10-12, Robin: a waterfall from the plateau into a pool, a lookout on a high point,
+       ledges with a tree on them): found from the cells once the ways up are known. */
+    var falls = [], lookouts = [], ledges = [];
+    function lipY(wx, ys, n2) { var yy; for (yy = ys; yy < ys + 90; yy += 0.5) if (mLevel(mAt(wx, yy)) < n2) return yy; return ys; }   // the edge itself under a point: where the ground drops below level n2, to the half unit
+    function footOk(i2, j2, wantL, half, front) {            // the foot of a south face one level high: a straight wall over it, level open ground before it
+      var c0f = cv(i2, j2), df, kf; if ((c0f & (M_BLOCK | M_RAMP)) || (c0f & 3) !== wantL || !(cv(i2, j2 - 1) & M_FACE)) return false;
+      for (df = -half; df <= half; df += 3) {
+        var ct = cv(i2 + df, j2 - FH - 3); if (!(cv(i2 + df, j2 - 1) & M_FACE) || !(cv(i2 + df, j2 - FH + 2) & M_FACE) || (ct & 3) !== wantL + 1 || (ct & (M_FACE | M_SIDE))) return false;
+        for (kf = 0; kf <= front; kf += 2) { var cg = cv(i2 + df, j2 + kf); if ((cg & (M_BLOCK | M_RAMP)) || (cg & 3) !== wantL || !dry(i2 + df, j2 + kf)) return false; }
+      }
+      return true;
+    }
+    function farFromRamps(x, y, d) { return !ramps.some(function (rm) { return Math.hypot(rm.ex - x, rm.ey - y) < d || Math.hypot(rm.x1 - x, rm.y1 - y) < d || Math.hypot(rm.x0 - x, rm.y0 - y) < d; }); }
+    function markWater(pts, hw) {
+      var a, b2, kk; for (kk = 0; kk < pts.length - 1; kk++) {
+        var p = pts[kk], q = pts[kk + 1], ia = Math.floor((Math.min(p[0], q[0]) - hw) / MC - cx0), ib = Math.ceil((Math.max(p[0], q[0]) + hw) / MC - cx0), ja = Math.floor((Math.min(p[1], q[1]) - hw) / MC - cy0), jb = Math.ceil((Math.max(p[1], q[1]) + hw) / MC - cy0);
+        for (b2 = ja; b2 <= jb; b2++) for (a = ia; a <= ib; a++) { if (a < 0 || b2 < 0 || a >= cw || b2 >= ch || (CL[b2 * cw + a] & M_BLOCK)) continue; var wx = (cx0 + a + 0.5) * MC, wy = (cy0 + b2 + 0.5) * MC, ax = q[0] - p[0], ay = q[1] - p[1], t = Math.max(0, Math.min(1, ((wx - p[0]) * ax + (wy - p[1]) * ay) / (ax * ax + ay * ay || 1))); if (Math.hypot(wx - p[0] - ax * t, wy - p[1] - ay * t) < hw) CL[b2 * cw + a] |= M_WATER; }
+      }
+    }
+    if (mo.falls !== false) (function waterfall() {
+      var wantL, bestF = null, up, jj;
+      for (wantL = 1; wantL >= 0 && !bestF; wantL--) for (j = FH + 6; j < ch - 44; j += 2) for (i = 24; i < cw - 24; i += 2) {
+        if (!reach[j * cw + i] || !footOk(i, j, wantL, 9, 34)) continue;
+        var fx0 = (cx0 + i + 0.5) * MC, fy0 = (cy0 + j) * MC; if (!farFromRamps(fx0, fy0, 240)) continue;
+        var snow = false; jj = j - FH - 2;                 // upstream: north from the lip over open ground, to the snow if it is near
+        for (up = 0; up < 46; up++) { var cu = cv(i, jj - up); if ((cu & 3) === 3) { snow = true; break; } if ((cu & 3) !== wantL + 1 || (cu & M_RAMP) || ((cu & M_BLOCK) && up > 1)) break; }
+        if (up < 12) continue;
+        var scf = (snow ? 60 : 0) + Math.min(up, 30) - Math.abs(i - cw / 2) * 0.03 + hash(i, j, s + 170) * 6;
+        if (!bestF || scf > bestF.sc) bestF = { i: i, j: j, want: wantL, up: up, snow: snow, sc: scf };
+      }
+      if (!bestF) return;
+      var fx = (cx0 + bestF.i + 0.5) * MC, n2 = bestF.want + 1, ye = lipY(fx, (cy0 + bestF.j - FH - 4) * MC, n2), len = Math.min(bestF.up, 42) * MC, pts = [], kq2, np = Math.max(3, Math.round(len / 34));
+      for (kq2 = 0; kq2 <= np; kq2++) {                    // the stream on the plateau, from the lip upstream; it wanders more the further from the edge
+        var tq = kq2 / np, wob = ((vnoise(kq2 * 0.9, 3, s + 173) - 0.5) * 90 + Math.sin(tq * 5 + s) * 16) * Math.min(1, tq * 2.6), sx = fx + wob, sy = ye - 2 - tq * len, cst = cellAt2(sx, sy);
+        if (kq2 > 0 && ((cst & 3) !== n2 || (cst & (M_RAMP | M_BLOCK)))) sx = fx;
+        pts.push([sx, sy]);
+      }
+      var yf = ye + HFW, pool = { x: fx, y: yf + 36, rx: 76, ry: 46 }, out = [[fx + 6, pool.y + pool.ry - 8]], ox = out[0][0], oy = out[0][1], drift = (hash(bestF.i, bestF.j, s + 174) - 0.5) * 1.3;
+      for (kq2 = 1; kq2 <= 7; kq2++) { ox += drift * 24 + (vnoise(kq2 * 0.8, 9, s + 175) - 0.5) * 44; oy += 30; var co = cellAt2(ox, oy); if ((co & (M_BLOCK | M_RAMP)) || (co & 3) !== bestF.want || elevAt(ox, oy) < 0.5) break; out.push([ox, oy]); }
+      var endp = out[out.length - 1], fall = { x: fx, ye: ye, n: n2, lvl: bestF.want, foot: yf, w: 22, pool: pool, stream: pts, out: out, bog: { x: endp[0], y: endp[1] + 8, r: 30 }, snow: bestF.snow };
+      markWater(pts, 9); markWater(out, 8);
+      var pa, pb; for (pb = Math.floor((pool.y - pool.ry) / MC - cy0); pb <= Math.ceil((pool.y + pool.ry) / MC - cy0); pb++) for (pa = Math.floor((pool.x - pool.rx) / MC - cx0); pa <= Math.ceil((pool.x + pool.rx) / MC - cx0); pa++) { if (pa < 0 || pb < 0 || pa >= cw || pb >= ch || (CL[pb * cw + pa] & M_BLOCK)) continue; if (Math.hypot(((cx0 + pa + 0.5) * MC - pool.x) / pool.rx, ((cy0 + pb + 0.5) * MC - pool.y) / pool.ry) < 0.97) CL[pb * cw + pa] |= M_WATER; }
+      fall.box = [Math.min.apply(null, pts.concat(out).map(function (p) { return p[0]; })) - 80, ye - len - 30, Math.max.apply(null, pts.concat(out).map(function (p) { return p[0]; })) + 80, endp[1] + 60];
+      falls.push(fall);
+    })();
+    function cellAt2(wx, wy) { return cv(Math.floor(wx / MC) - cx0, Math.floor(wy / MC) - cy0); }
+    (function lookout() {                                    // the lookout: the southernmost level stand on the highest ground you can walk to, a cliff under it
+      var wantL, bestL = null, k2;
+      for (wantL = 2; wantL >= 1 && !bestL; wantL--) for (j = 12; j < ch - FH - 4; j++) for (i = 12; i < cw - 12; i += 2) {
+        var q0 = j * cw + i; if (!reach[q0] || (CL[q0] & (M_BLOCK | M_RAMP | M_WATER)) || (CL[q0] & 3) !== wantL) continue;
+        var lip = 0; for (k2 = 4; k2 <= 9; k2++) if (cv(i, j + k2) & M_FACE) { lip = k2; break; } if (!lip) continue;
+        var flat = true, a2; for (a2 = 0; a2 < 8 && flat; a2++) { var cc = cv(i + Math.round(Math.cos(a2 * 0.785) * 3.4), j + Math.round(Math.sin(a2 * 0.785) * 3)); if ((cc & (M_BLOCK | M_RAMP | M_WATER)) || (cc & 3) !== wantL) flat = false; }
+        if (!flat) continue;
+        var lx = (cx0 + i + 0.5) * MC, ly = (cy0 + j + 0.5) * MC; if (!farFromRamps(lx, ly, 150) || falls.some(function (f) { return Math.abs(f.x - lx) < 240 && Math.abs(f.ye - ly) < 300; })) continue;
+        var scl = j + hash(i, j, s + 180) * 3; if (!bestL || scl > bestL.sc) bestL = { x: lx, y: ly, lvl: wantL, sc: scl };
+      }
+      if (bestL) lookouts.push(bestL);
+    })();
+    var caveAt = null;
+    (function cavePlace() {                                  // the cave's mouth: the foot of a straight wall you can walk to (the foothills by choice), clear of the slopes and the waterfall; strict first, then less so, so every island has a place
+      var wantL, tol, cands, x, y;
+      for (wantL = 1; wantL >= 0 && !caveAt; wantL--) for (tol = 0; tol < 3 && !caveAt; tol++) {
+        var halfC = [12, 9, 6][tol], rd = [300, 190, 120][tol]; cands = [];
+        for (j = FH + 4; j < ch - 20; j += 2) for (i = 16; i < cw - 16; i += 2) {
+          if (!reach[j * cw + i] || !footOk(i, j, wantL, halfC, 16)) continue;
+          x = (cx0 + i + 0.5) * MC; y = (cy0 + j) * MC; if (!farFromRamps(x, y, rd) || falls.some(function (f) { return Math.abs(f.x - x) < rd + 40 && Math.abs(f.foot - y) < 300; }) || lookouts.some(function (lo) { return Math.abs(lo.x - x) < rd && Math.abs(lo.y - y) < 320; })) continue;   // (and not under the lookout)
+          cands.push([x, y]);
+        }
+        if (cands.length) { var cq2 = cands[Math.floor(hash(cands.length, wantL, s + 181) * cands.length) % cands.length]; caveAt = { x: cq2[0], y: cq2[1] }; }
+      }
+    })();
+    (function shelves() {                                    // ledges in the faces: a grassy shelf part-way down a one-level south wall, a small tree or a bush on it
+      var k, n2, d3, k3;
+      for (k = Math.floor(tx0 * T / 110); k * 110 < (tx1 + 1) * T; k++) for (n2 = 1; n2 <= 2; n2++) {
+        var lx = (k + 0.2 + 0.6 * hash(k, n2, s + 176)) * 110, ci = Math.floor(lx / MC) - cx0; if (ci < 6 || ci >= cw - 6) continue;
+        for (j = 4; j < ch - FH - 4; j++) {
+          if ((cv(ci, j) & 3) < n2 || (cv(ci, j + 1) & 3) >= n2 || !(cv(ci, j + 1) & M_FACE)) continue;
+          if (hash(k, n2 * 31 + j, s + 177) > 0.36) continue;
+          var okL = !(cv(ci, j + FH + 2) & M_BLOCK) && dry(ci, j + FH + 2); for (d3 = -4; okL && d3 <= 4; d3 += 2) for (k3 = 1; okL && k3 <= FH - 1; k3 += 2) { var cl = cv(ci + d3, j + k3); if (!(cl & M_FACE) || (cl & 3) !== n2 - 1) okL = false; }
+          if (!okL) continue;
+          var ly = lipY(lx, (cy0 + j - 1) * MC, n2); if (!farFromRamps(lx, ly + 50, 100) || falls.some(function (f) { return Math.abs(f.x - lx) < 70 && Math.abs(f.ye - ly) < 60; }) || (caveAt && Math.abs(caveAt.x - lx) < 150 && Math.abs(caveAt.y - ly - HFW) < 70)) continue;
+          var hl = hash(k, j, s + 178);
+          ledges.push({ x: lx, ye: ly, n: n2, f: 30 + Math.floor(hl * 22), hw: 15 + hash(k, j, s + 179) * 11, kind: hl < 0.42 ? 'dwarfBirch' : (hl < 0.72 ? 'juniper' : 'heather') });
+        }
+      }
+    })();
+    mtn = { MC: MC, x0: cx0, y0: cy0, w: cw, h: ch, CL: CL, HF: HF, HFW: HFW, SIDE: SIDE, ramps: ramps, falls: falls, lookouts: lookouts, ledges: ledges, cave: caveAt, peaks: [], bay: bay ? { x: (bay.x + 0.5) * T, y: (bay.y + 0.5) * T, a: bay.a * T, b: bay.b * T } : null, seaSide: sea ? seaSide : 0, isle: isles.indexOf(mq), rampD: rampD, bx0: tx0 * T, by0: ty0 * T, bx1: (tx1 + 1) * T, by1: (ty1 + 1) * T };
   })();
   w.mt = mtn; w.MT = MT; w.mAt = MT ? mAt : function () { return 0; };
   function cellAt(wx, wy) { if (!mtn) return 0; var ci = Math.floor(wx / MC) - mtn.x0, cj = Math.floor(wy / MC) - mtn.y0; return (ci < 0 || cj < 0 || ci >= mtn.w || cj >= mtn.h) ? 0 : mtn.CL[cj * mtn.w + ci]; }
-  w.cellAt = cellAt; w.M_FACE = M_FACE; w.M_RIM = M_RIM; w.M_RAMP = M_RAMP; w.M_BLOCK = M_BLOCK;
+  w.cellAt = cellAt; w.M_FACE = M_FACE; w.M_RIM = M_RIM; w.M_RAMP = M_RAMP; w.M_BLOCK = M_BLOCK; w.M_SIDE = M_SIDE; w.M_WATER = M_WATER;
   w.levelAt = function (wx, wy) { return cellAt(wx, wy) & 3; };          // 0 low ground, 1 the foothills, 2 the high plateau, 3 the peaks
-  w.cliffAt = function (wx, wy) { return (cellAt(wx, wy) & M_BLOCK) !== 0; };   // a face, a rim or a peak: nothing walks, stands or grows here
+  w.cliffAt = function (wx, wy) { return (cellAt(wx, wy) & M_BLOCK) !== 0; };   // a face, a side wall, a rim or a peak: nothing walks, stands or grows here
   w.rampAt = function (wx, wy) { return (cellAt(wx, wy) & M_RAMP) !== 0; };
-  w.flatAt = function (wx, wy, r) {                                        // level ground with room round it: no cliff, no slope within r, one level
-    var c0 = cellAt(wx, wy), a; if (c0 & (M_BLOCK | M_RAMP)) return false; r = r || 0; if (!mtn || !r) return true;
-    for (a = 0; a < 8; a++) { var c1 = cellAt(wx + Math.cos(a * 0.785) * r, wy + Math.sin(a * 0.785) * r); if ((c1 & (M_BLOCK | M_RAMP)) || (c1 & 3) !== (c0 & 3)) return false; }
+  w.waterAt = function (wx, wy) { return (cellAt(wx, wy) & M_WATER) !== 0; };
+  function byFalls(wx, wy) {                                               // the ground kept open round the waterfall: before the pool, along the stream and the brook
+    if (!mtn) return false; var k9, f, q9;
+    for (k9 = 0; k9 < mtn.falls.length; k9++) { f = mtn.falls[k9]; if (wx < f.box[0] || wx > f.box[2] || wy < f.box[1] || wy > f.box[3]) continue;
+      if (Math.hypot((wx - f.pool.x) / (f.pool.rx + 70), (wy - f.pool.y - 30) / (f.pool.ry + 80)) < 1) return true;
+      for (q9 = 0; q9 < 2; q9++) { var pts = q9 ? f.out : f.stream, i9; for (i9 = 0; i9 < pts.length - 1; i9++) { var p = pts[i9], q = pts[i9 + 1], ax = q[0] - p[0], ay = q[1] - p[1], t = Math.max(0, Math.min(1, ((wx - p[0]) * ax + (wy - p[1]) * ay) / (ax * ax + ay * ay || 1))); if (Math.hypot(wx - p[0] - ax * t, wy - p[1] - ay * t) < 26) return true; } } }
+    return false;
+  }   // the waterfall's stream, its pool and the brook out of it: waded, never built on
+  w.flatAt = function (wx, wy, r) {                                        // level ground with room round it: no cliff, no slope, no water within r, one level
+    var c0 = cellAt(wx, wy), a; if (c0 & (M_BLOCK | M_RAMP | M_WATER)) return false; r = r || 0; if (!mtn || !r) return true;
+    for (a = 0; a < 8; a++) { var c1 = cellAt(wx + Math.cos(a * 0.785) * r, wy + Math.sin(a * 0.785) * r); if ((c1 & (M_BLOCK | M_RAMP | M_WATER)) || (c1 & 3) !== (c0 & 3)) return false; }
     return true;
   };
   /* 4. what each tile is for the game: 0 sea, 1 beach, 2 grass, 3 dark grass, 4 jetty. The jetty runs east from the home island. */
@@ -4589,8 +4747,9 @@ function make(kit, opts) {
     grid[p] = h2 < beachAt(x, y) ? 1 : (fbm(x / 9, y / 9, s + 70) > 0.6 ? 3 : 2);
   }
   if (mtn) for (y = Math.floor(mtn.by0 / T); y < Math.floor(mtn.by1 / T); y++) for (x = Math.floor(mtn.bx0 / T); x < Math.floor(mtn.bx1 / T); x++) {
+    if (grid[y * GW + x] === 1 && (cellAt((x + 0.5) * T, (y + 0.5) * T) & 3)) grid[y * GW + x] = 2;   // the top of a sea cliff is turf, not sand
     if (grid[y * GW + x] < 2) continue; var anyc = false, c4x, c4y;
-    for (c4y = 0; c4y < 4 && !anyc; c4y++) for (c4x = 0; c4x < 4; c4x++) if (cellAt(x * T + c4x * MC + 4, y * T + c4y * MC + 4) & (M_BLOCK | M_RAMP)) { anyc = true; break; }
+    for (c4y = 0; c4y < 4 && !anyc; c4y++) for (c4x = 0; c4x < 4; c4x++) if (cellAt(x * T + c4x * MC + 4, y * T + c4y * MC + 4) & (M_BLOCK | M_RAMP | M_WATER)) { anyc = true; break; }
     if (anyc) grid[y * GW + x] = 5;
   }
   var hx = Math.round(isles[0].x), hy = Math.round(isles[0].y);
@@ -4613,7 +4772,7 @@ function make(kit, opts) {
   w.eTile = eTile; w.elevAt = elevAt; w.code = code; w.onPlank = onPlank; w.beachAt = beachAt;
   w.isLand = function (wx, wy) { return onPlank(wx, wy) || (elevAt(wx, wy) > 0.05 && !(mtn && (cellAt(wx, wy) & M_BLOCK))); };   // not a cliff face, its rim or a peak
   w.isWade = function (wx, wy) { return elevAt(wx, wy) > -1.1 && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // the turquoise shallows: you can walk through them
-  w.isWater = function (wx, wy) { return !onPlank(wx, wy) && elevAt(wx, wy) < -0.18 && wx > 40 && wy > 40 && wx < WX - 40 && wy < WY - 40; };
+  w.isWater = function (wx, wy) { return !onPlank(wx, wy) && elevAt(wx, wy) < -0.18 && wx > 40 && wy > 40 && wx < WX - 40 && wy < WY - 40 && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // not where a sea cliff's foot stands in it
 
   /* baking */
   w.sprite = function (name, v) {
@@ -4687,31 +4846,89 @@ function make(kit, opts) {
     var W2 = CT * T, H2 = CT * TS, ccv = kit.mk(W2 * 2, H2 * 2), c = ccv.getContext('2d'), xx, yy, ii, jj;
     c.setTransform(2, 0, 0, 2, 0, 0);
     for (yy = 0; yy < CT; yy++) for (xx = 0; xx < CT; xx++) c.drawImage(tile('grass', cx * CT + xx, cy * CT + yy), xx * T, yy * TS, T + 0.3, TS + 0.3);
-    var n1 = CT + 2, EE = new Float32Array(n1 * n1), BW = new Float32Array(n1 * n1), DK = new Float32Array(n1 * n1), BMv = new Float32Array(n1 * n1);
-    for (jj = 0; jj < n1; jj++) for (ii = 0; ii < n1; ii++) { var gx = cx * CT + ii - 1, gy = cy * CT + jj - 1; EE[jj * n1 + ii] = eTile(gx, gy); BW[jj * n1 + ii] = beachAt(gx, gy); DK[jj * n1 + ii] = fbm(gx / 9, gy / 9, s + 70); BMv[jj * n1 + ii] = w.biomeAt(gx, gy); }
-    var ov = kit.mk(W2, H2), oc = ov.getContext('2d'), img = oc.createImageData(W2, H2), d = img.data, P = PAL, pp = 0;
-    // the mountains in this piece: the level of every pixel (and of a strip above it, as tall as two faces), then down every
-    // column what stands over each pixel: FN the level of the edge whose face covers it, FD how far below that edge it is
-    var lev = null, FN = null, FD = null, SH = null, LW = W2 + 16, PADR = HF * 2 + 8, d2 = null, img2 = null, ov2 = null, rampsHere = null, RK = null;
-    if (mtn && cx * W2 < mtn.bx1 && (cx + 1) * W2 > mtn.bx0 && cy * H2 / K < mtn.by1 + 8 && (cy + 1) * H2 / K > mtn.by0 - 8) {
-      var HR = H2 + PADR + 8, any = false, r0, px0; lev = new Uint8Array(LW * HR);   // a margin of 8 all round, so an edge's rim is found across the piece's own border
-      for (r0 = 0; r0 < HR; r0++) { var sy0 = cy * H2 + r0 - PADR, wy0 = sy0 / K; for (px0 = 0; px0 < LW; px0++) { var wx0 = cx * W2 + px0 - 8, lv0 = mLevel(mAt(wx0, wy0) + (noise[((sy0 & 127) << 7) | (wx0 & 127)] - 0.5) * 0.012); if (lv0) { lev[r0 * LW + px0] = lv0; any = true; } } }
-      if (!any) lev = null;
-      else {
-        FN = new Uint8Array(W2 * H2); FD = new Uint16Array(W2 * H2); SH = new Uint8Array(W2 * H2);
-        for (px0 = 0; px0 < W2; px0++) {
-          var l1 = -1e9, l2 = -1e9, l3 = -1e9;
-          for (r0 = 0; r0 < H2 + PADR; r0++) {
-            var Lq = lev[r0 * LW + px0 + 8]; if (Lq >= 1) l1 = r0; if (Lq >= 2) l2 = r0; if (Lq >= 3) l3 = r0;
-            if (r0 < PADR || Lq === 3) continue; var qi = (r0 - PADR) * W2 + px0, nn, la;
-            for (nn = 3; nn > Lq; nn--) { la = nn === 3 ? l3 : (nn === 2 ? l2 : l1); if (r0 - la <= HF * (nn - Lq)) { FN[qi] = nn; FD[qi] = r0 - la; break; } }
-            if (!FN[qi]) for (nn = 3; nn > Lq; nn--) { la = nn === 3 ? l3 : (nn === 2 ? l2 : l1); var over = r0 - la - HF * (nn - Lq); if (over > 0 && over <= 16) { SH[qi] = 17 - over; break; } }   // the shadow at a face's foot
-          }
+    var n1 = CT + 2, EE = new Float32Array(n1 * n1), BW = new Float32Array(n1 * n1), DK = new Float32Array(n1 * n1), BMv = new Float32Array(n1 * n1), SFt = mtn ? new Float32Array(n1 * n1) : null, HTt = mtn ? new Float32Array(n1 * n1) : null, SNt = mtn ? new Float32Array(n1 * n1) : null, sfv = 0, htv = 0, snv = 0;
+    for (jj = 0; jj < n1; jj++) for (ii = 0; ii < n1; ii++) { var gx = cx * CT + ii - 1, gy = cy * CT + jj - 1; EE[jj * n1 + ii] = eTile(gx, gy); BW[jj * n1 + ii] = beachAt(gx, gy); DK[jj * n1 + ii] = fbm(gx / 9, gy / 9, s + 70); BMv[jj * n1 + ii] = w.biomeAt(gx, gy);
+      if (mtn) { SFt[jj * n1 + ii] = fbm(gx / 3.1, gy / 3.1, s + 141); HTt[jj * n1 + ii] = fbm(gx / 3.7, gy / 2.7, s + 142); SNt[jj * n1 + ii] = fbm(gx / 3.3, gy / 1.5, s + 143); } }   // the fells' soft patches, the heather's drifts, the snow's fields: a value a tile, read between the tiles
+    var ov = kit.mk(W2, H2), oc = ov.getContext('2d'), img = oc.createImageData(W2, H2), d = img.data, P = PAL, pp = 0, tP = pnow();
+    /* The mountains in this piece. Everything is worked out on a sheet wider and taller than the piece (MG to each side, PADR
+       above: three faces, PADB below), so what an edge outside the piece casts into it is found, and what is drawn across a
+       piece's border is drawn the same from both sides. lev is the level of every pixel and mfr the field itself; then four
+       sweeps down columns say what stands over a pixel: FN/FD the edge whose south face covers it and how far below that edge
+       it is, EN/ED and WN/WD the same down columns that lean (a wall that faces east, one that faces west: a battered foot,
+       SIDE pixels out a level), HN/HD along the sun's way (the shadow a cliff throws east); BD/BO how far the nearest change
+       of level is and what lies across it (the crest of an edge, the dark under one that faces away). */
+    var lev = null, mfr = null, MG = 96, PADR = HF * 3 + 20, PADB = 60, LW = W2 + MG * 2, HR = H2 + PADR + PADB, GX0 = cx * W2 - MG, GY0 = cy * H2 - PADR;
+    var FN = null, FD = null, EN = null, ED = null, WN = null, WD = null, HN = null, HD = null, BD = null, BO = null, d2 = null, img2 = null, ov2 = null, rampsHere = null, fallsHere = null, ledgesHere = null, RK = null, OVS = null, OVY = null, WET = null, PAN = {};
+    if (mtn && cx * W2 < mtn.bx1 + MG && (cx + 1) * W2 > mtn.bx0 - MG && cy * H2 / K < mtn.by1 + 60 && (cy + 1) * H2 / K > mtn.by0 - 8) {
+      var NP = LW * HR, r0, px0, qq, minL = 9, maxL = 0, ixa = Math.floor(GX0 / T - 0.5);
+      if (!MB) { MB = { lev: new Uint8Array(NP), mfr: new Uint8Array(NP), FN: new Uint8Array(NP), FD: new Uint16Array(NP), EN: new Uint8Array(NP), ED: new Uint16Array(NP), WN: new Uint8Array(NP), WD: new Uint16Array(NP), HN: new Uint8Array(NP), HD: new Uint16Array(NP), BD: new Uint8Array(NP), BO: new Uint8Array(NP), colv: new Float32Array(Math.ceil(LW / T) + 4), IX: new Int32Array(LW), UU: new Float32Array(LW) }; }   // the sheets are kept between bakes
+      lev = MB.lev; mfr = MB.mfr; lev.fill(0); mfr.fill(0); var colv = MB.colv, IX = MB.IX, UU = MB.UU;
+      for (px0 = 0; px0 < LW; px0++) { var fx0 = (GX0 + px0) / T - 0.5, ix0 = Math.floor(fx0); IX[px0] = ix0 - ixa; UU[px0] = fx0 - ix0; }
+      for (r0 = 0; r0 < HR; r0++) {
+        var sy0 = GY0 + r0, fy0 = sy0 / K / T - 0.5, iy0 = Math.floor(fy0), vv = fy0 - iy0, rowAny = false, nrow = (sy0 & 127) << 7, rb = r0 * LW;
+        for (qq = 0; qq < colv.length; qq++) { colv[qq] = mTile(ixa + qq, iy0) * (1 - vv) + mTile(ixa + qq, iy0 + 1) * vv; if (colv[qq] > 0.004) rowAny = true; }
+        if (!rowAny) { minL = 0; continue; }
+        for (px0 = 0; px0 < LW; px0++) {
+          var ci0 = IX[px0], uu = UU[px0], ca0 = colv[ci0], cb0 = colv[ci0 + 1], mm = ca0 * (1 - uu) + cb0 * uu;
+          if (mm <= 0.004) { minL = 0; continue; }
+          var fl0 = mm | 0; if (mm - fl0 > 0.007 && mm - fl0 < 0.993) { if (fl0 > 3) fl0 = 3; lev[rb + px0] = fl0; if (fl0 > maxL) maxL = fl0; if (fl0 < minL) minL = fl0; mfr[rb + px0] = mm >= 3.98 ? 255 : mm * 64; continue; }   // well inside a level: no need of the grain that roughens an edge
+          mm += (noise[nrow | ((GX0 + px0) & 127)] - 0.5) * 0.012;
+          var lv0 = mm >= 3 ? 3 : (mm >= 2 ? 2 : (mm >= 1 ? 1 : 0)); lev[rb + px0] = lv0; if (lv0 > maxL) maxL = lv0; if (lv0 < minL) minL = lv0; mfr[rb + px0] = mm >= 3.98 ? 255 : mm * 64;
         }
+      }
+      if (!maxL) lev = null;
+      else {
+        FN = MB.FN; FD = MB.FD; EN = MB.EN; ED = MB.ED; WN = MB.WN; WD = MB.WD; HN = MB.HN; HD = MB.HD; BD = MB.BD; BO = MB.BO; FN.fill(0); EN.fill(0); WN.fill(0); HN.fill(0); BO.fill(0); BD.fill(250);
+        w.prof.lev += pnow() - tP; tP = pnow();
+        if (minL !== maxL) {                                 // (a piece and all round it on one level has no wall, no shadow, no edge)
+          var rs = Math.max(0, PADR - Math.ceil(HF * 8 / 7 * (maxL - minL)) - 14);   // no wall here is taller than the levels there are
+          sweepM(0, HF, FN, FD, rs); sweepM(SIDE / HF, HF, EN, ED, rs); sweepM(-SIDE / HF, HF, WN, WD, rs); sweepM(0.4375, HF * 8 / 7, HN, HD, rs);
+          edgeDist();
+        }
+        w.prof.sweep += pnow() - tP; tP = pnow();
         img2 = oc.createImageData(W2, H2); d2 = img2.data; RK = rockPal();
         rampsHere = mtn.ramps.filter(function (rm) { return Math.max(rm.x0, rm.x1) + rm.r * 1.6 > cx * W2 && Math.min(rm.x0, rm.x1) - rm.r * 1.6 < (cx + 1) * W2 && (Math.max(rm.y0, rm.y1) + rm.r * 1.6) * K > cy * H2 && (Math.min(rm.y0, rm.y1) - rm.r * 1.6) * K < (cy + 1) * H2; });
+        fallsHere = mtn.falls.filter(function (f) { return f.box[2] > cx * W2 - 20 && f.box[0] < (cx + 1) * W2 + 20 && f.box[3] * K > cy * H2 - 20 && f.box[1] * K < (cy + 1) * H2 + 20; });
+        ledgesHere = mtn.ledges.filter(function (lg) { return lg.x + 40 > cx * W2 && lg.x - 40 < (cx + 1) * W2 && lg.ye * K + HF + 10 > cy * H2 && lg.ye * K - 20 < (cy + 1) * H2; });
+        // what runs along a wall and depends only on where along it you are: an overhang, water running down it
+        OVS = new Float32Array(W2 * 4); OVY = new Float32Array(W2 * 4); WET = new Float32Array(W2 * 4);
+        for (qq = 1; qq <= 3; qq++) for (px0 = 0; px0 < W2; px0++) { var wxc = cx * W2 + px0; OVS[qq * W2 + px0] = sstep(0.66, 0.74, vnoise(wxc / 150, qq * 3.1, s + 48)); OVY[qq * W2 + px0] = (0.26 + 0.26 * vnoise(wxc / 330, qq * 1.7, s + 49)) * HF; WET[qq * W2 + px0] = sstep(0.6, 0.7, vnoise(wxc / 130, qq * 2.2, s + 51)) * sstep(0.5, 0.7, vnoise(wxc / 7, qq * 9.3, s + 50)); }
       }
     }
+    function sweepM(sh, per, N, D, rs) {                    // down every column (leaning sh pixels a row): the last row at or above each level, so what covers a pixel; only the columns that cross the piece, from the first row that can matter
+      var shift = new Int32Array(HR), r, idl, mn = 1e9, mx = -1e9, px, nn, la, per2 = per * 2, per3 = per * 3;
+      for (r = rs; r < HR; r++) { shift[r] = Math.round(sh * (GY0 + r)); if (r >= PADR - 12) { if (shift[r] < mn) mn = shift[r]; if (shift[r] > mx) mx = shift[r]; } }
+      for (idl = MG - 12 - mx; idl < MG + W2 + 12 - mn; idl++) {
+        var l1 = -1e9, l2 = -1e9, l3 = -1e9;
+        for (r = rs; r < HR; r++) {
+          px = idl + shift[r]; if (px < 0 || px >= LW) continue;
+          var q = r * LW + px, Lq = lev[q];
+          if (Lq === 0) { if (r - l1 > per3) continue; }
+          else { l1 = r; if (Lq === 1) { if (r - l2 > per2) continue; } else { l2 = r; if (Lq === 3) { l3 = r; continue; } if (r - l3 > per) continue; } }
+          for (nn = 3; nn > Lq; nn--) { la = nn === 3 ? l3 : (nn === 2 ? l2 : l1); if (r - la <= per * (nn - Lq)) { N[q] = nn; D[q] = r - la; break; } }
+        }
+      }
+    }
+    function edgeDist() {                                    // half pixels to the nearest change of level (chamfer 2, 3); BO: the level on its far side, and the near side's
+      var r, px, q, v, nv, ra = PADR - 62, xa = MG - 62, xb = MG + W2 + 62;   // only the piece and 60 pixels round it: nothing further is asked for
+      for (r = ra; r < HR - 1; r++) for (px = xa; px < xb; px++) { q = r * LW + px; var Lc = lev[q], o1 = lev[q - 1], o2e = lev[q + 1], o3 = lev[q - LW], o4 = lev[q + LW], ot = o1 !== Lc ? o1 : (o2e !== Lc ? o2e : (o3 !== Lc ? o3 : (o4 !== Lc ? o4 : 255))); if (ot !== 255) { BD[q] = 1; BO[q] = ot | (Lc << 2); } }
+      for (r = ra; r < HR; r++) for (px = xa; px < xb; px++) { q = r * LW + px; v = BD[q]; if (v <= 2) continue; nv = BD[q - 1] + 2; if (nv < v) { v = nv; BO[q] = BO[q - 1]; } nv = BD[q - LW] + 2; if (nv < v) { v = nv; BO[q] = BO[q - LW]; } nv = BD[q - LW - 1] + 3; if (nv < v) { v = nv; BO[q] = BO[q - LW - 1]; } nv = BD[q - LW + 1] + 3; if (nv < v) { v = nv; BO[q] = BO[q - LW + 1]; } BD[q] = v; }
+      for (r = HR - 2; r >= ra; r--) for (px = xb - 1; px >= xa; px--) { q = r * LW + px; v = BD[q]; if (v <= 2) continue; nv = BD[q + 1] + 2; if (nv < v) { v = nv; BO[q] = BO[q + 1]; } nv = BD[q + LW] + 2; if (nv < v) { v = nv; BO[q] = BO[q + LW]; } nv = BD[q + LW + 1] + 3; if (nv < v) { v = nv; BO[q] = BO[q + LW + 1]; } nv = BD[q + LW - 1] + 3; if (nv < v) { v = nv; BO[q] = BO[q + LW - 1]; } BD[q] = v; }
+    }
+    function nsm(x, y, sc) {                                 // the noise sheet read smoothly at a coarser scale (sc pixels to one of its own): soft shapes with no steps
+      var fx = x / sc, fy = y / sc, xi = Math.floor(fx), yi = Math.floor(fy), u = fx - xi, v = fy - yi, a = noise[((yi & 127) << 7) | (xi & 127)], b = noise[((yi & 127) << 7) | ((xi + 1) & 127)], c2 = noise[(((yi + 1) & 127) << 7) | (xi & 127)], d3 = noise[(((yi + 1) & 127) << 7) | ((xi + 1) & 127)];
+      return a + (b - a) * u + (c2 - a) * v + (a - b - c2 + d3) * u * v;
+    }
+    function panel(pk, fn) {                                 // a wall is split by fissures into panels of uneven width, each with its own kind of rock
+      var key = pk * 4 + fn, p = PAN[key]; if (p) return p;
+      var zn = vnoise(pk / 3.1, fn * 5.3, s + 44);
+      return (PAN[key] = { b: (pk + 0.15 + 0.7 * hash(pk, fn, s + 41)) * 46, hp: hash(pk, fn + 9, s + 43), style: zn < 0.4 ? 0 : (zn < 0.68 ? 1 : 2), l0: (0.16 + (hash(pk, 0, s + 47) - 0.5) * 0.18) * HF, l1: (0.45 + (hash(pk, 1, s + 47) - 0.5) * 0.18) * HF, l2: (0.74 + (hash(pk, 2, s + 47) - 0.5) * 0.18) * HF });
+    }
+    function lineD(pts, wx, wy) {                            // how far a point is from a line of points
+      var best = 1e9, kk; for (kk = 0; kk < pts.length - 1; kk++) { var p = pts[kk], q = pts[kk + 1], ax = q[0] - p[0], ay = q[1] - p[1], t = Math.max(0, Math.min(1, ((wx - p[0]) * ax + (wy - p[1]) * ay) / (ax * ax + ay * ay || 1))), dd = Math.hypot(wx - p[0] - ax * t, wy - p[1] - ay * t); if (dd < best) best = dd; }
+      return best;
+    }
+    tP = pnow();
     for (var py = 0; py < H2; py++) {
       var v = py / TS + 0.5, j0 = Math.floor(v), tv = v - j0, wy = cy * H2 + py;
       for (var px = 0; px < W2; px++, pp += 4) {
@@ -4719,8 +4936,9 @@ function make(kit, opts) {
         var w00 = (1 - tu) * (1 - tv), w10 = tu * (1 - tv), w01 = (1 - tu) * tv, w11 = tu * tv;
         var n1v = noise[((wy & 127) << 7) | (wx & 127)], n2v = noise[(((wy * 2) & 127) << 7) | ((wx * 2) & 127)];
         var e = EE[q] * w00 + EE[q + 1] * w10 + EE[q + n1] * w01 + EE[q + n1 + 1] * w11 + (n1v - 0.5) * 0.5;
+        var qe = lev ? (py + PADR) * LW + px + MG : 0, Lp = lev ? lev[qe] : 0;
         var r, g, b, a = 255;
-        if (e < 0) {                                        // sea: pale over the sand at the edge, turquoise shallows, deep blue beyond
+        if (e < 0 && !Lp) {                                 // sea: pale over the sand at the edge, turquoise shallows, deep blue beyond
           var t = Math.min(1, -e / 3.4); t = t * t * (3 - 2 * t);
           r = P.sh[0] + (P.dp[0] - P.sh[0]) * t; g = P.sh[1] + (P.dp[1] - P.sh[1]) * t; b = P.sh[2] + (P.dp[2] - P.sh[2]) * t;
           var st = Math.max(0, 1 + e / 0.95) * 0.62;
@@ -4729,31 +4947,39 @@ function make(kit, opts) {
           if (e > -0.14) { var fo = (1 + e / 0.14) * 0.85; r += (255 - r) * fo; g += (255 - g) * fo; b += (252 - b) * fo; }   // the white lip at the waterline
         } else {
           var bw = BW[q] * w00 + BW[q + 1] * w10 + BW[q + n1] * w01 + BW[q + n1 + 1] * w11, eg = e + (n2v - 0.5) * 0.7;
-          if (eg < bw) {                                    // beach: wet and dark by the water, pale and dry higher up, soft dunes
+          if (eg < bw && !Lp) {                             // beach: wet and dark by the water, pale and dry higher up, soft dunes (never on the fells: a sea cliff's top is turf)
             var dry = Math.min(1, e / 0.75); dry = dry * dry * (3 - 2 * dry);
             var dune = (n1v - 0.5) * 22 + Math.sin((wx * 0.33 + wy * 0.95) * 0.2 + n1v * 6) * 5;
             r = P.wet[0] + (P.sand[0] - P.wet[0]) * dry + dune; g = P.wet[1] + (P.sand[1] - P.wet[1]) * dry + dune; b = P.wet[2] + (P.sand[2] - P.wet[2]) * dry + dune * 0.8;
             a = Math.min(1, (bw - eg) / 0.32) * 255;        // the grass comes in raggedly at the top of the beach
           } else {                                          // grass: darker by the beach and in soft patches, never in squares
-            var dk = DK[q] * w00 + DK[q + 1] * w10 + DK[q + n1] * w01 + DK[q + n1 + 1] * w11, rim = Math.max(0, 1 - (eg - bw) / 0.4);
+            var dk = DK[q] * w00 + DK[q + 1] * w10 + DK[q + n1] * w01 + DK[q + n1 + 1] * w11, rim = Lp ? 0 : Math.max(0, 1 - (eg - bw) / 0.4);
             r = 22; g = 84; b = 40; a = Math.min(120, Math.max(0, (dk - 0.54) * 5) * 62 + rim * 70);
             var bmv = BMv[q] * w00 + BMv[q + 1] * w10 + BMv[q + n1] * w01 + BMv[q + n1 + 1] * w11; if (bmv > 0.05) { var bt = bmv * 95, at = a + bt; r = (r * a + 196 * bt) / at; g = (g * a + 176 * bt) / at; b = (b * a + 62 * bt) / at; a = Math.min(255, at); }   // the lowlands: a warmer, yellower green
           }
-          if (lev) mountainPixel(px, py, wx, wy, n1v, n2v);
         }
+        if (lev && (Lp || FN[qe] || EN[qe] || WN[qe] || HN[qe] || BD[qe] < 110 || rampsHere.length || fallsHere.length)) { if (Lp) { sfv = SFt[q] * w00 + SFt[q + 1] * w10 + SFt[q + n1] * w01 + SFt[q + n1 + 1] * w11; htv = HTt[q] * w00 + HTt[q + 1] * w10 + HTt[q + n1] * w01 + HTt[q + n1 + 1] * w11; snv = SNt[q] * w00 + SNt[q + 1] * w10 + SNt[q + n1] * w01 + SNt[q + n1 + 1] * w11; } mountainPixel(px, py, wx, wy, n1v, n2v, e, qe, Lp); }
         d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
       }
     }
-    /* One pixel of mountain. The fells' ground is a tint laid into the grass overlay (r, g, b, a above): shorter, greyer grass
-       on the foothills, stonier with heather on the high plateau. The rock goes into a second overlay (d2) laid over the meadow:
-       the face of a cliff (strata, cracks, a lit lip under an ink line at the top, darker toward a dark foot, moss in patches),
-       the rim where an edge faces away, the peaks' scree and snow, the shadow at a face's foot, and the slopes. */
-    function mountainPixel(px, py, wx, wy, n1v, n2v) {
-      var qi = py * W2 + px, lb = (py + PADR) * LW + px + 8, L = lev[lb], fn = FN[qi], o2 = pp, R0 = RK.base, R1 = RK.shade, R2 = RK.hl, big = noise[(((wy >> 2) & 127) << 7) | ((wx >> 2) & 127)], k, rr, gg, bb;
+    w.prof.paint += pnow() - tP; w.prof.n++;
+    /* One pixel of mountain. The fells' ground is a tint laid into the grass overlay (r, g, b, a above): cropped, drier turf on
+       the foothills, grey-green heath with heather in drifts on the high plateau, stonier toward the peaks. The rock goes into
+       a second overlay (d2) laid over the meadow: a cliff's south face (panels of beds, buttresses or thin strata between
+       fissures, an overhang, water running down, moss, a grassy ledge, lit where it turns west and dark where it turns east,
+       wet and foaming where it stands in the sea), a side wall, the crest of every edge, the dark under an edge that faces
+       away, the shadow a cliff throws east, the peaks' scree and snow, the slopes, and the waterfall's stream and pool. */
+    function mountainPixel(px, py, wx, wy, n1v, n2v, e, qe, L) {
+      var fn = FN[qe], o2 = pp, R0 = RK.base, R1 = RK.shade, R2 = RK.hl, big = noise[(((wy >> 2) & 127) << 7) | ((wx >> 2) & 127)], k, rr, gg, bb, INK0 = 38, INK1 = 30, INK2 = 30;
       if (L === 1 || L === 2) {                              // the fells: a tint over the grass
-        var tr = L === 1 ? 150 : 152, tg = L === 1 ? 158 : 146, tb = L === 1 ? 92 : 112, ta = L === 1 ? 46 + big * 30 : 78 + big * 40;
-        if (L === 2 && big > 0.62) { tr = 134; tg = 100; tb = 128; ta = 96; }                 // heather in drifts
-        if (L === 2 && n2v > 0.8 && big < 0.5) { tr = R0[0] + 20; tg = R0[1] + 20; tb = R0[2] + 14; ta = 200; }   // bare rock showing through
+        var soft = sfv + (n1v - 0.5) * 0.08, tr, tg, tb, ta;
+        if (L === 1) { tr = 168; tg = 164; tb = 96; ta = 84 + soft * 60; if (soft > 0.56) { var ok1 = Math.min(1, (soft - 0.56) / 0.05); tr += (186 - tr) * ok1; tg += (160 - tg) * ok1; tb += (98 - tb) * ok1; ta += 36 * ok1; } }   // the foothills: cropped, drier turf, ochre where it is thinnest
+        else {
+          tr = 150; tg = 146; tb = 108; ta = 150 + soft * 50;                                 // the plateau: grey-green heath
+          var hth = htv + (n1v - 0.5) * 0.1; if (hth > 0.63) { var hk = Math.min(1, (hth - 0.63) / 0.035); tr += (132 - tr) * hk; tg += (106 - tg) * hk; tb += (114 - tb) * hk; ta += 30 * hk; if (hk > 0.5 && n2v > 0.6 && white[(((wy >> 1) & 255) << 8) | ((wx >> 1) & 255)] > 0.8) { tr = 172; tg = 126; tb = 160; ta = 230; } }   // heather in drifts, flecked with its flowers
+          var mf = mfr[qe] / 64, stn = mf > 2.62 ? (mf - 2.62) / 0.38 : 0;
+          if (stn > 0 && n1v * 0.6 + n2v * 0.4 < 0.26 + stn * 0.55) { var gp = white[(((wy + 37) & 255) << 8) | ((wx + 91) & 255)]; tr = gp > 0.8 ? 192 : (gp < 0.2 ? 112 : 152); tg = gp > 0.8 ? 188 : (gp < 0.2 ? 110 : 148); tb = gp > 0.8 ? 174 : (gp < 0.2 ? 106 : 136); ta = 228; }   // gravel toward the peaks, a speck a stone
+        }
         var at2 = a + ta; r = (r * a + tr * ta) / at2; g = (g * a + tg * ta) / at2; b = (b * a + tb * ta) / at2; a = Math.min(255, at2);
       }
       if (rampsHere.length) {                                // a slope: trodden earth climbing through the face between two banks of rock, a step of stone now and then
@@ -4761,52 +4987,120 @@ function make(kit, opts) {
           var rm = rampsHere[k], rd = mtn.rampD(rm, wx, wy / K), tt = rd[1], along = tt * rm.len;
           var wide = rm.r * (0.84 + 0.2 * noise[(((along | 0) >> 1) & 127) << 7 | (rm.x0 & 127)] + (tt < 0.1 ? (0.1 - tt) * 2.2 : 0) + (tt > 0.88 ? (tt - 0.88) * 2.4 : 0)), dd = rd[0] + (n1v - 0.5) * 4;
           if (dd < wide) {
-            var inF = fn !== 0, edge = wide - dd, side = wx < rm.x0 + (rm.x1 - rm.x0) * tt, stp = (along + 6) % 23, lift = 1 - tt;
+            var inF = fn !== 0 || EN[qe] !== 0 || WN[qe] !== 0, edge = wide - dd, side = wx < rm.x0 + (rm.x1 - rm.x0) * tt, stp = (along + 6) % 23, lift = 1 - tt;
             rr = 150 + lift * 22 + (n2v - 0.5) * 26 + (big - 0.5) * 18; gg = 124 + lift * 20 + (n2v - 0.5) * 22 + (big - 0.5) * 14; bb = 86 + lift * 16 + (n2v - 0.5) * 18;
             if (dd < wide * 0.45) { rr += 10; gg += 9; bb += 6; }                                // trodden paler down the middle
-            var pb = hash(wx, wy, s + 91); if (pb > 0.965) { rr = 196; gg = 188; bb = 172; } else if (pb < 0.03) { rr -= 34; gg -= 30; bb -= 22; }   // pebbles (a speck each: the noise sheet is smooth and drew them as blots)
+            var pb = white[((wy & 255) << 8) | (wx & 255)]; if (pb > 0.965) { rr = 196; gg = 188; bb = 172; } else if (pb < 0.03) { rr -= 34; gg -= 30; bb -= 22; }   // pebbles (a speck each: the noise sheet is smooth and drew them as blots)
             if (!rm.gap && tt > 0.1 && tt < 0.9 && edge > 7) { if (stp < 2) { rr = R1[0] * 0.8; gg = R1[1] * 0.8; bb = R1[2] * 0.82; } else if (stp < 5) { rr = R2[0]; gg = R2[1]; bb = R2[2]; } }   // a step: a slab's lit top over its dark front
-            if (inF && edge < 7) { var bk = side ? R2 : R1, bt2 = side ? 1 : 0.8; rr = bk[0] * bt2 + (n2v - 0.5) * 20; gg = bk[1] * bt2 + (n2v - 0.5) * 20; bb = bk[2] * bt2 + (n2v - 0.5) * 16; if (edge < 1.6) { rr = 38; gg = 30; bb = 30; } }   // the banks: lit on the west, dark on the east
+            if (inF && edge < 7) { var bk = side ? R2 : R1, bt2 = side ? 1 : 0.8; rr = bk[0] * bt2 + (n2v - 0.5) * 20; gg = bk[1] * bt2 + (n2v - 0.5) * 20; bb = bk[2] * bt2 + (n2v - 0.5) * 16; if (edge < 1.6) { rr = INK0; gg = INK1; bb = INK2; } }   // the banks: lit on the west, dark on the east
             d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = inF ? 255 : 255 * Math.min(1, edge / 6); return;
           }
         }
       }
-      if (fn) {                                              // the face of a cliff: beds of blocks that follow the edge, each with a lit ledge and a dark underside, joints between them
-        var fd = FD[qi], tot = HF * (fn - L), kk = fd / tot, yb = fd + (big - 0.5) * 24 + 6, row = Math.floor(yb / 13), fy = yb / 13 - row, rh = hash(row, fn, s + 31), bw = 18 + rh * 30;
-        var xb = (wx + rh * 131 + (noise[(((wy >> 1) & 127) << 7) | ((wx >> 3) & 127)] - 0.5) * 10) / bw, col = Math.floor(xb), fx = xb - col, ch2 = hash(col, row, s + 33);
-        var tone = 1.12 - 0.34 * kk + (ch2 - 0.5) * 0.3 + (n2v - 0.5) * 0.1;
-        if (fy < 0.22) tone += 0.16; else if (fy > 0.8) tone -= 0.18;
-        if (fx * bw < 1.8 && ch2 > 0.28) tone -= 0.34;                                          // a joint down between two blocks
-        if (fy > 0.9 && hash(col, row, s + 35) > 0.25) tone -= 0.36;                            // the bed under a block
-        if (ch2 > 0.9) tone += 0.12;                                                            // a block that catches the light
+      if (fn) {                                              // the south face of a cliff
+        var fd = FD[qe], tot = HF * (fn - L), ey = wy - fd, fa = FN[qe - 4] === fn ? FD[qe - 4] : -1, fb2 = FN[qe + 4] === fn ? FD[qe + 4] : -1, sl = fa >= 0 && fb2 >= 0 ? (fa - fb2) / 8 : (fa >= 0 ? (fa - fd) / 4 : (fb2 >= 0 ? (fd - fb2) / 4 : 0));
+        sl = Math.max(-1.1, Math.min(1.1, sl));              // how the edge runs over this pixel: falling to the right the wall turns west (lit), rising it turns east (dark)
+        var X = wx + (noise[(((wy >> 1) & 127) << 7) | ((wx >> 3) & 127)] - 0.5) * 12, k0 = Math.floor(X / 46), pa = panel(k0, fn), pk = X < pa.b ? k0 - 1 : k0; if (pk !== k0) pa = panel(pk, fn);
+        var dl = X - pa.b, dr = panel(pk + 1, fn).b - X, un = dl / (dl + dr), hp = pa.hp, style = pa.style, kk = Math.min(1, fd / (HF * 1.5)), fm = fd % HF, fy = 0.5, ch2;
+        var tone = 1.1 - 0.3 * kk + (hp - 0.5) * 0.14 + (n2v - 0.5) * 0.1 + sl * 0.19 + (0.5 - un) * (style === 1 ? 0.2 : 0.08);
+        if (style === 0) {                                   // beds of blocks: each with a lit ledge and a dark underside, joints between them
+          var yb = fd + hp * 13 + dl * (hp - 0.5) * 0.3, row = Math.floor(yb / 13), rhh = hash(row, pk + fn * 77, s + 31), bw2 = 16 + rhh * 26, xb = (X + rhh * 131) / bw2, col = Math.floor(xb), fx2 = xb - col; fy = yb / 13 - row; ch2 = hash(col, row, s + 33);
+          tone += (ch2 - 0.5) * 0.26; if (fy < 0.2) tone += 0.14; else if (fy > 0.82) tone -= 0.16;
+          if (fx2 * bw2 < 1.6 && ch2 > 0.3) tone -= 0.3; if (fy > 0.9 && ch2 > 0.2) tone -= 0.3; if (ch2 > 0.92) tone += 0.1;
+        } else if (style === 2) {                            // thin strata that dip a little
+          var yb2 = fd + hp * 6 + dl * (hp - 0.5) * 0.5, row2 = Math.floor(yb2 / 6); fy = yb2 / 6 - row2; ch2 = hash(row2, pk + fn * 77, s + 34);
+          tone += (ch2 - 0.5) * 0.2; if (fy > 0.72) tone -= 0.2; else if (fy < 0.22) tone += 0.07;
+          if (ch2 > 0.7 && ((X + ch2 * 90) % 38) < 1.5) tone -= 0.26;
+        } else {                                             // a buttress: massive rock, a ledge or two across it, streaked down, a hairline crack
+          var yb3 = fd + hp * 29 + (nsm(X, fn * 300, 5) - 0.5) * 16, row3 = Math.floor(yb3 / 29), rh3 = hash(row3, pk + fn * 77, s + 37), bw3 = 30 + rh3 * 34; fy = yb3 / 29 - row3;
+          var xb3 = (X + rh3 * 131 + (fy - 0.5) * (rh3 - 0.5) * 30) / bw3, col3 = Math.floor(xb3), fx3 = xb3 - col3; ch2 = hash(col3, row3 + pk * 13, s + 38);
+          tone += (ch2 - 0.5) * 0.22; if (fy < 0.09) tone += 0.17; else if (fy > 0.9) tone -= 0.26; else if (fy > 0.78) tone -= 0.1;
+          if (fx3 * bw3 < 1.8) tone -= 0.34; else if (fx3 * bw3 < 4) tone += 0.1; else if ((1 - fx3) * bw3 < 3) tone -= 0.1;
+          if (ch2 > 0.35) tone += (fx3 - fy * (ch2 > 0.7 ? 0.9 : -0.9) - (ch2 > 0.7 ? 0.05 : 0.9) > 0 ? -0.07 : 0.06);   // a facet across the block: one side of it a shade darker
+          tone += (noise[(((wy >> 3) & 127) << 7) | ((wx * 2) & 127)] - 0.5) * 0.1;
+        }
+        var wideF = hp > 0.8 ? 3.4 : 1.7; if (dl < wideF) tone -= 0.46; else if (dl < wideF + 2.2) tone += 0.13; if (dr < 3) tone -= 0.13 * (1 - dr / 3);   // the fissure between two panels: dark, the next panel's edge catching the light
+        var cvi = fn * W2 + px, ovs = OVS[cvi];
+        if (ovs > 0) { var dfo = fm - OVY[cvi] - (n1v - 0.5) * 4; if (dfo >= -3 && dfo < 0) tone += 0.2 * ovs; else if (dfo >= 0 && dfo < 20) tone -= 0.44 * ovs * (1 - dfo / 20) * (1 - dfo / 20); }   // an overhang: a jutting bed and the dark under it
+        if (tone < 0.3) tone = 0.3;
         rr = R0[0] * tone; gg = R0[1] * tone; bb = R0[2] * (tone + 0.02);
-        if (big > 0.64 && kk < 0.75 && n2v > 0.3 && fy < 0.5) { rr = rr * 0.45 + 50; gg = gg * 0.45 + 74; bb = bb * 0.45 + 32; }   // moss on the ledges
-        if (fd <= 1) { rr = 38; gg = 30; bb = 30; }                                            // the ink line along the edge
+        var wet = WET[cvi]; if (wet > 0.05) { var wk = wet * (1 - kk * 0.35) * 0.46; rr *= 1 - wk; gg *= 1 - wk * 0.9; bb *= 1 - wk * 0.72; if (n2v > 0.8 && wet > 0.6) { rr += 26; gg += 30; bb += 36; } }   // water running down the rock: a dark streak that glints
+        var mossN = nsm(wx + 91, wy + fn * 517, 3.2) + wet * 0.1 - kk * 0.08;
+        if (mossN > 0.6) { var mk = Math.min(1, (mossN - 0.6) / 0.05) * (style === 1 || fy < 0.58 ? 1 : 0.4) * (n2v > 0.26 ? 1 : 0.25) * 0.86, lit = n1v > 0.5; rr += ((lit ? 100 : 68) - rr) * mk; gg += ((lit ? 132 : 100) - gg) * mk; bb += ((lit ? 60 : 46) - bb) * mk; }   // moss in big patches, thickest on what faces up
+        for (k = 0; k < ledgesHere.length; k++) {            // a grassy ledge: a shelf of turf, the dark under it
+          var lg = ledgesHere[k], ldx = Math.abs(wx - lg.x); if (lg.n !== fn || ldx > lg.hw + 3 || Math.abs(ey - lg.ye * K) > 16) continue;
+          var th = 6.5 * (1 - (ldx / lg.hw) * (ldx / lg.hw)), dq = fd - lg.f;
+          if (ldx <= lg.hw && dq > -th && dq <= 0) { var gl = dq < -th * 0.45 || n2v > 0.64; rr = gl ? 122 : 86; gg = gl ? 154 : 120; bb = gl ? 68 : 52; if (dq > -1.3) { rr = 54; gg = 44; bb = 34; } }
+          else if (dq > 0 && dq < 11) { var sh2 = 0.52 * (1 - dq / 11) * Math.min(1, (lg.hw + 3 - ldx) / 5); rr *= 1 - sh2; gg *= 1 - sh2; bb *= 1 - sh2 * 0.8; }
+        }
+        var footD = tot - fd, inSea = e < 0.45; if (footD < 34) { var blw = qe + (footD + 1) * LW; if (EN[blw] !== 0 || WN[blw] !== 0) footD = 99; }   // the wall goes on below this face (the foot of a wall that turns): no foot here
+        if (fd <= 1) { rr = INK0; gg = INK1; bb = INK2; }                                      // the ink line along the edge
         else if (fd <= 6) { var gt = n2v > 0.45 && fd <= 4; rr = gt ? 96 : R2[0]; gg = gt ? 140 : R2[1]; bb = gt ? 62 : R2[2]; }   // the lit lip, grass hanging over it
-        else if (fd >= tot - 3) { rr = R1[0] * 0.62; gg = R1[1] * 0.62; bb = R1[2] * 0.66; }   // the dark foot
-        if (px > 0 && px < W2 - 1 && (!FN[qi - 1] || !FN[qi + 1]) && lev[lb - 1] === L && lev[lb + 1] === L) { rr = 38; gg = 30; bb = 30; }   // the line down a face's end
+        else if (inSea && footD < 30) {                      // where the wall stands in the sea: wet and dark, weed on it, foam at its foot
+          var wz = 1 - footD / 30; rr *= 1 - 0.46 * wz; gg *= 1 - 0.36 * wz; bb *= 1 - 0.26 * wz;
+          if (footD < 13 && n2v > 0.46) { rr = rr * 0.55 + 16; gg = gg * 0.6 + 40; bb = bb * 0.5 + 22; }
+          if (footD < 4 + (n1v - 0.5) * 7) { rr = 238; gg = 247; bb = 250; }
+        }
+        else if (footD <= 3) { rr = R1[0] * 0.62; gg = R1[1] * 0.62; bb = R1[2] * 0.66; }      // the dark foot
+        if (fallsHere.length) for (k = 0; k < fallsHere.length; k++) {                         // the falling water (still here; w.drawFalls moves over it)
+          var fl = fallsHere[k]; if (fl.n !== fn || Math.abs(ey - fl.ye * K) > 14) continue; var fdx = Math.abs(wx - fl.x - Math.sin(fd * 0.07) * 1.2), fhw = fl.w * 0.5 + fd * 0.03;
+          if (fdx < fhw) { var wv = 0.5 + 0.5 * Math.sin(wx * 1.9 + fd * 0.23); rr = 186 + wv * 56; gg = 214 + wv * 34; bb = 232 + wv * 20; if (fdx > fhw - 1.6) { rr = 104; gg = 138; bb = 160; } }
+          else if (fdx < fhw + 9) { var sp = 1 - (fdx - fhw) / 9; rr *= 1 - 0.3 * sp; gg *= 1 - 0.24 * sp; bb *= 1 - 0.16 * sp; }                 // the rock wet with spray beside it
+        }
         d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255; return;
       }
-      if (L === 3) {                                         // the peaks' ground: scree, and snow lying on it
-        var snow = fbm(wx / 46, wy / 46, s + 77) + (n1v - 0.5) * 0.12; rr = R0[0] * (0.92 + (n2v - 0.5) * 0.3); gg = R0[1] * (0.92 + (n2v - 0.5) * 0.3); bb = R0[2] * (0.94 + (n2v - 0.5) * 0.3);
-        if (snow > 0.5) { var sk = Math.min(1, (snow - 0.5) / 0.06); rr += (238 - rr) * sk; gg += (243 - gg) * sk; bb += (250 - bb) * sk; if (sk < 1) { rr -= 30; gg -= 22; bb -= 8; } }
+      var en = EN[qe], wn = WN[qe];
+      if (en || wn) {                                        // a side wall: dark where it faces east, lit where it faces west; the same beds seen along the wall
+        var east = en !== 0 && (wn === 0 || ED[qe] <= WD[qe]), sn = east ? en : wn, sd = east ? ED[qe] : WD[qe], stot = HF * (sn - L), al = wy - sd, rowS = Math.floor((sd + 5) / 12), fyS = (sd + 5) / 12 - rowS, hS = hash(rowS, sn + (east ? 40 : 80), s + 36);
+        var offS = Math.ceil(sd * SIDE / HF) + 2, proper = lev[east ? qe - offS : qe + offS] >= sn;   // a true side wall has the high ground beside it; without, this is the foot of a south wall that turns a little, and takes that wall's own tone
+        var toneS = (proper ? (east ? 0.62 : 1.24) : 0.86) - 0.14 * Math.min(1, sd / (HF * 1.5)) + (hS - 0.5) * 0.14 + (n2v - 0.5) * 0.1;
+        if (fyS > 0.8) toneS -= 0.14; else if (fyS < 0.2) toneS += 0.08; if (((al + hS * 60) % (20 + hS * 14)) < 1.4) toneS -= 0.2;
+        rr = R0[0] * toneS; gg = R0[1] * toneS; bb = R0[2] * (toneS + (east && proper ? 0.05 : 0.01));
+        var outer = east ? (EN[qe + 1] === 0 && FN[qe + 1] === 0) : (WN[qe - 1] === 0 && FN[qe - 1] === 0);
+        if ((sd <= 1 && proper) || outer) { rr = INK0; gg = INK1; bb = INK2; }
+        else if (sd <= 4 && proper) { rr = R2[0]; gg = R2[1]; bb = R2[2]; }
+        else if (e < 0.45 && stot - sd < 16) { var wz2 = 1 - (stot - sd) / 16; rr *= 1 - 0.4 * wz2; gg *= 1 - 0.3 * wz2; bb *= 1 - 0.2 * wz2; if (stot - sd < 3.5 + (n1v - 0.5) * 6) { rr = 238; gg = 247; bb = 250; } }
         d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255; return;
       }
-      var up = lev[lb - 6 * LW], dn = lev[lb + 6 * LW], lf = lev[lb - 7], rt = lev[lb + 7];
-      var lo = Math.min(up, dn, lf, rt), hi = Math.max(up, dn, lf, rt);
-      if (lo < L) {                                          // the lip of an edge that faces away: pale stones along the drop, an ink line at it
-        var near = Math.min(lev[lb - 2 * LW], lev[lb + 2 * LW], lev[lb - 2], lev[lb + 2]) < L, stone = noise[(((wy >> 1) & 127) << 7) | ((wx >> 1) & 127)];
-        if (near) { d2[o2] = 38; d2[o2 + 1] = 30; d2[o2 + 2] = 30; d2[o2 + 3] = 230; return; }
-        if (stone > 0.34) { var st2 = stone > 0.66 ? 1.1 : 0.96; d2[o2] = R2[0] * st2 + (n2v - 0.5) * 18; d2[o2 + 1] = R2[1] * st2 + (n2v - 0.5) * 18; d2[o2 + 2] = R2[2] * st2 + (n2v - 0.5) * 14; d2[o2 + 3] = 235; }
-        return;
+      if (L === 3) {                                         // the peaks' ground: scree, and snow lying on it in long drifts, more of it further in
+        var mf3 = mfr[qe] / 64, snb = snv + Math.min(0.3, (mf3 - 3) * 0.6) - 0.03 + (n2v - 0.5) * 0.08, sn3 = snb + (n1v - 0.5) * 0.26, gr3 = 0.86 + (n2v - 0.5) * 0.3 + (noise[(((wy * 3) & 127) << 7) | ((wx >> 1) & 127)] - 0.5) * 0.3;
+        rr = R0[0] * gr3; gg = R0[1] * gr3; bb = R0[2] * (gr3 + 0.02);
+        var ps = white[(((wy + 201) & 255) << 8) | ((wx + 17) & 255)]; if (ps > 0.975) { rr = R2[0] * 1.05; gg = R2[1] * 1.05; bb = R2[2] * 1.05; } else if (ps < 0.03) { rr *= 0.72; gg *= 0.72; bb *= 0.76; }
+        if (sn3 > 0.52) { var skk = Math.min(1, (sn3 - 0.52) / 0.035), sn4 = snb + (noise[(((wy + 4) & 127) << 7) | ((wx + 5) & 127)] - 0.5) * 0.26, shd = sn4 < 0.535 ? 1 : 0; var sv = (sfv - 0.5) * 34; rr += ((shd ? 188 : 228 + sv * 0.5) - rr) * skk; gg += ((shd ? 204 : 235 + sv * 0.4) - gg) * skk; bb += ((shd ? 230 : 246 + sv * 0.2) - bb) * skk; }   // (the fields a little blue in their hollows)   // blue in the snow's lower right edge
+        d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255; return;
       }
-      if (hi > L) {                                          // under such an edge, on the low side: the foot of its far face, a thin dark band
-        var nearHi = Math.max(lev[lb - 2 * LW], lev[lb + 2 * LW], lev[lb - 2], lev[lb + 2]) > L;
-        if (nearHi) { d2[o2] = R1[0] * 0.7; d2[o2 + 1] = R1[1] * 0.7; d2[o2 + 2] = R1[2] * 0.76; d2[o2 + 3] = 215; }
-        else { d2[o2] = 20; d2[o2 + 1] = 30; d2[o2 + 2] = 40; d2[o2 + 3] = 46; }
-        return;
+      if (fallsHere.length) for (k = 0; k < fallsHere.length; k++) {                           // the waterfall's water on the ground: the pool, the stream above, the brook out of it and the bog it sinks into
+        var f = fallsHere[k], wyw = wy / K; if (wx < f.box[0] || wx > f.box[2] || wyw < f.box[1] || wyw > f.box[3]) continue;
+        var pd = Math.hypot((wx - f.pool.x) / f.pool.rx, (wyw - f.pool.y) / f.pool.ry) + (n1v - 0.5) * 0.14 + (big - 0.5) * 0.1;
+        if (pd < 1.14 && L === f.lvl) {
+          if (pd > 1.0) { rr = 150 + (n2v - 0.5) * 36; gg = 142 + (n2v - 0.5) * 32; bb = 124 + (n2v - 0.5) * 26; d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255 * Math.min(1, (1.14 - pd) / 0.06); return; }   // wet gravel round it
+          var dp = Math.min(1, (1 - pd / 0.95) * 1.5); if (dp < 0) dp = 0; dp = dp * dp * (3 - 2 * dp);
+          rr = 124 + (30 - 124) * dp + (n2v - 0.5) * 10; gg = 184 + (86 - 184) * dp + (n2v - 0.5) * 10; bb = 176 + (106 - 176) * dp + (n2v - 0.5) * 10;
+          if (pd > 0.95) { rr = 62; gg = 88; bb = 90; } else if (big > 0.66 && n2v > 0.6) { rr += 16; gg += 16; bb += 14; }
+          d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255; return;
+        }
+        var onUp = L === f.n, sdw = onUp ? lineD(f.stream, wx, wyw) : (L === f.lvl ? lineD(f.out, wx, wyw) : 99), shw = (onUp ? 7.6 : 6.4) + (n1v - 0.5) * 2.6;
+        if (sdw < shw + 3.2) {
+          if (sdw < shw) { var ce = sdw / shw; rr = 92 + ce * 30 + (n2v - 0.5) * 14; gg = 156 + ce * 22 + (n2v - 0.5) * 12; bb = 166 + ce * 6 + (n2v - 0.5) * 10; if (ce > 0.8) { rr = 66; gg = 96; bb = 100; } else if (n2v > 0.84) { rr = 226; gg = 242; bb = 248; } d2[o2 + 3] = 255; }
+          else { rr = 134 + (n2v - 0.5) * 30; gg = 122 + (n2v - 0.5) * 26; bb = 98 + (n2v - 0.5) * 22; d2[o2 + 3] = 220 * (1 - (sdw - shw) / 3.2); }                                              // the damp bank
+          d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; return;
+        }
+        if (L === f.lvl) { var bd0 = Math.hypot(wx - f.bog.x, (wyw - f.bog.y) * 1.25) / f.bog.r + (n1v - 0.5) * 0.5; if (bd0 < 1) { var gl2 = n2v > 0.8 ? 1 : 0; d2[o2] = 72 + (n2v - 0.5) * 20 + gl2 * 60; d2[o2 + 1] = 98 + (n2v - 0.5) * 24 + gl2 * 70; d2[o2 + 2] = 66 + (n2v - 0.5) * 20 + gl2 * 88; d2[o2 + 3] = 235 * Math.min(1, (1 - bd0) / 0.25); return; } }   // the bog: dark olive, glints of standing water
       }
-      if (SH[qi]) { d2[o2] = 14; d2[o2 + 1] = 18; d2[o2 + 2] = 34; d2[o2 + 3] = SH[qi] * 6.5; }
+      var bdist = BD[qe] * 0.5, bo = BO[qe], oth = (bo >> 2) === L ? (bo & 3) : (bo >> 2), al2 = 0;
+      if (bdist <= 52 && oth !== L) {
+        if (oth < L) {                                       // the crest of an edge: an ink line at the drop, pale stones along it
+          if (bdist <= 1.7) { d2[o2] = INK0; d2[o2 + 1] = INK1; d2[o2 + 2] = INK2; d2[o2 + 3] = 245; return; }
+          var stone = n1v, cw2 = 5.5 + stone * 5;                                // a rim of rock, its inner edge ragged, darker where it turns down to the drop
+          if (bdist <= cw2) { var st2 = bdist < 3.2 ? 0.8 : (stone > 0.56 ? 1.12 : 0.98); d2[o2] = R2[0] * st2 + (n2v - 0.5) * 18; d2[o2 + 1] = R2[1] * st2 + (n2v - 0.5) * 18; d2[o2 + 2] = R2[2] * st2 + (n2v - 0.5) * 14; d2[o2 + 3] = bdist > cw2 - 1 ? 150 : 245; return; }
+          if (bdist <= 24) { d2[o2] = 232; d2[o2 + 1] = 226; d2[o2 + 2] = 168; d2[o2 + 3] = 62 * (1 - (bdist - cw2) / (24 - cw2)); return; }   // the turf paler toward the drop: wind-bitten
+        } else {                                             // the low ground under an edge that faces away: an ink line, then the dark of the wall's foot, deepest at the wall
+          if (bdist <= 2.3) { d2[o2] = INK0; d2[o2 + 1] = INK1; d2[o2 + 2] = INK2; d2[o2 + 3] = 245; return; }
+          var ao = 1 - bdist / 52; al2 = 0.62 * ao * Math.sqrt(ao);
+        }
+      }
+      if (HN[qe]) { var hs = Math.min(1, (HF * 8 / 7 * (HN[qe] - L) - HD[qe]) / 10); if (hs > 0) al2 = 1 - (1 - al2) * (1 - 0.26 * hs); }   // the shadow a cliff throws east (and the strip at a south face's foot)
+      if (al2 > 0.01) { d2[o2] = 14; d2[o2 + 1] = 20; d2[o2 + 2] = 36; d2[o2 + 3] = 255 * al2; }
     }
     oc.putImageData(img, 0, 0);
     c.imageSmoothingEnabled = true; c.drawImage(ov, 0, 0, W2, H2);
@@ -4821,21 +5115,82 @@ function make(kit, opts) {
       else { c.fillStyle = '#fff6ea'; c.strokeStyle = 'rgba(150,104,52,0.7)'; c.lineWidth = 0.6; c.beginPath(); c.ellipse(sx, sy, 2, 1.5, 0.5, 0, 7); c.fill(); c.stroke(); }
     }
     if (d2) {
+      tP = pnow();
       ov2 = kit.mk(W2, H2); ov2.getContext('2d').putImageData(img2, 0, 0); c.drawImage(ov2, 0, 0, W2, H2);   // the rock, over the meadow
-      var RKc = rockPal(), fxp, fyp, qf; c.lineCap = 'round';
-      for (fyp = 1; fyp < H2 - 1; fyp++) for (fxp = 1; fxp < W2 - 1; fxp++) {
-        qf = fyp * W2 + fxp; if (!FN[qf]) continue; var wxf = cx * W2 + fxp, wyf = cy * H2 + fyp, hf = hash(wxf, wyf, s + 61);
-        if (mtn.ramps.length && (cellAt(wxf, wyf / K) & M_RAMP)) continue;
-        if (FD[qf] === 2 && hf < 0.2) {                       // a tuft over the lip
-          var nb = 2 + Math.floor(hf * 20), bi; c.lineWidth = 0.9;
-          for (bi = 0; bi < nb; bi++) { var hb = hash(wxf + bi, wyf, s + 62), down = hb < 0.45; c.strokeStyle = hb > 0.6 ? '#86b450' : '#5d8a3a'; c.beginPath(); c.moveTo(fxp + (bi - nb / 2) * 1.3, fyp - 1.5); c.quadraticCurveTo(fxp + (bi - nb / 2) * 1.8, fyp - (down ? 0 : 5), fxp + (bi - nb / 2) * 2.4 + (hb - 0.5) * 3, fyp + (down ? 3.5 + hb * 4 : -5 - hb * 3)); c.stroke(); }
-        } else if (FD[qf] === 2 && hf > 0.955) {              // a stone standing proud of the edge
-          c.fillStyle = 'rgb(' + RKc.hl.join(',') + ')'; c.strokeStyle = 'rgba(38,30,30,0.9)'; c.lineWidth = 0.7; c.beginPath(); c.ellipse(fxp, fyp - 1.5, 3 + hf * 2, 2.2, 0, 0, 7); c.fill(); c.stroke();
+      /* What is drawn with a pen over the painted rock: tufts over a lip, stones proud of an edge, scree at a foot, the stones
+         and sedge of the fells, heather, the rocks round the pool. Everything is placed from the world's own position (never
+         the piece's) and looked for a little way past the piece's border, so a thing cut by a border is drawn whole by both. */
+      var RKc = rockPal(), fxp, fyp, qf, INKS = 'rgba(38,30,30,0.9)', HL = 'rgb(' + RKc.hl.map(Math.round).join(',') + ')', BS = 'rgb(' + RKc.base.map(Math.round).join(',') + ')', X0p = cx * W2, Y0p = cy * H2, bi, si; c.lineCap = 'round'; c.lineJoin = 'round';
+      var stoneAt = function (x, y, rx, ry, col, seed, cap) {  // a stone: an uneven outline in ink, heavier on the lower right, a lit top
+        var a3, pts = []; for (a3 = 0; a3 < 7; a3++) { var an = a3 / 7 * 6.283 + 0.3, rq = 0.78 + hash(seed, a3, 5) * 0.44; pts.push([x + Math.cos(an) * rx * rq, y + Math.sin(an) * ry * rq]); }
+        c.fillStyle = 'rgba(14,20,36,0.3)'; c.beginPath(); c.ellipse(x + rx * 0.35, y + ry * 0.55, rx * 1.05, ry * 0.6, 0, 0, 7); c.fill();
+        c.fillStyle = col; c.beginPath(); pts.forEach(function (p, i4) { if (i4) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.fill();
+        c.fillStyle = cap ? 'rgba(244,247,252,0.95)' : 'rgba(255,255,255,0.24)'; c.beginPath(); c.ellipse(x - rx * 0.15, y - ry * 0.34, rx * (cap ? 0.72 : 0.5), ry * (cap ? 0.42 : 0.34), 0, 0, 7); c.fill();
+        c.strokeStyle = INKS; c.lineWidth = 0.6; c.beginPath(); pts.forEach(function (p, i4) { if (i4) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); c.stroke();
+        c.lineWidth = 1.15; c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); c.lineTo(pts[1][0], pts[1][1]); c.lineTo(pts[2][0], pts[2][1]); c.stroke();
+      };
+      var blades = function (x, y, n4, hgt, cols, seed, spread) { var b4; c.lineWidth = 0.9; for (b4 = 0; b4 < n4; b4++) { var hb4 = hash(seed + b4, seed, s + 62), ox = (b4 - (n4 - 1) / 2) * (spread || 1.5); c.strokeStyle = cols[hb4 > 0.55 ? 1 : 0]; c.beginPath(); c.moveTo(x + ox, y); c.quadraticCurveTo(x + ox * 1.4, y - hgt * 0.6, x + ox * 1.9 + (hb4 - 0.5) * 3, y - hgt * (0.7 + hb4 * 0.5)); c.stroke(); } };
+      var GRN = ['#5d8a3a', '#86b450'], SEDGE = ['#8a8748', '#bfae62'];
+      for (fyp = -10; fyp < H2 + 10; fyp++) for (fxp = -10; fxp < W2 + 10; fxp++) {
+        qf = (fyp + PADR) * LW + fxp + MG; var fnq = FN[qf]; if (!fnq && BD[qf] > 1) continue;
+        var wxf = X0p + fxp, wyf = Y0p + fyp, hf = white[(((wyf + 77) & 255) << 8) | ((wxf + 31) & 255)];
+        if (fnq) {
+          if (hf > 0.2 && hf < 0.86) continue;
+          if (mtn.ramps.length && (cellAt(wxf, wyf / K) & M_RAMP)) continue;
+          if (FD[qf] === 2 && hf < 0.2) {                     // a tuft over the lip
+            var nb = 2 + Math.floor(hf * 20); c.lineWidth = 0.9;
+            for (bi = 0; bi < nb; bi++) { var hb = hash(wxf + bi, wyf, s + 62), down = hb < 0.45; c.strokeStyle = hb > 0.6 ? '#86b450' : '#5d8a3a'; c.beginPath(); c.moveTo(fxp + (bi - nb / 2) * 1.3, fyp - 1.5); c.quadraticCurveTo(fxp + (bi - nb / 2) * 1.8, fyp - (down ? 0 : 5), fxp + (bi - nb / 2) * 2.4 + (hb - 0.5) * 3, fyp + (down ? 3.5 + hb * 4 : -5 - hb * 3)); c.stroke(); }
+          } else if (FD[qf] === 2 && hf > 0.955) stoneAt(fxp, fyp - 1.5, 3 + hf * 2, 2.2, HL, wxf + wyf);   // a stone standing proud of the edge
+          if (hf > 0.86 && !FN[qf + LW] && !EN[qf + LW] && !WN[qf + LW] && elevAt(wxf, (wyf + 4) / K) > 0.5) {   // scree at the foot (not where the foot is in the sea)
+            var ns = 1 + Math.floor((hf - 0.86) * 28); for (si = 0; si < ns; si++) { var hs = hash(wxf, wyf + si, s + 63); stoneAt(fxp + (hs - 0.5) * 9, fyp + 1 + hash(wxf + si, wyf, s + 64) * 6, 1.2 + hs * 2.4, 0.9 + hs * 1.6, hs > 0.5 ? HL : BS, wxf + si * 7); }
+            if (hf > 0.95) blades(fxp, fyp + 3, 3, 5, GRN, wxf);
+          }
+        } else if (!EN[qf] && !WN[qf] && lev[qf] < 3 && hf < 0.2) {   // the crest of an edge that faces away or runs north to south: stones standing on it, grass over it (what is on the high ground overlaps the low)
+          var boq = BO[qf], Lq2 = lev[qf], othq = (boq >> 2) === Lq2 ? (boq & 3) : (boq >> 2); if (othq > Lq2 || FN[qf + LW] || FN[qf + 2 * LW] || FN[qf + 3 * LW]) continue;
+          if (cellAt(wxf, wyf / K) & (M_RAMP | M_WATER)) continue;
+          if (hf < 0.085) stoneAt(fxp, fyp - 1, 2.4 + hf * 34, 1.7 + hf * 18, hf < 0.04 ? HL : BS, wxf * 3 + wyf);
+          else blades(fxp, fyp, 3 + Math.floor(hf * 12) % 3, 5.5, GRN, wxf + wyf);
         }
-        if (!FN[qf + W2] && hf > 0.86) {                      // scree at the foot
-          var ns = 1 + Math.floor((hf - 0.86) * 28), si; for (si = 0; si < ns; si++) { var hs = hash(wxf, wyf + si, s + 63), sxp = fxp + (hs - 0.5) * 9, syp = fyp + 1 + hash(wxf + si, wyf, s + 64) * 6, sr = 1.2 + hs * 2.4; c.fillStyle = 'rgb(' + (hs > 0.5 ? RKc.hl : RKc.base).join(',') + ')'; c.strokeStyle = 'rgba(38,30,30,0.85)'; c.lineWidth = 0.6; c.beginPath(); c.ellipse(sxp, syp, sr, sr * 0.7, 0, 0, 7); c.fill(); c.stroke(); }
-          if (hf > 0.95) { c.strokeStyle = '#5d8a3a'; c.lineWidth = 0.9; for (si = 0; si < 3; si++) { c.beginPath(); c.moveTo(fxp + si * 1.4 - 2, fyp + 3); c.lineTo(fxp + si * 2 - 3, fyp - 2 - si); c.stroke(); } }
+      }
+      var CS = 15, gx, gy;                                    // the fells' own ground: stones and slabs, sedge, heather; boulders on the peaks' scree
+      for (gy = Math.floor((Y0p - 10) / CS); gy <= Math.floor((Y0p + H2 + 10) / CS); gy++) for (gx = Math.floor((X0p - 10) / CS); gx <= Math.floor((X0p + W2 + 10) / CS); gx++) {
+        var h0 = hash(gx, gy, s + 65); if (h0 > 0.5) continue;
+        var dxp = (gx + hash(gx, gy, s + 66)) * CS - X0p, dyp = (gy + hash(gx, gy, s + 67)) * CS - Y0p; if (dxp < -9 || dyp < -9 || dxp >= W2 + 9 || dyp >= H2 + 9) continue;
+        var qd = (Math.round(dyp) + PADR) * LW + Math.round(dxp) + MG, Ld = lev[qd]; if (!Ld || FN[qd] || EN[qd] || WN[qd] || BD[qd] < (Ld === 3 ? 10 : 18)) continue;
+        if (cellAt(X0p + dxp, (Y0p + dyp) / K) & (M_RAMP | M_WATER)) continue;
+        var hz = hash(gx, gy, s + 71), clu = nsm(X0p + dxp + 900, Y0p + dyp + 300, 2.6) > 0.55 ? 2.4 : 0.3;
+        if (Ld === 3) { if (h0 < 0.05 && (mfr[qd] < 215 || hz > 0.7)) stoneAt(dxp, dyp, 4 + hz * 6, 2.8 + hz * 3.6, hz > 0.5 ? BS : HL, gx * 31 + gy, mfr[qd] > 205 && hz > 0.3); continue; }
+        if (h0 < (Ld === 2 ? 0.1 : 0.06) * clu) { if (hz > 0.72 && Ld === 2) { stoneAt(dxp, dyp, 6 + hz * 5, 2.6 + hz * 2, HL, gx * 31 + gy); c.fillStyle = 'rgba(150,160,84,0.7)'; for (si = 0; si < 4; si++) { c.beginPath(); c.arc(dxp + (hash(gx + si, gy, 73) - 0.5) * 8, dyp + (hash(gx, gy + si, 74) - 0.5) * 3, 0.9, 0, 7); c.fill(); } } else stoneAt(dxp, dyp, 1.8 + hz * 3.2, 1.3 + hz * 2, hz > 0.5 ? HL : BS, gx * 31 + gy); }   // a stone; on the plateau now and then a flat slab with lichen on it
+        else if (h0 > 0.24 && h0 < (Ld === 2 ? 0.37 : 0.35)) blades(dxp, dyp, 3 + Math.floor(hz * 3), 4 + hz * 2.5, SEDGE, gx * 17 + gy, 1.3);   // a tuft of dry sedge
+        else if (Ld === 2 && h0 > 0.4 && h0 < 0.47) {         // a cushion of heather
+          c.fillStyle = 'rgba(74,84,52,0.85)'; c.beginPath(); c.ellipse(dxp, dyp, 5 + hz * 3, 2.6 + hz * 1.2, 0, 0, 7); c.fill();
+          for (si = 0; si < 7; si++) { c.fillStyle = hash(gx + si, gy, 75) > 0.4 ? '#b07ca4' : '#8f6488'; c.beginPath(); c.arc(dxp + (hash(gx + si, gy, 76) - 0.5) * (9 + hz * 5), dyp - 0.6 + (hash(gx, gy + si, 77) - 0.5) * 3.6, 0.85, 0, 7); c.fill(); }
         }
+      }
+      ledgesHere.forEach(function (lg) {                      // grass on a ledge, a strand or two hanging off it
+        var i5; for (i5 = 0; i5 < 6; i5++) { var lx = lg.x + (i5 / 5 - 0.5) * lg.hw * 1.6, th = 6.5 * (1 - Math.pow((lx - lg.x) / lg.hw, 2)); blades(lx - X0p, lg.ye * K + lg.f - th - Y0p, 2, 5, GRN, Math.round(lg.x) + i5 * 13); }
+        c.strokeStyle = '#5d8a3a'; c.lineWidth = 0.9; for (i5 = 0; i5 < 3; i5++) { var hx5 = lg.x + (hash(i5, Math.round(lg.x), s + 78) - 0.5) * lg.hw * 1.5 - X0p, hy5 = lg.ye * K + lg.f - Y0p; c.beginPath(); c.moveTo(hx5, hy5 - 1); c.quadraticCurveTo(hx5 + 1.5, hy5 + 3, hx5 + 0.5, hy5 + 5 + i5 * 2); c.stroke(); }
+      });
+      fallsHere.forEach(function (f) {                        // rocks round the pool, stones on the banks, reeds in the bog
+        var i6, pl = f.pool, o0 = f.out[0];
+        for (i6 = 0; i6 < 24; i6++) {
+          var an = i6 / 24 * 6.283 + hash(i6, 3, s + 68) * 0.2, hz6 = hash(i6, 5, s + 70); if (Math.sin(an) < -0.5 || hz6 < 0.32) continue;
+          var rq6 = 1.01 + hash(i6, 4, s + 69) * 0.1, px6 = pl.x + Math.cos(an) * pl.rx * rq6, py6 = pl.y + Math.sin(an) * pl.ry * rq6; if (Math.hypot(px6 - o0[0], py6 - o0[1]) < 13) continue;
+          stoneAt(px6 - X0p, py6 * K - Y0p, 2.6 + hz6 * 4.4, 1.9 + hz6 * 2.6, hz6 > 0.66 ? HL : BS, i6 + 300);
+        }
+        [f.stream, f.out].forEach(function (pts, wh) { var k6; for (k6 = 0; k6 < pts.length - 1; k6++) { var p = pts[k6], q6 = pts[k6 + 1], seg = Math.hypot(q6[0] - p[0], q6[1] - p[1]), m6, nx = -(q6[1] - p[1]) / seg, ny = (q6[0] - p[0]) / seg; for (m6 = wh ? 8 : 12; m6 < seg; m6 += 15) { var hh6 = hash(k6 * 9 + m6, wh, s + 79); if (hh6 < 0.4) continue; var sd6 = hh6 > 0.7 ? 1 : -1, bx6 = p[0] + (q6[0] - p[0]) * m6 / seg + nx * sd6 * 10.5, by6 = p[1] + (q6[1] - p[1]) * m6 / seg + ny * sd6 * 10.5; if (cellAt(bx6, by6) & M_BLOCK) continue; stoneAt(bx6 - X0p, by6 * K - Y0p, 1.8 + hh6 * 2.4, 1.3 + hh6 * 1.4, hh6 > 0.6 ? HL : BS, k6 * 40 + m6); } } });
+        for (i6 = 0; i6 < 14; i6++) { var ra = hash(i6, 7, s + 80) * 6.283, rd6 = Math.sqrt(hash(i6, 8, s + 81)) * f.bog.r * 0.85; blades(f.bog.x + Math.cos(ra) * rd6 - X0p, (f.bog.y + Math.sin(ra) * rd6 * 0.8) * K - Y0p, 3, 7 + hash(i6, 9, s + 82) * 4, ['#6f8a3c', '#a4a85a'], i6 * 5 + 900, 1.2); }
+      });
+      w.prof.pen += pnow() - tP;
+    }
+    if (mtn && mtn.peaks.length) {                           // the peaks that reach into this piece, far to near (the list is kept in that order)
+      var pki, ck0 = cy * CW + cx;
+      for (pki = 0; pki < mtn.peaks.length; pki++) {
+        var pkq = mtn.peaks[pki], pim = IMAGES[pkq.name]; if (!pim) continue;
+        var pl = pkq.x - pim.ax * pim.upp * pkq.s, pt = pkq.y * K - pim.ay * pim.upp * pkq.s, pw2 = pim.w * pim.upp * pkq.s, ph2 = pim.h * pim.upp * pkq.s;
+        if (pl > (cx + 1) * W2 || pl + pw2 < cx * W2 || pt > (cy + 1) * H2 || pt + ph2 < cy * H2) continue;
+        if (!imgReady(pim.img)) { if (!imgWait[ck0]) { imgWait[ck0] = 1; imgWaitN++; } continue; }   // not loaded yet: this piece is painted again when they are
+        c.drawImage(pim.img, pl - cx * W2, pt - cy * H2, pw2, ph2);
       }
     }
     for (yy = 0; yy < CT; yy++) for (xx = 0; xx < CT; xx++) if (code(cx * CT + xx, cy * CT + yy) === 4) {       // the jetty
@@ -4845,13 +5200,15 @@ function make(kit, opts) {
     return ccv;
   }
   w.bakeChunk = bakeChunk;
+  w.prof = { n: 0, lev: 0, sweep: 0, paint: 0, pen: 0 };   // where a bake's time went, in milliseconds (the mountains' parts)
   w.waterCv = bakeChunk(-64, -64);                      // far outside the map: nothing but deep sea
   // the pieces of the map in view; at most one new piece is painted per call, and the oldest are forgotten
-  var stale = {}, lastBake = -1e9;
+  var stale = {}, lastBake = -1e9, imgWait = {}, imgWaitN = 0;
   w.bakes = 0; w.bakeMs = 0;                               // how many ground pieces were baked and how long it took (the frame log reads and clears them)
   function pnow() { return typeof performance !== 'undefined' ? performance.now() : Date.now(); }
   w.drawGround = function (c, cam, hw, hh) {
     var pw = CT * T, phh = CT * TS, baked = 0;
+    if (imgWaitN && mtn && !mtn.peaks.some(function (pq) { return IMAGES[pq.name] && !imgReady(IMAGES[pq.name].img); })) { for (var wk in imgWait) if (chunkCv[wk]) stale[wk] = 1; imgWait = {}; imgWaitN = 0; }   // the peaks' pictures have come: the pieces painted without them are painted again
     for (var qy = Math.max(0, Math.floor((cam.y - hh) / phh)); qy < CH && qy * phh < cam.y + hh; qy++) for (var qx = Math.max(0, Math.floor((cam.x - hw) / pw)); qx < CW && qx * pw < cam.x + hw; qx++) {
       var ck = qy * CW + qx, piece = w.waterCv;
       if (landChunk[ck]) {
@@ -4866,14 +5223,15 @@ function make(kit, opts) {
   };
   // the meadow under the blades (painted first, still): soft lighter and darker patches of grass, bare earth, and drifts of
   // tiny flowers in several colours, the way a real meadow is blotchy and flecked rather than one green
-  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (mtn && (cellAt(x, y / K) & (M_BLOCK | M_RAMP))) return false; var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
+  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
+  function fellOf(x, y) { return mtn ? cellAt(x, y / K) & 3 : 0; }   // 0 the low ground, 1 the foothills, 2 the high plateau (a screen position)
   w.drawMeadow = function (c, cam, hw, hh, G) {
     var sp = G.patchSize || 70, gx0 = Math.floor((cam.x - hw) / sp) - 2, gx1 = Math.ceil((cam.x + hw) / sp) + 1, gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 2, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1, gx, gy;
     if (G.patches > 0) for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) {           // big soft blotches, lighter or darker
       var hp = hash(gx, gy, 41); if (hp > 0.8) continue;
       var x = (gx + hash(gx, gy, 42)) * sp, y = (gy + hash(gx, gy, 43)) * sp * 0.75; if (!meadowOk(x, y)) continue;
-      var r = sp * (0.5 + hash(gx, gy, 44) * 0.7), light = hp < 0.45;
-      var gr = c.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, light ? G.patchLight : G.patchDark); gr.addColorStop(1, 'rgba(0,0,0,0)');
+      var r = sp * (0.5 + hash(gx, gy, 44) * 0.7), light = hp < 0.45, fl0 = fellOf(x, y); if (fl0 === 2 && !light) continue;   // the fells: paler, drier blotches, no deep green ones up on the plateau
+      var gr = c.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, fl0 ? (light ? '#c9bd7c' : '#5f6f44') : (light ? G.patchLight : G.patchDark)); gr.addColorStop(1, 'rgba(0,0,0,0)');
       c.save(); c.translate(x, y); c.scale(1, 0.6 + hash(gx, gy, 45) * 0.2); c.rotate((hash(gx, gy, 46) - 0.5) * 0.8); c.translate(-x, -y);
       c.fillStyle = gr; c.globalAlpha = (light ? 0.5 : 0.4) * G.patches; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore();
     }
@@ -4881,7 +5239,7 @@ function make(kit, opts) {
     var es = sp * 1.9; gx0 = Math.floor((cam.x - hw) / es) - 1; gx1 = Math.ceil((cam.x + hw) / es); gy0 = Math.floor((cam.y - hh) / (es * 0.75)) - 1; gy1 = Math.ceil((cam.y + hh) / (es * 0.75));
     if (G.earth > 0) for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) {             // bare earth showing through, with a soft grassy edge
       if (hash(gx, gy, 51) > G.earth) continue;
-      var ex0 = (gx + hash(gx, gy, 52)) * es, ey0 = (gy + hash(gx, gy, 53)) * es * 0.75; if (!meadowOk(ex0, ey0)) continue;
+      var ex0 = (gx + hash(gx, gy, 52)) * es, ey0 = (gy + hash(gx, gy, 53)) * es * 0.75; if (!meadowOk(ex0, ey0) || fellOf(ex0, ey0)) continue;   // no bare earth on the fells: stone shows through there instead
       var er = 9 + hash(gx, gy, 54) * 14, k;
       c.save(); c.translate(ex0, ey0); c.rotate((hash(gx, gy, 55) - 0.5) * 1.2); c.scale(1, 0.55);
       c.fillStyle = G.earthEdge; c.globalAlpha = 0.55; c.beginPath(); for (k = 0; k < 8; k++) { var aa = k / 8 * 6.283, rr = er * (1.15 + (hash(gx * 3 + k, gy, 56) - 0.5) * 0.5); c.lineTo(Math.cos(aa) * rr, Math.sin(aa) * rr); } c.closePath(); c.fill();
@@ -4894,6 +5252,7 @@ function make(kit, opts) {
     if (G.drifts > 0) for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) {            // drifts of tiny flowers, one colour to a drift
       if (hash(gx, gy, 61) > G.drifts) continue;
       var dx0 = (gx + hash(gx, gy, 62)) * ds, dy0 = (gy + hash(gx, gy, 63)) * ds * 0.75, n = 8 + Math.floor(hash(gx, gy, 64) * 16), col = G.bloom[Math.floor(hash(gx, gy, 65) * G.bloom.length) % G.bloom.length];
+      var fl1 = fellOf(dx0, dy0); if (fl1 === 2 || (fl1 === 1 && hash(gx, gy, 68) > 0.35)) continue; if (fl1) { n = Math.ceil(n * 0.5); col = G.bloom[0]; }   // few flowers on the foothills (the pale ones), none on the plateau
       var ang = hash(gx, gy, 66) * 3.14, lenD = ds * (0.5 + hash(gx, gy, 67) * 0.6), wid = ds * 0.18;
       c.fillStyle = col;
       for (var q = 0; q < n; q++) {
@@ -4909,23 +5268,24 @@ function make(kit, opts) {
   w.drawGrass = function (c, cam, hw, hh, clock, G) {
     G = G || GRASS; if (!w.meadowLook) w.drawMeadow(c, cam, hw, hh, G); if (!(G.density > 0)) return;   // a page that sets w.meadowLook has the meadow baked into the ground
     var sp = G.spacing, gx0 = Math.floor((cam.x - hw) / sp) - 1, gx1 = Math.ceil((cam.x + hw) / sp), gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 1, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1;
-    var cols = [G.dark, G.mid, G.light], sp0 = G.speed;
+    var cols = [G.dark, G.mid, G.light], sp0 = G.speed, FELLC = ['#5f6a3a', '#858a4c', '#aea766'];
     c.lineCap = 'round';
     for (var gy = gy0; gy <= gy1; gy++) for (var gx = gx0; gx <= gx1; gx++) {
       var h1 = hash(gx, gy, 31); if (h1 > G.density) continue;
       var x = (gx + hash(gx, gy, 32)) * sp, y = (gy + hash(gx, gy, 33)) * sp * 0.75;
       if (x < 0 || y < 0 || x >= WX || y / K >= WY) continue;
       if (!meadowOk(x, y)) continue;
+      var fl2 = fellOf(x, y), fk = fl2 === 2 ? 0.5 : (fl2 === 1 ? 0.72 : 1); if (fl2 && h1 > G.density * (fl2 === 2 ? 0.5 : 0.75)) continue;   // the fells: shorter, thinner, drier grass
       var wave = Math.sin(x * 0.011 - clock * 0.9 * sp0 + y * 0.007), gust = Math.sin(clock * 0.35 * sp0 + x * 0.004 - y * 0.003);
       if (G.shimmer > 0 && wave > 0.2) { var gr = c.createRadialGradient(x, y, 0, x, y, sp * 1.1); gr.addColorStop(0, G.glow); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.save(); c.translate(x, y); c.scale(1, 0.5); c.translate(-x, -y); c.fillStyle = gr; c.globalAlpha = (wave - 0.2) * 0.34 * G.shimmer; c.beginPath(); c.arc(x, y, sp * 1.1, 0, 7); c.fill(); c.restore(); c.globalAlpha = 1; }
       var sway = (Math.sin(clock * 1.9 * sp0 + x * 0.05 + y * 0.03) * 0.5 + gust * 0.7 + wave * 0.25) * G.sway, n = 3 + Math.floor(hash(gx, gy, 34) * 3);
       if (G.shade > 0) { c.fillStyle = G.dark; c.globalAlpha = 0.28 * G.shade; c.beginPath(); c.ellipse(x, y + 0.6, 4.6, 1.8, 0, 0, 7); c.fill(); c.globalAlpha = 1; }
       for (var k = 0; k < n; k++) {
-        var hk = hash(gx * 7 + k, gy, 35), bx = (k - (n - 1) / 2) * 1.7 + (hk - 0.5) * 1.2, bh = G.height * (0.65 + hk * 0.7), lean = (k - (n - 1) / 2) * 0.9 + sway * bh * 0.5;
-        c.fillStyle = cols[(k + gx + gy) % 3 === 0 ? 0 : (hk > 0.55 ? 2 : 1)];
+        var hk = hash(gx * 7 + k, gy, 35), bx = (k - (n - 1) / 2) * 1.7 + (hk - 0.5) * 1.2, bh = G.height * fk * (0.65 + hk * 0.7), lean = (k - (n - 1) / 2) * 0.9 + sway * bh * 0.5;
+        c.fillStyle = (fl2 ? FELLC : cols)[(k + gx + gy) % 3 === 0 ? 0 : (hk > 0.55 ? 2 : 1)];
         c.beginPath(); c.moveTo(x + bx - 0.9, y); c.quadraticCurveTo(x + bx + lean * 0.35, y - bh * 0.6, x + bx + lean, y - bh); c.quadraticCurveTo(x + bx + lean * 0.35 + 0.5, y - bh * 0.55, x + bx + 0.9, y); c.closePath(); c.fill();
       }
-      if (G.flowers > 0 && hash(gx, gy, 36) < G.flowers) {
+      if (G.flowers > 0 && fl2 < 2 && hash(gx, gy, 36) < G.flowers * (fl2 ? 0.4 : 1)) {
         var fc = G.bloom[Math.floor(hash(gx, gy, 37) * G.bloom.length) % G.bloom.length], fh = G.height * 0.9;
         c.strokeStyle = G.mid; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x + 2.2, y); c.lineTo(x + 2.2 + sway * fh * 0.5, y - fh); c.stroke();
         c.fillStyle = fc; c.beginPath(); c.arc(x + 2.2 + sway * fh * 0.5, y - fh, 1.4, 0, 7); c.fill();
@@ -4964,12 +5324,50 @@ function make(kit, opts) {
           if ((b0 > 0) !== (c0 > 0)) pts.push(X + T, Y + b0 / (b0 - c0) * TS);
           if ((d0 > 0) !== (c0 > 0)) pts.push(X + d0 / (d0 - c0) * T, Y + TS);
           if ((a0 > 0) !== (d0 > 0)) pts.push(X, Y + a0 / (a0 - d0) * TS);
+          if (mtn && ((cellAt(pts[0], pts[1] / K) | cellAt(pts[2], pts[3] / K)) & M_BLOCK)) continue;   // not over a sea cliff's foot
           c.moveTo(pts[0], pts[1]); c.lineTo(pts[2], pts[3]);
           if (pts.length === 8) { c.moveTo(pts[4], pts[5]); c.lineTo(pts[6], pts[7]); }
         }
         c.stroke();
       }
     }
+  };
+
+  /* The waterfall alive (2026-10-12): streaks running down the still water painted on the face, the water bending over the
+     lip, foam and mist where it lands, rings going out over the pool, glints running down the stream and the brook. Drawn
+     with the waves, under everything that stands. */
+  w.drawFalls = function (c, cam, hw, hh, clock) {
+    if (!mtn || !mtn.falls.length) return;
+    mtn.falls.forEach(function (f) {
+      var x = f.x, y0 = f.ye * K, H = HF * (f.n - f.lvl), y1 = y0 + H, i, wd = f.w;
+      if (f.box[2] < cam.x - hw || f.box[0] > cam.x + hw || f.box[3] * K < cam.y - hh || f.box[1] * K > cam.y + hh) return;
+      c.save(); c.lineCap = 'round';
+      [f.stream, f.out].forEach(function (pts, wh) {         // glints running with the water: down the stream to the lip, out of the pool down the brook
+        var tot = 0, segs = [], k; for (k = 0; k < pts.length - 1; k++) { var sl = Math.hypot(pts[k + 1][0] - pts[k][0], pts[k + 1][1] - pts[k][1]); segs.push(sl); tot += sl; }
+        var ng = Math.round(tot / 22); c.strokeStyle = 'rgba(240,252,255,0.75)'; c.lineWidth = 1;
+        for (i = 0; i < ng; i++) {
+          var ph = (clock * (wh ? 0.11 : 0.16) + hash(i, wh, s + 206)) % 1, dist = (wh ? ph : 1 - ph) * tot, acc = 0; if (wh === 0 && ph > 0.96) continue;
+          for (k = 0; k < segs.length; k++) { if (dist <= acc + segs[k]) { var t = (dist - acc) / segs[k], gx = pts[k][0] + (pts[k + 1][0] - pts[k][0]) * t + (hash(i, 7 + wh, s + 207) - 0.5) * 6, gy = (pts[k][1] + (pts[k + 1][1] - pts[k][1]) * t) * K, dxg = (pts[k + 1][0] - pts[k][0]) / segs[k] * (wh ? 1 : -1), dyg = (pts[k + 1][1] - pts[k][1]) / segs[k] * K * (wh ? 1 : -1); c.globalAlpha = Math.sin(ph * Math.PI) * 0.9; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx + dxg * 3.5, gy + dyg * 3.5); c.stroke(); break; } acc += segs[k]; }
+        }
+      });
+      c.globalAlpha = 1;
+      c.fillStyle = 'rgba(236,248,252,0.9)'; c.beginPath(); c.ellipse(x, y0 + 1.5, wd * 0.5 + 1, 2.6 + Math.sin(clock * 7) * 0.5, 0, 0, 7); c.fill();   // the water bending over the lip
+      for (i = 0; i < 30; i++) {                             // the fall: streaks of white running down, quicker as they go
+        var hx = hash(i, 1, s + 201), fall = ((clock * (0.9 + hash(i, 2, s + 202) * 0.5) + hash(i, 3, s + 203)) % 1), ph2 = fall * fall * 0.55 + fall * 0.45, yy = y0 + 2 + ph2 * (H - 2), len = 7 + ph2 * 16 + hash(i, 4, s + 204) * 8, xx = x + (hx - 0.5) * (wd - 2 + ph2 * H * 0.055);
+        c.strokeStyle = 'rgba(255,255,255,' + (0.3 + hx * 0.5).toFixed(2) + ')'; c.lineWidth = 0.9 + hash(i, 5, s + 205) * 1.3; c.beginPath(); c.moveTo(xx, yy); c.lineTo(xx + (hx - 0.5) * 0.8, Math.min(y1 + 1, yy + len)); c.stroke();
+      }
+      for (i = 0; i < 4; i++) {                              // rings going out over the pool (the near half: the far half is under the wall)
+        var pr = (clock * 0.3 + i / 4) % 1, rx = 9 + pr * f.pool.rx * 0.86; c.strokeStyle = 'rgba(235,250,255,' + (0.55 * (1 - pr) * (1 - pr)).toFixed(3) + ')'; c.lineWidth = 1.3 - pr * 0.6; c.beginPath(); c.ellipse(x, y1 + 3, rx, rx * 0.5, 0, 0.12, Math.PI - 0.12); c.stroke();
+      }
+      for (i = 0; i < 12; i++) {                             // foam boiling where it lands
+        var pf = (clock * 1.5 + hash(i, 8, s + 208)) % 1, fxx = x + (hash(i, 6, s + 209) - 0.5) * (wd + 16), rr = 1.8 + pf * 4.5; c.fillStyle = 'rgba(255,255,255,' + (0.8 * (1 - pf)).toFixed(2) + ')'; c.beginPath(); c.ellipse(fxx, y1 + 1 + pf * 3.5 + hash(i, 9, s + 210) * 3, rr * 1.5, rr * 0.7, 0, 0, 7); c.fill();
+      }
+      for (i = 0; i < 5; i++) {                              // mist drifting up off it
+        var pm = (clock * 0.22 + i / 5) % 1, mx = x + (hash(i, 10, s + 211) - 0.5) * 30 + Math.sin(clock * 0.6 + i) * 4, my = y1 - 4 - pm * 26, mr = 9 + pm * 12, gm = c.createRadialGradient(mx, my, 0, mx, my, mr);
+        gm.addColorStop(0, 'rgba(255,255,255,' + (0.2 * Math.sin(pm * Math.PI)).toFixed(3) + ')'); gm.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gm; c.beginPath(); c.arc(mx, my, mr, 0, 7); c.fill();
+      }
+      c.restore();
+    });
   };
 
   /* what stands on the land: props in buckets, one bucket per piece of map; solids beside them for collision */
@@ -5004,7 +5402,8 @@ function make(kit, opts) {
       var roll = R(), wx = (x + 0.2 + R() * 0.6) * T, wy = (y + 0.3 + R() * 0.5) * T, p = null;
       if (Math.hypot(wx - home.x, wy - home.y) < 130) continue;
       var mcell = mtn ? cellAt(wx, wy) : 0, mlv = mcell & 3;
-      if (mcell & (M_BLOCK | M_RAMP)) continue;                              // a cliff, a peak or a slope: nothing grows there
+      if (mcell & (M_BLOCK | M_RAMP | M_WATER)) continue;                    // a cliff, a peak, a slope or the stream: nothing grows there
+      if (mtn && mtn.falls.length && byFalls(wx, wy)) continue;               // and the waterfall is kept in the open
       if (mlv && t3 >= 2) {                                                  // the fells: sparse pine and dwarf birch on the foothills, juniper, heather and boulders; the high plateau all but bare of trees
         var grove = vnoise(x / 7, y / 7, s + 20), has = function (nm) { return !!kit.PROPS[nm]; };
         if (mlv === 1) {
@@ -5028,16 +5427,28 @@ function make(kit, opts) {
       p.kind = KIND[p.name] || null; if (p.kind) { p.max = p.hp = HP[p.name] * (0.7 + 0.6 * p.s); p.leanDir = R() < 0.5 ? -1 : 1; }
       w.addProp(p);
     }
+    if (mtn) {
+      mtn.ledges.forEach(function (lg) {                                      // a small tree or a bush on every ledge: it stands in the face, nobody reaches it (no kind: it is not gathered)
+        if (!kit.PROPS[lg.kind]) return; var tree = lg.kind === 'dwarfBirch';
+        w.addProp({ name: lg.kind, x: lg.x, y: lg.ye + (lg.f - 2) / K, s: tree ? 0.5 + R() * 0.14 : 0.62 + R() * 0.2, r: 0, v: Math.floor(R() * 3), ledge: true });
+      });
+      mtn.lookouts.forEach(function (lo) { if (kit.PROPS.varde) w.addProp({ name: 'varde', x: lo.x, y: lo.y, s: 1, r: 13, v: 0, lookout: true }); });   // the beacon cairn on the high point
+      mtn.falls.forEach(function (f) {                                        // boulders by the pool, reeds where the brook sinks away
+        [[-1.12, 0.2], [1.14, 0.3], [0.9, 0.9], [-0.84, 0.94]].forEach(function (q, qi) { var bx = f.pool.x + q[0] * f.pool.rx, by = f.pool.y + q[1] * f.pool.ry; if (qi % 2 === (Math.floor(R() * 2)) && kit.PROPS.boulder && w.flatAt(bx, by, 10)) { var pb = { name: R() < 0.6 ? 'boulder' : 'rock', x: bx, y: by, s: 0.7 + R() * 0.3, r: 10, v: Math.floor(R() * 3) }; pb.kind = KIND[pb.name]; pb.max = pb.hp = HP[pb.name] * (0.7 + 0.6 * pb.s); pb.leanDir = 1; w.addProp(pb); w.stats.rocks++; } });
+        if (kit.PROPS.tallGrass) for (var ri = 0; ri < 4; ri++) { var rx = f.bog.x + (R() - 0.5) * f.bog.r * 1.5, ry = f.bog.y + (R() - 0.5) * f.bog.r; if (w.flatAt(rx, ry, 6)) { var pr = { name: 'tallGrass', x: rx, y: ry, s: 0.9, r: 0, v: Math.floor(R() * 3), kind: 'bush' }; pr.max = pr.hp = HP.tallGrass; pr.leanDir = 1; w.addProp(pr); } }
+      });
+    }
     if (mtn && kit.PROPS.cairn) mtn.ramps.forEach(function (rm) {            // a cairn at the foot and the head of every slope: the old way of marking a way up
       (rm.gap ? [[rm.x1 + 30, rm.y1 + 4]] : [[rm.x1 + 38, rm.y1 - 6], [rm.x0 - 38, rm.y0 + 10]]).forEach(function (q) { if (w.flatAt(q[0], q[1], 12)) w.addProp({ name: 'cairn', x: q[0], y: q[1], s: 0.9, r: 8, v: Math.floor(R() * 3) }); });
     });
     return w.stats;
   };
   // 5b. the peaks (2026-10-12): the Blender peaks stood on the ground nobody can walk. A peak goes only where everything under
-  // its foot is peak ground or cliff, so it never covers a place you can stand; the biggest that fits, a smaller one where it
-  // does not, set back to front so the near ones stand before the far.
+  // it is peak ground or cliff, so it never covers a place you can stand; the biggest that fits, a smaller one where it does
+  // not, close enough to overlap (a range, not single hills). Since nothing can ever stand behind one, they are PAINTED INTO
+  // THE GROUND (bakeChunk, far to near) and cost nothing a frame: they are a list (w.mt.peaks), not props.
   w.peaks = function () {
-    if (!mtn) return 0; var n = 0, placed = [], kinds = ['peak_a', 'peak_b', 'peak_c'].filter(function (nm) { return !!IMAGES[nm]; }); if (!kinds.length) return 0;
+    if (!mtn) return 0; var n = 0, placed = [], kinds = ['peak_a', 'peak_b', 'peak_c', 'peak_d'].filter(function (nm) { return !!IMAGES[nm]; }); mtn.peaks.length = 0; if (!kinds.length) return 0;
     function fits(im, sc, x, y) {
       var hw = im.w * im.upp * sc * 0.44, up = im.ay * im.upp * sc, dn = (im.h - im.ay) * im.upp * sc, a, b;
       if ((cellAt(x, y) & 3) !== 3) return false;
@@ -5050,31 +5461,17 @@ function make(kit, opts) {
       if ((cellAt(x, y) & 3) !== 3) continue;
       for (ki = 0; ki < kinds.length && !done; ki++) for (si = 0; si < 3 && !done; si++) {
         var kn = kinds[(ki + Math.floor(hash(i, j, s + 83) * kinds.length)) % kinds.length], im = IMAGES[kn], sc = [1, 0.78, 0.6][si], ww = im.w * im.upp * sc;
-        if (placed.some(function (q) { return Math.abs(q.x - x) < (q.w + ww) * 0.46 && Math.abs(q.y - y) < 260; })) continue;
-        if (fits(im, sc, x, y)) { w.addProp({ name: kn, x: x, y: y, s: sc, r: 0, v: 0, peak: true }); placed.push({ x: x, y: y, w: ww }); n++; done = true; }
+        if (placed.some(function (q) { return Math.abs(q.x - x) < (q.w + ww) * 0.33 && Math.abs(q.y - y) < 150; })) continue;   // close enough to overlap: a range, not single hills
+        if (fits(im, sc, x, y)) { mtn.peaks.push({ name: kn, x: x, y: y, s: sc, peak: true }); placed.push({ x: x, y: y, w: ww }); n++; done = true; }
       }
     }
+    mtn.peaks.sort(function (p1, p2) { return p1.y - p2.y; });
     w.stats.peaks = n; return n;
   };
   // where the cave goes (2026-10-12): at the foot of a cliff one level high, where the face runs straight and the ground
-  // before it is level and open, away from any slope. Returns { x, y } (the foot of the face) or null. lvl: the ground it opens on.
-  w.caveSite = function (Rr, lvl) {
-    if (!mtn) return null; var cands = [], i, j, FH = Math.round(HFW / MC), want = lvl == null ? 1 : lvl;
-    function cv(a, b) { return (a < 0 || b < 0 || a >= mtn.w || b >= mtn.h) ? 0 : mtn.CL[b * mtn.w + a]; }
-    for (j = FH + 4; j < mtn.h - 20; j += 2) for (i = 16; i < mtn.w - 16; i += 2) {
-      var c0 = cv(i, j); if ((c0 & (M_BLOCK | M_RAMP)) || (c0 & 3) !== want || !(cv(i, j - 1) & M_FACE)) continue;
-      var ok = true, d, k;
-      for (d = -12; ok && d <= 12; d += 3) {
-        if (!(cv(i + d, j - 1) & M_FACE) || !(cv(i + d, j - FH + 2) & M_FACE) || (cv(i + d, j - FH - 3) & 3) !== want + 1 || (cv(i + d, j - FH - 3) & M_FACE)) ok = false;   // one level of face over it, level ground above that
-        for (k = 0; ok && k <= 16; k += 2) { var cg = cv(i + d, j + k); if ((cg & (M_BLOCK | M_RAMP)) || (cg & 3) !== want) ok = false; }   // open level ground in front
-      }
-      var x = (mtn.x0 + i + 0.5) * MC, y = (mtn.y0 + j) * MC;
-      if (ok && mtn.ramps.some(function (rm) { return Math.hypot(rm.ex - x, rm.ey - y) < 300; })) ok = false;
-      if (ok) cands.push({ x: x, y: y });
-    }
-    if (!cands.length) return want > 0 ? w.caveSite(Rr, want - 1) : null;
-    return cands[Math.floor((Rr ? Rr() : 0.5) * cands.length) % cands.length];
-  };
+  // before it is level, open and dry, away from the slopes and the waterfall. Found with the world (mountains(), cavePlace),
+  // so the ledges in the faces keep clear of it. Returns { x, y } (the foot of the face) or null.
+  w.caveSite = function () { return mtn && mtn.cave ? { x: mtn.cave.x, y: mtn.cave.y } : null; };
   // the nearest level ground to a point, on a given level, with room round it (for placing things and for the test scene)
   w.nearFlat = function (x, y, lvl, room) {
     var d, a; room = room || 26;
@@ -5122,7 +5519,7 @@ function make(kit, opts) {
     var step = Math.max(1, Math.ceil(GW / maxPx)), mw = Math.floor(GW / step), mh = Math.floor(GH / step), cv = kit.mk(mw, mh);
     var mc = cv.getContext('2d'), img = mc.createImageData(mw, mh), COL = [[33, 96, 122], [232, 204, 140], [96, 168, 84], [78, 146, 76], [140, 106, 72], [120, 116, 128]], MCOL = [null, [128, 170, 96], [150, 162, 122], [236, 240, 246]];
     for (var yy = 0; yy < mh; yy++) for (var xx = 0; xx < mw; xx++) { var gi = yy * step * GW + xx * step, cc = COL[grid[gi]], ip = (yy * mw + xx) * 4, bmc = grid[gi] >= 2 && grid[gi] !== 4 ? BM[gi] / 255 : 0; img.data[ip] = cc[0] + (150 - cc[0]) * bmc; img.data[ip + 1] = cc[1] + (176 - cc[1]) * bmc; img.data[ip + 2] = cc[2] + (70 - cc[2]) * bmc; img.data[ip + 3] = 255;
-      if (mtn) { var mcc = cellAt((xx * step + 0.5) * T, (yy * step + 0.5) * T), mlc = mcc & 3, mk2 = (mcc & M_FACE) ? COL[5] : ((mcc & M_RIM) ? [88, 84, 96] : (mlc ? MCOL[mlc] : null)); if (mk2 && grid[gi] >= 1) { img.data[ip] = mk2[0]; img.data[ip + 1] = mk2[1]; img.data[ip + 2] = mk2[2]; } }   // the fells paler by the level, the faces grey, the peaks white
+      if (mtn) { var mcc = cellAt((xx * step + 0.5) * T, (yy * step + 0.5) * T), mlc = mcc & 3, mk2 = (mcc & M_FACE) ? COL[5] : ((mcc & M_SIDE) ? [98, 94, 108] : ((mcc & M_RIM) ? [88, 84, 96] : ((mcc & M_WATER) ? [70, 150, 178] : (mlc ? MCOL[mlc] : null)))); if (mk2 && (grid[gi] >= 1 || (mcc & M_FACE))) { img.data[ip] = mk2[0]; img.data[ip + 1] = mk2[1]; img.data[ip + 2] = mk2[2]; } }   // the fells paler by the level, the faces grey, the peaks white
     }   // the lowlands warmer on the chart
     mc.putImageData(img, 0, 0);
     return cv;

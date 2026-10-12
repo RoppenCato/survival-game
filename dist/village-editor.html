@@ -3636,6 +3636,17 @@ function cairnObj(c, K, x, y, seed) {
     shape(c, blobPts(x + s[0], y + s[1], s[2], s[3], seed + i, 8, 0.2), i % 2 ? K.rockC : K.rock, { seed: seed + 10 + i, size: 'S', sh: 2, rough: 0.4 });
   });
 }
+// the varde (2026-10-12): a beacon cairn on a high point, a man and a half tall, three weathered poles leaned together over
+// it (the frame a beacon fire is stacked in): the mark men built on the fells to find their way and to watch the sea from
+function vardeObj(c, K, x, y, seed) {
+  gshadow(c, x + 4, y, 30, 7, 0.42);
+  line(c, [[x - 19, y - 9], [x + 3, y - 90]], 2.6, K.wood.shade, true); line(c, [[x + 20, y - 10], [x - 1, y - 91]], 2.6, K.wood.shade, true);
+  [[0, -7, 25, 9], [-13, -16, 14, 8], [12, -17, 14, 8], [0, -25, 17, 8], [-9, -34, 11, 7], [9, -35, 11, 7], [0, -43, 13, 7], [-4, -51, 9, 6], [5, -53, 8, 5], [0, -60, 7, 5]].forEach(function (s, i) {
+    shape(c, blobPts(x + s[0], y + s[1], s[2], s[3], seed + i, 8, 0.22), i % 3 === 1 ? K.rockC : K.rock, { seed: seed + 10 + i, size: 'S', sh: 2, rough: 0.4 });
+  });
+  line(c, [[x + 3, y + 3], [x + 1, y - 93]], 3, K.wood.base, true); line(c, [[x - 3, y - 82], [x + 5, y - 83]], 1.6, K.trunk.shade, false);   // the pole toward you, and the lashing where the three meet
+  shape(c, blobPts(x - 21, y + 1, 7, 4, seed + 31, 7, 0.25), K.rockC, { seed: seed + 41, size: 'S', sh: 1.5, rough: 0.4 }); shape(c, blobPts(x + 24, y + 2, 6, 3.5, seed + 32, 7, 0.25), K.rock, { seed: seed + 42, size: 'S', sh: 1.5, rough: 0.4 });
+}
 function stoneShip(c, K, x, y, seed) {
   var n = 16, i, list = [];
   for (i = 0; i < n; i++) { var a = i / n * Math.PI * 2, e = Math.abs(Math.cos(a)); list.push({ x: x + Math.cos(a) * 42, y: y + Math.sin(a) * 11 * (1 - e * e * 0.55), h: 8 + 11 * e * e * e, k: i }); }
@@ -4078,6 +4089,7 @@ var PROPS = {
   forge: { b: [-44, -46, 44, 10], f: function (c, K, s) { forgeObj(c, K, 0, 0, s); } },
   brazier: { b: [-18, -50, 18, 8], f: function (c, K, s) { brazierObj(c, K, 0, 0, s); } },
   cairn: { b: [-26, -44, 26, 8], f: function (c, K, s) { cairnObj(c, K, 0, 0, s); } },
+  varde: { b: [-36, -100, 38, 12], f: function (c, K, s) { vardeObj(c, K, 0, 0, s); } },
   stoneShip: { b: [-52, -30, 52, 18], f: function (c, K, s) { stoneShip(c, K, 0, 0, s); } },
   woodpile: { b: [-30, -46, 42, 10], f: function (c, K, s) { woodpile(c, K, 0, 0, s); } },
   snowPine: { b: [-60, -170, 100, 18], f: function (c, K, s) { snowPine(c, K, 0, 0, 128, s); } },

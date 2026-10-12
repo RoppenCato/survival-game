@@ -32,7 +32,8 @@
     "art:bysen": "node tools/blender.js art/build/troll_build.py -- bysen && node tools/blender.js art/build/render.py -- art/source/bysen.blend art/render/bysen --anims idle,walk,chop,hide,stump --dirs 8 --frames idle=8,walk=10,chop=12,hide=8,stump=1 --layers body --size 224 --px 2 --ortho 2.828 --style cel --scene day && node tools/sprites.js bysen art/render/bysen assets/sprites/bysen",
     "art:vasen": "npm run art:draugr && npm run art:huldra && npm run art:nacken && npm run art:bysen && node tools/visual/vasensheet.js",
     "art:rocks": "node tools/blender.js art/build/rocks_build.py && node tools/props.js",
-    "mountain": "node tools/visual/mountain.js"
+    "mountain": "node tools/visual/mountain.js",
+    "mountain:look": "node tools/visual/mountainlook.js"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^0.1.0"

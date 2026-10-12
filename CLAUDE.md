@@ -120,7 +120,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | `combat-arena.html` | `combat.html` | Combat Arena: fight wolves, boars, snakes and the bear with every weapon kind |
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
-| `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the cave mouth and into the cave, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
+| `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
@@ -1666,64 +1666,114 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
 
 **Decided:** height is drawn the way the old top-down games draw it, nothing is lifted on the screen. **Two terraces and peaks**: the
 low ground (level 0), the **foothills** (1), the **high plateau** (2), and the **peaks** (3), which cannot be walked. **Green fells,
-snow on the peaks.** You **build on any level ground** up there, never on a cliff, its rim or a slope, and never across a change of
-level. **Arrows fly over a cliff both ways** (Robin: either you can shoot and hit or you cannot, whichever makes more sense); a blow
-does not reach across one. The mountain island is a **test scene** (`game.html?scene=mountain`); the real game's islands have no
-mountains yet. **Not decided:** where mountains go in the real world, ore in the faces, height in a fight beyond arrows.
+snow on the peaks.** You **build on any level ground** up there, never on a cliff, its rim, a slope or the waterfall's water, and
+never across a change of level. **Arrows fly over a cliff both ways** (Robin: either you can shoot and hit or you cannot, whichever
+makes more sense); a blow does not reach across one. The mountain island is a **test scene** (`game.html?scene=mountain`); the real
+game's islands have no mountains yet. **The look pass (2026-10-12, Robin's list, all seven built):** edges that face away, the
+peaks against the ink world, variety in the cliffs, the fells' own ground, sea cliffs, a lookout, a waterfall (**not Näcken's**:
+Robin wants him in a lush forest). **Not decided:** where mountains go in the real world, ore in the faces, height in a fight
+beyond arrows, whether the chart should hide land you have not seen (the lookout marks places; the chart shows all land as before).
 
 - **The field** (`src/world.js`, in `World.make`, `o.mountain` names an island, `o.mountainOpts` the numbers): `MT` is a smooth value per
   tile read between the tiles like the coast's (`w.mAt`), from **how far north** a tile lies on the island's own land and **how far it
   is from the sea** (a two-sweep distance, so the mountains leave a shore all round), with noise, smoothed twice; its whole numbers
-  are the levels. **No specks:** a patch of higher ground of under 70 tiles is taken down and a pit that small filled (its face would
-  be a pillar or a slot). A level's edge is a contour of the field, so every cliff is a curve.
-- **Faces, rims, slopes.** South of an edge the lower ground is covered by the cliff's **face** for `HFW` 112 units a level (`HF` 84
-  pixels on the screen, a little over twice the hero): rock nobody walks, painted as a wall. Where an edge faces away (north) or runs
-  north to south there is only a **rim**, a lip a cell wide on each side. **Slopes** are the ways up: a strip cut through a south
-  face where the edge runs straight with level ground above and below (`faceRamp`, spread along the island: two to four a level),
-  then **every sizeable piece of high ground gets a way up** (a flood from the low ground over the walking cells; the largest piece
-  not reached is joined by a face slope, else by a **gap in a rim**, else straight down whatever face lies south of it). A cairn
-  stands at the foot and the head of each.
+  are the levels. **No specks:** a patch of higher ground of under 70 tiles is taken down and a pit that small filled. A level's edge
+  is a contour of the field, so every cliff is a curve.
+- **Sea cliffs and the bay** (`mountainOpts.sea`, on by default; `seaSide` 1 east or -1 west; `bay`, `bayAt`, `bayLen`, `bayWide`): on
+  one side of the island the mountains keep no shore. **A bay is cut into that coast** (the height field `E` is lowered inside a
+  rough ellipse before the mountains are raised) so there is a wall that faces south over water. North of the bay's middle the
+  ground rises **a level for every 3.25 tiles of land straight south of it** (a face is 3.5 tiles deep, so the wall's foot stands a
+  little way out in the shallows) and for every 0.8 tiles from any sea (a side wall's foot), as high as the mountain is there, at
+  most two levels: the plateau comes down to the bay in one wall. The top of a sea cliff is turf, not sand (the grid's beach code
+  is lifted to grass on the fells and the painter lays no beach there). **`w.isWater` is false where a wall stands in the sea**, the
+  boat's hull test refuses a cliff (`raftHull` in the game), and the shore's foam is not drawn over a wall.
+- **Faces, side walls, rims, slopes.** South of an edge the lower ground is covered by the cliff's **face** for `HFW` 112 units a
+  level (`HF` 84 pixels on the screen, a little over twice the hero). An edge that faces **east or west stands on a battered foot**:
+  its **side wall** leans `SIDE` 24 units out a level and, like every wall, 112 down the screen, so a plateau has a **lit west side
+  and a dark east side** and a corner turns as a solid does. Where an edge faces away (north) there is only a **rim**, a lip a cell
+  wide on each side. **Slopes** are the ways up: a strip cut through a south face where the edge runs straight with level dry ground
+  above and below (`faceRamp`: two to four a level), then **every sizeable piece of high ground gets a way up** (a flood from the low
+  ground over the walking cells; the largest piece not reached is joined by a face slope, else by a **gap in a rim or a side wall**,
+  else straight down whatever face lies south of it). A cairn stands at the foot and the head of each.
 - **What the game asks** reads a grid of cells 8 units wide: `w.cellAt(x, y)` is the level in two bits with `M_FACE` 4, `M_RIM` 8,
-  `M_RAMP` 16 and `M_BLOCK` 32; `w.levelAt`, `w.cliffAt` (a face, a rim or a peak), `w.rampAt`, `w.flatAt(x, y, r)` (level ground with
-  room), `w.nearFlat(x, y, lvl, room)`, `w.mt` (the cells, `ramps`, the box). **`w.isLand` and `w.isWade` are false on a cliff**, so
-  walking, spawning, planting and the meadow treat it as they treat the sea. A tile with any cliff or slope in it has **code 5**
-  (the site finders skip it; the chart draws the faces grey, the fells paler by the level, the peaks white).
-- **The painting** (`bakeChunk`, `mountainPixel`): for a ground piece that touches the mountains, the level of every pixel (and of a
-  strip above it two faces tall), then down every column which edge's face covers each pixel and how far below it. The fells are a
-  tint in the grass overlay (shorter, greyer grass on the foothills; stonier with heather on the plateau). The rock goes into a
-  second overlay laid over the meadow: **the face** in beds of blocks that follow the edge, each with a lit ledge and a dark
-  underside, joints, moss, a lit lip under an ink line at the top, darker toward a dark foot; **the rim** as pale stones over an ink
-  line with a soft dark band on the low side; the peaks' scree and snow; a shadow at a face's foot; **the slopes** as trodden
-  earth between banks of rock with a stone step now and then and pebbles. Tufts of grass over the lip and scree at the foot are
-  drawn after. The rock's colours are the kit's own rock (`w.rockPal`). About 11 ms a piece. **The noise sheet is smooth, not
-  speckled**: a threshold on it draws blots (the first pebbles were dark wedges); use `hash` for a speck.
+  `M_RAMP` 16, `M_BLOCK` 32, `M_SIDE` 64 and `M_WATER` 128; `w.levelAt`, `w.cliffAt` (a face, a side wall, a rim or a peak),
+  `w.rampAt`, `w.waterAt` (the waterfall's stream, pool and brook: waded, never built on), `w.flatAt(x, y, r)`, `w.nearFlat(x, y, lvl,
+  room)`, `w.mt` (the cells, `ramps`, `falls`, `lookouts`, `ledges`, `cave`, `peaks`, `bay`, `seaSide`, the box). **`w.isLand` and
+  `w.isWade` are false on a cliff.** A tile with any cliff, slope or water in it has **code 5** (the site finders skip it; the chart
+  draws the faces and side walls grey, the fells paler by the level, the peaks white, the waterfall's water blue).
+- **What stands in the mountains**, found with the world once the ways up are known (in `mountains()`): **the waterfall**
+  (`waterfall`: the foot of a straight one-level south wall you can walk to with open ground before it, by choice off the plateau,
+  its stream from the snow if the peaks are near; `mtn.falls[0]` = `{ x, ye (the lip), n, lvl, foot, w, pool, stream, out, bog, box }`:
+  a stream that wanders over the upper ground to the lip, a pool at the foot, a brook out of it that sinks into a bog; the ground
+  before it is kept clear of trees and rocks, `byFalls`); **the lookout** (`lookout`: the southernmost level stand on the highest
+  ground you can walk to, a cliff under it; `mtn.lookouts[0]`); **the cave's place** (`cavePlace`: the foot of a wall, the foothills
+  by choice, clear of the slopes, the waterfall and the lookout, strict first and then less so, so every island has one;
+  `w.caveSite()` hands it back); **ledges** (`shelves`: a grassy shelf part-way down a one-level south wall with a mountain birch, a
+  juniper or heather on it, a prop with no `kind`: it is not gathered).
+- **The painting** (`bakeChunk`, `mountainPixel`). Everything is worked out on a sheet wider and taller than the piece (`MG` 96 to
+  each side, three faces above, `PADB` 60 below: **an edge just outside a piece must still shade it**, or a seam shows): `lev` the
+  level of every pixel, then **four sweeps down columns** (`sweepM`): `FN/FD` the edge whose south face covers a pixel and how far
+  below it, `EN/ED` and `WN/WD` the same down columns that lean (the side walls), `HN/HD` along the sun's way (**the shadow a cliff
+  throws east**, 42 pixels a level); and `BD/BO` (`edgeDist`, a chamfer) how far the nearest change of level is and what lies across
+  it. From those: **a south face** is split by fissures into **panels of uneven width**, each one of three kinds of rock (beds of
+  blocks, great blocks with slanted joints and a facet, thin strata that dip), lit where the edge turns west and dark where it turns
+  east (from how `FD` changes sideways), with **an overhang** here and there (a jutting bed and the dark under it), **water running
+  down** in dark streaks that glint, **moss in big patches**, the **grassy ledges**, a lit lip under an ink line, a dark foot, and
+  where it stands in the sea a wet band with weed and **foam at the foot**; **a side wall** is the same beds seen along the wall, 0.62
+  of the tone on the east and 1.24 on the west; **the crest of every edge** is a rim of rock with a ragged inner edge, an ink line at
+  the drop and the turf paler toward it; **the low ground under an edge that faces away** takes an ink line and a dark that is
+  deepest at the wall and fades over 52 pixels (this, the rim and what overlaps it are how a north edge reads as a drop: it cannot
+  show a wall). **The fells:** the foothills are cropped, drier turf, ochre where thinnest; the plateau grey-green heath with
+  **heather in drifts**, gravel in specks toward the peaks; the peaks' ground scree and snow fields. The fells' soft patches, the
+  heather and the snow are **values a tile wide read with the weights the pixel loop already has** (`SFt`, `HTt`, `SNt`). With a pen
+  after (seamless across pieces: placed from the world's own position and looked for past the border): tufts over a lip, stones
+  on a crest, scree at a foot, the fells' stones in clusters, flat slabs with lichen, sedge, cushions of heather, the rocks round
+  the pool, reeds in the bog. `drawMeadow` and `drawGrass` know the fells too (`fellOf`): no bare earth, few flowers on the
+  foothills and none on the plateau, shorter, thinner, drier blades. **Speed:** the sheets are kept between bakes, a piece and all
+  round it on one level skips the sweeps, a speck comes from a sheet of white noise (`white`, never a sine a pixel); a mountain
+  piece still takes two to three times a lowland one (`w.prof` says where: `lev`, `sweep`, `paint`, `pen`; about 25 ms against 10 in
+  the browser pane). **The noise sheet is smooth, not speckled**: a threshold on it draws blots.
+- **The waterfall alive** (`w.drawFalls(c, cam, hw, hh, clock)`, drawn with the waves): streaks running down the still water painted
+  on the face, the water bending over the lip, foam and mist where it lands, rings going out over the pool, glints running down the
+  stream and the brook.
 - **What grows** (`w.plant`): sparse pine, birch and **mountain birch** on the foothills with **juniper**, **heather** and
-  **boulders**; the plateau all but bare of trees. Four props in the kit: `dwarfBirch` (tree, 4 wood), `juniper` and `heather`
-  (bushes), `boulder` (stone, 5).
-- **Set pieces from Blender** (`art/build/rocks_build.py`, `tools/props.js`, `npm run art:rocks`): `peak_a`, `peak_b`, `peak_c`
-  (faceted summits with shoulders, snow on what faces up above the snow line) and `cave_mouth` (a rough arch of blocks round the dark
-  inside, a trodden threshold, scree, a skull and ribs, roots hanging in). Nothing moves or turns: one render each from the game's
-  camera at 2 pixels a unit, packed into `assets/props/<name>.png` with `props.json` (size, the pixel it stands on, units a pixel).
-  The build hands the pages `__PROPIMG__`; `World.setImages` names them and a world's `sprite(name)` returns the image as a kit
-  sprite, so **a set piece is a prop like any other**. `w.peaks()` stands the peaks on the ground nobody walks, only where
-  everything under a peak's foot is peak or cliff (it never covers a place you can stand), the biggest that fits.
-  **The sun for these renders is 3.0**: at the characters' 1.15 no face passes the cel shader's light step and everything takes
-  the shadow tone (found 2026-10-12; **every character so far was rendered that way**, which is why their base colours had to be
-  brightened; whether to re-render them with a lit side is Robin's call).
-- **The cave in the mountain's side:** `w.caveSite(R, lvl)` finds the foot of a face one level high where the edge runs straight and
-  the ground before it is level, away from any slope; on a mountain island `caveSetup` puts the `cave_mouth` there (the foothills
-  by choice) and everything else about the cave is as it was.
-- **In the game:** `fellOk`, `fellSame`, `edgeFell`, `tileFell`, `fellWhy` keep building to level ground (the cursor says "Not on a
-  cliff", "Not on a slope", "Not across a cliff or a slope"); bears and moose are placed up on the fells of a mountain island.
+  **boulders**; the plateau all but bare of trees; boulders by the pool, reeds in the bog, the ledges' trees, and the **varde** on
+  the lookout. Props in the kit: `dwarfBirch` (tree, 4 wood), `juniper` and `heather` (bushes), `boulder` (stone, 5), `varde` (the
+  beacon cairn: a man and a half tall, three weathered poles leaned together over it; "Left by people" in the Art Editor).
+- **Set pieces from Blender** (`art/build/rocks_build.py`, `tools/props.js`, `npm run art:rocks`): `peak_a` to `peak_d` and
+  `cave_mouth`. **The peaks were rebuilt** (the first read as crystals beside the drawn world): ribs of rock run down from the top
+  with gullies between, the outline rough in soft waves, the surface smooth with the ribs' own edges sharp so the cel light falls
+  in big shapes and the ink runs down the ribs (Freestyle's crease angle 136 for them), **snow low in the gullies and the ribs bare
+  above it**, bands of darker rock; `peak_d` is a long ridge of four tops. **The packer gives a piece the drawn world's finish**:
+  the kit's grain, a cool shade toward the lower right, the silhouette in ink laid under it (thin all round, heavy on the shadow
+  side) and, for a peak, the shadow it throws east at its foot. One render each from the game's camera at 2 pixels a unit, packed
+  into `assets/props/<name>.png` with `props.json`; `node tools/blender.js art/build/rocks_build.py -- peak_a` renders only the
+  pieces named. **The peaks are painted into the ground** (`w.peaks()` fills the list `w.mt.peaks`; `bakeChunk` draws them far to
+  near): a peak goes only where everything under it is peak ground or cliff, so nothing can ever stand behind one, and close enough
+  to overlap (a range, 56 to 200 of them on an island) they would have been heavy to draw every frame. A piece baked before the
+  pictures have loaded is baked again when they have (`imgWait`). The cave mouth is still a prop (`World.setImages`, `w.sprite`).
+  **The sun for these renders is 3.0**: at the characters' 1.15 no face passes the cel shader's light step (found 2026-10-12;
+  **every character so far was rendered that way**; whether to re-render them with a lit side is Robin's call).
+- **In the game:** `fellOk`, `fellSame`, `edgeFell`, `tileFell`, `fellWhy` keep building to level dry ground ("Not on a cliff", "Not
+  on a slope", "Not in the water", "Not across a cliff, a slope or the water"); bears and moose are placed up on the fells.
+  **The lookout:** E by the beacon cairn ("Look out", `lookoutNear`, `lookOut`) pulls the view back to **twice as far** and turns
+  it south over the land below (`lookK` eases the zoom in `scene.begin`), and **every place within `LOOK_R` 3000 units is marked on
+  the chart** (`lookReveal`: the cave, the steading, villages, the waterfall; one toast); a step or E again ("Turn back") ends it.
+  **The waterfall** is marked when you come within 420 of it, as the cave is ("A waterfall: marked on your chart"), and has a voice
+  (`fallsSound`: looped filtered noise, louder and brighter as you come near, silent in the menu and the cave). The map and the
+  minimap show both once seen (`seen.falls`, `seen.look`). Debug: `Combat.api.debug().look()`.
 - **Found by the playtest and fixed in the engine (`src/combat.js`):** a solid (a tree, a wall) could **push a mover onto ground it
-  cannot walk** (into a cliff, and into the sea): `moveCircle` now puts it back. A calm creature with no aggro ring never wandered
-  (**the troll outside at night stood still**): `e.strolls` lets it wander while the page decides when it wakes. `wanderStep` picks
+  cannot walk**: `moveCircle` now puts it back. A calm creature with no aggro ring never wandered: `e.strolls`. `wanderStep` picks
   a place the creature can stand.
 - **Checking it:** `node tools/visual/mountain.js [seed]` (`npm run mountain`) prints the share of the land each level takes, the
-  slopes, and whether every level is reached on foot, and writes mountain.png (the chart and close-ups painted as the game paints
-  them). `tools/visual/mountainplay.js` is the playtest run in the page with `tools/visual/drive.js` (slopes up and down, 120
-  tries to get through the cliffs walking, sprinting and dashing, a hut on each level, the cursor's refusals, the cave, arrows over
-  a cliff, the troll outside).
+  slopes, the waterfall, the lookout, the bay and the cave, and whether every level is reached on foot, and writes mountain.png
+  (the chart and eight close-ups painted as the game paints them); checked on seeds 11, 3, 25, 42 and 7: every one has a way to
+  every level, a waterfall, a lookout, a bay and a cave. `node tools/visual/mountainlook.js [seed] [shots] [zoom]` writes one
+  picture a place, larger (east, west, north, face, fells1, fells2, sea, sea2, sea3, fall, look, peaks, cave, chart).
+  `tools/visual/mountainplay.js` is the playtest run in the page with `tools/visual/drive.js`: nothing planted in rock or water,
+  slopes up and down, 160 tries to get through the cliffs walking, sprinting and dashing (side walls and sea cliffs among them),
+  a hut on each level, the cursor's refusals, wading the pool and the stream and building in them, the lookout's E, the cave,
+  arrows over a cliff, **a boat rowed at the sea cliff and wading at its foot**, the troll outside.
 
 ## Sea and islands
 

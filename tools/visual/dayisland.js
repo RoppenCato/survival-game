@@ -16,6 +16,7 @@ function paint(kit, World, W, H, Z, opts) {
   c.save(); c.setTransform(Z, 0, 0, Z, 0, 0); c.translate(hw, hh); c.translate(-cam.x, -cam.y); c.lineJoin = 'round'; c.lineCap = 'round';
   for (let i = 0; i < 80; i++) w.drawGround(c, cam, hw, hh);          // the ground is baked one piece a call: call until every piece in view is ready
   w.drawWaves(c, cam, hw, hh, 1.3, 0.75, 1.05);
+  if (w.drawFalls) w.drawFalls(c, cam, hw, hh, 1.3);
   w.drawGrass(c, cam, hw, hh, 1.3, World.GRASS_INK);
   const items = [], T = w.T, CT = w.CT, CW = w.CW, CH = w.CH, TS = T * K;
   const bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1);

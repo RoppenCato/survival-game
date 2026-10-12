@@ -114,7 +114,7 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | Mountain troll (boulder) | `troll_boulder.blend` | own (`troll_build.py`), no Mixamo | 7 | `troll_boulder` | Models tab | **yes**, the cave troll (2026-10-12) | stone is the shield pose under a grey tint |
 | Forest troll | `troll_forest.blend` | the same rig | 7 | `troll_forest` | Models tab | arena only | not spawned in the game |
 | The Gape (new) | `troll_maw.blend` | the same rig | 7 | `troll_maw` | Models tab | arena only | Robin to decide where it lives |
-| Peaks (a, b, c), cave mouth | `rocks.blend` | none: set pieces, one render each (`rocks_build.py`) | none | `assets/props/` | no | **yes** (2026-10-12), the mountain test scene | drawn as props (`World.setImages`); the sun at 3.0 |
+| Peaks (a, b, c, d), cave mouth | `rocks.blend` | none: set pieces, one render each (`rocks_build.py`) | none | `assets/props/` | no | **yes** (2026-10-12), the mountain test scene | the peaks rebuilt the same day (ribs and gullies, a rough outline, smooth with sharp ribs) and finished by the packer (grain, a cool shade, the ink line heavy on the shadow side, a shadow at the foot); painted into the ground, the cave mouth a prop; the sun at 3.0 |
 | Draugr | `draugr.blend` | the trolls' rig as a person (`troll_build.py`) | 7 | `draugr` | Models tab | no | mechanics to discuss |
 | Huldra | `huldra.blend` | the same | 5 (`call`) | `huldra` | Models tab | no | mechanics to discuss |
 | Nacken | `nacken.blend` | the same | 5 (`play`) | `nacken` | Models tab | no | mechanics to discuss; the lyre opens instruments |
@@ -136,3 +136,13 @@ animals, the trolls, the draugr, the huldra, Nacken and the bysen. That is why b
 sphere rendered at 1.15, 2.2 and 3.6 shows it plainly: nothing lit, a small lit patch, a proper three-tone split. The mountain set
 pieces are rendered at 3.0 and have lit and shadowed faces. **For Robin to decide:** re-render the characters with a lit side
 (several hours of rendering, and every base colour would need taking back down), or keep them as they are.
+
+## A set piece needs the drawn world's finish (found 2026-10-12)
+
+The first peaks were flat-shaded cones of a few big triangles and read as crystals beside the drawn trees and the painted cliffs.
+What made them sit in the world: **form that light can read** (ribs and gullies, a smooth surface with only the ribs' edges sharp,
+so the cel shader gives two or three big shapes and not a mosaic), **a rough outline** (soft waves in the radius, a little grit),
+**the ink line the props have** (Freestyle's contour, then in `tools/props.js` the silhouette in ink laid under the piece: thin
+all round, heavy toward the lower right), **the kit's own grain** over it, **a cool shade** toward the shadow side, and **a shadow
+at its foot** so it stands on the ground. The same finish is there for any later set piece (`tools/props.js` does it to
+everything it packs). A thing nobody can walk behind is best **painted into the ground** and not drawn every frame.
