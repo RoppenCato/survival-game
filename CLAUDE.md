@@ -1173,9 +1173,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **The first minute (tested fresh 2026-10-05):** you land on nothing; 12 branches and 9 stones lie on land
   round the camp, never within 82 units of where you land (`campScatter`), and three lone trees (oak, birch,
   pine) stand 170 to 300 from camp (`campTrees`) so the first axe has something to fell. Things lying within
-  56 units slide toward you if the bag has room. **B opens on Crafting until you hold a tool.** Guidance is
+  56 units slide toward you if the bag has room. **C opens what you make by hand** (since 2026-10-12; it was on B's board). Guidance is
   subtle (Robin): the only hint line is three bare key reminders at the start (`HINTS`: "Walk over the things lying
-  about", "Press B", "Press Q"), each gone when its condition is met; nothing states a goal. The chart marks the camp's fire, and the
+  about", "Press C" (it was B until 2026-10-12), "Press Q"), each gone when its condition is met; nothing states a goal. The chart marks the camp's fire, and the
   steading once you have come within 380 of it (`seen.village`). Drops per thing (`TREE_WOOD` oak 6, pine 5,
   birch 4; `ROCK_STONE` rock 3, formation 6; bushes 2 fiber, berry bushes 3 berries and 1 fiber): a day's work
   reaches 40 wood, 20 stone and 15 fiber. Deer (2 hide) and a boar (1 hide) live within 800 to 900 of camp
@@ -1406,7 +1406,25 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   notches of the wheel; the other pages still run. **`tools/visual/ui.js`** drives the mouse and the keys on the page in
   the HUD's own units (`U.click`, `U.key`, `U.wheel`), takes pictures (`U.shot`, `U.crop`, `U.sheet`) and shows every board
   in another typeface without touching the game (`U.face`).
-- **The frame log (2026-10-08, Robin: it lags when I walk):** a readout on the **left of the screen, in the middle**, always on
+  **The second pass, Robin's answers (the same day: C yes; the map shows all for now; the readout as I think best; no
+  trials of the looks; all of the list).** **C is making by hand** (`handCraft`: the By hand recipe board, anywhere; C, E or
+  Esc closes it) and **B is building only** (the Building board; the first hint is "Press C"). **`eWhat(P)` is what E does,
+  by one rule,** and the prompt and the key both ask it: `{ say, act }`, first what you are in the middle of (a fish on
+  the line, the yard, a chest on the shoulder, the lookout, an open recipe board or ring board, a seat, the muster, the
+  boat), then of the things each within its own reach the one you most nearly face (`facingScore`): a heavy chest, a
+  sign, the raft, the raft bench, a cave's mouth or way out, the dead Viking, the hoard, a find, the built thing
+  `stationNear` picked, the clamp, the weir's net, a fire ring, the lookout, an unread runestone, a claim stone, a
+  workplace for a follower, a hirdman, Brokk, a villager, berries. **A new thing E can do is one `add(...)` line there.**
+  Debug: `eWhat()`, `board()`. **One number:** `worldDmg(it)` (the engine now shows a blow's number to one decimal) and
+  `thingLines(it)` (label, value, the difference from `heldLike(it)`) feed the card (`itemCard`, which also takes a
+  stack's kind: `stackTale`, `foodLines`), the recipe page (`infoStats`) and the Stats page. **The Building board** is
+  `buildCats()` as tabs (`BCATS` with the new `work`, `WORK_IDS`), eight pieces a row with name and `costRow`; `tabUi` is
+  the one tab for every board; recipe lists have headings (`menu.show`). **The bag:** right click `useSlot`, Shift and
+  click `transfer`, Shift and drag `splitTo`, `stackIn` draws a slot's thing for the bag and the chest. **Gear:**
+  `gearFor(id)` hides a slot nothing can fill. **The map** has a north mark and `labels()` that keep off each other.
+  **The frame readout** is on `ADMIN.fps` (bottom left, off by default; the log is kept either way). **"You have
+  fallen"** is the page's board (`scene.ownFallen`). `costText` reads in the game's words. `docs/ui-review.md` section 7.
+- **The frame log (2026-10-08, Robin: it lags when I walk):** a readout (since 2026-10-12 **bottom left, on Admin's "Show frame time"**; it was on the left in the middle, always on)
   (`drawPerf`: frames a second in green, amber or red, the milliseconds, the things drawn, and the frame's parts: t tick, u update,
   g ground, d draw, e end). `PERF` times every frame in parts (the page's tick, the engine's update, the render split into the
   ground (`scene.begin`), the list of things (`scene.items`), the engine's own y-sorted drawing, and the end overlays), and each
@@ -1596,6 +1614,8 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   right. The shield shows only when used (blocking); Robin likes that as it is.
 - **Build mode:** **B** enters it (no hammer item). In it **F** turns the cursor into a red crossed box that
   destroys pieces. Built in the game (see "The game").
+- **C (2026-10-12):** what you make by hand, anywhere. **E:** use what you face (`eWhat`). **In the bag:** drag moves, right
+  click uses, Shift and click sends across to a chest, Shift and drag carries half a stack.
 - **Tab:** inventory. **Ctrl:** target the nearest enemy, then the next nearest on each press, then let go.
 - Food and consumables should work in both modes (their own keys). Dragging things from the inventory onto the
   hotbar, so you can choose the layout, is wanted ("maybe"). Neither is built yet.

@@ -7044,7 +7044,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
     if (heavy && !killing) slowmo(WM.hs, WM.hd);
   }
   spark(hx, hy, (heavy && !killing ? 12 : 7) + (crit ? 5 : 0), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
-  num(e.x, e.y - e.r * 2.2 - 10, String(Math.round(dealt * 5)), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), heavy || crit);
+  num(e.x, e.y - e.r * 2.2 - 10, String(Math.round(dealt * 50) / 10), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), heavy || crit);
   sfx((heavy && !killing) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0);
   if (crit) { sfx('crit'); e.rattle = 1.6; }
   if (bigE) {
@@ -8109,7 +8109,7 @@ function drawHud(c) {
     }
   }
   if (!api.scene) drawNums(c);
-  if (P.dead) {
+  if (P.dead && !(api.scene && api.scene.ownFallen)) {      // (a page with boards of its own draws this one too: scene.ownFallen)
     c.fillStyle = 'rgba(20,20,40,0.55)'; c.fillRect(0, 0, SW, SH);
     c.font = 'bold 16px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3.4; c.strokeStyle = '#3a2a36';
     c.strokeText('You have fallen', 200, 118); c.fillStyle = '#fff'; c.fillText('You have fallen', 200, 118);

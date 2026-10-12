@@ -127,3 +127,32 @@ Mostly yes, and where it is not, the cause is in section 3: B meaning two things
 4. **The looks:** shall I make the type, the HUD's corners and the map as trials to switch on and off (the way the lighting
    was tried), so they can be judged in the game and not from my description?
 5. Anything in section 3 that should **not** be done, or done first?
+
+## 7. Robin's answers, and what was done (2026-10-12, the same day)
+
+*"1. Yes. 2. For now show all. 3. What you think is best. 4. Nah. 5. All."*
+
+`docs/ui-review2.jpg`: the Building board, what you make by hand, the bag with a material's card, the map.
+
+| Section 3 | Done |
+| --- | --- |
+| 1. B means two things | **C** opens what you make by hand, anywhere (C again or E or Esc closes it). **B** is build mode and the Building board, nothing else. The first hint reads "Press C". |
+| 2. E by one rule | `eWhat(P)` is the one answer to "what would E do here": what you are in the middle of first, then the thing you most nearly face of those within their own reach. The prompt shows what it says and the key does what it does; the two long chains are gone. It mended one disagreement on the way (by a claim stone with a man following, the prompt said Muster and the key made him its keeper) and a stone already read no longer swallows E. |
+| 3. One number for a weapon | The number over a struck beast is the number on the card, the recipe and the Stats page (an iron sword: 6.5 everywhere; the world's number shows one decimal, as a tool's blow always did). Beside it on a card or a recipe, in green or red, the difference from what you hold of the same use. |
+| 4. The workbench's list | Small headings in every recipe list with more than one kind: Tools, Weapons, Armour, Supplies. |
+| 5. The Building board | A tab a category (Walls, Floors and roofs, Ground, Yard, Furniture, **Work**, Outdoors), a screen each, no scrolling; every piece with its name and its cost (small pictures and numbers, red where you have too few), faint where you cannot pay. The wheel over the board steps through the tabs. Work is new: the benches, the furnace, the clamp and the rack, which lay scattered through Furniture and Outdoors. |
+| 6. Clicks in the bag | Drag moves; **right click uses** (eats, lights, sends to its bar, puts on); **Shift and click** sends across to an open chest or out of one; **Shift and drag** carries half a stack. A plain click no longer eats. The line over the bag says what a click would do; the card says what the thing is. |
+| 7. The map | **Left as it is: it shows all** (Robin). It has a north mark now, and names move aside where they would lie on each other. |
+| 8. The frame readout | One readout, bottom left, on Admin's **Show frame time** (off by default). The frame log is written whether it shows or not, so "Download the frame log" is as before. |
+| 9. Materials have a card | Every stack: its name, a line of what it is good for in the world's voice, and for a food what the meal gives. |
+| 10. The Gear page | The necklace, the rings and the trinkets show when there is something in the game to put in them (nothing yet). The arm ring sits under the shield. |
+| 11. Small | Sort says "Sort the bag" when pointed at; Cancel reads "Cancel 1"; the chest's slots are the bag's own; every board has the one make of tab; "You have fallen" is a board of the game's own. |
+
+**Section 4, the looks, is left as it was.** Robin's "Nah" was to making them as trials. Whether that means *leave the looks
+alone* or *do them without trials* is the one thing still to ask.
+
+Checked in the pane at 1200 by 750: C, B and the wheel on a fresh game; every prompt in the test hut by where the hero
+faces; the cave in and out; Brokk and his fire by which is faced; berries, the weir's net, a raft boarded and left; a split
+stack, a meal eaten on a right click, a stack sent into a chest and taken out; and the whole scripted start from the wreck
+to the raft and the first night (`tools/visual/startplay.js`).
+
