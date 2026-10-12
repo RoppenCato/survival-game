@@ -1954,6 +1954,25 @@ all land as before).
   boulder fallen at the foot now and then. Side walls take the slabs too; the peaks' faces do not (they are planes already).
   **So the three things a wall must not be:** courses of blocks (masonry), one smooth surface (cement), a net of even cells
   (paving): slabs must differ in size, most joints must be shut, and cracks must break off.
+  **Then made less perfect (the same day, Robin: "those lines are weird in the middle of the walls", and "maybe the walls are
+  too perfect height. They go around perfectly").** Three things. **No overhangs:** a jutting bed with its dark under it was a
+  long pale line across the middle of a wall; it is gone (`OVS`, `OVY`). **An uneven lip:** near an edge the field is read up
+  to five pixels to one side, in slow waves (in the sheet: `mm += gradient . offset`, only within reach of an edge, `STILL`
+  keeps it off round the waterfall, the shelter and the cave mouths), so an edge has shoulders and bites in it; the walk
+  cells do not follow (they are 8 units, coarser than that). No quicker waves: at a wall's bare foot they read as stairs.
+  **A wall's height varies: `footRise(wx, eyS, n, tot, list)`** (beside `nsm`, above `mountains()`) says how much of a wall's
+  foot is not there at a place along it: the low ground comes that much further in under the lip. About a third of the
+  walls' length loses something, up to a little under half the height, in slow waves. **Nothing is lifted: a wall is a
+  picture set between two grounds, and it may be a shorter picture**, so **both the walk cells and the painter ask the same
+  function**: at the end of `mountains()` the face cells of a foot that is not there become the low ground's again (you walk
+  in under the wall, things grow there), and in `mountainPixel` a pixel below the foot that shows is not wall (it takes the
+  wall's shade for ten pixels). The foot of a south wall that turns (a side-wall pixel that is not `proper`) follows the same
+  height. **Where a wall keeps its full height:** by anything set against it by that height (`WKEEP`, and `KEEP` the ones near
+  a piece: the waterfall, a vein, a cave's mouth, the shelter, a ledge, a slope), where it stands in the sea, and where its
+  foot is not open ground of its own level (another wall's lip under it, or hidden under one: a two-step sea cliff grew
+  green shelves in mid-wall before this was asked). `PADB` is 100 for it. `w.footRise` is exposed for checks. **The trap
+  met on the way:** the painter had its own reason not to lower a wall (`cont`, a wall that turns below) that the cells did
+  not share, and the hero stood in mid-wall on ground the cells had cleared: whatever decides the height must be asked by both.
   **The peaks: `paintPeaks`** (after the pixel loop, into the same rock layer). A peak is a summit with six or seven flat faces
   falling away from it (`peakAt(i, j)`: one to a cell of 126 by 94, from the seed; its height by how deep in the peaks' ground
   it stands and never more than that ground runs on north of it: nothing walks behind a mountain); the height anywhere is the

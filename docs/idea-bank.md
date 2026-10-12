@@ -508,7 +508,9 @@ The walls and the peaks are painted in one hand now (`rockTone`, `paintPeaks`). 
   (55 before the repaint; lowland about 12), all in one frame: a hitch as you walk under the peaks. Painting it a band of
   rows a frame would end that for every kind of ground. The bake is one long function with sheets it shares between pieces,
   so only one may be in hand at a time.
-- **More of what a cliff has:** an overhang with its shadow, a chimney (a deep gully from lip to foot), a band of another
+- **More height in the height:** a wall's foot rises in places now (`footRise`), never its top. A real second step (a wall
+  that breaks into two with a shelf you can walk between) would need the levels themselves to be finer.
+- **More of what a cliff has** (not an overhang drawn as a line across the wall: Robin found those weird): a chimney (a deep gully from lip to foot), a band of another
   rock across a wall, a fallen slab leaning at its foot, a tree rooted in a crack, nests on a sea cliff.
 - **Side walls still step.** A wall that faces east or west is whole pixels along its slanted outline; the south faces'
   lip and foot are true to a part of a pixel. It wants the same done along the leaning columns.
