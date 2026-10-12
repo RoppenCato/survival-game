@@ -3016,6 +3016,37 @@ function beechTree(c, K, x, y, h, seed) { oakTree(c, lowK(K, { trunk: M(30, 9, 5
 function ashTree(c, K, x, y, h, seed) { birch(c, lowK(K, { birch: M(28, 10, 46), birchLeaf: M(P.outsideHue - 2, 48, 50) }), x, y, h, seed); }
 function appleTree(c, K, x, y, h, seed) { var f = P.fruit, a = P.accentHue; P.fruit = 1; P.accentHue = 4; oakTree(c, lowK(K, { leaf: M(P.outsideHue + 6, 52, 46), leafD: M(P.outsideHue + 10, 46, 36) }), x, y, h, seed); P.fruit = f; P.accentHue = a; }
 function chalkRockObj(c, K, x, y, s, seed) { rock(c, lowK(K, { rock: M(42, 12, 82), rockC: M(42, 12, 80), rockD: M(40, 10, 62) }), x, y, s, seed, false); }
+// The fells' own growth (2026-10-12, the mountain biome): a mountain birch (short, crooked, two stems from one root), a juniper
+// (a dark upright flame of a bush with blue berries), heather (a low cushion flecked with purple) and an erratic boulder
+// (a big stone the ice left, moss on its top, a smaller one leaning on it)
+function dwarfBirchObj(c, K, x, y, seed) {
+  var R = rng(seed), i, k, stems = [[-1, 44 + R() * 12], [1, 36 + R() * 14]];
+  longShadow(c, x, y, 12, 22); gshadow(c, x, y + 1, 13, 4, 0.4);
+  stems.forEach(function (st, si) {
+    var cl = [], n = 7, h = st[1], lean = st[0] * (10 + R() * 9);
+    for (i = 0; i <= n; i++) { var t = i / n; cl.push([x + lean * t + Math.sin(t * 5 + seed + si) * 3.2 * t, y - h * t]); }
+    shape(c, ribbon(cl, 0, 0, function (t) { return lerp(7, 3.4, t) + (t < 0.12 ? (0.12 - t) * 20 : 0); }), K.birch, { seed: seed + si, size: 'M', sh: 1.6, rough: 0.3 });
+    for (k = 0; k < 5; k++) { var p = cl[1 + k]; c.fillStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,12%,0.7)'; c.beginPath(); c.ellipse(p[0] + (R() - 0.5) * 2, p[1] + (R() - 0.5) * 3, 1.3 + R() * 1.4, 0.7, 0, 0, 7); c.fill(); }
+    st.top = cl[n];
+  });
+  stems.forEach(function (st, si) { for (i = 0; i < 4; i++) leafBlobs(c, K, st.top[0] + (R() - 0.5) * 24, st.top[1] + (R() - 0.35) * 14, 9 + R() * 5, seed * 3 + i + si * 7, 3, K.birchLeaf); });
+}
+function juniperObj(c, K, x, y, seed) {
+  var R = rng(seed), dk = M(P.outsideHue + 38, 34, 26), md = M(P.outsideHue + 30, 36, 34), i, h = 34 + R() * 12, w = 13 + R() * 4;
+  gshadow(c, x + 1, y, w * 1.1, 4, 0.4);
+  var flame = function (cx, hh, ww, sd, mat) { var pts = [], n = 16; for (i = 0; i <= n; i++) { var t = i / n, a = Math.PI * t, r = Math.sin(a) * ww * (0.75 + 0.5 * (1 - t)) * (1 + (R() - 0.5) * 0.25); pts.push([cx - r, y - hh * t]); } for (i = n; i >= 0; i--) { var t2 = i / n, a2 = Math.PI * t2, r2 = Math.sin(a2) * ww * (0.75 + 0.5 * (1 - t2)) * (1 + (R() - 0.5) * 0.25); pts.push([cx + r2, y - hh * t2]); } shape(c, pts, mat, { seed: sd, size: 'M', sh: 2, rough: 0.5 }); };
+  flame(x - w * 0.55, h * 0.72, w * 0.62, seed + 1, dk); flame(x + w * 0.6, h * 0.62, w * 0.56, seed + 2, dk); flame(x, h, w * 0.78, seed, md);
+  for (i = 0; i < 6; i++) { c.fillStyle = 'hsl(222,36%,' + (34 + R() * 14).toFixed(0) + '%)'; c.beginPath(); c.arc(x + (R() - 0.5) * w * 1.3, y - h * (0.15 + R() * 0.55), 1.4, 0, 7); c.fill(); }
+}
+function heatherObj(c, K, x, y, seed) {
+  var R = rng(seed), gm = M(P.outsideHue + 26, 30, 30), i, w = 17 + R() * 7;
+  gshadow(c, x, y, w * 1.05, 3.4, 0.35);
+  fillPath(c, lobed(x, y - 5, w, 6.5, seed, 30, 0.2), gm.shade, true, ow('M'));
+  fillPath(c, lobed(x - 1, y - 6.4, w * 0.84, 4.8, seed + 1, 26, 0.22), gm.base, false);
+  for (i = 0; i < 26; i++) { var a = R() * 6.28, rr = Math.sqrt(R()), hx = x + Math.cos(a) * w * 0.86 * rr, hy = y - 6.2 + Math.sin(a) * 4.6 * rr - 1; c.fillStyle = 'hsl(' + (300 + R() * 26).toFixed(0) + ',' + (38 + R() * 18).toFixed(0) + '%,' + (56 + R() * 16).toFixed(0) + '%)'; c.beginPath(); c.ellipse(hx, hy, 1.5, 1.1, 0, 0, 7); c.fill(); }
+  c.save(); c.strokeStyle = gm.shade; c.lineWidth = 0.9; c.lineCap = 'round'; for (i = 0; i < 5; i++) { var sx = x + (R() - 0.5) * w * 1.6; c.beginPath(); c.moveTo(sx, y - 9); c.lineTo(sx + (R() - 0.5) * 3, y - 14 - R() * 3); c.stroke(); } c.restore();
+}
+function boulderObj(c, K, x, y, seed) { rock(c, K, x + 15, y + 2, 13, seed + 5, false); rock(c, K, x - 2, y, 25, seed, true); }
 function hedgeObj(c, K, x, y, seed) { bush(c, K, x - 24, y + 2, 15, seed, false); bush(c, K, x + 24, y + 2, 15, seed + 2, false); bush(c, K, x, y, 16, seed + 1, false); }
 function bogIronObj(c, K, x, y, seed) {                 // a lump of bog ore: rust-brown, an ochre crust, half sunk in dark marsh water
   var R = rng(seed);
@@ -4395,6 +4426,10 @@ var PROPS = {
   ancient: { b: [-190, -330, 220, 36], f: function (c, K, s) { ancient(c, K, 0, 0, 260, s); } },
   blossom: { b: [-100, -200, 130, 18], f: function (c, K, s) { blossomTree(c, K, 0, 0, 150, s); } },
   bush: { b: [-34, -60, 34, 10], f: function (c, K, s) { bush(c, K, 0, 0, 22, s, false); } },
+  dwarfBirch: { b: [-48, -88, 62, 14], f: function (c, K, s) { dwarfBirchObj(c, K, 0, 0, s); } },
+  juniper: { b: [-30, -58, 32, 9], f: function (c, K, s) { juniperObj(c, K, 0, 0, s); } },
+  heather: { b: [-32, -24, 32, 8], f: function (c, K, s) { heatherObj(c, K, 0, 0, s); } },
+  boulder: { b: [-46, -62, 56, 14], f: function (c, K, s) { boulderObj(c, K, 0, 0, s); } },
   berryBush: { b: [-34, -60, 34, 10], f: function (c, K, s) { bush(c, K, 0, 0, 22, s, true); } },
   fern: { b: [-34, -40, 34, 10], f: function (c, K, s) { fern(c, K, 0, 0, 22, s); } },
   log: { b: [-50, -50, 50, 14], f: function (c, K, s) { fallenLog(c, K, 0, 0, 64, s); } },
@@ -4485,8 +4520,8 @@ var T = 32, TS = 24, K = 0.75, CT = 16;
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
-var KIND = { birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
-var HP = { birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
+var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
+var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
 // the home camp: prop, offset from the jetty root, collision radius
 var CAMP = [['dryingRack', -150, -70, 0], ['woodpile', -190, -30, 12], ['stoneHearth', -120, 40, 8], ['vikingTent', -200, 60, 16], ['dragonPost', 20, -34, 6], ['beachedBoat', -30, 78, 0]];
 
@@ -4509,6 +4544,13 @@ function noiseSheet() {
   return (noiseT = o);
 }
 
+/* The Blender set pieces (2026-10-12: the peaks, the cave mouth; art/build/rocks_build.py, tools/props.js): a prop whose
+   sprite is a rendered image and not a drawing of the kit's. setImages({ name: { img, w, h, ax, ay, upp } }) names them: the
+   image, its size in pixels, the pixel it stands on, and the game units a pixel. A world's sprite(name) hands the image back
+   as a kit sprite does (cv, l, t, w, h); until it has loaded, a blank. */
+var IMAGES = {};
+function setImages(map) { for (var k in map) IMAGES[k] = map[k]; }
+function imgReady(im) { return !!im && (im.complete === undefined ? im.width > 0 : (im.complete && im.naturalWidth > 0)); }
 function make(kit, opts) {
   var o = {}, k; for (k in DEF) o[k] = DEF[k]; for (k in opts || {}) if (opts[k] != null) o[k] = opts[k];
   var w = { T: T, TS: TS, K: K, CT: CT, o: o, hash: hash, vnoise: vnoise, fbm: fbm };
@@ -4570,6 +4612,170 @@ function make(kit, opts) {
   }
   w.BM = BM; w.biomeAt = function (tx, ty) { return (tx < 0 || ty < 0 || tx >= GW || ty >= GH) ? 0 : BM[ty * GW + tx] / 255; }; w.biome = function (wx, wy) { return w.biomeAt(Math.floor(wx / T), Math.floor(wy / T)); };
   function beachAt(tx, ty) { return o.beach * (0.55 + 0.9 * vnoise(tx / 8, ty / 8, s + 50)); }   // the beach is wider in some places than others
+  /* 3c. The mountains (2026-10-12, Robin: mountains in a good immersive way; plateaus with cliff faces, and painted peaks on top).
+     o.mountain names an island (true is the first): its north rises in two terraces (the foothills, the high plateau) to peaks.
+     Nothing is lifted on the screen: height is drawn the way the old top-down games draw it. MT is a smooth field per tile, read
+     between the tiles like the coast's; its whole numbers are the levels (0 low ground, 1, 2, 3 the peaks). A level's edge is a
+     contour of the field, so every cliff is a curve. South of an edge the lower ground is covered by the cliff's FACE for HFW
+     units a level (HF pixels on the screen): rock you cannot walk on, painted as a wall. Where an edge faces away (north) or
+     runs north to south there is only a RIM, a lip of rock a cell wide on each side. The peaks (level 3) cannot be walked.
+     SLOPES are the ways up: a strip cut through a south face where the edge runs straight, found from the field and spread
+     along the island. Everything the game asks (walking, building, planting) reads a grid of cells 8 units wide (w.cellAt:
+     the level in two bits, FACE 4, RIM 8, RAMP 16, BLOCK 32), so w.isLand is false on a face, a rim and a peak. */
+  var MT = null, mtn = null, HF = 84, HFW = HF / K, MC = 8, M_FACE = 4, M_RIM = 8, M_RAMP = 16, M_BLOCK = 32;
+  function sstep(a, b, v) { var t = Math.max(0, Math.min(1, (v - a) / (b - a))); return t * t * (3 - 2 * t); }
+  function mTile(tx, ty) { return (tx < 0 || ty < 0 || tx >= GW || ty >= GH) ? 0 : MT[ty * GW + tx]; }
+  function mAt(wx, wy) {
+    var fx = wx / T - 0.5, fy = wy / T - 0.5, ix = Math.floor(fx), iy = Math.floor(fy), u = fx - ix, v = fy - iy;
+    var a = mTile(ix, iy), b = mTile(ix + 1, iy), c = mTile(ix, iy + 1), d = mTile(ix + 1, iy + 1);
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  }
+  function mLevel(m) { return m >= 3 ? 3 : (m >= 2 ? 2 : (m >= 1 ? 1 : 0)); }
+  (function mountains() {
+    if (o.mountain == null || o.mountain === false) return;
+    var mq = isles[o.mountain === true ? 0 : o.mountain] || isles[0], mo = o.mountainOpts || {}, tx, ty, i, j, n, pass;
+    MT = new Float32Array(GW * GH);
+    var tx0 = Math.max(2, Math.floor(mq.x - mq.r * 1.5)), tx1 = Math.min(GW - 3, Math.ceil(mq.x + mq.r * 1.5)), ty0 = Math.max(2, Math.floor(mq.y - mq.r * 1.5)), ty1 = Math.min(GH - 3, Math.ceil(mq.y + mq.r * 1.5));
+    var south = mo.south != null ? mo.south : 0.3, top = mo.top != null ? mo.top : 0.8, shore = mo.shore != null ? mo.shore : 7, rise = mo.rise != null ? mo.rise : 12, high = mo.high != null ? mo.high : 4.0;
+    // how far every tile is from the sea, in tiles (two sweeps), and the island's own northernmost and southernmost land
+    var DS = new Float32Array(GW * GH), yN = 1e9, yS = -1e9, dv;
+    for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) DS[ty * GW + tx] = E[ty * GW + tx] > 0 ? 1e6 : 0;
+    for (ty = ty0 + 1; ty <= ty1; ty++) for (tx = tx0 + 1; tx < tx1; tx++) { i = ty * GW + tx; dv = Math.min(DS[i], DS[i - 1] + 1, DS[i - GW] + 1, DS[i - GW - 1] + 1.414, DS[i - GW + 1] + 1.414); DS[i] = dv; }
+    for (ty = ty1 - 1; ty >= ty0; ty--) for (tx = tx1 - 1; tx > tx0; tx--) { i = ty * GW + tx; dv = Math.min(DS[i], DS[i + 1] + 1, DS[i + GW] + 1, DS[i + GW + 1] + 1.414, DS[i + GW - 1] + 1.414); DS[i] = dv; if (dv > 5) { if (ty < yN) yN = ty; if (ty > yS) yS = ty; } }
+    for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) {
+      var d0 = DS[ty * GW + tx]; if (d0 <= 0) continue;
+      var north = sstep(south, top, (yS - ty) / Math.max(1, yS - yN)), inland = sstep(shore, shore + rise, d0), base = north * inland;   // how far north on the island's own land, and how far from the sea: the mountains leave a shore all round
+      MT[ty * GW + tx] = high * base * (0.78 + 0.5 * fbm(tx / 30, ty / 30, s + 140)) + (fbm(tx / 10, ty / 10, s + 150) - 0.5) * 0.6 * base;
+    }
+    for (pass = 0; pass < 2; pass++) {                       // smoothed twice, so no terrace is a speck
+      var M2 = new Float32Array(MT.length);
+      for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) { var sm = 0, dy2, dx2; for (dy2 = -1; dy2 <= 1; dy2++) for (dx2 = -1; dx2 <= 1; dx2++) sm += MT[(ty + dy2) * GW + tx + dx2]; M2[ty * GW + tx] = sm / 9; }
+      MT = M2;
+    }
+    // no specks: a patch of higher ground too small to stand a cliff round is taken down, a pit too small is filled (its
+    // face would be a pillar or a slot); found as joined tiles at or above each level, and joined tiles below it
+    (function despeckle() {
+      var seenT = new Int32Array(GW * GH), stamp = 0, lvn, hi2, st, comp, q2, t2, k3, MIN = mo.minPatch || 70, NB = [1, -1, GW, -GW];
+      for (lvn = 3; lvn >= 1; lvn--) for (hi2 = 1; hi2 >= 0; hi2--) {
+        for (ty = ty0 + 1; ty < ty1; ty++) for (tx = tx0 + 1; tx < tx1; tx++) {
+          st = ty * GW + tx; if (seenT[st] === stamp + 1 || ((MT[st] >= lvn) ? 1 : 0) !== hi2) continue;
+          comp = [st]; seenT[st] = stamp + 1; var edge = false;
+          for (q2 = 0; q2 < comp.length; q2++) { t2 = comp[q2]; var cxx = t2 % GW, cyy = (t2 - cxx) / GW; if (cxx <= tx0 + 1 || cxx >= tx1 - 1 || cyy <= ty0 + 1 || cyy >= ty1 - 1) { edge = true; continue; } for (k3 = 0; k3 < 4; k3++) { var nb = t2 + NB[k3]; if (seenT[nb] !== stamp + 1 && ((MT[nb] >= lvn) ? 1 : 0) === hi2) { seenT[nb] = stamp + 1; comp.push(nb); } } }
+          if (comp.length < MIN && !edge) for (q2 = 0; q2 < comp.length; q2++) MT[comp[q2]] = hi2 ? Math.min(MT[comp[q2]], lvn - 0.03) : Math.max(MT[comp[q2]], lvn + 0.03);
+        }
+        stamp++;
+      }
+    })();
+    var cx0 = tx0 * T / MC, cy0 = ty0 * T / MC, cw = (tx1 - tx0 + 1) * T / MC, ch = (ty1 - ty0 + 1) * T / MC, CL = new Uint8Array(cw * ch), FH = Math.round(HFW / MC);
+    function cv(ci, cj) { return (ci < 0 || cj < 0 || ci >= cw || cj >= ch) ? 0 : CL[cj * cw + ci]; }
+    for (j = 0; j < ch; j++) for (i = 0; i < cw; i++) CL[j * cw + i] = mLevel(mAt((cx0 + i + 0.5) * MC, (cy0 + j + 0.5) * MC));
+    for (i = 0; i < cw; i++) {                               // the faces: down every column, the ground south of a higher edge
+      var last = [-1e9, -1e9, -1e9, -1e9];
+      for (j = 0; j < ch; j++) { var L = CL[j * cw + i] & 3; for (n = 1; n <= 3; n++) if (L >= n) last[n] = j; for (n = 3; n > L; n--) if ((j - last[n]) * MC <= HFW * (n - L)) { CL[j * cw + i] |= M_FACE | M_BLOCK; break; } }
+    }
+    var RIMS = [];
+    for (j = 1; j < ch - 1; j++) for (i = 1; i < cw - 1; i++) {   // the rims: wherever the level changes next door; and the peaks
+      var c0 = CL[j * cw + i], L0 = c0 & 3; if (L0 === 3) { CL[j * cw + i] |= M_BLOCK; continue; } if (c0 & M_FACE) continue;
+      var dif = false, di, dj; for (dj = -1; dj <= 1 && !dif; dj++) for (di = -1; di <= 1; di++) if ((CL[(j + dj) * cw + i + di] & 3) !== L0) { dif = true; break; }
+      if (dif) RIMS.push(j * cw + i);
+    }
+    RIMS.forEach(function (q) { CL[q] |= M_RIM | M_BLOCK; });
+    // the slopes: a straight stretch of south-facing edge, one level high, with level ground above it and below its foot
+    var ramps = [], candAll = { 1: [], 2: [] };
+    for (n = 1; n <= 2; n++) {
+      var cands = candAll[n];
+      for (j = 10; j < ch - FH - 10; j++) for (i = 8; i < cw - 8; i++) {
+        if ((cv(i, j) & 3) !== n || (cv(i, j + 1) & 3) !== n - 1) continue;
+        var ok = true, d2, k2;
+        for (d2 = -4; ok && d2 <= 4; d2 += 2) {
+          for (k2 = 1; ok && k2 <= 8; k2++) { var ca = cv(i + d2, j - k2); if ((ca & 3) !== n || (ca & M_FACE)) ok = false; }
+          if (ok && (cv(i + d2, j + 3) & 3) !== n - 1) ok = false;
+          for (k2 = 2; ok && k2 <= FH; k2 += 3) if ((cv(i + d2, j + k2) & 3) !== n - 1) ok = false;
+          for (k2 = FH + 2; ok && k2 <= FH + 8; k2++) { var cb = cv(i + d2, j + k2); if ((cb & 3) !== n - 1 || (cb & (M_FACE | M_RIM))) ok = false; }
+        }
+        if (ok) cands.push([i, j]);
+      }
+      if (!cands.length) continue;
+      var imin = 1e9, imax = -1e9; cands.forEach(function (q) { imin = Math.min(imin, q[0]); imax = Math.max(imax, q[0]); });
+      var want = Math.max(2, Math.min(n === 1 ? 4 : 3, Math.round((imax - imin) * MC / 900))), b, got = [];
+      for (b = 0; b < want; b++) {
+        var target = imin + (b + 0.5) * (imax - imin) / want, best = null, bs = 1e9;
+        cands.forEach(function (q) { var sc = Math.abs(q[0] - target) - q[1] * 0.35; if (sc < bs && !got.some(function (g) { return Math.abs(g[0] - q[0]) < 30; })) { bs = sc; best = q; } });
+        if (best) got.push(best);
+      }
+      got.forEach(function (q) {
+        ramps.push(faceRamp(n, q));
+      });
+    }
+    function faceRamp(n2, q) { var rx = (cx0 + q[0] + 0.5) * MC, ry = (cy0 + q[1] + 1) * MC, lean = (hash(q[0], q[1], s + 7) - 0.5) * 20; return { n: n2, x0: rx + lean, y0: ry - 52, x1: rx - lean, y1: ry + HFW + 44, r: 27, ex: rx, ey: ry }; }
+    function rampD(rm, wx, wy) {                             // how far a point is from a slope's middle line, and how far along it (0 the top)
+      var ax = rm.x1 - rm.x0, ay = rm.y1 - rm.y0, t = ((wx - rm.x0) * ax + (wy - rm.y0) * ay) / (ax * ax + ay * ay); t = Math.max(0, Math.min(1, t));
+      return [Math.hypot(wx - rm.x0 - ax * t, wy - rm.y0 - ay * t), t];
+    }
+    function markRamp(rm) {
+      rm.len = Math.hypot(rm.x1 - rm.x0, rm.y1 - rm.y0);
+      var i0 = Math.floor((Math.min(rm.x0, rm.x1) - rm.r) / MC - cx0), i1 = Math.ceil((Math.max(rm.x0, rm.x1) + rm.r) / MC - cx0), j0 = Math.floor((Math.min(rm.y0, rm.y1) - rm.r) / MC - cy0), j1 = Math.ceil((Math.max(rm.y0, rm.y1) + rm.r) / MC - cy0), a2, b2;
+      for (b2 = j0; b2 <= j1; b2++) for (a2 = i0; a2 <= i1; a2++) { if (a2 < 0 || b2 < 0 || a2 >= cw || b2 >= ch) continue; if (rampD(rm, (cx0 + a2 + 0.5) * MC, (cy0 + b2 + 0.5) * MC)[0] < rm.r - 7) CL[b2 * cw + a2] = (CL[b2 * cw + a2] & 3) | M_RAMP; }
+    }
+    ramps.forEach(markRamp);
+    /* Every sizeable piece of high ground gets a way up. A flood from the low ground over the walking cells; the largest piece
+       of fell it did not reach is joined on, by a slope up a south face if one of the found places touches it, else by a gap
+       in a rim (a short slope across an edge that faces away or runs north to south); then the flood goes on. */
+    var LANDC = new Uint8Array(cw * ch), reach = new Uint8Array(cw * ch), cm = new Int32Array(cw * ch), cid = 0, gave = {}, seeds = [], ix, tries;
+    for (j = 0; j < ch; j++) for (i = 0; i < cw; i++) LANDC[j * cw + i] = elevAt((cx0 + i + 0.5) * MC, (cy0 + j + 0.5) * MC) > 0.05 ? 1 : 0;
+    function flood(st) {
+      while (st.length) { var q3 = st.pop(), qi = q3 % cw, qj = (q3 - qi) / cw, d4; for (d4 = 0; d4 < 4; d4++) { var a3 = qi + (d4 === 0 ? 1 : (d4 === 1 ? -1 : 0)), b3 = qj + (d4 === 2 ? 1 : (d4 === 3 ? -1 : 0)); if (a3 < 0 || b3 < 0 || a3 >= cw || b3 >= ch) continue; var i3 = b3 * cw + a3; if (reach[i3] || !LANDC[i3] || (CL[i3] & M_BLOCK)) continue; reach[i3] = 1; st.push(i3); } }
+    }
+    for (ix = 0; ix < cw * ch; ix++) if (LANDC[ix] && !(CL[ix] & (M_BLOCK | M_RAMP)) && (CL[ix] & 3) === 0) { reach[ix] = 1; seeds.push(ix); }
+    flood(seeds);
+    var MINC = mo.minReach || 1400, DIRS = [[0, 1], [1, 0], [-1, 0], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+    for (tries = 0; tries < 16; tries++) {
+      var bestComp = null, base = cid;
+      for (ix = 0; ix < cw * ch; ix++) {
+        if (reach[ix] || !LANDC[ix] || (CL[ix] & M_BLOCK) || (CL[ix] & 3) === 0 || cm[ix] > base) continue;
+        var comp = [ix], qn; cid++; cm[ix] = cid;
+        for (qn = 0; qn < comp.length; qn++) { var c5 = comp[qn], ci5 = c5 % cw, cj5 = (c5 - ci5) / cw, d5; for (d5 = 0; d5 < 4; d5++) { var a5 = ci5 + (d5 === 0 ? 1 : (d5 === 1 ? -1 : 0)), b5 = cj5 + (d5 === 2 ? 1 : (d5 === 3 ? -1 : 0)); if (a5 < 0 || b5 < 0 || a5 >= cw || b5 >= ch) continue; var i5 = b5 * cw + a5; if (cm[i5] > base || reach[i5] || !LANDC[i5] || (CL[i5] & M_BLOCK)) continue; cm[i5] = cid; comp.push(i5); } }
+        if (comp.length >= MINC && !gave[comp[0]] && (!bestComp || comp.length > bestComp.length)) { bestComp = comp; bestComp.id = cid; }
+      }
+      if (!bestComp) break;
+      var made = null, nn2, kq;
+      for (nn2 = 1; nn2 <= 2 && !made; nn2++) for (kq = 0; kq < candAll[nn2].length; kq++) {     // a slope up a face
+        var cq = candAll[nn2][kq], topI = (cq[1] - 2) * cw + cq[0], footI = (cq[1] + FH + 4) * cw + cq[0];
+        if (cm[topI] === bestComp.id && reach[footI] && !ramps.some(function (g) { return Math.abs(g.ex - (cx0 + cq[0] + 0.5) * MC) < 200 && Math.abs(g.ey - (cy0 + cq[1] + 1) * MC) < 200; })) { made = faceRamp(nn2, cq); break; }
+      }
+      for (kq = 0; kq < bestComp.length && !made; kq += 3) {                                    // a gap in a rim
+        var c6 = bestComp[kq], ci6 = c6 % cw, cj6 = (c6 - ci6) / cw, dq, ds;
+        for (dq = 0; dq < 8 && !made; dq++) for (ds = 2; ds <= 6; ds++) {
+          var a6 = ci6 + DIRS[dq][0] * ds, b6 = cj6 + DIRS[dq][1] * ds; if (a6 < 0 || b6 < 0 || a6 >= cw || b6 >= ch) break;
+          var t6 = b6 * cw + a6; if (!reach[t6]) { if (!(CL[t6] & M_RIM) || (CL[t6] & M_FACE)) break; continue; }
+          var ux = DIRS[dq][0], uy = DIRS[dq][1], ul = Math.hypot(ux, uy), hx2 = (cx0 + ci6 + 0.5) * MC, hy2 = (cy0 + cj6 + 0.5) * MC, lx2 = (cx0 + a6 + 0.5) * MC, ly2 = (cy0 + b6 + 0.5) * MC, upper = (CL[c6] & 3) >= (CL[t6] & 3);
+          made = upper ? { n: CL[c6] & 3, x0: hx2 - ux / ul * 20, y0: hy2 - uy / ul * 20, x1: lx2 + ux / ul * 20, y1: ly2 + uy / ul * 20, r: 24, gap: true } : { n: CL[t6] & 3, x0: lx2 + ux / ul * 20, y0: ly2 + uy / ul * 20, x1: hx2 - ux / ul * 20, y1: hy2 - uy / ul * 20, r: 24, gap: true };
+          made.ex = (hx2 + lx2) / 2; made.ey = (hy2 + ly2) / 2; break;
+        }
+      }
+      for (kq = 0; kq < bestComp.length && !made; kq += 2) {                                    // or straight down whatever face lies south of it, however it runs
+        var c7 = bestComp[kq], ci7 = c7 % cw, cj7 = (c7 - ci7) / cw, k7, st7 = 0, end7 = -1;
+        for (k7 = 1; k7 <= FH * 2 + 6 && cj7 + k7 < ch; k7++) { var v7 = CL[(cj7 + k7) * cw + ci7], r7 = reach[(cj7 + k7) * cw + ci7]; if (r7) { end7 = k7; break; } if (st7 === 0 && (v7 & M_RIM)) continue; if (v7 & M_FACE) { st7 = 1; continue; } break; }
+        if (end7 > 0 && st7 === 1) { var x7 = (cx0 + ci7 + 0.5) * MC, y7 = (cy0 + cj7 + 0.5) * MC; made = { n: CL[c7] & 3, x0: x7, y0: y7 - 30, x1: x7, y1: y7 + end7 * MC + 34, r: 27, ex: x7, ey: y7 + 8 }; }
+      }
+      if (!made) { gave[bestComp[0]] = 1; continue; }
+      ramps.push(made); markRamp(made);
+      var st2 = []; for (ix = 0; ix < cw * ch; ix++) if (reach[ix]) { var xi = ix % cw; if ((xi > 0 && !reach[ix - 1]) || (xi < cw - 1 && !reach[ix + 1]) || (ix >= cw && !reach[ix - cw]) || (ix < cw * (ch - 1) && !reach[ix + cw])) st2.push(ix); }
+      flood(st2);
+    }
+    mtn = { MC: MC, x0: cx0, y0: cy0, w: cw, h: ch, CL: CL, HF: HF, HFW: HFW, ramps: ramps, isle: isles.indexOf(mq), rampD: rampD, bx0: tx0 * T, by0: ty0 * T, bx1: (tx1 + 1) * T, by1: (ty1 + 1) * T };
+  })();
+  w.mt = mtn; w.MT = MT; w.mAt = MT ? mAt : function () { return 0; };
+  function cellAt(wx, wy) { if (!mtn) return 0; var ci = Math.floor(wx / MC) - mtn.x0, cj = Math.floor(wy / MC) - mtn.y0; return (ci < 0 || cj < 0 || ci >= mtn.w || cj >= mtn.h) ? 0 : mtn.CL[cj * mtn.w + ci]; }
+  w.cellAt = cellAt; w.M_FACE = M_FACE; w.M_RIM = M_RIM; w.M_RAMP = M_RAMP; w.M_BLOCK = M_BLOCK;
+  w.levelAt = function (wx, wy) { return cellAt(wx, wy) & 3; };          // 0 low ground, 1 the foothills, 2 the high plateau, 3 the peaks
+  w.cliffAt = function (wx, wy) { return (cellAt(wx, wy) & M_BLOCK) !== 0; };   // a face, a rim or a peak: nothing walks, stands or grows here
+  w.rampAt = function (wx, wy) { return (cellAt(wx, wy) & M_RAMP) !== 0; };
+  w.flatAt = function (wx, wy, r) {                                        // level ground with room round it: no cliff, no slope within r, one level
+    var c0 = cellAt(wx, wy), a; if (c0 & (M_BLOCK | M_RAMP)) return false; r = r || 0; if (!mtn || !r) return true;
+    for (a = 0; a < 8; a++) { var c1 = cellAt(wx + Math.cos(a * 0.785) * r, wy + Math.sin(a * 0.785) * r); if ((c1 & (M_BLOCK | M_RAMP)) || (c1 & 3) !== (c0 & 3)) return false; }
+    return true;
+  };
   /* 4. what each tile is for the game: 0 sea, 1 beach, 2 grass, 3 dark grass, 4 jetty. The jetty runs east from the home island. */
   var grid = new Uint8Array(GW * GH), landChunk = new Uint8Array(CW * CH), landTiles = 0;
   for (y = 1; y < GH - 1; y++) for (x = 1; x < GW - 1; x++) {
@@ -4578,6 +4784,11 @@ function make(kit, opts) {
     if (h2 <= 0) continue;
     landTiles++;
     grid[p] = h2 < beachAt(x, y) ? 1 : (fbm(x / 9, y / 9, s + 70) > 0.6 ? 3 : 2);
+  }
+  if (mtn) for (y = Math.floor(mtn.by0 / T); y < Math.floor(mtn.by1 / T); y++) for (x = Math.floor(mtn.bx0 / T); x < Math.floor(mtn.bx1 / T); x++) {
+    if (grid[y * GW + x] < 2) continue; var anyc = false, c4x, c4y;
+    for (c4y = 0; c4y < 4 && !anyc; c4y++) for (c4x = 0; c4x < 4; c4x++) if (cellAt(x * T + c4x * MC + 4, y * T + c4y * MC + 4) & (M_BLOCK | M_RAMP)) { anyc = true; break; }
+    if (anyc) grid[y * GW + x] = 5;
   }
   var hx = Math.round(isles[0].x), hy = Math.round(isles[0].y);
   for (x = hx; x < GW - 16 && E[hy * GW + x] > 0; x++) {}
@@ -4597,12 +4808,15 @@ function make(kit, opts) {
   function code(tx, ty) { return (tx < 0 || ty < 0 || tx >= GW || ty >= GH) ? 255 : grid[ty * GW + tx]; }
   function onPlank(wx, wy) { return code(Math.floor(wx / T), Math.floor(wy / T)) === 4; }
   w.eTile = eTile; w.elevAt = elevAt; w.code = code; w.onPlank = onPlank; w.beachAt = beachAt;
-  w.isLand = function (wx, wy) { return onPlank(wx, wy) || elevAt(wx, wy) > 0.05; };
-  w.isWade = function (wx, wy) { return elevAt(wx, wy) > -1.1; };   // the turquoise shallows: you can walk through them
+  w.isLand = function (wx, wy) { return onPlank(wx, wy) || (elevAt(wx, wy) > 0.05 && !(mtn && (cellAt(wx, wy) & M_BLOCK))); };   // not a cliff face, its rim or a peak
+  w.isWade = function (wx, wy) { return elevAt(wx, wy) > -1.1 && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // the turquoise shallows: you can walk through them
   w.isWater = function (wx, wy) { return !onPlank(wx, wy) && elevAt(wx, wy) < -0.18 && wx > 40 && wy > 40 && wx < WX - 40 && wy < WY - 40; };
 
   /* baking */
-  w.sprite = function (name, v) { var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); sprites[kk] = kit.bakeProp(name, 3 + v * 7); } return sprites[kk]; };
+  w.sprite = function (name, v) {
+    var im = IMAGES[name];
+    if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [] }; return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
+    var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); sprites[kk] = kit.bakeProp(name, 3 + v * 7); } return sprites[kk]; };
   function tile(t, gx, gy) {
     if (!tiles[t]) { kit.setup(BASE); tiles[t] = []; for (var m = 0; m < kit.TILES[t].n; m++) tiles[t].push(kit.bakeTile(t, m)); }
     return tiles[t][Math.floor(hash(gx, gy, 5) * tiles[t].length) % tiles[t].length];
@@ -4659,6 +4873,13 @@ function make(kit, opts) {
     var R3 = kit.rng(cx * 311 + cy * 7907 + 5), i;                 // pebbles on the gravel, a crumb or two on the earth
     for (i = 0; i < 180; i++) { var sx = R3() * W2, sy = R3() * H2, gx = cx * W2 + sx, gy = (cy * H2 + sy) / K, kg = groundField(1, gx, gy), ke = groundField(2, gx, gy); if (kg > 0.62) { c.fillStyle = R3() < 0.5 ? 'rgba(90,84,76,0.55)' : 'rgba(205,198,184,0.7)'; c.beginPath(); c.ellipse(sx, sy, 1.2 + R3() * 1.2, 0.8 + R3() * 0.8, R3() * 3, 0, 7); c.fill(); } else if (ke > 0.7 && R3() < 0.3) { c.fillStyle = 'rgba(70,52,34,0.45)'; c.fillRect(sx, sy, 1.5, 1); } }
   }
+  var rockP = null;
+  function rockPal() {
+    if (rockP) return rockP; kit.setup(BASE); var mk = kit.mats().rock, cvp = kit.mk(3, 1), cp = cvp.getContext('2d');
+    [mk.base, mk.shade, mk.hl].forEach(function (col, i2) { cp.fillStyle = col || '#666'; cp.fillRect(i2, 0, 1, 1); });
+    var dp = cp.getImageData(0, 0, 3, 1).data; rockP = { base: [dp[0], dp[1], dp[2]], shade: [dp[4], dp[5], dp[6]], hl: [dp[8], dp[9], dp[10]] }; return rockP;
+  }
+  w.rockPal = rockPal;
   function bakeChunk(cx, cy) {
     var W2 = CT * T, H2 = CT * TS, ccv = kit.mk(W2 * 2, H2 * 2), c = ccv.getContext('2d'), xx, yy, ii, jj;
     c.setTransform(2, 0, 0, 2, 0, 0);
@@ -4666,6 +4887,28 @@ function make(kit, opts) {
     var n1 = CT + 2, EE = new Float32Array(n1 * n1), BW = new Float32Array(n1 * n1), DK = new Float32Array(n1 * n1), BMv = new Float32Array(n1 * n1);
     for (jj = 0; jj < n1; jj++) for (ii = 0; ii < n1; ii++) { var gx = cx * CT + ii - 1, gy = cy * CT + jj - 1; EE[jj * n1 + ii] = eTile(gx, gy); BW[jj * n1 + ii] = beachAt(gx, gy); DK[jj * n1 + ii] = fbm(gx / 9, gy / 9, s + 70); BMv[jj * n1 + ii] = w.biomeAt(gx, gy); }
     var ov = kit.mk(W2, H2), oc = ov.getContext('2d'), img = oc.createImageData(W2, H2), d = img.data, P = PAL, pp = 0;
+    // the mountains in this piece: the level of every pixel (and of a strip above it, as tall as two faces), then down every
+    // column what stands over each pixel: FN the level of the edge whose face covers it, FD how far below that edge it is
+    var lev = null, FN = null, FD = null, SH = null, LW = W2 + 16, PADR = HF * 2 + 8, d2 = null, img2 = null, ov2 = null, rampsHere = null, RK = null;
+    if (mtn && cx * W2 < mtn.bx1 && (cx + 1) * W2 > mtn.bx0 && cy * H2 / K < mtn.by1 + 8 && (cy + 1) * H2 / K > mtn.by0 - 8) {
+      var HR = H2 + PADR + 8, any = false, r0, px0; lev = new Uint8Array(LW * HR);   // a margin of 8 all round, so an edge's rim is found across the piece's own border
+      for (r0 = 0; r0 < HR; r0++) { var sy0 = cy * H2 + r0 - PADR, wy0 = sy0 / K; for (px0 = 0; px0 < LW; px0++) { var wx0 = cx * W2 + px0 - 8, lv0 = mLevel(mAt(wx0, wy0) + (noise[((sy0 & 127) << 7) | (wx0 & 127)] - 0.5) * 0.012); if (lv0) { lev[r0 * LW + px0] = lv0; any = true; } } }
+      if (!any) lev = null;
+      else {
+        FN = new Uint8Array(W2 * H2); FD = new Uint16Array(W2 * H2); SH = new Uint8Array(W2 * H2);
+        for (px0 = 0; px0 < W2; px0++) {
+          var l1 = -1e9, l2 = -1e9, l3 = -1e9;
+          for (r0 = 0; r0 < H2 + PADR; r0++) {
+            var Lq = lev[r0 * LW + px0 + 8]; if (Lq >= 1) l1 = r0; if (Lq >= 2) l2 = r0; if (Lq >= 3) l3 = r0;
+            if (r0 < PADR || Lq === 3) continue; var qi = (r0 - PADR) * W2 + px0, nn, la;
+            for (nn = 3; nn > Lq; nn--) { la = nn === 3 ? l3 : (nn === 2 ? l2 : l1); if (r0 - la <= HF * (nn - Lq)) { FN[qi] = nn; FD[qi] = r0 - la; break; } }
+            if (!FN[qi]) for (nn = 3; nn > Lq; nn--) { la = nn === 3 ? l3 : (nn === 2 ? l2 : l1); var over = r0 - la - HF * (nn - Lq); if (over > 0 && over <= 16) { SH[qi] = 17 - over; break; } }   // the shadow at a face's foot
+          }
+        }
+        img2 = oc.createImageData(W2, H2); d2 = img2.data; RK = rockPal();
+        rampsHere = mtn.ramps.filter(function (rm) { return Math.max(rm.x0, rm.x1) + rm.r * 1.6 > cx * W2 && Math.min(rm.x0, rm.x1) - rm.r * 1.6 < (cx + 1) * W2 && (Math.max(rm.y0, rm.y1) + rm.r * 1.6) * K > cy * H2 && (Math.min(rm.y0, rm.y1) - rm.r * 1.6) * K < (cy + 1) * H2; });
+      }
+    }
     for (var py = 0; py < H2; py++) {
       var v = py / TS + 0.5, j0 = Math.floor(v), tv = v - j0, wy = cy * H2 + py;
       for (var px = 0; px < W2; px++, pp += 4) {
@@ -4693,9 +4936,74 @@ function make(kit, opts) {
             r = 22; g = 84; b = 40; a = Math.min(120, Math.max(0, (dk - 0.54) * 5) * 62 + rim * 70);
             var bmv = BMv[q] * w00 + BMv[q + 1] * w10 + BMv[q + n1] * w01 + BMv[q + n1 + 1] * w11; if (bmv > 0.05) { var bt = bmv * 95, at = a + bt; r = (r * a + 196 * bt) / at; g = (g * a + 176 * bt) / at; b = (b * a + 62 * bt) / at; a = Math.min(255, at); }   // the lowlands: a warmer, yellower green
           }
+          if (lev) mountainPixel(px, py, wx, wy, n1v, n2v);
         }
         d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
       }
+    }
+    /* One pixel of mountain. The fells' ground is a tint laid into the grass overlay (r, g, b, a above): shorter, greyer grass
+       on the foothills, stonier with heather on the high plateau. The rock goes into a second overlay (d2) laid over the meadow:
+       the face of a cliff (strata, cracks, a lit lip under an ink line at the top, darker toward a dark foot, moss in patches),
+       the rim where an edge faces away, the peaks' scree and snow, the shadow at a face's foot, and the slopes. */
+    function mountainPixel(px, py, wx, wy, n1v, n2v) {
+      var qi = py * W2 + px, lb = (py + PADR) * LW + px + 8, L = lev[lb], fn = FN[qi], o2 = pp, R0 = RK.base, R1 = RK.shade, R2 = RK.hl, big = noise[(((wy >> 2) & 127) << 7) | ((wx >> 2) & 127)], k, rr, gg, bb;
+      if (L === 1 || L === 2) {                              // the fells: a tint over the grass
+        var tr = L === 1 ? 150 : 152, tg = L === 1 ? 158 : 146, tb = L === 1 ? 92 : 112, ta = L === 1 ? 46 + big * 30 : 78 + big * 40;
+        if (L === 2 && big > 0.62) { tr = 134; tg = 100; tb = 128; ta = 96; }                 // heather in drifts
+        if (L === 2 && n2v > 0.8 && big < 0.5) { tr = R0[0] + 20; tg = R0[1] + 20; tb = R0[2] + 14; ta = 200; }   // bare rock showing through
+        var at2 = a + ta; r = (r * a + tr * ta) / at2; g = (g * a + tg * ta) / at2; b = (b * a + tb * ta) / at2; a = Math.min(255, at2);
+      }
+      if (rampsHere.length) {                                // a slope: trodden earth climbing through the face between two banks of rock, a step of stone now and then
+        for (k = 0; k < rampsHere.length; k++) {
+          var rm = rampsHere[k], rd = mtn.rampD(rm, wx, wy / K), tt = rd[1], along = tt * rm.len;
+          var wide = rm.r * (0.84 + 0.2 * noise[(((along | 0) >> 1) & 127) << 7 | (rm.x0 & 127)] + (tt < 0.1 ? (0.1 - tt) * 2.2 : 0) + (tt > 0.88 ? (tt - 0.88) * 2.4 : 0)), dd = rd[0] + (n1v - 0.5) * 4;
+          if (dd < wide) {
+            var inF = fn !== 0, edge = wide - dd, side = wx < rm.x0 + (rm.x1 - rm.x0) * tt, stp = (along + 6) % 23, lift = 1 - tt;
+            rr = 150 + lift * 22 + (n2v - 0.5) * 26 + (big - 0.5) * 18; gg = 124 + lift * 20 + (n2v - 0.5) * 22 + (big - 0.5) * 14; bb = 86 + lift * 16 + (n2v - 0.5) * 18;
+            if (dd < wide * 0.45) { rr += 10; gg += 9; bb += 6; }                                // trodden paler down the middle
+            var pb = hash(wx, wy, s + 91); if (pb > 0.965) { rr = 196; gg = 188; bb = 172; } else if (pb < 0.03) { rr -= 34; gg -= 30; bb -= 22; }   // pebbles (a speck each: the noise sheet is smooth and drew them as blots)
+            if (!rm.gap && tt > 0.1 && tt < 0.9 && edge > 7) { if (stp < 2) { rr = R1[0] * 0.8; gg = R1[1] * 0.8; bb = R1[2] * 0.82; } else if (stp < 5) { rr = R2[0]; gg = R2[1]; bb = R2[2]; } }   // a step: a slab's lit top over its dark front
+            if (inF && edge < 7) { var bk = side ? R2 : R1, bt2 = side ? 1 : 0.8; rr = bk[0] * bt2 + (n2v - 0.5) * 20; gg = bk[1] * bt2 + (n2v - 0.5) * 20; bb = bk[2] * bt2 + (n2v - 0.5) * 16; if (edge < 1.6) { rr = 38; gg = 30; bb = 30; } }   // the banks: lit on the west, dark on the east
+            d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = inF ? 255 : 255 * Math.min(1, edge / 6); return;
+          }
+        }
+      }
+      if (fn) {                                              // the face of a cliff: beds of blocks that follow the edge, each with a lit ledge and a dark underside, joints between them
+        var fd = FD[qi], tot = HF * (fn - L), kk = fd / tot, yb = fd + (big - 0.5) * 24 + 6, row = Math.floor(yb / 13), fy = yb / 13 - row, rh = hash(row, fn, s + 31), bw = 18 + rh * 30;
+        var xb = (wx + rh * 131 + (noise[(((wy >> 1) & 127) << 7) | ((wx >> 3) & 127)] - 0.5) * 10) / bw, col = Math.floor(xb), fx = xb - col, ch2 = hash(col, row, s + 33);
+        var tone = 1.12 - 0.34 * kk + (ch2 - 0.5) * 0.3 + (n2v - 0.5) * 0.1;
+        if (fy < 0.22) tone += 0.16; else if (fy > 0.8) tone -= 0.18;
+        if (fx * bw < 1.8 && ch2 > 0.28) tone -= 0.34;                                          // a joint down between two blocks
+        if (fy > 0.9 && hash(col, row, s + 35) > 0.25) tone -= 0.36;                            // the bed under a block
+        if (ch2 > 0.9) tone += 0.12;                                                            // a block that catches the light
+        rr = R0[0] * tone; gg = R0[1] * tone; bb = R0[2] * (tone + 0.02);
+        if (big > 0.64 && kk < 0.75 && n2v > 0.3 && fy < 0.5) { rr = rr * 0.45 + 50; gg = gg * 0.45 + 74; bb = bb * 0.45 + 32; }   // moss on the ledges
+        if (fd <= 1) { rr = 38; gg = 30; bb = 30; }                                            // the ink line along the edge
+        else if (fd <= 6) { var gt = n2v > 0.45 && fd <= 4; rr = gt ? 96 : R2[0]; gg = gt ? 140 : R2[1]; bb = gt ? 62 : R2[2]; }   // the lit lip, grass hanging over it
+        else if (fd >= tot - 3) { rr = R1[0] * 0.62; gg = R1[1] * 0.62; bb = R1[2] * 0.66; }   // the dark foot
+        if (px > 0 && px < W2 - 1 && (!FN[qi - 1] || !FN[qi + 1]) && lev[lb - 1] === L && lev[lb + 1] === L) { rr = 38; gg = 30; bb = 30; }   // the line down a face's end
+        d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255; return;
+      }
+      if (L === 3) {                                         // the peaks' ground: scree, and snow lying on it
+        var snow = fbm(wx / 46, wy / 46, s + 77) + (n1v - 0.5) * 0.12; rr = R0[0] * (0.92 + (n2v - 0.5) * 0.3); gg = R0[1] * (0.92 + (n2v - 0.5) * 0.3); bb = R0[2] * (0.94 + (n2v - 0.5) * 0.3);
+        if (snow > 0.5) { var sk = Math.min(1, (snow - 0.5) / 0.06); rr += (238 - rr) * sk; gg += (243 - gg) * sk; bb += (250 - bb) * sk; if (sk < 1) { rr -= 30; gg -= 22; bb -= 8; } }
+        d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255; return;
+      }
+      var up = lev[lb - 6 * LW], dn = lev[lb + 6 * LW], lf = lev[lb - 7], rt = lev[lb + 7];
+      var lo = Math.min(up, dn, lf, rt), hi = Math.max(up, dn, lf, rt);
+      if (lo < L) {                                          // the lip of an edge that faces away: pale stones along the drop, an ink line at it
+        var near = Math.min(lev[lb - 2 * LW], lev[lb + 2 * LW], lev[lb - 2], lev[lb + 2]) < L, stone = noise[(((wy >> 1) & 127) << 7) | ((wx >> 1) & 127)];
+        if (near) { d2[o2] = 38; d2[o2 + 1] = 30; d2[o2 + 2] = 30; d2[o2 + 3] = 230; return; }
+        if (stone > 0.34) { var st2 = stone > 0.66 ? 1.1 : 0.96; d2[o2] = R2[0] * st2 + (n2v - 0.5) * 18; d2[o2 + 1] = R2[1] * st2 + (n2v - 0.5) * 18; d2[o2 + 2] = R2[2] * st2 + (n2v - 0.5) * 14; d2[o2 + 3] = 235; }
+        return;
+      }
+      if (hi > L) {                                          // under such an edge, on the low side: the foot of its far face, a thin dark band
+        var nearHi = Math.max(lev[lb - 2 * LW], lev[lb + 2 * LW], lev[lb - 2], lev[lb + 2]) > L;
+        if (nearHi) { d2[o2] = R1[0] * 0.7; d2[o2 + 1] = R1[1] * 0.7; d2[o2 + 2] = R1[2] * 0.76; d2[o2 + 3] = 215; }
+        else { d2[o2] = 20; d2[o2 + 1] = 30; d2[o2 + 2] = 40; d2[o2 + 3] = 46; }
+        return;
+      }
+      if (SH[qi]) { d2[o2] = 14; d2[o2 + 1] = 18; d2[o2 + 2] = 34; d2[o2 + 3] = SH[qi] * 6.5; }
     }
     oc.putImageData(img, 0, 0);
     c.imageSmoothingEnabled = true; c.drawImage(ov, 0, 0, W2, H2);
@@ -4708,6 +5016,24 @@ function make(kit, opts) {
       if (kind < 0.86) { c.fillStyle = kind < 0.5 ? 'rgba(150,104,52,0.5)' : 'rgba(255,246,214,0.75)'; c.fillRect(sx, sy, 1, 1); }
       else if (kind < 0.95) { c.fillStyle = 'rgba(150,140,140,0.9)'; c.beginPath(); c.ellipse(sx, sy, 1.6, 1.1, 0, 0, 7); c.fill(); }
       else { c.fillStyle = '#fff6ea'; c.strokeStyle = 'rgba(150,104,52,0.7)'; c.lineWidth = 0.6; c.beginPath(); c.ellipse(sx, sy, 2, 1.5, 0.5, 0, 7); c.fill(); c.stroke(); }
+    }
+    if (d2) {
+      ov2 = kit.mk(W2, H2); ov2.getContext('2d').putImageData(img2, 0, 0); c.drawImage(ov2, 0, 0, W2, H2);   // the rock, over the meadow
+      var RKc = rockPal(), fxp, fyp, qf; c.lineCap = 'round';
+      for (fyp = 1; fyp < H2 - 1; fyp++) for (fxp = 1; fxp < W2 - 1; fxp++) {
+        qf = fyp * W2 + fxp; if (!FN[qf]) continue; var wxf = cx * W2 + fxp, wyf = cy * H2 + fyp, hf = hash(wxf, wyf, s + 61);
+        if (mtn.ramps.length && (cellAt(wxf, wyf / K) & M_RAMP)) continue;
+        if (FD[qf] === 2 && hf < 0.2) {                       // a tuft over the lip
+          var nb = 2 + Math.floor(hf * 20), bi; c.lineWidth = 0.9;
+          for (bi = 0; bi < nb; bi++) { var hb = hash(wxf + bi, wyf, s + 62), down = hb < 0.45; c.strokeStyle = hb > 0.6 ? '#86b450' : '#5d8a3a'; c.beginPath(); c.moveTo(fxp + (bi - nb / 2) * 1.3, fyp - 1.5); c.quadraticCurveTo(fxp + (bi - nb / 2) * 1.8, fyp - (down ? 0 : 5), fxp + (bi - nb / 2) * 2.4 + (hb - 0.5) * 3, fyp + (down ? 3.5 + hb * 4 : -5 - hb * 3)); c.stroke(); }
+        } else if (FD[qf] === 2 && hf > 0.955) {              // a stone standing proud of the edge
+          c.fillStyle = 'rgb(' + RKc.hl.join(',') + ')'; c.strokeStyle = 'rgba(38,30,30,0.9)'; c.lineWidth = 0.7; c.beginPath(); c.ellipse(fxp, fyp - 1.5, 3 + hf * 2, 2.2, 0, 0, 7); c.fill(); c.stroke();
+        }
+        if (!FN[qf + W2] && hf > 0.86) {                      // scree at the foot
+          var ns = 1 + Math.floor((hf - 0.86) * 28), si; for (si = 0; si < ns; si++) { var hs = hash(wxf, wyf + si, s + 63), sxp = fxp + (hs - 0.5) * 9, syp = fyp + 1 + hash(wxf + si, wyf, s + 64) * 6, sr = 1.2 + hs * 2.4; c.fillStyle = 'rgb(' + (hs > 0.5 ? RKc.hl : RKc.base).join(',') + ')'; c.strokeStyle = 'rgba(38,30,30,0.85)'; c.lineWidth = 0.6; c.beginPath(); c.ellipse(sxp, syp, sr, sr * 0.7, 0, 0, 7); c.fill(); c.stroke(); }
+          if (hf > 0.95) { c.strokeStyle = '#5d8a3a'; c.lineWidth = 0.9; for (si = 0; si < 3; si++) { c.beginPath(); c.moveTo(fxp + si * 1.4 - 2, fyp + 3); c.lineTo(fxp + si * 2 - 3, fyp - 2 - si); c.stroke(); } }
+        }
+      }
     }
     for (yy = 0; yy < CT; yy++) for (xx = 0; xx < CT; xx++) if (code(cx * CT + xx, cy * CT + yy) === 4) {       // the jetty
       c.drawImage(tile('plank', cx * CT + xx, cy * CT + yy), xx * T, yy * TS, T + 0.3, TS + 0.3);
@@ -4737,7 +5063,7 @@ function make(kit, opts) {
   };
   // the meadow under the blades (painted first, still): soft lighter and darker patches of grass, bare earth, and drifts of
   // tiny flowers in several colours, the way a real meadow is blotchy and flecked rather than one green
-  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
+  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (mtn && (cellAt(x, y / K) & (M_BLOCK | M_RAMP))) return false; var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
   w.drawMeadow = function (c, cam, hw, hh, G) {
     var sp = G.patchSize || 70, gx0 = Math.floor((cam.x - hw) / sp) - 2, gx1 = Math.ceil((cam.x + hw) / sp) + 1, gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 2, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1, gx, gy;
     if (G.patches > 0) for (gy = gy0; gy <= gy1; gy++) for (gx = gx0; gx <= gx1; gx++) {           // big soft blotches, lighter or darker
@@ -4874,19 +5200,83 @@ function make(kit, opts) {
       var t3 = grid[y * GW + x]; if (t3 === 0 || t3 === 4) continue;
       var roll = R(), wx = (x + 0.2 + R() * 0.6) * T, wy = (y + 0.3 + R() * 0.5) * T, p = null;
       if (Math.hypot(wx - home.x, wy - home.y) < 130) continue;
-      if (t3 >= 2) {
+      var mcell = mtn ? cellAt(wx, wy) : 0, mlv = mcell & 3;
+      if (mcell & (M_BLOCK | M_RAMP)) continue;                              // a cliff, a peak or a slope: nothing grows there
+      if (mlv && t3 >= 2) {                                                  // the fells: sparse pine and dwarf birch on the foothills, juniper, heather and boulders; the high plateau all but bare of trees
+        var grove = vnoise(x / 7, y / 7, s + 20), has = function (nm) { return !!kit.PROPS[nm]; };
+        if (mlv === 1) {
+          if (roll < 0.1 && grove > 0.64) { var tm = R() < 0.4 && has('dwarfBirch') ? 'dwarfBirch' : (R() < 0.7 ? 'pine' : 'birch'); p = { name: tm, s: tm === 'dwarfBirch' ? 0.8 + R() * 0.25 : (tm === 'pine' ? 0.5 : 0.45) + R() * 0.1, r: tm === 'dwarfBirch' ? 7 : 11 }; w.stats.trees++; }
+          else if (roll > 0.95) p = { name: ['juniper', 'heather', 'bush', 'heather', 'tallGrass', 'berryBush'].filter(has)[Math.floor(R() * 6) % ['juniper', 'heather', 'bush', 'heather', 'tallGrass', 'berryBush'].filter(has).length], s: 0.9, r: 0 };
+          else if (roll > 0.936) { p = { name: R() < 0.5 && has('boulder') ? 'boulder' : (R() < 0.6 ? 'rock' : 'rockFormation'), s: 0.85 + R() * 0.3, r: 11 }; w.stats.rocks++; }
+        } else {
+          if (roll < 0.035 && grove > 0.6 && has('dwarfBirch')) { p = { name: 'dwarfBirch', s: 0.75 + R() * 0.25, r: 7 }; w.stats.trees++; }
+          else if (roll > 0.93) p = { name: ['heather', 'heather', 'juniper', 'heather', 'wildHerbs'].filter(has)[Math.floor(R() * 5) % ['heather', 'heather', 'juniper', 'heather', 'wildHerbs'].filter(has).length], s: 0.9, r: 0 };
+          else if (roll > 0.9) { p = { name: R() < 0.6 && has('boulder') ? 'boulder' : (R() < 0.5 ? 'rock' : 'rockFormation'), s: 0.85 + R() * 0.45, r: 12 }; w.stats.rocks++; }
+        }
+      } else if (t3 >= 2 && t3 !== 5) {
         var bmp = w.biomeAt(x, y);
         if (roll < 0.15 && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tl = bmp > R() && LOW.length ? LOW : TREES, tn = tl[Math.floor(R() * tl.length) % tl.length]; if (R() < 0.02 && kit.PROPS.struckTree) tn = 'struckTree'; p = { name: tn, s: (tn === 'pine' ? 0.54 : (tn === 'struckTree' ? 0.6 : 0.49)) + R() * 0.1, r: 11 }; w.stats.trees++; }   // now and then a tree struck by lightning: charcoal
         else if (roll > 0.955) p = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
         else if (roll > 0.948) { p = { name: bmp > 0.5 && kit.PROPS.chalkRock && R() < 0.7 ? 'chalkRock' : (R() < 0.6 ? 'rock' : 'rockFormation'), s: 0.9, r: 10 }; w.stats.rocks++; }
         else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs', 'fireRing'][Math.floor(R() * 6)], s: 1, r: 10 };   // things of nature, and an old fire ring someone left: no carved stones or posts lie about
-      } else if (roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
+      } else if (t3 === 1 && roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
       p.x = wx; p.y = wy; p.v = Math.floor(R() * 3);
       p.kind = KIND[p.name] || null; if (p.kind) { p.max = p.hp = HP[p.name] * (0.7 + 0.6 * p.s); p.leanDir = R() < 0.5 ? -1 : 1; }
       w.addProp(p);
     }
+    if (mtn && kit.PROPS.cairn) mtn.ramps.forEach(function (rm) {            // a cairn at the foot and the head of every slope: the old way of marking a way up
+      (rm.gap ? [[rm.x1 + 30, rm.y1 + 4]] : [[rm.x1 + 38, rm.y1 - 6], [rm.x0 - 38, rm.y0 + 10]]).forEach(function (q) { if (w.flatAt(q[0], q[1], 12)) w.addProp({ name: 'cairn', x: q[0], y: q[1], s: 0.9, r: 8, v: Math.floor(R() * 3) }); });
+    });
     return w.stats;
+  };
+  // 5b. the peaks (2026-10-12): the Blender peaks stood on the ground nobody can walk. A peak goes only where everything under
+  // its foot is peak ground or cliff, so it never covers a place you can stand; the biggest that fits, a smaller one where it
+  // does not, set back to front so the near ones stand before the far.
+  w.peaks = function () {
+    if (!mtn) return 0; var n = 0, placed = [], kinds = ['peak_a', 'peak_b', 'peak_c'].filter(function (nm) { return !!IMAGES[nm]; }); if (!kinds.length) return 0;
+    function fits(im, sc, x, y) {
+      var hw = im.w * im.upp * sc * 0.44, up = im.ay * im.upp * sc, dn = (im.h - im.ay) * im.upp * sc, a, b;
+      if ((cellAt(x, y) & 3) !== 3) return false;
+      for (b = -0.8; b <= 1.001; b += 0.2) for (a = -1; a <= 1.001; a += 0.25) { var py = b < 0 ? y + b * up / K : y + b * dn / K, c1 = cellAt(x + a * hw * (b < 0 ? 1 + b * 1.4 : 1), py); if (!(c1 & M_BLOCK)) return false; }
+      return true;
+    }
+    var j, i, step = 3 * T;
+    for (j = mtn.by1; j > mtn.by0; j -= step) for (i = mtn.bx0; i < mtn.bx1; i += step) {
+      var x = i + (hash(i, j, s + 81) - 0.5) * step * 0.8, y = j + (hash(i, j, s + 82) - 0.5) * step * 0.8, done = false, ki, si;
+      if ((cellAt(x, y) & 3) !== 3) continue;
+      for (ki = 0; ki < kinds.length && !done; ki++) for (si = 0; si < 3 && !done; si++) {
+        var kn = kinds[(ki + Math.floor(hash(i, j, s + 83) * kinds.length)) % kinds.length], im = IMAGES[kn], sc = [1, 0.78, 0.6][si], ww = im.w * im.upp * sc;
+        if (placed.some(function (q) { return Math.abs(q.x - x) < (q.w + ww) * 0.46 && Math.abs(q.y - y) < 260; })) continue;
+        if (fits(im, sc, x, y)) { w.addProp({ name: kn, x: x, y: y, s: sc, r: 0, v: 0, peak: true }); placed.push({ x: x, y: y, w: ww }); n++; done = true; }
+      }
+    }
+    w.stats.peaks = n; return n;
+  };
+  // where the cave goes (2026-10-12): at the foot of a cliff one level high, where the face runs straight and the ground
+  // before it is level and open, away from any slope. Returns { x, y } (the foot of the face) or null. lvl: the ground it opens on.
+  w.caveSite = function (Rr, lvl) {
+    if (!mtn) return null; var cands = [], i, j, FH = Math.round(HFW / MC), want = lvl == null ? 1 : lvl;
+    function cv(a, b) { return (a < 0 || b < 0 || a >= mtn.w || b >= mtn.h) ? 0 : mtn.CL[b * mtn.w + a]; }
+    for (j = FH + 4; j < mtn.h - 20; j += 2) for (i = 16; i < mtn.w - 16; i += 2) {
+      var c0 = cv(i, j); if ((c0 & (M_BLOCK | M_RAMP)) || (c0 & 3) !== want || !(cv(i, j - 1) & M_FACE)) continue;
+      var ok = true, d, k;
+      for (d = -12; ok && d <= 12; d += 3) {
+        if (!(cv(i + d, j - 1) & M_FACE) || !(cv(i + d, j - FH + 2) & M_FACE) || (cv(i + d, j - FH - 3) & 3) !== want + 1 || (cv(i + d, j - FH - 3) & M_FACE)) ok = false;   // one level of face over it, level ground above that
+        for (k = 0; ok && k <= 16; k += 2) { var cg = cv(i + d, j + k); if ((cg & (M_BLOCK | M_RAMP)) || (cg & 3) !== want) ok = false; }   // open level ground in front
+      }
+      var x = (mtn.x0 + i + 0.5) * MC, y = (mtn.y0 + j) * MC;
+      if (ok && mtn.ramps.some(function (rm) { return Math.hypot(rm.ex - x, rm.ey - y) < 300; })) ok = false;
+      if (ok) cands.push({ x: x, y: y });
+    }
+    if (!cands.length) return want > 0 ? w.caveSite(Rr, want - 1) : null;
+    return cands[Math.floor((Rr ? Rr() : 0.5) * cands.length) % cands.length];
+  };
+  // the nearest level ground to a point, on a given level, with room round it (for placing things and for the test scene)
+  w.nearFlat = function (x, y, lvl, room) {
+    var d, a; room = room || 26;
+    for (d = 0; d < 1600; d += 16) for (a = 0; a < (d ? 16 : 1); a++) { var px = x + Math.cos(a * 0.3927) * d, py = y + Math.sin(a * 0.3927) * d; if (w.isLand(px, py) && (lvl == null || (cellAt(px, py) & 3) === lvl) && w.flatAt(px, py, room)) return { x: px, y: py }; }
+    return null;
   };
   // 6. the ground dresses itself with the brush (2026-10-07, Robin: use the brush to make the ground more natural): bare earth
   // in the heart of the thickest groves, moss round the pines, gravel at the feet of the rock outcrops; cells only, no repaint
@@ -4927,8 +5317,10 @@ function make(kit, opts) {
   // the chart: one pixel per tile (or per few tiles), at most maxPx wide
   w.chart = function (maxPx) {
     var step = Math.max(1, Math.ceil(GW / maxPx)), mw = Math.floor(GW / step), mh = Math.floor(GH / step), cv = kit.mk(mw, mh);
-    var mc = cv.getContext('2d'), img = mc.createImageData(mw, mh), COL = [[33, 96, 122], [232, 204, 140], [96, 168, 84], [78, 146, 76], [140, 106, 72]];
-    for (var yy = 0; yy < mh; yy++) for (var xx = 0; xx < mw; xx++) { var gi = yy * step * GW + xx * step, cc = COL[grid[gi]], ip = (yy * mw + xx) * 4, bmc = grid[gi] >= 2 && grid[gi] !== 4 ? BM[gi] / 255 : 0; img.data[ip] = cc[0] + (150 - cc[0]) * bmc; img.data[ip + 1] = cc[1] + (176 - cc[1]) * bmc; img.data[ip + 2] = cc[2] + (70 - cc[2]) * bmc; img.data[ip + 3] = 255; }   // the lowlands warmer on the chart
+    var mc = cv.getContext('2d'), img = mc.createImageData(mw, mh), COL = [[33, 96, 122], [232, 204, 140], [96, 168, 84], [78, 146, 76], [140, 106, 72], [120, 116, 128]], MCOL = [null, [128, 170, 96], [150, 162, 122], [236, 240, 246]];
+    for (var yy = 0; yy < mh; yy++) for (var xx = 0; xx < mw; xx++) { var gi = yy * step * GW + xx * step, cc = COL[grid[gi]], ip = (yy * mw + xx) * 4, bmc = grid[gi] >= 2 && grid[gi] !== 4 ? BM[gi] / 255 : 0; img.data[ip] = cc[0] + (150 - cc[0]) * bmc; img.data[ip + 1] = cc[1] + (176 - cc[1]) * bmc; img.data[ip + 2] = cc[2] + (70 - cc[2]) * bmc; img.data[ip + 3] = 255;
+      if (mtn) { var mcc = cellAt((xx * step + 0.5) * T, (yy * step + 0.5) * T), mlc = mcc & 3, mk2 = (mcc & M_FACE) ? COL[5] : ((mcc & M_RIM) ? [88, 84, 96] : (mlc ? MCOL[mlc] : null)); if (mk2 && grid[gi] >= 1) { img.data[ip] = mk2[0]; img.data[ip + 1] = mk2[1]; img.data[ip + 2] = mk2[2]; } }   // the fells paler by the level, the faces grey, the peaks white
+    }   // the lowlands warmer on the chart
     mc.putImageData(img, 0, 0);
     return cv;
   };
@@ -4941,7 +5333,7 @@ var GRASS = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shimmer
 var GRASS_INK = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shimmer: 0.35, shade: 0.9, flowers: 0.04,
   patches: 1, patchSize: 70, patchLight: '#a9b96a', patchDark: '#4b6b3a', earth: 0.3, earthCol: '#9a7f55', earthLight: '#b89a68', earthEdge: '#6e7f40', drifts: 0.45,
   dark: '#3d6a33', mid: '#5f8a44', light: '#8aa65a', glow: '#d6d690', bloom: ['#efe6cf', '#dfc45e', '#d99aa8', '#d88a5a'] };
-return { make: make, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
+return { make: make, setImages: setImages, IMAGES: IMAGES, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
 })();
 if (typeof module !== 'undefined') module.exports = World;
 
@@ -5052,10 +5444,14 @@ function moveCircle(e, dx, dy) {
   // a tool page can mark ground as not walkable (the Sea Editor keeps walkers out of the water); slide along it
   var wk = api.scene && api.scene.walk;
   if (wk && !wk(e.x, e.y, e)) { if (wk(e.x, oy, e)) e.y = oy; else if (wk(ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
+  var wx0 = e.x, wy0 = e.y, sx0 = ox, sy0 = oy;
   for (var i = 0; i < W.pillars.length; i++) {
     var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
     if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; }
   }
+  // a solid may not push a mover onto ground that cannot be walked (2026-10-12: a tree by a cliff's foot pushed the hero into the
+  // rock, and one by the shore into the sea): back to where the walk test left it, or to where it started
+  if (wk && (e.x !== wx0 || e.y !== wy0) && !wk(e.x, e.y, e)) { if (wk(wx0, wy0, e)) { e.x = wx0; e.y = wy0; } else { e.x = sx0; e.y = sy0; } }
 }
 function alive(e) { return e && !e.dead; }
 function spawn(type) {
@@ -5634,7 +6030,7 @@ function bruteAI(e, dt, d, ang) {
 function wanderStep(e, dt) {
   var w = e.wander;
   if (w.wait > 0) { w.wait -= dt; e.state = 'idle'; return; }
-  if (w.tx == null) { var a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * w.r; w.tx = w.x0 + Math.cos(a) * r; w.ty = w.y0 + Math.sin(a) * r; w.tt = 7; }
+  if (w.tx == null) { var wkw = api.scene && api.scene.walk, tr; for (tr = 0; tr < 8; tr++) { var a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * w.r; w.tx = w.x0 + Math.cos(a) * r; w.ty = w.y0 + Math.sin(a) * r; if (!wkw || wkw(w.tx, w.ty, e)) break; } w.tt = 7; }   // a place it can stand (2026-10-12: half a troll's ground by the cave is cliff)
   w.tt -= dt;
   if (w.tt <= 0 || Math.hypot(w.tx - e.x, w.ty - e.y) < 6) { w.tx = null; w.wait = 1.5 + Math.random() * 4; e.state = 'idle'; return; }
   var ang = Math.atan2(w.ty - e.y, w.tx - e.x), sp = (e.cfg ? e.cfg.speed : 58) * 0.38, ox = e.x, oy = e.y;
@@ -5649,9 +6045,10 @@ function updateEnemies(dt) {
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
     if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
-    if (e.aggro) {                       // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away
+    if (e.aggro || e.strolls) {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
-      if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) && !P.dead) e.awake = true;   // the light step shortens the noticing
+      if (!e.aggro) { /* the page decides when it wakes */ }
+      else if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) && !P.dead) e.awake = true;   // the light step shortens the noticing
       else if (e.awake && gd > (e.human ? 900 : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) e.awake = false;   // a guard gives up only when you are far gone
       if (e.heard > 0) { e.heard -= dt; if (!P.dead) e.awake = true; }   // it heard something (mining): it comes
       if (e.flee) {                      // a grazer bolts instead of fighting
@@ -6838,7 +7235,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     };
     var CATS = [
       { name: 'Reference set', ground: 'grass', solid: 10, ref: true, list: Object.keys(REF) },
-      { name: 'Found in nature', ground: 'grass', solid: 10, list: ['beech', 'ash', 'apple', 'chalkRock', 'hedge', 'bogIron', 'yew', 'cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
+      { name: 'Found in nature', ground: 'grass', solid: 10, list: ['dwarfBirch', 'juniper', 'heather', 'boulder', 'beech', 'ash', 'apple', 'chalkRock', 'hedge', 'bogIron', 'yew', 'cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
       { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'fireRing', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'stoneShip', 'woodpile'] },
       { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['bellTower', 'porch', 'apse', 'gableCross', 'font', 'lychGate', 'altar', 'graveStone', 'wayCross', 'stall', 'firePit', 'logSeat', 'stake', 'banner', 'choppingBlock', 'cellarDoor', 'windowBox', 'lantern', 'awning', 'sign', 'woodshed', 'foodTable', 'longhouse', 'beachedBoat', 'campfire', 'furnace', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'fireplace', 'carverBench', 'deadViking', 'trough', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
       { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },

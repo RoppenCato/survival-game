@@ -103,10 +103,14 @@ function moveCircle(e, dx, dy) {
   // a tool page can mark ground as not walkable (the Sea Editor keeps walkers out of the water); slide along it
   var wk = api.scene && api.scene.walk;
   if (wk && !wk(e.x, e.y, e)) { if (wk(e.x, oy, e)) e.y = oy; else if (wk(ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
+  var wx0 = e.x, wy0 = e.y, sx0 = ox, sy0 = oy;
   for (var i = 0; i < W.pillars.length; i++) {
     var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
     if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; }
   }
+  // a solid may not push a mover onto ground that cannot be walked (2026-10-12: a tree by a cliff's foot pushed the hero into the
+  // rock, and one by the shore into the sea): back to where the walk test left it, or to where it started
+  if (wk && (e.x !== wx0 || e.y !== wy0) && !wk(e.x, e.y, e)) { if (wk(wx0, wy0, e)) { e.x = wx0; e.y = wy0; } else { e.x = sx0; e.y = sy0; } }
 }
 function alive(e) { return e && !e.dead; }
 function spawn(type) {
@@ -685,7 +689,7 @@ function bruteAI(e, dt, d, ang) {
 function wanderStep(e, dt) {
   var w = e.wander;
   if (w.wait > 0) { w.wait -= dt; e.state = 'idle'; return; }
-  if (w.tx == null) { var a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * w.r; w.tx = w.x0 + Math.cos(a) * r; w.ty = w.y0 + Math.sin(a) * r; w.tt = 7; }
+  if (w.tx == null) { var wkw = api.scene && api.scene.walk, tr; for (tr = 0; tr < 8; tr++) { var a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * w.r; w.tx = w.x0 + Math.cos(a) * r; w.ty = w.y0 + Math.sin(a) * r; if (!wkw || wkw(w.tx, w.ty, e)) break; } w.tt = 7; }   // a place it can stand (2026-10-12: half a troll's ground by the cave is cliff)
   w.tt -= dt;
   if (w.tt <= 0 || Math.hypot(w.tx - e.x, w.ty - e.y) < 6) { w.tx = null; w.wait = 1.5 + Math.random() * 4; e.state = 'idle'; return; }
   var ang = Math.atan2(w.ty - e.y, w.tx - e.x), sp = (e.cfg ? e.cfg.speed : 58) * 0.38, ox = e.x, oy = e.y;
@@ -700,9 +704,10 @@ function updateEnemies(dt) {
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
     if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
-    if (e.aggro) {                       // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away
+    if (e.aggro || e.strolls) {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
-      if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) && !P.dead) e.awake = true;   // the light step shortens the noticing
+      if (!e.aggro) { /* the page decides when it wakes */ }
+      else if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) && !P.dead) e.awake = true;   // the light step shortens the noticing
       else if (e.awake && gd > (e.human ? 900 : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) e.awake = false;   // a guard gives up only when you are far gone
       if (e.heard > 0) { e.heard -= dt; if (!P.dead) e.awake = true; }   // it heard something (mining): it comes
       if (e.flee) {                      // a grazer bolts instead of fighting

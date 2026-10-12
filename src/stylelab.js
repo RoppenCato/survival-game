@@ -643,6 +643,37 @@ function beechTree(c, K, x, y, h, seed) { oakTree(c, lowK(K, { trunk: M(30, 9, 5
 function ashTree(c, K, x, y, h, seed) { birch(c, lowK(K, { birch: M(28, 10, 46), birchLeaf: M(P.outsideHue - 2, 48, 50) }), x, y, h, seed); }
 function appleTree(c, K, x, y, h, seed) { var f = P.fruit, a = P.accentHue; P.fruit = 1; P.accentHue = 4; oakTree(c, lowK(K, { leaf: M(P.outsideHue + 6, 52, 46), leafD: M(P.outsideHue + 10, 46, 36) }), x, y, h, seed); P.fruit = f; P.accentHue = a; }
 function chalkRockObj(c, K, x, y, s, seed) { rock(c, lowK(K, { rock: M(42, 12, 82), rockC: M(42, 12, 80), rockD: M(40, 10, 62) }), x, y, s, seed, false); }
+// The fells' own growth (2026-10-12, the mountain biome): a mountain birch (short, crooked, two stems from one root), a juniper
+// (a dark upright flame of a bush with blue berries), heather (a low cushion flecked with purple) and an erratic boulder
+// (a big stone the ice left, moss on its top, a smaller one leaning on it)
+function dwarfBirchObj(c, K, x, y, seed) {
+  var R = rng(seed), i, k, stems = [[-1, 44 + R() * 12], [1, 36 + R() * 14]];
+  longShadow(c, x, y, 12, 22); gshadow(c, x, y + 1, 13, 4, 0.4);
+  stems.forEach(function (st, si) {
+    var cl = [], n = 7, h = st[1], lean = st[0] * (10 + R() * 9);
+    for (i = 0; i <= n; i++) { var t = i / n; cl.push([x + lean * t + Math.sin(t * 5 + seed + si) * 3.2 * t, y - h * t]); }
+    shape(c, ribbon(cl, 0, 0, function (t) { return lerp(7, 3.4, t) + (t < 0.12 ? (0.12 - t) * 20 : 0); }), K.birch, { seed: seed + si, size: 'M', sh: 1.6, rough: 0.3 });
+    for (k = 0; k < 5; k++) { var p = cl[1 + k]; c.fillStyle = 'hsla(' + P.shadowHue.toFixed(0) + ',40%,12%,0.7)'; c.beginPath(); c.ellipse(p[0] + (R() - 0.5) * 2, p[1] + (R() - 0.5) * 3, 1.3 + R() * 1.4, 0.7, 0, 0, 7); c.fill(); }
+    st.top = cl[n];
+  });
+  stems.forEach(function (st, si) { for (i = 0; i < 4; i++) leafBlobs(c, K, st.top[0] + (R() - 0.5) * 24, st.top[1] + (R() - 0.35) * 14, 9 + R() * 5, seed * 3 + i + si * 7, 3, K.birchLeaf); });
+}
+function juniperObj(c, K, x, y, seed) {
+  var R = rng(seed), dk = M(P.outsideHue + 38, 34, 26), md = M(P.outsideHue + 30, 36, 34), i, h = 34 + R() * 12, w = 13 + R() * 4;
+  gshadow(c, x + 1, y, w * 1.1, 4, 0.4);
+  var flame = function (cx, hh, ww, sd, mat) { var pts = [], n = 16; for (i = 0; i <= n; i++) { var t = i / n, a = Math.PI * t, r = Math.sin(a) * ww * (0.75 + 0.5 * (1 - t)) * (1 + (R() - 0.5) * 0.25); pts.push([cx - r, y - hh * t]); } for (i = n; i >= 0; i--) { var t2 = i / n, a2 = Math.PI * t2, r2 = Math.sin(a2) * ww * (0.75 + 0.5 * (1 - t2)) * (1 + (R() - 0.5) * 0.25); pts.push([cx + r2, y - hh * t2]); } shape(c, pts, mat, { seed: sd, size: 'M', sh: 2, rough: 0.5 }); };
+  flame(x - w * 0.55, h * 0.72, w * 0.62, seed + 1, dk); flame(x + w * 0.6, h * 0.62, w * 0.56, seed + 2, dk); flame(x, h, w * 0.78, seed, md);
+  for (i = 0; i < 6; i++) { c.fillStyle = 'hsl(222,36%,' + (34 + R() * 14).toFixed(0) + '%)'; c.beginPath(); c.arc(x + (R() - 0.5) * w * 1.3, y - h * (0.15 + R() * 0.55), 1.4, 0, 7); c.fill(); }
+}
+function heatherObj(c, K, x, y, seed) {
+  var R = rng(seed), gm = M(P.outsideHue + 26, 30, 30), i, w = 17 + R() * 7;
+  gshadow(c, x, y, w * 1.05, 3.4, 0.35);
+  fillPath(c, lobed(x, y - 5, w, 6.5, seed, 30, 0.2), gm.shade, true, ow('M'));
+  fillPath(c, lobed(x - 1, y - 6.4, w * 0.84, 4.8, seed + 1, 26, 0.22), gm.base, false);
+  for (i = 0; i < 26; i++) { var a = R() * 6.28, rr = Math.sqrt(R()), hx = x + Math.cos(a) * w * 0.86 * rr, hy = y - 6.2 + Math.sin(a) * 4.6 * rr - 1; c.fillStyle = 'hsl(' + (300 + R() * 26).toFixed(0) + ',' + (38 + R() * 18).toFixed(0) + '%,' + (56 + R() * 16).toFixed(0) + '%)'; c.beginPath(); c.ellipse(hx, hy, 1.5, 1.1, 0, 0, 7); c.fill(); }
+  c.save(); c.strokeStyle = gm.shade; c.lineWidth = 0.9; c.lineCap = 'round'; for (i = 0; i < 5; i++) { var sx = x + (R() - 0.5) * w * 1.6; c.beginPath(); c.moveTo(sx, y - 9); c.lineTo(sx + (R() - 0.5) * 3, y - 14 - R() * 3); c.stroke(); } c.restore();
+}
+function boulderObj(c, K, x, y, seed) { rock(c, K, x + 15, y + 2, 13, seed + 5, false); rock(c, K, x - 2, y, 25, seed, true); }
 function hedgeObj(c, K, x, y, seed) { bush(c, K, x - 24, y + 2, 15, seed, false); bush(c, K, x + 24, y + 2, 15, seed + 2, false); bush(c, K, x, y, 16, seed + 1, false); }
 function bogIronObj(c, K, x, y, seed) {                 // a lump of bog ore: rust-brown, an ochre crust, half sunk in dark marsh water
   var R = rng(seed);
@@ -2022,6 +2053,10 @@ var PROPS = {
   ancient: { b: [-190, -330, 220, 36], f: function (c, K, s) { ancient(c, K, 0, 0, 260, s); } },
   blossom: { b: [-100, -200, 130, 18], f: function (c, K, s) { blossomTree(c, K, 0, 0, 150, s); } },
   bush: { b: [-34, -60, 34, 10], f: function (c, K, s) { bush(c, K, 0, 0, 22, s, false); } },
+  dwarfBirch: { b: [-48, -88, 62, 14], f: function (c, K, s) { dwarfBirchObj(c, K, 0, 0, s); } },
+  juniper: { b: [-30, -58, 32, 9], f: function (c, K, s) { juniperObj(c, K, 0, 0, s); } },
+  heather: { b: [-32, -24, 32, 8], f: function (c, K, s) { heatherObj(c, K, 0, 0, s); } },
+  boulder: { b: [-46, -62, 56, 14], f: function (c, K, s) { boulderObj(c, K, 0, 0, s); } },
   berryBush: { b: [-34, -60, 34, 10], f: function (c, K, s) { bush(c, K, 0, 0, 22, s, true); } },
   fern: { b: [-34, -40, 34, 10], f: function (c, K, s) { fern(c, K, 0, 0, 22, s); } },
   log: { b: [-50, -50, 50, 14], f: function (c, K, s) { fallenLog(c, K, 0, 0, 64, s); } },

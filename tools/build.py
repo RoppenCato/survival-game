@@ -47,6 +47,14 @@ def item_icons():
         if m: out.setdefault(m.group(1), {})[m.group(2)] = '../assets/sprites/items/' + fn
     return json.dumps(out)
 SRC['__ICONS__'] = item_icons()
+def prop_images():
+    """the Blender set pieces (tools/props.js: assets/props/<name>.png and props.json): the peaks, the cave mouth"""
+    jp = os.path.join(ROOT, 'assets', 'props', 'props.json')
+    if not os.path.exists(jp): return 'null'
+    j = json.load(open(jp, encoding='utf-8'))
+    for name in j: j[name]['src'] = '../assets/props/' + name + '.png'
+    return json.dumps(j)
+SRC['__PROPIMG__'] = prop_images()
 
 # page name in dist/  ->  template in templates/
 PAGES = [

@@ -114,6 +114,7 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | Mountain troll (boulder) | `troll_boulder.blend` | own (`troll_build.py`), no Mixamo | 7 | `troll_boulder` | Models tab | **yes**, the cave troll (2026-10-12) | stone is the shield pose under a grey tint |
 | Forest troll | `troll_forest.blend` | the same rig | 7 | `troll_forest` | Models tab | arena only | not spawned in the game |
 | The Gape (new) | `troll_maw.blend` | the same rig | 7 | `troll_maw` | Models tab | arena only | Robin to decide where it lives |
+| Peaks (a, b, c), cave mouth | `rocks.blend` | none: set pieces, one render each (`rocks_build.py`) | none | `assets/props/` | no | **yes** (2026-10-12), the mountain test scene | drawn as props (`World.setImages`); the sun at 3.0 |
 | Draugr | `draugr.blend` | the trolls' rig as a person (`troll_build.py`) | 7 | `draugr` | Models tab | no | mechanics to discuss |
 | Huldra | `huldra.blend` | the same | 5 (`call`) | `huldra` | Models tab | no | mechanics to discuss |
 | Nacken | `nacken.blend` | the same | 5 (`play`) | `nacken` | Models tab | no | mechanics to discuss; the lyre opens instruments |
@@ -126,3 +127,12 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | Moose | `moose.blend` | the same rig | 7 | `moose` | Models tab | **yes** (2026-10-11) | a 324 px frame, 17 MB: the heaviest sheet set |
 | Adder | `snake.blend` | own chain (`snake_build.py`) | 7 | `snake` | Models tab | **yes** (2026-10-11) | twice life size so it reads |
 | Trees, rocks, the wreck | | | | | | | step 5, if judged needed |
+
+## The sun is too weak for the cel look (found 2026-10-12)
+
+`toon.sun` sets the sun's strength to 1.15. At that strength no surface passes the cel shader's light step (the diffuse value
+never reaches 0.66), so **every character so far has been rendered wholly in the shadow tone**, with no lit side: the hero, the six
+animals, the trolls, the draugr, the huldra, Nacken and the bysen. That is why base colours kept needing to be made brighter. A
+sphere rendered at 1.15, 2.2 and 3.6 shows it plainly: nothing lit, a small lit patch, a proper three-tone split. The mountain set
+pieces are rendered at 3.0 and have lit and shadowed faces. **For Robin to decide:** re-render the characters with a lit side
+(several hours of rendering, and every base colour would need taking back down), or keep them as they are.

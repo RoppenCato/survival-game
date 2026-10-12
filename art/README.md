@@ -22,6 +22,7 @@ npm run art:mixamo     # bind hero2 to the Mixamo skeleton, render idle, walk an
 npm run art:mixamo:sheets  # every Mixamo clip in eight directions into assets/sprites/hero2-mixamo (the hero)
 npm run art:items      # the things in the hand modelled and rendered as layers over the hero's clips, merged and packed
 npm run art:icons      # each thing alone as an icon for the bag (assets/sprites/items)
+npm run art:rocks      # the mountains' set pieces (three peaks, the cave mouth): modelled, rendered once each and packed into assets/props
 npm run art:vasen      # the draugr, the huldra, Nacken and the bysen (art:draugr, art:huldra, art:nacken, art:bysen), then vasen.png
 npm run art:trolls     # the four trolls (art:troll:boulder, :forest, :maw, :three), then trolls3d.png
 npm run art:beasts     # the boar, the deer and the wolf: modelled, rigged, animated, rendered and packed (art:boar, art:deer, art:wolf for one)
