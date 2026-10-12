@@ -476,3 +476,26 @@ hear any of it; Robin judges it by ear with the switches on the Light and sound 
 - **Weather, if there is ever weather:** rain on leaves, on thatch from inside, on the sea; thunder far off. (No wet state.)
 - **Your own things:** the creak of the oars, the sail filling, rope and mast under way; a door, a chest lid, the bed's straw.
 - **The mountain:** stones clattering down a slope behind you, an eagle, the wind dropping to nothing in the lee of a wall.
+
+## Lighting: what is left after the trials (2026-10-12)
+
+Built as switches (`docs/lighting.md`): the fire's glow and flicker, shadows thrown away from a fire, lit and dark sides, walls
+that stop light with glowing windows, moths (all on); a moonlit night, mist, sun shafts, cloud shadows (off until Robin has
+looked). Ideas, none decided:
+
+- **The people by the fire:** villagers, Brokk and the hird are drawn in ink each frame and get no dark side or lit rim. A row
+  of dark backs with a warm edge round the village fire is the picture that is missing. Either keep each figure's last drawing
+  as a shape, or wait until the people are Blender sheets (then it comes free, as for the hero).
+- **Clear nights and overcast ones:** the moon switch as weather of the night: a clear night you can travel in, an overcast one
+  as dark as now. A reward for looking at the sky at dusk, never a punishment. A full moon every so many days.
+- **Mist as a place, not a time:** over the marsh, the pool under the waterfall and the tarn rather than everywhere at dawn.
+- **Shafts that follow the trees:** placed from the real gaps between crowns, and in the doorway of a dark house by day.
+- **The hour of the day:** long shadows and a golden light toward evening. Needs the props baked without their shadows.
+- **Glow-worms and fireflies** in the grass on summer nights; **the northern lights** over the north of the map in winter.
+- **A fire that dies down:** embers that light less toward morning unless fed (a reason to keep a woodpile; never a chore that
+  punishes: the wolves' fear stays as long as it glows).
+- **The lighthouse idea, Viking-age:** a beacon fire on the lookout seen from the sea at night, to steer home by.
+- **Measure it on the real machine:** the pane draws in software, so what the full-screen passes (moon, mist, clouds) cost the
+  graphics card is unknown. The frame readout and the Admin board's layer test are the tools.
+- **If the drawing ever moves to WebGL:** normal maps rendered from the Blender models (free there), and a graded colour table
+  for every hour, which is how Graveyard Keeper and Factorio get their nights.

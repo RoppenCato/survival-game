@@ -239,8 +239,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `Combat.api.heroSprite` (opts: `scale()`, `tool()`, `shadow()`, `shadowHue`, `layers()`), `pick` chooses the clip and frame from the
   engine's state (walk and run; the attack's phases spread over attack1 and attack2, or chop and mine by the tool; the hit; `anim.sit`;
   death from the moment of death), `play(H, name, then)` queues a one-shot clip (the bow's shot comes from `fireT` in `tick`), `cast`
-  lays the frame's silhouette on the ground as the props' long shadows lie, `drawDead` draws the fallen hero where a page lists it.
-  Loads in Node too. Every page gets it as `__SPRITES_JS__` and the sheets' numbers as `__SPRITES__`.
+  lays the frame's silhouette on the ground as the props' long shadows lie (or, given `to` = `{ kx, ky, a }`, away from a fire),
+  `drawDead` draws the fallen hero where a page lists it. `draw` and `beast` take `opts.lit` (what a fire near the figure does
+  to it: a cast shadow, a dark side, a warm rim; see "The lighting trials"). Loads in Node too. Every page gets it as `__SPRITES_JS__` and the sheets' numbers as `__SPRITES__`.
 - `src/fishing.js` (`Fishing`): **fishing (2026-10-08, Robin: a rod of iron in the lowlands, a fisherman who teaches the dishes, a fun
   minigame, a few fishes, a sunken chest now and then).** The round with no drawing: `start(R, depth, lowland)` rolls what bites
   (`roll`, `table`: herring everywhere in the sea, perch in the shallows, cod and salmon deep, pike in the lowland shallows, a
@@ -363,6 +364,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
   upper left; grain in every fill; lean figures; trolls Bauer's. `docs/reference/` holds the board (Bauer and Kittelsen, public
   domain) and notes on Egerkrans pages from Robin's own book (the photos stay local). In the kit it is **`look: 3`** (`STYLE_INK`,
   `grain`): see "World look and props".
+- `docs/lighting.md` (2026-10-12): how similar games light a 2D world, the nine techniques tried here as switches, the verdict on
+  each, what was not tried and why, and the sources. Read it before touching the night or the fires.
 - `docs/moving-to-blender.md` (**decided 2026-10-09, Robin: the graphics move to Blender models**): what moves (characters, creatures, later
   some props), what stays in code (ground, water, building, vessels, UI), the order of work (foundations: `src/sprites.js`, a model
   manifest and sheet budget, things in the hand as layers; then the hero finished, people, trolls, animals, props where needed), the
@@ -1256,6 +1259,36 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **The Light and sound board (2026-10-12):** the Admin board's row **Light and sound** opens a second board of switches for
   trying things by eye and ear (`LAB`, kept in `game.lab`; `labRows`, `drawLab`, `labAct`): one for every layer of the ambient
   sound (`LAB.snd`) and one for every lighting technique on trial (`LAB.light`, `lightRows`, `lightAct`).
+- **The lighting trials (2026-10-12, Robin: research how similar games make good lighting, test a few techniques, see what works
+  best; the answers: fire and torch at night first, and atmosphere; pictures, then switches). `docs/lighting.md` has the research
+  (Graveyard Keeper, Factorio, Red Blob Games, Octopath, the painters' rules), every technique, its verdict and the sources;
+  the pictures are `docs/lighting-fire.jpg`, `-village.jpg`, `-torch.jpg`, `-air.jpg`.** Nine techniques, each a switch in
+  `LAB.light` on the Light and sound board, all in `templates/game.html` under "the lighting trials" (`lt(k)` asks a switch).
+  **The five for fire are on by default** (they were the better picture in every scene tried):
+  **`glow`** (`flick(i)`: a fire's reach and strength gutter and flare; a hot glow on the flame and a warm haze in the air, added
+  with 'lighter' after the dark, so firelight on grass is warm and not yellow-green); **`shadows`** (`nightFires()` lists every
+  light in view, `fireFor(x, y)` the one that falls hardest on a place, `figLit(x, y)` what it does to a thing standing there:
+  `{ cast: { kx, ky, a }, rim, dark, warm }`; `drawFireShadows` in `scene.begin` lays every prop's and built thing's own shape
+  on the ground away from the fire, longer the further off, through `shadowOf` and a one-colour copy of the sprite, `silCol`;
+  the hero and the beasts through `Sprites.cast(..., to)`); **`sides`** (what stands south of a fire, between it and you, is
+  darkened with a thin warm rim toward the fire; what stands north of it takes warm light; props in the page, the sprite
+  figures through `opts.lit` in `Sprites.draw` and `Sprites.beast`: `litUnder`, `litOver`, `silC`; skipped for a thing the hero
+  stands behind); **`walls`** (`lightInto(n, f, gr, sx, sy, rad)` draws a light into the night's sheet: a fire **indoors**
+  lights its own room when you stand in it and otherwise only a soft patch outside each door and window, `roomOpenings`; a fire
+  **outdoors** is a disc with a quad cut out behind every wall that `blocksLight`, the wall faces that look at it lit again;
+  `drawWindowGlow`: the windows of a room with a fire glow and a door shows light under it); **`moths`** (`drawMoths`).
+  **The other four are off until Robin has looked** (they change the mood or the daylight, and each adds full-screen passes):
+  **`moon`** (in `drawNight`: the night's blue lighter and bluer, colour drained from what no fire lights with the canvas's
+  'saturation' blend through `satCv`, the lights cut out of it; `drawMoonSea`: glints on the water, too faint yet), **`mist`**
+  (`mistK`: thick for the first four minutes of the day, thinner at dusk, a little all night; `drawMist` once under what stands
+  and once as a veil; banks from `softTile`, a tile of soft blobs that repeats with no seam, laid by `tileFill`), **`shafts`**
+  (`drawShafts`: by day where three trees stand close, light slanting down from the upper left with motes; placed by a hash of
+  the ground, not by the real gaps in the crowns), **`clouds`** (`drawClouds`: soft shadows drifting with the game's wind).
+  **Not done:** the villagers and Brokk (the ink figures) get a soft long shadow but no dark side or rim (they are drawn afresh
+  every frame, with no shape kept); normal maps, a colour table by the hour and anything that reads pixels back are out on a 2D
+  canvas (a readback once dropped the canvas to software). **Cost:** in the pane (software drawing) the five were within the
+  noise of a village at night, 16 to 18 ms either way; what they cost Robin's graphics card is not known: the frame readout
+  and the Admin board's layer test say. Debug: `Combat.api.debug().lab()`, `.nightFires()`, `.figLit(x, y)`.
 - **Admin (2026-10-06):** an Admin row in the Escape menu opens a cheat board for testing (`ADMIN`, kept in `game.admin`):
   toggles Immortal, One-shot hits (`mods().dmg` and `powerMul` 1000), Free building and crafting (`canAfford`/`pay`), Fly
   (`walk` true everywhere, `mods().speed` 2.6); and one-offs: plenty of everything, reveal the chart, skip to dusk or dawn,

@@ -8167,8 +8167,25 @@ if (typeof module !== 'undefined') module.exports = Combat;
     g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = 'hsl(' + (hue || 222) + ',40%,8%)'; g.fillRect(0, 0, cv2.width, cv2.height); H.sil[file] = cv2; return cv2;
   }
   // the frame's silhouette laid on the ground as the props' long shadows lie: to the lower right, a point h up lands at (0.5 h, 0.14 h)
-  function cast(c, H, im, file, hue, sx0, sy0, sw, sh, dx, dy, dw, dh) {
-    var sil = silOf(H, im, file, hue); c.save(); c.globalAlpha = 0.3; c.beginPath(); c.rect(-200, -400, 400, 400); c.clip(); c.transform(1, 0, -0.5, -0.14, 0, 0); c.drawImage(sil, sx0, sy0, sw, sh, dx, dy, dw, dh); c.restore();
+  function cast(c, H, im, file, hue, sx0, sy0, sw, sh, dx, dy, dw, dh, to) {
+    var sil = silOf(H, im, file, hue); c.save();
+    if (to) { c.globalAlpha *= to.a; c.transform(1, 0, -to.kx, -to.ky, 0, 0); }                    // thrown by a fire: away from it, the page says how far (a point h up lands at (kx h, ky h))
+    else { c.globalAlpha = 0.3; c.beginPath(); c.rect(-200, -400, 400, 400); c.clip(); c.transform(1, 0, -0.5, -0.14, 0, 0); }
+    c.drawImage(sil, sx0, sy0, sw, sh, dx, dy, dw, dh); c.restore();
+  }
+  // the frame's shape in one colour (made once a sheet and colour): for the side of a figure a fire lights, and the side it does not
+  function silC(H, im, file, col) {
+    var key = file + '|c|' + col, cv2 = H.sil[key]; if (cv2) return cv2;
+    cv2 = document.createElement('canvas'); cv2.width = im.naturalWidth; cv2.height = im.naturalHeight; var g = cv2.getContext('2d');
+    g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, cv2.width, cv2.height); H.sil[key] = cv2; return cv2;
+  }
+  // lit: what a fire near the figure does to it (the page works it out): { cast: { kx, ky, a }, rim: { a, ox, oy }, dark, warm }
+  function litUnder(c, H, im, file, lit, sx0, sy0, sw, sh, dx, dy, dw, dh) { if (lit && lit.rim) { var ga = c.globalAlpha; c.globalAlpha = ga * lit.rim.a; c.drawImage(silC(H, im, file, '#ffb45e'), sx0, sy0, sw, sh, dx + lit.rim.ox, dy + lit.rim.oy, dw, dh); c.globalAlpha = ga; } }
+  function litOver(c, H, im, file, lit, sx0, sy0, sw, sh, dx, dy, dw, dh) {
+    if (!lit) return; var ga = c.globalAlpha;
+    if (lit.dark) { c.globalAlpha = ga * lit.dark; c.drawImage(silC(H, im, file, '#060a1c'), sx0, sy0, sw, sh, dx, dy, dw, dh); }
+    else if (lit.warm) { var op = c.globalCompositeOperation; c.globalCompositeOperation = 'lighter'; c.globalAlpha = ga * lit.warm; c.drawImage(silC(H, im, file, '#ff8a2a'), sx0, sy0, sw, sh, dx, dy, dw, dh); c.globalCompositeOperation = op; }
+    c.globalAlpha = ga;
   }
   // draws the hero at (x, y) (the feet, in the camera's space). opts: scale (1 is the render's size), shadow (true), shadowHue, layers (['body'] plus gear)
   function draw(c, H, x, y, face, an, dashing, P, opts) {
@@ -8177,13 +8194,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var im = H.img[A.sheets.body]; if (!im || !im.complete || !im.naturalWidth) return;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
-    if (opts.shadow !== false && !P.dead) cast(c, H, im, A.sheets.body, opts.shadowHue, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    var lit = opts.lit || null;
+    if (opts.shadow !== false && !P.dead) cast(c, H, im, A.sheets.body, opts.shadowHue, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s, lit && lit.cast);
+    litUnder(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     for (var i = 0; i < layers.length; i++) {                     // a layer is a name, or { layer, tint } for a recoloured one
       var L = layers[i], ln = typeof L === 'string' ? L : L.layer, file = A.sheets[ln]; if (!file) continue;
       var li = H.img[file]; if (!li || !li.complete || !li.naturalWidth) continue;
       var src = typeof L === 'string' || !L.tint ? li : tinted(H, li, file, L.tint);
       c.drawImage(src, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     }
+    litOver(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     c.restore();
   }
   // once a frame: the one-shot clips the engine's state does not carry (the bow's shot) and the moment of death
@@ -8198,7 +8218,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (!H) { Combat.api.heroSprite = null; return null; }
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
-      draw(c, H, x, y, face, an, dashing, P, { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, layers: opts.layers ? opts.layers() : null, stepData: Combat.api.stepData, tool: opts.tool });
+      draw(c, H, x, y, face, an, dashing, P, { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers() : null, stepData: Combat.api.stepData, tool: opts.tool });
     };
     return H;
   }
@@ -8231,8 +8251,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (!im || !im.complete || !im.naturalWidth) return false;
     c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (lie - e.deadT) / 0.4));
-    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s, opts.lit && opts.lit.cast);
+    litUnder(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    litOver(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     if (opts.tint) { var ga = c.globalAlpha; c.globalAlpha = ga * opts.tint.a; c.drawImage(tinted(H, im, file, opts.tint.color), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); c.globalAlpha = ga; }
     if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); }
     c.restore();

@@ -134,7 +134,7 @@ are fine; night is dangerous and home with a fire is safe.
 | Event | What it is | Status |
 | --- | --- | --- |
 | **Landing with nothing** | Branches and stones round the camp, the first tools by hand, three bare key reminders | Built |
-| **The first night** | Wolves come at night; a fire keeps them off; Brokk's campfire shows it | Built (the night is dangerous; it is not yet a *moment*) |
+| **The first night** | Wolves come at night; a fire keeps them off; Brokk's campfire shows it. Since 2026-10-12 the fire's light flickers, throws shadows, stops at walls and shows in windows, and the night has its own sounds (crickets, an owl, the fire) | Built (the night is dangerous; sight and sound now tell home from the field; whether it is a *moment* yet is Robin's to judge) |
 | **The steading and its survivor** | Brokk tells his story, reminds what the home lacks, teaches the raft at Comfort 4 | Built |
 | **The home** | Walls, roof, hearth, bench, bed, rug: Comfort 4 | Built |
 | **The shipwright's bench and the raft** | The Shipyard, the raft from logs and lashings, the crossing and the banner "You have left the island" | Built |
@@ -181,7 +181,7 @@ there yet (see the gap list).
    *seen* (`docs/start-loop.md`, 1 and 2 of its order).
 2. **The steading as the beginner base**: move the camp, patch the hall's gaps, the hut's furniture (`start-loop.md`, 2).
 3. **A few small finds with a story** between the wreck and the steading (`start-loop.md`, 3).
-4. **The first night as a moment**: sound and sight that make home feel better than the field (`start-loop.md`, 4).
+4. **The first night as a moment**: sound and sight that make home feel better than the field (`start-loop.md`, 4). The means are built (2026-10-12: the ambient sound, and the fire techniques of `docs/lighting.md`); what is left is the staging of the night itself.
 5. **Slow verbs**: sitting by the fire, fishing (`start-loop.md`, 5).
 6. **Leaving as a scene**: Brokk at the shore (`start-loop.md`, 6).
 7. **The legend**: how a name is heard (Open, idea bank 3).
