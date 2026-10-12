@@ -460,3 +460,19 @@ the troll's worn path, a chart of what your light has shown (see "The cave's ins
 - **A cave of its own for each island:** the same module with other numbers (a long sea cave for the Gape, entered by boat at
   low water; a burial cave for the draugr).
 - **Building inside** is off. A torch in a wall bracket, or a fire you can lay in the hall, would let you make a camp of it.
+
+## Sound: what the ambient could still get (2026-10-12)
+
+Built: wind, sea, birds, crickets, fire, running water, cave tones and footsteps, all synthesized (`src/ambient.js`). I cannot
+hear any of it; Robin judges it by ear with the switches on the Light and sound board. Ideas, none decided:
+
+- **Recorded sound after all:** Robin chose synthesized. If a layer never sounds right (birds and surf are the hard ones to
+  synthesize), a slot for a recorded loop per layer would let one be swapped in without touching the rest.
+- **An echo in caves on every sound**, not only footsteps: the pick, a blow, the troll's steps, through one delay line.
+- **A village heard before it is seen:** a hammer at the smithy in time with the smith's arm, an axe at the chopping block, a
+  dog, hens, a rooster at dawn, voices as a murmur; nothing from a village that hides during a raid.
+- **Animals heard before they are seen:** a boar's grunt in the brush, the stag's bark, wolves answering each other at night,
+  the bear's huff; the troll's breath in his lair from two chambers off.
+- **Weather, if there is ever weather:** rain on leaves, on thatch from inside, on the sea; thunder far off. (No wet state.)
+- **Your own things:** the creak of the oars, the sail filling, rope and mast under way; a door, a chest lid, the bed's straw.
+- **The mountain:** stones clattering down a slope behind you, an eagle, the wind dropping to nothing in the lee of a wall.

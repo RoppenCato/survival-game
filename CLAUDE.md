@@ -109,7 +109,7 @@ gone from the code, and no new work may bring any of it back. This file is the s
 npm start         # rebuild, then open dist/index.html (the start page)
 npm run build     # python3 tools/build.py: stitches templates/ + src/ into dist/*.html
 npm install       # once; only dependency is @napi-rs/canvas (fake canvas for headless tests)
-npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the cave)
+npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the caves, the ambient sound)
 ```
 
 There is no bundler, linter or type checker. `.claude/launch.json` has a `workbench` entry that serves the **repo root** on
@@ -161,6 +161,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
   and floor by the mountains' technique turned inside out (`prepare`, `chunk`, `drawFloor`), the dark with the light let into it
   (`dark`), and the cave's own chart (`see`, `drawChart`). See "The cave's inside reworked" under Creatures. The game keeps what
   lives in it (the troll, the hoard, mining, the dead Viking).
+- `src/ambient.js` (`Ambient`, 2026-10-12): the sound of the place, synthesized: beds of filtered noise (wind, leaves, surf,
+  hull, brook, fire, a cave's tone) and single sounds (birds, crickets, crackles, drops, creaks), and footsteps by the ground.
+  See "Ambient sound" under The game. Loads in Node (the test runs it on a pretend audio context).
 - `src/build.js` (`Build`): building pieces, used by the game (the Base Editor is gone). **Redrawn for the art direction (Robin,
   2026-10-07):** build.js has its own small ink toolkit (`INK`, `ink(c, pts, fill, o)`: the fill, grain and a cool shade toward the
   lower right inside it, a warm lit edge up and left, a thin hand-made line all round, `wob`, and the heavy line on the shadow side
@@ -1125,6 +1128,33 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   wrecking returns the hide); `leather` is a kind of its own in the bag.
 - **Sound:** on in the game (`S.sound = true`); the Combat Arena's synthesized set copied into the page, plus
   chop, clink, fall, pick, craft and build. The engine calls `sfx('chop'|'clink')` on tool hits.
+- **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
+  (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
+  short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero
+  (`ambEnv`: `trees` how wooded within 260 units, `shore` how near the **open** sea is (`openSea`: water that goes on, so a tarn
+  makes no surf), `aboard` and `sail`, `fells` the mountain's level, `night`, `dusk`, `dawn`, `fire` how near one burns
+  (`nearestFire`), `torch`, `brook` how near the waterfall's water is, `wind` from the game's own wind, `cave` the kind of
+  cave he is in) and calls `amb.tick(dt)` every frame.
+  **The layers:** **wind** (brown noise through a band that opens with every gust; leaves rustling with it where trees are; a
+  thin whistle on the plateau and under the peaks; louder up there and aboard, softer in a wood and at night), **the sea** (a
+  wave every five to nine seconds, the swell and then the wash drawing back; aboard, water along the hull by the speed and a
+  slap under the bow), **birds** by day, more the more trees there are and most at dawn (a tit's two notes, a warbler, a
+  blackbird's phrase, a finch's falling trill, a sparrow, the cuckoo now and then, a woodpecker drumming, a crow over open
+  ground, a raven on the fells, gulls by the shore; an owl at night), **crickets** from dusk on (three of them, each its own
+  pitch, one voice a trill), **fire** (its low roar, crackles, a pop; a torch in the hand a little), **running water** by the
+  brook, and **in a cave** nothing of the world outside: a low tone, drops heard twice (the second fainter and from the other
+  side), the mine's timber creaking, the sea cave's slow boom and the lap of its water. **Footsteps** (`amb.step(ground)`): one
+  every stride on foot (27 units, 34 at a sprint), by the ground under the hero (`groundUnder`: grass, sand, rock, gravel, wood,
+  water; built floors and docks by their material, the peaks' scree rock, a slope gravel), ringing a second time in a cave.
+  **Loudness:** the Escape menu's second bar, **Sounds of the world** (`OPTS.amb`, 0.7; kept in `game.opts`); silent in the
+  menu, asleep and when the window is hidden. The waterfall's own voice (`fallsSound`) follows the same bar.
+  **I cannot hear it.** What I could do: measure it (rendered on an `OfflineAudioContext` in the pane, each layer alone: at the
+  bar's 70% a wood by day lies at about -37 dB, its loudest moment -20; the game's own chop peaks at -17 and a sword's blow at
+  -10) and test its logic (`tests/ambient.js`, in `npm test`: twenty minutes in each of twelve places on a pretend audio
+  context; a line says how many of each sound a minute, and flags birds in a cave, crickets by day, a fire where there is none,
+  or sounds piling up). **Whether it sounds right is for Robin's ear:** the Admin board's **Light and sound** board has a switch
+  for every layer (`LAB.snd`, kept in `game.lab`), so one can be heard alone or turned off and named. Debug:
+  `Combat.api.debug().amb()`, `.ambEnv()`, `.groundUnder()`.
 - **Day and night (step 2, 2026-10-05):** `day = { t, n }`, `t` in seconds over a 30 minute cycle (`DAY_LEN`
   1800): day until `DUSK_AT` 840 (14 min), dusk to `NIGHT_AT` 1200 (20 min), night to `DAWN_AT` 1740, then dawn.
   `light()` is 0 by day and 1 at night, `dusk()` the warm glow between. `drawNight` multiplies a small
@@ -1223,6 +1253,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **Saving** in `localStorage` (`game.save`): island seed, inventory, buildings, felled props (keyed by rounded
   position), stumps, hero position. Saved on every change, every 10 s and on leaving; loaded on start. "New
   island" deletes it. Boars and dropped items are not saved.
+- **The Light and sound board (2026-10-12):** the Admin board's row **Light and sound** opens a second board of switches for
+  trying things by eye and ear (`LAB`, kept in `game.lab`; `labRows`, `drawLab`, `labAct`): one for every layer of the ambient
+  sound (`LAB.snd`) and one for every lighting technique on trial (`LAB.light`, `lightRows`, `lightAct`).
 - **Admin (2026-10-06):** an Admin row in the Escape menu opens a cheat board for testing (`ADMIN`, kept in `game.admin`):
   toggles Immortal, One-shot hits (`mods().dmg` and `powerMul` 1000), Free building and crafting (`canAfford`/`pay`), Fly
   (`walk` true everywhere, `mods().speed` 2.6); and one-offs: plenty of everything, reveal the chart, skip to dusk or dawn,

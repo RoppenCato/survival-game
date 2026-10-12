@@ -98,6 +98,7 @@ __ART__
 __LIB__
 __WORLD__
 __CAVE__
+__AMBIENT__
 __BUILD__
 __ITEMS__
 __RUNES__
@@ -199,8 +200,8 @@ __COMBAT__
   // What is shown: the runes (the casting cloth, runestones, skills on the hotbar) and the Book of Beasts are built but
   // not finished, so they are hidden until the basics are right (Robin, 2026-10-05). Flip these to bring them back.
   var SHOW = { runes: true, book: false };     // runes: the arm ring (docs/arm-ring.md); book: the Book of Beasts, still hidden
-  var OPTS = { music: 0 }, musicOn = false, dangerT = 0, songsLS = null, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
-  try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; } } catch (e) {}
+  var OPTS = { music: 0, amb: 0.7 }, musicOn = false, dangerT = 0, songsLS = null, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
+  try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; OPTS.amb = o.amb != null ? o.amb : OPTS.amb; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
   function songOf(id) {                   // a song from the Song Editor's library (saved there on purpose), else the built-in one
     if (songsLS === null) { songsLS = {}; try { songsLS = JSON.parse(localStorage.getItem('song.library')) || {}; } catch (e) {} }
@@ -1345,9 +1346,48 @@ __COMBAT__
     if (f.chest) { var R2 = kit.rng(spec.seed * 13 + 5), n = 7 + Math.floor(R2() * 8), th2 = Items.make(['sword', 'seax', 'axe'][Math.floor(R2() * 3)], 'iron'); drop('silver', f.x, f.y + 10, n); dropThing(th2, f.x + 14, f.y + 12); }
     if (f.note) note(f.note); save();
   }
-  function caveTick(dt) {                  // what your light has shown goes onto the cave's chart; somewhere a drop falls
+  function caveTick(dt) {                  // what your light has shown goes onto the cave's chart (the drops that fall are the ambient sound's now)
     if (!inCave || !here()) return; var P = hero(); Cave.see(here(), P.x, P.y, torchOn ? 200 : 120);
-    if (S.sound && AC && Math.random() < dt * 0.22) tone(900 + Math.random() * 700, 0.07, 'sine', 0.014 + Math.random() * 0.02, 380);
+  }
+  /* The sound of the place (2026-10-12, Robin: ambient sounds; src/ambient.js, synthesized). A few times a second the page says
+     what is round the hero (ambEnv: how wooded, how near the open sea, a fire, a brook, the mountain's level, the hour, the cave
+     he is in), Ambient eases its beds toward that and lets its single sounds happen; and every stride on foot is a footstep by
+     the ground under him (groundUnder). Its loudness is the Escape menu's second bar; each layer has a switch on the Light and
+     sound board. */
+  var amb = null, ambT = 0, stepD = 0, lastHX = 0, lastHY = 0;
+  function openSea(x, y, a) { var n = 0, k; for (k = -1; k <= 1; k++) if (w.isWater(x + Math.cos(a + k * 0.3) * 220, y + Math.sin(a + k * 0.3) * 180)) n++; return n >= 2; }   // water that goes on: the sea, not a tarn
+  function ambEnv(P) {
+    var L = light(), aboard = !!(raft && raft.aboard);
+    if (inCave) return { cave: cur ? cur.kind : 'troll', torch: torchOn, fire: 0, aboard: false, sail: 0, trees: 0, shore: 0, brook: 0, fells: 0, night: L, dusk: dusk(), dawn: 0 };
+    if (inYard) return { cave: null, torch: false, fire: 0, aboard: false, sail: 0, trees: 0.2, shore: 0.5, brook: 0, fells: 0, night: L, dusk: dusk(), dawn: 0, wind: 0.4 };
+    var trees = 0, d = 1e9, br = 1e9, a, r, fq = nearestFire(P.x, P.y);
+    around(P.x, P.y, function (o) { if (o.kind === 'tree' && o.dying == null && Math.hypot(o.x - P.x, o.y - P.y) < 260) trees++; });
+    for (r = 40; r <= 500 && d > 1e8; r += 46) for (a = 0; a < 10; a++) { var sx = P.x + Math.cos(a * 0.628) * r, sy = P.y + Math.sin(a * 0.628) * r * 0.8; if (w.isWater(sx, sy) && openSea(sx, sy, a * 0.628)) { d = r; break; } }
+    if (w.mt && w.mt.falls.length) for (r = 0; r <= 150 && br > 1e8; r += 30) for (a = 0; a < 8; a++) if (w.waterAt(P.x + Math.cos(a * 0.785) * r, P.y + Math.sin(a * 0.785) * r)) { br = r; break; }
+    return { cave: null, torch: torchOn, trees: Math.min(1, trees / 9), shore: aboard ? 1 : Math.pow(Math.max(0, 1 - d / 500), 1.4), aboard: aboard, sail: aboard ? Math.min(1, Math.hypot(raft.vx || 0, raft.vy || 0) / 100) : 0,
+      fells: w.mt ? Math.min(3, w.levelAt(P.x, P.y) + (w.mAt(P.x, P.y) > 2.62 ? 1 : 0)) : 0, night: L, dusk: dusk(), dawn: day.t < 200 ? 1 - day.t / 200 : 0, fire: fq && fq.d < 230 ? Math.pow(1 - fq.d / 230, 1.5) : 0, brook: br < 1e8 ? 1 - br / 180 : 0, wind: 0.3 + Math.min(0.6, (wind.k || 0)) };
+  }
+  function groundUnder(P) {
+    if (inCave) return Cave.sAt(here(), P.x, P.y) > 0 ? 'water' : 'rock';
+    if (inYard) return 'grass'; if (P.lvl) return 'wood';
+    var tx = Math.floor(P.x / T), ty = Math.floor(P.y / T), fl = B.floors[Build.key(tx, ty)];
+    if (fl != null && Build.FLOORS[fl]) { var tl = Build.FLOORS[fl].tile; return tl === 'plank' ? 'wood' : (tl === 'path' || tl === 'rock') ? 'rock' : tl === 'trail' ? 'gravel' : 'grass'; }
+    if (dockAt(tx, ty) || w.onPlank(P.x, P.y)) return 'wood';
+    if (w.elevAt(P.x, P.y) < 0.06 || w.waterAt(P.x, P.y)) return 'water';
+    if (w.rampAt(P.x, P.y)) return 'gravel';
+    var gk = w.groundKind ? w.groundKind(P.x, P.y) : 0; if (gk === 1) return 'gravel'; if (gk === 5) return 'rock';
+    if (code(tx, ty) === 1) return 'sand';
+    if (w.mt && w.mAt(P.x, P.y) > 2.62) return 'rock';
+    return 'grass';
+  }
+  function ambTick(dt) {
+    if (!AC || AC.state !== 'running') return;
+    if (!amb) { amb = Ambient.make(AC, AC.destination); for (var lk in LAB.snd) amb.layers[lk] = LAB.snd[lk] ? 1 : 0; ambT = 0; }
+    var P = hero(); amb.setVolume(!S.sound || pauseOpen || document.hidden || sleep ? 0 : OPTS.amb);
+    ambT -= dt; if (ambT <= 0) { ambT = 0.3; amb.set(ambEnv(P)); }
+    amb.tick(dt);
+    var moved = Math.hypot(P.x - lastHX, P.y - lastHY); lastHX = P.x; lastHY = P.y;               // a footstep every stride on foot
+    if (moved > 0.05 && moved < 30 && !(raft && raft.aboard) && !P.dead && !sitting && !pauseOpen) { stepD += moved; if (stepD >= (P.sprinting ? 34 : 27)) { stepD = 0; amb.step(groundUnder(P), P.sprinting ? 1.15 : 0.9); } }
   }
   /* The lookout (2026-10-12, Robin: a high point that reveals part of the chart when you stand on it). A beacon cairn (the
      varde) stands on the southernmost stand of the highest ground you can walk to, a cliff under it. E beside it looks out: the
@@ -1383,7 +1423,7 @@ __COMBAT__
   function fallsSound() {
     if (!w.mt || !w.mt.falls.length) return; var P = hero(), d = 1e9, vol = 0;
     w.mt.falls.forEach(function (f) { d = Math.min(d, Math.hypot(P.x - f.x, P.y - f.foot)); });
-    if (S.sound && !inCave && !inYard && !pauseOpen && !document.hidden && d < 620) { vol = 1 - d / 620; vol = vol * vol * 0.2; }
+    if (S.sound && !inCave && !inYard && !pauseOpen && !document.hidden && d < 620 && LAB.snd.water) { vol = 1 - d / 620; vol = vol * vol * 0.2 * Math.min(1.4, OPTS.amb / 0.7); }
     if (!fallSnd) {
       if (vol <= 0 || !AC || AC.state !== 'running') return;
       var n = AC.sampleRate * 2, b = AC.createBuffer(1, n, AC.sampleRate), ch = b.getChannelData(0), i, last = 0;
@@ -2338,8 +2378,32 @@ __COMBAT__
     { id: 'layertest', name: 'Run the layer test', text: 'Twelve seconds: each layer off in turn (grass, grain, waves, ground, night, things), the frame drawn four times over so the cost shows. Results in the frame log.' },
     { id: 'perflog', name: 'Download the frame log', text: 'Saves framelog.txt: a line a second with the frame time, its parts and what was happening, for finding the lag.' },
     { id: 'weapons', name: 'Copper weapons', text: 'One of every kind into the bag: sword, axe, club, seax, spear, Dane axe, bow, sling, javelin, throwing axe.' },
+    { id: 'lab', name: 'Light and sound', text: 'Switches for trying things by eye and ear: each layer of the world\u2019s sound, each lighting technique.' },
     { id: 'back', name: 'Back', text: '' }
   ];
+  /* The Light and sound board (2026-10-12, Robin: compare the lighting techniques in pictures, then as switches on the Admin
+     board; and I cannot hear the ambient sound I make, so he judges it by ear): a switch for every layer of the world's sound
+     and for every lighting technique on trial. Kept in game.lab across reloads. */
+  var LAB = { snd: { wind: true, sea: true, birds: true, insects: true, fire: true, steps: true, cave: true, water: true }, light: {} }, labOpen = false;
+  try { var lb0 = JSON.parse(localStorage.getItem('game.lab')), lk0; if (lb0) { for (lk0 in LAB.snd) if (lb0.snd && lb0.snd[lk0] != null) LAB.snd[lk0] = !!lb0.snd[lk0]; for (lk0 in (lb0.light || {})) LAB.light[lk0] = lb0.light[lk0]; } } catch (e) {}
+  function saveLab() { try { localStorage.setItem('game.lab', JSON.stringify(LAB)); } catch (e) {} }
+  var SND_ROWS = [['wind', 'Wind', 'Gusts, leaves rustling where trees are, a whistle up on the plateau.'], ['sea', 'The sea', 'A wave and its wash by the shore; water along the hull aboard.'], ['birds', 'Birds', 'By day, most at dawn and where trees are; gulls by the shore, a raven on the fells, an owl at night.'], ['insects', 'Crickets', 'From dusk on.'], ['fire', 'Fire', 'The roar and the crackle near any fire, and of a torch in the hand.'], ['steps', 'Footsteps', 'By the ground: grass, sand, rock, gravel, wood, water.'], ['cave', 'Caves', 'The low tone, drops, the mine\u2019s timber, the sea cave\u2019s boom.'], ['water', 'Running water', 'The brook and the pool.']];
+  function labRows() { return SND_ROWS.map(function (q) { return { id: 'snd:' + q[0], name: 'Sound: ' + q[1], text: q[2], on: LAB.snd[q[0]] }; }).concat(lightRows(), [{ id: 'back', name: 'Back', text: '' }]); }
+  function lightRows() { return []; }
+  function drawLab(c) {
+    c.fillStyle = 'rgba(10,8,6,0.45)'; c.fillRect(0, 0, 400, 250);
+    panel(c, 30, 2, 340, 'Light and sound', 'For trying things by eye and ear. Switches stay as they are across reloads.', labRows().map(function (p) { return { p: p, can: true }; }), function (it, x0, yy, w0) {
+      c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(it.p.name, x0 + 14, yy + 2.2);
+      c.font = '600 4.6px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,0.65)'; var tx = it.p.text; while (tx.length > 1 && c.measureText(tx).width > w0 - 150) tx = tx.slice(0, -1); c.fillText(tx === it.p.text ? tx : tx.replace(/\s*$/, '') + '\u2026', x0 + 110, yy + 2);
+      if (it.p.on != null) { c.font = 'bold 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = it.p.on ? '#9be58b' : 'rgba(255,255,255,0.45)'; c.fillText(it.p.val || (it.p.on ? 'ON' : 'off'), x0 + w0 - 14, yy + 2.2); }
+    }, 11);
+  }
+  function labAct(id) {
+    if (id === 'back') { labOpen = false; return; }
+    if (id.indexOf('snd:') === 0) { var k = id.slice(4); LAB.snd[k] = !LAB.snd[k]; if (amb) amb.layers[k] = LAB.snd[k] ? 1 : 0; saveLab(); return; }
+    if (lightAct(id)) saveLab();
+  }
+  function lightAct(id) { return false; }
   function drawAdmin(c) {
     c.fillStyle = 'rgba(10,8,6,0.45)'; c.fillRect(0, 0, 400, 250);
     panel(c, 30, 2, 340, 'Admin', 'For testing. Toggles stay on until turned off, across reloads.', ADMIN_ROWS.map(function (p) { return { p: p, can: true }; }), function (it, x0, yy, w0) {   // one line a row, wide, so every row fits the screen (2026-10-08)
@@ -2351,6 +2415,7 @@ __COMBAT__
   function adminAct(id) {
     var P = hero(), row = ADMIN_ROWS.filter(function (r) { return r.id === id; })[0];
     if (id === 'back') { adminOpen = false; return; }
+    if (id === 'lab') { labOpen = true; return; }
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'fullres') fitCanvas(); return; }
     if (id === 'perflog') { perfDownload(); return; }
     if (id === 'layertest') { perfTestStart(); pauseOpen = false; adminOpen = false; toast('Layer test running'); return; }
@@ -2372,11 +2437,12 @@ __COMBAT__
     { id: 'restart', name: 'Restart with nothing', text: 'The same island, a fresh start: empty hands, branches and stones at camp.' },
     { id: 'newisle', name: 'New island', text: 'A different island, a fresh start. The old one is gone.' },
     { id: 'admin', name: 'Admin', text: 'Cheats for testing: immortal, one-shot hits, free building, fly, teleports.' },
-    { id: 'music', name: 'Music', text: 'Drag the bar. All the way left is silence. The evening theme plays from dusk.' }
+    { id: 'music', name: 'Music', text: 'Drag the bar. All the way left is silence. The evening theme plays from dusk.' },
+    { id: 'amb', name: 'Sounds of the world', text: 'Wind, sea, birds, fire, your own steps. Drag the bar.' }
   ];
   var musicDrag = false;
   function musicBar(x0, w0) { return { x: x0 + w0 - 70, y: 0, w: 56 }; }
-  function musicSet(mx, x0, w0) { var b = musicBar(x0, w0); setMusic(Math.round(Math.max(0, Math.min(1, (mx - b.x) / b.w)) * 20) / 20); }
+  function musicSet(mx, x0, w0) { var b = musicBar(x0, w0), v = Math.round(Math.max(0, Math.min(1, (mx - b.x) / b.w)) * 20) / 20; if (musicDrag === 'amb') { OPTS.amb = v; saveOpts(); } else setMusic(v); }
   // Guidance is subtle (Robin): a few quiet key reminders at the very start, never a goal and never an explanation. The
   // rest is found by exploring: prompts over the hero, the people, the way things look.
   var HINTS = [
@@ -2398,10 +2464,10 @@ __COMBAT__
     panel(c, 120, 60, 160, 'Paused', 'The game saves itself as you play. Esc closes.', PAUSE.map(function (p) { return { p: p, can: true }; }), function (it, x0, yy, w0) {
       c.font = '600 8px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(it.p.name, x0 + 14, yy + 1);
       c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText(it.p.text, x0 + 14, yy + 8);
-      if (it.p.id === 'music') {           // the volume bar
-        var b = musicBar(x0, w0); c.fillStyle = 'rgba(0,0,0,0.45)'; c.fillRect(b.x, yy - 3, b.w, 6);
-        c.fillStyle = '#f6c453'; c.fillRect(b.x, yy - 3, b.w * OPTS.music, 6); c.fillStyle = '#fff'; c.fillRect(b.x + b.w * OPTS.music - 1.5, yy - 5, 3, 10);
-        c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillText(Math.round(OPTS.music * 100) + '%', b.x - 4, yy + 2);
+      if (it.p.id === 'music' || it.p.id === 'amb') {           // the volume bars: the music, the sounds of the world
+        var b = musicBar(x0, w0), bv = it.p.id === 'amb' ? OPTS.amb : OPTS.music; c.fillStyle = 'rgba(0,0,0,0.45)'; c.fillRect(b.x, yy - 3, b.w, 6);
+        c.fillStyle = it.p.id === 'amb' ? '#9fd08a' : '#f6c453'; c.fillRect(b.x, yy - 3, b.w * bv, 6); c.fillStyle = '#fff'; c.fillRect(b.x + b.w * bv - 1.5, yy - 5, 3, 10);
+        c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillText(Math.round(bv * 100) + '%', b.x - 4, yy + 2);
       }
     });
   }
@@ -3453,7 +3519,7 @@ __COMBAT__
       if (ringOpen) drawRingBoard(c);
       drawRite(c);
       if ((SCENE === 'runes' || SCENE === 'mountain') && !pauseOpen && !invOpen && !ringOpen && !menu) drawRunePanel(c);
-      if (pauseOpen) { rows = []; if (adminOpen) drawAdmin(c); else drawPause(c); }
+      if (pauseOpen) { rows = []; if (adminOpen && labOpen) drawLab(c); else if (adminOpen) drawAdmin(c); else drawPause(c); }
       if (menu) drawMenu(c);
       c.restore();
     }
@@ -3517,7 +3583,7 @@ __COMBAT__
     if (e.code === 'KeyC') { e.preventDefault(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Enter' && ringOpen && !e.repeat) { e.preventDefault(); if (ringSel) startCut(ringSel); return; }
-    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || ringOpen || musterOpen || mapOpen) { ringOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
+    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || ringOpen || musterOpen || mapOpen) { ringOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (labOpen) labOpen = false; else if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
     if (inYard && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) YSCENE.key('Enter'); return; }
     if (menu && menu.info && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) infoMake(infoSel()); return; }
     if (inYard && (e.code === 'KeyB' || e.code === 'KeyQ')) { e.preventDefault(); return; }
@@ -3535,8 +3601,9 @@ __COMBAT__
     e.preventDefault(); mouseW = toWorld(e); mouseS = toScreen(e);
     var P = hero();
     if (pauseOpen) {
-      var pr = rowAt(); if (adminOpen) { if (pr && e.button === 0) adminAct(pr.p.id); else if (e.button === 2) adminOpen = false; return; }
-      if (pr && e.button === 0) { var id = pr.p.id; if (id === 'admin') { adminOpen = true; return; } if (id === 'music') { musicDrag = true; musicSet(mouseS.x, 120, 160); return; } pauseOpen = false; if (id === 'sandbox') sandbox(); else if (id === 'restart') start(true); else if (id === 'newisle') { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); } }
+      var pr = rowAt(); if (adminOpen && labOpen) { if (pr && e.button === 0) labAct(pr.p.id); else if (e.button === 2) labOpen = false; return; }
+      if (adminOpen) { if (pr && e.button === 0) adminAct(pr.p.id); else if (e.button === 2) adminOpen = false; return; }
+      if (pr && e.button === 0) { var id = pr.p.id; if (id === 'admin') { adminOpen = true; return; } if (id === 'music' || id === 'amb') { musicDrag = id === 'amb' ? 'amb' : true; musicSet(mouseS.x, 120, 160); return; } pauseOpen = false; if (id === 'sandbox') sandbox(); else if (id === 'restart') start(true); else if (id === 'newisle') { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); } }
       return;
     }
     if ((SCENE === 'runes' || SCENE === 'mountain') && !pauseOpen && !invOpen && !ringOpen && !menu && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
@@ -3820,7 +3887,7 @@ __COMBAT__
     if (kind === 'karve') { for (i = 0; i < 8; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 7; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } for (i = 2; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 1 }); parts.push({ id: 'strake', i: i, j: 5 }); } parts.push({ id: 'thwart', i: 2, j: 3 }, { id: 'thwart', i: 5, j: 3 }, { id: 'thwart', i: 6, j: 3 }, { id: 'mast', i: 4, j: 3 }, { id: 'sail', i: 4, j: 3 }, { id: 'rudder', i: 0, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -3920,7 +3987,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); heroGearSync(); raidTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); raidTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;
