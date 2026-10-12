@@ -114,6 +114,10 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | Mountain troll (boulder) | `troll_boulder.blend` | own (`troll_build.py`), no Mixamo | 7 | `troll_boulder` | Models tab | **yes**, the cave troll (2026-10-12) | stone is the shield pose under a grey tint |
 | Forest troll | `troll_forest.blend` | the same rig | 7 | `troll_forest` | Models tab | arena only | not spawned in the game |
 | The Gape (new) | `troll_maw.blend` | the same rig | 7 | `troll_maw` | Models tab | arena only | Robin to decide where it lives |
+| Draugr | `draugr.blend` | the trolls' rig as a person (`troll_build.py`) | 7 | `draugr` | Models tab | no | mechanics to discuss |
+| Huldra | `huldra.blend` | the same | 5 (`call`) | `huldra` | Models tab | no | mechanics to discuss |
+| Nacken | `nacken.blend` | the same | 5 (`play`) | `nacken` | Models tab | no | mechanics to discuss; the lyre opens instruments |
+| Bysen | `bysen.blend` | the same, half size | 5 (`chop`, `hide`, `stump`) | `bysen` | Models tab | no | mechanics to discuss |
 | Three-headed troll (new) | `troll_three.blend` | the same rig, two more necks and heads | 7 | `troll_three` | Models tab | arena only | Robin to decide where it lives |
 | Boar | `boar.blend` | own (`quad_build.py`) | 7 | `boar` | Models tab | **yes** (2026-10-11) | |
 | Deer | `deer.blend` | the same rig | 5 (no attack) | `deer` | Models tab | **yes** (2026-10-11) | a stag; the death lies stiff-legged |

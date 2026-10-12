@@ -25,7 +25,7 @@ from mathutils import Vector, Matrix
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 KIND = argv[0] if argv else 'boulder'
-NAME = 'troll_' + KIND
+NAME = KIND if KIND in ('draugr', 'huldra', 'nacken', 'bysen') else 'troll_' + KIND
 SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'source'); OUT = os.path.abspath(os.path.join(SRC, NAME + '.blend'))
 FPS = 24; rad = math.radians; TAU = 2 * math.pi
 RNG = random.Random(7)
@@ -67,6 +67,24 @@ SPECS = {
                   'R': {'neck': [(-0.30, -0.04, 2.68), (-0.66, -0.16, 3.02)], 'head': [(-0.66, -0.16, 3.02), (-0.86, -0.46, 3.04)]}},
     },
 }
+# ---- the people-shaped vasen (2026-10-12, Robin: the draugr, the huldra, Nacken and the bysen): the hero's build, 1.8 m, a big head
+def person(col, **kw):
+    d = {'leg': [(0.02, 0.80), (-0.02, 0.44), (0.04, 0.10), (-0.17, 0.04)], 'hx': 0.11,
+         'arm': [(0.0, 1.27), (0.03, 1.01), (-0.02, 0.78), (-0.04, 0.66)], 'sx': 0.25,
+         'piv': {'body': (0, 0.02, 0.84), 'spine': (0, 0.02, 0.98), 'chest': (0, 0.01, 1.12)},
+         'neck': [(0.0, 1.30), (0.0, 1.37)], 'head': [(0.0, 1.37), (-0.25, 1.37)], 'jaw': [(-0.02, 1.45), (-0.20, 1.43)], 'tail': None,
+         'col': col, 'knuckle': False, 'walk': dict(S=0.46, h=0.11, beta=0.60, bob=0.02, sway=2.5), 'lie': 0.62, 'person': True}
+    d.update(kw); return d
+SPECS['draugr'] = person({'skin': '#8fa9b4', 'dark': '#3d4f5c', 'mail': '#9a968a', 'rust': '#96603c', 'cloth': '#5d6a66', 'kelp': '#4d6a4c', 'beard': '#c9c6b4', 'eye': '#e9f4ee', 'tooth': '#e6dfc6', 'wood': '#8a6e50', 'iron': '#8f8f8a', 'barnacle': '#ddd6c4', 'mouth': '#2a2026'},
+    walk=dict(S=0.34, h=0.06, beta=0.68, bob=0.025, sway=6.0), clips=['idle', 'walk', 'windup', 'attack', 'hit', 'shield', 'death'], slump=0.45)
+SPECS['huldra'] = person({'skin': '#f6d8be', 'dress': '#d8442e', 'trim': '#f0c95a', 'hair': '#f3dc8c', 'bark': '#8a6e50', 'rot': '#2a1f18', 'fungus': '#e6d6b0', 'moss': '#86a652', 'eye': '#2a2420', 'lip': '#b8323a', 'flowerA': '#f2f0e4', 'flowerB': '#6f9fe0', 'shoe': '#6b4a34'},
+    walk=dict(S=0.30, h=0.07, beta=0.62, bob=0.012, sway=2.0), clips=['idle', 'walk', 'call', 'hit', 'death'])
+SPECS['nacken'] = person({'skin': '#dfe8de', 'tunic': '#4f8a7a', 'trouser': '#8a6a4c', 'hair': '#3a4a44', 'eye': '#20302c', 'belt': '#5a4632', 'reed': '#9ab05a', 'lily': '#f4f2e6', 'lilyc': '#f0c040', 'wood': '#b08a5a', 'string': '#f0e8d0', 'rock': '#9a9a94', 'moss': '#86a652', 'lip': '#8f9a98'},
+    clips=['idle', 'walk', 'play', 'hit', 'death'],
+    pbones={'lyreA': ((0, 0.20, 1.10), (0, 0.20, 1.30), 'chest', 1.0), 'lyreB': ((0.04, -0.20, 1.04), (0.04, -0.20, 1.24), 'chest', 0.0), 'rock': ((0, 0.10, 0.0), (0, 0.10, 0.2), 'root', 0.0)})
+SPECS['bysen'] = person({'skin': '#e8c8a8', 'coat': '#a8a69c', 'trouser': '#7d7a70', 'cap': '#d23c2c', 'beard': '#e6e2d6', 'eye': '#201c1a', 'shoe': '#5a4632', 'wood': '#b08a5a', 'iron': '#9a9a96', 'bark': '#8a6e50', 'ring': '#e2cc9c', 'moss': '#86a652', 'spot': '#f4f2e6', 'nose': '#e0a890'},
+    clips=['idle', 'walk', 'chop', 'hide', 'stump'], hs=1.3, size=0.5,
+    pbones={'stump': ((0, 0.0, 0.0), (0, 0.0, 0.3), 'root', 0.0)}, sdefault={'body': 1.0})
 S = SPECS[KIND]; PIV = S['piv']
 
 # ---------------- scene, materials, mesh helpers ----------------
@@ -136,6 +154,8 @@ if S['tail']: bone('tail', V3(S['tail'][0]), V3(S['tail'][1]), 'body')
 for hk, hs in S.get('heads', {}).items():
     bone('neck' + hk, hs['neck'][0], hs['neck'][1], 'chest'); bone('head' + hk, hs['head'][0], hs['head'][1], 'neck' + hk)
     b, hd, up, side, L = frame_of(hs['head'][0], hs['head'][1]); bone('jaw' + hk, b + hd * 0.08 - up * 0.10, b + hd * L * 0.9 - up * 0.16, 'head' + hk)
+SBONES = dict(S.get('sdefault', {}))
+for bn, (bh, bt, bpar, bdef) in S.get('pbones', {}).items(): bone(bn, bh, bt, bpar); SBONES[bn] = bdef
 LIMBS = {}
 for side, sgn in (('L', 1), ('R', -1)):
     for kind, J, x, par in (('l', S['leg'], S['hx'], 'body'), ('a', S['arm'], S['sx'], 'chest')):
@@ -346,7 +366,131 @@ def build_three():
         hand('a' + sd, C['blood'], C['bone'], 0.10, fingers=4, fl=0.40, fr=0.035, spread=1.0, curl=0.12)
         limb('l' + sd, sk, (0.14, 0.085, 0.07), knob=0.135); foot('l' + sd, sk, C['bone'], 0.13, toes=3, tl=0.24, tr=0.04)
 
-{'boulder': build_boulder, 'forest': build_forest, 'maw': build_maw, 'three': build_three}[KIND]()
+def body_of(skin, top, legs, shoe, belly=1.0, bare=False, arm_r=(0.078, 0.064, 0.056), leg_r=(0.098, 0.078, 0.062)):
+    """the shared figure: pelvis, waist, chest, neck, a big head, mitten hands, two-part limbs; returns the head's pointer"""
+    cone('pelvis', legs, 'body', (0, 0.02, 0.72), (0, 0.02, 0.96), 0.17, 0.165 * belly, sx=1.15)
+    cone('waist', top, 'spine', (0, 0.02, 0.93), (0, 0.01, 1.12), 0.165 * belly, 0.18, sx=1.2)
+    cone('chest', top, 'chest', (0, 0.01, 1.08), (0, 0.0, 1.31), 0.19, 0.15, sx=1.35)
+    cone('neck', skin, 'neck', (0, 0.0, 1.28), (0, 0.0, 1.40), 0.075, 0.07)
+    hp, HL, hd, up, side = pointer(V3(S['head'][0]), V3(S['head'][1]))
+    ball('head', skin, 'head', hp(0.0, 0.20), 0.225, sx=1.0, sy=1.0, sz=1.0, seg=12, rings=8)
+    for sd in ('L', 'R'):
+        limb('a' + sd, top, arm_r); hand('a' + sd, skin, skin, 0.066, fingers=0)
+        limb('l' + sd, legs, leg_r); foot('l' + sd, skin if bare else shoe, skin if bare else shoe, 0.072, toes=3 if bare else 0, tl=0.05, tr=0.022)
+    return hp, hd, up, side
+def lyre(group, c, mat, strings, tilt=0.0):
+    c = Vector(c); Rt = Matrix.Rotation(rad(tilt), 3, 'Y')
+    P = lambda x, z, y=0.0: c + Rt @ Vector((x, y, z))
+    ball('lyrebox', mat, group, P(0, -0.02), 0.11, sx=1.0, sy=0.28, sz=1.25, rot=Rt)
+    for sg in (1, -1): cone('lyrearm', mat, group, P(sg * 0.085, 0.06), P(sg * 0.10, 0.30), 0.022, 0.018, seg=5)
+    cone('lyreyoke', mat, group, P(-0.12, 0.30), P(0.12, 0.30), 0.02, 0.02, seg=5)
+    for k in range(5): x = (k - 2) * 0.03; cone('lyrestring', strings, group, P(x * 0.6, -0.08, -0.035), P(x, 0.30, -0.02), 0.004, 0.004, seg=3)
+
+def build_draugr():
+    sk = C['skin']; hp, hd, up, side = body_of(sk, C['mail'], C['cloth'], C['cloth'], belly=1.28, bare=True, arm_r=(0.085, 0.07, 0.06))
+    ball('gut', C['mail'], 'spine', (0, -0.05, 1.00), 0.21, sx=1.15, sy=1.0, sz=0.95)                                   # bloated under the mail
+    hang('mailhem', C['mail'], 'body', [(math.sin(rad(a)) * 0.22, 0.02 + math.cos(rad(a)) * 0.20, 0.80) for a in range(0, 360, 30)], 0.20, 0.07, lean=0.2, flat=0.5, vary=0.6)
+    hang('rags', C['cloth'], 'chest', [(math.sin(rad(a)) * 0.24, 0.03 + math.cos(rad(a)) * 0.15, 1.24) for a in (-60, -20, 30, 70, 150, 200)], 0.55, 0.07, lean=0.08, flat=0.3)   # what is left of a cloak
+    hang('weed', C['kelp'], 'chest', [(0.22, -0.02, 1.30), (-0.20, 0.06, 1.30), (0.10, 0.12, 1.30), (-0.26, -0.04, 1.26)], 0.5, 0.05, lean=0.1, flat=0.3)
+    for (x, y, z) in ((0.17, -0.13, 1.16), (0.20, -0.10, 1.08), (-0.19, -0.11, 0.94), (-0.05, 0.18, 1.12)): ball('barnacle', C['barnacle'], 'chest' if z > 1.05 else 'spine', (x, y, z), 0.03, sz=0.7, seg=6, rings=4)
+    for (x, z) in ((0.08, 1.16), (-0.10, 1.02)): ball('rustspot', C['rust'], 'chest' if z > 1.05 else 'spine', (x, -0.19 if z > 1.05 else -0.25, z), 0.032, sy=0.3, seg=6, rings=4)
+    ball('helm', C['rust'], 'head', hp(-0.02, 0.31), 0.235, sz=0.62, seg=12, rings=8); cone('helmrim', C['iron'], 'head', hp(-0.02, 0.285), hp(-0.02, 0.32), 0.24, 0.235, seg=12)
+    cone('nasal', C['iron'], 'head', hp(0.215, 0.30), hp(0.238, 0.17), 0.028, 0.02, seg=4); cone('spike', C['iron'], 'head', hp(-0.02, 0.44), hp(-0.04, 0.53), 0.03, 0.006, seg=5)
+    ball('socketL', C['dark'], 'head', hp(0.185, 0.215, 0.085), 0.05, sy=0.6); ball('socketR', C['dark'], 'head', hp(0.185, 0.215, -0.085), 0.05, sy=0.6)
+    ball('eyeL', C['eye'], 'head', hp(0.205, 0.215, 0.085), 0.026); ball('eyeR', C['eye'], 'head', hp(0.20, 0.21, -0.085), 0.015)      # one staring, one sunk
+    mark('eye.L', hp(0.215, 0.215, 0.085), 'head'); mark('eye.R', hp(0.21, 0.21, -0.085), 'head')
+    ball('mouth', C['mouth'], 'head', hp(0.17, 0.085), 0.075, sx=1.1, sy=0.8, sz=0.7)
+    jp, JL, jd, jup, jside = pointer(V3(S['jaw'][0]), V3(S['jaw'][1]))
+    ball('jaw', sk, 'jaw', jp(0.10, -0.045), 0.10, sx=1.15, sy=1.1, sz=0.5)
+    for k in (-1.5, -0.5, 0.5, 1.5): cone('tooth', C['tooth'], 'jaw', jp(0.17, -0.02, k * 0.035), jp(0.175, 0.03, k * 0.035), 0.014, 0.008, seg=4)
+    hang('beard', C['beard'], 'jaw', [jp(0.13, -0.07, k * 0.05) for k in (-2, -1, 0, 1, 2)] + [jp(0.05, -0.06, k * 0.11) for k in (-1, 1)], 0.36, 0.05, lean=0.1)
+    hang('beardweed', C['kelp'], 'jaw', [jp(0.14, -0.08, 0.07), jp(0.12, -0.08, -0.04)], 0.42, 0.03, flat=0.3)
+    hang('hair', C['beard'], 'head', [hp(-0.12 + 0.03 * (i % 2), 0.20, (i - 2.5) * 0.08) for i in range(6)], 0.42, 0.045, lean=0.15)
+    # the shield on the left forearm: rotten boards, a rusted boss, a bite out of the rim
+    L = LIMBS['aL']; e, w = V3(L['J'][1], L['x']), V3(L['J'][2], L['x']); c0 = e.lerp(w, 0.55) + Vector((0.09, -0.02, 0)); Ry = Matrix.Rotation(rad(90), 3, 'Y')
+    ball('shield', C['wood'], 'aL_lo', c0, 0.34, sx=1.0, sy=1.0, sz=0.10, rot=Ry, seg=12, rings=6); ball('boss', C['rust'], 'aL_lo', c0 + Vector((0.035, 0, 0)), 0.08, sx=0.6)
+    for k in (-1, 0, 1): cone('board', C['dark'], 'aL_lo', c0 + Vector((0.04, k * 0.13, -0.30)), c0 + Vector((0.04, k * 0.13, 0.30)), 0.008, 0.008, seg=3)
+    ball('bite', C['dark'], 'aL_lo', c0 + Vector((0.03, -0.24, 0.24)), 0.10, sx=0.25)
+    # the sword in the right hand: pitted, the point forward and down
+    L = LIMBS['aR']; w, t = V3(L['J'][2], L['x']), V3(L['J'][3], L['x']); m = w.lerp(t, 0.45); d = Vector((0, -0.92, -0.38)).normalized()
+    cone('grip', C['wood'], 'aR_ft', m - d * 0.09, m + d * 0.07, 0.022, 0.022, seg=5); cone('guard', C['iron'], 'aR_ft', m + d * 0.07 + Vector((0.09, 0, 0)), m + d * 0.07 - Vector((0.09, 0, 0)), 0.02, 0.02, seg=4)
+    cone('blade', C['iron'], 'aR_ft', m + d * 0.08, m + d * 0.80, 0.05, 0.012, seg=4, sy=0.25); ball('pommel', C['rust'], 'aR_ft', m - d * 0.10, 0.032)
+    for k in (0.3, 0.52, 0.66): ball('pit', C['rust'], 'aR_ft', m + d * k + Vector((0, 0, 0.012)), 0.022, sx=0.4, seg=5, rings=4)
+
+def build_huldra():
+    sk = C['skin']; hp, hd, up, side = body_of(sk, C['dress'], C['dress'], C['shoe'], arm_r=(0.062, 0.05, 0.044), leg_r=(0.085, 0.066, 0.052))
+    cone('skirt', C['dress'], 'body', (0, 0.02, 0.92), (0, 0.02, 0.09), 0.17, 0.33, seg=14, sx=1.1)
+    cone('hem', C['trim'], 'body', (0, 0.02, 0.13), (0, 0.02, 0.09), 0.325, 0.335, seg=14, sx=1.1); cone('belt', C['trim'], 'spine', (0, 0.02, 0.94), (0, 0.02, 0.99), 0.178, 0.178, seg=12, sx=1.2)
+    cone('neckline', C['trim'], 'chest', (0, 0.0, 1.27), (0, 0.0, 1.31), 0.165, 0.15, seg=12, sx=1.35)
+    for sd in ('L', 'R'):
+        L = LIMBS['a' + sd]; e, w = V3(L['J'][1], L['x']), V3(L['J'][2], L['x']); cone('cuff', C['trim'], 'a' + sd + '_lo', e.lerp(w, 0.86), w, 0.05, 0.05, seg=8)
+    # the face
+    for sg in (1, -1):
+        ball('eye', C['eye'], 'head', hp(0.20, 0.215, sg * 0.08), 0.024, sz=1.25); cone('brow', C['bark'], 'head', hp(0.205, 0.278, sg * 0.045), hp(0.19, 0.262, sg * 0.12), 0.009, 0.005, seg=3)
+        ball('cheek', C['lip'], 'head', hp(0.17, 0.155, sg * 0.12), 0.035, sy=0.3)
+    ball('nose', sk, 'head', hp(0.225, 0.18), 0.025); ball('lips', C['lip'], 'head', hp(0.205, 0.115), 0.032, sx=1.3, sy=0.5, sz=0.5)
+    # fair hair: a cap of it, two long locks falling in front over the shoulders (never down the back: the back is what she hides), a wreath of flowers
+    ball('haircap', C['hair'], 'head', hp(-0.045, 0.225), 0.238, seg=12, rings=8)
+    for sg in (1, -1):
+        hang('lock', C['hair'], 'head', [hp(0.06, 0.22, sg * 0.20), hp(0.02, 0.20, sg * 0.225), hp(0.10, 0.18, sg * 0.17)], 0.74, 0.06, lean=0.02, vary=0.12)
+    hang('nape', C['hair'], 'head', [hp(-0.20, 0.14, k * 0.07) for k in (-2, -1, 0, 1, 2)], 0.16, 0.06, vary=0.2)
+    for i in range(10):
+        a = rad(i * 36); ball('flower', C['flowerA'] if i % 2 else C['flowerB'], 'head', hp(-0.045 + 0.20 * math.cos(a), 0.37, 0.20 * math.sin(a)), 0.04, sz=0.7, seg=6, rings=4)
+    # the back: bark from the shoulders to the hips, and in it the hollow, black with rot, a ragged rim, bracket fungus and moss
+    ball('bark', C['bark'], 'spine', (0, 0.105, 1.07), 0.19, sx=1.22, sy=0.62, sz=1.55, seg=12, rings=8)
+    ball('hollow', C['rot'], 'spine', (0, 0.205, 1.07), 0.125, sx=1.0, sy=0.30, sz=1.75, seg=10, rings=6)
+    for i in range(14):
+        a = rad(i * 360 / 14); x, z = math.cos(a) * 0.135, math.sin(a) * 0.235; b = Vector((x, 0.19, 1.07 + z))
+        cone('rim', C['bark'], 'spine', b, b + Vector((x * 0.35, 0.06 + 0.04 * RNG.random(), z * 0.30)), 0.04, 0.006, seg=4)
+    for (x, z, r) in ((0.17, 1.20, 0.07), (-0.18, 1.00, 0.08), (0.16, 0.90, 0.055)): ball('fungus', C['fungus'], 'spine', (x, 0.17, z), r, sy=0.9, sz=0.35, seg=7, rings=4)
+    for (x, z, r) in ((-0.12, 1.30, 0.07), (0.05, 0.80, 0.08)): ball('moss', C['moss'], 'spine', (x, 0.19, z), r, sy=0.4, sz=0.6, seg=6, rings=4)
+    for (x, z) in ((0.06, 1.36), (-0.10, 0.78)): cone('twig', C['bark'], 'spine', (x, 0.20, z), (x * 2.2, 0.36, z + 0.10), 0.014, 0.003, seg=3)
+    for k in range(4): cone('grain', C['rot'], 'spine', (-0.15 + k * 0.10, 0.215 - 0.02 * abs(k - 1.5), 0.78), (-0.16 + k * 0.105, 0.215 - 0.02 * abs(k - 1.5), 0.70 - 0.02 * (k % 2)), 0.008, 0.004, seg=3)
+
+def build_nacken():
+    sk = C['skin']; hp, hd, up, side = body_of(sk, C['tunic'], C['trouser'], C['trouser'], bare=True, arm_r=(0.07, 0.056, 0.05), leg_r=(0.09, 0.07, 0.056))
+    cone('tunichem', C['tunic'], 'body', (0, 0.02, 0.94), (0, 0.02, 0.66), 0.17, 0.22, seg=12, sx=1.15); cone('belt', C['belt'], 'spine', (0, 0.02, 0.93), (0, 0.02, 0.975), 0.182, 0.182, seg=12, sx=1.2)
+    hang('tatters', C['tunic'], 'body', [(math.sin(rad(a)) * 0.24, 0.02 + math.cos(rad(a)) * 0.21, 0.68) for a in range(0, 360, 36)], 0.14, 0.06, lean=0.2, flat=0.4, vary=0.5)
+    for (x, a) in ((0.16, 12), (0.20, -6), (0.13, 24)): cone('reed', C['reed'], 'spine', (x, 0.06, 0.92), (x + math.sin(rad(a)) * 0.2, 0.10, 1.50 + 0.08 * RNG.random()), 0.012, 0.004, seg=3)
+    for sd in ('L', 'R'):
+        L = LIMBS['a' + sd]; e, w = V3(L['J'][1], L['x']), V3(L['J'][2], L['x']); cone('wrist', sk, 'a' + sd + '_lo', e.lerp(w, 0.55), w, 0.052, 0.046, seg=8)      # sleeves to the elbow
+        L = LIMBS['l' + sd]; k, a = V3(L['J'][1], L['x']), V3(L['J'][2], L['x']); cone('shin', sk, 'l' + sd + '_lo', k.lerp(a, 0.5), a, 0.066, 0.055, seg=8)          # trousers to the calf
+    for sg in (1, -1):
+        ball('eye', C['eye'], 'head', hp(0.20, 0.215, sg * 0.08), 0.028, sz=1.2); cone('brow', C['hair'], 'head', hp(0.205, 0.26, sg * 0.04), hp(0.19, 0.275, sg * 0.125), 0.012, 0.006, seg=3)
+    ball('nose', sk, 'head', hp(0.225, 0.18), 0.026, sz=1.3); ball('lips', C['lip'], 'head', hp(0.208, 0.115), 0.03, sx=1.4, sy=0.5, sz=0.4)
+    ball('haircap', C['hair'], 'head', hp(-0.04, 0.23), 0.238, seg=12, rings=8)                                         # long, dark and wet, hanging straight
+    hang('hair', C['hair'], 'head', [hp(-0.04 + 0.21 * math.cos(rad(a)), 0.20, 0.215 * math.sin(rad(a))) for a in range(50, 311, 20)], 0.50, 0.055, lean=0.03, vary=0.2)
+    hang('drip', C['lip'], 'head', [hp(-0.02, 0.05, 0.20), hp(-0.10, 0.02, -0.19)], 0.10, 0.012, vary=0.4)
+    l0 = hp(0.02, 0.40, 0.12)                                                                                            # a water lily caught in his hair
+    for i in range(6): a = rad(i * 60); ball('petal', C['lily'], 'head', l0 + Vector((math.cos(a) * 0.05, math.sin(a) * 0.05, 0.0)), 0.04, sz=0.5, seg=6, rings=4)
+    ball('lilyheart', C['lilyc'], 'head', l0 + Vector((0, 0, 0.02)), 0.028)
+    lyre('lyreA', (0, 0.20, 1.10), C['wood'], C['string'], tilt=20); cone('strap', C['belt'], 'chest', (0.20, -0.10, 1.26), (-0.16, 0.14, 0.98), 0.014, 0.014, seg=4)
+    lyre('lyreB', (0.04, -0.20, 1.04), C['wood'], C['string'], tilt=-14)
+    ball('rock', C['rock'], 'rock', (0, 0.10, 0.16), 0.34, sx=1.15, sy=1.0, sz=0.66, seg=9, rings=6); ball('rockmoss', C['moss'], 'rock', (0.14, 0.22, 0.30), 0.14, sz=0.4, seg=7, rings=4)
+
+def build_bysen():
+    sk = C['skin']; hp, hd, up, side = body_of(sk, C['coat'], C['trouser'], C['shoe'], belly=1.15, arm_r=(0.08, 0.066, 0.058))
+    cone('coathem', C['coat'], 'body', (0, 0.02, 0.94), (0, 0.02, 0.62), 0.19, 0.24, seg=12, sx=1.15); cone('belt', C['shoe'], 'spine', (0, 0.02, 0.92), (0, 0.02, 0.975), 0.20, 0.20, seg=12, sx=1.2)
+    for sg in (1, -1): ball('eye', C['eye'], 'head', hp(0.205, 0.225, sg * 0.075), 0.022); ball('brow', C['beard'], 'head', hp(0.20, 0.27, sg * 0.08), 0.04, sy=0.5, sz=0.5)
+    ball('nose', C['nose'], 'head', hp(0.235, 0.185), 0.05)
+    cone('cap', C['cap'], 'head', hp(-0.01, 0.30), hp(-0.06, 0.56), 0.215, 0.09, seg=10); cone('captip', C['cap'], 'head', hp(-0.06, 0.55), hp(-0.24, 0.50), 0.09, 0.02, seg=7); cone('capband', C['beard'], 'head', hp(-0.01, 0.285), hp(-0.01, 0.33), 0.232, 0.222, seg=10)
+    jp, JL, jd, jup, jside = pointer(V3(S['jaw'][0]), V3(S['jaw'][1]))
+    hang('beard', C['beard'], 'jaw', [jp(0.14, -0.03, k * 0.045) for k in (-3, -2, -1, 0, 1, 2, 3)] + [jp(0.06, -0.02, k * 0.15) for k in (-1, 1)], 0.46, 0.07, lean=0.12, vary=0.15)
+    ball('moustache', C['beard'], 'head', hp(0.215, 0.125), 0.05, sx=2.0, sy=0.6, sz=0.6)
+    hang('hair', C['beard'], 'head', [hp(-0.16, 0.20, k * 0.09) for k in (-2, -1, 0, 1, 2)], 0.22, 0.06, lean=0.2)
+    L = LIMBS['aR']; w, t = V3(L['J'][2], L['x']), V3(L['J'][3], L['x']); m = w.lerp(t, 0.45); d = Vector((0, -0.75, 0.66)).normalized()     # the little axe
+    cone('haft', C['wood'], 'aR_ft', m - d * 0.14, m + d * 0.52, 0.026, 0.022, seg=5); h0 = m + d * 0.46
+    cone('axehead', C['iron'], 'aR_ft', h0, h0 + Vector((0, -0.22, -0.10)), 0.045, 0.11, seg=4, sx=0.3)
+    # what he turns into: an old stump with spread roots, rings on its cut top, moss, and one red toadstool the colour of his cap
+    cone('stump', C['bark'], 'stump', (0, 0, 0.0), (0, 0, 1.0), 0.68, 0.54, seg=11); cone('stumptop', C['ring'], 'stump', (0, 0, 1.0), (0, 0, 1.03), 0.52, 0.50, seg=11)
+    for r in (0.36, 0.20): cone('rings', C['wood'], 'stump', (0.03, 0.02, 1.03), (0.03, 0.02, 1.04), r, r, seg=11)
+    for i in range(6): a = rad(i * 60 + 15); cone('root', C['bark'], 'stump', (math.cos(a) * 0.54, math.sin(a) * 0.54, 0.30), (math.cos(a) * 1.10, math.sin(a) * 1.10, 0.02), 0.22, 0.06, seg=6)
+    for i in range(7): a = rad(i * 51); cone('furrow', C['trouser'], 'stump', (math.cos(a) * 0.675, math.sin(a) * 0.675, 0.12), (math.cos(a) * 0.55, math.sin(a) * 0.55, 0.96), 0.02, 0.012, seg=3)
+    for (x, y, z, r) in ((0.32, -0.34, 1.01, 0.22), (-0.44, -0.38, 0.46, 0.21), (0.46, 0.26, 0.28, 0.2)): ball('moss', C['moss'], 'stump', (x, y, z), r, sz=0.35, seg=7, rings=4)
+    t0 = Vector((-0.26, -0.66, 0.30)); cone('toadstem', C['spot'], 'stump', t0 - Vector((0, 0, 0.26)), t0, 0.05, 0.04, seg=5); ball('toadcap', C['cap'], 'stump', t0, 0.14, sz=0.55, seg=8, rings=5)
+    for (dx, dy) in ((0.05, -0.07), (-0.06, -0.04), (0.0, 0.06)): ball('toadspot', C['spot'], 'stump', t0 + Vector((dx, dy, 0.055)), 0.022, sz=0.5, seg=5, rings=3)
+
+{'boulder': build_boulder, 'forest': build_forest, 'maw': build_maw, 'three': build_three, 'draugr': build_draugr, 'huldra': build_huldra, 'nacken': build_nacken, 'bysen': build_bysen}[KIND]()
 HS = S.get('hs', 1.0)
 if HS != 1.0:
     base = {'head': V3(S['head'][0]), 'jaw': V3(S['head'][0])}
@@ -396,6 +540,8 @@ def pose(frame, P):
     for nm in ('neck', 'head', 'neckL', 'headL', 'neckR', 'headR'): set_rot(nm, R3of(g(nm, 0.0)), frame)
     for nm in ('jaw', 'jawL', 'jawR'): set_rot(nm, RX(g(nm, 0.0)), frame)
     set_rot('tail', R3of(g('tail', 0.0)), frame)
+    for bn, bdef in SBONES.items():                    # a thing that is there or not (a lyre in the lap, a rock, the stump he turns into)
+        v = g('scale', {}).get(bn, bdef); pbs = rig.pose.bones[bn]; pbs.scale = (max(v, 0.0005),) * 3; pbs.keyframe_insert('scale', frame=frame)
     for n, L in LIMBS.items():
         leg = L['kind'] == 'l'; spec = g('limbs', {}).get(n) or (('w' if leg else 'l'), L['J'][3][0], L['J'][3][1], math.degrees(L['rest'][2]))
         if spec[0] == 'fk':
@@ -492,7 +638,43 @@ def death(p):
     if MAW: d['limbs'] = {n: ('fk', 30 * f, 46 * f, 10, 0, 0) for n in ('aL', 'aR')} if f > 0.02 else {}
     k = 1 - f; d.update(heads(p, 2.0 * k, {'neckL': (26 * f + 10 * k * sn(p, 3), 10 * k * sn(p, 2), 0), 'headL': (20 * f, 0, 20 * f), 'jawL': 34, 'neckR': (-30 * f, 20 * k * sn(p, 4), 0), 'headR': (-24 * f + 14 * k * sn(p, 5), 22 * k * sn(p, 4), 0), 'jawR': 30 * k})); return d
 
-clip('idle', 48, idle); clip('walk', 40, walk); clip('windup', 36, windup); clip('attack', 28, attack); clip('hit', 10, hit); clip('shield', 16, shield); clip('death', 40, death)
+PERSON = S.get('person', False); SL = S.get('slump', 0.0)
+def p_idle(p):
+    b = sn(p); d = {'loc': (0.01 * SL * sn(p, 1, 0.3), 0, -0.008 + 0.008 * b), 'pitch': 5 * SL, 'spine': (1 * b + 6 * SL, 0, 3 * SL * sn(p, 1, 0.2)), 'chest': (1.2 * b + 5 * SL, 2 * sn(p, 1, 0.25), 0),
+         'neck': (6 * SL, 4 * sn(p, 1, 0.3), 0), 'head': (2 * sn(p, 1, 0.1) + 10 * SL, 6 * sn(p, 1, 0.4), 8 * SL + 2 * sn(p, 2)), 'jaw': 14 * SL + 3 * SL * sn(p, 2),
+         'limbs': {'aL': ('fk', 3 + 2 * b, 5, 8 + 3 * b + 30 * SL, 0, 6), 'aR': ('fk', 2 - 2 * b, 5 + 4 * SL, 8 - 3 * b, 0, 6)}}
+    return d
+def p_walk(p):
+    lim = {'lL': step('lL', p % 1.0), 'lR': step('lR', (p + 0.5) % 1.0, yoff=0.06 * SL)}
+    A = 22 * (1 - 0.6 * SL); lim['aL'] = ('fk', A * sn(p, 1, 0.5) + 6, 5, 14 + 8 * sn(p, 1, 0.4) + 30 * SL, 0, 6); lim['aR'] = ('fk', A * sn(p) + 4, 5 + 5 * SL, 14 + 8 * sn(p, 1, 0.9), 0, 6)
+    return {'loc': (0.02 * sn(p, 1, 0.1) * (1 + 2 * SL), 0, -G['bob'] + G['bob'] * math.cos(2 * TAU * p)), 'roll': G['sway'] * sn(p, 1, 0.1), 'pitch': 3 + 5 * SL, 'spine': (1 + 5 * SL, -4 * sn(p), 0), 'chest': (1 + 4 * SL, -5 * sn(p), -G['sway'] * 0.5 * sn(p, 1, 0.1)),
+            'neck': (4 * SL, 0, 0), 'head': (2 * sn(p, 2, 0.3) + 8 * SL, 3 * sn(p), 8 * SL), 'jaw': 14 * SL, 'limbs': lim}
+def p_hit(p):
+    k = math.sin(math.pi * p)
+    return {'loc': (0, 0.08 * k, -0.02 * k), 'pitch': -8 * k, 'spine': -5 * k, 'chest': (-7 * k, 10 * k, 0), 'neck': (-8 * k, 0, 0), 'head': (-12 * k, 14 * k, 8 * k), 'jaw': 20 * k,
+            'limbs': {'aL': ('fk', -16 * k, 22 * k, 24 * k + 30 * SL, 0, 0), 'aR': ('fk', -12 * k, 26 * k, 26 * k, 0, 0)}}
+def call(p):                                        # the huldra beckons: one hand lifted and turned, the head tilted, the weight on one hip
+    k = ease(min(1.0, p * 3)) * ease(min(1.0, (1 - p) * 3)); w = sn(p, 3)
+    return {'loc': (0.02 * k, 0, 0), 'roll': 3 * k, 'spine': (0, 0, -3 * k), 'chest': (-2 * k, 4 * k, -3 * k), 'neck': (0, -6 * k, 0), 'head': (-4 * k, -8 * k, 10 * k),
+            'limbs': {'aR': ('fk', 62 * k, 18 * k, 70 * k + 14 * w * k, 20 * k, 30 * w * k), 'aL': ('fk', 4, 8 + 6 * k, 14, 0, 6)}}
+def play(p):                                        # Nacken on his stone with the lyre in his lap: one hand holds it, the other plucks, he sways with the tune
+    b = sn(p); pl = sn(p, 6); sw = sn(p, 1, 0.1)
+    return {'loc': (0, 0.06, -0.40), 'pitch': 2, 'spine': (6 + 1.5 * b, 0, 3 * sw), 'chest': (6, 3 * sw, 2 * sw), 'neck': (6, 0, 0), 'head': (12 + 3 * b, -8 + 6 * sw, 8 * sw),
+            'scale': {'lyreA': 0.0, 'lyreB': 1.0, 'rock': 1.0},
+            'limbs': {'lL': ('fk', 84, 9, -88, 0, 6), 'lR': ('fk', 74, 9, -62, 0, -8), 'aL': ('fk', 34, 6, 96, 22, 0), 'aR': ('fk', 30 + 4 * pl, 10, 92 + 10 * pl, 28, 14 * pl)}}
+def chop(p):                                        # the bysen at his tree: the little axe up over the shoulder and down, slowly
+    u = p / 0.55 if p < 0.55 else 1 - (p - 0.55) / 0.45; up_ = ease(max(0.0, min(1.0, u))); dn = 1 - up_
+    return {'loc': (0, -0.03 * dn, -0.03 * dn), 'pitch': -6 * up_ + 14 * dn, 'spine': (-4 * up_ + 8 * dn, -12 * up_ + 6 * dn, 0), 'chest': (-6 * up_ + 8 * dn, -16 * up_ + 8 * dn, 0), 'head': (4 * dn - 6 * up_, 0, 0),
+            'limbs': {'aR': ('fk', 30 + 110 * up_, 10, 30 + 60 * up_, 0, 20 * up_ - 30 * dn), 'aL': ('fk', 34 + 80 * up_, 4, 44 + 40 * up_, 26, 0)}}
+def hide(p):                                        # he folds down small and the stump stands where he stood
+    k = ease(min(1.0, p / 0.55)); g = ease(min(1.0, max(0.0, (p - 0.35) / 0.65)))
+    return {'loc': (0, 0, -0.70 * k), 'pitch': 26 * k, 'spine': 20 * k, 'chest': 16 * k, 'head': 22 * k, 'scale': {'body': 1.0 - 0.999 * g, 'stump': g * (1.0 + 0.12 * math.sin(math.pi * g))},
+            'limbs': {'aL': ('fk', 40 * k, 0, 90 * k, 0, 0), 'aR': ('fk', 40 * k, 0, 90 * k, 0, 0), 'lL': ('fk', 60 * k, 8, -110 * k, 0, 40 * k), 'lR': ('fk', 60 * k, 8, -110 * k, 0, 40 * k)}}
+def stump(p): return {'scale': {'body': 0.0, 'stump': 1.0}}
+ALL = {'idle': (48, p_idle if PERSON else idle), 'walk': (32 if PERSON else 40, p_walk if PERSON else walk), 'windup': (24 if PERSON else 36, windup), 'attack': (20 if PERSON else 28, attack), 'hit': (10, p_hit if PERSON else hit),
+       'shield': (16, shield), 'death': (32 if PERSON else 40, death), 'call': (40, call), 'play': (48, play), 'chop': (40, chop), 'hide': (16, hide), 'stump': (2, stump)}
+for cn in S.get('clips', ['idle', 'walk', 'windup', 'attack', 'hit', 'shield', 'death']): clip(cn, ALL[cn][0], ALL[cn][1])
+if S.get('size'): rig.scale = (S['size'],) * 3
 ad = rig.animation_data; ad.action = bpy.data.actions['idle']
 if hasattr(ad, 'action_slot') and len(ad.action.slots): ad.action_slot = ad.action.slots[0]
 sc.frame_set(1)

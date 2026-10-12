@@ -534,6 +534,23 @@ the text and it is made the default. When a spec's meaning changes, change the s
   four trolls (`trollForest`, `trollMaw`, `trollThree` in `ANIMALS` with their numbers; the Gape's attack is a lunge,
   `ATTACKS.trollMaw`), and its animals fight their own way again (`atk` was asked of a type name that no longer exists). The two
   new trolls and the forest troll are **not spawned in the game**.
+  **The four people-shaped vasen (2026-10-12, Robin: make the draugr, the huldra, Nacken and the bysen in Blender first, the
+  mechanics after):** four more kinds of `troll_build.py` (`-- draugr|huldra|nacken|bysen`, saved as `art/source/<kind>.blend`)
+  on the same rig, from `person(col, ...)`: the hero's build (1.8 m, a big head) and `body_of` (pelvis, waist, chest, neck, head,
+  mitten hands, two-part limbs). Their own clips (`p_idle`, `p_walk`, `p_hit`; a kind lists its `clips`), and **prop bones
+  switched by scale** (`pbones`, `sdefault`, a clip's `scale`: a thing that is there or not). **Robin's looks:** the **draugr** is
+  a man-sized drowned raider: death-blue and bloated under torn mail, a rusted helm with a nasal, kelp in a pale beard, barnacles,
+  one staring eye, a rotten round shield with a bite out of it and a pitted sword; he slumps and shambles (`slump`), sweeps the
+  sword, and `shield` is his block; eyes exported. The **huldra**: a red dress with gold trim, fair hair in a cap with two long
+  locks falling in front and a wreath of flowers, **no tail**; from behind, bark from shoulders to hips and in it **the hollow**,
+  black with rot, a ragged rim, bracket fungus, moss; clip `call` (she beckons). **Nacken**: a river-pale man with long wet dark
+  hair and a water lily in it, a blue-green tunic in tatters, bark-brown trousers to the calf, barefoot, reeds in his belt, **a
+  lyre** (a Viking-age instrument; the fiddle of the tales is later) slung on his back; clip `play`: seated on a mossy stone with
+  the lyre in his lap, plucking and swaying. The **bysen**: half the hero's height (`size` 0.5), grey coat, a red woven cap, a big
+  pale beard, a little axe; clip `chop` (slowly, at a tree), `hide` (he folds down and **the stump** grows where he stood: an old
+  stump with spread roots, rings on its top, moss and one red toadstool the colour of his cap) and `stump` (one frame). `npm run
+  art:draugr`, `art:huldra`, `art:nacken`, `art:bysen`, `art:vasen`; `node tools/visual/vasensheet.js` writes vasen.png. They are
+  in the Art Editor's Models tab; **nothing in the game spawns them and their mechanics are not decided** (`docs/beasts.md`).
   **In the Blender Editor (2026-10-09, Robin: fix it so I can try it out):** `npm run art:mixamo:sheets` renders all eighteen clips in
   eight directions with a frame count per clip (`render.py --frames idle=16,walk=12,run=10,...`; `tools/sprites.js` reads each
   animation's count from meta.json) and packs them into `assets/sprites/hero2-mixamo` (one 164 by 164 frame, 22 MB of sheets: the

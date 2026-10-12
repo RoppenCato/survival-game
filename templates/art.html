@@ -781,7 +781,7 @@ __SPRITES_JS__
     var names = Object.keys(SP), MODELS = {};
     names.forEach(function (nm) { MODELS[nm] = Sprites.load(SP, nm); });
     function H() { return MODELS[cur]; }
-    var LABEL = { 'hero': 'Hero (first, ink)', 'hero2-cel': 'Hero 2, cel', 'hero2-painted': 'Hero 2, painted', 'hero2-folk': 'Hero 2, folk art', 'hero2-fit': 'Hero 2, cel, fitted to the world', 'hero2-mixamo': 'Hero 2 with the Mixamo clips', 'boar': 'Wild boar', 'deer': 'Deer', 'wolf': 'Wolf', 'bear': 'Bear', 'moose': 'Moose', 'snake': 'Adder', 'troll_boulder': 'Mountain troll (Bauer)', 'troll_forest': 'Forest troll (Kittelsen)', 'troll_maw': 'The Gape (new)', 'troll_three': 'Three-headed troll (new)' };
+    var LABEL = { 'hero': 'Hero (first, ink)', 'hero2-cel': 'Hero 2, cel', 'hero2-painted': 'Hero 2, painted', 'hero2-folk': 'Hero 2, folk art', 'hero2-fit': 'Hero 2, cel, fitted to the world', 'hero2-mixamo': 'Hero 2 with the Mixamo clips', 'boar': 'Wild boar', 'deer': 'Deer', 'wolf': 'Wolf', 'bear': 'Bear', 'moose': 'Moose', 'snake': 'Adder', 'troll_boulder': 'Mountain troll (Bauer)', 'troll_forest': 'Forest troll (Kittelsen)', 'troll_maw': 'The Gape (new)', 'troll_three': 'Three-headed troll (new)', 'draugr': 'Draugr', 'huldra': 'Huldra', 'nacken': 'Näcken', 'bysen': 'Bysen' };
     var NOTE = { 'hero': 'The first Blender hero (2026-10-09): the ink figure’s proportions, a red cloak, eight directions, a helmet and a mail shirt as layers.',
       'hero2-cel': 'The second hero in the cel style: two or three tones, a warm rim light, a line heavy on the shadow side.',
       'hero2-painted': 'The second hero painted after Bauer: soft shading, muted greens and browns, a wobbling line.',
@@ -807,7 +807,7 @@ __SPRITES_JS__
     }
     function play(name, then) { return Sprites.play(H(), name, then); }
     function sit(on) { seated = on; var P = Combat.dbg().P; P.anim.sit = on ? 1 : 0; }
-    var CLIPKEYS = { KeyJ: function () { play(swingNext++ % 2 ? 'attack2' : 'attack1') || play('attack1') || play('attack'); }, KeyK: function () { play('bow_draw', { name: 'bow_shoot' }) || play('windup'); },
+    var CLIPKEYS = { KeyJ: function () { play(swingNext++ % 2 ? 'attack2' : 'attack1') || play('attack1') || play('attack') || play('call') || play('play') || play('chop'); }, KeyK: function () { play('bow_draw', { name: 'bow_shoot' }) || play('windup') || play('hide', { name: 'stump' }); },
       KeyE: function () { play('interact'); }, KeyG: function () { play('pickup'); }, KeyC: function () { play('chop'); }, KeyM: function () { play('mine'); }, KeyV: function () { play('drink'); },
       KeyX: function () { if (seated) { sit(false); play('standup'); } else if (play('sitdown', { name: '__sit' })) {} }, KeyT: function () { play('hit'); }, KeyB: function () { play('death'); }, KeyL: function () { play('idle_look'); } };
     window.addEventListener('keydown', function (e) { if (!active || !CLIPKEYS[e.code] || typing(e) || e.repeat) return; var M = meta(); if (!M || Object.keys(M.anims).length <= 2) return; if (H().clip) return; CLIPKEYS[e.code](); e.preventDefault(); });

@@ -82,6 +82,18 @@ each, and it gets faster and wilder), or the heads could quarrel: the hag sees y
 it away by screaming at night, so you hear it long before you see it. Where: a later island, as a big event of its own. It does
 not turn to stone at dawn like the mountain troll unless Robin wants every troll to.
 
+## Robin's looks for four of them (2026-10-12; modelled in Blender, the mechanics still to discuss)
+
+- **Draugr:** the walking corpse of a Viking, a drowned one. Man-sized, with a sword and a shield (not the ox-sized mound
+  dweller of the card below; whether he still guards a mound, a wreck or walks out of the sea is open).
+- **Huldra:** beautiful, in brighter colours (a red dress, fair hair), and the back of a hollowed rotten tree trunk. No tail.
+- **Nacken:** forest clothes and an instrument: a river-pale man with a lyre. This is also the way instruments come into the
+  game (Viking-age ones: lyre, bone flute, horn, lur; the fiddle is later than the age).
+- **Bysen:** small, tomte-like. He chops slowly at trees; come near and he turns into a wooden stump. Axe the stump and you get
+  a larger amount of wood and some sort of magic piece of wood. (Open: what the piece does; whether he is harmed or only
+  runs off; whether he still makes you lose the way home.)
+- The **mara** was left out of this round.
+
 ## Bysen
 
 **Found:** deep forest, where the paths are few. Looks like a tree stump or a small grey old man, and you will not
