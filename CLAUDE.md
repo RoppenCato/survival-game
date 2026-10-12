@@ -374,6 +374,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
   upper left; grain in every fill; lean figures; trolls Bauer's. `docs/reference/` holds the board (Bauer and Kittelsen, public
   domain) and notes on Egerkrans pages from Robin's own book (the photos stay local). In the kit it is **`look: 3`** (`STYLE_INK`,
   `grain`): see "World look and props".
+- `docs/ui-review.md` (2026-10-12; Robin: look through every menu, board and bar for function, looks and sense): what was
+  looked at, what was found broken and fixed (`docs/ui-review.jpg`, before and after), and **what is proposed and waits for
+  Robin**: C for making by hand, one rule for everything E does, one number for a weapon, tabs on the Building board, the
+  map showing only what has been seen, a book typeface (`docs/ui-type.jpg`), the HUD's three corners and the map in the art
+  direction. Read it before touching a board.
 - `docs/lighting.md` (2026-10-12): how similar games light a 2D world, the nine techniques tried here as switches, the verdict on
   each, what was not tried and why, and the sources. Read it before touching the night or the fires.
 - `docs/moving-to-blender.md` (**decided 2026-10-09, Robin: the graphics move to Blender models**): what moves (characters, creatures, later
@@ -644,6 +649,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
   of that screen's, and a picture that looks fine small (a light, a texture) can look murky or blocky there. Before judging
   anything of light or of painted ground: `resize_window` the pane to 1920 by 1080, reload the page, capture the canvas at
   full size and look at a crop of it, not at a small sheet of tiles.
+- **A patch must not put a `//` comment in the middle of a line** (the template's lines are long and hold many statements:
+  the comment swallows the rest, and the build is then a syntax error or, worse, silently lacks a statement). End-of-line
+  only, or `/* */`. After every build, parse the built pages (`new Function(script)`); it takes a second.
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
 - The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,
@@ -1362,6 +1370,42 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   6 iron bars 8 stone; key `ironBar`). The Shipyard shows only the plans the bench's tier allows (`Yard.PLAN_TIER` raft 1, boat 2, karve 3;
   `scene.planList()` from `host.tier()`; the Sea Editor's host has no tier and shows all). **The steading's half-gone house by the
   well is of planks** now, so wood mends it (Robin: the player should want to fix it with wooden pieces).
+- **The menus and boards reviewed (2026-10-12, Robin: look through all the menus, the crafting UI, the toolbar, the windows;
+  function, looks, sense). `docs/ui-review.md` has the whole review and the proposals; this is what changed in the code.**
+  **The wheel froze the game:** `stepPiece` called itself, so in build mode on a fresh game the wheel reaching a piece not
+  yet known threw on every frame after (since 2026-10-08); it steps now, and the wheel goes through the known pieces.
+  **Boards are drawn over the HUD:** the engine calls **`scene.boards(c, P)`** after its bars and hotbar (`render` in
+  `src/combat.js`), and the page draws there, in one order, bottom to top: the bag and the character, the hint, the notes,
+  the muster, the map, the book, the ring board, a test scene's board, the Escape menu, a recipe or Building board, and in
+  the yard `Yard.scene.hud`. `scene.end` keeps what belongs to the world and the corner (the night, the chart, the E
+  prompt, the build cursor's label, speech). In the yard `scene.noHud` is set as well as `noHotbar`.
+  **E takes the thing you face:** `stationNear(P)` now chooses among the hearths, the benches, the furnace **and the beds,
+  the chests and the seats** (reach 50, 56, 56, 40, 40, 34) by `facingScore`, kept for the frame (`pickC`); `bedNear`,
+  `storeNear`, `seatNear` (and `seatFirst`, now the same thing) ask it, so the E prompt and the E key cannot disagree about
+  built things. Before, a workbench answered from 56 units off before a chest was asked: in a 4 by 3 house the chest you
+  faced opened the workbench. People, stones, racks, berries, boats and caves are still the two long fixed orders (the
+  prompt's and the key's); making them one list is proposed. Debug: `usePick()`, `reach(it)`, `roomAt(x, y)`.
+  **The hotbar:** a page with its own bar (`api.barSlots`) gets no round sword-and-bow icons, no "F" and no loose arrow
+  count (`paged` in `drawHotbar`; the editors keep them); in build mode it shows the label and no slots; a slot may carry
+  **`ammo`** (the page's `ammoOf`: arrows for a bow, stones for a sling), written in that slot, red at nothing.
+  **Recipe boards:** `menuFrom` is set to `'E'` when a hearth or a furnace opens (they wore the workbench's tabs once a
+  bench had been used) and E closes a furnace's board as it does a hearth's; the tale is as many lines as the page holds
+  over the numbers, ending in an ellipsis if cut (it stopped at three, in mid-sentence); what it takes lies under the page.
+  **The Escape menu** is `PAUSE_X` 92 wide `PAUSE_W` 216; a row with `sure: true` (Restart, New island) wants a second click
+  within five seconds (`pauseArm`, `pauseArmed`); while it is open the game's keys rest (E opened a furnace's board over it).
+  **The Building board** starts at y 30 (it lay over the health bars and touched the chart), draws no empty cells, and
+  names the piece you point at in its tab row. **The bag:** both bars are numbered 1 to 6; the name of what you point at is
+  at the left over the bag, with what a click does ("to your bar", "wear"). **The character panel:** the arm ring is a
+  slot under the boots (`ringSlot` in `chSlots`; it was drawn across the quiver); Stats and Ring keep inside the
+  stitching; Attack is whatever hand weapon is held (it counted the sword alone, and fists as 5), stamina's return is a row
+  of its own; "Known, not cut" runs to the foot of the page. **Notes** are drawn over the bag, start beside the E prompt
+  (`promptBox`) and, when a board lies over the hero, stack above its top edge (`drawNotes(c, top)`). **The Shipyard's**
+  cursor label is under the part. The chart's frame, the E prompt and the cursor's label are the boards' ink (`UI_INK`)
+  instead of the old navy. **Checked in the pane at 1200 by 750:** each of the above before and after; E at the chest, the
+  bed (sleeps, day 2 to 3), the workbench, the furnace and the hearth in the test hut and in the play-through's hut; forty
+  notches of the wheel; the other pages still run. **`tools/visual/ui.js`** drives the mouse and the keys on the page in
+  the HUD's own units (`U.click`, `U.key`, `U.wheel`), takes pictures (`U.shot`, `U.crop`, `U.sheet`) and shows every board
+  in another typeface without touching the game (`U.face`).
 - **The frame log (2026-10-08, Robin: it lags when I walk):** a readout on the **left of the screen, in the middle**, always on
   (`drawPerf`: frames a second in green, amber or red, the milliseconds, the things drawn, and the frame's parts: t tick, u update,
   g ground, d draw, e end). `PERF` times every frame in parts (the page's tick, the engine's update, the render split into the

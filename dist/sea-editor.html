@@ -6736,7 +6736,7 @@ var scene = {
     c.font = '600 7px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 270, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 270, 14);
     if (!why) { var fr = this.finishRect(), hv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = hv ? '#6a4e38' : '#5a4232'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 3); c.fill(); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(fr.x, fr.y, fr.w, fr.h); c.restore(); c.strokeStyle = '#c99a3a'; c.lineWidth = 1; c.beginPath(); c.roundRect(fr.x + 0.5, fr.y + 0.5, fr.w - 1, fr.h - 1, 3); c.stroke(); c.strokeStyle = INK.line; c.lineWidth = 1.6; c.beginPath(); c.moveTo(fr.x + 3, fr.y + fr.h); c.lineTo(fr.x + fr.w - 3, fr.y + fr.h); c.moveTo(fr.x + fr.w, fr.y + 3); c.lineTo(fr.x + fr.w, fr.y + fr.h - 3); c.stroke(); c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.5); }
     if (hp >= 0) { var pp = PL[hp], tt = pp.name + '  ' + h.costText(pp.cost) + '.  ' + pp.text; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); c.fillStyle = '#fff'; c.fillText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); }
-    if (this.label && ms && hp < 0) { c.font = '600 6.5px system-ui, sans-serif'; var gw = c.measureText(this.label.text).width + 10, gx = Math.max(2, Math.min(398 - gw, ms.x + 8)), gy = Math.max(12, ms.y - 6); c.fillStyle = 'rgba(20,16,30,0.82)'; c.fillRect(gx, gy - 8, gw, 12); c.fillStyle = this.label.bad ? '#ff9a8a' : '#fff'; c.textAlign = 'left'; c.fillText(this.label.text, gx + 5, gy + 1); }
+    if (this.label && ms && hp < 0) { c.font = '600 6.5px system-ui, sans-serif'; var gw = c.measureText(this.label.text).width + 10, gx = Math.max(2, Math.min(398 - gw, ms.x - gw / 2)), gy = Math.min(222, ms.y + 26); c.fillStyle = 'rgba(35,26,22,0.85)'; c.beginPath(); c.roundRect(gx, gy - 8, gw, 12, 2.5); c.fill(); /* under the part, not across it */ c.fillStyle = this.label.bad ? '#ff9a8a' : '#fff'; c.textAlign = 'left'; c.fillText(this.label.text, gx + 5, gy + 1); }
     c.font = '600 5px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText('Right click takes a part back.  E leaves the yard.', 52, 242); c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText('Right click takes a part back.  E leaves the yard.', 52, 242);
     // a preview: the vessel as it will look afloat, in a small window of water at the bottom right
     if (hullCells(this.yard.cells).length) {
@@ -8161,21 +8161,22 @@ function drawHotbar(c) {
   var sz = 11, gap = 2, x0 = Math.round((SW - (6 * sz + 5 * gap)) / 2), y0 = SH - sz - 5, mode = P.mode, gather = mode === 'gather', build = mode === 'build', i, k = 0.55;
   var slots = build ? (api.buildSlots || []) : [];
   var bar = api.barSlots && (mode === 'fight' || gather) ? api.barSlots(mode) : null;   // a page's own bar: six things, one in hand
+  var paged = !!api.barSlots;                // such a page has no fixed sword and bow: the round icons, the F and the loose arrow count are the editors'
   c.save();
-  if (!bar) {
+  if (!bar && !paged) {
   // sword above left, bow below right, like the two rings of a % sign
   roundIcon(c, 'sword', x0 - 23, y0 - 1, 6.5, mode === 'fight' && P.weapon === 'melee', mode !== 'fight');
   roundIcon(c, 'bow', x0 - 10, y0 + 9, 6.5, mode === 'fight' && P.weapon === 'ranged', mode !== 'fight');
   c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 - 11, y0 - 2); c.lineTo(x0 - 22, y0 + 10); c.stroke();
   c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText('F', x0 - 16.5, y0 + 14.5);
   }
-  if (api.quiver != null && (!bar || (mode === 'fight' && P.weapon === 'ranged'))) { c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36'; c.strokeText(String(api.quiver), x0 - 3, y0 + 13); c.fillStyle = api.quiver > 0 ? '#fff' : '#ff8a7a'; c.fillText(String(api.quiver), x0 - 3, y0 + 13); }
-  for (i = 0; i < 6; i++) {
+  if (api.quiver != null && !paged) { c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36'; c.strokeText(String(api.quiver), x0 - 3, y0 + 13); c.fillStyle = api.quiver > 0 ? '#fff' : '#ff8a7a'; c.fillText(String(api.quiver), x0 - 3, y0 + 13); }
+  for (i = 0; i < 6 && !(paged && build); i++) {      // (build mode on such a page: the pieces are on its board, not in six slots)
     var x = x0 + i * (sz + gap), tool = gather && i < TOOLS.length ? TOOLS[i] : null, cx = x + sz / 2, cy = y0 + sz / 2;
     slotBox(c, x, y0, bar ? i === bar.hand : ((gather && i === P.tool) || (mode === 'fight' && i === (P.sel || 0))), sz);
     c.save(); c.translate(cx, cy); c.scale(k, k);
     var skl = mode === 'fight' && api.skills ? api.skills[i] : null;
-    if (bar) { var bq = bar.slots[i]; if (bq) { bq.draw(c); if (bq.n > 1) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36'; c.strokeText(String(bq.n), 9.5, 9.5); c.fillStyle = '#fff'; c.fillText(String(bq.n), 9.5, 9.5); } } }
+    if (bar) { var bq = bar.slots[i]; if (bq) { bq.draw(c); if (bq.ammo != null) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36'; c.strokeText(String(bq.ammo), 9.5, 9.5); c.fillStyle = bq.ammo > 0 ? '#fff' : '#ff8a7a'; c.fillText(String(bq.ammo), 9.5, 9.5); } else if (bq.n > 1) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36'; c.strokeText(String(bq.n), 9.5, 9.5); c.fillStyle = '#fff'; c.fillText(String(bq.n), 9.5, 9.5); } } }
     else if (tool) { var ti2 = itemOf('tool', i); if (ti2) Items.icon(c, ti2, 16); else { if (api.items) c.globalAlpha = 0.3; slotIcon(c, tool.id, 0, 0); c.globalAlpha = 1; } }
     else if (skl) { skl.draw(c); if (skl.cd > 0) { c.fillStyle = 'rgba(20,16,30,0.7)'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 14, -Math.PI / 2, -Math.PI / 2 + skl.cd * 6.283); c.closePath(); c.fill(); } }
     else if (api.beltSlots && api.beltSlots[i] && (mode !== 'gather' || i >= TOOLS.length)) {
@@ -8239,6 +8240,7 @@ function render(c) {
   c.restore();
   if (!(sc && sc.noHud)) drawHud(c);
   if (!(sc && sc.noHotbar)) drawHotbar(c);
+  if (sc && sc.boards) sc.boards(c, P);   // a page's boards (bag, menus, the map): over the bars and the hotbar, never under them
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
