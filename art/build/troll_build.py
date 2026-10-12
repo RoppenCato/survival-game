@@ -75,7 +75,7 @@ def person(col, **kw):
          'neck': [(0.0, 1.30), (0.0, 1.37)], 'head': [(0.0, 1.37), (-0.25, 1.37)], 'jaw': [(-0.02, 1.45), (-0.20, 1.43)], 'tail': None,
          'col': col, 'knuckle': False, 'walk': dict(S=0.46, h=0.11, beta=0.60, bob=0.02, sway=2.5), 'lie': 0.62, 'person': True}
     d.update(kw); return d
-SPECS['draugr'] = person({'skin': '#8fa9b4', 'dark': '#3d4f5c', 'mail': '#9a968a', 'rust': '#96603c', 'cloth': '#5d6a66', 'kelp': '#4d6a4c', 'beard': '#c9c6b4', 'eye': '#e9f4ee', 'tooth': '#e6dfc6', 'wood': '#8a6e50', 'iron': '#8f8f8a', 'barnacle': '#ddd6c4', 'mouth': '#2a2026'},
+SPECS['draugr'] = person({'helm': '#8d8a82', 'skin': '#97a8a6', 'dark': '#3d4f5c', 'mail': '#9a968a', 'rust': '#96603c', 'cloth': '#5d6a66', 'kelp': '#4d6a4c', 'beard': '#c9c6b4', 'eye': '#e9f4ee', 'tooth': '#e6dfc6', 'wood': '#8a6e50', 'iron': '#8f8f8a', 'barnacle': '#ddd6c4', 'mouth': '#2a2026'},
     walk=dict(S=0.34, h=0.06, beta=0.68, bob=0.025, sway=6.0), clips=['idle', 'walk', 'windup', 'attack', 'hit', 'shield', 'death'], slump=0.45)
 SPECS['huldra'] = person({'skin': '#f6d8be', 'dress': '#d8442e', 'trim': '#f0c95a', 'hair': '#f3dc8c', 'bark': '#8a6e50', 'rot': '#2a1f18', 'fungus': '#e6d6b0', 'moss': '#86a652', 'eye': '#2a2420', 'lip': '#b8323a', 'flowerA': '#f2f0e4', 'flowerB': '#6f9fe0', 'shoe': '#6b4a34'},
     walk=dict(S=0.30, h=0.07, beta=0.62, bob=0.012, sway=2.0), clips=['idle', 'walk', 'call', 'hit', 'death'])
@@ -294,7 +294,7 @@ def build_maw():
     mark('eye.L', e + Vector((0.03, -0.2, 0)), 'head')
     s0 = Vector((-0.50, -0.80, 1.58)); ball('blind', C['scar'], 'head', s0, 0.20, sy=0.45, sz=0.8)                # the other socket, torn and healed shut
     for k in range(4): cone('scarline', C['dark'], 'head', s0 + Vector((-0.20 + k * 0.11, -0.10, 0.20)), s0 + Vector((-0.08 + k * 0.11, -0.12, -0.20)), 0.02, 0.006, seg=4)
-    hang('kelp', C['kelp'], 'head', [(math.sin(rad(a)) * 1.16, 0.20 + math.cos(rad(a)) * 1.02, 1.50) for a in range(-100, 101, 14)], 1.15, 0.15, lean=0.12, flat=0.3)
+    hang('kelp', C['kelp'], 'head', [(math.sin(rad(a)) * 1.16, 0.20 + math.cos(rad(a)) * 1.02, 1.50) for a in range(-56, 57, 14)], 1.15, 0.15, lean=0.12, flat=0.3)
     hang('kelp2', C['kelp'], 'head', [(x, y, 2.02) for (x, y) in ((0.4, 0.5), (-0.4, 0.55), (0, 0.8), (0.6, 0.85), (-0.65, 0.9), (0.15, 1.0))], 0.8, 0.13, lean=0.8, flat=0.3)
     for i in range(7): cone('spine', C['dark'], 'head', (0, -0.40 + i * 0.24, 1.90 + 0.10 * math.sin(i * 0.55)), (0, -0.26 + i * 0.26, 2.30 + 0.20 * math.sin(i * 0.55) + 0.12 * (i % 2)), 0.08, 0.006, seg=5, sx=0.4)
     for (x, y, z) in ((0.70, 0.50, 1.60), (0.80, 0.42, 1.52), (0.66, 0.60, 1.52), (-0.80, 0.30, 1.56), (-0.72, 0.42, 1.60), (-0.9, 0.10, 0.80), (-0.96, 0.22, 0.72), (0.95, 0.30, 0.76)): ball('barnacle', C['barnacle'], 'head' if z > 1.2 else 'chest', (x, y, z), 0.07, sz=0.8, seg=6, rings=4)
@@ -394,7 +394,8 @@ def build_draugr():
     hang('weed', C['kelp'], 'chest', [(0.22, -0.02, 1.30), (-0.20, 0.06, 1.30), (0.10, 0.12, 1.30), (-0.26, -0.04, 1.26)], 0.5, 0.05, lean=0.1, flat=0.3)
     for (x, y, z) in ((0.17, -0.13, 1.16), (0.20, -0.10, 1.08), (-0.19, -0.11, 0.94), (-0.05, 0.18, 1.12)): ball('barnacle', C['barnacle'], 'chest' if z > 1.05 else 'spine', (x, y, z), 0.03, sz=0.7, seg=6, rings=4)
     for (x, z) in ((0.08, 1.16), (-0.10, 1.02)): ball('rustspot', C['rust'], 'chest' if z > 1.05 else 'spine', (x, -0.19 if z > 1.05 else -0.25, z), 0.032, sy=0.3, seg=6, rings=4)
-    ball('helm', C['rust'], 'head', hp(-0.02, 0.31), 0.235, sz=0.62, seg=12, rings=8); cone('helmrim', C['iron'], 'head', hp(-0.02, 0.285), hp(-0.02, 0.32), 0.24, 0.235, seg=12)
+    ball('helm', C['helm'], 'head', hp(-0.02, 0.31), 0.235, sz=0.62, seg=12, rings=8)
+    for (a_, u_, r_) in ((0.10, 0.40, 0.07), (-0.14, 0.38, 0.08), (0.02, 0.43, 0.05)): ball('helmrust', C['rust'], 'head', hp(a_, u_, 0.10 if a_ > 0 else -0.08), r_, sz=0.4, seg=6, rings=4); cone('helmrim', C['iron'], 'head', hp(-0.02, 0.285), hp(-0.02, 0.32), 0.24, 0.235, seg=12)
     cone('nasal', C['iron'], 'head', hp(0.215, 0.30), hp(0.238, 0.17), 0.028, 0.02, seg=4); cone('spike', C['iron'], 'head', hp(-0.02, 0.44), hp(-0.04, 0.53), 0.03, 0.006, seg=5)
     ball('socketL', C['dark'], 'head', hp(0.185, 0.215, 0.085), 0.05, sy=0.6); ball('socketR', C['dark'], 'head', hp(0.185, 0.215, -0.085), 0.05, sy=0.6)
     ball('eyeL', C['eye'], 'head', hp(0.205, 0.215, 0.085), 0.026); ball('eyeR', C['eye'], 'head', hp(0.20, 0.21, -0.085), 0.015)      # one staring, one sunk
@@ -479,8 +480,8 @@ def build_bysen():
     ball('moustache', C['beard'], 'head', hp(0.215, 0.125), 0.05, sx=2.0, sy=0.6, sz=0.6)
     hang('hair', C['beard'], 'head', [hp(-0.16, 0.20, k * 0.09) for k in (-2, -1, 0, 1, 2)], 0.22, 0.06, lean=0.2)
     L = LIMBS['aR']; w, t = V3(L['J'][2], L['x']), V3(L['J'][3], L['x']); m = w.lerp(t, 0.45); d = Vector((0, -0.75, 0.66)).normalized()     # the little axe
-    cone('haft', C['wood'], 'aR_ft', m - d * 0.14, m + d * 0.52, 0.026, 0.022, seg=5); h0 = m + d * 0.46
-    cone('axehead', C['iron'], 'aR_ft', h0, h0 + Vector((0, -0.22, -0.10)), 0.045, 0.11, seg=4, sx=0.3)
+    cone('haft', C['wood'], 'aR_ft', m - d * 0.16, m + d * 0.74, 0.034, 0.03, seg=5); h0 = m + d * 0.66
+    cone('axehead', C['iron'], 'aR_ft', h0, h0 + Vector((0, -0.30, -0.16)), 0.06, 0.19, seg=4, sx=0.3)
     # what he turns into: an old stump with spread roots, rings on its cut top, moss, and one red toadstool the colour of his cap
     cone('stump', C['bark'], 'stump', (0, 0, 0.0), (0, 0, 1.0), 0.68, 0.54, seg=11); cone('stumptop', C['ring'], 'stump', (0, 0, 1.0), (0, 0, 1.03), 0.52, 0.50, seg=11)
     for r in (0.36, 0.20): cone('rings', C['wood'], 'stump', (0.03, 0.02, 1.03), (0.03, 0.02, 1.04), r, r, seg=11)
@@ -629,8 +630,8 @@ def death(p):
     lie = S['lie']; settle = 0.03 * math.sin(math.pi * min(1.0, max(0.0, (p - 0.80) / 0.2)))
     lim = {}
     for n, L in LIMBS.items():
-        if L['kind'] == 'l': lim[n] = ('fk', -62 * land - 10 * f * (1 - land), 6 * f, -30 * f * (1 - land) - 8 * land, 0, -40 * land) if f > 0.02 else None
-        else: lim[n] = ('fk', (40 + (12 if n == 'aL' else -8)) * f + 46 * land, 22 * f, 20 * f * (1 - land) + 10, 0, 0) if (f > 0.02 or not KN) else None
+        if L['kind'] == 'l': lim[n] = ('fk', 4 * land - 10 * f * (1 - land) + (5 if n == 'lL' else -3) * land, 6 * f + 4 * land, -30 * f * (1 - land) - (10 if n == 'lL' else 2) * land, 0, 55 * land) if f > 0.02 else None
+        else: lim[n] = ('fk', (40 + (12 if n == 'aL' else -8)) * f * (1 - land) + (150 if n == 'aL' else 40) * land, 22 * f + (20 if n == 'aL' else 58) * land, 20 * f * (1 - land) + 10 + (16 if n == 'aL' else 40) * land, 0, 0) if (f > 0.02 or not KN) else None
         if lim[n] is None: del lim[n]
     d = {'loc': (0.05 * st, 0.10 * st - 0.75 * lie * land, -lie * f * 0.55 - lie * land * 0.45 + settle), 'pitch': -5 * st + 82 * land + 8 * f * (1 - land), 'roll': 5 * st + 6 * land, 'spine': 6 * f, 'chest': (8 * f, -8 * land, 0),
          'neck': (-16 * land + 10 * f, 16 * land, 0), 'head': (-20 * land + 12 * f, 30 * land, 0), 'jaw': 8 + 26 * f, 'tail': (20 * f, 10 * st, 0), 'limbs': lim}

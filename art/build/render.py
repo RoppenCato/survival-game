@@ -83,6 +83,7 @@ for anim in ANIMS:
             for f in range(nfr):
                 sc.frame_set(int(round(1 + f * length / nfr)))
                 sc.render.filepath = os.path.join(out, '%s_%s_%s_%02d.png' % (anim, layer, dir_names[d], f))
-                bpy.ops.render.render(write_still=True); n += 1
+                if not (opt.get('keep') == '1' and os.path.exists(sc.render.filepath)): bpy.ops.render.render(write_still=True)   # --keep 1: a frame already on disk is left as it is (re-render one clip by deleting its frames; the numbers are written for every clip named)
+                n += 1
 with open(os.path.join(out, 'meta.json'), 'w') as fh: json.dump(meta, fh, indent=1)
 print('rendered', n, 'frames to', out, 'anchor', anchor, 'figure px', round(meta['figure_px'], 1))

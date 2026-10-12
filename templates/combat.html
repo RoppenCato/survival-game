@@ -111,6 +111,10 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <button id="stroll2">Add forest troll</button>
         <button id="stroll3">Add the Gape</button>
         <button id="stroll4">Add the three-headed troll</button>
+        <button id="sdraugr">Add draugr</button>
+        <button id="shuldra">Add huldra</button>
+        <button id="snacken">Add Näcken</button>
+        <button id="sbysen">Add bysen</button>
         <button id="sclear">Clear</button>
         <button id="sreset">Reset</button>
       </div>
@@ -141,7 +145,7 @@ __SPRITES_JS__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   // Every enemy in this arena wears an animal: the plain attacker is a wolf, boar or snake, the big one is the bear.
-  var lib = GameArt.lib, want = null, BASE_R = { wolf: 7, boar: 8, snake: 5, bear: 9, moose: 7, deer: 6, troll: 5, trollForest: 4.5, trollMaw: 5.5, trollThree: 4.5 };
+  var lib = GameArt.lib, want = null, BASE_R = { wolf: 7, boar: 8, snake: 5, bear: 9, moose: 7, deer: 6, troll: 5, trollForest: 4.5, trollMaw: 5.5, trollThree: 4.5, draugr: 7, huldra: 7, nacken: 7, bysen: 8 };
   Combat.api.roster = ['beast', 'beast'];
   Combat.api.dress = function (e) {
     if (e.type !== 'beast' && e.type !== 'brute') return;
@@ -150,14 +154,15 @@ __SPRITES_JS__
     e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase(); e.kindA = k;
     e.r = BASE_R[k] * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, atk: e.type === 'beast' ? lib.animalAttack(k) : null };
     if (k === 'deer') e.flee = true;
+    if (k === 'huldra' || k === 'nacken' || k === 'bysen') { e.aggro = 1; e.flee = true; }   // no fighters: they stand until struck, then run (their own ways are not decided)
     if (e.type === 'beast') e.hp = e.maxHp = sp.hp;
   };
   lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   Combat.init(GameArt.lib);
   var ARENA_HERO = Sprites.hero(__SPRITES__ || {}, localStorage);
-  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, trollForest: { sheet: 'troll_forest', deadFor: 3 }, trollMaw: { sheet: 'troll_maw', deadFor: 3 }, trollThree: { sheet: 'troll_three', deadFor: 3 } };   // the animals modelled in Blender (2026-10-11)
+  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, trollForest: { sheet: 'troll_forest', deadFor: 3 }, trollMaw: { sheet: 'troll_maw', deadFor: 3 }, trollThree: { sheet: 'troll_three', deadFor: 3 }, draugr: { deadFor: 2.5 }, huldra: { deadFor: 2.5 }, nacken: { deadFor: 2.5 }, bysen: { deathClip: 'hide', deadFor: 2.5 } };   // the animals modelled in Blender (2026-10-11)
   Object.keys(ARENA_BOPT).forEach(function (bk) { var SPA = __SPRITES__ || {}, sh = ARENA_BOPT[bk].sheet || bk; if (SPA[sh]) ARENA_BEASTS[bk] = Sprites.load(SPA, sh); });
-  Combat.api.enemySprite = function (c, e) { var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: bo.scale, deadFor: bo.deadFor }); };
+  Combat.api.enemySprite = function (c, e) { var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: bo.scale, deadFor: bo.deadFor, deathClip: bo.deathClip }); };
   function arenaLayers() {
     var P = Combat.dbg().P, M = ARENA_HERO && ARENA_HERO.meta, out = ['body']; if (!M) return out;
     var kind = P.mode === 'fight' ? (P.weapon === 'ranged' ? arm.ranged : arm.melee) : P.mode === 'gather' ? (Combat.api.tools[P.tool] || {}).id : null; if (!kind) return out;
@@ -305,7 +310,7 @@ __SPRITES_JS__
   act('sshooter', function () { want = 'boar'; Combat.spawn('beast'); });
   act('sbrute', function () { Combat.spawn('brute'); });
   act('sboss', function () { want = 'snake'; Combat.spawn('beast'); });
-  [['smoose', 'moose'], ['sdeer', 'deer'], ['stroll', 'troll'], ['stroll2', 'trollForest'], ['stroll3', 'trollMaw'], ['stroll4', 'trollThree']].forEach(function (b) { act(b[0], function () { want = b[1]; Combat.spawn('beast'); }); });
+  [['smoose', 'moose'], ['sdeer', 'deer'], ['stroll', 'troll'], ['stroll2', 'trollForest'], ['stroll3', 'trollMaw'], ['stroll4', 'trollThree'], ['sdraugr', 'draugr'], ['shuldra', 'huldra'], ['snacken', 'nacken'], ['sbysen', 'bysen']].forEach(function (b) { act(b[0], function () { want = b[1]; Combat.spawn('beast'); }); });
   act('sclear', function () { Combat.clear(); });
   act('sreset', function () { Combat.reset(); });
 

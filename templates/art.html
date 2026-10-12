@@ -900,13 +900,19 @@ __SPRITES_JS__
       end: function (c) { var PSN = Combat.api.pixelScale || 2; c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0); c.globalAlpha = 0.12; c.fillStyle = kit.grain(c); c.fillRect(0, 0, 400 * PSN, 250 * PSN); c.globalAlpha = 1; c.restore(); }
     };
     var sceneName = 'island';
+    // where the hero starts: the nearest ground to the wreck with dry land all round it and nothing solid on it (he was put in the sea beside the island)
+    function startSpot() {
+      var hx = island.home.x, hy = island.home.y, ok = function (x, y) { for (var a = 0; a < 8; a++) if (!island.isLand(x + Math.cos(a * 0.785) * 44, y + Math.sin(a * 0.785) * 44)) return false; var so = island.nearSolids ? island.nearSolids({ x: x, y: y }) : []; for (var i = 0; so && i < so.length; i++) if (Math.hypot(so[i].x - x, so[i].y - y) < (so[i].r || 8) + 16) return false; return island.isLand(x, y); };
+      for (var d = 0; d < 1200; d += 24) for (var a = 0; a < 16; a++) { var x = hx + Math.cos(a * 0.3927) * d, y = hy + Math.sin(a * 0.3927) * d; if (ok(x, y)) return { x: x, y: y }; }
+      return { x: hx, y: hy };
+    }
     function setScene(nm) {
       sceneName = nm; night = nm === 'night';
       if (nm === 'island') {
         if (!island) makeIsland();
         islandScene.bounds = { x0: 8, y0: 12, x1: island.GW * T - 8, y1: island.GH * T - 8 }; Combat.api.scene = islandScene;
-        var P = Combat.dbg().P; if (!P.onIsland) { P.x = island.home.x + 100; P.y = island.home.y - 30; P.onIsland = true; }
-        if (!island.isLand(P.x, P.y)) { P.x = island.home.x + 100; P.y = island.home.y - 30; }
+        var P = Combat.dbg().P, st = startSpot(); if (!P.onIsland) { P.x = st.x; P.y = st.y; P.onIsland = true; }
+        if (!island.isLand(P.x, P.y)) { P.x = st.x; P.y = st.y; }
       } else { Combat.api.scene = night ? nightScene : null; var Q = Combat.dbg().P; if (Q.onIsland) { Q.x = 200; Q.y = 200; Q.onIsland = false; } }
       Combat.dbg().W.pillars.forEach(function (p) { p.hide = nm !== 'arena'; });
       pressed($('scIsland'), nm === 'island'); pressed($('scArena'), nm === 'arena'); pressed($('scNight'), night);

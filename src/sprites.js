@@ -41,10 +41,12 @@
       else nm = (a.combo % 2) ? 'attack2' : 'attack1';
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
+    if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip) { var C = A[H.clip.name], cf = Math.floor((t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     if (an && an.sit && A.sit) return { a: 'sit', f: loopFrame(A.sit, t) };
     var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (A.walk ? 'walk' : 'idle')) : 'idle';
+    if (!A[nm2]) return null;                                          // a sheet set with no such clip draws nothing (it threw)
     return { a: nm2, f: loopFrame(A[nm2], t) };
   }
   // a sheet recoloured once per tint (the metal of a thing in the hand, by its material): the colour laid over the pixels at 0.6
@@ -115,7 +117,8 @@
     var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.22, Math.min(0.22, dA));
     var nm, f, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, ph = t + (e.seed || 0);
     var lie = opts.deadFor || 1.5;
-    if (e.dead && A.death) { e.deadFor = lie; nm = 'death'; f = opts.deadFor ? Math.min(A.death.frames - 1, Math.floor(e.deadT / (lie * 0.6) * A.death.frames)) : Math.min(A.death.frames - 1, Math.floor(e.deadT * A.death.fps)); }
+    if (e.dead && !A.death && opts.deathClip && A[opts.deathClip]) { e.deadFor = lie; nm = opts.deathClip; f = Math.min(A[nm].frames - 1, Math.floor(e.deadT / (lie * 0.6) * A[nm].frames)); }   // a creature with no death of its own (the bysen folds into his stump)
+    else if (e.dead && A.death) { e.deadFor = lie; nm = 'death'; f = opts.deadFor ? Math.min(A.death.frames - 1, Math.floor(e.deadT / (lie * 0.6) * A.death.frames)) : Math.min(A.death.frames - 1, Math.floor(e.deadT * A.death.fps)); }
     else if (opts.clip && A[opts.clip]) { nm = opts.clip; f = opts.clipK != null ? frameAt(A[nm], Math.max(0, Math.min(0.999, opts.clipK))) : loopFrame(A[nm], ph); }
     else if (e.state === 'windup' && A.windup) { nm = 'windup'; f = opts.windupLoop ? loopFrame(A.windup, ph) : frameAt(A.windup, k); }
     else if (e.state === 'lunge' && A.attack) { nm = 'attack'; f = opts.attackLoop ? loopFrame(A.attack, ph) : frameAt(A.attack, k); }

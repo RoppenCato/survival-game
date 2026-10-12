@@ -551,6 +551,23 @@ the text and it is made the default. When a spec's meaning changes, change the s
   stump with spread roots, rings on its top, moss and one red toadstool the colour of his cap) and `stump` (one frame). `npm run
   art:draugr`, `art:huldra`, `art:nacken`, `art:bysen`, `art:vasen`; `node tools/visual/vasensheet.js` writes vasen.png. They are
   in the Art Editor's Models tab; **nothing in the game spawns them and their mechanics are not decided** (`docs/beasts.md`).
+  **The models tried out (2026-10-12, Robin: try every model in the game, fight them, walk as them, fix what is wrong):** all
+  fifteen (the hero, six animals, four trolls, the draugr, the huldra, Nacken, the bysen) were fought in the Combat Arena and
+  walked about in the Art Editor's Models tab, by script. **Found and fixed:** the two-legged models **died with their legs
+  straight up in the air** (the fall now lays the legs out behind and flings the arms past the head and to the side); the
+  **Models tab put the hero in the sea** beside its island, so nothing could walk there (`startSpot`: the nearest ground to the
+  wreck with dry land all round and nothing solid on it); `Sprites.pick` **threw on a sheet set with no such clip** (it now draws
+  nothing); the huldra, Nacken and the bysen **attacked in the arena with no attack to show** (they stand until struck, then
+  run: `e.aggro` 1, `e.flee`); the bysen had no death (`deathClip: 'hide'`: he folds into his stump); the draugr read as a
+  blue man in a brown cap (grey-blue now, an iron helm with rust on it); the bysen's axe could not be seen; the Gape's kelp hung
+  over its sides (down its back only now). The arena has buttons for the four new ones (`ANIMALS.draugr` with a sword sweep,
+  `ATTACKS.draugr`; the other three have numbers only). **A trap in the renderer, now closed:** rendering one clip of a model
+  rewrote `meta.json` with that clip alone, and the packer then packed a sheet set with nothing else in it. `render.py --keep 1`
+  leaves a frame already on disk as it is and writes the numbers for every clip named: to re-render one clip, delete its frames
+  and run the model's full command with `--keep 1`. **Driving a page by hand:** the browser pane stops animating when it is
+  hidden, so `tools/visual/drive.js` (load it in the page, then reload the page's own HTML with `document.write`) takes over
+  `requestAnimationFrame` and the clock: `H2.step(n)` runs n frames, `H2.snap` tiles crops of the canvas into a sheet and
+  `H2.part` hands it back as a JPEG.
   **In the Blender Editor (2026-10-09, Robin: fix it so I can try it out):** `npm run art:mixamo:sheets` renders all eighteen clips in
   eight directions with a frame count per clip (`render.py --frames idle=16,walk=12,run=10,...`; `tools/sprites.js` reads each
   animation's count from meta.json) and packs them into `assets/sprites/hero2-mixamo` (one 164 by 164 frame, 22 MB of sheets: the

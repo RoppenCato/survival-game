@@ -1038,6 +1038,11 @@ var ANIMALS = {
     col: { body: '#8f9a80', belly: '#b9bda4', accent: '#4d6a4c', eye: '#f4f1e2', glow: '#ff8a3a', line: '#2a2824', moss: '#4d6a4c' } },
   trollThree: { name: 'Three-headed troll', set: { plan: 9, size: 2.1, speed: 0.8, windup: 1.3, lunge: 0, hp: 130, aggro: 170, tell: 1, trollHair: 0.6, trollMoss: 0, trollAge: 1, trollHunch: 1 },
     col: { body: '#b9b29c', belly: '#cbc4ae', accent: '#332d2a', eye: '#f0452a', glow: '#f0452a', line: '#241e1a', moss: '#8a221c' } },
+  // the people-shaped vasen (2026-10-12): Blender models only (troll_build.py draugr, huldra, nacken, bysen); numbers for the Combat Arena, nothing decided
+  draugr: { name: 'Draugr', set: { plan: 9, size: 1, speed: 0.75, windup: 0.8, lunge: 0, hp: 30, aggro: 140, tell: 1 }, col: { body: '#8fa9b4', belly: '#9a968a', accent: '#3d4f5c', eye: '#e9f4ee', glow: '#e9f4ee', line: '#241e1a', moss: '#4d6a4c' } },
+  huldra: { name: 'Huldra', set: { plan: 9, size: 1, speed: 0.7, windup: 1, lunge: 0, hp: 20, aggro: 0, tell: 0 }, col: { body: '#d8442e', belly: '#f6d8be', accent: '#f3dc8c', eye: '#2a2420', glow: '#2a2420', line: '#241e1a', moss: '#86a652' } },
+  nacken: { name: 'Nacken', set: { plan: 9, size: 1, speed: 0.7, windup: 1, lunge: 0, hp: 20, aggro: 0, tell: 0 }, col: { body: '#4f8a7a', belly: '#dfe8de', accent: '#3a4a44', eye: '#20302c', glow: '#20302c', line: '#241e1a', moss: '#86a652' } },
+  bysen: { name: 'Bysen', set: { plan: 9, size: 0.5, speed: 0.6, windup: 1, lunge: 0, hp: 10, aggro: 0, tell: 0 }, col: { body: '#a8a69c', belly: '#e6e2d6', accent: '#d23c2c', eye: '#201c1a', glow: '#201c1a', line: '#241e1a', moss: '#86a652' } },
   trollOld: { name: 'Mountain troll (old)', set: { plan: 7, size: 2.05, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.2, trollMoss: 0.7, trollAge: 0.75 },   // the first troll, kept for comparison
     col: { body: '#7a7064', belly: '#9a9082', accent: '#5a4636', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824', moss: '#8fa86a' } },
   wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.4, windup: 0.35, hp: 22, aggro: 220 },
@@ -1049,6 +1054,7 @@ var ANIMALS = {
 var ATTACKS = {
   boar: { kind: 'charge', windup: 0.6, dur: 0.55, speed: 330, from: 150, recover: 1.1, cd: 1.2, turn: 2.4 },
   snake: { kind: 'lunge', windup: 0.5, dur: 0.14, speed: 330, near: 34, recover: 1.2, cd: 1.5, venom: 4, venomDmg: 2 },
+  draugr: { kind: 'arc', windup: 0.8, dur: 0.4, reach: 34, arc: 2.4, hitAt: 0.45, step: 40, recover: 1.0, cd: 1.5, turn: 2.2 },   // a wide sweep of a pitted sword
   trollMaw: { kind: 'lunge', windup: 1.3, dur: 0.5, speed: 300, recover: 1.6, cd: 2.2, heavy: true, turn: 1.6 },   // it sits back, the lid comes up, and it throws itself at you mouth first
   troll: { kind: 'arc', windup: 1.6, dur: 0.6, reach: 62, arc: 3.8, hitAt: 0.45, step: 30, recover: 2.2, cd: 2.6, heavy: true, turn: 1.4 },   // a great slow sweep of the arm, wide as he is
   wolf: { kind: 'lunge', windup: 0.25, dur: 0.2, speed: 320, ring: 70, recover: 0.4, cd: 0.8, pack: true },
