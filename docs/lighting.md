@@ -71,18 +71,42 @@ What this adds up to for a game drawn on a 2D canvas with no shaders and no norm
 ## 2. What was built, and the verdicts
 
 All nine are in `templates/game.html` under "the lighting trials" (and `src/sprites.js` for the figures). The pictures are real
-frames of the game from the browser pane, the same view with a switch off and on.
+frames of the game from the browser pane at the size Robin plays at (a canvas of 1200 by 750), the same view before and now.
+
+### Robin's look at the first version, and what changed (2026-10-12)
+
+> Not sure about the lighting. This in your picture looks more cozy for example. I tried in the game and it's more like it's
+> some weird filter over it. I like the shadows cast by light objects. Maybe the torch makes it a bit intense though, because
+> the shadows just run quickly when walking.
+
+I had judged the first version from small sheets of tiles. Seen at full size it was not light, for three reasons:
+
+1. **The light was dim.** A fire's light was at four fifths of daylight only at its very middle and a grey-yellow half by the
+   middle of its reach, so a lit place read as a dark sheet with a tinted hole in it. Now the ground by a fire shows its
+   daylight colours, warm, and the light goes amber and then ember-red as it falls off into the night.
+2. **Films over things.** `sides` laid a dark film over every tree on the near side of a light and an orange one over every
+   tree beyond it, with an orange outline. Round a fire that stands, that is a picture; round a torch, every tree changed
+   film as Robin walked past it. Now only figures (the hero, the beasts) take a dark side and a rim, and only at a fire that
+   stands; a prop goes a little dark on the near side of one; a torch does none of it.
+3. **A beam out of the door.** A fire indoors threw a hard wedge of light from itself through each opening and far across the
+   yard. Now there is a soft pool on the ground just outside each door and window.
+
+And the torch's shadows: a torch is carried, so what stands nearest swings its shadow round you at every step. Now a torch's
+shadows are faint and short, none at all from what stands within about 22 units, and every shadow ends where the light does
+(they ran on as dark shapes far outside the light).
+
+**The lesson is in CLAUDE.md ("Judge it at Robin's size"): look at a crop of the full-size canvas, never at a small sheet.**
 
 ### Fire and torch at night
 
-`docs/lighting-fire.jpg` (a campfire by a hut), `docs/lighting-village.jpg`, `docs/lighting-torch.jpg`.
+`docs/lighting-fire.jpg` (a torch in a wood; a hut with a fire inside), `docs/lighting-village.jpg` (a house in a village).
 
 | Switch | What it does | Verdict |
 | --- | --- | --- |
-| **glow** | The fire's reach and strength gutter and flare (three sines and a slow swell: `flick`). A hot glow sits on the flame and a faint warm haze hangs in the air round it, both added after the dark. | **Keep, on.** The single biggest change for the least work. Without it the firelight on grass is yellow-green; with it it is warm. |
-| **shadows** | Every prop, built thing and sprite figure near a fire or the torch throws its own shape on the ground, away from the light, longer the further off (`figLit`, `shadowOf`, `Sprites.cast`). People drawn in ink get a long soft shape. | **Keep, on.** Subtle at a campfire, strong with the torch in a wood (the trees' shadows swing as you walk). |
-| **sides** | What stands south of a fire (between it and you) is darkened and gets a thin warm edge toward the fire; what stands north of it catches warm light. | **Keep, on.** The hero before a fire becomes a shape with a lit edge, which is the picture everyone has of a campfire. Not on a thing you stand behind (it is drawn thin there). **Not yet on the villagers** (they are drawn afresh each frame, with no shape kept): a row of lit backs round the village fire is the obvious next step. |
-| **walls** | A fire indoors lights its own room when you are in it, and from outside only what falls out through the door and the windows, as soft patches on the ground; an outdoor fire is cut by the shadow of every wall (the faces that look at it stay lit); windows of a room with a fire glow, and a door shows light under it and down its edges. | **Keep, on. The best of the nine.** Before, a house with a hearth glowed through its roof as a blob. Now a village at night is dark houses with lit windows. The light out of a window still reads as a beam more than a pool on the ground; shorter and rounder would be truer. |
+| **glow** | The light's own colour: bright and warm at the fire, amber, ember-red, then the night (`FIRE_T`, `TORCH_T`, `warmGrad`); a gentle flicker; a hot glow on the flame and a little warm haze in the air. | **Keep, on.** This is what makes it light and not a filter. Without it the firelight is a dim yellow-green. |
+| **shadows** | Every prop, built thing and sprite figure near a fire throws its own shape on the ground, away from the light, ending where the light does (`figLit`, `shadowOf`, `Sprites.cast`). People drawn in ink get a soft shape. A torch throws only faint, short ones. | **Keep, on.** Robin liked them. |
+| **sides** | The hero and the beasts at a fire that stands: dark with a thin warm edge when between you and the fire, warmed beyond it. A prop goes a little dark on the near side. Nothing from a torch. | **Keep, on, as cut down.** The hero before a fire as a shape with a lit edge is worth having; the films over trees were the "filter". **Not on the villagers** (drawn afresh each frame, with no shape kept). |
+| **walls** | A fire indoors lights its own room when you are in it, and from outside a soft pool before each door and window; an outdoor fire is cut by the shadow of every wall (the faces that look at it stay lit); windows of a room with a fire glow, and a door shows light under it and down its edges; a lantern on a wall lights what is round it. | **Keep, on.** Before, a house with a hearth glowed green through its roof. Now a village at night is dark houses with lit windows and a warm doorstep. |
 | **moths** | Four pale flecks round every fire, circling, blinking as their wings turn. | **Keep, on.** Small; costs nothing. |
 
 ### The night itself
@@ -93,7 +117,7 @@ frames of the game from the browser pane, the same view with a switch off and on
 
 ### The air
 
-`docs/lighting-air.jpg`.
+`docs/lighting-air.jpg` (taken with the first version of the firelight; the four techniques themselves have not changed).
 
 | Switch | What it does | Verdict |
 | --- | --- | --- |

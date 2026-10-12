@@ -112,10 +112,13 @@ def peak(name, seed, main, shoulders):
         a = math.pi * (1.05 + 0.9 * R.random()); r = main[0] * (0.95 + 0.25 * R.random()); block(c, name + '_b%d' % i, (math.cos(a) * r, math.sin(a) * r * 0.85, 0.3), (1.2 + R.random() * 1.6, 1.0 + R.random(), 0.9 + R.random()), seed + 20 + i)
     return c
 
-peak('peak_a', 3, (7.5, 15.0, (0.8, 0.0), 0.46), [((-6.2, 0.6), 5.2, 9.0, 0.6), ((5.6, 1.2), 4.6, 7.2, 0.72)])
-peak('peak_b', 8, (6.4, 11.0, (-0.6, 0.0), 0.5), [((5.4, 0.4), 5.0, 8.4, 0.58)])
-peak('peak_c', 14, (5.0, 8.2, (0.3, 0.0), 0.62), [((-4.4, 0.8), 3.8, 5.6, 0.8), ((4.2, 0.6), 3.2, 4.6, 0.9)])
-peak('peak_d', 21, (6.0, 12.5, (0.4, 0.0), 0.5), [((-6.6, 0.5), 5.0, 9.6, 0.56), ((6.4, 0.8), 4.6, 7.8, 0.64), ((-11.8, 1.0), 3.8, 5.4, 0.82)])   # a long ridge of four tops
+# The peaks are painted with the ground since 2026-10-12 (src/world.js, paintPeaks: Robin found these looked pasted on). They are
+# built only when asked for by name (-- peak_a ...), for looking at.
+if any(a.startswith('peak') for a in sys.argv):
+    peak('peak_a', 3, (7.5, 15.0, (0.8, 0.0), 0.46), [((-6.2, 0.6), 5.2, 9.0, 0.6), ((5.6, 1.2), 4.6, 7.2, 0.72)])
+    peak('peak_b', 8, (6.4, 11.0, (-0.6, 0.0), 0.5), [((5.4, 0.4), 5.0, 8.4, 0.58)])
+    peak('peak_c', 14, (5.0, 8.2, (0.3, 0.0), 0.62), [((-4.4, 0.8), 3.8, 5.6, 0.8), ((4.2, 0.6), 3.2, 4.6, 0.9)])
+    peak('peak_d', 21, (6.0, 12.5, (0.4, 0.0), 0.5), [((-6.6, 0.5), 5.0, 9.6, 0.56), ((6.4, 0.8), 4.6, 7.8, 0.64), ((-11.8, 1.0), 3.8, 5.4, 0.82)])   # a long ridge of four tops
 
 EXTRA = {}                                            # what is rendered with a piece but takes no ink line and is left out of its frame's fitting: the inside of the cave
 def lin(col): return tuple(((v / 255 + 0.055) / 1.055) ** 2.4 if v / 255 > 0.04045 else v / 255 / 12.92 for v in col) + (1.0,)

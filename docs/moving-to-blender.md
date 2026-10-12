@@ -115,7 +115,7 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 | Forest troll | `troll_forest.blend` | the same rig | 7 | `troll_forest` | Models tab | arena only | not spawned in the game |
 | The Gape (new) | `troll_maw.blend` | the same rig | 7 | `troll_maw` | Models tab | arena only | Robin to decide where it lives |
 | Mine mouth, sea cave mouth, rock shelter (2026-10-12) | `rocks.blend` | none: set pieces (`rocks_build.py`: `mine_mouth`, `sea_mouth`, `rock_shelter`, their insides by `inside2`) | none | `assets/props/` | no | **yes**, the mountain test scene (the shelter on the big island too) | the shelter is two pieces: `shelter_in` painted into the ground, `shelter` a prop in front of whoever is under it; thin hanging roots took the ink as black sticks (moss instead) |
-| Peaks (a, b, c, d), cave mouth | `rocks.blend` | none: set pieces, one render each (`rocks_build.py`) | none | `assets/props/` | no | **yes** (2026-10-12), the mountain test scene | the peaks rebuilt the same day (ribs and gullies, a rough outline, smooth with sharp ribs) and finished by the packer (grain, a cool shade, the ink line heavy on the shadow side, a shadow at the foot); painted into the ground, the cave mouth a prop; the sun at 3.0 |
+| Cave mouth, mine mouth, sea cave mouth, rock shelter (and its inside) | `rocks.blend` | none: set pieces, one render each (`rocks_build.py`) | none | `assets/props/` | no | **yes** (2026-10-12) | finished by the packer (grain, a cool shade, the ink line heavy on the shadow side); the sun at 3.0. **The peaks were set pieces too and are not any more** (2026-10-12, Robin: they looked pasted on): the range is painted with the ground (`paintPeaks` in `src/world.js`); their builder runs only when a peak is asked for by name |
 | Draugr | `draugr.blend` | the trolls' rig as a person (`troll_build.py`) | 7 | `draugr` | Models tab | no | mechanics to discuss |
 | Huldra | `huldra.blend` | the same | 5 (`call`) | `huldra` | Models tab | no | mechanics to discuss |
 | Nacken | `nacken.blend` | the same | 5 (`play`) | `nacken` | Models tab | no | mechanics to discuss; the lyre opens instruments |
@@ -139,6 +139,12 @@ pieces are rendered at 3.0 and have lit and shadowed faces. **For Robin to decid
 (several hours of rendering, and every base colour would need taking back down), or keep them as they are.
 
 ## A set piece needs the drawn world's finish (found 2026-10-12)
+
+**And some things should not be set pieces at all (Robin, the same day, after walking under them).** The peaks, even with
+all of the finish below, read as pasted on: fifty to two hundred pictures stamped on painted ground, each in its own outline,
+beside cliffs painted in another hand. **What is part of the ground is painted with the ground** (the range is now
+`paintPeaks`, out of the same rock as the walls); a set piece is for a thing that stands on the ground like a prop (a cave's
+mouth, the shelter's stones). What follows is still how to finish those.
 
 The first peaks were flat-shaded cones of a few big triangles and read as crystals beside the drawn trees and the painted cliffs.
 What made them sit in the world: **form that light can read** (ribs and gullies, a smooth surface with only the ribs' edges sharp,

@@ -499,3 +499,20 @@ looked). Ideas, none decided:
   graphics card is unknown. The frame readout and the Admin board's layer test are the tools.
 - **If the drawing ever moves to WebGL:** normal maps rendered from the Blender models (free there), and a graded colour table
   for every hour, which is how Graveyard Keeper and Factorio get their nights.
+
+## Mountains: what is left after the repaint (2026-10-12)
+
+The walls and the peaks are painted in one hand now (`rockTone`, `paintPeaks`). Ideas and loose ends, none decided:
+
+- **Baking a piece over several frames.** A piece of ground with peaks in it takes about 77 ms the first time it is seen
+  (55 before the repaint; lowland about 12), all in one frame: a hitch as you walk under the peaks. Painting it a band of
+  rows a frame would end that for every kind of ground. The bake is one long function with sheets it shares between pieces,
+  so only one may be in hand at a time.
+- **Side walls still step.** A wall that faces east or west is whole pixels along its slanted outline; the south faces'
+  lip and foot are true to a part of a pixel. It wants the same done along the leaning columns.
+- **Kinds of mountain.** Every peak is a summit with flat faces. A long ridge with two or three tops, a table mountain, a
+  broad shoulder under a small top; lower and rounder in the south of the map, sharper in the north.
+- **The mountain's own shadow.** A peak throws none on the snow east of it; the cliffs do.
+- **The cave mouths and the shelter** are still pictures from Blender with a heavy line. They are small and stand like props,
+  but if they too read as pasted on, the answer is the same: paint them with the ground.
+- **Weather on the tops:** cloud caught on a summit, snow blowing off a ridge (if there is ever weather).

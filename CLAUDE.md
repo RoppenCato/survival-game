@@ -241,7 +241,12 @@ the text and it is made the default. When a spec's meaning changes, change the s
   death from the moment of death), `play(H, name, then)` queues a one-shot clip (the bow's shot comes from `fireT` in `tick`), `cast`
   lays the frame's silhouette on the ground as the props' long shadows lie (or, given `to` = `{ kx, ky, a }`, away from a fire),
   `drawDead` draws the fallen hero where a page lists it. `draw` and `beast` take `opts.lit` (what a fire near the figure does
-  to it: a cast shadow, a dark side, a warm rim; see "The lighting trials"). Loads in Node too. Every page gets it as `__SPRITES_JS__` and the sheets' numbers as `__SPRITES__`.
+  to it: a cast shadow, a dark side, a warm rim; see "The lighting trials"). **Slow clips are melted from frame to frame
+  (2026-10-12, Robin: the new creatures' idles looked laggy):** the animals' idles are rendered at 8 frames a second, the
+  trolls' and the väsen's at 5, and more frames would be sheets of many megabytes, so `idle`, `idle_look`, `sit` and `play`
+  (`BLEND`, or a clip with `blend` in its numbers) are drawn as the true in-between of the two frames the clock lies between
+  (`loopAt`, `mixTo`: both frames into a small canvas, each at its share, added); a walk is not (two sets of legs). Checked in
+  the pane: a standing moose's picture changes on every one of twenty-four frames. Loads in Node too. Every page gets it as `__SPRITES_JS__` and the sheets' numbers as `__SPRITES__`.
 - `src/fishing.js` (`Fishing`): **fishing (2026-10-08, Robin: a rod of iron in the lowlands, a fisherman who teaches the dishes, a fun
   minigame, a few fishes, a sunken chest now and then).** The round with no drawing: `start(R, depth, lowland)` rolls what bites
   (`roll`, `table`: herring everywhere in the sea, perch in the shallows, cod and salmon deep, pike in the lowland shallows, a
@@ -628,6 +633,12 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - The tests have no assertions. They print values and exit 0 unless something throws, so a green `npm test` proves
   only "no crash". Read the printed lines against their labels and report mismatches. `btest.js` is not in `npm test`.
 - Tests and render scripts write throwaway PNGs into the current directory; `.gitignore` covers PNGs in the root.
+- **Judge it at Robin's size (2026-10-12, learnt the hard way twice in one day).** The browser pane's canvas is 800 by 500 at 2
+  pixels a unit; Robin's is **1200 by 750 at 3 a unit, shown about one and a half times larger again** on Robin's screen, and the
+  ground is baked at 2 pixels a unit with the mountains' rock painted at **one**. So a pixel of painted rock is about three
+  of that screen's, and a picture that looks fine small (a light, a texture) can look murky or blocky there. Before judging
+  anything of light or of painted ground: `resize_window` the pane to 1920 by 1080, reload the page, capture the canvas at
+  full size and look at a crop of it, not at a small sheet of tiles.
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
 - The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,
@@ -1262,33 +1273,37 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **The lighting trials (2026-10-12, Robin: research how similar games make good lighting, test a few techniques, see what works
   best; the answers: fire and torch at night first, and atmosphere; pictures, then switches). `docs/lighting.md` has the research
   (Graveyard Keeper, Factorio, Red Blob Games, Octopath, the painters' rules), every technique, its verdict and the sources;
-  the pictures are `docs/lighting-fire.jpg`, `-village.jpg`, `-torch.jpg`, `-air.jpg`.** Nine techniques, each a switch in
-  `LAB.light` on the Light and sound board, all in `templates/game.html` under "the lighting trials" (`lt(k)` asks a switch).
-  **The five for fire are on by default** (they were the better picture in every scene tried):
-  **`glow`** (`flick(i)`: a fire's reach and strength gutter and flare; a hot glow on the flame and a warm haze in the air, added
-  with 'lighter' after the dark, so firelight on grass is warm and not yellow-green); **`shadows`** (`nightFires()` lists every
-  light in view, `fireFor(x, y)` the one that falls hardest on a place, `figLit(x, y)` what it does to a thing standing there:
-  `{ cast: { kx, ky, a }, rim, dark, warm }`; `drawFireShadows` in `scene.begin` lays every prop's and built thing's own shape
-  on the ground away from the fire, longer the further off, through `shadowOf` and a one-colour copy of the sprite, `silCol`;
-  the hero and the beasts through `Sprites.cast(..., to)`); **`sides`** (what stands south of a fire, between it and you, is
-  darkened with a thin warm rim toward the fire; what stands north of it takes warm light; props in the page, the sprite
-  figures through `opts.lit` in `Sprites.draw` and `Sprites.beast`: `litUnder`, `litOver`, `silC`; skipped for a thing the hero
-  stands behind); **`walls`** (`lightInto(n, f, gr, sx, sy, rad)` draws a light into the night's sheet: a fire **indoors**
-  lights its own room when you stand in it and otherwise only a soft patch outside each door and window, `roomOpenings`; a fire
-  **outdoors** is a disc with a quad cut out behind every wall that `blocksLight`, the wall faces that look at it lit again;
-  `drawWindowGlow`: the windows of a room with a fire glow and a door shows light under it); **`moths`** (`drawMoths`).
+  the pictures are `docs/lighting-fire.jpg`, `-village.jpg`, `-air.jpg`.** Nine techniques, each a switch in `LAB.light` on the
+  Light and sound board, all in `templates/game.html` under "the lighting trials" (`lt(k)` asks a switch).
+  **Robin's look at them in the game (2026-10-12): "not sure about the lighting... it's more like some weird filter over it";
+  the shadows that things throw were liked, but with the torch they "run quickly when walking".** What that was, seen at
+  the size Robin plays at (see "Judge it at Robin's size" under Things to know): the light itself was dim and grey-yellow by the middle
+  of its reach, so a lit place looked like a tinted sheet with a hole in it; dark and orange films were laid over every tree
+  near a light, and with the torch each tree changed film as the hero walked past it; a fire indoors threw a hard wedge of light out
+  of the door across the yard. **So, as it stands:**
+  **`glow`** is the light's own colour now: **bright and warm at the fire, amber, ember-red, then the night** (`FIRE_T`,
+  `TORCH_T`: the colours the ground should end at, by how far out; `warmGrad` takes the night's colour off them, since lights
+  are added to it), so the ground by a fire shows its daylight colours; a gentle flicker (`flick`); a hot glow on the flame
+  and a little warm haze, never for a fire under a roof you are not under (it hung on the roof).
+  **`shadows`**: `nightFires()` lists the lights in view, `fireFor(x, y)` the one that falls hardest on a place, **`figLit(x, y,
+  fig, hU)`** what it does to a thing standing there (`fig`: a figure; `hU`: its height, so **a shadow ends where the light
+  does**); `drawFireShadows` in `scene.begin` lays every prop's and built thing's shape on the ground away from the fire
+  (`shadowOf`, `silCol`), the hero and the beasts through `Sprites.cast(..., to)`. **A torch is carried**: it throws only
+  faint, short shadows, and none from what stands within about 22 units (the nearest things are the ones whose shadows swing).
+  **`sides`** is for **figures at a fire that stands** (the hero and the beasts: dark with a warm rim when between you and the
+  fire, warmed beyond it; `opts.lit` in `Sprites.draw` and `Sprites.beast`); a prop only goes a little dark on the near side of
+  a fire, with no rim and no warm film; a torch gives nothing of this.
+  **`walls`** (`lightInto`): a fire **indoors** lights its own room when you stand in it, and otherwise **a soft pool of light
+  on the ground just outside each door and window** (`roomOpenings`); a fire **outdoors** is a disc with a quad cut out behind
+  every wall that `blocksLight`, the wall faces that look at it lit again; a lantern on a wall is left out of all that and
+  lights what is round it; `drawWindowGlow`: windows of a room with a fire glow, a door shows light under it. **`moths`**.
   **The other four are off until Robin has looked** (they change the mood or the daylight, and each adds full-screen passes):
-  **`moon`** (in `drawNight`: the night's blue lighter and bluer, colour drained from what no fire lights with the canvas's
-  'saturation' blend through `satCv`, the lights cut out of it; `drawMoonSea`: glints on the water, too faint yet), **`mist`**
-  (`mistK`: thick for the first four minutes of the day, thinner at dusk, a little all night; `drawMist` once under what stands
-  and once as a veil; banks from `softTile`, a tile of soft blobs that repeats with no seam, laid by `tileFill`), **`shafts`**
-  (`drawShafts`: by day where three trees stand close, light slanting down from the upper left with motes; placed by a hash of
-  the ground, not by the real gaps in the crowns), **`clouds`** (`drawClouds`: soft shadows drifting with the game's wind).
-  **Not done:** the villagers and Brokk (the ink figures) get a soft long shadow but no dark side or rim (they are drawn afresh
-  every frame, with no shape kept); normal maps, a colour table by the hour and anything that reads pixels back are out on a 2D
-  canvas (a readback once dropped the canvas to software). **Cost:** in the pane (software drawing) the five were within the
-  noise of a village at night, 16 to 18 ms either way; what they cost Robin's graphics card is not known: the frame readout
-  and the Admin board's layer test say. Debug: `Combat.api.debug().lab()`, `.nightFires()`, `.figLit(x, y)`.
+  **`moon`** (the night's blue lighter and bluer, colour drained from what no fire lights with the 'saturation' blend, `satCv`;
+  `drawMoonSea`), **`mist`** (`mistK`, `drawMist`, `softTile`, `tileFill`), **`shafts`** (`drawShafts`), **`clouds`**
+  (`drawClouds`). **Not done:** the villagers and Brokk (the ink figures) get a soft long shadow but no dark side or rim;
+  normal maps, a colour table by the hour and anything that reads pixels back are out on a 2D canvas. **Cost:** within the
+  noise in the pane (software drawing); not measured on Robin's graphics card. Debug: `Combat.api.debug().lab()`,
+  `.nightFires()`, `.figLit(x, y, fig, hU)`.
 - **Admin (2026-10-06):** an Admin row in the Escape menu opens a cheat board for testing (`ADMIN`, kept in `game.admin`):
   toggles Immortal, One-shot hits (`mods().dmg` and `powerMul` 1000), Free building and crafting (`canAfford`/`pay`), Fly
   (`walk` true everywhere, `mods().speed` 2.6); and one-offs: plenty of everything, reveal the chart, skip to dusk or dawn,
@@ -1885,14 +1900,14 @@ all land as before).
   level of every pixel, then **four sweeps down columns** (`sweepM`): `FN/FD` the edge whose south face covers a pixel and how far
   below it, `EN/ED` and `WN/WD` the same down columns that lean (the side walls), `HN/HD` along the sun's way (**the shadow a cliff
   throws east**, 42 pixels a level); and `BD/BO` (`edgeDist`, a chamfer) how far the nearest change of level is and what lies across
-  it. From those: **a south face** is split by fissures into **panels of uneven width**, each one of three kinds of rock (beds of
-  blocks, great blocks with slanted joints and a facet, thin strata that dip), lit where the edge turns west and dark where it turns
-  east (from how `FD` changes sideways), with **an overhang** here and there (a jutting bed and the dark under it), **water running
-  down** in dark streaks that glint, **moss in big patches**, the **grassy ledges**, a lit lip under an ink line, a dark foot, and
-  where it stands in the sea a wet band with weed and **foam at the foot**; **a side wall** is the same beds seen along the wall, 0.62
-  of the tone on the east and 1.24 on the west; **the crest of every edge** is a rim of rock with a ragged inner edge, an ink line at
-  the drop and the turf paler toward it; **the low ground under an edge that faces away** takes an ink line and a dark that is
-  deepest at the wall and fades over 52 pixels (this, the rim and what overlaps it are how a north edge reads as a drop: it cannot
+  it. From those: **a south face** is rock as one smooth thing (see "The rock and the peaks repainted" below: it was panels of
+  blocks and strata), lit where the edge turns west and dark where it turns east (from how `FD` changes sideways), with **an
+  overhang** here and there (a jutting bed and the dark under it), **water running down** in dark streaks that glint, **moss in
+  big patches**, the **grassy ledges**, a lit lip under an ink line, darker toward its foot, and where it stands in the sea a
+  wet band with weed and **foam at the foot**; **a side wall** is the same rock seen along the wall, 0.64 of the tone on the
+  east and 1.2 on the west; **the crest of every edge** is a rim of rock with an uneven inner edge, an ink line at the drop and
+  the turf paler toward it; **the low ground under an edge that faces away** takes an ink line and a dark that is deepest at the
+  wall and fades over 52 pixels (this, the rim and what overlaps it are how a north edge reads as a drop: it cannot
   show a wall). **The fells:** the foothills are cropped, drier turf, ochre where thinnest; the plateau grey-green heath with
   **heather in drifts**, gravel in specks toward the peaks; the peaks' ground scree and snow fields. The fells' soft patches, the
   heather and the snow are **values a tile wide read with the weights the pixel loop already has** (`SFt`, `HTt`, `SNt`). With a pen
@@ -1910,18 +1925,44 @@ all land as before).
   **boulders**; the plateau all but bare of trees; boulders by the pool, reeds in the bog, the ledges' trees, and the **varde** on
   the lookout. Props in the kit: `dwarfBirch` (tree, 4 wood), `juniper` and `heather` (bushes), `boulder` (stone, 5), `varde` (the
   beacon cairn: a man and a half tall, three weathered poles leaned together over it; "Left by people" in the Art Editor).
-- **Set pieces from Blender** (`art/build/rocks_build.py`, `tools/props.js`, `npm run art:rocks`): `peak_a` to `peak_d` and
-  `cave_mouth`. **The peaks were rebuilt** (the first read as crystals beside the drawn world): ribs of rock run down from the top
-  with gullies between, the outline rough in soft waves, the surface smooth with the ribs' own edges sharp so the cel light falls
-  in big shapes and the ink runs down the ribs (Freestyle's crease angle 136 for them), **snow low in the gullies and the ribs bare
-  above it**, bands of darker rock; `peak_d` is a long ridge of four tops. **The packer gives a piece the drawn world's finish**:
-  the kit's grain, a cool shade toward the lower right, the silhouette in ink laid under it (thin all round, heavy on the shadow
-  side) and, for a peak, the shadow it throws east at its foot. One render each from the game's camera at 2 pixels a unit, packed
-  into `assets/props/<name>.png` with `props.json`; `node tools/blender.js art/build/rocks_build.py -- peak_a` renders only the
-  pieces named. **The peaks are painted into the ground** (`w.peaks()` fills the list `w.mt.peaks`; `bakeChunk` draws them far to
-  near): a peak goes only where everything under it is peak ground or cliff, so nothing can ever stand behind one, and close enough
-  to overlap (a range, 56 to 200 of them on an island) they would have been heavy to draw every frame. A piece baked before the
-  pictures have loaded is baked again when they have (`imgWait`). The cave mouth is still a prop (`World.setImages`, `w.sprite`).
+- **The rock and the peaks repainted (2026-10-12, Robin, after walking the mountains: "overall look pretty good. I'm not sure
+  about the wall texture and the rocky tops. It doesn't look very smooth and natural. It looks very just pasted on").** Two
+  causes. **The walls** were beds of blocks, strata and joints, every one a hard step of tone, painted a pixel a unit and shown
+  three times that size: masonry, in stairs. **The peaks** were pictures from Blender, fifty to two hundred faceted cones each
+  in its own heavy outline with boulders at its foot, stamped on the ground. Both are now painted here, in one hand:
+  **`rockTone(u, v, sd)`** (in `bakeChunk`) is rock as light on a surface: buttresses that run down the wall and lean a
+  little, smaller ribs on them, a few broken ledges, each lit from the upper left and turning into its own shade by soft
+  steps, a crack where a gully runs; nothing in it is a pixel wide. (The noise sheet's own shapes are 16 to 32 of its pixels
+  across: `nsm(x, y, 2.2)` gives buttresses, `0.8` ribs, `0.2` flecks.) A south face, a side wall and the peaks' faces all use
+  it. **Edges true to a part of a pixel:** the field is kept as it is (`mff`, a float a pixel, beside the byte `mfr`), a face's
+  lip and foot lie where the field really crosses the level between two rows (`fr`; the south sweep reaches a row further,
+  `ext`), and near any edge the distance to it is the field's own (`|m - level| / |grad m|`), so the lip, the foot, the rim and
+  the ink at a north edge are lines and not stairs; the grain that roughened the edges is gone. **No specks:** the plateau's
+  gravel, the heather's flowers, the scree, the snow's edge, the foam and the moss are soft shapes, not a pixel of white noise
+  each. **Side walls are still whole pixels** (their slanted outline steps; tried by coverage, it came out dotted).
+  **The peaks: `paintPeaks`** (after the pixel loop, into the same rock layer). A peak is a summit with six or seven flat faces
+  falling away from it (`peakAt(i, j)`: one to a cell of 126 by 94, from the seed; its height by how deep in the peaks' ground
+  it stands and never more than that ground runs on north of it: nothing walks behind a mountain); the height anywhere is the
+  highest of the peaks that reach there, measured on ground that is bent a little so no ridge is ruled, and sinks to nothing at
+  the ground's edges (`dN`, `dS`, the field). The picture: down every column of the piece, from the nearest ground to the
+  farthest, a point h high is drawn h up the screen, and only what rises above everything nearer is seen (the old terrain
+  renderers' way). A face is one plane, so it takes one tone from where it faces (west lit, east in cool shade) with
+  `rockTone` over it, **snow above a line that wanders**, **ink along a skyline** (where a mountain stands before what is
+  behind it), a thinner line down every ridge and valley. Seamless: everything comes from the world's own position, and a
+  piece asks every peak whose foot could reach its ground or reach up into it from the south (a peak's true reach, `R`: the
+  corners where two faces meet the ground; too small a reach was the one seam found). `PKM` keeps the pen's stones off the
+  mountains. **`w.peaks()` now only lists places on the peaks' ground** (`w.mt.peaks`: for the test board and the look
+  scripts). **Cost** (Node, a piece is 512 by 384): the thirty-odd pieces with peaks in them take about 77 ms the first time
+  they are seen, against about 55 before (the peak painter is 20 of it); the walls cost what they did. Baking a piece over
+  several frames would end those hitches and is not done. `docs/mountain-rock.jpg` is before and after.
+- **Set pieces from Blender** (`art/build/rocks_build.py`, `tools/props.js`, `npm run art:rocks`): `cave_mouth`, `mine_mouth`,
+  `sea_mouth`, `shelter` and `shelter_in` (the peaks were set pieces too until 2026-10-12; their builder is kept and runs only
+  when a peak is asked for by name). **The packer gives a piece the drawn world's finish**: the kit's grain, a cool shade
+  toward the lower right, the silhouette in ink laid under it (thin all round, heavy on the shadow side). One render each from
+  the game's camera at 2 pixels a unit, packed into `assets/props/<name>.png` with `props.json`; `node tools/blender.js
+  art/build/rocks_build.py -- cave_mouth` renders only the pieces named. A piece of ground baked before a picture set into
+  it has loaded (the shelter's inside) is baked again when it has (`imgWait`). The mouths are props (`World.setImages`,
+  `w.sprite`).
   **The cave mouth has an inside (2026-10-12, Robin: more look of depth, with colour; the opening was one flat black shape):**
   from the game's camera what shows through a mouth is mostly the **floor running back** (a point further in lies higher on the
   screen) and the walls where the passage narrows, so `cave_inside` builds a real passage behind the mouth: a floor, a left wall
@@ -2001,8 +2042,9 @@ all land as before).
   up through the grass** (the pen), **the trees thin and turn to pine, birch and mountain birch**, **juniper and heather
   appear**, and **boulders and rock lie about** (`w.plant`). The cliffs themselves stay hard edges: that is the terraces'
   nature. `docs/mountain-approach.jpg`.
-- **Checking it:** `node tools/visual/mountainlook.js` has shots `mine`, `shelter`, `seacave`, `vein`, `approach` and `over`,
-  `MSPEC=big` paints the game's own two islands (the big one with its small mountain) and `MAT=tx,ty,zoom` any place;
+- **Checking it:** `node tools/visual/mountainlook.js` has shots `mine`, `shelter`, `seacave`, `vein`, `approach`, `over`, and
+  `peaks`, `peaks2`, `peaks3` (the painted range; `SEAMS=1` marks the pieces' borders in red, `PROF=1` prints what a bake cost),
+  and `MSPEC=big` paints the game's own two islands (the big one with its small mountain) and `MAT=tx,ty,zoom` any place;
   `node tools/visual/worlds.js` prints the big island's mountain (the share of each level, the ways up, the cave, the shelter,
   the veins). `node tools/visual/mountain.js [seed]` (`npm run mountain`) prints the share of the land each level takes, the
   slopes, the waterfall, the lookout, the bay and the cave, and whether every level is reached on foot, and writes mountain.png

@@ -31,6 +31,18 @@
   function now() { return (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000; }
   function frameAt(A, k) { return Math.max(0, Math.min(A.frames - 1, Math.floor(k * A.frames))); }
   function loopFrame(A, t) { return Math.floor(t * A.fps) % A.frames; }
+  /* Slow clips are melted from one frame into the next (2026-10-12, Robin: the new creatures' idles looked laggy; they are
+     rendered at five to eight frames a second, and more frames would be sheets of many megabytes). loopAt says which two
+     frames the clock lies between and how far; mixTo draws the two into a small canvas, each at its share and added, which
+     is the true in-between of the two pictures, edges and all. Only clips that move little: a walk would show two sets of legs. */
+  var BLEND = { idle: 1, idle_look: 1, sit: 1, play: 1 };
+  function blends(nm, A) { return !!A && A.frames > 1 && (BLEND[nm] || A.blend) && typeof document !== 'undefined'; }
+  function loopAt(A, t) { var p = (t * A.fps) % A.frames; if (p < 0) p += A.frames; var f = Math.floor(p) % A.frames; return { f: f, f2: (f + 1) % A.frames, w: p - Math.floor(p) }; }
+  function mixTo(H, im, fw, fh, d, f, f2, w) {
+    var cv2 = H.mix; if (!cv2 || cv2.width !== fw || cv2.height !== fh) { cv2 = H.mix = document.createElement('canvas'); cv2.width = fw; cv2.height = fh; }
+    var g = cv2.getContext('2d'); g.globalCompositeOperation = 'copy'; g.globalAlpha = 1 - w; g.drawImage(im, f * fw, d * fh, fw, fh, 0, 0, fw, fh);
+    g.globalCompositeOperation = 'lighter'; g.globalAlpha = w; g.drawImage(im, f2 * fw, d * fh, fw, fh, 0, 0, fw, fh); return cv2;
+  }
   // which clip and frame the hero's state asks for. opts: stepData() (the engine's attack step), tool() ('pick', 'axe', ... or null)
   function pick(H, P, an, opts) {
     var A = H.meta.anims, t = now(), a = P.atk;
@@ -44,9 +56,10 @@
     if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip) { var C = A[H.clip.name], cf = Math.floor((t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
-    if (an && an.sit && A.sit) return { a: 'sit', f: loopFrame(A.sit, t) };
+    if (an && an.sit && A.sit) { var ls = loopAt(A.sit, t); return { a: 'sit', f: ls.f, f2: ls.f2, w: ls.w }; }
     var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (A.walk ? 'walk' : 'idle')) : 'idle';
     if (!A[nm2]) return null;                                          // a sheet set with no such clip draws nothing (it threw)
+    if (nm2 === 'idle') { var li = loopAt(A.idle, t); return { a: 'idle', f: li.f, f2: li.f2, w: li.w }; }
     return { a: nm2, f: loopFrame(A[nm2], t) };
   }
   // a sheet recoloured once per tint (the metal of a thing in the hand, by its material): the colour laid over the pixels at 0.6
@@ -94,14 +107,16 @@
     var im = H.img[A.sheets.body]; if (!im || !im.complete || !im.naturalWidth) return;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
-    var lit = opts.lit || null;
+    var lit = opts.lit || null, mixW = pk.w > 0.03 && pk.w < 0.97 && opts.blend !== false && blends(pk.a, A);
+    if (pk.w >= 0.97) pk = { a: pk.a, f: pk.f2 };                                                   // all but the next frame already
     if (opts.shadow !== false && !P.dead) cast(c, H, im, A.sheets.body, opts.shadowHue, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s, lit && lit.cast);
     litUnder(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     for (var i = 0; i < layers.length; i++) {                     // a layer is a name, or { layer, tint } for a recoloured one
       var L = layers[i], ln = typeof L === 'string' ? L : L.layer, file = A.sheets[ln]; if (!file) continue;
       var li = H.img[file]; if (!li || !li.complete || !li.naturalWidth) continue;
       var src = typeof L === 'string' || !L.tint ? li : tinted(H, li, file, L.tint);
-      c.drawImage(src, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+      if (mixW) c.drawImage(mixTo(H, src, fw, fh, d, pk.f, pk.f2, pk.w), 0, 0, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+      else c.drawImage(src, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     }
     litOver(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     c.restore();
@@ -135,7 +150,7 @@
     var M = H.meta, A = M.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null }), dt = t - st.t;
     if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; }
     var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.22, Math.min(0.22, dA));
-    var nm, f, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, ph = t + (e.seed || 0);
+    var nm, f, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, ph = t + (e.seed || 0), loopN = null, mixB = null;
     var lie = opts.deadFor || 1.5;
     if (e.dead && !A.death && opts.deathClip && A[opts.deathClip]) { e.deadFor = lie; nm = opts.deathClip; f = Math.min(A[nm].frames - 1, Math.floor(e.deadT / (lie * 0.6) * A[nm].frames)); }   // a creature with no death of its own (the bysen folds into his stump)
     else if (e.dead && A.death) { e.deadFor = lie; nm = 'death'; f = opts.deadFor ? Math.min(A.death.frames - 1, Math.floor(e.deadT / (lie * 0.6) * A.death.frames)) : Math.min(A.death.frames - 1, Math.floor(e.deadT * A.death.fps)); }
@@ -145,15 +160,18 @@
     else if ((e.state === 'stunned' || e.flash > 0.3) && A.hit) { nm = 'hit'; f = e.state === 'stunned' ? loopFrame(A.hit, ph * 0.5) : frameAt(A.hit, 1 - e.flash); }
     else {                                                           // the gait by the real speed, with a little hold so it does not flicker at the edge
       st.run = st.run ? st.spd > 28 : st.spd > 40; st.walk = st.walk ? st.spd > 3 : st.spd > 7;
-      nm = st.run && A.run ? 'run' : st.walk && A.walk ? 'walk' : 'idle'; f = loopFrame(A[nm], ph);
+      nm = st.run && A.run ? 'run' : st.walk && A.walk ? 'walk' : 'idle'; f = loopFrame(A[nm], ph); loopN = nm;
     }
+    if (opts.clip && A[opts.clip] && opts.clipK == null) loopN = nm;
+    if (loopN && opts.blend !== false && blends(nm, A[nm])) { var lp = loopAt(A[nm], ph); f = lp.f; if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) mixB = lp; }   // a slow loop: between two frames
     var An = A[nm], d = dirOf(M, st.face), fw = M.frame.w, fh = M.frame.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.img[file];
     if (!im || !im.complete || !im.naturalWidth) return false;
     c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (lie - e.deadT) / 0.4));
     if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s, opts.lit && opts.lit.cast);
     litUnder(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
-    c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    if (mixB) c.drawImage(mixTo(H, im, fw, fh, d, mixB.f, mixB.f2, mixB.w), 0, 0, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    else c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     litOver(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
     if (opts.tint) { var ga = c.globalAlpha; c.globalAlpha = ga * opts.tint.a; c.drawImage(tinted(H, im, file, opts.tint.color), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); c.globalAlpha = ga; }
     if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); }
@@ -162,5 +180,5 @@
     return true;
   }
   function drawDead(c, H, x, y, face, an, P, opts) { if (H) { tick(H, P); draw(c, H, x, y, face, an, false, P, opts || {}); } }
-  return { PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, beast: beast, ready: ready };
+  return { loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, beast: beast, ready: ready };
 });
