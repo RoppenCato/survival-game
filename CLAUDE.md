@@ -1968,10 +1968,15 @@ all land as before).
   in under the wall, things grow there), and in `mountainPixel` a pixel below the foot that shows is not wall (it takes the
   wall's shade for ten pixels). The foot of a south wall that turns (a side-wall pixel that is not `proper`) follows the same
   height. **Where a wall keeps its full height:** by anything set against it by that height (`WKEEP`, and `KEEP` the ones near
-  a piece: the waterfall, a vein, a cave's mouth, the shelter, a ledge, a slope), where it stands in the sea, and where its
-  foot is not open ground of its own level (another wall's lip under it, or hidden under one: a two-step sea cliff grew
-  green shelves in mid-wall before this was asked). `PADB` is 100 for it. `w.footRise` is exposed for checks. **The trap
-  met on the way:** the painter had its own reason not to lower a wall (`cont`, a wall that turns below) that the cells did
+  a piece: the waterfall, a vein, a cave's mouth, the shelter, a ledge, a slope) and where it stands in the sea. `PADB` is 100
+  for it. `w.footRise` is exposed for checks.
+  **Shelves in tall cliffs come of it, and are wanted (Robin, 2026-10-12: "These types of edges look nice tho. Hope you didnt
+  remove that").** A tall cliff is two walls, one above the other, with a strip of the middle level between them that the
+  upper wall covers. Where the upper wall's foot is not there, the strip shows: **a grassy shelf part-way down the cliff**,
+  scree and grass along its back. I had taken the first ones for a fault and stopped them (a wall was to lose its foot only
+  where it stood on open ground of its own level); that rule is gone again. The shelves are ground to the walk cells too,
+  though most are cut off from everything. **A side effect that looks good is to be shown to Robin, not tidied away.**
+  **The trap met on the way:** the painter had its own reason not to lower a wall (`cont`, a wall that turns below) that the cells did
   not share, and the hero stood in mid-wall on ground the cells had cleared: whatever decides the height must be asked by both.
   **The peaks: `paintPeaks`** (after the pixel loop, into the same rock layer). A peak is a summit with six or seven flat faces
   falling away from it (`peakAt(i, j)`: one to a cell of 126 by 94, from the seed; its height by how deep in the peaks' ground
