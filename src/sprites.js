@@ -283,7 +283,9 @@
     var d = dirOf(M, st.face || 0), f, f2 = -1, w = 0;
     if (st.k != null) f = frameAt(A, Math.max(0, Math.min(0.999, st.k)));
     else { var lp = loopAt(A, st.t || 0); f = lp.f; if (opts.blend !== false && blends(clip, A)) { if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) { f2 = lp.f2; w = lp.w; } } }
-    var e = personFrame(H, look, clip, d, f); if (!e) return false;
+    var e = personFrame(H, look, clip, d, f);
+    if (!e && clip !== 'idle' && M.anims.idle) { clip = 'idle'; A = M.anims.idle; f = loopAt(A, st.t || 0).f; f2 = -1; e = personFrame(H, look, clip, d, f); }   // the sheets of this clip are still on their way: he stands as he stood
+    if (!e) return false;
     var s = (opts.scale || 1) * (look.s || 1) / PX, dx = (e.x - M.anchor.x) * s, dy = (e.y - M.anchor.y) * s, dw = e.w * s, dh = e.h * s, lit = opts.lit || null, src = e.cv, hw, hh;
     if (f2 >= 0) { var e2 = personFrame(H, look, clip, d, f2); if (e2) { var mx = scratch('mix', e.w, e.h), mg = mx.getContext('2d'); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; mg.clearRect(0, 0, mx.width, mx.height); mg.globalAlpha = 1 - w; mg.drawImage(e.cv, 0, 0); mg.globalCompositeOperation = 'lighter'; mg.globalAlpha = w; mg.drawImage(e2.cv, 0, 0); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; src = mx; } }
     c.save(); c.translate(x, y); c.scale((look.sx || 1) * (opts.sx || 1), (look.sy || 1) * (opts.sy || 1)); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
@@ -310,20 +312,24 @@
      and recovery (e.sw = { wu, ac, rec, clip }, set by the engine when a soldier begins a blow; a plain guard's lunge
      without it), the shield up (e.guard), a flinch, and otherwise idle, walk or run by how fast he is really moving.
      The thing in his hand is e.wpn = { kind, tint }. */
+  var BEATS = { attack1: [0.39, 0.6], attack2: [0.3, 0.55], chop: [0.3, 0.62], mine: [0.39, 0.55] };   // where in each clip the weapon is drawn back, and where the blow is over (tools/visual/people.js blows)
+  var FIGHT = ['idle', 'walk', 'run', 'attack1', 'attack2', 'chop', 'mine', 'hit', 'block'];
   function fighter(c, H, e, K, look, opts) {
     if (!peopleReady(H)) return false; opts = opts || {};
     var A = H.meta.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null, ph: Math.random() * 10, wp: 0 }), dt = t - st.t;
     if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; } else dt = 0;
     var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.3, Math.min(0.3, dA));
+    if (!st.warm) { st.warm = 1; peopleWarm(H, withHand(look, e.wpn || opts.hand || null), FIGHT); peopleWarm(H, withHand(look, null), ['death', 'pickup']); }   // everything a fight will ask of him, asked for now
     var s = { face: st.face, clip: 'idle', t: t + st.ph }, hand = e.wpn || opts.hand || null, sw = e.sw, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, alpha = 1, flash = e.flash || 0;
     if (e.dead || e.down) { var lie = e.deadFor || 1.5; s.clip = 'death'; s.k = Math.min(0.999, (e.deadT || 0) / 0.9); hand = null; if (e.dead) alpha = Math.max(0, Math.min(1, (lie - e.deadT) / 1.2)); flash = 0; }
     else if (e.riseT > 0) { s.clip = 'death'; s.k = Math.max(0, Math.min(0.999, e.riseT / 0.8)); hand = null; }
     else if (e.state === 'yield') { s.clip = 'pickup'; s.k = Math.min(0.42, e.t / 0.6 * 0.42); hand = null; }
     else if (sw && (e.state === 'windup' || e.state === 'lunge' || (e.state === 'recover' && e.swung))) {      // the clip's own beats: the blow lands a little before its middle
-      s.clip = sw.clip; s.k = e.state === 'windup' ? 0.3 * Math.min(1, e.t / sw.wu) : e.state === 'lunge' ? 0.3 + 0.25 * Math.min(1, e.t / sw.ac) : 0.55 + 0.44 * Math.min(1, e.t / sw.rec);
+      var B = BEATS[sw.clip] || BEATS.attack1, u = Math.min(1, e.t / (e.state === 'windup' ? sw.wu : e.state === 'lunge' ? sw.ac : sw.rec));
+      s.clip = sw.clip; s.k = e.state === 'windup' ? B[0] * (1 - (1 - u) * (1 - u)) : e.state === 'lunge' ? B[0] + (B[1] - B[0]) * u : B[1] + (0.995 - B[1]) * u;   // the windup goes quickly to the drawn-back pose and holds it: that is what is read
     }
-    else if (!sw && e.state === 'windup') { s.clip = 'attack1'; s.k = 0.3 * k; }
-    else if (!sw && e.state === 'lunge') { s.clip = 'attack1'; s.k = 0.3 + 0.35 * k; }
+    else if (!sw && e.state === 'windup') { s.clip = 'attack1'; s.k = 0.39 * (1 - (1 - k) * (1 - k)); }
+    else if (!sw && e.state === 'lunge') { s.clip = 'attack1'; s.k = 0.39 + 0.3 * k; }
     else if (e.guard > 0) { s.clip = 'block'; s.k = Math.min(0.999, (e.guardAge || 0) / 0.16); }
     else if (e.state === 'stagger' || e.state === 'stunned' || flash > 0.35) { s.clip = 'hit'; s.k = e.state === 'stagger' ? 0.15 + 0.6 * k : Math.min(0.999, (1 - flash) * 0.8); }
     else {

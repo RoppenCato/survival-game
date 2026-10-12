@@ -111,7 +111,7 @@ gone from the code, and no new work may bring any of it back. This file is the s
 npm start         # rebuild, then open dist/index.html (the start page)
 npm run build     # python3 tools/build.py: stitches templates/ + src/ into dist/*.html
 npm install       # once; only dependency is @napi-rs/canvas (fake canvas for headless tests)
-npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the caves, the ambient sound)
+npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the caves, the ambient sound, the battles)
 ```
 
 There is no bundler, linter or type checker. `.claude/launch.json` has a `workbench` entry that serves the **repo root** on
@@ -130,6 +130,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, **to the old mine, into it, to its fall of rock, to the rock shelter, to a copper vein, a boat at the sea cave, into it, to its beach**, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
+| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five**; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan` |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the mountain's foot, onto the plateau, to the lookout, the rock shelter and a copper vein (the big island has a small mountain since 2026-10-12)**, **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
@@ -713,7 +714,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
 - The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,
-  with a stagger bar; the bear in the Combat Arena) and **`shooter`** (stands and shoots); `beastAI`, `bruteAI`, `shooterAI`
+  with a stagger bar; the bear in the Combat Arena), **`shooter`** (stands and shoots) and, since 2026-10-13, **`soldier`** (a man
+  with a weapon and perhaps a shield, on one of two sides: see "Fighting men"); `beastAI`, `bruteAI`, `shooterAI`, `soldierAI`
   (renamed 2026-10-09 from the old names). Pages dress them as animals with `api.dress`; undressed (the tests, the Character
   Editor's arena) they draw as a plain ink beast (`drawPlain`). There is no boss type.
 
@@ -791,6 +793,61 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - The first is Brokk, a friendly dwarf smith (dwarfs are from Norse myth). He stands at the home camp in the Sea
   Editor and by the well of the broken village in the game, turns to watch the hero, and E talks to him (a speech
   bubble cycling through a few lines). He does not walk, trade or give tasks yet.
+
+## Fighting men (2026-10-13; `docs/battle-plan.md`, Robin: fight a hirdman, two, two with one beside you, five against five, a town, the raid, fixing the bugs of each before the next)
+
+Everything here is tried in **`game.html?scene=battle`** and by `tests/battle.js`; nothing of it is in the real game's
+world yet (the towns that would hold such men are not spawned). **Robin has not played it: how hard a man should be was
+left as "not sure, try how it feels", so the numbers below are a first setting, not a decision.**
+
+- **Sides** (`src/combat.js`). Every fighter has `e.side`: 0 is against the hero (every beast, a town's men), 1 is with him
+  (his own). The hero's blows, arrows and auto-aim pass over his friends; `eachFoe(e, fn)` gives a man everyone of the other
+  side (the hero counts as side 1). **Beasts are as they were: they know only the hero** (my choice: Robin did not answer
+  whether beasts and men fight). `damageEnemy(e, dmg, ang, kb, stag, kind, src)` takes the man whose blow it is (`src`;
+  none is the hero): a blow between men makes no pause for the hero, no number and a quieter mark, and a kill by a man is
+  not the hero's (`e.killer`). `W.heroHit` is what the hero struck last.
+- **The soldier** (`Combat.soldier(o)`, `armMan(e, o)`: `o` = `{ side, wpn: { kind, mat }, shield, armor, hp, strength,
+  wits, loyal, nerve, x, y, post }`; a page dresses him in `api.dressMan(e, o)`). `MEN` (`api.men`) holds every number. He
+  closes to his weapon's reach and keeps it (`keep`), circles, and **shows his blow coming**: a windup of 0.3 s plus 2.4
+  times his weapon's own (a sword 0.42 s, a Dane axe 0.88), a red line on the ground when it is meant for the hero and a
+  wedge for a wide sweep. The blow is his weapon's `PROFILES` (arc, reach, the one thing each kind has); `strike(e)` lands
+  it on every foe in it (a thrust on the nearest only, a spear on all in its line). Damage: `MEN.dmg` 12 times the kind's
+  (`MEN.wdmg`: seax 0.6 to Dane axe 2), the metal and his strength; a fifth of that when it lands on a man (`MEN.toMen`:
+  men's health is on the beasts' scale, the hero's is 100). Sometimes a second, harder blow follows (`chainLeft`).
+- **His shield** is not a wall and not a meter. `e.guard` is the time it stays up, and it covers 1.7 radians to each side
+  of where he faces. It comes up **against a blow he sees coming** if he is quick enough (`e.react`: 0.36 s for a dull man
+  to 0.07 for a sharp one, counted from the blow's beginning, so a quick weapon beats a slow man), it is **kept up by a wary
+  man while you stand in his reach and he is not striking** (`e.wary`, rolled by his wits each time it comes down), and a
+  man who has been hit **covers up or hops back** instead of standing to be hit again. It is up for 1.7 s at most
+  (`guardMax`), then rests. On the shield a light blow does 0.3 and a heavy one 0.55; **an axe breaks the guard** (the
+  shield drops, he staggers), **a club's heavy blow staggers through it**, a parry by the hero opens him for 1.3 s, and
+  **a blow he has stopped he answers** with a quicker one. His own blow drops his shield: the time to hit him is while he
+  strikes and while he recovers (a blow on a man recovering does half again as much, as on any beast).
+- **What his weapons do to the hero's shield** (`hitFlags` in `hurtPlayer`): an axe gets 0.4 through instead of 0.12 and
+  costs nearly twice the stamina to hold; a club knocks the guard down for a moment; a Dane axe cannot be parried (it is a
+  heavy blow) and is to be stepped out of. So each of his weapons asks something else of you.
+- **No locking a man in place:** a second light blow within 0.9 s of a flinch he takes on his feet (`e.poiseT`); a blow he
+  has begun he finishes unless the one that hit him was heavy.
+- **Heart:** below a quarter of his health a man who is not loyal may yield (state `yield`, `e.out`: on his knees, nobody's
+  target; left alone he gets up and goes) or run (`flee`; gone, `e.fled`, when 620 units from every foe); `e.nerve` is the
+  chance he does neither. A man on his knees can still be struck.
+- **The dead lie** where they fell for 90 s (`MEN.lie`), drawn from the death clip's last frame.
+- **Drawn** by `Sprites.fighter` (the people's sheets): the windup goes quickly to the clip's drawn-back pose and holds it,
+  the blow and the recovery follow the clip's own beats (`BEATS`), the shield is the `block` clip, a flinch the `hit`, a
+  man on his knees a held frame of `pickup`. His fight clips are asked for the moment he is first drawn, and while one is
+  still loading he stands in his idle (never the old drawn figure).
+- **`tests/battle.js`** (in `npm test`: a short run of every rung; `node tests/battle.js one|two|friend|five [n]` for more
+  fights a line). The hero is played by three bots, each with a person's limits (a reaction time, a share of blows not
+  seen, timing that wanders): the **tapper** walks up and taps, the **careful** one raises the shield at what it sees and
+  strikes when the man is open, the **skilled** one parries and steps out of heavy blows. A line marked `!!` is a fault (a
+  fight that never ended, a man stood still, a number that is not one). **Where it stands** (200 fights a line, the hero in
+  leather): against an iron axe in leather the tapper wins 8% with a flint sword, the careful bot 100% with 64 health
+  left, the skilled 100% with 91; against mail, helm and shield 0%, 98% (53 left), 100% (88 left); fights of 18 to 31 s.
+  That is harder on the careless and kinder to the careful than the plan's table; a man's damage, pace and what gets
+  through a shield are three numbers in `MEN`.
+- **`tools/visual/battleplay.js`** plays the scene by script in the page (after `drive.js`): `BP.set('one')`, `BP.run({ bot,
+  secs })` (who fell, how long, a line for every change of a man's state, whether anyone slid), `BP.strip({ bot, n, every,
+  when })` (a film strip at Robin's size, begun when a man winds up, the hero swings or a shield comes up).
 
 ## The game (templates/game.html)
 

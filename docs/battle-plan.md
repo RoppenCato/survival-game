@@ -412,3 +412,36 @@ left behind or the fight is lost). Then: go through the whole plan, and by that,
   and the jobs. Until then: a spear is swung, a Dane axe uses the wood-chopping swing, a club the pick's, a man on his knees
   is a held frame of picking something up.
 
+### Rung 1, one hirdman (2026-10-13): built and tried by script; Robin has not fought him yet
+
+- **Built:** sides in the engine (beasts unchanged, the old tests pass), the soldier with his shield, his heart and his
+  dead, the weapons' own answers to a shield on both sides, `game.html?scene=battle` with its board, `tests/battle.js` in
+  `npm test`, `tools/visual/battleplay.js` for the page.
+- **Bugs of this rung, found and fixed:** the game's own spawning of animals at the end of a start **wiped the men** the
+  scene had just placed; a man **flickered to the old drawn figure** the first time each clip was needed (its sheet was
+  still on its way: he now stands in his idle, and his fight clips are asked for at once); the windup's picture **did not
+  show a blow coming** (the clip's first third is a stance: the windup now goes quickly to the drawn-back pose and holds
+  it); the plan's "he never blocks, a boar again" came true exactly: **every blow of the hero's chain made him flinch
+  again before his shield could come up**, so a tapping hero cut him down in four seconds untouched (now: a wary man keeps
+  his shield up in reach, a man who is hit covers up or hops back, and a second light blow does not make him flinch);
+  the flag for "ran away" clashed with the night wolves' own `gone`, which would have removed a wolf pack the moment it
+  gave up (renamed `fled`).
+- **The table** (200 fights a line, the hero in leather):
+
+  | | tapper | careful | skilled |
+  | --- | --- | --- | --- |
+  | an iron axe in leather, the hero with a flint sword | wins 8% | wins 100%, 64 left | wins 100%, 91 left |
+  | the same man in mail, helm and shield | 0% | 98%, 53 left | 100%, 88 left |
+  | length | | 23 to 31 s | 18 to 24 s |
+
+  Harder on the careless and kinder to the careful than section 4.3 aimed at ("about even" for the careful bot in mail
+  became "wins, half his health gone"). The bots have a person's reaction time but never tire or panic. **Robin's own
+  fight will say more than this table.** The three numbers to turn: `MEN.dmg`, `MEN.cd`, `MEN.blockLight`.
+- **Each weapon's reason, as the bots show it:** with a sword the hero waits for the man's blow and strikes while he
+  recovers; with an axe he breaks the guard and need not wait; a club is slow and wins by staggering through; the seax is
+  quick enough to land before a slow man's shield is up; the spear reaches him first; the Dane axe hits once, hard.
+  **Not yet true to it:** the spear is swung like a sword (no thrust clip), and a man does nothing clever about being
+  outreached.
+- **Still open from section 4.4:** a man who has yielded can be struck and dies like any other (nothing remembers it yet:
+  that is the raid's reputation); beasts and men ignore each other.
+

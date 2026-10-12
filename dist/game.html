@@ -9320,7 +9320,9 @@ if (typeof module !== 'undefined') module.exports = Music;
     var d = dirOf(M, st.face || 0), f, f2 = -1, w = 0;
     if (st.k != null) f = frameAt(A, Math.max(0, Math.min(0.999, st.k)));
     else { var lp = loopAt(A, st.t || 0); f = lp.f; if (opts.blend !== false && blends(clip, A)) { if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) { f2 = lp.f2; w = lp.w; } } }
-    var e = personFrame(H, look, clip, d, f); if (!e) return false;
+    var e = personFrame(H, look, clip, d, f);
+    if (!e && clip !== 'idle' && M.anims.idle) { clip = 'idle'; A = M.anims.idle; f = loopAt(A, st.t || 0).f; f2 = -1; e = personFrame(H, look, clip, d, f); }   // the sheets of this clip are still on their way: he stands as he stood
+    if (!e) return false;
     var s = (opts.scale || 1) * (look.s || 1) / PX, dx = (e.x - M.anchor.x) * s, dy = (e.y - M.anchor.y) * s, dw = e.w * s, dh = e.h * s, lit = opts.lit || null, src = e.cv, hw, hh;
     if (f2 >= 0) { var e2 = personFrame(H, look, clip, d, f2); if (e2) { var mx = scratch('mix', e.w, e.h), mg = mx.getContext('2d'); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; mg.clearRect(0, 0, mx.width, mx.height); mg.globalAlpha = 1 - w; mg.drawImage(e.cv, 0, 0); mg.globalCompositeOperation = 'lighter'; mg.globalAlpha = w; mg.drawImage(e2.cv, 0, 0); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; src = mx; } }
     c.save(); c.translate(x, y); c.scale((look.sx || 1) * (opts.sx || 1), (look.sy || 1) * (opts.sy || 1)); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
@@ -9347,20 +9349,24 @@ if (typeof module !== 'undefined') module.exports = Music;
      and recovery (e.sw = { wu, ac, rec, clip }, set by the engine when a soldier begins a blow; a plain guard's lunge
      without it), the shield up (e.guard), a flinch, and otherwise idle, walk or run by how fast he is really moving.
      The thing in his hand is e.wpn = { kind, tint }. */
+  var BEATS = { attack1: [0.39, 0.6], attack2: [0.3, 0.55], chop: [0.3, 0.62], mine: [0.39, 0.55] };   // where in each clip the weapon is drawn back, and where the blow is over (tools/visual/people.js blows)
+  var FIGHT = ['idle', 'walk', 'run', 'attack1', 'attack2', 'chop', 'mine', 'hit', 'block'];
   function fighter(c, H, e, K, look, opts) {
     if (!peopleReady(H)) return false; opts = opts || {};
     var A = H.meta.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null, ph: Math.random() * 10, wp: 0 }), dt = t - st.t;
     if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; } else dt = 0;
     var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.3, Math.min(0.3, dA));
+    if (!st.warm) { st.warm = 1; peopleWarm(H, withHand(look, e.wpn || opts.hand || null), FIGHT); peopleWarm(H, withHand(look, null), ['death', 'pickup']); }   // everything a fight will ask of him, asked for now
     var s = { face: st.face, clip: 'idle', t: t + st.ph }, hand = e.wpn || opts.hand || null, sw = e.sw, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, alpha = 1, flash = e.flash || 0;
     if (e.dead || e.down) { var lie = e.deadFor || 1.5; s.clip = 'death'; s.k = Math.min(0.999, (e.deadT || 0) / 0.9); hand = null; if (e.dead) alpha = Math.max(0, Math.min(1, (lie - e.deadT) / 1.2)); flash = 0; }
     else if (e.riseT > 0) { s.clip = 'death'; s.k = Math.max(0, Math.min(0.999, e.riseT / 0.8)); hand = null; }
     else if (e.state === 'yield') { s.clip = 'pickup'; s.k = Math.min(0.42, e.t / 0.6 * 0.42); hand = null; }
     else if (sw && (e.state === 'windup' || e.state === 'lunge' || (e.state === 'recover' && e.swung))) {      // the clip's own beats: the blow lands a little before its middle
-      s.clip = sw.clip; s.k = e.state === 'windup' ? 0.3 * Math.min(1, e.t / sw.wu) : e.state === 'lunge' ? 0.3 + 0.25 * Math.min(1, e.t / sw.ac) : 0.55 + 0.44 * Math.min(1, e.t / sw.rec);
+      var B = BEATS[sw.clip] || BEATS.attack1, u = Math.min(1, e.t / (e.state === 'windup' ? sw.wu : e.state === 'lunge' ? sw.ac : sw.rec));
+      s.clip = sw.clip; s.k = e.state === 'windup' ? B[0] * (1 - (1 - u) * (1 - u)) : e.state === 'lunge' ? B[0] + (B[1] - B[0]) * u : B[1] + (0.995 - B[1]) * u;   // the windup goes quickly to the drawn-back pose and holds it: that is what is read
     }
-    else if (!sw && e.state === 'windup') { s.clip = 'attack1'; s.k = 0.3 * k; }
-    else if (!sw && e.state === 'lunge') { s.clip = 'attack1'; s.k = 0.3 + 0.35 * k; }
+    else if (!sw && e.state === 'windup') { s.clip = 'attack1'; s.k = 0.39 * (1 - (1 - k) * (1 - k)); }
+    else if (!sw && e.state === 'lunge') { s.clip = 'attack1'; s.k = 0.39 + 0.3 * k; }
     else if (e.guard > 0) { s.clip = 'block'; s.k = Math.min(0.999, (e.guardAge || 0) / 0.16); }
     else if (e.state === 'stagger' || e.state === 'stunned' || flash > 0.35) { s.clip = 'hit'; s.k = e.state === 'stagger' ? 0.15 + 0.6 * k : Math.min(0.999, (1 - flash) * 0.8); }
     else {
@@ -9500,6 +9506,7 @@ function spawn(type) {
     seed: Math.random() * 10, size: 1, chain: 0, showBar: 0, freezeT: 0, pkx: 0, pky: 0, sq: 0, sqAng: 0, rattle: 0, flashRgb: '255,255,255', dead: false, deadT: 0, dirLock: 0, hitDone: false, stagMeter: 0, sinceHit: 9, attack: '' };
   if (type === 'shooter') { e.hp = e.maxHp = 5; e.r = 8; }
   else if (type === 'brute') { e.hp = e.maxHp = 32; e.r = 13; e.size = 1.8; }
+  else if (type === 'soldier') { e.hp = e.maxHp = 30; e.r = 7; armMan(e, null); }
   else { e.type = 'beast'; e.hp = e.maxHp = 4; e.r = 7; }
   if (api.dress) api.dress(e);   // a page can give each enemy its own look and numbers (see templates/combat.html)
   W.enemies.push(e);
@@ -9540,7 +9547,7 @@ function lockFor(ent, t) { if (S.juice && ent) ent.freezeT = Math.max(ent.freeze
 function nearest(range, face, cone) {
   var best = null, bs = 1e9;
   for (var i = 0; i < W.enemies.length; i++) {
-    var e = W.enemies[i]; if (e.dead) continue;
+    var e = W.enemies[i]; if (e.dead || e.side === 1 || e.down || e.out) continue;
     var d = Math.hypot(e.x - P.x, e.y - P.y);
     if (d > range + e.r) continue;
     var df = Math.abs(wrap(Math.atan2(e.y - P.y, e.x - P.x) - face));
@@ -9568,7 +9575,7 @@ function rangedAngle() {
   return P.face;
 }
 function cycleLock() {         // Ctrl: nearest enemy, then the next nearest, then no target
-  var list = W.enemies.filter(function (e) { return alive(e) && Math.hypot(e.x - P.x, e.y - P.y) < 300; });
+  var list = W.enemies.filter(function (e) { return alive(e) && e.side !== 1 && !e.down && Math.hypot(e.x - P.x, e.y - P.y) < 300; });
   list.sort(function (a, b) { return Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y); });
   var i = list.indexOf(W.lock);
   W.lock = !list.length ? null : (i < 0 ? list[0] : (i + 1 < list.length ? list[i + 1] : null));
@@ -9595,10 +9602,10 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
       num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
       return 'parry';
     }
-    var red = kind === 'heavy' ? (S.shield ? 0.4 : 0.8) : (S.shield ? 0.12 : 0.55);
+    var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (S.shield ? 0.4 : 0.8) : (S.shield ? 0.12 : 0.55);
     var d2 = dmg * red * (api.armor ? 1 - api.armor() : 1);
-    p.hp -= d2; p.st -= (S.shield ? 10 : 18) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
-    var kbs = kind === 'heavy' ? 110 : 55;
+    p.hp -= d2; p.st -= (S.shield ? 10 : 18) * (gbH ? 1.8 : 1) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
+    var kbs = kind === 'heavy' ? 110 : 55; if (hitFlags.stagger) { kbs = 150; p.hurtT = Math.max(p.hurtT, 0.24); p.guard = false; }
     p.kx = -Math.cos(toSrc) * kbs; p.ky = -Math.sin(toSrc) * kbs;
     spark(p.x + Math.cos(p.face) * 9, p.y + Math.sin(p.face) * 9, 6, '#cfd6e6', 90);
     lockFor(p, 0.035); sfx('block');
@@ -9620,19 +9627,44 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 }
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
-function damageEnemy(e, dmg, ang, kb, stag, kind) {
-  if (e.aggro) e.awake = true;   // hitting a calm creature rouses it
+function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose blow this is; none is the hero
+  if (e.aggro || e.awake === false) e.awake = true;   // hitting a calm creature rouses it
   e.struck = true;
-  if (e.dead) return;
-  var mult = 1, weak = false;
+  if (e.dead || e.down) return;
+  var mult = 1, weak = false, man = e.type === 'soldier', blocked = false, broke = false;
   var bigE = e.type === 'brute';
+  if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= MEN.front) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
+    blocked = true; broke = !!hitFlags.guardBreak || stag >= 40;
+    dmg *= kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight;
+    if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.4; } else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
+  }
+  if (man) dmg *= 1 - (e.armor || 0);
   if (e.state === 'recover') mult = bigE ? 1.3 : 1.5;
   if (bigE && e.state === 'stunned') mult = 2;
-  var crit = (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
+  var crit = !src && !blocked && (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
-  var dealt = dmg * mult * mod('dmg');          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
+  var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
+  if (!src) { W.heroHit = e; W.heroHitT = W.t; }
+  if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
+    e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
+  }
   var killing = e.hp <= 0;
+  if (src) {                                               // a blow between men: no pause for the hero, no number, a quieter mark
+    e.flash = blocked ? 0.5 : 1; e.flashRgb = '255,255,255';
+    e.pkx = 0; e.pky = 0; e.kx += Math.cos(ang) * kb * (blocked ? 0.4 : 0.8); e.ky += Math.sin(ang) * kb * (blocked ? 0.4 : 0.8);
+    spark(e.x - Math.cos(ang) * e.r * 0.8, e.y - Math.sin(ang) * e.r * 0.8, blocked ? 3 : 5, blocked ? '#cfd6e6' : '#fff3b0', 90); sfx(blocked ? 'block' : 'hit', 0, e);
+    if (broke) bits(e.x, e.y, 3);
+    if (killing) { killEnemy(e, src); return; }
+    if (blocked && !broke) return;
+    if (man && e.state === 'lunge') return;
+    if (man && e.state === 'windup' && kind !== 'heavy' && !broke) return;
+    if (e.type === 'beast' && (e.state === 'lunge' || e.state === 'windup')) return;
+    if (man && e.poiseT > 0 && kind !== 'heavy' && !broke) { heartOf(e); return; }
+    if (e.state !== 'recover' || man) { e.state = 'stagger'; e.t = 0; e.dur = kind === 'heavy' || broke ? 0.34 : 0.16; e.sw = null; e.swung = false; e.poiseT = 0.9; }
+    if (man) heartOf(e);
+    return;
+  }
   if (S.juice) { e.flash = 1; e.flashRgb = crit ? '255,208,70' : '255,255,255'; }
   var heavy = kind === 'heavy' || weak || stag >= 20, melee = kind === 'melee' || kind === 'heavy';
   var kbm = e.type === 'brute' ? 0.3 : (e.type === 'shooter' ? 0.15 : 1);
@@ -9652,8 +9684,9 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
     if (heavy && !killing) slowmo(WM.hs, WM.hd);
   }
   spark(hx, hy, (heavy && !killing ? 12 : 7) + (crit ? 5 : 0), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
-  num(e.x, e.y - e.r * 2.2 - 10, String(Math.round(dealt * 50) / 10), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), heavy || crit);
-  sfx((heavy && !killing) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0);
+  num(e.x, e.y - e.r * 2.2 - 10, String(Math.round(dealt * 50) / 10), blocked && !broke ? '#cfd6e6' : crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), !blocked && (heavy || crit));
+  sfx(blocked && !broke ? 'block' : (heavy && !killing) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0);
+  if (broke) { bits(e.x, e.y, 4); sfx('slam', 0, e); }
   if (crit) { sfx('crit'); e.rattle = 1.6; }
   if (bigE) {
     if (e.state !== 'stunned') {
@@ -9662,14 +9695,22 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
     }
   } else if (e.type === 'beast' && (e.state === 'lunge' || (e.state === 'windup' && !heavy))) {
     // an animal that has begun its attack finishes it: a light hit does not stop it (only a heavy hit or a parry does)
+  } else if (man) {                                        // a man: a blow he has begun he finishes unless it was a heavy one; a blow on his shield he holds; on his knees he stays there
+    if (e.state === 'yield' || e.state === 'flee') { /* stays as he is */ }
+    else if (blocked && !broke) { /* holds */ }
+    else if (e.state === 'lunge' || (e.state === 'windup' && !heavy && !broke)) { /* finishes it */ }
+    else if (e.poiseT > 0 && !heavy && !broke) { /* he has just flinched: this one he takes on his feet */ }
+    else { e.state = 'stagger'; e.t = 0; e.dur = heavy || broke ? 0.36 : 0.16; e.sw = null; e.swung = false; e.poiseT = 0.9; }
+    if (!killing) heartOf(e);
   } else if (e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = heavy ? 0.34 : 0.14; }   // a light hit is only a flinch: sword-tapping cannot lock an animal in place
   if (killing) killEnemy(e);
 }
-function killEnemy(e) {
+function killEnemy(e, src) {
   var bigK = e.type === 'brute';
-  e.dead = true; e.deadT = 0; W.kills++;
-  bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
-  slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die');
+  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null;
+  if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
+  else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
+    slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
   if (W.lock === e) W.lock = null;
   if (api.onDeath) api.onDeath(e);
   if (e.type === 'brute') num(e.x, e.y - 50, (e.name || 'Brute') + ' DOWN', '#ffe27a');
@@ -9714,7 +9755,7 @@ function stepData0(a) {
 function gapAhead(dir) {
   var g = 999;
   for (var i = 0; i < W.enemies.length; i++) {
-    var e = W.enemies[i]; if (e.dead) continue;
+    var e = W.enemies[i]; if (e.dead || e.side === 1 || e.down) continue;
     var dx = e.x - P.x, dy = e.y - P.y;
     if (Math.abs(wrap(Math.atan2(dy, dx) - dir)) < 1.0) g = Math.min(g, Math.hypot(dx, dy) - e.r - P.r);
   }
@@ -9723,10 +9764,10 @@ function gapAhead(dir) {
 function collideBodies() {
   var p = P; if (p.dead || p.roll.t > 0) return;
   for (var i = 0; i < W.enemies.length; i++) {
-    var e = W.enemies[i]; if (e.dead) continue;
+    var e = W.enemies[i]; if (e.dead || e.down) continue;
     var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), mn = p.r + e.r;
     if (d < mn && d > 0.01) {
-      var ov = mn - d, share = e.type === 'shooter' ? 1 : (e.type === 'brute' ? 0.7 : 0.45), nx = dx / d, ny = dy / d;
+      var ov = mn - d, share = e.side === 1 ? 0.08 : e.type === 'shooter' ? 1 : (e.type === 'brute' ? 0.7 : 0.45), nx = dx / d, ny = dy / d;
       moveCircle(p, nx * ov * share, ny * ov * share);
       if (e.type !== 'shooter') moveCircle(e, -nx * ov * (1 - share), -ny * ov * (1 - share));
     }
@@ -9870,13 +9911,13 @@ function updatePlayer(dt) {
         }
       } else for (i = 0; i < W.enemies.length; i++) {
         var e = W.enemies[i];
-        if (e.dead || a.hit.indexOf(e) >= 0) continue;
+        if (e.dead || e.side === 1 || e.down || a.hit.indexOf(e) >= 0) continue;
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
         if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12)) {
           a.hit.push(e);
           critBonus = ((!bareHanded() && meleeProfile().crit) || 0) + modZ('crit');   // the keen edge adds to the chance
-          damageEnemy(e, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0;
-          if (sd.guardBreak && e.guard) e.guard = 0;
+          hitFlags.guardBreak = !!sd.guardBreak;
+          damageEnemy(e, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0; hitFlags.guardBreak = false;
           if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
         }
       }
@@ -9915,7 +9956,7 @@ function updatePlayer(dt) {
   var spd = 84 * mod('speed');           // a walk, not a jog (118 was too fast for the world's scale); mods().speed for a page's cheats
   if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt * mod('sprintCost')); p.stDelay = Math.max(p.stDelay, 0.55); }
   if (sprint && il > 0 && modZ('charge') > 0 && p.mode === 'fight') for (i = 0; i < W.enemies.length; i++) {   // the boar's charge: your run is a blow
-    var ce = W.enemies[i]; if (ce.dead || (ce.chargeT || 0) > 0) continue;
+    var ce = W.enemies[i]; if (ce.dead || ce.side === 1 || ce.down || (ce.chargeT || 0) > 0) continue;
     if (Math.hypot(ce.x - p.x, ce.y - p.y) < ce.r + p.r + 6) { ce.chargeT = 1.2; var cang = Math.atan2(ce.y - p.y, ce.x - p.x); damageEnemy(ce, 1.2 * dmgMul('sword'), cang, 260, 40, 'heavy'); ring(ce.x, ce.y, 0, 14, 0.25, '255,243,196', false, 2); sfx('slam'); }
   }
   if (p.guard) spd *= 0.55;
@@ -10064,6 +10105,242 @@ function bruteAI(e, dt, d, ang) {
     case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.9; e.stagMeter = 0; } break;
   }
 }
+/* ---------- men: sides, and the soldier (2026-10-12, docs/battle-plan.md; Robin: fight a hirdman, two, two with one beside
+   you, five against five, a town, the raid) ----------
+   SIDES. Every fighter has a side: 0 is against the hero (every beast, a town's men), 1 is with him (his own men). The
+   hero's blows pass through his friends; a soldier's blow lands on whoever of the other side stands in it (strike).
+   Beasts are as they were: they know only the hero.
+   THE SOLDIER is the fourth kind of enemy, a man with a weapon and perhaps a shield. He closes to his weapon's reach and
+   keeps it, circles, shows his blow coming (a windup much longer than the hero's own), strikes by his weapon's numbers
+   (PROFILES: the arc, the reach, the one thing each kind has), raises his shield against a blow he sees coming if he is
+   quick enough (his wits), answers a blow he has stopped, steps back when hurt, and when badly hurt yields or runs unless
+   he is loyal. More than one on a target take places round it and strike in turn (slots). A friend (side 1) follows the
+   hero, takes what the hero strikes, keeps to a leash, goes down instead of dying and gets up when the fight is over.
+   Everything he is comes from a few numbers on him (armMan) and from MEN. */
+var MEN = {
+  speed: 60, run: 94, back: 50, strafe: 24, turn: 8,
+  wu: 0.3, wuK: 2.4,                  // a blow's windup: wu + the weapon's own times wuK
+  ac: 0.07, acK: 1.4, rec: 0.3, recK: 2.0, hitAt: 0.45,
+  dmg: 12,                            // a blow at strength 1 from a weapon whose kind says 1 (the hero's scale: he has 100)
+  toMen: 0.2,                         // the same blow landing on a man (their health is on the beasts' scale)
+  wdmg: { sword: 1, axe: 1.2, club: 0.85, seax: 0.6, spear: 1.1, greataxe: 2 },
+  cd: [1.0, 0.45],                    // the wait between his attacks: dull to sharp
+  react: [0.36, 0.07],                // how long after a blow begins he has his shield up: dull to sharp
+  guard: 0.75, guardMax: 1.7, guardCd: [1.5, 0.7],
+  blockLight: 0.3, blockHeavy: 0.55, front: 1.7,
+  slots: 2, gapT: 0.4,                // how many may be striking one target at once, and the least time between two blows begun on it
+  backAt: 0.6, yieldAt: 0.25,
+  sight: 340, aggro: 150, leash: 250, lie: 90,
+  followGap: 12, riseAfter: 4
+};
+api.men = MEN;
+var hitFlags = { guardBreak: false, stagger: false };       // what the blow now landing can do (set round the hero's own blows)
+function lerp(a, b, k) { return a + (b - a) * k; }
+function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
+  o = o || {}; e.type = 'soldier'; e.human = true; e.side = o.side ? 1 : 0; e.r = 7;
+  var kind = o.wpn && PROFILES[o.wpn.kind] ? o.wpn.kind : 'sword'; e.wpn = { kind: kind, mat: (o.wpn && o.wpn.mat) || 'iron', tint: (o.wpn && o.wpn.tint) || '#9ca3ad' };
+  e.pf = PROFILES[kind]; e.pow = o.pow != null ? o.pow : 1.3;                         // the metal (iron's 1.3)
+  e.shield = !!o.shield && kind !== 'greataxe'; e.armor = o.armor || 0;
+  e.hp = e.maxHp = o.hp || 30; e.str = 0.7 + (o.strength != null ? o.strength : 4) * 0.075;
+  e.w01 = clamp(((o.wits != null ? o.wits : 4) - 1) / 6, 0, 1); e.react = lerp(MEN.react[0], MEN.react[1], e.w01);
+  e.loyal = !!o.loyal; e.nerve = o.nerve != null ? o.nerve : 0.5; e.name = o.name || '';
+  e.guard = 0; e.guardCd = 0; e.guardAge = 0; e.seeT = 0; e.blocked = 0; e.poiseT = 0; e.wary = Math.random() < 0.2 + 0.65 * e.w01; e.swingN = 0; e.chainLeft = 0; e.tgt = null; e.retT = 0; e.strafe = e.seed > 5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
+  e.awake = true; e.sight = o.sight || MEN.sight; e.leash = o.leash || MEN.leash; e.order = 'follow'; e.deadFor = MEN.lie; e.cd = 0.4 + Math.random() * 0.8;
+  if (o.x != null) { e.x = o.x; e.y = o.y; }
+  if (o.post) { e.post = o.post; e.awake = false; }
+  return e;
+}
+function soldier(o) { var keep = api.dress; api.dress = null; var e = spawn('soldier'); api.dress = keep; armMan(e, o); if (api.dressMan) api.dressMan(e, o); return e; }
+function eachFoe(e, fn) {
+  var i, o;
+  if ((e.side || 0) === 0) { if (!P.dead && !P.hidden) fn(P); for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 && !o.dead && !o.down) fn(o); } }
+  else for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 || o.dead || o.fled || o.out) continue; if (o.type === 'soldier' ? o.awake !== false : (!o.flee && (!(o.aggro || o.strolls) || o.awake))) fn(o); }
+}
+function onTarget(F, me) { var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o !== me && o.type === 'soldier' && !o.dead && !o.down && !o.out && o.tgt === F && (o.side || 0) === (me.side || 0)) n++; } return n; }
+function pickTarget(e) {
+  var best = null, bs = 1e9, cur = e.tgt;
+  eachFoe(e, function (F) {
+    var d = Math.hypot(F.x - e.x, F.y - e.y); if (d > e.sight) return;
+    if (e.side === 1 && Math.hypot(F.x - P.x, F.y - P.y) > e.leash) return;                 // a friend does not go past his leash from the hero
+    if (e.order === 'hold' && e.holdAt && Math.hypot(F.x - e.holdAt.x, F.y - e.holdAt.y) > 90) return;   // told to hold: only what comes to him
+    var sc = d + onTarget(F, e) * 44;                                                       // one nobody has, then the least beset
+    if (F === cur) sc -= 34;
+    if (e.side === 1 && F === W.heroHit && W.t - (W.heroHitT || -9) < 4) sc -= 80;          // what the hero struck last
+    if (sc < bs) { bs = sc; best = F; }
+  });
+  return best;
+}
+function strikersOn(F, me) { var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o !== me && o.type === 'soldier' && !o.dead && o.tgt === F && (o.state === 'windup' || o.state === 'lunge')) n++; } return n; }
+function slotFree(F, e) { return strikersOn(F, e) < MEN.slots && W.t - (F._wuT == null ? -9 : F._wuT) >= MEN.gapT; }
+var ARCS = [0, 0, 1.6, 2.5, 3.2, 3.6];
+function slotAngle(e, T) {                  // more than one on a target: places round the side of it that faces their middle, in the order they stand
+  var L = [], i, o, sx = 0, sy = 0;
+  for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || o.out || o.tgt !== T || (o.side || 0) !== (e.side || 0)) continue; var a = Math.atan2(o.y - T.y, o.x - T.x); L.push({ o: o, a: a }); sx += Math.cos(a); sy += Math.sin(a); }
+  if (L.length < 2) return null;
+  var mean = Math.atan2(sy, sx), n = L.length, arc = n < ARCS.length ? ARCS[n] : 3.8;
+  L.forEach(function (q) { q.d = wrap(q.a - mean); }); L.sort(function (m1, m2) { return m1.d - m2.d; });
+  for (i = 0; i < n; i++) if (L[i].o === e) return mean + (i - (n - 1) / 2) * (arc / (n - 1));
+  return null;
+}
+function threatTo(e) {                      // whose blow is coming at him, if he can see one
+  var a = P.atk, i, o, dx, dy, d;
+  if ((e.side || 0) === 0 && !P.dead && P.mode === 'fight' && P.weapon !== 'ranged' && (a.ph === 'windup' || a.ph === 'active' || a.ph === 'charge')) {
+    var sd = stepData(a); dx = e.x - P.x; dy = e.y - P.y; d = Math.hypot(dx, dy);
+    if (d <= sd.reach + e.r + 30 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - (a.ph === 'charge' ? P.face : a.dir))) <= sd.arc / 2 + 0.35)) return P;
+  }
+  for (i = 0; i < W.enemies.length; i++) {
+    o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || !o.sw || (o.side || 0) === (e.side || 0)) continue;
+    if (o.state !== 'windup' && !(o.state === 'lunge' && !o.hitDone)) continue;
+    dx = e.x - o.x; dy = e.y - o.y; d = Math.hypot(dx, dy);
+    if (d <= o.sw.reach + e.r + 16 && Math.abs(wrap(Math.atan2(dy, dx) - o.dirLock)) <= o.sw.arc / 2 + 0.3) return o;
+  }
+  return null;
+}
+function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows the walls may give the next corner to make for (api.nav)
+  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { x = wpt.x; y = wpt.y; } }
+  var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 0.5) return 0;
+  var ox = e.x, oy = e.y, st = Math.min(d, sp * dt); moveCircle(e, dx / d * st, dy / d * st); return Math.hypot(e.x - ox, e.y - oy);
+}
+function blowOf(e, second, quick) {
+  var pf = e.pf, hv = second ? 1 : 0, clip = pf.motion === 'smash' ? 'mine' : (pf.heavy ? 'chop' : (e.swingN % 2 ? 'attack2' : 'attack1'));
+  return { wu: (MEN.wu + pf.wu * MEN.wuK) * (second ? 0.7 : quick ? 0.62 : 1), ac: MEN.ac + pf.ac * MEN.acK, rec: (MEN.rec + pf.rec * MEN.recK) * (1 + hv * 0.3), arc: Math.max(0.7, pf.arc * (pf.motion === 'thrust' ? 1.2 : 0.85)), reach: pf.reach,
+    dmg: MEN.dmg * (MEN.wdmg[e.wpn.kind] || 1) * e.pow * e.str * (1 + hv * 0.35), kb: pf.kb, stag: pf.stag * (1 + hv * 0.6), heavy: !!pf.heavy, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak, clip: clip };
+}
+function beginBlow(e, T, ang, second, quick) {
+  e.sw = blowOf(e, second, quick); e.swingN++; e.state = 'windup'; e.t = 0; e.dur = e.sw.wu; e.dirLock = ang; e.face = ang; e.hitDone = false; e.swung = false; e.guard = 0; e.blocked = 0;
+  T._wuT = W.t; sfx('tele', 0, e);
+}
+function strike(e) {
+  var sw = e.sw, L = [];
+  eachFoe(e, function (F) { var dx = F.x - e.x, dy = F.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx); if (d <= sw.reach + F.r + 2 && Math.abs(wrap(a - e.dirLock)) <= sw.arc / 2 + 0.1) L.push({ F: F, d: d, a: a }); });
+  L.sort(function (m1, m2) { return m1.d - m2.d; }); if (!sw.pierce && sw.motion === 'thrust' && L.length > 1) L.length = 1;
+  if (!L.length) { dust(e.x + Math.cos(e.dirLock) * (e.r + 10), e.y + Math.sin(e.dirLock) * (e.r + 10), 2); return; }
+  L.forEach(function (h) {
+    if (h.F === P) {
+      hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
+      if (r === 'parry') { daze(e, 1.3); e.sw = null; e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
+    } else { hitFlags.guardBreak = sw.guardBreak; damageEnemy(h.F, sw.dmg * MEN.toMen, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; }
+  });
+}
+function lowerGuard(e, tired) { e.guard = 0; e.guardAge = 0; e.guardCd = lerp(MEN.guardCd[0], MEN.guardCd[1], e.w01) * (tired ? 1 : 0.45); e.wary = Math.random() < 0.2 + 0.65 * e.w01; }
+function raiseGuard(e, t) { e.guard = t || MEN.guard; e.guardAge = 0; e.seeT = 0; sfx('raise', 0, e); }
+function heartOf(e) {                       // hurt badly: on his knees, away, or on with it (a loyal man and a friend do neither)
+  if (e.side === 1 || e.loyal || e.nerved || e.hp > e.maxHp * MEN.yieldAt) return; e.nerved = true;
+  if (Math.random() < e.nerve) return;
+  if (Math.random() < 0.55) { e.state = 'yield'; e.t = 0; e.out = true; e.guard = 0; e.sw = null; if (W.lock === e) W.lock = null; if (api.onYield) api.onYield(e); }
+  else { e.state = 'flee'; e.t = 0; e.out = true; e.guard = 0; e.sw = null; if (W.lock === e) W.lock = null; }
+}
+function goDown(e) {                        // a friend does not die of a blow: he is down, and up again when the fight is won
+  e.down = true; e.hp = 0; e.deadT = 0; e.state = 'down'; e.guard = 0; e.sw = null; e.tgt = null; e.quietT = 0; e.aloneT = 0; sfx('die', 0, e); if (api.onDown) api.onDown(e);
+}
+function downTick(e, dt) {
+  e.deadT += dt; var near = false, i, o;
+  for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side !== 1 && !o.dead && !o.out && !o.fled && (o.type === 'soldier' ? o.awake !== false : !!o.awake || (!(o.aggro || o.strolls) && !o.flee)) && Math.hypot(o.x - e.x, o.y - e.y) < 260) { near = true; break; } }
+  e.quietT = near ? 0 : (e.quietT || 0) + dt;
+  var far = P.dead || Math.hypot(P.x - e.x, P.y - e.y) > 700; e.aloneT = far ? (e.aloneT || 0) + dt : 0;
+  if (e.aloneT > 20) { e.down = false; e.dead = true; e.deadT = 2; if (api.onDeath) api.onDeath(e); return; }      // left behind, or the fight was lost
+  if (e.quietT > MEN.riseAfter && !P.dead) { e.down = false; e.riseT = 0.8; e.hp = Math.max(1, e.maxHp * 0.35); e.state = 'chase'; e.t = 0; e.cd = 1; if (api.onRise) api.onRise(e); }
+}
+var FOLLOW = [[-20, 15], [20, 15], [-38, 30], [38, 30], [0, 34], [-56, 46], [56, 46], [-18, 52], [18, 52]];
+function followStep(e, dt) {                // a friend with nobody to fight: his place beside and a little behind the hero
+  var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o === e) break; if (o.side === 1 && o.type === 'soldier' && !o.dead && !o.down && o.order !== 'hold') n++; }
+  if (e.order === 'hold' && e.holdAt) { if (Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 5) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); e.face = turnToward(e.face, Math.atan2(e.holdAt.y - e.y, e.holdAt.x - e.x), MEN.turn * dt); } else if (e.holdAt.face != null) e.face = turnToward(e.face, e.holdAt.face, 4 * dt); return; }
+  var hd = W.heading == null ? P.face : W.heading, f = FOLLOW[n % FOLLOW.length], k = 1 + Math.floor(n / FOLLOW.length) * 0.6, bx = -Math.cos(hd), by = -Math.sin(hd), lx = -by, ly = bx;
+  var tx = P.x + (lx * f[0] + bx * f[1]) * k, ty = P.y + (ly * f[0] + by * f[1]) * k, d = Math.hypot(tx - e.x, ty - e.y);
+  if (d > MEN.followGap || e.moving) { e.moving = d > 4; var sp = d > 70 ? MEN.run * 1.15 : (d > 26 ? P.sprinting ? MEN.run * 1.1 : 84 : MEN.speed); stepTo(e, tx, ty, sp, dt); e.face = turnToward(e.face, Math.atan2(ty - e.y, tx - e.x), MEN.turn * dt); }
+  else e.face = turnToward(e.face, hd, 3 * dt);
+}
+function postStep(e, dt) {                  // one of a town's men with nothing to fight: at his post
+  var p = e.post; if (!p) return;
+  if (Math.hypot(p.x - e.x, p.y - e.y) > 5) { stepTo(e, p.x, p.y, MEN.speed * 0.8, dt); e.face = turnToward(e.face, Math.atan2(p.y - e.y, p.x - e.x), MEN.turn * dt); e.atPost = false; }
+  else { if (p.face != null) e.face = turnToward(e.face, p.face, 3 * dt); e.atPost = true; }
+}
+function soldierAI(e, dt) {
+  var i, T, dx, dy, d, ang;
+  e.cd -= dt; e.guardCd -= dt; e.poiseT -= dt; if (e.riseT > 0) { e.riseT -= dt; return; }
+  if (e.guard > 0) { e.guard -= dt; e.guardAge += dt; if (e.guard <= 0) lowerGuard(e, false); }
+  if (e.heard > 0) { e.heard -= dt; e.awake = true; }
+  if (e.state === 'yield') {                // on his knees, out of it; left alone a while he gets up and goes
+    e.guard = 0; var near = 1e9; eachFoe(e, function (F) { near = Math.min(near, Math.hypot(F.x - e.x, F.y - e.y)); });
+    if (e.t > 14 || (e.t > 5 && near > 110)) { e.state = 'flee'; e.t = 0; }
+    return;
+  }
+  if (e.state === 'flee') {                 // away from whoever is nearest, and fled when far enough
+    var nx = 0, ny = 0, nd = 1e9; eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y); if (q < nd) { nd = q; nx = F.x; ny = F.y; } });
+    if (nd > 620 || nd === 1e9) { e.fled = true; return; }
+    var fa = Math.atan2(e.y - ny, e.x - nx); e.face = turnToward(e.face, fa, MEN.turn * dt); moveCircle(e, Math.cos(e.face) * MEN.run * dt, Math.sin(e.face) * MEN.run * dt); return;
+  }
+  if (e.awake === false) {                  // at his post, and has seen nothing
+    var seen = false, st = api.mods && api.mods().stealth ? api.mods().stealth : 1;
+    eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y), behind = Math.abs(wrap(Math.atan2(F.y - e.y, F.x - e.x) - e.face)) > 1.9; if (q < (e.aggro || MEN.aggro) * (behind ? 0.45 : 1) * (F === P ? st : 1)) seen = true; });
+    if (seen) { e.awake = true; if (api.onWake) api.onWake(e); } else { postStep(e, dt); e.state = 'idle'; return; }
+  }
+  e.retT -= dt; T = e.tgt;
+  if (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && P.hidden) || e.retT <= 0) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; }
+  if (!T) {                                 // nobody to fight
+    if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'back') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
+    e.state = 'idle'; e.guard = 0; e.sw = null;
+    if (e.side === 1) followStep(e, dt);
+    else { e.noT = (e.noT || 0) + dt; if (e.post && e.noT > 6) { postStep(e, dt); if (e.atPost) { e.awake = false; e.noT = 0; } } }
+    return;
+  }
+  e.noT = 0; e.moving = false;
+  dx = T.x - e.x; dy = T.y - e.y; d = Math.hypot(dx, dy); ang = Math.atan2(dy, dx);
+  var keep = e.pf.reach + T.r - 5;
+  switch (e.state) {
+    case 'idle': e.state = 'chase'; e.t = 0; break;
+    case 'chase':
+      var th = threatTo(e), fa2 = th ? Math.atan2(th.y - e.y, th.x - e.x) : ang;
+      e.face = turnToward(e.face, fa2, MEN.turn * dt);
+      if (e.guard > 0) { if (th || (e.wary && d <= keep + 16 && e.cd > 0.2)) e.guard = Math.max(e.guard, 0.3); if (e.guardAge > MEN.guardMax) lowerGuard(e, true); }
+      else if (e.shield && e.guardCd <= 0 && th) { e.seeT += dt; if (e.seeT >= e.react) raiseGuard(e); }                 // a blow he sees coming, if he is quick enough
+      else if (e.shield && e.guardCd <= 0 && e.wary && d <= keep + 16 && e.cd > 0.2) raiseGuard(e);                       // a wary man: behind his shield while you are in reach and he is not striking
+      else e.seeT = Math.max(0, e.seeT - dt * 2);
+      // his place: at his reach from the target, at his own angle round it when others are on it too
+      var sa = slotAngle(e, T), waiting = e.cd > 0.5 || !slotFree(T, e), want = keep + (sa != null && waiting && strikersOn(T, e) >= MEN.slots ? 14 : 0), slow = e.guard > 0 ? 0.5 : 1;
+      if (e.order === 'hold' && e.holdAt && Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 46 && d > keep) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); break; }   // told to hold: he does not follow a man who backs away
+      if (d > want + 70) stepTo(e, T.x, T.y, MEN.run, dt);
+      else {
+        var vr = clamp((d - want) * 3.2, -MEN.back, MEN.speed), vt = 0, here = Math.atan2(-dy, -dx);
+        if (sa != null) vt = clamp(wrap(sa - here) * 70, -MEN.strafe * 2, MEN.strafe * 2);
+        else { e.strafeT -= dt; if (e.strafeT <= 0) { e.strafeT = 0.8 + Math.random() * 2.2; e.strafe = Math.random() < 0.3 ? 0 : (Math.random() < 0.5 ? 1 : -1); } vt = e.strafe * MEN.strafe * (d < want + 20 ? 1 : 0); }
+        if (api.nav && d > want + 24) stepTo(e, T.x, T.y, MEN.speed * slow, dt);                                          // walls between: the page finds the way
+        else moveCircle(e, (Math.cos(ang) * vr - Math.sin(here) * vt) * slow * dt, (Math.sin(ang) * vr + Math.cos(here) * vt) * slow * dt);
+      }
+      if (e.guard <= 0 || (e.blocked > 0 && !th)) {
+        var aligned = Math.abs(wrap(ang - e.face)) < 0.45;
+        if (e.cd <= 0 && d <= keep + 7 && aligned && slotFree(T, e) && !(T === P && (P.roll.t > 0))) { var answer = e.blocked > 0; e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
+      }
+      break;
+    case 'windup':
+      if (e.pf.motion !== 'thrust') e.dirLock = turnToward(e.dirLock, ang, 1.6 * dt); e.face = e.dirLock;
+      if (e.t >= e.dur) { e.state = 'lunge'; e.t = 0; e.dur = e.sw.ac; e.hitDone = false; sfx('swing', 0, e); }
+      break;
+    case 'lunge':
+      if (d > T.r + e.r + 5) moveCircle(e, Math.cos(e.dirLock) * e.pf.lunge * 0.5 * dt, Math.sin(e.dirLock) * e.pf.lunge * 0.5 * dt);
+      if (!e.hitDone && e.t >= e.dur * MEN.hitAt) { e.hitDone = true; strike(e); }
+      if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = e.sw.rec; e.swung = true; }
+      break;
+    case 'recover':
+      if (e.swung && e.chainLeft > 0 && e.t >= e.dur * 0.45 && d <= keep + 14) { e.chainLeft--; beginBlow(e, T, ang, true); break; }
+      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = lerp(MEN.cd[0], MEN.cd[1], e.w01) * (0.8 + Math.random() * 0.5); }
+      break;
+    case 'stagger':
+      if (e.t >= e.dur) {
+        e.sw = null; e.swung = false; e.cd = Math.max(e.cd, 0.3); e.seeT = e.react * 0.6;                            // hit: he is quicker to cover now
+        var cover = e.shield && e.guardCd <= 0.3 && Math.random() < 0.4 + 0.5 * e.w01;                                  // a man with a shield gets it up after the first blow of a chain
+        if (cover) raiseGuard(e, MEN.guard + 0.3);
+        if ((e.hp < e.maxHp * MEN.backAt && Math.random() < 0.45) || (!cover && Math.random() < 0.3 + 0.45 * e.w01)) { e.state = 'back'; e.t = 0; e.dur = cover ? 0.5 + Math.random() * 0.4 : 0.32 + Math.random() * 0.2; e.hop = !cover; }   // or steps out of the next one
+        else { e.state = 'chase'; e.t = 0; }
+      }
+      break;
+    case 'back':
+      e.face = turnToward(e.face, ang, MEN.turn * dt); moveCircle(e, -Math.cos(ang) * MEN.back * (e.hop ? 1.9 : 1) * dt, -Math.sin(ang) * MEN.back * (e.hop ? 1.9 : 1) * dt);
+      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.hop = false; }
+      break;
+    default: e.state = 'chase'; e.t = 0;
+  }
+}
 // A calm animal with e.wander = { x0, y0, r } ambles between points near its home ground, pausing between walks.
 function wanderStep(e, dt) {
   var w = e.wander;
@@ -10082,8 +10359,9 @@ function updateEnemies(dt) {
     var e = W.enemies[i];
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
+    if (e.down) { downTick(e, dt); continue; }
     if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
-    if (e.aggro || e.strolls) {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
+    if ((e.aggro || e.strolls) && e.type !== 'soldier') {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
       if (!e.aggro) { /* the page decides when it wakes */ }
       else if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) && !P.dead) e.awake = true;   // the light step shortens the noticing
@@ -10107,13 +10385,14 @@ function updateEnemies(dt) {
       moveCircle(e, e.kx * dt, e.ky * dt);
       if (S.juice && Math.abs(e.kx) + Math.abs(e.ky) > 70 && Math.random() < dt * 22) dust(e.x, e.y, 1);
     }
+    if (e.type === 'soldier') { soldierAI(e, adt); continue; }
     if (P.dead) { if (e.state !== 'idle' && e.state !== 'recover') { e.state = 'idle'; } if (e.state === 'idle') continue; }
     if (e.type === 'brute') bruteAI(e, adt, d, ang); else if (e.type === 'shooter') shooterAI(e, adt, d, ang); else beastAI(e, adt, d, ang);
   }
-  W.enemies = W.enemies.filter(function (e) { return !(e.dead && e.deadT > (e.deadFor || 0.5)); });   // a sprite beast lies a moment longer (its death clip)
+  W.enemies = W.enemies.filter(function (e) { return !e.fled && !(e.dead && e.deadT > (e.deadFor || 0.5)); });   // a sprite beast lies a moment longer (its death clip)
   // soft separation
   for (var a = 0; a < W.enemies.length; a++) for (var b = a + 1; b < W.enemies.length; b++) {
-    var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.type === 'shooter' || B.type === 'shooter') continue;
+    var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.down || B.down || A.type === 'shooter' || B.type === 'shooter') continue;
     var ox = B.x - A.x, oy = B.y - A.y, dd = Math.hypot(ox, oy), mn = A.r + B.r;
     if (dd < mn && dd > 0.01) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }
   }
@@ -10135,7 +10414,7 @@ function updateProjs(dt) {
       } else {
         for (var j = 0; j < W.enemies.length; j++) {
           var e = W.enemies[j];
-          if (e.dead) continue;
+          if (e.dead || e.side === 1 || e.down) continue;
           if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, 1.6); e.pkx = e.pky = 0; num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } gone = true; hit = true; break; }
         }
       }
@@ -10160,6 +10439,7 @@ function updateFx(dt) {
 
 function update(dt) {
   dt = Math.min(dt, 0.05);
+  if (W.heading == null) W.heading = P.face; if (Math.hypot(P.vx, P.vy) > 30 && P.atk.ph === 'none') W.heading = turnToward(W.heading, Math.atan2(P.vy, P.vx), dt * 2.5);
   if (IN.pressed.KeyR && P.dead) { reset(); }
   if (IN.pressed.KeyH && !P.dead && W.enemies.length < 14) spawn('beast');
   if (W.slow.t > 0) { W.slow.t -= dt; dt *= W.slow.s; }
@@ -10259,6 +10539,12 @@ function drawTelegraphs(c) {
     if (e.type === 'beast' && e.state === 'windup') {
       c.strokeStyle = 'rgba(255,70,60,' + (0.25 + 0.35 * (e.t / e.dur)) + ')'; c.lineWidth = 4; c.lineCap = 'round';
       c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 52, (e.y + Math.sin(e.dirLock) * 52) * K); c.stroke();
+    }
+    if (e.type === 'soldier' && e.state === 'windup' && e.tgt === P && e.sw) {
+      var kw = e.t / e.dur, rw = e.sw.reach + 6;
+      if (e.sw.arc > 1.4) { c.save(); c.translate(e.x, e.y * K); c.scale(1, K); c.fillStyle = 'rgba(220,40,30,' + (0.05 + 0.13 * kw) + ')'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, rw, e.dirLock - e.sw.arc / 2, e.dirLock + e.sw.arc / 2); c.closePath(); c.fill(); c.restore(); }
+      c.strokeStyle = 'rgba(255,70,60,' + (0.2 + 0.4 * kw) + ')'; c.lineWidth = 3.4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * rw, (e.y + Math.sin(e.dirLock) * rw) * K); c.stroke();
     }
     if (e.type === 'shooter' && e.state === 'windup') {
       c.strokeStyle = 'rgba(255,70,60,0.55)'; c.lineWidth = 1.6; c.setLineDash([4, 3]); c.lineDashOffset = -e.t * 30;
@@ -10815,7 +11101,7 @@ function render(c) {
   c.fillStyle = 'rgba(30,70,50,0.28)';
   function sh2(x, y, rx, ry) { c.beginPath(); c.ellipse(x, y * K, rx, ry * K, 0, 0, Math.PI * 2); c.fill(); }
   for (i = 0; i < W.pillars.length; i++) if (!W.pillars[i].hide) sh2(W.pillars[i].x + 2, W.pillars[i].y, 9, 5);
-  for (i = 0; i < W.enemies.length; i++) { var en = W.enemies[i]; if (!en.dead) sh2(en.x, en.y, en.r * 1.3, en.r * 0.8); }
+  for (i = 0; i < W.enemies.length; i++) { var en = W.enemies[i]; if (!en.dead && !en.down && !en.human) sh2(en.x, en.y, en.r * 1.3, en.r * 0.8); }
   if (!P.dead && !(sc && sc.noHeroShadow)) sh2(P.x, P.y, 9, 4);
   for (i = 0; i < W.projs.length; i++) sh2(W.projs[i].x, W.projs[i].y, 3, 2);
   // pillars
@@ -10843,7 +11129,7 @@ function render(c) {
     if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
     c.stroke();
   }
-  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && eb.showBar > 0 && eb.type !== 'brute') bar(c, eb.x - 10, eb.y * K - eb.r * 2.6 - 10, 20, 3, eb.hp / eb.maxHp, '#e8584a'); } }
+  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && !eb.down && eb.showBar > 0 && eb.type !== 'brute') bar(c, eb.x - 10, eb.y * K - (eb.human ? 46 : eb.r * 2.6 + 10), 20, 3, eb.hp / eb.maxHp, eb.side === 1 ? '#7fbf6a' : '#e8584a'); } }
   if (sc && sc.end) sc.end(c, P);
   c.restore();
   if (!(sc && sc.noHud)) drawHud(c);
@@ -10852,7 +11138,7 @@ function render(c) {
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, reset: reset, S: S, api: api,
+return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   dbg: function () { return { P: P, W: W, IN: IN }; } };
 })();
@@ -10967,7 +11253,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var want = isEvening() ? eveTheme() : dayTheme();   // the song follows the clock: the evening theme from dusk to dawn
     if (want !== musicSong) { Music.stop(); musicOn = false; dangerT = 0; startMusic(); return; }
     var P = hero(), awake = false;       // a beast counts as awake when it is chasing or attacking within earshot
-    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
+    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
     var was = dangerT > 0; dangerT = awake ? 4 : Math.max(0, dangerT - dt);
     if ((dangerT > 0) !== was) { Music.setLayer('danger', dangerT > 0 ? 1 : 0, dangerT > 0 ? 1.2 : 4); Music.setLayer('calm', dangerT > 0 ? 0.15 : 1, dangerT > 0 ? 1.2 : 4); }
   }
@@ -11028,6 +11314,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function drawPerson(c, m) {
     if (!PEOPLE || !Sprites.peopleReady(PEOPLE)) { m.spr = false; return false; }
     var look = personLook(m), ph0 = m.ph0 || (m.ph0 = 1 + Math.random() * 9), st = { face: m.face, clip: 'idle', t: clock + ph0 }, J = null;
+    if (!m.warm) { m.warm = 1; Sprites.peopleWarm(PEOPLE, look, ['idle', 'walk', 'idle_look', 'sit', 'run']); }
     if (m.fleeing) { st.clip = 'run'; st.t = (m.ph || 0) / 9 + ph0; }
     else if (m.moving) { st.clip = 'walk'; st.t = (m.ph || 0) / 7 + ph0; }
     else if (m.sitting) st.clip = 'sit';
@@ -11950,7 +12237,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   // ?scene=runes is the Rune Editor (2026-10-07): the game itself with its own save, started on the big island at a carver's bench
   var SCENE = (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
-  var SAVE = SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : 'game.save'), gone = {}, saveT = 0;
+  var SAVE = SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' ? 'game.save.battle' : 'game.save')), gone = {}, saveT = 0;
   // The mountain test scene (2026-10-12, Robin: a mountain island, the first biome in the south and the mountains in the north, to
   // test it out): game.html?scene=mountain is the game on one island of its own (World.MOUNTAIN_SPEC), with its own save.
   if (SCENE === 'mountain') { for (var msk in World.MOUNTAIN_SPEC) spec[msk] = World.MOUNTAIN_SPEC[msk]; }
@@ -13944,7 +14231,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function regrowTick() {                   // each new day the stumps old enough become saplings that grow up
     Gather.regrowTick(GT, decals, day.n, function (st) { if (!st.name || !kit.PROPS[st.name]) return null; var clear = true; around(st.x, st.y, function (o) { if (Math.hypot(o.x - st.x, o.y - st.y) < 20) clear = false; }); if (!clear) return null; var p = { name: st.name === 'struckTree' ? 'birch' : st.name, x: st.x, y: st.y, s: st.s || 0.5, r: 11, v: Math.floor(Math.random() * 3), kind: 'tree', leanDir: Math.random() < 0.5 ? -1 : 1, grow: 0 }; p.max = p.hp = World.HP[st.name] * (0.7 + 0.6 * p.s); w.addProp(p); delete gone[propKey(p)]; return p; });
   }
-  Combat.api.onDeath = function (e) { if (e.human) { drop('silver', e.x, e.y, 1 + (Math.random() < 0.5 ? 1 : 0)); deed('kills'); return; } deed('kills'); if (inUse('wolfshunger')) { var Ph = hero(); Ph.hp = Math.min(Ph.maxHp, Ph.hp + 8); note('+8 health'); } var A = ANIMALS[e.kind] || ANIMALS.boar; for (var k in A.drops) { var q = A.drops[k], n = Math.floor(q) + (Math.random() < q - Math.floor(q) ? 1 : 0); if (n) drop(k, e.x, e.y, n); } if (e.kind) { learn(e.kind); killDeed(e.kind); } deed('kills'); };
+  Combat.api.onDeath = function (e) { if (e.side === 1) return; if (e.human) { if (!BT.on) drop('silver', e.x, e.y, 1 + (Math.random() < 0.5 ? 1 : 0)); if (!e.killer) deed('kills'); return; } deed('kills'); if (inUse('wolfshunger')) { var Ph = hero(); Ph.hp = Math.min(Ph.maxHp, Ph.hp + 8); note('+8 health'); } var A = ANIMALS[e.kind] || ANIMALS.boar; for (var k in A.drops) { var q = A.drops[k], n = Math.floor(q) + (Math.random() < q - Math.floor(q) ? 1 : 0); if (n) drop(k, e.x, e.y, n); } if (e.kind) { learn(e.kind); killDeed(e.kind); } deed('kills'); };
 
   /* ---------- runes: learnt from deeds, runestones and beasts; laid on the casting cloth to work ---------- */
   /* ---------- the arm ring (docs/arm-ring.md, 2026-10-06): runes are knowledge, cut into the ring's coils at the carver's bench.
@@ -13991,7 +14278,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function stoneNear(P) { var best = null; around(P.x, P.y, function (o) { if (o.name === 'runestone' && Math.hypot(o.x - P.x, o.y - P.y) < 44) best = o; }); return best; }
   function stoneRune(o) { return STONE_POOL[Math.floor(hash(Math.round(o.x), Math.round(o.y), 11) * STONE_POOL.length) % STONE_POOL.length]; }
   function readStone(o) { if (!ring) return; var key = propKey(o), id = stoneRune(o); if (RS.stones[key]) { toast('You have read this stone'); return; } RS.stones[key] = 1; if (RS.learnt[id]) { toast('The stone speaks of ' + Runes.BY[id].name + ', which you know'); save(); } else learnRune(id, 'read from a runestone'); }
-  function fighting() { var P = hero(); return Combat.dbg().W.enemies.some(function (e) { return !e.dead && e.awake && Math.hypot(e.x - P.x, e.y - P.y) < 240; }); }
+  function fighting() { var P = hero(); return Combat.dbg().W.enemies.some(function (e) { return !e.dead && e.side !== 1 && !e.out && e.awake && Math.hypot(e.x - P.x, e.y - P.y) < 240; }); }
   function sandboxRunes() { if (!ring) takeRing(true); Runes.LIST.forEach(function (r) { if (!RS.learnt[r.id]) RS.learnt[r.id] = { uses: 0, how: 'sandbox' }; }); RS.earned = {}; }
   function ringRank() { return ring ? (Runes.METALS[ring.metal] || Runes.METALS.bronze).rank : 0; }
   function heroRingSync() { var hs = lib.hero().spec; if (hs.ring !== ringRank()) hs.ring = ringRank(); }
@@ -14677,7 +14964,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (bookOpen) drawBook(c);
       if (ringOpen) drawRingBoard(c);
       drawRite(c);
-      if ((SCENE === 'runes' || SCENE === 'mountain') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen) drawRunePanel(c);
+      if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen) drawRunePanel(c);
       if (pauseOpen) { rows = []; if (adminOpen && labOpen) drawLab(c); else if (adminOpen) drawAdmin(c); else drawPause(c); }
       if (menu) drawMenu(c);
       if (over && !pauseOpen) drawNotes(c, menu ? menu.y : 30);
@@ -14781,7 +15068,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (pr && e.button === 0) { var id = pr.p.id; if (id === 'admin') { adminOpen = true; return; } if (id === 'music' || id === 'amb') { musicDrag = id === 'amb' ? 'amb' : true; musicSet(mouseS.x, PAUSE_X, PAUSE_W); return; } if (pr.p.sure && !pauseArmed(id)) { pauseArm = { id: id, at: performance.now() }; return; } pauseArm = null; pauseOpen = false; if (id === 'sandbox') sandbox(); else if (id === 'restart') start(true); else if (id === 'newisle') { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); } }
       return;
     }
-    if ((SCENE === 'runes' || SCENE === 'mountain') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
+    if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
     if (mapOpen) { mapOpen = false; return; }
     if (musterOpen) { if (e.button === 0) musterClick(); else musterOpen = false; return; }
     if (ringOpen) { ringClick(e.button); return; }
@@ -14882,10 +15169,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.carrying && sv.carrying.heavy) { carrying = sv.carrying; carrying.carried = true; }
       if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null, cargo: sv.raft.cargo || [] }; raftFit(); if (sv.seaBoat) raft.aboard = true; if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }   // (saved inside the sea cave, come by boat: you wake in the boat at its mouth)
-    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); }   // he wakes in the wreck: the screen opens slowly
+    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); if (SCENE === 'battle') battleScene(); }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
-    spawnBoars(); spawnGuards(); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Tab: the bag. C: make things by hand. B: build.'; save();
+    spawnBoars(); spawnGuards(); if (BT.on && BT.field) battleSet(BT.setup); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Tab: the bag. C: make things by hand. B: build.'; save();
   }
   document.getElementById('tohome').addEventListener('click', function (e) { toCamp(); e.currentTarget.blur(); });
   document.getElementById('newisle').addEventListener('click', function (e) { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); e.currentTarget.blur(); });
@@ -14948,6 +15235,77 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.strokeStyle = '#141216'; c.lineWidth = 0.5; for (i = -1; i <= 1; i++) { var lo = (k.go > 0 ? Math.sin(k.t * 20 + i) : 0) * 0.5; c.beginPath(); c.moveTo(x + i * 1.2, y - 0.6); c.lineTo(x + i * 1.2 + 1.2 * (i || 0.5) * 0.6, y + 0.6 + lo); c.moveTo(x + i * 1.2, y - 0.6); c.lineTo(x + i * 1.2 - 1.2 * (i || 0.5) * 0.6, y + 0.6 - lo); c.stroke(); }
     }
     c.restore();
+  }
+  /* ---------- the battle scene (game.html?scene=battle; docs/battle-plan.md, Robin 2026-10-12: fight a hirdman, two, two with
+     one beside you, five against five, a town, the raid; fix the bugs of each before the next). A cleared field on the starter
+     island, the hero armed with one of every weapon, and a board on the left that sets men against him and beside him and
+     says what they carry, wear and are. Nothing of it is saved, and the game itself is untouched: the men are the engine's
+     soldiers (src/combat.js: sides, soldierAI), dressed here from a rolled hirdman (Hird.roll) and drawn from the people's
+     sheets. Your own wear your colour (YOURS); the others a blue. ---------- */
+  var BT = { on: SCENE === 'battle', field: null, setup: 'one', wpn: 1, gear: 1, wits: 1, mine: 0, slow: false };
+  var BT_WPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe'], BT_WPN_N = { sword: 'a sword', axe: 'an axe', club: 'a club', seax: 'a seax', spear: 'a spear', greataxe: 'a Dane axe' };
+  var BT_GEAR = [{ name: 'cloth, no shield', armor: 0, shield: false }, { name: 'leather and a shield', armor: 0.2, shield: true }, { name: 'mail, a helm, a shield', armor: 0.4, shield: true, mail: true, helm: true }];
+  var BT_WITS = [{ name: 'dull', v: 1 }, { name: 'steady', v: 4 }, { name: 'sharp', v: 7 }], THEIRS = '#3f5a7a';
+  function fieldSite() {                   // open grass 22 tiles by 16, a short walk from the wreck, clear of the steading
+    var R = kit.rng(spec.seed * 53 + 9), tries, best = null;
+    for (tries = 0; tries < 1200 && !best; tries++) {
+      var a = R() * 6.283, d = tries < 600 ? 380 + R() * 500 : 260 + R() * 1100, cx = Math.floor((home.x + Math.cos(a) * d) / T), cy = Math.floor((home.y + Math.sin(a) * d) / T), ok = true, x, y;
+      for (y = cy - 8; y <= cy + 8 && ok; y++) for (x = cx - 11; x <= cx + 11; x++) { var cd = code(x, y); if (cd < 2 || cd === 255 || cd === 5) { ok = false; break; } }
+      if (ok && isleAt((cx + 0.5) * T, (cy + 0.5) * T) !== 0) ok = false;
+      if (ok && village && Math.hypot((cx + 0.5) * T - (village.tx + village.w / 2) * T, (cy + 0.5) * T - (village.ty + village.h / 2) * T) < 620) ok = false;
+      if (ok) best = { x: (cx + 0.5) * T, y: (cy + 0.5) * T };
+    }
+    return best || { x: home.x + 320, y: home.y + 40 };
+  }
+  function battleScene() {
+    var P = hero(), f = fieldSite(), list = [], k; BT.field = f;
+    w.eachProp(function (o) { if (Math.abs(o.x - f.x) < 12 * T && Math.abs(o.y - f.y) < 9 * T) list.push(o); }); list.forEach(function (o) { w.removeProp(o); });
+    for (k = 0; k < SLOTS; k++) slots[k] = null;
+    BT_WPN.forEach(function (kd, i) { slots[barBase('fight') + i] = { kind: 'item', n: 1, item: Items.make(kd, 'iron') }; });       // one of every weapon on the Fight bar: the number keys change what is in hand
+    barPut(Items.make('axe', 'iron')); barPut(Items.make('pick', 'iron')); barPut(Items.make('knife', 'iron')); addThing(Items.make('bow', 'wood'));
+    equip.shield = Items.make('shield', 'wood'); battleGear(); quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
+    addItem('cookedMeat', 10); hand = { fight: 0, gather: 0 }; day.t = 300; caveFade = 0; seen.met = 1; seen.village = 1; seen.fiber = 1; noSave = true;
+    P.mode = 'fight'; recount(); battleSet('one');
+  }
+  function battleGear() { ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, BT.mine && (g === 'helmet' || g === 'tunic') ? 'iron' : 'leather'); }); }
+  Combat.api.dressMan = function (e, o) {  // a soldier's own look: a rolled person's colours and build, a style of hair and beard, and what he wears and carries
+    var R = kit.rng(Math.floor(Math.random() * 1e9)), person = o.person || Hird.roll(R, HD), sp = Hird.figureSpec(person, lib.heroDef), v = lib.folkSpec('villager', R);
+    sp.hair = v.hair; sp.beard = R() < 0.6 ? (v.beard || 2) : 0; sp.hat = 0; sp.clothes = 1;
+    e.fig = lib.makeFigure(sp); e.kind = 'man'; e.person = person; e.name = person.name; e.look = null;
+    e.lookX = { mail: !!o.mail, helm: !!o.helm, shield: e.shield ? (e.side === 1 ? YOURS : THEIRS) : null, cloak: e.side === 1 ? YOURS : null };
+    e.wpn.tint = (Items.MATS[e.wpn.mat] || Items.MATS.iron).face;
+  };
+  function spawnMan(side, x, y, wpn, gear, wits) {
+    var person = Hird.roll(Math.random, HD), G = BT_GEAR[gear];
+    var e = Combat.soldier({ side: side, x: x, y: y, wpn: { kind: wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: person.stats.health, strength: person.stats.strength, wits: wits != null ? wits : person.stats.wits, loyal: person.traits.indexOf('loyal') >= 0, nerve: 0.55, name: person.name, person: person, mail: G.mail, helm: G.helm });
+    e.face = side ? -Math.PI / 2 : Math.PI / 2; return e;
+  }
+  function battleClear() { var W = Combat.dbg().W, f = BT.field; W.enemies = W.enemies.filter(function (e) { return e.type !== 'soldier' && !(f && Math.hypot(e.x - f.x, e.y - f.y) < 700); }); W.lock = null; }   // the men go, and any beast that has wandered onto the field
+  function battleSet(id) {
+    var f = BT.field, P = hero(), wk = BT_WPN[BT.wpn], wv = BT_WITS[BT.wits].v, MIX = ['axe', 'spear', 'sword', 'club', 'seax'], i; if (!f) return;
+    battleClear(); BT.setup = id; P.hp = P.maxHp; P.st = 100; P.x = f.x; P.y = f.y + 80; P.vx = P.vy = 0; P.face = -Math.PI / 2; if (inCave) caveSwap(false);
+    if (id === 'one') spawnMan(0, f.x, f.y - 70, wk, BT.gear, wv);
+    else if (id === 'two' || id === 'friend') { spawnMan(0, f.x - 30, f.y - 70, wk, BT.gear, wv); spawnMan(0, f.x + 30, f.y - 78, MIX[(BT.wpn + 1) % MIX.length], BT.gear, wv); if (id === 'friend') spawnMan(1, f.x + 30, f.y + 96, 'sword', 1); }
+    else if (id === 'five') { for (i = 0; i < 5; i++) spawnMan(0, f.x + (i - 2) * 36, f.y - 96 - (i % 2) * 14, i === 2 ? wk : MIX[i], BT.gear, i === 2 ? wv : null); for (i = 0; i < 4; i++) spawnMan(1, f.x + (i - 1.5) * 36, f.y + 104 + (i % 2) * 14, MIX[(i + 2) % MIX.length], 1); }
+  }
+  function battleRows() {
+    return [{ id: 'one', name: 'One hirdman', on: BT.setup === 'one' }, { id: 'two', name: 'Two', on: BT.setup === 'two' }, { id: 'friend', name: 'Two, and one beside you', on: BT.setup === 'friend' }, { id: 'five', name: 'Five against five', on: BT.setup === 'five' },
+      { id: 'wpn', name: 'He carries ' + BT_WPN_N[BT_WPN[BT.wpn]] }, { id: 'gear', name: 'He wears ' + BT_GEAR[BT.gear].name }, { id: 'wits', name: 'His wits: ' + BT_WITS[BT.wits].name },
+      { id: 'mine', name: BT.mine ? 'You wear mail and an iron helm' : 'You wear leather' }, { id: 'again', name: 'Again' }, { id: 'heal', name: 'Heal' }, { id: 'clearf', name: 'Clear the field' },
+      { id: 'slow', name: BT.slow ? 'The clock: a quarter speed' : 'The clock: as it runs', on: BT.slow }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }];
+  }
+  function battleAct(id) {
+    var P = hero();
+    if (id === 'one' || id === 'two' || id === 'friend' || id === 'five') battleSet(id);
+    else if (id === 'wpn') { BT.wpn = (BT.wpn + 1) % BT_WPN.length; battleSet(BT.setup); }
+    else if (id === 'gear') { BT.gear = (BT.gear + 1) % BT_GEAR.length; battleSet(BT.setup); }
+    else if (id === 'wits') { BT.wits = (BT.wits + 1) % BT_WITS.length; battleSet(BT.setup); }
+    else if (id === 'mine') { BT.mine = BT.mine ? 0 : 1; battleGear(); }
+    else if (id === 'again') battleSet(BT.setup);
+    else if (id === 'heal') { P.hp = P.maxHp; P.st = 100; }
+    else if (id === 'clearf') battleClear();
+    else if (id === 'slow') BT.slow = !BT.slow;
+    else if (id === 'night') day.t = light() > 0.5 ? 300 : 1300;
   }
   /* ---------- the Rune Editor (game.html?scene=runes): a hut with a carver's bench, a workbench and a fireplace on the big
      island, every rune known, a ring on the arm, the hero at the bench; a small board on the left to change the ring's
@@ -15023,6 +15381,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function runeAct(id) {
     var P = hero();
     if (id === 'fold') { runePanel.folded = !runePanel.folded; return; }
+    if (SCENE === 'battle') { battleAct(id); return; }
     if ((SCENE === 'mountain' || ['slope1', 'slope2', 'foot', 'plateau', 'look', 'shelter', 'vein'].indexOf(id) >= 0) && w.mt && mountainAct(id)) { save(); return; }
     if (Runes.METALS[id]) { var old = ring; ring = Runes.newRing(id); if (old) old.coils.forEach(function (c0) { if (c0.id) Runes.cut(ring, c0.id, RS.learnt); }); heroRingSync(); toast(Runes.METALS[id].name + ' ring: ' + ring.coils.length + ' coils'); }
     else if (id === 'learn') { Runes.LIST.forEach(function (r) { if (!RS.learnt[r.id]) RS.learnt[r.id] = { uses: 0, how: 'the editor' }; }); toast('Every rune known'); }
@@ -15043,12 +15402,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
     save();
   }
   function drawRunePanel(c) {
-    var rows = runePanel.folded ? [] : (SCENE === 'mountain' ? mountainRows() : runeRows()), rh = 9, x0 = runePanel.x, y0 = runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [{ id: 'fold', x: x0, y: y0, w: w0, h: 15 }];
+    var rows = runePanel.folded ? [] : (SCENE === 'battle' ? battleRows() : SCENE === 'mountain' ? mountainRows() : runeRows()), rh = 9, x0 = runePanel.x, y0 = runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [{ id: 'fold', x: x0, y: y0, w: w0, h: 15 }];
     c.save(); c.globalAlpha = 0.92; wood(c, x0, y0, w0, h0);
-    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(SCENE === 'mountain' ? 'Mountain test' : 'Rune editor', x0 + 6, y0 + 10);
+    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(SCENE === 'battle' ? 'Battle test' : SCENE === 'mountain' ? 'Mountain test' : 'Rune editor', x0 + 6, y0 + 10);
     c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = 'rgba(246,226,184,0.8)'; c.fillText(runePanel.folded ? '+' : '–', x0 + w0 - 6, y0 + 10.5);   // click the title to fold it
     rows.forEach(function (r, i) {
-      var yy = y0 + 16 + i * rh, hov = mouseS && mouseS.x > x0 + 3 && mouseS.x < x0 + w0 - 3 && mouseS.y >= yy && mouseS.y < yy + rh, on = ring && ring.metal === r.id;
+      var yy = y0 + 16 + i * rh, hov = mouseS && mouseS.x > x0 + 3 && mouseS.x < x0 + w0 - 3 && mouseS.y >= yy && mouseS.y < yy + rh, on = r.on || (ring && ring.metal === r.id);
       runePanel.rows.push({ id: r.id, x: x0 + 3, y: yy, w: w0 - 6, h: rh });
       c.fillStyle = on ? 'rgba(255,214,90,0.22)' : (hov ? 'rgba(255,230,180,0.16)' : 'rgba(0,0,0,0.22)'); c.fillRect(x0 + 3, yy, w0 - 6, rh - 1);
       c.font = (on ? 'bold ' : '600 ') + '5px system-ui, sans-serif'; c.fillStyle = on ? '#ffd34d' : '#f6e2b8'; c.textAlign = 'left'; c.fillText(r.name, x0 + 7, yy + 6.5);
@@ -15063,7 +15422,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (kind === 'karve') { for (i = 0; i < 8; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 7; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } for (i = 2; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 1 }); parts.push({ id: 'strake', i: i, j: 5 }); } parts.push({ id: 'thwart', i: 2, j: 3 }, { id: 'thwart', i: 5, j: 3 }, { id: 'thwart', i: 6, j: 3 }, { id: 'mast', i: 4, j: 3 }, { id: 'sail', i: 4, j: 3 }, { id: 'rudder', i: 0, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { battle: function () { return BT; }, battleAct: function (id) { battleAct(id); }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -15135,7 +15494,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     Combat.update = function (dt) { var t = performance.now(); u0(dt); PERF.parts.update = performance.now() - t; };
   })();
   function frame(now) {
-    var dt = pauseOpen ? 0 : Math.min(0.05, (now - lastF) / 1000); frameAvg += ((now - lastF) - frameAvg) * 0.05; lastF = now;
+    var dt = pauseOpen ? 0 : Math.min(0.05, (now - lastF) / 1000); frameAvg += ((now - lastF) - frameAvg) * 0.05; lastF = now; if (BT.slow) dt *= 0.25;
     var tf0 = performance.now(); PERF.parts.ground = PERF.parts.items = PERF.parts.end = PERF.parts.update = 0;
     simTick(dt); var tf1 = performance.now(); PERF.parts.tick = tf1 - tf0 - PERF.parts.update;
     Combat.render(ctx); var tf2 = performance.now(); PERF.parts.draw = Math.max(0, tf2 - tf1 - PERF.parts.ground - PERF.parts.items - PERF.parts.end);
@@ -15146,7 +15505,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // one step of the world: the solids near the hero, every tick of the page, then the engine (also the debug hook `tick`, so checks can run it without rendering)
   function simTick(dt) {
     var D = Combat.dbg(), P = D.P;
-    if (P !== lastP) { lastP = P; nightSpawned = false; nightWolves = []; crafting = []; if (inYard) { inYard = false; zoom = yardZoom || zoom; Combat.api.scene.bounds = worldBounds(); } if (inCave) { inCave = false; cur = null; Combat.api.scene.bounds = worldBounds(); } toCamp(); spawnBoars(); if (raft && raft.aboard) { raft.aboard = false; var drift = raftSpot(home.x, home.y); if (drift) { raft.x = drift.x; raft.y = drift.y; } } }   // the raft drifts back to the camp shore     // R after falling: the engine made a new hero
+    if (P !== lastP) { lastP = P; nightSpawned = false; nightWolves = []; crafting = []; if (inYard) { inYard = false; zoom = yardZoom || zoom; Combat.api.scene.bounds = worldBounds(); } if (inCave) { inCave = false; cur = null; Combat.api.scene.bounds = worldBounds(); } toCamp(); spawnBoars(); if (BT.on && BT.field) battleSet(BT.setup); if (raft && raft.aboard) { raft.aboard = false; var drift = raftSpot(home.x, home.y); if (drift) { raft.x = drift.x; raft.y = drift.y; } } }   // the raft drifts back to the camp shore     // R after falling: the engine made a new hero
     if (inYard) { P.mode = 'build'; menu = null; }
     else if (P.mode === 'build' && PIECES[P.piece] && !pieceKnown(PIECES[P.piece])) stepPiece(1);
     if (!inYard && P.mode === 'build' && lastMode !== 'build') { menuFrom = 'B'; openMenu('build'); }   // B opens the Building board (what you make by hand is on C)

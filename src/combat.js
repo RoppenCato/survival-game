@@ -121,6 +121,7 @@ function spawn(type) {
     seed: Math.random() * 10, size: 1, chain: 0, showBar: 0, freezeT: 0, pkx: 0, pky: 0, sq: 0, sqAng: 0, rattle: 0, flashRgb: '255,255,255', dead: false, deadT: 0, dirLock: 0, hitDone: false, stagMeter: 0, sinceHit: 9, attack: '' };
   if (type === 'shooter') { e.hp = e.maxHp = 5; e.r = 8; }
   else if (type === 'brute') { e.hp = e.maxHp = 32; e.r = 13; e.size = 1.8; }
+  else if (type === 'soldier') { e.hp = e.maxHp = 30; e.r = 7; armMan(e, null); }
   else { e.type = 'beast'; e.hp = e.maxHp = 4; e.r = 7; }
   if (api.dress) api.dress(e);   // a page can give each enemy its own look and numbers (see templates/combat.html)
   W.enemies.push(e);
@@ -161,7 +162,7 @@ function lockFor(ent, t) { if (S.juice && ent) ent.freezeT = Math.max(ent.freeze
 function nearest(range, face, cone) {
   var best = null, bs = 1e9;
   for (var i = 0; i < W.enemies.length; i++) {
-    var e = W.enemies[i]; if (e.dead) continue;
+    var e = W.enemies[i]; if (e.dead || e.side === 1 || e.down || e.out) continue;
     var d = Math.hypot(e.x - P.x, e.y - P.y);
     if (d > range + e.r) continue;
     var df = Math.abs(wrap(Math.atan2(e.y - P.y, e.x - P.x) - face));
@@ -189,7 +190,7 @@ function rangedAngle() {
   return P.face;
 }
 function cycleLock() {         // Ctrl: nearest enemy, then the next nearest, then no target
-  var list = W.enemies.filter(function (e) { return alive(e) && Math.hypot(e.x - P.x, e.y - P.y) < 300; });
+  var list = W.enemies.filter(function (e) { return alive(e) && e.side !== 1 && !e.down && Math.hypot(e.x - P.x, e.y - P.y) < 300; });
   list.sort(function (a, b) { return Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y); });
   var i = list.indexOf(W.lock);
   W.lock = !list.length ? null : (i < 0 ? list[0] : (i + 1 < list.length ? list[i + 1] : null));
@@ -216,10 +217,10 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
       num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
       return 'parry';
     }
-    var red = kind === 'heavy' ? (S.shield ? 0.4 : 0.8) : (S.shield ? 0.12 : 0.55);
+    var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (S.shield ? 0.4 : 0.8) : (S.shield ? 0.12 : 0.55);
     var d2 = dmg * red * (api.armor ? 1 - api.armor() : 1);
-    p.hp -= d2; p.st -= (S.shield ? 10 : 18) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
-    var kbs = kind === 'heavy' ? 110 : 55;
+    p.hp -= d2; p.st -= (S.shield ? 10 : 18) * (gbH ? 1.8 : 1) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
+    var kbs = kind === 'heavy' ? 110 : 55; if (hitFlags.stagger) { kbs = 150; p.hurtT = Math.max(p.hurtT, 0.24); p.guard = false; }
     p.kx = -Math.cos(toSrc) * kbs; p.ky = -Math.sin(toSrc) * kbs;
     spark(p.x + Math.cos(p.face) * 9, p.y + Math.sin(p.face) * 9, 6, '#cfd6e6', 90);
     lockFor(p, 0.035); sfx('block');
@@ -241,19 +242,44 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 }
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
-function damageEnemy(e, dmg, ang, kb, stag, kind) {
-  if (e.aggro) e.awake = true;   // hitting a calm creature rouses it
+function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose blow this is; none is the hero
+  if (e.aggro || e.awake === false) e.awake = true;   // hitting a calm creature rouses it
   e.struck = true;
-  if (e.dead) return;
-  var mult = 1, weak = false;
+  if (e.dead || e.down) return;
+  var mult = 1, weak = false, man = e.type === 'soldier', blocked = false, broke = false;
   var bigE = e.type === 'brute';
+  if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= MEN.front) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
+    blocked = true; broke = !!hitFlags.guardBreak || stag >= 40;
+    dmg *= kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight;
+    if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.4; } else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
+  }
+  if (man) dmg *= 1 - (e.armor || 0);
   if (e.state === 'recover') mult = bigE ? 1.3 : 1.5;
   if (bigE && e.state === 'stunned') mult = 2;
-  var crit = (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
+  var crit = !src && !blocked && (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
-  var dealt = dmg * mult * mod('dmg');          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
+  var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
+  if (!src) { W.heroHit = e; W.heroHitT = W.t; }
+  if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
+    e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
+  }
   var killing = e.hp <= 0;
+  if (src) {                                               // a blow between men: no pause for the hero, no number, a quieter mark
+    e.flash = blocked ? 0.5 : 1; e.flashRgb = '255,255,255';
+    e.pkx = 0; e.pky = 0; e.kx += Math.cos(ang) * kb * (blocked ? 0.4 : 0.8); e.ky += Math.sin(ang) * kb * (blocked ? 0.4 : 0.8);
+    spark(e.x - Math.cos(ang) * e.r * 0.8, e.y - Math.sin(ang) * e.r * 0.8, blocked ? 3 : 5, blocked ? '#cfd6e6' : '#fff3b0', 90); sfx(blocked ? 'block' : 'hit', 0, e);
+    if (broke) bits(e.x, e.y, 3);
+    if (killing) { killEnemy(e, src); return; }
+    if (blocked && !broke) return;
+    if (man && e.state === 'lunge') return;
+    if (man && e.state === 'windup' && kind !== 'heavy' && !broke) return;
+    if (e.type === 'beast' && (e.state === 'lunge' || e.state === 'windup')) return;
+    if (man && e.poiseT > 0 && kind !== 'heavy' && !broke) { heartOf(e); return; }
+    if (e.state !== 'recover' || man) { e.state = 'stagger'; e.t = 0; e.dur = kind === 'heavy' || broke ? 0.34 : 0.16; e.sw = null; e.swung = false; e.poiseT = 0.9; }
+    if (man) heartOf(e);
+    return;
+  }
   if (S.juice) { e.flash = 1; e.flashRgb = crit ? '255,208,70' : '255,255,255'; }
   var heavy = kind === 'heavy' || weak || stag >= 20, melee = kind === 'melee' || kind === 'heavy';
   var kbm = e.type === 'brute' ? 0.3 : (e.type === 'shooter' ? 0.15 : 1);
@@ -273,8 +299,9 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
     if (heavy && !killing) slowmo(WM.hs, WM.hd);
   }
   spark(hx, hy, (heavy && !killing ? 12 : 7) + (crit ? 5 : 0), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
-  num(e.x, e.y - e.r * 2.2 - 10, String(Math.round(dealt * 50) / 10), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), heavy || crit);
-  sfx((heavy && !killing) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0);
+  num(e.x, e.y - e.r * 2.2 - 10, String(Math.round(dealt * 50) / 10), blocked && !broke ? '#cfd6e6' : crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), !blocked && (heavy || crit));
+  sfx(blocked && !broke ? 'block' : (heavy && !killing) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0);
+  if (broke) { bits(e.x, e.y, 4); sfx('slam', 0, e); }
   if (crit) { sfx('crit'); e.rattle = 1.6; }
   if (bigE) {
     if (e.state !== 'stunned') {
@@ -283,14 +310,22 @@ function damageEnemy(e, dmg, ang, kb, stag, kind) {
     }
   } else if (e.type === 'beast' && (e.state === 'lunge' || (e.state === 'windup' && !heavy))) {
     // an animal that has begun its attack finishes it: a light hit does not stop it (only a heavy hit or a parry does)
+  } else if (man) {                                        // a man: a blow he has begun he finishes unless it was a heavy one; a blow on his shield he holds; on his knees he stays there
+    if (e.state === 'yield' || e.state === 'flee') { /* stays as he is */ }
+    else if (blocked && !broke) { /* holds */ }
+    else if (e.state === 'lunge' || (e.state === 'windup' && !heavy && !broke)) { /* finishes it */ }
+    else if (e.poiseT > 0 && !heavy && !broke) { /* he has just flinched: this one he takes on his feet */ }
+    else { e.state = 'stagger'; e.t = 0; e.dur = heavy || broke ? 0.36 : 0.16; e.sw = null; e.swung = false; e.poiseT = 0.9; }
+    if (!killing) heartOf(e);
   } else if (e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = heavy ? 0.34 : 0.14; }   // a light hit is only a flinch: sword-tapping cannot lock an animal in place
   if (killing) killEnemy(e);
 }
-function killEnemy(e) {
+function killEnemy(e, src) {
   var bigK = e.type === 'brute';
-  e.dead = true; e.deadT = 0; W.kills++;
-  bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
-  slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die');
+  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null;
+  if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
+  else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
+    slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
   if (W.lock === e) W.lock = null;
   if (api.onDeath) api.onDeath(e);
   if (e.type === 'brute') num(e.x, e.y - 50, (e.name || 'Brute') + ' DOWN', '#ffe27a');
@@ -335,7 +370,7 @@ function stepData0(a) {
 function gapAhead(dir) {
   var g = 999;
   for (var i = 0; i < W.enemies.length; i++) {
-    var e = W.enemies[i]; if (e.dead) continue;
+    var e = W.enemies[i]; if (e.dead || e.side === 1 || e.down) continue;
     var dx = e.x - P.x, dy = e.y - P.y;
     if (Math.abs(wrap(Math.atan2(dy, dx) - dir)) < 1.0) g = Math.min(g, Math.hypot(dx, dy) - e.r - P.r);
   }
@@ -344,10 +379,10 @@ function gapAhead(dir) {
 function collideBodies() {
   var p = P; if (p.dead || p.roll.t > 0) return;
   for (var i = 0; i < W.enemies.length; i++) {
-    var e = W.enemies[i]; if (e.dead) continue;
+    var e = W.enemies[i]; if (e.dead || e.down) continue;
     var dx = p.x - e.x, dy = p.y - e.y, d = Math.hypot(dx, dy), mn = p.r + e.r;
     if (d < mn && d > 0.01) {
-      var ov = mn - d, share = e.type === 'shooter' ? 1 : (e.type === 'brute' ? 0.7 : 0.45), nx = dx / d, ny = dy / d;
+      var ov = mn - d, share = e.side === 1 ? 0.08 : e.type === 'shooter' ? 1 : (e.type === 'brute' ? 0.7 : 0.45), nx = dx / d, ny = dy / d;
       moveCircle(p, nx * ov * share, ny * ov * share);
       if (e.type !== 'shooter') moveCircle(e, -nx * ov * (1 - share), -ny * ov * (1 - share));
     }
@@ -491,13 +526,13 @@ function updatePlayer(dt) {
         }
       } else for (i = 0; i < W.enemies.length; i++) {
         var e = W.enemies[i];
-        if (e.dead || a.hit.indexOf(e) >= 0) continue;
+        if (e.dead || e.side === 1 || e.down || a.hit.indexOf(e) >= 0) continue;
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
         if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12)) {
           a.hit.push(e);
           critBonus = ((!bareHanded() && meleeProfile().crit) || 0) + modZ('crit');   // the keen edge adds to the chance
-          damageEnemy(e, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0;
-          if (sd.guardBreak && e.guard) e.guard = 0;
+          hitFlags.guardBreak = !!sd.guardBreak;
+          damageEnemy(e, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0; hitFlags.guardBreak = false;
           if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
         }
       }
@@ -536,7 +571,7 @@ function updatePlayer(dt) {
   var spd = 84 * mod('speed');           // a walk, not a jog (118 was too fast for the world's scale); mods().speed for a page's cheats
   if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt * mod('sprintCost')); p.stDelay = Math.max(p.stDelay, 0.55); }
   if (sprint && il > 0 && modZ('charge') > 0 && p.mode === 'fight') for (i = 0; i < W.enemies.length; i++) {   // the boar's charge: your run is a blow
-    var ce = W.enemies[i]; if (ce.dead || (ce.chargeT || 0) > 0) continue;
+    var ce = W.enemies[i]; if (ce.dead || ce.side === 1 || ce.down || (ce.chargeT || 0) > 0) continue;
     if (Math.hypot(ce.x - p.x, ce.y - p.y) < ce.r + p.r + 6) { ce.chargeT = 1.2; var cang = Math.atan2(ce.y - p.y, ce.x - p.x); damageEnemy(ce, 1.2 * dmgMul('sword'), cang, 260, 40, 'heavy'); ring(ce.x, ce.y, 0, 14, 0.25, '255,243,196', false, 2); sfx('slam'); }
   }
   if (p.guard) spd *= 0.55;
@@ -685,6 +720,242 @@ function bruteAI(e, dt, d, ang) {
     case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.9; e.stagMeter = 0; } break;
   }
 }
+/* ---------- men: sides, and the soldier (2026-10-12, docs/battle-plan.md; Robin: fight a hirdman, two, two with one beside
+   you, five against five, a town, the raid) ----------
+   SIDES. Every fighter has a side: 0 is against the hero (every beast, a town's men), 1 is with him (his own men). The
+   hero's blows pass through his friends; a soldier's blow lands on whoever of the other side stands in it (strike).
+   Beasts are as they were: they know only the hero.
+   THE SOLDIER is the fourth kind of enemy, a man with a weapon and perhaps a shield. He closes to his weapon's reach and
+   keeps it, circles, shows his blow coming (a windup much longer than the hero's own), strikes by his weapon's numbers
+   (PROFILES: the arc, the reach, the one thing each kind has), raises his shield against a blow he sees coming if he is
+   quick enough (his wits), answers a blow he has stopped, steps back when hurt, and when badly hurt yields or runs unless
+   he is loyal. More than one on a target take places round it and strike in turn (slots). A friend (side 1) follows the
+   hero, takes what the hero strikes, keeps to a leash, goes down instead of dying and gets up when the fight is over.
+   Everything he is comes from a few numbers on him (armMan) and from MEN. */
+var MEN = {
+  speed: 60, run: 94, back: 50, strafe: 24, turn: 8,
+  wu: 0.3, wuK: 2.4,                  // a blow's windup: wu + the weapon's own times wuK
+  ac: 0.07, acK: 1.4, rec: 0.3, recK: 2.0, hitAt: 0.45,
+  dmg: 12,                            // a blow at strength 1 from a weapon whose kind says 1 (the hero's scale: he has 100)
+  toMen: 0.2,                         // the same blow landing on a man (their health is on the beasts' scale)
+  wdmg: { sword: 1, axe: 1.2, club: 0.85, seax: 0.6, spear: 1.1, greataxe: 2 },
+  cd: [1.0, 0.45],                    // the wait between his attacks: dull to sharp
+  react: [0.36, 0.07],                // how long after a blow begins he has his shield up: dull to sharp
+  guard: 0.75, guardMax: 1.7, guardCd: [1.5, 0.7],
+  blockLight: 0.3, blockHeavy: 0.55, front: 1.7,
+  slots: 2, gapT: 0.4,                // how many may be striking one target at once, and the least time between two blows begun on it
+  backAt: 0.6, yieldAt: 0.25,
+  sight: 340, aggro: 150, leash: 250, lie: 90,
+  followGap: 12, riseAfter: 4
+};
+api.men = MEN;
+var hitFlags = { guardBreak: false, stagger: false };       // what the blow now landing can do (set round the hero's own blows)
+function lerp(a, b, k) { return a + (b - a) * k; }
+function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
+  o = o || {}; e.type = 'soldier'; e.human = true; e.side = o.side ? 1 : 0; e.r = 7;
+  var kind = o.wpn && PROFILES[o.wpn.kind] ? o.wpn.kind : 'sword'; e.wpn = { kind: kind, mat: (o.wpn && o.wpn.mat) || 'iron', tint: (o.wpn && o.wpn.tint) || '#9ca3ad' };
+  e.pf = PROFILES[kind]; e.pow = o.pow != null ? o.pow : 1.3;                         // the metal (iron's 1.3)
+  e.shield = !!o.shield && kind !== 'greataxe'; e.armor = o.armor || 0;
+  e.hp = e.maxHp = o.hp || 30; e.str = 0.7 + (o.strength != null ? o.strength : 4) * 0.075;
+  e.w01 = clamp(((o.wits != null ? o.wits : 4) - 1) / 6, 0, 1); e.react = lerp(MEN.react[0], MEN.react[1], e.w01);
+  e.loyal = !!o.loyal; e.nerve = o.nerve != null ? o.nerve : 0.5; e.name = o.name || '';
+  e.guard = 0; e.guardCd = 0; e.guardAge = 0; e.seeT = 0; e.blocked = 0; e.poiseT = 0; e.wary = Math.random() < 0.2 + 0.65 * e.w01; e.swingN = 0; e.chainLeft = 0; e.tgt = null; e.retT = 0; e.strafe = e.seed > 5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
+  e.awake = true; e.sight = o.sight || MEN.sight; e.leash = o.leash || MEN.leash; e.order = 'follow'; e.deadFor = MEN.lie; e.cd = 0.4 + Math.random() * 0.8;
+  if (o.x != null) { e.x = o.x; e.y = o.y; }
+  if (o.post) { e.post = o.post; e.awake = false; }
+  return e;
+}
+function soldier(o) { var keep = api.dress; api.dress = null; var e = spawn('soldier'); api.dress = keep; armMan(e, o); if (api.dressMan) api.dressMan(e, o); return e; }
+function eachFoe(e, fn) {
+  var i, o;
+  if ((e.side || 0) === 0) { if (!P.dead && !P.hidden) fn(P); for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 && !o.dead && !o.down) fn(o); } }
+  else for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side === 1 || o.dead || o.fled || o.out) continue; if (o.type === 'soldier' ? o.awake !== false : (!o.flee && (!(o.aggro || o.strolls) || o.awake))) fn(o); }
+}
+function onTarget(F, me) { var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o !== me && o.type === 'soldier' && !o.dead && !o.down && !o.out && o.tgt === F && (o.side || 0) === (me.side || 0)) n++; } return n; }
+function pickTarget(e) {
+  var best = null, bs = 1e9, cur = e.tgt;
+  eachFoe(e, function (F) {
+    var d = Math.hypot(F.x - e.x, F.y - e.y); if (d > e.sight) return;
+    if (e.side === 1 && Math.hypot(F.x - P.x, F.y - P.y) > e.leash) return;                 // a friend does not go past his leash from the hero
+    if (e.order === 'hold' && e.holdAt && Math.hypot(F.x - e.holdAt.x, F.y - e.holdAt.y) > 90) return;   // told to hold: only what comes to him
+    var sc = d + onTarget(F, e) * 44;                                                       // one nobody has, then the least beset
+    if (F === cur) sc -= 34;
+    if (e.side === 1 && F === W.heroHit && W.t - (W.heroHitT || -9) < 4) sc -= 80;          // what the hero struck last
+    if (sc < bs) { bs = sc; best = F; }
+  });
+  return best;
+}
+function strikersOn(F, me) { var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o !== me && o.type === 'soldier' && !o.dead && o.tgt === F && (o.state === 'windup' || o.state === 'lunge')) n++; } return n; }
+function slotFree(F, e) { return strikersOn(F, e) < MEN.slots && W.t - (F._wuT == null ? -9 : F._wuT) >= MEN.gapT; }
+var ARCS = [0, 0, 1.6, 2.5, 3.2, 3.6];
+function slotAngle(e, T) {                  // more than one on a target: places round the side of it that faces their middle, in the order they stand
+  var L = [], i, o, sx = 0, sy = 0;
+  for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || o.out || o.tgt !== T || (o.side || 0) !== (e.side || 0)) continue; var a = Math.atan2(o.y - T.y, o.x - T.x); L.push({ o: o, a: a }); sx += Math.cos(a); sy += Math.sin(a); }
+  if (L.length < 2) return null;
+  var mean = Math.atan2(sy, sx), n = L.length, arc = n < ARCS.length ? ARCS[n] : 3.8;
+  L.forEach(function (q) { q.d = wrap(q.a - mean); }); L.sort(function (m1, m2) { return m1.d - m2.d; });
+  for (i = 0; i < n; i++) if (L[i].o === e) return mean + (i - (n - 1) / 2) * (arc / (n - 1));
+  return null;
+}
+function threatTo(e) {                      // whose blow is coming at him, if he can see one
+  var a = P.atk, i, o, dx, dy, d;
+  if ((e.side || 0) === 0 && !P.dead && P.mode === 'fight' && P.weapon !== 'ranged' && (a.ph === 'windup' || a.ph === 'active' || a.ph === 'charge')) {
+    var sd = stepData(a); dx = e.x - P.x; dy = e.y - P.y; d = Math.hypot(dx, dy);
+    if (d <= sd.reach + e.r + 30 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - (a.ph === 'charge' ? P.face : a.dir))) <= sd.arc / 2 + 0.35)) return P;
+  }
+  for (i = 0; i < W.enemies.length; i++) {
+    o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || !o.sw || (o.side || 0) === (e.side || 0)) continue;
+    if (o.state !== 'windup' && !(o.state === 'lunge' && !o.hitDone)) continue;
+    dx = e.x - o.x; dy = e.y - o.y; d = Math.hypot(dx, dy);
+    if (d <= o.sw.reach + e.r + 16 && Math.abs(wrap(Math.atan2(dy, dx) - o.dirLock)) <= o.sw.arc / 2 + 0.3) return o;
+  }
+  return null;
+}
+function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows the walls may give the next corner to make for (api.nav)
+  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { x = wpt.x; y = wpt.y; } }
+  var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 0.5) return 0;
+  var ox = e.x, oy = e.y, st = Math.min(d, sp * dt); moveCircle(e, dx / d * st, dy / d * st); return Math.hypot(e.x - ox, e.y - oy);
+}
+function blowOf(e, second, quick) {
+  var pf = e.pf, hv = second ? 1 : 0, clip = pf.motion === 'smash' ? 'mine' : (pf.heavy ? 'chop' : (e.swingN % 2 ? 'attack2' : 'attack1'));
+  return { wu: (MEN.wu + pf.wu * MEN.wuK) * (second ? 0.7 : quick ? 0.62 : 1), ac: MEN.ac + pf.ac * MEN.acK, rec: (MEN.rec + pf.rec * MEN.recK) * (1 + hv * 0.3), arc: Math.max(0.7, pf.arc * (pf.motion === 'thrust' ? 1.2 : 0.85)), reach: pf.reach,
+    dmg: MEN.dmg * (MEN.wdmg[e.wpn.kind] || 1) * e.pow * e.str * (1 + hv * 0.35), kb: pf.kb, stag: pf.stag * (1 + hv * 0.6), heavy: !!pf.heavy, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak, clip: clip };
+}
+function beginBlow(e, T, ang, second, quick) {
+  e.sw = blowOf(e, second, quick); e.swingN++; e.state = 'windup'; e.t = 0; e.dur = e.sw.wu; e.dirLock = ang; e.face = ang; e.hitDone = false; e.swung = false; e.guard = 0; e.blocked = 0;
+  T._wuT = W.t; sfx('tele', 0, e);
+}
+function strike(e) {
+  var sw = e.sw, L = [];
+  eachFoe(e, function (F) { var dx = F.x - e.x, dy = F.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx); if (d <= sw.reach + F.r + 2 && Math.abs(wrap(a - e.dirLock)) <= sw.arc / 2 + 0.1) L.push({ F: F, d: d, a: a }); });
+  L.sort(function (m1, m2) { return m1.d - m2.d; }); if (!sw.pierce && sw.motion === 'thrust' && L.length > 1) L.length = 1;
+  if (!L.length) { dust(e.x + Math.cos(e.dirLock) * (e.r + 10), e.y + Math.sin(e.dirLock) * (e.r + 10), 2); return; }
+  L.forEach(function (h) {
+    if (h.F === P) {
+      hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
+      if (r === 'parry') { daze(e, 1.3); e.sw = null; e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
+    } else { hitFlags.guardBreak = sw.guardBreak; damageEnemy(h.F, sw.dmg * MEN.toMen, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; }
+  });
+}
+function lowerGuard(e, tired) { e.guard = 0; e.guardAge = 0; e.guardCd = lerp(MEN.guardCd[0], MEN.guardCd[1], e.w01) * (tired ? 1 : 0.45); e.wary = Math.random() < 0.2 + 0.65 * e.w01; }
+function raiseGuard(e, t) { e.guard = t || MEN.guard; e.guardAge = 0; e.seeT = 0; sfx('raise', 0, e); }
+function heartOf(e) {                       // hurt badly: on his knees, away, or on with it (a loyal man and a friend do neither)
+  if (e.side === 1 || e.loyal || e.nerved || e.hp > e.maxHp * MEN.yieldAt) return; e.nerved = true;
+  if (Math.random() < e.nerve) return;
+  if (Math.random() < 0.55) { e.state = 'yield'; e.t = 0; e.out = true; e.guard = 0; e.sw = null; if (W.lock === e) W.lock = null; if (api.onYield) api.onYield(e); }
+  else { e.state = 'flee'; e.t = 0; e.out = true; e.guard = 0; e.sw = null; if (W.lock === e) W.lock = null; }
+}
+function goDown(e) {                        // a friend does not die of a blow: he is down, and up again when the fight is won
+  e.down = true; e.hp = 0; e.deadT = 0; e.state = 'down'; e.guard = 0; e.sw = null; e.tgt = null; e.quietT = 0; e.aloneT = 0; sfx('die', 0, e); if (api.onDown) api.onDown(e);
+}
+function downTick(e, dt) {
+  e.deadT += dt; var near = false, i, o;
+  for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side !== 1 && !o.dead && !o.out && !o.fled && (o.type === 'soldier' ? o.awake !== false : !!o.awake || (!(o.aggro || o.strolls) && !o.flee)) && Math.hypot(o.x - e.x, o.y - e.y) < 260) { near = true; break; } }
+  e.quietT = near ? 0 : (e.quietT || 0) + dt;
+  var far = P.dead || Math.hypot(P.x - e.x, P.y - e.y) > 700; e.aloneT = far ? (e.aloneT || 0) + dt : 0;
+  if (e.aloneT > 20) { e.down = false; e.dead = true; e.deadT = 2; if (api.onDeath) api.onDeath(e); return; }      // left behind, or the fight was lost
+  if (e.quietT > MEN.riseAfter && !P.dead) { e.down = false; e.riseT = 0.8; e.hp = Math.max(1, e.maxHp * 0.35); e.state = 'chase'; e.t = 0; e.cd = 1; if (api.onRise) api.onRise(e); }
+}
+var FOLLOW = [[-20, 15], [20, 15], [-38, 30], [38, 30], [0, 34], [-56, 46], [56, 46], [-18, 52], [18, 52]];
+function followStep(e, dt) {                // a friend with nobody to fight: his place beside and a little behind the hero
+  var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o === e) break; if (o.side === 1 && o.type === 'soldier' && !o.dead && !o.down && o.order !== 'hold') n++; }
+  if (e.order === 'hold' && e.holdAt) { if (Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 5) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); e.face = turnToward(e.face, Math.atan2(e.holdAt.y - e.y, e.holdAt.x - e.x), MEN.turn * dt); } else if (e.holdAt.face != null) e.face = turnToward(e.face, e.holdAt.face, 4 * dt); return; }
+  var hd = W.heading == null ? P.face : W.heading, f = FOLLOW[n % FOLLOW.length], k = 1 + Math.floor(n / FOLLOW.length) * 0.6, bx = -Math.cos(hd), by = -Math.sin(hd), lx = -by, ly = bx;
+  var tx = P.x + (lx * f[0] + bx * f[1]) * k, ty = P.y + (ly * f[0] + by * f[1]) * k, d = Math.hypot(tx - e.x, ty - e.y);
+  if (d > MEN.followGap || e.moving) { e.moving = d > 4; var sp = d > 70 ? MEN.run * 1.15 : (d > 26 ? P.sprinting ? MEN.run * 1.1 : 84 : MEN.speed); stepTo(e, tx, ty, sp, dt); e.face = turnToward(e.face, Math.atan2(ty - e.y, tx - e.x), MEN.turn * dt); }
+  else e.face = turnToward(e.face, hd, 3 * dt);
+}
+function postStep(e, dt) {                  // one of a town's men with nothing to fight: at his post
+  var p = e.post; if (!p) return;
+  if (Math.hypot(p.x - e.x, p.y - e.y) > 5) { stepTo(e, p.x, p.y, MEN.speed * 0.8, dt); e.face = turnToward(e.face, Math.atan2(p.y - e.y, p.x - e.x), MEN.turn * dt); e.atPost = false; }
+  else { if (p.face != null) e.face = turnToward(e.face, p.face, 3 * dt); e.atPost = true; }
+}
+function soldierAI(e, dt) {
+  var i, T, dx, dy, d, ang;
+  e.cd -= dt; e.guardCd -= dt; e.poiseT -= dt; if (e.riseT > 0) { e.riseT -= dt; return; }
+  if (e.guard > 0) { e.guard -= dt; e.guardAge += dt; if (e.guard <= 0) lowerGuard(e, false); }
+  if (e.heard > 0) { e.heard -= dt; e.awake = true; }
+  if (e.state === 'yield') {                // on his knees, out of it; left alone a while he gets up and goes
+    e.guard = 0; var near = 1e9; eachFoe(e, function (F) { near = Math.min(near, Math.hypot(F.x - e.x, F.y - e.y)); });
+    if (e.t > 14 || (e.t > 5 && near > 110)) { e.state = 'flee'; e.t = 0; }
+    return;
+  }
+  if (e.state === 'flee') {                 // away from whoever is nearest, and fled when far enough
+    var nx = 0, ny = 0, nd = 1e9; eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y); if (q < nd) { nd = q; nx = F.x; ny = F.y; } });
+    if (nd > 620 || nd === 1e9) { e.fled = true; return; }
+    var fa = Math.atan2(e.y - ny, e.x - nx); e.face = turnToward(e.face, fa, MEN.turn * dt); moveCircle(e, Math.cos(e.face) * MEN.run * dt, Math.sin(e.face) * MEN.run * dt); return;
+  }
+  if (e.awake === false) {                  // at his post, and has seen nothing
+    var seen = false, st = api.mods && api.mods().stealth ? api.mods().stealth : 1;
+    eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y), behind = Math.abs(wrap(Math.atan2(F.y - e.y, F.x - e.x) - e.face)) > 1.9; if (q < (e.aggro || MEN.aggro) * (behind ? 0.45 : 1) * (F === P ? st : 1)) seen = true; });
+    if (seen) { e.awake = true; if (api.onWake) api.onWake(e); } else { postStep(e, dt); e.state = 'idle'; return; }
+  }
+  e.retT -= dt; T = e.tgt;
+  if (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && P.hidden) || e.retT <= 0) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; }
+  if (!T) {                                 // nobody to fight
+    if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'back') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
+    e.state = 'idle'; e.guard = 0; e.sw = null;
+    if (e.side === 1) followStep(e, dt);
+    else { e.noT = (e.noT || 0) + dt; if (e.post && e.noT > 6) { postStep(e, dt); if (e.atPost) { e.awake = false; e.noT = 0; } } }
+    return;
+  }
+  e.noT = 0; e.moving = false;
+  dx = T.x - e.x; dy = T.y - e.y; d = Math.hypot(dx, dy); ang = Math.atan2(dy, dx);
+  var keep = e.pf.reach + T.r - 5;
+  switch (e.state) {
+    case 'idle': e.state = 'chase'; e.t = 0; break;
+    case 'chase':
+      var th = threatTo(e), fa2 = th ? Math.atan2(th.y - e.y, th.x - e.x) : ang;
+      e.face = turnToward(e.face, fa2, MEN.turn * dt);
+      if (e.guard > 0) { if (th || (e.wary && d <= keep + 16 && e.cd > 0.2)) e.guard = Math.max(e.guard, 0.3); if (e.guardAge > MEN.guardMax) lowerGuard(e, true); }
+      else if (e.shield && e.guardCd <= 0 && th) { e.seeT += dt; if (e.seeT >= e.react) raiseGuard(e); }                 // a blow he sees coming, if he is quick enough
+      else if (e.shield && e.guardCd <= 0 && e.wary && d <= keep + 16 && e.cd > 0.2) raiseGuard(e);                       // a wary man: behind his shield while you are in reach and he is not striking
+      else e.seeT = Math.max(0, e.seeT - dt * 2);
+      // his place: at his reach from the target, at his own angle round it when others are on it too
+      var sa = slotAngle(e, T), waiting = e.cd > 0.5 || !slotFree(T, e), want = keep + (sa != null && waiting && strikersOn(T, e) >= MEN.slots ? 14 : 0), slow = e.guard > 0 ? 0.5 : 1;
+      if (e.order === 'hold' && e.holdAt && Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 46 && d > keep) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); break; }   // told to hold: he does not follow a man who backs away
+      if (d > want + 70) stepTo(e, T.x, T.y, MEN.run, dt);
+      else {
+        var vr = clamp((d - want) * 3.2, -MEN.back, MEN.speed), vt = 0, here = Math.atan2(-dy, -dx);
+        if (sa != null) vt = clamp(wrap(sa - here) * 70, -MEN.strafe * 2, MEN.strafe * 2);
+        else { e.strafeT -= dt; if (e.strafeT <= 0) { e.strafeT = 0.8 + Math.random() * 2.2; e.strafe = Math.random() < 0.3 ? 0 : (Math.random() < 0.5 ? 1 : -1); } vt = e.strafe * MEN.strafe * (d < want + 20 ? 1 : 0); }
+        if (api.nav && d > want + 24) stepTo(e, T.x, T.y, MEN.speed * slow, dt);                                          // walls between: the page finds the way
+        else moveCircle(e, (Math.cos(ang) * vr - Math.sin(here) * vt) * slow * dt, (Math.sin(ang) * vr + Math.cos(here) * vt) * slow * dt);
+      }
+      if (e.guard <= 0 || (e.blocked > 0 && !th)) {
+        var aligned = Math.abs(wrap(ang - e.face)) < 0.45;
+        if (e.cd <= 0 && d <= keep + 7 && aligned && slotFree(T, e) && !(T === P && (P.roll.t > 0))) { var answer = e.blocked > 0; e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
+      }
+      break;
+    case 'windup':
+      if (e.pf.motion !== 'thrust') e.dirLock = turnToward(e.dirLock, ang, 1.6 * dt); e.face = e.dirLock;
+      if (e.t >= e.dur) { e.state = 'lunge'; e.t = 0; e.dur = e.sw.ac; e.hitDone = false; sfx('swing', 0, e); }
+      break;
+    case 'lunge':
+      if (d > T.r + e.r + 5) moveCircle(e, Math.cos(e.dirLock) * e.pf.lunge * 0.5 * dt, Math.sin(e.dirLock) * e.pf.lunge * 0.5 * dt);
+      if (!e.hitDone && e.t >= e.dur * MEN.hitAt) { e.hitDone = true; strike(e); }
+      if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = e.sw.rec; e.swung = true; }
+      break;
+    case 'recover':
+      if (e.swung && e.chainLeft > 0 && e.t >= e.dur * 0.45 && d <= keep + 14) { e.chainLeft--; beginBlow(e, T, ang, true); break; }
+      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = lerp(MEN.cd[0], MEN.cd[1], e.w01) * (0.8 + Math.random() * 0.5); }
+      break;
+    case 'stagger':
+      if (e.t >= e.dur) {
+        e.sw = null; e.swung = false; e.cd = Math.max(e.cd, 0.3); e.seeT = e.react * 0.6;                            // hit: he is quicker to cover now
+        var cover = e.shield && e.guardCd <= 0.3 && Math.random() < 0.4 + 0.5 * e.w01;                                  // a man with a shield gets it up after the first blow of a chain
+        if (cover) raiseGuard(e, MEN.guard + 0.3);
+        if ((e.hp < e.maxHp * MEN.backAt && Math.random() < 0.45) || (!cover && Math.random() < 0.3 + 0.45 * e.w01)) { e.state = 'back'; e.t = 0; e.dur = cover ? 0.5 + Math.random() * 0.4 : 0.32 + Math.random() * 0.2; e.hop = !cover; }   // or steps out of the next one
+        else { e.state = 'chase'; e.t = 0; }
+      }
+      break;
+    case 'back':
+      e.face = turnToward(e.face, ang, MEN.turn * dt); moveCircle(e, -Math.cos(ang) * MEN.back * (e.hop ? 1.9 : 1) * dt, -Math.sin(ang) * MEN.back * (e.hop ? 1.9 : 1) * dt);
+      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.hop = false; }
+      break;
+    default: e.state = 'chase'; e.t = 0;
+  }
+}
 // A calm animal with e.wander = { x0, y0, r } ambles between points near its home ground, pausing between walks.
 function wanderStep(e, dt) {
   var w = e.wander;
@@ -703,8 +974,9 @@ function updateEnemies(dt) {
     var e = W.enemies[i];
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
+    if (e.down) { downTick(e, dt); continue; }
     if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
-    if (e.aggro || e.strolls) {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
+    if ((e.aggro || e.strolls) && e.type !== 'soldier') {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
       if (!e.aggro) { /* the page decides when it wakes */ }
       else if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) && !P.dead) e.awake = true;   // the light step shortens the noticing
@@ -728,13 +1000,14 @@ function updateEnemies(dt) {
       moveCircle(e, e.kx * dt, e.ky * dt);
       if (S.juice && Math.abs(e.kx) + Math.abs(e.ky) > 70 && Math.random() < dt * 22) dust(e.x, e.y, 1);
     }
+    if (e.type === 'soldier') { soldierAI(e, adt); continue; }
     if (P.dead) { if (e.state !== 'idle' && e.state !== 'recover') { e.state = 'idle'; } if (e.state === 'idle') continue; }
     if (e.type === 'brute') bruteAI(e, adt, d, ang); else if (e.type === 'shooter') shooterAI(e, adt, d, ang); else beastAI(e, adt, d, ang);
   }
-  W.enemies = W.enemies.filter(function (e) { return !(e.dead && e.deadT > (e.deadFor || 0.5)); });   // a sprite beast lies a moment longer (its death clip)
+  W.enemies = W.enemies.filter(function (e) { return !e.fled && !(e.dead && e.deadT > (e.deadFor || 0.5)); });   // a sprite beast lies a moment longer (its death clip)
   // soft separation
   for (var a = 0; a < W.enemies.length; a++) for (var b = a + 1; b < W.enemies.length; b++) {
-    var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.type === 'shooter' || B.type === 'shooter') continue;
+    var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.down || B.down || A.type === 'shooter' || B.type === 'shooter') continue;
     var ox = B.x - A.x, oy = B.y - A.y, dd = Math.hypot(ox, oy), mn = A.r + B.r;
     if (dd < mn && dd > 0.01) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }
   }
@@ -756,7 +1029,7 @@ function updateProjs(dt) {
       } else {
         for (var j = 0; j < W.enemies.length; j++) {
           var e = W.enemies[j];
-          if (e.dead) continue;
+          if (e.dead || e.side === 1 || e.down) continue;
           if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, 1.6); e.pkx = e.pky = 0; num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } gone = true; hit = true; break; }
         }
       }
@@ -781,6 +1054,7 @@ function updateFx(dt) {
 
 function update(dt) {
   dt = Math.min(dt, 0.05);
+  if (W.heading == null) W.heading = P.face; if (Math.hypot(P.vx, P.vy) > 30 && P.atk.ph === 'none') W.heading = turnToward(W.heading, Math.atan2(P.vy, P.vx), dt * 2.5);
   if (IN.pressed.KeyR && P.dead) { reset(); }
   if (IN.pressed.KeyH && !P.dead && W.enemies.length < 14) spawn('beast');
   if (W.slow.t > 0) { W.slow.t -= dt; dt *= W.slow.s; }
@@ -880,6 +1154,12 @@ function drawTelegraphs(c) {
     if (e.type === 'beast' && e.state === 'windup') {
       c.strokeStyle = 'rgba(255,70,60,' + (0.25 + 0.35 * (e.t / e.dur)) + ')'; c.lineWidth = 4; c.lineCap = 'round';
       c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 52, (e.y + Math.sin(e.dirLock) * 52) * K); c.stroke();
+    }
+    if (e.type === 'soldier' && e.state === 'windup' && e.tgt === P && e.sw) {
+      var kw = e.t / e.dur, rw = e.sw.reach + 6;
+      if (e.sw.arc > 1.4) { c.save(); c.translate(e.x, e.y * K); c.scale(1, K); c.fillStyle = 'rgba(220,40,30,' + (0.05 + 0.13 * kw) + ')'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, rw, e.dirLock - e.sw.arc / 2, e.dirLock + e.sw.arc / 2); c.closePath(); c.fill(); c.restore(); }
+      c.strokeStyle = 'rgba(255,70,60,' + (0.2 + 0.4 * kw) + ')'; c.lineWidth = 3.4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * rw, (e.y + Math.sin(e.dirLock) * rw) * K); c.stroke();
     }
     if (e.type === 'shooter' && e.state === 'windup') {
       c.strokeStyle = 'rgba(255,70,60,0.55)'; c.lineWidth = 1.6; c.setLineDash([4, 3]); c.lineDashOffset = -e.t * 30;
@@ -1436,7 +1716,7 @@ function render(c) {
   c.fillStyle = 'rgba(30,70,50,0.28)';
   function sh2(x, y, rx, ry) { c.beginPath(); c.ellipse(x, y * K, rx, ry * K, 0, 0, Math.PI * 2); c.fill(); }
   for (i = 0; i < W.pillars.length; i++) if (!W.pillars[i].hide) sh2(W.pillars[i].x + 2, W.pillars[i].y, 9, 5);
-  for (i = 0; i < W.enemies.length; i++) { var en = W.enemies[i]; if (!en.dead) sh2(en.x, en.y, en.r * 1.3, en.r * 0.8); }
+  for (i = 0; i < W.enemies.length; i++) { var en = W.enemies[i]; if (!en.dead && !en.down && !en.human) sh2(en.x, en.y, en.r * 1.3, en.r * 0.8); }
   if (!P.dead && !(sc && sc.noHeroShadow)) sh2(P.x, P.y, 9, 4);
   for (i = 0; i < W.projs.length; i++) sh2(W.projs[i].x, W.projs[i].y, 3, 2);
   // pillars
@@ -1464,7 +1744,7 @@ function render(c) {
     if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
     c.stroke();
   }
-  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && eb.showBar > 0 && eb.type !== 'brute') bar(c, eb.x - 10, eb.y * K - eb.r * 2.6 - 10, 20, 3, eb.hp / eb.maxHp, '#e8584a'); } }
+  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && !eb.down && eb.showBar > 0 && eb.type !== 'brute') bar(c, eb.x - 10, eb.y * K - (eb.human ? 46 : eb.r * 2.6 + 10), 20, 3, eb.hp / eb.maxHp, eb.side === 1 ? '#7fbf6a' : '#e8584a'); } }
   if (sc && sc.end) sc.end(c, P);
   c.restore();
   if (!(sc && sc.noHud)) drawHud(c);
@@ -1473,7 +1753,7 @@ function render(c) {
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, reset: reset, S: S, api: api,
+return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   dbg: function () { return { P: P, W: W, IN: IN }; } };
 })();
