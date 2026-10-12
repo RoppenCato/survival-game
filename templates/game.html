@@ -270,11 +270,12 @@ __COMBAT__
      a look is made once from the figure spec each of them already has (hair, beard, hat, clothes, colours) and kept on them;
      the clip comes from what they are doing. The drawn ink figure stays for the moment the sheets are still loading. */
   var PEOPLE = SPR.people ? Sprites.loadLazy(SPR, 'people') : null;
+  var WOMEN = ['Sigrid', 'Astrid', 'Thora', 'Ingrid', 'Helga', 'Runa', 'Gudrun', 'Ragnhild'];   // the hird's names that are women's: no beard on them
   var YOURS = "#8a3a34";                    // the colour of your own people: the cloak the hero wears, on every one of them, and on their shields
   function personLook(m, x) {              // a hirdman is rolled with colours and a build but no style of hair: his name gives him one, and your colour his cloak
     if (m.look) return m.look; var sp = m.fig ? m.fig.spec : {};
     if (m === npc) { if (m.joined) x = x || { cloak: YOURS }; }               // Brokk keeps his own head; the cloak when he is yours
-    else if (m.person) { var h = 0, nm = m.name || "", i; for (i = 0; i < nm.length; i++) h = (h * 31 + nm.charCodeAt(i)) >>> 0; sp = Object.assign({}, sp, { hair: [1, 2, 6, 4, 7, 0][h % 6], beard: sp.beard ? [1, 3, 2][(h >> 3) % 3] : 0 }); x = x || { cloak: YOURS }; }
+    else if (m.person) { var h = 0, nm = m.name || "", i; for (i = 0; i < nm.length; i++) h = (h * 31 + nm.charCodeAt(i)) >>> 0; var wm = WOMEN.indexOf(nm) >= 0; sp = Object.assign({}, sp, { hair: wm ? [2, 3, 7, 4][h % 4] : [1, 2, 6, 4, 7, 0][h % 6], beard: sp.beard && !wm ? [1, 3, 2][(h >> 3) % 3] : 0 }); x = x || { cloak: YOURS }; }
     return (m.look = Sprites.lookOf(sp, x));
   }
   var JOB_CLIP = { chop: ['chop', 0.8, { kind: 'axe', tint: '#9ca3ad' }], smith: ['mine', 0.9, { kind: 'club' }], sweep: ['idle_look', 1], hang: ['interact', 0.7], fish: ['idle', 1], carry: ['interact', 0.6] }, HIRD_CLIP = { woodcutter: JOB_CLIP.chop, crafter: JOB_CLIP.smith, cook: ['interact', 0.6] };
@@ -3913,6 +3914,7 @@ __COMBAT__
       if (npc && !inCave && Math.abs(npc.x - cam.x) < 260 && Math.abs(npc.y * K - cam.y) < 200) bubble(c, npc);
       stones().forEach(function (st) { if (Math.hypot(P.x - st.x, P.y - st.y) > 90 || inYard || inCave) return; var sx = (st.x - cam.x) * cam.z + 200, sy = (st.y * K - cam.y) * cam.z + 125 - 50 * cam.z, tt = (st.named || 'The stead') + ':  room for ' + roomFor(st) + ',  food for ' + foodDays(st) + (foodDays(st) === 1 ? ' day' : ' days'); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.2; c.strokeStyle = '#2e1a10'; c.strokeText(tt, sx, sy); c.fillStyle = '#f6e2b8'; c.fillText(tt, sx, sy); });
       if (!inCave && !inYard) folk.forEach(function (f) { if (Math.abs(f.x - cam.x) < 260 && Math.abs(f.y * K - cam.y) < 200) bubble(c, f); });
+      if (!inYard) { var calm = !fighting(); Combat.dbg().W.enemies.forEach(function (e) { if (e.type === 'soldier' && !e.dead && !e.down && (e.sayT > 0 || (e.side === 1 && calm)) && Math.abs(e.x - cam.x) < 260 && Math.abs(e.y * K - cam.y) < 200) bubble(c, e); }); }   // what any man says; your own men by name when you are near and no fight is on (their cloaks tell them apart in one)
       c.restore();
     },
     /* The boards (2026-10-12, the UI review): everything that opens over the game is drawn here, after the engine's bars and
@@ -4009,6 +4011,7 @@ __COMBAT__
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
     if (e.code === 'KeyE') { e.preventDefault(); eHeld = true; if (!e.repeat) { var ew = eWhat(hero()); if (ew && ew.act) ew.act(); } return; }   // (what E does: eWhat)
     if (e.code === 'KeyM') { e.preventDefault(); if (!e.repeat && !inYard) { mapOpen = !mapOpen; if (mapOpen) { invOpen = false; menu = null; bookOpen = false; clothOpen = false; musterOpen = false; } } return; }
+    if (e.code === 'KeyG') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen && !inYard) { gKey.down = true; gKey.t = 0; gKey.done = false; } return; }   // a word to your own men: tapped, with me; held, hold here
     if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat) handCraft(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Enter' && ringOpen && !e.repeat) { e.preventDefault(); if (ringSel) startCut(ringSel); return; }
@@ -4022,7 +4025,7 @@ __COMBAT__
 
     heldK[e.code] = true; Combat.key(e.code, true);
   });
-  window.addEventListener('keyup', function (e) { if (e.code === 'KeyE') eHeld = false; if (!codes[e.code] || typing(e)) return; e.preventDefault(); heldK[e.code] = false; Combat.key(e.code, false); });
+  window.addEventListener('keyup', function (e) { if (e.code === 'KeyE') eHeld = false; if (e.code === 'KeyG') { if (gKey.down && !gKey.done) orderMen('follow'); gKey.down = false; } if (!codes[e.code] || typing(e)) return; e.preventDefault(); heldK[e.code] = false; Combat.key(e.code, false); });
   window.addEventListener('blur', function () { for (var k in heldK) if (heldK[k]) { heldK[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
   function toWorld(e) { var r = cv.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * 400, sy = (e.clientY - r.top) / r.height * 250; return { x: (sx - 200) / cam.z + cam.x, y: ((sy - 125) / cam.z + cam.y) / K }; }
   function toScreen(e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 400, y: (e.clientY - r.top) / r.height * 250 }; }
@@ -4237,7 +4240,7 @@ __COMBAT__
   function battleGear() { ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, BT.mine && (g === 'helmet' || g === 'tunic') ? 'iron' : 'leather'); }); }
   Combat.api.dressMan = function (e, o) {  // a soldier's own look: a rolled person's colours and build, a style of hair and beard, and what he wears and carries
     var R = kit.rng(Math.floor(Math.random() * 1e9)), person = o.person || Hird.roll(R, HD), sp = Hird.figureSpec(person, lib.heroDef), v = lib.folkSpec('villager', R);
-    sp.hair = v.hair; sp.beard = R() < 0.6 ? (v.beard || 2) : 0; sp.hat = 0; sp.clothes = 1;
+    var woman = WOMEN.indexOf(person.name) >= 0; sp.hair = woman ? [2, 3, 7, 4][Math.floor(R() * 4)] : v.hair; sp.beard = !woman && R() < 0.6 ? (v.beard || 2) : 0; sp.hat = 0; sp.clothes = 1;
     e.fig = lib.makeFigure(sp); e.kind = 'man'; e.person = person; e.name = person.name; e.look = null;
     e.lookX = { mail: !!o.mail, helm: !!o.helm, shield: e.shield ? (e.side === 1 ? YOURS : THEIRS) : null, cloak: e.side === 1 ? YOURS : null };
     e.wpn.tint = (Items.MATS[e.wpn.mat] || Items.MATS.iron).face;
@@ -4247,6 +4250,20 @@ __COMBAT__
     var e = Combat.soldier({ side: side, x: x, y: y, wpn: { kind: wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: person.stats.health, strength: person.stats.strength, wits: wits != null ? wits : person.stats.wits, loyal: person.traits.indexOf('loyal') >= 0, nerve: 0.55, name: person.name, person: person, mail: G.mail, helm: G.helm });
     e.face = side ? -Math.PI / 2 : Math.PI / 2; return e;
   }
+  /* The hero's word to his own men (rung 3; my choice of key and of two orders, Robin left both to me): G tapped calls them
+     to him (they break off and come), G held sets them in a line abreast where he stands, facing where he faces. No menu:
+     the nearest of them answers in his own voice. A man who yields says so. */
+  var gKey = { down: false, t: 0, done: false };
+  function orderMen(kind) {
+    var L = Combat.order(kind), P = hero(); if (!L.length) return; var m = L[0];
+    L.forEach(function (e) { if (Math.hypot(e.x - P.x, e.y - P.y) < Math.hypot(m.x - P.x, m.y - P.y)) m = e; });
+    m.say = kind === 'hold' ? (L.length > 1 ? 'We hold.' : 'I hold.') : 'With you.'; m.sayT = 2.2; sfx('tele');
+  }
+  function menTick(dt) {
+    if (gKey.down && !gKey.done) { gKey.t += dt; if (gKey.t >= 0.35) { gKey.done = true; orderMen('hold'); } }
+    var E = Combat.dbg().W.enemies, i; for (i = 0; i < E.length; i++) if (E[i].sayT > 0) E[i].sayT -= dt;
+  }
+  Combat.api.onYield = function (e) { e.say = 'I yield.'; e.sayT = 3.5; };
   function battleClear() { var W = Combat.dbg().W, f = BT.field; W.enemies = W.enemies.filter(function (e) { return e.type !== 'soldier' && !(f && Math.hypot(e.x - f.x, e.y - f.y) < 700); }); W.lock = null; }   // the men go, and any beast that has wandered onto the field
   function battleSet(id) {
     var f = BT.field, P = hero(), wk = BT_WPN[BT.wpn], wv = BT_WITS[BT.wits].v, MIX = ['axe', 'spear', 'sword', 'club', 'seax'], i; if (!f) return;
@@ -4488,7 +4505,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); heroGearSync(); raidTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); raidTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

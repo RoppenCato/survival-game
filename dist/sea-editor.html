@@ -6830,7 +6830,7 @@ var PROFILES = {
   club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.13, ac: 0.09, rec: 0.22, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9 },
   seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.03, ac: 0.06, rec: 0.07, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2 },
   spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.08, ac: 0.10, rec: 0.17, dmg: 1, kb: 130, stag: 12, lunge: 40, chain: 2, motion: 'thrust', st: 7, pierce: true },
-  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.24, ac: 0.16, rec: 0.42, dmg: 1, kb: 280, stag: 36, lunge: 90, chain: 2, motion: 'swing', st: 13, heavy: true }
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.24, ac: 0.16, rec: 0.42, dmg: 1, kb: 280, stag: 36, lunge: 90, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true }
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
@@ -6991,12 +6991,12 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
     var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (S.shield ? 0.4 : 0.8) : (S.shield ? 0.12 : 0.55);
     var d2 = dmg * red * (api.armor ? 1 - api.armor() : 1);
     p.hp -= d2; p.st -= (S.shield ? 10 : 18) * (gbH ? 1.8 : 1) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
-    var kbs = kind === 'heavy' ? 110 : 55; if (hitFlags.stagger) { kbs = 150; p.hurtT = Math.max(p.hurtT, 0.24); p.guard = false; }
+    var kbs = kind === 'heavy' ? 110 : 55; if (hitFlags.stagger) { kbs = 150; p.hurtT = Math.max(p.hurtT, 0.24); p.guard = false; p.invuln = Math.max(p.invuln, 0.3); }   // (while he cannot act he cannot be struck: with more than one man on him he must always be able to get out)
     p.kx = -Math.cos(toSrc) * kbs; p.ky = -Math.sin(toSrc) * kbs;
     spark(p.x + Math.cos(p.face) * 9, p.y + Math.sin(p.face) * 9, 6, '#cfd6e6', 90);
     lockFor(p, 0.035); sfx('block');
     if (d2 > 0.5) num(p.x, p.y - 26, String(Math.round(d2)), '#cfd6e6');
-    if (p.st <= 0) { p.st = 0; p.guard = false; p.hurtT = 0.35; num(p.x, p.y - 34, 'GUARD BREAK', '#ff9a7a'); }
+    if (p.st <= 0) { p.st = 0; p.guard = false; p.hurtT = 0.35; p.invuln = Math.max(p.invuln, 0.42); num(p.x, p.y - 34, 'GUARD BREAK', '#ff9a7a'); }
     if (p.hp <= 0) die();
     return 'block';
   }
@@ -7021,11 +7021,11 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var bigE = e.type === 'brute';
   if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= MEN.front) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
     blocked = true; broke = !!hitFlags.guardBreak || stag >= 40;
-    dmg *= kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight;
-    if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.4; } else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
+    dmg *= broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1);   // the sword is the surest guard; a blow that breaks the guard mostly gets through
+    if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; } else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
   }
   if (man) dmg *= 1 - (e.armor || 0);
-  if (e.state === 'recover') mult = bigE ? 1.3 : 1.5;
+  if (e.state === 'recover') mult = bigE ? 1.3 : (src ? 1.2 : 1.5);   // caught recovering: half again from the hero, a fifth more from a man
   if (bigE && e.state === 'stunned') mult = 2;
   var crit = !src && !blocked && (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
@@ -7038,7 +7038,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var killing = e.hp <= 0;
   if (src) {                                               // a blow between men: no pause for the hero, no number, a quieter mark
     e.flash = blocked ? 0.5 : 1; e.flashRgb = '255,255,255';
-    e.pkx = 0; e.pky = 0; e.kx += Math.cos(ang) * kb * (blocked ? 0.4 : 0.8); e.ky += Math.sin(ang) * kb * (blocked ? 0.4 : 0.8);
+    var push = blocked ? (hitFlags.thrust ? 1.1 : 0.4) : (hitFlags.thrust ? 1.2 : 0.8); e.pkx = 0; e.pky = 0; e.kx += Math.cos(ang) * kb * push; e.ky += Math.sin(ang) * kb * push;   // a spear keeps its man at the point, stopped or not
     spark(e.x - Math.cos(ang) * e.r * 0.8, e.y - Math.sin(ang) * e.r * 0.8, blocked ? 3 : 5, blocked ? '#cfd6e6' : '#fff3b0', 90); sfx(blocked ? 'block' : 'hit', 0, e);
     if (broke) bits(e.x, e.y, 3);
     if (killing) { killEnemy(e, src); return; }
@@ -7509,18 +7509,18 @@ var MEN = {
   ac: 0.07, acK: 1.4, rec: 0.3, recK: 2.0, hitAt: 0.45,
   dmg: 12,                            // a blow at strength 1 from a weapon whose kind says 1 (the hero's scale: he has 100)
   toMen: 0.2,                         // the same blow landing on a man (their health is on the beasts' scale)
-  wdmg: { sword: 1, axe: 1.2, club: 0.85, seax: 0.6, spear: 1.1, greataxe: 2 },
+  wdmg: { sword: 1, axe: 1, club: 0.9, seax: 0.7, spear: 1.1, greataxe: 1.6 },
   cd: [1.0, 0.45],                    // the wait between his attacks: dull to sharp
   react: [0.36, 0.07],                // how long after a blow begins he has his shield up: dull to sharp
   guard: 0.75, guardMax: 1.7, guardCd: [1.5, 0.7],
-  blockLight: 0.3, blockHeavy: 0.55, front: 1.7,
-  slots: 2, gapT: 0.4,                // how many may be striking one target at once, and the least time between two blows begun on it
+  blockLight: 0.3, blockHeavy: 0.55, blockBroken: 0.45, front: 1.7,
+  slots: 2, gapT: 0.35, gapHero: 0.75, // how many may be striking one target at once, and the least time between two blows LANDING on it (on the hero: as long as he is untouchable after a blow, so no two land together and none is wasted)
   backAt: 0.6, yieldAt: 0.25,
   sight: 340, aggro: 150, leash: 250, lie: 90,
   followGap: 12, riseAfter: 4
 };
 api.men = MEN;
-var hitFlags = { guardBreak: false, stagger: false };       // what the blow now landing can do (set round the hero's own blows)
+var hitFlags = { guardBreak: false, stagger: false, thrust: false };       // what the blow now landing can do (set round the hero's own blows)
 function lerp(a, b, k) { return a + (b - a) * k; }
 function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
   o = o || {}; e.type = 'soldier'; e.human = true; e.side = o.side ? 1 : 0; e.r = 7;
@@ -7530,7 +7530,7 @@ function armMan(e, o) {                     // make a spawned enemy a soldier: o
   e.hp = e.maxHp = o.hp || 30; e.str = 0.7 + (o.strength != null ? o.strength : 4) * 0.075;
   e.w01 = clamp(((o.wits != null ? o.wits : 4) - 1) / 6, 0, 1); e.react = lerp(MEN.react[0], MEN.react[1], e.w01);
   e.loyal = !!o.loyal; e.nerve = o.nerve != null ? o.nerve : 0.5; e.name = o.name || '';
-  e.guard = 0; e.guardCd = 0; e.guardAge = 0; e.seeT = 0; e.blocked = 0; e.poiseT = 0; e.wary = Math.random() < 0.2 + 0.65 * e.w01; e.swingN = 0; e.chainLeft = 0; e.tgt = null; e.retT = 0; e.strafe = e.seed > 5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
+  e.guard = 0; e.guardCd = 0; e.guardAge = 0; e.seeT = 0; e.blocked = 0; e.poiseT = 0; e.hopCd = 0; e.wary = Math.random() < 0.2 + 0.65 * e.w01; e.swingN = 0; e.chainLeft = 0; e.tgt = null; e.retT = 0; e.strafe = e.seed > 5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
   e.awake = true; e.sight = o.sight || MEN.sight; e.leash = o.leash || MEN.leash; e.order = 'follow'; e.deadFor = MEN.lie; e.cd = 0.4 + Math.random() * 0.8;
   if (o.x != null) { e.x = o.x; e.y = o.y; }
   if (o.post) { e.post = o.post; e.awake = false; }
@@ -7549,15 +7549,20 @@ function pickTarget(e) {
     var d = Math.hypot(F.x - e.x, F.y - e.y); if (d > e.sight) return;
     if (e.side === 1 && Math.hypot(F.x - P.x, F.y - P.y) > e.leash) return;                 // a friend does not go past his leash from the hero
     if (e.order === 'hold' && e.holdAt && Math.hypot(F.x - e.holdAt.x, F.y - e.holdAt.y) > 90) return;   // told to hold: only what comes to him
-    var sc = d + onTarget(F, e) * 44;                                                       // one nobody has, then the least beset
+    var on = onTarget(F, e), sc = d + on * 44;                                              // one nobody has, then the least beset
     if (F === cur) sc -= 34;
-    if (e.side === 1 && F === W.heroHit && W.t - (W.heroHitT || -9) < 4) sc -= 80;          // what the hero struck last
+    if (e.side === 1 && F === W.heroHit && W.t - (W.heroHitT || -9) < 4 && !(cur && cur !== F && cur.tgt === e && !cur.dead)) sc -= Math.max(0, 140 - on * 70) + (F === cur ? 0 : 34);   // what the hero struck last: the first of his men who is free turns to it, a second may; a man with a foe on him keeps that foe
     if (sc < bs) { bs = sc; best = F; }
   });
   return best;
 }
 function strikersOn(F, me) { var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o !== me && o.type === 'soldier' && !o.dead && o.tgt === F && (o.state === 'windup' || o.state === 'lunge')) n++; } return n; }
-function slotFree(F, e) { return strikersOn(F, e) < MEN.slots && W.t - (F._wuT == null ? -9 : F._wuT) >= MEN.gapT; }
+function blowTime(e, k) { return (MEN.wu + e.pf.wu * MEN.wuK) * (k || 1) + (MEN.ac + e.pf.ac * MEN.acK) * MEN.hitAt; }   // from the beginning of his blow to its landing (k: a quicker windup, as blowOf gives an answer or a second blow)
+function slotFree(F, e, k) {                // may he begin a blow at F now: not more than MEN.slots at once, and never two landing together
+  var n = 0, i, o, gap = F === P ? MEN.gapHero : MEN.gapT, mine = W.t + blowTime(e, k);
+  for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o === e || o.type !== 'soldier' || o.dead || o.tgt !== F || !(o.state === 'windup' || (o.state === 'lunge' && !o.hitDone))) continue; n++; if (Math.abs((o.hitT || 0) - mine) < gap) return false; }
+  return n < MEN.slots;
+}
 var ARCS = [0, 0, 1.6, 2.5, 3.2, 3.6];
 function slotAngle(e, T) {                  // more than one on a target: places round the side of it that faces their middle, in the order they stand
   var L = [], i, o, sx = 0, sy = 0;
@@ -7589,12 +7594,12 @@ function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows
 }
 function blowOf(e, second, quick) {
   var pf = e.pf, hv = second ? 1 : 0, clip = pf.motion === 'smash' ? 'mine' : (pf.heavy ? 'chop' : (e.swingN % 2 ? 'attack2' : 'attack1'));
-  return { wu: (MEN.wu + pf.wu * MEN.wuK) * (second ? 0.7 : quick ? 0.62 : 1), ac: MEN.ac + pf.ac * MEN.acK, rec: (MEN.rec + pf.rec * MEN.recK) * (1 + hv * 0.3), arc: Math.max(0.7, pf.arc * (pf.motion === 'thrust' ? 1.2 : 0.85)), reach: pf.reach,
+  return { wu: (MEN.wu + pf.wu * MEN.wuK) * (second ? 0.7 : quick ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1), ac: MEN.ac + pf.ac * MEN.acK, rec: (MEN.rec + pf.rec * MEN.recK) * (1 + hv * 0.3), arc: Math.max(0.7, pf.arc * (pf.motion === 'thrust' ? 1.2 : 0.85)), reach: pf.reach,
     dmg: MEN.dmg * (MEN.wdmg[e.wpn.kind] || 1) * e.pow * e.str * (1 + hv * 0.35), kb: pf.kb, stag: pf.stag * (1 + hv * 0.6), heavy: !!pf.heavy, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak, clip: clip };
 }
 function beginBlow(e, T, ang, second, quick) {
   e.sw = blowOf(e, second, quick); e.swingN++; e.state = 'windup'; e.t = 0; e.dur = e.sw.wu; e.dirLock = ang; e.face = ang; e.hitDone = false; e.swung = false; e.guard = 0; e.blocked = 0;
-  T._wuT = W.t; sfx('tele', 0, e);
+  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e);
 }
 function strike(e) {
   var sw = e.sw, L = [];
@@ -7605,7 +7610,7 @@ function strike(e) {
     if (h.F === P) {
       hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
       if (r === 'parry') { daze(e, 1.3); e.sw = null; e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
-    } else { hitFlags.guardBreak = sw.guardBreak; damageEnemy(h.F, sw.dmg * MEN.toMen, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; }
+    } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
   });
 }
 function lowerGuard(e, tired) { e.guard = 0; e.guardAge = 0; e.guardCd = lerp(MEN.guardCd[0], MEN.guardCd[1], e.w01) * (tired ? 1 : 0.45); e.wary = Math.random() < 0.2 + 0.65 * e.w01; }
@@ -7630,11 +7635,24 @@ function downTick(e, dt) {
 var FOLLOW = [[-20, 15], [20, 15], [-38, 30], [38, 30], [0, 34], [-56, 46], [56, 46], [-18, 52], [18, 52]];
 function followStep(e, dt) {                // a friend with nobody to fight: his place beside and a little behind the hero
   var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o === e) break; if (o.side === 1 && o.type === 'soldier' && !o.dead && !o.down && o.order !== 'hold') n++; }
-  if (e.order === 'hold' && e.holdAt) { if (Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 5) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); e.face = turnToward(e.face, Math.atan2(e.holdAt.y - e.y, e.holdAt.x - e.x), MEN.turn * dt); } else if (e.holdAt.face != null) e.face = turnToward(e.face, e.holdAt.face, 4 * dt); return; }
+  if (e.order === 'hold' && e.holdAt) {
+    if (Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 5) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed * 1.2, dt); e.face = turnToward(e.face, Math.atan2(e.holdAt.y - e.y, e.holdAt.x - e.x), MEN.turn * dt); }
+    else { if (e.holdAt.face != null) e.face = turnToward(e.face, e.holdAt.face, 4 * dt); if (e.shield) { var nf = 1e9; eachFoe(e, function (F) { nf = Math.min(nf, Math.hypot(F.x - e.x, F.y - e.y)); }); if (nf < 190) { if (!(e.guard > 0)) e.guardAge = 0; e.guard = 0.4; } } }   // in the line: the shield up while anyone is coming
+    return;
+  }
   var hd = W.heading == null ? P.face : W.heading, f = FOLLOW[n % FOLLOW.length], k = 1 + Math.floor(n / FOLLOW.length) * 0.6, bx = -Math.cos(hd), by = -Math.sin(hd), lx = -by, ly = bx;
   var tx = P.x + (lx * f[0] + bx * f[1]) * k, ty = P.y + (ly * f[0] + by * f[1]) * k, d = Math.hypot(tx - e.x, ty - e.y);
   if (d > MEN.followGap || e.moving) { e.moving = d > 4; var sp = d > 70 ? MEN.run * 1.15 : (d > 26 ? P.sprinting ? MEN.run * 1.1 : 84 : MEN.speed); stepTo(e, tx, ty, sp, dt); e.face = turnToward(e.face, Math.atan2(ty - e.y, tx - e.x), MEN.turn * dt); }
   else e.face = turnToward(e.face, hd, 3 * dt);
+}
+function order(kind) {                      // the hero's word to his own men within call: 'follow' (break off and come) or 'hold' (a line abreast where he stands, facing where he faces)
+  var L = W.enemies.filter(function (e) { return e.side === 1 && e.type === 'soldier' && !e.dead && !e.down && Math.hypot(e.x - P.x, e.y - P.y) < 420; }), f = W.heading == null ? P.face : W.heading, i;
+  if (kind === 'hold') {
+    var px = -Math.sin(f), py = Math.cos(f), fx = Math.cos(f), fy = Math.sin(f);
+    L.sort(function (m1, m2) { return ((m1.x - P.x) * px + (m1.y - P.y) * py) - ((m2.x - P.x) * px + (m2.y - P.y) * py); });       // each takes the place nearest to where he stands along the line
+    for (i = 0; i < L.length; i++) { var k = i - (L.length - 1) / 2, row = Math.floor(Math.abs(k) / 6); L[i].order = 'hold'; L[i].holdAt = { x: P.x + px * k * 17 + fx * (24 - row * 18), y: P.y + py * k * 17 + fy * (24 - row * 18), face: f }; L[i].calledT = 0; }
+  } else for (i = 0; i < L.length; i++) { L[i].order = 'follow'; L[i].holdAt = null; L[i].calledT = 1.6; }
+  return L;
 }
 function postStep(e, dt) {                  // one of a town's men with nothing to fight: at his post
   var p = e.post; if (!p) return;
@@ -7643,7 +7661,7 @@ function postStep(e, dt) {                  // one of a town's men with nothing 
 }
 function soldierAI(e, dt) {
   var i, T, dx, dy, d, ang;
-  e.cd -= dt; e.guardCd -= dt; e.poiseT -= dt; if (e.riseT > 0) { e.riseT -= dt; return; }
+  e.cd -= dt; e.guardCd -= dt; e.poiseT -= dt; e.hopCd -= dt; if (e.riseT > 0) { e.riseT -= dt; return; }
   if (e.guard > 0) { e.guard -= dt; e.guardAge += dt; if (e.guard <= 0) lowerGuard(e, false); }
   if (e.heard > 0) { e.heard -= dt; e.awake = true; }
   if (e.state === 'yield') {                // on his knees, out of it; left alone a while he gets up and goes
@@ -7662,7 +7680,8 @@ function soldierAI(e, dt) {
     if (seen) { e.awake = true; if (api.onWake) api.onWake(e); } else { postStep(e, dt); e.state = 'idle'; return; }
   }
   e.retT -= dt; T = e.tgt;
-  if (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && P.hidden) || e.retT <= 0) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; }
+  if (e.calledT > 0) { e.calledT -= dt; if (e.state !== 'windup' && e.state !== 'lunge') { T = e.tgt = null; e.retT = e.calledT; } }
+  if (!(e.calledT > 0) && (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && P.hidden) || e.retT <= 0)) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; }
   if (!T) {                                 // nobody to fight
     if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'back') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
     e.state = 'idle'; e.guard = 0; e.sw = null;
@@ -7679,6 +7698,9 @@ function soldierAI(e, dt) {
       var th = threatTo(e), fa2 = th ? Math.atan2(th.y - e.y, th.x - e.x) : ang;
       e.face = turnToward(e.face, fa2, MEN.turn * dt);
       if (e.guard > 0) { if (th || (e.wary && d <= keep + 16 && e.cd > 0.2)) e.guard = Math.max(e.guard, 0.3); if (e.guardAge > MEN.guardMax) lowerGuard(e, true); }
+      else if (th && th !== P && th.sw && (th.sw.guardBreak || th.sw.stag >= 40) && e.hopCd <= 0) {                        // a blow that would break his guard: a man who sees it in time steps out of it, and comes back in while the other recovers
+        e.seeT += dt; if (e.seeT >= e.react) { e.state = 'back'; e.t = 0; e.dur = 0.3; e.hop = true; e.seeT = 0; e.hopCd = 1.6; e.cd = Math.min(e.cd, 0.15); break; }
+      }
       else if (e.shield && e.guardCd <= 0 && th) { e.seeT += dt; if (e.seeT >= e.react) raiseGuard(e); }                 // a blow he sees coming, if he is quick enough
       else if (e.shield && e.guardCd <= 0 && e.wary && d <= keep + 16 && e.cd > 0.2) raiseGuard(e);                       // a wary man: behind his shield while you are in reach and he is not striking
       else e.seeT = Math.max(0, e.seeT - dt * 2);
@@ -7687,19 +7709,20 @@ function soldierAI(e, dt) {
       if (e.order === 'hold' && e.holdAt && Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 46 && d > keep) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); break; }   // told to hold: he does not follow a man who backs away
       if (d > want + 70) stepTo(e, T.x, T.y, MEN.run, dt);
       else {
-        var vr = clamp((d - want) * 3.2, -MEN.back, MEN.speed), vt = 0, here = Math.atan2(-dy, -dx);
+        var vr = clamp((d - want) * 3.2, -MEN.back * 0.5, MEN.speed), vt = 0, here = Math.atan2(-dy, -dx);
         if (sa != null) vt = clamp(wrap(sa - here) * 70, -MEN.strafe * 2, MEN.strafe * 2);
         else { e.strafeT -= dt; if (e.strafeT <= 0) { e.strafeT = 0.8 + Math.random() * 2.2; e.strafe = Math.random() < 0.3 ? 0 : (Math.random() < 0.5 ? 1 : -1); } vt = e.strafe * MEN.strafe * (d < want + 20 ? 1 : 0); }
         if (api.nav && d > want + 24) stepTo(e, T.x, T.y, MEN.speed * slow, dt);                                          // walls between: the page finds the way
         else moveCircle(e, (Math.cos(ang) * vr - Math.sin(here) * vt) * slow * dt, (Math.sin(ang) * vr + Math.cos(here) * vt) * slow * dt);
       }
-      if (e.guard <= 0 || (e.blocked > 0 && !th)) {
+      if ((e.guard <= 0 || (e.blocked > 0 && !th)) && !(th && e.shield && e.guardCd <= 0)) {   // a man with a shield does not begin a blow into one he sees coming: he stops it first, and answers
         var aligned = Math.abs(wrap(ang - e.face)) < 0.45;
-        if (e.cd <= 0 && d <= keep + 7 && aligned && slotFree(T, e) && !(T === P && (P.roll.t > 0))) { var answer = e.blocked > 0; e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
+        var answer = e.blocked > 0;
+        if (e.cd <= 0 && d <= keep + 7 && aligned && slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1) && !(T === P && (P.roll.t > 0))) { e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
       }
       break;
     case 'windup':
-      if (e.pf.motion !== 'thrust') e.dirLock = turnToward(e.dirLock, ang, 1.6 * dt); e.face = e.dirLock;
+      e.dirLock = turnToward(e.dirLock, ang, (e.pf.motion === 'thrust' ? 1.0 : 1.6) * dt); e.face = e.dirLock;
       if (e.t >= e.dur) { e.state = 'lunge'; e.t = 0; e.dur = e.sw.ac; e.hitDone = false; sfx('swing', 0, e); }
       break;
     case 'lunge':
@@ -7708,15 +7731,19 @@ function soldierAI(e, dt) {
       if (e.state === 'lunge' && e.t >= e.dur) { e.state = 'recover'; e.t = 0; e.dur = e.sw.rec; e.swung = true; }
       break;
     case 'recover':
-      if (e.swung && e.chainLeft > 0 && e.t >= e.dur * 0.45 && d <= keep + 14) { e.chainLeft--; beginBlow(e, T, ang, true); break; }
-      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = lerp(MEN.cd[0], MEN.cd[1], e.w01) * (0.8 + Math.random() * 0.5); }
+      if (e.swung && e.chainLeft > 0 && e.t >= e.dur * 0.45 && d <= keep + 14 && slotFree(T, e, 0.7)) { e.chainLeft--; beginBlow(e, T, ang, true); break; }
+      if (e.shield && e.guardCd <= 0 && e.t >= e.dur * 0.5) {                                                       // the second half of his recovery: a man who sees the answer coming gets his shield back in time, if he is quick
+        var th3 = threatTo(e);
+        if (th3) { e.seeT += dt; if (e.seeT >= e.react) { raiseGuard(e); e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = lerp(MEN.cd[0], MEN.cd[1], e.w01) * (0.8 + Math.random() * 0.5) * (0.5 + 0.5 * e.pf.st / 7); break; } }
+      }
+      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = lerp(MEN.cd[0], MEN.cd[1], e.w01) * (0.8 + Math.random() * 0.5) * (0.5 + 0.5 * e.pf.st / 7); }   // a light weapon is ready again sooner, a heavy one later
       break;
     case 'stagger':
       if (e.t >= e.dur) {
         e.sw = null; e.swung = false; e.cd = Math.max(e.cd, 0.3); e.seeT = e.react * 0.6;                            // hit: he is quicker to cover now
-        var cover = e.shield && e.guardCd <= 0.3 && Math.random() < 0.4 + 0.5 * e.w01;                                  // a man with a shield gets it up after the first blow of a chain
+        var cover = e.shield && e.guardCd <= 0.3 && Math.random() < 0.4 + 0.5 * e.w01, was = e.brokeT > 0; e.brokeT = 0;                                  // a man with a shield gets it up after the first blow of a chain
         if (cover) raiseGuard(e, MEN.guard + 0.3);
-        if ((e.hp < e.maxHp * MEN.backAt && Math.random() < 0.45) || (!cover && Math.random() < 0.3 + 0.45 * e.w01)) { e.state = 'back'; e.t = 0; e.dur = cover ? 0.5 + Math.random() * 0.4 : 0.32 + Math.random() * 0.2; e.hop = !cover; }   // or steps out of the next one
+        if ((e.hp < e.maxHp * MEN.backAt && Math.random() < 0.45) || (!cover && Math.random() < (was ? 0.75 : 0.3 + 0.45 * e.w01))) { e.state = 'back'; e.t = 0; e.dur = cover ? 0.5 + Math.random() * 0.4 : 0.32 + Math.random() * 0.2; e.hop = !cover; }   // or steps out of the next one
         else { e.state = 'chase'; e.t = 0; }
       }
       break;
@@ -8524,7 +8551,7 @@ function render(c) {
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, reset: reset, S: S, api: api,
+return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   dbg: function () { return { P: P, W: W, IN: IN }; } };
 })();

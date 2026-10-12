@@ -826,6 +826,46 @@ left as "not sure, try how it feels", so the numbers below are a first setting, 
 - **What his weapons do to the hero's shield** (`hitFlags` in `hurtPlayer`): an axe gets 0.4 through instead of 0.12 and
   costs nearly twice the stamina to hold; a club knocks the guard down for a moment; a Dane axe cannot be parried (it is a
   heavy blow) and is to be stepped out of. So each of his weapons asks something else of you.
+- **More than one on a target (rung 2).** At most two may be striking one target at once (`MEN.slots`), and **no two blows
+  land together**: a man may begin a blow only if it would land at least `MEN.gapHero` 0.75 s from any other already on its
+  way to the hero (as long as the hero is untouchable after a blow, so none is wasted), 0.35 s for a man (`slotFree`, by
+  each blow's own landing time, `e.hitT`; second blows and quick answers are held to it too). Those on one target take
+  **places round the side of it that faces their middle** (`slotAngle`: two stand 1.6 radians apart, three 2.5), so the
+  second works round to your flank instead of queueing; a man with no slot waits a step back. **While the hero cannot act
+  he cannot be struck** (a broken guard and a club's stagger now make him untouchable for as long as they hold him), so
+  with any number on him he can always get out. Measured over a thousand fights a line: two blows on the hero never
+  closer than 0.37 s, and he was never held longer than 0.42 s.
+- **Friends (rung 3).** A man of side 1 with nobody to fight **follows**: his place is beside and a little behind the hero
+  (`FOLLOW`, round the way the hero is going, `W.heading`, not the way he looks), never in his way. He **fights** the
+  nearest foe within his leash of the hero (`MEN.leash` 250), turns to **what the hero strikes** if he is free (a man with
+  a foe on him keeps that foe; a second friend may join, the rest keep their own), leaves men on their knees alone, and
+  never starts on a town's man who has not seen you (`awake === false`). **He does not die of a blow: he goes down**
+  (`goDown`: he lies, nobody's target) and **gets up when it is over** (4 s with no foe within 260 units, a third of his
+  health back, the death clip run backward); he dies only if the hero dies or is 700 units away for 20 s (`downTick`).
+  **Two orders** (`Combat.order(kind)`; the page's **G**: tapped, *with me*: they break off and come; held, *hold here*: a
+  line abreast where the hero stands, facing the way he is going, shields up while anyone is coming, fighting only what
+  comes to them). The nearest answers in his own voice ("With you.", "We hold."); a man who yields says so. Your own men
+  wear your colour (a red cloak, a red shield), the others blue shields; a friend's name shows when you are near and no
+  fight is on; a hurt friend has a green bar.
+- **Man against man** is not balanced weapon by weapon, and was not meant to be even: it makes cycles. `node
+  tests/battle.js duels 200` (even men in leather with shields; the share the row wins):
+
+  | | sword | axe | club | seax | spear | Dane axe |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | sword | 44 | 14 | 36 | 69 | 80 | 95 |
+  | axe | 90 | 52 | 72 | 100 | 71 | 4 |
+  | club | 62 | 35 | 47 | 98 | 7 | 1 |
+  | seax | 33 | 0 | 3 | 48 | 18 | 0 |
+  | spear | 17 | 37 | 95 | 82 | 47 | 99 |
+  | Dane axe | 6 | 98 | 100 | 100 | 2 | 52 |
+
+  The same weapon is a coin (44 to 52). Why the rest falls as it does: **a blow into a shield is stopped and answered**, so
+  among shield men the one who must attack loses the exchange unless his weapon **breaks the guard** (axe, club, Dane
+  axe: 0.45 gets through and the shield drops); a man who **sees a guard-breaking blow in time steps out of it** and comes
+  back in while the other recovers, which is how a sword or a spear beats the slow Dane axe (no shield, a long recovery);
+  a **spear** keeps its man at the point (a thrust pushes him back even when stopped); the **seax** is a sidearm. A man
+  with a shield does not begin a blow into one he sees coming, a quick man gets his shield back in the second half of his
+  own recovery, and a blow on a recovering man does a fifth more from a man (half again from the hero).
 - **No locking a man in place:** a second light blow within 0.9 s of a flinch he takes on his feet (`e.poiseT`); a blow he
   has begun he finishes unless the one that hit him was heavy.
 - **Heart:** below a quarter of his health a man who is not loyal may yield (state `yield`, `e.out`: on his knees, nobody's
@@ -840,11 +880,15 @@ left as "not sure, try how it feels", so the numbers below are a first setting, 
   fights a line). The hero is played by three bots, each with a person's limits (a reaction time, a share of blows not
   seen, timing that wanders): the **tapper** walks up and taps, the **careful** one raises the shield at what it sees and
   strikes when the man is open, the **skilled** one parries and steps out of heavy blows. A line marked `!!` is a fault (a
-  fight that never ended, a man stood still, a number that is not one). **Where it stands** (200 fights a line, the hero in
-  leather): against an iron axe in leather the tapper wins 8% with a flint sword, the careful bot 100% with 64 health
-  left, the skilled 100% with 91; against mail, helm and shield 0%, 98% (53 left), 100% (88 left); fights of 18 to 31 s.
-  That is harder on the careless and kinder to the careful than the plan's table; a man's damage, pace and what gets
-  through a shield are three numbers in `MEN`.
+  fight that never ended, a man stood still, a number that is not one). It also checks, one line each, what a friend must
+  and must not do (`friendChecks`). **Where it stands** (200 fights a line, the hero in leather; **one man:** against an
+  iron axe in leather the tapper wins 36% with a flint sword, the careful bot 100% with 75 health left, the skilled 100%
+  with 93; against mail, helm and shield 1%, 100% (62 left), 100% (91 left); 18 to 31 s. **Two men** (the hero with an
+  iron sword): the tapper 0 to 3%, the careful bot 61% against two axes, 92% against an axe and a spear, 86% against two
+  swords in mail (35 to 50 health left), the skilled 100% (61 to 79 left). **Two, with a friend beside you:** the tapper
+  84% (3% alone), the careful bot 100% (57% alone), the friend left with half his health and all but never down. That is
+  harder on the careless and kinder to the careful than the plan's table; a man's damage, pace and what gets through a
+  shield are numbers in `MEN`.
 - **`tools/visual/battleplay.js`** plays the scene by script in the page (after `drive.js`): `BP.set('one')`, `BP.run({ bot,
   secs })` (who fell, how long, a line for every change of a man's state, whether anyone slid), `BP.strip({ bot, n, every,
   when })` (a film strip at Robin's size, begun when a man winds up, the hero swings or a shield comes up).

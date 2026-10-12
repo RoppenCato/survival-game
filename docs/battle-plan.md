@@ -445,3 +445,35 @@ left behind or the fight is lost). Then: go through the whole plan, and by that,
 - **Still open from section 4.4:** a man who has yielded can be struck and dies like any other (nothing remembers it yet:
   that is the raid's reputation); beasts and men ignore each other.
 
+### Rung 2, two (2026-10-13): built and tried by script
+
+- **Built:** slots (two at once on a target), blows on one target spaced **by when they land** (0.75 s apart on the hero,
+  the length of his untouchable time; 0.35 s on a man), places round the target so the second man comes to the flank.
+- **Bugs of this rung:** two blows landed 0.02 s apart (a man's second blow and his quick answer after a block were not
+  held to the spacing: they are now); the hero could be **held for 0.67 s** with two men on him (a broken guard, then a
+  blow into it): while he cannot act he now cannot be struck. A thousand fights a line after that: never two blows closer
+  than 0.37 s, never held longer than 0.42 s, nobody stood still, no fight unfinished.
+- **Where it stands** (the hero with an iron sword, in leather): the tapper wins 0 to 3%; the careful bot 61% against two
+  axes, 92% against an axe and a spear, 86% against two swords in mail, with 35 to 50 health left; the skilled bot 100%
+  with 61 to 79 left. Two are clearly worse than one, and beatable with care, as aimed at.
+- **Seen in the page** (`BP.strip`): the two take the hero's left and right, he blocks one and parries the other.
+
+### Rung 3, two with one beside you (2026-10-13): built and tried by script
+
+- **Built:** following, engaging (the nearest within the leash; what the hero strikes, if the friend is free), no hurt
+  either way, **down instead of dead** and up again when it is over, **G** for *with me* and *hold here*, answers in the
+  men's own voice, your colour on your own. All my choices where Robin said "what you decide".
+- **Bugs of this rung, most found by the new one-line checks in `tests/battle.js`:** the friend **did not turn to the man
+  the hero struck** when he already stood by another (the pull was weaker than his liking for the foe he had); once it
+  was strong enough, he **left a man who was on him** to do it, and was struck from behind (a man with a foe on him now
+  keeps that foe); a friend's **name hung over the fight** the whole time (it shows only when no fight is on); rolled
+  names and looks did not agree (**a bearded Thora**: the women's names now carry no beard).
+- **The gate:** a friend alone against his equal wins about half (44 to 59% over 200); with a friend beside him the
+  tapper's 3% against two becomes 84%, the careful bot's 57% becomes 100%, and the tapper still loses one fight in six.
+  The friend ends such a fight with about half his health and is all but never down. Whether 84% for a careless hero is
+  "won for you" is for Robin to feel: the friend holds one of the two, he does not kill him.
+- **Man against man by weapon** came out of this rung as a table (CLAUDE.md, "Fighting men"): the same weapon is a coin,
+  the rest makes cycles (the axe beats the sword, the sword beats the spear and the Dane axe, the spear beats the club and
+  the Dane axe, the Dane axe beats the axe and the club). Not tuned to be even; tuned until no duel failed to end and
+  until nothing but the seax lost to everything.
+
