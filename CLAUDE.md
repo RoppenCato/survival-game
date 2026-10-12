@@ -374,6 +374,14 @@ the text and it is made the default. When a spec's meaning changes, change the s
   upper left; grain in every fill; lean figures; trolls Bauer's. `docs/reference/` holds the board (Bauer and Kittelsen, public
   domain) and notes on Egerkrans pages from Robin's own book (the photos stay local). In the kit it is **`look: 3`** (`STYLE_INK`,
   `grain`): see "World look and props".
+- `docs/battle-plan.md` (**a plan, 2026-10-12**; Robin: Blender the hirdmen and other humans, then fight one, two, two with
+  one beside you, five against five, a town full, the raid, fixing bugs at every rung): where the code stands (the people
+  are the last drawn figures; guards fight like boars; the hird never fights; **the engine has no sides and no
+  way-finding**), people as **one neutral body with cropped layers and colours laid on at draw time** so every look shares
+  one set of sheets, the clips to fetch from Mixamo (a sitting with Robin signed in), a fourth enemy kind (the soldier:
+  his weapon's own `PROFILES`, a shield, yielding), slots for more than one attacker, friends, groups and heart, a nav
+  grid from the building data, the town's answer to noise, the raid as "how much you dare to take", a test scene
+  `?scene=battle`, `tests/battle.js`, a gate for every rung, and nine questions for Robin. **Nothing of it is built.**
 - `docs/ui-review.md` (2026-10-12; Robin: look through every menu, board and bar for function, looks and sense): what was
   looked at, what was found broken and fixed (`docs/ui-review.jpg`, before and after), and **what is proposed and waits for
   Robin**: C for making by hand, one rule for everything E does, one number for a weapon, tabs on the Building board, the
