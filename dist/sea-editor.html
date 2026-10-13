@@ -5886,35 +5886,42 @@ var DEF = {
 var ARCH = {
   // The sizes grown on 2026-10-09 (Robin: the hero should feel small to the world; a village bigger than a screen): yards and sites
   // about 1.4 times, buildings below likewise
-  farmstead: { name: 'Farmstead', houses: [0, 0], out: [2, 3], yard: [7, 6], site: [20, 16], people: [3, 5] },
-  small: { name: 'Small village', houses: [1, 2], out: [3, 4], yard: [8, 7], site: [26, 20], people: [6, 9] },
-  village: { name: 'Village', houses: [3, 4], out: [5, 6], yard: [11, 8], site: [36, 28], people: [10, 15] },
-  seat: { name: "Chieftain's seat", houses: [5, 7], out: [7, 8], yard: [13, 10], site: [46, 36], people: [16, 24], hall: true, palisade: true },
-  fishing: { name: 'Fishing hamlet', houses: [1, 2], out: [3, 4], yard: [8, 7], site: [26, 20], people: [5, 8], shore: true, racks: 2 },
-  fisher: { name: 'Fisherman\u2019s hut', houses: [1, 1], out: [1, 1], yard: [5, 4], site: [12, 10], people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
-  trading: { name: 'Trading post', houses: [2, 3], out: [5, 6], yard: [11, 8], site: [36, 28], people: [8, 12], shore: true, stores: 2 },
-  ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [8, 7], site: [26, 20], people: [0, 0], ruin: true },
+  // Grown again on 2026-10-13 with the buildings (Robin: the houses are way too small, it does not feel like houses): a yard a
+  // hall can stand over, and a site wide enough for houses that run back from the yard. long: a smaller place's longhouse.
+  // hut: its one building is a house (the fisherman's).
+  farmstead: { name: 'Farmstead', houses: [0, 0], out: [2, 3], yard: [8, 6], site: [34, 26], long: [10, 13], people: [3, 5] },
+  small: { name: 'Small village', houses: [1, 2], out: [3, 4], yard: [9, 7], site: [44, 32], long: [10, 13], people: [6, 9] },
+  village: { name: 'Village', houses: [3, 4], out: [5, 6], yard: [13, 8], site: [54, 38], people: [10, 15] },
+  seat: { name: "Chieftain's seat", houses: [5, 7], out: [7, 8], yard: [16, 10], site: [66, 46], people: [16, 24], hall: true, palisade: true },
+  fishing: { name: 'Fishing hamlet', houses: [1, 2], out: [3, 4], yard: [9, 7], site: [44, 32], long: [10, 13], people: [5, 8], shore: true, racks: 2 },
+  fisher: { name: 'Fisherman\u2019s hut', houses: [0, 0], out: [1, 1], yard: [5, 4], site: [16, 24], hut: true, people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
+  trading: { name: 'Trading post', houses: [2, 3], out: [5, 6], yard: [13, 8], site: [54, 38], people: [8, 12], shore: true, stores: 2 },
+  ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [9, 7], site: [44, 32], long: [10, 13], people: [0, 0], ruin: true },
   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church, and a lone church with its priest's house (the lucky strike)
-  town: { name: 'Town', houses: [5, 7], out: [5, 7], yard: [13, 10], site: [50, 40], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },
-  church: { name: 'Church', houses: [1, 1], out: [0, 1], yard: [5, 4], site: [18, 16], people: [2, 3], church: true, chapel: true, lowland: true },
+  town: { name: 'Town', houses: [5, 7], out: [5, 7], yard: [16, 10], site: [70, 50], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },
+  church: { name: 'Church', houses: [1, 1], out: [0, 1], yard: [6, 5], site: [26, 26], people: [2, 3], church: true, chapel: true, lowland: true },
   // big places (2026-10-13, Robin: build a big village or town and raid it): the ring full, and a second ring of houses round it
   // (outer: a row behind the hall, a row before the gate, a column either side, with lanes between). Nothing plans them into a
   // world: a page asks for them (plan's opts.swap), as the Destruction Editor does.
-  great: { name: 'Great village', houses: [6, 6], outer: [9, 12], out: [7, 8], yard: [15, 11], site: [78, 64], people: [34, 44], hall: true, palisade: true, full: true },
-  bigtown: { name: 'Great town', houses: [6, 6], outer: [9, 12], out: [7, 9], yard: [15, 11], site: [80, 66], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true, full: true }
+  great: { name: 'Great village', houses: [6, 6], outer: [9, 12], out: [7, 8], yard: [18, 12], site: [100, 80], people: [34, 44], hall: true, palisade: true, full: true },
+  bigtown: { name: 'Great town', houses: [6, 6], outer: [9, 12], out: [7, 9], yard: [18, 12], site: [102, 82], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true, full: true }
 };
 // the buildings: inside size in tiles [w range, h range], what stands inside, where the door goes (toward the yard)
 var BUILD = {
-  longhouse: { name: 'Longhouse', w: [9, 12], h: [3, 4], roofed: true, inside: 'hall' },      // a real longhouse is three men wide and twelve long (2026-10-09)
-  hall: { name: 'Great hall', w: [13, 16], h: [4, 5], roofed: true, inside: 'hall' },
-  house: { name: 'House', w: [4, 5], h: [3, 4], roofed: true, inside: 'home' },          // the standard (Robin, 2026-10-09): a house people live in is 4 by 3 tiles inside at least
-  store: { name: 'Storehouse', w: [2, 2], h: [2, 2], roofed: true, inside: 'store', posts: true },
-  byre: { name: 'Byre', w: [3, 4], h: [2, 2], roofed: true, inside: 'byre' },
-  smithy: { name: 'Smithy', w: [3, 3], h: [2, 2], roofed: true, inside: 'smithy', open: true },
-  bath: { name: 'Bathhouse', w: [2, 2], h: [2, 2], roofed: true, inside: 'bath' },
-  pit: { name: 'Pit-house', w: [2, 2], h: [2, 2], roofed: true, inside: 'pit', floor: 1 },
-  boathouse: { name: 'Boathouse', w: [5, 7], h: [2, 2], roofed: true, inside: 'boat', open: true },
-  church: { name: 'Church', w: [3, 4], h: [5, 6], roofed: true, inside: 'church', floor: 2 }   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side
+  // Houses that are houses (Robin, 2026-10-13: "they are way too small today. It doesn't feel like houses"). What was real,
+  // in tiles of a metre and a half: nearly everything people lived in was two to five tiles across, as wide as a roof could
+  // span, and got its size from its length (Dublin's town houses 6 by 4, Hedeby's 12 by 5, the Trelleborg type 20 by 5; a
+  // king's hall 32 by 8). So a building here is NARROW AND LONG, and a house stands with its gable, and its door, to the yard.
+  longhouse: { name: 'Longhouse', w: [14, 18], h: [5, 5], roofed: true, inside: 'hall' },     // a farm's: 21 to 27 m by 7.5 (it was 9 to 12 by 3 to 4)
+  hall: { name: 'Great hall', w: [20, 22], h: [6, 6], roofed: true, inside: 'hall' },         // a jarl's: 30 to 33 m by 9, two rows of posts down it (it was 13 to 16 by 4 to 5). 22 is what the view shows when a big fight draws it back
+  house: { name: 'House', w: [6, 9], h: [4, 4], roofed: true, inside: 'home' },               // w is its LENGTH and h its width, whichever way it stands (houseSize): 9 to 13.5 m by 6, and now and then 7.5 across. (It was 4 to 5 by 3 to 4, and the jitter made a quarter of them 3 across.)
+  store: { name: 'Storehouse', w: [3, 3], h: [2, 2], roofed: true, inside: 'store', posts: true },
+  byre: { name: 'Byre', w: [5, 6], h: [3, 3], roofed: true, inside: 'byre' },
+  smithy: { name: 'Smithy', w: [4, 4], h: [3, 3], roofed: true, inside: 'smithy', open: true },
+  bath: { name: 'Bathhouse', w: [3, 3], h: [2, 2], roofed: true, inside: 'bath' },
+  pit: { name: 'Pit-house', w: [3, 3], h: [2, 2], roofed: true, inside: 'pit', floor: 1 },    // real pit-houses were about 4 m by 3
+  boathouse: { name: 'Boathouse', w: [6, 8], h: [3, 3], roofed: true, inside: 'boat', open: true },
+  church: { name: 'Church', w: [4, 4], h: [8, 9], roofed: true, inside: 'church', floor: 2 }   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side. Escomb's nave is 13.3 m by 4.4 inside: nine tiles by three (it was 5 to 6 deep)
 };
 var NAMES = ['Arnfinn', 'Bera', 'Dagny', 'Eyvind', 'Frida', 'Gorm', 'Halla', 'Ingolf', 'Jorunn', 'Ketil', 'Liv', 'Mundi', 'Nanna', 'Orm', 'Ragna', 'Sigrun', 'Thorir', 'Ulf', 'Vigdis', 'Yngvar', 'Asa', 'Bjorn', 'Gunnhild', 'Hakon'];
 var ROLES = { fisherman: ['Sit, sit. The sea has been feeding me for sixty years and it has not run dry yet.', 'Perch in the shallows, cod and salmon out where the water turns dark. Cast past the weed and wait: the float tells you everything.', 'Grill a fish on a flat stone, or boil two with berries: a soup that warms the whole night. Three on the rack over a charcoal smoke, and they keep till spring.', 'Mind the pike. Let him run when he runs, and reel when he rests, or he takes your line with him.'], priest: ['Peace be upon this house, stranger.', 'The silver on the altar is God\u2019s, not mine. He will know who took it.'], guard: ['Keep your blade sheathed inside the walls.', 'The jarl sees everything from his hall.'], merchant: ['Wool, salt, iron. What have you got?', 'Silver by weight, friend. We take no promises.'], farmer: ['The barley came in well this year.', 'Mind the goat: she butts.'], fisher: ['The herring run at dawn, out past the skerry.', 'That boat has crossed worse water than this.'], smith: ['Copper is soft. Bring me bog iron and I will show you steel.', 'My bench is yours if you leave it as you found it.'], weaver: ['Wool from our own sheep. Feel it.', 'The loom took a winter to build.'], elder: ['Ragnar\'s men came once. They will come again.', 'My father raised the stone by the gate.'], child: ['Are you a Viking?', 'I found a bird\'s nest with four eggs!'], thrall: ['...', 'I was taken from the south. This is home now.'] };
@@ -5926,7 +5933,7 @@ function pickRange(R, r, jit) { var v = r[0] + Math.floor(R() * (r[1] - r[0] + 1
 // make(seed, site, opts): site { tx, ty, w, h, shore } (shore: 'n', 's', 'e', 'w' or null); opts { arch, wealth, G (DEF overrides) }
 function make(seed, site, opts) {
   opts = opts || {}; var G = cfg(opts.G), R = rngOf(seed), archId = opts.arch || 'small', A = ARCH[archId] || ARCH.small, wealth = opts.wealth == null ? R() : opts.wealth, shore = site.shore || (A.shore ? 's' : null);
-  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
+  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h;
   // materials and roofs by wealth and place
   var lowland = !!(opts.biome || A.lowland);
@@ -5947,22 +5954,31 @@ function make(seed, site, opts) {
     var k, best = null; for (k = 0; k < 12; k++) { var dx = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, dy = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot }; if (fits(l)) { best = l; break; } }
     if (best) V.lots.push(best); return best;
   }
-  function size(id) { var b = BUILD[id], sz = id === 'house' && R() < 0.5 ? { w: 4, h: pickRange(R, [4, 5], 0) } : { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; if (HK !== 1) { sz.w = Math.max(sz.w, Math.round(sz.w * HK)); sz.h = Math.max(sz.h, Math.round(sz.h * HK)); } return sz; }   // half the houses stand deep: a gable end facing south. (HK: the trial's bigger houses)
+  function size(id) { var b = BUILD[id], sz = { w: pickRange(R, id === 'longhouse' && A.long ? A.long : b.w, 0), h: pickRange(R, b.h, 0) }; if (HK !== 1) { sz.w = Math.max(sz.w, Math.round(sz.w * HK)); sz.h = Math.max(sz.h, Math.round(sz.h * HK)); } return sz; }   // (no jitter any more: it made houses three tiles across. HK: the trial's switch)
+  // a house by the side its door is on: it runs back from that side, its gable and its door toward the yard
+  function houseSize(door) { var b = BUILD.house, lg = pickRange(R, b.w, 0), ac = b.h[0] + (wealth > 0.4 && R() < 0.35 ? 1 : 0); if (HK !== 1) { lg = Math.round(lg * HK); ac = Math.round(ac * HK); } return door === 's' || door === 'n' ? { w: ac, h: lg } : { w: lg, h: ac }; }
   // the ring: the longhouse north of the yard facing it; the houses east, west, south-east and south-west, shuffled; some slots left open
-  var big = A.chapel ? 'church' : (A.hall ? 'hall' : 'longhouse'), bs = size(big);
+  var big = A.chapel ? 'church' : A.hut ? 'house' : (A.hall ? 'hall' : 'longhouse'), bs = big === 'house' ? houseSize('s') : size(big);
   tryPlace({ id: big, x: yx + Math.floor((yw - bs.w) / 2) + Math.round((R() - 0.5) * 2), y: yy - G.yardGap - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'n' }, 1);
   if (A.church && !A.chapel) { var cs = size('church'), L00 = V.lots[0], cTries = [[L00.x + L00.w + G.gap, L00.y + L00.h - cs.h], [L00.x - cs.w - G.gap, L00.y + L00.h - cs.h], [yx + yw + G.yardGap + 1, yy - cs.h - 1], [yx - G.yardGap - cs.w - 1, yy - cs.h - 1], [yx + yw + G.yardGap + 2, yy], [yx - G.yardGap - cs.w - 2, yy]], ci; for (ci = 0; ci < cTries.length; ci++) if (tryPlace({ id: 'church', x: cTries[ci][0], y: cTries[ci][1], w: cs.w, h: cs.h, door: 's', slot: 'church' }, 2)) break; }   // the town's church: beside the hall, else at a corner of the yard
-  var nHouses = pickRange(R, A.houses, 0), slots = ['e', 'w', 'se', 'sw', 'ne', 'nw'], order = slots.slice().sort(function () { return R() - 0.5; }), placedHouses = 0, si;
+  // The houses: beside the yard east and west, running back from it with their doors to it; south of it either side of the
+  // way in, their doors to that way; and north, either side of the big building, deep, their gables south. A long yard takes
+  // two a side. Each keeps three tiles from the next whatever its length (the places are counted from what stands already).
+  var nHouses = A.hut ? 0 : pickRange(R, A.houses, 0), slots = ['e', 'w', 'se', 'sw', 'ne', 'nw'].concat(yh >= 11 ? ['e2', 'w2'] : []), order = slots.slice().sort(function () { return R() - 0.5; }), placedHouses = 0, si;
+  var gxm = yx + Math.floor(yw / 2), LB = V.lots[0], hx0 = LB ? LB.x : yx, hx1 = LB ? LB.x + LB.w : yx + yw;
+  V.lots.forEach(function (l) { if (l.id === 'church') { if (l.x >= hx1) hx1 = Math.max(hx1, l.x + l.w); else if (l.x + l.w <= hx0) hx0 = Math.min(hx0, l.x); } });   // (the church beside the hall: the corner houses stand beyond it)
   for (si = 0; si < order.length && placedHouses < nHouses; si++) {
     if (!A.townwall && !A.full && R() < G.emptySlots && si < order.length - 1) continue;   // (a town fills its ring: it came out with one to four houses where its rule asks for five to seven, 2026-10-13)
-    var sl = order[si], hs = size('house'), lot = null;
-    if (sl === 'e') lot = { x: yx + yw + G.yardGap, y: yy + Math.floor(R() * Math.max(1, yh - hs.h + 1)), door: 'w' };
-    else if (sl === 'w') lot = { x: yx - G.yardGap - hs.w, y: yy + Math.floor(R() * Math.max(1, yh - hs.h + 1)), door: 'e' };
-    else if (sl === 'se') lot = { x: yx + yw - hs.w + 1, y: yy + yh + G.yardGap, door: 'w' };
-    else if (sl === 'sw') lot = { x: yx - 1, y: yy + yh + G.yardGap, door: 'e' };
-    else if (sl === 'ne') lot = { x: yx + yw + G.yardGap + 1, y: yy - hs.h - 1, door: 's' };
-    else lot = { x: yx - G.yardGap - hs.w - 1, y: yy - hs.h - 1, door: 's' };
-    lot.w = hs.w; lot.h = hs.h; lot.id = 'house'; lot.slot = sl;
+    var sl = order[si], door = sl === 'e' || sl === 'e2' || sl === 'se' ? 'w' : (sl === 'w' || sl === 'w2' || sl === 'sw' ? 'e' : 's'), hs = houseSize(door), lot = null, two = yh >= 11;
+    if (sl === 'e') lot = { x: yx + yw + G.yardGap, y: yy + 1 + (two ? 0 : Math.floor(R() * Math.max(1, yh - hs.h))) };
+    else if (sl === 'e2') lot = { x: yx + yw + G.yardGap, y: yy + yh - hs.h };
+    else if (sl === 'w') lot = { x: yx - G.yardGap - hs.w, y: yy + 1 + (two ? 0 : Math.floor(R() * Math.max(1, yh - hs.h))) };
+    else if (sl === 'w2') lot = { x: yx - G.yardGap - hs.w, y: yy + yh - hs.h };
+    else if (sl === 'se') lot = { x: gxm + 2, y: yy + yh + Math.max(G.yardGap, G.gap) };
+    else if (sl === 'sw') lot = { x: gxm - 2 - hs.w, y: yy + yh + Math.max(G.yardGap, G.gap) };
+    else if (sl === 'ne') lot = { x: Math.max(yx + yw + G.yardGap + 1, hx1 + G.gap), y: yy - 2 - hs.h };
+    else lot = { x: Math.min(yx - G.yardGap - hs.w - 1, hx0 - G.gap - hs.w), y: yy - 2 - hs.h };
+    lot.door = door; lot.w = hs.w; lot.h = hs.h; lot.id = 'house'; lot.slot = sl;
     if (tryPlace(lot, 1)) placedHouses++;
   }
   // the outer ring: each outbuilding near what it serves
@@ -5979,7 +5995,13 @@ function make(seed, site, opts) {
     else if (id === 'bath') lot2 = shore === 'e' ? { x: rx1 + G.gap, y: yy + yh, door: 'w' } : { x: rx1 - os.w, y: ry0 - os.h - G.gap, door: 's' };
     else if (id === 'boathouse') lot2 = shore === 's' ? { x: yx + Math.floor(R() * 3) - 1, y: ty + h - os.h - 1, door: 's' } : shore === 'n' ? { x: yx, y: ty + 1, door: 's' } : shore === 'e' ? { x: tx + w - os.w - 1, y: yy + yh + 2, door: 's' } : { x: tx + 1, y: yy + yh + 2, door: 's' };
     lot2.w = os.w; lot2.h = os.h; lot2.id = id; lot2.slot = 'out';
-    if (tryPlace(lot2, 2)) placedOut++;
+    var ok2 = tryPlace(lot2, 2), fb, fi;
+    if (!ok2 && id !== 'boathouse') {    // no room where it belongs (a church beside the hall takes the storehouse's place): by the big building's other end or behind it, else along the outside of what stands
+      fb = id === 'store' ? [[L0.x - os.w - G.gap, L0.y], [hx1 + G.gap, L0.y], [hx0 - os.w - G.gap, L0.y], [L0.x + 2, L0.y - os.h - G.gap], [L0.x + L0.w - os.w - 2, L0.y - os.h - G.gap]] : [];
+      for (fi = 0; fi < 4; fi++) { fb.push([rx1 + G.gap, ry0 + 1 + fi * 5]); fb.push([rx0 - os.w - G.gap, ry0 + 1 + fi * 5]); }
+      for (fi = 0; fi < fb.length && !ok2; fi++) ok2 = tryPlace({ x: fb[fi][0], y: fb[fi][1], w: os.w, h: os.h, id: id, slot: 'out', door: lot2.door }, 1);
+    }
+    if (ok2) placedOut++;
   }
   // the second ring (the big places): houses in a row behind the hall and a row before the gate, and a column either side, a lane
   // from the first ring; the way in from the gate and the two ways a back gate may lie are kept open
@@ -5989,7 +6011,7 @@ function make(seed, site, opts) {
     var cur = { n: obx0 - 1, s: obx0 - 1, e: oby0, w: oby0 }, keepN = [[L0.x - 3, L0.x], [L0.x + L0.w, L0.x + L0.w + 3]], keepS = [[gxm - 2, gxm + 4]], sidesO = ['n', 'e', 's', 'w'];
     function pastLanes(x0, wd, lanes) { var moved = true, n2 = 0; while (moved && n2++ < 6) { moved = false; lanes.forEach(function (ln) { if (x0 < ln[1] && x0 + wd > ln[0]) { x0 = ln[1]; moved = true; } }); } return x0; }
     while (placedO < nO && nDead < 4 && turn < 80) {
-      var sdO = sidesO[turn % 4], hs2 = size('house'), lot3 = null; turn++; if (dead[sdO]) continue;
+      var sdO = sidesO[turn % 4], hs2 = houseSize(sdO === 'n' ? 's' : 'e'), lot3 = null; turn++; if (dead[sdO]) continue;
       if (sdO === 'n') { cur.n = pastLanes(cur.n, hs2.w, keepN); if (cur.n + hs2.w > obx1 + 2) { dead.n = 1; nDead++; continue; } lot3 = { x: cur.n, y: oby0 - lane - hs2.h, door: 's' }; cur.n += hs2.w + G.gap; }
       else if (sdO === 's') { cur.s = pastLanes(cur.s, hs2.w, keepS); if (cur.s + hs2.w > obx1 + 2) { dead.s = 1; nDead++; continue; } lot3 = { x: cur.s, y: oby1 + lane, door: cur.s < gxm ? 'e' : 'w' }; cur.s += hs2.w + G.gap; }
       else if (sdO === 'e') { if (cur.e + hs2.h > oby1 + 1) { dead.e = 1; nDead++; continue; } lot3 = { x: obx1 + lane, y: cur.e, door: 'w' }; cur.e += hs2.h + G.gap; }
@@ -6004,13 +6026,13 @@ function make(seed, site, opts) {
   function pieces(l) {
     var b = BUILD[l.id], m = l.id === big ? wallOf(0) : (l.id === 'house' ? wallOf(1) : (l.id === 'store' || l.id === 'bath' ? 1 : 2)), roof = roofOf(l.id === big), x, y;
     if (l.id === 'smithy') m = 3; if (l.id === 'pit') m = 4; if (l.id === 'church') { m = 6; roof = 4; }
-    var dx = l.door === 's' || l.door === 'n' ? l.x + 1 + Math.floor(R() * Math.max(1, l.w - 2)) : -1, dy = l.door === 'e' || l.door === 'w' ? l.y + Math.floor(R() * l.h) : -1;
+    var dx = l.door === 's' || l.door === 'n' ? l.x + 1 + Math.floor(R() * Math.max(1, l.w - 2)) : -1, dy = l.door === 'e' || l.door === 'w' ? (l.h > 2 ? l.y + 1 + Math.floor(R() * (l.h - 2)) : l.y + Math.floor(R() * l.h)) : -1;   // (a door in an end wall keeps off its corners: the long walls are where things stand)
     var gaps = V.ruin ? Math.max(1, Math.floor((l.w + l.h) * 0.35)) : 0, gapAt = {}; if (gaps) for (var g = 0; g < gaps; g++) gapAt[Math.floor(R() * (l.w * 2 + l.h * 2))] = 1;
     var n = 0; l.wins = [];
     for (x = l.x; x < l.x + l.w; x++) { if (!gapAt[n++] && !(b.open && l.door === 's' && false)) H(x, l.y, l.door === 'n' && x === dx ? 'door' : 'wall', m); }
-    for (x = l.x; x < l.x + l.w; x++) { var south = l.door === 's' && x === dx ? 'door' : ((x === l.x + l.w - 1 || (l.door !== 's' && x === l.x)) && l.w > 1 && R() < 0.6 ? 'window' : 'wall'); if (b.open && l.door === 's') south = x === dx ? 'door' : (x === l.x || x === l.x + l.w - 1 ? 'wall' : 'door'); if (!gapAt[n++]) { H(x, l.y + l.h, south, m); if (south === 'window') l.wins.push(x); } }
+    for (x = l.x; x < l.x + l.w; x++) { var south = l.door === 's' && x === dx ? 'door' : ((l.w >= 6 && l.id !== 'byre' && l.id !== 'boathouse' ? (x - l.x) % 3 === 1 && x !== dx + 1 && R() < 0.8 : (x === l.x + l.w - 1 || (l.door !== 's' && x === l.x)) && l.w > 1 && R() < 0.6) ? 'window' : 'wall');   /* (a long wall has a window every third tile) */ if (b.open && l.door === 's') south = x === dx ? 'door' : (x === l.x || x === l.x + l.w - 1 ? 'wall' : 'door'); if (!gapAt[n++]) { H(x, l.y + l.h, south, m); if (south === 'window') l.wins.push(x); } }
     for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x, y, l.door === 'w' && y === dy ? 'door' : (l.id === 'church' && y > l.y && y % 2 ? 'window' : 'wall'), m); }
-    for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : (y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e' ? 'window' : 'wall'), m); }
+    for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : ((l.h >= 6 && l.id !== 'church' ? (y - l.y) % 3 === 1 && R() < 0.6 : y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e') ? 'window' : 'wall'), m); }
     for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) V.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0);
     if (!V.ruin || R() < 0.5) V.roofs.push({ tx: l.x, ty: l.y, m: roof });
     l.m = m; l.roof = roof; l.dx = dx; l.dy = dy;
@@ -6021,17 +6043,33 @@ function make(seed, site, opts) {
     var cx = l.x + l.w / 2, p, k, loot;
     var mid = tile(cx - 0.5, l.y + Math.floor(l.h / 2));
     if (BUILD[l.id].inside === 'hall') {
-      item('stoneHearth', mid[0] - T * 0.5, mid[1], { hearth: true, light: 1 }); if (l.w >= 8) item('stoneHearth', mid[0] + T * 1.5, mid[1], { hearth: true, light: 1 });
-      p = tile(l.x, l.y); item('bed', p[0] + 4, p[1] + 2, { bed: true }); p = tile(l.x + l.w - 1, l.y); item('bed', p[0] - 4, p[1] + 2, { bed: true });
-      p = tile(l.x + 1, l.y + l.h - 1); item('bench', p[0], p[1] - 3); p = tile(l.x + l.w - 2, l.y + l.h - 1); item('bench', p[0], p[1] - 3);
-      p = tile(l.x + l.w - 1, l.y + l.h - 1); item('chest', p[0] - 2, p[1] - 2, { store: true, loot: { leather: 2, berries: 3, coin: 2 + Math.floor(wealth * 6) } });
-      p = tile(l.x + 2, l.y); item('table', p[0] + 10, p[1] + 4); if (wealth > 0.5) { p = tile(l.x + Math.floor(l.w / 2), l.y); item('shieldRack', p[0], p[1] + 2); }
-      if (A.hall) { p = tile(l.x + l.w - 2, l.y + 1); item('chair', p[0], p[1], { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall) { p = tile(l.x + l.w - 2, l.y); item('chest', p[0], p[1] + 2, { heavy: { silver: 24 + Math.floor(wealth * 36) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
+      // A hall: fires down the middle line with open floor between them, the sleeping places at both ends, tables and benches
+      // along the far wall with the high seat in its middle, stores by the door wall, and two rows of posts carrying the roof.
+      var nH = l.w >= 19 ? 3 : 2, hk, ym = (l.y + l.h / 2) * T, hx = [];
+      for (hk = 0; hk < nH; hk++) { hx.push(l.x + l.w * (hk + 1) / (nH + 1)); item('stoneHearth', hx[hk] * T, ym + 2, { hearth: true, light: 1 }); }
+      for (k = 0.7; k < l.h - 0.9; k += 1.7) { item('bed', (l.x + 0.62) * T, (l.y + k) * T, { bed: true }); item('bed', (l.x + l.w - 0.62) * T, (l.y + k) * T, { bed: true }); }
+      var seatX = l.x + l.w / 2, tx2;
+      for (tx2 = l.x + 3; tx2 <= l.x + l.w - 3; tx2 += 3.5) { if (Math.abs(tx2 - seatX) < 2.2) continue; item('table', tx2 * T, (l.y + 0.62) * T); item('bench', tx2 * T, (l.y + 1.3) * T, { seat: true }); }
+      if (wealth > 0.5) { item('shieldRack', (seatX - 1.6) * T, (l.y + 0.5) * T); if (l.w >= 19) item('shieldRack', (seatX + 2.7) * T, (l.y + 0.5) * T); }
+      item('chest', (l.x + l.w - 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: 2 + Math.floor(wealth * 6) } });
+      item('barrel', (l.x + 2.1) * T, (l.y + l.h - 0.55) * T); item('crate', (l.x + 2.9) * T, (l.y + l.h - 0.5) * T, { loot: { meat: 2, berries: 3 } });
+      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall) { p = [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: 24 + Math.floor(wealth * 36) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
+      else item('chair', seatX * T, (l.y + 0.8) * T, { seat: true });
+      var py0 = l.y + 2, py1 = l.y + l.h - 2, px2;                    // the posts: at tile corners, two rows, every fourth tile, none beside a fire
+      for (px2 = l.x + 2; px2 <= l.x + l.w - 2; px2 += 4) { if (hx.some(function (q) { return Math.abs(q - px2) < 0.8; })) continue; V.posts.push([px2, py0]); if (py1 > py0) V.posts.push([px2, py1]); }
     } else if (BUILD[l.id].inside === 'home') {
-      item('stoneHearth', mid[0] + (l.w > 3 ? 0 : T * 0.3), mid[1] + (l.h > 2 ? 0 : -2), { hearth: true, light: 1 });
-      p = tile(l.x, l.y); item('bed', p[0] + 3, p[1] + 2, { bed: true }); if (l.w >= 4 && l.h >= 3) { p = tile(l.x + l.w - 1, l.y); item('bed', p[0] - 3, p[1] + 2, { bed: true }); }
-      p = tile(l.x + l.w - 1, l.y + l.h - 1); item('chest', p[0] - 2, p[1] - 3, { store: true, loot: { fiber: 3, berries: 2, coin: Math.floor(wealth * 3) } });
-      if (l.w >= 4) { p = tile(l.x + 1, l.y + l.h - 1); item('chair', p[0] + 2, p[1] - 4, { seat: true }); }
+      // A house: the door end is open floor (a bench, a barrel in the corner), the fire stands off the middle line where the
+      // house's two halves meet, a table and a chair against the other long wall, and the far end is where they sleep and keep
+      // what they have. The longer the house, the more of it. (It had the same five things at any size.)
+      var dS = l.door, LG = dS === 's' || dS === 'n' ? l.h : l.w, AC = dS === 's' || dS === 'n' ? l.w : l.h;
+      var at = function (a, c) { return dS === 'w' ? [(l.x + a) * T, (l.y + c) * T] : dS === 'e' ? [(l.x + l.w - a) * T, (l.y + c) * T] : dS === 's' ? [(l.x + c) * T, (l.y + l.h - a) * T] : [(l.x + c) * T, (l.y + a) * T]; };   // a place by how far in from the door end and how far across
+      var inH = function (name, a, c, extra) { var q = at(a, c); return item(name, q[0], q[1], extra); };
+      inH('stoneHearth', LG * 0.5, AC * 0.36, { hearth: true, light: 1 });
+      inH('bed', LG - 0.62, 0.62, { bed: true }); inH('bed', LG - 0.62, AC - 0.62, { bed: true }); if (LG >= 8) inH('bed', LG - 2.3, 0.62, { bed: true });
+      inH('chest', LG - 0.6, AC / 2, { store: true, loot: { fiber: 3, berries: 2, coin: Math.floor(wealth * 3) } });
+      inH('table', LG * 0.5 + 0.35, AC - 0.62); inH('chair', LG * 0.5 - 0.7, AC - 0.7, { seat: true });
+      inH('bench', 1.7, 0.5, { seat: true }); inH('barrel', 0.5, AC - 0.5);
+      if (LG >= 7) inH('crate', LG - 2.2, AC - 0.55, { loot: { berries: 2, fiber: 2 } });
     } else if (BUILD[l.id].inside === 'store') {
       p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 2, { loot: { berries: 5, fiber: 4 } }); p = tile(l.x + 1, l.y); item('barrel', p[0] - 4, p[1] + 2, { loot: { meat: 2, leather: 1 } });
       p = tile(l.x, l.y + 1); item('crate', p[0] + 6, p[1], { loot: { arrows: 10, wood: 4 } });
@@ -6041,7 +6079,7 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'pit') { p = tile(l.x, l.y); item('campfire', p[0] + 10, p[1] + 6, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('dryingRack', p[0], p[1] - 4); }
     else if (BUILD[l.id].inside === 'church') {
       p = tile(l.x + Math.floor(l.w / 2), l.y); item('altar', p[0] + (l.w % 2 ? 0 : T / 2), p[1] + 2, { r: 6, altar: true, light: 1, lamp: true });
-      for (k = l.y + 2; k < l.y + l.h; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
+      for (k = l.y + 2; k < l.y + l.h - 1; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
       p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: 14 + Math.floor(wealth * 24) }, locked: 1, lore: 'The church\u2019s silver, given by the faithful.' });
       V.finds.push({ kind: 'silver', x: p[0], y: p[1] });
       V.props.push({ name: 'bellTower', x: l.x * T + 9, y: (l.y + l.h) * T + 8, solid: 14 });                                  // the tower at the front corner, like a west tower
@@ -6082,7 +6120,7 @@ function make(seed, site, opts) {
   if (G.clutter && !V.ruin && yw >= 7) { item('foodTable', wc[0] + T * 2.4, wc[1] + T * 1.2, { r: 7 }); item('bench', wc[0] + T * 2.4, wc[1] + T * 1.2 + 15, { seat: true }); }
   if (A.townwall && !V.ruin) { item('stall', wc[0] - T * 2.6, wc[1] - T * 1.4, { r: 8 }); item('stall', wc[0] + T * 2.8, wc[1] - T * 1.6, { r: 8 }); }   // the town's market
   var homes = V.lots.filter(function (l) { return l.id === big || l.id === 'house'; });
-  if (wealth >= G.cellarAt && homes.length) { var cl = homes[Math.floor(R() * homes.length)], cp = tile(cl.x + Math.floor(cl.w / 2), cl.y + cl.h - 1); item('cellarDoor', cp[0], cp[1] - 2, { cellar: true, store: true, loot: { coin: 6 + Math.floor(wealth * 10), leather: 3, copper: 2 }, lore: 'Someone kept this well hidden.' }); V.finds.push({ kind: 'cellar', x: cp[0], y: cp[1] }); }
+  if (wealth >= G.cellarAt && homes.length) { var cl = homes[Math.floor(R() * homes.length)], cp = cl.id === 'house' ? (cl.door === 'w' ? tile(cl.x + 2, cl.y + 2) : cl.door === 'e' ? tile(cl.x + cl.w - 3, cl.y + 2) : cl.door === 's' ? tile(cl.x + 2, cl.y + cl.h - 3) : tile(cl.x + 2, cl.y + 2)) : tile(cl.x + Math.floor(cl.w / 2) - 2, cl.y + cl.h - 2); item('cellarDoor', cp[0], cp[1] - 2, { cellar: true, store: true, loot: { coin: 6 + Math.floor(wealth * 10), leather: 3, copper: 2 }, lore: 'Someone kept this well hidden.' }); V.finds.push({ kind: 'cellar', x: cp[0], y: cp[1] }); }
   var ex0 = 1e9, ey0 = 1e9, ex1 = -1e9, ey1 = -1e9; V.lots.forEach(function (l) { ex0 = Math.min(ex0, l.x); ey0 = Math.min(ey0, l.y); ex1 = Math.max(ex1, l.x + l.w); ey1 = Math.max(ey1, l.y + l.h); });
   ex0 = Math.max(tx, ex0 - G.fenceGap); ey0 = Math.max(ty, ey0 - G.fenceGap); ex1 = Math.min(tx + w, ex1 + G.fenceGap); ey1 = Math.min(ty + h, ey1 + G.fenceGap);
   var gateX = yx + Math.floor(yw / 2), fk = fenceKind, fm = fk === 'drystone' ? 3 : (fk === 'townwall' ? 6 : 2), x, y;
@@ -6107,7 +6145,7 @@ function make(seed, site, opts) {
   // the ground: the yard trodden to earth, gravel from the gate to the well and to the shore, earth from every door, moss at the back
   function dab(x, y, r, kind) { V.paints.push({ x: x, y: y, r: r, kind: kind }); }
   function strokeTo(a, b, r, kind, r2) { var n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / (r * 0.6))), i; for (i = 0; i <= n; i++) { var u = i / n, rr = r2 == null ? r : r + (r2 - r) * u; dab(a[0] + (b[0] - a[0]) * u + (R() - 0.5) * 4, a[1] + (b[1] - a[1]) * u + (R() - 0.5) * 4, rr * (0.85 + R() * 0.3), kind); } }
-  if (G.yardEarth) { for (var yi = 0; yi < 5; yi++) dab(wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6, 12 + R() * 8, 2); }
+  if (G.yardEarth) { for (var yi = 0, yn = Math.max(5, Math.round(yw * yh / 14)); yi < yn; yi++) dab(wc[0] + (R() - 0.5) * yw * T * 0.6, wc[1] + (R() - 0.5) * yh * T * 0.6, 12 + R() * 8, 2); }
   // the road (Robin, 2026-10-07: one winding road, not spokes to every door): in at the gate, bending through the yard past the
   // fire, on to the longhouse door, and out by the back gate or down to the shore; narrow at the gates, wide in the yard; it
   // wanders a little and its edges are ragged with small dabs; the doors keep only their worn step

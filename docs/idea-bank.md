@@ -608,7 +608,11 @@ Built: breaking in, bringing down, burning, mending in a place you hold. None of
 
 ## House sizes: a proposal (2026-10-13; Robin: what sizes of houses are reasonable, for play and for immersion)
 
-Not decided. A tile is 1.5 m; the hero is 1.8 m and 12 units across (a man 14); the screen shows about 19 by 12 tiles.
+**Built the same day** (Robin: "Fix the house sizes so that they make sense. I feel like they are way too small today"): the
+proposal below is what `src/village.js` now grows, with the church a tile wider (4 by 8 or 9) and the steading on the starter
+island enlarged to match. What is still open is at the end of this section. `CLAUDE.md`, "House sizes", has what the code does.
+
+Not decided when written. A tile is 1.5 m; the hero is 1.8 m and 12 units across (a man 14); the screen shows about 19 by 12 tiles.
 
 **What was real** (looked up; sources in the session's answer): longhouses were about 5 to 7 m wide and 15 to 75 m
 long, the width held down by what a roof could span; Dublin's tenth-century town houses averaged about 9 by 6 m;

@@ -103,7 +103,8 @@ gone from the code, and no new work may bring any of it back. This file is the s
   the old brief's "100 tiles are a kilometre" is dropped (it made the hero 10 m wide). Two levers, both pulled: **the camera** sits
   out at zoom 0.65 (the view 390 units tall, the hero a tenth of the screen's height; it was 16%), and **the world grew relative
   to him**: houses 3 to 5 by 3 to 4 tiles, longhouses 9 to 12 by 3 to 4, halls 13 to 16 by 4 to 5, village yards and sites about 1.4
-  times (`Village.ARCH`, `BUILD`, `DEF.gap` 3), the starter island 120 tiles, the big island 400, about 100 tiles of water between
+  times (`Village.ARCH`, `BUILD`, `DEF.gap` 3; **the houses grew again on 2026-10-13, to real sizes: see "House sizes" under The
+  game**), the starter island 120 tiles, the big island 400, about 100 tiles of water between
   (the raft takes a minute, the boat half that). The karve at 7 heroes long already fits a real 15 m karve. **The hero's speed stays**
   at 84 units a second (a 4 m/s jog): a bigger world with the same jog feels big; a slower hero feels tedious. Islands feel large
   through obstacles (groves, cliffs, water) more than through distance. The Sea Editor shows walking and sailing times.
@@ -358,7 +359,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   bush against a side wall; `freeAt`; the game plants them as gatherable props); **things against the walls** (`clutter`: `windowBox`
   under every south window, `lantern` by the door with `lamp: true` (a small night light, no embers, no wolf fear: `drawNight`
   radius 0.4), `awning` on open-fronted buildings, `sign` on the hall and trading stores, `woodshed` at the longhouse, `foodTable`
-  and a bench in a big yard); half the houses **deep** (`size('house')`: 2 to 3 wide, 3 deep) for a gable; **job spots** by role
+  and a bench in a big yard); the houses north of the yard stand **deep**, their gables south (see "House sizes"); **job spots** by role
   (`chop` at the block, `carry` at the well, `sweep` at the door, `fish`, `hang`, `smith`; the door spot is tagged `door`).
   the midden, a grave; earth under the yard, gravel from the gate and to the shore, earth from every door, moss at the edges;
   the things inside by building (hearths, beds, chests with loot, crates, benches, a shield rack, a furnace and workbench in the
@@ -368,7 +369,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   grown by it** (`hamletSite` finds a site of the archetype's size, `hamletClear` grows it and makes the folk, `hamletBuild`
   writes it into `B`, paints the ground with `w.dabGround` and one `w.repaint`, plants the props; chests get their loot as
   stacks, `lootSlots`); `game.village` holds the editor's numbers. `cellarDoor` is a flat prop in the kit (a trapdoor with an
-  iron ring). `node tools/visual/villages.js [seed]` renders one village of each archetype.
+  iron ring). `node tools/visual/villages.js [seed] [archetypes] [zoom] [wealth]` renders one village of each archetype (or of those named).
   **Big places and bigger houses (2026-10-13, for the big trials; `docs/destruction.md` section 9):** two more archetypes, **`great`** (Great village: a log hall, a full ring and a **second ring** of houses, 17 to 21 buildings inside a ring of stakes, 34 to 44 people) and **`bigtown`** (Great town: the same with a church and two stores inside a town wall, lowland materials). `A.full` leaves no ring slot empty; **`A.outer`** is the second ring (after the outbuildings: a row behind the hall with doors south, a row before the gate, a column either side with doors to the middle, a lane of `gap + 1` from the first ring, the way in from the gate and both places a back gate may lie kept open). **Nothing plans them into a world**: a page asks with **`Village.plan(env, { swap: { town: 'bigtown', seat: 'great', village: 'great' }, G })`** (the plain archetype if the island has no room). **`DEF.houseK`** (1) multiplies every building's inside (`size(id)`), the yard by half of it and the site by 0.8 of it (`siteFor(arch, G)`). **A ring of stakes has gates of a sensible width** (about three tiles for the gate, two and a half for the back one: `gapA`, `gapB` by the ring's size; they were a ninth of the ring, nine tiles in a big place), says where they are (`V.fence.gateAt`, `backAt`), and `garrison` stands two men inside each. `node tools/visual/bigplace.js [arch] [houseK] [seed] [wealth]` renders one place large and prints what is in it.
 - `src/runes.js` (`Runes`): the skills as runes ({ id, name, norse, kind, text, active, cd, glyph }), kinds attack,
   guard, mobility, utility, hird; tiers by uses (common, carved at 50, legendary at 200); `glyph`, `stone` and
@@ -1300,13 +1301,37 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   Viking-age houses were single-storey with a loft at most, and more storeys would mean generalising `B.up` into a list of
   levels with the roof, fade and camera logic for each; not worth it.
 - **Houses, doorways and reach (2026-10-09, Robin's three notes: the hut was tiny beside the hero, things stood in front of doors, E
-  worked through walls):** **the standard for a generated house is 4 by 3 tiles inside at least** (`BUILD.house` w 4 to 5, h 3 to 4;
-  a deep house for a gable is 4 wide and 4 to 5 deep, `size('house')`), the steading's hut is 4 by 3 and its burnt hall 6 by 4.
+  worked through walls):** the standard for a generated house was 4 by 3 tiles inside at least (**since 2026-10-13 a house is 4 by
+  6 at least: see "House sizes" below**).
   **Doorways are kept clear:** after a village's props and nature are planted, `hamletBuild` removes every solid prop within a tile
   and a half of the tile outside each door and the one beyond (`V2.lots`, the door side and `dx`/`dy`). **E never works through a
   wall:** `canReach(P, it)` asks that the hero's tile and the thing's tile lie in the same room of `roomInfo`, or both outside; the
   bed, seats, chests, racks, the charcoal clamp and every station (`stationNear`) check it. Checked in the pane: a chair inside a
   village house answers E from inside and not from outside its wall.
+- **House sizes (2026-10-13, Robin: "Fix the house sizes so that they make sense. I feel like they are way too small today. It
+  doesn't feel like houses").** A tile is 1.5 m, so the old house (4 or 5 by 3 or 4 tiles) was a shed of 6 by 4.5 m with a bed, a
+  hearth and a chest filling it: a man with a weapon corked the room. **Houses are now narrow and long, at the sizes they were
+  dug up at**, and a house runs back from the side its door is on, its gable end and its door toward the yard
+  (`BUILD` in `src/village.js`, where a building's `w` is its length; `houseSize(door)`; `size(id)` has no jitter any more):
+  **a house 4 across (5 for one in three of the better off) and 6 to 9 long** (6 by 9 to 13.5 m: Dublin's town houses were about
+  9 by 6 m, Hedeby's up to 17 long); **a farm's longhouse 5 by 14 to 18** (a small place's 10 to 13: `ARCH.long`); **the jarl's
+  hall 6 by 20 to 22** (9 by 30 m, the Trelleborg type) with **two rows of posts down it** (`V.posts`, written into `B.posts` by
+  `hamletBuild`: they stand, they are solid, and there is cover behind them), two or three hearths on its middle line, tables and
+  benches along the far wall, beds at both ends, the high seat and the jarl's chest at one end; **the church 4 by 8 or 9** (a nave
+  as at Escomb, a tile wider than it was so two can pass the pews); store 3 by 2, byre 5 or 6 by 3, smithy 4 by 3, boathouse 6 to
+  8 by 3. A home is furnished by its length (`inH(name, a, c)`: tiles in from the door end and across): the hearth off the
+  middle line so the way from the door to the beds is clear, beds at the far end, table and bench along one wall. A long south or
+  east wall has a window every third tile; a door in an end wall keeps off the corners. **Sites and yards grew with them**
+  (`ARCH`: a village's site 54 by 38 tiles, a town's 70 by 50, a farmstead's 34 by 26), the ring's places are counted from what
+  already stands (so nothing overlaps whatever its length), a long yard takes two houses a side, and an outbuilding with no room
+  where it belongs tries the big building's other end and the outside of the ring (a town used to lose its storehouse to the
+  church). **What it gives** (`node tools/roomsize.js`: a room's free floor and the widest circle clear of things): a house has
+  2.8 to 4.3 tiles of clear floor (it was 1.4 to 2.2: under 2 a man corks the room, 3 is a fight with a dodge), the longhouse 4.1
+  to 4.4, the hall 4.6 to 4.8. A house is half the screen long, a hall longer than the screen. **The starter island's steading
+  grew too** (`villageSite` 22 by 16 tiles; the burnt hall 10 by 5, the hut that still stands and the plank house by the well
+  6 by 4). **The layout key ends `:h2`**, so older saves start fresh. `node tools/visual/villages.js [seed] [archetypes] [zoom]
+  [wealth]` draws them (a cell holds the largest site; the hero's height is marked). **My choices, not Robin's:** the numbers, and
+  that the player's own first hut is not held to any size. `docs/idea-bank.md` has the study behind it ("House sizes").
 - **Sitting (2026-10-07, Robin: do the chairs behave as they should?):** they did nothing. Now **E at a chair or a bench seat sits
   you on it** facing the room ("E Sit"; `sitting`, `seatNear`, `sitDown`, `standUp`, `sitTick`): you rest there, health 0.4 and
   stamina 12 a second coming back, the seat's own solid skipped while you sit; E again or any movement key stands you up a step
@@ -1644,7 +1669,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   silhouettes with "?". `BESTIARY` holds the cards (all six animals written, only boars exist in the game yet);
   `book` (slain counts) is saved. Creature ideas (Norse myth and nordiska väsen) are in `docs/idea-bank.md`.
 - **The broken village (step 6, 2026-10-05):** Hildir's steading, abandoned, on the home island. `villageSite`
-  finds a flat 14 by 12 tile stretch of grass **900 to 1600 from camp** (Robin, 2026-10-08: a wander first; nearer only when the island
+  finds a flat 22 by 16 tile stretch of grass (14 by 12 until 2026-10-13: see "House sizes") **900 to 1600 from camp** (Robin, 2026-10-08: a wander first; nearer only when the island
   has no room) from the island seed; Brokk's campfire stands a step away from him so E does not muddle the two; `villageClear` (every
   start) clears its trees and bushes, scatters rubble and places Brokk; `villageBuild` (a fresh start only)
   writes the pieces into `B`, so they are saved and can be wrecked for their wood and stone: a burnt log hall
