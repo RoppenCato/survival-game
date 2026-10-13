@@ -612,6 +612,13 @@ Built the same day (`CLAUDE.md`, "Four ways to raid", "Man to man, not a swarm",
 Robin asked for the options; how each works in detail was left to me. These are the choices that could as well have gone
 another way:
 
+**Robin answered four of these on 2026-10-13** (the unarmed can be killed; drawing is a key; versions of one-on-one are to be
+tried; a man's weapon is taken from him, not found lying): built the same day, `CLAUDE.md` "Robin's four answers". What is
+still open after them: **which of the five ways** they come at you (`duel` is the default; the measure says the ways change
+how crowded a fight looks more than how fast a careful player falls: for that the lever is how many may strike at once);
+**children** (they cannot be struck: my line); **sleeping villagers** (indoors and out of reach at night: mine too);
+**whether your own men strike the unarmed** (they do not); **what looted arms are for** (nothing spends them yet).
+
 - **Can people who do not fight be killed?** As built: no. Only a villager who has taken up arms can be hurt. A raid
   on a village with no men of its own is therefore bloodless unless its people choose to fight. The other way (anybody
   can be cut down, and it is remembered) is darker and closer to what a raid was.

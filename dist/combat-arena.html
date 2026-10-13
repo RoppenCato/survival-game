@@ -3193,7 +3193,7 @@ var MEN = {
   // hang: a man with no place hangs back this far from the nearest fight (nearest and farthest, by the man) and waits for
   // one; apart, drift: the middle of a fight keeps this far from the men of other fights, moving at this pace to get there; homeR: a
   // householder (o.homeR on the man) fights nobody further than this from his own door.
-  onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, hang: [105, 165], apart: 72, drift: 26, homeR: 190,
+  onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, way: 'duel', hang: [105, 165], apart: 72, drift: 26, homeR: 190,   // (the first five and hang are a WAY: see WAYS)
   sight: 340, aggro: 150, leash: 250, lie: 90,
   noise: { blow: 240, shout: 420, cry: 360, din: 0.24, far: 1000 }, wake: [0.5, 1.6],   // how far a blow, a man's shout and a death cry are heard by a town's men, and how long a man at his post takes to be on his way
   // A man with a bow (2026-10-13, rung 5): he stands off and shoots at whoever he has a clear line to, never with one of his own
@@ -3248,10 +3248,30 @@ function tallyOn(dt) {
   var L = W.enemies, i, o;
   function tick(F) { if (F.onN > 0) { F.onT = (F.onT || 0) + dt; F.offT = 0; } else if (F.onT) { F.offT = (F.offT || 0) + dt; if (F.offT > 1.5) F.onT = 0; } }
   P.onN = 0; for (i = 0; i < L.length; i++) L[i].onN = 0;
+  var od = W.odds || (W.odds = [0, 0]); od[0] = 0; od[1] = P.dead || P.hidden ? 0 : 1;                 // who stands in the fight where the hero is: theirs, yours (he is one of yours)
+  for (i = 0; i < L.length; i++) { o = L[i]; if (o.type !== 'soldier' || o.dead || o.down || o.out || o.fled || o.awake === false || o.errand) continue; if (o.tgt || Math.hypot(o.x - P.x, o.y - P.y) < 600) od[o.side === 1 ? 1 : 0]++; }
   for (i = 0; i < L.length; i++) { o = L[i]; if (o.tgt && takesPlace(o) && inContact(o, o.tgt)) { o.tgt.onN++; if (!o.engAt) o.engAt = W.t; } else o.engAt = 0; }
   tick(P); for (i = 0; i < L.length; i++) tick(L[i]);
 }
-function capOn(F, e) { return F === P ? MEN.onHero : (F.onT || 0) >= (e.side === 1 ? MEN.joinYours : MEN.joinAfter) ? MEN.onMax : MEN.onOne; }
+// How many of e's side may be at F. It begins at onOne (onHero for the hero) and grows by one for every joinAfter seconds
+// somebody has been at him (joinYours for the hero's own men), to onMax at most. With MEN.odds it is instead the odds of the
+// fight: as many to a man as there are of e's side for each of F's (W.odds, counted every frame), one at least, onMax at most.
+function capOn(F, e) {
+  var mine = e.side === 1 ? 1 : 0, top = Math.max(MEN.onMax, F === P ? MEN.onHero : 1);
+  if (MEN.odds && W.odds) { var k = W.odds[mine] / Math.max(1, W.odds[1 - mine]); return Math.max(F === P ? Math.min(top, MEN.onHero) : 1, Math.min(top, Math.round(k))); }
+  return Math.min(top, (F === P ? MEN.onHero : MEN.onOne) + Math.floor((F.onT || 0) / (mine ? MEN.joinYours : MEN.joinAfter)));
+}
+// The ways (2026-10-13, Robin on one at a time being too kind: "Yeah maybe. Try different versions"). Each is a set of the
+// numbers above; Combat.way(id) lays one over MEN. `tests/battle.js ways` measures them side by side; the battle board has
+// a row that steps through them.
+var WAYS = {
+  duel: { name: 'one at a time', onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, hang: [105, 165] },          // one each; a second after six seconds; never a third
+  pack: { name: 'one, then more', onOne: 1, onHero: 2, onMax: 3, joinAfter: 2.5, joinYours: 2, odds: 0, hang: [80, 130] },         // one each; a second after 2.5 s, a third after 5; those who wait stand nearer
+  press: { name: 'two at a time', onOne: 2, onHero: 3, onMax: 3, joinAfter: 5, joinYours: 3, odds: 0, hang: [95, 150] },           // two each from the first moment, three on the hero; a third after 5 s
+  odds: { name: 'by the odds', onOne: 1, onHero: 2, onMax: 3, joinAfter: 6, joinYours: 3, odds: 1, hang: [95, 150] },             // as many to a man as the sides stand: even numbers are duels, two to one is two on each
+  swarm: { name: 'all at once', onOne: 0, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, hang: [105, 165] }             // as it was before any of this: everybody on the nearest
+};
+function way(id) { var w = WAYS[id], k; if (!w) return null; for (k in w) if (k !== 'name') MEN[k] = w[k]; MEN.way = id; return w; }
 // Is F taken, for e: as many of e's side at him as may be, counting those who are there already and those who will be there
 // first. A man who is already after F gives way only to one who is nearer (or was at him first); a newcomer takes another
 // man's place only by being a good deal nearer. Never taken: the man who is fighting e, and the hero when he has struck e or
@@ -4494,7 +4514,7 @@ function render(c) {
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
+return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   hurt: function (e, dmg, ang) { damageEnemy(e, dmg, ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 

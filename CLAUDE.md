@@ -82,6 +82,11 @@ gone from the code, and no new work may bring any of it back. This file is the s
   church within reach, your own hird as the men beside you, the raid saved) and **people** (thralls to cut loose, your own
   taken men to win back, a man who yields bound and taken or let go, a priest who does not fight). Not picked for now: the
   town taking back its silver, and what the town remembers.
+- **Decided 2026-10-13 (Robin's four answers on the raid options; built the same day, see "Robin's four answers" under Fighting
+  men).** **The unarmed can be killed.** **Drawing the weapon is a key of its own** ("think about a good way to do it": X, and
+  a blade out is a threat before it is a raid). **One man at a time may be too kind: versions are to be tried** (five are on
+  the battle board; none is chosen yet). **Twenty guards leaving twenty weapons lying is weird: there is to be a system where
+  you "take the weapon"** (the weapon stays with the man and is taken from him).
 - **Decided 2026-10-07 (Robin's questionnaire, the night of the villages):** **villages across the islands** with generated names
   ("controlled generation"), the starter island empty of thriving villages (its village was raided; the story comes later), a
   **jetty by the sea** with a road up to the village and boats moored that cannot be boarded, roads between villages uncommon; the
@@ -967,9 +972,63 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   further than `MEN.pursueOut` 450 outside them. The test's hero bot fights whoever is at him first (it walked at men who only
   stood and watched while two struck it from behind). `BP.fast({ bot, secs })` plays on with no pictures and says how crowded
   it is. **My choices, not Robin's: every number here, one on one at all, and that a town's men wait their turn.**
+- **Robin's four answers (2026-10-13), as built. Where a bullet below says otherwise, this one holds.**
+  **1. Taking a man's weapon** ("there needs to be some system where you 'take the weapon'"). Nothing falls out of a man as
+  loot any more. **His weapon stays with him** (`e.arms` on the dead man, drawn by his hand; gone when the body is, 90 s),
+  and taking it is an act: **E by him, "Take his sword"**, a moment on one knee (`armedNear`, `startTake`, `takingTick`,
+  `TAKE_T`: 0.9 s from the fallen, 0.7 from a man on his knees, 0.4 for a thing that lies; the hero's `pickup` clip and a
+  small bar; a step, a blow taken or the man's being gone ends it). It goes into the empty hand, else the Fight bar, else
+  the bag (`armTake`). **A man who has yielded is disarmed the same way** (`e.disarmed`: he keeps his life, runs, never
+  fights again, and leaves nothing if he later falls). A man taken from behind with empty hands: his weapon is in your hand
+  as he falls, as before. Things that lie (what you laid down, a place's own) are taken up the same way, quicker. So twenty
+  dead are twenty weapons only to one who kneels twenty times in a minute and a half with room for them. **What arms are FOR
+  is still open** (they will arm the hird). `docs/take-weapon.jpg`.
+  **2. The unarmed can be killed.** The engine hands the hero's blow and his arrows to people the page keeps
+  (`Combat.api.struck = { list(at), hit(o, dmg, ang, kind) }`, asked in the melee loop after the enemies and for the hero's
+  arrows). A grown villager has `FOLK_HP` 2 on the men's scale (two blows of an iron sword or one heavy one; five punches),
+  an elder less; **one who has noticed nothing, struck from behind, falls to that blow**. One who is struck and lives runs
+  and screams (a man's cry: the place is raided); one who falls lies 90 s as the fallen lie (`f.fallen`, the death clip) and
+  is gone: **`seen.dead[vi]`** (his number among the place's people: he is still dead after a load, `markDead`) and
+  **`seen.slain[vi]`** (names: those who live speak of them afterwards, `mournLines`). **A villager sees what is before him**
+  (2 radians either side; anything, once he runs or crouches), so `witness` no longer counts a man with his back turned, and
+  a killing nobody sees or hears is nobody's alarm. **Children cannot be struck, your own men do not strike the unarmed, and
+  people abed at night are indoors and out of reach: my lines, not Robin's.**
+  **3. X draws the weapon and puts it away** (`drawToggle`, `drawn`; in Fight mode; the keys list says so). Three things set
+  it for you: a blow, a raised shield or being come at draws it; **walking into somebody else's place at peace puts it away**
+  (it is in the hand again when you leave); nothing else. **A blade out in a place at peace is a threat, before any blow:**
+  one of its people who sees it (`MENACE_R` 130 units before him, or 70 whichever way he looks) cries out and **the place is
+  uneasy**: `raidStir(vi, x, y, 1)`, `raid.lvl` 1 (`raidLvl(vi)`: 0 at peace, 1 uneasy, 2 raided; `atPeace` is "not raided").
+  Its people run, take cover or fetch what the house has exactly as in a raid, but those who arm only stand at their own
+  doors (`homeR` 70 until blood), its men are not called, and nothing is remembered; it lasts while the blade is out and
+  seen and `MENACE_T` 12 s after (`WARY_LINES`). **One of its men who sees it challenges you**: "Put up your blade."
+  (`challenge`, `CHALLENGE_T` 4 s): put it away and he says "Keep it there."; keep it out and it is a raid. So people can be
+  driven indoors and a store emptied while they crouch (taking is still theft if one of them sees). Tried in the pane: a
+  blade drawn before a villager, 17 running, 3 indoors and 2 in cover four seconds later with no man of the town up, all
+  calm again fifteen seconds after it was put away; a guard obeyed, and a guard defied (ten men up).
+  **4. The ways they come at you** ("is one at a time too kind?": "Yeah maybe. Try different versions"). `Combat.WAYS`,
+  `Combat.way(id)`: each is a set of the pairing numbers. `capOn(F, e)` now grows by one for every `joinAfter` seconds a
+  man has been fought, to `onMax`; with `MEN.odds` it is the odds of the fight instead (`W.odds`: as many to a man as
+  there are of the one side for each of the other). **The battle board's first town row steps through them ("They come one
+  at a time"); the choice is kept (`game.way`) and the real game takes it.** Measured (`node tests/battle.js ways 40`: a
+  town of twenty against the hero and five; the careful bot alone against two, three and six):
+
+  | way | round one of yours: average, most, three or more | alone against 2 | against 3 | against 6 he lasts |
+  | --- | --- | --- | --- | --- |
+  | `duel` one at a time (a second after 6 s) | 2.3, 9, 32% | wins 57% | 40% | 42 s |
+  | `pack` one, then more (2.5 s, then a third) | 3.2, 9, 66% | 57% | 28% | 31 s |
+  | `press` two at a time (three on the hero) | 2.9, 10, 62% | 40% | 33% | 32 s |
+  | `odds` by the odds | 2.9, 9, 66% | 73% | 30% | 31 s |
+  | `swarm` all at once, as it was | 4.1, 11, 65% | 60% | 35% | 23 s |
+
+  **What the numbers say:** in a town the hero would fall at about the same time under every way (56 to 63 s), because
+  only two may strike one man at once and no two blows land on him within 0.75 s (`MEN.slots`, `gapHero`): the ways differ
+  in how crowded it looks and in how long a man alone lasts against many, not in how fast a careful player dies in a
+  town. **If one at a time is too kind, the lever is `slots` and `gapHero`, or a town's numbers, more than the way.**
+  `duel` is still the default; Robin has not chosen.
 - **Weapons that drop and are taken (2026-10-13, Robin: "weapons can drop and be looted, for example if you manage to kill a guard
   with your hands you could take his weapon... Or maybe that stealth kill gives you the weapon of the target").** In
-  `templates/game.html`. **A man who falls drops what he fought with**, where he fell (`manDrops(e)` from `onDeath`, `manArms`:
+  `templates/game.html`. **(A fallen man's weapon no longer lies as a thing of its own: it stays with him and is taken from
+  him, see the bullet above. What follows about lying things holds for what you lay down and what a place keeps.)** **A man who falls drops what he fought with**, where he fell (`manDrops(e)` from `onDeath`, `manArms`:
   his weapon as a thing of its own metal; a bowman's bow and two to five arrows). It **lies** there (`d.lie` on the drop:
   walking over it does not pick it up, so a battlefield does not fill your bag) until **E, "Take the iron sword"**
   (`lyingNear`, `takeLying`; an `add` line in `eWhat`). **A thing taken goes into your hand if the hand is empty**, else to a
@@ -998,7 +1057,7 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   home, is inside `ARM_T` 2.6 s, and comes out a man of the engine (`armFolk`: his own face and clothes, a wood axe, a club,
   a fish spear or a long knife by his calling (`FOLK_ARMS`), copper in the first biome and iron in the lowlands, no shield,
   14 to 20 health against a guard's 30, slow wits, `nerve` 0.25 so he yields or runs when it goes badly; a householder,
-  `homeR`: he defends his own door). **Only one who has taken up arms can be hurt.** He drops what he held; one who runs is
+  `homeR`: he defends his own door). (Only one who had taken up arms could be hurt, until Robin's answer the same day: see "Robin's four answers".) His weapon stays by him; one who runs is
   a villager again; when it is over those who live put their arms away (`folkCalm`); one who fell is gone until the page is
   loaded again (the people are not saved). In the test town of twenty-two: six armed, ten in cover, six out of the gate.
   **Weapons away, and drawn (`armsTick`).** In somebody else's place at peace (`placeOfPeace`) the weapon is put away by
@@ -2248,6 +2307,7 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   right. The shield shows only when used (blocking); Robin likes that as it is.
 - **Build mode:** **B** enters it (no hammer item). In it **F** turns the cursor into a red crossed box that
   destroys pieces. Built in the game (see "The game").
+- **X (2026-10-13):** draw your weapon, or put it away (among other people it is away until you draw it; a drawn blade is a threat).
 - **C (2026-10-12):** what you make by hand, anywhere. **E:** use what you face (`eWhat`). **In the bag:** drag moves, right
   click uses, Shift and click sends across to a chest, Shift and drag carries half a stack.
 - **Tab:** inventory. **Ctrl:** target the nearest enemy, then the next nearest on each press, then let go.

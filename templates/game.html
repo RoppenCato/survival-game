@@ -5097,6 +5097,7 @@ __COMBAT__
      soldierAI); here they are placed: at the gate inside and out, at the back gate, by the market, a man or two at every
      house, and the jarl's own in the hall, who are the best and come last (they must arm). */
   var TOWN_N = 20;
+  try { var way0 = localStorage.getItem('game.way'); if (way0 && Combat.WAYS[way0]) Combat.way(way0); } catch (e) {}   // the way they come at a man, as last chosen on the battle board (Combat.WAYS)
   function townOf() { var i; if (RU.on && RU.place === 'village') { for (i = 0; i < villages.length; i++) if ((villages[i].arch === 'great' || villages[i].arch === 'seat' || villages[i].arch === 'village') && villages[i].V) return i; } for (i = 0; i < villages.length; i++) if ((villages[i].arch === 'town' || villages[i].arch === 'bigtown') && villages[i].V) return i; return -1; }   // the place the tests are about: the town, or (the Destruction Editor's switch) the first biome's biggest village
   function gateOf(v) { var F = v.V.fence; if (!F) { var c0 = vCentre(v); return { x: c0[0], y: c0[1] + v.h * T * 0.4, nx: 0, ny: 1 }; } if (F.round) { var g0 = F.gateAt || [F.cx, F.cy + F.ry], gl = Math.hypot(g0[0] - F.cx, g0[1] - F.cy) || 1; return { x: g0[0], y: g0[1], nx: (g0[0] - F.cx) / gl, ny: (g0[1] - F.cy) / gl }; } return { x: (F.gate + (F.gateW || 1) / 2) * T, y: F.y1 * T, nx: 0, ny: 1 }; }   // a place's gate, and the way out of it
   function vBox(v) { return { x0: v.tx * T, y0: v.ty * T, x1: (v.tx + v.w) * T, y1: (v.ty + v.h) * T }; }   // a place's bounds: its men go for nobody far outside them (MEN.pursueOut)
@@ -5234,7 +5235,7 @@ __COMBAT__
   }
   function battleRows() {
     return [{ id: 'one', name: 'One hirdman', on: BT.setup === 'one' }, { id: 'two', name: 'Two', on: BT.setup === 'two' }, { id: 'friend', name: 'Two, and one beside you', on: BT.setup === 'friend' }, { id: 'five', name: 'Five against five', on: BT.setup === 'five' }, { id: 'bows', name: 'Bowmen a side: ' + (BT.bows || 0) },
-      { id: 'town', name: 'A town defended', on: BT.setup === 'town' }, { id: 'raid', name: 'A raid on it', on: BT.setup === 'raid' }, { id: 'walkin', name: 'Walk in unarmed', on: BT.setup === 'walkin' }, { id: 'nightraid', name: 'A night raid', on: BT.setup === 'nightraid' }, { id: 'storm', name: 'Storm it: a longship\u2019s crew', on: BT.setup === 'storm' }, { id: 'townN', name: 'Its men: ' + TOWN_N }, { id: 'gate', name: 'To its gate' }, { id: 'hall', name: 'To its hall' }, { id: 'church', name: 'To its church' }, { id: 'ship', name: 'To your ship' },
+      { id: 'way', name: 'They come ' + Combat.WAYS[Combat.api.men.way || 'duel'].name }, { id: 'town', name: 'A town defended', on: BT.setup === 'town' }, { id: 'raid', name: 'A raid on it', on: BT.setup === 'raid' }, { id: 'walkin', name: 'Walk in unarmed', on: BT.setup === 'walkin' }, { id: 'nightraid', name: 'A night raid', on: BT.setup === 'nightraid' }, { id: 'storm', name: 'Storm it: a longship\u2019s crew', on: BT.setup === 'storm' }, { id: 'townN', name: 'Its men: ' + TOWN_N }, { id: 'gate', name: 'To its gate' }, { id: 'hall', name: 'To its hall' }, { id: 'church', name: 'To its church' }, { id: 'ship', name: 'To your ship' },
       { id: 'wpn', name: 'He carries ' + BT_WPN_N[BT_WPN[BT.wpn]] }, { id: 'gear', name: 'He wears ' + BT_GEAR[BT.gear].name }, { id: 'wits', name: 'His wits: ' + BT_WITS[BT.wits].name },
       { id: 'mine', name: BT.mine ? 'You wear mail and an iron helm' : 'You wear leather' }, { id: 'again', name: 'Again' }, { id: 'heal', name: 'Heal' }, { id: 'clearf', name: 'Clear the field' },
       { id: 'slow', name: BT.slow ? 'The clock: a quarter speed' : 'The clock: as it runs', on: BT.slow }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }];
@@ -5246,6 +5247,7 @@ __COMBAT__
     if (id === 'walkin') { walkSet(); return; }
     if (id === 'nightraid') { nightSet(); return; }
     if (id === 'storm') { stormSet(); return; }
+    if (id === 'way') { var WK = Object.keys(Combat.WAYS), wn = WK[(WK.indexOf(Combat.api.men.way || 'duel') + 1) % WK.length]; Combat.way(wn); try { localStorage.setItem('game.way', wn); } catch (e) {} return; }   /* (how many come at one man: kept, and the real game takes it too) */
     if (id === 'ship') { if (BT.raid && BT.raid.land) { P.x = BT.raid.land.x; P.y = BT.raid.land.y; P.vx = P.vy = 0; } return; }
     if (id === 'church') { var cv2 = townOf(); if (cv2 < 0) return; var cl = villages[cv2].V.lots.filter(function (l) { return l.id === 'church'; })[0]; if (cl) { P.x = (cl.dx + 0.5) * T; P.y = (cl.y + cl.h + 1.6) * T; P.vx = P.vy = 0; } return; }
     if (id === 'townN') { TOWN_N = TOWN_N === 12 ? 20 : TOWN_N === 20 ? 30 : 12; if (BT.setup === 'town') townSet(); else if (BT.setup === 'raid') raidSet(); return; }

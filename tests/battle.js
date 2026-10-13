@@ -316,6 +316,20 @@ function town(n, secs) {
   seeds.slice(0, Math.max(2, Math.round(n / 3))).forEach(seed => { const r = townFight(seed, { quiet: true, secs: 120 }); console.log((r.backAt < 0 || r.stuck >= 5 ? '!! ' : '   ') + ('town ' + seed + ', a noise at the gate and nobody there').padEnd(46) + r.went + ' of ' + r.n20 + ' went to look; ' + (r.backAt < 0 ? 'NOT all back at their posts after ' + r.t.toFixed(0) + ' s' : 'all back at their posts and at their day after ' + r.backAt.toFixed(0) + ' s') + (r.stuck >= 5 ? '; STOOD STILL ' + r.stuck.toFixed(0) + ' s: ' + r.who : '')); });
 }
 // ---- Bowmen (rung 5): what a man with a bow does, by himself and in a fight. Each line says what was seen; !! is a fault. ----
+// The ways they may come at a man (Combat.WAYS), side by side: the same fights under each. n: fights a line and towns.
+function ways(n) {
+  console.log('--- the ways they may come at you (Robin, 2026-10-13: is one at a time too kind? "Try different versions"). ' + n + ' fights a line, ' + Math.max(2, Math.round(n / 8)) + ' towns at both gates');
+  console.log('    way              | a town of 20 against you and five: round one of yours (avg, most, 3 or more), the hero would fall at, friends up at the end, over in | you (careful) and 4 against 5 | you (careful) against 2 | against 3 | against 6: you last | 5 against 5');
+  const seeds = []; for (let i = 0; i < Math.max(2, Math.round(n / 8)); i++) seeds.push(101 + i * 37);
+  const H = { bot: 'careful', weapon: ['sword', 'iron'], armour: LEATHER }, six = () => { let t = 0, w = 0; for (let i = 0; i < n; i++) { const r = fight({ hero: H, foes: [['sword', 'leather'], ['axe', 'leather'], ['spear', 'leather'], ['sword', 'leather'], ['club', 'leather'], ['axe', 'leather']] }); t += r.time; if (r.won) w++; } return (t / n).toFixed(0) + ' s' + (w ? ', wins ' + Math.round(100 * w / n) + '%' : ''); };
+  Object.keys(Combat.WAYS).forEach(id => {
+    Combat.way(id); const C = { most: 0, peak: 0, c3: 0, fell: 0, up: 0, t: 0, n: 0, bad: 0 };
+    seeds.forEach(seed => ['gate', 'back'].forEach(from => { const r = townFight(seed, { from }); if (from === 'back' && !r.backGate) return; if (r.timeout) C.late = (C.late || 0) + 1; if (r.stuck >= 5 || r.nan) { C.bad++; C.why = (C.why || '') + (r.stuck >= 5 ? ' stood ' + r.stuck.toFixed(0) + ' s: ' + r.who + ';' : ' NaN;'); }   /* (a town not finished in eight minutes by a hero who cannot die is no fault) */ if (!r.cN) return; C.most += r.cMost / r.cN; C.peak = Math.max(C.peak, r.cPeak); C.c3 += r.c3 / r.cN; C.fell += r.fell < 0 ? r.t : r.fell; C.up += r.friendsUp; C.t += r.t; C.n++; }));
+    const k = Math.max(1, C.n), a4 = run({ hero: H, foes: [['sword', 'leather'], ['axe', 'leather'], ['sword', 'leather'], ['spear', 'leather'], ['sword', 'leather']], friends: [['sword', 'leather'], ['axe', 'leather'], ['sword', 'leather'], ['spear', 'leather']] }, n), a2 = run({ hero: H, foes: [['axe', 'leather'], ['axe', 'leather']] }, n), a3 = run({ hero: H, foes: [['axe', 'leather'], ['sword', 'leather'], ['spear', 'leather']] }, n), e5 = run({ foes: [1, 2, 3, 4, 5].map(() => ['sword', 'leather']), friends: [1, 2, 3, 4, 5].map(() => ['sword', 'leather']) }, n);
+    console.log((C.bad ? '!! ' : '   ') + (' ' + Combat.WAYS[id].name).padEnd(17) + '| ' + ((C.most / k).toFixed(1) + ', ' + C.peak + ', ' + Math.round(100 * C.c3 / k) + '%').padEnd(16) + ' falls at ' + ((C.fell / k).toFixed(0) + ' s').padEnd(6) + ' ' + (C.up / k).toFixed(1) + ' up  over in ' + ((C.t / k).toFixed(0) + ' s').padEnd(6) + (C.late ? ' (' + C.late + ' not over in 8 min)' : '') + (C.bad ? ' (' + C.why + ')' : '') + ' | wins ' + (a4.pct + '%').padEnd(5) + ' ' + a4.secs + ' s, ' + a4.hp + ' left  | wins ' + (a2.pct + '%').padEnd(5) + a2.hp + ' left | wins ' + (a3.pct + '%').padEnd(5) + a3.hp + ' left | ' + six().padEnd(18) + ' | ' + e5.pct + '% in ' + e5.secs + ' s');
+  });
+  Combat.way('duel');
+}
 function bows(n) {
   console.log('--- bowmen (rung 5). ' + n + ' fights a line. Aimed at: a bowman behind a line that holds is worth nearly a swordsman, in the place of a swordsman much less, and alone against a man who reaches him he is lost; no arrow is loosed with one of his own in its way, or through a wall');
   line('a friend with a bow alone against a man with a sword and a shield', run({ foes: [['sword', 'leather']], friends: [['bow', 'leather']] }, n));
@@ -436,5 +450,6 @@ if (mode === 'duels') duels(N);
 if (mode === 'five' || mode === 'short') five(mode === 'short' ? 6 : N);
 if (mode === 'bows' || mode === 'short') bows(mode === 'short' ? 8 : N);
 if (mode === 'raid' || mode === 'short') raidChecks();
+if (mode === 'ways') ways(+process.argv[3] || 24);
 if (mode === 'town' || mode === 'short') town(mode === 'short' ? 2 : (+process.argv[3] || 12), +process.argv[4] || 480);
 console.log('(' + ((Date.now() - t0) / 1000).toFixed(1) + ' s)');
