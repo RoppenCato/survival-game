@@ -17,6 +17,10 @@ const JOBS = [
   ['shield_g', ['block_walk'], ['clubWood', 'axeWood', 'axeMetal']], ['shield_h', ['block_walk'], ['knifeWood', 'knifeMetal', 'bowWood']]
 ];
 const NEW_LAYERS = ['shieldRim', 'shieldFace', 'shieldMark'], NEW_CLIPS = ['block', 'block_walk'];
+// --hand seax,spear,greataxe   renders those kinds' Wood and Metal layers for the fighting clips instead (2026-10-13: the hero's hand
+// was empty with one of them on the Fight bar), each kind into art/render/hand_<kind>, and packs only those layers.
+const HANDK = (process.argv.indexOf('--hand') >= 0) ? process.argv[process.argv.indexOf('--hand') + 1].split(',') : null;
+if (HANDK) { JOBS.length = 0; HANDK.forEach(k => JOBS.push(['hand_' + k, FIGHT.concat(['block_walk']), [k + 'Wood', k + 'Metal']])); NEW_LAYERS.length = 0; NEW_CLIPS.length = 0; HANDK.forEach(k => NEW_LAYERS.push(k + 'Wood', k + 'Metal')); }
 const AT_ONCE = +process.argv[2] || 4, NORENDER = process.argv.includes('--norender');
 let next = 0, running = 0, failed = 0; const t0 = Date.now();
 function start() {
@@ -32,7 +36,7 @@ function finish() {
   if (failed) { console.log(failed + ' job(s) failed'); process.exit(1); }
   // joined to the hero's other renders: the frames copied in, the new layers and clips written into his numbers
   const mf = path.join(DST, 'meta.json'), m0 = JSON.parse(fs.readFileSync(mf, 'utf8')); let n = 0;
-  fs.readdirSync(R).filter(d => /^shield_[a-z]$/.test(d) && fs.existsSync(path.join(R, d, 'meta.json'))).sort().forEach(d => {
+  fs.readdirSync(R).filter(d => (HANDK ? /^hand_\w+$/ : /^shield_[a-z]$/).test(d) && fs.existsSync(path.join(R, d, 'meta.json'))).sort().forEach(d => {
     const m1 = JSON.parse(fs.readFileSync(path.join(R, d, 'meta.json'), 'utf8'));
     if (JSON.stringify(m1.anchor) !== JSON.stringify(m0.anchor) || m1.size !== m0.size || m1.px !== m0.px) throw new Error(d + ': not the frame of the hero\'s other renders');
     m1.layers.forEach(l => { if (m0.layers.indexOf(l) < 0) m0.layers.push(l); });

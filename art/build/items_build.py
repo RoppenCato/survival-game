@@ -16,7 +16,7 @@ SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'source')
 bpy.ops.wm.open_mainfile(filepath=os.path.abspath(os.path.join(SRC, 'hero2_mixamo.blend')))
 sc = bpy.context.scene; rig = next(o for o in sc.objects if o.type == 'ARMATURE'); gear = bpy.data.collections['Gear']
 RIGHT, LEFT = 'mixamorig:RightForeArm', 'mixamorig:LeftForeArm'
-KINDS = ['sword', 'axe', 'pick', 'knife', 'club', 'seax', 'spear', 'bow', 'rod']
+KINDS = ['sword', 'axe', 'pick', 'knife', 'club', 'seax', 'spear', 'bow', 'rod', 'greataxe']
 for o in list(gear.objects):
     if any(o.name.startswith(k) for k in KINDS): bpy.data.objects.remove(o)
 GRIP = Vector((0.0, 0.085, 0.0))                 # from the wrist into the fist, along the forearm
@@ -71,6 +71,9 @@ def build_club():
     attach([cyl('clubWood_a', MAT['wood'], (0, 0, -0.10), (0, 0, 0.42), 0.02, 0.045, seg=10), ball('clubWood_knob', MAT['wood'], (0, 0, 0.43), 0.05)], RIGHT)
 def build_spear():
     attach([cyl('spearWood_shaft', MAT['wood'], (0, 0, -0.65), (0, 0, 0.95), 0.014, 0.013), blade('spearMetal_head', MAT['metal'], 0.95, 1.22, 0.055, 0.004, 0.012)], RIGHT)
+def build_greataxe():                       # the Dane axe (2026-10-13, as the people's): a long haft, a broad head set off toward +Z
+    attach([cyl('greataxeWood_haft', MAT['wood'], (0, 0, -0.34), (0, 0, 0.86), 0.018, 0.016),
+            box('greataxeMetal_head', MAT['metal'], (0, -0.1, 0.78), (0.03, 0.22, 0.13)), blade('greataxeMetal_edge', MAT['metal'], 0.66, 0.9, 0.14, 0.26, 0.014, -0.25)], RIGHT)
 def build_rod():
     attach([cyl('rodWood_a', MAT['wood'], (0, 0, -0.15), (0, 0, 1.3), 0.012, 0.004, seg=6)], RIGHT)
 def build_bow():

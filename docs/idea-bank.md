@@ -417,6 +417,15 @@ https://en.wikipedia.org/wiki/MapleStory, https://tvtropes.org/pmwiki/pmwiki.php
 Still open: an OGG per song as an asset later if a SoundFont rendering sounds better; the forest, sea, night and
 village pieces; music by place once the island has places.
 
+## Arrows and the quiver (2026-10-13, open)
+
+Robin had the arrow slots removed ("we need to think of a better way") and the bow shoots without ammo for now. Ways to
+carry arrows that are not stacks in the bag: a quiver as a worn thing in a gear slot with a count on it (filled by making
+arrows; its kind of arrow is the one shot); arrows as a count on the bow itself (the bow's own line: 23 of 30, refilled at a
+workbench or from a bundle); a bundle in the belt row; or no ammo at all with a draw time and a limit on how fast one can
+shoot (the engine's `cd`), which the sling with stones already is not. The arrow kinds decided on 2026-10-05 (different arrow
+types) want the first or the second.
+
 ## The shield: what I chose, and what is left (2026-10-13)
 
 Robin asked for a shield to be created and implemented. What is built is in `CLAUDE.md` ("The hero's shield"). The

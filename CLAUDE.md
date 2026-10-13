@@ -439,6 +439,12 @@ the text and it is made the default. When a spec's meaning changes, change the s
   not a stick sword. `node tools/visual/weapons.js` renders every swing in four directions; `tests/weapons.js` checks hits,
   pierce, chains and throws (in `npm test`).
 - `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster); step 1 is built.
+- `docs/boats.md` (**a study, 2026-10-13**; Robin: re-evaluate the boat and the shipyard: boats big enough for several rowers,
+  more customisable yet functional, or a few good designs with parts and colours): what is built, the challenges (the grid
+  is the hull's length and a seat a cell, the free-form rules fight every new part, the shape changes nothing of the
+  handling, cargo has no shape, forty parts by hand), three ways (grow the free-form yard; a few designs with choices of
+  look; the designs as the hull and the yard for the fitting out), the recommendation (the third, with the second's
+  choices) and five questions. **Nothing of it is decided or built.**
 - `docs/art-direction.md` (**decided 2026-10-07**, Robin: the flat look felt like a mobile game): **the ink of Egerkrans, the light of
   Bauer**. One colour key per scene with one hot accent; shadows cooler and bluer than the light; an earth-and-bone palette; a
   hand-made warm brown-black line, thin toward the light and heavy on the shadow side; figures whole (two-pass outline); one sun
@@ -606,8 +612,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
   editor's sheet view). The rule and the game's side are under "Fighting men" ("The hero's shield").
   `docs/hero-shield.jpg`. **Seen on the way:** the block's weapon layers were rendered the new way (a hole cut by
   material, so nothing shows through the hand), the hero's older weapon layers the old way, so a sword's grip loses a few
-  pixels as the guard comes up; **and the hero still has no layers for the seax, the spear and the Dane axe: with one of
-  those on the Fight bar his hand is empty** (the people have all three).
+  pixels as the guard comes up. **The seax, the spear and the Dane axe are in his hand since 2026-10-13** (Robin: "when I
+  tried equipping some weapons it doesn't seem like it gets equipped": those three had no layers, so his hand was empty):
+  `items_build.py` has `build_greataxe` (the people's Dane axe), and **`node tools/shieldrender.js 3 --hand seax,spear,greataxe`**
+  renders a kind's Wood and Metal layers for the fighting clips into `art/render/hand_<kind>`, merges and packs only those
+  (`--only`). A spear and a Dane axe at full reach are cut by the 160 px frame, as noted below.
   **The animals (2026-10-11, Robin: the boar, the deer, then the wolf, eight directions; no Mixamo for four legs):**
   `art/build/quad_build.py -- <boar|deer|wolf>` models, rigs and animates a four-legged animal by script and saves
   `art/source/<name>.blend`. **One rig for every species:** `body` (bob, pitch, roll), `hips` and `chest` (the spine flexes between
@@ -974,6 +983,22 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   with a hirdman (a blow of his on the shield: 3). **Not done:** a shield slung on the back when the weapon is away; a
   parry with the weapon as the shieldless guard's own clip; the shield in the hero's cast shadow; whether a torch should
   cost the shield arm (`docs/idea-bank.md`).
+- **The weapons and tools pass (2026-10-13, Robin's list).** **The pace of a blow:** the hero hit "comically fast, spasmic":
+  a sword blow was 0.26 s from the press to the carry (windup 0.05). Now a sword blow is about 0.55 s (`PROFILES` and `STEPS`
+  in `src/combat.js`: windup 0.16, blow 0.11, recovery 0.28; the chain's last blow 0.24, 0.14, 0.44), an axe 0.68, a club
+  0.78, a seax 0.36, a spear 0.62, the Dane axe 1.2; the windup grew most, so a blow is seen coming and the slash clip has
+  time to play. **The men's own windup is set apart** (`MEN.wu` 0.12, `wuK` 2.0: the same seconds as before, a sword 0.44 s
+  to a Dane axe 0.92) so they did not slow with him. **The numbers shown:** a blow of the hero's shows as the engine's damage
+  times **`SHOW` 10**, whole (`api.SHOW`; `num` in `damageEnemy`; the page's `worldDmg`, the item cards and the Stats page
+  use it): an iron sword on a man shows 10 to 16, a crit 15 to 24; the health behind it is unchanged (Robin: at least
+  around 10, the decimals looked weird). A tool's number on a tree is whole too. **Tools bite beasts and men a little** in
+  gather mode (`TOOL_DMG` 0.5 of what the same thing would do as a weapon, a flinch, no lunge: an iron axe shows about 6, a
+  knife 3; Robin: tools should also do damage, but low). **Where the fights stand after the slower blows** (`npm test`, 12
+  fights a line): one man in leather: the tapper 0% (was 36), the careful bot 100% with 45 left (75), the skilled 100% with
+  49 (93); two axes: the careful bot 58% (61), the skilled 58% (100); the careful bot with four friends against five 0% (was
+  83), the skilled 50% (95). **The slower hero is a weaker hero against men, and the numbers in `MEN` were tuned to the fast
+  one:** which of them to move is Robin's call once he has felt the new pace (the men's damage `MEN.dmg`, their `slots`,
+  `gapHero`). The one-man and five-against-five lines of the test say so in their numbers, not as faults.
 - **More than one on a target (rung 2).** At most two may be striking one target at once (`MEN.slots`), and **no two blows
   land together**: a man may begin a blow only if it would land at least `MEN.gapHero` 0.75 s from any other already on its
   way to the hero (as long as the hero is untouchable after a blow, so none is wasted), 0.35 s for a man (`slotFree`, by
@@ -1491,6 +1516,17 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   the hero comes close. A missing animal of each kind wanders back in after a few seconds, far from the hero.
   They all still fight with the engine's chase-and-lunge; only the numbers differ (real per-animal attacks are
   still to do).
+- **The deer (2026-10-13, Robin: it should behave naturally and be a reason to learn the bow; "you can just run towards the
+  deer until he gets stuck on the edge of the beach, then hit him with your sword").** The engine has a **shy beast** (`e.shy`,
+  set by the page from `ANIMALS.deer.shy`; `shyK`, `fleeStep` in `src/combat.js`): it notices you **by sight**, 230 units
+  before it (`aggro` 230, it was 95) and less than half of that behind it, 1.6 times as far when you sprint, so a hunter walks
+  up slowly from behind and shoots from where the bow carries; it **runs the open way**, not straight away from you into the
+  sea (nine headings fanned round "away", the one with the longest clear run by `scene.walk`, chosen again every half
+  second), at 1.7 times its speed (faster than your sprint); it runs until you are 3.2 reaches off, then **stands and
+  watches you** a while before it grazes again where it stopped. An arrow that hits sets it running. **Checked by script**
+  on the starter island: sprinted at from the front it was off at about 230 units and kept ahead along the shore; it was
+  never still with the hero near. Not done: a wounded deer bleeding and slowing, the herd (two or three together, one with
+  its head up), the bow's draw as a held pose.
 - **Scale (2026-10-05):** the hero walks at 84 units a second (was 118); islands default to 160 tiles (1.6 km)
   in `World.DEF`, the Sea Editor and the game.
 - **Building** on **B** through `Build`: `PIECES` in the page, at low cost, placed with the mouse (drag lays
@@ -1852,7 +1888,11 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   boards; Robin: fewer menus). Wood outside, leather inside; the hero drawn large and turning in the middle
   (`playerD`, like the Character Editor), five equipment slots on the left (helmet, cloak, tunic, trousers, boots)
   and four on the right (sword, shield, bow, amulet), all with faint glyphs when empty; only the sword and bow are
-  "equipped" and nothing can be changed yet. Below, **the quiver**: three arrow slots (one arrow type each, up to 40),
+  "equipped" and nothing can be changed yet. **The quiver is gone since 2026-10-13** (Robin: remove the arrow slots, a better
+  way to carry arrows is to be found; "for now, let ranged weapons shoot without ammo so we easily can test"): `canShoot`
+  is true with any ranged thing in hand, a shot costs nothing, no arrow lies to be picked up, the arrow recipes are not
+  listed (`known`), and the panel has no arrow slots; the `quiver` data stays in the save, unused. Thrown things (a javelin,
+  a throwing axe) still fly away and lie. What was here before: **the quiver**: three arrow slots (one arrow type each, up to 40),
   outside the bag; the gold one is in use and a click chooses another. The bow shoots from it
   (`Combat.api.canShoot`/`onShoot`), the count shows by the bow icon on the hotbar, 70% of arrows that hit
   nothing land as pickups that go back into the quiver (`onArrowLand`), and a new game starts with 20 wood
@@ -2385,7 +2425,15 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
   first free slot of its bar (`barPut`), as does right-clicking one in the bag (swapping with the hand slot when the bar
   is full); loot fills the bag rows first (`addItem`, `addThing` start at `BAG0`). Old saves (24 slots, weapons in
   `equip`) are remapped on load.
-- **Fight mode:** whatever is in hand from the Fight bar: a sword hits, a bow shoots from the quiver, fists punch.
+- **Taking a thing in hand (2026-10-13, Robin: "as simple as scrolling to select it, and press the key; press the key again to
+  unequip, like Valheim"):** a **number key** takes that slot's thing in hand, and the key of the thing already in hand **puts
+  it away** (empty hands; `hand[mode]` -1). The **wheel** moves a pick along the bar (`sel`, outlined white on the hotbar:
+  `bar.sel` in the engine's `drawHotbar`) without taking anything; **Enter** takes the pick in hand or puts it away. A
+  one-handed weapon taken in hand **wears a shield from the bag** if the shield slot is empty (`shieldWithIt`; Robin: equipping
+  a one-handed weapon should always equip the shield if you have one on you). The shield lives in the character panel's
+  shield slot (a crafted or looted one goes there when it is empty, else to the bag; right click in the bag wears it), never
+  on a bar. Old saves with a hand index are as they were.
+- **Fight mode:** whatever is in hand from the Fight bar: a sword hits, a bow shoots, fists punch.
 - **Gather mode:** tools from the Gather bar. The right tool does full damage and any other half. Tools do not hurt
   enemies. No auto-pick, no highlight.
 - **Worn gear** (`equip`): helmet, cloak, tunic, trousers, boots on the character panel's left, shield and amulet on its

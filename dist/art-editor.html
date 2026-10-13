@@ -5996,10 +5996,13 @@ var TOOLS = [
 ];
 api.tools = TOOLS;
 api.profiles = function () { return PROFILES; }; api.parryWindow = function () { return parryWindow(); }; api.meleeStep = function () { return stepData(P.atk); }; api.num = num; api.rangedKinds = function () { return RANGED; }; api.stepData = function () { return stepData(P.atk); };
+// The pace of a blow (2026-10-13, Robin: "the hero is hitting comically fast and crazy, it looks spasmic"): a sword blow is
+// now about 0.55 s from the press to the carry (it was 0.26), an axe 0.68, a club 0.78, the Dane axe 1.2; the windup is what
+// grew most, so a blow is seen coming. The men's own windup is set apart (MEN.wu, wuK) so they did not slow with it.
 var STEPS = [
-  { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
-  { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
-  { wu: 0.10, ac: 0.12, rec: 0.26, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
+  { wu: 0.16, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
+  { wu: 0.16, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
+  { wu: 0.24, ac: 0.14, rec: 0.44, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
 ];
 // How each melee weapon fights (2026-10-06, docs/weapons.md): the arc and reach of a hit, its pace (windup, active,
 // recover), damage as a share of the thing's own, knockback, stagger, the step into it, how many hits chain (the last is
@@ -6007,12 +6010,12 @@ var STEPS = [
 // swing costs, and what sets it apart: pierce (a thrust hits everything in its line), guardBreak, crit (extra chance),
 // heavy (every hit counts as heavy). The old sword numbers in STEPS are the sword's profile.
 var PROFILES = {
-  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.05, ac: 0.09, rec: 0.12, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5 },
-  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.07, ac: 0.10, rec: 0.18, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true },
-  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.13, ac: 0.09, rec: 0.22, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9 },
-  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.03, ac: 0.06, rec: 0.07, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2 },
-  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.08, ac: 0.10, rec: 0.17, dmg: 1, kb: 130, stag: 12, lunge: 40, chain: 2, motion: 'thrust', st: 7, pierce: true },
-  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.24, ac: 0.16, rec: 0.42, dmg: 1, kb: 280, stag: 36, lunge: 90, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true }
+  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.16, ac: 0.11, rec: 0.28, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5 },
+  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.2, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true },
+  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.26, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9 },
+  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.1, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2 },
+  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.18, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 40, chain: 2, motion: 'thrust', st: 7, pierce: true },
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.4, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 90, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true }
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
@@ -6113,6 +6116,10 @@ function bits(x, y, n) {
     W.parts.push({ k: 'bit', x: x, y: y, z: 10, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6, vz: 40 + Math.random() * 60, life: 0.8, max: 0.8, c: Math.random() < 0.5 ? '#e0a93a' : '#8f8ba6', s: 1.6 });
   }
 }
+// What a blow of the hero's shows as (2026-10-13, Robin: about 10 at least, and no decimals): the engine's damage times SHOW,
+// rounded. A page shows a weapon's number the same way (api.SHOW). The health behind it is unchanged.
+var SHOW = 10; api.SHOW = SHOW;
+var TOOL_DMG = 0.5;                          // a tool's blow on a beast or a man, as a share of what the same thing would do as a weapon
 function num(x, y, txt, c, big, weak) { W.nums.push({ x: x, y: y, t: 0, txt: txt, c: c || '#ffffff', big: !!big, weak: !!weak }); }
 var wrongToolAt = -1e9;                   // when the 'wrong tool' note was last shown (W.t); it comes back after five minutes
 function slowmo(scale, dur) { if (S.juice && dur > W.slow.t) { W.slow.t = dur; W.slow.s = scale; } }
@@ -6282,7 +6289,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
     if (heavy && !killing) slowmo(WM.hs, WM.hd);
   }
   spark(hx, hy, (heavy && !killing ? 12 : 7) + (crit ? 5 : 0), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
-  num(e.x, e.y - e.r * 2.2 - 10, String(Math.round(dealt * 50) / 10), blocked && !broke ? '#cfd6e6' : crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), !blocked && (heavy || crit));
+  num(e.x, e.y - e.r * 2.2 - 10, String(Math.max(1, Math.round(dealt * SHOW))), blocked && !broke ? '#cfd6e6' : crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), !blocked && (heavy || crit));   // (the number is the blow times SHOW, whole)
   sfx(blocked && !broke ? 'block' : (heavy && !killing) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0);
   if (broke) { bits(e.x, e.y, 4); sfx('slam', 0, e); }
   if (crit) { sfx('crit'); e.rattle = 1.6; }
@@ -6503,9 +6510,14 @@ function updatePlayer(dt) {
             if (a.heavyG && S.juice) { dust(o.x, o.y, 5); }
             var hr = hv.hit(o, pw, right, tl.id) || {}, shown = hr.dealt != null ? hr.dealt : pw;   // the page may answer { dealt, crit, clean }: a sweet spot is a crit, gold
             var sayWrong = !right && W.t - wrongToolAt > 300; if (sayWrong) wrongToolAt = W.t;
-            num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + (Math.round(shown * 10) / 10), hr.crit ? '#ffd34d' : (right ? '#ffffff' : '#d9d0c0'), heavyHit(a) || !!hr.crit || !!hr.clean, !right);
+            num(o.x, o.y, (sayWrong ? 'wrong tool  ' : '') + Math.max(1, Math.round(shown)), hr.crit ? '#ffd34d' : (right ? '#ffffff' : '#d9d0c0'), heavyHit(a) || !!hr.crit || !!hr.clean, !right);
             sfx(o.kind === 'stone' ? 'clink' : 'chop', right ? 1 : 0);
           }
+        }
+        for (i = 0; i < W.enemies.length; i++) {              // and a tool bites a beast or a man a little (2026-10-13, Robin): TOOL_DMG of a blow of the sword's weight, a flinch and no more
+          var te = W.enemies[i]; if (te.dead || te.side === 1 || te.down || a.hit.indexOf(te) >= 0) continue;
+          var tx2 = te.x - p.x, ty2 = te.y - p.y, td = Math.hypot(tx2, ty2);
+          if (td <= sd.reach + te.r + 2 && Math.abs(wrap(Math.atan2(ty2, tx2) - a.dir)) <= half + 0.12 && !wallBetween(p.x, p.y, te.x, te.y)) { a.hit.push(te); damageEnemy(te, (ti ? Items.stats(ti).dmg : 0.5) * TOOL_DMG * dmgMul('sword'), Math.atan2(ty2, tx2), 40, 6, 'melee'); }
         }
       } else for (i = 0; i < W.enemies.length; i++) {
         var e = W.enemies[i];
@@ -6722,7 +6734,7 @@ function bruteAI(e, dt, d, ang) {
    Everything he is comes from a few numbers on him (armMan) and from MEN. */
 var MEN = {
   speed: 60, run: 94, back: 50, strafe: 24, turn: 8,
-  wu: 0.3, wuK: 2.4,                  // a blow's windup: wu + the weapon's own times wuK
+  wu: 0.12, wuK: 2.0,                 // a blow's windup: wu + the weapon's own times wuK (retuned 2026-10-13 when the hero's blows slowed, to the same seconds as before: a sword 0.44, a Dane axe 0.92)
   ac: 0.07, acK: 1.4, rec: 0.3, recK: 2.0, hitAt: 0.45,
   dmg: 12,                            // a blow at strength 1 from a weapon whose kind says 1 (the hero's scale: he has 100)
   toMen: 0.15,                        // the same blow landing on a man (their health is on the beasts' scale)
@@ -7254,6 +7266,24 @@ function soldierAI(e, dt) {
   }
 }
 // A calm animal with e.wander = { x0, y0, r } ambles between points near its home ground, pausing between walks.
+/* A shy beast (the deer, 2026-10-13; e.shy, set by the page): it notices you by sight, so e.aggro is its reach before it and
+   less than half of that behind it, more when you sprint (a hunter walks up slowly, from behind); and it runs the open way,
+   not straight away from you into the sea: fleeStep tries nine headings fanned round "away" and takes the one with the
+   longest clear run (api.scene.walk), so a deer on the beach runs along the shore instead of standing in the surf to be
+   cut down. It runs until you are far (3.2 of its reach), then stands and watches you a while before it grazes again. */
+function shyK(e, ga) { var behind = Math.abs(wrap(ga - e.face)) > 1.6, k = behind ? 0.45 : 1; if (P.sprinting) k *= 1.6; return k; }
+function fleeStep(e, dt, ga, gd) {
+  var fs2 = (e.cfg ? e.cfg.speed : 58) * (e.shy ? 1.7 : 1.5), away = ga + Math.PI, wkw = api.scene && api.scene.walk;
+  e.state = 'chase'; e.t += dt; e.fleeT = (e.fleeT || 0) + dt;
+  if (e.shy && wkw && (e.fleeT > (e.fleeRe || 0))) {               // a heading, chosen again every half second: the open way nearest to straight away
+    var best = null, bestR = -1, k;
+    for (k = 0; k < 9; k++) { var ang = away + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.42, run = 0, st; for (st = 1; st <= 6; st++) { if (!wkw(e.x + Math.cos(ang) * st * 24, e.y + Math.sin(ang) * st * 24, e)) break; run = st; } var score = run * 10 - Math.ceil(k / 2) * 3; if (score > bestR) { bestR = score; best = ang; } }
+    e.fleeAng = best == null ? away : best; e.fleeRe = e.fleeT + 0.5;
+  }
+  var fa = e.shy ? (e.fleeAng == null ? away : e.fleeAng) : away;
+  e.face = e.shy ? turnToward(e.face, fa, dt * 6) : fa;
+  moveCircle(e, Math.cos(e.face) * fs2 * dt, Math.sin(e.face) * fs2 * dt);
+}
 function wanderStep(e, dt) {
   var w = e.wander;
   if (w.wait > 0) { w.wait -= dt; e.state = 'idle'; return; }
@@ -7280,12 +7310,12 @@ function updateEnemies(dt) {
     if ((e.aggro || e.strolls) && e.type !== 'soldier') {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
       if (!e.aggro) { /* the page decides when it wakes */ }
-      else if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) && !P.dead) e.awake = true;   // the light step shortens the noticing
-      else if (e.awake && gd > (e.human ? 900 : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) e.awake = false;   // a guard gives up only when you are far gone
+      else if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) * (e.shy ? shyK(e, ga) : 1) && !P.dead) { e.awake = true; if (e.shy) { e.fleeT = 0; e.fled = 0; } }   // the light step shortens the noticing; a shy beast's own sight (shyK)
+      else if (e.awake && gd > (e.human ? 900 : e.shy ? e.aggro * 3.2 : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) { e.awake = false; if (e.shy) { e.fled = 6 + Math.random() * 4; if (e.wander) { e.wander.x0 = e.x; e.wander.y0 = e.y; e.wander.tx = null; e.wander.wait = e.fled; } } }   // a guard gives up only when you are far gone; a shy beast grazes again where it stopped
       if (e.heard > 0) { e.heard -= dt; if (!P.dead) e.awake = true; }   // it heard something (mining): it comes
       if (e.flee) {                      // a grazer bolts instead of fighting
-        if (e.awake && !P.dead) { var fs2 = (e.cfg ? e.cfg.speed : 58) * 1.5; e.state = 'chase'; e.t += dt; e.face = ga + Math.PI; moveCircle(e, -Math.cos(ga) * fs2 * dt, -Math.sin(ga) * fs2 * dt); }
-        else e.state = 'idle';
+        if (e.awake && !P.dead) fleeStep(e, dt, ga, gd);
+        else { e.state = 'idle'; if (e.shy && e.fled > 0) { e.fled -= dt; e.face = turnToward(e.face, ga, dt * 2); } }   /* (a shy one that has just run stands and watches you a while) */
         continue;
       }
       if (!e.awake) { if (e.wander && !P.dead) wanderStep(e, dt); else e.state = 'idle'; e.t += dt; continue; }
@@ -7991,6 +8021,7 @@ function drawHotbar(c) {
   for (i = 0; i < 6 && !(paged && build); i++) {      // (build mode on such a page: the pieces are on its board, not in six slots)
     var x = x0 + i * (sz + gap), tool = gather && i < TOOLS.length ? TOOLS[i] : null, cx = x + sz / 2, cy = y0 + sz / 2;
     slotBox(c, x, y0, bar ? i === bar.hand : ((gather && i === P.tool) || (mode === 'fight' && i === (P.sel || 0))), sz);
+    if (bar && bar.sel != null && bar.sel === i && bar.sel !== bar.hand) { c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 0.7; c.strokeRect(x + 0.6, y0 + 0.6, sz - 1.2, sz - 1.2); }   // the wheel's pick (2026-10-13): Enter takes it in hand
     c.save(); c.translate(cx, cy); c.scale(k, k);
     var skl = mode === 'fight' && api.skills ? api.skills[i] : null;
     if (bar) { var bq = bar.slots[i]; if (bq) { bq.draw(c); if (bq.ammo != null) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36'; c.strokeText(String(bq.ammo), 9.5, 9.5); c.fillStyle = bq.ammo > 0 ? '#fff' : '#ff8a7a'; c.fillText(String(bq.ammo), 9.5, 9.5); } else if (bq.n > 1) { c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 2.4; c.strokeStyle = '#3a2a36'; c.strokeText(String(bq.n), 9.5, 9.5); c.fillStyle = '#fff'; c.fillText(String(bq.n), 9.5, 9.5); } } }
