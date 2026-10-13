@@ -975,23 +975,34 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   ashore again they are beside you, the ones who were carried on their feet with a third of their health (`menAshore`).
   **Heard:** a town's man who shouts is heard up to 1100 units off, fainter with distance (`SFX.shout`, `api.onShout`):
   the town waking is a sound before it is a sight. I cannot hear it; whether it reads as a shout is for Robin's ear.
+  **Pursuit, and its end** (two rules of the engine that the scripted raids forced, both in the real game's soldiers):
+  **a man who is making off is run down and struck on the run** (`makingOff`: the hero walking away with his back turned,
+  a carrier, a man who flees; the pursuer runs through his windup and his lunge. Before this a pursuer stopped to draw
+  back his arm and never landed a blow on anyone who simply kept walking; a hero who backs away with his face to the
+  man, or sprints, is as before), and **a town's man goes for nobody further than `MEN.pursue` 700 units from his own
+  post** (they do not leave their town to chase a raider across the country; without it nothing could be carried out of
+  a woken town however far the ship lay). **My choices, not Robin's.** Together they make the raid's shape: inside the
+  town and for some way outside it you are hunted, beyond that you are clear, and what happens at the gate decides it.
   **`tools/visual/raidplay.js`** plays whole raids in the page with no pictures (`H2.sim` in `drive.js` steps the page's
   own `tick` at thousands of frames a second: a two-minute raid takes about four seconds): `RP.raid('quiet' | 'church' |
-  'loud')` and the steps they are made of (`RP.go`, `toDoor`, `hack`, `behind`, `G`, `E`, `escort`, `leave`), with a log
-  line a step that says how the town and your men stand. It presses only the game's own keys. **Where it stands** (the
-  ship 88 tiles from the gate, twenty in the town, the hero doing nothing but walk, hack and carry): **quiet** (the two at
-  the back gate from behind, a look, and away): 100 to 112 s, nothing aboard, all five with you. **The church** (its
-  door, its lock, G; the carrier is struck on his way out nearly every time, so the hero lifts the chest himself while
-  his five hold the town off him): **36 silver in about two minutes, two to four of the five aboard**, and one raid in
-  five ends with the hero dead on the way to the ship. **Both chests** (the hero carries the hall's): 58 to 94 silver in
-  140 s when it works, nobody or two of yours aboard, the hero at a tenth of his health or dead. So the curve is there:
-  nothing and everybody, a chest and most of them, everything and nobody.
+  'hold' | 'loud')` and the steps they are made of (`RP.go`, `toDoor`, `hack`, `behind`, `G`, `E`, `escort`, `leave`), with a
+  log line a step that says how the town and your men stand. It presses only the game's own keys. **Where it stands** (the
+  ship 88 tiles from the gate, twenty in the town, **the hero doing nothing but walk, hack and carry: he never fights
+  or raises his shield**, so these are a floor): **quiet** (the two at the back gate from behind, a look, and away):
+  about 100 s, nothing aboard, all five with you. **The church** (its door, its lock, G; the man sent with the chest is
+  struck before he is out of the church nearly every time, so the hero lifts it himself while his five hold the town
+  off him): **36 silver in two minutes, four or five of the five aboard, the hero at a quarter to a half of his
+  health**. **Hold** (the five told to hold a line before the church while he breaks in and carries it out, called when
+  he is 500 units clear): 36 silver, the hero unhurt or nearly, **none to three of the five aboard**: the line buys his
+  skin with theirs. **Both chests:** he dies in the hall. And **whenever the second man at the back gate is not taken in
+  time** (about one raid in three) the town is up before the church door is touched and the hero dies in the church.
+  So the curve is there: nothing and everybody, a chest and most of them, everything and nobody.
   **Debug hooks for it:** `raidInfo()`, `eDo()`, `gDo()` (what E and G would do, with their acts), `raidItems()`, `raidB()`,
   `villages()`, `folk()`, `navs()`, `cam()`. **Not built** (in `docs/idea-bank.md`, "The raid: what is left"): the town's men
   taking back what is dropped or holding your ship against you, thralls to cut loose, a man who yields bound and taken,
   what the town remembers beyond `seen.raided`, fire.
 - **`tests/battle.js`** (in `npm test`: a short run of every rung; `node tests/battle.js one|two|friend|five|bows [n]` for
-  more fights a line, `town [n] [secs]` for n towns, `raid` for the engine's raid rules (the blow from behind, the errand); `TOWN_SEEDS=286,434` picks the towns, `TOWN_DBG=1` prints every man who
+  more fights a line, `town [n] [secs]` for n towns, `raid` for the engine's raid rules (the blow from behind, the errand, a man making off run down, the limit of pursuit); `TOWN_SEEDS=286,434` picks the towns, `TOWN_DBG=1` prints every man who
   stands still and what blocks him, `BOW='{"toMen":0.7}'` tries a bowman's numbers). The hero is played by three bots, each with a person's limits (a reaction time, a share of blows not
   seen, timing that wanders): the **tapper** walks up and taps, the **careful** one raises the shield at what it sees and
   strikes when the man is open, the **skilled** one parries and steps out of heavy blows. A line marked `!!` is a fault (a

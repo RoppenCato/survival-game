@@ -544,11 +544,19 @@ can be played, and what the scripted raids say.
   is carried, by you or by another on your word, or left).
 - **Not built:** *people* (thralls to cut loose, a man who yields bound and taken) and *after* (what the town remembers,
   beyond the word that spreads). Nor the town taking back what is dropped, nor holding your ship against you.
-- **What the scripted raids say** (`tools/visual/raidplay.js`; the hero only walks, hacks and carries, he does not fight):
-  quiet in and out, about a hundred seconds, nothing aboard, nobody lost. The church: thirty-six silver in two
-  minutes, two to four of the five aboard; the man sent with the chest is struck before he is out of the church nearly
-  every time, so the hero carries it and his five hold the town off him; one raid in five the hero does not reach the
-  ship. Both chests: fifty-eight to ninety-four silver, nobody or two aboard, the hero at the edge of death or over it.
+- **Two rules the scripted raids forced, both my choices:** a pursuer **could never land a blow on a man who kept
+  walking** (he stopped to draw back his arm and the man walked out of it), so the first raids were won by strolling
+  to the ship with a chest: a man who is making off (his back turned, or carrying, or fleeing) is now run down and
+  struck on the run. That made every carry out of a woken town fatal, however far the ship, because the town chased
+  for ever: **a town's man now goes for nobody further than 700 units from his own post.** Inside the town and a
+  little way out you are hunted; beyond that you are clear; the gate decides it.
+- **What the scripted raids say** (`tools/visual/raidplay.js`; the hero only walks, hacks and carries, he never fights
+  or raises his shield, so this is the floor): quiet in and out, a hundred seconds, nothing aboard, nobody lost. The
+  church: thirty-six silver in two minutes, four or five of the five aboard, the hero at a quarter to a half of his
+  health (the man sent with the chest is struck before he is out of the church nearly every time, so the hero carries
+  it and the five hold the town off him). The five told to hold a line before the church: the same silver, the hero
+  unhurt, none to three of the five home. Both chests: he dies in the hall. And when the second man at the back gate
+  is not taken in time, about one raid in three, the town is up before the church is touched and he dies there.
 - **Bugs of this rung:** the karve was put half on the beach (it was placed with a raft's footprint); **E could not
   reach a karve from the shore** (its reach was sixty-six units from her middle, and she is over two hundred long: the
   reach follows the hull now, in the real game too); laying a carried man aboard **took him out of the engine's list in

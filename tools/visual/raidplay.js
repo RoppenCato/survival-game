@@ -8,7 +8,7 @@
 //   RP.G() / RP.E()               the word to a man of yours, or E, if either has anything to do here (says what it did)
 //   RP.wait(secs, until)          the clock runs with the hero standing
 //   RP.leave(secs)                to the ship, aboard, and rowed straight out
-//   RP.raid('loud' | 'church' | 'quiet')   a whole raid from the shore and back to sea; returns the log
+//   RP.raid('loud' | 'church' | 'hold' | 'quiet')   a whole raid from the shore and back to sea; returns the log
 //   RP.log                        a line for every step: the time on the raid's clock, what was done, and how the town stands
 //   RP.state()                    the town now: up, fighting, gone; yours standing; silver aboard
 // Everything is the game's own (the keys, E and G, the axe): the script only presses them.
@@ -89,13 +89,20 @@ window.RP = (function () {
     run(secs || 60, function () { var c = men(1).filter(function (e) { return e.load || e.loadMan; })[0]; if (!c) { out = state().silver > s0 ? 'stowed' : 'dropped'; return false; } var p = P(), d = Math.hypot(c.x - p.x, c.y - p.y), g = grid(), wp = g && d > 40 ? g.next(p, c.x, c.y, D().W.t, false) : null; keys(Math.atan2((wp && !wp.wait ? wp.y : c.y) - p.y, (wp && !wp.wait ? wp.x : c.x) - p.x), d > 40); Combat.button(0, false); });
     still(); note('walked with the carrier: ' + out); return out;
   }
-  // Whole raids. 'loud': in at the back gate, the two there from behind, the church (a man of yours carries its chest), the hall
+  // Whole raids ('hold': see below). 'loud': in at the back gate, the two there from behind, the church (a man of yours carries its chest), the hall
   // (the hero carries that one himself), and away. 'church': the church only, the hero walking with the carrier; if the chest is
   // dropped he lifts it himself. 'quiet': the two at the back gate from behind, a look round, and away with nothing but that.
   function raid(kind) {
     begin(); var bg = backGate() || gate(); go(bg.x, bg.y - 60, { near: 20, secs: 90 }); note('outside the back gate');
     var gs = men(0).filter(function (e) { return e.kindOf === 'gate' && Math.abs(e.y - bg.y) < 80; }); if (gs[0]) behind(gs[0]); if (gs[1]) behind(gs[1]);
     if (kind === 'quiet') { wait(6, null, 'stood in the town'); return leave(8), log; }
+    if (kind === 'hold') {                  // his five in a line before the church door, facing the town, while he breaks in and carries the chest out himself; called when he is clear
+      toDoor('church'); var dc = doorOf('church'), yc = town().V.yard, ya = Math.atan2((yc.y + yc.h / 2) * T - dc.y, (yc.x + yc.w / 2) * T - dc.x);
+      go(dc.x + Math.cos(ya) * 40, dc.y + Math.sin(ya) * 40, { near: 8, secs: 10 }); run(0.15, function () { keys(ya, true); }); still(); Combat.order('hold'); note('his five told to hold a line before the church, facing the yard');
+      toDoor('church'); hack('door', 'church', 30); toChest('church'); hack('lock', 'church', 30); E();
+      var ok2 = go(bg.x, bg.y - 500, { near: 30, secs: 90 }); note((ok2 ? '500 units' : 'NOT 500 units') + ' out of the back gate with the chest'); Combat.order('follow'); note('called his men');
+      return leave(8), log;
+    }
     toDoor('church'); hack('door', 'church', 30); toChest('church'); hack('lock', 'church', 30); G();
     if (kind === 'church') {
       wait(3, function () { return men(1).some(function (e) { return e.load; }); }, 'he went for it'); var r = escort(90);
