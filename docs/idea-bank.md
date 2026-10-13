@@ -606,3 +606,52 @@ Built: breaking in, bringing down, burning, mending in a place you hold. None of
   of it. Nothing stood still for it in the trials (a man walks to the end of what was found and looks again), but a
   bigger place still would want the search to work in two levels.
 
+## House sizes: a proposal (2026-10-13; Robin: what sizes of houses are reasonable, for play and for immersion)
+
+Not decided. A tile is 1.5 m; the hero is 1.8 m and 12 units across (a man 14); the screen shows about 19 by 12 tiles.
+
+**What was real** (looked up; sources in the session's answer): longhouses were about 5 to 7 m wide and 15 to 75 m
+long, the width held down by what a roof could span; Dublin's tenth-century town houses averaged about 9 by 6 m;
+Hedeby's houses were about 17 m long and 3.5 or 7 m wide; the Trelleborg type about 30 by 8 m; the hall at Lejre 48 by
+11.5 m (a later one 61 by 12), Borg in Lofoten 83 by 9.5; pit houses about 4 by 3 m; Escomb's nave 13.3 by 4.4 m inside.
+In tiles: **nearly everything people lived in was 2 to 5 tiles across**, and its size was its length. Only a king's
+hall was 6 to 8 across. A house of 6 by 6 tiles (the trial's) is a shape nobody built.
+
+**What play needs**, measured on generated villages (`node tools/roomsize.js`: for every room, the floor the hero can
+stand on and the widest circle of clear floor). Two men at a sword's distance are 1.5 tiles of floor; the hero's dodge
+is 1.6 tiles; two attackers flank over about 2. So a clear circle **under 2 tiles** is a room one man corks, **2 to 3**
+is toe to toe with no dodge, **3 or more** is a fight with a step in it, **4 to 6** takes several a side.
+
+| Room (tiles) | Metres | Clear circle | |
+| --- | --- | --- | --- |
+| house 3x3 to 3x5 | 4.5 x 4.5 to 7.5 | 1.7 to 1.9 | a quarter of today's houses |
+| house 4x4, 4x5 | 6 x 6 to 7.5 | 2.2 to 2.3 | two thirds of today's houses |
+| house 4x6 | 6 x 9 | 2.8 | |
+| house 4x8 | 6 x 12 | 3.6 | |
+| house 6x6 (the trial) | 9 x 9 | 3.4 | |
+| longhouse 3x9 to 3x11 | 4.5 wide | 2.2 to 2.6 | |
+| longhouse 4x9 to 4x11 | 6 wide | 2.9 to 3.3 | |
+| hall 4x13 to 5x15 (today) | 6 to 7.5 wide | 3.6 to 4.7 | |
+| hall 6x20 to 6x23 (the trial) | 9 wide | 5.9 | |
+| hall 8x20 (the trial) | 12 wide | 7.9 | a king's span |
+
+The things inside are the same five whatever the size, so **length buys clear floor as well as depth does**: 4 by 8
+gives what 6 by 6 gives, with less floor and a roof that could be built. Today no house reaches 3 tiles of clear
+floor; the generator's jitter makes over a quarter of them 3 across, and one in fifty 3 by 3, which is under the
+standard of 2026-10-09 ("4 by 3 at least").
+
+**The proposal: narrow and long, gable to the yard.**
+
+| | Today | Proposed | Why |
+| --- | --- | --- | --- |
+| House | 4 to 5 by 3 to 4 (jitter: 3 to 6) | **4 across, 6 to 8 long** (6 by 9 to 12 m), never 3 across | the Dublin and Hedeby house; a duel fits; the door on the short end to the yard, so the yard, the ring and what is heard stay as they are |
+| Longhouse (a farm's) | 9 to 12 by 3 to 4 | **5 by 14 to 18** | room for the hero and a friend; still fits the screen |
+| Jarl's hall | 13 to 16 by 4 to 5 | **6 by 20 to 22**, two rows of posts | the Trelleborg class; the hall-men's fight fits; eight seconds to its far end and twelve back with a chest, which is the raid's "deeper in"; 22 is what the view shows when a big fight draws it back |
+| Church | 3 to 4 by 5 to 6 | **3 to 4 by 8 to 9**, a small chancel | Escomb |
+| Pit house, store, smithy, bath | 2 by 2, 3 by 2 | as they are | real pit houses were 4 by 3 m |
+
+Open: **furnishing by length** (side benches and beds along one long wall and the ends, the hearth off the middle
+line: real houses had benches down both sides and two metres of floor, which is the one place play and history pull
+apart); whether a roof should have a **widest span** without posts when the player builds (posts are an option today);
+and whether your own first hut (4 by 3) should read as a hut beside a village's houses, which this would make it do.
+
