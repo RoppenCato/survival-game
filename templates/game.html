@@ -3678,7 +3678,7 @@ __COMBAT__
       if (!v.V) return;
       v.V.folk.forEach(function (fv, gi) {
         if (fv.role !== 'guard') return; var post = fv.spots.filter(function (q) { return q[2] === 'guard'; })[0] || fv.spots[0], person = Hird.roll(kit.rng(v.seed * 31 + gi * 7 + 3), HD);
-        var e = Combat.soldier({ side: 0, x: post[0], y: post[1], post: { x: post[0], y: post[1], face: Math.PI / 2 }, aggro: 0.5, vi: vi, wpn: { kind: gi % 2 ? 'spear' : 'sword', mat: 'iron' }, shield: true, armor: 0.4, hp: person.stats.health, strength: person.stats.strength, wits: person.stats.wits, loyal: true, nerve: 0.8, name: person.name, person: person, mail: true, helm: true });
+        var e = Combat.soldier({ side: 0, x: post[0], y: post[1], post: { x: post[0], y: post[1], face: Math.PI / 2, box: { x0: v.tx * T, y0: v.ty * T, x1: (v.tx + v.w) * T, y1: (v.ty + v.h) * T } }, aggro: 0.5, vi: vi, wpn: { kind: gi % 2 ? 'spear' : 'sword', mat: 'iron' }, shield: true, armor: 0.4, hp: person.stats.health, strength: person.stats.strength, wits: person.stats.wits, loyal: true, nerve: 0.8, name: person.name, person: person, mail: true, helm: true });
         e.face = Math.PI / 2; e.isle = v.isle; guards.push(e);
       });
     });
@@ -4669,10 +4669,11 @@ __COMBAT__
   var TOWN_N = 20;
   function townOf() { var i; if (RU.on && RU.place === 'village') { for (i = 0; i < villages.length; i++) if ((villages[i].arch === 'great' || villages[i].arch === 'seat' || villages[i].arch === 'village') && villages[i].V) return i; } for (i = 0; i < villages.length; i++) if ((villages[i].arch === 'town' || villages[i].arch === 'bigtown') && villages[i].V) return i; return -1; }   // the place the tests are about: the town, or (the Destruction Editor's switch) the first biome's biggest village
   function gateOf(v) { var F = v.V.fence; if (!F) { var c0 = vCentre(v); return { x: c0[0], y: c0[1] + v.h * T * 0.4, nx: 0, ny: 1 }; } if (F.round) { var g0 = F.gateAt || [F.cx, F.cy + F.ry], gl = Math.hypot(g0[0] - F.cx, g0[1] - F.cy) || 1; return { x: g0[0], y: g0[1], nx: (g0[0] - F.cx) / gl, ny: (g0[1] - F.cy) / gl }; } return { x: (F.gate + (F.gateW || 1) / 2) * T, y: F.y1 * T, nx: 0, ny: 1 }; }   // a place's gate, and the way out of it
+  function vBox(v) { return { x0: v.tx * T, y0: v.ty * T, x1: (v.tx + v.w) * T, y1: (v.ty + v.h) * T }; }   // a place's bounds: its men go for nobody far outside them (MEN.pursueOut)
   function townMen(vi, n) {               // where they stand is the village's own business (Village.garrison); here each becomes a man
     return Village.garrison(villages[vi].V, n, Math.random).map(function (q) {
       var kind = q.kind, person = Hird.roll(Math.random, HD), G = kind === 'hall' || kind === 'gate' ? BT_GEAR[2] : BT_GEAR[1], sp = isLand(q.x, q.y) ? { x: q.x, y: q.y } : landNear(q.x, q.y, 6);
-      var e = Combat.soldier({ side: 0, x: sp.x, y: sp.y, post: { x: sp.x, y: sp.y, face: q.face }, aggro: 0.5, vi: vi, wakeDelay: q.delay,
+      var e = Combat.soldier({ side: 0, x: sp.x, y: sp.y, post: { x: sp.x, y: sp.y, face: q.face, box: vBox(villages[vi]) }, aggro: 0.5, vi: vi, wakeDelay: q.delay, homeR: kind === 'door' || kind === 'house' ? Combat.api.men.homeR : 0,   /* (the men at the doors and in the houses are householders: each defends his own door) */
         wpn: { kind: q.wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: person.stats.health + (kind === 'hall' ? 8 : 0), strength: person.stats.strength + (kind === 'hall' ? 1 : 0), wits: kind === 'hall' ? Math.max(5, person.stats.wits) : person.stats.wits, aim: person.stats.aim, loyal: kind === 'hall' || person.traits.indexOf('loyal') >= 0, nerve: kind === 'hall' ? 0.9 : 0.5, name: person.name, person: person, mail: G.mail && q.wpn !== 'bow', helm: G.helm });
       e.face = q.face; e.kindOf = kind; return e;
     });

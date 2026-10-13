@@ -11,7 +11,7 @@ window.BP = (function () {
   var DT = 1 / 60, wrapA = function (a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
   function D() { return Combat.dbg(); }
   function men(side) { return D().W.enemies.filter(function (e) { return e.type === 'soldier' && !e.dead && !e.down && !e.fled && !e.out && (side == null || (e.side || 0) === side); }); }
-  function foesUp() { var L = men(0), up = L.filter(function (e) { return e.awake !== false; }); return up.length ? up : L; }
+  function foesUp() { var L = men(0), P = D().P, up = L.filter(function (e) { return e.awake !== false; }), at = up.filter(function (e) { return e.tgt === P && Math.hypot(e.x - P.x, e.y - P.y) < 110; }); return at.length ? at : up.length ? up : L; }   // (whoever is at him first: a man who hangs back for a place is not the one to go for)
   function keys(ang, go) { Combat.key('KeyD', go && Math.cos(ang) > 0.38); Combat.key('KeyA', go && Math.cos(ang) < -0.38); Combat.key('KeyS', go && Math.sin(ang) > 0.38); Combat.key('KeyW', go && Math.sin(ang) < -0.38); }
   function threat() {
     var P = D().P, best = null;
@@ -87,7 +87,17 @@ window.BP = (function () {
     }
     release(); return { secs: +t.toFixed(1), msFrame: +((Date.now() - t0) / frames).toFixed(1), heroDead: P.dead, line: line, stuck: Object.keys(stuck), stuckFor: +worst.toFixed(1) };
   }
+  // BP.fast({ bot, secs }): the same play with no pictures (H2.sim: the page's own step), for getting on to a later moment of a
+  // long fight quickly; then H2.step a few frames and look. Says how the two sides stand and how crowded it is: the most of
+  // theirs within 80 units of one of yours, and how many of them have no place and hang back.
+  function fast(o) {
+    o = o || {}; var st = { frame: 0 }, tick = Combat.api.debug().tick, n = Math.round((o.secs || 10) * 60);
+    H2.sim(n, function (dt) { tickBot(st, o.bot); tick(dt); if (D().P.dead && !o.stay) return false; }); release();
+    var A = D().W.enemies.filter(function (e) { return e.type === 'soldier'; }), f0 = A.filter(function (e) { return !e.side && !e.dead && !e.out && !e.fled; }), f1 = A.filter(function (e) { return e.side === 1 && !e.dead && !e.down; }), P = D().P, most = 0;
+    f1.concat([P]).forEach(function (y) { var k = 0; f0.forEach(function (m) { if (m.awake !== false && Math.hypot(m.x - y.x, m.y - y.y) < 80) k++; }); most = Math.max(most, k); });
+    return { theirs: f0.length, up: f0.filter(function (e) { return e.awake !== false; }).length, fighting: f0.filter(function (e) { return e.tgt; }).length, waiting: f0.filter(function (e) { return !e.tgt && e.waitOn; }).length, yours: f1.length, hero: Math.round(P.hp), heroDead: P.dead, mostRoundOne: most };
+  }
   function act(id) { Combat.api.debug().battleAct(id); H2.step(2); } function set(id) { act(id); }
   function look(q) { var cv = document.querySelector('canvas'); return cv.toDataURL('image/jpeg', q || 0.85); }
-  return { run: run, strip: strip, film: film, set: set, act: act, look: look, when: when, men: men, release: release, watch: watch };
+  return { run: run, strip: strip, film: film, set: set, act: act, look: look, when: when, men: men, release: release, watch: watch, fast: fast };
 })();

@@ -201,6 +201,16 @@ function five(n) {
 // them reached the fight, who stood still for five seconds with somewhere to go, the longest wait at a gate or a door, and
 // what an update cost. ----
 const RAD = {}; require('fs').readFileSync(require('path').join(__dirname, '../templates/game.html'), 'utf8').replace(/prop: '(\w+)'[^}]*?\br: ([\d.]+)/g, (m, k, r) => { RAD[k] = +r; });   // how big each placed thing is to a walker: the game's own table (PIECES)
+// "Like ants round a target" (Robin, 2026-10-13), measured: twice a second while anybody fights, how many of the other side
+// stand within 80 units of each of yours (the most round any one is the crowd), and how many separate fights there are
+// (everybody with a foe within 60 units, joined into one fight when they stand within 48 of each other).
+function crowdOf(men, yours) {
+  let most = 0; yours.forEach(y => { let n = 0; men.forEach(m => { if (Math.hypot(m.x - y.x, m.y - y.y) < 80) n++; }); most = Math.max(most, n); });
+  const inIt = []; yours.forEach(y => { if (men.some(m => Math.hypot(m.x - y.x, m.y - y.y) < 60)) inIt.push(y); }); men.forEach(m => { if (yours.some(y => Math.hypot(m.x - y.x, m.y - y.y) < 60)) inIt.push(m); });
+  const seen = new Set(); let fights = 0, big = 0;
+  inIt.forEach(a => { if (seen.has(a)) return; fights++; let size = 0; const q = [a]; seen.add(a); while (q.length) { const c = q.pop(); size++; inIt.forEach(o => { if (!seen.has(o) && Math.hypot(o.x - c.x, o.y - c.y) < 48) { seen.add(o); q.push(o); } }); } big = Math.max(big, size); });
+  return { most, fights, big, n: inIt.length };
+}
 function townMake(seed) {
   const T = 32, site = Village.siteFor('town'), V = Village.make(seed, { tx: 20, ty: 20, w: site.w, h: site.h, shore: null }, { arch: 'town', wealth: 0.7, biome: 1 });
   const B = { H: {}, V: {}, items: [], posts: {} }; for (const k in V.H) B.H[k] = Object.assign({}, V.H[k]); for (const k in V.V) B.V[k] = Object.assign({}, V.V[k]);
@@ -215,7 +225,7 @@ function townMake(seed) {
 // The hero at a town: he makes for the nearest man who is up (or, when none is, the nearest at all: the first blow is the
 // first noise), by the grid, and fights as the careful bot does.
 function raider(D, st, foes, g, t) {
-  const P = D.P, th = threatOf(D), up = foes.filter(e => e.awake !== false), L = up.length ? up : foes, tg = L[0];
+  const P = D.P, th = threatOf(D), up = foes.filter(e => e.awake !== false), at = up.filter(e => e.tgt === P && Math.hypot(e.x - P.x, e.y - P.y) < 110), L = at.length ? at : up.length ? up : foes, tg = L[0];   // (whoever is at him first, as a person would: since men hang back for a place, 2026-10-13, the nearest man up may be one who only stands and watches)
   if (th && th.tti < 0.6 && meets(st, th, 'careful')) { keys(0, false); Combat.button(0, false); Combat.key('KeyK', true); return; }
   Combat.key('KeyK', false); if (!tg) { keys(0, false); Combat.button(0, false); return; }
   const d = Math.hypot(tg.x - P.x, tg.y - P.y), reach = st.reach + tg.r, wp = d < reach + 10 && !Combat.api.wall(P.x, P.y, tg.x, tg.y) ? null : g.next(P, tg.x, tg.y, t, false);   // (a man in reach with no wall between is fought, whatever the grid makes of the way to him)
@@ -236,14 +246,15 @@ function townFight(seed, o) {
   const st = Object.assign({ frame: 0 }, hero(['sword', 'iron'], LEATHER));
   let back = null; for (let i = F.x0; i < F.x1; i++) if (V.H[i + ',' + F.y0] && V.H[i + ',' + F.y0].t === 'gate') back = i;
   const fromBack = o.from === 'back' && back != null, gx = fromBack ? (back + 0.5) * T : (F.gate + (F.gateW || 1) / 2) * T, gy = fromBack ? F.y0 * T : F.y1 * T, out = fromBack ? -1 : 1;
+  const BOX = { x0: V.tx * T, y0: V.ty * T, x1: (V.tx + V.w) * T, y1: (V.ty + V.h) * T };
   const men = Village.garrison(V, o.n || 20, R).map(q => { const p = Hird.roll(R), G = q.kind === 'hall' || q.kind === 'gate' ? GEAR.mail : GEAR.leather, hall = q.kind === 'hall';
-    const e = Combat.soldier({ side: 0, x: q.x, y: q.y, post: { x: q.x, y: q.y, face: q.face }, aggro: 0.5, vi: 0, wakeDelay: q.delay, wpn: { kind: q.wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: p.stats.health + (hall ? 8 : 0), strength: p.stats.strength + (hall ? 1 : 0), wits: hall ? Math.max(5, p.stats.wits) : p.stats.wits, aim: p.stats.aim, loyal: hall || p.traits.indexOf('loyal') >= 0, nerve: hall ? 0.9 : 0.5 });
+    const e = Combat.soldier({ side: 0, x: q.x, y: q.y, post: { x: q.x, y: q.y, face: q.face, box: BOX }, aggro: 0.5, vi: 0, wakeDelay: q.delay, homeR: (q.kind === 'door' || q.kind === 'house') && !process.env.NOHOME ? Combat.api.men.homeR : 0, wpn: { kind: q.wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: p.stats.health + (hall ? 8 : 0), strength: p.stats.strength + (hall ? 1 : 0), wits: hall ? Math.max(5, p.stats.wits) : p.stats.wits, aim: p.stats.aim, loyal: hall || p.traits.indexOf('loyal') >= 0, nerve: hall ? 0.9 : 0.5 });
     e.face = q.face; e.kindOf = q.kind; e.upAt = -1; e.metAt = -1; return e; });
   let friends = [];
   if (o.quiet) { P.hidden = true; P.x = -4000; P.y = -4000; }
   else { P.x = gx; P.y = gy + out * 6.5 * T; P.face = -out * Math.PI / 2; friends = ['sword', 'axe', 'spear', 'sword', 'bow'].map((w, i) => man(1, w, 'leather', gx + (i - 2) * 30, gy + out * (7.6 * T + (i % 2) * 16), rolled())); }
   const all = men.concat(friends), last = all.map(e => ({ x: e.x, y: e.y, still: 0 })), R2 = { stuck: 0, who: '', choke: 0, ms: 0, worst: 0, n: 0, fell: -1, hurt: 0, backAt: -1, went: 0, nan: false };
-  const gone = e => e.dead || e.fled || e.out, limit = o.secs || 300; let lastHp = P.hp, chokeRun = new Map();
+  const gone = e => e.dead || e.fled || e.out, limit = o.secs || 480; let lastHp = P.hp, chokeRun = new Map();
   while (t < limit) {
     const F2 = men.filter(e => !gone(e));
     if (o.gate) { if (st.frame === 20) { P.x = gx; P.y = gy + 96; P.face = -Math.PI / 2; friends.forEach((f, i) => { f.x = gx + (i - 2) * 17; f.y = gy + 72; }); if (o.gate === 'hold') Combat.order('hold'); } if (st.frame === 60) Combat.noise(gx, gy, 520); if (st.frame > 60 && (!F2.length || !friends.some(f => !f.down && !f.dead))) { R2.heldFor = t; break; } }
@@ -255,8 +266,11 @@ function townFight(seed, o) {
     const m0 = process.hrtime.bigint(); Combat.update(DT); const ms = Number(process.hrtime.bigint() - m0) / 1e6; R2.ms += ms; R2.n++; R2.worst = Math.max(R2.worst, ms);
     if (Nav.unlock(g, B)) g.read();
     t += DT; st.frame++;
+    if (process.env.HERO_DBG && st.frame % 600 === 0) { const F3 = men.filter(e => !gone(e)); const tg = F3.filter(e => e.awake !== false)[0] || F3[0]; const wp = tg ? g.next(P, tg.x, tg.y, t, false) : null; console.log('      hero t', t.toFixed(0), 'at', (P.x / T).toFixed(2), (P.y / T).toFixed(2), 'left', F3.length, 'up', F3.filter(e => e.awake !== false).length, 'tg', tg ? tg.kindOf + ' ' + (tg.x / T).toFixed(1) + ',' + (tg.y / T).toFixed(1) + ' awake ' + tg.awake + ' st ' + tg.state : '-', 'wp', wp ? (wp.wait ? 'WAIT' : (wp.x / T).toFixed(1) + ',' + (wp.y / T).toFixed(1)) : 'clear', 'pillars near', D.W.pillars.filter(q2 => Math.hypot(q2.x - P.x, q2.y - P.y) < q2.r + 12).length, 'sideT', (st.sideT || 0).toFixed(1), '| up:', F3.filter(e => e.awake !== false).map(e => e.kindOf + (e.bow ? '(bow)' : '') + ' ' + (e.x / T).toFixed(0) + ',' + (e.y / T).toFixed(0) + ' ' + e.state + ' tgt ' + (e.tgt ? (e.tgt === P ? 'HERO' : 'man') : e.waitOn ? 'waits' : '- [d ' + Math.hypot(e.x - P.x, e.y - P.y).toFixed(0) + ' sight ' + e.sight + ' rise ' + e.riseT + ' ret ' + (e.retT || 0).toFixed(2) + ' errand ' + !!e.errand + ' heard ' + !!e.heardAt + ' look ' + (e.lookT || 0).toFixed(1) + ' noT ' + (e.noT || 0).toFixed(1) + ' t ' + e.t.toFixed(1) + ' dur ' + e.dur + ' wall ' + Combat.api.wall(e.x, e.y, P.x, P.y) + ' post ' + (e.post ? Math.hypot(P.x - e.post.x, P.y - e.post.y).toFixed(0) : '-') + ']')).join('; '), '| K', !!D.keys && D.keys.KeyK); }
     if (!o.quiet) { if (P.hp < lastHp) R2.hurt += lastHp - P.hp; if (R2.fell < 0 && R2.hurt >= P.maxHp) R2.fell = t; P.hp = P.maxHp; lastHp = P.hp; if (P.dead) break; }
     for (const e of men) { if (e.upAt < 0 && e.awake !== false) e.upAt = t; if (e.metAt < 0 && e.awake !== false && !gone(e)) { if (e.shots) e.metAt = t; else for (const f of friends.concat(o.quiet ? [] : [P])) if (!f.dead && !f.down && Math.hypot(f.x - e.x, f.y - e.y) < 46) { e.metAt = t; break; } } }
+    if (st.frame % 30 === 0 && !o.quiet) { const cm = men.filter(e => !gone(e) && e.awake !== false), cy = friends.filter(f => !f.dead && !f.down).concat(P.dead ? [] : [P]), c = crowdOf(cm, cy);
+      if (c.n) { R2.cN = (R2.cN || 0) + 1; R2.cMost = (R2.cMost || 0) + c.most; R2.cPeak = Math.max(R2.cPeak || 0, c.most); R2.cFights = (R2.cFights || 0) + c.fights; R2.cBig = (R2.cBig || 0) + c.big; R2.c3 = (R2.c3 || 0) + (c.most >= 3 ? 1 : 0); let hn = 0; cm.forEach(m => { if (Math.hypot(m.x - P.x, m.y - P.y) < 80) hn++; }); R2.cHero = (R2.cHero || 0) + hn; R2.cHeroPeak = Math.max(R2.cHeroPeak || 0, hn); } }
     if (st.frame % 30 === 0) all.forEach((e, i) => {
       const q = last[i], moved = Math.hypot(e.x - q.x, e.y - q.y); q.x = e.x; q.y = e.y; if (e.x !== e.x || e.hp !== e.hp) R2.nan = true;
       const choked = e.choked != null && t - e.choked < 0.6; chokeRun.set(e, choked ? (chokeRun.get(e) || 0) + 0.5 : 0); R2.choke = Math.max(R2.choke, chokeRun.get(e));
@@ -280,6 +294,7 @@ function townFight(seed, o) {
   return Object.assign(R2, { t, n20: men.length, out: men.filter(gone).length, dead: men.filter(e => e.dead).length, never: men.length - ups.length, first: ups[0], at5: at(5), at15: at(15), at30: at(30), at60: at(60), lastUp: ups.length ? ups[ups.length - 1] - ups[0] : 0, met0: mets.length ? mets[0] - ups[0] : -1, metLast: mets.length ? mets[mets.length - 1] - ups[0] : -1, met: mets.length, kinds: 'gate ' + byKind('gate') + ', yard ' + byKind('yard') + ', doors ' + byKind('door') + ', in the houses ' + byKind('house') + ', hall ' + byKind('hall'),
     friendsUp: friends.filter(e => !e.dead && !e.down).length, waited: st.waited || 0, timeout: t >= limit && !o.quiet, mean: R2.ms / Math.max(1, R2.n), backGate: back != null, lots: V.lots.filter(l => l.id === 'house').length });
 }
+const CROWD = { most: 0, peak: 0, c3: 0, hero: 0, fights: 0, big: 0, n: 0, fell: 0, up: 0, dead: 0 };
 function town(n, secs) {
   console.log('--- a town full of men, attacked (rung 5): the hero (kept alive: the line says when he would have fallen) and five friends against twenty, in ' + n + ' towns, at the gate and at the back gate');
   console.log('    aimed at: nobody ever stuck; the town up over a minute or so, not all at once; every man of it reaches the fight or is still asleep for a reason');
@@ -291,7 +306,9 @@ function town(n, secs) {
     console.log((bad ? '!! ' : '   ') + ('town ' + seed + ' (' + r.lots + ' houses), in at the ' + (from === 'back' ? 'back gate' : 'gate')).padEnd(46) + 'up: ' + r.at5 + ' in 5 s, ' + r.at15 + ' in 15, ' + r.at30 + ' in 30, ' + r.at60 + ' in 60' + (r.never ? ', ' + r.never + ' never' : '') + ' (' + r.kinds + '); the first met them after ' + r.met0.toFixed(0) + ' s, the last after ' + r.metLast.toFixed(0) + ' (' + r.met + ' did); '
       + (r.timeout ? 'NOT OVER at ' + r.t.toFixed(0) + ' s with ' + (r.n20 - r.out) + ' left' : 'over in ' + r.t.toFixed(0) + ' s') + ', ' + r.dead + ' dead, ' + (r.out - r.dead) + ' gave up or ran; friends standing ' + r.friendsUp + '/5; the hero would have fallen at ' + (r.fell < 0 ? 'no time' : r.fell.toFixed(0) + ' s') + '; longest wait at a gate or door ' + r.choke.toFixed(0) + ' s'
       + (r.stuck >= 5 ? '; STOOD STILL ' + r.stuck.toFixed(0) + ' s: ' + r.who : '') + (r.nan ? ' NaN' : ''));
+    if (r.cN) { const k = r.cN; console.log('        the crowd: round one of yours ' + (r.cMost / k).toFixed(1) + ' of theirs on average, ' + r.cPeak + ' at most (three or more ' + Math.round(100 * r.c3 / k) + '% of the time); round the hero ' + (r.cHero / k).toFixed(1) + ', ' + r.cHeroPeak + ' at most; ' + (r.cFights / k).toFixed(1) + ' separate fights at a time, the largest of ' + (r.cBig / k).toFixed(1) + ' men'); CROWD.most += r.cMost / k; CROWD.peak = Math.max(CROWD.peak, r.cPeak); CROWD.c3 += r.c3 / k; CROWD.hero += r.cHero / k; CROWD.fights += r.cFights / k; CROWD.big += r.cBig / k; CROWD.n++; CROWD.fell += r.fell < 0 ? r.t : r.fell; CROWD.up += r.friendsUp; CROWD.dead += r.out; }
   }));
+  if (CROWD.n) console.log('    the crowd over all of them: round one of yours ' + (CROWD.most / CROWD.n).toFixed(2) + ' on average, ' + CROWD.peak + ' at most, three or more ' + Math.round(100 * CROWD.c3 / CROWD.n) + '% of the time; round the hero ' + (CROWD.hero / CROWD.n).toFixed(2) + '; ' + (CROWD.fights / CROWD.n).toFixed(2) + ' separate fights at a time, the largest of ' + (CROWD.big / CROWD.n).toFixed(1) + ' men; the hero would have fallen after ' + (CROWD.fell / CROWD.n).toFixed(0) + ' s, ' + (CROWD.up / CROWD.n).toFixed(1) + ' friends standing at the end, ' + (CROWD.dead / CROWD.n).toFixed(1) + ' of the town out of it');
   console.log('    an update: ' + (mean / Math.max(1, runs)).toFixed(2) + ' ms on average, ' + worst.toFixed(1) + ' at worst (the logic alone: nothing is drawn here)');
   { let h = { t: 0, out: 0, n: 0 }, f = { t: 0, out: 0, n: 0 };     // five of yours before the gate (the town must come out through it), the hero behind them doing nothing: told to hold a line there, or left to fight as they like
     seeds.slice(0, Math.max(2, Math.round(n / 2))).forEach(seed => { for (let k = 0; k < 2; k++) { const a = townFight(seed, { gate: 'hold', secs: 240 }), b = townFight(seed, { gate: 'free', secs: 240 }); h.t += a.heldFor || a.t; h.out += a.out; h.n++; f.t += b.heldFor || b.t; f.out += b.out; f.n++; } });
@@ -402,5 +419,5 @@ if (mode === 'duels') duels(N);
 if (mode === 'five' || mode === 'short') five(mode === 'short' ? 6 : N);
 if (mode === 'bows' || mode === 'short') bows(mode === 'short' ? 8 : N);
 if (mode === 'raid' || mode === 'short') raidChecks();
-if (mode === 'town' || mode === 'short') town(mode === 'short' ? 2 : (+process.argv[3] || 12), +process.argv[4] || 300);
+if (mode === 'town' || mode === 'short') town(mode === 'short' ? 2 : (+process.argv[3] || 12), +process.argv[4] || 480);
 console.log('(' + ((Date.now() - t0) / 1000).toFixed(1) + ' s)');

@@ -933,6 +933,40 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   turned; its place is a gate, rung 5); rolled men with mixed weapons: your side 69%, because theirs may break and yours
   never do. With the hero and four friends against five: the careful bot wins 83%, the skilled 95%, the tapper 6%, and a
   hero who stands by 1% (he is cut down).
+- **Man to man, not a swarm (2026-10-13, Robin after raiding: "everything just gathers up like ants around a target. We need to
+  work out a good way for it to feel more like lots of individual battles where things can go either way").** Measured first
+  (`crowdOf` in `tests/battle.js`, a line under every town of the town test): on the old rules about **4 to 5 of the town stood
+  within 80 units of one of yours on average, 12 to 18 at worst, three or more two thirds of the time**. Four rules, all in
+  `src/combat.js`, all numbers in `MEN`:
+  **One on one first** (`onOne` 1; `onHero` 2 on the hero): a man takes a foe nobody of his side is AT (`inContact`: within his
+  reach and 40 units; `tallyOn` counts it every frame: `F.onN`, and `F.onT`, how long somebody has been at him). `fullFor(e, F,
+  d)` says whether F is taken for e: those at him already count, and those on their way who will be there first (a man already
+  after F gives way only to one nearer; a newcomer takes a place only by being 40 units nearer). **Help comes after a while**:
+  a man fought for `joinAfter` 6 s without an end gets a second on him (`joinYours` 3 s for the hero's own men, who help a
+  fellow sooner); never more than `onMax` 2. **Never taken:** the man who is fighting you, the hero when he has struck you or
+  comes at you with a weapon, and (for a man told to hold) whoever is in reach. Bowmen and men on errands take no place.
+  **A man with no place hangs back** (`e.waitOn`, `hangStep`): 105 to 165 units (`hang`, by the man) from the nearest of the
+  taken, apart from the others who wait, his face to the fight; `pickTarget` is asked every frame he has nobody, so he steps
+  in the moment a place opens. The hero's own men with no place stand by him as before.
+  **A fight makes itself room** (`apartFrom`, `apart` 72, `drift` 26): the two of a duel move, together, away from the men of
+  other fights (both work it out from the middle of the pair, so the distance between them is left alone; pushed singly they
+  stood a pace out of each other's reach, and against a held line the attackers went round its ends: the line won 7 in 100).
+  Not from men who only stand by, never from the hero, not when either is the hero or holds a line.
+  **Householders hold their own doors** (`homeR` 190 on the man: the garrison's `door` and `house` kinds, set by `townMen` and
+  the test): such a man fights nobody further than that from his post, does not go to look at a noise beyond it (`alarmFor`),
+  and stays up 22 s after the last one. So the gate, the market, the back gate and the hall answer a fight, and every house
+  still has its man when you come to it.
+  **`MEN.onOne = 0` is the old way** (`MEN='{"onOne":0}' node tests/battle.js ...`). **What it gave** (six towns, both gates,
+  the same bot): round one of yours **2.4 on average** (4.1 the old way with the same householders, 5.1 before any of this),
+  three or more 34% of the time (65%), the largest fight 3.2 men (5.1); the hero would have fallen after 57 s (59: no easier);
+  a town fight takes longer (150 to 290 s; the town test's limit is 480 s). Five against five is still a coin (45 to 56% over
+  100), about 45 s (38); the hero's bots with four friends against five: tapper 2 to 6%, careful 84 to 90%, skilled 94 to 98%
+  (as before); a held line 37% (42). In the page (`docs/battle-pairs.jpg`): pairs at the gate, the rest of the town behind it.
+  **Found on the way:** since the houses grew a town is wider than `MEN.pursue` 700, and the hall's men stood idle beside a
+  fight at their own gate: a post may carry its town's bounds (`post.box`, from `vBox(v)`), and then a man goes for nobody
+  further than `MEN.pursueOut` 450 outside them. The test's hero bot fights whoever is at him first (it walked at men who only
+  stood and watched while two struck it from behind). `BP.fast({ bot, secs })` plays on with no pictures and says how crowded
+  it is. **My choices, not Robin's: every number here, one on one at all, and that a town's men wait their turn.**
 - **Man against man** is not balanced weapon by weapon, and was not meant to be even: it makes cycles. `node
   tests/battle.js duels 200` (even men in leather with shields; the share the row wins):
 
