@@ -967,6 +967,24 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   further than `MEN.pursueOut` 450 outside them. The test's hero bot fights whoever is at him first (it walked at men who only
   stood and watched while two struck it from behind). `BP.fast({ bot, secs })` plays on with no pictures and says how crowded
   it is. **My choices, not Robin's: every number here, one on one at all, and that a town's men wait their turn.**
+- **Weapons that drop and are taken (2026-10-13, Robin: "weapons can drop and be looted, for example if you manage to kill a guard
+  with your hands you could take his weapon... Or maybe that stealth kill gives you the weapon of the target").** In
+  `templates/game.html`. **A man who falls drops what he fought with**, where he fell (`manDrops(e)` from `onDeath`, `manArms`:
+  his weapon as a thing of its own metal; a bowman's bow and two to five arrows). It **lies** there (`d.lie` on the drop:
+  walking over it does not pick it up, so a battlefield does not fill your bag) until **E, "Take the iron sword"**
+  (`lyingNear`, `takeLying`; an `add` line in `eWhat`). **A thing taken goes into your hand if the hand is empty**, else to a
+  free place on the Fight bar, else into the bag (`armTake(spec)`: so an axe taken from a man is a weapon, not a tool).
+  **A man taken from behind with nothing in your hands: his weapon is in your hand as he falls** (the engine marks him
+  `quietKill`; fists do it, as any blow in the back of a man who has noticed nothing does). **What you drag out of the bag
+  lies too** (`dropThing(spec, x, y, lie)`), so a weapon can be left anywhere and found again. **A boat and a karve have a sea
+  chest** by the stern (`seaChest()`, `raft.chest`: twelve places, the chest board as for any chest; E facing the stern,
+  "Open the sea chest"; saved with the vessel; the raft has none): where weapons are left before a town that lets nobody
+  in armed. Lying things are gone after fifteen minutes; they are saved (`lie`). Other loot (a crate's sword, a chest's)
+  is walked over as before. **Tried in the pane:** six weapons into the sea chest; a gate guard taken from behind
+  bare-handed, his sword in the hand, the town not woken; his fellow's club lying, not picked up by standing on it, taken
+  with E to the Fight bar. **Not done:** the sea chest is not drawn on the vessel; your own men do not pick weapons up;
+  a man's shield, helm and mail are not loot. **My choices:** that they lie instead of jumping into the bag, the sea
+  chest, and that a guard's iron is real iron (twenty of them is a lot of iron: to be looked at when weapons arm the hird).
 - **Man against man** is not balanced weapon by weapon, and was not meant to be even: it makes cycles. `node
   tests/battle.js duels 200` (even men in leather with shields; the share the row wins):
 
