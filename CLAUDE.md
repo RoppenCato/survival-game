@@ -130,7 +130,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, **to the old mine, into it, to its fall of rock, to the rock shelter, to a copper vein, a boat at the sea cave, into it, to its beach**, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
-| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five**; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan` |
+| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five** (with none, one or two **bowmen a side**), **a town defended** (the scene's second island is a lowland one with a walled town on it: twenty men at their day, or twelve or thirty, the hero six tiles south of its gate with five of his own, one of them a bowman), to its gate, to its hall; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe, bow), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan`, `townOf()`, `townMen(vi, n)`, `townSet()` |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the mountain's foot, onto the plateau, to the lookout, the rock shelter and a copper vein (the big island has a small mountain since 2026-10-12)**, **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
@@ -167,6 +167,16 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `src/ambient.js` (`Ambient`, 2026-10-12): the sound of the place, synthesized: beds of filtered noise (wind, leaves, surf,
   hull, brook, fire, a cave's tone) and single sounds (birds, crickets, crackles, drops, creaks), and footsteps by the ground.
   See "Ambient sound" under The game. Loads in Node (the test runs it on a pretend audio context).
+- `src/nav.js` (`Nav`, 2026-10-13): finding a way round walls, for everything that walks in a village. `Nav.make({ x0, y0, w, h,
+  T, open, edge, cost, solids })` is a stretch of the world in tiles: which tiles can be stood on, which edges between tiles
+  are shut (`Nav.edgeOf(B)` reads the building data: a wall, a window and every yard piece shuts its edge, a door and a gate
+  are open but narrow, a locked door is shut to all but the place's own people), and the round things that stand there. From
+  it: `blocked` (does a straight step cross anything shut), `clear` (can he walk straight there: no wall, and nothing round
+  in the line), `path` (A-star, eight ways, no corner cut), `next(m, x, y, t, keys)` (the corner to make for now; the way is
+  kept on the mover), `narrowAhead` (a door or a gate on his way). `Nav.attach(Combat, at, clock)` answers the engine's three
+  questions from the grids a page keeps (`api.nav`, `api.blocked`, `api.wall`), with two rules of its own: **a doorway or a
+  gate takes two at a time** (the rest wait their turn a little way back; `e.choked`), and **a place's own man who comes to
+  its locked door opens it, and it stays open behind him** (`Nav.unlock(g, B)`). See "Fighting men". Loads in Node.
 - `src/build.js` (`Build`): building pieces, used by the game (the Base Editor is gone). **Redrawn for the art direction (Robin,
   2026-10-07):** build.js has its own small ink toolkit (`INK`, `ink(c, pts, fill, o)`: the fill, grain and a cool shade toward the
   lower right inside it, a warm lit edge up and left, a thin hand-made line all round, `wob`, and the heavy line on the shadow side
@@ -391,7 +401,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
   one set of sheets, the clips to fetch from Mixamo (a sitting with Robin signed in), a fourth enemy kind (the soldier:
   his weapon's own `PROFILES`, a shield, yielding), slots for more than one attacker, friends, groups and heart, a nav
   grid from the building data, the town's answer to noise, the raid as "how much you dare to take", a test scene
-  `?scene=battle`, `tests/battle.js`, a gate for every rung, and nine questions for Robin. **Nothing of it is built.**
+  `?scene=battle`, `tests/battle.js`, a gate for every rung, and nine questions for Robin. **Rungs 0 to 5 are built** (its
+  section 13, "How it went", says what each found); the raid, rung 6, is next.
 - `docs/ui-review.md` (2026-10-12; Robin: look through every menu, board and bar for function, looks and sense): what was
   looked at, what was found broken and fixed (`docs/ui-review.jpg`, before and after), and **what is proposed and waits for
   Robin**: C for making by hand, one rule for everything E does, one number for a weapon, tabs on the Building board, the
@@ -788,6 +799,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
   seconds; one person at a job spot at a time) and `carrying` (after the well, the bucket is carried home at a slower walk; the bob
   is added to the pose); `pickIdle` weights them (a child looks about more). The Village Editor shows the same poses.
 
+- **Villagers and walls (2026-10-13).** A villager finds his way round walls, the fire and the well (`navMove`, the
+  village's grid: see "Fighting men"). Two things came of everybody taking the same way: people **keep a step apart**
+  (two of a village nearer than 13 units ease apart, the one walking giving way; a spot somebody already stands on is
+  reached when you are beside it), and a villager **watches you for three to eight seconds and then has seen enough for
+  half a minute** (a hero who stood in the yard used to have the whole village standing round him for good).
 - Other people are the hero's figure with their own spec: `lib.makeFigure(spec)` then `lib.figureD(c, x, y, dir, an,
   pose, F)`. `FOLK` in `src/art.js` holds them (`lib.folkSpec(key)`); spec key `beard` adds a beard.
 - The first is Brokk, a friendly dwarf smith (dwarfs are from Norse myth). He stands at the home camp in the Sea
@@ -796,9 +812,10 @@ the text and it is made the default. When a spec's meaning changes, change the s
 
 ## Fighting men (2026-10-13; `docs/battle-plan.md`, Robin: fight a hirdman, two, two with one beside you, five against five, a town, the raid, fixing the bugs of each before the next)
 
-Everything here is tried in **`game.html?scene=battle`** and by `tests/battle.js`; nothing of it is in the real game's
-world yet (the towns that would hold such men are not spawned). **Robin has not played it: how hard a man should be was
-left as "not sure, try how it feels", so the numbers below are a first setting, not a decision.**
+Everything here is tried in **`game.html?scene=battle`** and by `tests/battle.js`. The men themselves are only in that
+test scene (the towns that would hold them are not spawned in the real game), **but the way-finding of rung 5 is in every
+village of the real game**: villagers and beasts no longer walk through walls. **Robin has not played it: how hard a man
+should be was left as "not sure, try how it feels", so the numbers below are a first setting, not a decision.**
 
 - **Sides** (`src/combat.js`). Every fighter has `e.side`: 0 is against the hero (every beast, a town's men), 1 is with him
   (his own). The hero's blows, arrows and auto-aim pass over his friends; `eachFoe(e, fn)` gives a man everyone of the other
@@ -891,8 +908,48 @@ left as "not sure, try how it feels", so the numbers below are a first setting, 
   the blow and the recovery follow the clip's own beats (`BEATS`), the shield is the `block` clip, a flinch the `hit`, a
   man on his knees a held frame of `pickup`. His fight clips are asked for the moment he is first drawn, and while one is
   still loading he stands in his idle (never the old drawn figure).
-- **`tests/battle.js`** (in `npm test`: a short run of every rung; `node tests/battle.js one|two|friend|five [n]` for more
-  fights a line). The hero is played by three bots, each with a person's limits (a reaction time, a share of blows not
+- **Walls and ways (rung 5, `src/nav.js`).** In a field a man walks straight at what he wants and slides round what is
+  round; in a town that is hopeless. The game keeps a **grid for every village the hero comes near** (`navOf(vi)`, built
+  by `navTick` within about 1900 units; `navs`; read again when a door is broken or anything is built: `navStale`) and
+  `Nav.attach` hands it to the engine: `moveCircle` lets **no mover but the hero step across a shut edge** (the hero is
+  stopped by the walls' circles as before; the others may be far from him, where there are no circles), a soldier's chase
+  asks for **the way round** (`stepTo`, and in `soldierAI`), and **no blow, no arrow and no seeing passes a wall**
+  (`wallBetween`). The villagers walk by it too (`navMove`). What it took to make it hold, each found by the town test:
+  a **tree by a wall** left a gap the grid thought a man could pass (a tile whose middle a big round thing covers is now
+  closed, a line that runs into anything round is not clear); a man **dead on against a hearth** stood there (a mover
+  that makes no way against something round steps round it: `moveCircle`; a soldier that makes no way for half a second
+  steps to one side, the other side next time: `e.sideT`); the hall's men stood **behind the pillars of their own locked
+  door** (they open it when they reach it); a man **on his knees in a passage** stopped everybody (he is in nobody's way
+  now, nor does he fill a doorway); a defender inside a house was **posted on its hearth** (`Village.garrison` settles
+  every post on free ground); and `Village.make` itself now keeps **doorways and gates clear** of anything solid (the game
+  did that after planting; a birch stood in a town's gate). **A town's gate is two tiles wide** (`fence.gateW`): through
+  one tile the fight was a duel with twenty men waiting.
+- **A town's men, and noise.** `Village.garrison(V, n)` says where each of n stands at his day: four at the gate (two
+  outside), two at the back gate, two by the market, a man by every house door, six of the jarl's own in the hall, a man
+  inside every house, the rest about the yard; a few carry bows. Each is a soldier with a **post** (`e.post`, `e.awake`
+  false, `aggro` 0.5: **a town at peace does not go for a stranger who walks in**; the first blow is the first noise).
+  **`Combat.noise(x, y, r)`**: every man of the other side within r hears it; one at his post is on his way after a moment
+  (`MEN.wake`, longer the further off; `e.wakeDelay`: 5 to 12 s for a man inside a house, 18 to 32 for the hall's, who must
+  arm), one already up with nobody to fight **goes to look** (`e.heardAt`), stands looking about for seven seconds and
+  then **walks back to his post and his day** (`postStep`). What is loud (`MEN.noise`): a blow that lands (240 units),
+  a town's man who sees a foe shouts (420), a man who falls cries out (360), a door broken or a chest lifted (the game's
+  `raidAlarm`, 520), and **the din of a fight carries further the more are in it** (`din()`: a blow's distance for two
+  men, across a town for fourteen, 1000 at most), which is what brings the far gate and the hall. The game's `raidStir`
+  (the folk run home, word spreads) hangs on `api.onNoise`. `spawnGuards` makes every town's gate guards soldiers (they
+  were beasts with a figure). No bell, no waves (Robin, 2026-10-07).
+- **Bowmen** (`e.bow`, `MEN.bow`; a soldier armed with `wpn.kind` 'bow', his `aim` from the rolled person). He stands off
+  (`range` 300), draws (`draw`: 1.3 to 0.75 s by his aim; state `aim`, clip `bow_draw`) and looses (state `loose`,
+  `bow_shoot`) at the man he means to fight if **the line to him is clear** (`laneClear`: no wall, **nobody of his own
+  within a lane's width of it**: checked again along the arrow's own true line, which is off by his aim and ahead of a
+  moving man), else at the nearest he has a line to; with no line to anybody he **walks round the fight** until he has
+  one. He **keeps out of a press** that is not about him (`keep` 125: backward, slowly), and with a man on him (`near` 60)
+  it is **the seax** (`sidearm`, `e.close`: a poor fighter, no shield); left alone a moment he takes up the bow again. A man
+  after a bowman runs at him. The arrow (`owner: 'man'`, its `side`) strikes the other side only and passes his own; **a
+  raised shield stops an arrow** (a man's and the hero's), a wall or a tree stops it; it does `dmg` 9 to the hero before
+  armour and half of that share to a man (`toMen`). Friends can be bowmen (the fifth of the town test's five is).
+- **`tests/battle.js`** (in `npm test`: a short run of every rung; `node tests/battle.js one|two|friend|five|bows [n]` for
+  more fights a line, `town [n] [secs]` for n towns; `TOWN_SEEDS=286,434` picks the towns, `TOWN_DBG=1` prints every man who
+  stands still and what blocks him, `BOW='{"toMen":0.7}'` tries a bowman's numbers). The hero is played by three bots, each with a person's limits (a reaction time, a share of blows not
   seen, timing that wanders): the **tapper** walks up and taps, the **careful** one raises the shield at what it sees and
   strikes when the man is open, the **skilled** one parries and steps out of heavy blows. A line marked `!!` is a fault (a
   fight that never ended, a man stood still, a number that is not one). It also checks, one line each, what a friend must
@@ -906,7 +963,25 @@ left as "not sure, try how it feels", so the numbers below are a first setting, 
   shield are numbers in `MEN`.
 - **`tools/visual/battleplay.js`** plays the scene by script in the page (after `drive.js`): `BP.set('one')`, `BP.run({ bot,
   secs })` (who fell, how long, a line for every change of a man's state, whether anyone slid), `BP.strip({ bot, n, every,
-  when })` (a film strip at Robin's size, begun when a man winds up, the hero swings or a shield comes up).
+  when })` (a film strip at Robin's size, begun when a man winds up, the hero swings or a shield comes up). `BP.watch({ bot,
+  secs })` plays a town on and says every two seconds how many of its men are up, fighting and gone and who has stood
+  still (keep it to nine seconds a call: the pane's tool gives up at about forty-five real seconds and leaves the page
+  mid-frame); `BP.film({ who, when, n, every })` is a strip round any one man.
+- **The town test** (`node tests/battle.js town`): twelve towns grown as the game grows them (`Village.make`, the `town`
+  archetype), the game's own grid, the garrison, the hero (the careful bot, kept alive so every town is played out; the
+  line says when he would have fallen) and five friends in at the gate and at the back gate; then a noise at an empty
+  gate, and five friends before the gate told to hold or left free. **Where it stands:** nobody stands still for five
+  seconds in any of the twenty-four attacks; in at the gate **ten to thirteen of the twenty are up in five seconds** (the
+  gate, the market, the men at the doors), the men inside the houses at 6 to 16 s, **the hall's at 26 to 46 s**, and the
+  last of the town meets the raiders after 50 to 115 s; from the back gate it builds more slowly (three to eight in five
+  seconds). **A frontal attack is lost:** the hero would have fallen after 21 to 48 s and his five are down by then. A
+  noise and nobody there: eleven or twelve go to look and all are back at their posts after 31 to 40 s. An update costs
+  0.07 ms (the worst 10 to 13: one long search for a way). In the page: 31 to 35 ms a frame in the pane's software
+  drawing with twenty-five fighters, by day and by night (what that is on Robin's card the frame log must say).
+  **Bowmen** (`bows`): a bowman alone against a man who reaches him loses (0%); **five swords with a bowman behind them
+  beat five swords 85 to 90%** (a sixth swordsman: 93 to 97%), four swords and a bowman 20%; the hero's bots beat a lone
+  bowman with 87 to 98 health left. **Not shown to be worth it: the line.** Five friends told to hold before a town's gate
+  stood 33 s, left to fight as they like 39 s, and put next to nobody out of the fight either way.
 
 ## The game (templates/game.html)
 

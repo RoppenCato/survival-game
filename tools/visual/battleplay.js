@@ -11,6 +11,7 @@ window.BP = (function () {
   var DT = 1 / 60, wrapA = function (a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
   function D() { return Combat.dbg(); }
   function men(side) { return D().W.enemies.filter(function (e) { return e.type === 'soldier' && !e.dead && !e.down && !e.fled && !e.out && (side == null || (e.side || 0) === side); }); }
+  function foesUp() { var L = men(0), up = L.filter(function (e) { return e.awake !== false; }); return up.length ? up : L; }
   function keys(ang, go) { Combat.key('KeyD', go && Math.cos(ang) > 0.38); Combat.key('KeyA', go && Math.cos(ang) < -0.38); Combat.key('KeyS', go && Math.sin(ang) > 0.38); Combat.key('KeyW', go && Math.sin(ang) < -0.38); }
   function threat() {
     var P = D().P, best = null;
@@ -38,7 +39,7 @@ window.BP = (function () {
     }
   };
   function release() { ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyK', 'Space'].forEach(function (k) { Combat.key(k, false); }); Combat.button(0, false); }
-  function tickBot(st, bot) { var P = D().P, F = men(0); st.frame++; if (P.dead || !F.length) { release(); return false; } F.sort(function (a, b) { return Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y); }); BOTS[bot || 'none'](st, F); return true; }
+  function tickBot(st, bot) { var P = D().P, F = foesUp(); st.frame++; if (P.dead || !F.length) { release(); return false; } F.sort(function (a, b) { return Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y); }); BOTS[bot || 'none'](st, F); return true; }
   function run(o) {
     o = o || {}; var st = { frame: 0 }, P = D().P, all = D().W.enemies.filter(function (e) { return e.type === 'soldier'; }), last = all.map(function (e) { return ''; }), log = [], t = 0, hp0 = P.hp, slide = 0, hits = 0, blocks = 0, lastHp = P.hp, pos = all.map(function (e) { return [e.x, e.y]; });
     while (t < (o.secs || 20)) {
@@ -60,7 +61,33 @@ window.BP = (function () {
     for (i = 0; i < n; i++) { var P = D().P, m = men(0)[0] || P, lab = (i * every) + 'f ' + (m !== P ? m.state + (m.guard > 0 ? '+sh' : '') : '') + ' hp' + Math.round(P.hp); H2.snap(cv, cv.width / 2, cv.height / 2 - 8 * PS, lab, i % cols, Math.floor(i / cols)); for (var k = 0; k < every; k++) { tickBot(st, o.bot); H2.step(1); } }
     release(); return H2.part(0, Math.ceil(n / cols));
   }
+  // BP.film({ who, n, every, cols, bot, when }): a film strip round one of the men (who(e): the first man it is true of), wherever
+  // he is on the screen; begun when `when()` is true
+  function film(o) {
+    o = o || {}; var st = { frame: 0 }, n = o.n || 16, every = o.every || 4, cols = o.cols || 8, wait = 0, cv = document.querySelector('canvas'), PS = Combat.api.pixelScale || 3, i, cam = Combat.api.debug().cam();
+    var pick = function () { return D().W.enemies.filter(function (e) { return e.type === 'soldier' && !e.dead && o.who(e); })[0]; };
+    while (!(pick() && (!o.when || o.when(pick()))) && wait < 1800) { tickBot(st, o.bot); H2.step(1); wait++; }
+    var m = pick(); if (!m) return null; H2.begin(cols, Math.ceil(n / cols));
+    for (i = 0; i < n; i++) { H2.snap(cv, ((m.x - cam.x) * cam.z + 200) * PS, ((m.y * 0.75 - cam.y) * cam.z + 125) * PS - 8 * PS, (i * every) + 'f ' + m.state + (m.close ? ' seax' : ''), i % cols, Math.floor(i / cols)); for (var k = 0; k < every; k++) { tickBot(st, o.bot); H2.step(1); } }
+    release(); return H2.part(0, Math.ceil(n / cols));
+  }
+  // The town: BP.watch({ bot, secs }) plays on and says, every two seconds, how many of its men are up and about (awake), how
+  // many have somebody to fight, how many have fallen or given up, how the hero's own stand, and who has stood still for five
+  // seconds although he has somewhere to go (stuck: the fault this rung is about).
+  var still = new Map();
+  function watch(o) {
+    o = o || {}; var st = { frame: 0 }, P = D().P, t = 0, line = [], stuck = {}, worst = 0, t0 = Date.now(), frames = 0;
+    var all = function () { return D().W.enemies.filter(function (e) { return e.type === 'soldier'; }); };
+    while (t < (o.secs || 8)) {
+      tickBot(st, o.bot); H2.step(1); t += DT; frames++;
+      all().forEach(function (e) { if (e.dead || e.down || e.out) { still.delete(e); return; } var q = still.get(e); if (!q) { q = { x: e.x, y: e.y, t: 0 }; still.set(e, q); } var wants = (e.tgt && Math.hypot(e.tgt.x - e.x, e.tgt.y - e.y) > e.pf.reach + 40) || (e.heardAt && !(e.lookT > 0) && Math.hypot(e.heardAt.x - e.x, e.heardAt.y - e.y) > 40) || (e.side === 1 && e.order !== 'hold' && Math.hypot(P.x - e.x, P.y - e.y) > 90 && !e.tgt);
+        if (Math.hypot(e.x - q.x, e.y - q.y) > 6 || !wants) { q.x = e.x; q.y = e.y; q.t = 0; } else { q.t += DT; if (q.t > 5) { stuck[(e.side ? 'friend ' : (e.kindOf || 'man') + ' ') + (e.name || '') + ' at ' + Math.round(e.x / 32) + ',' + Math.round(e.y / 32) + ' ' + e.state + (e.tgt ? ' after ' + (e.tgt === P ? 'the hero' : 'a man') : e.heardAt ? ' to a noise' : ' following')] = 1; worst = Math.max(worst, q.t); } } });
+      if (st.frame % 120 === 0) { var A = all(), f0 = A.filter(function (e) { return !e.side; }), f1 = A.filter(function (e) { return e.side === 1; }); line.push(Math.round(t) + 's up ' + f0.filter(function (e) { return e.awake !== false && !e.dead && !e.out; }).length + ' fighting ' + f0.filter(function (e) { return e.tgt && !e.dead && !e.out; }).length + ' gone ' + f0.filter(function (e) { return e.dead || e.out; }).length + '/' + f0.length + ' | yours up ' + f1.filter(function (e) { return !e.down && !e.dead; }).length + '/' + f1.length + ' hero ' + Math.round(P.hp)); }
+      if (P.dead && !o.stay) break;
+    }
+    release(); return { secs: +t.toFixed(1), msFrame: +((Date.now() - t0) / frames).toFixed(1), heroDead: P.dead, line: line, stuck: Object.keys(stuck), stuckFor: +worst.toFixed(1) };
+  }
   function act(id) { Combat.api.debug().battleAct(id); H2.step(2); } function set(id) { act(id); }
   function look(q) { var cv = document.querySelector('canvas'); return cv.toDataURL('image/jpeg', q || 0.85); }
-  return { run: run, strip: strip, set: set, act: act, look: look, when: when, men: men, release: release };
+  return { run: run, strip: strip, film: film, set: set, act: act, look: look, when: when, men: men, release: release, watch: watch };
 })();

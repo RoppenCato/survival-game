@@ -5,6 +5,8 @@
 //   node tests/battle.js friend [n] rung 3: two against the hero and one friend; and a friend alone against his equal
 //   node tests/battle.js five [n]   rung 4: five against five with no hero, then with him
 //   node tests/battle.js duels [n]  every weapon against every weapon, man against man
+//   node tests/battle.js bows [n]   rung 5: men with bows, alone, in a fight, behind their own, at a wall
+//   node tests/battle.js town [n] [secs]  rung 5: n towns (12) from n seeds, the hero and five friends in at the gate and at the back gate
 // The hero's bots: the TAPPER walks up and taps the attack, nothing else (a careless player); the CAREFUL one raises the
 // shield at a blow it sees coming and strikes when the man is open; the SKILLED one parries, steps out of a heavy blow, and
 // uses what its weapon is good at. A real player is somewhere between the last two.
@@ -15,12 +17,13 @@ global.__mk = (w, h) => createCanvas(w, h);
 global.GameArt = require('../src/art.js'); global.Items = require('../src/items.js');
 const lib = GameArt.lib, Combat = require(process.env.ENGINE || '../src/combat.js'), Hird = require('../src/hird.js');
 Combat.api.roster = []; Combat.init(lib);
+const Village = require('../src/village.js'), Nav = require('../src/nav.js'), Build = require('../src/build.js');
 const FPS = 60, DT = 1 / FPS, LIMIT = 180;
 const LEATHER = ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].reduce((s, k) => s + Items.stats(Items.make(k, 'leather')).armor, 0);
 const GEAR = { cloth: { armor: 0, shield: false }, leather: { armor: 0.2, shield: true }, mail: { armor: 0.4, shield: true } };
 const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
 function person(o) { return Object.assign({ hp: 30, strength: 4, wits: 4, nerve: 1 }, o || {}); }      // an even man who does not yield (so a fight is fought out) unless the test says otherwise
-function rolled() { const p = Hird.roll(Math.random); return { hp: p.stats.health, strength: p.stats.strength, wits: p.stats.wits, loyal: p.traits.indexOf('loyal') >= 0, nerve: 0.5 }; }
+function rolled() { const p = Hird.roll(Math.random); return { hp: p.stats.health, strength: p.stats.strength, wits: p.stats.wits, aim: p.stats.aim, loyal: p.traits.indexOf('loyal') >= 0, nerve: 0.5 }; }
 function man(side, wpn, gear, x, y, o) { const g = GEAR[gear || 'leather']; return Combat.soldier(Object.assign({ side, wpn: { kind: wpn, mat: 'iron' }, shield: g.shield, armor: g.armor, x, y }, person(o))); }
 function keys(ang, go) { Combat.key('KeyD', go && Math.cos(ang) > 0.38); Combat.key('KeyA', go && Math.cos(ang) < -0.38); Combat.key('KeyS', go && Math.sin(ang) > 0.38); Combat.key('KeyW', go && Math.sin(ang) < -0.38); }
 function threatOf(D) {                          // the blow that will reach the hero soonest, and in how long
@@ -28,13 +31,15 @@ function threatOf(D) {                          // the blow that will reach the 
   for (const e of D.W.enemies) { if (e.dead || e.side === 1 || e.type !== 'soldier' || !e.sw || e.tgt !== P) continue; if (e.state !== 'windup' && !(e.state === 'lunge' && !e.hitDone)) continue;
     const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > e.sw.reach + 34) continue; const hit = e.sw.ac * Combat.api.men.hitAt, tti = e.state === 'windup' ? e.dur - e.t + hit : hit - e.t;
     if (!best || tti < best.tti) best = { e, tti, d, heavy: e.sw.heavy }; }
+  for (const pr of D.W.projs) { if (pr.owner !== 'man' || pr.side !== 0) continue; const rx = P.x - pr.x, ry = P.y - pr.y, sp = Math.hypot(pr.vx, pr.vy), along = (rx * pr.vx + ry * pr.vy) / sp, off = Math.abs(rx * pr.vy - ry * pr.vx) / sp;   // an arrow on its way to him
+    if (along > 0 && off < 14 && along / sp < 0.5 && (!best || along / sp < best.tti)) best = { e: pr.src, tti: along / sp, d: along, heavy: false, arrow: pr }; }
   return best;
 }
 // A bot is a person: it sees a blow a moment after it begins (its reaction), its timing wanders (jitter), and now and then it
 // does not see the blow at all (missed). what() says how this blow is met.
 const HUMAN = { careful: { react: 0.2, miss: 0.12, jitter: 0 }, skilled: { react: 0.12, miss: 0.06, jitter: 0.18 } };
 function meets(st, th, who) {
-  const H = HUMAN[who]; if (st.thr !== th.e || st.thrN !== th.e.swingN) { st.thr = th.e; st.thrN = th.e.swingN; st.seen = 0; st.blind = Math.random() < H.miss; st.jit = (Math.random() - 0.5) * H.jitter; }
+  const H = HUMAN[who], tn = th.arrow || th.e.swingN; if (st.thr !== th.e || st.thrN !== tn) { st.thr = th.e; st.thrN = tn; st.seen = 0; st.blind = Math.random() < H.miss; st.jit = (Math.random() - 0.5) * H.jitter; }
   st.seen += DT; return !st.blind && st.seen >= H.react;
 }
 const BOTS = {
@@ -100,6 +105,7 @@ function line(label, R, extra) {
   const bad = R.timeout || R.nan || R.stuck >= 6;
   console.log((bad ? '!! ' : '   ') + pad(label, 58), 'won', lpad(R.pct, 3) + '%', ' in', lpad(R.secs, 3) + 's', ' left', lpad(R.hp, 3), ' longest', lpad(R.longest.toFixed(0), 3) + 's', R.timeout ? ' NEVER ENDED x' + R.timeout : '', R.stuck >= 6 ? ' STOOD STILL ' + R.stuck + 's' : '', R.nan ? ' NaN' : '', extra || '');
 }
+if (process.env.BOW) Object.assign(Combat.api.men.bow, JSON.parse(process.env.BOW));     // (for trying a bowman's numbers: BOW='{"toMen":0.7}')
 const mode = process.argv[2] || 'short', N = +process.argv[3] || (mode === 'short' ? 12 : 200);
 const HEROES = [['tapper', ['sword', 'flint'], LEATHER], ['careful', ['sword', 'flint'], LEATHER], ['skilled', ['sword', 'flint'], LEATHER]];
 function one(n) {
@@ -147,10 +153,10 @@ function friendChecks() {
   D = fresh(); P = D.P; f = man(1, 'sword', 'leather', 226, 250); f.order = 'hold'; f.holdAt = { x: 226, y: 250 }; const hp0 = f.hp; P.face = 0;
   run(3, t => { Combat.button(0, Math.floor(t * 60) % 14 < 3); }); off(); say(f.hp === hp0 && !f.down, 'the hero swings at a friend in front of him for 3 s: ' + (f.hp === hp0 ? 'no hurt' : 'HURT ' + (hp0 - f.hp).toFixed(1)));
   // 5. down, and up again when it is over; left behind, he dies
-  D = fresh(); P = D.P; f = man(1, 'sword', 'leather', 180, 250, { hp: 3 }); foe = man(0, 'axe', 'leather', 215, 250, { hp: 200 }); let wentDown = -1;
-  run(20, t => { P.hp = P.maxHp; if (f.down && wentDown < 0) wentDown = t; }); const wasDown = f.down && !f.dead; foe.dead = true; foe.deadT = 0; let upAt = -1; run(8, t => { if (!f.down && upAt < 0) upAt = t; });
+  D = fresh(); P = D.P; f = man(1, 'sword', 'cloth', 180, 250, { hp: 2 }); foe = man(0, 'sword', 'leather', 215, 250, { hp: 200 }); let wentDown = -1;
+  run(45, t => { P.hp = P.maxHp; if (f.down && wentDown < 0) wentDown = t; }); const wasDown = f.down && !f.dead; foe.dead = true; foe.deadT = 0; let upAt = -1; run(8, t => { if (!f.down && upAt < 0) upAt = t; });
   say(wasDown && upAt > 0 && f.hp > 0 && !f.dead, 'a friend with little health against a strong man: ' + (wasDown ? 'down after ' + wentDown.toFixed(1) + ' s, not dead' : 'NOT down (' + (f.dead ? 'dead' : 'standing') + ')') + '; the man gone, he is ' + (upAt > 0 ? 'up again after ' + upAt.toFixed(1) + ' s with ' + f.hp.toFixed(0) + ' health' : 'STILL down'));
-  D = fresh(); P = D.P; f = man(1, 'sword', 'leather', 180, 250, { hp: 3 }); foe = man(0, 'axe', 'leather', 215, 250, { hp: 200 }); run(20); const d2 = f.down; P.x = 2000; P.hidden = true; let deadAt = -1; run(30, t => { if (f.dead && deadAt < 0) deadAt = t; });
+  D = fresh(); P = D.P; f = man(1, 'sword', 'cloth', 180, 250, { hp: 2 }); foe = man(0, 'sword', 'leather', 215, 250, { hp: 200 }); run(45, () => { P.hp = P.maxHp; }); const d2 = f.down; P.x = 2000; P.hidden = true; let deadAt = -1; run(30, t => { if (f.dead && deadAt < 0) deadAt = t; });
   say(d2 && deadAt > 0, 'down, and the hero gone 1800 units away: ' + (deadAt > 0 ? 'dead after ' + deadAt.toFixed(0) + ' s' : 'never dies'));
   // 6. the two orders
   D = fresh(); P = D.P; f = man(1, 'sword', 'leather', 180, 280); run(1); Combat.order('hold'); const at = f.holdAt; far = 0;
@@ -186,10 +192,156 @@ function five(n) {
   line('the hero standing by (he does nothing) with four friends against five', run({ hero: { bot: 'idle', weapon: ['sword', 'iron'], armour: LEATHER }, foes: side('sword', 'leather'), friends: side('sword', 'leather').slice(0, 4) }, Math.max(4, Math.round(n / 2))));
   HEROES.forEach(([bot]) => line('with the hero (' + bot + ', iron sword) and four friends against five', run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: side('sword', 'leather'), friends: side('sword', 'leather').slice(0, 4) }, Math.max(4, Math.round(n / 2)))));
 }
+// ---- A town full of men, attacked (rung 5). The town is grown as the game grows it (Village.make, the 'town' archetype), its
+// men stand where the game puts them (Village.garrison), the walls are the game's grid (src/nav.js) and the engine is asked the
+// same three questions (Nav.attach). The hero is kept alive so that every town is played to its end (the line says when he
+// would have fallen). What a line says: when the town's men were up (how the answer builds), when the first and the last of
+// them reached the fight, who stood still for five seconds with somewhere to go, the longest wait at a gate or a door, and
+// what an update cost. ----
+const RAD = {}; require('fs').readFileSync(require('path').join(__dirname, '../templates/game.html'), 'utf8').replace(/prop: '(\w+)'[^}]*?\br: ([\d.]+)/g, (m, k, r) => { RAD[k] = +r; });   // how big each placed thing is to a walker: the game's own table (PIECES)
+function townMake(seed) {
+  const T = 32, site = Village.siteFor('town'), V = Village.make(seed, { tx: 20, ty: 20, w: site.w, h: site.h, shore: null }, { arch: 'town', wealth: 0.7, biome: 1 });
+  const B = { H: {}, V: {}, items: [], posts: {} }; for (const k in V.H) B.H[k] = Object.assign({}, V.H[k]); for (const k in V.V) B.V[k] = Object.assign({}, V.V[k]);
+  const solids = [];
+  V.items.forEach(it => { const r = it.r != null ? it.r : (it.name === 'cellarDoor' ? 0 : RAD[it.name] != null ? RAD[it.name] : 8); if (r) { solids.push({ x: it.x, y: it.y, r, hide: true }); } });
+  V.props.forEach(p => { const r = p.solid != null ? p.solid : 8; if (r) { solids.push({ x: p.x, y: p.y, r, hide: true }); } });
+  V.nature.forEach(n => { if (n.r) { solids.push({ x: n.x, y: n.y, r: n.r, hide: true }); } });
+  const walls = Build.rooms(B, 140, 140, { x0: 0, y0: 0, x1: 139, y1: 139 }).solids;
+  const g = Nav.make({ x0: 11, y0: 11, w: site.w + 18, h: site.h + 18, T, open: () => true, edge: Nav.edgeOf(B), solids: () => solids }); g.vi = 0;
+  return { T, V, B, g, solids, walls };
+}
+// The hero at a town: he makes for the nearest man who is up (or, when none is, the nearest at all: the first blow is the
+// first noise), by the grid, and fights as the careful bot does.
+function raider(D, st, foes, g, t) {
+  const P = D.P, th = threatOf(D), up = foes.filter(e => e.awake !== false), L = up.length ? up : foes, tg = L[0];
+  if (th && th.tti < 0.6 && meets(st, th, 'careful')) { keys(0, false); Combat.button(0, false); Combat.key('KeyK', true); return; }
+  Combat.key('KeyK', false); if (!tg) { keys(0, false); Combat.button(0, false); return; }
+  const d = Math.hypot(tg.x - P.x, tg.y - P.y), wp = g.next(P, tg.x, tg.y, t, false), reach = st.reach + tg.r;
+  // (a player walks round a bench; the bot, pressing straight at it, would stand there: making no way, it steps to one side for a moment)
+  st.pt = (st.pt || 0) + DT; if (st.sideT > 0) st.sideT -= DT; if (st.pt >= 0.5) { const made = Math.hypot(P.x - (st.px || 0), P.y - (st.py || 0)); st.pt = 0; st.px = P.x; st.py = P.y; if (made < 3 && d > reach + 30 && !(wp && wp.wait) && !(st.sideT > 0)) { st.sideT = 0.5; st.sideS = -(st.sideS || 1); } }
+  const turn = st.sideT > 0 ? st.sideS * 1.4 : 0;
+  if (wp) { if (wp.wait) { keys(0, false); st.waited = (st.waited || 0) + DT; } else keys(Math.atan2(wp.y - P.y, wp.x - P.x) + turn, true); Combat.button(0, false); return; }
+  if (turn) { keys(Math.atan2(tg.y - P.y, tg.x - P.x) + turn, true); Combat.button(0, false); return; }
+  const ang = Math.atan2(tg.y - P.y, tg.x - P.x), open = tg.state === 'recover' || tg.state === 'stagger' || !(tg.guard > 0) || st.breaks; D.W.lock = tg;
+  keys(ang, d > reach - 2); Combat.button(0, open && d < reach + 8 && P.st > 20 && st.frame % 12 < 3);
+}
+// One town. o: { from: 'gate' | 'back', n, secs, quiet }. quiet: nobody comes; a noise at the gate, and the town is watched going back to its day.
+function townFight(seed, o) {
+  const TW = townMake(seed), { T, V, B, g, solids, walls } = TW, F = V.fence, R = Village.rng(seed * 7 + 5);
+  Combat.reset(); const D = Combat.dbg(), P = D.P; P.mode = 'fight'; P.weapon = 'melee'; let t = 0;
+  Combat.api.scene = { begin() {}, items() {}, bounds: { x0: 0, y0: 0, x1: 140 * T, y1: 140 * T } };
+  Nav.attach(Combat, (x, y) => g.inside(x, y) ? g : null, () => t);
+  const st = Object.assign({ frame: 0 }, hero(['sword', 'iron'], LEATHER));
+  let back = null; for (let i = F.x0; i < F.x1; i++) if (V.H[i + ',' + F.y0] && V.H[i + ',' + F.y0].t === 'gate') back = i;
+  const fromBack = o.from === 'back' && back != null, gx = fromBack ? (back + 0.5) * T : (F.gate + (F.gateW || 1) / 2) * T, gy = fromBack ? F.y0 * T : F.y1 * T, out = fromBack ? -1 : 1;
+  const men = Village.garrison(V, o.n || 20, R).map(q => { const p = Hird.roll(R), G = q.kind === 'hall' || q.kind === 'gate' ? GEAR.mail : GEAR.leather, hall = q.kind === 'hall';
+    const e = Combat.soldier({ side: 0, x: q.x, y: q.y, post: { x: q.x, y: q.y, face: q.face }, aggro: 0.5, vi: 0, wakeDelay: q.delay, wpn: { kind: q.wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: p.stats.health + (hall ? 8 : 0), strength: p.stats.strength + (hall ? 1 : 0), wits: hall ? Math.max(5, p.stats.wits) : p.stats.wits, aim: p.stats.aim, loyal: hall || p.traits.indexOf('loyal') >= 0, nerve: hall ? 0.9 : 0.5 });
+    e.face = q.face; e.kindOf = q.kind; e.upAt = -1; e.metAt = -1; return e; });
+  let friends = [];
+  if (o.quiet) { P.hidden = true; P.x = -4000; P.y = -4000; }
+  else { P.x = gx; P.y = gy + out * 6.5 * T; P.face = -out * Math.PI / 2; friends = ['sword', 'axe', 'spear', 'sword', 'bow'].map((w, i) => man(1, w, 'leather', gx + (i - 2) * 30, gy + out * (7.6 * T + (i % 2) * 16), rolled())); }
+  const all = men.concat(friends), last = all.map(e => ({ x: e.x, y: e.y, still: 0 })), R2 = { stuck: 0, who: '', choke: 0, ms: 0, worst: 0, n: 0, fell: -1, hurt: 0, backAt: -1, went: 0, nan: false };
+  const gone = e => e.dead || e.fled || e.out, limit = o.secs || 300; let lastHp = P.hp, chokeRun = new Map();
+  while (t < limit) {
+    const F2 = men.filter(e => !gone(e));
+    if (o.gate) { if (st.frame === 20) { P.x = gx; P.y = gy + 96; P.face = -Math.PI / 2; friends.forEach((f, i) => { f.x = gx + (i - 2) * 17; f.y = gy + 72; }); if (o.gate === 'hold') Combat.order('hold'); } if (st.frame === 60) Combat.noise(gx, gy, 520); if (st.frame > 60 && (!F2.length || !friends.some(f => !f.down && !f.dead))) { R2.heldFor = t; break; } }
+    else if (!o.quiet) { if (!F2.length) break; F2.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); raider(D, st, F2, g, t); }
+    else if (st.frame === 60) Combat.noise(gx, gy, 520);
+    D.W.pillars = o.quiet ? [] : solids.filter(s => Math.abs(s.x - P.x) < 330 && Math.abs(s.y - P.y) < 330).concat(walls.filter(s => Math.abs(s.x - P.x) < 160 && Math.abs(s.y - P.y) < 160));
+    if (!o.quiet) for (const k in B.H) { const e = B.H[k]; if (e.t === 'door' && e.locked) { const p = k.split(','), dx = (+p[0] + 0.5) * T, dy = p[1] * T; if (Math.abs(dx - P.x) < 160 && Math.abs(dy - P.y) < 160) D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true }, { x: dx - 10, y: dy, r: 7, hide: true }, { x: dx + 10, y: dy, r: 7, hide: true }); } }
+    if (!o.quiet) for (const k in B.V) { const e = B.V[k]; if (e.t === 'door' && e.locked) { const p = k.split(','), dx = p[0] * T, dy = (+p[1] + 0.5) * T; if (Math.abs(dx - P.x) < 160 && Math.abs(dy - P.y) < 160) D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true }, { x: dx, y: dy - 8, r: 7, hide: true }, { x: dx, y: dy + 8, r: 7, hide: true }); } }
+    const m0 = process.hrtime.bigint(); Combat.update(DT); const ms = Number(process.hrtime.bigint() - m0) / 1e6; R2.ms += ms; R2.n++; R2.worst = Math.max(R2.worst, ms);
+    if (Nav.unlock(g, B)) g.read();
+    t += DT; st.frame++;
+    if (!o.quiet) { if (P.hp < lastHp) R2.hurt += lastHp - P.hp; if (R2.fell < 0 && R2.hurt >= P.maxHp) R2.fell = t; P.hp = P.maxHp; lastHp = P.hp; if (P.dead) break; }
+    for (const e of men) { if (e.upAt < 0 && e.awake !== false) e.upAt = t; if (e.metAt < 0 && e.awake !== false && !gone(e)) { if (e.shots) e.metAt = t; else for (const f of friends.concat(o.quiet ? [] : [P])) if (!f.dead && !f.down && Math.hypot(f.x - e.x, f.y - e.y) < 46) { e.metAt = t; break; } } }
+    if (st.frame % 30 === 0) all.forEach((e, i) => {
+      const q = last[i], moved = Math.hypot(e.x - q.x, e.y - q.y); q.x = e.x; q.y = e.y; if (e.x !== e.x || e.hp !== e.hp) R2.nan = true;
+      const choked = e.choked != null && t - e.choked < 0.6; chokeRun.set(e, choked ? (chokeRun.get(e) || 0) + 0.5 : 0); R2.choke = Math.max(R2.choke, chokeRun.get(e));
+      const goal = e.tgt || (e.side === 1 ? (e.order === 'hold' ? null : P) : e.heardAt), far = goal && Math.hypot(goal.x - e.x, goal.y - e.y) > (e.bow && !e.close && e.tgt ? Combat.api.men.bow.range : e.side === 1 && !e.tgt ? 120 : 90);   // (a bowman within a shot of his man is where he means to be)
+      const shot = e.bow && (e.state === 'aim' || e.state === 'loose' || (e.shots || 0) !== (q.shots || 0)); q.shots = e.shots || 0;
+      const idle = moved < 1.5 && far && !choked && !shot && !gone(e) && !e.down && e.awake !== false && !(e.lookT > 0) && e.state !== 'windup' && e.state !== 'lunge' && e.state !== 'recover' && e.state !== 'stagger';
+      q.still = idle ? q.still + 0.5 : 0;
+      if (process.env.TOWN_DBG && q.still >= 5 && q.still % 5 === 0) { const wp = g.next(e, goal.x, goal.y, t, e.side !== 1); console.log('      dbg t', t.toFixed(1), e.side === 1 ? 'friend' : e.kindOf, 'at', (e.x / T).toFixed(2), (e.y / T).toFixed(2), e.state, 'goal', (goal.x / T).toFixed(2), (goal.y / T).toFixed(2), goal === P ? 'hero' : goal.type || 'noise', 'wp', wp ? (wp.wait ? 'WAIT' : (wp.x / T).toFixed(1) + ',' + (wp.y / T).toFixed(1)) : 'clear', 'nav', e.nav ? e.nav.pts.length + ' pts, i ' + e.nav.i + (e.nav.short ? ' SHORT' : '') : '-', 'cd', (e.cd || 0).toFixed(1), 'order', e.order, 'calledT', e.calledT, 'out', !!goal.out, 'down', !!goal.down, 'back', e.backT, 'tgt', e.tgt ? e.tgt.state : '-');
+        const ax = wp && !wp.wait ? wp.x : goal.x, ay = wp && !wp.wait ? wp.y : goal.y, al = Math.hypot(ax - e.x, ay - e.y) || 1, sx = (ax - e.x) / al * 1.5, sy = (ay - e.y) / al * 1.5;
+        console.log('          step', sx.toFixed(2), sy.toFixed(2), 'blocked', Combat.api.blocked(e.x, e.y, e.x + sx, e.y + sy, e), 'pillars', D.W.pillars.filter(q2 => Math.hypot(q2.x - e.x, q2.y - e.y) < q2.r + e.r + 3).map(q2 => ((q2.x - e.x)).toFixed(1) + ',' + ((q2.y - e.y)).toFixed(1) + ' r' + q2.r).join(' | '), 'men', all.filter(o2 => o2 !== e && !o2.dead && Math.hypot(o2.x - e.x, o2.y - e.y) < 16).length, 'guard', (e.guard || 0).toFixed(1), 'choked', e.choked != null ? (t - e.choked).toFixed(1) : '-'); }
+      if (q.still > R2.stuck) { R2.stuck = q.still; R2.who = (e.side === 1 ? 'a friend' : 'a man of the ' + e.kindOf) + ' at ' + Math.round(e.x / T) + ',' + Math.round(e.y / T) + ' (' + e.state + ', after ' + (e.tgt ? (e.tgt === P ? 'the hero' : 'a man') : e.side === 1 ? 'the hero' : 'the noise') + ' at ' + Math.round(goal.x / T) + ',' + Math.round(goal.y / T) + ')'; }
+    });
+    if (o.quiet && t > 3) { const up = men.filter(e => e.awake !== false).length; R2.went = Math.max(R2.went, men.filter(e => e.upAt >= 0).length); if (!up && R2.backAt < 0 && R2.went) { R2.backAt = t; break; } }
+  }
+  if (process.env.TOWN_DBG && t >= limit && !o.quiet) { console.log('      left at the end: hero at', (P.x / T).toFixed(2), (P.y / T).toFixed(2), 'waited', (st.waited || 0).toFixed(0)); men.filter(e => !gone(e)).forEach(e => { const wp = g.next(P, e.x, e.y, t, false); console.log('        ', e.kindOf, 'at', (e.x / T).toFixed(2), (e.y / T).toFixed(2), e.state, 'awake', e.awake, 'tgt', e.tgt ? (e.tgt === P ? 'hero' : 'man') : '-', 'heardAt', !!e.heardAt, 'choked', e.choked != null ? (t - e.choked).toFixed(1) : '-', 'hp', e.hp.toFixed(0), 'hero wp', wp ? (wp.wait ? 'WAIT' : (wp.x / T).toFixed(1) + ',' + (wp.y / T).toFixed(1)) : 'clear', 'wall between', Combat.api.wall(P.x, P.y, e.x, e.y)); }); }
+  ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyK', 'Space'].forEach(k => Combat.key(k, false)); Combat.button(0, false);
+  Combat.api.nav = Combat.api.blocked = Combat.api.wall = null;
+  const ups = men.map(e => e.upAt).filter(v => v >= 0).sort((a, b) => a - b), mets = men.map(e => e.metAt).filter(v => v >= 0).sort((a, b) => a - b), at = s => ups.filter(v => v <= ups[0] + s).length;
+  const byKind = k => { const L = men.filter(e => e.kindOf === k && e.upAt >= 0).map(e => e.upAt - ups[0]); return L.length ? Math.min(...L).toFixed(0) + '-' + Math.max(...L).toFixed(0) : '-'; };
+  return Object.assign(R2, { t, n20: men.length, out: men.filter(gone).length, dead: men.filter(e => e.dead).length, never: men.length - ups.length, first: ups[0], at5: at(5), at15: at(15), at30: at(30), at60: at(60), lastUp: ups.length ? ups[ups.length - 1] - ups[0] : 0, met0: mets.length ? mets[0] - ups[0] : -1, metLast: mets.length ? mets[mets.length - 1] - ups[0] : -1, met: mets.length, kinds: 'gate ' + byKind('gate') + ', yard ' + byKind('yard') + ', doors ' + byKind('door') + ', in the houses ' + byKind('house') + ', hall ' + byKind('hall'),
+    friendsUp: friends.filter(e => !e.dead && !e.down).length, waited: st.waited || 0, timeout: t >= limit && !o.quiet, mean: R2.ms / Math.max(1, R2.n), backGate: back != null, lots: V.lots.filter(l => l.id === 'house').length });
+}
+function town(n, secs) {
+  console.log('--- a town full of men, attacked (rung 5): the hero (kept alive: the line says when he would have fallen) and five friends against twenty, in ' + n + ' towns, at the gate and at the back gate');
+  console.log('    aimed at: nobody ever stuck; the town up over a minute or so, not all at once; every man of it reaches the fight or is still asleep for a reason');
+  const seeds = process.env.TOWN_SEEDS ? process.env.TOWN_SEEDS.split(',').map(Number) : []; if (!seeds.length) for (let i = 0; i < n; i++) seeds.push(101 + i * 37);
+  let worst = 0, mean = 0, runs = 0;
+  seeds.forEach(seed => ['gate', 'back'].forEach(from => {
+    const r = townFight(seed, { from, secs }); if (from === 'back' && !r.backGate) return; runs++; worst = Math.max(worst, r.worst); mean += r.mean;
+    const bad = r.stuck >= 5 || r.nan || r.timeout;
+    console.log((bad ? '!! ' : '   ') + ('town ' + seed + ' (' + r.lots + ' houses), in at the ' + (from === 'back' ? 'back gate' : 'gate')).padEnd(46) + 'up: ' + r.at5 + ' in 5 s, ' + r.at15 + ' in 15, ' + r.at30 + ' in 30, ' + r.at60 + ' in 60' + (r.never ? ', ' + r.never + ' never' : '') + ' (' + r.kinds + '); the first met them after ' + r.met0.toFixed(0) + ' s, the last after ' + r.metLast.toFixed(0) + ' (' + r.met + ' did); '
+      + (r.timeout ? 'NOT OVER at ' + r.t.toFixed(0) + ' s with ' + (r.n20 - r.out) + ' left' : 'over in ' + r.t.toFixed(0) + ' s') + ', ' + r.dead + ' dead, ' + (r.out - r.dead) + ' gave up or ran; friends standing ' + r.friendsUp + '/5; the hero would have fallen at ' + (r.fell < 0 ? 'no time' : r.fell.toFixed(0) + ' s') + '; longest wait at a gate or door ' + r.choke.toFixed(0) + ' s'
+      + (r.stuck >= 5 ? '; STOOD STILL ' + r.stuck.toFixed(0) + ' s: ' + r.who : '') + (r.nan ? ' NaN' : ''));
+  }));
+  console.log('    an update: ' + (mean / Math.max(1, runs)).toFixed(2) + ' ms on average, ' + worst.toFixed(1) + ' at worst (the logic alone: nothing is drawn here)');
+  { let h = { t: 0, out: 0, n: 0 }, f = { t: 0, out: 0, n: 0 };     // five of yours before the gate (the town must come out through it), the hero behind them doing nothing: told to hold a line there, or left to fight as they like
+    seeds.slice(0, Math.max(2, Math.round(n / 2))).forEach(seed => { for (let k = 0; k < 2; k++) { const a = townFight(seed, { gate: 'hold', secs: 240 }), b = townFight(seed, { gate: 'free', secs: 240 }); h.t += a.heldFor || a.t; h.out += a.out; h.n++; f.t += b.heldFor || b.t; f.out += b.out; f.n++; } });
+    console.log('    five of yours two tiles outside the gate against the town, the hero standing behind them: told to hold a line there they stood ' + (h.t / h.n).toFixed(0) + ' s and put ' + (h.out / h.n).toFixed(1) + ' of the twenty out of the fight; left to fight as they like, ' + (f.t / f.n).toFixed(0) + ' s and ' + (f.out / f.n).toFixed(1)); }
+  seeds.slice(0, Math.max(2, Math.round(n / 3))).forEach(seed => { const r = townFight(seed, { quiet: true, secs: 120 }); console.log((r.backAt < 0 || r.stuck >= 5 ? '!! ' : '   ') + ('town ' + seed + ', a noise at the gate and nobody there').padEnd(46) + r.went + ' of ' + r.n20 + ' went to look; ' + (r.backAt < 0 ? 'NOT all back at their posts after ' + r.t.toFixed(0) + ' s' : 'all back at their posts and at their day after ' + r.backAt.toFixed(0) + ' s') + (r.stuck >= 5 ? '; STOOD STILL ' + r.stuck.toFixed(0) + ' s: ' + r.who : '')); });
+}
+// ---- Bowmen (rung 5): what a man with a bow does, by himself and in a fight. Each line says what was seen; !! is a fault. ----
+function bows(n) {
+  console.log('--- bowmen (rung 5). ' + n + ' fights a line. Aimed at: a bowman behind a line that holds is worth nearly a swordsman, in the place of a swordsman much less, and alone against a man who reaches him he is lost; no arrow is loosed with one of his own in its way, or through a wall');
+  line('a friend with a bow alone against a man with a sword and a shield', run({ foes: [['sword', 'leather']], friends: [['bow', 'leather']] }, n));
+  line('a friend with a bow alone against a man with a great axe (no shield)', run({ foes: [['greataxe', 'leather']], friends: [['bow', 'leather']] }, n));
+  const mixed = b => [0, 1, 2, 3, 4].map(i => [i >= 5 - b ? 'bow' : 'sword', 'leather']);
+  line('five against five, one bowman a side', run({ foes: mixed(1), friends: mixed(1) }, n));
+  const sw = k => Array.from({ length: k }, () => ['sword', 'leather']), bw = k => Array.from({ length: k }, () => ['bow', 'leather']);   // what a bowman adds: the same fight with one more swordsman, with a bowman behind, with a bowman in a swordsman's place
+  line('five swords and a sixth against five swords', run({ foes: sw(5), friends: sw(6) }, n));
+  line('five swords and a bowman behind them against five swords', run({ foes: sw(5), friends: sw(5).concat(bw(1)) }, n));
+  line('four swords and a bowman against five swords', run({ foes: sw(5), friends: sw(4).concat(bw(1)) }, n));
+  line('five bowmen against five swords', run({ foes: sw(5), friends: bw(5) }, n));
+  HEROES.forEach(([bot]) => line(bot + ', iron sword, against one bowman', run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['bow', 'leather']] }, n)));
+  HEROES.slice(1).forEach(([bot]) => line(bot + ', iron sword, against a man with an axe and a bowman behind him', run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['axe', 'leather'], ['bow', 'leather']] }, n)));
+  const say = (ok, text) => console.log((ok ? '   ' : '!! ') + text);
+  const fresh = () => { Combat.reset(); const D = Combat.dbg(), P = D.P; P.x = 200; P.y = 250; P.mode = 'fight'; P.weapon = 'melee'; P.hidden = true; P.x = -4000; D.W.pillars = []; Combat.api.items = null; Combat.api.scene = { begin() {}, items() {}, bounds: { x0: -5000, y0: -5000, x1: 5000, y1: 5000 } }; return D; };
+  // 1. never into his own: a friend duelling a strong man, the bowman straight behind his friend. Every arrow is looked at as it is loosed
+  let fouled = 0, shots = 0, hits = 0, friendHurtByArrow = 0;
+  for (let k = 0; k < Math.max(4, n / 4); k++) {
+    const D = fresh(), f = man(1, 'sword', 'leather', 300, 250, { hp: 400 }), foe = man(0, 'sword', 'leather', 340, 250, { hp: 400 }), b = man(1, 'bow', 'cloth', 160, 250, { aim: 4 }); f.sight = b.sight = foe.sight = 3000; f.leash = b.leash = 1e9;
+    const seen = new Set();
+    for (let i = 0; i < 40 * FPS; i++) { Combat.update(DT); for (const pr of D.W.projs) if (pr.owner === 'man' && !seen.has(pr)) { seen.add(pr); shots++; const dx = pr.vx, dy = pr.vy, L = Math.hypot(dx, dy), ax = f.x - pr.x, ay = f.y - pr.y, along = (ax * dx + ay * dy) / L, off = Math.abs(ax * dy - ay * dx) / L, toFoe = Math.hypot(foe.x - pr.x, foe.y - pr.y); if (along > 0 && along < toFoe && off < f.r + 4) fouled++; } }
+    hits += Math.round((400 - foe.hp) * 10) / 10 > 0 ? 1 : 0;
+  }
+  say(shots > 0 && fouled === 0, 'a bowman behind his own man who is in a fight: ' + shots + ' arrows loosed (he walks round until he has a line), ' + fouled + ' of them with his friend in the way');
+  // 2. not through a wall: a wall between the bowman and his man, a gap at its end
+  {
+    const D = fresh(), T = 32, B = { H: {}, V: {} }; for (let y = 2; y < 14; y++) B.V['10,' + y] = { t: 'wall' };
+    const g = Nav.make({ x0: 0, y0: 0, w: 20, h: 20, T, open: () => true, edge: Nav.edgeOf(B) }); let t = 0; Nav.attach(Combat, (x, y) => g.inside(x, y) ? g : null, () => t);
+    const b = man(1, 'bow', 'cloth', 7 * T, 6 * T, { aim: 6 }), foe = man(0, 'sword', 'leather', 13 * T, 6 * T, { hp: 400 }); foe.hold = true; b.sight = 3000; b.leash = 1e9; let through = 0, shots2 = 0, firstAt = -1; const seen = new Set();
+    for (let i = 0; i < 30 * FPS; i++) { Combat.update(DT); t += DT; for (const pr of D.W.projs) if (pr.owner === 'man' && !seen.has(pr)) { seen.add(pr); shots2++; if (firstAt < 0) firstAt = t; if (g.blocked(b.x, b.y, foe.x, foe.y, false)) through++; } }
+    Combat.api.nav = Combat.api.blocked = Combat.api.wall = null;
+    say(shots2 > 0 && through === 0, 'a wall between a bowman and a man who stands still: he walked round its end and loosed his first arrow after ' + (firstAt < 0 ? 'NEVER' : firstAt.toFixed(0) + ' s') + '; ' + through + ' of ' + shots2 + ' arrows loosed with the wall between them');
+  }
+  // 3. someone on him: he gives ground and does not shoot
+  {
+    const D = fresh(), b = man(1, 'bow', 'cloth', 200, 250, { aim: 4 }), foe = man(0, 'sword', 'leather', 250, 250, { hp: 400 }); b.sight = foe.sight = 3000; b.leash = 1e9; let close = 0, shotsClose = 0; const seen = new Set();
+    for (let i = 0; i < 12 * FPS; i++) { Combat.update(DT); const d = Math.hypot(b.x - foe.x, b.y - foe.y); if (d < 60) close++; for (const pr of D.W.projs) if (pr.owner === 'man' && !seen.has(pr)) { seen.add(pr); if (d < 60) shotsClose++; } }
+    say(shotsClose === 0 && (b.close || b.down), 'a man with a sword on a bowman for 12 s: the bowman ' + (b.close || b.down ? 'took his seax' : 'KEPT his bow') + ', loosed ' + shotsClose + ' arrows with the man on him' + (b.down ? ', and went down' : ', and has ' + b.hp.toFixed(0) + ' of ' + b.maxHp + ' health left'));
+  }
+}
 const t0 = Date.now();
 if (mode === 'one' || mode === 'short') one(N);
 if (mode === 'two' || mode === 'short') two(N);
 if (mode === 'friend' || mode === 'short') friend(N);
 if (mode === 'duels') duels(N);
 if (mode === 'five' || mode === 'short') five(mode === 'short' ? 6 : N);
+if (mode === 'bows' || mode === 'short') bows(mode === 'short' ? 8 : N);
+if (mode === 'town' || mode === 'short') town(mode === 'short' ? 2 : (+process.argv[3] || 12), +process.argv[4] || 300);
 console.log('(' + ((Date.now() - t0) / 1000).toFixed(1) + ' s)');

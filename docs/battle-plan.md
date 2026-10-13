@@ -498,3 +498,36 @@ left behind or the fight is lost). Then: go through the whole plan, and by that,
 - **Seen in the page:** ten men at 18 ms a frame in the pane's software drawing; red cloaks against blue shields tell the
   sides apart from most angles; a knot of five round the hero is a knot.
 
+### Rung 5, a town full of men (2026-10-13): built and tried by script
+
+- **Built:** way-finding (`src/nav.js`: a grid of each village's tiles from the building data, A-star, a doorway or a gate
+  two at a time, a locked door open only to its own people); nothing but the hero steps across a wall, and no blow,
+  arrow or seeing passes one; the town filled (`Village.garrison`: the gate, the back gate, the market, the house doors,
+  the houses, the hall); noise (a blow, a shout, a death cry, a broken door, and the din of a fight that carries further
+  the more are in it), men who come to it by the grid, look about, and go back to their day; bowmen on both sides; the
+  town in the battle scene (the board: a town defended, its men 12, 20 or 30, to its gate, to its hall, bowmen a side).
+  The villagers of the real game walk by the same grid.
+- **How many is full:** twenty fighters, as proposed. Thirty works; I did not go higher.
+- **Bugs of this rung** (the dozen-town test found most of them): through a **one-tile gate** the fight was a knot of
+  fifteen, and with the two-at-a-time rule a single duel with everyone waiting (a town's gate is two tiles now); a **tree
+  beside a wall** left a gap the grid thought passable; men walked **dead on into hearths, trees and each other** and
+  stood there; the hall's men could not get past **their own locked door**; a man **on his knees** blocked a passage; a
+  defender was **posted on a hearth**; a birch **grew in a gate**; the far gate's guards **never heard** a battle of
+  twenty (the din); a bowman and a swordsman could **chase each other for ever** (the bowman now takes his seax when a
+  man is on him); arrows went **through a friend** one time in sixty (the arrow's true line is looked along before it is
+  loosed); and in the real game the whole village came to **stand in two heaps** watching the hero (they keep a step
+  apart, and look for a few seconds only).
+- **The gate of this rung:** nobody stuck in twelve towns from both gates: **met**. The answer building over a minute or
+  two: **about a minute** (half the town in five seconds when you come in at the front, the hall after half a minute, the
+  last man after one to two minutes). The frame on Robin's machine: **not measured** (31 to 35 ms in the pane's software
+  drawing with twenty-five fighters).
+- **What it means for the raid:** a town of twenty cannot be taken from the front by six: the hero is down in half a
+  minute. That is the design (the raid is how much you dare to take), and it gives rung 6 its clock: from the first noise
+  about five seconds to the first ten men, half a minute to the hall's.
+- **Not shown:** that a line is worth holding. Before a gate five men in a line stood 33 s and five fighting as they like
+  39 s. Either a line needs more than shields that cover a neighbour, or its place is a doorway narrower than a gate.
+  For Robin to look at.
+- **For Robin's feel:** whether a town at peace should really let an armed band walk in at its gate (it does: the first
+  blow is the first noise; reputation is to change that); how soon the hall should come; whether bowmen are too weak
+  against the hero (a careful player raises the shield at an arrow he sees).
+

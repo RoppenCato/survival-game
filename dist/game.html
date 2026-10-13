@@ -8077,7 +8077,7 @@ function make(seed, site, opts) {
   if (A.church && !A.chapel) { var cs = size('church'), L00 = V.lots[0], cTries = [[L00.x + L00.w + G.gap, L00.y + L00.h - cs.h], [L00.x - cs.w - G.gap, L00.y + L00.h - cs.h], [yx + yw + G.yardGap + 1, yy - cs.h - 1], [yx - G.yardGap - cs.w - 1, yy - cs.h - 1], [yx + yw + G.yardGap + 2, yy], [yx - G.yardGap - cs.w - 2, yy]], ci; for (ci = 0; ci < cTries.length; ci++) if (tryPlace({ id: 'church', x: cTries[ci][0], y: cTries[ci][1], w: cs.w, h: cs.h, door: 's', slot: 'church' }, 2)) break; }   // the town's church: beside the hall, else at a corner of the yard
   var nHouses = pickRange(R, A.houses, 0), slots = ['e', 'w', 'se', 'sw', 'ne', 'nw'], order = slots.slice().sort(function () { return R() - 0.5; }), placedHouses = 0, si;
   for (si = 0; si < order.length && placedHouses < nHouses; si++) {
-    if (R() < G.emptySlots && si < order.length - 1) continue;
+    if (!A.townwall && R() < G.emptySlots && si < order.length - 1) continue;   // (a town fills its ring: it came out with one to four houses where its rule asks for five to seven, 2026-10-13)
     var sl = order[si], hs = size('house'), lot = null;
     if (sl === 'e') lot = { x: yx + yw + G.yardGap, y: yy + Math.floor(R() * Math.max(1, yh - hs.h + 1)), door: 'w' };
     else if (sl === 'w') lot = { x: yx - G.yardGap - hs.w, y: yy + Math.floor(R() * Math.max(1, yh - hs.h + 1)), door: 'e' };
@@ -8204,9 +8204,10 @@ function make(seed, site, opts) {
     for (k2 = 0; k2 < (shore === 's' ? 0 : Math.round(G.banners)); k2++) { var ba = gateA + (k2 % 2 ? 1 : -1) * 0.2; V.props.push({ name: 'banner', x: ecx + Math.cos(ba) * erx, y: ecy + Math.sin(ba) * ery + 2, solid: 3 }); }
     V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery };
   } else {
-    for (x = ex0; x < ex1; x++) { if (x === backGateX) H(x, ey0, 'gate', 2); else if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if (x === gateX && shore !== 's') H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
+    var wideGate = A.townwall ? 1 : 0;                         // a town's gate is two tiles wide (2026-10-13: through one tile a fight was a duel with everyone else waiting)
+    for (x = ex0; x < ex1; x++) { if (x === backGateX) H(x, ey0, 'gate', 2); else if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if ((x === gateX || (wideGate && x === gateX + 1)) && shore !== 's') H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
     for (y = ey0; y < ey1; y++) { if (!(V.ruin && R() < 0.4) && shore !== 'w') Vw(ex0, y, fk, fm); if (!(V.ruin && R() < 0.4) && shore !== 'e') Vw(ex1, y, fk, fm); }
-    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: fk, gate: gateX };
+    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: fk, gate: gateX, gateW: 1 + wideGate };
   }
   // the ground: the yard trodden to earth, gravel from the gate to the well and to the shore, earth from every door, moss at the back
   function dab(x, y, r, kind) { V.paints.push({ x: x, y: y, r: r, kind: kind }); }
@@ -8299,6 +8300,15 @@ function make(seed, site, opts) {
     else if (work) spots.push(tile(work.dx >= 0 ? work.dx : work.x, work.y + work.h + 1));
     V.folk.push({ name: NAMES[Math.floor(R() * NAMES.length)], role: role, home: [home.x, home.y], x: door[0], y: door[1], spots: spots, lines: ROLES[role], female: R() < 0.5, out: R() < G.outsideShare });
   }
+  // Doorways and gates kept clear (the game did this after planting, 2026-10-09; since 2026-10-13 the plan itself is clear, so
+  // the editor and the tests see what the game has): nothing solid within a tile and a half of the tile outside a door or the
+  // one beyond it, nor of the tiles either side of a gate.
+  var keep = [];
+  V.lots.forEach(function (l) { if (l.dx == null && l.dy == null) return; (l.door === 's' ? [[l.dx, l.y + l.h], [l.dx, l.y + l.h + 1]] : l.door === 'n' ? [[l.dx, l.y - 1], [l.dx, l.y - 2]] : l.door === 'e' ? [[l.x + l.w, l.dy], [l.x + l.w + 1, l.dy]] : [[l.x - 1, l.dy], [l.x - 2, l.dy]]).forEach(function (q) { keep.push(q); }); });
+  if (V.fence && !V.fence.round) { var Fk = V.fence, gk; for (gk = 0; gk < (Fk.gateW || 1); gk++) keep.push([Fk.gate + gk, Fk.y1 - 1], [Fk.gate + gk, Fk.y1]); for (gk = Fk.x0; gk < Fk.x1; gk++) if (V.H[key(gk, Fk.y0)] && V.H[key(gk, Fk.y0)].t === 'gate') keep.push([gk, Fk.y0 - 1], [gk, Fk.y0]); }
+  function inWay(o, r) { if (!(r > 0)) return false; for (var i = 0; i < keep.length; i++) if (Math.hypot(o.x - (keep[i][0] + 0.5) * T, o.y - (keep[i][1] + 0.5) * T) < T * 1.5) return true; return false; }
+  V.props = V.props.filter(function (o) { return !inWay(o, o.solid != null ? o.solid : (o.name === 'scarecrow' ? 4 : 8)); });
+  V.nature = V.nature.filter(function (o) { return !inWay(o, o.r); });
   return V;
 }
 // a page's site for an archetype: the tiles it needs
@@ -8412,9 +8422,238 @@ function draw(c, V, env, clock) {
 }
 var SIZES = { porch: 1, apse: 1, gableCross: 1, font: 1, lychGate: 1, bellTower: 1, altar: 1, graveStone: 1, wayCross: 1, stall: 1, yew: 1, windowBox: 1, lantern: 1, awning: 1, sign: 1, woodshed: 1, foodTable: 1, firePit: 1, logSeat: 1, stake: 1, banner: 1, choppingBlock: 1, woodenWell: 0.75, cart: 0.8, dryingRack: 0.8, shieldRack: 0.75, beeSkeps: 0.8, haystack: 0.8, table: 0.75, bed: 0.8, workbench: 0.9, chest: 0.9, crate: 0.9, barrel: 0.9, bench: 0.85, chair: 0.85, hearth: 0.9, campfire: 0.9, furnace: 0.9, trough: 0.9, scarecrow: 0.9, runestone: 0.75, cairn: 0.9, woodpile: 0.9, stoneHearth: 0.9, cellarDoor: 1, dragonPost: 0.8 };
 function SIZE_OF(kit, name) { return SIZES[name] || 1; }
-return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, draw: draw, rng: rngOf, SIZES: SIZES };
+/* A town's men (2026-10-13, rung 5 of docs/battle-plan.md): where each of n stands at his day, in the world's units. Four at
+   the gate (two outside, two inside), two at the back gate, two by the market, a man by every house door, the jarl's own in
+   the hall (the best; they must arm, so they come last: delay, seconds before a man who has heard something is on his way:
+   18 to 32), a man inside every house (asleep or at table: 5 to 12), the rest about the yard. Each is { x, y, face, kind:
+   'gate' | 'yard' | 'door' | 'house' | 'hall', wpn ('bow' for a few of them), delay }. The game (townMen) and tests/battle.js make soldiers of them. */
+function garrison(V, n, R) {
+  var F = V.fence, out = [], WP = ['sword', 'axe', 'spear', 'axe', 'sword', 'club', 'spear'], HW = ['sword', 'axe', 'greataxe', 'sword', 'spear', 'axe'], k = 0, i, S = Math.PI / 2, N = -Math.PI / 2; R = R || Math.random;
+  var things = V.items.map(function (it) { return [it.x, it.y, it.r != null ? it.r : (it.name === 'rug' || it.name === 'cellarDoor' ? -99 : 8)]; }).concat(V.props.map(function (o) { return [o.x, o.y, o.solid != null ? o.solid : 8]; }), V.nature.map(function (o) { return [o.x, o.y, o.r || -99]; }));
+  function lotAt(x, y) { for (var i2 = 0; i2 < V.lots.length; i2++) { var l = V.lots[i2]; if (x > l.x * T && x < (l.x + l.w) * T && y > l.y * T && y < (l.y + l.h) * T) return l; } return null; }
+  function roomy(x, y, l0) {     // nothing he would stand in, and the same side of every wall as the place meant
+    var i2, l = lotAt(x, y); if (l !== l0) return false;
+    if (l && (x < l.x * T + 11 || x > (l.x + l.w) * T - 11 || y < l.y * T + 11 || y > (l.y + l.h) * T - 11)) return false;
+    if (!l) for (i2 = 0; i2 < V.lots.length; i2++) { var q = V.lots[i2]; if (x > q.x * T - 12 && x < (q.x + q.w) * T + 12 && y > q.y * T - 12 && y < (q.y + q.h) * T + 12) return false; }
+    for (i2 = 0; i2 < things.length; i2++) if (Math.hypot(things[i2][0] - x, things[i2][1] - y) < things[i2][2] + 11) return false;
+    return true;
+  }
+  function settle(x, y) {        // the nearest roomy place to the one meant (a man inside a house was put on its hearth)
+    var l0 = lotAt(x, y), r, a2; if (roomy(x, y, l0)) return [x, y];
+    for (r = 8; r <= 56; r += 8) for (a2 = 0; a2 < 12; a2++) { var px = x + Math.cos(a2 * 0.5236) * r, py = y + Math.sin(a2 * 0.5236) * r; if (F && !F.round && ((py > F.y1 * T) !== (y > F.y1 * T) || (py > F.y0 * T) !== (y > F.y0 * T))) continue; if (roomy(px, py, l0)) return [px, py]; }
+    return [x, y];
+  }
+  var bows = { 3: 1, 7: 1 };              // which of them carry a bow: one inside the gate, one by the market, and (below) one of the hall's and every fourth about the yard
+  function put(x, y, face, kind) { if (out.length >= n) return; var sp = settle(x, y); x = sp[0]; y = sp[1]; out.push({ x: x, y: y, face: face, kind: kind, wpn: bows[out.length] ? 'bow' : kind === 'hall' ? HW[k % 6] : WP[k % WP.length], delay: kind === 'hall' ? 18 + R() * 14 : kind === 'house' ? 5 + R() * 7 : null }); k++; }
+  var hall = V.lots.filter(function (l) { return l.id === 'hall'; })[0], houses = V.lots.filter(function (l) { return l.id === 'house'; }), yc = [(V.yard.x + V.yard.w / 2) * T, (V.yard.y + V.yard.h / 2) * T];
+  if (F && !F.round) {
+    var gx = (F.gate + (F.gateW || 1) / 2) * T, gy = F.y1 * T;
+    put(gx - 34, gy + 22, S, 'gate'); put(gx + 34, gy + 22, S, 'gate'); put(gx - 40, gy - 24, S, 'gate'); put(gx + 40, gy - 24, S, 'gate');     // the gate: two outside, two inside
+    for (i = F.x0; i < F.x1; i++) if (V.H[key(i, F.y0)] && V.H[key(i, F.y0)].t === 'gate') { put((i + 0.5) * T - 16, F.y0 * T + 26, N, 'gate'); put((i + 0.5) * T + 16, F.y0 * T + 26, N, 'gate'); break; }   // the back gate
+  }
+  put(yc[0] - 60, yc[1] + 30, S, 'yard'); put(yc[0] + 70, yc[1] - 10, Math.PI, 'yard');                                                        // by the market
+  houses.forEach(function (l, hi) { var dx2 = l.door === 'e' ? l.x + l.w + 0.6 : l.door === 'w' ? l.x - 0.6 : l.dx + 0.5, dy2 = l.door === 's' ? l.y + l.h + 0.7 : l.door === 'n' ? l.y - 0.7 : l.dy + 0.5; put(dx2 * T + (l.door === 's' || l.door === 'n' ? (hi % 2 ? 14 : -14) : 0), dy2 * T + (l.door === 'e' || l.door === 'w' ? (hi % 2 ? 14 : -14) : 0), S, 'door'); });   // a man by every house door
+  bows[out.length + 4] = 1;
+  if (hall) for (i = 0; i < 6; i++) put((hall.x + 1.5 + i * (hall.w - 3) / 5) * T, (hall.y + 1.2 + (i % 2) * 1.4) * T, S, 'hall');           // the jarl's own, in the hall
+  houses.forEach(function (l) { put((l.x + l.w / 2) * T, (l.y + l.h / 2) * T, S, 'house'); });                                               // and a man inside every house
+  i = 0; while (out.length < n && i < 40) { var a = i * 2.4, r = 70 + (i % 5) * 34; if (i % 4 === 1) bows[out.length] = 1; put(yc[0] + Math.cos(a) * r, yc[1] + Math.sin(a) * r * 0.7, a, 'yard'); i++; }   // the rest about the yard
+  return out;
+}
+return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
 if (typeof module !== 'undefined') module.exports = Village;
+
+/* Nav: finding a way round walls (2026-10-13, docs/battle-plan.md rung 5; Robin: fill a big town with hirdmen, then attack it).
+   Movers in the engine walk straight at what they want and slide along circles, which is right in a field and hopeless in a
+   town: nobody reaches anybody through a wall. A Nav grid is a stretch of the world in tiles: which tiles a man can stand
+   on, and which edges between tiles are shut (a wall, a fence, a town wall; a locked door is shut to everyone without its
+   key). From it: whether a straight step or a straight line crosses anything shut (blocked, clear), a way from one place to
+   another (path: A-star over the tiles, eight ways, no cutting of corners), and the corner to make for next (next: the way
+   is kept on the mover and followed, looking as far along it as he can walk straight).
+     Nav.make({ x0, y0, w, h, T, open(tx, ty), edge(kind, tx, ty), cost(tx, ty) })
+       x0, y0, w, h: the stretch, in tiles; T: a tile's width in the world
+       open: can a man stand on this tile at all (land, not water, nothing great standing on it)
+       edge: what shuts the edge: kind 'H' is the tile's north edge, 'V' its west edge (the building data's own way of
+             keeping them); 0 open, 1 shut, 2 shut to all but those with keys (a locked door: its own people pass),
+             3 open but narrow (a door, a gate: one at a time; g.narrowAhead says when a mover is about to go through one)
+       cost: something on the tile that a man would rather walk round: added to the tile's price
+       solids: the round things that stand there (trees, rocks, a hearth, a well: [{ x, y, r }] in the world's units). A
+             straight line that runs into one is not clear, a tile whose middle a big one covers (a tree, a rock: r 9 and
+             up) is not walked through and one a smaller covers (a hearth, a bed) is dear, so a way leads round them (a man
+             walked straight at his foe into the pocket between a tree and a wall, and stood there)
+   The edges are read once (make) and again when told (g.read()): after a door is broken or a wall built.
+   Loads in the page and in Node. */
+var Nav = (function () {
+  function make(o) {
+    var T = o.T, X0 = o.x0, Y0 = o.y0, GW = o.w, GH = o.h, N = GW * GH;
+    var open = new Uint8Array(N), price = new Float32Array(N), eh = new Uint8Array(N + GW), ev = new Uint8Array(N + GH + GW);   // eh[y * GW + x]: the north edge of (x, y); ev[y * (GW + 1) + x]: its west edge
+    var g = { x0: X0, y0: Y0, w: GW, h: GH, T: T, stamp: 0 }, SOL = [];
+    function read() {
+      var x, y;
+      for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) { open[y * GW + x] = o.open(X0 + x, Y0 + y) ? 1 : 0; price[y * GW + x] = o.cost ? (o.cost(X0 + x, Y0 + y) || 0) : 0; eh[y * GW + x] = o.edge('H', X0 + x, Y0 + y) || 0; ev[y * (GW + 1) + x] = o.edge('V', X0 + x, Y0 + y) || 0; }
+      for (y = 0; y < GH; y++) ev[y * (GW + 1) + GW] = o.edge('V', X0 + GW, Y0 + y) || 0;
+      for (x = 0; x < GW; x++) eh[GH * GW + x] = o.edge('H', X0 + x, Y0 + GH) || 0;
+      SOL = (o.solids ? o.solids() : []).filter(function (q) { return q.r >= 6; });
+      for (var si = 0; si < SOL.length; si++) { var q = SOL[si], rr = q.r + 6, tx0 = Math.floor((q.x - rr) / T - 0.5) - X0, tx1 = Math.ceil((q.x + rr) / T - 0.5) - X0, ty0 = Math.floor((q.y - rr) / T - 0.5) - Y0, ty1 = Math.ceil((q.y + rr) / T - 0.5) - Y0;
+        for (y = Math.max(0, ty0); y <= Math.min(GH - 1, ty1); y++) for (x = Math.max(0, tx0); x <= Math.min(GW - 1, tx1); x++) if (Math.hypot((X0 + x + 0.5) * T - q.x, (Y0 + y + 0.5) * T - q.y) < rr) { if (q.r >= 9) open[y * GW + x] = 0; else price[y * GW + x] += 8; } }   // (a tree by a wall left a gap the grid thought a man could pass: he could not)
+      g.stamp++;
+    }
+    function inside(tx, ty) { return tx >= 0 && ty >= 0 && tx < GW && ty < GH; }
+    function shut(v, keys) { return v === 1 || (v === 2 && !keys); }
+    // one step between neighbours (in the grid's own tile numbers): is anything shut between them
+    function step(ax, ay, bx, by, keys) {
+      if (!inside(bx, by) || !inside(ax, ay)) return true;                       // off the stretch: nothing is known there, so nothing is in the way
+      if (!open[by * GW + bx]) return false;
+      if (bx !== ax && by !== ay) return step(ax, ay, bx, ay, keys) && step(bx, ay, bx, by, keys) && step(ax, ay, ax, by, keys) && step(ax, by, bx, by, keys);   // a corner is not cut
+      if (bx < ax) return !shut(ev[ay * (GW + 1) + ax], keys); if (bx > ax) return !shut(ev[by * (GW + 1) + bx], keys);
+      if (by < ay) return !shut(eh[ay * GW + ax], keys); if (by > ay) return !shut(eh[by * GW + bx], keys);
+      return true;
+    }
+    // a straight move in the world: does it cross anything shut (walked in pieces no longer than a third of a tile)
+    function blocked(x0, y0, x1, y1, keys) {
+      var d = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.ceil(d / (T * 0.3))), i, ax = Math.floor(x0 / T) - X0, ay = Math.floor(y0 / T) - Y0, bx, by;
+      for (i = 1; i <= n; i++) {
+        bx = Math.floor((x0 + (x1 - x0) * i / n) / T) - X0; by = Math.floor((y0 + (y1 - y0) * i / n) / T) - Y0;
+        if (bx !== ax || by !== ay) { if (!step(ax, ay, bx, by, keys)) return true; ax = bx; ay = by; }
+      }
+      return false;
+    }
+    // does a straight line run into something round: one whose nearest point to the line lies along it (not at its start: he is
+    // already past or beside that one; not at its end: the place meant is beside it) and nearer than a man can pass
+    function solidOn(x0, y0, x1, y1) {
+      var dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy, i, q, rr, t, px, py; if (L2 < 1) return false;
+      var lx = Math.min(x0, x1), hx = Math.max(x0, x1), ly = Math.min(y0, y1), hy = Math.max(y0, y1);
+      for (i = 0; i < SOL.length; i++) {
+        q = SOL[i]; rr = q.r + 5; if (q.x < lx - rr || q.x > hx + rr || q.y < ly - rr || q.y > hy + rr) continue;
+        t = ((q.x - x0) * dx + (q.y - y0) * dy) / L2; if (t <= 0.02 || t >= 0.98) continue;
+        px = x0 + dx * t - q.x; py = y0 + dy * t - q.y; if (px * px + py * py < rr * rr) return true;
+      }
+      return false;
+    }
+    // can he walk straight there: the line itself and one a little to each side of it (a man is not a point), and nothing round in it
+    function clear(x0, y0, x1, y1, keys, wide) {
+      if (blocked(x0, y0, x1, y1, keys)) return false; if (wide === 0) return true;
+      var d = Math.hypot(x1 - x0, y1 - y0); if (d < 1) return true; var px = -(y1 - y0) / d * (wide || 6), py = (x1 - x0) / d * (wide || 6);
+      return !blocked(x0 + px, y0 + py, x1 + px, y1 + py, keys) && !blocked(x0 - px, y0 - py, x1 - px, y1 - py, keys) && !solidOn(x0, y0, x1, y1);
+    }
+    var gS = new Float32Array(N), fS = new Float32Array(N), from = new Int32Array(N), mark = new Uint32Array(N), shutM = new Uint32Array(N), run = 0, heap = [];
+    function push(i) { var k = heap.length, p; heap.push(i); while (k > 0) { p = (k - 1) >> 1; if (fS[heap[p]] <= fS[heap[k]]) break; var t = heap[p]; heap[p] = heap[k]; heap[k] = t; k = p; } }
+    function pop() { var top = heap[0], last = heap.pop(), k = 0, n = heap.length, a, b, m; if (n) { heap[0] = last; for (;;) { a = k * 2 + 1; b = a + 1; m = k; if (a < n && fS[heap[a]] < fS[heap[m]]) m = a; if (b < n && fS[heap[b]] < fS[heap[m]]) m = b; if (m === k) break; var t = heap[m]; heap[m] = heap[k]; heap[k] = t; k = m; } } return top; }
+    var DX = [1, -1, 0, 0, 1, 1, -1, -1], DY = [0, 0, 1, -1, 1, -1, 1, -1];
+    // a way from one place to another, as points in the world (the middles of tiles; the last is the place itself), or null.
+    // If the place cannot be reached (a locked hall), the way leads to the tile that comes nearest to it, and .short says so.
+    function path(fx, fy, tx, ty, keys) {
+      var sx = Math.max(0, Math.min(GW - 1, Math.floor(fx / T) - X0)), sy = Math.max(0, Math.min(GH - 1, Math.floor(fy / T) - Y0)), ex = Math.max(0, Math.min(GW - 1, Math.floor(tx / T) - X0)), ey = Math.max(0, Math.min(GH - 1, Math.floor(ty / T) - Y0));
+      var s = sy * GW + sx, e = ey * GW + ex, i, k, best = s, bestH = 1e9, n = 0; run++; heap.length = 0;
+      gS[s] = 0; fS[s] = 0; from[s] = -1; mark[s] = run; push(s);
+      while (heap.length) {
+        var c = pop(); if (shutM[c] === run) continue; shutM[c] = run; if (c === e) { best = e; bestH = 0; break; } if (++n > 6000) break;
+        var cx = c % GW, cy = (c - cx) / GW, h0 = Math.abs(cx - ex) + Math.abs(cy - ey); if (h0 < bestH) { bestH = h0; best = c; }
+        for (k = 0; k < 8; k++) {
+          var nx = cx + DX[k], ny = cy + DY[k]; if (!inside(nx, ny)) continue; i = ny * GW + nx; if (shutM[i] === run || !step(cx, cy, nx, ny, keys)) continue;
+          var cost = gS[c] + (k < 4 ? 1 : 1.4142) + price[i];
+          if (mark[i] !== run || cost < gS[i]) { var dx = Math.abs(nx - ex), dy = Math.abs(ny - ey); gS[i] = cost; fS[i] = cost + Math.max(dx, dy) + 0.4142 * Math.min(dx, dy); from[i] = c; mark[i] = run; push(i); }
+        }
+      }
+      var pts = []; for (i = best; i !== -1 && i !== s; i = from[i]) pts.push({ x: (X0 + i % GW + 0.5) * T, y: (Y0 + Math.floor(i / GW) + 0.5) * T });
+      pts.reverse(); if (best === e) pts.push({ x: tx, y: ty }); else pts.short = true;
+      return pts.length || best === e ? pts : null;
+    }
+    // The corner to make for now, or null when he can walk straight to the place. The way is kept on the mover (m.nav) until
+    // the place has moved a tile, the grid has been read again, or two seconds have passed. With nowhere to go he is told to
+    // stay where he is (the answer has .wait).
+    function next(m, tx, ty, t, keys) {
+      var here = inside(Math.floor(m.x / T) - X0, Math.floor(m.y / T) - Y0), there = inside(Math.floor(tx / T) - X0, Math.floor(ty / T) - Y0);
+      if (!here && !there) { m.nav = null; return null; }
+      if (clear(m.x, m.y, tx, ty, keys)) { m.nav = null; return null; }
+      var gx = Math.floor(tx / T), gy = Math.floor(ty / T), nv = m.nav;
+      if (!nv || nv.g !== g || nv.stamp !== g.stamp || nv.gx !== gx || nv.gy !== gy || t - nv.t > 2 || nv.keys !== !!keys) {
+        var pts = path(m.x, m.y, tx, ty, keys); nv = m.nav = { g: g, stamp: g.stamp, gx: gx, gy: gy, t: t, keys: !!keys, pts: pts || [], i: 0, short: !pts || !!pts.short };
+      }
+      while (nv.i < nv.pts.length && Math.hypot(nv.pts[nv.i].x - m.x, nv.pts[nv.i].y - m.y) < T * 0.35) nv.i++;                      // reached
+      while (nv.i + 1 < nv.pts.length && clear(m.x, m.y, nv.pts[nv.i + 1].x, nv.pts[nv.i + 1].y, keys)) nv.i++;                      // and as far along it as he can walk straight
+      if (nv.i >= nv.pts.length) return nv.short && blocked(m.x, m.y, tx, ty, keys) ? { x: m.x, y: m.y, wait: true } : null;      // at the end of a way that fell short: he waits only if a wall is what is left between them
+      return nv.pts[nv.i];
+    }
+    // a doorway or a gate on the straight line from a place toward another, within `reach` of the first: the middle of the tile
+    // on this side of it (a page lets one or two through at a time and has the rest wait: a gate with fifteen men in it is a knot)
+    function narrowTile(tx, ty) { return tx >= 0 && ty >= 0 && tx < GW && ty < GH && (eh[ty * GW + tx] >= 2 || eh[(ty + 1) * GW + tx] >= 2 || ev[ty * (GW + 1) + tx] >= 2 || ev[ty * (GW + 1) + tx + 1] >= 2); }
+    function narrowAhead(x0, y0, x1, y1, reach) {
+      var d = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.ceil(Math.min(d, reach) / (T * 0.3))), i, ax = Math.floor(x0 / T) - X0, ay = Math.floor(y0 / T) - Y0, bx, by, k = Math.min(1, reach / (d || 1));
+      for (i = 1; i <= n; i++) {
+        bx = Math.floor((x0 + (x1 - x0) * k * i / n) / T) - X0; by = Math.floor((y0 + (y1 - y0) * k * i / n) / T) - Y0;
+        if (bx !== ax || by !== ay) {
+          if (inside(ax, ay) && inside(bx, by)) { var v = bx < ax ? ev[ay * (GW + 1) + ax] : bx > ax ? ev[by * (GW + 1) + bx] : by < ay ? eh[ay * GW + ax] : eh[by * GW + bx]; if (bx !== ax && by !== ay) v = 0; if (v >= 2) return { x: (X0 + ax + 0.5) * T, y: (Y0 + ay + 0.5) * T, bx: (X0 + bx + 0.5) * T, by: (Y0 + by + 0.5) * T, v: v, kind: bx !== ax ? 'V' : 'H', tx: X0 + (bx !== ax ? Math.max(ax, bx) : ax), ty: Y0 + (bx !== ax ? ay : Math.max(ay, by)) }; }
+          ax = bx; ay = by;
+        }
+      }
+      return null;
+    }
+    // a short step that crosses a locked door: which edge (the page unlocks it in the building data when one of its own goes through)
+    function lockAt(x0, y0, x1, y1) {
+      var ax = Math.floor(x0 / T) - X0, ay = Math.floor(y0 / T) - Y0, bx = Math.floor(x1 / T) - X0, by = Math.floor(y1 / T) - Y0;
+      if ((ax === bx && ay === by) || (ax !== bx && ay !== by) || !inside(ax, ay) || !inside(bx, by)) return null;
+      if (ax !== bx) { var vx = Math.max(ax, bx); return ev[ay * (GW + 1) + vx] === 2 ? { kind: 'V', tx: X0 + vx, ty: Y0 + ay } : null; }
+      var hy = Math.max(ay, by); return eh[hy * GW + ax] === 2 ? { kind: 'H', tx: X0 + ax, ty: Y0 + hy } : null;
+    }
+    g.lockAt = lockAt;
+    g.narrowAhead = narrowAhead; g.narrowTile = function (x, y) { return narrowTile(Math.floor(x / T) - X0, Math.floor(y / T) - Y0); };
+    g.solidOn = solidOn; g.read = read; g.step = step; g.blocked = blocked; g.clear = clear; g.path = path; g.next = next; g.inside = function (x, y) { return inside(Math.floor(x / T) - X0, Math.floor(y / T) - Y0); };
+    g.openAt = function (x, y) { var tx = Math.floor(x / T) - X0, ty = Math.floor(y / T) - Y0; return !inside(tx, ty) || !!open[ty * GW + tx]; };
+    g.edgeAt = function (kind, tx, ty) { tx -= X0; ty -= Y0; if (kind === 'H') return tx >= 0 && tx < GW && ty >= 0 && ty <= GH ? eh[ty * GW + tx] : 0; return tx >= 0 && tx <= GW && ty >= 0 && ty < GH ? ev[ty * (GW + 1) + tx] : 0; };
+    read(); return g;
+  }
+  // The edges of a building (the game's B, or what Village.make returns): H and V keyed "x,y", each { t, locked, broken }.
+  // A wall, a window and every piece of a yard shuts its edge; a door and a gate are open; a locked door that is not broken
+  // is shut to all but its own people.
+  function edgeOf(B, yardOpen) {
+    return function (kind, tx, ty) { var e = (kind === 'H' ? B.H : B.V)[tx + ',' + ty]; if (!e) return 0; if (e.t === 'gate') return 3; if (e.t === 'door') return e.locked && !e.broken ? 2 : 3; return yardOpen && yardOpen[e.t] ? 0 : 1; };
+  }
+  // The engine's three questions (Combat.api.nav, .blocked, .wall) answered from the grids a page keeps. at(x, y): the grid at
+  // a place, or null; clock(): the time. A place's own people have its keys: a soldier of the place's side whose e.vi is the
+  // grid's vi, and a villager (e.folk). A doorway or a gate takes two at a time: a man about to go through one that two others
+  // are in already waits his turn a little way back (a gate with fifteen men pushing into it was a knot); e.choked is when he
+  // was last told to. One of a place's own who steps through its locked door leaves it noted on the grid (g.opened) for
+  // unlock() below.
+  function attach(Combat, at, clock) {
+    function keysOf(e, g) { return !!e && (e.folk === true || (e.type === 'soldier' && e.side !== 1 && e.vi === g.vi)); }
+    function inIt(o, q) { return Math.hypot(o.x - q.x, o.y - q.y) < 17 || Math.hypot(o.x - q.bx, o.y - q.by) < 17; }
+    function chokeFull(g, e, q) {
+      var n = 0, D = Combat.dbg(), E = D.W.enemies, i, o, P = D.P;
+      if (Math.hypot(e.x - q.x, e.y - q.y) < 14 || Math.hypot(e.x - q.bx, e.y - q.by) < 14) return false;                   // he is in it himself
+      for (i = 0; i < E.length; i++) { o = E[i]; if (o === e || o.dead || o.down || o.out || !o.human) continue; if (inIt(o, q)) n++; }   // (a man on his knees in a doorway does not fill it)
+      if (e !== P && !P.dead && !P.hidden && inIt(P, q)) n++;
+      return n >= 2;
+    }
+    Combat.api.nav = function (e, x, y) {
+      var g = at(e.x, e.y) || at(x, y); if (!g) return null; var keys = keysOf(e, g), wp = g.next(e, x, y, clock(), keys);
+      if (wp && wp.wait) return wp;
+      var q = g.narrowAhead(e.x, e.y, wp ? wp.x : x, wp ? wp.y : y, 64);                                                    // a door or a gate on his way
+      if (q) {
+        if (q.v === 2 && keys && Math.hypot(e.x - q.x, e.y - q.y) < 30) (g.opened = g.opened || []).push({ kind: q.kind, tx: q.tx, ty: q.ty });   // his own locked door, and he is at it: he opens it (unlock() below)
+        if (chokeFull(g, e, q)) { e.choked = clock(); return { x: e.x, y: e.y, wait: true }; }
+      }
+      return wp;
+    };
+    Combat.api.blocked = function (ox, oy, nx, ny, e) {
+      var g = at(nx, ny) || at(ox, oy); if (!g) return false; var keys = keysOf(e, g);
+      if (keys) { var L = g.lockAt(ox, oy, nx, ny); if (L) (g.opened = g.opened || []).push(L); }
+      return g.blocked(ox, oy, nx, ny, keys);
+    };
+    Combat.api.wall = function (x0, y0, x1, y1) { var g = at(x0, y0) || at(x1, y1); return g ? g.blocked(x0, y0, x1, y1, false) : false; };
+    return { keysOf: keysOf, chokeFull: chokeFull };
+  }
+  // The locked doors a place's own men went through since the last call: unlocked in the building data B (they stay open
+  // behind them: wait for the hall's men to come out and the hall is open), fn(edge) for each. True when any was opened: the
+  // grids must then be read again.
+  function unlock(g, B, fn) {
+    var L = g.opened, any = false, i, d; if (!L || !L.length) return false;
+    for (i = 0; i < L.length; i++) { d = (L[i].kind === 'H' ? B.H : B.V)[L[i].tx + ',' + L[i].ty]; if (d && d.locked) { d.locked = 0; any = true; if (fn) fn(L[i]); } }
+    L.length = 0; return any;
+  }
+  return { make: make, edgeOf: edgeOf, attach: attach, unlock: unlock };
+})();
+if (typeof module !== 'undefined') module.exports = Nav;
 
 /* Gather: chopping, mining and cutting as a small game of their own (Robin, 2026-10-07: satisfying and interesting, never
    bothersome). One spec of switches and numbers (DEF), tuned in the Gathering Editor and handed to the game as game.gather.
@@ -9356,11 +9595,13 @@ if (typeof module !== 'undefined') module.exports = Music;
     var A = H.meta.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null, ph: Math.random() * 10, wp: 0 }), dt = t - st.t;
     if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; } else dt = 0;
     var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.3, Math.min(0.3, dA));
-    if (!st.warm) { st.warm = 1; peopleWarm(H, withHand(look, e.wpn || opts.hand || null), FIGHT); peopleWarm(H, withHand(look, null), ['death', 'pickup']); }   // everything a fight will ask of him, asked for now
+    if (!st.warm) { st.warm = 1; peopleWarm(H, withHand(look, e.wpn || opts.hand || null), e.bow ? ['idle', 'walk', 'run', 'bow_draw', 'bow_shoot', 'hit'] : FIGHT); peopleWarm(H, withHand(look, null), ['death', 'pickup']); }   // everything a fight will ask of him, asked for now
     var s = { face: st.face, clip: 'idle', t: t + st.ph }, hand = e.wpn || opts.hand || null, sw = e.sw, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, alpha = 1, flash = e.flash || 0;
     if (e.dead || e.down) { var lie = e.deadFor || 1.5; s.clip = 'death'; s.k = Math.min(0.999, (e.deadT || 0) / 0.9); hand = null; if (e.dead) alpha = Math.max(0, Math.min(1, (lie - e.deadT) / 1.2)); flash = 0; }
     else if (e.riseT > 0) { s.clip = 'death'; s.k = Math.max(0, Math.min(0.999, e.riseT / 0.8)); hand = null; }
     else if (e.state === 'yield') { s.clip = 'pickup'; s.k = Math.min(0.42, e.t / 0.6 * 0.42); hand = null; }
+    else if (e.state === 'aim') { s.clip = 'bow_draw'; s.k = Math.min(0.999, e.t / Math.max(0.01, e.dur)); }
+    else if (e.state === 'loose') { s.clip = 'bow_shoot'; s.k = k; }
     else if (sw && (e.state === 'windup' || e.state === 'lunge' || (e.state === 'recover' && e.swung))) {      // the clip's own beats: the blow lands a little before its middle
       var B = BEATS[sw.clip] || BEATS.attack1, u = Math.min(1, e.t / (e.state === 'windup' ? sw.wu : e.state === 'lunge' ? sw.ac : sw.rec));
       s.clip = sw.clip; s.k = e.state === 'windup' ? B[0] * (1 - (1 - u) * (1 - u)) : e.state === 'lunge' ? B[0] + (B[1] - B[0]) * u : B[1] + (0.995 - B[1]) * u;   // the windup goes quickly to the drawn-back pose and holds it: that is what is read
@@ -9489,14 +9730,21 @@ function moveCircle(e, dx, dy) {
   // a tool page can mark ground as not walkable (the Sea Editor keeps walkers out of the water); slide along it
   var wk = api.scene && api.scene.walk;
   if (wk && !wk(e.x, e.y, e)) { if (wk(e.x, oy, e)) e.y = oy; else if (wk(ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
-  var wx0 = e.x, wy0 = e.y, sx0 = ox, sy0 = oy;
+  var bl = e !== P && api.blocked ? api.blocked : null;      // a page that knows the walls (Nav): a man does not step across one, wherever he is
+  if (bl && bl(ox, oy, e.x, e.y, e)) { if (!bl(ox, oy, e.x, oy, e)) e.y = oy; else if (!bl(ox, oy, ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
+  var wx0 = e.x, wy0 = e.y, sx0 = ox, sy0 = oy, hitP = null;
   for (var i = 0; i < W.pillars.length; i++) {
     var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
-    if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; }
+    if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; hitP = p; }
+  }
+  if (hitP && e !== P) {       // dead on against something round there is nothing to slide along, so he steps round it (2026-10-13: a man stood for a minute with his nose against the hearth of his own house)
+    var il = Math.hypot(dx, dy), got = il > 0 ? ((e.x - sx0) * dx + (e.y - sy0) * dy) / il : 0;
+    if (il > 0 && got < il * 0.3) { var nx = e.x - hitP.x, ny = e.y - hitP.y, nl = Math.hypot(nx, ny) || 1, cr = nx * dy - ny * dx, sgn = Math.abs(cr) < il * nl * 0.08 ? (((e.seed || 0) * 1000 | 0) & 1 ? 1 : -1) : (cr >= 0 ? 1 : -1); e.x += -ny / nl * sgn * il; e.y += nx / nl * sgn * il; }
   }
   // a solid may not push a mover onto ground that cannot be walked (2026-10-12: a tree by a cliff's foot pushed the hero into the
   // rock, and one by the shore into the sea): back to where the walk test left it, or to where it started
   if (wk && (e.x !== wx0 || e.y !== wy0) && !wk(e.x, e.y, e)) { if (wk(wx0, wy0, e)) { e.x = wx0; e.y = wy0; } else { e.x = sx0; e.y = sy0; } }
+  if (bl && (e.x !== wx0 || e.y !== wy0) && bl(sx0, sy0, e.x, e.y, e)) { e.x = wx0; e.y = wy0; }      // nor may a solid push him across one
 }
 function alive(e) { return e && !e.dead; }
 function spawn(type) {
@@ -9636,7 +9884,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var bigE = e.type === 'brute';
   if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= (e.inLine ? MEN.frontLine : MEN.front)) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
     blocked = true; broke = !!hitFlags.guardBreak || stag >= 40;
-    dmg *= broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1);   // the sword is the surest guard; a blow that breaks the guard mostly gets through
+    dmg *= kind === 'proj' ? 0 : broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1);   // (an arrow on a raised shield is stopped)   // the sword is the surest guard; a blow that breaks the guard mostly gets through
     if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; } else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
   }
   if (man) dmg *= 1 - (e.armor || 0);
@@ -9646,7 +9894,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (crit) mult *= 1.5;
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
-  if (!src) { W.heroHit = e; W.heroHitT = W.t; }
+  if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, MEN.noise.blow * din()); }
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
   }
@@ -9708,7 +9956,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
 }
 function killEnemy(e, src) {
   var bigK = e.type === 'brute';
-  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null;
+  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; if (e.type === 'soldier') noise(e.x, e.y, MEN.noise.cry);
   if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
   else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
     slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
@@ -9914,7 +10162,7 @@ function updatePlayer(dt) {
         var e = W.enemies[i];
         if (e.dead || e.side === 1 || e.down || a.hit.indexOf(e) >= 0) continue;
         var dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy);
-        if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12)) {
+        if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12) && !wallBetween(p.x, p.y, e.x, e.y)) {
           a.hit.push(e);
           critBonus = ((!bareHanded() && meleeProfile().crit) || 0) + modZ('crit');   // the keen edge adds to the chance
           hitFlags.guardBreak = !!sd.guardBreak;
@@ -10132,6 +10380,13 @@ var MEN = {
   slots: 2, gapT: 0.35, gapHero: 0.75, // how many may be striking one target at once, and the least time between two blows LANDING on it (on the hero: as long as he is untouchable after a blow, so no two land together and none is wasted)
   backAt: 0.6, yieldAt: 0.25,
   sight: 340, aggro: 150, leash: 250, lie: 90,
+  noise: { blow: 240, shout: 420, cry: 360, din: 0.24, far: 1000 }, wake: [0.5, 1.6],   // how far a blow, a man's shout and a death cry are heard by a town's men, and how long a man at his post takes to be on his way
+  // A man with a bow (2026-10-13, rung 5): he stands off and shoots at whoever he has a clear line to, never with one of his own
+  // in it, never through a wall; with someone on him he drops the bow for his seax. range: how far he shoots; near: a foe
+  // this close and it is the seax; keep: he keeps this far from a fight that is not about him; draw: seconds to draw and aim (by his aim, worst to best); cd: between arrows; speed and life
+  // of the arrow; dmg to the hero (before armour) and the share of it a man takes (toMen); err: how far off he may be, radians;
+  // lead: how much of a moving man's way he allows for; lane: how wide a line must be free of his own
+  bow: { range: 300, keep: 125, near: 60, draw: [1.3, 0.75], cd: [2.6, 1.3], speed: 270, life: 1.25, dmg: 9, toMen: 0.5, err: [0.13, 0.03], lead: [0.2, 0.8], lane: 12 },
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
 api.men = MEN;
@@ -10139,16 +10394,19 @@ var hitFlags = { guardBreak: false, stagger: false, thrust: false };       // wh
 function lerp(a, b, k) { return a + (b - a) * k; }
 function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
   o = o || {}; e.type = 'soldier'; e.human = true; e.side = o.side ? 1 : 0; e.r = 7;
-  var kind = o.wpn && PROFILES[o.wpn.kind] ? o.wpn.kind : 'sword'; e.wpn = { kind: kind, mat: (o.wpn && o.wpn.mat) || 'iron', tint: (o.wpn && o.wpn.tint) || '#9ca3ad' };
+  var bow = !!(o.wpn && o.wpn.kind === 'bow'), kind = bow ? 'seax' : (o.wpn && PROFILES[o.wpn.kind] ? o.wpn.kind : 'sword'); e.wpn = bow ? { kind: 'bow', mat: 'wood', tint: null } : { kind: kind, mat: (o.wpn && o.wpn.mat) || 'iron', tint: (o.wpn && o.wpn.tint) || '#9ca3ad' };
+  e.bow = bow; e.a01 = clamp(((o.aim != null ? o.aim : 4) - 1) / 6, 0, 1); e.close = false;   // a bowman: no shield; his aim (1..8); with a man on him he drops the bow for his seax (e.close)
+  if (bow) { e.bowW = e.wpn; e.side2 = { kind: 'seax', mat: 'iron', tint: '#9ca3ad' }; }
   e.pf = PROFILES[kind]; e.pow = o.pow != null ? o.pow : 1.3;                         // the metal (iron's 1.3)
-  e.shield = !!o.shield && kind !== 'greataxe'; e.armor = o.armor || 0;
+  e.shield = !!o.shield && kind !== 'greataxe' && !bow; e.armor = o.armor || 0;
   e.hp = e.maxHp = o.hp || 30; e.str = 0.7 + (o.strength != null ? o.strength : 4) * 0.075;
   e.w01 = clamp(((o.wits != null ? o.wits : 4) - 1) / 6, 0, 1); e.react = lerp(MEN.react[0], MEN.react[1], e.w01);
   e.loyal = !!o.loyal; e.nerve = o.nerve != null ? o.nerve : 0.5; e.name = o.name || '';
   e.guard = 0; e.guardCd = 0; e.guardAge = 0; e.seeT = 0; e.blocked = 0; e.poiseT = 0; e.hopCd = 0; e.wary = Math.random() < 0.2 + 0.65 * e.w01; e.swingN = 0; e.chainLeft = 0; e.tgt = null; e.retT = 0; e.strafe = e.seed > 5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
   e.awake = true; e.sight = o.sight || MEN.sight; e.leash = o.leash || MEN.leash; e.order = 'follow'; e.deadFor = MEN.lie; e.cd = 0.4 + Math.random() * 0.8;
   if (o.x != null) { e.x = o.x; e.y = o.y; }
-  if (o.post) { e.post = o.post; e.awake = false; }
+  if (o.post) { e.post = o.post; e.awake = false; if (o.aggro != null) e.aggro = o.aggro; if (o.wakeDelay != null) e.wakeDelay = o.wakeDelay; }
+  if (o.vi != null) e.vi = o.vi;
   return e;
 }
 function soldier(o) { var keep = api.dress; api.dress = null; var e = spawn('soldier'); api.dress = keep; armMan(e, o); if (api.dressMan) api.dressMan(e, o); return e; }
@@ -10198,12 +10456,12 @@ function threatTo(e) {                      // whose blow is coming at him, if h
     o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || !o.sw || (o.side || 0) === (e.side || 0)) continue;
     if (o.state !== 'windup' && !(o.state === 'lunge' && !o.hitDone)) continue;
     dx = e.x - o.x; dy = e.y - o.y; d = Math.hypot(dx, dy);
-    if (d <= o.sw.reach + e.r + 16 && Math.abs(wrap(Math.atan2(dy, dx) - o.dirLock)) <= o.sw.arc / 2 + 0.3) return o;
+    if (d <= o.sw.reach + e.r + 16 && Math.abs(wrap(Math.atan2(dy, dx) - o.dirLock)) <= o.sw.arc / 2 + 0.3 && !wallBetween(o.x, o.y, e.x, e.y)) return o;
   }
   return null;
 }
 function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows the walls may give the next corner to make for (api.nav)
-  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { x = wpt.x; y = wpt.y; } }
+  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) return 0; x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }
   var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 0.5) return 0;
   var ox = e.x, oy = e.y, st = Math.min(d, sp * dt); moveCircle(e, dx / d * st, dy / d * st); return Math.hypot(e.x - ox, e.y - oy);
 }
@@ -10216,11 +10474,23 @@ function beginBlow(e, T, ang, second, quick) {
   e.sw = blowOf(e, second, quick); e.swingN++; e.state = 'windup'; e.t = 0; e.dur = e.sw.wu; e.dirLock = ang; e.face = ang; e.hitDone = false; e.swung = false; e.guard = 0; e.blocked = 0;
   e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e);
 }
+function din() { return Math.min(MEN.noise.far / MEN.noise.blow, 1 + MEN.noise.din * Math.max(0, (W.fighting || 0) - 2)); }   // two men at it are heard a blow's distance off; a battle of twenty across a town (the town's answer builds as the fight does)
+function noise(x, y, r) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
+  for (var i = 0; i < W.enemies.length; i++) {
+    var o = W.enemies[i]; if (o.type !== 'soldier' || o.side === 1 || o.dead || o.out || o.down || o.deaf) continue; var d = Math.hypot(o.x - x, o.y - y); if (d > r) continue;
+    o.alarm = { x: x, y: y };
+    if (o.awake === false) { if (!(o.wakeT > 0)) o.wakeT = (o.wakeDelay != null ? o.wakeDelay : lerp(MEN.wake[0], MEN.wake[1], Math.random())) * (0.6 + 0.8 * d / r); }
+    else if (!o.tgt) { o.heardAt = o.alarm; o.lookT = 0; }
+  }
+  if (api.onNoise) api.onNoise(x, y, r);
+}
+function wallBetween(x0, y0, x1, y1) { return !!api.wall && api.wall(x0, y0, x1, y1); }   // a page that knows the walls: no blow, no arrow and no seeing through one
 function strike(e) {
   var sw = e.sw, L = [];
-  eachFoe(e, function (F) { var dx = F.x - e.x, dy = F.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx); if (d <= sw.reach + F.r + 2 && Math.abs(wrap(a - e.dirLock)) <= sw.arc / 2 + 0.1) L.push({ F: F, d: d, a: a }); });
+  eachFoe(e, function (F) { var dx = F.x - e.x, dy = F.y - e.y, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx); if (d <= sw.reach + F.r + 2 && Math.abs(wrap(a - e.dirLock)) <= sw.arc / 2 + 0.1 && !wallBetween(e.x, e.y, F.x, F.y)) L.push({ F: F, d: d, a: a }); });
   L.sort(function (m1, m2) { return m1.d - m2.d; }); if (!sw.pierce && sw.motion === 'thrust' && L.length > 1) L.length = 1;
   if (!L.length) { dust(e.x + Math.cos(e.dirLock) * (e.r + 10), e.y + Math.sin(e.dirLock) * (e.r + 10), 2); return; }
+  noise(e.x, e.y, MEN.noise.blow * din());
   L.forEach(function (h) {
     if (h.F === P) {
       hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
@@ -10291,6 +10561,41 @@ function postStep(e, dt) {                  // one of a town's men with nothing 
   if (Math.hypot(p.x - e.x, p.y - e.y) > 5) { stepTo(e, p.x, p.y, MEN.speed * 0.8, dt); e.face = turnToward(e.face, Math.atan2(p.y - e.y, p.x - e.x), MEN.turn * dt); e.atPost = false; }
   else { if (p.face != null) e.face = turnToward(e.face, p.face, 3 * dt); e.atPost = true; }
 }
+function laneClear(e, F) {                  // may he shoot at this man: no wall between them and nobody of his own in the line (never into his friends)
+  if (wallBetween(e.x, e.y, F.x, F.y)) return false;
+  var dx = F.x - e.x, dy = F.y - e.y, L2 = dx * dx + dy * dy || 1, i, o, lane = MEN.bow.lane;
+  function inWay(o) { if (o === e) return false; var t = ((o.x - e.x) * dx + (o.y - e.y) * dy) / L2; if (t < 0.04 || t > 1.02) return false; var px = e.x + dx * t - o.x, py = e.y + dy * t - o.y; return px * px + py * py < (lane + o.r) * (lane + o.r); }
+  for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || (o.side || 0) !== (e.side || 0)) continue; if (inWay(o)) return false; }
+  if (e.side === 1 && !P.dead && !P.hidden && inWay(P)) return false;
+  return true;
+}
+function nearFoe(e) { var nd = 1e9, na = 0, nF = null; eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y); if (q < nd && !wallBetween(e.x, e.y, F.x, F.y)) { nd = q; na = Math.atan2(F.y - e.y, F.x - e.x); nF = F; } }); return { d: nd, a: na, F: nF }; }
+function sidearm(e, on) { if (!!e.close === !!on) return; e.close = !!on; e.wpn = on ? e.side2 : e.bowW; e.sw = null; e.farT = 0; }   // the bow for the seax, or back
+function archerStep(e, dt, T, d, ang) {      // a bowman with a man to shoot: where he goes, and when he draws
+  var B = MEN.bow; e.guard = 0;
+  var way = api.nav ? api.nav(e, T.x, T.y) : null, wa = way && !way.wait ? Math.atan2(way.y - e.y, way.x - e.x) : ang;
+  e.face = turnToward(e.face, wa, MEN.turn * dt);
+  var nf = nearFoe(e);
+  if (e.order === 'hold' && e.holdAt) { if (Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 10) stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); }
+  else if (nf.d < B.keep && nf.F && nf.F.tgt !== e) moveCircle(e, -Math.cos(nf.a) * MEN.back * dt, -Math.sin(nf.a) * MEN.back * dt);   // the press coming his way: he keeps out of it, backward (a man who comes for him is another matter: he shoots, and then it is the seax)
+  else if (way) { if (!way.wait) moveCircle(e, Math.cos(wa) * MEN.run * dt, Math.sin(wa) * MEN.run * dt); }
+  else if (d > B.range - 30) moveCircle(e, Math.cos(ang) * (d > B.range + 60 ? MEN.run : MEN.speed) * dt, Math.sin(ang) * (d > B.range + 60 ? MEN.run : MEN.speed) * dt);
+  else if (e.noLine > 0.8) { var bx0 = e.x, by0 = e.y; moveCircle(e, -Math.sin(ang) * e.strafe * MEN.speed * dt + Math.cos(ang) * (d > 170 ? 20 : 0) * dt, Math.cos(ang) * e.strafe * MEN.speed * dt + Math.sin(ang) * (d > 170 ? 20 : 0) * dt); if (Math.hypot(e.x - bx0, e.y - by0) < MEN.speed * dt * 0.4) { e.balkT = (e.balkT || 0) + dt; if (e.balkT > 0.4) { e.strafe = -e.strafe; e.balkT = 0; } } else e.balkT = 0; }   // no line to anybody (his own are in it): he walks round the fight until he has one
+  if (e.cd > 0) return;
+  var S2 = null, sd = 1e9;                   // the man he means to fight if the line to him is clear, else the nearest he has a line to
+  if (d <= B.range && laneClear(e, T)) S2 = T;
+  else eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y); if (q <= B.range && q < sd && laneClear(e, F)) { sd = q; S2 = F; } });
+  if (!S2) { e.cd = 0.3; e.noLine = (e.noLine || 0) + 0.3; if (e.noLine > 9) { e.noLine = 0.9; e.strafe = -e.strafe; } return; }   // (the other way round after a while, and at once when something stops him)
+  e.noLine = 0; e.state = 'aim'; e.t = 0; e.dur = lerp(B.draw[0], B.draw[1], e.a01); e.aimAt = S2; e.aim0 = { x: S2.x, y: S2.y }; e.dirLock = Math.atan2(S2.y - e.y, S2.x - e.x);
+}
+function loose(e, F) {                      // the arrow: at where the man will be by as much as the bowman allows for, off by as much as his aim lets it be
+  var B = MEN.bow, d = Math.hypot(F.x - e.x, F.y - e.y), ft = d / B.speed, k = lerp(B.lead[0], B.lead[1], e.a01), at = Math.max(0.3, e.t);
+  var tx = F.x + (e.aim0 ? (F.x - e.aim0.x) / at : 0) * ft * k, ty = F.y + (e.aim0 ? (F.y - e.aim0.y) / at : 0) * ft * k;
+  var a = Math.atan2(ty - e.y, tx - e.x) + (Math.random() * 2 - 1) * lerp(B.err[0], B.err[1], e.a01);
+  if (!laneClear(e, { x: e.x + Math.cos(a) * (d + 30), y: e.y + Math.sin(a) * (d + 30), r: 0 })) { a = Math.atan2(F.y - e.y, F.x - e.x); if (!laneClear(e, { x: e.x + Math.cos(a) * (d + 30), y: e.y + Math.sin(a) * (d + 30), r: 0 })) return false; }   // where the arrow will really go (off by his aim, ahead of a moving man): not with one of his own there
+  W.projs.push({ x: e.x + Math.cos(a) * 9, y: e.y + Math.sin(a) * 9, vx: Math.cos(a) * B.speed, vy: Math.sin(a) * B.speed, r: 3.5, dmg: B.dmg * e.str, owner: 'man', side: e.side || 0, src: e, life: B.life, ang: a });
+  e.shots = (e.shots || 0) + 1; sfx('shoot', 0, e); return true;
+}
 function soldierAI(e, dt) {
   var i, T, dx, dy, d, ang;
   e.cd -= dt; e.guardCd -= dt; e.poiseT -= dt; e.hopCd -= dt; if (e.riseT > 0) { e.riseT -= dt; return; }
@@ -10309,17 +10614,24 @@ function soldierAI(e, dt) {
   }
   if (e.awake === false) {                  // at his post, and has seen nothing
     var seen = false, st = api.mods && api.mods().stealth ? api.mods().stealth : 1;
-    eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y), behind = Math.abs(wrap(Math.atan2(F.y - e.y, F.x - e.x) - e.face)) > 1.9; if (q < (e.aggro || MEN.aggro) * (behind ? 0.45 : 1) * (F === P ? st : 1)) seen = true; });
-    if (seen) { e.awake = true; if (api.onWake) api.onWake(e); } else { postStep(e, dt); e.state = 'idle'; return; }
+    if (e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.awake = true; e.heardAt = e.alarm || null; e.lookT = 0; if (api.onWake) api.onWake(e); } }
+    if (e.awake === false) eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y), behind = Math.abs(wrap(Math.atan2(F.y - e.y, F.x - e.x) - e.face)) > 1.9; if (q < (e.aggro != null ? e.aggro : MEN.aggro) * (behind ? 0.45 : 1) * (F === P ? st : 1) && !wallBetween(e.x, e.y, F.x, F.y)) seen = true; });
+    if (seen) { e.awake = true; if (api.onWake) api.onWake(e); } else if (e.awake === false) { postStep(e, dt); e.state = 'idle'; return; }
   }
   e.retT -= dt; T = e.tgt;
   if (e.calledT > 0) { e.calledT -= dt; if (e.state !== 'windup' && e.state !== 'lunge') { T = e.tgt = null; e.retT = e.calledT; } }
   if (!(e.calledT > 0) && (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && P.hidden) || e.retT <= 0)) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; }
+  if (T && (e.side || 0) === 0 && e.post && W.t - (e.shoutAt == null ? -99 : e.shoutAt) > 25) { e.shoutAt = W.t; noise(e.x, e.y, MEN.noise.shout); sfx('tele', 0, e); if (api.onShout) api.onShout(e); }   // a town's man who sees you: his shout carries
   if (!T) {                                 // nobody to fight
-    if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'back') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
-    e.state = 'idle'; e.guard = 0; e.sw = null;
+    if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
+    e.state = 'idle'; e.guard = 0; e.sw = null; if (e.close) sidearm(e, false);
     if (e.side === 1) followStep(e, dt);
-    else { e.noT = (e.noT || 0) + dt; if (e.post && e.noT > 6) { postStep(e, dt); if (e.atPost) { e.awake = false; e.noT = 0; } } }
+    else if (e.heardAt) {
+      var hd = Math.hypot(e.heardAt.x - e.x, e.heardAt.y - e.y);
+      if (hd > 36 && !(e.lookT > 0)) { e.state = 'chase'; var mv = stepTo(e, e.heardAt.x, e.heardAt.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(e.heardAt.y - e.y, e.heardAt.x - e.x), MEN.turn * dt); e.stuckT = mv < MEN.run * dt * 0.2 ? (e.stuckT || 0) + dt : 0; if (e.stuckT > 2.5) { e.lookT = 0.01; e.stuckT = 0; } }   // (he cannot get there: he looks about where he is)
+      else { e.lookT = (e.lookT || 0) + dt; e.face += Math.sin(e.lookT * 1.3 + e.seed) * dt * 1.4; if (e.lookT > 7) { e.heardAt = null; e.lookT = 0; e.noT = 0; } }
+    }
+    else { e.noT = (e.noT || 0) + dt; if (e.post && e.noT > 6) { postStep(e, dt); if (e.atPost) { e.awake = false; e.noT = 0; e.wakeT = 0; } } }
     return;
   }
   e.noT = 0; e.moving = false;
@@ -10327,9 +10639,16 @@ function soldierAI(e, dt) {
   var keep = e.pf.reach + T.r - 5;
   e.inLine = false;                         // in a line: told to hold, at his place, another of his own at his shoulder. His shield stays up until he strikes and covers his neighbour's side as well as his own
   if (e.order === 'hold' && e.holdAt && e.shield && Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) < 30) for (i = 0; i < W.enemies.length; i++) { var nb = W.enemies[i]; if (nb !== e && nb.side === e.side && nb.type === 'soldier' && !nb.dead && !nb.down && nb.order === 'hold' && Math.hypot(nb.x - e.x, nb.y - e.y) < 26) { e.inLine = true; break; } }
+  if (e.bow) {                              // a bowman with a man on him draws his seax and fights with that (a poor fighter: no shield, a short blade); left alone a moment he takes up the bow again
+    var nfd = nearFoe(e).d;
+    if (!e.close && nfd < MEN.bow.near && e.state !== 'loose') { sidearm(e, true); if (e.state === 'aim') { e.state = 'chase'; e.t = 0; } e.cd = Math.max(e.cd, 0.35); }
+    else if (e.close && nfd > MEN.bow.near + 60 && e.state === 'chase') { e.farT = (e.farT || 0) + dt; if (e.farT > 0.8) { sidearm(e, false); e.cd = 0.4; } }
+    else e.farT = 0;
+  }
   switch (e.state) {
     case 'idle': e.state = 'chase'; e.t = 0; break;
     case 'chase':
+      if (e.bow && !e.close) { archerStep(e, dt, T, d, ang); break; }
       var th = threatTo(e), fa2 = th ? Math.atan2(th.y - e.y, th.x - e.x) : ang;
       e.face = turnToward(e.face, fa2, MEN.turn * dt);
       if (e.guard > 0) { if (th || e.inLine || (e.wary && d <= keep + 16 && e.cd > 0.2)) e.guard = Math.max(e.guard, 0.3); if (!e.inLine && e.guardAge > MEN.guardMax) lowerGuard(e, true); }
@@ -10342,18 +10661,23 @@ function soldierAI(e, dt) {
       // his place: at his reach from the target, at his own angle round it when others are on it too
       var sa = slotAngle(e, T), waiting = e.cd > 0.5 || !slotFree(T, e), want = keep + (sa != null && waiting && strikersOn(T, e) >= MEN.slots ? 14 : 0), slow = e.guard > 0 ? 0.5 : 1;
       if (e.order === 'hold' && e.holdAt && Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 46 && d > keep) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); break; }   // told to hold: he does not follow a man who backs away
-      if (d > want + 70) stepTo(e, T.x, T.y, MEN.run, dt);
+      var way = api.nav ? api.nav(e, T.x, T.y) : null;                                                                 // a wall between them: the way round it
+      // making no way toward a man who is still far (another man in a narrow place, a corner): he steps to one side for a moment, the other side next time
+      e.progT = (e.progT || 0) + dt; if (e.sideT > 0) e.sideT -= dt;
+      if (e.progT >= 0.5) { var made = Math.hypot(e.x - (e.progX || 0), e.y - (e.progY || 0)); e.progT = 0; e.progX = e.x; e.progY = e.y; if (made < 3 && d > want + 24 && !(way && way.wait) && !(e.sideT > 0)) { e.sideT = 0.6; e.sideS = -(e.sideS || (e.seed > 5 ? 1 : -1)); } }
+      var turnBy = e.sideT > 0 ? e.sideS * 1.25 : 0;
+      if (way) { if (!way.wait) { var wa = Math.atan2(way.y - e.y, way.x - e.x) + turnBy, wsp = (d > want + 70 ? MEN.run : MEN.speed) * slow; moveCircle(e, Math.cos(wa) * wsp * dt, Math.sin(wa) * wsp * dt); if (!th) e.face = turnToward(e.face, wa, MEN.turn * dt); } }
+      else if (d > want + 70 || turnBy || (T.bow && !T.close && d > want + 8)) moveCircle(e, Math.cos(ang + turnBy) * MEN.run * dt, Math.sin(ang + turnBy) * MEN.run * dt);   // (a bowman is run down, not walked up to)
       else {
         var vr = clamp((d - want) * 3.2, -MEN.back * 0.5, MEN.speed), vt = 0, here = Math.atan2(-dy, -dx);
         if (sa != null) vt = clamp(wrap(sa - here) * 70, -MEN.strafe * 2, MEN.strafe * 2);
         else { e.strafeT -= dt; if (e.strafeT <= 0) { e.strafeT = 0.8 + Math.random() * 2.2; e.strafe = Math.random() < 0.3 ? 0 : (Math.random() < 0.5 ? 1 : -1); } vt = e.strafe * MEN.strafe * (d < want + 20 ? 1 : 0); }
-        if (api.nav && d > want + 24) stepTo(e, T.x, T.y, MEN.speed * slow, dt);                                          // walls between: the page finds the way
-        else moveCircle(e, (Math.cos(ang) * vr - Math.sin(here) * vt) * slow * dt, (Math.sin(ang) * vr + Math.cos(here) * vt) * slow * dt);
+        moveCircle(e, (Math.cos(ang) * vr - Math.sin(here) * vt) * slow * dt, (Math.sin(ang) * vr + Math.cos(here) * vt) * slow * dt);
       }
       if ((e.guard <= 0 || (e.blocked > 0 && !th)) && !(th && e.shield && e.guardCd <= 0)) {   // a man with a shield does not begin a blow into one he sees coming: he stops it first, and answers
         var aligned = Math.abs(wrap(ang - e.face)) < 0.45;
         var answer = e.blocked > 0;
-        if (e.cd <= 0 && d <= keep + 7 && aligned && slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1) && !(T === P && (P.roll.t > 0))) { e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
+        if (e.cd <= 0 && d <= keep + 7 && aligned && !way && slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1) && !(T === P && (P.roll.t > 0))) { e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
       }
       break;
     case 'windup':
@@ -10386,6 +10710,19 @@ function soldierAI(e, dt) {
       e.face = turnToward(e.face, ang, MEN.turn * dt); moveCircle(e, -Math.cos(ang) * MEN.back * (e.hop ? 1.9 : 1) * dt, -Math.sin(ang) * MEN.back * (e.hop ? 1.9 : 1) * dt);
       if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.hop = false; }
       break;
+    case 'aim':                             // the bow drawn: he follows his man with it; someone on him and he lets it down; the line fouled and he holds a moment
+      var F2 = e.aimAt, BW = MEN.bow;
+      if (!F2 || F2.dead || F2.down || F2.out || F2.fled || (F2 === P && (P.hidden || P.dead))) { e.state = 'chase'; e.t = 0; e.cd = 0.3; break; }
+      e.dirLock = turnToward(e.dirLock, Math.atan2(F2.y - e.y, F2.x - e.x), 2.4 * dt); e.face = e.dirLock;
+      if (e.t >= e.dur) {
+        if (Math.hypot(F2.x - e.x, F2.y - e.y) > BW.range + 40 || !laneClear(e, F2)) { if (e.t > e.dur + 0.8) { e.state = 'chase'; e.t = 0; e.cd = 0.4; } break; }
+        if (!loose(e, F2)) { if (e.t > e.dur + 0.8) { e.state = 'chase'; e.t = 0; e.cd = 0.4; } break; }
+        e.state = 'loose'; e.t = 0; e.dur = 0.36;
+      }
+      break;
+    case 'loose':
+      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = lerp(MEN.bow.cd[0], MEN.bow.cd[1], e.a01) * (0.8 + Math.random() * 0.4); }
+      break;
     default: e.state = 'chase'; e.t = 0;
   }
 }
@@ -10404,6 +10741,7 @@ function wanderStep(e, dt) {
 }
 function updateEnemies(dt) {
   var NN = W.enemies.length, ORD = W.ord || (W.ord = []), oi, oj, ot; ORD.length = NN; for (oi = 0; oi < NN; oi++) ORD[oi] = oi;
+  var nf = 0; for (oi = 0; oi < NN; oi++) { ot = W.enemies[oi]; if (ot.type === 'soldier' && !ot.dead && !ot.down && !ot.out && ot.tgt) nf++; } W.fighting = nf + (nf && !P.dead && !P.hidden ? 1 : 0);   // how many are in a fight (the din: noise carries further the more there are)
   for (oi = NN - 1; oi > 0; oi--) { oj = Math.floor(Math.random() * (oi + 1)); ot = ORD[oi]; ORD[oi] = ORD[oj]; ORD[oj] = ot; }   // in a new order every frame: whoever is thought of first has an edge, and it must not always be the same men
   for (var i = 0; i < NN; i++) {
     var e = W.enemies[ORD[i]];
@@ -10442,7 +10780,7 @@ function updateEnemies(dt) {
   W.enemies = W.enemies.filter(function (e) { return !e.fled && !(e.dead && e.deadT > (e.deadFor || 0.5)); });   // a sprite beast lies a moment longer (its death clip)
   // soft separation
   for (var a = 0; a < W.enemies.length; a++) for (var b = a + 1; b < W.enemies.length; b++) {
-    var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.down || B.down || A.type === 'shooter' || B.type === 'shooter') continue;
+    var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.down || B.down || A.out || B.out || A.type === 'shooter' || B.type === 'shooter') continue;   // (a man on his knees is in nobody's way: one knelt in a passage a man wide and nobody passed)
     var ox = B.x - A.x, oy = B.y - A.y, dd = Math.hypot(ox, oy), mn = A.r + B.r;
     if (dd < mn && dd > 0.01) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }
   }
@@ -10453,9 +10791,15 @@ function updateProjs(dt) {
     pr.x += pr.vx * dt; pr.y += pr.vy * dt; pr.life -= dt;
     var SB = api.scene && api.scene.bounds, hit = false;   // a page with a big world has its own edges
     var gone = pr.life <= 0 || (SB ? (pr.x < SB.x0 || pr.x > SB.x1 || pr.y < SB.y0 || pr.y > SB.y1) : (pr.x < 8 || pr.x > AW - 8 || pr.y < 30 || pr.y > AH - 6));
-    if (!gone && pillarHit(pr.x, pr.y, pr.r)) { gone = true; spark(pr.x, pr.y, 4, '#ffe9a0', 60); }
+    if (!gone && (pillarHit(pr.x, pr.y, pr.r) || wallBetween(pr.x - pr.vx * dt, pr.y - pr.vy * dt, pr.x, pr.y))) { gone = true; spark(pr.x, pr.y, 4, '#ffe9a0', 60); }
     if (!gone) {
-      if (pr.owner === 'enemy') {
+      if (pr.owner === 'man') {              // a bowman's arrow: the other side only (his own it passes), the hero's shield stops it
+        if (pr.side === 0 && !P.dead && !P.hidden && Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) { if (hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr.src)) { gone = true; hit = true; } }
+        if (!gone) for (var jm = 0; jm < W.enemies.length; jm++) {
+          var em = W.enemies[jm]; if (em.type !== 'soldier' || em.dead || em.down || em.out || (em.side || 0) === pr.side) continue;
+          if (Math.hypot(pr.x - em.x, pr.y - em.y) < pr.r + em.r) { damageEnemy(em, pr.dmg * MEN.bow.toMen, Math.atan2(pr.vy, pr.vx), 30, 8, 'proj', pr.src); gone = true; hit = true; break; }
+        }
+      } else if (pr.owner === 'enemy') {
         if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) {
           var res = hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr);
           if (res === 'parry') { pr.owner = 'player'; pr.vx *= -1.4; pr.vy *= -1.4; pr.dmg = 3; pr.life = 3; pr.ang += Math.PI; pr.reflected = true; }
@@ -11188,7 +11532,7 @@ function render(c) {
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, reset: reset, S: S, api: api,
+return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, noise: noise, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   dbg: function () { return { P: P, W: W, IN: IN }; } };
 })();
@@ -12185,7 +12529,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return keys.length ? Build.rooms(BB, GW, GH, { x0: x0, y0: y0, x1: x1, y1: y1 }) : { rooms: [], solids: [], at: function () { return -1; } };
   }
   function rebuildRooms() {
-    bDirty = false; ensureB();
+    bDirty = false; navStale = true; ensureB();
     roomInfo = roomsOf(B);
     var k, p, auto = {};
     roofCache = {};
@@ -12292,6 +12636,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // The mountain test scene (2026-10-12, Robin: a mountain island, the first biome in the south and the mountains in the north, to
   // test it out): game.html?scene=mountain is the game on one island of its own (World.MOUNTAIN_SPEC), with its own save.
   if (SCENE === 'mountain') { for (var msk in World.MOUNTAIN_SPEC) spec[msk] = World.MOUNTAIN_SPEC[msk]; }
+  // The battle test scene (2026-10-13, docs/battle-plan.md): the starter island for the field, and a lowland island beside it for the town
+  // (Village.plan gives the biggest lowland island a walled town, a church or a farm, and a place on the shore). No mountain: it is not needed here.
+  if (SCENE === 'battle') { spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null; }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
   function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying || null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
@@ -13090,6 +13437,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
         pts.forEach(function (pt) { var cx = (pt[0] + 0.5) * T, cy = (pt[1] + 0.5) * T; w.around(cx, cy, function (o) { if (o.r > 0 && Math.hypot(o.x - cx, o.y - cy) < T * 1.5 && gone2.indexOf(o) < 0) gone2.push(o); }); });
         gone2.forEach(function (o) { w.removeProp(o); });
       });
+      if (V2.fence && !V2.fence.round) {                                           // and the gates (2026-10-13: a birch stood in a town's gate)
+        var Fg = V2.fence, gts = [], gi2, gone3 = []; for (gi2 = 0; gi2 < (Fg.gateW || 1); gi2++) gts.push([Fg.gate + gi2, Fg.y1 - 1], [Fg.gate + gi2, Fg.y1]);
+        for (gi2 = Fg.x0; gi2 < Fg.x1; gi2++) if (V2.H[Build.key(gi2, Fg.y0)] && V2.H[Build.key(gi2, Fg.y0)].t === 'gate') gts.push([gi2, Fg.y0 - 1], [gi2, Fg.y0]);
+        gts.forEach(function (pt) { var cx = (pt[0] + 0.5) * T, cy = (pt[1] + 0.5) * T; w.around(cx, cy, function (o) { if (o.r > 0 && Math.hypot(o.x - cx, o.y - cy) < T * 1.5 && gone3.indexOf(o) < 0) gone3.push(o); }); });
+        gone3.forEach(function (o) { w.removeProp(o); });
+      }
       if (v.jetty) {                                                               // the jetty: dock planks out into the shallows, a barrel and a rack on the root, the road up to the gate
         var J = v.jetty, rt = J.root, ok = true;
         J.tiles.forEach(function (t) { if (dockOk(t[0], t[1]) || code(t[0], t[1]) === 0) B.floors[Build.key(t[0], t[1])] = 8; });
@@ -13128,8 +13481,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (!f.moving && !f.sitting && !f.job && f.idle.t > f.idle.dur) { f.idle.from = f.lastPose; f.idle.id = pickIdle(f); f.idle.t = 0; f.idle.dur = 3 + Math.random() * 6; f.idle.blend = 0; }
       if (f.job) { f.job.t += dt; }
       if (f.hidden) continue;
-      if (f.fleeing) { var fdx = f.spots[0].x - f.x, fdy = f.spots[0].y - f.y, fdl = Math.hypot(fdx, fdy); if (fdl < 8) { f.hidden = true; f.moving = false; continue; } f.x += fdx / fdl * 70 * dt; f.y += fdy / fdl * 70 * dt; f.face = Math.atan2(fdy, fdx); f.moving = true; f.ph += dt * 9; continue; }   // running home
-      if ((d < 110 && !f.job) || f.sayT > 0) {                   // someone near: stop and watch (unless busy at a job)
+      if (f.fleeing) { var fdx = f.spots[0].x - f.x, fdy = f.spots[0].y - f.y, fdl = Math.hypot(fdx, fdy); if (fdl < 8) { f.hidden = true; f.moving = false; continue; } f.folk = true; navMove(f, f.spots[0].x, f.spots[0].y, 70, dt); f.moving = true; f.ph += dt * 9; continue; }   // running home (round the walls: navMove)
+      if (f.boredT > 0) f.boredT -= dt;
+      if ((d < 110 && !f.job && !(f.boredT > 0)) || f.sayT > 0) {   // someone near: stop and watch (unless busy at a job), for a few seconds; then he has seen enough of you for a while (2026-10-13: a hero who stood in the yard had the whole village standing round him for good)
+        f.watchT = (f.watchT || 0) + dt; if (f.watchT > (f.watchFor || (f.watchFor = 3 + Math.random() * 5)) && !(f.sayT > 0)) { f.watchT = 0; f.watchFor = 0; f.boredT = 20 + Math.random() * 20; }
         f.moving = false; f.wait = Math.max(f.wait, 1.5); if (f.job && f.sayT > 0) f.job = null;
         var want = Math.atan2(P.y - f.y, P.x - f.x), diff = ((want - f.face + Math.PI * 3) % (Math.PI * 2)) - Math.PI; f.face += diff * Math.min(1, dt * 4);
         continue;
@@ -13143,16 +13498,28 @@ if (typeof module !== 'undefined') module.exports = Combat;
         if (tg.tag && tg.tag !== 'sit' && tg.tag !== 'door' && folk.some(function (g) { return g !== f && g.target === tg; })) tg = f.spots[1];   // one at a job spot at a time
         f.target = tg;
       }
-      var dx = f.target.x - f.x, dy = f.target.y - f.y, dist = Math.hypot(dx, dy);
-      if (dist < 6) {
-        var tag = f.target.tag; f.sitting = !!f.target.sit;
+      var dx = f.target.x - f.x, dy = f.target.y - f.y, dist = Math.hypot(dx, dy), ftg = f.target;
+      if (dist < 6 || (dist < 20 && !ftg.sit && !(ftg.tag && ftg.tag !== 'door') && folk.some(function (g) { return g !== f && !g.moving && !g.hidden && Math.hypot(g.x - ftg.x, g.y - ftg.y) < 10; }))) {   // there, or as near as the one already standing there lets him be
+        var tag = dist < 6 ? f.target.tag : null; f.sitting = dist < 6 && !!f.target.sit;
         if (f.sitting) { f.x = f.target.x; f.y = f.target.y; f.face = Math.PI / 2; }
         if (f.carrying) f.carrying = false;
         if (tag && tag !== 'sit' && tag !== 'door') { f.job = { kind: tag, t: 0 }; f.x = f.target.x; f.y = f.target.y; f.face = tag === 'hang' ? -Math.PI / 2 : Math.PI / 2; f.wait = (tag === 'carry' ? 3 : 8) + Math.random() * 8; }
         else f.wait = (f.sitting ? 12 : 3) + Math.random() * 6;
         f.target = null; f.moving = false; f.idle.t = 0; f.idle.dur = 2 + Math.random() * 4; continue;
       }
-      var sp = (f.carrying ? 30 : 38) * dt; f.x += dx / dist * sp; f.y += dy / dist * sp; f.face = Math.atan2(dy, dx); f.moving = true; f.ph += dt * 7;
+      f.folk = true; navMove(f, f.target.x, f.target.y, f.carrying ? 30 : 38, dt); f.moving = true; f.ph += dt * 7;
+    }
+    // room for each other (2026-10-13: with everybody finding the same way round the fire and the well, the people who stopped to
+    // watch you stood in one heap): two of a village nearer than a step apart ease apart, the one who is walking giving way
+    for (i = 0; i < folk.length; i++) {
+      var fa = folk[i]; if (fa.hidden || fa.sitting || Math.abs(P.x - fa.x) > 900 || Math.abs(P.y - fa.y) > 700) continue;
+      for (var j = i + 1; j < folk.length; j++) {
+        var fb = folk[j]; if (fb.vi !== fa.vi || fb.hidden || fb.sitting) continue; var sx = fb.x - fa.x, sy = fb.y - fa.y; if (Math.abs(sx) > 13 || Math.abs(sy) > 13) continue;
+        var sd = Math.hypot(sx, sy); if (sd >= 13) continue; if (sd < 0.01) { sx = Math.cos(i * 2.4 + j); sy = Math.sin(i * 2.4 + j); sd = 1; }
+        var ps = (13 - sd) * Math.min(1, dt * 5), ka = fa.job && !fa.moving ? 0 : (fb.job && !fb.moving) || (fa.moving && !fb.moving) ? 1 : fb.moving && !fa.moving ? 0 : 0.5, ax = fa.x - sx / sd * ps * ka, ay = fa.y - sy / sd * ps * ka, bx = fb.x + sx / sd * ps * (1 - ka), by = fb.y + sy / sd * ps * (1 - ka);
+        if (fb.job && !fb.moving && fa.job && !fa.moving) continue;
+        if (!Combat.api.blocked || !Combat.api.blocked(fa.x, fa.y, ax, ay, fa)) { fa.x = ax; fa.y = ay; } if (!Combat.api.blocked || !Combat.api.blocked(fb.x, fb.y, bx, by, fb)) { fb.x = bx; fb.y = by; }
+      }
     }
   }
   function drawFolk(c, f) {
@@ -14250,7 +14617,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.harvest = {
     list: function (x, y, rad) { var out = []; if (!inCave) lockedDoorsNear(x, y, rad, function (k, L, e, dx, dy) { out.push(doorHvOf(k, L, e, dx, dy)); }); if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + 20 && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad) out.push(hvOf(it)); }); return out; },
     hit: function (o, power, right, tool) {
-      if (o.door) { o.hp -= power; chip(o.x, o.y, 8, '#8a6a4a', right ? 4 : 2, 70); sfx('chop'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.door.locked = 0; o.door.broken = 1; sfx('fall'); toast('The door gives'); save(); } return { dealt: power }; }
+      if (o.door) { o.hp -= power; chip(o.x, o.y, 8, '#8a6a4a', right ? 4 : 2, 70); sfx('chop'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.door.locked = 0; o.door.broken = 1; navStale = true; sfx('fall'); toast('The door gives'); save(); } return { dealt: power }; }
       if (o.box && o.box.heavy) { o.hp -= power; chip(o.x, o.y, 6, '#8a8f98', right ? 3 : 2, 60); sfx('clink'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.box.locked = 0; o.hp = o.max; toast('The lock breaks'); sfx('fall'); save(); } return { dealt: power }; }
       if (o.box) { o.hp -= power; chip(o.x, o.y, 8, '#b98a5a', right ? 4 : 2, 70); if (villageAt(o.x, o.y) >= 0) raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) breakBox(o.box); return; }
       if (o.vein) { veinHit(o, power); return { dealt: power }; }
@@ -14670,35 +15037,34 @@ if (typeof module !== 'undefined') module.exports = Combat;
      a heavy chest's lock breaks under the axe, then E lifts the chest onto your shoulder (carrying: slow, drawn on the shoulder), E
      at your vessel stows it (raft.cargo), and E at the vessel at home (your territory, or near the wreck) unloads it as silver. */
   var guards = [], raid = null, carrying = null, doorHv = {};
-  function spawnGuards() {
+  function spawnGuards() {                 // a town's guards at its gate: soldiers since 2026-10-13 (a man with a weapon, a shield and a post), not beasts with a figure
     guards = [];
     villages.forEach(function (v, vi) {
       if (!v.V) return;
-      v.V.folk.forEach(function (fv) {
-        if (fv.role !== 'guard') return; var post = fv.spots.filter(function (q) { return q[2] === 'guard'; })[0] || fv.spots[0];
-        wantKind = 'guard'; var e = Combat.spawn('beast'); wantKind = 'boar';
-        e.x = post[0]; e.y = post[1]; e.post = { x: post[0], y: post[1] }; e.vi = vi; e.face = Math.PI / 2; e.isle = v.isle; guards.push(e);
+      v.V.folk.forEach(function (fv, gi) {
+        if (fv.role !== 'guard') return; var post = fv.spots.filter(function (q) { return q[2] === 'guard'; })[0] || fv.spots[0], person = Hird.roll(kit.rng(v.seed * 31 + gi * 7 + 3), HD);
+        var e = Combat.soldier({ side: 0, x: post[0], y: post[1], post: { x: post[0], y: post[1], face: Math.PI / 2 }, aggro: 0.5, vi: vi, wpn: { kind: gi % 2 ? 'spear' : 'sword', mat: 'iron' }, shield: true, armor: 0.4, hp: person.stats.health, strength: person.stats.strength, wits: person.stats.wits, loyal: true, nerve: 0.8, name: person.name, person: person, mail: true, helm: true });
+        e.face = Math.PI / 2; e.isle = v.isle; guards.push(e);
       });
     });
   }
   function villageAt(x, y) { for (var i = 0; i < villages.length; i++) { var v = villages[i]; if (x > (v.tx - 3) * T && x < (v.tx + v.w + 3) * T && y > (v.ty - 3) * T && y < (v.ty + v.h + 3) * T) return i; } return -1; }
-  function raidAlarm(vi, x, y) {
+  function raidAlarm(vi, x, y) { if (vi < 0) return; raidStir(vi, x, y); Combat.noise(x, y, 520); }   // a door broken, a box smashed, a chest lifted: loud, and the town's men within 520 units hear it
+  Combat.api.onNoise = function (x, y, r) { var vi = villageAt(x, y); if (vi >= 0) raidStir(vi, x, y); };   // any fighting in a village is a raid on it
+  function raidStir(vi, x, y) {             // the village knows: its folk run home to hide, and word of it will spread
     if (vi < 0) return; var fresh = !raid || raid.vi !== vi;
     raid = { vi: vi, t: 30, x: x, y: y };
-    guards.forEach(function (e) { if (e.vi === vi && !e.dead) { e.heard = 30; e.awake = true; } });
     if (fresh) { folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = true; f.job = null; f.sitting = false; f.target = f.spots[0]; f.wait = 0; } }); if (!seen.raided) seen.raided = {}; if (!seen.raided[vi]) { seen.raided[vi] = day.n; toast('Word of this will spread'); } sfx('fall'); }
   }
   function raidTick(dt) {
     var P = hero(), i;
     for (i = 0; i < guards.length; i++) {
       var e = guards[i]; if (e.dead) continue;
-      if (e.awake && (!raid || raid.vi !== e.vi)) raidAlarm(e.vi, e.x, e.y);                                   // a guard struck raises the alarm
-      if (!e.awake && e.post && Math.hypot(e.x - e.post.x, e.y - e.post.y) > 4) { var dx = e.post.x - e.x, dy = e.post.y - e.y, dl = Math.hypot(dx, dy); e.x += dx / dl * Math.min(dl, 40 * dt); e.y += dy / dl * Math.min(dl, 40 * dt); e.face = Math.atan2(dy, dx); e.state = 'chase'; }   // walking back to the post
-      else if (!e.awake && e.post) { e.state = 'idle'; e.face = Math.PI / 2; }
+      if (e.awake === true && e.tgt && (!raid || raid.vi !== e.vi)) raidStir(e.vi, e.x, e.y);                    // a guard in a fight: the village knows (he walks back to his post by himself when it is over: the engine's postStep)
     }
     if (raid) {
       raid.t -= dt;
-      if (raid.t <= 0) { var vi = raid.vi; raid = null; guards.forEach(function (e) { if (e.vi === vi) { e.heard = 0; e.awake = false; } }); folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = false; f.hidden = false; f.lines = RAIDED_LINES.slice(); f.line = 0; } }); }
+      if (raid.t <= 0) { var vi = raid.vi; raid = null; folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = false; f.hidden = false; f.lines = RAIDED_LINES.slice(); f.line = 0; } }); }
     }
     if (carrying) { carrying.x = P.x; carrying.y = P.y; if (P.dead) { carrying.carried = false; carrying.r = 6; B.items.push(carrying); carrying = null; save(); } }   // a fallen raider drops the chest where he fell (2026-10-08)
   }
@@ -15296,7 +15662,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      soldiers (src/combat.js: sides, soldierAI), dressed here from a rolled hirdman (Hird.roll) and drawn from the people's
      sheets. Your own wear your colour (YOURS); the others a blue. ---------- */
   var BT = { on: SCENE === 'battle', field: null, setup: 'one', wpn: 1, gear: 1, wits: 1, mine: 0, slow: false };
-  var BT_WPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe'], BT_WPN_N = { sword: 'a sword', axe: 'an axe', club: 'a club', seax: 'a seax', spear: 'a spear', greataxe: 'a Dane axe' };
+  var BT_WPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'], BT_WPN_N = { sword: 'a sword', axe: 'an axe', club: 'a club', seax: 'a seax', spear: 'a spear', greataxe: 'a Dane axe', bow: 'a bow' };
   var BT_GEAR = [{ name: 'cloth, no shield', armor: 0, shield: false }, { name: 'leather and a shield', armor: 0.2, shield: true }, { name: 'mail, a helm, a shield', armor: 0.4, shield: true, mail: true, helm: true }];
   var BT_WITS = [{ name: 'dull', v: 1 }, { name: 'steady', v: 4 }, { name: 'sharp', v: 7 }], THEIRS = '#3f5a7a';
   function fieldSite() {                   // open grass 22 tiles by 16, a short walk from the wreck, clear of the steading
@@ -15326,11 +15692,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var woman = WOMEN.indexOf(person.name) >= 0; sp.hair = woman ? [2, 3, 7, 4][Math.floor(R() * 4)] : v.hair; sp.beard = !woman && R() < 0.6 ? (v.beard || 2) : 0; sp.hat = 0; sp.clothes = 1;
     e.fig = lib.makeFigure(sp); e.kind = 'man'; e.person = person; e.name = person.name; e.look = null;
     e.lookX = { mail: !!o.mail, helm: !!o.helm, shield: e.shield ? (e.side === 1 ? YOURS : THEIRS) : null, cloak: e.side === 1 ? YOURS : null };
-    e.wpn.tint = (Items.MATS[e.wpn.mat] || Items.MATS.iron).face;
+    e.wpn.tint = (Items.MATS[e.wpn.mat] || Items.MATS.iron).face; if (e.side2) e.side2.tint = Items.MATS.iron.face;
   };
   function spawnMan(side, x, y, wpn, gear, wits) {
     var person = Hird.roll(Math.random, HD), G = BT_GEAR[gear];
-    var e = Combat.soldier({ side: side, x: x, y: y, wpn: { kind: wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: person.stats.health, strength: person.stats.strength, wits: wits != null ? wits : person.stats.wits, loyal: person.traits.indexOf('loyal') >= 0, nerve: 0.55, name: person.name, person: person, mail: G.mail, helm: G.helm });
+    var e = Combat.soldier({ side: side, x: x, y: y, wpn: { kind: wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: person.stats.health, strength: person.stats.strength, wits: wits != null ? wits : person.stats.wits, aim: person.stats.aim, loyal: person.traits.indexOf('loyal') >= 0, nerve: 0.55, name: person.name, person: person, mail: G.mail && wpn !== 'bow', helm: G.helm });   // (a bowman wears no mail: he must draw)
     e.face = side ? -Math.PI / 2 : Math.PI / 2; return e;
   }
   /* The hero's word to his own men (rung 3; my choice of key and of two orders, Robin left both to me): G tapped calls them
@@ -15348,23 +15714,85 @@ if (typeof module !== 'undefined') module.exports = Combat;
     fightK += ((n >= 6 && !inCave && !inYard ? 1 : 0) - fightK) * Math.min(1, dt * 1.2); if (fightK < 0.002) fightK = 0;   // six men and more fighting round the hero: the view draws back
   }
   Combat.api.onYield = function (e) { e.say = 'I yield.'; e.sayT = 3.5; };
+  /* ---------- finding a way in a village, and a town's men (rung 5 of docs/battle-plan.md; src/nav.js) ----------
+     A village the hero is near gets a grid of its tiles (navOf: the walls, fences and gates from the building data, what
+     stands in the way, the sea), and from then on nobody there walks through a wall: the engine's men ask it for the way
+     (Combat.api.nav), are stopped at a shut edge wherever they are (api.blocked), and no blow or arrow passes a wall
+     (api.wall); the villagers find their way by it too (navMove). A locked door is shut to everyone but the place's own
+     people, and a door one of them goes through stays unlocked behind him. */
+  var navs = {}, navStale = false, navT = 0;
+  function navOf(vi) {
+    var v = villages[vi]; if (!v || !v.V) return null; if (navs[vi]) return navs[vi];
+    var M = 9;
+    function solids() {                     // every round thing a man walks round there: the world's props (trees, rocks, a tower) and what stands in the buildings and yards
+      var out = [], seen = [], x, y, x0 = (v.tx - M) * T, y0 = (v.ty - M) * T, x1 = (v.tx + v.w + M) * T, y1 = (v.ty + v.h + M) * T;
+      for (y = y0; y <= y1 + 511; y += 512) for (x = x0; x <= x1 + 511; x += 512) nearSolids({ x: Math.min(x, x1), y: Math.min(y, y1) }).forEach(function (q) { if (seen.indexOf(q) < 0 && q.x > x0 && q.x < x1 && q.y > y0 && q.y < y1) { seen.push(q); out.push(q); } });
+      B.items.forEach(function (it) { if (it.r && !it.lvl && it.x > x0 && it.x < x1 && it.y > y0 && it.y < y1) out.push({ x: it.x, y: it.y, r: it.r }); });
+      return out;
+    }
+    var g = Nav.make({ x0: v.tx - M, y0: v.ty - M, w: v.w + M * 2, h: v.h + M * 2, T: T,
+      open: function (tx, ty) { return isLand((tx + 0.5) * T, (ty + 0.5) * T) || dockAt(tx, ty); },
+      edge: Nav.edgeOf(B), solids: solids });
+    g.vi = vi; navs[vi] = g; return g;
+  }
+  function navAt(x, y) { for (var k in navs) if (navs[k].inside(x, y)) return navs[k]; return null; }
+  Nav.attach(Combat, navAt, function () { return clock; });   // the engine's questions (the way, a step across a wall, a blow through one) answered from these grids: src/nav.js
+  function navMove(m, tx, ty, sp, dt) {    // a villager's step toward a place, round the walls
+    var g = navAt(m.x, m.y) || navAt(tx, ty), wp = g ? g.next(m, tx, ty, clock, true) : null, x = wp && !wp.wait ? wp.x : tx, y = wp && !wp.wait ? wp.y : ty, dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy) || 1, st = Math.min(d, sp * dt);
+    m.x += dx / d * st; m.y += dy / d * st; m.face = Math.atan2(dy, dx);
+  }
+  function navTick(dt) {
+    var P = hero(), i; navT -= dt;
+    if (navT <= 0) { navT = 1; for (i = 0; i < villages.length; i++) { var c = vCentre(villages[i]); if (!navs[i] && Math.abs(c[0] - P.x) < 1900 && Math.abs(c[1] - P.y) < 1700) navOf(i); } }
+    for (var kn in navs) if (Nav.unlock(navs[kn], B, function (L) { if (Math.hypot((L.tx + 0.5) * T - P.x, (L.ty + 0.5) * T - P.y) < 320) sfx('pick'); })) navStale = true;   // a place's own man came through its locked door: it stays open behind him
+    if (navStale) { navStale = false; for (var k in navs) navs[k].read(); }
+  }
+  /* A town's men. Every one has a post and is at his day until something is heard (Robin, 2026-10-07: the defenders gather
+     to the noise from inside the town; no bell, no waves). The engine does the hearing and the coming (Combat.noise,
+     soldierAI); here they are placed: at the gate inside and out, at the back gate, by the market, a man or two at every
+     house, and the jarl's own in the hall, who are the best and come last (they must arm). */
+  var TOWN_N = 20;
+  function townOf() { for (var i = 0; i < villages.length; i++) if (villages[i].arch === 'town' && villages[i].V) return i; return -1; }
+  function townMen(vi, n) {               // where they stand is the village's own business (Village.garrison); here each becomes a man
+    return Village.garrison(villages[vi].V, n, Math.random).map(function (q) {
+      var kind = q.kind, person = Hird.roll(Math.random, HD), G = kind === 'hall' || kind === 'gate' ? BT_GEAR[2] : BT_GEAR[1], sp = isLand(q.x, q.y) ? { x: q.x, y: q.y } : landNear(q.x, q.y, 6);
+      var e = Combat.soldier({ side: 0, x: sp.x, y: sp.y, post: { x: sp.x, y: sp.y, face: q.face }, aggro: 0.5, vi: vi, wakeDelay: q.delay,
+        wpn: { kind: q.wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: person.stats.health + (kind === 'hall' ? 8 : 0), strength: person.stats.strength + (kind === 'hall' ? 1 : 0), wits: kind === 'hall' ? Math.max(5, person.stats.wits) : person.stats.wits, aim: person.stats.aim, loyal: kind === 'hall' || person.traits.indexOf('loyal') >= 0, nerve: kind === 'hall' ? 0.9 : 0.5, name: person.name, person: person, mail: G.mail && q.wpn !== 'bow', helm: G.helm });
+      e.face = q.face; e.kindOf = kind; return e;
+    });
+  }
+  function townSet() {                 // the test: the town at its day, the hero six tiles south of the gate with five of his own
+    var vi = townOf(), P = hero(); if (vi < 0) { toast('No town in this world'); return; }
+    var v = villages[vi], F = v.V.fence, gx = (F.gate + (F.gateW || 1) / 2) * T, gy = F.y1 * T, i, MIX = ['sword', 'axe', 'spear', 'sword', 'bow'];
+    battleClear(); var W2 = Combat.dbg().W; W2.enemies = W2.enemies.filter(function (e) { return !(e.human && e.vi === vi); }); guards = guards.filter(function (e) { return e.vi !== vi; });
+    navOf(vi); raid = null; folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = false; f.hidden = false; } });
+    BT.setup = 'town'; BT.town = vi; P.hp = P.maxHp; P.st = 100; P.x = gx; P.y = gy + 6.5 * T; P.vx = P.vy = 0; P.face = -Math.PI / 2; if (inCave) caveSwap(false);
+    BT.men = townMen(vi, TOWN_N);
+    for (i = 0; i < 5; i++) spawnMan(1, gx + (i - 2) * 30, gy + 7.6 * T + (i % 2) * 16, MIX[i], 1);
+  }
   function battleClear() { var W = Combat.dbg().W, f = BT.field; W.enemies = W.enemies.filter(function (e) { return e.type !== 'soldier' && !(f && Math.hypot(e.x - f.x, e.y - f.y) < 700); }); W.lock = null; }   // the men go, and any beast that has wandered onto the field
   function battleSet(id) {
     var f = BT.field, P = hero(), wk = BT_WPN[BT.wpn], wv = BT_WITS[BT.wits].v, MIX = ['axe', 'spear', 'sword', 'club', 'seax'], i; if (!f) return;
+    if (id === 'town') { townSet(); return; }
     battleClear(); BT.setup = id; P.hp = P.maxHp; P.st = 100; P.x = f.x; P.y = f.y + 80; P.vx = P.vy = 0; P.face = -Math.PI / 2; if (inCave) caveSwap(false);
     if (id === 'one') spawnMan(0, f.x, f.y - 70, wk, BT.gear, wv);
     else if (id === 'two' || id === 'friend') { spawnMan(0, f.x - 30, f.y - 70, wk, BT.gear, wv); spawnMan(0, f.x + 30, f.y - 78, MIX[(BT.wpn + 1) % MIX.length], BT.gear, wv); if (id === 'friend') spawnMan(1, f.x + 30, f.y + 96, 'sword', 1); }
-    else if (id === 'five') { for (i = 0; i < 5; i++) spawnMan(0, f.x + (i - 2) * 36, f.y - 96 - (i % 2) * 14, i === 2 ? wk : MIX[i], BT.gear, i === 2 ? wv : null); for (i = 0; i < 4; i++) spawnMan(1, f.x + (i - 1.5) * 36, f.y + 104 + (i % 2) * 14, MIX[(i + 2) % MIX.length], 1); }
+    else if (id === 'five') { var nb = BT.bows || 0; for (i = 0; i < 5; i++) spawnMan(0, f.x + (i - 2) * 36, f.y - 96 - (i % 2) * 14 - (i >= 5 - nb ? 60 : 0), i >= 5 - nb ? 'bow' : i === 2 ? wk : MIX[i], BT.gear, i === 2 ? wv : null); for (i = 0; i < 4; i++) spawnMan(1, f.x + (i - 1.5) * 36, f.y + 104 + (i % 2) * 14 + (i >= 4 - nb ? 60 : 0), i >= 4 - nb ? 'bow' : MIX[(i + 2) % MIX.length], 1); }   // (the bowmen of each side stand behind)
   }
   function battleRows() {
-    return [{ id: 'one', name: 'One hirdman', on: BT.setup === 'one' }, { id: 'two', name: 'Two', on: BT.setup === 'two' }, { id: 'friend', name: 'Two, and one beside you', on: BT.setup === 'friend' }, { id: 'five', name: 'Five against five', on: BT.setup === 'five' },
+    return [{ id: 'one', name: 'One hirdman', on: BT.setup === 'one' }, { id: 'two', name: 'Two', on: BT.setup === 'two' }, { id: 'friend', name: 'Two, and one beside you', on: BT.setup === 'friend' }, { id: 'five', name: 'Five against five', on: BT.setup === 'five' }, { id: 'bows', name: 'Bowmen a side: ' + (BT.bows || 0) },
+      { id: 'town', name: 'A town defended', on: BT.setup === 'town' }, { id: 'townN', name: 'Its men: ' + TOWN_N }, { id: 'gate', name: 'To its gate' }, { id: 'hall', name: 'To its hall' },
       { id: 'wpn', name: 'He carries ' + BT_WPN_N[BT_WPN[BT.wpn]] }, { id: 'gear', name: 'He wears ' + BT_GEAR[BT.gear].name }, { id: 'wits', name: 'His wits: ' + BT_WITS[BT.wits].name },
       { id: 'mine', name: BT.mine ? 'You wear mail and an iron helm' : 'You wear leather' }, { id: 'again', name: 'Again' }, { id: 'heal', name: 'Heal' }, { id: 'clearf', name: 'Clear the field' },
       { id: 'slow', name: BT.slow ? 'The clock: a quarter speed' : 'The clock: as it runs', on: BT.slow }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }];
   }
   function battleAct(id) {
     var P = hero();
+    if (id === 'town') { townSet(); return; }
+    if (id === 'townN') { TOWN_N = TOWN_N === 12 ? 20 : TOWN_N === 20 ? 30 : 12; if (BT.setup === 'town') townSet(); return; }
+    if (id === 'gate' || id === 'hall') { var tv = townOf(); if (tv < 0) return; var tV = villages[tv].V, hl = tV.lots.filter(function (l) { return l.id === 'hall'; })[0]; if (id === 'gate' || !hl) { P.x = (tV.fence.gate + (tV.fence.gateW || 1) / 2) * T; P.y = (tV.fence.y1 + 3) * T; } else { P.x = (hl.dx != null && hl.door === 's' ? hl.dx + 0.5 : hl.x + hl.w / 2) * T; P.y = (hl.y + hl.h + 1.6) * T; } P.vx = P.vy = 0; return; }
     if (id === 'one' || id === 'two' || id === 'friend' || id === 'five') battleSet(id);
+    else if (id === 'bows') { BT.bows = ((BT.bows || 0) + 1) % 3; battleSet('five'); }
     else if (id === 'wpn') { BT.wpn = (BT.wpn + 1) % BT_WPN.length; battleSet(BT.setup); }
     else if (id === 'gear') { BT.gear = (BT.gear + 1) % BT_GEAR.length; battleSet(BT.setup); }
     else if (id === 'wits') { BT.wits = (BT.wits + 1) % BT_WITS.length; battleSet(BT.setup); }
@@ -15490,7 +15918,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (kind === 'karve') { for (i = 0; i < 8; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 7; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } for (i = 2; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 1 }); parts.push({ id: 'strake', i: i, j: 5 }); } parts.push({ id: 'thwart', i: 2, j: 3 }, { id: 'thwart', i: 5, j: 3 }, { id: 'thwart', i: 6, j: 3 }, { id: 'mast', i: 4, j: 3 }, { id: 'sail', i: 4, j: 3 }, { id: 'rudder', i: 0, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { battle: function () { return BT; }, battleAct: function (id) { battleAct(id); }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { battle: function () { return BT; }, battleAct: function (id) { battleAct(id); }, cam: function () { return cam; }, folk: function () { return folk; }, navs: function () { return navs; }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -15584,12 +16012,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var RIs = RI(); if (RIs) for (var si = 0; si < RIs.solids.length; si++) { var sl = RIs.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
     lockedDoorsNear(P.x, P.y, 160, function (k, L, e, dx, dy) { D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true }); if (L === 'H') D.W.pillars.push({ x: dx - 10, y: dy, r: 7, hide: true }, { x: dx + 10, y: dy, r: 7, hide: true }); else D.W.pillars.push({ x: dx, y: dy - 8, r: 7, hide: true }, { x: dx, y: dy + 8, r: 7, hide: true }); });   // a locked door is a wall until it breaks
     for (var mi = 0; mi < moored.length; mi++) { var mv = moored[mi]; if (Math.abs(mv.x - P.x) < 160 && Math.abs(mv.y - P.y) < 160) D.W.pillars.push({ x: mv.x, y: mv.y, r: Math.max(mv.hw || 21, mv.hh || 21) * 0.7, hide: true }); }
-    for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt === sitting) continue; if (bt.r && sameLvl(bt) && Math.abs(bt.x - P.x) < 160 && Math.abs(bt.y - P.y) < 160) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }
+    for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt === sitting) continue; if (bt.r && sameLvl(bt) && Math.abs(bt.x - P.x) < 330 && Math.abs(bt.y - P.y) < 330) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }   // (330: a man fighting at the edge of the view walked through tables; walls are the grid's business)
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); heroGearSync(); raidTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); raidTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;
