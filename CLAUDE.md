@@ -139,7 +139,7 @@ gone from the code, and no new work may bring any of it back. This file is the s
 npm start         # rebuild, then open dist/index.html (the start page)
 npm run build     # python3 tools/build.py: stitches templates/ + src/ into dist/*.html
 npm install       # once; only dependency is @napi-rs/canvas (fake canvas for headless tests)
-npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the caves, the ambient sound, the battles, destruction)
+npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the caves, the ambient sound, the blows, the battles, destruction)
 ```
 
 There is no bundler, linter or type checker. `.claude/launch.json` has a `workbench` entry that serves the **repo root** on
@@ -998,7 +998,85 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   49 (93); two axes: the careful bot 58% (61), the skilled 58% (100); the careful bot with four friends against five 0% (was
   83), the skilled 50% (95). **The slower hero is a weaker hero against men, and the numbers in `MEN` were tuned to the fast
   one:** which of them to move is Robin's call once he has felt the new pace (the men's damage `MEN.dmg`, their `slots`,
-  `gapHero`). The one-man and five-against-five lines of the test say so in their numbers, not as faults.
+  `gapHero`). The one-man and five-against-five lines of the test say so in their numbers, not as faults. **(Moved the same
+  night: see the next bullet, "The blow, the men and the weight".)**
+- **The blow, the men and the weight (2026-10-13 into 14; Robin: "Do 1, 3 and 8 / Do extensive testing" of the combat ladder I
+  proposed: the feel of one blow, the men retuned to the slower hero, hit weight and sound). Robin has not played any of it: every
+  number is mine, measured, not felt.**
+  **Rung 1, the feel of one blow, measured.** `tests/blows.js` (in `npm test`) swings every melee weapon of the hero (iron) at a man
+  who stands still and watches the engine: press to the landing, the chain when the button is pressed on (hits in 4 s, the beats
+  between, hits a minute), what a blow does to a man in leather and how many put him down, the reach with the step into it, the
+  half-angle a blow still lands at, the push, the breath; then the men's blows (their windup, their blow on the hero in leather
+  and in cloth, on a man). A `!!` line is a contradiction of `docs/weapons.md` (a seax reaching as far as a sword, a Dane axe quicker
+  than an axe, the weapons not striking in the order seax, sword, axe, club, Dane axe when pressed on). The test's own traps, met
+  on the way: the engine chains only on a press (a held button swings on in gather mode alone), the auto-aim turns the hero to
+  the man whatever the angle (`D.S.aim = 'facing'`: `Combat.dbg()` hands out `S` now), a held man's knockback is zeroed and a
+  live one walks (the push is measured on a man at his post who has noticed nothing, 0.2 s after the hit, before he hops back),
+  and crits made the numbers wander (`S.crit` 0 in the test). **What it says now** (land: press to the first hit; a minute:
+  hits a minute pressing; blows: to put down a man of 22.5 in leather; reach: with the step; arc: the half-angle):
+
+  | weapon | land | a minute | blows | reach (data) | arc | push | a whole blow, and the chain's last |
+  | --- | --- | --- | --- | --- | --- | --- | --- |
+  | sword | 167 ms | 120 | 18 | 52 (34) | 72 | 9 | 0.55 s, 1.08 |
+  | axe | 217 | 90 | 14 | 50 (32) | 76 | 13 | 0.68, 1.35 |
+  | club | 267 | 60 | 15 | 46 (30) | 52 | 13 | 0.77, 1.54 |
+  | seax | 117 | 150 | 25 | 38 (25) | 36 | 4 | 0.36, 0.70 |
+  | spear | 183 | 90 | 14 | 70 (52) | 20 | 9 | 0.62, 1.22 |
+  | Dane axe | 517 | 45 | 9 | 64 (44) | 100 | 15 | 1.28, 2.55 |
+
+  **Changed for it** (`PROFILES` in `src/combat.js`): the **spear steps into its thrust** (`lunge` 70, was 40) and the **Dane axe
+  does not carry its man 16 units forward** (`lunge` 60, was 90), so the spear reaches furthest and the Dane axe outreaches the
+  axe; the **Dane axe's windup is 0.5 s** (was 0.4: a commitment, half a second to land, 1.3 s before he is free again); and a
+  kind that is heavy already (`pf.heavy`) grows only half as much on its last blow (`hv` 0.5 in `stepData0`: its second swing is
+  2.5 s, not 2.4 of windup alone). Everything else of the slower blows of 2026-10-13 stands.
+  **Rung 3, the men against the slower hero.** The ladder is `node tests/battle.js ladder [n]` (ten lines: the three bots with a
+  flint sword against an axe in leather, the careful one against mail, the careful and the skilled with an iron sword against
+  two axes, the careful with a friend, the careful and the skilled with four friends against five, five against five with no
+  hero) and **`node tools/sweepmen.js [n] '{...}' '{...}'`** runs it once a setting of `MEN` and prints a table (about ten seconds a
+  setting at a hundred fights a line). **One lever, `MEN.hpK`** (new, with `MEN.hp` 30 the default a page does not override): a
+  scale on the whole of the men's world, every man's health (`armMan`), their blows on each other, a bowman's arrow on a man,
+  what a roof does to him (`api.hurt`), so that **only the hero's blows gain on them**: men against men is as it was (the duels
+  table, five against five), and the hero puts a man down in three quarters of the blows. **It is 0.75**: a man of 30 is 22.5,
+  an iron sword's 18 blows (24 before; a man's own sword puts the hero in leather down in 9). Measured at 200 fights a line:
+  the tapper with a flint sword against an axe in leather **51%** (5 before: "one man about even" for a careless player), the
+  careful bot 100% with 59 left (43), the skilled 100% with 66; the careful bot against mail 100%; against two axes the careful
+  **91%** (52) and the skilled 93%, with a friend 99%; **the careful hero with four friends against five 35% and the skilled
+  37%** (18 and 16 before), five against five with no hero 61% (a coin at 100 fights; 42 to 58 over the sweeps). The sweep
+  (`MEN.hpK` 0.4 to 1, `dmg` 10, `slots` 1, `gapHero` 1, `onHero` 1, `joinAfter` 12, `onMax` 1, in combinations) found **a
+  cliff in the one-man race**: the tapper wins 5% at hpK 1, 47 at 0.75, 66 at 0.7 and 99 at 0.6 (and `dmg` 10 lifts him to 80
+  to 95 at any of them), and **the five-fight does not move with any crowd lever** (34 to 58% whatever `onHero`, `slots`,
+  `gapHero`, `joinAfter`, `onMax` say; 66 only with the men at 0.5 to 0.7 and `dmg` 10, where the tapper wins nearly always).
+  **Why it is lost:** the ladder's five-line now says: "the hero fell in 65 of 100; his friends down 0.1 of 4 a fight; they took
+  3.1 of the five": two of the five are at the hero from the first second (`onHero` 2), his four friends fight the other three
+  at the men's own pace (a man on a man is 15 to 20 blows) and he is down before they are free. So the five-fight hinges on
+  how the hero's own men come to him, not on these numbers, and I left the crowd numbers as they were (Robin has not chosen
+  a way, see "Robin's four answers", 4). **Seeded towns, before and after** (`RSEED` 11, 28, 57, two towns each, the
+  engine of `HEAD` against this): the crowd round one of yours 2.3 to 2.5 before, 2.1 to 2.6 after, the hero would have fallen
+  at 46 to 57 s before and 36 to 58 after; one random `!!` on the old engine in one run of seed 57 (the one fight in a hundred),
+  none in the other runs on either.
+  **Rung 8, hit weight and sound.** Every melee kind has a **weight, `wt`** in `PROFILES` (seax 0.6, spear 0.9, sword 1, axe
+  1.25, club 1.5, Dane axe 1.8); the hero's blow carries it (`hitFlags.wt`, `hitFlags.wkind`; `stepData` hands `wt` on; fists
+  0.5, a tool 1) and `damageEnemy` reads it for the hero's hits alone: the **pause** on both is 0.6 + 0.4 of it, the **ring**
+  0.7 + 0.3 of it and thicker over 1.3, the **slow moment** of a heavy blow half again as long, the sparks the same share, and a
+  weight of 1.4 or more (the club, the Dane axe) lands with **dust** at the man's feet, a **big number** and the **heavy hit's
+  sound**. **The sound carries the weapon:** `sfx(n, v, src, x)` has a fourth argument, `x` = `{ kind, wt, heavy }` of the hero's
+  weapon for a hit and for a swing, and a page's hook (`Combat.api.sfx = function (n, v, src, x)`) takes **`SFX[n + '_' +
+  x.kind]` if the set has it, else the plain sound**: in `templates/game.html` and `templates/combat.html` the sword keeps the
+  plain ring, `hit_axe` is a chop (lower, a bite of noise), `hit_club` a dull thud with no ring (and `heavyhit_club` a bigger
+  one), `hit_seax` a quick thin cut, `hit_spear` a thrust's punch, `hit_greataxe` the heavy hit deeper; the swings are whooshes
+  of the weapon's weight (`swing_axe`, `_club`, `_seax`, `_spear`, `_greataxe`). The Art Editor's hook takes the argument and
+  falls back. **I cannot hear them**: the voices are tones and filtered noise chosen by their numbers; whether a club thuds and
+  a seax cuts is for Robin's ear, and the Combat Arena is where to listen (its Sound switch). No screen shake; Snappy stays.
+  **Checked:** `tests/blows.js` with no contradictions; `npm test`; the ladder at 200; the seeded towns; in the pane at 1200 by
+  750 the arena's club on a held man (the big 9, the ring, the sparks, no console error) and the battle scene, which ran the
+  scripted church raid through five minutes with no error. **Found on the way, not mine and not fixed: the scripted raids of
+  `tools/visual/raidplay.js` no longer get in.** On the committed page too (an A/B against `HEAD`'s `dist/game.html`), the
+  church raid logs "could not get behind him" at the back gate and dies at the church door: the town bars its gates to an
+  armed man with his band at his back (`gateWatch`, "Four ways to raid", the same day the script was written: the back gate's
+  edge reads `barred: 1`, `arms()` says `carries: true, band: 1`), so the quiet start the script was built on (round behind
+  the two at the back gate) is barred now by design. The raid's numbers under "The raid" (rung 6) are from before that rule.
+  The script wants rewriting to the rule (weapons in the sea chest, the men told to hold by the ship, in alone, the gate
+  men taken bare-handed from behind); it is not a fault of the engine.
 - **More than one on a target (rung 2).** At most two may be striking one target at once (`MEN.slots`), and **no two blows
   land together**: a man may begin a blow only if it would land at least `MEN.gapHero` 0.75 s from any other already on its
   way to the hero (as long as the hero is untouchable after a blow, so none is wasted), 0.35 s for a man (`slotFree`, by

@@ -175,6 +175,21 @@ __COMBAT__
     heavyhit: function () { tone(130, 0.2, 'sawtooth', 0.12, 38); tone(70, 0.3, 'sine', 0.26, 32); noise(0.1, 0.32, 1400, 0.8); tone(900, 0.08, 'triangle', 0.05, 400); },
     parry: function () { tone(1320, 0.35, 'triangle', 0.12); tone(1980, 0.28, 'sine', 0.08); noise(0.04, 0.2, 5000, 2); },
     block: function () { tone(220, 0.1, 'square', 0.08, 120); noise(0.06, 0.2, 900, 1); },
+    /* each weapon's own voice (2026-10-13, combat rung 8): the engine hands the hero's weapon's kind with a hit or a swing and the page takes
+       '<sound>_<kind>' if it has one, else the plain sound: the sword keeps the plain ring, the axe chops, the club thuds, the seax cuts thin, the
+       spear punches, the Dane axe is the heavy hit deeper; the swings are whooshes of the weapon's weight */
+    hit_axe: function () { tone(150, 0.12, 'square', 0.1, 55); tone(78, 0.18, 'sine', 0.22, 36); noise(0.07, 0.3, 1700, 0.9); },
+    hit_club: function () { tone(92, 0.2, 'sine', 0.32, 38); tone(58, 0.26, 'triangle', 0.16, 30); noise(0.09, 0.18, 650, 0.6); },
+    hit_seax: function () { tone(430, 0.06, 'square', 0.06, 180); tone(140, 0.07, 'sine', 0.1, 70); noise(0.035, 0.26, 3800, 1.4); },
+    hit_spear: function () { tone(250, 0.08, 'triangle', 0.11, 90); tone(105, 0.11, 'sine', 0.15, 48); noise(0.045, 0.22, 2300, 1); },
+    hit_greataxe: function () { tone(120, 0.24, 'sawtooth', 0.13, 34); tone(52, 0.38, 'sine', 0.3, 26); noise(0.12, 0.34, 1200, 0.7); tone(800, 0.09, 'triangle', 0.05, 350); },
+    heavyhit_club: function () { tone(85, 0.26, 'sine', 0.36, 34); tone(50, 0.34, 'triangle', 0.2, 26); noise(0.12, 0.22, 600, 0.6); },
+    heavyhit_greataxe: function () { tone(120, 0.24, 'sawtooth', 0.13, 34); tone(52, 0.38, 'sine', 0.3, 26); noise(0.12, 0.34, 1200, 0.7); tone(800, 0.09, 'triangle', 0.05, 350); },
+    swing_axe: function () { noise(0.13, 0.21, 1300, 0.7); },
+    swing_club: function () { noise(0.16, 0.2, 1000, 0.6); },
+    swing_seax: function () { noise(0.07, 0.16, 2400, 1.1); },
+    swing_spear: function () { noise(0.09, 0.16, 2000, 1.0); },
+    swing_greataxe: function () { noise(0.24, 0.24, 800, 0.5); },
     dash: function () { noise(0.13, 0.16, 1400, 0.9); tone(760, 0.1, 'triangle', 0.05, 320); },
     shoot: function () { tone(520, 0.1, 'square', 0.06, 180); noise(0.06, 0.12, 3000, 1.5); },
     hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
@@ -198,9 +213,9 @@ __COMBAT__
     shout: function (v) { var k = v == null ? 1 : v; tone(215, 0.24, 'sawtooth', 0.05 * k, 150); tone(430, 0.2, 'triangle', 0.025 * k, 300); noise(0.14, 0.07 * k, 950, 2); },
     horn: function () { tone(98, 1.5, 'sawtooth', 0.07, 104); tone(147, 1.4, 'triangle', 0.045, 152); tone(196, 1.2, 'sawtooth', 0.02, 199); noise(1.2, 0.02, 420, 1.2); }   /* a war horn: a long low note and its fifth (the word to storm) */   // a man's shout, far off (the town waking: rung 6)
   };
-  Combat.api.sfx = function (n, v, src) {   // a beast's sound is only heard when it is near; the world is big
+  Combat.api.sfx = function (n, v, src, x) {   // a beast's sound is only heard when it is near; the world is big; x: the hero's weapon for a hit or a swing (its own voice if the set has one)
     if (src && src.x != null) { var P = hero(); if (Math.hypot(src.x - P.x, src.y - P.y) > 260) return; }
-    if (SFX[n]) SFX[n](v);
+    var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x);
   };
   function sfx(n, v) { if (S.sound) Combat.api.sfx(n, v); }
   window.addEventListener('keydown', ac); window.addEventListener('mousedown', ac);

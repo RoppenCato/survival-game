@@ -343,7 +343,7 @@ __SPRITES_JS__
     raise: function () { tone(420, 0.04, 'triangle', 0.03); },
     charge: function (v) { tone(420 + (v || 0) * 220, 0.12, 'triangle', 0.05); if (v === 3) tone(1400, 0.2, 'sine', 0.06); }
   };
-  Combat.api.sfx = function (n, v) { if (S.sound && SFX[n]) SFX[n](v); };
+  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x); };
 
   var TABS = {}, SP = __SPRITES__ || {};
   var GAME_HERO = Sprites.hero(SP, localStorage);                 // the hero of every tab is the Blender model (2026-10-09)

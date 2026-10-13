@@ -21,7 +21,7 @@ function itemOf(fn, a) { if (!api.items || typeof Items === 'undefined' || !api.
 function bareHanded() { return !!api.items && P.mode === 'fight' && P.weapon === 'melee' && !itemOf('weapon', 'sword'); }   // a page that holds items and has no sword equipped: punch
 function dmgMul(kind) { var it = itemOf('weapon', kind); return it ? Items.stats(it).dmg : (api.items ? 0.4 : 1); }   // canShoot()/onShoot(): ammunition; onArrowLand(x, y): a player's arrow that hit nothing; quiver: the count shown by the bow   // beltSlots: [{ n, draw(c) }] shown in free hotbar slots   // buildSlots: [{ name, draw(c) }] for the build-mode hotbar   // onDeath(e): a page hears when an enemy is killed (drops)   // harvest: a page that has trees, rocks and bushes sets { list(x, y, radius), hit(obj, power, rightTool, toolId) -> { dealt, crit, clean } or nothing }; gatherPace(): slows the tool swing   // facings8: the hero turns on the diagonals and animals turn freely
 var sfxAt = {};
-function sfx(n, v, src) { if (!S.sound) return; if (src && src.type === 'soldier') { var t0 = W ? W.t : 0; if (t0 - (sfxAt[n] == null ? -9 : sfxAt[n]) < 0.07 && t0 >= (sfxAt[n] || 0)) return; sfxAt[n] = t0; } api.sfx(n, v, src); }   // ten men's blows must not be ten sounds on one beat: the same sound from a man not twice within 0.07 s   // src: the enemy making the sound, so a page can keep far-off ones quiet
+function sfx(n, v, src, x) { if (!S.sound) return; if (src && src.type === 'soldier') { var t0 = W ? W.t : 0; if (t0 - (sfxAt[n] == null ? -9 : sfxAt[n]) < 0.07 && t0 >= (sfxAt[n] || 0)) return; sfxAt[n] = t0; } api.sfx(n, v, src, x); }   // x (2026-10-13): { kind, wt, heavy } of the hero's weapon for a hit or a swing, so a page can give each weapon its voice   // ten men's blows must not be ten sounds on one beat: the same sound from a man not twice within 0.07 s   // src: the enemy making the sound, so a page can keep far-off ones quiet
 
 function wrap(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
 function turnToward(a, b, step) { var d = wrap(b - a); if (Math.abs(d) <= step) return b; return a + (d > 0 ? step : -step); }
@@ -58,12 +58,14 @@ var STEPS = [
 // swing costs, and what sets it apart: pierce (a thrust hits everything in its line), guardBreak, crit (extra chance),
 // heavy (every hit counts as heavy). The old sword numbers in STEPS are the sword's profile.
 var PROFILES = {
-  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.16, ac: 0.11, rec: 0.28, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5 },
-  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.2, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true },
-  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.26, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9 },
-  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.1, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2 },
-  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.18, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 40, chain: 2, motion: 'thrust', st: 7, pierce: true },
-  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.4, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 90, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true }
+  // wt (2026-10-13, hit weight per weapon): what a hit of it feels like: the pause on both, the ring, the number's size and the
+  // sound follow it; 1 is the sword. The knockback (kb) and the stagger (stag) were already each weapon's own.
+  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.16, ac: 0.11, rec: 0.28, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5, wt: 1 },
+  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.2, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true, wt: 1.25 },
+  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.26, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9, wt: 1.5 },
+  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.1, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
+  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.18, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.5, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 }   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
@@ -73,6 +75,7 @@ var RANGED = {
   throwaxe: { proj: 'throwaxe', speed: 200, r: 4, cd: 0.5, st: 7, stag: 22, life: 0.6, thrown: true, kb: 160 }
 };
 function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
+for (var pk in PROFILES) PROFILES[pk].kind = pk;
 function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
 function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
 function rangedOf() { var it = itemOf('weapon', 'bow'); return { it: it, kind: it ? it.kind : 'bow', R: (it && RANGED[it.kind]) || RANGED.bow }; }
@@ -323,22 +326,24 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var kbm = e.type === 'brute' ? 0.3 : (e.type === 'shooter' ? 0.15 : 1);
   var hx = e.x - Math.cos(ang) * e.r * 0.8, hy = e.y - Math.sin(ang) * e.r * 0.8;
   var hot = crit ? '255,208,70' : (weak ? '143,227,255' : '255,255,255');
+  var WT = !src && melee ? (hitFlags.wt || 1) : 1, WK = !src && melee ? hitFlags.wkind : null;   // the weight of the hero's weapon (rung 8, 2026-10-13): a seax's hit is light and quick, a club's lands like a stone
   if (S.juice) {
     var WM = WPRE[S.weight] || WPRE.normal;
-    var fz = melee ? ((heavy && !killing) ? 0.09 : 0.055) : 0.025;
+    var fz = melee ? ((heavy && !killing) ? 0.09 : 0.055) * (0.6 + 0.4 * WT) : 0.025;
     if (crit) fz += 0.015;
     fz *= WM.fz;
     e.freezeT = Math.max(e.freezeT, fz); if (melee) P.freezeT = Math.max(P.freezeT, fz * 0.9 * WM.pf);
     e.pkx = Math.cos(ang) * kb * kbm * WM.kb; e.pky = Math.sin(ang) * kb * kbm * WM.kb;
     e.sq = 1; e.sqAng = ang;
     streaks(hx, hy, ang, (heavy && !killing ? 8 : 5) + (crit ? 4 : 0), heavy ? 260 : 200, crit ? '255,214,90' : null);
-    ring(hx, hy, 12, (heavy && !killing) ? 22 : 14, heavy ? 0.16 : 0.12, hot, true, heavy ? 3 : 2);
+    ring(hx, hy, 12, ((heavy && !killing) ? 22 : 14) * (0.7 + 0.3 * WT), heavy ? 0.16 : 0.12, hot, true, (heavy ? 3 : 2) * (WT > 1.3 ? 1.3 : 1));
     if (crit) ring(hx, hy, 12, 28, 0.2, '255,208,70', true, 2.4);
-    if (heavy && !killing) slowmo(WM.hs, WM.hd);
+    if (heavy && !killing) slowmo(WM.hs, WM.hd * (WT > 1.3 ? 1.4 : 1));
+    if (WT >= 1.4 && !blocked) dust(e.x, e.y, 3);                                   // a club or a Dane axe lands with dust
   }
-  spark(hx, hy, (heavy && !killing ? 12 : 7) + (crit ? 5 : 0), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
-  num(e.x, e.y - e.r * 2.2 - 10, String(Math.max(1, Math.round(dealt * SHOW))), blocked && !broke ? '#cfd6e6' : crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), !blocked && (heavy || crit));   // (the number is the blow times SHOW, whole)
-  sfx(blocked && !broke ? 'block' : (heavy && !killing) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0);
+  spark(hx, hy, Math.round(((heavy && !killing ? 12 : 7) + (crit ? 5 : 0)) * (0.7 + 0.3 * WT)), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
+  num(e.x, e.y - e.r * 2.2 - 10, String(Math.max(1, Math.round(dealt * SHOW))), blocked && !broke ? '#cfd6e6' : crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), !blocked && (heavy || crit || WT >= 1.4));   // (the number is the blow times SHOW, whole; a heavy weapon's is big)
+  sfx(blocked && !broke ? 'block' : ((heavy && !killing) || WT >= 1.4) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0, null, WK ? { kind: WK, wt: WT, heavy: heavy && !killing } : null);
   if (broke) { bits(e.x, e.y, 4); sfx('slam', 0, e); }
   if (crit) { sfx('crit'); e.rattle = 1.6; }
   if (bigE) {
@@ -396,9 +401,9 @@ function stepData0(a) {
   if (a.bash) return { wu: 0.06, ac: 0.1, rec: 0.3, arc: 1.6, reach: 30, blade: 20, dmg: 0.6, kb: 260, lunge: 160, stag: 45 };
   var pf = (P.mode === 'fight' && !bareHanded()) ? meleeProfile() : null;
   if (pf && pf !== PROFILES.sword) {                     // from the weapon's profile: light hits, then the heavy last one; charged is heavier still
-    var last = a.combo === 3 || a.combo === pf.chain - 1, cc = a.combo === 3 ? (a.chg || 0) : 0, hv = last ? 1 : 0;
+    var last = a.combo === 3 || a.combo === pf.chain - 1, cc = a.combo === 3 ? (a.chg || 0) : 0, hv = last ? (pf.heavy ? 0.5 : 1) : 0;   // (a kind that is heavy already grows less on its last blow: a Dane axe's second swing is not 2.4 s)
     s = { wu: pf.wu * (1 + hv) * (1 + cc * 0.3), ac: pf.ac * (1 + hv * 0.3), rec: pf.rec * (1 + hv * 1.2), arc: pf.arc * (1 + hv * 0.3) + cc * (pf.motion === 'thrust' ? 0.2 : 1), reach: pf.reach * (1 + hv * 0.2) + cc * 8, blade: pf.blade * (1 + hv * 0.15) + cc * 4,
-      dmg: pf.dmg * (1 + hv) + 1.5 * cc, kb: pf.kb * (1 + hv) + 150 * cc, lunge: pf.lunge * (1 + hv * 0.6) + 60 * cc, stag: pf.stag * (1 + hv * 1.4) + 16 * cc, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak };
+      dmg: pf.dmg * (1 + hv) + 1.5 * cc, kb: pf.kb * (1 + hv) + 150 * cc, lunge: pf.lunge * (1 + hv * 0.6) + 60 * cc, stag: pf.stag * (1 + hv * 1.4) + 16 * cc, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak, wt: pf.wt || 1 };
   }
   else if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
   else s = STEPS[a.combo];
@@ -538,7 +543,7 @@ function updatePlayer(dt) {
   else if (a.ph !== 'charge') {
     var sd = stepData(a);
     a.t += dt;
-    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing'); if (S.juice && lookSpec().atkStyle >= 2) dust(p.x, p.y, 3); }
+    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing', 0, null, p.mode === 'fight' && !bareHanded() ? { kind: meleeProfile().kind, wt: sd.wt || 1, heavy: heavyHit(a) } : null); if (S.juice && lookSpec().atkStyle >= 2) dust(p.x, p.y, 3); }
     else if (a.ph === 'active') {
       var u = Math.min(1, a.t / sd.ac);
       var arc = a.spin ? 6.283 : sd.arc, half = arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
@@ -574,8 +579,8 @@ function updatePlayer(dt) {
         if (d <= sd.reach + e.r + 2 && (a.spin || Math.abs(wrap(Math.atan2(dy, dx) - a.dir)) <= half + 0.12) && !wallBetween(p.x, p.y, e.x, e.y)) {
           a.hit.push(e);
           critBonus = ((!bareHanded() && meleeProfile().crit) || 0) + modZ('crit');   // the keen edge adds to the chance
-          hitFlags.guardBreak = !!sd.guardBreak;
-          damageEnemy(e, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0; hitFlags.guardBreak = false;
+          hitFlags.guardBreak = !!sd.guardBreak; hitFlags.wt = bareHanded() ? 0.5 : (sd.wt || 1); hitFlags.wkind = bareHanded() ? 'fist' : (P.mode === 'fight' ? meleeProfile().kind || null : 'tool');
+          damageEnemy(e, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(dy, dx), sd.kb, sd.stag, heavyHit(a) ? 'heavy' : 'melee'); critBonus = 0; hitFlags.guardBreak = false; hitFlags.wt = 1; hitFlags.wkind = null;
           if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
         }
       }
@@ -784,6 +789,7 @@ var MEN = {
   speed: 60, run: 94, back: 50, strafe: 24, turn: 8,
   wu: 0.12, wuK: 2.0,                 // a blow's windup: wu + the weapon's own times wuK (retuned 2026-10-13 when the hero's blows slowed, to the same seconds as before: a sword 0.44, a Dane axe 0.92)
   ac: 0.07, acK: 1.4, rec: 0.3, recK: 2.0, hitAt: 0.45,
+  hp: 30, hpK: 0.75,                  // a man's health unless the page says (hp), and a scale on the whole of the men's world (hpK: every man's health, their blows on each other, a bowman's arrow on a man, what a roof does to him), so that only the hero's blows gain on them: the lever of rung 3 (2026-10-13)
   dmg: 12,                            // a blow at strength 1 from a weapon whose kind says 1 (the hero's scale: he has 100)
   toMen: 0.15,                        // the same blow landing on a man (their health is on the beasts' scale)
   wdmg: { sword: 1, axe: 1, club: 0.9, seax: 0.7, spear: 1.1, greataxe: 1.6 },
@@ -820,7 +826,7 @@ var MEN = {
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
 api.men = MEN;
-var hitFlags = { guardBreak: false, stagger: false, thrust: false };       // what the blow now landing can do (set round the hero's own blows)
+var hitFlags = { guardBreak: false, stagger: false, thrust: false, wt: 1, wkind: null };       // what the blow now landing can do (set round the hero's own blows); wt, wkind: its weight and the weapon's kind (for the pause, the ring and the sound)
 function lerp(a, b, k) { return a + (b - a) * k; }
 function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
   o = o || {}; e.type = 'soldier'; e.human = true; e.side = o.side ? 1 : 0; e.r = 7;
@@ -829,7 +835,7 @@ function armMan(e, o) {                     // make a spawned enemy a soldier: o
   if (bow) { e.bowW = e.wpn; e.side2 = { kind: 'seax', mat: 'iron', tint: '#9ca3ad' }; }
   e.pf = PROFILES[kind]; e.pow = o.pow != null ? o.pow : 1.3;                         // the metal (iron's 1.3)
   e.shield = !!o.shield && kind !== 'greataxe' && !bow; e.armor = o.armor || 0;
-  e.hp = e.maxHp = o.hp || 30; e.str = 0.7 + (o.strength != null ? o.strength : 4) * 0.075;
+  e.hp = e.maxHp = (o.hp || MEN.hp) * MEN.hpK; e.str = 0.7 + (o.strength != null ? o.strength : 4) * 0.075;
   e.w01 = clamp(((o.wits != null ? o.wits : 4) - 1) / 6, 0, 1); e.react = lerp(MEN.react[0], MEN.react[1], e.w01);
   e.loyal = !!o.loyal; e.nerve = o.nerve != null ? o.nerve : 0.5; e.name = o.name || '';
   e.guard = 0; e.guardCd = 0; e.guardAge = 0; e.seeT = 0; e.blocked = 0; e.poiseT = 0; e.hopCd = 0; e.wary = Math.random() < 0.2 + 0.65 * e.w01; e.swingN = 0; e.chainLeft = 0; e.tgt = null; e.retT = 0; e.strafe = e.seed > 5 ? 1 : -1; e.strafeT = 1 + Math.random() * 2;
@@ -1049,7 +1055,7 @@ function strike(e) {
     if (h.F === P) {
       hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
       if (r === 'parry') { daze(e, 1.3); e.sw = null; e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
-    } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
+    } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen * MEN.hpK, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
   });
 }
 function dodges(e, th) { if (e.thr !== th || e.thrN !== th.swingN) { e.thr = th; e.thrN = th.swingN; e.willDodge = Math.random() < 0.3 + 0.5 * e.w01; } return e.willDodge; }   // decided once a blow
@@ -1403,7 +1409,7 @@ function updateProjs(dt) {
         if (pr.side === 0 && !P.dead && !P.hidden && Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) { if (hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr.src)) { gone = true; hit = true; } }
         if (!gone) for (var jm = 0; jm < W.enemies.length; jm++) {
           var em = W.enemies[jm]; if (em.type !== 'soldier' || em.dead || em.down || em.out || (em.side || 0) === pr.side) continue;
-          if (Math.hypot(pr.x - em.x, pr.y - em.y) < pr.r + em.r) { damageEnemy(em, pr.dmg * MEN.bow.toMen, Math.atan2(pr.vy, pr.vx), 30, 8, 'proj', pr.src); gone = true; hit = true; break; }
+          if (Math.hypot(pr.x - em.x, pr.y - em.y) < pr.r + em.r) { damageEnemy(em, pr.dmg * MEN.bow.toMen * MEN.hpK, Math.atan2(pr.vy, pr.vx), 30, 8, 'proj', pr.src); gone = true; hit = true; break; }
         }
       } else if (pr.owner === 'enemy') {
         if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) {
@@ -2143,8 +2149,8 @@ function render(c) {
 function init(l) { lib = l; reset(); buildGround(); }
 return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
-  hurt: function (e, dmg, ang) { damageEnemy(e, dmg, ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
+  hurt: function (e, dmg, ang) { damageEnemy(e, dmg * (e.type === 'soldier' ? MEN.hpK : 1), ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 
-  dbg: function () { return { P: P, W: W, IN: IN }; } };
+  dbg: function () { return { P: P, W: W, IN: IN, S: S }; } };
 })();
 if (typeof module !== 'undefined') module.exports = Combat;

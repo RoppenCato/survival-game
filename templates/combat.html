@@ -272,6 +272,21 @@ __SPRITES_JS__
     heavyhit: function (v) { tone(130, 0.2, 'sawtooth', 0.12, 38); tone(70, 0.3, 'sine', 0.26, 32); noise(0.1, 0.32, 1400, 0.8); tone(900, 0.08, 'triangle', 0.05, 400); },
     parry: function () { tone(1320, 0.35, 'triangle', 0.12); tone(1980, 0.28, 'sine', 0.08); noise(0.04, 0.2, 5000, 2); },
     block: function () { tone(220, 0.1, 'square', 0.08, 120); noise(0.06, 0.2, 900, 1); },
+    /* each weapon's own voice (2026-10-13, combat rung 8): the engine hands the hero's weapon's kind with a hit or a swing and the page takes
+       '<sound>_<kind>' if it has one, else the plain sound: the sword keeps the plain ring, the axe chops, the club thuds, the seax cuts thin, the
+       spear punches, the Dane axe is the heavy hit deeper; the swings are whooshes of the weapon's weight */
+    hit_axe: function () { tone(150, 0.12, 'square', 0.1, 55); tone(78, 0.18, 'sine', 0.22, 36); noise(0.07, 0.3, 1700, 0.9); },
+    hit_club: function () { tone(92, 0.2, 'sine', 0.32, 38); tone(58, 0.26, 'triangle', 0.16, 30); noise(0.09, 0.18, 650, 0.6); },
+    hit_seax: function () { tone(430, 0.06, 'square', 0.06, 180); tone(140, 0.07, 'sine', 0.1, 70); noise(0.035, 0.26, 3800, 1.4); },
+    hit_spear: function () { tone(250, 0.08, 'triangle', 0.11, 90); tone(105, 0.11, 'sine', 0.15, 48); noise(0.045, 0.22, 2300, 1); },
+    hit_greataxe: function () { tone(120, 0.24, 'sawtooth', 0.13, 34); tone(52, 0.38, 'sine', 0.3, 26); noise(0.12, 0.34, 1200, 0.7); tone(800, 0.09, 'triangle', 0.05, 350); },
+    heavyhit_club: function () { tone(85, 0.26, 'sine', 0.36, 34); tone(50, 0.34, 'triangle', 0.2, 26); noise(0.12, 0.22, 600, 0.6); },
+    heavyhit_greataxe: function () { tone(120, 0.24, 'sawtooth', 0.13, 34); tone(52, 0.38, 'sine', 0.3, 26); noise(0.12, 0.34, 1200, 0.7); tone(800, 0.09, 'triangle', 0.05, 350); },
+    swing_axe: function () { noise(0.13, 0.21, 1300, 0.7); },
+    swing_club: function () { noise(0.16, 0.2, 1000, 0.6); },
+    swing_seax: function () { noise(0.07, 0.16, 2400, 1.1); },
+    swing_spear: function () { noise(0.09, 0.16, 2000, 1.0); },
+    swing_greataxe: function () { noise(0.24, 0.24, 800, 0.5); },
     dash: function () { noise(0.13, 0.16, 1400, 0.9); tone(760, 0.1, 'triangle', 0.05, 320); },
     shoot: function () { tone(520, 0.1, 'square', 0.06, 180); },
     hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
@@ -283,7 +298,7 @@ __SPRITES_JS__
     raise: function () { tone(420, 0.04, 'triangle', 0.03); },
     charge: function (v) { tone(420 + (v || 0) * 220, 0.12, 'triangle', 0.05); if (v === 3) tone(1400, 0.2, 'sine', 0.06); }
   };
-  Combat.api.sfx = function (n, v) { if (S.sound && SFX[n]) SFX[n](v); };
+  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x); };   /* x: the hero's weapon for a hit or a swing: its own voice */
 
   /* input */
   window.addEventListener('keydown', function (e) {
@@ -351,7 +366,7 @@ __SPRITES_JS__
   function spawnMan(side, x, y, wpn, gear, wits) {
     var G = MGEAR[gear] || MGEAR[1], P = Combat.dbg().P;
     x = Math.max(20, Math.min(AWp() - 20, x)); y = Math.max(40, Math.min(AHp() - 20, y));
-    var e = Combat.soldier({ side: side, x: x, y: y, wpn: { kind: wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: 30, strength: 4, wits: wits != null ? wits : 4, aim: 4, loyal: false, nerve: 0.55, mail: G.mail && wpn !== 'bow', helm: G.helm });
+    var e = Combat.soldier({ side: side, x: x, y: y, wpn: { kind: wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, strength: 4, wits: wits != null ? wits : 4, aim: 4, loyal: false, nerve: 0.55, mail: G.mail && wpn !== 'bow', helm: G.helm });
     e.face = Math.atan2(P.y - y, P.x - x); if (holdAll) e.hold = true; return e;
   }
   function AWp() { return 400; } function AHp() { return 333; }

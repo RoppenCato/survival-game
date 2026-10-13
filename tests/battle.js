@@ -5,6 +5,8 @@
 //   node tests/battle.js friend [n] rung 3: two against the hero and one friend; and a friend alone against his equal
 //   node tests/battle.js five [n]   rung 4: five against five with no hero, then with him
 //   node tests/battle.js duels [n]  every weapon against every weapon, man against man
+//   node tests/battle.js ladder [n] the ten fights that place the men against the hero (rung 3 of the combat work; tools/sweepmen.js runs it with settings)
+//   node tests/battle.js ladder [n] the seven fights that place the men against the hero (rung 3 of the combat work; tools/sweepmen.js runs it with settings)
 //   node tests/battle.js bows [n]   rung 5: men with bows, alone, in a fight, behind their own, at a wall
 //   node tests/battle.js raid       rung 6: the blow from behind, the errand (the raid itself is played in the page: tools/visual/raidplay.js)
 //   node tests/battle.js town [n] [secs]  rung 5: n towns (12) from n seeds, the hero and five friends in at the gate and at the back gate
@@ -121,6 +123,21 @@ function one(n) {
   console.log('    his wits (the shield comes up sooner, he waits less), against the careful bot with an iron sword:');
   [1, 4, 7].forEach(wits => line('wits ' + wits, run({ hero: { bot: 'careful', weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['sword', 'leather', { wits }]] }, n)));
   const y = run({ hero: { bot: 'careful', weapon: ['axe', 'iron'], armour: LEATHER }, foes: [['sword', 'leather', { nerve: 0.3 }]] }, n); line('a man of little nerve (he may yield or run)', y, ' gave up ' + y.yielded + ' of ' + n);
+}
+// The ladder (rung 3 of the combat work, 2026-10-13): the ten fights that say whether the men sit right against the slower hero,
+// one line each, for tools/sweepmen.js to try settings of MEN against. Aimed at (my targets, not Robin's): one man in leather:
+// the tapper 30 to 50%, the careful bot 90% or more, the skilled 100% with 70 left; two axes: the careful bot 60 to 75%; with a
+// friend against two: the careful bot 90% or more; the careful hero with four friends against five: 70 to 85%; five against
+// five with no hero still a coin.
+function ladder(n) {
+  const side = (w, g) => [0, 1, 2, 3, 4].map(() => [w, g]);
+  HEROES.forEach(([bot, wp, ar]) => line(bot + ' with a flint sword against an axe in leather', run({ hero: { bot, weapon: wp, armour: ar }, foes: [['axe', 'leather']] }, n)));
+  line('careful with a flint sword against an axe in mail', run({ hero: { bot: 'careful', weapon: ['sword', 'flint'], armour: LEATHER }, foes: [['axe', 'mail']] }, n));
+  line('careful, iron sword, against two axes in leather', run({ hero: { bot: 'careful', weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['axe', 'leather'], ['axe', 'leather']] }, n));
+  line('skilled, iron sword, against two axes in leather', run({ hero: { bot: 'skilled', weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['axe', 'leather'], ['axe', 'leather']] }, n));
+  line('careful against two axes, with a friend', run({ hero: { bot: 'careful', weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['axe', 'leather'], ['axe', 'leather']], friends: [['sword', 'leather']] }, n));
+  ['careful', 'skilled'].forEach(bot => { const R = run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: side('sword', 'leather'), friends: side('sword', 'leather').slice(0, 4) }, Math.max(4, Math.round(n / 2))); line(bot + ' with four friends against five', R, ' (the hero fell in ' + R.lost + ' of ' + R.n + '; his friends down ' + (R.friendsDown / R.n).toFixed(1) + ' of 4 a fight; they took ' + (R.foesDead).toFixed(1) + ' of the five)'); });
+  line('five against five, no hero', run({ foes: side('sword', 'leather'), friends: side('sword', 'leather') }, Math.max(4, Math.round(n / 2))));
 }
 function two(n) {
   console.log('--- two (rung 2). ' + n + ' fights a line. Aimed at: clearly worse than one; the careful bot can win; no two blows landing together, and the hero never held (unable to act) for longer than he could dash out of');
@@ -457,5 +474,6 @@ if (mode === 'five' || mode === 'short') five(mode === 'short' ? 6 : N);
 if (mode === 'bows' || mode === 'short') bows(mode === 'short' ? 8 : N);
 if (mode === 'raid' || mode === 'short') raidChecks();
 if (mode === 'ways') ways(+process.argv[3] || 24);
+if (mode === 'ladder') ladder(+process.argv[3] || 40);
 if (mode === 'town' || mode === 'short') town(mode === 'short' ? 2 : (+process.argv[3] || 12), +process.argv[4] || 480);
 console.log('(' + ((Date.now() - t0) / 1000).toFixed(1) + ' s)');
