@@ -3,7 +3,7 @@ transparent PNGs at double size for tools/sprites.js to crop, halve and pack. Th
 line come from toon.py, so every character renders alike.
 
   node tools/blender.js art/build/render.py -- art/source/hero.blend art/render/hero [--anims idle,walk] [--dirs 8]
-      [--frames 8 | --frames idle=16,walk=12,8] [--walkframes 6] [--layers body,helm,mail] [--size 160] [--px 2] [--elev 35] [--ortho 1.75] [--style cel|painted|folk] [--eyes dot|oval|highlight] [--face neutral|blink|angry|hurt] [--scene day|night]
+      [--frames 8 | --frames idle=16,walk=12,8] [--walkframes 6] [--layers body,helm,mail] [--size 160] [--px 2] [--elev 35] [--ortho 1.75] [--aim 0.85] [--inplace death] [--style cel|painted|folk] [--eyes dot|oval|highlight] [--face neutral|blink|angry|hurt] [--scene day|night]
 
 The frame is size by size at 1x (px times that in the render); the figure's origin (between the feet) projects to the pixel
 written in meta.json as the foot anchor. A layer is 'body' (the Body collection alone) or the name of a gear piece: its meshes
@@ -36,7 +36,7 @@ bpy.ops.wm.open_mainfile(filepath=blend)
 sc = bpy.context.scene; vl = bpy.context.view_layer
 rig = next(o for o in sc.objects if o.type == 'ARMATURE')
 body_c = bpy.data.collections['Body']; gear_c = bpy.data.collections['Gear']
-toon.restyle(STYLE); toon.world(sc, style=STYLE); toon.sun(STYLE); cam = toon.camera(sc, float(opt['elev']), float(opt['ortho']))
+toon.restyle(STYLE); toon.world(sc, style=STYLE); toon.sun(STYLE); cam = toon.camera(sc, float(opt['elev']), float(opt['ortho']), float(opt.get('aim', 0.85)))
 toon.setup_render(sc, SIZE, PX, int(opt['samples']))
 
 PARTS = {c.name[4:].lower(): c for c in bpy.data.collections if c.name.startswith('Part')}   # layers of the body itself (the people's tunic and legs, 2026-10-12): a 'Part...' collection
@@ -84,6 +84,21 @@ def set_action(name):
     if hasattr(ad, 'action_slot') and len(act.slots): ad.action_slot = act.slots[0]
     return act
 
+# --inplace death: a clip whose body travels (a man falling backward ends two metres from where he stood, and out of the
+# frame: 2026-10-13, the dead lay with half their bodies cut off) is rendered with the hips held over the spot they began
+# on. The whole figure is moved, frame by frame, by what the hips have travelled over the ground since the clip's first frame.
+INPLACE = [x for x in opt.get('inplace', '').split(',') if x]
+TOP = rig.parent or rig; TOP0 = TOP.location.copy()
+HIPS = next((b for b in ('mixamorig:Hips', 'hips', 'body') if b in rig.pose.bones), None)
+def hips_at(): TOP.location = TOP0; bpy.context.view_layer.update(); return rig.matrix_world @ rig.pose.bones[HIPS].head
+def settle(anim, length, nfr, f):
+    """The frame set, and for a clip held in place the figure moved back over its spot (call after the direction is set)."""
+    if anim in INPLACE and HIPS:
+        sc.frame_set(1); h0 = hips_at().copy(); sc.frame_set(int(round(1 + f * length / nfr))); h = hips_at()
+        TOP.location = (TOP0.x - (h.x - h0.x), TOP0.y - (h.y - h0.y), TOP0.z); bpy.context.view_layer.update()
+    else:
+        TOP.location = TOP0; sc.frame_set(int(round(1 + f * length / nfr))); bpy.context.view_layer.update()
+
 # the foot anchor: where the origin lands in the render
 bpy.context.view_layer.update()
 a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
@@ -97,13 +112,14 @@ for anim in ANIMS:
     act = set_action(anim); length = int(act.frame_end - act.frame_start + 1) if act.use_frame_range else int(act.frame_range[1] - act.frame_range[0] + 1)
     nfr = FR.get(anim, int(opt['walkframes']) if (anim == 'walk' and opt['walkframes']) else NFR)
     meta['anims'][anim] = {'frames': nfr, 'fps': nfr / (length / sc.render.fps), 'hands': {}}
+    if anim in INPLACE: meta['anims'][anim]['inplace'] = True
     # the wrists per direction and frame (2026-10-09, for the things in the hands): render pixels [x, y] and the depth toward the camera, right then left
     HANDS = [b for b in ('mixamorig:RightForeArm', 'mixamorig:LeftForeArm', 'hand.R', 'hand.L') if b in rig.pose.bones]
     if rig.get('marks'): HANDS = [b for b in rig['marks'].split(',') if b in rig.pose.bones]     # a rig may name its own points (a wolf's eyes for the night glow, 2026-10-11)
     for d in range(NDIR):
         (rig.parent or rig).rotation_euler = (0, 0, -2 * math.pi * d / NDIR); rows = []
         for f in range(nfr):
-            sc.frame_set(int(round(1 + f * length / nfr))); bpy.context.view_layer.update(); row = []
+            settle(anim, length, nfr, f); row = []
             for bn in HANDS[:2]:
                 wp = rig.matrix_world @ rig.pose.bones[bn].tail; cv2 = world_to_camera_view(sc, cam, wp)
                 row.append([round(cv2.x * SIZE * PX, 1), round((1 - cv2.y) * SIZE * PX, 1), round(cv2.z, 3)])
@@ -114,9 +130,10 @@ for anim in ANIMS:
         for d in range(NDIR):
             (rig.parent or rig).rotation_euler = (0, 0, -2 * math.pi * d / NDIR)      # a Mixamo rig sits under a 'Turn' empty (mixamo_bind.py)
             for f in range(nfr):
-                sc.frame_set(int(round(1 + f * length / nfr)))
+                settle(anim, length, nfr, f)
                 sc.render.filepath = os.path.join(out, '%s_%s_%s_%02d.png' % (anim, layer, dir_names[d], f))
                 if not (opt.get('keep') == '1' and os.path.exists(sc.render.filepath)): bpy.ops.render.render(write_still=True)   # --keep 1: a frame already on disk is left as it is (re-render one clip by deleting its frames; the numbers are written for every clip named)
                 n += 1
+TOP.location = TOP0
 with open(os.path.join(out, opt.get('meta', 'meta.json')), 'w') as fh: json.dump(meta, fh, indent=1)   # --meta name.json: several renders into one folder at once each keep their own numbers (tools/peoplerender.js joins them)
 print('rendered', n, 'frames to', out, 'anchor', anchor, 'figure px', round(meta['figure_px'], 1))

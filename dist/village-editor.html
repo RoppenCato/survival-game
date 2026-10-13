@@ -57,6 +57,10 @@
   </div>
 </div>
 <script>
+(function () { if (!/[?&]mute(=[^0&][^&]*)?(&|$)/.test(location.search)) return; window.__mute = true;
+  ['AudioContext', 'webkitAudioContext'].forEach(function (k) { var AC = window[k]; if (!AC || AC.__quiet) return; var Q = function (o) { var ac = new AC(o), g = ac.createGain(); g.gain.value = 0; g.connect(ac.destination); try { Object.defineProperty(ac, 'destination', { value: g }); } catch (e) { try { ac.suspend(); } catch (e2) {} } return ac; }; Q.prototype = AC.prototype; Q.__quiet = true; window[k] = Q; }); })();
+</script>
+<script>
 var GameArt = (function () {
 'use strict';
 

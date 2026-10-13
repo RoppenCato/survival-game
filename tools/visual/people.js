@@ -3,6 +3,7 @@
 //                                               at the size Robin plays at (3 px a unit shown one and a half times larger): people_crowd.png
 //   node tools/visual/people.js clips [kind]     every clip of an armed man, all its frames, from three sides: people_clips.png
 //   node tools/visual/people.js blows            the four clips a blow is drawn with, frame by frame with a weapon: people_blows.png
+//   node tools/visual/people.js dead             the dead as they lie, from all eight sides in different dress, and the fall frame by frame, at Robin's size: people_dead.png
 // A canvas from @napi-rs/canvas stands in for the page's; the sheets are read from assets/sprites/people.
 const { createCanvas, loadImage } = require('../../node_modules/@napi-rs/canvas'); const fs = require('fs'); const path = require('path');
 global.__mk = (w, h) => createCanvas(w, h); global.document = { createElement: () => createCanvas(1, 1) };
@@ -52,5 +53,14 @@ const mode = process.argv[2] || 'crowd';
       for (let f = 0; f < A.frames; f++) { await put(c, q.look, { clip: q.cl, face: FACE[q.d], k: (f + 0.5) / A.frames }, 150 + f * cw + cw / 2, r * ch + ch - 8 * Z, Z, { shadow: false }); c.fillStyle = '#1b1612'; c.font = '11px sans-serif'; c.fillText(String(f), 150 + f * cw + 4, r * ch + 12); }
       c.fillStyle = '#1b1612'; c.font = 'bold 13px sans-serif'; c.fillText(q.cl + ' ' + q.d + (q.k ? ' ' + q.k : ''), 6, r * ch + ch / 2); }
     const out = mode === 'clips' ? 'people_clips.png' : 'people_blows.png'; fs.writeFileSync(out, cv.toBuffer('image/png')); console.log('wrote', out, W + 'x' + HH);
+  } else if (mode === 'dead') {              // (2026-10-13: the dead lay with half their bodies cut off by the frame; the death now has a frame of its own)
+    const R = rng(5), Z = 4.5, W = 1800, HH = 760;
+    const w = DI.make(kit, World, 11), r = DI.paint(kit, World, W, HH, Z, { world: w, at: { x: w.home.x - 330, y: w.home.y - 250 } }), cv = r.cv, c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+    const dress = [{ mail: true, helm: true }, { helm: true, shield: RED, cloak: RED }, {}, { mail: true, helm: true, shield: BLUE }, { cloak: BLUE }, {}, { helm: true, shield: BLUE }, { cloak: RED, shield: RED }], looks = [];
+    for (let i = 0; i < 8; i++) { const sp = lib.folkSpec('villager', R); if (i !== 2 && i !== 5) { sp.clothes = 1; sp.hat = 0; } looks.push(Sprites.lookOf(sp, dress[i])); }
+    for (let i = 0; i < 8; i++) { const x = 130 + i * 215, y = 250; await put(c, looks[i], { clip: 'death', face: FACE[DIRS[i]], k: 0.999 }, x, y, Z, { shadow: false, lying: 1 }); c.fillStyle = '#c0392b'; c.fillRect(x - 2, y - 2, 4, 4); label(c, 'fell facing ' + DIRS[i], x - 44, y + 96); }
+    for (let f = 0; f < 10; f++) { const x = 100 + f * 177, y = 590; await put(c, looks[1], { clip: 'death', face: FACE.w, k: (f + 0.5) / 10 }, x, y, Z, { shadow: false, lying: (f + 0.5) / 10 }); c.fillStyle = '#c0392b'; c.fillRect(x - 2, y - 2, 4, 4); }
+    label(c, 'The dead as they lie (the red dot is where the man stood). Below: the fall, frame by frame.', 14, 22);
+    fs.writeFileSync('people_dead.png', cv.toBuffer('image/png')); console.log('wrote people_dead.png');
   }
 })();

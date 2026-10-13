@@ -852,7 +852,7 @@ __SPRITES_JS__
       var M = meta(); sctx.setTransform(1, 0, 0, 1, 0, 0); sctx.fillStyle = '#cfc19c'; sctx.fillRect(0, 0, sheet.width, sheet.height);
       sctx.globalAlpha = 0.18; sctx.fillStyle = kit.grain(sctx); sctx.fillRect(0, 0, sheet.width, sheet.height); sctx.globalAlpha = 1;
       if (!M) return;
-      var A = M.anims[anim], fw = M.frame.w, fh = M.frame.h, cols = A.frames, rows = M.dirs.length, s = Math.min(sheet.width / (cols * fw / SPR_PX * 2), sheet.height / (rows * fh / SPR_PX * 2)) * 2 / SPR_PX;
+      var A = M.anims[anim], fw = (A.frame || M.frame).w, fh = (A.frame || M.frame).h, cols = A.frames, rows = M.dirs.length, s = Math.min(sheet.width / (cols * fw / SPR_PX * 2), sheet.height / (rows * fh / SPR_PX * 2)) * 2 / SPR_PX;
       sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = 'high';
       for (var r = 0; r < rows; r++) for (var f = 0; f < cols; f++) {
         layersOn().forEach(function (l) { var ln = typeof l === 'string' ? l : l.layer, file = A.sheets[ln], im = file && H().img[file]; if (!im || !im.complete || !im.naturalWidth) return; var src = typeof l === 'string' ? im : Sprites.tinted(H(), im, file, l.tint); sctx.drawImage(src, f * fw, r * fh, fw, fh, f * fw * s, r * fh * s, fw * s, fh * s); });

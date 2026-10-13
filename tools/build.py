@@ -67,9 +67,18 @@ PAGES = [
     ('song-editor', 'song'),
     ('combat-arena', 'combat'), ('village-editor', 'village'), ('game', 'game'),
 ]
+# ?mute=1 on any page silences it: every sound the page makes goes to a gain of nothing (Robin, 2026-10-13: the sound was on
+# while pages were tested by script, and the browser pane cannot be silenced). It goes in before the page's first script, so
+# whatever makes an audio context later gets a quiet one. tools/visual/drive.js does the same for a page it drives.
+MUTE = """<script>
+(function () { if (!/[?&]mute(=[^0&][^&]*)?(&|$)/.test(location.search)) return; window.__mute = true;
+  ['AudioContext', 'webkitAudioContext'].forEach(function (k) { var AC = window[k]; if (!AC || AC.__quiet) return; var Q = function (o) { var ac = new AC(o), g = ac.createGain(); g.gain.value = 0; g.connect(ac.destination); try { Object.defineProperty(ac, 'destination', { value: g }); } catch (e) { try { ac.suspend(); } catch (e2) {} } return ac; }; Q.prototype = AC.prototype; Q.__quiet = true; window[k] = Q; }); })();
+</script>
+"""
 for page, template in PAGES:
     html = read('templates', template + '.html')
     for mark, code in SRC.items():
         html = html.replace(mark, code)
+    if '<script>' in html: html = html.replace('<script>', MUTE + '<script>', 1)
     write(os.path.join(ROOT, 'dist', page + '.html'), html)
 print('built ' + ', '.join(p for p, _ in PAGES) + ' in dist/')

@@ -133,6 +133,10 @@ body.advanced .adv{display:block}
   </div>
 </main>
 <script>
+(function () { if (!/[?&]mute(=[^0&][^&]*)?(&|$)/.test(location.search)) return; window.__mute = true;
+  ['AudioContext', 'webkitAudioContext'].forEach(function (k) { var AC = window[k]; if (!AC || AC.__quiet) return; var Q = function (o) { var ac = new AC(o), g = ac.createGain(); g.gain.value = 0; g.connect(ac.destination); try { Object.defineProperty(ac, 'destination', { value: g }); } catch (e) { try { ac.suspend(); } catch (e2) {} } return ac; }; Q.prototype = AC.prototype; Q.__quiet = true; window[k] = Q; }); })();
+</script>
+<script>
 /* Music: songs as data, played by a small sequencer through synthesized General-MIDI-style voices (Web Audio).
    The style is early MapleStory: a small set of clearly defined instruments, playful melodies, light jazz colour.
    A song: { name, bpm, key, chords: ['F', 'Dm7', ...] one per bar, tracks: [...] }

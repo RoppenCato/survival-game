@@ -72,7 +72,7 @@
   // where a hand is for a drawn frame: [dx, dy, depth] from the feet in world units (null when the sheet has no hands); which is 0 right, 1 left
   function hand(H, pk, face, which, scale) {
     var M = H.meta, A = M.anims[pk.a]; if (!A.hands) return null; var d = M.dirs[dirOf(M, face)], rows = A.hands[d]; if (!rows || !rows[pk.f]) return null;
-    var h = rows[pk.f][which || 0], s = (scale || 1) / PX; return h ? [(h[0] - M.anchor.x) * s, (h[1] - M.anchor.y) * s, h[2]] : null;
+    var h = rows[pk.f][which || 0], s = (scale || 1) / PX, AN = A.anchor || M.anchor; return h ? [(h[0] - AN.x) * s, (h[1] - AN.y) * s, h[2]] : null;
   }
   function silOf(H, im, file, hue) {
     var cv2 = H.sil[file]; if (cv2) return cv2;
@@ -103,22 +103,23 @@
   // draws the hero at (x, y) (the feet, in the camera's space). opts: scale (1 is the render's size), shadow (true), shadowHue, layers (['body'] plus gear)
   function draw(c, H, x, y, face, an, dashing, P, opts) {
     opts = opts || {}; var M = H.meta, pk = pick(H, P, an, opts); H.last = pk; if (!pk) return;
-    var A = M.anims[pk.a], d = dirOf(M, face), fw = M.frame.w, fh = M.frame.h, s = (opts.scale || 1) * (M.scale || 1) / PX, layers = opts.layers || ['body'];
+    var A = M.anims[pk.a], d = dirOf(M, face), F0 = A.frame || M.frame, AN = A.anchor || M.anchor, fw = F0.w, fh = F0.h,   /* (a clip may have a frame and an anchor of its own: the death, which no other clip's frame holds) */
+        s = (opts.scale || 1) * (M.scale || 1) / PX, layers = opts.layers || ['body'];
     var im = H.img[A.sheets.body]; if (!im || !im.complete || !im.naturalWidth) return;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     var lit = opts.lit || null, mixW = pk.w > 0.03 && pk.w < 0.97 && opts.blend !== false && blends(pk.a, A);
     if (pk.w >= 0.97) pk = { a: pk.a, f: pk.f2 };                                                   // all but the next frame already
-    if (opts.shadow !== false && !P.dead) cast(c, H, im, A.sheets.body, opts.shadowHue, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s, lit && lit.cast);
-    litUnder(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    if (opts.shadow !== false && !P.dead) cast(c, H, im, A.sheets.body, opts.shadowHue, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s, lit && lit.cast);
+    litUnder(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
     for (var i = 0; i < layers.length; i++) {                     // a layer is a name, or { layer, tint } for a recoloured one
       var L = layers[i], ln = typeof L === 'string' ? L : L.layer, file = A.sheets[ln]; if (!file) continue;
       var li = H.img[file]; if (!li || !li.complete || !li.naturalWidth) continue;
       var src = typeof L === 'string' || !L.tint ? li : tinted(H, li, file, L.tint);
-      if (mixW) c.drawImage(mixTo(H, src, fw, fh, d, pk.f, pk.f2, pk.w), 0, 0, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
-      else c.drawImage(src, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+      if (mixW) c.drawImage(mixTo(H, src, fw, fh, d, pk.f, pk.f2, pk.w), 0, 0, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+      else c.drawImage(src, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
     }
-    litOver(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
+    litOver(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
     c.restore();
   }
   // once a frame: the one-shot clips the engine's state does not carry (the bow's shot) and the moment of death
@@ -164,19 +165,19 @@
     }
     if (opts.clip && A[opts.clip] && opts.clipK == null) loopN = nm;
     if (loopN && opts.blend !== false && blends(nm, A[nm])) { var lp = loopAt(A[nm], ph); f = lp.f; if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) mixB = lp; }   // a slow loop: between two frames
-    var An = A[nm], d = dirOf(M, st.face), fw = M.frame.w, fh = M.frame.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.img[file];
+    var An = A[nm], d = dirOf(M, st.face), F0 = An.frame || M.frame, AN = An.anchor || M.anchor, fw = F0.w, fh = F0.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.img[file];
     if (!im || !im.complete || !im.naturalWidth) return false;
     c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (lie - e.deadT) / 0.4));
-    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s, opts.lit && opts.lit.cast);
-    litUnder(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
-    if (mixB) c.drawImage(mixTo(H, im, fw, fh, d, mixB.f, mixB.f2, mixB.w), 0, 0, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
-    else c.drawImage(im, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
-    litOver(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s);
-    if (opts.tint) { var ga = c.globalAlpha; c.globalAlpha = ga * opts.tint.a; c.drawImage(tinted(H, im, file, opts.tint.color), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); c.globalAlpha = ga; }
-    if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), f * fw, d * fh, fw, fh, -M.anchor.x * s, -M.anchor.y * s, fw * s, fh * s); }
+    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s, opts.lit && opts.lit.cast);
+    litUnder(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+    if (mixB) c.drawImage(mixTo(H, im, fw, fh, d, mixB.f, mixB.f2, mixB.w), 0, 0, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+    else c.drawImage(im, f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+    litOver(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+    if (opts.tint) { var ga = c.globalAlpha; c.globalAlpha = ga * opts.tint.a; c.drawImage(tinted(H, im, file, opts.tint.color), f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s); c.globalAlpha = ga; }
+    if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s); }
     c.restore();
-    if (An.hands) { var rows = An.hands[M.dirs[d]], row = rows && rows[f]; if (row && row.length) e.eyes = row.map(function (h) { return [(h[0] - M.anchor.x) * s, (h[1] - M.anchor.y) * s]; }); }
+    if (An.hands) { var rows = An.hands[M.dirs[d]], row = rows && rows[f]; if (row && row.length) e.eyes = row.map(function (h) { return [(h[0] - AN.x) * s, (h[1] - AN.y) * s]; }); }
     return true;
   }
   function drawDead(c, H, x, y, face, an, P, opts) { if (H) { tick(H, P); draw(c, H, x, y, face, an, false, P, opts || {}); } }
@@ -286,7 +287,7 @@
     var e = personFrame(H, look, clip, d, f);
     if (!e && clip !== 'idle' && M.anims.idle) { clip = 'idle'; A = M.anims.idle; f = loopAt(A, st.t || 0).f; f2 = -1; e = personFrame(H, look, clip, d, f); }   // the sheets of this clip are still on their way: he stands as he stood
     if (!e) return false;
-    var s = (opts.scale || 1) * (look.s || 1) / PX, dx = (e.x - M.anchor.x) * s, dy = (e.y - M.anchor.y) * s, dw = e.w * s, dh = e.h * s, lit = opts.lit || null, src = e.cv, hw, hh;
+    var AN = A.anchor || M.anchor, s = (opts.scale || 1) * (look.s || 1) / PX, dx = (e.x - AN.x) * s, dy = (e.y - AN.y) * s, dw = e.w * s, dh = e.h * s, lit = opts.lit || null, src = e.cv, hw, hh;
     if (f2 >= 0) { var e2 = personFrame(H, look, clip, d, f2); if (e2) { var mx = scratch('mix', e.w, e.h), mg = mx.getContext('2d'); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; mg.clearRect(0, 0, mx.width, mx.height); mg.globalAlpha = 1 - w; mg.drawImage(e.cv, 0, 0); mg.globalCompositeOperation = 'lighter'; mg.globalAlpha = w; mg.drawImage(e2.cv, 0, 0); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; src = mx; } }
     c.save(); c.translate(x, y); c.scale((look.sx || 1) * (opts.sx || 1), (look.sy || 1) * (opts.sy || 1)); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (opts.alpha != null) c.globalAlpha *= opts.alpha;
@@ -297,6 +298,7 @@
       else { c.globalAlpha = ga * 0.3; c.beginPath(); c.rect(-200, -400, 400, 400); c.clip(); c.transform(1, 0, -0.5, -0.14, 0, 0); }
       c.drawImage(sl, 0, 0, sl.width, sl.height, dx, dy, dw, dh); c.restore();
     }
+    if (opts.lying > 0) { var sl2 = silP(e, opts.shadowHue); c.globalAlpha = ga * 0.24 * opts.lying; c.drawImage(sl2, 0, 0, sl2.width, sl2.height, dx + 1.4, dy + 1.8, dw, dh); c.globalAlpha = ga; }   /* (a man on the ground: the shadow he lies on, a little down and right of him, where the sun puts it) */
     hw = Math.ceil(e.w / 2); hh = Math.ceil(e.h / 2);
     if (lit && lit.rim) { c.globalAlpha = ga * lit.rim.a; c.drawImage(silCol(e, '#ffb45e'), 0, 0, hw, hh, dx + lit.rim.ox, dy + lit.rim.oy, dw, dh); c.globalAlpha = ga; }
     c.drawImage(src, 0, 0, e.w, e.h, dx, dy, dw, dh);
@@ -340,7 +342,7 @@
       else if (st.walk) { st.wp += dt * Math.max(0.7, Math.min(1.9, st.spd / 36)); s.clip = 'walk'; s.t = st.wp; }
     }
     if (!A[s.clip]) s.clip = 'idle';
-    return person(c, H, withHand(look, hand), s, e.x, e.y * K, { scale: opts.scale, shadow: opts.shadow !== false && !(e.dead || e.down), shadowHue: opts.shadowHue, lit: opts.lit, flash: flash, alpha: alpha, tint: opts.tint });
+    return person(c, H, withHand(look, hand), s, e.x, e.y * K, { scale: opts.scale, shadow: opts.shadow !== false && !(e.dead || e.down), lying: opts.shadow !== false && (e.dead || e.down) ? s.k : 0, shadowHue: opts.shadowHue, lit: opts.lit, flash: flash, alpha: alpha, tint: opts.tint });
   }
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
