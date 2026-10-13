@@ -1004,8 +1004,9 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   **Weapons away, and drawn (`armsTick`).** In somebody else's place at peace (`placeOfPeace`) the weapon is put away by
   itself: not in the hand (`handLayers`), nor in your men's (`sheathed` in `Sprites.fighter`). It is out when you strike,
   raise your shield, are struck or come at, and `ARMS_T` 2.5 s after (`armsOut`). No key: the blow is the drawing. **A blow
-  or a raised shield that somebody of the place sees ends its peace** (`witness(vi, x, y)`: one of its people within 170
-  units with no wall between, or one of its men within 150 who is not looking away; `cryOut`: he cries, `raidAlarm`). A man
+  that somebody of the place sees ends its peace** (`witness(vi, x, y, r)`: one of its people within 120 units with no wall
+  between (170 for a theft), or one of its men within 150 who is not looking away; `cryOut`: he cries, `raidAlarm`; a raised
+  shield alone alarms nobody, and a swing with nobody near is nobody's business). A man
   taken from behind where nobody looks is seen by nobody: **a quiet noise (no further than `MEN.hush` 80) now stirs a place
   only if a man or a villager heard it** (`onNoise`; it used to send every villager running at any quiet kill, and the man
   who was struck counted as one who heard: `noise(..., except)`). A beast at you in the street is no attack on the place.
@@ -1016,7 +1017,7 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   hacked, loudly) and the gate's man says which it is ("No blades inside the walls. Leave them at your ship.", "You
   alone. Your men stay out there.", "Go on in."). Men of yours who come inside the walls of a town at peace by day end
   it when seen. The weapons go in the ship's sea chest. **Things to take** (`layArms`, laid when a place is built): an axe at
-  every chopping block, a spear by a shield rack (two at most), the smith's blade at the smithy; they lie (`d.own`, `d.keep`:
+  every chopping block (flint in the first biome, so a village is not a free forge; iron in the lowlands), a spear by a shield rack (two at most), the smith's blade at the smithy; they lie (`d.own`, `d.keep`:
   the place's, and they do not rot away), and taking one where a witness sees is theft: "Thief!", and the alarm.
   **The night (`sleepTick`).** At night a place at peace sleeps: its people go home and in (`f.abed`), its men to the beds
   nearest their posts (`bedDown`; `e.asleep`, the engine's sleeping man: he lies, sees nothing, is drawn on his bed, `e.bed`).

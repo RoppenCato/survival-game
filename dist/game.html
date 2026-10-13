@@ -15798,8 +15798,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
      the hand (handLayers), and your men's are not in theirs. It is out again the moment you strike, raise your shield, are
      struck or are come at, and for ARMS_T seconds after (armsOut, armsT). Outside such a place nothing changes: it is in
      the hand as it always was. No key: the blow is the drawing.
-     SEEN. A weapon out in a place at peace is the end of the peace if anybody sees it (witness: one of its people within
-     170 units with no wall between, or one of its men within 150 who is not looking the other way): he cries out, the
+     SEEN. A blow struck in a place at peace is the end of the peace if anybody sees it (witness: one of its people within
+     120 units with no wall between (170 for a theft), or one of its men within 150 who is not looking the other way; a
+     raised shield alone alarms nobody): he cries out, the
      place is alarmed (raidAlarm) and everybody does what they do (folkReact). A man taken from behind where nobody looks
      is seen by nobody.
      THE GATE. A walled town with men at its gates (gated(v)) lets in one who comes ALONE and UNARMED. With any weapon on
@@ -15817,9 +15818,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function bandNear(P, r) { var n = 0; Combat.dbg().W.enemies.forEach(function (e) { if (e.side === 1 && e.type === 'soldier' && !e.dead && !e.down && e.order !== 'hold' && Math.hypot(e.x - P.x, e.y - P.y) < (r || 320)) n++; }); return n; }
   function atPeace(vi) { return vi >= 0 && !(raid && raid.vi === vi) && !villageHeld(vi) && !!villages[vi].V && !(villages[vi].V.ruin); }
   function placeOfPeace(P) { for (var i = 0; i < villages.length; i++) { var v = villages[i]; if (P.x > (v.tx - 4) * T && P.x < (v.tx + v.w + 4) * T && P.y > (v.ty - 4) * T && P.y < (v.ty + v.h + 4) * T) return atPeace(i) ? i : -1; } return -1; }
-  function witness(vi, x, y) {             // who of a place sees what is done at (x, y): one of its people, else one of its men; null if nobody
+  function witness(vi, x, y, r) {          // who of a place sees what is done at (x, y): one of its people (within r, 170 if not said), else one of its men; null if nobody
     var i, f, e, d, E = Combat.dbg().W.enemies, wall = Combat.api.wall;
-    for (i = 0; i < folk.length; i++) { f = folk[i]; if (f.vi !== vi || f.hidden || f.dead || f.armed) continue; d = Math.hypot(f.x - x, f.y - y); if (d < 170 && !(wall && wall(f.x, f.y, x, y))) return f; }
+    for (i = 0; i < folk.length; i++) { f = folk[i]; if (f.vi !== vi || f.hidden || f.dead || f.armed) continue; d = Math.hypot(f.x - x, f.y - y); if (d < (r || 170) && !(wall && wall(f.x, f.y, x, y))) return f; }
     for (i = 0; i < E.length; i++) { e = E[i]; if (e.type !== 'soldier' || e.side === 1 || e.vi !== vi || e.dead || e.out || e.asleep) continue; d = Math.hypot(e.x - x, e.y - y); if (d < 150 && Math.abs(angDiff(Math.atan2(y - e.y, x - e.x), e.face)) < 1.9 && !(wall && wall(e.x, e.y, x, y))) return e; }
     return null;
   }
@@ -15831,7 +15832,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (i = 0; i < E.length; i++) { e = E[i]; if (e.side === 1 || e.dead || e.out) continue; d = Math.hypot(e.x - P.x, e.y - P.y); if (e.type === 'soldier') { if (e.awake !== false && e.tgt === P && d < 260) come = true; } else if (e.awake && d < 200 && !e.flee) beast = true; }
     armsT = act || come || beast || P.hurtT > 0 ? ARMS_T : Math.max(0, armsT - dt);
     armsOut = vi < 0 || armsT > 0;
-    if (vi >= 0 && act && !beast && !P.dead) { var w = witness(vi, P.x, P.y); if (w) cryOut(w, w.type === 'soldier' ? 'To arms!' : ['Blades! Blades!', 'Raiders!', 'He has drawn!'][nameHash(w.name) % 3], vi, P.x, P.y); }   /* (a beast at you in the street is no attack on the place) */
+    if (vi >= 0 && act && !P.guard && !beast && !P.dead) { var w = witness(vi, P.x, P.y, 120); if (w) cryOut(w, w.type === 'soldier' ? 'To arms!' : ['Blades! Blades!', 'Raiders!', 'He has drawn!'][nameHash(w.name) % 3], vi, P.x, P.y); }   /* (a beast at you in the street is no attack on the place) */
     gateWatch(dt, P);
   }
   function gated(v) { var F = v.V && v.V.fence, A = Village.ARCH[v.arch]; return !!F && !F.round && !!A && !!A.townwall; }
@@ -15859,7 +15860,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function layArm(kind, mat, x, y, vi) { if (!isLand(x, y)) return; drops.push({ kind: 'item', item: Items.make(kind, mat), x: x, y: y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: (x * 7 + y) % 6.283, lie: 1, own: vi, keep: 1 }); }
   function layArms(v, vi) {                // what lies about a place for the taking: an axe at the block, a spear by a rack, the smith's blade
     var V2 = v.V, mat = v.biome === 1 ? 'iron' : 'copper', n = 0;
-    (V2.props || []).forEach(function (p) { if (p.name === 'choppingBlock') layArm('axe', mat, p.x + 11, p.y + 6, vi); });
+    (V2.props || []).forEach(function (p) { if (p.name === 'choppingBlock') layArm('axe', v.biome === 1 ? 'iron' : 'flint', p.x + 11, p.y + 6, vi); });   /* (a household's own axe: flint where copper is the new metal, so a village is not a free forge) */
     V2.items.forEach(function (it) { if (it.name === 'shieldRack' && n < 2) { n++; layArm('spear', mat, it.x + 13, it.y + 9, vi); } });
     V2.lots.forEach(function (l) { if (l.id === 'smithy') layArm('sword', mat, (l.x + l.w * 0.5) * T + 6, (l.y + l.h * 0.55) * T, vi); });
   }
