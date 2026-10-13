@@ -322,7 +322,8 @@
     if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; } else dt = 0;
     var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.3, Math.min(0.3, dA));
     if (!st.warm) { st.warm = 1; peopleWarm(H, withHand(look, e.wpn || opts.hand || null), e.bow ? ['idle', 'walk', 'run', 'bow_draw', 'bow_shoot', 'hit'] : FIGHT); peopleWarm(H, withHand(look, null), ['death', 'pickup']); }   // everything a fight will ask of him, asked for now
-    var s = { face: st.face, clip: 'idle', t: t + st.ph }, hand = e.wpn || opts.hand || null, sw = e.sw, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, alpha = 1, flash = e.flash || 0;
+    var s = { face: st.face, clip: 'idle', t: t + st.ph }, hand = opts.sheathed ? null : (e.wpn || opts.hand || null), sw = e.sw,   /* (sheathed: his weapon is away: a man of yours walking into a place at peace) */
+       k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, alpha = 1, flash = e.flash || 0;
     if (e.dead || e.down) { var lie = e.deadFor || 1.5; s.clip = 'death'; s.k = Math.min(0.999, (e.deadT || 0) / 0.9); hand = null; if (e.dead) alpha = Math.max(0, Math.min(1, (lie - e.deadT) / 1.2)); flash = 0; }
     else if (e.riseT > 0) { s.clip = 'death'; s.k = Math.max(0, Math.min(0.999, e.riseT / 0.8)); hand = null; }
     else if (e.state === 'yield') { s.clip = 'pickup'; s.k = Math.min(0.42, e.t / 0.6 * 0.42); hand = null; }
