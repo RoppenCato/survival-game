@@ -571,6 +571,43 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `{ layer, tint }` (`tinted`: the sheet recoloured once per tint) and `Sprites.hand(H, pk, face, which, scale)` gives a hand's
   offset from the feet for a drawn frame. The character panel draws the Blender hero with the thing in hand too. Items are now a
   kind and a material: the size, twist and curl of the old drawn items no longer show on the hero.
+  **The hero's shield (2026-10-13, Robin: "you need to create a shield and implement it").** `art/build/shield_build.py`
+  puts a Viking round shield on the left forearm of `hero2_mixamo.blend` (0.31 m across the radius, the people's size: five
+  boards with seams, a rawhide rim, an iron boss on its flange) as **three layers**, each a hole under the others
+  (`o['under'] = 'shield'`): **`shieldRim`** (what is never coloured: the back, the rim, the boss, the seams),
+  **`shieldFace`** (near white: **the game multiplies a colour in**) and **`shieldMark`** (two opposite quarters, for a
+  second colour: the device of a painted shield, as on the item's icon). And **two clips**, made by aiming the arm's bones
+  at directions in the world as the people's `block` is: **`block`** (from the idle's stance the left arm brings the shield
+  across; six frames) and **`block_walk`** (the walk's own frames with the arm held across: a man with his shield up walks
+  at about half his pace, and in the idle's stance he slid). `node tools/shieldrender.js [jobs at once] [--norender]`
+  renders the shield's layers for idle, walk, run, both slashes, the hit and the block, and the two new clips for the body
+  and for what the other hand may hold (sword, club, axe, knife, bow), four Blender processes at a time, each into its own
+  folder (`art/render/shield_a` to `_h`; a frame on disk is kept); copies the frames into `art/render/hero2_mixamo` and
+  writes the new layers and clips into its numbers (so a full pack still holds them); and packs **only the new sheets**:
+  **`node tools/sprites.js <name> <in> <out> --only shieldRim,shieldFace,block,...`** packs every sheet whose layer or clip
+  is named into a set that is already packed, with the frame and anchor the set has (a pixel outside it is flagged `!!`).
+  **A layer packed that way lies in a box of its own, cut to its pixels** (`anims[clip].boxes[layer]` = `[x, y, w, h]`: the
+  box's corner in the clip's frame and its size, at 1x, on whole pixels; `Sprites.draw` and the Art Editor's sheet view
+  place it; the body is always the whole frame): a shield is a fifth of the frame, and a sheet of a hundred full idle
+  frames is 86 MB once the browser has decoded it. The forty-two new sheets are 184 MB if every one were decoded, against
+  557 in full frames. (The hero's older weapon layers are still full frames: packing them again with `--only` would cut
+  them the same way.)
+  The full pack no longer holds every frame in memory either (twenty thousand frames did not fit: each is read to be
+  measured and read again to be packed) and writes the set's crop box (`box`) into its numbers. **`npm run art:shield`**
+  does the build, the renders, the merge and the pack: 5,472 frames, 42 new sheets, 8.3 MB (the hero's set is now 44 MB
+  on disk). **Run it again after `art:mixamo`** (which makes the blend anew; `art:items` and `art:people` leave the shield
+  alone). **In `src/sprites.js`:** `tick` eases `H.blk` (the guard up in an eighth of a second, down a little slower) and
+  `pick` plays `block` by it while he stands and `block_walk` while he walks (after the attack, a one-shot clip and the
+  hit; before sitting and walking); a layer `{ layer, tint, mul: true }` has its colour **multiplied in, a frame at a
+  time** (`mulTo`: a whole idle sheet recoloured, as `tinted` does for a weapon's metal, is a canvas of twenty million
+  pixels); **`Sprites.shieldInto(layers, M, face, { face, mark })`** puts the three layers among a hero's: over the thing
+  in his right hand when his left side is toward us (he faces west, or us), under it when it is the far side
+  (`attach` now hands the facing to `opts.layers(face)`); `SHIELD_WOOD`, `SHIELD_MARK`, `tintedMul` (a whole sheet, for an
+  editor's sheet view). The rule and the game's side are under "Fighting men" ("The hero's shield").
+  `docs/hero-shield.jpg`. **Seen on the way:** the block's weapon layers were rendered the new way (a hole cut by
+  material, so nothing shows through the hand), the hero's older weapon layers the old way, so a sword's grip loses a few
+  pixels as the guard comes up; **and the hero still has no layers for the seax, the spear and the Dane axe: with one of
+  those on the Fight bar his hand is empty** (the people have all three).
   **The animals (2026-10-11, Robin: the boar, the deer, then the wolf, eight directions; no Mixamo for four legs):**
   `art/build/quad_build.py -- <boar|deer|wolf>` models, rigs and animates a four-legged animal by script and saves
   `art/source/<name>.blend`. **One rig for every species:** `body` (bob, pitch, roll), `hips` and `chest` (the spine flexes between
@@ -902,6 +939,36 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
 - **What his weapons do to the hero's shield** (`hitFlags` in `hurtPlayer`): an axe gets 0.4 through instead of 0.12 and
   costs nearly twice the stamina to hold; a club knocks the guard down for a moment; a Dane axe cannot be parried (it is a
   heavy blow) and is to be stepped out of. So each of his weapons asks something else of you.
+- **The hero's shield (2026-10-13, Robin: "you need to create a shield and implement it"). My reading of it, not a ruling
+  of Robin's: where the code decides something, it is marked mine.** Until now K (or the right mouse button) raised a
+  guard as strong with nothing on the arm as with a shield there (the engine's `S.shield` was always on), the shield in
+  the gear slot only turned a tenth of a blow aside, and the Blender hero showed neither a shield nor a guard. Now:
+  **The shield you wear is the strong guard.** The engine asks `shielded()`: a page's `api.shield()` if it has one, the
+  arena's Shield switch otherwise (so the tests and the editors are as they were). With a shield: the guard covers 1.9
+  radians to each side, 0.12 of a light blow and 0.4 of a heavy one get through, a blocked blow costs 10 stamina, the
+  parry's moment is 0.22 s, **and a bowman's arrow is stopped**. Without: K still fends with whatever he holds (1.4
+  radians, 0.55 and 0.8 through, 18 stamina, 0.12 s) **and stops no arrow** (`hurtPlayer`: a `proj` from a soldier passes
+  a guard with no shield). So the first wooden shield (5 wood and a leather, known from the first hide) is worth making:
+  the unprepared state is the weak baseline, the shield the buff. **In the game** `shieldHeld()` says it is on the arm:
+  one is worn (`equip.shield`), he is in Fight mode, nothing is on his shoulder, **and the thing in his hand leaves the
+  other arm free: not a bow, not a Dane axe** (`TWO_HANDS`; mine). **A lit torch does not take it away** (mine: nothing
+  in his hands is drawn while the torch burns, as before, and the troll's cave was tuned with a full guard and a torch).
+  **Drawn** (`handLayers(face)`, `shieldPaint()`): on his left arm whenever his weapon is out (so not while gathering,
+  building, carrying, or with the blade put away in a place at peace), across his body with the block clip while K is
+  held, held across through a walk. **A wooden shield is bare boards; any other is painted: your colour (`YOURS`)
+  quartered with bone.** Without a shield K brings the bare forearm up. The character panel shows it; the shield's card
+  has a second line ("Raised, it stops 88% of a blow") and the Stats page a **Guard** row (what a raised guard stops,
+  with and without). **Robin liked the drawn hero's shield showing only when used** (2026-10-05): the Admin board has
+  **"Shield only when raised"** (`ADMIN.shieldRaised`) for that; on the arm is the default because the men beside him
+  carry theirs so (mine). The Combat Arena's Shield switch puts a wooden one on his arm; the Art Editor's Models tab has
+  **Shield** and **Painted shield** among the hero's gear. Debug: `Combat.api.debug().shield()` (worn, held, paint, blk,
+  last, layers). **Checked:** `node tests/battle.js raid` (its last line: against 10, the hero in leather, an arrow costs
+  0.7 behind a shield and 6 with none; a thing thrown at him 0.7 and 3.3); the same seeded town fights give the same
+  lines on the engine before and after (a test sets no `api.shield`); in the pane at 1200 by 750: the wooden and the
+  painted shield in eight directions, the guard standing and walking, the bare arm, the Dane axe (no shield), a fight
+  with a hirdman (a blow of his on the shield: 3). **Not done:** a shield slung on the back when the weapon is away; a
+  parry with the weapon as the shieldless guard's own clip; the shield in the hero's cast shadow; whether a torch should
+  cost the shield arm (`docs/idea-bank.md`).
 - **More than one on a target (rung 2).** At most two may be striking one target at once (`MEN.slots`), and **no two blows
   land together**: a man may begin a blow only if it would land at least `MEN.gapHero` 0.75 s from any other already on its
   way to the hero (as long as the hero is untouchable after a blow, so none is wasted), 0.35 s for a man (`slotFree`, by
@@ -2304,7 +2371,10 @@ The hero has two modes, switched with **Q**, each with its own six-slot bar at t
 - **Gather mode:** tools from the Gather bar. The right tool does full damage and any other half. Tools do not hurt
   enemies. No auto-pick, no highlight.
 - **Worn gear** (`equip`): helmet, cloak, tunic, trousers, boots on the character panel's left, shield and amulet on its
-  right. The shield shows only when used (blocking); Robin likes that as it is.
+  right. (The drawn hero's shield showed only when used, and Robin liked that. Since 2026-10-13 the Blender hero carries
+  his on the arm whenever his weapon is out; Admin's "Shield only when raised" is the old way: see "The hero's shield".)
+- **K, or the right mouse button (Fight mode):** raise your guard. With a shield on the arm it is a shield's; without, you
+  fend with what you hold. Raised in the instant a blow lands it is a parry.
 - **Build mode:** **B** enters it (no hammer item). In it **F** turns the cursor into a red crossed box that
   destroys pieces. Built in the game (see "The game").
 - **X (2026-10-13):** draw your weapon, or put it away (among other people it is away until you draw it; a drawn blade is a threat).

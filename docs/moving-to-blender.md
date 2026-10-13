@@ -58,7 +58,7 @@ Blender Editor and in the game, a before/after image, and a note in the status t
 
 Layers on the second hero: helmet (leather, iron), mail, gambeson, cloak, the tunic recoloured by the material; the hair and beard
 as layers so Eirik, Ásta and Hallvard are one body with different layers (Ásta's braid and cap, Hallvard's knot and fur vest); the
-clips the game still lacks (bow draw as a held pose, block with the shield, carrying the heavy chest, fishing cast and reel, the
+clips the game still lacks (bow draw as a held pose, ~~block with the shield~~ (made by script 2026-10-13: `block`, `block_walk`), carrying the heavy chest, fishing cast and reel, the
 raft paddle and the karve's tiller, sleep). The old drawn hero stays until Robin switches the default.
 
 ### 2. People
@@ -113,7 +113,7 @@ New creatures from `docs/beasts.md` (draugr, huldra, näcken, the jötunn) are m
 
 | Model | Blend | Rig | Clips | Sheets | In the editor | In the game | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Hero 2 (cel, fitted) | `hero2.blend`, `hero2_mixamo.blend` | Mixamo | 18 | `hero2-mixamo` | yes | **the hero** everywhere (since 2026-10-09 evening, `src/sprites.js`) | the sword, axe, pick, knife, club and bow as layers in the hand (2026-10-09); no gear layers yet; the drawn hero retired to `art/backup/` |
+| Hero 2 (cel, fitted) | `hero2.blend`, `hero2_mixamo.blend` | Mixamo | 18 | `hero2-mixamo` | yes | **the hero** everywhere (since 2026-10-09 evening, `src/sprites.js`) | the sword, axe, pick, knife, club and bow as layers in the hand (2026-10-09); **the round shield on the left arm as three layers, with a block and a walk-with-shield clip (2026-10-13, `shield_build.py`, `npm run art:shield`)**; no seax, spear or Dane axe in his hand yet; no other gear layers yet; the drawn hero retired to `art/backup/` |
 | Hero 1 (first trial) | `hero.blend` | own | idle, walk | `hero` | yes | Character Editor only | superseded |
 | The people: villagers, the hird, guards (and Brokk and a child as the same body scaled) | `people.blend` (`people_build.py`, from the hero's file) | Mixamo (the hero's) | 16 (the hero's, and `block` made by script) | `people`: 28 layers as atlases, WebP, 22.8 MB | Models tab, the People panel | **yes** (2026-10-13): `drawPerson`, `drawFighter` | one neutral body, the tunic and trousers coloured at draw time, hair, beards, hats, mail, cloak, dress, shield and weapons as layers; no Mixamo sitting yet for the missing clips; Brokk's own body, the elder's stoop and the priest's dress are still to do |
 | Mountain troll (boulder) | `troll_boulder.blend` | own (`troll_build.py`), no Mixamo | 7 | `troll_boulder` | Models tab | **yes**, the cave troll (2026-10-12) | stone is the shield pose under a grey tint |

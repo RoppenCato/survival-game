@@ -220,12 +220,16 @@ function switchMode() {
 }
 
 /* ---------- damage ---------- */
-function parryWindow() { return S.shield ? 0.22 : 0.12; }
+// Is there a shield on his arm? (2026-10-13: the strong guard was everybody's, shield or none.) A page says (api.shield); the
+// arena's own switch otherwise. With one the guard is wide, most of a blow is stopped and an arrow is; without, K still fends
+// with what he holds: a narrow guard that lets more than half of a light blow through, costs more breath, and stops no arrow.
+function shielded() { return api.shield ? !!api.shield() : S.shield; }
+function parryWindow() { return shielded() ? 0.22 : 0.12; }
 function hurtPlayer(dmg, sx, sy, kind, src) {
   var p = P; if (p.dead || p.invuln > 0) return false;
   var toSrc = Math.atan2(sy - p.y, sx - p.x);
-  var front = Math.abs(wrap(toSrc - p.face)) <= (S.shield ? 1.9 : 1.4);
-  if (p.guard && front) {
+  var front = Math.abs(wrap(toSrc - p.face)) <= (shielded() ? 1.9 : 1.4);
+  if (p.guard && front && !(kind === 'proj' && src && src.type === 'soldier' && !shielded())) {   /* (a bowman's arrow is stopped by a shield, not by a raised arm) */
     if (kind !== 'heavy' && p.guardT < parryWindow()) {
       p.parryFx = 0.35; p.st = Math.min(maxSt(), p.st + 12);
       spark(p.x + Math.cos(p.face) * 10, p.y + Math.sin(p.face) * 10, 14, '#fff6c8', 140);
@@ -233,9 +237,9 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
       num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
       return 'parry';
     }
-    var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (S.shield ? 0.4 : 0.8) : (S.shield ? 0.12 : 0.55);
+    var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (shielded() ? 0.4 : 0.8) : (shielded() ? 0.12 : 0.55);
     var d2 = dmg * red * (api.armor ? 1 - api.armor() : 1);
-    p.hp -= d2; p.st -= (S.shield ? 10 : 18) * (gbH ? 1.8 : 1) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
+    p.hp -= d2; p.st -= (shielded() ? 10 : 18) * (gbH ? 1.8 : 1) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
     var kbs = kind === 'heavy' ? 110 : 55; if (hitFlags.stagger) { kbs = 150; p.hurtT = Math.max(p.hurtT, 0.24); p.guard = false; p.invuln = Math.max(p.invuln, 0.3); }   // (while he cannot act he cannot be struck: with more than one man on him he must always be able to get out)
     p.kx = -Math.cos(toSrc) * kbs; p.ky = -Math.sin(toSrc) * kbs;
     spark(p.x + Math.cos(p.face) * 9, p.y + Math.sin(p.face) * 9, 6, '#cfd6e6', 90);
@@ -1573,7 +1577,7 @@ function swordPose(dir) {
     if (o.tilt) { var nn = Math.hypot(o.ca, o.sa); o.ca /= nn; o.sa /= nn; }
     o.front = Math.sin(ang) >= -0.05; o.side = sdn; o.atk = true;
   } else {
-    var side = (p.guard && S.shield) ? -guardSide() : 1;
+    var side = (p.guard && shielded()) ? -guardSide() : 1;
     // at rest the thing hangs down at the side from a straight arm, the way you carry an axe when you walk
     // carried: the hand at the hip and the thing pointing up past the shoulder, resting on it, so it stays short and clear
     // at the side with the arm hanging, the thing pointing forward and down, the way a sword or an axe is carried (Robin, 2026-10-07)
@@ -1644,7 +1648,7 @@ function heroPose(dir) {
   pose.sheath = !drawn && !api.items;
   var swordHand = [sp.hx + bp.lx, sp.hy + bp.ly];
   if (p.fireT > 0) swordHand = [Math.cos(p.fireAng) * 10 + bp.lx, -13 + Math.sin(p.fireAng) * 10 * K + bp.ly];
-  if (p.guard && !S.shield) {
+  if (p.guard && !shielded()) {
     if (side) { pose.near = [Math.cos(p.face) * 5 + bp.lx, -13 + bp.ly]; pose.far = [Math.cos(p.face) * 6 + bp.lx, -14 + bp.ly]; }
     else { pose.armL = [-2.5 + bp.lx, -13 + bp.ly]; pose.armR = [2.5 + bp.lx, -13 + bp.ly]; }
   } else {
@@ -1694,7 +1698,7 @@ function atkBody() {
 }
 function drawHeroWeapon(c, front) {
   var p = P, a = p.atk, dir = heroDir(), bp = bodyPose(), sp = swordPose(dir);
-  var hideSword = (p.guard && !S.shield) || (a.ph === 'none' && !itemOf('held')), HH = lib.hero(), HC = HH.pal;
+  var hideSword = (p.guard && !shielded()) || (a.ph === 'none' && !itemOf('held')), HH = lib.hero(), HC = HH.pal;
   var hx = p.x + sp.hx + bp.lx, hy = p.y * K + sp.hy + bp.ly;
   if (a.ph === 'charge' && !front) {
     var c01 = Math.min(1, a.t), full = a.t >= 1, pulse = full ? 0.5 + 0.5 * Math.sin(W.t * 24) : 0;
@@ -1779,12 +1783,12 @@ function drawShield(c, front) {
   var bp = bodyPose(), sh = shieldPose();
   var x = p.x + sh[0] + bp.lx, y = p.y * K + sh[1] + bp.ly;
   var parry = p.guardT < parryWindow();
-  if (S.shield) {
+  if (shielded()) {
     var bh = shieldBehind(), srx = bh ? 10.5 : 7.5, sry = bh ? 11 : 9;
     lib.ell(c, x, y, srx, sry, parry ? '#fff3c4' : '#8f8ba6', 1.8);
     lib.ell(c, x, y, srx * 0.53, sry * 0.55, '#e0a93a', 1.2); lib.ell(c, x, y, srx * 0.19, sry * 0.2, '#f6d878', 0);
   }
-  if (parry) { c.strokeStyle = 'rgba(255,240,170,' + (0.8 - p.guardT / parryWindow() * 0.6) + ')'; c.lineWidth = 1.6; c.beginPath(); c.ellipse(S.shield ? x : p.x + Math.cos(p.face) * 8, S.shield ? y : p.y * K - 12 + Math.sin(p.face) * 5, 12, 13, 0, 0, Math.PI * 2); c.stroke(); }
+  if (parry) { c.strokeStyle = 'rgba(255,240,170,' + (0.8 - p.guardT / parryWindow() * 0.6) + ')'; c.lineWidth = 1.6; c.beginPath(); c.ellipse(shielded() ? x : p.x + Math.cos(p.face) * 8, shielded() ? y : p.y * K - 12 + Math.sin(p.face) * 5, 12, 13, 0, 0, Math.PI * 2); c.stroke(); }
 }
 // With api.facings8 the side view is used only when he faces nearly straight left or right; on the diagonals he is
 // drawn from the front or back, turned (heroTurn) toward the side.

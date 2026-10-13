@@ -163,11 +163,12 @@ __SPRITES_JS__
   var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, trollForest: { sheet: 'troll_forest', deadFor: 3 }, trollMaw: { sheet: 'troll_maw', deadFor: 3 }, trollThree: { sheet: 'troll_three', deadFor: 3 }, draugr: { deadFor: 2.5 }, huldra: { deadFor: 2.5 }, nacken: { deadFor: 2.5 }, bysen: { deathClip: 'hide', deadFor: 2.5 } };   // the animals modelled in Blender (2026-10-11)
   Object.keys(ARENA_BOPT).forEach(function (bk) { var SPA = __SPRITES__ || {}, sh = ARENA_BOPT[bk].sheet || bk; if (SPA[sh]) ARENA_BEASTS[bk] = Sprites.load(SPA, sh); });
   Combat.api.enemySprite = function (c, e) { var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: bo.scale, deadFor: bo.deadFor, deathClip: bo.deathClip }); };
-  function arenaLayers() {
+  function arenaLayers(face) {
     var P = Combat.dbg().P, M = ARENA_HERO && ARENA_HERO.meta, out = ['body']; if (!M) return out;
-    var kind = P.mode === 'fight' ? (P.weapon === 'ranged' ? arm.ranged : arm.melee) : P.mode === 'gather' ? (Combat.api.tools[P.tool] || {}).id : null; if (!kind) return out;
-    if (M.layers.indexOf(kind + 'Wood') >= 0) out.push(kind + 'Wood');
-    if (M.layers.indexOf(kind + 'Metal') >= 0) out.push({ layer: kind + 'Metal', tint: (Items.MATS[arm.mat] || Items.MATS.iron).face });
+    var kind = P.mode === 'fight' ? (P.weapon === 'ranged' ? arm.ranged : arm.melee) : P.mode === 'gather' ? (Combat.api.tools[P.tool] || {}).id : null;
+    if (kind && M.layers.indexOf(kind + 'Wood') >= 0) out.push(kind + 'Wood');
+    if (kind && M.layers.indexOf(kind + 'Metal') >= 0) out.push({ layer: kind + 'Metal', tint: (Items.MATS[arm.mat] || Items.MATS.iron).face });
+    if (Combat.S.shield && P.mode === 'fight' && P.weapon !== 'ranged' && arm.melee !== 'greataxe') out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, null);   /* (the Shield switch: a wooden shield on the arm, 2026-10-13) */
     return out;
   }
   Sprites.attach(Combat, ARENA_HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var P = Combat.dbg().P, t = Combat.api.tools && Combat.api.tools[P.tool]; return t ? t.id : null; }, shadowHue: 222, layers: arenaLayers });

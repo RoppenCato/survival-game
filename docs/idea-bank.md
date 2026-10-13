@@ -417,6 +417,26 @@ https://en.wikipedia.org/wiki/MapleStory, https://tvtropes.org/pmwiki/pmwiki.php
 Still open: an OGG per song as an asset later if a SoundFont rendering sounds better; the forest, sea, night and
 village pieces; music by place once the island has places.
 
+## The shield: what I chose, and what is left (2026-10-13)
+
+Robin asked for a shield to be created and implemented. What is built is in `CLAUDE.md` ("The hero's shield"). The
+choices in it are mine and any can go:
+
+- **Blocking is now the shield's.** Without one K only fends (more than half of a light blow through, no arrow
+  stopped). Before, everybody blocked at full strength with bare hands. If the start feels too hard before the first
+  leather, the numbers are the engine's old "no shield" ones and can be made kinder.
+- **On the arm whenever the weapon is out**, not only while raised (Robin liked "only when used" on the drawn hero;
+  Admin has the switch). A third way: **slung on his back** when the weapon is away or he is gathering (a layer on the
+  spine bone for every clip: about seven thousand frames).
+- **A bow and a Dane axe take both hands** (no shield, the weak guard). A spear is used with a shield.
+- **A torch does not cost the shield.** It could: a torch or a shield at night and in the cave is a real choice, but it
+  makes the troll's cave harder than it was tuned (a blocked sweep would cost 32 instead of 16), so it waits for Robin.
+- **Paint.** A wooden shield is bare boards; the iron one is your red quartered with bone. Wanted later, perhaps: your
+  own device (the item's tale says "painted the way you like"), and the hird's shields taking it.
+- **Not made:** a parry with the weapon as the shieldless guard's own clip (he brings a bare forearm up); the shield in
+  his cast shadow; the hero's seax, spear and Dane axe in the hand (nothing is drawn there today); the hero's older
+  weapon layers rendered again the new way.
+
 ## Mountains: what is left to think about (2026-10-12, after the look pass)
 
 Built: terraces, cliffs with side walls, sea cliffs and a bay, peaks, slopes, a waterfall, a lookout, the fells' own ground (see

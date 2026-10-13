@@ -441,6 +441,12 @@ function raidChecks() {
   // 10. the storm order: a man of yours runs to the place he was given, far beyond his leash from the hero, and is a follower again when no place is left
   { const D = fresh(), P = D.P, f = man(1, 'sword', 'leather', 230, 280, person()); P.x = 200; P.y = 250; Combat.order('storm'); f.stormAt = { x: 1100, y: 250 }; let asked = 0, at = -1; Combat.api.onStormAt = e => { asked++; at = Math.hypot(e.x - 1100, e.y - 250); return null; };
     run(14); Combat.api.onStormAt = null; say(asked === 1 && f.order === 'follow', 'a man told to storm a place 900 units off: ' + (asked ? 'he got there (' + Math.round(at) + ' units from it when he asked for the next)' : 'HE NEVER GOT THERE') + ', and with none left he is ' + (f.order === 'follow' ? 'a follower again' : 'STILL ' + f.order)); }
+  // 11. the shield (2026-10-13): K with a shield on the arm stops a bowman's arrow and most of what is thrown at him; with none he fends poorly and no arrow is stopped
+  { const shot = (has, owner) => { const D = fresh(), P = D.P; Combat.api.shield = () => has; const b = man(0, 'sword', 'leather', 1500, 250, person()); b.awake = false; b.aggro = 0; b.post = { x: 1500, y: 250, face: 0 };
+      P.face = 0; P.faceVis = 0; Combat.key('KeyK', true); run(0.5); const h0 = P.hp, up = P.guard;
+      D.W.projs.push({ x: P.x + 60, y: P.y, vx: -300, vy: 0, r: 3.5, dmg: 10, owner, side: 0, src: b, life: 2, ang: Math.PI }); run(0.6); off(); Combat.api.shield = null; return up ? +(h0 - P.hp).toFixed(1) : -1; };
+    const a1 = shot(true, 'man'), a0 = shot(false, 'man'), m1 = shot(true, 'enemy'), m0 = shot(false, 'enemy');
+    say(a1 >= 0 && a1 < 2 && a0 > 4 && m1 < m0 && m0 < a0, 'the guard raised against 10 (the hero in leather): an arrow costs ' + a1 + ' behind a shield and ' + a0 + ' with none (it is not stopped); a thing thrown at him ' + m1 + ' and ' + m0); }
 }
 const t0 = Date.now();
 if (mode === 'one' || mode === 'short') one(N);

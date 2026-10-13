@@ -21,6 +21,7 @@ npm run art:styles     # the style test: hero2 in the three styles over the Nigh
 npm run art:mixamo     # bind hero2 to the Mixamo skeleton, render idle, walk and run, mixamocompare.png
 npm run art:mixamo:sheets  # every Mixamo clip in eight directions into assets/sprites/hero2-mixamo (the hero)
 npm run art:items      # the things in the hand modelled and rendered as layers over the hero's clips, merged and packed
+npm run art:shield     # the hero's round shield (three layers on the left arm) and his block and walk-with-shield clips: built, rendered, merged and packed into his sheets (tools/shieldrender.js; run again after art:mixamo)
 npm run art:icons      # each thing alone as an icon for the bag (assets/sprites/items)
 npm run art:rocks      # the mountains' set pieces (the cave, mine and sea cave mouths, the rock shelter): modelled, rendered once each and packed into assets/props
 npm run art:vasen      # the draugr, the huldra, Nacken and the bysen (art:draugr, art:huldra, art:nacken, art:bysen), then vasen.png

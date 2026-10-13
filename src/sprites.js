@@ -39,7 +39,7 @@
   function blends(nm, A) { return !!A && A.frames > 1 && (BLEND[nm] || A.blend) && typeof document !== 'undefined'; }
   function loopAt(A, t) { var p = (t * A.fps) % A.frames; if (p < 0) p += A.frames; var f = Math.floor(p) % A.frames; return { f: f, f2: (f + 1) % A.frames, w: p - Math.floor(p) }; }
   function mixTo(H, im, fw, fh, d, f, f2, w) {
-    var cv2 = H.mix; if (!cv2 || cv2.width !== fw || cv2.height !== fh) { cv2 = H.mix = document.createElement('canvas'); cv2.width = fw; cv2.height = fh; }
+    var MB = H.mixBy || (H.mixBy = {}), mk = fw + 'x' + fh, cv2 = MB[mk]; if (!cv2) { cv2 = MB[mk] = document.createElement('canvas'); cv2.width = fw; cv2.height = fh; }   /* (a canvas a size: a layer in a box of its own is another size than the body, every frame) */
     var g = cv2.getContext('2d'); g.globalCompositeOperation = 'copy'; g.globalAlpha = 1 - w; g.drawImage(im, f * fw, d * fh, fw, fh, 0, 0, fw, fh);
     g.globalCompositeOperation = 'lighter'; g.globalAlpha = w; g.drawImage(im, f2 * fw, d * fh, fw, fh, 0, 0, fw, fh); return cv2;
   }
@@ -56,6 +56,10 @@
     if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip) { var C = A[H.clip.name], cf = Math.floor((t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
+    if ((H.blk || 0) > 0.02 && A.block && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the left arm brought across as he stands, held across through the walk
+      if (!(an && an.amt > 0.3)) return { a: 'block', f: frameAt(A.block, Math.min(0.999, H.blk)) };
+      if (H.blk > 0.5 && A.block_walk) return { a: 'block_walk', f: loopFrame(A.block_walk, t * 0.62) };   /* (he walks at about half his pace with it up) */
+    }
     if (an && an.sit && A.sit) { var ls = loopAt(A.sit, t); return { a: 'sit', f: ls.f, f2: ls.f2, w: ls.w }; }
     var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (A.walk ? 'walk' : 'idle')) : 'idle';
     if (!A[nm2]) return null;                                          // a sheet set with no such clip draws nothing (it threw)
@@ -68,6 +72,35 @@
     cv2 = document.createElement('canvas'); cv2.width = im.naturalWidth; cv2.height = im.naturalHeight; var g = cv2.getContext('2d');
     g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = 0.6; g.fillStyle = tint; g.fillRect(0, 0, cv2.width, cv2.height);
     g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.35; g.drawImage(im, 0, 0); H.sil[key] = cv2; return cv2;
+  }
+  // a colour multiplied into one frame (2026-10-13, the shield's face: rendered near white, so the colour comes out shaded as the
+  // render shaded it). Done a frame at a time into a small canvas: a whole sheet recoloured, as tinted() does, is a canvas of
+  // twenty million pixels for the idle alone. src is a sheet (sx, sy: the frame's corner) or a frame already mixed (0, 0).
+  function mulTo(H, src, sx, sy, fw, fh, tint) {
+    if (typeof document === 'undefined') return null;
+    var UB = H.mulBy || (H.mulBy = {}), uk = fw + 'x' + fh, cv2 = UB[uk]; if (!cv2) { cv2 = UB[uk] = document.createElement('canvas'); cv2.width = fw; cv2.height = fh; }
+    var g = cv2.getContext('2d'); g.globalAlpha = 1; g.globalCompositeOperation = 'copy'; g.drawImage(src, sx, sy, fw, fh, 0, 0, fw, fh);
+    g.globalCompositeOperation = 'multiply'; g.fillStyle = tint; g.fillRect(0, 0, fw, fh);
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(src, sx, sy, fw, fh, 0, 0, fw, fh); g.globalCompositeOperation = 'source-over'; return cv2;
+  }
+  // the same for a whole sheet, kept (an editor's sheet view)
+  function tintedMul(H, im, file, tint) {
+    var key = file + '|m|' + tint, cv2 = H.sil[key]; if (cv2) return cv2;
+    cv2 = document.createElement('canvas'); cv2.width = im.naturalWidth; cv2.height = im.naturalHeight; var g = cv2.getContext('2d');
+    g.drawImage(im, 0, 0); g.globalCompositeOperation = 'multiply'; g.fillStyle = tint; g.fillRect(0, 0, cv2.width, cv2.height);
+    g.globalCompositeOperation = 'destination-in'; g.drawImage(im, 0, 0); H.sil[key] = cv2; return cv2;
+  }
+  /* The hero's shield (2026-10-13, Robin: "create a shield and implement it"; art/build/shield_build.py): three layers on his
+     left forearm. shieldRim is what is never coloured (the boards' back, the rawhide rim, the iron boss, the seams);
+     shieldFace takes a colour multiplied in (bare limewood, or paint); shieldMark is two opposite quarters for a second
+     colour (the device of a painted shield). shieldInto puts them among a hero's layers: over the thing in his right hand
+     when his left side is toward us (he faces west or toward us), under it when it is the far side. paint: { face, mark }. */
+  var SHIELD_WOOD = '#b98a5a', SHIELD_MARK = '#e4dac2';
+  function shieldInto(out, M, face, paint) {
+    if (!M || M.layers.indexOf('shieldRim') < 0) return out; paint = paint || {};
+    var Sh = ['shieldRim', { layer: 'shieldFace', tint: paint.face || SHIELD_WOOD, mul: true }]; if (paint.mark) Sh.push({ layer: 'shieldMark', tint: paint.mark, mul: true });
+    var d = M.dirs[dirOf(M, face == null ? Math.PI / 2 : face)], near = d === 'w' || d === 'sw' || d === 'nw' || d === 's';
+    return near ? out.concat(Sh) : [out[0]].concat(Sh, out.slice(1));
   }
   // where a hand is for a drawn frame: [dx, dy, depth] from the feet in world units (null when the sheet has no hands); which is 0 right, 1 left
   function hand(H, pk, face, which, scale) {
@@ -115,9 +148,11 @@
     for (var i = 0; i < layers.length; i++) {                     // a layer is a name, or { layer, tint } for a recoloured one
       var L = layers[i], ln = typeof L === 'string' ? L : L.layer, file = A.sheets[ln]; if (!file) continue;
       var li = H.img[file]; if (!li || !li.complete || !li.naturalWidth) continue;
-      var src = typeof L === 'string' || !L.tint ? li : tinted(H, li, file, L.tint);
-      if (mixW) c.drawImage(mixTo(H, src, fw, fh, d, pk.f, pk.f2, pk.w), 0, 0, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
-      else c.drawImage(src, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+      var mulL = typeof L !== 'string' && L.tint && L.mul, src = typeof L === 'string' || !L.tint || mulL ? li : tinted(H, li, file, L.tint);
+      var LB = A.boxes && A.boxes[ln], lw = LB ? LB[2] : fw, lh = LB ? LB[3] : fh, dx = (-AN.x + (LB ? LB[0] : 0)) * s, dy = (-AN.y + (LB ? LB[1] : 0)) * s;   /* (a layer may be packed in a box of its own, cut to its pixels: its corner in the frame, its size) */
+      if (mulL) { var mx = mixW ? mixTo(H, li, lw, lh, d, pk.f, pk.f2, pk.w) : null, mc = mulTo(H, mx || li, mx ? 0 : pk.f * lw, mx ? 0 : d * lh, lw, lh, L.tint); c.drawImage(mc || mx || li, mc || mx ? 0 : pk.f * lw, mc || mx ? 0 : d * lh, lw, lh, dx, dy, lw * s, lh * s); }   /* (a colour multiplied in, a frame at a time: the shield's face) */
+      else if (mixW) c.drawImage(mixTo(H, src, lw, lh, d, pk.f, pk.f2, pk.w), 0, 0, lw, lh, dx, dy, lw * s, lh * s);
+      else c.drawImage(src, pk.f * lw, d * lh, lw, lh, dx, dy, lw * s, lh * s);
     }
     litOver(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
     c.restore();
@@ -127,6 +162,8 @@
     if (!H) return;
     if (P.fireT > H.fireT) play(H, 'bow_shoot'); H.fireT = P.fireT;
     if (P.dead && !H.deadT) H.deadT = now(); if (!P.dead) H.deadT = 0;
+    var tb = now(), db = Math.min(0.1, Math.max(0, tb - (H.blkAt || tb))); H.blkAt = tb;          // the guard: up in an eighth of a second, down a little slower (pick plays the block clip by it)
+    H.blk = Math.max(0, Math.min(1, (H.blk || 0) + (P.guard && !P.dead ? db / 0.12 : -db / 0.16)));
   }
   // the engine's hero: Combat.api.heroSprite draws from the sheet; opts may give scale(), tool(), shadow(), shadowHue, layers()
   function attach(Combat, H, opts) {
@@ -134,7 +171,7 @@
     if (!H) { Combat.api.heroSprite = null; return null; }
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
-      draw(c, H, x, y, face, an, dashing, P, { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers() : null, stepData: Combat.api.stepData, tool: opts.tool });
+      draw(c, H, x, y, face, an, dashing, P, { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool });
     };
     return H;
   }
@@ -349,5 +386,5 @@
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
   function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { loadLazy: loadLazy, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, beast: beast, ready: ready };
+  return { loadLazy: loadLazy, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });

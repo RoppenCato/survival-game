@@ -806,10 +806,11 @@ __SPRITES_JS__
     function meta() { return SP[cur] && SP[cur].meta; }
     var handKind = null;
     function isHandLayer(l) { return /^(\w+?)(Wood|Metal)$/.test(l); }
-    function layersOn() {
+    function layersOn(face) {
       var M = meta(), out = ['body']; if (!M) return out;
-      M.layers.forEach(function (l) { if (l !== 'body' && !isHandLayer(l) && gear[l]) out.push(l); });
+      M.layers.forEach(function (l) { if (l !== 'body' && !isHandLayer(l) && !/^shield/.test(l) && gear[l]) out.push(l); });
       if (handKind) { if (M.layers.indexOf(handKind + 'Wood') >= 0) out.push(handKind + 'Wood'); if (M.layers.indexOf(handKind + 'Metal') >= 0) out.push({ layer: handKind + 'Metal', tint: '#9ca3ad' }); }
+      if (gear.shield) out = Sprites.shieldInto(out, M, face, gear.shield === 'paint' ? { face: '#8a3a34', mark: Sprites.SHIELD_MARK } : null);   /* (the shield is three layers and two colours: one piece of gear here, bare or painted) */
       return out;
     }
     function spriteDir(face) {
@@ -833,7 +834,8 @@ __SPRITES_JS__
       Array.prototype.forEach.call(modelsEl.children, function (b) { pressed(b, b.dataset.nm === nm); });
       $('modelnote').textContent = NOTE[nm] || ('Sheets from assets/sprites/' + nm + '.');
       gearEl.innerHTML = ''; var M = meta(); handKind = null;
-      M.layers.forEach(function (l) { if (l === 'body' || isHandLayer(l)) return; var b = document.createElement('button'); b.textContent = l.charAt(0).toUpperCase() + l.slice(1); pressed(b, false); b.addEventListener('click', function () { gear[l] = !gear[l]; pressed(b, gear[l]); b.blur(); drawSheet(); }); gearEl.appendChild(b); });
+      M.layers.forEach(function (l) { if (l === 'body' || isHandLayer(l) || /^shield/.test(l)) return; var b = document.createElement('button'); b.textContent = l.charAt(0).toUpperCase() + l.slice(1); pressed(b, false); b.addEventListener('click', function () { gear[l] = !gear[l]; pressed(b, gear[l]); b.blur(); drawSheet(); }); gearEl.appendChild(b); });
+      if (M.layers.indexOf('shieldRim') >= 0) [['wood', 'Shield'], ['paint', 'Painted shield']].forEach(function (q) { var b = document.createElement('button'); b.textContent = q[1]; b.dataset.sh = q[0]; pressed(b, false); b.addEventListener('click', function () { gear.shield = gear.shield === q[0] ? null : q[0]; Array.prototype.forEach.call(gearEl.children, function (z) { if (z.dataset && z.dataset.sh) pressed(z, gear.shield === z.dataset.sh); }); b.blur(); drawSheet(); }); gearEl.appendChild(b); });
       if (gearEl.children.length === 0) { var p = document.createElement('span'); p.className = 'desc'; p.textContent = 'This model has no gear layers.'; gearEl.appendChild(p); }
       var handEl = $('hand'); handEl.innerHTML = ''; var kinds = [];
       M.layers.forEach(function (l) { var mk = /^(\w+?)(Wood|Metal)$/.exec(l); if (mk && kinds.indexOf(mk[1]) < 0) kinds.push(mk[1]); });
@@ -855,7 +857,7 @@ __SPRITES_JS__
       var A = M.anims[anim], fw = (A.frame || M.frame).w, fh = (A.frame || M.frame).h, cols = A.frames, rows = M.dirs.length, s = Math.min(sheet.width / (cols * fw / SPR_PX * 2), sheet.height / (rows * fh / SPR_PX * 2)) * 2 / SPR_PX;
       sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = 'high';
       for (var r = 0; r < rows; r++) for (var f = 0; f < cols; f++) {
-        layersOn().forEach(function (l) { var ln = typeof l === 'string' ? l : l.layer, file = A.sheets[ln], im = file && H().img[file]; if (!im || !im.complete || !im.naturalWidth) return; var src = typeof l === 'string' ? im : Sprites.tinted(H(), im, file, l.tint); sctx.drawImage(src, f * fw, r * fh, fw, fh, f * fw * s, r * fh * s, fw * s, fh * s); });
+        layersOn(Math.PI / 2 + Math.max(0, ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'].indexOf(M.dirs[r])) * Math.PI / 4).forEach(function (l) { var ln = typeof l === 'string' ? l : l.layer, file = A.sheets[ln], im = file && H().img[file]; if (!im || !im.complete || !im.naturalWidth) return; var src = typeof l === 'string' ? im : l.mul ? Sprites.tintedMul(H(), im, file, l.tint) : Sprites.tinted(H(), im, file, l.tint), LB = A.boxes && A.boxes[ln], lw = LB ? LB[2] : fw, lh = LB ? LB[3] : fh; sctx.drawImage(src, f * lw, r * lh, lw, lh, (f * fw + (LB ? LB[0] : 0)) * s, (r * fh + (LB ? LB[1] : 0)) * s, lw * s, lh * s); });   /* (a layer may lie in a box of its own: anims[clip].boxes) */
         if (f === 0) { sctx.fillStyle = '#231a16'; sctx.font = '11px sans-serif'; sctx.fillText(M.dirs[r], 4, r * fh * s + 14); }
       }
     }
