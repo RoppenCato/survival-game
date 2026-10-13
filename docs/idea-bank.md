@@ -606,6 +606,29 @@ Built: breaking in, bringing down, burning, mending in a place you hold. None of
   of it. Nothing stood still for it in the trials (a man walks to the end of what was found and looks again), but a
   bigger place still would want the search to work in two levels.
 
+## Raiding four ways: what I chose, and what is Robin's to decide (2026-10-13)
+
+Built the same day (`CLAUDE.md`, "Four ways to raid", "Man to man, not a swarm", "Weapons that drop and are taken").
+Robin asked for the options; how each works in detail was left to me. These are the choices that could as well have gone
+another way:
+
+- **Can people who do not fight be killed?** As built: no. Only a villager who has taken up arms can be hurt. A raid
+  on a village with no men of its own is therefore bloodless unless its people choose to fight. The other way (anybody
+  can be cut down, and it is remembered) is darker and closer to what a raid was.
+- **One on one.** A town's men wait their turn: one at each of yours, a second after six seconds, the rest hanging
+  back. It reads well and gives every fight a chance; it is also kinder than a real mob. The numbers (`MEN.onOne`,
+  `joinAfter`, `onHero`) decide how hard a town is.
+- **No key for drawing.** The weapon is away in a place at peace and out when you strike. A key to draw without
+  striking (to threaten, to make people run) would be a verb of its own: wanted?
+- **What a guarded gate lets in.** One man, unarmed, by day. Tools pass (a pick, a knife); a wood axe does not. At night
+  nobody, but the back gate is on the latch. Should a merchant's errand, a bribe or a disguise open it?
+- **The risk at night** is light sleepers (one in three, unseen), the walking watch (you, your men, a body), running,
+  and noise. Not built: a dog, a villager who cannot sleep, carrying a body out of sight, a sleeper who wakes of himself.
+- **Storming** is one order and a horn. Your men break gates and doors but take nothing and burn nothing.
+- **Looted iron.** A guard's weapon is real iron and twenty guards are twenty weapons. Nothing spends them yet (they
+  will arm the hird); until then a town is an armoury.
+- **The sea chest** is how weapons are left at the ship. It is a chest like any other and is not drawn on the hull.
+
 ## House sizes: a proposal (2026-10-13; Robin: what sizes of houses are reasonable, for play and for immersion)
 
 **Built the same day** (Robin: "Fix the house sizes so that they make sense. I feel like they are way too small today"): the

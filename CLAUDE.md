@@ -153,7 +153,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, **to the old mine, into it, to its fall of rock, to the rock shelter, to a copper vein, a boat at the sea cave, into it, to its beach**, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
-| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five** (with none, one or two **bowmen a side**), **a town defended** (the scene's second island is a lowland one with a walled town on it: twenty men at their day, or twelve or thirty, the hero six tiles south of its gate with five of his own, one of them a bowman), **a raid on it** (the same town with its silver behind its doors, your karve on the nearest shore and you beside it with your five), to its gate, to its hall, to its church, to your ship; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe, bow), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan`, `townOf()`, `townMen(vi, n)`, `townSet()`, `raidSet()`, `raidShore(vi)`. **No wolves come at night in this scene.** |
+| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five** (with none, one or two **bowmen a side**), **a town defended** (the scene's second island is a lowland one with a walled town on it: twenty men at their day, or twelve or thirty, the hero six tiles south of its gate with five of his own, one of them a bowman), **a raid on it** (the same town with its silver behind its doors, your karve on the nearest shore and you beside it with your five), **walk in unarmed, a night raid, storm it with a longship's crew (2026-10-13: see "Four ways to raid")**, to its gate, to its hall, to its church, to your ship; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe, bow), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan`, `townOf()`, `townMen(vi, n)`, `townSet()`, `raidSet()`, `raidShore(vi)`. **No wolves come at night in this scene.** |
 | `game.html?scene=ruin` | `game.html` | **Destruction Editor (2026-10-13)**, the test scene of `docs/destruction.md`: the game on the battle test's world, started at a **sampler** (a small house in every wall material under every kind of roof, a locked store with a chest, a row of yard pieces with a barred gate), the Gather bar holding an iron axe, an iron pick, a knife, a flint axe and a copper pick on 1 to 5, torches and stuff to mend with in the bag. The board on the left (it folds): to the sampler, the town's gate, its church, its hall; the town's men (none, 12, 20); **this place is theirs or yours**; set fire to the nearest house; bring the nearest roof down; put the fires out; whole again; the sampler anew; the wind (east, south, west, north, none); **side walls as now or leaning**; a torch; more to mend with; heal; night or day. **Beside the game view a panel of sliders** (the only test scene with one): every number of `src/ruin.js`, the settings as text (what differs from the defaults), Defaults, **Use in the game** (`game.ruin`) and Take back. **Nothing is saved.** `RU`, `SAMPLER`, `samplerBuild()`, `ruinScene()`, `ruinRows()`, `ruinAct(id)`, `RU_GROUPS`, `ruinPanel()`; played by script with `tools/visual/ruinplay.js`. **The big trials (2026-10-13, the same day):** the board also has **the place** (the town or the village), its men **none, 12, 20, 30, 40**, **a raid on it** (your ship on the nearest shore and five of your own), and three switches that **reload the page**: **Places: great ones** (`&big=1`: three islands, a great village on the second and a great town on the third: `Village.ARCH.great`, `bigtown`), **Houses: as now / half again as big / twice as big** (`&roomy=1.5`, `2`: `Village.DEF.houseK`) and, with bigger houses, **Heard as far again, too** (on by default; `&loud=0` leaves hearing as it was). `TRIAL` = `{ big, roomy, loud }`, `townOf()`, `gateOf(v)`; played by `tools/visual/sackplay.js` |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the mountain's foot, onto the plateau, to the lookout, the rock shelter and a copper vein (the big island has a small mountain since 2026-10-12)**, **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
@@ -985,6 +985,71 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   with E to the Fight bar. **Not done:** the sea chest is not drawn on the vessel; your own men do not pick weapons up;
   a man's shield, helm and mail are not loot. **My choices:** that they lie instead of jumping into the bag, the sea
   chest, and that a guard's iron is real iron (twenty of them is a lot of iron: to be looked at when weapons arm the hird).
+- **Four ways to raid (2026-10-13, Robin: "I also want you to have different options of raiding": by night; walking in with
+  weapons not drawn; a guarded town that checks you for weapons; storming; and villagers who flee, take cover or fight).**
+  All in `templates/game.html` with a little in the engine; tried on four rows of the battle board (below). **Robin has
+  played none of it: every number and every line of speech is a first setting, and the choices are mine.**
+  **The people (`folkReact`, on a fresh alarm: `raidStir`).** By who each one is, the same every time (`nameHash`, the
+  calling): a share takes up arms (`FOLK_FIGHT`: smith 85%, farmer and fisher 50%, weaver 15%; a child, an elder, a thrall,
+  a priest and a merchant never); of the rest about four in ten **run out of the place** and watch from beyond its edge
+  (`refugeOf`), four in ten **run home and crouch behind what stands furthest from the door** (`coverIn`), two in ten
+  **crouch behind their own house** on the side away from you (`coverBehind`; they run again when you come round it).
+  Crouched is `f.cower`, drawn as a held frame of `pickup`, with a line now and then (`COWER_LINES`). **One who arms** runs
+  home, is inside `ARM_T` 2.6 s, and comes out a man of the engine (`armFolk`: his own face and clothes, a wood axe, a club,
+  a fish spear or a long knife by his calling (`FOLK_ARMS`), copper in the first biome and iron in the lowlands, no shield,
+  14 to 20 health against a guard's 30, slow wits, `nerve` 0.25 so he yields or runs when it goes badly; a householder,
+  `homeR`: he defends his own door). **Only one who has taken up arms can be hurt.** He drops what he held; one who runs is
+  a villager again; when it is over those who live put their arms away (`folkCalm`); one who fell is gone until the page is
+  loaded again (the people are not saved). In the test town of twenty-two: six armed, ten in cover, six out of the gate.
+  **Weapons away, and drawn (`armsTick`).** In somebody else's place at peace (`placeOfPeace`) the weapon is put away by
+  itself: not in the hand (`handLayers`), nor in your men's (`sheathed` in `Sprites.fighter`). It is out when you strike,
+  raise your shield, are struck or come at, and `ARMS_T` 2.5 s after (`armsOut`). No key: the blow is the drawing. **A blow
+  or a raised shield that somebody of the place sees ends its peace** (`witness(vi, x, y)`: one of its people within 170
+  units with no wall between, or one of its men within 150 who is not looking away; `cryOut`: he cries, `raidAlarm`). A man
+  taken from behind where nobody looks is seen by nobody: **a quiet noise (no further than `MEN.hush` 80) now stirs a place
+  only if a man or a villager heard it** (`onNoise`; it used to send every villager running at any quiet kill, and the man
+  who was struck counted as one who heard: `noise(..., except)`). A beast at you in the street is no attack on the place.
+  **The gate (`gateWatch`).** A walled town with men at its gates (`gated(v)`: the `townwall` archetypes) lets in one who
+  comes **alone and unarmed**. With any weapon on you (`carriesArms`: a thing of a fighting kind anywhere in the bag or on
+  the bars; a wood axe and a bow are, a pick and a knife are not) or men of yours following within 320 units (`bandNear`;
+  men told to hold further off do not count) **its gates are barred** (their edges locked: `barred`; a barred gate can be
+  hacked, loudly) and the gate's man says which it is ("No blades inside the walls. Leave them at your ship.", "You
+  alone. Your men stay out there.", "Go on in."). Men of yours who come inside the walls of a town at peace by day end
+  it when seen. The weapons go in the ship's sea chest. **Things to take** (`layArms`, laid when a place is built): an axe at
+  every chopping block, a spear by a shield rack (two at most), the smith's blade at the smithy; they lie (`d.own`, `d.keep`:
+  the place's, and they do not rot away), and taking one where a witness sees is theft: "Thief!", and the alarm.
+  **The night (`sleepTick`).** At night a place at peace sleeps: its people go home and in (`f.abed`), its men to the beds
+  nearest their posts (`bedDown`; `e.asleep`, the engine's sleeping man: he lies, sees nothing, is drawn on his bed, `e.bed`).
+  **The watch:** the front gate's men, inside it now with a lantern, and one who walks a round with a torch (two in a
+  garrison over fourteen: gate, yard, the hall's door, the back gate; `roundOf`, the engine's errands); the back gate's two
+  doze where they stand. **A sleeping man falls to any one blow, from any side, heard 70 units off. The risk:** one in three
+  is a light sleeper (`e.light`, nothing shows it; the dozing gate men both are): a death within those 70 units has him up
+  within a second or two, and so does anybody running within 60 (`WATCH.step`; walk); the watch sees you within 120 units
+  before him with no wall between (260 if you carry a lit torch), your men likewise, and **a dead man within 100**
+  (`watchSees`): his shout is the alarm; anything loud wakes sleepers as it wakes anybody, `MEN.getUp` 2.2 s slower; and the
+  fight's own noise wakes the rest by ear. **The way in:** at night the gates are shut to everybody; the front one is
+  barred, **the back one (the front where there is none) is on the latch**: E, "Lift the latch", from either side, quietly
+  (`latchNear`, `liftLatch`). A place that has been woken stays up that night. In the test hall: a man killed beside a
+  sound sleeper, and nobody stirred; beside a light one, and he was up, then the walking watch, then six of the people armed.
+  **Storming (`stormOrder`).** A third word to your men: **G before somebody else's place with men following, "Storm
+  Steinarsheim"** (`stormable`, in `gWhat`). The engine's order `'storm'`: no leash; each man runs to the place he was
+  given (`e.stormAt`, `stormStep`), fights whoever he meets (one man each: the pairing), asks the page for the next
+  (`api.onStormAt`) and with none left follows you again. The page deals out doors (`stormGoals`: every building's door and
+  the yard; no two men begin at the same one, three each), sounds a horn (`SFX.horn`: I cannot hear it), raises the alarm
+  across the place, and has a man whose way is a barred gate or a locked door hack at it (`api.onStormBlocked`,
+  `stormTick`, `wallBlow`: as loud as when you do it). G again calls them back from up to 1400 units. Sixteen against the
+  town of twenty: after 12 s, 9 fights going at once across 8 by 13 tiles, never more than 3 of theirs round one of yours.
+  **The battle board's rows** (`walkSet`, `nightSet`, `stormSet`, `freshTown`): **Walk in unarmed** (your weapons in the
+  karve's sea chest, your men told to hold by her, you before the gate with nothing on you), **A night raid** (the middle
+  of the night, everybody where he would be, `nightNow`; you outside the back gate with your five and your weapons),
+  **Storm it: a longship's crew** (sixteen behind you before the gate, by day). `tests/battle.js raid` checks the engine's
+  part (lines 7 to 10: three against one, a householder, sleepers, the storm order). Debug: `arms()`, `witness`, `atPeace`,
+  `nightV()`, `bedDown(vi)`, `menOf(vi)`, `folkReact`, `armFolk`. `docs/raid-ways.jpg`.
+  **Not done, and open:** a watchman's torch and a villager's weapon rack are not drawn (the light is); a body cannot be
+  carried out of the watch's way; your men do not kill sleepers, loot, or put fire to anything; villagers of a place with
+  no men at all (the first biome's villages in the real game) react to a blow seen and to noise, but nobody there fights
+  back unless they arm; the real game spawns no town, so the gate and the night watch are seen only in the test scene;
+  a dead villager is back when the page is loaded again; nothing of this is remembered by the place afterwards.
 - **Man against man** is not balanced weapon by weapon, and was not meant to be even: it makes cycles. `node
   tests/battle.js duels 200` (even men in leather with shields; the share the row wins):
 

@@ -259,7 +259,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
 function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose blow this is; none is the hero
-  var quiet = !src && e.type === 'soldier' && e.awake === false && !e.dead && !e.down && kind !== 'proj' && Math.abs(wrap(ang - e.face)) < 1.25;   // the hero's blade in the back of a man at his post who has noticed nothing
+  var quiet = !src && e.type === 'soldier' && e.awake === false && !e.dead && !e.down && kind !== 'proj' && (e.asleep || Math.abs(wrap(ang - e.face)) < 1.25);   // the hero's blade in the back of a man at his post who has noticed nothing
   if (e.aggro || e.awake === false) e.awake = true;   // hitting a calm creature rouses it
   e.struck = true;
   if (e.dead || e.down) return;
@@ -279,7 +279,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (quiet) crit = true;                                     // (shown as a critical blow)
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
-  if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din()); }
+  if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }   // (the man the quiet blow falls on is not one who heard it)
   if (e.errand) { var er0 = e.errand; e.errand = null; if (er0.drop) er0.drop(e); }   // struck on an errand: that is the end of it (he drops what he carries, and fights)
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
@@ -785,6 +785,10 @@ var MEN = {
   pursueOut: 450,                           // ...or, when his post knows his town's bounds (post.box: x0, y0, x1, y1), nobody further than this outside them: a town is wider than 700 units since its houses grew (2026-10-13), and the hall's men stood idle beside a fight at their own gate
   pursue: 700,                              // a town's man goes for nobody further than this from his own post: they do not leave their town to run a raider down across the country (my choice, 2026-10-13: without it nothing could be carried out of a woken town, however far the ship)
   quiet: 70,                                // a man at his post who has noticed nothing, struck from behind by the hero, falls to that one blow, and it is heard only this far (rung 6: the quiet way in)
+  // A man asleep (e.asleep, set by the page at night; 2026-10-13: the night raid). He lies where he is, sees nothing, and any
+  // blow of the hero's is the one blow, from whichever side. A quiet noise (no further than hush) wakes him only if he is a
+  // light sleeper (e.light); a loud one wakes him as it wakes anybody, and he is slow to his feet (getUp more seconds).
+  hush: 80, getUp: 2.2,
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
 api.men = MEN;
@@ -883,7 +887,7 @@ function pickTarget(e) {
   eachFoe(e, function (F) {
     var d = Math.hypot(F.x - e.x, F.y - e.y); if (d > e.sight) return;
     if (e.homeR && e.post && e.side !== 1 && Math.hypot(F.x - e.post.x, F.y - e.post.y) > e.homeR) return;   // a householder: only what comes to his own door
-    if (e.side === 1 && Math.hypot(F.x - P.x, F.y - P.y) > e.leash) return;                 // a friend does not go past his leash from the hero
+    if (e.side === 1 && e.order !== 'storm' && Math.hypot(F.x - P.x, F.y - P.y) > e.leash) return;   // a friend does not go past his leash from the hero (storming, he has none)
     if (e.post && e.side !== 1 && tooFar(e, F)) return;   // a man with a post: nobody beyond his reach from it (or from his town)
     if (e.order === 'hold' && e.holdAt && Math.hypot(F.x - e.holdAt.x, F.y - e.holdAt.y) > 90) return;   // told to hold: only what comes to him
     if (fullFor(e, F, d)) { if (d < wd) { wd = d; wait = F; } return; }                     // he has his man (or men) already: not for e
@@ -957,12 +961,13 @@ function beginBlow(e, T, ang, second, quick) {
   e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e);
 }
 function din() { return Math.min(MEN.noise.far / MEN.noise.blow, 1 + MEN.noise.din * Math.max(0, (W.fighting || 0) - 2)); }   // two men at it are heard a blow's distance off; a battle of twenty across a town (the town's answer builds as the fight does)
-function noise(x, y, r, soft) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
+function noise(x, y, r, soft, except) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
   var heardN = 0;
   for (var i = 0; i < W.enemies.length; i++) {
-    var o = W.enemies[i]; if (o.type !== 'soldier' || o.side === 1 || o.dead || o.out || o.down || o.deaf) continue; var d = Math.hypot(o.x - x, o.y - y); if (d > r) continue;
+    var o = W.enemies[i]; if (o.type !== 'soldier' || o.side === 1 || o.dead || o.out || o.down || o.deaf || o === except) continue; var d = Math.hypot(o.x - x, o.y - y); if (d > r) continue;
     o.alarm = { x: x, y: y }; heardN++;
-    if (o.awake === false) { if (!(o.wakeT > 0)) o.wakeT = (o.wakeDelay != null ? o.wakeDelay : lerp(MEN.wake[0], MEN.wake[1], Math.random())) * (0.6 + 0.8 * d / r); }
+    if (o.asleep && r <= MEN.hush && !o.light) { heardN--; continue; }                         // a quiet noise and a sound sleeper: he sleeps on
+    if (o.awake === false) { if (!(o.wakeT > 0)) o.wakeT = o.asleep && r <= MEN.hush ? lerp(MEN.wake[0], MEN.wake[1], Math.random()) : (o.wakeDelay != null ? o.wakeDelay : lerp(MEN.wake[0], MEN.wake[1], Math.random())) * (0.6 + 0.8 * d / r) + (o.asleep ? MEN.getUp : 0); }   // (a light sleeper started out of his sleep by something beside him is up at once, with whatever lay by the bed; a man woken by a far noise arms first)
     else if (!o.tgt && alarmFor(o)) { o.heardAt = o.alarm; o.lookT = 0; }
   }
   if (api.onNoise) api.onNoise(x, y, r, heardN, !!soft);   // heardN: how many men heard it; soft: a noise that is nothing unless somebody did (a blow on a wall)
@@ -1051,13 +1056,24 @@ function followStep(e, dt) {                // a friend with nobody to fight: hi
   else e.face = turnToward(e.face, hd, 3 * dt);
 }
 function order(kind) {                      // the hero's word to his own men within call: 'follow' (break off and come) or 'hold' (a line abreast where he stands, facing where he faces)
-  var L = W.enemies.filter(function (e) { return e.side === 1 && e.type === 'soldier' && !e.dead && !e.down && Math.hypot(e.x - P.x, e.y - P.y) < 420; }), f = W.heading == null ? P.face : W.heading, i;
+  var L = W.enemies.filter(function (e) { return e.side === 1 && e.type === 'soldier' && !e.dead && !e.down && Math.hypot(e.x - P.x, e.y - P.y) < (kind === 'storm' ? 700 : e.order === 'storm' ? 1400 : 420); }), f = W.heading == null ? P.face : W.heading, i;   // (a man who storms hears the call back from much further)
   if (kind === 'hold') {
     var px = -Math.sin(f), py = Math.cos(f), fx = Math.cos(f), fy = Math.sin(f);
     L.sort(function (m1, m2) { return ((m1.x - P.x) * px + (m1.y - P.y) * py) - ((m2.x - P.x) * px + (m2.y - P.y) * py); });       // each takes the place nearest to where he stands along the line
     for (i = 0; i < L.length; i++) { var k = i - (L.length - 1) / 2, row = Math.floor(Math.abs(k) / 6); L[i].order = 'hold'; L[i].holdAt = { x: P.x + px * k * 17 + fx * (24 - row * 18), y: P.y + py * k * 17 + fy * (24 - row * 18), face: f }; L[i].calledT = 0; }
-  } else for (i = 0; i < L.length; i++) { L[i].order = 'follow'; L[i].holdAt = null; L[i].calledT = 1.6; }
+  } else if (kind === 'storm') { for (i = 0; i < L.length; i++) { L[i].order = 'storm'; L[i].holdAt = null; L[i].calledT = 0; L[i].stormAt = null; } }   // storm: no leash; each runs to the place the page gives him (e.stormAt) and fights whoever he meets
+  else for (i = 0; i < L.length; i++) { L[i].order = 'follow'; L[i].holdAt = null; L[i].calledT = 1.6; L[i].stormAt = null; }
   return L;
+}
+// Storming (2026-10-13): a man of the hero's with nobody to fight runs to the place he was given; there the page gives him
+// the next (api.onStormAt(e): a place, or nothing: then he is the hero's follower again). Making no way for three seconds
+// (a barred gate, a locked door) the page is told (api.onStormBlocked(e)): it may have him break it.
+function stormStep(e, dt) {
+  var g = e.stormAt, d = Math.hypot(g.x - e.x, g.y - e.y);
+  if (d < 34) { e.stormAt = api.onStormAt ? api.onStormAt(e) : null; if (!e.stormAt) e.order = 'follow'; e.state = 'idle'; e.stormT = 0; return; }
+  e.state = 'chase'; var x0 = e.x, y0 = e.y; stepTo(e, g.x, g.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(g.y - e.y, g.x - e.x), MEN.turn * dt);
+  e.stormT = Math.hypot(e.x - x0, e.y - y0) < MEN.run * dt * 0.25 ? (e.stormT || 0) + dt : Math.max(0, (e.stormT || 0) - dt * 2);
+  if (e.stormT > 1.2) { e.stormT = 0; if (api.onStormBlocked) api.onStormBlocked(e); }
 }
 function postStep(e, dt) {                  // one of a town's men with nothing to fight: at his post
   var p = e.post; if (!p) return;
@@ -1135,7 +1151,8 @@ function soldierAI(e, dt) {
   }
   if (e.awake === false) {                  // at his post, and has seen nothing
     var seen = false, st = api.mods && api.mods().stealth ? api.mods().stealth : 1;
-    if (e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.awake = true; e.heardAt = alarmFor(e); e.lookT = 0; if (api.onWake) api.onWake(e); } }
+    if (e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.awake = true; e.heardAt = alarmFor(e); e.lookT = 0; if (e.asleep) { e.asleep = false; e.riseT = 0.8; } if (api.onWake) api.onWake(e); } }
+    if (e.asleep) { e.state = 'idle'; e.guard = 0; return; }                                 // asleep: he sees nobody and does not stir
     if (e.awake === false) eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y), behind = Math.abs(wrap(Math.atan2(F.y - e.y, F.x - e.x) - e.face)) > 1.9; if (q < (e.aggro != null ? e.aggro : MEN.aggro) * (behind ? 0.45 : 1) * (F === P ? st : 1) && !wallBetween(e.x, e.y, F.x, F.y)) seen = true; });
     if (seen) { e.awake = true; if (api.onWake) api.onWake(e); } else if (e.awake === false) { postStep(e, dt); e.state = 'idle'; return; }
   }
@@ -1146,7 +1163,7 @@ function soldierAI(e, dt) {
   if (!T) {                                 // nobody to fight
     if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
     e.state = 'idle'; e.guard = 0; e.sw = null; if (e.close) sidearm(e, false);
-    if (e.side === 1) followStep(e, dt);
+    if (e.side === 1) { if (e.order === 'storm' && e.stormAt) stormStep(e, dt); else followStep(e, dt); }
     else if (e.waitOn && !e.waitOn.dead && !(e.waitOn !== P && (e.waitOn.down || e.waitOn.out || e.waitOn.fled))) hangStep(e, dt, e.waitOn);
     else if (e.heardAt) {
       var hd = Math.hypot(e.heardAt.x - e.x, e.heardAt.y - e.y);

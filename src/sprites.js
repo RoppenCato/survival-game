@@ -325,6 +325,7 @@
     var s = { face: st.face, clip: 'idle', t: t + st.ph }, hand = opts.sheathed ? null : (e.wpn || opts.hand || null), sw = e.sw,   /* (sheathed: his weapon is away: a man of yours walking into a place at peace) */
        k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, alpha = 1, flash = e.flash || 0;
     if (e.dead || e.down) { var lie = e.deadFor || 1.5; s.clip = 'death'; s.k = Math.min(0.999, (e.deadT || 0) / 0.9); hand = null; if (e.dead) alpha = Math.max(0, Math.min(1, (lie - e.deadT) / 1.2)); flash = 0; }
+    else if (e.asleep) { s.clip = 'death'; s.k = 0.999; hand = null; flash = 0; }                    // asleep: he lies as the fallen lie
     else if (e.riseT > 0) { s.clip = 'death'; s.k = Math.max(0, Math.min(0.999, e.riseT / 0.8)); hand = null; }
     else if (e.state === 'yield') { s.clip = 'pickup'; s.k = Math.min(0.42, e.t / 0.6 * 0.42); hand = null; }
     else if (e.state === 'aim') { s.clip = 'bow_draw'; s.k = Math.min(0.999, e.t / Math.max(0.01, e.dur)); }
@@ -343,7 +344,7 @@
       else if (st.walk) { st.wp += dt * Math.max(0.7, Math.min(1.9, st.spd / 36)); s.clip = 'walk'; s.t = st.wp; }
     }
     if (!A[s.clip]) s.clip = 'idle';
-    return person(c, H, withHand(look, hand), s, e.x, e.y * K, { scale: opts.scale, shadow: opts.shadow !== false && !(e.dead || e.down), lying: opts.shadow !== false && (e.dead || e.down) ? s.k : 0, shadowHue: opts.shadowHue, lit: opts.lit, flash: flash, alpha: alpha, tint: opts.tint });
+    return person(c, H, withHand(look, hand), s, e.x, e.y * K, { scale: opts.scale, shadow: opts.shadow !== false && !(e.dead || e.down || e.asleep), lying: opts.shadow !== false && (e.dead || e.down || e.asleep) ? s.k : 0, shadowHue: opts.shadowHue, lit: opts.lit, flash: flash, alpha: alpha, tint: opts.tint });
   }
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }

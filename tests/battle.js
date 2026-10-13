@@ -410,6 +410,23 @@ function raidChecks() {
     run(8, t => { tt = t; P.hp = P.maxHp; if (struck < 0 && (m.state === 'windup' || m.state === 'lunge')) struck = t; });
     Combat.api.nav = null; Combat.api.blocked = null; Combat.api.wall = null;
     say(clearNow && struck >= 0, 'a man hard against a wall, the hero 13 units before him: ' + (clearNow ? 'nothing between them' : 'THE GRID SAYS HE MUST GO ROUND') + ', and he ' + (struck >= 0 ? 'began his blow after ' + struck.toFixed(1) + ' s' : 'NEVER STRUCK in 8 s')); }
+  // 7. man to man (2026-10-13): three of a town against one of yours. One is at him at first, a second after MEN.joinAfter,
+  // never a third; the others hang back at their distance
+  { const D = fresh(), P = D.P; P.hidden = true; P.x = -3000; P.y = -3000; const y0 = man(1, 'sword', 'mail', 600, 300, person({ hp: 400 })), T3 = [0, 1, 2].map(i => man(0, 'sword', 'leather', 480 + i * 12, 240 + i * 60, person()));
+    let early = 0, late = 0, most = 0, far = 1e9; run(14, t => { const at = T3.filter(m => m.tgt === y0 && Math.hypot(m.x - y0.x, m.y - y0.y) < 80).length; most = Math.max(most, at); if (t > 2 && t < 5) early = Math.max(early, at); if (t > 10) { late = Math.max(late, at); T3.forEach(m => { if (m.tgt !== y0 && m.waitOn) far = Math.min(far, Math.hypot(m.x - y0.x, m.y - y0.y)); }); } });
+    say(early === 1 && late === 2 && most <= 2 && far > 85, 'three against one of yours: ' + early + ' at him in the first seconds, ' + late + ' after ' + Combat.api.men.joinAfter + ' s, never more than ' + most + '; the one with no place keeps ' + (far === 1e9 ? '?' : Math.round(far)) + ' units off'); }
+  // 8. a householder (homeR): a foe 300 units from his door is not his; one who comes within 150 is
+  { const D = fresh(), P = D.P; P.hidden = true; P.x = -3000; P.y = -3000; const h = post(300, 300, 0, { homeR: Combat.api.men.homeR }); h.awake = true; const y1 = man(1, 'sword', 'leather', 600, 300, person({ hp: 300 })); y1.order = 'hold'; y1.holdAt = { x: 600, y: 300 };
+    run(4); const stayed = Math.hypot(h.x - 300, h.y - 300) < 30 && !h.tgt; y1.x = 430; y1.holdAt = { x: 430, y: 300 }; run(4); say(stayed && h.tgt === y1, 'a householder and a foe 300 units from his door: ' + (stayed ? 'he stays' : 'HE WENT') + '; the foe 130 units from it: ' + (h.tgt === y1 ? 'he goes for him' : 'HE DOES NOT')); }
+  // 9. a man asleep: one blow from the front; the sound sleeper beside him sleeps on, the light one is up at once; a loud noise wakes both
+  { const D = fresh(), P = D.P, a2 = post(240, 250, Math.PI), heavy = post(240, 250 + 54, 0), light = post(240, 250 - 54, 0); [a2, heavy, light].forEach(m => { m.asleep = true; }); light.light = true; P.x = 216; P.y = 250; P.face = 0; D.W.lock = a2;
+    let blows = 0, was = false; run(2, t => { const down = Math.floor(t * 60) % 20 < 3; if (down && !was) blows++; was = down; Combat.button(0, down); if (a2.dead) return false; }); off(); run(2.5);
+    say(a2.dead && blows === 1 && heavy.asleep && !light.asleep && light.awake === true, 'a man asleep, struck from the front: ' + (a2.dead ? 'dead after ' + blows + ' blow' : 'NOT DEAD') + '; the sound sleeper 54 units off ' + (heavy.asleep ? 'sleeps on' : 'WOKE') + ', the light sleeper ' + (!light.asleep ? 'is up' : 'SLEEPS ON'));
+    const D2 = fresh(), s1 = post(240, 250, 0), s2 = post(300, 250, 0); s1.asleep = s2.asleep = true; D2.P.hidden = true; D2.P.x = -3000; Combat.noise(260, 250, 400); let upAt = -1; run(6, t => { if (upAt < 0 && !s1.asleep && !s2.asleep) upAt = t; });
+    say(upAt > 1.5 && upAt < 5.5, 'two men asleep and a loud noise beside them: both up after ' + (upAt < 0 ? 'NEVER' : upAt.toFixed(1) + ' s') + ' (slower than a man at his post: he must get up)'); }
+  // 10. the storm order: a man of yours runs to the place he was given, far beyond his leash from the hero, and is a follower again when no place is left
+  { const D = fresh(), P = D.P, f = man(1, 'sword', 'leather', 230, 280, person()); P.x = 200; P.y = 250; Combat.order('storm'); f.stormAt = { x: 1100, y: 250 }; let asked = 0, at = -1; Combat.api.onStormAt = e => { asked++; at = Math.hypot(e.x - 1100, e.y - 250); return null; };
+    run(14); Combat.api.onStormAt = null; say(asked === 1 && f.order === 'follow', 'a man told to storm a place 900 units off: ' + (asked ? 'he got there (' + Math.round(at) + ' units from it when he asked for the next)' : 'HE NEVER GOT THERE') + ', and with none left he is ' + (f.order === 'follow' ? 'a follower again' : 'STILL ' + f.order)); }
 }
 const t0 = Date.now();
 if (mode === 'one' || mode === 'short') one(N);
