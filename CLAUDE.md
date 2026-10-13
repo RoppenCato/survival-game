@@ -60,6 +60,28 @@ gone from the code, and no new work may bring any of it back. This file is the s
   cave** (a little safely, the real amount behind the troll); the big island gets **foothills and a small plateau** (about a
   sixth of it); **ambient sound is synthesized in code** like all the sound; better lighting should do **fire and torch at
   night** and **atmosphere** first; lighting techniques are compared **in pictures, then as switches on the Admin board**.
+- **Decided 2026-10-13 (Robin's questionnaire on raids and the hird, after `docs/battle-plan.md` was built through; twelve
+  answers).** **Most of this is not built yet: where the code does otherwise today is said in brackets.**
+  **Walking in:** a town at peace lets you walk in **alone**; with armed men at your back the gate guards bar the way and
+  shout (built: any band walks in until the first blow). **Pursuit is by what you took:** a short way for a quiet theft,
+  to the shore and your ship if you carry the church's or the jarl's silver (built: nobody further than 700 units from a
+  man's own post, whatever you took). **The blow from behind** on a man who has noticed nothing is **a kill**, as built.
+  **A man of yours left on the shore is taken, not dead:** the town holds him as a thrall and a later raid, or silver,
+  wins him back (built: he dies). **The raid party grows with your ships:** a karve's six are for farms, churches and
+  small villages; a town of twenty waits for a longship's crew. **A carrier holds on until he is badly hurt** (half his
+  health, or down; built: he drops the chest at the first blow). **Your men fall back with you when you carry:** any man
+  not in a fight comes once you have a chest or a friend on your shoulder; a man in a fight still needs G (built: only on
+  G). **The line becomes a real shield wall:** men in a line stop more on their shields and cannot be struck from the
+  side by one man alone; strong in a gate or a doorway, broken when several turn its end (built: it is no advantage
+  anywhere it was tried). **If the hero falls on a raid** and any of his own still stands, he is **dragged to the ship**:
+  he wakes aboard, hurt and at sea, what was stowed kept, what he carried lost, whoever was down left (and so taken);
+  with nobody standing he wakes at home with nothing (built: he rises at the wreck with everything). **The raid's twenty
+  minutes come from more to take, deeper in:** more doors and stores in a town (the storehouse, a cellar, every house),
+  each thing taken waking more of it (built: two chests, two minutes). **One more order: keep the ship** (the men named
+  stay by her and fight for her). **Next to build:** the raid **into the real game** (the lowland island, its town and a
+  church within reach, your own hird as the men beside you, the raid saved) and **people** (thralls to cut loose, your own
+  taken men to win back, a man who yields bound and taken or let go, a priest who does not fight). Not picked for now: the
+  town taking back its silver, and what the town remembers.
 - **Decided 2026-10-07 (Robin's questionnaire, the night of the villages):** **villages across the islands** with generated names
   ("controlled generation"), the starter island empty of thriving villages (its village was raided; the story comes later), a
   **jetty by the sea** with a road up to the village and boats moored that cannot be boarded, roads between villages uncommon; the

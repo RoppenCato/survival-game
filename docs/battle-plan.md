@@ -568,3 +568,26 @@ can be played, and what the scripted raids say.
   themselves when you carry the last chest out, or only on G? Is two minutes too short for something meant to be the
   game's big deed (the real towns will lie further from their shores)? And whether any of it is fun.
 
+### Robin's answers (2026-10-13, a questionnaire of twelve after rung 6)
+
+| Asked | Answered | Built today |
+| --- | --- | --- |
+| Does a town at peace let you walk in? | Alone yes; with armed men at your back the gate guards bar the way and shout | Any band walks in until the first blow |
+| How far do they chase? | By what you took: a short way for a quiet theft, to the ship for the church's or the jarl's silver | 700 units from each man's post, whatever you took |
+| The blow from behind | A kill | A kill |
+| A man of yours left on the shore | Taken as a thrall; a later raid or silver wins him back | Dead |
+| How many of your own for a town of twenty? | It grows with your ships: a karve's six for farms, churches and small villages, a longship's crew for a town | Six against twenty |
+| A carrier who is struck | Holds on until badly hurt | Drops the chest at the first blow |
+| Do your men come to the ship by themselves? | Those not in a fight fall back with you when you carry; a man in a fight needs G | Only on G |
+| The line | A real shield wall: stops more, cannot be struck from the side by one man alone, broken when several turn its end | No advantage anywhere it was tried |
+| The hero falls on a raid | Dragged to the ship if any of his own stands (what was stowed kept, what he carried lost, the down left); else he wakes at home with nothing | He rises at the wreck with everything |
+| Where do the raid's twenty minutes come from? | More to take, deeper in: more doors and stores, each thing taken waking more | Two chests, two minutes |
+| More orders? | One: keep the ship | With me, hold here, carry that |
+| What next? | Into the real game, and people | Both in the test scene only; people not at all |
+
+So the order of work from here: **(1) what the answers change in the engine and the test scene** (the carrier, falling
+back with a carrier, the shield wall, the gate guards and a band, pursuit by what was taken, the taken man, the hero
+dragged to the ship, keep the ship); **(2) into the real game** (a lowland island with a town and a church within the
+karve's reach, the hird as soldiers, the raid saved); **(3) people** (thralls, your own taken men, a man who yields, the
+priest); and with (2), **more to take** (the storehouse, a cellar, the houses' chests as noise).
+

@@ -541,25 +541,26 @@ Measured by script (`tools/visual/startplay.js`); Robin has not ruled on any of 
   is no threat either.
 - **The bow.** The scripted hunter lost a deer to ten arrows. A hand on the mouse will do better; worth a try by Robin.
 
-## The raid: what is left (2026-10-13, after rung 6 of docs/battle-plan.md)
+## The raid: what is left (2026-10-13, after rung 6 of docs/battle-plan.md and Robin's answers the same day)
 
-Built: the quiet blow, noise, the carry order, the ship, carrying a man who is down, leaving. Not built, none of it
-decided:
+Decided since, and so no longer here (they are in `CLAUDE.md` under 2026-10-13 and in the plan's last table): the shield
+wall, the men falling back with a carrier, a man left behind being taken, pursuit by what you took, keeping the ship,
+the hero dragged to the ship, more to take in a town, the people of a raid. Still open, none of it decided:
 
 - **The town takes back.** A chest dropped in the street lies there for you to lift again. A town's man who stands by
   it with nobody near could carry it home (the carry mirrored), and one who reaches your ship unopposed could take
-  what is stowed, or push her off. "Someone holds the ship" would then be a choice with a cost.
-- **People.** Thralls held in the hall who can be cut loose and run for your ship; a man who yields left, bound and
-  taken, or killed, and what each does to how you are spoken of; a priest who does not fight and what it costs to
-  strike him.
+  what is stowed, or push her off. Robin did not pick this as next; "keep the ship" is decided, and has little to do
+  until this is.
 - **After.** The town remembers more than that it was raided: traders shut, a price on you, more men at the gate next
-  spring, the men you left there. What came home becomes stores, silver and people.
-- **A line that is worth holding.** In every test so far (the open field, before a gate) men told to hold did no better
-  than men fighting as they like. A doorway is the place to try next, or a rule that men in a line cannot be flanked
-  by fewer than two.
+  spring. What came home becomes stores, silver and people. Not picked as next either, but the gate guards who bar the
+  way to a band, and pursuit by what you took, are its first two pieces.
 - **The wait at a full gate.** Men who cannot get through a gate that two are fighting in stand and wait. They could
   go round by the other gate and take the raiders in the back.
-- **Your men's own judgement.** They come to the ship only on G. They could fall back with you when you carry, close
-  round a carrier, or call out when the hall's men come.
+- **Bodies found.** A man taken from behind lies where he fell and nobody who walks past him says a word. A town's man
+  who comes on a body could raise the cry; then where you leave them matters, and dragging one out of sight is a thing
+  to do.
+- **Rounds.** Every man of a town stands at his post like a statue until noise. Guards who walk a round would make the
+  quiet part a matter of watching and waiting.
+- **Robbing in plain sight.** Villagers and guards do not care what you take from an unlocked chest in front of them.
 - **Fire**, and smoke that tells the next village.
 
