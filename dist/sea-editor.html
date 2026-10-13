@@ -7674,14 +7674,16 @@ function beginBlow(e, T, ang, second, quick) {
   e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e);
 }
 function din() { return Math.min(MEN.noise.far / MEN.noise.blow, 1 + MEN.noise.din * Math.max(0, (W.fighting || 0) - 2)); }   // two men at it are heard a blow's distance off; a battle of twenty across a town (the town's answer builds as the fight does)
-function noise(x, y, r) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
+function noise(x, y, r, soft) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
+  var heardN = 0;
   for (var i = 0; i < W.enemies.length; i++) {
     var o = W.enemies[i]; if (o.type !== 'soldier' || o.side === 1 || o.dead || o.out || o.down || o.deaf) continue; var d = Math.hypot(o.x - x, o.y - y); if (d > r) continue;
-    o.alarm = { x: x, y: y };
+    o.alarm = { x: x, y: y }; heardN++;
     if (o.awake === false) { if (!(o.wakeT > 0)) o.wakeT = (o.wakeDelay != null ? o.wakeDelay : lerp(MEN.wake[0], MEN.wake[1], Math.random())) * (0.6 + 0.8 * d / r); }
     else if (!o.tgt) { o.heardAt = o.alarm; o.lookT = 0; }
   }
-  if (api.onNoise) api.onNoise(x, y, r);
+  if (api.onNoise) api.onNoise(x, y, r, heardN, !!soft);   // heardN: how many men heard it; soft: a noise that is nothing unless somebody did (a blow on a wall)
+  return heardN;
 }
 function wallBetween(x0, y0, x1, y1) { return !!api.wall && api.wall(x0, y0, x1, y1); }   // a page that knows the walls: no blow, no arrow and no seeing through one
 function strike(e) {
@@ -8749,6 +8751,8 @@ function render(c) {
 function init(l) { lib = l; reset(); buildGround(); }
 return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, noise: noise, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
+  hurt: function (e, dmg, ang) { damageEnemy(e, dmg, ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
+
   dbg: function () { return { P: P, W: W, IN: IN }; } };
 })();
 if (typeof module !== 'undefined') module.exports = Combat;

@@ -26,7 +26,7 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
-var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1 };   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
+var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 0 };   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 }, OPEN = { door: 1, gate: 1 };
@@ -98,8 +98,8 @@ function rooms(B, GW, GH, bounds) {
     out.push({ id: 'r' + x + '_' + y, tiles: tiles, maxY: maxY });
   }
   var solids = [], k, p;
-  for (k in B.H) { if (OPEN[B.H[k].t]) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }
-  for (k in B.V) { if (OPEN[B.V[k].t]) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
+  for (k in B.H) { if (OPEN[B.H[k].t] || B.H[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }   // (a wall that has given, breach, is a way through: src/ruin.js)
+  for (k in B.V) { if (OPEN[B.V[k].t] || B.V[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
   for (k in B.posts || {}) { p = k.split(','); solids.push({ x: p[0] * T, y: p[1] * T, r: 3.5, hide: true }); }
   return { rooms: out, roomOf: roomOf, solids: solids, x0: bx0, y0: by0, w: w, h: h, at: function (tx, ty) { return inside(tx, ty) ? roomOf[idx(tx, ty)] : -1; } };
 }
@@ -195,10 +195,111 @@ function cap(c, m, x, y, w, h, seed, along) {
 function post(c, x, y, w, h, m, seed) {                              // a short fence post: a split timber with a lit side and a cut top
   ink(c, [[x - w / 2, y], [x - w / 2 - 0.2, y - h], [x + w / 2 + 0.2, y - h - 0.6], [x + w / 2, y]], m.dark, { wob: 0.5, seed: seed || 7, lw: 0.7, heavy: 1.3 });
 }
+/* ---------- damage (2026-10-13, src/ruin.js): a wall that has been hacked at, one that has given, one that fire took, and
+   what a fallen roof leaves on the floor. An edge carries st (1 hacked, 2 nearly through), breach, burnt, scorch.
+   Everything here is drawn in "face space" (0..w along the wall, 0..h down it), so the same drawing serves a wall that faces
+   you and, sheared, the leaning side face of a wall that runs away from you. ---------- */
+var CHAR = '#1c1714', FRESH = { logs: '#d7bf93', planks: '#d9c39a', wattle: '#cdb98f', blocks: '#3c3d44', turf: '#5a4630', frame: '#9a8460', ashlar: '#55504a' }, matCache = {};
+function wallMat(e) {                  // the wall's material as it now is: its own, blackened by a fire that passed, or charred through
+  var m = WALLS[e.m] || WALLS[0], k = e.burnt ? 2 : e.scorch ? 1 : 0; if (!k) return m;
+  var id = e.m + ':' + k, o = matCache[id];
+  if (!o) o = matCache[id] = { name: m.name, tex: m.tex, burnt: k === 2, face: mix(m.face, CHAR, k === 2 ? 0.8 : 0.4), top: mix(m.top, CHAR, k === 2 ? 0.74 : 0.32), dark: mix(m.dark, CHAR, k === 2 ? 0.82 : 0.42) };
+  return o;
+}
+// the marks of blows on a face: gashes in the material's own broken colour (pale new wood, the dark between stones, torn earth), the first of them a hole right through once it is nearly gone, and cracks
+function scars(c, m, w, h, seed, st) {
+  var n = st >= 2 ? 4 : 2, i, k, wood = m.tex === 'logs' || m.tex === 'planks', col = m.burnt ? '#0e0b0a' : (FRESH[m.tex] || '#3a3028');
+  for (i = 0; i < n; i++) {
+    var cx = 4 + hs(seed + 71, i) * (w - 8), cy = h * (0.3 + hs(seed + 73, i) * 0.5), r = (st >= 2 ? 3.6 : 2.5) * (0.7 + hs(seed + 75, i) * 0.7), pts = [], np = 6;
+    for (k = 0; k < np; k++) { var a = k / np * 6.283 + hs(seed + i, k) * 0.7, rr = r * (0.55 + hs(seed + i * 3, k + 9) * 0.8); pts.push([cx + Math.cos(a) * rr * (m.tex === 'planks' ? 0.6 : 1), cy + Math.sin(a) * rr * (m.tex === 'planks' ? 1.9 : m.tex === 'logs' ? 0.7 : 1)]); }
+    ink(c, pts, i === 0 && st >= 2 ? '#1a1310' : col, { wob: 0, flat: true, lw: 0.6, heavy: 1, seed: seed + i });
+    if (wood) stroke(c, [[cx - r * 0.8, cy - r * 0.5], [cx + r * 0.3, cy + r * 0.4]], INK.soft, 0.5);
+  }
+  for (i = 0; i < (st >= 2 ? 3 : 1); i++) { var x1 = 3 + hs(seed + 81, i) * (w - 6), y1 = h * (0.1 + hs(seed + 83, i) * 0.3); stroke(c, [[x1, y1], [x1 + (hs(seed + 85, i) - 0.5) * 5, y1 + h * 0.2], [x1 + (hs(seed + 87, i) - 0.5) * 7, y1 + h * 0.42]], INK.soft, 0.65); }
+}
+// what is left of a wall that has given: a ragged stump at each end and a low ragged sill between, in its own material; a timber frame keeps its timbers. shade: a colour laid over what is left (a side face's light or dark)
+function remains(c, m, w, h, seed, burnt, shade, hole) {   // hole: a window smashed in: the wall stands to its full height either side of the gap
+  var frame = m.tex === 'frame', k = burnt ? 0.55 : frame ? 0.5 : 1, hl = hole && !burnt ? h : h * (0.5 + hs(seed + 91, 1) * 0.4) * k, hr = hole && !burnt ? h : h * (0.45 + hs(seed + 91, 2) * 0.45) * k, wl = hole ? w * 0.26 : Math.min(w * 0.3, 5 + hs(seed + 93, 1) * 4), wr = hole ? w * 0.26 : Math.min(w * 0.3, 5 + hs(seed + 93, 2) * 4);
+  var sill = Math.min(h * 0.6, (m.tex === 'turf' || m.tex === 'blocks' ? 5 : 2.5) + hs(seed + 95, 1) * 3.5) * (burnt ? 0.7 : 1), pts = [[0, h], [0, h - hl]], top = [], i, n;
+  n = 3; for (i = 1; i <= n; i++) top.push([wl * i / n, h - Math.max(sill, hl * (1 - i / n * 0.8)) + (hs(seed + 97, i) - 0.5) * Math.min(4, h * 0.2)]);
+  n = 6; for (i = 0; i <= n; i++) top.push([wl + (w - wl - wr) * i / n, h - sill - hs(seed + 99, i) * Math.min(3.2, h * 0.25)]);
+  n = 3; for (i = 1; i <= n; i++) top.push([w - wr + wr * i / n, h - Math.max(sill, hr * (0.2 + i / n * 0.8)) + (hs(seed + 101, i) - 0.5) * Math.min(4, h * 0.2)]);
+  pts = pts.concat(top); pts.push([w, h - hr]); pts.push([w, h]);
+  c.save(); path(c, pts); c.clip(); c.fillStyle = m.face; c.fillRect(0, 0, w, h); face(c, m, 0, 0, w, h, seed);
+  if (shade) { c.fillStyle = shade; c.fillRect(0, 0, w, h); }
+  c.restore();
+  path(c, pts); c.lineJoin = 'round'; c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, pts, 1.5);
+  if (!burnt && (m.tex === 'logs' || m.tex === 'planks' || m.tex === 'wattle')) stroke(c, [[0.6, h - hl + 0.8]].concat(top.map(function (q) { return [q[0], q[1] + 0.9]; })), FRESH[m.tex], 0.9, 0.85);   // broken wood is pale
+  if (frame && !burnt && !hole) {       // the timbers still stand: the two posts and the head beam, the panel between them gone
+    var tw = 2.6; [[0, 0, tw, h], [w - tw, 0, tw, h], [0, 0, w, tw]].forEach(function (q, qi) { ink(c, rect(q[0], q[1], q[2], q[3]), m.top, { wob: 0.3, seed: seed + 110 + qi, flat: true, lw: 0.6, heavy: 1.1 }); });
+    if (hs(seed + 113, 1) < 0.6) stroke(c, [[tw, tw + 1], [w * 0.42, h * 0.45]], m.top, tw * 0.8);          // a brace, snapped
+  }
+  if (frame && burnt) { ink(c, [[0, h], [0.2, h * 0.3], [2.6, h * 0.36], [2.6, h]], m.top, { wob: 0.4, seed: seed + 120, flat: true, lw: 0.6, heavy: 1.1 }); ink(c, [[w - 2.6, h], [w - 2.6, h * 0.5], [w, h * 0.42], [w, h]], m.top, { wob: 0.4, seed: seed + 121, flat: true, lw: 0.6, heavy: 1.1 }); }
+}
+// what lies on the ground where a wall gave: splintered boards, sticks, stones or clods in the wall's colours, ash where it burnt. Scattered in a box (x, y, w, h) on the ground
+function rubble(c, m, x, y, w, h, seed, burnt) {
+  var i, n = 9, stone = m.tex === 'blocks' || m.tex === 'ashlar', turf = m.tex === 'turf';
+  if (burnt) { c.fillStyle = 'rgba(40,36,34,0.42)'; c.beginPath(); c.ellipse(x + w / 2, y + h / 2, w * 0.55, h * 0.6, 0, 0, 7); c.fill(); for (i = 0; i < 5; i++) { c.fillStyle = 'rgba(190,186,178,' + (0.25 + hs(seed + 131, i) * 0.25) + ')'; c.beginPath(); c.ellipse(x + hs(seed + 133, i) * w, y + hs(seed + 135, i) * h, 1.5 + hs(seed + 137, i) * 2.5, 0.8 + hs(seed + 139, i) * 1.2, 0, 0, 7); c.fill(); } }
+  for (i = 0; i < n; i++) {
+    var px = x + hs(seed + 141, i) * w, py = y + hs(seed + 143, i) * h, a = (hs(seed + 145, i) - 0.5) * 2.4, tone = (hs(seed + 147, i) - 0.5) * 0.24, col = mix(i % 3 === 0 && !burnt && !stone && !turf ? (FRESH[m.tex] || m.face) : m.face, tone > 0 ? '#ffffff' : '#000000', Math.abs(tone));
+    if (stone || turf) { var r = (turf ? 1.6 : 1.4) + hs(seed + 149, i) * (turf ? 2.2 : 2.6); ink(c, [[px - r, py + r * 0.3], [px - r * 0.5, py - r * 0.6], [px + r * 0.6, py - r * 0.5], [px + r, py + r * 0.2], [px + r * 0.3, py + r * 0.6]], col, { wob: 0.3, seed: seed + i, flat: true, lw: 0.55, heavy: 0.9 }); }
+    else { var L = (m.tex === 'wattle' ? 3 : 4) + hs(seed + 151, i) * (m.tex === 'logs' ? 7 : 5), wd = m.tex === 'wattle' ? 0.8 : m.tex === 'logs' ? 2.2 : 1.5, ca = Math.cos(a), sa = Math.sin(a) * K; ink(c, [[px - ca * L / 2 - sa * wd / 2, py - sa * L / 2 + ca * wd / 2], [px + ca * L / 2 - sa * wd / 2, py + sa * L / 2 + ca * wd / 2], [px + ca * L / 2 + sa * wd / 2, py + sa * L / 2 - ca * wd / 2], [px - ca * L / 2 + sa * wd / 2, py - sa * L / 2 - ca * wd / 2]], col, { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }
+  }
+}
+// The leaning side face of a wall that runs north to south (C.lean; the mountains' side walls, 2026-10-13): its outer face shown as
+// a sheared strip, the foot standing `lean` out from the top, lit where it looks west and in shade where it looks east. side: -1 the
+// face looks west (the wall is a room's west wall, or stands free), +1 it looks east.
+function sideFace(c, x, y, e, m, open, C, side, seed) {
+  var h = C.wallH, th = C.thick, lean = C.lean, X = x * T + side * th / 2, y0 = y * TS - h, shade = side < 0 ? 'rgba(255,240,205,0.10)' : 'hsla(222,40%,12%,0.36)';
+  c.save(); c.transform(0, 1, side * lean / h, 1, X, y0);
+  if (e.breach) remains(c, m, TS, h, seed + 7, !!e.burnt, shade);
+  else {
+    c.fillStyle = m.face; c.fillRect(0, 0, TS, h); face(c, m, 0, 0, TS, h, seed + 7);
+    if (e.t === 'door') { c.fillStyle = m.dark; c.fillRect(2, 2, TS - 4, h - 2); c.fillStyle = open ? '#1e1612' : '#5e4430'; c.fillRect(4, 5, TS - 8, h - 5); if (!open) { stroke(c, [[4, h * 0.36], [TS - 4, h * 0.36]], '#3a2a1c', 1.6); stroke(c, [[4, h * 0.72], [TS - 4, h * 0.72]], '#3a2a1c', 1.6); } c.strokeStyle = INK.line; c.lineWidth = 0.7; c.strokeRect(4, 5, TS - 8, h - 5); }
+    if (e.t === 'window') { c.fillStyle = '#241a14'; c.fillRect(8, 7, TS - 16, h - 20); c.strokeStyle = INK.line; c.lineWidth = 0.7; c.strokeRect(8, 7, TS - 16, h - 20); }
+    if (e.st) scars(c, m, TS, h, seed + 7, e.st);
+    c.fillStyle = shade; c.fillRect(0, 0, TS, h);
+    c.strokeStyle = INK.line; c.lineWidth = 0.9; c.lineJoin = 'round'; c.strokeRect(0, 0, TS, h);
+    if (side > 0) stroke(c, [[0, h], [TS, h]], INK.line, 1.6);                                             // the heavy line at the foot of the shadow side
+  }
+  c.restore();
+}
+// what a fallen or a burnt roof leaves on one tile of the floor (ru = { k, m }): straw heaps, sods, shingles or shards and broken rafters; or ash and charred timber
+function drawDebris(c, tx, ty, ru, C) {
+  var x0 = tx * T, y0 = ty * TS, seed = tx * 53 + ty * 97, i, r = ROOFS[ru.m] || ROOFS[1], burnt = ru.k === 'burnt', beam = burnt ? '#1a1512' : '#4a3626';
+  if (burnt) { c.fillStyle = 'rgba(26,22,20,0.5)'; c.beginPath(); c.ellipse(x0 + T / 2, y0 + TS / 2, T * 0.62, TS * 0.62, 0, 0, 7); c.fill(); for (i = 0; i < 6; i++) { c.fillStyle = 'rgba(196,192,184,' + (0.22 + hs(seed, i) * 0.28) + ')'; c.beginPath(); c.ellipse(x0 + 3 + hs(seed + 3, i) * (T - 6), y0 + 2 + hs(seed + 5, i) * (TS - 4), 2 + hs(seed + 7, i) * 4, 1 + hs(seed + 9, i) * 2, 0, 0, 7); c.fill(); } }
+  else if (r.col) {
+    for (i = 0; i < 3; i++) {
+      var hx = x0 + 5 + hs(seed + 11, i) * (T - 10), hy = y0 + 5 + hs(seed + 13, i) * (TS - 9), hw = 5 + hs(seed + 15, i) * 6, hh = 2.5 + hs(seed + 17, i) * 3, tone = (hs(seed + 19, i) - 0.5) * 0.2, col = mix(r.col, tone > 0 ? '#ffffff' : '#000000', Math.abs(tone));
+      if (ru.m === 1 || ru.m === 0) { ink(c, [[hx - hw, hy + hh * 0.4], [hx - hw * 0.6, hy - hh * 0.5], [hx - hw * 0.1, hy - hh], [hx + hw * 0.5, hy - hh * 0.7], [hx + hw, hy + hh * 0.3], [hx + hw * 0.3, hy + hh * 0.7], [hx - hw * 0.5, hy + hh * 0.7]], col, { wob: 0.5, seed: seed + i, lw: 0.6, heavy: 1.1 }); if (ru.m === 1) for (var k = 0; k < 4; k++) stroke(c, [[hx - hw * 0.6 + k * hw * 0.35, hy - hh * 0.4], [hx - hw * 0.5 + k * hw * 0.35 + 1.5, hy + hh * 0.5]], r.line, 0.5, 0.6); }
+      else for (k = 0; k < 4; k++) { var sx = hx + (hs(seed + 21 + i, k) - 0.5) * hw * 2, sy = hy + (hs(seed + 23 + i, k) - 0.5) * hh * 2.4, a2 = hs(seed + 25 + i, k) * 3; ink(c, [[sx - 2.2 * Math.cos(a2), sy - 1.2 * Math.sin(a2)], [sx + 1.4, sy - 1.3], [sx + 2.2 * Math.cos(a2), sy + 1.1 * Math.sin(a2) + 0.6], [sx - 1.2, sy + 1.4]], mix(col, k % 2 ? '#000000' : '#ffffff', 0.1), { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }
+    }
+  }
+  for (i = 0; i < (hs(seed + 31, 1) < 0.55 ? 2 : 1); i++) {      // a rafter or two, lying where they fell (they may reach onto the next tile)
+    var bx = x0 + hs(seed + 33, i) * T, by = y0 + 3 + hs(seed + 35, i) * (TS - 6), ba = (hs(seed + 37, i) - 0.5) * 2.2, bl = 14 + hs(seed + 39, i) * 18, ca = Math.cos(ba), sa = Math.sin(ba) * K, bw = 1.5;
+    ink(c, [[bx - ca * bl / 2 - sa * bw, by - sa * bl / 2 + ca * bw], [bx + ca * bl / 2 - sa * bw, by + sa * bl / 2 + ca * bw], [bx + ca * bl / 2 + sa * bw, by + sa * bl / 2 - ca * bw], [bx - ca * bl / 2 + sa * bw, by - sa * bl / 2 - ca * bw]], beam, { wob: 0.3, seed: seed + 40 + i, flat: burnt, lw: 0.6, heavy: 1.2 });
+    if (!burnt) stroke(c, [[bx - ca * bl / 2 + 1, by - sa * bl / 2], [bx + ca * bl / 2 - 1, by + sa * bl / 2]], INK.lit, 0.5);
+  }
+}
+// a flame at a place, s its size, t the clock: three tongues, each swaying on its own
+function drawFlame(c, x, y, s, t, seed) {
+  var cols = ['#d9541e', '#f08a2a', '#fbc24a', '#fff0b8'], i;
+  for (i = 0; i < 4; i++) {
+    var k = 1 - i * 0.22, sw = Math.sin(t * (6.5 + i * 1.7) + (seed || 0) * 1.3 + i) * s * 0.16 * k, hh = s * (1 + 0.22 * Math.sin(t * (9 + i * 2.3) + (seed || 0) + i * 2)) * k, ww = s * 0.42 * k;
+    c.fillStyle = cols[i]; c.beginPath(); c.moveTo(x - ww, y); c.quadraticCurveTo(x - ww * 1.15, y - hh * 0.45, x + sw, y - hh); c.quadraticCurveTo(x + ww * 1.15, y - hh * 0.45, x + ww, y); c.quadraticCurveTo(x, y + ww * 0.5, x - ww, y); c.fill();
+  }
+}
 // a fence along the top of tile (x, y): posts with woven wattle between; a gate: a bar frame that swings open as you come near;
 // a palisade: a row of pointed logs; a rail fence; a dry-stone wall
 function drawFenceH(c, x, y, e, open, C) {
   var m = WALLS[e.m] || WALLS[2], x0 = x * T, yb = y * TS, i, seed = x * 31 + y * 7;
+  if (e.breach) {                         // it has given: stumps of its posts, and the rest on the ground
+    var bm = e.t === 'drystone' ? WALLS[3] : wallMat(e), bh = e.t === 'palisade' ? PALISADE_H : FENCE_H;
+    if (e.t === 'palisade') { c.save(); c.translate(x0, yb - bh); remains(c, { name: bm.name, tex: 'logs', face: bm.face, top: bm.top, dark: bm.dark }, T, bh, seed, !!e.burnt); c.restore(); }
+    else if (e.t !== 'drystone') { ink(c, [[x0, yb], [x0 + 0.4, yb - bh * 0.55], [x0 + 3, yb - bh * 0.4], [x0 + 3, yb]], bm.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 }); ink(c, [[x0 + T - 3, yb], [x0 + T - 3, yb - bh * 0.35], [x0 + T - 0.4, yb - bh * 0.6], [x0 + T, yb]], bm.dark, { wob: 0.4, seed: seed + 1, lw: 0.6, heavy: 1.1 }); }
+    rubble(c, e.t === 'fence' ? { tex: 'wattle', face: bm.face, dark: bm.dark } : e.t === 'drystone' ? bm : { tex: 'planks', face: bm.face, dark: bm.dark }, x0 + 2, yb - 2, T - 4, 8, seed, !!e.burnt);
+    return;
+  }
   if (e.t === 'palisade') {
     for (i = 0; i < 4; i++) { var px = x0 + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4, col = mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08); ink(c, [[px + 0.3, yb], [px, yb - ph + 4], [px + 4, yb - ph], [px + 8, yb - ph + 4], [px + 7.7, yb]], col, { wob: 0.7, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[px + 2.5, yb - 3], [px + 2.2, yb - ph + 6]], INK.faint, 0.6); stroke(c, [[px + 5.5, yb - 2], [px + 5.8, yb - ph + 7]], INK.faint, 0.5); }
     ink(c, rect(x0, yb - 11, T, 2.4), m.dark, { wob: 0.4, seed: seed + 9, flat: true, lw: 0.6, heavy: 1 }); ink(c, rect(x0, yb - 22, T, 2.4), m.dark, { wob: 0.4, seed: seed + 10, flat: true, lw: 0.6, heavy: 1 });
@@ -235,6 +336,12 @@ function drawFenceH(c, x, y, e, open, C) {
 }
 function drawFenceV(c, x, y, e, open, more, C) {
   var m = WALLS[e.m] || WALLS[2], xl = x * T, yt = y * TS, i, seed = x * 17 + y * 29;
+  if (e.breach) {
+    var bm = e.t === 'drystone' ? WALLS[3] : wallMat(e), bh = e.t === 'palisade' ? PALISADE_H : FENCE_H;
+    ink(c, [[xl - 1.5, yt + 2], [xl - 1.2, yt + 2 - bh * 0.5], [xl + 1.4, yt + 2 - bh * 0.4], [xl + 1.5, yt + 2]], bm.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 });
+    rubble(c, e.t === 'fence' ? { tex: 'wattle', face: bm.face, dark: bm.dark } : e.t === 'drystone' ? bm : { tex: e.t === 'palisade' ? 'logs' : 'planks', face: bm.face, dark: bm.dark }, xl - 6, yt + 3, 12, TS - 4, seed, !!e.burnt);
+    return;
+  }
   if (e.t === 'palisade') {
     for (i = 0; i < 3; i++) { var py = yt + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4; ink(c, [[xl - 3, py + 8], [xl - 3, py + 8 - ph + 3], [xl, py + 8 - ph], [xl + 3, py + 8 - ph + 3], [xl + 3, py + 8]], mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08), { wob: 0.6, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[xl - 1, py + 6], [xl - 1.2, py + 8 - ph + 6]], INK.faint, 0.55); }
     return;
@@ -280,11 +387,13 @@ function shutterWindow(c, x, y, w, h, seed) {
 function drawH(c, x, y, e, low, open, C) {
   C = C || CFG;
   if (YARD[e.t]) return drawFenceH(c, x, y, e, open, C);
-  var m = WALLS[e.m] || WALLS[0], h = low ? 7 : C.wallH, x0 = x * T, yb = y * TS, cp = C.thick * K, seed = x * 13 + y * 37;
+  var m = wallMat(e), h = low ? 7 : C.wallH, x0 = x * T, yb = y * TS, cp = C.thick * K, seed = x * 13 + y * 37;
+  if (e.breach) { c.save(); c.translate(x0, yb - h); remains(c, m, T, h, seed, !!e.burnt, null, e.t === 'window'); c.restore(); rubble(c, e.t === 'window' && !e.burnt ? { tex: 'planks', face: '#8a6a4a', dark: '#5a4430' } : m, x0 + (e.t === 'window' ? 8 : 2), yb - 1, T - (e.t === 'window' ? 16 : 4), 8, seed, !!e.burnt); return; }   // it has given: what is left of it, and what lies before it
   if (e.t === 'door' && !low) {
     ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.3 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.7, heavy: 1.3 });
     ink(c, rect(x0 - 0.5, yb - h - cp, T + 1, cp + 4), m.top, { wob: 0.4, seed: seed + 2, lw: 0.7, heavy: 1.3 });   // the lintel
     if (m.tex === 'ashlar') archDoor(c, x0 + 5, yb - h + 2, T - 10, h - 2, open, seed + 3); else door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3);
+    if (e.st && !open) { c.save(); c.translate(x0 + 4, yb - h + 4); scars(c, { tex: 'planks' }, T - 8, h - 4, seed + 3, e.st); c.restore(); }   // a locked door under the axe
     return;
   }
   if (e.t === 'door') { ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.6, heavy: 1.1 }); return; }
@@ -294,21 +403,35 @@ function drawH(c, x, y, e, low, open, C) {
   path(c, d); c.lineJoin = 'round'; c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8);
   stroke(c, [[x0 + 0.5, yb - h + 0.6], [x0 + T - 0.5, yb - h + 0.6]], INK.lit, 1.0);                                // the lit top of the face
   if (e.t === 'window' && !low) { if (m.tex === 'ashlar') archWindow(c, x0 + 12, yb - h + 3, 8, 12, seed + 5); else shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5); }
+  if (e.st) { c.save(); c.translate(x0, yb - h); scars(c, m, T, h, seed, e.st); c.restore(); }
 }
 // an edge along the left side of tile (x, y). more: whether the V edge below continues it (no end face then)
-function drawV(c, x, y, e, open, more, C) {
+function drawV(c, x, y, e, open, more, C, side) {
   C = C || CFG;
   if (YARD[e.t]) return drawFenceV(c, x, y, e, open, !!(more && more.t && YARD[more.t]), C);
-  var m = WALLS[e.m] || WALLS[0], h = C.wallH, th = C.thick, xl = x * T - th / 2, yt = y * TS - h, seed = x * 41 + y * 11;
+  var m = wallMat(e), h = C.wallH, th = C.thick, xl = x * T - th / 2, yt = y * TS - h, seed = x * 41 + y * 11, lean = C.lean || 0, sd = side > 0 ? 1 : -1;
+  if (lean) sideFace(c, x, y, e, m, open, C, sd, seed);
+  function endFace(mm, hk) {              // the wall's south end, seen from the south: with a lean it widens to its foot on the side its face shows
+    var top = yt + TS + h * (1 - hk), bot = yt + TS + h, pts = [[xl, top], [xl + th, top], [xl + th + (sd > 0 ? lean : 0), bot], [xl - (sd < 0 ? lean : 0), bot]];
+    c.save(); path(c, pts); c.clip(); c.fillStyle = mm.face; c.fillRect(xl - lean, top, th + lean * 2, h); face(c, mm, xl - lean, yt + TS, th + lean * 2, h, seed, true); c.restore();
+    path(c, pts); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, pts, 1.8);
+  }
+  if (e.breach) {                         // it has given: a stub of its top at each end, its south end broken short, and what lies at its foot
+    if (!lean) { cap(c, m, xl, yt, th, 5, seed, false); cap(c, m, xl, yt + TS - 4, th, 4, seed + 1, false); }
+    if (!more) endFace(m, e.burnt ? 0.3 : 0.5);
+    rubble(c, m, x * T - 7 + (lean ? sd * lean * 0.6 : 0), y * TS + 2, 14, TS - 4, seed, !!e.burnt);
+    return;
+  }
   if (e.t === 'door') {
     ink(c, rect(xl, yt, th, 4), m.dark, { wob: 0.3, seed: seed, lw: 0.6, heavy: 1 }); ink(c, rect(xl, yt + TS - 4, th, 4), m.dark, { wob: 0.3, seed: seed + 1, lw: 0.6, heavy: 1 });
     if (!open) ink(c, rect(xl + 0.6, yt + 4, th - 1.2, TS - 8), '#5e4430', { wob: 0.3, seed: seed + 2, flat: true, lw: 0.5, heavy: 0.9 });
-    if (!more) ink(c, rect(xl, yt + TS, th, h), m.dark, { wob: 0.4, seed: seed + 3, lw: 0.7, heavy: 1.3 });
+    if (!more) { if (lean) endFace({ tex: m.tex, face: m.dark, top: m.top, dark: m.dark }, 1); else ink(c, rect(xl, yt + TS, th, h), m.dark, { wob: 0.4, seed: seed + 3, lw: 0.7, heavy: 1.3 }); }
     return;
   }
-  if (!more) { var d = ink(c, rect(xl, yt + TS, th, h), m.face, { wob: 0.5, seed: seed, noLine: true, flat: true }); face(c, m, xl, yt + TS, th, h, seed, true); path(c, d); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8); }
+  if (!more) { if (lean) endFace(m, 1); else { var d = ink(c, rect(xl, yt + TS, th, h), m.face, { wob: 0.5, seed: seed, noLine: true, flat: true }); face(c, m, xl, yt + TS, th, h, seed, true); path(c, d); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8); } }
   cap(c, m, xl, yt, th, TS, seed, false);
   if (e.t === 'window') { ink(c, rect(xl + 0.8, yt + 6, th - 1.6, TS - 12), '#241a14', { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }
+  if (e.st && !lean) { var gi; for (gi = 0; gi < (e.st >= 2 ? 3 : 1); gi++) ink(c, rect(xl + 0.4, yt + 4 + hs(seed + 61, gi) * (TS - 9), th - 0.8, 1.6 + hs(seed + 63, gi) * 1.8), m.burnt ? '#0e0b0a' : (FRESH[m.tex] || '#3a3028'), { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }   // notches hacked into its top (with a lean the marks are on its face)
 }
 // The frame: a post at corner (x, y) (a timber a little taller than the wall, with a cap), and a beam between two
 // posts a tile apart where no wall stands between them, so a frame reads as a frame before the walls fill it in.
@@ -490,6 +613,6 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon };
+return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;

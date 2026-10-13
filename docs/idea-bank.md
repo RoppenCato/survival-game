@@ -564,3 +564,25 @@ the hero dragged to the ship, more to take in a town, the people of a raid. Stil
 - **Robbing in plain sight.** Villagers and guards do not care what you take from an unlocked chest in front of them.
 - **Fire**, and smoke that tells the next village.
 
+## Destruction: what is left (2026-10-13, after docs/destruction.md)
+
+Built: breaking in, bringing down, burning, mending in a place you hold. None of what follows is decided.
+
+- **A ram.** Four men and a felled trunk for a barred gate or a church door, and in time for cut stone. It would give
+  the hird a thing to do in a break-in, and make a town's wall a thing with an answer.
+- **The gate barred.** Decided 2026-10-13 that a band is barred at a town's gate; a barred gate already takes the axe
+  (28, eleven blows) in the rules, and nothing bars one yet.
+- **The town fights the fire.** Villagers with buckets from the well, in a chain; a fire near the well goes out, one
+  far from it does not. Then where you light it matters.
+- **A torch in the yard.** A guard who sees you carry fire among thatch could tell you to put it out, once.
+- **Smoke.** A burning village seen from the next one, and from the sea: word of you travels faster than you do.
+- **Who dies.** Nobody who is not a fighting man is hurt by fire or a falling roof today. If people can die of it,
+  burning a house with its people in it is the worst thing in the game, and should be said of you for good.
+- **The hird breaks and mends.** "Break that door" as a word to a man of yours (G at a door); a mason and a carpenter
+  among the jobs of a held place, mending a piece a day from the chests.
+- **A place mends itself.** A raided village that is nobody's is rebuilt after winter (decided). In between, its
+  people could patch a breach with wattle and planks, which would read as "they are afraid of you".
+- **Holding a ruin.** A burnt village claimed is a cheap place to build in: its stone walls stand. Should a place that
+  was burnt to the ground be worth less (its people gone for good)?
+- **Side walls with a face** for every building, if the trial is liked (`Build.CFG.lean`).
+

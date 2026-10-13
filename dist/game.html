@@ -6583,7 +6583,7 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
-var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1 };   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
+var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 0 };   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 }, OPEN = { door: 1, gate: 1 };
@@ -6655,8 +6655,8 @@ function rooms(B, GW, GH, bounds) {
     out.push({ id: 'r' + x + '_' + y, tiles: tiles, maxY: maxY });
   }
   var solids = [], k, p;
-  for (k in B.H) { if (OPEN[B.H[k].t]) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }
-  for (k in B.V) { if (OPEN[B.V[k].t]) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
+  for (k in B.H) { if (OPEN[B.H[k].t] || B.H[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }   // (a wall that has given, breach, is a way through: src/ruin.js)
+  for (k in B.V) { if (OPEN[B.V[k].t] || B.V[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
   for (k in B.posts || {}) { p = k.split(','); solids.push({ x: p[0] * T, y: p[1] * T, r: 3.5, hide: true }); }
   return { rooms: out, roomOf: roomOf, solids: solids, x0: bx0, y0: by0, w: w, h: h, at: function (tx, ty) { return inside(tx, ty) ? roomOf[idx(tx, ty)] : -1; } };
 }
@@ -6752,10 +6752,111 @@ function cap(c, m, x, y, w, h, seed, along) {
 function post(c, x, y, w, h, m, seed) {                              // a short fence post: a split timber with a lit side and a cut top
   ink(c, [[x - w / 2, y], [x - w / 2 - 0.2, y - h], [x + w / 2 + 0.2, y - h - 0.6], [x + w / 2, y]], m.dark, { wob: 0.5, seed: seed || 7, lw: 0.7, heavy: 1.3 });
 }
+/* ---------- damage (2026-10-13, src/ruin.js): a wall that has been hacked at, one that has given, one that fire took, and
+   what a fallen roof leaves on the floor. An edge carries st (1 hacked, 2 nearly through), breach, burnt, scorch.
+   Everything here is drawn in "face space" (0..w along the wall, 0..h down it), so the same drawing serves a wall that faces
+   you and, sheared, the leaning side face of a wall that runs away from you. ---------- */
+var CHAR = '#1c1714', FRESH = { logs: '#d7bf93', planks: '#d9c39a', wattle: '#cdb98f', blocks: '#3c3d44', turf: '#5a4630', frame: '#9a8460', ashlar: '#55504a' }, matCache = {};
+function wallMat(e) {                  // the wall's material as it now is: its own, blackened by a fire that passed, or charred through
+  var m = WALLS[e.m] || WALLS[0], k = e.burnt ? 2 : e.scorch ? 1 : 0; if (!k) return m;
+  var id = e.m + ':' + k, o = matCache[id];
+  if (!o) o = matCache[id] = { name: m.name, tex: m.tex, burnt: k === 2, face: mix(m.face, CHAR, k === 2 ? 0.8 : 0.4), top: mix(m.top, CHAR, k === 2 ? 0.74 : 0.32), dark: mix(m.dark, CHAR, k === 2 ? 0.82 : 0.42) };
+  return o;
+}
+// the marks of blows on a face: gashes in the material's own broken colour (pale new wood, the dark between stones, torn earth), the first of them a hole right through once it is nearly gone, and cracks
+function scars(c, m, w, h, seed, st) {
+  var n = st >= 2 ? 4 : 2, i, k, wood = m.tex === 'logs' || m.tex === 'planks', col = m.burnt ? '#0e0b0a' : (FRESH[m.tex] || '#3a3028');
+  for (i = 0; i < n; i++) {
+    var cx = 4 + hs(seed + 71, i) * (w - 8), cy = h * (0.3 + hs(seed + 73, i) * 0.5), r = (st >= 2 ? 3.6 : 2.5) * (0.7 + hs(seed + 75, i) * 0.7), pts = [], np = 6;
+    for (k = 0; k < np; k++) { var a = k / np * 6.283 + hs(seed + i, k) * 0.7, rr = r * (0.55 + hs(seed + i * 3, k + 9) * 0.8); pts.push([cx + Math.cos(a) * rr * (m.tex === 'planks' ? 0.6 : 1), cy + Math.sin(a) * rr * (m.tex === 'planks' ? 1.9 : m.tex === 'logs' ? 0.7 : 1)]); }
+    ink(c, pts, i === 0 && st >= 2 ? '#1a1310' : col, { wob: 0, flat: true, lw: 0.6, heavy: 1, seed: seed + i });
+    if (wood) stroke(c, [[cx - r * 0.8, cy - r * 0.5], [cx + r * 0.3, cy + r * 0.4]], INK.soft, 0.5);
+  }
+  for (i = 0; i < (st >= 2 ? 3 : 1); i++) { var x1 = 3 + hs(seed + 81, i) * (w - 6), y1 = h * (0.1 + hs(seed + 83, i) * 0.3); stroke(c, [[x1, y1], [x1 + (hs(seed + 85, i) - 0.5) * 5, y1 + h * 0.2], [x1 + (hs(seed + 87, i) - 0.5) * 7, y1 + h * 0.42]], INK.soft, 0.65); }
+}
+// what is left of a wall that has given: a ragged stump at each end and a low ragged sill between, in its own material; a timber frame keeps its timbers. shade: a colour laid over what is left (a side face's light or dark)
+function remains(c, m, w, h, seed, burnt, shade, hole) {   // hole: a window smashed in: the wall stands to its full height either side of the gap
+  var frame = m.tex === 'frame', k = burnt ? 0.55 : frame ? 0.5 : 1, hl = hole && !burnt ? h : h * (0.5 + hs(seed + 91, 1) * 0.4) * k, hr = hole && !burnt ? h : h * (0.45 + hs(seed + 91, 2) * 0.45) * k, wl = hole ? w * 0.26 : Math.min(w * 0.3, 5 + hs(seed + 93, 1) * 4), wr = hole ? w * 0.26 : Math.min(w * 0.3, 5 + hs(seed + 93, 2) * 4);
+  var sill = Math.min(h * 0.6, (m.tex === 'turf' || m.tex === 'blocks' ? 5 : 2.5) + hs(seed + 95, 1) * 3.5) * (burnt ? 0.7 : 1), pts = [[0, h], [0, h - hl]], top = [], i, n;
+  n = 3; for (i = 1; i <= n; i++) top.push([wl * i / n, h - Math.max(sill, hl * (1 - i / n * 0.8)) + (hs(seed + 97, i) - 0.5) * Math.min(4, h * 0.2)]);
+  n = 6; for (i = 0; i <= n; i++) top.push([wl + (w - wl - wr) * i / n, h - sill - hs(seed + 99, i) * Math.min(3.2, h * 0.25)]);
+  n = 3; for (i = 1; i <= n; i++) top.push([w - wr + wr * i / n, h - Math.max(sill, hr * (0.2 + i / n * 0.8)) + (hs(seed + 101, i) - 0.5) * Math.min(4, h * 0.2)]);
+  pts = pts.concat(top); pts.push([w, h - hr]); pts.push([w, h]);
+  c.save(); path(c, pts); c.clip(); c.fillStyle = m.face; c.fillRect(0, 0, w, h); face(c, m, 0, 0, w, h, seed);
+  if (shade) { c.fillStyle = shade; c.fillRect(0, 0, w, h); }
+  c.restore();
+  path(c, pts); c.lineJoin = 'round'; c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, pts, 1.5);
+  if (!burnt && (m.tex === 'logs' || m.tex === 'planks' || m.tex === 'wattle')) stroke(c, [[0.6, h - hl + 0.8]].concat(top.map(function (q) { return [q[0], q[1] + 0.9]; })), FRESH[m.tex], 0.9, 0.85);   // broken wood is pale
+  if (frame && !burnt && !hole) {       // the timbers still stand: the two posts and the head beam, the panel between them gone
+    var tw = 2.6; [[0, 0, tw, h], [w - tw, 0, tw, h], [0, 0, w, tw]].forEach(function (q, qi) { ink(c, rect(q[0], q[1], q[2], q[3]), m.top, { wob: 0.3, seed: seed + 110 + qi, flat: true, lw: 0.6, heavy: 1.1 }); });
+    if (hs(seed + 113, 1) < 0.6) stroke(c, [[tw, tw + 1], [w * 0.42, h * 0.45]], m.top, tw * 0.8);          // a brace, snapped
+  }
+  if (frame && burnt) { ink(c, [[0, h], [0.2, h * 0.3], [2.6, h * 0.36], [2.6, h]], m.top, { wob: 0.4, seed: seed + 120, flat: true, lw: 0.6, heavy: 1.1 }); ink(c, [[w - 2.6, h], [w - 2.6, h * 0.5], [w, h * 0.42], [w, h]], m.top, { wob: 0.4, seed: seed + 121, flat: true, lw: 0.6, heavy: 1.1 }); }
+}
+// what lies on the ground where a wall gave: splintered boards, sticks, stones or clods in the wall's colours, ash where it burnt. Scattered in a box (x, y, w, h) on the ground
+function rubble(c, m, x, y, w, h, seed, burnt) {
+  var i, n = 9, stone = m.tex === 'blocks' || m.tex === 'ashlar', turf = m.tex === 'turf';
+  if (burnt) { c.fillStyle = 'rgba(40,36,34,0.42)'; c.beginPath(); c.ellipse(x + w / 2, y + h / 2, w * 0.55, h * 0.6, 0, 0, 7); c.fill(); for (i = 0; i < 5; i++) { c.fillStyle = 'rgba(190,186,178,' + (0.25 + hs(seed + 131, i) * 0.25) + ')'; c.beginPath(); c.ellipse(x + hs(seed + 133, i) * w, y + hs(seed + 135, i) * h, 1.5 + hs(seed + 137, i) * 2.5, 0.8 + hs(seed + 139, i) * 1.2, 0, 0, 7); c.fill(); } }
+  for (i = 0; i < n; i++) {
+    var px = x + hs(seed + 141, i) * w, py = y + hs(seed + 143, i) * h, a = (hs(seed + 145, i) - 0.5) * 2.4, tone = (hs(seed + 147, i) - 0.5) * 0.24, col = mix(i % 3 === 0 && !burnt && !stone && !turf ? (FRESH[m.tex] || m.face) : m.face, tone > 0 ? '#ffffff' : '#000000', Math.abs(tone));
+    if (stone || turf) { var r = (turf ? 1.6 : 1.4) + hs(seed + 149, i) * (turf ? 2.2 : 2.6); ink(c, [[px - r, py + r * 0.3], [px - r * 0.5, py - r * 0.6], [px + r * 0.6, py - r * 0.5], [px + r, py + r * 0.2], [px + r * 0.3, py + r * 0.6]], col, { wob: 0.3, seed: seed + i, flat: true, lw: 0.55, heavy: 0.9 }); }
+    else { var L = (m.tex === 'wattle' ? 3 : 4) + hs(seed + 151, i) * (m.tex === 'logs' ? 7 : 5), wd = m.tex === 'wattle' ? 0.8 : m.tex === 'logs' ? 2.2 : 1.5, ca = Math.cos(a), sa = Math.sin(a) * K; ink(c, [[px - ca * L / 2 - sa * wd / 2, py - sa * L / 2 + ca * wd / 2], [px + ca * L / 2 - sa * wd / 2, py + sa * L / 2 + ca * wd / 2], [px + ca * L / 2 + sa * wd / 2, py + sa * L / 2 - ca * wd / 2], [px - ca * L / 2 + sa * wd / 2, py - sa * L / 2 - ca * wd / 2]], col, { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }
+  }
+}
+// The leaning side face of a wall that runs north to south (C.lean; the mountains' side walls, 2026-10-13): its outer face shown as
+// a sheared strip, the foot standing `lean` out from the top, lit where it looks west and in shade where it looks east. side: -1 the
+// face looks west (the wall is a room's west wall, or stands free), +1 it looks east.
+function sideFace(c, x, y, e, m, open, C, side, seed) {
+  var h = C.wallH, th = C.thick, lean = C.lean, X = x * T + side * th / 2, y0 = y * TS - h, shade = side < 0 ? 'rgba(255,240,205,0.10)' : 'hsla(222,40%,12%,0.36)';
+  c.save(); c.transform(0, 1, side * lean / h, 1, X, y0);
+  if (e.breach) remains(c, m, TS, h, seed + 7, !!e.burnt, shade);
+  else {
+    c.fillStyle = m.face; c.fillRect(0, 0, TS, h); face(c, m, 0, 0, TS, h, seed + 7);
+    if (e.t === 'door') { c.fillStyle = m.dark; c.fillRect(2, 2, TS - 4, h - 2); c.fillStyle = open ? '#1e1612' : '#5e4430'; c.fillRect(4, 5, TS - 8, h - 5); if (!open) { stroke(c, [[4, h * 0.36], [TS - 4, h * 0.36]], '#3a2a1c', 1.6); stroke(c, [[4, h * 0.72], [TS - 4, h * 0.72]], '#3a2a1c', 1.6); } c.strokeStyle = INK.line; c.lineWidth = 0.7; c.strokeRect(4, 5, TS - 8, h - 5); }
+    if (e.t === 'window') { c.fillStyle = '#241a14'; c.fillRect(8, 7, TS - 16, h - 20); c.strokeStyle = INK.line; c.lineWidth = 0.7; c.strokeRect(8, 7, TS - 16, h - 20); }
+    if (e.st) scars(c, m, TS, h, seed + 7, e.st);
+    c.fillStyle = shade; c.fillRect(0, 0, TS, h);
+    c.strokeStyle = INK.line; c.lineWidth = 0.9; c.lineJoin = 'round'; c.strokeRect(0, 0, TS, h);
+    if (side > 0) stroke(c, [[0, h], [TS, h]], INK.line, 1.6);                                             // the heavy line at the foot of the shadow side
+  }
+  c.restore();
+}
+// what a fallen or a burnt roof leaves on one tile of the floor (ru = { k, m }): straw heaps, sods, shingles or shards and broken rafters; or ash and charred timber
+function drawDebris(c, tx, ty, ru, C) {
+  var x0 = tx * T, y0 = ty * TS, seed = tx * 53 + ty * 97, i, r = ROOFS[ru.m] || ROOFS[1], burnt = ru.k === 'burnt', beam = burnt ? '#1a1512' : '#4a3626';
+  if (burnt) { c.fillStyle = 'rgba(26,22,20,0.5)'; c.beginPath(); c.ellipse(x0 + T / 2, y0 + TS / 2, T * 0.62, TS * 0.62, 0, 0, 7); c.fill(); for (i = 0; i < 6; i++) { c.fillStyle = 'rgba(196,192,184,' + (0.22 + hs(seed, i) * 0.28) + ')'; c.beginPath(); c.ellipse(x0 + 3 + hs(seed + 3, i) * (T - 6), y0 + 2 + hs(seed + 5, i) * (TS - 4), 2 + hs(seed + 7, i) * 4, 1 + hs(seed + 9, i) * 2, 0, 0, 7); c.fill(); } }
+  else if (r.col) {
+    for (i = 0; i < 3; i++) {
+      var hx = x0 + 5 + hs(seed + 11, i) * (T - 10), hy = y0 + 5 + hs(seed + 13, i) * (TS - 9), hw = 5 + hs(seed + 15, i) * 6, hh = 2.5 + hs(seed + 17, i) * 3, tone = (hs(seed + 19, i) - 0.5) * 0.2, col = mix(r.col, tone > 0 ? '#ffffff' : '#000000', Math.abs(tone));
+      if (ru.m === 1 || ru.m === 0) { ink(c, [[hx - hw, hy + hh * 0.4], [hx - hw * 0.6, hy - hh * 0.5], [hx - hw * 0.1, hy - hh], [hx + hw * 0.5, hy - hh * 0.7], [hx + hw, hy + hh * 0.3], [hx + hw * 0.3, hy + hh * 0.7], [hx - hw * 0.5, hy + hh * 0.7]], col, { wob: 0.5, seed: seed + i, lw: 0.6, heavy: 1.1 }); if (ru.m === 1) for (var k = 0; k < 4; k++) stroke(c, [[hx - hw * 0.6 + k * hw * 0.35, hy - hh * 0.4], [hx - hw * 0.5 + k * hw * 0.35 + 1.5, hy + hh * 0.5]], r.line, 0.5, 0.6); }
+      else for (k = 0; k < 4; k++) { var sx = hx + (hs(seed + 21 + i, k) - 0.5) * hw * 2, sy = hy + (hs(seed + 23 + i, k) - 0.5) * hh * 2.4, a2 = hs(seed + 25 + i, k) * 3; ink(c, [[sx - 2.2 * Math.cos(a2), sy - 1.2 * Math.sin(a2)], [sx + 1.4, sy - 1.3], [sx + 2.2 * Math.cos(a2), sy + 1.1 * Math.sin(a2) + 0.6], [sx - 1.2, sy + 1.4]], mix(col, k % 2 ? '#000000' : '#ffffff', 0.1), { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }
+    }
+  }
+  for (i = 0; i < (hs(seed + 31, 1) < 0.55 ? 2 : 1); i++) {      // a rafter or two, lying where they fell (they may reach onto the next tile)
+    var bx = x0 + hs(seed + 33, i) * T, by = y0 + 3 + hs(seed + 35, i) * (TS - 6), ba = (hs(seed + 37, i) - 0.5) * 2.2, bl = 14 + hs(seed + 39, i) * 18, ca = Math.cos(ba), sa = Math.sin(ba) * K, bw = 1.5;
+    ink(c, [[bx - ca * bl / 2 - sa * bw, by - sa * bl / 2 + ca * bw], [bx + ca * bl / 2 - sa * bw, by + sa * bl / 2 + ca * bw], [bx + ca * bl / 2 + sa * bw, by + sa * bl / 2 - ca * bw], [bx - ca * bl / 2 + sa * bw, by - sa * bl / 2 - ca * bw]], beam, { wob: 0.3, seed: seed + 40 + i, flat: burnt, lw: 0.6, heavy: 1.2 });
+    if (!burnt) stroke(c, [[bx - ca * bl / 2 + 1, by - sa * bl / 2], [bx + ca * bl / 2 - 1, by + sa * bl / 2]], INK.lit, 0.5);
+  }
+}
+// a flame at a place, s its size, t the clock: three tongues, each swaying on its own
+function drawFlame(c, x, y, s, t, seed) {
+  var cols = ['#d9541e', '#f08a2a', '#fbc24a', '#fff0b8'], i;
+  for (i = 0; i < 4; i++) {
+    var k = 1 - i * 0.22, sw = Math.sin(t * (6.5 + i * 1.7) + (seed || 0) * 1.3 + i) * s * 0.16 * k, hh = s * (1 + 0.22 * Math.sin(t * (9 + i * 2.3) + (seed || 0) + i * 2)) * k, ww = s * 0.42 * k;
+    c.fillStyle = cols[i]; c.beginPath(); c.moveTo(x - ww, y); c.quadraticCurveTo(x - ww * 1.15, y - hh * 0.45, x + sw, y - hh); c.quadraticCurveTo(x + ww * 1.15, y - hh * 0.45, x + ww, y); c.quadraticCurveTo(x, y + ww * 0.5, x - ww, y); c.fill();
+  }
+}
 // a fence along the top of tile (x, y): posts with woven wattle between; a gate: a bar frame that swings open as you come near;
 // a palisade: a row of pointed logs; a rail fence; a dry-stone wall
 function drawFenceH(c, x, y, e, open, C) {
   var m = WALLS[e.m] || WALLS[2], x0 = x * T, yb = y * TS, i, seed = x * 31 + y * 7;
+  if (e.breach) {                         // it has given: stumps of its posts, and the rest on the ground
+    var bm = e.t === 'drystone' ? WALLS[3] : wallMat(e), bh = e.t === 'palisade' ? PALISADE_H : FENCE_H;
+    if (e.t === 'palisade') { c.save(); c.translate(x0, yb - bh); remains(c, { name: bm.name, tex: 'logs', face: bm.face, top: bm.top, dark: bm.dark }, T, bh, seed, !!e.burnt); c.restore(); }
+    else if (e.t !== 'drystone') { ink(c, [[x0, yb], [x0 + 0.4, yb - bh * 0.55], [x0 + 3, yb - bh * 0.4], [x0 + 3, yb]], bm.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 }); ink(c, [[x0 + T - 3, yb], [x0 + T - 3, yb - bh * 0.35], [x0 + T - 0.4, yb - bh * 0.6], [x0 + T, yb]], bm.dark, { wob: 0.4, seed: seed + 1, lw: 0.6, heavy: 1.1 }); }
+    rubble(c, e.t === 'fence' ? { tex: 'wattle', face: bm.face, dark: bm.dark } : e.t === 'drystone' ? bm : { tex: 'planks', face: bm.face, dark: bm.dark }, x0 + 2, yb - 2, T - 4, 8, seed, !!e.burnt);
+    return;
+  }
   if (e.t === 'palisade') {
     for (i = 0; i < 4; i++) { var px = x0 + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4, col = mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08); ink(c, [[px + 0.3, yb], [px, yb - ph + 4], [px + 4, yb - ph], [px + 8, yb - ph + 4], [px + 7.7, yb]], col, { wob: 0.7, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[px + 2.5, yb - 3], [px + 2.2, yb - ph + 6]], INK.faint, 0.6); stroke(c, [[px + 5.5, yb - 2], [px + 5.8, yb - ph + 7]], INK.faint, 0.5); }
     ink(c, rect(x0, yb - 11, T, 2.4), m.dark, { wob: 0.4, seed: seed + 9, flat: true, lw: 0.6, heavy: 1 }); ink(c, rect(x0, yb - 22, T, 2.4), m.dark, { wob: 0.4, seed: seed + 10, flat: true, lw: 0.6, heavy: 1 });
@@ -6792,6 +6893,12 @@ function drawFenceH(c, x, y, e, open, C) {
 }
 function drawFenceV(c, x, y, e, open, more, C) {
   var m = WALLS[e.m] || WALLS[2], xl = x * T, yt = y * TS, i, seed = x * 17 + y * 29;
+  if (e.breach) {
+    var bm = e.t === 'drystone' ? WALLS[3] : wallMat(e), bh = e.t === 'palisade' ? PALISADE_H : FENCE_H;
+    ink(c, [[xl - 1.5, yt + 2], [xl - 1.2, yt + 2 - bh * 0.5], [xl + 1.4, yt + 2 - bh * 0.4], [xl + 1.5, yt + 2]], bm.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 });
+    rubble(c, e.t === 'fence' ? { tex: 'wattle', face: bm.face, dark: bm.dark } : e.t === 'drystone' ? bm : { tex: e.t === 'palisade' ? 'logs' : 'planks', face: bm.face, dark: bm.dark }, xl - 6, yt + 3, 12, TS - 4, seed, !!e.burnt);
+    return;
+  }
   if (e.t === 'palisade') {
     for (i = 0; i < 3; i++) { var py = yt + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4; ink(c, [[xl - 3, py + 8], [xl - 3, py + 8 - ph + 3], [xl, py + 8 - ph], [xl + 3, py + 8 - ph + 3], [xl + 3, py + 8]], mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08), { wob: 0.6, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[xl - 1, py + 6], [xl - 1.2, py + 8 - ph + 6]], INK.faint, 0.55); }
     return;
@@ -6837,11 +6944,13 @@ function shutterWindow(c, x, y, w, h, seed) {
 function drawH(c, x, y, e, low, open, C) {
   C = C || CFG;
   if (YARD[e.t]) return drawFenceH(c, x, y, e, open, C);
-  var m = WALLS[e.m] || WALLS[0], h = low ? 7 : C.wallH, x0 = x * T, yb = y * TS, cp = C.thick * K, seed = x * 13 + y * 37;
+  var m = wallMat(e), h = low ? 7 : C.wallH, x0 = x * T, yb = y * TS, cp = C.thick * K, seed = x * 13 + y * 37;
+  if (e.breach) { c.save(); c.translate(x0, yb - h); remains(c, m, T, h, seed, !!e.burnt, null, e.t === 'window'); c.restore(); rubble(c, e.t === 'window' && !e.burnt ? { tex: 'planks', face: '#8a6a4a', dark: '#5a4430' } : m, x0 + (e.t === 'window' ? 8 : 2), yb - 1, T - (e.t === 'window' ? 16 : 4), 8, seed, !!e.burnt); return; }   // it has given: what is left of it, and what lies before it
   if (e.t === 'door' && !low) {
     ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.3 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.7, heavy: 1.3 });
     ink(c, rect(x0 - 0.5, yb - h - cp, T + 1, cp + 4), m.top, { wob: 0.4, seed: seed + 2, lw: 0.7, heavy: 1.3 });   // the lintel
     if (m.tex === 'ashlar') archDoor(c, x0 + 5, yb - h + 2, T - 10, h - 2, open, seed + 3); else door(c, x0 + 4, yb - h + 4, T - 8, h - 4, open, seed + 3);
+    if (e.st && !open) { c.save(); c.translate(x0 + 4, yb - h + 4); scars(c, { tex: 'planks' }, T - 8, h - 4, seed + 3, e.st); c.restore(); }   // a locked door under the axe
     return;
   }
   if (e.t === 'door') { ink(c, rect(x0, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 }); ink(c, rect(x0 + T - 4, yb - h, 4, h), m.dark, { wob: 0.4, seed: seed + 1, lw: 0.6, heavy: 1.1 }); return; }
@@ -6851,21 +6960,35 @@ function drawH(c, x, y, e, low, open, C) {
   path(c, d); c.lineJoin = 'round'; c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8);
   stroke(c, [[x0 + 0.5, yb - h + 0.6], [x0 + T - 0.5, yb - h + 0.6]], INK.lit, 1.0);                                // the lit top of the face
   if (e.t === 'window' && !low) { if (m.tex === 'ashlar') archWindow(c, x0 + 12, yb - h + 3, 8, 12, seed + 5); else shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5); }
+  if (e.st) { c.save(); c.translate(x0, yb - h); scars(c, m, T, h, seed, e.st); c.restore(); }
 }
 // an edge along the left side of tile (x, y). more: whether the V edge below continues it (no end face then)
-function drawV(c, x, y, e, open, more, C) {
+function drawV(c, x, y, e, open, more, C, side) {
   C = C || CFG;
   if (YARD[e.t]) return drawFenceV(c, x, y, e, open, !!(more && more.t && YARD[more.t]), C);
-  var m = WALLS[e.m] || WALLS[0], h = C.wallH, th = C.thick, xl = x * T - th / 2, yt = y * TS - h, seed = x * 41 + y * 11;
+  var m = wallMat(e), h = C.wallH, th = C.thick, xl = x * T - th / 2, yt = y * TS - h, seed = x * 41 + y * 11, lean = C.lean || 0, sd = side > 0 ? 1 : -1;
+  if (lean) sideFace(c, x, y, e, m, open, C, sd, seed);
+  function endFace(mm, hk) {              // the wall's south end, seen from the south: with a lean it widens to its foot on the side its face shows
+    var top = yt + TS + h * (1 - hk), bot = yt + TS + h, pts = [[xl, top], [xl + th, top], [xl + th + (sd > 0 ? lean : 0), bot], [xl - (sd < 0 ? lean : 0), bot]];
+    c.save(); path(c, pts); c.clip(); c.fillStyle = mm.face; c.fillRect(xl - lean, top, th + lean * 2, h); face(c, mm, xl - lean, yt + TS, th + lean * 2, h, seed, true); c.restore();
+    path(c, pts); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, pts, 1.8);
+  }
+  if (e.breach) {                         // it has given: a stub of its top at each end, its south end broken short, and what lies at its foot
+    if (!lean) { cap(c, m, xl, yt, th, 5, seed, false); cap(c, m, xl, yt + TS - 4, th, 4, seed + 1, false); }
+    if (!more) endFace(m, e.burnt ? 0.3 : 0.5);
+    rubble(c, m, x * T - 7 + (lean ? sd * lean * 0.6 : 0), y * TS + 2, 14, TS - 4, seed, !!e.burnt);
+    return;
+  }
   if (e.t === 'door') {
     ink(c, rect(xl, yt, th, 4), m.dark, { wob: 0.3, seed: seed, lw: 0.6, heavy: 1 }); ink(c, rect(xl, yt + TS - 4, th, 4), m.dark, { wob: 0.3, seed: seed + 1, lw: 0.6, heavy: 1 });
     if (!open) ink(c, rect(xl + 0.6, yt + 4, th - 1.2, TS - 8), '#5e4430', { wob: 0.3, seed: seed + 2, flat: true, lw: 0.5, heavy: 0.9 });
-    if (!more) ink(c, rect(xl, yt + TS, th, h), m.dark, { wob: 0.4, seed: seed + 3, lw: 0.7, heavy: 1.3 });
+    if (!more) { if (lean) endFace({ tex: m.tex, face: m.dark, top: m.top, dark: m.dark }, 1); else ink(c, rect(xl, yt + TS, th, h), m.dark, { wob: 0.4, seed: seed + 3, lw: 0.7, heavy: 1.3 }); }
     return;
   }
-  if (!more) { var d = ink(c, rect(xl, yt + TS, th, h), m.face, { wob: 0.5, seed: seed, noLine: true, flat: true }); face(c, m, xl, yt + TS, th, h, seed, true); path(c, d); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8); }
+  if (!more) { if (lean) endFace(m, 1); else { var d = ink(c, rect(xl, yt + TS, th, h), m.face, { wob: 0.5, seed: seed, noLine: true, flat: true }); face(c, m, xl, yt + TS, th, h, seed, true); path(c, d); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d, 1.8); } }
   cap(c, m, xl, yt, th, TS, seed, false);
   if (e.t === 'window') { ink(c, rect(xl + 0.8, yt + 6, th - 1.6, TS - 12), '#241a14', { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }
+  if (e.st && !lean) { var gi; for (gi = 0; gi < (e.st >= 2 ? 3 : 1); gi++) ink(c, rect(xl + 0.4, yt + 4 + hs(seed + 61, gi) * (TS - 9), th - 0.8, 1.6 + hs(seed + 63, gi) * 1.8), m.burnt ? '#0e0b0a' : (FRESH[m.tex] || '#3a3028'), { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }   // notches hacked into its top (with a lean the marks are on its face)
 }
 // The frame: a post at corner (x, y) (a timber a little taller than the wall, with a cap), and a beam between two
 // posts a tile apart where no wall stands between them, so a frame reads as a frame before the walls fill it in.
@@ -7047,7 +7170,7 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon };
+return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;
 
@@ -8607,7 +8730,7 @@ var Nav = (function () {
   // A wall, a window and every piece of a yard shuts its edge; a door and a gate are open; a locked door that is not broken
   // is shut to all but its own people.
   function edgeOf(B, yardOpen) {
-    return function (kind, tx, ty) { var e = (kind === 'H' ? B.H : B.V)[tx + ',' + ty]; if (!e) return 0; if (e.t === 'gate') return 3; if (e.t === 'door') return e.locked && !e.broken ? 2 : 3; return yardOpen && yardOpen[e.t] ? 0 : 1; };
+    return function (kind, tx, ty) { var e = (kind === 'H' ? B.H : B.V)[tx + ',' + ty]; if (!e) return 0; if (e.breach) return 3; if (e.t === 'gate') return e.locked && !e.broken ? 2 : 3; if (e.t === 'door') return e.locked && !e.broken ? 2 : 3; return yardOpen && yardOpen[e.t] ? 0 : 1; };
   }
   // The engine's three questions (Combat.api.nav, .blocked, .wall) answered from the grids a page keeps. at(x, y): the grid at
   // a place, or null; clock(): the time. A place's own people have its keys: a soldier of the place's side whose e.vi is the
@@ -8654,6 +8777,234 @@ var Nav = (function () {
   return { make: make, edgeOf: edgeOf, attach: attach, unlock: unlock };
 })();
 if (typeof module !== 'undefined') module.exports = Nav;
+
+/* Ruin: breaking in, bringing down, burning and mending what is built (2026-10-13; Robin: you should be able to destroy
+   houses and villages and to break in; balanced, so that a stone wall is not felled by an axe; semi-realistic; usable as
+   tactics; not exploitable; it must not glitch the people; it leaves a trashed, broken place; and what you have claimed you
+   can build up again). The rules only: no drawing (src/build.js draws a damaged wall, a breach, a fallen or burnt roof) and
+   no page (the game offers the edges to the tools, makes the noise, moves the people). Loads in the page and in Node.
+
+   A building is the game's B: edges B.H and B.V keyed "x,y", each { t, m } (src/build.js). What this module adds to it:
+     on an edge   dmg     the damage it has taken so far
+                  breach  1: it has given. A breach is a way through, and still the room's wall as far as the roof goes
+                  burnt   1: it was fire that took it (it is drawn charred)
+                  scorch  1: stone that a fire has blackened
+     B.ruin       { "x,y": { k: 'fallen' | 'burnt', m: the roof it had, hot: seconds it still glows } } for every tile of a
+                  room whose roof has come down
+     B.fire       { "H:x,y" | "V:x,y": { t }, "R:<room id>": { t, at: [tx, ty] } }: what burns now
+
+   WHAT BREAKS WHAT (DEF.hp, DEF.bite). A piece takes its hp in the damage of blows; a tool's blow is its own power (an iron
+   axe or pick 2.6, about two blows a second) times what that tool does to that material:
+     the axe   wood: wattle, a window's shutter, a door, planks, the panels of a timber frame, logs, a palisade, fences;
+               a little to turf; nothing to stone (it rings off)
+     the pick  loose stone (a rubble wall, a dry-stone wall) and turf; poorly on wood
+     nothing in the hand breaks dressed stone in mortar: a cut-stone wall or a town's wall is gone round, or its door is the
+     way in. (A ram for gates is not built.)
+   THE ROOF. A room keeps its roof while its walls stand. When the share of its wall edges that have given passes
+   DEF.collapse it comes down on whatever is inside (a timber frame's panels count half: the frame still carries).
+   FIRE (DEF.fire). Thatch catches at once and goes in half a minute; shingles slower; turf hardly; tiles and slate not at
+   all. Wood walls burn through to a breach, stone stands and is blackened. A burning roof lights the walls under it and
+   throws sparks downwind onto other roofs that can burn.
+   MENDING (DEF.mend) costs a share of the piece's own price; the game allows it only in a place you hold. */
+var Ruin = (function () {
+'use strict';
+var TEX = ['logs', 'planks', 'wattle', 'blocks', 'turf', 'frame', 'ashlar'];          // Build.WALLS, in its order
+var ROOFN = ['turf', 'thatch', 'shingles', 'tiles', 'slate', 'none'];                 // Build.ROOFS, in its order
+var YARDS = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 };
+var DEF = {
+  on: 1,
+  // how much a piece takes before it gives (0: no hand tool breaks it)
+  hp: { fence: 8, rail: 7, wattle: 18, window: 10, door: 14, archDoor: 26, gate: 28, planks: 48, frame: 36, logs: 110, palisade: 90, turf: 56, drystone: 40, blocks: 130, ashlar: 0, townwall: 0 },
+  // what a tool's blow does to a material, as a share of its power
+  bite: {
+    axe: { fence: 1, rail: 1, wattle: 1, window: 1, door: 1, archDoor: 1, gate: 1, planks: 1, frame: 1, logs: 1, palisade: 1, turf: 0.3, drystone: 0.1, blocks: 0, ashlar: 0, townwall: 0 },
+    pick: { fence: 0.5, rail: 0.5, wattle: 0.5, window: 0.5, door: 0.35, archDoor: 0.35, gate: 0.35, planks: 0.35, frame: 0.5, logs: 0.25, palisade: 0.25, turf: 1, drystone: 1, blocks: 1, ashlar: 0, townwall: 0 },
+    knife: { fence: 0.3, wattle: 0.3 }
+  },
+  // how far a blow on it is heard, in the world's units (a town's men within that distance hear it)
+  noise: { fence: 110, rail: 110, wattle: 150, window: 170, turf: 130, frame: 260, planks: 280, door: 360, gate: 320, logs: 320, palisade: 320, drystone: 300, archDoor: 480, blocks: 430, ashlar: 430, townwall: 430 },
+  noiseK: 1,                     // every noise above, times this
+  collapse: 0.34,                // the share of a room's wall edges that must have given before its roof comes down
+  frameCounts: 0.5,              // a timber frame's broken panel counts this much toward it (the frame still carries)
+  fallHurt: 24, fallHurtMen: 16, // what the roof does to the hero and to a man who is under it
+  warn: 1.6,                     // seconds between the groan and the fall
+  // what falls out of a piece that gives: far less than it cost to build (it is no way to gather)
+  drop: { fence: {}, rail: {}, wattle: {}, window: {}, door: { wood: 1 }, archDoor: { wood: 1 }, gate: { wood: 1 }, planks: { wood: 1 }, frame: { wood: 1 }, logs: { wood: 1 }, palisade: { wood: 1 }, turf: {}, drystone: { stone: 1 }, blocks: { stone: 1 } },
+  mend: 0.5,                     // mending costs this share of the piece's own price (a roof: of its price a tile)
+  fire: {
+    on: 1,
+    catchT: 1.2,                 // seconds a torch must be held to it
+    // seconds a burning wall edge lasts before it has burnt through (0: it does not burn)
+    wall: { fence: 8, rail: 9, wattle: 12, window: 14, door: 18, archDoor: 26, gate: 16, planks: 25, frame: 30, logs: 60, palisade: 50, turf: 0, drystone: 0, blocks: 0, ashlar: 0, townwall: 0 },
+    // a roof: catch (how readily, 0..1: 0 never), spread (seconds a tile), burn (seconds from catching to the fall)
+    roof: { thatch: { catch: 1, spread: 1.5, burn: 26 }, shingles: { catch: 0.5, spread: 4, burn: 40 }, turf: { catch: 0.12, spread: 9, burn: 70 }, tiles: { catch: 0, spread: 0, burn: 0 }, slate: { catch: 0, spread: 0, burn: 0 }, none: { catch: 0, spread: 0, burn: 0 } },
+    wallK: 1,                    // every wall's time above, times this
+    step: 2.5,                   // every so many seconds a burning piece tries its neighbours
+    along: 0.55,                 // the chance, each try, that a burning wall lights the wall beside it
+    toRoof: 6, toWalls: 9,       // seconds until a burning wall has lit the roof over it, and a burning roof its first wall
+    jump: 90, wind: 1.7,         // how far sparks carry to another roof, and how many times further downwind (upwind 0.4 of it)
+    spark: 0.1,                  // the chance a second that a burning roof lights a roof right beside it (times that roof's catch; less with distance, nothing at the reach's edge)
+    heat: 9,                     // health a second lost by whoever stands in a burning room
+    hot: 70,                     // seconds the ashes glow and smoke after
+    loud: 220, louder: 55, loudMax: 1000   // how far a fire is noticed: this, and this much more for every piece alight
+  }
+};
+function cfg(over) {             // DEF with a page's stored numbers laid over it (one level deep, two for hp, bite, fire)
+  var o = JSON.parse(JSON.stringify(DEF)), k, j, i;
+  for (k in over || {}) {
+    if (over[k] && typeof over[k] === 'object' && o[k] && typeof o[k] === 'object') { for (j in over[k]) { if (over[k][j] && typeof over[k][j] === 'object' && o[k][j] && typeof o[k][j] === 'object') { for (i in over[k][j]) o[k][j][i] = over[k][j][i]; } else o[k][j] = over[k][j]; } }
+    else o[k] = over[k];
+  }
+  return o;
+}
+function isYard(e) { return !!YARDS[e.t]; }
+// what an edge is made of, as far as breaking and burning go
+function matOf(e) {
+  if (YARDS[e.t]) return e.t;
+  var tex = TEX[e.m] || 'planks';
+  if (e.t === 'door') return tex === 'ashlar' ? 'archDoor' : 'door';
+  if (e.t === 'window') return tex === 'ashlar' || tex === 'blocks' ? tex : 'window';   // in stone a window is a small hole in the stone; in wood, wattle or turf it is the shutter and its frame
+  return tex;
+}
+function hpOf(R, e) { return R.hp[matOf(e)] || 0; }
+function rightTool(e) { var m = matOf(e); return m === 'blocks' || m === 'ashlar' || m === 'townwall' || m === 'drystone' || m === 'turf' ? 'stone' : 'tree'; }   // the engine's two kinds: the pick's and the axe's
+// can anything be done to it by blows: a wall, a window and a yard piece always; a door or a gate only while it is locked and whole (an open one is walked through)
+function standing(e) { return !!e && !e.breach && ((e.t !== 'door' && e.t !== 'gate') || (!!e.locked && !e.broken)); }
+function passable(e) { return !e || !!e.breach || ((e.t === 'door' || e.t === 'gate') && (!e.locked || !!e.broken)); }
+function stageOf(R, e) { var hp = hpOf(R, e); return e.breach ? 3 : !hp || !e.dmg ? 0 : e.dmg >= hp * 0.6 ? 2 : e.dmg >= hp * 0.25 ? 1 : 0; }   // 0 whole, 1 hacked, 2 nearly through, 3 given
+/* A blow. power is the tool's own (Items.stats(tool).power, times whatever the engine multiplies a heavy blow by); tool is
+   'axe' | 'pick' | 'knife'. Answers { dealt, mat, k (how far gone it now is, 0..1), gave, noise, none (this tool does nothing
+   to it), never (no hand tool does) }, or null when there is nothing there to strike. */
+function hit(R, e, power, tool) {
+  if (!R.on || !standing(e)) return null;
+  var mat = matOf(e), hp = R.hp[mat] || 0, bite = (R.bite[tool] && R.bite[tool][mat]) || 0, out = { mat: mat, dealt: 0, k: 0, gave: false, noise: (R.noise[mat] || 200) * (R.noiseK == null ? 1 : R.noiseK), none: false, never: !hp };
+  if (!hp || !bite) { out.none = true; out.k = hp ? Math.min(1, (e.dmg || 0) / hp) : 0; out.noise *= 0.6; return out; }
+  out.dealt = power * bite; e.dmg = (e.dmg || 0) + out.dealt; out.k = Math.min(1, e.dmg / hp);
+  if (e.dmg >= hp) { give(e); out.gave = true; }
+  e.st = e.dmg >= hp * 0.6 ? 2 : e.dmg >= hp * 0.25 ? 1 : 0;                       // how it is drawn: hacked, nearly through
+  return out;
+}
+function give(e, burnt) {          // it gives: a door stands open for good, anything else is a breach
+  if (e.t === 'door' || e.t === 'gate') { e.locked = 0; e.broken = 1; if (burnt) { e.breach = 1; e.burnt = 1; } }
+  else { e.breach = 1; if (burnt) e.burnt = 1; }
+}
+// the wall edges round a room (each once): [{ L, k, e }]. An edge with no piece on it is left out.
+function edgesOf(B, room) {
+  var has = {}, out = [], seen = {}, i, t;
+  for (i = 0; i < room.tiles.length; i++) has[room.tiles[i][0] + ',' + room.tiles[i][1]] = 1;
+  function add(L, x, y) { var k = x + ',' + y, id = L + k, e = (L === 'H' ? B.H : B.V)[k]; if (e && !seen[id]) { seen[id] = 1; out.push({ L: L, k: k, e: e, x: x, y: y }); } }
+  for (i = 0; i < room.tiles.length; i++) {
+    t = room.tiles[i];
+    if (!has[t[0] + ',' + (t[1] - 1)]) add('H', t[0], t[1]); if (!has[t[0] + ',' + (t[1] + 1)]) add('H', t[0], t[1] + 1);
+    if (!has[(t[0] - 1) + ',' + t[1]]) add('V', t[0], t[1]); if (!has[(t[0] + 1) + ',' + t[1]]) add('V', t[0] + 1, t[1]);
+  }
+  return out;
+}
+// how far gone a room's walls are: { n (its wall edges), broken (those that have given, a frame's panel counting less), share }
+function strain(R, B, room) {
+  var E = edgesOf(B, room), n = 0, br = 0, i, e;
+  for (i = 0; i < E.length; i++) { e = E[i].e; if (isYard(e)) continue; n++; if (e.breach && e.t !== 'door') br += matOf(e) === 'frame' && !e.burnt ? R.frameCounts : 1; }
+  return { n: n, broken: br, share: n ? br / n : 0 };
+}
+function ruined(B, room) { var t = room.tiles[0]; return !!(B.ruin && B.ruin[t[0] + ',' + t[1]]); }
+function roofOf(B, room, dflt) { return B.roofs && B.roofs[room.id] != null ? B.roofs[room.id] : (dflt == null ? 1 : dflt); }
+// the roof comes down: every tile of the room is marked, and the room has no roof until it is raised again
+function collapse(R, B, room, kind, dflt) {
+  if (ruined(B, room)) return false; var m = roofOf(B, room, dflt), i, t;
+  if (!B.ruin) B.ruin = {}; if (!B.roofs) B.roofs = {};
+  for (i = 0; i < room.tiles.length; i++) { t = room.tiles[i]; B.ruin[t[0] + ',' + t[1]] = { k: kind || 'fallen', m: m, hot: kind === 'burnt' ? R.fire.hot : 0 }; }
+  B.roofs[room.id] = 5; if (B.fire) delete B.fire['R:' + room.id];
+  return true;
+}
+// should it come down now (its walls too far gone, and it still has a roof to lose)
+function due(R, B, room, dflt) { return !room.up && !ruined(B, room) && roofOf(B, room, dflt) !== 5 && strain(R, B, room).share >= R.collapse; }   // (room.up: a room with stairs has a floor above and no roof)
+// mending: an edge whole again; a room's roof raised again (its walls must stand first)
+function damaged(e) { return !!e && (!!e.breach || !!e.broken || !!e.burnt || !!e.scorch || (e.dmg || 0) > 0); }
+function mendShare(R, e) { var hp = hpOf(R, e); return e.breach || e.broken ? 1 : hp ? Math.min(1, (e.dmg || 0) / hp) : e.scorch ? 0.2 : 0; }   // how much of its price the mending is: all of it for a breach, less for a hacked wall
+function mend(e) { delete e.dmg; delete e.st; delete e.breach; delete e.burnt; delete e.scorch; delete e.broken; }
+function canRaise(R, B, room) { return ruined(B, room) && strain(R, B, room).broken === 0; }
+function raise(B, room) {
+  var t0 = room.tiles[0], ru = B.ruin && B.ruin[t0[0] + ',' + t0[1]], i, t; if (!ru) return false;
+  B.roofs[room.id] = ru.m; for (i = 0; i < room.tiles.length; i++) { t = room.tiles[i]; delete B.ruin[t[0] + ',' + t[1]]; }
+  return true;
+}
+// how much of a set of rooms and edges is gone, for a place's state: { edges, broken, rooms, down }
+function tally(R, B, rooms) {
+  var o = { edges: 0, broken: 0, rooms: rooms.length, down: 0 }, i;
+  for (i = 0; i < rooms.length; i++) { var s = strain(R, B, rooms[i]); o.edges += s.n; o.broken += s.broken; if (ruined(B, rooms[i])) o.down++; }
+  return o;
+}
+
+/* ---------- fire ---------- */
+function burnsWall(R, e) { return !!e && !e.breach && !e.burnt && (R.fire.wall[matOf(e)] || 0) > 0; }
+function roofSpec(R, B, room, dflt) { return R.fire.roof[ROOFN[roofOf(B, room, dflt)] || 'none'] || R.fire.roof.none; }
+function burnsRoof(R, B, room, dflt) { return !room.up && !ruined(B, room) && roofSpec(R, B, room, dflt).burn > 0; }
+function alight(B) { var n = 0, k; for (k in B.fire || {}) n++; return n; }
+function onFire(B, L, k) { return !!(B.fire && B.fire[L + ':' + k]); }
+// put fire to an edge ('H' | 'V', its key) or to a room's roof ('R', the room): true if it took
+function ignite(R, B, L, k, room, at, dflt) {
+  if (!R.on || !R.fire.on) return false; if (!B.fire) B.fire = {};
+  if (L === 'R') { if (!room || !burnsRoof(R, B, room, dflt) || B.fire['R:' + room.id]) return false; B.fire['R:' + room.id] = { t: 0, at: at || room.tiles[0], s: 0 }; return true; }
+  var e = (L === 'H' ? B.H : B.V)[k]; if (!burnsWall(R, e) || B.fire[L + ':' + k]) return false;
+  B.fire[L + ':' + k] = { t: 0, s: 0 }; return true;
+}
+function cornerMates(L, x, y) {      // the edges that meet this one at its two ends
+  return L === 'H' ? [['H', x - 1, y], ['H', x + 1, y], ['V', x, y - 1], ['V', x, y], ['V', x + 1, y - 1], ['V', x + 1, y]]
+    : [['V', x, y - 1], ['V', x, y + 1], ['H', x - 1, y], ['H', x, y], ['H', x - 1, y + 1], ['H', x, y + 1]];
+}
+/* The fire's own step. env = { rooms: [{ id, tiles }], at(tx, ty): the room's index or -1, wind: { a, k } or null,
+   rand(), roofDefault }. Answers what happened: { lit: [[L, k] or ['R', room]], gave: [{ L, k, e }], fell: [room], n }. */
+function fireTick(R, B, dt, env) {
+  var ev = { lit: [], gave: [], fell: [], n: 0 }, F = B.fire, key, f, p, L, x, y, e, i, rnd = env.rand || Math.random, FR = R.fire, dflt = env.roofDefault;
+  if (!F) return ev;
+  function roomsBy(L2, x2, y2) { var a = env.at(L2 === 'H' ? x2 : x2 - 1, L2 === 'H' ? y2 - 1 : y2), b = env.at(x2, y2), o = []; if (a >= 0) o.push(env.rooms[a]); if (b >= 0 && b !== a) o.push(env.rooms[b]); return o; }
+  for (key in F) {
+    f = F[key]; f.t += dt; f.s += dt; ev.n++;
+    if (key.charAt(0) === 'R') {
+      var room = null; for (i = 0; i < env.rooms.length; i++) if (env.rooms[i].id === key.slice(2)) { room = env.rooms[i]; break; }
+      if (!room || ruined(B, room)) { delete F[key]; continue; }
+      var rs = roofSpec(R, B, room, dflt);
+      edgesOf(B, room).forEach(function (q) { if (!burnsWall(R, q.e) && !q.e.breach && !isYard(q.e)) q.e.scorch = 1; });      // the stone under a burning roof is blackened
+      if (f.t >= rs.burn) { collapse(R, B, room, 'burnt', dflt); ev.fell.push(room); continue; }
+      if (f.s >= FR.step) {
+        f.s = 0;
+        if (f.t >= FR.toWalls) { var W = edgesOf(B, room).filter(function (q) { return burnsWall(R, q.e) && !F[q.L + ':' + q.k]; }); if (W.length) { var q0 = W[Math.floor(rnd() * W.length)]; F[q0.L + ':' + q0.k] = { t: 0, s: 0 }; ev.lit.push([q0.L, q0.k]); } }
+        // sparks: onto another roof within reach, further downwind
+        var c0 = centre(room);
+        for (i = 0; i < env.rooms.length; i++) {
+          var o = env.rooms[i]; if (o === room || F['R:' + o.id] || !burnsRoof(R, B, o, dflt)) continue;
+          var c1 = centre(o), dx = c1[0] - c0[0], dy = c1[1] - c0[1], d = Math.hypot(dx, dy), reach = FR.jump;
+          if (env.wind && env.wind.k > 0) { var al = Math.cos(Math.atan2(dy, dx) - env.wind.a); reach *= al > 0 ? 1 + (FR.wind - 1) * al * Math.min(1, env.wind.k * 2) : 1 + 0.6 * al; }
+          d -= (Math.sqrt(room.tiles.length) + Math.sqrt(o.tiles.length)) * 16;                                           // from eaves to eaves, near enough
+          if (d < reach && rnd() < FR.spark * FR.step * roofSpec(R, B, o, dflt).catch * (1 - Math.max(0, d) / reach)) { /* the nearer, the likelier: a roof at the very edge of the sparks' reach all but never catches */ F['R:' + o.id] = { t: 0, s: 0, at: nearestTile(o, c0) }; ev.lit.push(['R', o]); }
+        }
+      }
+      continue;
+    }
+    L = key.charAt(0); p = key.slice(2).split(','); x = +p[0]; y = +p[1]; e = (L === 'H' ? B.H : B.V)[key.slice(2)];
+    if (!e || e.breach) { delete F[key]; continue; }
+    if (f.t >= (FR.wall[matOf(e)] || 1) * (FR.wallK == null ? 1 : FR.wallK)) { give(e, true); delete F[key]; ev.gave.push({ L: L, k: key.slice(2), e: e }); continue; }
+    if (f.s >= FR.step) {
+      f.s = 0;
+      cornerMates(L, x, y).forEach(function (m) { var mk = m[1] + ',' + m[2], me = (m[0] === 'H' ? B.H : B.V)[mk]; if (burnsWall(R, me) && !F[m[0] + ':' + mk] && rnd() < FR.along) { F[m[0] + ':' + mk] = { t: 0, s: 0 }; ev.lit.push([m[0], mk]); } });
+      if (f.t >= FR.toRoof) roomsBy(L, x, y).forEach(function (rm) { if (burnsRoof(R, B, rm, dflt) && !F['R:' + rm.id] && rnd() < 0.6 * roofSpec(R, B, rm, dflt).catch) { F['R:' + rm.id] = { t: 0, s: 0, at: L === 'H' ? [x, env.at(x, y) >= 0 && env.rooms[env.at(x, y)] === rm ? y : y - 1] : [env.at(x, y) >= 0 && env.rooms[env.at(x, y)] === rm ? x : x - 1, y] }; ev.lit.push(['R', rm]); } });
+    }
+  }
+  for (key in B.ruin || {}) if (B.ruin[key].hot > 0) B.ruin[key].hot = Math.max(0, B.ruin[key].hot - dt);
+  return ev;
+}
+function centre(room) { var sx = 0, sy = 0, i; for (i = 0; i < room.tiles.length; i++) { sx += room.tiles[i][0] + 0.5; sy += room.tiles[i][1] + 0.5; } return [sx / room.tiles.length * 32, sy / room.tiles.length * 32]; }
+function nearestTile(room, c) { var b = room.tiles[0], bd = 1e9, i; for (i = 0; i < room.tiles.length; i++) { var d = Math.hypot((room.tiles[i][0] + 0.5) * 32 - c[0], (room.tiles[i][1] + 0.5) * 32 - c[1]); if (d < bd) { bd = d; b = room.tiles[i]; } } return b; }
+// how far the flames have run over a burning roof, 0..1 (for the drawing), and whether a given tile of it is alight
+function roofFlame(R, B, room, tx, ty, dflt) {
+  var f = B.fire && B.fire['R:' + room.id]; if (!f) return 0; var rs = roofSpec(R, B, room, dflt), d = Math.abs(tx - f.at[0]) + Math.abs(ty - f.at[1]), t0 = d * rs.spread;
+  return f.t <= t0 ? 0 : Math.min(1, (f.t - t0) / 3);
+}
+function fireNoise(R, B) { var n = alight(B); return n ? Math.min(R.fire.loudMax, R.fire.loud + R.fire.louder * n) : 0; }
+return { DEF: DEF, TEX: TEX, ROOFN: ROOFN, cfg: cfg, matOf: matOf, hpOf: hpOf, rightTool: rightTool, standing: standing, passable: passable, stageOf: stageOf, hit: hit, give: give, edgesOf: edgesOf, strain: strain, ruined: ruined, roofOf: roofOf, collapse: collapse, due: due, damaged: damaged, mendShare: mendShare, mend: mend, canRaise: canRaise, raise: raise, tally: tally,
+  burnsWall: burnsWall, burnsRoof: burnsRoof, roofSpec: roofSpec, alight: alight, onFire: onFire, ignite: ignite, fireTick: fireTick, roofFlame: roofFlame, fireNoise: fireNoise, centre: centre, isYard: isYard };
+})();
+if (typeof module !== 'undefined') module.exports = Ruin;
 
 /* Gather: chopping, mining and cutting as a small game of their own (Robin, 2026-10-07: satisfying and interesting, never
    bothersome). One spec of switches and numbers (DEF), tuned in the Gathering Editor and handed to the game as game.gather.
@@ -10482,14 +10833,16 @@ function beginBlow(e, T, ang, second, quick) {
   e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e);
 }
 function din() { return Math.min(MEN.noise.far / MEN.noise.blow, 1 + MEN.noise.din * Math.max(0, (W.fighting || 0) - 2)); }   // two men at it are heard a blow's distance off; a battle of twenty across a town (the town's answer builds as the fight does)
-function noise(x, y, r) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
+function noise(x, y, r, soft) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
+  var heardN = 0;
   for (var i = 0; i < W.enemies.length; i++) {
     var o = W.enemies[i]; if (o.type !== 'soldier' || o.side === 1 || o.dead || o.out || o.down || o.deaf) continue; var d = Math.hypot(o.x - x, o.y - y); if (d > r) continue;
-    o.alarm = { x: x, y: y };
+    o.alarm = { x: x, y: y }; heardN++;
     if (o.awake === false) { if (!(o.wakeT > 0)) o.wakeT = (o.wakeDelay != null ? o.wakeDelay : lerp(MEN.wake[0], MEN.wake[1], Math.random())) * (0.6 + 0.8 * d / r); }
     else if (!o.tgt) { o.heardAt = o.alarm; o.lookT = 0; }
   }
-  if (api.onNoise) api.onNoise(x, y, r);
+  if (api.onNoise) api.onNoise(x, y, r, heardN, !!soft);   // heardN: how many men heard it; soft: a noise that is nothing unless somebody did (a blow on a wall)
+  return heardN;
 }
 function wallBetween(x0, y0, x1, y1) { return !!api.wall && api.wall(x0, y0, x1, y1); }   // a page that knows the walls: no blow, no arrow and no seeing through one
 function strike(e) {
@@ -11557,6 +11910,8 @@ function render(c) {
 function init(l) { lib = l; reset(); buildGround(); }
 return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, noise: noise, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
+  hurt: function (e, dmg, ang) { damageEnemy(e, dmg, ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
+
   dbg: function () { return { P: P, W: W, IN: IN }; } };
 })();
 if (typeof module !== 'undefined') module.exports = Combat;
@@ -11639,6 +11994,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     craft: function () { tone(440, 0.08, 'triangle', 0.06); tone(660, 0.1, 'triangle', 0.06); tone(880, 0.14, 'sine', 0.05); },
     build: function () { tone(220, 0.08, 'square', 0.06, 160); noise(0.08, 0.2, 1200, 1); },
     howl: function () { tone(330, 1.6, 'sine', 0.08, 520); tone(495, 1.4, 'triangle', 0.03, 760); },
+    groan: function () { tone(95, 0.9, 'sawtooth', 0.07, 62); tone(190, 0.5, 'triangle', 0.03, 120); noise(0.5, 0.07, 500, 3); },   // a roof's timbers, about to go
+    crash: function () { tone(70, 0.8, 'sine', 0.26, 28); noise(0.7, 0.36, 380, 0.5); noise(0.25, 0.22, 1800, 0.8); tone(120, 0.3, 'sawtooth', 0.08, 50); },   // the roof comes down
+    whoosh: function () { noise(0.6, 0.16, 900, 0.7); tone(180, 0.5, 'sine', 0.05, 320); },   // a fire catches
     shout: function (v) { var k = v == null ? 1 : v; tone(215, 0.24, 'sawtooth', 0.05 * k, 150); tone(430, 0.2, 'triangle', 0.025 * k, 300); noise(0.14, 0.07 * k, 950, 2); }   // a man's shout, far off (the town waking: rung 6)
   };
   Combat.api.sfx = function (n, v, src) {   // a beast's sound is only heard when it is near; the world is big
@@ -11874,6 +12232,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   ];
   var ICON_SCALE = { bellTower: 0.17, altar: 0.5, graveStone: 0.7, wayCross: 0.4, stall: 0.36, firePit: 0.34, logSeat: 0.55, furnace: 0.36, carverBench: 0.5, fireplace: 0.4, campfire: 0.4, trough: 0.5, scarecrow: 0.26, flowerBed: 0.36, cairn: 0.4, charcoalPit: 0.3, shipwright: 0.36, workbench: 0.55, rug: 0.6, chest: 0.42, woodenWell: 0.26, cart: 0.26, dryingRack: 0.36, shieldRack: 0.3, beeSkeps: 0.4, haystack: 0.4, dragonPost: 0.26, brazier: 0.4, barrel: 0.5, crate: 0.45, chair: 0.5, bench: 0.4, table: 0.36, woodpile: 0.42 };
   // the rows of the Building board (a piece's cat): the frame and walls, floors and roofs, the yard, the home, outdoors
+  PIECES.push({ id: 'mend', name: 'Mend', cost: {}, key: 'mend', icon: function (c) { c.save(); c.rotate(-0.6); c.fillStyle = '#8a6a48'; c.fillRect(-1, -2, 2, 9); c.fillStyle = '#b08e62'; c.fillRect(-4.5, -6, 9, 5); c.strokeStyle = 'rgba(42,30,22,0.9)'; c.lineWidth = 0.9; c.strokeRect(-4.5, -6, 9, 5); c.strokeRect(-1, -1, 2, 8); c.restore(); } });   // (2026-10-13: a damaged wall whole again, a fallen roof raised: in a place you hold)
   var BCATS = [['frame', 'Walls'], ['floor', 'Floors and roofs'], ['path', 'Ground'], ['yard', 'Yard'], ['home', 'Furniture'], ['work', 'Work'], ['out', 'Outdoors']];   // the Building board's tabs (Work, 2026-10-12: the benches, the furnace, the clamp, the rack; they were scattered through Furniture and Outdoors)
   var HOME_IDS = { bed: 1, hearth: 1, fireplace: 1, chair: 1, seat: 1, table: 1, barrel: 1, crate: 1, rug: 1, chest: 1 }, WORK_IDS = { bench: 1, carver: 1, mason: 1, ship1: 1, ship: 1, ship3: 1, furnace: 1, charcoal: 1, rack: 1 };
   PIECES.forEach(function (p) { p.cat = p.yard ? 'yard' : p.id === 'brush' ? 'path' : (p.id === 'floor' && (Build.FLOORS[p.m] || {}).path) ? 'path' : (p.id === 'floor' || p.id === 'roof') ? 'floor' : p.kind === 'item' ? (WORK_IDS[p.id] ? 'work' : HOME_IDS[p.id] ? 'home' : 'out') : 'frame'; });
@@ -11931,7 +12290,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var roofCfgs = {};
   // a workbench works only with a roof over it: the first thing a house is for
   function benchNear(P) { var s = stationNear(P); return s && s.kind === 'bench' ? s.it : null; }
-  function benchRoofed(it) { var R = RI(it.lvl || 0); return (!!R && R.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0) || !!(w.shelterAt && !it.lvl && w.shelterAt(it.x, it.y)); }   // a room, or the rock shelter's overhang
+  function benchRoofed(it) { var R = RI(it.lvl || 0); return (!!R && R.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0 && !(!it.lvl && B.ruin && B.ruin[Math.floor(it.x / T) + ',' + Math.floor(it.y / T)])) || !!(w.shelterAt && !it.lvl && w.shelterAt(it.x, it.y)); }   // a room, or the rock shelter's overhang
   function shelterComfort(x, y) { return w.shelterAt && !inCave && !inYard && w.shelterAt(x, y) ? 1 + (fireNear(x, y, 110) ? 1 : 0) : 0; }   // a roof of rock: comfort 1, and 2 with a fire under it
   function bedNear(P) { var s = stationNear(P); return s && s.kind === 'bed' ? s.it : null; }   // (the bed, the seats and the chest are picked with the stations: see stationNear)
   // Sitting (2026-10-07, Robin: chairs should do something): E at a chair or a bench seat sits you on it, facing the room; you rest
@@ -12066,7 +12425,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     if (L < 0.3 && nightSpawned) { nightSpawned = false; nightWolves.forEach(function (e) { var k = W.enemies.indexOf(e); if (k >= 0) W.enemies.splice(k, 1); }); nightWolves = []; }
   }
-  function nearestFire(x, y) { var best = null; function q(f) { var d = Math.hypot(x - f.x, y - f.y); if (!best || d < best.d) best = { x: f.x, y: f.y, d: d }; } if (hearth) q(hearth); B.items.forEach(function (it) { if (isHearth(it) || (it.light && !it.lamp)) q(it); }); return best; }
+  function nearestFire(x, y) { var best = null; function q(f) { var d = Math.hypot(x - f.x, y - f.y); if (!best || d < best.d) best = { x: f.x, y: f.y, d: d }; } if (hearth) q(hearth); B.items.forEach(function (it) { if (isHearth(it) || (it.light && !it.lamp)) q(it); }); for (var bi = 0; bi < BURN.length; bi += 2) q(BURN[bi]); return best; }
   function drawWolfEyes(c) {               // two red points per wolf, through the dark, from far off
     var L = light(); if (L < 0.3) return;
     c.save(); c.globalCompositeOperation = 'lighter';
@@ -12115,6 +12474,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     function add(f, torch) { if (Math.abs(f.x - cam.x) > 200 / cam.z + 260 || Math.abs(f.y * K - cam.y) > 125 / cam.z + 260) return; var fl = flick(nfL.length); nfL.push({ src: f, x: f.x, y: f.y, r: (f.lamp ? 58 : torch ? 170 : 145), lamp: !!f.lamp, torch: !!torch, lvl: f.lvl || 0, fl: fl }); }
     if (hearth) add(hearth); for (i = 0; i < B.items.length; i++) if (isHearth(B.items[i]) || B.items[i].light) add(B.items[i]);
     if (torchOn) add({ x: P.x, y: P.y, lvl: P.lvl || 0 }, true);
+    blazeLights(function (q) { var n0 = nfL.length; add(q); if (nfL.length > n0) { nfL[n0].blaze = true; nfL[n0].big = q.big; } });   // a house on fire
     return nfL;
   }
   function fireFor(x, y) {                 // the light that falls hardest on a place: { f, d, k } (k 1 at the fire, 0 at the edge of its reach)
@@ -12185,7 +12545,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function lightInto(n, f, gr, sx, sy, rad) {
     function disc(g) { g.fillStyle = gr; g.beginPath(); g.arc(sx, sy, rad, 0, 7); g.fill(); }
-    if (!lt('walls') || !roomInfo || inYard || f.lamp) { disc(n); return; }   // (a lantern hangs on a wall: it lights what is round it)
+    if (!lt('walls') || !roomInfo || inYard || f.lamp || f.blaze) { disc(n); return; }   // (a lantern hangs on a wall: it lights what is round it)
     var tx = Math.floor(f.x / T), ty = Math.floor(f.y / T), ri = f.lvl ? -1 : roomInfo.at(tx, ty), P = hero(), hri = P.lvl ? -1 : roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)), WH = BCFG.wallH * cam.z / 2, x, y;
     if (ri >= 0) {                         // indoors: its own room when you are in it, and what falls out through the door and the windows
       if (hri === ri) { n.save(); n.beginPath(); roomInfo.rooms[ri].tiles.forEach(function (t) { var a = nScr(t[0] * T - 4, t[1] * T - 4), b = nScr((t[0] + 1) * T + 4, (t[1] + 1) * T + 4); n.rect(a[0], a[1] - WH, b[0] - a[0], b[1] - a[1] + WH); }); n.clip(); disc(n); n.restore(); }
@@ -12289,7 +12649,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (L > 0.05 || inUse('stonesense')) {  // fires light their surroundings
       n.globalCompositeOperation = 'lighter';
       for (i = 0; i < fsN.length; i++) {
-        var f = fsN[i]; if (f.torch) continue; var sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (GL ? 152 * (1 + 0.03 * f.fl) : 145 + Math.sin(clock * 9 + i) * 5 + Math.sin(clock * 1.7 + i) * 8) * (f.lamp ? 0.4 : 1) * cam.z / 2, br = GL ? L * (0.97 + 0.04 * f.fl) : L;
+        var f = fsN[i]; if (f.torch) continue; var sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (GL ? 152 * (1 + 0.03 * f.fl) : 145 + Math.sin(clock * 9 + i) * 5 + Math.sin(clock * 1.7 + i) * 8) * (f.lamp ? 0.4 : 1) * (f.big || 1) * cam.z / 2, br = GL ? L * (0.97 + 0.04 * f.fl) : L;
         if (sx < -rad || sx > 200 + rad || sy < -rad || sy > 125 + rad) continue;
         var gr; if (GL) gr = warmGrad(n, sx, sy, rad, NB, FIRE_T, Math.min(1, br * 1.15) * (f.lamp ? 0.86 : 1));   // (the light as it was: a dim core, grey-yellow by the middle of its reach, which on a big screen read as a filter and not as light)
         else { gr = n.createRadialGradient(sx, sy, 0, sx, sy, rad); gr.addColorStop(0, 'rgba(' + Math.round(190 * br) + ',' + Math.round(150 * br) + ',' + Math.round(70 * br) + ',1)'); gr.addColorStop(0.35, 'rgba(' + Math.round(130 * br) + ',' + Math.round(90 * br) + ',' + Math.round(30 * br) + ',1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); }
@@ -12472,7 +12832,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return false;
   }
   function floorAtCornerIn(set, cx, cy) { return set[Build.key(cx, cy)] || set[Build.key(cx - 1, cy)] || set[Build.key(cx, cy - 1)] || set[Build.key(cx - 1, cy - 1)]; }
-  function buildTarget() {           // what the cursor is over in build mode, and whether the piece may go there
+  function buildTarget() {           // what the cursor is over in build mode, and whether it may be done there. A village that is not yours is not yours to build in or to take apart (2026-10-13: the wreck cursor took any wall anywhere, silently, and gave its wood back); a claim stone may be raised in it once nobody defends it
+    var t = buildTarget0(); if (!t || !mouseW || t.kind === 'mend' || t.kind === 'raise') return t;
+    var P = hero(), my = mouseW.y + (lvl() ? UP / K : 0), pl = placeAt(mouseW.x, my); if (pl < 0 || (pl === 99 ? RU.held : villageHeld(pl))) return t;
+    if (t.piece && t.piece.claim && !P.wreck) { if (pl !== 99 && defended(pl)) { t.ok = false; t.why = 'Its people still hold it'; } return t; }
+    t.ok = false; t.why = P.wreck ? 'Not yours to take down' : 'Not your ground to build on'; return t;
+  }
+  function buildTarget0() {
     var P = hero(); if (!mouseW || P.mode !== 'build') return null;
     var L = lvl(), BB = Bl(L), R = RI(L), my = mouseW.y + (L ? UP / K : 0);   // upstairs everything is drawn a storey up, so the cursor points a storey lower
     var pc = PIECES[P.piece] || PIECES[0], tx = Math.floor(mouseW.x / T), ty = Math.floor(my / T), far = Math.hypot(mouseW.x - P.x, my - P.y) > 150, i, k;
@@ -12488,6 +12854,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (!L && B.stairs[fk]) { var sr = stairRoomAt(tx, ty), over = sr && upPiecesOver(sr); return { kind: 'stairs', tx: tx, ty: ty, ok: !far && !over, why: far ? 'Too far' : over ? 'Take down what stands upstairs first' : '' }; }
       if (L && B.up.auto[fk]) return { kind: 'tile', tx: tx, ty: ty, ok: false, why: 'The stairs hold this floor up' };
       return { kind: 'tile', tx: tx, ty: ty, ok: !far && BB.floors[fk] != null };
+    }
+    if (pc.id === 'mend') {                // mending: a damaged piece of wall, or the roof of a room whose walls all stand
+      var me = Build.edgeAt(mouseW.x, my), mk = Build.key(me.x, me.y), mE = me.d < 0.36 ? B[me.L][mk] : null, held = !theirs(mouseW.x, my);
+      if (!L && mE && Ruin.damaged(mE)) { var mc = mendCost(mE); return { kind: 'mend', ed: me, has: mE, cost: mc, piece: pc, ok: !far && held && canAfford(mc), why: far ? 'Too far' : !held ? 'Not yours to mend' : 'Need ' + costText(mc) }; }
+      var mri = !L && roomInfo ? roomInfo.at(tx, ty) : -1, mroom = mri >= 0 ? roomInfo.rooms[mri] : null;
+      if (mroom && Ruin.ruined(B, mroom)) { var rc = roofMendCost(mroom), wallsUp = Ruin.strain(RUIN, B, mroom).broken === 0; return { kind: 'raise', room: mroom, cost: rc, piece: pc, tx: tx, ty: ty, ok: !far && held && wallsUp && canAfford(rc), why: far ? 'Too far' : !held ? 'Not yours to mend' : !wallsUp ? 'Mend its walls first' : 'Need ' + costText(rc) }; }
+      return { kind: 'mend', none: true, piece: pc, ok: false, why: '' };
     }
     if (pc.kind === 'item') {
       var ix = Math.round(mouseW.x / 4) * 4, iy = Math.round(my / 4) * 4, wallWhy = '', ft = footOf(pc, buildRot);
@@ -12542,8 +12915,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
       else { pay(costOfFloor(BB.floors[Build.key(t.tx, t.ty)]), 1); delete BB.floors[Build.key(t.tx, t.ty)]; }
       bDirty = true; save(); return;
     }
+    if (t.kind === 'mend') { var mid = t.ed.L + Build.key(t.ed.x, t.ed.y); if (!first && mid === lastPlaced) return; lastPlaced = mid; pay(t.cost); mendEdge(t.ed.L, Build.key(t.ed.x, t.ed.y)); sfx('build'); save(); return; }
+    if (t.kind === 'raise') { if (!first) return; pay(t.cost); raiseRoof(t.room); sfx('build'); save(); return; }
     if (t.kind === 'brush') { if (w.paintGround(t.x, t.y, BRUSH_R, t.piece.k)) { if (first) sfx('build'); groundDirtyT = clock; } return; }
-    if (t.kind === 'item') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: t.piece.ship || false, sign: !!t.piece.sign, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver, clamp: !!t.piece.clamp, furnace: !!t.piece.furnace }; if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = 'I will keep this stone.'; kp.sayT = 3; } } else B.items.push(nit); if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
+    if (t.kind === 'item') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); var nit = { name: t.piece.prop, x: t.x, y: t.y, r: t.piece.r, bench: !!t.piece.bench, bed: !!t.piece.bed, rot: buildRot, ship: t.piece.ship || false, sign: !!t.piece.sign, light: t.piece.light || 0, hearth: !!t.piece.hearth, chimney: !!t.piece.chimney, carver: !!t.piece.carver, clamp: !!t.piece.clamp, furnace: !!t.piece.furnace }; if (L) nit.lvl = L; if (t.piece.claim) { nit.claim = true; if (villageAt(nit.x, nit.y) >= 0) noteSeen('mend'); var kp = stones().length ? followerNear(P) : null; B.items.push(nit); raiseStone(nit); if (kp) { assignTo(kp, nit); kp.say = 'I will keep this stone.'; kp.sayT = 3; } } else B.items.push(nit); if (t.piece.gives && !seen[t.piece.gives]) { seen[t.piece.gives] = 1; if (PIECES.some(function (p2) { return p2.key === t.piece.gives; })) toast('Something new to build'); } if (t.piece.chest) nit.store = [null, null, null, null, null, null, null, null, null, null, null, null]; sfx('build'); save(); return; }
     if (t.kind === 'roof') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); if (!BB.roofs) BB.roofs = {}; BB.roofs[t.room.id] = t.piece.m; sfx('build'); save(); return; }
     if (t.kind === 'stairs') { if (!first) return; pay(buildCost(t.piece.cost)); deed('built'); B.stairs[Build.key(t.tx, t.ty)] = { d: 0 }; bDirty = true; sfx('build'); save(); return; }
     var id = t.kind === 'edge' ? t.ed.L + Build.key(t.ed.x, t.ed.y) : t.kind === 'post' ? 'P' + Build.key(t.cx, t.cy) : 'F' + Build.key(t.tx, t.ty);
@@ -12600,6 +12975,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(); ghostLabel = null;
     if (inYard) { YSCENE.ghost(c, mouseW, P.wreck); ghostLabel = YSCENE.label; return; }
     var t = buildTarget(); if (!t) return;
+    if (t.kind === 'mend' || t.kind === 'raise') {     // what would be mended, framed
+      if (t.none) return; var mcol = t.ok ? '120,255,160' : '255,80,60'; c.save(); c.shadowColor = 'rgba(' + mcol + ',0.95)'; c.shadowBlur = 10; c.strokeStyle = 'rgba(' + mcol + ',0.95)'; c.lineWidth = 2; c.beginPath();
+      if (t.kind === 'raise') t.room.tiles.forEach(function (tl) { c.rect(tl[0] * T, tl[1] * TS, T, TS); }); else { var mr = wreckRect({ kind: 'edge', ed: t.ed, has: t.has }); c.rect(mr.x + 1, mr.y + 1, mr.w - 2, mr.h - 2); }
+      c.stroke(); c.restore(); ghostLabel = t.ok ? { text: (t.kind === 'raise' ? 'Raise the roof again' : 'Mend') + '  ' + costText(t.cost), bad: false } : { text: t.why, bad: true }; return;
+    }
     if (false) {
       var yx = YARD.X + t.i * T, yy = (YARD.Y + t.j * T) * K, ycol = t.ok ? '120,255,160' : '255,80,60', yw = t.wreck ? T : t.part.w * T;
       c.save();
@@ -12664,13 +13044,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* ---------- saving: the island seed, what you carry, what you built, what you felled, where you stand ---------- */
   // ?scene=runes is the Rune Editor (2026-10-07): the game itself with its own save, started on the big island at a carver's bench
   var SCENE = (function () { try { return new URLSearchParams(location.search).get('scene') || ''; } catch (e) { return ''; } })();
-  var SAVE = SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' ? 'game.save.battle' : 'game.save')), gone = {}, saveT = 0;
+  var SAVE = SCENE === 'runes' ? 'game.save.runes' : (SCENE === 'mountain' ? 'game.save.mountain' : (SCENE === 'battle' || SCENE === 'ruin' ? 'game.save.battle' : 'game.save')), gone = {}, saveT = 0;
   // The mountain test scene (2026-10-12, Robin: a mountain island, the first biome in the south and the mountains in the north, to
   // test it out): game.html?scene=mountain is the game on one island of its own (World.MOUNTAIN_SPEC), with its own save.
   if (SCENE === 'mountain') { for (var msk in World.MOUNTAIN_SPEC) spec[msk] = World.MOUNTAIN_SPEC[msk]; }
   // The battle test scene (2026-10-13, docs/battle-plan.md): the starter island for the field, and a lowland island beside it for the town
   // (Village.plan gives the biggest lowland island a walled town, a church or a farm, and a place on the shore). No mountain: it is not needed here.
-  if (SCENE === 'battle') { spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null; }
+  if (SCENE === 'battle' || SCENE === 'ruin') { spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null; }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
   function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
@@ -13516,7 +13896,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (!f.moving && !f.sitting && !f.job && f.idle.t > f.idle.dur) { f.idle.from = f.lastPose; f.idle.id = pickIdle(f); f.idle.t = 0; f.idle.dur = 3 + Math.random() * 6; f.idle.blend = 0; }
       if (f.job) { f.job.t += dt; }
       if (f.hidden) continue;
-      if (f.fleeing) { var fdx = f.spots[0].x - f.x, fdy = f.spots[0].y - f.y, fdl = Math.hypot(fdx, fdy); if (fdl < 8) { f.hidden = true; f.moving = false; continue; } f.folk = true; navMove(f, f.spots[0].x, f.spots[0].y, 70, dt); f.moving = true; f.ph += dt * 9; continue; }   // running home (round the walls: navMove)
+      if (f.fleeing) { var fto = f.refuge || f.spots[0], fdx = fto.x - f.x, fdy = fto.y - f.y, fdl = Math.hypot(fdx, fdy); if (fdl < 8) { f.moving = false; if (f.refuge) { var fvc = vCentre(villages[f.vi]); f.face = Math.atan2(fvc[1] - f.y, fvc[0] - f.x); } else f.hidden = true; continue; } f.folk = true; navMove(f, fto.x, fto.y, 70, dt); f.moving = true; f.ph += dt * 9; continue; }   // (f.refuge: his house burns or is down, so he runs out of the place instead and watches from there)   // running home (round the walls: navMove)
       if (f.boredT > 0) f.boredT -= dt;
       if ((d < 110 && !f.job && !(f.boredT > 0)) || f.sayT > 0) {   // someone near: stop and watch (unless busy at a job), for a few seconds; then he has seen enough of you for a while (2026-10-13: a hero who stood in the yard had the whole village standing round him for good)
         f.watchT = (f.watchT || 0) + dt; if (f.watchT > (f.watchFor || (f.watchFor = 3 + Math.random() * 5)) && !(f.sayT > 0)) { f.watchT = 0; f.watchFor = 0; f.boredT = 20 + Math.random() * 20; }
@@ -13904,6 +14284,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (raft && raft.aboard) { var cb = caveAtHand(); return cb ? { say: 'Enter ' + CAVE_NAME[cb.kind][0], act: caveUse } : (rUse ? { say: 'Step ashore', act: raftUse } : null); }
     var C = [];
     function add(o, say, act, bias) { if (o && (say || act)) C.push({ say: say || null, act: act || null, sc: facingScore(P, o.x, o.y) + (bias || 0) }); }
+    var fa = fireAtHand(P); if (fa) add(fa, fa.what === 'roof' ? 'Set the roof alight' : 'Set it alight', function () { lighting = { fa: fa, t: 0, x: P.x, y: P.y }; }, 5);
     var hv = heavyNear(P); if (hv) add(hv, hv.locked ? 'Locked: break it open' : 'Lift the chest', hv.locked ? null : function () { liftHeavy(hv); });
     var dn = downNear(P, 36); if (dn) add(dn, 'Lift ' + (dn.name || 'him'), function () { liftMan(dn); });      // one of yours who is down: carried, he lives
     var sg = signNear(P); if (sg) add(sg, 'Write', function () { signWrite(sg); });
@@ -14651,9 +15032,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
   }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; if (!inCave) lockedDoorsNear(x, y, rad, function (k, L, e, dx, dy) { out.push(doorHvOf(k, L, e, dx, dy)); }); if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + 20 && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad) out.push(hvOf(it)); }); return out; },
+    list: function (x, y, rad) { var out = []; if (!inCave) wallsFor(hero(), out); if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + 20 && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool) {
-      if (o.door) { o.hp -= power; chip(o.x, o.y, 8, '#8a6a4a', right ? 4 : 2, 70); sfx('chop'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.door.locked = 0; o.door.broken = 1; navStale = true; sfx('fall'); toast('The door gives'); save(); } return { dealt: power }; }
+      if (o.edge) return wallBlow(o, power, right, tool);   // a wall, a locked door, a fence: src/ruin.js
       if (o.box && o.box.heavy) { o.hp -= power; chip(o.x, o.y, 6, '#8a8f98', right ? 3 : 2, 60); sfx('clink'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.box.locked = 0; o.hp = o.max; toast('The lock breaks'); sfx('fall'); save(); } return { dealt: power }; }
       if (o.box) { o.hp -= power; chip(o.x, o.y, 8, '#b98a5a', right ? 4 : 2, 70); if (villageAt(o.x, o.y) >= 0) raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) breakBox(o.box); return; }
       if (o.vein) { veinHit(o, power); return { dealt: power }; }
@@ -15072,7 +15453,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      the village remembers (seen.raided). A locked door is solid and opens to nothing but the axe (harvest.list offers it; door hp 14);
      a heavy chest's lock breaks under the axe, then E lifts the chest onto your shoulder (carrying: slow, drawn on the shoulder), E
      at your vessel stows it (raft.cargo), and E at the vessel at home (your territory, or near the wreck) unloads it as silver. */
-  var guards = [], raid = null, carrying = null, doorHv = {};
+  var guards = [], raid = null, carrying = null;
   function spawnGuards() {                 // a town's guards at its gate: soldiers since 2026-10-13 (a man with a weapon, a shield and a post), not beasts with a figure
     guards = [];
     villages.forEach(function (v, vi) {
@@ -15086,11 +15467,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function villageAt(x, y) { for (var i = 0; i < villages.length; i++) { var v = villages[i]; if (x > (v.tx - 3) * T && x < (v.tx + v.w + 3) * T && y > (v.ty - 3) * T && y < (v.ty + v.h + 3) * T) return i; } return -1; }
   function raidAlarm(vi, x, y) { if (vi < 0) return; raidStir(vi, x, y); Combat.noise(x, y, 520); }   // a door broken, a box smashed, a chest lifted: loud, and the town's men within 520 units hear it
-  Combat.api.onNoise = function (x, y, r) { var vi = villageAt(x, y); if (vi >= 0) raidStir(vi, x, y); };   // any fighting in a village is a raid on it
   function raidStir(vi, x, y) {             // the village knows: its folk run home to hide, and word of it will spread
     if (vi < 0) return; var fresh = !raid || raid.vi !== vi;
     raid = { vi: vi, t: 30, x: x, y: y };
-    if (fresh) { folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = true; f.job = null; f.sitting = false; f.target = f.spots[0]; f.wait = 0; } }); if (!seen.raided) seen.raided = {}; if (!seen.raided[vi]) { seen.raided[vi] = day.n; toast('Word of this will spread'); } sfx('fall'); }
+    if (fresh) { folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = true; f.job = null; f.sitting = false; f.target = f.spots[0]; f.wait = 0; f.refuge = homeGone(f) ? refugeOf(f) : null; } }); if (!seen.raided) seen.raided = {}; if (!seen.raided[vi]) { seen.raided[vi] = day.n; toast('Word of this will spread'); } sfx('fall'); }
   }
   function raidTick(dt) {
     var P = hero(), i;
@@ -15100,18 +15480,235 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     if (raid) {
       raid.t -= dt;
-      if (raid.t <= 0) { var vi = raid.vi; raid = null; folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = false; f.hidden = false; f.lines = RAIDED_LINES.slice(); f.line = 0; } }); }
+      if (raid.t <= 0) { var vi = raid.vi; raid = null; folk.forEach(function (f) { if (f.vi === vi) { var hg = homeGone(f); f.fleeing = false; f.hidden = false; f.refuge = null; f.lines = (hg ? HOMELESS_LINES : RAIDED_LINES).slice(); f.line = 0; } }); }
     }
     if (carrying && carrying.man) { carrying.man.x = P.x; carrying.man.y = P.y; if (P.dead || carrying.man.dead) { setDown(carrying.man, P.x + 8, P.y + 3); carrying = null; } }
     else if (carrying) { carrying.x = P.x; carrying.y = P.y; if (P.dead) { carrying.carried = false; carrying.r = 6; B.items.push(carrying); carrying = null; save(); } }   // a fallen raider drops the chest where he fell (2026-10-08)
   }
   var RAIDED_LINES = ['You again. Take what you want and go.', 'We have nothing left. You saw to that.', 'The jarl will hear of this. Everyone will.'];
-  // doors that take blows
-  function lockedDoorsNear(x, y, rad, fn) {
-    var tx0 = Math.floor((x - rad) / T), tx1 = Math.floor((x + rad) / T), ty0 = Math.floor((y - rad) / T), ty1 = Math.floor((y + rad) / T), tx, ty, k, e;
-    for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) { k = Build.key(tx, ty); e = B.H[k]; if (e && e.t === 'door' && e.locked) fn(k, 'H', e, (tx + 0.5) * T, ty * T); e = B.V[k]; if (e && e.t === 'door' && e.locked) fn(k, 'V', e, tx * T, (ty + 0.5) * T); }
+  /* ---------- breaking in, bringing down, burning and mending (2026-10-13; Robin: you should be able to destroy houses and
+     villages and to break in; balanced, semi-realistic, usable as tactics, not exploitable, no glitched people, a trashed
+     place left behind, and what you hold you can build up again). The rules are src/ruin.js (RUIN: its numbers, with
+     game.ruin laid over them), the drawings src/build.js. Here: whose a piece is, the tools on the wall you face, the noise,
+     the fall of a roof, fire, what the people do, and mending. Tried in game.html?scene=ruin (the Destruction Editor). ---------- */
+  var RUIN_SV = (function () { try { return JSON.parse(localStorage.getItem('game.ruin') || 'null') || {}; } catch (e) { return {}; } })(), RUIN = Ruin.cfg(RUIN_SV);
+  var RU = { on: SCENE === 'ruin', held: false, box: null, men: 0 }, wallHv = {}, wallHitT = -9, wallLast = null, ruinDue = {}, edgeCache = {}, debrisCache = {}, lighting = null, ruinChecked = false, BURN = [], burnT = 0, fireLoudT = 0, heatAcc = 0, fireMenT = 0;
+  function setLean(v) { Build.CFG.lean = v || 0; BCFG.lean = v || 0; for (var k in roofCfgs) roofCfgs[k].lean = v || 0; edgeCache = {}; }
+  if (RUIN.lean) setLean(RUIN.lean);
+  function wrapA(a) { while (a > Math.PI) a -= 6.2831853; while (a < -Math.PI) a += 6.2831853; return a; }
+  // whose ground a spot is: a village's number, 99 the Destruction Editor's sampler, -1 nobody's (yours to build on)
+  function placeAt(x, y) { if (RU.box && x > RU.box.x0 && x < RU.box.x1 && y > RU.box.y0 && y < RU.box.y1) return 99; return villageAt(x, y); }
+  function villageHeld(vi) { if (RU.on) return RU.held; var ss = stones(), i; for (i = 0; i < ss.length; i++) if (villageAt(ss[i].x, ss[i].y) === vi) return true; return false; }   // a place is yours when a stone of yours stands in it
+  function theirs(x, y) { var pl = placeAt(x, y); return pl >= 0 && !(pl === 99 ? RU.held : villageHeld(pl)); }       // somebody else's: your tools and your fire work on it, your building does not
+  function defended(vi) { var E = Combat.dbg().W.enemies, i; for (i = 0; i < E.length; i++) if (E[i].human && E[i].vi === vi && E[i].side !== 1 && !E[i].dead && !E[i].out && !E[i].fled && !E[i].down) return true; return false; }
+  function edgeMidOf(L, x, y) { return L === 'H' ? { x: (x + 0.5) * T, y: y * T } : { x: x * T, y: (y + 0.5) * T }; }
+  function edgeRooms(L, x, y) { var o = []; if (!roomInfo) return o; var a = roomInfo.at(L === 'H' ? x : x - 1, L === 'H' ? y - 1 : y), b = roomInfo.at(x, y); if (a >= 0) o.push(roomInfo.rooms[a]); if (b >= 0 && b !== a) o.push(roomInfo.rooms[b]); return o; }
+  function roomById(id) { if (!roomInfo) return null; for (var i = 0; i < roomInfo.rooms.length; i++) if (roomInfo.rooms[i].id === id) return roomInfo.rooms[i]; return null; }
+  function roomOf(x, y) { var i = roomInfo ? roomInfo.at(Math.floor(x / T), Math.floor(y / T)) : -1; return i >= 0 ? roomInfo.rooms[i] : null; }
+  function ruinAt(tx, ty) { return !!(B.ruin && B.ruin[tx + ',' + ty]); }
+  function roofBurning(r) { return !!(r && B.fire && B.fire['R:' + r.id]); }
+  function faceDir(P) { return P.atk && P.atk.ph && P.atk.ph !== 'none' ? P.atk.dir : P.face; }
+  // the piece of wall the hero faces, within reach: { L, k, e, x, y (the point of it nearest him), tx, ty }. want(e): which pieces count
+  function edgeFaced(P, reach, want) {
+    if (inCave || inYard || P.lvl) return null;
+    var tx0 = Math.floor((P.x - reach) / T), tx1 = Math.floor((P.x + reach) / T) + 1, ty0 = Math.floor((P.y - reach) / T), ty1 = Math.floor((P.y + reach) / T) + 1, tx, ty, best = null, bs = 1e9, a = faceDir(P);
+    function tryE(L, ex, ey) {
+      var k = Build.key(ex, ey), e = (L === 'H' ? B.H : B.V)[k]; if (!e || !want(e)) return;
+      var qx = L === 'H' ? Math.max(ex * T + 4, Math.min((ex + 1) * T - 4, P.x)) : ex * T, qy = L === 'H' ? ey * T : Math.max(ey * T + 4, Math.min((ey + 1) * T - 4, P.y)), d = Math.hypot(qx - P.x, qy - P.y); if (d > reach) return;
+      var da = Math.abs(wrapA(Math.atan2(qy - P.y, qx - P.x) - a)); if (da > 1.2) return; var sc = d + da * 26; if (sc < bs) { bs = sc; best = { L: L, k: k, e: e, x: qx, y: qy, tx: ex, ty: ey }; }
+    }
+    for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) { tryE('H', tx, ty); tryE('V', tx, ty); }
+    return best;
   }
-  function doorHvOf(k, L, e, x, y) { var id = L + k, h = doorHv[id]; if (!h) { h = doorHv[id] = { x: x, y: y, r: 6, kind: 'tree', door: e, hp: 14, max: 14, name: 'door', v: 0, s: 1 }; } return h; }
+  /* The tools. The engine swings at whatever the page offers within the blow's arc; of walls it is offered one: the piece
+     the hero faces (one blow, one piece: a swing across a corner does not take two walls), and only a piece that is somebody
+     else's (never your own house: the wreck cursor is for that). It is the axe's kind of thing or the pick's by what it is
+     made of, so the engine's "wrong tool" and half blow come by themselves; how much of the blow bites is Ruin's table. */
+  function wallsFor(P, out) {
+    if (!RUIN.on) return;
+    if (wallLast && clock - wallHitT < 0.3) { out.push(wallLast); return; }       // (the same piece for the rest of this swing)
+    var q = edgeFaced(P, 44, function (e) { return Ruin.standing(e); }); if (!q || !theirs(q.x, q.y)) return;
+    var id = q.L + q.k, h = wallHv[id] || (wallHv[id] = { r: 5, name: 'wall', v: 0, s: 1 });
+    h.edge = q.e; h.L = q.L; h.k = q.k; h.tx = q.tx; h.ty = q.ty; h.x = q.x; h.y = q.y; h.kind = Ruin.rightTool(q.e); out.push(h);
+  }
+  var CHIPC = { logs: '#a9855c', planks: '#b08e62', wattle: '#c9b488', blocks: '#8f9199', turf: '#6b5a3a', frame: '#d8cdb4', ashlar: '#bdb8ae', door: '#8a6a4a', archDoor: '#8a6a4a', window: '#8a6a4a', gate: '#8a6a4a', fence: '#c9b488', rail: '#a9855c', palisade: '#a9855c', drystone: '#8f9199', townwall: '#bdb8ae' };
+  function wallBlow(o, power, right, tool) {
+    var e = o.edge, was = e.st || 0, r = Ruin.hit(RUIN, e, power / (right ? 1 : 0.5), tool); wallHitT = clock; wallLast = o;
+    if (!r) return { dealt: 0 };
+    chip(o.x, o.y, 14, CHIPC[r.mat] || '#8a6a4a', r.none ? 2 : (right ? 5 : 3), 70);
+    Combat.noise(o.x, o.y, r.noise, true);
+    if (r.gave) wallGave(o.L, o.tx, o.ty, e, false); else if ((e.st || 0) !== was) delete edgeCache[o.L + o.k];
+    return { dealt: Math.round(r.dealt * 10) / 10 };
+  }
+  function folkHear(vi, x, y, r) { for (var i = 0; i < folk.length; i++) { var f = folk[i]; if (f.vi === vi && !f.hidden && Math.hypot(f.x - x, f.y - y) < r) return true; } return false; }
+  // a noise in a village is a raid on it (any fighting); a soft one (a blow on a wall, a fire) only if a man of it or one of its people heard
+  Combat.api.onNoise = function (x, y, r, n, soft) { var vi = villageAt(x, y); if (vi < 0) return; if (soft && !n && !folkHear(vi, x, y, r * 0.8)) return; raidStir(vi, x, y); };
+  function wallGave(L, tx, ty, e, burnt) {   // a piece has given: the way is open, what it was made of lies there, and its room may have lost too much
+    var m = edgeMidOf(L, tx, ty), mat = Ruin.matOf(e), dr = burnt ? null : RUIN.drop[mat], k, P = hero(), near = Math.hypot(m.x - P.x, m.y - P.y) < 460;
+    bDirty = true; navStale = true; delete edgeCache[L + Build.key(tx, ty)];
+    if (near) { sfx('fall'); chip(m.x, m.y, 16, burnt ? '#2a2422' : (CHIPC[mat] || '#8a6a4a'), 14, 120); chip(m.x, m.y, 6, '#c8c0b0', 8, 60); }
+    for (k in dr || {}) if (dr[k] > 0) drop(k, m.x + (Math.random() - 0.5) * 16, m.y + 8, dr[k]);
+    if (!burnt) Combat.noise(m.x, m.y, (RUIN.noise[mat] || 200) * (RUIN.noiseK == null ? 1 : RUIN.noiseK) * 1.3, true);
+    edgeRooms(L, tx, ty).forEach(function (r) { if (!ruinDue[r.id] && Ruin.due(RUIN, B, r, BCFG.roof)) { ruinDue[r.id] = clock + RUIN.warn; if (near && S.sound) SFX.groan(); folkFlush(r); } });
+    save();
+  }
+  /* The roof comes down. Ruin marks the room's tiles; here is what that does: what stood inside is wrecked (a box spills
+     what it held, or loses it to a fire; a heavy chest lies under it all, its silver whole; stone things stand), whoever was
+     inside is hurt, and the people of the house are out of it. */
+  function roofFalls(r, kind) { if (Ruin.collapse(RUIN, B, r, kind, BCFG.roof)) roofDown(r, kind); }
+  var STONE_THINGS = { stoneHearth: 1, fireplace: 1, furnace: 1, well: 1, altar: 1, firePit: 1, font: 1, anvil: 1, cairn: 1, claimStone: 1 };
+  function roofDown(r, kind) {
+    var c = Ruin.centre(r), P = hero(), near = Math.hypot(c[0] - P.x, c[1] - P.y) < 700, i, burnt = kind === 'burnt';
+    function inside(x, y) { return roomOf(x, y) === r; }
+    if (near && S.sound) SFX.crash();
+    if (near) r.tiles.forEach(function (t) { chip((t[0] + 0.5) * T, (t[1] + 0.5) * T, 22, burnt ? '#3a3230' : '#b9a878', 5, 100); chip((t[0] + 0.5) * T, (t[1] + 0.5) * T, 8, '#cfc8b8', 4, 50); });
+    for (i = B.items.length - 1; i >= 0; i--) {
+      var it = B.items[i]; if (it.lvl || !inside(it.x, it.y) || it.heavy || STONE_THINGS[it.name] || it.name === 'rug') { if (it.heavy && burnt && inside(it.x, it.y)) it.locked = 0; continue; }   // (a lock does not outlast the fire)
+      if (it.loot && !burnt) { for (var lk in it.loot) { if (lk === 'arrows' || lk === 'thing') continue; if (it.loot[lk] > 0) drop(lk, it.x + (Math.random() - 0.5) * 14, it.y + 6, it.loot[lk]); } if (it.thing) dropThing(Items.make(it.thing[0], it.thing[1]), it.x, it.y + 8); }
+      if (it.store && !burnt) it.store.forEach(function (s) { if (!s) return; if (s.kind === 'item') dropThing(s.item, it.x, it.y + 8); else drop(s.kind, it.x + (Math.random() - 0.5) * 14, it.y + 6, s.n); });
+      it.loot = null; it.thing = null; if (it.store) it.store = it.store.map(function () { return null; }); it.out = null; it.cooking = null; it.light = 0;
+      if (burnt) B.items.splice(i, 1); else it.fallen = 1;
+    }
+    if (inside(P.x, P.y) && !P.dead) gatherEv.hurt(RUIN.fallHurt, c[0], c[1], P.x < c[0] ? -1 : 1);
+    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.away && inside(e.x, e.y)) Combat.hurt(e, e.type === 'soldier' ? RUIN.fallHurtMen : RUIN.fallHurtMen * 0.6); });
+    folkFlush(r); delete ruinDue[r.id]; Combat.noise(c[0], c[1], 620, true); navStale = true; roofCache = {}; save();
+  }
+  // the people of a house that burns or has come down: whoever hid in it is out, and they do not go back to it. Where they go instead: out of the place, on the side away from the hero
+  function homeOf(f) { if (!roomInfo || !f.spots || !f.spots[0]) return null; var tx = Math.floor(f.spots[0].x / T), ty = Math.floor(f.spots[0].y / T), D = [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0], [0, -2], [0, 2], [-2, 0], [2, 0]], i, ri; for (i = 0; i < D.length; i++) { ri = roomInfo.at(tx + D[i][0], ty + D[i][1]); if (ri >= 0) return roomInfo.rooms[ri]; } return null; }
+  function aflame(r) { if (roofBurning(r)) return true; if (!B.fire) return false; var E = Ruin.edgesOf(B, r), i; for (i = 0; i < E.length; i++) if (B.fire[E[i].L + ':' + E[i].k]) return true; return false; }   // its roof burns, or any of its walls
+  function homeGone(f) { var r = homeOf(f); return !!r && (Ruin.ruined(B, r) || aflame(r) || !!ruinDue[r.id]); }
+  function refugeOf(f) {
+    var v = villages[f.vi]; if (!v) return null; var c = vCentre(v), P = hero(), a0 = Math.atan2(c[1] - P.y, c[0] - P.x) + ((f.name ? f.name.charCodeAt(0) % 9 : 4) - 4) * 0.16, i, a, x, y, d;
+    for (i = 0; i < 9; i++) { a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5; d = (Math.min(v.w / 2 / Math.max(0.05, Math.abs(Math.cos(a))), v.h / 2 / Math.max(0.05, Math.abs(Math.sin(a)))) + 5.5) * T; x = c[0] + Math.cos(a) * d; y = c[1] + Math.sin(a) * d; if (isLand(x, y) && !roomOf(x, y)) return { x: x, y: y }; }   // (five tiles beyond the place's edge on that side: still on the grid its people find their way by)
+    return null;
+  }
+  function folkFlush(r) { folk.forEach(function (f) { var hr = homeOf(f); if (!hr || hr.id !== r.id) return; var rf = refugeOf(f); if (!rf) return; f.refuge = rf; if (f.hidden) { f.hidden = false; f.fleeing = true; } }); }
+  var HOMELESS_LINES = ['It is gone. All of it.', 'Where are we to sleep now?', 'My father built that house.'];
+  /* Fire. A torch burning in the hand and E at a wall that is somebody else's: the wall if it burns, else the eaves of the
+     roof over it. It takes a moment of standing there. From then on Ruin.fireTick runs it: along the walls, up into the
+     roof, down from a roof into its walls, and as sparks downwind onto other roofs. */
+  function fireAtHand(P) {
+    if (!torchOn || !RUIN.on || !RUIN.fire.on || P.mode === 'build' || lighting) return null;
+    var q = edgeFaced(P, 42, function (e) { return !e.breach; }); if (!q || !theirs(q.x, q.y)) return null;
+    if (Ruin.burnsWall(RUIN, q.e) && !Ruin.onFire(B, q.L, q.k)) return { x: q.x, y: q.y, q: q, what: 'wall' };
+    var rs = edgeRooms(q.L, q.tx, q.ty).filter(function (r) { return Ruin.burnsRoof(RUIN, B, r, BCFG.roof) && !roofBurning(r); });
+    return rs.length ? { x: q.x, y: q.y, q: q, what: 'roof', room: rs[0] } : null;
+  }
+  function lightingTick(dt) {
+    if (!lighting) return; var P = hero();
+    if (P.dead || !torchOn || Math.hypot(P.x - lighting.x, P.y - lighting.y) > 10) { lighting = null; return; }
+    lighting.t += dt; if (lighting.t < RUIN.fire.catchT) return;
+    var fa = lighting.fa, q = fa.q, ok; lighting = null;
+    if (fa.what === 'roof') { var a = q.L === 'H' ? [q.tx, roomInfo.rooms[roomInfo.at(q.tx, q.ty)] === fa.room ? q.ty : q.ty - 1] : [roomInfo.rooms[roomInfo.at(q.tx, q.ty)] === fa.room ? q.tx : q.tx - 1, q.ty]; ok = Math.random() < Ruin.roofSpec(RUIN, B, fa.room, BCFG.roof).catch && Ruin.ignite(RUIN, B, 'R', null, fa.room, a, BCFG.roof); }
+    else ok = Ruin.ignite(RUIN, B, q.L, q.k);
+    if (ok) { fireLit(q.x, q.y, true); edgeRooms(q.L, q.tx, q.ty).forEach(folkFlush); } else note('It will not catch');
+  }
+  function fireLit(x, y, loud) { var P = hero(); if (S.sound && Math.hypot(x - P.x, y - P.y) < 500) SFX.whoosh(); burnT = 0; if (loud) fireLoudT = 0; navStale = true; save(); }
+  function outsideOf(x, y) {                // a spot by a place that is not inside any room (men come to look at a fire, not into it)
+    if (!roomOf(x, y)) return { x: x, y: y }; var tx = Math.floor(x / T), ty = Math.floor(y / T), d, i, j;
+    for (d = 1; d < 7; d++) for (j = -d; j <= d; j++) for (i = -d; i <= d; i++) { if (Math.max(Math.abs(i), Math.abs(j)) !== d) continue; var px = (tx + i + 0.5) * T, py = (ty + j + 0.5) * T; if (!roomOf(px, py) && isLand(px, py)) return { x: px, y: py }; }
+    return { x: x, y: y };
+  }
+  function burnList() {                     // what burns now, as places to draw a flame, to light the night and to feel
+    BURN = []; var F = B.fire, key; if (!F) return;
+    for (key in F) {
+      if (key.charAt(0) === 'R') { var r = roomById(key.slice(2)); if (!r) continue; r.tiles.forEach(function (t) { var k = Ruin.roofFlame(RUIN, B, r, t[0], t[1], BCFG.roof); if (k > 0) BURN.push({ x: (t[0] + 0.5) * T, y: (t[1] + 0.5) * T, s: 9 + 10 * k, up: BCFG.wallH + 8 + ((t[0] * 7 + t[1] * 3) % 5) * 2, roof: r, seed: t[0] * 7 + t[1] * 13 }); }); }
+      else { var p = key.slice(2).split(','), m = edgeMidOf(key.charAt(0), +p[0], +p[1]); BURN.push({ x: m.x, y: m.y, s: 8 + Math.min(9, F[key].t * 0.7), up: 8, seed: +p[0] * 5 + +p[1] * 11, edge: true }); }
+    }
+  }
+  function fireTickAll(dt) {
+    var F = B.fire, any = false, k, P = hero(), i; for (k in F || {}) { any = true; break; }
+    if (B.ruin) for (k in B.ruin) if (B.ruin[k].hot > 0) B.ruin[k].hot = Math.max(0, B.ruin[k].hot - (any ? 0 : dt));   // (Ruin.fireTick cools them while anything burns)
+    if (!any) { if (BURN.length) BURN = []; heatAcc = 0; return; }
+    if (!roomInfo || bDirty) return;
+    var ev = Ruin.fireTick(RUIN, B, dt, { rooms: roomInfo.rooms, at: roomInfo.at, wind: wind, rand: Math.random, roofDefault: BCFG.roof });
+    ev.lit.forEach(function (q) { var at = q[0] === 'R' ? Ruin.centre(q[1]) : (function () { var p = q[1].split(','), m = edgeMidOf(q[0], +p[0], +p[1]); return [m.x, m.y]; })(); fireLit(at[0], at[1], false); if (q[0] === 'R') folkFlush(q[1]); else { var lp = q[1].split(','); edgeRooms(q[0], +lp[0], +lp[1]).forEach(folkFlush); } });
+    ev.gave.forEach(function (g) { var p = g.k.split(','); wallGave(g.L, +p[0], +p[1], g.e, true); });
+    ev.fell.forEach(function (r) { roofDown(r, 'burnt'); });
+    burnT -= dt; if (burnT <= 0 || ev.lit.length || ev.gave.length || ev.fell.length) { burnT = 0.25; burnList(); }
+    // it is seen and heard from far off: the bigger, the further; the men who come to look come to the nearest open ground by it
+    fireLoudT -= dt;
+    if (fireLoudT <= 0 && BURN.length) { fireLoudT = 2.5; var b0 = BURN[0], bd = 1e9; BURN.forEach(function (b) { var d = Math.hypot(b.x - P.x, b.y - P.y); if (d < bd) { bd = d; b0 = b; } }); var at2 = outsideOf(b0.x, b0.y); Combat.noise(at2.x, at2.y, Ruin.fireNoise(RUIN, B), true); }
+    // heat: whoever stands under a roof that burns over him, or right against a burning wall
+    var hot = false, hr = roomOf(P.x, P.y); if (hr && roofBurning(hr) && Ruin.roofFlame(RUIN, B, hr, Math.floor(P.x / T), Math.floor(P.y / T), BCFG.roof) > 0) hot = true;
+    for (i = 0; i < BURN.length && !hot; i++) if (BURN[i].edge && Math.hypot(BURN[i].x - P.x, BURN[i].y - P.y) < 15) hot = true;
+    if (hot && !P.dead && !ADMIN.immortal) { heatAcc += RUIN.fire.heat * dt; if (heatAcc >= 3) { heatAcc -= 3; gatherEv.hurt(3, P.x, P.y, 0); } } else heatAcc = 0;
+    fireMenT -= dt;
+    if (fireMenT <= 0) {                     // the men: one who stands in a burning room is burnt, and unless he is fighting he gets out of it, and his post is no longer in there
+      fireMenT = 0.5;
+      Combat.dbg().W.enemies.forEach(function (e) {
+        if (e.dead || e.away) return; var er = roomOf(e.x, e.y), pr = e.post ? roomOf(e.post.x, e.post.y) : null;
+        if (pr && (roofBurning(pr) || Ruin.ruined(B, pr))) { var o2 = outsideOf(e.post.x, e.post.y); e.post = { x: o2.x, y: o2.y, face: e.post.face }; }
+        if (!er || !roofBurning(er)) return;
+        if (Ruin.roofFlame(RUIN, B, er, Math.floor(e.x / T), Math.floor(e.y / T), BCFG.roof) > 0) Combat.hurt(e, RUIN.fire.heat * 0.5 * (e.type === 'soldier' ? 0.2 : 0.3));
+        if (e.type === 'soldier' && !e.tgt && !e.errand && !e.down && !e.out) { var o3 = outsideOf(e.x, e.y); e.awake = true; e.errand = { x: o3.x, y: o3.y, near: 14, run: true }; }
+      });
+    }
+  }
+  function ruinTick(dt) {
+    var id, r;
+    if (bDirty) rebuildRooms();              // (the rooms and their solids are otherwise made again only when a frame is drawn)
+    if (!ruinChecked && roomInfo) { ruinChecked = true; roomInfo.rooms.forEach(function (r0) { if (Ruin.due(RUIN, B, r0, BCFG.roof)) Ruin.collapse(RUIN, B, r0, 'fallen', BCFG.roof); }); }   // a game loaded in the moment between a roof's groan and its fall: it is down
+    for (id in ruinDue) if (clock >= ruinDue[id]) { r = roomById(id); delete ruinDue[id]; if (r && Ruin.due(RUIN, B, r, BCFG.roof)) roofFalls(r, 'fallen'); }
+    lightingTick(dt); fireTickAll(dt);
+  }
+  // what a tile costs a man to walk over: he goes round a room that burns, and round hot ashes if he can
+  function ruinCost(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; if (ri >= 0 && roofBurning(roomInfo.rooms[ri])) return 60; var ru = B.ruin && B.ruin[tx + ',' + ty]; return ru ? (ru.hot > 0 ? 25 : 2) : 0; }
+  /* Mending, in a place you hold: the Mend piece of the Building board. A damaged piece of wall is made whole for a share
+     of its price (RUIN.mend, by how far gone it was); a roof is raised again once every wall under it stands. */
+  function mendCost(e) { var c = costOf(e), sh = Ruin.mendShare(RUIN, e) * RUIN.mend, o = {}, k, n = 0, first = null; for (k in c) { if (!first) first = k; var v = Math.ceil(c[k] * sh - 0.001); if (v > 0) { o[k] = v; n += v; } } if (!n && first) o[first] = 1; return o; }
+  function roofMendCost(room) { var t0 = room.tiles[0], ru = B.ruin[t0[0] + ',' + t0[1]], pc = pieceFor('roof', ru ? ru.m : 1) || pieceFor('roof', 1), o = { wood: Math.ceil(room.tiles.length / 3) }, k; for (k in pc.cost) o[k] = (o[k] || 0) + Math.ceil(pc.cost[k] * room.tiles.length / 6 * RUIN.mend * 2); return o; }
+  function mendEdge(L, k) { var e = (L === 'H' ? B.H : B.V)[k]; if (!e) return; Ruin.mend(e); if (B.fire) delete B.fire[L + ':' + k]; delete edgeCache[L + k]; bDirty = true; navStale = true; }
+  function raiseRoof(room) { if (!Ruin.raise(B, room)) return; B.items.forEach(function (it) { if (it.fallen && !it.heavy && roomOf(it.x, it.y) === room) it.fallen = 0; }); roofCache = {}; debrisCache = {}; navStale = true; }
+  function ruinWhole(x0, y0, x1, y1) {       // everything in a stretch of the world as it was built (the editor's "Whole again", and a test's fresh town)
+    var k, L, p, m, any = false;
+    function inB(x, y) { return x0 == null || (x > x0 && x < x1 && y > y0 && y < y1); }
+    ['H', 'V'].forEach(function (L2) { for (k in B[L2]) { p = k.split(','); m = edgeMidOf(L2, +p[0], +p[1]); if (inB(m.x, m.y) && Ruin.damaged(B[L2][k])) { Ruin.mend(B[L2][k]); any = true; } } });
+    for (k in B.fire || {}) { delete B.fire[k]; any = true; }
+    if (roomInfo) roomInfo.rooms.forEach(function (r) { var c = Ruin.centre(r); if (inB(c[0], c[1]) && Ruin.ruined(B, r)) { raiseRoof(r); any = true; } });
+    B.items.forEach(function (it) { if (it.fallen && !it.heavy && inB(it.x, it.y)) it.fallen = 0; });
+    ruinDue = {}; BURN = []; edgeCache = {}; debrisCache = {}; roofCache = {}; wallHv = {}; wallLast = null; lighting = null; folk.forEach(function (f) { f.refuge = null; });
+    if (any) { bDirty = true; navStale = true; }
+  }
+  // the pictures kept: a wall that has given (its stumps and its rubble are many strokes) and what a fallen roof left on a tile are drawn once
+  function edgeSprite(L, x, y, e, k, side) {
+    var more = L === 'V' && !!B.V[Build.key(x, y + 1)], id = L + k, sig = (e.burnt ? 'b' : '') + e.t + e.m + ':' + (BCFG.lean || 0) + (side || 0) + (more ? 'm' : ''), sp = edgeCache[id]; if (sp && sp.sig === sig) return sp;
+    var h = Math.max(BCFG.wallH, 36) + 6, x0 = L === 'H' ? x * T - 14 : x * T - 26, y0 = y * TS - h - 4, w2 = L === 'H' ? T + 28 : 52, h2 = L === 'H' ? h + 24 : h + TS + 16, cv = document.createElement('canvas'); cv.width = w2 * 2; cv.height = h2 * 2;
+    var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -x0 * 2, -y0 * 2); c2.lineCap = 'round'; c2.lineJoin = 'round';
+    if (L === 'H') Build.drawH(c2, x, y, e, false, false, BCFG); else Build.drawV(c2, x, y, e, false, more ? B.V[Build.key(x, y + 1)] : false, BCFG, side);
+    return (edgeCache[id] = { cv: cv, x: x0, y: y0, w: w2, h: h2, sig: sig });
+  }
+  function drawEdgeKept(c, L, x, y, e, k, side) { var sp = edgeSprite(L, x, y, e, k, side); c.drawImage(sp.cv, sp.x, sp.y, sp.w, sp.h); }
+  function behindRoof(r, P) { var bb = r.bb || (r.bb = roofBox(r)); return P.x > bb.x0 * T - 12 && P.x < (bb.x1 + 1) * T + 12 && P.y < bb.y0 * T + 2 && P.y > bb.y0 * T - 58; }   // right behind a house, where its roof stands before you: it thins so that you see yourself and its back wall
+  function vSide(x, y) { return roomInfo && roomInfo.at(x - 1, y) >= 0 && roomInfo.at(x, y) < 0 ? 1 : -1; }   // which way a north-south wall's outer face looks: east when it is the east wall of a room, else west
+  function drawDebrisAll(c, hw, hh) {
+    var k, p, ru, sp, x0, y0;
+    for (k in B.ruin || {}) {
+      p = k.split(','); x0 = p[0] * T; y0 = p[1] * TS; if (x0 + T < cam.x - hw - 30 || x0 > cam.x + hw + 30 || y0 + TS < cam.y - hh - 30 || y0 > cam.y + hh + 30) continue; ru = B.ruin[k];
+      sp = debrisCache[k]; if (!sp || sp.sig !== ru.k + ru.m) { var cv = document.createElement('canvas'); cv.width = (T + 44) * 2; cv.height = (TS + 36) * 2; var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -(x0 - 22) * 2, -(y0 - 18) * 2); c2.lineCap = 'round'; c2.lineJoin = 'round'; Build.drawDebris(c2, +p[0], +p[1], ru, BCFG); sp = debrisCache[k] = { cv: cv, sig: ru.k + ru.m }; }
+      c.drawImage(sp.cv, x0 - 22, y0 - 18, T + 44, TS + 36);
+      if (ru.hot > 0) { var g = Math.min(1, ru.hot / 30), s = (+p[0]) * 3.7 + (+p[1]) * 1.9, i; c.save(); c.globalCompositeOperation = 'lighter'; for (i = 0; i < 4; i++) { var ex = x0 + 4 + ((s * (i + 1) * 7.3) % 1) * (T - 8), ey = y0 + 3 + ((s * (i + 2) * 3.1) % 1) * (TS - 6), fl = 0.5 + 0.5 * Math.sin(clock * (2 + i) + s + i); c.fillStyle = 'rgba(255,' + Math.round(90 + 70 * fl) + ',30,' + (0.35 * g * fl).toFixed(2) + ')'; c.beginPath(); c.ellipse(ex, ey, 2.4, 1.4, 0, 0, 7); c.fill(); } c.restore(); }
+    }
+  }
+  function pushFlames(items, hw, hh) {      // the flames and the smoke, among the things of the world
+    var seenR = {}, k, r, t0;
+    BURN.forEach(function (b, i) {
+      if (Math.abs(b.x - cam.x) > hw + 40 || Math.abs(b.y * K - cam.y) > hh + 90) return;
+      items.push({ y: b.roof ? (b.roof.maxY + 1) * T + 3 : b.y + 4, f: function () { Build.drawFlame(ctx, b.x, b.y * K - b.up, b.s, clock, b.seed); if (i % 3 === 0) drawSmoke(ctx, b.x, b.y * K - b.up - b.s, clock + b.seed, false); } });
+    });
+    if (roomInfo && B.ruin) roomInfo.rooms.forEach(function (r2) { t0 = r2.tiles[0]; var ru = B.ruin[t0[0] + ',' + t0[1]]; if (!ru || !(ru.hot > 0)) return; var c0 = Ruin.centre(r2); if (Math.abs(c0[0] - cam.x) > hw + 60 || Math.abs(c0[1] * K - cam.y) > hh + 90) return; items.push({ y: c0[1] + 2, f: function () { drawSmoke(ctx, c0[0], c0[1] * K - 4, clock + t0[0], ru.hot < 30); } }); });
+    if (lighting) { var P = hero(), u = Math.min(1, lighting.t / RUIN.fire.catchT); items.push({ y: P.y + 0.7, f: function () { ctx.fillStyle = 'rgba(20,14,10,0.75)'; ctx.fillRect(P.x - 11, P.y * K - 56, 22, 4); ctx.fillStyle = '#f0a03a'; ctx.fillRect(P.x - 10, P.y * K - 55, 20 * u, 2); } }); }
+  }
+  function blazeLights(add) {               // the fires that light the night: one for every burning roof, and burning walls that stand apart from the lights there already are (six at most)
+    if (!BURN.length) return; var L = [], i, j;
+    for (i = 0; i < BURN.length && L.length < 6; i++) { var b = BURN[i], far = true; for (j = 0; j < L.length; j++) if (Math.hypot(L[j].x - b.x, L[j].y - b.y) < (b.roof ? 110 : 70)) { far = false; break; } if (far) L.push({ x: b.x, y: b.y, big: b.roof ? 1.45 : 1 }); }
+    L.forEach(function (q) { add(q); });
+  }
+  function lockedDoorsNear(x, y, rad, fn) {   // the locked doors and barred gates near a place: solid until they are broken (Build.rooms leaves a door open to walk through)
+    var tx0 = Math.floor((x - rad) / T), tx1 = Math.floor((x + rad) / T), ty0 = Math.floor((y - rad) / T), ty1 = Math.floor((y + rad) / T), tx, ty, k, e;
+    function shut(q) { return !!q && (q.t === 'door' || q.t === 'gate') && !!q.locked && !q.broken && !q.breach; }
+    for (ty = ty0; ty <= ty1; ty++) for (tx = tx0; tx <= tx1; tx++) { k = Build.key(tx, ty); e = B.H[k]; if (shut(e)) fn(k, 'H', e, (tx + 0.5) * T, ty * T); e = B.V[k]; if (shut(e)) fn(k, 'V', e, tx * T, (ty + 0.5) * T); }
+  }
   // the heavy silver: lifted, carried, stowed, unloaded
   function heavyNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.heavy && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
   function liftHeavy(it) { var i = B.items.indexOf(it); if (i < 0) return; B.items.splice(i, 1); carrying = it; it.carried = true; raidAlarm(villageAt(it.x, it.y), it.x, it.y); sfx('pick'); save(); }
@@ -15242,6 +15839,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         c.drawImage(w.tile(fm.tile, +fp[0], +fp[1]), fx, fy, T + 0.4, TS + 0.4);
         if (fm.water) { var dtx = +fp[0], dty = +fp[1]; c.fillStyle = '#5a3f2a'; if (!dockAt(dtx, dty + 1) && code(dtx, dty + 1) === 0) { c.fillRect(fx, fy + TS - 2.5, T, 3); c.fillRect(fx + 2, fy + TS - 1, 3.5, 6); c.fillRect(fx + T - 5.5, fy + TS - 1, 3.5, 6); } if (!dockAt(dtx - 1, dty) && code(dtx - 1, dty) === 0) c.fillRect(fx - 1, fy, 2.5, TS); if (!dockAt(dtx + 1, dty) && code(dtx + 1, dty) === 0) c.fillRect(fx + T - 1.5, fy, 2.5, TS); c.strokeStyle = 'rgba(20,14,26,0.4)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(fx, fy + TS / 2); c.lineTo(fx + T, fy + TS / 2); c.stroke(); }
         else if (fm.tile !== 'dirt' && !fm.bare) { c.strokeStyle = 'rgba(20,14,26,0.35)'; c.lineWidth = 0.8; c.strokeRect(fx, fy, T, TS); } }
+      if (B.ruin) drawDebrisAll(c, hw, hh);     // what a fallen or a burnt roof left on the floor
       // stumps where trees stood
       for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue;
         c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(dc.x, dc.y * K, dc.r, dc.r * 0.7, 0, 0, 7); c.fill();
@@ -15287,12 +15885,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
       Object.keys(B.H).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.H[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
         var low = mine(x, y - 1, x, y) && y * T > P.y, under = underMe(x, y - 1) || underMe(x, y);      // the walls in front of you drop low while you are inside
-        items.push({ y: under ? FAR : y * T, f: function () { Build.drawH(ctx, x, y, e, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, BCFG); } });
+        items.push({ y: under ? FAR : y * T, f: function () { if (e.breach) drawEdgeKept(ctx, 'H', x, y, e, kk, 0); else Build.drawH(ctx, x, y, e, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, BCFG); } });
       });
       Object.keys(B.V).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.V[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
         var under = underMe(x - 1, y) || underMe(x, y);
-        items.push({ y: under ? FAR : (y + 1) * T - 1, f: function () { Build.drawV(ctx, x, y, e, (near(x * T, (y + 0.5) * T) && !e.locked) || !!e.broken, B.V[Build.key(x, y + 1)] || false, BCFG); } });
+        items.push({ y: under ? FAR : (y + 1) * T - 1, f: function () { var sd = BCFG.lean ? vSide(x, y) : -1; if (e.breach) drawEdgeKept(ctx, 'V', x, y, e, kk, sd); else Build.drawV(ctx, x, y, e, (near(x * T, (y + 0.5) * T) && !e.locked) || !!e.broken, B.V[Build.key(x, y + 1)] || false, BCFG, sd); } });
       });
       Object.keys(B.posts).forEach(function (kk) {       // the frame: posts, and beams between neighbouring posts with no wall between
         var q = kk.split(','), x = +q[0], y = +q[1], p = B.posts[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
@@ -15321,12 +15919,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var IF = lib.INK_FIG; IF.passes = figsInView > 14 ? 6 : 8; IF.heavyPasses = figsInView > 14 ? 2 : 4; figsLast = figsInView; figsInView = 0;   // a crowd gets a lighter outline so the frame keeps up (2026-10-08)
       if (roomInfo) roomInfo.rooms.forEach(function (r, ri) {
         if (r.up) return;                               // a room with stairs has the floor above instead of a roof
-        var target = here === ri && !L ? BCFG.seeThrough : 1;
+        var target = here === ri && !L ? BCFG.seeThrough : (!L && behindRoof(r, P) ? 0.36 : 1);   // (behind it: 2026-10-13, a man hacking at a back wall could not see himself or the wall)
         roofA[r.id] += (target - roofA[r.id]) * 0.18;
         if (!roofInView(r, hw, hh)) return;              // only the roofs in view are drawn, from the cache
+        if (ruinAt(r.tiles[0][0], r.tiles[0][1])) return;  // it has come down
         items.push({ y: (r.maxY + 1) * T + 1, f: function () { drawRoofCached(ctx, r, roofA[r.id], roofCfg(r), 0); } });
         sceneItems = items; chimneys(r, 0, (r.maxY + 1) * T + 2, roofA[r.id], 0);
       });
+      if (BURN.length || lighting || B.ruin) pushFlames(items, hw, hh);
       sceneItems = items; upperFloor(items, L, here, hw, hh);
       for (i = 0; i < drops.length; i++) (function (d) { items.push({ y: d.y, f: function () { drawDrop(ctx, d); } }); })(drops[i]);
       critters.forEach(function (k) { if (Math.abs(k.x - cam.x) < hw + 20 && Math.abs(k.y * K - cam.y) < hh + 40) items.push({ y: k.y + (k.kind === 'butterfly' ? 6 : 0), f: function () { drawCritter(ctx, k); } }); });
@@ -15430,7 +16030,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (bookOpen) drawBook(c);
       if (ringOpen) drawRingBoard(c);
       drawRite(c);
-      if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen) drawRunePanel(c);
+      if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen) drawRunePanel(c);
       if (pauseOpen) { rows = []; if (adminOpen && labOpen) drawLab(c); else if (adminOpen) drawAdmin(c); else drawPause(c); }
       if (menu) drawMenu(c);
       if (over && !pauseOpen) drawNotes(c, menu ? menu.y : 30);
@@ -15535,7 +16135,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (pr && e.button === 0) { var id = pr.p.id; if (id === 'admin') { adminOpen = true; return; } if (id === 'music' || id === 'amb') { musicDrag = id === 'amb' ? 'amb' : true; musicSet(mouseS.x, PAUSE_X, PAUSE_W); return; } if (pr.p.sure && !pauseArmed(id)) { pauseArm = { id: id, at: performance.now() }; return; } pauseArm = null; pauseOpen = false; if (id === 'sandbox') sandbox(); else if (id === 'restart') start(true); else if (id === 'newisle') { spec.seed = spec.seed >= 99 ? 1 : spec.seed + 1; try { localStorage.removeItem(SAVE); } catch (err) {} start(true); } }
       return;
     }
-    if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
+    if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
     if (mapOpen) { mapOpen = false; return; }
     if (musterOpen) { if (e.button === 0) musterClick(); else musterOpen = false; return; }
     if (ringOpen) { ringClick(e.button); return; }
@@ -15636,7 +16236,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.carrying && sv.carrying.heavy) { carrying = sv.carrying; carrying.carried = true; }
       if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null, cargo: sv.raft.cargo || [] }; raftFit(); if (sv.seaBoat) raft.aboard = true; if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }   // (saved inside the sea cave, come by boat: you wake in the boat at its mouth)
-    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); if (SCENE === 'battle') battleScene(); }   // he wakes in the wreck: the screen opens slowly
+    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); if (SCENE === 'battle') battleScene(); if (SCENE === 'ruin') ruinScene(); }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
     spawnBoars(); spawnGuards(); if (BT.on && BT.field) battleSet(BT.setup); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Tab: the bag. C: make things by hand. B: build.'; save();
@@ -15709,7 +16309,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      says what they carry, wear and are. Nothing of it is saved, and the game itself is untouched: the men are the engine's
      soldiers (src/combat.js: sides, soldierAI), dressed here from a rolled hirdman (Hird.roll) and drawn from the people's
      sheets. Your own wear your colour (YOURS); the others a blue. ---------- */
-  var BT = { on: SCENE === 'battle', field: null, setup: 'one', wpn: 1, gear: 1, wits: 1, mine: 0, slow: false };
+  var BT = { on: SCENE === 'battle' || SCENE === 'ruin', field: null, setup: 'one', wpn: 1, gear: 1, wits: 1, mine: 0, slow: false };
   var BT_WPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'], BT_WPN_N = { sword: 'a sword', axe: 'an axe', club: 'a club', seax: 'a seax', spear: 'a spear', greataxe: 'a Dane axe', bow: 'a bow' };
   var BT_GEAR = [{ name: 'cloth, no shield', armor: 0, shield: false }, { name: 'leather and a shield', armor: 0.2, shield: true }, { name: 'mail, a helm, a shield', armor: 0.4, shield: true, mail: true, helm: true }];
   var BT_WITS = [{ name: 'dull', v: 1 }, { name: 'steady', v: 4 }, { name: 'sharp', v: 7 }], THEIRS = '#3f5a7a';
@@ -15781,7 +16381,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     var g = Nav.make({ x0: v.tx - M, y0: v.ty - M, w: v.w + M * 2, h: v.h + M * 2, T: T,
       open: function (tx, ty) { return isLand((tx + 0.5) * T, (ty + 0.5) * T) || dockAt(tx, ty); },
-      edge: Nav.edgeOf(B), solids: solids });
+      edge: Nav.edgeOf(B), solids: solids, cost: ruinCost });
     g.vi = vi; navs[vi] = g; return g;
   }
   function navAt(x, y) { for (var k in navs) if (navs[k].inside(x, y)) return navs[k]; return null; }
@@ -15852,7 +16452,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     // the town as it was before anybody came: its heavy chests back in their places and locked, its doors locked and whole
     if (!BT.loot0) { BT.loot0 = B.items.filter(function (it) { return it.heavy; }).map(function (it) { return JSON.parse(JSON.stringify(it)); }); BT.doors0 = []; var k; for (k in B.H) if (B.H[k].locked) BT.doors0.push(['H', k]); for (k in B.V) if (B.V[k].locked) BT.doors0.push(['V', k]); }
     B.items = B.items.filter(function (it) { return !it.heavy; }); BT.loot0.forEach(function (it) { B.items.push(JSON.parse(JSON.stringify(it))); });
-    BT.doors0.forEach(function (d) { var e = (d[0] === 'H' ? B.H : B.V)[d[1]]; if (e) { e.locked = 1; e.broken = 0; } }); doorHv = {}; carrying = null; bDirty = true; navStale = true;
+    BT.doors0.forEach(function (d) { var e = (d[0] === 'H' ? B.H : B.V)[d[1]]; if (e) { e.locked = 1; e.broken = 0; } }); ruinWhole(); carrying = null; bDirty = true; navStale = true;
     navOf(vi); raid = null; folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = false; f.hidden = false; } });
     BT.setup = 'raid'; BT.town = vi; BT.raid = { vi: vi, t0: clock, land: sh.land, left: false, loot: BT.loot0.reduce(function (q, it) { return q + (it.heavy.silver || 0); }, 0), chests: BT.loot0.length };
     P.hp = P.maxHp; P.st = 100; P.x = sh.dry.x; P.y = sh.dry.y; P.vx = P.vy = 0; P.face = Math.atan2(v.V.fence.y1 * T - P.y, (v.V.fence.gate + 1) * T - P.x); if (inCave) caveSwap(false);
@@ -15960,6 +16560,131 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* ---------- the Rune Editor (game.html?scene=runes): a hut with a carver's bench, a workbench and a fireplace on the big
      island, every rune known, a ring on the arm, the hero at the bench; a small board on the left to change the ring's
      metal, bring beasts, turn the night on and start over. Its save is game.save.runes, so the real game is untouched. */
+  /* ---------- the Destruction Editor (game.html?scene=ruin, 2026-10-13): the game on the battle test's world (the starter
+     island and a lowland island with a town and a church), started at a sampler: a small house in every wall material
+     under every kind of roof, a locked store, and a row of yard pieces. The board on the left goes to places, sets fire,
+     brings a roof down, makes all whole, and says whether the place is yours; the panel beside the game view has every
+     number of src/ruin.js as a slider, as text, and "Use in the game" (game.ruin). Nothing is saved. ---------- */
+  var SAMPLER = [[0, 0, 'Logs, turf'], [1, 1, 'Planks, thatch'], [2, 1, 'Wattle, thatch'], [3, 2, 'Stone, shingles'], [4, 0, 'Turf, turf'], [5, 3, 'Timber frame, tiles'], [6, 4, 'Cut stone, slate'], [1, 2, 'Planks, shingles: a locked store']];
+  function samplerBuild() {
+    var f = BT.field, k = Build.key, tx0 = Math.floor(f.x / T) - 10, ty0 = Math.floor(f.y / T) - 7, i, x, y, key;
+    RU.box = { x0: (tx0 - 1) * T, y0: (ty0 - 1) * T, x1: (tx0 + 21) * T, y1: (ty0 + 15) * T };
+    function inBox(px, py) { return px > RU.box.x0 && px < RU.box.x1 && py > RU.box.y0 && py < RU.box.y1; }
+    ['H', 'V'].forEach(function (L) { for (key in B[L]) { var p = key.split(','), m = edgeMidOf(L, +p[0], +p[1]); if (inBox(m.x, m.y)) delete B[L][key]; } });
+    for (key in B.floors) { var p2 = key.split(','); if (inBox((+p2[0] + 0.5) * T, (+p2[1] + 0.5) * T)) delete B.floors[key]; }
+    for (key in B.ruin || {}) { var p3 = key.split(','); if (inBox((+p3[0] + 0.5) * T, (+p3[1] + 0.5) * T)) delete B.ruin[key]; }
+    for (key in B.roofs) delete B.roofs[key]; B.fire = {};
+    B.items = B.items.filter(function (it) { return !inBox(it.x, it.y); });
+    function item(name, px, py, extra) { var it = { name: name, x: px, y: py, r: (PIECES.filter(function (p) { return p.prop === name; })[0] || { r: 8 }).r }; for (var q in extra || {}) it[q] = extra[q]; B.items.push(it); return it; }
+    RU.houses = [];
+    SAMPLER.forEach(function (s, n) {
+      var hx = tx0 + (n % 4) * 5, hy = ty0 + Math.floor(n / 4) * 5, w = 3, h = 2, lock = n === 7;
+      for (y = hy; y < hy + h; y++) for (x = hx; x < hx + w; x++) B.floors[k(x, y)] = s[0] === 3 || s[0] === 6 ? 2 : s[0] === 4 || s[0] === 2 ? 1 : 0;
+      for (x = hx; x < hx + w; x++) { B.H[k(x, hy)] = { t: 'wall', m: s[0] }; B.H[k(x, hy + h)] = x === hx + 1 ? { t: 'door', m: s[0], locked: lock ? 1 : 0, lock0: lock ? 1 : 0 } : { t: x === hx + 2 ? 'window' : 'wall', m: s[0] }; }
+      for (y = hy; y < hy + h; y++) { B.V[k(hx, y)] = { t: 'wall', m: s[0] }; B.V[k(hx + w, y)] = { t: y === hy && n % 2 ? 'window' : 'wall', m: s[0] }; }
+      RU.houses.push({ x: hx, y: hy, w: w, h: h, roof: s[1], name: s[2] });
+      item('bed', (hx + 0.6) * T, (hy + 0.55) * T, { bed: true }); item(n % 2 ? 'barrel' : 'crate', (hx + 2.4) * T, (hy + 0.55) * T, { loot: lock ? { silver: 6, wood: 4 } : (n % 2 ? { berries: 4 } : { wood: 4, fiber: 3 }) });
+      if (n === 3 || n === 6) item('stoneHearth', (hx + 1.5) * T, (hy + 0.6) * T, { hearth: true });
+      if (lock) item('chest', (hx + 1.5) * T, (hy + 0.5) * T, { store: [{ kind: 'silver', n: 8 }, { kind: 'ironBar', n: 2 }, null, null, null, null, null, null, null, null, null, null] });
+    });
+    // the yard pieces: a run of three of each, and a locked gate in a palisade
+    var yy = ty0 + 12;
+    [['fence', 2], ['rail', 1], ['drystone', 3], ['palisade', 0], ['townwall', 6]].forEach(function (q, n) { for (i = 0; i < 3; i++) B.H[k(tx0 + n * 4 + i, yy)] = { t: q[0], m: q[1] }; });
+    B.H[k(tx0 + 13, yy)] = { t: 'gate', m: 0, locked: 1, lock0: 1 };
+    bDirty = true; rebuildRooms();
+    RU.houses.forEach(function (hs) { var ri = roomInfo.at(hs.x, hs.y); if (ri >= 0) B.roofs[roomInfo.rooms[ri].id] = hs.roof; });
+    ruinDue = {}; BURN = []; edgeCache = {}; debrisCache = {}; roofCache = {}; wallHv = {}; wallLast = null; lighting = null; bDirty = true; navStale = true;
+  }
+  function ruinScene() {
+    var P = hero(), f = fieldSite(), list = [], k; BT.field = f;
+    w.eachProp(function (o) { if (Math.abs(o.x - f.x) < 13 * T && Math.abs(o.y - f.y) < 10 * T) list.push(o); }); list.forEach(function (o) { w.removeProp(o); });
+    for (k = 0; k < SLOTS; k++) slots[k] = null;
+    [['axe', 'iron'], ['pick', 'iron'], ['knife', 'iron'], ['axe', 'flint'], ['pick', 'copper']].forEach(function (q, i) { slots[barBase('gather') + i] = { kind: 'item', n: 1, item: Items.make(q[0], q[1]) }; });   // the Gather bar: the number keys change the tool
+    slots[barBase('fight')] = { kind: 'item', n: 1, item: Items.make('sword', 'iron') }; slots[barBase('fight') + 1] = { kind: 'item', n: 1, item: Items.make('axe', 'iron') };
+    equip.shield = Items.make('shield', 'wood'); battleGear();
+    addItem('torch', 12); addItem('wood', 75); addItem('stone', 50); addItem('fiber', 50); addItem('cookedMeat', 6);
+    hand = { fight: 0, gather: 0 }; day.t = 300; caveFade = 0; noSave = true; BT.setup = 'none';
+    ['met', 'village', 'fiber', 'wood', 'stone', 'leather', 'mend', 'mason', 'copper', 'ironBar'].forEach(function (q) { seen[q] = 1; });
+    samplerBuild(); P.mode = 'gather'; recount(); P.x = f.x; P.y = f.y + 30; P.face = -Math.PI / 2; wind.a = 0; wind.to = 0; wind.t = 1e9;
+    ruinPanel();
+  }
+  function nearestRoom(P, want) { var best = null, bd = 1e9; if (roomInfo) roomInfo.rooms.forEach(function (r) { if (r.up || (want && !want(r))) return; var c = Ruin.centre(r), d = Math.hypot(c[0] - P.x, c[1] - P.y); if (d < bd) { bd = d; best = r; } }); return bd < 520 ? best : null; }
+  var WINDS = [['east', 0], ['south', Math.PI / 2], ['west', Math.PI], ['north', -Math.PI / 2]];
+  function ruinRows() {
+    var t = Ruin.alight(B), wn = WINDS.filter(function (q) { return Math.abs(wrapA(q[1] - wind.a)) < 0.4; })[0];
+    return [{ id: 'sampler', name: 'To the sampler' }, { id: 'gate', name: 'To the town’s gate' }, { id: 'church', name: 'To its church' }, { id: 'hall', name: 'To its hall' },
+      { id: 'men', name: 'The town’s men: ' + (RU.men || 'none'), on: !!RU.men },
+      { id: 'held', name: RU.held ? 'This place is yours: mend it' : 'This place is theirs: break it', on: RU.held },
+      { id: 'burn', name: 'Set fire to the nearest house' }, { id: 'fall', name: 'Bring the nearest roof down' }, { id: 'out', name: 'Put the fires out' + (t ? ' (' + t + ')' : '') },
+      { id: 'whole', name: 'Whole again' }, { id: 'again', name: 'The sampler anew' },
+      { id: 'wind', name: 'The wind blows ' + (wind.k < 0.05 ? 'not at all' : (wn ? wn[0] : 'about')) }, { id: 'lean', name: BCFG.lean ? 'Side walls: leaning, a face' : 'Side walls: as now', on: !!BCFG.lean },
+      { id: 'torch', name: torchOn ? 'Put the torch out' : 'Light a torch', on: torchOn }, { id: 'stuff', name: 'More to mend with' }, { id: 'heal', name: 'Heal' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }];
+  }
+  function ruinAct(id) {
+    var P = hero(), r, f = BT.field;
+    if (id === 'sampler') { P.x = f.x; P.y = f.y + 30; P.vx = P.vy = 0; P.lvl = 0; if (inCave) caveSwap(false); }
+    else if (id === 'gate' || id === 'church' || id === 'hall') battleAct(id);
+    else if (id === 'men') { RU.men = RU.men === 0 ? 12 : RU.men === 12 ? 20 : 0; var tv = townOf(); if (tv >= 0) { if (RU.men) { TOWN_N = RU.men; var px = P.x, py = P.y; townSet(); battleClearMine(); P.x = px; P.y = py; } else { var W2 = Combat.dbg().W; W2.enemies = W2.enemies.filter(function (e) { return !(e.human && e.vi === tv); }); guards = guards.filter(function (e) { return e.vi !== tv; }); BT.setup = 'none'; } } }
+    else if (id === 'held') { RU.held = !RU.held; if (RU.held) P.mode = P.mode === 'gather' ? 'gather' : P.mode; }
+    else if (id === 'burn') { r = nearestRoom(P, function (q) { return Ruin.burnsRoof(RUIN, B, q, BCFG.roof) && !roofBurning(q); }); if (r && Ruin.ignite(RUIN, B, 'R', null, r, null, BCFG.roof)) { var c = Ruin.centre(r); fireLit(c[0], c[1], true); folkFlush(r); } else { var bw = null, bwd = 320; ['H', 'V'].forEach(function (L) { for (var k in B[L]) { if (!Ruin.burnsWall(RUIN, B[L][k]) || Ruin.onFire(B, L, k)) continue; var p = k.split(','), m = edgeMidOf(L, +p[0], +p[1]), d = Math.hypot(m.x - P.x, m.y - P.y); if (d < bwd) { bwd = d; bw = [L, k, m]; } } }); if (bw && Ruin.ignite(RUIN, B, bw[0], bw[1])) { fireLit(bw[2].x, bw[2].y, true); var bp = bw[1].split(','); edgeRooms(bw[0], +bp[0], +bp[1]).forEach(folkFlush); toast('No roof here burns: a wall, then'); } else toast('Nothing near that would burn'); } }
+    else if (id === 'fall') { r = nearestRoom(P, function (q) { return !Ruin.ruined(B, q) && Ruin.roofOf(B, q, BCFG.roof) !== 5; }); if (r) { ruinDue[r.id] = clock + RUIN.warn; if (S.sound) SFX.groan(); folkFlush(r); } }
+    else if (id === 'out') { B.fire = {}; BURN = []; navStale = true; }
+    else if (id === 'whole') { ruinWhole(); ['H', 'V'].forEach(function (L) { for (var k in B[L]) if (B[L][k].lock0) { B[L][k].locked = 1; B[L][k].broken = 0; } }); if (BT.doors0) BT.doors0.forEach(function (d) { var e = (d[0] === 'H' ? B.H : B.V)[d[1]]; if (e) { e.locked = 1; e.broken = 0; } }); toast('Whole again'); }
+    else if (id === 'again') { samplerBuild(); toast('The sampler, new'); }
+    else if (id === 'wind') { var i = 0; if (wind.k < 0.05) { wind.k = Yard.WIND.k; wind.a = wind.to = WINDS[0][1]; } else { WINDS.forEach(function (q, n) { if (Math.abs(wrapA(q[1] - wind.a)) < 0.4) i = n + 1; }); if (i >= WINDS.length) wind.k = 0; else wind.a = wind.to = WINDS[i][1]; } wind.t = 1e9; }
+    else if (id === 'lean') { setLean(BCFG.lean ? 0 : (RUIN.lean || 9)); ruinPanelSync(); }
+    else if (id === 'torch') { torchOn = !torchOn; if (torchOn) torchLeft = TORCH_TIME; }
+    else if (id === 'stuff') { ['wood', 'stone', 'fiber'].forEach(function (k2) { addItem(k2, 25); }); addItem('torch', 5); }
+    else if (id === 'heal') { P.hp = P.maxHp; P.st = 100; }
+    else if (id === 'night') { day.t = light() > 0.5 ? 300 : 1300; }
+  }
+  function battleClearMine() { var W2 = Combat.dbg().W; W2.enemies = W2.enemies.filter(function (e) { return !(e.type === 'soldier' && e.side === 1); }); menAboard = []; }   // the editor's town has its men and none of yours
+  // the panel beside the game view: every number as a slider
+  var RU_GROUPS = [
+    ['How much a piece takes before it gives (0: no hand tool breaks it)', [['hp.fence', 'Wattle fence', 0, 60, 1], ['hp.rail', 'Rail fence', 0, 60, 1], ['hp.wattle', 'Wattle wall', 0, 120, 1], ['hp.window', 'Window', 0, 80, 1], ['hp.door', 'Door, locked', 0, 120, 1], ['hp.archDoor', 'Church door', 0, 200, 1], ['hp.gate', 'Gate, barred', 0, 200, 1], ['hp.planks', 'Plank wall', 0, 200, 1], ['hp.frame', 'Timber frame', 0, 200, 1], ['hp.logs', 'Log wall', 0, 300, 1], ['hp.palisade', 'Palisade', 0, 300, 1], ['hp.turf', 'Turf wall', 0, 200, 1], ['hp.drystone', 'Dry-stone wall', 0, 200, 1], ['hp.blocks', 'Stone wall', 0, 400, 1], ['hp.ashlar', 'Cut stone', 0, 600, 5], ['hp.townwall', 'Town wall', 0, 600, 5]]],
+    ['What a blow of the wrong tool does (a share of its power)', [['bite.axe.turf', 'Axe on turf', 0, 1, 0.05], ['bite.axe.drystone', 'Axe on dry stone', 0, 1, 0.05], ['bite.axe.blocks', 'Axe on a stone wall', 0, 1, 0.05], ['bite.pick.planks', 'Pick on planks', 0, 1, 0.05], ['bite.pick.logs', 'Pick on logs', 0, 1, 0.05], ['bite.pick.wattle', 'Pick on wattle', 0, 1, 0.05]]],
+    ['The roof and the noise', [['collapse', 'Walls gone before it falls', 0.1, 1, 0.02], ['frameCounts', 'A broken frame panel counts', 0, 1, 0.05], ['warn', 'Seconds from groan to fall', 0, 5, 0.1], ['fallHurt', 'It hurts you', 0, 100, 1], ['fallHurtMen', 'It hurts a man', 0, 60, 1], ['noiseK', 'How loud breaking is', 0, 3, 0.05]]],
+    ['Fire', [['fire.on', 'Fire (0 off, 1 on)', 0, 1, 1], ['fire.catchT', 'Seconds to set alight', 0, 5, 0.1], ['fire.roof.thatch.burn', 'Thatch burns for', 5, 120, 1], ['fire.roof.thatch.spread', 'Thatch: seconds a tile', 0.2, 10, 0.1], ['fire.roof.shingles.burn', 'Shingles burn for', 5, 180, 1], ['fire.roof.shingles.catch', 'Shingles catch', 0, 1, 0.05], ['fire.roof.turf.burn', 'Turf roof burns for', 5, 240, 1], ['fire.roof.turf.catch', 'Turf roof catches', 0, 1, 0.02], ['fire.wallK', 'Walls burn: times as long', 0.2, 4, 0.1], ['fire.along', 'Wall to wall, each try', 0, 1, 0.05], ['fire.toRoof', 'Wall lights its roof after', 0, 30, 0.5], ['fire.toWalls', 'Roof lights its walls after', 0, 30, 0.5], ['fire.jump', 'Sparks carry', 0, 300, 5], ['fire.wind', 'Downwind, times as far', 1, 4, 0.1], ['fire.spark', 'Chance a second', 0, 0.5, 0.01], ['fire.heat', 'Heat: health a second', 0, 40, 1], ['fire.hot', 'Ashes glow for', 0, 300, 5]]],
+    ['Mending and the look', [['mend', 'Mending costs (share of the price)', 0, 1.5, 0.05], ['lean', 'Side walls lean (0: as now)', 0, 14, 1]]]
+  ];
+  function ruGet(path) { var p = path.split('.'), o = RUIN, i; for (i = 0; i < p.length; i++) { if (o == null) return 0; o = o[p[i]]; } return o == null ? 0 : o; }
+  function ruSet(path, v) { var p = path.split('.'), o = RUIN, i; for (i = 0; i < p.length - 1; i++) o = o[p[i]]; o[p[p.length - 1]] = v; if (path === 'lean') setLean(v); edgeCache = {}; }
+  function ruinDiff() {                    // what differs from the defaults, as an object of the same shape
+    var D = Ruin.cfg({}), out = {}; D.lean = 0;
+    (function walk(a, b, o) { for (var k in a) { if (a[k] && typeof a[k] === 'object') { var sub = {}; walk(a[k], b[k] || {}, sub); for (var q in sub) { o[k] = sub; break; } } else if (a[k] !== b[k]) o[k] = a[k]; } })(RUIN, D, out);
+    return out;
+  }
+  var ruinPanelSync = function () {};
+  function ruinPanel() {
+    var stage = document.querySelector('.stage'), h1 = document.querySelector('h1'), lede = document.querySelector('.lede'); if (!stage) return;
+    if (h1) h1.textContent = 'Destruction Editor'; document.title = 'Destruction Editor';
+    if (lede) lede.textContent = 'Breaking in, bringing down, burning and mending. Q for the tools (1 to 5 change the tool: iron axe, iron pick, knife, flint axe, copper pick) and swing at a wall; T lights a torch and E sets a wall or a roof alight; B and the Mend piece mend a place that is yours. The board on the left goes to the town and switches things; the sliders are the rules.';
+    stage.style.display = 'grid'; stage.style.gridTemplateColumns = 'minmax(0,1fr) 330px'; stage.style.gap = '10px'; stage.style.alignItems = 'start';
+    cv.style.width = 'min(100%,calc((100vh - 190px)*1.6))';
+    var box = document.createElement('div'); box.id = 'ruinpanel'; box.style.cssText = 'max-height:calc(100vh - 150px);overflow:auto;font-size:.8rem;padding:2px 6px 8px 2px';
+    var rows = [];
+    RU_GROUPS.forEach(function (g) {
+      var hh = document.createElement('h2'); hh.textContent = g[0]; hh.style.cssText = 'font-size:.8rem;margin:10px 0 4px;font-weight:650'; box.appendChild(hh);
+      g[1].forEach(function (s) {
+        var row = document.createElement('label'); row.style.cssText = 'display:grid;grid-template-columns:128px 1fr 42px;gap:6px;align-items:center;margin:1px 0';
+        var nm = document.createElement('span'); nm.textContent = s[1]; var inp = document.createElement('input'); inp.type = 'range'; inp.min = s[2]; inp.max = s[3]; inp.step = s[4]; var val = document.createElement('span'); val.style.cssText = 'text-align:right;font-variant-numeric:tabular-nums';
+        inp.addEventListener('input', function () { ruSet(s[0], +inp.value); val.textContent = (+inp.value).toString(); txt.value = JSON.stringify(ruinDiff()); });
+        row.appendChild(nm); row.appendChild(inp); row.appendChild(val); box.appendChild(row); rows.push([s, inp, val]);
+      });
+    });
+    var h2 = document.createElement('h2'); h2.textContent = 'Settings as text (what differs from the defaults)'; h2.style.cssText = 'font-size:.8rem;margin:10px 0 4px;font-weight:650'; box.appendChild(h2);
+    var txt = document.createElement('textarea'); txt.rows = 4; txt.style.cssText = 'width:100%;font:12px ui-monospace,Consolas,monospace'; box.appendChild(txt);
+    var bar = document.createElement('div'); bar.className = 'group'; bar.style.marginTop = '6px';
+    function btn(name, fn) { var b = document.createElement('button'); b.textContent = name; b.style.cssText = 'min-height:32px;font-size:.8rem;padding:0 9px'; b.addEventListener('click', fn); bar.appendChild(b); return b; }
+    var sayEl = document.createElement('p'); sayEl.className = 'desc';
+    btn('Apply the text', function () { try { var o = JSON.parse(txt.value || '{}'); RUIN = Ruin.cfg(o); RUIN.lean = o.lean || 0; setLean(RUIN.lean); ruinPanelSync(); sayEl.textContent = 'Applied.'; } catch (e) { sayEl.textContent = 'That is not settings text.'; } });
+    btn('Defaults', function () { RUIN = Ruin.cfg({}); RUIN.lean = 0; setLean(0); ruinPanelSync(); sayEl.textContent = 'The defaults.'; });
+    btn('Use in the game', function () { try { localStorage.setItem('game.ruin', JSON.stringify(ruinDiff())); sayEl.textContent = 'Stored: the game uses these from its next start.'; } catch (e) {} });
+    btn('Take back', function () { try { localStorage.removeItem('game.ruin'); sayEl.textContent = 'Taken back: the game uses the defaults.'; } catch (e) {} });
+    box.appendChild(bar); box.appendChild(sayEl); stage.appendChild(box);
+    ruinPanelSync = function () { rows.forEach(function (q) { var v = q[0][0] === 'lean' ? (BCFG.lean || 0) : ruGet(q[0][0]); q[1].value = v; q[2].textContent = (+v).toString(); }); RUIN.lean = BCFG.lean || 0; txt.value = JSON.stringify(ruinDiff()); };
+    ruinPanelSync(); fitCanvas();
+  }
   var runePanel = { x: 6, y: 40, w: 92, rows: [], folded: false }, runeSite = null, noSave = false;
   function runesScene() {
     var q = w.isles[1] || w.isles[0], R2 = kit.rng(spec.seed * 7 + 3), P = hero(), site = null, tries, x, y, tx, ty, kk = Build.key;
@@ -16032,6 +16757,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero();
     if (id === 'fold') { runePanel.folded = !runePanel.folded; return; }
     if (SCENE === 'battle') { battleAct(id); return; }
+    if (SCENE === 'ruin') { ruinAct(id); return; }
     if ((SCENE === 'mountain' || ['slope1', 'slope2', 'foot', 'plateau', 'look', 'shelter', 'vein'].indexOf(id) >= 0) && w.mt && mountainAct(id)) { save(); return; }
     if (Runes.METALS[id]) { var old = ring; ring = Runes.newRing(id); if (old) old.coils.forEach(function (c0) { if (c0.id) Runes.cut(ring, c0.id, RS.learnt); }); heroRingSync(); toast(Runes.METALS[id].name + ' ring: ' + ring.coils.length + ' coils'); }
     else if (id === 'learn') { Runes.LIST.forEach(function (r) { if (!RS.learnt[r.id]) RS.learnt[r.id] = { uses: 0, how: 'the editor' }; }); toast('Every rune known'); }
@@ -16052,9 +16778,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     save();
   }
   function drawRunePanel(c) {
-    var rows = runePanel.folded ? [] : (SCENE === 'battle' ? battleRows() : SCENE === 'mountain' ? mountainRows() : runeRows()), rh = 9, x0 = runePanel.x, y0 = runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [{ id: 'fold', x: x0, y: y0, w: w0, h: 15 }];
+    var rows = runePanel.folded ? [] : (SCENE === 'battle' ? battleRows() : SCENE === 'ruin' ? ruinRows() : SCENE === 'mountain' ? mountainRows() : runeRows()), rh = 9, x0 = runePanel.x, y0 = runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [{ id: 'fold', x: x0, y: y0, w: w0, h: 15 }];
     c.save(); c.globalAlpha = 0.92; wood(c, x0, y0, w0, h0);
-    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(SCENE === 'battle' ? 'Battle test' : SCENE === 'mountain' ? 'Mountain test' : 'Rune editor', x0 + 6, y0 + 10);
+    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(SCENE === 'battle' ? 'Battle test' : SCENE === 'ruin' ? 'Destruction editor' : SCENE === 'mountain' ? 'Mountain test' : 'Rune editor', x0 + 6, y0 + 10);
     c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = 'rgba(246,226,184,0.8)'; c.fillText(runePanel.folded ? '+' : '–', x0 + w0 - 6, y0 + 10.5);   // click the title to fold it
     rows.forEach(function (r, i) {
       var yy = y0 + 16 + i * rh, hov = mouseS && mouseS.x > x0 + 3 && mouseS.x < x0 + w0 - 3 && mouseS.y >= yy && mouseS.y < yy + rh, on = r.on || (ring && ring.metal === r.id);
@@ -16072,7 +16798,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (kind === 'karve') { for (i = 0; i < 8; i++) parts.push({ id: 'keel', i: i, j: 3 }); for (i = 1; i < 7; i++) { parts.push({ id: 'strake', i: i, j: 2 }); parts.push({ id: 'strake', i: i, j: 4 }); } for (i = 2; i < 6; i++) { parts.push({ id: 'strake', i: i, j: 1 }); parts.push({ id: 'strake', i: i, j: 5 }); } parts.push({ id: 'thwart', i: 2, j: 3 }, { id: 'thwart', i: 5, j: 3 }, { id: 'thwart', i: 6, j: 3 }, { id: 'mast', i: 4, j: 3 }, { id: 'sail', i: 4, j: 3 }, { id: 'rudder', i: 0, j: 3 }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
-  Combat.api.debug = function () { return { battle: function () { return BT; }, battleAct: function (id) { battleAct(id); }, cam: function () { return cam; }, folk: function () { return folk; }, navs: function () { return navs; }, villages: function () { return villages; }, raidInfo: function () { return { raid: BT.raid, cargo: raft && raft.cargo, aboard: menAboard.length, raft: raft, carrying: carrying }; }, eDo: function () { return eWhat(hero()); }, gDo: function () { return gWhat(hero()); }, raidItems: function () { return B.items; }, raidB: function () { return B; }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { battle: function () { return BT; }, ruinInfo: function () { return { RUIN: RUIN, RU: RU, due: ruinDue, burn: BURN, fire: B.fire, ruin: B.ruin, rooms: roomInfo, cache: [Object.keys(edgeCache).length, Object.keys(debrisCache).length] }; }, ruinDo: function (id) { ruinAct(id); }, ruinBag: function () { recount(); return { wood: inv.wood, stone: inv.stone, fiber: inv.fiber }; }, wallFaced: function () { return edgeFaced(hero(), 44, function (e) { return Ruin.standing(e); }); }, ruinB: function () { return B; }, ruinWhole: ruinWhole, fireAtHand: function () { return fireAtHand(hero()); }, placeAt: placeAt, theirs: theirs, homeOf: homeOf, ruinTarget: function () { return buildTarget(); }, battleAct: function (id) { battleAct(id); }, cam: function () { return cam; }, folk: function () { return folk; }, navs: function () { return navs; }, villages: function () { return villages; }, raidInfo: function () { return { raid: BT.raid, cargo: raft && raft.cargo, aboard: menAboard.length, raft: raft, carrying: carrying }; }, eDo: function () { return eWhat(hero()); }, gDo: function () { return gWhat(hero()); }, raidItems: function () { return B.items; }, raidB: function () { return B; }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, doorHv: doorHv, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, brokk: function () { return brokkState(); }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -16171,7 +16897,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); heroGearSync(); raidTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); raidTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)) store = null;   // the chest closes when you walk away
     Combat.api.quiver = quiverCount();
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

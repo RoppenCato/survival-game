@@ -142,7 +142,7 @@ var Nav = (function () {
   // A wall, a window and every piece of a yard shuts its edge; a door and a gate are open; a locked door that is not broken
   // is shut to all but its own people.
   function edgeOf(B, yardOpen) {
-    return function (kind, tx, ty) { var e = (kind === 'H' ? B.H : B.V)[tx + ',' + ty]; if (!e) return 0; if (e.t === 'gate') return 3; if (e.t === 'door') return e.locked && !e.broken ? 2 : 3; return yardOpen && yardOpen[e.t] ? 0 : 1; };
+    return function (kind, tx, ty) { var e = (kind === 'H' ? B.H : B.V)[tx + ',' + ty]; if (!e) return 0; if (e.breach) return 3; if (e.t === 'gate') return e.locked && !e.broken ? 2 : 3; if (e.t === 'door') return e.locked && !e.broken ? 2 : 3; return yardOpen && yardOpen[e.t] ? 0 : 1; };
   }
   // The engine's three questions (Combat.api.nav, .blocked, .wall) answered from the grids a page keeps. at(x, y): the grid at
   // a place, or null; clock(): the time. A place's own people have its keys: a soldier of the place's side whose e.vi is the

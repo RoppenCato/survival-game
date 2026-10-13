@@ -133,7 +133,7 @@ gone from the code, and no new work may bring any of it back. This file is the s
 npm start         # rebuild, then open dist/index.html (the start page)
 npm run build     # python3 tools/build.py: stitches templates/ + src/ into dist/*.html
 npm install       # once; only dependency is @napi-rs/canvas (fake canvas for headless tests)
-npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the caves, the ambient sound, the battles)
+npm test          # runs the scripts in tests/ in sequence (combat, weapons, the ring, gathering, iron, the karve, fishing, runes, the caves, the ambient sound, the battles, destruction)
 ```
 
 There is no bundler, linter or type checker. `.claude/launch.json` has a `workbench` entry that serves the **repo root** on
@@ -153,6 +153,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, **to the old mine, into it, to its fall of rock, to the rock shelter, to a copper vein, a boat at the sea cave, into it, to its beach**, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
 | `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five** (with none, one or two **bowmen a side**), **a town defended** (the scene's second island is a lowland one with a walled town on it: twenty men at their day, or twelve or thirty, the hero six tiles south of its gate with five of his own, one of them a bowman), **a raid on it** (the same town with its silver behind its doors, your karve on the nearest shore and you beside it with your five), to its gate, to its hall, to its church, to your ship; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe, bow), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan`, `townOf()`, `townMen(vi, n)`, `townSet()`, `raidSet()`, `raidShore(vi)`. **No wolves come at night in this scene.** |
+| `game.html?scene=ruin` | `game.html` | **Destruction Editor (2026-10-13)**, the test scene of `docs/destruction.md`: the game on the battle test's world, started at a **sampler** (a small house in every wall material under every kind of roof, a locked store with a chest, a row of yard pieces with a barred gate), the Gather bar holding an iron axe, an iron pick, a knife, a flint axe and a copper pick on 1 to 5, torches and stuff to mend with in the bag. The board on the left (it folds): to the sampler, the town's gate, its church, its hall; the town's men (none, 12, 20); **this place is theirs or yours**; set fire to the nearest house; bring the nearest roof down; put the fires out; whole again; the sampler anew; the wind (east, south, west, north, none); **side walls as now or leaning**; a torch; more to mend with; heal; night or day. **Beside the game view a panel of sliders** (the only test scene with one): every number of `src/ruin.js`, the settings as text (what differs from the defaults), Defaults, **Use in the game** (`game.ruin`) and Take back. **Nothing is saved.** `RU`, `SAMPLER`, `samplerBuild()`, `ruinScene()`, `ruinRows()`, `ruinAct(id)`, `RU_GROUPS`, `ruinPanel()`; played by script with `tools/visual/ruinplay.js` |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the mountain's foot, onto the plateau, to the lookout, the rock shelter and a copper vein (the big island has a small mountain since 2026-10-12)**, **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
@@ -189,6 +190,27 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - `src/ambient.js` (`Ambient`, 2026-10-12): the sound of the place, synthesized: beds of filtered noise (wind, leaves, surf,
   hull, brook, fire, a cave's tone) and single sounds (birds, crickets, crackles, drops, creaks), and footsteps by the ground.
   See "Ambient sound" under The game. Loads in Node (the test runs it on a pretend audio context).
+- `src/ruin.js` (`Ruin`, 2026-10-13): **the rules of breaking in, bringing down, burning and mending** (`docs/destruction.md`),
+  with no drawing and no page; loads in Node. It adds to the building data: on an edge `dmg` (damage taken), `st` (how it is
+  drawn: 1 hacked, 2 nearly through), `breach` (it has given: a way through, and still the room's wall as far as the roof
+  goes), `burnt`, `scorch` (stone a fire blackened), and on a door `broken`; `B.ruin["x,y"] = { k: 'fallen' | 'burnt', m:
+  the roof it had, hot }` for every tile of a room whose roof is down; `B.fire["H:x,y" | "V:x,y" | "R:<room id>"]` for what
+  burns. `DEF` is every number (`hp` what a piece takes, `bite` what a tool does to a material, `noise`, `collapse`,
+  `frameCounts`, `warn`, `fallHurt`, `drop`, `mend`, `fire`); `cfg(over)` lays a page's numbers over it. `matOf(e)`,
+  `rightTool(e)` (the axe's kind of thing or the pick's), `standing(e)` (anything to strike: a door or a gate only while
+  locked), `passable(e)`, `hit(R, e, power, tool)` → `{ dealt, mat, gave, noise, none, never }`, `give(e, burnt)`,
+  `edgesOf(B, room)`, `strain(R, B, room)` → `{ n, broken, share }`, `due`, `collapse(R, B, room, kind, dflt)`, `ruined`,
+  `damaged(e)`, `mendShare`, `mend(e)`, `canRaise`, `raise`; fire: `burnsWall`, `burnsRoof`, `roofSpec`, `ignite(R, B, L, k,
+  room, at, dflt)`, `fireTick(R, B, dt, env)` (`env` = `{ rooms, at(tx, ty), wind, rand, roofDefault }` → `{ lit, gave,
+  fell, n }`), `roofFlame` (how far the flames have run over a roof's tile), `fireNoise`. `Build.rooms` leaves no solids on a
+  breached edge, `Nav.edgeOf` reads a breach as a narrow opening, and **`src/build.js` draws all of it**: `wallMat(e)` (the
+  material blackened or charred), `scars` (gashes in the material's own broken colour, the first a hole once it is nearly
+  through), `remains` (the ragged stumps of a wall that has given; a timber frame keeps its timbers; a window is a hole in a
+  wall that still stands), `rubble`, `drawDebris(c, tx, ty, ru, C)` (what a fallen or burnt roof left on a tile) and
+  `drawFlame`; all in "face space", so the same drawing serves a wall that faces you and, sheared, the **leaning side face
+  of a wall that runs away from you (`CFG.lean`, 0 by default: a trial, see "Destruction")**. `node tools/visual/ruin.js
+  [lean]` renders every state of every piece, a house whole, broken into, fallen and burnt, and the lean before and after,
+  to ruin.png.
 - `src/nav.js` (`Nav`, 2026-10-13): finding a way round walls, for everything that walks in a village. `Nav.make({ x0, y0, w, h,
   T, open, edge, cost, solids })` is a stretch of the world in tiles: which tiles can be stood on, which edges between tiles
   are shut (`Nav.edgeOf(B)` reads the building data: a wall, a window and every yard piece shuts its edge, a door and a gate
@@ -744,6 +766,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
 - **A patch must not put a `//` comment in the middle of a line** (the template's lines are long and hold many statements:
   the comment swallows the rest, and the build is then a syntax error or, worse, silently lacks a statement). End-of-line
   only, or `/* */`. After every build, parse the built pages (`new Function(script)`); it takes a second.
+- **Rooms and their solids are rebuilt in two places** since 2026-10-13: when a frame is drawn (`if (bDirty) rebuildRooms()`
+  in `scene.items`) and in `ruinTick`. A script that steps the page without pictures (`H2.sim`) used to walk into walls that
+  were no longer there, or through none that were.
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
 - The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,
@@ -1058,6 +1083,81 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   beat five swords 85 to 90%** (a sixth swordsman: 93 to 97%), four swords and a bowman 20%; the hero's bots beat a lone
   bowman with 87 to 98 health left. **Not shown to be worth it: the line.** Five friends told to hold before a town's gate
   stood 33 s, left to fight as they like 39 s, and put next to nobody out of the fight either way.
+
+## Destruction (2026-10-13; `docs/destruction.md`, Robin: destroy houses and villages, break in; balanced, semi-realistic, tactics, not exploitable, no glitched people, a trashed place left behind; what you hold you can build up again)
+
+Tried in **`game.html?scene=ruin`** (the Destruction Editor) and by `tests/ruin.js`; it is **in the real game too**: the
+big island's villages can be broken into and burnt today. **Robin has not played it: every number is a first setting.**
+`docs/destruction.md` has the table, the exploits looked at, the rungs and six questions; read it before touching this.
+
+- **Whose a piece is** decides everything (`placeAt(x, y)`: a village's number, 99 the editor's sampler, -1 nobody's;
+  `villageHeld(vi)`: a claim stone of yours stands in it; `theirs(x, y)`). **Your tools and your fire work only on what is
+  somebody else's** (a village you do not hold); nothing in the game damages what is yours. **In a village that is not yours
+  you cannot build and cannot use the wreck cursor** (`buildTarget` wraps `buildTarget0`: "Not your ground to build on",
+  "Not yours to take down"; before this the wreck cursor took any wall of any village, silently, and gave its wood back). A
+  claim stone may be raised in a village once nobody defends it (`defended(vi)`: "Its people still hold it"). The steading
+  on the starter island is nobody's: tools do nothing to it and the wreck cursor takes it apart, as before.
+- **The tools on the wall you face** (`edgeFaced(P, reach, want)`, `wallsFor`, `wallBlow`): `Combat.api.harvest.list`
+  offers the engine **one** piece of wall, the one faced within 44 units (one blow, one piece: a swing across a corner
+  does not take two), as a thing of the axe's kind or the pick's (`Ruin.rightTool`), so the engine's "wrong tool" and half
+  blow come by themselves and Ruin's table says how much bites. Locked doors go through the same rules (they were a
+  special case). **A tool reaches a box only in the room you are in** (`canReach` in the harvest list: a swing at a wall
+  broke the barrel behind it). Admin's one-shot takes a wall at a blow.
+- **Noise:** a blow on a wall is `Combat.noise(x, y, r, soft)` with the material's reach (a wattle wall 150 units, planks
+  280, a stone wall 430). The engine's `noise` now answers how many men heard it and hands `api.onNoise(x, y, r, n, soft)`
+  both; **a soft noise stirs the village only if a man or a villager heard it** (`folkHear`), so a quiet wall at the back of
+  a quiet house can be cut unseen. Fighting is never soft.
+- **A piece gives** (`wallGave`): rooms and solids are made again (`bDirty`; **`ruinTick` rebuilds them when dirty**, since
+  they were otherwise rebuilt only when a frame is drawn), the way-finding grids are read again (`navStale`), a little
+  falls out (`RUIN.drop`: one wood or one stone, or nothing), and if the room has now lost too much its roof is due
+  (`ruinDue[room.id]`: a groan, `RUIN.warn` 1.6 s, then `roofFalls`). **`roofDown(r, kind)`** is what a fall does: things
+  inside are tipped over (`it.fallen`) or, in a fire, gone; a box spills what it held (in a fire it is lost); a heavy chest
+  stays (a fire breaks its lock); stone things stand (`STONE_THINGS`); the hero inside is hurt (`RUIN.fallHurt` 24), a man
+  16 (`Combat.hurt(e, dmg)`, new: a hurt that is nobody's blow); the room's people are out (`folkFlush`). A room with
+  stairs (`r.up`) has no roof to lose. A ruined room is no roof over a bench or a bed.
+- **Fire:** a torch burning in the hand and E (`fireAtHand`, an `add` line in `eWhat`: "Set it alight", or "Set the roof
+  alight" when only the roof over the wall burns), `RUIN.fire.catchT` 1.2 s of standing there with a small bar over the
+  hero (`lighting`, `lightingTick`; a roof that hardly burns may answer "It will not catch"). `fireTickAll` runs
+  `Ruin.fireTick` with the game's own `wind`, and from what it answers: a wall burnt through (`wallGave(..., true)`), a
+  roof down (`roofDown(r, 'burnt')`), `BURN` (`burnList`: the places that burn, for the flames, the light and the heat),
+  the fire's noise every 2.5 s from open ground beside it (`outsideOf`, `Ruin.fireNoise`: 275 units for one piece, 1000 for
+  twenty), heat on the hero (`RUIN.fire.heat` 9 a second under a burning roof or against a burning wall), and the men:
+  one in a burning room is burnt, gets out unless he is fighting (an `errand` to open ground), and a post in a house that
+  burns or is down is moved outside it. Flames and smoke are things among the world's things (`pushFlames`); a burning
+  house lights the night (`blazeLights` into `nightFires()`: `blaze`, `big`; `lightInto` gives it a plain disc) and its
+  windows glow; what burns counts as a fire to the wolves and to the ambient sound (`nearestFire`). Ashes glow and smoke
+  for `RUIN.fire.hot` 70 s (`drawDebrisAll`).
+- **The people** (`homeOf(f)`: the room by a villager's door spot; `aflame(r)`, `homeGone(f)`, `refugeOf(f)`, `folkFlush(r)`):
+  the people of a house that burns, is about to fall or is down do not hide in it. They run out of the place on the side
+  away from the hero, five and a half tiles beyond its edge (still on its way-finding grid), and watch from there
+  (`f.refuge`); when the raid is over they come back, and those whose house is gone have `HOMELESS_LINES`. Nobody who is
+  not a fighting man is hurt. `ruinCost(tx, ty)` makes a burning room dear to walk through (the grid's `cost`).
+  **A villager is not ticked when the hero is more than 1200 units off** (an old rule): a test that parks the hero far
+  away sees them stand still.
+- **Mending** (`PIECES` has a last entry, `mend`, key `mend`: known once a claim stone of yours stands in a village, and in
+  the editor): in `buildTarget0` it answers `{ kind: 'mend', ed, has, cost }` for a damaged piece of wall and `{ kind:
+  'raise', room, cost }` for a fallen roof whose walls all stand ("Mend its walls first"); `mendCost(e)` (a share of the
+  piece's own price by how far gone it was, at least one of its material), `roofMendCost(room)`, `mendEdge`, `raiseRoof`;
+  `ruinWhole(x0, y0, x1, y1)` makes a stretch (or everything) whole at once, for the editor and for a test's fresh town.
+- **Drawing:** a breached piece is drawn once and kept (`edgeSprite`, `drawEdgeKept`: its stumps and rubble are many
+  strokes), so is a tile's debris (`debrisCache`); a hacked wall is drawn live with its scars. **A roof thins when you
+  stand right behind its house** (`behindRoof`: you could not see yourself or the wall you hacked at), for every house.
+- **Side walls with a face, a trial (Robin, 2026-10-13: could what made the mountains' north, west and east edges clear
+  improve the building?).** A wall that runs north to south is a strip seen from above, five units wide. With
+  `Build.CFG.lean` (the editor's switch and slider; `setLean(v)`; stored in `game.ruin` as `lean`) its foot stands that
+  far out from its top and its outer face shows (`sideFace`: lit where it looks west, in shade where it looks east;
+  `vSide(x, y)` says which way), as the mountains' side walls do. **Off by default; Robin has not judged it**
+  (`docs/destruction-lean.jpg`). It makes side walls clear, above all from inside, and gives a house a splayed foot.
+- **`RUIN`** is `Ruin.cfg(game.ruin)`; sounds `SFX.groan`, `crash`, `whoosh`. Debug: `ruinInfo()` (RUIN, RU, due, burn,
+  fire, ruin, rooms), `ruinDo(id)`, `ruinB()`, `ruinBag()`, `wallFaced()`, `fireAtHand()`, `placeAt`, `theirs`, `homeOf`,
+  `ruinWhole`, `ruinTarget()`.
+- **`tests/ruin.js`** (in `npm test`): the table of what breaks what, a house (due after 4 of 10 pieces, a timber frame
+  after 7; mended and raised), doors, the way through a breach, and fire (60 houses of each kind; 300 fires for each gap
+  and wind: a thatched roof one tile off catches 85% downwind, 70% in no wind, never upwind; three tiles off 49%, 0%, 0%;
+  five never). **`tools/visual/ruinplay.js`** plays the editor in the page (`RU2.at(n, side, i)`, `tool(k)`, `hack(secs)`,
+  `fire(secs)`, `mend(n)`, `walk`, `wait`, `state(n)`, `table()`, `opt.god`).
+- **Not built:** a ram, a barred town gate, the town fighting a fire, smoke seen from the next village, your men breaking
+  or mending, a village mending itself (and the decided rebuilding after winter), the floor above.
 
 ## The game (templates/game.html)
 
