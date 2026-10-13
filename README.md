@@ -18,16 +18,16 @@ no dependencies, so you can also open any file in `dist/` directly.
 
 | Page | What it is for |
 | --- | --- |
-| Character Editor | Tune the hero: proportions, colours, walk and attack |
-| Creature Editor | The animals (wild boar, deer, bear, snake, moose, wolf): looks, movement, behaviour |
-| Object Editor | One world object at a time: size, shape, surface, colour |
-| Environment Editor | A patch of land: biome, ground, which objects appear, how dense and how open |
-| Base Editor | Build a homestead piece by piece; closed rooms get a roof |
-| Sea Editor | The archipelago and the ships: island sizes, sea distances, handling |
-| Item Editor | Weapons and tools: material, size, sharpness, glow, twist and curl, name and tale; give them to the game |
-| Song Editor | The game's music, played by its own instruments: tempo, key, tracks and notes; export as .mid |
-| Combat Arena | Fight wolves, boars, snakes and the bear |
-| The game | The first island: chop trees, mine stone, hunt boar, keep what you find |
+| The game | The starter island and the big island, played from the wreck (chapters 1 and 2) |
+| Combat Arena | The fight on its own: beasts and men against you, hirdmen beside you, every weapon, the shield and the gear, the clock slowed, the blows drawn and written down |
+| Battle test (`game.html?scene=battle`) | Men in the real game: one, two, five against five, a town defended, a raid on it, walking in unarmed, a night raid, storming it |
+| Destruction Editor (`game.html?scene=ruin`) | Breaking in, bringing down, burning and mending, with every number as a slider |
+| Big island test (`game.html?scene=runes`) | The big island at a carver's bench with every rune known: the arm ring, the mountain, the cave |
+| Mountain test (`game.html?scene=mountain`) | A mountain island of its own: the terraces, the slopes, the waterfall, the lookout, the caves |
+| Art Editor | The Blender models (the hero, the beasts, the people) and the world's drawn objects |
+| Village Editor | The rules that grow a village, with "Use in the game" |
+| Sea Editor | The islands and the sea between, the ships and their handling, the Shipyard |
+| Song Editor | The game's music, played by its own instruments; export as .mid |
 
 Each editor can copy its settings out as text, and paste them back in.
 
@@ -47,17 +47,24 @@ npm test
 ## Folder layout
 
 ```
-src/art.js          the hero, the animals and other creatures
+src/art.js          the drawn hero and creatures (what shows while a Blender sheet is still loading) and small drawing helpers
+src/sprites.js      the Blender models' sprite sheets drawn in the game and the editors: the hero, the beasts, the people
 src/stylelab.js     the world: props, ground tiles and the shared look
-src/world.js        the archipelago: islands, ground, what grows there (Sea Editor and the game)
-src/build.js        building pieces, rooms and roofs (Base Editor and the game)
-src/items.js        weapons and tools: drawing, names and numbers (Item Editor and the game)
-src/music.js        the music: songs as note data, synthesized instruments, a sequencer, MIDI export (Song Editor and the game)
-src/combat.js       the arena engine: movement, combat, enemy behaviour, rendering
+src/world.js        the archipelago: islands, ground, the mountains, what grows there (Sea Editor and the game)
+src/cave.js         the insides of the caves
+src/build.js        building pieces, rooms and roofs
+src/ruin.js         breaking in, bringing down, burning and mending
+src/nav.js          finding a way round walls, for everything that walks in a village
+src/village.js      the rules that grow a village (Village Editor and the game)
+src/items.js        weapons and tools: drawing, names and numbers
+src/combat.js       the engine: movement, combat, beasts and men, rendering (the Combat Arena, the game and the tests)
+src/yard.js         vessels and the Shipyard
+src/music.js        the music; src/ambient.js the sound of the place
+art/                the Blender models, built by script and rendered to assets/sprites (art/README.md)
 templates/          the HTML shell for each page
 tools/build.py      stitches templates and source into single-file pages in dist/
-tools/visual/       scripts that render things to PNG for checking
-tests/              headless checks for combat behaviour (see tests/README.md)
+tools/visual/       scripts that render things to PNG, and scripts that play the pages by themselves
+tests/              headless checks (see tests/README.md)
 dist/               the built pages
 ```
 

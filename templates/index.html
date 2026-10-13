@@ -19,48 +19,49 @@
 }
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:24px 16px 40px}
-main{max-width:960px;margin:0 auto}
+main{max-width:1100px;margin:0 auto}
 h1{font-size:1.5rem;line-height:1.2;margin:0 0 6px;font-weight:700;letter-spacing:-0.01em}
-.lede{margin:0 0 22px;color:var(--ink2);max-width:64ch}
+.lede{margin:0 0 22px;color:var(--ink2);max-width:70ch}
 h2{font-size:1.05rem;margin:26px 0 4px;font-weight:650}
-.sub{margin:0 0 12px;color:var(--ink2);font-size:.92rem;max-width:64ch}
+.sub{margin:0 0 12px;color:var(--ink2);font-size:.92rem;max-width:70ch}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
 .card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;color:inherit;text-decoration:none}
 a.card:hover{background:var(--btnh);border-color:var(--accent)}
 a.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .card strong{display:block;font-size:1rem;margin-bottom:4px}
 .card span{display:block;color:var(--ink2);font-size:.9rem}
-.card.soon{border-style:dashed}
-.card.soon strong{color:var(--ink2)}
-.old .card{padding:10px 14px}
-.old .card strong{font-size:.93rem;font-weight:600}
+.card em{display:block;color:var(--accent);font-size:.78rem;font-style:normal;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
 </style>
 </head>
 <body>
 <main>
   <h1>Survival game workbench</h1>
-  <p class="lede">Pick what you want to work in. Create holds the editors; Game is where the pieces are played. Cleaned up on 2026-10-09 for the move to Blender models and the work on the first island.</p>
+  <p class="lede">One engine, one set of rules, many doors into it. The game is played by chapter; the systems that every chapter shares (fighting, raiding, destruction, the mountains) each have a place of their own to work on them, and whatever is tuned there is what the chapters run on. The editors change how things look and how places are made.</p>
 
-  <h2>Create</h2>
-  <p class="sub">Editors. Change how something looks or moves and see it straight away.</p>
+  <h2>Play</h2>
+  <p class="sub">The game as it is played, from the wreck.</p>
   <div class="grid">
-    <a class="card" href="art-editor.html"><strong>Art Editor</strong><span>Characters, creatures, objects and the Blender models in one place: pick a tab, tune it, walk and fight with it, hand it to the game.</span></a>
-    <a class="card" href="sea-editor.html"><strong>Sea Editor</strong><span>The game's two islands and the sea between: sizes and distances, the villages planned on them, the ships and their handling, the Shipyard.</span></a>
-    <a class="card" href="village-editor.html"><strong>Village Editor</strong><span>The rules that grow a village: an archetype, a seed, the wealth and the shore; the yard, the longhouse, the houses round it, the fences, the fields and the finds. "Use in the game" hands the numbers over.</span></a>
-    <a class="card" href="song-editor.html"><strong>Song Editor</strong><span>The game's music, played by its own instruments: the meadow by day and by evening, with a fight layer. Tempo, key, tracks and notes, and export as .mid.</span></a>
+    <a class="card" href="game.html"><em>Chapters 1 and 2</em><strong>The game</strong><span>The starter island and the big island: land with nothing, gather, hunt, build a home, meet Brokk, cross the water; the big island's villages, its small mountain, the troll's cave and the copper.</span></a>
   </div>
 
-  <h2>Game</h2>
-  <p class="sub">Playable pieces.</p>
+  <h2>Systems</h2>
+  <p class="sub">Each a part of the game set up to be worked on by itself. They share the engine and the numbers with the game, so what is fixed here is fixed everywhere.</p>
   <div class="grid">
-    <a class="card" href="game.html"><strong>The game</strong><span>The starter island and the big island: chop trees, mine stone, hunt the boar, build a home, cross the water.</span></a>
-    <a class="card" href="combat-arena.html"><strong>Combat Arena</strong><span>Fight wolves, boars, snakes and the bear with every weapon kind.</span></a>
-    <a class="card" href="game.html?scene=mountain"><strong>Mountain test</strong><span>The game on a mountain island of its own: the first biome in the south, foothills, a high plateau and peaks in the north, slopes up the cliffs, the troll’s cave in a rock face. Walk it, build on it. Its own save; the real game is untouched.</span></a>
-    <a class="card" href="game.html?scene=battle"><strong>Battle test</strong><span>The game on a cleared field with one of every weapon: fight one hirdman, two, two with a friend beside you, five against five; a town of twenty defended; a raid on it with a karve and five of your own. Nothing is saved.</span></a>
-    <a class="card" href="game.html?scene=ruin"><strong>Destruction Editor</strong><span>Breaking in, bringing down, burning and mending: a sampler of houses in every wall and roof, the town and its church, tools, a torch, and every number of the rules as a slider. &ldquo;Use in the game&rdquo; hands them over. Nothing is saved.</span></a>
-    <a class="card" href="game.html?scene=runes"><strong>Rune Editor</strong><span>The game started on the big island at a carver’s bench with a ring on your arm and every rune known: try the runes, cut them, change them. Its own save; the real game is untouched.</span></a>
+    <a class="card" href="combat-arena.html"><em>Combat</em><strong>Combat Arena</strong><span>The fight on its own: beasts and men against you, hirdmen beside you, every weapon, shield and gear, the clock slowed, the blows drawn and written down. Dodging, parrying, blocking, moving.</span></a>
+    <a class="card" href="game.html?scene=battle"><em>Chapter 3: raiding</em><strong>Battle test</strong><span>Men in the real game: one, two, five against five, a town defended, a raid on it, walking in unarmed, a night raid, storming it. The ways they come at you, what he carries and wears.</span></a>
+    <a class="card" href="game.html?scene=ruin"><em>Chapter 3: raiding</em><strong>Destruction Editor</strong><span>Breaking in, bringing down, burning and mending: a sampler of every wall and roof, the town, fire and wind, every number of the rules as a slider, the big trials.</span></a>
+    <a class="card" href="game.html?scene=runes"><em>Chapter 2</em><strong>Big island test</strong><span>The game started on the big island at a carver’s bench with every rune known: the arm ring, the mountain, the cave and the troll, the furnace and the charcoal.</span></a>
+    <a class="card" href="game.html?scene=mountain"><em>Mountains</em><strong>Mountain test</strong><span>A mountain island of its own: foothills, the plateau, the peaks, slopes, sea cliffs, the waterfall, the lookout, the old mine, the rock shelter and the sea cave.</span></a>
   </div>
 
+  <h2>Editors</h2>
+  <p class="sub">How things look and how places are made. Each hands its result to the game with "Use in the game".</p>
+  <div class="grid">
+    <a class="card" href="art-editor.html"><strong>Art Editor</strong><span>The Blender models (the hero and his gear, the beasts, the people) and the world's drawn objects: pick, tune, walk and fight with it, hand it to the game.</span></a>
+    <a class="card" href="village-editor.html"><strong>Village Editor</strong><span>The rules that grow a village: an archetype, a seed, the wealth and the shore; the yard, the longhouse, the houses, the fences and the people.</span></a>
+    <a class="card" href="sea-editor.html"><strong>Sea Editor</strong><span>The islands and the sea between: sizes and distances, the villages planned on them, the ships and their handling, the Shipyard.</span></a>
+    <a class="card" href="song-editor.html"><strong>Song Editor</strong><span>The game's music, played by its own instruments: the day and the evening themes with a fight layer; dice, a library, the piano roll.</span></a>
+  </div>
 </main>
 </body>
 </html>

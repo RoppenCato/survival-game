@@ -43,7 +43,7 @@ var TOOLS = [
   { id: 'knife', name: 'Knife', good: 'bush', dmg: 2 }
 ];
 api.tools = TOOLS;
-api.profiles = function () { return PROFILES; }; api.num = num; api.rangedKinds = function () { return RANGED; }; api.stepData = function () { return stepData(P.atk); };
+api.profiles = function () { return PROFILES; }; api.parryWindow = function () { return parryWindow(); }; api.meleeStep = function () { return stepData(P.atk); }; api.num = num; api.rangedKinds = function () { return RANGED; }; api.stepData = function () { return stepData(P.atk); };
 var STEPS = [
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
@@ -225,8 +225,12 @@ function switchMode() {
 // with what he holds: a narrow guard that lets more than half of a light blow through, costs more breath, and stops no arrow.
 function shielded() { return api.shield ? !!api.shield() : S.shield; }
 function parryWindow() { return shielded() ? 0.22 : 0.12; }
+// The log of the blows (2026-10-13, the Combat Arena's tools): a page may listen with api.onLog(ev), ev = { k, dmg, src, kind, ... }:
+// 'dodged' (a blow came while a dash made him untouchable), 'parry', 'block' (what got through, and whether the guard broke),
+// 'hurt', 'hit' (the hero's blow on a foe: dealt, crit, blocked by his shield, his guard broken), 'kill'.
+function logEv(ev) { if (api.onLog) api.onLog(ev); }
 function hurtPlayer(dmg, sx, sy, kind, src) {
-  var p = P; if (p.dead || p.invuln > 0) return false;
+  var p = P; if (p.dead) return false; if (p.invuln > 0) { if (p.roll.t > 0) logEv({ k: 'dodged', dmg: dmg, kind: kind, src: src }); return false; }
   var toSrc = Math.atan2(sy - p.y, sx - p.x);
   var front = Math.abs(wrap(toSrc - p.face)) <= (shielded() ? 1.9 : 1.4);
   if (p.guard && front && !(kind === 'proj' && src && src.type === 'soldier' && !shielded())) {   /* (a bowman's arrow is stopped by a shield, not by a raised arm) */
@@ -234,7 +238,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
       p.parryFx = 0.35; p.st = Math.min(maxSt(), p.st + 12);
       spark(p.x + Math.cos(p.face) * 10, p.y + Math.sin(p.face) * 10, 14, '#fff6c8', 140);
       lockFor(p, 0.09); lockFor(src, 0.09); slowmo(0.25, 0.14); ring(p.x + Math.cos(p.face) * 10, p.y, 13, 24, 0.2, '255,243,196', true, 2.4); sfx('parry');
-      num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
+      num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); logEv({ k: 'parry', dmg: dmg, kind: kind, src: src }); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
       return 'parry';
     }
     var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (shielded() ? 0.4 : 0.8) : (shielded() ? 0.12 : 0.55);
@@ -246,10 +250,12 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
     lockFor(p, 0.035); sfx('block');
     if (d2 > 0.5) num(p.x, p.y - 26, String(Math.round(d2)), '#cfd6e6');
     if (p.st <= 0) { p.st = 0; p.guard = false; p.hurtT = 0.35; p.invuln = Math.max(p.invuln, 0.42); num(p.x, p.y - 34, 'GUARD BREAK', '#ff9a7a'); }
+    logEv({ k: 'block', dmg: dmg, through: d2, kind: kind, src: src, broke: p.st <= 0, stagger: !!hitFlags.stagger, guardBreak: !!gbH });
     if (p.hp <= 0) die();
     return 'block';
   }
   var hit = dmg * (api.armor ? 1 - api.armor() : 1);     // armour turns a share of every blow aside, not only blocked ones
+  logEv({ k: 'hurt', dmg: dmg, through: hit, kind: kind, src: src, guard: p.guard, front: front });
   p.hp -= hit; p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false; p.anim.sq = 1; p.anim.sqv = 0;
   p.atk.ph = 'none'; p.atkBuf = 0;
   var kb = kind === 'heavy' ? 170 : 110;
@@ -283,6 +289,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (quiet) crit = true;                                     // (shown as a critical blow)
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
+  if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
   if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }   // (the man the quiet blow falls on is not one who heard it)
   if (e.errand) { var er0 = e.errand; e.errand = null; if (er0.drop) er0.drop(e); }   // struck on an errand: that is the end of it (he drops what he carries, and fights)
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
@@ -346,7 +353,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
 }
 function killEnemy(e, src) {
   var bigK = e.type === 'brute';
-  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet : MEN.noise.cry);
+  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; logEv({ k: 'kill', e: e, src: src }); if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet : MEN.noise.cry);
   if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
   else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
     slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
@@ -2086,6 +2093,7 @@ function render(c) {
   items.sort(function (a, b) { return a.y - b.y; });
   for (i = 0; i < items.length; i++) items[i].f();
   for (i = 0; i < W.parts.length; i++) if (W.parts[i].k !== 'dust') drawPart(c, W.parts[i]);
+  if (api.overlay) api.overlay(c, P, W);                   // a page draws over the world, under the HUD (the arena's reach arcs and timers, 2026-10-13)
   for (i = 0; i < W.rings.length; i++) {
     var rg = W.rings[i], u = 1 - rg.life / rg.max, rr0 = rg.r1 * (0.25 + 0.75 * Math.sin(u * Math.PI / 2));
     c.strokeStyle = 'rgba(' + rg.c + ',' + (0.85 * (1 - u)) + ')'; c.lineWidth = rg.w * (1 - u * 0.6);

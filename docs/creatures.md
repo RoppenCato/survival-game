@@ -1,5 +1,10 @@
 # How creatures are drawn: the view rig
 
+> **Superseded (2026-10-13).** Every creature is a Blender model rendered to sprite sheets since 2026-10-11 and 2026-10-12
+> (`docs/moving-to-blender.md`); the drawn view rig below is only what the game shows for the moment a sheet is still
+> loading, and the Creatures tab that edited it was removed from the Art Editor on 2026-10-13. Kept as the record of how
+> the drawn creatures were made.
+
 Decided 2026-10-07 after Robin found the troll "clipping in various ways", with "so many different moving pieces", and asked
 for "a new car": a new way to make creatures that works for every creature to come, with some research first.
 

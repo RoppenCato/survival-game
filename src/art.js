@@ -2018,7 +2018,7 @@ function creatureD(c, x, y, s, H) {
 // (game.creatures), the rig to draw them with (creature.rig).
 function applyStored(st) {
   try { var gh = JSON.parse(st.getItem('game.hero2')); if (gh && typeof gh === 'object') setHero(gh); } catch (e) {}
-  try { var gc = JSON.parse(st.getItem('game.creatures')); if (gc && typeof gc === 'object') { var k; for (k in gc) if (ANIMALS[k] && gc[k] && typeof gc[k] === 'object') useAnimal(k, gc[k]); } } catch (e) {}
+  try { st.removeItem('game.creatures'); st.removeItem('creature.library'); st.removeItem('creatureeditor2.meta'); } catch (e) {}   // the Creatures tab is gone (2026-10-13): the beasts are Blender sheets, and a stored drawn design must not change their numbers
   try { var gl = JSON.parse(st.getItem('game.light')); if (gl && gl.faceShade != null) FACE_SHADE.k = +gl.faceShade; } catch (e) {}
   RIG.animals = 'views'; RIG.trolls = 'views';          // the game always draws the view rig; the Creature Editor's Rig switch (creature.rig) is its own (2026-10-08: a stored 'turntable' kept the clipping trolls in the game)
 }

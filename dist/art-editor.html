@@ -71,40 +71,14 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
   <h1>Art Editor</h1>
-  <p class="lede">Everything that is drawn or modelled, in one place: the Blender models (the hero), the drawn creatures and the world's objects. One arena, one engine; the tabs change what stands in it and what the panels on the right tune. The hero in every tab is the Blender model; the old drawn hero is kept in art/backup.</p>
+  <p class="lede">Everything that is drawn or modelled, in one place: the Blender models (the hero, the beasts, the people) and the world's objects. One arena, one engine; the tabs change what stands in it and what the panels on the right tune. The hero in every tab is the Blender model; the old drawn hero is kept in art/backup.</p>
   <div class="tabs" id="tabs">
     <button data-tab="models">Models</button>
-    <button data-tab="creatures">Creatures</button>
     <button data-tab="objects">Objects</button>
   </div>
   <div class="wrap">
     <div class="left">
       <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Arena"></canvas></div>
-
-      <div class="tab" id="left-creatures" hidden>
-        <section class="panel">
-          <h2>Poses</h2>
-          <canvas class="sheetcv" data-id="poses" width="800" height="210" aria-label="The creature in each state"></canvas>
-          <p class="desc">Standing, moving, warning before an attack, attacking, and stunned.</p>
-        </section>
-        <section class="panel">
-          <h2>Arena</h2>
-          <div class="group">
-            <button data-id="spawn">Add one</button>
-            <button data-id="clear">Clear</button>
-            <button data-id="hold" aria-pressed="false">Hold still</button>
-            <button data-id="nodmg" aria-pressed="true">No damage</button>
-          </div>
-          <p class="desc">Every creature in the arena shows the current design. Hold still freezes them so you can look closely.</p>
-          <h2 class="more">Controls</h2>
-          <dl class="keys">
-            <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
-            <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack</dd>
-            <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block. Press just before a hit to parry</dd>
-            <dt><kbd>Space</kbd></dt><dd>Dash</dd>
-          </dl>
-        </section>
-      </div>
 
       <div class="tab" id="left-objects" hidden>
         <section class="panel">
@@ -162,97 +136,6 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
     </div>
 
     <div class="right">
-      <div class="tab" id="right-creatures" hidden>
-        <section class="panel">
-          <h2>Creature</h2>
-          <div class="group">
-            <input data-id="cname" type="text" placeholder="Name" aria-label="The creature's name" style="width:150px">
-            <button data-id="savec">Save</button>
-            <button data-id="newc">New creature</button>
-            <button data-id="delc">Delete</button>
-          </div>
-          <h2 class="more">Saved creatures</h2>
-          <div class="group" data-id="library"></div>
-          <h2 class="more">In the game</h2>
-          <div class="group">
-            <select data-id="slot" aria-label="Which beast of the game this design replaces"></select>
-            <button data-id="useGame">Update in game</button>
-            <button data-id="takeBack">Take back</button>
-          </div>
-          <p class="desc" data-id="gameStatus"></p>
-          <p class="desc">Save keeps the design under its name in this browser; New creature starts a variation from what is on screen; Update in game makes the chosen beast of the game look and fight like this design (the game keeps its own counts, damage and drops); Take back restores the game's own.</p>
-        </section>
-        <section class="panel">
-          <h2>Templates</h2>
-          <div class="group" data-id="models"></div>
-          <h2 class="more">Body plan</h2>
-          <div class="group" data-id="c-plan"></div>
-          <div class="group" style="margin-top:12px">
-            <button data-id="random">Randomise</button>
-          </div>
-          <p class="desc">A template is a complete starting creature: the six animals of the first biome and the two trolls. The body plan is Animal, Snake, Boulder troll or Forest troll; the panels below follow it.</p>
-        </section>
-        <section class="panel">
-          <h2>Shape</h2>
-          <div data-id="pshape"></div>
-          <p class="desc">The trolls’ arm length is in the Troll panel.</p>
-        </section>
-        <section class="panel" data-id="sec-animal">
-          <h2>Animal</h2>
-          <div data-id="panimal"></div>
-          <h2 class="more">Ears</h2>
-          <div class="group chips" data-id="c-ears"></div>
-          <h2 class="more">Antlers</h2>
-          <div class="group chips" data-id="c-antlers"></div>
-          <h2 class="more">Details</h2>
-          <div class="group chips" data-id="flags"></div>
-          <p class="desc">These apply to the Animal body plan (and neck and snout to the Snake). Head carried: 0 is low like a boar, 1 is high like a deer.</p>
-        </section>
-        <section class="panel" data-id="sec-troll">
-          <h2>Troll</h2>
-          <div data-id="ptroll"></div>
-          <h2 class="more">Details</h2>
-          <div class="group chips" data-id="tflags"></div>
-          <p class="desc">The Boulder troll after John Bauer and the Forest troll after Theodor Kittelsen. Hair, nose, ears, arms, moss and age work on both; hunch leans the forest troll. The moss colour is under Colours.</p>
-        </section>
-        <section class="panel">
-          <h2>Eyes</h2>
-          <div class="group chips" data-id="c-eyeStyle"></div>
-          <div data-id="peyes" style="margin-top:8px"></div>
-          <h2 class="more">Tail</h2>
-          <div class="group chips" data-id="c-tail"></div>
-          <h2 class="more">Pattern</h2>
-          <div class="group chips" data-id="c-pattern"></div>
-          <p class="desc">The tail and the pattern apply to the animals.</p>
-        </section>
-        <section class="panel">
-          <h2>Attack warning</h2>
-          <div class="group chips" data-id="c-tell"></div>
-          <div class="group" style="margin-top:8px"><button data-id="mark" aria-pressed="true">Warning mark</button></div>
-          <p class="desc" data-id="telldesc"></p>
-          <h2 class="more">Behaviour</h2>
-          <div class="group chips" data-id="c-behave"></div>
-          <p class="desc" data-id="behavedesc"></p>
-          <div data-id="pbehave" style="margin-top:8px"></div>
-          <p class="desc">Speed, warning time and lunge speed apply to the Lunger. Health applies to newly added creatures. Notice distance is how close you must come before it reacts; hitting it also rouses it.</p>
-        </section>
-        <section class="panel">
-          <h2>Colours</h2>
-          <div class="swatches" data-id="swatches"></div>
-          <h2 class="more">Tone (all colours at once)</h2>
-          <div data-id="ptone"></div>
-        </section>
-        <section class="panel">
-          <h2>Settings as text</h2>
-          <textarea data-id="json" spellcheck="false" aria-label="Creature settings as text"></textarea>
-          <div class="group" style="margin-top:8px">
-            <button data-id="copy">Copy</button>
-            <button data-id="applyjson">Apply text</button>
-          </div>
-          <p class="desc" data-id="jsonmsg">Copy this to keep a creature. Paste one in and press Apply text to load it.</p>
-        </section>
-      </div>
-
       <div class="tab" id="right-objects" hidden>
         <section class="panel">
           <h2>Category</h2>
@@ -2376,7 +2259,7 @@ function creatureD(c, x, y, s, H) {
 // (game.creatures), the rig to draw them with (creature.rig).
 function applyStored(st) {
   try { var gh = JSON.parse(st.getItem('game.hero2')); if (gh && typeof gh === 'object') setHero(gh); } catch (e) {}
-  try { var gc = JSON.parse(st.getItem('game.creatures')); if (gc && typeof gc === 'object') { var k; for (k in gc) if (ANIMALS[k] && gc[k] && typeof gc[k] === 'object') useAnimal(k, gc[k]); } } catch (e) {}
+  try { st.removeItem('game.creatures'); st.removeItem('creature.library'); st.removeItem('creatureeditor2.meta'); } catch (e) {}   // the Creatures tab is gone (2026-10-13): the beasts are Blender sheets, and a stored drawn design must not change their numbers
   try { var gl = JSON.parse(st.getItem('game.light')); if (gl && gl.faceShade != null) FACE_SHADE.k = +gl.faceShade; } catch (e) {}
   RIG.animals = 'views'; RIG.trolls = 'views';          // the game always draws the view rig; the Creature Editor's Rig switch (creature.rig) is its own (2026-10-08: a stored 'turntable' kept the clipping trolls in the game)
 }
@@ -6112,7 +5995,7 @@ var TOOLS = [
   { id: 'knife', name: 'Knife', good: 'bush', dmg: 2 }
 ];
 api.tools = TOOLS;
-api.profiles = function () { return PROFILES; }; api.num = num; api.rangedKinds = function () { return RANGED; }; api.stepData = function () { return stepData(P.atk); };
+api.profiles = function () { return PROFILES; }; api.parryWindow = function () { return parryWindow(); }; api.meleeStep = function () { return stepData(P.atk); }; api.num = num; api.rangedKinds = function () { return RANGED; }; api.stepData = function () { return stepData(P.atk); };
 var STEPS = [
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
   { wu: 0.05, ac: 0.09, rec: 0.12, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
@@ -6294,8 +6177,12 @@ function switchMode() {
 // with what he holds: a narrow guard that lets more than half of a light blow through, costs more breath, and stops no arrow.
 function shielded() { return api.shield ? !!api.shield() : S.shield; }
 function parryWindow() { return shielded() ? 0.22 : 0.12; }
+// The log of the blows (2026-10-13, the Combat Arena's tools): a page may listen with api.onLog(ev), ev = { k, dmg, src, kind, ... }:
+// 'dodged' (a blow came while a dash made him untouchable), 'parry', 'block' (what got through, and whether the guard broke),
+// 'hurt', 'hit' (the hero's blow on a foe: dealt, crit, blocked by his shield, his guard broken), 'kill'.
+function logEv(ev) { if (api.onLog) api.onLog(ev); }
 function hurtPlayer(dmg, sx, sy, kind, src) {
-  var p = P; if (p.dead || p.invuln > 0) return false;
+  var p = P; if (p.dead) return false; if (p.invuln > 0) { if (p.roll.t > 0) logEv({ k: 'dodged', dmg: dmg, kind: kind, src: src }); return false; }
   var toSrc = Math.atan2(sy - p.y, sx - p.x);
   var front = Math.abs(wrap(toSrc - p.face)) <= (shielded() ? 1.9 : 1.4);
   if (p.guard && front && !(kind === 'proj' && src && src.type === 'soldier' && !shielded())) {   /* (a bowman's arrow is stopped by a shield, not by a raised arm) */
@@ -6303,7 +6190,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
       p.parryFx = 0.35; p.st = Math.min(maxSt(), p.st + 12);
       spark(p.x + Math.cos(p.face) * 10, p.y + Math.sin(p.face) * 10, 14, '#fff6c8', 140);
       lockFor(p, 0.09); lockFor(src, 0.09); slowmo(0.25, 0.14); ring(p.x + Math.cos(p.face) * 10, p.y, 13, 24, 0.2, '255,243,196', true, 2.4); sfx('parry');
-      num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
+      num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); logEv({ k: 'parry', dmg: dmg, kind: kind, src: src }); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
       return 'parry';
     }
     var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (shielded() ? 0.4 : 0.8) : (shielded() ? 0.12 : 0.55);
@@ -6315,10 +6202,12 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
     lockFor(p, 0.035); sfx('block');
     if (d2 > 0.5) num(p.x, p.y - 26, String(Math.round(d2)), '#cfd6e6');
     if (p.st <= 0) { p.st = 0; p.guard = false; p.hurtT = 0.35; p.invuln = Math.max(p.invuln, 0.42); num(p.x, p.y - 34, 'GUARD BREAK', '#ff9a7a'); }
+    logEv({ k: 'block', dmg: dmg, through: d2, kind: kind, src: src, broke: p.st <= 0, stagger: !!hitFlags.stagger, guardBreak: !!gbH });
     if (p.hp <= 0) die();
     return 'block';
   }
   var hit = dmg * (api.armor ? 1 - api.armor() : 1);     // armour turns a share of every blow aside, not only blocked ones
+  logEv({ k: 'hurt', dmg: dmg, through: hit, kind: kind, src: src, guard: p.guard, front: front });
   p.hp -= hit; p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false; p.anim.sq = 1; p.anim.sqv = 0;
   p.atk.ph = 'none'; p.atkBuf = 0;
   var kb = kind === 'heavy' ? 170 : 110;
@@ -6352,6 +6241,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (quiet) crit = true;                                     // (shown as a critical blow)
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
+  if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
   if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }   // (the man the quiet blow falls on is not one who heard it)
   if (e.errand) { var er0 = e.errand; e.errand = null; if (er0.drop) er0.drop(e); }   // struck on an errand: that is the end of it (he drops what he carries, and fights)
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
@@ -6415,7 +6305,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
 }
 function killEnemy(e, src) {
   var bigK = e.type === 'brute';
-  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet : MEN.noise.cry);
+  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; logEv({ k: 'kill', e: e, src: src }); if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet : MEN.noise.cry);
   if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
   else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
     slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
@@ -8155,6 +8045,7 @@ function render(c) {
   items.sort(function (a, b) { return a.y - b.y; });
   for (i = 0; i < items.length; i++) items[i].f();
   for (i = 0; i < W.parts.length; i++) if (W.parts[i].k !== 'dust') drawPart(c, W.parts[i]);
+  if (api.overlay) api.overlay(c, P, W);                   // a page draws over the world, under the HUD (the arena's reach arcs and timers, 2026-10-13)
   for (i = 0; i < W.rings.length; i++) {
     var rg = W.rings[i], u = 1 - rg.life / rg.max, rr0 = rg.r1 * (0.25 + 0.75 * Math.sin(u * Math.PI / 2));
     c.strokeStyle = 'rgba(' + rg.c + ',' + (0.85 * (1 - u)) + ')'; c.lineWidth = rg.w * (1 - u * 0.6);
@@ -8673,157 +8564,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var GAME_HERO = Sprites.hero(SP, localStorage);                 // the hero of every tab is the Blender model (2026-10-09)
   function attachHero() { Sprites.attach(Combat, GAME_HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, shadowHue: kit.STYLE.shadowHue }); }
 
-  /* ================= Creatures: the drawn animals and trolls (the old Creature Editor) ================= */
-  TABS.creatures = (function () {
-    var sc = scope('creatures'), $ = sc.$;
-    var SHAPE = [{ k: 'size', label: 'Overall size', min: 0.5, max: 3, step: 0.05 }, { k: 'bodyW', label: 'Body width', min: 0.6, max: 1.6, step: 0.02 }, { k: 'bodyH', label: 'Body height', min: 0.6, max: 1.6, step: 0.02 },
-      { k: 'head', label: 'Head size', min: 0.6, max: 1.6, step: 0.02 }, { k: 'legLen', label: 'Leg length', min: 0.5, max: 2, step: 0.05 }, { k: 'legW', label: 'Leg thickness', min: 0.6, max: 1.8, step: 0.05 }];
-    var EYES = [{ k: 'eyeSize', label: 'Eye size', min: 0.5, max: 1.8, step: 0.05 }];
-    var BEHAVE = [{ k: 'speed', label: 'Move speed', min: 0.3, max: 2.5, step: 0.05 }, { k: 'windup', label: 'Warning time', min: 0.2, max: 2.5, step: 0.05 }, { k: 'lunge', label: 'Lunge speed', min: 0.4, max: 2, step: 0.05 },
-      { k: 'hp', label: 'Health', min: 1, max: 200, step: 1 }, { k: 'aggro', label: 'Notice distance', min: 30, max: 200, step: 5 }];
-    var ANIMAL = [{ k: 'neck', label: 'Neck length', min: 0.4, max: 2, step: 0.05 }, { k: 'neckUp', label: 'Head carried', min: 0, max: 1, step: 0.05 }, { k: 'snout', label: 'Snout length', min: 0.5, max: 2, step: 0.05 },
-      { k: 'snoutW', label: 'Snout thickness', min: 0.5, max: 1.6, step: 0.05 }, { k: 'hump', label: 'Shoulder hump', min: 0, max: 1.5, step: 0.05 }, { k: 'antlerSize', label: 'Antler size', min: 0.5, max: 1.8, step: 0.05 }];
-    var FLAGS = [['tusks', 'Tusks'], ['fangs', 'Fangs'], ['mane', 'Bristles'], ['hoof', 'Hooves'], ['brow', 'Heavy brow'], ['paleMuzzle', 'Pale muzzle'], ['snoutFlat', 'Flat nose'], ['tailPale', 'Pale tail']];
-    var TROLL = [{ k: 'trollHair', label: 'Hair length', min: 0, max: 2.5, step: 0.05 }, { k: 'trollAge', label: 'Age (grey, warts)', min: 0, max: 1, step: 0.05 }, { k: 'trollHunch', label: 'Hunch', min: 0, max: 1.6, step: 0.05 },
-      { k: 'trollArms', label: 'Arm length', min: 0.5, max: 1.8, step: 0.05 }, { k: 'trollNose', label: 'Nose length', min: 0.3, max: 2.2, step: 0.05 }, { k: 'trollEars', label: 'Ear size', min: 0, max: 2.2, step: 0.05 },
-      { k: 'trollBelly', label: 'Belly', min: 0.5, max: 1.6, step: 0.05 }, { k: 'trollMoss', label: 'Moss and lichen', min: 0, max: 1, step: 0.05 }];
-    var TFLAGS = [['trollBeads', 'Beads and ring'], ['trollSack', 'A sack on the back'], ['trollTail', 'Tail']];
-    var TONE = [{ k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 }, { k: 'sat', label: 'Saturation', min: 0, max: 2, step: 0.05 }, { k: 'lum', label: 'Brightness', min: 0.5, max: 1.5, step: 0.05 }];
-    var NUM = SHAPE.concat(EYES, BEHAVE, TONE, ANIMAL, TROLL);
-    var COLS = [['body', 'Body'], ['belly', 'Belly and markings'], ['accent', 'Horns, teeth and hair'], ['moss', 'Moss and lichen'], ['eye', 'Pupils'], ['glow', 'Glow and warning'], ['line', 'Outline']];
-    var CHOICES = {
-      plan: ['Blob', 'Critter', 'Brute', 'Floater', 'Crawler', 'Animal', 'Snake', 'Troll (old)', 'Boulder troll', 'Forest troll'],
-      ears: ['None', 'Pointed', 'Round', 'Long'], antlers: ['None', 'Spikes', 'Deer', 'Moose'], eyeStyle: ['Round', 'Glowing', 'Angry', 'Sleepy'], mouth: ['None', 'Line', 'Fangs', 'Maw'], top: ['Nothing', 'Nubs', 'Horns', 'Antennae', 'Spikes'],
-      tail: ['None', 'Stub', 'Long', 'Spiked or bushy'], pattern: ['Plain', 'Belly', 'Spots', 'Stripes'], tell: ['Swell', 'Shake', 'Rear up', 'Eye glow'], behave: ['Lunger', 'Brute', 'Shooter', 'Grazer']
-    };
-    var TELLTXT = ['Swell: it squashes wide and flushes with its warning colour.', 'Shake: it trembles on the spot and flushes with its warning colour.', 'Rear up: it lifts and tips back before it strikes.', 'Eye glow: the eyes grow and light up, with a pulse ring.'];
-    var BEHAVETXT = ['Lunger: chases you, circles, then lunges in a straight line. It can be parried.', 'Brute: the engine\'s brute, with a lunge, a chain of hits and a spin. It has a stagger bar.', 'Shooter: stands still and fires a shot along a marked line.', 'Grazer: never attacks. It runs away when you come close.'];
-    var MODEL_KEYS = ['boar', 'deer', 'bear', 'snake', 'moose', 'wolf', 'troll', 'trollForest', 'trollStone'], MODELS = MODEL_KEYS.map(function (k) { return lib.animals[k]; });
-    var LIB_KEY = 'creature.library', GAME_KEY = 'game.creatures', META_KEY = 'creatureeditor2.meta', library = {}, meta = { name: '', slot: 'troll' };
-    try { library = JSON.parse(localStorage.getItem(LIB_KEY)) || {}; } catch (e) { library = {}; } try { var mt = JSON.parse(localStorage.getItem(META_KEY)); if (mt && typeof mt === 'object') meta = mt; } catch (e) {}
-    var spec = clone(lib.creatureDef), inputs = {}, outputs = {}, swatch = {}, hold = false, noDmg = true, flagBtn = {};
-    var json = $('json'), jsonmsg = $('jsonmsg');
-    function choice(key) { var b = sc.$$('c-' + key, 'button'); for (var n = 0; n < b.length; n++) { var idx = b[n].hasAttribute('data-n') ? +b[n].getAttribute('data-n') : n; b[n].setAttribute('aria-pressed', idx === spec[key] ? 'true' : 'false'); } }
-    function apply() {
-      var d = lib.creatureDef, i, k;
-      for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snapTo(p, isFinite(v) ? v : d[p.k]); }
-      for (k in CHOICES) { var c = Math.round(Number(spec[k])); spec[k] = isFinite(c) ? Math.max(0, Math.min(CHOICES[k].length - 1, c)) : d[k]; }
-      spec.mark = spec.mark === 0 ? 0 : 1;
-      FLAGS.concat(TFLAGS).forEach(function (f) { spec[f[0]] = spec[f[0]] ? 1 : 0; });
-      spec = lib.setCreature(spec);
-      for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
-      for (i = 0; i < COLS.length; i++) swatch[COLS[i][0]].value = spec.col[COLS[i][0]];
-      for (k in CHOICES) choice(k);
-      $('mark').setAttribute('aria-pressed', spec.mark ? 'true' : 'false');
-      FLAGS.concat(TFLAGS).forEach(function (f) { flagBtn[f[0]].setAttribute('aria-pressed', spec[f[0]] ? 'true' : 'false'); });
-      $('telldesc').textContent = TELLTXT[spec.tell]; $('behavedesc').textContent = BEHAVETXT[spec.behave];
-      if (document.activeElement !== json) json.value = JSON.stringify(spec);
-      try { localStorage.setItem('creatureeditor2', JSON.stringify(spec)); } catch (e) {}
-      var pl = Math.round(spec.plan); $('sec-animal').hidden = !(pl === 5 || pl === 6); $('sec-troll').hidden = !(pl === 7 || pl === 8 || pl === 9);
-    }
-    function gameOverrides() { try { return JSON.parse(localStorage.getItem(GAME_KEY)) || {}; } catch (e) { return {}; } }
-    function refreshLibrary() {
-      var host = $('library'); host.innerHTML = ''; var names = Object.keys(library).sort();
-      if (!names.length) { var em = document.createElement('span'); em.className = 'desc'; em.textContent = 'Nothing saved yet'; host.appendChild(em); }
-      names.forEach(function (nm) { var b = document.createElement('button'); b.textContent = nm; b.setAttribute('aria-pressed', nm === meta.name ? 'true' : 'false'); b.addEventListener('click', function () { spec = clone(library[nm]); meta.name = nm; if (library[nm].__slot) meta.slot = library[nm].__slot; saveMeta(); apply(); respawn(); refreshLibrary(); b.blur(); }); host.appendChild(b); });
-      $('cname').value = meta.name; $('slot').value = meta.slot;
-      var g = gameOverrides(), lines = MODEL_KEYS.filter(function (k) { return g[k]; }).map(function (k) { return lib.animals[k].name + ': ' + (g[k].__name || 'a design from here'); });
-      $('gameStatus').textContent = lines.length ? 'In the game: ' + lines.join('; ') : 'The game uses its own beasts.';
-    }
-    function saveMeta() { try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {} }
-    var sel = $('slot'); MODEL_KEYS.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = lib.animals[k].name; sel.appendChild(o); });
-    sel.addEventListener('change', function () { meta.slot = sel.value; saveMeta(); refreshLibrary(); });
-    $('cname').addEventListener('change', function (e) { meta.name = e.target.value.trim(); saveMeta(); });
-    $('savec').addEventListener('click', function (e) { var nm = $('cname').value.trim(); if (!nm) { $('cname').focus(); return; } var sp = clone(spec); sp.__slot = meta.slot; library[nm] = sp; meta.name = nm; saveMeta(); try { localStorage.setItem(LIB_KEY, JSON.stringify(library)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
-    $('newc').addEventListener('click', function (e) { meta.name = ''; saveMeta(); $('cname').value = ''; refreshLibrary(); $('cname').focus(); e.currentTarget.blur(); });
-    $('delc').addEventListener('click', function (e) { if (meta.name && library[meta.name]) { delete library[meta.name]; try { localStorage.setItem(LIB_KEY, JSON.stringify(library)); } catch (err) {} } meta.name = ''; saveMeta(); refreshLibrary(); e.currentTarget.blur(); });
-    $('useGame').addEventListener('click', function (e) { var g = gameOverrides(), sp = clone(spec); sp.__name = meta.name || null; g[meta.slot] = sp; try { localStorage.setItem(GAME_KEY, JSON.stringify(g)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
-    $('takeBack').addEventListener('click', function (e) { var g = gameOverrides(); delete g[meta.slot]; try { localStorage.setItem(GAME_KEY, JSON.stringify(g)); } catch (err) {} refreshLibrary(); e.currentTarget.blur(); });
-    function getSpec() { return spec; }
-    sliders($('panimal'), ANIMAL, getSpec, apply, inputs, outputs);
-    FLAGS.forEach(function (f) { var b = document.createElement('button'); b.textContent = f[1]; b.addEventListener('click', function () { spec[f[0]] = spec[f[0]] ? 0 : 1; apply(); b.blur(); }); $('flags').appendChild(b); flagBtn[f[0]] = b; });
-    sliders($('pshape'), SHAPE, getSpec, apply, inputs, outputs); sliders($('peyes'), EYES, getSpec, apply, inputs, outputs); sliders($('pbehave'), BEHAVE, getSpec, apply, inputs, outputs); sliders($('ptone'), TONE, getSpec, apply, inputs, outputs); sliders($('ptroll'), TROLL, getSpec, apply, inputs, outputs);
-    TFLAGS.forEach(function (f) { var b = document.createElement('button'); b.textContent = f[1]; b.addEventListener('click', function () { spec[f[0]] = spec[f[0]] ? 0 : 1; apply(); b.blur(); }); $('tflags').appendChild(b); flagBtn[f[0]] = b; });
-    var PLAN_SHOWN = { 5: 1, 6: 1, 8: 1, 9: 1 };
-    Object.keys(CHOICES).forEach(function (key) {
-      var host = $('c-' + key); if (!host) return;
-      CHOICES[key].forEach(function (nm, n) {
-        if (key === 'plan' && !PLAN_SHOWN[n]) return;
-        var b = document.createElement('button'); b.textContent = nm; if (key === 'plan') b.setAttribute('data-n', n);
-        b.addEventListener('click', function () { var was = spec.behave; spec[key] = n; apply(); if (key === 'behave' && was !== n) respawn(); b.blur(); }); host.appendChild(b);
-      });
-    });
-    COLS.forEach(function (cdef) {
-      var lab = document.createElement('label'); lab.className = 'sw'; var inp = document.createElement('input'); inp.type = 'color'; var name = document.createElement('span'); name.textContent = cdef[1];
-      inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); }); lab.appendChild(inp); lab.appendChild(name); $('swatches').appendChild(lab); swatch[cdef[0]] = inp;
-    });
-    try { localStorage.removeItem('creature.rig'); } catch (e) {}
-    MODELS.forEach(function (m, mi) {
-      var b = document.createElement('button'); b.textContent = m.name;
-      b.addEventListener('click', function () { var k; spec = clone(lib.creatureDef); for (k in m.set) spec[k] = m.set[k]; for (k in m.col) spec.col[k] = m.col[k]; meta.slot = MODEL_KEYS[mi]; meta.name = ''; saveMeta(); refreshLibrary(); apply(); respawn(); b.blur(); });
-      $('models').appendChild(b);
-    });
-    $('mark').addEventListener('click', function (e) { spec.mark = spec.mark ? 0 : 1; apply(); e.currentTarget.blur(); });
-    function pickN(n) { return Math.floor(Math.random() * n); }
-    $('random').addEventListener('click', function (e) {
-      var keep = spec.behave, h = rnd(0, 360);
-      spec = clone(lib.creatureDef); spec.behave = keep;
-      ['eyeStyle', 'tail', 'pattern', 'tell'].forEach(function (k) { spec[k] = pickN(CHOICES[k].length); }); spec.plan = [5, 5, 6, 8, 9][pickN(5)];
-      SHAPE.forEach(function (p) { if (p.k !== 'size') spec[p.k] = rnd(p.min + (p.max - p.min) * 0.2, p.max - (p.max - p.min) * 0.25); });
-      spec.size = [0.8, 1, 1, 1.2, 1.5][pickN(5)]; spec.eyes = 1 + pickN(4); spec.eyeSize = rnd(0.8, 1.4);
-      spec.col.body = hsl(h, rnd(0.25, 0.6), rnd(0.32, 0.55)); spec.col.belly = hsl(h + rnd(-30, 30), rnd(0.3, 0.6), rnd(0.7, 0.85)); spec.col.glow = hsl(h + 180 + rnd(-50, 50), 0.95, 0.6);
-      apply(); e.currentTarget.blur();
-    });
-    $('copy').addEventListener('click', function (e) { copyText(json, jsonmsg, JSON.stringify(spec)); e.currentTarget.blur(); });
-    $('applyjson').addEventListener('click', function (e) { var o = parseText(json, jsonmsg); if (o) { spec = o; apply(); respawn(); } e.currentTarget.blur(); });
-    /* the arena */
-    var TYPES = ['beast', 'brute', 'shooter', 'beast'], BASE_R = [7, 9, 8, 7];
-    function addOne() {
-      var n = Combat.dbg().W.enemies.filter(function (q) { return q.creature && !q.dead; }).length, e = Combat.spawn(TYPES[spec.behave]);
-      e.creature = true; e.size = 1; e.hp = e.maxHp = spec.hp; e.kind = spec.behave;
-      e.x = 200 + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 34; e.y = 92; e.state = 'idle'; e.awake = false; e.face = Math.PI / 2;
-      return e;
-    }
-    function respawn() { var n = Combat.dbg().W.enemies.filter(function (e) { return e.creature && !e.dead; }).length || 1; Combat.clear(); for (var i = 0; i < n; i++) addOne(); }
-    function act(id, fn) { var b = $(id); b.addEventListener('click', function () { fn(b); b.blur(); }); }
-    act('spawn', function () { addOne(); }); act('clear', function () { Combat.clear(); });
-    act('hold', function (b) { hold = !hold; b.setAttribute('aria-pressed', hold ? 'true' : 'false'); });
-    act('nodmg', function (b) { noDmg = !noDmg; b.setAttribute('aria-pressed', noDmg ? 'true' : 'false'); });
-    var poses = $('poses'), pctx = poses.getContext('2d');
-    var POSES = [['Standing', 'idle', 0], ['Moving', 'chase', 1], ['Warning', 'windup', 0], ['Attacking', 'lunge', 1], ['Stunned', 'stunned', 0]];
-    function drawPoses(t) {
-      var z = Math.min(3.2, 2.6 / Math.max(0.6, spec.size * 0.75));
-      pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = '#d9c9a0'; pctx.fillRect(0, 0, 800, 210); pctx.lineJoin = 'round'; pctx.lineCap = 'round';
-      POSES.forEach(function (p, i) {
-        var cx = 80 + i * 160;
-        pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.fillStyle = 'rgba(60,40,20,0.16)'; pctx.beginPath(); pctx.ellipse(cx, 172, 34, 9, 0, 0, Math.PI * 2); pctx.fill();
-        pctx.fillStyle = '#5b4a3a'; pctx.font = '600 15px system-ui, sans-serif'; pctx.textAlign = 'center'; pctx.fillText(p[0], cx, 200);
-        pctx.setTransform(z, 0, 0, z, cx, 172);
-        lib.creatureD(pctx, 0, 0, { t: t, move: p[2], phase: t * 9 * spec.stepRate, dir: 1, look: [1, 0.2], state: p[1], k: p[1] === 'windup' ? (t / Math.max(0.2, spec.windup)) % 1 : 0.5 });
-      });
-    }
-    var saved = null;
-    try { saved = JSON.parse(localStorage.getItem('creatureeditor2')); if (saved && typeof saved === 'object' && PLAN_SHOWN[Math.round(saved.plan)]) spec = saved; else saved = null; } catch (e) { saved = null; }
-    if (!saved) { var k0; spec = clone(lib.creatureDef); for (k0 in MODELS[0].set) spec[k0] = MODELS[0].set[k0]; for (k0 in MODELS[0].col) spec.col[k0] = MODELS[0].col[k0]; }
-    apply(); refreshLibrary();
-    var clock = 0;
-    return {
-      enter: function () { cv.classList.remove('dark'); Combat.api.roster = []; Combat.reset(); Combat.api.scene = null; attachHero(); apply(); addOne(); },
-      leave: function () {},
-      tick: function (dt) {
-        clock += dt; var D = Combat.dbg();
-        D.W.enemies.forEach(function (e) {
-          if (!e.creature) return;
-          e.hold = hold; e.r = Math.max(4, Math.min(40, BASE_R[e.kind || 0] * spec.size)); e.aggro = spec.aggro; e.flee = spec.behave === 3;
-          var A2 = (spec.behave === 0 || spec.behave === 3) && lib.animalAttack(meta.slot); e.cfg = { speed: 58 * spec.speed, windup: spec.windup, lunge: 175 * spec.lunge, dmg: 12, atk: A2 || undefined };
-        });
-        if (noDmg && !D.P.dead) D.P.hp = D.P.maxHp;
-        if (D.P.dead) { Combat.reset(); Combat.clear(); addOne(); }
-      },
-      after: function () { drawPoses(clock); }
-    };
-  })();
-
   /* ================= Objects: one world prop at a time (the old Object Editor) ================= */
   TABS.objects = (function () {
     var sc = scope('objects'), $ = sc.$;
@@ -9186,7 +8926,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function show(name) {
     if (!TABS[name]) name = 'models';
     if (curTab && TABS[curTab].leave) TABS[curTab].leave();
-    ['creatures', 'objects', 'models'].forEach(function (n) { document.getElementById('left-' + n).hidden = n !== name; document.getElementById('right-' + n).hidden = n !== name; });
+    ['objects', 'models'].forEach(function (n) { document.getElementById('left-' + n).hidden = n !== name; document.getElementById('right-' + n).hidden = n !== name; });
     Array.prototype.forEach.call(tabBtns, function (b) { b.setAttribute('aria-pressed', b.dataset.tab === name ? 'true' : 'false'); });
     curTab = name; TABS[name].enter(); try { localStorage.setItem('arteditor.tab', name); } catch (e) {}
   }

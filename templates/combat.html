@@ -9,133 +9,165 @@
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
-  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5;
+  --bg:#eceff3; --card:#ffffff; --ink:#1f2430; --ink2:#5b6475; --line:#d8dde6; --accent:#2f8f6b; --btn:#f3f5f8; --btnh:#e4e8ee; --key:#eef1f5; --log:#f6f7f9;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+    --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b; --log:#161920;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b;
+  --bg:#14171d; --card:#1d212a; --ink:#eef1f6; --ink2:#9aa4b5; --line:#2d3340; --accent:#5fcf9f; --btn:#262b36; --btnh:#303644; --key:#2a2f3b; --log:#161920;
 }
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;padding:16px 14px 28px}
-main{max-width:960px;margin:0 auto}
+main{max-width:2400px;margin:0 auto}
 h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
-.lede{margin:0 0 14px;color:var(--ink2);max-width:64ch}
+.lede{margin:0 0 14px;color:var(--ink2);max-width:80ch}
+.wrap{display:grid;grid-template-columns:1fr;gap:12px;align-items:start}
+@media (min-width:1100px){.wrap{grid-template-columns:minmax(0,1.6fr) minmax(360px,1fr)}}
 .stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
 canvas{display:block;width:100%;height:auto;border-radius:8px;background:#8fd66d;cursor:crosshair;touch-action:none}
 .panel{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.panel:first-child{margin-top:0}
 .panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
-.group{display:flex;flex-wrap:wrap;gap:8px}
-button{min-height:44px;padding:0 14px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;cursor:pointer}
+.panel h2.more{margin-top:12px}
+.group{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.group label{font-size:.88rem;color:var(--ink2)}
+button{min-height:40px;padding:0 12px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit;cursor:pointer}
 button:hover{background:var(--btnh)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+select{min-height:40px;padding:0 10px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit}
 .desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem;min-height:1.3em}
-.cols{display:grid;grid-template-columns:1fr;gap:12px}
-@media (min-width:760px){.cols{grid-template-columns:1fr 1fr}}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
 kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .keys dt{white-space:nowrap}
 .keys dd{margin:0;color:var(--ink2)}
-.note{margin:10px 2px 0;color:var(--ink2);font-size:.88rem;max-width:72ch}
+.log{margin:0;padding:8px 10px;background:var(--log);border:1px solid var(--line);border-radius:8px;font:.84rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-height:6em;max-height:16em;overflow:auto;white-space:pre-wrap}
+.log .me{color:var(--accent)}
+.log .bad{color:#d4654a}
+.tally{margin:6px 2px 0;color:var(--ink2);font-size:.86rem}
 </style>
 </head>
 <body>
 <main>
   <a href="index.html" style="display:inline-block;margin:0 0 6px;color:inherit;opacity:.7;font-size:.9rem;text-decoration:none">&larr; Back to menu</a>
   <h1>Combat Arena</h1>
-  <p class="lede">Fight the animals of the first islands: wolves, boars, snakes and the bear. Everything works from the keyboard alone. The mouse is only used to aim the ranged weapon, and you can switch that to auto.</p>
-  <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Combat arena"></canvas></div>
+  <p class="lede">The fight on its own, on the game's own engine: what is tuned here is what the game and the raids fight with (<code>src/combat.js</code>, the weapons' numbers in <code>docs/weapons.md</code>, the men's in <code>MEN</code>). Beasts and men against you, hirdmen beside you, every weapon, the shield and the gear, the clock slowed, the blows drawn and written down. Everything works from the keyboard; the mouse only aims the bow.</p>
 
-  <div class="cols">
-    <section class="panel">
-      <h2>Melee aiming</h2>
-      <div class="group" id="aim">
-        <button data-aim="facing" aria-pressed="false">Facing</button>
-        <button data-aim="soft" aria-pressed="true">Soft aim</button>
-        <button data-aim="lock" aria-pressed="false">Target lock</button>
-      </div>
-      <p class="desc" id="aimdesc"></p>
-      <h2 style="margin-top:14px">Ranged aiming</h2>
-      <div class="group" id="rng">
-        <button data-r="mouse" aria-pressed="true">Mouse</button>
-        <button data-r="auto" aria-pressed="false">Auto</button>
-      </div>
-      <p class="desc" id="rngdesc"></p>
-      <h2 style="margin-top:14px">Hit weight</h2>
-      <div class="group" id="wgt">
-        <button data-w="snappy" aria-pressed="true">Snappy</button>
-        <button data-w="normal" aria-pressed="false">Normal</button>
-        <button data-w="heavy" aria-pressed="false">Heavy</button>
-      </div>
-      <p class="desc" id="wgtdesc"></p>
-      <h2 style="margin-top:14px">Crit chance</h2>
-      <div class="group" id="crt">
-        <button data-c="0" aria-pressed="false">Off</button>
-        <button data-c="0.15" aria-pressed="true">15%</button>
-        <button data-c="0.5" aria-pressed="false">50%</button>
-        <button data-c="1" aria-pressed="false">Always</button>
-      </div>
-      <p class="desc">A crit hits for 50% more, shows in yellow, and rattles the enemy: it moves and attacks 30% slower for a moment.</p>
-      <h2 style="margin-top:14px">Options</h2>
-      <div class="group">
-        <button id="shield" aria-pressed="true">Shield</button>
-        <button id="juice" aria-pressed="true">Juice</button>
-        <button id="sound" aria-pressed="true">Sound</button>
-      </div>
-      <p class="desc" id="optdesc"></p>
-    </section>
-    <section class="panel">
-      <h2>Weapons</h2>
-      <div class="group" id="melee"></div>
-      <p class="desc" id="meleedesc"></p>
-      <div class="group" id="ranged" style="margin-top:8px"></div>
-      <p class="desc" id="rangeddesc"></p>
-      <div class="group" style="margin-top:8px" id="mats"></div>
-      <p class="desc">F swaps between the melee weapon and the ranged one. Each fights its own way (docs/weapons.md): the arc, reach and pace of a hit, how many chain, and what sets it apart. Thrown things are endless here; in the game they lie where they fall.</p>
-    </section>
-    <section class="panel">
-      <h2>Arena</h2>
-      <div class="group">
-        <button id="sbeast">Add wolf</button>
-        <button id="sshooter">Add boar</button>
-        <button id="sbrute">Add bear</button>
-        <button id="sboss">Add snake</button>
-        <button id="smoose">Add moose</button>
-        <button id="sdeer">Add deer</button>
-        <button id="stroll">Add mountain troll</button>
-        <button id="stroll2">Add forest troll</button>
-        <button id="stroll3">Add the Gape</button>
-        <button id="stroll4">Add the three-headed troll</button>
-        <button id="sdraugr">Add draugr</button>
-        <button id="shuldra">Add huldra</button>
-        <button id="snacken">Add Näcken</button>
-        <button id="sbysen">Add bysen</button>
-        <button id="sclear">Clear</button>
-        <button id="sreset">Reset</button>
-      </div>
-      <h2 style="margin-top:14px">Controls</h2>
-      <dl class="keys">
-        <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move</dd>
-        <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack (three-hit combo, the third hits harder). You can keep moving while you swing</dd>
-        <dt>Hold <kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Charge a heavy swing for up to a second, then let go. Dash or block to cancel</dd>
-        <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Hold to block. Press just before a hit to parry</dd>
-        <dt>Hold <kbd>Shift</kbd></dt><dd>Sprint while moving. It drains stamina and stops when you run out</dd>
-        <dt><kbd>Space</kbd></dt><dd>Dash. A quick sidestep in the direction you move (a backstep if you stand still), with brief invulnerability. You dash through enemies</dd>
-        <dt><kbd>Q</kbd></dt><dd>Switch between fight and gather mode</dd>
-        <dt><kbd>F</kbd></dt><dd>Fight mode: swap between the melee weapon and the ranged one. With the bow out, the attack button shoots (at the mouse cursor, or automatically)</dd>
-        <dt><kbd>Ctrl</kbd></dt><dd>Target the nearest enemy; press again for the next nearest, then to let go</dd>
-        <dt><kbd>1</kbd> to <kbd>3</kbd></dt><dd>Gather mode: axe, pickaxe, knife. The right tool does full damage, the wrong one half</dd>
-        <dt><kbd>H</kbd></dt><dd>Add a wolf or a boar</dd>
-        <dt><kbd>R</kbd></dt><dd>Restart after you are scrapped</dd>
-      </dl>
-    </section>
+  <div class="wrap">
+    <div>
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Combat arena"></canvas></div>
+      <section class="panel">
+        <h2>The last blows</h2>
+        <pre class="log" id="log" aria-live="polite"></pre>
+        <p class="tally" id="tally"></p>
+        <p class="desc">What landed on whom and what it cost, newest first: a dodge (a blow that came during a dash), a parry, a block and what got through, a hit on a man's shield, a guard broken, a kill. The clock is the arena's own seconds.</p>
+      </section>
+      <section class="panel">
+        <h2>Controls</h2>
+        <dl class="keys">
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint (it drains stamina)</dd>
+          <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack: a chain of blows, the last one harder. Hold it to charge a heavy blow, let go to strike</dd>
+          <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Hold to guard. Raised in the instant a blow lands it is a parry. With a shield on the arm the guard is wide and strong and stops arrows; without, you only fend</dd>
+          <dt><kbd>Space</kbd></dt><dd>Dash in the direction you move (a backstep standing still): a moment untouchable, and through a foe to his back</dd>
+          <dt><kbd>F</kbd></dt><dd>Swap between the melee weapon and the ranged one. With the bow out the attack button shoots</dd>
+          <dt><kbd>G</kbd></dt><dd>Your men: tapped, they break off and come to you; held, they hold a line where you stand</dd>
+          <dt><kbd>Ctrl</kbd></dt><dd>Target the nearest foe; again for the next, then to let go</dd>
+          <dt><kbd>Q</kbd> <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></dt><dd>Gather mode and its tools (axe, pick, knife): tools do not hurt anybody</dd>
+          <dt><kbd>H</kbd></dt><dd>Add a wolf or a boar</dd>
+          <dt><kbd>R</kbd></dt><dd>Rise again after falling</dd>
+        </dl>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel">
+        <h2>You</h2>
+        <div class="group" id="melee"></div>
+        <p class="desc" id="meleedesc"></p>
+        <div class="group" id="ranged" style="margin-top:8px"></div>
+        <p class="desc" id="rangeddesc"></p>
+        <div class="group" style="margin-top:8px" id="mats"></div>
+        <h2 class="more">What you wear</h2>
+        <div class="group" id="gear"></div>
+        <div class="group" style="margin-top:8px">
+          <button id="shield" aria-pressed="true">A shield on the arm</button>
+          <button id="heal">Heal</button>
+          <button id="immortal" aria-pressed="false">Never fall</button>
+        </div>
+        <p class="desc" id="geardesc"></p>
+      </section>
+
+      <section class="panel">
+        <h2>Men</h2>
+        <div class="group">
+          <label for="mwpn">Against you:</label>
+          <select id="mwpn" aria-label="The man's weapon"></select>
+          <select id="mgear" aria-label="What the man wears"></select>
+          <select id="mwits" aria-label="The man's wits"></select>
+          <button id="addman">Add one</button>
+        </div>
+        <div class="group" style="margin-top:8px">
+          <label for="fwpn">Beside you:</label>
+          <select id="fwpn" aria-label="The hirdman's weapon"></select>
+          <select id="fgear" aria-label="What the hirdman wears"></select>
+          <button id="addfriend">Add a hirdman</button>
+        </div>
+        <h2 class="more">Set pieces</h2>
+        <div class="group">
+          <button id="setone">One against you</button>
+          <button id="settwo">Two</button>
+          <button id="setfriend">Two, one beside you</button>
+          <button id="setfive">Five against five</button>
+          <button id="setbows">Five against five, a bowman each</button>
+          <button id="setline">Three against your line of three</button>
+        </div>
+        <h2 class="more">They come</h2>
+        <div class="group" id="ways"></div>
+        <p class="desc" id="waydesc"></p>
+        <div class="group" style="margin-top:8px">
+          <button id="sclear">Clear the field</button>
+          <button id="sreset">Start over</button>
+        </div>
+        <p class="desc">A man fights as in the game: he shows his blow coming, keeps his weapon's reach, guards with his shield if he has one, yields or runs when it goes badly. Your men wear your red; theirs carry blue shields. They come at a man by the way chosen (one at a time by default, as the game runs).</p>
+      </section>
+
+      <section class="panel">
+        <h2>Beasts</h2>
+        <div class="group" id="beasts"></div>
+        <p class="desc">Each fights its own way (<code>ATTACKS</code> in <code>src/art.js</code>): the boar charges past, the wolves ring you and bite one at a time, the bear rears and comes down with both paws, the adder's bite poisons, the moose gores. The trolls sweep slow and hard. The huldra, Näcken and the bysen do not fight.</p>
+      </section>
+
+      <section class="panel">
+        <h2>The clock and the eye</h2>
+        <div class="group" id="clock">
+          <button data-k="1" aria-pressed="true">As it runs</button>
+          <button data-k="0.5">Half speed</button>
+          <button data-k="0.25">A quarter</button>
+        </div>
+        <div class="group" style="margin-top:8px">
+          <button id="show" aria-pressed="false">Show the blows</button>
+          <button id="hold" aria-pressed="false">Hold them still</button>
+          <button id="sound" aria-pressed="true">Sound</button>
+        </div>
+        <p class="desc">Show the blows draws your weapon's reach and arc (amber while you wind up, red as it lands), your guard (white in the instant it would parry, blue after), the dash while it keeps you untouchable, and on every man his reach, his blow filling as he winds up, and his shield's cover.</p>
+        <h2 class="more">Aiming</h2>
+        <div class="group" id="aim">
+          <button data-aim="facing" aria-pressed="false">Facing</button>
+          <button data-aim="soft" aria-pressed="true">Soft aim</button>
+          <button data-aim="lock" aria-pressed="false">Target lock</button>
+        </div>
+        <p class="desc" id="aimdesc"></p>
+        <div class="group" id="rng" style="margin-top:8px">
+          <button data-r="mouse" aria-pressed="true">The bow aims at the mouse</button>
+          <button data-r="auto" aria-pressed="false">The bow aims itself</button>
+        </div>
+      </section>
+    </div>
   </div>
-  <p class="note">Try these: hold the attack button for a charged swing, keep moving while you swing, dash through a wolf to get behind it, parry a boar's charge, and fill the bear's stagger bar to stun it. Then turn Juice off to feel the stiff version of the same combat.</p>
 </main>
 <script>
 __ART__
@@ -144,7 +176,7 @@ __COMBAT__
 __SPRITES_JS__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-  // Every enemy in this arena wears an animal: the plain attacker is a wolf, boar or snake, the big one is the bear.
+  // Every beast in this arena wears an animal: the plain attacker is a wolf, boar or snake, the big one is the bear.
   var lib = GameArt.lib, want = null, BASE_R = { wolf: 7, boar: 8, snake: 5, bear: 9, moose: 7, deer: 6, troll: 5, trollForest: 4.5, trollMaw: 5.5, trollThree: 4.5, draugr: 7, huldra: 7, nacken: 7, bysen: 8 };
   Combat.api.roster = ['beast', 'beast'];
   Combat.api.dress = function (e) {
@@ -157,40 +189,61 @@ __SPRITES_JS__
     if (k === 'huldra' || k === 'nacken' || k === 'bysen') { e.aggro = 1; e.flee = true; }   // no fighters: they stand until struck, then run (their own ways are not decided)
     if (e.type === 'beast') e.hp = e.maxHp = sp.hp;
   };
-  lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
+  lib.applyStored(localStorage);                            // the hero the editors handed to the game, from one place
   Combat.init(GameArt.lib);
-  var ARENA_HERO = Sprites.hero(__SPRITES__ || {}, localStorage);
-  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, trollForest: { sheet: 'troll_forest', deadFor: 3 }, trollMaw: { sheet: 'troll_maw', deadFor: 3 }, trollThree: { sheet: 'troll_three', deadFor: 3 }, draugr: { deadFor: 2.5 }, huldra: { deadFor: 2.5 }, nacken: { deadFor: 2.5 }, bysen: { deathClip: 'hide', deadFor: 2.5 } };   // the animals modelled in Blender (2026-10-11)
-  Object.keys(ARENA_BOPT).forEach(function (bk) { var SPA = __SPRITES__ || {}, sh = ARENA_BOPT[bk].sheet || bk; if (SPA[sh]) ARENA_BEASTS[bk] = Sprites.load(SPA, sh); });
-  Combat.api.enemySprite = function (c, e) { var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: bo.scale, deadFor: bo.deadFor, deathClip: bo.deathClip }); };
+  var SP = __SPRITES__ || {}, ARENA_HERO = Sprites.hero(SP, localStorage), PEOPLE = SP.people ? Sprites.loadLazy(SP, 'people') : null;
+  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, trollForest: { sheet: 'troll_forest', deadFor: 3 }, trollMaw: { sheet: 'troll_maw', deadFor: 3 }, trollThree: { sheet: 'troll_three', deadFor: 3 }, draugr: { deadFor: 3 }, huldra: { deadFor: 3 }, nacken: { deadFor: 3 }, bysen: { deadFor: 3, deathClip: 'hide' } };
+  Object.keys(ARENA_BOPT).forEach(function (bk) { var sh = ARENA_BOPT[bk].sheet || bk; if (SP[sh]) ARENA_BEASTS[bk] = Sprites.load(SP, sh); });
+  /* The men (2026-10-13): the game's soldiers, drawn from the people's sheets as the game draws them. A man is rolled a look of his
+     own (lib.folkSpec), a name, and what the Men panel says he carries and wears; your own wear your red. */
+  var YOURS = '#8a3a34', THEIRS = '#3f5a7a', NAMES = ['Ulf', 'Hakon', 'Leif', 'Gunnar', 'Eirik', 'Bjorn', 'Orm', 'Steinar', 'Ketil', 'Arni', 'Sigrid', 'Astrid', 'Thora', 'Ingrid', 'Helga', 'Runa'], WOMEN = ['Sigrid', 'Astrid', 'Thora', 'Ingrid', 'Helga', 'Runa'], nameN = 0;
+  Combat.api.dressMan = function (e, o) {
+    var sp = lib.folkSpec('villager', Math.random), nm = o.name || NAMES[(nameN++) % NAMES.length], woman = WOMEN.indexOf(nm) >= 0;
+    sp.hat = 0; sp.clothes = 1; if (woman) { sp.beard = 0; sp.hair = [2, 3, 7, 4][Math.floor(Math.random() * 4)]; }
+    e.spec = sp; e.kind = 'man'; e.name = nm; e.look = null;
+    e.lookX = { mail: !!o.mail, helm: !!o.helm, shield: e.shield ? (e.side === 1 ? YOURS : THEIRS) : null, cloak: e.side === 1 ? YOURS : null };
+    e.wpn.tint = (Items.MATS[e.wpn.mat] || Items.MATS.iron).face; if (e.side2) e.side2.tint = Items.MATS.iron.face;
+  };
+  Combat.api.enemySprite = function (c, e) {
+    if (e.type === 'soldier') { if (!PEOPLE || !e.spec) return false; var look = e.look || (e.look = Sprites.lookOf(e.spec, e.lookX || {})); return Sprites.fighter(c, PEOPLE, e, 0.75, look, { shadowHue: 222 }); }
+    var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: bo.scale, deadFor: bo.deadFor, deathClip: bo.deathClip });
+  };
+  var S = Combat.S; S.weight = 'snappy'; S.crit = 0.15; S.juice = true;   // the decided settings (hit weight Snappy, crit 15%): no longer switches here
+  /* the weapons: one melee and one ranged thing in hand (F swaps); the tools stay copper */
+  var arm = { melee: 'sword', ranged: 'bow', mat: 'iron' }, GEAR = [{ id: 'cloth', name: 'Cloth', armor: 0, text: 'Nothing turns a blow aside.' }, { id: 'leather', name: 'Leather', armor: 0.3, text: 'The leather set: 30% of every blow turned aside.' }, { id: 'mail', name: 'Mail and an iron helm', armor: 0.55, text: 'Mail, helm and leather: 55% turned aside, near the cap of 60.' }], gear = GEAR[1];
+  function armed(k) { return Items.make(k, arm.mat); }
+  function twoHands() { return arm.melee === 'greataxe'; }
+  Combat.api.items = {
+    held: function () { var P = Combat.dbg().P; if (P.mode === 'fight') return P.weapon === 'ranged' ? armed(arm.ranged) : armed(arm.melee); if (P.mode === 'gather') return Items.make(Combat.api.tools[P.tool].id, 'copper'); return null; },
+    tool: function (i) { return Items.make(Combat.api.tools[i].id, 'copper'); },
+    weapon: function (k) { return k === 'bow' ? armed(arm.ranged) : armed(arm.melee); }
+  };
+  Combat.api.armor = function () { return gear.armor; };
+  Combat.api.shield = function () { var P = Combat.dbg().P; return S.shield && P.mode === 'fight' && P.weapon !== 'ranged' && !twoHands(); };   // the shield on the arm is the strong guard (as in the game); a bow or a Dane axe takes both hands
   function arenaLayers(face) {
     var P = Combat.dbg().P, M = ARENA_HERO && ARENA_HERO.meta, out = ['body']; if (!M) return out;
     var kind = P.mode === 'fight' ? (P.weapon === 'ranged' ? arm.ranged : arm.melee) : P.mode === 'gather' ? (Combat.api.tools[P.tool] || {}).id : null;
     if (kind && M.layers.indexOf(kind + 'Wood') >= 0) out.push(kind + 'Wood');
     if (kind && M.layers.indexOf(kind + 'Metal') >= 0) out.push({ layer: kind + 'Metal', tint: (Items.MATS[arm.mat] || Items.MATS.iron).face });
-    if (Combat.S.shield && P.mode === 'fight' && P.weapon !== 'ranged' && arm.melee !== 'greataxe') out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, null);   /* (the Shield switch: a wooden shield on the arm, 2026-10-13) */
+    if (Combat.api.shield()) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, gear.id === 'cloth' ? null : { face: YOURS, mark: Sprites.SHIELD_MARK });   /* (a wooden shield in cloth, a painted one with the leather or the mail) */
     return out;
   }
   Sprites.attach(Combat, ARENA_HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var P = Combat.dbg().P, t = Combat.api.tools && Combat.api.tools[P.tool]; return t ? t.id : null; }, shadowHue: 222, layers: arenaLayers });
-  (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the Blender hero (2026-10-09; the arena has no kit, so the shadow hue is the ink look's 222)
-  var S = Combat.S;
-  /* the weapons: one melee and one ranged thing in hand, the copper kinds (2026-10-06); the tools stay copper too */
-  var arm = { melee: 'sword', ranged: 'bow', mat: 'copper' }, held = {};
-  function armed(k) { return Items.make(k, arm.mat); }
-  Combat.api.items = {
-    held: function () { var P = Combat.dbg().P; if (P.mode === 'fight') return P.weapon === 'ranged' ? armed(arm.ranged) : armed(arm.melee); if (P.mode === 'gather') return armed(Combat.api.tools[P.tool].id); return null; },
-    tool: function (i) { return armed(Combat.api.tools[i].id); },
-    weapon: function (k) { return k === 'bow' ? armed(arm.ranged) : armed(arm.melee); }
-  };
-  function armButtons(hostId, kinds, key, descId) {
+  (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the Blender icons for the hotbar
+  function btnRow(hostId, list, isOn, onPick) {
     var host = document.getElementById(hostId); host.innerHTML = '';
-    kinds.forEach(function (k) { var b = document.createElement('button'); b.textContent = Items.KINDS[k].name; b.setAttribute('aria-pressed', arm[key] === k); b.addEventListener('click', function () { arm[key] = k; var P = Combat.dbg().P; P.atk.ph = 'none'; P.atk.since = 9; armButtons(hostId, kinds, key, descId); b.blur(); }); host.appendChild(b); });
-    document.getElementById(descId).textContent = Items.KINDS[arm[key]].desc;
+    list.forEach(function (q) { var b = document.createElement('button'); b.textContent = q.name; b.setAttribute('aria-pressed', isOn(q) ? 'true' : 'false'); b.addEventListener('click', function () { onPick(q); btnRow(hostId, list, isOn, onPick); b.blur(); }); host.appendChild(b); });
   }
-  function matButtons() { var host = document.getElementById('mats'); host.innerHTML = ''; ['wood', 'flint', 'copper', 'bronze', 'iron'].forEach(function (m) { var b = document.createElement('button'); b.textContent = Items.MATS[m].name; b.setAttribute('aria-pressed', arm.mat === m); b.addEventListener('click', function () { arm.mat = m; matButtons(); b.blur(); }); host.appendChild(b); }); }
-  armButtons('melee', Items.MELEE, 'melee', 'meleedesc'); armButtons('ranged', Items.RANGED, 'ranged', 'rangeddesc'); matButtons();
+  function armRows() {
+    btnRow('melee', Items.MELEE.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.melee === q.id; }, function (q) { arm.melee = q.id; var P = Combat.dbg().P; P.atk.ph = 'none'; document.getElementById('meleedesc').textContent = Items.KINDS[q.id].desc; });
+    btnRow('ranged', Items.RANGED.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.ranged === q.id; }, function (q) { arm.ranged = q.id; document.getElementById('rangeddesc').textContent = Items.KINDS[q.id].desc; });
+    btnRow('mats', ['wood', 'flint', 'copper', 'bronze', 'iron'].map(function (m) { return { id: m, name: Items.MATS[m].name }; }), function (q) { return arm.mat === q.id; }, function (q) { arm.mat = q.id; });
+    btnRow('gear', GEAR, function (q) { return gear === q; }, function (q) { gear = q; document.getElementById('geardesc').textContent = q.text; });
+    document.getElementById('meleedesc').textContent = Items.KINDS[arm.melee].desc; document.getElementById('rangeddesc').textContent = Items.KINDS[arm.ranged].desc; document.getElementById('geardesc').textContent = gear.text;
+  }
+  armRows();
   var codes = { Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1 };
-  var held = {};
+  var held = {}, gDown = 0;
 
   /* sound */
   var AC = null;
@@ -230,20 +283,22 @@ __SPRITES_JS__
     raise: function () { tone(420, 0.04, 'triangle', 0.03); },
     charge: function (v) { tone(420 + (v || 0) * 220, 0.12, 'triangle', 0.05); if (v === 3) tone(1400, 0.2, 'sine', 0.06); }
   };
-  Combat.api.sfx = function (n, v) { if (SFX[n]) SFX[n](v); };
+  Combat.api.sfx = function (n, v) { if (S.sound && SFX[n]) SFX[n](v); };
 
   /* input */
   window.addEventListener('keydown', function (e) {
+    if (e.code === 'KeyG') { if (!e.repeat) gDown = performance.now(); e.preventDefault(); return; }
     if (!codes[e.code]) return;
     e.preventDefault(); ac();
     if (e.repeat) return;
     held[e.code] = true; Combat.key(e.code, true);
   });
   window.addEventListener('keyup', function (e) {
+    if (e.code === 'KeyG') { if (gDown) Combat.order(performance.now() - gDown > 380 ? 'hold' : 'follow'); gDown = 0; e.preventDefault(); return; }   // tapped: with me; held: hold here
     if (!codes[e.code]) return;
     e.preventDefault(); held[e.code] = false; Combat.key(e.code, false);
   });
-  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
+  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); gDown = 0; });
   function pos(e) {
     var r = cv.getBoundingClientRect();
     Combat.mouse((e.clientX - r.left) / r.width * 400, (e.clientY - r.top) / r.height * 250);
@@ -253,11 +308,11 @@ __SPRITES_JS__
   window.addEventListener('mouseup', function (e) { Combat.button(e.button, false); });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  /* ui */
+  /* aiming */
   var aimDesc = {
     facing: 'Attacks go where you are facing, with a wide swing and a small lunge. No aiming needed.',
-    soft: 'Attacks snap to the nearest enemy in front of you, and you turn smoothly to face it. With nothing there, you swing forward.',
-    lock: 'Press Q to lock onto the nearest enemy. You face it and strafe around it with WASD. Press Q again to release.'
+    soft: 'Attacks snap to the nearest foe in front of you, and you turn smoothly to face it. With nothing there, you swing forward.',
+    lock: 'Press Q to lock onto the nearest foe. You face it and strafe around it with WASD. Press Q again to release.'
   };
   var aimBtns = document.querySelectorAll('#aim button'), aimdesc = document.getElementById('aimdesc');
   function setAim(m) {
@@ -267,57 +322,108 @@ __SPRITES_JS__
   }
   for (var i = 0; i < aimBtns.length; i++) aimBtns[i].addEventListener('click', function (e) { setAim(e.currentTarget.getAttribute('data-aim')); e.currentTarget.blur(); });
   setAim('soft');
-                                    // the hero is the ink figure; the pixel-sprite look is gone from the page (2026-10-08)
-  var rngBtns = document.querySelectorAll('#rng button'), rngdesc = document.getElementById('rngdesc');
-  var rngTxt = { mouse: 'F fires toward the mouse cursor.', auto: 'F fires at the nearest enemy in front of you, or straight ahead. No mouse needed.' };
-  function setRng(m) {
-    S.ranged = m;
-    for (var i = 0; i < rngBtns.length; i++) rngBtns[i].setAttribute('aria-pressed', rngBtns[i].getAttribute('data-r') === m ? 'true' : 'false');
-    rngdesc.textContent = rngTxt[m];
-  }
+  var rngBtns = document.querySelectorAll('#rng button');
+  function setRng(m) { S.ranged = m; for (var i = 0; i < rngBtns.length; i++) rngBtns[i].setAttribute('aria-pressed', rngBtns[i].getAttribute('data-r') === m ? 'true' : 'false'); }
   for (var j = 0; j < rngBtns.length; j++) rngBtns[j].addEventListener('click', function (e) { setRng(e.currentTarget.getAttribute('data-r')); e.currentTarget.blur(); });
   setRng('mouse');
-  var wgtBtns = document.querySelectorAll('#wgt button'), wgtdesc = document.getElementById('wgtdesc');
-  var wgtTxt = { snappy: 'Short pauses and a light slow-mo beat. Hits land fast and combos flow.', normal: 'The previous setting: longer pauses and a slow-mo beat on heavy hits.', heavy: 'Long pauses and stronger knockback. Each hit feels big but the pace is slower.' };
-  function setWgt(m) {
-    S.weight = m;
-    for (var i = 0; i < wgtBtns.length; i++) wgtBtns[i].setAttribute('aria-pressed', wgtBtns[i].getAttribute('data-w') === m ? 'true' : 'false');
-    wgtdesc.textContent = wgtTxt[m];
-  }
-  for (var w = 0; w < wgtBtns.length; w++) wgtBtns[w].addEventListener('click', function (e) { setWgt(e.currentTarget.getAttribute('data-w')); e.currentTarget.blur(); });
-  setWgt('snappy');
-  var crtBtns = document.querySelectorAll('#crt button');
-  function setCrit(v) {
-    S.crit = v;
-    for (var i = 0; i < crtBtns.length; i++) crtBtns[i].setAttribute('aria-pressed', parseFloat(crtBtns[i].getAttribute('data-c')) === v ? 'true' : 'false');
-  }
-  for (var k = 0; k < crtBtns.length; k++) crtBtns[k].addEventListener('click', function (e) { setCrit(parseFloat(e.currentTarget.getAttribute('data-c'))); e.currentTarget.blur(); });
-  setCrit(0.15);
-  var optdesc = document.getElementById('optdesc');
-  function opt(id, key) {
-    var b = document.getElementById(id);
-    b.addEventListener('click', function () { S[key] = !S[key]; b.setAttribute('aria-pressed', S[key] ? 'true' : 'false'); upd(); b.blur(); });
-  }
-  opt('shield', 'shield'); opt('juice', 'juice'); opt('sound', 'sound');
-  function upd() {
-    var t = [];
-    t.push(S.shield ? 'Shield: wide parry window and strong blocking.' : 'No shield: parrying still works, but the window is tight and blocking is weak.');
-    t.push(S.juice ? 'Juice on: smooth movement, lunges, hit pauses, knockback, squash, impact rings, slow-mo on big hits, flashes and swing trails.' : 'Juice off: instant movement, slow stiff swings and no feedback.');
-    optdesc.textContent = t.join(' ');
-  }
-  upd();
+  function toggle(id, get, set) { var b = document.getElementById(id); b.setAttribute('aria-pressed', get() ? 'true' : 'false'); b.addEventListener('click', function () { set(!get()); b.setAttribute('aria-pressed', get() ? 'true' : 'false'); b.blur(); }); }
   function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(); b.blur(); }); }
-  act('sbeast', function () { want = 'wolf'; Combat.spawn('beast'); });
-  act('sshooter', function () { want = 'boar'; Combat.spawn('beast'); });
-  act('sbrute', function () { Combat.spawn('brute'); });
-  act('sboss', function () { want = 'snake'; Combat.spawn('beast'); });
-  [['smoose', 'moose'], ['sdeer', 'deer'], ['stroll', 'troll'], ['stroll2', 'trollForest'], ['stroll3', 'trollMaw'], ['stroll4', 'trollThree'], ['sdraugr', 'draugr'], ['shuldra', 'huldra'], ['snacken', 'nacken'], ['sbysen', 'bysen']].forEach(function (b) { act(b[0], function () { want = b[1]; Combat.spawn('beast'); }); });
-  act('sclear', function () { Combat.clear(); });
-  act('sreset', function () { Combat.reset(); });
+  var immortal = false, holdAll = false, showBlows = false, clockK = 1;
+  toggle('shield', function () { return S.shield; }, function (v) { S.shield = v; });
+  toggle('immortal', function () { return immortal; }, function (v) { immortal = v; });
+  toggle('hold', function () { return holdAll; }, function (v) { holdAll = v; Combat.dbg().W.enemies.forEach(function (e) { e.hold = v; }); });
+  toggle('show', function () { return showBlows; }, function (v) { showBlows = v; });
+  toggle('sound', function () { return S.sound; }, function (v) { S.sound = v; });
+  act('heal', function () { var P = Combat.dbg().P; P.hp = P.maxHp; P.st = 100; });
+  var clockBtns = document.querySelectorAll('#clock button');
+  for (var ci = 0; ci < clockBtns.length; ci++) clockBtns[ci].addEventListener('click', function (e) { clockK = parseFloat(e.currentTarget.getAttribute('data-k')); for (var i = 0; i < clockBtns.length; i++) clockBtns[i].setAttribute('aria-pressed', clockBtns[i] === e.currentTarget ? 'true' : 'false'); e.currentTarget.blur(); });
+
+  /* the beasts */
+  var BEAST_BTNS = [['wolf', 'Wolf', 'beast'], ['boar', 'Boar', 'beast'], ['snake', 'Adder', 'beast'], ['bear', 'Bear', 'brute'], ['moose', 'Moose', 'beast'], ['deer', 'Deer', 'beast'], ['troll', 'Mountain troll', 'beast'], ['trollForest', 'Forest troll', 'beast'], ['trollMaw', 'The Gape', 'beast'], ['trollThree', 'Three-headed troll', 'beast'], ['draugr', 'Draugr', 'beast'], ['huldra', 'Huldra', 'beast'], ['nacken', 'Näcken', 'beast'], ['bysen', 'Bysen', 'beast']];
+  (function () { var host = document.getElementById('beasts'); BEAST_BTNS.forEach(function (q) { var b = document.createElement('button'); b.textContent = q[1]; b.addEventListener('click', function () { want = q[0]; var e = Combat.spawn(q[2]); if (holdAll) e.hold = true; b.blur(); }); host.appendChild(b); });
+    var b2 = document.createElement('button'); b2.textContent = 'A pair of wolves'; b2.addEventListener('click', function () { want = 'wolf'; Combat.spawn('beast'); want = 'wolf'; Combat.spawn('beast'); b2.blur(); }); host.appendChild(b2); })();
+
+  /* the men */
+  var MWPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'], MGEAR = [{ name: 'cloth, no shield', armor: 0, shield: false }, { name: 'leather and a shield', armor: 0.2, shield: true }, { name: 'mail, a helm and a shield', armor: 0.45, shield: true, mail: true, helm: true }], MWITS = [{ name: 'dull', v: 1 }, { name: 'steady', v: 4 }, { name: 'sharp', v: 7 }];
+  function fill(id, list, name) { var s = document.getElementById(id); s.innerHTML = ''; list.forEach(function (q, i) { var o = document.createElement('option'); o.value = String(i); o.textContent = name(q); s.appendChild(o); }); return s; }
+  var mwpn = fill('mwpn', MWPN, function (k) { return Items.KINDS[k].name; }), mgear = fill('mgear', MGEAR, function (g) { return g.name; }), mwits = fill('mwits', MWITS, function (w) { return w.name; }), fwpn = fill('fwpn', MWPN, function (k) { return Items.KINDS[k].name; }), fgear = fill('fgear', MGEAR, function (g) { return g.name; });
+  mgear.value = '1'; mwits.value = '1'; fgear.value = '1';
+  function spawnMan(side, x, y, wpn, gear, wits) {
+    var G = MGEAR[gear] || MGEAR[1], P = Combat.dbg().P;
+    x = Math.max(20, Math.min(AWp() - 20, x)); y = Math.max(40, Math.min(AHp() - 20, y));
+    var e = Combat.soldier({ side: side, x: x, y: y, wpn: { kind: wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: 30, strength: 4, wits: wits != null ? wits : 4, aim: 4, loyal: false, nerve: 0.55, mail: G.mail && wpn !== 'bow', helm: G.helm });
+    e.face = Math.atan2(P.y - y, P.x - x); if (holdAll) e.hold = true; return e;
+  }
+  function AWp() { return 400; } function AHp() { return 333; }
+  var MIX = ['axe', 'spear', 'sword', 'club', 'seax'];
+  function resetLog() { logLines.length = 0; tally = { hits: 0, dealt: 0, taken: 0, parried: 0, blocked: 0, dodged: 0, kills: 0 }; drawLog(); }
+  function clearField() { Combat.clear(); resetLog(); }
+  function placeHero() { var P = Combat.dbg().P; P.x = 200; P.y = 220; P.vx = P.vy = 0; P.face = -Math.PI / 2; P.hp = P.maxHp; P.st = 100; }
+  function setPiece(id) {
+    clearField(); placeHero(); var P = Combat.dbg().P, wk = MWPN[+mwpn.value], g = +mgear.value, wv = MWITS[+mwits.value].v, fk = MWPN[+fwpn.value], fg = +fgear.value, i;
+    if (id === 'one') spawnMan(0, P.x, P.y - 90, wk, g, wv);
+    else if (id === 'two' || id === 'friend') { spawnMan(0, P.x - 30, P.y - 90, wk, g, wv); spawnMan(0, P.x + 30, P.y - 98, MIX[(+mwpn.value + 1) % MIX.length], g, wv); if (id === 'friend') spawnMan(1, P.x + 30, P.y + 30, fk, fg); }
+    else if (id === 'five' || id === 'bows') { var nb = id === 'bows' ? 1 : 0; for (i = 0; i < 5; i++) spawnMan(0, P.x + (i - 2) * 36, P.y - 110 - (i % 2) * 14 - (i >= 5 - nb ? 50 : 0), i >= 5 - nb ? 'bow' : i === 2 ? wk : MIX[i], g, i === 2 ? wv : null); for (i = 0; i < 4; i++) spawnMan(1, P.x + (i - 1.5) * 36, P.y + 36 + (i % 2) * 14 + (i >= 4 - nb ? 50 : 0), i >= 4 - nb ? 'bow' : i === 0 ? fk : MIX[(i + 2) % MIX.length], fg); }
+    else if (id === 'line') { for (i = 0; i < 3; i++) spawnMan(0, P.x + (i - 1) * 40, P.y - 120 - (i % 2) * 12, MIX[i], g, wv); for (i = 0; i < 3; i++) spawnMan(1, P.x + (i - 1) * 24, P.y + 20, i === 1 ? fk : 'sword', fg); setTimeout(function () { Combat.order('hold'); }, 400); }
+  }
+  act('addman', function () { var P = Combat.dbg().P; spawnMan(0, P.x + (Math.random() - 0.5) * 80, P.y - 100 - Math.random() * 30, MWPN[+mwpn.value], +mgear.value, MWITS[+mwits.value].v); });
+  act('addfriend', function () { var P = Combat.dbg().P; spawnMan(1, P.x + (Math.random() - 0.5) * 60, P.y + 30 + Math.random() * 20, MWPN[+fwpn.value], +fgear.value); });
+  [['setone', 'one'], ['settwo', 'two'], ['setfriend', 'friend'], ['setfive', 'five'], ['setbows', 'bows'], ['setline', 'line']].forEach(function (q) { act(q[0], function () { setPiece(q[1]); }); });
+  act('sclear', clearField);
+  act('sreset', function () { Combat.reset(); resetLog(); });
+  var WAYTXT = { duel: 'One at a time: a second man joins after six seconds. The game runs this way.', pack: 'One, then more: a second after 2.5 s, a third after five; those who wait stand nearer.', press: 'Two at a time from the first moment, three on you.', odds: 'By the odds: as many to a man as the sides stand.', swarm: 'All at once, as it was before any pairing: everybody on the nearest.' };
+  function wayRows() { btnRow('ways', Object.keys(Combat.WAYS).map(function (k) { return { id: k, name: Combat.WAYS[k].name }; }), function (q) { return (Combat.api.men.way || 'duel') === q.id; }, function (q) { Combat.way(q.id); document.getElementById('waydesc').textContent = WAYTXT[q.id] || ''; }); document.getElementById('waydesc').textContent = WAYTXT[Combat.api.men.way || 'duel']; }
+  wayRows();
+
+  /* the log of the blows */
+  var logLines = [], tally = { hits: 0, dealt: 0, taken: 0, parried: 0, blocked: 0, dodged: 0, kills: 0 }, logEl = document.getElementById('log'), tallyEl = document.getElementById('tally');
+  function who(src) { if (!src) return 'something'; if (src.type === 'soldier') return src.name || 'a man'; return (src.name || src.kindA || 'a beast').toLowerCase(); }
+  function f1(v) { return (Math.round(v * 10) / 10).toFixed(1); }
+  function myWeapon() { var P = Combat.dbg().P; return P.mode === 'fight' ? (P.weapon === 'ranged' ? Items.KINDS[arm.ranged].name : Items.KINDS[arm.melee].name) : 'a tool'; }
+  Combat.api.onLog = function (ev) {
+    var W = Combat.dbg().W, t = (W.t || 0).toFixed(1).padStart(6), txt = '', cls = '';
+    if (ev.k === 'dodged') { txt = 'Dodged ' + who(ev.src) + "'s blow (" + f1(ev.dmg) + ')'; cls = 'me'; tally.dodged++; }
+    else if (ev.k === 'parry') { txt = 'PARRIED ' + who(ev.src) + ': ' + f1(ev.dmg) + ' turned aside'; cls = 'me'; tally.parried++; }
+    else if (ev.k === 'block') { txt = 'Blocked ' + who(ev.src) + ': ' + f1(ev.through) + ' of ' + f1(ev.dmg) + ' through' + (ev.guardBreak ? ' (an axe: the guard broken)' : '') + (ev.stagger ? ' (a club: staggered)' : '') + (ev.broke ? ', GUARD BREAK (no stamina)' : ''); cls = ev.broke || ev.guardBreak ? 'bad' : ''; tally.blocked++; tally.taken += ev.through; }
+    else if (ev.k === 'hurt') { txt = 'Hit by ' + who(ev.src) + ': ' + f1(ev.through) + ' of ' + f1(ev.dmg) + (ev.guard ? ' (your guard was up, but ' + (ev.front ? 'too late' : 'it came from behind') + ')' : '') + (ev.kind === 'heavy' ? ' heavy' : ev.kind === 'proj' ? ', an arrow' : ''); cls = 'bad'; tally.taken += ev.through; }
+    else if (ev.k === 'hit') { txt = myWeapon() + ' on ' + who(ev.e) + ': ' + f1(ev.dmg) + (ev.crit ? ' CRIT' : '') + (ev.blocked ? (ev.broke ? ' through his shield, his guard broken' : ' on his shield') : '') + (ev.weak ? ' (the wrong tool)' : '') + (ev.quiet ? ' (from behind, unseen)' : '') + (ev.kind === 'heavy' ? ' heavy' : ''); cls = 'me'; tally.hits++; tally.dealt += ev.dmg; }
+    else if (ev.k === 'kill') { txt = who(ev.e) + ' falls' + (ev.src ? ' to ' + who(ev.src) : ''); if (!ev.src) tally.kills++; }
+    else return;
+    logLines.unshift(t + '  ' + txt + '|' + cls); if (logLines.length > 40) logLines.length = 40; drawLog();
+  };
+  function drawLog() {
+    logEl.innerHTML = ''; logLines.forEach(function (ln) { var p = ln.lastIndexOf('|'), sp = document.createElement('span'); sp.className = ln.slice(p + 1); sp.textContent = ln.slice(0, p) + '\n'; logEl.appendChild(sp); });
+    tallyEl.textContent = 'Your blows ' + tally.hits + ' for ' + f1(tally.dealt) + ', kills ' + tally.kills + '; taken ' + f1(tally.taken) + '; parried ' + tally.parried + ', blocked ' + tally.blocked + ', dodged ' + tally.dodged + '.';
+  }
+  drawLog();
+
+  /* the eye: the blows drawn on the ground */
+  var KV = 0.75;
+  function wedge(c, x, y, r, a0, a1, fill, stroke) { c.beginPath(); c.moveTo(x, y * KV); c.ellipse(x, y * KV, r, r * KV, 0, a0, a1); c.closePath(); if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.lineWidth = 1; c.stroke(); } }
+  Combat.api.overlay = function (c, P, W) {
+    if (!showBlows) return; var a = P.atk, i;
+    c.save(); c.lineWidth = 1;
+    if (!P.dead && P.mode === 'fight' && P.weapon !== 'ranged') {
+      var sd = Combat.api.meleeStep(), dir = a.ph !== 'none' && a.ph !== 'charge' ? a.dir : P.face, R = sd.reach + 9, col = a.ph === 'windup' ? 'rgba(255,190,60,0.28)' : a.ph === 'active' ? 'rgba(255,70,40,0.4)' : a.ph === 'recover' ? 'rgba(120,120,120,0.18)' : 'rgba(255,255,255,0.1)';
+      wedge(c, P.x, P.y, R, dir - sd.arc / 2, dir + sd.arc / 2, col, a.ph === 'none' ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.7)');
+    }
+    if (!P.dead && P.guard) { var pw = Combat.api.parryWindow(), half = Combat.api.shield() ? 1.9 : 1.4, parry = P.guardT < pw; wedge(c, P.x, P.y, 16, P.face - half, P.face + half, parry ? 'rgba(255,255,255,0.55)' : 'rgba(90,150,255,0.35)', parry ? '#fff' : 'rgba(120,170,255,0.9)'); }
+    if (!P.dead && P.roll.t > 0 && P.invuln > 0) { c.setLineDash([3, 2]); c.strokeStyle = 'rgba(255,255,255,0.9)'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(P.x, P.y * KV, 14, 14 * KV, 0, 0, Math.PI * 2); c.stroke(); c.setLineDash([]); }
+    for (i = 0; i < W.enemies.length; i++) {
+      var e = W.enemies[i]; if (e.dead || e.type !== 'soldier' || e.down || e.out) continue;
+      var reach = (e.sw ? e.sw.reach : e.pf.reach) + P.r + 2, theirs = e.side !== 1;
+      c.strokeStyle = theirs ? 'rgba(255,120,90,0.45)' : 'rgba(140,220,140,0.45)'; c.setLineDash([2, 3]); c.beginPath(); c.ellipse(e.x, e.y * KV, reach, reach * KV, 0, 0, Math.PI * 2); c.stroke(); c.setLineDash([]);
+      if (e.state === 'windup' && e.sw && e.dur > 0) { var k = Math.min(1, e.t / e.dur), ar = e.sw.arc; wedge(c, e.x, e.y, reach, e.dirLock - ar / 2, e.dirLock - ar / 2 + ar * k, theirs ? 'rgba(255,60,40,' + (0.15 + 0.35 * k) + ')' : 'rgba(80,200,80,' + (0.15 + 0.3 * k) + ')', null); }
+      if (e.guard > 0 && e.shield) { var fr = e.inLine ? Combat.api.men.frontLine : Combat.api.men.front; wedge(c, e.x, e.y, 13, e.face - fr, e.face + fr, 'rgba(90,150,255,0.3)', 'rgba(120,170,255,0.8)'); }
+    }
+    c.restore();
+  };
 
   var last = performance.now();
   function frame(now) {
-    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    var dt = Math.min(0.05, (now - last) / 1000) * clockK; last = now;
+    var D = Combat.dbg(); if (immortal && !D.P.dead) { D.P.hp = D.P.maxHp; if (D.P.st < 30) D.P.st = 30; }
+    if (holdAll) D.W.enemies.forEach(function (e) { e.hold = true; });
     Combat.update(dt); Combat.render(ctx);
     requestAnimationFrame(frame);
   }

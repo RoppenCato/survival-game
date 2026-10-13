@@ -14,6 +14,21 @@ the older build order; this file is the one to read first when planning a chapte
 
 ---
 
+## 0. Where each chapter is worked on (2026-10-13)
+
+Robin: work on the chapters one at a time, but connected: whatever is fixed in a system is fixed everywhere it is used. So
+every page runs the same engine (`src/combat.js`) and the same numbers (`MEN`, `PROFILES`, `Items`, `Village`, `Ruin`), and the
+start page is laid out by chapter:
+
+| Chapter | Where it is played | Where its systems are worked on |
+| --- | --- | --- |
+| 1 The starter island | `game.html` from the wreck | the Combat Arena (`combat-arena.html`: every fight the game has, beasts and men); the Art, Village, Sea and Song editors |
+| 2 The first big island | `game.html` after the crossing | the Big island test (`game.html?scene=runes`: the ring, the mountain, the cave), the Mountain test (`?scene=mountain`) |
+| 3 The second biome and the first raid | not in the game yet (the lowlands are built but not spawned) | the Battle test (`?scene=battle`: men, the town, the four ways to raid), the Destruction Editor (`?scene=ruin`), and the Combat Arena for the fighting itself |
+
+A change to a weapon, a man's wits or his shield in the Combat Arena is a change to the raid; a change to the raid's rules in
+the Battle test is a change to the real game's men. Nothing is tuned in one place and copied to another.
+
 ## 1. The rules every chapter keeps
 
 These are decided and apply to every chapter. A new chapter is checked against them.

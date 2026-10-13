@@ -3086,17 +3086,25 @@ __COMBAT__
     c.strokeStyle = UI_INK; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x + 3, y + h); c.lineTo(x + w - 3, y + h); c.moveTo(x + w, y + 3); c.lineTo(x + w, y + h - 3); c.stroke();
     c.font = 'bold ' + Math.round(h * 0.56) + 'px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = can ? '#f6e2b8' : 'rgba(246,226,184,0.4)'; c.fillText(label, x + w / 2, y + h * 0.7);
   }
+  // A board taller than the screen scrolls (2026-10-13, Robin: "menu can't scroll"; the Admin board had outgrown it): its rows are
+  // clipped to the screen and the wheel over it moves them (panelScroll by the board's title; panelWheel from the wheel handler).
+  var panelScroll = {}, panelTall = null;
+  function panelWheel(d) { if (!panelTall) return false; var ps = panelScroll[panelTall.title] || 0; panelScroll[panelTall.title] = Math.max(0, Math.min(panelTall.over, ps + d * 22)); return true; }
   function panel(c, x0, y0, w0, title, hint, list, draw, rowH) {
-    rowH = rowH || 20; var h0 = 24 + list.length * rowH + (hint ? 12 : 0), i;
-    wood(c, x0, y0, w0, h0);
+    rowH = rowH || 20; var h0 = 24 + list.length * rowH + (hint ? 12 : 0), i, maxH = 250 - y0 - 2, over = Math.max(0, h0 - maxH), sc = over ? Math.min(over, panelScroll[title] || 0) : 0, hh = Math.min(h0, maxH);
+    panelTall = over ? { title: title, over: over } : (panelTall && panelTall.title === title ? null : panelTall);
+    wood(c, x0, y0, w0, hh);
     c.font = 'bold 9px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(title, x0 + 10, y0 + 13);
+    c.save(); if (over) { c.beginPath(); c.rect(x0, y0 + 18, w0, hh - 18 - (hint ? 12 : 4)); c.clip(); }
     for (i = 0; i < list.length; i++) {
-      var yy = y0 + 29 + i * rowH, hov = mouseS && mouseS.x > x0 + 8 && mouseS.x < x0 + w0 - 8 && Math.abs(mouseS.y - yy) < rowH / 2 - 1;
-      rows.push({ x0: x0 + 8, x1: x0 + w0 - 8, y: yy, h: rowH, item: list[i] });
+      var yy = y0 + 29 + i * rowH - sc, seen = yy > y0 + 18 && yy < y0 + hh - (hint ? 12 : 4), hov = seen && mouseS && mouseS.x > x0 + 8 && mouseS.x < x0 + w0 - 8 && Math.abs(mouseS.y - yy) < rowH / 2 - 1;
+      if (seen) rows.push({ x0: x0 + 8, x1: x0 + w0 - 8, y: yy, h: rowH, item: list[i] });
       c.fillStyle = hov && list[i].can ? 'rgba(255,230,180,0.22)' : 'rgba(30,16,8,0.45)'; c.fillRect(x0 + 8, yy - rowH / 2 + 1, w0 - 16, rowH - 2);
       draw(list[i], x0, yy, w0);
     }
-    if (hint) { c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'left'; c.fillText(hint, x0 + 10, y0 + h0 - 5); }
+    c.restore();
+    if (over) { var sy0 = y0 + 20, sh = hh - 24 - (hint ? 12 : 0), kh = Math.max(8, sh * hh / h0); c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(x0 + w0 - 5, sy0, 2.5, sh); c.fillStyle = 'rgba(246,226,184,0.75)'; c.fillRect(x0 + w0 - 5, sy0 + (sh - kh) * (sc / over), 2.5, kh); }   /* (the strip: the wheel scrolls) */
+    if (hint) { c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'left'; c.fillText(hint, x0 + 10, y0 + hh - 5); }
   }
   // the bag: cell size, where it sits when open (right side, under the chart, clear of the hero), how far it has slid in
   /* ---------- the quiver: three arrow slots, outside the bag; the bow shoots the active one ---------- */
@@ -4823,6 +4831,7 @@ __COMBAT__
   cv.addEventListener('wheel', function (e) {
     e.preventDefault(); var P = hero(), d = e.deltaY > 0 ? 1 : -1, n;
     if (menu && overMenu() && menuScroll(d)) return;      // the wheel scrolls a tall board
+    if (pauseOpen && panelWheel(d)) return;               // and a tall board of the Escape menu (Admin)
     if (P.mode === 'gather' || P.mode === 'fight') { hand[P.mode] = (hand[P.mode] + d + 6) % 6; P.atk.ph = 'none'; P.atk.since = 9; }
     else if (inYard) YSCENE.wheel(d);
     else if (P.mode === 'build') { if (!P.wreck && PIECES[P.piece] && PIECES[P.piece].kind === 'item') buildRot = (buildRot + (d > 0 ? 1 : 3)) & 3; else { stepPiece(d); P.wreck = false; } }   // the wheel turns what you are placing, or steps through the pieces you know
