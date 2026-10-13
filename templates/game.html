@@ -290,6 +290,7 @@ __COMBAT__
     if (!PEOPLE || !Sprites.peopleReady(PEOPLE)) { m.spr = false; return false; }
     var look = personLook(m), ph0 = m.ph0 || (m.ph0 = 1 + Math.random() * 9), st = { face: m.face, clip: 'idle', t: clock + ph0 }, J = null;
     if (!m.warm) { m.warm = 1; Sprites.peopleWarm(PEOPLE, look, ['idle', 'walk', 'idle_look', 'sit', 'run']); }
+    if (m.fallen) { st = { face: m.face, clip: 'death', k: Math.min(0.999, m.fallen.t / 0.9) }; if (!m.warmD) { m.warmD = 1; Sprites.peopleWarm(PEOPLE, look, ['death']); } m.spr = Sprites.person(c, PEOPLE, look, st, m.x, m.y * K, { shadow: false, lying: Math.min(1, m.fallen.t / 0.9), shadowHue: kit.STYLE.shadowHue, alpha: Math.max(0, Math.min(1, (90 - m.fallen.t) / 1.2)) }); return true; }
     if (m.cower) { st = { face: m.face, clip: 'pickup', k: 0.4 + Math.sin(clock * 5 + ph0) * 0.012 }; if (!m.warmC) { m.warmC = 1; Sprites.peopleWarm(PEOPLE, look, ['pickup']); } }   /* (crouched, and shaking a little) */
     else if (m.fleeing && m.moving) { st.clip = 'run'; st.t = (m.ph || 0) / 9 + ph0; }
     else if (m.moving) { st.clip = 'walk'; st.t = (m.ph || 0) / 7 + ph0; }
@@ -304,7 +305,7 @@ __COMBAT__
     var look = e.look || (e.look = Sprites.lookOf(e.fig.spec, e.lookX || { mail: true, helm: true }));
     if (!e.wpn) e.wpn = { kind: 'sword', tint: '#9ca3ad' };
     var bx0 = e.x, by0 = e.y; if (e.asleep && e.bed) { e.x = e.bed.x; e.y = e.bed.y + 1; }   /* (asleep: on his bed, though he stands beside it) */
-    var drawn = Sprites.fighter(c, PEOPLE, e, K, look, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, lit: figLit(e.x, e.y, true, 40), sheathed: e.side === 1 && !armsOut && !e.tgt && e.state !== 'windup' && e.state !== 'lunge' && e.state !== 'recover' });
+    var drawn = Sprites.fighter(c, PEOPLE, e, K, look, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, lit: figLit(e.x, e.y, true, 40), sheathed: !!e.disarmed || (e.side === 1 && !armsOut && !e.tgt && e.state !== 'windup' && e.state !== 'lunge' && e.state !== 'recover') });
     e.x = bx0; e.y = by0;
     if (drawn && e.loadMan && !e.dead && !e.down) drawCarried(c, e.x, e.y, e.face, e.loadMan);
     if (drawn && e.load && !e.dead && !e.down) { var s3 = sprite('chest', 0); c.save(); c.translate(e.x + (Math.cos(e.face) >= 0 ? -3 : 3), e.y * K - 30); c.scale(0.9, 0.9); c.drawImage(s3.cv, s3.l, s3.t); c.restore(); }   // what he carries, on his shoulder as the hero carries it
@@ -2099,7 +2100,7 @@ __COMBAT__
     }
     bDirty = true; Build.ensurePosts(B);
   }
-  function folkNear(P) { var best = null; folk.forEach(function (f) { if (f.hidden) return; var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
+  function folkNear(P) { var best = null; folk.forEach(function (f) { if (f.hidden || f.fallen) return; var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
   function folkTalk(f) { f.say = f.lines[f.line % f.lines.length]; f.line++; f.sayT = 5; if (f.role === 'fisherman' && f.line >= 4 && !seen.fishTaught) { seen.fishTaught = 1; toast('The fisherman taught you his dishes'); save(); } }
   // the villagers' life (2026-10-07, Robin: they all stood the same way): each idles their own way (an idle from lib.IDLES, a new one every
   // few seconds, blended over a third of a second), sits at the fire, and works at the spots their role gave them (chop at the block,
@@ -2117,6 +2118,7 @@ __COMBAT__
       f.idle.t += dt; f.idle.blend = Math.min(1, f.idle.blend + dt / 0.35);
       if (!f.moving && !f.sitting && !f.job && f.idle.t > f.idle.dur) { f.idle.from = f.lastPose; f.idle.id = pickIdle(f); f.idle.t = 0; f.idle.dur = 3 + Math.random() * 6; f.idle.blend = 0; }
       if (f.job) { f.job.t += dt; }
+      if (f.fallen) { f.fallen.t += dt; if (f.fallen.t > 90) { f.fallen = null; f.dead = true; f.hidden = true; } continue; }
       if (f.dead) continue; if (f.armed) { folkArmsTick(f, dt); continue; }
       if (f.abed) { if (light() > 0.6 && !f.fleeing) continue; f.abed = false; if (!f.fleeing) f.hidden = false; }                      /* (abed till morning, or till it breaks out) */
       if (f.react === 'arm' && f.armT > 0) { f.armT += dt; if (f.armT > ARM_T) { f.hidden = false; armFolk(f); } continue; }   /* (inside, taking down what hangs on the wall) */
@@ -2410,13 +2412,40 @@ __COMBAT__
     var out = [], w0 = e.bow ? (e.bowW || { kind: 'bow', mat: 'wood' }) : e.wpn; if (w0 && Items.KINDS[w0.kind]) out.push(Items.make(w0.kind, w0.kind === 'bow' ? 'wood' : (w0.mat || 'iron')));
     return out;
   }
-  function manDrops(e) {                   // he falls: his weapon lies by him (or, taken from behind by empty hands, is in them)
+  /* Taking a man's weapon (2026-10-13, Robin on twenty guards leaving twenty iron weapons lying: "that's a bit weird. There
+     needs to be some system where you 'take the weapon'"). Nothing falls out of a man as loot any more. **His weapon stays
+     with him** (e.arms: on the body, drawn by his hand, and gone when the body is, MEN.lie 90 s), and taking it is a thing
+     you do: **E by him, "Take his sword"**, a moment on one knee (TAKE_T: the hero's pick-up clip, a small bar; a step, a
+     blow taken or his being gone ends it). It goes into your hand if the hand is empty, else to the Fight bar, else the
+     bag (armTake). **A man who has yielded can be disarmed the same way** (he keeps his life, gets up and runs, and does
+     not fight again). A man taken from behind with nothing in your hands: his weapon is in your hand as he falls, as
+     before. Things that lie (what you laid down, what a place keeps by its chopping block) are taken up the same way,
+     quicker. So a field of twenty dead is twenty weapons only to somebody who kneels twenty times in a minute and a half,
+     with room for them. */
+  var TAKE_T = { man: 0.9, yield: 0.7, lie: 0.4 }, taking = null;
+  function hisHer(e) { return WOMEN.indexOf(e.name) >= 0 || (e.fig && e.fig.spec && e.fig.spec.clothes === 3) ? 'her' : 'his'; }
+  function manDrops(e) {                   // he falls: what he fought with stays by him (or, taken from behind by empty hands, is in them)
+    if (e.disarmed) { e.arms = []; return; }
     var L = manArms(e), P = hero(), b = barBase('fight');
-    L.forEach(function (th, i) {
-      if (e.quietKill && !e.killer && i === 0 && !slots[b + hand.fight] && !P.dead) { slots[b + hand.fight] = { kind: 'item', n: 1, item: th }; toast(th.name + ': in your hand'); recount(); return; }
-      dropThing(th, e.x + (Math.random() - 0.5) * 10, e.y + 5, true);
-    });
+    if (e.quietKill && !e.killer && L.length && !slots[b + hand.fight] && !P.dead) { var th = L.shift(); slots[b + hand.fight] = { kind: 'item', n: 1, item: th }; toast(th.name + ': in your hand'); recount(); }
+    e.arms = L; e.armsAt = { x: (Math.random() < 0.5 ? -1 : 1) * (9 + Math.random() * 5), y: 3 + Math.random() * 5, a: Math.random() * 6.283 };
     if (e.bow) { var n = 2 + Math.floor(Math.random() * 4); for (var k = 0; k < n; k++) drops.push({ kind: 'arrow', x: e.x + (Math.random() - 0.5) * 22, y: e.y + 4 + Math.random() * 8, z: 0, vx: 0, vy: 0, vz: 0, t: 0.3, spin: Math.random() * 6.283 }); }
+  }
+  function armedNear(P) {                  // a fallen man who still has his weapon by him, or one on his knees with his in his hand: the nearest in reach
+    var E = Combat.dbg().W.enemies, best = null, bd = 36, i, e, d;
+    for (i = 0; i < E.length; i++) { e = E[i]; if (e.type !== 'soldier') continue; var has = e.dead ? (e.arms && e.arms.length && (e.deadFor || 90) - e.deadT > 1.4) : (e.state === 'yield' && !e.disarmed && e.wpn && e.side !== 1); if (!has) continue; d = Math.hypot(P.x - e.x, P.y - e.y); if (d < bd) { bd = d; best = e; } }
+    return best;
+  }
+  function armsName(e) { var th = e.dead ? e.arms[0] : manArms(e)[0]; return th ? Items.KINDS[th.kind].name.toLowerCase() : 'weapon'; }
+  function startTake(o) { var P = hero(); if (taking || P.dead) return; taking = { man: o.man || null, drop: o.drop || null, t: 0, x: P.x, y: P.y, dur: o.man ? (o.man.dead ? TAKE_T.man : TAKE_T.yield) : TAKE_T.lie }; if (sprHero) Sprites.play(sprHero, 'pickup'); }
+  function takingTick(dt) {
+    if (!taking) return; var P = hero(), q = taking, e = q.man, d = q.drop;
+    if (P.dead || P.hurtT > 0 || Math.hypot(P.x - q.x, P.y - q.y) > 9 || (e && (e.dead ? !(e.arms && e.arms.length) || e.deadT > (e.deadFor || 90) : e.state !== 'yield')) || (d && drops.indexOf(d) < 0)) { taking = null; return; }
+    q.t += dt; if (q.t < q.dur) return; taking = null;
+    if (d) { takeLying(d); return; }
+    var th = e.dead ? e.arms[0] : manArms(e)[0]; if (!th) return; var where = armTake(th); if (!where) { toast('No room for it'); return; }
+    if (e.dead) e.arms.shift(); else { e.disarmed = true; e.nerve = 0; e.loyal = false; e.say = 'Take it.'; e.sayT = 1.8; }
+    toast(th.name + (where === 'hand' ? ': in your hand' : '')); sfx('pick'); recount(); save();
   }
   function seaChest() { if (!raft || (raft.kind !== 'boat' && raft.kind !== 'karve')) return null; if (!raft.chest) { raft.chest = { sea: true, store: [] }; for (var i = 0; i < STORE_N; i++) raft.chest.store.push(null); } var ch = Math.cos(raft.h || 0), sh = Math.sin(raft.h || 0), k = (raft.hw || 21) * 0.55; raft.chest.x = raft.x - ch * k; raft.chest.y = raft.y - sh * k; return raft.chest; }   // (by the stern)
   Combat.api.items = {                    // what is in the hand: the chosen slot of the mode's bar
@@ -2555,7 +2584,8 @@ __COMBAT__
     var hv = heavyNear(P); if (hv) add(hv, hv.locked ? 'Locked: break it open' : 'Lift the chest', hv.locked ? null : function () { liftHeavy(hv); });
     var dn = downNear(P, 36); if (dn) add(dn, 'Lift ' + (dn.name || 'him'), function () { liftMan(dn); });      // one of yours who is down: carried, he lives
     var sg = signNear(P); if (sg) add(sg, 'Write', function () { signWrite(sg); });
-    var ly = lyingNear(P); if (ly) add(ly, 'Take the ' + ly.item.name.toLowerCase(), function () { takeLying(ly); });
+    var ly = taking ? null : lyingNear(P); if (ly) add(ly, 'Take the ' + ly.item.name.toLowerCase(), function () { startTake({ drop: ly }); });
+    var am = taking ? null : armedNear(P); if (am) add(am, 'Take ' + hisHer(am) + ' ' + armsName(am), function () { startTake({ man: am }); }, 3);
     var lg = latchNear(P); if (lg) add(lg, 'Lift the latch', function () { liftLatch(lg); }, 6);
     var sc0 = rUse && !cargo ? seaChest() : null; if (sc0) add(sc0, 'Open the sea chest', function () { store = sc0; invOpen = true; bookOpen = false; clothOpen = false; }, 4);
     if (rUse) add(raft, cargo ? 'Unload the silver' : raft.kind === 'karve' ? 'Board the karve' : raft.kind === 'boat' ? 'Board the boat' : 'Board the raft', cargo ? unloadCargo : raftUse);
@@ -3769,7 +3799,7 @@ __COMBAT__
   function placeOfPeace(P) { for (var i = 0; i < villages.length; i++) { var v = villages[i]; if (P.x > (v.tx - 4) * T && P.x < (v.tx + v.w + 4) * T && P.y > (v.ty - 4) * T && P.y < (v.ty + v.h + 4) * T) return atPeace(i) ? i : -1; } return -1; }
   function witness(vi, x, y, r) {          // who of a place sees what is done at (x, y): one of its people (within r, 170 if not said), else one of its men; null if nobody
     var i, f, e, d, E = Combat.dbg().W.enemies, wall = Combat.api.wall;
-    for (i = 0; i < folk.length; i++) { f = folk[i]; if (f.vi !== vi || f.hidden || f.dead || f.armed) continue; d = Math.hypot(f.x - x, f.y - y); if (d < (r || 170) && !(wall && wall(f.x, f.y, x, y))) return f; }
+    for (i = 0; i < folk.length; i++) { f = folk[i]; if (f.vi !== vi || f.hidden || f.dead || f.fallen || f.armed) continue; d = Math.hypot(f.x - x, f.y - y); if (d < (r || 170) && (f.fleeing || f.cower || Math.abs(angDiff(Math.atan2(y - f.y, x - f.x), f.face)) < 2.0) && !(wall && wall(f.x, f.y, x, y))) return f; }   /* (he sees what is before him; running or crouched he is looking at you whatever way he faces) */
     for (i = 0; i < E.length; i++) { e = E[i]; if (e.type !== 'soldier' || e.side === 1 || e.vi !== vi || e.dead || e.out || e.asleep) continue; d = Math.hypot(e.x - x, e.y - y); if (d < 150 && Math.abs(angDiff(Math.atan2(y - e.y, x - e.x), e.face)) < 1.9 && !(wall && wall(e.x, e.y, x, y))) return e; }
     return null;
   }
@@ -3889,6 +3919,42 @@ __COMBAT__
   }
   function latchNear(P) { var best = null, bd = 44; villages.forEach(function (v) { if (!v.V || !gated(v)) return; gateEdges(v).forEach(function (g) { var ed = B.H[g.k]; if (!ed || !ed.latch || !ed.locked) return; var d = Math.hypot(P.x - g.x, P.y - g.y); if (d < bd) { bd = d; best = g; } }); }); return best; }
   function liftLatch(g) { villages.forEach(function (v) { if (!v.V || !gated(v)) return; gateEdges(v).forEach(function (q) { var ed = B.H[q.k]; if (ed && ed.latch && q.s === g.s && Math.abs(q.y - g.y) < 2 && Math.abs(q.x - g.x) < 70) { delete ed.locked; delete ed.barred; delete ed.latch; ed.lifted = day.n; } }); }); bDirty = true; sfx('build'); }
+  /* The unarmed can be killed (2026-10-13, Robin's answer to "can unarmed villagers be killed?": yes). The engine hands the
+     hero's blow and his arrows to the people of the place too (Combat.api.struck): a grown villager who is neither hidden nor
+     already down has FOLK_HP 2 health on the men's scale (two blows of an iron sword, or one heavy one; five punches),
+     an elder less; **one who has noticed nothing, struck from behind, falls to that blow**. **Children cannot be struck** (my line, not Robin's: a blow passes them). One who is struck and lives runs
+     and screams (heard as a man's cry is); one who falls lies as the fallen lie for 90 s (f.fallen, the death clip) and is
+     gone from the place: `seen.dead[vi]` keeps who (by his number among the place's people, so he is still dead after a
+     load) and `seen.slain[vi]` their names, which those who live speak of afterwards (mournLines). A killing that nobody
+     sees or hears is nobody's alarm: a villager sees what is before him (2 radians either side) or anything at all once he
+     is running or crouched, so one struck down from behind by a single blow, alone, cries no further than a man taken
+     quietly does. Your own men do not strike the unarmed. */
+  var FOLK_HP = 2;
+  function folkAlive(f) { return !f.dead && !f.fallen; }
+  function folkIx(f) { var n = 0, i; for (i = 0; i < folk.length; i++) { if (folk[i] === f) return n; if (folk[i].vi === f.vi) n++; } return -1; }
+  function markDead() { if (!seen.dead) return; var cnt = {}; folk.forEach(function (f) { var n = cnt[f.vi] = (cnt[f.vi] == null ? 0 : cnt[f.vi] + 1); if (seen.dead[f.vi] && seen.dead[f.vi].indexOf(n) >= 0) { f.dead = true; f.hidden = true; f.fallen = null; } }); }
+  function folkFall(f, ang, quietly) {
+    var vi = f.vi, ix = folkIx(f); f.fallen = { t: 0 }; f.face = ang + Math.PI; f.moving = false; f.fleeing = false; f.cower = false; f.job = null; f.sitting = false; f.say = ''; f.sayT = 0; f.hidden = false; f.abed = false;
+    if (!seen.dead) seen.dead = {}; if (!seen.dead[vi]) seen.dead[vi] = []; if (ix >= 0 && seen.dead[vi].indexOf(ix) < 0) seen.dead[vi].push(ix);
+    if (!seen.slain) seen.slain = {}; if (!seen.slain[vi]) seen.slain[vi] = []; seen.slain[vi].push(f.name);
+    sfx('die'); chip(f.x, f.y, 14, '#8a1c14', 9, 80);
+    if (quietly) { Combat.noise(f.x, f.y, Combat.api.men.quiet); if (folkHear(vi, f.x, f.y, 60) || witness(vi, f.x, f.y, 120)) raidAlarm(vi, f.x, f.y); }
+    else { Combat.noise(f.x, f.y, Combat.api.men.noise.cry); raidAlarm(vi, f.x, f.y); }
+    if (!seen.raided) seen.raided = {}; if (!seen.raided[vi]) seen.raided[vi] = day.n; save();
+  }
+  Combat.api.struck = {
+    list: function (at) { var out = [], i, f; for (i = 0; i < folk.length; i++) { f = folk[i]; if (f.hidden || f.dead || f.fallen || f.armed || f.child) continue; if (Math.abs(f.x - at.x) > 90 || Math.abs(f.y - at.y) > 90) continue; f.r = 6; out.push(f); } return out; },
+    hit: function (f, dmg, ang, kind) {
+      var P = hero(), unseen = !f.fleeing && !f.cower && Math.abs(angDiff(Math.atan2(P.y - f.y, P.x - f.x), f.face)) > 2.0, full = f.hp == null;
+      if (full) f.hp = f.role === 'elder' ? FOLK_HP * 0.6 : FOLK_HP; if (unseen && full && kind !== 'proj') dmg = Math.max(dmg, f.hp);   /* (struck from behind, having noticed nothing: the one blow, as with a man at his post) */
+      f.hp -= dmg;
+      Combat.api.num(f.x, f.y - 30, String(Math.round(dmg * 10) / 10), '#ffffff', kind === 'heavy'); chip(f.x, f.y, 16, '#8a1c14', 5, 70); sfx('hit');
+      if (f.hp <= 0) { folkFall(f, ang, unseen && full && kind !== 'proj'); return; }
+      f.say = ['No! No!', 'Help! Help me!', 'Gods!'][nameHash(f.name) % 3]; f.sayT = 1.6; Combat.noise(f.x, f.y, Combat.api.men.noise.cry); raidAlarm(f.vi, f.x, f.y);
+      f.react = 'flee'; f.cower = false; f.fleeing = true; f.refuge = refugeOf(f, true) || refugeOf(f) || null; f.job = null; f.sitting = false;
+    }
+  };
+  function mournLines(vi) { var N = (seen.slain && seen.slain[vi]) || []; if (!N.length) return null; var a = N[N.length - 1], L = ['You killed ' + a + '.', N.length > 1 ? N.length + ' of us. ' + N.length + '.' : a + ' never lifted a hand to you.', 'There is blood on you. Go.']; return L; }
   /* What the people do when a raid breaks out (2026-10-13, Robin: "Villagers that some flee, some seek shelter behind
      furniture or houses, some equip themselves with weapons and fight (but aren't as capable)"). By who each one is, the
      same every time (his name and his work): FOLK_FIGHT is the share of a calling that takes up arms; of the rest about
@@ -3944,7 +4010,7 @@ __COMBAT__
   function raidStir(vi, x, y) {             // the village knows: its folk run home to hide, and word of it will spread
     if (vi < 0) return; var fresh = !raid || raid.vi !== vi;
     raid = { vi: vi, t: 30, x: x, y: y };
-    if (fresh) { folk.forEach(function (f) { if (f.vi === vi && !f.dead && !f.armed) folkReact(f, x, y); }); if (!seen.raided) seen.raided = {}; if (!seen.raided[vi]) { seen.raided[vi] = day.n; toast('Word of this will spread'); } sfx('fall'); }
+    if (fresh) { folk.forEach(function (f) { if (f.vi === vi && !f.dead && !f.fallen && !f.armed) folkReact(f, x, y); }); if (!seen.raided) seen.raided = {}; if (!seen.raided[vi]) { seen.raided[vi] = day.n; toast('Word of this will spread'); } sfx('fall'); }
   }
   function raidTick(dt) {
     var P = hero(), i;
@@ -3955,7 +4021,7 @@ __COMBAT__
     if (raid) {
       raid.t -= dt;
       if (raid.t < 20 && folk.some(function (f) { return f.vi === raid.vi && f.armed && !f.armed.dead && f.armed.tgt; })) raid.t = 20;   /* (one of its people still fights) */
-      if (raid.t <= 0) { var vi = raid.vi; raid = null; folk.forEach(function (f) { if (f.vi === vi && !f.dead) { var hg = homeGone(f); folkCalm(f); f.fleeing = false; f.hidden = false; f.refuge = null; f.lines = (hg ? HOMELESS_LINES : RAIDED_LINES).slice(); f.line = 0; } }); }
+      if (raid.t <= 0) { var vi = raid.vi; raid = null; folk.forEach(function (f) { if (f.vi === vi && !f.dead) { var hg = homeGone(f); folkCalm(f); f.fleeing = false; f.hidden = false; f.refuge = null; f.lines = (mournLines(vi) || (hg ? HOMELESS_LINES : RAIDED_LINES)).slice(); f.line = 0; } }); }
     }
     if (carrying && carrying.man) { carrying.man.x = P.x; carrying.man.y = P.y; if (P.dead || carrying.man.dead) { setDown(carrying.man, P.x + 8, P.y + 3); carrying = null; } }
     else if (carrying) { carrying.x = P.x; carrying.y = P.y; if (P.dead) { carrying.carried = false; carrying.r = 6; B.items.push(carrying); carrying = null; save(); } }   // a fallen raider drops the chest where he fell (2026-10-08)
@@ -4036,7 +4102,7 @@ __COMBAT__
     return { dealt: Math.round(r.dealt * 10) / 10 };
   }
   function dropSolids(L, tx, ty) { if (!roomInfo || bDirty) return; var x0 = tx * T, y0 = ty * T; roomInfo.solids = roomInfo.solids.filter(function (q) { if (q.r !== 5.5) return true; return L === 'H' ? !(q.y === y0 && q.x > x0 && q.x < x0 + T) : !(q.x === x0 && q.y > y0 && q.y < y0 + T); }); }   // the three circles of a piece of wall that is no longer in the way
-  function folkHear(vi, x, y, r) { for (var i = 0; i < folk.length; i++) { var f = folk[i]; if (f.vi === vi && !f.hidden && Math.hypot(f.x - x, f.y - y) < r) return true; } return false; }
+  function folkHear(vi, x, y, r) { for (var i = 0; i < folk.length; i++) { var f = folk[i]; if (f.vi === vi && !f.hidden && !f.fallen && Math.hypot(f.x - x, f.y - y) < r) return true; } return false; }
   // a noise in a village is a raid on it (any fighting); a soft one (a blow on a wall, a fire) only if a man of it or one of its people heard
   Combat.api.onNoise = function (x, y, r, n, soft) { var vi = villageAt(x, y); if (vi < 0) return; if ((soft || r <= Combat.api.men.hush) && !n && !folkHear(vi, x, y, r * 0.8)) return; raidStir(vi, x, y); };   /* (a quiet noise, a man taken from behind or in his sleep, is nothing unless somebody heard it: it used to send the whole village running, 2026-10-13) */
   function wallGave(L, tx, ty, e, burnt) {   // a piece has given: the way is open, what it was made of lies there, and its room may have lost too much
@@ -4159,7 +4225,7 @@ __COMBAT__
     if (bDirty) rebuildRooms();              // (the rooms and their solids are otherwise made again only when a frame is drawn)
     if (!ruinChecked && roomInfo) { ruinChecked = true; roomInfo.rooms.forEach(function (r0) { if (Ruin.due(RUIN, B, r0, BCFG.roof)) Ruin.collapse(RUIN, B, r0, 'fallen', BCFG.roof); }); }   // a game loaded in the moment between a roof's groan and its fall: it is down
     for (id in ruinDue) if (clock >= ruinDue[id]) { r = roomById(id); delete ruinDue[id]; if (r && Ruin.due(RUIN, B, r, BCFG.roof)) roofFalls(r, fellByFire(r) ? 'burnt' : 'fallen'); }
-    lightingTick(dt); fireTickAll(dt);
+    lightingTick(dt); takingTick(dt); fireTickAll(dt);
   }
   // what a tile costs a man to walk over: he goes round a room that burns, and round hot ashes if he can
   function ruinCost(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; if (ri >= 0 && roofBurning(roomInfo.rooms[ri])) return 60; var ru = B.ruin && B.ruin[tx + ',' + ty]; return ru ? (ru.hot > 0 ? 25 : 2) : 0; }
@@ -4438,6 +4504,9 @@ __COMBAT__
       if (BURN.length || lighting || B.ruin) pushFlames(items, hw, hh);
       sceneItems = items; upperFloor(items, L, here, hw, hh);
       for (i = 0; i < drops.length; i++) (function (d) { items.push({ y: d.y, f: function () { drawDrop(ctx, d); } }); })(drops[i]);
+      if (taking) { var Pk = hero(), uk = Math.min(1, taking.t / taking.dur); items.push({ y: Pk.y + 0.7, f: function () { ctx.fillStyle = 'rgba(20,14,10,0.75)'; ctx.fillRect(Pk.x - 11, Pk.y * K - 56, 22, 4); ctx.fillStyle = '#e8dcc0'; ctx.fillRect(Pk.x - 10, Pk.y * K - 55, 20 * uk, 2); } }); }
+      Combat.dbg().W.enemies.forEach(function (e) { if (e.type !== 'soldier' || !e.dead || !e.arms || !e.arms.length || !(e.deadT > 0.55)) return; var q = e.armsAt || { x: 10, y: 5, a: 0 }, al = Math.max(0, Math.min(1, ((e.deadFor || 90) - e.deadT) / 1.2));
+        items.push({ y: e.y + q.y - 0.4, f: function () { ctx.save(); ctx.globalAlpha *= al; ctx.translate(e.x + q.x, (e.y + q.y) * K); ctx.rotate(Math.sin(q.a) * 0.5); Items.icon(ctx, e.arms[0], 14); ctx.restore(); } }); });   /* (what a fallen man fought with, by his hand until it is taken or he is gone) */
       critters.forEach(function (k) { if (Math.abs(k.x - cam.x) < hw + 20 && Math.abs(k.y * K - cam.y) < hh + 40) items.push({ y: k.y + (k.kind === 'butterfly' ? 6 : 0), f: function () { drawCritter(ctx, k); } }); });
       for (i = 0; i < bits.length; i++) (function (b) { items.push({ y: b.y + 1, f: function () { ctx.globalAlpha = Math.min(1, b.life / 0.25); ctx.fillStyle = b.col; ctx.beginPath(); ctx.arc(b.x, b.y * K - b.z, b.r, 0, 7); ctx.fill(); ctx.globalAlpha = 1; } }); })(bits[i]);
     },
@@ -4519,7 +4588,7 @@ __COMBAT__
       }
       if (npc && !inCave && Math.abs(npc.x - cam.x) < 260 && Math.abs(npc.y * K - cam.y) < 200) bubble(c, npc);
       stones().forEach(function (st) { if (Math.hypot(P.x - st.x, P.y - st.y) > 90 || inYard || inCave) return; var sx = (st.x - cam.x) * cam.z + 200, sy = (st.y * K - cam.y) * cam.z + 125 - 50 * cam.z, tt = (st.named || 'The stead') + ':  room for ' + roomFor(st) + ',  food for ' + foodDays(st) + (foodDays(st) === 1 ? ' day' : ' days'); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.2; c.strokeStyle = '#2e1a10'; c.strokeText(tt, sx, sy); c.fillStyle = '#f6e2b8'; c.fillText(tt, sx, sy); });
-      if (!inCave && !inYard) folk.forEach(function (f) { if (Math.abs(f.x - cam.x) < 260 && Math.abs(f.y * K - cam.y) < 200) bubble(c, f); });
+      if (!inCave && !inYard) folk.forEach(function (f) { if (!f.dead && !f.fallen && Math.abs(f.x - cam.x) < 260 && Math.abs(f.y * K - cam.y) < 200) bubble(c, f); });
       if (!inYard) { var calm = !fighting(); Combat.dbg().W.enemies.forEach(function (e) { if (e.type === 'soldier' && !e.dead && !e.down && (e.sayT > 0 || (e.side === 1 && calm)) && Math.abs(e.x - cam.x) < 260 && Math.abs(e.y * K - cam.y) < 200) bubble(c, e); }); }   // what any man says; your own men by name when you are near and no fight is on (their cloaks tell them apart in one)
       c.restore();
     },
@@ -4727,7 +4796,7 @@ __COMBAT__
       if (sv.equip) { for (k in equip) equip[k] = sv.equip[k] ? Items.make(sv.equip[k].kind, sv.equip[k].mat, sv.equip[k]) : null; ['weapon', 'bow', 'axe', 'pick', 'knife'].forEach(function (ok) { if (sv.equip[ok]) { var oi = Items.make(sv.equip[ok].kind, sv.equip[ok].mat, sv.equip[ok]); if (!barPut(oi)) addThing(oi); } }); } else startKit();   // older saves kept weapons and tools in equipment slots
       hand = sv.hand && sv.hand.fight != null ? sv.hand : { fight: 0, gather: 0 };
       hird = []; hirdDay = sv.hirdDay || 0; (sv.hird || []).forEach(function (h) { var m; if (h.brokk && npc) { m = npc; npc.joined = true; } else { m = { x: h.x, y: h.y, face: Math.PI / 2, say: '', sayT: 0, name: h.name, fig: lib.makeFigure(Hird.figureSpec(h.person || Hird.roll(Math.random, HD), lib.heroDef)) }; } m.person = h.person; m.job = h.job; m.at = h.at; m.workAt = h.workIdx >= 0 ? B.items[h.workIdx] : null; m.follow = h.follow; m.mustered = h.follow; m.aboard = !!h.aboard; m.sitting = m.aboard; m.hungry = h.hungry; m.ph = 0; m.moving = false; m.x = h.x; m.y = h.y; hird.push(m); });
-      seen = sv.seen || {}; if (!sv.seen) { for (k in inv) if (inv[k] > 0) seen[k] = 1; }
+      seen = sv.seen || {}; if (!sv.seen) { for (k in inv) if (inv[k] > 0) seen[k] = 1; } markDead();
       RS = sv.runes && sv.runes.learnt && !sv.runes.slots ? sv.runes : freshRunes(); var fr = freshRunes(); ['earned', 'deeds', 'kills', 'stones'].forEach(function (k) { if (!RS[k]) RS[k] = fr[k]; }); ring = sv.ring && sv.ring.coils ? sv.ring : null; heroRingSync();
       (sv.drops || []).forEach(function (d) { drops.push({ kind: d.kind, item: d.item ? Items.make(d.item.kind, d.item.mat, d.item) : undefined, x: d.x, y: d.y, z: 0, vx: 0, vy: 0, vz: 0, t: 1, spin: 0, lie: d.lie ? 1 : 0, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : 0 }); });
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
@@ -5009,7 +5078,7 @@ __COMBAT__
     var vi = townOf(), P = hero(); if (vi < 0) { toast('No town in this world'); return; }
     var v = villages[vi], G0 = gateOf(v), gx = G0.x, gy = G0.y, i, MIX = ['sword', 'axe', 'spear', 'sword', 'bow'];
     battleClear(); var W2 = Combat.dbg().W; W2.enemies = W2.enemies.filter(function (e) { return !(e.human && e.vi === vi); }); guards = guards.filter(function (e) { return e.vi !== vi; });
-    navOf(vi); raid = null; folk.forEach(function (f) { if (f.vi === vi) { folkCalm(f); f.dead = false; f.fleeing = false; f.hidden = false; f.refuge = null; } });
+    navOf(vi); raid = null; if (seen.dead) delete seen.dead[vi]; if (seen.slain) delete seen.slain[vi]; folk.forEach(function (f) { if (f.vi === vi) { folkCalm(f); f.dead = false; f.fallen = null; f.hp = null; f.fleeing = false; f.hidden = false; f.refuge = null; } });
     freshTown(vi); BT.setup = 'town'; BT.town = vi; P.hp = P.maxHp; P.st = 100; P.x = gx; P.y = gy + 6.5 * T; P.vx = P.vy = 0; P.face = -Math.PI / 2; if (inCave) caveSwap(false);
     BT.men = townMen(vi, TOWN_N);
     for (i = 0; i < 5; i++) spawnMan(1, gx + (i - 2) * 30, gy + 7.6 * T + (i % 2) * 16, MIX[i], 1);
@@ -5048,7 +5117,7 @@ __COMBAT__
     if (!BT.loot0) { BT.loot0 = B.items.filter(function (it) { return it.heavy; }).map(function (it) { return JSON.parse(JSON.stringify(it)); }); BT.doors0 = []; var k; for (k in B.H) if (B.H[k].locked) BT.doors0.push(['H', k]); for (k in B.V) if (B.V[k].locked) BT.doors0.push(['V', k]); }
     B.items = B.items.filter(function (it) { return !it.heavy; }); BT.loot0.forEach(function (it) { B.items.push(JSON.parse(JSON.stringify(it))); });
     BT.doors0.forEach(function (d) { var e = (d[0] === 'H' ? B.H : B.V)[d[1]]; if (e) { e.locked = 1; e.broken = 0; } }); ruinWhole(); carrying = null; bDirty = true; navStale = true;
-    navOf(vi); raid = null; folk.forEach(function (f) { if (f.vi === vi) { folkCalm(f); f.dead = false; f.fleeing = false; f.hidden = false; f.refuge = null; } });
+    navOf(vi); raid = null; if (seen.dead) delete seen.dead[vi]; if (seen.slain) delete seen.slain[vi]; folk.forEach(function (f) { if (f.vi === vi) { folkCalm(f); f.dead = false; f.fallen = null; f.hp = null; f.fleeing = false; f.hidden = false; f.refuge = null; } });
     freshTown(vi); BT.setup = 'raid'; BT.town = vi; BT.raid = { vi: vi, t0: clock, land: sh.land, left: false, loot: BT.loot0.reduce(function (q, it) { return q + (it.heavy.silver || 0); }, 0), chests: BT.loot0.length };
     P.hp = P.maxHp; P.st = 100; P.x = sh.dry.x; P.y = sh.dry.y; P.vx = P.vy = 0; P.face = Math.atan2(gateOf(v).y - P.y, gateOf(v).x - P.x); if (inCave) caveSwap(false);
     BT.men = townMen(vi, TOWN_N);

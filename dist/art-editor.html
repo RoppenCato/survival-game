@@ -6625,6 +6625,11 @@ function updatePlayer(dt) {
           if (!sd.pierce && sd.motion === 'thrust') break;      // a thrust (not a spear) stops in the first thing it meets
         }
       }
+      if (p.mode !== 'gather' && api.struck) {                  // people the page keeps who are no fighters (a village's own): the same blow lands on them. api.struck = { list(at) -> [{ x, y, r }], hit(o, dmg, ang, kind) }
+        var OT = api.struck.list(p), oi2;
+        for (oi2 = 0; oi2 < OT.length; oi2++) { var o2 = OT[oi2]; if (a.hit.indexOf(o2) >= 0) continue; var ox2 = o2.x - p.x, oy2 = o2.y - p.y, od2 = Math.hypot(ox2, oy2);
+          if (od2 <= sd.reach + (o2.r || 6) + 2 && (a.spin || Math.abs(wrap(Math.atan2(oy2, ox2) - a.dir)) <= half + 0.12) && !wallBetween(p.x, p.y, o2.x, o2.y)) { a.hit.push(o2); api.struck.hit(o2, sd.dmg * dmgMul('sword') * (a.riposte ? 1.5 : 1), Math.atan2(oy2, ox2), heavyHit(a) ? 'heavy' : 'melee'); if (!sd.pierce && sd.motion === 'thrust') break; } }
+      }
       if (a.t >= sd.ac) { a.ph = 'recover'; a.t = 0; }
     } else if (a.ph === 'recover' && a.t >= sd.rec) { a.ph = 'none'; a.t = 0; a.since = 0; }
   }
@@ -7420,6 +7425,7 @@ function updateProjs(dt) {
           if (e.dead || e.side === 1 || e.down) continue;
           if (Math.hypot(pr.x - e.x, pr.y - e.y) < pr.r + e.r) { damageEnemy(e, pr.dmg, Math.atan2(pr.vy, pr.vx), pr.kb || 40, pr.stag || 8, (pr.stag || 8) >= 20 ? 'heavy' : 'proj'); if (pr.pin && !e.dead) { e.freezeT = Math.max(e.freezeT, 1.6); e.pkx = e.pky = 0; num(e.x, e.y - 12, 'PINNED', '#9fd8ff'); } gone = true; hit = true; break; }
         }
+        if (!gone && api.struck) { var OT2 = api.struck.list(pr), oj2; for (oj2 = 0; oj2 < OT2.length; oj2++) { var o3 = OT2[oj2]; if (Math.hypot(pr.x - o3.x, pr.y - o3.y) < pr.r + (o3.r || 6)) { api.struck.hit(o3, pr.dmg, Math.atan2(pr.vy, pr.vx), 'proj'); gone = true; hit = true; break; } } }   // (an arrow, too)
       }
     }
     if (gone) { W.projs.splice(i, 1); if (pr.thing && api.onThrowLand) api.onThrowLand(pr.x, pr.y, pr.thing); else if (!hit && pr.owner === 'player' && !pr.reflected && pr.kind !== 'stone' && api.onArrowLand) api.onArrowLand(pr.x, pr.y); }
