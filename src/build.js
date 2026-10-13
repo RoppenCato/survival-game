@@ -98,9 +98,11 @@ function rooms(B, GW, GH, bounds) {
     out.push({ id: 'r' + x + '_' + y, tiles: tiles, maxY: maxY });
   }
   var solids = [], k, p;
-  for (k in B.H) { if (OPEN[B.H[k].t] || B.H[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }   // (a wall that has given, breach, is a way through: src/ruin.js)
-  for (k in B.V) { if (OPEN[B.V[k].t] || B.V[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
+  if (!(bounds && bounds.noSolids)) {
+  for (k in B.H) { if (OPEN[B.H[k].t] || B.H[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true, wall: true }); }   // (a wall that has given, breach, is a way through: src/ruin.js)
+  for (k in B.V) { if (OPEN[B.V[k].t] || B.V[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true, wall: true }); }
   for (k in B.posts || {}) { p = k.split(','); solids.push({ x: p[0] * T, y: p[1] * T, r: 3.5, hide: true }); }
+  }
   return { rooms: out, roomOf: roomOf, solids: solids, x0: bx0, y0: by0, w: w, h: h, at: function (tx, ty) { return inside(tx, ty) ? roomOf[idx(tx, ty)] : -1; } };
 }
 
@@ -267,7 +269,11 @@ function sideFace(c, x, y, e, m, open, C, side, seed) {
 // what a fallen or a burnt roof leaves on one tile of the floor (ru = { k, m }): straw heaps, sods, shingles or shards and broken rafters; or ash and charred timber
 function drawDebris(c, tx, ty, ru, C) {
   var x0 = tx * T, y0 = ty * TS, seed = tx * 53 + ty * 97, i, r = ROOFS[ru.m] || ROOFS[1], burnt = ru.k === 'burnt', beam = burnt ? '#1a1512' : '#4a3626';
-  if (burnt) { c.fillStyle = 'rgba(26,22,20,0.5)'; c.beginPath(); c.ellipse(x0 + T / 2, y0 + TS / 2, T * 0.62, TS * 0.62, 0, 0, 7); c.fill(); for (i = 0; i < 6; i++) { c.fillStyle = 'rgba(196,192,184,' + (0.22 + hs(seed, i) * 0.28) + ')'; c.beginPath(); c.ellipse(x0 + 3 + hs(seed + 3, i) * (T - 6), y0 + 2 + hs(seed + 5, i) * (TS - 4), 2 + hs(seed + 7, i) * 4, 1 + hs(seed + 9, i) * 2, 0, 0, 7); c.fill(); } }
+  if (burnt) {                            // black where it burnt and pale ash on it, no two tiles alike (the same oval and six specks on every tile read as rows, 2026-10-13)
+    var na = 1 + Math.floor(hs(seed + 2, 1) * 3), ns = 2 + Math.floor(hs(seed + 4, 1) * 7);
+    for (i = 0; i < na; i++) { c.fillStyle = 'rgba(26,22,20,' + (0.3 + hs(seed + 6, i) * 0.28).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 + T / 2 + (hs(seed + 8, i) - 0.5) * T * 0.7, y0 + TS / 2 + (hs(seed + 10, i) - 0.5) * TS * 0.7, T * (0.36 + hs(seed + 12, i) * 0.4), TS * (0.3 + hs(seed + 14, i) * 0.42), hs(seed + 16, i) * 3, 0, 7); c.fill(); }
+    for (i = 0; i < ns; i++) { c.fillStyle = 'rgba(196,192,184,' + (0.16 + hs(seed, i) * 0.3).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 - 4 + hs(seed + 3, i) * (T + 8), y0 - 3 + hs(seed + 5, i) * (TS + 6), 1.5 + hs(seed + 7, i) * 6, 0.8 + hs(seed + 9, i) * 2.6, hs(seed + 11, i) * 3, 0, 7); c.fill(); }
+  }
   else if (r.col) {
     for (i = 0; i < 3; i++) {
       var hx = x0 + 5 + hs(seed + 11, i) * (T - 10), hy = y0 + 5 + hs(seed + 13, i) * (TS - 9), hw = 5 + hs(seed + 15, i) * 6, hh = 2.5 + hs(seed + 17, i) * 3, tone = (hs(seed + 19, i) - 0.5) * 0.2, col = mix(r.col, tone > 0 ? '#ffffff' : '#000000', Math.abs(tone));

@@ -17,7 +17,7 @@ window.RP = (function () {
   function dbg() { return Combat.api.debug(); }
   function D() { return Combat.dbg(); }
   function P() { return D().P; }
-  function town() { var V = dbg().villages(), i; for (i = 0; i < V.length; i++) if (V[i].arch === 'town' && V[i].V) return V[i]; return null; }
+  function town() { var V = dbg().villages(), bt = dbg().battle(), i; if (bt && bt.town != null && V[bt.town] && V[bt.town].V) return V[bt.town]; for (i = 0; i < V.length; i++) if ((V[i].arch === 'town' || V[i].arch === 'bigtown') && V[i].V) return V[i]; return null; }   // the place the test is on (the board sets it), else the town
   function grid() { var n = dbg().navs(), k; for (k in n) if (n[k].inside(P().x, P().y)) return n[k]; return null; }
   function men(side) { return D().W.enemies.filter(function (e) { return e.type === 'soldier' && (e.side || 0) === side; }); }
   function state() {
@@ -32,7 +32,7 @@ window.RP = (function () {
   function run(secs, each) { var n = Math.round(secs * 60), i; for (i = 0; i < n; i++) { if (each && each(i * DT) === false) break; H2.sim(1, tick); if (P().dead) break; } return i * DT; }
   function begin() { log = []; if (P().dead) { Combat.key('KeyR', true); H2.sim(3, tick); Combat.key('KeyR', false); H2.sim(5, tick); }   // (the hero of the last raid fell: R, as a player would)
     BP.act('raid'); t0 = D().W.t; H2.sim(10, tick); note('ashore: the ship ' + Math.round(Math.hypot(P().x - gate().x, P().y - gate().y) / T) + ' tiles from the gate'); return state(); }
-  function gate() { var F = town().V.fence; return { x: (F.gate + (F.gateW || 1) / 2) * T, y: F.y1 * T }; }
+  function gate() { var F = town().V.fence; if (F.round) return { x: (F.gateAt || [F.cx, F.cy + F.ry])[0], y: (F.gateAt || [F.cx, F.cy + F.ry])[1] }; return { x: (F.gate + (F.gateW || 1) / 2) * T, y: F.y1 * T }; }
   function backGate() { var V = town().V, F = V.fence, i; for (i = F.x0; i < F.x1; i++) if (V.H[i + ',' + F.y0] && V.H[i + ',' + F.y0].t === 'gate') return { x: (i + 0.5) * T, y: F.y0 * T }; return null; }
   function lot(id) { return town().V.lots.filter(function (l) { return l.id === id; })[0]; }
   function doorOf(id) { var l = lot(id); if (!l) return null; return l.door === 's' ? { x: (l.dx + 0.5) * T, y: (l.y + l.h) * T + 20, fx: (l.dx + 0.5) * T, fy: (l.y + l.h) * T } : l.door === 'n' ? { x: (l.dx + 0.5) * T, y: l.y * T - 20, fx: (l.dx + 0.5) * T, fy: l.y * T } : l.door === 'e' ? { x: (l.x + l.w) * T + 20, y: (l.dy + 0.5) * T, fx: (l.x + l.w) * T, fy: (l.dy + 0.5) * T } : { x: l.x * T - 20, y: (l.dy + 0.5) * T, fx: l.x * T, fy: (l.dy + 0.5) * T }; }

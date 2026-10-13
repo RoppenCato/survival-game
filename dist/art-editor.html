@@ -5747,7 +5747,7 @@ function make(kit, opts) {
   };
   // the meadow under the blades (painted first, still): soft lighter and darker patches of grass, bare earth, and drifts of
   // tiny flowers in several colours, the way a real meadow is blotchy and flecked rather than one green
-  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mtn.shelters.length && w.shelterAt(x, y / K, 4)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
+  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (w.noGrass && w.noGrass(Math.floor(x / T), Math.floor(y / K / T))) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mtn.shelters.length && w.shelterAt(x, y / K, 4)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
   function fellOf(x, y) { return mtn ? cellAt(x, y / K) & 3 : 0; }   // 0 the low ground, 1 the foothills, 2 the high plateau (a screen position)
   w.drawMeadow = function (c, cam, hw, hh, G) {
     var sp = G.patchSize || 70, gx0 = Math.floor((cam.x - hw) / sp) - 2, gx1 = Math.ceil((cam.x + hw) / sp) + 1, gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 2, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1, gx, gy;
@@ -6170,10 +6170,18 @@ function moveCircle(e, dx, dy) {
   var wk = api.scene && api.scene.walk;
   if (wk && !wk(e.x, e.y, e)) { if (wk(e.x, oy, e)) e.y = oy; else if (wk(ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
   var bl = e !== P && api.blocked ? api.blocked : null;      // a page that knows the walls (Nav): a man does not step across one, wherever he is
-  if (bl && bl(ox, oy, e.x, e.y, e)) { if (!bl(ox, oy, e.x, oy, e)) e.y = oy; else if (!bl(ox, oy, ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
+  if (bl) {                                                  // (MEN.wallGap: he stops that far short of a wall he walks into, so that he does not stand in it; along it and away from it he walks as he likes)
+    var wg = MEN.wallGap || 0, gx = wg && e.x !== ox ? (e.x > ox ? wg : -wg) : 0, gy = wg && e.y !== oy ? (e.y > oy ? wg : -wg) : 0;
+    if (bl(ox, oy, e.x + gx, e.y + gy, e)) { if (!bl(ox, oy, e.x + gx, oy, e)) e.y = oy; else if (!bl(ox, oy, ox, e.y + gy, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
+  }
   var wx0 = e.x, wy0 = e.y, sx0 = ox, sy0 = oy, hitP = null;
+  // A wall's circles are there for the hero. Where a grid knows the walls, nobody else steps across one anyway (bl, above), and
+  // the circles exist only near the hero: a man who walked past a chest along a wall, far from him, was caged between the chest
+  // and the wall's circles the moment the hero came near (2026-10-13, found by the town test: a man of the hall stood 21 s in the
+  // corner of a house). So where the grid keeps him, a wall's circles leave him alone, near the hero and far from him alike.
+  var noWalls = bl && api.walled && api.walled(e.x, e.y);
   for (var i = 0; i < W.pillars.length; i++) {
-    var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
+    var p = W.pillars[i]; if (noWalls && p.wall) continue; var ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
     if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; hitP = p; }
   }
   if (hitP && e !== P) {       // dead on against something round there is nothing to slide along, so he steps round it (2026-10-13: a man stood for a minute with his nose against the hearth of his own house)
@@ -6830,6 +6838,7 @@ var MEN = {
   // of the arrow; dmg to the hero (before armour) and the share of it a man takes (toMen); err: how far off he may be, radians;
   // lead: how much of a moving man's way he allows for; lane: how wide a line must be free of his own
   bow: { range: 300, keep: 125, near: 60, draw: [1.3, 0.75], cd: [2.6, 1.3], speed: 270, life: 1.25, dmg: 9, toMen: 0.5, err: [0.13, 0.03], lead: [0.2, 0.8], lane: 12 },
+  wallGap: 4,                               // how far short of a wall anybody but the hero stops when he walks into it (see moveCircle), so that he does not stand in it; 0 and 4 came out alike over 246 scripted attacks on towns (2026-10-13)
   pursue: 700,                              // a town's man goes for nobody further than this from his own post: they do not leave their town to run a raider down across the country (my choice, 2026-10-13: without it nothing could be carried out of a woken town, however far the ship)
   quiet: 70,                                // a man at his post who has noticed nothing, struck from behind by the hero, falls to that one blow, and it is heard only this far (rung 6: the quiet way in)
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
@@ -6906,9 +6915,25 @@ function threatTo(e) {                      // whose blow is coming at him, if h
   }
   return null;
 }
+// Making no way toward a place that is still far (another man in a narrow place, a corner, two round things side by side): he
+// steps to one side for a moment, the other side next time, and further round each time it has not helped, until he is all
+// but backing out of whatever holds him. (2026-10-13: a turn of 72 degrees either way, which is all this was, only pressed a
+// man against one log seat or the other when he stood in the notch between two; the town test found men standing 5 to 21 s.)
+// d: how far the place still is; far: far enough to bother; waiting: he is waiting his turn at a door. Answers the turn.
+function sideStep(e, dt, d, far, waiting) {
+  e.progT = (e.progT || 0) + dt; if (e.sideT > 0) e.sideT -= dt;
+  if (e.sideN && (d < e.sideD - 28 || d > e.sideD + 160)) e.sideN = 0;      // past it (or the place has moved away): begin again
+  if (e.progT >= 0.5) {
+    var made = Math.hypot(e.x - (e.progX || 0), e.y - (e.progY || 0)); e.progT = 0; e.progX = e.x; e.progY = e.y;
+    if (made < 3 && far && !waiting && !(e.sideT > 0)) { if (!e.sideN) e.sideD = d; e.sideN = Math.min(4, (e.sideN || 0) + 1); e.sideT = 0.45 + e.sideN * 0.15; e.sideS = -(e.sideS || (e.seed > 5 ? 1 : -1)); }
+  }
+  return e.sideT > 0 ? e.sideS * (0.7 + e.sideN * 0.55) : 0;
+}
 function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows the walls may give the next corner to make for (api.nav)
-  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) return 0; x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }
+  var far = Math.hypot(x - e.x, y - e.y);
+  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) { e.progT = 0; return 0; } x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }
   var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 0.5) return 0;
+  var tb = e.type === 'soldier' ? sideStep(e, dt, far, far > 30, false) : 0; if (tb) { var ta = Math.atan2(dy, dx) + tb; dx = Math.cos(ta) * d; dy = Math.sin(ta) * d; }   // (a man who makes no way on an errand, to his post, to a noise or after the hero steps round what holds him)
   var ox = e.x, oy = e.y, st = Math.min(d, sp * dt); moveCircle(e, dx / d * st, dy / d * st); return Math.hypot(e.x - ox, e.y - oy);
 }
 function blowOf(e, second, quick) {
@@ -6931,6 +6956,23 @@ function noise(x, y, r, soft) {                   // something loud at a place: 
   }
   if (api.onNoise) api.onNoise(x, y, r, heardN, !!soft);   // heardN: how many men heard it; soft: a noise that is nothing unless somebody did (a blow on a wall)
   return heardN;
+}
+/* Something to look at that is nobody's blow (a house on fire). The men of the other side within r who are at their day
+   leave it and go to stand before it, for o.hold seconds (call again to keep them there); a man the page says must stay
+   (o.stays(e): a gate's guards, the hall's own) stays where he is. They have noticed nothing else: a real noise wakes them
+   as at their posts, and a stranger who walks past is still a stranger. One already up with nobody to fight goes to look,
+   as at any noise. Answers how many went or stand. (2026-10-13: a fire lit as a diversion drew nobody: it was a noise like
+   any other, and every man who heard it was simply up and after the hero wherever he stood.) */
+function gawk(x, y, r, o) {
+  o = o || {}; var n = 0, i, m, d, a, q;
+  for (i = 0; i < W.enemies.length; i++) {
+    m = W.enemies[i]; if (m.type !== 'soldier' || m.side === 1 || m.dead || m.out || m.down || m.deaf) continue; d = Math.hypot(m.x - x, m.y - y); if (d > r) continue;
+    if (m.errand && m.errand.gawk) { m.errand.hold = o.hold || 5; n++; continue; }
+    if (m.errand) continue;
+    if (m.awake === false) { if (o.stays && o.stays(m)) continue; a = Math.atan2(m.y - y, m.x - x) + (Math.random() - 0.5) * 1.1; q = (o.near || 64) + Math.random() * 44; var sp = o.spot ? o.spot(m, x + Math.cos(a) * q, y + Math.sin(a) * q) : { x: x + Math.cos(a) * q, y: y + Math.sin(a) * q }; if (!sp) continue; m.errand = { x: sp.x, y: sp.y, near: 24, run: true, gawk: true, hold: o.hold || 5, fx: x, fy: y }; n++; }   // (o.spot: the page says where a man may stand to look: not in the house that burns)
+    else if (!m.tgt && !m.heardAt) { m.heardAt = { x: x + (Math.random() - 0.5) * 60, y: y + (Math.random() - 0.5) * 60 }; m.lookT = 0; }
+  }
+  return n;
 }
 function wallBetween(x0, y0, x1, y1) { return !!api.wall && api.wall(x0, y0, x1, y1); }   // a page that knows the walls: no blow, no arrow and no seeing through one
 function strike(e) {
@@ -7008,7 +7050,11 @@ function order(kind) {                      // the hero's word to his own men wi
 }
 function postStep(e, dt) {                  // one of a town's men with nothing to fight: at his post
   var p = e.post; if (!p) return;
-  if (Math.hypot(p.x - e.x, p.y - e.y) > 5) { stepTo(e, p.x, p.y, MEN.speed * 0.8, dt); e.face = turnToward(e.face, Math.atan2(p.y - e.y, p.x - e.x), MEN.turn * dt); e.atPost = false; }
+  var pd = Math.hypot(p.x - e.x, p.y - e.y);
+  // (pushed a step from his place, he steps back to it as he stands: he does not turn his back on what he was watching to walk
+  // two paces. 2026-10-13: the hero's own men, following him to a gate, nudged its guards, who turned about; nobody could then
+  // come up behind them.)
+  if (pd > 5) { stepTo(e, p.x, p.y, MEN.speed * 0.8, dt); e.face = turnToward(e.face, pd > 26 || p.face == null ? Math.atan2(p.y - e.y, p.x - e.x) : p.face, (pd > 26 ? MEN.turn : 3) * dt); e.atPost = pd <= 26 && p.face != null && Math.abs(wrap(e.face - p.face)) < 0.2; }
   else { if (p.face != null) e.face = turnToward(e.face, p.face, 3 * dt); e.atPost = true; }
 }
 function laneClear(e, F) {                  // may he shoot at this man: no wall between them and nobody of his own in the line (never into his friends)
@@ -7068,7 +7114,8 @@ function soldierAI(e, dt) {
   }
   if (e.errand) {                           // sent somewhere with something to do there (a chest to the ship): he goes by the grid and fights nobody on the way. { x, y, near, run, slow, done(e), drop(e), fail(e) }
     var er = e.errand, ed = Math.hypot(er.x - e.x, er.y - e.y); e.tgt = null; e.guard = 0; e.sw = null;
-    if (ed < (er.near || 16)) { e.errand = null; e.state = 'idle'; if (er.done) er.done(e); return; }
+    if (er.gawk && e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.errand = null; e.awake = true; e.heardAt = e.alarm || null; e.lookT = 0; if (api.onWake) api.onWake(e); return; } }   // (a man gone to look at a fire has noticed nothing else: a noise wakes him as it would at his post)
+    if (ed < (er.near || 16)) { if (er.hold > 0) { er.hold -= dt; e.state = 'idle'; if (er.fx != null) e.face = turnToward(e.face, Math.atan2(er.fy - e.y, er.fx - e.x), 3 * dt); return; } e.errand = null; e.state = 'idle'; if (er.done) er.done(e); return; }   // (hold: he stands there that long, looking at fx, fy)
     e.state = 'chase'; var em = stepTo(e, er.x, er.y, (er.run ? MEN.run : MEN.speed) * (er.slow || 1), dt);
     e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(er.y - e.y, er.x - e.x), MEN.turn * dt);
     er.t = (er.t || 0) + dt; er.px = er.px == null ? e.x : er.px; er.py = er.py == null ? e.y : er.py;
@@ -7091,7 +7138,7 @@ function soldierAI(e, dt) {
     if (e.side === 1) followStep(e, dt);
     else if (e.heardAt) {
       var hd = Math.hypot(e.heardAt.x - e.x, e.heardAt.y - e.y);
-      if (hd > 36 && !(e.lookT > 0)) { e.state = 'chase'; var mv = stepTo(e, e.heardAt.x, e.heardAt.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(e.heardAt.y - e.y, e.heardAt.x - e.x), MEN.turn * dt); e.stuckT = mv < MEN.run * dt * 0.2 ? (e.stuckT || 0) + dt : 0; if (e.stuckT > 2.5) { e.lookT = 0.01; e.stuckT = 0; } }   // (he cannot get there: he looks about where he is)
+      if (hd > 36 && !(e.lookT > 0)) { e.state = 'chase'; var mv = stepTo(e, e.heardAt.x, e.heardAt.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(e.heardAt.y - e.y, e.heardAt.x - e.x), MEN.turn * dt); e.stuckT = mv < MEN.run * dt * 0.2 || e.sideN >= 3 ? (e.stuckT || 0) + dt : 0; if (e.stuckT > 2.5) { e.lookT = 0.01; e.stuckT = 0; e.sideN = 0; } }   // (he cannot get there: he looks about where he is)
       else { e.lookT = (e.lookT || 0) + dt; e.face += Math.sin(e.lookT * 1.3 + e.seed) * dt * 1.4; if (e.lookT > 7) { e.heardAt = null; e.lookT = 0; e.noT = 0; } }
     }
     else { e.noT = (e.noT || 0) + dt; if (e.post && e.noT > 6) { postStep(e, dt); if (e.atPost) { e.awake = false; e.noT = 0; e.wakeT = 0; } } }
@@ -7126,9 +7173,7 @@ function soldierAI(e, dt) {
       if (e.order === 'hold' && e.holdAt && Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 46 && d > keep) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); break; }   // told to hold: he does not follow a man who backs away
       var way = api.nav ? api.nav(e, T.x, T.y) : null;                                                                 // a wall between them: the way round it
       // making no way toward a man who is still far (another man in a narrow place, a corner): he steps to one side for a moment, the other side next time
-      e.progT = (e.progT || 0) + dt; if (e.sideT > 0) e.sideT -= dt;
-      if (e.progT >= 0.5) { var made = Math.hypot(e.x - (e.progX || 0), e.y - (e.progY || 0)); e.progT = 0; e.progX = e.x; e.progY = e.y; if (made < 3 && d > want + 24 && !(way && way.wait) && !(e.sideT > 0)) { e.sideT = 0.6; e.sideS = -(e.sideS || (e.seed > 5 ? 1 : -1)); } }
-      var turnBy = e.sideT > 0 ? e.sideS * 1.25 : 0;
+      var turnBy = sideStep(e, dt, d, d > want + 24, way && way.wait);
       if (way) { if (!way.wait) { var wa = Math.atan2(way.y - e.y, way.x - e.x) + turnBy, wsp = (d > want + 70 ? MEN.run : MEN.speed) * slow; moveCircle(e, Math.cos(wa) * wsp * dt, Math.sin(wa) * wsp * dt); if (!th) e.face = turnToward(e.face, wa, MEN.turn * dt); } }
       else if (d > want + 70 || turnBy || (T.bow && !T.close && d > want + 8) || (d > keep - 2 && makingOff(T, e))) moveCircle(e, Math.cos(ang + turnBy) * MEN.run * dt, Math.sin(ang + turnBy) * MEN.run * dt);   // (a bowman is run down, not walked up to)
       else {
@@ -7139,8 +7184,8 @@ function soldierAI(e, dt) {
       }
       if ((e.guard <= 0 || (e.blocked > 0 && !th)) && !(th && e.shield && e.guardCd <= 0)) {   // a man with a shield does not begin a blow into one he sees coming: he stops it first, and answers
         var aligned = Math.abs(wrap(ang - e.face)) < 0.45;
-        var answer = e.blocked > 0;
-        if (e.cd <= 0 && d <= keep + 7 && aligned && !way && slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1) && !(T === P && (P.roll.t > 0))) { e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
+        var answer = e.blocked > 0;   // (below: a foe in reach with no wall between is struck, whatever the grid makes of the way to him: being led round a corner, or waiting his turn at a gate, he stood face to face with his man and did nothing)
+        if (e.cd <= 0 && d <= keep + 7 && aligned && (!way || !wallBetween(e.x, e.y, T.x, T.y)) && slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1) && !(T === P && (P.roll.t > 0))) { e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
       }
       break;
     case 'windup':
@@ -7246,7 +7291,7 @@ function updateEnemies(dt) {
   for (var a = 0; a < W.enemies.length; a++) for (var b = a + 1; b < W.enemies.length; b++) {
     var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.down || B.down || A.out || B.out || A.type === 'shooter' || B.type === 'shooter') continue;   // (a man on his knees is in nobody's way: one knelt in a passage a man wide and nobody passed)
     var ox = B.x - A.x, oy = B.y - A.y, dd = Math.hypot(ox, oy), mn = A.r + B.r;
-    if (dd < mn && dd > 0.01) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }
+    if (dd < mn && dd > 0.01 && !wallBetween(A.x, A.y, B.x, B.y)) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }   // (not through a wall: a man hard against one side of it stopped a man walking along the other)
   }
 }
 function updateProjs(dt) {
@@ -7996,7 +8041,7 @@ function render(c) {
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, noise: noise, reset: reset, S: S, api: api,
+return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   hurt: function (e, dmg, ang) { damageEnemy(e, dmg, ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 

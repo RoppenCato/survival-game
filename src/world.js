@@ -1182,7 +1182,7 @@ function make(kit, opts) {
   };
   // the meadow under the blades (painted first, still): soft lighter and darker patches of grass, bare earth, and drifts of
   // tiny flowers in several colours, the way a real meadow is blotchy and flecked rather than one green
-  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mtn.shelters.length && w.shelterAt(x, y / K, 4)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
+  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (w.noGrass && w.noGrass(Math.floor(x / T), Math.floor(y / K / T))) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mtn.shelters.length && w.shelterAt(x, y / K, 4)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
   function fellOf(x, y) { return mtn ? cellAt(x, y / K) & 3 : 0; }   // 0 the low ground, 1 the foothills, 2 the high plateau (a screen position)
   w.drawMeadow = function (c, cam, hw, hh, G) {
     var sp = G.patchSize || 70, gx0 = Math.floor((cam.x - hw) / sp) - 2, gx1 = Math.ceil((cam.x + hw) / sp) + 1, gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 2, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1, gx, gy;

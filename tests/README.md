@@ -22,4 +22,6 @@ Run everything: `npm install` once, then `npm test` from the project root.
 | ruin.js | breaking in, bringing down, burning and mending (src/ruin.js, docs/destruction.md): the table of what breaks what under an iron axe and an iron pick (blows until it gives, and how far it is heard); a house (how many walls before the roof falls, what is left, mending and raising it); doors; the way through a breach on the way-finding grid; fire (what catches, 60 houses of each kind burnt, sparks over one, two, three and five tiles downwind, in no wind, across and upwind, 300 fires each). A line that begins `!!` is a fault |
 | balance.js | (not in `npm test`) a tap-swinging bot against each animal, with stick or flint sword, with and without leather: time, health lost, deaths |
 
+The fights are random. To play one again, give `Math.random` a seed: `RSEED=28 node -r ./tools/seedrand.js tests/battle.js town 2` (with `TOWN_DBG=1` the town test prints every man who stands still and what blocks him).
+
 Some scripts also write PNG images into the current folder. Delete them any time.

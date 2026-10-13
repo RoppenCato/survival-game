@@ -586,3 +586,23 @@ Built: breaking in, bringing down, burning, mending in a place you hold. None of
   was burnt to the ground be worth less (its people gone for good)?
 - **Side walls with a face** for every building, if the trial is liked (`Build.CFG.lean`).
 
+**After the big trials (2026-10-13; `docs/destruction.md` section 9).** Not decided:
+
+- **Bigger houses for good.** `Village.DEF.houseK` is one number; half again as big was tried. If it is kept, the
+  inside needs a **furnishing pass by floor area** (more beds along the walls, a long table and benches in a hall, a
+  loom, a partition or a raised sleeping bench), or the rooms read as empty.
+- **Hearing by house size.** A bigger place is a quieter one unless what is heard grows with it. One number for both.
+- **The second ring.** Its houses are plain houses. It could hold what a big place has and a village has not: a second
+  well, a tanner, a weaver, a shipwright by the shore, a market street.
+- **A fire's watchers.** They stand and look until it is out. Some could run for water (the town fighting a fire,
+  above), one could run for the hall, and the priest could shout.
+- **The ring of stakes.** One stake a blow makes it a way in that nobody hears. A village could keep a dog.
+- **The walk from the ship** was skipped in every scripted raid. How far a big place lies from any shore decides more
+  than its walls do.
+- **Your men at a gate.** Following you, they take their places behind you even when that is inside a gate you have
+  just walked out of, among its guards. A follower's place could keep to your side of a gate and clear of men at
+  their posts; the decided rule (a band is barred at the gate) would settle most of it.
+- **A way-finder's limit.** A way's search gives up after 6000 tiles, which in a place of 130 by 110 tiles is not all
+  of it. Nothing stood still for it in the trials (a man walks to the end of what was found and looks again), but a
+  bigger place still would want the search to work in two levels.
+

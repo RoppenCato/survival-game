@@ -5539,7 +5539,7 @@ function make(kit, opts) {
   };
   // the meadow under the blades (painted first, still): soft lighter and darker patches of grass, bare earth, and drifts of
   // tiny flowers in several colours, the way a real meadow is blotchy and flecked rather than one green
-  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mtn.shelters.length && w.shelterAt(x, y / K, 4)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
+  function meadowOk(x, y) { if (x < 0 || y < 0 || x >= WX || y / K >= WY) return false; if (w.noGrass && w.noGrass(Math.floor(x / T), Math.floor(y / K / T))) return false; if (mtn) { var mc0 = cellAt(x, y / K); if (mc0 & (M_BLOCK | M_RAMP | M_WATER)) return false; if (mtn.shelters.length && w.shelterAt(x, y / K, 4)) return false; if (mc0 & 3) return true; } var ex = elevAt(x, y / K); return ex >= 0.4 && ex >= beachAt(x / T, y / K / T) + 0.35; }
   function fellOf(x, y) { return mtn ? cellAt(x, y / K) & 3 : 0; }   // 0 the low ground, 1 the foothills, 2 the high plateau (a screen position)
   w.drawMeadow = function (c, cam, hw, hh, G) {
     var sp = G.patchSize || 70, gx0 = Math.floor((cam.x - hw) / sp) - 2, gx1 = Math.ceil((cam.x + hw) / sp) + 1, gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 2, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1, gx, gy;
@@ -5875,7 +5875,8 @@ var DEF = {
   chestLoot: 1, cellarAt: 0.3, storeLoot: 1,           // finds: a chest in every house, a cellar in one house at this wealth and above
   yardEarth: 1, pathGravel: 1, mossEdge: 1,
   emptySlots: 0.25,                                   // the share of ring slots left open, so no two rings are alike
-  sizeJitter: 1                                       // buildings vary by this many tiles
+  sizeJitter: 1,                                      // buildings vary by this many tiles
+  houseK: 1                                           // every building's inside, times this (2026-10-13, Robin: a trial with bigger houses, so there is more room to move around); the yard and the site grow with it
 };
 // the archetypes: how many of what, the yard, the site a page should find for it
 var ARCH = {
@@ -5891,7 +5892,12 @@ var ARCH = {
   ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [8, 7], site: [26, 20], people: [0, 0], ruin: true },
   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church, and a lone church with its priest's house (the lucky strike)
   town: { name: 'Town', houses: [5, 7], out: [5, 7], yard: [13, 10], site: [50, 40], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },
-  church: { name: 'Church', houses: [1, 1], out: [0, 1], yard: [5, 4], site: [18, 16], people: [2, 3], church: true, chapel: true, lowland: true }
+  church: { name: 'Church', houses: [1, 1], out: [0, 1], yard: [5, 4], site: [18, 16], people: [2, 3], church: true, chapel: true, lowland: true },
+  // big places (2026-10-13, Robin: build a big village or town and raid it): the ring full, and a second ring of houses round it
+  // (outer: a row behind the hall, a row before the gate, a column either side, with lanes between). Nothing plans them into a
+  // world: a page asks for them (plan's opts.swap), as the Destruction Editor does.
+  great: { name: 'Great village', houses: [6, 6], outer: [9, 12], out: [7, 8], yard: [15, 11], site: [78, 64], people: [34, 44], hall: true, palisade: true, full: true },
+  bigtown: { name: 'Great town', houses: [6, 6], outer: [9, 12], out: [7, 9], yard: [15, 11], site: [80, 66], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true, full: true }
 };
 // the buildings: inside size in tiles [w range, h range], what stands inside, where the door goes (toward the yard)
 var BUILD = {
@@ -5924,7 +5930,7 @@ function make(seed, site, opts) {
   var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return shore ? 1 : 0; };   // the lowlands: clay tiles for the rich, thatch for the rest
   var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : wealth >= G.railAt ? 'fence' : 'rail'; if (A.chapel) fenceKind = 'drystone';
   // the yard
-  var yw = A.yard[0], yh = A.yard[1], yx = tx + Math.floor((w - yw) / 2), yy = ty + Math.floor((h - yh) / 2) + 1;
+  var HK = G.houseK || 1, yw = Math.round(A.yard[0] * (1 + (HK - 1) * 0.5)), yh = Math.round(A.yard[1] * (1 + (HK - 1) * 0.5)), yx = tx + Math.floor((w - yw) / 2), yy = ty + Math.floor((h - yh) / 2) + 1;
   V.yard = { x: yx, y: yy, w: yw, h: yh };
   function overlaps(a, b, gap) { return !(a.x + a.w + gap <= b.x || b.x + b.w + gap <= a.x || a.y + a.h + gap <= b.y || b.y + b.h + gap <= a.y); }
   function fits(lot) {
@@ -5937,14 +5943,14 @@ function make(seed, site, opts) {
     var k, best = null; for (k = 0; k < 12; k++) { var dx = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, dy = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot }; if (fits(l)) { best = l; break; } }
     if (best) V.lots.push(best); return best;
   }
-  function size(id) { var b = BUILD[id]; if (id === 'house' && R() < 0.5) return { w: 4, h: pickRange(R, [4, 5], 0) }; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }   // half the houses stand deep: a gable end facing south
+  function size(id) { var b = BUILD[id], sz = id === 'house' && R() < 0.5 ? { w: 4, h: pickRange(R, [4, 5], 0) } : { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; if (HK !== 1) { sz.w = Math.max(sz.w, Math.round(sz.w * HK)); sz.h = Math.max(sz.h, Math.round(sz.h * HK)); } return sz; }   // half the houses stand deep: a gable end facing south. (HK: the trial's bigger houses)
   // the ring: the longhouse north of the yard facing it; the houses east, west, south-east and south-west, shuffled; some slots left open
   var big = A.chapel ? 'church' : (A.hall ? 'hall' : 'longhouse'), bs = size(big);
   tryPlace({ id: big, x: yx + Math.floor((yw - bs.w) / 2) + Math.round((R() - 0.5) * 2), y: yy - G.yardGap - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'n' }, 1);
   if (A.church && !A.chapel) { var cs = size('church'), L00 = V.lots[0], cTries = [[L00.x + L00.w + G.gap, L00.y + L00.h - cs.h], [L00.x - cs.w - G.gap, L00.y + L00.h - cs.h], [yx + yw + G.yardGap + 1, yy - cs.h - 1], [yx - G.yardGap - cs.w - 1, yy - cs.h - 1], [yx + yw + G.yardGap + 2, yy], [yx - G.yardGap - cs.w - 2, yy]], ci; for (ci = 0; ci < cTries.length; ci++) if (tryPlace({ id: 'church', x: cTries[ci][0], y: cTries[ci][1], w: cs.w, h: cs.h, door: 's', slot: 'church' }, 2)) break; }   // the town's church: beside the hall, else at a corner of the yard
   var nHouses = pickRange(R, A.houses, 0), slots = ['e', 'w', 'se', 'sw', 'ne', 'nw'], order = slots.slice().sort(function () { return R() - 0.5; }), placedHouses = 0, si;
   for (si = 0; si < order.length && placedHouses < nHouses; si++) {
-    if (!A.townwall && R() < G.emptySlots && si < order.length - 1) continue;   // (a town fills its ring: it came out with one to four houses where its rule asks for five to seven, 2026-10-13)
+    if (!A.townwall && !A.full && R() < G.emptySlots && si < order.length - 1) continue;   // (a town fills its ring: it came out with one to four houses where its rule asks for five to seven, 2026-10-13)
     var sl = order[si], hs = size('house'), lot = null;
     if (sl === 'e') lot = { x: yx + yw + G.yardGap, y: yy + Math.floor(R() * Math.max(1, yh - hs.h + 1)), door: 'w' };
     else if (sl === 'w') lot = { x: yx - G.yardGap - hs.w, y: yy + Math.floor(R() * Math.max(1, yh - hs.h + 1)), door: 'e' };
@@ -5970,6 +5976,23 @@ function make(seed, site, opts) {
     else if (id === 'boathouse') lot2 = shore === 's' ? { x: yx + Math.floor(R() * 3) - 1, y: ty + h - os.h - 1, door: 's' } : shore === 'n' ? { x: yx, y: ty + 1, door: 's' } : shore === 'e' ? { x: tx + w - os.w - 1, y: yy + yh + 2, door: 's' } : { x: tx + 1, y: yy + yh + 2, door: 's' };
     lot2.w = os.w; lot2.h = os.h; lot2.id = id; lot2.slot = 'out';
     if (tryPlace(lot2, 2)) placedOut++;
+  }
+  // the second ring (the big places): houses in a row behind the hall and a row before the gate, and a column either side, a lane
+  // from the first ring; the way in from the gate and the two ways a back gate may lie are kept open
+  if (A.outer) {
+    var nO = pickRange(R, A.outer, 0), obx0 = 1e9, oby0 = 1e9, obx1 = -1e9, oby1 = -1e9, lane = G.gap + 1, gxm = yx + Math.floor(yw / 2), placedO = 0, turn = 0, dead = {}, nDead = 0;
+    V.lots.forEach(function (l) { obx0 = Math.min(obx0, l.x); oby0 = Math.min(oby0, l.y); obx1 = Math.max(obx1, l.x + l.w); oby1 = Math.max(oby1, l.y + l.h); });
+    var cur = { n: obx0 - 1, s: obx0 - 1, e: oby0, w: oby0 }, keepN = [[L0.x - 3, L0.x], [L0.x + L0.w, L0.x + L0.w + 3]], keepS = [[gxm - 2, gxm + 4]], sidesO = ['n', 'e', 's', 'w'];
+    function pastLanes(x0, wd, lanes) { var moved = true, n2 = 0; while (moved && n2++ < 6) { moved = false; lanes.forEach(function (ln) { if (x0 < ln[1] && x0 + wd > ln[0]) { x0 = ln[1]; moved = true; } }); } return x0; }
+    while (placedO < nO && nDead < 4 && turn < 80) {
+      var sdO = sidesO[turn % 4], hs2 = size('house'), lot3 = null; turn++; if (dead[sdO]) continue;
+      if (sdO === 'n') { cur.n = pastLanes(cur.n, hs2.w, keepN); if (cur.n + hs2.w > obx1 + 2) { dead.n = 1; nDead++; continue; } lot3 = { x: cur.n, y: oby0 - lane - hs2.h, door: 's' }; cur.n += hs2.w + G.gap; }
+      else if (sdO === 's') { cur.s = pastLanes(cur.s, hs2.w, keepS); if (cur.s + hs2.w > obx1 + 2) { dead.s = 1; nDead++; continue; } lot3 = { x: cur.s, y: oby1 + lane, door: cur.s < gxm ? 'e' : 'w' }; cur.s += hs2.w + G.gap; }
+      else if (sdO === 'e') { if (cur.e + hs2.h > oby1 + 1) { dead.e = 1; nDead++; continue; } lot3 = { x: obx1 + lane, y: cur.e, door: 'w' }; cur.e += hs2.h + G.gap; }
+      else { if (cur.w + hs2.h > oby1 + 1) { dead.w = 1; nDead++; continue; } lot3 = { x: obx0 - lane - hs2.w, y: cur.w, door: 'e' }; cur.w += hs2.h + G.gap; }
+      lot3.w = hs2.w; lot3.h = hs2.h; lot3.id = 'house'; lot3.slot = 'outer';
+      if (tryPlace(lot3, 0)) placedO++;
+    }
   }
   // the pieces of every lot: walls in the lot's material, a door on the yard side, a window or two, the floor, the roof later
   function H(x, y, t, m) { V.H[key(x, y)] = { t: t, m: m }; } function Vw(x, y, t, m) { V.V[key(x, y)] = { t: t, m: m }; }
@@ -6067,9 +6090,10 @@ function make(seed, site, opts) {
     V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it
     var erx = hw2 * kk + T * 0.8, ery = hh2 * kk + T * 0.8, per = 6.283 * Math.sqrt((erx * erx + ery * ery) / 2), nst = Math.max(12, Math.round(per / G.stakeStep)), gpt = tile(gateX, ey1), gateA = Math.atan2((gpt[1] + T - ecy) / ery, (gpt[0] - ecx) / erx), k2;
     var gpt2 = backGateX != null ? tile(backGateX, ey0) : null, gate2A = gpt2 ? Math.atan2((gpt2[1] - T - ecy) / ery, (gpt2[0] - ecx) / erx) : null;
-    for (k2 = 0; k2 < nst; k2++) { var a2 = k2 / nst * 6.283, px = ecx + Math.cos(a2) * erx, py = ecy + Math.sin(a2) * ery, da = Math.abs(Math.atan2(Math.sin(a2 - gateA), Math.cos(a2 - gateA))); if (da < 0.16) continue; if (gate2A != null && Math.abs(Math.atan2(Math.sin(a2 - gate2A), Math.cos(a2 - gate2A))) < 0.14) continue; if (shore === 's' && Math.sin(a2) > 0.75) continue; if (V.ruin && R() < 0.35) continue; V.props.push({ name: 'stake', x: px, y: py, solid: 5 }); }
-    for (k2 = 0; k2 < (shore === 's' ? 0 : Math.round(G.banners)); k2++) { var ba = gateA + (k2 % 2 ? 1 : -1) * 0.2; V.props.push({ name: 'banner', x: ecx + Math.cos(ba) * erx, y: ecy + Math.sin(ba) * ery + 2, solid: 3 }); }
-    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery };
+    var gapA = Math.min(0.16, 1.7 * T / Math.max(1, Math.min(erx, ery))), gapB = Math.min(0.14, 1.3 * T / Math.max(1, Math.min(erx, ery)));   // the gate's gap by its width on the ground, three tiles and a bit (2026-10-13: by angle alone a big ring's gate was nine tiles of nothing; a small ring keeps what it had)
+    for (k2 = 0; k2 < nst; k2++) { var a2 = k2 / nst * 6.283, px = ecx + Math.cos(a2) * erx, py = ecy + Math.sin(a2) * ery, da = Math.abs(Math.atan2(Math.sin(a2 - gateA), Math.cos(a2 - gateA))); if (da < gapA) continue; if (gate2A != null && Math.abs(Math.atan2(Math.sin(a2 - gate2A), Math.cos(a2 - gate2A))) < gapB) continue; if (shore === 's' && Math.sin(a2) > 0.75) continue; if (V.ruin && R() < 0.35) continue; V.props.push({ name: 'stake', x: px, y: py, solid: 5 }); }
+    for (k2 = 0; k2 < (shore === 's' ? 0 : Math.round(G.banners)); k2++) { var ba = gateA + (k2 % 2 ? 1 : -1) * (gapA + 0.04); V.props.push({ name: 'banner', x: ecx + Math.cos(ba) * erx, y: ecy + Math.sin(ba) * ery + 2, solid: 3 }); }
+    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery, gateAt: shore === 's' ? null : [ecx + Math.cos(gateA) * erx, ecy + Math.sin(gateA) * ery], backAt: gate2A != null ? [ecx + Math.cos(gate2A) * erx, ecy + Math.sin(gate2A) * ery] : null };   // gateAt, backAt: the gaps in the ring of stakes
   } else {
     var wideGate = A.townwall ? 1 : 0;                         // a town's gate is two tiles wide (2026-10-13: through one tile a fight was a duel with everyone else waiting)
     for (x = ex0; x < ex1; x++) { if (x === backGateX) H(x, ey0, 'gate', 2); else if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if ((x === gateX || (wideGate && x === gateX + 1)) && shore !== 's') H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
@@ -6179,7 +6203,7 @@ function make(seed, site, opts) {
   return V;
 }
 // a page's site for an archetype: the tiles it needs
-function siteFor(archId) { var A = ARCH[archId] || ARCH.small; return { w: A.site[0], h: A.site[1] }; }
+function siteFor(archId, G) { var A = ARCH[archId] || ARCH.small, k = 1 + (((G && +G.houseK) || 1) - 1) * 0.8; return { w: Math.round(A.site[0] * k), h: Math.round(A.site[1] * k) }; }   // (G.houseK: bigger houses need a bigger site)
 
 /* Villages across the islands (2026-10-07, Robin): where the villages of a world stand, what kind each is, its name and its jetty.
    plan(env, opts): env = { isles: [{ x, y, r }] in tiles (the first is the starter island and gets nothing: its village was raided),
@@ -6227,7 +6251,7 @@ function plan(env, opts) {
   function shoreOf(cx, cy, sh) { var x, sy, n; for (sy = cy + Math.ceil(sh / 2) + 2; sy <= cy + Math.ceil(sh / 2) + 10; sy++) { n = 0; for (x = cx - 4; x <= cx + 4; x++) if (env.code(x, sy) === 0) n++; if (n >= 5) return 's'; } return null; }   // the sea within a few tiles past the beach below the site
   function farEnough(cx, cy) { var k; for (k = 0; k < sites.length; k++) if (Math.hypot(sites[k].cx - cx, sites[k].cy - cy) < 38) return false; for (k = 0; k < (env.avoid || []).length; k++) if (Math.hypot(env.avoid[k].x - cx, env.avoid[k].y - cy) < env.avoid[k].r + 18) return false; return true; }
   function find(q, arch, wantShore) {                         // a site of the archetype's size on island q, on a shore or not, or null
-    var sz = siteFor(arch), tries;
+    var sz = siteFor(arch, opts.G), tries;
     for (tries = 0; tries < 900; tries++) {
       var a = R() * 6.283, d = (wantShore ? 0.45 + R() * 0.5 : R() * 0.6) * q.r, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d * 0.9);
       if (!siteOk(cx, cy, sz.w, sz.h) || !farEnough(cx, cy)) continue;
@@ -6248,9 +6272,10 @@ function plan(env, opts) {
     else if (q.r >= 42) wants = [R() < 0.5 ? ['fishing', true] : ['farmstead', false]];
     else if (R() < 0.5) wants = [['farmstead', false]];
     wants.forEach(function (wq) {
-      var arch = wq[0], st = find(q, arch, wq[1]); if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
-      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && R() < 0.14) arch = 'ruin';
-      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
+      var arch = (opts.swap && opts.swap[wq[0]]) || wq[0], st = find(q, arch, wq[1]); if (!st && arch !== wq[0]) { arch = wq[0]; st = find(q, arch, wq[1]); }   // (opts.swap: a page asks for a big place where a town or a seat would stand; if the island has no room for it, the plain one)
+      if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
+      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && R() < 0.14) arch = 'ruin';
+      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat' || arch === 'great') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
       st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
       sites.push(st);
@@ -6317,6 +6342,11 @@ function garrison(V, n, R) {
     var gx = (F.gate + (F.gateW || 1) / 2) * T, gy = F.y1 * T;
     put(gx - 34, gy + 22, S, 'gate'); put(gx + 34, gy + 22, S, 'gate'); put(gx - 40, gy - 24, S, 'gate'); put(gx + 40, gy - 24, S, 'gate');     // the gate: two outside, two inside
     for (i = F.x0; i < F.x1; i++) if (V.H[key(i, F.y0)] && V.H[key(i, F.y0)].t === 'gate') { put((i + 0.5) * T - 16, F.y0 * T + 26, N, 'gate'); put((i + 0.5) * T + 16, F.y0 * T + 26, N, 'gate'); break; }   // the back gate
+  }
+  if (F && F.round && F.gateAt) {            // a ring of stakes: two inside each gap
+    var ga = Math.atan2(F.cy - F.gateAt[1], F.cx - F.gateAt[0]), gnx = Math.cos(ga), gny = Math.sin(ga);
+    put(F.gateAt[0] + gnx * 30 - gny * 22, F.gateAt[1] + gny * 30 + gnx * 22, S, 'gate'); put(F.gateAt[0] + gnx * 30 + gny * 22, F.gateAt[1] + gny * 30 - gnx * 22, S, 'gate');
+    if (F.backAt) { var gb = Math.atan2(F.cy - F.backAt[1], F.cx - F.backAt[0]); put(F.backAt[0] + Math.cos(gb) * 30 - Math.sin(gb) * 20, F.backAt[1] + Math.sin(gb) * 30 + Math.cos(gb) * 20, N, 'gate'); put(F.backAt[0] + Math.cos(gb) * 30 + Math.sin(gb) * 20, F.backAt[1] + Math.sin(gb) * 30 - Math.cos(gb) * 20, N, 'gate'); }
   }
   put(yc[0] - 60, yc[1] + 30, S, 'yard'); put(yc[0] + 70, yc[1] - 10, Math.PI, 'yard');                                                        // by the market
   houses.forEach(function (l, hi) { var dx2 = l.door === 'e' ? l.x + l.w + 0.6 : l.door === 'w' ? l.x - 0.6 : l.dx + 0.5, dy2 = l.door === 's' ? l.y + l.h + 0.7 : l.door === 'n' ? l.y - 0.7 : l.dy + 0.5; put(dx2 * T + (l.door === 's' || l.door === 'n' ? (hi % 2 ? 14 : -14) : 0), dy2 * T + (l.door === 'e' || l.door === 'w' ? (hi % 2 ? 14 : -14) : 0), S, 'door'); });   // a man by every house door
@@ -6923,10 +6953,18 @@ function moveCircle(e, dx, dy) {
   var wk = api.scene && api.scene.walk;
   if (wk && !wk(e.x, e.y, e)) { if (wk(e.x, oy, e)) e.y = oy; else if (wk(ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
   var bl = e !== P && api.blocked ? api.blocked : null;      // a page that knows the walls (Nav): a man does not step across one, wherever he is
-  if (bl && bl(ox, oy, e.x, e.y, e)) { if (!bl(ox, oy, e.x, oy, e)) e.y = oy; else if (!bl(ox, oy, ox, e.y, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
+  if (bl) {                                                  // (MEN.wallGap: he stops that far short of a wall he walks into, so that he does not stand in it; along it and away from it he walks as he likes)
+    var wg = MEN.wallGap || 0, gx = wg && e.x !== ox ? (e.x > ox ? wg : -wg) : 0, gy = wg && e.y !== oy ? (e.y > oy ? wg : -wg) : 0;
+    if (bl(ox, oy, e.x + gx, e.y + gy, e)) { if (!bl(ox, oy, e.x + gx, oy, e)) e.y = oy; else if (!bl(ox, oy, ox, e.y + gy, e)) e.x = ox; else { e.x = ox; e.y = oy; } }
+  }
   var wx0 = e.x, wy0 = e.y, sx0 = ox, sy0 = oy, hitP = null;
+  // A wall's circles are there for the hero. Where a grid knows the walls, nobody else steps across one anyway (bl, above), and
+  // the circles exist only near the hero: a man who walked past a chest along a wall, far from him, was caged between the chest
+  // and the wall's circles the moment the hero came near (2026-10-13, found by the town test: a man of the hall stood 21 s in the
+  // corner of a house). So where the grid keeps him, a wall's circles leave him alone, near the hero and far from him alike.
+  var noWalls = bl && api.walled && api.walled(e.x, e.y);
   for (var i = 0; i < W.pillars.length; i++) {
-    var p = W.pillars[i], ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
+    var p = W.pillars[i]; if (noWalls && p.wall) continue; var ox = e.x - p.x, oy = e.y - p.y, d = Math.hypot(ox, oy), min = e.r + p.r;
     if (d < min && d > 0.001) { e.x = p.x + ox / d * min; e.y = p.y + oy / d * min; hitP = p; }
   }
   if (hitP && e !== P) {       // dead on against something round there is nothing to slide along, so he steps round it (2026-10-13: a man stood for a minute with his nose against the hearth of his own house)
@@ -7583,6 +7621,7 @@ var MEN = {
   // of the arrow; dmg to the hero (before armour) and the share of it a man takes (toMen); err: how far off he may be, radians;
   // lead: how much of a moving man's way he allows for; lane: how wide a line must be free of his own
   bow: { range: 300, keep: 125, near: 60, draw: [1.3, 0.75], cd: [2.6, 1.3], speed: 270, life: 1.25, dmg: 9, toMen: 0.5, err: [0.13, 0.03], lead: [0.2, 0.8], lane: 12 },
+  wallGap: 4,                               // how far short of a wall anybody but the hero stops when he walks into it (see moveCircle), so that he does not stand in it; 0 and 4 came out alike over 246 scripted attacks on towns (2026-10-13)
   pursue: 700,                              // a town's man goes for nobody further than this from his own post: they do not leave their town to run a raider down across the country (my choice, 2026-10-13: without it nothing could be carried out of a woken town, however far the ship)
   quiet: 70,                                // a man at his post who has noticed nothing, struck from behind by the hero, falls to that one blow, and it is heard only this far (rung 6: the quiet way in)
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
@@ -7659,9 +7698,25 @@ function threatTo(e) {                      // whose blow is coming at him, if h
   }
   return null;
 }
+// Making no way toward a place that is still far (another man in a narrow place, a corner, two round things side by side): he
+// steps to one side for a moment, the other side next time, and further round each time it has not helped, until he is all
+// but backing out of whatever holds him. (2026-10-13: a turn of 72 degrees either way, which is all this was, only pressed a
+// man against one log seat or the other when he stood in the notch between two; the town test found men standing 5 to 21 s.)
+// d: how far the place still is; far: far enough to bother; waiting: he is waiting his turn at a door. Answers the turn.
+function sideStep(e, dt, d, far, waiting) {
+  e.progT = (e.progT || 0) + dt; if (e.sideT > 0) e.sideT -= dt;
+  if (e.sideN && (d < e.sideD - 28 || d > e.sideD + 160)) e.sideN = 0;      // past it (or the place has moved away): begin again
+  if (e.progT >= 0.5) {
+    var made = Math.hypot(e.x - (e.progX || 0), e.y - (e.progY || 0)); e.progT = 0; e.progX = e.x; e.progY = e.y;
+    if (made < 3 && far && !waiting && !(e.sideT > 0)) { if (!e.sideN) e.sideD = d; e.sideN = Math.min(4, (e.sideN || 0) + 1); e.sideT = 0.45 + e.sideN * 0.15; e.sideS = -(e.sideS || (e.seed > 5 ? 1 : -1)); }
+  }
+  return e.sideT > 0 ? e.sideS * (0.7 + e.sideN * 0.55) : 0;
+}
 function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows the walls may give the next corner to make for (api.nav)
-  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) return 0; x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }
+  var far = Math.hypot(x - e.x, y - e.y);
+  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) { e.progT = 0; return 0; } x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }
   var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 0.5) return 0;
+  var tb = e.type === 'soldier' ? sideStep(e, dt, far, far > 30, false) : 0; if (tb) { var ta = Math.atan2(dy, dx) + tb; dx = Math.cos(ta) * d; dy = Math.sin(ta) * d; }   // (a man who makes no way on an errand, to his post, to a noise or after the hero steps round what holds him)
   var ox = e.x, oy = e.y, st = Math.min(d, sp * dt); moveCircle(e, dx / d * st, dy / d * st); return Math.hypot(e.x - ox, e.y - oy);
 }
 function blowOf(e, second, quick) {
@@ -7684,6 +7739,23 @@ function noise(x, y, r, soft) {                   // something loud at a place: 
   }
   if (api.onNoise) api.onNoise(x, y, r, heardN, !!soft);   // heardN: how many men heard it; soft: a noise that is nothing unless somebody did (a blow on a wall)
   return heardN;
+}
+/* Something to look at that is nobody's blow (a house on fire). The men of the other side within r who are at their day
+   leave it and go to stand before it, for o.hold seconds (call again to keep them there); a man the page says must stay
+   (o.stays(e): a gate's guards, the hall's own) stays where he is. They have noticed nothing else: a real noise wakes them
+   as at their posts, and a stranger who walks past is still a stranger. One already up with nobody to fight goes to look,
+   as at any noise. Answers how many went or stand. (2026-10-13: a fire lit as a diversion drew nobody: it was a noise like
+   any other, and every man who heard it was simply up and after the hero wherever he stood.) */
+function gawk(x, y, r, o) {
+  o = o || {}; var n = 0, i, m, d, a, q;
+  for (i = 0; i < W.enemies.length; i++) {
+    m = W.enemies[i]; if (m.type !== 'soldier' || m.side === 1 || m.dead || m.out || m.down || m.deaf) continue; d = Math.hypot(m.x - x, m.y - y); if (d > r) continue;
+    if (m.errand && m.errand.gawk) { m.errand.hold = o.hold || 5; n++; continue; }
+    if (m.errand) continue;
+    if (m.awake === false) { if (o.stays && o.stays(m)) continue; a = Math.atan2(m.y - y, m.x - x) + (Math.random() - 0.5) * 1.1; q = (o.near || 64) + Math.random() * 44; var sp = o.spot ? o.spot(m, x + Math.cos(a) * q, y + Math.sin(a) * q) : { x: x + Math.cos(a) * q, y: y + Math.sin(a) * q }; if (!sp) continue; m.errand = { x: sp.x, y: sp.y, near: 24, run: true, gawk: true, hold: o.hold || 5, fx: x, fy: y }; n++; }   // (o.spot: the page says where a man may stand to look: not in the house that burns)
+    else if (!m.tgt && !m.heardAt) { m.heardAt = { x: x + (Math.random() - 0.5) * 60, y: y + (Math.random() - 0.5) * 60 }; m.lookT = 0; }
+  }
+  return n;
 }
 function wallBetween(x0, y0, x1, y1) { return !!api.wall && api.wall(x0, y0, x1, y1); }   // a page that knows the walls: no blow, no arrow and no seeing through one
 function strike(e) {
@@ -7761,7 +7833,11 @@ function order(kind) {                      // the hero's word to his own men wi
 }
 function postStep(e, dt) {                  // one of a town's men with nothing to fight: at his post
   var p = e.post; if (!p) return;
-  if (Math.hypot(p.x - e.x, p.y - e.y) > 5) { stepTo(e, p.x, p.y, MEN.speed * 0.8, dt); e.face = turnToward(e.face, Math.atan2(p.y - e.y, p.x - e.x), MEN.turn * dt); e.atPost = false; }
+  var pd = Math.hypot(p.x - e.x, p.y - e.y);
+  // (pushed a step from his place, he steps back to it as he stands: he does not turn his back on what he was watching to walk
+  // two paces. 2026-10-13: the hero's own men, following him to a gate, nudged its guards, who turned about; nobody could then
+  // come up behind them.)
+  if (pd > 5) { stepTo(e, p.x, p.y, MEN.speed * 0.8, dt); e.face = turnToward(e.face, pd > 26 || p.face == null ? Math.atan2(p.y - e.y, p.x - e.x) : p.face, (pd > 26 ? MEN.turn : 3) * dt); e.atPost = pd <= 26 && p.face != null && Math.abs(wrap(e.face - p.face)) < 0.2; }
   else { if (p.face != null) e.face = turnToward(e.face, p.face, 3 * dt); e.atPost = true; }
 }
 function laneClear(e, F) {                  // may he shoot at this man: no wall between them and nobody of his own in the line (never into his friends)
@@ -7821,7 +7897,8 @@ function soldierAI(e, dt) {
   }
   if (e.errand) {                           // sent somewhere with something to do there (a chest to the ship): he goes by the grid and fights nobody on the way. { x, y, near, run, slow, done(e), drop(e), fail(e) }
     var er = e.errand, ed = Math.hypot(er.x - e.x, er.y - e.y); e.tgt = null; e.guard = 0; e.sw = null;
-    if (ed < (er.near || 16)) { e.errand = null; e.state = 'idle'; if (er.done) er.done(e); return; }
+    if (er.gawk && e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.errand = null; e.awake = true; e.heardAt = e.alarm || null; e.lookT = 0; if (api.onWake) api.onWake(e); return; } }   // (a man gone to look at a fire has noticed nothing else: a noise wakes him as it would at his post)
+    if (ed < (er.near || 16)) { if (er.hold > 0) { er.hold -= dt; e.state = 'idle'; if (er.fx != null) e.face = turnToward(e.face, Math.atan2(er.fy - e.y, er.fx - e.x), 3 * dt); return; } e.errand = null; e.state = 'idle'; if (er.done) er.done(e); return; }   // (hold: he stands there that long, looking at fx, fy)
     e.state = 'chase'; var em = stepTo(e, er.x, er.y, (er.run ? MEN.run : MEN.speed) * (er.slow || 1), dt);
     e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(er.y - e.y, er.x - e.x), MEN.turn * dt);
     er.t = (er.t || 0) + dt; er.px = er.px == null ? e.x : er.px; er.py = er.py == null ? e.y : er.py;
@@ -7844,7 +7921,7 @@ function soldierAI(e, dt) {
     if (e.side === 1) followStep(e, dt);
     else if (e.heardAt) {
       var hd = Math.hypot(e.heardAt.x - e.x, e.heardAt.y - e.y);
-      if (hd > 36 && !(e.lookT > 0)) { e.state = 'chase'; var mv = stepTo(e, e.heardAt.x, e.heardAt.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(e.heardAt.y - e.y, e.heardAt.x - e.x), MEN.turn * dt); e.stuckT = mv < MEN.run * dt * 0.2 ? (e.stuckT || 0) + dt : 0; if (e.stuckT > 2.5) { e.lookT = 0.01; e.stuckT = 0; } }   // (he cannot get there: he looks about where he is)
+      if (hd > 36 && !(e.lookT > 0)) { e.state = 'chase'; var mv = stepTo(e, e.heardAt.x, e.heardAt.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(e.heardAt.y - e.y, e.heardAt.x - e.x), MEN.turn * dt); e.stuckT = mv < MEN.run * dt * 0.2 || e.sideN >= 3 ? (e.stuckT || 0) + dt : 0; if (e.stuckT > 2.5) { e.lookT = 0.01; e.stuckT = 0; e.sideN = 0; } }   // (he cannot get there: he looks about where he is)
       else { e.lookT = (e.lookT || 0) + dt; e.face += Math.sin(e.lookT * 1.3 + e.seed) * dt * 1.4; if (e.lookT > 7) { e.heardAt = null; e.lookT = 0; e.noT = 0; } }
     }
     else { e.noT = (e.noT || 0) + dt; if (e.post && e.noT > 6) { postStep(e, dt); if (e.atPost) { e.awake = false; e.noT = 0; e.wakeT = 0; } } }
@@ -7879,9 +7956,7 @@ function soldierAI(e, dt) {
       if (e.order === 'hold' && e.holdAt && Math.hypot(e.holdAt.x - e.x, e.holdAt.y - e.y) > 46 && d > keep) { stepTo(e, e.holdAt.x, e.holdAt.y, MEN.speed, dt); break; }   // told to hold: he does not follow a man who backs away
       var way = api.nav ? api.nav(e, T.x, T.y) : null;                                                                 // a wall between them: the way round it
       // making no way toward a man who is still far (another man in a narrow place, a corner): he steps to one side for a moment, the other side next time
-      e.progT = (e.progT || 0) + dt; if (e.sideT > 0) e.sideT -= dt;
-      if (e.progT >= 0.5) { var made = Math.hypot(e.x - (e.progX || 0), e.y - (e.progY || 0)); e.progT = 0; e.progX = e.x; e.progY = e.y; if (made < 3 && d > want + 24 && !(way && way.wait) && !(e.sideT > 0)) { e.sideT = 0.6; e.sideS = -(e.sideS || (e.seed > 5 ? 1 : -1)); } }
-      var turnBy = e.sideT > 0 ? e.sideS * 1.25 : 0;
+      var turnBy = sideStep(e, dt, d, d > want + 24, way && way.wait);
       if (way) { if (!way.wait) { var wa = Math.atan2(way.y - e.y, way.x - e.x) + turnBy, wsp = (d > want + 70 ? MEN.run : MEN.speed) * slow; moveCircle(e, Math.cos(wa) * wsp * dt, Math.sin(wa) * wsp * dt); if (!th) e.face = turnToward(e.face, wa, MEN.turn * dt); } }
       else if (d > want + 70 || turnBy || (T.bow && !T.close && d > want + 8) || (d > keep - 2 && makingOff(T, e))) moveCircle(e, Math.cos(ang + turnBy) * MEN.run * dt, Math.sin(ang + turnBy) * MEN.run * dt);   // (a bowman is run down, not walked up to)
       else {
@@ -7892,8 +7967,8 @@ function soldierAI(e, dt) {
       }
       if ((e.guard <= 0 || (e.blocked > 0 && !th)) && !(th && e.shield && e.guardCd <= 0)) {   // a man with a shield does not begin a blow into one he sees coming: he stops it first, and answers
         var aligned = Math.abs(wrap(ang - e.face)) < 0.45;
-        var answer = e.blocked > 0;
-        if (e.cd <= 0 && d <= keep + 7 && aligned && !way && slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1) && !(T === P && (P.roll.t > 0))) { e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
+        var answer = e.blocked > 0;   // (below: a foe in reach with no wall between is struck, whatever the grid makes of the way to him: being led round a corner, or waiting his turn at a gate, he stood face to face with his man and did nothing)
+        if (e.cd <= 0 && d <= keep + 7 && aligned && (!way || !wallBetween(e.x, e.y, T.x, T.y)) && slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1) && !(T === P && (P.roll.t > 0))) { e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
       }
       break;
     case 'windup':
@@ -7999,7 +8074,7 @@ function updateEnemies(dt) {
   for (var a = 0; a < W.enemies.length; a++) for (var b = a + 1; b < W.enemies.length; b++) {
     var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.down || B.down || A.out || B.out || A.type === 'shooter' || B.type === 'shooter') continue;   // (a man on his knees is in nobody's way: one knelt in a passage a man wide and nobody passed)
     var ox = B.x - A.x, oy = B.y - A.y, dd = Math.hypot(ox, oy), mn = A.r + B.r;
-    if (dd < mn && dd > 0.01) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }
+    if (dd < mn && dd > 0.01 && !wallBetween(A.x, A.y, B.x, B.y)) { var push = (mn - dd) * 0.5; moveCircle(A, -ox / dd * push, -oy / dd * push); moveCircle(B, ox / dd * push, oy / dd * push); }   // (not through a wall: a man hard against one side of it stopped a man walking along the other)
   }
 }
 function updateProjs(dt) {
@@ -8749,7 +8824,7 @@ function render(c) {
 }
 
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, noise: noise, reset: reset, S: S, api: api,
+return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   hurt: function (e, dmg, ang) { damageEnemy(e, dmg, ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 

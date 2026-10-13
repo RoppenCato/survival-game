@@ -323,6 +323,7 @@ __COMBAT__
   function worldBounds() { return { x0: 8, y0: 12, x1: WX + 12000, y1: WY - 8 }; }
   function buildWorld() {
     w = World.make(kit, spec); w.meadowLook = grassLook;
+    w.noGrass = function (tx, ty) { var f = B.floors[tx + ',' + ty]; return f != null && f !== 4 && f !== 5 && f !== 6; };   // no grass grows through a laid floor (planks, earth, flags, a dock; the grass and moss floors are grass). It did, in every house: seen in the big halls of 2026-10-13
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); if (w.peaks) w.peaks(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
@@ -1127,10 +1128,18 @@ __COMBAT__
     else { pay(buildCost(t.piece.cost)); deed('built'); BB[t.ed.L][Build.key(t.ed.x, t.ed.y)] = { t: t.piece.id, m: t.piece.m }; }
     bDirty = true; sfx('build'); save();
   }
-  function roomsOf(BB) {             // only the part of the grid with pieces in it is searched for closed rooms
-    var keys = Object.keys(BB.H).concat(Object.keys(BB.V)), x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-    keys.forEach(function (k) { var p = k.split(','); x0 = Math.min(x0, +p[0] - 2); y0 = Math.min(y0, +p[1] - 2); x1 = Math.max(x1, +p[0] + 2); y1 = Math.max(y1, +p[1] + 2); });
-    return keys.length ? Build.rooms(BB, GW, GH, { x0: x0, y0: y0, x1: x1, y1: y1 }) : { rooms: [], solids: [], at: function () { return -1; } };
+  function roomsOf(BB) {             // the closed rooms of a set of pieces. Only where there are pieces, and (2026-10-13) each cluster of them by itself: one stretch over everything was 164,000 tiles of sea and wood between the villages of two islands, searched again every time a wall changed (28 ms)
+    var CB = 24, blocks = {}, ids = [], keys = Object.keys(BB.H).concat(Object.keys(BB.V)), none = { rooms: [], solids: [], at: function () { return -1; } };
+    if (!keys.length) return none;
+    keys.forEach(function (k) { var p = k.split(','), x = +p[0], y = +p[1], id = Math.floor(x / CB) + ',' + Math.floor(y / CB), b = blocks[id]; if (!b) { b = blocks[id] = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9, bx: Math.floor(x / CB), by: Math.floor(y / CB), c: -1 }; ids.push(id); } if (x - 2 < b.x0) b.x0 = x - 2; if (y - 2 < b.y0) b.y0 = y - 2; if (x + 2 > b.x1) b.x1 = x + 2; if (y + 2 > b.y1) b.y1 = y + 2; });
+    var cl = [];
+    ids.forEach(function (id) {             // blocks that touch are one cluster (a building never lies in two)
+      var b0 = blocks[id]; if (b0.c >= 0) return; var c = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 }, st = [b0], ci = cl.length; b0.c = ci;
+      while (st.length) { var b = st.pop(), dx, dy; c.x0 = Math.min(c.x0, b.x0); c.y0 = Math.min(c.y0, b.y0); c.x1 = Math.max(c.x1, b.x1); c.y1 = Math.max(c.y1, b.y1); for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++) { var nb = blocks[(b.bx + dx) + ',' + (b.by + dy)]; if (nb && nb.c < 0) { nb.c = ci; st.push(nb); } } }
+      cl.push(c);
+    });
+    var rooms = [], parts = cl.map(function (c, i) { var r = Build.rooms(BB, GW, GH, { x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1, noSolids: i > 0 }); r.base = rooms.length; r.rooms.forEach(function (q) { rooms.push(q); }); r.bx0 = Math.max(0, c.x0); r.by0 = Math.max(0, c.y0); r.bx1 = c.x1; r.by1 = c.y1; return r; });
+    return { rooms: rooms, solids: parts[0].solids, at: function (tx, ty) { for (var i = 0; i < parts.length; i++) { var q = parts[i]; if (tx < q.bx0 || ty < q.by0 || tx > q.bx1 || ty > q.by1) continue; var k = q.at(tx, ty); if (k >= 0) return q.base + k; } return -1; } };
   }
   function rebuildRooms() {
     bDirty = false; navStale = true; ensureB();
@@ -1247,7 +1256,8 @@ __COMBAT__
   if (SCENE === 'mountain') { for (var msk in World.MOUNTAIN_SPEC) spec[msk] = World.MOUNTAIN_SPEC[msk]; }
   // The battle test scene (2026-10-13, docs/battle-plan.md): the starter island for the field, and a lowland island beside it for the town
   // (Village.plan gives the biggest lowland island a walled town, a church or a farm, and a place on the shore). No mountain: it is not needed here.
-  if (SCENE === 'battle' || SCENE === 'ruin') { spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null; }
+  var TRIAL = (function () { var q; try { q = new URLSearchParams(location.search); } catch (e) { q = null; } var on = SCENE === 'ruin' && !!q, rm = on ? Math.max(1, Math.min(2, +q.get('roomy') || 1)) : 1; return { big: on && q.get('big') === '1', roomy: rm, loud: on && rm > 1 && q.get('loud') !== '0' ? rm : 1 }; })();   // loud: with bigger houses everything is heard that much further (a place spread over half again the ground was half as well guarded: nobody heard anything); &loud=0 leaves the hearing as it is   // (2026-10-13, the big trials: ?big=1 grows a great town and a great village, ?roomy=1.5 makes every building half again as big inside)
+  if (SCENE === 'battle' || SCENE === 'ruin') { spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null; if (TRIAL.big) { var tk = TRIAL.roomy > 1 ? 380 : 300; spec.sizes = [120, tk, tk]; spec.big = tk; spec.biomes = [0, 0, 1]; spec.count = 3; } else if (TRIAL.roomy > 1) { spec.sizes = [120, 300]; spec.big = 300; } }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
   function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
@@ -1977,7 +1987,10 @@ __COMBAT__
   function villagePlan() {
     var R = kit.rng(spec.seed * 23 + 11), avoid = [];
     if (caveMouth) avoid.push({ x: caveMouth.x / T, y: caveMouth.y / T, r: 12 });
-    return Village.plan({ isles: w.isles, code: w.siteCode, shallow: function (tx, ty) { return code(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7; }, R: R, home: [home.x / T, home.y / T], avoid: avoid });
+    if (TRIAL.roomy > 1) { hamletCfg = hamletCfg || {}; hamletCfg.houseK = TRIAL.roomy; }
+    var sites = Village.plan({ isles: w.isles, code: w.siteCode, shallow: function (tx, ty) { return code(tx, ty) === 0 && w.elevAt((tx + 0.5) * T, (ty + 0.5) * T) > -7; }, R: R, home: [home.x / T, home.y / T], avoid: avoid }, { swap: TRIAL.big ? { town: 'bigtown', seat: 'great', village: 'great' } : null, G: hamletCfg });
+    if (SCENE === 'ruin') sites.forEach(function (st) { if (st.arch === 'bigtown' || st.arch === 'town') st.wealth = 0.6; else if (st.arch === 'great') st.wealth = 0.75; });   // the trial's town is of the middling kind: plank houses under thatch round a timber-framed hall under tiles and a church of cut stone, so that every rule has something to bite on
+    return sites;
   }
   function vSeen(i) { return !!(seen.vill && seen.vill[i]); }
   function vCentre(v) { return [(v.tx + v.w / 2) * T, (v.ty + v.h / 2) * T]; }
@@ -2085,15 +2098,16 @@ __COMBAT__
   function folkTick(dt) {
     var P = hero(), i;
     for (i = 0; i < villages.length; i++) { var vv = villages[i]; if (!vSeen(i) && Math.hypot(P.x - (vv.tx + vv.w / 2) * T, P.y - (vv.ty + vv.h / 2) * T) < 460) { if (!seen.vill) seen.vill = {}; seen.vill[i] = 1; if (i === 0) seen.hamlet = 1; toast(vv.name + ': marked on your chart'); save(); } }
+    var liveVi = -1; for (i = 0; i < villages.length; i++) { var lv = villages[i]; if (P.x > (lv.tx - 16) * T && P.x < (lv.tx + lv.w + 16) * T && P.y > (lv.ty - 16) * T && P.y < (lv.ty + lv.h + 16) * T) { liveVi = i; break; } }
     for (i = 0; i < folk.length; i++) {
       var f = folk[i], d = Math.hypot(P.x - f.x, P.y - f.y);
-      if (Math.abs(P.x - f.x) > 1500 || Math.abs(P.y - f.y) > 1200) continue;                  // only the people near you live; the rest wait
+      if ((Math.abs(P.x - f.x) > 1500 || Math.abs(P.y - f.y) > 1200) && f.vi !== liveVi) continue;                  // only the people near you live; the rest wait. (liveVi: the place you are in or beside: all its people live. In a great town those at its far end froze in mid-flight, 2026-10-13)
       if (f.sayT > 0) f.sayT -= dt;
       f.idle.t += dt; f.idle.blend = Math.min(1, f.idle.blend + dt / 0.35);
       if (!f.moving && !f.sitting && !f.job && f.idle.t > f.idle.dur) { f.idle.from = f.lastPose; f.idle.id = pickIdle(f); f.idle.t = 0; f.idle.dur = 3 + Math.random() * 6; f.idle.blend = 0; }
       if (f.job) { f.job.t += dt; }
       if (f.hidden) continue;
-      if (f.fleeing) { var fto = f.refuge || f.spots[0], fdx = fto.x - f.x, fdy = fto.y - f.y, fdl = Math.hypot(fdx, fdy); if (fdl < 8) { f.moving = false; if (f.refuge) { var fvc = vCentre(villages[f.vi]); f.face = Math.atan2(fvc[1] - f.y, fvc[0] - f.x); } else f.hidden = true; continue; } f.folk = true; navMove(f, fto.x, fto.y, 70, dt); f.moving = true; f.ph += dt * 9; continue; }   // (f.refuge: his house burns or is down, so he runs out of the place instead and watches from there)   // running home (round the walls: navMove)
+      if (f.fleeing) { var fto = f.refuge || f.spots[0], fdx = fto.x - f.x, fdy = fto.y - f.y, fdl = Math.hypot(fdx, fdy); if (fdl < 8) { f.moving = false; if (f.refuge) { var fvc = vCentre(villages[f.vi]); f.face = Math.atan2(fvc[1] - f.y, fvc[0] - f.x); } else f.hidden = true; continue; } f.folk = true; if (!navMove(f, fto.x, fto.y, 70, dt)) { f.moving = false; if (f.noWay > 1.5) { f.noWay = 0; if (f.refuge) f.refuge = refugeOf(f, true) || { x: f.x, y: f.y }; } continue; } f.moving = true; f.ph += dt * 9; continue; }   // (f.refuge: his house burns or is down, so he runs out of the place instead and watches from there)   // running home (round the walls: navMove)
       if (f.boredT > 0) f.boredT -= dt;
       if ((d < 110 && !f.job && !(f.boredT > 0)) || f.sayT > 0) {   // someone near: stop and watch (unless busy at a job), for a few seconds; then he has seen enough of you for a while (2026-10-13: a hero who stood in the yard had the whole village standing round him for good)
         f.watchT = (f.watchT || 0) + dt; if (f.watchT > (f.watchFor || (f.watchFor = 3 + Math.random() * 5)) && !(f.sayT > 0)) { f.watchT = 0; f.watchFor = 0; f.boredT = 20 + Math.random() * 20; }
@@ -2119,7 +2133,8 @@ __COMBAT__
         else f.wait = (f.sitting ? 12 : 3) + Math.random() * 6;
         f.target = null; f.moving = false; f.idle.t = 0; f.idle.dur = 2 + Math.random() * 4; continue;
       }
-      f.folk = true; navMove(f, f.target.x, f.target.y, f.carrying ? 30 : 38, dt); f.moving = true; f.ph += dt * 7;
+      f.folk = true; if (!navMove(f, f.target.x, f.target.y, f.carrying ? 30 : 38, dt)) { f.moving = false; if (f.noWay > 2) { f.noWay = 0; f.target = null; f.wait = 1 + Math.random() * 2; } continue; }   /* (no way to it: he thinks of somewhere else) */
+      f.moving = true; f.ph += dt * 7;
     }
     // room for each other (2026-10-13: with everybody finding the same way round the fire and the well, the people who stopped to
     // watch you stood in one heap): two of a village nearer than a step apart ease apart, the one who is walking giving way
@@ -3229,9 +3244,10 @@ __COMBAT__
     drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
   }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; if (!inCave) wallsFor(hero(), out); if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + 20 && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
+    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + 20 && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool) {
       if (o.edge) return wallBlow(o, power, right, tool);   // a wall, a locked door, a fence: src/ruin.js
+      if (o.stake) return stakeBlow(o, power, right, tool);
       if (o.box && o.box.heavy) { o.hp -= power; chip(o.x, o.y, 6, '#8a8f98', right ? 3 : 2, 60); sfx('clink'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.box.locked = 0; o.hp = o.max; toast('The lock breaks'); sfx('fall'); save(); } return { dealt: power }; }
       if (o.box) { o.hp -= power; chip(o.x, o.y, 8, '#b98a5a', right ? 4 : 2, 70); if (villageAt(o.x, o.y) >= 0) raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) breakBox(o.box); return; }
       if (o.vein) { veinHit(o, power); return { dealt: power }; }
@@ -3663,7 +3679,7 @@ __COMBAT__
     });
   }
   function villageAt(x, y) { for (var i = 0; i < villages.length; i++) { var v = villages[i]; if (x > (v.tx - 3) * T && x < (v.tx + v.w + 3) * T && y > (v.ty - 3) * T && y < (v.ty + v.h + 3) * T) return i; } return -1; }
-  function raidAlarm(vi, x, y) { if (vi < 0) return; raidStir(vi, x, y); Combat.noise(x, y, 520); }   // a door broken, a box smashed, a chest lifted: loud, and the town's men within 520 units hear it
+  function raidAlarm(vi, x, y) { if (vi < 0) return; raidStir(vi, x, y); Combat.noise(x, y, 520 * TRIAL.loud); }   // a door broken, a box smashed, a chest lifted: loud, and the town's men within 520 units hear it
   function raidStir(vi, x, y) {             // the village knows: its folk run home to hide, and word of it will spread
     if (vi < 0) return; var fresh = !raid || raid.vi !== vi;
     raid = { vi: vi, t: 30, x: x, y: y };
@@ -3689,7 +3705,7 @@ __COMBAT__
      game.ruin laid over them), the drawings src/build.js. Here: whose a piece is, the tools on the wall you face, the noise,
      the fall of a roof, fire, what the people do, and mending. Tried in game.html?scene=ruin (the Destruction Editor). ---------- */
   var RUIN_SV = (function () { try { return JSON.parse(localStorage.getItem('game.ruin') || 'null') || {}; } catch (e) { return {}; } })(), RUIN = Ruin.cfg(RUIN_SV);
-  var RU = { on: SCENE === 'ruin', held: false, box: null, men: 0 }, wallHv = {}, wallHitT = -9, wallLast = null, ruinDue = {}, edgeCache = {}, debrisCache = {}, lighting = null, ruinChecked = false, BURN = [], burnT = 0, fireLoudT = 0, heatAcc = 0, fireMenT = 0;
+  var RU = { on: SCENE === 'ruin', held: false, box: null, men: 0, place: 'town' }, wallHv = {}, wallHitT = -9, wallLast = null, ruinDue = {}, edgeCache = {}, debrisCache = {}, lighting = null, ruinChecked = false, BURN = [], burnT = 0, fireLoudT = 0, heatAcc = 0, fireMenT = 0;
   function setLean(v) { Build.CFG.lean = v || 0; BCFG.lean = v || 0; for (var k in roofCfgs) roofCfgs[k].lean = v || 0; edgeCache = {}; }
   if (RUIN.lean) setLean(RUIN.lean);
   function wrapA(a) { while (a > Math.PI) a -= 6.2831853; while (a < -Math.PI) a += 6.2831853; return a; }
@@ -3728,6 +3744,26 @@ __COMBAT__
     var id = q.L + q.k, h = wallHv[id] || (wallHv[id] = { r: 5, name: 'wall', v: 0, s: 1 });
     h.edge = q.e; h.L = q.L; h.k = q.k; h.tx = q.tx; h.ty = q.ty; h.x = q.x; h.y = q.y; h.kind = Ruin.rightTool(q.e); out.push(h);
   }
+  /* A village's ring of sharpened stakes is props, not pieces of wall (it is round). A stake of a place that is not yours
+     takes the axe (RUIN.hp.stake, a third of a palisade's tile: three stand to a tile) and is gone for good; two felled side
+     by side are a gap a man squeezes through. The way-finding closes every tile a stake stands in (navOf), so nobody's way
+     leads through the ring: before this the grid did not know the ring was there, and the people of a great village walked
+     through it. */
+  var stakeLast = null, stakeHitT = -9;
+  function stakesFor(P, out) {              // one blow, one stake: the one most nearly faced (a swing's arc covers four of them, and the ring fell at four times the pace of a palisade)
+    if (!RUIN.on) return; if (stakeLast && !stakeLast.stake.cut && clock - stakeHitT < 0.3) { out.push(stakeLast); return; }
+    var a = faceDir(P), best = null, bs = 1e9;
+    around(P.x, P.y, function (o) { if (o.name !== 'stake' || o.cut) return; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d > 46) return; var da = Math.abs(wrapA(Math.atan2(o.y - P.y, o.x - P.x) - a)); if (da > 1.2) return; var sc = d + da * 26; if (sc < bs) { bs = sc; best = o; } });
+    if (!best || !theirs(best.x, best.y)) return;
+    if (!best.hv) { best.hv = { x: best.x, y: best.y, r: 5, kind: 'tree', stake: best, name: 'stake', v: 0, s: 1 }; if (best.hp == null) best.hp = RUIN.hp.stake || 30; }
+    out.push(best.hv);
+  }
+  function stakeBlow(h, power, right, tool) {
+    var o = h.stake, bite = (RUIN.bite[tool] && RUIN.bite[tool].palisade) || 0, dealt = power / (right ? 1 : 0.5) * bite; stakeLast = h; stakeHitT = clock; if (o.cut) return { dealt: 0 };
+    o.hp -= dealt; chip(o.x, o.y, 16, '#a9855c', right ? 5 : 3, 70); Combat.noise(o.x, o.y, (RUIN.noise.palisade || 320) * (RUIN.noiseK == null ? 1 : RUIN.noiseK), true);
+    if (o.hp <= 0) { o.cut = true; w.removeProp(o); gone[propKey(o)] = 1; navStale = true; sfx('fall'); decals.push({ x: o.x, y: o.y, r: 2.8, day: day.n });   /* (its stump stays) */ chip(o.x, o.y, 12, '#c8b48c', 9, 100); if (Math.random() < 0.34) drop('wood', o.x, o.y + 6, 1); save(); }
+    return { dealt: Math.round(dealt * 10) / 10 };
+  }
   var CHIPC = { logs: '#a9855c', planks: '#b08e62', wattle: '#c9b488', blocks: '#8f9199', turf: '#6b5a3a', frame: '#d8cdb4', ashlar: '#bdb8ae', door: '#8a6a4a', archDoor: '#8a6a4a', window: '#8a6a4a', gate: '#8a6a4a', fence: '#c9b488', rail: '#a9855c', palisade: '#a9855c', drystone: '#8f9199', townwall: '#bdb8ae' };
   function wallBlow(o, power, right, tool) {
     var e = o.edge, was = e.st || 0, r = Ruin.hit(RUIN, e, power / (right ? 1 : 0.5), tool); wallHitT = clock; wallLast = o;
@@ -3737,12 +3773,14 @@ __COMBAT__
     if (r.gave) wallGave(o.L, o.tx, o.ty, e, false); else if ((e.st || 0) !== was) delete edgeCache[o.L + o.k];
     return { dealt: Math.round(r.dealt * 10) / 10 };
   }
+  function dropSolids(L, tx, ty) { if (!roomInfo || bDirty) return; var x0 = tx * T, y0 = ty * T; roomInfo.solids = roomInfo.solids.filter(function (q) { if (q.r !== 5.5) return true; return L === 'H' ? !(q.y === y0 && q.x > x0 && q.x < x0 + T) : !(q.x === x0 && q.y > y0 && q.y < y0 + T); }); }   // the three circles of a piece of wall that is no longer in the way
   function folkHear(vi, x, y, r) { for (var i = 0; i < folk.length; i++) { var f = folk[i]; if (f.vi === vi && !f.hidden && Math.hypot(f.x - x, f.y - y) < r) return true; } return false; }
   // a noise in a village is a raid on it (any fighting); a soft one (a blow on a wall, a fire) only if a man of it or one of its people heard
   Combat.api.onNoise = function (x, y, r, n, soft) { var vi = villageAt(x, y); if (vi < 0) return; if (soft && !n && !folkHear(vi, x, y, r * 0.8)) return; raidStir(vi, x, y); };
   function wallGave(L, tx, ty, e, burnt) {   // a piece has given: the way is open, what it was made of lies there, and its room may have lost too much
     var m = edgeMidOf(L, tx, ty), mat = Ruin.matOf(e), dr = burnt ? null : RUIN.drop[mat], k, P = hero(), near = Math.hypot(m.x - P.x, m.y - P.y) < 460;
-    bDirty = true; navStale = true; delete edgeCache[L + Build.key(tx, ty)];
+    dropSolids(L, tx, ty); navStale = true; delete edgeCache[L + Build.key(tx, ty)];
+    for (var wi = B.items.length - 1; wi >= 0; wi--) { var wt = B.items[wi]; if (!wt.wall || wt.lvl) continue; if (L === 'H' ? (Math.abs(wt.y - ty * T) < 14 && wt.x > tx * T - 9 && wt.x < (tx + 1) * T + 9) : (Math.abs(wt.x - tx * T) < 14 && wt.y > ty * T - 9 && wt.y < (ty + 1) * T + 9)) B.items.splice(wi, 1); }   // what hung on it goes with it: a window box, a lantern, a sign (they hung on in the air over a burnt wall)   // (not bDirty: the rooms are what they were. Finding them again threw away every roof's picture too: a hitch at every piece)
     if (near) { sfx('fall'); chip(m.x, m.y, 16, burnt ? '#2a2422' : (CHIPC[mat] || '#8a6a4a'), 14, 120); chip(m.x, m.y, 6, '#c8c0b0', 8, 60); }
     for (k in dr || {}) if (dr[k] > 0) drop(k, m.x + (Math.random() - 0.5) * 16, m.y + 8, dr[k]);
     if (!burnt) Combat.noise(m.x, m.y, (RUIN.noise[mat] || 200) * (RUIN.noiseK == null ? 1 : RUIN.noiseK) * 1.3, true);
@@ -3768,16 +3806,16 @@ __COMBAT__
     }
     if (inside(P.x, P.y) && !P.dead) gatherEv.hurt(RUIN.fallHurt, c[0], c[1], P.x < c[0] ? -1 : 1);
     Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.away && inside(e.x, e.y)) Combat.hurt(e, e.type === 'soldier' ? RUIN.fallHurtMen : RUIN.fallHurtMen * 0.6); });
-    folkFlush(r); delete ruinDue[r.id]; Combat.noise(c[0], c[1], 620, true); navStale = true; roofCache = {}; save();
+    folkFlush(r); delete ruinDue[r.id]; Combat.noise(c[0], c[1], 620, true); navStale = true; for (var rk in roofCache) if (rk.indexOf(r.id + ':') === 0) delete roofCache[rk]; save();
   }
   // the people of a house that burns or has come down: whoever hid in it is out, and they do not go back to it. Where they go instead: out of the place, on the side away from the hero
   function homeOf(f) { if (!roomInfo || !f.spots || !f.spots[0]) return null; var tx = Math.floor(f.spots[0].x / T), ty = Math.floor(f.spots[0].y / T), D = [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0], [0, -2], [0, 2], [-2, 0], [2, 0]], i, ri; for (i = 0; i < D.length; i++) { ri = roomInfo.at(tx + D[i][0], ty + D[i][1]); if (ri >= 0) return roomInfo.rooms[ri]; } return null; }
   function aflame(r) { if (roofBurning(r)) return true; if (!B.fire) return false; var E = Ruin.edgesOf(B, r), i; for (i = 0; i < E.length; i++) if (B.fire[E[i].L + ':' + E[i].k]) return true; return false; }   // its roof burns, or any of its walls
   function homeGone(f) { var r = homeOf(f); return !!r && (Ruin.ruined(B, r) || aflame(r) || !!ruinDue[r.id]); }
-  function refugeOf(f) {
-    var v = villages[f.vi]; if (!v) return null; var c = vCentre(v), P = hero(), a0 = Math.atan2(c[1] - P.y, c[0] - P.x) + ((f.name ? f.name.charCodeAt(0) % 9 : 4) - 4) * 0.16, i, a, x, y, d;
-    for (i = 0; i < 9; i++) { a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5; d = (Math.min(v.w / 2 / Math.max(0.05, Math.abs(Math.cos(a))), v.h / 2 / Math.max(0.05, Math.abs(Math.sin(a)))) + 5.5) * T; x = c[0] + Math.cos(a) * d; y = c[1] + Math.sin(a) * d; if (isLand(x, y) && !roomOf(x, y)) return { x: x, y: y }; }   // (five tiles beyond the place's edge on that side: still on the grid its people find their way by)
-    return null;
+  function refugeOf(f, other) {            // (other: the one he had cannot be reached: begin a step further round)
+    var v = villages[f.vi]; if (!v) return null; var c = vCentre(v), P = hero(), first = null, a0 = Math.atan2(c[1] - P.y, c[0] - P.x) + ((f.name ? f.name.charCodeAt(0) % 9 : 4) - 4) * 0.16, i, a, x, y, d;
+    for (i = 0; i < 9; i++) { a = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 0.5; d = (Math.min(v.w / 2 / Math.max(0.05, Math.abs(Math.cos(a))), v.h / 2 / Math.max(0.05, Math.abs(Math.sin(a)))) + 3.6 + ((f.name ? f.name.charCodeAt(f.name.length - 1) + f.name.length * 3 : 0) % 7) * 0.55) * T; x = c[0] + Math.cos(a) * d; y = c[1] + Math.sin(a) * d; if (other && i < 2) continue; if (isLand(x, y) && !roomOf(x, y)) { if (wayTo(f, x, y)) return { x: x, y: y }; first = first || { x: x, y: y }; } }   /* (a place he can walk to: a refuge inside somebody's walled yard is none) */   // (five tiles beyond the place's edge on that side: still on the grid its people find their way by)
+    return other ? null : first;
   }
   function folkFlush(r) { folk.forEach(function (f) { var hr = homeOf(f); if (!hr || hr.id !== r.id) return; var rf = refugeOf(f); if (!rf) return; f.refuge = rf; if (f.hidden) { f.hidden = false; f.fleeing = true; } }); }
   var HOMELESS_LINES = ['It is gone. All of it.', 'Where are we to sleep now?', 'My father built that house.'];
@@ -3798,13 +3836,24 @@ __COMBAT__
     var fa = lighting.fa, q = fa.q, ok; lighting = null;
     if (fa.what === 'roof') { var a = q.L === 'H' ? [q.tx, roomInfo.rooms[roomInfo.at(q.tx, q.ty)] === fa.room ? q.ty : q.ty - 1] : [roomInfo.rooms[roomInfo.at(q.tx, q.ty)] === fa.room ? q.tx : q.tx - 1, q.ty]; ok = Math.random() < Ruin.roofSpec(RUIN, B, fa.room, BCFG.roof).catch && Ruin.ignite(RUIN, B, 'R', null, fa.room, a, BCFG.roof); }
     else ok = Ruin.ignite(RUIN, B, q.L, q.k);
-    if (ok) { fireLit(q.x, q.y, true); edgeRooms(q.L, q.tx, q.ty).forEach(folkFlush); } else note('It will not catch');
+    if (ok) { fireLit(q.x, q.y, true); edgeRooms(q.L, q.tx, q.ty).forEach(folkFlush); if (seenAt(P.x, P.y, 190)) { Combat.noise(P.x, P.y, 300); if (villageAt(P.x, P.y) >= 0) raidStir(villageAt(P.x, P.y), P.x, P.y); } } else note('It will not catch');   // (lit where a man or a villager of the place could see it done: the cry goes up, and it is for you they come)
+  }
+  function seenAt(x, y, r) {                 // does anybody of a place see what is done here: one of its men or its people within r, no wall between
+    var E = Combat.dbg().W.enemies, i, e, vi = villageAt(x, y);
+    for (i = 0; i < E.length; i++) { e = E[i]; if (e.type !== 'soldier' || e.side === 1 || e.dead || e.down || e.out || e.away) continue; if (Math.hypot(e.x - x, e.y - y) < r && !(Combat.api.wall && Combat.api.wall(e.x, e.y, x, y))) return true; }
+    for (i = 0; i < folk.length; i++) { var f = folk[i]; if (f.vi !== vi || f.hidden) continue; if (Math.hypot(f.x - x, f.y - y) < r && !(Combat.api.wall && Combat.api.wall(f.x, f.y, x, y))) return true; }
+    return false;
   }
   function fireLit(x, y, loud) { var P = hero(); if (S.sound && Math.hypot(x - P.x, y - P.y) < 500) SFX.whoosh(); burnT = 0; if (loud) fireLoudT = 0; navStale = true; save(); }
   function outsideOf(x, y) {                // a spot by a place that is not inside any room (men come to look at a fire, not into it)
     if (!roomOf(x, y)) return { x: x, y: y }; var tx = Math.floor(x / T), ty = Math.floor(y / T), d, i, j;
     for (d = 1; d < 7; d++) for (j = -d; j <= d; j++) for (i = -d; i <= d; i++) { if (Math.max(Math.abs(i), Math.abs(j)) !== d) continue; var px = (tx + i + 0.5) * T, py = (ty + j + 0.5) * T; if (!roomOf(px, py) && isLand(px, py)) return { x: px, y: py }; }
     return { x: x, y: y };
+  }
+  function gawkSpot(m, x, y) {              // where a man stands to look at a fire: open ground, in no room at all (in a big house the place meant lay inside the house that burnt: nine men stood in it and died, 2026-10-13)
+    var i, a, px, py; if (!roomOf(x, y) && isLand(x, y)) return { x: x, y: y };
+    for (i = 1; i <= 10; i++) { a = i * 0.63; px = x + Math.cos(a) * i * 16; py = y + Math.sin(a) * i * 16; if (!roomOf(px, py) && isLand(px, py)) return { x: px, y: py }; }
+    return null;
   }
   function burnList() {                     // what burns now, as places to draw a flame, to light the night and to feel
     BURN = []; var F = B.fire, key; if (!F) return;
@@ -3825,7 +3874,7 @@ __COMBAT__
     burnT -= dt; if (burnT <= 0 || ev.lit.length || ev.gave.length || ev.fell.length) { burnT = 0.25; burnList(); }
     // it is seen and heard from far off: the bigger, the further; the men who come to look come to the nearest open ground by it
     fireLoudT -= dt;
-    if (fireLoudT <= 0 && BURN.length) { fireLoudT = 2.5; var b0 = BURN[0], bd = 1e9; BURN.forEach(function (b) { var d = Math.hypot(b.x - P.x, b.y - P.y); if (d < bd) { bd = d; b0 = b; } }); var at2 = outsideOf(b0.x, b0.y); Combat.noise(at2.x, at2.y, Ruin.fireNoise(RUIN, B), true); }
+    if (fireLoudT <= 0 && BURN.length) { fireLoudT = 2.5; var b0 = BURN[0], bd = 1e9; BURN.forEach(function (b) { var d = Math.hypot(b.x - P.x, b.y - P.y); if (d < bd) { bd = d; b0 = b; } }); var at2 = outsideOf(b0.x, b0.y), fr = Ruin.fireNoise(RUIN, B), fv = villageAt(b0.x, b0.y), fn2 = Combat.gawk(at2.x, at2.y, fr, { hold: 5, stays: function (m) { return m.kindOf === 'gate' || m.kindOf === 'hall'; }, spot: gawkSpot }); if (fv >= 0 && (fn2 > 0 || folkHear(fv, b0.x, b0.y, fr * 0.8))) raidStir(fv, b0.x, b0.y); }   // (the men at their day go and stand before it while it burns; the gate keeps its guards and the hall its own)
     // heat: whoever stands under a roof that burns over him, or right against a burning wall
     var hot = false, hr = roomOf(P.x, P.y); if (hr && roofBurning(hr) && Ruin.roofFlame(RUIN, B, hr, Math.floor(P.x / T), Math.floor(P.y / T), BCFG.roof) > 0) hot = true;
     for (i = 0; i < BURN.length && !hot; i++) if (BURN[i].edge && Math.hypot(BURN[i].x - P.x, BURN[i].y - P.y) < 15) hot = true;
@@ -3838,15 +3887,16 @@ __COMBAT__
         if (pr && (roofBurning(pr) || Ruin.ruined(B, pr))) { var o2 = outsideOf(e.post.x, e.post.y); e.post = { x: o2.x, y: o2.y, face: e.post.face }; }
         if (!er || !roofBurning(er)) return;
         if (Ruin.roofFlame(RUIN, B, er, Math.floor(e.x / T), Math.floor(e.y / T), BCFG.roof) > 0) Combat.hurt(e, RUIN.fire.heat * 0.5 * (e.type === 'soldier' ? 0.2 : 0.3));
-        if (e.type === 'soldier' && !e.tgt && !e.errand && !e.down && !e.out) { var o3 = outsideOf(e.x, e.y); e.awake = true; e.errand = { x: o3.x, y: o3.y, near: 14, run: true }; }
+        if (e.type === 'soldier' && !e.tgt && !(e.errand && !e.errand.gawk && !e.errand.flee) && !e.down && !e.out) { var o3 = outsideOf(e.x, e.y); e.errand = { x: o3.x, y: o3.y, near: 14, run: true, flee: true }; }   // (whatever he was about, unless it is a fight or a load: out of it. He is not made hostile by it)
       });
     }
   }
+  function fellByFire(r) { if (roofBurning(r)) return true; var E = Ruin.edgesOf(B, r), nb = 0, ng = 0, i; for (i = 0; i < E.length; i++) if (E[i].e.breach) { ng++; if (E[i].e.burnt) nb++; } return nb * 2 > ng; }   // its roof was alight, or most of the walls it lost were burnt through: what comes down is ash, not straw (2026-10-13: a house whose walls burnt out from under a burning thatch lost it as if it had been felled)
   function ruinTick(dt) {
     var id, r;
     if (bDirty) rebuildRooms();              // (the rooms and their solids are otherwise made again only when a frame is drawn)
     if (!ruinChecked && roomInfo) { ruinChecked = true; roomInfo.rooms.forEach(function (r0) { if (Ruin.due(RUIN, B, r0, BCFG.roof)) Ruin.collapse(RUIN, B, r0, 'fallen', BCFG.roof); }); }   // a game loaded in the moment between a roof's groan and its fall: it is down
-    for (id in ruinDue) if (clock >= ruinDue[id]) { r = roomById(id); delete ruinDue[id]; if (r && Ruin.due(RUIN, B, r, BCFG.roof)) roofFalls(r, 'fallen'); }
+    for (id in ruinDue) if (clock >= ruinDue[id]) { r = roomById(id); delete ruinDue[id]; if (r && Ruin.due(RUIN, B, r, BCFG.roof)) roofFalls(r, fellByFire(r) ? 'burnt' : 'fallen'); }
     lightingTick(dt); fireTickAll(dt);
   }
   // what a tile costs a man to walk over: he goes round a room that burns, and round hot ashes if he can
@@ -4576,16 +4626,30 @@ __COMBAT__
       B.items.forEach(function (it) { if (it.r && !it.lvl && it.x > x0 && it.x < x1 && it.y > y0 && it.y < y1) out.push({ x: it.x, y: it.y, r: it.r }); });
       return out;
     }
+    var stk = null;
+    function stakeTiles() {                 // the tiles a stake of the ring stands in (those still standing)
+      var o2 = {}, seenB = {}, x, y, x0 = (v.tx - M) * T, y0 = (v.ty - M) * T, x1 = (v.tx + v.w + M) * T, y1 = (v.ty + v.h + M) * T;
+      if (!v.V.fence || !v.V.fence.round) return o2;
+      for (y = y0; y <= y1 + 1023; y += 1024) for (x = x0; x <= x1 + 1023; x += 1024) w.around(Math.min(x, x1), Math.min(y, y1), function (o) { if (o.name === 'stake' && !o.cut) o2[Math.floor(o.x / T) + ',' + Math.floor(o.y / T)] = 1; });
+      return o2;
+    }
     var g = Nav.make({ x0: v.tx - M, y0: v.ty - M, w: v.w + M * 2, h: v.h + M * 2, T: T,
-      open: function (tx, ty) { return isLand((tx + 0.5) * T, (ty + 0.5) * T) || dockAt(tx, ty); },
-      edge: Nav.edgeOf(B), solids: solids, cost: ruinCost });
+      open: function (tx, ty) { if (!stk) stk = stakeTiles(); return (isLand((tx + 0.5) * T, (ty + 0.5) * T) || dockAt(tx, ty)) && !stk[tx + ',' + ty]; },
+      edge: Nav.edgeOf(B), solids: function () { var o3 = solids(); stk = null; return o3; }, cost: ruinCost });
     g.vi = vi; navs[vi] = g; return g;
   }
   function navAt(x, y) { for (var k in navs) if (navs[k].inside(x, y)) return navs[k]; return null; }
   Nav.attach(Combat, navAt, function () { return clock; });   // the engine's questions (the way, a step across a wall, a blow through one) answered from these grids: src/nav.js
   function navMove(m, tx, ty, sp, dt) {    // a villager's step toward a place, round the walls
-    var g = navAt(m.x, m.y) || navAt(tx, ty), wp = g ? g.next(m, tx, ty, clock, true) : null, x = wp && !wp.wait ? wp.x : tx, y = wp && !wp.wait ? wp.y : ty, dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy) || 1, st = Math.min(d, sp * dt);
-    m.x += dx / d * st; m.y += dy / d * st; m.face = Math.atan2(dy, dx);
+    var g = navAt(m.x, m.y) || navAt(tx, ty), wp = g ? g.next(m, tx, ty, clock, true) : null;
+    if (wp && wp.wait) { m.noWay = (m.noWay || 0) + dt; m.face = Math.atan2(ty - m.y, tx - m.x); return false; }   /* no way there (a place walled in): he stands. (2026-10-13: he walked straight at it, through the wall; the big trial's watch caught a refugee going through a dry-stone wall) */
+    var x = wp ? wp.x : tx, y = wp ? wp.y : ty, dx = x - m.x, dy = y - m.y, d = Math.hypot(dx, dy) || 1, st = Math.min(d, sp * dt);
+    if (g && g.blocked(m.x, m.y, m.x + dx / d * st, m.y + dy / d * st, true)) { m.noWay = (m.noWay || 0) + dt; return false; }   /* (and never a step across a shut edge, whatever the way says) */
+    m.noWay = 0; m.x += dx / d * st; m.y += dy / d * st; m.face = Math.atan2(dy, dx); return true;
+  }
+  function wayTo(m, x, y) {                // can a villager walk from where he is to a place (the village's grid; where there is none, yes)
+    var g = navAt(x, y); if (!g || g.vi == null || !villages[g.vi]) return true; if (!g.reachC || g.reachC.stamp !== g.stamp) { var c = vCentre(villages[g.vi]); g.reachC = { stamp: g.stamp, fl: g.flood(c[0], c[1], true) }; }   /* (everything that can be walked to from the yard, found once for each reading of the grid) */
+    return g.reachC.fl.has(x, y);
   }
   function navTick(dt) {
     var P = hero(), i; navT -= dt;
@@ -4598,7 +4662,8 @@ __COMBAT__
      soldierAI); here they are placed: at the gate inside and out, at the back gate, by the market, a man or two at every
      house, and the jarl's own in the hall, who are the best and come last (they must arm). */
   var TOWN_N = 20;
-  function townOf() { for (var i = 0; i < villages.length; i++) if (villages[i].arch === 'town' && villages[i].V) return i; return -1; }
+  function townOf() { var i; if (RU.on && RU.place === 'village') { for (i = 0; i < villages.length; i++) if ((villages[i].arch === 'great' || villages[i].arch === 'seat' || villages[i].arch === 'village') && villages[i].V) return i; } for (i = 0; i < villages.length; i++) if ((villages[i].arch === 'town' || villages[i].arch === 'bigtown') && villages[i].V) return i; return -1; }   // the place the tests are about: the town, or (the Destruction Editor's switch) the first biome's biggest village
+  function gateOf(v) { var F = v.V.fence; if (!F) { var c0 = vCentre(v); return { x: c0[0], y: c0[1] + v.h * T * 0.4, nx: 0, ny: 1 }; } if (F.round) { var g0 = F.gateAt || [F.cx, F.cy + F.ry], gl = Math.hypot(g0[0] - F.cx, g0[1] - F.cy) || 1; return { x: g0[0], y: g0[1], nx: (g0[0] - F.cx) / gl, ny: (g0[1] - F.cy) / gl }; } return { x: (F.gate + (F.gateW || 1) / 2) * T, y: F.y1 * T, nx: 0, ny: 1 }; }   // a place's gate, and the way out of it
   function townMen(vi, n) {               // where they stand is the village's own business (Village.garrison); here each becomes a man
     return Village.garrison(villages[vi].V, n, Math.random).map(function (q) {
       var kind = q.kind, person = Hird.roll(Math.random, HD), G = kind === 'hall' || kind === 'gate' ? BT_GEAR[2] : BT_GEAR[1], sp = isLand(q.x, q.y) ? { x: q.x, y: q.y } : landNear(q.x, q.y, 6);
@@ -4609,7 +4674,7 @@ __COMBAT__
   }
   function townSet() {                 // the test: the town at its day, the hero six tiles south of the gate with five of his own
     var vi = townOf(), P = hero(); if (vi < 0) { toast('No town in this world'); return; }
-    var v = villages[vi], F = v.V.fence, gx = (F.gate + (F.gateW || 1) / 2) * T, gy = F.y1 * T, i, MIX = ['sword', 'axe', 'spear', 'sword', 'bow'];
+    var v = villages[vi], G0 = gateOf(v), gx = G0.x, gy = G0.y, i, MIX = ['sword', 'axe', 'spear', 'sword', 'bow'];
     battleClear(); var W2 = Combat.dbg().W; W2.enemies = W2.enemies.filter(function (e) { return !(e.human && e.vi === vi); }); guards = guards.filter(function (e) { return e.vi !== vi; });
     navOf(vi); raid = null; folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = false; f.hidden = false; } });
     BT.setup = 'town'; BT.town = vi; P.hp = P.maxHp; P.st = 100; P.x = gx; P.y = gy + 6.5 * T; P.vx = P.vy = 0; P.face = -Math.PI / 2; if (inCave) caveSwap(false);
@@ -4626,8 +4691,8 @@ __COMBAT__
      and leaving (E at the ship: those of yours within reach step aboard and row; who is left is left). */
   var menAboard = [];
   function raidShore(vi) {                 // where a raider's ship lies off this town: the nearest beach to its gate with sea before it. The karve must be afloat already (its own hull is what is fitted): broadside to the shore, as near in as the whole hull clears the land; .land is the dry ground nearest it (where you board, stow and are waited for)
-    var v = villages[vi], F = v.V.fence, gx = (F.gate + (F.gateW || 1) / 2) * T, gy = F.y1 * T, r, a, q;
-    for (r = 5; r < 90; r += 2) for (a = 0; a < 40; a++) {
+    var v = villages[vi], G0 = gateOf(v), gx = G0.x, gy = G0.y, r, a, q;
+    for (r = 5; r < 200; r += 2) for (a = 0; a < 40; a++) {      /* (200 tiles: a great town on a big island lies far from any beach; it was 90) */
       var an = a / 40 * 6.283 + 1.5708, x = gx + Math.cos(an) * r * T, y = gy + Math.sin(an) * r * T; if (!isLand(x, y) || code(Math.floor(x / T), Math.floor(y / T)) !== 1) continue;
       var out = Math.atan2(y - gy, x - gx), ox = Math.cos(out), oy = Math.sin(out);                                                              // out: on away from the town, across the sand (a beach is up to five tiles wide) to the sea
       for (q = 20; q < 420; q += 6) if (raftHull(x + ox * q, y + oy * q, out + Math.PI / 2)) {
@@ -4652,7 +4717,7 @@ __COMBAT__
     BT.doors0.forEach(function (d) { var e = (d[0] === 'H' ? B.H : B.V)[d[1]]; if (e) { e.locked = 1; e.broken = 0; } }); ruinWhole(); carrying = null; bDirty = true; navStale = true;
     navOf(vi); raid = null; folk.forEach(function (f) { if (f.vi === vi) { f.fleeing = false; f.hidden = false; } });
     BT.setup = 'raid'; BT.town = vi; BT.raid = { vi: vi, t0: clock, land: sh.land, left: false, loot: BT.loot0.reduce(function (q, it) { return q + (it.heavy.silver || 0); }, 0), chests: BT.loot0.length };
-    P.hp = P.maxHp; P.st = 100; P.x = sh.dry.x; P.y = sh.dry.y; P.vx = P.vy = 0; P.face = Math.atan2(v.V.fence.y1 * T - P.y, (v.V.fence.gate + 1) * T - P.x); if (inCave) caveSwap(false);
+    P.hp = P.maxHp; P.st = 100; P.x = sh.dry.x; P.y = sh.dry.y; P.vx = P.vy = 0; P.face = Math.atan2(gateOf(v).y - P.y, gateOf(v).x - P.x); if (inCave) caveSwap(false);
     BT.men = townMen(vi, TOWN_N);
     var ux = Math.cos(sh.h), uy = Math.sin(sh.h), bkx = sh.dry.x - sh.sea.x, bky = sh.dry.y - sh.sea.y, bl = Math.hypot(bkx, bky) || 1;
     for (i = 0; i < 5; i++) { var sp = landNear(sh.dry.x + ux * (i - 2) * 26 + bkx / bl * (22 + (i % 2) * 16), sh.dry.y + uy * (i - 2) * 26 + bky / bl * (22 + (i % 2) * 16), 8); spawnMan(1, sp.x, sp.y, MIX[i], 1); }   // along the sand behind you
@@ -4741,7 +4806,7 @@ __COMBAT__
     if (id === 'ship') { if (BT.raid && BT.raid.land) { P.x = BT.raid.land.x; P.y = BT.raid.land.y; P.vx = P.vy = 0; } return; }
     if (id === 'church') { var cv2 = townOf(); if (cv2 < 0) return; var cl = villages[cv2].V.lots.filter(function (l) { return l.id === 'church'; })[0]; if (cl) { P.x = (cl.dx + 0.5) * T; P.y = (cl.y + cl.h + 1.6) * T; P.vx = P.vy = 0; } return; }
     if (id === 'townN') { TOWN_N = TOWN_N === 12 ? 20 : TOWN_N === 20 ? 30 : 12; if (BT.setup === 'town') townSet(); else if (BT.setup === 'raid') raidSet(); return; }
-    if (id === 'gate' || id === 'hall') { var tv = townOf(); if (tv < 0) return; var tV = villages[tv].V, hl = tV.lots.filter(function (l) { return l.id === 'hall'; })[0]; if (id === 'gate' || !hl) { P.x = (tV.fence.gate + (tV.fence.gateW || 1) / 2) * T; P.y = (tV.fence.y1 + 3) * T; } else { P.x = (hl.dx != null && hl.door === 's' ? hl.dx + 0.5 : hl.x + hl.w / 2) * T; P.y = (hl.y + hl.h + 1.6) * T; } P.vx = P.vy = 0; return; }
+    if (id === 'gate' || id === 'hall') { var tv = townOf(); if (tv < 0) return; var tV = villages[tv].V, hl = tV.lots.filter(function (l) { return l.id === 'hall'; })[0]; if (id === 'gate' || !hl) { var gt0 = gateOf(villages[tv]); P.x = gt0.x + gt0.nx * 3 * T; P.y = gt0.y + gt0.ny * 3 * T; } else { P.x = (hl.dx != null && hl.door === 's' ? hl.dx + 0.5 : hl.x + hl.w / 2) * T; P.y = (hl.y + hl.h + 1.6) * T; } P.vx = P.vy = 0; return; }
     if (id === 'one' || id === 'two' || id === 'friend' || id === 'five') battleSet(id);
     else if (id === 'bows') { BT.bows = ((BT.bows || 0) + 1) % 3; battleSet('five'); }
     else if (id === 'wpn') { BT.wpn = (BT.wpn + 1) % BT_WPN.length; battleSet(BT.setup); }
@@ -4803,30 +4868,36 @@ __COMBAT__
     hand = { fight: 0, gather: 0 }; day.t = 300; caveFade = 0; noSave = true; BT.setup = 'none';
     ['met', 'village', 'fiber', 'wood', 'stone', 'leather', 'mend', 'mason', 'copper', 'ironBar'].forEach(function (q) { seen[q] = 1; });
     samplerBuild(); P.mode = 'gather'; recount(); P.x = f.x; P.y = f.y + 30; P.face = -Math.PI / 2; wind.a = 0; wind.to = 0; wind.t = 1e9;
-    ruinPanel();
+    ruinPanel(); RU.items0 = JSON.stringify(B.items);
+    if (TRIAL.loud > 1) { var MN = Combat.api.men.noise, FRL = RUIN.fire; RUIN.noiseK = (RUIN.noiseK == null ? 1 : RUIN.noiseK) * TRIAL.loud; MN.blow *= TRIAL.loud; MN.shout *= TRIAL.loud; MN.cry *= TRIAL.loud; MN.far *= TRIAL.loud; FRL.loud *= TRIAL.loud; FRL.louder *= TRIAL.loud; FRL.loudMax *= TRIAL.loud; ruinPanelSync(); }
   }
   function nearestRoom(P, want) { var best = null, bd = 1e9; if (roomInfo) roomInfo.rooms.forEach(function (r) { if (r.up || (want && !want(r))) return; var c = Ruin.centre(r), d = Math.hypot(c[0] - P.x, c[1] - P.y); if (d < bd) { bd = d; best = r; } }); return bd < 520 ? best : null; }
   var WINDS = [['east', 0], ['south', Math.PI / 2], ['west', Math.PI], ['north', -Math.PI / 2]];
   function ruinRows() {
     var t = Ruin.alight(B), wn = WINDS.filter(function (q) { return Math.abs(wrapA(q[1] - wind.a)) < 0.4; })[0];
-    return [{ id: 'sampler', name: 'To the sampler' }, { id: 'gate', name: 'To the town’s gate' }, { id: 'church', name: 'To its church' }, { id: 'hall', name: 'To its hall' },
-      { id: 'men', name: 'The town’s men: ' + (RU.men || 'none'), on: !!RU.men },
+    return [{ id: 'sampler', name: 'To the sampler' }, { id: 'gate', name: 'To its gate' }, { id: 'church', name: 'To its church' }, { id: 'hall', name: 'To its hall' }, { id: 'ship', name: 'To your ship' },
+      { id: 'place', name: RU.place === 'village' ? 'The place: the village' : 'The place: the town' },
+      { id: 'men', name: 'Its men: ' + (RU.men || 'none'), on: !!RU.men }, { id: 'raid', name: 'A raid on it: your ship, and five' },
       { id: 'held', name: RU.held ? 'This place is yours: mend it' : 'This place is theirs: break it', on: RU.held },
       { id: 'burn', name: 'Set fire to the nearest house' }, { id: 'fall', name: 'Bring the nearest roof down' }, { id: 'out', name: 'Put the fires out' + (t ? ' (' + t + ')' : '') },
       { id: 'whole', name: 'Whole again' }, { id: 'again', name: 'The sampler anew' },
       { id: 'wind', name: 'The wind blows ' + (wind.k < 0.05 ? 'not at all' : (wn ? wn[0] : 'about')) }, { id: 'lean', name: BCFG.lean ? 'Side walls: leaning, a face' : 'Side walls: as now', on: !!BCFG.lean },
-      { id: 'torch', name: torchOn ? 'Put the torch out' : 'Light a torch', on: torchOn }, { id: 'stuff', name: 'More to mend with' }, { id: 'heal', name: 'Heal' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }];
+      { id: 'torch', name: torchOn ? 'Put the torch out' : 'Light a torch', on: torchOn }, { id: 'stuff', name: 'More to mend with' }, { id: 'heal', name: 'Heal' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' },
+      { id: 'big', name: TRIAL.big ? 'Places: great ones' : 'Places: as in the game', on: TRIAL.big }, { id: 'roomy', name: 'Houses: ' + (TRIAL.roomy > 1.7 ? 'twice as big' : TRIAL.roomy > 1 ? 'half again as big' : 'as now'), on: TRIAL.roomy > 1 }].concat(TRIAL.roomy > 1 ? [{ id: 'loud', name: TRIAL.loud > 1 ? 'Heard as far again, too' : 'Heard as far as before', on: TRIAL.loud > 1 }] : []);   // (the last two grow the world anew: the page loads again)
   }
   function ruinAct(id) {
     var P = hero(), r, f = BT.field;
     if (id === 'sampler') { P.x = f.x; P.y = f.y + 30; P.vx = P.vy = 0; P.lvl = 0; if (inCave) caveSwap(false); }
-    else if (id === 'gate' || id === 'church' || id === 'hall') battleAct(id);
-    else if (id === 'men') { RU.men = RU.men === 0 ? 12 : RU.men === 12 ? 20 : 0; var tv = townOf(); if (tv >= 0) { if (RU.men) { TOWN_N = RU.men; var px = P.x, py = P.y; townSet(); battleClearMine(); P.x = px; P.y = py; } else { var W2 = Combat.dbg().W; W2.enemies = W2.enemies.filter(function (e) { return !(e.human && e.vi === tv); }); guards = guards.filter(function (e) { return e.vi !== tv; }); BT.setup = 'none'; } } }
+    else if (id === 'gate' || id === 'church' || id === 'hall' || id === 'ship') battleAct(id);
+    else if (id === 'place') { RU.place = RU.place === 'village' ? 'town' : 'village'; if (townOf() < 0) toast('No such place in this world'); else { battleAct('gate'); toast(villages[townOf()].name + ', ' + Village.ARCH[villages[townOf()].arch].name.toLowerCase()); } }
+    else if (id === 'raid') { TOWN_N = RU.men || 20; RU.men = TOWN_N; raidSet(); }
+    else if (id === 'big' || id === 'roomy' || id === 'loud') { var nb = id === 'big' ? !TRIAL.big : TRIAL.big, nr = id === 'roomy' ? (TRIAL.roomy > 1.7 ? 1 : TRIAL.roomy > 1 ? 2 : 1.5) : TRIAL.roomy, nl = id === 'loud' ? !(TRIAL.loud > 1) : TRIAL.loud > 1 || TRIAL.roomy === 1; location.search = '?scene=ruin' + (nb ? '&big=1' : '') + (nr > 1 ? '&roomy=' + nr + (nl ? '' : '&loud=0') : ''); return; }
+    else if (id === 'men') { RU.men = RU.men === 0 ? 12 : RU.men === 12 ? 20 : RU.men === 20 ? 30 : RU.men === 30 ? 40 : 0; var tv = townOf(); if (tv >= 0) { if (RU.men) { TOWN_N = RU.men; var px = P.x, py = P.y; townSet(); battleClearMine(); P.x = px; P.y = py; } else { var W2 = Combat.dbg().W; W2.enemies = W2.enemies.filter(function (e) { return !(e.human && e.vi === tv); }); guards = guards.filter(function (e) { return e.vi !== tv; }); BT.setup = 'none'; } } }
     else if (id === 'held') { RU.held = !RU.held; if (RU.held) P.mode = P.mode === 'gather' ? 'gather' : P.mode; }
     else if (id === 'burn') { r = nearestRoom(P, function (q) { return Ruin.burnsRoof(RUIN, B, q, BCFG.roof) && !roofBurning(q); }); if (r && Ruin.ignite(RUIN, B, 'R', null, r, null, BCFG.roof)) { var c = Ruin.centre(r); fireLit(c[0], c[1], true); folkFlush(r); } else { var bw = null, bwd = 320; ['H', 'V'].forEach(function (L) { for (var k in B[L]) { if (!Ruin.burnsWall(RUIN, B[L][k]) || Ruin.onFire(B, L, k)) continue; var p = k.split(','), m = edgeMidOf(L, +p[0], +p[1]), d = Math.hypot(m.x - P.x, m.y - P.y); if (d < bwd) { bwd = d; bw = [L, k, m]; } } }); if (bw && Ruin.ignite(RUIN, B, bw[0], bw[1])) { fireLit(bw[2].x, bw[2].y, true); var bp = bw[1].split(','); edgeRooms(bw[0], +bp[0], +bp[1]).forEach(folkFlush); toast('No roof here burns: a wall, then'); } else toast('Nothing near that would burn'); } }
     else if (id === 'fall') { r = nearestRoom(P, function (q) { return !Ruin.ruined(B, q) && Ruin.roofOf(B, q, BCFG.roof) !== 5; }); if (r) { ruinDue[r.id] = clock + RUIN.warn; if (S.sound) SFX.groan(); folkFlush(r); } }
     else if (id === 'out') { B.fire = {}; BURN = []; navStale = true; }
-    else if (id === 'whole') { ruinWhole(); ['H', 'V'].forEach(function (L) { for (var k in B[L]) if (B[L][k].lock0) { B[L][k].locked = 1; B[L][k].broken = 0; } }); if (BT.doors0) BT.doors0.forEach(function (d) { var e = (d[0] === 'H' ? B.H : B.V)[d[1]]; if (e) { e.locked = 1; e.broken = 0; } }); toast('Whole again'); }
+    else if (id === 'whole') { ruinWhole(); if (RU.items0) { B.items = JSON.parse(RU.items0); carrying = null; BT.loot0 = null; bDirty = true; navStale = true; }   /* (and what stood in the houses: a fire takes it for good, and a second trial ran through empty rooms) */ ['H', 'V'].forEach(function (L) { for (var k in B[L]) if (B[L][k].lock0) { B[L][k].locked = 1; B[L][k].broken = 0; } }); if (BT.doors0) BT.doors0.forEach(function (d) { var e = (d[0] === 'H' ? B.H : B.V)[d[1]]; if (e) { e.locked = 1; e.broken = 0; } }); toast('Whole again'); }
     else if (id === 'again') { samplerBuild(); toast('The sampler, new'); }
     else if (id === 'wind') { var i = 0; if (wind.k < 0.05) { wind.k = Yard.WIND.k; wind.a = wind.to = WINDS[0][1]; } else { WINDS.forEach(function (q, n) { if (Math.abs(wrapA(q[1] - wind.a)) < 0.4) i = n + 1; }); if (i >= WINDS.length) wind.k = 0; else wind.a = wind.to = WINDS[i][1]; } wind.t = 1e9; }
     else if (id === 'lean') { setLean(BCFG.lean ? 0 : (RUIN.lean || 9)); ruinPanelSync(); }
@@ -4975,7 +5046,7 @@ __COMBAT__
     save();
   }
   function drawRunePanel(c) {
-    var rows = runePanel.folded ? [] : (SCENE === 'battle' ? battleRows() : SCENE === 'ruin' ? ruinRows() : SCENE === 'mountain' ? mountainRows() : runeRows()), rh = 9, x0 = runePanel.x, y0 = runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [{ id: 'fold', x: x0, y: y0, w: w0, h: 15 }];
+    var rows = runePanel.folded ? [] : (SCENE === 'battle' ? battleRows() : SCENE === 'ruin' ? ruinRows() : SCENE === 'mountain' ? mountainRows() : runeRows()), rh = rows.length > 21 ? 8 : 9, x0 = runePanel.x, y0 = rows.length > 21 ? 34 : runePanel.y, w0 = runePanel.w, h0 = 16 + rows.length * rh + 4; runePanel.rows = [{ id: 'fold', x: x0, y: y0, w: w0, h: 15 }];
     c.save(); c.globalAlpha = 0.92; wood(c, x0, y0, w0, h0);
     c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(SCENE === 'battle' ? 'Battle test' : SCENE === 'ruin' ? 'Destruction editor' : SCENE === 'mountain' ? 'Mountain test' : 'Rune editor', x0 + 6, y0 + 10);
     c.font = 'bold 8px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = 'rgba(246,226,184,0.8)'; c.fillText(runePanel.folded ? '+' : '–', x0 + w0 - 6, y0 + 10.5);   // click the title to fold it
@@ -5087,7 +5158,7 @@ __COMBAT__
     if (inCave) { var hcv = here(); hcv.ores.concat(hcv.props, hcv.finds.filter(function (f) { return f.r && !(f.taken && f.gone); })).forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * o.s, hide: true }); });
       hcv.sets.forEach(function (st) { if (Math.abs(st.x - P.x) < 200 && Math.abs(st.y - P.y) < 200) D.W.pillars.push({ x: st.x - st.w / 2, y: st.y, r: 4, hide: true }, { x: st.x + st.w / 2, y: st.y, r: 4, hide: true }); }); if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }
     var RIs = RI(); if (RIs) for (var si = 0; si < RIs.solids.length; si++) { var sl = RIs.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
-    lockedDoorsNear(P.x, P.y, 160, function (k, L, e, dx, dy) { D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true }); if (L === 'H') D.W.pillars.push({ x: dx - 10, y: dy, r: 7, hide: true }, { x: dx + 10, y: dy, r: 7, hide: true }); else D.W.pillars.push({ x: dx, y: dy - 8, r: 7, hide: true }, { x: dx, y: dy + 8, r: 7, hide: true }); });   // a locked door is a wall until it breaks
+    lockedDoorsNear(P.x, P.y, 160, function (k, L, e, dx, dy) { D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true, wall: true }); if (L === 'H') D.W.pillars.push({ x: dx - 10, y: dy, r: 7, hide: true, wall: true }, { x: dx + 10, y: dy, r: 7, hide: true, wall: true }); else D.W.pillars.push({ x: dx, y: dy - 8, r: 7, hide: true, wall: true }, { x: dx, y: dy + 8, r: 7, hide: true, wall: true }); });   // a locked door is a wall until it breaks
     for (var mi = 0; mi < moored.length; mi++) { var mv = moored[mi]; if (Math.abs(mv.x - P.x) < 160 && Math.abs(mv.y - P.y) < 160) D.W.pillars.push({ x: mv.x, y: mv.y, r: Math.max(mv.hw || 21, mv.hh || 21) * 0.7, hide: true }); }
     for (var bi = 0; bi < B.items.length; bi++) { var bt = B.items[bi]; if (bt === sitting) continue; if (bt.r && sameLvl(bt) && Math.abs(bt.x - P.x) < 330 && Math.abs(bt.y - P.y) < 330) D.W.pillars.push({ x: bt.x, y: bt.y, r: bt.r, hide: true }); }   // (330: a man fighting at the edge of the view walked through tables; walls are the grid's business)
     if (caveFade > 0) caveFade = Math.max(0, caveFade - dt);

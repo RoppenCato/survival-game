@@ -106,6 +106,7 @@ function line(label, R, extra) {
   const bad = R.timeout || R.nan || R.stuck >= 6;
   console.log((bad ? '!! ' : '   ') + pad(label, 58), 'won', lpad(R.pct, 3) + '%', ' in', lpad(R.secs, 3) + 's', ' left', lpad(R.hp, 3), ' longest', lpad(R.longest.toFixed(0), 3) + 's', R.timeout ? ' NEVER ENDED x' + R.timeout : '', R.stuck >= 6 ? ' STOOD STILL ' + R.stuck + 's' : '', R.nan ? ' NaN' : '', extra || '');
 }
+if (process.env.MEN) Object.assign(Combat.api.men, JSON.parse(process.env.MEN));             // (for trying a number of the men's: MEN='{"wallGap":4}')
 if (process.env.BOW) Object.assign(Combat.api.men.bow, JSON.parse(process.env.BOW));     // (for trying a bowman's numbers: BOW='{"toMen":0.7}')
 const mode = process.argv[2] || 'short', N = +process.argv[3] || (mode === 'short' ? 12 : 200);
 const HEROES = [['tapper', ['sword', 'flint'], LEATHER], ['careful', ['sword', 'flint'], LEATHER], ['skilled', ['sword', 'flint'], LEATHER]];
@@ -217,7 +218,7 @@ function raider(D, st, foes, g, t) {
   const P = D.P, th = threatOf(D), up = foes.filter(e => e.awake !== false), L = up.length ? up : foes, tg = L[0];
   if (th && th.tti < 0.6 && meets(st, th, 'careful')) { keys(0, false); Combat.button(0, false); Combat.key('KeyK', true); return; }
   Combat.key('KeyK', false); if (!tg) { keys(0, false); Combat.button(0, false); return; }
-  const d = Math.hypot(tg.x - P.x, tg.y - P.y), wp = g.next(P, tg.x, tg.y, t, false), reach = st.reach + tg.r;
+  const d = Math.hypot(tg.x - P.x, tg.y - P.y), reach = st.reach + tg.r, wp = d < reach + 10 && !Combat.api.wall(P.x, P.y, tg.x, tg.y) ? null : g.next(P, tg.x, tg.y, t, false);   // (a man in reach with no wall between is fought, whatever the grid makes of the way to him)
   // (a player walks round a bench; the bot, pressing straight at it, would stand there: making no way, it steps to one side for a moment)
   st.pt = (st.pt || 0) + DT; if (st.sideT > 0) st.sideT -= DT; if (st.pt >= 0.5) { const made = Math.hypot(P.x - (st.px || 0), P.y - (st.py || 0)); st.pt = 0; st.px = P.x; st.py = P.y; if (made < 3 && d > reach + 30 && !(wp && wp.wait) && !(st.sideT > 0)) { st.sideT = 0.5; st.sideS = -(st.sideS || 1); } }
   const turn = st.sideT > 0 ? st.sideS * 1.4 : 0;
@@ -249,8 +250,8 @@ function townFight(seed, o) {
     else if (!o.quiet) { if (!F2.length) break; F2.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); raider(D, st, F2, g, t); }
     else if (st.frame === 60) Combat.noise(gx, gy, 520);
     D.W.pillars = o.quiet ? [] : solids.filter(s => Math.abs(s.x - P.x) < 330 && Math.abs(s.y - P.y) < 330).concat(walls.filter(s => Math.abs(s.x - P.x) < 160 && Math.abs(s.y - P.y) < 160));
-    if (!o.quiet) for (const k in B.H) { const e = B.H[k]; if (e.t === 'door' && e.locked) { const p = k.split(','), dx = (+p[0] + 0.5) * T, dy = p[1] * T; if (Math.abs(dx - P.x) < 160 && Math.abs(dy - P.y) < 160) D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true }, { x: dx - 10, y: dy, r: 7, hide: true }, { x: dx + 10, y: dy, r: 7, hide: true }); } }
-    if (!o.quiet) for (const k in B.V) { const e = B.V[k]; if (e.t === 'door' && e.locked) { const p = k.split(','), dx = p[0] * T, dy = (+p[1] + 0.5) * T; if (Math.abs(dx - P.x) < 160 && Math.abs(dy - P.y) < 160) D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true }, { x: dx, y: dy - 8, r: 7, hide: true }, { x: dx, y: dy + 8, r: 7, hide: true }); } }
+    if (!o.quiet) for (const k in B.H) { const e = B.H[k]; if (e.t === 'door' && e.locked) { const p = k.split(','), dx = (+p[0] + 0.5) * T, dy = p[1] * T; if (Math.abs(dx - P.x) < 160 && Math.abs(dy - P.y) < 160) D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true, wall: true }, { x: dx - 10, y: dy, r: 7, hide: true, wall: true }, { x: dx + 10, y: dy, r: 7, hide: true, wall: true }); } }
+    if (!o.quiet) for (const k in B.V) { const e = B.V[k]; if (e.t === 'door' && e.locked) { const p = k.split(','), dx = p[0] * T, dy = (+p[1] + 0.5) * T; if (Math.abs(dx - P.x) < 160 && Math.abs(dy - P.y) < 160) D.W.pillars.push({ x: dx, y: dy, r: 11, hide: true, wall: true }, { x: dx, y: dy - 8, r: 7, hide: true, wall: true }, { x: dx, y: dy + 8, r: 7, hide: true, wall: true }); } }
     const m0 = process.hrtime.bigint(); Combat.update(DT); const ms = Number(process.hrtime.bigint() - m0) / 1e6; R2.ms += ms; R2.n++; R2.worst = Math.max(R2.worst, ms);
     if (Nav.unlock(g, B)) g.read();
     t += DT; st.frame++;
@@ -259,6 +260,7 @@ function townFight(seed, o) {
     if (st.frame % 30 === 0) all.forEach((e, i) => {
       const q = last[i], moved = Math.hypot(e.x - q.x, e.y - q.y); q.x = e.x; q.y = e.y; if (e.x !== e.x || e.hp !== e.hp) R2.nan = true;
       const choked = e.choked != null && t - e.choked < 0.6; chokeRun.set(e, choked ? (chokeRun.get(e) || 0) + 0.5 : 0); R2.choke = Math.max(R2.choke, chokeRun.get(e));
+      if (process.env.TOWN_DBG && chokeRun.get(e) === 30) console.log('      waited 30 s at a door:', e.side === 1 ? 'friend' : e.kindOf, 'at', (e.x / T).toFixed(2), (e.y / T).toFixed(2), e.state, 'tgt', e.tgt ? (e.tgt === P ? 'hero' : 'man') : '-', '; the hero at', (P.x / T).toFixed(2), (P.y / T).toFixed(2), '; near him:', all.filter(o2 => o2 !== e && !o2.dead && Math.hypot(o2.x - e.x, o2.y - e.y) < 70).map(o2 => (o2.side === 1 ? 'friend' : o2.kindOf) + ' ' + (o2.x / T).toFixed(2) + ',' + (o2.y / T).toFixed(2) + ' ' + o2.state + (o2.down ? ' down' : '') + (o2.out ? ' out' : '') + (o2.choked != null && t - o2.choked < 0.6 ? ' WAITING' : '')).join(' | '));
       const goal = e.tgt || (e.side === 1 ? (e.order === 'hold' ? null : P) : e.heardAt), far = goal && Math.hypot(goal.x - e.x, goal.y - e.y) > (e.bow && !e.close && e.tgt ? Combat.api.men.bow.range : e.side === 1 && !e.tgt ? 120 : 90);   // (a bowman within a shot of his man is where he means to be)
       const shot = e.bow && (e.state === 'aim' || e.state === 'loose' || (e.shots || 0) !== (q.shots || 0)); q.shots = e.shots || 0;
       const idle = moved < 1.5 && far && !choked && !shot && !gone(e) && !e.down && e.awake !== false && !(e.lookT > 0) && e.state !== 'windup' && e.state !== 'lunge' && e.state !== 'recover' && e.state !== 'stagger';
@@ -382,6 +384,15 @@ function raidChecks() {
   // 5. taken out of the world in the middle of a pass (laid aboard a ship): nothing breaks
   D = fresh(); P = D.P; f = man(1, 'sword', 'leather', 220, 250); const g2 = man(1, 'sword', 'leather', 240, 270); f.errand = { x: 222, y: 250, near: 14, done: () => { g2.away = true; f.away = true; } }; let threw = null; try { run(2); } catch (e) { threw = e.message; }
   say(!threw && D.W.enemies.indexOf(f) < 0 && D.W.enemies.indexOf(g2) < 0, 'two men taken out of the world from inside the engine\'s own pass: ' + (threw ? 'IT THREW: ' + threw : 'gone from its list, and nothing broke'));
+  // 6. a man hard against a wall with a foe at arm's length before him: he strikes (2026-10-13: the way-finding's side line
+  // began beyond the wall, so he was never "clear" of the man he faced, looked for a way round and never struck; the hero's
+  // bot did the same, and a town's fight never ended)
+  D = fresh(); P = D.P; { const T = 32, B = { H: {}, V: {} }; for (let i = 4; i < 18; i++) B.H[i + ',10'] = { t: 'wall', m: 0 };
+    const g = Nav.make({ x0: 0, y0: 0, w: 24, h: 24, T, open: () => true, edge: Nav.edgeOf(B), solids: () => [] }); let tt = 0; Nav.attach(Combat, (x, y) => g.inside(x, y) ? g : null, () => tt);
+    const m = man(0, 'sword', 'leather', 10.5 * T, 10 * T + 0.3); m.awake = true; P.x = 10.36 * T; P.y = 10 * T + 13; let struck = -1; const clearNow = g.clear(m.x, m.y, P.x, P.y, false);
+    run(8, t => { tt = t; P.hp = P.maxHp; if (struck < 0 && (m.state === 'windup' || m.state === 'lunge')) struck = t; });
+    Combat.api.nav = null; Combat.api.blocked = null; Combat.api.wall = null;
+    say(clearNow && struck >= 0, 'a man hard against a wall, the hero 13 units before him: ' + (clearNow ? 'nothing between them' : 'THE GRID SAYS HE MUST GO ROUND') + ', and he ' + (struck >= 0 ? 'began his blow after ' + struck.toFixed(1) + ' s' : 'NEVER STRUCK in 8 s')); }
 }
 const t0 = Date.now();
 if (mode === 'one' || mode === 'short') one(N);

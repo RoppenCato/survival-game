@@ -4368,9 +4368,11 @@ function rooms(B, GW, GH, bounds) {
     out.push({ id: 'r' + x + '_' + y, tiles: tiles, maxY: maxY });
   }
   var solids = [], k, p;
-  for (k in B.H) { if (OPEN[B.H[k].t] || B.H[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true }); }   // (a wall that has given, breach, is a way through: src/ruin.js)
-  for (k in B.V) { if (OPEN[B.V[k].t] || B.V[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true }); }
+  if (!(bounds && bounds.noSolids)) {
+  for (k in B.H) { if (OPEN[B.H[k].t] || B.H[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T + 5.3 + i * 10.7, y: p[1] * T, r: 5.5, hide: true, wall: true }); }   // (a wall that has given, breach, is a way through: src/ruin.js)
+  for (k in B.V) { if (OPEN[B.V[k].t] || B.V[k].breach) continue; p = k.split(','); for (i = 0; i < 3; i++) solids.push({ x: p[0] * T, y: p[1] * T + 5.3 + i * 10.7, r: 5.5, hide: true, wall: true }); }
   for (k in B.posts || {}) { p = k.split(','); solids.push({ x: p[0] * T, y: p[1] * T, r: 3.5, hide: true }); }
+  }
   return { rooms: out, roomOf: roomOf, solids: solids, x0: bx0, y0: by0, w: w, h: h, at: function (tx, ty) { return inside(tx, ty) ? roomOf[idx(tx, ty)] : -1; } };
 }
 
@@ -4537,7 +4539,11 @@ function sideFace(c, x, y, e, m, open, C, side, seed) {
 // what a fallen or a burnt roof leaves on one tile of the floor (ru = { k, m }): straw heaps, sods, shingles or shards and broken rafters; or ash and charred timber
 function drawDebris(c, tx, ty, ru, C) {
   var x0 = tx * T, y0 = ty * TS, seed = tx * 53 + ty * 97, i, r = ROOFS[ru.m] || ROOFS[1], burnt = ru.k === 'burnt', beam = burnt ? '#1a1512' : '#4a3626';
-  if (burnt) { c.fillStyle = 'rgba(26,22,20,0.5)'; c.beginPath(); c.ellipse(x0 + T / 2, y0 + TS / 2, T * 0.62, TS * 0.62, 0, 0, 7); c.fill(); for (i = 0; i < 6; i++) { c.fillStyle = 'rgba(196,192,184,' + (0.22 + hs(seed, i) * 0.28) + ')'; c.beginPath(); c.ellipse(x0 + 3 + hs(seed + 3, i) * (T - 6), y0 + 2 + hs(seed + 5, i) * (TS - 4), 2 + hs(seed + 7, i) * 4, 1 + hs(seed + 9, i) * 2, 0, 0, 7); c.fill(); } }
+  if (burnt) {                            // black where it burnt and pale ash on it, no two tiles alike (the same oval and six specks on every tile read as rows, 2026-10-13)
+    var na = 1 + Math.floor(hs(seed + 2, 1) * 3), ns = 2 + Math.floor(hs(seed + 4, 1) * 7);
+    for (i = 0; i < na; i++) { c.fillStyle = 'rgba(26,22,20,' + (0.3 + hs(seed + 6, i) * 0.28).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 + T / 2 + (hs(seed + 8, i) - 0.5) * T * 0.7, y0 + TS / 2 + (hs(seed + 10, i) - 0.5) * TS * 0.7, T * (0.36 + hs(seed + 12, i) * 0.4), TS * (0.3 + hs(seed + 14, i) * 0.42), hs(seed + 16, i) * 3, 0, 7); c.fill(); }
+    for (i = 0; i < ns; i++) { c.fillStyle = 'rgba(196,192,184,' + (0.16 + hs(seed, i) * 0.3).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 - 4 + hs(seed + 3, i) * (T + 8), y0 - 3 + hs(seed + 5, i) * (TS + 6), 1.5 + hs(seed + 7, i) * 6, 0.8 + hs(seed + 9, i) * 2.6, hs(seed + 11, i) * 3, 0, 7); c.fill(); }
+  }
   else if (r.col) {
     for (i = 0; i < 3; i++) {
       var hx = x0 + 5 + hs(seed + 11, i) * (T - 10), hy = y0 + 5 + hs(seed + 13, i) * (TS - 9), hw = 5 + hs(seed + 15, i) * 6, hh = 2.5 + hs(seed + 17, i) * 3, tone = (hs(seed + 19, i) - 0.5) * 0.2, col = mix(r.col, tone > 0 ? '#ffffff' : '#000000', Math.abs(tone));
@@ -4911,7 +4917,8 @@ var DEF = {
   chestLoot: 1, cellarAt: 0.3, storeLoot: 1,           // finds: a chest in every house, a cellar in one house at this wealth and above
   yardEarth: 1, pathGravel: 1, mossEdge: 1,
   emptySlots: 0.25,                                   // the share of ring slots left open, so no two rings are alike
-  sizeJitter: 1                                       // buildings vary by this many tiles
+  sizeJitter: 1,                                      // buildings vary by this many tiles
+  houseK: 1                                           // every building's inside, times this (2026-10-13, Robin: a trial with bigger houses, so there is more room to move around); the yard and the site grow with it
 };
 // the archetypes: how many of what, the yard, the site a page should find for it
 var ARCH = {
@@ -4927,7 +4934,12 @@ var ARCH = {
   ruin: { name: 'Abandoned', houses: [1, 3], out: [3, 4], yard: [8, 7], site: [26, 20], people: [0, 0], ruin: true },
   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church, and a lone church with its priest's house (the lucky strike)
   town: { name: 'Town', houses: [5, 7], out: [5, 7], yard: [13, 10], site: [50, 40], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },
-  church: { name: 'Church', houses: [1, 1], out: [0, 1], yard: [5, 4], site: [18, 16], people: [2, 3], church: true, chapel: true, lowland: true }
+  church: { name: 'Church', houses: [1, 1], out: [0, 1], yard: [5, 4], site: [18, 16], people: [2, 3], church: true, chapel: true, lowland: true },
+  // big places (2026-10-13, Robin: build a big village or town and raid it): the ring full, and a second ring of houses round it
+  // (outer: a row behind the hall, a row before the gate, a column either side, with lanes between). Nothing plans them into a
+  // world: a page asks for them (plan's opts.swap), as the Destruction Editor does.
+  great: { name: 'Great village', houses: [6, 6], outer: [9, 12], out: [7, 8], yard: [15, 11], site: [78, 64], people: [34, 44], hall: true, palisade: true, full: true },
+  bigtown: { name: 'Great town', houses: [6, 6], outer: [9, 12], out: [7, 9], yard: [15, 11], site: [80, 66], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true, full: true }
 };
 // the buildings: inside size in tiles [w range, h range], what stands inside, where the door goes (toward the yard)
 var BUILD = {
@@ -4960,7 +4972,7 @@ function make(seed, site, opts) {
   var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return shore ? 1 : 0; };   // the lowlands: clay tiles for the rich, thatch for the rest
   var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : wealth >= G.railAt ? 'fence' : 'rail'; if (A.chapel) fenceKind = 'drystone';
   // the yard
-  var yw = A.yard[0], yh = A.yard[1], yx = tx + Math.floor((w - yw) / 2), yy = ty + Math.floor((h - yh) / 2) + 1;
+  var HK = G.houseK || 1, yw = Math.round(A.yard[0] * (1 + (HK - 1) * 0.5)), yh = Math.round(A.yard[1] * (1 + (HK - 1) * 0.5)), yx = tx + Math.floor((w - yw) / 2), yy = ty + Math.floor((h - yh) / 2) + 1;
   V.yard = { x: yx, y: yy, w: yw, h: yh };
   function overlaps(a, b, gap) { return !(a.x + a.w + gap <= b.x || b.x + b.w + gap <= a.x || a.y + a.h + gap <= b.y || b.y + b.h + gap <= a.y); }
   function fits(lot) {
@@ -4973,14 +4985,14 @@ function make(seed, site, opts) {
     var k, best = null; for (k = 0; k < 12; k++) { var dx = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, dy = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot }; if (fits(l)) { best = l; break; } }
     if (best) V.lots.push(best); return best;
   }
-  function size(id) { var b = BUILD[id]; if (id === 'house' && R() < 0.5) return { w: 4, h: pickRange(R, [4, 5], 0) }; return { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; }   // half the houses stand deep: a gable end facing south
+  function size(id) { var b = BUILD[id], sz = id === 'house' && R() < 0.5 ? { w: 4, h: pickRange(R, [4, 5], 0) } : { w: pickRange(R, b.w, G.sizeJitter * (b.w[1] > b.w[0] ? 1 : 0)), h: pickRange(R, b.h, 0) }; if (HK !== 1) { sz.w = Math.max(sz.w, Math.round(sz.w * HK)); sz.h = Math.max(sz.h, Math.round(sz.h * HK)); } return sz; }   // half the houses stand deep: a gable end facing south. (HK: the trial's bigger houses)
   // the ring: the longhouse north of the yard facing it; the houses east, west, south-east and south-west, shuffled; some slots left open
   var big = A.chapel ? 'church' : (A.hall ? 'hall' : 'longhouse'), bs = size(big);
   tryPlace({ id: big, x: yx + Math.floor((yw - bs.w) / 2) + Math.round((R() - 0.5) * 2), y: yy - G.yardGap - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'n' }, 1);
   if (A.church && !A.chapel) { var cs = size('church'), L00 = V.lots[0], cTries = [[L00.x + L00.w + G.gap, L00.y + L00.h - cs.h], [L00.x - cs.w - G.gap, L00.y + L00.h - cs.h], [yx + yw + G.yardGap + 1, yy - cs.h - 1], [yx - G.yardGap - cs.w - 1, yy - cs.h - 1], [yx + yw + G.yardGap + 2, yy], [yx - G.yardGap - cs.w - 2, yy]], ci; for (ci = 0; ci < cTries.length; ci++) if (tryPlace({ id: 'church', x: cTries[ci][0], y: cTries[ci][1], w: cs.w, h: cs.h, door: 's', slot: 'church' }, 2)) break; }   // the town's church: beside the hall, else at a corner of the yard
   var nHouses = pickRange(R, A.houses, 0), slots = ['e', 'w', 'se', 'sw', 'ne', 'nw'], order = slots.slice().sort(function () { return R() - 0.5; }), placedHouses = 0, si;
   for (si = 0; si < order.length && placedHouses < nHouses; si++) {
-    if (!A.townwall && R() < G.emptySlots && si < order.length - 1) continue;   // (a town fills its ring: it came out with one to four houses where its rule asks for five to seven, 2026-10-13)
+    if (!A.townwall && !A.full && R() < G.emptySlots && si < order.length - 1) continue;   // (a town fills its ring: it came out with one to four houses where its rule asks for five to seven, 2026-10-13)
     var sl = order[si], hs = size('house'), lot = null;
     if (sl === 'e') lot = { x: yx + yw + G.yardGap, y: yy + Math.floor(R() * Math.max(1, yh - hs.h + 1)), door: 'w' };
     else if (sl === 'w') lot = { x: yx - G.yardGap - hs.w, y: yy + Math.floor(R() * Math.max(1, yh - hs.h + 1)), door: 'e' };
@@ -5006,6 +5018,23 @@ function make(seed, site, opts) {
     else if (id === 'boathouse') lot2 = shore === 's' ? { x: yx + Math.floor(R() * 3) - 1, y: ty + h - os.h - 1, door: 's' } : shore === 'n' ? { x: yx, y: ty + 1, door: 's' } : shore === 'e' ? { x: tx + w - os.w - 1, y: yy + yh + 2, door: 's' } : { x: tx + 1, y: yy + yh + 2, door: 's' };
     lot2.w = os.w; lot2.h = os.h; lot2.id = id; lot2.slot = 'out';
     if (tryPlace(lot2, 2)) placedOut++;
+  }
+  // the second ring (the big places): houses in a row behind the hall and a row before the gate, and a column either side, a lane
+  // from the first ring; the way in from the gate and the two ways a back gate may lie are kept open
+  if (A.outer) {
+    var nO = pickRange(R, A.outer, 0), obx0 = 1e9, oby0 = 1e9, obx1 = -1e9, oby1 = -1e9, lane = G.gap + 1, gxm = yx + Math.floor(yw / 2), placedO = 0, turn = 0, dead = {}, nDead = 0;
+    V.lots.forEach(function (l) { obx0 = Math.min(obx0, l.x); oby0 = Math.min(oby0, l.y); obx1 = Math.max(obx1, l.x + l.w); oby1 = Math.max(oby1, l.y + l.h); });
+    var cur = { n: obx0 - 1, s: obx0 - 1, e: oby0, w: oby0 }, keepN = [[L0.x - 3, L0.x], [L0.x + L0.w, L0.x + L0.w + 3]], keepS = [[gxm - 2, gxm + 4]], sidesO = ['n', 'e', 's', 'w'];
+    function pastLanes(x0, wd, lanes) { var moved = true, n2 = 0; while (moved && n2++ < 6) { moved = false; lanes.forEach(function (ln) { if (x0 < ln[1] && x0 + wd > ln[0]) { x0 = ln[1]; moved = true; } }); } return x0; }
+    while (placedO < nO && nDead < 4 && turn < 80) {
+      var sdO = sidesO[turn % 4], hs2 = size('house'), lot3 = null; turn++; if (dead[sdO]) continue;
+      if (sdO === 'n') { cur.n = pastLanes(cur.n, hs2.w, keepN); if (cur.n + hs2.w > obx1 + 2) { dead.n = 1; nDead++; continue; } lot3 = { x: cur.n, y: oby0 - lane - hs2.h, door: 's' }; cur.n += hs2.w + G.gap; }
+      else if (sdO === 's') { cur.s = pastLanes(cur.s, hs2.w, keepS); if (cur.s + hs2.w > obx1 + 2) { dead.s = 1; nDead++; continue; } lot3 = { x: cur.s, y: oby1 + lane, door: cur.s < gxm ? 'e' : 'w' }; cur.s += hs2.w + G.gap; }
+      else if (sdO === 'e') { if (cur.e + hs2.h > oby1 + 1) { dead.e = 1; nDead++; continue; } lot3 = { x: obx1 + lane, y: cur.e, door: 'w' }; cur.e += hs2.h + G.gap; }
+      else { if (cur.w + hs2.h > oby1 + 1) { dead.w = 1; nDead++; continue; } lot3 = { x: obx0 - lane - hs2.w, y: cur.w, door: 'e' }; cur.w += hs2.h + G.gap; }
+      lot3.w = hs2.w; lot3.h = hs2.h; lot3.id = 'house'; lot3.slot = 'outer';
+      if (tryPlace(lot3, 0)) placedO++;
+    }
   }
   // the pieces of every lot: walls in the lot's material, a door on the yard side, a window or two, the floor, the roof later
   function H(x, y, t, m) { V.H[key(x, y)] = { t: t, m: m }; } function Vw(x, y, t, m) { V.V[key(x, y)] = { t: t, m: m }; }
@@ -5103,9 +5132,10 @@ function make(seed, site, opts) {
     V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it
     var erx = hw2 * kk + T * 0.8, ery = hh2 * kk + T * 0.8, per = 6.283 * Math.sqrt((erx * erx + ery * ery) / 2), nst = Math.max(12, Math.round(per / G.stakeStep)), gpt = tile(gateX, ey1), gateA = Math.atan2((gpt[1] + T - ecy) / ery, (gpt[0] - ecx) / erx), k2;
     var gpt2 = backGateX != null ? tile(backGateX, ey0) : null, gate2A = gpt2 ? Math.atan2((gpt2[1] - T - ecy) / ery, (gpt2[0] - ecx) / erx) : null;
-    for (k2 = 0; k2 < nst; k2++) { var a2 = k2 / nst * 6.283, px = ecx + Math.cos(a2) * erx, py = ecy + Math.sin(a2) * ery, da = Math.abs(Math.atan2(Math.sin(a2 - gateA), Math.cos(a2 - gateA))); if (da < 0.16) continue; if (gate2A != null && Math.abs(Math.atan2(Math.sin(a2 - gate2A), Math.cos(a2 - gate2A))) < 0.14) continue; if (shore === 's' && Math.sin(a2) > 0.75) continue; if (V.ruin && R() < 0.35) continue; V.props.push({ name: 'stake', x: px, y: py, solid: 5 }); }
-    for (k2 = 0; k2 < (shore === 's' ? 0 : Math.round(G.banners)); k2++) { var ba = gateA + (k2 % 2 ? 1 : -1) * 0.2; V.props.push({ name: 'banner', x: ecx + Math.cos(ba) * erx, y: ecy + Math.sin(ba) * ery + 2, solid: 3 }); }
-    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery };
+    var gapA = Math.min(0.16, 1.7 * T / Math.max(1, Math.min(erx, ery))), gapB = Math.min(0.14, 1.3 * T / Math.max(1, Math.min(erx, ery)));   // the gate's gap by its width on the ground, three tiles and a bit (2026-10-13: by angle alone a big ring's gate was nine tiles of nothing; a small ring keeps what it had)
+    for (k2 = 0; k2 < nst; k2++) { var a2 = k2 / nst * 6.283, px = ecx + Math.cos(a2) * erx, py = ecy + Math.sin(a2) * ery, da = Math.abs(Math.atan2(Math.sin(a2 - gateA), Math.cos(a2 - gateA))); if (da < gapA) continue; if (gate2A != null && Math.abs(Math.atan2(Math.sin(a2 - gate2A), Math.cos(a2 - gate2A))) < gapB) continue; if (shore === 's' && Math.sin(a2) > 0.75) continue; if (V.ruin && R() < 0.35) continue; V.props.push({ name: 'stake', x: px, y: py, solid: 5 }); }
+    for (k2 = 0; k2 < (shore === 's' ? 0 : Math.round(G.banners)); k2++) { var ba = gateA + (k2 % 2 ? 1 : -1) * (gapA + 0.04); V.props.push({ name: 'banner', x: ecx + Math.cos(ba) * erx, y: ecy + Math.sin(ba) * ery + 2, solid: 3 }); }
+    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery, gateAt: shore === 's' ? null : [ecx + Math.cos(gateA) * erx, ecy + Math.sin(gateA) * ery], backAt: gate2A != null ? [ecx + Math.cos(gate2A) * erx, ecy + Math.sin(gate2A) * ery] : null };   // gateAt, backAt: the gaps in the ring of stakes
   } else {
     var wideGate = A.townwall ? 1 : 0;                         // a town's gate is two tiles wide (2026-10-13: through one tile a fight was a duel with everyone else waiting)
     for (x = ex0; x < ex1; x++) { if (x === backGateX) H(x, ey0, 'gate', 2); else if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if ((x === gateX || (wideGate && x === gateX + 1)) && shore !== 's') H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
@@ -5215,7 +5245,7 @@ function make(seed, site, opts) {
   return V;
 }
 // a page's site for an archetype: the tiles it needs
-function siteFor(archId) { var A = ARCH[archId] || ARCH.small; return { w: A.site[0], h: A.site[1] }; }
+function siteFor(archId, G) { var A = ARCH[archId] || ARCH.small, k = 1 + (((G && +G.houseK) || 1) - 1) * 0.8; return { w: Math.round(A.site[0] * k), h: Math.round(A.site[1] * k) }; }   // (G.houseK: bigger houses need a bigger site)
 
 /* Villages across the islands (2026-10-07, Robin): where the villages of a world stand, what kind each is, its name and its jetty.
    plan(env, opts): env = { isles: [{ x, y, r }] in tiles (the first is the starter island and gets nothing: its village was raided),
@@ -5263,7 +5293,7 @@ function plan(env, opts) {
   function shoreOf(cx, cy, sh) { var x, sy, n; for (sy = cy + Math.ceil(sh / 2) + 2; sy <= cy + Math.ceil(sh / 2) + 10; sy++) { n = 0; for (x = cx - 4; x <= cx + 4; x++) if (env.code(x, sy) === 0) n++; if (n >= 5) return 's'; } return null; }   // the sea within a few tiles past the beach below the site
   function farEnough(cx, cy) { var k; for (k = 0; k < sites.length; k++) if (Math.hypot(sites[k].cx - cx, sites[k].cy - cy) < 38) return false; for (k = 0; k < (env.avoid || []).length; k++) if (Math.hypot(env.avoid[k].x - cx, env.avoid[k].y - cy) < env.avoid[k].r + 18) return false; return true; }
   function find(q, arch, wantShore) {                         // a site of the archetype's size on island q, on a shore or not, or null
-    var sz = siteFor(arch), tries;
+    var sz = siteFor(arch, opts.G), tries;
     for (tries = 0; tries < 900; tries++) {
       var a = R() * 6.283, d = (wantShore ? 0.45 + R() * 0.5 : R() * 0.6) * q.r, cx = Math.floor(q.x + Math.cos(a) * d), cy = Math.floor(q.y + Math.sin(a) * d * 0.9);
       if (!siteOk(cx, cy, sz.w, sz.h) || !farEnough(cx, cy)) continue;
@@ -5284,9 +5314,10 @@ function plan(env, opts) {
     else if (q.r >= 42) wants = [R() < 0.5 ? ['fishing', true] : ['farmstead', false]];
     else if (R() < 0.5) wants = [['farmstead', false]];
     wants.forEach(function (wq) {
-      var arch = wq[0], st = find(q, arch, wq[1]); if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
-      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && R() < 0.14) arch = 'ruin';
-      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
+      var arch = (opts.swap && opts.swap[wq[0]]) || wq[0], st = find(q, arch, wq[1]); if (!st && arch !== wq[0]) { arch = wq[0]; st = find(q, arch, wq[1]); }   // (opts.swap: a page asks for a big place where a town or a seat would stand; if the island has no room for it, the plain one)
+      if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
+      if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && R() < 0.14) arch = 'ruin';
+      var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat' || arch === 'great') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
       st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
       sites.push(st);
@@ -5353,6 +5384,11 @@ function garrison(V, n, R) {
     var gx = (F.gate + (F.gateW || 1) / 2) * T, gy = F.y1 * T;
     put(gx - 34, gy + 22, S, 'gate'); put(gx + 34, gy + 22, S, 'gate'); put(gx - 40, gy - 24, S, 'gate'); put(gx + 40, gy - 24, S, 'gate');     // the gate: two outside, two inside
     for (i = F.x0; i < F.x1; i++) if (V.H[key(i, F.y0)] && V.H[key(i, F.y0)].t === 'gate') { put((i + 0.5) * T - 16, F.y0 * T + 26, N, 'gate'); put((i + 0.5) * T + 16, F.y0 * T + 26, N, 'gate'); break; }   // the back gate
+  }
+  if (F && F.round && F.gateAt) {            // a ring of stakes: two inside each gap
+    var ga = Math.atan2(F.cy - F.gateAt[1], F.cx - F.gateAt[0]), gnx = Math.cos(ga), gny = Math.sin(ga);
+    put(F.gateAt[0] + gnx * 30 - gny * 22, F.gateAt[1] + gny * 30 + gnx * 22, S, 'gate'); put(F.gateAt[0] + gnx * 30 + gny * 22, F.gateAt[1] + gny * 30 - gnx * 22, S, 'gate');
+    if (F.backAt) { var gb = Math.atan2(F.cy - F.backAt[1], F.cx - F.backAt[0]); put(F.backAt[0] + Math.cos(gb) * 30 - Math.sin(gb) * 20, F.backAt[1] + Math.sin(gb) * 30 + Math.cos(gb) * 20, N, 'gate'); put(F.backAt[0] + Math.cos(gb) * 30 + Math.sin(gb) * 20, F.backAt[1] + Math.sin(gb) * 30 - Math.cos(gb) * 20, N, 'gate'); }
   }
   put(yc[0] - 60, yc[1] + 30, S, 'yard'); put(yc[0] + 70, yc[1] - 10, Math.PI, 'yard');                                                        // by the market
   houses.forEach(function (l, hi) { var dx2 = l.door === 'e' ? l.x + l.w + 0.6 : l.door === 'w' ? l.x - 0.6 : l.dx + 0.5, dy2 = l.door === 's' ? l.y + l.h + 0.7 : l.door === 'n' ? l.y - 0.7 : l.dy + 0.5; put(dx2 * T + (l.door === 's' || l.door === 'n' ? (hi % 2 ? 14 : -14) : 0), dy2 * T + (l.door === 'e' || l.door === 'w' ? (hi % 2 ? 14 : -14) : 0), S, 'door'); });   // a man by every house door

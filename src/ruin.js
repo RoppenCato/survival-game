@@ -34,7 +34,7 @@ var YARDS = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 
 var DEF = {
   on: 1,
   // how much a piece takes before it gives (0: no hand tool breaks it)
-  hp: { fence: 8, rail: 7, wattle: 18, window: 10, door: 14, archDoor: 26, gate: 28, planks: 48, frame: 36, logs: 110, palisade: 90, turf: 56, drystone: 40, blocks: 130, ashlar: 0, townwall: 0 },
+  hp: { fence: 8, rail: 7, wattle: 18, window: 10, door: 14, archDoor: 26, gate: 28, planks: 48, frame: 36, logs: 110, palisade: 90, stake: 30, turf: 56, drystone: 40, blocks: 130, ashlar: 0, townwall: 0 },   // (stake: one sharpened log of a village's round wall; three stand to a tile)
   // what a tool's blow does to a material, as a share of its power
   bite: {
     axe: { fence: 1, rail: 1, wattle: 1, window: 1, door: 1, archDoor: 1, gate: 1, planks: 1, frame: 1, logs: 1, palisade: 1, turf: 0.3, drystone: 0.1, blocks: 0, ashlar: 0, townwall: 0 },
@@ -185,7 +185,8 @@ function fireTick(R, B, dt, env) {
       if (!room || ruined(B, room)) { delete F[key]; continue; }
       var rs = roofSpec(R, B, room, dflt);
       edgesOf(B, room).forEach(function (q) { if (!burnsWall(R, q.e) && !q.e.breach && !isYard(q.e)) q.e.scorch = 1; });      // the stone under a burning roof is blackened
-      if (f.t >= rs.burn) { collapse(R, B, room, 'burnt', dflt); ev.fell.push(room); continue; }
+      if (f.need == null) { var far = 0; room.tiles.forEach(function (tl) { var dd = Math.abs(tl[0] - f.at[0]) + Math.abs(tl[1] - f.at[1]); if (dd > far) far = dd; }); f.need = Math.max(rs.burn, far * rs.spread + 6); }   // a big roof does not fall before the flames have crossed it (2026-10-13: a hall's roof was down with its far end not yet alight)
+      if (f.t >= f.need) { collapse(R, B, room, 'burnt', dflt); ev.fell.push(room); continue; }
       if (f.s >= FR.step) {
         f.s = 0;
         if (f.t >= FR.toWalls) { var W = edgesOf(B, room).filter(function (q) { return burnsWall(R, q.e) && !F[q.L + ':' + q.k]; }); if (W.length) { var q0 = W[Math.floor(rnd() * W.length)]; F[q0.L + ':' + q0.k] = { t: 0, s: 0 }; ev.lit.push([q0.L, q0.k]); } }

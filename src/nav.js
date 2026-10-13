@@ -69,7 +69,12 @@ var Nav = (function () {
     function clear(x0, y0, x1, y1, keys, wide) {
       if (blocked(x0, y0, x1, y1, keys)) return false; if (wide === 0) return true;
       var d = Math.hypot(x1 - x0, y1 - y0); if (d < 1) return true; var px = -(y1 - y0) / d * (wide || 6), py = (x1 - x0) / d * (wide || 6);
-      return !blocked(x0 + px, y0 + py, x1 + px, y1 + py, keys) && !blocked(x0 - px, y0 - py, x1 - px, y1 - py, keys) && !solidOn(x0, y0, x1, y1);
+      // (a side line counts only if both its ends are on his side of any wall: a man pressed against a wall has one side line
+      // that begins beyond it, and with that line counted he was never "clear" of the man he stood face to face with, so he
+      // looked for a way round and never struck. 2026-10-13, found by the town test: a fight that never ended)
+      if (!blocked(x0, y0, x0 + px, y0 + py, keys) && !blocked(x1, y1, x1 + px, y1 + py, keys) && blocked(x0 + px, y0 + py, x1 + px, y1 + py, keys)) return false;
+      if (!blocked(x0, y0, x0 - px, y0 - py, keys) && !blocked(x1, y1, x1 - px, y1 - py, keys) && blocked(x0 - px, y0 - py, x1 - px, y1 - py, keys)) return false;
+      return !solidOn(x0, y0, x1, y1);
     }
     var gS = new Float32Array(N), fS = new Float32Array(N), from = new Int32Array(N), mark = new Uint32Array(N), shutM = new Uint32Array(N), run = 0, heap = [];
     function push(i) { var k = heap.length, p; heap.push(i); while (k > 0) { p = (k - 1) >> 1; if (fS[heap[p]] <= fS[heap[k]]) break; var t = heap[p]; heap[p] = heap[k]; heap[k] = t; k = p; } }
@@ -94,6 +99,14 @@ var Nav = (function () {
       pts.reverse(); if (best === e) pts.push({ x: tx, y: ty }); else pts.short = true;
       return pts.length || best === e ? pts : null;
     }
+    // Every tile that can be walked to from a place (a flood over the steps; a way's search gives up after 6000 tiles, which in a
+    // big town is not the whole of it, so "can he get there at all" is asked here). Answers { has(x, y) } in the world's units.
+    function flood(fx, fy, keys) {
+      var sx = Math.max(0, Math.min(GW - 1, Math.floor(fx / T) - X0)), sy = Math.max(0, Math.min(GH - 1, Math.floor(fy / T) - Y0)), out = new Uint8Array(N), q = [sy * GW + sx], qi = 0, k, c, cx, cy, nx, ny, i;
+      out[q[0]] = 1;
+      while (qi < q.length) { c = q[qi++]; cx = c % GW; cy = (c - cx) / GW; for (k = 0; k < 4; k++) { nx = cx + DX[k]; ny = cy + DY[k]; if (!inside(nx, ny)) continue; i = ny * GW + nx; if (out[i] || !step(cx, cy, nx, ny, keys)) continue; out[i] = 1; q.push(i); } }
+      return { has: function (x, y) { var tx = Math.floor(x / T) - X0, ty = Math.floor(y / T) - Y0; return inside(tx, ty) && !!out[ty * GW + tx]; } };
+    }
     // The corner to make for now, or null when he can walk straight to the place. The way is kept on the mover (m.nav) until
     // the place has moved a tile, the grid has been read again, or two seconds have passed. With nowhere to go he is told to
     // stay where he is (the answer has .wait).
@@ -108,6 +121,10 @@ var Nav = (function () {
       while (nv.i < nv.pts.length && Math.hypot(nv.pts[nv.i].x - m.x, nv.pts[nv.i].y - m.y) < T * 0.35) nv.i++;                      // reached
       while (nv.i + 1 < nv.pts.length && clear(m.x, m.y, nv.pts[nv.i + 1].x, nv.pts[nv.i + 1].y, keys)) nv.i++;                      // and as far along it as he can walk straight
       if (nv.i >= nv.pts.length) return nv.short && blocked(m.x, m.y, tx, ty, keys) ? { x: m.x, y: m.y, wait: true } : null;      // at the end of a way that fell short: he waits only if a wall is what is left between them
+      // the last point of a whole way is the place itself: with no wall left between, that is "walk straight there" (2026-10-13:
+      // two men face to face beside a corner were each given the other as a corner to make for, and a man who is being led
+      // round something does not strike: found by the town test as fights that never ended)
+      if (nv.i === nv.pts.length - 1 && !nv.short && !blocked(m.x, m.y, tx, ty, keys)) return null;
       return nv.pts[nv.i];
     }
     // a doorway or a gate on the straight line from a place toward another, within `reach` of the first: the middle of the tile
@@ -133,7 +150,7 @@ var Nav = (function () {
     }
     g.lockAt = lockAt;
     g.narrowAhead = narrowAhead; g.narrowTile = function (x, y) { return narrowTile(Math.floor(x / T) - X0, Math.floor(y / T) - Y0); };
-    g.solidOn = solidOn; g.read = read; g.step = step; g.blocked = blocked; g.clear = clear; g.path = path; g.next = next; g.inside = function (x, y) { return inside(Math.floor(x / T) - X0, Math.floor(y / T) - Y0); };
+    g.solidOn = solidOn; g.read = read; g.step = step; g.blocked = blocked; g.clear = clear; g.path = path; g.flood = flood; g.next = next; g.inside = function (x, y) { return inside(Math.floor(x / T) - X0, Math.floor(y / T) - Y0); };
     g.openAt = function (x, y) { var tx = Math.floor(x / T) - X0, ty = Math.floor(y / T) - Y0; return !inside(tx, ty) || !!open[ty * GW + tx]; };
     g.edgeAt = function (kind, tx, ty) { tx -= X0; ty -= Y0; if (kind === 'H') return tx >= 0 && tx < GW && ty >= 0 && ty <= GH ? eh[ty * GW + tx] : 0; return tx >= 0 && tx <= GW && ty >= 0 && ty < GH ? ev[ty * (GW + 1) + tx] : 0; };
     read(); return g;
@@ -156,8 +173,13 @@ var Nav = (function () {
     function chokeFull(g, e, q) {
       var n = 0, D = Combat.dbg(), E = D.W.enemies, i, o, P = D.P;
       if (Math.hypot(e.x - q.x, e.y - q.y) < 14 || Math.hypot(e.x - q.bx, e.y - q.by) < 14) return false;                   // he is in it himself
-      for (i = 0; i < E.length; i++) { o = E[i]; if (o === e || o.dead || o.down || o.out || !o.human) continue; if (inIt(o, q)) n++; }   // (a man on his knees in a doorway does not fill it)
-      if (e !== P && !P.dead && !P.hidden && inIt(P, q)) n++;
+      // Who fills it: his own side, on their way through. Not a foe (a foe in a gate is somebody to fight there, not somebody to
+      // wait for) and not a man who is himself waiting. (2026-10-13: with everybody counted, the town's men inside a gate and the
+      // raiders outside it each waited for the others to clear it, in reach of one another, for minutes: the town test's long
+      // waits "at a gate or door".)
+      var side = e.side || 0, now = clock();
+      for (i = 0; i < E.length; i++) { o = E[i]; if (o === e || o.dead || o.down || o.out || !o.human) continue; if ((o.side || 0) !== side) continue; if (o.choked != null && now - o.choked < 0.25) continue; if (inIt(o, q)) n++; }   // (a man on his knees in a doorway does not fill it)
+      if (e !== P && side === 1 && !P.dead && !P.hidden && inIt(P, q)) n++;
       return n >= 2;
     }
     Combat.api.nav = function (e, x, y) {
@@ -167,6 +189,7 @@ var Nav = (function () {
       if (q) {
         if (q.v === 2 && keys && Math.hypot(e.x - q.x, e.y - q.y) < 30) (g.opened = g.opened || []).push({ kind: q.kind, tx: q.tx, ty: q.ty });   // his own locked door, and he is at it: he opens it (unlock() below)
         if (chokeFull(g, e, q)) { e.choked = clock(); return { x: e.x, y: e.y, wait: true }; }
+        e.choked = null;                                                                                                   // let through: from now he is one of those in it
       }
       return wp;
     };
@@ -176,6 +199,7 @@ var Nav = (function () {
       return g.blocked(ox, oy, nx, ny, keys);
     };
     Combat.api.wall = function (x0, y0, x1, y1) { var g = at(x0, y0) || at(x1, y1); return g ? g.blocked(x0, y0, x1, y1, false) : false; };
+    Combat.api.walled = function (x, y) { return !!at(x, y); };   // are the walls at this place known to a grid (then a wall's own circles are not needed to stop a mover there, and must not push him: see moveCircle)
     return { keysOf: keysOf, chokeFull: chokeFull };
   }
   // The locked doors a place's own men went through since the last call: unlocked in the building data B (they stay open

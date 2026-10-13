@@ -174,3 +174,167 @@ Also changed for everybody, because breaking in needed it: **a roof thins when y
 5. **The lean** of side walls: on, off, how much.
 6. **Dressed stone is never broken by hand.** A cut-stone church is entered by its door. Right, or should a great
    deal of work with a pick do it?
+
+## 9. The big trials (2026-10-13)
+
+Robin: *"Now do a big trial where you build a big village/town and raid it. Destroying houses, breaking in etc. Then a
+new trial where you make the houses bigger so there is more room to move around. Every time work on fixing bugs you
+find."* `docs/destruction-trials.jpg` is the pictures.
+
+### What was built for it
+
+- **Two big places** (`src/village.js`): the **great village** (`ARCH.great`: a log hall, a full ring of houses and a
+  **second ring** behind it, 17 to 21 buildings inside a ring of stakes, 34 to 44 people) and the **great town**
+  (`ARCH.bigtown`: the same with a church and two stores inside a town wall, in the lowlands' materials). Nothing plans
+  them into a world: a page asks for them (`Village.plan(env, { swap })`), as the Destruction Editor does.
+- **Bigger houses as one number** (`Village.DEF.houseK`): every building's inside times that, the yard and the site
+  growing with it.
+- **Three switches in the Destruction Editor** (they reload the page): **Places: great ones** (`&big=1`: a great village
+  on the second island, a great town on the third), **Houses: as now, half again as big, twice as big**
+  (`&roomy=1.5`), and, with bigger houses, **Heard as far again, too** (`&loud=0` turns it off). And on the board: the
+  place (town or village), its men (none, 12, 20, 30, 40), a raid on it (your ship and five of your own).
+- **`tools/visual/sackplay.js`** plays it in the page with no pictures (`SK.setup`, `SK.raid('hall' | 'fire')`,
+  `SK.sack`, `SK.watch()`); **`tools/visual/bigplace.js`** renders one place large from the generator.
+
+**How it was played.** By script, with the game's own keys. The hero **never fights and never raises his shield**, so
+the raids are a floor, as in `docs/battle-plan.md`. He and his five are **set down at the gate**: the walk from the
+ship (73 to 143 tiles in these worlds) was skipped. A **watch** runs with every step and counts what must never happen:
+anybody walking through a wall, a man standing still with somebody to go for, people hidden in a house that is gone,
+people fleeing who do not move, time spent standing in a fire. **Every number below is from the code as committed**
+(the raids were run again after the last fix: several numbers moved on the way).
+
+### Trial 1: the places as they are
+
+**The great town** (Alvarsberg: 19 buildings; the hall 14 by 4 in timber frame under tiles, a cut-stone church under
+slate, thirteen plank houses under thatch; 302 pieces of wall; a town wall; 35 people and 30 men).
+
+| What | How it went |
+| --- | --- |
+| The hall by its back wall, four times | through the wall in 10 s, the chest on his shoulder at 30 s with 12 to 15 men up; never out of the gate; **dead at 46 to 49 s** |
+| A house set alight first, then the church, four times | lit unseen; three to six men stand at the fire; nobody up at the church door; the chest lifted at 40 to 51 s with all but full health, 12 to 19 men up by then; out of the gate once; **dead at 61 to 69 s** |
+| The sack with nobody to stop him (the men taken out) | **17 of 19 buildings down**, 16 of them burnt, 253 of 302 pieces, in 634 s. The church stands, and the hall (23 pieces hacked out of it in two and a half minutes: a timber frame stands until most of it is gone) |
+| The sack with the town up (30 men, the hero made unkillable) | he is **held**: three to six pieces of the hall in two and a half to three minutes, and it does not come down |
+| Afterwards | 32 of its 35 people stand outside the place with no home; three are indoors (the hall stands) |
+
+**The great village** (Tovasstad: 18 buildings; the hall 17 by 4 of logs, plank houses under turf; a ring of stakes;
+40 people and 20 men).
+
+| What | How it went |
+| --- | --- |
+| Through the ring | a way cut in **14 s of axe work, unheard**; his men follow him through it |
+| The hall's log wall, three times | 18 to 22 s of blows that the whole village hears: 19 or 20 of the 20 up; in two he was **dead before it gave**, in the third he stood in the hole with 7 health and no chest |
+| The sack with nobody to stop him | **17 of 18 down** (16 burnt), 276 of 288 pieces, in 374 s. The stone smithy stands |
+
+### Trial 2: every house half again as big
+
+**The great town** (Torstenstun: 18 buildings; houses 6 by 6 to 8 by 5, **the hall 26 by 6**; 432 pieces; 40 people,
+30 men). The sack with nobody to stop him: **17 of 18 down** (15 burnt), 386 of 432 pieces, in 462 s; the church
+stands; all 40 people outside the place. **The great village** (21 buildings, 510 pieces, the hall 26 by 6, 41
+people): **20 of 21 down** (19 burnt), 436 of 510 pieces, in 786 s; the log hall stands.
+
+| Four raids each | Houses as now | Half again as big, heard as before | Half again as big, heard half again as far |
+| --- | --- | --- | --- |
+| The hall by its back wall | 0 of 4 away (12 to 15 men up at the lift) | **3 of 4 away, untouched** (three men up at the lift, four to seven in all) | 0 of 4 (five up at the lift, 25 to 27 by the end, dead at 46 to 54 s) |
+| Fire first, then the church | 0 of 4 away (the chest lifted in all) | not run | **3 of 4 away with the chest**, untouched, all five with him, 87 s (13 to 15 men at the fire, two up at the lift); once run down outside the gate |
+
+**What that says.**
+
+- **Room.** A hall of 26 by 6 is wider than the screen and a house of 6 by 6 is a room you can fight in. But **the
+  things inside do not grow with the room**: the same two beds, a hearth, a chair and a chest stand in more than twice
+  the floor, and the hall is a plank floor with two braziers. Bigger houses need a furnishing pass before they look
+  lived in.
+- **Sound is distance.** Make the houses bigger and the same noise reaches fewer men: the hall raid went from never
+  getting out to walking away untouched three times of four. With what is heard scaled by the same number it is lost
+  again, as before. So **house size and hearing must move together**; the trial does that by default.
+- **Fire as a diversion grows stronger with the place.** In the bigger town the fire stands further from the church,
+  more men go to stand at it (13 to 15 against three to six), and the church's chest comes out three times of four. At
+  today's size it never did. Whether that is "a good plan pays" or "too easy" needs Robin's eye, and a hero who is
+  chased by somebody who plays.
+- **A town that is up cannot be pulled down round its own ears.** Once the men strike a man who stands hacking at a
+  wall (they often did not: fault 15 below), an unkillable hero is held at the first wall. Sacking is what happens
+  after the fight is won, or with fire.
+- **Cost.** Finding the rooms again after a house falls takes 5.9 ms at the bigger size (4.5 at today's); a step of the
+  whole town with the watch on is about 1 ms, 20 to 33 at worst. The pane draws in software, so only the comparison
+  counts.
+
+### What the trials found, and what was done
+
+**In the place and its people** (the first passes):
+
+1. **The editor's board ran off the screen** with the new rows: it packs its rows tighter when there are many.
+2. **A fire drew nobody.** It was a noise like any other, so every man who heard it was simply up and after the hero
+   wherever he stood. Now a fire is something to look at (`Combat.gawk`): the men at their day **leave it and go to
+   stand before the fire while it burns**; the gate's and the hall's own stay; a real noise still wakes them; and
+   **lighting a fire where a man or a villager can see you raises the cry**.
+3. **A roof whose walls burnt away fell as straw, not as ash.**
+4. **A hitch of 28 ms every time a piece gave way**: the rooms were found again over the whole map (164,000 tiles) and
+   every roof picture thrown away. Rooms are now found per **cluster of buildings**, a breach rebuilds nothing, and a
+   fallen roof drops only its own pictures.
+5. **Villagers froze** beyond about 37 tiles from the hero: in a big place half the village stood still while it burnt.
+   Everybody of the place you are in now lives.
+6. **A village's ring of stakes was unknown to the axe and to the way-finding**: a swing took four stakes at once, men
+   planned ways straight through it, and its gate was nine tiles wide. Stakes fall **one a blow** (the palisade's
+   toughness), leave a stump, the grid closes every tile a stake stands in, and the gate is about three tiles.
+7. **"Whole again" left burnt furniture gone.**
+8. **People who fled stood in a ruled line** outside the place.
+9. **Ash lay the same on every tile.**
+10. **Window boxes, lanterns and signs hung in the air** where their wall had gone.
+11. **With bigger houses the men who came to look stood inside the burning house**, and nine of them burnt. They stand
+    on open ground now, and a man in a room that is alight walks out of it unless he is fighting.
+12. **Grass grew through laid floors** in every house (seen once the rooms were big enough to look into).
+13. **A big roof fell before the flames had crossed it**: it now waits until the fire has reached its far end.
+14. **With bigger houses nothing was heard** (above): hearing scales with the house size in the trial.
+
+**In the engine every fighting man uses** (found when the whole test suite was run before committing: the town test
+of `tests/battle.js` showed one man standing still, which it had not shown in the handful of fights it runs. Its fights
+are random, so `tools/seedrand.js` now gives `Math.random` a seed and a fault can be played again. Over the same 246
+scripted attacks on three towns, the engine as it was committed that morning had **2 fights that never ended, 3 men
+who stood still for five seconds or more, and 12 waits of half a minute or more at a gate; now: none, none, and no wait longer than 28 s**):
+
+15. **A man hard against a wall never struck**, and neither did two men face to face beside a corner: the way-finding
+    told each to walk round something to reach the man in front of him, and a man who is being led round something
+    did not strike. A fight between the last two could go on for ever, and **a hero hacking at a wall was half safe
+    from the men behind him**. A foe in reach with no wall between is now struck, whatever the way-finding says.
+16. **A man caged in the corner of a house** behind a chest, the moment the hero came near: the walls' own circles exist
+    only near the hero, and they pushed a man who had walked along the wall far from him. They push nobody but the
+    hero now; instead everybody else stops four units short of a wall he walks into, near the hero and far from him
+    alike (so nobody stands in a wall).
+17. **A man in the notch between two round things** (two log seats by the fire; a table and its bench) stood 5 to 21 s:
+    his step to one side was always 72 degrees, which pressed him against one or the other. He now turns further each
+    time it has not helped, until he is all but backing out.
+18. **Both sides waiting their turn at a gate**: the town's men inside and the raiders outside, in reach of one another,
+    each waiting for the gate to clear, for up to three minutes. A gate is filled only by a man's own side on its way
+    through; a foe in a gate is somebody to fight there.
+19. **Two men either side of a wall pushed each other** through it.
+20. **A fleeing villager walked through a dry-stone wall.** Her refuge was a walled-in yard, and a villager with no way
+    to a place simply walked straight at it. With no way he stands, then thinks of somewhere else; and a refuge is a
+    place that can be walked to from the yard.
+21. **A guard nudged a step from his place turned his back to walk the step home**, so nobody could come up behind
+    him once the hero's own men had crowded his gate. (The old fault 18 had been keeping them out of it: the scripted
+    church raid of `docs/battle-plan.md` went from six quiet starts in six to two in twelve, and is back at five in
+    six.) He steps back as he stands.
+
+Nobody walked through a wall, nobody stood still with somewhere to go, and nobody hid in a house that was gone, in
+any of the runs on the code as committed.
+
+### Not done, and what I cannot judge
+
+- **The hero does not fight**, and the walk from the ship was skipped: these are raids on paper.
+- **Four raids a line** is few: read the lines as "never", "sometimes", "always", not as percentages.
+- **Furnishing** of big rooms; the second ring's houses are plain houses (no workshops, no second well).
+- **The big places are only in the editor.** The real game's villages are as they were. The engine fixes (15 to 21)
+  are in the real game.
+- **Your own men follow you through a gate and stand among its guards.** A town at peace lets a band walk in today
+  (decided otherwise on 2026-10-13, not built); until then they crowd a gate you stand outside of.
+- I cannot hear it, and I judged the pictures in the pane at Robin's size, not on Robin's screen.
+
+### Questions for Robin
+
+7. **Bigger houses: yes, and how much?** Half again as big gives real room and an emptier look; a quarter more may be
+   the better trade. If yes: for every village in the game, or only the big places?
+8. **Should hearing grow with the houses**, as the trial has it? It keeps the hall raid as hard as it was.
+9. **Fire as a diversion.** At the bigger size it makes the church nearly a sure thing. Leave it, or should some of
+   the men who go to look come back sooner, or the priest raise the cry?
+10. **The great village and the great town**: are these the size a "big place" should be (17 to 21 buildings, 35 to
+    45 people, 20 to 30 men)? Where do they go in the world?
+
