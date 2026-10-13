@@ -393,7 +393,7 @@ __SPRITES_JS__
     var hs = YSCENE.heroSpot(); P.x = hs.x; P.y = hs.y; P.vx = P.vy = 0; releaseWalk(); yui();
   }
   function yardLeave() { var P = Combat.dbg().P; inYard = false; YSCENE.leave(); view.zoom = yardZoom || 0.7; syncView(); P.x = (dockEnd.x + 7.4) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; yui(); }
-  function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + (built.kind === 'karve' ? 'a karve' : built.kind === 'boat' ? 'a boat' : 'a raft') + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
+  function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + ('a ' + Yard.nameOf(built.kind).toLowerCase()) + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
   document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { var kind = built ? built.kind : 'boat'; localStorage.setItem('game.boat', JSON.stringify({ kind: kind, steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip, windK: spec.windK })); document.getElementById('usemsg').textContent = 'The game\'s ' + kind + ' now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ', wind ' + spec.windK + ').'; } catch (err) {} };
   document.getElementById('useworld').onclick = function (e) { e.currentTarget.blur(); try { var o = worldSpec(), g = {}; ['count', 'gap', 'gapVar', 'skerries', 'rough', 'beach', 'seed', 'isle', 'isle0', 'big', 'sizes', 'biomes', 'dir', 'sizeVar'].forEach(function (k) { if (o[k] != null) g[k] = o[k]; }); if (!spec.layout) { g.sizes = null; g.biomes = null; } localStorage.setItem('game.world2', JSON.stringify(g)); document.getElementById('worldmsg').textContent = 'The game now builds this sea on its next fresh start: ' + g.count + ' islands, sea number ' + g.seed + (g.biomes ? ', lowlands from island ' + spec.lowFrom : '') + '. Esc, New island in the game starts it.'; } catch (err) {} };
   document.getElementById('yopen').onclick = function (e) { e.currentTarget.blur(); if (inYard) yardLeave(); else yardEnter(); };
@@ -468,7 +468,7 @@ __SPRITES_JS__
   function sail(dt) {
     var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), iy = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0);
     if (!aboard) ix = iy = 0;
-    boat.sail = !!(built && built.kind === 'karve' && built.sail); boat.crew = spec.rowers; boat.rowers = built && built.rowers != null ? built.rowers : 99;
+    boat.sail = !!(built && Yard.rigged(built.kind) && built.sail); boat.crew = spec.rowers; boat.rowers = built && built.rowers != null ? built.rowers : 99;
     Yard.sail(boat, { ix: ix, iy: iy }, dt, free, spec, { a: spec.windA, k: spec.windK });   // the same physics as the game (src/yard.js); the wind fills a karve's sail
     var sp = Math.hypot(boat.vx, boat.vy), d = dims();
     wakeT -= dt;
@@ -584,7 +584,7 @@ __SPRITES_JS__
       hero = P; this.noHeroShadow = aboard;
       var z = view.zoom, hw = 200 / z, hh = 125 / z, i;
       cam.z = z;
-      if (inYard) { var yc = YSCENE.cam(); cam.x = yc.x; cam.y = yc.y; c.fillStyle = '#2d4a22'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y); YSCENE.floor(c); YSCENE.ghost(c, mouseW, false); return; }
+      if (inYard) { var yc = YSCENE.cam(); cam.x = yc.x; cam.y = yc.y; if (view.zoom !== yc.z) { view.zoom = yc.z; syncView(); } z = yc.z; cam.z = z; c.fillStyle = '#2d4a22'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y); YSCENE.floor(c); YSCENE.ghost(c, mouseW, false); return; }
       cam.x = hw * 2 >= WX ? WX / 2 : Math.max(hw, Math.min(WX - hw, P.x));
       cam.y = hh * 2 >= WY * K ? WY * K / 2 : Math.max(hh, Math.min(WY * K - hh, P.y * K - 14));
       c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250);

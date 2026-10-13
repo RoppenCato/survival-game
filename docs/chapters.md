@@ -23,7 +23,7 @@ start page is laid out by chapter:
 | Chapter | Where it is played | Where its systems are worked on |
 | --- | --- | --- |
 | 1 The starter island | `game.html` from the wreck | the Combat Arena (`combat-arena.html`: every fight the game has, beasts and men); the Art, Village, Sea and Song editors |
-| 2 The first big island | `game.html` after the crossing | the Big island test (`game.html?scene=runes`: the ring, the mountain, the cave), the Mountain test (`?scene=mountain`) |
+| 2 The first big island (the boat built in the yard; the karve and the longship for chapter 3) | `game.html` after the crossing | the Big island test (`game.html?scene=runes`: the ring, the mountain, the cave), the Mountain test (`?scene=mountain`) |
 | 3 The second biome and the first raid | not in the game yet (the lowlands are built but not spawned) | the Battle test (`?scene=battle`: men, the town, the four ways to raid), the Destruction Editor (`?scene=ruin`), and the Combat Arena for the fighting itself |
 
 A change to a weapon, a man's wits or his shield in the Combat Arena is a change to the raid; a change to the raid's rules in

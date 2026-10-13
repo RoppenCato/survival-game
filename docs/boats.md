@@ -1,5 +1,13 @@
 # Boats and the Shipyard: where it stands, what is hard, what to do (2026-10-13)
 
+> **Decided and built the same day.** Robin: "Do it" to the recommendation in section 4 (C, with B's choices of look).
+> Built: four hull designs (faering, boat, karve, longship) chosen in the yard and laid at once, the fitting out as parts
+> (seats, mast, sail, steering oar, a dragon stem, shields on the rail), the hull paid at the launch, the yard sized to the
+> hull with the camera pulled back for the longship, handling and the rowers' share per hull. See `CLAUDE.md`, "The hulls".
+> Not yet: the rowing clip, the sail's colours, the ship's name, the knarr. The questions in section 5 are answered by what
+> was built where it had to choose (a hull of your own: no; the longship huge: yes; the shape and the handling: per design;
+> the crew: every rower is drawn seated and every oar pulls; a name and a figurehead: the dragon stem now, the name later).
+
 Robin asked (2026-10-13): re-evaluate the boat and the shipyard system; how do we make boats big enough for several Vikings
 to row; how do we make it even more customizable and still functional; is it better to make a few really good designs and let
 the player choose parts and colours. This is the study, with a recommendation and the questions it leaves. **Nothing here is

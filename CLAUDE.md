@@ -1723,6 +1723,36 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   so `known()` is false until Brokk has taught it (`seen.raft`; the cell says "Someone must teach you this"), and
   `soon: true` until step 9 builds the raft. Hints: speak to Brokk again once the home is ready, then build the
   bench at the water.
+- **The hulls (2026-10-13, decided by Robin: "Do it" to the recommendation of `docs/boats.md`): a vessel is a design chosen in the
+  yard and laid at once; the fitting out is the player's.** `Yard.HULLS` in `src/yard.js`: **faering** (4 keel cells, 1 to 2
+  seats, no mast; 10 wood, 3 copper), **boat** (6 cells, 1 to 3 seats; 14 wood, 5 copper), **karve** (9 cells, 2 to 6 seats, a
+  mast on cell 5, the steering oar on cell 1; 24 wood, 8 iron bars) and **longship** (16 cells, 4 to 13 seats, 26 oars, a mast on
+  cell 8; 44 wood, 16 iron bars; about eleven heroes long, longer than the screen), each with `beam` (how many strake rows it
+  carries amidships), `thwarts` [min, max], `mast` and `rudder` (the cells they must go on), `tier`, `cost`, `zoom` and a line
+  of text. **The hull's shape is the design's** (`hullProfile`, `shapeK`: full amidships, drawing in to the stems), not laid
+  strakes: the keel and strake parts are gone from the parts strip, and the yard draws the chosen hull on its floor
+  (`hullCellsOf`: the keel on row `KJ` 3, cells 1 to n, up to two strake rows a side) with the mast's, the steering oar's and
+  the stem's cells marked. **The parts** (`ALL_PARTS`): the raft's three as before; for a hull **rowing seat** (anywhere on the
+  hull, not on the mast's or the oar's cell), **mast**, **sail** and **steering oar** (the rigged hulls, on their cells), a
+  **dragon stem** (at the bow; copper on a boat, iron on a ship) and **shields on the rail** (rigged hulls, laid once anywhere).
+  `PLANS[hull].checks` come from the design (`hullChecks`: seats between min and max, the rig on its cells, one stem, one row of
+  shields) and the scene's `check()` adds the hull's price ("The hull costs 24 wood, 8 iron bars: not enough"); **the hull is
+  paid when the vessel is launched** (`Yard.hullCost`; the game's `yardFinish` pays it), the parts as they are laid. **The yard is
+  as long as the hull and two** (`scene.setPlan`: `Y.W` = n + 2, the camera's zoom per hull: 1.1, the karve 0.95, the longship
+  0.58, shifted right of the parts strip by `SHIFT`; the game and the Sea Editor take the zoom from `cam().z` every frame), and
+  the plan tabs are Raft, Faering, Boat, Karve, Longship by the bench's tier (`PLAN_TIER`: raft 1, faering and boat 2, karve
+  and longship 3). **Afloat:** `fit` takes the hull's profile and the laid parts (seats, `rowers` two a seat, `mastX`, `sail`,
+  `rudder`, `dragon`, `shields`); `drawBoat` draws the design's hull with the seats as laid, the shields as leaning discs along
+  both rails (red, bone, blue), the dragon's neck and head at the bow in place of the curl, the steering oar only once it is
+  bound, the rig only with a mast. **Handling per hull** (`HANDLING`: faering 92 and nimble, boat 100, karve 115, longship 128
+  and slow to turn) with **`rowK` per hull** (what each rower adds: a faering's 0.1, a longship's 0.03, so twenty-six oars give
+  78%, not 180%). `Yard.isShip(kind)`, `rigged(kind)` (a mast: the wind, the steering oar, standing at the stern) and
+  `nameOf(kind)` are what the game asks instead of `kind === 'boat' || 'karve'`. **A vessel saved with its strakes** (before
+  this) keeps its kind and its seats on the design's hull (`scene.enter` drops laid hull parts from a saved yard). `tests/karve.js`
+  checks every hull's rules, where the yard lets a part go, the fit and the sailing; `node tools/visual/boats.js` renders them
+  all (`docs/boats.jpg`). **Not done:** the rowing clip (rowers sit, the oars pull by themselves), the sail's colours, the ship's
+  name, the knarr with its hold, the Sea Editor's own four old ship kinds (still there beside the yard's). **What the older
+  paragraphs below say about laying a keel and strakes is history.**
 - **The Shipyard (2026-10-05, Robin's design):** E at the shipwright's bench steps into its own small place (like the cave,
   east of the map at `YARD.X`): a stretch of plain grass in a wooden frame, the parts to pick down the left side, the hero
   in the bottom-right corner, and the build cursor laying parts in a 6 by 4 cell grid. **Parts are data** (`YPARTS`: id,
