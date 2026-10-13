@@ -2663,6 +2663,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
 function die() { P.dead = true; P.hp = 0; P.guard = false; sfx('die'); }
 
 function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose blow this is; none is the hero
+  var quiet = !src && e.type === 'soldier' && e.awake === false && !e.dead && !e.down && kind !== 'proj' && Math.abs(wrap(ang - e.face)) < 1.25;   // the hero's blade in the back of a man at his post who has noticed nothing
   if (e.aggro || e.awake === false) e.awake = true;   // hitting a calm creature rouses it
   e.struck = true;
   if (e.dead || e.down) return;
@@ -2674,13 +2675,16 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
     if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; } else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
   }
   if (man) dmg *= 1 - (e.armor || 0);
+  if (quiet) { dmg = Math.max(dmg * 3, e.hp + 1); e.quietKill = true; }   // one blow, and no cry
   if (e.state === 'recover') mult = bigE ? 1.3 : (src ? 1.2 : 1.5);   // caught recovering: half again from the hero, a fifth more from a man
   if (bigE && e.state === 'stunned') mult = 2;
   var crit = !src && !blocked && (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
+  if (quiet) crit = true;                                     // (shown as a critical blow)
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
-  if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, MEN.noise.blow * din()); }
+  if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din()); }
+  if (e.errand) { var er0 = e.errand; e.errand = null; if (er0.drop) er0.drop(e); }   // struck on an errand: that is the end of it (he drops what he carries, and fights)
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
   }
@@ -2742,7 +2746,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
 }
 function killEnemy(e, src) {
   var bigK = e.type === 'brute';
-  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; if (e.type === 'soldier') noise(e.x, e.y, MEN.noise.cry);
+  e.dead = true; e.deadT = 0; e.guard = 0; e.sw = null; e.killer = src || null; if (e.type === 'soldier') noise(e.x, e.y, e.quietKill ? MEN.quiet : MEN.noise.cry);
   if (src) { spark(e.x, e.y, 5, '#ffd98a', 90); sfx('die', 0, e); }
   else { W.kills++; if (e.type !== 'soldier') bits(e.x, e.y, bigK ? 22 : 8); spark(e.x, e.y, 9, '#ffd98a', 120);
     slowmo(bigK ? 0.4 : 0.55, (bigK ? 0.16 : 0.08) * (WPRE[S.weight] || WPRE.normal).kd); ring(e.x, e.y, 12, bigK ? 36 : 18, 0.2, '255,226,150', true, 2); sfx('die'); }
@@ -3173,6 +3177,7 @@ var MEN = {
   // of the arrow; dmg to the hero (before armour) and the share of it a man takes (toMen); err: how far off he may be, radians;
   // lead: how much of a moving man's way he allows for; lane: how wide a line must be free of his own
   bow: { range: 300, keep: 125, near: 60, draw: [1.3, 0.75], cd: [2.6, 1.3], speed: 270, life: 1.25, dmg: 9, toMen: 0.5, err: [0.13, 0.03], lead: [0.2, 0.8], lane: 12 },
+  quiet: 70,                                // a man at his post who has noticed nothing, struck from behind by the hero, falls to that one blow, and it is heard only this far (rung 6: the quiet way in)
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
 api.men = MEN;
@@ -3309,9 +3314,11 @@ function breakMan(e, how) {
   e.state = how; e.t = 0; e.out = true; e.guard = 0; e.sw = null; e.swung = false; if (W.lock === e) W.lock = null; if (how === 'yield' && api.onYield) api.onYield(e); if (how === 'flee' && api.onFlee) api.onFlee(e);
 }
 function goDown(e) {                        // a friend does not die of a blow: he is down, and up again when the fight is won
+  if (e.errand) { var er1 = e.errand; e.errand = null; if (er1.drop) er1.drop(e); }
   e.down = true; e.hp = 0; e.deadT = 0; e.state = 'down'; e.guard = 0; e.sw = null; e.tgt = null; e.quietT = 0; e.aloneT = 0; sfx('die', 0, e); if (api.onDown) api.onDown(e);
 }
 function downTick(e, dt) {
+  if (e.held) { e.quietT = 0; e.aloneT = 0; return; }           // carried, or laid aboard: he neither gets up nor dies of being left
   e.deadT += dt; var near = false, i, o;
   for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o.side !== 1 && !o.dead && !o.out && !o.fled && (o.type === 'soldier' ? o.awake !== false : !!o.awake || (!(o.aggro || o.strolls) && !o.flee)) && Math.hypot(o.x - e.x, o.y - e.y) < MEN.riseClear) { near = true; break; } }
   e.quietT = near ? 0 : (e.quietT || 0) + dt;
@@ -3397,6 +3404,15 @@ function soldierAI(e, dt) {
     var nx = 0, ny = 0, nd = 1e9; eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y); if (q < nd) { nd = q; nx = F.x; ny = F.y; } });
     if (nd > 620 || nd === 1e9) { e.fled = true; return; }
     var fa = Math.atan2(e.y - ny, e.x - nx); e.face = turnToward(e.face, fa, MEN.turn * dt); moveCircle(e, Math.cos(e.face) * MEN.run * dt, Math.sin(e.face) * MEN.run * dt); return;
+  }
+  if (e.errand) {                           // sent somewhere with something to do there (a chest to the ship): he goes by the grid and fights nobody on the way. { x, y, near, run, slow, done(e), drop(e), fail(e) }
+    var er = e.errand, ed = Math.hypot(er.x - e.x, er.y - e.y); e.tgt = null; e.guard = 0; e.sw = null;
+    if (ed < (er.near || 16)) { e.errand = null; e.state = 'idle'; if (er.done) er.done(e); return; }
+    e.state = 'chase'; var em = stepTo(e, er.x, er.y, (er.run ? MEN.run : MEN.speed) * (er.slow || 1), dt);
+    e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(er.y - e.y, er.x - e.x), MEN.turn * dt);
+    er.t = (er.t || 0) + dt; er.px = er.px == null ? e.x : er.px; er.py = er.py == null ? e.y : er.py;
+    if (er.t >= 6) { if (Math.hypot(e.x - er.px, e.y - er.py) < 6) { e.errand = null; if (er.fail) er.fail(e); else if (er.drop) er.drop(e); } er.t = 0; er.px = e.x; er.py = e.y; }   // six seconds and no way made: he gives it up
+    return;
   }
   if (e.awake === false) {                  // at his post, and has seen nothing
     var seen = false, st = api.mods && api.mods().stealth ? api.mods().stealth : 1;
@@ -3530,7 +3546,7 @@ function updateEnemies(dt) {
   var nf = 0; for (oi = 0; oi < NN; oi++) { ot = W.enemies[oi]; if (ot.type === 'soldier' && !ot.dead && !ot.down && !ot.out && ot.tgt) nf++; } W.fighting = nf + (nf && !P.dead && !P.hidden ? 1 : 0);   // how many are in a fight (the din: noise carries further the more there are)
   for (oi = NN - 1; oi > 0; oi--) { oj = Math.floor(Math.random() * (oi + 1)); ot = ORD[oi]; ORD[oi] = ORD[oj]; ORD[oj] = ot; }   // in a new order every frame: whoever is thought of first has an edge, and it must not always be the same men
   for (var i = 0; i < NN; i++) {
-    var e = W.enemies[ORD[i]];
+    var e = W.enemies[ORD[i]]; if (!e || e.away) continue;     // (away: taken out of the world by the page, aboard a ship: dropped from the list when this pass is over, never in the middle of it)
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
     if (e.down) { downTick(e, dt); continue; }
@@ -3563,7 +3579,7 @@ function updateEnemies(dt) {
     if (P.dead) { if (e.state !== 'idle' && e.state !== 'recover') { e.state = 'idle'; } if (e.state === 'idle') continue; }
     if (e.type === 'brute') bruteAI(e, adt, d, ang); else if (e.type === 'shooter') shooterAI(e, adt, d, ang); else beastAI(e, adt, d, ang);
   }
-  W.enemies = W.enemies.filter(function (e) { return !e.fled && !(e.dead && e.deadT > (e.deadFor || 0.5)); });   // a sprite beast lies a moment longer (its death clip)
+  W.enemies = W.enemies.filter(function (e) { return !e.fled && !e.away && !(e.dead && e.deadT > (e.deadFor || 0.5)); });   // a sprite beast lies a moment longer (its death clip)
   // soft separation
   for (var a = 0; a < W.enemies.length; a++) for (var b = a + 1; b < W.enemies.length; b++) {
     var A = W.enemies[a], B = W.enemies[b]; if (A.dead || B.dead || A.down || B.down || A.out || B.out || A.type === 'shooter' || B.type === 'shooter') continue;   // (a man on his knees is in nobody's way: one knelt in a passage a man wide and nobody passed)

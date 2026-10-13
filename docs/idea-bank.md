@@ -541,3 +541,25 @@ Measured by script (`tools/visual/startplay.js`); Robin has not ruled on any of 
   is no threat either.
 - **The bow.** The scripted hunter lost a deer to ten arrows. A hand on the mouse will do better; worth a try by Robin.
 
+## The raid: what is left (2026-10-13, after rung 6 of docs/battle-plan.md)
+
+Built: the quiet blow, noise, the carry order, the ship, carrying a man who is down, leaving. Not built, none of it
+decided:
+
+- **The town takes back.** A chest dropped in the street lies there for you to lift again. A town's man who stands by
+  it with nobody near could carry it home (the carry mirrored), and one who reaches your ship unopposed could take
+  what is stowed, or push her off. "Someone holds the ship" would then be a choice with a cost.
+- **People.** Thralls held in the hall who can be cut loose and run for your ship; a man who yields left, bound and
+  taken, or killed, and what each does to how you are spoken of; a priest who does not fight and what it costs to
+  strike him.
+- **After.** The town remembers more than that it was raided: traders shut, a price on you, more men at the gate next
+  spring, the men you left there. What came home becomes stores, silver and people.
+- **A line that is worth holding.** In every test so far (the open field, before a gate) men told to hold did no better
+  than men fighting as they like. A doorway is the place to try next, or a rule that men in a line cannot be flanked
+  by fewer than two.
+- **The wait at a full gate.** Men who cannot get through a gate that two are fighting in stand and wait. They could
+  go round by the other gate and take the raiders in the back.
+- **Your men's own judgement.** They come to the ship only on G. They could fall back with you when you carry, close
+  round a carrier, or call out when the hall's men come.
+- **Fire**, and smoke that tells the next village.
+

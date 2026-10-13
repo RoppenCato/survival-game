@@ -531,3 +531,32 @@ left behind or the fight is lost). Then: go through the whole plan, and by that,
   blow is the first noise; reputation is to change that); how soon the hall should come; whether bowmen are too weak
   against the hero (a careful player raises the shield at an arrow he sees).
 
+### Rung 6, the raid (2026-10-13): built as far as a script can judge; Robin has not played it
+
+This rung's gate is "Robin wants to do it again", which no script can meet. What follows is what was built so that it
+can be played, and what the scripted raids say.
+
+- **Tried of the eight ideas, and kept:** *the quiet before* (the town at its day lets you walk in and look); *noise is
+  the clock* (a man taken from behind falls to one blow and is heard seventy units off; a door or a lock under the axe
+  is heard across half the town); *the carry* (G: a man of yours lifts the chest you stand at and takes it to the ship;
+  struck, he drops it); *the ship* (a karve on the shore, boarded from the shallows, your men aboard with you if they
+  are near enough when you go); *greed* (nothing ends the raid but your leaving); *the rout* (a man of yours who is down
+  is carried, by you or by another on your word, or left).
+- **Not built:** *people* (thralls to cut loose, a man who yields bound and taken) and *after* (what the town remembers,
+  beyond the word that spreads). Nor the town taking back what is dropped, nor holding your ship against you.
+- **What the scripted raids say** (`tools/visual/raidplay.js`; the hero only walks, hacks and carries, he does not fight):
+  quiet in and out, about a hundred seconds, nothing aboard, nobody lost. The church: thirty-six silver in two
+  minutes, two to four of the five aboard; the man sent with the chest is struck before he is out of the church nearly
+  every time, so the hero carries it and his five hold the town off him; one raid in five the hero does not reach the
+  ship. Both chests: fifty-eight to ninety-four silver, nobody or two aboard, the hero at the edge of death or over it.
+- **Bugs of this rung:** the karve was put half on the beach (it was placed with a raft's footprint); **E could not
+  reach a karve from the shore** (its reach was sixty-six units from her middle, and she is over two hundred long: the
+  reach follows the hull now, in the real game too); laying a carried man aboard **took him out of the engine's list in
+  the middle of its pass and crashed it**; a chest a man was already going for was offered to a second man; the hero
+  with his own shoulders full could not send anybody; the test scene's seventh weapon (the bow) spilt off the Fight bar
+  into the Gather bar; wolves came out at night and walked into the third raid of a row.
+- **For Robin, playing it:** is the second man at a gate fair (about a second after the first)? Is a carrier who drops
+  the chest at the first blow right, or should the others close round him? Should your men come to the ship by
+  themselves when you carry the last chest out, or only on G? Is two minutes too short for something meant to be the
+  game's big deed (the real towns will lie further from their shores)? And whether any of it is fun.
+

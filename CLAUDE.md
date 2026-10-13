@@ -130,7 +130,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, **to the old mine, into it, to its fall of rock, to the rock shelter, to a copper vein, a boat at the sea cave, into it, to its beach**, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
-| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five** (with none, one or two **bowmen a side**), **a town defended** (the scene's second island is a lowland one with a walled town on it: twenty men at their day, or twelve or thirty, the hero six tiles south of its gate with five of his own, one of them a bowman), to its gate, to its hall; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe, bow), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan`, `townOf()`, `townMen(vi, n)`, `townSet()` |
+| `game.html?scene=battle` | `game.html` | **Battle test (2026-10-13)**, the test scene of `docs/battle-plan.md`: the game on a cleared field of the starter island, the hero in leather with one of every iron weapon on the Fight bar (the number keys change what is in hand), and the board on the left (it folds): **one hirdman, two, two and one beside you, five against five** (with none, one or two **bowmen a side**), **a town defended** (the scene's second island is a lowland one with a walled town on it: twenty men at their day, or twelve or thirty, the hero six tiles south of its gate with five of his own, one of them a bowman), **a raid on it** (the same town with its silver behind its doors, your karve on the nearest shore and you beside it with your five), to its gate, to its hall, to its church, to your ship; what he carries (it cycles: sword, axe, club, seax, spear, Dane axe, bow), what he wears (cloth and no shield, leather and a shield, mail, helm and shield), his wits (dull, steady, sharp); your own gear (leather, or mail and an iron helm); again, heal, clear the field, the clock at a quarter speed, night or day. **Nothing is saved** (`noSave`). `BT`, `fieldSite()`, `battleScene()`, `battleSet(id)`, `battleRows()`, `battleAct(id)`, `spawnMan`, `Combat.api.dressMan`, `townOf()`, `townMen(vi, n)`, `townSet()`, `raidSet()`, `raidShore(vi)`. **No wolves come at night in this scene.** |
 | `game.html?scene=runes` | `game.html` | Rune Editor (2026-10-07), the test scene of the big island: the game started at a carver's bench in a hut with a workbench, fireplace, bed and chest, and outside it a **furnace, a charcoal clamp and a campfire**; a dragon ring on the arm, every rune known, ore, charcoal, bars and materials in the bag. The board on the left (it folds on a click of its title): the ring's metal, know or forget every rune, bring beasts, day or night, skip to dawn (embers), **to the mountain's foot, onto the plateau, to the lookout, the rock shelter and a copper vein (the big island has a small mountain since 2026-10-12)**, **to the cave mouth, into the cave, to the troll's lair, the troll walking out (brings night) or walking home, veins and hoard full, more ore and charcoal**, back to the bench (finds the carver's bench), start over (clears the save without saving again: `noSave`). Its own save (`game.save.runes`). `SCENE` from the URL, `runesScene()`, `runeAct` |
 
 Robin calls these by the page names. Every page has a "Back to menu" link to `index.html`. Adding a page means a
@@ -401,8 +401,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
   one set of sheets, the clips to fetch from Mixamo (a sitting with Robin signed in), a fourth enemy kind (the soldier:
   his weapon's own `PROFILES`, a shield, yielding), slots for more than one attacker, friends, groups and heart, a nav
   grid from the building data, the town's answer to noise, the raid as "how much you dare to take", a test scene
-  `?scene=battle`, `tests/battle.js`, a gate for every rung, and nine questions for Robin. **Rungs 0 to 5 are built** (its
-  section 13, "How it went", says what each found); the raid, rung 6, is next.
+  `?scene=battle`, `tests/battle.js`, a gate for every rung, and nine questions for Robin. **Every rung is built** (its section 13,
+  "How it went", says what each found); the raid, rung 6, as far as a script can judge it: Robin has not played any of it.
 - `docs/ui-review.md` (2026-10-12; Robin: look through every menu, board and bar for function, looks and sense): what was
   looked at, what was found broken and fixed (`docs/ui-review.jpg`, before and after), and **what is proposed and waits for
   Robin**: C for making by hand, one rule for everything E does, one number for a weapon, tabs on the Building board, the
@@ -947,8 +947,51 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   after a bowman runs at him. The arrow (`owner: 'man'`, its `side`) strikes the other side only and passes his own; **a
   raised shield stops an arrow** (a man's and the hero's), a wall or a tree stops it; it does `dmg` 9 to the hero before
   armour and half of that share to a man (`toMen`). Friends can be bowmen (the fifth of the town test's five is).
+- **The raid (rung 6; in the test scene: the board's "A raid on it").** Not "win the battle of rung 5" (that is lost in half
+  a minute) but **how much you dare to take before the town is on you**. What it is made of:
+  **The quiet way.** A town at peace lets you walk in. **A man at his post who has noticed nothing, struck by the hero from
+  behind, falls to that one blow** (`quiet` in `damageEnemy`: `e.awake === false` and the blow within 1.25 radians of the way
+  he faces), with no cry, heard only `MEN.quiet` 70 units off; from the front he is a fight and it is heard. His fellow
+  within those 70 units wakes, and a moment later sees you and shouts: two men together must be taken within about a
+  second of each other. (Walking past a man jostles him and he turns to step back to his place: wait until he stands.)
+  **The loud way.** A locked door and a chest's lock give to the axe in two to six seconds, and every blow is heard 520
+  units: ten men are up within five seconds of the first blow on the church door.
+  **The ship.** `raidSet()` puts a karve on the nearest shore to the town (`raidShore`: broadside to the beach, as near in
+  as her whole hull clears the land) and you beside her with five of your own. **E's reach of a vessel follows her hull**
+  (45 units from it: `raftUsable`; it was 66 from her middle, which a karve's is never within from the shore; a raft's
+  reach is what it was): this is in the real game too. You board and stow from the shallows by her side.
+  **The carry order.** With a chest at hand whose lock is broken and a man of yours free, **G** is "Have it carried"
+  (`gWhat`, a second prompt over the E one; otherwise G is the two plain orders as before): he goes to it, lifts it (a
+  chest lifted is loud), takes it to the ship at a carrier's pace by the grid, stows it and comes back (`carryOrder`; the
+  engine's **errand**: `e.errand = { x, y, near, run, slow, done, drop, fail }`, a man who goes somewhere and fights nobody
+  on the way). **Struck or down he drops it where he is** (the chest lies there to be lifted again) and fights. His load
+  is drawn on his shoulder (`e.load`).
+  **A man of yours who is down** (`downNear`): **E lifts him** onto your own shoulders ("Lift Ulf"; a carrier's pace, no
+  weapon; `carrying.man`, `liftMan`, `setDown`), E at the ship lays him aboard; **G with a man free has him carried there**
+  (`carryManOrder`). Held, he neither gets up nor dies of being left (`e.held`); left on the shore when you sail, he is lost.
+  **Leaving.** E at the ship: those of yours within 190 units of her step aboard (`menBoard`: they are taken out of the
+  engine's list with `e.away`, never in the middle of its pass: that crashed it) and row; G first, to call them. Once she
+  is 260 units out a toast says what the raid came to ("36 silver aboard, and 2 of yours left on the shore"). Stepping
+  ashore again they are beside you, the ones who were carried on their feet with a third of their health (`menAshore`).
+  **Heard:** a town's man who shouts is heard up to 1100 units off, fainter with distance (`SFX.shout`, `api.onShout`):
+  the town waking is a sound before it is a sight. I cannot hear it; whether it reads as a shout is for Robin's ear.
+  **`tools/visual/raidplay.js`** plays whole raids in the page with no pictures (`H2.sim` in `drive.js` steps the page's
+  own `tick` at thousands of frames a second: a two-minute raid takes about four seconds): `RP.raid('quiet' | 'church' |
+  'loud')` and the steps they are made of (`RP.go`, `toDoor`, `hack`, `behind`, `G`, `E`, `escort`, `leave`), with a log
+  line a step that says how the town and your men stand. It presses only the game's own keys. **Where it stands** (the
+  ship 88 tiles from the gate, twenty in the town, the hero doing nothing but walk, hack and carry): **quiet** (the two at
+  the back gate from behind, a look, and away): 100 to 112 s, nothing aboard, all five with you. **The church** (its
+  door, its lock, G; the carrier is struck on his way out nearly every time, so the hero lifts the chest himself while
+  his five hold the town off him): **36 silver in about two minutes, two to four of the five aboard**, and one raid in
+  five ends with the hero dead on the way to the ship. **Both chests** (the hero carries the hall's): 58 to 94 silver in
+  140 s when it works, nobody or two of yours aboard, the hero at a tenth of his health or dead. So the curve is there:
+  nothing and everybody, a chest and most of them, everything and nobody.
+  **Debug hooks for it:** `raidInfo()`, `eDo()`, `gDo()` (what E and G would do, with their acts), `raidItems()`, `raidB()`,
+  `villages()`, `folk()`, `navs()`, `cam()`. **Not built** (in `docs/idea-bank.md`, "The raid: what is left"): the town's men
+  taking back what is dropped or holding your ship against you, thralls to cut loose, a man who yields bound and taken,
+  what the town remembers beyond `seen.raided`, fire.
 - **`tests/battle.js`** (in `npm test`: a short run of every rung; `node tests/battle.js one|two|friend|five|bows [n]` for
-  more fights a line, `town [n] [secs]` for n towns; `TOWN_SEEDS=286,434` picks the towns, `TOWN_DBG=1` prints every man who
+  more fights a line, `town [n] [secs]` for n towns, `raid` for the engine's raid rules (the blow from behind, the errand); `TOWN_SEEDS=286,434` picks the towns, `TOWN_DBG=1` prints every man who
   stands still and what blocks him, `BOW='{"toMen":0.7}'` tries a bowman's numbers). The hero is played by three bots, each with a person's limits (a reaction time, a share of blows not
   seen, timing that wanders): the **tapper** walks up and taps, the **careful** one raises the shield at what it sees and
   strikes when the man is open, the **skilled** one parries and steps out of heavy blows. A line marked `!!` is a fault (a
@@ -1796,7 +1839,8 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   drawn on the shoulder), E puts it down (`putDown`), E at the vessel stows it (`stowHeavy`, `raft.cargo`), and E at the vessel at
   home (`atHome`: inside a territory or within 700 of the wreck) unloads it (`unloadCargo`) as **silver** in the bag (a new kind,
   hack-silver; village coins are silver now; a slain guard drops a coin or two). `carrying` and the cargo are saved. Debug:
-  `Combat.api.debug().raid()`. Not built: fire, hirdmen carrying, traders closing to a known raider.
+  `Combat.api.debug().raid()`. Not built: fire, traders closing to a known raider. (Men of yours who carry: built 2026-10-13 in the
+  battle test scene, see "Fighting men", the raid.)
 - Not built: ships beyond the raft, hazards at sea, night-only beasts, trading, the torch.
 
 

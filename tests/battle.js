@@ -6,6 +6,7 @@
 //   node tests/battle.js five [n]   rung 4: five against five with no hero, then with him
 //   node tests/battle.js duels [n]  every weapon against every weapon, man against man
 //   node tests/battle.js bows [n]   rung 5: men with bows, alone, in a fight, behind their own, at a wall
+//   node tests/battle.js raid       rung 6: the blow from behind, the errand (the raid itself is played in the page: tools/visual/raidplay.js)
 //   node tests/battle.js town [n] [secs]  rung 5: n towns (12) from n seeds, the hero and five friends in at the gate and at the back gate
 // The hero's bots: the TAPPER walks up and taps the attack, nothing else (a careless player); the CAREFUL one raises the
 // shield at a blow it sees coming and strikes when the man is open; the SKILLED one parries, steps out of a heavy blow, and
@@ -336,6 +337,42 @@ function bows(n) {
     say(shotsClose === 0 && (b.close || b.down), 'a man with a sword on a bowman for 12 s: the bowman ' + (b.close || b.down ? 'took his seax' : 'KEPT his bow') + ', loosed ' + shotsClose + ' arrows with the man on him' + (b.down ? ', and went down' : ', and has ' + b.hp.toFixed(0) + ' of ' + b.maxHp + ' health left'));
   }
 }
+// ---- The raid's own rules in the engine (rung 6): the blow from behind on a man who has noticed nothing, and the errand (a man
+// sent somewhere with something to do there). The raid itself is the page's (loot, the ship): tools/visual/raidplay.js plays it. ----
+function raidChecks() {
+  console.log('--- the raid (rung 6): what the engine does for it');
+  const say = (ok, text) => console.log((ok ? '   ' : '!! ') + text);
+  const fresh = () => { Combat.reset(); const D = Combat.dbg(), P = D.P; P.x = 200; P.y = 250; P.mode = 'fight'; P.weapon = 'melee'; D.W.pillars = []; hero(['sword', 'iron'], LEATHER); Combat.api.scene = { begin() {}, items() {}, bounds: { x0: -5000, y0: -5000, x1: 5000, y1: 5000 } }; return D; };
+  const run = (secs, each) => { for (let i = 0, n = Math.round(secs * FPS); i < n; i++) { if (each && each(i * DT) === false) break; Combat.update(DT); } };
+  const off = () => { ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyK', 'Space'].forEach(k => Combat.key(k, false)); Combat.button(0, false); };
+  const post = (x, y, face, o) => { const m = Combat.soldier(Object.assign({ side: 0, wpn: { kind: 'sword', mat: 'iron' }, shield: true, armor: 0.4, x, y, post: { x, y, face }, aggro: 0.5, hp: 34, strength: 4, wits: 4, nerve: 1 }, o || {})); m.face = face; return m; };
+  // 1. from behind, a man at his post who has noticed nothing: one blow; a man 140 units off hears nothing. With a fellow 50 units off it is
+  // another matter: he is within earshot of even a quiet blow, wakes, sees you and shouts, and that is heard
+  const behind = withNear => {
+    const D = fresh(), P = D.P, a = post(240, 250, 0), far = post(240 + 140, 250, 0), near = withNear ? post(240, 250 + 50, 0) : null; P.x = 216; P.y = 250; P.face = 0; D.W.lock = a;
+    let blows = 0, was = false; run(2, t => { const down = Math.floor(t * 60) % 20 < 3; if (down && !was) blows++; was = down; Combat.button(0, down); if (a.dead) return false; }); off(); run(3);
+    return { dead: a.dead, blows, far: far.awake !== false, near: near ? near.awake !== false : null };
+  };
+  let b1 = behind(false), b2 = behind(true);
+  say(b1.dead && b1.blows === 1 && !b1.far, 'a man at his post struck from behind: ' + (b1.dead ? 'down after ' + b1.blows + ' blow' + (b1.blows === 1 ? '' : 's') : 'NOT down') + '; a man 140 units off ' + (b1.far ? 'WOKE' : 'noticed nothing') + ' (a quiet blow is heard ' + Combat.api.men.quiet + ' units)');
+  say(b2.dead && b2.near, 'the same with his fellow 50 units off: the fellow ' + (b2.near ? 'woke' : 'NOTICED NOTHING') + (b2.far ? ', saw you and shouted, and the man 140 off heard that' : ', and the man 140 off still noticed nothing'));
+  let D, P, a, far, blows, was;
+  // 2. from the front the same man is a fight, and it is heard
+  D = fresh(); P = D.P; a = post(240, 250, Math.PI); far = post(240 + 140, 250, 0); P.x = 216; P.y = 250; P.face = 0; D.W.lock = a; blows = 0; was = false;
+  run(2, t => { const down = Math.floor(t * 60) % 20 < 3; if (down && !was) blows++; was = down; Combat.button(0, down); }); off(); run(2);
+  say(!a.dead && far.awake !== false, 'the same man struck from the front: ' + (a.dead ? 'DOWN at once' : 'still up after ' + blows + ' blows, with ' + a.hp.toFixed(0) + ' of ' + a.maxHp + ' health') + '; the man 140 units off ' + (far.awake === false ? 'NOTICED NOTHING' : 'heard it'));
+  // 3. an errand: he goes there by himself past a foe he does not fight, and does what he was sent to do
+  D = fresh(); P = D.P; P.hidden = true; P.x = -4000; let f = man(1, 'sword', 'leather', 200, 250), foe = man(0, 'sword', 'leather', 330, 330, { hp: 400 }); foe.hold = true; f.sight = 3000; f.leash = 1e9; let done = -1, t3 = 0;
+  f.errand = { x: 460, y: 250, near: 14, run: true, done: () => { done = t3; } }; run(12, t => { t3 = t; if (done >= 0) return false; });
+  say(done > 0 && !f.tgt, 'a man sent 260 units past a foe who stands by: ' + (done > 0 ? 'there after ' + done.toFixed(1) + ' s' : 'NEVER there') + ', and he ' + (f.hp === f.maxHp ? 'fought nobody on the way' : 'was hurt'));
+  // 4. struck on an errand he drops it (what he carries falls where he is) and fights
+  D = fresh(); P = D.P; P.hidden = true; P.x = -4000; f = man(1, 'sword', 'leather', 200, 250, { hp: 300 }); foe = man(0, 'sword', 'leather', 250, 262, { hp: 400 }); f.sight = foe.sight = 3000; f.leash = 1e9; let dropped = -1, arrived = false; t3 = 0;
+  f.errand = { x: 900, y: 250, near: 14, run: true, slow: 0.62, done: () => { arrived = true; }, drop: () => { dropped = t3; } }; run(20, t => { t3 = t; if (dropped >= 0 && f.tgt) return false; });
+  say(dropped > 0 && !arrived && f.tgt === foe, 'a carrier with a man on him: ' + (dropped > 0 ? 'he dropped what he carried after ' + dropped.toFixed(1) + ' s' : 'NEVER dropped it') + (f.tgt === foe ? ' and turned on the man' : ' and did NOT turn on him'));
+  // 5. taken out of the world in the middle of a pass (laid aboard a ship): nothing breaks
+  D = fresh(); P = D.P; f = man(1, 'sword', 'leather', 220, 250); const g2 = man(1, 'sword', 'leather', 240, 270); f.errand = { x: 222, y: 250, near: 14, done: () => { g2.away = true; f.away = true; } }; let threw = null; try { run(2); } catch (e) { threw = e.message; }
+  say(!threw && D.W.enemies.indexOf(f) < 0 && D.W.enemies.indexOf(g2) < 0, 'two men taken out of the world from inside the engine\'s own pass: ' + (threw ? 'IT THREW: ' + threw : 'gone from its list, and nothing broke'));
+}
 const t0 = Date.now();
 if (mode === 'one' || mode === 'short') one(N);
 if (mode === 'two' || mode === 'short') two(N);
@@ -343,5 +380,6 @@ if (mode === 'friend' || mode === 'short') friend(N);
 if (mode === 'duels') duels(N);
 if (mode === 'five' || mode === 'short') five(mode === 'short' ? 6 : N);
 if (mode === 'bows' || mode === 'short') bows(mode === 'short' ? 8 : N);
+if (mode === 'raid' || mode === 'short') raidChecks();
 if (mode === 'town' || mode === 'short') town(mode === 'short' ? 2 : (+process.argv[3] || 12), +process.argv[4] || 300);
 console.log('(' + ((Date.now() - t0) / 1000).toFixed(1) + ' s)');
