@@ -1836,6 +1836,29 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   ten minutes rested. **Seen and left alone:** animal counts scale with area, so the starter island has 16 boars, about 20 deer
   and 12 adders; nothing points from the wreck to the steading; death costs nothing (you rise at the wreck with everything); the
   deer got away from the bot's ten arrows (the bow aims by the mouse). `docs/chapters.md` chapter 1 lists them.
+- **Ready for the first play-through (2026-10-14, Robin: a manual test from the beginning to the big island; make sure it is
+  all ready, rebalance the drops with a parameter to treble them when testing, check crafting and cooking, berries that drop on
+  E, a list of what to test, an error log). `docs/playtest-1.md` is the list for Robin, the balance table and what the
+  scripted play-through found.** **Berries drop from the bush on E** (`pickBerries`: `yieldDrop('berries', ...)`, three of
+  them, picked up like anything that drops; they laid themselves in the bag before). **Fiber is 3 a bush** (`BUSH_FIBER` in `src/gather.js`, which is the one the cutting reads; the page's constant of the same name is kept alike; was 2:
+  the chain to the raft wants about 22 fiber, eight bushes now instead of eleven; wood, stone, berries and the beasts' drops
+  are as they were, the table is in the doc). **Admin's "Threefold drops"** (`ADMIN.triple`, kept in `game.admin`; `yieldK()`,
+  `yieldDrop(kind, x, y, n)`) multiplies what gathering gives (the harvest callbacks' `drop`), the beasts' drops, the berries,
+  the weir's net and the veins' copper; nothing made, bought or taken from a chest. **The error log:** every error the page
+  throws (window `error` and `unhandledrejection`, `console.error`, and anything thrown inside a frame, which `frame` now
+  catches round `frame1` so the game goes on instead of the loop dying silently) goes into `ERR.lines` (`logErr(kind, msg,
+  stack)`: the real time, the kind, the message, the day and clock, where the hero stood and the frame log's state words, the
+  stack; the last 200 kept in `game.errlog`), a toast says so once a minute at most, Admin's **"Download the error log"**
+  saves `errorlog.txt` (with the last sixty lines of the frame log), the frame log carries the errors at its end, and
+  `Combat.api.debug().errlog()` reads it. **Hooks for scripts:** `cook(id)`, `dishes`, `cookFires()`, `hand()`, `yieldK()`,
+  `logErr`. **`tools/visual/startplay.js`** has two new steps, `ST.berries()` and `ST.cook()`, and presses a bar slot only when
+  the thing is not in hand already (`take(n)`: **the number of the thing in hand puts it away since 2026-10-13**, which had
+  the old script fighting the boar with its fists and chopping with nothing, and is worth knowing when reading its lines),
+  counts arrows as they fly (no quiver), and asks E through `eDo()`. **Played through on 2026-10-14 with no error logged:**
+  the wreck, the tools, berries dropped and picked up, two trees, a rock and five bushes (9 fiber, 9 berries), the club and the
+  bow (it shoots), a young boar (the careless bot wins with 9 of 93 left; a careful one loses 7), the hut at Comfort 5 (44 wood,
+  3 stone, 8 fiber, 2 leather), roast meat and roast berries cooked and waiting at the campfire, Brokk's story and the raft
+  taught, the raft bench on the sand, the raft laid and launched, the crossing in 68 s with "You have left the island".
 - **The fish weir (2026-10-12, Robin's pick of the finds for the starter island):** `weirPlace()` (every start, after
   `villageClear`) walks out from the island's middle along every bearing to the shore and takes shallow water off a beach 320 to
   1500 units from the wreck, by choice nearest the way from the wreck to the steading: a `fishWeir` (stakes and wattle) in the

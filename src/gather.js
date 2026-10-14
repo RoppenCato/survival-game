@@ -47,7 +47,7 @@ function spotHit(G, o, t, hero) {              // does a blow from where the her
 function crackAng(G, o) { return G && G.crackLook === 4 ? LIT_ANG : hash(Math.round(o.x) + 1, Math.round(o.y), 4) * 6.283; }
 function crackHit(G, o, hero) { if (!G.cracks || o.kind !== 'stone') return false; var ca = crackAng(G, o), a = Math.atan2((hero.y - o.y) * K, hero.x - o.x), d = Math.atan2(Math.sin(a - ca), Math.cos(a - ca)); return Math.abs(d) < 0.75; }
 function rhythmHit(G, o, t) { if (!G.rhythm || o.lastHit == null) return false; var dt = t - o.lastHit; return dt >= G.rhythmAfter && dt <= G.rhythmAfter + G.rhythmWindow; }
-var TREE_WOOD = { oak: 14, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 };   // a lightning-struck tree gives charcoal, no trunk
+var TREE_WOOD = { oak: 14, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 }, BUSH_FIBER = 3, BERRIES = 3;   // a lightning-struck tree gives charcoal, no trunk
 function treeLen(s, o) { return -s.t * o.s * 0.8; }   // how far along the ground the trunk reaches when it lies
 // One blow. ctx: { power, right, hero, t, s (sprite bounds), ev }. Returns what happened: { mult, spot, rhythm, crack, felled }.
 function hit(G, o, ctx) {
@@ -68,7 +68,7 @@ function hit(G, o, ctx) {
   if (o.hp <= 0) {
     o.dying = 0; out.felled = o.kind === 'tree'; out.broke = o.kind !== 'tree';
     if (o.kind === 'stone' && ev) { if (ev.chip) ev.chip(o.x, o.y, 8, '#9d9995', 14, 110); if (ev.drop) ev.drop('stone', o.x, o.y, ROCK_STONE[o.name] || 3); }
-    else if (o.kind === 'bush' && ev && ev.drop) { if (o.name === 'berryBush') { ev.drop('berries', o.x, o.y, 3); ev.drop('fiber', o.x, o.y, 1); } else ev.drop('fiber', o.x, o.y, 2); }
+    else if (o.kind === 'bush' && ev && ev.drop) { if (o.name === 'berryBush') { ev.drop('berries', o.x, o.y, BERRIES); ev.drop('fiber', o.x, o.y, 1); } else ev.drop('fiber', o.x, o.y, BUSH_FIBER); }   // (BUSH_FIBER 3 since 2026-10-14, was 2; the page's own constants of the same names were never read here)
   }
   return out;
 }
