@@ -1952,6 +1952,17 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   the Sea Editor's game layout and `tools/visual/worlds.js` the same; the layout key carries the gap, so older saves start
   fresh). **"You have left the island"** came only from stepping ashore by E, which is why Robin never saw it; it now comes
   whenever you stand on land of another island, not aboard, not in a cave or the yard (`raftTick`, once a second).
+- **The cave mouth cut into the rock (2026-10-14, the play-through's point 21: "the cave mouth looks pasted onto the mountain").**
+  The Blender piece (`cave_mouth`: blocks of flat-shaded rock round the opening) sat on the painted wall in another hand. **The
+  troll cave's mouth is now painted by the mountain painter itself**, in `mountainPixel` (`caveHere`, set per piece from
+  `mtn.cave`): the wall's own rock, slabs and lichen run round an arch (`MW` 44 half width, `MH` 64 high, straight jambs and a
+  round top with an uneven edge), inside it the floor runs back from trodden earth at the threshold through violet-brown into
+  the dark with the sun as one soft patch on the floor and paler stones, the walls and roof go from dim rock to black with the
+  left wall a little lit and a rib on the right, and the rock round the arch is lit along its left and top, dark under its
+  right, with the ink line at the edge. The page still keeps the `cave_mouth` prop for the place (E, the troll's walks) but
+  marks it `painted` and draws nothing for it. **The mine's and the sea cave's mouths are still the Blender pieces** (they are
+  not on the big island; `mtn.noPaintMouth` would turn the painting off). My look, not Robin's; the scree and the skull of
+  the Blender piece are not painted yet. `docs/cave-mouth.png` is the older before-and-after.
 - **The fish weir (2026-10-12, Robin's pick of the finds for the starter island):** `weirPlace()` (every start, after
   `villageClear`) walks out from the island's middle along every bearing to the shore and takes shallow water off a beach 320 to
   1500 units from the wreck, by choice nearest the way from the wreck to the steading: a `fishWeir` (stakes and wattle) in the

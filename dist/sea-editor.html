@@ -5048,7 +5048,7 @@ function make(kit, opts) {
        SIDE pixels out a level), HN/HD along the sun's way (the shadow a cliff throws east); BD/BO how far the nearest change
        of level is and what lies across it (the crest of an edge, the dark under one that faces away). */
     var lev = null, mfr = null, mff = null, PKM = null, maxLAll = 0, MG = 96, PADR = HF * 3 + 20, PADB = 100, LW = W2 + MG * 2, HR = H2 + PADR + PADB, GX0 = cx * W2 - MG, GY0 = cy * H2 - PADR;
-    var FN = null, FD = null, EN = null, ED = null, WN = null, WD = null, HN = null, HD = null, BD = null, BO = null, d2 = null, img2 = null, ov2 = null, rampsHere = null, fallsHere = null, ledgesHere = null, RK = null, WET = null, KEEP = [], PAN = {};
+    var FN = null, FD = null, EN = null, ED = null, WN = null, WD = null, HN = null, HD = null, BD = null, BO = null, d2 = null, img2 = null, ov2 = null, rampsHere = null, fallsHere = null, ledgesHere = null, caveHere = null, RK = null, WET = null, KEEP = [], PAN = {};
     if (mtn && cx * W2 < mtn.bx1 + MG && (cx + 1) * W2 > mtn.bx0 - MG && cy * H2 / K < mtn.by1 + 60 && (cy + 1) * H2 / K > mtn.by0 - 8) {
       var NP = LW * HR, r0, px0, qq, minL = 9, maxL = 0, ixa = Math.floor(GX0 / T - 0.5);
       if (!MB) { MB = { lev: new Uint8Array(NP), mfr: new Uint8Array(NP), mff: new Float32Array(NP), FN: new Uint8Array(NP), FD: new Uint16Array(NP), EN: new Uint8Array(NP), ED: new Uint16Array(NP), WN: new Uint8Array(NP), WD: new Uint16Array(NP), HN: new Uint8Array(NP), HD: new Uint16Array(NP), BD: new Uint8Array(NP), BO: new Uint8Array(NP), colv: new Float32Array(Math.ceil(LW / T) + 4), colg: new Float32Array(Math.ceil(LW / T) + 4), IX: new Int32Array(LW), UU: new Float32Array(LW) }; }   // the sheets are kept between bakes
@@ -5087,6 +5087,7 @@ function make(kit, opts) {
         KEEP = WKEEP.filter(function (q) { return q[0] > cx * W2 - 40 - q[2] && q[0] < (cx + 1) * W2 + 40 + q[2] && q[1] > cy * H2 - 90 && q[1] < (cy + 1) * H2 + HF * 3 + 100; });   // what a wall keeps its full height for, near this piece
         rampsHere = mtn.ramps.filter(function (rm) { return Math.max(rm.x0, rm.x1) + rm.r * 1.6 > cx * W2 && Math.min(rm.x0, rm.x1) - rm.r * 1.6 < (cx + 1) * W2 && (Math.max(rm.y0, rm.y1) + rm.r * 1.6) * K > cy * H2 && (Math.min(rm.y0, rm.y1) - rm.r * 1.6) * K < (cy + 1) * H2; });
         fallsHere = mtn.falls.filter(function (f) { return f.box[2] > cx * W2 - 20 && f.box[0] < (cx + 1) * W2 + 20 && f.box[3] * K > cy * H2 - 20 && f.box[1] * K < (cy + 1) * H2 + 20; });
+        caveHere = mtn.cave && !mtn.noPaintMouth && mtn.cave.x > cx * W2 - 80 && mtn.cave.x < (cx + 1) * W2 + 80 && mtn.cave.y * K > cy * H2 - 140 && mtn.cave.y * K < (cy + 1) * H2 + 200 ? mtn.cave : null;
         ledgesHere = mtn.ledges.filter(function (lg) { return lg.x + 40 > cx * W2 && lg.x - 40 < (cx + 1) * W2 && lg.ye * K + HF + 10 > cy * H2 && lg.ye * K - 20 < (cy + 1) * H2; });
         // what runs along a wall and depends only on where along it you are: an overhang, water running down it
         WET = new Float32Array(W2 * 4);
@@ -5358,6 +5359,34 @@ function make(kit, opts) {
           var fl = fallsHere[k]; if (fl.n !== fn || Math.abs(ey - fl.ye * K) > 14) continue; var fdx = Math.abs(wx - fl.x - Math.sin(fd * 0.07) * 1.2), fhw = fl.w * 0.5 + fd * 0.03;
           if (fdx < fhw) { var wv = 0.5 + 0.5 * Math.sin(wx * 1.9 + fd * 0.23); rr = 186 + wv * 56; gg = 214 + wv * 34; bb = 232 + wv * 20; if (fdx > fhw - 1.6) { rr = 104; gg = 138; bb = 160; } }
           else if (fdx < fhw + 9) { var sp = 1 - (fdx - fhw) / 9; rr *= 1 - 0.3 * sp; gg *= 1 - 0.24 * sp; bb *= 1 - 0.16 * sp; }                 // the rock wet with spray beside it
+        }
+        if (caveHere && Math.abs(ey + tot - caveHere.y * K) < 40) {   /* The troll cave's mouth, cut into the face (2026-10-14, Robin: the Blender mouth looked pasted onto the
+           mountain). The wall's own rock runs round an arch: straight jambs, a round top, the edge a little uneven; inside it the floor runs back from
+           trodden earth at the threshold through violet-brown into the dark, the sun falls in as one soft patch on the floor, the walls and the roof go
+           from dim rock at the opening to black at the back, the left wall a little lit as the sun is; the rock round the arch is lit along its left
+           and top edge and dark under its right, with the ink line of the painter's own edges. MW, MH: the opening's half width and height in pixels. */
+          var MW = 44, MH = 64, mu = (wx - caveHere.x) / MW, mv = footD / MH;
+          if (mv > -0.02 && mv < 1.12 && Math.abs(mu) < 1.3) {
+            var mtop = mv < 0.42 ? 1 : Math.sqrt(Math.max(0, 1 - Math.pow((mv - 0.42) / 0.58, 2))), medge = Math.abs(mu) - mtop * (0.96 + 0.08 * nsm(wx * 0.7 + 50, footD * 1.3, 0.5)) - (mv > 1 ? (mv - 1) * 3 : 0);
+            if (medge < 0) {
+              var inD = -medge * MW, occ = 0.42 + 0.58 * sstep(0, 6, inD), grit = nsm(wx * 1.7 + 300, footD * 2.1 + 40, 0.22);
+              if (mv < 0.4) {                                                                    // the floor running back
+                var dd = mv / 0.4, fr0 = 154, fg0 = 116, fb0 = 82, fr1 = 94, fg1 = 68, fb1 = 62, fr2 = 24, fg2 = 21, fb2 = 38;
+                if (dd < 0.55) { var t1 = dd / 0.55; rr = fr0 + (fr1 - fr0) * t1; gg = fg0 + (fg1 - fg0) * t1; bb = fb0 + (fb1 - fb0) * t1; } else { var t2 = (dd - 0.55) / 0.45; rr = fr1 + (fr2 - fr1) * t2; gg = fg1 + (fg2 - fg1) * t2; bb = fb1 + (fb2 - fb1) * t2; }
+                var sun = Math.exp(-(Math.pow((mu - 0.12) / 0.55, 2) + Math.pow((mv - 0.1) / 0.11, 2))) * 0.7; rr += (204 - rr) * sun; gg += (172 - gg) * sun; bb += (120 - bb) * sun;   // the sun on the threshold
+                if (grit > 0.66) { var gk = sstep(0.66, 0.72, grit) * (1 - dd * 0.6); rr += (rr * 0.6 + 70 - rr) * gk; gg += (gg * 0.6 + 60 - gg) * gk; bb += (bb * 0.6 + 56 - bb) * gk; }   // stones on the floor, paler than the dark behind them
+              } else {                                                                           // the walls and the roof, into the dark
+                var wd = (mv - 0.4) / 0.6, wr0 = 76, wg0 = 60, wb0 = 58; rr = wr0 + (14 - wr0) * wd; gg = wg0 + (11 - wg0) * wd; bb = wb0 + (24 - wb0) * wd;
+                var lw = mu < -0.2 ? Math.min(1, (-mu - 0.2) / 0.6) * (1 - wd) * 0.45 : 0; rr += (118 - rr) * lw; gg += (94 - gg) * lw; bb += (78 - bb) * lw;   // the left wall, lit by what falls in
+                var rib = mu > 0.45 && mu < 0.7 ? (1 - wd) * 0.25 : 0; rr += (96 - rr) * rib; gg += (76 - gg) * rib; bb += (70 - bb) * rib;                       // a rib of rock on the right
+              }
+              rr *= occ; gg *= occ; bb *= occ;
+            } else if (medge < 0.14 && mv < 1.08) {                                             // the rock round the arch: lit along the left and the top, dark under the right, an ink line at the edge
+              var lit2 = (mu < 0 || mv > 0.75 ? 1 : 0.15) * (1 - sstep(0.03, 0.12, medge)) * 0.55, dk2 = (mu > 0 && mv < 0.8 ? 1 : 0.2) * (1 - sstep(0.02, 0.1, medge)) * 0.4;
+              rr += (R2[0] - rr) * lit2; gg += (R2[1] - gg) * lit2; bb += (R2[2] - bb) * lit2; rr *= 1 - dk2; gg *= 1 - dk2; bb *= 1 - dk2 * 0.9;
+              var ink2 = 1 - sstep(0.008, 0.028, medge); rr += (INK0 - rr) * ink2; gg += (INK1 - gg) * ink2; bb += (INK2 - bb) * ink2;
+            }
+          }
         }
         var aF = fdf < 1 ? fdf : 1; if (!cont) { var aB = footD + 1; if (aB < aF) aF = aB < 0 ? 0 : aB; }
         d2[o2] = rr; d2[o2 + 1] = gg; d2[o2 + 2] = bb; d2[o2 + 3] = 255 * aF; return;

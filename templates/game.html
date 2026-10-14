@@ -1533,7 +1533,7 @@ __COMBAT__
   }
   function raftTick(dt) {
     if (leftBanner > 0) leftBanner -= dt;
-    if (!seen.left && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; leftBanner = 9; sfx('craft'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
+    if (!seen.left && !SCENE && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; leftBanner = 9; sfx('craft'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
     windTick(dt);
     if (!raft || !raft.aboard) return;
     raft.crew = hird.filter(function (m) { return m.aboard; }).length + menAboard.length;
@@ -1709,7 +1709,7 @@ __COMBAT__
     var inFace = null; if (w.mt && w.caveSite) { inFace = w.caveSite(R); if (inFace) site = { x: inFace.x, y: inFace.y + 2 }; }   // a mountain island: the cave opens in a cliff face (2026-10-12)
     if (!site) return;
     var near = []; w.eachProp(function (o) { if (!o.peak && Math.abs(o.x - site.x) < (inFace ? 130 : 80) && o.y > site.y - 80 && o.y < site.y + (inFace ? 150 : 80)) near.push(o); }); near.forEach(function (o) { w.removeProp(o); });
-    caveMouth = inFace && World.IMAGES.cave_mouth ? { name: 'cave_mouth', x: site.x, y: site.y, s: 1, r: 0, v: 0, inFace: true } : { name: 'cave', x: site.x, y: site.y, s: 0.85, r: 14, v: 0 }; w.addProp(caveMouth);
+    caveMouth = inFace ? { name: 'cave_mouth', x: site.x, y: site.y, s: 1, r: 0, v: 0, inFace: true, painted: true } : { name: 'cave', x: site.x, y: site.y, s: 0.85, r: 14, v: 0 };   /* (painted: the mouth is cut into the face by the world's painter, 2026-10-14; the Blender piece is not drawn) */ w.addProp(caveMouth);
     cave = Cave.make(spec.seed, { x: CAVE_X, y: CAVE_Y, rockHp: World.HP.rock });   // the inside: src/cave.js
     caves.push({ kind: 'troll', cave: cave, mouth: caveMouth });
     if (w.mt) [['mine', w.mt.mine, 'mine_mouth', 1500], ['sea', w.mt.seaCave, 'sea_mouth', 3000]].forEach(function (q) {     // the old mine and the sea cave, where the mountains have a place for them
@@ -4584,6 +4584,7 @@ __COMBAT__
       for (var by = by0; by <= by1; by++) for (var bx = bx0; bx <= bx1; bx++) {
         var list = buckets[by * CW + bx]; if (!list) continue;
         list.forEach(function (o) {
+          if (o.painted) return;   /* (the troll cave's mouth is painted into the face by the world since 2026-10-14; the prop only marks the place) */
           var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
           if (px + w < cam.x - hw - 60 || px > cam.x + hw + 60 || py + h < cam.y - hh || py > cam.y + hh) return;
           items.push({ y: o.y, f: function () {

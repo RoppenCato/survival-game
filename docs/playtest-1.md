@@ -184,6 +184,8 @@ pacing, rocks that differ, the cave mouth, the troll, the island gap, the yard.
 
 **Then 14, 5, 11 and 19 (Robin: "Do 1-4 and then 6"):** the dark falls faster and faster after "The light is going", which now comes two and a half minutes before full night instead of five; rocks come in six variations with their own tones and builds; walls that run north to south have a leaning face you can see (the Destruction Editor's trial, on by default); the islands lie about 200 tiles apart (a raft's two minutes) and the banner comes whenever you stand on the other island. Details in CLAUDE.md under "Four more of the play-through's points".
 
+**Then 21:** the troll cave's mouth is cut into the painted wall by the mountain painter itself (an arch in the wall's own rock, the floor running back into the dark), no Blender rock round it. Details in CLAUDE.md under "The cave mouth cut into the rock".
+
 ### Questions for Robin
 
 - The crafting that "feels off" (10, 23): is it the board (a list and a page), the queue and the Ready strip, the time a
