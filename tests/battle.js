@@ -31,8 +31,10 @@ function man(side, wpn, gear, x, y, o) { const g = GEAR[gear || 'leather']; retu
 function keys(ang, go) { Combat.key('KeyD', go && Math.cos(ang) > 0.38); Combat.key('KeyA', go && Math.cos(ang) < -0.38); Combat.key('KeyS', go && Math.sin(ang) > 0.38); Combat.key('KeyW', go && Math.sin(ang) < -0.38); }
 function threatOf(D) {                          // the blow that will reach the hero soonest, and in how long
   const P = D.P; let best = null;
-  for (const e of D.W.enemies) { if (e.dead || e.side === 1 || e.type !== 'soldier' || !e.sw || e.tgt !== P) continue; if (e.state !== 'windup' && !(e.state === 'lunge' && !e.hitDone)) continue;
-    const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > e.sw.reach + 34) continue; const hit = e.sw.ac * Combat.api.men.hitAt, tti = e.state === 'windup' ? e.dur - e.t + hit : hit - e.t;
+  for (const e of D.W.enemies) { if (e.dead || e.side === 1 || e.type !== 'soldier' || !e.sw) continue; if (e.state !== 'windup' && !(e.state === 'lunge' && !e.hitDone)) continue;
+    const d = Math.hypot(e.x - P.x, e.y - P.y); if (d > e.sw.reach + 34) continue;
+    if (e.tgt !== P && Math.abs(Math.atan2(Math.sin(Math.atan2(P.y - e.y, P.x - e.x) - e.dirLock), Math.cos(Math.atan2(P.y - e.y, P.x - e.x) - e.dirLock))) > e.sw.arc / 2 + 0.35) continue;   /* (2026-10-14: a blow meant for a friend whose sweep would take the hero too is a blow he sees; in a crowd that was most of what hit him) */
+    const hit = e.sw.ac * Combat.api.men.hitAt, tti = e.state === 'windup' ? e.dur - e.t + hit : hit - e.t;
     if (!best || tti < best.tti) best = { e, tti, d, heavy: e.sw.heavy }; }
   for (const pr of D.W.projs) { if (pr.owner !== 'man' || pr.side !== 0) continue; const rx = P.x - pr.x, ry = P.y - pr.y, sp = Math.hypot(pr.vx, pr.vy), along = (rx * pr.vx + ry * pr.vy) / sp, off = Math.abs(rx * pr.vy - ry * pr.vx) / sp;   // an arrow on its way to him
     if (along > 0 && off < 14 && along / sp < 0.5 && (!best || along / sp < best.tti)) best = { e: pr.src, tti: along / sp, d: along, heavy: false, arrow: pr }; }
@@ -88,8 +90,9 @@ function fight(S) {
   while (t < LIMIT) {
     const F = alive(foes), A = alive(friends);
     if (!F.length) break; if (S.hero ? P.dead : !A.length) break;
-    if (S.hero && !P.dead) { F.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); BOTS[S.hero.bot](D, st, F); }
+    if (S.hero && !P.dead) { F.sort((a, b) => (a.tgt === P ? 0 : 1) - (b.tgt === P ? 0 : 1) || Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); BOTS[S.hero.bot](D, st, F); }   // (the bots fight the man who is on them first, then the nearest: 2026-10-14; before, the nearest, which in a crowd was a man dueling a friend, and the hero walked into his sweep)
     Combat.update(DT); t += DT; st.frame++;
+    if (S.watch && st.frame % 120 === 0) S.watch(t, P, foes, friends);
     if (P.hp < lastHp - 0.01) { closest = Math.min(closest, t - lastHurtT); chain = t - lastHurtT < 1.0 ? chain + 1 : 1; worstChain = Math.max(worstChain, chain); lastHurtT = t; } lastHp = P.hp;
     held = !P.dead && P.hurtT > 0 ? held + DT : 0; heldMax = Math.max(heldMax, held);
     if (st.frame % 60 === 0) { let moved = false; foes.concat(friends).forEach((e, i) => { if (Math.hypot(e.x - pos[i][0], e.y - pos[i][1]) > 2 || e.dead || e.down || e.out) moved = true; pos[i] = [e.x, e.y]; if (e.x !== e.x || e.hp !== e.hp) nan = true; }); const busy = foes.concat(friends).some(e => e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger'); stuck = moved || busy || (S.hero && Math.hypot(P.vx, P.vy) > 5) ? 0 : stuck + 1; stuckMax = Math.max(stuckMax, stuck); }
@@ -136,7 +139,8 @@ function ladder(n) {
   line('careful, iron sword, against two axes in leather', run({ hero: { bot: 'careful', weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['axe', 'leather'], ['axe', 'leather']] }, n));
   line('skilled, iron sword, against two axes in leather', run({ hero: { bot: 'skilled', weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['axe', 'leather'], ['axe', 'leather']] }, n));
   line('careful against two axes, with a friend', run({ hero: { bot: 'careful', weapon: ['sword', 'iron'], armour: LEATHER }, foes: [['axe', 'leather'], ['axe', 'leather']], friends: [['sword', 'leather']] }, n));
-  ['careful', 'skilled'].forEach(bot => { const R = run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: side('sword', 'leather'), friends: side('sword', 'leather').slice(0, 4) }, Math.max(4, Math.round(n / 2))); line(bot + ' with four friends against five', R, ' (the hero fell in ' + R.lost + ' of ' + R.n + '; his friends down ' + (R.friendsDown / R.n).toFixed(1) + ' of 4 a fight; they took ' + (R.foesDead).toFixed(1) + ' of the five)'); });
+  const watch = process.env.FIVE_DBG ? (t, P, foes, friends) => { const onP = foes.filter(f => !f.dead && f.tgt === P), help = friends.filter(f => !f.dead && !f.down && f.tgt && f.tgt.tgt === P), free = friends.filter(f => !f.dead && !f.down && !f.tgt); console.log('      ' + t.toFixed(0) + ' s: hero ' + Math.round(P.hp) + ' hp, on him ' + onP.length + ' (' + onP.map(f => Math.round(f.hp)).join(',') + ')' + ', friends on those ' + help.length + ', free ' + free.length + ', foes dead ' + foes.filter(f => f.dead || f.out || f.fled).length + ', friends down ' + friends.filter(f => f.down || f.dead).length + '; friends at: ' + friends.map(f => f.dead || f.down ? 'x' : (f.tgt ? (f.tgt.tgt === P ? 'H' : (f.tgt.tgt === f ? 'duel' : 'other')) : '-')).join(' ')); } : null;
+  ['careful', 'skilled'].forEach(bot => { const R = run({ hero: { bot, weapon: ['sword', 'iron'], armour: LEATHER }, foes: side('sword', 'leather'), friends: side('sword', 'leather').slice(0, 4), watch }, Math.max(4, Math.round(n / 2))); line(bot + ' with four friends against five', R, ' (the hero fell in ' + R.lost + ' of ' + R.n + '; his friends down ' + (R.friendsDown / R.n).toFixed(1) + ' of 4 a fight; they took ' + (R.foesDead).toFixed(1) + ' of the five)'); });
   line('five against five, no hero', run({ foes: side('sword', 'leather'), friends: side('sword', 'leather') }, Math.max(4, Math.round(n / 2))));
 }
 function two(n) {

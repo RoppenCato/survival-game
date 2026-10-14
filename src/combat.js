@@ -300,7 +300,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
   if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
-  if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }   // (the man the quiet blow falls on is not one who heard it)
+  if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }
+  else if (man && src.type === 'soldier' && !src.dead) { e.hitBy = src; e.hitByT = W.t; }   // (2026-10-14: a man remembers who struck him last, and turns to him: see pickTarget)   // (the man the quiet blow falls on is not one who heard it)
   if (e.errand) { var er0 = e.errand; e.errand = null; if (er0.drop) er0.drop(e); }   // struck on an errand: that is the end of it (he drops what he carries, and fights)
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
@@ -806,7 +807,8 @@ var MEN = {
   // hang: a man with no place hangs back this far from the nearest fight (nearest and farthest, by the man) and waits for
   // one; apart, drift: the middle of a fight keeps this far from the men of other fights, moving at this pace to get there; homeR: a
   // householder (o.homeR on the man) fights nobody further than this from his own door.
-  onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, way: 'duel', hang: [105, 165], apart: 72, drift: 26, homeR: 190,   // (the first five and hang are a WAY: see WAYS)
+  onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, way: 'duel', hang: [105, 165], apart: 72, drift: 26, homeR: 190,
+  turnT: 2.5, turnK: 120,            // a man struck by a man who is not his foe turns on him for turnT seconds (turnK: how strongly, against distance in units): the relief of a beset man (2026-10-14)   // (the first five and hang are a WAY: see WAYS)
   sight: 340, aggro: 150, leash: 250, lie: 90,
   noise: { blow: 240, shout: 420, cry: 360, din: 0.24, far: 1000 }, wake: [0.5, 1.6],   // how far a blow, a man's shout and a death cry are heard by a town's men, and how long a man at his post takes to be on his way
   // A man with a bow (2026-10-13, rung 5): he stands off and shoots at whoever he has a clear line to, never with one of his own
@@ -947,6 +949,7 @@ function pickTarget(e) {
     if (fullFor(e, F, d)) { if (d < wd) { wd = d; wait = F; } return; }                     // he has his man (or men) already: not for e
     var on = onTarget(F, e), sc = d + on * 44;                                              // one nobody has, then the least beset
     if (F === cur) sc -= 34;
+    if (F === e.hitBy && W.t - (e.hitByT || -9) < MEN.turnT && d < 110 && !F.dead) sc -= MEN.turnK;   // a man struck by somebody other than his foe turns on him (2026-10-14): two of yours on the man who is on the hero draw him off the hero; the same for a town's man joining on one of yours
     if (e.side === 1 && F === W.heroHit && W.t - (W.heroHitT || -9) < 4 && !(cur && cur !== F && cur.tgt === e && !cur.dead)) sc -= Math.max(0, 140 - on * 70) + (F === cur ? 0 : 34);   // what the hero struck last: the first of his men who is free turns to it, a second may; a man with a foe on him keeps that foe
     if (sc < bs) { bs = sc; best = F; }
   });

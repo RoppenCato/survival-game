@@ -1061,7 +1061,24 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   3.1 of the five": two of the five are at the hero from the first second (`onHero` 2), his four friends fight the other three
   at the men's own pace (a man on a man is 15 to 20 blows) and he is down before they are free. So the five-fight hinges on
   how the hero's own men come to him, not on these numbers, and I left the crowd numbers as they were (Robin has not chosen
-  a way, see "Robin's four answers", 4). **Seeded towns, before and after** (`RSEED` 11, 28, 57, two towns each, the
+  a way, see "Robin's four answers", 4). **Then found and mended (2026-10-14; `FIVE_DBG=1 node tests/battle.js ladder 8`
+  prints the five-fight every two seconds: who is on the hero, what each friend is at):** the hero mostly had ONE man on
+  him and still lost about 45 health a man, the same as in the one-man line; his friends won their three duels but were
+  busy for 30 s, so the hero had to beat two of the five himself and died at about 40 s with his share half done. Two
+  friends who came to his man struck that man from behind without drawing him off: **a man kept his target whoever hit him.**
+  Now **a man turns on whoever struck him last** (`e.hitBy`, `e.hitByT` set in `damageEnemy` for a man's blow; in
+  `pickTarget` that man scores `MEN.turnK` 120 better for `MEN.turnT` 2.5 s within 110 units): two of yours on the man who is
+  on the hero draw him off, and a town's man joining on one of yours turns him likewise. **It is the relief of a beset man,
+  and it is mine.** The ladder with it (100 fights): the careful hero with four friends against five **68%** (34), the
+  skilled 64% (52), "they took 4.1 of the five", no friend down; the one-man and two-man lines unmoved (a duel has no third
+  man to turn to); five against five 36 to 57% (a coin still). **What it costs:** being outnumbered is harsher, because a
+  man with two on him turns from one to the other and is struck from behind by each: five against seven now take 0.4 of the
+  seven with them (1.2 before), spears in a line against swords 0% (5). In the seeded towns (`RSEED` 11, 28) the crowd round
+  one of yours fell from 2.4 to 2.2 and nothing stood still or never ended. **The test's bots learnt two things the same day**
+  (in `tests/battle.js`, not the engine): `threatOf` counts a blow meant for a friend whose sweep would take the hero too (a
+  man's blow lands on every foe in its arc, and in a crowd that was much of what hit him unseen), and the bots fight the man
+  who is on them before the nearest (they walked at a man dueling a friend and ate his sweep). Those two alone moved
+  nothing (34%); the turning did. **Seeded towns, before and after** (`RSEED` 11, 28, 57, two towns each, the
   engine of `HEAD` against this): the crowd round one of yours 2.3 to 2.5 before, 2.1 to 2.6 after, the hero would have fallen
   at 46 to 57 s before and 36 to 58 after; one random `!!` on the old engine in one run of seed 57 (the one fight in a hundred),
   none in the other runs on either.
@@ -1080,14 +1097,20 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   a seax cuts is for Robin's ear, and the Combat Arena is where to listen (its Sound switch). No screen shake; Snappy stays.
   **Checked:** `tests/blows.js` with no contradictions; `npm test`; the ladder at 200; the seeded towns; in the pane at 1200 by
   750 the arena's club on a held man (the big 9, the ring, the sparks, no console error) and the battle scene, which ran the
-  scripted church raid through five minutes with no error. **Found on the way, not mine and not fixed: the scripted raids of
-  `tools/visual/raidplay.js` no longer get in.** On the committed page too (an A/B against `HEAD`'s `dist/game.html`), the
-  church raid logs "could not get behind him" at the back gate and dies at the church door: the town bars its gates to an
-  armed man with his band at his back (`gateWatch`, "Four ways to raid", the same day the script was written: the back gate's
-  edge reads `barred: 1`, `arms()` says `carries: true, band: 1`), so the quiet start the script was built on (round behind
-  the two at the back gate) is barred now by design. The raid's numbers under "The raid" (rung 6) are from before that rule.
-  The script wants rewriting to the rule (weapons in the sea chest, the men told to hold by the ship, in alone, the gate
-  men taken bare-handed from behind); it is not a fault of the engine.
+  scripted church raid through five minutes with no error. **Found on the way: the scripted raids of `tools/visual/raidplay.js`
+  no longer got in.** On the committed page too (an A/B against `HEAD`'s `dist/game.html`), the church raid logged "could
+  not get behind him" at the back gate and died at the church door: the town bars its gates to an armed man with his band at
+  his back (`gateWatch`, "Four ways to raid", the same day the script was written: the back gate's edge read `barred: 1`,
+  `arms()` said `carries: true, band: 1`), so the quiet start the script was built on (round behind the two at the back gate
+  by day) was barred by design, not a fault of the engine. **Rewritten on 2026-10-14 to the rule:** the quiet raids
+  (`quiet`, `church`, `hold`) begin from the board's night raid (`RP.begin('nightraid')`), **lift the back gate's latch**
+  (`RP.latch`: E, "Lift the latch", from outside) and take the two dozing men from behind; `loud` is by day and **hacks the
+  front gate open** (`RP.hack('gate', 'front')`, `RP.gateKeys`: 1.3 s of axe). **Where they stand now** (the engine with the
+  turning rule above; the ship 40 tiles from the back gate at night): **quiet** about 70 s, both gate men taken, nobody of
+  the town up, nothing aboard; **church** 36 silver in 90 to 150 s, three to five of the five aboard, the hero at 3 to 26
+  health (the second gate man is a light sleeper and wakes the town about half the time, as the day's second man did);
+  **hold** 36 silver, the hero at 91, none of the five aboard; **loud** the gate in 1.3 s, the church's silver carried out,
+  the hero dead in the hall. The curve the rung-6 paragraph below describes still holds; its own numbers are the day's.
 - **More than one on a target (rung 2).** At most two may be striking one target at once (`MEN.slots`), and **no two blows
   land together**: a man may begin a blow only if it would land at least `MEN.gapHero` 0.75 s from any other already on its
   way to the hero (as long as the hero is untouchable after a blow, so none is wasted), 0.35 s for a man (`slotFree`, by
