@@ -628,6 +628,22 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `items_build.py` has `build_greataxe` (the people's Dane axe), and **`node tools/shieldrender.js 3 --hand seax,spear,greataxe`**
   renders a kind's Wood and Metal layers for the fighting clips into `art/render/hand_<kind>`, merges and packs only those
   (`--only`). A spear and a Dane axe at full reach are cut by the 160 px frame, as noted below.
+  **The art studio's hero and weapons (2026-10-14; from the other session, "Survival Crafting game art design", in
+  `C:\dev\SG Art\out\hero\`, its `HANDOFF.md` and `NOTES.md`; Robin approved them there and asked for them in the game).**
+  Dropped in as sheets, nothing rendered here: `assets/sprites/hero2-mixamo/` (the same 20 layers and 20 clips, the frame
+  164 by 164, the death's own frame: no code changed) and `assets/sprites/items/` (the bag icons re-cut to fill their
+  squares, and `greataxe_*` new), with the studio's `art/build/toon.py`, `hero2_build.py`, `items_build.py` and `rack.py`
+  (the weapon rack and the icon cut) so the next render reproduces it. What it is: the same body and clips with **a painted
+  face that has life** (almond eyes with catchlights, slanted brows, a nose shadow, cheeks, a moustache and mouth), a fringe,
+  ears, the beard at the jaw, **a lit side** (`toon.py`'s sun 3.0, was 1.15, at which no surface passed the cel's light
+  step; the palette taken down a tenth to keep the mean), and **every thing in the hand rebuilt from a Viking outline** (a
+  sword with a fuller and a three-lobed pommel, the hilt's bronze in the Wood layer so the metal tint colours the blade
+  alone; a bearded axe; the Dane axe; a leaf-bladed spear; a broken-back seax and knife; a root club; a one-pointed pick; a
+  longbow), rendered on every fighting clip. **To know:** `toon.py` is shared, so **everything rendered after this gets a lit
+  side** and bright base colours want taking down about 15 percent (done by the studio for the hero and the four beasts,
+  not the rest), and **the people share the hero's head**: until `npm run art:people` is run they stand beside the lit hero
+  with living eyes as flat figures with the old face. Also approved and ready in `C:\dev\SG Art\out\`: `beasts/` (boar,
+  deer, moose, bear, lit) and `redesign/` (the huldra, Näcken, the draugr, a new troll Trollmor), not dropped in.
   **The animals (2026-10-11, Robin: the boar, the deer, then the wolf, eight directions; no Mixamo for four legs):**
   `art/build/quad_build.py -- <boar|deer|wolf>` models, rigs and animates a four-legged animal by script and saves
   `art/source/<name>.blend`. **One rig for every species:** `body` (bob, pitch, roll), `hips` and `chest` (the spine flexes between

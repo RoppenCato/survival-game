@@ -16,10 +16,10 @@ FPS = 24
 
 # the palette is the game's own hero (Eirik in src/art.js HEROES, as the game draws him on the starter island by day; 2026-10-09):
 # a grey-green wool tunic, dark trousers, dark boots, warm skin, red hair and beard, the red cloak's colour on the hood, ochre trim
-COL = {
-    'skin': '#e3bd98', 'face': '#e3bd98', 'hair': '#a8522a', 'beard': '#8e4424', 'ink': '#231a16',
-    'tunic': '#857a62', 'pants': '#4e4a52', 'boot': '#3e2c24', 'belt': '#5a3d2a', 'buckle': '#c99a3a', 'leather': '#6a4a32',
-    'hood': '#8a3a34', 'trim': '#b08a3a', 'trimX': '#b08a3a', 'trim2': '#4e4a52',
+COL = {   # 2026-10-13 (the studio): the bases taken down about a tenth now that the sun gives a lit side (toon.SUN_ENERGY); the game's hero palette is what they were
+    'skin': '#d4ad89', 'face': '#d4ad89', 'hair': '#9a4b26', 'beard': '#823e21', 'ink': '#231a16',
+    'tunic': '#786e58', 'pants': '#47434a', 'boot': '#382820', 'belt': '#523726', 'buckle': '#c99a3a', 'leather': '#60432d',
+    'hood': '#7f3530', 'trim': '#a37f35', 'trimX': '#a37f35', 'trim2': '#47434a',
 }
 PATTERN = {'trim': 'knot:z', 'trimX': 'knot:x', 'trim2': 'woven:z'}          # the folk style draws these; the others show plain bands
 
@@ -136,14 +136,22 @@ def face_uvs(o):
         uf.data[lp.index].uv = ((v.x - x0) / (x1 - x0), (v.z - z0) / (z1 - z0)); ub.data[lp.index].uv = ((v.y - y0) / (y1 - y0), 0.0)
 face_uvs(head)
 part(cap('hair', body_c, M['hair'], 'head', (0, 0.01, hz + 0.02), HEAD * 0.5, (0, -0.17, hz + 0.125), (0, 0.6, 1), 12, 9, 0.95, 1.04, 1.04))
+# 2026-10-13 (the studio; Robin: no personality or life): a jagged fringe over the brow, ears, a fuller nose, the beard dropped to
+# the jaw with tufts along its edge so the mouth shows; the face itself is painted (toon._paint_face)
+for i, (fx, fl) in enumerate(((-0.11, 0.05), (-0.04, 0.075), (0.045, 0.065), (0.115, 0.045))):
+    part(cone('fringe%d' % i, body_c, M['hair'], 'head', (fx, -0.155, hz + 0.115), (fx * 1.15, -0.185, hz + 0.115 - fl), 0.03, 0.006, 6, 1.0, 0.5))
+for s, sx in (('L', 1), ('R', -1)):
+    part(ball('ear.' + s, body_c, M['skin'], 'head', (sx * 0.175, 0.0, hz - 0.015), 0.034, 8, 6, 0.55, 0.8, 1.0))
 bx, bz = 0.15, hz - 0.02
 for i in range(5):
     part(ball('braid%d' % i, body_c, M['hair'], 'head', (bx + 0.012 * i, 0.06 - 0.03 * i, bz - 0.085 * i), 0.052 - 0.004 * i, 8, 6, 1.0, 0.9, 1.0))
 part(ball('braidtie', body_c, M['trim'], 'head', (bx + 0.06, -0.09, bz - 0.43), 0.03, 8, 6))
-part(cone('nose', body_c, M['skin'], 'head', (0, -0.15, hz - 0.02), (0, -0.215, hz - 0.06), 0.03, 0.016, 8))
+part(cone('nose', body_c, M['skin'], 'head', (0, -0.15, hz - 0.02), (0, -0.22, hz - 0.065), 0.034, 0.02, 8))
 part(wedge('beard', body_c, M['beard'], 'head', [
     [(-0.05, -0.14, CHIN - 0.03), (0.05, -0.14, CHIN - 0.03), (0.045, -0.06, CHIN - 0.025), (-0.045, -0.06, CHIN - 0.025)],
-    [(-0.14, -0.14, hz - 0.06), (0.14, -0.14, hz - 0.06), (0.15, 0.0, hz - 0.04), (-0.15, 0.0, hz - 0.04)]]))
+    [(-0.14, -0.14, hz - 0.10), (0.14, -0.14, hz - 0.10), (0.15, 0.0, hz - 0.08), (-0.15, 0.0, hz - 0.08)]]))
+for i, (bxx, bz0, L) in enumerate(((-0.07, CHIN + 0.02, 0.06), (-0.025, CHIN - 0.02, 0.07), (0.025, CHIN - 0.02, 0.07), (0.07, CHIN + 0.02, 0.06))):
+    part(cone('tuft%d' % i, body_c, M['beard'], 'head', (bxx, -0.12, bz0), (bxx * 1.1, -0.135, bz0 - L), 0.028, 0.006, 6, 1.0, 0.6))
 # arms out in the T-pose: sleeves, cuff bands, mitten hands
 for s, sx in (('L', 1), ('R', -1)):
     a0 = Vector((sx * SHW, 0, SH - 0.04)); a1 = Vector((sx * (SHW + ARM1), 0, SH - 0.04)); a2 = Vector((sx * (SHW + ARM1 + ARM2), 0, SH - 0.04))

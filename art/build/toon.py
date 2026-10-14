@@ -159,7 +159,7 @@ def _decal(n, L, base):
     a = _math(n, L, 'MULTIPLY', tex.outputs['Alpha'], front)
     return _mix(n, L, 'MIX', a, base, tex.outputs['Color'])
 
-def _paint_face(name, eyes, expr, size=256):
+def _paint_face(name, eyes, expr, size=256, kind='hero'):
     """A face as an RGBA image: two dark eyes set a little high, short thick brows, no mouth (the beard covers it). eyes: dot
     (a solid round eye), oval (a small upright oval), highlight (a dot with a tiny light in its upper left). expr: neutral,
     blink (two lines), angry (brows down toward the nose, eyes narrowed), hurt (eyes shut tight, brows up)."""
@@ -176,27 +176,74 @@ def _paint_face(name, eyes, expr, size=256):
                 d = (u / rx) ** 2 + (v / ry) ** 2
                 if d <= 1: put(x, y, col, 1.0)
                 elif d <= 1.35: put(x, y, col, max(0.0, 1 - (d - 1) / 0.35))
-    # positions in the head box: u across (0 left .. 1 right), v up (0 chin .. 1 crown); the image's v axis is flipped on write
-    ex, ey = 0.19, 0.575; es = size
+    # 2026-10-13 (the studio; Robin: he looks like he has no personality or life). The face redrawn in the head box (u across,
+    # 0 left .. 1 right; v up, 0 chin .. 1 crown; the image's v axis is flipped on write): almond eyes a little below the middle,
+    # each with a catchlight in its upper left; thick brows with a slight slant down toward the nose (a determined look, not
+    # an angry one); a shadow line down the shadow side of the nose; a warm patch on each cheek; a moustache in the beard's
+    # colour over a dark mouth line, so the mouth shows above the modelled beard (hero2_build lowers the beard to the jaw).
+    # kind (2026-10-13): 'hero' as described; 'huldra' no moustache, thin arched brows, a lash at each eye's corner, red lips,
+    # a stronger blush; 'nacken' narrow eyes, brows slanted up toward the nose (sad), hollows under the eyes, a thin mouth
+    # with drooping ends, no blush; 'draugr' one eye wide and pale with a pinpoint, the other sunk in a dark socket, heavy
+    # low brows, hollow cheeks, no catchlight, no mouth (the jaw is modelled). The people-shaped väsen's heads take these.
+    moust = srgb('#8e4424'); blush = srgb('#d4937a'); shade = srgb('#b8866a')
+    if kind == 'huldra': blush = srgb('#d98a84'); shade = srgb('#c69a86')
+    if kind == 'nacken': shade = srgb('#7f9a90')
+    if kind == 'draugr': ink = srgb('#1c1a20'); brow = srgb('#2a2026'); shade = srgb('#5a6e70')
+    pale = srgb('#e9f4ee'); lip = srgb('#b8323a')
+    def soft(cx, cy, rx, ry, col, a, rot=0.0):        # a tint laid at part strength (the cheeks, the nose's shadow)
+        for y in range(int(cy - ry - rx) - 1, int(cy + ry + rx) + 2):
+            for x in range(int(cx - rx - ry) - 1, int(cx + rx + ry) + 2):
+                dx, dy = x + 0.5 - cx, y + 0.5 - cy; c, s_ = _m.cos(rot), _m.sin(rot); u, v = dx * c + dy * s_, -dx * s_ + dy * c
+                d = (u / rx) ** 2 + (v / ry) ** 2
+                if d <= 1.4 and 0 <= x < size and 0 <= y < size:
+                    i = (y * size + x) * 4
+                    if px[i + 3] < 0.99: px[i] = col[0]; px[i + 1] = col[1]; px[i + 2] = col[2]; px[i + 3] = max(px[i + 3], a * max(0.0, min(1.0, (1.4 - d) / 0.6)))
+    ex, ey = 0.17, 0.545; es = size
+    if kind in ('hero', 'huldra'):
+        for sx in (-1, 1): soft((0.5 + sx * 0.205) * es, (1 - 0.455) * es, 0.052 * es, 0.034 * es, blush, 0.42 if kind == 'hero' else 0.55)
+    else:
+        for sx in (-1, 1): soft((0.5 + sx * 0.19) * es, (1 - 0.47) * es, 0.055 * es, 0.03 * es, shade, 0.45)       # hollows under the eyes
+    soft((0.5 + 0.036) * es, (1 - 0.47) * es, 0.012 * es, 0.042 * es, shade, 0.55)                      # the nose's shadow side (the sun is upper left)
     for sx in (-1, 1):
         cx, cy = (0.5 + sx * ex) * es, (1 - ey) * es
-        if expr == 'blink': ellipse(cx, cy, 0.05 * es, 0.009 * es, ink)
-        elif expr == 'hurt': ellipse(cx, cy, 0.045 * es, 0.01 * es, ink, rot=sx * 0.5); ellipse(cx, cy, 0.045 * es, 0.01 * es, ink, rot=-sx * 0.5)
+        if kind == 'draugr' and expr not in ('blink', 'hurt'):
+            if sx < 0: ellipse(cx, cy, 0.072 * es, 0.05 * es, brow); ellipse(cx + 0.01 * es, cy + 0.006 * es, 0.022 * es, 0.017 * es, pale); ellipse(cx + 0.012 * es, cy + 0.008 * es, 0.007 * es, 0.007 * es, ink)   # the sunk eye in its socket
+            else: ellipse(cx, cy, 0.052 * es, 0.046 * es, pale); ellipse(cx - 0.006 * es, cy + 0.004 * es, 0.013 * es, 0.013 * es, ink)   # the staring eye
+        elif expr == 'blink': ellipse(cx, cy, 0.054 * es, 0.009 * es, ink)
+        elif expr == 'hurt': ellipse(cx, cy, 0.05 * es, 0.01 * es, ink, rot=sx * 0.5); ellipse(cx, cy, 0.05 * es, 0.01 * es, ink, rot=-sx * 0.5)
         else:
-            if eyes == 'oval': ellipse(cx, cy, 0.03 * es, 0.048 * es, ink)
-            else: ellipse(cx, cy, 0.044 * es, 0.044 * es, ink)
-            if expr == 'angry': ellipse(cx, cy - 0.03 * es, 0.05 * es, 0.022 * es, (0, 0, 0), rot=0)   # a lid cut from above (made transparent below)
-            if eyes == 'highlight' and expr != 'angry': ellipse(cx - 0.012 * es, cy - 0.012 * es, 0.009 * es, 0.009 * es, hi)
-        # the brow: a short thick bar; angry slants it down toward the nose, hurt lifts it
-        by = cy - (0.085 if expr != 'hurt' else 0.11) * es; rot = 0.0
-        if expr == 'angry': rot = -sx * 0.45; by += 0.02 * es
+            rx_, ry_ = (0.058, 0.044) if kind == 'huldra' else (0.056, 0.032) if kind == 'nacken' else (0.056, 0.040)
+            if eyes == 'oval': ellipse(cx, cy, 0.04 * es, 0.05 * es, ink)
+            else: ellipse(cx, cy, rx_ * es, ry_ * es, ink)
+            if kind == 'huldra': ellipse(cx + sx * 0.062 * es, cy - 0.014 * es, 0.02 * es, 0.006 * es, ink, rot=-sx * 0.55)   # a lash flicked up at the outer corner
+            if expr == 'angry': ellipse(cx, cy - 0.028 * es, 0.06 * es, 0.022 * es, (0, 0, 0), rot=0)   # a lid cut from above (made transparent below)
+            if expr != 'angry': ellipse(cx - 0.018 * es, cy - 0.013 * es, 0.011 * es, 0.011 * es, hi)   # the catchlight: every eye has it now
+        # the brow: a thick bar, its inner end a little lower (determined); angry drives it down hard, hurt lifts it
+        by = cy - (0.088 if expr != 'hurt' else 0.115) * es; rot = -sx * 0.20; brx, bry = 0.074, 0.021
+        if kind == 'huldra': by = cy - 0.105 * es; rot = -sx * 0.12; brx, bry = 0.066, 0.012
+        if kind == 'nacken': rot = sx * 0.28; bry = 0.018
+        if kind == 'draugr': by = cy - 0.075 * es; rot = -sx * 0.10; bry = 0.026
+        if expr == 'angry': rot = -sx * 0.5; by += 0.025 * es
         if expr == 'hurt': rot = sx * 0.3
-        ellipse(cx + (0.01 * sx if expr == 'angry' else 0) * es, by, 0.065 * es, 0.018 * es, brow, rot=rot)
+        ellipse(cx + (0.01 * sx if expr == 'angry' else 0) * es, by, brx * es, bry * es, brow, rot=rot)
+    # the moustache and the mouth
+    if kind == 'hero':
+        ellipse(0.5 * es, (1 - 0.385) * es, 0.095 * es, 0.021 * es, moust)
+        for sx in (-1, 1): ellipse((0.5 + sx * 0.088) * es, (1 - 0.362) * es, 0.024 * es, 0.036 * es, moust, rot=-sx * 0.35)
+        if expr == 'hurt': ellipse(0.5 * es, (1 - 0.345) * es, 0.03 * es, 0.022 * es, ink)
+        elif expr == 'angry': ellipse(0.5 * es, (1 - 0.35) * es, 0.052 * es, 0.009 * es, ink)
+        else: ellipse(0.5 * es, (1 - 0.35) * es, 0.042 * es, 0.0075 * es, ink)
+    elif kind == 'huldra':
+        if expr == 'hurt': ellipse(0.5 * es, (1 - 0.35) * es, 0.026 * es, 0.02 * es, ink)
+        else: ellipse(0.5 * es, (1 - 0.358) * es, 0.036 * es, 0.015 * es, lip); ellipse(0.5 * es, (1 - 0.356) * es, 0.034 * es, 0.004 * es, ink)
+    elif kind == 'nacken':
+        ellipse(0.5 * es, (1 - 0.352) * es, 0.03 * es, 0.005 * es, ink)
+        for sx in (-1, 1): ellipse((0.5 + sx * 0.036) * es, (1 - 0.343) * es, 0.013 * es, 0.004 * es, ink, rot=-sx * 0.5)   # the ends droop
     if expr == 'angry':               # the lid: skin-coloured alpha 0 cannot be drawn with put, so punch it: clear the lid region
         for sx in (-1, 1):
             cx, cy = (0.5 + sx * ex) * es, (1 - ey) * es
             for y in range(int(cy - 0.06 * es), int(cy - 0.012 * es)):
-                for x in range(int(cx - 0.05 * es), int(cx + 0.05 * es) + 1):
+                for x in range(int(cx - 0.06 * es), int(cx + 0.06 * es) + 1):
                     if 0 <= x < size and 0 <= y < size: i = (y * size + x) * 4; px[i + 3] = 0.0
     img = bpy.data.images.get(name) or bpy.data.images.new(name, size, size, alpha=True)
     flipped = []
@@ -204,10 +251,11 @@ def _paint_face(name, eyes, expr, size=256):
     img.pixels = flipped; img.alpha_mode = 'STRAIGHT'; img.pack(); img.use_fake_user = True
     return img
 
-def face_images():
-    """Every face image the renders can pick: three eye styles by four expressions, packed into the .blend."""
+def face_images(kind='hero'):
+    """Every face image the renders can pick: three eye styles by four expressions, packed into the .blend; kind picks whose
+    face (the hero's, the huldra's, Nacken's, the draugr's), the names staying the same so render.py's --eyes and --face work."""
     for eyes in ('dot', 'oval', 'highlight'):
-        for expr in ('neutral', 'blink', 'angry', 'hurt'): _paint_face('face_%s_%s' % (eyes, expr), eyes, expr)
+        for expr in ('neutral', 'blink', 'angry', 'hurt'): _paint_face('face_%s_%s' % (eyes, expr), eyes, expr, kind=kind)
 
 def material(name, hexs, pattern=None, style='cel', face=False):
     m = bpy.data.materials.get(name)
@@ -221,8 +269,9 @@ def restyle(style):
     for m in bpy.data.materials:
         if 'hex' in m: build_nodes(m, style)
 
+SUN_ENERGY = 3.0                      # 2026-10-13 (the studio): at 1.15 no surface passed the cel's light step and every model was all shadow tone; at 3.0 the lit side faces the sun within about 45 degrees and the highlight within 20
 def sun(style='cel'):
-    d = bpy.data.lights.new('Sun', 'SUN'); d.energy = 1.0 if style == 'painted' else 1.15; d.angle = 0.0
+    d = bpy.data.lights.new('Sun', 'SUN'); d.energy = 1.0 if style == 'painted' else SUN_ENERGY; d.angle = 0.0
     o = bpy.data.objects.new('Sun', d); bpy.context.scene.collection.objects.link(o)
     o.rotation_euler = SUN_DIR.to_track_quat('-Z', 'Y').to_euler()
     return o
@@ -269,7 +318,7 @@ def freestyle(scene, view_layer, px, collection=None, style='cel'):
 def setup_render(scene, size, px, samples=16):
     r = scene.render; r.engine = 'BLENDER_EEVEE'; r.resolution_x = r.resolution_y = size * px; r.resolution_percentage = 100
     r.film_transparent = True; r.image_settings.file_format = 'PNG'; r.image_settings.color_mode = 'RGBA'; r.image_settings.color_depth = '8'
-    r.filter_size = 1.2
+    r.filter_size = 1.0                 # 2026-10-13 (the studio): a little crisper than 1.2; the halving in the packer smooths it again
     scene.eevee.taa_render_samples = samples
     scene.view_settings.view_transform = 'Standard'; scene.view_settings.look = 'None'
     scene.display_settings.display_device = 'sRGB'
