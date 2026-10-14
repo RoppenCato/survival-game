@@ -786,10 +786,23 @@ with their surroundings generated and only the town itself hand-laid. The Villag
 is a saved layout plus a sheet of people, loot and lines: cheap to build, and the world gets memorable places without losing
 freshness.
 
-### Questions for Robin
+### Robin's answers (2026-10-14; these are the direction, also in CLAUDE.md)
 
-1. Does the year end when you winter at home (your choice), or on the calendar whether you are home or at sea?
-2. Should a sacked town be rebuilt by survivors who remember you, by strangers, or by chance of either?
-3. The sea: a faster clock on long empty crossings, yes or no? And the camera pulled out under sail?
-4. How many anchors: the hub alone, or the hub and three or four great seats with their jarls?
-5. Should warning beacons exist from the first raid, or come with the lowlands?
+1. **Seasons Stardew Valley style, but the player decides when a season moves**, at a moment at the end of every season. It
+   must not be abusable, and the player must not feel stressed about seasons moving: how that balances is to be worked out.
+   **Seasons should feel different and give access to different things and mechanics.** The whole time and season aspect is
+   to be worked on later.
+2. **A system of "controlled randomness".** A destroyed village or town may, after winter, be **rebuilt by survivors and be
+   stronger**, be **scavenged by bandits who make it their home**, or **fade away and be overtaken by nature**. And **every
+   island gets events generated after winter**: people settling and making a small village (boats by the shore and a path up
+   to it); trolls moving into a new cave (the cave changes, not the layout); new creatures showing up, such as Näcken;
+   destroyed villages rebuilt in various ways; villages and towns that were not raided expanding and getting bigger.
+3. **The camera pulled out under sail: yes.** A faster clock: not sure; later, with the time and season work.
+4. **Nothing handcrafted**: everything generated in a controlled way (so no anchors; the hub and the great seats are
+   generated too, with their jarls).
+5. **Warning beacons: a good idea**, kept here as an idea (not decided when they come).
+
+Open after the answers: what the moment at the end of a season is (a feast? the first snow? sleeping at home?) and what
+stops it being abused; what each season gives and takes; the list of after-winter events per island and their odds (the
+controlled randomness: which outcomes a sacked place can have by what happened to it); bandits as a people (who they are,
+what they hold, whether they raid); what a troll's move does to a cave; how Näcken and the other väsen arrive.

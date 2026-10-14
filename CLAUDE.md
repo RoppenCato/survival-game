@@ -60,6 +60,17 @@ gone from the code, and no new work may bring any of it back. This file is the s
   cave** (a little safely, the real amount behind the troll); the big island gets **foothills and a small plateau** (about a
   sixth of it); **ambient sound is synthesized in code** like all the sound; better lighting should do **fire and torch at
   night** and **atmosphere** first; lighting techniques are compared **in pictures, then as switches on the Admin board**.
+- **Decided 2026-10-14 (Robin's answers on the four big problems in `docs/idea-bank.md`: the year turning, scale in 2D, a
+  living world, handcrafted or generated towns; nothing of it is built).** **Seasons Stardew Valley style, but the player
+  decides when a season moves**, at a moment at the end of every season; not abusable, and never a stress; **seasons feel
+  different and give access to different things and mechanics**; the whole time and season aspect is for later. **After
+  winter, "controlled randomness":** a destroyed village or town is rebuilt by survivors and stronger, or scavenged by
+  bandits who make it their home, or fades and is overtaken by nature; and **every island gets events generated after
+  winter** (people settling a small new village with boats by the shore and a path up to it; trolls moving into a new
+  cave, the cave changed but not the layout; new creatures showing up, such as Näcken; destroyed villages rebuilt in
+  various ways; places that were not raided expanding). **The camera pulls out under sail** (a faster clock at sea: not
+  sure, later). **Nothing handcrafted: everything generated in a controlled way**, the hub and the great seats too.
+  **Warning beacons** that light along a coast when a raider's sail is seen are a good idea, kept in the idea bank.
 - **Decided 2026-10-13 (Robin's questionnaire on raids and the hird, after `docs/battle-plan.md` was built through; twelve
   answers).** **Most of this is not built yet: where the code does otherwise today is said in brackets.**
   **Walking in:** a town at peace lets you walk in **alone**; with armed men at your back the gate guards bar the way and
