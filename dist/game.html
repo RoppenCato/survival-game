@@ -15157,9 +15157,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function openInfo() {
     menuStation = menuTab === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (menuTab === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : (menuTab === 'furnace' ? { kind: 'furnace', it: furnaceAt(hero()) } : null)); if (menuStation && !menuStation.it) menuStation = null;
-    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 118, h: 214, list: infoList(), scroll: 0, maxScroll: 0 };
-    menu.x = 400 - menu.w - 8; menu.y = 18;   /* (a narrow column on the right since 2026-10-14, Robin: the one screen, clear of the hero, as small as it can be: the list above the page, no tabs) */
-    var rowH = 11, listH = 7 * rowH - (menuStation ? 2 * rowH : 0); menu.rowH = rowH; menu.listH = listH;
+    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 118, h: 198, list: infoList(), scroll: 0, maxScroll: 0 };
+    menu.x = 400 - menu.w - 8; menu.y = 250 - menu.h - 6;   /* (lower right, under the chart: Robin did not want it hanging from the top) */   /* (a narrow column on the right since 2026-10-14, Robin: the one screen, clear of the hero, as small as it can be: the list above the page, no tabs) */
+    var rowH = 11, listH = 6 * rowH - (menuStation ? 2 * rowH : 0); menu.rowH = rowH; menu.listH = listH;
     // the list as it is shown: under a small heading a category when there is more than one (Tools, Weapons, Armour, Supplies); it was one long scroll
     var show = [], cats = CATS2.filter(function (ct) { return menu.list.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
     if (cats.length > 1) cats.forEach(function (ct) { show.push({ head: ct[1] }); menu.list.forEach(function (e) { if (e.r && e.r.cat === ct[0]) show.push({ e: e }); }); });
@@ -15680,7 +15680,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   INV.x = 8; INV.y = CHAR_H + 12; var BAR = { y: INV.y, h: 0 };
   function invLeft() { return INV.x - (1 - INV.slide) * (INV.w + 40); }
   function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + 6 + (i % COLS) * CELL, y: INV.y + 16 + row * CELL, w: CELL - 2, h: CELL - 2 }; }
-  var STORE_UI = { x: 400 - (COLS * CELL + 12) - 8, y: 40, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };   // an open chest: on the right, where the crafting board sits otherwise
+  var STORE_UI = { x: 400 - (COLS * CELL + 12) - 8, y: 250 - (16 + (STORE_N / COLS) * CELL + 8) - 6, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };   // an open chest: on the right, where the crafting board sits otherwise
   function storeLeft() { return STORE_UI.x + (1 - INV.slide) * (STORE_UI.w + 40); }
   function storeRect(j) { var x0 = storeLeft(); return { x: x0 + 6 + (j % COLS) * CELL, y: STORE_UI.y + 16 + Math.floor(j / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
   function slotAt() {

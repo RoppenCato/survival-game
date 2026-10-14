@@ -1986,8 +1986,8 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   112 tall with slots 12.5 apart, the bag's cells 17 (`CELL`), so the column fits in 250. The hotbar's label names B only. **Robin's third look ("still covering a lot of the screen; the icons outside the panel; the 1 to
   6 as part of the bag's slots; the crafting panel smaller, no By hand, the list smaller"):** the panel is 102 wide with the slots
   well inside it and the hero at 1.1; **the bag is one board of five rows, its first row the bar** (`CELL` 15, a thin line under
-  the row; `BAR` is only a name for its top now); **the crafting board is a narrow column** (118 by 214 at x 274: the list of seven
-  rows of 11 above the page, **no tabs at all**: what you can make by hand is in every list, under its own headings, after the
+  the row; `BAR` is only a name for its top now); **the crafting board is a narrow column** (118 by 198 at x 274, y 46, **lower right under the chart**, Robin: not hanging from
+  the top; the list of six rows of 11 above the page, **no tabs at all**: what you can make by hand is in every list, under its own headings, after the
   station's own things (`infoList`), so a hearth's list is its dishes and then the hand recipes; `infoCan` asks for a roofed
   bench only of a bench recipe). The lists' `menuTabs` is kept for the Building board's row. **The interface grows:** the hotbar is
   not drawn until a thing has been put on the bar (`seen.bar`, set by `barPut`; the engine's `api.hideBar`; the bag's bar row
