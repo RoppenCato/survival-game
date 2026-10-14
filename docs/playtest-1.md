@@ -180,6 +180,8 @@ comes back, the Building board starts with six pieces and opens after the first 
 and speech is a board at the foot of the screen. Not done from the list: the bars and Q, K against X, the deer, the night's
 pacing, rocks that differ, the cave mouth, the troll, the island gap, the yard.
 
+**5, the deer (the same day, Robin: "Do the deer"):** a deer hit once bleeds, slows and stops sooner, and leaves a trail of blood to follow; one wood arrow bleeds it out in about 37 s, a second on the standing deer in 17; deer go in herds of two or three with one on watch that sees all round, and a herd runs and grazes together. The real fault behind "impossible to kill": a deer that stopped running was removed from the world (a flag shared with men who run off), so the one you chased was never there to be caught. Details in CLAUDE.md under "The wounded deer and the herd".
+
 ### Questions for Robin
 
 - The crafting that "feels off" (10, 23): is it the board (a list and a page), the queue and the Ready strip, the time a

@@ -2457,7 +2457,7 @@ var WPRE = {
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
 var DASH_T = 0.18;
-var api = { sfx: function () {}, facings8: true, heroSprite: null, enemySprite: null, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
+var api = { onBlood: null, sfx: function () {}, facings8: true, heroSprite: null, enemySprite: null, harvest: null, onDeath: null, buildSlots: null, beltSlots: null, canShoot: null, onShoot: null, onArrowLand: null, quiver: null, items: null, armor: null,
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
 // mods(): { sprint, sprintCost, stam, dash, block, riposte, charge, roll, heavyblow } from the arm ring's runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
 // trigger: a skill id to cast this frame; powerMul(kind): tool power multiplier; onDeed(kind): 'block', 'parry', 'dash'
@@ -2730,6 +2730,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var quiet = !src && e.type === 'soldier' && e.awake === false && !e.dead && !e.down && kind !== 'proj' && (e.asleep || Math.abs(wrap(ang - e.face)) < 1.25);   // the hero's blade in the back of a man at his post who has noticed nothing
   if (e.aggro || e.awake === false) e.awake = true;   // hitting a calm creature rouses it
   e.struck = true;
+  if (e.shy && !e.dead) { e.bleedT = SHY.bleedT; e.bx = e.x; e.by = e.y; e.bloodD = SHY.trail; herdWake(e); }   // a shy beast bleeds from the hit (the first drop at once), and its herd runs
   if (e.dead || e.down) return;
   var mult = 1, weak = false, man = e.type === 'soldier', blocked = false, broke = false;
   var bigE = e.type === 'brute';
@@ -3787,16 +3788,44 @@ function soldierAI(e, dt) {
    not straight away from you into the sea: fleeStep tries nine headings fanned round "away" and takes the one with the
    longest clear run (api.scene.walk), so a deer on the beach runs along the shore instead of standing in the surf to be
    cut down. It runs until you are far (3.2 of its reach), then stands and watches you a while before it grazes again. */
-function shyK(e, ga) { var behind = Math.abs(wrap(ga - e.face)) > 1.6, k = behind ? 0.45 : 1; if (P.sprinting) k *= 1.6; return k; }
+/* The wounded shy beast and the herd (2026-10-14, Robin: the deer "runs when you come close, and runs when hit by an arrow, so
+   you chase it for ever: feels impossible to kill"). A hit on a shy beast makes it BLEED (e.bleedT seconds, the loss fastest at
+   first and fading as it clots; a second hit opens it again), and its wounds SLOW it (its run by SHY.slow of its share of health
+   lost) and SHORTEN its runs (it stops and stands sooner, by SHY.run of the same). Bleeding, it leaves BLOOD ON THE GROUND
+   (api.onBlood(x, y, k, pool): a drop every SHY.trail units of its run, a pool when it stands), so a hunter follows the trail
+   to where it stands or lies; bled out it dies as a beast dies (killEnemy, nobody's blow but the hero's kill). THE HERD: a
+   shy beast with e.herd runs when any of its herd within SHY.herdR runs or is struck (herdWake), and one of them, e.watch,
+   keeps its head up: it sees as far behind it as before it (shyK), so a herd is stalked from the side its watcher is not on.
+   Every number is mine, a first setting. */
+var SHY = { bleedT: 40, bleed: 0.14, slow: 0.7, run: 0.6, herdR: 260, trail: 16, pool: 2.5 }; api.shy = SHY;
+function shyK(e, ga) { var behind = !e.watch && Math.abs(wrap(ga - e.face)) > 1.6, k = behind ? 0.45 : 1; if (P.sprinting) k *= 1.6; return k; }
+function woundOf(e) { return e.maxHp > 0 ? Math.max(0, Math.min(1, 1 - e.hp / e.maxHp)) : 0; }
+function herdLead(e) {                 // the watcher of a beast's herd, while it lives: the one the rest run with and graze by
+  if (e.herd == null || e.watch) return null; if (e.lead && !e.lead.dead && e.lead.herd === e.herd) return e.lead;
+  for (var i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o.herd === e.herd && o.watch && !o.dead) return (e.lead = o); }
+  return null;
+}
+function herdWake(e) {
+  if (e.herd == null) return;
+  for (var i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o === e || o.herd !== e.herd || o.dead || !o.shy || o.awake) continue; if (Math.hypot(o.x - e.x, o.y - e.y) < SHY.herdR) { o.awake = true; o.fleeT = 0; o.watchT = 0; } }
+}
+function bleedTick(e, dt) {
+  var k = Math.max(0, e.bleedT / SHY.bleedT); e.bleedT -= dt; e.hp -= SHY.bleed * (0.35 + 0.65 * k) * dt;
+  var mv = e.bx == null ? 0 : Math.hypot(e.x - e.bx, e.y - e.by); e.bx = e.x; e.by = e.y; e.bloodD = (e.bloodD || 0) + mv; e.poolT = (e.poolT || 0) + dt;
+  if (e.bloodD >= SHY.trail) { e.bloodD = 0; e.poolT = 0; if (api.onBlood) api.onBlood(e.x, e.y, 0.6 + k * 0.6, false); }
+  else if (mv < dt * 4 && e.poolT > SHY.pool) { e.poolT = 0; if (api.onBlood) api.onBlood(e.x, e.y, 1 + k, true); }
+  if (e.hp <= 0) { e.hp = 0; e.bledOut = true; killEnemy(e); }
+}
 function fleeStep(e, dt, ga, gd) {
-  var fs2 = (e.cfg ? e.cfg.speed : 58) * (e.shy ? 1.7 : 1.5), away = ga + Math.PI, wkw = api.scene && api.scene.walk;
+  var fs2 = (e.cfg ? e.cfg.speed : 58) * (e.shy ? 1.7 * (1 - SHY.slow * woundOf(e)) : 1.5), away = ga + Math.PI, wkw = api.scene && api.scene.walk;   // (a wounded shy beast runs slower, by its wounds)
   e.state = 'chase'; e.t += dt; e.fleeT = (e.fleeT || 0) + dt;
   if (e.shy && wkw && (e.fleeT > (e.fleeRe || 0))) {               // a heading, chosen again every half second: the open way nearest to straight away
     var best = null, bestR = -1, k;
     for (k = 0; k < 9; k++) { var ang = away + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.42, run = 0, st; for (st = 1; st <= 6; st++) { if (!wkw(e.x + Math.cos(ang) * st * 24, e.y + Math.sin(ang) * st * 24, e)) break; run = st; } var score = run * 10 - Math.ceil(k / 2) * 3; if (score > bestR) { bestR = score; best = ang; } }
     e.fleeAng = best == null ? away : best; e.fleeRe = e.fleeT + 0.5;
   }
-  var fa = e.shy ? (e.fleeAng == null ? away : e.fleeAng) : away;
+  var fa = e.shy ? (e.fleeAng == null ? away : e.fleeAng) : away, L = e.shy ? herdLead(e) : null;
+  if (L && L.awake && L.fleeAng != null && Math.hypot(L.x - e.x, L.y - e.y) < SHY.herdR) fa = L.fleeAng + (e.herdOff || (e.herdOff = (Math.random() - 0.5) * 0.5));   // a herd runs the way its watcher runs, so it stays a herd
   e.face = e.shy ? turnToward(e.face, fa, dt * 6) : fa;
   moveCircle(e, Math.cos(e.face) * fs2 * dt, Math.sin(e.face) * fs2 * dt);
 }
@@ -3826,12 +3855,14 @@ function updateEnemies(dt) {
     if ((e.aggro || e.strolls) && e.type !== 'soldier') {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
       var gd = Math.hypot(P.x - e.x, P.y - e.y), ga = Math.atan2(P.y - e.y, P.x - e.x);
       if (!e.aggro) { /* the page decides when it wakes */ }
-      else if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) * (e.shy ? shyK(e, ga) : 1) && !P.dead) { e.awake = true; if (e.shy) { e.fleeT = 0; e.fled = 0; } }   // the light step shortens the noticing; a shy beast's own sight (shyK)
-      else if (e.awake && gd > (e.human ? 900 : e.shy ? e.aggro * 3.2 : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) { e.awake = false; if (e.shy) { e.fled = 6 + Math.random() * 4; if (e.wander) { e.wander.x0 = e.x; e.wander.y0 = e.y; e.wander.tx = null; e.wander.wait = e.fled; } } }   // a guard gives up only when you are far gone; a shy beast grazes again where it stopped
+      else if (!e.awake && gd < e.aggro * (api.mods && api.mods().stealth ? api.mods().stealth : 1) * (e.shy ? shyK(e, ga) : 1) && !P.dead) { e.awake = true; if (e.shy) { e.fleeT = 0; e.fled = 0; herdWake(e); } }   // the light step shortens the noticing; a shy beast's own sight (shyK)
+      else if (e.awake && gd > (e.human ? 900 : e.shy ? e.aggro * 3.2 * (1 - SHY.run * woundOf(e)) : e.aggro * 2.6) && (e.state === 'chase' || e.state === 'idle')) { /* (a wounded shy beast stops sooner) */ e.awake = false; if (e.shy) { e.watchT = 6 + Math.random() * 4; if (e.wander) { e.wander.x0 = e.x; e.wander.y0 = e.y; e.wander.tx = null; e.wander.wait = e.watchT; } } }   // a guard gives up only when you are far gone; a shy beast grazes again where it stopped (watchT: it was kept in e.fled until 2026-10-14, and e.fled is what the list drops a man for who has run off, so a deer that stopped running vanished from the world)
       if (e.heard > 0) { e.heard -= dt; if (!P.dead) e.awake = true; }   // it heard something (mining): it comes
+      if (e.shy && e.bleedT > 0) { bleedTick(e, dt); if (e.dead) continue; }
+      if (e.shy && e.herd != null && !e.watch) { var LD = herdLead(e); if (LD) { if (e.awake && !LD.awake && Math.hypot(LD.x - e.x, LD.y - e.y) < SHY.herdR * 0.7) { e.awake = false; e.watchT = LD.watchT || 4; if (e.wander) { e.wander.x0 = e.x; e.wander.y0 = e.y; e.wander.tx = null; e.wander.wait = e.watchT; } } if (!e.awake && e.wander && (e.herdT = (e.herdT || 0) - dt) <= 0) { e.herdT = 2 + Math.random() * 2; e.wander.x0 = LD.wander ? LD.wander.x0 : LD.x; e.wander.y0 = LD.wander ? LD.wander.y0 : LD.y; } } }   /* the herd stops when its watcher stops, and grazes round where he grazes */
       if (e.flee) {                      // a grazer bolts instead of fighting
         if (e.awake && !P.dead) fleeStep(e, dt, ga, gd);
-        else { e.state = 'idle'; if (e.shy && e.fled > 0) { e.fled -= dt; e.face = turnToward(e.face, ga, dt * 2); } }   /* (a shy one that has just run stands and watches you a while) */
+        else { e.state = 'idle'; if (e.shy && e.watchT > 0) { e.watchT -= dt; e.face = turnToward(e.face, ga, dt * 2); } }   /* (a shy one that has just run stands and watches you a while) */
         continue;
       }
       if (!e.awake) { if (e.wander && !P.dead) wanderStep(e, dt); else e.state = 'idle'; e.t += dt; continue; }

@@ -133,7 +133,7 @@ __COMBAT__
   var ANIMALS = {
     // nearN of them live within nearMax of camp: the safe first meat and leather, a short walk from the fire
     boar: { start: 4, n: 8, ground: 'grass', r: 9, dmg: 14, aggro: 75, range: 110, nearN: 1, nearMax: 900, drops: { meat: 1, leather: 1 }, young: { hp: 6, dmg: 7, size: 0.84 } },   // young: what the starter island's are (see youngOne)
-    deer: { start: 5, n: 7, ground: 'grass', r: 8, dmg: 0, aggro: 230, range: 140, nearN: 2, nearMax: 800, flee: true, shy: true, drops: { meat: 1, leather: 2 } },   /* (2026-10-13: it sees you 230 units off before it, 100 behind, further when you sprint, and runs the open way: the engine's shy beast) */
+    deer: { start: 5, n: 7, ground: 'grass', r: 8, dmg: 0, aggro: 230, range: 140, nearN: 2, nearMax: 800, flee: true, shy: true, herd: [2, 3], drops: { meat: 1, leather: 2 } },   /* (herd: two or three together, one with its head up; 2026-10-14) */   /* (2026-10-13: it sees you 230 units off before it, 100 behind, further when you sprint, and runs the open way: the engine's shy beast) */
     snake: { start: 3, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: { snakeBlood: 1 } },
     wolf: { n: 0, ground: 'grass', r: 8, dmg: 22, aggro: 220, range: 260, drops: { meat: 1, leather: 0.5 } },   // only at night, in packs of three: see nightTick
     moose: { n: 2, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, leather: 2, antler: 1 } },
@@ -1303,7 +1303,7 @@ __COMBAT__
   var TRIAL = (function () { var q; try { q = new URLSearchParams(location.search); } catch (e) { q = null; } var on = SCENE === 'ruin' && !!q, rm = on ? Math.max(1, Math.min(2, +q.get('roomy') || 1)) : 1; return { big: on && q.get('big') === '1', roomy: rm, loud: on && rm > 1 && q.get('loud') !== '0' ? rm : 1 }; })();   // loud: with bigger houses everything is heard that much further (a place spread over half again the ground was half as well guarded: nobody heard anything); &loud=0 leaves the hearing as it is   // (2026-10-13, the big trials: ?big=1 grows a great town and a great village, ?roomy=1.5 makes every building half again as big inside)
   if (SCENE === 'battle' || SCENE === 'ruin') { spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null; if (TRIAL.big) { var tk = TRIAL.roomy > 1 ? 380 : 300; spec.sizes = [120, tk, tk]; spec.big = tk; spec.biomes = [0, 0, 1]; spec.count = 3; } else if (TRIAL.roomy > 1) { spec.sizes = [120, 300]; spec.big = 300; } }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals, fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -3450,6 +3450,22 @@ __COMBAT__
   function regrowTick() {                   // each new day the stumps old enough become saplings that grow up
     Gather.regrowTick(GT, decals, day.n, function (st) { if (!st.name || !kit.PROPS[st.name]) return null; var clear = true; around(st.x, st.y, function (o) { if (Math.hypot(o.x - st.x, o.y - st.y) < 20) clear = false; }); if (!clear) return null; var p = { name: st.name === 'struckTree' ? 'birch' : st.name, x: st.x, y: st.y, s: st.s || 0.5, r: 11, v: Math.floor(Math.random() * 3), kind: 'tree', leanDir: Math.random() < 0.5 ? -1 : 1, grow: 0 }; p.max = p.hp = World.HP[st.name] * (0.7 + 0.6 * p.s); w.addProp(p); delete gone[propKey(p)]; return p; });
   }
+  /* Blood on the ground (2026-10-14): a wounded deer leaves a trail of drops and a pool where it stands (the engine's api.onBlood);
+     they are decals among the stumps, aged by bloodTick, gone after BLOOD_T seconds, never saved, at most BLOOD_MAX of them. */
+  var BLOOD_T = 240, BLOOD_MAX = 160;
+  Combat.api.onBlood = function (x, y, k, pool) {
+    var n = 0, i; for (i = decals.length - 1; i >= 0; i--) if (decals[i].k === 'blood') { n++; if (n >= BLOOD_MAX) { decals.splice(i, 1); } }
+    decals.push({ k: 'blood', x: x + (Math.random() - 0.5) * 6, y: y + (Math.random() - 0.5) * 4, r: pool ? 2.6 + k * 1.6 : 1.1 + k * 0.9, t: 0, a: Math.random() * 6.283, s: Math.floor(Math.random() * 1e6) });
+  };
+  function bloodTick(dt) { for (var i = decals.length - 1; i >= 0; i--) { var d = decals[i]; if (d.k !== 'blood') continue; d.t += dt; if (d.t > BLOOD_T) decals.splice(i, 1); } }
+  function drawBlood(c, dc) {
+    var f = Math.max(0, Math.min(1, (BLOOD_T - dc.t) / 60)), R = kit.rng(dc.s), x = dc.x, y = dc.y * K, r = dc.r, i;
+    c.save(); c.globalAlpha = 0.78 * f; c.fillStyle = '#5e1414';
+    c.beginPath(); c.ellipse(x, y, r, r * 0.62, dc.a, 0, 7); c.fill();
+    for (i = 0; i < 3; i++) { var aa = dc.a + R() * 6.283, dd = r * (0.8 + R() * 1.4), rr = r * (0.22 + R() * 0.3); c.beginPath(); c.ellipse(x + Math.cos(aa) * dd, y + Math.sin(aa) * dd * 0.62, rr, rr * 0.7, aa, 0, 7); c.fill(); }
+    c.fillStyle = '#8a2020'; c.globalAlpha = 0.5 * f; c.beginPath(); c.ellipse(x - r * 0.15, y - r * 0.12, r * 0.5, r * 0.3, dc.a, 0, 7); c.fill();
+    c.restore();
+  }
   Combat.api.onDeath = function (e) { if (e.human && e.type === 'soldier') manDrops(e); if (e.side === 1) return; if (e.human) { if (!BT.on && !e.villager) drop('silver', e.x, e.y, 1 + (Math.random() < 0.5 ? 1 : 0)); if (!e.killer) deed('kills'); return; } deed('kills'); if (inUse('wolfshunger')) { var Ph = hero(); Ph.hp = Math.min(Ph.maxHp, Ph.hp + 8); note('+8 health'); } var A = ANIMALS[e.kind] || ANIMALS.boar; for (var k in A.drops) { var q = A.drops[k], n = Math.floor(q) + (Math.random() < q - Math.floor(q) ? 1 : 0); if (n) drop(k, e.x, e.y, n); } if (e.kind) { learn(e.kind); killDeed(e.kind); } deed('kills'); };
 
   /* ---------- runes: learnt from deeds, runestones and beasts; laid on the casting cloth to work ---------- */
@@ -4418,12 +4434,19 @@ __COMBAT__
   function animalN(k, isle) { var q = w.isles[isle], ref = isle === 0 ? 60 : 230, base = isle === 0 ? (ANIMALS[k].start || 0) : ANIMALS[k].n; if (!q || !base) return base || 0; var ak = Math.pow(q.r * 2 / ref, 2); return Math.max(base, Math.round(base * ak)); }
   function spawnBoars() {                 // all the animals, by kind; wolves in pairs
     Combat.clear();
-    for (var k in ANIMALS) { placeIsle = 0; for (var i0 = 0, n0 = animalN(k, 0); i0 < n0; i0++) { var e0 = youngOne(placeAnimal(k, 260, null, false), k); if (e0) e0.isle = 0; } placeIsle = null; }   // a few on the starter island
-    for (var k in ANIMALS) for (var i = 0, n1 = animalN(k, 1); i < n1; i++) { placeIsle = 1; var e = placeAnimal(k, 260, null, false); placeIsle = null; if (e) e.isle = 1; if (e && ANIMALS[k].pair && i % 2 === 0) placeAnimal(k, 260, { x: e.wander.x0, y: e.wander.y0 }); }
+    for (var k in ANIMALS) { placeIsle = 0; for (var i0 = 0, n0 = animalN(k, 0); i0 < n0; i0++) { var e0 = youngOne(placeAnimal(k, 260, null, false), k); if (e0) { e0.isle = 0; i0 += herdOf(e0, k, n0 - i0 - 1); } } placeIsle = null; }   // a few on the starter island
+    for (var k in ANIMALS) for (var i = 0, n1 = animalN(k, 1); i < n1; i++) { placeIsle = 1; var e = placeAnimal(k, 260, null, false); if (e) { e.isle = 1; i += herdOf(e, k, n1 - i - 1); } placeIsle = null; if (e && ANIMALS[k].pair && i % 2 === 0) placeAnimal(k, 260, { x: e.wander.x0, y: e.wander.y0 }); }
     trollReset();
     if (w.mt) [['bear', 1, 3], ['moose', 1, 3], ['bear', 2, 1], ['moose', 2, 2]].forEach(function (q) {   // the mountain island: bears and moose up on the fells
       for (var i2 = 0; i2 < q[2]; i2++) for (var t2 = 0; t2 < 40; t2++) { var x2 = w.mt.bx0 + Math.random() * (w.mt.bx1 - w.mt.bx0), y2 = w.mt.by0 + Math.random() * (w.mt.by1 - w.mt.by0); if (w.levelAt(x2, y2) !== q[1] || !w.flatAt(x2, y2, 40) || !isLand(x2, y2) || Math.hypot(x2 - hero().x, y2 - hero().y) < 400) continue; var e2 = placeAnimal(q[0], 0, { x: x2, y: y2 }, false); if (e2) e2.isle = 9; break; }
     });
+  }
+  var herdN = 0;
+  function herdOf(e, k, left) {          // a herd round a beast just placed (the deer, 2026-10-14): one to two more at its home, all one herd, the first with its head up; answers how many more it placed
+    var H = ANIMALS[k].herd; if (!H || !e) return 0; var n = Math.min(left, H[0] + Math.floor(Math.random() * (H[1] - H[0] + 1)) - 1), id = ++herdN, m = 0;
+    e.herd = id; e.watch = true;
+    for (var i = 0; i < n; i++) { var o = placeAnimal(k, 260, { x: e.wander.x0 + (Math.random() - 0.5) * 60, y: e.wander.y0 + (Math.random() - 0.5) * 60 }); if (!o) break; o = youngOne(o, k); o.herd = id; o.isle = e.isle; o.wander.x0 = e.wander.x0; o.wander.y0 = e.wander.y0; m++; }
+    return m;
   }
   function keepBoars(dt) {                // a missing animal wanders back in after a while, far from the hero
     respawnT -= dt; if (respawnT > 0) return; respawnT = 4;
@@ -4531,7 +4554,7 @@ __COMBAT__
         else if (fm.tile !== 'dirt' && !fm.bare) { c.strokeStyle = 'rgba(20,14,26,0.35)'; c.lineWidth = 0.8; c.strokeRect(fx, fy, T, TS); } }
       if (B.ruin) drawDebrisAll(c, hw, hh);     // what a fallen or a burnt roof left on the floor
       // stumps where trees stood
-      for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue;
+      for (i = 0; i < decals.length; i++) { var dc = decals[i]; if (Math.abs(dc.x - cam.x) > hw + 20 || Math.abs(dc.y * K - cam.y) > hh + 20) continue; if (dc.k === 'blood') { drawBlood(c, dc); continue; }
         c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(dc.x, dc.y * K, dc.r, dc.r * 0.7, 0, 0, 7); c.fill();
         c.fillStyle = '#b98a5a'; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.78, dc.r * 0.52, 0, 0, 7); c.fill();
         c.strokeStyle = 'rgba(90,58,38,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.45, dc.r * 0.3, 0, 0, 7); c.stroke(); }
@@ -5720,7 +5743,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); heroGearSync(); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

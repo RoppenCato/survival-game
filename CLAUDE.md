@@ -1653,8 +1653,30 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   second), at 1.7 times its speed (faster than your sprint); it runs until you are 3.2 reaches off, then **stands and
   watches you** a while before it grazes again where it stopped. An arrow that hits sets it running. **Checked by script**
   on the starter island: sprinted at from the front it was off at about 230 units and kept ahead along the shore; it was
-  never still with the hero near. Not done: a wounded deer bleeding and slowing, the herd (two or three together, one with
-  its head up), the bow's draw as a held pose.
+  never still with the hero near. Not done: the bow's draw as a held pose.
+  **The wounded deer and the herd (2026-10-14, the play-through's point 5: "the deer runs when you come close, and runs
+  when hit by an arrow, so you chase it for ever: feels impossible to kill"). Every number is mine.** In the engine
+  (`SHY` in `src/combat.js`, `api.shy`): **a hit shy beast bleeds** (`e.bleedT` 40 s, `bleedTick`: 0.14 health a second at
+  first, fading as it clots, about 3.8 in all against a deer's 5, so one wood arrow (1.4) bleeds a deer out in about 37 s
+  and a second arrow on the standing deer ends it in 17; a new hit opens it again), **its wounds slow it** (its run by 0.7
+  of the share of health lost, `woundOf`) **and shorten its runs** (it stops and stands at 3.2 reaches less 0.6 of the
+  same: 568 units after one arrow, 737 unhurt), and **bleeding it leaves blood on the ground** (`api.onBlood(x, y, k,
+  pool)`: a drop every 16 units of its run, a pool every 2.5 s where it stands; the page's `onBlood` keeps them as
+  decals of kind `blood`, `drawBlood`, aged by `bloodTick`, gone after 240 s, at most 160, never saved), so a hunter
+  shoots once and follows the trail to where it stands or lies; bled out it dies as a beast dies (`killEnemy`, the
+  drops at the body, `e.bledOut`). **The herd:** `ANIMALS.deer.herd` [2, 3] places two or three at one home (`herdOf` in
+  the page: `e.herd` an id, the first `e.watch`), **the watcher keeps its head up** (`shyK`: it sees as far behind it as
+  before it, 230; a grazer 103 behind), **a herd runs when any of it runs or is struck** (`herdWake`), **runs the way its
+  watcher runs** (`herdLead`, its `fleeAng`), **stops when he stops and grazes round where he grazes** (their wander home
+  is his), so a herd stays a herd after a fright. **Found on the way: a deer that stopped running vanished from the
+  world since 2026-10-13.** Its stand-and-watch timer was kept in `e.fled`, and `e.fled` is what the enemy list drops a
+  man for who has run off; it is `e.watchT` now. That, more than anything, was the chase that never ended: the deer you
+  followed was gone at 736 units and another stood somewhere else. `tests/deer.js` (in `npm test`) checks the herd's
+  waking, the grazer's blind side, the unhurt deer against the shot one (pace, where it stops, when it dies, the blood)
+  and the second arrow. **In the pane:** a grazer stalked from 250 units behind it took the arrow where it stood, its herd
+  ran together and grazed again 120 units apart, the deer stood at 6 s and bled out at 27 s with the hero walking after
+  the drops, its meat and leather beside it. **Not done:** the start script's hunter (`ST.deer`) still chases instead of
+  stalking; a wounded deer's head is not down (no such clip); the bow's draw as a held pose.
 - **Scale (2026-10-05):** the hero walks at 84 units a second (was 118); islands default to 160 tiles (1.6 km)
   in `World.DEF`, the Sea Editor and the game.
 - **Building** on **B** through `Build`: `PIECES` in the page, at low cost, placed with the mouse (drag lays
