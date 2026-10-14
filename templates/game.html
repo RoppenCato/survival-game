@@ -1284,9 +1284,19 @@ __COMBAT__
         else { c.moveTo(t.ed.x * T, t.ed.y * TS); if (t.ed.L === 'H') c.lineTo((t.ed.x + 1) * T, t.ed.y * TS); else c.lineTo(t.ed.x * T, (t.ed.y + 1) * TS); }
         c.stroke();
       }
-      if (t.kind === 'edge') {           // the edge itself on the ground, bright, so you see which side of the tile you are laying on
-        c.shadowBlur = 0; c.fillStyle = 'rgba(' + col + ',0.55)';
-        if (t.ed.L === 'H') c.fillRect(t.ed.x * T, t.ed.y * TS - 2.2, T, 4.4); else c.fillRect(t.ed.x * T - 2.2, t.ed.y * TS, 4.4, TS);
+      if (t.kind === 'edge') {           /* the edge on the ground (2026-10-14, Robin: east and west walls were hard to see and to place; "a wide green marking
+           if you are close to a wall that can be built, sort of like flashing with a flashlight"): a wide soft band of light along the edge you are
+           near, breathing, the three other edges of that tile faintly, and the walls that already stand round the cursor marked along their foot */
+        c.shadowBlur = 0; var pul = 0.78 + 0.22 * Math.sin(performance.now() / 180), bw = 18, gd, ex = t.ed.x * T, ey = t.ed.y * TS, i2;
+        var Bw = Bl(), ktx = Math.floor(mouseW.x / T), kty = Math.floor((mouseW.y + (lvl() ? UP / K : 0)) / T);
+        c.strokeStyle = 'rgba(255,255,255,0.55)'; c.lineWidth = 1.2; c.setLineDash([3, 3]); c.beginPath();
+        for (i2 = -2; i2 <= 3; i2++) for (var j2 = -2; j2 <= 3; j2++) { var hx = ktx + i2, hy = kty + j2; if (Bw.H[Build.key(hx, hy)]) { c.moveTo(hx * T, hy * TS + 1.5); c.lineTo((hx + 1) * T, hy * TS + 1.5); } if (Bw.V[Build.key(hx, hy)]) { c.moveTo(hx * T + 1.5, hy * TS); c.lineTo(hx * T + 1.5, (hy + 1) * TS); } }
+        c.stroke(); c.setLineDash([]);
+        c.fillStyle = 'rgba(' + col + ',0.14)'; c.fillRect(ktx * T - 1, kty * TS, 2, TS); c.fillRect((ktx + 1) * T - 1, kty * TS, 2, TS); c.fillRect(ktx * T, kty * TS - 1, T, 2); c.fillRect(ktx * T, (kty + 1) * TS - 1, T, 2);   // the tile's four edges, faint
+        if (t.ed.L === 'H') { gd = c.createLinearGradient(0, ey - bw, 0, ey + bw); gd.addColorStop(0, 'rgba(' + col + ',0)'); gd.addColorStop(0.5, 'rgba(' + col + ',' + (0.62 * pul) + ')'); gd.addColorStop(1, 'rgba(' + col + ',0)'); c.fillStyle = gd; c.fillRect(ex - 3, ey - bw, T + 6, bw * 2); }
+        else { gd = c.createLinearGradient(ex - bw, 0, ex + bw, 0); gd.addColorStop(0, 'rgba(' + col + ',0)'); gd.addColorStop(0.5, 'rgba(' + col + ',' + (0.62 * pul) + ')'); gd.addColorStop(1, 'rgba(' + col + ',0)'); c.fillStyle = gd; c.fillRect(ex - bw, ey - 3, bw * 2, TS + 6); }
+        c.fillStyle = 'rgba(' + col + ',' + (0.7 * pul) + ')';
+        if (t.ed.L === 'H') c.fillRect(ex, ey - 1.6, T, 3.2); else c.fillRect(ex - 1.6, ey, 3.2, TS);
         c.fillStyle = 'rgba(255,255,255,0.9)'; var e1 = t.ed.L === 'H' ? [[t.ed.x * T, t.ed.y * TS], [(t.ed.x + 1) * T, t.ed.y * TS]] : [[t.ed.x * T, t.ed.y * TS], [t.ed.x * T, (t.ed.y + 1) * TS]];
         e1.forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 2.2, 0, 7); c.fill(); });
       }
@@ -4600,16 +4610,18 @@ __COMBAT__
       function near(wx, wy) { return Math.hypot(P.x - wx, P.y - wy) < 34; }
       function mine(ax, ay, bx2, by2) { return !L && here >= 0 && (roomInfo.at(ax, ay) === here || roomInfo.at(bx2, by2) === here); }
       function underMe(tx, ty) { return L && !!stairRoomAt(tx, ty); }    // upstairs, the ground-floor room under your feet is drawn first, under the floor
+      var bfade = P.mode === 'build' && mouseW && !inYard;   /* (2026-10-14, Robin: nearby walls fade slightly in build mode, so the ground and the edges behind them show) */
+      function fadeOf(wx, wy) { if (!bfade) return 1; var dd = Math.hypot(wx - mouseW.x, wy - mouseW.y); return dd > 110 ? 1 : dd < 60 ? 0.5 : 0.5 + 0.5 * (dd - 60) / 50; }
       var FAR = -1e8;
       Object.keys(B.H).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.H[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
         var low = mine(x, y - 1, x, y) && y * T > P.y, under = underMe(x, y - 1) || underMe(x, y);      // the walls in front of you drop low while you are inside
-        items.push({ y: under ? FAR : y * T, f: function () { if (e.breach) drawEdgeKept(ctx, 'H', x, y, e, kk, 0); else Build.drawH(ctx, x, y, e, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, BCFG); } });
+        items.push({ y: under ? FAR : y * T, f: function () { var fa = fadeOf((x + 0.5) * T, y * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'H', x, y, e, kk, 0); else Build.drawH(ctx, x, y, e, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, BCFG); if (fa < 1) ctx.restore(); } });
       });
       Object.keys(B.V).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.V[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
         var under = underMe(x - 1, y) || underMe(x, y);
-        items.push({ y: under ? FAR : (y + 1) * T - 1, f: function () { var sd = BCFG.lean ? vSide(x, y) : -1; if (e.breach) drawEdgeKept(ctx, 'V', x, y, e, kk, sd); else Build.drawV(ctx, x, y, e, (near(x * T, (y + 0.5) * T) && !e.locked) || !!e.broken, B.V[Build.key(x, y + 1)] || false, BCFG, sd); } });
+        items.push({ y: under ? FAR : (y + 1) * T - 1, f: function () { var sd = BCFG.lean ? vSide(x, y) : -1, fa = fadeOf(x * T, (y + 0.5) * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'V', x, y, e, kk, sd); else Build.drawV(ctx, x, y, e, (near(x * T, (y + 0.5) * T) && !e.locked) || !!e.broken, B.V[Build.key(x, y + 1)] || false, BCFG, sd); if (fa < 1) ctx.restore(); } });
       });
       Object.keys(B.posts).forEach(function (kk) {       // the frame: posts, and beams between neighbouring posts with no wall between
         var q = kk.split(','), x = +q[0], y = +q[1], p = B.posts[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;

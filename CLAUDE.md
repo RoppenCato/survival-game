@@ -1945,10 +1945,15 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   builds (round, a flat slab, peaked, split by a crack, tall and leaning) with lichen on one in four and moss on half, a
   formation is mirrored by its seed, taller or squatter, in its own tone, with or without its moss and a fifth stone, a
   boulder's two stones differ in size and side; the world plants a rock in **six variations** (`ROCKV` in `src/world.js`;
-  three before, and the three were near alike). The chalk rock keeps its own white. **East and west walls** (11): **the leaning
-  side face is on by default** (`Build.CFG.lean` 7; it was 0, the trial on the Destruction Editor's board: `docs/destruction-lean.jpg`), so a
-  wall that runs north to south has a face you see, lit on the west and shaded on the east, and the build cursor's ghost shows
-  it. **The island gap** (19): `spec.gap` 240 tiles (150; about 200 tiles of water now, a raft's two minutes, a boat's one;
+  three before, and the three were near alike). The chalk rock keeps its own white. **East and west walls** (11): the leaning side face was turned on by default for an hour and **taken back the same day**
+  (Robin: a wall at an angle might look odd; `Build.CFG.lean` is 0, the trial stays on the Destruction Editor's board). Instead
+  **the build cursor marks the edge** (Robin: "a wide green marking if you are close to a wall that can be built, sort of like
+  flashing with a flashlight"): in `drawGhost`, the edge the cursor is near gets a wide soft band of green light along it that
+  breathes, the three other edges of that tile show faintly, and every wall that already stands within two tiles of the
+  cursor is marked along its foot with a dotted white line, so you see where a wall would go and whether one is there.
+  **And walls near the cursor fade** (Robin, the same hour: "maybe that nearby walls fade slightly"): in build mode a wall within 110
+  units of the cursor is drawn at half strength at 60 units and less faded out to 110 (`fadeOf` in the items loop), so the ground and
+  the edges behind it show. The band is 18 units to each side of the edge, breathing between 0.56 and 0.62 alpha. **The island gap** (19): `spec.gap` 240 tiles (150; about 200 tiles of water now, a raft's two minutes, a boat's one;
   the Sea Editor's game layout and `tools/visual/worlds.js` the same; the layout key carries the gap, so older saves start
   fresh). **"You have left the island"** came only from stepping ashore by E, which is why Robin never saw it; it now comes
   whenever you stand on land of another island, not aboard, not in a cave or the yard (`raftTick`, once a second).
