@@ -66,7 +66,7 @@ must(by.seax.land < by.sword.land, 'the seax should land quicker than the sword 
 must(by.sword.land < by.axe.land, 'the sword should land quicker than the axe (' + ms(by.sword.land) + ' against ' + ms(by.axe.land) + ' ms)');
 must(by.axe.land < by.greataxe.land, 'the axe should land quicker than the Dane axe (' + ms(by.axe.land) + ' against ' + ms(by.greataxe.land) + ' ms)');
 must(by.club.land > by.sword.land, 'the club should be slower than the sword to land (' + ms(by.club.land) + ' against ' + ms(by.sword.land) + ' ms)');
-must(by.greataxe.land >= 0.5, 'the Dane axe should be a commitment: half a second at least to land (' + ms(by.greataxe.land) + ' ms)');
+must(by.greataxe.land >= 0.4 && PF.greataxe.wu + PF.greataxe.ac + PF.greataxe.rec >= 1.1, 'the Dane axe should be a commitment: 0.4 s at least to land and over 1.1 s before he is free (' + ms(by.greataxe.land) + ' ms, ' + ms(PF.greataxe.wu + PF.greataxe.ac + PF.greataxe.rec) + ' ms)');
 must(by.sword.land <= 0.3, 'the sword should be quick: within 0.3 s of the press (' + ms(by.sword.land) + ' ms)');
 must(by.seax.perMin > by.sword.perMin && by.sword.perMin > by.axe.perMin && by.axe.perMin > by.club.perMin && by.club.perMin > by.greataxe.perMin, 'held, the weapons should strike in the order seax, sword, axe, club, Dane axe: ' + rows.map(r => r.kind + ' ' + Math.round(r.perMin)).join(', '));
 must(by.spear.reach > by.sword.reach && by.spear.reach > by.greataxe.reach, 'the spear should reach furthest (' + by.spear.reach + ' against the sword ' + by.sword.reach + ', the Dane axe ' + by.greataxe.reach + ')');

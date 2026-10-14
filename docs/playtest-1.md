@@ -169,6 +169,17 @@ the rest is direction for the work to come, and most of it is big.
 6. **Night pacing** (14), **rocks that differ** (5), **the cave mouth set into the rock** (21), **the troll's size** (22),
    **the island gap** (19), **the yard as models to customise** (18): each its own smaller piece.
 
+### Built the same day (Robin: "Do 1, 2 and 3")
+
+1, 2 and 3 of the order above are built and pushed; the details are in CLAUDE.md under "After the play-through". In short:
+a light hit no longer staggers a beast, a parry stuns for a second, the red attack marks are gone (dust and a glint at the
+start of a windup instead), the hero's windups are quicker, hits stop harder, trees and bushes sway when struck, the swing
+pace is quicker, a trunk holds four logs and is as long as the tree was tall (it was twice: a bug in its length); trees are
+three times the size; the steading is further off, the broken plank house holds the bed and must be mended before its roof
+comes back, the Building board starts with six pieces and opens after the first night under a roof, Brokk speaks differently,
+and speech is a board at the foot of the screen. Not done from the list: the bars and Q, K against X, the deer, the night's
+pacing, rocks that differ, the cave mouth, the troll, the island gap, the yard.
+
 ### Questions for Robin
 
 - The crafting that "feels off" (10, 23): is it the board (a list and a page), the queue and the Ready strip, the time a

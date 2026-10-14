@@ -1874,6 +1874,45 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   hirdmen rowing; "You have left the island" not seen and the islands too close; K and X confused; the cave mouth pasted on;
   **the troll bigger, scarier, not met by stumbling on him**. From the sound studio: **the ambient sound and the waterfall
   go quiet when the window loses focus, as the music does** (built: `document.hasFocus()` in both).
+- **After the play-through, the first three of its order built (2026-10-14; Robin: "Do 1, 2 and 3"). Nothing of it has been
+  felt by Robin; the numbers are mine.**
+  **1. The feel of a blow and a chop.** In `src/combat.js`: **a light hit no longer staggers a beast** (it flashes, squashes and
+  is pushed, and goes on; an idle one turns to chase; only a heavy blow staggers, 0.34 s), as Robin found they staggered too
+  easily; the men keep their flinch rules (the duel table rests on them). **A parry stuns** (`stun(e, MEN.parryStun)` 1.0 s:
+  the state `stunned`, open to anything, a ring, sparks and the stagger sound; the soldier's states know it) for beasts
+  and men alike, where a parry gave a 1.3 to 1.5 s daze that showed nothing. **The red attack marks are gone** (the beasts'
+  red line, the men's line and wedge, the arc attack's wedge, which is `if (false &&` now): the tell is the body's drawn-back
+  clip and **`tell(e)`** at the start of every windup, dust under the feet and a glint before the attacker; the Combat
+  Arena's "Show the blows" keeps the geometry for tuning. **Quicker windups** for the hero (sword 0.13, axe 0.17, club 0.2,
+  seax 0.08, spear 0.15, Dane axe 0.42; `STEPS` 0.13 and the last 0.2), the recoveries as they were, and the Snappy preset's
+  hit pause and push a touch bigger (`fz` 0.7, `pf` 0.65, `kb` 1.0): the weight is in the stop, the answer to the press is
+  quick. With the hero quicker the men are at **`MEN.hpK` 0.8** (0.75 yesterday): the ladder at 100 fights gives the tapper 71%
+  against one man, the careful bot 100%, against two axes 64% (the skilled 87%), the careful hero with four friends against
+  five 44 to 62%, five against five a coin. In `src/gather.js`: **the swing pace 1.5** (was 2), **a shake you can see** (a tree
+  rocks about its foot and sways, a bush sways 5 units, a rock 1.4; 0.5 s), **four logs a trunk** (`logsPerTrunk`, eight
+  blows), chips flying from the cut end, the bush shakes when its berries are picked, and a trunk is struck anywhere along
+  its length (its `r` is half its length while it is offered). `tests/blows.js` holds (the Dane axe's rule is 0.4 s to land and
+  over 1.1 s to be free again).
+  **2. The trees.** Every tree is **baked three times its prop** (`World.TREE_BAKE`: oak, pine, birch, beech, ash and the
+  struck tree 3, the apple 2.5, the mountain birch 1.8; `bakeProp`'s `sx`/`sy`, so it is sharp), the planted scale and the
+  trunk's collision radius untouched: a pine is about 107 units tall now, nearly three heroes (it was 36, less than one),
+  an oak 115. Everything that reads the sprite grows with it. **The trunk was twice the tree because `treeLen` took the
+  sprite's top offset for its height** (a pine's box top lies far above the tree); it is 0.8 of the drawn height now, so a
+  felled birch of 105 units lies 76 long with four logs in it, and **its thickness is by tree** (`TRUNK_W` in `src/gather.js`:
+  oak 1.2 to birch 0.7 of the old radius; scaled by the bake it was fatter than the hero is tall).
+  **3. The beginning.** **The steading lies 1500 to 2400 units from the wreck** (`villageSite`; it was 900 to 1600; 1939 in
+  the pane's world). **The plank house by the well is the first home:** its bed is inside it (the whole wattle hut has a
+  table and the crate instead), five of its wall pieces are gone and so is its roof, so E at the bed says "No roof over it"
+  until the plank walls are mended and the roof comes back by itself. **The Building board starts with the plank house's
+  own pieces** (plank wall, door, window, plank floor, thatch, a campfire) and **the first night slept under a roof opens the
+  rest** (twenty-five pieces with `key: 'slept'`; `noteSeen('slept')` on waking roofed: "Something new to build"); the keys of
+  2026-10-08 (leather, honey, copper, mason, charcoal, iron, silver, snake blood) stand over it. **Brokk's lines are
+  rewritten** (`brokkLines`: he speaks as a man and names what the house still lacks in the waiting state, one line a thing),
+  and **what anyone says is shown on a speech board** at the foot of the screen (`drawSpeech`, in the boards under the notes: a
+  parchment in a wooden frame with the speaker's name over the line, the nearest speaker at a time, fading as the line's
+  time runs out) **in place of the bubble** (`bubble` draws only the name over the head when you are near, and registers
+  the speaker). The notes themselves are as they were: Robin wants another way for text to appear and did not say which;
+  that is still open, with the crafting that "feels off".
 - **The fish weir (2026-10-12, Robin's pick of the finds for the starter island):** `weirPlace()` (every start, after
   `villageClear`) walks out from the island's middle along every bearing to the shore and takes shallow water off a beach 320 to
   1500 units from the wreck, by choice nearest the way from the wreck to the steading: a `fishWeir` (stakes and wattle) in the

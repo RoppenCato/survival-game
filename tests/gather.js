@@ -33,7 +33,7 @@ const Gs=G0.cfg({spotLook:4,crackLook:4});o=tree(300,300);
 check('sunny side: the sweet side is the left, and never wanders',G0.spot(Gs,o,0).side===-1&&G0.spot(Gs,o,500).side===-1);
 check('sunny side: a rock’s sweet facet is the left',Math.abs(G0.crackAng(Gs,rock)-Math.PI)<1e-9);
 check('with cracks on a rock has no glint spot of its own',G0.spot(G,rock,0)===null);
-check('Robin’s settings are the defaults (logsPerTrunk 2, pace 2)',G.logsPerTrunk===2&&G.pace===2);
+check('the defaults (logsPerTrunk 4, pace 1.5 since 2026-10-14; Robin’s were 2 and 2)',G.logsPerTrunk===4&&G.pace===1.5);
 // the fall: the trunk fells the tree in its line, hurts the hero there, and lies as a trunk
 const spawned=[],felled=[],hurt=[],drops=[];const ev={spawn:function(t){spawned.push(t);},fell:function(q){felled.push(q);},hurt:function(d){hurt.push(d);},drop:function(k,x,y,n){drops.push([k,n]);},chip:function(){},sfx:function(){},decal:function(){}};
 o=tree(300,300);o.hp=0;o.dying=0;o.leanDir=1;const len=G0.treeLen(s,o);const near=[o,tree(300+len*0.6,305),tree(300-40,300),tree(300+len*0.5,360)];

@@ -14,6 +14,7 @@ var T = 32, TS = 24, K = 0.75, CT = 16;
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
+var TREE_BAKE = { oak: 3, pine: 3, birch: 3, beech: 3, ash: 3, apple: 2.5, struckTree: 3, dwarfBirch: 1.8 };   // how much bigger each tree is baked than its prop (2026-10-14)
 var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
 var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
 // the home camp: prop, offset from the jetty root, collision radius
@@ -587,7 +588,11 @@ function make(kit, opts) {
   w.sprite = function (name, v) {
     var im = IMAGES[name];
     if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [] }; return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
-    var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); sprites[kk] = kit.bakeProp(name, 3 + v * 7); } return sprites[kk]; };
+    var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); var tb = TREE_BAKE[name] || 1; sprites[kk] = kit.bakeProp(name, 3 + v * 7, tb !== 1 ? { sx: tb, sy: tb } : null); sprites[kk].bake = tb; } return sprites[kk]; };
+  /* The trees are baked bigger (2026-10-14, Robin: "trees are way too small, they should probably be three times the size"): a tree
+     kind in TREE_BAKE is drawn through bakeProp's sx/sy at that size, so it stays sharp, and everything that reads the sprite's
+     bounds (the fall, the trunk's length, the shadows, the fade when you stand behind it) grows with it; the planted scale (s)
+     and the trunk's collision radius are as they were. A pine is about 125 units tall now, three heroes and a bit; it was 43, barely one. */
   function tile(t, gx, gy) {
     if (!tiles[t]) { kit.setup(BASE); tiles[t] = []; for (var m = 0; m < kit.TILES[t].n; m++) tiles[t].push(kit.bakeTile(t, m)); }
     return tiles[t][Math.floor(hash(gx, gy, 5) * tiles[t].length) % tiles[t].length];

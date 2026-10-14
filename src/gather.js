@@ -14,10 +14,10 @@ var Gather = (function () {
 'use strict';
 var K = 0.75;
 var DEF = {
-  sweetSpot: 1, spotBonus: 2, spotWander: 1, spotLook: 5, crackLook: 4, pace: 2,
+  sweetSpot: 1, spotBonus: 2, spotWander: 1, spotLook: 5, crackLook: 4, pace: 1.5,   // (pace 1.5 since 2026-10-14, was 2: Robin found the chop slow and low in impact)
   rhythm: 1, rhythmAfter: 0.45, rhythmWindow: 0.3, rhythmBonus: 1.5,
   fallFells: 1, fallReach: 1, fallHurts: 1, fallDamage: 12,
-  trunks: 1, logsPerTrunk: 2, chopsPerLog: 2,
+  trunks: 1, logsPerTrunk: 4, chopsPerLog: 2,   // (four logs a trunk since 2026-10-14, with the trees grown: eight blows that each shake it and roll a log out every second one)
   nests: 1, nestChance: 0.15,
   regrow: 1, regrowDays: 3,
   cracks: 1, crackBonus: 2.5,
@@ -48,7 +48,7 @@ function crackAng(G, o) { return G && G.crackLook === 4 ? LIT_ANG : hash(Math.ro
 function crackHit(G, o, hero) { if (!G.cracks || o.kind !== 'stone') return false; var ca = crackAng(G, o), a = Math.atan2((hero.y - o.y) * K, hero.x - o.x), d = Math.atan2(Math.sin(a - ca), Math.cos(a - ca)); return Math.abs(d) < 0.75; }
 function rhythmHit(G, o, t) { if (!G.rhythm || o.lastHit == null) return false; var dt = t - o.lastHit; return dt >= G.rhythmAfter && dt <= G.rhythmAfter + G.rhythmWindow; }
 var TREE_WOOD = { oak: 14, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 }, BUSH_FIBER = 3, BERRIES = 3;   // a lightning-struck tree gives charcoal, no trunk
-function treeLen(s, o) { return -s.t * o.s * 0.8; }   // how far along the ground the trunk reaches when it lies
+function treeLen(s, o) { return s.h * (o.s || 1) * 0.8; }   // how far along the ground the trunk reaches when it lies: 0.8 of the tree's drawn height (2026-10-14: it took the sprite's top offset for its height, which for a pine is more than twice the tree, and Robin saw trunks twice the tree)
 // One blow. ctx: { power, right, hero, t, s (sprite bounds), ev }. Returns what happened: { mult, spot, rhythm, crack, felled }.
 function hit(G, o, ctx) {
   var ev = ctx.ev, out = { mult: 1, spot: false, rhythm: false, crack: false, felled: false, broke: false }, hero = ctx.hero, t = ctx.t;
@@ -58,7 +58,7 @@ function hit(G, o, ctx) {
   if (crackHit(G, o, hero)) { out.mult *= G.crackBonus; out.crack = true; }
   o.lastHit = t;
   if (o.kind === 'tree' && G.spotLook === 5 && !o.notch) { o.notch = hero.x < o.x ? -1 : 1; out.notched = true; }
-  var dmg = ctx.power * out.mult; o.hp -= dmg; o.shake = 0.3; o.leanDir = o.x >= hero.x ? 1 : -1; out.dealt = dmg;
+  var dmg = ctx.power * out.mult; o.hp -= dmg; o.shake = o.kind === 'stone' ? 0.3 : 0.5; o.leanDir = o.x >= hero.x ? 1 : -1; out.dealt = dmg;   /* (the shake: 0.5 s for a tree or a bush since 2026-10-14) */
   if (ev && ev.chip && G.chips) {
     var n = Math.round((ctx.right ? 4 : 2) * (out.spot || out.crack ? 2 : 1) * G.chips), top = ctx.s ? o.y * K + ctx.s.t * o.s : o.y * K - 30;
     if (o.kind === 'tree') { ev.chip(o.x, o.y, (o.y * K - top) * 0.6, '#6fb84f', 4, 50); ev.chip(o.x, o.y, 8, '#d9b37a', n, 70); }
@@ -83,7 +83,7 @@ function tick(G, o, dt, ctx) {
     if (ev.sfx) ev.sfx('fall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
     if (CHAR_TREE[o.name]) { if (ev.drop) ev.drop('charcoal', o.x + dir * len * 0.6, o.y, CHAR_TREE[o.name]); }
-    else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
+    else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, bake: s ? s.bake : 1, s: o.s, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
     else if (ev.drop) ev.drop('wood', o.x + dir * len * 0.6, o.y, wood);
     if (G.nests && !CHAR_TREE[o.name] && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
     // what lies in the line it fell along: trees come down after it, the hero is struck
@@ -96,8 +96,8 @@ function tick(G, o, dt, ctx) {
 // Chopping a trunk: every chopsPerLog blows a log rolls out at its far end and it shortens; the last log takes it away.
 function chopTrunk(G, o, ctx) {
   var ev = ctx.ev || {}, out = { mult: 1, rhythm: rhythmHit(G, o, ctx.t), log: false, gone: false };
-  o.lastHit = ctx.t; o.shake = 0.25; o.chops += out.rhythm ? 2 : 1;
-  if (ev.chip) ev.chip(o.x, o.y, 6, '#d9b37a', 4, 70);
+  o.lastHit = ctx.t; o.shake = 0.4; o.chops += out.rhythm ? 2 : 1;
+  if (ev.chip) ev.chip(o.x - o.dir * o.len * 0.3, o.y, 10, '#d9b37a', 5, 90);   /* (chips fly from the cut end; more of them since 2026-10-14) */
   if (o.chops >= G.chopsPerLog) { o.chops = 0; o.logs--; out.log = true; if (ev.drop) ev.drop('wood', o.x + o.dir * o.len * 0.5, o.y + 2, o.woodEach); if (ev.sfx) ev.sfx('fall'); o.len *= Math.max(0.35, (o.logs) / (o.logs + 1)); if (o.logs <= 0) { out.gone = true; o.dying = 0; } }
   return out;
 }
@@ -111,7 +111,7 @@ function regrowTick(G, stumps, dayN, plant) {
 }
 /* drawing */
 function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
-  var bx = o.x, byy = o.y * K, shk = o.shake > 0 ? Math.sin(o.shake * 70) * 1.8 * Math.min(1, o.shake * 4) : 0, dmg = o.kind ? 1 - o.hp / o.max : 0;
+  var bx = o.x, byy = o.y * K, shk = o.shake > 0 ? Math.sin(o.shake * 44) * (o.kind === 'stone' ? 1.4 : o.kind === 'tree' ? 3.2 : 5) * Math.min(1, o.shake * 3) : 0, dmg = o.kind ? 1 - o.hp / o.max : 0;   /* (2026-10-14, Robin: a struck tree or bush was static and stiff: the shake is a visible sway now, a tree's a rock of the whole crown about its foot) */
   var behind = o.kind === 'tree' && P && P.y < o.y && P.y * K > py + h * 0.25 && Math.abs(P.x - o.x) < w * 0.3;
   var grow = o.grow != null ? 0.3 + 0.7 * Math.min(1, o.grow) : 1;
   c.save();
@@ -120,7 +120,7 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
     var u = o.dying != null ? Math.min(1, o.dying / 0.95) : 0, ang = (o.leanDir || 1) * (Math.max(0, dmg) * 0.1 + u * u * 1.5), spL = G && G.spotLook === 3 && o.dying == null ? spot(G, o, t) : null;
     if (spL) ang += spL.side * 0.07;
     if (o.dying != null && o.dying > 0.95) c.globalAlpha *= Math.max(0, 1 - (o.dying - 0.95) / 0.35);
-    c.translate(bx + shk, byy); c.rotate(ang); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
+    c.translate(bx + shk * 0.4, byy); c.rotate(ang + shk * 0.011); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
     c.drawImage(s.cv, px, py, w, h);
   } else if (o.kind === 'stone') {
     var sh = o.dying != null ? Math.max(0, 1 - o.dying / 0.4) : 1, sc = (1 - 0.18 * dmg) * sh;
@@ -163,8 +163,9 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
 }
 var BARK = { oak: ['#7a5636', '#4a3220', '#c9a070'], pine: ['#6b4a3a', '#3f2a1c', '#c99a70'], birch: ['#e8e4dc', '#5a5650', '#d9c9a6'] };
 // a felled trunk lying along the ground, its cut end toward where it fell from; shorter as the logs come off
+var TRUNK_W = { oak: 1.2, beech: 1.15, pine: 0.9, ash: 0.9, apple: 0.8, birch: 0.7, struckTree: 1, dwarfBirch: 0.6 };   /* how thick a felled trunk lies, by tree (2026-10-14: a trunk scaled by the tree's bake was fatter than the hero is tall) */
 function drawTrunk(c, o) {
-  var col = BARK[o.tree] || BARK.oak, y = o.y * K, len = o.len, x0 = o.x - o.dir * len * 0.5, x1 = o.x + o.dir * len * 0.5, r = 5.5 * (o.s || 0.5) / 0.5, shk = o.shake > 0 ? Math.sin(o.shake * 70) * 1.5 : 0;
+  var col = BARK[o.tree] || BARK.oak, y = o.y * K, len = o.len, x0 = o.x - o.dir * len * 0.5, x1 = o.x + o.dir * len * 0.5, r = 5.5 * (o.s || 0.5) / 0.5 * (TRUNK_W[o.tree] || 1), shk = o.shake > 0 ? Math.sin(o.shake * 50) * 2.4 * Math.min(1, o.shake * 3) : 0;   /* (the thickness by TRUNK_W, never by the bake) */
   if (o.dying != null) c.globalAlpha *= Math.max(0, 1 - o.dying / 0.3);
   c.save(); c.translate(0, shk); c.lineCap = 'round';
   c.fillStyle = 'rgba(20,40,20,0.22)'; c.beginPath(); c.ellipse(o.x, y + 2, len * 0.5 + 3, r * 0.7, 0, 0, 7); c.fill();

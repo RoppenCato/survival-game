@@ -4,7 +4,7 @@ var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
 var lib = null;
 var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy' };
 var WPRE = {
-  snappy: { fz: 0.55, pf: 0.6, kb: 0.9, hs: 0.6, hd: 0.06, kd: 0.5 },
+  snappy: { fz: 0.7, pf: 0.65, kb: 1.0, hs: 0.6, hd: 0.06, kd: 0.5 },
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
@@ -48,9 +48,9 @@ api.profiles = function () { return PROFILES; }; api.parryWindow = function () {
 // now about 0.55 s from the press to the carry (it was 0.26), an axe 0.68, a club 0.78, the Dane axe 1.2; the windup is what
 // grew most, so a blow is seen coming. The men's own windup is set apart (MEN.wu, wuK) so they did not slow with it.
 var STEPS = [
-  { wu: 0.16, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
-  { wu: 0.16, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
-  { wu: 0.24, ac: 0.14, rec: 0.44, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
+  { wu: 0.13, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
+  { wu: 0.13, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
+  { wu: 0.2, ac: 0.14, rec: 0.44, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
 ];
 // How each melee weapon fights (2026-10-06, docs/weapons.md): the arc and reach of a hit, its pace (windup, active,
 // recover), damage as a share of the thing's own, knockback, stagger, the step into it, how many hits chain (the last is
@@ -60,12 +60,12 @@ var STEPS = [
 var PROFILES = {
   // wt (2026-10-13, hit weight per weapon): what a hit of it feels like: the pause on both, the ring, the number's size and the
   // sound follow it; 1 is the sword. The knockback (kb) and the stagger (stag) were already each weapon's own.
-  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.16, ac: 0.11, rec: 0.28, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5, wt: 1 },
-  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.2, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true, wt: 1.25 },
-  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.26, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9, wt: 1.5 },
-  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.1, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
-  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.18, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
-  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.5, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 }   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
+  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.13, ac: 0.11, rec: 0.28, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5, wt: 1 },
+  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.17, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true, wt: 1.25 },
+  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.2, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9, wt: 1.5 },
+  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.08, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
+  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.15, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.42, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 }   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
@@ -361,7 +361,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
     else if (e.poiseT > 0 && !heavy && !broke) { /* he has just flinched: this one he takes on his feet */ }
     else { e.state = 'stagger'; e.t = 0; e.dur = heavy || broke ? 0.36 : 0.16; e.sw = null; e.swung = false; e.poiseT = 0.9; }
     if (!killing) heartOf(e);
-  } else if (e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = heavy ? 0.34 : 0.14; }   // a light hit is only a flinch: sword-tapping cannot lock an animal in place
+  } else if (heavy && e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = 0.34; }   // a heavy blow staggers a beast; a light one does not stop it at all (2026-10-14, Robin: they staggered too easily; before, a light hit was a 0.14 s flinch): the flash, the squash and the push are its whole answer
+  else if (!heavy && (e.state === 'idle' || e.state === 'wander')) { e.state = 'chase'; e.t = 0; }
   if (killing) killEnemy(e);
 }
 function killEnemy(e, src) {
@@ -375,6 +376,14 @@ function killEnemy(e, src) {
   if (e.type === 'brute') num(e.x, e.y - 50, (e.name || 'Brute') + ' DOWN', '#ffe27a');
 }
 function daze(e, dur) { e.state = 'recover'; e.t = 0; e.dur = dur; }
+function tell(e) {                     // the start of a windup, shown in the world (2026-10-14, the red line gone): dust under the feet and a glint before the attacker
+  if (!S.juice) return; dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, '#fff3b0', 55);
+}
+function stun(e, dur) {                     // a parry's stun (2026-10-14, Robin: it should stun the mob for about a second): he stands dazed, open to anything, stars over his head
+  e.state = 'stunned'; e.t = 0; e.dur = dur; e.sw = null; e.swung = false; e.hitDone = true; e.stunT = dur;
+  if (S.juice) { ring(e.x, e.y, 0, 22, 0.25, '255,230,140', false, 2.4); spark(e.x, e.y - e.r * 2, 6, '#ffe27a', 90); }
+  sfx('stagger', 0, e);
+}
 
 /* ---------- player ---------- */
 function startAttack() {
@@ -673,7 +682,7 @@ function beastAI(e, dt, d, ang) {
       else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt, Math.sin(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt); }
       var canGo = e.cd <= 0 && !P.dead && aligned && (!A.pack || packT <= 0);
       if (canGo && (d < near || (kind === 'charge' && d < (A.from || 150)) || (A.ring && d < ring + 14))) {
-        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e);
+        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e); tell(e);
         if (A.pack) packT = (A.windup || cf.windup) + (A.dur || 0.22) + 1.0;   // the next of the pack waits its turn
       }
       break;
@@ -687,7 +696,7 @@ function beastAI(e, dt, d, ang) {
         if (!e.hitDone && e.t >= e.dur * (A.hitAt || 0.4)) {
           e.hitDone = true;
           var dd = Math.hypot(P.x - e.x, P.y - e.y), da = Math.abs(wrap(Math.atan2(P.y - e.y, P.x - e.x) - e.dirLock));
-          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') daze(e, 1.5); }
+          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') stun(e, MEN.parryStun); }
           else dust(e.x + Math.cos(e.dirLock) * e.r, e.y + Math.sin(e.dirLock) * e.r, 3);
         }
       } else {
@@ -697,7 +706,7 @@ function beastAI(e, dt, d, ang) {
         if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
           e.hitDone = true;
           var r = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e);
-          if (r === 'parry') daze(e, 1.5);
+          if (r === 'parry') stun(e, MEN.parryStun);
           else if (r === 'hit' && A.venom) P.venom = { t: A.venom, dmg: A.venomDmg || 2 };
           if (kind === 'charge' && r !== 'parry') { P.kx += Math.cos(e.dirLock) * 80; P.ky += Math.sin(e.dirLock) * 80; }   // bowled along
         }
@@ -706,6 +715,7 @@ function beastAI(e, dt, d, ang) {
       break;
     case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = A.cd || 1.1; } break;
     case 'stagger': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = Math.min(e.cd, 0.6); } break;   // a flinch does not reset the wait before its next attack
+    case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.5; } break;   // a parry's stun (beasts that are not brutes)
   }
 }
 function shooterAI(e, dt, d, ang) {
@@ -713,7 +723,7 @@ function shooterAI(e, dt, d, ang) {
   switch (e.state) {
     case 'idle':
       e.aim = turnToward(e.aim, ang, dt * 2.2);
-      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele', 0, e); }
+      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele', 0, e); tell(e); }
       break;
     case 'windup':
       e.aim = e.dirLock;
@@ -741,7 +751,7 @@ function bruteAI(e, dt, d, ang) {
       if (e.cd <= 0 && d < 96 && !P.dead) {
         var r = Math.random();
         e.attack = r < 0.4 ? 'lunge' : (r < 0.75 ? 'chain' : 'spin'); e.chain = e.attack === 'chain' ? 3 : 1;
-        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e);
+        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e); tell(e);
       }
       break;
     case 'windup':
@@ -762,7 +772,7 @@ function bruteAI(e, dt, d, ang) {
       }
       if (e.state === 'lunge' && e.t >= e.dur) {
         e.chain--;
-        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele', 0, e); }
+        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele', 0, e); tell(e); }
         else { e.state = 'recover'; e.t = 0; e.dur = 1.0; }
       }
       break;
@@ -790,7 +800,7 @@ var MEN = {
   speed: 60, run: 94, back: 50, strafe: 24, turn: 8,
   wu: 0.12, wuK: 2.0,                 // a blow's windup: wu + the weapon's own times wuK (retuned 2026-10-13 when the hero's blows slowed, to the same seconds as before: a sword 0.44, a Dane axe 0.92)
   ac: 0.07, acK: 1.4, rec: 0.3, recK: 2.0, hitAt: 0.45,
-  hp: 30, hpK: 0.75,                  // a man's health unless the page says (hp), and a scale on the whole of the men's world (hpK: every man's health, their blows on each other, a bowman's arrow on a man, what a roof does to him), so that only the hero's blows gain on them: the lever of rung 3 (2026-10-13)
+  hp: 30, hpK: 0.8,                   // a man's health unless the page says (hp), and a scale on the whole of the men's world (hpK: every man's health, their blows on each other, a bowman's arrow on a man, what a roof does to him), so that only the hero's blows gain on them: the lever of rung 3 (2026-10-13)
   dmg: 12,                            // a blow at strength 1 from a weapon whose kind says 1 (the hero's scale: he has 100)
   toMen: 0.15,                        // the same blow landing on a man (their health is on the beasts' scale)
   wdmg: { sword: 1, axe: 1, club: 0.9, seax: 0.7, spear: 1.1, greataxe: 1.6 },
@@ -808,7 +818,8 @@ var MEN = {
   // one; apart, drift: the middle of a fight keeps this far from the men of other fights, moving at this pace to get there; homeR: a
   // householder (o.homeR on the man) fights nobody further than this from his own door.
   onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, way: 'duel', hang: [105, 165], apart: 72, drift: 26, homeR: 190,
-  turnT: 2.5, turnK: 120,            // a man struck by a man who is not his foe turns on him for turnT seconds (turnK: how strongly, against distance in units): the relief of a beset man (2026-10-14)   // (the first five and hang are a WAY: see WAYS)
+  turnT: 2.5, turnK: 120,            // a man struck by a man who is not his foe turns on him for turnT seconds (turnK: how strongly, against distance in units): the relief of a beset man (2026-10-14)
+  parryStun: 1.0,                    // a parried man or beast stands stunned this long (2026-10-14, Robin: a parry should stun for about a second)   // (the first five and hang are a WAY: see WAYS)
   sight: 340, aggro: 150, leash: 250, lie: 90,
   noise: { blow: 240, shout: 420, cry: 360, din: 0.24, far: 1000 }, wake: [0.5, 1.6],   // how far a blow, a man's shout and a death cry are heard by a town's men, and how long a man at his post takes to be on his way
   // A man with a bow (2026-10-13, rung 5): he stands off and shoots at whoever he has a clear line to, never with one of his own
@@ -1015,7 +1026,7 @@ function blowOf(e, second, quick) {
 }
 function beginBlow(e, T, ang, second, quick) {
   e.sw = blowOf(e, second, quick); e.swingN++; e.state = 'windup'; e.t = 0; e.dur = e.sw.wu; e.dirLock = ang; e.face = ang; e.hitDone = false; e.swung = false; e.guard = 0; e.blocked = 0;
-  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e);
+  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e); tell(e);
 }
 function din() { return Math.min(MEN.noise.far / MEN.noise.blow, 1 + MEN.noise.din * Math.max(0, (W.fighting || 0) - 2)); }   // two men at it are heard a blow's distance off; a battle of twenty across a town (the town's answer builds as the fight does)
 function noise(x, y, r, soft, except) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
@@ -1057,7 +1068,7 @@ function strike(e) {
   L.forEach(function (h) {
     if (h.F === P) {
       hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
-      if (r === 'parry') { daze(e, 1.3); e.sw = null; e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
+      if (r === 'parry') { stun(e, MEN.parryStun); e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
     } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen * MEN.hpK, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
   });
 }
@@ -1216,9 +1227,9 @@ function soldierAI(e, dt) {
   e.retT -= dt; T = e.tgt;
   if (e.calledT > 0) { e.calledT -= dt; if (e.state !== 'windup' && e.state !== 'lunge') { T = e.tgt = null; e.retT = e.calledT; } }
   if (!(e.calledT > 0) && (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && P.hidden) || e.retT <= 0)) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; }
-  if (T && (e.side || 0) === 0 && e.post && W.t - (e.shoutAt == null ? -99 : e.shoutAt) > 25) { e.shoutAt = W.t; noise(e.x, e.y, MEN.noise.shout); sfx('tele', 0, e); if (api.onShout) api.onShout(e); }   // a town's man who sees you: his shout carries
+  if (T && (e.side || 0) === 0 && e.post && W.t - (e.shoutAt == null ? -99 : e.shoutAt) > 25) { e.shoutAt = W.t; noise(e.x, e.y, MEN.noise.shout); sfx('tele', 0, e); tell(e); if (api.onShout) api.onShout(e); }   // a town's man who sees you: his shout carries
   if (!T) {                                 // nobody to fight
-    if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
+    if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'stunned' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
     e.state = 'idle'; e.guard = 0; e.sw = null; if (e.close) sidearm(e, false);
     if (e.side === 1) { if (e.order === 'storm' && e.stormAt) stormStep(e, dt); else followStep(e, dt); }
     else if (e.waitOn && !e.waitOn.dead && !(e.waitOn !== P && (e.waitOn.down || e.waitOn.out || e.waitOn.fled))) hangStep(e, dt, e.waitOn);
@@ -1546,16 +1557,9 @@ function drawTelegraphs(c) {
         c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 78, (e.y + Math.sin(e.dirLock) * 78) * K); c.stroke();
       }
     }
-    if (e.type === 'beast' && e.state === 'windup') {
-      c.strokeStyle = 'rgba(255,70,60,' + (0.25 + 0.35 * (e.t / e.dur)) + ')'; c.lineWidth = 4; c.lineCap = 'round';
-      c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 52, (e.y + Math.sin(e.dirLock) * 52) * K); c.stroke();
-    }
-    if (e.type === 'soldier' && e.state === 'windup' && e.tgt === P && e.sw) {
-      var kw = e.t / e.dur, rw = e.sw.reach + 6;
-      if (e.sw.arc > 1.4) { c.save(); c.translate(e.x, e.y * K); c.scale(1, K); c.fillStyle = 'rgba(220,40,30,' + (0.05 + 0.13 * kw) + ')'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, rw, e.dirLock - e.sw.arc / 2, e.dirLock + e.sw.arc / 2); c.closePath(); c.fill(); c.restore(); }
-      c.strokeStyle = 'rgba(255,70,60,' + (0.2 + 0.4 * kw) + ')'; c.lineWidth = 3.4; c.lineCap = 'round';
-      c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * rw, (e.y + Math.sin(e.dirLock) * rw) * K); c.stroke();
-    }
+    /* (2026-10-14, Robin: the red line that marked a coming blow was not natural; gone, for beasts and men. The tell is the
+       body now: the drawn-back clip, a glint of the weapon and dust at the feet as the windup begins (in beastAI and soldierAI),
+       and the Combat Arena's "Show the blows" overlay keeps the geometry for tuning.) */
     if (e.type === 'shooter' && e.state === 'windup') {
       c.strokeStyle = 'rgba(255,70,60,0.55)'; c.lineWidth = 1.6; c.setLineDash([4, 3]); c.lineDashOffset = -e.t * 30;
       c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 300, (e.y + Math.sin(e.dirLock) * 300) * K); c.stroke(); c.setLineDash([]);
@@ -1920,7 +1924,7 @@ function drawEnemy(c, e) {
   var fn = e.fig ? drawHuman : e.creature ? drawCreature : drawPlain;
   if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
   var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0, A = e.cfg && e.cfg.atk;
-  if (A && A.kind === 'arc' && (e.state === 'windup' || (e.state === 'lunge' && !e.hitDone))) {   // the blow to come, marked on the ground
+  if (false && A && A.kind === 'arc' && (e.state === 'windup' || (e.state === 'lunge' && !e.hitDone))) {   // (the red wedge of an arc attack: off since 2026-10-14, Robin; the clip is the tell)
     var k2 = e.state === 'windup' ? e.t / e.dur : 1, R2 = e.r + (A.reach || 20) + 6, a0 = e.dirLock - (A.arc || 1.6) / 2, a1 = e.dirLock + (A.arc || 1.6) / 2;
     c.save(); c.translate(e.x, e.y * K); c.scale(1, K);
     c.fillStyle = 'rgba(220,40,30,' + (0.08 + 0.16 * k2) + ')'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R2, a0, a1); c.closePath(); c.fill();

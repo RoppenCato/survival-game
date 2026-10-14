@@ -4323,6 +4323,7 @@ var T = 32, TS = 24, K = 0.75, CT = 16;
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
+var TREE_BAKE = { oak: 3, pine: 3, birch: 3, beech: 3, ash: 3, apple: 2.5, struckTree: 3, dwarfBirch: 1.8 };   // how much bigger each tree is baked than its prop (2026-10-14)
 var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
 var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
 // the home camp: prop, offset from the jetty root, collision radius
@@ -4896,7 +4897,11 @@ function make(kit, opts) {
   w.sprite = function (name, v) {
     var im = IMAGES[name];
     if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [] }; return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
-    var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); sprites[kk] = kit.bakeProp(name, 3 + v * 7); } return sprites[kk]; };
+    var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); var tb = TREE_BAKE[name] || 1; sprites[kk] = kit.bakeProp(name, 3 + v * 7, tb !== 1 ? { sx: tb, sy: tb } : null); sprites[kk].bake = tb; } return sprites[kk]; };
+  /* The trees are baked bigger (2026-10-14, Robin: "trees are way too small, they should probably be three times the size"): a tree
+     kind in TREE_BAKE is drawn through bakeProp's sx/sy at that size, so it stays sharp, and everything that reads the sprite's
+     bounds (the fall, the trunk's length, the shadows, the fade when you stand behind it) grows with it; the planted scale (s)
+     and the trunk's collision radius are as they were. A pine is about 125 units tall now, three heroes and a bit; it was 43, barely one. */
   function tile(t, gx, gy) {
     if (!tiles[t]) { kit.setup(BASE); tiles[t] = []; for (var m = 0; m < kit.TILES[t].n; m++) tiles[t].push(kit.bakeTile(t, m)); }
     return tiles[t][Math.floor(hash(gx, gy, 5) * tiles[t].length) % tiles[t].length];
@@ -9179,10 +9184,10 @@ var Gather = (function () {
 'use strict';
 var K = 0.75;
 var DEF = {
-  sweetSpot: 1, spotBonus: 2, spotWander: 1, spotLook: 5, crackLook: 4, pace: 2,
+  sweetSpot: 1, spotBonus: 2, spotWander: 1, spotLook: 5, crackLook: 4, pace: 1.5,   // (pace 1.5 since 2026-10-14, was 2: Robin found the chop slow and low in impact)
   rhythm: 1, rhythmAfter: 0.45, rhythmWindow: 0.3, rhythmBonus: 1.5,
   fallFells: 1, fallReach: 1, fallHurts: 1, fallDamage: 12,
-  trunks: 1, logsPerTrunk: 2, chopsPerLog: 2,
+  trunks: 1, logsPerTrunk: 4, chopsPerLog: 2,   // (four logs a trunk since 2026-10-14, with the trees grown: eight blows that each shake it and roll a log out every second one)
   nests: 1, nestChance: 0.15,
   regrow: 1, regrowDays: 3,
   cracks: 1, crackBonus: 2.5,
@@ -9213,7 +9218,7 @@ function crackAng(G, o) { return G && G.crackLook === 4 ? LIT_ANG : hash(Math.ro
 function crackHit(G, o, hero) { if (!G.cracks || o.kind !== 'stone') return false; var ca = crackAng(G, o), a = Math.atan2((hero.y - o.y) * K, hero.x - o.x), d = Math.atan2(Math.sin(a - ca), Math.cos(a - ca)); return Math.abs(d) < 0.75; }
 function rhythmHit(G, o, t) { if (!G.rhythm || o.lastHit == null) return false; var dt = t - o.lastHit; return dt >= G.rhythmAfter && dt <= G.rhythmAfter + G.rhythmWindow; }
 var TREE_WOOD = { oak: 14, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 }, BUSH_FIBER = 3, BERRIES = 3;   // a lightning-struck tree gives charcoal, no trunk
-function treeLen(s, o) { return -s.t * o.s * 0.8; }   // how far along the ground the trunk reaches when it lies
+function treeLen(s, o) { return s.h * (o.s || 1) * 0.8; }   // how far along the ground the trunk reaches when it lies: 0.8 of the tree's drawn height (2026-10-14: it took the sprite's top offset for its height, which for a pine is more than twice the tree, and Robin saw trunks twice the tree)
 // One blow. ctx: { power, right, hero, t, s (sprite bounds), ev }. Returns what happened: { mult, spot, rhythm, crack, felled }.
 function hit(G, o, ctx) {
   var ev = ctx.ev, out = { mult: 1, spot: false, rhythm: false, crack: false, felled: false, broke: false }, hero = ctx.hero, t = ctx.t;
@@ -9223,7 +9228,7 @@ function hit(G, o, ctx) {
   if (crackHit(G, o, hero)) { out.mult *= G.crackBonus; out.crack = true; }
   o.lastHit = t;
   if (o.kind === 'tree' && G.spotLook === 5 && !o.notch) { o.notch = hero.x < o.x ? -1 : 1; out.notched = true; }
-  var dmg = ctx.power * out.mult; o.hp -= dmg; o.shake = 0.3; o.leanDir = o.x >= hero.x ? 1 : -1; out.dealt = dmg;
+  var dmg = ctx.power * out.mult; o.hp -= dmg; o.shake = o.kind === 'stone' ? 0.3 : 0.5; o.leanDir = o.x >= hero.x ? 1 : -1; out.dealt = dmg;   /* (the shake: 0.5 s for a tree or a bush since 2026-10-14) */
   if (ev && ev.chip && G.chips) {
     var n = Math.round((ctx.right ? 4 : 2) * (out.spot || out.crack ? 2 : 1) * G.chips), top = ctx.s ? o.y * K + ctx.s.t * o.s : o.y * K - 30;
     if (o.kind === 'tree') { ev.chip(o.x, o.y, (o.y * K - top) * 0.6, '#6fb84f', 4, 50); ev.chip(o.x, o.y, 8, '#d9b37a', n, 70); }
@@ -9248,7 +9253,7 @@ function tick(G, o, dt, ctx) {
     if (ev.sfx) ev.sfx('fall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
     if (CHAR_TREE[o.name]) { if (ev.drop) ev.drop('charcoal', o.x + dir * len * 0.6, o.y, CHAR_TREE[o.name]); }
-    else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
+    else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, bake: s ? s.bake : 1, s: o.s, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
     else if (ev.drop) ev.drop('wood', o.x + dir * len * 0.6, o.y, wood);
     if (G.nests && !CHAR_TREE[o.name] && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
     // what lies in the line it fell along: trees come down after it, the hero is struck
@@ -9261,8 +9266,8 @@ function tick(G, o, dt, ctx) {
 // Chopping a trunk: every chopsPerLog blows a log rolls out at its far end and it shortens; the last log takes it away.
 function chopTrunk(G, o, ctx) {
   var ev = ctx.ev || {}, out = { mult: 1, rhythm: rhythmHit(G, o, ctx.t), log: false, gone: false };
-  o.lastHit = ctx.t; o.shake = 0.25; o.chops += out.rhythm ? 2 : 1;
-  if (ev.chip) ev.chip(o.x, o.y, 6, '#d9b37a', 4, 70);
+  o.lastHit = ctx.t; o.shake = 0.4; o.chops += out.rhythm ? 2 : 1;
+  if (ev.chip) ev.chip(o.x - o.dir * o.len * 0.3, o.y, 10, '#d9b37a', 5, 90);   /* (chips fly from the cut end; more of them since 2026-10-14) */
   if (o.chops >= G.chopsPerLog) { o.chops = 0; o.logs--; out.log = true; if (ev.drop) ev.drop('wood', o.x + o.dir * o.len * 0.5, o.y + 2, o.woodEach); if (ev.sfx) ev.sfx('fall'); o.len *= Math.max(0.35, (o.logs) / (o.logs + 1)); if (o.logs <= 0) { out.gone = true; o.dying = 0; } }
   return out;
 }
@@ -9276,7 +9281,7 @@ function regrowTick(G, stumps, dayN, plant) {
 }
 /* drawing */
 function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
-  var bx = o.x, byy = o.y * K, shk = o.shake > 0 ? Math.sin(o.shake * 70) * 1.8 * Math.min(1, o.shake * 4) : 0, dmg = o.kind ? 1 - o.hp / o.max : 0;
+  var bx = o.x, byy = o.y * K, shk = o.shake > 0 ? Math.sin(o.shake * 44) * (o.kind === 'stone' ? 1.4 : o.kind === 'tree' ? 3.2 : 5) * Math.min(1, o.shake * 3) : 0, dmg = o.kind ? 1 - o.hp / o.max : 0;   /* (2026-10-14, Robin: a struck tree or bush was static and stiff: the shake is a visible sway now, a tree's a rock of the whole crown about its foot) */
   var behind = o.kind === 'tree' && P && P.y < o.y && P.y * K > py + h * 0.25 && Math.abs(P.x - o.x) < w * 0.3;
   var grow = o.grow != null ? 0.3 + 0.7 * Math.min(1, o.grow) : 1;
   c.save();
@@ -9285,7 +9290,7 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
     var u = o.dying != null ? Math.min(1, o.dying / 0.95) : 0, ang = (o.leanDir || 1) * (Math.max(0, dmg) * 0.1 + u * u * 1.5), spL = G && G.spotLook === 3 && o.dying == null ? spot(G, o, t) : null;
     if (spL) ang += spL.side * 0.07;
     if (o.dying != null && o.dying > 0.95) c.globalAlpha *= Math.max(0, 1 - (o.dying - 0.95) / 0.35);
-    c.translate(bx + shk, byy); c.rotate(ang); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
+    c.translate(bx + shk * 0.4, byy); c.rotate(ang + shk * 0.011); if (grow < 1) c.scale(grow, grow); c.translate(-bx, -byy);
     c.drawImage(s.cv, px, py, w, h);
   } else if (o.kind === 'stone') {
     var sh = o.dying != null ? Math.max(0, 1 - o.dying / 0.4) : 1, sc = (1 - 0.18 * dmg) * sh;
@@ -9328,8 +9333,9 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
 }
 var BARK = { oak: ['#7a5636', '#4a3220', '#c9a070'], pine: ['#6b4a3a', '#3f2a1c', '#c99a70'], birch: ['#e8e4dc', '#5a5650', '#d9c9a6'] };
 // a felled trunk lying along the ground, its cut end toward where it fell from; shorter as the logs come off
+var TRUNK_W = { oak: 1.2, beech: 1.15, pine: 0.9, ash: 0.9, apple: 0.8, birch: 0.7, struckTree: 1, dwarfBirch: 0.6 };   /* how thick a felled trunk lies, by tree (2026-10-14: a trunk scaled by the tree's bake was fatter than the hero is tall) */
 function drawTrunk(c, o) {
-  var col = BARK[o.tree] || BARK.oak, y = o.y * K, len = o.len, x0 = o.x - o.dir * len * 0.5, x1 = o.x + o.dir * len * 0.5, r = 5.5 * (o.s || 0.5) / 0.5, shk = o.shake > 0 ? Math.sin(o.shake * 70) * 1.5 : 0;
+  var col = BARK[o.tree] || BARK.oak, y = o.y * K, len = o.len, x0 = o.x - o.dir * len * 0.5, x1 = o.x + o.dir * len * 0.5, r = 5.5 * (o.s || 0.5) / 0.5 * (TRUNK_W[o.tree] || 1), shk = o.shake > 0 ? Math.sin(o.shake * 50) * 2.4 * Math.min(1, o.shake * 3) : 0;   /* (the thickness by TRUNK_W, never by the bake) */
   if (o.dying != null) c.globalAlpha *= Math.max(0, 1 - o.dying / 0.3);
   c.save(); c.translate(0, shk); c.lineCap = 'round';
   c.fillStyle = 'rgba(20,40,20,0.22)'; c.beginPath(); c.ellipse(o.x, y + 2, len * 0.5 + 3, r * 0.7, 0, 0, 7); c.fill();
@@ -10179,7 +10185,7 @@ var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
 var lib = null;
 var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy' };
 var WPRE = {
-  snappy: { fz: 0.55, pf: 0.6, kb: 0.9, hs: 0.6, hd: 0.06, kd: 0.5 },
+  snappy: { fz: 0.7, pf: 0.65, kb: 1.0, hs: 0.6, hd: 0.06, kd: 0.5 },
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
@@ -10223,9 +10229,9 @@ api.profiles = function () { return PROFILES; }; api.parryWindow = function () {
 // now about 0.55 s from the press to the carry (it was 0.26), an axe 0.68, a club 0.78, the Dane axe 1.2; the windup is what
 // grew most, so a blow is seen coming. The men's own windup is set apart (MEN.wu, wuK) so they did not slow with it.
 var STEPS = [
-  { wu: 0.16, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
-  { wu: 0.16, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
-  { wu: 0.24, ac: 0.14, rec: 0.44, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
+  { wu: 0.13, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
+  { wu: 0.13, ac: 0.11, rec: 0.28, arc: 2.4, reach: 34, blade: 26, dmg: 1, kb: 110, lunge: 85, stag: 10 },
+  { wu: 0.2, ac: 0.14, rec: 0.44, arc: 3.2, reach: 41, blade: 30, dmg: 2, kb: 220, lunge: 140, stag: 24 }
 ];
 // How each melee weapon fights (2026-10-06, docs/weapons.md): the arc and reach of a hit, its pace (windup, active,
 // recover), damage as a share of the thing's own, knockback, stagger, the step into it, how many hits chain (the last is
@@ -10235,12 +10241,12 @@ var STEPS = [
 var PROFILES = {
   // wt (2026-10-13, hit weight per weapon): what a hit of it feels like: the pause on both, the ring, the number's size and the
   // sound follow it; 1 is the sword. The knockback (kb) and the stagger (stag) were already each weapon's own.
-  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.16, ac: 0.11, rec: 0.28, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5, wt: 1 },
-  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.2, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true, wt: 1.25 },
-  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.26, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9, wt: 1.5 },
-  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.1, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
-  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.18, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
-  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.5, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 }   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
+  sword:    { arc: 2.4, reach: 34, blade: 26, wu: 0.13, ac: 0.11, rec: 0.28, dmg: 1, kb: 110, stag: 10, lunge: 85, chain: 3, motion: 'swing', st: 7, parry: 1.5, wt: 1 },
+  axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.17, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true, wt: 1.25 },
+  club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.2, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9, wt: 1.5 },
+  seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.08, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
+  spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.15, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
+  greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.42, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 }   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
@@ -10536,7 +10542,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
     else if (e.poiseT > 0 && !heavy && !broke) { /* he has just flinched: this one he takes on his feet */ }
     else { e.state = 'stagger'; e.t = 0; e.dur = heavy || broke ? 0.36 : 0.16; e.sw = null; e.swung = false; e.poiseT = 0.9; }
     if (!killing) heartOf(e);
-  } else if (e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = heavy ? 0.34 : 0.14; }   // a light hit is only a flinch: sword-tapping cannot lock an animal in place
+  } else if (heavy && e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = 0.34; }   // a heavy blow staggers a beast; a light one does not stop it at all (2026-10-14, Robin: they staggered too easily; before, a light hit was a 0.14 s flinch): the flash, the squash and the push are its whole answer
+  else if (!heavy && (e.state === 'idle' || e.state === 'wander')) { e.state = 'chase'; e.t = 0; }
   if (killing) killEnemy(e);
 }
 function killEnemy(e, src) {
@@ -10550,6 +10557,14 @@ function killEnemy(e, src) {
   if (e.type === 'brute') num(e.x, e.y - 50, (e.name || 'Brute') + ' DOWN', '#ffe27a');
 }
 function daze(e, dur) { e.state = 'recover'; e.t = 0; e.dur = dur; }
+function tell(e) {                     // the start of a windup, shown in the world (2026-10-14, the red line gone): dust under the feet and a glint before the attacker
+  if (!S.juice) return; dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, '#fff3b0', 55);
+}
+function stun(e, dur) {                     // a parry's stun (2026-10-14, Robin: it should stun the mob for about a second): he stands dazed, open to anything, stars over his head
+  e.state = 'stunned'; e.t = 0; e.dur = dur; e.sw = null; e.swung = false; e.hitDone = true; e.stunT = dur;
+  if (S.juice) { ring(e.x, e.y, 0, 22, 0.25, '255,230,140', false, 2.4); spark(e.x, e.y - e.r * 2, 6, '#ffe27a', 90); }
+  sfx('stagger', 0, e);
+}
 
 /* ---------- player ---------- */
 function startAttack() {
@@ -10848,7 +10863,7 @@ function beastAI(e, dt, d, ang) {
       else { var sd = e.seed > 5 ? 1 : -1; moveCircle(e, Math.cos(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt, Math.sin(ang + sd * 1.57) * (A.ring ? 60 : 30) * sk * dt); }
       var canGo = e.cd <= 0 && !P.dead && aligned && (!A.pack || packT <= 0);
       if (canGo && (d < near || (kind === 'charge' && d < (A.from || 150)) || (A.ring && d < ring + 14))) {
-        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e);
+        e.state = 'windup'; e.t = 0; e.dur = A.windup || cf.windup; e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e); tell(e);
         if (A.pack) packT = (A.windup || cf.windup) + (A.dur || 0.22) + 1.0;   // the next of the pack waits its turn
       }
       break;
@@ -10862,7 +10877,7 @@ function beastAI(e, dt, d, ang) {
         if (!e.hitDone && e.t >= e.dur * (A.hitAt || 0.4)) {
           e.hitDone = true;
           var dd = Math.hypot(P.x - e.x, P.y - e.y), da = Math.abs(wrap(Math.atan2(P.y - e.y, P.x - e.x) - e.dirLock));
-          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') daze(e, 1.5); }
+          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') stun(e, MEN.parryStun); }
           else dust(e.x + Math.cos(e.dirLock) * e.r, e.y + Math.sin(e.dirLock) * e.r, 3);
         }
       } else {
@@ -10872,7 +10887,7 @@ function beastAI(e, dt, d, ang) {
         if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
           e.hitDone = true;
           var r = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e);
-          if (r === 'parry') daze(e, 1.5);
+          if (r === 'parry') stun(e, MEN.parryStun);
           else if (r === 'hit' && A.venom) P.venom = { t: A.venom, dmg: A.venomDmg || 2 };
           if (kind === 'charge' && r !== 'parry') { P.kx += Math.cos(e.dirLock) * 80; P.ky += Math.sin(e.dirLock) * 80; }   // bowled along
         }
@@ -10881,6 +10896,7 @@ function beastAI(e, dt, d, ang) {
       break;
     case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = A.cd || 1.1; } break;
     case 'stagger': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = Math.min(e.cd, 0.6); } break;   // a flinch does not reset the wait before its next attack
+    case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.5; } break;   // a parry's stun (beasts that are not brutes)
   }
 }
 function shooterAI(e, dt, d, ang) {
@@ -10888,7 +10904,7 @@ function shooterAI(e, dt, d, ang) {
   switch (e.state) {
     case 'idle':
       e.aim = turnToward(e.aim, ang, dt * 2.2);
-      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele', 0, e); }
+      if (e.cd <= 0 && d < 320 && !P.dead) { e.state = 'windup'; e.t = 0; e.dur = 0.8; e.dirLock = e.aim; sfx('tele', 0, e); tell(e); }
       break;
     case 'windup':
       e.aim = e.dirLock;
@@ -10916,7 +10932,7 @@ function bruteAI(e, dt, d, ang) {
       if (e.cd <= 0 && d < 96 && !P.dead) {
         var r = Math.random();
         e.attack = r < 0.4 ? 'lunge' : (r < 0.75 ? 'chain' : 'spin'); e.chain = e.attack === 'chain' ? 3 : 1;
-        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e);
+        e.state = 'windup'; e.t = 0; e.dur = e.attack === 'lunge' ? 0.7 : (e.attack === 'chain' ? 0.45 : 0.65); e.dirLock = ang; e.hitDone = false; sfx('tele', 0, e); tell(e);
       }
       break;
     case 'windup':
@@ -10937,7 +10953,7 @@ function bruteAI(e, dt, d, ang) {
       }
       if (e.state === 'lunge' && e.t >= e.dur) {
         e.chain--;
-        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele', 0, e); }
+        if (e.chain > 0) { e.dirLock = ang; e.state = 'windup'; e.t = 0; e.dur = 0.36; e.hitDone = false; sfx('tele', 0, e); tell(e); }
         else { e.state = 'recover'; e.t = 0; e.dur = 1.0; }
       }
       break;
@@ -10965,7 +10981,7 @@ var MEN = {
   speed: 60, run: 94, back: 50, strafe: 24, turn: 8,
   wu: 0.12, wuK: 2.0,                 // a blow's windup: wu + the weapon's own times wuK (retuned 2026-10-13 when the hero's blows slowed, to the same seconds as before: a sword 0.44, a Dane axe 0.92)
   ac: 0.07, acK: 1.4, rec: 0.3, recK: 2.0, hitAt: 0.45,
-  hp: 30, hpK: 0.75,                  // a man's health unless the page says (hp), and a scale on the whole of the men's world (hpK: every man's health, their blows on each other, a bowman's arrow on a man, what a roof does to him), so that only the hero's blows gain on them: the lever of rung 3 (2026-10-13)
+  hp: 30, hpK: 0.8,                   // a man's health unless the page says (hp), and a scale on the whole of the men's world (hpK: every man's health, their blows on each other, a bowman's arrow on a man, what a roof does to him), so that only the hero's blows gain on them: the lever of rung 3 (2026-10-13)
   dmg: 12,                            // a blow at strength 1 from a weapon whose kind says 1 (the hero's scale: he has 100)
   toMen: 0.15,                        // the same blow landing on a man (their health is on the beasts' scale)
   wdmg: { sword: 1, axe: 1, club: 0.9, seax: 0.7, spear: 1.1, greataxe: 1.6 },
@@ -10983,7 +10999,8 @@ var MEN = {
   // one; apart, drift: the middle of a fight keeps this far from the men of other fights, moving at this pace to get there; homeR: a
   // householder (o.homeR on the man) fights nobody further than this from his own door.
   onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, way: 'duel', hang: [105, 165], apart: 72, drift: 26, homeR: 190,
-  turnT: 2.5, turnK: 120,            // a man struck by a man who is not his foe turns on him for turnT seconds (turnK: how strongly, against distance in units): the relief of a beset man (2026-10-14)   // (the first five and hang are a WAY: see WAYS)
+  turnT: 2.5, turnK: 120,            // a man struck by a man who is not his foe turns on him for turnT seconds (turnK: how strongly, against distance in units): the relief of a beset man (2026-10-14)
+  parryStun: 1.0,                    // a parried man or beast stands stunned this long (2026-10-14, Robin: a parry should stun for about a second)   // (the first five and hang are a WAY: see WAYS)
   sight: 340, aggro: 150, leash: 250, lie: 90,
   noise: { blow: 240, shout: 420, cry: 360, din: 0.24, far: 1000 }, wake: [0.5, 1.6],   // how far a blow, a man's shout and a death cry are heard by a town's men, and how long a man at his post takes to be on his way
   // A man with a bow (2026-10-13, rung 5): he stands off and shoots at whoever he has a clear line to, never with one of his own
@@ -11190,7 +11207,7 @@ function blowOf(e, second, quick) {
 }
 function beginBlow(e, T, ang, second, quick) {
   e.sw = blowOf(e, second, quick); e.swingN++; e.state = 'windup'; e.t = 0; e.dur = e.sw.wu; e.dirLock = ang; e.face = ang; e.hitDone = false; e.swung = false; e.guard = 0; e.blocked = 0;
-  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e);
+  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e); tell(e);
 }
 function din() { return Math.min(MEN.noise.far / MEN.noise.blow, 1 + MEN.noise.din * Math.max(0, (W.fighting || 0) - 2)); }   // two men at it are heard a blow's distance off; a battle of twenty across a town (the town's answer builds as the fight does)
 function noise(x, y, r, soft, except) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
@@ -11232,7 +11249,7 @@ function strike(e) {
   L.forEach(function (h) {
     if (h.F === P) {
       hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
-      if (r === 'parry') { daze(e, 1.3); e.sw = null; e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
+      if (r === 'parry') { stun(e, MEN.parryStun); e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
     } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen * MEN.hpK, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
   });
 }
@@ -11391,9 +11408,9 @@ function soldierAI(e, dt) {
   e.retT -= dt; T = e.tgt;
   if (e.calledT > 0) { e.calledT -= dt; if (e.state !== 'windup' && e.state !== 'lunge') { T = e.tgt = null; e.retT = e.calledT; } }
   if (!(e.calledT > 0) && (!T || T.dead || T.down || T.fled || (T !== P && T.out) || (T === P && P.hidden) || e.retT <= 0)) { T = e.tgt = pickTarget(e); e.retT = 0.4 + Math.random() * 0.3; }
-  if (T && (e.side || 0) === 0 && e.post && W.t - (e.shoutAt == null ? -99 : e.shoutAt) > 25) { e.shoutAt = W.t; noise(e.x, e.y, MEN.noise.shout); sfx('tele', 0, e); if (api.onShout) api.onShout(e); }   // a town's man who sees you: his shout carries
+  if (T && (e.side || 0) === 0 && e.post && W.t - (e.shoutAt == null ? -99 : e.shoutAt) > 25) { e.shoutAt = W.t; noise(e.x, e.y, MEN.noise.shout); sfx('tele', 0, e); tell(e); if (api.onShout) api.onShout(e); }   // a town's man who sees you: his shout carries
   if (!T) {                                 // nobody to fight
-    if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
+    if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'stunned' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
     e.state = 'idle'; e.guard = 0; e.sw = null; if (e.close) sidearm(e, false);
     if (e.side === 1) { if (e.order === 'storm' && e.stormAt) stormStep(e, dt); else followStep(e, dt); }
     else if (e.waitOn && !e.waitOn.dead && !(e.waitOn !== P && (e.waitOn.down || e.waitOn.out || e.waitOn.fled))) hangStep(e, dt, e.waitOn);
@@ -11721,16 +11738,9 @@ function drawTelegraphs(c) {
         c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 78, (e.y + Math.sin(e.dirLock) * 78) * K); c.stroke();
       }
     }
-    if (e.type === 'beast' && e.state === 'windup') {
-      c.strokeStyle = 'rgba(255,70,60,' + (0.25 + 0.35 * (e.t / e.dur)) + ')'; c.lineWidth = 4; c.lineCap = 'round';
-      c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 52, (e.y + Math.sin(e.dirLock) * 52) * K); c.stroke();
-    }
-    if (e.type === 'soldier' && e.state === 'windup' && e.tgt === P && e.sw) {
-      var kw = e.t / e.dur, rw = e.sw.reach + 6;
-      if (e.sw.arc > 1.4) { c.save(); c.translate(e.x, e.y * K); c.scale(1, K); c.fillStyle = 'rgba(220,40,30,' + (0.05 + 0.13 * kw) + ')'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, rw, e.dirLock - e.sw.arc / 2, e.dirLock + e.sw.arc / 2); c.closePath(); c.fill(); c.restore(); }
-      c.strokeStyle = 'rgba(255,70,60,' + (0.2 + 0.4 * kw) + ')'; c.lineWidth = 3.4; c.lineCap = 'round';
-      c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * rw, (e.y + Math.sin(e.dirLock) * rw) * K); c.stroke();
-    }
+    /* (2026-10-14, Robin: the red line that marked a coming blow was not natural; gone, for beasts and men. The tell is the
+       body now: the drawn-back clip, a glint of the weapon and dust at the feet as the windup begins (in beastAI and soldierAI),
+       and the Combat Arena's "Show the blows" overlay keeps the geometry for tuning.) */
     if (e.type === 'shooter' && e.state === 'windup') {
       c.strokeStyle = 'rgba(255,70,60,0.55)'; c.lineWidth = 1.6; c.setLineDash([4, 3]); c.lineDashOffset = -e.t * 30;
       c.beginPath(); c.moveTo(e.x, e.y * K); c.lineTo(e.x + Math.cos(e.dirLock) * 300, (e.y + Math.sin(e.dirLock) * 300) * K); c.stroke(); c.setLineDash([]);
@@ -12095,7 +12105,7 @@ function drawEnemy(c, e) {
   var fn = e.fig ? drawHuman : e.creature ? drawCreature : drawPlain;
   if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
   var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0, A = e.cfg && e.cfg.atk;
-  if (A && A.kind === 'arc' && (e.state === 'windup' || (e.state === 'lunge' && !e.hitDone))) {   // the blow to come, marked on the ground
+  if (false && A && A.kind === 'arc' && (e.state === 'windup' || (e.state === 'lunge' && !e.hitDone))) {   // (the red wedge of an arc attack: off since 2026-10-14, Robin; the clip is the tell)
     var k2 = e.state === 'windup' ? e.t / e.dur : 1, R2 = e.r + (A.reach || 20) + 6, a0 = e.dirLock - (A.arc || 1.6) / 2, a1 = e.dirLock + (A.arc || 1.6) / 2;
     c.save(); c.translate(e.x, e.y * K); c.scale(1, K);
     c.fillStyle = 'rgba(220,40,30,' + (0.08 + 0.16 * k2) + ')'; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R2, a0, a1); c.closePath(); c.fill();
@@ -12594,48 +12604,48 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* ---------- building: B enters build mode; pieces cost a little wood or stone; F takes them down again ---------- */
   // The board: walls and openings, floors, yard pieces, roofs, then furniture and outdoor things (props from the kit).
   var PIECES = [
-    { id: 'wall', name: 'Log wall', m: 0, cost: { wood: 2 } },
+    { key: 'slept', id: 'wall', name: 'Log wall', m: 0, cost: { wood: 2 } },
     { id: 'wall', name: 'Plank wall', m: 1, cost: { wood: 2 } },
-    { id: 'wall', name: 'Wattle wall', m: 2, cost: { wood: 1, fiber: 2 } },
+    { key: 'slept', id: 'wall', name: 'Wattle wall', m: 2, cost: { wood: 1, fiber: 2 } },
     { id: 'wall', name: 'Stone wall', m: 3, cost: { stone: 2 }, key: 'mason' },
-    { id: 'wall', name: 'Turf wall', m: 4, cost: { stone: 1, fiber: 2 } },
+    { key: 'slept', id: 'wall', name: 'Turf wall', m: 4, cost: { stone: 1, fiber: 2 } },
     { id: 'wall', name: 'Timber frame', m: 5, cost: { wood: 2, fiber: 1 }, key: 'ironBar' },
     { id: 'wall', name: 'Cut stone', m: 6, cost: { stone: 3 }, key: 'ironBar' },
     { id: 'door', name: 'Door', m: 0, cost: { wood: 2 } },
     { id: 'window', name: 'Window', m: 0, cost: { wood: 2 } },
-    { id: 'post', name: 'Post', m: 0, cost: { wood: 1 } },
-    { id: 'stairs', name: 'Stairs', m: 0, cost: { wood: 6 } },
+    { key: 'slept', id: 'post', name: 'Post', m: 0, cost: { wood: 1 } },
+    { key: 'slept', id: 'stairs', name: 'Stairs', m: 0, cost: { wood: 6 } },
     { id: 'floor', name: 'Plank floor', m: 0, cost: { wood: 1 } },
-    { id: 'floor', name: 'Packed earth', m: 1, cost: { fiber: 1 } },
+    { key: 'slept', id: 'floor', name: 'Packed earth', m: 1, cost: { fiber: 1 } },
     { id: 'floor', name: 'Stone flags', m: 2, cost: { stone: 1 }, key: 'mason' },
-    { id: 'brush', name: 'Gravel', k: 1, cost: {}, icon: function (c) { c.fillStyle = '#8f877a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#c9c2b4'; [[-4, 0], [1, -1.5], [3, 2], [-1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.4, 0.9, 0, 0, 7); c.fill(); }); } },
-    { id: 'brush', name: 'Earth', k: 2, cost: {}, icon: function (c) { c.fillStyle = '#7e623e'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#5a4228'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.fillRect(q[0], q[1], 2, 1.2); }); } },
-    { id: 'brush', name: 'Moss', k: 3, cost: {}, icon: function (c) { c.fillStyle = '#5c8046'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#7fa062'; [[-4, 0], [1, -1.5], [3, 2], [-1, 2.5]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 1.1, 0, 0, 7); c.fill(); }); } },
+    { key: 'slept', id: 'brush', name: 'Gravel', k: 1, cost: {}, icon: function (c) { c.fillStyle = '#8f877a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#c9c2b4'; [[-4, 0], [1, -1.5], [3, 2], [-1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.4, 0.9, 0, 0, 7); c.fill(); }); } },
+    { key: 'slept', id: 'brush', name: 'Earth', k: 2, cost: {}, icon: function (c) { c.fillStyle = '#7e623e'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#5a4228'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.fillRect(q[0], q[1], 2, 1.2); }); } },
+    { key: 'slept', id: 'brush', name: 'Moss', k: 3, cost: {}, icon: function (c) { c.fillStyle = '#5c8046'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#7fa062'; [[-4, 0], [1, -1.5], [3, 2], [-1, 2.5]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 1.1, 0, 0, 7); c.fill(); }); } },
     { id: 'brush', key: 'bogIron', name: 'Field', k: 4, cost: {}, icon: function (c) { c.fillStyle = '#76583a'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#4e3a26'; c.lineWidth = 1; [-2, 0, 2].forEach(function (q) { c.beginPath(); c.moveTo(-6, q + 1); c.lineTo(6, q + 1); c.stroke(); }); } },
     { id: 'brush', key: 'bogIron', name: 'Chalk', k: 5, cost: {}, icon: function (c) { c.fillStyle = '#d6d2c4'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#b8b4a6'; [[-3, 0], [2, -1], [1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.5, 1, 0, 0, 7); c.fill(); }); } },
     { id: 'brush', key: 'bogIron', name: 'Marsh', k: 6, cost: {}, icon: function (c) { c.fillStyle = '#465f40'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.fillStyle = '#8fb0d0'; [[-3, 1], [2, -1], [1, 3]].forEach(function (q) { c.beginPath(); c.ellipse(q[0], q[1], 1.6, 0.9, 0, 0, 7); c.fill(); }); } },
-    { id: 'brush', name: 'Grass back', k: 0, cost: {}, icon: function (c) { c.fillStyle = '#5f8a44'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#8aa65a'; c.lineWidth = 1; [[-4, 2], [0, 1], [4, 2]].forEach(function (q) { c.beginPath(); c.moveTo(q[0], q[1] + 2); c.lineTo(q[0] + 1, q[1] - 3); c.stroke(); }); } },
+    { key: 'slept', id: 'brush', name: 'Grass back', k: 0, cost: {}, icon: function (c) { c.fillStyle = '#5f8a44'; c.beginPath(); c.ellipse(0, 1, 8, 5, 0, 0, 7); c.fill(); c.strokeStyle = '#8aa65a'; c.lineWidth = 1; [[-4, 2], [0, 1], [4, 2]].forEach(function (q) { c.beginPath(); c.moveTo(q[0], q[1] + 2); c.lineTo(q[0] + 1, q[1] - 3); c.stroke(); }); } },
     { id: 'floor', name: 'Grass', m: 4, cost: { fiber: 1 }, key: 'mason' },
     { id: 'floor', name: 'Dark grass', m: 5, cost: { fiber: 1 }, key: 'mason' },
     { id: 'floor', name: 'Moss', m: 6, cost: { fiber: 1 }, key: 'mason' },
     { id: 'floor', name: 'Bare rock', m: 7, cost: { stone: 1 }, key: 'mason' },
     { id: 'floor', name: 'Dock', m: 8, cost: { wood: 2 }, key: 'ship1' },
-    { id: 'fence', name: 'Wattle fence', m: 2, cost: { wood: 1 }, yard: true },
-    { id: 'gate', name: 'Gate', m: 2, cost: { wood: 2 }, yard: true },
+    { key: 'slept', id: 'fence', name: 'Wattle fence', m: 2, cost: { wood: 1 }, yard: true },
+    { key: 'slept', id: 'gate', name: 'Gate', m: 2, cost: { wood: 2 }, yard: true },
     { id: 'palisade', name: 'Palisade', m: 0, cost: { wood: 3 }, yard: true, key: 'copper' },
-    { id: 'rail', name: 'Rail fence', m: 1, cost: { wood: 1 }, yard: true },
+    { key: 'slept', id: 'rail', name: 'Rail fence', m: 1, cost: { wood: 1 }, yard: true },
     { id: 'drystone', name: 'Dry-stone wall', m: 3, cost: { stone: 2 }, yard: true, key: 'mason' },
     { id: 'townwall', name: 'Town wall', m: 6, cost: { stone: 4 }, yard: true, key: 'ironBar' },
-    { id: 'roof', name: 'Turf roof', m: 0, cost: { fiber: 2 } },
+    { key: 'slept', id: 'roof', name: 'Turf roof', m: 0, cost: { fiber: 2 } },
     { id: 'roof', name: 'Thatch roof', m: 1, cost: { fiber: 4 } },
     { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 }, key: 'copper' },
     { id: 'roof', name: 'Tile roof', m: 3, cost: { stone: 3 }, key: 'ironBar' },
     { id: 'roof', name: 'Slate roof', m: 4, cost: { stone: 4 }, key: 'ironBar' },
-    { id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 4, cost: { wood: 6, stone: 1 }, icon: function (c) {
+    { key: 'slept', id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 4, cost: { wood: 6, stone: 1 }, icon: function (c) {
       c.fillStyle = '#b98a5a'; c.fillRect(-7, -3, 14, 3); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-7, -3, 14, 3); c.fillStyle = '#8a5a3a'; c.fillRect(-6, 0, 2, 6); c.fillRect(4, 0, 2, 6);
       c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(-3, -4); c.lineTo(1, -8); c.lineTo(3, -6); c.lineTo(-1, -3); c.closePath(); c.fill(); c.stroke();
     } },
-    { id: 'bed', name: 'Bed', kind: 'item', prop: 'bed', bed: true, r: 6, cost: { wood: 6, fiber: 4 }, icon: function (c) {
+    { key: 'slept', id: 'bed', name: 'Bed', kind: 'item', prop: 'bed', bed: true, r: 6, cost: { wood: 6, fiber: 4 }, icon: function (c) {
       c.fillStyle = '#8a5a3a'; c.fillRect(-8, -2, 16, 7); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-8, -2, 16, 7);
       c.fillStyle = '#d9c9a6'; c.fillRect(-7, -4, 14, 4); c.strokeRect(-7, -4, 14, 4); c.fillStyle = '#c96a4a'; c.fillRect(-2, -4, 9, 4); c.fillStyle = '#f1e6cf'; c.beginPath(); c.ellipse(-4.5, -2, 2.2, 1.4, 0, 0, 7); c.fill();
     } },
@@ -12653,16 +12663,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'fireplace', name: 'Fireplace', kind: 'item', prop: 'fireplace', r: 7, hearth: true, chimney: true, cost: { stone: 10, wood: 2 }, key: 'mason' },
     { id: 'carver', name: 'Carver’s bench', kind: 'item', prop: 'carverBench', r: 5, carver: true, cost: { wood: 6, stone: 2, copper: 2 }, key: 'copper' },
     // outdoor and household things, drawn from the kit's props; their icons are the props shrunk
-    { id: 'chair', name: 'Chair', kind: 'item', prop: 'chair', r: 3, cost: { wood: 2 } },
-    { id: 'seat', name: 'Bench seat', kind: 'item', prop: 'bench', r: 6, cost: { wood: 3 } },
-    { id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 5, cost: { wood: 4 } },
-    { id: 'barrel', name: 'Barrel', kind: 'item', prop: 'barrel', r: 4, cost: { wood: 3 } },
-    { id: 'crate', name: 'Crate', kind: 'item', prop: 'crate', r: 4, cost: { wood: 3 } },
+    { key: 'slept', id: 'chair', name: 'Chair', kind: 'item', prop: 'chair', r: 3, cost: { wood: 2 } },
+    { key: 'slept', id: 'seat', name: 'Bench seat', kind: 'item', prop: 'bench', r: 6, cost: { wood: 3 } },
+    { key: 'slept', id: 'table', name: 'Table', kind: 'item', prop: 'table', r: 5, cost: { wood: 4 } },
+    { key: 'slept', id: 'barrel', name: 'Barrel', kind: 'item', prop: 'barrel', r: 4, cost: { wood: 3 } },
+    { key: 'slept', id: 'crate', name: 'Crate', kind: 'item', prop: 'crate', r: 4, cost: { wood: 3 } },
     { id: 'rug', name: 'Rug', kind: 'item', prop: 'rug', r: 0, flat: true, cost: { leather: 2, fiber: 4 }, key: 'leather' },
-    { id: 'chest', name: 'Chest', kind: 'item', prop: 'chest', r: 5, chest: true, cost: { wood: 8 } },
+    { key: 'slept', id: 'chest', name: 'Chest', kind: 'item', prop: 'chest', r: 5, chest: true, cost: { wood: 8 } },
     { id: 'claim', name: 'Claim stone', kind: 'item', prop: 'claimStone', r: 5, claim: true, cost: Hird.DEF.claimCost, key: 'snakeBlood' },
-    { id: 'woodpile', name: 'Woodpile', kind: 'item', prop: 'woodpile', r: 6, cost: { wood: 5 } },
-    { id: 'rack', name: 'Drying rack', kind: 'item', prop: 'dryingRack', r: 6, cost: { wood: 4, fiber: 2 } },
+    { key: 'slept', id: 'woodpile', name: 'Woodpile', kind: 'item', prop: 'woodpile', r: 6, cost: { wood: 5 } },
+    { key: 'slept', id: 'rack', name: 'Drying rack', kind: 'item', prop: 'dryingRack', r: 6, cost: { wood: 4, fiber: 2 } },
     { id: 'brazier', name: 'Brazier', kind: 'item', prop: 'brazier', r: 3, light: 1, cost: { stone: 2, wood: 2 }, key: 'copper' },
     { id: 'well', name: 'Well', kind: 'item', prop: 'woodenWell', r: 6, cost: { stone: 6, wood: 4 }, key: 'mason' },
     { id: 'hay', name: 'Haystack', kind: 'item', prop: 'haystack', r: 6, cost: { fiber: 8 }, key: 'leather' },
@@ -12672,7 +12682,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'dragon', name: 'Dragon post', kind: 'item', prop: 'dragonPost', r: 3, cost: { wood: 4 }, key: 'silver' },
     { id: 'campfire', name: 'Campfire', kind: 'item', prop: 'campfire', r: 5, light: 1, hearth: true, cost: { wood: 4, stone: 2 } },
     { id: 'firePit', name: 'Fire pit', kind: 'item', prop: 'firePit', r: 11, light: 1, hearth: true, cost: { stone: 8, wood: 4 }, key: 'mason' },
-    { id: 'logSeat', name: 'Log seat', kind: 'item', prop: 'logSeat', r: 5, cost: { wood: 2 } },
+    { key: 'slept', id: 'logSeat', name: 'Log seat', kind: 'item', prop: 'logSeat', r: 5, cost: { wood: 2 } },
     { id: 'trough', name: 'Trough', kind: 'item', prop: 'trough', r: 5, cost: { wood: 4 }, key: 'leather' },
     { id: 'scarecrow', name: 'Scarecrow', kind: 'item', prop: 'scarecrow', r: 2, cost: { wood: 2, fiber: 3 }, key: 'leather' },
     { id: 'flowers', name: 'Flower bed', kind: 'item', prop: 'flowerBed', r: 0, cost: { fiber: 2 }, key: 'honey' },
@@ -12699,7 +12709,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // A piece is on the board once its key has been found (a kind picked up: copper, leather, honey, charcoal, iron, silver, snake blood)
   // or built (the mason's bench opens stone, the shipwright's benches open the dock) or taught (Brokk's raft). 2026-10-08, Robin: the
   // start was overwhelming; wood first, stone with copper, the lowland pieces with iron, finds open the rest.
-  function pieceKnown(p) { return !p.key || !!seen[p.key]; }
+  function pieceKnown(p) { return !p.key || !!seen[p.key]; }   /* keys: a kind picked up, a thing built, Brokk's teaching, and 'slept' (2026-10-14): the first night slept under a roof opens the rest of the board; until then only the plank house's own pieces (plank wall, door, window, plank floor, thatch, a campfire) are listed */
   function stepPiece(d) { var P = hero(), n = 0; do { P.piece = (P.piece + d + PIECES.length) % PIECES.length; } while (!pieceKnown(PIECES[P.piece]) && n++ < PIECES.length); }   // the next piece you know (it called itself until 2026-10-12: the wheel on a piece not yet known froze the game)
   function costText(cost) { var p = []; for (var k in cost) p.push(cost[k] + ' ' + (typeof NAMES !== 'undefined' && NAMES[k] ? NAMES[k].toLowerCase() : k)); return p.join(', '); }
   var buildSlots0 = PIECES.map(function (p) { return { name: p.name, cost: costText(p.cost), draw: function (c) { if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); } }; });
@@ -12830,7 +12840,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function dayTick(dt) {
     if (sleep) {                           // asleep: the screen goes dark, the night passes, you wake at dawn
       sleep.t += dt;
-      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; if (day.n >= 10) earnRune('nighteyes', 'ten days lived'); regrowTick(); morningEmbers(); var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { restedMax = rested = Math.max(120, sleep.comfort * 120) * (inUse('deepsleep') ? 2 : 1); deed('slept'); } else if (inUse('hearthwarmth')) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
+      if (sleep.t >= 1.4 && !sleep.woke) { sleep.woke = true; day.t = 0; day.n++; if (day.n >= 10) earnRune('nighteyes', 'ten days lived'); regrowTick(); morningEmbers(); var P = hero(); P.hp = P.maxHp; P.st = 100; if (sleep.roofed) { noteSeen('slept'); restedMax = rested = Math.max(120, sleep.comfort * 120) * (inUse('deepsleep') ? 2 : 1); deed('slept'); } else if (inUse('hearthwarmth')) { restedMax = rested = 120; } toast(sleep.roofed ? 'A good night under a roof: rested' : 'Slept rough. Morning.'); save(); }
       if (sleep.t >= 2.6) sleep = null;
       return;
     }
@@ -13626,16 +13636,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* Brokk, the only one left of Hildir's steading. Simple on purpose: he tells the story once, then reminds you what your
      home still needs, then, when it is a home (Comfort 4), teaches the raft (seen.raft, saved). */
   function brokkState() { return seen.raft ? 'taught' : (!seen.met ? 'meet' : (baseComfort().n >= 4 ? 'teach' : 'wait')); }   // the story always comes first
-  function brokkLines(st) {
-    if (st === 'meet') return ['Well met. I am Brokk, a smith. All that is left of Hildir’s steading.', 'Two winters back a longship came up the sound: Ragnar Ironside and his crew. They burnt the hall.', 'Some of ours they took as thralls. Some went with them of their own will. The rest lie in the ground. I am the last.', baseComfort().n >= 4 ? 'You have a home already. Come and talk to me again.' : 'A home is a roof and what you put under it. Make one, and come and talk to me again.'];
-    if (st === 'wait') return [baseComfort().n ? 'It keeps the rain off. Is it somewhere you would want to be?' : 'The sea is wide. A man needs somewhere to come back to.'];
-    if (st === 'teach') return ['Now that is a home. Sit. I will show you something.', 'Logs, bound with rope. A bench on the sand by the water to lay them on. That is how we crossed the first time.', 'They sailed east, Ragnar’s crew.'];
-    return ['The sea is wide. Mind it.'];
+  function brokkLines(st) {              // (rewritten 2026-10-14, Robin: the old lines were bad and non-immersive; he speaks as a man, never as a list)
+    if (st === 'meet') return ['You live, then. Few do, from a sea like that.', 'Brokk. I was Hildir\u2019s smith, when there was a Hildir. Two winters back Ragnar Ironside came up the sound with a longship and left us this.', 'Some of ours he took for thralls. Some went with him of their own will. The rest are under the turf behind the hall.', 'The plank house by the well still has its bones. Put walls on it before the dark, if you mean to stay.'];
+    if (st === 'wait') { var n = baseComfort().n, has = baseComfort().has || {}; return [!n ? 'Walls and a roof first. The nights here are not kind.' : !has.hearth ? 'A fire in it. A roof without a fire is a cave.' : !has.bench ? 'A bench to work at. Hands alone make poor tools.' : 'Something on the floor. A house is not a home until it is warm underfoot.']; }
+    if (st === 'teach') return ['That is a home. Good. Sit a while.', 'Logs, and rope. Three logs lashed together will carry a man across the sound. They carried me, once.', 'A bench on the sand, by the water, to lay them on. Then east. That is where they went, Ragnar\u2019s men. East, past the big island.'];
+    return ['The bench on the sand. Lay the logs, and mind the sea.'];
   }
-  function villageSite() {               // a flat stretch of grass 22 by 16 tiles (14 by 12 until 2026-10-13: its houses were huts), far from the camp (900 to 1600 units: a wander first, Robin 2026-10-08; nearer only if the island has no room), from the island seed
+  function villageSite() {               // a flat stretch of grass 22 by 16 tiles (14 by 12 until 2026-10-13: its houses were huts), far from the camp (1500 to 2400 units since 2026-10-14, 900 to 1600 before: a wander first; nearer only if the island has no room), from the island seed
     var R = kit.rng(spec.seed * 13 + 5), tries, best = null;
     for (tries = 0; tries < 900 && !best; tries++) {
-      var a = R() * 6.283, d = tries < 400 ? 900 + R() * 700 : tries < 700 ? 600 + R() * 600 : 330 + R() * 420, cx = Math.floor((home.x + Math.cos(a) * d) / T), cy = Math.floor((home.y + Math.sin(a) * d) / T), ok = true, x, y;
+      var a = R() * 6.283, d = tries < 400 ? 1500 + R() * 900 : tries < 600 ? 1000 + R() * 500 : tries < 750 ? 600 + R() * 400 : 330 + R() * 300, cx = Math.floor((home.x + Math.cos(a) * d) / T), cy = Math.floor((home.y + Math.sin(a) * d) / T), ok = true, x, y;   /* (1500 to 2400 units first since 2026-10-14, Robin: it was too easy to find; it was 900 to 1600) */
       for (y = cy - 8; y <= cy + 8 && ok; y++) for (x = cx - 11; x <= cx + 11; x++) { var cd = code(x, y); if (cd < 2 || cd === 255 || cd === 5) { ok = false; break; } }
       if (ok && w.levelAt((cx + 0.5) * T, (cy + 0.5) * T) > 0) ok = false;   // not up on the fells
       if (ok && isleAt((cx + 0.5) * T, (cy + 0.5) * T) !== 0) ok = false;   // on the starter island
@@ -13671,9 +13681,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
        well 6 by 4 (9 m by 6). It was 6 by 4 and 4 by 3 on a site of 14 by 12. */
     house(vx + 1, vy + 1, 10, 5, 0, 0, vx + 5, 9);         // the burnt hall: logs, planks, nine gaps
     item('stoneHearth', vx + 5, vy + 3);
-    house(vx + 14, vy + 1, 6, 4, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a bed and a crate
-    item('bed', vx + 14, vy + 1, { bed: true }); item('crate', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });
-    house(vx + 14, vy + 9, 6, 4, 1, 0, vx + 17, 9);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces)
+    house(vx + 14, vy + 1, 6, 4, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
+    item('table', vx + 14.6, vy + 1.2); item('crate', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });
+    house(vx + 14, vy + 9, 6, 4, 1, 0, vx + 17, 5);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces). Its bed is the first home (2026-10-14, Robin: finish the broken house to sleep in it): five gaps, and no roof until they are closed
+    item('bed', vx + 14, vy + 9, { bed: true });
     item('woodenWell', vx + 12, vy + 10); item('stoneHearth', vx + 8.6, vy + 10.6, { light: 1 });   // Brokk's fire: light, and a hint that you will want one; a step away from him so E does not muddle them (2026-10-08)
     item('barrel', vx + 19, vy + 10, { loot: { berries: 5, meat: 2 } });
     for (x = vx; x < vx + village.w; x++) if (!(x >= vx + 11 && x <= vx + 12) && R() < 0.8) H(x, vy, 'palisade', 0);   // the palisade: a gate in the north, gaps all round
@@ -14233,7 +14244,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     });
     return best;
   }
-  function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, BERRIES); o.was = o.name; o.name = 'bush'; o.regrow = clock + 360; sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
+  function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, BERRIES); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360; sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
 
   /* ---------- the hamlet: a living village on the big island, with folk who wander it (step 5, 2026-10-05) ----------
      A point of interest found by exploring: four huts round a green with a well, a woodpile, a haystack and a fence,
@@ -14611,11 +14622,31 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.fillStyle = 'rgba(20,30,20,0.22)'; c.beginPath(); c.ellipse(npc.x, npc.y * K, 9, 4, 0, 0, 7); c.fill();
     lib.figureD(c, npc.x, npc.y * K, dir, an, null, npc.fig);
   }
-  function bubble(c, who) {              // a name, and what is said, above the head
+  /* Speech (2026-10-14, Robin: the chat bubble is bad; another way to show it). What anyone says is shown on a board at the foot of
+     the screen, a parchment in a wooden frame with the speaker's name over the line, one speaker at a time (the nearest who is
+     speaking), fading in and out; over the head only the name, when you are near. bubble() registers the speaker and draws the
+     name; drawSpeech() draws the board among the boards. */
+  var speakers = [];
+  function drawSpeech(c) {
+    if (!speakers.length) return; var P = hero(), best = null, bd = 1e9, i;
+    for (i = 0; i < speakers.length; i++) { var q = speakers[i], d = Math.hypot(q.x - P.x, q.y - P.y); if (d < bd) { bd = d; best = q; } }
+    speakers.length = 0; if (!best || bd > 260) return;
+    var text = best.say || '', a = Math.min(1, best.sayT / 0.35) * Math.min(1, (best.sayDur || 5) - best.sayT + 0.35 > 0 ? 1 : 1);
+    c.save(); c.globalAlpha = a; c.font = '500 7px system-ui, sans-serif';
+    var words = text.split(' '), lines = [''], tw = 0; for (i = 0; i < words.length; i++) { var t2 = lines[lines.length - 1] + (lines[lines.length - 1] ? ' ' : '') + words[i]; if (c.measureText(t2).width > 228 && lines[lines.length - 1]) lines.push(words[i]); else lines[lines.length - 1] = t2; }
+    for (i = 0; i < lines.length; i++) tw = Math.max(tw, c.measureText(lines[i]).width);
+    var bw = Math.max(120, tw + 28), bh = 14 + lines.length * 9, bx = 200 - bw / 2, by = 250 - 46 - bh;
+    wood(c, bx - 4, by - 4, bw + 8, bh + 8); parchment(c, bx, by, bw, bh);
+    c.fillStyle = '#6a4a2a'; c.font = '700 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillText((best.name || 'Someone').toUpperCase(), bx + 8, by + 7.5);
+    c.fillStyle = UI_INK; c.font = '500 7px system-ui, sans-serif'; for (i = 0; i < lines.length; i++) c.fillText(lines[i], bx + 8, by + 16 + i * 9);
+    c.restore();
+  }
+  function bubble(c, who) {              // the name over the head when you are near; what is said goes to the speech board (drawSpeech)
     var npc = who; var P = hero(), s = 1 / cam.z, text = npc.sayT > 0 ? npc.say : '', near = Math.hypot(P.x - npc.x, P.y - npc.y) < 90;
-    if (!text && !near) return;
+    if (text) speakers.push(npc);
+    if (!near) return;
     c.save(); c.translate((npc.x - cam.x) * cam.z + 200, (npc.y * K - cam.y) * cam.z + 125 - 36 * cam.z); c.textAlign = 'center';
-    if (!text) { c.font = '600 8px system-ui, sans-serif'; c.lineWidth = 2.5; c.strokeStyle = 'rgba(20,16,30,0.8)'; c.strokeText(npc.name, 0, 0); c.fillStyle = '#ffffff'; c.fillText(npc.name, 0, 0); c.restore(); return; }
+    { c.font = '600 8px system-ui, sans-serif'; c.lineWidth = 2.5; c.strokeStyle = 'rgba(20,16,30,0.8)'; c.strokeText(npc.name, 0, 0); c.fillStyle = '#ffffff'; c.fillText(npc.name, 0, 0); c.restore(); return; }
     c.font = '500 8.5px system-ui, sans-serif';
     var words = text.split(' '), lines = [''], i, tw = 0;
     for (i = 0; i < words.length; i++) { var tryL = lines[lines.length - 1] + (lines[lines.length - 1] ? ' ' : '') + words[i]; if (c.measureText(tryL).width > 130 && lines[lines.length - 1]) lines.push(words[i]); else lines[lines.length - 1] = tryL; }
@@ -15613,7 +15644,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
   }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + 20 && Math.abs(o.y - y) < rad) out.push(o); }); B.items.forEach(function (it) { if (BREAK[it.name] && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
+    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + o.len * 0.5 && Math.abs(o.y - y) < rad) { o.r = Math.max(6, o.len * 0.5 - 4); out.push(o); } });   /* (a trunk is struck anywhere along its length: its r is half of it, 2026-10-14) */ B.items.forEach(function (it) { if (BREAK[it.name] && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool) {
       if (o.edge) return wallBlow(o, power, right, tool);   // a wall, a locked door, a fence: src/ruin.js
       if (o.stake) return stakeBlow(o, power, right, tool);
@@ -16914,7 +16945,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0);
       if (inYard) { YSCENE.hud(c, mouseS, P.wreck); drawNotes(c); c.restore(); return; }
       drawPanels(c); drawHint(c);
-      if (!over) drawNotes(c);
+      drawSpeech(c); if (!over) drawNotes(c);
       if (musterOpen) drawMuster(c);
       if (mapOpen) drawMap(c);
       bookFlash = Math.max(0, bookFlash - 0.02);
