@@ -1974,12 +1974,16 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   second pass the same evening, from Robin's Valheim picture: the bag bottom left with the character panel over it, the crafting
   panel on the right):** `CHAR` sits top left (126 by 104, `CHAR_H`; the hero at 1.35, the gear slots 15 apart; a Stats or Ring
   page makes it 238 tall and it lies over the bag), the bag under it (`INV.x` 8, the bar row at `BAR.y` 114, sliding in from the
-  left), and **the recipe board on the right** (`openInfo`: 254 by 190 at x 138, y 22; the list and the page as before). **Tab
+  left), and **the recipe board on the right** (`openInfo`: 180 by 200 at x 212, y 22, the list 66 wide: **the middle of the screen stays
+  clear, so the hero is seen and can keep moving with the screen open**, Robin's rule; the list and the page as before). **Tab
   opens all of it** with the board for where you stand (`craftTabHere`: the bench, the hearth or the furnace beside you, else By
   hand; `menuFrom` 'tab' gives the tabs By hand plus whichever station is near), **E at a station opens the same screen** with
   that station's board, and E or Tab closes both. **An open chest takes the right side instead** (`STORE_UI` at x 266, sliding in
   from the right). The panel's title is "You" and its tabs are `chTabs()`: Gear always, **Stats after the first kill**
-  (`seen.fought`), **Ring once a ring is worn**. (A Make page on the panel lived for an hour in between; it is gone.) **The interface grows:** the hotbar is
+  (`seen.fought`), **Ring once a ring is worn**. (A Make page on the panel lived for an hour in between; it is gone.) **Robin's second look:** the bag's bar row is always
+  drawn (only the hotbar at the foot of the screen waits for the first tool), and **every gear slot shows** (the necklace, the
+  two rings, the two trinkets and the arm ring were hidden until something could fill them, since the UI review): the panel is
+  112 tall with slots 12.5 apart, the bag's cells 17 (`CELL`), so the column fits in 250. The hotbar's label names B only. **The interface grows:** the hotbar is
   not drawn until a thing has been put on the bar (`seen.bar`, set by `barPut`; the engine's `api.hideBar`; the bag's bar row
   likewise), **B does nothing until Brokk's word** (`seen.build`, set when his story's last line is heard: a test scene or the
   sandbox sets it with `seen.met`), the Building board holds the plank house's six pieces until the first night under a roof

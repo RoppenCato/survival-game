@@ -2850,8 +2850,8 @@ __COMBAT__
   }
   function openInfo() {
     menuStation = menuTab === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (menuTab === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : (menuTab === 'furnace' ? { kind: 'furnace', it: furnaceAt(hero()) } : null)); if (menuStation && !menuStation.it) menuStation = null;
-    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 254, h: 190, list: infoList(), scroll: 0, maxScroll: 0 };
-    menu.x = 400 - menu.w - 8; menu.y = 22;   /* (on the right since 2026-10-14: the one screen) */
+    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 180, h: 200, list: infoList(), scroll: 0, maxScroll: 0 };
+    menu.x = 400 - menu.w - 8; menu.y = 22;   /* (on the right since 2026-10-14, the one screen; 180 wide so the hero in the middle of the screen stays clear of it: Robin wants to see him and keep moving with the bag open) */
     var rowH = 15, listH = menu.h - 36 - (menuStation ? 26 : 0); menu.rowH = rowH; menu.listH = listH;
     // the list as it is shown: under a small heading a category when there is more than one (Tools, Weapons, Armour, Supplies); it was one long scroll
     var show = [], cats = CATS2.filter(function (ct) { return menu.list.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
@@ -2933,7 +2933,7 @@ __COMBAT__
     wood(c, menu.x, menu.y, menu.w, menu.h);
     menu.tabs.forEach(function (t) { tabUi(c, t, t.id === menuTab, th === t); });
     // the list
-    var lx = menu.x + 6, ly = menu.y + 22, lw = 96, rowH = menu.rowH, sel = infoSel(); menu.rows = [];
+    var lx = menu.x + 6, ly = menu.y + 22, lw = 66, rowH = menu.rowH, sel = infoSel(); menu.rows = [];
     c.fillStyle = '#33241a'; c.fillRect(lx, ly, lw, menu.listH); uiGrain(c, lx, ly, lw, menu.listH, 0.14); c.strokeStyle = UI_INK; c.lineWidth = 0.9; c.strokeRect(lx + 0.5, ly + 0.5, lw - 1, menu.listH - 1);
     c.save(); c.beginPath(); c.rect(lx, ly, lw, menu.listH); c.clip();
     menu.show.forEach(function (q) {
@@ -3229,16 +3229,16 @@ __COMBAT__
   Combat.api.onArrowLand = function (x, y) { };   /* (no arrows lie to be picked up while there is no quiver) */
 
   /* ---------- the character panel: slides in from the left on Tab, the bag from the right ---------- */
-  var CHAR_H = 104, CHAR = { w: 126, h: CHAR_H, x: 8, y: 6, slide: 0 };   /* (2026-10-14, one screen on Tab: the panel top left over the bag, the crafting board on the right, as Valheim lays it out in Robin's picture) */
+  var CHAR_H = 112, CHAR = { w: 126, h: CHAR_H, x: 8, y: 6, slide: 0 };   /* (2026-10-14, one screen on Tab: the panel top left over the bag, the crafting board on the right, as Valheim lays it out in Robin's picture) */
   function chLeft() { return CHAR.x - (1 - CHAR.slide) * (CHAR.w + 40); }
   var EQUIP = [['head', 'Helmet'], ['cloak', 'Cloak'], ['chest', 'Tunic'], ['legs', 'Trousers'], ['feet', 'Boots'], ['shield', 'Shield'], ['neck', 'Necklace'], ['ring1', 'Ring'], ['ring2', 'Ring'], ['trinket', 'Trinket'], ['trinket2', 'Trinket']];   // the right column: shield, necklace, two rings, two trinkets (Robin, 2026-10-07)
   var EQUIPPED = { weapon: 'sword', bow: 'bow' };
   function gearFor(id) { if (equip[id]) return true; for (var k in Items.KINDS) if (TOOL_SLOT[k] === id) return true; return false; }   // is there anything in the game that goes in this slot?
   function chSlots() {                      // (2026-10-12: the necklace, the rings and the trinkets show once there is something to put in them; they were five empty outlines)
     var x0 = chLeft(), out = [], i, rn = 0;
-    for (i = 0; i < 5; i++) out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + 12, y: CHAR.y + 22 + i * 15, w: 14, h: 14 });
-    for (i = 5; i < EQUIP.length; i++) if (gearFor(EQUIP[i][0])) { out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + CHAR.w - 26, y: CHAR.y + 22 + rn * 15, w: 14, h: 14 }); rn++; }
-    out.push({ id: 'armring', name: 'Arm ring', ringSlot: true, x: x0 + CHAR.w - 26, y: CHAR.y + 22 + rn * 15, w: 14, h: 14 });   // the arm ring: under the shield
+    for (i = 0; i < 5; i++) out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + 12, y: CHAR.y + 21 + i * 12.5, w: 11.5, h: 11.5 });
+    for (i = 5; i < EQUIP.length; i++) { out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + CHAR.w - 24, y: CHAR.y + 21 + rn * 12.5, w: 11.5, h: 11.5 }); rn++; }   /* (every slot shown, 2026-10-14, Robin: the rings and the trinkets were hidden until something could fill them) */
+    out.push({ id: 'armring', name: 'Arm ring', ringSlot: true, x: x0 + CHAR.w - 24, y: CHAR.y + 21 + rn * 12.5, w: 11.5, h: 11.5 });   // the arm ring: under the shield
     /* (the quiver's three slots were here until 2026-10-13: Robin, remove the arrow slots, a better way is to be found) */
     return out;
   }
@@ -3369,11 +3369,11 @@ __COMBAT__
       c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + 6, CHAR.y + CHAR.h - 2.5); c.fillStyle = '#fff'; c.fillText(txt, x0 + 6, CHAR.y + CHAR.h - 2.5);
     }
   }
-  var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + (ROWS - 1) * CELL + 8, slide: 0 }, BAR = { y: CHAR_H + 10, h: CELL + 10 };   // the bar's board sits above the bag, under the character panel
+  var CELL = 17, INV = { w: COLS * CELL + 12, h: 16 + (ROWS - 1) * CELL + 8, slide: 0 }, BAR = { y: CHAR_H + 10, h: CELL + 10 };   // the bar's board sits above the bag, under the character panel
   INV.x = 8; INV.y = BAR.y + BAR.h + 4;
   function invLeft() { return INV.x - (1 - INV.slide) * (INV.w + 40); }
   function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + 6 + (i % COLS) * CELL, y: i < BAG0 ? BAR.y + 6 + row * CELL : INV.y + 16 + (row - 1) * CELL, w: CELL - 2, h: CELL - 2 }; }
-  var STORE_UI = { x: 400 - (COLS * CELL + 12) - 8, y: 40, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };   // an open chest: on the right, where the crafting board sits otherwise
+  var STORE_UI = { x: 400 - (COLS * CELL + 12) - 8, y: 60, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };   // an open chest: on the right, where the crafting board sits otherwise
   function storeLeft() { return STORE_UI.x + (1 - INV.slide) * (STORE_UI.w + 40); }
   function storeRect(j) { var x0 = storeLeft(); return { x: x0 + 6 + (j % COLS) * CELL, y: STORE_UI.y + 16 + Math.floor(j / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
   function slotAt() {
@@ -3401,11 +3401,11 @@ __COMBAT__
     var sr = btnRect(0);                                // a small Sort button above the bag: three bars side by side
     c.fillStyle = hb === 'sort' ? '#6b4a32' : '#4a2e1c'; c.beginPath(); c.roundRect(sr.x, sr.y, sr.w, sr.h, 2); c.fill(); c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.stroke();
     c.fillStyle = '#f6e2b8'; c.fillRect(sr.x + 3.5, sr.y + 3, 2.2, 5); c.fillRect(sr.x + 6.9, sr.y + 2, 2.2, 6); c.fillRect(sr.x + 10.3, sr.y + 3.8, 2.2, 4.2);
-    if (seen.bar || SCENE) wood(c, x0, BAR.y, INV.w, BAR.h);                   // the bar: six things, one in hand (shown once there is a thing for it)
+    wood(c, x0, BAR.y, INV.w, BAR.h);                   // the bar: six things, one in hand
     wood(c, x0, INV.y, INV.w, INV.h);
     c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Bag', x0 + 8, INV.y + 11);
     for (i = 0; i < SLOTS; i++) {
-      var r = slotRect(i), s = slots[i], top = i < BAG0, inHand = top && i === hand; if (top && !seen.bar && !SCENE) continue;
+      var r = slotRect(i), s = slots[i], top = i < BAG0, inHand = top && i === hand;
       slotUi(c, r.x, r.y, r.w, r.h, hov === i, inHand);
       if (top) { c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.textAlign = 'left'; c.fillText(String(i % COLS + 1), r.x + 2, r.y + 6.5); }   // the key that takes it in hand
       if (s) stackIn(c, r, s, i);
