@@ -8098,6 +8098,7 @@ function roundIcon(c, id, x, y, r, on, dim) {
   c.globalAlpha = 1;
 }
 function drawHotbar(c) {
+  if (api.hideBar && api.hideBar()) return;   // (a page that has not shown its bar yet: the game's beginning, 2026-10-14)
   var sz = 11, gap = 2, x0 = Math.round((SW - (6 * sz + 5 * gap)) / 2), y0 = SH - sz - 5, mode = P.mode, gather = mode === 'gather', build = mode === 'build', i, k = 0.55;
   var slots = build ? (api.buildSlots || []) : [];
   var bar = api.barSlots && (mode === 'fight' || gather) ? api.barSlots(mode) : null;   // a page's own bar: six things, one in hand

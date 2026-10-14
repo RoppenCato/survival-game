@@ -186,6 +186,12 @@ pacing, rocks that differ, the cave mouth, the troll, the island gap, the yard.
 
 **Then 21:** the troll cave's mouth is cut into the painted wall by the mountain painter itself (an arch in the wall's own rock, the floor running back into the dark), no Blender rock round it. Details in CLAUDE.md under "The cave mouth cut into the rock".
 
+**Then the beginning itself (Robin: "Yes, do all this", with his additions):** one bar and no Q (the thing in hand decides the act);
+C gone, hand crafting on the panel's Make page under Tab; the hotbar hidden until the first tool, B dead until Brokk's story is heard,
+Stats after the first kill and Ring once a ring is worn; the big steps on a bordered board (your bar, building, the raft, the island
+left); the wreck pried for the first wood and a line of trail stones toward the steading; no "something new" toasts, a gold dot on
+a thing never yet made. Details in CLAUDE.md under "The beginning that grows" and "Controls and modes".
+
 ### Questions for Robin
 
 - The crafting that "feels off" (10, 23): is it the board (a list and a page), the queue and the Ready strip, the time a

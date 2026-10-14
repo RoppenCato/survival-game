@@ -1968,6 +1968,29 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   marks it `painted` and draws nothing for it. **The mine's and the sea cave's mouths are still the Blender pieces** (they are
   not on the big island; `mtn.noPaintMouth` would turn the painting off). My look, not Robin's; the scree and the skull of
   the Blender piece are not painted yet. `docs/cave-mouth.png` is the older before-and-after.
+- **The beginning that grows (2026-10-14; Robin: "Yes, do all this" to my five points on being overwhelmed at the start, and his own
+  additions: big steps announced on a bordered board, Brokk as the gate, only the basic pieces, Brokk naming what the house still
+  lacks). Built the same day, in three commits (one bar first, see "Controls and modes").** **C is gone: hand crafting is the
+  character panel's first page, Make** (`drawMake`, `makeList`, `makeRows`, `makeRowAt`: every by-hand recipe known, its icon, name
+  and what it takes, red where short, a click makes it; the panel's title is "You" and its tabs are `chTabs()`: Make and Gear
+  always, **Stats after the first kill** (`seen.fought`), **Ring once a ring is worn**). **The interface grows:** the hotbar is
+  not drawn until a thing has been put on the bar (`seen.bar`, set by `barPut`; the engine's `api.hideBar`; the bag's bar row
+  likewise), **B does nothing until Brokk's word** (`seen.build`, set when his story's last line is heard: a test scene or the
+  sandbox sets it with `seen.met`), the Building board holds the plank house's six pieces until the first night under a roof
+  (as before). **The big steps are boards** (`bigStep(title, line)`, `banner`, drawn where the "left the island" banner was, which
+  is one of them now): "Your bar" at the first tool, "Building" at Brokk's word, "The raft" when he has taught it (the toast is
+  gone), "You have left the island". **The wreck is the first wood:** E at it, "Pry a plank from the wreck", four times three
+  wood (`WRECK_PRIES`, `WRECK_WOOD`, `wreckNear`, `seen.pried`), and only four branches lie about (`CAMP_WOOD`; the nine stones stay).
+  **A sign to the steading, not a hint:** `layCairns()` (every start, in `villageClear`) lays trail stones from the wreck's beach
+  toward the steading every 230 units, each in sight of the last (`o.cairn`; six in the pane's world). **No more "Something new to
+  make" or "to build"** (`noteSeen` only records): a thing never yet made carries a **gold dot** on the Make page, the recipe
+  boards and the Building board (`isNew`, `markMade`, `seen.made`; a piece under `p:<id>:<m>`). **The key reminders** are three
+  again, in order: "E at the wreck", "Walk over the things lying about", "Tab" (until the first tool), then "1 to 6". **Brokk's
+  wait lines** name the first thing the house lacks (a fire, a bench, something on the floor), as rewritten the same day.
+  **Played through in the pane:** pried four planks (12 wood), Tab, the axe from the Make page, the bar board, B dead before
+  Brokk, his fourth line and the Building board, B alive with six pieces, a hut at comfort 5, his three raft lines and the raft
+  board. **Not done:** smoke seen from afar (the chart's question mark and the cairns are the sign); the notes still stack as
+  they did (under a board now, never over it); the shipyard tiers and the rest of the keys are as they were.
 - **The fish weir (2026-10-12, Robin's pick of the finds for the starter island):** `weirPlace()` (every start, after
   `villageClear`) walks out from the island's middle along every bearing to the shore and takes shallow water off a beach 320 to
   1500 units from the wreck, by choice nearest the way from the wreck to the steading: a `fishWeir` (stakes and wattle) in the

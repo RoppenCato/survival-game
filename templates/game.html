@@ -71,12 +71,11 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <dt><kbd>Ctrl</kbd></dt><dd>Target the nearest beast; again for the next, then let go</dd>
           <dt><kbd>X</kbd></dt><dd>Draw your weapon, or put it away. Among other people it is away until you draw it, and a drawn blade is a threat</dd>
           <dt><kbd>Esc</kbd></dt><dd>Closes whatever board is open; else the menu: continue, a sandbox to try things out in, restart with nothing or a new island (each asks for a second click), the music and the sounds of the world</dd>
-          <dt><kbd>C</kbd></dt><dd>What you make by hand, anywhere: the first tools, a club, a bow, arrows, torches. A recipe appears once you have picked up what it is made of</dd>
           <dt><kbd>B</kbd></dt><dd>Build mode. The Building board opens with it, and again on <kbd>Right click</kbd>: a tab for walls, floors and roofs, ground, yard, furniture, work and outdoors, every piece with its name and what it costs. Pick one, then click to place it (drag for walls and floors). <kbd>F</kbd> turns the cursor into the wreck cursor: the piece under it glows, and a click takes it down and gives the material back</dd>
           <dt><kbd>Mouse wheel</kbd></dt><dd>Pick a slot on the bar (<kbd>Enter</kbd> takes the pick in hand, or puts it away; a number key does the same for its slot); in build mode through the pieces you know (it turns a thing you are about to set down), and over the Building board through its tabs</dd>
           <dt><kbd>E</kbd></dt><dd>Use what you face: a workbench, a hearth or a furnace (its board; E again closes it), a bed from dusk (sleep until morning), a chest (opens beside the bag), a seat, a boat, a cave, a person to talk to, berries to pick. The words over the hero say what it will do</dd>
           <dt>In the bag</dt><dd><kbd>Drag</kbd> a thing to move it; off the boards, to lay it on the ground (a weapon or a tool lies there until <kbd>E</kbd> takes it up again). <kbd>Right click</kbd> uses it: eats a food, lights a torch, sends a weapon or a tool to its bar, puts a garment on (on the character panel, takes it off). <kbd>Shift</kbd> and click sends it across to an open chest, or out of one. <kbd>Shift</kbd> and drag carries half a stack</dd>
-          <dt><kbd>Tab</kbd></dt><dd>The character panel slides in from the left (the hero, what is worn, the arm ring; pages for the numbers and the ring) and the bag from the right: six slots wide, stacks of 25, its top two rows the Fight bar and the Gather bar. Point at a thing for its card. Sort tidies the rows below the bars</dd>
+          <dt><kbd>Tab</kbd></dt><dd>Your panel slides in from the left (Make: what you can make by hand; Gear: the hero and what is worn; pages for the numbers and the ring come as you earn them) and the bag from the right: six slots wide, stacks of 25, its top two rows the Fight bar and the Gather bar. Point at a thing for its card. Sort tidies the rows below the bars</dd>
           <dt><kbd>R</kbd></dt><dd>Rise again after you have fallen</dd>
         </dl>
       </div>
@@ -365,7 +364,7 @@ __COMBAT__
     w.plant(); if (w.peaks) w.peaks(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(700);
-    raft = null; leftBanner = 0; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
+    raft = null; leftBanner = 0; banner = null; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
     villageClear(); weirPlace(); caveSetup(); hamletClear();
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
     Combat.api.scene.bounds = worldBounds();
@@ -1324,7 +1323,7 @@ __COMBAT__
   var FISH_KINDS = { herring: 1, perch: 1, cod: 1, pike: 1, salmon: 1 };   // the fishes are kinds of their own in the bag; 'fish' counts them all for the dishes
   var NAMES = { herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
-  function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; var n = RECIPES2.filter(function (r) { return known(r) && !r._told; }).length; if (n) toast('Something new to make'); if (PIECES.some(function (p) { return p.key === kind; })) toast('Something new to build'); RECIPES2.forEach(function (r) { if (known(r)) r._told = true; }); } }
+  function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; save(); } }   /* (2026-10-14: no toast any more; a thing never made carries a gold mark on its board instead) */
   // The bag: 30 slots, 6 wide. The top row is the bar (one bar since 2026-10-14; it was the Fight bar over the Gather bar: each the hotbar of its mode),
   // numbered 1 to 6, and `hand` says which slot of each is in the hand. The three rows below are the bag proper.
   var COLS = 6, ROWS = 5, SLOTS = COLS * ROWS, BAG0 = COLS, STACK = 25, slots = [], held = null, pick = null;   /* (one bar since 2026-10-14: the top row; four rows of bag under it) */
@@ -1339,7 +1338,7 @@ __COMBAT__
   function handSlot() { return hand < 0 ? null : slots[hand]; }   // -1: empty hands (the thing was put away)
   function handItem() { var s = handSlot(); return s && s.kind === 'item' ? s.item : null; }   // (the argument older callers pass, a mode, is ignored: one hand)
   function barPut(spec) {                // a new weapon or tool goes to the first free slot of the bar; true if it did
-    if (!BAR_OF[spec.kind]) return false;
+    if (!BAR_OF[spec.kind]) return false; if (!seen.bar) { seen.bar = 1; bigStep('Your bar', 'What you made is in your hand. 1 to 6 take a thing in hand, the key again puts it away.'); }
     for (var i = 0; i < COLS; i++) if (!slots[i]) { slots[i] = { kind: 'item', n: 1, item: spec }; return true; }
     return false;
   }
@@ -1370,7 +1369,7 @@ __COMBAT__
   var TOOL_SLOT = { shield: 'shield', helmet: 'head', tunic: 'chest', trousers: 'legs', boots: 'feet', cloak: 'cloak' }, TOOL_IDS = ['axe', 'pick', 'knife'];   // worn gear; weapons and tools live on the bars
   var equip = { shield: null, trinket: null, trinket2: null, ring1: null, ring2: null, neck: null, head: null, cloak: null, chest: null, legs: null, feet: null };
   function startKit() { for (var k in equip) equip[k] = null; }   // you start with nothing: the first tools are made by hand
-  var CAMP_WOOD = 12, CAMP_STONE = 9;      // the axe, knife, pick and stick sword take 9 branches and 6 stones; the rest is for the first bench
+  var CAMP_WOOD = 4, CAMP_STONE = 9, WRECK_WOOD = 4, WRECK_PRIES = 4;   /* (2026-10-14: the wreck is the first wood, pried from its hull, four times three; fewer branches lie about) */      // the axe, knife, pick and stick sword take 9 branches and 6 stones; the rest is for the first bench
   function campScatter() {               // branches and stones lying round the camp, on land, clear of the spot you land on
     var R = kit.rng(spec.seed * 7 + 1), n = 0, tries = 0, want = CAMP_WOOD + CAMP_STONE, sx = home.x - 40, sy = home.y;
     while (n < want && tries++ < 600) {
@@ -1405,6 +1404,7 @@ __COMBAT__
     weirAt = { x: best.bx, y: best.by };
   }
   var weirAt = null;
+  function wreckNear(P) { var best = null; around(P.x, P.y, function (o) { if (o.name === 'wreckedBoat' && Math.hypot(o.x - P.x, o.y - P.y) < 70) best = o; }); return best; }
   function weirNear(P) { var best = null; around(P.x, P.y, function (o) { if (o.weirNet && Math.hypot(o.x - P.x, o.y - P.y) < 46) best = o; }); return best; }
   function weirTake(o) { yieldDrop('fiber', o.x, o.y + 8, 4); w.removeProp(o); gone[propKey(o)] = 1; sfx('pick'); save(); }
   function campTrees() {                 // three lone trees an easy walk from camp, so the first axe has something to fell
@@ -1443,8 +1443,12 @@ __COMBAT__
     }
     return best;
   }
+  function layCairns() {                 // a line of trail stones from the wreck's beach toward the steading (2026-10-14, Robin: a sign, not a hint): each in sight of the last
+    if (!village) return; var R = kit.rng(spec.seed * 13 + 5), vx = (village.tx + village.w / 2) * T, vy = (village.ty + village.h / 2) * T, dx = vx - home.x, dy = vy - home.y, dd = Math.hypot(dx, dy), n = Math.floor(dd / 230), k;
+    for (k = 1; k < n; k++) { var t = k / n, x = home.x + dx * t + (R() - 0.5) * 60, y = home.y + dy * t + (R() - 0.5) * 60; if (!isLand(x, y)) continue; var busy = false; around(x, y, function (o) { if (Math.hypot(o.x - x, o.y - y) < 26) busy = true; }); if (busy) continue; w.addProp({ name: 'trailStone', x: x, y: y, s: 1.1, r: 5, v: k % 3, cairn: true }); }
+  }
   function villageClear() {              // the site is cleared of trees and bushes, and the rubble and the smith placed (every start)
-    village = villageSite(); npc = null; if (!village) return;
+    village = villageSite(); npc = null; if (!village) return; layCairns();
     var x0 = village.tx * T, y0 = village.ty * T, x1 = (village.tx + village.w) * T, y1 = (village.ty + village.h) * T, list = [];
     w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20 && o.name !== 'rubble') list.push(o); });
     list.forEach(function (o) { w.removeProp(o); });
@@ -1500,7 +1504,8 @@ __COMBAT__
   var roofLater = null;
   /* ---------- the raft (Goal 1, step 9): crafted at the shipwright's bench, boarded with E, paddled with WASD, left with E ----------
      One raft. It floats anywhere that is not land, slowly; stepping ashore on the second island is the goal. */
-  var raft = null, leftBanner = 0, leftChk = 0;
+  var raft = null, leftBanner = 0, leftChk = 0, banner = null;
+  function bigStep(title, line) { banner = { title: title, line: line, t: 9 }; sfx('craft'); }   /* a big step announced on a bordered board (2026-10-14, Robin): the bar, building, the raft, the island left */
   // how the vessels handle: the Sea Editor's numbers (Yard.HANDLING), or what its "Use in the game" handed over (game.boat);
   // the raft is a slower, clumsier share of the boat's
   function handling(kind) {
@@ -1543,12 +1548,12 @@ __COMBAT__
     }
     if (!best) { toast('No shore close enough'); return; }
     raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; sfx('pick'); crewAshore(best); menAshore(best);
-    if (!seen.left && onOtherIsland(best.x, best.y)) { seen.left = 1; leftBanner = 9; sfx('craft'); earnRune('sealegs', 'the second island reached'); }
+    if (!seen.left && onOtherIsland(best.x, best.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ragnar sailed east.'); earnRune('sealegs', 'the second island reached'); }
     save();
   }
   function raftTick(dt) {
-    if (leftBanner > 0) leftBanner -= dt;
-    if (!seen.left && !SCENE && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; leftBanner = 9; sfx('craft'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
+    if (leftBanner > 0) leftBanner -= dt; if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
+    if (!seen.left && !SCENE && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ragnar sailed east.'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
     windTick(dt);
     if (!raft || !raft.aboard) return;
     raft.crew = hird.filter(function (m) { return m.aboard; }).length + menAboard.length;
@@ -2402,8 +2407,8 @@ __COMBAT__
     npc.say = L[npc.line % L.length]; npc.line++; npc.sayT = 5;
     if (ring && seen.met && !RS.learnt.riposte && !RS.earned.riposte) { npc.say = 'A ring on your arm, I see. Then take this from me: meet the blow on your shield, and strike while they are still swinging.'; npc.sayT = 6; earnRune('riposte', 'Brokk showed you'); return; }
     if (npc.line >= L.length) {          // heard it all: the story is known; the lesson is learnt
-      if (st === 'meet' && !seen.met) { seen.met = 1; save(); }
-      else if (st === 'teach' && !seen.raft) { seen.raft = 1; toast('Brokk taught you the raft'); save(); }
+      if (st === 'meet' && !seen.met) { seen.met = 1; seen.build = 1; bigStep('Building', 'Press B. The plank house by the well wants its walls, a door and a roof.'); save(); }
+      else if (st === 'teach' && !seen.raft) { seen.raft = 1; bigStep('The raft', 'Brokk has taught you the raft. Build the raft bench on the sand, at the water.'); save(); }
     }
   }
   function drawNpc(c) {
@@ -2546,6 +2551,7 @@ __COMBAT__
     weapon: function (k) { var it = handItem(); if (!it || GATHER_KINDS[it.kind]) return null; var K2 = Items.KINDS[it.kind]; return (k === 'bow' ? K2.ranged : K2.melee) ? it : null; }   // 'sword' asks for the melee thing in hand, 'bow' for the ranged one
   };
   Combat.api.barSelect = barPress;
+  Combat.api.hideBar = function () { return !seen.bar && !SCENE; };
   Combat.api.barSlots = function (mode) { var b = 0; return { hand: hand, sel: sel, slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, ammo: ammoOf(s), draw: function (c) { if (s.kind === 'item') itemIcon(c, s.item, 16, 9.5); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; }) }; };
   function ammoOf(s) { return null; }   /* (no ammo while there is no quiver, 2026-10-13) */   // arrows for a bow, stones for a sling: written in the thing's own slot
   function handSync() {                   // the engine's mode, tool and weapon follow the hand (one bar, 2026-10-14)
@@ -2626,6 +2632,7 @@ __COMBAT__
   function drawNotes(c, top) {              // top: a board lies over the hero; the notes are stacked above its top edge, centred
     var P = hero(), sx = (P.x - cam.x) * cam.z + 200 + 15, sy = (P.y * K - cam.y) * cam.z + 125 - 24, k = 0, i;
     if (promptBox && top == null) sx = Math.max(sx, promptBox.x1 + 4);
+    if (banner && sy < 118 && top == null) sy = 118;   /* (under a big-step board, never over it) */
     notes = notes.filter(function (q) { return clock - q.born < 3.6; });
     c.save(); c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = 'rgba(30,18,10,0.85)';
     for (i = notes.length - 1; i >= 0; i--, k++) {
@@ -2699,6 +2706,7 @@ __COMBAT__
     else if (s && s.kind === 'store') add(it, 'Open', function () { store = it; invOpen = true; bookOpen = false; clothOpen = false; });
     var cl = clampNear(P), clp = cl && clampPrompt(cl); if (clp) add(cl, clp, function () { clampUse(cl); });
     var wr = weirNear(P); if (wr) add(wr, 'Take down the net', function () { weirTake(wr); });
+    var wk = wreckNear(P); if (wk && (seen.pried || 0) < WRECK_PRIES) add(wk, 'Pry a plank from the wreck', function () { seen.pried = (seen.pried || 0) + 1; addItem('wood', 3); sfx('chop'); note('+3 wood'); if (seen.pried >= WRECK_PRIES) note('Nothing more to pry loose'); save(); });
     var fr = ringNear(P); if (fr) add(fr, 'Take the charcoal', function () { ringTake(fr); });
     var lo = !build && lookoutNear(P); if (lo) add(lo, 'Look out', function () { lookOut(lo); });
     var rsn = ring && stoneNear(P); if (rsn && !RS.stones[propKey(rsn)]) add(rsn, 'Read the stone', function () { readStone(rsn); });   // a stone read once is not offered again
@@ -2915,7 +2923,7 @@ __COMBAT__
     for (i = crafting.length - 1; i >= 0; i--) if (crafting[i].r === e.r) { var j = crafting.splice(i, 1)[0]; refund(e.r.needs, j.at); sfx('pick'); save(); return; }
   }
   function infoCancelHit() { var b = menu && menu.info && menu.cbtn; return !!b && mouseS && mouseS.x >= b.x && mouseS.x <= b.x + b.w && mouseS.y >= b.y && mouseS.y <= b.y + b.h; }
-  function infoMake(e) { if (!e || !infoCan(e)) return; if (e.dish) cook(e.dish); else if (e.r.at === 'furnace') smelt(e.r); else craft(e.r); }
+  function infoMake(e) { if (!e || !infoCan(e)) return; markMade(e.id); if (e.dish) cook(e.dish); else if (e.r.at === 'furnace') smelt(e.r); else craft(e.r); }
   function wrapText(c, text, maxW) { var words = text.split(' '), lines = [], cur = ''; words.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }); if (cur) lines.push(cur); return lines; }
   function drawInfo(c) {
     var P = hero(), th = menuTabHit(), i, bench = benchNear(P), roofed = bench && benchRoofed(bench);
@@ -2934,6 +2942,7 @@ __COMBAT__
       var can = infoCan(e); c.globalAlpha = can ? 1 : 0.55; infoIcon(c, e, lx + 9, y + rowH / 2, 0.62); c.globalAlpha = 1;
       c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = on ? '#fff' : (can ? '#f6e2b8' : 'rgba(246,226,184,0.55)'); c.fillText(infoName(e), lx + 18, y + rowH / 2 + 2.2);
       var pr = infoProgress(e); if (pr) { c.fillStyle = '#ffd34d'; c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.fillText('x' + pr.n, lx + lw - 3, y + rowH / 2 + 2); }
+      else if (isNew(e.id)) { c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(lx + lw - 5, y + 4.5, 1.6, 0, 7); c.fill(); }   // never made: a mark, where a toast used to say "something new"
     });
     c.restore();
     if (menu.maxScroll) { var sh = menu.listH, kh = Math.max(8, sh * sh / menu.listTotal), ky = ly + (sh - kh) * menu.scroll / menu.maxScroll; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(lx + lw - 2.5, ly, 2, sh); c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillRect(lx + lw - 2.5, ky, 2, kh); }
@@ -3008,7 +3017,7 @@ __COMBAT__
       c.save(); c.beginPath(); c.rect(it.x + 1, it.y + 1, it.w - 2, 25); c.clip(); c.translate(it.x + it.w / 2, it.y + 13.5); c.globalAlpha = ok ? 1 : 0.5; if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); c.restore();
       c.font = '600 4.6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = ok ? '#f6e2b8' : 'rgba(246,226,184,0.6)';
       var nl = wrapText(c, p.name, it.w - 3).slice(0, 2); nl.forEach(function (ln, k) { c.fillText(ln, it.x + it.w / 2, it.y + (nl.length === 1 ? 31 : 29) + k * 5.2); });
-      costRow(c, cost, it.x + it.w / 2, it.y + it.h - 2.6);
+      costRow(c, cost, it.x + it.w / 2, it.y + it.h - 2.6); if (isNew('p:' + it.piece.id + ':' + it.piece.m)) { c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(it.x + it.w - 4, it.y + 4, 1.7, 0, 7); c.fill(); }
     }
   }
   // panels: the inventory (Tab) and the hearth (E). Rows are remembered so clicks can find them.
@@ -3090,7 +3099,7 @@ __COMBAT__
     else if (id === 'tpVillage' && village) { P.x = (village.tx + 11.5) * T; P.y = (village.ty + 8.5) * T; }
     else if (id === 'tpHamlet' && villages.length) { var tv = villages[tpV % villages.length]; tpV++; P.x = (tv.tx + tv.w / 2) * T; P.y = (tv.ty + tv.h / 2 + 1) * T; toast(tv.name); }
     else if (id === 'tpCave' && caveMouth) { P.x = caveMouth.x; P.y = caveMouth.y + 44; }
-    else if (id === 'brokk') { seen.met = 1; seen.raft = 1; if (!stones().length) { var cs = { name: 'claimStone', x: P.x + 30, y: P.y, r: 5, claim: true }; B.items.push(cs); raiseStone(cs); } else if (npc && !npc.joined) brokkJoin(stones()[0]); toast('Brokk is yours'); }
+    else if (id === 'brokk') { seen.met = 1; seen.build = 1; seen.bar = 1; seen.raft = 1; if (!stones().length) { var cs = { name: 'claimStone', x: P.x + 30, y: P.y, r: 5, claim: true }; B.items.push(cs); raiseStone(cs); } else if (npc && !npc.joined) brokkJoin(stones()[0]); toast('Brokk is yours'); }
     P.vx = P.vy = 0; save(); pauseOpen = false; adminOpen = false;
   }
   var rows = [], pauseOpen = false;
@@ -3110,8 +3119,9 @@ __COMBAT__
   // Guidance is subtle (Robin): a few quiet key reminders at the very start, never a goal and never an explanation. The
   // rest is found by exploring: prompts over the hero, the people, the way things look.
   var HINTS = [
+    { done: function () { return (seen.pried || 0) > 0 || hasTool(); }, text: 'E at the wreck' },
     { done: function () { return hasTool() || (inv.wood >= 4 && inv.stone >= 3); }, text: 'Walk over the things lying about' },
-    { done: function () { return hasTool(); }, text: 'Press C' },
+    { done: function () { return hasTool(); }, text: 'Tab' },
     { done: function () { return inv.fiber > 0 || seen.fiber; }, text: '1 to 6: take a thing in hand' }
   ];
   function itemIcon(c, it, size, half) { c.save(); c.beginPath(); c.rect(-half, -half, half * 2, half * 2); c.clip(); Items.icon(c, it, size); c.restore(); }   // a thing's icon kept inside its slot
@@ -3264,10 +3274,11 @@ __COMBAT__
     c.restore();
   }
   /* ---------- the stats board: a second page of the character panel, Gear | Stats ---------- */
-  var chTab = 'gear';
-  var CH_TABS = ['gear', 'stats', 'ring'];
-  function chTabRect(i) { return { x: chLeft() + CHAR.w - 76 + i * 25, y: CHAR.y + 3, w: 23, h: 10 }; }
-  function chTabAt() { if (!mouseS || CHAR.slide < 0.9) return null; for (var i = 0; i < 3; i++) { var r = chTabRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return CH_TABS[i]; } return null; }
+  var chTab = 'make', makeScroll = 0;
+  var CH_TABS = ['make', 'gear', 'stats', 'ring'], CH_NAMES = { make: 'Make', gear: 'Gear', stats: 'Stats', ring: 'Ring' };
+  function chTabs() { return CH_TABS.filter(function (t) { return t === 'make' || t === 'gear' || (t === 'stats' ? !!seen.fought : !!ring); }); }   /* (the interface grows, 2026-10-14: Stats after the first kill, Ring once a ring is worn) */
+  function chTabRect(i) { return { x: chLeft() + 28 + i * 22, y: CHAR.y + 3, w: 20, h: 10 }; }
+  function chTabAt() { if (!mouseS || CHAR.slide < 0.9) return null; var TB = chTabs(); for (var i = 0; i < TB.length; i++) { var r = chTabRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return TB[i]; } return null; }
   function statRows() {
     var P = hero(), wp = handItem('fight'), ws = wp && Items.KINDS[wp.kind] && !Items.KINDS[wp.kind].ranged ? Items.stats(wp) : null, bwi = wp && wp.kind === 'bow' ? wp : bestTool('bow'), bw = bwi ? Items.stats(bwi) : null, m = Combat.api.mods(), ar = Combat.api.armor();
     function r1(v) { return Math.round(v * 10) / 10; }
@@ -3317,13 +3328,35 @@ __COMBAT__
       y += 11;
     });
   }
+  /* The Make page (2026-10-14, Robin: C was a key you used once and never again; Valheim keeps hand crafting on the inventory screen):
+     what can be made by hand right now, on the character panel's first page. A row is a thing: its icon, its name, what it
+     takes (red where short); a click makes it (the hero's queue, as before); a gold dot marks a thing never yet made. */
+  function makeList() { return RECIPES2.filter(function (r) { return r.at === 'hand' && known(r); }); }
+  function makeRows() { var x0 = chLeft(), y = CHAR.y + 20 - makeScroll, out = []; makeList().forEach(function (r) { out.push({ r: r, x: x0 + 6, y: y, w: CHAR.w - 12, h: 16 }); y += 16; }); return out; }
+  function makeRowAt() { if (!mouseS || CHAR.slide < 0.9 || chTab !== 'make') return null; var R = makeRows(); for (var i = 0; i < R.length; i++) { var q = R[i]; if (q.y < CHAR.y + 18 || q.y + q.h > CHAR.y + CHAR.h - 4) continue; if (mouseS.x >= q.x && mouseS.x <= q.x + q.w && mouseS.y >= q.y && mouseS.y <= q.y + q.h) return q; } return null; }
+  function isNew(id) { return !(seen.made && seen.made[id]); }
+  function markMade(id) { if (!seen.made) seen.made = {}; seen.made[id] = 1; }
+  function drawMake(c, x0) {
+    var R = makeRows(), hv = makeRowAt(), i; c.save(); c.beginPath(); c.rect(x0 + 5, CHAR.y + 18, CHAR.w - 10, CHAR.h - 24); c.clip();
+    if (!R.length) { c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.75)'; wrapText(c, 'Nothing to make yet. What you find will show you what it can become.', CHAR.w - 24).forEach(function (ln, k) { c.fillText(ln, x0 + 10, CHAR.y + 32 + k * 9); }); }
+    for (i = 0; i < R.length; i++) { var q = R[i], e = { id: q.r.id, r: q.r }, can = canAfford(q.r.needs), on = hv === q;
+      if (on) { c.fillStyle = 'rgba(255,230,180,0.14)'; c.fillRect(q.x, q.y, q.w, q.h); }
+      c.globalAlpha = can ? 1 : 0.5; infoIcon(c, e, q.x + 8, q.y + q.h / 2, 0.6); c.globalAlpha = 1;
+      c.font = '600 5.8px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = can ? '#f6e2b8' : 'rgba(246,226,184,0.5)'; c.fillText(infoName(e), q.x + 17, q.y + 6.5);
+      c.font = '500 4.8px system-ui, sans-serif'; c.fillStyle = can ? 'rgba(246,226,184,0.7)' : '#e0705a'; c.fillText(costText(q.r.needs), q.x + 17, q.y + 13);
+      if (isNew(q.r.id)) { c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(q.x + q.w - 5, q.y + 5, 1.8, 0, 7); c.fill(); }
+      var pr = infoProgress(e); if (pr) { c.fillStyle = '#ffd34d'; c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.fillText('x' + pr.n, q.x + q.w - 10, q.y + 6.5); }
+    }
+    c.restore();
+  }
   function drawChar(c) {
     var x0 = chLeft(), P = hero(), hov = chSlotAt(), i;
     wood(c, x0, CHAR.y, CHAR.w, CHAR.h);
     leather(c, x0 + 5, CHAR.y + 15, CHAR.w - 10, CHAR.h - 20);
-    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Character', x0 + 8, CHAR.y + 11);
-    var hovT = chTabAt();
-    ['Gear', 'Stats', 'Ring'].forEach(function (nm, ti) { var tr = chTabRect(ti), on = CH_TABS[ti] === chTab; c.fillStyle = on ? 'rgba(255,230,180,0.26)' : (hovT === CH_TABS[ti] ? 'rgba(255,230,180,0.14)' : 'rgba(0,0,0,0.28)'); c.fillRect(tr.x, tr.y, tr.w, tr.h); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(nm, tr.x + tr.w / 2, tr.y + 7.6); });
+    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('You', x0 + 8, CHAR.y + 11);
+    var hovT = chTabAt(); if (chTabs().indexOf(chTab) < 0) chTab = 'make';
+    chTabs().forEach(function (tid, ti) { var nm = CH_NAMES[tid], tr = chTabRect(ti), on = tid === chTab; c.fillStyle = on ? 'rgba(255,230,180,0.26)' : (hovT === tid ? 'rgba(255,230,180,0.14)' : 'rgba(0,0,0,0.28)'); c.fillRect(tr.x, tr.y, tr.w, tr.h); c.font = (on ? 'bold ' : '600 ') + '5.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#fff' : 'rgba(246,226,184,0.8)'; c.fillText(nm, tr.x + tr.w / 2, tr.y + 7.2); });
+    if (chTab === 'make') { drawMake(c, x0); return; }
     if (chTab === 'stats') { drawStats(c, x0); return; }
     if (chTab === 'ring') { drawRingTab(c, x0); return; }
     // the hero, turning slowly, on a patch of floor
@@ -3385,11 +3418,11 @@ __COMBAT__
     var sr = btnRect(0);                                // a small Sort button above the bag: three bars side by side
     c.fillStyle = hb === 'sort' ? '#6b4a32' : '#4a2e1c'; c.beginPath(); c.roundRect(sr.x, sr.y, sr.w, sr.h, 2); c.fill(); c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.stroke();
     c.fillStyle = '#f6e2b8'; c.fillRect(sr.x + 3.5, sr.y + 3, 2.2, 5); c.fillRect(sr.x + 6.9, sr.y + 2, 2.2, 6); c.fillRect(sr.x + 10.3, sr.y + 3.8, 2.2, 4.2);
-    wood(c, x0, BAR.y, INV.w, BAR.h);                   // the bar: six things, one in hand
+    if (seen.bar || SCENE) wood(c, x0, BAR.y, INV.w, BAR.h);                   // the bar: six things, one in hand (shown once there is a thing for it)
     wood(c, x0, INV.y, INV.w, INV.h);
     c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Bag', x0 + 8, INV.y + 11);
     for (i = 0; i < SLOTS; i++) {
-      var r = slotRect(i), s = slots[i], top = i < BAG0, inHand = top && i === hand;
+      var r = slotRect(i), s = slots[i], top = i < BAG0, inHand = top && i === hand; if (top && !seen.bar && !SCENE) continue;
       slotUi(c, r.x, r.y, r.w, r.h, hov === i, inHand);
       if (top) { c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.textAlign = 'left'; c.fillText(String(i % COLS + 1), r.x + 2, r.y + 6.5); }   // the key that takes it in hand
       if (s) stackIn(c, r, s, i);
@@ -3488,7 +3521,7 @@ __COMBAT__
     c.fillStyle = '#8a2020'; c.globalAlpha = 0.5 * f; c.beginPath(); c.ellipse(x - r * 0.15, y - r * 0.12, r * 0.5, r * 0.3, dc.a, 0, 7); c.fill();
     c.restore();
   }
-  Combat.api.onDeath = function (e) { if (e.human && e.type === 'soldier') manDrops(e); if (e.side === 1) return; if (e.human) { if (!BT.on && !e.villager) drop('silver', e.x, e.y, 1 + (Math.random() < 0.5 ? 1 : 0)); if (!e.killer) deed('kills'); return; } deed('kills'); if (inUse('wolfshunger')) { var Ph = hero(); Ph.hp = Math.min(Ph.maxHp, Ph.hp + 8); note('+8 health'); } var A = ANIMALS[e.kind] || ANIMALS.boar; for (var k in A.drops) { var q = A.drops[k], n = Math.floor(q) + (Math.random() < q - Math.floor(q) ? 1 : 0); if (n) drop(k, e.x, e.y, n); } if (e.kind) { learn(e.kind); killDeed(e.kind); } deed('kills'); };
+  Combat.api.onDeath = function (e) { if (!seen.fought) { seen.fought = 1; save(); } if (e.human && e.type === 'soldier') manDrops(e); if (e.side === 1) return; if (e.human) { if (!BT.on && !e.villager) drop('silver', e.x, e.y, 1 + (Math.random() < 0.5 ? 1 : 0)); if (!e.killer) deed('kills'); return; } deed('kills'); if (inUse('wolfshunger')) { var Ph = hero(); Ph.hp = Math.min(Ph.maxHp, Ph.hp + 8); note('+8 health'); } var A = ANIMALS[e.kind] || ANIMALS.boar; for (var k in A.drops) { var q = A.drops[k], n = Math.floor(q) + (Math.random() < q - Math.floor(q) ? 1 : 0); if (n) drop(k, e.x, e.y, n); } if (e.kind) { learn(e.kind); killDeed(e.kind); } deed('kills'); };
 
   /* ---------- runes: learnt from deeds, runestones and beasts; laid on the casting cloth to work ---------- */
   /* ---------- the arm ring (docs/arm-ring.md, 2026-10-06): runes are knowledge, cut into the ring's coils at the carver's bench.
@@ -4743,11 +4776,11 @@ __COMBAT__
         c.font = '600 6.5px system-ui, sans-serif'; var gw = c.measureText(ghostLabel.text).width + 10, gx = Math.min(400 - gw - 2, mouseS.x + 10), gy = Math.max(14, mouseS.y - 14);
         c.fillStyle = 'rgba(35,26,22,0.85)'; c.beginPath(); c.roundRect(gx, gy - 8, gw, 12, 2.5); c.fill(); c.fillStyle = ghostLabel.bad ? '#ff9a8a' : '#d8ffd8'; c.textAlign = 'left'; c.fillText(ghostLabel.text, gx + 5, gy + 1);
       }
-      if (leftBanner > 0) {                // the goal: you have left the island
-        var ba = Math.min(1, leftBanner / 1.5, (9 - leftBanner) / 0.6), by = 62;
-        c.save(); c.globalAlpha = ba; wood(c, 80, by - 14, 240, 44);
-        c.font = 'bold 13px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#f6e2b8'; c.fillText('You have left the island', 200, by + 4);
-        c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.fillText('Day ' + day.n + '. Ragnar sailed east.', 200, by + 18); c.restore();
+      if (banner) {                        // a big step, on a bordered board: the title and one line
+        var ba = Math.min(1, (9 - banner.t) / 0.6, banner.t / 1.5), by = 62; c.save(); c.globalAlpha = ba; c.font = '600 6.5px system-ui, sans-serif';
+        var bls = wrapText(c, banner.line, 220), bh = 36 + bls.length * 9; wood(c, 80, by - 14, 240, bh);
+        c.font = 'bold 13px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#f6e2b8'; c.fillText(banner.title, 200, by + 4);
+        c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; bls.forEach(function (ln, k) { c.fillText(ln, 200, by + 18 + k * 9); }); c.restore();
       }
       if (npc && !inCave && Math.abs(npc.x - cam.x) < 260 && Math.abs(npc.y * K - cam.y) < 200) bubble(c, npc);
       stones().forEach(function (st) { if (Math.hypot(P.x - st.x, P.y - st.y) > 90 || inYard || inCave) return; var sx = (st.x - cam.x) * cam.z + 200, sy = (st.y * K - cam.y) * cam.z + 125 - 50 * cam.z, tt = (st.named || 'The stead') + ':  room for ' + roomFor(st) + ',  food for ' + foodDays(st) + (foodDays(st) === 1 ? ' day' : ' days'); c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.2; c.strokeStyle = '#2e1a10'; c.strokeText(tt, sx, sy); c.fillStyle = '#f6e2b8'; c.fillText(tt, sx, sy); });
@@ -4852,13 +4885,13 @@ __COMBAT__
     if (e.code === 'KeyX') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen && !inYard) drawToggle(); return; }   // draw your weapon, or put it away
     if (e.code === 'Enter' && !menu && !pauseOpen && !invOpen && !mapOpen && !inYard && !ringOpen && (hero().mode === 'fight' || hero().mode === 'gather')) { e.preventDefault(); if (!e.repeat) barPress(sel); return; }   // the wheel's pick, taken in hand or put away
     if (e.code === 'KeyG') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen && !inYard) { gKey.down = true; gKey.t = 0; gKey.done = false; } return; }   // a word to your own men: tapped, with me; held, hold here
-    if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat) handCraft(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
     if (e.code === 'Enter' && ringOpen && !e.repeat) { e.preventDefault(); if (ringSel) startCut(ringSel); return; }
     if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; if (invOpen || cookOpen || menu || bookOpen || clothOpen || ringOpen || musterOpen || mapOpen) { ringOpen = false; mapOpen = false; musterOpen = false; invOpen = false; cookOpen = false; menu = null; bookOpen = false; clothOpen = false; rpick = null; } else { if (labOpen) labOpen = false; else if (adminOpen) adminOpen = false; else pauseOpen = !pauseOpen; } return; }
     if (inYard && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) YSCENE.key('Enter'); return; }
     if (menu && menu.info && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) infoMake(infoSel()); return; }
     if (inYard && (e.code === 'KeyB' || e.code === 'KeyQ')) { e.preventDefault(); return; }
+    if (e.code === 'KeyB' && !seen.build && !SCENE) { e.preventDefault(); return; }   // (building comes with Brokk's word, 2026-10-14)
     if (!codes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
     if (e.code === 'KeyF' && hero().mode === 'build') menu = null;      // the board closes when the wreck cursor comes
@@ -4889,7 +4922,7 @@ __COMBAT__
       var th = menuTabHit(), hit = menuHit();
       if (th && e.button === 0) { openMenu(th.id); return; }
       if (menu.info) { var ie = infoRowHit(); if (ie && e.button === 0) { menuSel[menuTab] = ie.id; return; } if (e.button === 0 && menuStation && menu.takes) { for (var tk = 0; tk < menu.takes.length; tk++) { var tq = menu.takes[tk]; if (mouseS.x >= tq.x && mouseS.x < tq.x + tq.w && mouseS.y >= tq.y && mouseS.y < tq.y + tq.h) { stationTake(menuStation.it, tq.i); return; } } } if (infoCancelHit() && e.button === 0) { infoCancel(infoSel()); return; } if (infoBtnHit() && e.button === 0) { infoMake(infoSel()); return; } if (e.button === 2 || !overMenu()) menu = null; return; }
-      if (hit && hit.piece && e.button === 0) { P.piece = PIECES.indexOf(hit.piece); P.wreck = false; menu = null; if (P.mode !== 'build') { P.lastMode = P.mode; P.mode = 'build'; lastMode = 'build'; } }
+      if (hit && hit.piece && e.button === 0) { P.piece = PIECES.indexOf(hit.piece); P.wreck = false; menu = null; markMade('p:' + hit.piece.id + ':' + hit.piece.m); if (P.mode !== 'build') { P.lastMode = P.mode; P.mode = 'build'; lastMode = 'build'; } }
       else if (hit && hit.r && e.button === 0) { if (menuTab !== 'bench' || benchRoofed(benchNear(P))) craft(hit.r); }
       else if (hit && hit.dish && e.button === 0) cook(hit.dish);
       else if (e.button === 2 || (!hit && !th)) menu = null;
@@ -4900,6 +4933,7 @@ __COMBAT__
     }
     if (invOpen && !store && CHAR.slide > 0.9) {
       var ctb = chTabAt(); if (ctb) { if (e.button === 0) chTab = ctb; return; }
+      var mkr = makeRowAt(); if (mkr) { if (e.button === 0 && canAfford(mkr.r.needs)) { craft(mkr.r); markMade(mkr.r.id); } return; }
       var cs = chSlotAt();
       if (cs) { if (cs.q != null && quiver.slots[cs.q] && e.button === 0) { quiver.sel = cs.q; save(); } else if (cs.q == null && e.button === 2 && equip[cs.id]) unequipToBag(cs.id); return; }
       if (mouseS.x < chLeft() + CHAR.w + 4 && mouseS.y > CHAR.y - 4 && mouseS.y < CHAR.y + CHAR.h + 4) return;
@@ -5075,7 +5109,7 @@ __COMBAT__
     BT_WPN.slice(0, 6).forEach(function (kd, i) { slots[i] = { kind: 'item', n: 1, item: Items.make(kd, 'iron') }; });       // one of every weapon on the bar: the number keys change what is in hand
     addThing(Items.make('axe', 'iron')); addThing(Items.make('pick', 'iron')); addThing(Items.make('knife', 'iron')); addThing(Items.make('bow', 'wood'));
     equip.shield = Items.make('shield', 'wood'); battleGear(); quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
-    addItem('cookedMeat', 10); hand = 0; day.t = 300; caveFade = 0; seen.met = 1; seen.village = 1; seen.fiber = 1; noSave = true;
+    addItem('cookedMeat', 10); hand = 0; day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.village = 1; seen.fiber = 1; noSave = true;
     P.mode = 'fight'; recount(); battleSet('one');
   }
   function battleGear() { ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, BT.mine && (g === 'helmet' || g === 'tunic') ? 'iron' : 'leather'); }); }
@@ -5555,7 +5589,7 @@ __COMBAT__
     ['wood', 'stone', 'fiber', 'copper', 'leather', 'berries', 'meat', 'charcoal', 'copperBar', 'bogIron', 'ironBar'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
     [Items.make('sword', 'copper'), Items.make('bow', 'wood'), Items.make('axe', 'copper'), Items.make('pick', 'copper'), Items.make('knife', 'copper')].forEach(function (it) { if (!barPut(it)) addThing(it); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 300; caveFade = 0;
-    seen.met = 1; seen.village = 1; seen.hamlet = 1; seen.cave = 1;
+    seen.met = 1; seen.build = 1; seen.bar = 1; seen.village = 1; seen.hamlet = 1; seen.cave = 1;
     ring = Runes.newRing('dragon'); seen.ring = 1; heroRingSync(); Runes.LIST.forEach(function (r) { RS.learnt[r.id] = { uses: 0, how: 'the editor' }; });
     runeSite = site; recount(); save();
   }
@@ -5568,7 +5602,7 @@ __COMBAT__
     ['wood', 'stone', 'fiber', 'leather', 'copper', 'berries', 'meat', 'charcoal', 'copperBar'].forEach(function (k) { addItem(k, 25); seen[k] = 1; }); addItem('wood', 125); addItem('stone', 75); addItem('fiber', 25);   // enough for a house or two
     seen.mason = 1; seen.raft = 1;
     [Items.make('sword', 'copper'), Items.make('bow', 'wood'), Items.make('axe', 'copper'), Items.make('pick', 'copper'), Items.make('knife', 'copper')].forEach(function (it) { if (!barPut(it)) addThing(it); });
-    quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 200; caveFade = 0; seen.met = 1; seen.village = 1; seen.cave = 1;
+    quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 200; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.village = 1; seen.cave = 1;
     if (r1) { var sp = w.nearFlat(r1.x1, r1.y1 + 70, 0) || { x: r1.x1, y: r1.y1 + 70 }; P.x = sp.x; P.y = sp.y; P.face = -Math.PI / 2; }
     recount(); save();
   }
