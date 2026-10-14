@@ -69,7 +69,7 @@ var PROFILES = {
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
-  bow:      { proj: 'arrow', speed: 240, r: 3.5, cd: 0.45, st: 6, stag: 8, life: 1.0 },
+  bow:      { proj: 'arrow', speed: 420, r: 2.5, cd: 0.45, st: 6, stag: 8, life: 0.75 },   // (2026-10-14, Robin: thinner and a lot faster; it looked as if it was transporting itself)
   sling:    { proj: 'stone', speed: 210, r: 3, cd: 0.6, st: 5, stag: 26, life: 0.8, kb: 120 },
   javelin:  { proj: 'javelin', speed: 250, r: 4, cd: 0.5, st: 8, stag: 14, life: 0.9, thrown: true },
   throwaxe: { proj: 'throwaxe', speed: 200, r: 4, cd: 0.5, st: 7, stag: 22, life: 0.6, thrown: true, kb: 160 }
@@ -1950,10 +1950,10 @@ function drawProj(c, pr) {
     // an arrow: shaft, iron head, two feathers
     var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K, px = -sa, py = ca, tx = x + ca * 8, ty = y + sa * 8, bx = x - ca * 8, by = y - sa * 8;
     c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = '#3a2a36'; c.lineWidth = 3; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
-    c.strokeStyle = pr.reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
-    c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.beginPath(); c.moveTo(tx + ca * 4, ty + sa * 4); c.lineTo(tx + px * 1.8, ty + py * 1.8); c.lineTo(tx - px * 1.8, ty - py * 1.8); c.closePath(); c.fill(); c.stroke();
-    c.strokeStyle = '#eef3fb'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 2.4, by - sa * 3 + py * 2.4); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 2.4, by - sa * 3 - py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 2.4, by - sa * 0.5 + py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 2.4, by - sa * 0.5 - py * 2.4); c.stroke();
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();   /* (2026-10-14, Robin: a lot thinner) */
+    c.strokeStyle = pr.reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
+    c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(tx + ca * 3.2, ty + sa * 3.2); c.lineTo(tx + px * 1.2, ty + py * 1.2); c.lineTo(tx - px * 1.2, ty - py * 1.2); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#eef3fb'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 2.4, by - sa * 3 + py * 2.4); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 2.4, by - sa * 3 - py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 2.4, by - sa * 0.5 + py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 2.4, by - sa * 0.5 - py * 2.4); c.stroke();
   }
 }
 function drawPart(c, q) {

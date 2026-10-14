@@ -4308,7 +4308,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { porch: 1, apse: 1, gableCross: 1, font: 0.8, lychGate: 0.9, bellTower: 1, altar: 0.7, graveStone: 0.75, wayCross: 0.75, stall: 0.7, windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { porch: 1, apse: 1, gableCross: 1, font: 0.8, lychGate: 0.9, bellTower: 1, altar: 0.7, graveStone: 0.75, wayCross: 0.75, stall: 0.7, windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.5, crate: 0.55, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
@@ -5870,7 +5870,7 @@ var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   peoplePerHouse: 2.6, outsideShare: 0.4,             // people in a household; how many of them are out walking at a time
   wealthStone: 0.85, wealthLogs: 0.55, wealthPlanks: 0.25,   // the longhouse's walls by wealth (below: wattle); the houses one step poorer
-  shinglesAt: 0.8, turfInland: 1, thatchShore: 1,     // roofs: shingles for the rich, turf inland, thatch by the sea
+  shinglesAt: 0.8, turfBelow: 0.22,                  // roofs: shingles for the rich, thatch for the rest, turf only for the poorest (2026-10-14)
   palisadeAt: 0.7, drystoneAt: 0.5, railAt: 0.2,      // the fence by wealth: rail (poor), wattle, dry stone; from palisadeAt a round wall of stakes with banners at the gate
   stakeStep: 11, banners: 2, firePit: 1, logSeats: 4, doorProps: 1.4,
   roadW: 10, backGate: 1,                             // the one winding road (Robin, 2026-10-07): its width in the yard; a back gate for the road to leave by
@@ -5938,7 +5938,7 @@ function make(seed, site, opts) {
   // materials and roofs by wealth and place
   var lowland = !!(opts.biome || A.lowland);
   var wallOf = function (step) { var wv = wealth - step * 0.3; if (lowland) return wv >= G.wealthStone ? 6 : wv >= G.wealthLogs - 0.15 ? 5 : wv >= G.wealthPlanks ? 1 : 2; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };   // the lowlands: cut stone for the rich, timber framing for most
-  var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return shore ? 1 : 0; };   // the lowlands: clay tiles for the rich, thatch for the rest
+  var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return wealth < G.turfBelow ? 0 : 1; };   /* (2026-10-14, Robin: thatch is the roof; turf only for the poorest) */   // the lowlands: clay tiles for the rich, thatch for the rest
   var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : wealth >= G.railAt ? 'fence' : 'rail'; if (A.chapel) fenceKind = 'drystone';
   // the yard
   var HK = G.houseK || 1, yw = Math.round(A.yard[0] * (1 + (HK - 1) * 0.5)), yh = Math.round(A.yard[1] * (1 + (HK - 1) * 0.5)), yx = tx + Math.floor((w - yw) / 2), yy = ty + Math.floor((h - yh) / 2) + 1;
@@ -7012,7 +7012,7 @@ var PROFILES = {
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
-  bow:      { proj: 'arrow', speed: 240, r: 3.5, cd: 0.45, st: 6, stag: 8, life: 1.0 },
+  bow:      { proj: 'arrow', speed: 420, r: 2.5, cd: 0.45, st: 6, stag: 8, life: 0.75 },   // (2026-10-14, Robin: thinner and a lot faster; it looked as if it was transporting itself)
   sling:    { proj: 'stone', speed: 210, r: 3, cd: 0.6, st: 5, stag: 26, life: 0.8, kb: 120 },
   javelin:  { proj: 'javelin', speed: 250, r: 4, cd: 0.5, st: 8, stag: 14, life: 0.9, thrown: true },
   throwaxe: { proj: 'throwaxe', speed: 200, r: 4, cd: 0.5, st: 7, stag: 22, life: 0.6, thrown: true, kb: 160 }
@@ -8893,10 +8893,10 @@ function drawProj(c, pr) {
     // an arrow: shaft, iron head, two feathers
     var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K, px = -sa, py = ca, tx = x + ca * 8, ty = y + sa * 8, bx = x - ca * 8, by = y - sa * 8;
     c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = '#3a2a36'; c.lineWidth = 3; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
-    c.strokeStyle = pr.reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
-    c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.beginPath(); c.moveTo(tx + ca * 4, ty + sa * 4); c.lineTo(tx + px * 1.8, ty + py * 1.8); c.lineTo(tx - px * 1.8, ty - py * 1.8); c.closePath(); c.fill(); c.stroke();
-    c.strokeStyle = '#eef3fb'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 2.4, by - sa * 3 + py * 2.4); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 2.4, by - sa * 3 - py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 2.4, by - sa * 0.5 + py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 2.4, by - sa * 0.5 - py * 2.4); c.stroke();
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();   /* (2026-10-14, Robin: a lot thinner) */
+    c.strokeStyle = pr.reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
+    c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(tx + ca * 3.2, ty + sa * 3.2); c.lineTo(tx + px * 1.2, ty + py * 1.2); c.lineTo(tx - px * 1.2, ty - py * 1.2); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#eef3fb'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 2.4, by - sa * 3 + py * 2.4); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 2.4, by - sa * 3 - py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 2.4, by - sa * 0.5 + py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 2.4, by - sa * 0.5 - py * 2.4); c.stroke();
   }
 }
 function drawPart(c, q) {

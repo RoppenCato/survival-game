@@ -11,7 +11,7 @@ var DEF = {
   gap: 3, yardGap: 1, fenceGap: 1,                    // tiles between buildings, between a wall and the yard, between the ring and the fence
   peoplePerHouse: 2.6, outsideShare: 0.4,             // people in a household; how many of them are out walking at a time
   wealthStone: 0.85, wealthLogs: 0.55, wealthPlanks: 0.25,   // the longhouse's walls by wealth (below: wattle); the houses one step poorer
-  shinglesAt: 0.8, turfInland: 1, thatchShore: 1,     // roofs: shingles for the rich, turf inland, thatch by the sea
+  shinglesAt: 0.8, turfBelow: 0.22,                  // roofs: shingles for the rich, thatch for the rest, turf only for the poorest (2026-10-14)
   palisadeAt: 0.7, drystoneAt: 0.5, railAt: 0.2,      // the fence by wealth: rail (poor), wattle, dry stone; from palisadeAt a round wall of stakes with banners at the gate
   stakeStep: 11, banners: 2, firePit: 1, logSeats: 4, doorProps: 1.4,
   roadW: 10, backGate: 1,                             // the one winding road (Robin, 2026-10-07): its width in the yard; a back gate for the road to leave by
@@ -79,7 +79,7 @@ function make(seed, site, opts) {
   // materials and roofs by wealth and place
   var lowland = !!(opts.biome || A.lowland);
   var wallOf = function (step) { var wv = wealth - step * 0.3; if (lowland) return wv >= G.wealthStone ? 6 : wv >= G.wealthLogs - 0.15 ? 5 : wv >= G.wealthPlanks ? 1 : 2; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };   // the lowlands: cut stone for the rich, timber framing for most
-  var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return shore ? 1 : 0; };   // the lowlands: clay tiles for the rich, thatch for the rest
+  var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return wealth < G.turfBelow ? 0 : 1; };   /* (2026-10-14, Robin: thatch is the roof; turf only for the poorest) */   // the lowlands: clay tiles for the rich, thatch for the rest
   var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : wealth >= G.railAt ? 'fence' : 'rail'; if (A.chapel) fenceKind = 'drystone';
   // the yard
   var HK = G.houseK || 1, yw = Math.round(A.yard[0] * (1 + (HK - 1) * 0.5)), yh = Math.round(A.yard[1] * (1 + (HK - 1) * 0.5)), yx = tx + Math.floor((w - yw) / 2), yy = ty + Math.floor((h - yh) / 2) + 1;

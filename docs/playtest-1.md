@@ -103,3 +103,77 @@ boat come with copper. Villages can be broken into and burnt; their people run; 
 two trees, a rock and five bushes, the club and the bow, a boar (the careless bot wins with 9 health left; a careful one
 loses 7), the bow shoots, the hut at Comfort 5, roast meat and roast berries cooked and waiting at the fire, Brokk's story
 and his teaching, the raft bench, the raft, the crossing. No error was logged.
+
+## Robin's report (2026-10-14), point by point, and what was done
+
+Robin played from the wreck to the big island's copper the same day and answered the 25 points. **Fixed at once** is marked;
+the rest is direction for the work to come, and most of it is big.
+
+1. **The beginning** works but is strange: waking, looting at once, then C (which you never use again), and B's board already
+   full. **Direction: a slower, more elaborate beginning, introducing things one at a time; finishing the broken house to sleep
+   in it; no sleeping in a bed that has no roof.** (The roof rule is fixed at once: a bed with no roof says "No roof over it".)
+2. **Combat** works but needs a lot: the club feels awful, the fight not smooth or snappy enough; **a parry should stun the man
+   for about a second; mobs stagger too easily from plain hits; the red line that marks an attack is to go, for something natural
+   and immersive.**
+3. **Chopping** is clunky: hitting slowly with low impact, "I ended up just hitting till it dropped". **Trees are far too small:
+   about three times the size. Trunks are now twice the tree's size, and chopping them is not satisfying.**
+4. The trunk is clear (see 3).
+5. Mining has the same feel problem; the crack reads. **The stones all look the same everywhere, especially the big ones: it
+   breaks immersion.**
+6. Berries work. **The bush should shake or something: static and stiff now.**
+7. See 2. **K showed nothing on the hero**, and the villagers armed and attacked (a raised guard counts as a drawn weapon, which
+   is a threat in a place at peace). Robin had no shield: without one K raises only the bare forearm.
+8. **The deer** runs when you come close, and runs when hit by an arrow, so you chase it for ever: feels impossible to kill.
+   **A good system is wanted.**
+9. The bow aims well. **Arrows should be a lot thinner and fly faster** ("transporting itself"). **Fixed at once:** speed 240 to
+   420, the shaft and head half as thick.
+10. Food works. **Crafting feels off against other survival games**: you can queue more than you have materials for (the
+    furnace board showed 33 on the way with 19 ore; to be checked whether Admin's Free was on, since the queue is capped by
+    `canAfford`, which Free bypasses), and something about making things feels wrong.
+11. **East and west walls are very hard to place**: hard to see where they go and whether a wall is there at all. **Most roofs
+    are green, though thatch should be yellow.** (Fixed at once for the villages: thatch is the roof, turf only for the poorest,
+    `Village.DEF.turfBelow` 0.22; the player's own default was thatch already.)
+12. E works. **Village beds should not be usable** (fixed at once: "Not your bed" in a village you do not hold).
+13. Crafting works. **The bag with its two bar rows looks weird and complicated; maybe the whole Q switch is a bad idea.**
+14. **Night progresses strangely**: the message comes and then it is five minutes before it is dark; the light changes little
+    after the message.
+15. Sleep works. **The way text appears is not liked: the toasts, the crafting and the new-recipe notes. A better way is wanted.**
+16. **The steading was too easy to find: it should be further, so you explore and learn the controls first. Brokk's lines are
+    bad and non-immersive, and the chat bubble is bad: another way to show speech is wanted.**
+17. Crates work. **Bigger boxes, and no glint over them.** (Fixed at once: the crate and the chest half again as big in the
+    kit's `SIZE`, the loot glint gone; stations keep their glint for what is ready.)
+18. The raft works, but **the shipyard wants rethinking: perhaps a few really nice models that the player customises, since
+    the hirdmen must board and row.**
+19. **"You have left the island" did not show, and the next island was too close to be a trip.**
+20. Villages react. **K and X are confused**: K equipped nothing visible but the villagers ran; with X Robin could kill them.
+21. The vein works. **The cave mouth looks pasted onto the mountain** (the first picture).
+22. The cave looks nice. **The troll must be bigger and scarier: he was almost the hero's size and slow, met by stumbling on
+    him.**
+23. Copper works; crafting feels off (see 10).
+24. (not tried)
+25. The logs were sent. And from the sound studio: **the ambient sound and the waterfall went on when the window lost focus**
+    while the music hushed (fixed at once: both check `document.hasFocus()` as the music does).
+
+### The order I propose (Claude; nothing decided)
+
+1. **The feel of a blow and a chop, together** (2, 3, 5, 6): one impact system for weapons and tools (the pause, the push,
+   the sound, the thing struck moving: a tree that shudders, a bush that shakes, a rock that chips), the parry's stun, stagger
+   only from heavy blows, and the attack mark redrawn as something of the world (a man's stance, a drawn-back arm, a shadow)
+   instead of a red line. The Combat Arena is where to try it.
+2. **Scale of trees and trunks** (3): trees three times the size, the trunk the tree's own length, the chopping of a trunk
+   made worth doing.
+3. **The beginning** (1, 16, 15): the wreck further from the steading, things introduced one at a time, the broken house as
+   the first home, Brokk's lines rewritten and speech shown another way, the notes and recipe reveals redesigned.
+4. **The bars and the bag** (13, 20): one bar, perhaps, and the drawn weapon made plain; K and X told apart on the hero.
+5. **The deer and the bow** (8): a wounded deer that slows and bleeds, a hit that does not send it to the horizon.
+6. **Night pacing** (14), **rocks that differ** (5), **the cave mouth set into the rock** (21), **the troll's size** (22),
+   **the island gap** (19), **the yard as models to customise** (18): each its own smaller piece.
+
+### Questions for Robin
+
+- The crafting that "feels off" (10, 23): is it the board (a list and a page), the queue and the Ready strip, the time a
+  thing takes, or that things appear in the bag rather than in the hand? One sentence on what Valheim or Grounded do that
+  this does not would set the direction.
+- Was Admin's Free building and crafting on when the furnace showed 33 on the way?
+- The bars (13): one bar of six with weapons and tools side by side, Q gone? Or keep Q and only draw it differently?
+- The steading (16): how far should it be, in minutes of walking?

@@ -618,7 +618,12 @@ __COMBAT__
     day.t += dt; if (day.t >= DAY_LEN) { day.t -= DAY_LEN; day.n++; if (day.n >= 10) earnRune('nighteyes', 'ten days lived'); morningEmbers(); save(); }
     if (rested > 0) { rested -= dt; var P2 = hero(); if (!P2.dead) P2.hp = Math.min(P2.maxHp, P2.hp + 0.3 * dt); }
   }
-  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening()) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: Math.max(comfortOf(roomInfo ? roomInfo.at(Math.floor(bd.x / T), Math.floor(bd.y / T)) : -1).n, shelterComfort(bd.x, bd.y)) }; invOpen = false; menu = null; }
+  function bedWhy(bd) {                    // why a bed cannot be slept in: somebody else's (a village you do not hold), or no roof over it (2026-10-14)
+    var bv = placeAt(bd.x, bd.y); if (bv >= 0 && bv !== 99 && !villageHeld(bv)) return 'Not your bed';
+    if (!benchRoofed(bd) && !(w.shelterAt && w.shelterAt(bd.x, bd.y))) return 'No roof over it';
+    return null;
+  }
+  function goSleep() { var bd = bedNear(hero()); if (!bd || sleep || !isEvening() || bedWhy(bd)) return; torchOn = false; sleep = { t: 0, roofed: benchRoofed(bd), comfort: Math.max(comfortOf(roomInfo ? roomInfo.at(Math.floor(bd.x / T), Math.floor(bd.y / T)) : -1).n, shelterComfort(bd.x, bd.y)) }; invOpen = false; menu = null; }
 
   /* ---------- the night (Robin, 2026-10-06): dark, and the wolves come. Home, with its fire, is where you are safe ----------
      Wolves live nowhere by day. When the light has mostly gone a pack of three comes in from the edge of your view, on
@@ -1755,7 +1760,7 @@ __COMBAT__
   function ambTick(dt) {
     if (!AC || AC.state !== 'running') return;
     if (!amb) { amb = Ambient.make(AC, AC.destination); for (var lk in LAB.snd) amb.layers[lk] = LAB.snd[lk] ? 1 : 0; ambT = 0; }
-    var P = hero(); amb.setVolume(!S.sound || pauseOpen || document.hidden || sleep ? 0 : OPTS.amb);
+    var P = hero(); amb.setVolume(!S.sound || pauseOpen || document.hidden || !document.hasFocus() || sleep ? 0 : OPTS.amb);   /* (2026-10-14: quiet when the window loses focus, as the music is) */
     ambT -= dt; if (ambT <= 0) { ambT = 0.3; amb.set(ambEnv(P)); }
     amb.tick(dt);
     var moved = Math.hypot(P.x - lastHX, P.y - lastHY); lastHX = P.x; lastHY = P.y;               // a footstep every stride on foot
@@ -1795,7 +1800,7 @@ __COMBAT__
   function fallsSound() {
     if (!w.mt || !w.mt.falls.length) return; var P = hero(), d = 1e9, vol = 0;
     w.mt.falls.forEach(function (f) { d = Math.min(d, Math.hypot(P.x - f.x, P.y - f.foot)); });
-    if (S.sound && !inCave && !inYard && !pauseOpen && !document.hidden && d < 620 && LAB.snd.water) { vol = 1 - d / 620; vol = vol * vol * 0.2 * Math.min(1.4, OPTS.amb / 0.7); }
+    if (S.sound && !inCave && !inYard && !pauseOpen && !document.hidden && document.hasFocus() && d < 620 && LAB.snd.water) { vol = 1 - d / 620; vol = vol * vol * 0.2 * Math.min(1.4, OPTS.amb / 0.7); }
     if (!fallSnd) {
       if (vol <= 0 || !AC || AC.state !== 'running') return;
       var n = AC.sampleRate * 2, b = AC.createBuffer(1, n, AC.sampleRate), ch = b.getChannelData(0), i, last = 0;
@@ -2646,7 +2651,7 @@ __COMBAT__
     else if (s && s.kind === 'hearth') add(it, 'Cook', function () { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('hearth'); });
     else if (s && s.kind === 'furnace') add(it, 'Smelt', function () { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('furnace'); });
     else if (s && s.kind === 'bench') { if (!build) add(it, 'Craft', function () { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); }); }
-    else if (s && s.kind === 'bed') add(it, isEvening() ? 'Sleep' : 'Sleep (when it gets dark)', function () { if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); });
+    else if (s && s.kind === 'bed') { var bw = bedWhy(it); add(it, bw ? bw : isEvening() ? 'Sleep' : 'Sleep (when it gets dark)', function () { if (bw) toast(bw); else if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); }); }   /* (2026-10-14, Robin: no sleeping in a bed with no roof over it, and a village's beds are not yours) */
     else if (s && s.kind === 'store') add(it, 'Open', function () { store = it; invOpen = true; bookOpen = false; clothOpen = false; });
     var cl = clampNear(P), clp = cl && clampPrompt(cl); if (clp) add(cl, clp, function () { clampUse(cl); });
     var wr = weirNear(P); if (wr) add(wr, 'Take down the net', function () { weirTake(wr); });
@@ -4569,7 +4574,7 @@ __COMBAT__
       B.items.forEach(function (it) {
         if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
-        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.loot || (it.out && it.out.length)) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
+        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 60 && Math.abs(mv.y * K - cam.y) < hh + 60) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });

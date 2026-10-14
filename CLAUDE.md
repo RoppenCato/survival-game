@@ -1859,6 +1859,21 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   bow (it shoots), a young boar (the careless bot wins with 9 of 93 left; a careful one loses 7), the hut at Comfort 5 (44 wood,
   3 stone, 8 fiber, 2 leather), roast meat and roast berries cooked and waiting at the campfire, Brokk's story and the raft
   taught, the raft bench on the sand, the raft laid and launched, the crossing in 68 s with "You have left the island".
+- **Robin's first play-through (2026-10-14; `docs/playtest-1.md`, "Robin's report", has every point and the order I propose).
+  Robin's direction from it, not yet built unless said:** a slower beginning that introduces things one at a time, with the
+  broken house finished as the first home; **no sleeping in a bed with no roof, and a village's beds are not yours** (built:
+  `bedWhy`: "No roof over it", "Not your bed"); combat not smooth or snappy enough, the club awful, **a parry stuns about a
+  second, mobs stagger too easily, the red attack line is to go**; chopping and mining clunky and low in impact, **trees
+  about three times bigger, trunks not twice the tree, chopping a trunk made satisfying**; rocks all alike; **bushes should
+  shake**; the deer impossible to kill (runs when shot); **arrows thinner and faster** (built: `RANGED.bow` speed 420, the
+  drawing half as thick); crafting "feels off" and can queue more than the bag holds (to be checked against Admin's Free);
+  east and west walls hard to place; **thatch, not turf, on the villages** (built: `Village.DEF.turfBelow`); the bag's two
+  bar rows too complicated, Q itself in question; the night's light slow to follow its message; the toasts and the way
+  recipes appear not liked; **the steading too easy to find, Brokk's lines bad, the chat bubble bad**; **crates bigger and
+  without a glint** (built: `SIZE` crate 0.55, chest 0.5; the loot glint gone); the yard perhaps models to customise, with
+  hirdmen rowing; "You have left the island" not seen and the islands too close; K and X confused; the cave mouth pasted on;
+  **the troll bigger, scarier, not met by stumbling on him**. From the sound studio: **the ambient sound and the waterfall
+  go quiet when the window loses focus, as the music does** (built: `document.hasFocus()` in both).
 - **The fish weir (2026-10-12, Robin's pick of the finds for the starter island):** `weirPlace()` (every start, after
   `villageClear`) walks out from the island's middle along every bearing to the shore and takes shallow water off a beach 320 to
   1500 units from the wreck, by choice nearest the way from the wreck to the steading: a `fishWeir` (stakes and wattle) in the

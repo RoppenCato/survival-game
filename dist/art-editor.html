@@ -4397,7 +4397,7 @@ var PROPS = {
 };
 // Furniture and household things sized to the hero (about 27 units tall). The factors are relative to how each was
 // drawn: measured beside the hero they were all two to three times too big.
-var SIZE = { porch: 1, apse: 1, gableCross: 1, font: 0.8, lychGate: 0.9, bellTower: 1, altar: 0.7, graveStone: 0.75, wayCross: 0.75, stall: 0.7, windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.38, crate: 0.38, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
+var SIZE = { porch: 1, apse: 1, gableCross: 1, font: 0.8, lychGate: 0.9, bellTower: 1, altar: 0.7, graveStone: 0.75, wayCross: 0.75, stall: 0.7, windowBox: 0.85, lantern: 0.8, awning: 0.8, sign: 0.8, woodshed: 0.62, foodTable: 0.62, firePit: 0.72, logSeat: 0.8, stake: 0.85, banner: 0.8, choppingBlock: 0.75, cellarDoor: 0.7, furnace: 0.72, struckTree: 0.9, fireRing: 0.62, carverBench: 0.63, deadViking: 0.9, fireplace: 0.72, trough: 0.62, campfire: 0.7, scarecrow: 0.6, flowerBed: 0.7, cairn: 0.7, charcoalPit: 0.6, workbench: 0.63, table: 0.56, bed: 0.76, chair: 0.58, bench: 0.5, chest: 0.5, crate: 0.55, barrel: 0.55, woodpile: 0.43, dryingRack: 0.5, brazier: 0.6, stoneHearth: 0.65, woodenWell: 0.55, well: 0.55, haystack: 0.66, cart: 0.72, shieldRack: 0.55, beeSkeps: 0.6, dragonPost: 0.5, shipwright: 0.6, rug: 0.7 };
 Object.keys(SIZE).forEach(function (n) {
   var p = PROPS[n]; if (!p) return; var k = SIZE[n], f0 = p.f;
   p.f = function (c, K, sd) { c.save(); c.scale(k, k); f0(c, K, sd); c.restore(); };
@@ -6021,7 +6021,7 @@ var PROFILES = {
 };
 // the ranged ones: what flies, how fast, the time between shots, what it costs, and whether the thing itself is thrown
 var RANGED = {
-  bow:      { proj: 'arrow', speed: 240, r: 3.5, cd: 0.45, st: 6, stag: 8, life: 1.0 },
+  bow:      { proj: 'arrow', speed: 420, r: 2.5, cd: 0.45, st: 6, stag: 8, life: 0.75 },   // (2026-10-14, Robin: thinner and a lot faster; it looked as if it was transporting itself)
   sling:    { proj: 'stone', speed: 210, r: 3, cd: 0.6, st: 5, stag: 26, life: 0.8, kb: 120 },
   javelin:  { proj: 'javelin', speed: 250, r: 4, cd: 0.5, st: 8, stag: 14, life: 0.9, thrown: true },
   throwaxe: { proj: 'throwaxe', speed: 200, r: 4, cd: 0.5, st: 7, stag: 22, life: 0.6, thrown: true, kb: 160 }
@@ -7902,10 +7902,10 @@ function drawProj(c, pr) {
     // an arrow: shaft, iron head, two feathers
     var ca = Math.cos(pr.ang), sa = Math.sin(pr.ang) * K, px = -sa, py = ca, tx = x + ca * 8, ty = y + sa * 8, bx = x - ca * 8, by = y - sa * 8;
     c.lineCap = 'round'; c.lineJoin = 'round';
-    c.strokeStyle = '#3a2a36'; c.lineWidth = 3; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
-    c.strokeStyle = pr.reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
-    c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.beginPath(); c.moveTo(tx + ca * 4, ty + sa * 4); c.lineTo(tx + px * 1.8, ty + py * 1.8); c.lineTo(tx - px * 1.8, ty - py * 1.8); c.closePath(); c.fill(); c.stroke();
-    c.strokeStyle = '#eef3fb'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 2.4, by - sa * 3 + py * 2.4); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 2.4, by - sa * 3 - py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 2.4, by - sa * 0.5 + py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 2.4, by - sa * 0.5 - py * 2.4); c.stroke();
+    c.strokeStyle = '#3a2a36'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();   /* (2026-10-14, Robin: a lot thinner) */
+    c.strokeStyle = pr.reflected ? '#ffd34d' : '#b98a5a'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(tx, ty); c.stroke();
+    c.fillStyle = '#c5ccd6'; c.strokeStyle = '#3a2a36'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(tx + ca * 3.2, ty + sa * 3.2); c.lineTo(tx + px * 1.2, ty + py * 1.2); c.lineTo(tx - px * 1.2, ty - py * 1.2); c.closePath(); c.fill(); c.stroke();
+    c.strokeStyle = '#eef3fb'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(bx, by); c.lineTo(bx - ca * 3 + px * 2.4, by - sa * 3 + py * 2.4); c.moveTo(bx, by); c.lineTo(bx - ca * 3 - px * 2.4, by - sa * 3 - py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 + px * 2.4, by - sa * 0.5 + py * 2.4); c.moveTo(bx + ca * 2.5, by + sa * 2.5); c.lineTo(bx - ca * 0.5 - px * 2.4, by - sa * 0.5 - py * 2.4); c.stroke();
   }
 }
 function drawPart(c, q) {
