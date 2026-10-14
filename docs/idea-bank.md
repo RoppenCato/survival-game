@@ -221,6 +221,86 @@ night, bysen confusing the player, the huldra as a boss stunned to reach her bac
 Their cards in the book's format, with strengths, weaknesses, warning signs, drops and suggested rules, are in
 `docs/beasts.md`. The table above stays as the longer list of candidates.
 
+### Midgardsormen, the World Serpent (Robin, 2026-10-14: huge and mythological, appearing and moving the sea; a suggestion, nothing decided)
+
+**The sources, looked up on 2026-10-14.** In the Eddas he is Jörmungandr, Old Norse *Miðgarðsormr*, the Midgard Serpent:
+the middle child of Loki and the giantess Angrboða, whom Odin threw into the sea round Midgard, where he grew until he lay
+round the whole world biting his own tail (Snorri's *Gylfaginning*). Three stories: at Útgarða-Loki's hall Thor is set to
+lift a grey cat and gets one paw off the floor; the cat is the serpent, and the giant says the whole hall was afraid when
+the serpent's back touched the sky. Thor fishes with the giant Hymir, baits his hook with the head of Hymir's biggest ox,
+rows further out than Hymir dares, and the serpent takes it; Thor hauls so hard his feet go through the boat's bottom to
+the sea floor, the serpent's head comes up blowing venom, Thor glares at it and lifts the hammer, and Hymir in terror cuts
+the line (*Hymiskviða*, *Gylfaginning*, *Húsdrápa*; the picture stones of Altuna, Ardre and Hørdum, and the Gosforth slab,
+show the fishing, Altuna with the feet through the boat). At Ragnarök he lets go of his tail, **the sea surges over the
+land**, he comes ashore beside the wolf spraying venom over sky and sea, Thor kills him and walks nine steps before the
+venom kills Thor (*Völuspá*, *Gylfaginning*). The later Norwegian sea serpent, the *sjøorm*, is the same creature come
+down in folk belief: Erik Valkendorf's letter to the Pope (1520), Olaus Magnus (1555: a serpent of the rifts and caves off
+Bergen, two hundred feet long, black scales, flaming red eyes, a mane of hair down the neck, out on calm summer nights to
+take cattle and lift men off the deck), Peder Claussøn Friis (a head as big as a *jekt*, a body as thick as a barrel),
+Hans Egede off Greenland (1734: three or four times his ship, blowing like a whale), Pontoppidan. Seen only in **calm, fair
+weather**, hiding in sea caves between. Nothing in any source gives him a colour or a face beyond that; the ouroboros,
+the venom, the mane and the red eyes are the whole of the tradition, and the rest is ours.
+
+**The suggestion.** Not a monster to fight: **the one thing in the world that is bigger than the world**. He is the sea's
+own weather. What the player ever sees is a part of him, never the whole, and he is why the ocean is dangerous.
+
+- **Found:** the deep sea, far from any coast, and more the further west (the open ocean and the unknown; the compass
+  rule). Never in a strait, never in sight of home. In a sea cave now and then: the *sjøorm*'s rifts and caves off the
+  coast are where a coil lies sleeping, and the sea cave of the mountains could one day hold one.
+- **Lore (the card):** Loki's child, thrown into the sea by Odin, grown round the whole world with his tail in his mouth.
+  Thor had him on a hook once and the giant cut the line. When he lets go of his tail the sea comes over the land and the
+  world ends. The fishermen of the west say he sleeps in the deep and turns in his sleep, and that the long swell on a
+  windless day is his breathing.
+- **How he shows:** in stages, each rarer than the last, and never where you can get at him.
+  1. **The swell.** On a calm day far out, the sea begins to move: long slow waves from no wind, the boat lifted and set
+     down, the wake pushed aside. The ambient sound gets a slow boom and the hull creaks. Nothing is seen. This is the one
+     the player meets first and oftenest, and most never learn what it was.
+  2. **The coil.** A black, glistening ridge rises out of the water a few hundred units off, the length of several
+     longships, scaled, with weed and barnacles on it like the sea cave's walls, and sinks again; the water runs off it in
+     sheets, and the wave it makes rolls under the boat. A second rises further off, then a third: the coils of one body
+     passing beneath you. Gulls scatter. Nothing can be done to it; an arrow sticks in it as in a hill.
+  3. **The head.** Once in a long while, at dusk or in fog, the head: a mane of hair streaming water, two red eyes the
+     size of shields, the jaw, and the breath that hangs on the water like steam and sickens whoever rows through it (the
+     venom: health draining slowly while you are in the mist, the reward-not-punish rule kept by making it a thing you
+     can row out of). He looks at the boat, and sinks. The water he leaves behind is poison for a while: fish float up
+     dead, and a boat that stays in it loses rowers to sickness.
+  4. **The wake.** A wave that is wrong: a single long roller crossing the sea at an angle to every other, with nothing
+     behind it, that lifts the boat and rolls on to break on a coast miles away. That is him moving in the deep. A village
+     on that shore has a story about it afterwards (the living world: word spreads).
+- **What he does to the sea, in play:** the only true hazard at sea that is not weather. A coil rising under the boat
+  throws it (the hull lifted, the crew flung from the thwarts, cargo loose: a chest of silver can go over the side), and
+  the raft is simply swamped. The swell makes rowing slow and the sail useless for a while. The venom mist is a sickness
+  with a cure at home. **He never chases and never hunts**: he is not after you, you are in his way. So he gives the deep
+  sea its fear without a chase mechanic, and the near seas stay safe: **the further from the coasts you dare, the more of
+  him you meet**, which fits the compass (the west is the unknown) and the scale problem (the sea is the huge thing).
+- **What he gives:** the fishermen's lore and a page in the book, earned by *seeing* him, not by a kill (the book could
+  grow by sightings: the silhouette of the swell first, the coil, then the head). A **scale** shed where a coil surfaced,
+  floating, black and as big as a shield: the one drop, rare, a thing of legend to carry home (a shield of it that no
+  arrow pierces; or the proof that makes a legendary Viking's name). The fisherman's hut and the old men of the shore
+  places have lines about him once you have seen the swell, and Brokk has one.
+- **Thor's fishing as the far goal (an idea, not a mechanic):** the only way to "fight" him is Thor's: a hook forged for
+  it, an ox's head, the longship rowed further out than anyone goes, and the strength to hold the line; the myth ends with
+  the line cut, and so could ours (a legendary Viking who held him for a minute). Something for the far west, years in.
+- **Weakness, as a card would put it:** none. The card says only *where he is not*: never in sight of land, never in a
+  storm, never under a ship with the gods' luck (a dragon stem, a sacrifice before sailing, a rune on the hull: the
+  reward side, things that keep him down).
+
+**How it could be built (so it stays cheap):** he is **never one creature in the engine**. The swell is the water's own
+drawing plus the vessel's physics (a long wave field added under the boat; the Sea Editor's handling takes it as a push).
+A coil is a prop on the water: one Blender set piece, a scaled ridge rendered like the sea cave's mouth, drawn with foam
+and run-off, animated by rising and sinking (two or three frames or a scale curve), placed by a `serpentTick` that chooses
+a line beneath the boat and raises coils along it in turn. The head is a second set piece with its own rise and sink and
+the mist as a particle field that lingers. The wake is a travelling wave in the water field. None of it needs collision
+beyond the boat's hull being lifted. So: a water field that things can push, two set pieces, a mist, a tick that
+decides when (calm weather, far from land, the deep, rarer near home) and the lines and the page. The sea's own weather
+(wind, fog, swell) would want to exist first, which the time and season work will bring; he is the reason to build it.
+
+**Open:** whether he can be met in the home waters at all (I say never: the two islands are too near); whether the coil
+should be able to wreck a boat outright or only throw what is loose (I say throw: dying at sea is meant to be forgiving);
+whether the head should ever be drawn in full or only ever half out of the water (half: the whole is for the book's
+page); and whether the sea cave's dry pocket is where a sleeping coil lies, so the sea cave on a real mountain island is
+where he is first seen close.
+
 ### How the book could grow (Claude)
 - A page is earned on the first kill (decided). Later pages could also be earned by *meeting* a creature you
   cannot or should not kill (the ravens, the tomte, the huldra), by reading a runestone, or by Brokk's stories.
