@@ -1983,7 +1983,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   (`seen.fought`), **Ring once a ring is worn**. (A Make page on the panel lived for an hour in between; it is gone.) **Robin's second look:** the bag's bar row is always
   drawn (only the hotbar at the foot of the screen waits for the first tool), and **every gear slot shows** (the necklace, the
   two rings, the two trinkets and the arm ring were hidden until something could fill them, since the UI review): the panel is
-  112 tall with slots 12.5 apart, the bag's cells 17 (`CELL`), so the column fits in 250. The hotbar's label names B only. **The interface grows:** the hotbar is
+  112 tall with slots 12.5 apart, the bag's cells 17 (`CELL`), so the column fits in 250. The hotbar's label names B only. **Robin's third look ("still covering a lot of the screen; the icons outside the panel; the 1 to
+  6 as part of the bag's slots; the crafting panel smaller, no By hand, the list smaller"):** the panel is 102 wide with the slots
+  well inside it and the hero at 1.1; **the bag is one board of five rows, its first row the bar** (`CELL` 15, a thin line under
+  the row; `BAR` is only a name for its top now); **the crafting board is a narrow column** (118 by 214 at x 274: the list of seven
+  rows of 11 above the page, **no tabs at all**: what you can make by hand is in every list, under its own headings, after the
+  station's own things (`infoList`), so a hearth's list is its dishes and then the hand recipes; `infoCan` asks for a roofed
+  bench only of a bench recipe). The lists' `menuTabs` is kept for the Building board's row. **The interface grows:** the hotbar is
   not drawn until a thing has been put on the bar (`seen.bar`, set by `barPut`; the engine's `api.hideBar`; the bag's bar row
   likewise), **B does nothing until Brokk's word** (`seen.build`, set when his story's last line is heard: a test scene or the
   sandbox sets it with `seen.met`), the Building board holds the plank house's six pieces until the first night under a roof
