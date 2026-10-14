@@ -295,6 +295,48 @@ beyond the boat's hull being lifted. So: a water field that things can push, two
 decides when (calm weather, far from land, the deep, rarer near home) and the lines and the page. The sea's own weather
 (wind, fog, swell) would want to exist first, which the time and season work will bring; he is the reason to build it.
 
+**The art concept (2026-10-14, what I imagine; it is built for the gameplay above, so each picture is one of the four
+stages and nothing else).** The rule that governs it all: **the screen never holds him**. Every picture is a piece of
+him crossing the edge of the view, drawn so the eye finishes the body off-screen. That is how a 2D top-down game, which
+shows 29 by 18 metres, can carry a creature that goes round the world: not by drawing him big, but by never drawing an
+end to him.
+
+- **The body.** A sea-black coil with a bottle-green sheen where the light catches it, in the ink look like everything
+  else: a heavy brown-black line on the shadow side, grain in the fill, one cool shadow. Scales the size of shields,
+  drawn as overlapping plates with a lit edge each, as the wall slabs of the mountains are drawn, so he reads as rock
+  that moves. Weed hangs off him and barnacles sit in the hollows between the plates, in the sea cave's palette, so he
+  and the sea cave belong to each other and the player who has been in the cave recognises the surface. The scale of a
+  coil is set by the longship: **a coil rising is at least twice as long as the longship and as high as its mast**, and the
+  longship is already longer than the screen. Three or four frames of rising and sinking, the water running off him in
+  sheets and foam boiling along his length, as one Blender set piece rendered from the game's camera like the cave
+  mouths, and a mirrored one so two coils in a row are not the same.
+- **The head.** Only ever half out of the water, the chin on the surface, the rest hidden by the swell and the mist. A
+  long reptile skull like a longship's prow seen from above, which is on purpose: the dragon stem on the player's own ship
+  is the shape men made of him, and the first time a player sees the head they should feel that the stem was a copy. A
+  **mane** from the crown down the neck, the sea serpent's hair of the old accounts, drawn as the people's hair is drawn
+  but streaming and heavy with water, with the water pouring out of it. **Two red eyes**, the one hot colour of the
+  picture, set far apart and glowing as the wolves' eyes glow at night, so they are the thing seen first through fog, and
+  they can be drawn alone when the rest is hidden (two red points on the water far off, which is the cheapest and
+  scariest picture of all). No teeth shown: the jaw stays shut on the tail he is not biting any more, and the venom comes
+  as **breath**, a pale green-grey steam that lies on the water and drifts, in the mist technique of the lighting trials.
+  His gaze is the one animation that matters: the head turns, the eyes find the boat and hold it, then the whole thing
+  sinks without hurry.
+- **What the water does.** Most of the picture is water, so most of the art is the sea's own drawing changed: the long
+  swell as a field under the waves that lifts the boat and tilts it (the hull's own drawing already turns with the
+  heading; a tilt is a small shear), a ring of foam where a coil breaks the surface, a slick of flattened water behind a
+  coil that has sunk with bubbles rising in it, the dead fish floating belly-up in the poisoned water, and the wake: one
+  dark line across the sea, longer than the screen, with a white crest, moving. At dusk the swell takes the sky's colour
+  and the coil is a black cut-out against it; by night only the eyes, and the sound.
+- **Sound before sight.** Every stage has a sound first: a slow boom under the hull like the sea cave's, the hull's
+  creak, gulls leaving, the hiss of water off the scales, the breath. The ambient sound already has beds and single
+  sounds; he would be a bed that comes up for a minute and goes.
+- **The book's page.** The only place he is drawn whole: an old chart's picture, the ouroboros round a small drawn world
+  with the islands you know on it, in the ink of the runestones, with the four stages as four small vignettes down the
+  margin that fill in as they are seen (the swell as a line of waves, a coil, the head, the wake), and Olaus Magnus's
+  serpent round a ship as the last, which is Thor's fishing and is never filled.
+- **What he must not be:** a dragon (no wings, no legs, no fire; a worm), cartoon-cute (no grin, no round eyes; the eyes
+  are slits under a heavy brow, as the trolls' are), a boss with a health bar, or ever seen whole on the screen.
+
 **Open:** whether he can be met in the home waters at all (I say never: the two islands are too near); whether the coil
 should be able to wreck a boat outright or only throw what is loose (I say throw: dying at sea is meant to be forgiving);
 whether the head should ever be drawn in full or only ever half out of the water (half: the whole is for the book's
