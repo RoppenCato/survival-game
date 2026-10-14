@@ -1970,10 +1970,16 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   the Blender piece are not painted yet. `docs/cave-mouth.png` is the older before-and-after.
 - **The beginning that grows (2026-10-14; Robin: "Yes, do all this" to my five points on being overwhelmed at the start, and his own
   additions: big steps announced on a bordered board, Brokk as the gate, only the basic pieces, Brokk naming what the house still
-  lacks). Built the same day, in three commits (one bar first, see "Controls and modes").** **C is gone: hand crafting is the
-  character panel's first page, Make** (`drawMake`, `makeList`, `makeRows`, `makeRowAt`: every by-hand recipe known, its icon, name
-  and what it takes, red where short, a click makes it; the panel's title is "You" and its tabs are `chTabs()`: Make and Gear
-  always, **Stats after the first kill** (`seen.fought`), **Ring once a ring is worn**). **The interface grows:** the hotbar is
+  lacks). Built the same day, in three commits (one bar first, see "Controls and modes").** **C is gone, and Tab is one screen (the
+  second pass the same evening, from Robin's Valheim picture: the bag bottom left with the character panel over it, the crafting
+  panel on the right):** `CHAR` sits top left (126 by 104, `CHAR_H`; the hero at 1.35, the gear slots 15 apart; a Stats or Ring
+  page makes it 238 tall and it lies over the bag), the bag under it (`INV.x` 8, the bar row at `BAR.y` 114, sliding in from the
+  left), and **the recipe board on the right** (`openInfo`: 254 by 190 at x 138, y 22; the list and the page as before). **Tab
+  opens all of it** with the board for where you stand (`craftTabHere`: the bench, the hearth or the furnace beside you, else By
+  hand; `menuFrom` 'tab' gives the tabs By hand plus whichever station is near), **E at a station opens the same screen** with
+  that station's board, and E or Tab closes both. **An open chest takes the right side instead** (`STORE_UI` at x 266, sliding in
+  from the right). The panel's title is "You" and its tabs are `chTabs()`: Gear always, **Stats after the first kill**
+  (`seen.fought`), **Ring once a ring is worn**. (A Make page on the panel lived for an hour in between; it is gone.) **The interface grows:** the hotbar is
   not drawn until a thing has been put on the bar (`seen.bar`, set by `barPut`; the engine's `api.hideBar`; the bag's bar row
   likewise), **B does nothing until Brokk's word** (`seen.build`, set when his story's last line is heard: a test scene or the
   sandbox sets it with `seen.met`), the Building board holds the plank house's six pieces until the first night under a roof
@@ -2197,7 +2203,8 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   back), attack (the damage number you see in the world, and the heavy swing), arrow damage, crit chance (15%) and
   crit damage (x1.5), defense (the share of a blow turned aside, at most 60%), walk and run speed, and the chop, mine
   and cut power of the tools in hand. It reads the live numbers, so food, gear and tools change it.
-- **The character panel** slides in from the left on Tab while the bag slides in from the right (one key, two
+- **The character panel** (since 2026-10-14 top left over the bag, with the crafting board on the right: see "The beginning that
+  grows"; what follows is the older layout) slid in from the left on Tab while the bag slid in from the right (one key, two
   boards; Robin: fewer menus). Wood outside, leather inside; the hero drawn large and turning in the middle
   (`playerD`, like the Character Editor), five equipment slots on the left (helmet, cloak, tunic, trousers, boots)
   and four on the right (sword, shield, bow, amulet), all with faint glyphs when empty; only the sword and bow are

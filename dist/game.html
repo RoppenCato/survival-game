@@ -75,7 +75,7 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
           <dt><kbd>Mouse wheel</kbd></dt><dd>Pick a slot on the bar (<kbd>Enter</kbd> takes the pick in hand, or puts it away; a number key does the same for its slot); in build mode through the pieces you know (it turns a thing you are about to set down), and over the Building board through its tabs</dd>
           <dt><kbd>E</kbd></dt><dd>Use what you face: a workbench, a hearth or a furnace (its board; E again closes it), a bed from dusk (sleep until morning), a chest (opens beside the bag), a seat, a boat, a cave, a person to talk to, berries to pick. The words over the hero say what it will do</dd>
           <dt>In the bag</dt><dd><kbd>Drag</kbd> a thing to move it; off the boards, to lay it on the ground (a weapon or a tool lies there until <kbd>E</kbd> takes it up again). <kbd>Right click</kbd> uses it: eats a food, lights a torch, sends a weapon or a tool to its bar, puts a garment on (on the character panel, takes it off). <kbd>Shift</kbd> and click sends it across to an open chest, or out of one. <kbd>Shift</kbd> and drag carries half a stack</dd>
-          <dt><kbd>Tab</kbd></dt><dd>Your panel slides in from the left (Make: what you can make by hand; Gear: the hero and what is worn; pages for the numbers and the ring come as you earn them) and the bag from the right: six slots wide, stacks of 25, its top two rows the Fight bar and the Gather bar. Point at a thing for its card. Sort tidies the rows below the bars</dd>
+          <dt><kbd>Tab</kbd></dt><dd>The one screen: your panel top left (the hero and what is worn; pages for the numbers and the ring come as you earn them), the bag under it, and on the right what you can make where you stand (by hand, or the bench, hearth or furnace beside you): six slots wide, stacks of 25, its top two rows the Fight bar and the Gather bar. Point at a thing for its card. Sort tidies the rows below the bars</dd>
           <dt><kbd>R</kbd></dt><dd>Rise again after you have fallen</dd>
         </dl>
       </div>
@@ -14980,7 +14980,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var rUse = raftUsable(), cargo = cargoHome() && rUse && !raft.aboard, build = P.mode === 'build';
     if (carrying) return rUse && !raft.aboard ? { say: carrying.man ? 'Lay him aboard' : 'Stow it aboard', act: stowHeavy } : { say: carrying.man ? 'Set him down' : 'Put it down', act: putDown };
     if (looking) return { say: 'Turn back', act: function () { looking = null; } };
-    if (menu && menu.info) return { act: function () { menu = null; } };            // E closes a recipe board as it opened it
+    if (menu && menu.info) return { act: function () { menu = null; invOpen = false; } };            // E closes a recipe board as it opened it, and the screen with it
     if (ringOpen) return { act: function () { ringOpen = false; } };
     if (sitting) return { say: 'Stand up', act: standUp };
     if (musterOpen) return { act: function () { musterOpen = false; } };
@@ -15004,11 +15004,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var s = stationNear(P), it = s && s.it;                          // the built things: one of them, already chosen by the same rule
     if (s && s.kind === 'carver') { if (!build) add(it, 'Cut runes', function () { openRing(it); }); }
     else if (s && s.kind === 'seat') { if (!build) add(it, 'Sit', function () { sitDown(it); }); }
-    else if (s && s.kind === 'hearth') add(it, 'Cook', function () { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('hearth'); });
-    else if (s && s.kind === 'furnace') add(it, 'Smelt', function () { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('furnace'); });
-    else if (s && s.kind === 'bench') { if (!build) add(it, 'Craft', function () { invOpen = false; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); }); }
+    else if (s && s.kind === 'hearth') add(it, 'Cook', function () { invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('hearth'); });
+    else if (s && s.kind === 'furnace') add(it, 'Smelt', function () { invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'E'; openMenu('furnace'); });
+    else if (s && s.kind === 'bench') { if (!build) add(it, 'Craft', function () { invOpen = true; store = null; bookOpen = false; clothOpen = false; menuFrom = 'bench'; openMenu('bench'); }); }
     else if (s && s.kind === 'bed') { var bw = bedWhy(it); add(it, bw ? bw : isEvening() ? 'Sleep' : 'Sleep (when it gets dark)', function () { if (bw) toast(bw); else if (isEvening()) goSleep(); else toast('Not sleepy yet: wait for dusk'); }); }   /* (2026-10-14, Robin: no sleeping in a bed with no roof over it, and a village's beds are not yours) */
-    else if (s && s.kind === 'store') add(it, 'Open', function () { store = it; invOpen = true; bookOpen = false; clothOpen = false; });
+    else if (s && s.kind === 'store') add(it, 'Open', function () { store = it; menu = null; invOpen = true; bookOpen = false; clothOpen = false; });
     var cl = clampNear(P), clp = cl && clampPrompt(cl); if (clp) add(cl, clp, function () { clampUse(cl); });
     var wr = weirNear(P); if (wr) add(wr, 'Take down the net', function () { weirTake(wr); });
     var wk = wreckNear(P); if (wk && (seen.pried || 0) < WRECK_PRIES) add(wk, 'Pry a plank from the wreck', function () { seen.pried = (seen.pried || 0) + 1; addItem('wood', 3); sfx('chop'); note('+3 wood'); if (seen.pried >= WRECK_PRIES) note('Nothing more to pry loose'); save(); });
@@ -15121,7 +15121,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function fedText() { if (!fed) return ''; var m = Math.floor(fed.left / 60), s = Math.floor(fed.left % 60); return 'Well fed (' + NAMES[fed.kind].toLowerCase() + '): ' + m + ':' + (s < 10 ? '0' : '') + s + (fed.regen ? '  +' + fed.regen + ' health a second' : ''); }
   // the build menu (right click in build mode): a wooden board of big piece icons; the wreck cursor is the last one
   var MCELL = 22, MCOLS = 8, MROWS = 4, menuTab = 'build', menuFrom = 'B';   // menuFrom: 'B' for the build board, 'bench' when E opened it at a workbench
-  function menuTabs() { var P = hero(), b = benchNear(P); if (menuFrom === 'bench') return [{ id: 'bench', name: 'Workbench', roofed: b && benchRoofed(b) }, { id: 'hand', name: 'By hand' }]; if (menuTab === 'hearth') return [{ id: 'hearth', name: 'Hearth' }]; if (menuTab === 'furnace') return [{ id: 'furnace', name: 'Furnace' }]; if (menuTab === 'hand') return [{ id: 'hand', name: 'By hand' }]; return [{ id: 'build', name: 'Building' }]; }
+  function craftTabHere() { var P = hero(); return benchNear(P) ? 'bench' : nearHearth(P) ? 'hearth' : furnaceAt(P) ? 'furnace' : 'hand'; }   // what the right side of the screen shows where you stand (Tab)
+  function menuTabs() { var P = hero(), b = benchNear(P);
+    if (menuFrom === 'tab') { var tb = [{ id: 'hand', name: 'By hand' }]; if (b) tb.unshift({ id: 'bench', name: 'Workbench', roofed: benchRoofed(b) }); if (nearHearth(P)) tb.push({ id: 'hearth', name: 'Hearth' }); if (furnaceAt(P)) tb.push({ id: 'furnace', name: 'Furnace' }); return tb; }
+    if (menuFrom === 'bench') return [{ id: 'bench', name: 'Workbench', roofed: b && benchRoofed(b) }, { id: 'hand', name: 'By hand' }]; if (menuTab === 'hearth') return [{ id: 'hearth', name: 'Hearth' }]; if (menuTab === 'furnace') return [{ id: 'furnace', name: 'Furnace' }]; if (menuTab === 'hand') return [{ id: 'hand', name: 'By hand' }]; return [{ id: 'build', name: 'Building' }]; }
   function buildCats() { return BCATS.filter(function (ct) { return PIECES.some(function (p) { return p.cat === ct[0] && pieceKnown(p); }); }); }
   var buildCat = null;                                      // the Building board's open category
   function openMenu(tab) {
@@ -15152,8 +15155,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function openInfo() {
     menuStation = menuTab === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (menuTab === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : (menuTab === 'furnace' ? { kind: 'furnace', it: furnaceAt(hero()) } : null)); if (menuStation && !menuStation.it) menuStation = null;
-    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 272, h: 176, list: infoList(), scroll: 0, maxScroll: 0 };
-    menu.x = Math.round((400 - menu.w) / 2); menu.y = 30;
+    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 254, h: 190, list: infoList(), scroll: 0, maxScroll: 0 };
+    menu.x = 400 - menu.w - 8; menu.y = 22;   /* (on the right since 2026-10-14: the one screen) */
     var rowH = 15, listH = menu.h - 36 - (menuStation ? 26 : 0); menu.rowH = rowH; menu.listH = listH;
     // the list as it is shown: under a small heading a category when there is more than one (Tools, Weapons, Armour, Supplies); it was one long scroll
     var show = [], cats = CATS2.filter(function (ct) { return menu.list.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
@@ -15531,16 +15534,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.onArrowLand = function (x, y) { };   /* (no arrows lie to be picked up while there is no quiver) */
 
   /* ---------- the character panel: slides in from the left on Tab, the bag from the right ---------- */
-  var CHAR = { w: 118, h: 178, x: 8, y: 38, slide: 0 };
+  var CHAR_H = 104, CHAR = { w: 126, h: CHAR_H, x: 8, y: 6, slide: 0 };   /* (2026-10-14, one screen on Tab: the panel top left over the bag, the crafting board on the right, as Valheim lays it out in Robin's picture) */
   function chLeft() { return CHAR.x - (1 - CHAR.slide) * (CHAR.w + 40); }
   var EQUIP = [['head', 'Helmet'], ['cloak', 'Cloak'], ['chest', 'Tunic'], ['legs', 'Trousers'], ['feet', 'Boots'], ['shield', 'Shield'], ['neck', 'Necklace'], ['ring1', 'Ring'], ['ring2', 'Ring'], ['trinket', 'Trinket'], ['trinket2', 'Trinket']];   // the right column: shield, necklace, two rings, two trinkets (Robin, 2026-10-07)
   var EQUIPPED = { weapon: 'sword', bow: 'bow' };
   function gearFor(id) { if (equip[id]) return true; for (var k in Items.KINDS) if (TOOL_SLOT[k] === id) return true; return false; }   // is there anything in the game that goes in this slot?
   function chSlots() {                      // (2026-10-12: the necklace, the rings and the trinkets show once there is something to put in them; they were five empty outlines)
     var x0 = chLeft(), out = [], i, rn = 0;
-    for (i = 0; i < 5; i++) out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + 15, y: CHAR.y + 28 + i * 19, w: 16, h: 16 });
-    for (i = 5; i < EQUIP.length; i++) if (gearFor(EQUIP[i][0])) { out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + CHAR.w - 31, y: CHAR.y + 28 + rn * 19, w: 16, h: 16 }); rn++; }
-    out.push({ id: 'armring', name: 'Arm ring', ringSlot: true, x: x0 + CHAR.w - 31, y: CHAR.y + 28 + rn * 19, w: 16, h: 16 });   // the arm ring: under the shield
+    for (i = 0; i < 5; i++) out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + 12, y: CHAR.y + 22 + i * 15, w: 14, h: 14 });
+    for (i = 5; i < EQUIP.length; i++) if (gearFor(EQUIP[i][0])) { out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + CHAR.w - 26, y: CHAR.y + 22 + rn * 15, w: 14, h: 14 }); rn++; }
+    out.push({ id: 'armring', name: 'Arm ring', ringSlot: true, x: x0 + CHAR.w - 26, y: CHAR.y + 22 + rn * 15, w: 14, h: 14 });   // the arm ring: under the shield
     /* (the quiver's three slots were here until 2026-10-13: Robin, remove the arrow slots, a better way is to be found) */
     return out;
   }
@@ -15579,9 +15582,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.restore();
   }
   /* ---------- the stats board: a second page of the character panel, Gear | Stats ---------- */
-  var chTab = 'make', makeScroll = 0;
-  var CH_TABS = ['make', 'gear', 'stats', 'ring'], CH_NAMES = { make: 'Make', gear: 'Gear', stats: 'Stats', ring: 'Ring' };
-  function chTabs() { return CH_TABS.filter(function (t) { return t === 'make' || t === 'gear' || (t === 'stats' ? !!seen.fought : !!ring); }); }   /* (the interface grows, 2026-10-14: Stats after the first kill, Ring once a ring is worn) */
+  var chTab = 'gear';
+  var CH_TABS = ['gear', 'stats', 'ring'], CH_NAMES = { gear: 'Gear', stats: 'Stats', ring: 'Ring' };
+  function chTabs() { return CH_TABS.filter(function (t) { return t === 'gear' || (t === 'stats' ? !!seen.fought : !!ring); }); }   /* (the interface grows, 2026-10-14: Stats after the first kill, Ring once a ring is worn) */
   function chTabRect(i) { return { x: chLeft() + 28 + i * 22, y: CHAR.y + 3, w: 20, h: 10 }; }
   function chTabAt() { if (!mouseS || CHAR.slide < 0.9) return null; var TB = chTabs(); for (var i = 0; i < TB.length; i++) { var r = chTabRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return TB[i]; } return null; }
   function statRows() {
@@ -15633,41 +15636,21 @@ if (typeof module !== 'undefined') module.exports = Combat;
       y += 11;
     });
   }
-  /* The Make page (2026-10-14, Robin: C was a key you used once and never again; Valheim keeps hand crafting on the inventory screen):
-     what can be made by hand right now, on the character panel's first page. A row is a thing: its icon, its name, what it
-     takes (red where short); a click makes it (the hero's queue, as before); a gold dot marks a thing never yet made. */
-  function makeList() { return RECIPES2.filter(function (r) { return r.at === 'hand' && known(r); }); }
-  function makeRows() { var x0 = chLeft(), y = CHAR.y + 20 - makeScroll, out = []; makeList().forEach(function (r) { out.push({ r: r, x: x0 + 6, y: y, w: CHAR.w - 12, h: 16 }); y += 16; }); return out; }
-  function makeRowAt() { if (!mouseS || CHAR.slide < 0.9 || chTab !== 'make') return null; var R = makeRows(); for (var i = 0; i < R.length; i++) { var q = R[i]; if (q.y < CHAR.y + 18 || q.y + q.h > CHAR.y + CHAR.h - 4) continue; if (mouseS.x >= q.x && mouseS.x <= q.x + q.w && mouseS.y >= q.y && mouseS.y <= q.y + q.h) return q; } return null; }
   function isNew(id) { return !(seen.made && seen.made[id]); }
   function markMade(id) { if (!seen.made) seen.made = {}; seen.made[id] = 1; }
-  function drawMake(c, x0) {
-    var R = makeRows(), hv = makeRowAt(), i; c.save(); c.beginPath(); c.rect(x0 + 5, CHAR.y + 18, CHAR.w - 10, CHAR.h - 24); c.clip();
-    if (!R.length) { c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.75)'; wrapText(c, 'Nothing to make yet. What you find will show you what it can become.', CHAR.w - 24).forEach(function (ln, k) { c.fillText(ln, x0 + 10, CHAR.y + 32 + k * 9); }); }
-    for (i = 0; i < R.length; i++) { var q = R[i], e = { id: q.r.id, r: q.r }, can = canAfford(q.r.needs), on = hv === q;
-      if (on) { c.fillStyle = 'rgba(255,230,180,0.14)'; c.fillRect(q.x, q.y, q.w, q.h); }
-      c.globalAlpha = can ? 1 : 0.5; infoIcon(c, e, q.x + 8, q.y + q.h / 2, 0.6); c.globalAlpha = 1;
-      c.font = '600 5.8px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = can ? '#f6e2b8' : 'rgba(246,226,184,0.5)'; c.fillText(infoName(e), q.x + 17, q.y + 6.5);
-      c.font = '500 4.8px system-ui, sans-serif'; c.fillStyle = can ? 'rgba(246,226,184,0.7)' : '#e0705a'; c.fillText(costText(q.r.needs), q.x + 17, q.y + 13);
-      if (isNew(q.r.id)) { c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(q.x + q.w - 5, q.y + 5, 1.8, 0, 7); c.fill(); }
-      var pr = infoProgress(e); if (pr) { c.fillStyle = '#ffd34d'; c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.fillText('x' + pr.n, q.x + q.w - 10, q.y + 6.5); }
-    }
-    c.restore();
-  }
   function drawChar(c) {
     var x0 = chLeft(), P = hero(), hov = chSlotAt(), i;
     wood(c, x0, CHAR.y, CHAR.w, CHAR.h);
     leather(c, x0 + 5, CHAR.y + 15, CHAR.w - 10, CHAR.h - 20);
     c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('You', x0 + 8, CHAR.y + 11);
-    var hovT = chTabAt(); if (chTabs().indexOf(chTab) < 0) chTab = 'make';
+    var hovT = chTabAt(); if (chTabs().indexOf(chTab) < 0) chTab = 'gear'; CHAR.h = chTab === 'gear' ? CHAR_H : 238;   /* (Stats and Ring want the height: the tall panel lies over the bag) */
     chTabs().forEach(function (tid, ti) { var nm = CH_NAMES[tid], tr = chTabRect(ti), on = tid === chTab; c.fillStyle = on ? 'rgba(255,230,180,0.26)' : (hovT === tid ? 'rgba(255,230,180,0.14)' : 'rgba(0,0,0,0.28)'); c.fillRect(tr.x, tr.y, tr.w, tr.h); c.font = (on ? 'bold ' : '600 ') + '5.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#fff' : 'rgba(246,226,184,0.8)'; c.fillText(nm, tr.x + tr.w / 2, tr.y + 7.2); });
-    if (chTab === 'make') { drawMake(c, x0); return; }
     if (chTab === 'stats') { drawStats(c, x0); return; }
     if (chTab === 'ring') { drawRingTab(c, x0); return; }
     // the hero, turning slowly, on a patch of floor
-    var cx = x0 + CHAR.w / 2, cy = CHAR.y + 112, vx = 0, side = false, dir = 'down';   // he always faces you, so the face and the gear can be seen
+    var cx = x0 + CHAR.w / 2, cy = CHAR.y + 92, vx = 0, side = false, dir = 'down';   // he always faces you, so the face and the gear can be seen
     c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(cx, cy + 2, 20, 7, 0, 0, 7); c.fill();
-    c.save(); c.translate(cx, cy); c.scale(1.8, 1.8);
+    c.save(); c.translate(cx, cy); c.scale(1.35, 1.35);
     if (sprHero) Sprites.draw(c, sprHero, 0, 0, Math.PI / 2, { amt: 0, sit: 0 }, false, { atk: { ph: 'none' }, dead: false, hurtT: 0, mode: 'fight', sprinting: false }, { scale: Sprites.scaleOf(localStorage), shadow: false, layers: handLayers() });   // the Blender hero, facing you, with the thing in hand (2026-10-09)
     else lib.playerD(c, 0, 0, dir, { phase: 0, amt: 0, t: clock, lx: 0, ly: 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) }, null);
     c.restore();
@@ -15688,15 +15671,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (hov) {                              // what the slot is
       var txt = hov.ringSlot ? (ring ? Runes.METALS[ring.metal].name + ' arm ring  (the Ring page shows it)' : 'Arm ring: none') : hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ': empty');
       if (equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
-      c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0, CHAR.y + CHAR.h + 7); c.fillStyle = '#fff'; c.fillText(txt, x0, CHAR.y + CHAR.h + 7);
+      c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + 6, CHAR.y + CHAR.h - 2.5); c.fillStyle = '#fff'; c.fillText(txt, x0 + 6, CHAR.y + CHAR.h - 2.5);
     }
   }
-  var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + (ROWS - 1) * CELL + 8, slide: 0 }, BAR = { y: 62, h: CELL + 10 };   // the bar's board sits above the bag
-  INV.x = 400 - INV.w - 8; INV.y = BAR.y + BAR.h + 14;
-  function invLeft() { return INV.x + (1 - INV.slide) * (INV.w + 40); }
+  var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + (ROWS - 1) * CELL + 8, slide: 0 }, BAR = { y: CHAR_H + 10, h: CELL + 10 };   // the bar's board sits above the bag, under the character panel
+  INV.x = 8; INV.y = BAR.y + BAR.h + 4;
+  function invLeft() { return INV.x - (1 - INV.slide) * (INV.w + 40); }
   function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + 6 + (i % COLS) * CELL, y: i < BAG0 ? BAR.y + 6 + row * CELL : INV.y + 16 + (row - 1) * CELL, w: CELL - 2, h: CELL - 2 }; }
-  var STORE_UI = { x: 8, y: 80, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };
-  function storeLeft() { return STORE_UI.x - (1 - INV.slide) * (STORE_UI.w + 40); }
+  var STORE_UI = { x: 400 - (COLS * CELL + 12) - 8, y: 40, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };   // an open chest: on the right, where the crafting board sits otherwise
+  function storeLeft() { return STORE_UI.x + (1 - INV.slide) * (STORE_UI.w + 40); }
   function storeRect(j) { var x0 = storeLeft(); return { x: x0 + 6 + (j % COLS) * CELL, y: STORE_UI.y + 16 + Math.floor(j / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
   function slotAt() {
     if (!mouseS || INV.slide < 0.9) return -1; var i, r;
@@ -15704,7 +15687,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (store) for (i = 0; i < STORE_N; i++) { r = storeRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return 100 + i; }
     return -1;
   }
-  function drawStore(c) {                  // the open chest's board, on the left where the character panel sits
+  function drawStore(c) {                  // the open chest's board, on the right
     var x0 = storeLeft(), i, hov = slotAt();
     wood(c, x0, STORE_UI.y, STORE_UI.w, STORE_UI.h);
     c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Chest', x0 + 8, STORE_UI.y + 11);
@@ -15736,7 +15719,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (hov >= 0 && slotGet(hov) && !(pick && pick.drag)) {   // the name of what you point at, and what eating it does
       var s2 = slotGet(hov), f = FOOD[s2.kind], txt = hov >= 100 ? 'Shift and click, or right click: take' : store ? 'Shift and click: into the chest' : f ? 'Right click: eat' : s2.kind === 'torch' ? (torchOn ? 'Right click or T: put it out' : 'Right click or T: light it') : s2.kind === 'item' && hov >= BAG0 ? (TOOL_SLOT[s2.item.kind] ? 'Right click: wear' : BAR_OF[s2.item.kind] ? 'Right click: to your bar' : '') : '';   // (its card says what it is)
       c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + 3, INV.y - 4); c.fillStyle = '#fff'; c.fillText(txt, x0 + 3, INV.y - 4);
-      cardLater(s2.kind === 'item' ? s2.item : s2.kind, store ? 133 : x0 - 150, store ? (hov >= 100 ? STORE_UI.y + STORE_UI.h + 6 : BAR.y - 2) : INV.y);   // a thing's card, or a material's (clear of the chest when one is open)
+      cardLater(s2.kind === 'item' ? s2.item : s2.kind, hov >= 100 ? storeLeft() - 150 : x0 + INV.w + 6, hov >= 100 ? STORE_UI.y : BAR.y);   // a thing's card, or a material's, beside the board it is in
     }
     if (pick && pick.drag && slotGet(pick.i) && mouseS) { var sd = slotGet(pick.i), dn = sd.kind === 'item' ? 1 : (pick.half && sd.n > 1 ? Math.ceil(sd.n / 2) : sd.n); c.globalAlpha = 0.9; if (sd.kind === 'item') { c.save(); c.translate(mouseS.x, mouseS.y); Items.icon(c, sd.item, 16); c.restore(); } else drawDropIcon(c, sd.kind, mouseS.x, mouseS.y, 1.3); c.globalAlpha = 1; if (dn > 1) { c.font = 'bold 6px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText(String(dn), mouseS.x + 5, mouseS.y + 8); c.fillStyle = '#fff'; c.fillText(String(dn), mouseS.x + 5, mouseS.y + 8); } }
   }
@@ -15751,7 +15734,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     rows = [];
     INV.slide += ((invOpen ? 1 : 0) - INV.slide) * 0.25; if (INV.slide < 0.01 && !invOpen) INV.slide = 0;
     CHAR.slide = INV.slide;
-    if (INV.slide > 0.01) { if (store) drawStore(c); else drawChar(c); drawInv(c); }
+    if (INV.slide > 0.01) { drawInv(c); if (store) drawStore(c); drawChar(c); }   /* (the bag, then the chest on the right, then the panel: a tall Stats or Ring page lies over the bag) */
     if (pendingCard) { itemCard(c, pendingCard.it, pendingCard.x, pendingCard.y); pendingCard = null; }   // over both boards
 
   }
@@ -17183,7 +17166,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   window.addEventListener('keydown', function (e) {
     if (typing(e)) return;
     if (pauseOpen && e.code !== 'Escape') { if (e.code === 'Tab') e.preventDefault(); return; }   // the Escape menu holds the world still, and the game's keys with it (the browser's own keys are left alone)
-    if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; } return; }
+    if (e.code === 'Tab') { e.preventDefault(); if (!e.repeat) { invOpen = !invOpen; cookOpen = false; menu = null; if (invOpen && !store && !hero().dead && !inYard) { menuFrom = 'tab'; openMenu(craftTabHere()); } } return; }   /* (one screen: the panel and the bag on the left, the crafting board on the right, 2026-10-14) */
     if (e.code === 'KeyT') { e.preventDefault(); if (!e.repeat) torchToggle(); return; }
     if (e.code === 'KeyE') { e.preventDefault(); eHeld = true; if (!e.repeat) { var ew = eWhat(hero()); if (ew && ew.act) ew.act(); } return; }   // (what E does: eWhat)
     if (e.code === 'KeyM') { e.preventDefault(); if (!e.repeat && !inYard) { mapOpen = !mapOpen; if (mapOpen) { invOpen = false; menu = null; bookOpen = false; clothOpen = false; musterOpen = false; } } return; }
@@ -17238,7 +17221,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     if (invOpen && !store && CHAR.slide > 0.9) {
       var ctb = chTabAt(); if (ctb) { if (e.button === 0) chTab = ctb; return; }
-      var mkr = makeRowAt(); if (mkr) { if (e.button === 0 && canAfford(mkr.r.needs)) { craft(mkr.r); markMade(mkr.r.id); } return; }
       var cs = chSlotAt();
       if (cs) { if (cs.q != null && quiver.slots[cs.q] && e.button === 0) { quiver.sel = cs.q; save(); } else if (cs.q == null && e.button === 2 && equip[cs.id]) unequipToBag(cs.id); return; }
       if (mouseS.x < chLeft() + CHAR.w + 4 && mouseS.y > CHAR.y - 4 && mouseS.y < CHAR.y + CHAR.h + 4) return;
