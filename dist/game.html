@@ -2602,20 +2602,31 @@ function oakTree(c, K, x, y, h, seed) {
   for (i = 0; i < nf; i++) { var a = R() * 6.28, bx = cx + Math.cos(a) * cr * 0.6, by = cy + Math.sin(a) * cr * 0.5; c.beginPath(); c.arc(bx, by, 4, 0, 7); c.fillStyle = bm.base; c.fill(); }
 }
 // a boulder: flat on the ground, a lit top facet, a dark foot, one crack; three builds by seed
-function rock(c, K, x, y, s, seed, mossy) {
-  var R = rng(seed), kind = seed % 3, w = s * (1.4 + R() * 0.5), hh = s * (0.9 + R() * 0.5) * (kind === 1 ? 0.7 : 1), i;
+/* Rocks that differ (2026-10-14, Robin: "the stones all look the same everywhere, especially the big ones: it breaks immersion").
+   rockMat gives a stone one of six tones by its seed (the kit's own grey, a lighter grey, a warm brown-grey, a dark blue-grey, a pale
+   sandy one, a dark violet-grey); rock() has five builds (round, a flat slab, peaked, split by a crack, tall and leaning), lichen on
+   one in four and moss on half; a formation is mirrored by its seed, taller or squatter, in its own tone, with or without the moss
+   and a fifth stone; a boulder's two stones differ in size and side. The world gives a rock six variations instead of three. */
+function rockMat(K, seed) {
+  var v = Math.floor(seed / 7) % 6; if (v === 0) return K.rock;
+  return M([0, 230, 30, 215, 40, 262][v], [0, 8, 14, 14, 10, 9][v], [0, 48, 40, 38, 54, 36][v]);
+}
+function rock(c, K, x, y, s, seed, mossy, mat) {
+  var R = rng(seed), kind = seed % 5, rk = mat || K.rock, w = s * (1.4 + R() * 0.5) * (kind === 4 ? 0.72 : 1), hh = s * (0.9 + R() * 0.5) * (kind === 1 ? 0.62 : kind === 4 ? 1.5 : 1), i;
   gshadow(c, x + 2, y + 1, w * 0.62, s * 0.26);
   var body = [[x - w * 0.5, y], [x - w * 0.56, y - hh * 0.45], [x - w * (0.3 + R() * 0.15), y - hh * (0.85 + R() * 0.15)], [x + w * (0.05 + R() * 0.2), y - hh], [x + w * 0.42, y - hh * (0.7 + R() * 0.2)], [x + w * 0.55, y - hh * 0.35], [x + w * 0.48, y]];
   if (kind === 2) body.splice(3, 0, [x - w * 0.05, y - hh * 0.78], [x + w * 0.05, y - hh * 1.08]);
-  var d = shape(c, body, K.rock, { seed: seed, size: 'M', flat: true, rough: 0.45 });
+  var d = shape(c, body, rk, { seed: seed, size: 'M', flat: true, rough: 0.45 });
   c.save(); path(c, d); c.clip();
   // the lit top: a facet that follows the upper edge; the foot: a dark band at the bottom
   var topF = [[x - w * 0.56, y - hh * 0.45], [x - w * 0.36, y - hh * 0.92], [x + w * 0.12, y - hh * 1.02], [x + w * 0.46, y - hh * 0.74], [x + w * 0.2, y - hh * 0.5], [x - w * 0.2, y - hh * 0.46]];
-  path(c, wob(dens(topF, 5), P.rough * 0.8, seed + 2)); c.fillStyle = K.rock.hl; c.fill();
-  c.fillStyle = K.rock.shade; c.globalAlpha = 0.9; c.fillRect(x - w, y - hh * 0.28, w * 2, hh * 0.3); c.globalAlpha = 1;
-  c.fillStyle = K.rock.shade; c.beginPath(); c.moveTo(x + w * 0.2, y - hh * 0.5); c.lineTo(x + w * 0.5, y - hh * 0.6); c.lineTo(x + w * 0.6, y); c.lineTo(x + w * 0.2, y); c.closePath(); c.globalAlpha = 0.55; c.fill(); c.globalAlpha = 1;
+  path(c, wob(dens(topF, 5), P.rough * 0.8, seed + 2)); c.fillStyle = rk.hl; c.fill();
+  c.fillStyle = rk.shade; c.globalAlpha = 0.9; c.fillRect(x - w, y - hh * 0.28, w * 2, hh * 0.3); c.globalAlpha = 1;
+  c.fillStyle = rk.shade; c.beginPath(); c.moveTo(x + w * 0.2, y - hh * 0.5); c.lineTo(x + w * 0.5, y - hh * 0.6); c.lineTo(x + w * 0.6, y); c.lineTo(x + w * 0.2, y); c.closePath(); c.globalAlpha = 0.55; c.fill(); c.globalAlpha = 1;
   c.restore();
-  line(c, [[x + w * 0.05, y - hh * 0.7], [x + w * 0.12, y - hh * 0.45], [x + w * 0.06, y - hh * 0.25]], 1.1, K.rock.shade, false);
+  line(c, [[x + w * 0.05, y - hh * 0.7], [x + w * 0.12, y - hh * 0.45], [x + w * 0.06, y - hh * 0.25]], 1.1, rk.shade, false);
+  if (kind === 3) { line(c, [[x - w * 0.12, y - hh * 0.98], [x + w * 0.02, y - hh * 0.62], [x - w * 0.08, y - hh * 0.3], [x + w * 0.05, y - 1]], 1.4, rk.shade, false); line(c, [[x - w * 0.1, y - hh * 0.96], [x + w * 0.04, y - hh * 0.62]], 0.6, rk.hl, false); }   // split: a crack down it, lit along one lip
+  if (seed % 4 === 1) { c.fillStyle = 'rgba(218,214,150,0.6)'; for (i = 0; i < 5; i++) { c.beginPath(); c.arc(x - w * 0.3 + R() * w * 0.55, y - hh * (0.5 + R() * 0.42), 1.1 + R() * 1.5, 0, 7); c.fill(); } }   // lichen on the top
   if (mossy) fillPath(c, lobed(x - w * 0.12, y - hh * 0.9, w * 0.26, hh * 0.14, seed + 3, 20, 0.3), K.moss.base, false);
   c.save(); c.lineCap = 'round'; c.strokeStyle = K.grassB.base; c.lineWidth = 1.3;   // grass at the foot, so it sits in the ground
   for (i = 0; i < 4; i++) { var gx = x - w * 0.45 + R() * w * 0.9, gy = y + 1; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx - 1 + R() * 2, gy - 4 - R() * 3); c.stroke(); }
@@ -2803,7 +2814,7 @@ function heatherObj(c, K, x, y, seed) {
   for (i = 0; i < 26; i++) { var a = R() * 6.28, rr = Math.sqrt(R()), hx = x + Math.cos(a) * w * 0.86 * rr, hy = y - 6.2 + Math.sin(a) * 4.6 * rr - 1; c.fillStyle = 'hsl(' + (300 + R() * 26).toFixed(0) + ',' + (38 + R() * 18).toFixed(0) + '%,' + (56 + R() * 16).toFixed(0) + '%)'; c.beginPath(); c.ellipse(hx, hy, 1.5, 1.1, 0, 0, 7); c.fill(); }
   c.save(); c.strokeStyle = gm.shade; c.lineWidth = 0.9; c.lineCap = 'round'; for (i = 0; i < 5; i++) { var sx = x + (R() - 0.5) * w * 1.6; c.beginPath(); c.moveTo(sx, y - 9); c.lineTo(sx + (R() - 0.5) * 3, y - 14 - R() * 3); c.stroke(); } c.restore();
 }
-function boulderObj(c, K, x, y, seed) { rock(c, K, x + 15, y + 2, 13, seed + 5, false); rock(c, K, x - 2, y, 25, seed, true); }
+function boulderObj(c, K, x, y, seed) { var R = rng(seed + 9), rk = rockMat(K, seed), sd = seed % 2 ? -1 : 1, big = 22 + R() * 7, small = 9 + R() * 7; rock(c, K, x + sd * 15, y + 2, small, seed + 5, false, rk); rock(c, K, x - sd * 2, y, big, seed, R() < 0.6, rk); }
 function hedgeObj(c, K, x, y, seed) { bush(c, K, x - 24, y + 2, 15, seed, false); bush(c, K, x + 24, y + 2, 15, seed + 2, false); bush(c, K, x, y, 16, seed + 1, false); }
 function bogIronObj(c, K, x, y, seed) {                 // a lump of bog ore: rust-brown, an ochre crust, half sunk in dark marsh water
   var R = rng(seed);
@@ -3791,13 +3802,16 @@ function wildHive(c, K, x, y, seed) {
   for (i = 0; i < 5; i++) { var bx = x - 14 + R() * 30, by = y - 12 - R() * 28; c.fillStyle = C(46, 95, 60); c.beginPath(); c.ellipse(bx, by, 1.5, 1.1, 0, 0, 7); c.fill(); c.fillStyle = OLC; c.fillRect(bx - 0.3, by - 1, 0.7, 2); c.fillStyle = 'rgba(255,255,255,0.6)'; c.beginPath(); c.ellipse(bx, by - 1.3, 1.3, 0.7, 0, 0, 7); c.fill(); }
 }
 function rockFormation(c, K, x, y, seed) {
-  longShadow(c, x, y, 44, 30); gshadow(c, x + 2, y, 32, 7, 0.4);
-  shape(c, [[x + 4, y], [x + 6, y - 28], [x + 16, y - 38], [x + 26, y - 30], [x + 28, y]], K.rock, { seed: seed + 1, size: 'M', sh: 4, rough: 0.5 });
-  shape(c, [[x - 20, y], [x - 24, y - 30], [x - 14, y - 52], [x - 2, y - 56], [x + 6, y - 40], [x + 8, y]], K.rockC, { seed: seed, size: 'L', sh: 5, hl: 2.5, rough: 0.5 });
-  shape(c, [[x - 10, y + 2], [x - 12, y - 12], [x - 2, y - 18], [x + 8, y - 12], [x + 8, y + 2]], K.rockC, { seed: seed + 2, size: 'M', sh: 3, rough: 0.5 });
-  shape(c, blobPts(x - 27, y - 3, 7, 5, seed + 3, 8, 0.25), K.rock, { seed: seed + 4, size: 'S', sh: 1.5, rough: 0.3 });
-  shape(c, blobPts(x - 12, y - 50, 10, 4, seed + 5, 10, 0.4), K.moss, { seed: seed + 6, size: 'S' });
-  line(c, [[x - 14, y - 40], [x - 8, y - 22]], 1.2, OLC, false);
+  var R = rng(seed), m = seed % 2 ? -1 : 1, hk = 0.82 + (Math.floor(seed / 7) % 4) * 0.13, rk = rockMat(K, seed), rc = Math.floor(seed / 7) % 3 === 1 ? rk : K.rockC;
+  function pts(a) { var o = a.map(function (q) { return [x + m * q[0], y - q[1] * hk]; }); return m < 0 ? o.reverse() : o; }   // mirrored by the seed; the winding kept, so the ink's shadow side stays the lower right
+  longShadow(c, x, y, 44, 30 * hk); gshadow(c, x + 2, y, 32, 7, 0.4);
+  shape(c, pts([[4, 0], [6, 28], [16, 38], [26, 30], [28, 0]]), rk, { seed: seed + 1, size: 'M', sh: 4, rough: 0.5 });
+  shape(c, pts([[-20, 0], [-24, 30], [-14, 52], [-2, 56], [6, 40], [8, 0]]), rc, { seed: seed, size: 'L', sh: 5, hl: 2.5, rough: 0.5 });
+  shape(c, pts([[-10, -2], [-12, 12], [-2, 18], [8, 12], [8, -2]]), rc, { seed: seed + 2, size: 'M', sh: 3, rough: 0.5 });
+  shape(c, blobPts(x - m * 27, y - 3, 7, 5, seed + 3, 8, 0.25), rk, { seed: seed + 4, size: 'S', sh: 1.5, rough: 0.3 });
+  if (R() < 0.6) shape(c, blobPts(x - m * 12, y - 50 * hk, 10, 4, seed + 5, 10, 0.4), K.moss, { seed: seed + 6, size: 'S' });
+  if (R() < 0.5) shape(c, blobPts(x + m * 31, y - 2, 6, 4, seed + 7, 8, 0.25), rc, { seed: seed + 8, size: 'S', sh: 1.5, rough: 0.3 });
+  line(c, [[x - m * 14, y - 40 * hk], [x - m * 8, y - 22 * hk]], 1.2, OLC, false);
 }
 function wildHerbs(c, K, x, y, seed) {
   var R = rng(seed), i, hue = [60, 48, 285, 330][Math.floor(R() * 4)];
@@ -4124,7 +4138,7 @@ var PROPS = {
   birdNest: { b: [-16, -16, 18, 8], f: function (c, K, s) { birdNest(c, K, 0, 0, s); } },
   animalDen: { b: [-38, -30, 38, 10], f: function (c, K, s) { animalDen(c, K, 0, 0, s); } },
   wildHive: { b: [-20, -46, 20, 8], f: function (c, K, s) { wildHive(c, K, 0, 0, s); } },
-  rockFormation: { b: [-38, -64, 62, 12], f: function (c, K, s) { rockFormation(c, K, 0, 0, s); } },
+  rockFormation: { b: [-62, -70, 62, 12], f: function (c, K, s) { rockFormation(c, K, 0, 0, s); } },
   wildHerbs: { b: [-16, -32, 16, 6], f: function (c, K, s) { wildHerbs(c, K, 0, 0, s); } },
   spring: { b: [-34, -24, 46, 16], f: function (c, K, s) { springObj(c, K, 0, 0, s); } },
   fallenTree: { b: [-56, -38, 62, 10], f: function (c, K, s) { fallenTree(c, K, 0, 0, s); } },
@@ -4234,12 +4248,12 @@ var PROPS = {
   dwarfBirch: { b: [-48, -88, 62, 14], f: function (c, K, s) { dwarfBirchObj(c, K, 0, 0, s); } },
   juniper: { b: [-30, -58, 32, 9], f: function (c, K, s) { juniperObj(c, K, 0, 0, s); } },
   heather: { b: [-32, -24, 32, 8], f: function (c, K, s) { heatherObj(c, K, 0, 0, s); } },
-  boulder: { b: [-46, -62, 56, 14], f: function (c, K, s) { boulderObj(c, K, 0, 0, s); } },
+  boulder: { b: [-56, -66, 56, 14], f: function (c, K, s) { boulderObj(c, K, 0, 0, s); } },
   berryBush: { b: [-34, -60, 34, 10], f: function (c, K, s) { bush(c, K, 0, 0, 22, s, true); } },
   fern: { b: [-34, -40, 34, 10], f: function (c, K, s) { fern(c, K, 0, 0, 22, s); } },
   log: { b: [-50, -50, 50, 14], f: function (c, K, s) { fallenLog(c, K, 0, 0, 64, s); } },
   reeds: { b: [-30, -60, 30, 10], f: function (c, K, s) { reeds(c, K, 0, 0, s); } },
-  rock: { b: [-36, -40, 36, 10], f: function (c, K, s) { rock(c, K, 0, 0, 16, s, s % 2 === 0); } },
+  rock: { b: [-36, -44, 36, 10], f: function (c, K, s) { rock(c, K, 0, 0, 16, s, s % 2 === 0, rockMat(K, s)); } },
   mushrooms: { b: [-30, -46, 36, 10], f: function (c, K, s) { mushroom(c, K, 0, 0, 22, s); mushroom(c, K, 15, 5, 14, s + 1); } },
   flower: { b: [-20, -40, 24, 8], f: function (c, K, s) { flower(c, K, 0, 0, s); } },
   fence: { b: [-20, -50, 100, 10], f: function (c, K, s) { fence(c, K, 0, 0, 5, s); } },
@@ -4323,6 +4337,7 @@ var T = 32, TS = 24, K = 0.75, CT = 16;
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
+var ROCKV = { rock: 1, rockFormation: 1, boulder: 1, chalkRock: 1 };
 var TREE_BAKE = { oak: 3, pine: 3, birch: 3, beech: 3, ash: 3, apple: 2.5, struckTree: 3, dwarfBirch: 1.8 };   // how much bigger each tree is baked than its prop (2026-10-14)
 var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
 var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
@@ -5700,7 +5715,7 @@ function make(kit, opts) {
         else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs', 'fireRing'][Math.floor(R() * 6)], s: 1, r: 10 };   // things of nature, and an old fire ring someone left: no carved stones or posts lie about
       } else if (t3 === 1 && roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
-      p.x = wx; p.y = wy; p.v = Math.floor(R() * 3);
+      p.x = wx; p.y = wy; p.v = Math.floor(R() * (ROCKV[p.name] ? 6 : 3));   // (a rock in six variations since 2026-10-14, its tone and build by the seed: see rockMat in the kit)
       p.kind = KIND[p.name] || null; if (p.kind) { p.max = p.hp = HP[p.name] * (0.7 + 0.6 * p.s); p.leanDir = R() < 0.5 ? -1 : 1; }
       w.addProp(p);
     }
@@ -6593,7 +6608,7 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
-var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 0 };   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
+var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 7 };   /* (lean 7 by default since 2026-10-14, Robin: east and west walls were hard to see and to place; it was 0, a trial on the Destruction Editor's board) */   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 }, OPEN = { door: 1, gate: 1 };
@@ -12516,7 +12531,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // until they feel great, the further biomes later): the starter 120 tiles, the big island 400, about 85 tiles of water between
   // (50 s by raft, 27 s by boat), no lowland island; the view 390 units tall (zoom 0.65) so the hero is a tenth of the screen's height.
   // The canon: the hero is 1.8 m and 39 units tall, so a unit is 4.6 cm and a tile 1.5 m.
-  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN }, zoom = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12)
+  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN }, zoom = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12)
   try { var gwS = JSON.parse(localStorage.getItem('game.world2')); if (gwS && gwS.count) { for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
@@ -12836,7 +12851,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   var restedMax = 600;
   var DAY_LEN = 1800, DUSK_AT = 840, NIGHT_AT = 1200, DAWN_AT = 1740, day = { t: 0, n: 1 }, sleep = null, rested = 0, nightCv = null;
-  function light() { var t = day.t; if (t < DUSK_AT) return 0; if (t < NIGHT_AT) return (t - DUSK_AT) / (NIGHT_AT - DUSK_AT); if (t < DAWN_AT) return 1; return 1 - (t - DAWN_AT) / (DAY_LEN - DAWN_AT); }
+  function light() { var t = day.t; if (t < DUSK_AT) return 0; if (t < NIGHT_AT) return Math.pow((t - DUSK_AT) / (NIGHT_AT - DUSK_AT), DUSK_POW); if (t < DAWN_AT) return 1; return 1 - (t - DAWN_AT) / (DAY_LEN - DAWN_AT); }
+  var DUSK_POW = 2.4, NOTE_AT = 0.25;   /* (2026-10-14, Robin: the dark took five minutes to come after its message and changed little after it. The evening is golden and
+     hardly darker for its first half, then the dark falls faster and faster (light() is the dusk's share to the power 2.4: 0.19 at its middle, 0.68 at
+     six sevenths), and "The light is going" is said when the dark has really begun (light() past NOTE_AT, 0.25: about two and a half minutes before full
+     night, every moment after it darker than the last). The clock itself is unchanged: dusk 840 to 1200.) */
   function dusk() { var t = day.t; return t >= DUSK_AT && t < NIGHT_AT ? Math.sin((t - DUSK_AT) / (NIGHT_AT - DUSK_AT) * Math.PI) : 0; }
   function isEvening() { return day.t >= DUSK_AT; }
   function timeName() { var t = day.t; return t < 300 ? 'morning' : t < DUSK_AT ? 'day' : t < NIGHT_AT ? 'evening' : t < DAWN_AT ? 'night' : 'dawn'; }
@@ -12893,7 +12912,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var nightWolves = [], nightSpawned = false, nightSaid = 0;
   function nightTick(dt) {
     var L = light(), P = hero(), W = Combat.dbg().W, i;
-    if (day.t >= DUSK_AT && nightSaid !== day.n) { nightSaid = day.n; note('The light is going'); }
+    if (day.t >= DUSK_AT && day.t < NIGHT_AT && L >= NOTE_AT && nightSaid !== day.n) { nightSaid = day.n; note('The light is going'); }
     nightWolves = nightWolves.filter(function (e) { return !e.dead && W.enemies.indexOf(e) >= 0; });
     if (BT.on) return;                      // the battle test has no wolves (a pack walked into the third raid of a row)
     // the pack hunts you by scent and sight from far off, but fire keeps it off (Robin): a wolf never comes within FIRE_R
@@ -13741,7 +13760,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var roofLater = null;
   /* ---------- the raft (Goal 1, step 9): crafted at the shipwright's bench, boarded with E, paddled with WASD, left with E ----------
      One raft. It floats anywhere that is not land, slowly; stepping ashore on the second island is the goal. */
-  var raft = null, leftBanner = 0;
+  var raft = null, leftBanner = 0, leftChk = 0;
   // how the vessels handle: the Sea Editor's numbers (Yard.HANDLING), or what its "Use in the game" handed over (game.boat);
   // the raft is a slower, clumsier share of the boat's
   function handling(kind) {
@@ -13789,6 +13808,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function raftTick(dt) {
     if (leftBanner > 0) leftBanner -= dt;
+    if (!seen.left && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; leftBanner = 9; sfx('craft'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
     windTick(dt);
     if (!raft || !raft.aboard) return;
     raft.crew = hird.filter(function (m) { return m.aboard; }).length + menAboard.length;

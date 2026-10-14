@@ -182,6 +182,8 @@ pacing, rocks that differ, the cave mouth, the troll, the island gap, the yard.
 
 **5, the deer (the same day, Robin: "Do the deer"):** a deer hit once bleeds, slows and stops sooner, and leaves a trail of blood to follow; one wood arrow bleeds it out in about 37 s, a second on the standing deer in 17; deer go in herds of two or three with one on watch that sees all round, and a herd runs and grazes together. The real fault behind "impossible to kill": a deer that stopped running was removed from the world (a flag shared with men who run off), so the one you chased was never there to be caught. Details in CLAUDE.md under "The wounded deer and the herd".
 
+**Then 14, 5, 11 and 19 (Robin: "Do 1-4 and then 6"):** the dark falls faster and faster after "The light is going", which now comes two and a half minutes before full night instead of five; rocks come in six variations with their own tones and builds; walls that run north to south have a leaning face you can see (the Destruction Editor's trial, on by default); the islands lie about 200 tiles apart (a raft's two minutes) and the banner comes whenever you stand on the other island. Details in CLAUDE.md under "Four more of the play-through's points".
+
 ### Questions for Robin
 
 - The crafting that "feels off" (10, 23): is it the board (a list and a page), the queue and the Ready strip, the time a

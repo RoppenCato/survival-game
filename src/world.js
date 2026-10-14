@@ -14,6 +14,7 @@ var T = 32, TS = 24, K = 0.75, CT = 16;
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
+var ROCKV = { rock: 1, rockFormation: 1, boulder: 1, chalkRock: 1 };
 var TREE_BAKE = { oak: 3, pine: 3, birch: 3, beech: 3, ash: 3, apple: 2.5, struckTree: 3, dwarfBirch: 1.8 };   // how much bigger each tree is baked than its prop (2026-10-14)
 var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
 var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
@@ -1391,7 +1392,7 @@ function make(kit, opts) {
         else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs', 'fireRing'][Math.floor(R() * 6)], s: 1, r: 10 };   // things of nature, and an old fire ring someone left: no carved stones or posts lie about
       } else if (t3 === 1 && roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
-      p.x = wx; p.y = wy; p.v = Math.floor(R() * 3);
+      p.x = wx; p.y = wy; p.v = Math.floor(R() * (ROCKV[p.name] ? 6 : 3));   // (a rock in six variations since 2026-10-14, its tone and build by the seed: see rockMat in the kit)
       p.kind = KIND[p.name] || null; if (p.kind) { p.max = p.hp = HP[p.name] * (0.7 + 0.6 * p.s); p.leanDir = R() < 0.5 ? -1 : 1; }
       w.addProp(p);
     }

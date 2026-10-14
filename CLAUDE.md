@@ -1935,6 +1935,23 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   time runs out) **in place of the bubble** (`bubble` draws only the name over the head when you are near, and registers
   the speaker). The notes themselves are as they were: Robin wants another way for text to appear and did not say which;
   that is still open, with the crafting that "feels off".
+- **Four more of the play-through's points (2026-10-14; Robin: "Do 1-4 and then 6" of the list I gave after the deer). Mine,
+  unfelt.** **The night's pacing** (14): `light()` rises over the dusk as its share to the power `DUSK_POW` 2.4 (0.19 at the
+  dusk's middle, 0.68 at six sevenths), so the evening stays golden and hardly darker for its first three minutes and the dark
+  then falls faster and faster; **"The light is going" is said when `light()` passes `NOTE_AT` 0.25**, about two and a half
+  minutes before full night, every moment after it darker (it came at the dusk's first second, five minutes before the dark). The
+  clock is unchanged. **Rocks that differ** (5): `rockMat(K, seed)` in `src/stylelab.js` gives a stone one of six tones by its
+  seed (the kit's grey, a lighter grey, a warm brown-grey, a dark blue-grey, a pale sandy one, a violet-grey), `rock()` has five
+  builds (round, a flat slab, peaked, split by a crack, tall and leaning) with lichen on one in four and moss on half, a
+  formation is mirrored by its seed, taller or squatter, in its own tone, with or without its moss and a fifth stone, a
+  boulder's two stones differ in size and side; the world plants a rock in **six variations** (`ROCKV` in `src/world.js`;
+  three before, and the three were near alike). The chalk rock keeps its own white. **East and west walls** (11): **the leaning
+  side face is on by default** (`Build.CFG.lean` 7; it was 0, the trial on the Destruction Editor's board: `docs/destruction-lean.jpg`), so a
+  wall that runs north to south has a face you see, lit on the west and shaded on the east, and the build cursor's ghost shows
+  it. **The island gap** (19): `spec.gap` 240 tiles (150; about 200 tiles of water now, a raft's two minutes, a boat's one;
+  the Sea Editor's game layout and `tools/visual/worlds.js` the same; the layout key carries the gap, so older saves start
+  fresh). **"You have left the island"** came only from stepping ashore by E, which is why Robin never saw it; it now comes
+  whenever you stand on land of another island, not aboard, not in a cave or the yard (`raftTick`, once a second).
 - **The fish weir (2026-10-12, Robin's pick of the finds for the starter island):** `weirPlace()` (every start, after
   `villageClear`) walks out from the island's middle along every bearing to the shore and takes shallow water off a beach 320 to
   1500 units from the wreck, by choice nearest the way from the wreck to the steading: a `fishWeir` (stakes and wattle) in the

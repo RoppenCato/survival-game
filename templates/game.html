@@ -256,7 +256,7 @@ __COMBAT__
   // until they feel great, the further biomes later): the starter 120 tiles, the big island 400, about 85 tiles of water between
   // (50 s by raft, 27 s by boat), no lowland island; the view 390 units tall (zoom 0.65) so the hero is a tenth of the screen's height.
   // The canon: the hero is 1.8 m and 39 units tall, so a unit is 4.6 cm and a tile 1.5 m.
-  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN }, zoom = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12)
+  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN }, zoom = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12)
   try { var gwS = JSON.parse(localStorage.getItem('game.world2')); if (gwS && gwS.count) { for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
@@ -576,7 +576,11 @@ __COMBAT__
   }
   var restedMax = 600;
   var DAY_LEN = 1800, DUSK_AT = 840, NIGHT_AT = 1200, DAWN_AT = 1740, day = { t: 0, n: 1 }, sleep = null, rested = 0, nightCv = null;
-  function light() { var t = day.t; if (t < DUSK_AT) return 0; if (t < NIGHT_AT) return (t - DUSK_AT) / (NIGHT_AT - DUSK_AT); if (t < DAWN_AT) return 1; return 1 - (t - DAWN_AT) / (DAY_LEN - DAWN_AT); }
+  function light() { var t = day.t; if (t < DUSK_AT) return 0; if (t < NIGHT_AT) return Math.pow((t - DUSK_AT) / (NIGHT_AT - DUSK_AT), DUSK_POW); if (t < DAWN_AT) return 1; return 1 - (t - DAWN_AT) / (DAY_LEN - DAWN_AT); }
+  var DUSK_POW = 2.4, NOTE_AT = 0.25;   /* (2026-10-14, Robin: the dark took five minutes to come after its message and changed little after it. The evening is golden and
+     hardly darker for its first half, then the dark falls faster and faster (light() is the dusk's share to the power 2.4: 0.19 at its middle, 0.68 at
+     six sevenths), and "The light is going" is said when the dark has really begun (light() past NOTE_AT, 0.25: about two and a half minutes before full
+     night, every moment after it darker than the last). The clock itself is unchanged: dusk 840 to 1200.) */
   function dusk() { var t = day.t; return t >= DUSK_AT && t < NIGHT_AT ? Math.sin((t - DUSK_AT) / (NIGHT_AT - DUSK_AT) * Math.PI) : 0; }
   function isEvening() { return day.t >= DUSK_AT; }
   function timeName() { var t = day.t; return t < 300 ? 'morning' : t < DUSK_AT ? 'day' : t < NIGHT_AT ? 'evening' : t < DAWN_AT ? 'night' : 'dawn'; }
@@ -633,7 +637,7 @@ __COMBAT__
   var nightWolves = [], nightSpawned = false, nightSaid = 0;
   function nightTick(dt) {
     var L = light(), P = hero(), W = Combat.dbg().W, i;
-    if (day.t >= DUSK_AT && nightSaid !== day.n) { nightSaid = day.n; note('The light is going'); }
+    if (day.t >= DUSK_AT && day.t < NIGHT_AT && L >= NOTE_AT && nightSaid !== day.n) { nightSaid = day.n; note('The light is going'); }
     nightWolves = nightWolves.filter(function (e) { return !e.dead && W.enemies.indexOf(e) >= 0; });
     if (BT.on) return;                      // the battle test has no wolves (a pack walked into the third raid of a row)
     // the pack hunts you by scent and sight from far off, but fire keeps it off (Robin): a wolf never comes within FIRE_R
@@ -1481,7 +1485,7 @@ __COMBAT__
   var roofLater = null;
   /* ---------- the raft (Goal 1, step 9): crafted at the shipwright's bench, boarded with E, paddled with WASD, left with E ----------
      One raft. It floats anywhere that is not land, slowly; stepping ashore on the second island is the goal. */
-  var raft = null, leftBanner = 0;
+  var raft = null, leftBanner = 0, leftChk = 0;
   // how the vessels handle: the Sea Editor's numbers (Yard.HANDLING), or what its "Use in the game" handed over (game.boat);
   // the raft is a slower, clumsier share of the boat's
   function handling(kind) {
@@ -1529,6 +1533,7 @@ __COMBAT__
   }
   function raftTick(dt) {
     if (leftBanner > 0) leftBanner -= dt;
+    if (!seen.left && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; leftBanner = 9; sfx('craft'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
     windTick(dt);
     if (!raft || !raft.aboard) return;
     raft.crew = hird.filter(function (m) { return m.aboard; }).length + menAboard.length;
