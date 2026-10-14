@@ -718,3 +718,78 @@ line: real houses had benches down both sides and two metres of floor, which is 
 apart); whether a roof should have a **widest span** without posts when the player builds (posts are an option today);
 and whether your own first hut (4 by 3) should read as a hut beside a village's houses, which this would make it do.
 
+## Four big problems: the year, the scale, a living world, the great towns (Robin, 2026-10-14; thoughts, not decided)
+
+Robin asked (2026-10-14): how the islands resetting at the new year makes sense for the player; how a huge world of massive
+islands and lots of sea makes sense in a 2D game, where scale is strangely hard; how the world feels alive; and whether there
+should be a few massive handcrafted towns with big jarls beside many generated ones. These are my thoughts with a recommendation
+each. **Nothing here is decided.** The questions for Robin are at the end.
+
+### 1. The year turning
+
+The reset should never touch the land, only the people. Coasts, mountains, caves and groves stay, so what the player learned
+exploring stays true. What turns over is the settlement layer, and it should turn over by cause, not at random:
+
+- **A place nobody touched grows:** a house or two more, a wall it did not have, a new jarl when the old one dies. The player
+  comes back and recognises it, changed.
+- **A place you sacked is rebuilt** by whoever moves in: survivors who remember you, or strangers who do not. This is the
+  regenerated case, and it reads as a consequence of your own raid.
+- **A place you emptied of people decays to a ruin**, and a ruin is resettled some years later (the starter island's steading is
+  what that looks like).
+- **A place you hold never turns over.** That is the whole reward for claiming, and the hird defends it.
+
+The year wants a rhythm the player feels, not a counter: summer the raiding season, autumn the haul home, winter at home with
+storms that make sailing foolish, spring the news. **The year ends when you winter at home**, so it is the player's choice, and
+the world's loot refills with it: a church raided this year has its silver again next year. The player learns what changed
+through rumour and the chart, never a popup: a trader says Steinarsheim has a stone wall now; on the chart a place seen last
+year fades to a question mark until it is seen again (the map shows nothing until seen, decided 2026-10-07).
+
+### 2. Scale in two dimensions
+
+Why it feels hard: in 3D you see the mountain from far off; top-down you see one screen of 29 by 18 metres and nothing beyond
+it, so distance can only be felt through travel time, the map and signs of things you cannot see. Three levers:
+
+- **The sea is the huge thing, the islands are dense.** Walking stays an adventure of obstacles (decided 2026-10-09). Sailing
+  is where size lives: the camera pulls out under sail so the hull is small on a big sea, crossings take minutes, and a crossing
+  eats a day of the calendar. A long crossing with nothing in sight can run the clock faster until something is sighted, so a
+  voyage feels long without being tedious.
+- **The chart is the horizon.** In a 2D game the map is where scale is seen: it fills in as you sail, keeps your track, and shows
+  nothing you have not seen. The unknown edge of the chart is what makes the world big, not the number of tiles.
+- **Signs from afar:** smoke columns drawn tall enough to show over the trees before the village does, a beacon fire at night, a
+  sail on the edge of the sea, a bell heard before the church is seen. These give the far-off presence 3D gets for free.
+
+Sizes to try: lowland islands two to three times the big island, several places each, reached along the coast by boat rather
+than overland (Vikings sailed; coasts are the roads), and seas of several minutes under sail. The longship already longer than
+the screen and towns wider than it are the right kind of cue.
+
+### 3. A living world
+
+Alive means things happen without you, things remember you, and the player can see both. Cheapest first:
+
+- **Other ships.** Three to five vessels moving between jetties on their own errands, a fishing boat off every hamlet, a patrol
+  from the trading hub, now and then a rival raider's sail. Nothing makes a sea alive like something else on it.
+- **A world tick once a game day.** Each place's state advances: wealth grows, a garrison recruits, a sacked town rebuilds, a
+  jarl ages. News of events spreads by ship from place to place and people's lines draw on it; the legendary Vikings' names can
+  travel the same way (the open question of 2026-10-04).
+- **Warning beacons** along a coast that light when your sail is seen, so the next town is ready. Real Viking-age practice
+  (vardar), and it makes the approach to a raid a decision: by night, from the far side.
+- **Seasons you can see:** autumn colours, snow, fog, the sea state. Also how the year's turning becomes visible.
+- **Wildlife with its own business:** wolves hunting deer rather than only you, birds over a carcass, seals on a skerry.
+
+### 4. Handcrafted or generated towns
+
+Both, with a clear split. **A few handcrafted anchors**: the trading hub and perhaps three or four great seats, each with a named
+jarl, a story, a legendary Viking and a reason to go there. These persist across years and change by story state rather than
+regeneration. **Everything else generated** from archetypes as the Village Editor already does, the names and the compass rules
+deciding what kind of place stands where. The anchors are still placed by the generator, so their position differs each world,
+with their surroundings generated and only the town itself hand-laid. The Village Editor can save a design, so a handcrafted town
+is a saved layout plus a sheet of people, loot and lines: cheap to build, and the world gets memorable places without losing
+freshness.
+
+### Questions for Robin
+
+1. Does the year end when you winter at home (your choice), or on the calendar whether you are home or at sea?
+2. Should a sacked town be rebuilt by survivors who remember you, by strangers, or by chance of either?
+3. The sea: a faster clock on long empty crossings, yes or no? And the camera pulled out under sail?
+4. How many anchors: the hub alone, or the hub and three or four great seats with their jarls?
+5. Should warning beacons exist from the first raid, or come with the lowlands?
