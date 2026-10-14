@@ -64,7 +64,6 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <h2>Controls</h2>
         <dl class="keys">
           <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk. Hold <kbd>Shift</kbd> to sprint</dd>
-          <dt><kbd>Q</kbd></dt><dd>Switch between fight mode and gather mode</dd>
           <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Swing the sword or the tool, or shoot the bow. Hold for a charged swing</dd>
           <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block. Press just before a hit to parry</dd>
           <dt><kbd>Space</kbd></dt><dd>Dash</dd>
@@ -284,7 +283,7 @@ __COMBAT__
   var SPR = __SPRITES__ || {}, sprHero = Sprites.hero(SPR, localStorage);   // the Blender hero (hero2-mixamo, or the model game.blenderHero names); without sheets the drawn figure stays
   function handLayers(face) {              // the thing in the hand as layers over the body (2026-10-09): its wood, and its metal tinted by the material; and the shield on the other arm
     var P = hero(), M = sprHero && sprHero.meta, out = ['body']; if (!M) return out;
-    var it = P.mode === 'fight' ? handItem('fight') : P.mode === 'gather' ? handItem('gather') : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) return out;   /* (in a place at peace the weapon is away until it is used) */
+    var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) return out;   /* (in a place at peace the weapon is away until it is used) */
     if (it && M.layers.indexOf(it.kind + 'Wood') >= 0) out.push(it.kind + 'Wood');
     if (it && M.layers.indexOf(it.kind + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: it.kind + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
     if (shieldHeld() && (!ADMIN.shieldRaised || (sprHero.blk || 0) > 0.02)) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, shieldPaint());
@@ -1326,16 +1325,22 @@ __COMBAT__
   var NAMES = { herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
   function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; var n = RECIPES2.filter(function (r) { return known(r) && !r._told; }).length; if (n) toast('Something new to make'); if (PIECES.some(function (p) { return p.key === kind; })) toast('Something new to build'); RECIPES2.forEach(function (r) { if (known(r)) r._told = true; }); } }
-  // The bag: 30 slots, 6 wide. The top row is the Fight bar and the second the Gather bar: each is the hotbar of its mode,
+  // The bag: 30 slots, 6 wide. The top row is the bar (one bar since 2026-10-14; it was the Fight bar over the Gather bar: each the hotbar of its mode),
   // numbered 1 to 6, and `hand` says which slot of each is in the hand. The three rows below are the bag proper.
-  var COLS = 6, ROWS = 5, SLOTS = COLS * ROWS, BAG0 = COLS * 2, STACK = 25, slots = [], held = null, pick = null;
-  var hand = { fight: 0, gather: 0 }, sel = { fight: 0, gather: 0 }, BAR_OF = { sword: 'fight', axe: 'gather', club: 'fight', seax: 'fight', spear: 'fight', greataxe: 'fight', bow: 'fight', sling: 'fight', javelin: 'fight', throwaxe: 'fight', pick: 'gather', knife: 'gather', rod: 'gather' };
-  function barBase(mode) { return mode === 'gather' ? COLS : 0; }
-  function handSlot(mode) { return hand[mode] < 0 ? null : slots[barBase(mode) + hand[mode]]; }   // -1: empty hands (the thing was put away)
-  function handItem(mode) { var s = handSlot(mode); return s && s.kind === 'item' ? s.item : null; }
-  function barPut(spec) {                // a new weapon or tool goes to the first free slot of its bar; true if it did
-    var bar = BAR_OF[spec.kind]; if (!bar) return false; var b = barBase(bar);
-    for (var i = 0; i < COLS; i++) if (!slots[b + i]) { slots[b + i] = { kind: 'item', n: 1, item: spec }; return true; }
+  var COLS = 6, ROWS = 5, SLOTS = COLS * ROWS, BAG0 = COLS, STACK = 25, slots = [], held = null, pick = null;   /* (one bar since 2026-10-14: the top row; four rows of bag under it) */
+  /* One bar, no Q (2026-10-14, Robin: the two bar rows looked weird and complicated, Q itself in question; decided: the thing in hand
+     decides the act). The bar is the bag's top row, six slots, one in hand (hand: its index, -1 for empty hands); a number key takes
+     a thing in hand or puts it away, the wheel moves the pick (sel), Enter takes it. The engine's two modes are still there under
+     it, but the page sets them from what is in hand every frame (handSync): an axe, a pick, a knife or a rod is gather mode (chop,
+     mine, cut, fish; a tool bites a beast a little), anything else, or empty hands, is fight mode. BAR_OF says what belongs on
+     the bar at all (every weapon and tool); GATHER_KINDS which of them are tools. */
+  var hand = 0, sel = 0, BAR_OF = { sword: 1, axe: 1, club: 1, seax: 1, spear: 1, greataxe: 1, bow: 1, sling: 1, javelin: 1, throwaxe: 1, pick: 1, knife: 1, rod: 1 }, GATHER_KINDS = { axe: 1, pick: 1, knife: 1, rod: 1 };
+  function barBase() { return 0; }
+  function handSlot() { return hand < 0 ? null : slots[hand]; }   // -1: empty hands (the thing was put away)
+  function handItem() { var s = handSlot(); return s && s.kind === 'item' ? s.item : null; }   // (the argument older callers pass, a mode, is ignored: one hand)
+  function barPut(spec) {                // a new weapon or tool goes to the first free slot of the bar; true if it did
+    if (!BAR_OF[spec.kind]) return false;
+    for (var i = 0; i < COLS; i++) if (!slots[i]) { slots[i] = { kind: 'item', n: 1, item: spec }; return true; }
     return false;
   }
   /* Taking a thing in hand (2026-10-13, Robin: as simple as Valheim: scroll to it, press the key; press again to put it
@@ -1345,12 +1350,12 @@ __COMBAT__
      the shield slot is empty (Robin: equipping a one-handed weapon should always equip the shield if you have one on you). */
   function barPress(i) {                 // a number key: a thing is taken in hand or put away, food is eaten, a torch lit
     var P = hero(), mode = P.mode; if (mode !== 'fight' && mode !== 'gather') return;
-    var s = slots[barBase(mode) + i];
+    var s = slots[i];
     if (s && FOOD[s.kind]) { eat(s.kind); return; }
     if (s && s.kind === 'torch') { torchToggle(); return; }
-    sel[mode] = i;
-    hand[mode] = hand[mode] === i ? -1 : i; P.atk.ph = 'none'; P.atk.since = 9; P.atkBuf = 0; P.holdT = 0; sfx('tele');
-    if (hand[mode] >= 0 && s && s.kind === 'item') shieldWithIt(s.item);
+    sel = i;
+    hand = hand === i ? -1 : i; P.atk.ph = 'none'; P.atk.since = 9; P.atkBuf = 0; P.holdT = 0; sfx('tele'); handSync();
+    if (hand >= 0 && s && s.kind === 'item') shieldWithIt(s.item);
     save();
   }
   function shieldWithIt(it) {            // a one-handed weapon in hand: a shield from the bag goes on the arm if the slot is empty
@@ -1602,7 +1607,7 @@ __COMBAT__
      A float lands in the water ahead; E at the bite hooks the fish; holding E reels it in while the line's tension rises, letting
      go rests the line. A caught fish goes into the bag as its own kind, a sunken chest gives silver. Moving away ends the round. */
   var fishing = null, fishFloat = null, eHeld = false, fishLog = {};
-  function rodInHand() { var P = hero(), it = handItem(P.mode === 'gather' ? 'gather' : 'fight'); return P.mode === 'gather' && it && it.kind === 'rod'; }
+  function rodInHand() { var P = hero(), it = handItem(); return P.mode === 'gather' && it && it.kind === 'rod'; }
   function castSpot(P) {                   // the first open water along the way the hero faces, 40 to 130 units out
     if (inCave || inYard || (raft && raft.aboard)) return null;
     var cx = Math.cos(P.face), cy = Math.sin(P.face);
@@ -2458,7 +2463,7 @@ __COMBAT__
   function sandbox() {                   // a state to try things out in: full kit, plenty of everything, every recipe known
     for (var k = 0; k < SLOTS; k++) slots[k] = null;
     [['wood', 25], ['stone', 25], ['fiber', 25], ['leather', 12], ['torch', 6], ['berries', 10], ['meat', 5], ['copper', 12], ['charcoal', 12], ['copperBar', 6], ['bogIron', 9], ['ironBar', 6]].forEach(function (q) { addItem(q[0], q[1]); });
-    barPut(Items.make('sword', 'iron')); barPut(Items.make('bow', 'wood')); barPut(Items.make('rod', 'iron')); seen.fishTaught = 1; barPut(Items.make('axe', 'iron')); barPut(Items.make('pick', 'iron')); barPut(Items.make('knife', 'iron')); equip.shield = Items.make('shield', 'wood'); hand = { fight: 0, gather: 0 };
+    barPut(Items.make('sword', 'iron')); barPut(Items.make('bow', 'wood')); barPut(Items.make('rod', 'iron')); seen.fishTaught = 1; barPut(Items.make('axe', 'iron')); barPut(Items.make('pick', 'iron')); barPut(Items.make('knife', 'iron')); equip.shield = Items.make('shield', 'wood'); hand = 0;
     ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, 'leather'); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
     ORDER.forEach(function (k) { seen[k] = 1; }); ['raft', 'mason', 'ship1', 'ship2', 'ship3'].forEach(function (k) { seen[k] = 1; });
@@ -2468,9 +2473,9 @@ __COMBAT__
   function equipFromBag(i) {               // right click in the bag: the thing goes to its slot, what was there comes back
     var s = slots[i]; if (!s || s.kind !== 'item') return; var where = TOOL_SLOT[s.item.kind];
     if (!where) {                          // a weapon or tool: to a free slot of its bar, or swapped with the thing in that bar's hand
-      var bar = BAR_OF[s.item.kind]; if (!bar || i < BAG0) return;
+      if (!BAR_OF[s.item.kind] || i < BAG0) return;
       var spec = s.item; slots[i] = null;
-      if (!barPut(spec)) { var hs = barBase(bar) + hand[bar]; slots[i] = slots[hs]; slots[hs] = { kind: 'item', n: 1, item: spec }; }
+      if (!barPut(spec)) { var hs = hand < 0 ? sel : hand; slots[i] = slots[hs]; slots[hs] = { kind: 'item', n: 1, item: spec }; }
       recount(); save(); return;
     }
     var old = equip[where]; equip[where] = s.item; slots[i] = old ? { kind: 'item', n: 1, item: old } : null;
@@ -2487,7 +2492,7 @@ __COMBAT__
      sea chest by the stern (E, facing it: twelve places, a chest like any other), which is where weapons are left before a
      town that lets nobody in armed. Lying things are gone after fifteen minutes. */
   function armTake(spec) {                 // into the empty hand, else the Fight bar, else the bag; says where it went (null: no room)
-    var b = barBase('fight'); if (!slots[b + hand.fight]) { slots[b + hand.fight] = { kind: 'item', n: 1, item: spec }; return 'hand'; }
+    if (hand >= 0 && !slots[hand]) { slots[hand] = { kind: 'item', n: 1, item: spec }; return 'hand'; }
     for (var i = 0; i < COLS; i++) if (!slots[b + i]) { slots[b + i] = { kind: 'item', n: 1, item: spec }; return 'bar'; }
     return addThing(spec) ? 'bag' : null;
   }
@@ -2514,7 +2519,7 @@ __COMBAT__
   function manDrops(e) {                   // he falls: what he fought with stays by him (or, taken from behind by empty hands, is in them)
     if (e.disarmed) { e.arms = []; return; }
     var L = manArms(e), P = hero(), b = barBase('fight');
-    if (e.quietKill && !e.killer && L.length && !slots[b + hand.fight] && !P.dead) { var th = L.shift(); slots[b + hand.fight] = { kind: 'item', n: 1, item: th }; toast(th.name + ': in your hand'); recount(); }
+    if (e.quietKill && !e.killer && L.length && hand >= 0 && !slots[hand] && !P.dead) { var th = L.shift(); slots[hand] = { kind: 'item', n: 1, item: th }; toast(th.name + ': in your hand'); recount(); }
     e.arms = L; e.armsAt = { x: (Math.random() < 0.5 ? -1 : 1) * (9 + Math.random() * 5), y: 3 + Math.random() * 5, a: Math.random() * 6.283 };
     if (e.bow) { var n = 2 + Math.floor(Math.random() * 4); for (var k = 0; k < n; k++) drops.push({ kind: 'arrow', x: e.x + (Math.random() - 0.5) * 22, y: e.y + 4 + Math.random() * 8, z: 0, vx: 0, vy: 0, vz: 0, t: 0.3, spin: Math.random() * 6.283 }); }
   }
@@ -2536,16 +2541,19 @@ __COMBAT__
   }
   function seaChest() { if (!raft || !Yard.isShip(raft.kind)) return null; if (!raft.chest) { raft.chest = { sea: true, store: [] }; for (var i = 0; i < STORE_N; i++) raft.chest.store.push(null); } var ch = Math.cos(raft.h || 0), sh = Math.sin(raft.h || 0), k = (raft.hw || 21) * 0.55; raft.chest.x = raft.x - ch * k; raft.chest.y = raft.y - sh * k; return raft.chest; }   // (by the stern)
   Combat.api.items = {                    // what is in the hand: the chosen slot of the mode's bar
-    held: function () { var P = hero(); return P.mode === 'fight' || P.mode === 'gather' ? handItem(P.mode) : null; },
-    tool: function (i) { var it = handItem('gather'); return it && it.kind === TOOL_IDS[i] ? it : null; },
-    weapon: function (k) { var it = handItem('fight'); if (!it) return null; var K2 = Items.KINDS[it.kind]; return (k === 'bow' ? K2.ranged : K2.melee) ? it : null; }   // 'sword' asks for the melee thing in hand, 'bow' for the ranged one
+    held: function () { var P = hero(); return P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; },
+    tool: function (i) { var it = handItem(); return it && it.kind === TOOL_IDS[i] ? it : null; },
+    weapon: function (k) { var it = handItem(); if (!it || GATHER_KINDS[it.kind]) return null; var K2 = Items.KINDS[it.kind]; return (k === 'bow' ? K2.ranged : K2.melee) ? it : null; }   // 'sword' asks for the melee thing in hand, 'bow' for the ranged one
   };
   Combat.api.barSelect = barPress;
-  Combat.api.barSlots = function (mode) { var b = barBase(mode); return { hand: hand[mode], sel: sel[mode], slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, ammo: ammoOf(s), draw: function (c) { if (s.kind === 'item') itemIcon(c, s.item, 16, 9.5); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; }) }; };
+  Combat.api.barSlots = function (mode) { var b = 0; return { hand: hand, sel: sel, slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, ammo: ammoOf(s), draw: function (c) { if (s.kind === 'item') itemIcon(c, s.item, 16, 9.5); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; }) }; };
   function ammoOf(s) { return null; }   /* (no ammo while there is no quiver, 2026-10-13) */   // arrows for a bow, stones for a sling: written in the thing's own slot
-  function handSync() {                   // the engine's tool and weapon follow the hand
-    var P = hero(), it = handItem('gather'), ti = it ? TOOL_IDS.indexOf(it.kind) : -1; if (ti >= 0) P.tool = ti;
-    var wf = handItem('fight'); P.weapon = wf && Items.KINDS[wf.kind].ranged ? 'ranged' : 'melee';
+  function handSync() {                   // the engine's mode, tool and weapon follow the hand (one bar, 2026-10-14)
+    var P = hero(), it = handItem(), tool = !!(it && GATHER_KINDS[it.kind]), want = tool ? 'gather' : 'fight';
+    if (P.mode === 'fight' || P.mode === 'gather') { if (P.mode !== want) { P.mode = want; P.atk.ph = 'none'; P.atk.since = 9; P.atkBuf = 0; P.guard = false; P.holdT = 0; } }
+    else if (P.lastMode) P.lastMode = want;   /* (in build mode: what the engine goes back to on B) */
+    var ti = tool ? TOOL_IDS.indexOf(it.kind) : -1; if (ti >= 0) P.tool = ti;
+    P.weapon = it && !tool && Items.KINDS[it.kind].ranged ? 'ranged' : 'melee';
   }
   function addItem(kind, n) {             // fills stacks of the same kind first, then empty slots; returns what did not fit
     var i, s, take; noteSeen(kind); if (FISH_KINDS[kind]) noteSeen('fish'); if (kind === 'charcoal' || kind === 'honey') deed(kind, n);
@@ -3104,7 +3112,7 @@ __COMBAT__
   var HINTS = [
     { done: function () { return hasTool() || (inv.wood >= 4 && inv.stone >= 3); }, text: 'Walk over the things lying about' },
     { done: function () { return hasTool(); }, text: 'Press C' },
-    { done: function () { return inv.fiber > 0 || seen.fiber; }, text: 'Press Q' }
+    { done: function () { return inv.fiber > 0 || seen.fiber; }, text: '1 to 6: take a thing in hand' }
   ];
   function itemIcon(c, it, size, half) { c.save(); c.beginPath(); c.rect(-half, -half, half * 2, half * 2); c.clip(); Items.icon(c, it, size); c.restore(); }   // a thing's icon kept inside its slot
   function hasItem(kind) { return slots.some(function (s) { return s && s.kind === 'item' && s.item.kind === kind; }); }
@@ -3198,7 +3206,7 @@ __COMBAT__
   Combat.api.onShoot = function (thrown) {
     deed('shots');
     var it = rangedHand(); if (!it) return;
-    if (thrown) { var hs = barBase('fight') + hand.fight; if (slots[hs] && slots[hs].kind === 'item' && slots[hs].item === it) slots[hs] = null; recount(); save(); return; }   // the thing itself flies
+    if (thrown) { var hs = hand; if (hs >= 0 && slots[hs] && slots[hs].kind === 'item' && slots[hs].item === it) slots[hs] = null; recount(); save(); return; }   // the thing itself flies
   };
   function onShootArrow() {
     var s = quiver.slots[quiver.sel]; if (!s) return; s.n--;
@@ -3345,10 +3353,10 @@ __COMBAT__
       c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0, CHAR.y + CHAR.h + 7); c.fillStyle = '#fff'; c.fillText(txt, x0, CHAR.y + CHAR.h + 7);
     }
   }
-  var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + (ROWS - 2) * CELL + 8, slide: 0 }, BAR = { y: 62, h: 2 * CELL + 10 };   // the bars' board sits above the bag
+  var CELL = 19, INV = { w: COLS * CELL + 12, h: 16 + (ROWS - 1) * CELL + 8, slide: 0 }, BAR = { y: 62, h: CELL + 10 };   // the bar's board sits above the bag
   INV.x = 400 - INV.w - 8; INV.y = BAR.y + BAR.h + 14;
   function invLeft() { return INV.x + (1 - INV.slide) * (INV.w + 40); }
-  function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + 6 + (i % COLS) * CELL, y: i < BAG0 ? BAR.y + 6 + row * CELL : INV.y + 16 + (row - 2) * CELL, w: CELL - 2, h: CELL - 2 }; }
+  function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + 6 + (i % COLS) * CELL, y: i < BAG0 ? BAR.y + 6 + row * CELL : INV.y + 16 + (row - 1) * CELL, w: CELL - 2, h: CELL - 2 }; }
   var STORE_UI = { x: 8, y: 80, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };
   function storeLeft() { return STORE_UI.x - (1 - INV.slide) * (STORE_UI.w + 40); }
   function storeRect(j) { var x0 = storeLeft(); return { x: x0 + 6 + (j % COLS) * CELL, y: STORE_UI.y + 16 + Math.floor(j / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
@@ -3377,14 +3385,13 @@ __COMBAT__
     var sr = btnRect(0);                                // a small Sort button above the bag: three bars side by side
     c.fillStyle = hb === 'sort' ? '#6b4a32' : '#4a2e1c'; c.beginPath(); c.roundRect(sr.x, sr.y, sr.w, sr.h, 2); c.fill(); c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.stroke();
     c.fillStyle = '#f6e2b8'; c.fillRect(sr.x + 3.5, sr.y + 3, 2.2, 5); c.fillRect(sr.x + 6.9, sr.y + 2, 2.2, 6); c.fillRect(sr.x + 10.3, sr.y + 3.8, 2.2, 4.2);
-    wood(c, x0, BAR.y, INV.w, BAR.h);                   // the bars: fight above, gather below
+    wood(c, x0, BAR.y, INV.w, BAR.h);                   // the bar: six things, one in hand
     wood(c, x0, INV.y, INV.w, INV.h);
     c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Bag', x0 + 8, INV.y + 11);
     for (i = 0; i < SLOTS; i++) {
-      var r = slotRect(i), s = slots[i], top = i < BAG0, inHand = top && (i % COLS) === hand[i < COLS ? 'fight' : 'gather'];
+      var r = slotRect(i), s = slots[i], top = i < BAG0, inHand = top && i === hand;
       slotUi(c, r.x, r.y, r.w, r.h, hov === i, inHand);
-      if (top && i % COLS === 0) barMark(c, i < COLS ? 'fight' : 'gather', r.x - 3.5, r.y + r.h / 2);
-      if (top) { c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.textAlign = 'left'; c.fillText(String(i % COLS + 1), r.x + 2, r.y + 6.5); }   // the key that takes it in hand in its mode (the second row read 7 to 12)
+      if (top) { c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.textAlign = 'left'; c.fillText(String(i % COLS + 1), r.x + 2, r.y + 6.5); }   // the key that takes it in hand
       if (s) stackIn(c, r, s, i);
     }
     if (hb === 'sort' && !(pick && pick.drag)) { c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText('Sort the bag', x0 + 3, INV.y - 4); c.fillStyle = '#fff'; c.fillText('Sort the bag', x0 + 3, INV.y - 4); }
@@ -4832,7 +4839,7 @@ __COMBAT__
   }
 
   /* ---------- input ---------- */
-  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyJ: 1, KeyK: 1, KeyQ: 1, KeyF: 1, KeyR: 1, KeyB: 1, Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, ShiftLeft: 1, ShiftRight: 1 };
+  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyJ: 1, KeyK: 1, KeyF: 1, KeyR: 1, KeyB: 1, Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1, ShiftLeft: 1, ShiftRight: 1 };
   var heldK = {};
   function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')); }
   window.addEventListener('keydown', function (e) {
@@ -4843,7 +4850,7 @@ __COMBAT__
     if (e.code === 'KeyE') { e.preventDefault(); eHeld = true; if (!e.repeat) { var ew = eWhat(hero()); if (ew && ew.act) ew.act(); } return; }   // (what E does: eWhat)
     if (e.code === 'KeyM') { e.preventDefault(); if (!e.repeat && !inYard) { mapOpen = !mapOpen; if (mapOpen) { invOpen = false; menu = null; bookOpen = false; clothOpen = false; musterOpen = false; } } return; }
     if (e.code === 'KeyX') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen && !inYard) drawToggle(); return; }   // draw your weapon, or put it away
-    if (e.code === 'Enter' && !menu && !pauseOpen && !invOpen && !mapOpen && !inYard && !ringOpen && (hero().mode === 'fight' || hero().mode === 'gather')) { e.preventDefault(); if (!e.repeat) barPress(sel[hero().mode]); return; }   // the wheel's pick, taken in hand or put away
+    if (e.code === 'Enter' && !menu && !pauseOpen && !invOpen && !mapOpen && !inYard && !ringOpen && (hero().mode === 'fight' || hero().mode === 'gather')) { e.preventDefault(); if (!e.repeat) barPress(sel); return; }   // the wheel's pick, taken in hand or put away
     if (e.code === 'KeyG') { e.preventDefault(); if (!e.repeat && !menu && !invOpen && !mapOpen && !inYard) { gKey.down = true; gKey.t = 0; gKey.done = false; } return; }   // a word to your own men: tapped, with me; held, hold here
     if (e.code === 'KeyC') { e.preventDefault(); if (!e.repeat) handCraft(); return; }
     if (e.code === 'KeyL') { e.preventDefault(); if (!e.repeat && SHOW.book) { bookOpen = !bookOpen; if (bookOpen) { invOpen = false; cookOpen = false; menu = null; } } return; }
@@ -4933,7 +4940,7 @@ __COMBAT__
     e.preventDefault(); var P = hero(), d = e.deltaY > 0 ? 1 : -1, n;
     if (menu && overMenu() && menuScroll(d)) return;      // the wheel scrolls a tall board
     if (pauseOpen && panelWheel(d)) return;               // and a tall board of the Escape menu (Admin)
-    if (P.mode === 'gather' || P.mode === 'fight') sel[P.mode] = (sel[P.mode] + d + 6) % 6;   // the wheel picks a slot; Enter (or its number) takes it in hand
+    if (P.mode === 'gather' || P.mode === 'fight') sel = (sel + d + 6) % 6;   // the wheel picks a slot; Enter (or its number) takes it in hand
     else if (inYard) YSCENE.wheel(d);
     else if (P.mode === 'build') { if (!P.wreck && PIECES[P.piece] && PIECES[P.piece].kind === 'item') buildRot = (buildRot + (d > 0 ? 1 : 3)) & 3; else { stepPiece(d); P.wreck = false; } }   // the wheel turns what you are placing, or steps through the pieces you know
   }, { passive: false });
@@ -4953,7 +4960,7 @@ __COMBAT__
       if (sv.slots) { var oldBag = sv.slots.length <= 24; for (k = 0; k < sv.slots.length && k < SLOTS; k++) { var ss = sv.slots[k], dk = oldBag ? (k < COLS ? k : k + COLS) : k; slots[dk] = !ss ? null : (ss.kind === 'item' && ss.item ? { kind: 'item', n: 1, item: Items.make(ss.item.kind, ss.item.mat, ss.item) } : (NAMES[ss.kind] ? { kind: ss.kind, n: Math.min(STACK, ss.n | 0) } : null)); } recount(); }
       else for (k in sv.inv || {}) addItem(k, sv.inv[k]);
       if (sv.equip) { for (k in equip) equip[k] = sv.equip[k] ? Items.make(sv.equip[k].kind, sv.equip[k].mat, sv.equip[k]) : null; ['weapon', 'bow', 'axe', 'pick', 'knife'].forEach(function (ok) { if (sv.equip[ok]) { var oi = Items.make(sv.equip[ok].kind, sv.equip[ok].mat, sv.equip[ok]); if (!barPut(oi)) addThing(oi); } }); } else startKit();   // older saves kept weapons and tools in equipment slots
-      hand = sv.hand && sv.hand.fight != null ? sv.hand : { fight: 0, gather: 0 };
+      hand = typeof sv.hand === 'number' ? sv.hand : (sv.hand && sv.hand.fight != null ? sv.hand.fight : 0);
       hird = []; hirdDay = sv.hirdDay || 0; (sv.hird || []).forEach(function (h) { var m; if (h.brokk && npc) { m = npc; npc.joined = true; } else { m = { x: h.x, y: h.y, face: Math.PI / 2, say: '', sayT: 0, name: h.name, fig: lib.makeFigure(Hird.figureSpec(h.person || Hird.roll(Math.random, HD), lib.heroDef)) }; } m.person = h.person; m.job = h.job; m.at = h.at; m.workAt = h.workIdx >= 0 ? B.items[h.workIdx] : null; m.follow = h.follow; m.mustered = h.follow; m.aboard = !!h.aboard; m.sitting = m.aboard; m.hungry = h.hungry; m.ph = 0; m.moving = false; m.x = h.x; m.y = h.y; hird.push(m); });
       seen = sv.seen || {}; if (!sv.seen) { for (k in inv) if (inv[k] > 0) seen[k] = 1; } markDead();
       RS = sv.runes && sv.runes.learnt && !sv.runes.slots ? sv.runes : freshRunes(); var fr = freshRunes(); ['earned', 'deeds', 'kills', 'stones'].forEach(function (k) { if (!RS[k]) RS[k] = fr[k]; }); ring = sv.ring && sv.ring.coils ? sv.ring : null; heroRingSync();
@@ -4973,7 +4980,7 @@ __COMBAT__
       torchOn = !!(sv.torch && sv.torch.on && sv.torch.left > 0); torchLeft = sv.torch ? sv.torch.left || 0 : 0;
       if (sv.carrying && sv.carrying.heavy) { carrying = sv.carrying; carrying.carried = true; }
       if (sv.raft && sv.raft.x != null) { raft = { x: sv.raft.x, y: sv.raft.y, h: sv.raft.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!sv.raft.aboard, kind: sv.raft.kind || 'raft', parts: sv.raft.parts || null, cargo: sv.raft.cargo || [] }; if (sv.raft.chest && sv.raft.chest.store) raft.chest = { sea: true, store: sv.raft.chest.store.slice(0, STORE_N).map(function (q) { return !q ? null : (q.kind === 'item' && q.item ? { kind: 'item', n: 1, item: Items.make(q.item.kind, q.item.mat, q.item) } : (NAMES[q.kind] ? { kind: q.kind, n: Math.min(STACK, q.n | 0) } : null)); }) }; raftFit(); if (sv.seaBoat) raft.aboard = true; if (raft.aboard) { P.x = raft.x; P.y = raft.y; } }   // (saved inside the sea cave, come by boat: you wake in the boat at its mouth)
-    } else { startKit(); hand = { fight: 0, gather: 0 }; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); if (SCENE === 'battle') battleScene(); if (SCENE === 'ruin') ruinScene(); }   // he wakes in the wreck: the screen opens slowly
+    } else { startKit(); hand = 0; toCamp(); seen = {}; campScatter(); day = { t: 0, n: 1 }; rested = 0; villageBuild(); hamletBuild(); caveFade = 2.6; if (SCENE === 'runes') runesScene(); if (SCENE === 'mountain') mountainScene(); if (SCENE === 'battle') battleScene(); if (SCENE === 'ruin') ruinScene(); }   // he wakes in the wreck: the screen opens slowly
     sleep = null;
     try { var give = JSON.parse(localStorage.getItem('game.give')); if (give && give.kind) { localStorage.removeItem('game.give'); var gi = Items.make(give.kind, give.mat, give); if (addThing(gi)) toast('From the Item Editor: ' + gi.name); } } catch (e) {}
     spawnBoars(); spawnGuards(); if (BT.on && BT.field) battleSet(BT.setup); stat.textContent = info + (sv ? ' Welcome back.' : '') + ' Tab: the bag. C: make things by hand. B: build.'; save();
@@ -5065,10 +5072,10 @@ __COMBAT__
     var P = hero(), f = fieldSite(), list = [], k; BT.field = f;
     w.eachProp(function (o) { if (Math.abs(o.x - f.x) < 12 * T && Math.abs(o.y - f.y) < 9 * T) list.push(o); }); list.forEach(function (o) { w.removeProp(o); });
     for (k = 0; k < SLOTS; k++) slots[k] = null;
-    BT_WPN.slice(0, 6).forEach(function (kd, i) { slots[barBase('fight') + i] = { kind: 'item', n: 1, item: Items.make(kd, 'iron') }; });       // one of every weapon on the Fight bar: the number keys change what is in hand
-    barPut(Items.make('axe', 'iron')); barPut(Items.make('pick', 'iron')); barPut(Items.make('knife', 'iron')); addThing(Items.make('bow', 'wood'));
+    BT_WPN.slice(0, 6).forEach(function (kd, i) { slots[i] = { kind: 'item', n: 1, item: Items.make(kd, 'iron') }; });       // one of every weapon on the bar: the number keys change what is in hand
+    addThing(Items.make('axe', 'iron')); addThing(Items.make('pick', 'iron')); addThing(Items.make('knife', 'iron')); addThing(Items.make('bow', 'wood'));
     equip.shield = Items.make('shield', 'wood'); battleGear(); quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 };
-    addItem('cookedMeat', 10); hand = { fight: 0, gather: 0 }; day.t = 300; caveFade = 0; seen.met = 1; seen.village = 1; seen.fiber = 1; noSave = true;
+    addItem('cookedMeat', 10); hand = 0; day.t = 300; caveFade = 0; seen.met = 1; seen.village = 1; seen.fiber = 1; noSave = true;
     P.mode = 'fight'; recount(); battleSet('one');
   }
   function battleGear() { ['helmet', 'tunic', 'trousers', 'boots', 'cloak'].forEach(function (g) { equip[Items.KINDS[g].gear] = Items.make(g, BT.mine && (g === 'helmet' || g === 'tunic') ? 'iron' : 'leather'); }); }
@@ -5435,7 +5442,7 @@ __COMBAT__
     slots[barBase('fight')] = { kind: 'item', n: 1, item: Items.make('sword', 'iron') }; slots[barBase('fight') + 1] = { kind: 'item', n: 1, item: Items.make('axe', 'iron') };
     equip.shield = Items.make('shield', 'wood'); battleGear();
     addItem('torch', 12); addItem('wood', 75); addItem('stone', 50); addItem('fiber', 50); addItem('cookedMeat', 6);
-    hand = { fight: 0, gather: 0 }; day.t = 300; caveFade = 0; noSave = true; BT.setup = 'none';
+    hand = 0; day.t = 300; caveFade = 0; noSave = true; BT.setup = 'none';
     ['met', 'village', 'fiber', 'wood', 'stone', 'leather', 'mend', 'mason', 'copper', 'ironBar'].forEach(function (q) { seen[q] = 1; });
     samplerBuild(); P.mode = 'gather'; recount(); P.x = f.x; P.y = f.y + 30; P.face = -Math.PI / 2; wind.a = 0; wind.to = 0; wind.t = 1e9;
     ruinPanel(); RU.items0 = JSON.stringify(B.items);

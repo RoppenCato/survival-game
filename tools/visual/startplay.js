@@ -16,7 +16,7 @@ window.ST = (function () {
   function draw(n) { for (var i = 0; i < (n || 1); i++) { if (!H2.step(1)) throw new Error('the game loop is dead: reload the page'); ST.frames++; } }
   function key(c, d) { Combat.key(c, d); } function clear() { ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ShiftLeft', 'KeyJ', 'KeyK'].forEach(function (c) { key(c, false); }); }
   function tap(c) { key(c, true); fast(2); key(c, false); fast(2); }
-  function take(digit) { var h = D().hand ? D().hand()[P().mode] : -1; if (h !== digit - 1) tap('Digit' + digit); }   // (2026-10-14: the number of the thing already in hand puts it away, so the slot is pressed only when it is not in hand)
+  function take(digit) { var h = D().hand ? D().hand() : -1; if (typeof h === 'object') h = h[P().mode]; if (h !== digit - 1) tap('Digit' + digit); }   // (2026-10-14: the number of the thing already in hand puts it away, so the slot is pressed only when it is not in hand)
   function inv() { var v = D().inv, o = {}; for (var k in v) if (v[k]) o[k] = v[k]; return o; }
   function clock() { var d = D().day(); return 'day ' + d.n + ', ' + Math.floor(d.t / 60) + ':' + ('0' + Math.floor(d.t % 60)).slice(-2); }
   function walkTo(x, y, r, max) {
@@ -28,7 +28,8 @@ window.ST = (function () {
   }
   function pick(radius) { var n = 0, g = 0; for (;;) { var p = P(), ds = D().drops.filter(function (q) { return Math.hypot(q.x - p.x, q.y - p.y) < radius; }).sort(function (a, b) { return Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y); }); if (!ds.length || g++ > 50) break; var b4 = D().drops.length; walkTo(ds[0].x, ds[0].y, 8, 900); fast(20); if (D().drops.length < b4) n++; else if (g > 25) break; } return n; }
   function nearest(test) { var b = null, bd = 1e9, p = P(); D().world().eachProp(function (o) { if (!test(o) || o.dying != null) return; var d = Math.hypot(o.x - p.x, o.y - p.y); if (d < bd) { bd = d; b = o; } }); return b; }
-  function mode(m) { if (P().mode !== m) tap('KeyQ'); if (P().mode !== m) P().mode = m; }
+  function mode(m) { /* (one bar since 2026-10-14: the mode follows the thing in hand; nothing to press) */ }
+  function takeKind(kind) { var sl = D().slots, i; for (i = 0; i < 6; i++) if (sl[i] && sl[i].kind === 'item' && sl[i].item.kind === kind) { take(i + 1); return true; } return false; }   // the bar slot that holds a kind of thing
   function make(id) { var r = D().recipes2.filter(function (q) { return q.id === id; })[0]; D().craft(r); fast(200); }
   function work(o, digit, dx) { take(digit); walkTo(o.x + dx, o.y + 2, 6, 2400); key(dx < 0 ? 'KeyD' : 'KeyA', true); fast(6); key(dx < 0 ? 'KeyD' : 'KeyA', false); var f = 0; key('KeyJ', true); for (; f < 2400 && o.dying == null && o.hp > 0; f++) fast(1); key('KeyJ', false); draw(110); return f; }
   function trunks() { var t = D().trunks; return typeof t === 'function' ? t() : t; }
@@ -59,13 +60,13 @@ window.ST = (function () {
     return 'queued: meat ' + ok1 + ', roast berries ' + ok2 + '; after 12 s the fire holds ' + (f ? JSON.stringify({ cooking: (f.cooking || []).length, ready: (f.out || []).map(function (o) { return o && (o.kind + ' x' + o.n); }) }) : 'no fire found') + '; ' + JSON.stringify(inv());
   };
   ST.boar = function () {                                 // a plain fighter: turns to face it and swings when it is in reach; never blocks, never steps aside
-    mode('fight'); take(1); var b = beasts('boar')[0]; if (!b) return 'no boar on the island'; var hp0 = P().hp, bh = b.hp, bd = b.cfg.dmg; walkTo(b.x, b.y, 60, 3000);
+    mode('fight'); takeKind('club'); var b = beasts('boar')[0]; if (!b) return 'no boar on the island'; var hp0 = P().hp, bh = b.hp, bd = b.cfg.dmg; walkTo(b.x, b.y, 60, 3000);
     var f = 0, hits = 0, hurt = 0, lb = b.hp, lh = P().hp; for (; f < 3600 && !b.dead && !P().dead; f++) { var p = P(), dx = b.x - p.x, dy = b.y - p.y, d = Math.hypot(dx, dy); key('KeyD', dx > 4); key('KeyA', dx < -4); key('KeyS', dy > 4); key('KeyW', dy < -4); key('KeyJ', d < 46); fast(1); if (b.hp < lb) { hits++; lb = b.hp; } if (P().hp < lh) { hurt++; lh = P().hp; } }
     clear(); draw(120); var dead = P().dead, res = 'a boar of ' + bh + ' health that does ' + bd + (b.young ? ' (a young one)' : '') + ', fought with the club by trading blows: ' + (b.dead ? 'the boar dead' : 'the boar alive') + ' after ' + Math.round(f / 60) + ' s and ' + hits + ' blows landed; the hero hit ' + hurt + ' times, ' + (dead ? 'DEAD' : Math.round(P().hp) + ' of ' + Math.round(hp0) + ' health left');
     if (dead) { tap('KeyR'); fast(40); } else pick(200); return res + '; ' + JSON.stringify(inv());
   };
   ST.deer = function () {                                 // (the bow aims by the mouse; the script has none, so it lets the bow aim where the hero faces)
-    mode('fight'); take(2); var was = Combat.S.ranged; Combat.S.ranged = 'auto'; var d0 = beasts('deer')[0]; if (!d0) { Combat.S.ranged = was; return 'no deer'; } walkTo(d0.x, d0.y, 150, 3600);
+    mode('fight'); takeKind('bow'); var was = Combat.S.ranged; Combat.S.ranged = 'auto'; var d0 = beasts('deer')[0]; if (!d0) { Combat.S.ranged = was; return 'no deer'; } walkTo(d0.x, d0.y, 150, 3600);
     var G = Combat.dbg(), shots = 0, pn = G.W.projs.length, f = 0; for (; f < 1500 && !d0.dead; f++) { if (G.W.projs.length > pn) shots += G.W.projs.length - pn; pn = G.W.projs.length;   /* (no quiver since 2026-10-13: the shots are counted as they fly) */ var p = P(), dx = d0.x - p.x, dy = d0.y - p.y, d = Math.hypot(dx, dy); key('KeyD', dx > 4); key('KeyA', dx < -4); key('KeyS', dy > 4); key('KeyW', dy < -4); key('KeyJ', d < 170 && (f % 40) < 3); fast(1); }
     clear(); draw(100); Combat.S.ranged = was; var shot = shots; pick(700); return 'a deer: ' + (d0.dead ? 'brought down' : 'got away') + ' with ' + shot + ' arrows loosed in ' + Math.round(f / 60) + ' s; ' + JSON.stringify(inv());
   };

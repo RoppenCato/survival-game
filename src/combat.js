@@ -170,7 +170,7 @@ function bits(x, y, n) {
 // What a blow of the hero's shows as (2026-10-13, Robin: about 10 at least, and no decimals): the engine's damage times SHOW,
 // rounded. A page shows a weapon's number the same way (api.SHOW). The health behind it is unchanged.
 var SHOW = 10; api.SHOW = SHOW;
-var TOOL_DMG = 0.5;                          // a tool's blow on a beast or a man, as a share of what the same thing would do as a weapon
+var TOOL_DMG = 0.8;                          // a tool's blow on a beast or a man, as a share of what the same thing would do as a weapon (0.8 since 2026-10-14, one bar and no modes: the axe in hand is what you swing at a boar; it was 0.5)
 function num(x, y, txt, c, big, weak) { W.nums.push({ x: x, y: y, t: 0, txt: txt, c: c || '#ffffff', big: !!big, weak: !!weak }); }
 var wrongToolAt = -1e9;                   // when the 'wrong tool' note was last shown (W.t); it comes back after five minutes
 function slowmo(scale, dur) { if (S.juice && dur > W.slow.t) { W.slow.t = dur; W.slow.s = scale; } }

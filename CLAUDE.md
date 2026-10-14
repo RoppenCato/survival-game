@@ -2701,31 +2701,42 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   plus the ground hue, brightness and saturation. "Use in the game" stores `game.grass`, which the game merges over
   the defaults on load.
 
-## Controls and modes (decided 2026-10-04)
+## Controls and modes (decided 2026-10-04; one bar and no Q since 2026-10-14)
 
-The hero has two modes, switched with **Q**, each with its own six-slot bar at the bottom middle of the screen
+**One bar (2026-10-14, Robin: the two bar rows looked weird and complicated and Q itself was in question; decided with the
+rest of the beginning's redesign: the thing in hand decides the act).** The bar is the bag's top row, six slots, one in hand
+(`hand`, an index, -1 for empty hands; `sel` the wheel's pick). A number key takes a thing in hand or puts it away, the wheel
+moves the pick, Enter takes it. The engine's two modes are still there under it, but the page sets them from what is in hand
+every frame (`handSync`): an axe, a pick, a knife or a rod is gather mode (chop, mine, cut, fish; `GATHER_KINDS`), anything
+else, or empty hands, is fight mode. A tool bites a beast or a man at `TOOL_DMG` 0.8 of what the same thing would do as a
+weapon (it was 0.5), so the axe in hand is what you swing at a boar. `BAR_OF` says what belongs on the bar (every weapon and
+tool), `barPut` puts a new one in the first free slot. Q is no key of the game's (the Combat Arena keeps the engine's). The
+bag has four rows under the bar (`BAG0` 6; 30 slots as before). An old save's `hand.fight` is taken as the hand. The start
+script's `mode()` is a no-op and `takeKind(kind)` presses the slot that holds a kind. **What the two bullets below say about
+a Fight bar and a Gather bar is history.**
+
+The hero had two modes, switched with **Q**, each with its own six-slot bar at the bottom middle of the screen
 (**rebuilt 2026-10-05**; Robin found the fixed sword-and-bow with F awkward).
-- **The bars are the top two rows of the bag:** row one is the Fight bar, row two the Gather bar, each numbered 1 to 6
+- **The bars were the top two rows of the bag:** row one the Fight bar, row two the Gather bar, each numbered 1 to 6
   and marked with a tiny sword or axe. Anything can be dragged into them. A number key takes a weapon or tool in that
-  slot **in hand** (`hand = { fight, gather }`, the gold slot; saved), eats food, or lights a torch; an empty slot means
+  slot **in hand**, eats food, or lights a torch; an empty slot means
   empty hands (fists in fight mode, nothing to swing in gather mode). The wheel steps the hand. The engine reads the hand
   through `Combat.api.items` (`held`, `tool(i)`, `weapon(kind)`), `api.barSlots(mode)` draws the bar and
   `api.barSelect(i)` takes the number keys; `handSync()` sets `P.tool` and `P.weapon` (a bow in hand is ranged) each
   frame. **F no longer swaps weapons** (it still toggles wrecking in build mode). A crafted weapon or tool goes to the
-  first free slot of its bar (`barPut`), as does right-clicking one in the bag (swapping with the hand slot when the bar
+  first free slot of the bar (`barPut`), as does right-clicking one in the bag (swapping with the hand slot when the bar
   is full); loot fills the bag rows first (`addItem`, `addThing` start at `BAG0`). Old saves (24 slots, weapons in
   `equip`) are remapped on load.
 - **Taking a thing in hand (2026-10-13, Robin: "as simple as scrolling to select it, and press the key; press the key again to
   unequip, like Valheim"):** a **number key** takes that slot's thing in hand, and the key of the thing already in hand **puts
-  it away** (empty hands; `hand[mode]` -1). The **wheel** moves a pick along the bar (`sel`, outlined white on the hotbar:
+  it away** (empty hands; `hand` -1). The **wheel** moves a pick along the bar (`sel`, outlined white on the hotbar:
   `bar.sel` in the engine's `drawHotbar`) without taking anything; **Enter** takes the pick in hand or puts it away. A
   one-handed weapon taken in hand **wears a shield from the bag** if the shield slot is empty (`shieldWithIt`; Robin: equipping
   a one-handed weapon should always equip the shield if you have one on you). The shield lives in the character panel's
   shield slot (a crafted or looted one goes there when it is empty, else to the bag; right click in the bag wears it), never
-  on a bar. Old saves with a hand index are as they were.
-- **Fight mode:** whatever is in hand from the Fight bar: a sword hits, a bow shoots, fists punch.
-- **Gather mode:** tools from the Gather bar. The right tool does full damage and any other half. Tools do not hurt
-  enemies. No auto-pick, no highlight.
+  on a bar.
+- **Fight mode:** whatever weapon is in hand: a sword hits, a bow shoots, fists punch. **Gather mode:** a tool in hand. The right
+  tool does full damage to a tree or a rock and any other half; a tool bites a beast at `TOOL_DMG`. No auto-pick, no highlight.
 - **Worn gear** (`equip`): helmet, cloak, tunic, trousers, boots on the character panel's left, shield and amulet on its
   right. (The drawn hero's shield showed only when used, and Robin liked that. Since 2026-10-13 the Blender hero carries
   his on the arm whenever his weapon is out; Admin's "Shield only when raised" is the old way: see "The hero's shield".)
