@@ -2411,6 +2411,17 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   `chain` (with the chain's length; was the charge's tone), `broken` (was stagger), `perfect` (was crit) and `finish` (was
   slam). **To compare:** the Combat Arena's **The old sounds** switch and its **The sounds** panel (every sound by name, a click
   plays it alone; a dim one has no recording), and the game's Admin **The old fight sounds**. `Sfx.on`, `Sfx.vol`.
+  **The set is in (the same day):** the studio delivered all 32 (`C:\dev\SG Sound\out\sfx\combat\`: 96 WAVs, 48 kHz mono,
+  every peak at -1 dBFS, `combat.json` with a measured `gain` a sound; its `NOTES.md` says what each is made of and its levers;
+  `preview-fight.mp3` is a staged exchange). Bundled with `node tools/sfxjs.js "C:\dev\SG Sound\out\sfx\combat" combat` into
+  `assets/sfx/combat.js` (3.4 MB, loaded at the first key or click). **`Sfx.vol` is 0.5**: measured on an `OfflineAudioContext`
+  (each sound's loudest 50 ms), the set at its gains was about 6 dB over the synthesized one; at half the sword's hit is -22.6 dB
+  against the old -23.7, a heavy hit -19.5 (-18.1), the parry -21.6 (-24.2), the block -22.8 (-30.2: the old block was nearly
+  silent), the swing -31.5 (-29.8). The seax and the spear have no heavy hit of their own (the sword's plays). **Played by
+  script in the arena and the battle scene, muted:** every weapon's swing and hit, the heavy hits, a man's swing, block, parry,
+  the chain's x2 to x4, the finishing blow, the stun, a fall, the red tell, the perfect dodge, dash, hurt and the bow each
+  played its recording; no errors. **Still synthesized:** `raise` (the guard coming up) and `tele` (the tick as a man begins a
+  blow), not asked for. Robin had heard none of it in the game when it went in.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero

@@ -5210,7 +5210,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
                                              its rate moved by up to pitch (0.03 by default) so a run of blows is not one
                                              sound; false if there is none, so the page plays its synthesized one instead
    Sfx.on                                    false plays nothing (the pages' "recorded sounds" switch: false = the old)
-   Sfx.vol                                   a master gain for all of them
+   Sfx.vol                                   a master gain for all of them (0.5)
    Sfx.names()                               what is loaded, with the number of variations
    No browser globals at load time: it loads in Node too (the tests). */
 var Sfx = (function () {
@@ -5255,7 +5255,7 @@ var Sfx = (function () {
     src.connect(g); g.connect(dest || ctx.destination); src.start(ctx.currentTime + (o.delay || 0));
     return true;
   }
-  return { load: load, has: has, play: play, names: names, on: true, vol: 1 };
+  return { load: load, has: has, play: play, names: names, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
 })();
 if (typeof module !== 'undefined') module.exports = Sfx;
 
@@ -5460,7 +5460,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   var SFX_ROWS = [
     ['Swings', ['swing', 'swing_axe', 'swing_club', 'swing_seax', 'swing_spear', 'swing_greataxe']],
     ['Hits', ['hit', 'hit_axe', 'hit_club', 'hit_seax', 'hit_spear', 'hit_greataxe']],
-    ['Heavy hits', ['heavyhit', 'heavyhit_axe', 'heavyhit_club', 'heavyhit_seax', 'heavyhit_spear', 'heavyhit_greataxe']],
+    ['Heavy hits', ['heavyhit', 'heavyhit_axe', 'heavyhit_club', 'heavyhit_greataxe']],   // (the seax and the spear have none of their own: the game plays heavyhit)
     ['Defence', ['block', 'parry', 'crit']],
     ['The chain', ['chain_2', 'chain_3', 'chain_4']],
     ['Moments', ['finish', 'broken', 'heavytell', 'perfect', 'stagger']],
