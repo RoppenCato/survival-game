@@ -2464,6 +2464,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   arena's "Cut the swing at the hit", `SFX_PICK.cut`). The bundler takes MP3 and OGG too and more than one folder (`"<studio
   folder>|assets/sfx/robin"`); an MP3's peak is found once decoded (`loudest` in `src/sfx.js`). Checked by stepping the arena:
   light, light, heavy on a chain's last blow, light again; the game played the light one; nothing cut.
+  **What set Robin's swings apart, measured by the studio** (its `docs/sfx-notes.md` section 7, `work/swing-compare.js`): the
+  **colour**. His light swing is centred at about 413 Hz (79% of its energy between 354 and 707 Hz, almost nothing above 1 kHz),
+  rises from 38 dB under to its peak in about 50 ms and is 28 dB down 40 ms later: one short low-mid "vwom"; his heavy one is
+  centred at about 307 Hz (62 to 500 Hz). Every candidate was high hiss (the old swing 2.8 kHz, A 3.2, C 5.7, D 3.1) or, B, a
+  rumble at 121 Hz. **For the other weapons' swings:** recorded material in his manner first; if made in Sonic Pi, aimed at 300
+  to 500 Hz with a rise of about 50 ms and a quick fall, each candidate's centre and band shares measured against his before
+  Robin hears it. The studio holds the other swings until Robin has judged his two in the game.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero
