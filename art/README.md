@@ -15,10 +15,7 @@ the game was drawn in code; this folder is the first place where a model lives i
 - `tools/blender.js` finds blender.exe (or `BLENDER` in the environment) and runs a script headless.
 
 ```
-npm run art:hero       # build the .blend, render every frame, pack the sheets
-npm run art:compare    # herocompare.png: the drawn hero beside the rendered one
-npm run art:styles     # the style test: hero2 in the three styles over the Night Forest, herostyles.png
-npm run art:mixamo     # bind hero2 to the Mixamo skeleton, render idle, walk and run, mixamocompare.png
+npm run art:mixamo     # build hero2 (build/hero2_build.py) and bind it to the Mixamo skeleton: source/hero2_mixamo.blend
 npm run art:mixamo:sheets  # every Mixamo clip in eight directions into assets/sprites/hero2-mixamo (the hero)
 npm run art:items      # the things in the hand modelled and rendered as layers over the hero's clips, merged and packed
 npm run art:shield     # the hero's round shield (three layers on the left arm) and his block and walk-with-shield clips: built, rendered, merged and packed into his sheets (tools/shieldrender.js; run again after art:mixamo)
@@ -46,9 +43,10 @@ hands yet.
 can auto-rig it (`source/hero2_tpose.fbx` is the joined body mesh); its rig is calibrated at build time (which local axis swings a
 bone down, forward or outward is measured, so the animations are written in those words). `toon.py` renders any character in
 three styles, `--style cel | painted | folk`, rebuilding every material from its stored colour and pattern (`restyle`).
-`tools/visual/herostyles.js` puts the three side by side over a Night Forest painted from the game's own props.
+Robin picked the cel style; the style test's sheets (the first hero, and hero2 in cel, painted, folk and fitted) and its comparison
+scripts were removed in the cleanup of 2026-10-15 (`build/hero_build.py` and the .blend files are kept as sources).
 
 Directions go clockwise from facing the camera: s, sw, w, nw, n, ne, e, se. The frame's anchor is the point between the feet.
 
-The **Blender Editor** page (`npm start`, then Blender Editor) shows every packed sheet: pick a model and its gear, walk round the arena or
-the night forest with it, and see the sheet. Rebuild the page after new sheets: `npm run build`.
+The **Art Editor**'s Models tab (`npm start`, then Art Editor) shows every packed sheet: pick a model and its gear, walk round the
+starter island, the arena or the night forest with it, and see the sheet. Rebuild the pages after new sheets: `npm run build`.

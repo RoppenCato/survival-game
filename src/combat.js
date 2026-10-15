@@ -279,6 +279,7 @@ function parryStun() { return MEN.parryStun * (1 + CHAIN.stun * Math.max(0, (P.c
    wins some of it back. PERFECT: a dash begun in the last moment before a blow lands slows time, gives the dash's stamina back
    and leaves the foe exposed for a moment (your blows on him do more). The unparryable tell: a heavy blow (it cannot be parried)
    flashes a red glint as it is wound up, and sounds deeper; any other a white one. */
+var BEAST_POISE = 1.1;   // after a beast is staggered, no blow staggers it again for this long, so it gets its attack off (2026-10-15: every blow of a club counts as heavy, stag 42, and a careless tapper with the first weapon of the game felled a bear losing nothing; tests/balance.js)
 var POSTURE = { parry: 0.25, dodge: 0.25, block: 0.04, hit: 0.02, hold: 1.6, decay: 0.15, breakT: 2.0 };   // (block and hit kept small: at 0.15 a bot that only blocked and hit into the shield broke men sooner than one that parried; a perfect dodge counts as a parry, so a foe whose blows are all red can be broken too)
 var RALLY = { share: 0.5, hold: 0.4, time: 1.8, perHit: 2 };   // (at 0.6 of a hit, 6 a blow over 3 s the battle test's careless tapper beat a man in mail with a shield every time (4% before it); at these, 42%)
 var PERFECT = { win: 0.18, slow: 0.3, slowT: 0.28, exposed: 1.2, bonus: 1.5 };
@@ -440,7 +441,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
     else if (e.poiseT > 0 && !heavy && !broke) { /* he has just flinched: this one he takes on his feet */ }
     else { e.state = 'stagger'; e.t = 0; e.dur = heavy || broke ? 0.36 : 0.16; e.sw = null; e.swung = false; e.poiseT = 0.9; }
     if (!killing) heartOf(e);
-  } else if (heavy && e.state !== 'recover' && e.state !== 'stunned') { e.state = 'stagger'; e.t = 0; e.dur = 0.34; }   // a heavy blow staggers a beast; a light one does not stop it at all (2026-10-14, Robin: they staggered too easily; before, a light hit was a 0.14 s flinch): the flash, the squash and the push are its whole answer
+  } else if (heavy && e.state !== 'recover' && e.state !== 'stunned' && !(W.t - (e.stagAt == null ? -99 : e.stagAt) < BEAST_POISE)) { e.state = 'stagger'; e.t = 0; e.dur = 0.34; e.stagAt = W.t; }   // a heavy blow staggers a beast; a light one does not stop it at all (2026-10-14, Robin: they staggered too easily; before, a light hit was a 0.14 s flinch): the flash, the squash and the push are its whole answer
   else if (!heavy && (e.state === 'idle' || e.state === 'wander')) { e.state = 'chase'; e.t = 0; }
   if (killing) killEnemy(e);
 }

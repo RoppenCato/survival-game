@@ -162,9 +162,9 @@ pane has a tab limit: close old tabs if a page will not open).
 | Page (in `dist/`) | Template | What it is |
 | --- | --- | --- |
 | `index.html` | `index.html` | Start page. **Laid out by chapter since 2026-10-13** (Robin: work on the chapters one at a time, all connected): **Play** (the game: chapters 1 and 2), **Systems** (each a part of the game set up to be worked on by itself, on the same engine and numbers as the game, so what is fixed there is fixed everywhere: the Combat Arena, the Battle test and the Destruction Editor for chapter 3's raiding, the Big island test, the Mountain test) and **Editors** (Art, Village, Sea, Song). |
-| `art-editor.html` | `art.html` | **Art Editor (2026-10-09, the cleanup; the Creatures tab removed 2026-10-13, see "The editors cleaned up" under The game):** the Object and Blender editors as one page with two tabs, **Models** (the Blender sheets: model, gear layers, Height, "Use in the game" picks which model is the hero, the starter island, arena or night forest, the Clips keys), **Creatures** (the drawn animals and trolls: templates, body plan, shape, behaviour, the library, "Update in game") and **Objects** (one world prop at a time: category, variations, size, shape, surface, colour). The hero in every tab is the Blender model (`Sprites.attach`). One canvas and one engine: each tab is an object in `TABS` with `enter` (sets `Combat.api.scene`, `roster` and resets the arena), `leave`, `tick` and `after`; a tab's elements are found by `data-id` inside its own containers (`scope(name)`), so the tabs share names; the open tab is kept in `arteditor.tab` and `?tab=` opens one. The Characters tab (the drawn hero's editor) was retired the same day to `art/backup/character-editor.html`. **Since 2026-10-13 the Models tab has a People panel** (rolled villagers from the one body every person shares: the clip, the thing in the hand, mail, helmet, shield and cloak for all; `crowdRoll`, `crowdItems`). |
+| `art-editor.html` | `art.html` | **Art Editor (2026-10-09, the cleanup; the Creatures tab removed 2026-10-13, see "The editors cleaned up" under The game):** the Object and Blender editors as one page with two tabs, **Models** (the Blender sheets: model, gear layers, Height, "Use in the game" picks which model is the hero, the starter island, arena or night forest, the Clips keys) and **Objects** (one world prop at a time: category, variations, size, shape, surface, colour). The hero in every tab is the Blender model (`Sprites.attach`). One canvas and one engine: each tab is an object in `TABS` with `enter` (sets `Combat.api.scene`, `roster` and resets the arena), `leave`, `tick` and `after`; a tab's elements are found by `data-id` inside its own containers (`scope(name)`), so the tabs share names; the open tab is kept in `arteditor.tab` and `?tab=` opens one. The Characters tab (the drawn hero's editor) was retired the same day to `art/backup/character-editor.html`. **Since 2026-10-13 the Models tab has a People panel** (rolled villagers from the one body every person shares: the clip, the thing in the hand, mail, helmet, shield and cloak for all; `crowdRoll`, `crowdItems`). |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
-| `song-editor.html` | `song.html` | Song Editor: the game's music; a simple view with dice and a library, Advanced for the piano roll |
+| `song-editor.html` | `song.html` | Song Editor: tunes on the game's synthesized instruments; a simple view with dice and a library, Advanced for the piano roll. **A sketchpad since 2026-10-15**: the game plays the sound studio's recorded meadow and reads nothing from here (its "Use in the game" buttons are gone; the built-in `meadowDay` and `meadowEvening` are the game's fallback when a recording cannot load) |
 | `combat-arena.html` | `combat.html` | **Combat Arena (rebuilt 2026-10-13, Robin: more tools to work combat out to perfection: dodging, parrying, blocking, every weapon, moving, different and multiple enemies, hirdmen and fighting men):** the fight on its own, on the game's engine and numbers. **You:** the melee kind, the ranged kind, the metal, what you wear (cloth, leather, mail and helm: `Combat.api.armor`), a shield on the arm (`Combat.api.shield`, the game's rule: not with a bow or a Dane axe), Heal, Never fall. **Men:** against you a weapon, gear and wits and Add one; beside you a weapon and gear and Add a hirdman; set pieces (one, two, two with one beside you, five against five, with a bowman each, three against your line of three); **They come** (`Combat.WAYS`); Clear the field, Start over. **Beasts:** every animal, the four trolls, the four väsen, a pair of wolves. **The clock and the eye:** the clock as it runs, half, a quarter; **Show the blows** (`Combat.api.overlay`: your weapon's reach and arc, amber winding up and red as it lands; your guard, white in the parry's instant and blue after; the dash while it keeps you untouchable; on every man his reach, his blow filling as he winds up, his shield's cover); Hold them still (`e.hold`); Sound; aiming. **The last blows** (`Combat.api.onLog`): a log, newest first, of every dodge, parry, block (what got through, a guard broken), hit taken, blow landed (crit, on his shield, his guard broken) and kill, with a tally. The men are the game's soldiers drawn from the people's sheets (`Combat.api.dressMan`, `Sprites.fighter`; a look from `lib.folkSpec`, a name; yours in your red); **G** gives the two orders. Hit weight (Snappy) and crit (15%) are the decided settings and no longer switches; Juice is always on. `docs/combat-arena.jpg`. **The Tuning panel (2026-10-15, Robin: tune combat against animals, men and many; `docs/combat-tuning.md` is what to test):** sliders for the feel of a hit, the chosen weapon's `PROFILES`, the men's `MEN` and each beast's numbers (`Combat.tune`, see "Things to know"), green where moved, settings as text, **Use in the game** (`game.combat`), Take back, Defaults; the working copy in `combatarena.tune`. The arena's beasts are dressed from the same numbers as the game's (they bit for 12 whatever they were), with a **Young boar** and groups: a pair of wolves, the night's pack, two boars, three young boars, a boar and a wolf. |
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
@@ -416,9 +416,9 @@ the text and it is made the default. When a spec's meaning changes, change the s
   - Collision is circles only: `W.pillars` holds `{ x, y, r, hide }`. Big maps pass only the solids near the hero.
 - `templates/`: one HTML shell per page with `__ART__`, `__LIB__`, `__WORLD__`, `__BUILD__`, `__COMBAT__` placeholders.
 - `tools/build.py`: plain string substitution. `tools/open.js`: opens the start page. `tools/visual/`: scripts that
-  render things to PNG for checking (`props.js`, `creatures.js`, `walkcycle.js`, `swingdirs.js`, `attackstyles.js`: the attack styles).
-- `tools/visual/figures.js` renders the ink figures (the hero in four directions standing and walking, the troll, a boar) to
-  figures.png; `folk.js` the concepts.
+  render things to PNG for checking (`props.js`, `house.js`, `villages.js`, `boats.js`, `beasts.js`, `mountain.js`, `cave.js` and more),
+  and scripts loaded into a page in the browser pane to play or check it (`drive.js`, `startplay.js`, `battleplay.js`,
+  `raidplay.js`, `ruinplay.js`, `sackplay.js`, `ui.js`, and `smoke.js` and `scenesmoke.js`: see "The cleanup of 2026-10-15").
 - `tests/`: headless combat checks (table in `tests/README.md`).
 - `docs/idea-bank.md`: ideas and open design questions that are not decided yet.
 - `docs/beasts.md`: the cards and rules for Robin's creatures from Norse myth and folklore (troll, bysen,
@@ -1909,6 +1909,36 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   blanket** with a cream folded hem and two woven stripes, a fleece at the head. `workbenchObj` is a **joiner's bench**: a thick planed
   slab (its end grain showing) on two splayed trestles with a stretcher, an adze, a mallet head up and two chisels on it, a plank
   leaning against a leg, shavings on the floor. Both through `shape` (ink line, grain, the cool shade).
+- **The cleanup of 2026-10-15 (Robin: "do another cleanup and fix things").** **How it was checked:** every page and every test
+  scene opened in the pane with an error catcher. **`tools/visual/smoke.js`** (load it in an editor, `await SMOKE.run()`) clicks every
+  visible button and checkbox, never one that hands something to the game, throws work away or downloads (`SMOKE.SKIP`), and puts
+  the page's storage back as it was. **`tools/visual/scenesmoke.js`** (in a game page opened with `?scene=...`, `await
+  SCENE_SMOKE.run()`) presses every row of the scene's board through **`Combat.api.debug().sceneRows()`** and `act(id)`, skips
+  the rows that reload the page or start over, and reads the page's own error log. The Art, Village and Sea editors, the Combat
+  Arena and the Mountain, Big island and Battle tests came through clean (the Song Editor's Rename and Copy fail only on the
+  pane's lack of a prompt and a clipboard). **Fixed:** (1) **the Battle test and the Destruction Editor kept a save after all**:
+  something saved during their very first load, before the scene switched saving off, and every later visit loaded that save
+  and skipped building the scene, so the Destruction Editor had no sampler and "To the sampler" and "The sampler anew" threw;
+  `start()` now never loads or keeps a save while `BT.on`, and drops the old one. (2) **The club stun-locked big beasts**: every
+  blow with a stagger of 20 or more counts as heavy on a beast and staggers it, the club's is 42, so each club blow broke off a
+  bear's or a moose's windup, and the careless bot of `tests/balance.js` felled a bear with the wooden club losing 0 to 2 health
+  (with a flint sword, 44). **`BEAST_POISE` 1.1 s** in `src/combat.js`: after a beast is staggered no blow staggers it again for
+  that long (`e.stagAt`). Now a bear costs the club 62 health in leather, a moose 52; a boar 29 (23); the flint sword's lines
+  did not move, nor did `tests/parry.js`'s beasts. Mine, not Robin's. (3) **A raised guard drew the weapon** (Robin's play-test,
+  point 20: K brought up his guard, his club came out with it, and the village ran): in a place at peace the guard now comes up
+  with the weapon still away (`armsTick`); X still draws it and still frightens them (checked in Tovasborg: guard up, nobody
+  afraid; X, sixteen of sixteen). (4) **`tests/balance.js` dressed its beasts with numbers of its own**, older than the tuning:
+  it uses `Combat.tuneBeast` now, the wooden club in place of the stick sword, and the young boar. **Removed:** the hero
+  style test's sheets (`assets/sprites/hero`, `hero2-cel`, `hero2-painted`, `hero2-folk`, `hero2-fit`: the Art Editor listed
+  them as models), the scripts that only compared them (`tools/visual/herocompare.js`, `herofit.js`, `herostyles.js`,
+  `heroseat.js`, `mixamocompare.js`, `nightforest.js`) and their package scripts (`art:hero`, `art:compare`, `art:styles`;
+  **`npm run art:mixamo` now builds hero2 itself** and binds it, which is what the two did together); where this file names them
+  it is history. The Song Editor's **"Use in the game" buttons** (the game reads nothing from it since the recorded meadow went
+  in) and its, the start page's and the READMEs' texts that said otherwise. 107 throwaway pictures in the project's root.
+  **Corrected:** the game page's key list and description (one bar, not two; Tab, not C; the beasts, the plank house, thatch),
+  the line under the canvas, and the stale lines of this file (the Art Editor's tabs, the C key, `templates/objects.html`, the
+  removed render scripts). **Seen and left:** Point 10 of the play-test (33 bars on the way with 19 ore) is Admin's Free, which
+  `canAfford` lets through; Cancel then gives back what was never paid. The play-test's other points are design, not faults.
 - **The editors and modes cleaned up again (2026-10-13, Robin: look through all the editors and modes, clean and remove what we do
   not need, fix the menus, streamline, work on the chapters one at a time but connected).** **The Art Editor's Creatures tab is
   gone** (the drawn animals and trolls with their sliders: every beast is a Blender sheet in the game and the arena, and the drawn
@@ -2444,7 +2474,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **The first minute (tested fresh 2026-10-05):** you land on nothing; 12 branches and 9 stones lie on land
   round the camp, never within 82 units of where you land (`campScatter`), and three lone trees (oak, birch,
   pine) stand 170 to 300 from camp (`campTrees`) so the first axe has something to fell. Things lying within
-  56 units slide toward you if the bag has room. **C opens what you make by hand** (since 2026-10-12; it was on B's board). Guidance is
+  56 units slide toward you if the bag has room. **Tab opens what you can make** (since 2026-10-14; C did from 2026-10-12, and before that B's board). Guidance is
   subtle (Robin): the only hint line is three bare key reminders at the start (`HINTS`: "Walk over the things lying
   about", "Press C" (it was B until 2026-10-12), "Press Q"), each gone when its condition is met; nothing states a goal. The chart marks the camp's fire, and the
   steading once you have come within 380 of it (`seen.village`). Drops per thing (`TREE_WOOD` oak 6, pine 5,
@@ -3049,7 +3079,7 @@ The hero had two modes, switched with **Q**, each with its own six-slot bar at t
 - **Build mode:** **B** enters it (no hammer item). In it **F** turns the cursor into a red crossed box that
   destroys pieces. Built in the game (see "The game").
 - **X (2026-10-13):** draw your weapon, or put it away (among other people it is away until you draw it; a drawn blade is a threat).
-- **C (2026-10-12):** what you make by hand, anywhere. **E:** use what you face (`eWhat`). **In the bag:** drag moves, right
+- **Tab** (since 2026-10-14; C did this from 2026-10-12 and is no key now): what you make, where you stand. **E:** use what you face (`eWhat`). **In the bag:** drag moves, right
   click uses, Shift and click sends across to a chest, Shift and drag carries half a stack.
 - **Tab:** inventory. **Ctrl:** target the nearest enemy, then the next nearest on each press, then let go.
 - Food and consumables should work in both modes (their own keys). Dragging things from the inventory onto the
@@ -3373,7 +3403,7 @@ The hero had two modes, switched with **Q**, each with its own six-slot bar at t
 - Props are functions that draw with `shape`, `line`, `gshadow` and materials from `mats()`, registered in `PROPS`
   with a bounding box. `node tools/visual/props.js name name ...` renders them next to the hero.
 - Built things use `K.wood`; `K.trunk` is living bark.
-- A new prop must also be added to a category in `CATS` in `templates/objects.html`, or it will not show up there.
+- A new prop must also be added to a category in `CATS` in `templates/art.html` (the Art Editor's Objects tab), or it will not show up there.
 - **Removed 2026-10-06:** the Environment Editor and the Base Editor (superseded by the game's own world and build mode;
   last in commit `3f526e7`), and the Grass Editor (last in `9d8f68e`; `World.GRASS` and `w.drawGrass`/`drawMeadow` stay in the
   game, and a `game.grass` look in storage is still honoured).

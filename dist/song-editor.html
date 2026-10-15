@@ -64,7 +64,7 @@ body.advanced .adv{display:block}
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
   <h1>Song Editor</h1>
-  <p class="lede">The game's music, played by its own instruments. Pick a song and hear it, change the pace and the instruments, or start a new one and let the dice find a tune. Save what you like to the library; the game plays only what you hand it with "Use in the game".</p>
+  <p class="lede">The game's music, played by its own instruments. Pick a song and hear it, change the pace and the instruments, or start a new one and let the dice find a tune. Save what you like to the library. The game itself plays the sound studio's recordings of the meadow by day and by night; these songs are a sketchpad, and "Meadow, day" and "Meadow, evening" are what the game falls back on if a recording cannot load.</p>
   <div class="wrap">
     <div class="left">
       <div class="stage adv"><canvas id="roll" width="1600" height="700" aria-label="Piano roll"></canvas></div>
@@ -91,8 +91,6 @@ body.advanced .adv{display:block}
           <button id="savelib">Save to library</button>
           <button id="renamelib">Rename</button>
           <button id="dellib">Delete from library</button>
-          <button id="usegame">Use in the game (day)</button>
-          <button id="useeve">Use in the game (evening)</button>
         </div>
         <p class="desc">The library is kept in this browser. Built-in songs cannot be deleted; saving one makes your own copy.</p>
       </section>
@@ -538,8 +536,8 @@ if (typeof module !== 'undefined') module.exports = Music;
 
 (function () {
   // Songs: the built-ins (Music.SONGS), the library (your saved songs, 'song.library'), and the working copies you are
-  // editing ('songeditor2'). The game reads only the library and the built-ins, through 'game.theme' (day) and
-  // 'game.theme.eve' (evening), so nothing you try here changes the game until you save and hand it over.
+  // editing ('songeditor2'). The game reads none of them: since 2026-10-15 it plays the sound studio's recorded meadow,
+  // with the built-in meadowDay and meadowEvening as its fallback.
   var KEY = 'songeditor2', LIB = 'song.library', songs = {}, lib = {}, curId = 'meadowDay', trk = 0, layer = 'calm';
   var roll = document.getElementById('roll'), rc = roll.getContext('2d');
   var $ = function (id) { return document.getElementById(id); };
@@ -648,14 +646,9 @@ if (typeof module !== 'undefined') module.exports = Music;
   roll.addEventListener('mousedown', function (e) { var r = roll.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * roll.width, L = Music.length(song()), left = 40, pw = (roll.width - left - 8) / L, beat = Math.max(0, Math.floor((x - left) / pw / 4) * 4); Music.play(song(), beat); Music.setLayer('calm', layer === 'calm' ? 1 : 0, 0.1); Music.setLayer('danger', layer === 'danger' ? 1 : 0, 0.1); });
 
   function themeOf(k) { var id = null; try { id = localStorage.getItem(k); } catch (e) {} return id; }
-  function inUse() {
-    var dayId = themeOf('game.theme') || 'meadowDay', eveId = themeOf('game.theme.eve') || 'meadowEvening';
-    function nm(id) { return (lib[id] || Music.SONGS[id] || { name: id }).name; }
-    $('inuse').textContent = 'The game plays "' + nm(dayId) + '" by day and "' + nm(eveId) + '" from dusk.' + (lib[curId] || isBuiltin(curId) ? '' : '  This song is not saved yet: save it to the library before handing it to the game.');
+  function inUse() {   /* (the game has played the recorded loops since 2026-10-15 and reads no song from here: "Use in the game" is gone) */
+    $('inuse').textContent = "The game plays the sound studio’s recorded meadow by day and by night." + (lib[curId] || isBuiltin(curId) ? '' : '  This song is not saved yet.');
   }
-  function handOver(key) { if (!isBuiltin(curId) && !lib[curId]) { alert('Save it to the library first.'); return; } try { localStorage.setItem(key, curId); } catch (e) {} inUse(); }
-  $('usegame').onclick = function () { handOver('game.theme'); };
-  $('useeve').onclick = function () { handOver('game.theme.eve'); };
   $('savelib').onclick = function () {
     var S = clone(song()), id = curId;
     if (isBuiltin(curId)) { id = curId + '_' + Date.now().toString(36); S.name = S.name + ' (mine)'; }
