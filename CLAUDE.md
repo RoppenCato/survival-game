@@ -2498,6 +2498,21 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   **The stored choice's key is `game.sfxpick2`** (it was `game.sfxpick`): every click in the arena's Choose rows while
   auditioning was kept and overrode the defaults in the game too, so the new key drops them. Checked in the game with the old
   key holding the studio's swing and hit H: it played E, hit, E, hit, F, heavy hit.
+  **The other weapons' swings (the same day):** the studio made **`swish_seax`, `swish_spear`, `swish_axe`, `swish_club`,
+  `swish_greataxe`** from Robin's E and F themselves, played faster for a light weapon and slower for a heavy one (the seax E at
+  1.28, the spear E at 1.06, the axe E at 0.82 over F at 1.26, the club F at 1.05, the Dane axe F at 0.85 over E at 0.55),
+  centred 592 down to 256 Hz, loudest at 47 to 113 ms, levelled by the weighted measure against E (gains 0.206 to 0.265).
+  **They are the other weapons' swings by default** (`recName`: `swish_<kind>` unless `SFX_PICK.swish` is `orig`), the
+  arena's "Choose the other weapons' swings" row (made from Robin's E and F, or the studio's first) and a "Their swishes" row
+  to hear each. Checked by stepping the arena: each weapon played its own. Their hits are still the studio's first set.
+  **The shield going up (Robin: "Id like to change the sound for putting the shield up also"):** the studio's `raise` measured
+  about 10 dB under a hit by the weighted measure, all but lost. Candidates from the Kenney packs already downloaded, in
+  `assets/sfx/free/` (credits there), set at -29 (about 4 dB over the old, well under a hit): **E** a light knock of wood (the
+  boards; 300 to 400 Hz, 60 ms, five versions), **F** leather handled (the straps), **G** cloth moving (the arm), **H** the
+  straps and the boards together (a layer), **I** a heavier leather thud. **A file's leading silence is skipped** (`trim` in
+  `free.json` by file, passed by the bundler; `src/sfx.js` starts it there and counts its peak from there), so the sound comes
+  as the guard does. The arena's "Choose the shield going up" row; the studio's stays the default until Robin picks. Checked:
+  K played the chosen one; the loudest peaks at -14.6 dBFS. The bundle is 5.3 MB.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero
