@@ -324,6 +324,7 @@ __SPRITES_JS__
     shoot: function () { tone(520, 0.1, 'square', 0.06, 180); },
     hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
     tele: function () { tone(880, 0.07, 'square', 0.04); },
+    heavytell: function () { tone(120, 0.32, 'sawtooth', 0.09, 70); tone(62, 0.36, 'sine', 0.16, 40); },   // a blow that cannot be parried: low and rough (2026-10-15)
     die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
     crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
     stagger: function () { tone(260, 0.3, 'triangle', 0.1, 520); },
@@ -430,7 +431,7 @@ __SPRITES_JS__
   function tuneRead(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; } }
   TUNE = Combat.tune(tuneRead(TK) || tuneRead('game.combat') || {});
   var TS = {
-    feel: [['fz', 'Hit pause, you', 0, 2, 0.05], ['pf', 'Hit pause, the struck', 0, 2, 0.05], ['kb', 'Push of a hit', 0, 2, 0.05], ['parryShield', 'Parry moment, shield (s)', 0, 0.5, 0.01], ['parryBare', 'Parry moment, no shield (s)', 0, 0.4, 0.01], ['parryStun', 'Parry stun (s)', 0, 3, 0.05], ['chainStun', 'Chain: more stun a parry (x)', 0, 1, 0.05], ['chainDmg', 'Chain: harder blows a parry (x)', 0, 1, 0.05], ['chainMax', 'Chain: longest', 1, 6, 1], ['chainAnswer', 'Chain: he answers within (s)', 0, 2, 0.05], ['toolDmg', 'A tool on a beast or man', 0, 1.5, 0.05]],
+    feel: [['fz', 'Hit pause, you', 0, 2, 0.05], ['pf', 'Hit pause, the struck', 0, 2, 0.05], ['kb', 'Push of a hit', 0, 2, 0.05], ['parryShield', 'Parry moment, shield (s)', 0, 0.5, 0.01], ['parryBare', 'Parry moment, no shield (s)', 0, 0.4, 0.01], ['parryStun', 'Parry stun (s)', 0, 3, 0.05], ['chainStun', 'Chain: more stun a parry (x)', 0, 1, 0.05], ['chainDmg', 'Chain: harder blows a parry (x)', 0, 1, 0.05], ['chainMax', 'Chain: longest', 1, 6, 1], ['chainAnswer', 'Chain: he answers within (s)', 0, 2, 0.05], ['postureParry', 'Balance: a parry fills', 0, 1, 0.01], ['postureDodge', 'Balance: a perfect dodge fills', 0, 1, 0.01], ['postureBlock', 'Balance: a blow on his shield', 0, 0.6, 0.01], ['postureHit', 'Balance: a blow that lands', 0, 0.3, 0.01], ['rallyShare', 'Win back: share of a hit', 0, 1, 0.05], ['rallyHit', 'Win back: a blow wins', 0, 20, 0.5], ['rallyTime', 'Win back: fades over (s)', 0.5, 8, 0.1], ['perfectWin', 'Perfect dodge: window (s)', 0, 0.4, 0.01], ['perfectBonus', 'Perfect dodge: blows after (x)', 1, 3, 0.05], ['toolDmg', 'A tool on a beast or man', 0, 1.5, 0.05]],
     hero: [['wu', 'Windup (s)', 0, 1, 0.01], ['ac', 'The blow (s)', 0.03, 0.5, 0.01], ['rec', 'Recovery (s)', 0.05, 1.5, 0.01], ['dmg', 'Damage (x the metal)', 0.2, 3, 0.05], ['reach', 'Reach', 10, 90, 1], ['arc', 'Arc (radians)', 0.2, 4, 0.05], ['lunge', 'Step into the blow', 0, 160, 1], ['kb', 'Push', 0, 400, 5], ['stag', 'Stagger', 0, 60, 1], ['st', 'Stamina a blow', 0, 25, 0.5]],
     men: [['hpK', 'Their health (x)', 0.3, 2, 0.05], ['dmg', 'Their blow', 2, 30, 0.5], ['wu', 'Their windup, base (s)', 0, 0.6, 0.01], ['wuK', 'Their windup, x the weapon', 0, 4, 0.05], ['slots', 'Striking one man at once', 1, 5, 1], ['gapHero', 'Least gap between blows on you (s)', 0, 2, 0.05], ['onHero', 'Men on you before others wait', 1, 6, 1], ['joinAfter', 'Help comes after (s)', 0, 20, 0.5], ['toMen', 'A blow on a man (x)', 0.05, 0.6, 0.01]],
     beasts: [['hp', 'Health', 1, 150, 1], ['dmg', 'Bite (of 100)', 0, 60, 1], ['speed', 'Speed (x)', 0.3, 3, 0.05], ['windup', 'Windup (s)', 0.1, 3, 0.05], ['aggro', 'Notices you at', 0, 400, 5]]
@@ -485,13 +486,17 @@ __SPRITES_JS__
     else if (ev.k === 'block') { txt = 'Blocked ' + who(ev.src) + ': ' + f1(ev.through) + ' of ' + f1(ev.dmg) + ' through' + (ev.guardBreak ? ' (an axe: the guard broken)' : '') + (ev.stagger ? ' (a club: staggered)' : '') + (ev.broke ? ', GUARD BREAK (no stamina)' : ''); cls = ev.broke || ev.guardBreak ? 'bad' : ''; tally.blocked++; tally.taken += ev.through; }
     else if (ev.k === 'hurt') { txt = 'Hit by ' + who(ev.src) + ': ' + f1(ev.through) + ' of ' + f1(ev.dmg) + (ev.guard ? ' (your guard was up, but ' + (ev.front ? 'too late' : 'it came from behind') + ')' : '') + (ev.kind === 'heavy' ? ' heavy' : ev.kind === 'proj' ? ', an arrow' : ''); cls = 'bad'; tally.taken += ev.through; }
     else if (ev.k === 'hit') { txt = myWeapon() + ' on ' + who(ev.e) + ': ' + f1(ev.dmg) + (ev.crit ? ' CRIT' : '') + (ev.blocked ? (ev.broke ? ' through his shield, his guard broken' : ' on his shield') : '') + (ev.weak ? ' (the wrong tool)' : '') + (ev.quiet ? ' (from behind, unseen)' : '') + (ev.kind === 'heavy' ? ' heavy' : ''); cls = 'me'; tally.hits++; tally.dealt += ev.dmg; }
+    else if (ev.k === 'finish') { txt = 'FINISHING BLOW on ' + who(ev.e) + ': ' + f1(ev.dmg); cls = 'me'; tally.finish = (tally.finish || 0) + 1; }
+    else if (ev.k === 'broken') { txt = (ev.chain ? 'Parry x4: ' + who(ev.e) + ' is open' : who(ev.e) + '\u2019s balance BROKEN') + ': the next blow finishes'; cls = 'me'; }
+    else if (ev.k === 'perfect') { txt = 'PERFECT DODGE of ' + who(ev.src) + ': time slows, he is exposed'; cls = 'me'; tally.perfect = (tally.perfect || 0) + 1; }
+    else if (ev.k === 'rally') { txt = 'Won back ' + f1(ev.dmg) + ' health'; cls = 'me'; tally.rally = (tally.rally || 0) + ev.dmg; }
     else if (ev.k === 'kill') { txt = who(ev.e) + ' falls' + (ev.src ? ' to ' + who(ev.src) : ''); if (!ev.src) tally.kills++; }
     else return;
     logLines.unshift(t + '  ' + txt + '|' + cls); if (logLines.length > 40) logLines.length = 40; drawLog();
   };
   function drawLog() {
     logEl.innerHTML = ''; logLines.forEach(function (ln) { var p = ln.lastIndexOf('|'), sp = document.createElement('span'); sp.className = ln.slice(p + 1); sp.textContent = ln.slice(0, p) + '\n'; logEl.appendChild(sp); });
-    tallyEl.textContent = 'Your blows ' + tally.hits + ' for ' + f1(tally.dealt) + ', kills ' + tally.kills + '; taken ' + f1(tally.taken) + '; parried ' + tally.parried + ', blocked ' + tally.blocked + ', dodged ' + tally.dodged + (tally.chain > 1 ? '; longest parry chain x' + tally.chain : '') + '.';
+    tallyEl.textContent = 'Your blows ' + tally.hits + ' for ' + f1(tally.dealt) + ', kills ' + tally.kills + '; taken ' + f1(tally.taken) + '; parried ' + tally.parried + ', blocked ' + tally.blocked + ', dodged ' + tally.dodged + (tally.chain > 1 ? '; longest parry chain x' + tally.chain : '') + (tally.finish ? '; finishing blows ' + tally.finish : '') + (tally.perfect ? '; perfect dodges ' + tally.perfect : '') + (tally.rally ? '; won back ' + f1(tally.rally) : '') + '.';
   }
   drawLog();
 

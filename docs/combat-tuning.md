@@ -11,6 +11,21 @@ motion with the new sword).
 **The parry chain (2026-10-15):** a parried foe reels through your blows and comes out of it swinging, so you can parry again.
 Each parry in a row adds to the stun and to your blows on him, up to x4. Its four numbers are under The feel of a hit (Chain).
 
+**Four more (2026-10-15, your picks 1 to 4):**
+- **Balance.** The amber bar under a foe's health. Parries, perfect dodges, blows on his shield and blows that land fill it. Full,
+  he is broken and your next blow is a **finishing blow** (it flashes orange). **Parry x4 opens him at once.**
+- **The win-back.** Half of a hit you take shows as a pale stretch on your health bar. Hit back within about two seconds to win
+  some of it back (a green +N).
+- **The red tell.** A white glint means parry it. A red glint and a deeper sound means you cannot: dash out of it.
+- **The perfect dodge.** Dash in the last moment before a blow lands: time slows, the stamina comes back, and his back is open
+  for a moment.
+
+Their numbers are under The feel of a hit (Balance, Win-back, Perfect dodge). What to try: parry a sword man to x4 and finish
+him; block and hit a shield man until his balance breaks; take a hit from an axeman and win it back; dodge a Dane axe at the
+last moment and break him with dodges. **Against one man a careless player now wins far more often** (in the battle test, an
+axeman in mail with a shield went from 4% to 42%). If one man is too easy, the levers are the win-back (share, per blow) and the
+men's numbers.
+
 ## The Tuning panel
 
 It sits on the right, under Beasts. Four groups of sliders:

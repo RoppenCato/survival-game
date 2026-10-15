@@ -949,7 +949,9 @@ built. What the sources agree on, and what of it the game already has:
 - **Matchups through stagger, not damage** (Ghost of Tsushima's stances: the right answer opens a foe, the wrong one still works).
   We have some (an axe breaks a guard, a club staggers, a spear keeps a man off).
 
-**Suggestions, in the order I would build them** (all mine; each is small on the engine we have):
+**Suggestions, in the order I would build them** (all mine; each is small on the engine we have). **1 to 4 are built (2026-10-15,
+Robin: "Number 1, but that when you have reached parry x4, next attack is a finishing move. Number 2 Number 3 Number 4"; see
+"Fighting men" in CLAUDE.md under the parry chain). 5 to 8 wait.**
 
 1. **Posture: the chain's payoff.** Every parry and every blow a man stops on his shield fills his balance; full, he breaks: on his
    knees for two seconds, open to a finishing blow (a short kill with the hero untouchable, as DOOM's), or to **taking his

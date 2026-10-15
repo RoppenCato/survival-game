@@ -892,6 +892,38 @@ the text and it is made the default. When a spec's meaning changes, change the s
   40` for more, `CHAIN='{...}'` to try numbers): a parrying bot against a man in leather needs about four parries and 14 s and
   lands four in five blows on a reeling man, six parries against one in mail; a bot that only blocks parries two or three times
   and lands two in five. Tried in the arena by script: the man reeled, came out swinging, the parry caught it, x1 to x3.
+  **Balance, the finishing blow, the win-back, the red tell and the perfect dodge (2026-10-15, Robin's picks from "Combat:
+  what would make it more engaging" in `docs/idea-bank.md`: "Number 1, but that when you have reached parry x4, next attack is
+  a finishing move. Number 2 Number 3 Number 4"). All in `src/combat.js`; every number is mine and Robin has felt none of it.**
+  **Balance** (`POSTURE`, `api.posture`): `e.posture` 0 to 1, an amber bar under a foe's health (in both of the engine's ways of
+  drawing bars: a page's scene and the arena's). A parry fills 0.25, a perfect dodge 0.25, a blow he stops on his shield 0.04
+  (half again if it breaks his guard), a blow that lands 0.02 (`postureAdd`); it drains 0.15 a second after 1.6 s unpressed, never
+  while he is stunned. Full, he is **BROKEN**: stunned `breakT` 2 s, `e.finish` set, the bar flashing orange. **A parry chain at
+  `CHAIN.max` (x4) opens him the same way at once** ("FINISH HIM"; `parried(e)`, which every parry now goes through). Not for a
+  brute (the bear keeps its stagger meter, and a chain of four staggers it big) and not for your own men. **The finishing blow:**
+  the hero's next swing at an open foe within his reach and 30 is turned to him and is the chain's heavy last blow
+  (`a.finisher`, in `startAttack`); it kills a man or a beast of 40 health or less and takes a third of a bigger one (at least
+  three times the blow); the hero is untouchable 0.55 s; "FINISHED", a slow moment, rings, the slam's sound; the chain is spent.
+  (Robin's decided "take his weapon", or a yield, after a break: not built.) **The win-back** (`RALLY`, Bloodborne's rally): of a
+  blow that gets through, `share` 0.5 shows as a pale orange stretch at the end of the health bar (`P.rally`), holds 0.4 s and
+  fades over `time` 1.8 s, and every blow you land wins back up to `perHit` 2 times the weapon's weight of it (a green "+N");
+  a blow on a shield wins nothing. **The red tell** (`tell(e)`, `heavyBlow(e)`): every windup shows a four-pointed glint over
+  the attacker (`W.glints`), white for a blow you can parry, red with a deeper sound (`sfx('heavytell')`, in the game's and the
+  arena's sound sets) for one you cannot: a man's Dane axe, a heavy beast attack such as the troll's sweep, a brute's. **The
+  perfect dodge** (`PERFECT`, `perfectCheck` at the dash's start): a dash begun in the last `win` 0.18 s before a blow lands on
+  you slows time a moment, gives 18 stamina back, fills a quarter of his balance and leaves him exposed 1.2 s (`e.exposedT`:
+  your blows do half again); "DODGE!". So a man whose every blow is red can be broken too. **On the Tuning panel** (the feel
+  of a hit): postureParry, postureDodge, postureBlock, postureHit, rallyShare, rallyHit, rallyTime, perfectWin, perfectBonus;
+  the arena's log says broken, finished, perfect dodge and won back. **Measured** (`tests/parry.js 16`, which counts them and
+  has its parrier dash from red blows; it and `tests/battle.js` take `POSTURE`, `RALLY`, `PERFECT`, and `CHAIN`, and
+  `ONLY='blocker.*sword'` plays some lines): against a man with a sword and a shield the parrier wins in 11 s with 99 health left
+  and a finishing blow nearly every fight, the blocker in 12 s with 88 left and one every other fight; against the Dane axe the
+  parrier dashes about five times and finishes him every fight. **What it did to the men:** against one man the careless tapper
+  of `tests/battle.js` won 4% (an axe in mail with a shield) and 67% (in leather) on the engine before it; with my first numbers
+  (a win-back of 0.6 of a hit, 6 a blow, over 3 s; balance 0.05 a blocked blow and 0.03 a landed one) he won every fight,
+  mostly through the win-back; at these, 42% and 96%; the careful bot keeps 10 to 18 more health. Checked in the arena at
+  Robin's size by script: the red and white glints, parry x2 to x4, FINISH HIM, the finishing blow, the stretch on the bar and
+  its win-back, DODGE!, and both bars (`docs/combat-four.jpg`).
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
 - The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,

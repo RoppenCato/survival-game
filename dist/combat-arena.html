@@ -2566,7 +2566,7 @@ function rangedOf() { var it = itemOf('weapon', 'bow'); return { it: it, kind: i
 var critBonus = 0;
 
 function newWorld() {
-  W = { ghosts: [], rings: [], slow: { t: 0, s: 1 }, t: 0, enemies: [], projs: [], parts: [], nums: [], lock: null, kills: 0, dustT: 0,
+  W = { glints: [], ghosts: [], rings: [], slow: { t: 0, s: 1 }, t: 0, enemies: [], projs: [], parts: [], nums: [], lock: null, kills: 0, dustT: 0,
     pillars: [{ x: 100, y: 90, r: 7 }, { x: 300, y: 90, r: 7 }, { x: 100, y: 243, r: 7 }, { x: 300, y: 243, r: 7 }] };
 }
 function newPlayer() {
@@ -2729,6 +2729,42 @@ function parryWindow() { return shielded() ? PARRY.shield : PARRY.bare; }
 var CHAIN = { max: 4, keep: 4.5, stun: 0.15, dmg: 0.1, kb: 0.25, answer: 0.9 };   // (set by the bots of tests/parry.js, 2026-10-15: a good parrier needs about four parries for a man in leather, six for one in mail, and lands four in five of his blows on a reeling man; a mere blocker two or three, and two in five)
 function chainUp() { var p = P; if (W.t - (p.chainAt == null ? -99 : p.chainAt) > CHAIN.keep) p.chain = 0; p.chain = Math.min(CHAIN.max, (p.chain || 0) + 1); p.chainAt = W.t; return p.chain; }
 function parryStun() { return MEN.parryStun * (1 + CHAIN.stun * Math.max(0, (P.chain || 1) - 1)); }
+/* Four more for the fight (2026-10-15, Robin's picks from the research in docs/idea-bank.md, "Combat: what would make it more
+   engaging"). POSTURE: a foe's balance (e.posture 0..1, shown under his health) fills with every parry, every blow he stops on his
+   shield and a little with every blow that lands; it drains after a while unpressed; full, he is BROKEN: stunned a long while,
+   and the hero's next blow on him is a FINISHING BLOW (e.finish). A parry chain of CHAIN.max makes the next blow a finishing
+   blow too (Robin: "when you have reached parry x4, next attack is a finishing move"). The finishing blow is the chain's heavy
+   last swing; it kills a man or a beast of 40 health or less, takes a third of a bigger one, and the hero is untouchable through
+   it. RALLY (Bloodborne's): part of a blow you take stays on the bar as a fading stretch, and every blow you land within its time
+   wins some of it back. PERFECT: a dash begun in the last moment before a blow lands slows time, gives the dash's stamina back
+   and leaves the foe exposed for a moment (your blows on him do more). The unparryable tell: a heavy blow (it cannot be parried)
+   flashes a red glint as it is wound up, and sounds deeper; any other a white one. */
+var POSTURE = { parry: 0.25, dodge: 0.25, block: 0.04, hit: 0.02, hold: 1.6, decay: 0.15, breakT: 2.0 };   // (block and hit kept small: at 0.15 a bot that only blocked and hit into the shield broke men sooner than one that parried; a perfect dodge counts as a parry, so a foe whose blows are all red can be broken too)
+var RALLY = { share: 0.5, hold: 0.4, time: 1.8, perHit: 2 };   // (at 0.6 of a hit, 6 a blow over 3 s the battle test's careless tapper beat a man in mail with a shield every time (4% before it); at these, 42%)
+var PERFECT = { win: 0.18, slow: 0.3, slowT: 0.28, exposed: 1.2, bonus: 1.5 };
+function headY(e) { return e.y * K - (e.human ? 50 : e.r * 2.6 + 14); }
+function postureAdd(e, v) {
+  if (!e || e.dead || e.down || e.out || e.type === 'brute' || e.side === 1) return;
+  e.posture = Math.min(1, (e.posture || 0) + v); e.postureT = 0; e.showBar = Math.max(e.showBar, 2.2);
+  if (e.posture >= 1 && !e.finish) { e.posture = 0; stun(e, POSTURE.breakT); e.finish = true; num(e.x, headY(e), 'BROKEN', '#ff9a4a', true); slowmo(0.35, 0.18); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); sfx('stagger', 0, e); logEv({ k: 'broken', e: e }); }
+}
+function parried(e) {                    // a parry on a foe: the stun, his balance, and at the chain's top the finishing blow
+  if ((P.chain || 0) >= CHAIN.max) { stun(e, Math.max(parryStun(), POSTURE.breakT)); e.posture = 0; e.finish = true; num(e.x, headY(e), 'FINISH HIM', '#ff9a4a', true); slowmo(0.35, 0.16); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); logEv({ k: 'broken', e: e, chain: true }); return; }   // the chain at its top: the next blow finishes (Robin)
+  stun(e, parryStun()); postureAdd(e, POSTURE.parry);
+}
+function heavyBlow(e) { return e.type === 'soldier' ? !!(e.sw && e.sw.heavy) : (e.type === 'brute' || !!(e.cfg && e.cfg.atk && e.cfg.atk.heavy)); }
+function glint(x, y, hv) { if (S.juice) W.glints.push({ x: x, y: y, t: 0, life: hv ? 0.5 : 0.35, hv: !!hv }); }
+function perfectCheck() {                // a dash begun in the last moment before a blow would land
+  var p = P, best = null, i;
+  for (i = 0; i < W.enemies.length; i++) { var e = W.enemies[i]; if (e.dead || e.down || e.out || e.side === 1) continue;
+    var eta = 9, reach = e.type === 'soldier' ? (e.sw ? e.sw.reach : 30) : ((e.cfg && e.cfg.atk && e.cfg.atk.reach) || 24);
+    if (e.type === 'soldier') { if ((e.state === 'windup' || e.state === 'lunge') && e.tgt === p && !e.hitDone) eta = e.hitT - W.t; }
+    else if (e.state === 'windup') eta = e.dur - e.t + 0.05; else if ((e.state === 'lunge' || e.state === 'active') && !e.hitDone) eta = 0.03;
+    if (eta <= PERFECT.win && eta >= -0.02 && Math.hypot(e.x - p.x, e.y - p.y) <= reach + e.r + p.r + 26) { best = e; break; } }
+  if (!best) return;
+  slowmo(PERFECT.slow, PERFECT.slowT); p.st = Math.min(maxSt(), p.st + 18 * mod('dash')); best.exposedT = PERFECT.exposed; postureAdd(best, POSTURE.dodge);
+  num(p.x, p.y - 32, 'DODGE!', '#9fd8ff', true); ring(p.x, p.y, 0, 26, 0.3, '170,220,255', false, 2.2); sfx('crit'); logEv({ k: 'perfect', src: best });
+}
 // The log of the blows (2026-10-13, the Combat Arena's tools): a page may listen with api.onLog(ev), ev = { k, dmg, src, kind, ... }:
 // 'dodged' (a blow came while a dash made him untouchable), 'parry', 'block' (what got through, and whether the guard broke),
 // 'hurt', 'hit' (the hero's blow on a foe: dealt, crit, blocked by his shield, his guard broken), 'kill'.
@@ -2760,7 +2796,8 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
   }
   var hit = dmg * (api.armor ? 1 - api.armor() : 1);     // armour turns a share of every blow aside, not only blocked ones
   logEv({ k: 'hurt', dmg: dmg, through: hit, kind: kind, src: src, guard: p.guard, front: front });
-  p.hp -= hit; p.chain = 0; p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false;   // (a blow that gets through ends the parry chain) p.anim.sq = 1; p.anim.sqv = 0;
+  p.hp -= hit; p.chain = 0; p.rally = Math.min(p.maxHp, (p.rally || 0) + hit * RALLY.share); p.rally0 = p.rally; p.rallyT = 0;   // (the win-back: RALLY)
+  p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false;   // (a blow that gets through ends the parry chain) p.anim.sq = 1; p.anim.sqv = 0;
   p.atk.ph = 'none'; p.atkBuf = 0;
   var kb = kind === 'heavy' ? 170 : 110;
   p.kx = -Math.cos(toSrc) * kb * (S.juice ? 1 : 0.4); p.ky = -Math.sin(toSrc) * kb * (S.juice ? 1 : 0.4);
@@ -2789,11 +2826,14 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (quiet) { dmg = Math.max(dmg * 3, e.hp + 1); e.quietKill = true; }   // one blow, and no cry
   if (e.state === 'recover') mult = bigE ? 1.3 : (src ? 1.2 : 1.5);   // caught recovering: half again from the hero, a fifth more from a man
   var reeling = !src && !bigE && e.state === 'stunned'; if (reeling) { mult *= e.ripK || 1.3; kb *= CHAIN.kb; }   // parried and reeling: your blows bite harder and push him only a little, so he stays in reach (the parry chain)
+  var fin = !src && e.finish && e.state === 'stunned' && P.atk.finisher;   // the finishing blow (POSTURE)
+  if (!src && e.exposedT > 0) mult *= PERFECT.bonus;                       // after a perfect dodge
   if (bigE && e.state === 'stunned') mult = 2;
   var crit = !src && !blocked && (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
   if (quiet) crit = true;                                     // (shown as a critical blow)
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
+  if (fin) { crit = true; dealt = e.maxHp > 40 ? Math.max(dealt * 3, e.maxHp * 0.34) : Math.max(dealt, e.hp + 0.01); e.finish = false; P.chain = 0; P.invuln = Math.max(P.invuln, 0.55); slowmo(0.22, 0.34); ring(e.x, e.y, 0, 54, 0.4, '255,150,80', false, 3.4); ring(e.x, e.y, 10, 30, 0.3, '255,236,200', true, 2.2); num(e.x, headY(e) - 10, 'FINISHED', '#ff8a3a', true); sfx('slam'); logEv({ k: 'finish', e: e, dmg: dealt }); }
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
   if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
   if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }
@@ -2803,6 +2843,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
   }
   var killing = e.hp <= 0;
+  if (!src && !killing && !fin) postureAdd(e, blocked && !broke ? POSTURE.block : broke ? POSTURE.block * 1.5 : reeling ? 0 : POSTURE.hit);   // his balance: what he stops on his shield, and a little of what lands
+  if (!src && (!blocked || broke) && P.rally > 0 && !P.dead) { var rg = Math.min(P.rally, RALLY.perHit * (hitFlags.wt || 1), P.maxHp - P.hp); if (rg > 0.05) { P.hp += rg; P.rally -= rg; num(P.x - 8, P.y - 30, '+' + Math.max(1, Math.round(rg)), '#9be58b'); logEv({ k: 'rally', dmg: rg }); } }   // the win-back (RALLY)
   if (src) {                                               // a blow between men: no pause for the hero, no number, a quieter mark
     e.flash = blocked ? 0.5 : 1; e.flashRgb = '255,255,255';
     var push = blocked ? (hitFlags.thrust ? 1.1 : 0.4) : (hitFlags.thrust ? 1.2 : 0.8); e.pkx = 0; e.pky = 0; e.kx += Math.cos(ang) * kb * push; e.ky += Math.sin(ang) * kb * push;   // a spear keeps its man at the point, stopped or not
@@ -2878,8 +2920,9 @@ function stunStars(c, e) {             // three small stars going round over a s
   for (i = 0; i < 3; i++) { var a2 = t * 5 + i * 2.09, sx = e.x + Math.cos(a2) * 8, sy = e.y * K - h + Math.sin(a2) * 2.5; c.fillStyle = '#ffd34d'; c.strokeStyle = 'rgba(60,40,10,0.8)'; c.lineWidth = 0.6; c.beginPath(); for (var j = 0; j < 10; j++) { var rr = j % 2 ? 1.1 : 2.6, aa = j * Math.PI / 5 - Math.PI / 2; c.lineTo(sx + Math.cos(aa) * rr, sy + Math.sin(aa) * rr); } c.closePath(); c.fill(); c.stroke(); }
   c.restore();
 }
-function tell(e) {                     // the start of a windup, shown in the world (2026-10-14, the red line gone): dust under the feet and a glint before the attacker
-  if (!S.juice) return; dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, '#fff3b0', 55);
+function tell(e) {                     // the start of a windup, shown in the world (2026-10-14, the red line gone): dust under the feet and a glint before the attacker; red for a blow that cannot be parried (2026-10-15)
+  if (!S.juice) return; var hv = heavyBlow(e); dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, hv ? '#ff6a4a' : '#fff3b0', 55);
+  glint(e.x + Math.cos(dl) * (e.r + 5), e.y * K + Math.sin(dl) * (e.r + 5) * K - (e.human ? 30 : e.r * 1.6 + 6), hv); if (hv) sfx('heavytell', 0, e);
 }
 function tone2(n) { sfx('charge', Math.min(3, n - 1)); }   // the chain heard: the charge's rising tone, a step higher each parry
 function stun(e, dur) {                     // a parry's stun (2026-10-14, Robin: it should stun the mob for about a second): he stands dazed, open to anything, stars over his head
@@ -2894,6 +2937,7 @@ function startAttack() {
   if (a.ph === 'recover' || a.since < 0.45) a.combo = (a.combo + 1) % chainLen(); else a.combo = 0;
   a.riposte = false; if (p.riposteT > 0 && p.mode === 'fight') { a.combo = chainLen() - 1; a.riposte = true; p.riposteT = 0; }
   a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
+  a.finisher = false; if (p.mode === 'fight') for (var fi = 0; fi < W.enemies.length; fi++) { var fe = W.enemies[fi]; if (fe.finish && !fe.dead && fe.state === 'stunned' && Math.hypot(fe.x - p.x, fe.y - p.y) < meleeProfile().reach + fe.r + 30) { a.finisher = true; a.combo = chainLen() - 1; a.dir = Math.atan2(fe.y - p.y, fe.x - p.x); p.face = a.dir; break; } }   // a foe ready for it: the finishing blow is the chain's heavy last swing, at him
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; a.spin = false; a.bash = false; a.smashed = false;
   if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st); p.stDelay = 0.5; }
   p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
@@ -3019,6 +3063,7 @@ function updatePlayer(dt) {
   }
   if (!want && p.guard) p.guard = false;
   if (p.guard) p.guardT += dt;
+  if (p.rally > 0) { p.rallyT = (p.rallyT || 0) + dt; if (p.rallyT > RALLY.hold) p.rally = Math.max(0, p.rally - (p.rally0 || p.rally) / RALLY.time * dt); if (p.rally > p.maxHp - p.hp) p.rally = Math.max(0, p.maxHp - p.hp); }
 
   // roll
   if (p.dashBuf > 0 && p.roll.cd <= 0 && p.roll.t <= 0 && p.hurtT <= 0 && p.st >= 18) {
@@ -3027,7 +3072,7 @@ function updatePlayer(dt) {
     var rx = il > 0 ? ix : -Math.cos(p.face), ry = il > 0 ? iy : -Math.sin(p.face);
     var rl = modZ('roll') > 0 ? 1 : 0;                           // the roll rune (mods().roll 2): longer, longer untouchable, slower to rise
     p.roll.t = DASH_T * (rl ? 1.7 : 1); p.roll.len = p.roll.t; p.roll.dx = rx; p.roll.dy = ry; p.roll.cd = rl ? 0.35 : 0.08; p.invuln = Math.max(p.invuln, rl ? 0.42 : 0.16); p.ghostT = 0; p.anim.sq = -0.6; p.anim.sqv = 0;
-    dust(p.x, p.y, 7); sfx('dash');
+    dust(p.x, p.y, 7); sfx('dash'); perfectCheck();
   }
 
   if (a.ph === 'none' && held && p.holdT > 0.25 && p.st >= 10 && !p.guard && p.roll.t <= 0 && p.hurtT <= 0 && p.atkBuf <= 0) { a.ph = 'charge'; a.t = 0; a.lvl = 0; }
@@ -3206,7 +3251,7 @@ function beastAI(e, dt, d, ang) {
         if (!e.hitDone && e.t >= e.dur * (A.hitAt || 0.4)) {
           e.hitDone = true;
           var dd = Math.hypot(P.x - e.x, P.y - e.y), da = Math.abs(wrap(Math.atan2(P.y - e.y, P.x - e.x) - e.dirLock));
-          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') stun(e, parryStun()); }
+          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') parried(e); }
           else dust(e.x + Math.cos(e.dirLock) * e.r, e.y + Math.sin(e.dirLock) * e.r, 3);
         }
       } else {
@@ -3216,7 +3261,7 @@ function beastAI(e, dt, d, ang) {
         if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
           e.hitDone = true;
           var r = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e);
-          if (r === 'parry') stun(e, parryStun());
+          if (r === 'parry') parried(e);
           else if (r === 'hit' && A.venom) P.venom = { t: A.venom, dmg: A.venomDmg || 2 };
           if (kind === 'charge' && r !== 'parry') { P.kx += Math.cos(e.dirLock) * 80; P.ky += Math.sin(e.dirLock) * 80; }   // bowled along
         }
@@ -3225,7 +3270,7 @@ function beastAI(e, dt, d, ang) {
       break;
     case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = A.cd || 1.1; } break;
     case 'stagger': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = Math.min(e.cd, 0.6); } break;   // a flinch does not reset the wait before its next attack
-    case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.1; } break;   // a parry's stun (beasts that are not brutes); it comes again at once (the parry chain; it waited 0.5 s)
+    case 'stunned': if (e.t >= e.dur) { e.finish = false; e.state = 'chase'; e.t = 0; e.cd = 0.1; } break;   // a parry's stun (beasts that are not brutes); it comes again at once (the parry chain; it waited 0.5 s)
   }
 }
 function shooterAI(e, dt, d, ang) {
@@ -3278,7 +3323,7 @@ function bruteAI(e, dt, d, ang) {
       if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
         e.hitDone = true;
         var rs = hurtPlayer(e.attack === 'chain' ? 12 : 18, e.x, e.y, 'melee', e);
-        if (rs === 'parry') { e.stagMeter += 40; if (e.stagMeter >= 100) stunBig(e); else daze(e, 1.2); }
+        if (rs === 'parry') { e.stagMeter += 40; if (e.stagMeter >= 100 || (P.chain || 0) >= CHAIN.max) stunBig(e); else daze(e, 1.2); }   // (a chain at its top fells a brute: 2026-10-15)
       }
       if (e.state === 'lunge' && e.t >= e.dur) {
         e.chain--;
@@ -3348,7 +3393,7 @@ var MEN = {
   hush: 80, getUp: 2.2,
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
-api.men = MEN; api.chain = CHAIN;
+api.men = MEN; api.chain = CHAIN; api.posture = POSTURE; api.rally = RALLY; api.perfect = PERFECT;
 var hitFlags = { guardBreak: false, stagger: false, thrust: false, wt: 1, wkind: null };       // what the blow now landing can do (set round the hero's own blows); wt, wkind: its weight and the weapon's kind (for the pause, the ring and the sound)
 function lerp(a, b, k) { return a + (b - a) * k; }
 function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
@@ -3578,7 +3623,7 @@ function strike(e) {
   L.forEach(function (h) {
     if (h.F === P) {
       hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
-      if (r === 'parry') { stun(e, parryStun()); e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
+      if (r === 'parry') { parried(e); e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
     } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen * MEN.hpK, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
   });
 }
@@ -3817,7 +3862,7 @@ function soldierAI(e, dt) {
       break;
     case 'stunned':                       // parried (2026-10-15: there was no case, and the default sent him straight back to the chase: Robin parried a man and he struck again at once)
       e.guard = 0; e.kx *= 0.9; e.ky *= 0.9;
-      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = 0; e.answerT = CHAIN.answer; e.guardCd = Math.max(e.guardCd, CHAIN.answer); }   // he comes out of it swinging: a blow at once, which can be parried again (the parry chain)
+      if (e.t >= e.dur) { e.finish = false; e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = 0; e.answerT = CHAIN.answer; e.guardCd = Math.max(e.guardCd, CHAIN.answer); }   // he comes out of it swinging: a blow at once, which can be parried again (the parry chain)
       break;
     case 'stagger':
       if (e.t >= e.dur) {
@@ -3916,6 +3961,8 @@ function updateEnemies(dt) {
     var e = W.enemies[ORD[i]]; if (!e || e.away) continue;     // (away: taken out of the world by the page, aboard a ship: dropped from the list when this pass is over, never in the middle of it)
     if (e.dead) { e.deadT += dt; continue; }
     e.flash = Math.max(0, e.flash - dt * 6); e.showBar = Math.max(0, e.showBar - dt);
+    if (e.posture > 0 && e.state !== 'stunned') { e.postureT = (e.postureT || 0) + dt; if (e.postureT > POSTURE.hold) e.posture = Math.max(0, e.posture - POSTURE.decay * dt); }
+    if (e.exposedT > 0) e.exposedT -= dt;
     if (e.down) { downTick(e, dt); continue; }
     if (e.hold) { e.state = 'idle'; e.kx = e.ky = 0; continue; }
     if ((e.aggro || e.strolls) && e.type !== 'soldier') {          // set by the Creature Editor: calm until the hero is within e.aggro, calm again once he is far away; e.strolls: calm with no ring of its own (the page wakes it: the troll outside at night, which notices you by its own rule and stood still with aggro 0, found 2026-10-12)
@@ -4542,6 +4589,7 @@ function drawHud(c) {
   var i, bigRow = 0;
   var mst = maxSt(), bw = 60, stw = bw * mst / 100;       // small bars with the numbers beside them
   bar(c, 10, 8, bw, 7, P.hp / P.maxHp, '#b8432f');
+  if (P.rally > 0.2) { c.fillStyle = 'rgba(236,160,96,0.75)'; c.fillRect(10 + bw * Math.max(0, P.hp) / P.maxHp, 8, bw * Math.min(P.rally, P.maxHp - P.hp) / P.maxHp, 7); }   // what a blow of yours can win back (RALLY)
   bar(c, 10, 18, stw, 6, P.st / mst, P.st < 22 ? '#c9a63a' : '#6f9a4a');
   c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.6; c.strokeStyle = '#3a2a36'; c.fillStyle = '#fff';   // the number sits inside its bar
   var hpTxt = String(Math.ceil(Math.max(0, P.hp))), stTxt = String(Math.round(Math.max(0, P.st)));
@@ -4558,7 +4606,8 @@ function drawHud(c) {
       var nm = e.name || 'Brute';
       c.textAlign = 'center'; c.strokeText(nm, 200, by + 27); c.fillStyle = '#fff'; c.fillText(nm, 200, by + 27);
     } else if (e.showBar > 0 && !api.scene) {
-      bar(c, e.x - 10, e.y * K - e.r * 2.6 - 10, 20, 3, e.hp / e.maxHp, '#e8584a');
+      var byA = e.y * K - (e.human ? 46 : e.r * 2.6 + 10); bar(c, e.x - 10, byA, 20, 3, e.hp / e.maxHp, e.side === 1 ? '#7fbf6a' : '#e8584a');
+      if (e.side !== 1 && (e.posture > 0.01 || e.finish)) bar(c, e.x - 10, byA + 5, 20, 1.6, e.finish ? 1 : e.posture, e.finish ? (Math.floor(W.t * 8) % 2 ? '#ffb05a' : '#ff7a2a') : '#e8b04a');   // his balance (POSTURE), as in a page's scene
     }
   }
   if (!api.scene) drawNums(c);
@@ -4684,6 +4733,12 @@ function render(c) {
   for (i = 0; i < items.length; i++) items[i].f();
   for (i = 0; i < W.parts.length; i++) if (W.parts[i].k !== 'dust') drawPart(c, W.parts[i]);
   if (api.overlay) api.overlay(c, P, W);                   // a page draws over the world, under the HUD (the arena's reach arcs and timers, 2026-10-13)
+  for (i = W.glints.length - 1; i >= 0; i--) {   // the tells' glints: a four-pointed star that opens and fades, white or red (2026-10-15)
+    var gl = W.glints[i]; gl.t += 1 / 60; if (gl.t >= gl.life) { W.glints.splice(i, 1); continue; }
+    var gk = gl.t / gl.life, gr = (gl.hv ? 9 : 6.5) * Math.sin(Math.min(1, gk * 2.2) * Math.PI / 2) * (1 - Math.max(0, gk - 0.6) / 0.4), ga = gl.t * 2.5;
+    c.save(); c.globalAlpha = 1 - Math.max(0, gk - 0.55) / 0.45; c.translate(gl.x, gl.y); c.rotate(ga * 0.3); c.beginPath(); for (var gj = 0; gj < 8; gj++) { var rr2 = gj % 2 ? gr * 0.22 : gr, aa2 = gj * Math.PI / 4; c.lineTo(Math.cos(aa2) * rr2, Math.sin(aa2) * rr2); } c.closePath();
+    c.fillStyle = gl.hv ? '#ff4a2a' : '#fffbe6'; c.strokeStyle = gl.hv ? 'rgba(80,10,0,0.85)' : 'rgba(80,60,20,0.7)'; c.lineWidth = 0.8; c.fill(); c.stroke(); c.restore();
+  }
   for (i = 0; i < W.rings.length; i++) {
     var rg = W.rings[i], u = 1 - rg.life / rg.max, rr0 = rg.r1 * (0.25 + 0.75 * Math.sin(u * Math.PI / 2));
     c.strokeStyle = 'rgba(' + rg.c + ',' + (0.85 * (1 - u)) + ')'; c.lineWidth = rg.w * (1 - u * 0.6);
@@ -4691,7 +4746,7 @@ function render(c) {
     if (rg.air) c.arc(rg.x, rg.y * K - rg.z, rr0, 0, Math.PI * 2); else c.ellipse(rg.x, rg.y * K, rr0, rr0 * K, 0, 0, Math.PI * 2);
     c.stroke();
   }
-  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && !eb.down && eb.showBar > 0 && eb.type !== 'brute') bar(c, eb.x - 10, eb.y * K - (eb.human ? 46 : eb.r * 2.6 + 10), 20, 3, eb.hp / eb.maxHp, eb.side === 1 ? '#7fbf6a' : '#e8584a'); } }
+  if (sc) { drawNums(c); for (i = 0; i < W.enemies.length; i++) { var eb = W.enemies[i]; if (!eb.dead && !eb.down && eb.showBar > 0 && eb.type !== 'brute') { var by0 = eb.y * K - (eb.human ? 46 : eb.r * 2.6 + 10); bar(c, eb.x - 10, by0, 20, 3, eb.hp / eb.maxHp, eb.side === 1 ? '#7fbf6a' : '#e8584a'); if (eb.side !== 1 && (eb.posture > 0.01 || eb.finish)) bar(c, eb.x - 10, by0 + 5, 20, 1.6, eb.finish ? 1 : eb.posture, eb.finish ? (Math.floor(W.t * 8) % 2 ? '#ffb05a' : '#ff7a2a') : '#e8b04a'); } } }   /* (his balance under his health: POSTURE; flashing when the finishing blow is ready) */
   if (sc && sc.end) sc.end(c, P);
   c.restore();
   if (!(sc && sc.noHud)) drawHud(c);
@@ -4713,7 +4768,7 @@ var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge'
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {
   if (TUNE0) return JSON.parse(JSON.stringify(TUNE0));
-  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, chainStun: CHAIN.stun, chainDmg: CHAIN.dmg, chainMax: CHAIN.max, chainAnswer: CHAIN.answer, toolDmg: TOOL_DMG }, hero: {}, men: {}, beasts: {} }, k, i;
+  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, chainStun: CHAIN.stun, chainDmg: CHAIN.dmg, chainMax: CHAIN.max, chainAnswer: CHAIN.answer, postureParry: POSTURE.parry, postureDodge: POSTURE.dodge, postureBlock: POSTURE.block, postureHit: POSTURE.hit, rallyShare: RALLY.share, rallyHit: RALLY.perHit, rallyTime: RALLY.time, perfectWin: PERFECT.win, perfectBonus: PERFECT.bonus, toolDmg: TOOL_DMG }, hero: {}, men: {}, beasts: {} }, k, i;
   for (k in PROFILES) { T.hero[k] = {}; for (i = 0; i < HERO_KEYS.length; i++) T.hero[k][HERO_KEYS[i]] = PROFILES[k][HERO_KEYS[i]]; }
   for (i = 0; i < MEN_KEYS.length; i++) T.men[MEN_KEYS[i]] = MEN[MEN_KEYS[i]];
   for (k in BEAST_GAME) { var g = BEAST_GAME[k], sp = lib && lib.animalSpec ? lib.animalSpec(g.of || k) : null, at = lib && lib.animalAttack ? lib.animalAttack(g.of || k) : null;
@@ -4723,7 +4778,7 @@ function tuneDefaults() {
 function tune(over) {
   var T = tuneDefaults(), g, k, q; over = over || {};
   for (g in over) { if (!T[g] || typeof over[g] !== 'object') continue; for (k in over[g]) { q = over[g][k]; if (q && typeof q === 'object') { if (!T[g][k]) continue; for (var kk in q) if (typeof q[kk] === 'number' && T[g][k][kk] != null) T[g][k][kk] = q[kk]; } else if (typeof q === 'number' && T[g][k] != null) T[g][k] = q; } }
-  WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; CHAIN.stun = T.feel.chainStun; CHAIN.dmg = T.feel.chainDmg; CHAIN.max = T.feel.chainMax; CHAIN.answer = T.feel.chainAnswer; TOOL_DMG = T.feel.toolDmg;
+  WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; CHAIN.stun = T.feel.chainStun; CHAIN.dmg = T.feel.chainDmg; CHAIN.max = T.feel.chainMax; CHAIN.answer = T.feel.chainAnswer; POSTURE.parry = T.feel.postureParry; POSTURE.dodge = T.feel.postureDodge; POSTURE.block = T.feel.postureBlock; POSTURE.hit = T.feel.postureHit; RALLY.share = T.feel.rallyShare; RALLY.perHit = T.feel.rallyHit; RALLY.time = T.feel.rallyTime; PERFECT.win = T.feel.perfectWin; PERFECT.bonus = T.feel.perfectBonus; TOOL_DMG = T.feel.toolDmg;
   for (k in T.hero) if (PROFILES[k]) for (var hk in T.hero[k]) PROFILES[k][hk] = T.hero[k][hk];
   for (k in T.men) MEN[k] = T.men[k];
   TUNED = T; return T;
@@ -5258,6 +5313,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     shoot: function () { tone(520, 0.1, 'square', 0.06, 180); },
     hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
     tele: function () { tone(880, 0.07, 'square', 0.04); },
+    heavytell: function () { tone(120, 0.32, 'sawtooth', 0.09, 70); tone(62, 0.36, 'sine', 0.16, 40); },   // a blow that cannot be parried: low and rough (2026-10-15)
     die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
     crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
     stagger: function () { tone(260, 0.3, 'triangle', 0.1, 520); },
@@ -5364,7 +5420,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function tuneRead(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; } }
   TUNE = Combat.tune(tuneRead(TK) || tuneRead('game.combat') || {});
   var TS = {
-    feel: [['fz', 'Hit pause, you', 0, 2, 0.05], ['pf', 'Hit pause, the struck', 0, 2, 0.05], ['kb', 'Push of a hit', 0, 2, 0.05], ['parryShield', 'Parry moment, shield (s)', 0, 0.5, 0.01], ['parryBare', 'Parry moment, no shield (s)', 0, 0.4, 0.01], ['parryStun', 'Parry stun (s)', 0, 3, 0.05], ['chainStun', 'Chain: more stun a parry (x)', 0, 1, 0.05], ['chainDmg', 'Chain: harder blows a parry (x)', 0, 1, 0.05], ['chainMax', 'Chain: longest', 1, 6, 1], ['chainAnswer', 'Chain: he answers within (s)', 0, 2, 0.05], ['toolDmg', 'A tool on a beast or man', 0, 1.5, 0.05]],
+    feel: [['fz', 'Hit pause, you', 0, 2, 0.05], ['pf', 'Hit pause, the struck', 0, 2, 0.05], ['kb', 'Push of a hit', 0, 2, 0.05], ['parryShield', 'Parry moment, shield (s)', 0, 0.5, 0.01], ['parryBare', 'Parry moment, no shield (s)', 0, 0.4, 0.01], ['parryStun', 'Parry stun (s)', 0, 3, 0.05], ['chainStun', 'Chain: more stun a parry (x)', 0, 1, 0.05], ['chainDmg', 'Chain: harder blows a parry (x)', 0, 1, 0.05], ['chainMax', 'Chain: longest', 1, 6, 1], ['chainAnswer', 'Chain: he answers within (s)', 0, 2, 0.05], ['postureParry', 'Balance: a parry fills', 0, 1, 0.01], ['postureDodge', 'Balance: a perfect dodge fills', 0, 1, 0.01], ['postureBlock', 'Balance: a blow on his shield', 0, 0.6, 0.01], ['postureHit', 'Balance: a blow that lands', 0, 0.3, 0.01], ['rallyShare', 'Win back: share of a hit', 0, 1, 0.05], ['rallyHit', 'Win back: a blow wins', 0, 20, 0.5], ['rallyTime', 'Win back: fades over (s)', 0.5, 8, 0.1], ['perfectWin', 'Perfect dodge: window (s)', 0, 0.4, 0.01], ['perfectBonus', 'Perfect dodge: blows after (x)', 1, 3, 0.05], ['toolDmg', 'A tool on a beast or man', 0, 1.5, 0.05]],
     hero: [['wu', 'Windup (s)', 0, 1, 0.01], ['ac', 'The blow (s)', 0.03, 0.5, 0.01], ['rec', 'Recovery (s)', 0.05, 1.5, 0.01], ['dmg', 'Damage (x the metal)', 0.2, 3, 0.05], ['reach', 'Reach', 10, 90, 1], ['arc', 'Arc (radians)', 0.2, 4, 0.05], ['lunge', 'Step into the blow', 0, 160, 1], ['kb', 'Push', 0, 400, 5], ['stag', 'Stagger', 0, 60, 1], ['st', 'Stamina a blow', 0, 25, 0.5]],
     men: [['hpK', 'Their health (x)', 0.3, 2, 0.05], ['dmg', 'Their blow', 2, 30, 0.5], ['wu', 'Their windup, base (s)', 0, 0.6, 0.01], ['wuK', 'Their windup, x the weapon', 0, 4, 0.05], ['slots', 'Striking one man at once', 1, 5, 1], ['gapHero', 'Least gap between blows on you (s)', 0, 2, 0.05], ['onHero', 'Men on you before others wait', 1, 6, 1], ['joinAfter', 'Help comes after (s)', 0, 20, 0.5], ['toMen', 'A blow on a man (x)', 0.05, 0.6, 0.01]],
     beasts: [['hp', 'Health', 1, 150, 1], ['dmg', 'Bite (of 100)', 0, 60, 1], ['speed', 'Speed (x)', 0.3, 3, 0.05], ['windup', 'Windup (s)', 0.1, 3, 0.05], ['aggro', 'Notices you at', 0, 400, 5]]
@@ -5419,13 +5475,17 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (ev.k === 'block') { txt = 'Blocked ' + who(ev.src) + ': ' + f1(ev.through) + ' of ' + f1(ev.dmg) + ' through' + (ev.guardBreak ? ' (an axe: the guard broken)' : '') + (ev.stagger ? ' (a club: staggered)' : '') + (ev.broke ? ', GUARD BREAK (no stamina)' : ''); cls = ev.broke || ev.guardBreak ? 'bad' : ''; tally.blocked++; tally.taken += ev.through; }
     else if (ev.k === 'hurt') { txt = 'Hit by ' + who(ev.src) + ': ' + f1(ev.through) + ' of ' + f1(ev.dmg) + (ev.guard ? ' (your guard was up, but ' + (ev.front ? 'too late' : 'it came from behind') + ')' : '') + (ev.kind === 'heavy' ? ' heavy' : ev.kind === 'proj' ? ', an arrow' : ''); cls = 'bad'; tally.taken += ev.through; }
     else if (ev.k === 'hit') { txt = myWeapon() + ' on ' + who(ev.e) + ': ' + f1(ev.dmg) + (ev.crit ? ' CRIT' : '') + (ev.blocked ? (ev.broke ? ' through his shield, his guard broken' : ' on his shield') : '') + (ev.weak ? ' (the wrong tool)' : '') + (ev.quiet ? ' (from behind, unseen)' : '') + (ev.kind === 'heavy' ? ' heavy' : ''); cls = 'me'; tally.hits++; tally.dealt += ev.dmg; }
+    else if (ev.k === 'finish') { txt = 'FINISHING BLOW on ' + who(ev.e) + ': ' + f1(ev.dmg); cls = 'me'; tally.finish = (tally.finish || 0) + 1; }
+    else if (ev.k === 'broken') { txt = (ev.chain ? 'Parry x4: ' + who(ev.e) + ' is open' : who(ev.e) + '\u2019s balance BROKEN') + ': the next blow finishes'; cls = 'me'; }
+    else if (ev.k === 'perfect') { txt = 'PERFECT DODGE of ' + who(ev.src) + ': time slows, he is exposed'; cls = 'me'; tally.perfect = (tally.perfect || 0) + 1; }
+    else if (ev.k === 'rally') { txt = 'Won back ' + f1(ev.dmg) + ' health'; cls = 'me'; tally.rally = (tally.rally || 0) + ev.dmg; }
     else if (ev.k === 'kill') { txt = who(ev.e) + ' falls' + (ev.src ? ' to ' + who(ev.src) : ''); if (!ev.src) tally.kills++; }
     else return;
     logLines.unshift(t + '  ' + txt + '|' + cls); if (logLines.length > 40) logLines.length = 40; drawLog();
   };
   function drawLog() {
     logEl.innerHTML = ''; logLines.forEach(function (ln) { var p = ln.lastIndexOf('|'), sp = document.createElement('span'); sp.className = ln.slice(p + 1); sp.textContent = ln.slice(0, p) + '\n'; logEl.appendChild(sp); });
-    tallyEl.textContent = 'Your blows ' + tally.hits + ' for ' + f1(tally.dealt) + ', kills ' + tally.kills + '; taken ' + f1(tally.taken) + '; parried ' + tally.parried + ', blocked ' + tally.blocked + ', dodged ' + tally.dodged + (tally.chain > 1 ? '; longest parry chain x' + tally.chain : '') + '.';
+    tallyEl.textContent = 'Your blows ' + tally.hits + ' for ' + f1(tally.dealt) + ', kills ' + tally.kills + '; taken ' + f1(tally.taken) + '; parried ' + tally.parried + ', blocked ' + tally.blocked + ', dodged ' + tally.dodged + (tally.chain > 1 ? '; longest parry chain x' + tally.chain : '') + (tally.finish ? '; finishing blows ' + tally.finish : '') + (tally.perfect ? '; perfect dodges ' + tally.perfect : '') + (tally.rally ? '; won back ' + f1(tally.rally) : '') + '.';
   }
   drawLog();
 

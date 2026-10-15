@@ -5,7 +5,8 @@
 //            answer, and hits a foe that has just swung and missed;
 //   blocker: raises the guard as soon as a blow is seen and holds it, hits whenever the foe is not winding up.
 // For each fight: won, how long, health left, parries, the longest chain, blows landed (and how many on a reeling foe), hits taken.
-// Usage: node tests/parry.js [fights a line]   CHAIN='{"stun":0.3}' tries the chain's numbers.  Exits 0 unless something throws.
+// Usage: node tests/parry.js [fights a line]   CHAIN='{"stun":0.3}' tries the chain's numbers (POSTURE, RALLY, PERFECT likewise);
+//        ONLY='blocker.*sword' plays only the lines that match.  Exits 0 unless something throws.
 const {createCanvas}=require('@napi-rs/canvas');global.__mk=(w,h)=>createCanvas(w,h);
 const G=require('../src/art.js'),I=require('../src/items.js');global.Items=I;const C=require('../src/combat.js');
 C.init(G.lib);C.S.sound=false;C.S.juice=true;C.S.crit=0.15;C.S.weight='snappy';C.S.aim='soft';
@@ -13,10 +14,13 @@ C.api.scene={noHud:true,begin(){},items(){},end(){},walk(){return true;},bounds:
 const D=C.dbg(),P=D.P,W=D.W;W.pillars=[];
 const N=+(process.argv[2]||40);
 if(process.env.CHAIN)Object.assign(C.api.chain,JSON.parse(process.env.CHAIN));
+for(const k of ['POSTURE','RALLY','PERFECT'])if(process.env[k])Object.assign(C.api[k.toLowerCase()],JSON.parse(process.env[k]));
+const ONLY=process.env.ONLY?new RegExp(process.env.ONLY):null;
 let heroKind='sword',heroShield=true;
 C.api.items={held:()=>P.mode==='fight'?I.make(heroKind,'iron'):null,tool:()=>null,weapon:k=>k==='bow'?null:I.make(heroKind,'iron')};
 C.api.shield=()=>heroShield;C.api.armor=()=>0.3;
-const BASE_R={wolf:7,boar:8,bear:9,moose:7};let want=null;
+const BASE_R={wolf:7,boar:8,bear:9,moose:7};
+C.api.onLog=null;let want=null;
 C.api.dress=function(e){if(e.type!=='beast'&&e.type!=='brute')return;const k=want||'boar',sp=G.lib.animalSpec(k);e.creature=true;e.kindA=k;e.r=BASE_R[k]*sp.size;e.cfg={speed:58*sp.speed,windup:sp.windup,lunge:175*sp.lunge,atk:e.type==='beast'?G.lib.animalAttack(k):null};e.hp=e.maxHp=sp.hp;C.tuneBeast(e,k);};
 C.tune({});
 const sd=()=>C.api.meleeStep();const KEYS={};function key(c,v){if(!!KEYS[c]===!!v)return;KEYS[c]=v;C.key(c,v);}
@@ -26,12 +30,16 @@ function etaOf(e){if(e.dead||e.down||e.out)return 99;if(e.type==='soldier'){if((
 function fight(foeMaker,bot){
   W.enemies.length=0;W.projs.length=0;C.reset&&0;P.x=0;P.y=0;P.hp=P.maxHp=100;P.st=100;P.dead=false;P.face=-Math.PI/2;P.faceVis=P.face;P.atk.ph='none';P.atk.since=9;P.chain=0;P.guard=false;P.invuln=0;P.hurtT=0;P.vx=P.vy=0;P.roll.t=0;
   for(const k in KEYS)key(k,false);
-  const e=foeMaker();const T0=W.t;let t=0,plan=null,guardHeld=0,released=1,st={parries:0,chain:0,blows:0,reel:0,taken:0,hp0:P.hp};
-  const hp0=e.hp;let lastHp=e.hp;C.api.onLog=ev=>{if(ev.k==='parry'){st.parries++;st.chain=Math.max(st.chain,ev.chain||1);}if(ev.k==='hit'){st.blows++;if(ev.e&&ev.e.state==='stunned')st.reel++;}if(ev.k==='hurt'||ev.k==='block')st.taken+=ev.through!=null?ev.through:ev.dmg;};
+  const e=foeMaker();const T0=W.t;let t=0,plan=null,dash=null,guardHeld=0,released=1,st={parries:0,chain:0,blows:0,reel:0,taken:0,hp0:P.hp,fin:0,broken:0,perfect:0,rally:0};
+  const hp0=e.hp;let lastHp=e.hp;C.api.onLog=ev=>{if(ev.k==='parry'){st.parries++;st.chain=Math.max(st.chain,ev.chain||1);}if(ev.k==='hit'){st.blows++;if(ev.e&&ev.e.state==='stunned')st.reel++;}if(ev.k==='hurt'||ev.k==='block')st.taken+=ev.through!=null?ev.through:ev.dmg;if(ev.k==='finish')st.fin++;if(ev.k==='broken')st.broken++;if(ev.k==='perfect')st.perfect++;if(ev.k==='rally')st.rally+=ev.dmg;};
   while(t<90&&!P.dead&&!e.dead&&!e.out&&!e.fled){
     const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy),s=sd(),reach=s.reach+e.r+2,eta=etaOf(e);
     // the guard
-    if(bot==='parrier'){
+    const heavy=e.type==='soldier'?!!(e.sw&&e.sw.heavy):(e.type==='brute'||!!(e.cfg&&e.cfg.atk&&e.cfg.atk.heavy));
+    if(bot==='parrier'&&heavy){   // a red blow: no parry, a dash in its last moment (the perfect dodge)
+      if(eta<9&&!dash){dash={at:W.t+eta-0.09+gauss()*0.04};if(Math.random()<0.15)dash.at+=0.15;}
+      if(dash&&W.t>=dash.at){key('Space',true);}if(dash&&W.t>dash.at+0.05){key('Space',false);}if(dash&&eta>=9&&W.t>dash.at+0.3)dash=null;
+    }else if(bot==='parrier'){
       if(eta<9&&!plan){const win=C.api.parryWindow();plan={at:W.t+eta-win*(0.25+Math.random()*0.55)+gauss()*0.045,until:W.t+eta+0.12};if(Math.random()<0.12)plan.at+=0.12+Math.random()*0.15;}   // (one blow in eight misjudged: late)
       if(plan&&W.t>=plan.at&&P.atk.ph!=='windup'&&P.atk.ph!=='active')key('KeyK',true);
       if(plan&&W.t>plan.until){plan=null;key('KeyK',false);}
@@ -42,7 +50,7 @@ function fight(foeMaker,bot){
     const reeling=e.state==='stunned',left=reeling?e.dur-e.t:0,need=s.wu+s.ac*0.5+0.06;
     let hit=false;
     if(!KEYS.KeyK){
-      if(bot==='parrier'){hit=d<=reach+4&&(reeling?left>need:(e.state==='recover'||(e.type!=='soldier'&&e.state==='chase'&&e.cd>0.6)));}
+      if(bot==='parrier'){hit=d<=reach+4&&(reeling?left>need:(e.exposedT>0.3||e.state==='recover'||(e.type!=='soldier'&&e.state==='chase'&&e.cd>0.6)));}
       else hit=d<=reach+4&&eta>0.7;
     }
     key('KeyJ',hit&&Math.floor(t*60)%4===0);
@@ -51,17 +59,19 @@ function fight(foeMaker,bot){
     C.update(1/60);t+=1/60;
   }
   for(const k in KEYS)key(k,false);C.api.onLog=null;
-  return {won:e.dead||e.out||e.fled,t:t,hp:Math.max(0,P.hp),parries:st.parries,chain:st.chain,blows:st.blows,reel:st.reel,lost:!P.dead&&!(e.dead||e.out||e.fled)};
+  return {won:e.dead||e.out||e.fled,t:t,hp:Math.max(0,P.hp),parries:st.parries,chain:st.chain,blows:st.blows,reel:st.reel,fin:st.fin,broken:st.broken,perfect:st.perfect,rally:st.rally,lost:!P.dead&&!(e.dead||e.out||e.fled)};
 }
 function man(kind,shield,armor,wits){return ()=>{const e=C.soldier({side:0,x:0,y:-80,wpn:{kind:kind,mat:'iron'},shield:shield,armor:armor,strength:4,wits:wits,loyal:true,nerve:1});return e;};}
 function beast(k,type){return ()=>{want=k;const e=C.spawn(type||'beast');want=null;e.x=0;e.y=-90;return e;};}
-function line(label,maker,bot){let won=0,t=0,hp=0,par=0,ch=0,bl=0,re=0,chMax=0,draw=0;for(let i=0;i<N;i++){const r=fight(maker,bot);if(r.won){won++;t+=r.t;hp+=r.hp;}if(r.lost)draw++;par+=r.parries;ch+=r.chain;chMax=Math.max(chMax,r.chain);bl+=r.blows;re+=r.reel;}
-  const w=won||1;console.log((bot.padEnd(8)+' '+label).padEnd(46),'won',String(Math.round(won/N*100)).padStart(3)+'%','in',(t/w).toFixed(0).padStart(3)+'s','left',(hp/w).toFixed(0).padStart(3),'| parries',(par/N).toFixed(1).padStart(4),'chain',(ch/N).toFixed(1),'(longest',chMax+')','blows',(bl/N).toFixed(1).padStart(4),'of them on a reeling foe',Math.round(re/Math.max(1,bl)*100)+'%'+(draw?'  ('+draw+' not over in 90 s)':''));}
+function line(label,maker,bot){if(ONLY&&!ONLY.test(bot+' '+label))return;let won=0,t=0,hp=0,par=0,ch=0,bl=0,re=0,chMax=0,draw=0,fin=0,brk=0,pf=0,ra=0;for(let i=0;i<N;i++){const r=fight(maker,bot);if(r.won){won++;t+=r.t;hp+=r.hp;}if(r.lost)draw++;par+=r.parries;ch+=r.chain;chMax=Math.max(chMax,r.chain);bl+=r.blows;re+=r.reel;fin+=r.fin;brk+=r.broken;pf+=r.perfect;ra+=r.rally;}
+  const w=won||1;console.log((bot.padEnd(8)+' '+label).padEnd(46),'won',String(Math.round(won/N*100)).padStart(3)+'%','in',(t/w).toFixed(0).padStart(3)+'s','left',(hp/w).toFixed(0).padStart(3),'| parries',(par/N).toFixed(1).padStart(4),'chain',(ch/N).toFixed(1),'(longest',chMax+')','blows',(bl/N).toFixed(1).padStart(4),'on a reeling foe',Math.round(re/Math.max(1,bl)*100)+'%','| finishing blows',(fin/N).toFixed(2),'broken',(brk/N).toFixed(2),'perfect dodges',(pf/N).toFixed(1),'won back',(ra/N).toFixed(1)+(draw?'  ('+draw+' not over in 90 s)':''));}
 console.log('CHAIN',JSON.stringify(C.api.chain),'parry stun',C.api.men.parryStun,'| the hero: an iron',heroKind,'with a shield, leather');
 for(const bot of ['parrier','blocker']){
   line('a man: sword, shield, leather',man('sword',true,0.2,4),bot);
   line('a man: axe, leather, no shield',man('axe',false,0.2,4),bot);
   line('a man: spear, shield, mail',man('spear',true,0.45,6),bot);
+  line('a man: Dane axe, leather',man('greataxe',false,0.2,4),bot);
   line('a boar',beast('boar'),bot);
   line('a wolf',beast('wolf'),bot);
+  line('a bear',beast('bear','brute'),bot);
 }

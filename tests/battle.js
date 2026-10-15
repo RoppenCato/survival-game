@@ -113,6 +113,7 @@ function line(label, R, extra) {
 }
 if (process.env.MEN) Object.assign(Combat.api.men, JSON.parse(process.env.MEN));             // (for trying a number of the men's: MEN='{"wallGap":4}')
 if (process.env.BOW) Object.assign(Combat.api.men.bow, JSON.parse(process.env.BOW));     // (for trying a bowman's numbers: BOW='{"toMen":0.7}')
+for (const k of ['POSTURE', 'RALLY', 'PERFECT', 'CHAIN']) if (process.env[k]) Object.assign(Combat.api[k.toLowerCase()], JSON.parse(process.env[k]));   // (the balance, the win-back, the perfect dodge, the parry chain: POSTURE='{"block":0}')
 const mode = process.argv[2] || 'short', N = +process.argv[3] || (mode === 'short' ? 12 : 200);
 const HEROES = [['tapper', ['sword', 'flint'], LEATHER], ['careful', ['sword', 'flint'], LEATHER], ['skilled', ['sword', 'flint'], LEATHER]];
 function one(n) {
