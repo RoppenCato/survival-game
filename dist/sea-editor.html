@@ -7260,7 +7260,7 @@ function headY(e) { return e.y * K - (e.human ? 50 : e.r * 2.6 + 14); }
 function postureAdd(e, v) {
   if (!e || e.dead || e.down || e.out || e.type === 'brute' || e.side === 1) return;
   e.posture = Math.min(1, (e.posture || 0) + v); e.postureT = 0; e.showBar = Math.max(e.showBar, 2.2);
-  if (e.posture >= 1 && !e.finish) { e.posture = 0; stun(e, POSTURE.breakT); e.finish = true; num(e.x, headY(e), 'BROKEN', '#ff9a4a', true); slowmo(0.35, 0.18); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); sfx('stagger', 0, e); logEv({ k: 'broken', e: e }); }
+  if (e.posture >= 1 && !e.finish) { e.posture = 0; stun(e, POSTURE.breakT); e.finish = true; num(e.x, headY(e), 'BROKEN', '#ff9a4a', true); slowmo(0.35, 0.18); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); sfx('broken', 0, e); logEv({ k: 'broken', e: e }); }
 }
 function parried(e) {                    // a parry on a foe: the stun, his balance, and at the chain's top the finishing blow
   if ((P.chain || 0) >= CHAIN.max) { stun(e, Math.max(parryStun(), POSTURE.breakT)); e.posture = 0; e.finish = true; num(e.x, headY(e), 'FINISH HIM', '#ff9a4a', true); slowmo(0.35, 0.16); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); logEv({ k: 'broken', e: e, chain: true }); return; }   // the chain at its top: the next blow finishes (Robin)
@@ -7277,7 +7277,7 @@ function perfectCheck() {                // a dash begun in the last moment befo
     if (eta <= PERFECT.win && eta >= -0.02 && Math.hypot(e.x - p.x, e.y - p.y) <= reach + e.r + p.r + 26) { best = e; break; } }
   if (!best) return;
   slowmo(PERFECT.slow, PERFECT.slowT); p.st = Math.min(maxSt(), p.st + 18 * mod('dash')); best.exposedT = PERFECT.exposed; postureAdd(best, POSTURE.dodge);
-  num(p.x, p.y - 32, 'DODGE!', '#9fd8ff', true); ring(p.x, p.y, 0, 26, 0.3, '170,220,255', false, 2.2); sfx('crit'); logEv({ k: 'perfect', src: best });
+  num(p.x, p.y - 32, 'DODGE!', '#9fd8ff', true); ring(p.x, p.y, 0, 26, 0.3, '170,220,255', false, 2.2); sfx('perfect'); logEv({ k: 'perfect', src: best });
 }
 // The log of the blows (2026-10-13, the Combat Arena's tools): a page may listen with api.onLog(ev), ev = { k, dmg, src, kind, ... }:
 // 'dodged' (a blow came while a dash made him untouchable), 'parry', 'block' (what got through, and whether the guard broke),
@@ -7347,7 +7347,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (crit) mult *= 1.5;
   if (quiet) crit = true;                                     // (shown as a critical blow)
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
-  if (fin) { crit = true; dealt = e.maxHp > 40 ? Math.max(dealt * 3, e.maxHp * 0.34) : Math.max(dealt, e.hp + 0.01); e.finish = false; P.chain = 0; P.invuln = Math.max(P.invuln, 0.55); slowmo(0.22, 0.34); ring(e.x, e.y, 0, 54, 0.4, '255,150,80', false, 3.4); ring(e.x, e.y, 10, 30, 0.3, '255,236,200', true, 2.2); num(e.x, headY(e) - 10, 'FINISHED', '#ff8a3a', true); sfx('slam'); logEv({ k: 'finish', e: e, dmg: dealt }); }
+  if (fin) { crit = true; dealt = e.maxHp > 40 ? Math.max(dealt * 3, e.maxHp * 0.34) : Math.max(dealt, e.hp + 0.01); e.finish = false; P.chain = 0; P.invuln = Math.max(P.invuln, 0.55); slowmo(0.22, 0.34); ring(e.x, e.y, 0, 54, 0.4, '255,150,80', false, 3.4); ring(e.x, e.y, 10, 30, 0.3, '255,236,200', true, 2.2); num(e.x, headY(e) - 10, 'FINISHED', '#ff8a3a', true); sfx('finish'); logEv({ k: 'finish', e: e, dmg: dealt }); }
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
   if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
   if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }
@@ -7438,7 +7438,7 @@ function tell(e) {                     // the start of a windup, shown in the wo
   if (!S.juice) return; var hv = heavyBlow(e); dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, hv ? '#ff6a4a' : '#fff3b0', 55);
   glint(e.x + Math.cos(dl) * (e.r + 5), e.y * K + Math.sin(dl) * (e.r + 5) * K - (e.human ? 30 : e.r * 1.6 + 6), hv); if (hv) sfx('heavytell', 0, e);
 }
-function tone2(n) { sfx('charge', Math.min(3, n - 1)); }   // the chain heard: the charge's rising tone, a step higher each parry
+function tone2(n) { sfx('chain', n); }   // the chain heard: the charge's rising tone, a step higher each parry
 function stun(e, dur) {                     // a parry's stun (2026-10-14, Robin: it should stun the mob for about a second): he stands dazed, open to anything, stars over his head
   e.state = 'stunned'; e.t = 0; e.dur = dur; e.sw = null; e.swung = false; e.hitDone = true; e.stunT = dur; e.ripK = 1 + CHAIN.dmg * (P.chain || 1);   // (your blows on him while he reels: see CHAIN)
   if (S.juice) { ring(e.x, e.y, 0, 22, 0.25, '255,230,140', false, 2.4); spark(e.x, e.y - e.r * 2, 6, '#ffe27a', 90); }

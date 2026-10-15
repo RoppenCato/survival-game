@@ -2396,6 +2396,21 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   wrecking returns the hide); `leather` is a kind of its own in the bag.
 - **Sound:** on in the game (`S.sound = true`); the Combat Arena's synthesized set copied into the page, plus
   chop, clink, fall, pick, craft and build. The engine calls `sfx('chop'|'clink')` on tool hits.
+- **Recorded fight sounds (2026-10-15, Robin: "work on the attack sounds; request the sounds you need from the Sound director,
+  then try those new sounds").** The request went to the sound studio's session (Sound Director, `C:\dev\SG Sound`): swings,
+  hits and heavy hits for every weapon, block, parry, crit, the parry chain's x2 to x4, the finishing blow, a broken balance,
+  the red tell, the perfect dodge, stagger, dash, hurt, the bow's release, slam and die, three variations each, delivered to its
+  `out/sfx/combat/`. **`src/sfx.js` (`Sfx`)** plays them: `Sfx.load(ctx, url)` adds a script made by **`node tools/sfxjs.js
+  <folder> <set>`** (every `<name>_<n>.wav` a variation of `<name>`, a level per sound from the manifest as `gain` or `gain_db`;
+  written to `assets/sfx/<set>.js` as `window.__SFX[set]`, which loads from disk as from the server) and decodes every file
+  once; `Sfx.play(ctx, dest, name, { v, rate, pitch })` plays a variation never the same twice running, its rate moved by up to
+  3%; false when there is no recording. **Both pages** (`templates/game.html`, `templates/combat.html`) load
+  `../assets/sfx/combat.js` when their audio context is made, and their `Combat.api.sfx` tries the recording first
+  (`recSfx`: `<sound>_<weapon kind>`, then `<sound>`; the chain's `chain_<n>`; a chain's later hits a shade higher) and plays the
+  synthesized one when there is none. **The engine names four moments of its own now** (each falls back to what it played):
+  `chain` (with the chain's length; was the charge's tone), `broken` (was stagger), `perfect` (was crit) and `finish` (was
+  slam). **To compare:** the Combat Arena's **The old sounds** switch and its **The sounds** panel (every sound by name, a click
+  plays it alone; a dim one has no recording), and the game's Admin **The old fight sounds**. `Sfx.on`, `Sfx.vol`.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero

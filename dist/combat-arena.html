@@ -40,6 +40,7 @@ button:hover{background:var(--btnh)}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
 select{min-height:40px;padding:0 10px;border:1px solid var(--line);background:var(--btn);color:var(--ink);border-radius:10px;font:inherit}
+.sfxrow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:4px 0}.sfxrow span{font-size:.8rem;color:var(--ink2);min-width:8.5em}.sfxrow button{font-size:.78rem;padding:2px 7px}.sfxrow button.old{opacity:.45}
 .desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem;min-height:1.3em}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
 kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
@@ -182,8 +183,12 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
           <button id="show" aria-pressed="false">Show the blows</button>
           <button id="hold" aria-pressed="false">Hold them still</button>
           <button id="sound" aria-pressed="true">Sound</button>
+          <button id="oldsfx" aria-pressed="false">The old sounds</button>
         </div>
         <p class="desc">Show the blows draws your weapon's reach and arc (amber while you wind up, red as it lands), your guard (white in the instant it would parry, blue after), the dash while it keeps you untouchable, and on every man his reach, his blow filling as he winds up, and his shield's cover.</p>
+        <h2 class="more">The sounds</h2>
+        <div id="sfxlist"></div>
+        <p class="desc" id="sfxnote">Click a sound to hear it on its own. A dim one has no recording yet and plays the old synthesized sound; The old sounds above plays the old ones for all.</p>
         <h2 class="more">Aiming</h2>
         <div class="group" id="aim">
           <button data-aim="facing" aria-pressed="false">Facing</button>
@@ -2746,7 +2751,7 @@ function headY(e) { return e.y * K - (e.human ? 50 : e.r * 2.6 + 14); }
 function postureAdd(e, v) {
   if (!e || e.dead || e.down || e.out || e.type === 'brute' || e.side === 1) return;
   e.posture = Math.min(1, (e.posture || 0) + v); e.postureT = 0; e.showBar = Math.max(e.showBar, 2.2);
-  if (e.posture >= 1 && !e.finish) { e.posture = 0; stun(e, POSTURE.breakT); e.finish = true; num(e.x, headY(e), 'BROKEN', '#ff9a4a', true); slowmo(0.35, 0.18); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); sfx('stagger', 0, e); logEv({ k: 'broken', e: e }); }
+  if (e.posture >= 1 && !e.finish) { e.posture = 0; stun(e, POSTURE.breakT); e.finish = true; num(e.x, headY(e), 'BROKEN', '#ff9a4a', true); slowmo(0.35, 0.18); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); sfx('broken', 0, e); logEv({ k: 'broken', e: e }); }
 }
 function parried(e) {                    // a parry on a foe: the stun, his balance, and at the chain's top the finishing blow
   if ((P.chain || 0) >= CHAIN.max) { stun(e, Math.max(parryStun(), POSTURE.breakT)); e.posture = 0; e.finish = true; num(e.x, headY(e), 'FINISH HIM', '#ff9a4a', true); slowmo(0.35, 0.16); ring(e.x, e.y, 0, 40, 0.35, '255,170,90', false, 3); logEv({ k: 'broken', e: e, chain: true }); return; }   // the chain at its top: the next blow finishes (Robin)
@@ -2763,7 +2768,7 @@ function perfectCheck() {                // a dash begun in the last moment befo
     if (eta <= PERFECT.win && eta >= -0.02 && Math.hypot(e.x - p.x, e.y - p.y) <= reach + e.r + p.r + 26) { best = e; break; } }
   if (!best) return;
   slowmo(PERFECT.slow, PERFECT.slowT); p.st = Math.min(maxSt(), p.st + 18 * mod('dash')); best.exposedT = PERFECT.exposed; postureAdd(best, POSTURE.dodge);
-  num(p.x, p.y - 32, 'DODGE!', '#9fd8ff', true); ring(p.x, p.y, 0, 26, 0.3, '170,220,255', false, 2.2); sfx('crit'); logEv({ k: 'perfect', src: best });
+  num(p.x, p.y - 32, 'DODGE!', '#9fd8ff', true); ring(p.x, p.y, 0, 26, 0.3, '170,220,255', false, 2.2); sfx('perfect'); logEv({ k: 'perfect', src: best });
 }
 // The log of the blows (2026-10-13, the Combat Arena's tools): a page may listen with api.onLog(ev), ev = { k, dmg, src, kind, ... }:
 // 'dodged' (a blow came while a dash made him untouchable), 'parry', 'block' (what got through, and whether the guard broke),
@@ -2833,7 +2838,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (crit) mult *= 1.5;
   if (quiet) crit = true;                                     // (shown as a critical blow)
   var dealt = dmg * mult * (src ? 1 : mod('dmg'));          // mods().dmg: a page's damage multiplier (the admin one-shot cheat)
-  if (fin) { crit = true; dealt = e.maxHp > 40 ? Math.max(dealt * 3, e.maxHp * 0.34) : Math.max(dealt, e.hp + 0.01); e.finish = false; P.chain = 0; P.invuln = Math.max(P.invuln, 0.55); slowmo(0.22, 0.34); ring(e.x, e.y, 0, 54, 0.4, '255,150,80', false, 3.4); ring(e.x, e.y, 10, 30, 0.3, '255,236,200', true, 2.2); num(e.x, headY(e) - 10, 'FINISHED', '#ff8a3a', true); sfx('slam'); logEv({ k: 'finish', e: e, dmg: dealt }); }
+  if (fin) { crit = true; dealt = e.maxHp > 40 ? Math.max(dealt * 3, e.maxHp * 0.34) : Math.max(dealt, e.hp + 0.01); e.finish = false; P.chain = 0; P.invuln = Math.max(P.invuln, 0.55); slowmo(0.22, 0.34); ring(e.x, e.y, 0, 54, 0.4, '255,150,80', false, 3.4); ring(e.x, e.y, 10, 30, 0.3, '255,236,200', true, 2.2); num(e.x, headY(e) - 10, 'FINISHED', '#ff8a3a', true); sfx('finish'); logEv({ k: 'finish', e: e, dmg: dealt }); }
   e.hp -= dealt; e.showBar = 2.2; e.sinceHit = 0;
   if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
   if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }
@@ -2924,7 +2929,7 @@ function tell(e) {                     // the start of a windup, shown in the wo
   if (!S.juice) return; var hv = heavyBlow(e); dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, hv ? '#ff6a4a' : '#fff3b0', 55);
   glint(e.x + Math.cos(dl) * (e.r + 5), e.y * K + Math.sin(dl) * (e.r + 5) * K - (e.human ? 30 : e.r * 1.6 + 6), hv); if (hv) sfx('heavytell', 0, e);
 }
-function tone2(n) { sfx('charge', Math.min(3, n - 1)); }   // the chain heard: the charge's rising tone, a step higher each parry
+function tone2(n) { sfx('chain', n); }   // the chain heard: the charge's rising tone, a step higher each parry
 function stun(e, dur) {                     // a parry's stun (2026-10-14, Robin: it should stun the mob for about a second): he stands dazed, open to anything, stars over his head
   e.state = 'stunned'; e.t = 0; e.dur = dur; e.sw = null; e.swung = false; e.hitDone = true; e.stunT = dur; e.ripK = 1 + CHAIN.dmg * (P.chain || 1);   // (your blows on him while he reels: see CHAIN)
   if (S.juice) { ring(e.x, e.y, 0, 22, 0.25, '255,230,140', false, 2.4); spark(e.x, e.y - e.r * 2, 6, '#ffe27a', 90); }
@@ -5193,6 +5198,67 @@ if (typeof module !== 'undefined') module.exports = Combat;
   return { loadLazy: loadLazy, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });
 
+/* Sfx: recorded sound effects (2026-10-15, Robin: "work on the attack sounds; request the sounds you need from the Sound
+   director, then try those new sounds"). The sound studio (C:\dev\SG Sound) renders each sound as a few variations of WAV;
+   tools/sfxjs.js bundles a delivered folder into one script, assets/sfx/<set>.js, which sets
+   window.__SFX[set] = { gain: { name: g }, files: { name_1: base64, ... } }. A script loads from disk as well as from the
+   server (a page opened from file:// may not fetch a file beside it).
+
+   Sfx.load(ctx, 'assets/sfx/combat.js')    adds the script, decodes every file once on the page's AudioContext (a promise)
+   Sfx.has(name)                             are there recordings of it
+   Sfx.play(ctx, dest, name, { v, pitch })   one of its variations (never the same twice running), at its own gain times v,
+                                             its rate moved by up to pitch (0.03 by default) so a run of blows is not one
+                                             sound; false if there is none, so the page plays its synthesized one instead
+   Sfx.on                                    false plays nothing (the pages' "recorded sounds" switch: false = the old)
+   Sfx.vol                                   a master gain for all of them
+   Sfx.names()                               what is loaded, with the number of variations
+   No browser globals at load time: it loads in Node too (the tests). */
+var Sfx = (function () {
+  var bufs = {}, gains = {}, last = {}, sets = {};
+  function b64bytes(b64) { var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+  function decode(ctx, ab) { return new Promise(function (res, rej) { var p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); }); }
+  function load(ctx, url) {
+    var set = url.replace(/\?.*$/, '').replace(/^.*\//, '').replace(/\.js$/, '');
+    if (sets[set]) return sets[set];
+    var G = window.__SFX || (window.__SFX = {});
+    sets[set] = new Promise(function (res, rej) {
+      function take() {
+        var S = G[set]; delete G[set]; if (!S) { rej(new Error('no sound set ' + set)); return; }
+        var jobs = [];
+        Object.keys(S.gain || {}).forEach(function (n) { gains[n] = S.gain[n]; });
+        Object.keys(S.files).forEach(function (f) {
+          var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
+          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { (bufs[n] || (bufs[n] = [])).push(buf); }, function () { /* one bad file is left out */ }));
+        });
+        Promise.all(jobs).then(function () { res(names()); });
+      }
+      if (G[set]) { take(); return; }
+      var sc = document.createElement('script'); sc.src = url; sc.async = true;
+      sc.onload = function () { sc.remove(); take(); };
+      sc.onerror = function () { sc.remove(); delete sets[set]; rej(new Error('cannot load ' + url)); };
+      document.head.appendChild(sc);
+    });
+    return sets[set];
+  }
+  function has(n) { return !!(bufs[n] && bufs[n].length); }
+  function names() { var o = {}; for (var n in bufs) o[n] = bufs[n].length; return o; }
+  function play(ctx, dest, n, o) {
+    if (!Sfx.on || !ctx) return false;
+    var list = bufs[n]; if (!list || !list.length) return false;
+    o = o || {};
+    var i = Math.floor(Math.random() * list.length);
+    if (list.length > 1 && i === last[n]) i = (i + 1) % list.length;
+    last[n] = i;
+    var src = ctx.createBufferSource(), g = ctx.createGain(), pv = o.pitch == null ? 0.03 : o.pitch;
+    src.buffer = list[i]; src.playbackRate.value = (o.rate || 1) * (1 + (Math.random() * 2 - 1) * pv);
+    g.gain.value = (gains[n] == null ? 1 : gains[n]) * (o.v == null ? 1 : o.v) * Sfx.vol;
+    src.connect(g); g.connect(dest || ctx.destination); src.start(ctx.currentTime + (o.delay || 0));
+    return true;
+  }
+  return { load: load, has: has, play: play, names: names, on: true, vol: 1 };
+})();
+if (typeof module !== 'undefined') module.exports = Sfx;
+
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   // Every beast in this arena wears an animal: the plain attacker is a wolf, boar or snake, the big one is the bear.
@@ -5270,7 +5336,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* sound */
   var AC = null;
   function ac() {
-    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); Sfx.load(AC, SFX_SET).then(function () { sfxList(); }, function () { sfxList(); }); } catch (e) {} }
     if (AC && AC.state === 'suspended') AC.resume();
     return AC;
   }
@@ -5313,6 +5379,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     shoot: function () { tone(520, 0.1, 'square', 0.06, 180); },
     hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
     tele: function () { tone(880, 0.07, 'square', 0.04); },
+    /* the fight's own moments (2026-10-15): recorded sounds come from the studio (src/sfx.js); these are what plays without them */
+    chain: function (v) { SFX.charge(Math.min(3, (v || 2) - 1)); },
+    broken: function () { SFX.stagger(); },
+    perfect: function () { SFX.crit(); },
+    finish: function () { SFX.slam(); SFX.heavyhit(); },
     heavytell: function () { tone(120, 0.32, 'sawtooth', 0.09, 70); tone(62, 0.36, 'sine', 0.16, 40); },   // a blow that cannot be parried: low and rough (2026-10-15)
     die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
     crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
@@ -5321,7 +5392,19 @@ if (typeof module !== 'undefined') module.exports = Combat;
     raise: function () { tone(420, 0.04, 'triangle', 0.03); },
     charge: function (v) { tone(420 + (v || 0) * 220, 0.12, 'triangle', 0.05); if (v === 3) tone(1400, 0.2, 'sine', 0.06); }
   };
-  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x); };   /* x: the hero's weapon for a hit or a swing: its own voice */
+  /* recorded sounds (2026-10-15, Robin: the attack sounds from the Sound director): src/sfx.js plays the studio's WAVs, bundled into
+     assets/sfx/combat.js by tools/sfxjs.js; a sound with no recording plays the synthesized one above. The chain's x2 to x4 are
+     chain_2 to chain_4; a hit of a chain's later blows is a shade higher, as the synthesized one is */
+  var SFX_SET = '../assets/sfx/combat.js';
+  function recSfx(n, v, x) {
+    var a = AC; if (!a || OLD_SFX()) return false;
+    var d = a.destination, o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
+    if (n === 'chain') return Sfx.play(a, d, 'chain_' + v, o);
+    if (x && x.kind && Sfx.play(a, d, n + '_' + x.kind, o)) return true;
+    return Sfx.play(a, d, n, o);
+  }
+  var oldSfx = false; function OLD_SFX() { return oldSfx; }
+  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; if (recSfx(n, v, x)) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x); };   /* x: the hero's weapon for a hit or a swing: its own voice */
 
   /* input */
   window.addEventListener('keydown', function (e) {
@@ -5372,6 +5455,35 @@ if (typeof module !== 'undefined') module.exports = Combat;
   toggle('hold', function () { return holdAll; }, function (v) { holdAll = v; Combat.dbg().W.enemies.forEach(function (e) { e.hold = v; }); });
   toggle('show', function () { return showBlows; }, function (v) { showBlows = v; });
   toggle('sound', function () { return S.sound; }, function (v) { S.sound = v; });
+  toggle('oldsfx', function () { return oldSfx; }, function (v) { oldSfx = v; });
+  /* the listening panel (2026-10-15): every fight sound by name, recorded if the studio's set has it, else the old one */
+  var SFX_ROWS = [
+    ['Swings', ['swing', 'swing_axe', 'swing_club', 'swing_seax', 'swing_spear', 'swing_greataxe']],
+    ['Hits', ['hit', 'hit_axe', 'hit_club', 'hit_seax', 'hit_spear', 'hit_greataxe']],
+    ['Heavy hits', ['heavyhit', 'heavyhit_axe', 'heavyhit_club', 'heavyhit_seax', 'heavyhit_spear', 'heavyhit_greataxe']],
+    ['Defence', ['block', 'parry', 'crit']],
+    ['The chain', ['chain_2', 'chain_3', 'chain_4']],
+    ['Moments', ['finish', 'broken', 'heavytell', 'perfect', 'stagger']],
+    ['Also', ['dash', 'hurt', 'shoot', 'slam', 'die']]
+  ];
+  function sfxOld(name) { var m = /^chain_(\d)$/.exec(name); if (m) { SFX.chain(+m[1]); return; } var f = SFX[name]; if (!f) { var b = name.replace(/_[a-z]+$/, ''); f = SFX[b]; } if (f) f(0); }
+  function sfxList() {
+    var host = document.getElementById('sfxlist'); if (!host) return; host.innerHTML = '';
+    var n = 0, tot = 0;
+    SFX_ROWS.forEach(function (row) {
+      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = row[0]; d.appendChild(lab);
+      row[1].forEach(function (name) {
+        var b = document.createElement('button'); b.textContent = name; tot++;
+        if (Sfx.has(name)) n++; else b.className = 'old';
+        b.addEventListener('click', function () { var a = ac(); if (!a) return; if (oldSfx || !Sfx.play(a, a.destination, name)) sfxOld(name); b.blur(); });
+        d.appendChild(b);
+      });
+      host.appendChild(d);
+    });
+    document.getElementById('sfxnote').textContent = (n ? n + ' of ' + tot + ' have recordings. ' : 'No recordings loaded yet (assets/sfx/combat.js). ') + 'Click a sound to hear it on its own. A dim one plays the old synthesized sound; The old sounds above plays the old ones for all.';
+  }
+  sfxList();
+
   act('heal', function () { var P = Combat.dbg().P; P.hp = P.maxHp; P.st = 100; });
   var clockBtns = document.querySelectorAll('#clock button');
   for (var ci = 0; ci < clockBtns.length; ci++) clockBtns[ci].addEventListener('click', function (e) { clockK = parseFloat(e.currentTarget.getAttribute('data-k')); for (var i = 0; i < clockBtns.length; i++) clockBtns[i].setAttribute('aria-pressed', clockBtns[i] === e.currentTarget ? 'true' : 'false'); e.currentTarget.blur(); });
