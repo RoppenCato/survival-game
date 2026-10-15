@@ -49,6 +49,13 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 .log .me{color:var(--accent)}
 .log .bad{color:#d4654a}
 .tally{margin:6px 2px 0;color:var(--ink2);font-size:.86rem}
+.row{display:grid;grid-template-columns:12.5em minmax(0,1fr) 3.4em;gap:8px;align-items:center;font-size:.86rem;min-height:28px}
+.row span{color:var(--ink2)}
+.row output{text-align:right;font-variant-numeric:tabular-nums}
+.row.changed span{color:var(--accent);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--log);color:var(--ink);font:.8rem/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.tstat{margin:6px 2px 0;font-size:.86rem;color:var(--ink2)}
 </style>
 </head>
 <body>
@@ -139,6 +146,29 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <h2>Beasts</h2>
         <div class="group" id="beasts"></div>
         <p class="desc">Each fights its own way (<code>ATTACKS</code> in <code>src/art.js</code>): the boar charges past, the wolves ring you and bite one at a time, the bear rears and comes down with both paws, the adder's bite poisons, the moose gores. The trolls sweep slow and hard. The huldra, Näcken and the bysen do not fight.</p>
+      </section>
+
+      <section class="panel" id="tuning">
+        <h2>Tuning</h2>
+        <p class="desc" style="margin-top:0">The numbers that decide how a fight feels, live: what you move here is what the next blow does. A number you have moved is green. <b>Use in the game</b> hands them to the game (it reads them when it loads); <b>Take back</b> brings back what the game has now.</p>
+        <h2 class="more">The feel of a hit</h2>
+        <div id="tfeel"></div>
+        <h2 class="more" id="theroh">Your weapon</h2>
+        <div id="thero"></div>
+        <h2 class="more">Men</h2>
+        <div id="tmen"></div>
+        <h2 class="more">Beasts</h2>
+        <div class="group"><select id="tbk" aria-label="Which beast"></select></div>
+        <div id="tbeast" style="margin-top:6px"></div>
+        <h2 class="more">Settings as text</h2>
+        <textarea id="ttext" spellcheck="false" aria-label="The tuned numbers as text"></textarea>
+        <div class="group" style="margin-top:8px">
+          <button id="tuse">Use in the game</button>
+          <button id="tback">Take back</button>
+          <button id="tapply">Apply the text</button>
+          <button id="tdef">Defaults</button>
+        </div>
+        <p class="tstat" id="tstat"></p>
       </section>
 
       <section class="panel">
@@ -2682,7 +2712,8 @@ function switchMode() {
 // arena's own switch otherwise. With one the guard is wide, most of a blow is stopped and an arrow is; without, K still fends
 // with what he holds: a narrow guard that lets more than half of a light blow through, costs more breath, and stops no arrow.
 function shielded() { return api.shield ? !!api.shield() : S.shield; }
-function parryWindow() { return shielded() ? 0.22 : 0.12; }
+var PARRY = { shield: 0.22, bare: 0.12 };   // the parry's moment, with a shield on the arm and without (tuned in the Combat Arena: see tune)
+function parryWindow() { return shielded() ? PARRY.shield : PARRY.bare; }
 // The log of the blows (2026-10-13, the Combat Arena's tools): a page may listen with api.onLog(ev), ev = { k, dmg, src, kind, ... }:
 // 'dodged' (a blow came while a dash made him untouchable), 'parry', 'block' (what got through, and whether the guard broke),
 // 'hurt', 'hit' (the hero's blow on a foe: dealt, crit, blocked by his shield, his guard broken), 'kill'.
@@ -4633,8 +4664,46 @@ function render(c) {
   if (sc && sc.boards) sc.boards(c, P);   // a page's boards (bag, menus, the map): over the bars and the hotbar, never under them
 }
 
+/* Tuning (2026-10-15, Robin: work through and tune combat against animals, men and many at once). The numbers that decide how a
+   fight feels, in one spec with four groups: feel (the hit pause and push of the Snappy preset, the parry's moment and stun, a
+   tool's bite), hero (each melee weapon's PROFILES: windup, blow, recovery, reach, arc, damage, push, stagger, step, stamina), men
+   (MEN: their health scale, blow, windup, how many strike one man and how far apart, help after how long) and beasts (each kind's
+   health, bite, speed, windup and how far it notices you). tuneDefaults() is the spec as the code has it; tune(over) lays a page's
+   differences over it and puts every number in place; beastNum(kind) and tuneBeast(e, kind, opts) are how a page dresses a beast
+   from it. The Combat Arena edits it live and hands it to the game as 'game.combat'; the game lays that over its own on load.
+   BEAST_GAME holds what the game's ANIMALS said a bite does and how far a beast notices you (the arena's beasts did 12 a bite
+   whatever they were, until this); health, speed and windup come from the art library's specs and attacks. */
+var BEAST_GAME = { boar: { dmg: 14, aggro: 75 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 } };
+var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge', 'st'], MEN_KEYS = ['hpK', 'dmg', 'wu', 'wuK', 'slots', 'gapHero', 'onHero', 'joinAfter', 'toMen'];
+var TUNE0 = null, TUNED = null;
+function tuneDefaults() {
+  if (TUNE0) return JSON.parse(JSON.stringify(TUNE0));
+  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, toolDmg: TOOL_DMG }, hero: {}, men: {}, beasts: {} }, k, i;
+  for (k in PROFILES) { T.hero[k] = {}; for (i = 0; i < HERO_KEYS.length; i++) T.hero[k][HERO_KEYS[i]] = PROFILES[k][HERO_KEYS[i]]; }
+  for (i = 0; i < MEN_KEYS.length; i++) T.men[MEN_KEYS[i]] = MEN[MEN_KEYS[i]];
+  for (k in BEAST_GAME) { var g = BEAST_GAME[k], sp = lib && lib.animalSpec ? lib.animalSpec(g.of || k) : null, at = lib && lib.animalAttack ? lib.animalAttack(g.of || k) : null;
+    T.beasts[k] = { hp: g.hp != null ? g.hp : (sp ? sp.hp : 10), dmg: g.dmg, speed: sp ? sp.speed : 1, windup: +((at && at.windup) || (sp && sp.windup) || 0.4).toFixed(2), aggro: g.aggro }; }
+  TUNE0 = T; return JSON.parse(JSON.stringify(T));
+}
+function tune(over) {
+  var T = tuneDefaults(), g, k, q; over = over || {};
+  for (g in over) { if (!T[g] || typeof over[g] !== 'object') continue; for (k in over[g]) { q = over[g][k]; if (q && typeof q === 'object') { if (!T[g][k]) continue; for (var kk in q) if (typeof q[kk] === 'number' && T[g][k][kk] != null) T[g][k][kk] = q[kk]; } else if (typeof q === 'number' && T[g][k] != null) T[g][k] = q; } }
+  WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; TOOL_DMG = T.feel.toolDmg;
+  for (k in T.hero) if (PROFILES[k]) for (var hk in T.hero[k]) PROFILES[k][hk] = T.hero[k][hk];
+  for (k in T.men) MEN[k] = T.men[k];
+  TUNED = T; return T;
+}
+function tuneDiff(T) { var D0 = tuneDefaults(), out = {}, g, k, kk; for (g in T) { for (k in T[g]) { if (typeof T[g][k] === 'object') { for (kk in T[g][k]) if (D0[g] && D0[g][k] && Math.abs(T[g][k][kk] - D0[g][k][kk]) > 1e-9) { out[g] = out[g] || {}; out[g][k] = out[g][k] || {}; out[g][k][kk] = T[g][k][kk]; } } else if (D0[g] && Math.abs(T[g][k] - D0[g][k]) > 1e-9) { out[g] = out[g] || {}; out[g][k] = T[g][k]; } } } return out; }   // what differs from the code's own numbers
+function beastNum(k) { if (!TUNED) tune({}); return TUNED.beasts[k] || null; }
+function tuneBeast(e, k, o) {         // a beast dressed from the tuned numbers: its health, bite, speed and windup (and how far it notices you, when the page asks)
+  var b = beastNum(k); if (!b || !e) return e; o = o || {};
+  e.hp = e.maxHp = b.hp; e.cfg = e.cfg || {}; e.cfg.dmg = b.dmg; e.cfg.speed = 58 * b.speed;
+  if (e.cfg.atk) { e.cfg.atk = Object.assign({}, e.cfg.atk); e.cfg.atk.windup = b.windup; } else e.cfg.windup = b.windup;
+  if (o.aggro) e.aggro = b.aggro;
+  return e;
+}
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
+return { tune: tune, tuneDefaults: tuneDefaults, tuneDiff: tuneDiff, beastNum: beastNum, tuneBeast: tuneBeast, init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   hurt: function (e, dmg, ang) { damageEnemy(e, dmg * (e.type === 'soldier' ? MEN.hpK : 1), ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 
@@ -5040,6 +5109,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.roster = ['beast', 'beast'];
   Combat.api.dress = function (e) {
     if (e.type !== 'beast' && e.type !== 'brute') return;
+    var young = want === 'boarYoung'; if (young) want = 'boar';
     var k = e.type === 'brute' ? 'bear' : (want || (Math.random() < 0.5 ? 'wolf' : 'boar')), sp = lib.animalSpec(k);
     want = null;
     e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase(); e.kindA = k;
@@ -5047,6 +5117,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (k === 'deer') e.flee = true;
     if (k === 'huldra' || k === 'nacken' || k === 'bysen') { e.aggro = 1; e.flee = true; }   // no fighters: they stand until struck, then run (their own ways are not decided)
     if (e.type === 'beast') e.hp = e.maxHp = sp.hp;
+    var tk = young ? 'boarYoung' : k; if (Combat.beastNum(tk)) { Combat.tuneBeast(e, tk); e.tuneK = tk; }   // the tuned numbers: the game's own (2026-10-15: they did 12 a bite whatever they were)
+    if (young) { e.sizeK = 0.84; e.r *= 0.84; e.young = true; e.name = 'YOUNG BOAR'; }
   };
   lib.applyStored(localStorage);                            // the hero the editors handed to the game, from one place
   Combat.init(GameArt.lib);
@@ -5065,7 +5137,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   };
   Combat.api.enemySprite = function (c, e) {
     if (e.type === 'soldier') { if (!PEOPLE || !e.spec) return false; var look = e.look || (e.look = Sprites.lookOf(e.spec, e.lookX || {})); return Sprites.fighter(c, PEOPLE, e, 0.75, look, { shadowHue: 222 }); }
-    var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: bo.scale, deadFor: bo.deadFor, deathClip: bo.deathClip });
+    var BH = ARENA_BEASTS[e.kindA]; if (!BH) return false; var bo = ARENA_BOPT[e.kindA]; return Sprites.beast(c, BH, e, 0.75, { shadowHue: 222, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: bo.deadFor, deathClip: bo.deathClip });
   };
   var S = Combat.S; S.weight = 'snappy'; S.crit = 0.15; S.juice = true;   // the decided settings (hit weight Snappy, crit 15%): no longer switches here
   /* the weapons: one melee and one ranged thing in hand (F swaps); the tools stay copper */
@@ -5094,7 +5166,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     list.forEach(function (q) { var b = document.createElement('button'); b.textContent = q.name; b.setAttribute('aria-pressed', isOn(q) ? 'true' : 'false'); b.addEventListener('click', function () { onPick(q); btnRow(hostId, list, isOn, onPick); b.blur(); }); host.appendChild(b); });
   }
   function armRows() {
-    btnRow('melee', Items.MELEE.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.melee === q.id; }, function (q) { arm.melee = q.id; var P = Combat.dbg().P; P.atk.ph = 'none'; document.getElementById('meleedesc').textContent = Items.KINDS[q.id].desc; });
+    btnRow('melee', Items.MELEE.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.melee === q.id; }, function (q) { arm.melee = q.id; if (typeof tuneDraw === 'function' && TUNE) tuneDraw(); var P = Combat.dbg().P; P.atk.ph = 'none'; document.getElementById('meleedesc').textContent = Items.KINDS[q.id].desc; });
     btnRow('ranged', Items.RANGED.map(function (k) { return { id: k, name: Items.KINDS[k].name }; }), function (q) { return arm.ranged === q.id; }, function (q) { arm.ranged = q.id; document.getElementById('rangeddesc').textContent = Items.KINDS[q.id].desc; });
     btnRow('mats', ['wood', 'flint', 'copper', 'bronze', 'iron'].map(function (m) { return { id: m, name: Items.MATS[m].name }; }), function (q) { return arm.mat === q.id; }, function (q) { arm.mat = q.id; });
     btnRow('gear', GEAR, function (q) { return gear === q; }, function (q) { gear = q; document.getElementById('geardesc').textContent = q.text; });
@@ -5213,9 +5285,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   for (var ci = 0; ci < clockBtns.length; ci++) clockBtns[ci].addEventListener('click', function (e) { clockK = parseFloat(e.currentTarget.getAttribute('data-k')); for (var i = 0; i < clockBtns.length; i++) clockBtns[i].setAttribute('aria-pressed', clockBtns[i] === e.currentTarget ? 'true' : 'false'); e.currentTarget.blur(); });
 
   /* the beasts */
-  var BEAST_BTNS = [['wolf', 'Wolf', 'beast'], ['boar', 'Boar', 'beast'], ['snake', 'Adder', 'beast'], ['bear', 'Bear', 'brute'], ['moose', 'Moose', 'beast'], ['deer', 'Deer', 'beast'], ['troll', 'Mountain troll', 'beast'], ['trollForest', 'Forest troll', 'beast'], ['trollMaw', 'The Gape', 'beast'], ['trollThree', 'Three-headed troll', 'beast'], ['draugr', 'Draugr', 'beast'], ['huldra', 'Huldra', 'beast'], ['nacken', 'Näcken', 'beast'], ['bysen', 'Bysen', 'beast']];
+  var BEAST_BTNS = [['wolf', 'Wolf', 'beast'], ['boarYoung', 'Young boar', 'beast'], ['boar', 'Boar', 'beast'], ['snake', 'Adder', 'beast'], ['bear', 'Bear', 'brute'], ['moose', 'Moose', 'beast'], ['deer', 'Deer', 'beast'], ['troll', 'Mountain troll', 'beast'], ['trollForest', 'Forest troll', 'beast'], ['trollMaw', 'The Gape', 'beast'], ['trollThree', 'Three-headed troll', 'beast'], ['draugr', 'Draugr', 'beast'], ['huldra', 'Huldra', 'beast'], ['nacken', 'Näcken', 'beast'], ['bysen', 'Bysen', 'beast']];
   (function () { var host = document.getElementById('beasts'); BEAST_BTNS.forEach(function (q) { var b = document.createElement('button'); b.textContent = q[1]; b.addEventListener('click', function () { want = q[0]; var e = Combat.spawn(q[2]); if (holdAll) e.hold = true; b.blur(); }); host.appendChild(b); });
-    var b2 = document.createElement('button'); b2.textContent = 'A pair of wolves'; b2.addEventListener('click', function () { want = 'wolf'; Combat.spawn('beast'); want = 'wolf'; Combat.spawn('beast'); b2.blur(); }); host.appendChild(b2); })();
+    [['A pair of wolves', ['wolf', 'wolf']], ['The night\u2019s pack (three wolves)', ['wolf', 'wolf', 'wolf']], ['Two boars', ['boar', 'boar']], ['Three young boars', ['boarYoung', 'boarYoung', 'boarYoung']], ['A boar and a wolf', ['boar', 'wolf']]].forEach(function (g) { var b2 = document.createElement('button'); b2.textContent = g[0]; b2.addEventListener('click', function () { g[1].forEach(function (kk) { want = kk; var e2 = Combat.spawn('beast'); if (holdAll) e2.hold = true; }); b2.blur(); }); host.appendChild(b2); }); })();   /* several at once (2026-10-15, for tuning fights against many) */
 
   /* the men */
   var MWPN = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'], MGEAR = [{ name: 'cloth, no shield', armor: 0, shield: false }, { name: 'leather and a shield', armor: 0.2, shield: true }, { name: 'mail, a helm and a shield', armor: 0.45, shield: true, mail: true, helm: true }], MWITS = [{ name: 'dull', v: 1 }, { name: 'steady', v: 4 }, { name: 'sharp', v: 7 }];
@@ -5248,6 +5320,56 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var WAYTXT = { duel: 'One at a time: a second man joins after six seconds. The game runs this way.', pack: 'One, then more: a second after 2.5 s, a third after five; those who wait stand nearer.', press: 'Two at a time from the first moment, three on you.', odds: 'By the odds: as many to a man as the sides stand.', swarm: 'All at once, as it was before any pairing: everybody on the nearest.' };
   function wayRows() { btnRow('ways', Object.keys(Combat.WAYS).map(function (k) { return { id: k, name: Combat.WAYS[k].name }; }), function (q) { return (Combat.api.men.way || 'duel') === q.id; }, function (q) { Combat.way(q.id); document.getElementById('waydesc').textContent = WAYTXT[q.id] || ''; }); document.getElementById('waydesc').textContent = WAYTXT[Combat.api.men.way || 'duel']; }
   wayRows();
+
+  /* Tuning (2026-10-15, Robin: tune combat against animals, men and many). Combat.tune holds the spec; this panel edits a working copy
+     (combatarena.tune, what differs from the code's numbers) and hands it to the game as game.combat. The beasts on the field take a
+     beast's new numbers at once (health in proportion), the weapon and the men's numbers act on the next blow. */
+  var TK = 'combatarena.tune', TUNE = null;
+  function tuneRead(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; } }
+  TUNE = Combat.tune(tuneRead(TK) || tuneRead('game.combat') || {});
+  var TS = {
+    feel: [['fz', 'Hit pause, you', 0, 2, 0.05], ['pf', 'Hit pause, the struck', 0, 2, 0.05], ['kb', 'Push of a hit', 0, 2, 0.05], ['parryShield', 'Parry moment, shield (s)', 0, 0.5, 0.01], ['parryBare', 'Parry moment, no shield (s)', 0, 0.4, 0.01], ['parryStun', 'Parry stun (s)', 0, 3, 0.05], ['toolDmg', 'A tool on a beast or man', 0, 1.5, 0.05]],
+    hero: [['wu', 'Windup (s)', 0, 1, 0.01], ['ac', 'The blow (s)', 0.03, 0.5, 0.01], ['rec', 'Recovery (s)', 0.05, 1.5, 0.01], ['dmg', 'Damage (x the metal)', 0.2, 3, 0.05], ['reach', 'Reach', 10, 90, 1], ['arc', 'Arc (radians)', 0.2, 4, 0.05], ['lunge', 'Step into the blow', 0, 160, 1], ['kb', 'Push', 0, 400, 5], ['stag', 'Stagger', 0, 60, 1], ['st', 'Stamina a blow', 0, 25, 0.5]],
+    men: [['hpK', 'Their health (x)', 0.3, 2, 0.05], ['dmg', 'Their blow', 2, 30, 0.5], ['wu', 'Their windup, base (s)', 0, 0.6, 0.01], ['wuK', 'Their windup, x the weapon', 0, 4, 0.05], ['slots', 'Striking one man at once', 1, 5, 1], ['gapHero', 'Least gap between blows on you (s)', 0, 2, 0.05], ['onHero', 'Men on you before others wait', 1, 6, 1], ['joinAfter', 'Help comes after (s)', 0, 20, 0.5], ['toMen', 'A blow on a man (x)', 0.05, 0.6, 0.01]],
+    beasts: [['hp', 'Health', 1, 150, 1], ['dmg', 'Bite (of 100)', 0, 60, 1], ['speed', 'Speed (x)', 0.3, 3, 0.05], ['windup', 'Windup (s)', 0.1, 3, 0.05], ['aggro', 'Notices you at', 0, 400, 5]]
+  };
+  var TNAMES = { boar: 'Boar', boarYoung: 'Young boar', deer: 'Deer', snake: 'Adder', wolf: 'Wolf', moose: 'Moose', bear: 'Bear', troll: 'Mountain troll' };
+  var tbk = document.getElementById('tbk'), tbeastK = 'boar';
+  Object.keys(TUNE.beasts).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = TNAMES[k] || k; tbk.appendChild(o); });
+  tbk.value = tbeastK; tbk.addEventListener('change', function () { tbeastK = tbk.value; tuneDraw(); });
+  function tuneApply() { TUNE = Combat.tune(Combat.tuneDiff(TUNE)); try { localStorage.setItem(TK, JSON.stringify(Combat.tuneDiff(TUNE))); } catch (e) {} }
+  function liveBeasts(k) { var b = Combat.beastNum(k); Combat.dbg().W.enemies.forEach(function (e) { if (e.dead || e.tuneK !== k) return; var f = e.maxHp > 0 ? e.hp / e.maxHp : 1; e.maxHp = b.hp; e.hp = Math.max(0.1, b.hp * f); e.cfg.dmg = b.dmg; e.cfg.speed = 58 * b.speed; if (e.cfg.atk) { e.cfg.atk = Object.assign({}, e.cfg.atk); e.cfg.atk.windup = b.windup; } else e.cfg.windup = b.windup; }); }
+  function sliders(hostId, list, get, def, after) {   // get: where the numbers are now (tune makes a new spec each time: a slider must not keep the old one)
+    var host = document.getElementById(hostId); host.innerHTML = '';
+    list.forEach(function (q) { var obj = get();
+      var row = document.createElement('label'); row.className = 'row' + (Math.abs(obj[q[0]] - def[q[0]]) > 1e-9 ? ' changed' : '');
+      var nm = document.createElement('span'); nm.textContent = q[1]; nm.title = 'Default ' + def[q[0]];
+      var inp = document.createElement('input'); inp.type = 'range'; inp.min = q[2]; inp.max = q[3]; inp.step = q[4]; inp.value = obj[q[0]];
+      var out = document.createElement('output'); out.textContent = +(+obj[q[0]]).toFixed(3);
+      inp.addEventListener('input', function () { obj = get(); obj[q[0]] = +inp.value; out.textContent = +(+inp.value).toFixed(3); row.className = 'row' + (Math.abs(obj[q[0]] - def[q[0]]) > 1e-9 ? ' changed' : ''); tuneApply(); if (after) after(); tuneText(); });
+      row.appendChild(nm); row.appendChild(inp); row.appendChild(out); host.appendChild(row);
+    });
+  }
+  function tuneText() {
+    var d = Combat.tuneDiff(TUNE), game = tuneRead('game.combat') || {}, same = JSON.stringify(d) === JSON.stringify(Combat.tuneDiff(Combat.tune(game)));
+    Combat.tune(d); document.getElementById('ttext').value = JSON.stringify(d, null, 1);
+    var n = 0; (function cnt(o) { for (var k in o) { if (typeof o[k] === 'object') cnt(o[k]); else n++; } })(d);
+    document.getElementById('tstat').textContent = (n ? n + ' number' + (n > 1 ? 's' : '') + ' moved from the code’s own. ' : 'Every number is the code’s own. ') + (same ? 'The game has exactly these.' : 'The game does not have these yet: Use in the game.');
+  }
+  function tuneDraw() {
+    var D0 = Combat.tuneDefaults();
+    sliders('tfeel', TS.feel, function () { return TUNE.feel; }, D0.feel);
+    document.getElementById('theroh').textContent = 'Your weapon: ' + Items.KINDS[arm.melee].name + ' (choose it under You)';
+    sliders('thero', TS.hero, function () { return TUNE.hero[arm.melee]; }, D0.hero[arm.melee]);
+    sliders('tmen', TS.men, function () { return TUNE.men; }, D0.men);
+    sliders('tbeast', TS.beasts, function () { return TUNE.beasts[tbeastK]; }, D0.beasts[tbeastK], function () { liveBeasts(tbeastK); });
+    tuneText();
+  }
+  act('tuse', function () { try { localStorage.setItem('game.combat', JSON.stringify(Combat.tuneDiff(TUNE))); } catch (e) {} tuneText(); });
+  act('tback', function () { TUNE = Combat.tune(tuneRead('game.combat') || {}); tuneApply(); Object.keys(TUNE.beasts).forEach(liveBeasts); tuneDraw(); });
+  act('tdef', function () { TUNE = Combat.tune({}); tuneApply(); Object.keys(TUNE.beasts).forEach(liveBeasts); tuneDraw(); });
+  act('tapply', function () { var o; try { o = JSON.parse(document.getElementById('ttext').value || '{}'); } catch (e) { document.getElementById('tstat').textContent = 'That text is not numbers this page can read.'; return; } TUNE = Combat.tune(o); tuneApply(); Object.keys(TUNE.beasts).forEach(liveBeasts); tuneDraw(); });
+  tuneDraw(); Object.keys(TUNE.beasts).forEach(liveBeasts);   // (the two beasts the arena starts with were dressed before the tuning was read)
 
   /* the log of the blows */
   var logLines = [], tally = { hits: 0, dealt: 0, taken: 0, parried: 0, blocked: 0, dodged: 0, kills: 0 }, logEl = document.getElementById('log'), tallyEl = document.getElementById('tally');

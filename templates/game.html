@@ -148,8 +148,10 @@ __COMBAT__
     e.creature = true; e.size = 1; e.skin = lib.makeCreature(sp); e.name = lib.animals[k].name.toUpperCase(); e.kind = k;
     e.r = A.r * sp.size; e.cfg = { speed: 58 * sp.speed, windup: sp.windup, lunge: 175 * sp.lunge, dmg: A.dmg, atk: lib.animalAttack(k) };
     e.hp = e.maxHp = sp.hp; e.aggro = A.aggro; if (A.flee) e.flee = true; if (A.shy) e.shy = true;
+    Combat.tuneBeast(e, k, { aggro: true });   // health, bite, speed, windup and noticing from the tuned numbers (the arena's)
   };
   Combat.init(lib);
+  try { Combat.tune(JSON.parse(localStorage.getItem('game.combat') || '{}')); } catch (eT) { Combat.tune({}); }   /* the Combat Arena's tuning, handed over with "Use in the game" (2026-10-15) */
   var S = Combat.S; S.sound = true;
   Combat.clear();
 
@@ -4470,7 +4472,7 @@ __COMBAT__
      blows with "the safe first meat" died with the boar half alive (the numbers were set when you woke with an iron sword).
      A young one has 6 health and does 7: the same fight ends with the boar dead and the hero at about half his health (a
      club's blow is 0.6 to 1, so it is eight to ten blows either way). Smaller, to be told apart. */
-  function youngOne(e, k) { var y = ANIMALS[k].young; if (!e || !y) return e; e.hp = e.maxHp = y.hp; e.cfg.dmg = y.dmg; e.sizeK = y.size; e.r *= y.size; e.young = true; return e; }
+  function youngOne(e, k) { var y = ANIMALS[k].young; if (!e || !y) return e; Combat.tuneBeast(e, 'boarYoung', { aggro: true }); e.sizeK = y.size; e.r *= y.size; e.young = true; return e; }   /* (the young boar's numbers are the tuned 'boarYoung', 2026-10-15) */
   function animalN(k, isle) { var q = w.isles[isle], ref = isle === 0 ? 60 : 230, base = isle === 0 ? (ANIMALS[k].start || 0) : ANIMALS[k].n; if (!q || !base) return base || 0; var ak = Math.pow(q.r * 2 / ref, 2); return Math.max(base, Math.round(base * ak)); }
   function spawnBoars() {                 // all the animals, by kind; wolves in pairs
     Combat.clear();

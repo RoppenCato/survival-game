@@ -7226,7 +7226,8 @@ function switchMode() {
 // arena's own switch otherwise. With one the guard is wide, most of a blow is stopped and an arrow is; without, K still fends
 // with what he holds: a narrow guard that lets more than half of a light blow through, costs more breath, and stops no arrow.
 function shielded() { return api.shield ? !!api.shield() : S.shield; }
-function parryWindow() { return shielded() ? 0.22 : 0.12; }
+var PARRY = { shield: 0.22, bare: 0.12 };   // the parry's moment, with a shield on the arm and without (tuned in the Combat Arena: see tune)
+function parryWindow() { return shielded() ? PARRY.shield : PARRY.bare; }
 // The log of the blows (2026-10-13, the Combat Arena's tools): a page may listen with api.onLog(ev), ev = { k, dmg, src, kind, ... }:
 // 'dodged' (a blow came while a dash made him untouchable), 'parry', 'block' (what got through, and whether the guard broke),
 // 'hurt', 'hit' (the hero's blow on a foe: dealt, crit, blocked by his shield, his guard broken), 'kill'.
@@ -9177,8 +9178,46 @@ function render(c) {
   if (sc && sc.boards) sc.boards(c, P);   // a page's boards (bag, menus, the map): over the bars and the hotbar, never under them
 }
 
+/* Tuning (2026-10-15, Robin: work through and tune combat against animals, men and many at once). The numbers that decide how a
+   fight feels, in one spec with four groups: feel (the hit pause and push of the Snappy preset, the parry's moment and stun, a
+   tool's bite), hero (each melee weapon's PROFILES: windup, blow, recovery, reach, arc, damage, push, stagger, step, stamina), men
+   (MEN: their health scale, blow, windup, how many strike one man and how far apart, help after how long) and beasts (each kind's
+   health, bite, speed, windup and how far it notices you). tuneDefaults() is the spec as the code has it; tune(over) lays a page's
+   differences over it and puts every number in place; beastNum(kind) and tuneBeast(e, kind, opts) are how a page dresses a beast
+   from it. The Combat Arena edits it live and hands it to the game as 'game.combat'; the game lays that over its own on load.
+   BEAST_GAME holds what the game's ANIMALS said a bite does and how far a beast notices you (the arena's beasts did 12 a bite
+   whatever they were, until this); health, speed and windup come from the art library's specs and attacks. */
+var BEAST_GAME = { boar: { dmg: 14, aggro: 75 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 } };
+var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge', 'st'], MEN_KEYS = ['hpK', 'dmg', 'wu', 'wuK', 'slots', 'gapHero', 'onHero', 'joinAfter', 'toMen'];
+var TUNE0 = null, TUNED = null;
+function tuneDefaults() {
+  if (TUNE0) return JSON.parse(JSON.stringify(TUNE0));
+  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, toolDmg: TOOL_DMG }, hero: {}, men: {}, beasts: {} }, k, i;
+  for (k in PROFILES) { T.hero[k] = {}; for (i = 0; i < HERO_KEYS.length; i++) T.hero[k][HERO_KEYS[i]] = PROFILES[k][HERO_KEYS[i]]; }
+  for (i = 0; i < MEN_KEYS.length; i++) T.men[MEN_KEYS[i]] = MEN[MEN_KEYS[i]];
+  for (k in BEAST_GAME) { var g = BEAST_GAME[k], sp = lib && lib.animalSpec ? lib.animalSpec(g.of || k) : null, at = lib && lib.animalAttack ? lib.animalAttack(g.of || k) : null;
+    T.beasts[k] = { hp: g.hp != null ? g.hp : (sp ? sp.hp : 10), dmg: g.dmg, speed: sp ? sp.speed : 1, windup: +((at && at.windup) || (sp && sp.windup) || 0.4).toFixed(2), aggro: g.aggro }; }
+  TUNE0 = T; return JSON.parse(JSON.stringify(T));
+}
+function tune(over) {
+  var T = tuneDefaults(), g, k, q; over = over || {};
+  for (g in over) { if (!T[g] || typeof over[g] !== 'object') continue; for (k in over[g]) { q = over[g][k]; if (q && typeof q === 'object') { if (!T[g][k]) continue; for (var kk in q) if (typeof q[kk] === 'number' && T[g][k][kk] != null) T[g][k][kk] = q[kk]; } else if (typeof q === 'number' && T[g][k] != null) T[g][k] = q; } }
+  WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; TOOL_DMG = T.feel.toolDmg;
+  for (k in T.hero) if (PROFILES[k]) for (var hk in T.hero[k]) PROFILES[k][hk] = T.hero[k][hk];
+  for (k in T.men) MEN[k] = T.men[k];
+  TUNED = T; return T;
+}
+function tuneDiff(T) { var D0 = tuneDefaults(), out = {}, g, k, kk; for (g in T) { for (k in T[g]) { if (typeof T[g][k] === 'object') { for (kk in T[g][k]) if (D0[g] && D0[g][k] && Math.abs(T[g][k][kk] - D0[g][k][kk]) > 1e-9) { out[g] = out[g] || {}; out[g][k] = out[g][k] || {}; out[g][k][kk] = T[g][k][kk]; } } else if (D0[g] && Math.abs(T[g][k] - D0[g][k]) > 1e-9) { out[g] = out[g] || {}; out[g][k] = T[g][k]; } } } return out; }   // what differs from the code's own numbers
+function beastNum(k) { if (!TUNED) tune({}); return TUNED.beasts[k] || null; }
+function tuneBeast(e, k, o) {         // a beast dressed from the tuned numbers: its health, bite, speed and windup (and how far it notices you, when the page asks)
+  var b = beastNum(k); if (!b || !e) return e; o = o || {};
+  e.hp = e.maxHp = b.hp; e.cfg = e.cfg || {}; e.cfg.dmg = b.dmg; e.cfg.speed = 58 * b.speed;
+  if (e.cfg.atk) { e.cfg.atk = Object.assign({}, e.cfg.atk); e.cfg.atk.windup = b.windup; } else e.cfg.windup = b.windup;
+  if (o.aggro) e.aggro = b.aggro;
+  return e;
+}
 function init(l) { lib = l; reset(); buildGround(); }
-return { init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
+return { tune: tune, tuneDefaults: tuneDefaults, tuneDiff: tuneDiff, beastNum: beastNum, tuneBeast: tuneBeast, init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   hurt: function (e, dmg, ang) { damageEnemy(e, dmg * (e.type === 'soldier' ? MEN.hpK : 1), ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 
