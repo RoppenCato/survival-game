@@ -1,0 +1,16 @@
+{
+  "about": "Free sounds tried for the sword's swing and hit (2026-10-15, Robin: 'Maybe you should look online and see if you can find any free sound assets' and 'take swinging of sword too then. Do it'). Every one CC0 or free for any use: see CREDITS.md. Gains set by ear-weighted loudness (a high-pass at 100 Hz and a 4 dB shelf at 1.5 kHz, the loudest 50 ms) against what each would replace in the game at Sfx.vol 0.5: a hit at the studio's sword hit (-22), a heavy hit at its heavy hit (-21), a swing at Robin's light or heavy swing (-30, -26). The cut is laid 6 dB under the light impact in hit_h.",
+  "sounds": {
+    "hit_e": { "gain": 1.08, "label": "Kenney: light impact" },
+    "hit_f": { "gain": 0.457, "label": "Kenney: punch" },
+    "hit_g": { "gain": 0.69, "label": "OpenGameArt: thwacks" },
+    "cut": { "gain": 0.254, "label": "Kenney: a chop (a layer)" },
+    "heavyhit_e": { "gain": 0.53, "label": "Kenney: heavy punch" },
+    "heavyhit_f": { "gain": 0.79, "label": "OpenGameArt: thwacks with a crack" },
+    "swing_e": { "gain": 0.21, "label": "OpenGameArt: a swish (like Robin's light)" },
+    "swing_f": { "gain": 0.296, "label": "OpenGameArt: a heavier swish" }
+  },
+  "layers": {
+    "hit_h": { "parts": [["hit_e", 1, 0], ["cut", 1, 0]], "label": "Kenney: a chop over the light impact" }
+  }
+}

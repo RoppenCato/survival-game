@@ -2471,6 +2471,23 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   rumble at 121 Hz. **For the other weapons' swings:** recorded material in his manner first; if made in Sonic Pi, aimed at 300
   to 500 Hz with a rise of about 50 ms and a quick fall, each candidate's centre and band shares measured against his before
   Robin hears it. The studio holds the other swings until Robin has judged his two in the game.
+  **Then the sword's hit (Robin: "now i think its the sword hitting that sounds off").** Measured: the studio's `hit` is centred
+  at 104 Hz with nothing above 250 Hz (a kick drum pitched up, the iron tick and the noise slice under 1%), the heavy hit at 78
+  Hz: a thump, where the parry Robin likes sits at 3.5 kHz; and his swing, peaking on the hit at about 400 Hz, covers it.
+  **Free sounds, with Robin's go-ahead** ("look online... free sound assets", "take swinging of sword too then. Do it"): six packs
+  downloaded (Kenney's Impact Sounds and RPG Audio, CC0; OpenGameArt's thwack sounds, CC0, 3 melee sounds, free for any use, and
+  StarNinjas' sword attacks and clashes, CC0, measured and not used: knife scrapes at 8 kHz), every file measured (centre,
+  octave shares, rise, fall), and the fitting ones put in **`assets/sfx/free/`** under candidate names with **`CREDITS.md`**
+  (the pack, the author, the licence, the original file) and **`free.json`** (gains by ear-weighted loudness, a high-pass at
+  100 Hz and a 4 dB shelf at 1.5 kHz over the loudest 50 ms, matched to what each would replace; labels; one layered sound).
+  **The sword's hit:** E Kenney's light impact (600 to 900 Hz, the slap the old one lacks), F Kenney's punch (about 200 Hz), G
+  three thwacks, **H a Kenney chop (1 to 2 kHz, the cut) laid over the light impact**; **its heavy hit:** E Kenney's heavy punch,
+  F thwacks with a crack; **the swing:** E a swish that sits where Robin's light swing does (455 Hz), F a heavier one (292 Hz).
+  They are **choices on the arena's Choose rows** ("Choose the sword's hit", "its heavy hit", "the sword's swing"; each
+  labelled), the studio's hit and Robin's swings still the defaults. **`src/sfx.js` plays a layered sound** (`layers`: parts
+  played together, each at its gain; `Sfx.label`), and the bundler takes the three folders: `node tools/sfxjs.js "C:\dev\SG
+  Sound\out\sfx\combat|assets/sfx/robin|assets/sfx/free" combat` (4.4 MB). Checked by stepping the arena: choosing H, a chain
+  played Robin's light swing, H, light swing, H, his heavy swing and the heavy hit.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero

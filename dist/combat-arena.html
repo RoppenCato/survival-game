@@ -5226,7 +5226,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
    Sfx.names()                               what is loaded, with the number of variations
    No browser globals at load time: it loads in Node too (the tests). */
 var Sfx = (function () {
-  var bufs = {}, gains = {}, peaks = {}, last = {}, sets = {};
+  var bufs = {}, gains = {}, peaks = {}, last = {}, sets = {}, layers = {}, labels = {};
   function b64bytes(b64) { var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
   function loudest(buf) { var d = buf.getChannelData(0), w = Math.max(1, Math.round(buf.sampleRate * 0.01)), best = -1, at = 0; for (var s0 = 0; s0 + w <= d.length; s0 += w >> 1) { var e = 0; for (var i = s0; i < s0 + w; i++) e += d[i] * d[i]; if (e > best) { best = e; at = s0 + w / 2; } } return at / buf.sampleRate; }   /* an MP3's peak, found once it is decoded (the bundler measures a WAV's) */
   function decode(ctx, ab) { return new Promise(function (res, rej) { var p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); }); }
@@ -5240,6 +5240,8 @@ var Sfx = (function () {
         var jobs = [];
         Object.keys(S.gain || {}).forEach(function (n) { gains[n] = S.gain[n]; });
         Object.keys(S.peak || {}).forEach(function (n) { peaks[n] = S.peak[n]; });
+        Object.keys(S.label || {}).forEach(function (n) { labels[n] = S.label[n]; });
+        Object.keys(S.layers || {}).forEach(function (n) { layers[n] = S.layers[n]; });
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
           var pk = S.peakf && S.peakf[f];
@@ -5255,10 +5257,16 @@ var Sfx = (function () {
     });
     return sets[set];
   }
-  function has(n) { return !!(bufs[n] && bufs[n].length); }
-  function names() { var o = {}; for (var n in bufs) o[n] = bufs[n].length; return o; }
+  function has(n) { if (bufs[n] && bufs[n].length) return true; var L = layers[n]; return !!(L && L.parts.every(function (pt) { return bufs[pt[0]] && bufs[pt[0]].length; })); }
+  function names() { var o = {}, n; for (n in bufs) o[n] = bufs[n].length; for (n in layers) if (has(n)) o[n] = bufs[layers[n].parts[0][0]].length; return o; }
+  function label(n) { return labels[n] || (layers[n] && layers[n].label) || ''; }
   function play(ctx, dest, n, o) {
     if (!Sfx.on || !ctx) return false;
+    if (layers[n] && !(bufs[n] && bufs[n].length)) {   /* a layered sound: every part at once, each at its own gain times the part's */
+      var first = false; o = o || {};
+      layers[n].parts.forEach(function (pt) { var o2 = {}; for (var k in o) o2[k] = o[k]; o2.v = (o.v == null ? 1 : o.v) * (pt[1] == null ? 1 : pt[1]); if (pt[2]) o2.delay = (o2.delay || 0) + pt[2]; var h = play(ctx, dest, pt[0], o2); if (!first) first = h; });
+      return first;
+    }
     var list = bufs[n]; if (!list || !list.length) return false;
     o = o || {};
     var i = Math.floor(Math.random() * list.length);
@@ -5278,7 +5286,7 @@ var Sfx = (function () {
     try { if (h.at > now + 0.005) { h.src.stop(); return; } h.g.gain.cancelScheduledValues(now); h.g.gain.setValueAtTime(h.g.gain.value, now); h.g.gain.setTargetAtTime(0, now, f / 3); h.src.stop(now + f * 2 + 0.02); } catch (e) {}
   }
   function peak(n) { return peaks[n] || 0; }
-  return { load: load, has: has, play: play, cut: cut, peak: peak, names: names, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
+  return { load: load, has: has, play: play, cut: cut, peak: peak, names: names, label: label, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
 })();
 if (typeof module !== 'undefined') module.exports = Sfx;
 
@@ -5529,12 +5537,12 @@ if (typeof module !== 'undefined') module.exports = Sfx;
       host.appendChild(d);
     });
     /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick) */
-    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-e])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
+    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
     Object.keys(cands).forEach(function (base) {
-      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + base; d.appendChild(lab);
+      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the sword’s hit' : base === 'heavyhit' ? 'its heavy hit' : base === 'swing' ? 'the sword’s swing' : base); d.appendChild(lab);
       var opts = base === 'swing' ? (Sfx.has('swing_light') ? ['robin', 'orig'] : ['orig']).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_light') ? 'robin' : 'orig') : '';
       opts.forEach(function (k) {
-        var b = document.createElement('button'); b.textContent = k === 'robin' ? 'Robin’s' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() : 'As delivered'; b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
+        var b = document.createElement('button'); b.textContent = k === 'robin' ? 'Robin’s' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' ? 'The studio’s' : 'As delivered'); b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
         b.addEventListener('click', function () {
           if (k && k !== dflt) SFX_PICK[base] = k; else delete SFX_PICK[base];
           try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {}

@@ -458,12 +458,12 @@ __SFX__
       host.appendChild(d);
     });
     /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick) */
-    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-e])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
+    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
     Object.keys(cands).forEach(function (base) {
-      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + base; d.appendChild(lab);
+      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the sword’s hit' : base === 'heavyhit' ? 'its heavy hit' : base === 'swing' ? 'the sword’s swing' : base); d.appendChild(lab);
       var opts = base === 'swing' ? (Sfx.has('swing_light') ? ['robin', 'orig'] : ['orig']).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_light') ? 'robin' : 'orig') : '';
       opts.forEach(function (k) {
-        var b = document.createElement('button'); b.textContent = k === 'robin' ? 'Robin’s' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() : 'As delivered'; b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
+        var b = document.createElement('button'); b.textContent = k === 'robin' ? 'Robin’s' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' ? 'The studio’s' : 'As delivered'); b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
         b.addEventListener('click', function () {
           if (k && k !== dflt) SFX_PICK[base] = k; else delete SFX_PICK[base];
           try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {}
