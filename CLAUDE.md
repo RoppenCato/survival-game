@@ -595,6 +595,13 @@ the text and it is made the default. When a spec's meaning changes, change the s
   stays as the fallback for a clip with no sheet for what is in the hand; **`shows` reads a clip's `sheets`**: the packer writes
   no per-clip `layers` key (only the top-level `layers`, and per clip `sheets` and `boxes`), and the first `shows` read that
   missing key, so the stopgap never acted and the axe stayed invisible until this drop. An axe blow is the one-handed slash.
+  **Robin's verdict on the studio's grip comparison (2026-10-15), sent to the art studio to render:** the sword at rest tilted
+  forward (but the old way facing north); **the axe at rest and walking the old way, held at the haft's end, but a shorter axe**
+  (choked up, nobody could tell it was an axe); **the pick a new model, a classic two-headed pickaxe**; the Dane axe and the
+  spear upright at rest, the Dane axe's head turned to read facing north and south, the spear's tip up there too; **the spear
+  to stab in a fight, not swing** (a new clip; the game will play it for the spear); the blade cocked 20 degrees in the first
+  slash only (not the second slash, not the chop); and **facing east the chop's axe head turned up so the edge meets the tree**.
+  The wrist (Mixamo hand bones) waits.
   **The grip (Robin, the same day: "he's holding them a bit far down on the grip... wouldnt holding like that be very
   uncomfortable?"):** the fist sits where it should on each weapon (`items_build.py`: the sword between guard and pommel, an axe
   or a pick 9 cm from the haft's end, the spear about 40% up from the butt), but **every weapon continues the forearm's line**
