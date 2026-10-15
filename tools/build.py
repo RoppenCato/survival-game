@@ -26,6 +26,10 @@ SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), 
 # metadata inlined and the PNGs as paths beside dist/ (../assets/sprites/...), which load from file:// and from the workbench
 # server rooted at the repo. (They were data URIs until 2026-10-09; eighteen Mixamo clips made that 25 MB of page.)
 import base64, json, re
+TAGS = {}
+def sheet_tag(fp):
+    if fp not in TAGS: TAGS[fp] = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8]
+    return TAGS[fp]
 def all_sprites():
     """every packed sheet under assets/sprites/<name>/<name>.json, for the Blender Editor"""
     root = os.path.join(ROOT, 'assets', 'sprites'); out = {}
@@ -35,7 +39,9 @@ def all_sprites():
         if not os.path.exists(jp): continue
         j = json.load(open(jp, encoding='utf-8')); imgs = {}
         for a in j['anims'].values():
-            for f in a['sheets'].values(): imgs[f] = '../assets/sprites/' + name + '/' + f
+            for f in a['sheets'].values():
+                fp = os.path.join(root, name, f)   # tagged by its bytes (2026-10-15): a browser kept the old idle spear sheet under the new boxes and drew it in pieces
+                imgs[f] = '../assets/sprites/' + name + '/' + f + ('?v=' + sheet_tag(fp) if os.path.exists(fp) else '')
         out[name] = {'meta': j, 'images': imgs}
     return json.dumps(out)
 SRC['__SPRITES__'] = all_sprites()

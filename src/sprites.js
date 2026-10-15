@@ -43,6 +43,7 @@
     var g = cv2.getContext('2d'); g.globalCompositeOperation = 'copy'; g.globalAlpha = 1 - w; g.drawImage(im, f * fw, d * fh, fw, fh, 0, 0, fw, fh);
     g.globalCompositeOperation = 'lighter'; g.globalAlpha = w; g.drawImage(im, f2 * fw, d * fh, fw, fh, 0, 0, fw, fh); return cv2;
   }
+  function holds(layers, name) { for (var i = 0; i < layers.length; i++) { var n = typeof layers[i] === 'string' ? layers[i] : layers[i] && layers[i].layer; if (n === name) return true; } return false; }
   function shows(A, layers) { var sh = A.sheets || {}, i, n; for (i = 0; i < layers.length; i++) { n = typeof layers[i] === 'string' ? layers[i] : layers[i] && layers[i].layer; if (!n || n === 'body' || /^shield/.test(n)) continue; if (!sh[n]) return false; } return true; }   /* does the clip hold every layer of what is in the hand */
   // which clip and frame the hero's state asks for. opts: stepData() (the engine's attack step), tool() ('pick', 'axe', ... or null)
   function pick(H, P, an, opts) {
@@ -52,7 +53,11 @@
       var sd = opts.stepData(), tot = sd.wu + sd.ac + sd.rec, el = a.ph === 'windup' ? a.t : a.ph === 'active' ? sd.wu + a.t : sd.wu + sd.ac + a.t, k = Math.max(0, Math.min(0.999, el / tot)), nm;
       if (P.mode === 'gather') { var tl = opts.tool ? opts.tool() : null; nm = tl === 'pick' ? 'mine' : 'chop'; }
       else nm = (a.combo % 2) ? 'attack2' : 'attack1';
-      if (A[nm] && A.chop && opts.layers && !shows(A[nm], opts.layers) && shows(A.chop, opts.layers)) nm = 'chop';   /* a clip that cannot show what is in the hand (the hero's slashes have no axe: Robin, 2026-10-15, "the axe seems invisible when hitting") gives way to one that can: the chop, an overhead axe blow */
+      if (A[nm] && A.chop && opts.layers && !shows(A[nm], opts.layers) && shows(A.chop, opts.layers)) nm = 'chop';
+      if (P.mode !== 'gather' && A.thrust && opts.layers && holds(opts.layers, 'spearWood') && shows(A.thrust, opts.layers)) {   /* the spear stabs (2026-10-15, Robin: "he should also be doing a stabbing motion with spear, not swing"): the art studio's thrust, its drive (frames 5 to 7) on the moment the blow lands, which is the windup's end */
+        var ph = a.ph, uu = ph === 'windup' ? a.t / Math.max(0.001, sd.wu) : ph === 'active' ? a.t / Math.max(0.001, sd.ac) : a.t / Math.max(0.001, sd.rec); uu = Math.max(0, Math.min(1, uu));
+        return { a: 'thrust', f: frameAt(A.thrust, Math.min(0.999, ph === 'windup' ? 0.38 * uu : ph === 'active' ? 0.38 + 0.22 * uu : 0.6 + 0.4 * uu)) };
+      }   /* a clip that cannot show what is in the hand (the hero's slashes have no axe: Robin, 2026-10-15, "the axe seems invisible when hitting") gives way to one that can: the chop, an overhead axe blow */
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
     if (H.clip && !A[H.clip.name]) H.clip = null;

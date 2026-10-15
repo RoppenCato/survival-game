@@ -602,6 +602,20 @@ the text and it is made the default. When a spec's meaning changes, change the s
   to stab in a fight, not swing** (a new clip; the game will play it for the spear); the blade cocked 20 degrees in the first
   slash only (not the second slash, not the chop); and **facing east the chop's axe head turned up so the edge meets the tree**.
   The wrist (Mixamo hand bones) waits.
+  **Rendered and in the game the same evening** (the studio's drop, the whole folder `out\hero\sheets\hero2-mixamo`, 101 sheets
+  changed and six new; six bag icons; `art/build/items_build.py` with its modes `rest | tilt | chop<deg>`, `items_merge2.py` and
+  **`thrust_build.py`** copied in): the rest grips (the sword, seax, knife and club tilted 25 degrees, the old frames facing north;
+  the Dane axe and the spear upright, the head turned 45 degrees and the shaft canted out 12; the axe and the pick hanging),
+  **the axe 0.58 m and the spear 1.74 m everywhere, the two-headed pickaxe**, the 20-degree tilt in `attack1` only, the axe and
+  the pick turned about the haft in `chop` and `mine` (so seen from the east the edge meets the tree; turned in every direction,
+  so facing west is to be looked at), and **a new clip, `thrust`** (12 frames, a frame of its own 315 by 202 like the death; the
+  elbow up behind the shoulder, the spear driven forward and down with the torso leaning in, the point furthest at frame 7, a
+  hold, the recovery). **`Sprites.pick` plays `thrust` for a blow with a spear in hand** (`holds(layers, 'spearWood')`), its
+  drive on the blow's landing: the windup is frames 1 to 5, the blow 5 to 7, the recovery 8 to 12 (0.38, 0.6 of the clip).
+  **Found on the way: the browser kept the old sheets.** The numbers are built into the page and the pictures are not, so the
+  old idle spear sheet was drawn by the new boxes, in fragments; **every sheet's path now carries `?v=` and eight letters of
+  its own bytes** (`sheet_tag` in `tools/build.py`, as the set pieces had), so a changed sheet is always fetched. Checked in the
+  arena: the spear and the Dane axe upright and whole from four sides, the stab in its own frame, the pickaxe and the chop.
   **The grip (Robin, the same day: "he's holding them a bit far down on the grip... wouldnt holding like that be very
   uncomfortable?"):** the fist sits where it should on each weapon (`items_build.py`: the sword between guard and pommel, an axe
   or a pick 9 cm from the haft's end, the spear about 40% up from the butt), but **every weapon continues the forearm's line**

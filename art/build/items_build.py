@@ -73,20 +73,21 @@ def build_sword():
             ball('swordWood_pommel', MAT['bronze'], (0, 0, -0.098), 0.024, 1.0, 1.0, 0.85), ball('swordWood_lobeA', MAT['bronze'], (0, 0.033, -0.091), 0.017, 0.9, 1.0, 0.8), ball('swordWood_lobeB', MAT['bronze'], (0, -0.033, -0.091), 0.017, 0.9, 1.0, 0.8),   # the three lobes
             poly('swordMetal_blade', MAT['metal'], blade, 0.012),
             poly('swordMetal_fuller', MAT['fuller'], [(-0.008, 0.09), (0.008, 0.09), (0.007, 0.60), (-0.007, 0.60)], 0.0135)], RIGHT)   # the groove, a shade darker, showing on both faces
-def build_axe():
-    head = [(0.03, 0.575), (-0.035, 0.58), (-0.14, 0.605), (-0.178, 0.565), (-0.188, 0.50), (-0.172, 0.425), (-0.148, 0.36), (-0.095, 0.40), (-0.062, 0.46), (-0.042, 0.50), (-0.036, 0.51), (0.03, 0.515)]
-    attach([cyl('axeWood_haft', MAT['wood'], (0, 0, -0.09), (0, 0, 0.60), 0.019, 0.016),
-            cyl('axeWood_wedge', MAT['dark'], (0, 0, 0.59), (0, 0, 0.605), 0.014, 0.012, seg=6),                                 # the wedge that holds the head
+def build_axe():                            # 2026-10-15: the haft 0.58 m (was 0.69), so the head hangs clear of the ground from a hanging arm
+    head = [(0.03, 0.475), (-0.035, 0.48), (-0.14, 0.505), (-0.178, 0.465), (-0.188, 0.40), (-0.172, 0.325), (-0.148, 0.26), (-0.095, 0.30), (-0.062, 0.36), (-0.042, 0.40), (-0.036, 0.41), (0.03, 0.415)]
+    attach([cyl('axeWood_haft', MAT['wood'], (0, 0, -0.08), (0, 0, 0.50), 0.019, 0.016),
+            cyl('axeWood_wedge', MAT['dark'], (0, 0, 0.49), (0, 0, 0.505), 0.014, 0.012, seg=6),                                 # the wedge that holds the head
             poly('axeMetal_head', MAT['metal'], head, 0.02)], RIGHT)
 def build_greataxe():                       # the Dane axe (2026-10-13, as the people's): a long haft, a broad thin crescent set off toward +Z
     head = [(0.03, 0.88), (-0.04, 0.885), (-0.20, 0.945), (-0.262, 0.885), (-0.278, 0.78), (-0.255, 0.665), (-0.19, 0.59), (-0.10, 0.70), (-0.06, 0.78), (-0.04, 0.815), (0.03, 0.82)]
     attach([cyl('greataxeWood_haft', MAT['wood'], (0, 0, -0.34), (0, 0, 0.90), 0.018, 0.016), cyl('greataxeWood_wedge', MAT['dark'], (0, 0, 0.89), (0, 0, 0.905), 0.013, 0.011, seg=6),
             poly('greataxeMetal_head', MAT['metal'], head, 0.016)], RIGHT)
-def build_pick():
-    attach([cyl('pickWood_haft', MAT['wood'], (0, 0, -0.09), (0, 0, 0.50), 0.019, 0.016),
-            box('pickMetal_socket', MAT['metal'], (0, 0, 0.46), (0.034, 0.07, 0.07)),
-            cyl('pickMetal_point', MAT['metal'], (0, -0.03, 0.46), (0, -0.30, 0.40), 0.024, 0.004),                              # one point, curving a little down
-            box('pickMetal_hammer', MAT['metal'], (0, 0.06, 0.46), (0.034, 0.06, 0.05))], RIGHT)                                    # a hammer face behind
+def build_pick():                           # 2026-10-15 (Robin): a classic two-headed pickaxe: a bowed head, two points curving down to their tips, the eye round the haft
+    half = [(0.04, 0.47), (0.12, 0.465), (0.20, 0.44), (0.27, 0.395), (0.29, 0.36), (0.26, 0.37), (0.19, 0.40), (0.12, 0.415), (0.04, 0.42)]
+    head = [(y, z) for (y, z) in half] + [(-y, z) for (y, z) in reversed(half)]                                                    # the right point, then the left, one outline
+    attach([cyl('pickWood_haft', MAT['wood'], (0, 0, -0.08), (0, 0, 0.47), 0.019, 0.016),
+            poly('pickMetal_head', MAT['metal'], head, 0.028),
+            box('pickMetal_eye', MAT['metal'], (0, 0, 0.445), (0.04, 0.085, 0.06))], RIGHT)                                       # the eye the haft passes through
 def build_seax():
     blade = [(0.012, 0.045), (0.012, 0.30), (-0.02, 0.42), (-0.032, 0.30), (-0.03, 0.045)]
     attach([cyl('seaxWood_handle', MAT['horn'], (0, 0, -0.085), (0, 0, 0.045), 0.016, 0.014, seg=8), cyl('seaxWood_ferrule', MAT['bronze'], (0, 0, 0.038), (0, 0, 0.048), 0.0165, 0.0165, seg=8), ball('seaxWood_butt', MAT['bronze'], (0, 0, -0.088), 0.014),
@@ -99,11 +100,11 @@ def build_club():
     attach([cyl('clubWood_a', MAT['wood'], (0, 0, -0.10), (0, 0, 0.40), 0.02, 0.042, seg=10), ball('clubWood_knob', MAT['wood'], (0, 0, 0.42), 0.055, 1.0, 1.1, 0.9),
             ball('clubWood_burlA', MAT['wood'], (0, -0.035, 0.37), 0.028), ball('clubWood_burlB', MAT['wood'], (0, 0.04, 0.44), 0.025), ball('clubWood_burlC', MAT['wood'], (0.03, 0.0, 0.46), 0.022),   # a root's knots
             ball('clubWood_knotA', MAT['dark'], (0.02, -0.02, 0.18), 0.012), ball('clubWood_knotB', MAT['dark'], (-0.02, 0.015, 0.30), 0.011)], RIGHT)
-def build_spear():
-    head = [(0.0, 1.02), (0.034, 1.09), (0.032, 1.17), (0.016, 1.26), (0.0, 1.30), (-0.016, 1.26), (-0.032, 1.17), (-0.034, 1.09)]
-    attach([cyl('spearWood_shaft', MAT['wood'], (0, 0, -0.65), (0, 0, 0.96), 0.014, 0.013),
-            cyl('spearMetal_socket', MAT['metal'], (0, 0, 0.94), (0, 0, 1.03), 0.019, 0.016), poly('spearMetal_head', MAT['metal'], head, 0.011),
-            cyl('spearMetal_rib', MAT['metal'], (0, 0, 1.03), (0, 0, 1.26), 0.0085, 0.004, seg=6)], RIGHT)
+def build_spear():                          # 2026-10-15: 1.74 m (was 1.95), so it fits the frame carried upright and reaches less far out of it in a thrust
+    head = [(0.0, 0.96), (0.034, 1.03), (0.032, 1.11), (0.016, 1.20), (0.0, 1.24), (-0.016, 1.20), (-0.032, 1.11), (-0.034, 1.03)]
+    attach([cyl('spearWood_shaft', MAT['wood'], (0, 0, -0.50), (0, 0, 0.90), 0.014, 0.013),
+            cyl('spearMetal_socket', MAT['metal'], (0, 0, 0.88), (0, 0, 0.97), 0.019, 0.016), poly('spearMetal_head', MAT['metal'], head, 0.011),
+            cyl('spearMetal_rib', MAT['metal'], (0, 0, 0.97), (0, 0, 1.20), 0.0085, 0.004, seg=6)], RIGHT)
 def build_rod():
     attach([cyl('rodWood_a', MAT['wood'], (0, 0, -0.15), (0, 0, 1.3), 0.012, 0.004, seg=6)], RIGHT)
 def build_bow():
@@ -117,8 +118,43 @@ def build_bow():
     objs.append(cyl('bowWood_string', MAT['cord'], pts[0], pts[-1], 0.003, 0.003, seg=4))
     attach(objs, LEFT, False)
 for fn in (build_axe, build_pick, build_sword, build_knife, build_seax, build_club, build_spear, build_rod, build_bow, build_greataxe): fn()
+# --rest and --tilt (2026-10-15; Robin, through the game's session: the Dane axe and the spear hung into the ground when he stood,
+# walked and ran, and "he's holding them a bit far down on the grip, like at the bottom; wouldn't that be uncomfortable?").
+# The rig has no hand bones (Mixamo's No Fingers skeleton: the hands ride on the forearms), so there is no wrist to give back;
+# what can change is the grip per kind and per use. Two more files are saved beside hero2_mixamo.blend:
+#   rest   for idle, walk and run: the sword, seax, knife and club hang tilted forward of the arm's line, as a wrist would hold
+#          them; the axe and the pick are held choked up under the head, the head out at the hip and the haft hanging; the
+#          Dane axe and the spear stand upright beside him, the shaft through the fist, on the world's up whatever the arm does
+#          (a Child Of on an empty in the fist for the place, a Copy Rotation from the rig for the way up and the facing), the
+#          butt just above the ground, the head up by the shoulder, the crescent forward
+#   tilt   for the fight clips: every thing in the right hand cocked toward the knuckles by TILT degrees, so the blade leads the
+#          arm in a blow instead of continuing it like a stick taped on
+# The layer names are the same, so the game needs no wiring: it is a matter of which file a clip is rendered from.
+ARGS = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
+MODE = next((x for x in ARGS if x in ('rest', 'carry', 'tilt') or x.startswith('chop')), None); MODE = 'rest' if MODE == 'carry' else MODE
+TILT = 20.0; CANT = 12.0
+def kind_of(o): return o.name.split('Wood')[0] if 'Wood' in o.name else o.name.split('Metal')[0]
+if MODE == 'rest':
+    fist = bpy.data.objects.new('carryFist', None); gear.objects.link(fist); fist.parent = rig; fist.parent_type = 'BONE'; fist.parent_bone = RIGHT; fist.matrix_parent_inverse = Matrix.Identity(4); fist.location = GRIP
+    carry = bpy.data.objects.new('carryR', None); gear.objects.link(carry)
+    c = carry.constraints.new('CHILD_OF'); c.target = fist; c.inverse_matrix = Matrix.Identity(4)                  # Blender sets an inverse at creation that would leave the empty at the origin
+    for ax in 'xyz': setattr(c, 'use_rotation_' + ax, False); setattr(c, 'use_scale_' + ax, False)
+    r = carry.constraints.new('COPY_ROTATION'); r.target = rig; r.owner_space = 'WORLD'; r.target_space = 'WORLD'
+    for o in gear.objects:
+        k = kind_of(o)
+        if k in ('spear', 'greataxe'):
+            o.parent = carry; o.parent_type = 'OBJECT'; o.matrix_parent_inverse = Matrix.Identity(4); o.location = (-0.025, 0.0, 0.0); o.rotation_euler = (-math.pi / 2, math.radians(45), math.radians(CANT))   # carry space: Y up, Z forward, -X his right; the head turned 45 degrees so it reads from every side (Robin: edge-on it was a stick), the shaft canted out
+        elif k in ('sword', 'seax', 'knife', 'club'):
+            o.rotation_euler = (-math.pi / 2, 0, -math.radians(25))                                                  # tilted forward of the arm's line (the bone's +X is forward with the arm hanging)
+        # the axe and the pick keep the grip along the arm (Robin, 2026-10-15: the choked grip hid what he holds; the shorter haft keeps the head off the ground)
+elif MODE and MODE.startswith('chop'):                                                                     # chop<degrees>: the axe and the pick turned about the haft, for the chop and mine clips
+    for o in gear.objects:
+        if kind_of(o) in ('axe', 'pick'): o.rotation_euler = (-math.pi / 2, math.radians(float(MODE[4:] or 0)), 0)
+elif MODE == 'tilt':
+    for o in gear.objects:
+        if kind_of(o) in ('sword', 'axe', 'pick', 'knife', 'club', 'seax', 'spear', 'greataxe'): o.rotation_euler = (-math.pi / 2 + math.radians(TILT), 0, 0)
 # the items start hidden in renders; render.py's layer setup shows the chosen one
 for o in gear.objects:
     if any(o.name.startswith(k) for k in KINDS): o.hide_render = True
-out = os.path.abspath(os.path.join(SRC, 'hero2_mixamo.blend')); bpy.ops.wm.save_as_mainfile(filepath=out)
+out = os.path.abspath(os.path.join(SRC, 'hero2_mixamo_%s.blend' % MODE if MODE else 'hero2_mixamo.blend')); bpy.ops.wm.save_as_mainfile(filepath=out)
 print('items built:', sorted(set(o.name.split('_')[0] for o in gear.objects)), 'saved', out)
