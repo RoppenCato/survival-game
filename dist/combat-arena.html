@@ -4859,6 +4859,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var g = cv2.getContext('2d'); g.globalCompositeOperation = 'copy'; g.globalAlpha = 1 - w; g.drawImage(im, f * fw, d * fh, fw, fh, 0, 0, fw, fh);
     g.globalCompositeOperation = 'lighter'; g.globalAlpha = w; g.drawImage(im, f2 * fw, d * fh, fw, fh, 0, 0, fw, fh); return cv2;
   }
+  function shows(A, layers) { var have = A.layers || [], i, n; for (i = 0; i < layers.length; i++) { n = typeof layers[i] === 'string' ? layers[i] : layers[i] && layers[i].layer; if (!n || n === 'body' || /^shield/.test(n)) continue; if (have.indexOf(n) < 0) return false; } return true; }   /* does the clip hold every layer of what is in the hand */
   // which clip and frame the hero's state asks for. opts: stepData() (the engine's attack step), tool() ('pick', 'axe', ... or null)
   function pick(H, P, an, opts) {
     var A = H.meta.anims, t = now(), a = P.atk;
@@ -4867,6 +4868,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var sd = opts.stepData(), tot = sd.wu + sd.ac + sd.rec, el = a.ph === 'windup' ? a.t : a.ph === 'active' ? sd.wu + a.t : sd.wu + sd.ac + a.t, k = Math.max(0, Math.min(0.999, el / tot)), nm;
       if (P.mode === 'gather') { var tl = opts.tool ? opts.tool() : null; nm = tl === 'pick' ? 'mine' : 'chop'; }
       else nm = (a.combo % 2) ? 'attack2' : 'attack1';
+      if (A[nm] && A.chop && opts.layers && !shows(A[nm], opts.layers) && shows(A.chop, opts.layers)) nm = 'chop';   /* a clip that cannot show what is in the hand (the hero's slashes have no axe: Robin, 2026-10-15, "the axe seems invisible when hitting") gives way to one that can: the chop, an overhead axe blow */
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
     if (H.clip && !A[H.clip.name]) H.clip = null;
@@ -5432,7 +5434,8 @@ if (typeof module !== 'undefined') module.exports = Sfx;
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick2') || '{}') || {}; } catch (eP) {}
-  function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
+  var DEFAULT_PICK = { raise: 'f' };   /* Robin's picks where the default is a candidate: the shield going up is F, leather handled (2026-10-15) */
+  function pickOf(n) { var k = n in SFX_PICK ? SFX_PICK[n] : DEFAULT_PICK[n]; return k && k !== 'orig' && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
   /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
      finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
      and the studio's (orig, a to d) are the arena's other choices */
@@ -5556,11 +5559,11 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
     Object.keys(cands).forEach(function (base) {
       var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the sword’s hit' : base === 'heavyhit' ? 'its heavy hit' : base === 'swing' ? 'the sword’s swing' : base === 'raise' ? 'the shield going up' : base); d.appendChild(lab);
-      var opts = base === 'swing' ? ['free', 'robin', 'orig'].filter(function (q) { return q === 'orig' || Sfx.has(SWING_SETS[q][0]); }).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_e') ? 'free' : 'orig') : '';
+      var opts = base === 'swing' ? ['free', 'robin', 'orig'].filter(function (q) { return q === 'orig' || Sfx.has(SWING_SETS[q][0]); }).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_e') ? 'free' : 'orig') : (DEFAULT_PICK[base] || '');
       opts.forEach(function (k) {
-        var b = document.createElement('button'); b.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' ? 'The studio’s' : 'As delivered'); b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
+        var b = document.createElement('button'); b.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' ? 'The studio’s' : 'As delivered'); var cur = base in SFX_PICK ? SFX_PICK[base] : dflt; if (cur === 'orig' && base !== 'swing') cur = ''; b.setAttribute('aria-pressed', cur === k ? 'true' : 'false');
         b.addEventListener('click', function () {
-          if (k && k !== dflt) SFX_PICK[base] = k; else delete SFX_PICK[base];
+          if (k === dflt) delete SFX_PICK[base]; else SFX_PICK[base] = k || 'orig';
           try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {}
           var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k === 'free' ? 'swing_e' : k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k);
           sfxList(); b.blur();

@@ -235,7 +235,8 @@ __COMBAT__
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick2') || '{}') || {}; } catch (eP) {}
-  function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
+  var DEFAULT_PICK = { raise: 'f' };   /* Robin's picks where the default is a candidate: the shield going up is F, leather handled (2026-10-15) */
+  function pickOf(n) { var k = n in SFX_PICK ? SFX_PICK[n] : DEFAULT_PICK[n]; return k && k !== 'orig' && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
   /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
      finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
      and the studio's (orig, a to d) are the arena's other choices */

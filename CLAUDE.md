@@ -582,6 +582,13 @@ the text and it is made the default. When a spec's meaning changes, change the s
   (`items_merge.py`) and packs; `npm run art:icons` renders each kind alone, laid on its side from a nearly level camera, as
   `assets/sprites/items/<kind>_wood.png` and `_metal.png` (`items_icons.py`), which the build inlines as `__ICONS__` and `Items.icon`
   draws (`Items.setIcons`, the metal tinted by the material, laid diagonally in the slot; the drawn icon is the fallback).
+  **The axe has no layers in the hero's slashes (found 2026-10-15, Robin: "when hitting with the axe, the axe seem to be invisible
+  when hitting"):** `attack1` and `attack2` hold the sword, club, Dane axe, seax, spear and shield layers but not `axeWood` and
+  `axeMetal`, so an axe in a fight-mode blow (the Combat Arena; in the game an axe is a tool and chops) drew an empty hand.
+  **`Sprites.pick` now plays the chop clip when the slash cannot show what is in the hand** (`shows(clip, layers)`: every layer
+  but the body and the shield's), an overhead axe blow; the chop has no shield layers, so a worn shield is not drawn through the
+  blow. **And the Dane axe and the spear hang below the feet in the idle** in five of eight directions (they read as sunk in the
+  ground). Both asked of the art studio (Art Director): the axe rendered into the slashes, and a carry for the long weapons.
   **In the game** the thing in the hand is the hero's layers (`handLayers`: the kind of the Fight or Gather bar's hand slot, its
   metal tinted `Items.MATS[mat].face`; nothing while carrying the chest or with the torch lit), in the Combat Arena the weapon panel's
   kinds (`arenaLayers`), in the Art Editor's Models tab the **In the hand** chooser. `Sprites.draw` takes a layer as a name or
@@ -2513,6 +2520,8 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   `free.json` by file, passed by the bundler; `src/sfx.js` starts it there and counts its peak from there), so the sound comes
   as the guard does. The arena's "Choose the shield going up" row; the studio's stays the default until Robin picks. Checked:
   K played the chosen one; the loudest peaks at -14.6 dBFS. The bundle is 5.3 MB.
+  **Robin picked F for the shield (leather handled): it is the default** (`DEFAULT_PICK` = { raise: 'f' } in both pages; `pickOf`
+  takes it unless something is stored; the arena's row says F; choosing "The studio's" stores `orig`).
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero
