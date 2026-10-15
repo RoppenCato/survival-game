@@ -589,6 +589,14 @@ the text and it is made the default. When a spec's meaning changes, change the s
   but the body and the shield's), an overhead axe blow; the chop has no shield layers, so a worn shield is not drawn through the
   blow. **And the Dane axe and the spear hang below the feet in the idle** in five of eight directions (they read as sunk in the
   ground). Both asked of the art studio (Art Director): the axe rendered into the slashes, and a carry for the long weapons.
+  **The grip (Robin, the same day: "he's holding them a bit far down on the grip... wouldnt holding like that be very
+  uncomfortable?"):** the fist sits where it should on each weapon (`items_build.py`: the sword between guard and pommel, an axe
+  or a pick 9 cm from the haft's end, the spear about 40% up from the butt), but **every weapon continues the forearm's line**
+  (the long axis on the forearm's +Y, from `probe_grip.py`) **and the mitten hands are bound to the forearm** (`mixamo_bind.py`), so
+  there is no wrist: a weapon reads as a stick taped to the arm, and at rest the axe, the pick and the Dane axe hang from the end
+  of the haft with the head by the ankle. Asked of the art studio with the rest (not built): the hands bound to the Mixamo hand
+  bones (whose wrist motion the clips carry) with the weapons on them, a grip across the palm, a rest carry for hafted things,
+  and a comparison picture for Robin before rendering everything.
   **In the game** the thing in the hand is the hero's layers (`handLayers`: the kind of the Fight or Gather bar's hand slot, its
   metal tinted `Items.MATS[mat].face`; nothing while carrying the chest or with the torch lit), in the Combat Arena the weapon panel's
   kinds (`arenaLayers`), in the Art Editor's Models tab the **In the hand** chooser. `Sprites.draw` takes a layer as a name or
