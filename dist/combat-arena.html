@@ -5431,7 +5431,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   /* the hero's swing starts in his windup so its loudest moment comes as the blow lands (x.lead, 2026-10-15) and is cut when it
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
-  try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick') || '{}') || {}; } catch (eP) {}
+  try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick2') || '{}') || {}; } catch (eP) {}
   function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
   /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
      finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
@@ -5516,7 +5516,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   toggle('show', function () { return showBlows; }, function (v) { showBlows = v; });
   toggle('sound', function () { return S.sound; }, function (v) { S.sound = v; });
   toggle('oldsfx', function () { return oldSfx; }, function (v) { oldSfx = v; });
-  toggle('swingcut', function () { return !!SFX_PICK.cut; }, function (v) { if (v) SFX_PICK.cut = true; else delete SFX_PICK.cut; try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {} });
+  toggle('swingcut', function () { return !!SFX_PICK.cut; }, function (v) { if (v) SFX_PICK.cut = true; else delete SFX_PICK.cut; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} });
   /* the listening panel (2026-10-15): every fight sound by name, recorded if the studio's set has it, else the old one */
   var SFX_ROWS = [
     ['Swings', ['swing_light', 'swing_heavy', 'swing', 'swing_axe', 'swing_club', 'swing_seax', 'swing_spear', 'swing_greataxe']],
@@ -5550,7 +5550,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
         var b = document.createElement('button'); b.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' ? 'The studio’s' : 'As delivered'); b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
         b.addEventListener('click', function () {
           if (k && k !== dflt) SFX_PICK[base] = k; else delete SFX_PICK[base];
-          try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {}
+          try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {}
           var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k === 'free' ? 'swing_e' : k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k);
           sfxList(); b.blur();
         });

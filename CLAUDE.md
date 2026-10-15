@@ -2440,7 +2440,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   hear), the sword's swing is near full loudness from its first 10 ms and flat for 170 ms, with a narrow resonant band
   wandering 1.2 to 3.4 kHz (a band-pass at a high resonance swept over noise: the synthesizer's wind). Sent back to the studio
   with the timing put right and a request for **candidates**, `swing_a` to `swing_d`, each a different approach: **the arena's
-  The sounds panel gets a "Choose swing" row** (a click plays one and makes it the one played; `game.sfxpick`, which the game
+  The sounds panel gets a "Choose swing" row** (a click plays one and makes it the one played; `game.sfxpick2`, which the game
   reads too: `SFX_PICK`, `pickOf`; "As delivered" goes back). The other weapons' swings follow whichever Robin picks.
   **The candidates came the same day** (the studio first read back what it understood, as asked): **A** recorded whooshes only,
   no filter (loudest at 85 ms); **B** the body: an arm's push and a cloth and leather rustle over a faint whoosh (64 to 99 ms by
@@ -2495,6 +2495,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   plays `SFX_PICK.swing || 'free'`; the arena's swing row offers "Robin's pick: E, and F on a heavy blow" (the default), "Robin's
   own two", the studio's first and A to F alone. Checked by stepping the arena with nothing stored: E, hit, E, hit, F, heavy hit.
   The studio takes E and F (a swish at about 455 Hz and one at about 292 Hz) as the target for the other weapons' swings.
+  **The stored choice's key is `game.sfxpick2`** (it was `game.sfxpick`): every click in the arena's Choose rows while
+  auditioning was kept and overrode the defaults in the game too, so the new key drops them. Checked in the game with the old
+  key holding the studio's swing and hit H: it played E, hit, E, hit, F, heavy hit.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero
