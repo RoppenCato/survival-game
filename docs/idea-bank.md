@@ -928,3 +928,60 @@ Open after the answers: what the moment at the end of a season is (a feast? the 
 stops it being abused; what each season gives and takes; the list of after-winter events per island and their odds (the
 controlled randomness: which outcomes a sacked place can have by what happened to it); bandits as a people (who they are,
 what they hold, whether they raid); what a troll's move does to a cave; how Näcken and the other väsen arrive.
+
+## Combat: what would make it more engaging (research, 2026-10-15; suggestions, not decided)
+
+Robin asked to look online at how 2D action games make combat engaging and to come with suggestions, after the parry chain was
+built. What the sources agree on, and what of it the game already has:
+
+- **Readable, consistent tells** ("the fairness contract": the same look always means the same timing and the same answer; a
+  colour or sound for "parry this" against "get out of the way"). We have the drawn-back clip, dust and a glint (`tell`), but
+  nothing says which blows cannot be parried (the Dane axe, a troll's sweep, a heavy blow).
+- **A cap on attackers at once** (DOOM's and The Last of Us Part II's attack tokens). We have it: `MEN.slots`, `gapHero`, the ways
+  they come.
+- **Hit-stop, small and short** (50 to 100 ms on a heavy hit). We have it, weighted by weapon.
+- **A reward for reading a tell**, not only safety: Sekiro's deflect breaks posture; Windblown slows time for a dodge timed to the
+  swing; TARAE refunds part of a dodge. We have the parry chain.
+- **Reward pushing forward over turtling**: DOOM's glory kills give back health when you are low; Bloodborne's rally gives back
+  health you lost if you hit back quickly. We have nothing of it.
+- **Enemies with one clear job, mixed**: a tank that opens space, a fragile damage dealer to kill first, a support, a flanker;
+  Hyper Light Drifter's packs and leaders. We have weapons and bowmen, but every man fights the same way.
+- **Matchups through stagger, not damage** (Ghost of Tsushima's stances: the right answer opens a foe, the wrong one still works).
+  We have some (an axe breaks a guard, a club staggers, a spear keeps a man off).
+
+**Suggestions, in the order I would build them** (all mine; each is small on the engine we have):
+
+1. **Posture: the chain's payoff.** Every parry and every blow a man stops on his shield fills his balance; full, he breaks: on his
+   knees for two seconds, open to a finishing blow (a short kill with the hero untouchable, as DOOM's), or to **taking his
+   weapon** (Robin's decided system), or he yields. A parry chain of four breaks him at once. So the combo ends in something, and a
+   player who mostly blocks still gets there, slower.
+2. **Win it back** (Bloodborne's rally, the reward rule): part of a hit you take shows as a fading stretch of the bar, and blows you
+   land within three seconds win it back. Aggression after a mistake, never a punishment.
+3. **The unparryable tell**: a red glint and a deeper sound on blows that cannot be parried (heavy blows, the Dane axe, a troll's
+   sweep, a bear's rearing swipe); white stays "parry this". The answer to red is a dodge.
+4. **A perfect dodge**: a dash that starts in the last 0.15 s before a blow lands slows time for a moment, gives back the dash's
+   stamina, and leaves you beside him with his back half turned (a blow from there does more). The second skill beside the parry,
+   and the answer to red.
+5. **Feints from sharp men**: a man of good wits sometimes holds his windup a moment longer or stops it, to bait an early parry
+   (the anti-spam rule already makes a raised guard worthless for half a second). The parry stays readable, never mashable.
+6. **Men with jobs**, from their weapon and wits, with a few new behaviours: the shieldman (holds his guard, shoves; the axe opens
+   him), the spearman (keeps you at the point, falls back), the berserker (no shield, fast and relentless: parry or dodge), the
+   bowman (fires during the waits; kill him first), the leader (his shout steadies the rest; cut him down and the band's heart
+   breaks: `bandHeart` exists). Fights are then made of mixes: a shieldman in front of a bowman, two berserkers and a leader.
+7. **A shield bash**: a shove with the shield (a new key, or K tapped while stepping in) that knocks a man back; into a wall it
+   stuns him, into water or fire it hurts. Uses the world we have (walls, cliffs, fires, the sea).
+8. **Weapons that answer foes**: say it on the card and show it in the hit (the axe's broken guard already sounds and looks
+   different); with one bar now, switching weapons mid-fight is a number key, which makes matchups a real choice.
+
+Sources: [enemy telegraph shape language](https://gamineai.com/blog/enemy-telegraph-shape-language-top-down-boss-fights-fast-visual-consistency-audit-2026),
+[enemy archetypes](https://www.wayline.io/blog/designing-engaging-enemy-archetypes),
+[attack tokens](https://www.strayspark.studio/blog/attack-token-system-ue5-group-combat-that-feels-fair),
+[DOOM's AI](https://www.gamedeveloper.com/design/cyber-demons-the-ai-of-doom-2016-),
+[DOOM's push forward combat](https://www.gamedeveloper.com/design/video-the-combat-design-of-i-doom-i-),
+[Bloodborne's rally](https://gamerant.com/bloodborne-unwritten-rules-explained-guns-parry-aggression-insight/),
+[Sekiro's combat](https://www.superjumpmagazine.com/the-art-and-science-of-sekiros-combat/),
+[Sekiro critique](https://www.gamedeveloper.com/design/how-i-broke-sekiro-shadows-die-twice),
+[Ghost of Tsushima design analysis](https://gamedeveloper.com/game-platforms/ghost-of-tsushima-design-analysis),
+[Windblown preview](https://www.pcgamer.com/games/roguelike/im-terrified-for-my-free-time-after-a-few-hours-with-the-dead-cells-developers-new-frantic-co-op-roguelike-out-this-month/),
+[Hyper Light Drifter](https://www.hardcoregaming101.net/hyper-light-drifter/),
+[hit-stop and juice](https://www.wayline.io/learn/game-feel/1).
