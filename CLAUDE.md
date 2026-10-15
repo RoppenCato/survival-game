@@ -589,6 +589,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
   but the body and the shield's), an overhead axe blow; the chop has no shield layers, so a worn shield is not drawn through the
   blow. **And the Dane axe and the spear hang below the feet in the idle** in five of eight directions (they read as sunk in the
   ground). Both asked of the art studio (Art Director): the axe rendered into the slashes, and a carry for the long weapons.
+  **The axe is in the slashes since the same evening** (the art studio's drop: `attack1_axeWood/Metal`, `attack2_axeWood/Metal`, and
+  the axe's sheets of idle, walk, run, hit, chop and mine repacked into boxes with the numbers to match; copy the whole folder
+  `C:\dev\SG Art\out\hero\sheets\hero2-mixamo`, not a list of files: its numbers move boxes the list leaves out). The chop
+  stays as the fallback for a clip with no sheet for what is in the hand; **`shows` reads a clip's `sheets`, not its `layers`
+  list** (the studio's drop updated the sheets and left `layers` as it was). An axe blow is the one-handed slash again.
   **The grip (Robin, the same day: "he's holding them a bit far down on the grip... wouldnt holding like that be very
   uncomfortable?"):** the fist sits where it should on each weapon (`items_build.py`: the sword between guard and pommel, an axe
   or a pick 9 cm from the haft's end, the spear about 40% up from the butt), but **every weapon continues the forearm's line**
