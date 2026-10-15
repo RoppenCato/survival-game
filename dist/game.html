@@ -12802,11 +12802,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick') || '{}') || {}; } catch (eP) {}
   function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
-  function swingName(x) {   /* the sword's swing (also fists and the men's): Robin's own two by default (2026-10-15), the light one on an ordinary blow,
-                              the heavy one on the chain's last, a charged or a finishing blow; or what the arena's Choose swing row picked */
-    var k = SFX_PICK.swing;
-    if ((k == null || k === 'robin') && Sfx.has('swing_light')) return x && x.heavy && Sfx.has('swing_heavy') ? 'swing_heavy' : 'swing_light';
-    if (k && k !== 'orig' && k !== 'robin' && Sfx.has('swing_' + k)) return 'swing_' + k;
+  /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
+     finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
+     and the studio's (orig, a to d) are the arena's other choices */
+  var SWING_SETS = { free: ['swing_e', 'swing_f'], robin: ['swing_light', 'swing_heavy'] };
+  function swingName(x) {
+    var k = SFX_PICK.swing || 'free', set = SWING_SETS[k];
+    if (set && Sfx.has(set[0])) return x && x.heavy && Sfx.has(set[1]) ? set[1] : set[0];
+    if (k === 'orig') return Sfx.has('swing') ? 'swing' : null;
+    if (Sfx.has('swing_' + k)) return 'swing_' + k;
+    set = SWING_SETS.free; if (Sfx.has(set[0])) return x && x.heavy && Sfx.has(set[1]) ? set[1] : set[0];
     return Sfx.has('swing') ? 'swing' : null;
   }
   function recName(n, v, x) {

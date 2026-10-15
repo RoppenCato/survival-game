@@ -2488,6 +2488,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   played together, each at its gain; `Sfx.label`), and the bundler takes the three folders: `node tools/sfxjs.js "C:\dev\SG
   Sound\out\sfx\combat|assets/sfx/robin|assets/sfx/free" combat` (4.4 MB). Checked by stepping the arena: choosing H, a chain
   played Robin's light swing, H, light swing, H, his heavy swing and the heavy hit.
+  **Robin's picks (the same day), now the defaults:** "Sword swing: E OpenGameArt a swish. Heavy hit: F OpenGameArt a heavier
+  swish. Sword hit: The studio's first." Read as: **the swing is the free swish E on an ordinary blow and the heavier swish F on a
+  heavy blow** (his "heavy hit" named F's label, which is on the swing row: the pair his own two had been), **the hit and the
+  heavy hit stay the studio's**. `SWING_SETS` = { free: [swing_e, swing_f], robin: [swing_light, swing_heavy] }; `swingName`
+  plays `SFX_PICK.swing || 'free'`; the arena's swing row offers "Robin's pick: E, and F on a heavy blow" (the default), "Robin's
+  own two", the studio's first and A to F alone. Checked by stepping the arena with nothing stored: E, hit, E, hit, F, heavy hit.
+  The studio takes E and F (a swish at about 455 Hz and one at about 292 Hz) as the target for the other weapons' swings.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero

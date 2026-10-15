@@ -354,11 +354,16 @@ __SFX__
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick') || '{}') || {}; } catch (eP) {}
   function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
-  function swingName(x) {   /* the sword's swing (also fists and the men's): Robin's own two by default (2026-10-15), the light one on an ordinary blow,
-                              the heavy one on the chain's last, a charged or a finishing blow; or what the arena's Choose swing row picked */
-    var k = SFX_PICK.swing;
-    if ((k == null || k === 'robin') && Sfx.has('swing_light')) return x && x.heavy && Sfx.has('swing_heavy') ? 'swing_heavy' : 'swing_light';
-    if (k && k !== 'orig' && k !== 'robin' && Sfx.has('swing_' + k)) return 'swing_' + k;
+  /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
+     finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
+     and the studio's (orig, a to d) are the arena's other choices */
+  var SWING_SETS = { free: ['swing_e', 'swing_f'], robin: ['swing_light', 'swing_heavy'] };
+  function swingName(x) {
+    var k = SFX_PICK.swing || 'free', set = SWING_SETS[k];
+    if (set && Sfx.has(set[0])) return x && x.heavy && Sfx.has(set[1]) ? set[1] : set[0];
+    if (k === 'orig') return Sfx.has('swing') ? 'swing' : null;
+    if (Sfx.has('swing_' + k)) return 'swing_' + k;
+    set = SWING_SETS.free; if (Sfx.has(set[0])) return x && x.heavy && Sfx.has(set[1]) ? set[1] : set[0];
     return Sfx.has('swing') ? 'swing' : null;
   }
   function recName(n, v, x) {
@@ -461,13 +466,13 @@ __SFX__
     var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
     Object.keys(cands).forEach(function (base) {
       var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the sword’s hit' : base === 'heavyhit' ? 'its heavy hit' : base === 'swing' ? 'the sword’s swing' : base); d.appendChild(lab);
-      var opts = base === 'swing' ? (Sfx.has('swing_light') ? ['robin', 'orig'] : ['orig']).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_light') ? 'robin' : 'orig') : '';
+      var opts = base === 'swing' ? ['free', 'robin', 'orig'].filter(function (q) { return q === 'orig' || Sfx.has(SWING_SETS[q][0]); }).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_e') ? 'free' : 'orig') : '';
       opts.forEach(function (k) {
-        var b = document.createElement('button'); b.textContent = k === 'robin' ? 'Robin’s' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' ? 'The studio’s' : 'As delivered'); b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
+        var b = document.createElement('button'); b.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' ? 'The studio’s' : 'As delivered'); b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
         b.addEventListener('click', function () {
           if (k && k !== dflt) SFX_PICK[base] = k; else delete SFX_PICK[base];
           try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {}
-          var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k);
+          var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k === 'free' ? 'swing_e' : k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k);
           sfxList(); b.blur();
         });
         d.appendChild(b);
