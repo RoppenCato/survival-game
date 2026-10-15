@@ -2032,12 +2032,19 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   blows), chips flying from the cut end, the bush shakes when its berries are picked, and a trunk is struck anywhere along
   its length (its `r` is half its length while it is offered). `tests/blows.js` holds (the Dane axe's rule is 0.4 s to land and
   over 1.1 s to be free again).
-  **2. The trees.** Every tree is **baked three times its prop** (`World.TREE_BAKE`: oak, pine, birch, beech, ash and the
-  struck tree 3, the apple 2.5, the mountain birch 1.8; `bakeProp`'s `sx`/`sy`, so it is sharp), the planted scale and the
-  trunk's collision radius untouched: a pine is about 107 units tall now, nearly three heroes (it was 36, less than one),
-  an oak 115. Everything that reads the sprite grows with it. **The trunk was twice the tree because `treeLen` took the
+  **2. The trees.** Every tree is **baked twice its prop** (`World.TREE_BAKE`: oak, pine, birch, beech, ash and the
+  struck tree 2, the apple 1.7, the mountain birch 1.2; `bakeProp`'s `sx`/`sy`, so it is sharp), the planted scale and the
+  trunk's collision radius untouched: on the starter island a pine, a birch or an oak is drawn 200 to 250 units tall, five
+  to six heroes (it was 100 to 130). Everything that reads the sprite grows with it. **It was three times until
+  2026-10-15, and that never showed** (Robin: "the tree sizes hasn't changed... maybe twice the size is better than 3x
+  anyway"): `bakeProp` trimmed a stretched picture with `trimSprite(out, 2 * sx, 2 * sy)`, but `out.l` and `out.w` are in
+  the stretched prop's own units already (two canvas pixels each), so the trim shrank the box back to the tree's old size
+  and left its corner where the stretch had put it. **Every tree was drawn at its old size, up and to the left of its
+  trunk** (an oak's corner 337 units out for a box 217 wide): **trees stood in the sea** off a beach whose trunks were on
+  the sand, and a tree faded whenever you walked anywhere in a long band north of it (Gather's `behind` reads the same
+  box). Now `trimSprite(out, 2, 2)`. The Art Editor's Objects tab, which stretches a prop the same way, was off likewise. **The trunk was twice the tree because `treeLen` took the
   sprite's top offset for its height** (a pine's box top lies far above the tree); it is 0.8 of the drawn height now, so a
-  felled birch of 105 units lies 76 long with four logs in it, and **its thickness is by tree** (`TRUNK_W` in `src/gather.js`:
+  felled tree lies 0.8 of the tree's height (about 170 units now) with four logs in it, and **its thickness is by tree** (`TRUNK_W` in `src/gather.js`:
   oak 1.2 to birch 0.7 of the old radius; scaled by the bake it was fatter than the hero is tall).
   **3. The beginning.** **The steading lies 1500 to 2400 units from the wreck** (`villageSite`; it was 900 to 1600; 1939 in
   the pane's world). **The plank house by the well is the first home:** its bed is inside it (the whole wattle hut has a

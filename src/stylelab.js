@@ -2162,7 +2162,7 @@ function bakeProp(name, seed, opts) {
   var L = lights.map(function (l) { return { x: l.x * sx, y: l.y * sy, r: l.r * Math.max(sx, sy), h: l.h, s: l.s, l: l.l, a: l.a }; });
   if (sv) { P.bright = sv.b; P.sat = sv.s; P.noShadow = sv.ns; P.outsideHue = sv.oh; P.factoryHue = sv.fh; }
   var out = { cv: cv, l: b[0] * sx, t: b[1] * sy, w: w * sx, h: h * sy, lights: L };
-  if (!opts.noTrim) trimSprite(out, 2 * sx, 2 * sy);
+  if (!opts.noTrim) trimSprite(out, 2, 2);   // 2 pixels a unit of the stretched prop (out.l and out.w are in its units already); it was 2 * sx, which shrank a stretched prop back to its size and left its corner where the stretch put it: since 2026-10-14 every tree was drawn at its old size up and left of its trunk (Robin, 2026-10-15: trees fading in and out, trees in the ocean)
   return out;
 }
 // The sprite's canvas cut down to the pixels actually drawn (2026-10-08, the lag): a prop's box is generous, and the graphics card

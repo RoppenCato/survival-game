@@ -15,7 +15,7 @@ var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1
 
 // what can be gathered in the first biome, and how much it takes
 var ROCKV = { rock: 1, rockFormation: 1, boulder: 1, chalkRock: 1 };
-var TREE_BAKE = { oak: 3, pine: 3, birch: 3, beech: 3, ash: 3, apple: 2.5, struckTree: 3, dwarfBirch: 1.8 };   // how much bigger each tree is baked than its prop (2026-10-14)
+var TREE_BAKE = { oak: 2, pine: 2, birch: 2, beech: 2, ash: 2, apple: 1.7, struckTree: 2, dwarfBirch: 1.2 };   // twice (Robin, 2026-10-15: "maybe twice the size is better than 3x"; the 3x of 2026-10-14 never showed, see trimSprite)   // how much bigger each tree is baked than its prop (2026-10-14)
 var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
 var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
 // the home camp: prop, offset from the jetty root, collision radius
