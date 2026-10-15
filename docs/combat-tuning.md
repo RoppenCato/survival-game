@@ -8,6 +8,9 @@ button.
 recovery 0.2, reach 50 and step 123, the boar's speed 1.1. The men no longer take the hero's weapon numbers (they swung in slow
 motion with the new sword).
 
+**The parry chain (2026-10-15):** a parried foe reels through your blows and comes out of it swinging, so you can parry again.
+Each parry in a row adds to the stun and to your blows on him, up to x4. Its four numbers are under The feel of a hit (Chain).
+
 ## The Tuning panel
 
 It sits on the right, under Beasts. Four groups of sliders:

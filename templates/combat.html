@@ -430,7 +430,7 @@ __SPRITES_JS__
   function tuneRead(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; } }
   TUNE = Combat.tune(tuneRead(TK) || tuneRead('game.combat') || {});
   var TS = {
-    feel: [['fz', 'Hit pause, you', 0, 2, 0.05], ['pf', 'Hit pause, the struck', 0, 2, 0.05], ['kb', 'Push of a hit', 0, 2, 0.05], ['parryShield', 'Parry moment, shield (s)', 0, 0.5, 0.01], ['parryBare', 'Parry moment, no shield (s)', 0, 0.4, 0.01], ['parryStun', 'Parry stun (s)', 0, 3, 0.05], ['toolDmg', 'A tool on a beast or man', 0, 1.5, 0.05]],
+    feel: [['fz', 'Hit pause, you', 0, 2, 0.05], ['pf', 'Hit pause, the struck', 0, 2, 0.05], ['kb', 'Push of a hit', 0, 2, 0.05], ['parryShield', 'Parry moment, shield (s)', 0, 0.5, 0.01], ['parryBare', 'Parry moment, no shield (s)', 0, 0.4, 0.01], ['parryStun', 'Parry stun (s)', 0, 3, 0.05], ['chainStun', 'Chain: more stun a parry (x)', 0, 1, 0.05], ['chainDmg', 'Chain: harder blows a parry (x)', 0, 1, 0.05], ['chainMax', 'Chain: longest', 1, 6, 1], ['chainAnswer', 'Chain: he answers within (s)', 0, 2, 0.05], ['toolDmg', 'A tool on a beast or man', 0, 1.5, 0.05]],
     hero: [['wu', 'Windup (s)', 0, 1, 0.01], ['ac', 'The blow (s)', 0.03, 0.5, 0.01], ['rec', 'Recovery (s)', 0.05, 1.5, 0.01], ['dmg', 'Damage (x the metal)', 0.2, 3, 0.05], ['reach', 'Reach', 10, 90, 1], ['arc', 'Arc (radians)', 0.2, 4, 0.05], ['lunge', 'Step into the blow', 0, 160, 1], ['kb', 'Push', 0, 400, 5], ['stag', 'Stagger', 0, 60, 1], ['st', 'Stamina a blow', 0, 25, 0.5]],
     men: [['hpK', 'Their health (x)', 0.3, 2, 0.05], ['dmg', 'Their blow', 2, 30, 0.5], ['wu', 'Their windup, base (s)', 0, 0.6, 0.01], ['wuK', 'Their windup, x the weapon', 0, 4, 0.05], ['slots', 'Striking one man at once', 1, 5, 1], ['gapHero', 'Least gap between blows on you (s)', 0, 2, 0.05], ['onHero', 'Men on you before others wait', 1, 6, 1], ['joinAfter', 'Help comes after (s)', 0, 20, 0.5], ['toMen', 'A blow on a man (x)', 0.05, 0.6, 0.01]],
     beasts: [['hp', 'Health', 1, 150, 1], ['dmg', 'Bite (of 100)', 0, 60, 1], ['speed', 'Speed (x)', 0.3, 3, 0.05], ['windup', 'Windup (s)', 0.1, 3, 0.05], ['aggro', 'Notices you at', 0, 400, 5]]
@@ -481,7 +481,7 @@ __SPRITES_JS__
   Combat.api.onLog = function (ev) {
     var W = Combat.dbg().W, t = (W.t || 0).toFixed(1).padStart(6), txt = '', cls = '';
     if (ev.k === 'dodged') { txt = 'Dodged ' + who(ev.src) + "'s blow (" + f1(ev.dmg) + ')'; cls = 'me'; tally.dodged++; }
-    else if (ev.k === 'parry') { txt = 'PARRIED ' + who(ev.src) + ': ' + f1(ev.dmg) + ' turned aside'; cls = 'me'; tally.parried++; }
+    else if (ev.k === 'parry') { txt = 'PARRIED ' + who(ev.src) + ': ' + f1(ev.dmg) + ' turned aside' + (ev.chain > 1 ? '  (chain x' + ev.chain + ')' : ''); cls = 'me'; tally.parried++; tally.chain = Math.max(tally.chain || 0, ev.chain || 1); }
     else if (ev.k === 'block') { txt = 'Blocked ' + who(ev.src) + ': ' + f1(ev.through) + ' of ' + f1(ev.dmg) + ' through' + (ev.guardBreak ? ' (an axe: the guard broken)' : '') + (ev.stagger ? ' (a club: staggered)' : '') + (ev.broke ? ', GUARD BREAK (no stamina)' : ''); cls = ev.broke || ev.guardBreak ? 'bad' : ''; tally.blocked++; tally.taken += ev.through; }
     else if (ev.k === 'hurt') { txt = 'Hit by ' + who(ev.src) + ': ' + f1(ev.through) + ' of ' + f1(ev.dmg) + (ev.guard ? ' (your guard was up, but ' + (ev.front ? 'too late' : 'it came from behind') + ')' : '') + (ev.kind === 'heavy' ? ' heavy' : ev.kind === 'proj' ? ', an arrow' : ''); cls = 'bad'; tally.taken += ev.through; }
     else if (ev.k === 'hit') { txt = myWeapon() + ' on ' + who(ev.e) + ': ' + f1(ev.dmg) + (ev.crit ? ' CRIT' : '') + (ev.blocked ? (ev.broke ? ' through his shield, his guard broken' : ' on his shield') : '') + (ev.weak ? ' (the wrong tool)' : '') + (ev.quiet ? ' (from behind, unseen)' : '') + (ev.kind === 'heavy' ? ' heavy' : ''); cls = 'me'; tally.hits++; tally.dealt += ev.dmg; }
@@ -491,7 +491,7 @@ __SPRITES_JS__
   };
   function drawLog() {
     logEl.innerHTML = ''; logLines.forEach(function (ln) { var p = ln.lastIndexOf('|'), sp = document.createElement('span'); sp.className = ln.slice(p + 1); sp.textContent = ln.slice(0, p) + '\n'; logEl.appendChild(sp); });
-    tallyEl.textContent = 'Your blows ' + tally.hits + ' for ' + f1(tally.dealt) + ', kills ' + tally.kills + '; taken ' + f1(tally.taken) + '; parried ' + tally.parried + ', blocked ' + tally.blocked + ', dodged ' + tally.dodged + '.';
+    tallyEl.textContent = 'Your blows ' + tally.hits + ' for ' + f1(tally.dealt) + ', kills ' + tally.kills + '; taken ' + f1(tally.taken) + '; parried ' + tally.parried + ', blocked ' + tally.blocked + ', dodged ' + tally.dodged + (tally.chain > 1 ? '; longest parry chain x' + tally.chain : '') + '.';
   }
   drawLog();
 

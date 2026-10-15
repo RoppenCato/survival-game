@@ -242,6 +242,15 @@ function switchMode() {
 function shielded() { return api.shield ? !!api.shield() : S.shield; }
 var PARRY = { shield: 0.22, bare: 0.12 };   // the parry's moment, with a shield on the arm and without (tuned in the Combat Arena: see tune)
 function parryWindow() { return shielded() ? PARRY.shield : PARRY.bare; }
+/* The parry chain (2026-10-15, Robin: parry more in a fight, "when you hit them after they are dizzy they attack and you can parry
+   again; to make combos"). A parry stuns (stun). While he is stunned your blows do not end it (he reels on, pushed only a
+   little so he stays in reach) and they bite harder; when it ends he comes out of it swinging at once, a blow you can parry
+   again. Each parry within CHAIN.keep seconds of the last is one more in the chain (P.chain, up to CHAIN.max): the stun grows by
+   CHAIN.stun of the first for each, and your blows on a stunned foe do 1 + CHAIN.dmg times the chain. A blow that gets through
+   to you ends the chain. The numbers are on the Combat Arena's Tuning panel (the feel of a hit). */
+var CHAIN = { max: 4, keep: 4.5, stun: 0.15, dmg: 0.1, kb: 0.25, answer: 0.9 };   // (set by the bots of tests/parry.js, 2026-10-15: a good parrier needs about four parries for a man in leather, six for one in mail, and lands four in five of his blows on a reeling man; a mere blocker two or three, and two in five)
+function chainUp() { var p = P; if (W.t - (p.chainAt == null ? -99 : p.chainAt) > CHAIN.keep) p.chain = 0; p.chain = Math.min(CHAIN.max, (p.chain || 0) + 1); p.chainAt = W.t; return p.chain; }
+function parryStun() { return MEN.parryStun * (1 + CHAIN.stun * Math.max(0, (P.chain || 1) - 1)); }
 // The log of the blows (2026-10-13, the Combat Arena's tools): a page may listen with api.onLog(ev), ev = { k, dmg, src, kind, ... }:
 // 'dodged' (a blow came while a dash made him untouchable), 'parry', 'block' (what got through, and whether the guard broke),
 // 'hurt', 'hit' (the hero's blow on a foe: dealt, crit, blocked by his shield, his guard broken), 'kill'.
@@ -255,7 +264,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
       p.parryFx = 0.35; p.st = Math.min(maxSt(), p.st + 12);
       spark(p.x + Math.cos(p.face) * 10, p.y + Math.sin(p.face) * 10, 14, '#fff6c8', 140);
       lockFor(p, 0.09); lockFor(src, 0.09); slowmo(0.25, 0.14); ring(p.x + Math.cos(p.face) * 10, p.y, 13, 24, 0.2, '255,243,196', true, 2.4); sfx('parry');
-      num(p.x, p.y - 26, 'PARRY!', '#ffe27a'); logEv({ k: 'parry', dmg: dmg, kind: kind, src: src }); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
+      var chN = chainUp(); num(p.x, p.y - 26, chN > 1 ? 'PARRY x' + chN : 'PARRY!', chN >= CHAIN.max ? '#ff9a4a' : chN > 1 ? '#ffc94a' : '#ffe27a', chN > 1); if (chN > 1) tone2(chN); logEv({ k: 'parry', dmg: dmg, kind: kind, src: src, chain: chN }); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
       return 'parry';
     }
     var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (shielded() ? 0.4 : 0.8) : (shielded() ? 0.12 : 0.55);
@@ -273,7 +282,7 @@ function hurtPlayer(dmg, sx, sy, kind, src) {
   }
   var hit = dmg * (api.armor ? 1 - api.armor() : 1);     // armour turns a share of every blow aside, not only blocked ones
   logEv({ k: 'hurt', dmg: dmg, through: hit, kind: kind, src: src, guard: p.guard, front: front });
-  p.hp -= hit; p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false; p.anim.sq = 1; p.anim.sqv = 0;
+  p.hp -= hit; p.chain = 0; p.invuln = 0.7; p.flash = 1; p.hurtT = 0.18; p.guard = false;   // (a blow that gets through ends the parry chain) p.anim.sq = 1; p.anim.sqv = 0;
   p.atk.ph = 'none'; p.atkBuf = 0;
   var kb = kind === 'heavy' ? 170 : 110;
   p.kx = -Math.cos(toSrc) * kb * (S.juice ? 1 : 0.4); p.ky = -Math.sin(toSrc) * kb * (S.juice ? 1 : 0.4);
@@ -301,6 +310,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (man) dmg *= 1 - (e.armor || 0);
   if (quiet) { dmg = Math.max(dmg * 3, e.hp + 1); e.quietKill = true; }   // one blow, and no cry
   if (e.state === 'recover') mult = bigE ? 1.3 : (src ? 1.2 : 1.5);   // caught recovering: half again from the hero, a fifth more from a man
+  var reeling = !src && !bigE && e.state === 'stunned'; if (reeling) { mult *= e.ripK || 1.3; kb *= CHAIN.kb; }   // parried and reeling: your blows bite harder and push him only a little, so he stays in reach (the parry chain)
   if (bigE && e.state === 'stunned') mult = 2;
   var crit = !src && !blocked && (S.crit > 0 || critBonus > 0) && Math.random() < S.crit + critBonus;
   if (crit) mult *= 1.5;
@@ -364,12 +374,13 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
     // an animal that has begun its attack finishes it: a light hit does not stop it (only a heavy hit or a parry does)
   } else if (man) {                                        // a man: a blow he has begun he finishes unless it was a heavy one; a blow on his shield he holds; on his knees he stays there
     if (e.state === 'yield' || e.state === 'flee') { /* stays as he is */ }
+    else if (e.state === 'stunned') { e.flash = Math.max(e.flash, 0.6); }   // reeling from a parry: the stun holds through your blows (it ended at the first, 2026-10-15)
     else if (blocked && !broke) { /* holds */ }
     else if (e.state === 'lunge' || (e.state === 'windup' && !heavy && !broke)) { /* finishes it */ }
     else if (e.poiseT > 0 && !heavy && !broke) { /* he has just flinched: this one he takes on his feet */ }
     else { e.state = 'stagger'; e.t = 0; e.dur = heavy || broke ? 0.36 : 0.16; e.sw = null; e.swung = false; e.poiseT = 0.9; }
     if (!killing) heartOf(e);
-  } else if (heavy && e.state !== 'recover') { e.state = 'stagger'; e.t = 0; e.dur = 0.34; }   // a heavy blow staggers a beast; a light one does not stop it at all (2026-10-14, Robin: they staggered too easily; before, a light hit was a 0.14 s flinch): the flash, the squash and the push are its whole answer
+  } else if (heavy && e.state !== 'recover' && e.state !== 'stunned') { e.state = 'stagger'; e.t = 0; e.dur = 0.34; }   // a heavy blow staggers a beast; a light one does not stop it at all (2026-10-14, Robin: they staggered too easily; before, a light hit was a 0.14 s flinch): the flash, the squash and the push are its whole answer
   else if (!heavy && (e.state === 'idle' || e.state === 'wander')) { e.state = 'chase'; e.t = 0; }
   if (killing) killEnemy(e);
 }
@@ -392,8 +403,9 @@ function stunStars(c, e) {             // three small stars going round over a s
 function tell(e) {                     // the start of a windup, shown in the world (2026-10-14, the red line gone): dust under the feet and a glint before the attacker
   if (!S.juice) return; dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, '#fff3b0', 55);
 }
+function tone2(n) { sfx('charge', Math.min(3, n - 1)); }   // the chain heard: the charge's rising tone, a step higher each parry
 function stun(e, dur) {                     // a parry's stun (2026-10-14, Robin: it should stun the mob for about a second): he stands dazed, open to anything, stars over his head
-  e.state = 'stunned'; e.t = 0; e.dur = dur; e.sw = null; e.swung = false; e.hitDone = true; e.stunT = dur;
+  e.state = 'stunned'; e.t = 0; e.dur = dur; e.sw = null; e.swung = false; e.hitDone = true; e.stunT = dur; e.ripK = 1 + CHAIN.dmg * (P.chain || 1);   // (your blows on him while he reels: see CHAIN)
   if (S.juice) { ring(e.x, e.y, 0, 22, 0.25, '255,230,140', false, 2.4); spark(e.x, e.y - e.r * 2, 6, '#ffe27a', 90); }
   sfx('stagger', 0, e);
 }
@@ -523,6 +535,7 @@ function updatePlayer(dt) {
   if (a.ph === 'charge' && (IN.rmb || IN.keys.KeyK)) { a.ph = 'none'; a.since = 9; }
   // guard
   var want = (IN.rmb || IN.keys.KeyK) && p.mode === 'fight';
+  if (want && !p.guard && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }   // the guard from the second half of a recovery (2026-10-15: to parry the blow that answers yours)
   if (want && !p.guard && a.ph === 'none' && p.roll.t <= 0 && p.hurtT <= 0 && p.st > 0 && p.atkBuf <= 0) {
     p.guard = true; p.guardT = (W.t - p.lastRaise > 0.5) ? 0 : 99; p.lastRaise = W.t; sfx('raise');
   }
@@ -715,7 +728,7 @@ function beastAI(e, dt, d, ang) {
         if (!e.hitDone && e.t >= e.dur * (A.hitAt || 0.4)) {
           e.hitDone = true;
           var dd = Math.hypot(P.x - e.x, P.y - e.y), da = Math.abs(wrap(Math.atan2(P.y - e.y, P.x - e.x) - e.dirLock));
-          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') stun(e, MEN.parryStun); }
+          if (dd < e.r + (A.reach || 20) + P.r && da < (A.arc || 1.6) / 2) { var r2 = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e); if (r2 === 'parry') stun(e, parryStun()); }
           else dust(e.x + Math.cos(e.dirLock) * e.r, e.y + Math.sin(e.dirLock) * e.r, 3);
         }
       } else {
@@ -725,7 +738,7 @@ function beastAI(e, dt, d, ang) {
         if (!e.hitDone && Math.hypot(P.x - e.x, P.y - e.y) < e.r + P.r + 3) {
           e.hitDone = true;
           var r = hurtPlayer(cf.dmg || 12, e.x, e.y, A.heavy ? 'heavy' : 'melee', e);
-          if (r === 'parry') stun(e, MEN.parryStun);
+          if (r === 'parry') stun(e, parryStun());
           else if (r === 'hit' && A.venom) P.venom = { t: A.venom, dmg: A.venomDmg || 2 };
           if (kind === 'charge' && r !== 'parry') { P.kx += Math.cos(e.dirLock) * 80; P.ky += Math.sin(e.dirLock) * 80; }   // bowled along
         }
@@ -734,7 +747,7 @@ function beastAI(e, dt, d, ang) {
       break;
     case 'recover': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = A.cd || 1.1; } break;
     case 'stagger': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = Math.min(e.cd, 0.6); } break;   // a flinch does not reset the wait before its next attack
-    case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.5; } break;   // a parry's stun (beasts that are not brutes)
+    case 'stunned': if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.cd = 0.1; } break;   // a parry's stun (beasts that are not brutes); it comes again at once (the parry chain; it waited 0.5 s)
   }
 }
 function shooterAI(e, dt, d, ang) {
@@ -857,7 +870,7 @@ var MEN = {
   hush: 80, getUp: 2.2,
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
-api.men = MEN;
+api.men = MEN; api.chain = CHAIN;
 var hitFlags = { guardBreak: false, stagger: false, thrust: false, wt: 1, wkind: null };       // what the blow now landing can do (set round the hero's own blows); wt, wkind: its weight and the weapon's kind (for the pause, the ring and the sound)
 function lerp(a, b, k) { return a + (b - a) * k; }
 function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
@@ -1087,7 +1100,7 @@ function strike(e) {
   L.forEach(function (h) {
     if (h.F === P) {
       hitFlags.guardBreak = sw.guardBreak; hitFlags.stagger = sw.stag >= 40; var r = hurtPlayer(sw.dmg, e.x, e.y, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.stagger = false;
-      if (r === 'parry') { stun(e, MEN.parryStun); e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
+      if (r === 'parry') { stun(e, parryStun()); e.guard = 0; e.guardCd = 1.3; e.chainLeft = 0; }
     } else { hitFlags.guardBreak = sw.guardBreak; hitFlags.thrust = sw.pierce; damageEnemy(h.F, sw.dmg * MEN.toMen * MEN.hpK, h.a, sw.kb * 0.6, sw.stag, sw.heavy ? 'heavy' : 'melee', e); hitFlags.guardBreak = false; hitFlags.thrust = false; }
   });
 }
@@ -1300,9 +1313,10 @@ function soldierAI(e, dt) {
         if (MEN.onOne && !e.inLine && e.order !== 'hold' && apartFrom(e, T)) moveCircle(e, apX * MEN.drift * dt, apY * MEN.drift * dt);   // room for his own fight
       }
       if ((e.guard <= 0 || (e.blocked > 0 && !th)) && !(th && e.shield && e.guardCd <= 0)) {   // a man with a shield does not begin a blow into one he sees coming: he stops it first, and answers
-        var aligned = Math.abs(wrap(ang - e.face)) < 0.45;
+        if (e.answerT > 0) e.answerT -= dt;
+        var aligned = Math.abs(wrap(ang - e.face)) < (e.answerT > 0 ? 1.1 : 0.45);
         var answer = e.blocked > 0;   // (below: a foe in reach with no wall between is struck, whatever the grid makes of the way to him: being led round a corner, or waiting his turn at a gate, he stood face to face with his man and did nothing)
-        if (e.cd <= 0 && d <= keep + 7 && aligned && (!way || !wallBetween(e.x, e.y, T.x, T.y)) && slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1) && !(T === P && (P.roll.t > 0))) { e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
+        if (e.cd <= 0 && d <= keep + 7 && aligned && (!way || !wallBetween(e.x, e.y, T.x, T.y)) && (e.answerT > 0 || slotFree(T, e, answer ? (e.wpn.kind === 'sword' ? 0.5 : 0.62) : 1)) && !(T === P && (P.roll.t > 0))) { e.answerT = 0; e.chainLeft = e.pf.chain > 1 && Math.random() < 0.2 + e.w01 * 0.4 ? 1 : 0; beginBlow(e, T, ang, false, answer); }
       }
       break;
     case 'windup':
@@ -1325,7 +1339,7 @@ function soldierAI(e, dt) {
       break;
     case 'stunned':                       // parried (2026-10-15: there was no case, and the default sent him straight back to the chase: Robin parried a man and he struck again at once)
       e.guard = 0; e.kx *= 0.9; e.ky *= 0.9;
-      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = Math.max(e.cd, 0.25); }
+      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = 0; e.answerT = CHAIN.answer; e.guardCd = Math.max(e.guardCd, CHAIN.answer); }   // he comes out of it swinging: a blow at once, which can be parried again (the parry chain)
       break;
     case 'stagger':
       if (e.t >= e.dur) {
@@ -2221,7 +2235,7 @@ var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge'
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {
   if (TUNE0) return JSON.parse(JSON.stringify(TUNE0));
-  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, toolDmg: TOOL_DMG }, hero: {}, men: {}, beasts: {} }, k, i;
+  var T = { feel: { fz: WPRE.snappy.fz, pf: WPRE.snappy.pf, kb: WPRE.snappy.kb, parryShield: PARRY.shield, parryBare: PARRY.bare, parryStun: MEN.parryStun, chainStun: CHAIN.stun, chainDmg: CHAIN.dmg, chainMax: CHAIN.max, chainAnswer: CHAIN.answer, toolDmg: TOOL_DMG }, hero: {}, men: {}, beasts: {} }, k, i;
   for (k in PROFILES) { T.hero[k] = {}; for (i = 0; i < HERO_KEYS.length; i++) T.hero[k][HERO_KEYS[i]] = PROFILES[k][HERO_KEYS[i]]; }
   for (i = 0; i < MEN_KEYS.length; i++) T.men[MEN_KEYS[i]] = MEN[MEN_KEYS[i]];
   for (k in BEAST_GAME) { var g = BEAST_GAME[k], sp = lib && lib.animalSpec ? lib.animalSpec(g.of || k) : null, at = lib && lib.animalAttack ? lib.animalAttack(g.of || k) : null;
@@ -2231,7 +2245,7 @@ function tuneDefaults() {
 function tune(over) {
   var T = tuneDefaults(), g, k, q; over = over || {};
   for (g in over) { if (!T[g] || typeof over[g] !== 'object') continue; for (k in over[g]) { q = over[g][k]; if (q && typeof q === 'object') { if (!T[g][k]) continue; for (var kk in q) if (typeof q[kk] === 'number' && T[g][k][kk] != null) T[g][k][kk] = q[kk]; } else if (typeof q === 'number' && T[g][k] != null) T[g][k] = q; } }
-  WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; TOOL_DMG = T.feel.toolDmg;
+  WPRE.snappy.fz = T.feel.fz; WPRE.snappy.pf = T.feel.pf; WPRE.snappy.kb = T.feel.kb; PARRY.shield = T.feel.parryShield; PARRY.bare = T.feel.parryBare; MEN.parryStun = T.feel.parryStun; CHAIN.stun = T.feel.chainStun; CHAIN.dmg = T.feel.chainDmg; CHAIN.max = T.feel.chainMax; CHAIN.answer = T.feel.chainAnswer; TOOL_DMG = T.feel.toolDmg;
   for (k in T.hero) if (PROFILES[k]) for (var hk in T.hero[k]) PROFILES[k][hk] = T.hero[k][hk];
   for (k in T.men) MEN[k] = T.men[k];
   TUNED = T; return T;

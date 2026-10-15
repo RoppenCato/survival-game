@@ -878,6 +878,20 @@ the text and it is made the default. When a spec's meaning changes, change the s
   none in the blow itself, 0.2 in the recovery, and **moving in the second half of the recovery ends it** (where a chain's next
   blow could begin anyway, so the pace is the same; the walk clip shows at once); **the step into a blow is taken toward a foe**
   within the reach and 60 units, and at nothing it is 0.15 of the lunge (Robin's lunge slid him 35 units at the air).
+  **The parry chain (2026-10-15, Robin: "parry even more when fighting... when you hit them after they are dizzy they attack
+  and you can parry again; to make combos").** `CHAIN` in `src/combat.js` (`api.chain`): a parried foe **reels through your
+  blows** (they no longer end the stun; a man's state stays `stunned`, a beast's heavy blow no longer staggers it out), **pushed
+  only `CHAIN.kb` 0.25 as far** so he stays in reach, and **comes out of it swinging at once** (a man: `e.answerT` `CHAIN.answer`
+  0.9 s in which he begins a blow at once, wider aligned, past the slots, his guard held back as long; a beast: its next attack
+  0.1 s after), so you parry again. **Each parry within `CHAIN.keep` 4.5 s of the last is one more in the chain** (`P.chain`, to
+  `CHAIN.max` 4; `chainUp`): the stun grows by `CHAIN.stun` 0.15 of the first each time (`parryStun()`: 1, 1.15, 1.3, 1.45 s) and
+  your blows on a reeling foe do 1 + `CHAIN.dmg` 0.1 times the chain (`e.ripK`, set by `stun`). A blow that gets through ends the
+  chain. Shown: "PARRY x2" to "x4" in growing gold, the charge's rising tone, stars over the reeling head; the arena's log and
+  tally say the chain. **K in the second half of a recovery raises the guard** (as a step ends it). The four numbers are on the
+  Tuning panel (the feel of a hit: Chain). **Set by `tests/parry.js`** (in `npm test` at four fights a line; `node tests/parry.js
+  40` for more, `CHAIN='{...}'` to try numbers): a parrying bot against a man in leather needs about four parries and 14 s and
+  lands four in five blows on a reeling man, six parries against one in mail; a bot that only blocks parries two or three times
+  and lands two in five. Tried in the arena by script: the man reeled, came out swinging, the parry caught it, x1 to x3.
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
 - The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,
