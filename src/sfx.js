@@ -10,6 +10,7 @@
                                              gain times v, its rate moved by up to pitch (0.03 by default) so a run of blows is
                                              not one sound, after delay seconds; a handle (truthy) or false if there is none, so
                                              the page plays its synthesized one instead
+   ... { peakAt }                            in place of delay: start it so that this variation's own loudest moment comes peakAt from now
    Sfx.cut(ctx, h, fade)                     fades a playing handle out over about fade seconds (0.03), or stops it before it starts
    Sfx.peak(name)                            when its loudest moment comes, in seconds from its start (tools/sfxjs.js measures it)
    Sfx.on                                    false plays nothing (the pages' "recorded sounds" switch: false = the old)
@@ -32,7 +33,8 @@ var Sfx = (function () {
         Object.keys(S.peak || {}).forEach(function (n) { peaks[n] = S.peak[n]; });
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
-          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { (bufs[n] || (bufs[n] = [])).push(buf); }, function () { /* one bad file is left out */ }));
+          var pk = S.peakf && S.peakf[f];
+          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); }, function () { /* one bad file is left out */ }));
         });
         Promise.all(jobs).then(function () { res(names()); });
       }
@@ -54,7 +56,9 @@ var Sfx = (function () {
     if (list.length > 1 && i === last[n]) i = (i + 1) % list.length;
     last[n] = i;
     var src = ctx.createBufferSource(), g = ctx.createGain(), pv = o.pitch == null ? 0.03 : o.pitch;
-    src.buffer = list[i]; src.playbackRate.value = (o.rate || 1) * (1 + (Math.random() * 2 - 1) * pv);
+    var rate = (o.rate || 1) * (1 + (Math.random() * 2 - 1) * pv);
+    src.buffer = list[i].buf; src.playbackRate.value = rate;
+    if (o.peakAt != null) o.delay = Math.max(0, o.peakAt - (list[i].peak != null ? list[i].peak : (peaks[n] || 0)) / rate);   /* this variation's own loudest moment lands peakAt seconds from now */
     g.gain.value = (gains[n] == null ? 1 : gains[n]) * (o.v == null ? 1 : o.v) * Sfx.vol;
     var at = ctx.currentTime + (o.delay || 0);
     src.connect(g); g.connect(dest || ctx.destination); src.start(at);

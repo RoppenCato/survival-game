@@ -2442,6 +2442,14 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   with the timing put right and a request for **candidates**, `swing_a` to `swing_d`, each a different approach: **the arena's
   The sounds panel gets a "Choose swing" row** (a click plays one and makes it the one played; `game.sfxpick`, which the game
   reads too: `SFX_PICK`, `pickOf`; "As delivered" goes back). The other weapons' swings follow whichever Robin picks.
+  **The candidates came the same day** (the studio first read back what it understood, as asked): **A** recorded whooshes only,
+  no filter (loudest at 85 ms); **B** the body: an arm's push and a cloth and leather rustle over a faint whoosh (64 to 99 ms by
+  variation); **C** a breath, about 5 dB under the rest (75 ms); **D** a mirrored pass, a recorded whoosh backwards into the mark
+  and forwards away (76 ms). All start 19 to 26 dB under their loudest (the old swing 11 to 14), none has a resonant filter.
+  The studio's `preview-swings.mp3` plays the old one and A to D at the game's timing. **Each variation is timed by its own
+  loudest moment** (the bundler writes `peakf` per file; `Sfx.play(..., { peakAt })` starts the one it picks so its peak comes
+  `peakAt` from now, its rate counted), since B's three differ by 35 ms. Checked live at 57 frames a second: the swing asked
+  for 128 ms before the hit, B's loudest moment on it; the choice made in the arena played in the game. **Robin has not chosen.**
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero

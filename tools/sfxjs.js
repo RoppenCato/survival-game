@@ -8,7 +8,7 @@ const fs = require('fs'), path = require('path');
 const [dir, set, only] = process.argv.slice(2);
 if (!dir || !set) { console.log('usage: node tools/sfxjs.js <folder> <set> [only,these,names]'); process.exit(1); }
 const want = only ? new Set(only.split(',')) : null;
-const files = {}, gain = {}, count = {}, peakSum = {};
+const files = {}, gain = {}, count = {}, peakSum = {}, peakf = {};
 function peakOf(buf) {   // a 16-bit PCM WAV: the time of its loudest 10 ms
   let o = 12, sr = 48000, ch = 1, data = null;
   while (o + 8 <= buf.length) { const id = buf.toString('ascii', o, o + 4), n = buf.readUInt32LE(o + 4); if (id === 'fmt ') { ch = buf.readUInt16LE(o + 10); sr = buf.readUInt32LE(o + 12); } if (id === 'data') { data = buf.subarray(o + 8, o + 8 + n); break; } o += 8 + n + (n & 1); }
@@ -29,11 +29,11 @@ for (const f of all.filter(f => /_\d+\.wav$/i.test(f)).sort()) {
   if (want && !want.has(name)) continue;
   const raw = fs.readFileSync(path.join(dir, f));
   files[key] = raw.toString('base64');
-  count[name] = (count[name] || 0) + 1; peakSum[name] = (peakSum[name] || 0) + peakOf(raw);
+  const pk = peakOf(raw); count[name] = (count[name] || 0) + 1; peakSum[name] = (peakSum[name] || 0) + pk; peakf[key] = Math.round(pk * 1000) / 1000;
 }
 for (const k of Object.keys(gain)) if (!count[k]) delete gain[k];
 const peak = {}; for (const k of Object.keys(count)) peak[k] = Math.round(peakSum[k] / count[k] * 1000) / 1000;
 const out = path.join(__dirname, '..', 'assets', 'sfx', set + '.js');
 fs.mkdirSync(path.dirname(out), { recursive: true });
-fs.writeFileSync(out, '(window.__SFX = window.__SFX || {})[' + JSON.stringify(set) + '] = ' + JSON.stringify({ gain, peak, files }) + ';\n');
+fs.writeFileSync(out, '(window.__SFX = window.__SFX || {})[' + JSON.stringify(set) + '] = ' + JSON.stringify({ gain, peak, peakf, files }) + ';\n');
 console.log('wrote ' + out + ' (' + Math.round(fs.statSync(out).size / 1024) + ' KB): ' + Object.keys(count).map(n => n + ' x' + count[n] + (gain[n] != null ? ' @' + gain[n].toFixed(2) : '') + ' peak ' + Math.round(peak[n] * 1000) + 'ms').join(', '));
