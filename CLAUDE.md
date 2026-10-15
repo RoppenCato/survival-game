@@ -2410,6 +2410,20 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   skills on the hotbar, rune toasts) and the Book of Beasts (L, the book icon, page toasts) are built but not
   finished, so `SHOW = { runes: false, book: false }` in the page hides them until the basics are right. The
   data still runs underneath (`book` counts kills, deeds count) so nothing is lost when they come back.
+- **The meadow by day and by night, recorded (2026-10-15; the sound studio's handoff, `C:\dev\SG Sound\out\music\HANDOFF-meadow-day-night.md`;
+  Robin: "tell the game to use the new meadows day and night soundtrack").** `assets/music/meadow-day.mp3` (3:23) and `meadow-night.mp3`
+  (2:40, dusk to dawn) play in place of the synthesized `meadowDay` and `meadowEvening` (`MUSIC_FILES`, `fileOf`), unless the Song
+  Editor's "Use in the game" picked another song (that still wins: my reading of the studio's suggestion). **The studio's MP3s,
+  not its WAVs** (7 MB against 70): an MP3 starts with the encoder's 1105 samples of delay, measured in Chrome against the WAVs
+  (the same offset at the head and the tail of both, the join as smooth as the WAV's), so each loops from 1105 to 1105 plus the
+  studio's loop length at 48 kHz (`loopStart`, `loopEnd` in seconds, so a 44.1 kHz context is right too). `src/music.js` has the
+  player: `loadTrack(url)` (fetch and decode, kept by url), `playTrack(url, { loopStart, loopEnd, fade, fadeIn })` (a looping
+  buffer through its own gain into the music master, so the volume bar, the hush on a lost focus and a hidden page apply; it
+  crossfades from the track playing and stops a synthesized song), `stopTrack(fade)`, `releaseTrack(url)`, `trackPlaying()`.
+  **At dusk and at dawn the two crossfade over seven seconds**; the next one is decoded 40 s before it is wanted and the old one
+  let go 12 s after; one mix each, so the danger layer is skipped while a track plays. On `file://` the fetch fails and the
+  synthesized song plays. Checked in the pane: the day loop in 0.4 s after the first key, the night at dusk and the day at dawn,
+  no errors. **Robin has not heard them in the game.**
 - **Music (2026-10-05):** off by default (`OPTS.music` 0; Robin): the bar in the Escape menu turns it on; it
   then starts at the next key or click (browsers require it). A day theme
   by day (`dayTheme()`: the Song Editor's "Use in the game" choice in `localStorage['game.theme']`, else

@@ -9639,6 +9639,38 @@ function play(song, fromBeat) {               // start the song (from a beat, fo
 function stop() { playing = false; if (timer) clearInterval(timer); timer = null; }
 function restart() { if (cur) play(cur); }
 function setLayer(tag, g, secs) { if (!ctx) return; var L = layer(tag); L.gain.cancelScheduledValues(ctx.currentTime); L.gain.setTargetAtTime(g, ctx.currentTime, (secs || 1) / 3); }
+/* Recorded tracks (2026-10-15, the sound studio's meadow by day and by night; Robin: "tell the game to use the new meadows day and
+   night soundtrack"). A track is a file decoded once (loadTrack: fetch and decodeAudioData, kept by its url) and played as a
+   looping buffer through its own gain into the same master as the songs, so the volume, the hush on a lost focus and a hidden
+   page all apply. playTrack(url, o) crossfades from whatever track plays (o.fade seconds, the time constant a third of it, as
+   setLayer does) and stops a synthesized song if one plays; o.loopStart and o.loopEnd (seconds) say where the loop lies in the
+   file (an MP3 carries the encoder's delay ahead of the music: see the game's MUSIC_FILES). stopTrack(fade); releaseTrack(url)
+   lets a decoded buffer go; trackPlaying() is the url playing. A failed load answers null, and the page falls back to a song. */
+var tracks = {}, cur = null;
+function loadTrack(url) {
+  if (tracks[url]) return tracks[url];
+  var c = ac(); if (!c || typeof fetch === 'undefined') return Promise.resolve(null);
+  tracks[url] = fetch(url).then(function (r) { if (!r.ok) throw new Error('status ' + r.status); return r.arrayBuffer(); }).then(function (ab) { return new Promise(function (res, rej) { c.decodeAudioData(ab, res, rej); }); }).catch(function () { delete tracks[url]; return null; });
+  return tracks[url];
+}
+function fadeOut(t, fade) { if (!t) return; var c = ctx, now = c.currentTime; t.g.gain.cancelScheduledValues(now); t.g.gain.setValueAtTime(t.g.gain.value, now); t.g.gain.setTargetAtTime(0, now, Math.max(0.05, fade / 3)); try { t.src.stop(now + fade * 1.5 + 0.1); } catch (e) {} }
+function playTrack(url, o) {
+  o = o || {}; var fade = o.fade == null ? 7 : o.fade;
+  return loadTrack(url).then(function (buf) {
+    if (!buf) return false; var c = ac(); if (!c) return false;
+    if (cur && cur.url === url) return true;
+    if (playing) stop();                                  // a synthesized song gives way at once
+    var src = c.createBufferSource(), g = c.createGain(), now = c.currentTime, ls = o.loopStart || 0, le = o.loopEnd || buf.duration;
+    src.buffer = buf; src.loop = true; src.loopStart = ls; src.loopEnd = Math.min(le, buf.duration);
+    g.gain.value = 0; src.connect(g); g.connect(master); src.start(now, ls);
+    g.gain.setTargetAtTime(1, now, Math.max(0.05, (cur ? fade : (o.fadeIn == null ? 1.5 : o.fadeIn)) / 3));
+    fadeOut(cur, fade); cur = { url: url, src: src, g: g };
+    return true;
+  });
+}
+function stopTrack(fade) { fadeOut(cur, fade == null ? 0.6 : fade); cur = null; }
+function releaseTrack(url) { if (!cur || cur.url !== url) delete tracks[url]; }
+function trackPlaying() { return cur ? cur.url : null; }
 function setVolume(v) { vol = v; if (master && (typeof document === 'undefined' || document.hasFocus())) master.gain.setTargetAtTime(v, ctx.currentTime, 0.05); }
 function at() { if (!playing || !cur) return 0; var spb = 60 / cur.bpm; return ((ctx.currentTime - startT) / spb) % loopLen; }
 
@@ -9826,7 +9858,7 @@ var SONGS = {
     ]
   }
 };
-return { SONGS: SONGS, INSTS: INSTS, PATTERNS: PATTERNS, GM: GM, play: play, stop: stop, restart: restart, setLayer: setLayer, setVolume: setVolume, at: at, render: render, length: length, events: events, parse: parse, chord: chord, midi: midiFile, playing: function () { return playing; }, layers: function () { var o = {}; for (var k in layerGain) o[k] = layerGain[k].gain.value; return o; }, current: function () { return cur; } };
+return { loadTrack: loadTrack, playTrack: playTrack, stopTrack: stopTrack, releaseTrack: releaseTrack, trackPlaying: trackPlaying, SONGS: SONGS, INSTS: INSTS, PATTERNS: PATTERNS, GM: GM, play: play, stop: stop, restart: restart, setLayer: setLayer, setVolume: setVolume, at: at, render: render, length: length, events: events, parse: parse, chord: chord, midi: midiFile, playing: function () { return playing; }, layers: function () { var o = {}; for (var k in layerGain) o[k] = layerGain[k].gain.value; return o; }, current: function () { return cur; } };
 })();
 if (typeof module !== 'undefined') module.exports = Music;
 
@@ -12575,23 +12607,41 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (songsLS === null) { songsLS = {}; try { songsLS = JSON.parse(localStorage.getItem('song.library')) || {}; } catch (e) {} }
     return songsLS[id] || Music.SONGS[id];
   }
+  /* The meadow by day and by night from the sound studio (2026-10-15; C:\dev\SG Sound\out\music\HANDOFF-meadow-day-night.md): two
+     recorded loops in place of the synthesized meadowDay and meadowEvening, when no song from the Song Editor is chosen in their
+     place (a choice there still wins). Each MP3 starts with the encoder's 1105 samples of delay (measured against the studio's
+     WAV in Chrome on 2026-10-15: the same offset at the start and the end of both, and the join as smooth as the WAV's), so the
+     loop runs from 1105 to 1105 + the studio's loop length, at 48 kHz. On file:// the fetch fails and the synthesized song plays. */
+  var MUSIC_FILES = {
+    meadowDay: { url: '../assets/music/meadow-day.mp3', frames: 9762712 },
+    meadowEvening: { url: '../assets/music/meadow-night.mp3', frames: 7680000 }
+  };
+  function fileOf(id) { var f = MUSIC_FILES[id]; if (!f) return null; return { url: f.url, loopStart: 1105 / 48000, loopEnd: (1105 + f.frames) / 48000 }; }
   function startMusic() {                 // browsers allow sound only after the first key or click
     if (musicOn || OPTS.music <= 0) return;
     musicSong = isEvening() ? eveTheme() : dayTheme();
-    Music.setVolume(OPTS.music); if (Music.play(songOf(musicSong))) musicOn = true;
+    Music.setVolume(OPTS.music); musicOn = true;
+    var fl = fileOf(musicSong), want = musicSong;
+    if (fl) Music.playTrack(fl.url, { loopStart: fl.loopStart, loopEnd: fl.loopEnd, fadeIn: 2 }).then(function (ok) { if (!ok && musicOn && musicSong === want) Music.play(songOf(want)); });   // the file, or the song if it cannot be had
+    else { Music.stopTrack(1); if (!Music.play(songOf(musicSong))) musicOn = false; }
   }
   function dayTheme() { var id = null; try { id = localStorage.getItem('game.theme'); } catch (e) {} return id && songOf(id) ? id : 'meadowDay'; }
   function eveTheme() { var id = null; try { id = localStorage.getItem('game.theme.eve'); } catch (e) {} return id && songOf(id) ? id : 'meadowEvening'; }   // the Song Editor's "Use in the game" choice
   function musicTick(dt) {
     if (!musicOn) return;
     var want = isEvening() ? eveTheme() : dayTheme();   // the song follows the clock: the evening theme from dusk to dawn
-    if (want !== musicSong) { Music.stop(); musicOn = false; dangerT = 0; startMusic(); return; }
+    if (want !== musicSong) {             // dusk or dawn: two recorded loops crossfade over seven seconds; a song is stopped and the other started
+      var fl = fileOf(want), was = musicSong;
+      if (fl && Music.trackPlaying()) { musicSong = want; Music.playTrack(fl.url, { loopStart: fl.loopStart, loopEnd: fl.loopEnd, fade: 7 }).then(function (ok) { var old = fileOf(was); if (old) setTimeout(function () { Music.releaseTrack(old.url); }, 12000); if (!ok && musicSong === want) { Music.stopTrack(1); Music.play(songOf(want)); } }); return; }
+      Music.stop(); musicOn = false; dangerT = 0; startMusic(); return;
+    }
+    var next = isEvening() ? (day.t > DAY_LEN - 40 ? dayTheme() : null) : (day.t > DUSK_AT - 40 ? eveTheme() : null), nf = next && fileOf(next); if (nf) Music.loadTrack(nf.url);   // the next loop decoded a little before it is wanted
     var P = hero(), awake = false;       // a beast counts as awake when it is chasing or attacking within earshot
     Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
     var was = dangerT > 0; dangerT = awake ? 4 : Math.max(0, dangerT - dt);
-    if ((dangerT > 0) !== was) { Music.setLayer('danger', dangerT > 0 ? 1 : 0, dangerT > 0 ? 1.2 : 4); Music.setLayer('calm', dangerT > 0 ? 0.15 : 1, dangerT > 0 ? 1.2 : 4); }
+    if ((dangerT > 0) !== was && !Music.trackPlaying()) { Music.setLayer('danger', dangerT > 0 ? 1 : 0, dangerT > 0 ? 1.2 : 4); Music.setLayer('calm', dangerT > 0 ? 0.15 : 1, dangerT > 0 ? 1.2 : 4); }
   }
-  function setMusic(v) { OPTS.music = v; saveOpts(); Music.setVolume(v); if (v > 0 && !musicOn) startMusic(); if (v <= 0 && musicOn) { Music.stop(); musicOn = false; } }
+  function setMusic(v) { OPTS.music = v; saveOpts(); Music.setVolume(v); if (v > 0 && !musicOn) startMusic(); if (v <= 0 && musicOn) { Music.stop(); Music.stopTrack(0.4); musicOn = false; } }
   window.addEventListener('keydown', startMusic); window.addEventListener('mousedown', startMusic);
   window.addEventListener('visibilitychange', function () { if (document.hidden) Music.setVolume(0); else Music.setVolume(OPTS.music); });
 
