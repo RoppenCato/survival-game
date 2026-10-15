@@ -10285,6 +10285,7 @@ if (typeof module !== 'undefined') module.exports = Music;
 var Sfx = (function () {
   var bufs = {}, gains = {}, peaks = {}, last = {}, sets = {};
   function b64bytes(b64) { var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+  function loudest(buf) { var d = buf.getChannelData(0), w = Math.max(1, Math.round(buf.sampleRate * 0.01)), best = -1, at = 0; for (var s0 = 0; s0 + w <= d.length; s0 += w >> 1) { var e = 0; for (var i = s0; i < s0 + w; i++) e += d[i] * d[i]; if (e > best) { best = e; at = s0 + w / 2; } } return at / buf.sampleRate; }   /* an MP3's peak, found once it is decoded (the bundler measures a WAV's) */
   function decode(ctx, ab) { return new Promise(function (res, rej) { var p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); }); }
   function load(ctx, url) {
     var set = url.replace(/\?.*$/, '').replace(/^.*\//, '').replace(/\.js$/, '');
@@ -10299,7 +10300,7 @@ var Sfx = (function () {
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
           var pk = S.peakf && S.peakf[f];
-          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); }, function () { /* one bad file is left out */ }));
+          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { if (pk == null) pk = loudest(buf); (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); if (peaks[n] == null) peaks[n] = pk; }, function () { /* one bad file is left out */ }));
         });
         Promise.all(jobs).then(function () { res(names()); });
       }
@@ -12793,7 +12794,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick') || '{}') || {}; } catch (eP) {}
   function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
+  function swingName(x) {   /* the sword's swing (also fists and the men's): Robin's own two by default (2026-10-15), the light one on an ordinary blow,
+                              the heavy one on the chain's last, a charged or a finishing blow; or what the arena's Choose swing row picked */
+    var k = SFX_PICK.swing;
+    if ((k == null || k === 'robin') && Sfx.has('swing_light')) return x && x.heavy && Sfx.has('swing_heavy') ? 'swing_heavy' : 'swing_light';
+    if (k && k !== 'orig' && k !== 'robin' && Sfx.has('swing_' + k)) return 'swing_' + k;
+    return Sfx.has('swing') ? 'swing' : null;
+  }
   function recName(n, v, x) {
+    if (n === 'swing' && (!x || !x.kind || x.kind === 'sword')) return swingName(x);
     if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
     if (n === 'tell') return Sfx.has('tele') ? pickOf('tele') : null;   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
     if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
@@ -12801,7 +12810,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function recSfx(n, v, x) {
     var a = AC; if (!a || OLD_SFX()) return false;
-    if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { Sfx.cut(a, swingH, 0.03); swingH = null; }   /* the blade stops: no whoosh after the blow */
+    if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { if (SFX_PICK.cut) Sfx.cut(a, swingH, 0.03); swingH = null; }   /* cut at the blow only if the arena's switch says so (off since Robin's own swings: a cut whoosh may be what spoiled the studio's) */
     var name = recName(n, v, x); if (!name) return false;
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */

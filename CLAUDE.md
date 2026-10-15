@@ -2450,6 +2450,20 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   loudest moment** (the bundler writes `peakf` per file; `Sfx.play(..., { peakAt })` starts the one it picks so its peak comes
   `peakAt` from now, its rate counted), since B's three differ by 35 ms. Checked live at 57 frames a second: the swing asked
   for 128 ms before the hit, B's loudest moment on it; the choice made in the arena played in the game. **Robin has not chosen.**
+  **Robin's verdict: "The sounds of the sword swing are all bad."** My reading of why (sent to Robin, not built): neither the
+  studio nor I can hear, so every round was a blind guess; Sonic Pi ships 207 samples and four whooshes, and three of the four
+  candidates were the same two (`perc_swoosh`, `ambi_swoosh`) cut differently, the fourth filtered noise; and the game decides a
+  hit on the blow's first frame while the drawn slash sweeps on for its `ac` (0.4 s, Robin's tuning), so a whoosh cut at the hit
+  is over before the blade has visibly moved. **Then Robin put two sounds of his own in the project ("Try that")**: "Sword, axe
+  or dagger, light swing - attack.mp3" (0.26 s, loudest at 115 to 120 ms) and "heavy swing" (0.44 s, 185 ms), now
+  `assets/sfx/robin/swing_light_1.mp3` and `swing_heavy_1.mp3` with `robin.json` (gains: the light 8 dB under the sword's hit,
+  0.234; the heavy 6 dB under the heavy hit, 0.57; their source and licence are Robin's to say). **They are the sword's swing
+  by default** (`swingName`: the light one on an ordinary blow, the heavy one on the chain's last, a charged or a finishing blow;
+  also fists and the men's swings; the other weapons keep theirs), the first entry of the arena's Choose swing row
+  ("Robin's"; "The studio's first" and A to D are the others). **The cut at the hit is now a switch, off by default** (the
+  arena's "Cut the swing at the hit", `SFX_PICK.cut`). The bundler takes MP3 and OGG too and more than one folder (`"<studio
+  folder>|assets/sfx/robin"`); an MP3's peak is found once decoded (`loudest` in `src/sfx.js`). Checked by stepping the arena:
+  light, light, heavy on a chain's last blow, light again; the game played the light one; nothing cut.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero

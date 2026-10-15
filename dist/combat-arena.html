@@ -184,6 +184,7 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
           <button id="hold" aria-pressed="false">Hold them still</button>
           <button id="sound" aria-pressed="true">Sound</button>
           <button id="oldsfx" aria-pressed="false">The old sounds</button>
+          <button id="swingcut" aria-pressed="false">Cut the swing at the hit</button>
         </div>
         <p class="desc">Show the blows draws your weapon's reach and arc (amber while you wind up, red as it lands), your guard (white in the instant it would parry, blue after), the dash while it keeps you untouchable, and on every man his reach, his blow filling as he winds up, and his shield's cover.</p>
         <h2 class="more">The sounds</h2>
@@ -5227,6 +5228,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
 var Sfx = (function () {
   var bufs = {}, gains = {}, peaks = {}, last = {}, sets = {};
   function b64bytes(b64) { var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+  function loudest(buf) { var d = buf.getChannelData(0), w = Math.max(1, Math.round(buf.sampleRate * 0.01)), best = -1, at = 0; for (var s0 = 0; s0 + w <= d.length; s0 += w >> 1) { var e = 0; for (var i = s0; i < s0 + w; i++) e += d[i] * d[i]; if (e > best) { best = e; at = s0 + w / 2; } } return at / buf.sampleRate; }   /* an MP3's peak, found once it is decoded (the bundler measures a WAV's) */
   function decode(ctx, ab) { return new Promise(function (res, rej) { var p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); }); }
   function load(ctx, url) {
     var set = url.replace(/\?.*$/, '').replace(/^.*\//, '').replace(/\.js$/, '');
@@ -5241,7 +5243,7 @@ var Sfx = (function () {
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
           var pk = S.peakf && S.peakf[f];
-          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); }, function () { /* one bad file is left out */ }));
+          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { if (pk == null) pk = loudest(buf); (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); if (peaks[n] == null) peaks[n] = pk; }, function () { /* one bad file is left out */ }));
         });
         Promise.all(jobs).then(function () { res(names()); });
       }
@@ -5423,7 +5425,15 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick') || '{}') || {}; } catch (eP) {}
   function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
+  function swingName(x) {   /* the sword's swing (also fists and the men's): Robin's own two by default (2026-10-15), the light one on an ordinary blow,
+                              the heavy one on the chain's last, a charged or a finishing blow; or what the arena's Choose swing row picked */
+    var k = SFX_PICK.swing;
+    if ((k == null || k === 'robin') && Sfx.has('swing_light')) return x && x.heavy && Sfx.has('swing_heavy') ? 'swing_heavy' : 'swing_light';
+    if (k && k !== 'orig' && k !== 'robin' && Sfx.has('swing_' + k)) return 'swing_' + k;
+    return Sfx.has('swing') ? 'swing' : null;
+  }
   function recName(n, v, x) {
+    if (n === 'swing' && (!x || !x.kind || x.kind === 'sword')) return swingName(x);
     if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
     if (n === 'tell') return Sfx.has('tele') ? pickOf('tele') : null;   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
     if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
@@ -5431,7 +5441,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   }
   function recSfx(n, v, x) {
     var a = AC; if (!a || OLD_SFX()) return false;
-    if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { Sfx.cut(a, swingH, 0.03); swingH = null; }   /* the blade stops: no whoosh after the blow */
+    if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { if (SFX_PICK.cut) Sfx.cut(a, swingH, 0.03); swingH = null; }   /* cut at the blow only if the arena's switch says so (off since Robin's own swings: a cut whoosh may be what spoiled the studio's) */
     var name = recName(n, v, x); if (!name) return false;
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */
@@ -5493,9 +5503,10 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   toggle('show', function () { return showBlows; }, function (v) { showBlows = v; });
   toggle('sound', function () { return S.sound; }, function (v) { S.sound = v; });
   toggle('oldsfx', function () { return oldSfx; }, function (v) { oldSfx = v; });
+  toggle('swingcut', function () { return !!SFX_PICK.cut; }, function (v) { if (v) SFX_PICK.cut = true; else delete SFX_PICK.cut; try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {} });
   /* the listening panel (2026-10-15): every fight sound by name, recorded if the studio's set has it, else the old one */
   var SFX_ROWS = [
-    ['Swings', ['swing', 'swing_axe', 'swing_club', 'swing_seax', 'swing_spear', 'swing_greataxe']],
+    ['Swings', ['swing_light', 'swing_heavy', 'swing', 'swing_axe', 'swing_club', 'swing_seax', 'swing_spear', 'swing_greataxe']],
     ['Hits', ['hit', 'hit_axe', 'hit_club', 'hit_seax', 'hit_spear', 'hit_greataxe']],
     ['Heavy hits', ['heavyhit', 'heavyhit_axe', 'heavyhit_club', 'heavyhit_greataxe']],   // (the seax and the spear have none of their own: the game plays heavyhit)
     ['Defence', ['raise', 'block', 'parry', 'crit']],
@@ -5521,12 +5532,13 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-e])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
     Object.keys(cands).forEach(function (base) {
       var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + base; d.appendChild(lab);
-      ['', ].concat(cands[base].sort()).forEach(function (k) {
-        var b = document.createElement('button'); b.textContent = k ? k.toUpperCase() : 'As delivered'; b.setAttribute('aria-pressed', (SFX_PICK[base] || '') === k ? 'true' : 'false');
+      var opts = base === 'swing' ? (Sfx.has('swing_light') ? ['robin', 'orig'] : ['orig']).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_light') ? 'robin' : 'orig') : '';
+      opts.forEach(function (k) {
+        var b = document.createElement('button'); b.textContent = k === 'robin' ? 'Robin’s' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() : 'As delivered'; b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');
         b.addEventListener('click', function () {
-          if (k) SFX_PICK[base] = k; else delete SFX_PICK[base];
+          if (k && k !== dflt) SFX_PICK[base] = k; else delete SFX_PICK[base];
           try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {}
-          var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k ? base + '_' + k : base);
+          var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k);
           sfxList(); b.blur();
         });
         d.appendChild(b);

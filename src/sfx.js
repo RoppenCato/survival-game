@@ -20,6 +20,7 @@
 var Sfx = (function () {
   var bufs = {}, gains = {}, peaks = {}, last = {}, sets = {};
   function b64bytes(b64) { var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+  function loudest(buf) { var d = buf.getChannelData(0), w = Math.max(1, Math.round(buf.sampleRate * 0.01)), best = -1, at = 0; for (var s0 = 0; s0 + w <= d.length; s0 += w >> 1) { var e = 0; for (var i = s0; i < s0 + w; i++) e += d[i] * d[i]; if (e > best) { best = e; at = s0 + w / 2; } } return at / buf.sampleRate; }   /* an MP3's peak, found once it is decoded (the bundler measures a WAV's) */
   function decode(ctx, ab) { return new Promise(function (res, rej) { var p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); }); }
   function load(ctx, url) {
     var set = url.replace(/\?.*$/, '').replace(/^.*\//, '').replace(/\.js$/, '');
@@ -34,7 +35,7 @@ var Sfx = (function () {
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
           var pk = S.peakf && S.peakf[f];
-          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); }, function () { /* one bad file is left out */ }));
+          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { if (pk == null) pk = loudest(buf); (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); if (peaks[n] == null) peaks[n] = pk; }, function () { /* one bad file is left out */ }));
         });
         Promise.all(jobs).then(function () { res(names()); });
       }
