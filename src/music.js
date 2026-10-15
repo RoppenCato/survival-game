@@ -176,8 +176,17 @@ var tracks = {}, cur = null;
 function loadTrack(url) {
   if (tracks[url]) return tracks[url];
   var c = ac(); if (!c || typeof fetch === 'undefined') return Promise.resolve(null);
-  tracks[url] = fetch(url).then(function (r) { if (!r.ok) throw new Error('status ' + r.status); return r.arrayBuffer(); }).then(function (ab) { return new Promise(function (res, rej) { c.decodeAudioData(ab, res, rej); }); }).catch(function () { delete tracks[url]; return null; });
+  var bytes = /\.js(\?|$)/.test(url) ? scriptBytes(url) : fetch(url).then(function (r) { if (!r.ok) throw new Error('status ' + r.status); return r.arrayBuffer(); });   // a .js track is the file wrapped in a script, which loads from disk too (file:// may not fetch)
+  tracks[url] = bytes.then(function (ab) { return new Promise(function (res, rej) { c.decodeAudioData(ab, res, rej); }); }).catch(function () { delete tracks[url]; return null; });
   return tracks[url];
+}
+function scriptBytes(url) {            // tools/musicjs.js wraps a file as window.__MUSIC[name] = base64; the script is added, read and let go
+  var name = url.replace(/\?.*$/, '').replace(/^.*\//, '').replace(/\.js$/, ''), G = window.__MUSIC || (window.__MUSIC = {});
+  return new Promise(function (res, rej) {
+    function take() { var b64 = G[name]; delete G[name]; if (!b64) { rej(new Error('no track')); return; } var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); res(u.buffer); }
+    if (G[name]) { take(); return; }
+    var sc = document.createElement('script'); sc.src = url; sc.async = true; sc.onload = function () { sc.remove(); take(); }; sc.onerror = function () { sc.remove(); rej(new Error('cannot load ' + url)); }; document.head.appendChild(sc);
+  });
 }
 function fadeOut(t, fade) { if (!t) return; var c = ctx, now = c.currentTime; t.g.gain.cancelScheduledValues(now); t.g.gain.setValueAtTime(t.g.gain.value, now); t.g.gain.setTargetAtTime(0, now, Math.max(0.05, fade / 3)); try { t.src.stop(now + fade * 1.5 + 0.1); } catch (e) {} }
 function playTrack(url, o) {

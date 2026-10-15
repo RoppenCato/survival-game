@@ -237,8 +237,8 @@ __COMBAT__
      WAV in Chrome on 2026-10-15: the same offset at the start and the end of both, and the join as smooth as the WAV's), so the
      loop runs from 1105 to 1105 + the studio's loop length, at 48 kHz. On file:// the fetch fails and the synthesized song plays. */
   var MUSIC_FILES = {
-    meadowDay: { url: '../assets/music/meadow-day.mp3', frames: 9762712 },
-    meadowEvening: { url: '../assets/music/meadow-night.mp3', frames: 7680000 }
+    meadowDay: { url: '../assets/music/meadow-day.js', frames: 9762712 },        // the studio's MP3, wrapped in a script so a page opened from disk can load it too (tools/musicjs.js; npm start opens file://, where a fetch fails)
+    meadowEvening: { url: '../assets/music/meadow-night.js', frames: 7680000 }
   };
   function fileOf(id) { var f = MUSIC_FILES[id]; if (!f) return null; return { url: f.url, loopStart: 1105 / 48000, loopEnd: (1105 + f.frames) / 48000 }; }
   function startMusic() {                 // browsers allow sound only after the first key or click
@@ -249,8 +249,8 @@ __COMBAT__
     if (fl) Music.playTrack(fl.url, { loopStart: fl.loopStart, loopEnd: fl.loopEnd, fadeIn: 2 }).then(function (ok) { if (!ok && musicOn && musicSong === want) Music.play(songOf(want)); });   // the file, or the song if it cannot be had
     else { Music.stopTrack(1); if (!Music.play(songOf(musicSong))) musicOn = false; }
   }
-  function dayTheme() { var id = null; try { id = localStorage.getItem('game.theme'); } catch (e) {} return id && songOf(id) ? id : 'meadowDay'; }
-  function eveTheme() { var id = null; try { id = localStorage.getItem('game.theme.eve'); } catch (e) {} return id && songOf(id) ? id : 'meadowEvening'; }   // the Song Editor's "Use in the game" choice
+  function dayTheme() { return 'meadowDay'; }       /* (2026-10-15, Robin: "tell the game to use the new meadows day and night soundtrack"; a song handed over from the Song Editor took their place, which is likely why Robin did not hear them: the recorded loops are the day and the night now) */
+  function eveTheme() { return 'meadowEvening'; }   // the Song Editor's "Use in the game" choice
   function musicTick(dt) {
     if (!musicOn) return;
     var want = isEvening() ? eveTheme() : dayTheme();   // the song follows the clock: the evening theme from dusk to dawn

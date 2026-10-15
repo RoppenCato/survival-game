@@ -4,6 +4,10 @@ Robin asked to work through and tune the fights against animals, men and several
 **Combat Arena** (`combat-arena.html`), on the game's own engine and numbers. What you tune there goes to the game with one
 button.
 
+**Robin's first tuning (2026-10-15) is now the code's default:** the hit pause 0.75, the sword's windup 0.11, blow 0.4,
+recovery 0.2, reach 50 and step 123, the boar's speed 1.1. The men no longer take the hero's weapon numbers (they swung in slow
+motion with the new sword).
+
 ## The Tuning panel
 
 It sits on the right, under Beasts. Four groups of sliders:

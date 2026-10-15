@@ -374,7 +374,8 @@
     else if (!sw && e.state === 'windup') { s.clip = 'attack1'; s.k = 0.39 * (1 - (1 - k) * (1 - k)); }
     else if (!sw && e.state === 'lunge') { s.clip = 'attack1'; s.k = 0.39 + 0.3 * k; }
     else if (e.guard > 0) { s.clip = 'block'; s.k = Math.min(0.999, (e.guardAge || 0) / 0.16); }
-    else if (e.state === 'stagger' || e.state === 'stunned' || flash > 0.35) { s.clip = 'hit'; s.k = e.state === 'stagger' ? 0.15 + 0.6 * k : Math.min(0.999, (1 - flash) * 0.8); }
+    else if (e.state === 'stunned') { s.clip = 'hit'; s.k = 0.42 + 0.14 * Math.sin((e.t || 0) * 6.5); }   // parried: reeling, a sway in the recoil (2026-10-15)
+    else if (e.state === 'stagger' || flash > 0.35) { s.clip = 'hit'; s.k = e.state === 'stagger' ? 0.15 + 0.6 * k : Math.min(0.999, (1 - flash) * 0.8); }
     else {
       st.run = st.run ? st.spd > 50 : st.spd > 62; st.walk = st.walk ? st.spd > 3 : st.spd > 7;
       if (st.run) { st.wp += dt * Math.max(0.8, Math.min(1.4, st.spd / 100)); s.clip = 'run'; s.t = st.wp; }

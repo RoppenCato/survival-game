@@ -4,7 +4,7 @@ var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
 var lib = null;
 var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy' };
 var WPRE = {
-  snappy: { fz: 0.7, pf: 0.65, kb: 1.0, hs: 0.6, hd: 0.06, kd: 0.5 },
+  snappy: { fz: 0.75, pf: 0.65, kb: 1.0, hs: 0.6, hd: 0.06, kd: 0.5 },   // (fz 0.75: Robin's tuning in the Combat Arena, 2026-10-15)
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
   heavy: { fz: 1.35, pf: 1.1, kb: 1.15, hs: 0.25, hd: 0.15, kd: 1.2 }
 };
@@ -74,8 +74,14 @@ var RANGED = {
   javelin:  { proj: 'javelin', speed: 250, r: 4, cd: 0.5, st: 8, stag: 14, life: 0.9, thrown: true },
   throwaxe: { proj: 'throwaxe', speed: 200, r: 4, cd: 0.5, st: 7, stag: 22, life: 0.6, thrown: true, kb: 160 }
 };
-function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
 for (var pk in PROFILES) PROFILES[pk].kind = pk;
+/* The men's weapons (2026-10-15): a man's blow is timed and reached from his weapon's profile (blowOf: wu, ac, rec times MEN's
+   factors, reach, arc). When Robin tuned the hero's sword (a blow of 0.4 s, reach 50, a long step), the men's swords took it too
+   and swung in slow motion. MAN_PF is the profiles as they were before any of the hero's tuning, and a man is armed from it;
+   the men's own levers are MEN's (their windup, blow and recovery factors). */
+var MAN_PF = JSON.parse(JSON.stringify(PROFILES));
+Object.assign(PROFILES.sword, { wu: 0.11, ac: 0.4, rec: 0.2, reach: 50, lunge: 123 });   // Robin's sword (the Combat Arena, 2026-10-15: "this feels good")
+function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
 function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
 function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
 function rangedOf() { var it = itemOf('weapon', 'bow'); return { it: it, kind: it ? it.kind : 'bow', R: (it && RANGED[it.kind]) || RANGED.bow }; }
@@ -378,6 +384,11 @@ function killEnemy(e, src) {
   if (e.type === 'brute') num(e.x, e.y - 50, (e.name || 'Brute') + ' DOWN', '#ffe27a');
 }
 function daze(e, dur) { e.state = 'recover'; e.t = 0; e.dur = dur; }
+function stunStars(c, e) {             // three small stars going round over a stunned head (2026-10-15)
+  var h = e.type === 'soldier' ? 46 : e.r * 2.4 + 12, t = W.t || 0, i; c.save();
+  for (i = 0; i < 3; i++) { var a2 = t * 5 + i * 2.09, sx = e.x + Math.cos(a2) * 8, sy = e.y * K - h + Math.sin(a2) * 2.5; c.fillStyle = '#ffd34d'; c.strokeStyle = 'rgba(60,40,10,0.8)'; c.lineWidth = 0.6; c.beginPath(); for (var j = 0; j < 10; j++) { var rr = j % 2 ? 1.1 : 2.6, aa = j * Math.PI / 5 - Math.PI / 2; c.lineTo(sx + Math.cos(aa) * rr, sy + Math.sin(aa) * rr); } c.closePath(); c.fill(); c.stroke(); }
+  c.restore();
+}
 function tell(e) {                     // the start of a windup, shown in the world (2026-10-14, the red line gone): dust under the feet and a glint before the attacker
   if (!S.juice) return; dust(e.x, e.y, 3); var dl = e.dirLock != null ? e.dirLock : e.face; spark(e.x + Math.cos(dl) * (e.r + 6), e.y + Math.sin(dl) * (e.r + 6) - e.r * 1.2, 3, '#fff3b0', 55);
 }
@@ -640,7 +651,13 @@ function updatePlayer(dt) {
     if (Math.hypot(ce.x - p.x, ce.y - p.y) < ce.r + p.r + 6) { ce.chargeT = 1.2; var cang = Math.atan2(ce.y - p.y, ce.x - p.x); damageEnemy(ce, 1.2 * dmgMul('sword'), cang, 260, 40, 'heavy'); ring(ce.x, ce.y, 0, 14, 0.25, '255,243,196', false, 2); sfx('slam'); }
   }
   if (p.guard) spd *= 0.55;
-  if (a.ph === 'windup' || a.ph === 'active') spd *= 0.55; else if (a.ph === 'recover') spd *= 0.9; else if (a.ph === 'charge') spd *= 0.6;
+  /* (2026-10-15, Robin: attacking on and moving at once, the legs did not move and he glided: the sheets' slash is the whole body, so a
+     walk under it cannot be shown. Now the blow is a commitment: a shuffle in the windup, no walking in the blow itself (its step is
+     the lunge), little in the first half of the recovery, and moving in the second half ends the recovery (the walk shows at once);
+     that is where a next blow of the chain could begin anyway, so the pace is the same. It was 0.55 of a walk through the windup
+     and the blow and 0.9 through the recovery.) */
+  if (a.ph === 'recover' && il > 0 && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }
+  if (a.ph === 'windup') spd *= 0.1; else if (a.ph === 'active') spd *= 0; else if (a.ph === 'recover') spd *= 0.2; else if (a.ph === 'charge') spd *= 0.6;
   var tvx = ix * spd, tvy = iy * spd;
   if (p.roll.t > 0) {
     p.roll.t -= dt;
@@ -652,7 +669,7 @@ function updatePlayer(dt) {
   else if (S.juice) { var k = Math.min(1, dt * 15); p.vx += (tvx - p.vx) * k; p.vy += (tvy - p.vy) * k; }
   else { p.vx = tvx; p.vy = tvy; }
   var lvx = 0, lvy = 0;
-  if (a.ph === 'active' && P.mode !== 'gather') { var sd2 = stepData(a), lf = clamp((gapAhead(a.dir) - 3) / 14, 0, 1); lvx = Math.cos(a.dir) * sd2.lunge * lf; lvy = Math.sin(a.dir) * sd2.lunge * lf; }
+  if (a.ph === 'active' && P.mode !== 'gather') { var sd2 = stepData(a), gA = gapAhead(a.dir), lf = clamp((gA - 3) / 14, 0, 1) * (gA < sd2.reach + 60 ? 1 : 0.15); lvx = Math.cos(a.dir) * sd2.lunge * lf; lvy = Math.sin(a.dir) * sd2.lunge * lf; }   /* (the step into a blow is taken toward a foe in front, within the reach and 60 units; at nothing, a small step: 2026-10-15, with Robin's long lunge a blow at the air slid him 35 units, which read as gliding) */
   p.kx *= Math.exp(-dt * 10); p.ky *= Math.exp(-dt * 10);
   moveCircle(p, (p.vx + lvx + p.kx) * dt, (p.vy + lvy + p.ky) * dt);
   updateAnim(dt, p.roll.t > 0);
@@ -848,7 +865,7 @@ function armMan(e, o) {                     // make a spawned enemy a soldier: o
   var bow = !!(o.wpn && o.wpn.kind === 'bow'), kind = bow ? 'seax' : (o.wpn && PROFILES[o.wpn.kind] ? o.wpn.kind : 'sword'); e.wpn = bow ? { kind: 'bow', mat: 'wood', tint: null } : { kind: kind, mat: (o.wpn && o.wpn.mat) || 'iron', tint: (o.wpn && o.wpn.tint) || '#9ca3ad' };
   e.bow = bow; e.a01 = clamp(((o.aim != null ? o.aim : 4) - 1) / 6, 0, 1); e.close = false;   // a bowman: no shield; his aim (1..8); with a man on him he drops the bow for his seax (e.close)
   if (bow) { e.bowW = e.wpn; e.side2 = { kind: 'seax', mat: 'iron', tint: '#9ca3ad' }; }
-  e.pf = PROFILES[kind]; e.pow = o.pow != null ? o.pow : 1.3;                         // the metal (iron's 1.3)
+  e.pf = MAN_PF[kind]; e.pow = o.pow != null ? o.pow : 1.3;   // (the men's own profiles: see MAN_PF)                         // the metal (iron's 1.3)
   e.shield = !!o.shield && kind !== 'greataxe' && !bow; e.armor = o.armor || 0;
   e.hp = e.maxHp = (o.hp || MEN.hp) * MEN.hpK; e.str = 0.7 + (o.strength != null ? o.strength : 4) * 0.075;
   e.w01 = clamp(((o.wits != null ? o.wits : 4) - 1) / 6, 0, 1); e.react = lerp(MEN.react[0], MEN.react[1], e.w01);
@@ -1305,6 +1322,10 @@ function soldierAI(e, dt) {
         if (th3) { e.seeT += dt; if (e.seeT >= e.react) { raiseGuard(e); e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = lerp(MEN.cd[0], MEN.cd[1], e.w01) * (0.8 + Math.random() * 0.5) * (0.5 + 0.5 * e.pf.st / 7); break; } }
       }
       if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = lerp(MEN.cd[0], MEN.cd[1], e.w01) * (0.8 + Math.random() * 0.5) * (0.5 + 0.5 * e.pf.st / 7); }   // a light weapon is ready again sooner, a heavy one later
+      break;
+    case 'stunned':                       // parried (2026-10-15: there was no case, and the default sent him straight back to the chase: Robin parried a man and he struck again at once)
+      e.guard = 0; e.kx *= 0.9; e.ky *= 0.9;
+      if (e.t >= e.dur) { e.state = 'chase'; e.t = 0; e.sw = null; e.swung = false; e.cd = Math.max(e.cd, 0.25); }
       break;
     case 'stagger':
       if (e.t >= e.dur) {
@@ -1952,7 +1973,7 @@ function drawHuman(c, e) {
   if (lib.figureHeld) lib.figureHeld(c, 0, 0, dir, e.fig, { kind: 'sword', x: hp[0], y: hp[1], ang: ang });
 }
 function drawEnemy(c, e) {
-  if (api.enemySprite && api.enemySprite(c, e)) return;        // a page draws this one from a sprite sheet (the Blender animals, 2026-10-11)
+  if (api.enemySprite && api.enemySprite(c, e)) { if (e.state === 'stunned' && !e.dead) stunStars(c, e); return; }        // a page draws this one from a sprite sheet (the Blender animals, 2026-10-11); a stunned one gets its stars
   var fn = e.fig ? drawHuman : e.creature ? drawCreature : drawPlain;
   if (e.dead) { c.save(); c.globalAlpha = Math.max(0, 1 - e.deadT * 2); c.translate(e.x, e.y * K - e.deadT * 14); c.scale(1 + e.deadT, 1 - e.deadT * 0.6); fn(c, e); c.restore(); return; }
   var jx = e.freezeT > 0 ? Math.sin(W.t * 90 + e.seed) * 1.1 : 0, A = e.cfg && e.cfg.atk;
@@ -2195,7 +2216,7 @@ function render(c) {
    from it. The Combat Arena edits it live and hands it to the game as 'game.combat'; the game lays that over its own on load.
    BEAST_GAME holds what the game's ANIMALS said a bite does and how far a beast notices you (the arena's beasts did 12 a bite
    whatever they were, until this); health, speed and windup come from the art library's specs and attacks. */
-var BEAST_GAME = { boar: { dmg: 14, aggro: 75 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 } };
+var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 } };
 var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge', 'st'], MEN_KEYS = ['hpK', 'dmg', 'wu', 'wuK', 'slots', 'gapHero', 'onHero', 'joinAfter', 'toMen'];
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {
@@ -2204,7 +2225,7 @@ function tuneDefaults() {
   for (k in PROFILES) { T.hero[k] = {}; for (i = 0; i < HERO_KEYS.length; i++) T.hero[k][HERO_KEYS[i]] = PROFILES[k][HERO_KEYS[i]]; }
   for (i = 0; i < MEN_KEYS.length; i++) T.men[MEN_KEYS[i]] = MEN[MEN_KEYS[i]];
   for (k in BEAST_GAME) { var g = BEAST_GAME[k], sp = lib && lib.animalSpec ? lib.animalSpec(g.of || k) : null, at = lib && lib.animalAttack ? lib.animalAttack(g.of || k) : null;
-    T.beasts[k] = { hp: g.hp != null ? g.hp : (sp ? sp.hp : 10), dmg: g.dmg, speed: sp ? sp.speed : 1, windup: +((at && at.windup) || (sp && sp.windup) || 0.4).toFixed(2), aggro: g.aggro }; }
+    T.beasts[k] = { hp: g.hp != null ? g.hp : (sp ? sp.hp : 10), dmg: g.dmg, speed: g.speed != null ? g.speed : (sp ? sp.speed : 1), windup: +((at && at.windup) || (sp && sp.windup) || 0.4).toFixed(2), aggro: g.aggro }; }
   TUNE0 = T; return JSON.parse(JSON.stringify(T));
 }
 function tune(over) {

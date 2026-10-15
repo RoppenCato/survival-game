@@ -867,6 +867,17 @@ the text and it is made the default. When a spec's meaning changes, change the s
   numbers, `tuneBeast(e, kind, { aggro })` dresses one. The game calls `Combat.tune(game.combat)` after `Combat.init` and dresses
   its beasts and its young boars through `tuneBeast`; **change a default in the code by changing `BEAST_GAME`, `PROFILES`, `MEN`
   or `WPRE`**, not the game's `ANIMALS` (its `dmg` and `aggro` are no longer read).
+  **Robin's first tuning is the default (2026-10-15, "this feels good"):** `WPRE.snappy.fz` 0.75; the sword wu 0.11, ac 0.4,
+  rec 0.2, reach 50, lunge 123; the boar's speed 1.1 (`BEAST_GAME.boar.speed`). **The men are armed from `MAN_PF`**, a copy of
+  `PROFILES` taken before any of the hero's tuning: with the sword's tuning the men's swords swung in slow motion (their blow
+  is the weapon's ac times `MEN.acK`), so the hero's weapon numbers are the hero's only and the men's levers are `MEN`'s.
+  **Found by Robin's test the same day:** a parried man struck again at once, because the soldier's state switch had no case
+  for `stunned` and its default sent him back to the chase in one frame; it has one now (he reels with the `hit` clip swaying,
+  three stars over his head from `stunStars`, for `MEN.parryStun`, measured 1.2 s with the hit pause). **And the glide:** the
+  slash clip is the whole body, so walking under it slid him with still legs. Now a shuffle in the windup (0.1 of a walk),
+  none in the blow itself, 0.2 in the recovery, and **moving in the second half of the recovery ends it** (where a chain's next
+  blow could begin anyway, so the pace is the same; the walk clip shows at once); **the step into a blow is taken toward a foe**
+  within the reach and 60 units, and at nothing it is 0.15 of the lunge (Robin's lunge slid him 35 units at the air).
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
 - The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,
@@ -2413,7 +2424,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
 - **The meadow by day and by night, recorded (2026-10-15; the sound studio's handoff, `C:\dev\SG Sound\out\music\HANDOFF-meadow-day-night.md`;
   Robin: "tell the game to use the new meadows day and night soundtrack").** `assets/music/meadow-day.mp3` (3:23) and `meadow-night.mp3`
   (2:40, dusk to dawn) play in place of the synthesized `meadowDay` and `meadowEvening` (`MUSIC_FILES`, `fileOf`), unless the Song
-  Editor's "Use in the game" picked another song (that still wins: my reading of the studio's suggestion). **The studio's MP3s,
+  Editor's "Use in the game" picked another song (it no longer does: see below). **The studio's MP3s,
   not its WAVs** (7 MB against 70): an MP3 starts with the encoder's 1105 samples of delay, measured in Chrome against the WAVs
   (the same offset at the head and the tail of both, the join as smooth as the WAV's), so each loops from 1105 to 1105 plus the
   studio's loop length at 48 kHz (`loopStart`, `loopEnd` in seconds, so a 44.1 kHz context is right too). `src/music.js` has the
@@ -2423,7 +2434,14 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   **At dusk and at dawn the two crossfade over seven seconds**; the next one is decoded 40 s before it is wanted and the old one
   let go 12 s after; one mix each, so the danger layer is skipped while a track plays. On `file://` the fetch fails and the
   synthesized song plays. Checked in the pane: the day loop in 0.4 s after the first key, the night at dusk and the day at dawn,
-  no errors. **Robin has not heard them in the game.**
+  no errors.
+  **Robin did not hear them (the same day), and two things stood in the way:** `npm start` opens the pages from disk, where a
+  page may not fetch a file beside it, so the synthesized song played; and a song handed over from the Song Editor took their
+  place. Now **each MP3 is wrapped in a script** (`assets/music/meadow-day.js`, `meadow-night.js`: `window.__MUSIC[name]` = the
+  file in base64, written by `node tools/musicjs.js <file.mp3> <name>`; `Music.loadTrack` adds the script, decodes the bytes and
+  lets the string go), which loads from disk as from the server, and **the recorded loops are always the day and the night**
+  (`dayTheme`, `eveTheme`; the Song Editor's "Use in the game" no longer changes the game's music). The bare MP3s are not in the
+  repo; the studio's folder has them.
 - **Music (2026-10-05):** off by default (`OPTS.music` 0; Robin): the bar in the Escape menu turns it on; it
   then starts at the next key or click (browsers require it). A day theme
   by day (`dayTheme()`: the Song Editor's "Use in the game" choice in `localStorage['game.theme']`, else
