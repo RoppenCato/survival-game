@@ -2946,11 +2946,18 @@ function startAttack() {
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; a.spin = false; a.bash = false; a.smashed = false;
   if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st); p.stDelay = 0.5; }
   p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
+  swingSound(a);
 }
+/* The swing is heard from the windup's start (2026-10-15, Robin: the sword's swing sounded really bad): the blow lands about
+   SWING_LAG after the windup ends, so a whoosh that began there played after the hit. x.lead says how long until it lands; a page
+   with a recording starts it so its loudest moment comes then (and cuts it when the blow lands), a synthesized one waits that long. */
+var SWING_LAG = 0.015;
+function swingSound(a) { if (P.mode !== 'fight' || P.weapon === 'ranged') return; var sd = stepData(a); sfx('swing', 0, null, { kind: bareHanded() ? null : meleeProfile().kind, wt: sd.wt || 1, heavy: heavyHit(a), lead: sd.wu + SWING_LAG }); }
 function releaseCharge() {
   var p = P, a = p.atk, c = clamp((a.t - 0.3) / 0.7, 0, 1);
   a.combo = 3; a.chg = c; a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; p.st -= 10; p.stDelay = 0.6;
+  swingSound(a);
 }
 function stepData(a) {
   var s0 = stepData0(a);
@@ -3107,7 +3114,7 @@ function updatePlayer(dt) {
   else if (a.ph !== 'charge') {
     var sd = stepData(a);
     a.t += dt;
-    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing', 0, null, p.mode === 'fight' && !bareHanded() ? { kind: meleeProfile().kind, wt: sd.wt || 1, heavy: heavyHit(a) } : null); if (S.juice && lookSpec().atkStyle >= 2) dust(p.x, p.y, 3); }
+    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; if (p.mode !== 'fight') sfx('swing');   /* a fight's swing was heard from the windup's start (swingSound) */ if (S.juice && lookSpec().atkStyle >= 2) dust(p.x, p.y, 3); }
     else if (a.ph === 'active') {
       var u = Math.min(1, a.t / sd.ac);
       var arc = a.spin ? 6.283 : sd.arc, half = arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;
@@ -5206,15 +5213,18 @@ if (typeof module !== 'undefined') module.exports = Combat;
 
    Sfx.load(ctx, 'assets/sfx/combat.js')    adds the script, decodes every file once on the page's AudioContext (a promise)
    Sfx.has(name)                             are there recordings of it
-   Sfx.play(ctx, dest, name, { v, pitch })   one of its variations (never the same twice running), at its own gain times v,
-                                             its rate moved by up to pitch (0.03 by default) so a run of blows is not one
-                                             sound; false if there is none, so the page plays its synthesized one instead
+   Sfx.play(ctx, dest, name, { v, pitch, delay, rate })   one of its variations (never the same twice running), at its own
+                                             gain times v, its rate moved by up to pitch (0.03 by default) so a run of blows is
+                                             not one sound, after delay seconds; a handle (truthy) or false if there is none, so
+                                             the page plays its synthesized one instead
+   Sfx.cut(ctx, h, fade)                     fades a playing handle out over about fade seconds (0.03), or stops it before it starts
+   Sfx.peak(name)                            when its loudest moment comes, in seconds from its start (tools/sfxjs.js measures it)
    Sfx.on                                    false plays nothing (the pages' "recorded sounds" switch: false = the old)
    Sfx.vol                                   a master gain for all of them (0.5)
    Sfx.names()                               what is loaded, with the number of variations
    No browser globals at load time: it loads in Node too (the tests). */
 var Sfx = (function () {
-  var bufs = {}, gains = {}, last = {}, sets = {};
+  var bufs = {}, gains = {}, peaks = {}, last = {}, sets = {};
   function b64bytes(b64) { var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
   function decode(ctx, ab) { return new Promise(function (res, rej) { var p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); }); }
   function load(ctx, url) {
@@ -5226,6 +5236,7 @@ var Sfx = (function () {
         var S = G[set]; delete G[set]; if (!S) { rej(new Error('no sound set ' + set)); return; }
         var jobs = [];
         Object.keys(S.gain || {}).forEach(function (n) { gains[n] = S.gain[n]; });
+        Object.keys(S.peak || {}).forEach(function (n) { peaks[n] = S.peak[n]; });
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
           jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { (bufs[n] || (bufs[n] = [])).push(buf); }, function () { /* one bad file is left out */ }));
@@ -5252,10 +5263,16 @@ var Sfx = (function () {
     var src = ctx.createBufferSource(), g = ctx.createGain(), pv = o.pitch == null ? 0.03 : o.pitch;
     src.buffer = list[i]; src.playbackRate.value = (o.rate || 1) * (1 + (Math.random() * 2 - 1) * pv);
     g.gain.value = (gains[n] == null ? 1 : gains[n]) * (o.v == null ? 1 : o.v) * Sfx.vol;
-    src.connect(g); g.connect(dest || ctx.destination); src.start(ctx.currentTime + (o.delay || 0));
-    return true;
+    var at = ctx.currentTime + (o.delay || 0);
+    src.connect(g); g.connect(dest || ctx.destination); src.start(at);
+    return { src: src, g: g, at: at };
   }
-  return { load: load, has: has, play: play, names: names, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
+  function cut(ctx, h, fade) {
+    if (!h || !ctx) return; var now = ctx.currentTime, f = fade == null ? 0.03 : fade;
+    try { if (h.at > now + 0.005) { h.src.stop(); return; } h.g.gain.cancelScheduledValues(now); h.g.gain.setValueAtTime(h.g.gain.value, now); h.g.gain.setTargetAtTime(0, now, f / 3); h.src.stop(now + f * 2 + 0.02); } catch (e) {}
+  }
+  function peak(n) { return peaks[n] || 0; }
+  return { load: load, has: has, play: play, cut: cut, peak: peak, names: names, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
 })();
 if (typeof module !== 'undefined') module.exports = Sfx;
 
@@ -5397,16 +5414,30 @@ if (typeof module !== 'undefined') module.exports = Sfx;
      assets/sfx/combat.js by tools/sfxjs.js; a sound with no recording plays the synthesized one above. The chain's x2 to x4 are
      chain_2 to chain_4; a hit of a chain's later blows is a shade higher, as the synthesized one is */
   var SFX_SET = '../assets/sfx/combat.js';
+  /* the hero's swing starts in his windup so its loudest moment comes as the blow lands (x.lead, 2026-10-15) and is cut when it
+     lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
+  var swingH = null, SFX_PICK = {};
+  try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick') || '{}') || {}; } catch (eP) {}
+  function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
+  function recName(n, v, x) {
+    if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
+    if (n === 'tell') return Sfx.has('tele') ? pickOf('tele') : null;   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
+    if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
+    return Sfx.has(n) ? pickOf(n) : null;
+  }
   function recSfx(n, v, x) {
     var a = AC; if (!a || OLD_SFX()) return false;
-    var d = a.destination, o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
-    if (n === 'chain') return Sfx.play(a, d, 'chain_' + v, o);
-    if (n === 'tell') return Sfx.play(a, d, 'tele', o);   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
-    if (x && x.kind && Sfx.play(a, d, n + '_' + x.kind, o)) return true;
-    return Sfx.play(a, d, n, o);
+    if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { Sfx.cut(a, swingH, 0.03); swingH = null; }   /* the blade stops: no whoosh after the blow */
+    var name = recName(n, v, x); if (!name) return false;
+    var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
+    if (n === 'swing' && x && x.lead != null) o.delay = Math.max(0, x.lead * LEAD_K() - Sfx.peak(name));
+    var h = Sfx.play(a, a.destination, name, o); if (h && n === 'swing' && x && x.lead != null) swingH = h;
+    return !!h;
   }
+  function synthAt(f, v, x) { if (x && x.lead != null && x.lead > 0.02) setTimeout(function () { f(v, x); }, (x.lead * LEAD_K() - 0.01) * 1000); else f(v, x); }   /* the old whoosh as the blow lands, as before */
   var oldSfx = false; function OLD_SFX() { return oldSfx; }
-  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; if (recSfx(n, v, x)) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x); };   /* x: the hero's weapon for a hit or a swing: its own voice */
+  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; if (recSfx(n, v, x)) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) synthAt(f, v, x); };
+  function LEAD_K() { return 1 / (clockK || 1); }   /* the arena's clock at half or a quarter: the blow lands later in real time */   /* x: the hero's weapon for a hit or a swing: its own voice */
 
   /* input */
   window.addEventListener('keydown', function (e) {
@@ -5478,6 +5509,22 @@ if (typeof module !== 'undefined') module.exports = Sfx;
         var b = document.createElement('button'); b.textContent = name; tot++;
         if (Sfx.has(name)) n++; else b.className = 'old';
         b.addEventListener('click', function () { var a = ac(); if (!a) return; if (oldSfx || !Sfx.play(a, a.destination, name)) sfxOld(name); b.blur(); });
+        d.appendChild(b);
+      });
+      host.appendChild(d);
+    });
+    /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick) */
+    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-e])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
+    Object.keys(cands).forEach(function (base) {
+      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + base; d.appendChild(lab);
+      ['', ].concat(cands[base].sort()).forEach(function (k) {
+        var b = document.createElement('button'); b.textContent = k ? k.toUpperCase() : 'As delivered'; b.setAttribute('aria-pressed', (SFX_PICK[base] || '') === k ? 'true' : 'false');
+        b.addEventListener('click', function () {
+          if (k) SFX_PICK[base] = k; else delete SFX_PICK[base];
+          try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {}
+          var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k ? base + '_' + k : base);
+          sfxList(); b.blur();
+        });
         d.appendChild(b);
       });
       host.appendChild(d);

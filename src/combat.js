@@ -463,11 +463,18 @@ function startAttack() {
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; a.spin = false; a.bash = false; a.smashed = false;
   if (p.mode === 'fight') { p.st -= (bareHanded() ? 4 : meleeProfile().st); p.stDelay = 0.5; }
   p.guard = false; p.anim.sq = -0.25; p.anim.sqv = 0;
+  swingSound(a);
 }
+/* The swing is heard from the windup's start (2026-10-15, Robin: the sword's swing sounded really bad): the blow lands about
+   SWING_LAG after the windup ends, so a whoosh that began there played after the hit. x.lead says how long until it lands; a page
+   with a recording starts it so its loudest moment comes then (and cuts it when the blow lands), a synthesized one waits that long. */
+var SWING_LAG = 0.015;
+function swingSound(a) { if (P.mode !== 'fight' || P.weapon === 'ranged') return; var sd = stepData(a); sfx('swing', 0, null, { kind: bareHanded() ? null : meleeProfile().kind, wt: sd.wt || 1, heavy: heavyHit(a), lead: sd.wu + SWING_LAG }); }
 function releaseCharge() {
   var p = P, a = p.atk, c = clamp((a.t - 0.3) / 0.7, 0, 1);
   a.combo = 3; a.chg = c; a.dir = aimAngle(); p.face = a.dir; if (!S.juice) p.faceVis = a.dir;
   a.ph = 'windup'; a.t = 0; a.hit = []; a.tr = null; p.st -= 10; p.stDelay = 0.6;
+  swingSound(a);
 }
 function stepData(a) {
   var s0 = stepData0(a);
@@ -624,7 +631,7 @@ function updatePlayer(dt) {
   else if (a.ph !== 'charge') {
     var sd = stepData(a);
     a.t += dt;
-    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; sfx('swing', 0, null, p.mode === 'fight' && !bareHanded() ? { kind: meleeProfile().kind, wt: sd.wt || 1, heavy: heavyHit(a) } : null); if (S.juice && lookSpec().atkStyle >= 2) dust(p.x, p.y, 3); }
+    if (a.ph === 'windup' && a.t >= sd.wu) { a.ph = 'active'; a.t = 0; if (p.mode !== 'fight') sfx('swing');   /* a fight's swing was heard from the windup's start (swingSound) */ if (S.juice && lookSpec().atkStyle >= 2) dust(p.x, p.y, 3); }
     else if (a.ph === 'active') {
       var u = Math.min(1, a.t / sd.ac);
       var arc = a.spin ? 6.283 : sd.arc, half = arc / 2, sign = (a.combo % 2 === 0) ? 1 : -1;

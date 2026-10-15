@@ -6,15 +6,18 @@
 
    Sfx.load(ctx, 'assets/sfx/combat.js')    adds the script, decodes every file once on the page's AudioContext (a promise)
    Sfx.has(name)                             are there recordings of it
-   Sfx.play(ctx, dest, name, { v, pitch })   one of its variations (never the same twice running), at its own gain times v,
-                                             its rate moved by up to pitch (0.03 by default) so a run of blows is not one
-                                             sound; false if there is none, so the page plays its synthesized one instead
+   Sfx.play(ctx, dest, name, { v, pitch, delay, rate })   one of its variations (never the same twice running), at its own
+                                             gain times v, its rate moved by up to pitch (0.03 by default) so a run of blows is
+                                             not one sound, after delay seconds; a handle (truthy) or false if there is none, so
+                                             the page plays its synthesized one instead
+   Sfx.cut(ctx, h, fade)                     fades a playing handle out over about fade seconds (0.03), or stops it before it starts
+   Sfx.peak(name)                            when its loudest moment comes, in seconds from its start (tools/sfxjs.js measures it)
    Sfx.on                                    false plays nothing (the pages' "recorded sounds" switch: false = the old)
    Sfx.vol                                   a master gain for all of them (0.5)
    Sfx.names()                               what is loaded, with the number of variations
    No browser globals at load time: it loads in Node too (the tests). */
 var Sfx = (function () {
-  var bufs = {}, gains = {}, last = {}, sets = {};
+  var bufs = {}, gains = {}, peaks = {}, last = {}, sets = {};
   function b64bytes(b64) { var bin = atob(b64), n = bin.length, u = new Uint8Array(n); for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
   function decode(ctx, ab) { return new Promise(function (res, rej) { var p = ctx.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); }); }
   function load(ctx, url) {
@@ -26,6 +29,7 @@ var Sfx = (function () {
         var S = G[set]; delete G[set]; if (!S) { rej(new Error('no sound set ' + set)); return; }
         var jobs = [];
         Object.keys(S.gain || {}).forEach(function (n) { gains[n] = S.gain[n]; });
+        Object.keys(S.peak || {}).forEach(function (n) { peaks[n] = S.peak[n]; });
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
           jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { (bufs[n] || (bufs[n] = [])).push(buf); }, function () { /* one bad file is left out */ }));
@@ -52,9 +56,15 @@ var Sfx = (function () {
     var src = ctx.createBufferSource(), g = ctx.createGain(), pv = o.pitch == null ? 0.03 : o.pitch;
     src.buffer = list[i]; src.playbackRate.value = (o.rate || 1) * (1 + (Math.random() * 2 - 1) * pv);
     g.gain.value = (gains[n] == null ? 1 : gains[n]) * (o.v == null ? 1 : o.v) * Sfx.vol;
-    src.connect(g); g.connect(dest || ctx.destination); src.start(ctx.currentTime + (o.delay || 0));
-    return true;
+    var at = ctx.currentTime + (o.delay || 0);
+    src.connect(g); g.connect(dest || ctx.destination); src.start(at);
+    return { src: src, g: g, at: at };
   }
-  return { load: load, has: has, play: play, names: names, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
+  function cut(ctx, h, fade) {
+    if (!h || !ctx) return; var now = ctx.currentTime, f = fade == null ? 0.03 : fade;
+    try { if (h.at > now + 0.005) { h.src.stop(); return; } h.g.gain.cancelScheduledValues(now); h.g.gain.setValueAtTime(h.g.gain.value, now); h.g.gain.setTargetAtTime(0, now, f / 3); h.src.stop(now + f * 2 + 0.02); } catch (e) {}
+  }
+  function peak(n) { return peaks[n] || 0; }
+  return { load: load, has: has, play: play, cut: cut, peak: peak, names: names, on: true, vol: 0.5 };   // vol 0.5: the studio levels every file to a peak of -1 dBFS; at half, the sword's hit lies where the synthesized one did (measured: -22.6 dB against -23.7 over its loudest 50 ms)
 })();
 if (typeof module !== 'undefined') module.exports = Sfx;

@@ -224,20 +224,34 @@ __COMBAT__
   Combat.api.sfx = function (n, v, src, x) {   // a beast's sound is only heard when it is near; the world is big; x: the hero's weapon for a hit or a swing (its own voice if the set has one)
     if (src && src.x != null) { var P = hero(); if (Math.hypot(src.x - P.x, src.y - P.y) > 260) return; }
     if (recSfx(n, v, x)) return;
-    var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x);
+    var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) synthAt(f, v, x);
   };
+  function LEAD_K() { return 1; }
   /* recorded sounds (2026-10-15, Robin: the attack sounds from the Sound director): src/sfx.js plays the studio's WAVs, bundled into
      assets/sfx/combat.js by tools/sfxjs.js; a sound with no recording plays the synthesized one above. The chain's x2 to x4 are
      chain_2 to chain_4; a hit of a chain's later blows is a shade higher, as the synthesized one is */
   var SFX_SET = '../assets/sfx/combat.js';
+  /* the hero's swing starts in his windup so its loudest moment comes as the blow lands (x.lead, 2026-10-15) and is cut when it
+     lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
+  var swingH = null, SFX_PICK = {};
+  try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick') || '{}') || {}; } catch (eP) {}
+  function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
+  function recName(n, v, x) {
+    if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
+    if (n === 'tell') return Sfx.has('tele') ? pickOf('tele') : null;   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
+    if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
+    return Sfx.has(n) ? pickOf(n) : null;
+  }
   function recSfx(n, v, x) {
     var a = AC; if (!a || OLD_SFX()) return false;
-    var d = a.destination, o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
-    if (n === 'chain') return Sfx.play(a, d, 'chain_' + v, o);
-    if (n === 'tell') return Sfx.play(a, d, 'tele', o);   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
-    if (x && x.kind && Sfx.play(a, d, n + '_' + x.kind, o)) return true;
-    return Sfx.play(a, d, n, o);
+    if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { Sfx.cut(a, swingH, 0.03); swingH = null; }   /* the blade stops: no whoosh after the blow */
+    var name = recName(n, v, x); if (!name) return false;
+    var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
+    if (n === 'swing' && x && x.lead != null) o.delay = Math.max(0, x.lead * LEAD_K() - Sfx.peak(name));
+    var h = Sfx.play(a, a.destination, name, o); if (h && n === 'swing' && x && x.lead != null) swingH = h;
+    return !!h;
   }
+  function synthAt(f, v, x) { if (x && x.lead != null && x.lead > 0.02) setTimeout(function () { f(v, x); }, (x.lead * LEAD_K() - 0.01) * 1000); else f(v, x); }   /* the old whoosh as the blow lands, as before */
   function OLD_SFX() { return !!(ADMIN && ADMIN.oldSfx); }
   function sfx(n, v) { if (S.sound) Combat.api.sfx(n, v); }
   window.addEventListener('keydown', ac); window.addEventListener('mousedown', ac);

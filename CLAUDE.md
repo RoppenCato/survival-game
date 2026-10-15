@@ -2427,6 +2427,21 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   played both), and the pages play the studio's `tele` for it; every other `tele` is still the synthesized tick. Checked in
   the arena: the guard, a sword man's blows and a Dane axe man's each played what they should. Robin had heard none of it in
   the game when it went in.
+  **Robin's first take (the same day): "The swing sounds with the sword are really bad. Parry and block are good tho."** Two
+  causes, one mine: **the blow lands 0 to 25 ms after the windup ends** (`tests/blows.js`: the sword 133 ms after the press, its
+  windup 110), and the swing was played there, so its whoosh (loudest at 120 ms) swelled after the hit. My brief to the studio
+  said the hit came somewhere in a blow of 0.1 to 0.4 s. **Now the swing is heard from the windup's start** (`swingSound(a)` in
+  `startAttack` and `releaseCharge`; `x.lead` = the step's windup and `SWING_LAG` 0.015: how long until the blow lands): a page
+  starts the recording `lead - Sfx.peak(name)` later, so its loudest 10 ms comes as the blow lands (the bundler measures each
+  sound's `peak`), and **cuts it when the blow lands** (`Sfx.cut`, a 30 ms fade, on the hero's hit, heavy hit or block, or a hurt
+  or a parry: no whoosh after the blow); a miss plays it whole; a synthesized swing waits the lead (`synthAt`); the arena scales
+  it by its clock (`LEAD_K`). Measured live in the arena: the sword's swing began 25 ms after the press, its loudest moment 25 ms
+  before the hit, cut at the hit. A tool's swing in gather mode is as before. **The second, the studio's:** measured (I cannot
+  hear), the sword's swing is near full loudness from its first 10 ms and flat for 170 ms, with a narrow resonant band
+  wandering 1.2 to 3.4 kHz (a band-pass at a high resonance swept over noise: the synthesizer's wind). Sent back to the studio
+  with the timing put right and a request for **candidates**, `swing_a` to `swing_d`, each a different approach: **the arena's
+  The sounds panel gets a "Choose swing" row** (a click plays one and makes it the one played; `game.sfxpick`, which the game
+  reads too: `SFX_PICK`, `pickOf`; "As delivered" goes back). The other weapons' swings follow whichever Robin picks.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero

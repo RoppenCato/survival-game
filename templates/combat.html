@@ -348,16 +348,30 @@ __SFX__
      assets/sfx/combat.js by tools/sfxjs.js; a sound with no recording plays the synthesized one above. The chain's x2 to x4 are
      chain_2 to chain_4; a hit of a chain's later blows is a shade higher, as the synthesized one is */
   var SFX_SET = '../assets/sfx/combat.js';
+  /* the hero's swing starts in his windup so its loudest moment comes as the blow lands (x.lead, 2026-10-15) and is cut when it
+     lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
+  var swingH = null, SFX_PICK = {};
+  try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick') || '{}') || {}; } catch (eP) {}
+  function pickOf(n) { var k = SFX_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
+  function recName(n, v, x) {
+    if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
+    if (n === 'tell') return Sfx.has('tele') ? pickOf('tele') : null;   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
+    if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
+    return Sfx.has(n) ? pickOf(n) : null;
+  }
   function recSfx(n, v, x) {
     var a = AC; if (!a || OLD_SFX()) return false;
-    var d = a.destination, o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
-    if (n === 'chain') return Sfx.play(a, d, 'chain_' + v, o);
-    if (n === 'tell') return Sfx.play(a, d, 'tele', o);   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
-    if (x && x.kind && Sfx.play(a, d, n + '_' + x.kind, o)) return true;
-    return Sfx.play(a, d, n, o);
+    if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { Sfx.cut(a, swingH, 0.03); swingH = null; }   /* the blade stops: no whoosh after the blow */
+    var name = recName(n, v, x); if (!name) return false;
+    var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
+    if (n === 'swing' && x && x.lead != null) o.delay = Math.max(0, x.lead * LEAD_K() - Sfx.peak(name));
+    var h = Sfx.play(a, a.destination, name, o); if (h && n === 'swing' && x && x.lead != null) swingH = h;
+    return !!h;
   }
+  function synthAt(f, v, x) { if (x && x.lead != null && x.lead > 0.02) setTimeout(function () { f(v, x); }, (x.lead * LEAD_K() - 0.01) * 1000); else f(v, x); }   /* the old whoosh as the blow lands, as before */
   var oldSfx = false; function OLD_SFX() { return oldSfx; }
-  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; if (recSfx(n, v, x)) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x); };   /* x: the hero's weapon for a hit or a swing: its own voice */
+  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; if (recSfx(n, v, x)) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) synthAt(f, v, x); };
+  function LEAD_K() { return 1 / (clockK || 1); }   /* the arena's clock at half or a quarter: the blow lands later in real time */   /* x: the hero's weapon for a hit or a swing: its own voice */
 
   /* input */
   window.addEventListener('keydown', function (e) {
@@ -429,6 +443,22 @@ __SFX__
         var b = document.createElement('button'); b.textContent = name; tot++;
         if (Sfx.has(name)) n++; else b.className = 'old';
         b.addEventListener('click', function () { var a = ac(); if (!a) return; if (oldSfx || !Sfx.play(a, a.destination, name)) sfxOld(name); b.blur(); });
+        d.appendChild(b);
+      });
+      host.appendChild(d);
+    });
+    /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick) */
+    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-e])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
+    Object.keys(cands).forEach(function (base) {
+      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + base; d.appendChild(lab);
+      ['', ].concat(cands[base].sort()).forEach(function (k) {
+        var b = document.createElement('button'); b.textContent = k ? k.toUpperCase() : 'As delivered'; b.setAttribute('aria-pressed', (SFX_PICK[base] || '') === k ? 'true' : 'false');
+        b.addEventListener('click', function () {
+          if (k) SFX_PICK[base] = k; else delete SFX_PICK[base];
+          try { localStorage.setItem('game.sfxpick', JSON.stringify(SFX_PICK)); } catch (eS) {}
+          var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k ? base + '_' + k : base);
+          sfxList(); b.blur();
+        });
         d.appendChild(b);
       });
       host.appendChild(d);
