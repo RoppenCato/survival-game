@@ -3586,7 +3586,7 @@ function blowOf(e, second, quick) {
 }
 function beginBlow(e, T, ang, second, quick) {
   e.sw = blowOf(e, second, quick); e.swingN++; e.state = 'windup'; e.t = 0; e.dur = e.sw.wu; e.dirLock = ang; e.face = ang; e.hitDone = false; e.swung = false; e.guard = 0; e.blocked = 0;
-  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e); tell(e);
+  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; if (!heavyBlow(e)) sfx('tell', 0, e); tell(e);   // a blow that can be parried has its own sound (the studio's iron glint, 2026-10-15); a heavy one only the red tell's
 }
 function din() { return Math.min(MEN.noise.far / MEN.noise.blow, 1 + MEN.noise.din * Math.max(0, (W.fighting || 0) - 2)); }   // two men at it are heard a blow's distance off; a battle of twenty across a town (the town's answer builds as the fight does)
 function noise(x, y, r, soft, except) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look
@@ -5384,6 +5384,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     broken: function () { SFX.stagger(); },
     perfect: function () { SFX.crit(); },
     finish: function () { SFX.slam(); SFX.heavyhit(); },
+    tell: function () { SFX.tele(); },
     heavytell: function () { tone(120, 0.32, 'sawtooth', 0.09, 70); tone(62, 0.36, 'sine', 0.16, 40); },   // a blow that cannot be parried: low and rough (2026-10-15)
     die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
     crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
@@ -5400,6 +5401,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     var a = AC; if (!a || OLD_SFX()) return false;
     var d = a.destination, o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if (n === 'chain') return Sfx.play(a, d, 'chain_' + v, o);
+    if (n === 'tell') return Sfx.play(a, d, 'tele', o);   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
     if (x && x.kind && Sfx.play(a, d, n + '_' + x.kind, o)) return true;
     return Sfx.play(a, d, n, o);
   }
@@ -5461,9 +5463,9 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     ['Swings', ['swing', 'swing_axe', 'swing_club', 'swing_seax', 'swing_spear', 'swing_greataxe']],
     ['Hits', ['hit', 'hit_axe', 'hit_club', 'hit_seax', 'hit_spear', 'hit_greataxe']],
     ['Heavy hits', ['heavyhit', 'heavyhit_axe', 'heavyhit_club', 'heavyhit_greataxe']],   // (the seax and the spear have none of their own: the game plays heavyhit)
-    ['Defence', ['block', 'parry', 'crit']],
+    ['Defence', ['raise', 'block', 'parry', 'crit']],
     ['The chain', ['chain_2', 'chain_3', 'chain_4']],
-    ['Moments', ['finish', 'broken', 'heavytell', 'perfect', 'stagger']],
+    ['Moments', ['tele', 'heavytell', 'finish', 'broken', 'perfect', 'stagger']],
     ['Also', ['dash', 'hurt', 'shoot', 'slam', 'die']]
   ];
   function sfxOld(name) { var m = /^chain_(\d)$/.exec(name); if (m) { SFX.chain(+m[1]); return; } var f = SFX[name]; if (!f) { var b = name.replace(/_[a-z]+$/, ''); f = SFX[b]; } if (f) f(0); }

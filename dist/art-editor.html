@@ -7104,7 +7104,7 @@ function blowOf(e, second, quick) {
 }
 function beginBlow(e, T, ang, second, quick) {
   e.sw = blowOf(e, second, quick); e.swingN++; e.state = 'windup'; e.t = 0; e.dur = e.sw.wu; e.dirLock = ang; e.face = ang; e.hitDone = false; e.swung = false; e.guard = 0; e.blocked = 0;
-  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; sfx('tele', 0, e); tell(e);
+  e.hitT = W.t + e.sw.wu + e.sw.ac * MEN.hitAt; if (!heavyBlow(e)) sfx('tell', 0, e); tell(e);   // a blow that can be parried has its own sound (the studio's iron glint, 2026-10-15); a heavy one only the red tell's
 }
 function din() { return Math.min(MEN.noise.far / MEN.noise.blow, 1 + MEN.noise.din * Math.max(0, (W.fighting || 0) - 2)); }   // two men at it are heard a blow's distance off; a battle of twenty across a town (the town's answer builds as the fight does)
 function noise(x, y, r, soft, except) {                   // something loud at a place: every man of the other side within r hears it. One at his post is on his way after a moment (longer if it was far, or if he must arm: e.wakeDelay); one already up with nobody to fight goes to look

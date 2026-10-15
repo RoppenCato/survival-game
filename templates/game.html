@@ -200,6 +200,7 @@ __COMBAT__
     broken: function () { SFX.stagger(); },
     perfect: function () { SFX.crit(); },
     finish: function () { SFX.slam(); SFX.heavyhit(); },
+    tell: function () { SFX.tele(); },
     heavytell: function () { tone(120, 0.32, 'sawtooth', 0.09, 70); tone(62, 0.36, 'sine', 0.16, 40); },   // a blow that cannot be parried (2026-10-15)
     die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
     crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
@@ -233,6 +234,7 @@ __COMBAT__
     var a = AC; if (!a || OLD_SFX()) return false;
     var d = a.destination, o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if (n === 'chain') return Sfx.play(a, d, 'chain_' + v, o);
+    if (n === 'tell') return Sfx.play(a, d, 'tele', o);   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
     if (x && x.kind && Sfx.play(a, d, n + '_' + x.kind, o)) return true;
     return Sfx.play(a, d, n, o);
   }

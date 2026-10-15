@@ -2420,8 +2420,13 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   silent), the swing -31.5 (-29.8). The seax and the spear have no heavy hit of their own (the sword's plays). **Played by
   script in the arena and the battle scene, muted:** every weapon's swing and hit, the heavy hits, a man's swing, block, parry,
   the chain's x2 to x4, the finishing blow, the stun, a fall, the red tell, the perfect dodge, dash, hurt and the bow each
-  played its recording; no errors. **Still synthesized:** `raise` (the guard coming up) and `tele` (the tick as a man begins a
-  blow), not asked for. Robin had heard none of it in the game when it went in.
+  played its recording; no errors. **Then `raise` and `tele` (the same day, the studio's offer):** the guard coming up (a wooden
+  click with a creak of leather) and a man beginning a blow you can parry (a small glint of iron); 34 sounds, no other file or
+  gain moved. The engine's `tele` is a tick in eleven places (a beast's windup, a man's shout, the target lock, the mode
+  switches), so **a man's parryable blow is named `tell` now** (`beginBlow`; a heavy one plays only `heavytell`, where it
+  played both), and the pages play the studio's `tele` for it; every other `tele` is still the synthesized tick. Checked in
+  the arena: the guard, a sword man's blows and a Dane axe man's each played what they should. Robin had heard none of it in
+  the game when it went in.
 - **Ambient sound (2026-10-12, Robin: ambient sounds; his answer: synthesized in code, like all the sound).** `src/ambient.js`
   (`Ambient.make(AC, dest)`), no sound files: every layer is looped noise through filters (a *bed*, eased toward a loudness) or
   short tones and snatches of noise (single sounds). The page tells it a few times a second what is round the hero
