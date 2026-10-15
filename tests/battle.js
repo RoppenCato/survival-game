@@ -56,7 +56,7 @@ const BOTS = {
   careful(D, st, foes) {
     const P = D.P, t = foes[0], d = Math.hypot(t.x - P.x, t.y - P.y), ang = Math.atan2(t.y - P.y, t.x - P.x), th = threatOf(D), reach = st.reach + t.r;
     D.W.lock = t;
-    if (th && th.tti < 0.6 && meets(st, th, 'careful')) { keys(ang, false); Combat.button(0, false); Combat.key('KeyK', true); return; }       // a blow coming: the shield, and nothing else
+    if (th && th.tti < 0.6 && meets(st, th, 'careful')) { if (Combat.S.guardFace) D.W.lock = null; keys(ang, false); Combat.button(0, false); Combat.key('KeyK', true); return; }       // a blow coming: the shield, and nothing else (with the guard turning to the threat, he lets go of his lock as a player without Ctrl would)
     Combat.key('KeyK', false);
     const open = t.state === 'recover' || t.state === 'stagger' || t.state === 'yield' || !(t.guard > 0) || st.breaks;
     keys(ang, d > reach - 2); Combat.button(0, open && d < reach + 8 && P.st > 20 && st.frame % 12 < 3);
@@ -66,7 +66,7 @@ const BOTS = {
     D.W.lock = t; Combat.key('Space', false);
     if (th && meets(st, th, 'skilled')) {
       if (th.heavy) { if (th.tti < 0.22 && P.roll.cd <= 0 && P.st >= 18) { keys(ang + Math.PI, true); Combat.key('Space', true); } else keys(ang + Math.PI, th.tti < 0.5); Combat.key('KeyK', false); Combat.button(0, false); return; }   // a heavy blow is stepped out of, not met
-      keys(ang, false); Combat.button(0, false); Combat.key('KeyK', th.tti <= 0.15 + st.jit); return;                                   // the shield up at the last moment: a parry
+      if (Combat.S.guardFace && th.tti <= 0.15 + st.jit) D.W.lock = null; keys(ang, false); Combat.button(0, false); Combat.key('KeyK', th.tti <= 0.15 + st.jit); return;                                   // the shield up at the last moment: a parry
     }
     Combat.key('KeyK', false);
     const dazed = t.state === 'recover' || t.state === 'stagger', open = dazed || !(t.guard > 0) || st.breaks;
@@ -111,6 +111,7 @@ function line(label, R, extra) {
   const bad = R.timeout || R.nan || R.stuck >= 6;
   console.log((bad ? '!! ' : '   ') + pad(label, 58), 'won', lpad(R.pct, 3) + '%', ' in', lpad(R.secs, 3) + 's', ' left', lpad(R.hp, 3), ' longest', lpad(R.longest.toFixed(0), 3) + 's', R.timeout ? ' NEVER ENDED x' + R.timeout : '', R.stuck >= 6 ? ' STOOD STILL ' + R.stuck + 's' : '', R.nan ? ' NaN' : '', extra || '');
 }
+if (process.env.GUARDFACE === '0') Combat.S.guardFace = false;   // (the guard turning to the threat off, to compare: GUARDFACE=0)
 if (process.env.MEN) Object.assign(Combat.api.men, JSON.parse(process.env.MEN));             // (for trying a number of the men's: MEN='{"wallGap":4}')
 if (process.env.BOW) Object.assign(Combat.api.men.bow, JSON.parse(process.env.BOW));     // (for trying a bowman's numbers: BOW='{"toMen":0.7}')
 for (const k of ['POSTURE', 'RALLY', 'PERFECT', 'CHAIN']) if (process.env[k]) Object.assign(Combat.api[k.toLowerCase()], JSON.parse(process.env[k]));   // (the balance, the win-back, the perfect dodge, the parry chain: POSTURE='{"block":0}')

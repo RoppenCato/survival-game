@@ -103,6 +103,7 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
         <div class="group" id="gear"></div>
         <div class="group" style="margin-top:8px">
           <button id="shield" aria-pressed="true">A shield on the arm</button>
+          <button id="guardface" aria-pressed="true">The shield turns you to the threat</button>
           <button id="heal">Heal</button>
           <button id="immortal" aria-pressed="false">Never fall</button>
         </div>
@@ -434,6 +435,7 @@ __SFX__
   function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(); b.blur(); }); }
   var immortal = false, holdAll = false, showBlows = false, clockK = 1;
   toggle('shield', function () { return S.shield; }, function (v) { S.shield = v; });
+  toggle('guardface', function () { return S.guardFace !== false; }, function (v) { S.guardFace = v; });   /* with the guard up he turns to the foe about to strike, else the nearest (2026-10-15) */
   toggle('immortal', function () { return immortal; }, function (v) { immortal = v; });
   toggle('hold', function () { return holdAll; }, function (v) { holdAll = v; Combat.dbg().W.enemies.forEach(function (e) { e.hold = v; }); });
   toggle('show', function () { return showBlows; }, function (v) { showBlows = v; });

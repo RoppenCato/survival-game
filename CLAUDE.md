@@ -916,7 +916,17 @@ the text and it is made the default. When a spec's meaning changes, change the s
   your blows on a reeling foe do 1 + `CHAIN.dmg` 0.1 times the chain (`e.ripK`, set by `stun`). A blow that gets through ends the
   chain. Shown: "PARRY x2" to "x4" in growing gold, the charge's rising tone, stars over the reeling head; the arena's log and
   tally say the chain. **K in the second half of a recovery raises the guard** (as a step ends it). The four numbers are on the
-  Tuning panel (the feel of a hit: Chain). **Set by `tests/parry.js`** (in `npm test` at four fights a line; `node tests/parry.js
+  Tuning panel (the feel of a hit: Chain). **The shield turns you to the threat (2026-10-15, Robin: "when you press shield, right
+  click, you should automatically turn to the nearest creature. That way you can prepare parrying"):** while the guard is up and
+  no target is locked (Ctrl still wins) the hero faces the foe whose blow at him lands soonest (a man winding up, a beast's
+  windup or lunge within 260 units, a bowman drawing on him within 340), else the nearest foe within 150; not his own men, one
+  on his knees, asleep or fled, nor a shy beast (`guardThreat`, `GUARD_FACE`, `api.guardFace`); he turns at 12 radians a second
+  and **walking does not turn him while it holds**, so he can back off behind the shield. `S.guardFace` (on); the arena's "The
+  shield turns you to the threat"; `GUARDFACE=0 node tests/battle.js ...` turns it off (the bots let go of their lock when they
+  raise the shield with it on, as a player without Ctrl would). **Measured** (seed 7): against two men the guarding bots keep 5
+  to 16 more health (the skilled one against two axes 64 to 77, the careful one against an axe and a spear 44 to 56), their wins
+  as before; one man and five against five as before. Checked in the arena: a man behind, the shield up, the hero turned to him
+  and kept facing him walking away. Tuning panel (the feel of a hit: Chain). **Set by `tests/parry.js`** (in `npm test` at four fights a line; `node tests/parry.js
   40` for more, `CHAIN='{...}'` to try numbers): a parrying bot against a man in leather needs about four parries and 14 s and
   lands four in five blows on a reeling man, six parries against one in mail; a bot that only blocks parries two or three times
   and lands two in five. Tried in the arena by script: the man reeled, came out swinging, the parry caught it, x1 to x3.

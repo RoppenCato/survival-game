@@ -6003,7 +6003,7 @@ var Combat = (function () {
 'use strict';
 var AW = 400, AH = 333, K = 0.75, SW = 400, SH = 250;
 var lib = null;
-var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy' };
+var S = { aim: 'soft', ranged: 'mouse', shield: true, juice: true, sound: true, crit: 0.15, weight: 'snappy', guardFace: true };
 var WPRE = {
   snappy: { fz: 0.75, pf: 0.65, kb: 1.0, hs: 0.6, hd: 0.06, kd: 0.5 },   // (fz 0.75: Robin's tuning in the Combat Arena, 2026-10-15)
   normal: { fz: 1, pf: 1, kb: 1, hs: 0.3, hd: 0.12, kd: 1 },
@@ -6241,6 +6241,24 @@ function switchMode() {
 // arena's own switch otherwise. With one the guard is wide, most of a blow is stopped and an arrow is; without, K still fends
 // with what he holds: a narrow guard that lets more than half of a light blow through, costs more breath, and stops no arrow.
 function shielded() { return api.shield ? !!api.shield() : S.shield; }
+/* Turning to the threat with the shield up (2026-10-15, Robin: "when you press shield, right click, you should automatically turn to the
+   nearest creature. That way you can prepare parrying"). While the guard is up and no target is locked (Ctrl, which still wins) he
+   faces, at GUARD_FACE.turn radians a second: the foe whose blow at him lands soonest (a man winding up or a beast's windup or lunge
+   within GUARD_FACE.reach; a bowman drawing on him within GUARD_FACE.bow), else the nearest foe within GUARD_FACE.near; not a
+   man of his own, one on his knees, asleep or fled, nor a shy beast. Walking does not turn him while it holds. S.guardFace switches it. */
+var GUARD_FACE = { turn: 12, reach: 260, bow: 340, near: 150 };
+function guardThreat() {
+  var best = null, bestT = 99, near = null, nearD = GUARD_FACE.near, i, e, d, t;
+  for (i = 0; i < W.enemies.length; i++) {
+    e = W.enemies[i]; if (!e || e.dead || e.down || e.out || e.fled || e.away || e.asleep || e.side === 1 || e.shy || e.flee) continue;
+    d = Math.hypot(e.x - P.x, e.y - P.y); t = 99;
+    if (e.type === 'soldier') { if ((e.state === 'windup' || e.state === 'lunge') && e.tgt === P && !e.hitDone && d < GUARD_FACE.reach) t = Math.max(0, (e.hitT || W.t) - W.t); else if (e.state === 'aim' && e.tgt === P && d < GUARD_FACE.bow) t = 1 + (e.dur ? Math.max(0, e.dur - e.t) : 0); }
+    else if ((e.state === 'windup' || e.state === 'lunge') && d < GUARD_FACE.reach) t = e.state === 'lunge' ? 0.02 : Math.max(0, (e.dur || 0) - e.t);
+    if (t < bestT) { bestT = t; best = e; }
+    if (d < nearD) { nearD = d; near = e; }
+  }
+  return best || near;
+}
 var PARRY = { shield: 0.22, bare: 0.12 };   // the parry's moment, with a shield on the arm and without (tuned in the Combat Arena: see tune)
 function parryWindow() { return shielded() ? PARRY.shield : PARRY.bare; }
 /* The parry chain (2026-10-15, Robin: parry more in a fight, "when you hit them after they are dizzy they attack and you can parry
@@ -6698,11 +6716,12 @@ function updatePlayer(dt) {
   }
 
   // facing
-  var target = p.face;
+  var target = p.face, gT = null;
   if (a.ph !== 'none' && a.ph !== 'charge' && !(a.ph === 'recover' && il > 0)) target = a.dir;
   else if (lockValid()) target = Math.atan2(W.lock.y - p.y, W.lock.x - p.x);
+  else if (p.guard && S.guardFace && (gT = guardThreat())) target = Math.atan2(gT.y - p.y, gT.x - p.x);   /* the shield up: he turns to the threat and keeps it, walking or backing off (GUARD_FACE) */
   else if (il > 0) target = Math.atan2(iy, ix);
-  p.face = turnToward(p.face, target, S.juice ? dt * 30 : 99);
+  p.face = turnToward(p.face, target, gT ? dt * GUARD_FACE.turn : (S.juice ? dt * 30 : 99));
   p.faceVis = turnToward(p.faceVis, p.face, S.juice ? dt * 42 : 99);
 
   // movement
@@ -6923,7 +6942,7 @@ var MEN = {
   hush: 80, getUp: 2.2,
   followGap: 12, riseAfter: 4, riseClear: 480   // a man who is down gets up after this long with no foe within this far: when the fight is over, not when it has only moved off
 };
-api.men = MEN; api.chain = CHAIN; api.posture = POSTURE; api.rally = RALLY; api.perfect = PERFECT;
+api.men = MEN; api.guardFace = GUARD_FACE; api.chain = CHAIN; api.posture = POSTURE; api.rally = RALLY; api.perfect = PERFECT;
 var hitFlags = { guardBreak: false, stagger: false, thrust: false, wt: 1, wkind: null };       // what the blow now landing can do (set round the hero's own blows); wt, wkind: its weight and the weapon's kind (for the pause, the ring and the sound)
 function lerp(a, b, k) { return a + (b - a) * k; }
 function armMan(e, o) {                     // make a spawned enemy a soldier: o = { side, wpn: { kind, mat, tint }, shield, armor, hp, strength (1..8), wits (1..8), loyal, nerve (0..1), bow }
