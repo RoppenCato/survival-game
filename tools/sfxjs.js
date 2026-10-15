@@ -10,7 +10,7 @@ const fs = require('fs'), path = require('path');
 const [dir, set, only] = process.argv.slice(2);
 if (!dir || !set) { console.log('usage: node tools/sfxjs.js <folder> <set> [only,these,names]'); process.exit(1); }
 const want = only ? new Set(only.split(',')) : null;
-const files = {}, gain = {}, count = {}, peakSum = {}, peakf = {}, label = {}, layers = {};
+const files = {}, gain = {}, count = {}, peakSum = {}, peakf = {}, label = {}, layers = {}, trim = {};
 function peakOf(buf) {   // a 16-bit PCM WAV: the time of its loudest 10 ms
   let o = 12, sr = 48000, ch = 1, data = null;
   while (o + 8 <= buf.length) { const id = buf.toString('ascii', o, o + 4), n = buf.readUInt32LE(o + 4); if (id === 'fmt ') { ch = buf.readUInt16LE(o + 10); sr = buf.readUInt32LE(o + 12); } if (id === 'data') { data = buf.subarray(o + 8, o + 8 + n); break; } o += 8 + n + (n & 1); }
@@ -26,7 +26,8 @@ for (const fp of all.filter(f => /\.json$/i.test(f))) {
   const one = gainOf(j); if (one != null && j.name) gain[j.name] = one;
   const list = j.sounds || j.gains || null;
   if (list && typeof list === 'object') for (const k of Object.keys(list)) { const v = typeof list[k] === 'number' ? list[k] : gainOf(list[k]); if (v != null) gain[k] = v; if (list[k] && list[k].label) label[k] = list[k].label; }
-  if (j.layers && typeof j.layers === 'object') for (const k of Object.keys(j.layers)) layers[k] = j.layers[k];   // a sound made of others played together: { parts: [[name, gain, delay]], label }
+  if (j.layers && typeof j.layers === 'object') for (const k of Object.keys(j.layers)) layers[k] = j.layers[k];
+  if (j.trim && typeof j.trim === 'object') for (const k of Object.keys(j.trim)) trim[k] = j.trim[k];   // a file's leading silence to skip, in seconds, by its key (raise_f_1)   // a sound made of others played together: { parts: [[name, gain, delay]], label }
 }
 for (const fp of all.filter(f => /_\d+\.(wav|mp3|ogg)$/i.test(f)).sort()) {
   const f = path.basename(fp), wavf = /\.wav$/i.test(f), key = f.replace(/\.(wav|mp3|ogg)$/i, ''), name = key.replace(/_\d+$/, '');
@@ -38,9 +39,10 @@ for (const fp of all.filter(f => /_\d+\.(wav|mp3|ogg)$/i.test(f)).sort()) {
 }
 for (const k of Object.keys(gain)) if (!count[k]) delete gain[k];
 for (const k of Object.keys(label)) if (!count[k]) delete label[k];
+for (const k of Object.keys(trim)) if (!files[k]) delete trim[k];
 for (const k of Object.keys(layers)) if (!layers[k].parts.every(pt => count[pt[0]])) delete layers[k];
 const peak = {}; for (const k of Object.keys(count)) if (peakSum[k] != null) peak[k] = Math.round(peakSum[k] / count[k] * 1000) / 1000;
 const out = path.join(__dirname, '..', 'assets', 'sfx', set + '.js');
 fs.mkdirSync(path.dirname(out), { recursive: true });
-fs.writeFileSync(out, '(window.__SFX = window.__SFX || {})[' + JSON.stringify(set) + '] = ' + JSON.stringify({ gain, peak, peakf, label, layers, files }) + ';\n');
+fs.writeFileSync(out, '(window.__SFX = window.__SFX || {})[' + JSON.stringify(set) + '] = ' + JSON.stringify({ gain, peak, peakf, label, layers, trim, files }) + ';\n');
 console.log('wrote ' + out + ' (' + Math.round(fs.statSync(out).size / 1024) + ' KB): ' + Object.keys(count).map(n => n + ' x' + count[n] + (gain[n] != null ? ' @' + gain[n].toFixed(2) : '') + (peak[n] != null ? ' peak ' + Math.round(peak[n] * 1000) + 'ms' : ' peak on decoding')).join(', '));

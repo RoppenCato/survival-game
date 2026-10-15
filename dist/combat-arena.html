@@ -5244,8 +5244,8 @@ var Sfx = (function () {
         Object.keys(S.layers || {}).forEach(function (n) { layers[n] = S.layers[n]; });
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
-          var pk = S.peakf && S.peakf[f];
-          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { if (pk == null) pk = loudest(buf); (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); if (peaks[n] == null) peaks[n] = pk; }, function () { /* one bad file is left out */ }));
+          var pk = S.peakf && S.peakf[f], tr = (S.trim && S.trim[f]) || 0;
+          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { if (pk == null) pk = loudest(buf); pk = Math.max(0, pk - tr); (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk, trim: tr }); if (peaks[n] == null) peaks[n] = pk; }, function () { /* one bad file is left out */ }));
         });
         Promise.all(jobs).then(function () { res(names()); });
       }
@@ -5278,7 +5278,7 @@ var Sfx = (function () {
     if (o.peakAt != null) o.delay = Math.max(0, o.peakAt - (list[i].peak != null ? list[i].peak : (peaks[n] || 0)) / rate);   /* this variation's own loudest moment lands peakAt seconds from now */
     g.gain.value = (gains[n] == null ? 1 : gains[n]) * (o.v == null ? 1 : o.v) * Sfx.vol;
     var at = ctx.currentTime + (o.delay || 0);
-    src.connect(g); g.connect(dest || ctx.destination); src.start(at);
+    src.connect(g); g.connect(dest || ctx.destination); src.start(at, list[i].trim || 0);   /* past the file's leading silence, if it has one (trim) */
     return { src: src, g: g, at: at };
   }
   function cut(ctx, h, fade) {
@@ -5447,6 +5447,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   }
   function recName(n, v, x) {
     if (n === 'swing' && (!x || !x.kind || x.kind === 'sword')) return swingName(x);
+    if (n === 'swing' && x && x.kind && SFX_PICK.swish !== 'orig' && Sfx.has('swish_' + x.kind)) return 'swish_' + x.kind;   /* the other weapons: the studio's swishes made from Robin's E and F (2026-10-15), lighter faster, heavier slower */
     if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
     if (n === 'tell') return Sfx.has('tele') ? pickOf('tele') : null;   /* a man begins a blow you can parry: the studio named it tele; the engine's other ticks stay synthesized */
     if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
@@ -5521,6 +5522,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   var SFX_ROWS = [
     ['Swings', ['swing_light', 'swing_heavy', 'swing', 'swing_axe', 'swing_club', 'swing_seax', 'swing_spear', 'swing_greataxe']],
     ['Hits', ['hit', 'hit_axe', 'hit_club', 'hit_seax', 'hit_spear', 'hit_greataxe']],
+    ['Their swishes', ['swish_seax', 'swish_spear', 'swish_axe', 'swish_club', 'swish_greataxe']],
     ['Heavy hits', ['heavyhit', 'heavyhit_axe', 'heavyhit_club', 'heavyhit_greataxe']],   // (the seax and the spear have none of their own: the game plays heavyhit)
     ['Defence', ['raise', 'block', 'parry', 'crit']],
     ['The chain', ['chain_2', 'chain_3', 'chain_4']],
@@ -5541,10 +5543,19 @@ if (typeof module !== 'undefined') module.exports = Sfx;
       });
       host.appendChild(d);
     });
-    /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick) */
+    if (Sfx.has('swish_axe')) {   /* the other weapons' swings: the swishes (the default) or the studio's first */
+      var dw = document.createElement('div'); dw.className = 'sfxrow'; var lw = document.createElement('span'); lw.textContent = 'Choose the other weapons’ swings'; dw.appendChild(lw);
+      [['', 'Made from Robin’s E and F'], ['orig', 'The studio’s first']].forEach(function (q) {
+        var b = document.createElement('button'); b.textContent = q[1]; b.setAttribute('aria-pressed', (SFX_PICK.swish || '') === q[0] ? 'true' : 'false');
+        b.addEventListener('click', function () { if (q[0]) SFX_PICK.swish = q[0]; else delete SFX_PICK.swish; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, q[0] ? 'swing_axe' : 'swish_axe'); sfxList(); b.blur(); });
+        dw.appendChild(b);
+      });
+      host.appendChild(dw);
+    }
+    /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick2) */
     var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
     Object.keys(cands).forEach(function (base) {
-      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the sword’s hit' : base === 'heavyhit' ? 'its heavy hit' : base === 'swing' ? 'the sword’s swing' : base); d.appendChild(lab);
+      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the sword’s hit' : base === 'heavyhit' ? 'its heavy hit' : base === 'swing' ? 'the sword’s swing' : base === 'raise' ? 'the shield going up' : base); d.appendChild(lab);
       var opts = base === 'swing' ? ['free', 'robin', 'orig'].filter(function (q) { return q === 'orig' || Sfx.has(SWING_SETS[q][0]); }).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_e') ? 'free' : 'orig') : '';
       opts.forEach(function (k) {
         var b = document.createElement('button'); b.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' ? 'The studio’s' : 'As delivered'); b.setAttribute('aria-pressed', (SFX_PICK[base] || dflt) === k ? 'true' : 'false');

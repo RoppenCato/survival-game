@@ -12,5 +12,9 @@ All are CC0 (public domain) or "free for any use"; credit is not required, but t
 | `heavyhit_f_1..2.wav` | `thwack-09.wav`, `thwack-10.wav` | Thwack Sounds 1.0, AntumDeluge | CC0 | https://opengameart.org/content/thwack-sounds |
 | `swing_e_1.wav` | `sword sound.wav` | 3 melee sounds, remaxim, from qubodup's "Swish" sounds | free for any use (public domain, CC0 or WTFPL) | https://opengameart.org/content/3-melee-sounds |
 | `swing_f_1.wav` | `melee sound.wav` | 3 melee sounds, remaxim, from qubodup's "Swish" sounds | free for any use (public domain, CC0 or WTFPL) | https://opengameart.org/content/3-melee-sounds |
+| `raise_e_1..5.ogg` | `impactWood_light_000..004.ogg` | Impact Sounds 1.0, Kenney | CC0 | https://kenney.nl/assets/impact-sounds |
+| `raise_f_1..2.ogg` | `handleSmallLeather.ogg`, `handleSmallLeather2.ogg` | RPG Audio, Kenney | CC0 | https://kenney.nl/assets/rpg-audio |
+| `raise_g_1.ogg` | `cloth2.ogg` | RPG Audio, Kenney | CC0 | https://kenney.nl/assets/rpg-audio |
+| `raise_i_1.ogg` | `dropLeather.ogg` | RPG Audio, Kenney | CC0 | https://kenney.nl/assets/rpg-audio |
 
 Downloaded the same day with Robin's go-ahead (also looked at: the StarNinjas sword attacks and clashes, CC0, not used: the attacks are knife scrapes at about 8 kHz).

@@ -36,8 +36,8 @@ var Sfx = (function () {
         Object.keys(S.layers || {}).forEach(function (n) { layers[n] = S.layers[n]; });
         Object.keys(S.files).forEach(function (f) {
           var n = f.replace(/_\d+$/, '');   /* hit_axe_2 is a variation of hit_axe */
-          var pk = S.peakf && S.peakf[f];
-          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { if (pk == null) pk = loudest(buf); (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk }); if (peaks[n] == null) peaks[n] = pk; }, function () { /* one bad file is left out */ }));
+          var pk = S.peakf && S.peakf[f], tr = (S.trim && S.trim[f]) || 0;
+          jobs.push(decode(ctx, b64bytes(S.files[f])).then(function (buf) { if (pk == null) pk = loudest(buf); pk = Math.max(0, pk - tr); (bufs[n] || (bufs[n] = [])).push({ buf: buf, peak: pk, trim: tr }); if (peaks[n] == null) peaks[n] = pk; }, function () { /* one bad file is left out */ }));
         });
         Promise.all(jobs).then(function () { res(names()); });
       }
@@ -70,7 +70,7 @@ var Sfx = (function () {
     if (o.peakAt != null) o.delay = Math.max(0, o.peakAt - (list[i].peak != null ? list[i].peak : (peaks[n] || 0)) / rate);   /* this variation's own loudest moment lands peakAt seconds from now */
     g.gain.value = (gains[n] == null ? 1 : gains[n]) * (o.v == null ? 1 : o.v) * Sfx.vol;
     var at = ctx.currentTime + (o.delay || 0);
-    src.connect(g); g.connect(dest || ctx.destination); src.start(at);
+    src.connect(g); g.connect(dest || ctx.destination); src.start(at, list[i].trim || 0);   /* past the file's leading silence, if it has one (trim) */
     return { src: src, g: g, at: at };
   }
   function cut(ctx, h, fade) {
