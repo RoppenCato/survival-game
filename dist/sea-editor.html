@@ -4393,6 +4393,8 @@ var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1
 
 // what can be gathered in the first biome, and how much it takes
 var ROCKV = { rock: 1, rockFormation: 1, boulder: 1, chalkRock: 1 };
+var TREE_SHAPES = { big: [1, 1, 'twice (as now)'], mid: [0.5, 0.5, 'one and a half'], tall: [0.25, 0.8, 'tall and thin'], old: [0, 0, 'as before'] }, treeShape = TREE_SHAPES.big;   // how far toward TREE_BAKE a tree is drawn, across and up (2026-10-16, Robin: "maybe we need smaller trees. Or thinner. It looked much nicer before, although less immersive")
+function treeBake(name) { var tb = TREE_BAKE[name] || 1; return { sx: 1 + (tb - 1) * treeShape[0], sy: 1 + (tb - 1) * treeShape[1] }; }
 var TREE_BAKE = { oak: 2, pine: 2, birch: 2, beech: 2, ash: 2, apple: 1.7, struckTree: 2, dwarfBirch: 1.2 };   // twice (Robin, 2026-10-15: "maybe twice the size is better than 3x"; the 3x of 2026-10-14 never showed, see trimSprite)   // how much bigger each tree is baked than its prop (2026-10-14)
 var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
 var HP = { dwarfBirch: 8, juniper: 4, heather: 3, boulder: 16, birch: 14, pine: 18, oak: 22, beech: 20, ash: 17, apple: 10, struckTree: 9, rock: 11, rockFormation: 18, chalkRock: 10, bogIron: 8, bush: 2, berryBush: 2, wildHerbs: 1, tallGrass: 1, hedge: 4 };
@@ -4967,7 +4969,7 @@ function make(kit, opts) {
   w.sprite = function (name, v) {
     var im = IMAGES[name];
     if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [] }; return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
-    var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); var tb = TREE_BAKE[name] || 1; sprites[kk] = kit.bakeProp(name, 3 + v * 7, tb !== 1 ? { sx: tb, sy: tb } : null); sprites[kk].bake = tb; } return sprites[kk]; };
+    var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); var tb = treeBake(name); sprites[kk] = kit.bakeProp(name, 3 + v * 7, tb.sx !== 1 || tb.sy !== 1 ? tb : null); sprites[kk].bake = tb.sy; } return sprites[kk]; };
   /* The trees are baked bigger (2026-10-14, Robin: "trees are way too small, they should probably be three times the size"): a tree
      kind in TREE_BAKE is drawn through bakeProp's sx/sy at that size, so it stays sharp, and everything that reads the sprite's
      bounds (the fall, the trunk's length, the shadows, the fade when you stand behind it) grows with it; the planted scale (s)
@@ -5905,7 +5907,7 @@ var GRASS_INK = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shi
    troll's cave in a wall, a rock shelter, a few veins of copper in the open cliffs. No sea cliffs, no mine, no sea cave: those
    are for a real mountain island. spec.mountain = 1 with these options. */
 var BIG_MOUNTAIN = { at: [-0.3, -0.5], r: 0.56, high: 3.5, shore: 6, rise: 9, sea: false, mine: false, seaCave: false, veins: 4, minPatch: 60 };
-return { make: make, setImages: setImages, IMAGES: IMAGES, BIG_MOUNTAIN: BIG_MOUNTAIN, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, mountainOpts: null, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
+return { TREE_SHAPES: TREE_SHAPES, setTreeShape: function (k) { if (TREE_SHAPES[k]) treeShape = TREE_SHAPES[k]; return treeShape; }, make: make, setImages: setImages, IMAGES: IMAGES, BIG_MOUNTAIN: BIG_MOUNTAIN, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, mountainOpts: null, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
 })();
 if (typeof module !== 'undefined') module.exports = World;
 

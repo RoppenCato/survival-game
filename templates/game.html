@@ -437,6 +437,7 @@ __COMBAT__
   // mover to it, so it never changes; the walk test keeps the hero on the floor he is on
   function worldBounds() { return { x0: 8, y0: 12, x1: WX + 12000, y1: WY - 8 }; }
   function buildWorld() {
+    try { World.setTreeShape(localStorage.getItem('game.trees') || 'big'); } catch (eT) {}   /* the trees' size (Admin: Trees) */
     w = World.make(kit, spec); w.meadowLook = grassLook;
     w.noGrass = function (tx, ty) { var f = B.floors[tx + ',' + ty]; return f != null && f !== 4 && f !== 5 && f !== 6; };   // no grass grows through a laid floor (planks, earth, flags, a dock; the grass and moss floors are grass). It did, in every house: seen in the big halls of 2026-10-13
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
@@ -3355,6 +3356,7 @@ __COMBAT__
     { id: 'shieldRaised', name: 'Shield only when raised', text: 'The shield is on the arm whenever the weapon is out. With this on it shows only while K holds it up, as the drawn hero\u2019s did.', toggle: true },
     { id: 'oldSfx', name: 'The old fight sounds', text: 'Swings, hits, blocks and parries as the synthesized sounds they were, in place of the studio’s recordings (assets/sfx/combat.js), to compare the two.', toggle: true },
     { id: 'fps', name: 'Show frame time', text: 'Frames a second, milliseconds and the frame\u2019s parts, bottom left. The frame log is kept whether this shows or not.', toggle: true },
+    { id: 'trees', get name() { var k = 'big'; try { k = localStorage.getItem('game.trees') || 'big'; } catch (eT) {} return 'Trees: ' + ((World.TREE_SHAPES[k] || World.TREE_SHAPES.big)[2]); }, text: 'How big the trees are drawn: twice their old size as now, one and a half, tall and thin, or as before. The page reloads.' },
     { id: 'triple', name: 'Threefold drops', text: 'For testing: trees, rocks, bushes, berries, beasts, the weir and the veins give three times as much.', toggle: true },
     { id: 'errlog', name: 'Download the error log', text: 'Saves errorlog.txt: every error the page caught, with the time, the day and what was happening. Put it in the project folder.' },
     { id: 'stuff', name: 'Plenty of everything', text: '25 of every material into the bag.' },
@@ -3406,6 +3408,7 @@ __COMBAT__
   function adminAct(id) {
     var P = hero(), row = ADMIN_ROWS.filter(function (r) { return r.id === id; })[0];
     if (id === 'back') { adminOpen = false; return; }
+    if (id === 'trees') { var tk = ['big', 'mid', 'tall', 'old'], cur0 = 'big'; try { cur0 = localStorage.getItem('game.trees') || 'big'; } catch (eT) {} var nx = tk[(tk.indexOf(cur0) + 1) % tk.length]; try { localStorage.setItem('game.trees', nx); save(); } catch (eT) {} location.reload(); return; }
     if (id === 'lab') { labOpen = true; return; }
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'fullres') fitCanvas(); return; }
     if (id === 'perflog') { perfDownload(); return; }

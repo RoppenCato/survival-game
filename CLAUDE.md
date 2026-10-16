@@ -300,7 +300,8 @@ and chips (never fells) up to three trees in its line (`fallBite`, Robin); a roc
 with E** and pop out (a bush or tuft regrows in six minutes; no tool takes a bush; Robin), and now and then a tree's wood
 comes with a strip of fiber; everything shakes when struck; the swing's pace is 1.5; a tool bites a beast at `TOOL_DMG` 0.8 of a weapon. Stumps regrow. Drops lie with a bounce
 and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) multiplies what is gathered and dropped. Trees
-are baked at twice their prop (`World.TREE_BAKE` 2), 200 to 250 units tall; rocks come in six variations of tone and build.
+are baked at twice their prop (`World.TREE_BAKE` 2), 200 to 250 units tall, or by Admin's **Trees** (`game.trees`:
+twice, one and a half, tall and thin, as before; `World.setTreeShape`) while Robin chooses (`docs/trees-compare.jpg`); rocks come in six variations of tone and build.
 
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
 right click uses, Shift and click sends across to a chest, Shift and drag carries half a stack; Sort tidies. The panel
