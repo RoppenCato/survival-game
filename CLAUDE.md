@@ -30,7 +30,7 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   `{place}`, `{lack}`, `{dead}`), under 130 characters. Words in the game that Robin never reviewed are "in-game" in its
   canon. **A name or line needed before the lore has one is a placeholder marked `LORE?` in a comment, and a message to the
   Lore Director; Robin's lore decisions made here are messaged to it.** `docs/beasts.md` keeps only the mechanics.
-- **Two other Claude sessions are studios**, reached with SendMessage: the **Art Director** (`C:\dev\SG\Art Director`; models,
+- **The other Claude sessions are studios**, reached with SendMessage (the Lore Director above): the **Art Director** (`C:\dev\SG\Art Director`; models,
   renders and sheets, dropped in `C:\dev\SG\Art Director\out\`) and the **Sound Director** (`C:\dev\SG\Sound Director`; sound effects and music
   in `out/sfx/` and `out/music/`). **Copy a drop as the whole folder** (its numbers move boxes that a list of files leaves
   out). Neither studio nor I can hear: a new sound starts from a reference Robin likes, measured, and Robin chooses by ear in
