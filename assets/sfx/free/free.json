@@ -1,91 +1,123 @@
 {
-  "about": "Free sounds tried for the sword's swing and hit (2026-10-15, Robin: 'Maybe you should look online and see if you can find any free sound assets' and 'take swinging of sword too then. Do it'). Every one CC0 or free for any use: see CREDITS.md. Gains set by ear-weighted loudness (a high-pass at 100 Hz and a 4 dB shelf at 1.5 kHz, the loudest 50 ms) against what each would replace in the game at Sfx.vol 0.5: a hit at the studio's sword hit (-22), a heavy hit at its heavy hit (-21), a swing at Robin's light or heavy swing (-30, -26). The cut is laid 6 dB under the light impact in hit_h. The shield going up (raise_e to raise_i, the same day, Robin: 'Id like to change the sound for putting the shield up also'): set at -29 by the same measure, about 4 dB above the studio's raise (-32.8, which was all but lost) and well under a hit; a file's leading silence is skipped (trim), so the guard sounds as it comes up.",
-  "sounds": {
-    "hit_e": {
-      "gain": 1.08,
-      "label": "Kenney: light impact"
-    },
-    "hit_f": {
-      "gain": 0.457,
-      "label": "Kenney: punch"
-    },
-    "hit_g": {
-      "gain": 0.69,
-      "label": "OpenGameArt: thwacks"
-    },
-    "cut": {
-      "gain": 0.254,
-      "label": "Kenney: a chop (a layer)"
-    },
-    "heavyhit_e": {
-      "gain": 0.53,
-      "label": "Kenney: heavy punch"
-    },
-    "heavyhit_f": {
-      "gain": 0.79,
-      "label": "OpenGameArt: thwacks with a crack"
-    },
-    "swing_e": {
-      "gain": 0.21,
-      "label": "OpenGameArt: a swish (like Robin's light)"
-    },
-    "swing_f": {
-      "gain": 0.296,
-      "label": "OpenGameArt: a heavier swish"
-    },
-    "raise_e": {
-      "gain": 0.44,
-      "label": "Kenney: a light knock of wood (the boards)"
-    },
-    "raise_f": {
-      "gain": 2.0,
-      "label": "Kenney: leather handled (the straps)"
-    },
-    "raise_g": {
-      "gain": 0.97,
-      "label": "Kenney: cloth moving (the arm)"
-    },
-    "raise_i": {
-      "gain": 0.54,
-      "label": "Kenney: a heavier leather thud"
-    }
+ "about": "Free sounds tried for the sword's swing and hit (2026-10-15, Robin: 'Maybe you should look online and see if you can find any free sound assets' and 'take swinging of sword too then. Do it'). Every one CC0 or free for any use: see CREDITS.md. Gains set by ear-weighted loudness (a high-pass at 100 Hz and a 4 dB shelf at 1.5 kHz, the loudest 50 ms) against what each would replace in the game at Sfx.vol 0.5: a hit at the studio's sword hit (-22), a heavy hit at its heavy hit (-21), a swing at Robin's light or heavy swing (-30, -26). The cut is laid 6 dB under the light impact in hit_h. The shield going up (raise_e to raise_i, the same day, Robin: 'Id like to change the sound for putting the shield up also'): set at -29 by the same measure, about 4 dB above the studio's raise (-32.8, which was all but lost) and well under a hit; a file's leading silence is skipped (trim), so the guard sounds as it comes up. Hits I to L and heavy hits I to L (2026-10-16, Robin: the hit sounded 'like a bump', and the reference is Valheim's 'sharp fleshy slap'): layered here from the same CC0 packs (Kenney's light impact as the slap, an OpenGameArt thwack or Kenney's knife slice or chop as the crack, Kenney's soft impact as a small body; the heavy ones with Kenney's heavy soft impact and heavy punch), each measured: an attack of 6 to 8 ms, centred 1.2 to 2 kHz, a quarter to a half of the energy between 1 and 4 kHz, under a fifth below 250 Hz (the studio's hit: 104 Hz, all of it below 250). Gains levelled as above.",
+ "sounds": {
+  "hit_e": {
+   "gain": 1.08,
+   "label": "Kenney: light impact"
   },
-  "layers": {
-    "hit_h": {
-      "parts": [
-        [
-          "hit_e",
-          1,
-          0
-        ],
-        [
-          "cut",
-          1,
-          0
-        ]
-      ],
-      "label": "Kenney: a chop over the light impact"
-    },
-    "raise_h": {
-      "parts": [
-        [
-          "raise_e",
-          0.7,
-          0
-        ],
-        [
-          "raise_f",
-          0.7,
-          0
-        ]
-      ],
-      "label": "Kenney: the straps and the boards together"
-    }
+  "hit_f": {
+   "gain": 0.457,
+   "label": "Kenney: punch"
   },
-  "trim": {
-    "raise_f_1": 0.035,
-    "raise_f_2": 0.055,
-    "raise_g_1": 0.045,
-    "raise_i_1": 0.015
+  "hit_g": {
+   "gain": 0.69,
+   "label": "OpenGameArt: thwacks"
+  },
+  "cut": {
+   "gain": 0.254,
+   "label": "Kenney: a chop (a layer)"
+  },
+  "heavyhit_e": {
+   "gain": 0.53,
+   "label": "Kenney: heavy punch"
+  },
+  "heavyhit_f": {
+   "gain": 0.79,
+   "label": "OpenGameArt: thwacks with a crack"
+  },
+  "swing_e": {
+   "gain": 0.21,
+   "label": "OpenGameArt: a swish (like Robin's light)"
+  },
+  "swing_f": {
+   "gain": 0.296,
+   "label": "OpenGameArt: a heavier swish"
+  },
+  "raise_e": {
+   "gain": 0.44,
+   "label": "Kenney: a light knock of wood (the boards)"
+  },
+  "raise_f": {
+   "gain": 2.0,
+   "label": "Kenney: leather handled (the straps)"
+  },
+  "raise_g": {
+   "gain": 0.97,
+   "label": "Kenney: cloth moving (the arm)"
+  },
+  "raise_i": {
+   "gain": 0.54,
+   "label": "Kenney: a heavier leather thud"
+  },
+  "hit_i": {
+   "gain": 0.8,
+   "label": "Slap and crack (sharp)"
+  },
+  "hit_j": {
+   "gain": 1.1,
+   "label": "Slap and slice (bright)"
+  },
+  "hit_k": {
+   "gain": 0.86,
+   "label": "Chop and slap"
+  },
+  "hit_l": {
+   "gain": 0.76,
+   "label": "Wet slap (fleshy)"
+  },
+  "heavyhit_i": {
+   "gain": 0.84,
+   "label": "Slap and crack, with body"
+  },
+  "heavyhit_j": {
+   "gain": 1.05,
+   "label": "Slap and slice, with body"
+  },
+  "heavyhit_k": {
+   "gain": 0.9,
+   "label": "Chop and slap, with body"
+  },
+  "heavyhit_l": {
+   "gain": 0.79,
+   "label": "Wet slap, with body"
   }
+ },
+ "layers": {
+  "hit_h": {
+   "parts": [
+    [
+     "hit_e",
+     1,
+     0
+    ],
+    [
+     "cut",
+     1,
+     0
+    ]
+   ],
+   "label": "Kenney: a chop over the light impact"
+  },
+  "raise_h": {
+   "parts": [
+    [
+     "raise_e",
+     0.7,
+     0
+    ],
+    [
+     "raise_f",
+     0.7,
+     0
+    ]
+   ],
+   "label": "Kenney: the straps and the boards together"
+  }
+ },
+ "trim": {
+  "raise_f_1": 0.035,
+  "raise_f_2": 0.055,
+  "raise_g_1": 0.045,
+  "raise_i_1": 0.015
+ }
 }

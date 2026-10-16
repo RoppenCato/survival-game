@@ -16,5 +16,9 @@ All are CC0 (public domain) or "free for any use"; credit is not required, but t
 | `raise_f_1..2.ogg` | `handleSmallLeather.ogg`, `handleSmallLeather2.ogg` | RPG Audio, Kenney | CC0 | https://kenney.nl/assets/rpg-audio |
 | `raise_g_1.ogg` | `cloth2.ogg` | RPG Audio, Kenney | CC0 | https://kenney.nl/assets/rpg-audio |
 | `raise_i_1.ogg` | `dropLeather.ogg` | RPG Audio, Kenney | CC0 | https://kenney.nl/assets/rpg-audio |
+| `hit_i_1..3.wav`, `heavyhit_i_1..3.wav` | layered (2026-10-16): `impactGeneric_light_001/003/004.ogg` and `impactSoft_medium_000/002/003.ogg` (heavy: `impactSoft_heavy_000..002.ogg`, `impactPunch_heavy_000..002.ogg`); `thwack-04.wav` | Impact Sounds 1.0, Kenney; Thwack Sounds 1.0, AntumDeluge | CC0 | https://kenney.nl/assets/impact-sounds, https://opengameart.org/content/thwack-sounds |
+| `hit_j_1..3.wav`, `heavyhit_j_1..3.wav` | layered: the same impacts; `knifeSlice2.ogg` | Impact Sounds 1.0 and RPG Audio, Kenney | CC0 | https://kenney.nl/assets/impact-sounds, https://kenney.nl/assets/rpg-audio |
+| `hit_k_1..3.wav`, `heavyhit_k_1..3.wav` | layered: the same impacts; `chop.ogg` | Impact Sounds 1.0 and RPG Audio, Kenney | CC0 | https://kenney.nl/assets/impact-sounds, https://kenney.nl/assets/rpg-audio |
+| `hit_l_1..3.wav`, `heavyhit_l_1..3.wav` | layered: the same impacts; `thwack-04.wav`, `thwack-06.wav`; `knifeSlice2.ogg` | Kenney (Impact Sounds 1.0, RPG Audio); Thwack Sounds 1.0, AntumDeluge | CC0 | as above |
 
 Downloaded the same day with Robin's go-ahead (also looked at: the StarNinjas sword attacks and clashes, CC0, not used: the attacks are knife scrapes at about 8 kHz).

@@ -64,6 +64,12 @@ def prop_images():
         j[name]['src'] = '../assets/props/' + name + '.png?v=' + tag
     return json.dumps(j)
 SRC['__PROPIMG__'] = prop_images()
+def file_tag(*parts):   # the sound bundle and the music scripts carry a hash of their bytes too (2026-10-16: a browser kept the old bundle)
+    fp = os.path.join(ROOT, *parts)
+    return hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
+SRC['__TAG_SFX__'] = file_tag('assets', 'sfx', 'combat.js')
+SRC['__TAG_DAY__'] = file_tag('assets', 'music', 'meadow-day.js')
+SRC['__TAG_NIGHT__'] = file_tag('assets', 'music', 'meadow-night.js')
 
 # page name in dist/  ->  template in templates/
 PAGES = [

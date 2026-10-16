@@ -369,7 +369,9 @@ is health and stamina top left, the chart and the meal top right; damage numbers
 - **One spec of numbers: `Combat.tune(over)`** lays a page's differences over `tuneDefaults()` and writes them in place: the
   feel (`WPRE.snappy`: fz 0.75, pf, kb), `PARRY`, `MEN.parryStun`, `TOOL_DMG`, each melee kind's `PROFILES`, `MEN`, and each
   beast's `BEAST_GAME` numbers with the art library's health, speed and windup (`beastNum`, `tuneBeast`). The game applies
-  `game.combat` from the arena. **Change a default by changing `PROFILES`, `MEN`, `BEAST_GAME` or `WPRE`.** The men are
+  `game.combat` from the arena. **The arena plays from its own working copy (`combatarena.tune`); the game gets those numbers
+  only by Use in the game** (the line under the Tuning panel says whether the game has them). **Change a default by changing
+  `PROFILES`, `MEN`, `BEAST_GAME` or `WPRE`.** The men are
   armed from `MAN_PF`, a copy of `PROFILES` taken before the hero's tuning, so the hero's weapon numbers are his alone.
   Robin's first tuning (2026-10-15, "this feels good") is the default: the sword wu 0.11, ac 0.4, rec 0.2, reach 50, lunge
   123; the boar's speed 1.1.
@@ -506,6 +508,16 @@ trial on the editor's board, off (Robin doubted it).
   weapons' swings are the studio's `swish_<kind>` made from them; the hit and heavy hit the studio's; the guard going up F
   (`DEFAULT_PICK`). Picks made in the arena's The sounds panel are kept in `game.sfxpick2` and the game reads them. The cut
   at the hit is a switch, off.
+- **The hit is being replaced (2026-10-16, Robin: it sounds "like a bump"; the reference is Valheim's "sharp fleshy slap").**
+  Every studio hit measures as a low thump (centred 59 to 173 Hz, all of it under 250 Hz). Candidates **I to L** (and heavy
+  hits I to L) are layered from the CC0 packs in `assets/sfx/free/` (`free.json`, `CREDITS.md`): Kenney's light impact as the
+  slap, a thwack, the knife slice or the chop as the crack, a small soft body; measured: attack 6 to 8 ms, centred 1.2 to
+  2 kHz, a quarter to a half of the energy between 1 and 4 kHz, under a fifth below 250 Hz. The Sound Director is asked for
+  its own against the same targets (`out/sfx/hit_v/`). **A hit picked in the arena is every weapon's hit** (`recName`),
+  pitched by the weapon (`HIT_RATE`: the seax higher, the Dane axe lower), and **the heavy hit follows the hit's letter**
+  unless it is chosen on its own. Robin has not chosen yet; the studio's hit is still the default.
+- **The sound bundle and the music scripts carry `?v=` and a hash of their bytes** (`file_tag` in `tools/build.py`): a browser
+  kept the old bundle. Rebuild after `node tools/sfxjs.js`.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the
   Escape menu's bar is turned up; there is no mute key (M is the map).
