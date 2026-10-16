@@ -284,7 +284,7 @@ out (most of its walls charred stumps, the rest charred or scorched, its door go
 wattle hut scorched on the side toward the hall, a plank house by the well missing five walls and its roof, axe-marked and
 sooty (mend it and it is your first home: its bed answers only with a roof over it), a palisade whose gaps are charred stumps
 and a gate broken open, the ground round the hall burnt to earth, a cart, rack and post tipped over, crates and barrels that
-**E kicks open** (`kickable`, `kickBox`: a short kick, then the box breaks as to the axe), the graves behind the hall (E reads Thorgunna's stone),
+**E kicks open** (`kickable`, `kickBox`: it breaks at once as to the axe, with no clip; Robin), the graves behind the hall (E reads Thorgunna's stone),
 and a campfire by the well. **Arnor** (`npc`; `arnorState`: meet, wait, teach, taught) goes about the ruin
 scavenging and hammering at what can be mended (`arnorWork`, his spots `npc.work`, every walk by the yard), and stops to
 watch you when you come near; his story's last line opens building; while you build he names what your home lacks; at
@@ -302,7 +302,9 @@ board holds the plank house's pieces and the workbench until the first night sle
 **Gathering** (`src/gather.js`, through `Combat.api.harvest`): a tree's first blow cuts a notch, blows from the other side are
 the back cut and fell it toward the notch; it falls as a trunk (four logs, eight blows, struck anywhere along it) and
 chips (never fells) up to three trees in its line (`fallBite`, Robin); a rock cracks; **berries and grass are picked by hand
-with E** and pop out (a bush or tuft regrows in six minutes; no tool takes a bush; Robin), and now and then a tree's wood
+with E** and pop out (no tool takes a bush; Robin): a berry bush grows its berries again in six minutes and gives no grass;
+grass comes only from tufts of tall grass (`GRASS_KINDS`), and a pulled tuft is gone (Robin), growing back where it stood
+after `GT.regrowDays` 3 (mine; a saved decal of kind `grass`; the regrowth runs on every new day); and now and then a tree's wood
 comes with a strip of fiber; everything shakes when struck; the swing's pace is 1.5; a tool bites a beast at `TOOL_DMG` 0.8 of a weapon. Stumps regrow. Drops lie with a bounce
 and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) multiplies what is gathered and dropped. **Trees
 are at their prop's size, as before 2026-10-14** (Robin, 2026-10-16: "it needs to be as before"; `World.TREE_SHAPES.old`, the
