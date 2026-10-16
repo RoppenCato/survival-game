@@ -57,6 +57,13 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 input[type=range]{width:100%;accent-color:var(--accent)}
 textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--log);color:var(--ink);font:.8rem/1.35 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .tstat{margin:6px 2px 0;font-size:.86rem;color:var(--ink2)}
+details.panel>summary,details.sub>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;min-height:30px;font-size:.95rem;font-weight:650}
+details.sub>summary{font-size:.88rem;font-weight:600;min-height:28px;margin-top:6px}
+details.panel>summary::-webkit-details-marker,details.sub>summary::-webkit-details-marker{display:none}
+details.panel>summary::before,details.sub>summary::before{content:'';flex:none;border-left:6px solid var(--ink2);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details.panel[open]>summary{margin-bottom:8px}
+.group select{max-width:100%}
 </style>
 </head>
 <body>
@@ -74,8 +81,8 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
         <p class="tally" id="tally"></p>
         <p class="desc">What landed on whom and what it cost, newest first: a dodge (a blow that came during a dash), a parry, a block and what got through, a hit on a man's shield, a guard broken, a kill. The clock is the arena's own seconds.</p>
       </section>
-      <section class="panel">
-        <h2>Controls</h2>
+      <details class="panel" data-k="controls">
+        <summary>Controls</summary>
         <dl class="keys">
           <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint (it drains stamina)</dd>
           <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack: a chain of blows, the last one harder. Hold it to charge a heavy blow, let go to strike</dd>
@@ -88,30 +95,28 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
           <dt><kbd>H</kbd></dt><dd>Add a wolf or a boar</dd>
           <dt><kbd>R</kbd></dt><dd>Rise again after falling</dd>
         </dl>
-      </section>
+      </details>
     </div>
 
     <div>
-      <section class="panel">
-        <h2>You</h2>
+      <details class="panel" data-k="you" open>
+        <summary>You</summary>
         <div class="group" id="melee"></div>
         <p class="desc" id="meleedesc"></p>
         <div class="group" id="ranged" style="margin-top:8px"></div>
         <p class="desc" id="rangeddesc"></p>
         <div class="group" style="margin-top:8px" id="mats"></div>
-        <h2 class="more">What you wear</h2>
         <div class="group" id="gear"></div>
         <div class="group" style="margin-top:8px">
           <button id="shield" aria-pressed="true">A shield on the arm</button>
-          <button id="guardface" aria-pressed="true">The shield turns you to the threat</button>
           <button id="heal">Heal</button>
           <button id="immortal" aria-pressed="false">Never fall</button>
         </div>
         <p class="desc" id="geardesc"></p>
-      </section>
+      </details>
 
-      <section class="panel">
-        <h2>Men</h2>
+      <details class="panel" data-k="men" open>
+        <summary>Men</summary>
         <div class="group">
           <label for="mwpn">Against you:</label>
           <select id="mwpn" aria-label="The man's weapon"></select>
@@ -125,8 +130,7 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
           <select id="fgear" aria-label="What the hirdman wears"></select>
           <button id="addfriend">Add a hirdman</button>
         </div>
-        <h2 class="more">Set pieces</h2>
-        <div class="group">
+        <div class="group" id="sets" style="margin-top:8px">
           <button id="setone">One against you</button>
           <button id="settwo">Two</button>
           <button id="setfriend">Two, one beside you</button>
@@ -134,34 +138,28 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
           <button id="setbows">Five against five, a bowman each</button>
           <button id="setline">Three against your line of three</button>
         </div>
-        <h2 class="more">They come</h2>
-        <div class="group" id="ways"></div>
+        <div class="group" id="ways" style="margin-top:8px"></div>
         <p class="desc" id="waydesc"></p>
         <div class="group" style="margin-top:8px">
           <button id="sclear">Clear the field</button>
           <button id="sreset">Start over</button>
         </div>
-        <p class="desc">A man fights as in the game: he shows his blow coming, keeps his weapon's reach, guards with his shield if he has one, yields or runs when it goes badly. Your men wear your red; theirs carry blue shields. They come at a man by the way chosen (one at a time by default, as the game runs).</p>
-      </section>
+      </details>
 
-      <section class="panel">
-        <h2>Beasts</h2>
+      <details class="panel" data-k="beasts" open>
+        <summary>Beasts</summary>
         <div class="group" id="beasts"></div>
-        <p class="desc">Each fights its own way (<code>ATTACKS</code> in <code>src/art.js</code>): the boar charges past, the wolves ring you and bite one at a time, the bear rears and comes down with both paws, the adder's bite poisons, the moose gores. The trolls sweep slow and hard. The huldra, Näcken and the bysen do not fight.</p>
-      </section>
+      </details>
 
-      <section class="panel" id="tuning">
-        <h2>Tuning</h2>
+      <details class="panel" id="tuning" data-k="tuning">
+        <summary>Tuning</summary>
         <p class="desc" style="margin-top:0">The numbers that decide how a fight feels, live: what you move here is what the next blow does. A number you have moved is green. <b>Use in the game</b> hands them to the game (it reads them when it loads); <b>Take back</b> brings back what the game has now.</p>
-        <h2 class="more">The feel of a hit</h2>
-        <div id="tfeel"></div>
-        <h2 class="more" id="theroh">Your weapon</h2>
-        <div id="thero"></div>
-        <h2 class="more">Men</h2>
-        <div id="tmen"></div>
-        <h2 class="more">Beasts</h2>
+        <details class="sub" data-k="tfeel"><summary>The feel of a hit</summary><div id="tfeel"></div></details>
+        <details class="sub" data-k="thero"><summary id="theroh">Your weapon</summary><div id="thero"></div></details>
+        <details class="sub" data-k="tmen"><summary>Men</summary><div id="tmen"></div></details>
+        <details class="sub" data-k="tbeast"><summary>Beasts</summary>
         <div class="group"><select id="tbk" aria-label="Which beast"></select></div>
-        <div id="tbeast" style="margin-top:6px"></div>
+        <div id="tbeast" style="margin-top:6px"></div></details>
         <h2 class="more">Settings as text</h2>
         <textarea id="ttext" spellcheck="false" aria-label="The tuned numbers as text"></textarea>
         <div class="group" style="margin-top:8px">
@@ -171,10 +169,10 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
           <button id="tdef">Defaults</button>
         </div>
         <p class="tstat" id="tstat"></p>
-      </section>
+      </details>
 
-      <section class="panel">
-        <h2>The clock and the eye</h2>
+      <details class="panel" data-k="eye">
+        <summary>The clock, the eye and the sounds</summary>
         <div class="group" id="clock">
           <button data-k="1" aria-pressed="true">As it runs</button>
           <button data-k="0.5">Half speed</button>
@@ -184,13 +182,11 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
           <button id="show" aria-pressed="false">Show the blows</button>
           <button id="hold" aria-pressed="false">Hold them still</button>
           <button id="sound" aria-pressed="true">Sound</button>
-          <button id="oldsfx" aria-pressed="false">The old sounds</button>
-          <button id="swingcut" aria-pressed="false">Cut the swing at the hit</button>
         </div>
         <p class="desc">Show the blows draws your weapon's reach and arc (amber while you wind up, red as it lands), your guard (white in the instant it would parry, blue after), the dash while it keeps you untouchable, and on every man his reach, his blow filling as he winds up, and his shield's cover.</p>
-        <h2 class="more">The sounds</h2>
+        <details class="sub" data-k="sounds"><summary>The sounds</summary>
         <div id="sfxlist"></div>
-        <p class="desc" id="sfxnote">Click a sound to hear it on its own. A dim one has no recording yet and plays the old synthesized sound; The old sounds above plays the old ones for all.</p>
+        <p class="desc" id="sfxnote">Click a sound to hear it on its own. A dim one has no recording yet and plays the old synthesized sound.</p></details>
         <h2 class="more">Aiming</h2>
         <div class="group" id="aim">
           <button data-aim="facing" aria-pressed="false">Facing</button>
@@ -202,7 +198,7 @@ textarea{width:100%;min-height:5.5em;padding:6px 8px;border:1px solid var(--line
           <button data-r="mouse" aria-pressed="true">The bow aims at the mouse</button>
           <button data-r="auto" aria-pressed="false">The bow aims itself</button>
         </div>
-      </section>
+      </details>
     </div>
   </div>
 </main>
@@ -439,13 +435,10 @@ __SFX__
   function act(id, fn) { var b = document.getElementById(id); b.addEventListener('click', function () { fn(); b.blur(); }); }
   var immortal = false, holdAll = false, showBlows = false, clockK = 1;
   toggle('shield', function () { return S.shield; }, function (v) { S.shield = v; });
-  toggle('guardface', function () { return S.guardFace !== false; }, function (v) { S.guardFace = v; });   /* with the guard up he turns to the foe about to strike, else the nearest (2026-10-15) */
   toggle('immortal', function () { return immortal; }, function (v) { immortal = v; });
   toggle('hold', function () { return holdAll; }, function (v) { holdAll = v; Combat.dbg().W.enemies.forEach(function (e) { e.hold = v; }); });
   toggle('show', function () { return showBlows; }, function (v) { showBlows = v; });
   toggle('sound', function () { return S.sound; }, function (v) { S.sound = v; });
-  toggle('oldsfx', function () { return oldSfx; }, function (v) { oldSfx = v; });
-  toggle('swingcut', function () { return !!SFX_PICK.cut; }, function (v) { if (v) SFX_PICK.cut = true; else delete SFX_PICK.cut; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} });
   /* the listening panel (2026-10-15): every fight sound by name, recorded if the studio's set has it, else the old one */
   var SFX_ROWS = [
     ['Swings', ['swing_light', 'swing_heavy', 'swing', 'swing_axe', 'swing_club', 'swing_seax', 'swing_spear', 'swing_greataxe']],
@@ -471,33 +464,20 @@ __SFX__
       });
       host.appendChild(d);
     });
-    if (Sfx.has('swish_axe')) {   /* the other weapons' swings: the swishes (the default) or the studio's first */
-      var dw = document.createElement('div'); dw.className = 'sfxrow'; var lw = document.createElement('span'); lw.textContent = 'Choose the other weapons’ swings'; dw.appendChild(lw);
-      [['', 'Made from Robin’s E and F'], ['orig', 'The studio’s first']].forEach(function (q) {
-        var b = document.createElement('button'); b.textContent = q[1]; b.setAttribute('aria-pressed', (SFX_PICK.swish || '') === q[0] ? 'true' : 'false');
-        b.addEventListener('click', function () { if (q[0]) SFX_PICK.swish = q[0]; else delete SFX_PICK.swish; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, q[0] ? 'swing_axe' : 'swish_axe'); sfxList(); b.blur(); });
-        dw.appendChild(b);
-      });
-      host.appendChild(dw);
-    }
     /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick2) */
     var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
     Object.keys(cands).forEach(function (base) {
-      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the sword’s hit' : base === 'heavyhit' ? 'its heavy hit' : base === 'swing' ? 'the sword’s swing' : base === 'raise' ? 'the shield going up' : base); d.appendChild(lab);
+      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the hit (every weapon)' : base === 'heavyhit' ? 'the heavy hit' : base === 'swing' ? 'the sword’s swing' : base === 'raise' ? 'the shield going up' : base); d.appendChild(lab);
       var opts = base === 'swing' ? ['free', 'robin', 'orig'].filter(function (q) { return q === 'orig' || Sfx.has(SWING_SETS[q][0]); }).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_e') ? 'free' : 'orig') : (DEFAULT_PICK[base] || '');
-      opts.forEach(function (k) {
-        var b = document.createElement('button'); b.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' ? 'The studio’s' : 'As delivered'); var cur = base in SFX_PICK ? SFX_PICK[base] : dflt; if (cur === 'orig' && base !== 'swing') cur = ''; b.setAttribute('aria-pressed', cur === k ? 'true' : 'false');
-        b.addEventListener('click', function () {
-          if (k === dflt) delete SFX_PICK[base]; else SFX_PICK[base] = k || 'orig';
-          try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {}
-          var a = ac(); if (a && !oldSfx) Sfx.play(a, a.destination, k === 'free' ? 'swing_e' : k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k);
-          sfxList(); b.blur();
-        });
-        d.appendChild(b);
-      });
+      var sel = document.createElement('select'), cur = base in SFX_PICK ? SFX_PICK[base] : dflt; if (cur === 'orig' && base !== 'swing') cur = ''; sel.setAttribute('aria-label', lab.textContent);
+      opts.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' ? 'The studio’s' : 'As delivered'); if (cur === k) o.selected = true; sel.appendChild(o); });
+      function hear() { var k = sel.value, a = ac(); if (a) Sfx.play(a, a.destination, k === 'free' ? 'swing_e' : k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k); }
+      sel.addEventListener('change', function () { var k = sel.value; if (k === dflt) delete SFX_PICK[base]; else SFX_PICK[base] = k || 'orig'; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} hear(); });
+      var hb = document.createElement('button'); hb.textContent = 'Hear it'; hb.addEventListener('click', function () { hear(); hb.blur(); });
+      d.appendChild(sel); d.appendChild(hb);
       host.appendChild(d);
     });
-    document.getElementById('sfxnote').textContent = (n ? n + ' of ' + tot + ' have recordings. ' : 'No recordings loaded yet (assets/sfx/combat.js). ') + 'Click a sound to hear it on its own. A dim one plays the old synthesized sound; The old sounds above plays the old ones for all.';
+    document.getElementById('sfxnote').textContent = (n ? n + ' of ' + tot + ' have recordings. ' : 'No recordings loaded yet (assets/sfx/combat.js). ') + 'Click a sound to hear it on its own. A dim one plays the old synthesized sound. What you choose in a drop-down is what the arena and the game play.';
   }
   sfxList();
 
@@ -639,6 +619,30 @@ __SFX__
     }
     c.restore();
   };
+
+  /* A row of buttons shown as a drop-down (2026-10-16, Robin: the options were bloated): the buttons stay, hidden, and do the
+     work; a choice row's drop-down follows whichever is pressed, an action row's has a button that presses the chosen one. */
+  function asSelect(hostId, label, actLabel) {
+    var host = document.getElementById(hostId); if (!host) return;
+    var wrap = document.createElement('div'); wrap.className = 'group'; if (host.style.marginTop) wrap.style.marginTop = host.style.marginTop;
+    if (label) { var l = document.createElement('label'); l.textContent = label; wrap.appendChild(l); }
+    var sel = document.createElement('select'); sel.setAttribute('aria-label', label || hostId); wrap.appendChild(sel);
+    var go = null; if (actLabel) { go = document.createElement('button'); go.textContent = actLabel; wrap.appendChild(go); }
+    host.parentNode.insertBefore(wrap, host); host.style.display = 'none';
+    function btns() { return host.querySelectorAll('button'); }
+    function sync() { var b = btns(), keep = sel.value, i;
+      if (sel.options.length !== b.length) { sel.innerHTML = ''; for (i = 0; i < b.length; i++) { var o = document.createElement('option'); o.value = String(i); o.textContent = b[i].textContent; sel.appendChild(o); } }
+      if (!actLabel) { for (i = 0; i < b.length; i++) if (b[i].getAttribute('aria-pressed') === 'true') sel.value = String(i); } else if (keep) sel.value = keep; }
+    sync(); new MutationObserver(sync).observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
+    if (go) go.addEventListener('click', function () { var b = btns()[+sel.value]; if (b) b.click(); go.blur(); });
+    else sel.addEventListener('change', function () { var b = btns()[+sel.value]; if (b) b.click(); });
+  }
+  asSelect('melee', 'Weapon'); asSelect('ranged', 'Ranged'); asSelect('mats', 'Metal'); asSelect('gear', 'Wearing');
+  asSelect('sets', 'Set piece', 'Set it up'); asSelect('ways', 'They come'); asSelect('beasts', 'Beast', 'Bring it');
+  asSelect('clock', 'The clock'); asSelect('aim', 'Aiming'); asSelect('rng', 'The bow');
+  (function () { var OPEN = {}; try { OPEN = JSON.parse(localStorage.getItem('combatarena.open') || '{}') || {}; } catch (eO) {}
+    var ds = document.querySelectorAll('details[data-k]'); for (var i = 0; i < ds.length; i++) (function (d) { var k = d.getAttribute('data-k'); if (k in OPEN) d.open = !!OPEN[k];
+      d.addEventListener('toggle', function () { OPEN[k] = d.open; try { localStorage.setItem('combatarena.open', JSON.stringify(OPEN)); } catch (eO) {} }); })(ds[i]); })();
 
   var last = performance.now();
   function frame(now) {
