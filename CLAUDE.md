@@ -506,8 +506,8 @@ trial on the editor's board, off (Robin doubted it).
   place's sound (wind, leaves, sea, birds by day, crickets from dusk, fire, water, caves, footsteps by the ground), its
   loudness the Escape menu's second bar, each layer a switch on Admin's Light and sound board (`LAB.snd`). Everything hushes
   when the window loses focus.
-- **Recorded fight sounds:** `src/sfx.js` plays `assets/sfx/combat.js`, built by `node tools/sfxjs.js "C:\dev\SG
-  Sound\out\sfx\combat|assets/sfx/robin|assets/sfx/free" combat` (the studio's set, Robin's own two swings, and free CC0
+- **Recorded fight sounds:** `src/sfx.js` plays `assets/sfx/combat.js`, built by `node tools/sfxjs.js
+  "C:\dev\SG\Sound Director\out\sfx\combat|assets/sfx/robin|assets/sfx/free" combat` (the studio's set, Robin's own two swings, and free CC0
   sounds with `assets/sfx/free/CREDITS.md`); `Sfx.vol` 0.5; a recording plays where one exists, else the synthesized sound.
   **Robin's picks are the defaults:** the swing is the free swish E, and F on a heavy blow (`SWING_SETS`); the other
   weapons' swings are the studio's `swish_<kind>` made from them; the hit and heavy hit the studio's; the guard going up F
@@ -522,8 +522,8 @@ trial on the editor's board, off (Robin doubted it).
   pitched by the weapon (`HIT_RATE`: the seax higher, the Dane axe lower), and **the heavy hit follows the hit's letter**
   unless it is chosen on its own. Robin has not chosen yet; the studio's hit is still the default.
 - **The sound bundle and the music scripts carry `?v=` and a hash of their bytes** (`file_tag` in `tools/build.py`): a browser
-  kept the old bundle. Rebuild after `node tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|C:/dev/SG
-  Sound/out/sfx/hit_v|assets/sfx/robin|assets/sfx/free" combat`.
+  kept the old bundle. Rebuild after `node tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|
+  C:/dev/SG/Sound Director/out/sfx/hit_v|assets/sfx/robin|assets/sfx/free" combat`.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the
   Escape menu's bar is turned up; there is no mute key (M is the map).
