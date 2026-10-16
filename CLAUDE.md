@@ -21,7 +21,15 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
   so at their top (`start-loop.md`, `the-beginning.md`; `ui-review.md` has a list waiting).
 - **One project roof, `C:\dev\SG`** (Robin, 2026-10-16): `Art Director`, `Sound Director` (Robin also says music or
-  sound director) and `Game Developer` (this repo; it was `C:\dev\survival-game`).
+  sound director), `Lore Director` and `Game Developer` (this repo; it was `C:\dev\survival-game`).
+- **The lore is the Lore Director's** (`C:\dev\SG\Lore Director`; the agreement Robin approved on 2026-10-16 is its
+  `docs/integration.md`): names, people, families, what creatures are and what folk believe, and the words people say (lines,
+  cards, tales, name pools). **The lore says what people believe; the game decides what is true.** Interface words (prompts,
+  toasts, the big-step boards, plain item names) stay mine. Only canon reaches the game, delivered as `out/lore/` with a
+  HANDOFF.md, copied into `assets/lore/` and inlined at build time; lines come keyed by situation with slots (`{name}`,
+  `{place}`, `{lack}`, `{dead}`), under 130 characters. Words in the game that Robin never reviewed are "in-game" in its
+  canon. **A name or line needed before the lore has one is a placeholder marked `LORE?` in a comment, and a message to the
+  Lore Director; Robin's lore decisions made here are messaged to it.** `docs/beasts.md` keeps only the mechanics.
 - **Two other Claude sessions are studios**, reached with SendMessage: the **Art Director** (`C:\dev\SG\Art Director`; models,
   renders and sheets, dropped in `C:\dev\SG\Art Director\out\`) and the **Sound Director** (`C:\dev\SG\Sound Director`; sound effects and music
   in `out/sfx/` and `out/music/`). **Copy a drop as the whole folder** (its numbers move boxes that a list of files leaves
