@@ -25,7 +25,7 @@ Comfort stays what it is (a room's roof, hearth, bench, bed, rug). The stone add
 asks before people will stay is **room and food**, below, and that is read from the whole territory, not one room.
 
 Suggestion for the broken steading on the starter island: its old claim stone lies toppled by the well. Raising it
-again (a few stone) claims the steading, which is the quiet way to teach the piece without a word. Brokk could be
+again (a few stone) claims the steading, which is the quiet way to teach the piece without a word. Arnor could be
 the first to join when it stands, since he lives there already.
 
 ## 2. Who joins, and how
@@ -33,7 +33,7 @@ the first to join when it stands, since he lives there already.
 People join one at a time, each in a way that fits who they are. No menu to hire from. Every way ends the same:
 the person walks to your claim stone and is a hirdman from then on.
 
-- **Brokk** joins when his steading's stone is raised again (the first hirdman, a smith: he works the bench).
+- **Arnor** joins when his steading's stone is raised again (the first hirdman, a smith: he works the bench).
 - **Freed thralls** after a raid: a raided hall or church holds captives; cut their rope and some follow you to
   your boat. They are weak but grateful (a trait).
 - **A villager you have helped**: each hamlet has one person with a small trouble (wolves took sheep, a brother
@@ -42,7 +42,7 @@ the person walks to your claim stone and is a hirdman from then on.
 - **Kin by boat**: once your town has three roofs, a boat lands now and then with one or two people looking for a
   place (and news, and the names of legendary Vikings). You can turn them away.
 - **Defeated raiders**: a raider who yields (health low, you stop) may ask to join rather than die. Risky: a
-  trait like "sworn to Ragnar" that can turn on you later.
+  trait like "sworn to Ormr" that can turn on you later.
 - **Later**: a trading hub where you pay a bride-price or a thrall-price for a person, which is historical and ugly
   in the right way; and legendary Vikings who come only when your name is big enough.
 
@@ -100,12 +100,12 @@ Rowing and sailing times are tuned in the Sea Editor, which already shows them.
    so the number of stones is limited: every stone after the first needs a hirdman who stays as its keeper.
 3. Yes: they stay without food, and go slow and sad.
 4. Yes, something like that; never lost at random. Illness and the like can come later.
-5. Brokk is the first hirdman.
+5. Arnor is the first hirdman.
 6. Muster at the stone, or a speaking place; later from the Jarl's seat in the main hall, so it must be movable.
 7. The hird is only used at the base and on raids, never in the open world (too hard to balance). They follow you
    round the base when you talk to them, and you assign them by leading them to a workplace.
 
-Step 1 of the build order is built (the stone, the reach, room and food, Brokk joining, follow, jobs, muster) and the
+Step 1 of the build order is built (the stone, the reach, room and food, Arnor joining, follow, jobs, muster) and the
 numbers live in `src/hird.js`, tuned in the Hird Editor.
 
 ## 6. The questions as they were asked
@@ -117,16 +117,16 @@ numbers live in `src/hird.js`, tuned in the Hird Editor.
 - Do people need food to stay, or only to work and fight? My suggestion as above: they stay regardless, and go
   slow without food, which is the Valheim-food shape you chose.
 - Can hirdmen die? My suggestion: yes, and rarely. A death should mean something; a healing bed makes it rare.
-- Should Brokk be the first hirdman, or stay a friend who teaches? My suggestion: the first hirdman, and he keeps
+- Should Arnor be the first hirdman, or stay a friend who teaches? My suggestion: the first hirdman, and he keeps
   his lines.
 - The muster: at the stone only, or anywhere by calling? My suggestion: the stone, so the stone matters.
 
 ## 7. The order to build it in
 
 1. The claim stone piece, the territory on the chart, "Room for N".
-2. Brokk joins when the old stone is raised; he walks to the bench and works there (the first job).
+2. Arnor joins when the old stone is raised; he walks to the bench and works there (the first job).
 3. Food from the stores, beds, the idle day (well, fire, bed), chatter between two people.
 4. The woodcutter and the cook, the first two jobs that give something.
 5. Muster at the stone, following on land, fighting beside you.
 6. Crewing the raft, then the first real boat.
-7. The ways of joining beyond Brokk: the helped villager first, kin by boat second, freed thralls with the first raid.
+7. The ways of joining beyond Arnor: the helped villager first, kin by boat second, freed thralls with the first raid.

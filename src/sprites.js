@@ -262,7 +262,7 @@
     if (hair) L.push({ l: hair, t: col.hair || '#5a3a28' });
     if (hat) L.push(hat === 'hood' ? { l: 'hood', t: x.cloak || col.cloak || '#6b4a2e' } : { l: hat });
     if (x.shield) { L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: x.shield }); }
-    var dwarf = spec.legL != null && spec.legL < 0.8;              // Brokk: the same man made short and broad (a body of his own is for later)
+    var dwarf = spec.legL != null && spec.legL < 0.8;              // a dwarf's spec: the same man made short and broad (nobody in the game is one since 2026-10-16)
     var look = { L: L, s: Math.max(0.62, Math.min(1.12, (spec.scale || 0.8) / 0.8)) * (dwarf ? 0.8 : 1), sx: dwarf ? 1.24 : Math.max(0.9, Math.min(1.2, spec.bodyW || 1)), sy: 1 };
     idOf(look); return x.hand ? withHand(look, x.hand) : look;
   }

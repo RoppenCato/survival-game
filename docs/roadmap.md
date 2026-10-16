@@ -38,7 +38,7 @@ takes to get there, in the order it has to be played, with what already exists, 
 to test each step. The runes and the Book of Beasts stay hidden until this is done.
 
 **The chain, backwards from the raft:** to leave you need a **raft**. To build a raft you need the raft recipe
-(taught by Brokk, the only survivor of the raided village) and a **shipwright's bench** on the shore. To build the
+(taught by Arnor, the only survivor of the raided village) and a **shipwright's bench** on the shore. To build the
 shipwright's bench your base must be **comfortable** enough: a house with a roof, a workbench, a fireplace and a
 rug inside it. To build those you need to **gather** wood, stone, fiber and hide on the island, which needs
 **tools** of stone and wood, **leather armour** so the beasts do not stop you, and **food** that raises health
@@ -113,27 +113,27 @@ order is the order a new player meets them; build them in the same order so the 
 - **Test:** a 3 by 3 hut with door, roof, hearth, workbench, bed and rug reads Comfort 6; sleeping in it gives
   Rested for 12 minutes; the same hut without a roof reads nothing.
 
-### 7. The village and the survivor (built simply 2026-10-05: Brokk tells the story once, reminds you what your home lacks, teaches the raft at Comfort 4 and sets `seen.raft`; the chart marks the steading once found; still to do if wanted: lines for after the raft, more tales)
-- **Have:** Hildir's steading, broken, inland: the burnt hall, the whole hut, the stone house, the palisade,
-  loot crates that break, Brokk by the well with five lines.
-- **Build:** Brokk's story told straight: the village was raided, some were taken as slaves or went with the
+### 7. The village and the survivor (built simply 2026-10-05: Arnor tells the story once, reminds you what your home lacks, teaches the raft at Comfort 4 and sets `seen.raft`; the chart marks the steading once found; still to do if wanted: lines for after the raft, more tales)
+- **Have:** Thorgunna's steading, broken, inland: the burnt hall, the whole hut, the stone house, the palisade,
+  loot crates that break, Arnor by the well with five lines.
+- **Build:** Arnor's story told straight: the village was raided, some were taken as slaves or went with the
   Vikings, some died, he is the only one left. His lines gate on what the player has done: first meeting (the
   tale), after the player has a roofed house ("you build well; come back when your hall is warm"), after comfort
   reaches the bar ("I will teach you the raft"), after the raft ("they sailed east"). A chart marker for the
   village once found. A small reason to go there before the raft: the crates (there), and the well as the only
   water (not yet a system; skip for now).
 - **Test:** a new player finds the village by walking inland within the first day (the hint "smoke to the
-  north" or a chart marker), and Brokk's first line tells the whole story in one read.
+  north" or a chart marker), and Arnor's first line tells the whole story in one read.
 
-### 8. The shipwright's bench (built 2026-10-05: the piece, its placement rules, the Shipwright tab with the raft recipe locked until Brokk has taught it; the raft itself is step 9)
+### 8. The shipwright's bench (built 2026-10-05: the piece, its placement rules, the Shipwright tab with the raft recipe locked until Arnor has taught it; the raft itself is step 9)
 - **Have:** the workbench's "needs a roof" rule (`benchRoofed`) as the pattern for a placing rule; the jetty.
 - **Build:** the **shipwright's bench** piece: a trestle with a keel-piece, buildable only on sand within a few
   tiles of the water, costing wood and stone, and only when the player's base has **comfort 4 or more** (the
   cursor says "Your home needs a roof, a fire, a workbench and a rug first" until it does). It opens a
-  **Shipwright** tab on the B board when near, like the workbench's. Brokk's raft recipe appears there once he
+  **Shipwright** tab on the B board when near, like the workbench's. Arnor's raft recipe appears there once he
   has taught it (step 7); until then the tab says "Someone must teach you".
 - **Test:** the bench cannot be placed inland or with comfort 3; with comfort 4 it can; its tab shows the raft
-  recipe only after talking to Brokk with comfort 4.
+  recipe only after talking to Arnor with comfort 4.
 
 ### 9. The raft, and leaving (built 2026-10-05: **Goal 1 is playable from a fresh start**; still to do: the drifting raft after death at sea is only a respawn rule, no hazards at sea yet, and the Book and runes stay hidden until Robin says)
 - **Have:** the ships and sailing in the Sea Editor (hull, heading, speed, boarding with E); nothing in the game.
@@ -151,7 +151,7 @@ order is the order a new player meets them; build them in the same order so the 
 1. Step 4's stamina on food and step 3's drying rack and leather (small, and everything after wears leather).
 2. Step 2's club, stick names and the first-press Crafting tab, with the step 1 snags, played as a new player.
 3. Step 6's rug and comfort, with the hint sequence.
-4. Step 7's Brokk lines and the village marker.
+4. Step 7's Arnor lines and the village marker.
 5. Step 8's shipwright's bench.
 6. Step 9's raft, the second island and the goal line.
 7. Step 5's balance pass last, once the whole chain can be played, because every earlier step changes it.
@@ -227,24 +227,24 @@ The quiver is built (the character panel); step 3 adds making arrows and new arr
 
 - A troll that lives under a hill on the second island, comes out at night, and turns to stone at dawn. Its card
   says so, and that is the way to beat it: lure it into the open and fight until the sun rises, or run.
-- Trolls are the first creature that is not an animal: a new body plan or a figure built like Brokk, big.
+- Trolls are the first creature that is not an animal: a new body plan or a figure built like Arnor, big.
 - This proves the pattern for every väsen after it: a card whose weakness is a real rule in the fight.
 
 Depends on: Q1 (which väsen first).
 
-## Step 6: the broken village, the first friend, and trading (2026-10-05: the broken steading is built from the building pieces with loot crates, and Brokk stands there with the tale of Ragnar Ironside; chests for storage and breakable crates and barrels added the same day; still to do: the living village, trading)
+## Step 6: the broken village, the first friend, and trading (2026-10-05: the broken steading is built from the building pieces with loot crates, and Arnor stands there with the tale of Ormr Midgardbane; chests for storage and breakable crates and barrels added the same day; still to do: the living village, trading)
 
 - On the home island (decided): an abandoned, broken village. Fallen walls, a burnt longhouse, a palisade with
   gaps, things left behind. It shows the player how a village is built and set up, and that the world has
   dangers. Built from the Base Editor's pieces by a generator that then breaks them.
-- The first friendly person is met there (Brokk, or another), and tells of the first legendary Viking: who burnt
+- The first friendly person is met there (Arnor, or another), and tells of the first legendary Viking: who burnt
   the village, where they were last seen. That is the hook for exploring.
 - A living village to trade with is on the second island or further: five or six huts with people (figures, like
-  Brokk) going about their work, a palisade, a trader at a table.
+  Arnor) going about their work, a palisade, a trader at a table.
 - Trading (decided): the first island and its neighbours trade in the basics, food and materials, by barter. A
   currency comes later, and a new one about every third biome, not one per biome, so new places need new things
   farmed.
-- People talk: a few lines each, like Brokk.
+- People talk: a few lines each, like Arnor.
 - This is the first place where "raid or trade" is a choice.
 
 ## Step 7: raiding

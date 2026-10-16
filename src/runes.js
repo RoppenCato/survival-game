@@ -6,7 +6,7 @@
 var Runes = (function () {
 'use strict';
 var LIST = [
-  { id: 'riposte', name: 'Riposte', norse: 'Tiwaz', side: 'hand', source: 'Brokk teaches it', text: 'A parry opens a free heavy blow for a moment.', glyph: [[[5, 14], [5, 0]], [[1, 3], [5, 0], [9, 3]]] },
+  { id: 'riposte', name: 'Riposte', norse: 'Tiwaz', side: 'hand', source: 'Arnor teaches it', text: 'A parry opens a free heavy blow for a moment.', glyph: [[[5, 14], [5, 0]], [[1, 3], [5, 0], [9, 3]]] },
   { id: 'boarcharge', name: 'Boar’s charge', norse: 'Uruz', side: 'hand', source: 'ten boars', text: 'Sprint into a beast to bowl it over: your run is a blow.', glyph: [[[1, 14], [1, 2], [9, 5], [9, 14]]] },
   { id: 'surefeet', name: 'Sure feet', norse: 'Raido', side: 'foot', source: 'a minute of sprinting', text: 'Sprinting costs half the stamina.', glyph: [[[2, 14], [2, 0], [8, 3], [2, 7], [8, 14]]] },
   { id: 'wolfsrun', name: 'Wolf’s run', norse: 'Ehwaz', side: 'foot', source: 'ten wolves', text: 'At night you run faster, and the wolves let you be unless you strike first.', glyph: [[[1, 14], [1, 0], [5, 4], [9, 0], [9, 14]]] },

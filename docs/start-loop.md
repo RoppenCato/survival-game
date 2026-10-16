@@ -41,13 +41,13 @@ dusk; the first boat as a memory; and people found in the world who make home be
 2. Branches and stones round the wreck. Flint axe, knife and pick by hand, a stick sword and bow, arrows, torches.
 3. Three lone trees near the wreck, rocks, bushes, berries with E. Boars charge, deer flee, snakes bite.
 4. Build mode: walls, floors, door, window, a roof over a closed room, a hearth, a workbench (wants a roof), a rug,
-   a bed, a chest. Comfort counts a room's roof, hearth, bench, bed, rug: at 4, Brokk will teach and the shipwright's
+   a bed, a chest. Comfort counts a room's roof, hearth, bench, bed, rug: at 4, Arnor will teach and the shipwright's
    bench may be built.
 5. Food: berries, roast berries and meat, stew at the hearth; meals raise top health and stamina for minutes.
 6. Leather drops from deer and boar; armour and the shield at the bench.
 7. Night and dusk; sleep in a bed skips to morning; rested under a roof.
-8. The broken steading a walk away: Hildir's burnt hall, a hut still whole with a bed, the well, a toppled claim
-   stone, Brokk with his story. Six stone raise the stone; Brokk joins and can be given the woodpile or bench.
+8. The broken steading a walk away: Thorgunna's burnt hall, a hut still whole with a bed, the well, a toppled claim
+   stone, Arnor with his story. Six stone raise the stone; Arnor joins and can be given the woodpile or bench.
 9. The shipwright's bench on sand by the water (Comfort 4). E steps into the Shipyard; logs, lashings, an oar; Finish.
 10. The raft, paddled east to the big island: the hamlet, the cave, the troll, bears and wolves. "You have left the
     island."
@@ -77,7 +77,7 @@ a survivor who joins, the raft as the first goal.
 
 A proposal, in play order. Each item says what it adds and roughly what it costs to build.
 
-**Wake, and see where to go.** From the wreck, a thin column of smoke stands over the trees inland: Brokk's fire
+**Wake, and see where to go.** From the wreck, a thin column of smoke stands over the trees inland: Arnor's fire
 at the steading. The wreck's mast stays as the beach landmark you come back to. On a low rise between them a
 stone cairn, which when you reach it marks the big island on the chart and shows it as a hazy coast on the
 horizon strip of the chart. *Cost: a smoke effect, a cairn prop, a chart mark. Small.*
@@ -89,16 +89,16 @@ line of runes on a stone (the world is dangerous, told once), a hollow oak with 
 cut logs someone never fetched (a woodpile: free wood and the sight of one). *Cost: props exist for most; a placer
 like the steading's. Medium.*
 
-**Make the steading the beginner base.** Hildir's hut is the first bed, its roof the first roof, and the burnt hall
+**Make the steading the beginner base.** Thorgunna's hut is the first bed, its roof the first roof, and the burnt hall
 is the house to fix: patch five gaps in the walls, roof it, put a hearth, a bench and a rug in it, and it is a home at
 Comfort 4. Fixing is quicker than building from nothing and teaches the pieces by their gaps. The wreck's beach keeps
 the shipwright's bench, since it is the sand nearest the steading, or the steading's own cove if the placer puts it by
-the shore. Brokk's fire is the first hearth to cook at. *Cost: move the home camp to the steading, make the hall's gaps
+the shore. Arnor's fire is the first hearth to cook at. *Cost: move the home camp to the steading, make the hall's gaps
 match the first recipes, place the steading within sight of a beach. Medium.*
 
 **The first night.** At dusk the light goes gold, then blue, and far off a wolf howls (there are none on the starter
 island, so it is only a sound). Under a roof with a fire the room glows, the fire crackles and the rested ring fills.
-Brokk says one line about the night the first time. *Cost: a howl, a crackle, a glow, one line. Small.*
+Arnor says one line about the night the first time. *Cost: a howl, a crackle, a glow, one line. Small.*
 
 **Two slow verbs.** Sitting: E on a bench seat, a chair or a log by a fire sits the hero down, the camera settles,
 stamina returns faster and a short rested comes on. Fishing: a rod at the workbench (wood and fiber), cast from the
@@ -110,7 +110,7 @@ cast-and-wait, a fish kind and dish. Medium.*
 table, the hall's rubble gives a few planks, the Building board's first row is walls, door, roof, hearth, bench, bed,
 rug, chest, in the order they are needed, and the rest below. *Cost: ordering and the steading's furniture. Small.*
 
-**Leaving.** When the raft is finished Brokk walks to the shore and stands there as you paddle out, and says a line
+**Leaving.** When the raft is finished Arnor walks to the shore and stands there as you paddle out, and says a line
 when you come back. The big island's coast is visible from the raft before the chart says so. *Cost: one walk and two
 lines. Small.*
 
@@ -118,10 +118,10 @@ lines. Small.*
 
 1. Wake in the wreck. Smoke over the trees. The things on the sand, tools by hand.
 2. The cairn on the rise: the far island marked. A find or two on the way.
-3. The steading: Brokk, his story, the hut's bed. The first night under its roof.
+3. The steading: Arnor, his story, the hut's bed. The first night under its roof.
 4. Day two: the hall patched and roofed, hearth, bench, rug. Deer for leather, armour at the bench. Sit by the fire.
-5. Day three: Comfort 4, Brokk teaches, the stone raised, Brokk at the bench. The shipwright's bench on the sand.
-6. The Shipyard: logs, lashings, an oar. Finish. Brokk on the shore. The crossing, and the hamlet's roofs.
+5. Day three: Comfort 4, Arnor teaches, the stone raised, Arnor at the bench. The shipwright's bench on the sand.
+6. The Shipyard: logs, lashings, an oar. Finish. Arnor on the shore. The crossing, and the hamlet's roofs.
 
 Three slow days, about an hour and a half, with the town only beginning on the far side: the claim stone and the
 hird stay on the starter island as a beginning, and the real town is for the big island, as decided.
@@ -133,4 +133,4 @@ hird stay on the starter island as a beginning, and the real town is for the big
 3. The finds.
 4. The first night.
 5. Sitting, then fishing.
-6. Brokk at the shore when you leave.
+6. Arnor at the shore when you leave.

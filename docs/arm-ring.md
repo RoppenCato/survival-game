@@ -14,7 +14,7 @@ cut and reddened with blood had power. The game never explains any of it.
   and one movement rune, and a new side opening reads as a story.
 - **The metal is the rank.** Five words anyone can order: **bronze, silver, twisted silver, gold, dragon**. The metal says
   which biome a Viking has mastered, the coils how far into it. Every figure in the world wears its ring on the arm and is
-  named by it in speech ("Ragnar of the gold ring"); your own ring sits on the panel beside theirs when you meet. The rule a
+  named by it in speech ("Ormr of the gold ring"); your own ring sits on the panel beside theirs when you meet. The rule a
   player learns in a minute: a heavier metal beats you. The **curveballs** keep it from going stale: a jarl with silver and
   one legendary rune, a thrall with gold under his sleeve, a ring only worn by whoever kills its owner, a cursed ring that
   gives a strong rune and takes a coil forever.
@@ -43,7 +43,7 @@ cut and reddened with blood had power. The game never explains any of it.
 
 Finding one is the event. Sources, in the order they appear: **beasts** (the wolf's night running, the bear's berserk, the
 boar's charge: after enough of them), **runestones** (the odd ones that change how something works), **deeds** (the plain
-ones), **Brokk** (the one person-taught rune on the first island; other people teach later), then **bosses, raids,
+ones), **Arnor** (the one person-taught rune on the first island; other people teach later), then **bosses, raids,
 fishing, quests, hirdmen** on later islands. A rune's worth matches how it was found: the plain ones from deeds, the
 strange ones from stones, the legendary ones from bosses and raids.
 
@@ -68,7 +68,7 @@ The first big island's runes, by side, with how each is learnt. Each changes wha
 
 | Side | Rune | Learnt from | What it does |
 | --- | --- | --- | --- |
-| hand | **Riposte** | Brokk teaches it | a parry opens a free heavy hit for a second |
+| hand | **Riposte** | Arnor teaches it | a parry opens a free heavy hit for a second |
 | hand | **Boar's charge** | ten boars | sprint into a beast to bowl it over: your run becomes an attack |
 | foot | **Sure feet** | a minute of sprinting | sprinting costs half the stamina |
 | foot | **Wolf's run** | ten wolves | at night you run faster and silently, and wolves ignore you unless you strike first |
@@ -103,10 +103,10 @@ combat tests are.
    edge, the moose's push. The learning moment is a rite: a dim, the rune glowing over the beast, its name. Test: the count,
    the rite once, nothing before the ring.
 5. **The bronze ring in the cave.** The dead Viking lies at the very back of the troll's cave, **behind the troll's lair**, past the
-   ore; E takes the ring; the troll must be dealt with or slipped past. Two coils, hand and foot. Brokk's one taught rune comes after it. Test: the ring appears once, is
+   ore; E takes the ring; the troll must be dealt with or slipped past. Two coils, hand and foot. Arnor's one taught rune comes after it. Test: the ring appears once, is
    saved, and discovery opens with it.
 6. **Runestones give runes again,** the odd ones, with the rite of step 4.
-7. **Rings on leaders.** Only leaders wear rings: Brokk bronze, jarls and legendary Vikings by their biome, ordinary people
+7. **Rings on leaders.** Only leaders wear rings: Arnor bronze, jarls and legendary Vikings by their biome, ordinary people
    none. Drawn on the arm, said in speech, compared on meeting.
 8. **Growth.** The silver ring from the second biome's jarl or hoard, the eye side; the smith's rework. Waits for the second
    biome and the raid.
@@ -122,7 +122,7 @@ Left out until asked for: pairs, cursed rings, rings taken from the dead, the da
 rune hooks, and a play-through from the big island in the browser: the ring taken from the dead Viking behind the lair, the
 owed boar's rune arriving with it, the carver's bench under a roof, cutting (five blood, the bar, the glow), filing one rune
 away with another, the panel, the save and reload, the boar's charge, the wolves' truce at night and their waking when
-struck, healing by a campfire in the open, Brokk's riposte, the roll. Step 8 (growth) and step 9 (hirdmen's rings) wait.
+struck, healing by a campfire in the open, Arnor's riposte, the roll. Step 8 (growth) and step 9 (hirdmen's rings) wait.
 Long breath is known but does nothing yet (there is no swimming).
 
 **The bench reworked (2026-10-07, after Robin tried it):** the ring is a flat cuff with knotwork and small round hollows (Robin's

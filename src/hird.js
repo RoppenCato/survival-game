@@ -4,7 +4,7 @@
    from. roll(R) makes one person from it (stats, traits, a figure spec for lib.makeFigure). Nothing here moves or
    draws; the game does that. Robin's decisions (2026-10-06): a claim stone costs stone and berries (the red for its
    runes); several stones, but every stone after the first needs a hirdman to keep it, so each claim costs a person;
-   the hird stays without food but goes slow and sad; they can die, never at random; Brokk is the first; muster at
+   the hird stays without food but goes slow and sad; they can die, never at random; Arnor is the first; muster at
    the stone now, from the high seat later (anything with `muster` on it); they follow and work only inside your
    territory and on raids, never in the open world. */
 var Hird = (function () {

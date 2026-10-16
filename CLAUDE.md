@@ -50,7 +50,7 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   defend what you claim; found and recruited in different ways, with randomised stats and traits and training to change
   them. **They follow and work only inside your territory and on raids, never in the open world.** Claim stones cost stone
   and berries (and snake blood, as built); every stone after the first needs a hirdman as its keeper; without food they are
-  slow and sad, never leaving. Brokk is the first hirdman.
+  slow and sad, never leaving. Arnor is the first hirdman.
 - **The year:** spring, summer, autumn, winter, Stardew Valley style but **the player decides when a season moves**, at a
   moment at the end of each season; not abusable, never a stress; seasons feel different and open different things. After
   winter, "controlled randomness": an unclaimed destroyed place is rebuilt stronger by survivors, taken by bandits or
@@ -68,9 +68,12 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   2 the big island, 3 the second biome and the first raid, 4 on by the compass. Work a chapter at a time on one engine and one
   set of numbers; raiding and combat get the most work.
 - **The start:** you land with nothing at a wreck on the starter island; an abandoned, broken steading there shows how a
-  village is set up and that the world is dangerous; there you meet Brokk, the first friendly person, and hear of the first
-  legendary Viking (in the game Ragnar Ironside, whose crew burnt Hildir's steading: those names are mine, not Robin's, and
-  the Lore Director holds them as "in-game", not canon). A slower beginning that introduces things one at a time (Robin,
+  village is set up and that the world is dangerous; there you meet Arnor, the first friendly person, and hear of the first
+  legendary Viking. **Robin's start (2026-10-16, through the Lore Director; canon):** the hero's past is never explained and
+  the player picks his name (no line ever says it); the raider is **Ormr Midgardbane** (folk say the World Serpent fears him;
+  he always leaves one alive to tell it); the survivor is **Arnor, the village smith**, an ordinary man scavenging and mending
+  in the ruin (he keeps the place Brokk the dwarf had in earlier builds: the story, the raft, the first hirdman); the steading was **Thorgunna's**; the
+  dead Viking in the troll's cave is **Hogni**, whose brother **Old Aslak** lives in the big island's first village. A slower beginning that introduces things one at a time (Robin,
   2026-10-14). Sleeping skips the night. Dying at sea is forgiving: the boat drifts to the shore where you last slept and
   needs half its materials (not built). Currencies: more than one, a new one about every third biome; the first island trades
   basics, silver comes with raiding. Arrows are ammunition of several types carried outside the bag (a way is still to be
@@ -261,22 +264,31 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 - **E**: use what you face (one rule, `eWhat`). **G**: your men: tap "with me", hold "hold here"; "storm" before a place,
   "have it carried" by a broken chest.
 - **Tab**: the one screen: your panel top left, the bag under it, what you can make where you stand on the right. **B**:
-  build (after Brokk's word); right click opens the Building board; **F** the wreck cursor. **T**: the torch. **M**: the
+  build (after Arnor's word); right click opens the Building board; **F** the wreck cursor. **T**: the torch. **M**: the
   map. **R**: rise after falling. **Esc**: closes a board, else the menu (continue, sandbox, restart, new island, the music and
   world-sound bars, Admin). L (the Book of Beasts) is hidden (`SHOW.book` false).
 
 ## The game as it stands (`templates/game.html`)
 
-**The start.** You wake in a wrecked boat on the starter island's beach. E pries four planks from the wreck (12 wood); four
+**The start.** A fresh start (or an older save) first asks the hero's name, over the dark before the first light (`naming`,
+`heroName`, shown on the panel; the dice offer names until the lore's pools come). You wake in a wrecked boat on the starter
+island's beach. E pries four planks from the wreck (12 wood); four
 branches and nine stones lie about; three lone trees stand near. Key reminders, in order: "E at the wreck", "Walk over the
 things lying about", "Tab", then "1 to 6". Trail stones lead toward the steading 1500 to 2400 units off (`layCairns`); a fish
-weir's net on a beach gives 4 fiber. **Hildir's steading**, burnt by Ragnar Ironside's crew: a burnt hall, a whole wattle
+weir's net on a beach gives 4 fiber. **The burnt steading** (Thorgunna's), burnt by Ormr Midgardbane's crew: a burnt hall, a whole wattle
 hut, a plank house by the well missing five walls and its roof (mend it and it is your first home: its bed answers only with
-a roof over it), a palisade with gaps, crates to break with the axe, Brokk by the well with his campfire. **Brokk**
-(`brokkState`: meet, wait, teach, taught): his story's last line opens building; while you build he names what your home
-lacks; at comfort 4 he teaches the raft. What anyone says shows on the speech board at the foot of the screen. The big steps
+a roof over it), a palisade with gaps, crates to break with the axe, the graves behind the hall (E reads Thorgunna's stone),
+and a campfire by the well. **Arnor** (`npc`; `arnorState`: meet, wait, teach, taught) goes about the ruin
+scavenging and hammering at what can be mended (`arnorWork`, his spots `npc.work`, every walk by the yard), and stops to
+watch you when you come near; his story's last line opens building; while you build he names what your home lacks; at
+comfort 4 he teaches the raft. Once, when you stand at the graves, he comes and tells who lies there; when your first raft is
+launched he is at the shore to see you off. **Every line he says is the Lore Director's** (`loreLines('line.arnor.*')`, from
+`assets/lore/lore.json`, inlined as `__LORE__`), as are Old Aslak's (the first village of the big island: his brother Hogni's
+story a line a talk, other lines once you wear the bronze ring) and the villagers' pairs about Ormr. Words that are not a
+person's (the scratch by Hogni, the carving on Thorgunna's stone) go on the speech board too (`sayAt`). What anyone says
+shows on the speech board at the foot of the screen. The big steps
 are bordered boards (`bigStep`: "Your bar", "Building", "The raft", "You have left the island", the last whenever you stand
-on another island's land). The interface grows: the hotbar shows once a thing is on the bar; B waits for Brokk; the Building
+on another island's land). The interface grows: the hotbar shows once a thing is on the bar; B waits for Arnor; the Building
 board holds the plank house's pieces and the workbench until the first night slept under a roof opens twenty-four more
 (key `slept`).
 
@@ -304,7 +316,7 @@ clamp, lightning-struck trees, old fire rings. The furnace makes copper bars (an
 
 **Building** (B, `PIECES`, `src/build.js`): the board is tabs by kind (frame and walls, floors and roofs, ground brushes,
 yard, furniture, work, outdoors), eight pieces a row with name and cost; pieces open by keys (things picked up or built,
-Brokk's teaching: `slept`, `leather`, `honey`, `copper`, `mason` (the mason's bench opens stone), `charcoal`, `ironBar`,
+Arnor's teaching: `slept`, `leather`, `honey`, `copper`, `mason` (the mason's bench opens stone), `charcoal`, `ironBar`,
 `bogIron`, `silver`, `snakeBlood`). Walls in logs, planks, wattle, stone, turf (timber frame and cut stone from iron); doors,
 windows, posts, stairs to one floor above, floors, docks over shallow water, the ground brushes (gravel, earth, moss, grass;
 field, chalk, marsh). A closed room gets a roof by itself (thatch unless you pick turf, shingles, tiles or slate; `BCFG` is thatch, Robin) that fades
@@ -350,7 +362,7 @@ and the sea cave exist on the Mountain test's island only.
 kills, stones and meetings, learnt once a ring is worn (the bronze ring from the dead Viking), cut into the ring at the
 carver's bench for five health (a coil per side: hand, foot, eye, heart); a rune works only while cut (`inUse`, `api.mods`).
 
-**The hird** (`docs/hird.md`, `src/hird.js`): claim stones (stone, berries, snake blood) with a reach; Brokk joins at your
+**The hird** (`docs/hird.md`, `src/hird.js`): claim stones (stone, berries, snake blood) with a reach; Arnor joins at your
 first; hirdmen follow (inside your territory), take jobs at workplaces and eat at dawn from chests; muster at a stone.
 
 **Villages** (the big island): grown by `Village.make`, placed by `Village.plan`, named, with jetties; their people live
@@ -361,7 +373,7 @@ Houses are narrow and long at real sizes (a house 4 by 6 to 9 tiles, a longhouse
 **Boats** (`src/yard.js`, `docs/boats.md`): E at a shipwright's bench steps into the Shipyard; a vessel is a hull design chosen
 there (raft, faering, boat, karve, longship by the bench's tier), fitted out with seats, mast, sail, steering oar, dragon stem
 and shields, and launched (the hull is paid then). Sailing is `Yard.sail`, with the wind for rigged hulls and rowers for the
-crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Brokk; boats need copper, ships iron.
+crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper, ships iron.
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
 chart show what has been seen; saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is

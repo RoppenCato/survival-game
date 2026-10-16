@@ -141,7 +141,7 @@ are fine; night is dangerous and home with a fire is safe.
 | --- | --- | --- |
 | A1 The world | A 120-tile island (`isle0`; 60 until the scale pass of 2026-10-09), grass, groves of oak, pine and birch, beaches, the big island about a minute east by raft. Day and night over a 30-minute cycle | Built |
 | A1 Look | The ink look (2026-10-07), painterly meadow, wide warm beaches, critters (butterflies, birds, beetles) by day; the hero and the animals are Blender models (2026-10-09 to 11) | Built |
-| A2 Places | The wreck on the beach, the broken steading (Hildir's, a burnt hall, a hut, a half stone house, a well, a palisade), loose finds (nests, fallen trees, herbs, mushrooms) | Built |
+| A2 Places | The wreck on the beach, the broken steading (Thorgunna's, a burnt hall, a hut, a half stone house, a well, a palisade), loose finds (nests, fallen trees, herbs, mushrooms) | Built |
 | A2 Small finds with a story | A fish weir on the shore with a net to take down (4 fiber) | **Built (2026-10-12)**, Robin's pick |
 | A2 More finds | A hunter's camp, a cairn, a dead man by a cold fire | Not picked (`docs/start-loop.md` proposal; Robin chose the weir alone) |
 
@@ -150,8 +150,8 @@ are fine; night is dangerous and home with a fire is safe.
 | Event | What it is | Status |
 | --- | --- | --- |
 | **Landing with nothing** | Branches and stones round the camp, the first tools by hand, three bare key reminders | Built |
-| **The first night** | Wolves come at night; a fire keeps them off; Brokk's campfire shows it. Since 2026-10-12 the fire's light flickers, throws shadows, stops at walls and shows in windows, and the night has its own sounds (crickets, an owl, the fire) | Built (the night is dangerous; sight and sound now tell home from the field; whether it is a *moment* yet is Robin's to judge) |
-| **The steading and its survivor** | Brokk tells his story, reminds what the home lacks, teaches the raft at Comfort 4 | Built |
+| **The first night** | Wolves come at night; a fire keeps them off; Arnor's campfire shows it. Since 2026-10-12 the fire's light flickers, throws shadows, stops at walls and shows in windows, and the night has its own sounds (crickets, an owl, the fire) | Built (the night is dangerous; sight and sound now tell home from the field; whether it is a *moment* yet is Robin's to judge) |
+| **The steading and its survivor** | Arnor tells his story, reminds what the home lacks, teaches the raft at Comfort 4 | Built |
 | **The home** | Walls, roof, hearth, bench, bed, rug: Comfort 4 | Built |
 | **The shipwright's bench and the raft** | The Shipyard, the raft from logs and lashings, the crossing and the banner "You have left the island" | Built |
 
@@ -164,8 +164,8 @@ there yet (see the gap list).
 | --- | --- | --- |
 | C1 Day beasts | Boar, deer and adders; the counts scale with the island's area, so at 120 tiles that is 16 boars, about 20 deer and 12 adders. **The boars here are young** (6 health, 7 a blow, smaller; 2026-10-12) so a wooden club can win | Built (the numbers are Robin's to judge) |
 | C1 Night | One wolf pack a night, fire-shy, glowing red eyes | Built |
-| C2 People | Brokk (the dwarf smith), the first hirdman | Built |
-| C2 The first legendary Viking heard of | Decided to be heard on the home island; Brokk's tale names Ragnar Ironside; the legend system itself is not built | Partly |
+| C2 People | Arnor (the village smith), the first hirdman | Built |
+| C2 The first legendary Viking heard of | Decided to be heard on the home island; Arnor's tale names Ormr Midgardbane; the legend system itself is not built | Partly |
 | C2 Who you are | Robin, 2026-10-12: "kid survives raid then works for revenge". `docs/the-beginning.md` expands it | **Proposal, with questions for Robin** |
 
 ### D. What you make and gain
@@ -183,14 +183,14 @@ there yet (see the gap list).
 | Part | What it is | Status |
 | --- | --- | --- |
 | E1 The raft | Paddled at 54 units a second, drawn from its parts | Built |
-| E1 Leaving | The raft slides out and a banner says you have left; nobody sees you go | Partly (`docs/start-loop.md`: Brokk at the shore) |
+| E1 Leaving | The raft slides out and a banner says you have left; nobody sees you go | Partly (`docs/start-loop.md`: Arnor at the shore) |
 
 ### F. Making and checking it
 
 | Part | What it is | Status |
 | --- | --- | --- |
 | F1 Editors | The Art Editor (models, creatures, objects), the Village Editor, the Sea Editor, the Combat Arena, the game's Admin and Sandbox (the Gathering, Character and Item editors went in the cleanup of 2026-10-09) | Built |
-| F2 Tests | `npm test` covers combat, weapons, gather and ring. **Played from the wreck to the raft by script on 2026-10-12** (`tools/visual/startplay.js`; the first was 2026-10-05): the chain holds after four fixes (a home anywhere on the island counts, young boars, Brokk's raft line, E at a bench just set down) | Built by script; a play by hand, for the feel of it, is Robin's |
+| F2 Tests | `npm test` covers combat, weapons, gather and ring. **Played from the wreck to the raft by script on 2026-10-12** (`tools/visual/startplay.js`; the first was 2026-10-05): the chain holds after four fixes (a home anywhere on the island counts, young boars, Arnor's raft line, E at a bench just set down) | Built by script; a play by hand, for the feel of it, is Robin's |
 
 ### Gap list for Chapter 1 (the work)
 
@@ -203,8 +203,8 @@ there yet (see the gap list).
    Since 2026-10-12 a home there counts as yours.
 4. **The first night as a moment**: the means are built (the ambient sound and the firelight of 2026-10-12) and the rules
    hold (wolves come, the fire sends them off, you heal and wake rested); what is left is the staging.
-5. **Leaving as a scene**: Brokk at the shore (`start-loop.md`, 6).
-6. **The legend**: how a name is heard (Open, idea bank 3; `the-beginning.md` section 5 makes Ragnar the first).
+5. **Leaving as a scene**: Arnor at the shore (`start-loop.md`, 6).
+6. **The legend**: how a name is heard (Open, idea bank 3; `the-beginning.md` section 5 makes Ormr the first).
 7. **Numbers for Robin to judge** (measured 2026-10-12, in CLAUDE.md under "The start played again"): how fast wood comes
    (a pine's 12 wood in 15 s), what a first home costs (44 wood), how many animals the island holds (16 boars, about 20
    deer, 12 adders), and that **death costs nothing** (you rise at the wreck with everything).
@@ -219,7 +219,7 @@ and moose. Its big events are the ones that make you a leader instead of a survi
 building an actual village, the arm ring** (Robin, 2026-10-06). It ends with a boat that can sail somewhere else.
 
 **The measure of power:** the **bronze ring** (two coils: hand and foot), taken from the dead Viking behind the troll's
-lair. Brokk wears bronze. **The chapter's rule:** heavier metal beats you; the troll is heavier than you until you have
+lair. Arnor wears bronze. **The chapter's rule:** heavier metal beats you; the troll is heavier than you until you have
 copper and the ring.
 
 ### A. The place
@@ -238,12 +238,12 @@ copper and the ring.
 | --- | --- | --- |
 | **Copper** | **First as veins in the open cliffs of the mountain** (four, two or three lumps each, 2026-10-12), then veins on the cave walls mined out for good, a little on loose rocks, charcoal from embers, the clamp and finds in the wild, the furnace, copper bars, copper tools and weapons at the workbench | Built |
 | **The troll and the cave** | His young (Hårungen, 2026-10-16) bonk at the ore and leave you be unless struck; he comes for you when they are struck again and again, when three are killed, when he sees you, and by a chance that grows with every ore you mine; he walks out some nights within sight and you can sneak past; his hoard is open while he is out; his walk home at morning; stone at dawn if provoked | Built |
-| **The village** | The claim stone (stone, berries, snake blood), territory on the chart, room for N and food for D days, Brokk joins, muster, jobs yielding into chests | Partly (see gaps) |
-| **The arm ring** | The bronze ring from the dead Viking, the carver's bench (blood rite), thirty runes (2026-10-08) from deeds, ten beasts, stones and Brokk, the Ring tab | Built |
+| **The village** | The claim stone (stone, berries, snake blood), territory on the chart, room for N and food for D days, Arnor joins, muster, jobs yielding into chests | Partly (see gaps) |
+| **The arm ring** | The bronze ring from the dead Viking, the carver's bench (blood rite), thirty runes (2026-10-08) from deeds, ten beasts, stones and Arnor, the Ring tab | Built |
 | **The first real boat** | The Shipyard's boat plan (keel, strakes, thwarts), copper nails, sailing like the Sea Editor | Partly (no mast or sail) |
 
 **The way in:** the raft from Chapter 1, copper tools being the key preparation. **The way on:** a sail. The boat can
-only paddle; the sea beyond the island is where the next chapter begins. A name heard (Ragnar Ironside) and a bigger ship's
+only paddle; the sea beyond the island is where the next chapter begins. A name heard (Ormr Midgardbane) and a bigger ship's
 sail on the horizon are the pointers, neither built.
 
 ### C. The living world
@@ -255,7 +255,7 @@ sail on the horizon are the pointers, neither built.
 | C1 The troll's young | Hårungen: five in the cave, friendly until struck, the rest that see it join in; the troll senses it (2026-10-16) | Built |
 | C1 More väsen | Bysen, huldra, tomtar, näcken, draugr, mara, shapeshifter (`docs/beasts.md`); at least one more for this chapter | Not started, Open: which one next |
 | C1 Night | Wolves and the walking troll | Built |
-| C2 People | The hamlet's folk (two lines each, no trading), Brokk, the ring-holder (the dead Viking) | Built |
+| C2 People | The hamlet's folk (two lines each, no trading), Arnor, the ring-holder (the dead Viking) | Built |
 | C2 The hamlet's leader, a trader, a charcoal burner, people who can be helped and join | Idea |
 
 ### D. What you make and gain
@@ -267,7 +267,7 @@ sail on the horizon are the pointers, neither built.
 | D1 Crafting | Furnace board, copper tools and seven copper weapons, the carver's bench | Built |
 | D1 Trading | The hamlet trades the basics (food, materials) | Not started |
 | D2 Building | Claim stone, the carver's bench, furnace, clamp, chests, stairs and upper floor | Built |
-| D2 The hird at home | Jobs: crafter, woodcutter, cook, keeper; they eat at dawn; Brokk walking to the bench | Partly (Brokk does not yet walk to the bench; idle day, chatter, fighting beside you not built) |
+| D2 The hird at home | Jobs: crafter, woodcutter, cook, keeper; they eat at dawn; Arnor walking to the bench | Partly (Arnor does not yet walk to the bench; idle day, chatter, fighting beside you not built) |
 | D3 Power | Bronze ring, thirty runes (2026-10-08); copper weapons | Built |
 | D3 Currency | The first island trades in the basics | Not started |
 
@@ -289,7 +289,7 @@ sail on the horizon are the pointers, neither built.
 
 ### Gap list for Chapter 2 (the work)
 
-1. **The hird's next steps** (`docs/hird.md`, 2 to 4): Brokk walks to the bench and works, the idle day, chatter,
+1. **The hird's next steps** (`docs/hird.md`, 2 to 4): Arnor walks to the bench and works, the idle day, chatter,
    following on land and fighting beside you.
 2. **Trading at the hamlet**: the basics for goods; a trader; the first currency question (Open: is it silver?).
 3. **A mast and a sail** so the boat leaves the island, and hirdmen at the oars.

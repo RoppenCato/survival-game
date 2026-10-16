@@ -328,7 +328,7 @@ __SPRITES_JS__
     w.plant(); if (w.peaks) w.peaks(); w.camp(); w.sortBuckets(); YSCENE.Y.X = WX + 6000; Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX + 9000, y1: WY - 8 };
     buckets = w.buckets; solidB = w.solidB;
     var isles = w.isles, n = isles.length, skerries = w.stats.skerries, landTiles = w.stats.landTiles;
-    // Brokk the dwarf stands by the hearth at the camp, on the first bit of clear land found there
+    // Arnor stands by the hearth at the camp, on the first bit of clear land found there
     [[-95, 8], [-80, 30], [-60, 0], [-40, -20], [-20, 0]].some(function (q) { if (!isLand(home.x + q[0], home.y + q[1])) return false; npc.x = home.x + q[0]; npc.y = home.y + q[1]; return true; });
     npc.say = ''; npc.line = 0;
 
@@ -348,7 +348,7 @@ __SPRITES_JS__
   function showStat() { stat.textContent = info + ' Sailing that gap at top speed takes about ' + Math.max(1, Math.round(parseFloat((info.match(/island: (\d+) m/) || [0, 0])[1]) / 10 * T / spec.top)) + ' s.'; }
   /* ---------- a friendly dwarf at the camp: he turns to watch you, and E talks to him ---------- */
   var npc = { x: 0, y: 0, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: lib.makeFigure(lib.folkSpec('dwarf')), name: lib.folk.dwarf.name };
-  var LINES = ['Well met, friend! I am Brokk. I keep the fire here.', 'Good oak grows inland. Mind the boar when you fetch it.', 'The ship is sound. Bring her back in one piece.', 'Bring me iron one day and I will make you a proper axe.', 'Fair winds to you.'];
+  var LINES = ['Well met, friend! I am Arnor. I keep the fire here.', 'Good oak grows inland. Mind the boar when you fetch it.', 'The ship is sound. Bring her back in one piece.', 'Bring me iron one day and I will make you a proper axe.', 'Fair winds to you.'];
   function nearNpc(P) { return !aboard && Math.hypot(P.x - npc.x, P.y - npc.y) < 40; }
   function talk() { npc.say = LINES[npc.line % LINES.length]; npc.line++; npc.sayT = 4.5; }
   function drawNpc(c) {

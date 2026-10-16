@@ -43,7 +43,7 @@ Suggestions (Claude):
 Robin: their names need to spread through the world somehow, so you know about them.
 
 Suggestions (Claude):
-- **Skalds and gossip.** Traders, priests and your own members talk about them ("Brokk: they say Ragnhild Red-Sail
+- **Skalds and gossip.** Traders, priests and your own members talk about them ("Arnor: they say Ragnhild Red-Sail
   took three ships to the south coast"). Lines change with what the legend did that year.
 - **Runestones.** Stones raised where they won a battle or lost a friend, readable in the world.
 - **What they leave behind.** A village already burnt when you arrive, with their mark on the gate.
@@ -154,7 +154,7 @@ drop to a lower level; petrified older trolls as ore; nuggets in a cave stream.
   ship that still sails. *(Claude, from Robin's "the more the faster")*
 - **An army turning up at a church.** A horn or church bell is the warning; how fast help comes could depend on
   how close the nearest castle is, so the player can judge the risk from the chart. *(Claude)*
-- **Brokk** could be the first member, and the one who explains members and work at home. *(Claude)*
+- **Arnor** could be the first member, and the one who explains members and work at home. *(Claude)*
 
 ## Weather and biomes: reward, not punishment (Claude, revised 2026-10-04)
 
@@ -231,7 +231,7 @@ the serpent's back touched the sky. Thor fishes with the giant Hymir, baits his 
 rows further out than Hymir dares, and the serpent takes it; Thor hauls so hard his feet go through the boat's bottom to
 the sea floor, the serpent's head comes up blowing venom, Thor glares at it and lifts the hammer, and Hymir in terror cuts
 the line (*Hymiskviða*, *Gylfaginning*, *Húsdrápa*; the picture stones of Altuna, Ardre and Hørdum, and the Gosforth slab,
-show the fishing, Altuna with the feet through the boat). At Ragnarök he lets go of his tail, **the sea surges over the
+show the fishing, Altuna with the feet through the boat). At Ormrök he lets go of his tail, **the sea surges over the
 land**, he comes ashore beside the wolf spraying venom over sky and sea, Thor kills him and walks nine steps before the
 venom kills Thor (*Völuspá*, *Gylfaginning*). The later Norwegian sea serpent, the *sjøorm*, is the same creature come
 down in folk belief: Erik Valkendorf's letter to the Pope (1520), Olaus Magnus (1555: a serpent of the rifts and caves off
@@ -277,7 +277,7 @@ own weather. What the player ever sees is a part of him, never the whole, and he
   grow by sightings: the silhouette of the swell first, the coil, then the head). A **scale** shed where a coil surfaced,
   floating, black and as big as a shield: the one drop, rare, a thing of legend to carry home (a shield of it that no
   arrow pierces; or the proof that makes a legendary Viking's name). The fisherman's hut and the old men of the shore
-  places have lines about him once you have seen the swell, and Brokk has one.
+  places have lines about him once you have seen the swell, and Arnor has one.
 - **Thor's fishing as the far goal (an idea, not a mechanic):** the only way to "fight" him is Thor's: a hook forged for
   it, an ox's head, the longship rowed further out than anyone goes, and the strength to hold the line; the myth ends with
   the line cut, and so could ours (a legendary Viking who held him for a minute). Something for the far west, years in.
@@ -345,7 +345,7 @@ where he is first seen close.
 
 ### How the book could grow (Claude)
 - A page is earned on the first kill (decided). Later pages could also be earned by *meeting* a creature you
-  cannot or should not kill (the ravens, the tomte, the huldra), by reading a runestone, or by Brokk's stories.
+  cannot or should not kill (the ravens, the tomte, the huldra), by reading a runestone, or by Arnor's stories.
 - Facts could fill in by degrees: the silhouette after the first sighting, the name after the first kill, the
   weakness after the third, so the book rewards hunting a thing more than once.
 - Legendary Vikings (idea bank, question 3) could have cards of their own in a second section of the book, with
@@ -428,7 +428,7 @@ hird slot when you have a hird. A grown character has perhaps nine slots and a b
   rare ones far away. The compass rule applies: the north's stones carry cold runes, the south's trading runes.
 - **Beasts.** A beast slain for the first time can drop its rune (the Book of Beasts already marks the first kill):
   Boar's charge, Wolf's hunger, Bear's hide, Moose's shoulder.
-- **People.** Brokk teaches a smith's rune for a favour; traders sell common ones; the first friend in the broken
+- **People.** Arnor teaches a smith's rune for a favour; traders sell common ones; the first friend in the broken
   village gives the first attack rune.
 - **Raids.** Castles and churches keep rare runes in their storehouses; the legendary Vikings carry the best,
   which is a reason to meet them.
@@ -634,7 +634,7 @@ Built as switches (`docs/lighting.md`): the fire's glow and flicker, shadows thr
 that stop light with glowing windows, moths (all on); a moonlit night, mist, sun shafts, cloud shadows (off until Robin has
 looked). Ideas, none decided:
 
-- **The people by the fire:** villagers, Brokk and the hird are drawn in ink each frame and get no dark side or lit rim. A row
+- **The people by the fire:** villagers, Arnor and the hird are drawn in ink each frame and get no dark side or lit rim. A row
   of dark backs with a warm edge round the village fire is the picture that is missing. Either keep each figure's last drawing
   as a shape, or wait until the people are Blender sheets (then it comes free, as for the hero).
 - **Clear nights and overcast ones:** the moon switch as weather of the night: a clear night you can travel in, an overcast one

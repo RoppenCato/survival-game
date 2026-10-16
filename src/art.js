@@ -162,7 +162,7 @@ function figureD(c, x, y, dir, an, pose, F) {
 }
 // People of the world, as changes on top of the hero's spec.
 var FOLK = {
-  dwarf: { name: 'Brokk', set: { scale: 0.8, headW: 1.15, headH: 1.05, bodyW: 1.3, bodyH: 0.85, legL: 0.55, legW: 1.35, armL: 0.95, armW: 1.3, eyeSize: 0.9, blush: 1, beard: 1, hair: 2, clothes: 1, hat: 0, walkRate: 1.7, stance: 1, ring: 1 },
+  dwarf: { name: 'Dwarf', set: { scale: 0.8, headW: 1.15, headH: 1.05, bodyW: 1.3, bodyH: 0.85, legL: 0.55, legW: 1.35, armL: 0.95, armW: 1.3, eyeSize: 0.9, blush: 1, beard: 1, hair: 2, clothes: 1, hat: 0, walkRate: 1.7, stance: 1, ring: 1 },
     col: { skin: '#f0c49c', hair: '#c8743a', coat: '#7d4a3a', vest: '#4f3b2c', pants: '#4a4038', boot: '#3a2a22', trim: '#b9b2a6' } }
 };
 // Concepts for the people of this world (2026-10-06): whole looks, each a set of spec changes and colours on the hero's
