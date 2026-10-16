@@ -2583,7 +2583,7 @@ __COMBAT__
     var w0 = 372, h0 = 236, x0 = 14, y0 = 7, iw = mini.width, ih = mini.height, sc = Math.min((w0 - 16) / iw, (h0 - 26) / ih), mw = iw * sc, mh = ih * sc, mx = x0 + (w0 - mw) / 2, my = y0 + 18, step = Math.max(1, Math.ceil(GW / 700)), P = hero();
     c.fillStyle = 'rgba(10,8,6,0.55)'; c.fillRect(0, 0, 400, 250);
     wood(c, x0, y0, w0, h0);
-    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(inCave ? CAVE_NAME[cur ? cur.kind : 'troll'][2] : 'The sea', x0 + 10, y0 + 12);
+    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(inCave ? CAVE_NAME[cur ? cur.kind : 'troll'][2] : 'Skargard', x0 + 10, y0 + 12);   /* the realm's name (the lore's world.realm, Robin 2026-10-16) */
     c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'right'; c.fillText('M or Esc closes', x0 + w0 - 10, y0 + 12);
     if (inCave && here()) { Cave.drawChart(c, here(), x0 + 8, y0 + 18, w0 - 16, h0 - 26, P); c.strokeStyle = '#2e1a10'; c.lineWidth = 1.2; c.strokeRect(x0 + 8, y0 + 18, w0 - 16, h0 - 26); c.textAlign = 'left'; return; }   // inside, the map is the cave as far as your light has shown it
     c.save(); c.beginPath(); c.rect(mx, my, mw, mh); c.clip(); c.imageSmoothingEnabled = true; c.drawImage(mini, mx, my, mw, mh); c.restore();

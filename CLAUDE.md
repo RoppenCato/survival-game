@@ -56,6 +56,8 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   winter, "controlled randomness": an unclaimed destroyed place is rebuilt stronger by survivors, taken by bandits or
   overgrown, and every island gets generated events (a new settlement with boats and a path, trolls in a new cave, new
   creatures such as Näcken, unraided places growing). **All of the year is for later.**
+- **The realm is Skargard** (Robin, 2026-10-16, through the Lore Director: from *skärgård*, archipelago; a part of Midgard), the
+  map's title. The gods may appear only in the background, never named, never bosses (Robin); Odin forged the dragon ring.
 - **The map:** the compass means something, the details are generated: north colder, south richer and settled ("England in
   the south"), east rivers and trade, west open ocean and the unknown. Distance from home sets how hard a place is,
   direction what kind. An archipelago of big islands and big seas; one island can hold several biomes; each biome is harder
