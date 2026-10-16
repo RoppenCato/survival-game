@@ -237,7 +237,7 @@ copper and the ring.
 | Event | What it is | Status |
 | --- | --- | --- |
 | **Copper** | **First as veins in the open cliffs of the mountain** (four, two or three lumps each, 2026-10-12), then veins on the cave walls mined out for good, a little on loose rocks, charcoal from embers, the clamp and finds in the wild, the furnace, copper bars, copper tools and weapons at the workbench | Built |
-| **The troll and the cave** | Mining is loud; he walks out some nights within sight and you can sneak past; his hoard is open while he is out; his walk home at morning; stone at dawn if provoked | Built |
+| **The troll and the cave** | His young (Hårungen, 2026-10-16) bonk at the ore and leave you be unless struck; he comes for you when they are struck again and again, when three are killed, when he sees you, and by a chance that grows with every ore you mine; he walks out some nights within sight and you can sneak past; his hoard is open while he is out; his walk home at morning; stone at dawn if provoked | Built |
 | **The village** | The claim stone (stone, berries, snake blood), territory on the chart, room for N and food for D days, Brokk joins, muster, jobs yielding into chests | Partly (see gaps) |
 | **The arm ring** | The bronze ring from the dead Viking, the carver's bench (blood rite), thirty runes (2026-10-08) from deeds, ten beasts, stones and Brokk, the Ring tab | Built |
 | **The first real boat** | The Shipyard's boat plan (keel, strakes, thwarts), copper nails, sailing like the Sea Editor | Partly (no mast or sail) |
@@ -252,6 +252,7 @@ sail on the horizon are the pointers, neither built.
 | --- | --- | --- |
 | C1 Day beasts | Boar, deer, bear, moose, wolves, adders, each with its own attack; more of the larger ones here | Built |
 | C1 The troll | Cave troll with the card in the Book | Built |
+| C1 The troll's young | Hårungen: five in the cave, friendly until struck, the rest that see it join in; the troll senses it (2026-10-16) | Built |
 | C1 More väsen | Bysen, huldra, tomtar, näcken, draugr, mara, shapeshifter (`docs/beasts.md`); at least one more for this chapter | Not started, Open: which one next |
 | C1 Night | Wolves and the walking troll | Built |
 | C2 People | The hamlet's folk (two lines each, no trading), Brokk, the ring-holder (the dead Viking) | Built |

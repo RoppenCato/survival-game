@@ -211,7 +211,7 @@ __SFX__
 (function () {
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   // Every beast in this arena wears an animal: the plain attacker is a wolf, boar or snake, the big one is the bear.
-  var lib = GameArt.lib, want = null, BASE_R = { wolf: 7, boar: 8, snake: 5, bear: 9, moose: 7, deer: 6, troll: 5, trollForest: 4.5, trollMaw: 5.5, trollThree: 4.5, draugr: 7, huldra: 7, nacken: 7, bysen: 8 };
+  var lib = GameArt.lib, want = null, BASE_R = { wolf: 7, boar: 8, snake: 5, bear: 9, moose: 7, deer: 6, troll: 5, trollForest: 4.5, trollMaw: 5.5, trollThree: 4.5, draugr: 7, huldra: 7, nacken: 7, bysen: 8, unge: 9 };
   Combat.api.roster = ['beast', 'beast'];
   Combat.api.dress = function (e) {
     if (e.type !== 'beast' && e.type !== 'brute') return;
@@ -229,7 +229,7 @@ __SFX__
   lib.applyStored(localStorage);                            // the hero the editors handed to the game, from one place
   Combat.init(GameArt.lib);
   var SP = __SPRITES__ || {}, ARENA_HERO = Sprites.hero(SP, localStorage), PEOPLE = SP.people ? Sprites.loadLazy(SP, 'people') : null;
-  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, trollForest: { sheet: 'troll_forest', deadFor: 3 }, trollMaw: { sheet: 'troll_maw', deadFor: 3 }, trollThree: { sheet: 'troll_three', deadFor: 3 }, draugr: { deadFor: 3 }, huldra: { deadFor: 3 }, nacken: { deadFor: 3 }, bysen: { deadFor: 3, deathClip: 'hide' } };
+  var ARENA_BEASTS = {}, ARENA_BOPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, unge: { sheet: 'troll_unge', deadFor: 2.5 }, trollForest: { sheet: 'troll_forest', deadFor: 3 }, trollMaw: { sheet: 'troll_maw', deadFor: 3 }, trollThree: { sheet: 'troll_three', deadFor: 3 }, draugr: { deadFor: 3 }, huldra: { deadFor: 3 }, nacken: { deadFor: 3 }, bysen: { deadFor: 3, deathClip: 'hide' } };
   Object.keys(ARENA_BOPT).forEach(function (bk) { var sh = ARENA_BOPT[bk].sheet || bk; if (SP[sh]) ARENA_BEASTS[bk] = Sprites.load(SP, sh); });
   /* The men (2026-10-13): the game's soldiers, drawn from the people's sheets as the game draws them. A man is rolled a look of his
      own (lib.folkSpec), a name, and what the Men panel says he carries and wears; your own wear your red. */
@@ -486,7 +486,7 @@ __SFX__
   for (var ci = 0; ci < clockBtns.length; ci++) clockBtns[ci].addEventListener('click', function (e) { clockK = parseFloat(e.currentTarget.getAttribute('data-k')); for (var i = 0; i < clockBtns.length; i++) clockBtns[i].setAttribute('aria-pressed', clockBtns[i] === e.currentTarget ? 'true' : 'false'); e.currentTarget.blur(); });
 
   /* the beasts */
-  var BEAST_BTNS = [['wolf', 'Wolf', 'beast'], ['boarYoung', 'Young boar', 'beast'], ['boar', 'Boar', 'beast'], ['snake', 'Adder', 'beast'], ['bear', 'Bear', 'brute'], ['moose', 'Moose', 'beast'], ['deer', 'Deer', 'beast'], ['troll', 'Mountain troll', 'beast'], ['trollForest', 'Forest troll', 'beast'], ['trollMaw', 'The Gape', 'beast'], ['trollThree', 'Three-headed troll', 'beast'], ['draugr', 'Draugr', 'beast'], ['huldra', 'Huldra', 'beast'], ['nacken', 'Näcken', 'beast'], ['bysen', 'Bysen', 'beast']];
+  var BEAST_BTNS = [['wolf', 'Wolf', 'beast'], ['boarYoung', 'Young boar', 'beast'], ['boar', 'Boar', 'beast'], ['snake', 'Adder', 'beast'], ['bear', 'Bear', 'brute'], ['moose', 'Moose', 'beast'], ['deer', 'Deer', 'beast'], ['troll', 'Mountain troll', 'beast'], ['unge', 'Troll young (Hårungen)', 'beast'], ['trollForest', 'Forest troll', 'beast'], ['trollMaw', 'The Gape', 'beast'], ['trollThree', 'Three-headed troll', 'beast'], ['draugr', 'Draugr', 'beast'], ['huldra', 'Huldra', 'beast'], ['nacken', 'Näcken', 'beast'], ['bysen', 'Bysen', 'beast']];
   (function () { var host = document.getElementById('beasts'); BEAST_BTNS.forEach(function (q) { var b = document.createElement('button'); b.textContent = q[1]; b.addEventListener('click', function () { want = q[0]; var e = Combat.spawn(q[2]); if (holdAll) e.hold = true; b.blur(); }); host.appendChild(b); });
     [['A pair of wolves', ['wolf', 'wolf']], ['The night\u2019s pack (three wolves)', ['wolf', 'wolf', 'wolf']], ['Two boars', ['boar', 'boar']], ['Three young boars', ['boarYoung', 'boarYoung', 'boarYoung']], ['A boar and a wolf', ['boar', 'wolf']]].forEach(function (g) { var b2 = document.createElement('button'); b2.textContent = g[0]; b2.addEventListener('click', function () { g[1].forEach(function (kk) { want = kk; var e2 = Combat.spawn('beast'); if (holdAll) e2.hold = true; }); b2.blur(); }); host.appendChild(b2); }); })();   /* several at once (2026-10-15, for tuning fights against many) */
 

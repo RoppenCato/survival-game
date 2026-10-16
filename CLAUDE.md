@@ -325,9 +325,16 @@ slows, runs shorter and leaves a blood trail to follow (`SHY`, `api.onBlood`); o
 
 **The troll's cave** (on the big island's mountain; its mouth painted into the cliff): a way through from a daylight tunnel
 past holes in the roof that follow the sun, a pool, a chasm, a gallery of copper veins, to the troll's lair and the dead
-Viking with the bronze ring; a chart of what your light has shown. The troll (the boulder troll's sheets) hears mining, walks
-out on some nights (a fire makes him shield his eyes; caught provoked by daylight he turns to stone), walks home at morning,
-keeps a hoard. The first copper is the veins in the mountain's open cliffs; there is none on the starter island. The old mine
+Viking with the bronze ring; a chart of what your light has shown. The troll (the boulder troll's sheets) walks out on some
+nights (a fire makes him shield his eyes; caught provoked by daylight he turns to stone), walks home at morning, keeps a
+hoard. **His young, Hårungen** (Robin, 2026-10-16; the art studio's sheets `troll_unge`, half the hero's height): five live
+in the cave, waddle to the ore rocks and veins and bonk at them with their bones (it gives nothing), idle about, and shuffle
+off if you come close; friendly unless attacked: one struck turns on you, and so does every other that can see it
+(`ungeAlarm`, `caveSight`). **The troll comes for you** (`trollSeek`) when the young are struck again and again, wherever he
+is (4 blows, one forgotten every 12 s), when three have been killed, when he sees you in his cave (`trollSeesIn`), and as you
+mine: past 3 ores each ore is a chance, 4% more each time (`ungeOre`; he no longer comes at every blow). Hunting, he follows
+the passage toward you, goes straight at you once he can see you, and walks home a while after you leave. A lost young
+comes back each dawn while the troll lives. The numbers are mine (`UNGE`); the boards have "To the troll's young". The first copper is the veins in the mountain's open cliffs; there is none on the starter island. The old mine
 and the sea cave exist on the Mountain test's island only.
 
 **The arm ring and the runes** (`docs/arm-ring.md`, `src/runes.js`): thirty runes, knowledge not items, earned by deeds,
@@ -491,7 +498,7 @@ trial on the editor's board, off (Robin doubted it).
   `art:beasts` (and `art:boar` to `art:snake`), `art:trolls`, `art:vasen`, `art:rocks`, `art:hero:death`.
 - **What is in the game:** the hero (`hero2-mixamo`, with the art studio's face, lit side, weapons and rest grips, the shield
   in three layers with the `block` and `block_walk` clips, the `thrust` clip for the spear), the people (one body with coloured
-  layers, packed as WebP atlases, loaded lazily), the six animals, the boulder troll as the cave troll. The forest troll, the
+  layers, packed as WebP atlases, loaded lazily), the six animals, the boulder troll as the cave troll, Hårungen as his young. The forest troll, the
   Gape, the three-headed troll, the draugr, the huldra, Näcken and the bysen are in the Art Editor only (`docs/beasts.md`).
 - **Traps already met:** hold out by material, not by the object's switch (Freestyle lines showed through bodies); render one
   clip again with `--keep 1` (else the numbers hold that clip alone); a clip that travels gets a frame of its own

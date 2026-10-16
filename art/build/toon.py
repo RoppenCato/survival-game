@@ -143,7 +143,12 @@ def build_nodes(m, style):
         if m.get('face'):             # the painted face laid over the skin before the shading: a decal projected from the front
             bsock = _decal(n, L, base_t)
         col = _mix(n, L, 'MIX', lit, _mix(n, L, 'MIX', dark, bsock, _mix(n, L, 'MULTIPLY', 1.0, bsock, SHADOW_TINT_FIT)), _mix(n, L, 'MIX', 0.16, bsock, LIGHT_TINT))
+        if m.get('wet'):              # 2026-10-14 (the studio; Robin: the draugr should look a little wet): a glossy band where the light is strongest, cool and pale, that dry things do not have
+            gloss = _math(n, L, 'GREATER_THAN', v, 0.88)
+            col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', gloss, 0.38), col, (0.80, 0.92, 0.98))   # a little wet, not glazed
         col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _math(n, L, 'GREATER_THAN', _rim(n, L), 0.55), RIM_K), col, RIM_COL)   # the rim as a hard step, not a gradient (2026-10-09: the soft rim read as gloss)
+        if pattern:                   # 2026-10-14 (the studio): a trim pattern in the cel style too, as a faint darkening (the mail's rings, a woven band)
+            col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _pattern(n, L, pattern), 0.16), col, _mix(n, L, 'MULTIPLY', 1.0, col, (0.55, 0.58, 0.62)))
         col = _grain(n, L, col, GRAIN_K, 320)
         L.new(col, em.inputs['Color'])
     L.new(em.outputs[0], out.inputs['Surface'])
@@ -212,7 +217,7 @@ def _paint_face(name, eyes, expr, size=256, kind='hero'):
         elif expr == 'blink': ellipse(cx, cy, 0.054 * es, 0.009 * es, ink)
         elif expr == 'hurt': ellipse(cx, cy, 0.05 * es, 0.01 * es, ink, rot=sx * 0.5); ellipse(cx, cy, 0.05 * es, 0.01 * es, ink, rot=-sx * 0.5)
         else:
-            rx_, ry_ = (0.058, 0.044) if kind == 'huldra' else (0.056, 0.032) if kind == 'nacken' else (0.056, 0.040)
+            rx_, ry_ = (0.072, 0.052) if kind == 'huldra' else (0.064, 0.034) if kind == 'nacken' else (0.056, 0.040)   # the väsen's heads are near life size, so their eyes are drawn larger in the box
             if eyes == 'oval': ellipse(cx, cy, 0.04 * es, 0.05 * es, ink)
             else: ellipse(cx, cy, rx_ * es, ry_ * es, ink)
             if kind == 'huldra': ellipse(cx + sx * 0.062 * es, cy - 0.014 * es, 0.02 * es, 0.006 * es, ink, rot=-sx * 0.55)   # a lash flicked up at the outer corner
@@ -257,11 +262,12 @@ def face_images(kind='hero'):
     for eyes in ('dot', 'oval', 'highlight'):
         for expr in ('neutral', 'blink', 'angry', 'hurt'): _paint_face('face_%s_%s' % (eyes, expr), eyes, expr, kind=kind)
 
-def material(name, hexs, pattern=None, style='cel', face=False):
+def material(name, hexs, pattern=None, style='cel', face=False, wet=False):
     m = bpy.data.materials.get(name)
     if m: return m
     m = bpy.data.materials.new(name); m['hex'] = hexs; m['pattern'] = pattern or ''
     if face: m['face'] = 1
+    if wet: m['wet'] = 1
     build_nodes(m, style); m.diffuse_color = (*srgb(hexs), 1)
     return m
 

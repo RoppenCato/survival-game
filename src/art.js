@@ -1043,6 +1043,8 @@ var ANIMALS = {
   huldra: { name: 'Huldra', set: { plan: 9, size: 1, speed: 0.7, windup: 1, lunge: 0, hp: 20, aggro: 0, tell: 0 }, col: { body: '#d8442e', belly: '#f6d8be', accent: '#f3dc8c', eye: '#2a2420', glow: '#2a2420', line: '#241e1a', moss: '#86a652' } },
   nacken: { name: 'Nacken', set: { plan: 9, size: 1, speed: 0.7, windup: 1, lunge: 0, hp: 20, aggro: 0, tell: 0 }, col: { body: '#4f8a7a', belly: '#dfe8de', accent: '#3a4a44', eye: '#20302c', glow: '#20302c', line: '#241e1a', moss: '#86a652' } },
   bysen: { name: 'Bysen', set: { plan: 9, size: 0.5, speed: 0.6, windup: 1, lunge: 0, hp: 10, aggro: 0, tell: 0 }, col: { body: '#a8a69c', belly: '#e6e2d6', accent: '#d23c2c', eye: '#201c1a', glow: '#201c1a', line: '#241e1a', moss: '#86a652' } },
+  unge: { name: 'Troll young', set: { plan: 8, size: 0.55, speed: 0.9, windup: 0.6, lunge: 0, hp: 8, aggro: 0, tell: 1, trollHair: 1.2, trollMoss: 0.1, trollAge: 0.8 },   // Hårungen, the cave troll's young (2026-10-16): a Blender model; this drawing shows only until its sheets load
+    col: { body: '#776c60', belly: '#a89c8a', accent: '#5a4a3a', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824', moss: '#86a062' } },
   trollOld: { name: 'Mountain troll (old)', set: { plan: 7, size: 2.05, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.2, trollMoss: 0.7, trollAge: 0.75 },   // the first troll, kept for comparison
     col: { body: '#7a7064', belly: '#9a9082', accent: '#5a4636', eye: '#ffd34d', glow: '#ff8a3a', line: '#2a2824', moss: '#8fa86a' } },
   wolf: { name: 'Wolf', set: { plan: 5, size: 1.05, bodyH: 0.9, legLen: 1.15, legW: 0.85, neck: 0.9, neckUp: 0.45, snout: 1.2, snoutW: 0.8, ears: 1, tail: 3, pattern: 1, paleMuzzle: 1, fangs: 1, brow: 1, eyeSize: 0.85, tell: 0, speed: 1.5, stepRate: 1.4, lunge: 1.4, windup: 0.35, hp: 22, aggro: 220 },
@@ -1058,6 +1060,7 @@ var ATTACKS = {
   trollMaw: { kind: 'lunge', windup: 1.3, dur: 0.5, speed: 300, recover: 1.6, cd: 2.2, heavy: true, turn: 1.6 },   // it sits back, the lid comes up, and it throws itself at you mouth first
   troll: { kind: 'arc', windup: 1.6, dur: 0.6, reach: 62, arc: 3.8, hitAt: 0.45, step: 30, recover: 2.2, cd: 2.6, heavy: true, turn: 1.4 },   // a great slow sweep of the arm, wide as he is
   wolf: { kind: 'lunge', windup: 0.25, dur: 0.2, speed: 320, ring: 70, recover: 0.4, cd: 0.8, pack: true },
+  unge: { kind: 'arc', windup: 0.6, dur: 0.3, reach: 20, arc: 1.8, hitAt: 0.45, step: 40, recover: 0.8, cd: 1.3, turn: 3 },   // Hårungen: he rears back with the bone overhead, shaking, then hops in and brings it down
   moose: { kind: 'arc', windup: 0.7, dur: 0.35, reach: 30, arc: 1.7, hitAt: 0.4, step: 120, recover: 0.9, cd: 1.3, turn: 2.6 },
   bear: { kind: 'arc', windup: 0.9, dur: 0.3, reach: 26, arc: 2.1, hitAt: 0.35, step: 50, recover: 1.0, cd: 1.5, heavy: true }
 };
