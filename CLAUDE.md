@@ -512,12 +512,13 @@ trial on the editor's board, off (Robin doubted it).
   Every studio hit measures as a low thump (centred 59 to 173 Hz, all of it under 250 Hz). Candidates **I to L** (and heavy
   hits I to L) are layered from the CC0 packs in `assets/sfx/free/` (`free.json`, `CREDITS.md`): Kenney's light impact as the
   slap, a thwack, the knife slice or the chop as the crack, a small soft body; measured: attack 6 to 8 ms, centred 1.2 to
-  2 kHz, a quarter to a half of the energy between 1 and 4 kHz, under a fifth below 250 Hz. The Sound Director is asked for
-  its own against the same targets (`out/sfx/hit_v/`). **A hit picked in the arena is every weapon's hit** (`recName`),
+  2 kHz, a quarter to a half of the energy between 1 and 4 kHz, under a fifth below 250 Hz. The Sound Director's **V** (recorded: a finger snap
+  and a snare's crack, a hand on a tabla's skin, a small tom; attack under 4 ms, centred 1.2 to 1.8 kHz) is in the same row. **A hit picked in the arena is every weapon's hit** (`recName`),
   pitched by the weapon (`HIT_RATE`: the seax higher, the Dane axe lower), and **the heavy hit follows the hit's letter**
   unless it is chosen on its own. Robin has not chosen yet; the studio's hit is still the default.
 - **The sound bundle and the music scripts carry `?v=` and a hash of their bytes** (`file_tag` in `tools/build.py`): a browser
-  kept the old bundle. Rebuild after `node tools/sfxjs.js`.
+  kept the old bundle. Rebuild after `node tools/sfxjs.js "C:/dev/SG Sound/out/sfx/combat|C:/dev/SG
+  Sound/out/sfx/hit_v|assets/sfx/robin|assets/sfx/free" combat`.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the
   Escape menu's bar is turned up; there is no mute key (M is the map).
