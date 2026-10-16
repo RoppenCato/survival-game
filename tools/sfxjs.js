@@ -4,8 +4,8 @@
 // 10 ms comes, in seconds, the mean of its variations) is measured here: the game starts a swing so that moment lands on contact.
 // Usage: node tools/sfxjs.js <folder>[|<folder>...] <set> [only,these,names]   (writes assets/sfx/<set>.js)
 // WAV, MP3 or OGG; a WAV's peak is measured here, any other's by src/sfx.js once it is decoded.
-// The game's set: node tools/sfxjs.js "C:\dev\SG Sound\out\sfx\combat|assets/sfx/robin" combat
-// The combat set came from the studio's out/sfx/combat (C:\dev\SG Sound).
+// The game's set: node tools/sfxjs.js "C:\dev\SG\Sound Director\out\sfx\combat|assets/sfx/robin" combat
+// The combat set came from the studio's out/sfx/combat (C:\dev\SG\Sound Director).
 const fs = require('fs'), path = require('path');
 const [dir, set, only] = process.argv.slice(2);
 if (!dir || !set) { console.log('usage: node tools/sfxjs.js <folder> <set> [only,these,names]'); process.exit(1); }

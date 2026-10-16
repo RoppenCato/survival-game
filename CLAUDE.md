@@ -20,8 +20,10 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   little of the systems below: their numbers are first settings, measured by bots, not felt.
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
   so at their top (`start-loop.md`, `the-beginning.md`; `ui-review.md` has a list waiting).
-- **Two other Claude sessions are studios**, reached with SendMessage: the **Art Director** (`C:\dev\SG Art`; models,
-  renders and sheets, dropped in `C:\dev\SG Art\out\`) and the **Sound Director** (`C:\dev\SG Sound`; sound effects and music
+- **One project roof, `C:\dev\SG`** (Robin, 2026-10-16): `Art Director`, `Sound Director` (Robin also says music or
+  sound director) and `Game Developer` (this repo; it was `C:\dev\survival-game`).
+- **Two other Claude sessions are studios**, reached with SendMessage: the **Art Director** (`C:\dev\SG\Art Director`; models,
+  renders and sheets, dropped in `C:\dev\SG\Art Director\out\`) and the **Sound Director** (`C:\dev\SG\Sound Director`; sound effects and music
   in `out/sfx/` and `out/music/`). **Copy a drop as the whole folder** (its numbers move boxes that a list of files leaves
   out). Neither studio nor I can hear: a new sound starts from a reference Robin likes, measured, and Robin chooses by ear in
   the Combat Arena's The sounds panel.
@@ -520,7 +522,7 @@ trial on the editor's board, off (Robin doubted it).
   pitched by the weapon (`HIT_RATE`: the seax higher, the Dane axe lower), and **the heavy hit follows the hit's letter**
   unless it is chosen on its own. Robin has not chosen yet; the studio's hit is still the default.
 - **The sound bundle and the music scripts carry `?v=` and a hash of their bytes** (`file_tag` in `tools/build.py`): a browser
-  kept the old bundle. Rebuild after `node tools/sfxjs.js "C:/dev/SG Sound/out/sfx/combat|C:/dev/SG
+  kept the old bundle. Rebuild after `node tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|C:/dev/SG
   Sound/out/sfx/hit_v|assets/sfx/robin|assets/sfx/free" combat`.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the

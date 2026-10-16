@@ -2,7 +2,7 @@
 // A page opened from file:// (npm start) may not fetch a file beside it, but it may load a <script>: the file's bytes go into
 // window.__MUSIC[name] as base64, and Music.loadTrack decodes them (src/music.js).
 // Usage: node tools/musicjs.js <file.mp3> <name>   (writes assets/music/<name>.js)
-// The meadow by day and by night came from the sound studio: C:\dev\SG Sound\out\music\meadow-day-v3\full.mp3 (name meadow-day)
+// The meadow by day and by night came from the sound studio: C:\dev\SG\Sound Director\out\music\meadow-day-v3\full.mp3 (name meadow-day)
 // and meadow-night-v3\full.mp3 (name meadow-night).
 const fs = require('fs'), path = require('path');
 const [src, name] = process.argv.slice(2);

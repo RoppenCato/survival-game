@@ -10271,7 +10271,7 @@ if (typeof module !== 'undefined') module.exports = Music;
 });
 
 /* Sfx: recorded sound effects (2026-10-15, Robin: "work on the attack sounds; request the sounds you need from the Sound
-   director, then try those new sounds"). The sound studio (C:\dev\SG Sound) renders each sound as a few variations of WAV;
+   director, then try those new sounds"). The sound studio (C:\dev\SG\Sound Director) renders each sound as a few variations of WAV;
    tools/sfxjs.js bundles a delivered folder into one script, assets/sfx/<set>.js, which sets
    window.__SFX[set] = { gain: { name: g }, files: { name_1: base64, ... } }. A script loads from disk as well as from the
    server (a page opened from file:// may not fetch a file beside it).
@@ -12876,7 +12876,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; OPTS.amb = o.amb != null ? o.amb : OPTS.amb; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
   function songOf(id) { return Music.SONGS[id]; }   // the synthesized song, the fallback when a recording cannot load (the Song Editor and its library are gone since 2026-10-16)
-  /* The meadow by day and by night from the sound studio (2026-10-15; C:\dev\SG Sound\out\music\HANDOFF-meadow-day-night.md): two
+  /* The meadow by day and by night from the sound studio (2026-10-15; C:\dev\SG\Sound Director\out\music\HANDOFF-meadow-day-night.md): two
      recorded loops in place of the synthesized meadowDay and meadowEvening, when no song from the Song Editor is chosen in their
      place (a choice there still wins). Each MP3 starts with the encoder's 1105 samples of delay (measured against the studio's
      WAV in Chrome on 2026-10-15: the same offset at the start and the end of both, and the join as smooth as the WAV's), so the
