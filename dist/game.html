@@ -4339,7 +4339,7 @@ var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1
 
 // what can be gathered in the first biome, and how much it takes
 var ROCKV = { rock: 1, rockFormation: 1, boulder: 1, chalkRock: 1 };
-var TREE_SHAPES = { big: [1, 1, 'twice (as now)'], mid: [0.5, 0.5, 'one and a half'], tall: [0.25, 0.8, 'tall and thin'], old: [0, 0, 'as before'] }, treeShape = TREE_SHAPES.big;   // how far toward TREE_BAKE a tree is drawn, across and up (2026-10-16, Robin: "maybe we need smaller trees. Or thinner. It looked much nicer before, although less immersive")
+var TREE_SHAPES = { big: [1, 1, 'twice'], mid: [0.5, 0.5, 'one and a half'], tall: [0.25, 0.8, 'tall and thin'], old: [0, 0, 'as before'] }, treeShape = TREE_SHAPES.old;   /* (Robin, 2026-10-16: "as before" is the default) */   // how far toward TREE_BAKE a tree is drawn, across and up (2026-10-16, Robin: "maybe we need smaller trees. Or thinner. It looked much nicer before, although less immersive")
 function treeBake(name) { var tb = TREE_BAKE[name] || 1; return { sx: 1 + (tb - 1) * treeShape[0], sy: 1 + (tb - 1) * treeShape[1] }; }
 var TREE_BAKE = { oak: 2, pine: 2, birch: 2, beech: 2, ash: 2, apple: 1.7, struckTree: 2, dwarfBirch: 1.2 };   // twice (Robin, 2026-10-15: "maybe twice the size is better than 3x"; the 3x of 2026-10-14 never showed, see trimSprite)   // how much bigger each tree is baked than its prop (2026-10-14)
 var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };
@@ -6912,7 +6912,7 @@ function drawFlame(c, x, y, s, t, seed) {
 // a fence along the top of tile (x, y): posts with woven wattle between; a gate: a bar frame that swings open as you come near;
 // a palisade: a row of pointed logs; a rail fence; a dry-stone wall
 function drawFenceH(c, x, y, e, open, C) {
-  var m = WALLS[e.m] || WALLS[2], x0 = x * T, yb = y * TS, i, seed = x * 31 + y * 7;
+  var m = e.burnt || e.scorch ? wallMat(e) : (WALLS[e.m] || WALLS[2]), x0 = x * T, yb = y * TS, i, seed = x * 31 + y * 7;
   if (e.breach) {                         // it has given: stumps of its posts, and the rest on the ground
     var bm = e.t === 'drystone' ? WALLS[3] : wallMat(e), bh = e.t === 'palisade' ? PALISADE_H : FENCE_H;
     if (e.t === 'palisade') { c.save(); c.translate(x0, yb - bh); remains(c, { name: bm.name, tex: 'logs', face: bm.face, top: bm.top, dark: bm.dark }, T, bh, seed, !!e.burnt); c.restore(); }
@@ -6955,7 +6955,7 @@ function drawFenceH(c, x, y, e, open, C) {
   post(c, x0 + 1.5, yb, 3, h + 2, m, seed); post(c, x0 + T / 2, yb, 3, h + 2, m, seed + 1); post(c, x0 + T - 1.5, yb, 3, h + 2, m, seed + 2);
 }
 function drawFenceV(c, x, y, e, open, more, C) {
-  var m = WALLS[e.m] || WALLS[2], xl = x * T, yt = y * TS, i, seed = x * 17 + y * 29;
+  var m = e.burnt || e.scorch ? wallMat(e) : (WALLS[e.m] || WALLS[2]), xl = x * T, yt = y * TS, i, seed = x * 17 + y * 29;
   if (e.breach) {
     var bm = e.t === 'drystone' ? WALLS[3] : wallMat(e), bh = e.t === 'palisade' ? PALISADE_H : FENCE_H;
     ink(c, [[xl - 1.5, yt + 2], [xl - 1.2, yt + 2 - bh * 0.5], [xl + 1.4, yt + 2 - bh * 0.4], [xl + 1.5, yt + 2]], bm.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 });
@@ -7057,12 +7057,18 @@ function drawV(c, x, y, e, open, more, C, side) {
 // posts a tile apart where no wall stands between them, so a frame reads as a frame before the walls fill it in.
 function drawPost(c, x, y, p, C) {
   C = C || CFG; var m = WALLS[p.m] || WALLS[0], w = C.thick + 1.5, h = C.wallH + C.thick * K + 4, px = x * T, py = y * TS, seed = x * 7 + y * 19;
+  if (p.burnt) {                          // charred (2026-10-16, the burnt steading): black, a split or two, its top burnt ragged; snapped short where p.snap says
+    var hb = h * (p.snap || 1), j1 = hs(seed + 3, 1) * 3, j2 = hs(seed + 3, 2) * 4;
+    ink(c, [[px - w / 2, py], [px - w / 2 + 0.3, py - hb + j1], [px - w * 0.1, py - hb - 1.5], [px + w * 0.2, py - hb + j2], [px + w / 2 - 0.3, py - hb + 1.2], [px + w / 2, py]], mix(m.dark, CHAR, 0.75), { wob: 0.5, seed: seed, lw: 0.8, heavy: 1.6 });
+    stroke(c, [[px - 0.6, py - 3], [px - 0.8, py - hb + 5]], 'rgba(150,140,128,0.35)', 0.6); stroke(c, [[px + 1.4, py - hb * 0.3], [px + 1.6, py - hb * 0.62], [px + 0.9, py - hb * 0.7]], 'rgba(0,0,0,0.5)', 0.6);
+    return;
+  }
   ink(c, [[px - w / 2, py], [px - w / 2 + 0.3, py - h], [px + w / 2 - 0.3, py - h], [px + w / 2, py]], m.dark, { wob: 0.5, seed: seed, lw: 0.8, heavy: 1.6 });
   stroke(c, [[px - 0.6, py - 3], [px - 0.8, py - h + 4]], INK.faint, 0.6); stroke(c, [[px + 1.2, py - 6], [px + 1.4, py - h + 10]], INK.faint, 0.5);
   ink(c, rect(px - w / 2 - 1, py - h - 2.5, w + 2, 3), m.top, { wob: 0.4, seed: seed + 1, lw: 0.7, heavy: 1.2 });
 }
 function drawBeam(c, x, y, horiz, p, C) {
-  C = C || CFG; var m = WALLS[p.m] || WALLS[0], top = y * TS - C.wallH - C.thick * K - 1, seed = x * 5 + y * 23;
+  if (p.burnt) return; C = C || CFG; var m = WALLS[p.m] || WALLS[0], top = y * TS - C.wallH - C.thick * K - 1, seed = x * 5 + y * 23;
   if (horiz) { ink(c, rect(x * T + 2, top, T - 4, 3.2), m.top, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.2 }); stroke(c, [[x * T + 4, top + 1.6], [x * T + T - 4, top + 1.4]], INK.faint, 0.5); }
   else { ink(c, rect(x * T - 1.6, top, 3.2, TS), m.top, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.2 }); stroke(c, [[x * T, top + 2], [x * T + 0.2, top + TS - 2]], INK.faint, 0.5); }
 }
@@ -13045,9 +13051,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // mover to it, so it never changes; the walk test keeps the hero on the floor he is on
   function worldBounds() { return { x0: 8, y0: 12, x1: WX + 12000, y1: WY - 8 }; }
   function buildWorld() {
-    try { World.setTreeShape(localStorage.getItem('game.trees') || 'big'); } catch (eT) {}   /* the trees' size (Admin: Trees) */
+    try { World.setTreeShape(localStorage.getItem('game.trees') || 'old'); } catch (eT) {}   /* the trees' size (Admin: Trees) */
     w = World.make(kit, spec); w.meadowLook = grassLook;
-    w.noGrass = function (tx, ty) { var f = B.floors[tx + ',' + ty]; return f != null && f !== 4 && f !== 5 && f !== 6; };   // no grass grows through a laid floor (planks, earth, flags, a dock; the grass and moss floors are grass). It did, in every house: seen in the big halls of 2026-10-13
+    w.noGrass = function (tx, ty) { var f = B.floors[tx + ',' + ty], ru = B.ruin && B.ruin[tx + ',' + ty]; return (f != null && f !== 4 && f !== 5 && f !== 6) || !!(ru && ru.k === 'burnt'); };   // no grass grows through a laid floor, nor in the ash of a burnt room (2026-10-16) (planks, earth, flags, a dock; the grass and moss floors are grass). It did, in every house: seen in the big halls of 2026-10-13
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); if (w.peaks) w.peaks(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
@@ -13245,6 +13251,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function comfortOf(ri, L) {
     var R = RI(L || 0); L = L || 0;
     if (ri < 0 || !R || !R.rooms[ri]) return { n: 0, has: {} };
+    if (!L && B.ruin && Ruin.ruined(B, R.rooms[ri])) return { n: 0, has: {} };   /* (its roof is down: 2026-10-16) */
     var has = {}, furn = 0;
     B.items.forEach(function (it) { if ((it.lvl || 0) !== L || R.at(Math.floor(it.x / T), Math.floor(it.y / T)) !== ri) return; if (isHearth(it)) has.hearth = 1; else if (it.bench) has.bench = 1; else if (it.bed) has.bed = 1; else if (it.name === 'rug') has.rug = 1; else if (FURN[it.name]) furn++; });
     has.furn = Math.min(2, furn);
@@ -14148,7 +14155,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
     w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20 && o.name !== 'rubble') list.push(o); });
     list.forEach(function (o) { w.removeProp(o); });
     var R = kit.rng(spec.seed * 17 + 3), i;
-    for (i = 0; i < 8; i++) { var rx = x0 + (1.5 + R() * 9) * T, ry = y0 + (1.5 + R() * 3.6) * T; w.addProp({ name: 'rubble', x: rx, y: ry, s: 0.8 + R() * 0.4, r: 0, v: 0 }); }
     w.sortBuckets();
     var wx = x0 + 12 * T, wy = y0 + 10.5 * T;   // Arnor starts by the well and goes about the ruin
     var asp = lib.folkSpec('villager', kit.rng(spec.seed * 41 + 9)); asp.beard = 1; asp.hat = 0; asp.clothes = 1; asp.col.hair = '#4a3428'; asp.col.coat = '#5d4a3a';   /* an ordinary man, the smith (the lore: not a dwarf) */
@@ -14181,7 +14187,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     /* The steading at a house's size (2026-10-13, Robin: the houses were way too small, they did not feel like houses): the
        burnt hall is 10 by 5 inside (15 m by 7.5: a farm's longhouse), the hut that still stands and the plank house by the
        well 6 by 4 (9 m by 6). It was 6 by 4 and 4 by 3 on a site of 14 by 12. */
-    house(vx + 1, vy + 1, 10, 5, 0, 0, vx + 5, 9);         // the burnt hall: logs, planks, nine gaps
+    house(vx + 1, vy + 1, 10, 5, 0, 0, vx + 5, 0);         // the burnt hall: logs, planks (its ruin is laid over it below)
     item('stoneHearth', vx + 5, vy + 3);
     house(vx + 14, vy + 1, 6, 4, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
     item('table', vx + 14.6, vy + 1.2); item('crate', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });
@@ -14206,7 +14212,26 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (x = vx; x < vx + 8; x++) if (B.H[k(x, vy + village.h)]) B.H[k(x, vy + village.h)] = { t: 'rail', m: 1 };
     for (y = vy + 8; y < vy + 14; y++) if (R() < 0.8) V(vx + 21, y, 'drystone', 3);
     item('trough', vx + 5, vy + 11.4); item('flowerBed', vx + 14.9, vy + 5.2); item('scarecrow', vx + 1.5, vy + 10.5);
+    /* The makeover (2026-10-16, Robin: "do a makeover on the broken down village... we have more tools for that now that you made
+       the destruction editor"): the ruin drawn with the destruction states instead of walls simply missing. The hall: every log
+       blackened, about a third burnt through to charred stumps (a way in), a third charred but standing, the rest scorched or
+       hacked; its door burnt open; its roof burnt down onto the floor (B.ruin: charred beams and ash, drawn by build.js). The
+       plank house keeps its five gaps for you to mend, the axe marks of the raid on what stands and the fire's soot on its north
+       side; the hut that still stands is scorched on the side toward the hall; the palisade's gaps are charred stumps, its gate
+       broken open; the fence is broken in places; the ground round the hall burnt to earth; a few things tipped over. */
+    var ruinEdges = function (x0, y0, w0, h0, fn) { var ex, ey; for (ex = x0; ex < x0 + w0; ex++) { fn(B.H[k(ex, y0)], 'n'); fn(B.H[k(ex, y0 + h0)], 's'); } for (ey = y0; ey < y0 + h0; ey++) { fn(B.V[k(x0, ey)], 'w'); fn(B.V[k(x0 + w0, ey)], 'e'); } };
+    ruinEdges(vx + 1, vy + 1, 10, 5, function (e) { if (!e) return; if (e.t === 'door') { e.broken = 1; e.breach = 1; e.burnt = 1; return; } var r = R(); if (r < 0.6) { e.breach = 1; e.burnt = 1; } else if (r < 0.88) e.burnt = 1; else { e.scorch = 1; if (R() < 0.5) { e.st = 1; e.dmg = 4; } } });
+    B.ruin = B.ruin || {}; for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) { B.ruin[x + ',' + y] = { k: 'burnt', m: 0, hot: 0 }; delete B.floors[k(x, y)]; w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 21 + R() * 6, 2); }   /* its floor burnt away to earth under the ash */
+    ruinEdges(vx + 14, vy + 9, 6, 4, function (e, side) { if (!e || e.t === 'door') return; if (side === 'n' && R() < 0.7) e.scorch = 1; else if (R() < 0.4) { e.st = R() < 0.3 ? 2 : 1; e.dmg = 3; } });
+    ruinEdges(vx + 14, vy + 1, 6, 4, function (e, side) { if (!e) return; if (side === 'w') e.scorch = 1; else if (side === 'n' && R() < 0.3) { e.st = 1; e.dmg = 2; } });
+    for (x = vx; x < vx + village.w; x++) { var pe = B.H[k(x, vy)]; if (x === vx + 11) continue; if (!pe) { B.H[k(x, vy)] = { t: 'palisade', m: 0, breach: 1, burnt: 1 }; } else if (x <= vx + 12 && R() < 0.5) pe.scorch = 1; }
+    for (y = vy; y < vy + village.h; y++) { if (!B.V[k(vx, y)]) B.V[k(vx, y)] = { t: 'palisade', m: 0, breach: 1, burnt: R() < 0.7 ? 1 : 0 }; else if (y < vy + 7 && R() < 0.5) B.V[k(vx, y)].scorch = 1; }
+    var gte = B.H[k(vx + 11, vy)]; if (gte) { gte.broken = 1; gte.scorch = 1; }
+    for (x = vx; x < vx + 8; x++) { var fe = B.H[k(x, vy + village.h)]; if (fe && R() < 0.3) fe.breach = 1; }
+    for (var ag = 0; ag < 16; ag++) w.paintGround((vx + 0.6 + R() * 10.8) * T, (vy + (ag % 2 ? 0.6 : 6.5) + (R() - 0.5) * 0.9) * T, 9 + R() * 9, 2);   // the ground round the hall, burnt to earth
+    B.items.forEach(function (it) { if ((it.name === 'shieldRack' || it.name === 'cart' || it.name === 'dragonPost') && R() < 0.7) it.fallen = 1; });   // tipped over in the raid
     B.roofs = {}; bDirty = true; Build.ensurePosts(B);
+    for (y = vy + 1; y <= vy + 6; y++) for (x = vx + 1; x <= vx + 11; x++) { var po = B.posts[k(x, y)]; if (!po) continue; var held = [B.H[k(x, y)], B.H[k(x - 1, y)], B.V[k(x, y)], B.V[k(x, y - 1)]].some(function (e) { return e && !e.breach; }); po.burnt = 1; if (!held && R() < 0.75) po.snap = 0.3 + R() * 0.45; }   // the hall's posts charred, snapped short where no wall stands against them
     roofLater = { tx: vx + 14, ty: vy + 1, m: 1 };          // the hut's thatch is set once the rooms are known
   }
   var roofLater = null;
@@ -15643,6 +15668,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var rk = rackUsable(P); if (rk) add(rk, rackCured(rk) ? 'Collect leather' : 'Hang hide', function () { rackUse(rk); });
     var bb = berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });
     var gb = !bb && grassNear(P); if (gb) add(gb, 'Pull grass', function () { pullGrass(gb); });
+    var kb = kickable(P); if (kb) add(kb, 'Kick it open', function () { kickBox(kb); });
     if (!C.length) return null;
     C.sort(function (a, b) { return a.sc - b.sc; });
     return C[0];
@@ -15964,7 +15990,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'shieldRaised', name: 'Shield only when raised', text: 'The shield is on the arm whenever the weapon is out. With this on it shows only while K holds it up, as the drawn hero\u2019s did.', toggle: true },
     { id: 'oldSfx', name: 'The old fight sounds', text: 'Swings, hits, blocks and parries as the synthesized sounds they were, in place of the studio’s recordings (assets/sfx/combat.js), to compare the two.', toggle: true },
     { id: 'fps', name: 'Show frame time', text: 'Frames a second, milliseconds and the frame\u2019s parts, bottom left. The frame log is kept whether this shows or not.', toggle: true },
-    { id: 'trees', get name() { var k = 'big'; try { k = localStorage.getItem('game.trees') || 'big'; } catch (eT) {} return 'Trees: ' + ((World.TREE_SHAPES[k] || World.TREE_SHAPES.big)[2]); }, text: 'How big the trees are drawn: twice their old size as now, one and a half, tall and thin, or as before. The page reloads.' },
+    { id: 'trees', get name() { var k = 'old'; try { k = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} return 'Trees: ' + ((World.TREE_SHAPES[k] || World.TREE_SHAPES.old)[2]); }, text: 'How big the trees are drawn: as before (the default), twice their old size, one and a half, or tall and thin. The page reloads.' },
     { id: 'triple', name: 'Threefold drops', text: 'For testing: trees, rocks, bushes, berries, beasts, the weir and the veins give three times as much.', toggle: true },
     { id: 'errlog', name: 'Download the error log', text: 'Saves errorlog.txt: every error the page caught, with the time, the day and what was happening. Put it in the project folder.' },
     { id: 'stuff', name: 'Plenty of everything', text: '25 of every material into the bag.' },
@@ -16016,7 +16042,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function adminAct(id) {
     var P = hero(), row = ADMIN_ROWS.filter(function (r) { return r.id === id; })[0];
     if (id === 'back') { adminOpen = false; return; }
-    if (id === 'trees') { var tk = ['big', 'mid', 'tall', 'old'], cur0 = 'big'; try { cur0 = localStorage.getItem('game.trees') || 'big'; } catch (eT) {} var nx = tk[(tk.indexOf(cur0) + 1) % tk.length]; try { localStorage.setItem('game.trees', nx); save(); } catch (eT) {} location.reload(); return; }
+    if (id === 'trees') { var tk = ['old', 'big', 'mid', 'tall'], cur0 = 'old'; try { cur0 = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} var nx = tk[(tk.indexOf(cur0) + 1) % tk.length]; try { localStorage.setItem('game.trees', nx); save(); } catch (eT) {} location.reload(); return; }
     if (id === 'lab') { labOpen = true; return; }
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'fullres') fitCanvas(); return; }
     if (id === 'perflog') { perfDownload(); return; }
@@ -16372,6 +16398,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // Crates, barrels and chests break under a tool (the axe is the right one): what was inside falls out, and a little wood.
   var BREAK = { crate: 3, barrel: 3, chest: 6 }, hvMap = new WeakMap();
   function hvOf(it) { var h = hvMap.get(it); if (!h) { h = { x: it.x, y: it.y, r: it.r || 7, kind: 'tree', box: it, hp: BREAK[it.name], max: BREAK[it.name], name: it.name, v: 0, s: 1 }; hvMap.set(it, h); } return h; }
+  function kickable(P) {                   // a crate or a barrel with something in it, or somebody else's, within reach (your own empty ones are furniture)
+    var best = null, bd = 34;
+    B.items.forEach(function (it) { if ((it.name !== 'crate' && it.name !== 'barrel') || it.fallen || (it.lvl || 0) !== (P.lvl || 0)) return; var full = it.loot || it.thing || (it.store && it.store.some(Boolean)); if (!full && villageAt(it.x, it.y) < 0) return; var d = Math.hypot(it.x - P.x, it.y - P.y); if (d < bd && canReach(P, it)) { bd = d; best = it; } });
+    return best;
+  }
+  var kicking = null;
+  function kickBox(it) { var P = hero(); if (kicking || P.dead) return; kicking = { it: it, t: 0 }; P.face = Math.atan2(it.y - P.y, it.x - P.x); try { Sprites.play(sprHero, 'interact'); } catch (eK) {} }
+  function kickTick(dt) { if (!kicking) return; kicking.t += dt; if (kicking.t < 0.3) return; var it = kicking.it; kicking = null; if (B.items.indexOf(it) < 0) return; var vi = villageAt(it.x, it.y); sfx('chop'); breakBox(it); if (vi >= 0) raidAlarm(vi, it.x, it.y); }   /* (a box kicked open in somebody's village is heard as an axe's would be) */
   function breakBox(it) {
     var i = B.items.indexOf(it), q; if (i < 0) return; B.items.splice(i, 1); if (store === it) store = null;
     chip(it.x, it.y, 8, '#b98a5a', 10, 90); sfx('fall');
@@ -18719,7 +18753,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); kickTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

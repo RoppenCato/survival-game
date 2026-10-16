@@ -4484,7 +4484,7 @@ var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1
 
 // what can be gathered in the first biome, and how much it takes
 var ROCKV = { rock: 1, rockFormation: 1, boulder: 1, chalkRock: 1 };
-var TREE_SHAPES = { big: [1, 1, 'twice (as now)'], mid: [0.5, 0.5, 'one and a half'], tall: [0.25, 0.8, 'tall and thin'], old: [0, 0, 'as before'] }, treeShape = TREE_SHAPES.big;   // how far toward TREE_BAKE a tree is drawn, across and up (2026-10-16, Robin: "maybe we need smaller trees. Or thinner. It looked much nicer before, although less immersive")
+var TREE_SHAPES = { big: [1, 1, 'twice'], mid: [0.5, 0.5, 'one and a half'], tall: [0.25, 0.8, 'tall and thin'], old: [0, 0, 'as before'] }, treeShape = TREE_SHAPES.old;   /* (Robin, 2026-10-16: "as before" is the default) */   // how far toward TREE_BAKE a tree is drawn, across and up (2026-10-16, Robin: "maybe we need smaller trees. Or thinner. It looked much nicer before, although less immersive")
 function treeBake(name) { var tb = TREE_BAKE[name] || 1; return { sx: 1 + (tb - 1) * treeShape[0], sy: 1 + (tb - 1) * treeShape[1] }; }
 var TREE_BAKE = { oak: 2, pine: 2, birch: 2, beech: 2, ash: 2, apple: 1.7, struckTree: 2, dwarfBirch: 1.2 };   // twice (Robin, 2026-10-15: "maybe twice the size is better than 3x"; the 3x of 2026-10-14 never showed, see trimSprite)   // how much bigger each tree is baked than its prop (2026-10-14)
 var KIND = { dwarfBirch: 'tree', juniper: 'bush', heather: 'bush', boulder: 'stone', birch: 'tree', pine: 'tree', oak: 'tree', beech: 'tree', ash: 'tree', apple: 'tree', struckTree: 'tree', rock: 'stone', rockFormation: 'stone', chalkRock: 'stone', bogIron: 'stone', bush: 'bush', berryBush: 'bush', wildHerbs: 'bush', tallGrass: 'bush', hedge: 'bush' };

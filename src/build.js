@@ -298,7 +298,7 @@ function drawFlame(c, x, y, s, t, seed) {
 // a fence along the top of tile (x, y): posts with woven wattle between; a gate: a bar frame that swings open as you come near;
 // a palisade: a row of pointed logs; a rail fence; a dry-stone wall
 function drawFenceH(c, x, y, e, open, C) {
-  var m = WALLS[e.m] || WALLS[2], x0 = x * T, yb = y * TS, i, seed = x * 31 + y * 7;
+  var m = e.burnt || e.scorch ? wallMat(e) : (WALLS[e.m] || WALLS[2]), x0 = x * T, yb = y * TS, i, seed = x * 31 + y * 7;
   if (e.breach) {                         // it has given: stumps of its posts, and the rest on the ground
     var bm = e.t === 'drystone' ? WALLS[3] : wallMat(e), bh = e.t === 'palisade' ? PALISADE_H : FENCE_H;
     if (e.t === 'palisade') { c.save(); c.translate(x0, yb - bh); remains(c, { name: bm.name, tex: 'logs', face: bm.face, top: bm.top, dark: bm.dark }, T, bh, seed, !!e.burnt); c.restore(); }
@@ -341,7 +341,7 @@ function drawFenceH(c, x, y, e, open, C) {
   post(c, x0 + 1.5, yb, 3, h + 2, m, seed); post(c, x0 + T / 2, yb, 3, h + 2, m, seed + 1); post(c, x0 + T - 1.5, yb, 3, h + 2, m, seed + 2);
 }
 function drawFenceV(c, x, y, e, open, more, C) {
-  var m = WALLS[e.m] || WALLS[2], xl = x * T, yt = y * TS, i, seed = x * 17 + y * 29;
+  var m = e.burnt || e.scorch ? wallMat(e) : (WALLS[e.m] || WALLS[2]), xl = x * T, yt = y * TS, i, seed = x * 17 + y * 29;
   if (e.breach) {
     var bm = e.t === 'drystone' ? WALLS[3] : wallMat(e), bh = e.t === 'palisade' ? PALISADE_H : FENCE_H;
     ink(c, [[xl - 1.5, yt + 2], [xl - 1.2, yt + 2 - bh * 0.5], [xl + 1.4, yt + 2 - bh * 0.4], [xl + 1.5, yt + 2]], bm.dark, { wob: 0.4, seed: seed, lw: 0.6, heavy: 1.1 });
@@ -443,12 +443,18 @@ function drawV(c, x, y, e, open, more, C, side) {
 // posts a tile apart where no wall stands between them, so a frame reads as a frame before the walls fill it in.
 function drawPost(c, x, y, p, C) {
   C = C || CFG; var m = WALLS[p.m] || WALLS[0], w = C.thick + 1.5, h = C.wallH + C.thick * K + 4, px = x * T, py = y * TS, seed = x * 7 + y * 19;
+  if (p.burnt) {                          // charred (2026-10-16, the burnt steading): black, a split or two, its top burnt ragged; snapped short where p.snap says
+    var hb = h * (p.snap || 1), j1 = hs(seed + 3, 1) * 3, j2 = hs(seed + 3, 2) * 4;
+    ink(c, [[px - w / 2, py], [px - w / 2 + 0.3, py - hb + j1], [px - w * 0.1, py - hb - 1.5], [px + w * 0.2, py - hb + j2], [px + w / 2 - 0.3, py - hb + 1.2], [px + w / 2, py]], mix(m.dark, CHAR, 0.75), { wob: 0.5, seed: seed, lw: 0.8, heavy: 1.6 });
+    stroke(c, [[px - 0.6, py - 3], [px - 0.8, py - hb + 5]], 'rgba(150,140,128,0.35)', 0.6); stroke(c, [[px + 1.4, py - hb * 0.3], [px + 1.6, py - hb * 0.62], [px + 0.9, py - hb * 0.7]], 'rgba(0,0,0,0.5)', 0.6);
+    return;
+  }
   ink(c, [[px - w / 2, py], [px - w / 2 + 0.3, py - h], [px + w / 2 - 0.3, py - h], [px + w / 2, py]], m.dark, { wob: 0.5, seed: seed, lw: 0.8, heavy: 1.6 });
   stroke(c, [[px - 0.6, py - 3], [px - 0.8, py - h + 4]], INK.faint, 0.6); stroke(c, [[px + 1.2, py - 6], [px + 1.4, py - h + 10]], INK.faint, 0.5);
   ink(c, rect(px - w / 2 - 1, py - h - 2.5, w + 2, 3), m.top, { wob: 0.4, seed: seed + 1, lw: 0.7, heavy: 1.2 });
 }
 function drawBeam(c, x, y, horiz, p, C) {
-  C = C || CFG; var m = WALLS[p.m] || WALLS[0], top = y * TS - C.wallH - C.thick * K - 1, seed = x * 5 + y * 23;
+  if (p.burnt) return; C = C || CFG; var m = WALLS[p.m] || WALLS[0], top = y * TS - C.wallH - C.thick * K - 1, seed = x * 5 + y * 23;
   if (horiz) { ink(c, rect(x * T + 2, top, T - 4, 3.2), m.top, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.2 }); stroke(c, [[x * T + 4, top + 1.6], [x * T + T - 4, top + 1.4]], INK.faint, 0.5); }
   else { ink(c, rect(x * T - 1.6, top, 3.2, TS), m.top, { wob: 0.4, seed: seed, lw: 0.7, heavy: 1.2 }); stroke(c, [[x * T, top + 2], [x * T + 0.2, top + TS - 2]], INK.faint, 0.5); }
 }

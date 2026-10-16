@@ -263,7 +263,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   hand gathers (the engine's gather mode, `GATHER_KINDS`); anything else, or empty hands, fights (the knife is a weapon, Robin). A one-handed weapon
   taken in hand wears a shield from the bag. Q is no key of the game's.
 - **X**: draw your weapon or put it away (among other people it is away until drawn; a drawn blade is a threat).
-- **E**: use what you face (one rule, `eWhat`). **G**: your men: tap "with me", hold "hold here"; "storm" before a place,
+- **E**: use what you face (one rule, `eWhat`; a crate or barrel with something in it, or somebody else's, is kicked open). **G**: your men: tap "with me", hold "hold here"; "storm" before a place,
   "have it carried" by a broken chest.
 - **Tab**: the one screen: your panel top left, the bag under it, what you can make where you stand on the right. **B**:
   build (after Arnor's word); right click opens the Building board; **F** the wreck cursor. **T**: the torch. **M**: the
@@ -277,9 +277,14 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 island's beach. E pries four planks from the wreck (12 wood); four
 branches and nine stones lie about; three lone trees stand near. Key reminders, in order: "E at the wreck", "Walk over the
 things lying about", "Tab", then "1 to 6". Trail stones lead toward the steading 1500 to 2400 units off (`layCairns`); a fish
-weir's net on a beach gives 4 fiber. **The burnt steading** (Thorgunna's), burnt by Ormr Midgardbane's crew: a burnt hall, a whole wattle
-hut, a plank house by the well missing five walls and its roof (mend it and it is your first home: its bed answers only with
-a roof over it), a palisade with gaps, crates to break with the axe, the graves behind the hall (E reads Thorgunna's stone),
+weir's net on a beach gives 4 fiber. **The burnt steading** (Thorgunna's), burnt by Ormr Midgardbane's crew, drawn with the
+destruction states (made over 2026-10-16, Robin: "you can make it look much better"; the choices are mine): the hall burnt
+out (most of its walls charred stumps, the rest charred or scorched, its door gone, its roof down as ash and charred beams
+(`B.ruin`), its floor earth where no grass grows, its posts charred and snapped short where no wall holds them), a whole
+wattle hut scorched on the side toward the hall, a plank house by the well missing five walls and its roof, axe-marked and
+sooty (mend it and it is your first home: its bed answers only with a roof over it), a palisade whose gaps are charred stumps
+and a gate broken open, the ground round the hall burnt to earth, a cart, rack and post tipped over, crates and barrels that
+**E kicks open** (`kickable`, `kickBox`: a short kick, then the box breaks as to the axe), the graves behind the hall (E reads Thorgunna's stone),
 and a campfire by the well. **Arnor** (`npc`; `arnorState`: meet, wait, teach, taught) goes about the ruin
 scavenging and hammering at what can be mended (`arnorWork`, his spots `npc.work`, every walk by the yard), and stops to
 watch you when you come near; his story's last line opens building; while you build he names what your home lacks; at
@@ -295,13 +300,14 @@ board holds the plank house's pieces and the workbench until the first night sle
 (key `slept`).
 
 **Gathering** (`src/gather.js`, through `Combat.api.harvest`): a tree's first blow cuts a notch, blows from the other side are
-the back cut and fell it toward the notch; it falls as a trunk (four logs, eight blows, struck anywhere along it) and fells
-and chips (never fells) up to three trees in its line (`fallBite`, Robin); a rock cracks; **berries and grass are picked by hand
+the back cut and fell it toward the notch; it falls as a trunk (four logs, eight blows, struck anywhere along it) and
+chips (never fells) up to three trees in its line (`fallBite`, Robin); a rock cracks; **berries and grass are picked by hand
 with E** and pop out (a bush or tuft regrows in six minutes; no tool takes a bush; Robin), and now and then a tree's wood
 comes with a strip of fiber; everything shakes when struck; the swing's pace is 1.5; a tool bites a beast at `TOOL_DMG` 0.8 of a weapon. Stumps regrow. Drops lie with a bounce
-and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) multiplies what is gathered and dropped. Trees
-are baked at twice their prop (`World.TREE_BAKE` 2), 200 to 250 units tall, or by Admin's **Trees** (`game.trees`:
-twice, one and a half, tall and thin, as before; `World.setTreeShape`) while Robin chooses (`docs/trees-compare.jpg`); rocks come in six variations of tone and build.
+and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) multiplies what is gathered and dropped. **Trees
+are at their prop's size, as before 2026-10-14** (Robin, 2026-10-16: "it needs to be as before"; `World.TREE_SHAPES.old`, the
+default); Admin's **Trees** still cycles the bigger ones baked toward `World.TREE_BAKE` (twice, one and a half, tall and thin;
+`game.trees`, `World.setTreeShape`; `docs/trees-compare.jpg`); rocks come in six variations of tone and build.
 
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
 right click uses, Shift and click sends across to a chest, Shift and drag carries half a stack; Sort tidies. The panel
@@ -488,6 +494,8 @@ lights the night, heats, is heard; men come to watch a fire (`Combat.gawk`) and 
 refuge and come back homeless. The stakes of a village's ring can be hacked down. **Mending** (the piece `mend`, once a claim
 stone of yours stands there) mends walls and raises a fallen roof. Side walls leaning with a face (`Build.CFG.lean`) is a
 trial on the editor's board, off (Robin doubted it).
+A post can be charred too (`p.burnt`, snapped to `p.snap` of its height; no beam is left between burnt posts), a standing
+fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.noGrass`); the burnt steading uses all of it.
 
 ## The world (`src/world.js`)
 
