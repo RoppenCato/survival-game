@@ -266,7 +266,8 @@ a roof over it), a palisade with gaps, crates to break with the axe, Brokk by th
 lacks; at comfort 4 he teaches the raft. What anyone says shows on the speech board at the foot of the screen. The big steps
 are bordered boards (`bigStep`: "Your bar", "Building", "The raft", "You have left the island", the last whenever you stand
 on another island's land). The interface grows: the hotbar shows once a thing is on the bar; B waits for Brokk; the Building
-board holds the plank house's six pieces until the first night slept under a roof opens twenty-five more (key `slept`).
+board holds the plank house's pieces and the workbench until the first night slept under a roof opens twenty-four more
+(key `slept`).
 
 **Gathering** (`src/gather.js`, through `Combat.api.harvest`): a tree's first blow cuts a notch, blows from the other side are
 the back cut and fell it toward the notch; it falls as a trunk (four logs, eight blows, struck anywhere along it) and fells
@@ -278,8 +279,10 @@ are baked at twice their prop (`World.TREE_BAKE` 2), 200 to 250 units tall; rock
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
 right click uses, Shift and click sends across to a chest, Shift and drag carries half a stack; Sort tidies. The panel
 ("You") has Gear (helmet, cloak, tunic, trousers, boots; shield, necklace, two rings, two trinkets, the arm ring), Stats after
-the first kill, Ring once a ring is worn. The crafting board is a narrow column on the right: the station's own things and
-then what you make by hand, under headings; a chest takes the right side instead. The middle of the screen stays clear (Robin).
+the first kill, Ring once a ring is worn. The crafting board sits lower right under the chart, **the list on the left and
+the chosen thing beside it** (Robin). **Each board lists only its own**: Tab opens what you make by hand, with a tab for a
+workbench, a fire or a furnace you stand at; E at a fire shows its dishes, at a furnace its bars, at a workbench its things
+(with a By hand tab). A chest takes the right side instead. The middle of the screen stays clear (Robin).
 
 **Crafting** (`RECIPES2`): a recipe is listed once you have picked up its key ingredient; a thing never made carries a gold
 dot. Made by hand anywhere, or at a roofed workbench, a hearth, a furnace or a shipwright's bench; each press pays, so a
@@ -293,7 +296,7 @@ yard, furniture, work, outdoors), eight pieces a row with name and cost; pieces 
 Brokk's teaching: `slept`, `leather`, `honey`, `copper`, `mason` (the mason's bench opens stone), `charcoal`, `ironBar`,
 `bogIron`, `silver`, `snakeBlood`). Walls in logs, planks, wattle, stone, turf (timber frame and cut stone from iron); doors,
 windows, posts, stairs to one floor above, floors, docks over shallow water, the ground brushes (gravel, earth, moss, grass;
-field, chalk, marsh). A closed room gets a roof by itself (thatch unless you pick turf, shingles, tiles or slate) that fades
+field, chalk, marsh). A closed room gets a roof by itself (thatch unless you pick turf, shingles, tiles or slate; `BCFG` is thatch, Robin) that fades
 when you are inside. The cursor lights a wide green band on the edge it is near and marks standing walls; walls near it fade.
 F takes pieces back for what they cost. Nothing can be built in somebody else's village. E never works through a wall
 (`canReach`).

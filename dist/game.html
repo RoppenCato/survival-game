@@ -13075,7 +13075,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'roof', name: 'Shingle roof', m: 2, cost: { wood: 4 }, key: 'copper' },
     { id: 'roof', name: 'Tile roof', m: 3, cost: { stone: 3 }, key: 'ironBar' },
     { id: 'roof', name: 'Slate roof', m: 4, cost: { stone: 4 }, key: 'ironBar' },
-    { key: 'slept', id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 4, cost: { wood: 6, stone: 1 }, icon: function (c) {
+    { id: 'bench', name: 'Workbench', kind: 'item', prop: 'workbench', bench: true, r: 4, cost: { wood: 6, stone: 1 }, icon: function (c) {
       c.fillStyle = '#b98a5a'; c.fillRect(-7, -3, 14, 3); c.strokeStyle = '#3a2a36'; c.lineWidth = 1; c.strokeRect(-7, -3, 14, 3); c.fillStyle = '#8a5a3a'; c.fillRect(-6, 0, 2, 6); c.fillRect(4, 0, 2, 6);
       c.fillStyle = '#c5ccd6'; c.beginPath(); c.moveTo(-3, -4); c.lineTo(1, -8); c.lineTo(3, -6); c.lineTo(-1, -3); c.closePath(); c.fill(); c.stroke();
     } },
@@ -13152,7 +13152,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // it.lvl 1 for things upstairs). B.up is the floor above: its floors (auto: laid by the stairs), walls, posts and roofs.
   function freshB() { return { floors: {}, H: {}, V: {}, posts: {}, stairs: {}, roofs: {}, items: [], up: { floors: {}, auto: {}, H: {}, V: {}, posts: {}, roofs: {} } }; }
   function ensureB() { var f = freshB(), k; for (k in f) if (B[k] == null) B[k] = f[k]; for (k in f.up) if (B.up[k] == null) B.up[k] = f.up[k]; }
-  var B = freshB(), BCFG = Build.cfg({ roof: 0 }), roomInfo = null, roomInfo1 = null, roofA = {}, roofA1 = {}, bDirty = true, mouseW = null, mdown = 0, lastPlaced = '';
+  var B = freshB(), BCFG = Build.cfg({ roof: 1 }), roomInfo = null, roomInfo1 = null, roofA = {}, roofA1 = {}, bDirty = true, mouseW = null, mdown = 0, lastPlaced = '';
   var UP = Build.UP;                       // one storey, in screen units
   function lvl() { return hero().lvl || 0; }
   function Bl(L) { return (L == null ? lvl() : L) ? B.up : B; }                       // the pieces of the floor you are on
@@ -15481,7 +15481,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function fedText() { if (!fed) return ''; var m = Math.floor(fed.left / 60), s = Math.floor(fed.left % 60); return 'Well fed (' + NAMES[fed.kind].toLowerCase() + '): ' + m + ':' + (s < 10 ? '0' : '') + s + (fed.regen ? '  +' + fed.regen + ' health a second' : ''); }
   // the build menu (right click in build mode): a wooden board of big piece icons; the wreck cursor is the last one
   var MCELL = 22, MCOLS = 8, MROWS = 4, menuTab = 'build', menuFrom = 'B';   // menuFrom: 'B' for the build board, 'bench' when E opened it at a workbench
-  function craftTabHere() { var P = hero(); return benchNear(P) ? 'bench' : nearHearth(P) ? 'hearth' : furnaceAt(P) ? 'furnace' : 'hand'; }   // what the right side of the screen shows where you stand (Tab)
+  function craftTabHere() { return 'hand'; }   // Tab opens what you make by hand; a station you stand at is a tab beside it
   function menuTabs() { var P = hero(), b = benchNear(P);
     if (menuFrom === 'tab') { var tb = [{ id: 'hand', name: 'By hand' }]; if (b) tb.unshift({ id: 'bench', name: 'Workbench', roofed: benchRoofed(b) }); if (nearHearth(P)) tb.push({ id: 'hearth', name: 'Hearth' }); if (furnaceAt(P)) tb.push({ id: 'furnace', name: 'Furnace' }); return tb; }
     if (menuFrom === 'bench') return [{ id: 'bench', name: 'Workbench', roofed: b && benchRoofed(b) }, { id: 'hand', name: 'By hand' }]; if (menuTab === 'hearth') return [{ id: 'hearth', name: 'Hearth' }]; if (menuTab === 'furnace') return [{ id: 'furnace', name: 'Furnace' }]; if (menuTab === 'hand') return [{ id: 'hand', name: 'By hand' }]; return [{ id: 'build', name: 'Building' }]; }
@@ -15510,23 +15510,22 @@ if (typeof module !== 'undefined') module.exports = Combat;
      hearth (cooking), the hand, the workbench and the shipwright's bench all use it; Building keeps its grid. ---------- */
   var menuSel = {};                                         // the chosen recipe id per tab
   function infoList() {
-    if (menuTab === 'hearth') return RECIPES.filter(dishKnown).map(function (d) { return { id: d.id, dish: d }; }).concat(RECIPES2.filter(function (r) { return r.at === 'hand' && known(r); }).map(function (r) { return { id: r.id, r: r }; }));
-    var L = RECIPES2.filter(function (r) { return r.at === menuTab && known(r); }).map(function (r) { return { id: r.id, r: r }; });
-    if (menuTab !== 'hand') L = L.concat(RECIPES2.filter(function (r) { return r.at === 'hand' && known(r); }).map(function (r) { return { id: r.id, r: r }; }));   // what you can make by hand is in every list (2026-10-14: no By hand tab)
-    return L;
+    if (menuTab === 'hearth') return RECIPES.filter(dishKnown).map(function (d) { return { id: d.id, dish: d }; });   /* a board lists only its own (Robin: E at a fire opened a list mixed with the hand recipes) */
+    return RECIPES2.filter(function (r) { return r.at === menuTab && known(r); }).map(function (r) { return { id: r.id, r: r }; });
   }
   function openInfo() {
     menuStation = menuTab === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (menuTab === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : (menuTab === 'furnace' ? { kind: 'furnace', it: furnaceAt(hero()) } : null)); if (menuStation && !menuStation.it) menuStation = null;
-    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 118, h: 198, list: infoList(), scroll: 0, maxScroll: 0 };
-    menu.x = 400 - menu.w - 8; menu.y = 250 - menu.h - 6;   /* (lower right, under the chart: Robin did not want it hanging from the top) */   /* (a narrow column on the right since 2026-10-14, Robin: the one screen, clear of the hero, as small as it can be: the list above the page, no tabs) */
-    var rowH = 11, listH = 6 * rowH - (menuStation ? 2 * rowH : 0); menu.rowH = rowH; menu.listH = listH;
+    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 176, h: 164, list: infoList(), scroll: 0, maxScroll: 0 };
+    menu.x = 400 - menu.w - 6; menu.y = 250 - menu.h - 6;   /* lower right, under the chart, clear of the hero; the list on the left and the chosen thing beside it */
+    var tabs = menuTabs(); if (tabs.length > 1) { var tx = menu.x + 6; tabs.forEach(function (t) { var w = Math.round(t.name.length * 3.4 + 11); menu.tabs.push({ id: t.id, name: t.name, x: tx, y: menu.y + 5, w: w, h: 13 }); tx += w + 2; }); }
+    var rowH = 11; menu.ly = menu.y + (menu.tabs.length ? 21 : 7); menu.lw = 64;
+    var listH = menu.y + menu.h - 6 - menu.ly - (menuStation ? 41 : 0); menu.rowH = rowH; menu.listH = listH;
     // the list as it is shown: under a small heading a category when there is more than one (Tools, Weapons, Armour, Supplies); it was one long scroll
     var show = [], cats = CATS2.filter(function (ct) { return menu.list.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
     if (cats.length > 1) cats.forEach(function (ct) { show.push({ head: ct[1] }); menu.list.forEach(function (e) { if (e.r && e.r.cat === ct[0]) show.push({ e: e }); }); });
     menu.list.forEach(function (e) { if (!show.some(function (q) { return q.e === e; })) show.push({ e: e }); });
     show.forEach(function (q) { q.y = yy0; q.h = q.head ? 9 : rowH; yy0 += q.h; }); menu.show = show; menu.listTotal = yy0; menu.maxScroll = Math.max(0, yy0 - listH);
     var ids = show.filter(function (q) { return q.e; }).map(function (q) { return q.e.id; }); if (ids.indexOf(menuSel[menuTab]) < 0) menuSel[menuTab] = ids[0] || null;
-    menu.tabs = [];   /* (no tabs, 2026-10-14: one list, the hand recipes in it wherever you stand; menuTabs is kept for the Building board's row) */
   }
   function infoSel() { if (!menu || !menu.info) return null; for (var i = 0; i < menu.list.length; i++) if (menu.list[i].id === menuSel[menuTab]) return menu.list[i]; return null; }
   function infoName(e) { return e.dish ? NAMES[e.dish.id] : recipeName(e.r); }
@@ -15600,7 +15599,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     wood(c, menu.x, menu.y, menu.w, menu.h);
     menu.tabs.forEach(function (t) { tabUi(c, t, t.id === menuTab, th === t); });
     // the list
-    var lx = menu.x + 6, ly = menu.y + 8, lw = menu.w - 12, rowH = menu.rowH, sel = infoSel(); menu.rows = [];
+    var lx = menu.x + 6, ly = menu.ly, lw = menu.lw, rowH = menu.rowH, sel = infoSel(); menu.rows = [];
     c.fillStyle = '#33241a'; c.fillRect(lx, ly, lw, menu.listH); uiGrain(c, lx, ly, lw, menu.listH, 0.14); c.strokeStyle = UI_INK; c.lineWidth = 0.9; c.strokeRect(lx + 0.5, ly + 0.5, lw - 1, menu.listH - 1);
     c.save(); c.beginPath(); c.rect(lx, ly, lw, menu.listH); c.clip();
     menu.show.forEach(function (q) {
@@ -15619,19 +15618,19 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (!menu.list.length) { c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'left'; c.fillText('Nothing known yet', lx + 6, ly + 12); }
     menu.takes = [];
     if (menuStation) {                      // what waits at the station: take it with a click
-      var oy = ly + menu.listH + 3, outs = menuStation.it.out || [];
-      c.font = '600 5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText(outs.length ? 'Ready: click to take' : 'Nothing ready', lx + 1, oy + 5);
-      var sw = Math.floor((lw - 2) / 8), si; c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(lx, oy + 6.5, sw * 8 + 2, sw + 3);
-      for (si = 0; si < 8; si++) { var bx = lx + 1 + si * sw, by = oy + 8, o = outs[si], hov = o && mouseS && mouseS.x >= bx && mouseS.x < bx + sw && mouseS.y >= by && mouseS.y < by + sw;
+      var oy = ly + menu.listH + 2, outs = menuStation.it.out || [];
+      c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText(outs.length ? 'Ready: click to take' : 'Nothing ready', lx + 1, oy + 5);
+      var sw = Math.floor((lw - 2) / 4), si; c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(lx, oy + 6.5, sw * 4 + 2, sw * 2 + 3);
+      for (si = 0; si < 8; si++) { var bx = lx + 1 + (si % 4) * sw, by = oy + 8 + Math.floor(si / 4) * sw, o = outs[si], hov = o && mouseS && mouseS.x >= bx && mouseS.x < bx + sw && mouseS.y >= by && mouseS.y < by + sw;
         slotUi(c, bx, by, sw - 1, sw, hov, false);
         if (!o) continue; menu.takes.push({ x: bx, y: by, w: sw, h: sw, i: si });
         c.save(); c.translate(bx + (sw - 1) / 2, by + sw / 2); if (o.item) itemIcon(c, o.item, sw - 3, sw / 2 - 1); else drawDropIcon(c, o.kind, 0, 0, 0.85); c.restore();
         if (o.n > 1) { c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 1.6; c.strokeStyle = '#2e1a10'; c.strokeText(o.n, bx + sw - 2, by + sw - 1.5); c.fillStyle = '#fff'; c.fillText(o.n, bx + sw - 2, by + sw - 1.5); } }
     }
     // the chosen thing
-    var rx = lx + 2, rw = lw - 4, ry = ly + menu.listH + 10; menu.btn = null;
+    var rx = lx + lw + 9, rw = menu.x + menu.w - 9 - rx, ry = ly + 3; menu.btn = null;
     if (!sel) return;
-    parchment(c, rx - 4, ry - 3, rw + 8, (menu.y + menu.h - 52) - (ry - 3));                            // the chosen thing on a page under the list (what it takes lies under the page)
+    parchment(c, rx - 4, ry - 3, rw + 8, (menu.y + menu.h - 52) - (ry - 3));                            // the chosen thing on a page beside the list (what it takes lies under the page)
     c.fillStyle = 'rgba(35,26,22,0.1)'; c.beginPath(); c.arc(rx + 10, ry + 10, 9.5, 0, 7); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.45)'; c.lineWidth = 0.8; c.stroke(); infoIcon(c, sel, rx + 10, ry + 10, 0.85);
     c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = '#2e1e14'; c.fillText(infoName(sel), rx + 24, ry + 9);
     var pr2 = infoProgress(sel); if (pr2 && pr2.n > 1) { c.font = 'bold 5.2px system-ui, sans-serif'; c.fillStyle = '#8a5a1a'; c.fillText('x' + pr2.n + ' on the way', rx + 24, ry + 17); }
@@ -15642,10 +15641,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     lines.forEach(function (ln) { c.fillText(ln, rx, yy); yy += 6.8; });
     yy += 3; sts.forEach(function (st) { c.fillStyle = '#5a4634'; c.fillText(st[0] + ':', rx, yy); var kw = c.measureText(st[0] + ': ').width; c.fillStyle = '#8a5a1a'; c.fillText(st[1], rx + kw, yy); if (st[2]) { c.fillStyle = st[2] > 0 ? '#3e7a2e' : '#a8402e'; c.fillText((st[2] > 0 ? '+' : '\u2212') + Math.abs(st[2]) + (st[3] || ''), rx + kw + c.measureText(st[1] + '   ').width, yy); } yy += 7.5; });
     // what it takes
-    var needs = infoNeeds(sel), bx = rx, by = menu.y + menu.h - 46; for (var k in needs) {
-      var have = inv[k] || 0, ok = have >= needs[k]; slotUi(c, bx, by, 22, 22, false, false); if (!ok) { c.strokeStyle = 'rgba(200,80,60,0.8)'; c.lineWidth = 1; c.strokeRect(bx + 0.5, by + 0.5, 21, 21); }
-      drawDropIcon(c, k, bx + 11, by + 8, 0.85); c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = ok ? '#f6e2b8' : '#ff9a8a'; c.fillText(have + '/' + needs[k], bx + 11, by + 19.5);
-      bx += 25;
+    var needs = infoNeeds(sel), bx = rx, by = menu.y + menu.h - 46, nk = Object.keys(needs).length, bw = Math.min(22, Math.floor((rw + 3) / Math.max(1, nk)) - 3); for (var k in needs) {
+      var have = inv[k] || 0, ok = have >= needs[k]; slotUi(c, bx, by, bw, 22, false, false); if (!ok) { c.strokeStyle = 'rgba(200,80,60,0.8)'; c.lineWidth = 1; c.strokeRect(bx + 0.5, by + 0.5, bw - 1, 21); }
+      drawDropIcon(c, k, bx + bw / 2, by + 8, 0.85); c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = ok ? '#f6e2b8' : '#ff9a8a'; c.fillText(have + '/' + needs[k], bx + bw / 2, by + 19.5);
+      bx += bw + 3;
     }
     // the Craft button, filling as the first one is made
     var btn = { x: rx, y: menu.y + menu.h - 21, w: pr2 ? rw - 50 : rw, h: 16 }; menu.btn = btn; menu.cbtn = null; var can = infoCan(sel), hovB = mouseS && mouseS.x >= btn.x && mouseS.x <= btn.x + btn.w && mouseS.y >= btn.y && mouseS.y <= btn.y + btn.h;
@@ -15654,9 +15653,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var cb = { x: rx + rw - 46, y: btn.y, w: 46, h: 16 }, hovC = mouseS && mouseS.x >= cb.x && mouseS.x <= cb.x + cb.w && mouseS.y >= cb.y && mouseS.y <= cb.y + cb.h; menu.cbtn = cb;
       buttonUi(c, cb.x, cb.y, cb.w, cb.h, 'Cancel 1', true, hovC, 0);
     }
-    if (menuTab === 'bench' && !roofed) { c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = '#ff9a8a'; c.textAlign = 'left'; c.fillText('The workbench needs a roof over it', bx + 3, by + 13); }   // beside what it takes (it lay across those boxes)
+    if (menuTab === 'bench' && !roofed) { c.font = '600 5.2px system-ui, sans-serif'; c.fillStyle = '#ff9a8a'; c.textAlign = 'left'; c.fillText('It needs a roof over it', rx, by - 3); }   // beside what it takes (it lay across those boxes)
   }
-  function infoRowHit() { if (!menu || !menu.info || !mouseS) return null; for (var i = 0; i < menu.rows.length; i++) { var r = menu.rows[i]; if (mouseS.y < menu.y + 22 || mouseS.y > menu.y + 22 + menu.listH) continue; if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y < r.y + r.h) return r.e; } return null; }
+  function infoRowHit() { if (!menu || !menu.info || !mouseS) return null; for (var i = 0; i < menu.rows.length; i++) { var r = menu.rows[i]; if (mouseS.y < menu.ly || mouseS.y > menu.ly + menu.listH) continue; if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y < r.y + r.h) return r.e; } return null; }
   function infoBtnHit() { var b = menu && menu.info && menu.btn; return !!b && mouseS && mouseS.x >= b.x && mouseS.x <= b.x + b.w && mouseS.y >= b.y && mouseS.y <= b.y + b.h; }
   function menuScroll(d) {
     if (menu && menu.info) { if (!menu.maxScroll) return true; menu.scroll = Math.max(0, Math.min(menu.maxScroll, menu.scroll + d * 15)); return true; }
