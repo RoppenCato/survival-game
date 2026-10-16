@@ -16,7 +16,7 @@ var K = 0.75;
 var DEF = {
   sweetSpot: 1, spotBonus: 2, spotWander: 1, spotLook: 5, crackLook: 4, pace: 1.5,   // (pace 1.5 since 2026-10-14, was 2: Robin found the chop slow and low in impact)
   rhythm: 1, rhythmAfter: 0.45, rhythmWindow: 0.3, rhythmBonus: 1.5,
-  fallFells: 1, fallReach: 1, fallHurts: 1, fallDamage: 12,
+  fallFells: 1, fallReach: 1, fallHurts: 1, fallDamage: 12, fallBite: 0.45, fallFloor: 0.15, fallMax: 3,   // (2026-10-16, Robin: a falling tree chipped away at the trees it landed on instead of felling them all: the nearest takes fallBite of its health, the next less, at most fallMax, never below fallFloor)
   trunks: 1, logsPerTrunk: 4, chopsPerLog: 2,   // (four logs a trunk since 2026-10-14, with the trees grown: eight blows that each shake it and roll a log out every second one)
   nests: 1, nestChance: 0.15,
   regrow: 1, regrowDays: 3,
@@ -88,7 +88,8 @@ function tick(G, o, dt, ctx) {
     if (G.nests && !CHAR_TREE[o.name] && ev.drop && hash(Math.round(o.x), Math.round(o.y), 8) < G.nestChance) { var honey = hash(Math.round(o.y), Math.round(o.x), 9) < 0.4; ev.drop(honey ? 'honey' : 'eggs', o.x + dir * len * 0.3, o.y, honey ? 1 : 2); if (honey && ev.bees) ev.bees(o.x + dir * len * 0.3, o.y); if (ev.note) ev.note(o.x + dir * len * 0.3, o.y - 20, honey ? 'a bees’ nest' : 'a nest', '#ffd34d'); }
     // what lies in the line it fell along: trees come down after it, the hero is struck
     var x0 = o.x + dir * 12, x1 = o.x + dir * len, lo = Math.min(x0, x1), hi = Math.max(x0, x1);
-    if (G.fallFells && ctx.trees) ctx.trees.forEach(function (q) { if (q === o || q.kind !== 'tree' || q.dying != null) return; if (q.x >= lo - 4 && q.x <= hi + 4 && Math.abs(q.y - o.y) < 22 * G.fallReach) { q.hp = 0; q.dying = 0; q.leanDir = dir; q.chained = true; if (ev.fell) ev.fell(q); } });
+    if (G.fallFells && ctx.trees) { var hitT = ctx.trees.filter(function (q) { return q !== o && q.kind === 'tree' && q.dying == null && q.x >= lo - 4 && q.x <= hi + 4 && Math.abs(q.y - o.y) < 22 * G.fallReach; }).sort(function (a, b) { return Math.abs(a.x - o.x) - Math.abs(b.x - o.x); }).slice(0, G.fallMax || 3);
+      hitT.forEach(function (q, k) { var bite = q.max * (G.fallBite || 0.45) / (1 + k * 0.6); q.hp = Math.max(q.max * (G.fallFloor || 0.15), q.hp - bite); q.shake = 0.6; q.leanDir = dir; if (ev.chip) ev.chip(q.x, q.y - 20, 8, '#c9a46a', 6, 70); if (ev.fell) ev.fell(q); }); }   /* chipped, shaken, and left standing */
     if (G.fallHurts && ctx.hero && ev.hurt) { var h = ctx.hero; if (h.x >= lo - 6 && h.x <= hi + 6 && Math.abs(h.y - o.y) < 16) ev.hurt(G.fallDamage, o.x, o.y, dir); }
   }
   return o.dying >= done;

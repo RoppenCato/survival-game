@@ -18,7 +18,7 @@ var KINDS = {
   spear: { name: 'Spear', len: 40, w: 2.2, dmg: 1.1, tool: null, melee: true, desc: 'The commonest weapon of the north. Long reach in a narrow line; it runs through one beast into the next.' },
   greataxe: { name: 'Dane axe', len: 34, w: 2.6, dmg: 2, tool: null, melee: true, desc: 'A great axe swung with both hands. Slow to lift, and nothing stands where it comes down.' },
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
-  knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: 'bush', desc: 'Cuts fiber, berries and rope.' },
+  knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: null, melee: true, desc: 'A short blade for close work: quick stabs and little reach.' },   /* (a weapon only since 2026-10-16, Robin: grass is pulled with E) */
   rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod, a line of twisted fiber and a forged hook. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
   // ranged: the bow shoots the quiver, the sling throws stones from the bag, a javelin or throwing axe is thrown itself and lies where it falls
   bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, ranged: true, desc: 'Bent wood and a string. Arrows come from the quiver.' },
@@ -46,7 +46,7 @@ var MATS = {
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
-var ORDER = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
+var ORDER = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
   var it = { kind: KINDS[kind] ? kind : 'sword', mat: MATS[mat] ? mat : 'iron' }, k;
   for (k in DEF) it[k] = DEF[k];
@@ -224,7 +224,7 @@ function iconImage(c, it, s) {
   var set = SPR.imgs && SPR.imgs[it.kind]; if (!set) return false;
   var wood = set.wood, metal = set.metal, ok = function (im) { return im && im.complete && im.naturalWidth; };
   if (!ok(wood) && !ok(metal)) return false;
-  var side = (s || 14) * 1.9, M = MATS[it.mat] || MATS.iron;
+  var side = (s || 14) * 1.42, M = MATS[it.mat] || MATS.iron;   /* (1.42: a thing laid across the slot's diagonal fits inside it; at 1.9 its ends were cut off by the slot's edge, 2026-10-16) */
   c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';   // laid diagonally in the slot, as the drawn icons were
   if (ok(wood)) c.drawImage(wood, -side / 2, -side / 2, side, side);
   if (ok(metal)) { var key = it.kind + '|' + it.mat, cv = SPR.cache[key]; if (!cv) { cv = tintCanvas(metal, hsl(M.face, it.hue || 0)); SPR.cache[key] = cv; } c.drawImage(cv, -side / 2, -side / 2, side, side); }

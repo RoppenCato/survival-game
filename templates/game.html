@@ -376,6 +376,8 @@ __COMBAT__
   function shieldHeld() { var P = hero(); return shieldFits() && P.mode === 'fight' && !carrying; }
   function shieldPaint() { var sh = equip.shield; return sh && sh.mat !== 'wood' ? { face: YOURS, mark: Sprites.SHIELD_MARK } : { face: Sprites.SHIELD_WOOD }; }
   Combat.api.shield = shieldHeld;
+  function shieldThrough(sh) { sh = sh || (equip && equip.shield); var m = sh ? sh.mat : 'wood'; return { wood: 0.2, leather: 0.2, copper: 0.17, bronze: 0.15, iron: 0.12, silver: 0.12, gold: 0.12 }[m] || 0.2; }   /* what a raised shield lets through (Robin, 2026-10-16: it stops 80%, more with a better shield; a parry stops all) */
+  Combat.api.shieldThrough = function () { return shieldThrough(); };
   Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers });
   var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, unge: { sheet: 'troll_unge', deadFor: 2.5 } };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
   ['boar', 'deer', 'wolf', 'bear', 'moose', 'snake', 'troll', 'unge'].forEach(function (bk) { var sh = BEAST_OPT[bk].sheet || bk; if (SPR[sh]) BEASTS[bk] = Sprites.load(SPR, sh); });
@@ -576,6 +578,7 @@ __COMBAT__
     return ra === rb;
   }
   function isHearth(it) { return it.name == 'stoneHearth' || !!it.hearth; }
+  var FIRE_YARD = 100;                      // how near the house a fire outside must burn to count as its hearth (about three tiles; mine)
   function stairRoomAt(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; return ri >= 0 && roomInfo.rooms[ri].up ? roomInfo.rooms[ri] : null; }
   function canAfford(cost) { if (ADMIN.free) return true; for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
   function buildCost(cost) { if (!inUse('buildershand')) return cost; var o = {}, k; for (k in cost) o[k] = (k === 'wood' || k === 'stone') ? Math.max(1, cost[k] - 1) : cost[k]; return o; }   // the builder's hand
@@ -636,6 +639,7 @@ __COMBAT__
     var has = {}, furn = 0;
     B.items.forEach(function (it) { if ((it.lvl || 0) !== L || R.at(Math.floor(it.x / T), Math.floor(it.y / T)) !== ri) return; if (isHearth(it)) has.hearth = 1; else if (it.bench) has.bench = 1; else if (it.bed) has.bed = 1; else if (it.name === 'rug') has.rug = 1; else if (FURN[it.name]) furn++; });
     has.furn = Math.min(2, furn);
+    if (!has.hearth && !L) { var room = R.rooms[ri]; B.items.some(function (it) { if (!isHearth(it) || (it.lvl || 0) || it.chimney || R.at(Math.floor(it.x / T), Math.floor(it.y / T)) >= 0) return false; return room.tiles.some(function (t) { return Math.hypot((t[0] + 0.5) * T - it.x, (t[1] + 0.5) * T - it.y) < FIRE_YARD; }); }) && (has.hearth = 1); }   /* a fire outside by the house warms it (Robin, 2026-10-16) */
     return { n: 1 + (has.hearth ? 1 : 0) + (has.bench ? 1 : 0) + (has.bed ? 1 : 0) + (has.rug ? 1 : 0) + has.furn, has: has };
   }
   /* Your home: the best room on the starter island, wherever it stands. (It was the best room within 500 units of the wreck,
@@ -1194,6 +1198,8 @@ __COMBAT__
       if (pc.claim && stones().length && !followerNear(P)) shipWhy = 'A second stone needs a hirdman with you to keep it';
       if (pc.ship) { shipWhy = baseComfort().n < 4 ? 'Your home needs a roof, a fire, a workbench and a rug first (Comfort 4)' : (code(tx, ty) !== 1 ? 'Build it on the sand' : (!nearWater(tx, ty, 4) ? 'Build it at the water’s edge' : '')); }
       if (L && (pc.ship || pc.claim || pc.id === 'well' || pc.id === 'charcoal')) shipWhy = 'Not up here';
+      if ((pc.id === 'campfire' || pc.id === 'hearth') && (L || (roomInfo && roomInfo.at(Math.floor(ix / T), Math.floor(iy / T)) >= 0))) shipWhy = 'Not indoors';   /* (Robin, 2026-10-16: a fire burns outside; a fireplace goes in the house) */
+      if (pc.id === 'fireplace' && homeIsle(ix, iy) === 0) shipWhy = 'Not on this island';
       return { kind: 'item', x: ix, y: iy, piece: pc, ok: !far && clear && !shipWhy && !wallWhy && canAfford(buildCost(pc.cost)), why: far ? 'Too far' : shipWhy ? shipWhy : wallWhy ? wallWhy : !clear ? (L ? 'No floor here' : (fellWhy(ix, iy) || 'Blocked, or not on land')) : !canAfford(pc.cost) ? 'Need ' + costText(pc.cost) : '' };
     }
     if (pc.id === 'floor') { var fk2 = Build.key(tx, ty), fw = !!(Build.FLOORS[pc.m] || {}).water, onLand = L ? (roomInfo && roomInfo.at(tx, ty) >= 0 && !fw) : (fw ? dockOk(tx, ty) : (code(tx, ty) >= 1 && code(tx, ty) !== 255 && tileFell(tx, ty))), hasF = BB.floors[fk2] != null && BB.floors[fk2] === pc.m, auto = L && B.up.auto[fk2];
@@ -1410,7 +1416,7 @@ __COMBAT__
      it, but the page sets them from what is in hand every frame (handSync): an axe, a pick, a knife or a rod is gather mode (chop,
      mine, cut, fish; a tool bites a beast a little), anything else, or empty hands, is fight mode. BAR_OF says what belongs on
      the bar at all (every weapon and tool); GATHER_KINDS which of them are tools. */
-  var hand = 0, sel = 0, BAR_OF = { sword: 1, axe: 1, club: 1, seax: 1, spear: 1, greataxe: 1, bow: 1, sling: 1, javelin: 1, throwaxe: 1, pick: 1, knife: 1, rod: 1 }, GATHER_KINDS = { axe: 1, pick: 1, knife: 1, rod: 1 };
+  var hand = 0, sel = 0, BAR_OF = { sword: 1, axe: 1, club: 1, seax: 1, spear: 1, greataxe: 1, bow: 1, sling: 1, javelin: 1, throwaxe: 1, pick: 1, knife: 1, rod: 1 }, GATHER_KINDS = { axe: 1, pick: 1, rod: 1 };   /* (the knife is a weapon since 2026-10-16: grass is pulled by hand) */
   function barBase() { return 0; }
   function handSlot() { return hand < 0 ? null : slots[hand]; }   // -1: empty hands (the thing was put away)
   function handItem() { var s = handSlot(); return s && s.kind === 'item' ? s.item : null; }   // (the argument older callers pass, a mode, is ignored: one hand)
@@ -1605,6 +1611,7 @@ __COMBAT__
     var H = Yard.HANDLING[kind] || Yard.HANDLING.raft, o = {}, k; for (k in H) o[k] = H[k];
     try { var g = JSON.parse(localStorage.getItem('game.boat')); if (g && g.top && (!g.kind || g.kind === kind || (kind === 'raft' && g.kind === 'boat'))) { for (k in g) if (k !== 'kind' && k !== 'windK') o[k] = g[k]; if (kind === 'raft') { o.top = g.top * 0.55; o.accel = g.accel * 0.8; o.turn = g.turn * 0.9; } } } catch (e) {}   // the editor's numbers for the kind they were set for
     if (inUse('sealegs')) { o.top *= 1.2; o.accel *= 1.2; }
+    o.steer = 1;   /* W rows forward, A and D steer, the raft too (Robin, 2026-10-16: the Sea Editor's way) */
     return o;
   }
   // The wind (2026-10-08, the karve): a direction that wanders slowly through the day; a sail with it behind goes faster (never slower: a buff only).
@@ -1633,7 +1640,7 @@ __COMBAT__
   function onOtherIsland(x, y) { for (var i = 1; i < w.isles.length; i++) { var q = w.isles[i]; if (Math.hypot(x / T - q.x, y / T - q.y) < q.r * 1.4) return true; } return false; }
   function raftUse() {
     var P = hero();
-    if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; crewBoard(P); menBoard(); if (npc && npc.shore && !seen.shore) { seen.shore = 1; var Ls = loreLines('line.arnor.shore'); npc.say = Ls[Math.floor(Math.random() * Ls.length)]; npc.sayT = 7; save(); } toast(Yard.rigged(raft.kind) ? 'In the ' + Yard.nameOf(raft.kind).toLowerCase() + ': W rows, A and D steer, the sail takes a wind from behind, E to step ashore' : raft.kind === 'boat' ? (handling('boat').steer ? 'In the boat: W rows, A and D steer, E to step ashore' : 'In the boat: WASD to row, E to step ashore') : 'On the raft: WASD to paddle, E to step ashore'); sfx('pick'); save(); return; }
+    if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; crewBoard(P); menBoard(); if (npc && npc.shore && !seen.shore) { seen.shore = 1; var Ls = loreLines('line.arnor.shore'); npc.say = Ls[Math.floor(Math.random() * Ls.length)]; npc.sayT = 7; save(); } toast(Yard.rigged(raft.kind) ? 'In the ' + Yard.nameOf(raft.kind).toLowerCase() + ': W rows, A and D steer, the sail takes a wind from behind, E to step ashore' : raft.kind === 'boat' ? (handling('boat').steer ? 'In the boat: W rows, A and D steer, E to step ashore' : 'In the boat: WASD to row, E to step ashore') : 'On the raft: W paddles, A and D steer, E to step ashore'); sfx('pick'); save(); return; }
     var best = null;                       // step ashore: the nearest land, looking ahead first
     for (var d = 26; d < 120 && !best; d += 8) for (var k = 0; k < 16 && !best; k++) {
       var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d;
@@ -2257,6 +2264,16 @@ __COMBAT__
     });
     return best;
   }
+  function grassNear(P) {                 /* a bush or tuft whose grass you can pull (2026-10-16, Robin: grass with E, popping out like the berries; the knife is no tool now) */
+    var best = null;
+    around(P.x, P.y, function (o) {
+      if (o.kind !== 'bush' || o.dying != null || o.name === 'berryBush' || Math.hypot(o.x - P.x, o.y - P.y) > 38) return;
+      if (o.pulled && clock > o.pulled) o.pulled = 0;                            // grown back
+      if (!o.pulled && (!best || Math.hypot(o.x - P.x, o.y - P.y) < Math.hypot(best.x - P.x, best.y - P.y))) best = o;
+    });
+    return best;
+  }
+  function pullGrass(o) { yieldDrop('fiber', o.x, o.y + 10, o.name === 'tallGrass' || o.name === 'heather' ? 2 : BUSH_FIBER); o.shake = 0.5; o.pulled = clock + 360; sfx('pick'); }
   function pickBerries(o) { yieldDrop('berries', o.x, o.y + 10, BERRIES); o.shake = 0.5; o.was = o.name; o.name = 'bush'; o.regrow = clock + 360; sfx('pick'); }   /* (2026-10-14, Robin: the berries drop from the bush and are looted like anything that drops; they lay themselves in the bag before) */
 
   /* ---------- the hamlet: a living village on the big island, with folk who wander it (step 5, 2026-10-05) ----------
@@ -2848,7 +2865,7 @@ __COMBAT__
   };
   Combat.api.barSelect = barPress;
   Combat.api.hideBar = function () { return !seen.bar && !SCENE; };
-  Combat.api.barSlots = function (mode) { var b = 0; return { hand: hand, sel: sel, slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, ammo: ammoOf(s), draw: function (c) { if (s.kind === 'item') itemIcon(c, s.item, 16, 9.5); else drawDropIcon(c, s.kind, 0, 0, 1.6); } } : null; }) }; };
+  Combat.api.barSlots = function (mode) { var b = 0; return { hand: hand, sel: sel, slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, ammo: ammoOf(s), draw: function (c) { if (s.kind === 'item') itemIcon(c, s.item, 16, 9); else { c.save(); c.beginPath(); c.rect(-9, -9, 18, 18); c.clip(); drawDropIcon(c, s.kind, 0, 0, 1.25); c.restore(); } } } : null; }) }; };
   function ammoOf(s) { return null; }   /* (no ammo while there is no quiver, 2026-10-13) */   // arrows for a bow, stones for a sling: written in the thing's own slot
   function handSync() {                   // the engine's mode, tool and weapon follow the hand (one bar, 2026-10-14)
     var P = hero(), it = handItem(), tool = !!(it && GATHER_KINDS[it.kind]), want = tool ? 'gather' : 'fight';
@@ -2907,8 +2924,8 @@ __COMBAT__
   }
   function stackIn(c, r, s, i) {            // a slot's thing and its count; while it is dragged the slot is empty, or keeps the half that stays
     var drag = pick && pick.drag && pick.i === i, n = s.n; if (drag && !(pick.half && s.kind !== 'item' && s.n > 1)) return; if (drag) n = s.n - Math.ceil(s.n / 2);
-    if (s.kind === 'item') { c.save(); c.translate(r.x + r.w / 2, r.y + r.h / 2); itemIcon(c, s.item, 12.5, r.w / 2 - 1.5); c.restore(); }
-    else drawDropIcon(c, s.kind, r.x + r.w / 2, r.y + r.h / 2 + 0.5, 1.15);
+    if (s.kind === 'item') { c.save(); c.translate(r.x + r.w / 2, r.y + r.h / 2); itemIcon(c, s.item, r.w - 2.5, r.w / 2 - 1); c.restore(); }
+    else { c.save(); c.beginPath(); c.rect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); c.clip(); drawDropIcon(c, s.kind, r.x + r.w / 2, r.y + r.h / 2 + 0.5, r.w / 15); c.restore(); }   /* (inside the slot, 2026-10-16) */
     if (n > 1) { c.font = 'bold 6px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'right'; c.strokeText(String(n), r.x + r.w - 1.5, r.y + r.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(n), r.x + r.w - 1.5, r.y + r.h - 1.5); }
   }
   function dropOn(from, to) {             // drag and drop: merge like kinds, otherwise swap
@@ -3016,6 +3033,7 @@ __COMBAT__
     var fk = folkNear(P); if (fk) add(fk, fk.sayT > 0 ? null : 'Talk', function () { folkTalk(fk); });
     var rk = rackUsable(P); if (rk) add(rk, rackCured(rk) ? 'Collect leather' : 'Hang hide', function () { rackUse(rk); });
     var bb = berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });
+    var gb = !bb && grassNear(P); if (gb) add(gb, 'Pull grass', function () { pullGrass(gb); });
     if (!C.length) return null;
     C.sort(function (a, b) { return a.sc - b.sc; });
     return C[0];
@@ -3191,7 +3209,7 @@ __COMBAT__
   }
   function thingLines(it) {                 // a thing's numbers, as [label, value, difference, unit] lines
     var st = Items.stats(it), K = Items.KINDS[it.kind], h = heldLike(it), hs = h && h !== it ? Items.stats(h) : null, out = [];
-    if (st.gear) { var gl = [['Turns aside', Math.round(st.armor * 100) + '% of a blow', hs ? dlt(Math.round(st.armor * 100), Math.round(hs.armor * 100)) : null, '%']]; if (it.kind === 'shield') gl.push(['Raised, it stops', '88% of a blow']); return gl; }
+    if (st.gear) { var gl = [['Turns aside', Math.round(st.armor * 100) + '% of a blow', hs ? dlt(Math.round(st.armor * 100), Math.round(hs.armor * 100)) : null, '%']]; if (it.kind === 'shield') gl.push(['Raised, it stops', Math.round((1 - shieldThrough(it)) * 100) + '% of a blow']); return gl; }
     if (K.ranged) out.push([it.kind === 'bow' ? 'An arrow' : K.ammo ? 'A stone' : 'Thrown', String(worldDmg(it)), hs ? dlt(worldDmg(it), worldDmg(h)) : null]);
     else if (K.melee) out.push(['Damage', String(worldDmg(it)), hs ? dlt(worldDmg(it), worldDmg(h)) : null]);
     if (st.tool) out.push([st.tool === 'tree' ? 'Chop' : st.tool === 'stone' ? 'Mine' : 'Cut', String(st.power), hs ? dlt(st.power, hs.power) : null]);
@@ -3595,7 +3613,7 @@ __COMBAT__
       ['Crit chance', Math.round(Combat.S.crit * 100) + '%'],
       ['Crit damage', 'x1.5'],
       ['Defense', Math.round(Math.min(0.6, ar) * 100) + '%'],
-      ['Guard', shieldFits() ? 'stops 88%  (heavy 60%)' : 'stops 45%  (heavy 20%)'],
+      ['Guard', shieldFits() ? 'stops ' + Math.round((1 - shieldThrough()) * 100) + '%, parries all' : 'with what you hold: less, and half the stun'],
       ['Walk', '84  (run ' + Math.round(84 * 1.55 * m.sprint) + ')'],
       ['Chop', pw(bestTool('axe'))], ['Mine', pw(bestTool('pick'))], ['Cut', pw(bestTool('knife'))]
     ];
@@ -3752,7 +3770,7 @@ __COMBAT__
     drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
   }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + o.len * 0.5 && Math.abs(o.y - y) < rad) { o.r = Math.max(6, o.len * 0.5 - 4); out.push(o); } });   /* (a trunk is struck anywhere along its length: its r is half of it, 2026-10-14) */ B.items.forEach(function (it) { if (BREAK[it.name] && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
+    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + o.len * 0.5 && Math.abs(o.y - y) < rad) { o.r = Math.max(6, o.len * 0.5 - 4); out.push(o); } });   /* (a trunk is struck anywhere along its length: its r is half of it, 2026-10-14) */ B.items.forEach(function (it) { if (BREAK[it.name] && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool) {
       if (o.edge) return wallBlow(o, power, right, tool);   // a wall, a locked door, a fence: src/ruin.js
       if (o.stake) return stakeBlow(o, power, right, tool);
@@ -3775,7 +3793,7 @@ __COMBAT__
   Combat.api.gatherPace = function () { return GT.pace; };
   // what gathering does to the world: chips, drops, stumps, trunks, the chain, the fall on the hero, bees
   var gatherEv = {
-    chip: chip, drop: yieldDrop, sfx: sfx, note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },   /* (yieldDrop: the Admin switch that trebles what the world gives) */
+    chip: chip, drop: function (k, x, y, n) { yieldDrop(k, x, y, n); if (k === 'wood' && Math.random() < 0.3) yieldDrop('fiber', x + 8, y + 3, 1); }, sfx: sfx,   /* (now and then a strip of bast with the wood, 2026-10-16) */ note: function (x, y, text, col) { Combat.api.num(x, y, text, col); },   /* (yieldDrop: the Admin switch that trebles what the world gives) */
     decal: function (d) { d.day = day.n; decals.push(d); },
     spawn: function (o) { o.chopsPerLog = GT.chopsPerLog; trunks.push(o); },
     fell: function (q) { if (busy.indexOf(q) < 0) busy.push(q); },

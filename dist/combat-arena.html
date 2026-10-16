@@ -2258,7 +2258,7 @@ var KINDS = {
   spear: { name: 'Spear', len: 40, w: 2.2, dmg: 1.1, tool: null, melee: true, desc: 'The commonest weapon of the north. Long reach in a narrow line; it runs through one beast into the next.' },
   greataxe: { name: 'Dane axe', len: 34, w: 2.6, dmg: 2, tool: null, melee: true, desc: 'A great axe swung with both hands. Slow to lift, and nothing stands where it comes down.' },
   pick: { name: 'Pickaxe', len: 15, w: 2.8, dmg: 0.6, tool: 'stone', desc: 'Breaks stone from the rock.' },
-  knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: 'bush', desc: 'Cuts fiber, berries and rope.' },
+  knife: { name: 'Knife', len: 10, w: 2.4, dmg: 0.5, tool: null, melee: true, desc: 'A short blade for close work: quick stabs and little reach.' },   /* (a weapon only since 2026-10-16, Robin: grass is pulled with E) */
   rod: { name: 'Fishing rod', len: 26, w: 1.6, dmg: 0, tool: null, desc: 'A long hazel rod, a line of twisted fiber and a forged hook. Cast at the water with E, hook the bite, and reel with care.' },   // fishing (2026-10-08)
   // ranged: the bow shoots the quiver, the sling throws stones from the bag, a javelin or throwing axe is thrown itself and lies where it falls
   bow: { name: 'Bow', len: 8, w: 2.4, dmg: 2, tool: null, ranged: true, desc: 'Bent wood and a string. Arrows come from the quiver.' },
@@ -2286,7 +2286,7 @@ var MATS = {
   fur: { name: 'Fur', face: '#7a5a42', dark: '#46321f', edge: '#b59a80', glow: '255,230,200', power: 1 }
 };
 var DEF = { size: 1, width: 1, sharp: 0.5, glow: 0, twist: 0, curl: 0, hue: 0 };
-var ORDER = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
+var ORDER = ['sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow', 'sling', 'javelin', 'throwaxe', 'pick', 'knife', 'shield', 'helmet', 'tunic', 'trousers', 'boots', 'cloak'], MELEE = ['sword', 'axe', 'club', 'seax', 'knife', 'spear', 'greataxe'], RANGED = ['bow', 'sling', 'javelin', 'throwaxe'], MORDER = ['wood', 'flint', 'copper', 'bronze', 'iron', 'silver', 'gold', 'leather', 'fur'];
 function make(kind, mat, o) {
   var it = { kind: KINDS[kind] ? kind : 'sword', mat: MATS[mat] ? mat : 'iron' }, k;
   for (k in DEF) it[k] = DEF[k];
@@ -2464,7 +2464,7 @@ function iconImage(c, it, s) {
   var set = SPR.imgs && SPR.imgs[it.kind]; if (!set) return false;
   var wood = set.wood, metal = set.metal, ok = function (im) { return im && im.complete && im.naturalWidth; };
   if (!ok(wood) && !ok(metal)) return false;
-  var side = (s || 14) * 1.9, M = MATS[it.mat] || MATS.iron;
+  var side = (s || 14) * 1.42, M = MATS[it.mat] || MATS.iron;   /* (1.42: a thing laid across the slot's diagonal fits inside it; at 1.9 its ends were cut off by the slot's edge, 2026-10-16) */
   c.save(); c.rotate(-Math.PI / 4); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';   // laid diagonally in the slot, as the drawn icons were
   if (ok(wood)) c.drawImage(wood, -side / 2, -side / 2, side, side);
   if (ok(metal)) { var key = it.kind + '|' + it.mat, cv = SPR.cache[key]; if (!cv) { cv = tintCanvas(metal, hsl(M.face, it.hue || 0)); SPR.cache[key] = cv; } c.drawImage(cv, -side / 2, -side / 2, side, side); }
@@ -2548,6 +2548,7 @@ var PROFILES = {
   axe:      { arc: 2.6, reach: 32, blade: 22, wu: 0.17, ac: 0.12, rec: 0.36, dmg: 1, kb: 150, stag: 16, lunge: 80, chain: 3, motion: 'swing', st: 8, guardBreak: true, wt: 1.25 },
   club:     { arc: 1.7, reach: 30, blade: 20, wu: 0.2, ac: 0.11, rec: 0.4, dmg: 1, kb: 230, stag: 42, lunge: 60, chain: 2, motion: 'smash', st: 9, wt: 1.5 },
   seax:     { arc: 1.1, reach: 25, blade: 16, wu: 0.08, ac: 0.08, rec: 0.18, dmg: 1, kb: 50, stag: 4, lunge: 70, chain: 3, motion: 'thrust', st: 4, crit: 0.2, wt: 0.6 },
+  knife:    { arc: 1.0, reach: 21, blade: 11, wu: 0.07, ac: 0.07, rec: 0.16, dmg: 1, kb: 40, stag: 3, lunge: 60, chain: 3, motion: 'thrust', st: 3, crit: 0.15, wt: 0.5 },   // (2026-10-16: the knife is a weapon now, a smaller seax)
   spear:    { arc: 0.55, reach: 52, blade: 40, wu: 0.15, ac: 0.12, rec: 0.32, dmg: 1, kb: 130, stag: 12, lunge: 70, chain: 2, motion: 'thrust', st: 7, pierce: true, wt: 0.9 },   // (lunge 70, was 40: a thrust is a step in, and so the spear reaches furthest)
   greataxe: { arc: 3.6, reach: 44, blade: 34, wu: 0.42, ac: 0.18, rec: 0.6, dmg: 1, kb: 280, stag: 36, lunge: 60, chain: 2, motion: 'swing', st: 13, heavy: true, guardBreak: true, wt: 1.8 }   // (wu 0.5 and lunge 60, were 0.4 and 90: half a second to land, and the swing does not carry him 16 units forward)
 };
@@ -2742,8 +2743,15 @@ function guardThreat() {
   }
   return best || near;
 }
-var PARRY = { shield: 0.22, bare: 0.12 };   // the parry's moment, with a shield on the arm and without (tuned in the Combat Arena: see tune)
-function parryWindow() { return shielded() ? PARRY.shield : PARRY.bare; }
+var PARRY = { shield: 0.22, bare: 0.12 };   // the parry's moment, with a shield on the arm and with a weapon (tuned in the Combat Arena: see tune)
+/* What the guard is made of (Robin, 2026-10-16): a shield, a weapon, a tool or the bare arm. A parry stops all of a blow whatever
+   it is made with, but stuns the foe for less with a weapon (half) and a tool; a block lets through: with a shield a fifth (Robin:
+   it stops 80%, more with a better one: the page's api.shieldThrough), with a weapon half, with a tool or the bare arm most. Only a
+   shield stops an arrow. arc: how far round the guard covers; st: what a block costs in breath; win: the parry's moment. */
+var GUARD = { shield: { arc: 1.9, light: 0.2, heavy: 0.4, st: 10, stun: 1 }, weapon: { arc: 1.5, light: 0.5, heavy: 0.75, st: 14, stun: 0.5 }, tool: { arc: 1.2, light: 0.75, heavy: 0.9, st: 20, stun: 0.3, win: 0.08 }, bare: { arc: 1.2, light: 0.8, heavy: 0.95, st: 22, stun: 0.3, win: 0.08 } };
+function guardKind() { if (shielded()) return 'shield'; if (P.mode === 'gather') return 'tool'; if (P.mode === 'fight' && P.weapon === 'melee' && itemOf('weapon', 'sword')) return 'weapon'; if (P.mode === 'fight' && P.weapon === 'melee' && !api.items) return 'weapon'; return P.mode === 'fight' && P.weapon === 'ranged' ? 'tool' : 'bare'; }   /* (a page that gives the engine no items: the tests' and editors' plain sword is a weapon) */
+function guardOf() { var k = guardKind(), g = GUARD[k]; if (k === 'shield' && api.shieldThrough) { var t = api.shieldThrough(); if (t != null) return { kind: k, arc: g.arc, light: t, heavy: Math.min(0.9, t * 2), st: g.st, stun: g.stun }; } return { kind: k, arc: g.arc, light: g.light, heavy: g.heavy, st: g.st, stun: g.stun, win: g.win }; }
+function parryWindow() { var k = guardKind(); return k === 'shield' ? PARRY.shield : k === 'weapon' ? PARRY.bare : GUARD[k].win; }
 /* The parry chain (2026-10-15, Robin: parry more in a fight, "when you hit them after they are dizzy they attack and you can parry
    again; to make combos"). A parry stuns (stun). While he is stunned your blows do not end it (he reels on, pushed only a
    little so he stays in reach) and they bite harder; when it ends he comes out of it swinging at once, a blow you can parry
@@ -2752,7 +2760,7 @@ function parryWindow() { return shielded() ? PARRY.shield : PARRY.bare; }
    to you ends the chain. The numbers are on the Combat Arena's Tuning panel (the feel of a hit). */
 var CHAIN = { max: 4, keep: 4.5, stun: 0.15, dmg: 0.1, kb: 0.25, answer: 0.9 };   // (set by the bots of tests/parry.js, 2026-10-15: a good parrier needs about four parries for a man in leather, six for one in mail, and lands four in five of his blows on a reeling man; a mere blocker two or three, and two in five)
 function chainUp() { var p = P; if (W.t - (p.chainAt == null ? -99 : p.chainAt) > CHAIN.keep) p.chain = 0; p.chain = Math.min(CHAIN.max, (p.chain || 0) + 1); p.chainAt = W.t; return p.chain; }
-function parryStun() { return MEN.parryStun * (1 + CHAIN.stun * Math.max(0, (P.chain || 1) - 1)); }
+function parryStun() { return MEN.parryStun * (P.parryK == null ? 1 : P.parryK) * (1 + CHAIN.stun * Math.max(0, (P.chain || 1) - 1)); }   /* (P.parryK: what the parry was made with, GUARD[].stun) */
 /* Four more for the fight (2026-10-15, Robin's picks from the research in docs/idea-bank.md, "Combat: what would make it more
    engaging"). POSTURE: a foe's balance (e.posture 0..1, shown under his health) fills with every parry, every blow he stops on his
    shield and a little with every blow that lands; it drains after a while unpressed; full, he is BROKEN: stunned a long while,
@@ -2797,18 +2805,18 @@ function logEv(ev) { if (api.onLog) api.onLog(ev); }
 function hurtPlayer(dmg, sx, sy, kind, src) {
   var p = P; if (p.dead) return false; if (p.invuln > 0) { if (p.roll.t > 0) logEv({ k: 'dodged', dmg: dmg, kind: kind, src: src }); return false; }
   var toSrc = Math.atan2(sy - p.y, sx - p.x);
-  var front = Math.abs(wrap(toSrc - p.face)) <= (shielded() ? 1.9 : 1.4);
-  if (p.guard && front && !(kind === 'proj' && src && src.type === 'soldier' && !shielded())) {   /* (a bowman's arrow is stopped by a shield, not by a raised arm) */
+  var gd = guardOf(), front = Math.abs(wrap(toSrc - p.face)) <= gd.arc;
+  if (p.guard && front && !(kind === 'proj' && src && src.type === 'soldier' && gd.kind !== 'shield')) {   /* (a bowman's arrow is stopped by a shield, not by a raised arm) */
     if (kind !== 'heavy' && p.guardT < parryWindow()) {
-      p.parryFx = 0.35; p.st = Math.min(maxSt(), p.st + 12);
+      p.parryFx = 0.35; p.parryK = gd.stun; p.st = Math.min(maxSt(), p.st + 12);
       spark(p.x + Math.cos(p.face) * 10, p.y + Math.sin(p.face) * 10, 14, '#fff6c8', 140);
       lockFor(p, 0.09); lockFor(src, 0.09); slowmo(0.25, 0.14); ring(p.x + Math.cos(p.face) * 10, p.y, 13, 24, 0.2, '255,243,196', true, 2.4); sfx('parry');
       var chN = chainUp(); num(p.x, p.y - 26, chN > 1 ? 'PARRY x' + chN : 'PARRY!', chN >= CHAIN.max ? '#ff9a4a' : chN > 1 ? '#ffc94a' : '#ffe27a', chN > 1); if (chN > 1) tone2(chN); logEv({ k: 'parry', dmg: dmg, kind: kind, src: src, chain: chN }); if (api.onDeed) api.onDeed('parry'); if (modZ('riposte') > 0) p.riposteT = 1.2;   // the riposte rune: a free heavy blow follows
       return 'parry';
     }
-    var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? (shielded() ? 0.4 : 0.8) : (shielded() ? 0.12 : 0.55);
+    var gbH = hitFlags.guardBreak, red = (kind === 'heavy' || gbH) ? gd.heavy : gd.light;
     var d2 = dmg * red * (api.armor ? 1 - api.armor() : 1);
-    p.hp -= d2; p.st -= (shielded() ? 10 : 18) * (gbH ? 1.8 : 1) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
+    p.hp -= d2; p.st -= gd.st * (gbH ? 1.8 : 1) * mod('block'); p.stDelay = 0.8; if (api.onDeed) api.onDeed('block');
     var kbs = kind === 'heavy' ? 110 : 55; if (hitFlags.stagger) { kbs = 150; p.hurtT = Math.max(p.hurtT, 0.24); p.guard = false; p.invuln = Math.max(p.invuln, 0.3); }   // (while he cannot act he cannot be struck: with more than one man on him he must always be able to get out)
     p.kx = -Math.cos(toSrc) * kbs; p.ky = -Math.sin(toSrc) * kbs;
     spark(p.x + Math.cos(p.face) * 9, p.y + Math.sin(p.face) * 9, 6, '#cfd6e6', 90);
@@ -3088,7 +3096,7 @@ function updatePlayer(dt) {
   p.holdT = held ? p.holdT + dt : 0;
   if (a.ph === 'charge' && (IN.rmb || IN.keys.KeyK)) { a.ph = 'none'; a.since = 9; }
   // guard
-  var want = (IN.rmb || IN.keys.KeyK) && p.mode === 'fight';
+  var want = (IN.rmb || IN.keys.KeyK) && (p.mode === 'fight' || p.mode === 'gather');   /* (a tool can block too, badly: GUARD.tool, 2026-10-16) */
   if (want && !p.guard && a.ph === 'recover' && a.t >= stepData(a).rec * 0.5) { a.ph = 'none'; a.t = 0; a.since = 0; }   // the guard from the second half of a recovery (2026-10-15: to parry the blow that answers yours)
   if (want && !p.guard && a.ph === 'none' && p.roll.t <= 0 && p.hurtT <= 0 && p.st > 0 && p.atkBuf <= 0) {
     p.guard = true; p.guardT = (W.t - p.lastRaise > 0.5) ? 0 : 99; p.lastRaise = W.t; sfx('raise');

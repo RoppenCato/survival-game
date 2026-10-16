@@ -259,8 +259,8 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   charged swing). **K** or right click: raise the guard (with a shield on the arm a shield's; in the instant a blow lands, a
   parry). **Ctrl**: target the nearest foe, then the next, then let go.
 - **The bar** is the bag's top row, six slots, one in hand (`hand`, -1 empty). **1 to 6** take a slot's thing in hand or use
-  it (food, a torch); its number again puts it away. The wheel picks a slot, **Enter** takes it. An axe, a pick, a knife or a
-  rod in hand gathers (the engine's gather mode, `GATHER_KINDS`); anything else, or empty hands, fights. A one-handed weapon
+  it (food, a torch); its number again puts it away. The wheel picks a slot, **Enter** takes it. An axe, a pick or a rod in
+  hand gathers (the engine's gather mode, `GATHER_KINDS`); anything else, or empty hands, fights (the knife is a weapon, Robin). A one-handed weapon
   taken in hand wears a shield from the bag. Q is no key of the game's.
 - **X**: draw your weapon or put it away (among other people it is away until drawn; a drawn blade is a threat).
 - **E**: use what you face (one rule, `eWhat`). **G**: your men: tap "with me", hold "hold here"; "storm" before a place,
@@ -296,8 +296,9 @@ board holds the plank house's pieces and the workbench until the first night sle
 
 **Gathering** (`src/gather.js`, through `Combat.api.harvest`): a tree's first blow cuts a notch, blows from the other side are
 the back cut and fell it toward the notch; it falls as a trunk (four logs, eight blows, struck anywhere along it) and fells
-the trees in its line; a rock cracks; a bush is cut with the knife; berries drop from a bush on E; everything shakes when
-struck; the swing's pace is 1.5; a tool bites a beast at `TOOL_DMG` 0.8 of a weapon. Stumps regrow. Drops lie with a bounce
+and chips (never fells) up to three trees in its line (`fallBite`, Robin); a rock cracks; **berries and grass are picked by hand
+with E** and pop out (a bush or tuft regrows in six minutes; no tool takes a bush; Robin), and now and then a tree's wood
+comes with a strip of fiber; everything shakes when struck; the swing's pace is 1.5; a tool bites a beast at `TOOL_DMG` 0.8 of a weapon. Stumps regrow. Drops lie with a bounce
 and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) multiplies what is gathered and dropped. Trees
 are baked at twice their prop (`World.TREE_BAKE` 2), 200 to 250 units tall; rocks come in six variations of tone and build.
 
@@ -327,7 +328,9 @@ F takes pieces back for what they cost. Nothing can be built in somebody else's 
 (`canReach`).
 
 **Home, sleep and comfort:** a closed room is worth its roof, a hearth, a workbench, a bed, a rug and up to two pieces of
-furniture (at most 7); the comfort line shows it. A bed answers only under a roof and only if it is yours; sleeping skips the
+furniture (at most 7). **A fire burns outdoors** (a campfire or a hearth cannot be built inside) and counts as the house's
+hearth within `FIRE_YARD` 100 units of it; a fireplace goes inside, but not on the starter island (Robin). New animated fire
+models are asked of the Art Director; the comfort line shows it. A bed answers only under a roof and only if it is yours; sleeping skips the
 night, and under a roof leaves you rested for comfort × 2 minutes. Inside a room with comfort and near a fire you heal. Chairs
 and benches seat you (E). The shipwright's raft bench needs comfort 4 at home and goes on the sand by the sea.
 
@@ -374,8 +377,8 @@ Houses are narrow and long at real sizes (a house 4 by 6 to 9 tiles, a longhouse
 
 **Boats** (`src/yard.js`, `docs/boats.md`): E at a shipwright's bench steps into the Shipyard; a vessel is a hull design chosen
 there (raft, faering, boat, karve, longship by the bench's tier), fitted out with seats, mast, sail, steering oar, dragon stem
-and shields, and launched (the hull is paid then). Sailing is `Yard.sail`, with the wind for rigged hulls and rowers for the
-crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper, ships iron.
+and shields, and launched (the hull is paid then). Sailing is `Yard.sail`: every vessel, the raft too, goes forward on W and
+steers with A and D (Robin), with the wind for rigged hulls and rowers for the crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper, ships iron.
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
 chart show what has been seen; saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is
@@ -416,9 +419,10 @@ is health and stamina top left, the chart and the meal top right; damage numbers
   1.5, Dane axe 1.8) sets the pause, the ring and the sound of a hit. `tests/blows.js` prints each weapon's numbers and flags
   a contradiction of the doc. Ranged: the bow (no arrows needed for now), sling, javelin, throwing axe. A hit lands within
   reach plus the foe's radius plus 2, and the hero steps into a blow toward a foe (a little at the air).
-- **The guard:** with a shield on the arm (`shielded()`: the page's `api.shield`) it covers 1.9 radians, lets 0.12 of a light
-  and 0.4 of a heavy blow through, costs 10 stamina, parries in 0.22 s and stops arrows; without, the bare forearm or the
-  weapon (1.4 radians, 0.55 and 0.8 through, 18 stamina, 0.12 s, no arrows). No shield with a bow or a Dane axe (`TWO_HANDS`,
+- **The guard is made of what you hold** (`GUARD`, `guardKind`, Robin 2026-10-16): **a parry stops all of a blow** whatever it
+  is made with, but stuns for less with a weapon (half) or a tool; a block lets through a fifth with a shield (Robin: it stops
+  80%, more with a better shield: the page's `api.shieldThrough`, wood 0.2 to iron 0.12), half with a weapon, most with a tool or
+  the bare arm; only a shield stops arrows; a tool can block (gather mode raises a guard too). Arcs 1.9 (shield) to 1.2. No shield with a bow or a Dane axe (`TWO_HANDS`,
   mine). **The guard turns you to the threat** (Robin, 2026-10-15: the foe whose blow lands soonest, else the nearest;
   `GUARD_FACE`, `S.guardFace`) and walking does not turn you while it is up. K late in a recovery raises it.
 - **The parry and what follows** (Robin's picks, 2026-10-15; the numbers are mine): a parry stuns (`MEN.parryStun` 1.0 s);

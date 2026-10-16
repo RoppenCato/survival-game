@@ -164,7 +164,7 @@ var T = 32, TS = 24, K = 0.75;
   // and the hull turns to face it and goes), 1 is Tiller (W drives, S backs, A and D turn). top and accel in units a
   // second, turn in radians a second, glide how long it keeps moving after you let go, grip how firmly it follows its bow.
   // rowK: what each rower adds to the top speed and the acceleration (a longship's twenty-six add less each than a faering's four)
-  var HANDLING = { raft: { steer: 0, top: 54, accel: 40, turn: 1.6, glide: 1.4, grip: 0.5 }, faering: { steer: 1, top: 92, accel: 56, turn: 2.2, glide: 1.8, grip: 0.62, rowK: 0.1 }, boat: { steer: 1, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, rowK: 0.08 },
+  var HANDLING = { raft: { steer: 1, top: 54, accel: 40, turn: 1.6, glide: 1.4, grip: 0.5 }, faering: { steer: 1, top: 92, accel: 56, turn: 2.2, glide: 1.8, grip: 0.62, rowK: 0.1 }, boat: { steer: 1, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, rowK: 0.08 },
     karve: { steer: 1, top: 115, accel: 42, turn: 1.3, glide: 3.2, grip: 0.72, rowK: 0.05 }, longship: { steer: 1, top: 128, accel: 34, turn: 0.9, glide: 4.2, grip: 0.8, rowK: 0.03 } };
   // The wind is a buff only (reward, never punishment): a sail with the wind behind it goes up to (1 + k) times the top speed, and a wind
   // ahead costs nothing. Each rower aboard (v.crew, capped by the seats) adds rowK to the top speed and the acceleration.
