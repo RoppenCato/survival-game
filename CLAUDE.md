@@ -61,7 +61,8 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   set of numbers; raiding and combat get the most work.
 - **The start:** you land with nothing at a wreck on the starter island; an abandoned, broken steading there shows how a
   village is set up and that the world is dangerous; there you meet Brokk, the first friendly person, and hear of the first
-  legendary Viking (Ragnar Ironside, whose crew burnt it). A slower beginning that introduces things one at a time (Robin,
+  legendary Viking (in the game Ragnar Ironside, whose crew burnt Hildir's steading: those names are mine, not Robin's, and
+  the Lore Director holds them as "in-game", not canon). A slower beginning that introduces things one at a time (Robin,
   2026-10-14). Sleeping skips the night. Dying at sea is forgiving: the boat drifts to the shore where you last slept and
   needs half its materials (not built). Currencies: more than one, a new one about every third biome; the first island trades
   basics, silver comes with raiding. Arrows are ammunition of several types carried outside the bag (a way is still to be
