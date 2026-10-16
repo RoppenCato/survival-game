@@ -2,8 +2,8 @@
 """Build the pages from the source files.
 
 Usage:  python3 tools/build.py
-Output in dist/: index.html (the start page), the editors (art-editor, sea-editor, song-editor,
-village-editor), the combat-arena and the game.
+Output in dist/: index.html (the start page), the editors (art-editor, sea-editor, village-editor), the
+combat-arena and the game.
 Each is a single self-contained file you can open in a browser or host anywhere.
 """
 import hashlib
@@ -70,7 +70,6 @@ PAGES = [
     ('index', 'index'),
     ('art-editor', 'art'),          # the Character, Creature, Object and Blender editors as one page (2026-10-09, the cleanup)
     ('sea-editor', 'sea'),
-    ('song-editor', 'song'),
     ('combat-arena', 'combat'), ('village-editor', 'village'), ('game', 'game'),
 ]
 # ?mute=1 on any page silences it: every sound the page makes goes to a gain of nothing (Robin, 2026-10-13: the sound was on

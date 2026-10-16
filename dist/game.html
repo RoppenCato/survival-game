@@ -12868,13 +12868,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // What is shown: the runes (the casting cloth, runestones, skills on the hotbar) and the Book of Beasts are built but
   // not finished, so they are hidden until the basics are right (Robin, 2026-10-05). Flip these to bring them back.
   var SHOW = { runes: true, book: false };     // runes: the arm ring (docs/arm-ring.md); book: the Book of Beasts, still hidden
-  var OPTS = { music: 0, amb: 0.7 }, musicOn = false, dangerT = 0, songsLS = null, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
+  var OPTS = { music: 0, amb: 0.7 }, musicOn = false, dangerT = 0, musicSong = '';   // music is off until turned up in the Escape menu (Robin, 2026-10-05)
   try { var o = JSON.parse(localStorage.getItem('game.opts')); if (o) { OPTS.music = o.music != null ? o.music : OPTS.music; OPTS.amb = o.amb != null ? o.amb : OPTS.amb; } } catch (e) {}
   function saveOpts() { try { localStorage.setItem('game.opts', JSON.stringify(OPTS)); } catch (e) {} }
-  function songOf(id) {                   // a song from the Song Editor's library (saved there on purpose), else the built-in one
-    if (songsLS === null) { songsLS = {}; try { songsLS = JSON.parse(localStorage.getItem('song.library')) || {}; } catch (e) {} }
-    return songsLS[id] || Music.SONGS[id];
-  }
+  function songOf(id) { return Music.SONGS[id]; }   // the synthesized song, the fallback when a recording cannot load (the Song Editor and its library are gone since 2026-10-16)
   /* The meadow by day and by night from the sound studio (2026-10-15; C:\dev\SG Sound\out\music\HANDOFF-meadow-day-night.md): two
      recorded loops in place of the synthesized meadowDay and meadowEvening, when no song from the Song Editor is chosen in their
      place (a choice there still wins). Each MP3 starts with the encoder's 1105 samples of delay (measured against the studio's

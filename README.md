@@ -27,7 +27,6 @@ no dependencies, so you can also open any file in `dist/` directly.
 | Art Editor | The Blender models (the hero, the beasts, the people) and the world's drawn objects |
 | Village Editor | The rules that grow a village, with "Use in the game" |
 | Sea Editor | The islands and the sea between, the ships and their handling, the Shipyard |
-| Song Editor | Tunes on the game's own synthesized instruments, a sketchpad (the game plays the sound studio's recordings); export as .mid |
 
 Each editor can copy its settings out as text, and paste them back in.
 
