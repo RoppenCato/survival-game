@@ -339,6 +339,13 @@ Only the shape is known. Each is a new part of the compass, a new ring metal and
 | later | The south, "England in the south": richer, more settled | **Gold in the hall of the south**, the gold ring |
 | last known | Beyond | The **dragon ring** |
 
+**Kvennaey, the island of women** (Robin's family, canon through the Lore Director, 2026-10-17; chapter 4 material, nothing
+built): men land only in the invited season, opened by a quest (a daughter met on another island marks it on the chart); out
+of season draugr rise from the surf against men, never women; the lore warns when the season is ending; a hidden son can be
+hired as a hirdman; a rune makes draugr leave the hero alone unless struck (like the Wolf's run). The lore's ids:
+`family.skulds-daughters`, `place.kvennaey`, `being.noatun-drowned`, `thing.rune-brimgrid`, `person.skuld`, `person.ari`.
+Njord is canon as the god of the seas (in the background, as every god).
+
 ---
 
 ## 4. The checklist for a new chapter
