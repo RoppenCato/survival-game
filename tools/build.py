@@ -46,13 +46,18 @@ def all_sprites():
     return json.dumps(out)
 SRC['__SPRITES__'] = all_sprites()
 def lore_lines():
-    """the Lore Director's delivery (assets/lore/lore.json, copied from its out/lore): every entry with lines, canon or in-game, as { id: { mode, lines } }"""
+    """the Lore Director's delivery (assets/lore/lore.json, copied from its out/lore): every entry with lines, canon or in-game, as { id: { mode, lines } };
+    a rumour (handoff 3, 2026-10-17) also keeps its tier (whisper, lead, truth), heard, when and about (a list of lore ids)"""
     fp = os.path.join(ROOT, 'assets', 'lore', 'lore.json')
     if not os.path.exists(fp): return 'null'
     with open(fp, encoding='utf-8') as f: L = json.load(f)
     out = {}
     for e in L.get('entries', []):
-        if e.get('lines') and e.get('status') in ('canon', 'in-game'): out[e['id']] = { 'mode': e.get('mode', 'variants'), 'lines': e['lines'] }
+        if e.get('lines') and e.get('status') in ('canon', 'in-game'):
+            o = out[e['id']] = { 'mode': e.get('mode', 'variants'), 'lines': e['lines'] }
+            for k in ('tier', 'heard', 'when'):
+                if e.get(k): o[k] = e[k]
+            if e.get('about'): o['about'] = [x.strip() for x in e['about'].split(',') if x.strip()] if isinstance(e['about'], str) else e['about']
     return json.dumps(out, ensure_ascii=False)
 SRC['__LORE__'] = lore_lines()
 def item_icons():

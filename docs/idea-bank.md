@@ -539,13 +539,15 @@ https://en.wikipedia.org/wiki/MapleStory, https://tvtropes.org/pmwiki/pmwiki.php
 Still open: an OGG per song as an asset later if a SoundFont rendering sounds better; the forest, sea, night and
 village pieces; music by place once the island has places.
 
-## Rumours (Robin, 2026-10-17, through the Lore Director; proposed, nothing built)
+## Rumours (Robin, 2026-10-17, through the Lore Director; canon since handoff 3, not surfaced yet)
 
 A database of rumours for villager talk, story and quests (the Lore Director's `canon/rumours.md`, its `docs/integration.md`
-"Rumours"; fourteen written, all proposed). Each has a **tier**: a whisper (a hint from afar, safe at any time), a lead
+"Rumours"; fourteen, canon since handoff 3). Each has a **tier**: a whisper (a hint from afar, safe at any time), a lead
 (something to act on) or a truth (a secret, only after the player has seen the thing), so nothing spoils; **heard** (where
 and from whom), **when** (a condition, if any), **about** (lore ids, so a quest can ask for "a lead about place.kvennaey")
-and **lines** (variants under 130 characters, read by id as lines are). Once Robin approves them they come in `lore.json`.
+and **lines** (variants under 130 characters, read by id as lines are). They are in `lore.json` and inlined in `__LORE__`
+with `tier`, `heard`, `when` and `about` (a list). The Ormr, Aslak, golden boar and Wanderer ones fit the game as it is; the
+Kvennaey ones are for chapter 4.
 **How they surface is mine to decide** (open): mixed into the villagers' pairs, sold by traders, quest openers.
 
 ## Arrows and the quiver (2026-10-13, open)
