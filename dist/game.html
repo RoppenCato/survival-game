@@ -12617,7 +12617,7 @@ function drawHotbar(c) {
     c.font = 'bold 3.8px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText(String(i + 1), x + 1.3, y0 + 4.5);
   }
   c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36';
-  var pc = slots[P.piece], label = build ? (P.wreck ? 'WRECK  (F to build, B to leave)' : 'BUILD: ' + (pc ? pc.name + (pc.cost ? ' (' + pc.cost + ')' : '') : '') + '   (right click: pieces, F: wreck, B: leave)') : (paged ? (gather ? 'GATHER  (B to build)' : 'FIGHT  (B to build)') : (gather ? 'GATHER  (Q to fight, B to build)' : 'FIGHT  (Q to gather, B to build)'));   /* (a page with its own bar has no Q: the mode follows the thing in hand, 2026-10-14) */
+  var pc = slots[P.piece], label = build ? (P.wreck ? 'WRECK  (F to build, B to leave)' : 'BUILD: ' + (pc ? pc.name + (pc.cost ? ' (' + pc.cost + ')' : '') : '') + '   (right click: pieces, F: wreck, B: leave)') : (paged ? (gather ? 'GATHER' : 'FIGHT') + (api.canBuild && !api.canBuild() ? '' : '  (B to build)') : (gather ? 'GATHER  (Q to fight, B to build)' : 'FIGHT  (Q to gather, B to build)'));   /* (a page with its own bar has no Q: the mode follows the thing in hand, 2026-10-14; api.canBuild false: no B yet) */
   var col = build ? (P.wreck ? '#e08a7a' : '#a9c8d8') : (gather ? '#a9cf8a' : '#e6c46a');
   c.strokeStyle = '#231a16'; c.strokeText(label, SW / 2, y0 - 3); c.fillStyle = col; c.fillText(label, SW / 2, y0 - 3);
   c.restore();
@@ -14037,7 +14037,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function handSlot() { return hand < 0 ? null : slots[hand]; }   // -1: empty hands (the thing was put away)
   function handItem() { var s = handSlot(); return s && s.kind === 'item' ? s.item : null; }   // (the argument older callers pass, a mode, is ignored: one hand)
   function barPut(spec) {                // a new weapon or tool goes to the first free slot of the bar; true if it did
-    if (!BAR_OF[spec.kind]) return false; if (!seen.bar) { seen.bar = 1; bigStep('Your bar', 'What you made is in your hand. 1 to 6 take a thing in hand, the key again puts it away.'); }
+    if (!BAR_OF[spec.kind]) return false; seen.bar = 1;   /* (no 'Your bar' board: the bar is there from the start, Robin 2026-10-17) */
     for (var i = 0; i < COLS; i++) if (!slots[i]) { slots[i] = { kind: 'item', n: 1, item: spec }; return true; }
     return false;
   }
@@ -15501,7 +15501,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     weapon: function (k) { var it = handItem(); if (!it || GATHER_KINDS[it.kind]) return null; var K2 = Items.KINDS[it.kind]; return (k === 'bow' ? K2.ranged : K2.melee) ? it : null; }   // 'sword' asks for the melee thing in hand, 'bow' for the ranged one
   };
   Combat.api.barSelect = barPress;
-  Combat.api.hideBar = function () { return !seen.bar && !SCENE; };
+  Combat.api.canBuild = function () { return !!seen.build || !!SCENE; };   /* the bar's "(B to build)" waits for Arnor's word as B does */
   Combat.api.barSlots = function (mode) { var b = 0; return { hand: hand, sel: sel, slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, ammo: ammoOf(s), draw: function (c) { if (s.kind === 'item') itemIcon(c, s.item, 16, 9); else { c.save(); c.beginPath(); c.rect(-9, -9, 18, 18); c.clip(); drawDropIcon(c, s.kind, 0, 0, 1.25); c.restore(); } } } : null; }) }; };
   function ammoOf(s) { return null; }   /* (no ammo while there is no quiver, 2026-10-13) */   // arrows for a bow, stones for a sling: written in the thing's own slot
   function handSync() {                   // the engine's mode, tool and weapon follow the hand (one bar, 2026-10-14)

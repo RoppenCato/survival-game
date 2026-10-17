@@ -294,8 +294,8 @@ launched he is at the shore to see you off. **Every line he says is the Lore Dir
 story a line a talk, other lines once you wear the bronze ring) and the villagers' pairs about Ormr. Words that are not a
 person's (the scratch by Hogni, the carving on Thorgunna's stone) go on the speech board too (`sayAt`). What anyone says
 shows on the speech board at the foot of the screen. The big steps
-are bordered boards (`bigStep`: "Your bar", "Building", "The raft", "You have left the island", the last whenever you stand
-on another island's land). The interface grows: the hotbar shows once a thing is on the bar; B waits for Arnor; the Building
+are bordered boards (`bigStep`: "Building", "The raft", "You have left the island", the last whenever you stand
+on another island's land). **The bar is there from the start** (Robin, 2026-10-17: not something you gain); B, and the bar's "(B to build)" (`api.canBuild`), wait for Arnor; the Building
 board holds the plank house's pieces and the workbench until the first night slept under a roof opens twenty-four more
 (key `slept`).
 
