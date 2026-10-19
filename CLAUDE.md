@@ -20,7 +20,7 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   little of the systems below: their numbers are first settings, measured by bots, not felt.
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
   so at their top (`start-loop.md`, `the-beginning.md`, `world-shape.md`: waters, the lifecycle of a raided place, named
-  islands, claims and the year; `ui-review.md` has a list waiting).
+  islands, claims and the year; `build-plan-waters.md`: the steps to build it, for a long Fable session; `ui-review.md` has a list waiting).
 - **One project roof, `C:\dev\SG`** (Robin, 2026-10-16): `Art Director`, `Sound Director` (Robin also says music or
   sound director), `Lore Director` and `Game Developer` (this repo; it was `C:\dev\survival-game`).
 - **The lore is the Lore Director's** (`C:\dev\SG\Lore Director`; the agreement Robin approved on 2026-10-16 is its
@@ -234,8 +234,8 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 
 ## Things to know before changing code
 
-- `dist/` is committed: after editing `src/` or `templates/`, `npm run build`, then **parse the built pages** (`new
-  Function(script)` over each page's scripts; it takes a second).
+- `dist/` is committed: after editing `src/` or `templates/`, `npm run build`, then **parse the built pages** (`node
+  tools/parsecheck.js`: `new Function(script)` over each page's scripts; it takes a second).
 - Source files load two ways, inlined into a page and `require`d by Node scripts: no ES module syntax, no browser globals at
   load time. `stylelab.js` needs `global.__mk` for canvases.
 - **A patch must not put a `//` comment in the middle of a line**: the templates' lines are long and hold many statements,
