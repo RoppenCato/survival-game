@@ -61,7 +61,8 @@ and not built (`docs/idea-bank.md`).
   overgrown, and every island gets generated events (a new settlement with boats and a path, trolls in a new cave, new
   creatures such as Näcken, unraided places growing). **All of the year is for later.**
 - **The realm is Skargard** (Robin, 2026-10-16, through the Lore Director: from *skärgård*, archipelago; a part of Midgard), the
-  map's title. The gods may appear only in the background, never named, never bosses (Robin); Odin forged the dragon ring.
+  map's title. The gods may appear only in the background, never named, never bosses (Robin); Odin forged the last ring, the one the legends are about; **it is not called the dragon ring** (Robin, 2026-10-19: "dragon"
+  is not Viking; the name is the Lore Director's to give, "Odin's ring" until then, `LORE?`; the id `dragon` stays in code).
 - **The map:** the compass means something, the details are generated: north colder, south richer and settled ("England in
   the south"), east rivers and trade, west open ocean and the unknown. Distance from home sets how hard a place is,
   direction what kind. An archipelago of big islands and big seas; one island can hold several biomes; each biome is harder

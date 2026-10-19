@@ -337,7 +337,7 @@ Only the shape is known. Each is a new part of the compass, a new ring metal and
 | --- | --- | --- |
 | 4 and 5 | By the compass: north the cold, east the rivers and trade, west the unknown | The twisted silver ring (heart side), the central **trading hub** (heavily guarded, unwise to attack; Hedeby, Birka and Kaupang are the candidates), legendary Vikings with big ships |
 | later | The south, "England in the south": richer, more settled | **Gold in the hall of the south**, the gold ring |
-| last known | Beyond | The **dragon ring** |
+| last known | Beyond | **Odin's ring** (its name is the Lore Director's; not "dragon", Robin 2026-10-19) |
 
 **Kvennaey, the island of women** (Robin's family, canon through the Lore Director, 2026-10-17; chapter 4 material, nothing
 built): Skuld's Daughters, every woman a Skuldardottir (Geirhild, Eydis, Yngvild; Ari, a hidden son of sixteen); men land

@@ -20,7 +20,7 @@ mix toward the next, as Valheim's do.
 | The first big island | the first biome in full | **copper**; the **troll and the cave**; building **an actual village** (the claim stone, the hird); **the arm ring** from the dead Viking at the back of the cave, and the carver's bench |
 | Islands around it | the same biome, later filled with different places of interest; they mix toward the next biome | places, people, runes from beasts and stones |
 | The second biome | new things again | **the first Viking ship**; **the first raid** on a nearby island, which everything in this biome revolves round; the silver ring |
-| Beyond | each biome adds its own events and its own ring | twisted silver, gold in the hall of the south, the dragon ring |
+| Beyond | each biome adds its own events and its own ring | twisted silver, gold in the hall of the south, Odin's ring (not "dragon", Robin 2026-10-19) |
 
 The rule for a biome: one easy formula a player understands in a minute (heavier metal beats you, each biome has its ring
 holder), and plenty of curveballs inside it.

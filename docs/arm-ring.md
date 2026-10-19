@@ -12,7 +12,7 @@ cut and reddened with blood had power. The game never explains any of it.
   the **hand** (fight: skills, attacks, weapon runes), the **foot** (movement), the **eye** (work: how you chop, mine,
   fish, hunt), the **heart** (endurance and the hird). Coils are bound to their side, so "two coils" means one fight rune
   and one movement rune, and a new side opening reads as a story.
-- **The metal is the rank.** Five words anyone can order: **bronze, silver, twisted silver, gold, dragon**. The metal says
+- **The metal is the rank.** Five words anyone can order: **bronze, silver, twisted silver, gold, and Odin's ring** (not "dragon": Robin, 2026-10-19; its name is the Lore Director's). The metal says
   which biome a Viking has mastered, the coils how far into it. Every figure in the world wears its ring on the arm and is
   named by it in speech ("Ormr of the gold ring"); your own ring sits on the panel beside theirs when you meet. The rule a
   player learns in a minute: a heavier metal beats you. The **curveballs** keep it from going stale: a jarl with silver and
@@ -26,7 +26,7 @@ cut and reddened with blood had power. The game never explains any of it.
 | Silver | 3 | + eye | a jarl or hoard of the second biome (the raid) |
 | Twisted silver | 4 | + heart | later biomes |
 | Gold | 6 | two per side | the hall in the south |
-| Dragon | 8 | two per side | the thing the legends are about |
+| Odin's | 8 | two per side | the thing the legends are about |
 
 ## Cutting and changing
 

@@ -52,7 +52,7 @@ metal), but nobody should see a ring:
 - Each circle's metal comes in a different way in each sea (bog iron, ore, salvage, trade), so the same step feels
   different by direction.
 - The metals, in order (mine; the names of the later ones are the Lore Director's): flint, copper, iron, steel, then
-  something legendary at the edge. The ring metals (bronze, silver, gold, the dragon ring) run beside them as the world's
+  something legendary at the edge. The ring metals (bronze, silver, gold, Odin's ring) run beside them as the world's
   big rewards.
 
 This matches what was decided already: distance from home sets how hard a place is, direction what kind.

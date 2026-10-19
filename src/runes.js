@@ -47,7 +47,7 @@ var METALS = {
   silver: { name: 'Silver', rank: 2, coils: ['hand', 'foot', 'eye'], col: '#c9ced8', dark: '#6f7580', light: '#ffffff' },
   twisted: { name: 'Twisted silver', rank: 3, coils: ['hand', 'foot', 'eye', 'heart'], col: '#d6dbe4', dark: '#6f7580', light: '#ffffff' },
   gold: { name: 'Gold', rank: 4, coils: ['hand', 'hand', 'foot', 'foot', 'eye', 'eye', 'heart', 'heart'].slice(0, 6), col: '#e2b63a', dark: '#8a6a18', light: '#fff0a8' },
-  dragon: { name: 'Dragon', rank: 5, coils: ['hand', 'hand', 'foot', 'foot', 'eye', 'eye', 'heart', 'heart'], col: '#c8402a', dark: '#6a1e12', light: '#ff9a7a' }
+  dragon: { name: 'Odin\'s', rank: 5, coils: ['hand', 'hand', 'foot', 'foot', 'eye', 'eye', 'heart', 'heart'], col: '#c8402a', dark: '#6a1e12', light: '#ff9a7a' }   /* LORE? the fifth ring's name: not "dragon" (Robin, 2026-10-19: not Viking); the id stays so saves keep it */
 };
 var METAL_ORDER = ['bronze', 'silver', 'twisted', 'gold', 'dragon'];
 function newRing(metal) { var m = METALS[metal] || METALS.bronze; return { metal: METALS[metal] ? metal : 'bronze', coils: m.coils.map(function (s) { return { side: s, id: null }; }) }; }
