@@ -19,7 +19,8 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
 - **Robin's decisions are marked as Robin's; choices I made are marked "mine"** so Robin can judge them. Robin has played
   little of the systems below: their numbers are first settings, measured by bots, not felt.
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
-  so at their top (`start-loop.md`, `the-beginning.md`; `ui-review.md` has a list waiting).
+  so at their top (`start-loop.md`, `the-beginning.md`, `world-shape.md`: waters, the lifecycle of a raided place, named
+  islands, claims and the year; `ui-review.md` has a list waiting).
 - **One project roof, `C:\dev\SG`** (Robin, 2026-10-16): `Art Director`, `Sound Director` (Robin also says music or
   sound director), `Lore Director` and `Game Developer` (this repo; it was `C:\dev\survival-game`).
 - **The lore is the Lore Director's** (`C:\dev\SG\Lore Director`; the agreement Robin approved on 2026-10-16 is its
