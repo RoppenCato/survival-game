@@ -15,6 +15,48 @@ And, Robin's:
 - **The four seas around are about the same level**, but each gives different things, so you want to explore them all:
   the ring's tools can be made on every side, and each sea has separate things that are not required to go further out.
 
+## Robin's answers, round two (2026-10-19)
+
+- **Home water cannot be raided until raiding is opened in the second circle.**
+- **Each circle's material can be got in different ways** (copper at home too); the ways are worked out when that part is
+  built.
+- **Raiding home has a point: you overthrow the jarl and can then claim home's islands, one by one if you want.**
+- **A new ore every circle**, so you go further and further out. Robin asks whether always-circles makes the world feel less
+  random; some control is wanted, so circles may be good.
+
+### Worked out from round two (mine, waiting)
+
+**Opening the raids at home.** Before your first raid abroad, home's villages are not raid places at all: no stores behind
+doors, no raid state, and the jarl's peace holds. Your first raid in the second circle is the turn: word of it comes home
+with the traders, and the jarl calls you to his hall and asks for a share. Pay, and the peace holds a while longer; refuse,
+or come back with enough men, and his waters are open to you: his villages keep stores now (his tax), his men answer you.
+
+**Overthrowing the jarl.** Raiding his villages weakens him (fewer men at his hall, less in his stores) and wins you
+loot and men. When you are ready, you raid his hall: his hird at the doors, the jarl himself a man with a good weapon
+and his best men, a set piece of the raid we have, not a boss type. Take his high seat and home water is yours to claim.
+
+**Claiming home, one island at a time.** After the jarl falls, each village can be claimed: a claim stone and a hirdman to
+keep it, as decided. Two ways, by what you did before: villages you spared and traded with swear to you willingly; ones you
+raided you claim by force, and they give less. A claimed village sends food, wool and recruits and works for you, so home
+water becomes your realm and the big base Robin wants grows across islands.
+
+**Circles, without looking like circles.** The circles stay (control: the further out, the harder and the newer the
+metal), but nobody should see a ring:
+- A circle is a count of crossings from home, not a radius. Waters are scattered by noise, so the map is lumpy: one
+  second-circle water lies close, another far; a third-circle water may sit behind a second-circle one, reachable only
+  through it.
+- Circles are not complete: the second circle has four seas, the third five to seven, some dead ends, one behind sea
+  ice that opens only in summer.
+- The next metal is teased before its circle: a trader selling one bar, a wreck with a broken blade, a fallen star with
+  a lump of strange iron. You know it exists and roughly where.
+- Each circle's metal comes in a different way in each sea (bog iron, ore, salvage, trade), so the same step feels
+  different by direction.
+- The metals, in order (mine; the names of the later ones are the Lore Director's): flint, copper, iron, steel, then
+  something legendary at the edge. The ring metals (bronze, silver, gold, the dragon ring) run beside them as the world's
+  big rewards.
+
+This matches what was decided already: distance from home sets how hard a place is, direction what kind.
+
 ## Worked out (mine, 2026-10-19; waiting for Robin)
 
 ### The rings
