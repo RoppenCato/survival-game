@@ -1,8 +1,96 @@
 # The shape of the world: raids, exploration, special islands, claims and the year
 
-**A proposal, waiting for Robin (2026-10-19).** Robin set out the directional challenges below; the problems list and the
+**A proposal (2026-10-19); Robin finds the idea good and has answered the first questions (below).** Robin set out the directional challenges below; the problems list and the
 solutions are mine. Nothing here is decided or built. Where it touches decided things (`CLAUDE.md`: the compass, the
 chapters, the year, the hird, the raid) it keeps them and says how they fit.
+
+## Robin's answers (2026-10-19)
+
+**The idea is good** (the sea as waters, one continuous sea, named islands in slots, the lifecycle, rumours on the chart).
+And, Robin's:
+
+- **Seasons everywhere, eventually.**
+- **The player is tied to the starter seas at the beginning.** The middle (home water) is **a lot bigger, with more islands,
+  but only villages on them**, and **a simpler jarl** somewhere. **Raiding is introduced in the next seas.**
+- **The four seas around are about the same level**, but each gives different things, so you want to explore them all:
+  the ring's tools can be made on every side, and each sea has separate things that are not required to go further out.
+
+## Worked out (mine, 2026-10-19; waiting for Robin)
+
+### The rings
+
+- **Ring 0, home water**: the starter island, the big island with its mountain and the troll, and many more islands: a
+  few medium (150 to 250 tiles), many small (30 to 80), skerries. Villages only (farmsteads, fishing hamlets, a trading
+  post), friendly, and the simple jarl's hall on one medium island. Flint, then copper (on more than one island, so it is
+  never a single place). What you do: settle, build, trade, hear rumours, recruit your first hirdmen, help and be helped.
+  Chapters 1 and 2.
+- **Ring 1, the four seas** (north, south, east, west): the same level. Raiding starts here. Every sea has the ring's
+  tier material (iron) in its own form, and things only it has. Chapter 3 is the first of them (the south: the lowlands are
+  built), then the others.
+- **Ring 2 and beyond**: harder, further, the next ring metal; the far west (Kvennaey, as its lore says "far west") lies
+  out here.
+
+### What ties you to home at first: the ship, not a wall
+
+The edge of home water is open sea: the swell grows and a raft or a small boat cannot cross it (turned back by the swell,
+never punished: it drifts home). A sea-going ship can: a hull from the big shipwright's bench, copper rivets, a sail woven
+from the villages' wool, tar from pine, and a crew of hirdmen to row. Getting all of that is most of chapters 1 and 2, and
+it is earned, not a key. The simple jarl can be the one who says the seas are open to you (a feast, a gift of a sail),
+so the moment is a story beat, not a menu.
+
+### The four seas: the same level, different things
+
+Each has the tier material in its own form (so any direction moves you on), its own look, its own places to raid, and
+side things that fill the necklace, ring and trinket slots, the bag and the base, never required:
+
+| Sea | Look | Iron, its way | Raids | Only here (optional) |
+| --- | --- | --- | --- | --- |
+| North | birch, fell, snow, long winters | ore in the mountains | fell farms, a jarl's hall | furs, walrus ivory, whale oil (a longer torch), skis, reindeer |
+| South | chalk, fields, orchards, mild | bought or looted bars, a town's bloomery | churches, towns (silver) | bread and wheat, dyes for sails and clothes, glass beads, honey |
+| East | marsh, reeds, rivers | bog iron and charcoal | river forts, rich traders' boats | amber (necklaces), the trading hub, foreign goods |
+| West | heath, sea cliffs, wind | salvaged from wrecks | island monasteries, wreckers | seal skin, puffin eggs, the sunstone (finds the sun in fog), the way further west |
+
+Each sea also has its own beasts, its own recruits (a northern hunter with a bow, a southern smith) and its own named slot.
+
+### Islands: a recipe, rolled with guarantees
+
+A sea is rolled first: ring, direction, climate, its specialty, its kinds of island, its named slot. Then each island is a
+recipe with its own seed (the world's seed, the sea, its number), so it can be rebuilt from the seed and saved as what
+changed:
+
+1. **Size and shape**: round, long, a ring round a bay, a steep rock.
+2. **Relief**: flat, hills, or a mountain (the mountain code we have).
+3. **Climate**: the sea's, varied a little per island and blended where seas meet.
+4. **Kind**: settled, wild, mountain, marsh, holy, ruin, fishing; settlements by kind (the Village archetypes).
+5. **Features** from a pool weighted by kind and sea: caves, waterfalls, lookouts, groves, bogs, rune stones, ship
+   settings, ruins.
+6. **Beasts** by climate; **resources** by the sea's specialty.
+7. **Good build spots**, scored: shelter, flat ground, water, timber near, a view, a landing.
+
+Controlled, not loose: every sea guarantees its specialty on at least two islands and its iron on at least one, every big
+island at least one good build spot and a landing, home water copper on two islands and a village within reach of the
+start; the rest is rolled.
+
+### Biomes become climates, and seasons are a layer on top
+
+A **climate** is a table of looks: ground colours, trees, rocks, grass, flowers, light, weather, beasts (home meadow,
+birch fell, chalk field, marsh, heath). What sits on an island is its kind; how hard is its ring. The lowland "biome" in
+the code becomes the chalk climate plus the town kind.
+
+**Seasons are a second axis: the look is climate times season.** Every climate entry gets four palettes from the start
+(spring, summer, autumn, winter), even while only summer is drawn: blossom, full green, autumn colours, snow or rain.
+Seasons change paint and props, never the land: the ground is baked again when the season turns, trees swap to their
+season's sprite, the grass changes colour. Climates differ in their year (the north's snow comes in autumn and the sea ices
+over in winter, so you sail north in summer; the south has a mild wet winter; the west has autumn storms). That gives the
+year its rhythm without a rule saying so, and fits the invited season (summer) for Kvennaey.
+
+### Questions for Robin
+
+- Can home water's villages be raided at all? Mine: you can fight there, but there is nothing worth a raid (no stores
+  behind doors), and the jarl outlaws whoever does it.
+- The simple jarl: the one who opens the seas to you (a feast and a sail), a trader, a rival you can one day replace?
+- Is iron the tier material of the first ring (it fits the lowlands as decided)?
+- Kvennaey in ring 2's west, as its lore says far west?
 
 ## Robin's challenges (2026-10-19, in his words, shortened)
 

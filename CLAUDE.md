@@ -67,6 +67,11 @@ and not built (`docs/idea-bank.md`).
   direction what kind. An archipelago of big islands and big seas; one island can hold several biomes; each biome is harder
   than the one before; no gates or keys: you struggle in a biome until you have done things in earlier ones. **Nothing
   handcrafted: everything generated in a controlled way**, the hub and the great seats too. The map shows nothing until seen.
+- **The shape of the sea (Robin, 2026-10-19; `docs/world-shape.md`):** one continuous sea of **waters** (clusters of islands
+  with crossings between). **Home water is a lot bigger, with more islands, villages only and a simpler jarl; the player is
+  tied to it at first. Raiding is introduced in the next seas.** The four seas round it are **about the same level, each
+  giving different things** (the ring's tools on every side, separate things not required to go further). **Seasons
+  everywhere, eventually.** The rest of that doc (rings, generation, climates) is mine, waiting.
 - **Scope for now (2026-10-09): the starter island and the big island only**, until they feel great (`spec.sizes` [120,
   400], `biomes` [0, 0], `count` 2); the lowlands and further islands stay in the code, not spawned. **The big island has a
   small mountain** (foothills and a small plateau, about a sixth of it, its north-west; the first copper).
