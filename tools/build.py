@@ -112,12 +112,13 @@ def prop_images():
     for name in j:                                    # a tag from the picture's own bytes: a browser that has the old picture cached fetches the new one (2026-10-12: the cave mouth was redone and the old one kept showing)
         fp = os.path.join(ROOT, 'assets', 'props', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
         j[name]['src'] = '../assets/props/' + name + '.png?v=' + tag
-    tp = os.path.join(ROOT, 'assets', 'props', 'trees', 'trees.json')   # the trees (the Art Director's, 2026-10-20): standing trees in three variants a kind, the felled trunk and a log
-    if os.path.exists(tp):
+    for sub, jn in [('trees', 'trees.json'), ('pieces', 'pieces.json')]:   # the Art Director's set pieces by folder (2026-10-20): the trees (three variants a kind, the felled trunk, a log), the benches
+        tp = os.path.join(ROOT, 'assets', 'props', sub, jn)
+        if not os.path.exists(tp): continue
         tj = json.load(open(tp, encoding='utf-8'))
         for name in tj:
-            fp = os.path.join(ROOT, 'assets', 'props', 'trees', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
-            tj[name]['src'] = '../assets/props/trees/' + name + '.png?v=' + tag; j[name] = tj[name]
+            fp = os.path.join(ROOT, 'assets', 'props', sub, name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
+            tj[name]['src'] = '../assets/props/' + sub + '/' + name + '.png?v=' + tag; j[name] = tj[name]
     return json.dumps(j)
 SRC['__PROPIMG__'] = prop_images()
 def file_tag(*parts):   # the sound bundle and the music scripts carry a hash of their bytes too (2026-10-16: a browser kept the old bundle)

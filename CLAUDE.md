@@ -330,7 +330,8 @@ oak and birch are the Art Director's pictures** (2026-10-20, Robin's pick: conce
 heroes; `assets/props/trees`, set pieces through `World.setImages` in three variants a kind by the prop's seed, drawn at their
 own size, `fixed`); the felling states stay the game's, and **a felled tree lies as its own trunk picture** along the fall,
 its chopped end at the stump, shortened at the far end as the logs come off (never thinner: Robin), the wood rolling out
-there; the log picture waits for a use. The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
+there; the log picture waits for a use. **The workbench and the raft bench are the studio's pictures too** (2026-10-20,
+`assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12). The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
 props at their old size (Admin's **Trees** cycles their bake; `World.TREE_SHAPES`); rocks come in six variations of tone and build.
 
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
