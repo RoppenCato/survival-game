@@ -49,7 +49,7 @@ in the frame log at Robin's size.
 
 ### 3. Leaner sheets from the Art Director (asked 2026-10-20: done)
 
-In their art plan (`C:\dev\SG\Art Director\docsrt-plan.md`): memory budgets per set (the hero 1.5 GB to 350 MB, the idle
+In their art plan (`C:\dev\SG\Art Director\docs\art-plan.md`): memory budgets per set (the hero 1.5 GB to 350 MB, the idle
 100 frames to 16), the approved beasts and väsen trimmed before they are dropped in. **After Wednesday, mine:** a packer that
 cuts each frame to its own pixels with an offset (`tools/sprites.js` and `src/sprites.js`), then the studio repacks every set.
 
