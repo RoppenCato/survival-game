@@ -569,8 +569,8 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   clip again with `--keep 1` (else the numbers hold that clip alone); a clip that travels gets a frame of its own
   (`--inplace`, `anims[clip].frame`); a layer packed with `--only` lies in a box cut to its pixels; a changed sheet needs its
   `?v=` tag (the build adds it). **Open:** the 160 px frame cuts the tips of long weapons; the wrist (the hands bound to
-  Mixamo's hand bones) waits; the people share the hero's old head until the studio re-renders them (its plan, phase 0); the wolf, the snake,
-  the four old trolls and the bysen still lack the lit side.
+  Mixamo's hand bones) waits; the people share the hero's old head until the studio re-renders them (its plan, phase 0); the four old
+  trolls and the bysen still lack the lit side (the wolf and the adder have it since 2026-10-20).
 
 ## Sound and music
 

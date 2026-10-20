@@ -83,7 +83,7 @@ sound and the day and night are perfected in this chapter**.
 | The lit boar and deer | Built (dropped in 2026-10-20, approved art) |
 | The fires (campfire, hearth, fireplace, brazier, fire pit) | Built (2026-10-20; Robin's yes) |
 | The people (Arnor first): the lit side and the new face | Not started (the studio, phase 0) |
-| The wolf and the adder with the lit side | Not started (the studio, phase 0) |
+| The wolf and the adder with the lit side | Built (2026-10-20; the wolf 32 MB, was 65; the adder 19, was 30) |
 | **The trees**: three concepts for Robin, then pine, birch and broadleaf as set pieces with the felling drawn over | Open (the most screen time of anything; the studio, phase 1) |
 | Crafting stations (workbench, shipwright's bench first) | Not started (the studio, phase 1) |
 | Furniture (bed, chest, chair, table, bench, crate, barrel) | Not started (the studio) |
