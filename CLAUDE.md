@@ -608,6 +608,12 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
 - **The sound bundle and the music scripts carry `?v=` and a hash of their bytes** (`file_tag` in `tools/build.py`): a browser
   kept the old bundle. Rebuild after `node tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|
   C:/dev/SG/Sound Director/out/sfx/hit_v|assets/sfx/robin|assets/sfx/free" combat`.
+- **The world's sounds (2026-10-20, after Robin's play-test; the four free packs he chose, credited in `assets/sfx/free/CREDITS.md`):**
+  candidates to pick in the arena's The sounds panel: the hit on a tree (`chop` A to C), on a rock (`clink` A), a tree falling
+  (`treefall` A, played from the felling blow and trimmed so its crash lands with the trunk, which then plays nothing more), a
+  log coming off the trunk (`logthud` A, B), a box breaking (`boxbreak` A to C), the block (`block` A); levelled to one loudness a
+  row (`free.json`). Until one is picked the synthesized sound plays. The club's own hit and the sea wait for the Sound
+  Director's layered ones.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the
   Escape menu's bar is turned up; there is no mute key (M is the map).

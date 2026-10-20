@@ -72,6 +72,9 @@ Also done: beasts start at least 500 units from the steading's middle and 300 fr
 
 **The Sound Director** (each from a reference Robin likes): the hit on a tree, a tree falling, the club's hit ("awful"), the
 block, a box opening ("something wooden breaking, a nice snappy comforting sound"), the ambient sea ("more like a noise").
+**First candidates in the arena (2026-10-20),** from the free packs Robin chose: The sounds panel, the Choose rows for the hit on
+a tree, the rock, a tree falling, a log coming off, a box breaking and the block. The studio's layered ones (and the club's hit,
+the sea) join the same rows when they come.
 
 **The Art Director:** the character panel, the bag and the crafting board in the art direction (the panel's gear icons too
 cramped, plain and ugly); a block with the weapon raised for when no shield is worn; the trees (already in its plan).
