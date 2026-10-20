@@ -26,6 +26,7 @@ SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'source')
 bpy.ops.wm.open_mainfile(filepath=os.path.abspath(os.path.join(SRC, 'hero2_mixamo.blend')))
 sc = bpy.context.scene; rig = next(o for o in sc.objects if o.type == 'ARMATURE')
 body = bpy.data.collections['Body']; gear = bpy.data.collections['Gear']
+toon.face_images('folk')                                 # 2026-10-20 (the studio): the people's face, painted over the hero's in place (no moustache)
 
 # the hero's own measures (hero2_build.py): the parts lie in the T-pose, facing -Y, the left side at +X
 TOP, HEAD = 1.62, 0.40
@@ -40,7 +41,7 @@ M = {k: toon.material(k, v, None, 'cel') for k, v in COL.items()}
 
 # ---- the hero's own things go; his tunic and trousers become layers ----
 for o in list(body.objects):
-    if o.name in ('cowl', 'hoodback', 'hair', 'braidtie', 'beard', 'pouchL', 'pouchR') or o.name.startswith('braid'): bpy.data.objects.remove(o)
+    if o.name in ('cowl', 'hoodback', 'hair', 'braidtie', 'beard', 'pouchL', 'pouchR') or o.name.startswith(('braid', 'fringe', 'tuft')): bpy.data.objects.remove(o)   # 2026-10-20 (the studio): the hero's fringe and beard tufts (2026-10-13) are his, not theirs
 def coll(name):
     c = bpy.data.collections.get(name) or bpy.data.collections.new(name)
     if c.name not in [k.name for k in sc.collection.children]: sc.collection.children.link(c)

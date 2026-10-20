@@ -7,7 +7,8 @@
 // run overwrites what another said about a clip. Then: node tools/people.js
 const { spawn } = require('child_process'); const fs = require('fs'); const path = require('path');
 const OUT = path.join('art', 'render', 'people'), BLEND = path.join('art', 'source', 'people.blend');
-const FR = { idle: 32, idle_look: 36, walk: 10, run: 8, attack1: 10, attack2: 10, chop: 10, mine: 10, hit: 5, death: 10, block: 3, sit: 4, pickup: 8, interact: 6, bow_draw: 5, bow_shoot: 4 };
+const FR = { idle: 16, idle_look: 18,      // 2026-10-20 (the studio, the memory budget): the idles halved from 32 and 36
+  walk: 10, run: 8, attack1: 10, attack2: 10, chop: 10, mine: 10, hit: 5, death: 10, block: 3, sit: 4, pickup: 8, interact: 6, bow_draw: 5, bow_shoot: 4 };
 // The death is rendered in a frame of its own (2026-10-13): a man falling backward ends two metres from where he stood and
 // out of the frame every other clip fits in, so the dead lay with half their bodies cut off. Jobs 8 to 11 render it larger
 // (--size 208), looking lower (--aim 0.6) and held over its spot (--inplace death) into art/render/people_own, with numbers
