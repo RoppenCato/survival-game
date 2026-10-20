@@ -364,7 +364,7 @@ awake within 420 units, the music's test), with its picture, name and each mater
 when short) and "ready to make"; a click on the slip's pin lets it go; **the hand board teaches the stations**: under its
 own groups, faint, "At the hearth", "At the workbench", "At the furnace" for each station kind the hero has stood at
 (`seen.stations`, set in `stationNear`) with what it makes that he knows; a dim row can be chosen and its card says "Made
-at the hearth" in place of the button. The pin pieces (`pin_on`, `pin_off`) are drawn in code until the studio's land.
+at the hearth" in place of the button. The pin is the studio's `pin_on` and `pin_off` (drawn in code while they load).
 Hand: flint axe, knife, pick, wooden club, stick bow, torch. Bench: the flint sword, the wooden shield, the leather set,
 copper and iron tools and weapons from bars. Charcoal (none on the starter island, where nothing uses it: no old fire rings or struck trees there, no embers: Robin, 2026-10-20): embers at dawn by every fire that burned all night, the charcoal
 clamp, lightning-struck trees, old fire rings. The furnace makes copper bars (and iron bars from bog iron).
