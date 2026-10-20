@@ -337,7 +337,8 @@ bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three
 bush until it regrows), **and the rocks** (`assets/props/rocks`: rock, boulder and rock formation in six variants each, by
 the prop's seed; the cracks and the sweet spot's cue are drawn over them), **and the camp things** (`assets/props/camp`:
 the drying rack, woodpile, chopping block, log seat, cart, well, trough and the two tents in undyed wool, their mouths
-south). The build folds any
+south), **and the furniture** (`assets/props/furniture`: bed, chest (and `chest_open` while its board is open), chair, table,
+bench, crate, barrel; the rug, loom, stool, shelf and cupboard come with the steading). The build folds any
 `assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`); `w.sprite` looks for `name_1` to `name_6`, then
 `name_1` to `name_3`, then `name`, then the drawn prop. The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
 props at their old size (Admin's **Trees** cycles their bake; `World.TREE_SHAPES`); rocks come in six variations of tone and build.
