@@ -554,8 +554,12 @@ is health and stamina top left, the chart and the meal top right; damage numbers
 Tried in **`game.html?scene=battle`** and by `tests/battle.js` (`one|two|friend|five|bows|duels|ladder|town|raid|ways [n]`;
 three bots: tapper, careful, skilled); `tools/visual/battleplay.js` and `raidplay.js` play it in the page. **In the real game
 (raid step 1, 2026-10-20, `docs/raid-build-plan.md`): a place outside home water gets its men** (`garrisonTick`: `Village.garrison`
-through `townMen`, `DEFENCE` men by archetype, a town 20, a seat 10, a trading post 4, mine until step 4) **when the hero comes
-within 1200 units of its bounds**, and loses them when he has been 2600 off for 40 s and no raid is on there; their names are
+through `townMen`; **how many and how armed is `Village.defence(arch, wealth, ring)` from the table `Village.DEFENCE`** (step 4,
+mine: a farmstead 0 to 1, a small village or fishing hamlet 0 to 2, a village 2 to 6, a trading post 3 to 6, a seat 6 to 12, a
+town 14 to 24, a great town 30 to 40, by wealth; a sixth more a ring further out; the hall's and the gate's men in mail, the
+rest in leather, a share with bows, a bonus to wits; a church none; `tests/battle.js arches` prints the ladder, kept in
+`docs/baselines/arches-2026-10-20.txt`: a farmstead falls to the hero alone, a village about even alone, a trading post or a
+seat wants men at his back, a town is lost with five) **when the hero comes within 1200 units of its bounds**, and loses them when he has been 2600 off for 40 s and no raid is on there; their names are
 seeded, a man killed stays dead by his number (`seen.menDead[vi]`, saved). Home water's places have none (at peace); the Battle
 and Destruction scenes make their own. **The settlement remembers (step 2):** its pieces are in `B` and saved (a broken door,
 a taken chest, a burnt wall survive a reload); `seen.raids[vi]` counts its raids and `seen.lastRaid[vi]` the day; its folk speak

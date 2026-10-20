@@ -38,3 +38,12 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
    units off is lost (taken, to be won back in step 9); a carrier holds on until under 45% of his health (`MEN.dropAt`); if
    you fall on a raid with any of your men standing within 600 units you wake aboard the ship with them, the chest you
    carried left where you fell, your bag kept. Admin: "A karve by you", "Four hirdmen join".
+6. **Sizes of villages and levels of defence (raid step 4): the table `Village.DEFENCE`**, mine, for you to set the targets
+   on. Fighting men by archetype at wealth 0 and 1: farmstead 0 to 1, small village and fishing hamlet 0 to 2, village 2 to 6,
+   trading post 3 to 6, chieftain's seat 6 to 12, town 14 to 24, great town 30 to 40; a sixth more a ring further out; the
+   hall's and gate's men in mail, the rest in leather (a great town's all in mail), a fifth with bows, wits +1 in the bigger
+   places. The bots' ladder (`tests/battle.js arches 3`, `docs/baselines/arches-2026-10-20.txt`), the careful bot with an
+   iron sword in leather, alone / with 2 / with 5 of his own: a farmstead taken every time; a small village every time
+   (hurt 30 to 60); a village alone 67 to 100%, with men every time; a trading post alone never, with 2 every time; a seat
+   alone never, with 2 sometimes, with 5 mostly; a town never, even with 5 (a longship's crew, as you decided). Say which
+   rungs feel wrong and I move the numbers.

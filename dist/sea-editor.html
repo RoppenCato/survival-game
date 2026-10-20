@@ -6515,8 +6515,31 @@ function SIZE_OF(kit, name) { return SIZES[name] || 1; }
    the hall (the best; they must arm, so they come last: delay, seconds before a man who has heard something is on his way:
    18 to 32), a man inside every house (asleep or at table: 5 to 12), the rest about the yard. Each is { x, y, face, kind:
    'gate' | 'yard' | 'door' | 'house' | 'hall', wpn ('bow' for a few of them), delay }. The game (townMen) and tests/battle.js make soldiers of them. */
-function garrison(V, n, R) {
+/* The fighting men of a place (raid step 4, 2026-10-20; a first table of mine, by archetype: Robin's "different sizes of villages,
+   different levels of defence"): n at wealth 0 and at wealth 1 (between, in proportion), the gear of the hall's and the gate's men
+   and of the rest (0 cloth, 1 leather and a shield, 2 mail, a helm and a shield), the share with a bow, a bonus to wits; a place
+   in a further water gets a sixth more men a ring. Villagers who are not fighting men still arm when raided (the game's
+   FOLK_FIGHT). A church has none: its priests do not fight (Robin). Tried by tests/battle.js arches. */
+var DEFENCE = {
+  farmstead: { n: [0, 1], gear: [1, 0], bows: 0, wits: 0 },
+  small: { n: [0, 2], gear: [1, 0], bows: 0, wits: 0 },
+  fishing: { n: [0, 2], gear: [1, 0], bows: 0, wits: 0 },
+  village: { n: [2, 6], gear: [1, 1], bows: 0.15, wits: 0 },
+  trading: { n: [3, 6], gear: [2, 1], bows: 0.2, wits: 1 },
+  seat: { n: [6, 12], gear: [2, 1], bows: 0.2, wits: 1 },
+  town: { n: [14, 24], gear: [2, 1], bows: 0.2, wits: 1 },
+  great: { n: [24, 34], gear: [2, 1], bows: 0.2, wits: 1 },
+  bigtown: { n: [30, 40], gear: [2, 2], bows: 0.25, wits: 2 }
+};
+function defence(arch, wealth, ring) {
+  var d = DEFENCE[arch]; if (!d) return { n: 0, gear: [1, 1], bows: 0, wits: 0 };
+  var k = Math.max(0, Math.min(1, wealth == null ? 0.5 : wealth)), n = Math.round(d.n[0] + (d.n[1] - d.n[0]) * k);
+  n = Math.round(n * (1 + 0.16 * Math.max(0, (ring || 0) - 1)));
+  return { n: n, gear: d.gear, bows: d.bows, wits: d.wits };
+}
+function garrison(V, n, R, D) {
   var F = V.fence, out = [], WP = ['sword', 'axe', 'spear', 'axe', 'sword', 'club', 'spear'], HW = ['sword', 'axe', 'greataxe', 'sword', 'spear', 'axe'], k = 0, i, S = Math.PI / 2, N = -Math.PI / 2; R = R || Math.random;
+  if (D && D.n != null && n == null) n = D.n;
   var things = V.items.map(function (it) { return [it.x, it.y, it.r != null ? it.r : (it.name === 'rug' || it.name === 'cellarDoor' ? -99 : 8)]; }).concat(V.props.map(function (o) { return [o.x, o.y, o.solid != null ? o.solid : 8]; }), V.nature.map(function (o) { return [o.x, o.y, o.r || -99]; }));
   function lotAt(x, y) { for (var i2 = 0; i2 < V.lots.length; i2++) { var l = V.lots[i2]; if (x > l.x * T && x < (l.x + l.w) * T && y > l.y * T && y < (l.y + l.h) * T) return l; } return null; }
   function roomy(x, y, l0) {     // nothing he would stand in, and the same side of every wall as the place meant
@@ -6532,7 +6555,7 @@ function garrison(V, n, R) {
     return [x, y];
   }
   var bows = { 3: 1, 7: 1 };              // which of them carry a bow: one inside the gate, one by the market, and (below) one of the hall's and every fourth about the yard
-  function put(x, y, face, kind) { if (out.length >= n) return; var sp = settle(x, y); x = sp[0]; y = sp[1]; out.push({ x: x, y: y, face: face, kind: kind, wpn: bows[out.length] ? 'bow' : kind === 'hall' ? HW[k % 6] : WP[k % WP.length], delay: kind === 'hall' ? 18 + R() * 14 : kind === 'house' ? 5 + R() * 7 : null }); k++; }
+  function put(x, y, face, kind) { if (out.length >= n) return; var sp = settle(x, y); x = sp[0]; y = sp[1]; var bow = D && D.bows != null ? (kind !== 'door' && kind !== 'house' && out.length > 1 && R() < D.bows) : !!bows[out.length]; out.push({ x: x, y: y, face: face, kind: kind, wpn: bow ? 'bow' : kind === 'hall' ? HW[k % 6] : WP[k % WP.length], delay: kind === 'hall' ? 18 + R() * 14 : kind === 'house' ? 5 + R() * 7 : null }); k++; }   /* (the table's share with a bow, when a table is given; the old fixed posts else) */
   var hall = V.lots.filter(function (l) { return l.id === 'hall'; })[0], houses = V.lots.filter(function (l) { return l.id === 'house'; }), yc = [(V.yard.x + V.yard.w / 2) * T, (V.yard.y + V.yard.h / 2) * T];
   if (F && !F.round) {
     var gx = (F.gate + (F.gateW || 1) / 2) * T, gy = F.y1 * T;
@@ -6552,7 +6575,7 @@ function garrison(V, n, R) {
   i = 0; while (out.length < n && i < 40) { var a = i * 2.4, r = 70 + (i % 5) * 34; if (i % 4 === 1) bows[out.length] = 1; put(yc[0] + Math.cos(a) * r, yc[1] + Math.sin(a) * r * 0.7, a, 'yard'); i++; }   // the rest about the yard
   return out;
 }
-return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, draw: draw, rng: rngOf, SIZES: SIZES };
+return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
 if (typeof module !== 'undefined') module.exports = Village;
 
