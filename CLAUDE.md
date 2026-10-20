@@ -128,7 +128,7 @@ and not built (`docs/idea-bank.md`).
   camera sits at zoom 0.65 (the view 390 units tall); houses are at the sizes they were dug up at; the starter island is 120
   tiles, the big island 400, about 200 tiles of water between (`gap` 240); the hero jogs at 84 units a second. Islands feel
   large through obstacles (groves, cliffs, water) more than through distance.
-- **Look:** happy, lush, green Scandinavia in daylight; no dark shady scenes, no glowing weird lights. **Art direction
+- **Look:** **the art direction is kept; no makeover** (Robin, 2026-10-20, after the studio's options page). Happy, lush, green Scandinavia in daylight; no dark shady scenes, no glowing weird lights. **Art direction
   (decided 2026-10-07, `docs/art-direction.md`): the ink of Egerkrans, the light of Bauer**: one colour key a scene with one
   hot accent, shadows cooler and bluer than the light, an earth-and-bone palette, a warm brown-black hand-made line heavy on
   the shadow side, one sun upper left, grain in every fill. Characters in the cel style Robin picked (2026-10-09). Trolls as
