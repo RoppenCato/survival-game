@@ -38,6 +38,13 @@ then `canvas.toDataURL('image/jpeg', .92)`. A big result lands in a file: decode
 **Effort:** high for the session; extra high for step 1 only. Small fixes noticed along the way go on a list at the end of
 this file for a later Opus session, not into the day.
 
+**Baselines (2026-10-20, before any of this; `docs/baselines/`):** the game's sea (seed 11, 912 by 640 tiles, 2 islands)
+takes `World.make` 936 ms, `plant` 42 ms (4929 trees, 1196 rocks), `dress` 62 ms (5868 dabs, 109,662 ground cells), the
+chart 13 ms, about 20 MB of heap (`node --expose-gc tools/worldtime.js 11`); `npm test` prints 463 lines with no fault
+(`npm-test-2026-10-20.txt`); the chart of today's sea with its villages is `sea-2026-10-20.png`. A save is about 55 KB
+(the ground as a diff), every save together 124 KB. The beasts' sheets load when a beast is near (about 550 MB decoded if
+every kind were loaded; none at the start).
+
 ## 1. Decisions to confirm with Robin first (defaults if he is not there)
 
 | # | Question | Default (mine) |

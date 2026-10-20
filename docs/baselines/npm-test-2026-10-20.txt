@@ -1,0 +1,463 @@
+
+> survival-game-prototype@0.1.0 test
+> node tests/ctest2.js && node tests/ctest4.js && node tests/btest3.js && node tests/ktest.js && node tests/turntest.js && node tests/wtest2.js && node tests/sprinttest.js && node tests/fuzz.js && node tests/weapons.js && node tests/ring.js && node tests/gather.js && node tests/deer.js && node tests/iron.js && node tests/karve.js && node tests/fishing.js && node tests/runes30.js && node tests/cave.js && node tests/ambient.js && node tests/blows.js && node tests/parry.js 4 && node tests/battle.js && node tests/ruin.js
+
+reach 42 hit: true hp 3
+reach 60 hit (should be false): false
+mash min distance 17.0 (body radii sum 13) bot hp 0
+cross arena in 3.87 s
+moved up during attack by 0.8
+parry works: false hp 100
+frames bot spent hugging (<20): 0 of 180
+auto ranged hit: true
+done
+dash sideways dist 48.8
+backstep moved y by 53.2 (positive = backward/down)
+dash dodge hp 100
+180 turn in frames 7 ( 0.12 s )
+done
+brute lunge parried with good timing: true stagMeter 40 hp 100
+spin dodged with dash, hp 100
+hits 300 crit-like first hits 41 (expect ~15%)
+crit dmg 1.50 rattle 1.55 flashRgb 255,208,70
+kill: dead true slowmo secs 0.05 (was 0.18+)
+rattled windup frames 48 (normal 33)
+soft enemy behind: HIT
+soft enemy above, facing right: HIT
+facing enemy behind: miss
+facing enemy above, facing right: miss
+holding A: attack dir 3.14 (pi=3.14 means left)
+phase recover -> face after holding W during swing/recovery -1.57 (-1.57 = up)
+far enemy behind, no input: dir 0.00 (0 = forward)
+snappy normal hit: enemy pause frames 2 player pause frames 2 knockback dist 7.6
+snappy 3rd hit: enemy pause 5 player pause 4 slowmo frames 4
+normal normal hit: enemy pause frames 3 player pause frames 3 knockback dist 7.9
+normal 3rd hit: enemy pause 11 player pause 11 slowmo frames 8
+heavy normal hit: enemy pause frames 4 player pause frames 5 knockback dist 6.5
+heavy 3rd hit: enemy pause 0 player pause 0 slowmo frames 0
+walk speed 84 sprint speed 130 stamina after 0.5s sprint 89.0
+stamina empties after 4.5 s of sprinting; sprintLock false
+speed when empty and shift held 87
+stamina after 2s rest 54.4
+sprint again speed 130 lock false
+guard + shift speed 46 (guard walk ~65)
+fuzz done, bad = 0
+sword     hits near 1.00 far 0.00 stagger idle motion swing
+axe       hits near 1.20 far 0.00 stagger idle motion swing
+club      hits near 0.85 far 0.00 stagger idle motion smash
+seax      hits near 0.60 far 0.00 stagger idle motion thrust
+knife     hits near 0.50 far 0.00 stagger idle motion thrust
+spear     hits near 1.10 far 1.10 stagger idle motion thrust
+greataxe  hits near 2.00 far 0.00 stagger idle motion swing
+sword     chain 3 combos 1,2,0,1
+axe       chain 3 combos 1,2,0,1
+club      chain 2 combos 1,0,1
+seax      chain 3 combos 1,2,0,1
+knife     chain 3 combos 1,2,0,1
+spear     chain 2 combos 1,0,1
+greataxe  chain 2 combos 1,0,1
+bow       shot ammo hit for 2.00 landed -
+sling     shot ammo hit for 0.90 landed -
+javelin   shot javelin hit for 1.80 landed javelin
+throwaxe  shot throwaxe hit for 1.60 landed throwaxe
+bad = 0
+ok  bronze has hand and foot
+ok  nothing cut when unknown
+ok  riposte cut into the hand coil
+ok  an eye rune has no coil on bronze
+ok  surefeet into the foot coil
+ok  roll files surefeet away
+ok  cutting an alive rune again is refused
+ok  file empties the coil
+ok  silver opens the eye
+ok  gold has six, two per side
+ok  dragon has eight
+ok  sure feet halves the sprint cost (10.6 vs 5.3)
+ok  riposte: the swing after a parry is the heavy one (dealt 3.00)
+ok  boar’s charge bowls a beast over (dealt 1.20, moved 25)
+ok  without it, sprinting into a beast does nothing
+ok  roll: longer (0.16 to 0.29) and longer untouchable (0.16 to 0.42)
+plain chops while held: 2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0  heavy blow: 6.0,6.0,6.0,6.0,6.0,6.0,6.0
+ok  heavy blow: holding does not keep chopping, letting go lands about three blows
+bad = 0
+ok  notch: the first blow is plain and notches the west side (dealt 2, notch -1)
+ok  from the notched side it stays plain (dealt 2)
+ok  the back cut from the other side is x2 (dealt 4)
+ok  glint: from the glint side the blow is x2 (dealt 4)
+ok  from the other side it is plain (dealt 2)
+ok  rhythm: in the window the blow is x1.5
+ok  too soon after the last: plain
+ok  crack: from the crack’s side the blow is deeper (dealt 2.5)
+ok  sunny side: the sweet side is the left, and never wanders
+ok  sunny side: a rock’s sweet facet is the left
+ok  with cracks on a rock has no glint spot of its own
+ok  the defaults (logsPerTrunk 4, pace 1.5 since 2026-10-14; Robin’s were 2 and 2)
+ok  the tree in the fall line is felled, the ones behind and far aside are not
+ok  the hero in the fall line is hurt for 12
+ok  a trunk lies where it fell
+ok  the trunk gives its logs (16 wood) and goes
+ok  without trunks the wood drops at once (["wood",14])
+ok  a stump does not grow back before regrowDays
+ok  after regrowDays it is a sapling (grow 0)
+bad = 0
+SHY {"bleedT":40,"bleed":0.14,"slow":0.7,"run":0.6,"herdR":260,"trail":16,"pool":2.5}
+herd: the watcher woke at {"t":"4.42","d":232} its two grazers at {"t":"4.42","d":230} {"t":"4.42","d":261}
+a grazer alone, come at from behind, noticed at 106 units (the watcher: 232)
+unhurt: pace a second 124,168,168,168 | stops at {"t":"4.1","d":737} | alive with 5 | blood 0
+one wood arrow (1.4 of 5):
+  pace and wound by the second 1s w0.31 97 | 2s w0.33 130 | 3s w0.36 127
+  stops at {"t":"3.9","d":568} | dead at {"t":"36.6","d":568} | furthest 568 | blood: 30 drops along the way, 13 pools where it stood
+a second arrow after 12 s: dead at 17.2 s (one arrow: 36.6)
+
+no faults
+ok   iron sword hits harder than copper: 1 -> 1.3
+ok   iron axe chops better than copper: 2 -> 2.6
+ok   gambeson turns more aside than leather: 0.14 < 0.19
+ok   mail turns more aside than the gambeson: 0.19 < 0.31
+ok   iron helm over leather helmet: 0.08 < 0.18
+ok   painted shield over wooden: 0.07 < 0.22
+ok   names: Mail Shirt, Gambeson, Iron Helm, Painted Shield
+ok   tales differ
+ok   a full iron set reaches the cap: 0.89 before the 0.6 cap
+ok   the leather set stays under the cap: 0.47
+bad = 0
+ok   karve: no seats yet: Rowing seats, two at least
+ok   karve: one seat is too few: Rowing seats, two at least
+ok   karve: no mast yet: Step a mast on the keel, amidships (the marked cell)
+ok   karve: no sail yet: A sail on the mast
+ok   karve: a sail off the mast is refused: The sail goes on the mast
+ok   karve: no steering oar yet: A steering oar at the stern (the marked cell)
+ok   karve: the karve is sound: ""
+ok   karve: six seats are the most: ""
+ok   karve: a seventh seat is refused: No room for more than 6 seats
+ok   karve: two stems are refused: One stem
+ok   karve: a stem and shields are fine
+ok   the yard is as long as the karve and two: 11
+ok   a mast off its cell is refused: The mast steps amidships, on the marked cell
+ok   a mast on its cell is allowed
+ok   a seat on a strake cell is allowed (the hull is the design's): 
+ok   a seat off the hull is refused: It must go on the hull
+ok   a seat on the mast's cell is refused: The mast stands there
+ok   the steering oar at the bow is refused: The steering oar is bound at the stern, on the marked cell
+ok   the stem at the stern is refused: The stem is carved at the bow, on the marked cell
+ok   a hull you cannot pay for is not sound: The hull costs 24 wood, 8 iron bars: not enough
+ok   faering: one seat is enough, no mast: 
+ok   faering: three seats are too many
+ok   boat: a seat at least: A rowing seat, at least one
+ok   longship: four seats, the rig: sound: ""
+ok   longship: three seats are too few: Rowing seats, four at least
+ok   the raft is as it was: Lay at least three logs
+ok   the tiers: raft 1, faering and boat 2, karve and longship 3
+ok   the karve's parts cost iron, not copper
+ok   the boat's stem costs copper
+ok   six seats, twelve rowers: -81,-54,-27,27,54,81 / 12
+ok   the mast is amidships: 0
+ok   you stand at the stern: -81.53 of 131.5
+ok   the sail is set, the steering oar bound, the stem carved, the shields hung
+ok   a longship is about eleven heroes long: 452 units
+ok   a boat saved with its strakes still fits (the design's hull, its seat kept): 91
+ok   calm: the top speed: 115.0
+ok   wind behind: half again as fast: 172.5
+ok   wind ahead: no slower: 115.0
+ok   twelve rowers: 60% faster (0.05 each): 184.0
+ok   more rowers than seats add nothing: 184.0
+ok   a longship's eight rowers: 24% faster (0.03 each): 158.7
+ok   the boat has no sail: the wind does nothing: 100.0
+ok   drawing every hull throws nothing: null
+bad = 0
+shallow sea {"herring":1490,"perch":1361,"cod":91,"salmon":21,"pike":37}
+deep sea {"cod":897,"herring":1370,"perch":270,"salmon":346,"pike":45,"chest":72}
+lowland shallows {"herring":1337,"perch":834,"pike":701,"cod":97,"salmon":31}
+ok   no chest in the shallows
+ok   a chest about 3% of deep bites: 72 of 3000
+ok   perch is a shallow fish: 1361 vs 270
+ok   cod and salmon are deep fish: 897/91, 346/21
+ok   pike lives in the lowland shallows: 701 vs 37
+ok   herring is everywhere
+ok   salmon is rare: 346
+ok   every weight within its fish's range
+ok   a nibble comes within 3 to 9 seconds: 3.5s
+ok   a press during the nibble scares the fish
+ok   a bite follows the nibble
+ok   an unanswered bite is missed within about a second: 0.87s
+ok   a press in the window hooks it
+herring: careful lands 40/40 in 3.2s, steady lands 40/40, greedy lands 39/40
+ok   herring: the careful bot lands nearly all: 40
+ok   herring: even the greedy bot lands most: 39
+perch: careful lands 40/40 in 4.5s, steady lands 40/40, greedy lands 16/40
+ok   perch: the careful bot lands nearly all: 40
+cod: careful lands 40/40 in 4.8s, steady lands 40/40, greedy lands 13/40
+ok   cod: the careful bot lands nearly all: 40
+pike: careful lands 40/40 in 7.8s, steady lands 40/40, greedy lands 0/40
+ok   pike: the careful bot lands nearly all: 40
+ok   pike: the greedy bot loses most: 0
+salmon: careful lands 40/40 in 8.4s, steady lands 40/40, greedy lands 0/40
+ok   salmon: the careful bot lands nearly all: 40
+ok   salmon: the greedy bot loses most: 0
+chest: careful lands 40/40 in 4.0s, steady lands 40/40, greedy lands 18/40
+ok   chest: the careful bot lands nearly all: 40
+ok   the chest never runs
+ok   the bot that never reels lands nothing
+ok   a salmon takes longer than a herring: 9.7s vs 2.3s
+bad = 0
+ok   thirty runes: 30
+ok   every id unique
+ok   every rune has a side of the ring
+ok   every rune has a glyph, a source and a line
+by side {"hand":5,"foot":7,"eye":11,"heart":7}
+ok   each side has at least five
+ok   every rune the game names exists: 
+ok   every rune changes something (inUse): 
+ok   every rune can be earned (a deed, a beast, a stone or a meeting; riposte is Brokk's): 
+ok   the engine reads the new mods (crit, stealth, arrow)
+bad = 0
+seed   11  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 43 yes  veins 9  way through off the floor 0  light to light 288 352 480 448 352  floor cells 11086
+seed    1  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 43 yes  veins 9  way through off the floor 0  light to light 288 320 512 448 352  floor cells 11379
+seed    2  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 42 yes  veins 9  way through off the floor 0  light to light 288 288 512 416 448  floor cells 11336
+seed    3  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 41 yes  veins 9  way through off the floor 0  light to light 288 288 512 480 384  floor cells 11318
+seed    5  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 39 yes  veins 8  way through off the floor 0  light to light 288 288 512 480 416  floor cells 11365
+seed    7  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 39 yes  veins 9  way through off the floor 0  light to light 288 320 576 416 416  floor cells 11467
+seed   12  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 41 yes  veins 9  way through off the floor 0  light to light 288 352 480 448 416  floor cells 11492
+seed   25  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 42 yes  veins 9  way through off the floor 0  light to light 288 320 512 448 384  floor cells 11203
+seed   42  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 43 yes  veins 9  way through off the floor 0  light to light 288 320 512 416 448  floor cells 11582
+seed   77  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 43 yes  veins 9  way through off the floor 0  light to light 288 320 480 480 352  floor cells 11240
+seed  100  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 39 yes  veins 9  way through off the floor 0  light to light 288 320 512 448 416  floor cells 11098
+seed 2024  lair yes  dead man yes  pool yes  ledge yes  way out yes  pockets yes  ores 10 yes  things 38 yes  veins 9  way through off the floor 0  light to light 288 288 544 448 416  floor cells 11460
+every seed: all of the cave can be walked to
+seed   11  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5221  timber sets 9  posts 3  fire-settings 4  stones of the fall 2
+seed    1  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5156  timber sets 9  posts 2  fire-settings 4  stones of the fall 2
+seed    2  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5201  timber sets 9  posts 3  fire-settings 4  stones of the fall 2
+seed    3  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5182  timber sets 9  posts 2  fire-settings 4  stones of the fall 2
+seed    5  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5245  timber sets 9  posts 2  fire-settings 4  stones of the fall 2
+seed    7  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5181  timber sets 9  posts 2  fire-settings 4  stones of the fall 2
+seed   12  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5213  timber sets 9  posts 3  fire-settings 4  stones of the fall 2
+seed   25  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5254  timber sets 9  posts 4  fire-settings 4  stones of the fall 2
+seed   42  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5225  timber sets 9  posts 2  fire-settings 4  stones of the fall 2
+seed   77  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 334255  way through off the floor 0  floor cells 5200  timber sets 9  posts 3  fire-settings 4  stones of the fall 2
+seed  100  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5250  timber sets 9  posts 4  fire-settings 4  stones of the fall 2
+seed 2024  mine  first stope yes  big stope yes  dead end yes  deep stope yes  way out yes  finds 5 yes  ores 6 yes  veins 3342565  way through off the floor 0  floor cells 5249  timber sets 9  posts 3  fire-settings 4  stones of the fall 2
+every seed: all of the mine can be walked to
+seed   11  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6822  under water 64%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed    1  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6877  under water 63%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed    2  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6955  under water 61%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed    3  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6933  under water 60%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed    5  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6896  under water 63%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed    7  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6797  under water 60%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed   12  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6830  under water 64%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed   25  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6741  under water 63%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed   42  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6814  under water 63%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed   77  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6823  under water 62%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed  100  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 7004  under water 64%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+seed 2024  sea  hall yes  beach yes  pocket yes  way out yes  finds 5 yes  ores 0 yes  veins   way through off the floor 0  floor cells 6825  under water 60%  stands 8  the way in is water yes  the pocket is dry yes  the chest is dry yes
+every seed: all of the sea cave can be walked to
+a wood by day         a minute: birds 18.1  owl 0.0  crickets 0.0  waves 0.0  crackles 0.0  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.058  leaves 0.026  fire 0.000  drone 0.000  | most sounding at once 17
+a wood at dawn        a minute: birds 26.2  owl 0.0  crickets 0.0  waves 0.0  crackles 0.0  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.031  leaves 0.008  fire 0.000  drone 0.000  | most sounding at once 14
+open ground by day    a minute: birds 2.9  owl 0.0  crickets 0.0  waves 0.0  crackles 0.0  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.073  leaves 0.002  fire 0.000  drone 0.000  | most sounding at once 11
+the shore by day      a minute: birds 3.4  owl 0.0  crickets 0.0  waves 8.9  crackles 0.0  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.066  leaves 0.002  fire 0.000  drone 0.000  | most sounding at once 14
+aboard, under way     a minute: birds 3.1  owl 0.0  crickets 0.0  waves 8.8  crackles 0.0  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.059  leaves 0.000  fire 0.000  drone 0.000  | most sounding at once 12
+the high plateau      a minute: birds 1.9  owl 0.0  crickets 0.0  waves 0.0  crackles 0.0  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.138  leaves 0.000  fire 0.000  drone 0.000  | most sounding at once 10
+a meadow at dusk      a minute: birds 1.6  owl 0.0  crickets 39.5  waves 0.0  crackles 0.0  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.047  leaves 0.003  fire 0.000  drone 0.000  | most sounding at once 13
+a wood at night       a minute: birds 0.0  owl 1.8  crickets 39.3  waves 0.0  crackles 0.0  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.047  leaves 0.025  fire 0.000  drone 0.000  | most sounding at once 6
+by a fire at night    a minute: birds 0.0  owl 1.9  crickets 39.4  waves 0.0  crackles 333.4  drips 0.0  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.047  leaves 0.007  fire 0.035  drone 0.000  | most sounding at once 8
+the troll's cave      a minute: birds 0.0  owl 0.0  crickets 0.0  waves 0.0  crackles 0.0  drips 18.9  creaks 0.0  booms 0.0  steps 150.0  | beds: wind 0.000  leaves 0.000  fire 0.000  drone 0.045  | most sounding at once 6
+the old mine          a minute: birds 0.0  owl 0.0  crickets 0.0  waves 0.0  crackles 0.0  drips 10.2  creaks 2.1  booms 0.0  steps 150.0  | beds: wind 0.000  leaves 0.000  fire 0.000  drone 0.045  | most sounding at once 8
+the sea cave          a minute: birds 0.0  owl 0.0  crickets 0.0  waves 0.0  crackles 0.0  drips 30.6  creaks 0.0  booms 7.4  steps 150.0  | beds: wind 0.000  leaves 0.000  fire 0.000  drone 0.030  | most sounding at once 7
+every place: only what belongs there is heard, and nothing piles up
+--- one blow of each weapon (iron, the hero in fight mode) against a man in leather who stands still. land: press to the first hit;
+    pressed 4 s: hits, the beats between, how many were the heavy last blow of a chain, hits a minute pressing; dealt: the blow on him (a man has 24);
+    reach: where he must stand for the first blow to land (the step into it counts) against the number; arc: the half-angle a blow still lands at; push: how far a man was moved in the 0.2 s after; breath: the stamina the 4 s took net of what came back, and what one blow costs
+weapon    | land | 4 s: hits | beat min..max | heavy | a min | dealt (light / heavy) | blows to a man | reach (data, step) | arc (data) | push (kb) | breath (a blow)
+sword     |  33 ms |   11 |  333..483 ms |   3 |  165 |   1.32 (1.04 / 2.08) |   19 |   52 (50, 123) |   72 (69) |   9 (110) |  77 (7)
+axe       |  33 ms |    9 |  383..683 ms |   3 |  135 |    1.66 (1.25 / 2.5) |   15 |    50 (32, 80) |   80 (74) |  12 (150) |  63 (8)
+club      |  33 ms |    7 |  500..717 ms |   3 |  105 |   1.27 (0.89 / 1.78) |   19 |    46 (30, 60) |   52 (49) |  12 (230) |  46 (9)
+seax      |  33 ms |   13 |  250..417 ms |   4 |  195 |   0.91 (0.62 / 1.25) |   27 |    38 (25, 70) |   36 (32) |    4 (50) |  52 (4)
+spear     |  33 ms |    8 |  400..633 ms |   4 |  120 |   1.72 (1.14 / 2.29) |   14 |    70 (52, 70) |   20 (16) |  10 (130) |  46 (7)
+greataxe  | 150 ms |    5 |  817..950 ms |   5 |   75 |       2.5 (0 / 2.08) |   10 |    64 (44, 60) | 100 (103) |  15 (280) | 28 (13)
+    a whole blow (press to free again, the first of the chain): sword 630 ms, axe 510 ms, club 540 ms, seax 290 ms, spear 470 ms, greataxe 930 ms; the heavy last: sword 1020 ms, axe 1008 ms, club 1083 ms, seax 560 ms, spear 920 ms, greataxe 1854 ms
+--- the men (iron, strength 4): their windup (what the hero sees coming), their blow on the hero (in leather, 0.2 turned aside; and in cloth), on a man in leather
+   sword     windup 180 ms   on the hero: 12.48 (leather), 15.6 (cloth): 9 blows to 100   on a man: 1.87: 13 blows to 24
+   axe       windup 180 ms   on the hero: 12.48 (leather), 15.6 (cloth): 9 blows to 100   on a man: 1.87: 13 blows to 24
+   club      windup 180 ms   on the hero: 11.23 (leather), 14.04 (cloth): 9 blows to 100   on a man: 1.68: 15 blows to 24
+   seax      windup 180 ms   on the hero: 8.74 (leather), 10.92 (cloth): 12 blows to 100   on a man: 1.31: 19 blows to 24
+   spear     windup 180 ms   on the hero: 13.73 (leather), 17.16 (cloth): 8 blows to 100   on a man: 2.06: 12 blows to 24
+   greataxe  windup 420 ms   on the hero: 19.97 (leather), 24.96 (cloth): 6 blows to 100   on a man: 3: 9 blows to 24
+   the hero with an iron sword puts a man of 24 in leather down in 19 blows (6.9 s held); a man with a sword puts the hero in leather down in 9 (one every 1.18 to 0.63 s by his wits)
+   no contradictions: every weapon has the character docs/weapons.md gives it
+CHAIN {"max":4,"keep":4.5,"stun":0.15,"dmg":0.1,"kb":0.25,"answer":0.9} parry stun 1 | the hero: an iron sword with a shield, leather
+parrier  a man: sword, shield, leather         won 100% in  11s left  91 | parries  3.5 chain 2.3 (longest 3) blows 15.3 on a reeling foe 87% | finishing blows 0.25 broken 0.25 perfect dodges 0.0 won back 1.5
+parrier  a man: axe, leather, no shield        won 100% in  10s left  93 | parries  3.5 chain 3.0 (longest 4) blows 13.5 on a reeling foe 89% | finishing blows 0.50 broken 0.50 perfect dodges 0.0 won back 1.3
+parrier  a man: spear, shield, mail            won 100% in  17s left  84 | parries  4.5 chain 2.3 (longest 3) blows 20.5 on a reeling foe 83% | finishing blows 0.75 broken 0.75 perfect dodges 0.0 won back 2.8
+parrier  a man: Dane axe, leather              won 100% in  14s left  96 | parries  0.0 chain 0.0 (longest 0) blows  6.0 on a reeling foe 17% | finishing blows 1.00 broken 1.00 perfect dodges 4.3 won back 0.5
+parrier  a boar                                won 100% in   6s left  98 | parries  1.3 chain 1.3 (longest 2) blows  6.5 on a reeling foe 62% | finishing blows 0.00 broken 0.00 perfect dodges 0.0 won back 0.7
+parrier  a wolf                                won 100% in   7s left  94 | parries  2.5 chain 2.0 (longest 3) blows 11.3 on a reeling foe 76% | finishing blows 0.00 broken 0.00 perfect dodges 0.0 won back 2.4
+parrier  a bear                                won 100% in  12s left  94 | parries  0.0 chain 0.0 (longest 0) blows 11.5 on a reeling foe 30% | finishing blows 0.00 broken 0.00 perfect dodges 3.3 won back 2.1
+blocker  a man: sword, shield, leather         won 100% in  11s left  87 | parries  2.0 chain 2.0 (longest 2) blows 19.5 on a reeling foe 23% | finishing blows 0.00 broken 0.00 perfect dodges 0.0 won back 4.8
+blocker  a man: axe, leather, no shield        won 100% in  13s left  82 | parries  0.5 chain 0.5 (longest 1) blows 16.3 on a reeling foe 8% | finishing blows 0.00 broken 0.00 perfect dodges 0.0 won back 0.0
+blocker  a man: spear, shield, mail            won 100% in  17s left  88 | parries  3.3 chain 2.0 (longest 2) blows 24.3 on a reeling foe 34% | finishing blows 1.00 broken 1.00 perfect dodges 0.0 won back 0.0
+blocker  a man: Dane axe, leather              won 100% in  16s left  71 | parries  0.0 chain 0.0 (longest 0) blows 17.0 on a reeling foe 0% | finishing blows 0.00 broken 0.00 perfect dodges 0.0 won back 0.0
+blocker  a boar                                won 100% in   4s left  99 | parries  0.0 chain 0.0 (longest 0) blows  7.0 on a reeling foe 0% | finishing blows 0.00 broken 0.00 perfect dodges 0.0 won back 0.0
+blocker  a wolf                                won 100% in   5s left  93 | parries  1.0 chain 1.0 (longest 2) blows 11.5 on a reeling foe 35% | finishing blows 0.00 broken 0.00 perfect dodges 0.0 won back 1.5
+blocker  a bear                                won 100% in   5s left  96 | parries  0.5 chain 0.5 (longest 1) blows 11.3 on a reeling foe 44% | finishing blows 0.00 broken 0.00 perfect dodges 0.0 won back 2.0
+--- one hirdman (rung 1). The hero in leather (0.40 of a blow turned aside). 12 fights a line
+    aimed at: an axe in leather: the tapper loses more often than not, the careful bot wins most, the skilled nearly always; in mail with a shield: loses, about even, wins most; 15 to 40 s
+   tapper with a flint sword against an axe in leather        won 100%  in  19s  left  44  longest  20s    
+   careful with a flint sword against an axe in leather       won 100%  in  18s  left  82  longest  24s    
+   skilled with a flint sword against an axe in leather       won 100%  in  15s  left  95  longest  18s    
+   tapper with a flint sword against an axe in mail           won 100%  in  25s  left  27  longest  27s    
+   careful with a flint sword against an axe in mail          won 100%  in  25s  left  75  longest  40s    
+   skilled with a flint sword against an axe in mail          won 100%  in  14s  left  97  longest  15s    
+    his weapons, against the careful bot with an iron sword:
+   careful, iron sword, against a sword in leather            won 100%  in  12s  left  87  longest  14s    
+   careful, iron sword, against a axe in leather              won 100%  in  11s  left  91  longest  13s    
+   careful, iron sword, against a club in leather             won 100%  in  12s  left  94  longest  14s    
+   careful, iron sword, against a seax in leather             won 100%  in  11s  left  91  longest  15s    
+   careful, iron sword, against a spear in leather            won 100%  in  12s  left  86  longest  15s    
+   careful, iron sword, against a greataxe in leather         won 100%  in  17s  left  82  longest  21s    
+    the hero's weapons (iron), the skilled bot, against a sword and shield in mail:
+   skilled with an iron sword                                 won 100%  in  13s  left  95  longest  15s    
+   skilled with an iron axe                                   won 100%  in  12s  left  97  longest  14s    
+   skilled with an iron club                                  won 100%  in  26s  left 100  longest  29s    
+   skilled with an iron seax                                  won 100%  in  13s  left  97  longest  17s    
+   skilled with an iron spear                                 won 100%  in  14s  left  89  longest  18s    
+   skilled with an iron greataxe                              won 100%  in  20s  left 100  longest  24s    
+    his wits (the shield comes up sooner, he waits less), against the careful bot with an iron sword:
+   wits 1                                                     won 100%  in  10s  left  93  longest  11s    
+   wits 4                                                     won 100%  in  11s  left  88  longest  13s    
+   wits 7                                                     won 100%  in  11s  left  84  longest  13s    
+   a man of little nerve (he may yield or run)                won 100%  in   8s  left  95  longest   9s     gave up 10 of 12
+--- two (rung 2). 12 fights a line. Aimed at: clearly worse than one; the careful bot can win; no two blows landing together, and the hero never held (unable to act) for longer than he could dash out of
+   tapper, iron sword, against axe in leather and axe in leather won 100%  in  24s  left  32  longest  26s     | two blows never closer than 0.90s, never held longer than 0.25s
+   careful, iron sword, against axe in leather and axe in leather won 100%  in  28s  left  44  longest  40s     | two blows never closer than 0.10s, never held longer than 0.42s
+   skilled, iron sword, against axe in leather and axe in leather won 100%  in  17s  left  89  longest  23s     | two blows never closer than 1.33s, never held longer than 0.42s
+   tapper, iron sword, against axe in leather and spear in leather won  75%  in  23s  left  24  longest  27s     | two blows never closer than 1.00s, never held longer than 0.27s
+   careful, iron sword, against axe in leather and spear in leather won 100%  in  26s  left  62  longest  39s     | two blows never closer than 0.42s, never held longer than 0.42s
+   skilled, iron sword, against axe in leather and spear in leather won 100%  in  16s  left  87  longest  21s     | two blows never closer than 0.42s, never held longer than 0.25s
+   tapper, iron sword, against sword in mail and sword in mail won   0%  in   -s  left   -  longest  32s     | two blows never closer than 0.85s, never held longer than 0.25s
+   careful, iron sword, against sword in mail and sword in mail won 100%  in  29s  left  64  longest  36s     | two blows never closer than 0.05s, never held longer than 0.42s
+   skilled, iron sword, against sword in mail and sword in mail won 100%  in  19s  left  82  longest  27s     | two blows never closer than 0.33s, never held longer than 0.25s
+--- a friend (rung 3). 12 fights a line. Aimed at: a friend alone against his equal wins about half; with a friend the same fight is easier and not won for you
+   a friend with a sword alone against a man with a sword     won  42%  in  34s  left 100  longest  38s    
+   a friend with a axe alone against a man with a sword       won  92%  in  42s  left 100  longest  50s    
+   a friend with a spear alone against a man with a sword     won   0%  in   -s  left   -  longest  38s    
+   a friend with a club alone against a man with a sword      won  42%  in  54s  left 100  longest  58s    
+   a friend with a seax alone against a man with a sword      won  58%  in  41s  left 100  longest  45s    
+   a friend with a greataxe alone against a man with a sword  won  33%  in  54s  left 100  longest  70s    
+   rolled men, one against one                                won  58%  in  27s  left 100  longest  44s    
+    a friend, by himself:
+   following a walking and a running hero for 24 s: 51 units from him on average, never more than 98; in his way 0% of the time
+   a man 560 units off (the leash is 250): the friend stays (36 from the hero at most)
+   two men standing: he went for the second, and when the hero struck the other he turned to that one
+   the hero swings at a friend in front of him for 3 s: no hurt
+   a friend with little health against a strong man: down after 2.0 s, not dead; the man gone, he is up again after 4.0 s with 1 health
+   down, and the hero gone 1800 units away: dead after 20 s
+   told to hold, he stood (5 units from his place at most) while the hero walked 250 off; called, he was 26 from the hero 4 s later
+   a man on his knees beside him: left alone
+   in a fight and called: he breaks off
+   tapper against two, alone                                  won  83%  in  24s  left  24  longest  26s    
+   tapper against two, with a friend                          won 100%  in  22s  left  62  longest  26s     the friend went down in 0 of 12 and had 67% of his health left
+   careful against two, alone                                 won  83%  in  29s  left  47  longest  42s    
+   careful against two, with a friend                         won 100%  in  19s  left  90  longest  23s     the friend went down in 0 of 12 and had 68% of his health left
+   skilled against two, alone                                 won 100%  in  19s  left  83  longest  23s    
+   skilled against two, with a friend                         won 100%  in  17s  left  94  longest  22s     the friend went down in 0 of 12 and had 67% of his health left
+--- five against five (rung 4). 6 fights a line. Aimed at: equal sides an even coin; one to two minutes; nobody stuck
+   equal sides (swords, leather), no hero: your side          won  50%  in  46s  left 100  longest  48s    
+   rolled men on both sides, mixed weapons                    won  83%  in  53s  left 100  longest  90s    
+   your side in mail                                          won 100%  in  45s  left 100  longest  48s    
+   your side with spears                                      won   0%  in   -s  left   -  longest  39s    
+   equal sides, yours told to hold a line (shoulder to shoulder, shields up) won  50%  in  37s  left 100  longest  41s    
+   five against seven, yours fighting as they like            won   0%  in   -s  left   -  longest  41s     they took 0.2 of the seven with them, and lasted 41 s at most
+   five against seven, yours in a line                        won   0%  in   -s  left   -  longest  39s     they took 0.5 of the seven with them
+   spears in a line against swords                            won  17%  in  48s  left 100  longest  48s    
+   the hero standing by (he does nothing) with four friends against five won   0%  in   -s  left   -  longest  35s    
+   with the hero (tapper, iron sword) and four friends against five won  75%  in  34s  left  18  longest  37s    
+   with the hero (careful, iron sword) and four friends against five won 100%  in  33s  left  55  longest  36s    
+   with the hero (skilled, iron sword) and four friends against five won 100%  in  31s  left  73  longest  32s    
+--- bowmen (rung 5). 8 fights a line. Aimed at: a bowman behind a line that holds is worth nearly a swordsman, in the place of a swordsman much less, and alone against a man who reaches him he is lost; no arrow is loosed with one of his own in its way, or through a wall
+   a friend with a bow alone against a man with a sword and a shield won   0%  in   -s  left   -  longest  29s    
+   a friend with a bow alone against a man with a great axe (no shield) won   0%  in   -s  left   -  longest  31s    
+   five against five, one bowman a side                       won  50%  in  44s  left 100  longest  57s    
+   five swords and a sixth against five swords                won  88%  in  39s  left 100  longest  55s    
+   five swords and a bowman behind them against five swords   won 100%  in  39s  left 100  longest  44s    
+   four swords and a bowman against five swords               won  25%  in  46s  left 100  longest  58s    
+   five bowmen against five swords                            won   0%  in   -s  left   -  longest  28s    
+   tapper, iron sword, against one bowman                     won 100%  in  11s  left  92  longest  13s    
+   careful, iron sword, against one bowman                    won 100%  in  12s  left  96  longest  14s    
+   skilled, iron sword, against one bowman                    won 100%  in  11s  left  99  longest  12s    
+   careful, iron sword, against a man with an axe and a bowman behind him won 100%  in  25s  left  79  longest  29s    
+   skilled, iron sword, against a man with an axe and a bowman behind him won 100%  in  24s  left  87  longest  31s    
+   a bowman behind his own man who is in a fight: 47 arrows loosed (he walks round until he has a line), 0 of them with his friend in the way
+   a wall between a bowman and a man who stands still: he walked round its end and loosed his first arrow after 3 s; 0 of 11 arrows loosed with the wall between them
+   a man with a sword on a bowman for 12 s: the bowman took his seax, loosed 0 arrows with the man on him, and has 8 of 24 health left
+--- the raid (rung 6): what the engine does for it
+   a man at his post struck from behind: down after 1 blow; a man 140 units off noticed nothing (a quiet blow is heard 70 units)
+   the same with his fellow 50 units off: the fellow woke, saw you and shouted, and the man 140 off heard that
+   the same man struck from the front: still up after 6 blows, with 24 of 27.200000000000003 health; the man 140 units off heard it
+   a man sent 260 units past a foe who stands by: there after 2.6 s, and he fought nobody on the way
+   a carrier who walks into two men: he dropped what he carried at the first blow, after 2.1 s and turned on them
+   the hero walks away from a man 70 units behind him, his back turned, for 12 s: struck first after 3.2 s, 19 health lost
+   the same at a sprint: never struck; the man 282 units behind at the end
+   a carrier with one man 60 units behind him: caught and struck after 1.6 s
+   a man of a town 600 units from his post, the hero 160 further on (beyond the 700 he pursues): he let him go, and 26 s later is 5 units from his post
+   two men taken out of the world from inside the engine's own pass: gone from its list, and nothing broke
+   a man hard against a wall, the hero 13 units before him: nothing between them, and he began his blow after 0.9 s
+   three against one of yours: 1 at him in the first seconds, 2 after 6 s, never more than 2; the one with no place keeps 147 units off
+   a householder and a foe 300 units from his door: he stays; the foe 130 units from it: he goes for him
+   a man asleep, struck from the front: dead after 1 blow; the sound sleeper 54 units off sleeps on, the light sleeper is up
+   two men asleep and a loud noise beside them: both up after 3.0 s (slower than a man at his post: he must get up)
+   a man told to storm a place 900 units off: he got there (34 units from it when he asked for the next), and with none left he is a follower again
+   the guard raised against 10 (the hero in leather): an arrow costs 1.2 behind a shield and 6 with none (it is not stopped); a thing thrown at him 1.2 and 3
+--- a town full of men, attacked (rung 5): the hero (kept alive: the line says when he would have fallen) and five friends against twenty, in 2 towns, at the gate and at the back gate
+    aimed at: nobody ever stuck; the town up over a minute or so, not all at once; every man of it reaches the fight or is still asleep for a reason
+   town 101 (5 houses), in at the gate           up: 10 in 5 s, 11 in 15, 12 in 30, 20 in 60 (gate 0-48, yard 3-3, doors 2-50, in the houses 10-10, hall 28-48); the first met them after 0 s, the last after 273 (20 did); over in 285 s, 16 dead, 4 gave up or ran; friends standing 5/5; the hero would have fallen at 40 s; longest wait at a gate or door 2 s
+        the crowd: round one of yours 2.1 of theirs on average, 7 at most (three or more 24% of the time); round the hero 1.9, 7 at most; 1.9 separate fights at a time, the largest of 3.1 men
+   town 101 (5 houses), in at the back gate      up: 3 in 5 s, 3 in 15, 7 in 30, 19 in 60 (gate 0-33, yard 29-30, doors 2-34, in the houses 38-38, hall 26-65); the first met them after 0 s, the last after 294 (20 did); over in 303 s, 11 dead, 9 gave up or ran; friends standing 5/5; the hero would have fallen at 65 s; longest wait at a gate or door 4 s
+        the crowd: round one of yours 1.8 of theirs on average, 5 at most (three or more 11% of the time); round the hero 1.6, 4 at most; 1.7 separate fights at a time, the largest of 2.8 men
+   town 138 (6 houses), in at the gate           up: 11 in 5 s, 12 in 15, 12 in 30, 20 in 60 (gate 0-49, yard 2-2, doors 1-5, in the houses -, hall 33-40); the first met them after 0 s, the last after 236 (20 did); over in 245 s, 12 dead, 8 gave up or ran; friends standing 5/5; the hero would have fallen at 48 s; longest wait at a gate or door 1 s
+        the crowd: round one of yours 2.4 of theirs on average, 6 at most (three or more 36% of the time); round the hero 2.2, 5 at most; 2.1 separate fights at a time, the largest of 2.9 men
+   town 138 (6 houses), in at the back gate      up: 2 in 5 s, 3 in 15, 6 in 30, 20 in 60 (gate 0-55, yard 10-50, doors 15-57, in the houses -, hall 35-42); the first met them after 0 s, the last after 274 (18 did); over in 290 s, 14 dead, 6 gave up or ran; friends standing 5/5; the hero would have fallen at 74 s; longest wait at a gate or door 3 s
+        the crowd: round one of yours 2.2 of theirs on average, 7 at most (three or more 33% of the time); round the hero 2.1, 6 at most; 1.7 separate fights at a time, the largest of 3.1 men
+    the crowd over all of them: round one of yours 2.12 on average, 7 at most, three or more 26% of the time; round the hero 1.96; 1.82 separate fights at a time, the largest of 3.0 men; the hero would have fallen after 57 s, 5.0 friends standing at the end, 20.0 of the town out of it
+    an update: 0.04 ms on average, 2.1 at worst (the logic alone: nothing is drawn here)
+    five of yours two tiles outside the gate against the town, the hero standing behind them: told to hold a line there they stood 43 s and put 1.0 of the twenty out of the fight; left to fight as they like, 54 s and 1.0
+   town 101, a noise at the gate and nobody there9 of 20 went to look; all back at their posts and at their day after 32 s
+   town 138, a noise at the gate and nobody there9 of 20 went to look; all back at their posts and at their day after 34 s
+(13.3 s)
+What breaks what (an iron tool, 2.6 a blow; about two blows a second in play, every third a heavy one):
+  wattle fence      axe        4   pick        7   heard  110 units off
+  rail fence        axe        3   pick        6   heard  110 units off
+  wattle wall       axe        7   pick       14   heard  150 units off
+  window in planks  axe        4   pick        8   heard  170 units off
+  locked door       axe        6   pick       16   heard  360 units off
+  church door       axe       10   pick       29   heard  480 units off
+  barred gate       axe       11   pick       31   heard  320 units off
+  timber frame      axe       14   pick       28   heard  260 units off
+  plank wall        axe       19   pick       53   heard  280 units off
+  turf wall         axe       72   pick       22   heard  130 units off
+  dry-stone wall    axe      154   pick       16   heard  300 units off
+  palisade          axe       35   pick      139   heard  320 units off
+  log wall          axe       43   pick      170   heard  320 units off
+  stone wall        axe  nothing   pick       51   heard  430 units off
+  cut stone         axe    never   pick    never   heard  430 units off
+  town wall         axe    never   pick    never   heard  430 units off
+A plank house, 3 by 2 under thatch: 10 pieces of wall round it; its roof falls when 34% have given
+  it is due after 4 have given (0.40)
+  still a room: yes; its wall solids 27 before, 15 with 4 given (three a piece)
+  down: 6 tiles of debris, the roof it had: thatch, its roof now: none; can it be raised at once: no, its walls first
+  mended: 4 pieces for 2.0 times the price of one; raised again: yes, under thatch, debris left: 0
+  a plank wall struck eight times: stage 1 (1 hacked, 2 nearly through), mending it is 0.22 of its price
+A timber-frame house of the same size: due after 7 panels (a broken panel counts 0.5: the frame still carries)
+Doors: a locked door gives after 6 blows and then is open for good; an open door struck: nothing there to strike; way through a locked one: false, a broken one: true
+Ways: into a locked store from outside, before: none; with its west wall given: a way of 4 steps; the gap is narrow (one at a time); a straight line through it is clear
+Fire: walls that burn: logs, planks, wattle, timber frame; that do not: stone, turf, cut stone
+      roofs that burn: turf (70 s, catches 0.12), thatch (26 s), shingles (40 s, catches 0.5); that do not: tiles, slate, none
+      wattle under thatch       roof alight after 9 s (60/60), the house down in 60/60, out after 35 s, 10.0 of 10 pieces burnt through
+      planks under shingles     roof alight after 10 s (60/60), the house down in 60/60, out after 50 s, 10.0 of 10 pieces burnt through
+      logs under turf           roof alight after 16 s (60/60), the house down in 60/60, out after 86 s, 10.0 of 10 pieces burnt through
+      timber frame under tiles  roof alight never, the house down in 60/60, out after 51 s, 10.0 of 10 pieces burnt through
+      stone under thatch        roof alight after 9 s (60/60), the house down in 60/60, out after 35 s, 1.0 of 10 pieces burnt through
+      sparks from one thatched roof to another 1 tile off (300 fires each): downwind 85%, no wind 70%, across the wind 70%, upwind 0%
+      sparks from one thatched roof to another 2 tiles off (300 fires each): downwind 71%, no wind 20%, across the wind 20%, upwind 0%
+      sparks from one thatched roof to another 3 tiles off (300 fires each): downwind 49%, no wind 0%, across the wind 0%, upwind 0%
+      sparks from one thatched roof to another 5 tiles off (300 fires each): downwind 0%, no wind 0%, across the wind 0%, upwind 0%
+      a fire of 1, 6 and 20 pieces is noticed 275, 550, 1000 units off
+ruin: no faults
