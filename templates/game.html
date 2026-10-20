@@ -385,6 +385,10 @@ __COMBAT__
      filled) and the beard; what is in the hand and the shield, when they are out, as handLayers says. Blades in iron light
      steel (Robin). */
   var HERO_LOOK = { hair: '#9a4b26' };
+  /* the headwear by the helmet's material (the studio's nine heads, 2026-10-20; Robin liked them all; the tiers are mine until he
+     sets them): wool caps, fur, then the iron line from the plain cap to the conical helm (the item's own words: four plates and a
+     nasal) to the Gjermundbu; a colour for the cloth ones, the helms and the fur cap as rendered. The hoods wait for an item. */
+  var HERO_HEADS = { leather: ['capC', '#6e5a44'], wool: ['capA', '#7c3a2c'], fur: ['capB', null], copper: ['helmC', null], bronze: ['helmC', null], iron: ['helmB', null], silver: ['helmA', null], gold: ['helmA', null] };
   function bladeTint(m) { return m === 'iron' ? '#c4cbd4' : ((Items.MATS[m] || {}).face || '#c4cbd4'); }
   function heroLook(face) {
     var P = hero(), M = sprHero && sprHero.meta; if (!M || !sprHero.kit) return null;
@@ -393,8 +397,9 @@ __COMBAT__
     if (equip.chest) L.push(equip.chest.mat === 'iron' ? { l: 'mail', t: Items.MATS.iron.face } : { l: 'coat', t: mf(equip.chest, '#9a6a44') });
     if (equip.cloak) L.push({ l: 'cloak', t: mf(equip.cloak, '#6b4f36') });
     if (ring) L.push({ l: 'armring', t: (Runes.METALS[ring.metal] && Runes.METALS[ring.metal].col) || '#b07a3a' });
-    L.push({ l: 'beardA', t: HERO_LOOK.hair }); L.push({ l: equip.head ? 'hairHatA' : 'hairA', t: HERO_LOOK.hair });
-    if (equip.head) L.push(equip.head.mat === 'iron' ? { l: 'helm', t: Items.MATS.iron.face } : { l: 'cap' });
+    var hd = equip.head && (HERO_HEADS[equip.head.mat] || HERO_HEADS.leather);
+    L.push({ l: 'beardA', t: HERO_LOOK.hair }); L.push({ l: hd && hd[0] !== 'hoodC' ? 'hairHatA' : 'hairA', t: HERO_LOOK.hair });
+    if (hd) L.push(hd[1] ? { l: hd[0], t: hd[1] } : { l: hd[0] });
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || torchOn || (P.mode === 'fight' && !armsOut);   /* (in a place at peace the weapon is away until it is used) */
     if (!away && it && has(it.kind + 'Wood')) L.push({ l: it.kind + 'Wood', hand: 1 });
     if (!away && it && has(it.kind + 'Metal')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });

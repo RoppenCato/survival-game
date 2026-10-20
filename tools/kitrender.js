@@ -30,6 +30,9 @@ J.push(['k_tilt', '_tilt', ['attack1'], [...WK('sword'), ...WK('seax'), 'clubWoo
 J.push(['k_chop', '_chop180', ['chop', 'mine'], [...WK('axe'), ...WK('pick')], 0]);
 WEAR.forEach((ls, i) => J.push(['k_own' + i, '', OWN, ls, 1]));
 J.push(['k_own_thrust', '', ['thrust'], ['shieldRim', 'shieldFace', 'shieldMark', ...WK('spear')], 1]);
+// 2026-10-20 (Robin: the caps looked weird; then "I like all the new headwear"): nine head layers (art/build/kit_heads.py) replace the first cap, helm and hood
+const HEADS = [['capA', 'capB', 'capC'], ['helmA', 'helmB', 'helmC'], ['hoodA', 'hoodB', 'hoodC']], OBSOLETE = new Set(['cap', 'helm', 'hood']);
+HEADS.forEach((ls, i) => J.push(['k_heads' + i, '', ALL, ls, 0])); HEADS.forEach((ls, i) => J.push(['k_ownheads' + i, '', OWN, ls, 1]));
 const OWN_ARGS = ['--size', '320', '--ortho', '4.04', '--inplace', 'death'];
 const args = process.argv.slice(2), JOIN = args.includes('--join'), rest = args.filter(a => a !== '--join');
 const AT_ONCE = +rest[0] || 6, only = rest[1] ? rest[1].split(',').map(Number) : null;
@@ -55,6 +58,7 @@ function join() {
     for (const f of fs.readdirSync(src)) {
       if (!/\.png$/.test(f)) continue; const m = /^(.+)_([A-Za-z0-9]+)_(s|sw|w|nw|n|ne|e|se)_\d\d\.png$/.exec(f); if (!m) continue;
       if (north && m[3] === 'n' && north.has(m[2])) continue;               // the old grip facing north (k_north) stays
+      if (OBSOLETE.has(m[2])) continue;                                    // the first cap, helm and hood: replaced
       fs.copyFileSync(path.join(src, f), path.join(dst, f)); layers[key].add(m[2]);
     }
     const mf = path.join(src, 'meta.json'); if (!fs.existsSync(mf)) continue; const m = JSON.parse(fs.readFileSync(mf, 'utf8'));

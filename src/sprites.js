@@ -305,7 +305,7 @@
     if (hand && hand.kind) { L.push({ l: hand.kind + 'Wood', hand: 1 }); L.push({ l: hand.kind + 'Metal', t: hand.tint || null, metal: 1, hand: 1 }); }
     var o = idOf({ L: L, s: look.s, sx: look.sx, sy: look.sy }); (look._h || (look._h = {}))[key] = o; o._h = look._h; return o;
   }
-  var RANK = { body: 0, shoes: 0.5, boots: 0.5, legs: 1, tunic: 2, belt: 2.5, dress: 3, coat: 4, mail: 4.1, cloak: 5, brooch: 5.1, armring: 5.2, beardA: 6, beardB: 6, hairA: 7, hairB: 7, hairC: 7, hairHatA: 7, hairHatB: 7, hairHatC: 7, hood: 8, cap: 8, helm: 8, shieldRim: 9, shieldFace: 9.1, shieldMark: 9.2 };
+  var RANK = { body: 0, shoes: 0.5, boots: 0.5, legs: 1, tunic: 2, belt: 2.5, dress: 3, coat: 4, mail: 4.1, cloak: 5, brooch: 5.1, armring: 5.2, beardA: 6, beardB: 6, hairA: 7, hairB: 7, hairC: 7, hairHatA: 7, hairHatB: 7, hairHatC: 7, hood: 8, cap: 8, helm: 8, capA: 8, capB: 8, capC: 8, helmA: 8, helmB: 8, helmC: 8, hoodA: 8, hoodB: 8, hoodC: 8, shieldRim: 9, shieldFace: 9.1, shieldMark: 9.2 };
   // Where a layer lies in the pile. The body hides what is behind it already (every layer was rendered with the body held
   // out); this is only about a layer against another: an arm on the far side carries its shield or weapon under the
   // cloak and the mail, an arm on the near side over them. dirs: s sw w nw n ne e se.
