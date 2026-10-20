@@ -9403,8 +9403,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function loopAt(A, t) { var p = (t * A.fps) % A.frames; if (p < 0) p += A.frames; var f = Math.floor(p) % A.frames; return { f: f, f2: (f + 1) % A.frames, w: p - Math.floor(p) }; }
   function mixTo(H, im, fw, fh, d, f, f2, w) {
     var MB = H.mixBy || (H.mixBy = {}), mk = fw + 'x' + fh, cv2 = MB[mk]; if (!cv2) { cv2 = MB[mk] = document.createElement('canvas'); cv2.width = fw; cv2.height = fh; }   /* (a canvas a size: a layer in a box of its own is another size than the body, every frame) */
-    var g = cv2.getContext('2d'); g.globalCompositeOperation = 'copy'; g.globalAlpha = 1 - w; g.drawImage(im, f * fw, d * fh, fw, fh, 0, 0, fw, fh);
-    g.globalCompositeOperation = 'lighter'; g.globalAlpha = w; g.drawImage(im, f2 * fw, d * fh, fw, fh, 0, 0, fw, fh); return cv2;
+    var g = cv2.getContext('2d'); g.globalCompositeOperation = 'copy'; g.globalAlpha = 1; g.drawImage(im, f * fw, d * fh, fw, fh, 0, 0, fw, fh);
+    g.globalCompositeOperation = 'source-over'; g.globalAlpha = w; g.drawImage(im, f2 * fw, d * fh, fw, fh, 0, 0, fw, fh); g.globalAlpha = 1; return cv2;   /* (the first whole, the next laid over: 2026-10-20) */
   }
   function holds(layers, name) { for (var i = 0; i < layers.length; i++) { var n = typeof layers[i] === 'string' ? layers[i] : layers[i] && layers[i].layer; if (n === name) return true; } return false; }
   function shows(A, layers) { var sh = A.sheets || {}, i, n; for (i = 0; i < layers.length; i++) { n = typeof layers[i] === 'string' ? layers[i] : layers[i] && layers[i].layer; if (!n || n === 'body' || /^shield/.test(n)) continue; if (!sh[n]) return false; } return true; }   /* does the clip hold every layer of what is in the hand */
@@ -9429,7 +9429,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip) { var C = A[H.clip.name], cf = Math.floor((t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
-    if ((H.blk || 0) > 0.02 && A.block && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the left arm brought across as he stands, held across through the walk
+    if ((H.blk || 0) > 0.02 && A.block && !(an && an.sit) && (!opts.layers || holds(opts.layers, 'shieldRim'))) {   /* (the block clip raises the shield arm: only with a shield, Robin 2026-10-20) */          // the guard is up (H.blk, eased in tick): the left arm brought across as he stands, held across through the walk
       if (!(an && an.amt > 0.3)) return { a: 'block', f: frameAt(A.block, Math.min(0.999, H.blk)) };
       if (H.blk > 0.5 && A.block_walk) return { a: 'block_walk', f: loopFrame(A.block_walk, t * 0.62) };   /* (he walks at about half his pace with it up) */
     }
@@ -9725,7 +9725,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (!e && clip !== 'idle' && M.anims.idle) { clip = 'idle'; A = M.anims.idle; f = loopAt(A, st.t || 0).f; f2 = -1; e = personFrame(H, look, clip, d, f); }   // the sheets of this clip are still on their way: he stands as he stood
     if (!e) return false;
     var AN = A.anchor || M.anchor, s = (opts.scale || 1) * (look.s || 1) / PX, dx = (e.x - AN.x) * s, dy = (e.y - AN.y) * s, dw = e.w * s, dh = e.h * s, lit = opts.lit || null, src = e.cv, hw, hh;
-    if (f2 >= 0) { var e2 = personFrame(H, look, clip, d, f2); if (e2) { var mx = scratch('mix', e.w, e.h), mg = mx.getContext('2d'); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; mg.clearRect(0, 0, mx.width, mx.height); mg.globalAlpha = 1 - w; mg.drawImage(e.cv, 0, 0); mg.globalCompositeOperation = 'lighter'; mg.globalAlpha = w; mg.drawImage(e2.cv, 0, 0); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; src = mx; } }
+    if (f2 >= 0) { var e2 = personFrame(H, look, clip, d, f2); if (e2) { var mx = scratch('mix', e.w, e.h), mg = mx.getContext('2d'); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; mg.clearRect(0, 0, mx.width, mx.height); mg.globalAlpha = 1; mg.drawImage(e.cv, 0, 0); mg.globalAlpha = w; mg.drawImage(e2.cv, 0, 0); mg.globalCompositeOperation = 'source-over'; mg.globalAlpha = 1; src = mx; } }
     c.save(); c.translate(x, y); c.scale((look.sx || 1) * (opts.sx || 1), (look.sy || 1) * (opts.sy || 1)); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (opts.alpha != null) c.globalAlpha *= opts.alpha;
     var ga = c.globalAlpha;

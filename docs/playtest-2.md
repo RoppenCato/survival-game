@@ -48,7 +48,7 @@ Escape, Admin: download the error log and the frame log, and put both in the pro
 
 ## Robin's report (2026-10-20), sorted
 
-**Mine, now** (bugs and small changes, in the order I take them):
+**Mine, now** (bugs and small changes, in the order I take them; **done 2026-10-20** unless marked):
 1. The character panel's Gear page draws the hero as a row of broken pieces (the new kit drawn by the old path).
 2. Text runs out of its box on the Stats page (the guard line).
 3. The panel's tabs overlap the name: move them to the left side.
@@ -60,7 +60,9 @@ Escape, Admin: download the error log and the frame log, and put both in the pro
 9. The idle of the hero and Arnor fades in and out "like a drunken thing": the blend between frames made smooth.
 10. Blocking without a shield raises the other arm: until the studio has a block with the weapon, no shield-arm block clip.
 11. "Step ashore" shows far from the shore.
-12. Leaving the island seems to give every recipe and the arm ring: to reproduce and find.
+12. Leaving the island seems to give every recipe and the arm ring: **not reproduced** (a clean crossing only marks the island left and owes one rune, kept until a ring is worn); a question for Robin.
+
+Also done: beasts start at least 500 units from the steading's middle and 300 from any village (measured 679); "Step ashore" only with land in reach; the blend between frames draws the first whole and lays the next over it (it added two half-see-through pictures); the shield-arm block only with a shield (the studio's weapon block, `block_wpn`, is on its way).
 
 **Bigger, mine, later** (each its own piece of work):
 - The roof built by hand, not by itself, with a message and a red mark where a wall is missing.

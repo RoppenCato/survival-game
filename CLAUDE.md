@@ -278,7 +278,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   charged swing). **K** or right click: raise the guard (with a shield on the arm a shield's; in the instant a blow lands, a
   parry). **Ctrl**: target the nearest foe, then the next, then let go.
 - **The bar** is the bag's top row, six slots, one in hand (`hand`, -1 empty). **1 to 6** take a slot's thing in hand or use
-  it (food, a torch); its number again puts it away. The wheel picks a slot, **Enter** takes it. An axe, a pick or a rod in
+  it (food, a torch); its number again puts it away. **Shift and drag on the toolbar** swaps two of its slots or puts a thing into the bag (Robin, 2026-10-20). The wheel picks a slot, **Enter** takes it. An axe, a pick or a rod in
   hand gathers (the engine's gather mode, `GATHER_KINDS`); anything else, or empty hands, fights (the knife is a weapon, Robin). A one-handed weapon
   taken in hand wears a shield from the bag. Q is no key of the game's.
 - **X**: draw your weapon or put it away (among other people it is away until drawn; a drawn blade is a threat).
@@ -342,7 +342,7 @@ workbench, a fire or a furnace you stand at; E at a fire shows its dishes, at a 
 dot. Made by hand anywhere, or at a roofed workbench, a hearth, a furnace or a shipwright's bench; each press pays, so a
 queue is what you can afford; jobs take seconds; a station keeps what it made in its Ready strip; Cancel gives the materials
 back. Hand: flint axe, knife, pick, wooden club, stick bow, torch. Bench: the flint sword, the wooden shield, the leather set,
-copper and iron tools and weapons from bars. Charcoal: embers at dawn by every fire that burned all night, the charcoal
+copper and iron tools and weapons from bars. Charcoal (none on the starter island, where nothing uses it: no old fire rings or struck trees there, no embers: Robin, 2026-10-20): embers at dawn by every fire that burned all night, the charcoal
 clamp, lightning-struck trees, old fire rings. The furnace makes copper bars (and iron bars from bog iron).
 
 **Building** (B, `PIECES`, `src/build.js`): the board is tabs by kind (frame and walls, floors and roofs, ground brushes,
@@ -352,7 +352,7 @@ Arnor's teaching: `slept`, `leather`, `honey`, `copper`, `mason` (the mason's be
 windows, posts, stairs to one floor above, floors, docks over shallow water, the ground brushes (gravel, earth, moss, grass;
 field, chalk, marsh). A closed room gets a roof by itself (thatch unless you pick turf, shingles, tiles or slate; `BCFG` is thatch, Robin) that fades
 when you are inside. The cursor lights a wide green band on the edge it is near and marks standing walls; walls near it fade.
-F takes pieces back for what they cost. Nothing can be built in somebody else's village. E never works through a wall
+**On the starter island the board holds only what the house and the raft need** (`STARTER_PIECES`: walls in logs, planks and wattle, the door, window, post, two floors, thatch, the workbench, bed, raft bench, chair, bench, table, rug, chest, campfire; Robin, 2026-10-20). The placement ghost is drawn over the world's things (`api.overlay`). F takes pieces back for what they cost. Nothing can be built in somebody else's village. E never works through a wall
 (`canReach`).
 
 **Home, sleep and comfort:** a closed room is worth its roof, a hearth, a workbench, a bed, a rug and up to two pieces of
