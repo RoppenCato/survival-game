@@ -533,8 +533,13 @@ is health and stamina top left, the chart and the meal top right; damage numbers
 ## Men, towns and raids
 
 Tried in **`game.html?scene=battle`** and by `tests/battle.js` (`one|two|friend|five|bows|duels|ladder|town|raid|ways [n]`;
-three bots: tapper, careful, skilled); `tools/visual/battleplay.js` and `raidplay.js` play it in the page. **The men exist only
-in that scene** (no town is spawned in the real game); the way-finding is in every real village. Robin has played none of it.
+three bots: tapper, careful, skilled); `tools/visual/battleplay.js` and `raidplay.js` play it in the page. **In the real game
+(raid step 1, 2026-10-20, `docs/raid-build-plan.md`): a place outside home water gets its men** (`garrisonTick`: `Village.garrison`
+through `townMen`, `DEFENCE` men by archetype, a town 20, a seat 10, a trading post 4, mine until step 4) **when the hero comes
+within 1200 units of its bounds**, and loses them when he has been 2600 off for 40 s and no raid is on there; their names are
+seeded, a man killed stays dead by his number (`seen.menDead[vi]`, saved). Home water's places have none (at peace); the Battle
+and Destruction scenes make their own. `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
+way-finding is in every real village. Robin has played none of it.
 
 - **Sides:** every fighter has `e.side` (0 against the hero, 1 with him); the hero's blows pass his friends; beasts know only
   the hero (mine). **The soldier** (`Combat.soldier(o)`): closes to his weapon's reach, circles, shows his blow coming (a

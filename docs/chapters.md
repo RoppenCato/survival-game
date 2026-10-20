@@ -203,7 +203,7 @@ introduced here (Robin, 2026-10-19). Your first raid there opens raiding at home
 | --- | --- |
 | The south water and its islands (the lowland look: oak, beech, ash, orchards, chalk, fields, marsh) | Built in code, not spawned |
 | The town, the church, the manor (Village archetypes) | Built in code |
-| **The raid in the real game**: the garrison, your ship and hird, carrying, leaving, saved (`docs/build-plan-waters.md`, step 4) | Not started (all of it works in the Battle test) |
+| **The raid in the real game**: the garrison, your ship and hird, carrying, leaving, saved (`docs/raid-build-plan.md`, ten steps) | Started 2026-10-20: step 1 built (the settlements' men by distance, the dead kept) |
 | Men, towns and raids: one on one, bowmen, noise, night raids, storming, villagers who flee or arm (`CLAUDE.md`) | Built in the Battle test |
 | Destruction: breaking in, roofs that fall, fire, mending (`docs/destruction.md`) | Built (real villages and the Destruction Editor) |
 | Iron: bog iron, the bloomery, iron tools and arms, mail, gambeson, helm, painted shield | Built in code |
