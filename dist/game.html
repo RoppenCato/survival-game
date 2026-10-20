@@ -15933,10 +15933,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function openInfo() {
     menuStation = menuTab === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (menuTab === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : (menuTab === 'furnace' ? { kind: 'furnace', it: furnaceAt(hero()) } : null)); if (menuStation && !menuStation.it) menuStation = null;
-    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 175, h: 500 / 3, list: infoList(), scroll: 0, maxScroll: 0 };
+    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 151, h: 500 / 3, list: infoList(), scroll: 0, maxScroll: 0 };   /* (453 by 500 canvas pixels: narrower, so more of the game shows, Robin's update) */
     menu.x = 400 - menu.w - 5; menu.y = 250 - menu.h - 20 / 3;   /* 525 by 500 canvas pixels, bottom right (the studio's spec, 2026-10-20) */   /* lower right, under the chart, clear of the hero; the list on the left and the chosen thing beside it */
     var tabs = menuTabs(); if (tabs.length > 1) { var ty = 24; tabs.forEach(function (t) { var hp = Math.max(60, Math.round(t.name.length * 7 + 20)); menu.tabs.push({ id: t.id, name: t.name, x: menu.x - 20 / 3, y: menu.y + ty / 3, w: 20 / 3, h: hp / 3, py: ty, hp: hp }); ty += hp + 4; }); }   // down the board's left edge
-    var rowH = 10; menu.ly = menu.y + 18; menu.lw = 170 / 3; menu.lx = menu.x + 6;
+    var rowH = 10; menu.ly = menu.y + 18; menu.lw = 150 / 3; menu.lx = menu.x + 6;
     var listH = (428 - (menuStation ? 104 : 0)) / 3; menu.rowH = rowH; menu.listH = listH;
     // the list as it is shown: under a small heading a category when there is more than one (Tools, Weapons, Armour, Supplies); it was one long scroll
     var show = [], cats = CATS2.filter(function (ct) { return menu.list.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
@@ -16019,56 +16019,56 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (o.raft) return 'a vessel'; if (o.arrows) return 'for the bow'; if (o.stack && o.stack[0] === 'torch') return 'a light for the dark'; if (e.r.at === 'furnace') return 'smelted in the furnace';
     return 'a supply';
   }
-  function bigSc(e) { return e.dish || !e.r.out.item ? 1.9 : (Items.KINDS[e.r.out.item[0]].gear ? 1.8 : 1.75); }   // the thing's picture on the card, about 116 canvas pixels
+  function bigSc(e) { return e.dish || !e.r.out.item ? 1.6 : (Items.KINDS[e.r.out.item[0]].gear ? 1.5 : 1.45); }   // the picture about 96 canvas pixels   // the thing's picture on the card, about 116 canvas pixels
   function drawInfo(c) {
     var P = hero(), th = menuTabHit(), bench = benchNear(P), roofed = bench && benchRoofed(bench), sel = infoSel(), X = menu.x, Y = menu.y, LX = 18, LY = 54, wellH = menu.listH * 3;
     menu.rows = []; menu.takes = []; menu.btn = null; menu.cbtn = null;
     var inR = function (r) { return !!r && !!mouseS && mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h; };
     hPx(c, X, Y, function () {
-      hBoard(c, 525, 500);
+      hBoard(c, 453, 500);
       menu.tabs.forEach(function (t) { hTab(c, -20, t.py, t.hp, t.name, t.id === menuTab, th === t); });
-      hTitle(c, menuTab === 'hearth' ? 'Cooking' : menuTab === 'furnace' ? 'Smelting' : 'Crafting', 22, 42, 20);   /* (the heading by the board: mine) */
+      hTitle(c, menuTab === 'hearth' ? 'Cooking' : menuTab === 'furnace' ? 'Smelting' : 'Crafting');   /* (the heading by the board: mine) */
       // the list, in its dark well
-      c.fillStyle = HC.well; c.fillRect(LX, LY, 170, 428);
-      c.save(); c.beginPath(); c.rect(LX, LY, 170, wellH); c.clip();
+      c.fillStyle = HC.well; c.fillRect(LX, LY, 150, 428);
+      c.save(); c.beginPath(); c.rect(LX, LY, 150, wellH); c.clip();
       menu.show.forEach(function (q) {
         var e = q.e, top = LY + (q.y - menu.scroll) * 3; if (top > LY + wellH || top + q.h * 3 < LY) return;
         if (q.head) { hText(c, q.head.toUpperCase(), LX + 10, top + 17, hf('bold', 12), HC.ochre); return; }
-        var on = e === sel, row = { e: e, x: X + LX / 3, y: Y + top / 3, w: 170 / 3, h: 10 }, hovR = inR(row) && mouseS.y >= menu.ly && mouseS.y <= menu.ly + menu.listH; menu.rows.push(row);
-        if (on) { if (!nine(c, 'list_bar_gold', LX + 2, top + 2, 166, 26, 6) && !nine(c, 'list_bar', LX + 2, top + 2, 166, 26, 6)) { c.fillStyle = 'rgba(217,168,69,0.30)'; c.fillRect(LX + 2, top + 2, 166, 26); } } else if (hovR) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(LX + 2, top + 2, 166, 26); }
+        var on = e === sel, row = { e: e, x: X + LX / 3, y: Y + top / 3, w: 150 / 3, h: 10 }, hovR = inR(row) && mouseS.y >= menu.ly && mouseS.y <= menu.ly + menu.listH; menu.rows.push(row);
+        if (on) { if (!nine(c, 'list_bar_gold', LX + 2, top + 2, 146, 26, 6) && !nine(c, 'list_bar', LX + 2, top + 2, 146, 26, 6)) { c.fillStyle = 'rgba(217,168,69,0.30)'; c.fillRect(LX + 2, top + 2, 146, 26); } } else if (hovR) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(LX + 2, top + 2, 146, 26); }
         var can = infoCan(e); c.globalAlpha = can ? 1 : 0.5; hUnits(c, LX + 20, top + 15, function () { infoIcon(c, e, 0, 0, 0.6); });
         hText(c, infoName(e), LX + 38, top + 21, hf('', 16), HC.cream); c.globalAlpha = 1;
-        var pr = infoProgress(e); if (pr) hText(c, 'x' + pr.n, LX + 162, top + 21, hf('bold', 14), HC.ochre, 'right'); else if (isNew(e.id)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(LX + 160, top + 9, 3.5, 0, 7); c.fill(); }   // never made: a mark
+        var pr = infoProgress(e); if (pr) hText(c, 'x' + pr.n, LX + 142, top + 21, hf('bold', 14), HC.ochre, 'right'); else if (isNew(e.id)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(LX + 140, top + 9, 3.5, 0, 7); c.fill(); }   // never made: a mark
       });
       c.restore();
-      if (menu.maxScroll) { var kh = Math.max(24, wellH * wellH / (menu.listTotal * 3)), ky = LY + (wellH - kh) * menu.scroll / menu.maxScroll; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(LX + 164, LY, 5, wellH); c.fillStyle = 'rgba(240,227,196,0.55)'; c.fillRect(LX + 164, ky, 5, kh); }
+      if (menu.maxScroll) { var kh = Math.max(24, wellH * wellH / (menu.listTotal * 3)), ky = LY + (wellH - kh) * menu.scroll / menu.maxScroll; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(LX + 144, LY, 5, wellH); c.fillStyle = 'rgba(240,227,196,0.55)'; c.fillRect(LX + 144, ky, 5, kh); }
       if (!menu.list.length) hText(c, 'Nothing known yet', LX + 12, LY + 30, hf('italic', 14), 'rgba(240,227,196,0.7)');
       if (menuStation) {                    // what waits at the station, at the foot of the well: take it with a click
         var oy = LY + wellH + 4, outs = menuStation.it.out || [], si;
-        c.strokeStyle = 'rgba(255,225,170,0.18)'; c.lineWidth = 1; c.beginPath(); c.moveTo(LX + 8, oy); c.lineTo(LX + 162, oy); c.stroke();
+        c.strokeStyle = 'rgba(255,225,170,0.18)'; c.lineWidth = 1; c.beginPath(); c.moveTo(LX + 8, oy); c.lineTo(LX + 142, oy); c.stroke();
         hText(c, outs.length ? 'Ready: click to take' : 'Nothing ready', LX + 10, oy + 20, hf('italic', 13), 'rgba(240,227,196,0.75)');
-        for (si = 0; si < 8; si++) { var bx = LX + 9 + (si % 4) * 39, by = oy + 28 + Math.floor(si / 4) * 37, o = outs[si], tr = { x: X + bx / 3, y: Y + by / 3, w: 34 / 3, h: 34 / 3, i: si };
+        for (si = 0; si < 8; si++) { var bx = LX + 4 + (si % 4) * 36, by = oy + 28 + Math.floor(si / 4) * 37, o = outs[si], tr = { x: X + bx / 3, y: Y + by / 3, w: 34 / 3, h: 34 / 3, i: si };
           hSocket(c, bx, by, 34, false, o && inR(tr)); if (!o) continue; menu.takes.push(tr);
           hUnits(c, bx + 17, by + 17, function () { if (o.item) itemIcon(c, o.item, 9.3, 5.4); else drawDropIcon(c, o.kind, 0, 0, 0.75); });
           if (o.n > 1) { c.font = hf('bold', 12); c.lineWidth = 3; c.lineJoin = 'round'; c.strokeStyle = HC.dark; c.textAlign = 'right'; c.strokeText(o.n, bx + 32, by + 32); c.fillStyle = HC.cream; c.fillText(o.n, bx + 32, by + 32); c.textAlign = 'left'; } }
       }
       if (!sel) return;
       // the chosen thing, on its vellum card
-      var cx0 = 202, cy0 = 54, cw = 306;
+      var cx0 = 178, cy0 = 54, cw = 257;
       hVellum(c, cx0, cy0, cw, 362, 'card_frame');
       if (!nine(c, 'plate_frame', cx0 + 16, cy0 + 14, cw - 32, 110, 12)) { c.strokeStyle = HC.ink; c.lineWidth = 1.2; c.strokeRect(cx0 + 16, cy0 + 14, cw - 32, 110); }   /* (110, not the mock's 130: the tale gets a fourth line, the studio's note)*/
       hUnits(c, cx0 + cw / 2, cy0 + 69, function () { infoIcon(c, sel, 0, 0, bigSc(sel)); });
       if (menuTab === 'bench' && !roofed) hText(c, 'It needs a roof over it', cx0 + cw / 2, cy0 + 116, hf('italic', 13), HC.rubric, 'center');
-      var nm = infoName(sel), ns = 25; c.font = hf('bold', ns); while (ns > 15 && c.measureText(nm).width + ns * 0.6 > cw - 32) { ns -= 1; c.font = hf('bold', ns); }
-      hRubric(c, nm, cx0 + 16, cy0 + 158, ns, HC.ink);
+      var nm = infoName(sel), ns = 24; c.font = hf('bold', ns); while (ns > 15 && c.measureText(nm).width > cw - 32) { ns -= 1; c.font = hf('bold', ns); }
+      hText(c, nm, cx0 + 16, cy0 + 152, hf('bold', ns), HC.ink);   // the thing's name plain (Robin's update)
       var pr2 = infoProgress(sel);
-      hText(c, infoSub(sel), cx0 + 16, cy0 + 179, hf('italic', 13), HC.sepia);
-      if (pr2 && pr2.n > 1) hText(c, 'x' + pr2.n + ' on the way', cx0 + cw - 16, cy0 + 179, hf('italic', 13), '#8a5a1a', 'right');
+      hText(c, infoSub(sel), cx0 + 16, cy0 + 173, hf('italic', 13), HC.sepia);
+      if (pr2 && pr2.n > 1) hText(c, 'x' + pr2.n + ' on the way', cx0 + cw - 16, cy0 + 173, hf('italic', 13), '#8a5a1a', 'right');
       var sts = infoStats(sel), nr = Math.ceil(sts.length / 3), top = cy0 + 316 - nr * 40;
-      c.font = hf('', 14.5); var lines = wrapText(c, infoText(sel), cw - 32), maxL = Math.max(0, Math.floor((top - 6 - (cy0 + 206)) / 20) + 1);
+      c.font = hf('', 14); var lines = wrapText(c, infoText(sel), cw - 32), maxL = Math.min(4, Math.max(0, Math.floor((top - 6 - (cy0 + 200)) / 19) + 1));
       if (lines.length > maxL) { lines = lines.slice(0, maxL); if (maxL) lines[maxL - 1] = lines[maxL - 1].replace(/[,;:\s]*\S*$/, '') + ' \u2026'; }
-      lines.forEach(function (ln, k) { hText(c, ln, cx0 + 16, cy0 + 206 + k * 20, hf('', 14.5), HC.ink); });
-      sts.forEach(function (st, k) { var x = cx0 + 16 + (k % 3) * 96, y = top + Math.floor(k / 3) * 40; hText(c, st[0], x, y + 14, hf('italic', 13), HC.sepia); c.font = hf('bold', 17); var vs = c.measureText(st[1]).width > 90 ? 14 : 17; hText(c, st[1], x, y + 34, hf('bold', vs), HC.ink);
+      lines.forEach(function (ln, k) { hText(c, ln, cx0 + 16, cy0 + 200 + k * 19, hf('', 14), HC.ink); });
+      sts.forEach(function (st, k) { var x = cx0 + 16 + (k % 3) * 78, y = top + Math.floor(k / 3) * 40; hText(c, st[0], x, y + 14, hf('italic', 13), HC.sepia); c.font = hf('bold', 17); var vs = c.measureText(st[1]).width > 72 ? 14 : 17; hText(c, st[1], x, y + 34, hf('bold', vs), HC.ink);
         if (st[2]) { c.font = hf('bold', vs); var vw = c.measureText(st[1]).width; hText(c, (st[2] > 0 ? '+' : '\u2212') + Math.abs(st[2]) + (st[3] || ''), x + vw + 5, y + 34, hf('bold', 13), st[2] > 0 ? '#3e7a2e' : '#a8402e'); } });
       // what it takes: each material in a socket, the number needed in its corner, red when you have too few, and a line saying
       // what is short (Robin's pick, 2026-10-20: "it should just be 3", no "Needs", as other crafting games do)
@@ -16080,11 +16080,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
         hUnits(c, x + 18, y + 18, function () { drawDropIcon(c, k, 0, 0, 32 / 42); });
         c.font = hf('bold', 14); c.lineWidth = 3; c.lineJoin = 'round'; c.strokeStyle = HC.dark; c.textAlign = 'right'; c.strokeText(String(needs[k]), x + 34, y + 34); c.fillStyle = ok ? HC.cream : HC.short; c.fillText(String(needs[k]), x + 34, y + 34); c.textAlign = 'left';
       });
-      if (short.length) { var sx = cx0 + 16 + ks.length * 46 + 4; c.font = hf('italic', 13); var sl = wrapText(c, 'You have too little ' + short.join(' and '), cx0 + cw - 16 - sx).slice(0, 2); sl.forEach(function (ln, k) { hText(c, ln, sx, cy0 + (sl.length > 1 ? 337 : 345) + k * 15, hf('italic', 13), HC.rubric); }); }
+      if (short.length) { var sx = cx0 + 16 + ks.length * 46 + 4; c.font = hf('italic', 13); var sl = wrapText(c, 'Short of ' + short.join(' and '), cx0 + cw - 16 - sx).slice(0, 2); sl.forEach(function (ln, k) { hText(c, ln, sx, cy0 + (sl.length > 1 ? 337 : 345) + k * 15, hf('italic', 13), HC.rubric); }); }
       // the Craft button under the card, filling as the first one is made; Cancel beside it while something is on the way
-      var can = infoCan(sel), bw = pr2 ? 196 : cw; menu.btn = { x: X + cx0 / 3, y: Y + 428 / 3, w: bw / 3, h: 52 / 3 };
+      var can = infoCan(sel), bw = pr2 ? 160 : cw; menu.btn = { x: X + cx0 / 3, y: Y + 428 / 3, w: bw / 3, h: 52 / 3 };
       hButton(c, cx0, 428, bw, 52, sel.dish ? 'Cook' : 'Craft', can, inR(menu.btn), pr2 ? pr2.f : 0, 24);
-      if (pr2) { menu.cbtn = { x: X + (cx0 + 206) / 3, y: Y + 428 / 3, w: 100 / 3, h: 52 / 3 }; hButton(c, cx0 + 206, 428, 100, 52, 'Cancel 1', true, inR(menu.cbtn), 0, 18); }
+      if (pr2) { menu.cbtn = { x: X + (cx0 + 167) / 3, y: Y + 428 / 3, w: 90 / 3, h: 52 / 3 }; hButton(c, cx0 + 167, 428, 90, 52, 'Cancel 1', true, inR(menu.cbtn), 0, 17); }
     });
   }
   function infoRowHit() { if (!menu || !menu.info || !mouseS) return null; for (var i = 0; i < menu.rows.length; i++) { var r = menu.rows[i]; if (mouseS.y < menu.ly || mouseS.y > menu.ly + menu.listH) continue; if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y < r.y + r.h) return r.e; } return null; }
@@ -16293,7 +16293,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     rowH = rowH || 20; var h0 = 24 + list.length * rowH + (hint ? 12 : 0), i, maxH = 250 - y0 - 2, over = Math.max(0, h0 - maxH), sc = over ? Math.min(over, panelScroll[title] || 0) : 0, hh = Math.min(h0, maxH);
     panelTall = over ? { title: title, over: over } : (panelTall && panelTall.title === title ? null : panelTall);
     wood(c, x0, y0, w0, hh);
-    c.font = 'bold 9px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(title, x0 + 10, y0 + 13);
+    if (himg('plaque')) hPx(c, x0, y0, function () { hTitle(c, title); }); else { c.font = 'bold 9px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(title, x0 + 10, y0 + 13); }
     c.save(); if (over) { c.beginPath(); c.rect(x0, y0 + 18, w0, hh - 18 - (hint ? 12 : 4)); c.clip(); }
     for (i = 0; i < list.length; i++) {
       var yy = y0 + 29 + i * rowH - sc, seen = yy > y0 + 18 && yy < y0 + hh - (hint ? 12 : 4), hov = seen && mouseS && mouseS.x > x0 + 8 && mouseS.x < x0 + w0 - 8 && Math.abs(mouseS.y - yy) < rowH / 2 - 1;
@@ -16336,7 +16336,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      a dark well beside a vellum card with the thing's picture large; light only for the window, the slots and the card. A
      board is drawn in the canvas pixels of Robin's size (1200 by 750, three to a unit: hPx), so the spec's numbers are used as
      they are; what the mouse can hit stays in units. ---------- */
-  var HUD_ART = {"board_frame": "../assets/hud/board_frame.png?v=a3dc2cc2", "board_frame_gilt": "../assets/hud/board_frame_gilt.png?v=8c45eec8", "button": "../assets/hud/button.png?v=da923b68", "button_down": "../assets/hud/button_down.png?v=9724e8b3", "button_hover": "../assets/hud/button_hover.png?v=57f2482a", "capital_box": "../assets/hud/capital_box.png?v=5e4a81b8", "card_frame": "../assets/hud/card_frame.png?v=69c6fbf5", "cost_socket": "../assets/hud/cost_socket.png?v=d5a8b977", "flap_off": "../assets/hud/flap_off.png?v=c45f8165", "flap_on": "../assets/hud/flap_on.png?v=23d6fe0f", "list_bar": "../assets/hud/list_bar.png?v=9cb61956", "list_bar_gold": "../assets/hud/list_bar_gold.png?v=9a69ffa0", "plate_frame": "../assets/hud/plate_frame.png?v=dc63f7f5", "rivet": "../assets/hud/rivet.png?v=703a4492", "sketch_armour": "../assets/hud/sketch_armour.png?v=0dde2a7e", "sketch_chest": "../assets/hud/sketch_chest.png?v=728689a2", "sketch_cloak": "../assets/hud/sketch_cloak.png?v=a2ca11f6", "sketch_feet": "../assets/hud/sketch_feet.png?v=0c512317", "sketch_head": "../assets/hud/sketch_head.png?v=3e2ab850", "sketch_legs": "../assets/hud/sketch_legs.png?v=5813b244", "sketch_light_armour": "../assets/hud/sketch_light_armour.png?v=f48cff4c", "sketch_light_chest": "../assets/hud/sketch_light_chest.png?v=75c1bfb9", "sketch_light_cloak": "../assets/hud/sketch_light_cloak.png?v=933d8778", "sketch_light_feet": "../assets/hud/sketch_light_feet.png?v=cf709a54", "sketch_light_head": "../assets/hud/sketch_light_head.png?v=ce927fff", "sketch_light_legs": "../assets/hud/sketch_light_legs.png?v=6148d0b1", "sketch_light_neck": "../assets/hud/sketch_light_neck.png?v=ea088f61", "sketch_light_ring": "../assets/hud/sketch_light_ring.png?v=a4e935bb", "sketch_light_shield": "../assets/hud/sketch_light_shield.png?v=8dcbd063", "sketch_light_trinket": "../assets/hud/sketch_light_trinket.png?v=a565c57e", "sketch_neck": "../assets/hud/sketch_neck.png?v=cb95b00d", "sketch_ring": "../assets/hud/sketch_ring.png?v=dcae29d3", "sketch_shield": "../assets/hud/sketch_shield.png?v=78dd282d", "sketch_trinket": "../assets/hud/sketch_trinket.png?v=e7e68059", "slot_round": "../assets/hud/slot_round.png?v=ea136761", "slot_round_chosen": "../assets/hud/slot_round_chosen.png?v=7de463f1", "slot_square": "../assets/hud/slot_square.png?v=3ed6814b", "slot_square_chosen": "../assets/hud/slot_square_chosen.png?v=9cb24252", "socket": "../assets/hud/socket.png?v=a20d3ac8", "socket_chosen": "../assets/hud/socket_chosen.png?v=520b3290", "socket_chosen_gold": "../assets/hud/socket_chosen_gold.png?v=694ca89b", "tab_off": "../assets/hud/tab_off.png?v=a0be3ee0", "tab_on": "../assets/hud/tab_on.png?v=189221ee", "vellum_tile": "../assets/hud/vellum_tile.png?v=10d2ef7c", "window_back": "../assets/hud/window_back.png?v=e9056a98", "window_frame": "../assets/hud/window_frame.png?v=428d0ba8", "wood_tile": "../assets/hud/wood_tile.png?v=a798f512"}, HUD_IMG = {}, HUD_PAT = {};
+  var HUD_ART = {"board_frame": "../assets/hud/board_frame.png?v=a3dc2cc2", "board_frame_gilt": "../assets/hud/board_frame_gilt.png?v=8c45eec8", "button": "../assets/hud/button.png?v=da923b68", "button_down": "../assets/hud/button_down.png?v=9724e8b3", "button_hover": "../assets/hud/button_hover.png?v=57f2482a", "capital_box": "../assets/hud/capital_box.png?v=5e4a81b8", "card_frame": "../assets/hud/card_frame.png?v=69c6fbf5", "cost_socket": "../assets/hud/cost_socket.png?v=d5a8b977", "flap_off": "../assets/hud/flap_off.png?v=c45f8165", "flap_on": "../assets/hud/flap_on.png?v=23d6fe0f", "list_bar": "../assets/hud/list_bar.png?v=9cb61956", "list_bar_gold": "../assets/hud/list_bar_gold.png?v=9a69ffa0", "plaque": "../assets/hud/plaque.png?v=8911fdce", "plate_frame": "../assets/hud/plate_frame.png?v=dc63f7f5", "rivet": "../assets/hud/rivet.png?v=703a4492", "sketch_armour": "../assets/hud/sketch_armour.png?v=0dde2a7e", "sketch_chest": "../assets/hud/sketch_chest.png?v=728689a2", "sketch_cloak": "../assets/hud/sketch_cloak.png?v=a2ca11f6", "sketch_feet": "../assets/hud/sketch_feet.png?v=0c512317", "sketch_head": "../assets/hud/sketch_head.png?v=3e2ab850", "sketch_legs": "../assets/hud/sketch_legs.png?v=5813b244", "sketch_light_armour": "../assets/hud/sketch_light_armour.png?v=f48cff4c", "sketch_light_chest": "../assets/hud/sketch_light_chest.png?v=75c1bfb9", "sketch_light_cloak": "../assets/hud/sketch_light_cloak.png?v=933d8778", "sketch_light_feet": "../assets/hud/sketch_light_feet.png?v=cf709a54", "sketch_light_head": "../assets/hud/sketch_light_head.png?v=ce927fff", "sketch_light_legs": "../assets/hud/sketch_light_legs.png?v=6148d0b1", "sketch_light_neck": "../assets/hud/sketch_light_neck.png?v=ea088f61", "sketch_light_ring": "../assets/hud/sketch_light_ring.png?v=a4e935bb", "sketch_light_shield": "../assets/hud/sketch_light_shield.png?v=8dcbd063", "sketch_light_trinket": "../assets/hud/sketch_light_trinket.png?v=a565c57e", "sketch_neck": "../assets/hud/sketch_neck.png?v=cb95b00d", "sketch_ring": "../assets/hud/sketch_ring.png?v=dcae29d3", "sketch_shield": "../assets/hud/sketch_shield.png?v=78dd282d", "sketch_trinket": "../assets/hud/sketch_trinket.png?v=e7e68059", "slot_round": "../assets/hud/slot_round.png?v=ea136761", "slot_round_chosen": "../assets/hud/slot_round_chosen.png?v=7de463f1", "slot_square": "../assets/hud/slot_square.png?v=3ed6814b", "slot_square_chosen": "../assets/hud/slot_square_chosen.png?v=9cb24252", "socket": "../assets/hud/socket.png?v=a20d3ac8", "socket_chosen": "../assets/hud/socket_chosen.png?v=520b3290", "socket_chosen_gold": "../assets/hud/socket_chosen_gold.png?v=694ca89b", "tab_off": "../assets/hud/tab_off.png?v=a0be3ee0", "tab_on": "../assets/hud/tab_on.png?v=189221ee", "vellum_tile": "../assets/hud/vellum_tile.png?v=10d2ef7c", "window_back": "../assets/hud/window_back.png?v=e9056a98", "window_frame": "../assets/hud/window_frame.png?v=428d0ba8", "wood_tile": "../assets/hud/wood_tile.png?v=a798f512"}, HUD_IMG = {}, HUD_PAT = {};
   (function () { if (!HUD_ART) return; for (var k in HUD_ART) { var im = new Image(); im.src = HUD_ART[k]; HUD_IMG[k] = im; } })();
   var UI_FACE = "'Alegreya', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif";   /* the book face: Alegreya (Robin's pick in the studio's panel picker, 2026-10-20), loaded from Google Fonts; Palatino while it loads */
   if (typeof document !== 'undefined' && document.fonts && document.fonts.load) ['16px Alegreya', 'bold 16px Alegreya', 'italic 16px Alegreya'].forEach(function (f) { try { document.fonts.load(f).catch(function () {}); } catch (eF) {} });
@@ -16361,11 +16361,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,230,180,0.08)'); gr.addColorStop(1, 'rgba(0,0,0,0.20)'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
     if (!nine(c, 'board_frame_gilt', 0, 0, w, h, 24) && !nine(c, 'board_frame', 0, 0, w, h, 24)) { c.strokeStyle = '#1f130c'; c.lineWidth = 3; c.strokeRect(1.5, 1.5, w - 3, h - 3); c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = 1.5; c.strokeRect(8, 8, w - 16, h - 16); }
   }
-  function hTitle(c, t, x, y, size) {      // a heading: its first letter red in a small vellum square, the rest cream beside it
-    var bw = size * 1.5, by = y - size * 1.22, im = himg('capital_box');
-    if (im) c.drawImage(im, x, by, bw, bw); else { c.fillStyle = '#e8dbbd'; c.fillRect(x, by, bw, bw); c.strokeStyle = '#1f130c'; c.lineWidth = 2; c.strokeRect(x, by, bw, bw); }
-    hText(c, t.charAt(0), x + bw / 2, y + size * 0.05, hf('bold', size * 1.25), HC.rubric, 'center');
-    hText(c, t.slice(1), x + bw + 4, y, hf('bold', size), HC.cream);
+  function hTitle(c, t) {                   // a board's heading: its name on a plaque, 20 px in from the board's corner (Robin's pick, 2026-10-20)
+    c.font = hf('bold', 18); var w = Math.ceil(c.measureText(t).width) + 30;
+    if (!nine(c, 'plaque', 20, 20, w, 32, 9)) { c.fillStyle = '#2b1c13'; c.fillRect(20, 20, w, 32); c.strokeStyle = HC.gold; c.lineWidth = 1; c.strokeRect(22.5, 22.5, w - 5, 27); }
+    hText(c, t, 20 + w / 2, 42, hf('bold', 18), HC.cream, 'center');
   }
   function hRubric(c, t, x, y, size, col) { // a name with its first letter large and red (the card's)
     c.font = hf('bold', size * 1.45); var w0 = c.measureText(t.charAt(0)).width; hText(c, t.charAt(0), x, y + size * 0.2, c.font, HC.rubric);
@@ -16465,8 +16464,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   /* ---------- the stats board: a second page of the character panel, Gear | Stats ---------- */
   var chTab = 'gear';
-  var CH_TABS = ['gear', 'ring', 'stats'], CH_NAMES = { gear: 'Gear', stats: 'Saga', ring: 'Rings' };   /* (the names and order of Robin's picks, 2026-10-20) */
-  function chTabs() { return CH_TABS.filter(function (t) { return t === 'gear' || (t === 'stats' ? !!seen.fought : !!ring); }); }   /* (the interface grows, 2026-10-14: Stats after the first kill, Ring once a ring is worn) */
+  var CH_TABS = ['gear', 'ring', 'stats'], CH_NAMES = { gear: 'Gear', stats: 'Stats', ring: 'Rings' };   /* (the names and order of Robin's picks, 2026-10-20) */
+  function chTabs() { return CH_TABS.filter(function (t) { return t !== 'ring' || !!ring; }); }   /* (Rings once a ring is worn; Stats always, since the status line under the window went to it: Robin, 2026-10-20) */
   var CHAR_TALL = 230;                       // the Saga and Rings pages, over the bag, with room for the flaps under them
   function chTabRect(i) { return { x: chLeft() + (22 + i * 74) / 3, y: CHAR.y + (CHAR.h * 3 - 8) / 3, w: 22, h: 38 / 3 }; }   /* flaps hanging under the board, 74 apart (Robin's pick, 2026-10-20) */
   function chTabAt() { if (!mouseS || CHAR.slide < 0.9) return null; var TB = chTabs(); for (var i = 0; i < TB.length; i++) { var r = chTabRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return TB[i]; } return null; }
@@ -16527,8 +16526,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     hPx(c, x0, CHAR.y, function () {
       chTabs().forEach(function (tid, ti) { hFlap(c, 22 + ti * 74, CHAR.h * 3 - 8, CH_NAMES[tid], tid === chTab, hovT === tid); });   // the flaps hang from under the board: drawn first
       hBoard(c, CHAR.w * 3, CHAR.h * 3);
-      hTitle(c, heroName || 'You', 22, 40, 20);
-      hText(c, runesOf(heroName), 310, 38, '17px ' + RUNE_FACE, '#c96a4f', 'right');   // the name in runes
+      hTitle(c, heroName || 'You');
     });
     if (chTab === 'stats') { drawStats(c, x0); return; }
     if (chTab === 'ring') { drawRingTab(c, x0); return; }
@@ -16554,13 +16552,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
         else { var sk = himg('sketch_light_' + SKETCH[s.id]) || himg('sketch_' + SKETCH[s.id]); if (sk) c.drawImage(sk, s.px - 20, s.py - 20, 40, 40); else hUnits(c, s.px, s.py, function () { glyph(c, s.id, 0, 0); }); }
       });
       // under the window: what you wear turns aside, or what the slot you point at holds
-      var txt = 'Armour ' + Math.round(Combat.api.armor() * 100) + '%';
+      var txt = '';   /* (no status line under the window: the Stats tab has it, Robin's update) */
       if (hov) { var txt = hov.ringSlot ? (ring ? Runes.METALS[ring.metal].name + ' arm ring  (the Ring page shows it)' : 'Arm ring: none') : hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ': empty'); }
-      c.font = hf('italic', 13); var tw = c.measureText(txt).width; hText(c, txt, 165, 348, hf('italic', tw > 300 ? 11 : 13), HC.under, 'center');
+      if (txt) { c.font = hf('italic', 13); var tw = c.measureText(txt).width; hText(c, txt, 165, 348, hf('italic', tw > 300 ? 11 : 13), HC.under, 'center'); }
     });
     if (hov && !hov.ringSlot && equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
   }
-  var CELL = 47 / 3, INV = { w: 110, h: 100, slide: 0 };   /* (330 by 300 canvas pixels, cells 42 and 47 apart: the studio's spec, 2026-10-20) */   // the bag: one board under the character panel; its first row is the bar (Robin, 2026-10-14: the 1 to 6 as part of the bag's slots, not a board of its own)
+  var CELL = 47 / 3, INV = { w: 110, h: 102, slide: 0 };   /* (330 by 300 canvas pixels, cells 42 and 47 apart: the studio's spec, 2026-10-20) */   // the bag: one board under the character panel; its first row is the bar (Robin, 2026-10-14: the 1 to 6 as part of the bag's slots, not a board of its own)
   INV.x = 8; INV.y = 418 / 3; var BAR = { y: INV.y, h: 0 };   /* (under the flaps: Robin's pick) */
   function invLeft() { return INV.x - (1 - INV.slide) * (INV.w + 40); }
   function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + (20 + (i % COLS) * 47) / 3, y: INV.y + (54 + row * 47) / 3, w: 14, h: 14 }; }
@@ -16576,7 +16574,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function drawStore(c) {                  // the open chest's board, on the right
     var x0 = storeLeft(), i, hov = slotAt();
     hPx(c, x0, STORE_UI.y, function () {
-      hBoard(c, STORE_UI.w * 3, STORE_UI.h * 3); hTitle(c, 'Chest', 22, 42, 20);
+      hBoard(c, STORE_UI.w * 3, STORE_UI.h * 3); hTitle(c, 'Chest');
       hText(c, 'Shift and click moves across', STORE_UI.w * 3 - 20, 37, hf('italic', 13), HC.under, 'right');
       for (i = 0; i < STORE_N; i++) hSocket(c, 20 + (i % COLS) * 47, 54 + Math.floor(i / COLS) * 47, 42, false, hov === 100 + i);
     });
@@ -16593,7 +16591,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       hint = txt;
     } else if (hb === 'sort' && !(pick && pick.drag)) hint = 'Sort the bag';
     hPx(c, x0, INV.y, function () {
-      hBoard(c, 330, 300); hTitle(c, 'Bag', 22, 42, 20);
+      hBoard(c, 330, 306); hTitle(c, 'Bag');
       hText(c, 'Sort', 292, 37, hf(hb === 'sort' ? 'bold' : '', 13), hb === 'sort' ? HC.cream : 'rgba(240,227,196,0.65)', 'center');
       if (hint) { c.font = hf('italic', 13); hText(c, hint, 268, 37, hf('italic', c.measureText(hint).width > 170 ? 11 : 13), HC.under, 'right'); }
       for (i = 0; i < SLOTS; i++) hSocket(c, 20 + (i % COLS) * 47, 54 + Math.floor(i / COLS) * 47, 42, i < BAG0 && i === hand, hov === i);
@@ -18038,7 +18036,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var h = 20 + lines.length * 7.5 + 4, w = 140; x = Math.max(4, Math.min(400 - w - 4, x)); y = Math.max(4, Math.min(250 - h - 4, y));
     hPx(c, x, y, function () { c.fillStyle = 'rgba(0,0,0,0.28)'; c.fillRect(4, 5, w * 3, h * 3); hVellum(c, 0, 0, w * 3, h * 3, 'card_frame'); });
     if (stack) drawDropIcon(c, stack, x + 14, y + 12, 1.05); else { c.save(); c.translate(x + 14, y + 12); Items.icon(c, it, 16); c.restore(); }
-    hPx(c, x, y, function () { hRubric(c, name, 78, 40, 20 / 1, HC.ink); });
+    hPx(c, x, y, function () { hText(c, name, 78, 40, hf('bold', 20), HC.ink); });
     lines.forEach(function (l, i) {
       var yy = y + 27 + i * 7.5;
       if (l.t) { hText(c, l.t, x + 8, yy, hf('', 5.6), HC.ink); return; }

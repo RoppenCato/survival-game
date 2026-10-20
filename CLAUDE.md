@@ -427,13 +427,15 @@ looked: `moon`, `mist`, `shafts`, `clouds`. Robin found the first version "a wei
 Director's** (2026-10-20, Robin's mix of its three directions; its `out/hud/SPEC.md` and `hud_mix.png`, the art copied whole
 into `assets/hud`, inlined as `__HUD__`), **with Robin's own picks from the studio's panel picker** (2026-10-20, the end of
 that SPEC): every board (`wood()`) is the dark oak with a dark outline and two gilt lines (`hBoard`, 9-slice
-`board_frame_gilt`); what is chosen is pale gold `#ead08a`; the Gear board (330 by 360 canvas pixels) has the hero in an
+`board_frame_gilt`); every board's heading is its name on a plaque (`hTitle`, `plaque`; Robin's second round, 2026-10-20);
+what is chosen is pale gold `#ead08a`; the Gear board (330 by 360 canvas pixels) has the hero in an
 arched vellum window and six square dark slots with a bronze rim a side (the arm ring where the spec has "armour", mine; an
-empty slot shows a pale sepia sketch), the name with a red capital and in runes, and rounded flaps hanging under it (Gear,
-Rings, Saga: Saga is the Stats page; `hFlap`, Robin: "rounded flaps on the bottom so it's not so square"); the bag (330 by
-300) under the flaps is dark sockets; crafting (525 by 500, bottom right) has its list in a dark well, a vellum card with the
+empty slot shows a pale sepia sketch; nothing under the window, no runes: Robin), and rounded flaps hanging under it (Gear,
+Rings once a ring is worn, Stats always: what was the status line under the window; `hFlap`, Robin: "rounded flaps on the
+bottom so it's not so square"); the bag (330 by 306) under the flaps is dark sockets; crafting (453 by 500, bottom right,
+narrower so more of the game shows: Robin) has its list in a dark well, a vellum card with the
 thing's picture large, a sub-title (`infoSub`, mine), the tale, its numbers and **the cost as each material in a socket with
-the number needed in its corner, red when you have too few, and a line saying what is short** (Robin: "it should just be 3",
+the number needed in its corner, red when you have too few, and "Short of fibre" beside them** (Robin: "it should just be 3",
 no "Needs"), and the Craft button; the station tabs go down its left edge; a thing's hover card is vellum, over every board.
 A board is drawn in Robin's canvas pixels (`hPx`, three to a unit) so the spec's numbers stand as they are; the mouse is
 tested in units. **The type is Alegreya** (Robin's pick; `UI_FACE`), loaded from Google Fonts by a link in the page, Palatino
