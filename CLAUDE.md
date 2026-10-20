@@ -325,10 +325,13 @@ with E** and pop out (no tool takes a bush; Robin): a berry bush grows its berri
 grass comes only from tufts of tall grass (`GRASS_KINDS`), and a pulled tuft is gone (Robin), growing back where it stood
 after `GT.regrowDays` 3 (mine; a saved decal of kind `grass`; the regrowth runs on every new day); and now and then a tree's wood
 comes with a strip of fiber; everything shakes when struck; the swing's pace is 1.5; a tool bites a beast at `TOOL_DMG` 0.8 of a weapon. Stumps regrow. Drops lie with a bounce
-and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) multiplies what is gathered and dropped. **Trees
-are at their prop's size, as before 2026-10-14** (Robin, 2026-10-16: "it needs to be as before"; `World.TREE_SHAPES.old`, the
-default); Admin's **Trees** still cycles the bigger ones baked toward `World.TREE_BAKE` (twice, one and a half, tall and thin;
-`game.trees`, `World.setTreeShape`; `docs/trees-compare.jpg`); rocks come in six variations of tone and build.
+and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) multiplies what is gathered and dropped. **The pine,
+oak and birch are the Art Director's pictures** (2026-10-20, Robin's pick: concept A, the large size, a pine of about 5.3 m, three
+heroes; `assets/props/trees`, set pieces through `World.setImages` in three variants a kind by the prop's seed, drawn at their
+own size, `fixed`); the felling states stay the game's, and **a felled tree lies as its own trunk picture** along the fall,
+its chopped end at the stump, shortened at the far end as the logs come off (never thinner: Robin), the wood rolling out
+there; the log picture waits for a use. The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
+props at their old size (Admin's **Trees** cycles their bake; `World.TREE_SHAPES`); rocks come in six variations of tone and build.
 
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
 right click uses, Shift and click sends across to a chest, Shift and drag carries half a stack; Sort tidies. The panel

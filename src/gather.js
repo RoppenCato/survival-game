@@ -48,7 +48,7 @@ function crackAng(G, o) { return G && G.crackLook === 4 ? LIT_ANG : hash(Math.ro
 function crackHit(G, o, hero) { if (!G.cracks || o.kind !== 'stone') return false; var ca = crackAng(G, o), a = Math.atan2((hero.y - o.y) * K, hero.x - o.x), d = Math.atan2(Math.sin(a - ca), Math.cos(a - ca)); return Math.abs(d) < 0.75; }
 function rhythmHit(G, o, t) { if (!G.rhythm || o.lastHit == null) return false; var dt = t - o.lastHit; return dt >= G.rhythmAfter && dt <= G.rhythmAfter + G.rhythmWindow; }
 var TREE_WOOD = { oak: 14, pine: 11, birch: 9, dwarfBirch: 4 }, ROCK_STONE = { rock: 3, rockFormation: 6, boulder: 5 }, CHAR_TREE = { struckTree: 4 }, BUSH_FIBER = 3, BERRIES = 3;   // a lightning-struck tree gives charcoal, no trunk
-function treeLen(s, o) { return s.h * (o.s || 1) * 0.8; }   // how far along the ground the trunk reaches when it lies: 0.8 of the tree's drawn height (2026-10-14: it took the sprite's top offset for its height, which for a pine is more than twice the tree, and Robin saw trunks twice the tree)
+function treeLen(s, o) { return s.h * (s.fixed ? 1 : (o.s || 1)) * 0.8; }   // how far along the ground the trunk reaches when it lies: 0.8 of the tree's drawn height (2026-10-14: it took the sprite's top offset for its height, which for a pine is more than twice the tree, and Robin saw trunks twice the tree)
 // One blow. ctx: { power, right, hero, t, s (sprite bounds), ev }. Returns what happened: { mult, spot, rhythm, crack, felled }.
 function hit(G, o, ctx) {
   var ev = ctx.ev, out = { mult: 1, spot: false, rhythm: false, crack: false, felled: false, broke: false }, hero = ctx.hero, t = ctx.t;
@@ -98,8 +98,9 @@ function tick(G, o, dt, ctx) {
 function chopTrunk(G, o, ctx) {
   var ev = ctx.ev || {}, out = { mult: 1, rhythm: rhythmHit(G, o, ctx.t), log: false, gone: false };
   o.lastHit = ctx.t; o.shake = 0.4; o.chops += out.rhythm ? 2 : 1;
-  if (ev.chip) ev.chip(o.x - o.dir * o.len * 0.3, o.y, 10, '#d9b37a', 5, 90);   /* (chips fly from the cut end; more of them since 2026-10-14) */
-  if (o.chops >= G.chopsPerLog) { o.chops = 0; o.logs--; out.log = true; if (ev.drop) ev.drop('wood', o.x + o.dir * o.len * 0.5, o.y + 2, o.woodEach); if (ev.sfx) ev.sfx('logoff'); o.len *= Math.max(0.35, (o.logs) / (o.logs + 1)); if (o.logs <= 0) { out.gone = true; o.dying = 0; } }
+  var L0 = o.len0 || o.len, far = o.x - o.dir * L0 * 0.5 + o.dir * o.len;   // the far end, where the next log comes off (the stump end stays put)
+  if (ev.chip) ev.chip(far - o.dir * 6, o.y, 10, '#d9b37a', 5, 90);   /* (chips fly from where the log comes off; more of them since 2026-10-14) */
+  if (o.chops >= G.chopsPerLog) { o.chops = 0; o.logs--; out.log = true; if (ev.drop) ev.drop('wood', far, o.y + 2, o.woodEach); if (ev.sfx) ev.sfx('logoff'); o.len *= Math.max(0.35, (o.logs) / (o.logs + 1)); if (o.logs <= 0) { out.gone = true; o.dying = 0; } }
   return out;
 }
 // A stump grows back: after regrowDays it is a sapling, then a tree over as many days again. The page keeps the stumps
@@ -165,7 +166,18 @@ function drawProp(c, o, s, px, py, w, h, P, G, t, dark) {
 var BARK = { oak: ['#7a5636', '#4a3220', '#c9a070'], pine: ['#6b4a3a', '#3f2a1c', '#c99a70'], birch: ['#e8e4dc', '#5a5650', '#d9c9a6'] };
 // a felled trunk lying along the ground, its cut end toward where it fell from; shorter as the logs come off
 var TRUNK_W = { oak: 1.2, beech: 1.15, pine: 0.9, ash: 0.9, apple: 0.8, birch: 0.7, struckTree: 1, dwarfBirch: 0.6 };   /* how thick a felled trunk lies, by tree (2026-10-14: a trunk scaled by the tree's bake was fatter than the hero is tall) */
-function drawTrunk(c, o) {
+function drawTrunk(c, o, pic) {
+  if (o.len0 == null) o.len0 = o.len;                   // its length when it fell: the stump end stays put, the logs come off the far end
+  if (pic && pic.cv && pic.w > 2) {                      // the tree's own trunk picture (2026-10-20; Robin: the logs "getting smaller as they break" looked poor, so the trunk loses length, never thickness)
+    var yP = o.y * K, shkP = o.shake > 0 ? Math.sin(o.shake * 50) * 2.4 * Math.min(1, o.shake * 3) : 0, f = Math.max(0.12, Math.min(1, o.len / o.len0)), sc0 = o.len0 / pic.w, xs = o.x - o.dir * o.len0 * 0.5;
+    if (o.dying != null) c.globalAlpha *= Math.max(0, 1 - o.dying / 0.3);
+    c.save(); c.translate(xs, yP + shkP); if (o.dir < 0) c.scale(-1, 1);
+    c.fillStyle = 'rgba(20,40,20,0.22)'; c.beginPath(); c.ellipse(o.len0 * f * 0.5, 2, o.len0 * f * 0.5 + 3, pic.h * sc0 * 0.3, 0, 0, 7); c.fill();
+    c.drawImage(pic.cv, 0, 0, pic.cv.width * f, pic.cv.height, 0, pic.t * sc0, pic.w * sc0 * f, pic.h * sc0);   // the picture's chopped end is toward -x: cut at the other end
+    c.restore();
+    if (o.chops > 0) { c.fillStyle = 'rgba(20,16,30,0.6)'; c.fillRect(o.x - 9, yP + pic.t * sc0 - 6, 18, 3); c.fillStyle = '#9be58b'; c.fillRect(o.x - 9, yP + pic.t * sc0 - 6, 18 * Math.min(1, o.chops / Math.max(1, o.chopsPerLog || 2)), 3); }
+    return;
+  }
   var col = BARK[o.tree] || BARK.oak, y = o.y * K, len = o.len, x0 = o.x - o.dir * len * 0.5, x1 = o.x + o.dir * len * 0.5, r = 5.5 * (o.s || 0.5) / 0.5 * (TRUNK_W[o.tree] || 1), shk = o.shake > 0 ? Math.sin(o.shake * 50) * 2.4 * Math.min(1, o.shake * 3) : 0;   /* (the thickness by TRUNK_W, never by the bake) */
   if (o.dying != null) c.globalAlpha *= Math.max(0, 1 - o.dying / 0.3);
   c.save(); c.translate(0, shk); c.lineCap = 'round';

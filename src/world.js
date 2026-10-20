@@ -665,8 +665,8 @@ function make(kit, opts) {
 
   /* baking */
   w.sprite = function (name, v) {
-    var im = IMAGES[name];
-    if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [] }; return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
+    var im = IMAGES[name + '_' + (((v | 0) % 3) + 1)] || IMAGES[name];   // a set piece in three variants (the trees, 2026-10-20: pine_1 to pine_3 by the prop's seed), else one picture, else the drawn prop baked
+    if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [], fixed: true };   /* (fixed: a set piece is drawn at its own size, never by the prop's planted scale) */ return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
     var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); var tb = treeBake(name); sprites[kk] = kit.bakeProp(name, 3 + v * 7, tb.sx !== 1 || tb.sy !== 1 ? tb : null); sprites[kk].bake = tb.sy; } return sprites[kk]; };
   /* The trees are baked bigger (2026-10-14, Robin: "trees are way too small, they should probably be three times the size"): a tree
      kind in TREE_BAKE is drawn through bakeProp's sx/sy at that size, so it stays sharp, and everything that reads the sprite's

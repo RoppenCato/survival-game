@@ -2115,7 +2115,7 @@ __COMBAT__
     hc.sets.forEach(function (st) { if (Math.abs(st.x - cam.x) > 300 || Math.abs(st.y * K - cam.y) > 220) return; items.push({ y: st.y, f: function () { Cave.drawSet(ctx, st); } }); });   // the mine's timber: you walk under its caps
     hc.ores.concat(hc.props, trolls && cave.body && !seen.ring ? [cave.body] : []).forEach(function (o) {   // the ore rocks, the stalagmites and columns (you walk behind them), the dead man
       if (Math.abs(o.x - cam.x) > 260 || Math.abs(o.y * K - cam.y) > 200) return;
-      var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, ww = s.w * o.s, hh = s.h * o.s, P = hero();
+      var s = sprite(o.name, o.v), sS = s.fixed ? 1 : o.s, px = o.x + s.l * sS, py = o.y * K + s.t * sS, ww = s.w * sS, hh = s.h * sS, P = hero();   /* (a set piece, the trees since 2026-10-20, at its own size) */
       items.push({ y: o.y, f: function () { drawProp(o, s, px, py, ww, hh, P); if (o === cave.body) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(o.x - 15, o.y * K - 6 + Math.sin(clock * 3) * 1.2, 1.8, 0, 7); ctx.fill(); } } });
     });
   }
@@ -5222,7 +5222,7 @@ __COMBAT__
         if (B.posts[Build.key(x, y + 1)] && !B.V[kk]) items.push({ y: under ? FAR + 0.4 : (y + 1) * T - 0.9, f: function () { Build.drawBeam(ctx, x, y, false, p, BCFG); } });
       });
       Object.keys(B.stairs).forEach(function (kk) { var q = kk.split(','), x = +q[0], y = +q[1]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return; items.push({ y: L ? FAR + 0.6 : y * T + 2, f: function () { Build.drawStairs(ctx, x, y, BCFG); } }); });
-      trunks.forEach(function (o) { if (Math.abs(o.x - cam.x) < hw + 60 && Math.abs(o.y * K - cam.y) < hh + 40) items.push({ y: o.y, f: function () { ctx.save(); Gather.drawTrunk(ctx, o); ctx.restore(); } }); });
+      trunks.forEach(function (o) { if (Math.abs(o.x - cam.x) < hw + 60 && Math.abs(o.y * K - cam.y) < hh + 40) items.push({ y: o.y, f: function () { ctx.save(); Gather.drawTrunk(ctx, o, World.IMAGES[o.tree + '_trunk'] ? sprite(o.tree + '_trunk', 0) : null); ctx.restore(); } }); });
       bees.forEach(function (b) { items.push({ y: b.y + 2, f: function () { ctx.fillStyle = '#2a2420'; ctx.beginPath(); ctx.arc(b.x, b.y * K - 14 - Math.sin(b.t * 9) * 3, 1.5, 0, 7); ctx.fill(); ctx.fillStyle = '#f2d75a'; ctx.beginPath(); ctx.arc(b.x + 0.6, b.y * K - 14 - Math.sin(b.t * 9) * 3, 0.7, 0, 7); ctx.fill(); } }); });
       B.items.forEach(function (it) {
         if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;

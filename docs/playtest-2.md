@@ -68,7 +68,7 @@ Also done: beasts start at least 500 units from the steading's middle and 300 fr
 - The roof built by hand, not by itself, with a message and a red mark where a wall is missing.
 - The sea looks boring and static when sailing.
 - The shipyard and shipbuilding reworked (chapter 2).
-- The tree's fall and the logs that shrink as they break: with the studio's new trees.
+- The tree's fall and the logs that shrink as they break: **done 2026-10-20** with the studio's trees (the trunk's own picture, shortened as the logs come off).
 
 **The Sound Director** (each from a reference Robin likes): the hit on a tree, a tree falling, the club's hit ("awful"), the
 block, a box opening ("something wooden breaking, a nice snappy comforting sound"), the ambient sea ("more like a noise").
