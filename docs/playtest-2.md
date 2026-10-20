@@ -45,3 +45,31 @@ more than the list.
 ## Sending the logs
 
 Escape, Admin: download the error log and the frame log, and put both in the project folder.
+
+## Robin's report (2026-10-20), sorted
+
+**Mine, now** (bugs and small changes, in the order I take them):
+1. The character panel's Gear page draws the hero as a row of broken pieces (the new kit drawn by the old path).
+2. Text runs out of its box on the Stats page (the guard line).
+3. The panel's tabs overlap the name: move them to the left side.
+4. Shift and drag on the toolbar to move or remove things.
+5. The placement ghost in build mode hides behind things: draw it in front.
+6. The Building board on the starter island holds only what the house and the raft need (no shield rack and the like).
+7. No beasts in the first village (the steading): they keep a distance from it.
+8. No charcoal on the starter island (nothing there uses it): the old fire rings and the morning embers there give none.
+9. The idle of the hero and Arnor fades in and out "like a drunken thing": the blend between frames made smooth.
+10. Blocking without a shield raises the other arm: until the studio has a block with the weapon, no shield-arm block clip.
+11. "Step ashore" shows far from the shore.
+12. Leaving the island seems to give every recipe and the arm ring: to reproduce and find.
+
+**Bigger, mine, later** (each its own piece of work):
+- The roof built by hand, not by itself, with a message and a red mark where a wall is missing.
+- The sea looks boring and static when sailing.
+- The shipyard and shipbuilding reworked (chapter 2).
+- The tree's fall and the logs that shrink as they break: with the studio's new trees.
+
+**The Sound Director** (each from a reference Robin likes): the hit on a tree, a tree falling, the club's hit ("awful"), the
+block, a box opening ("something wooden breaking, a nice snappy comforting sound"), the ambient sea ("more like a noise").
+
+**The Art Director:** the character panel, the bag and the crafting board in the art direction (the panel's gear icons too
+cramped, plain and ugly); a block with the weapon raised for when no shield is worn; the trees (already in its plan).
