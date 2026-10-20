@@ -17,10 +17,10 @@ const W = 2300, ROW = 420, H = ROW * ROWS.length + 20, Z = 3;
   const sil = {};
   async function put(name, anim, d, fr, x, y, s) {
     const dir = path.join('assets', 'sprites', name), J = JSON.parse(fs.readFileSync(path.join(dir, name + '.json'), 'utf8')), A = J.anims[anim]; if (!A) return;
-    const file = A.sheets.body, im = await loadImage(path.join(dir, file)), fw = J.frame.w, fh = J.frame.h, row = J.dirs.indexOf(d), k = s * (J.scale || 1) * Z / 3, f = Math.min(A.frames - 1, Math.floor(A.frames * fr));
+    const file = A.sheets.body, im = await loadImage(path.join(dir, file)), fw = (A.frame || J.frame).w, fh = (A.frame || J.frame).h, row = J.dirs.indexOf(d), k = s * (J.scale || 1) * Z / 3, f = Math.min(A.frames - 1, Math.floor(A.frames * fr));
     const key = dir + file; if (!sil[key]) { const c2 = createCanvas(im.width, im.height), g = c2.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = 'hsl(222,40%,8%)'; g.fillRect(0, 0, im.width, im.height); sil[key] = c2; }
-    c.save(); c.translate(x, y); c.globalAlpha = 0.3; c.beginPath(); c.rect(-900, -1200, 1800, 1200); c.clip(); c.transform(1, 0, -0.5, -0.14, 0, 0); c.drawImage(sil[key], f * fw, row * fh, fw, fh, -J.anchor.x * k, -J.anchor.y * k, fw * k, fh * k); c.restore();
-    c.drawImage(im, f * fw, row * fh, fw, fh, x - J.anchor.x * k, y - J.anchor.y * k, fw * k, fh * k);
+    c.save(); c.translate(x, y); c.globalAlpha = 0.3; c.beginPath(); c.rect(-900, -1200, 1800, 1200); c.clip(); c.transform(1, 0, -0.5, -0.14, 0, 0); c.drawImage(sil[key], f * fw, row * fh, fw, fh, -(A.anchor || J.anchor).x * k, -(A.anchor || J.anchor).y * k, fw * k, fh * k); c.restore();
+    c.drawImage(im, f * fw, row * fh, fw, fh, x - (A.anchor || J.anchor).x * k, y - (A.anchor || J.anchor).y * k, fw * k, fh * k);
   }
   for (let i = 0; i < ROWS.length; i++) {
     const [nm, title, show] = ROWS[i], y0 = i * ROW, yb = y0 + ROW - 50;
