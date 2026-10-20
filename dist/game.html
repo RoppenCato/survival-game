@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,700;1,400&display=swap">
 <style>
 :root{
   box-sizing:border-box;
@@ -16034,7 +16035,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         var e = q.e, top = LY + (q.y - menu.scroll) * 3; if (top > LY + wellH || top + q.h * 3 < LY) return;
         if (q.head) { hText(c, q.head.toUpperCase(), LX + 10, top + 17, hf('bold', 12), HC.ochre); return; }
         var on = e === sel, row = { e: e, x: X + LX / 3, y: Y + top / 3, w: 170 / 3, h: 10 }, hovR = inR(row) && mouseS.y >= menu.ly && mouseS.y <= menu.ly + menu.listH; menu.rows.push(row);
-        if (on) { if (!nine(c, 'list_bar', LX + 2, top + 2, 166, 26, 6)) { c.fillStyle = 'rgba(217,168,69,0.30)'; c.fillRect(LX + 2, top + 2, 166, 26); } } else if (hovR) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(LX + 2, top + 2, 166, 26); }
+        if (on) { if (!nine(c, 'list_bar_gold', LX + 2, top + 2, 166, 26, 6) && !nine(c, 'list_bar', LX + 2, top + 2, 166, 26, 6)) { c.fillStyle = 'rgba(217,168,69,0.30)'; c.fillRect(LX + 2, top + 2, 166, 26); } } else if (hovR) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(LX + 2, top + 2, 166, 26); }
         var can = infoCan(e); c.globalAlpha = can ? 1 : 0.5; hUnits(c, LX + 20, top + 15, function () { infoIcon(c, e, 0, 0, 0.6); });
         hText(c, infoName(e), LX + 38, top + 21, hf('', 16), HC.cream); c.globalAlpha = 1;
         var pr = infoProgress(e); if (pr) hText(c, 'x' + pr.n, LX + 162, top + 21, hf('bold', 14), HC.ochre, 'right'); else if (isNew(e.id)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(LX + 160, top + 9, 3.5, 0, 7); c.fill(); }   // never made: a mark
@@ -16069,10 +16070,17 @@ if (typeof module !== 'undefined') module.exports = Combat;
       lines.forEach(function (ln, k) { hText(c, ln, cx0 + 16, cy0 + 206 + k * 20, hf('', 14.5), HC.ink); });
       sts.forEach(function (st, k) { var x = cx0 + 16 + (k % 3) * 96, y = top + Math.floor(k / 3) * 40; hText(c, st[0], x, y + 14, hf('italic', 13), HC.sepia); c.font = hf('bold', 17); var vs = c.measureText(st[1]).width > 90 ? 14 : 17; hText(c, st[1], x, y + 34, hf('bold', vs), HC.ink);
         if (st[2]) { c.font = hf('bold', vs); var vw = c.measureText(st[1]).width; hText(c, (st[2] > 0 ? '+' : '\u2212') + Math.abs(st[2]) + (st[3] || ''), x + vw + 5, y + 34, hf('bold', 13), st[2] > 0 ? '#3e7a2e' : '#a8402e'); } });
-      // what it takes: each material's picture, what it needs of what you have, red where you have too few
-      hText(c, 'Needs', cx0 + 16, cy0 + 348, hf('bold', 13), HC.rubric);
-      var needs = infoNeeds(sel), ks = Object.keys(needs), step = Math.min(116, (cw - 64 - 8) / Math.max(1, ks.length)), small = step < 100, is = small ? 26 : 34;
-      ks.forEach(function (k, q) { var x = cx0 + 64 + q * step, have = inv[k] || 0, ok = ADMIN.free || have >= needs[k]; hUnits(c, x + is / 2, cy0 + 339, function () { drawDropIcon(c, k, 0, 0, is / 42); }); hText(c, needs[k] + ' of ' + have, x + is + 2, cy0 + 345, hf('bold', small ? 13 : 15), ok ? HC.ink : HC.rubric); });
+      // what it takes: each material in a socket, the number needed in its corner, red when you have too few, and a line saying
+      // what is short (Robin's pick, 2026-10-20: "it should just be 3", no "Needs", as other crafting games do)
+      c.strokeStyle = 'rgba(59,42,31,0.3)'; c.lineWidth = 1; c.beginPath(); c.moveTo(cx0 + 16, cy0 + 316); c.lineTo(cx0 + cw - 16, cy0 + 316); c.stroke();
+      var needs = infoNeeds(sel), ks = Object.keys(needs), short = [];
+      ks.forEach(function (k, q) {
+        var x = cx0 + 16 + q * 46, y = cy0 + 322, ok = ADMIN.free || (inv[k] || 0) >= needs[k]; if (!ok) short.push((NAMES[k] || k).toLowerCase());
+        var cs = himg('cost_socket'); if (cs) c.drawImage(cs, x, y, 36, 36); else hSocket(c, x, y, 36, false, false);
+        hUnits(c, x + 18, y + 18, function () { drawDropIcon(c, k, 0, 0, 32 / 42); });
+        c.font = hf('bold', 14); c.lineWidth = 3; c.lineJoin = 'round'; c.strokeStyle = HC.dark; c.textAlign = 'right'; c.strokeText(String(needs[k]), x + 34, y + 34); c.fillStyle = ok ? HC.cream : HC.short; c.fillText(String(needs[k]), x + 34, y + 34); c.textAlign = 'left';
+      });
+      if (short.length) { var sx = cx0 + 16 + ks.length * 46 + 4; c.font = hf('italic', 13); var sl = wrapText(c, 'You have too little ' + short.join(' and '), cx0 + cw - 16 - sx).slice(0, 2); sl.forEach(function (ln, k) { hText(c, ln, sx, cy0 + (sl.length > 1 ? 337 : 345) + k * 15, hf('italic', 13), HC.rubric); }); }
       // the Craft button under the card, filling as the first one is made; Cancel beside it while something is on the way
       var can = infoCan(sel), bw = pr2 ? 196 : cw; menu.btn = { x: X + cx0 / 3, y: Y + 428 / 3, w: bw / 3, h: 52 / 3 };
       hButton(c, cx0, 428, bw, 52, sel.dish ? 'Cook' : 'Craft', can, inR(menu.btn), pr2 ? pr2.f : 0, 24);
@@ -16251,7 +16259,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.strokeStyle = UI_LIT; c.lineWidth = 1; c.beginPath(); c.moveTo(x + r + 1, y + 1.2); c.lineTo(x + w - r - 1, y + 1.2); c.moveTo(x + 1.2, y + r + 1); c.lineTo(x + 1.2, y + h - r - 1); c.stroke();
   }
   function wood(c, x, y, w, h) {          // a wooden board: the studio's oak and frame (2026-10-20); planks drawn in code while they load
-    if (himg('wood_tile') && himg('board_frame')) { hPx(c, x, y, function () { hBoard(c, w * 3, h * 3); }); return; }
+    if (himg('wood_tile') && (himg('board_frame_gilt') || himg('board_frame'))) { hPx(c, x, y, function () { hBoard(c, w * 3, h * 3); }); return; }
     c.save();
     c.fillStyle = '#5c4535'; c.beginPath(); c.roundRect(x, y, w, h, 4); c.fill();
     c.save(); c.beginPath(); c.roundRect(x + 1, y + 1, w - 2, h - 2, 3); c.clip();
@@ -16328,11 +16336,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
      a dark well beside a vellum card with the thing's picture large; light only for the window, the slots and the card. A
      board is drawn in the canvas pixels of Robin's size (1200 by 750, three to a unit: hPx), so the spec's numbers are used as
      they are; what the mouse can hit stays in units. ---------- */
-  var HUD_ART = {"board_frame": "../assets/hud/board_frame.png?v=a3dc2cc2", "button": "../assets/hud/button.png?v=da923b68", "button_down": "../assets/hud/button_down.png?v=9724e8b3", "button_hover": "../assets/hud/button_hover.png?v=57f2482a", "capital_box": "../assets/hud/capital_box.png?v=5e4a81b8", "card_frame": "../assets/hud/card_frame.png?v=69c6fbf5", "list_bar": "../assets/hud/list_bar.png?v=9cb61956", "plate_frame": "../assets/hud/plate_frame.png?v=dc63f7f5", "rivet": "../assets/hud/rivet.png?v=703a4492", "sketch_armour": "../assets/hud/sketch_armour.png?v=0dde2a7e", "sketch_chest": "../assets/hud/sketch_chest.png?v=728689a2", "sketch_cloak": "../assets/hud/sketch_cloak.png?v=a2ca11f6", "sketch_feet": "../assets/hud/sketch_feet.png?v=0c512317", "sketch_head": "../assets/hud/sketch_head.png?v=3e2ab850", "sketch_legs": "../assets/hud/sketch_legs.png?v=5813b244", "sketch_neck": "../assets/hud/sketch_neck.png?v=cb95b00d", "sketch_ring": "../assets/hud/sketch_ring.png?v=dcae29d3", "sketch_shield": "../assets/hud/sketch_shield.png?v=78dd282d", "sketch_trinket": "../assets/hud/sketch_trinket.png?v=e7e68059", "slot_round": "../assets/hud/slot_round.png?v=ea136761", "slot_round_chosen": "../assets/hud/slot_round_chosen.png?v=7de463f1", "socket": "../assets/hud/socket.png?v=a20d3ac8", "socket_chosen": "../assets/hud/socket_chosen.png?v=520b3290", "tab_off": "../assets/hud/tab_off.png?v=a0be3ee0", "tab_on": "../assets/hud/tab_on.png?v=189221ee", "vellum_tile": "../assets/hud/vellum_tile.png?v=10d2ef7c", "window_back": "../assets/hud/window_back.png?v=e9056a98", "window_frame": "../assets/hud/window_frame.png?v=428d0ba8", "wood_tile": "../assets/hud/wood_tile.png?v=a798f512"}, HUD_IMG = {}, HUD_PAT = {};
+  var HUD_ART = {"board_frame": "../assets/hud/board_frame.png?v=a3dc2cc2", "board_frame_gilt": "../assets/hud/board_frame_gilt.png?v=8c45eec8", "button": "../assets/hud/button.png?v=da923b68", "button_down": "../assets/hud/button_down.png?v=9724e8b3", "button_hover": "../assets/hud/button_hover.png?v=57f2482a", "capital_box": "../assets/hud/capital_box.png?v=5e4a81b8", "card_frame": "../assets/hud/card_frame.png?v=69c6fbf5", "cost_socket": "../assets/hud/cost_socket.png?v=d5a8b977", "flap_off": "../assets/hud/flap_off.png?v=c45f8165", "flap_on": "../assets/hud/flap_on.png?v=23d6fe0f", "list_bar": "../assets/hud/list_bar.png?v=9cb61956", "list_bar_gold": "../assets/hud/list_bar_gold.png?v=9a69ffa0", "plate_frame": "../assets/hud/plate_frame.png?v=dc63f7f5", "rivet": "../assets/hud/rivet.png?v=703a4492", "sketch_armour": "../assets/hud/sketch_armour.png?v=0dde2a7e", "sketch_chest": "../assets/hud/sketch_chest.png?v=728689a2", "sketch_cloak": "../assets/hud/sketch_cloak.png?v=a2ca11f6", "sketch_feet": "../assets/hud/sketch_feet.png?v=0c512317", "sketch_head": "../assets/hud/sketch_head.png?v=3e2ab850", "sketch_legs": "../assets/hud/sketch_legs.png?v=5813b244", "sketch_light_armour": "../assets/hud/sketch_light_armour.png?v=f48cff4c", "sketch_light_chest": "../assets/hud/sketch_light_chest.png?v=75c1bfb9", "sketch_light_cloak": "../assets/hud/sketch_light_cloak.png?v=933d8778", "sketch_light_feet": "../assets/hud/sketch_light_feet.png?v=cf709a54", "sketch_light_head": "../assets/hud/sketch_light_head.png?v=ce927fff", "sketch_light_legs": "../assets/hud/sketch_light_legs.png?v=6148d0b1", "sketch_light_neck": "../assets/hud/sketch_light_neck.png?v=ea088f61", "sketch_light_ring": "../assets/hud/sketch_light_ring.png?v=a4e935bb", "sketch_light_shield": "../assets/hud/sketch_light_shield.png?v=8dcbd063", "sketch_light_trinket": "../assets/hud/sketch_light_trinket.png?v=a565c57e", "sketch_neck": "../assets/hud/sketch_neck.png?v=cb95b00d", "sketch_ring": "../assets/hud/sketch_ring.png?v=dcae29d3", "sketch_shield": "../assets/hud/sketch_shield.png?v=78dd282d", "sketch_trinket": "../assets/hud/sketch_trinket.png?v=e7e68059", "slot_round": "../assets/hud/slot_round.png?v=ea136761", "slot_round_chosen": "../assets/hud/slot_round_chosen.png?v=7de463f1", "slot_square": "../assets/hud/slot_square.png?v=3ed6814b", "slot_square_chosen": "../assets/hud/slot_square_chosen.png?v=9cb24252", "socket": "../assets/hud/socket.png?v=a20d3ac8", "socket_chosen": "../assets/hud/socket_chosen.png?v=520b3290", "socket_chosen_gold": "../assets/hud/socket_chosen_gold.png?v=694ca89b", "tab_off": "../assets/hud/tab_off.png?v=a0be3ee0", "tab_on": "../assets/hud/tab_on.png?v=189221ee", "vellum_tile": "../assets/hud/vellum_tile.png?v=10d2ef7c", "window_back": "../assets/hud/window_back.png?v=e9056a98", "window_frame": "../assets/hud/window_frame.png?v=428d0ba8", "wood_tile": "../assets/hud/wood_tile.png?v=a798f512"}, HUD_IMG = {}, HUD_PAT = {};
   (function () { if (!HUD_ART) return; for (var k in HUD_ART) { var im = new Image(); im.src = HUD_ART[k]; HUD_IMG[k] = im; } })();
-  var UI_FACE = "'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif";   /* the book face: the mock's Palatino (Robin picked the mock); the studio suggests Alegreya, embedded, which would need the font downloaded */
+  var UI_FACE = "'Alegreya', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif";   /* the book face: Alegreya (Robin's pick in the studio's panel picker, 2026-10-20), loaded from Google Fonts; Palatino while it loads */
+  if (typeof document !== 'undefined' && document.fonts && document.fonts.load) ['16px Alegreya', 'bold 16px Alegreya', 'italic 16px Alegreya'].forEach(function (f) { try { document.fonts.load(f).catch(function () {}); } catch (eF) {} });
   var RUNE_FACE = "'Segoe UI Historic', 'Noto Sans Runic', serif";
-  var HC = { cream: '#f0e3c4', ink: '#3b2a1f', sepia: '#6b5236', rubric: '#9e3326', ochre: '#d9a845', well: 'rgba(22,13,8,0.55)', under: '#d8c49c', dark: '#1d120b' };
+  var HC = { gold: '#ead08a', short: '#e0604c', cream: '#f0e3c4', ink: '#3b2a1f', sepia: '#6b5236', rubric: '#9e3326', ochre: '#d9a845', well: 'rgba(22,13,8,0.55)', under: '#d8c49c', dark: '#1d120b' };
   var HERO_WIN = 1.3;                       // the hero in the window, against his size in the world (mine, judged against hud_mix.png)
   function hf(st, px) { return (st ? st + ' ' : '') + px + 'px ' + UI_FACE; }
   function himg(n) { var im = HUD_IMG[n]; return im && im.complete && im.naturalWidth ? im : null; }
@@ -16350,7 +16359,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function hBoard(c, w, h) {                // a board: the oak, a shade from top to bottom, the frame with its carved line and rivets
     var p = hpat(c, 'wood_tile'); c.fillStyle = p || '#5e4230'; c.fillRect(0, 0, w, h);
     var gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,230,180,0.08)'); gr.addColorStop(1, 'rgba(0,0,0,0.20)'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
-    if (!nine(c, 'board_frame', 0, 0, w, h, 24)) { c.strokeStyle = '#1f130c'; c.lineWidth = 3; c.strokeRect(1.5, 1.5, w - 3, h - 3); c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = 1.5; c.strokeRect(8, 8, w - 16, h - 16); }
+    if (!nine(c, 'board_frame_gilt', 0, 0, w, h, 24) && !nine(c, 'board_frame', 0, 0, w, h, 24)) { c.strokeStyle = '#1f130c'; c.lineWidth = 3; c.strokeRect(1.5, 1.5, w - 3, h - 3); c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = 1.5; c.strokeRect(8, 8, w - 16, h - 16); }
   }
   function hTitle(c, t, x, y, size) {      // a heading: its first letter red in a small vellum square, the rest cream beside it
     var bw = size * 1.5, by = y - size * 1.22, im = himg('capital_box');
@@ -16366,13 +16375,18 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function hSocket(c, x, y, s, chosen, hov) {   // a bag cell: dark, a faint light line; the ochre square round the chosen one
     var im = himg('socket'); if (im) c.drawImage(im, x, y, s, s); else { c.fillStyle = '#2b1c13'; c.fillRect(x, y, s, s); c.strokeStyle = 'rgba(255,225,170,0.16)'; c.lineWidth = 1; c.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1); }
     if (hov) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(x + 2, y + 2, s - 4, s - 4); }
-    if (chosen) { var k = s / 42, ch = himg('socket_chosen'); if (ch) c.drawImage(ch, x - 3 * k, y - 3 * k, 48 * k, 48 * k); else { c.strokeStyle = HC.ochre; c.lineWidth = 2.4; c.strokeRect(x - 1, y - 1, s + 2, s + 2); } }
+    if (chosen) { var k = s / 42, ch = himg('socket_chosen_gold') || himg('socket_chosen'); if (ch) c.drawImage(ch, x - 3 * k, y - 3 * k, 48 * k, 48 * k); else { c.strokeStyle = HC.gold; c.lineWidth = 2.4; c.strokeRect(x - 1, y - 1, s + 2, s + 2); } }
   }
   function hButton(c, x, y, w, h, label, can, hov, fill, size) {   // the Craft button: the carved plank with its ochre edge; it fills as the first one is made
     c.save(); if (!can) c.globalAlpha = 0.5;
     if (!nine(c, hov && can ? 'button_hover' : 'button', x, y, w, h, 12)) { c.fillStyle = '#3d2a1d'; c.fillRect(x, y, w, h); c.strokeStyle = HC.ochre; c.lineWidth = 2; c.strokeRect(x + 1, y + 1, w - 2, h - 2); }
     if (fill) { c.fillStyle = 'rgba(217,168,69,0.32)'; c.fillRect(x + 5, y + 5, (w - 10) * Math.max(0, Math.min(1, fill)), h - 10); }
     hText(c, label, x + w / 2, y + h / 2 + size * 0.36, hf('bold', size), HC.cream, 'center'); c.restore();
+  }
+  function hFlap(c, x, y, label, on, hov) {   // a rounded flap hanging from under a board (x, y: its top left, 66 wide, 38 tall when chosen, 30 when not)
+    var h = on ? 38 : 30, im = himg(on ? 'flap_on' : 'flap_off'); if (im) c.drawImage(im, x - 2, y - 2, 70, h + 4); else { c.fillStyle = on ? '#8e2f22' : '#4e3a2c'; c.beginPath(); c.roundRect(x, y, 66, h, [0, 0, 10, 10]); c.fill(); }
+    if (hov && !on) { c.fillStyle = 'rgba(255,230,180,0.14)'; c.beginPath(); c.roundRect(x + 3, y + 8, 60, h - 11, [0, 0, 8, 8]); c.fill(); }
+    hText(c, label, x + 33, y + h - (on ? 11 : 9), hf('bold', 13), HC.cream, 'center');
   }
   function hTab(c, x, y, h, label, on, hov) {   // a tab down a board's left edge, its word turned up it
     var im = himg(on ? 'tab_on' : 'tab_off'); if (im) c.drawImage(im, x, y, 20, h); else { c.fillStyle = on ? '#8e2f22' : '#4e3a2c'; c.fillRect(x + 2, y, 18, h); }
@@ -16451,9 +16465,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   /* ---------- the stats board: a second page of the character panel, Gear | Stats ---------- */
   var chTab = 'gear';
-  var CH_TABS = ['gear', 'stats', 'ring'], CH_NAMES = { gear: 'Gear', stats: 'Stats', ring: 'Ring' };
+  var CH_TABS = ['gear', 'ring', 'stats'], CH_NAMES = { gear: 'Gear', stats: 'Saga', ring: 'Rings' };   /* (the names and order of Robin's picks, 2026-10-20) */
   function chTabs() { return CH_TABS.filter(function (t) { return t === 'gear' || (t === 'stats' ? !!seen.fought : !!ring); }); }   /* (the interface grows, 2026-10-14: Stats after the first kill, Ring once a ring is worn) */
-  function chTabRect(i) { return { x: chLeft() - 20 / 3, y: CHAR.y + (24 + i * 64) / 3, w: 20 / 3, h: 20 }; }   /* down the board's left edge, outside it (the studio's spec, 2026-10-20) */
+  var CHAR_TALL = 230;                       // the Saga and Rings pages, over the bag, with room for the flaps under them
+  function chTabRect(i) { return { x: chLeft() + (22 + i * 74) / 3, y: CHAR.y + (CHAR.h * 3 - 8) / 3, w: 22, h: 38 / 3 }; }   /* flaps hanging under the board, 74 apart (Robin's pick, 2026-10-20) */
   function chTabAt() { if (!mouseS || CHAR.slide < 0.9) return null; var TB = chTabs(); for (var i = 0; i < TB.length; i++) { var r = chTabRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return TB[i]; } return null; }
   function statRows() {
     var P = hero(), wp = handItem('fight'), ws = wp && Items.KINDS[wp.kind] && !Items.KINDS[wp.kind].ranged ? Items.stats(wp) : null, bwi = wp && wp.kind === 'bow' ? wp : bestTool('bow'), bw = bwi ? Items.stats(bwi) : null, m = Combat.api.mods(), ar = Combat.api.armor();
@@ -16508,10 +16523,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function markMade(id) { if (!seen.made) seen.made = {}; seen.made[id] = 1; }
   function drawChar(c) {
     var x0 = chLeft(), P = hero(), hov = chSlotAt(), hovT = chTabAt();
-    if (chTabs().indexOf(chTab) < 0) chTab = 'gear'; CHAR.h = chTab === 'gear' ? CHAR_H : 238;   /* (Stats and Ring want the height: the tall panel lies over the bag) */
+    if (chTabs().indexOf(chTab) < 0) chTab = 'gear'; CHAR.h = chTab === 'gear' ? CHAR_H : CHAR_TALL;   /* (Saga and Rings want the height: the tall panel lies over the bag) */
     hPx(c, x0, CHAR.y, function () {
+      chTabs().forEach(function (tid, ti) { hFlap(c, 22 + ti * 74, CHAR.h * 3 - 8, CH_NAMES[tid], tid === chTab, hovT === tid); });   // the flaps hang from under the board: drawn first
       hBoard(c, CHAR.w * 3, CHAR.h * 3);
-      chTabs().forEach(function (tid, ti) { hTab(c, -20, 24 + ti * 64, 60, CH_NAMES[tid], tid === chTab, hovT === tid); });
       hTitle(c, heroName || 'You', 22, 40, 20);
       hText(c, runesOf(heroName), 310, 38, '17px ' + RUNE_FACE, '#c96a4f', 'right');   // the name in runes
     });
@@ -16531,12 +16546,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var wf = himg('window_frame'); if (wf) c.drawImage(wf, 100, 54); else { c.strokeStyle = '#1f130c'; c.lineWidth = 4; c.beginPath(); c.moveTo(104, 328); c.lineTo(104, 120); c.arc(165, 120, 61, Math.PI, 0); c.lineTo(226, 328); c.closePath(); c.stroke(); }
       // the round slots: a thing worn shows its icon, an empty one a sepia sketch of what goes there
       chSlots().forEach(function (s) {
-        var sr = himg('slot_round'); if (sr) c.drawImage(sr, s.px - 24, s.py - 24, 48, 48); else { c.fillStyle = '#e4d5b2'; c.beginPath(); c.arc(s.px, s.py, 20, 0, 7); c.fill(); c.strokeStyle = HC.ink; c.lineWidth = 1.8; c.stroke(); }
-        if (hov && hov.id === s.id) { var sc = himg('slot_round_chosen'); if (sc) c.drawImage(sc, s.px - 28, s.py - 28, 56, 56); else { c.strokeStyle = '#c0392b'; c.lineWidth = 2.6; c.beginPath(); c.arc(s.px, s.py, 23.5, 0, 7); c.stroke(); } }
+        var sr = himg('slot_square') || himg('slot_round'); if (sr) c.drawImage(sr, s.px - 24, s.py - 24, 48, 48); else { c.fillStyle = '#e4d5b2'; c.beginPath(); c.arc(s.px, s.py, 20, 0, 7); c.fill(); c.strokeStyle = HC.ink; c.lineWidth = 1.8; c.stroke(); }
+        if (hov && hov.id === s.id) { var sq = himg('slot_square_chosen'), sc = himg('slot_round_chosen'); if (sq) c.drawImage(sq, s.px - 24, s.py - 24, 48, 48); else if (sc) c.drawImage(sc, s.px - 28, s.py - 28, 56, 56); else { c.strokeStyle = '#c0392b'; c.lineWidth = 2.6; c.beginPath(); c.arc(s.px, s.py, 23.5, 0, 7); c.stroke(); } }
         var worn = s.ringSlot ? ring : equip[s.id];
         if (worn && s.ringSlot) hUnits(c, s.px, s.py, function () { Runes.ringD(c, 0, 0.4, ring, 5.4, -1, ringGlow.i, ringGlow.t); });
         else if (worn) hUnits(c, s.px, s.py, function () { itemIcon(c, worn, 10.9, 6.2); });
-        else { var sk = himg('sketch_' + SKETCH[s.id]); if (sk) c.drawImage(sk, s.px - 20, s.py - 20, 40, 40); else hUnits(c, s.px, s.py, function () { glyph(c, s.id, 0, 0); }); }
+        else { var sk = himg('sketch_light_' + SKETCH[s.id]) || himg('sketch_' + SKETCH[s.id]); if (sk) c.drawImage(sk, s.px - 20, s.py - 20, 40, 40); else hUnits(c, s.px, s.py, function () { glyph(c, s.id, 0, 0); }); }
       });
       // under the window: what you wear turns aside, or what the slot you point at holds
       var txt = 'Armour ' + Math.round(Combat.api.armor() * 100) + '%';
@@ -16546,14 +16561,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (hov && !hov.ringSlot && equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
   }
   var CELL = 47 / 3, INV = { w: 110, h: 100, slide: 0 };   /* (330 by 300 canvas pixels, cells 42 and 47 apart: the studio's spec, 2026-10-20) */   // the bag: one board under the character panel; its first row is the bar (Robin, 2026-10-14: the 1 to 6 as part of the bag's slots, not a board of its own)
-  INV.x = 8; INV.y = 386 / 3; var BAR = { y: INV.y, h: 0 };
+  INV.x = 8; INV.y = 418 / 3; var BAR = { y: INV.y, h: 0 };   /* (under the flaps: Robin's pick) */
   function invLeft() { return INV.x - (1 - INV.slide) * (INV.w + 40); }
   function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + (20 + (i % COLS) * 47) / 3, y: INV.y + (54 + row * 47) / 3, w: 14, h: 14 }; }
   var STORE_UI = { w: 110, h: (54 + (STORE_N / COLS) * 47 + 12) / 3 }; STORE_UI.x = 400 - STORE_UI.w - 5; STORE_UI.y = 250 - STORE_UI.h - 20 / 3;   // an open chest: on the right, where the crafting board sits otherwise
   function storeLeft() { return STORE_UI.x + (1 - INV.slide) * (STORE_UI.w + 40); }
   function storeRect(j) { var x0 = storeLeft(); return { x: x0 + (20 + (j % COLS) * 47) / 3, y: STORE_UI.y + (54 + Math.floor(j / COLS) * 47) / 3, w: 14, h: 14 }; }
   function slotAt() {
-    if (!mouseS || INV.slide < 0.9) return -1; var i, r, under = CHAR.h > CHAR_H && mouseS.x < chLeft() + CHAR.w && mouseS.y < CHAR.y + CHAR.h;   /* (under the tall Stats or Ring page the bag is not there to point at) */
+    if (!mouseS || INV.slide < 0.9) return -1; var i, r, under = CHAR.h > CHAR_H && mouseS.x < chLeft() + CHAR.w && mouseS.y < CHAR.y + CHAR.h + 10;   /* (under the tall Stats or Ring page the bag is not there to point at) */
     if (!under) for (i = 0; i < SLOTS; i++) { r = slotRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return i; }
     if (store) for (i = 0; i < STORE_N; i++) { r = storeRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return 100 + i; }
     return -1;

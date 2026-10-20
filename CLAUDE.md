@@ -425,14 +425,19 @@ looked: `moon`, `mist`, `shafts`, `clouds`. Robin found the first version "a wei
 
 **The UI** (`docs/ui-review.md`): boards are drawn over the HUD in one order (`scene.boards`). **The panels' look is the Art
 Director's** (2026-10-20, Robin's mix of its three directions; its `out/hud/SPEC.md` and `hud_mix.png`, the art copied whole
-into `assets/hud`, inlined as `__HUD__`): every board (`wood()`) is the dark oak with a carved line and rivets (`hBoard`, a
-9-slice `board_frame`); the Gear board (330 by 360 canvas pixels) has the hero in an arched vellum window and six round light
-slots a side (the arm ring where the spec has "armour", mine; an empty slot shows a sepia sketch), the tabs down its left
-edge, the name with a red capital and in runes; the bag (330 by 300) is dark sockets; crafting (525 by 500, bottom right) has
-its list in a dark well and a vellum card with the thing's picture large, a sub-title (`infoSub`, mine), its numbers and what
-it needs ("3 of 25": needs of has), and the Craft button; a thing's hover card is vellum, over every board. A board is drawn
-in Robin's canvas pixels (`hPx`, three to a unit) so the spec's numbers stand as they are; the mouse is tested in units. The
-type is the book face, `UI_FACE` (the mock's Palatino; Alegreya would need the font downloaded). On the Tab screen a click on
+into `assets/hud`, inlined as `__HUD__`), **with Robin's own picks from the studio's panel picker** (2026-10-20, the end of
+that SPEC): every board (`wood()`) is the dark oak with a dark outline and two gilt lines (`hBoard`, 9-slice
+`board_frame_gilt`); what is chosen is pale gold `#ead08a`; the Gear board (330 by 360 canvas pixels) has the hero in an
+arched vellum window and six square dark slots with a bronze rim a side (the arm ring where the spec has "armour", mine; an
+empty slot shows a pale sepia sketch), the name with a red capital and in runes, and rounded flaps hanging under it (Gear,
+Rings, Saga: Saga is the Stats page; `hFlap`, Robin: "rounded flaps on the bottom so it's not so square"); the bag (330 by
+300) under the flaps is dark sockets; crafting (525 by 500, bottom right) has its list in a dark well, a vellum card with the
+thing's picture large, a sub-title (`infoSub`, mine), the tale, its numbers and **the cost as each material in a socket with
+the number needed in its corner, red when you have too few, and a line saying what is short** (Robin: "it should just be 3",
+no "Needs"), and the Craft button; the station tabs go down its left edge; a thing's hover card is vellum, over every board.
+A board is drawn in Robin's canvas pixels (`hPx`, three to a unit) so the spec's numbers stand as they are; the mouse is
+tested in units. **The type is Alegreya** (Robin's pick; `UI_FACE`), loaded from Google Fonts by a link in the page, Palatino
+while it loads or offline (embedding it means downloading the font: asked). On the Tab screen a click on
 the panel or the bag reaches them and the crafting board stays open. E does one thing by one rule, `eWhat(P)` (a new thing E can do is one `add(...)` line there); the HUD
 is health and stamina top left, the chart and the meal top right; damage numbers are the engine's damage × 10 (`SHOW`), whole.
 
