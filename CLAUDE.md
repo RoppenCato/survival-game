@@ -593,7 +593,15 @@ karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, 
   (three walk rounds by day, all sharper), **muster** (they gather at the fire pit, hold ten seconds, then come on together),
   **bows** (a bowman stands fixed on the watchtower and sees and shoots over the wall: `g.towers` in the nav). Measured on one
   town (`docs/baselines/plans-2026-10-20.txt`): the plans read apart in spread (302 to 463 units from the yard's middle) and
-  in when the hero would fall (21 to 60 s). `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
+  in when the hero would fall (21 to 60 s). **Rewards (step 7, 2026-10-21):** a place rolls with its seed how full its stores
+  are (`V.stockK` 0.4 to 1.6) and how deep its hoard (`V.hoardK`, times `RICH` by archetype: a seat's and a town's chests are
+  richer than a farm's), so two places of one size never give the same; a seat has the chieftain's heavy chest as a town
+  the jarl's; a full store (stockK high) holds **a sack of food** (a heavy thing carried, stowed and unloaded at home into the
+  bag like the silver: `unloadCargo` takes whatever a heavy thing holds) and shows it (`sackPile`, `hangingFish`); **the feast**:
+  at dusk (`FEAST` 840 to 1200) E at a laid `foodTable` eats their feast once a day (`FOOD.feast`: above any home dish, for the
+  raid; a villager who sees it cries thief). `Village.lootOf(V)` sums what a place holds; `tests/loot.js` prints it against
+  the men (`docs/baselines/loot-2026-10-21.txt`: a farm 29 to 37, a village 36 to 53, a seat 61 to 103, a town 149 to 233, a
+  church 46 to 66 with no men; about 8 to 12 of value a man in the defended places). `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
 way-finding is in every real village. Robin has played none of it.
 
 - **Sides:** every fighter has `e.side` (0 against the hero, 1 with him); the hero's blows pass his friends; beasts know only

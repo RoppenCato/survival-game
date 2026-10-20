@@ -8465,7 +8465,8 @@ function pickRange(R, r, jit) { var v = r[0] + Math.floor(R() * (r[1] - r[0] + 1
 // make(seed, site, opts): site { tx, ty, w, h, shore } (shore: 'n', 's', 'e', 'w' or null); opts { arch, wealth, G (DEF overrides) }
 function make(seed, site, opts) {
   opts = opts || {}; var G = cfg(opts.G), R = rngOf(seed), archId = opts.arch || 'small', A = ARCH[archId] || ARCH.small, wealth = opts.wealth == null ? R() : opts.wealth, shore = site.shore || (A.shore ? 's' : null);
-  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
+  var stockK = 0.4 + R() * 1.2, hoardK = (0.7 + R() * 0.7) * (RICH[archId] || 1);   // the place's own rolls (raid step 7): how full its stores, how deep its hoard (and the archetype's wealth in coin: RICH)
+  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, stockK: stockK, hoardK: hoardK, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h;
   // materials and roofs by wealth and place
   var lowland = !!(opts.biome || A.lowland);
@@ -8583,9 +8584,9 @@ function make(seed, site, opts) {
       var seatX = l.x + l.w / 2, tx2;
       for (tx2 = l.x + 3; tx2 <= l.x + l.w - 3; tx2 += 3.5) { if (Math.abs(tx2 - seatX) < 2.2) continue; item('table', tx2 * T, (l.y + 0.62) * T); item('bench', tx2 * T, (l.y + 1.3) * T, { seat: true }); }
       if (wealth > 0.5) { item('shieldRack', (seatX - 1.6) * T, (l.y + 0.5) * T); if (l.w >= 19) item('shieldRack', (seatX + 2.7) * T, (l.y + 0.5) * T); }
-      item('chest', (l.x + l.w - 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: 2 + Math.floor(wealth * 6) } });
+      item('chest', (l.x + l.w - 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: Math.round((2 + wealth * 6) * hoardK) } });
       item('barrel', (l.x + 2.1) * T, (l.y + l.h - 0.55) * T); item('crate', (l.x + 2.9) * T, (l.y + l.h - 0.5) * T, { loot: { meat: 2, berries: 3 } });
-      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall) { p = [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: 24 + Math.floor(wealth * 36) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
+      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall || archId === 'seat' || archId === 'great') { p = [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: Math.round((A.townwall ? 24 + wealth * 36 : 10 + wealth * 18) * hoardK / (RICH[archId] || 1)) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
       else item('chair', seatX * T, (l.y + 0.8) * T, { seat: true });
       var py0 = l.y + 2, py1 = l.y + l.h - 2, px2;                    // the posts: at tile corners, two rows, every fourth tile, none beside a fire
       for (px2 = l.x + 2; px2 <= l.x + l.w - 2; px2 += 4) { if (hx.some(function (q) { return Math.abs(q - px2) < 0.8; })) continue; V.posts.push([px2, py0]); if (py1 > py0) V.posts.push([px2, py1]); }
@@ -8598,13 +8599,16 @@ function make(seed, site, opts) {
       var inH = function (name, a, c, extra) { var q = at(a, c); return item(name, q[0], q[1], extra); };
       inH('stoneHearth', LG * 0.5, AC * 0.36, { hearth: true, light: 1 });
       inH('bed', LG - 0.62, 0.62, { bed: true }); inH('bed', LG - 0.62, AC - 0.62, { bed: true }); if (LG >= 8) inH('bed', LG - 2.3, 0.62, { bed: true });
-      inH('chest', LG - 0.6, AC / 2, { store: true, loot: { fiber: 3, berries: 2, coin: Math.floor(wealth * 3) } });
+      inH('chest', LG - 0.6, AC / 2, { store: true, loot: { fiber: 3, berries: 2, coin: Math.round(wealth * 3 * hoardK) } });
       inH('table', LG * 0.5 + 0.35, AC - 0.62); inH('chair', LG * 0.5 - 0.7, AC - 0.7, { seat: true });
       inH('bench', 1.7, 0.5, { seat: true }); inH('barrel', 0.5, AC - 0.5);
       if (LG >= 7) inH('crate', LG - 2.2, AC - 0.55, { loot: { berries: 2, fiber: 2 } });
     } else if (BUILD[l.id].inside === 'store') {
-      p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 2, { loot: { berries: 5, fiber: 4 } }); p = tile(l.x + 1, l.y); item('barrel', p[0] - 4, p[1] + 2, { loot: { meat: 2, leather: 1 } });
+      var SK = stockK * (0.6 + wealth * 0.8), fm = function (n) { return Math.max(1, Math.round(n * SK)); };   // the stocks: the place's roll and its wealth (raid step 7)
+      p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 2, { loot: { berries: fm(5), fiber: 4 } }); p = tile(l.x + 1, l.y); item('barrel', p[0] - 4, p[1] + 2, { loot: { meat: fm(3), leather: 1 } });
       p = tile(l.x, l.y + 1); item('crate', p[0] + 6, p[1], { loot: { arrows: 10, wood: 4 } });
+      if (SK >= 0.9) { p = tile(l.x + l.w - 1, l.y + l.h - 1); item('sack', p[0] - 6, p[1] - 4, { heavy: { meat: fm(4), berries: fm(6), honey: SK > 1.3 ? 2 : 0 }, sack: true, lore: 'A sack of the store\u2019s food.' }); }   // a full store has a sack to carry to the ship (the Art Director's piece)
+      if (SK >= 1.1) { p = tile(l.x + l.w - 1, l.y); V.props.push({ name: 'sackPile', x: p[0] - 4, y: p[1] + 6, solid: 6 }); if (shore) V.props.push({ name: 'hangingFish', x: (l.dx + 0.5) * T + 18, y: (l.y + l.h) * T + 2, solid: 0 }); }   // the full store shows it
     } else if (BUILD[l.id].inside === 'byre') { p = tile(l.x, l.y); item('haystack', p[0] + 8, p[1] + 4); p = tile(l.x + l.w - 1, l.y + l.h - 1); item('trough', p[0] - 4, p[1] - 4); }
     else if (BUILD[l.id].inside === 'smithy') { p = tile(l.x, l.y); item('furnace', p[0] + 8, p[1] + 2, { furnace: true, light: 1 }); V.props.push({ name: 'forge', x: (l.x + l.w / 2) * T + 4, y: (l.y + l.h / 2) * T + 4, solid: 9 }); p = tile(l.x + l.w - 1, l.y); item('workbench', p[0] - 6, p[1] + 2, { bench: true }); p = tile(l.x + 1, l.y + l.h - 1); item('trough', p[0], p[1]); }
     else if (BUILD[l.id].inside === 'bath') { p = tile(l.x, l.y); item('stoneHearth', p[0] + 8, p[1] + 4, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('bench', p[0], p[1] - 4, { seat: true }); }
@@ -8612,7 +8616,7 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'church') {
       p = tile(l.x + Math.floor(l.w / 2), l.y); item('altar', p[0] + (l.w % 2 ? 0 : T / 2), p[1] + 2, { r: 6, altar: true, light: 1, lamp: true });
       for (k = l.y + 2; k < l.y + l.h - 1; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
-      p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: 14 + Math.floor(wealth * 24) }, locked: 1, lore: 'The church\u2019s silver, given by the faithful.' });
+      p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: Math.round((14 + wealth * 24) * hoardK) }, locked: 1, lore: 'The church\u2019s silver, given by the faithful.' });
       V.finds.push({ kind: 'silver', x: p[0], y: p[1] });
       V.props.push({ name: 'bellTower', x: l.x * T + 9, y: (l.y + l.h) * T + 8, solid: 14 });                                  // the tower at the front corner, like a west tower
       V.props.push({ name: 'porch', x: (l.dx + 0.5) * T, y: (l.y + l.h) * T + 9 });                                           // the porch over the door
@@ -8934,6 +8938,31 @@ function defence(arch, wealth, ring) {
    muster (on an alarm they gather at the fire pit, hold ten seconds, then come on together), bows (a bowman stands on the
    watchtower and sees over the wall; the rest as usual). tactics(V, kind) gives the points; applyTactic(e, q, tac) sets a
    man's flags, the same for the game and for tests/battle.js plans. */
+/* The rewards (raid step 7, 2026-10-21; Robin: good rewards, balanced, with variation: food stocks, a place at its meal). A
+   place rolls with its seed how full its stores are (stockK, 0.4 to 1.6) and how deep its hoard is (hoardK, 0.7 to 1.4), so two
+   places of one size never give the same; LOOT says, by archetype, what a wealth of 0 and of 1 gives in all, as a value (silver
+   1, a bar 3, leather or hide 1, food 0.3, arrows 0.2): the test tests/loot.js prints it against the defence's men. */
+var LOOT = {
+  farmstead: { food: [6, 16], goods: [1, 4], silver: [0, 2] },
+  small: { food: [8, 22], goods: [2, 6], silver: [0, 4] },
+  fishing: { food: [10, 26], goods: [2, 5], silver: [0, 3] },
+  village: { food: [12, 34], goods: [4, 10], silver: [2, 10] },
+  trading: { food: [10, 30], goods: [8, 24], silver: [8, 30] },
+  seat: { food: [20, 50], goods: [6, 16], silver: [24, 60] },
+  town: { food: [24, 60], goods: [10, 30], silver: [38, 100] },
+  church: { food: [2, 6], goods: [1, 3], silver: [14, 38] },
+  great: { food: [30, 70], goods: [12, 36], silver: [50, 120] },
+  bigtown: { food: [36, 90], goods: [16, 48], silver: [80, 180] }
+};
+var RICH = { farmstead: 0.6, small: 0.8, fishing: 0.8, village: 1.0, trading: 1.4, seat: 1.8, town: 2.2, great: 2.5, bigtown: 3 };   // the coin a place's chests hold, by archetype: a seat's and a town's are richer than a farm's (the curve rises with the men: tests/loot.js)
+var VALUE = { silver: 1, coin: 1, ironBar: 3, copperBar: 2, copper: 1, leather: 1, hide: 1, arrows: 0.2, wood: 0.1, stone: 0.1, fiber: 0.1, meat: 0.3, berries: 0.3, honey: 0.5, eggs: 0.3, fish: 0.3 };
+function lootOf(V) {                       // what a place holds for the taking, summed from its chests, crates, barrels, sacks and heavy chests: { silver, food, goods, value }
+  var out = { silver: 0, food: 0, goods: 0, value: 0 }, k;
+  function add(l) { for (k in l) { var n = l[k], val = (VALUE[k] || 0) * n; if (k === 'silver' || k === 'coin') out.silver += n; else if (k === 'meat' || k === 'berries' || k === 'honey' || k === 'eggs' || k === 'fish') out.food += n; else if (VALUE[k] >= 1) out.goods += n; out.value += val; } }
+  V.items.forEach(function (it) { if (it.loot) add(it.loot); if (it.heavy) add(it.heavy); });
+  V.props.forEach(function (p) { if (p.loot) add(p.loot); });
+  return out;
+}
 var TACTICS = ['gate', 'hall', 'hunters', 'watch', 'muster', 'bows'];
 function tacticOf(V, R) {
   R = R || rngOf(V.seed * 13 + 9); var F = V.fence, can = TACTICS.filter(function (k) {
@@ -9001,7 +9030,7 @@ function garrison(V, n, R, D) {
   if (D && D.tactic === 'bows') { var tw = V.props.filter(function (p) { return p.tower; })[0], bm = tw ? out.filter(function (q) { return q.wpn === 'bow'; })[0] : null; if (bm) { bm.x = tw.x; bm.y = tw.y - 4; bm.kind = 'tower'; bm.face = S; } }   // the bowman on the tower (his tactic)
   return out;
 }
-return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, TACTICS: TACTICS, tacticOf: tacticOf, tactics: tactics, applyTactic: applyTactic, draw: draw, rng: rngOf, SIZES: SIZES };
+return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, LOOT: LOOT, VALUE: VALUE, lootOf: lootOf, TACTICS: TACTICS, tacticOf: tacticOf, tactics: tactics, applyTactic: applyTactic, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
 if (typeof module !== 'undefined') module.exports = Village;
 
@@ -13370,7 +13399,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var drawn = Sprites.fighter(c, PEOPLE, e, K, look, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, lit: figLit(e.x, e.y, true, 40), sheathed: !!e.disarmed || (e.side === 1 && !armsOut && !e.tgt && e.state !== 'windup' && e.state !== 'lunge' && e.state !== 'recover') });
     e.x = bx0; e.y = by0;
     if (drawn && e.loadMan && !e.dead && !e.down) drawCarried(c, e.x, e.y, e.face, e.loadMan);
-    if (drawn && e.load && !e.dead && !e.down) { var s3 = sprite('chest', 0); c.save(); c.translate(e.x + (Math.cos(e.face) >= 0 ? -3 : 3), e.y * K - 30); c.scale(0.9, 0.9); c.drawImage(s3.cv, s3.l, s3.t); c.restore(); }   // what he carries, on his shoulder as the hero carries it
+    if (drawn && e.load && !e.dead && !e.down) { var s3 = sprite(e.load.name === 'sack' ? 'sack' : 'chest', 0); c.save(); c.translate(e.x + (Math.cos(e.face) >= 0 ? -3 : 3), e.y * K - 30); c.scale(0.9, 0.9); c.drawImage(s3.cv, s3.l, s3.t); c.restore(); }   // what he carries, on his shoulder as the hero carries it
     return drawn;
   }
   function drawCarried(c, x, y, face, m) {    // a man who cannot walk, across the shoulders of one who can: his own lying picture, lifted
@@ -14391,7 +14420,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
   var fullT = -9, drops = [], bits = [], decals = [], inv = { charcoal: 0, copperBar: 0, bogIron: 0, ironBar: 0, silver: 0, eggs: 0, honey: 0, wood: 0, stone: 0, fiber: 0, hide: 0, leather: 0, copper: 0, snakeBlood: 0, torch: 0, antler: 0, berries: 0, meat: 0, roastBerries: 0, cookedMeat: 0, stew: 0 }, invOpen = false, ORDER = ['wood', 'stone', 'fiber', 'hide', 'leather', 'copper', 'charcoal', 'copperBar', 'snakeBlood', 'torch', 'antler', 'berries', 'meat', 'roastBerries', 'cookedMeat', 'stew'];
   var FISH_KINDS = { herring: 1, perch: 1, cod: 1, pike: 1, salmon: 1 };   // the fishes are kinds of their own in the bag; 'fish' counts them all for the dishes
-  var NAMES = { herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
+  var NAMES = { feast: 'Feast', sack: 'Sack of food', herring: 'Herring', perch: 'Perch', cod: 'Cod', pike: 'Pike', salmon: 'Salmon', fish: 'Fish', grilledFish: 'Grilled fish', fishSoup: 'Fish soup', smokedFish: 'Smoked fish', charcoal: 'Charcoal', copperBar: 'Copper bar', bogIron: 'Bog iron', ironBar: 'Iron bar', silver: 'Silver', eggs: 'Eggs', honey: 'Honey', wood: 'Wood', stone: 'Stone', fiber: 'Fiber', hide: 'Hide', leather: 'Leather', copper: 'Copper ore', snakeBlood: 'Snake blood', torch: 'Torch', antler: 'Antler', berries: 'Berries', meat: 'Meat', roastBerries: 'Roast berries', cookedMeat: 'Roast meat', stew: 'Berry stew' };
   var seen = {};                          // every kind of thing you have ever picked up: recipes open as these grow
   function noteSeen(kind) { if (!seen[kind]) { seen[kind] = 1; save(); } }   /* (2026-10-14: no toast any more; a thing never made carries a gold mark on its board instead) */
   // The bag: 30 slots, 6 wide. The top row is the bar (one bar since 2026-10-14; it was the Fight bar over the Gather bar: each the hotbar of its mode),
@@ -14558,6 +14587,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (var so = 0; so < 5; so++) w.paintGround((vx + 13.75) * T, (vy + 1.3 + so * 0.85) * T, 6, 8);   // soot at the foot of the hut's wall facing the hall
     for (var so2 = 0; so2 < 7; so2++) w.paintGround((vx + 14.3 + so2 * 0.9) * T, (vy + 8.75) * T, 6, 8);   // and under the plank house's north wall
   }
+  var FEAST = { from: 840, to: 1200 };     // when a place is at its meal: dusk (the hall's table is laid then; the feast eaten there is a buff above any home dish, for the raid: raid step 7, 2026-10-21, mine)
+  function feastNear(P) { if (day.t < FEAST.from || day.t > FEAST.to) return null; for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.name === 'foodTable' && sameLvl(it) && !(it.eaten === day.n) && Math.hypot(P.x - it.x, P.y - it.y) < 40 && canReach(P, it)) return it; } return null; }
+  function feastEat(it) { it.eaten = day.n; eat('feast', true); toast('Their feast is yours'); theftSeen(it); deed('feast'); }
   function spriteName(o) {               // a prop's picture by what it is: the graves are mounds (Thorgunna's a standing stone), a hacked stake a stump (the Art Director's steading and fence pieces, 2026-10-20)
     if (o.name === 'graveStone') return o.grave === 'thorgunna' ? 'graveThorgunna' : 'graveMound';
     if (o.name === 'stake' && o.cut) return 'stake_stump';
@@ -16052,7 +16084,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     { id: 'smokedFish', needs: { fish: 3, charcoal: 1 }, taught: 'fishTaught', text: 'Three fish hung in charcoal smoke until they keep' }
   ];
   // heal: at once. For time seconds: bonus on top health, regen health a second, stam on top stamina, stamRegen on how fast it returns
-  var FOOD = { eggs: { heal: 12, regen: 0, time: 0, bonus: 0, stam: 5, stamRegen: 1 }, honey: { heal: 20, regen: 0.5, time: 600, bonus: 5, stam: 15, stamRegen: 1.2 }, berries: { heal: 10, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, roastBerries: { heal: 15, regen: 0.5, time: 600, bonus: 5, stam: 10, stamRegen: 1.1 }, cookedMeat: { heal: 30, regen: 1, time: 720, bonus: 15, stam: 15, stamRegen: 1.15 }, stew: { heal: 50, regen: 2, time: 900, bonus: 25, stam: 30, stamRegen: 1.35 }, grilledFish: { heal: 28, regen: 1, time: 600, bonus: 12, stam: 15, stamRegen: 1.15 }, fishSoup: { heal: 45, regen: 1.8, time: 900, bonus: 22, stam: 28, stamRegen: 1.3 }, smokedFish: { heal: 22, regen: 0.8, time: 1200, bonus: 15, stam: 20, stamRegen: 1.2 } };   // a meal lasts ten minutes at least (Robin, 2026-10-08)
+  var FOOD = { feast: { heal: 60, regen: 2.5, time: 720, bonus: 30, stam: 35, stamRegen: 1.4 }, eggs: { heal: 12, regen: 0, time: 0, bonus: 0, stam: 5, stamRegen: 1 }, honey: { heal: 20, regen: 0.5, time: 600, bonus: 5, stam: 15, stamRegen: 1.2 }, berries: { heal: 10, regen: 0, time: 0, bonus: 0, stam: 0, stamRegen: 1 }, roastBerries: { heal: 15, regen: 0.5, time: 600, bonus: 5, stam: 10, stamRegen: 1.1 }, cookedMeat: { heal: 30, regen: 1, time: 720, bonus: 15, stam: 15, stamRegen: 1.15 }, stew: { heal: 50, regen: 2, time: 900, bonus: 25, stam: 30, stamRegen: 1.35 }, grilledFish: { heal: 28, regen: 1, time: 600, bonus: 12, stam: 15, stamRegen: 1.15 }, fishSoup: { heal: 45, regen: 1.8, time: 900, bonus: 22, stam: 28, stamRegen: 1.3 }, smokedFish: { heal: 22, regen: 0.8, time: 1200, bonus: 15, stam: 20, stamRegen: 1.2 } };   // a meal lasts ten minutes at least (Robin, 2026-10-08)
   var fed = null, hearth = null, cookOpen = false, menu = null, mouseS = null;   // fed: { kind, left, regen, bonus }
   // Which station E means when a fire and a workbench both stand close: the one you look at counts as nearer
   // (facingScore). While a board is open its station is kept, so turning does not swap it.
@@ -16093,7 +16125,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (yardUsable()) add(shipNear(P), 'Lay a hull', yardUse);
     var cv = caveAtHand(); if (cv) add(inCave ? cv.cave.exitAt : { x: cv.mouth.x, y: cv.mouth.y + 28 }, (inCave ? 'Leave ' : 'Enter ') + CAVE_NAME[cv.kind][0], caveUse);
     if (bodyNear(P)) add(cave.body, 'Take the arm ring', function () { takeRing(); });
-    var gn = graveNear(P); if (gn) add(gn, 'Read', function () { sayAt(gn.x, gn.y, 'Carved in the stone', 'Arnor raised this stone for Thorgunna. She did not pay.', 7); });   /* (the lore's person.thorgunna) */
+    var gn = graveNear(P); if (gn) add(gn, 'Read', function () { sayAt(gn.x, gn.y, 'Carved in the stone', 'Arnor raised this stone for Thorgunna. She did not pay.', 7); });
+    var ft = feastNear(P); if (ft) add(ft, 'Eat at their table', function () { feastEat(ft); }, -40);   /* (the prompts are scored by distance and facing: the feast wins over the bench's Sit beside it) */   /* (raid step 7: they are at their meal, so you eat well) */   /* (the lore's person.thorgunna) */
     if (hoardNear(P)) add(cave.hoard, 'Take from the hoard', hoardTake);
     var fd = findNear(P); if (fd) add(fd, fd.say, function () { findTake(fd); });
     var s = stationNear(P), it = s && s.it;                          // the built things: one of them, already chosen by the same rule
@@ -16184,9 +16217,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
     c.translate(x - 23, y); c.scale(0.55, 0.55); if (kind) drawDropIcon(c, kind, 0, 0, 1.3); else if (r && r.out.item) Items.icon(c, Items.make(r.out.item[0], r.out.item[1]), 14); else if (r) drawDropIcon(c, r.out.stack ? r.out.stack[0] : 'arrow', 0, 0, 1.3); c.restore();
     if (n > 1) { c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.8; c.strokeStyle = '#2e1a10'; c.strokeText('x' + n, x + 18, y + 2); c.fillStyle = '#fff'; c.fillText('x' + n, x + 18, y + 2); }
   }
-  function eat(kind) {
-    var f = FOOD[kind], P = hero(); if (!f || !(inv[kind] > 0) || P.dead) return;
-    takeItem(kind, 1);
+  function eat(kind, free) {
+    var f = FOOD[kind], P = hero(); if (!f || (!free && !(inv[kind] > 0)) || P.dead) return;
+    if (!free) takeItem(kind, 1);
     if (f.time) fed = { kind: kind, left: f.time * (1 + 0.5 * runeMul('hearty')), regen: f.regen, bonus: f.bonus, stam: f.stam || 0, stamRegen: f.stamRegen || 1 };
     if (!f.time) deed('rawfood'); P.maxHp = 100 + (fed ? fed.bonus : 0); P.hp = Math.min(P.maxHp, P.hp + f.heal * (!f.time && inUse('ironstomach') ? 2 : 1));
     toast('Ate ' + NAMES[kind].toLowerCase()); save();
@@ -18088,10 +18121,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function heavyNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.heavy && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
   function liftHeavy(it) { var i = B.items.indexOf(it); if (i < 0) return; B.items.splice(i, 1); carrying = it; it.carried = true; raidAlarm(villageAt(it.x, it.y), it.x, it.y); sfx('pick'); save(); }
   function putDown() { var P = hero(); if (!carrying) return; if (carrying.man) { if (carrying.drag) carrying.man.deadFor = carrying.man.deadT + 90; setDown(carrying.man, P.x + 10, P.y + 4); carrying = null; sfx('build'); return; } carrying.x = P.x + 10; carrying.y = P.y + 4; carrying.carried = false; carrying.r = 6; B.items.push(carrying); carrying = null; sfx('build'); save(); }
-  function stowHeavy() { if (!carrying || !raft) return; if (carrying.man) { layAboard(carrying.man); carrying = null; sfx('build'); return; } if (!raft.cargo) raft.cargo = []; raft.cargo.push({ silver: carrying.heavy.silver, lore: carrying.lore }); carrying = null; toast('Stowed aboard'); sfx('build'); save(); }
+  function stowHeavy() { if (!carrying || !raft) return; if (carrying.man) { layAboard(carrying.man); carrying = null; sfx('build'); return; } if (!raft.cargo) raft.cargo = []; var cg0 = {}; for (var ck in carrying.heavy) cg0[ck] = carrying.heavy[ck]; cg0.lore = carrying.lore; raft.cargo.push(cg0); carrying = null; toast('Stowed aboard'); sfx('build'); save(); }   /* (silver or a sack's food: whatever the heavy thing holds) */
   function atHome(x, y) { return !!inTerritory(x, y) || Math.hypot(x - home.x, y - home.y) < 700; }
   function cargoHome() { return !!(raft && raft.cargo && raft.cargo.length && !raft.aboard && atHome(raft.x, raft.y)); }
-  function unloadCargo() { var n = 0; (raft.cargo || []).forEach(function (cg) { n += cg.silver || 0; }); raft.cargo = []; if (n) { var left = addItem('silver', n); if (left) drop('silver', raft.x, raft.y, left); toast(n + ' silver, home'); } sfx('craft'); save(); }
+  function unloadCargo() { var n = 0, food = {}, k; (raft.cargo || []).forEach(function (cg) { for (k in cg) { if (k === 'silver') n += cg[k]; else if (cg[k] > 0 && inv[k] != null) food[k] = (food[k] || 0) + cg[k]; } }); raft.cargo = []; if (n) { var left = addItem('silver', n); if (left) drop('silver', raft.x, raft.y, left); toast(n + ' silver, home'); } var fn = 0; for (k in food) { var lf = addItem(k, food[k]); if (lf) drop(k, raft.x + 10, raft.y + 8, lf); fn += food[k]; } if (fn) toast(fn + ' of food, home'); sfx('craft'); save(); }   /* (a sack's food unloads too: raid step 7) */
   // The counts in ANIMALS were tuned for a starter island of 60 tiles and a big island of 230; they scale with the island's area
   // (2026-10-11: the islands grew to 120 and 400 and the animals were a quarter and a third as dense)
   /* The starter island's boars are young ones (the play-through of 2026-10-12): the first weapon is a wooden club that takes
@@ -18316,7 +18349,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (raft && raft.aboard && Yard.isShip(raft.kind)) items.push({ y: P.y + 0.5, f: function () { Yard.drawVesselFront(ctx, raft, clock, P.y); } });
       if (fishing) items.push({ y: P.y + 0.4, f: function () { drawFishing(ctx); } });
       if (carrying && carrying.man) items.push({ y: P.y + 0.6, f: function () { drawCarried(ctx, P.x, P.y - (hero().lvl ? UP / K : 0), P.face, carrying.man); } });
-      else if (carrying) items.push({ y: P.y + 0.6, f: function () { var s2 = sprite('chest', 0); ctx.save(); ctx.translate(P.x + (Math.cos(P.face) >= 0 ? -3 : 3), P.y * K - 30 - (hero().lvl ? UP : 0)); ctx.scale(0.9, 0.9); ctx.drawImage(s2.cv, s2.l, s2.t); ctx.restore(); } });   // the heavy chest on the shoulder
+      else if (carrying) items.push({ y: P.y + 0.6, f: function () { var s2 = sprite(carrying.name === 'sack' ? 'sack' : 'chest', 0); ctx.save(); ctx.translate(P.x + (Math.cos(P.face) >= 0 ? -3 : 3), P.y * K - 30 - (hero().lvl ? UP : 0)); ctx.scale(0.9, 0.9); ctx.drawImage(s2.cv, s2.l, s2.t); ctx.restore(); } });   // the heavy chest on the shoulder
       if (npc && !npc.asMan && !npc.lost && !npc.dead && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });   /* (on a raid Arnor is the engine's man, drawn by it) */
       hird.forEach(function (m) { if (m === npc || m.asMan || m.lost || m.dead) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });
       folk.forEach(function (f) { if (!f.hidden && Math.abs(f.x - cam.x) < hw + 30 && Math.abs(f.y * K - cam.y) < hh + 50) { figsInView++; items.push({ y: f.y, f: function () { drawFolk(ctx, f); } }); } });
@@ -18995,7 +19028,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       B.items.splice(i, 1); it.carried = true; e.load = it; raidAlarm(villageAt(it.x, it.y), it.x, it.y); sfx('pick', 0, e);
       e.errand = { x: land.x, y: land.y, near: 30, run: true, slow: 0.62, hold: true, drop: dropLoad, fail: dropLoad, done: function (e2) {
         if (!raft || Math.hypot(raft.x - e2.x, raft.y - e2.y) > 160) { dropLoad(e2); return; }                // the ship is gone: he sets it down on the sand
-        if (!raft.cargo) raft.cargo = []; raft.cargo.push({ silver: it.heavy.silver, lore: it.lore }); e2.load = null; e2.say = 'Stowed.'; e2.sayT = 2; sfx('build', 0, e2);
+        if (!raft.cargo) raft.cargo = []; var cg1 = {}; for (var ck1 in it.heavy) cg1[ck1] = it.heavy[ck1]; cg1.lore = it.lore; raft.cargo.push(cg1); e2.load = null; e2.say = 'Stowed.'; e2.sayT = 2; sfx('build', 0, e2);
       } };
     } };
   }

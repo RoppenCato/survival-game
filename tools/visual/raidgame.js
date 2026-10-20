@@ -103,5 +103,22 @@
     } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
     return out;
   }
-  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, town: town, men: men, sim: sim, own: own };
+  // Step 7: rewards. At dusk the town's hall table is laid: E at it eats the feast (the buff on the meal line); a full store's
+  // sack is lifted, stowed aboard and unloaded at home as food in the bag; the loot test (tests/loot.js) is the curve.
+  function step7() {
+    var t = town(), out = {}, d = D(), P = Combat.dbg().P; if (!t) return { fault: 'no town outside home water' };
+    try {
+    d.B.items = d.B.items.filter(function (it) { return !it.claim; }); d.timeOf(900); var c = d.toVillage(t.i); sim(2);
+    var tbl = null, tbd = 1e18; d.B.items.forEach(function (it) { if (it.name !== 'foodTable') return; var dd = Math.hypot(it.x - c.x, it.y - c.y); if (dd < tbd) { tbd = dd; tbl = it; } }); out.tableDist = Math.round(tbd);
+    if (tbl) { d.goto(tbl.x, tbl.y + 20); sim(0.3); var w = d.eWhat(); out.prompt = w; if (w && /Eat at their table/.test(w)) { var q = d.eDo(); if (q && q.act) q.act(); } sim(0.3); var fd = Combat.api.debug().fed; out.feast = fd ? [fd.kind, Math.round(fd.left), fd.bonus] : null; out.maxHp = P.maxHp; }
+    var sack = d.B.items.filter(function (it) { return it.sack && it.heavy; })[0]; out.sackAt = sack ? d.villages().list ? null : [Math.round(sack.x), Math.round(sack.y)] : null;
+    if (sack) { d.goto(sack.x + 8, sack.y + 10); sim(0.3); var hv = d.raid().heavyNear(P); out.heavy = hv && hv.name; d.raid().lift(sack); sim(0.2); out.carrying = d.raid().carrying && d.raid().carrying.name;
+      d.giveBoat('karve', { x: 200, y: 200 }); var r = d.raftObj(); r.x = P.x + 40; r.y = P.y; r.cargo = []; d.raid().stow(); out.cargo = r.cargo.map(function (cg) { return Object.keys(cg).filter(function (k) { return k !== 'lore'; }).map(function (k) { return k + ':' + cg[k]; }).join(' '); });
+      var meat0 = d.inv.meat || 0, ber0 = d.inv.berries || 0; d.raid().unload(); out.food = { meat: (d.inv.meat || 0) - meat0, berries: (d.inv.berries || 0) - ber0 }; }
+    out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+    out.fault = (tbl && !(out.feast && out.feast[0] === 'feast')) || (sack && !(out.food && out.food.meat > 0)) ? '!!' : '';
+    } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
+    return out;
+  }
+  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step7: step7, town: town, men: men, sim: sim, own: own };
 })();

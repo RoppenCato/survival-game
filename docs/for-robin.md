@@ -61,3 +61,11 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
    (`tests/battle.js plans`): the men stand 300 to 460 units from the yard's middle by plan and you would fall at 21 (bows,
    muster) to 60 s (hall). You can read a plan by how its men stand when you walk in. Reactions (falling back to the hall
    when losing, a sortie when you carry) are not built.
+9. **Rewards (raid step 7), mine:** every place rolls how full its stores are and how deep its hoard is, and a seat's and a
+   town's chests hold more coin than a farm's (`RICH`), so the value rises with the men: a farm 29 to 37, a village 36 to
+   53, a trading post 43 to 60, a seat 61 to 103, a town 149 to 233; a church 46 to 66 with no men at all (the lucky strike,
+   as you decided); about 8 to 12 of value a man in the defended places (`tests/loot.js`, `docs/baselines/loot-2026-10-21.txt`).
+   A full store holds a **sack of food** to carry to the ship like the silver, unloaded at home into the bag. **The feast**:
+   at dusk the hall's table is laid; E at it eats their feast (heal 60, +30 top health, stamina, for twelve minutes: above the
+   stew), once a day a table; a villager who sees it cries thief. The food kinds are the game's own (meat, berries, honey): a
+   store of fish and grain waits for those kinds.

@@ -6076,7 +6076,8 @@ function pickRange(R, r, jit) { var v = r[0] + Math.floor(R() * (r[1] - r[0] + 1
 // make(seed, site, opts): site { tx, ty, w, h, shore } (shore: 'n', 's', 'e', 'w' or null); opts { arch, wealth, G (DEF overrides) }
 function make(seed, site, opts) {
   opts = opts || {}; var G = cfg(opts.G), R = rngOf(seed), archId = opts.arch || 'small', A = ARCH[archId] || ARCH.small, wealth = opts.wealth == null ? R() : opts.wealth, shore = site.shore || (A.shore ? 's' : null);
-  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
+  var stockK = 0.4 + R() * 1.2, hoardK = (0.7 + R() * 0.7) * (RICH[archId] || 1);   // the place's own rolls (raid step 7): how full its stores, how deep its hoard (and the archetype's wealth in coin: RICH)
+  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, stockK: stockK, hoardK: hoardK, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin };
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h;
   // materials and roofs by wealth and place
   var lowland = !!(opts.biome || A.lowland);
@@ -6194,9 +6195,9 @@ function make(seed, site, opts) {
       var seatX = l.x + l.w / 2, tx2;
       for (tx2 = l.x + 3; tx2 <= l.x + l.w - 3; tx2 += 3.5) { if (Math.abs(tx2 - seatX) < 2.2) continue; item('table', tx2 * T, (l.y + 0.62) * T); item('bench', tx2 * T, (l.y + 1.3) * T, { seat: true }); }
       if (wealth > 0.5) { item('shieldRack', (seatX - 1.6) * T, (l.y + 0.5) * T); if (l.w >= 19) item('shieldRack', (seatX + 2.7) * T, (l.y + 0.5) * T); }
-      item('chest', (l.x + l.w - 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: 2 + Math.floor(wealth * 6) } });
+      item('chest', (l.x + l.w - 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: Math.round((2 + wealth * 6) * hoardK) } });
       item('barrel', (l.x + 2.1) * T, (l.y + l.h - 0.55) * T); item('crate', (l.x + 2.9) * T, (l.y + l.h - 0.5) * T, { loot: { meat: 2, berries: 3 } });
-      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall) { p = [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: 24 + Math.floor(wealth * 36) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
+      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall || archId === 'seat' || archId === 'great') { p = [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: Math.round((A.townwall ? 24 + wealth * 36 : 10 + wealth * 18) * hoardK / (RICH[archId] || 1)) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
       else item('chair', seatX * T, (l.y + 0.8) * T, { seat: true });
       var py0 = l.y + 2, py1 = l.y + l.h - 2, px2;                    // the posts: at tile corners, two rows, every fourth tile, none beside a fire
       for (px2 = l.x + 2; px2 <= l.x + l.w - 2; px2 += 4) { if (hx.some(function (q) { return Math.abs(q - px2) < 0.8; })) continue; V.posts.push([px2, py0]); if (py1 > py0) V.posts.push([px2, py1]); }
@@ -6209,13 +6210,16 @@ function make(seed, site, opts) {
       var inH = function (name, a, c, extra) { var q = at(a, c); return item(name, q[0], q[1], extra); };
       inH('stoneHearth', LG * 0.5, AC * 0.36, { hearth: true, light: 1 });
       inH('bed', LG - 0.62, 0.62, { bed: true }); inH('bed', LG - 0.62, AC - 0.62, { bed: true }); if (LG >= 8) inH('bed', LG - 2.3, 0.62, { bed: true });
-      inH('chest', LG - 0.6, AC / 2, { store: true, loot: { fiber: 3, berries: 2, coin: Math.floor(wealth * 3) } });
+      inH('chest', LG - 0.6, AC / 2, { store: true, loot: { fiber: 3, berries: 2, coin: Math.round(wealth * 3 * hoardK) } });
       inH('table', LG * 0.5 + 0.35, AC - 0.62); inH('chair', LG * 0.5 - 0.7, AC - 0.7, { seat: true });
       inH('bench', 1.7, 0.5, { seat: true }); inH('barrel', 0.5, AC - 0.5);
       if (LG >= 7) inH('crate', LG - 2.2, AC - 0.55, { loot: { berries: 2, fiber: 2 } });
     } else if (BUILD[l.id].inside === 'store') {
-      p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 2, { loot: { berries: 5, fiber: 4 } }); p = tile(l.x + 1, l.y); item('barrel', p[0] - 4, p[1] + 2, { loot: { meat: 2, leather: 1 } });
+      var SK = stockK * (0.6 + wealth * 0.8), fm = function (n) { return Math.max(1, Math.round(n * SK)); };   // the stocks: the place's roll and its wealth (raid step 7)
+      p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 2, { loot: { berries: fm(5), fiber: 4 } }); p = tile(l.x + 1, l.y); item('barrel', p[0] - 4, p[1] + 2, { loot: { meat: fm(3), leather: 1 } });
       p = tile(l.x, l.y + 1); item('crate', p[0] + 6, p[1], { loot: { arrows: 10, wood: 4 } });
+      if (SK >= 0.9) { p = tile(l.x + l.w - 1, l.y + l.h - 1); item('sack', p[0] - 6, p[1] - 4, { heavy: { meat: fm(4), berries: fm(6), honey: SK > 1.3 ? 2 : 0 }, sack: true, lore: 'A sack of the store\u2019s food.' }); }   // a full store has a sack to carry to the ship (the Art Director's piece)
+      if (SK >= 1.1) { p = tile(l.x + l.w - 1, l.y); V.props.push({ name: 'sackPile', x: p[0] - 4, y: p[1] + 6, solid: 6 }); if (shore) V.props.push({ name: 'hangingFish', x: (l.dx + 0.5) * T + 18, y: (l.y + l.h) * T + 2, solid: 0 }); }   // the full store shows it
     } else if (BUILD[l.id].inside === 'byre') { p = tile(l.x, l.y); item('haystack', p[0] + 8, p[1] + 4); p = tile(l.x + l.w - 1, l.y + l.h - 1); item('trough', p[0] - 4, p[1] - 4); }
     else if (BUILD[l.id].inside === 'smithy') { p = tile(l.x, l.y); item('furnace', p[0] + 8, p[1] + 2, { furnace: true, light: 1 }); V.props.push({ name: 'forge', x: (l.x + l.w / 2) * T + 4, y: (l.y + l.h / 2) * T + 4, solid: 9 }); p = tile(l.x + l.w - 1, l.y); item('workbench', p[0] - 6, p[1] + 2, { bench: true }); p = tile(l.x + 1, l.y + l.h - 1); item('trough', p[0], p[1]); }
     else if (BUILD[l.id].inside === 'bath') { p = tile(l.x, l.y); item('stoneHearth', p[0] + 8, p[1] + 4, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('bench', p[0], p[1] - 4, { seat: true }); }
@@ -6223,7 +6227,7 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'church') {
       p = tile(l.x + Math.floor(l.w / 2), l.y); item('altar', p[0] + (l.w % 2 ? 0 : T / 2), p[1] + 2, { r: 6, altar: true, light: 1, lamp: true });
       for (k = l.y + 2; k < l.y + l.h - 1; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
-      p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: 14 + Math.floor(wealth * 24) }, locked: 1, lore: 'The church\u2019s silver, given by the faithful.' });
+      p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: Math.round((14 + wealth * 24) * hoardK) }, locked: 1, lore: 'The church\u2019s silver, given by the faithful.' });
       V.finds.push({ kind: 'silver', x: p[0], y: p[1] });
       V.props.push({ name: 'bellTower', x: l.x * T + 9, y: (l.y + l.h) * T + 8, solid: 14 });                                  // the tower at the front corner, like a west tower
       V.props.push({ name: 'porch', x: (l.dx + 0.5) * T, y: (l.y + l.h) * T + 9 });                                           // the porch over the door
@@ -6545,6 +6549,31 @@ function defence(arch, wealth, ring) {
    muster (on an alarm they gather at the fire pit, hold ten seconds, then come on together), bows (a bowman stands on the
    watchtower and sees over the wall; the rest as usual). tactics(V, kind) gives the points; applyTactic(e, q, tac) sets a
    man's flags, the same for the game and for tests/battle.js plans. */
+/* The rewards (raid step 7, 2026-10-21; Robin: good rewards, balanced, with variation: food stocks, a place at its meal). A
+   place rolls with its seed how full its stores are (stockK, 0.4 to 1.6) and how deep its hoard is (hoardK, 0.7 to 1.4), so two
+   places of one size never give the same; LOOT says, by archetype, what a wealth of 0 and of 1 gives in all, as a value (silver
+   1, a bar 3, leather or hide 1, food 0.3, arrows 0.2): the test tests/loot.js prints it against the defence's men. */
+var LOOT = {
+  farmstead: { food: [6, 16], goods: [1, 4], silver: [0, 2] },
+  small: { food: [8, 22], goods: [2, 6], silver: [0, 4] },
+  fishing: { food: [10, 26], goods: [2, 5], silver: [0, 3] },
+  village: { food: [12, 34], goods: [4, 10], silver: [2, 10] },
+  trading: { food: [10, 30], goods: [8, 24], silver: [8, 30] },
+  seat: { food: [20, 50], goods: [6, 16], silver: [24, 60] },
+  town: { food: [24, 60], goods: [10, 30], silver: [38, 100] },
+  church: { food: [2, 6], goods: [1, 3], silver: [14, 38] },
+  great: { food: [30, 70], goods: [12, 36], silver: [50, 120] },
+  bigtown: { food: [36, 90], goods: [16, 48], silver: [80, 180] }
+};
+var RICH = { farmstead: 0.6, small: 0.8, fishing: 0.8, village: 1.0, trading: 1.4, seat: 1.8, town: 2.2, great: 2.5, bigtown: 3 };   // the coin a place's chests hold, by archetype: a seat's and a town's are richer than a farm's (the curve rises with the men: tests/loot.js)
+var VALUE = { silver: 1, coin: 1, ironBar: 3, copperBar: 2, copper: 1, leather: 1, hide: 1, arrows: 0.2, wood: 0.1, stone: 0.1, fiber: 0.1, meat: 0.3, berries: 0.3, honey: 0.5, eggs: 0.3, fish: 0.3 };
+function lootOf(V) {                       // what a place holds for the taking, summed from its chests, crates, barrels, sacks and heavy chests: { silver, food, goods, value }
+  var out = { silver: 0, food: 0, goods: 0, value: 0 }, k;
+  function add(l) { for (k in l) { var n = l[k], val = (VALUE[k] || 0) * n; if (k === 'silver' || k === 'coin') out.silver += n; else if (k === 'meat' || k === 'berries' || k === 'honey' || k === 'eggs' || k === 'fish') out.food += n; else if (VALUE[k] >= 1) out.goods += n; out.value += val; } }
+  V.items.forEach(function (it) { if (it.loot) add(it.loot); if (it.heavy) add(it.heavy); });
+  V.props.forEach(function (p) { if (p.loot) add(p.loot); });
+  return out;
+}
 var TACTICS = ['gate', 'hall', 'hunters', 'watch', 'muster', 'bows'];
 function tacticOf(V, R) {
   R = R || rngOf(V.seed * 13 + 9); var F = V.fence, can = TACTICS.filter(function (k) {
@@ -6612,7 +6641,7 @@ function garrison(V, n, R, D) {
   if (D && D.tactic === 'bows') { var tw = V.props.filter(function (p) { return p.tower; })[0], bm = tw ? out.filter(function (q) { return q.wpn === 'bow'; })[0] : null; if (bm) { bm.x = tw.x; bm.y = tw.y - 4; bm.kind = 'tower'; bm.face = S; } }   // the bowman on the tower (his tactic)
   return out;
 }
-return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, TACTICS: TACTICS, tacticOf: tacticOf, tactics: tactics, applyTactic: applyTactic, draw: draw, rng: rngOf, SIZES: SIZES };
+return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, LOOT: LOOT, VALUE: VALUE, lootOf: lootOf, TACTICS: TACTICS, tacticOf: tacticOf, tactics: tactics, applyTactic: applyTactic, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
 if (typeof module !== 'undefined') module.exports = Village;
 
