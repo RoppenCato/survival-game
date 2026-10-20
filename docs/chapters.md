@@ -85,7 +85,7 @@ sound and the day and night are perfected in this chapter**.
 | The people (Arnor first): the lit side and the new face | Built (2026-10-20; 263 MB decoded, was 313) |
 | The wolf and the adder with the lit side | Built (2026-10-20; the wolf 32 MB, was 65; the adder 19, was 30) |
 | **The trees**: three concepts for Robin, then pine, birch and broadleaf as set pieces with the felling drawn over | Built (2026-10-20: Robin's pick, concept A at the large size; the pine, oak and birch and their felled trunks are the studio's pictures; the logs' pictures wait for a use) |
-| Crafting stations (workbench, shipwright's bench first) | Not started (the studio, phase 1) |
+| Crafting stations (workbench, shipwright's bench first) | Built (2026-10-20: the workbench and the raft bench are the studio's pictures; the boat bench and the yard come with their chapters) |
 | Furniture (bed, chest, chair, table, bench, crate, barrel) | Not started (the studio) |
 | Camp things (drying rack, woodpile, cart, well, trough, tent without stripes) | Not started (the studio) |
 | Bushes and plants (bush, berry bush, tall grass, toadstools smaller) | Not started (the studio) |
