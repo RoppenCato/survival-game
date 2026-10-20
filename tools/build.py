@@ -94,6 +94,10 @@ def hud_art():
     if not os.path.isdir(d): return 'null'
     for fn in sorted(os.listdir(d)):
         if fn.endswith('.png'): out[fn[:-4]] = '../assets/hud/' + fn + '?v=' + hashlib.md5(open(os.path.join(d, fn), 'rb').read()).hexdigest()[:8]
+    pd = os.path.join(d, 'pieces')                      # the Building board's cell icons for the buildable set pieces (the Art Director's villages plan step 7, 2026-10-20): pieces/<picture name>
+    if os.path.isdir(pd):
+        for fn in sorted(os.listdir(pd)):
+            if fn.endswith('.png'): out['pieces/' + fn[:-4]] = '../assets/hud/pieces/' + fn + '?v=' + hashlib.md5(open(os.path.join(pd, fn), 'rb').read()).hexdigest()[:8]
     return json.dumps(out)
 SRC['__HUD__'] = hud_art()
 def font_faces():
@@ -112,7 +116,7 @@ def prop_images():
     for name in j:                                    # a tag from the picture's own bytes: a browser that has the old picture cached fetches the new one (2026-10-12: the cave mouth was redone and the old one kept showing)
         fp = os.path.join(ROOT, 'assets', 'props', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
         j[name]['src'] = '../assets/props/' + name + '.png?v=' + tag
-    for sub, jn in [('trees', 'trees.json'), ('pieces', 'pieces.json'), ('plants', 'plants.json'), ('rocks', 'rocks.json'), ('camp', 'camp.json'), ('furniture', 'furniture.json'), ('steading', 'steading.json'), ('fences', 'fences.json'), ('faces', 'faces.json'), ('yard', 'yard.json'), ('sacred', 'sacred.json')]:   # the Art Director's set pieces by folder (2026-10-20): the trees (three variants a kind, the felled trunk, a log), the benches
+    for sub, jn in [('trees', 'trees.json'), ('pieces', 'pieces.json'), ('plants', 'plants.json'), ('rocks', 'rocks.json'), ('camp', 'camp.json'), ('furniture', 'furniture.json'), ('steading', 'steading.json'), ('fences', 'fences.json'), ('faces', 'faces.json'), ('yard', 'yard.json'), ('sacred', 'sacred.json'), ('raid', 'raid.json')]:   # the Art Director's set pieces by folder (2026-10-20): the trees (three variants a kind, the felled trunk, a log), the benches
         tp = os.path.join(ROOT, 'assets', 'props', sub, jn)
         if not os.path.exists(tp): continue
         tj = json.load(open(tp, encoding='utf-8'))

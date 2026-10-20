@@ -356,7 +356,12 @@ the carver's and mason's benches by their names; and new in the generator (mine,
 `washingLine` behind one house in two, the hall's `spearRack` and a `torchBracket` at its door in place of the lantern, the
 `forge` in the smithy, the `midden` heap on earth behind the longhouse, a `watchtower` and a torch inside a walled town's gate
 at wealth 0.5 and up (a bowman's post, raid step 6), a `beachedBoat` on a shore place's sand; a set piece with no drawn prop
-of its name passes the village's prop check). **Two more ground
+of its name passes the village's prop check), **and the raid's set** (`assets/props/raid`, the studio's step 6: the ram, sack
+pile and hanging fish, the heavy chest whole and broken, the sack, trapdoor, crypt stairs, coffins, reliquary, bones, ladder,
+bucket, the beached karve; wired as the raid plan's steps 7 and 8 reach them). **The Building board's cells show the studio's
+icons for the buildable set pieces** (`assets/hud/pieces/<picture name>.png`, the villages plan's step 7, inlined as
+`pieces/<name>` in `__HUD__`; the kit's walls, floors and roofs keep the drawn ones). **A house's lantern goes out at midnight**
+(`nightFires`, day.t 1470 to 1740); the hall's torch, the gate's and the watch's burn on (the dark a raid wants). **Two more ground
 kinds, ash (7) and soot (8)** (the studio's paints): the steading's `villagePaint` lays ash over the hall's floor thinning out
 of its south side and soot at the foot of the hut's wall and under the plank house's north wall. The build folds any
 `assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`); `w.sprite` looks for `name_1` to `name_N` for
