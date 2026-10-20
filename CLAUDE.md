@@ -641,7 +641,8 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   one) with heavy hits to match, in the hit row; and **the beasts' cries when struck** (`pain_boar`, `pain_wolf`, `pain_deer`,
   `pain_snake` W; chapter 1's beasts only): the engine calls `sfx('pain')` after a hit on a beast that does not kill it
   (`e.bkind`, set by `tuneBeast`), and the page plays the picked cry 50 ms later, always on a heavy blow, every other light
-  one, never two within 0.35 s (mine); none until one is picked in the arena. Real boar, wolf and deer recordings need
+  one, never two within 0.35 s (mine), a grown boar's slower (0.88: the cry was made for the young); none until one is picked
+  in the arena. Real boar, wolf and deer recordings need
   Robin's Freesound account or a Sonniss bundle.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the

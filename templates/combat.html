@@ -394,7 +394,7 @@ __SFX__
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if ((n === 'hit' || n === 'heavyhit') && name !== n && x && x.kind && HIT_RATE[x.kind] && name.indexOf(n + '_' + x.kind) !== 0) o.rate *= HIT_RATE[x.kind];
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */
-    if (n === 'pain') { o.delay = 0.05; o.pitch = 0.05; if (x && x.beast === 'boarYoung') o.rate = 1.15; }   /* the cry a moment after the hit (the studio's preview); a young boar's higher */
+    if (n === 'pain') { o.delay = 0.05; o.pitch = 0.05; if (x && x.beast === 'boar') o.rate = 0.88; }   /* the cry a moment after the hit (the studio's preview); the boar's cry was made for the young one, so a grown boar's is slower (the Sound Director's advice) */
     var h = Sfx.play(a, a.destination, name, o); if (h && n === 'swing' && x && x.lead != null) swingH = h;
     return !!h;
   }
