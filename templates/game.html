@@ -239,7 +239,7 @@ __COMBAT__
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick2') || '{}') || {}; } catch (eP) {}
-  var DEFAULT_PICK = { raise: 'f' };   /* Robin's picks where the default is a candidate: the shield going up is F, leather handled (2026-10-15) */
+  var DEFAULT_PICK = { raise: 'f', wave: 'v' };   /* Robin's picks where the default is a candidate: the shield going up is F, leather handled (2026-10-15); the wave on the shore the studio's recorded V (mine, 2026-10-20: Robin found the synthesized sea "more like a noise") */
   function pickOf(n) { var k = n in SFX_PICK ? SFX_PICK[n] : DEFAULT_PICK[n]; return k && k !== 'orig' && Sfx.has(n + '_' + k) ? n + '_' + k : n; }
   /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
      finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
@@ -261,6 +261,7 @@ __COMBAT__
     if (n === 'logoff') return pickedOnly('logthud');
     if (n === 'boxbreak') return pickedOnly('boxbreak');
     if ((n === 'hit' || n === 'heavyhit') && x && x.kind && pickedOnly(n + '_' + x.kind)) return pickedOnly(n + '_' + x.kind);   /* the club's own hit, picked, before the hit every weapon shares */
+    if (n === 'heavyhit' && x && x.kind && !(('heavyhit_' + x.kind) in SFX_PICK) && pickedOnly('hit_' + x.kind) && Sfx.has('heavyhit_' + x.kind + '_' + SFX_PICK['hit_' + x.kind])) return 'heavyhit_' + x.kind + '_' + SFX_PICK['hit_' + x.kind];   /* its heavy hit follows its hit's letter unless chosen on its own */
     if (n === 'swing' && (!x || !x.kind || x.kind === 'sword')) return swingName(x);
     if (n === 'swing' && x && x.kind && SFX_PICK.swish !== 'orig' && Sfx.has('swish_' + x.kind)) return 'swish_' + x.kind;   /* the other weapons: the studio's swishes made from Robin's E and F (2026-10-15), lighter faster, heavier slower */
     if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
@@ -1967,9 +1968,10 @@ __COMBAT__
     if (w.mt && w.mAt(P.x, P.y) > 2.62) return 'rock';
     return 'grass';
   }
+  function ambWave(v) { var nm = pickOf('wave'); if (nm === 'wave' || OLD_SFX() || !Sfx.has(nm)) return false; return !!Sfx.play(AC, amb.master, nm, { v: v * 0.35, pitch: 0.06 }); }   /* a recorded wave on the shore, through the place's own volume; 0.35 (mine) lays it about 15 dB under a blow at the water's edge, louder than the beds, as a wave is */
   function ambTick(dt) {
     if (!AC || AC.state !== 'running') return;
-    if (!amb) { amb = Ambient.make(AC, AC.destination); for (var lk in LAB.snd) amb.layers[lk] = LAB.snd[lk] ? 1 : 0; ambT = 0; }
+    if (!amb) { amb = Ambient.make(AC, AC.destination); for (var lk in LAB.snd) amb.layers[lk] = LAB.snd[lk] ? 1 : 0; ambT = 0; amb.wave = ambWave; }
     var P = hero(); amb.setVolume(!S.sound || pauseOpen || document.hidden || !document.hasFocus() || sleep ? 0 : OPTS.amb);   /* (2026-10-14: quiet when the window loses focus, as the music is) */
     ambT -= dt; if (ambT <= 0) { ambT = 0.3; amb.set(ambEnv(P)); }
     amb.tick(dt);

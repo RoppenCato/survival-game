@@ -14,6 +14,8 @@
        cave              null, 'troll', 'mine' or 'sea': inside, the world outside is not heard
    amb.tick(dt)          every frame: eases the beds toward what `set` asked for and lets the single sounds happen
    amb.step(ground, v)   a footstep: 'grass', 'sand', 'rock', 'gravel', 'wood', 'water' (in a cave it rings a little)
+   amb.wave              the page's recorded wave (2026-10-20): a function (v) that plays one through amb.master and says
+                         whether it did; if it did, the synthesized surf is not played. Ashore only (aboard the hull's sounds stay)
    amb.setVolume(v)      0 is silence (the page turns it down in the menu and when the window is hidden)
    amb.layers            { wind, sea, birds, insects, fire, steps, cave, water }: set one to 0 to switch it off (the page's
                          Light and sound board does: I cannot hear what I have made, so Robin tells me by ear which is wrong)
@@ -105,7 +107,7 @@ function make(AC, dest) {
     ease(B.leaves, 0.03 * E.trees * (0.2 + gustV) * outD * L.wind, 0.5);
     // the sea: a wave, then its wash
     var sh = E.aboard ? 0.5 : E.shore;
-    if (nx.wave <= 0) { nx.wave = 4.6 + R() * 4.4; if (sh > 0.03 && outD && L.sea) { var pk = 0.085 * sh * (0.7 + R() * 0.6), g = B.surf.g.gain, fq = B.surf.f[0].frequency; g.setTargetAtTime(pk, t, 0.45); g.setTargetAtTime(0.012 * sh, t + 1.3, 1.1); fq.setTargetAtTime(1500, t, 0.5); fq.setTargetAtTime(480, t + 1.3, 1.2); B.surf.v = -1; if (!E.aboard) burst(t + 1.2, 2.0, 0.022 * sh, 'highpass', 2600, 0.5, (R() - 0.5) * 0.8, 0.8); note('wave'); } }
+    if (nx.wave <= 0) { nx.wave = 4.6 + R() * 4.4; if (sh > 0.03 && outD && L.sea && !E.aboard && self.wave && self.wave(sh * (0.7 + R() * 0.6) * L.sea)) note('wave'); else if (sh > 0.03 && outD && L.sea) { var pk = 0.085 * sh * (0.7 + R() * 0.6), g = B.surf.g.gain, fq = B.surf.f[0].frequency; g.setTargetAtTime(pk, t, 0.45); g.setTargetAtTime(0.012 * sh, t + 1.3, 1.1); fq.setTargetAtTime(1500, t, 0.5); fq.setTargetAtTime(480, t + 1.3, 1.2); B.surf.v = -1; if (!E.aboard) burst(t + 1.2, 2.0, 0.022 * sh, 'highpass', 2600, 0.5, (R() - 0.5) * 0.8, 0.8); note('wave'); } }
     if (!(sh > 0.03 && outD && L.sea)) ease(B.surf, 0, 0.6);
     ease(B.hull, E.aboard ? (0.012 + 0.06 * E.sail) * L.sea : 0, 0.5);
     if (E.aboard && nx.slap <= 0) { nx.slap = 1.5 - 0.9 * E.sail + R() * 0.7; if (L.sea) { burst(t, 0.13, 0.02 + 0.03 * E.sail, 'lowpass', 380, 0.7, (R() - 0.5) * 0.5); note('slap'); } }
@@ -140,7 +142,8 @@ function make(AC, dest) {
     }
     one(t, k); if (ring) one(t + 0.11, k * 0.3); note('step');
   }
-  return { set: set, tick: tick, step: step, setVolume: setVolume, layers: layers, stats: stats, env: E, beds: B, master: master };
+  var self = { set: set, tick: tick, step: step, setVolume: setVolume, layers: layers, stats: stats, env: E, beds: B, master: master, wave: null };
+  return self;
 }
 return { make: make, LAYERS: LAYERS };
 })();
