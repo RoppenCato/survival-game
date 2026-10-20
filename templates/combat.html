@@ -364,7 +364,14 @@ __SFX__
     set = SWING_SETS.free; if (Sfx.has(set[0])) return x && x.heavy && Sfx.has(set[1]) ? set[1] : set[0];
     return Sfx.has('swing') ? 'swing' : null;
   }
+  function pickedOnly(b) { var k = SFX_PICK[b]; return k && k !== 'orig' && Sfx.has(b + '_' + k) ? b + '_' + k : null; }
+  var SFX_ALIAS = { trunkfall: 'fall', logoff: 'fall', boxbreak: 'fall' };   /* the synthesized sound of a name that has none of its own */
   function recName(n, v, x) {
+    if (n === 'treefall') return pickedOnly('treefall');                     /* at the felling blow: its crash lands with the trunk */
+    if (n === 'trunkfall') return pickedOnly('treefall') ? '' : null;        /* the trunk landing: nothing more, when the fall is recorded ('' is heard as handled) */
+    if (n === 'logoff') return pickedOnly('logthud');
+    if (n === 'boxbreak') return pickedOnly('boxbreak');
+    if ((n === 'hit' || n === 'heavyhit') && x && x.kind && pickedOnly(n + '_' + x.kind)) return pickedOnly(n + '_' + x.kind);   /* the club's own hit, picked, before the hit every weapon shares */
     if (n === 'swing' && (!x || !x.kind || x.kind === 'sword')) return swingName(x);
     if (n === 'swing' && x && x.kind && SFX_PICK.swish !== 'orig' && Sfx.has('swish_' + x.kind)) return 'swish_' + x.kind;   /* the other weapons: the studio's swishes made from Robin's E and F (2026-10-15), lighter faster, heavier slower */
     if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
@@ -372,13 +379,13 @@ __SFX__
     if (n === 'heavyhit' && !('heavyhit' in SFX_PICK) && SFX_PICK.hit && SFX_PICK.hit !== 'orig' && Sfx.has('heavyhit_' + SFX_PICK.hit)) return 'heavyhit_' + SFX_PICK.hit;   /* the heavy hit follows the hit's pick unless it is chosen on its own (I to L come in pairs) */
     if ((n === 'hit' || n === 'heavyhit') && x && x.kind && pickOf(n) !== n) return pickOf(n);   /* a hit picked in the arena is every weapon's hit, pitched by the weapon in recSfx (2026-10-16: the studio's own hits for each weapon were all a low bump, 59 to 173 Hz) */
     if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
-    return Sfx.has(n) ? pickOf(n) : null;
+    if (Sfx.has(n)) return pickOf(n); var pkn = pickOf(n); return pkn !== n ? pkn : null;   /* a sound with no recording of its own but a picked candidate (the world's sounds, 2026-10-20) */
   }
   var HIT_RATE = { seax: 1.12, spear: 1.05, sword: 1, axe: 0.95, club: 0.9, greataxe: 0.85 };   /* a picked hit on a lighter weapon a little higher and quicker, on a heavier one lower and slower (as the swishes are) */
   function recSfx(n, v, x) {
     var a = AC; if (!a || OLD_SFX()) return false;
     if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { if (SFX_PICK.cut) Sfx.cut(a, swingH, 0.03); swingH = null; }   /* cut at the blow only if the arena's switch says so (off since Robin's own swings: a cut whoosh may be what spoiled the studio's) */
-    var name = recName(n, v, x); if (!name) return false;
+    var name = recName(n, v, x); if (name === '') return true; if (!name) return false;
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if ((n === 'hit' || n === 'heavyhit') && name !== n && x && x.kind && HIT_RATE[x.kind] && name.indexOf(n + '_' + x.kind) !== 0) o.rate *= HIT_RATE[x.kind];
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */
@@ -387,7 +394,7 @@ __SFX__
   }
   function synthAt(f, v, x) { if (x && x.lead != null && x.lead > 0.02) setTimeout(function () { f(v, x); }, (x.lead * LEAD_K() - 0.01) * 1000); else f(v, x); }   /* the old whoosh as the blow lands, as before */
   var oldSfx = false; function OLD_SFX() { return oldSfx; }
-  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; if (recSfx(n, v, x)) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) synthAt(f, v, x); };
+  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; if (recSfx(n, v, x)) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n] || SFX[SFX_ALIAS[n]]; if (f) synthAt(f, v, x); };
   function LEAD_K() { return 1 / (clockK || 1); }   /* the arena's clock at half or a quarter: the blow lands later in real time */   /* x: the hero's weapon for a hit or a swing: its own voice */
 
   /* input */
@@ -448,9 +455,11 @@ __SFX__
     ['Defence', ['raise', 'block', 'parry', 'crit']],
     ['The chain', ['chain_2', 'chain_3', 'chain_4']],
     ['Moments', ['tele', 'heavytell', 'finish', 'broken', 'perfect', 'stagger']],
-    ['Also', ['dash', 'hurt', 'shoot', 'slam', 'die']]
+    ['Also', ['dash', 'hurt', 'shoot', 'slam', 'die']],
+    ['Gathering and the world', ['chop', 'clink', 'treefall', 'logthud', 'boxbreak']]
   ];
   function sfxOld(name) { var m = /^chain_(\d)$/.exec(name); if (m) { SFX.chain(+m[1]); return; } var f = SFX[name]; if (!f) { var b = name.replace(/_[a-z]+$/, ''); f = SFX[b]; } if (f) f(0); }
+  var WORLD_NAMES = { chop: 'the hit on a tree', clink: 'the hit on a rock', treefall: 'a tree falling', logthud: 'a log coming off the trunk', boxbreak: 'a box breaking', block: 'the block', hit_club: 'the club’s hit', heavyhit_club: 'the club’s heavy hit', wave: 'a wave on the shore' };   /* the world's sounds (2026-10-20) */
   function sfxList() {
     var host = document.getElementById('sfxlist'); if (!host) return; host.innerHTML = '';
     var n = 0, tot = 0;
@@ -465,12 +474,12 @@ __SFX__
       host.appendChild(d);
     });
     /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick2) */
-    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
-    Object.keys(cands).forEach(function (base) {
-      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (base === 'hit' ? 'the hit (every weapon)' : base === 'heavyhit' ? 'the heavy hit' : base === 'swing' ? 'the sword’s swing' : base === 'raise' ? 'the shield going up' : base); d.appendChild(lab);
+    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit|^(chop|clink|treefall|logthud|boxbreak|block|wave)$/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
+    Object.keys(cands).sort(function (p, q) { return (WORLD_NAMES[p] && p !== 'block' ? 1 : 0) - (WORLD_NAMES[q] && q !== 'block' ? 1 : 0); }).forEach(function (base) {   /* the fight's rows first, the world's after */
+      var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (WORLD_NAMES[base] ? WORLD_NAMES[base] : base === 'hit' ? 'the hit (every weapon)' : base === 'heavyhit' ? 'the heavy hit' : base === 'swing' ? 'the sword’s swing' : base === 'raise' ? 'the shield going up' : base); d.appendChild(lab);
       var opts = base === 'swing' ? ['free', 'robin', 'orig'].filter(function (q) { return q === 'orig' || Sfx.has(SWING_SETS[q][0]); }).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_e') ? 'free' : 'orig') : (DEFAULT_PICK[base] || '');
       var sel = document.createElement('select'), cur = base in SFX_PICK ? SFX_PICK[base] : dflt; if (cur === 'orig' && base !== 'swing') cur = ''; sel.setAttribute('aria-label', lab.textContent);
-      opts.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' ? 'The studio’s' : 'As delivered'); if (cur === k) o.selected = true; sel.appendChild(o); });
+      opts.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' || base === 'block' ? 'The studio’s' : (Sfx.has(base) ? 'As delivered' : 'None: the game’s old synthesized sound')); if (cur === k) o.selected = true; sel.appendChild(o); });
       function hear() { var k = sel.value, a = ac(); if (a) Sfx.play(a, a.destination, k === 'free' ? 'swing_e' : k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k); }
       sel.addEventListener('change', function () { var k = sel.value; if (k === dflt) delete SFX_PICK[base]; else SFX_PICK[base] = k || 'orig'; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} hear(); });
       var hb = document.createElement('button'); hb.textContent = 'Hear it'; hb.addEventListener('click', function () { hear(); hb.blur(); });

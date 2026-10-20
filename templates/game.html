@@ -228,7 +228,7 @@ __COMBAT__
   Combat.api.sfx = function (n, v, src, x) {   // a beast's sound is only heard when it is near; the world is big; x: the hero's weapon for a hit or a swing (its own voice if the set has one)
     if (src && src.x != null) { var P = hero(); if (Math.hypot(src.x - P.x, src.y - P.y) > 260) return; }
     if (recSfx(n, v, x)) return;
-    var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) synthAt(f, v, x);
+    var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n] || SFX[SFX_ALIAS[n]]; if (f) synthAt(f, v, x);
   };
   function LEAD_K() { return 1; }
   /* recorded sounds (2026-10-15, Robin: the attack sounds from the Sound director): src/sfx.js plays the studio's WAVs, bundled into
@@ -253,7 +253,14 @@ __COMBAT__
     set = SWING_SETS.free; if (Sfx.has(set[0])) return x && x.heavy && Sfx.has(set[1]) ? set[1] : set[0];
     return Sfx.has('swing') ? 'swing' : null;
   }
+  function pickedOnly(b) { var k = SFX_PICK[b]; return k && k !== 'orig' && Sfx.has(b + '_' + k) ? b + '_' + k : null; }
+  var SFX_ALIAS = { trunkfall: 'fall', logoff: 'fall', boxbreak: 'fall' };   /* the synthesized sound of a name that has none of its own */
   function recName(n, v, x) {
+    if (n === 'treefall') return pickedOnly('treefall');                     /* at the felling blow: its crash lands with the trunk */
+    if (n === 'trunkfall') return pickedOnly('treefall') ? '' : null;        /* the trunk landing: nothing more, when the fall is recorded ('' is heard as handled) */
+    if (n === 'logoff') return pickedOnly('logthud');
+    if (n === 'boxbreak') return pickedOnly('boxbreak');
+    if ((n === 'hit' || n === 'heavyhit') && x && x.kind && pickedOnly(n + '_' + x.kind)) return pickedOnly(n + '_' + x.kind);   /* the club's own hit, picked, before the hit every weapon shares */
     if (n === 'swing' && (!x || !x.kind || x.kind === 'sword')) return swingName(x);
     if (n === 'swing' && x && x.kind && SFX_PICK.swish !== 'orig' && Sfx.has('swish_' + x.kind)) return 'swish_' + x.kind;   /* the other weapons: the studio's swishes made from Robin's E and F (2026-10-15), lighter faster, heavier slower */
     if (n === 'chain') return Sfx.has('chain_' + v) ? 'chain_' + v : null;
@@ -261,13 +268,13 @@ __COMBAT__
     if (n === 'heavyhit' && !('heavyhit' in SFX_PICK) && SFX_PICK.hit && SFX_PICK.hit !== 'orig' && Sfx.has('heavyhit_' + SFX_PICK.hit)) return 'heavyhit_' + SFX_PICK.hit;   /* the heavy hit follows the hit's pick unless it is chosen on its own (I to L come in pairs) */
     if ((n === 'hit' || n === 'heavyhit') && x && x.kind && pickOf(n) !== n) return pickOf(n);   /* a hit picked in the arena is every weapon's hit, pitched by the weapon in recSfx (2026-10-16: the studio's own hits for each weapon were all a low bump, 59 to 173 Hz) */
     if (x && x.kind && Sfx.has(n + '_' + x.kind)) return pickOf(n + '_' + x.kind);
-    return Sfx.has(n) ? pickOf(n) : null;
+    if (Sfx.has(n)) return pickOf(n); var pkn = pickOf(n); return pkn !== n ? pkn : null;   /* a sound with no recording of its own but a picked candidate (the world's sounds, 2026-10-20) */
   }
   var HIT_RATE = { seax: 1.12, spear: 1.05, sword: 1, axe: 0.95, club: 0.9, greataxe: 0.85 };   /* a picked hit on a lighter weapon a little higher and quicker, on a heavier one lower and slower (as the swishes are) */
   function recSfx(n, v, x) {
     var a = AC; if (!a || OLD_SFX()) return false;
     if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { if (SFX_PICK.cut) Sfx.cut(a, swingH, 0.03); swingH = null; }   /* cut at the blow only if the arena's switch says so (off since Robin's own swings: a cut whoosh may be what spoiled the studio's) */
-    var name = recName(n, v, x); if (!name) return false;
+    var name = recName(n, v, x); if (name === '') return true; if (!name) return false;
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if ((n === 'hit' || n === 'heavyhit') && name !== n && x && x.kind && HIT_RATE[x.kind] && name.indexOf(n + '_' + x.kind) !== 0) o.rate *= HIT_RATE[x.kind];
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */
@@ -3859,10 +3866,10 @@ __COMBAT__
     B.items.forEach(function (it) { if ((it.name !== 'crate' && it.name !== 'barrel') || it.fallen || (it.lvl || 0) !== (P.lvl || 0)) return; var full = it.loot || it.thing || (it.store && it.store.some(Boolean)); if (!full && villageAt(it.x, it.y) < 0) return; var d = Math.hypot(it.x - P.x, it.y - P.y); if (d < bd && canReach(P, it)) { bd = d; best = it; } });
     return best;
   }
-  function kickBox(it) { var P = hero(); if (P.dead || B.items.indexOf(it) < 0) return; var vi = villageAt(it.x, it.y); P.face = Math.atan2(it.y - P.y, it.x - P.x); sfx('chop'); breakBox(it); if (vi >= 0) raidAlarm(vi, it.x, it.y); }   /* at once, with no clip (Robin, 2026-10-16); a box kicked open in somebody's village is heard as an axe's would be */
+  function kickBox(it) { var P = hero(); if (P.dead || B.items.indexOf(it) < 0) return; var vi = villageAt(it.x, it.y); P.face = Math.atan2(it.y - P.y, it.x - P.x); breakBox(it); if (vi >= 0) raidAlarm(vi, it.x, it.y); }   /* at once, with no clip (Robin, 2026-10-16); a box kicked open in somebody's village is heard as an axe's would be */
   function breakBox(it) {
     var i = B.items.indexOf(it), q; if (i < 0) return; B.items.splice(i, 1); if (store === it) store = null;
-    chip(it.x, it.y, 8, '#b98a5a', 10, 90); sfx('fall');
+    chip(it.x, it.y, 8, '#b98a5a', 10, 90); sfx('boxbreak');
     for (q in it.loot || {}) { if (q === 'arrows') drop('arrow', it.x, it.y, it.loot[q]); else drop(q, it.x, it.y, it.loot[q]); }
     if (it.thing) dropThing(Items.make(it.thing[0], it.thing[1]), it.x, it.y);
     (it.store || []).forEach(function (s) { if (!s) return; if (s.kind === 'item') dropThing(s.item, it.x, it.y); else drop(s.kind, it.x, it.y, s.n); });
@@ -3881,6 +3888,7 @@ __COMBAT__
       var r = Gather.hit(GT, o, { power: power, right: right, hero: { x: P.x, y: P.y }, t: clock, s: s, ev: gatherEv });
       if (busy.indexOf(o) < 0) busy.push(o);
       if (o.hp <= 0 && o.dying != null && o.kind !== 'trunk') {
+        if (o.kind === 'tree') sfx('treefall');   /* (a recorded fall, if one is picked, is played from the felling blow: 2026-10-20) */
         deed(o.kind === 'tree' ? 'trees' : (o.kind === 'stone' ? 'rocks' : 'bushes'));
         if (o.kind === 'stone') { if (o.bog) drop('bogIron', o.x, o.y, 2 + (Math.random() < 0.5 ? 1 : 0)); if (o.trollStone) drop('copper', o.x, o.y, 4); else if (o.ore) { var dark = light() > 0.5 || o.cave; if (dark) drop('copper', o.x, o.y, 2); else if (Math.random() < 1 / 6) drop('copper', o.x, o.y, 1); }
           if (inUse('quarryman')) drop('stone', o.x, o.y, 1);

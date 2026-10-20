@@ -22,3 +22,12 @@ All are CC0 (public domain) or "free for any use"; credit is not required, but t
 | `hit_l_1..3.wav`, `heavyhit_l_1..3.wav` | layered: the same impacts; `thwack-04.wav`, `thwack-06.wav`; `knifeSlice2.ogg` | Kenney (Impact Sounds 1.0, RPG Audio); Thwack Sounds 1.0, AntumDeluge | CC0 | as above |
 
 Downloaded the same day with Robin's go-ahead (also looked at: the StarNinjas sword attacks and clashes, CC0, not used: the attacks are knife scrapes at about 8 kHz).
+
+## The world's sounds (2026-10-20, Robin's go-ahead; the Sound Director's download, `C:\dev\SG\Sound Director\sfx\world\ref`)
+
+- **Wood Chopping Sound Pack**, Mo'ad (yuralria on itch.io): free for any project, credit not needed, not to be resold unaltered.
+  `chop_a` (tree_chop_ax_06 to 08), `chop_b` (ax_hit_log_03 to 05), `treefall_a` (tree_felling_01), `boxbreak_a` (ax_split_log_03, 05, 08).
+- **100 CC0 metal and wood SFX**, rubberduck (OpenGameArt, CC0): `logthud_a` (wood_falling_01 to 03), `boxbreak_b` (wood_breaking_01, 02),
+  `block_a` (wood_hit_07, wood_slam_01, wood_hammer_01).
+- **Kenney Impact Sounds** (kenney.nl, CC0): `chop_c` (impactWood_heavy_000 to 002), `clink_a` (impactMining_000 to 002), `logthud_b`
+  (impactWood_heavy_003, 004), `boxbreak_c` (impactPlank_medium_000 to 002).

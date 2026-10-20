@@ -1,5 +1,5 @@
 {
- "about": "Free sounds tried for the sword's swing and hit (2026-10-15, Robin: 'Maybe you should look online and see if you can find any free sound assets' and 'take swinging of sword too then. Do it'). Every one CC0 or free for any use: see CREDITS.md. Gains set by ear-weighted loudness (a high-pass at 100 Hz and a 4 dB shelf at 1.5 kHz, the loudest 50 ms) against what each would replace in the game at Sfx.vol 0.5: a hit at the studio's sword hit (-22), a heavy hit at its heavy hit (-21), a swing at Robin's light or heavy swing (-30, -26). The cut is laid 6 dB under the light impact in hit_h. The shield going up (raise_e to raise_i, the same day, Robin: 'Id like to change the sound for putting the shield up also'): set at -29 by the same measure, about 4 dB above the studio's raise (-32.8, which was all but lost) and well under a hit; a file's leading silence is skipped (trim), so the guard sounds as it comes up. Hits I to L and heavy hits I to L (2026-10-16, Robin: the hit sounded 'like a bump', and the reference is Valheim's 'sharp fleshy slap'): layered here from the same CC0 packs (Kenney's light impact as the slap, an OpenGameArt thwack or Kenney's knife slice or chop as the crack, Kenney's soft impact as a small body; the heavy ones with Kenney's heavy soft impact and heavy punch), each measured: an attack of 6 to 8 ms, centred 1.2 to 2 kHz, a quarter to a half of the energy between 1 and 4 kHz, under a fifth below 250 Hz (the studio's hit: 104 Hz, all of it below 250). Gains levelled as above.",
+ "about": "Free sounds tried for the sword's swing and hit (2026-10-15, Robin: 'Maybe you should look online and see if you can find any free sound assets' and 'take swinging of sword too then. Do it'). Every one CC0 or free for any use: see CREDITS.md. Gains set by ear-weighted loudness (a high-pass at 100 Hz and a 4 dB shelf at 1.5 kHz, the loudest 50 ms) against what each would replace in the game at Sfx.vol 0.5: a hit at the studio's sword hit (-22), a heavy hit at its heavy hit (-21), a swing at Robin's light or heavy swing (-30, -26). The cut is laid 6 dB under the light impact in hit_h. The shield going up (raise_e to raise_i, the same day, Robin: 'Id like to change the sound for putting the shield up also'): set at -29 by the same measure, about 4 dB above the studio's raise (-32.8, which was all but lost) and well under a hit; a file's leading silence is skipped (trim), so the guard sounds as it comes up. Hits I to L and heavy hits I to L (2026-10-16, Robin: the hit sounded 'like a bump', and the reference is Valheim's 'sharp fleshy slap'): layered here from the same CC0 packs (Kenney's light impact as the slap, an OpenGameArt thwack or Kenney's knife slice or chop as the crack, Kenney's soft impact as a small body; the heavy ones with Kenney's heavy soft impact and heavy punch), each measured: an attack of 6 to 8 ms, centred 1.2 to 2 kHz, a quarter to a half of the energy between 1 and 4 kHz, under a fifth below 250 Hz (the studio's hit: 104 Hz, all of it below 250). Gains levelled as above. The world's sounds (2026-10-20, Robin after his play-test: the tree hit, the fall, the club, the block, a box breaking; the free packs he chose): raw candidates chop A to C, clink A (rock), treefall A (its lead-in trimmed so the crash lands as the trunk does), logthud A and B, boxbreak A to C, block A, levelled by the same ear-weighted measure (the loudest 50 ms after a high-pass at 100 Hz and a 4 dB shelf at 1.5 kHz, the mean of the variations) so the candidates of a row are heard at one loudness: the block at the studio's block (-16 before Sfx.vol), a box breaking -16, the hits on a tree and a rock -17, a log off the trunk -19, the tree's fall -14 (mine; the Sound Director may level them again).",
  "sounds": {
   "hit_e": {
    "gain": 1.08,
@@ -86,6 +86,50 @@
   },
   "heavyhit_v": {
    "label": "The studio's, with body and crunch"
+  },
+  "chop_a": {
+   "gain": 0.835,
+   "label": "Wood pack: an axe in a tree"
+  },
+  "chop_b": {
+   "gain": 1.603,
+   "label": "Wood pack: an axe in a log"
+  },
+  "chop_c": {
+   "gain": 0.631,
+   "label": "Kenney: a heavy knock on wood"
+  },
+  "clink_a": {
+   "gain": 0.565,
+   "label": "Kenney: a pick on rock"
+  },
+  "treefall_a": {
+   "gain": 0.804,
+   "label": "Wood pack: a tree felled"
+  },
+  "logthud_a": {
+   "gain": 0.423,
+   "label": "rubberduck: wood falling"
+  },
+  "logthud_b": {
+   "gain": 0.484,
+   "label": "Kenney: a heavy knock on wood"
+  },
+  "boxbreak_a": {
+   "gain": 1.122,
+   "label": "Wood pack: an axe splitting a log"
+  },
+  "boxbreak_b": {
+   "gain": 0.468,
+   "label": "rubberduck: wood breaking"
+  },
+  "boxbreak_c": {
+   "gain": 0.484,
+   "label": "Kenney: a plank knocked"
+  },
+  "block_a": {
+   "gain": 0.605,
+   "label": "rubberduck: a knock, a slam, a hammer on wood"
   }
  },
  "layers": {
@@ -124,6 +168,7 @@
   "raise_f_1": 0.035,
   "raise_f_2": 0.055,
   "raise_g_1": 0.045,
-  "raise_i_1": 0.015
+  "raise_i_1": 0.015,
+  "treefall_a_1": 1.944
  }
 }

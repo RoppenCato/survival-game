@@ -80,7 +80,7 @@ function tick(G, o, dt, ctx) {
   var done = o.kind === 'tree' ? 1.3 : (o.kind === 'stone' ? 0.4 : 0.3);
   if (o.kind === 'tree' && o.dying >= 0.95 && !o.dropped) {
     o.dropped = true; var s = ctx.s, len = s ? treeLen(s, o) : 60, dir = o.leanDir || 1, wood = TREE_WOOD[o.name] || 4;
-    if (ev.sfx) ev.sfx('fall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
+    if (ev.sfx) ev.sfx('trunkfall'); if (ev.chip) ev.chip(o.x + dir * len * 0.5, o.y, 4, '#6fb84f', 10, 70);
     if (ev.decal) ev.decal({ x: o.x, y: o.y, r: 5 * o.s + 2, name: o.name, s: o.s });
     if (CHAR_TREE[o.name]) { if (ev.drop) ev.drop('charcoal', o.x + dir * len * 0.6, o.y, CHAR_TREE[o.name]); }
     else if (G.trunks && ev.spawn) ev.spawn({ name: 'trunk', kind: 'trunk', tree: o.name, x: o.x + dir * len * 0.5, y: o.y + 1, dir: dir, len: len * 0.9, bake: s ? s.bake : 1, s: o.s, logs: G.logsPerTrunk, woodEach: Math.max(1, Math.round(wood / G.logsPerTrunk)), chops: 0, hp: 9999, max: 9999, s: o.s, r: 0, v: 0, lastHit: null });
@@ -99,7 +99,7 @@ function chopTrunk(G, o, ctx) {
   var ev = ctx.ev || {}, out = { mult: 1, rhythm: rhythmHit(G, o, ctx.t), log: false, gone: false };
   o.lastHit = ctx.t; o.shake = 0.4; o.chops += out.rhythm ? 2 : 1;
   if (ev.chip) ev.chip(o.x - o.dir * o.len * 0.3, o.y, 10, '#d9b37a', 5, 90);   /* (chips fly from the cut end; more of them since 2026-10-14) */
-  if (o.chops >= G.chopsPerLog) { o.chops = 0; o.logs--; out.log = true; if (ev.drop) ev.drop('wood', o.x + o.dir * o.len * 0.5, o.y + 2, o.woodEach); if (ev.sfx) ev.sfx('fall'); o.len *= Math.max(0.35, (o.logs) / (o.logs + 1)); if (o.logs <= 0) { out.gone = true; o.dying = 0; } }
+  if (o.chops >= G.chopsPerLog) { o.chops = 0; o.logs--; out.log = true; if (ev.drop) ev.drop('wood', o.x + o.dir * o.len * 0.5, o.y + 2, o.woodEach); if (ev.sfx) ev.sfx('logoff'); o.len *= Math.max(0.35, (o.logs) / (o.logs + 1)); if (o.logs <= 0) { out.gone = true; o.dying = 0; } }
   return out;
 }
 // A stump grows back: after regrowDays it is a sapling, then a tree over as many days again. The page keeps the stumps
