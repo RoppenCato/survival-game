@@ -186,7 +186,9 @@ details.panel[open]>summary{margin-bottom:8px}
         <p class="desc">Show the blows draws your weapon's reach and arc (amber while you wind up, red as it lands), your guard (white in the instant it would parry, blue after), the dash while it keeps you untouchable, and on every man his reach, his blow filling as he winds up, and his shield's cover.</p>
         <details class="sub" data-k="sounds"><summary>The sounds</summary>
         <div id="sfxlist"></div>
-        <p class="desc" id="sfxnote">Click a sound to hear it on its own. A dim one has no recording yet and plays the old synthesized sound.</p></details>
+        <p class="desc" id="sfxnote">Click a sound to hear it on its own. A dim one has no recording yet and plays the old synthesized sound.</p>
+        <div class="sfxrow"><span>Your picks, as text</span><input id="sfxpicks" readonly style="flex:1;min-width:0;font:12px monospace"><button id="sfxcopy">Copy</button></div>
+        <p class="desc">Paste this to Claude to make your picks the game's defaults.</p></details>
         <h2 class="more">Aiming</h2>
         <div class="group" id="aim">
           <button data-aim="facing" aria-pressed="false">Facing</button>
@@ -5626,6 +5628,10 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   ];
   function sfxOld(name) { var m = /^chain_(\d)$/.exec(name); if (m) { SFX.chain(+m[1]); return; } var f = SFX[name]; if (!f) { var b = name.replace(/_[a-z]+$/, ''); f = SFX[b]; } if (f) f(0); }
   var WORLD_NAMES = { chop: 'the hit on a tree', clink: 'the hit on a rock', treefall: 'a tree falling', logthud: 'a log coming off the trunk', boxbreak: 'a box breaking', block: 'the block', hit_club: 'the club’s hit', heavyhit_club: 'the club’s heavy hit', wave: 'a wave on the shore' };   /* the world's sounds (2026-10-20) */
+  function pickText() {                     // the picks as text, to paste to Claude (2026-10-20: Robin's picks live in his own browser; the editors' way: settings as text, made the default)
+    var el = document.getElementById('sfxpicks'); if (!el) return; el.value = 'sfxpick2 ' + JSON.stringify(SFX_PICK);
+    var cb = document.getElementById('sfxcopy'); if (cb && !cb.__on) { cb.__on = true; cb.addEventListener('click', function () { el.select(); try { navigator.clipboard.writeText(el.value); cb.textContent = 'Copied'; setTimeout(function () { cb.textContent = 'Copy'; }, 1500); } catch (eC) { document.execCommand('copy'); } }); }
+  }
   function sfxList() {
     var host = document.getElementById('sfxlist'); if (!host) return; host.innerHTML = '';
     var n = 0, tot = 0;
@@ -5647,11 +5653,12 @@ if (typeof module !== 'undefined') module.exports = Sfx;
       var sel = document.createElement('select'), cur = base in SFX_PICK ? SFX_PICK[base] : dflt; if (cur === 'orig' && base !== 'swing') cur = ''; sel.setAttribute('aria-label', lab.textContent);
       opts.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' || base === 'block' ? 'The studio’s' : base === 'wave' ? 'None: the game’s old synthesized sea' : (Sfx.has(base) ? 'As delivered' : 'None: the game’s old synthesized sound')); if (cur === k) o.selected = true; sel.appendChild(o); });
       function hear() { var k = sel.value, a = ac(); if (a) Sfx.play(a, a.destination, k === 'free' ? 'swing_e' : k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k); }
-      sel.addEventListener('change', function () { var k = sel.value; if (k === dflt) delete SFX_PICK[base]; else SFX_PICK[base] = k || 'orig'; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} hear(); });
+      sel.addEventListener('change', function () { var k = sel.value; if (k === dflt) delete SFX_PICK[base]; else SFX_PICK[base] = k || 'orig'; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} pickText(); hear(); });
       var hb = document.createElement('button'); hb.textContent = 'Hear it'; hb.addEventListener('click', function () { hear(); hb.blur(); });
       d.appendChild(sel); d.appendChild(hb);
       host.appendChild(d);
     });
+    pickText();
     document.getElementById('sfxnote').textContent = (n ? n + ' of ' + tot + ' have recordings. ' : 'No recordings loaded yet (assets/sfx/combat.js). ') + 'Click a sound to hear it on its own. A dim one plays the old synthesized sound. What you choose in a drop-down is what the arena and the game play.';
   }
   sfxList();
