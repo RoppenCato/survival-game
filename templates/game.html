@@ -3351,7 +3351,7 @@ __COMBAT__
     if (o.raft) return 'a vessel'; if (o.arrows) return 'for the bow'; if (o.stack && o.stack[0] === 'torch') return 'a light for the dark'; if (e.r.at === 'furnace') return 'smelted in the furnace';
     return 'a supply';
   }
-  function bigSc(e) { return e.dish || !e.r.out.item ? 2.2 : (Items.KINDS[e.r.out.item[0]].gear ? 2.1 : 2.0); }   // the thing's picture on the card, about 116 canvas pixels
+  function bigSc(e) { return e.dish || !e.r.out.item ? 1.9 : (Items.KINDS[e.r.out.item[0]].gear ? 1.8 : 1.75); }   // the thing's picture on the card, about 116 canvas pixels
   function drawInfo(c) {
     var P = hero(), th = menuTabHit(), bench = benchNear(P), roofed = bench && benchRoofed(bench), sel = infoSel(), X = menu.x, Y = menu.y, LX = 18, LY = 54, wellH = menu.listH * 3;
     menu.rows = []; menu.takes = []; menu.btn = null; menu.cbtn = null;
@@ -3388,18 +3388,18 @@ __COMBAT__
       // the chosen thing, on its vellum card
       var cx0 = 202, cy0 = 54, cw = 306;
       hVellum(c, cx0, cy0, cw, 362, 'card_frame');
-      if (!nine(c, 'plate_frame', cx0 + 16, cy0 + 14, cw - 32, 130, 12)) { c.strokeStyle = HC.ink; c.lineWidth = 1.2; c.strokeRect(cx0 + 16, cy0 + 14, cw - 32, 130); }
-      hUnits(c, cx0 + cw / 2, cy0 + 79, function () { infoIcon(c, sel, 0, 0, bigSc(sel)); });
-      if (menuTab === 'bench' && !roofed) hText(c, 'It needs a roof over it', cx0 + cw / 2, cy0 + 136, hf('italic', 13), HC.rubric, 'center');
+      if (!nine(c, 'plate_frame', cx0 + 16, cy0 + 14, cw - 32, 110, 12)) { c.strokeStyle = HC.ink; c.lineWidth = 1.2; c.strokeRect(cx0 + 16, cy0 + 14, cw - 32, 110); }   /* (110, not the mock's 130: the tale gets a fourth line, the studio's note)*/
+      hUnits(c, cx0 + cw / 2, cy0 + 69, function () { infoIcon(c, sel, 0, 0, bigSc(sel)); });
+      if (menuTab === 'bench' && !roofed) hText(c, 'It needs a roof over it', cx0 + cw / 2, cy0 + 116, hf('italic', 13), HC.rubric, 'center');
       var nm = infoName(sel), ns = 25; c.font = hf('bold', ns); while (ns > 15 && c.measureText(nm).width + ns * 0.6 > cw - 32) { ns -= 1; c.font = hf('bold', ns); }
-      hRubric(c, nm, cx0 + 16, cy0 + 178, ns, HC.ink);
+      hRubric(c, nm, cx0 + 16, cy0 + 158, ns, HC.ink);
       var pr2 = infoProgress(sel);
-      hText(c, infoSub(sel), cx0 + 16, cy0 + 199, hf('italic', 13), HC.sepia);
-      if (pr2 && pr2.n > 1) hText(c, 'x' + pr2.n + ' on the way', cx0 + cw - 16, cy0 + 199, hf('italic', 13), '#8a5a1a', 'right');
+      hText(c, infoSub(sel), cx0 + 16, cy0 + 179, hf('italic', 13), HC.sepia);
+      if (pr2 && pr2.n > 1) hText(c, 'x' + pr2.n + ' on the way', cx0 + cw - 16, cy0 + 179, hf('italic', 13), '#8a5a1a', 'right');
       var sts = infoStats(sel), nr = Math.ceil(sts.length / 3), top = cy0 + 316 - nr * 40;
-      c.font = hf('', 14.5); var lines = wrapText(c, infoText(sel), cw - 32), maxL = Math.max(0, Math.floor((top - 6 - (cy0 + 226)) / 20) + 1);
+      c.font = hf('', 14.5); var lines = wrapText(c, infoText(sel), cw - 32), maxL = Math.max(0, Math.floor((top - 6 - (cy0 + 206)) / 20) + 1);
       if (lines.length > maxL) { lines = lines.slice(0, maxL); if (maxL) lines[maxL - 1] = lines[maxL - 1].replace(/[,;:\s]*\S*$/, '') + ' \u2026'; }
-      lines.forEach(function (ln, k) { hText(c, ln, cx0 + 16, cy0 + 226 + k * 20, hf('', 14.5), HC.ink); });
+      lines.forEach(function (ln, k) { hText(c, ln, cx0 + 16, cy0 + 206 + k * 20, hf('', 14.5), HC.ink); });
       sts.forEach(function (st, k) { var x = cx0 + 16 + (k % 3) * 96, y = top + Math.floor(k / 3) * 40; hText(c, st[0], x, y + 14, hf('italic', 13), HC.sepia); c.font = hf('bold', 17); var vs = c.measureText(st[1]).width > 90 ? 14 : 17; hText(c, st[1], x, y + 34, hf('bold', vs), HC.ink);
         if (st[2]) { c.font = hf('bold', vs); var vw = c.measureText(st[1]).width; hText(c, (st[2] > 0 ? '+' : '\u2212') + Math.abs(st[2]) + (st[3] || ''), x + vw + 5, y + 34, hf('bold', 13), st[2] > 0 ? '#3e7a2e' : '#a8402e'); } });
       // what it takes: each material's picture, what it needs of what you have, red where you have too few
