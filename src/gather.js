@@ -100,7 +100,7 @@ function chopTrunk(G, o, ctx) {
   o.lastHit = ctx.t; o.shake = 0.4; o.chops += out.rhythm ? 2 : 1;
   var L0 = o.len0 || o.len, far = o.x - o.dir * L0 * 0.5 + o.dir * o.len;   // the far end, where the next log comes off (the stump end stays put)
   if (ev.chip) ev.chip(far - o.dir * 6, o.y, 10, '#d9b37a', 5, 90);   /* (chips fly from where the log comes off; more of them since 2026-10-14) */
-  if (o.chops >= G.chopsPerLog) { o.chops = 0; o.logs--; out.log = true; if (ev.drop) ev.drop('wood', far, o.y + 2, o.woodEach); if (ev.sfx) ev.sfx('logoff'); o.len *= Math.max(0.35, (o.logs) / (o.logs + 1)); if (o.logs <= 0) { out.gone = true; o.dying = 0; } }
+  if (o.chops >= G.chopsPerLog) { o.chops = 0; o.logs--; out.log = true; if (ev.log) ev.log(o.tree, far, o.y + 2, o.woodEach, o.dir); else if (ev.drop) ev.drop('wood', far, o.y + 2, o.woodEach); if (ev.sfx) ev.sfx('logoff'); o.len *= Math.max(0.35, (o.logs) / (o.logs + 1)); if (o.logs <= 0) { out.gone = true; o.dying = 0; } }
   return out;
 }
 // A stump grows back: after regrowDays it is a sapling, then a tree over as many days again. The page keeps the stumps

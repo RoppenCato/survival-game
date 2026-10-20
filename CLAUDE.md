@@ -329,11 +329,15 @@ and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) mul
 oak and birch are the Art Director's pictures** (2026-10-20, Robin's pick: concept A, the large size, a pine of about 5.3 m, three
 heroes; `assets/props/trees`, set pieces through `World.setImages` in three variants a kind by the prop's seed, drawn at their
 own size, `fixed`); the felling states stay the game's, and **a felled tree lies as its own trunk picture** along the fall,
-its chopped end at the stump, shortened at the far end as the logs come off (never thinner: Robin), the wood rolling out
-there; the log picture waits for a use. **The workbench and the raft bench are the studio's pictures too** (2026-10-20,
+its chopped end at the stump, shortened at the far end as the logs come off (never thinner: Robin), **and each log rolls
+out at the far end as the studio's log picture** (a drop of kind `log` that gives its wood when walked over; a tree without a
+log picture drops wood as before). **The workbench and the raft bench are the studio's pictures too** (2026-10-20,
 `assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12), **and the plants** (`assets/props/plants`:
 bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three variants each; a picked berry bush is a
-bush until it regrows). The build folds any `assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`). The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
+bush until it regrows), **and the rocks** (`assets/props/rocks`: rock, boulder and rock formation in six variants each, by
+the prop's seed; the cracks and the sweet spot's cue are drawn over them). The build folds any
+`assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`); `w.sprite` looks for `name_1` to `name_6`, then
+`name_1` to `name_3`, then `name`, then the drawn prop. The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
 props at their old size (Admin's **Trees** cycles their bake; `World.TREE_SHAPES`); rocks come in six variations of tone and build.
 
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
@@ -571,7 +575,11 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   deepens the green, brings birch and willow, tall grass and reeds, marsh by the water and (cold and wet) moss; the dry
   south is the lowlands. The tint is laid over a chunk's grass as it bakes. **Seasons are slots** (`World.SEASONS`,
   `w.season`, `w.setSeason`: the ground bakes again); only summer is drawn. The
-  chart is 1400 pixels wide (`CHART_PX`). Beasts live on the first two islands only (the others have none yet). The
+  chart is 1400 pixels wide (`CHART_PX`). **Beasts on every island** (`isleBeastTick`, mine): the first two are peopled at
+  the start as before; any other island gets its animals when the hero comes within 1100 units of its coast (boar, deer
+  and adder by its area, `animalN`; moose and bear only on islands of 80 tiles' radius or more outside home water) and
+  they are taken away (`e.away`) when he has been more than 2600 units off for 40 s, so the engine carries only the islands
+  round him. The
   Sea Editor lays out the same sea (`game.world3`; an old `game.world2` is ignored); `layoutKey()` names the arrangement
   (the waters' numbers in it, so a save of the old sea is dropped with the toast). `tools/visual/waters.js` draws it. Islands are blobs from noise on a
   height field (`E`); the ground is painted per pixel from it (deep sea, shallows that can be waded, a white lip, wet then dry
