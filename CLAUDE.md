@@ -501,8 +501,9 @@ is health and stamina top left, the chart and the meal top right; damage numbers
   (found 2026-10-20): the arena's sword sliders for wu, ac and rec do not move a sword blow (its reach and lunge do); whether
   to switch the sword to its profile is Robin's (it would change the feel he approved). **The player's blows start on the
   press** (Robin, 2026-10-20): every kind's wu 0.03 (the Dane axe 0.15, its weight), `STEPS` 0.03 (0.06 on the chain's last);
-  a charged blow keeps its hold; the men keep theirs. Measured: a careless player beats an axe-man in mail 89% (was 49%),
-  fights 10 to 20% shorter; the men are not retuned yet.
+  a charged blow keeps its hold; the men keep theirs. **The men retuned to it (mine, 2026-10-20): `MEN.dmg` 18, was 12**, the one
+  number that brings `tests/battle.js ladder` back to its targets (the tapping bot wins half against one axe-man in leather,
+  the careful bot three in four against two, five against five a coin; `tools/sweepmen.js` has the sweep); `docs/for-robin.md`.
 - **Weapons** (`docs/weapons.md`): six melee kinds, each with a motion, reach, arc, pace, chain and one thing of its own: the
   sword parries, the axe breaks a guard, the club staggers, the seax crits, the spear pierces (and stabs: the `thrust` clip),
   the Dane axe is heavy (two-handed, not to be parried); a weight each (`wt`: seax 0.6, spear 0.9, sword 1, axe 1.25, club
