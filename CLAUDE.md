@@ -616,7 +616,9 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   layered V of each (`out/sfx/chapter1`), with the club's own hit and heavy hit (`hit_club` V: a pick for a weapon kind comes
   before the hit every weapon shares, its heavy hit follows its letter); all on the studio's levels. Until one is picked the
   synthesized sound plays. **The wave on the shore** is the studio's recorded V by default (mine; `amb.wave`, through the
-  place's volume, ashore only; the arena's row can put the synthesized sea back).
+  place's volume, ashore only; the arena's row can put the synthesized sea back): each wave ±2 dB and ±4%, gaps 4.6 to 11 s
+  with now and then a close pair, and between them the old wash low and unswept (0.01: the Sound Director measured it 11 to
+  17 dB under the waves; 0.012 for a more continuous shore, under 0.007 it no longer fills the gaps).
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the
   Escape menu's bar is turned up; there is no mute key (M is the map).
