@@ -12,6 +12,7 @@ it is done. Mine are in order; Robin's can come at any time today.
 | R2 | Yes or no to the fire models (the Art Director's `out\fires`, waiting for your yes) | If yes, they go in today (task 6), not on Fable's day. |
 | R3 | Optional: pick a hit sound in the Combat Arena's The sounds panel (I to L, or V) | It becomes the default in a minute. |
 | R4 | Optional: pick the fifth ring's name from the Lore Director's list | It comes in the next lore handoff. |
+| R5 | Optional: may I delete the old renders and tests in `art/render` (4.1 GB, git-ignored), the old blends and probe scripts the Art Director listed? | Disk space; nothing in the game uses them, but re-rendering would take time. |
 
 ## Mine, in order
 
@@ -39,16 +40,18 @@ can show as stutters; more men and creatures on a raid make it worse.
 
 **Do:** load the hero lazily (as `loadLazy` and `imgOf()` do for people), warm the clips that are seen at once (idle, walk,
 run) and warm a weapon's clips when it is taken in hand, so no clip shows a blank frame; load a beast's sheets when one comes
-near and let them go when none has been near for a while. The drawn ink figure stays as the fallback while a sheet loads.
+near and let them go when none has been near for a while. While a sheet loads, show a plain soft shadow, not the old drawn
+figure (the Art Director, 2026-10-20: a flash of the old drawn people is a second style); warming ahead makes it rare.
 
 **Done when:** at the start only the sheets in use are loaded (count the loaded images and their pixels before and after);
 walking, sprinting, the first swing of each weapon, a boar charging and the troll's cave show no pop-in and no new SPIKE lines
 in the frame log at Robin's size.
 
-### 3. Ask the Art Director for leaner sheets (a message, not blocking)
+### 3. Leaner sheets from the Art Director (asked 2026-10-20: done)
 
-The numbers above, and the ask: trim empty space round the frames, fewer frames where nobody would see it (idle), and say what
-can be packed smaller. Their work, any time.
+In their art plan (`C:\dev\SG\Art Director\docsrt-plan.md`): memory budgets per set (the hero 1.5 GB to 350 MB, the idle
+100 frames to 16), the approved beasts and väsen trimmed before they are dropped in. **After Wednesday, mine:** a packer that
+cuts each frame to its own pixels with an offset (`tools/sprites.js` and `src/sprites.js`), then the studio repacks every set.
 
 ### 4. Baselines for Fable to compare against
 
