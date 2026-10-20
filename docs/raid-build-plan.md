@@ -1,6 +1,6 @@
 # The raid in the real game: the build order
 
-**Approved by Robin (2026-10-20: "do all the steps, don't stop to ask; keep a list for me": `docs/for-robin.md`). Status: steps 1 to 4 built and checked 2026-10-20 (`tools/visual/raidgame.js` step1, step2, step2b, step3; `tests/battle.js arches` for step 4); step 5's first half built (the day watch, bodies found, dragging, theft seen, the shield wall: step5); its second half (the ram, the town fighting fire, men going round by the other gate, the way chosen) waits; step 6 built (the six tactics, `tests/battle.js plans`); step 7 built (the loot rolls, the sack, the feast, `tests/loot.js`); step 8 built (crypts under churches, the hall's back room; `tests/cave.js`); step 9 next.**
+**Approved by Robin (2026-10-20: "do all the steps, don't stop to ask; keep a list for me": `docs/for-robin.md`). Status: steps 1 to 4 built and checked 2026-10-20 (`tools/visual/raidgame.js` step1, step2, step2b, step3; `tests/battle.js arches` for step 4); step 5's first half built (the day watch, bodies found, dragging, theft seen, the shield wall: step5); its second half (the ram, the town fighting fire, men going round by the other gate, the way chosen) waits; step 6 built (the six tactics, `tests/battle.js plans`); step 7 built (the loot rolls, the sack, the feast, `tests/loot.js`); step 8 built (crypts under churches, the hall's back room; `tests/cave.js`); step 9 built 2026-10-21 (thralls cut loose, the lost man won back, the yielded man let go, the chest carried home, more men after a raid; `raidgame.js` step9); step 10 is Robin's play.**
 
 **The plan as written (2026-10-20).** Robin's order, in his words: *implement the raid in the real game; different
 sizes of villages, different levels of defence; test each step; different ways of entering villages and buildings (sneaking in,
@@ -179,3 +179,8 @@ Robin plays a raid at every size, each way in. The frame log, the error log; the
 ## Bugs and small fixes found along the way
 
 (kept here as they are found; each with the step, the seed and the fix)
+
+- Step 9: a thrall cut loose was spliced out of `folk`, so the counts that remember the dead and the freed by their place (an
+  index among the place's folk, `markDead`, `markFreed`) slipped for the next one; he stays in `folk`, hidden and `gone`.
+- Step 9: `hisHer` gives his or her (the possessive), so "Let his go": the let-go prompt chooses him or her itself.
+- Step 9: an errand with `gawk` is dropped when a noise wakes the man; the one that carries a chest home must not have it.

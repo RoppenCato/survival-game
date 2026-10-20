@@ -75,3 +75,14 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
     broken, and stays taken in the save). The hall has a back room behind a locked inner door with the jarl's (or the
     chieftain's) chest in it. Not built: the storehouse loft, a relic as a thing of its own (the crypt gives silver), a
     draugr in a crypt (chapter 3's side threat), the men following you down.
+11. **The people of a raid (raid step 9), mine:** a **thrall** of a place (the generator rolls them among its folk) is cut
+    loose with E ("Cut his rope") and joins the hird on the spot: he follows you anywhere until he is home or aboard (the
+    one case a hirdman follows outside your territory), and the place remembers him gone. **A man of yours left behind**
+    (your default 4: taken, not killed) stands bound by the hall of the place that took him whenever its men are up; E
+    cuts his bonds and he is yours again. The way to buy him back with silver is not built (no trader talks yet). **A man
+    who yields** is let go with E ("Let him go"): he runs and is out of the fight. **A heavy chest dropped** in the open is
+    carried back to where it stood by a free man of the place when nobody of yours is within 240 units ("Ours, that."), so
+    a dropped chest is not kept for you. **A place raided before keeps two men more a raid, up to six.** Not built: the
+    priest (churches have no men; he is a villager and runs), traders shut to you, a price on your head. The lines are
+    placeholders for the Lore Director. Checked in the live game: the lost man (Gudrun) bound by the hall and won back,
+    a thrall (Arnfinn) joined, a yielded man ran, a chest 450 units from its place went home in 30 seconds, 23 men became 25.

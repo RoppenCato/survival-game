@@ -137,5 +137,34 @@
     } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
     return out;
   }
-  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step7: step7, step8: step8, town: town, men: men, sim: sim, own: own };
+  // Step 9: the people of a raid. A thrall of the town cut loose joins the hird; a man of yours lost there stands bound by the hall
+  // and is won back with E; a man who yields is let go; a heavy chest dropped in the yard is carried home by a man of the town
+  // when nobody of yours is near; a raided place keeps more men.
+  function step9() {
+    var t = town(), out = {}, d = D(), P = Combat.dbg().P; if (!t) return { fault: 'no town outside home water' };
+    try {
+    d.B.items = d.B.items.filter(function (it) { return !it.claim; }); d.timeOf(400); d.clearMen(); var c = d.toVillage(t.i); sim(3); var vi = t.i;
+    // a man of yours lost here: he stands bound and is won back
+    d.giveMen(1); var hl = d.hirdList(); var mName = hl[hl.length - 1].name; var W2 = W(); var em = W2.enemies.filter(function (e) { return e.side === 1 && e.hirdOf; })[0];
+    if (em) { em.x = c.x + 3000; var hm = em.hirdOf; hm.lost = { vi: vi, day: 1, x: em.x, y: em.y }; em.away = true; em.hirdOf = null; hm.asMan = null; }
+    d.goto(c.x + 4000, c.y); sim(46); d.toVillage(vi); sim(3.5);
+    var bound = d.folk().filter(function (f) { return f.bound; })[0]; out.bound = bound ? [bound.name, bound.name === mName] : null;
+    if (bound) { d.goto(bound.x, bound.y + 12); sim(0.3); out.prompt = d.eWhat(); d.cutLoose(bound); sim(0.3); out.wonBack = d.hirdList().filter(function (m) { return m.name === mName && !m.lost; }).length; out.boundLeft = d.folk().filter(function (f) { return f.bound; }).length; }
+    // a thrall cut loose
+    var th = d.folk().filter(function (f) { return f.vi === vi && f.role === 'thrall' && !f.dead && !f.hidden; })[0]; out.thrall = th ? th.name : null;
+    if (th) { var n0 = d.hirdList().length; d.goto(th.x, th.y + 12); sim(0.3); out.prompt2 = d.eWhat(); d.cutLoose(th); sim(0.3); out.joined = d.hirdList().length - n0; out.freedSaved = JSON.stringify(d.seen.freed || {}); }
+    // a man who yields, let go
+    var vm = men(vi).filter(function (e) { return !e.dead; })[0]; if (vm) { vm.state = 'yield'; vm.out = true; d.goto(vm.x, vm.y + 14); sim(0.2); out.prompt3 = d.eWhat(); d.letGo(vm); sim(2); out.letGo = [vm.state, !!vm.spared]; }
+    // a dropped chest carried home
+    var chest = d.B.items.filter(function (it) { return it.heavy && it.heavy.silver && Math.abs(it.x - c.x) < 1500 && Math.abs(it.y - c.y) < 1500; })[0];
+    if (chest) { chest.home = chest.home || { x: chest.x, y: chest.y }; delete chest.locked; var vs = d.villages(), v = (Array.isArray(vs) ? vs : vs.list)[vi], yx = (v.V.yard.x + v.V.yard.w / 2) * 32, yy = (v.V.yard.y + v.V.yard.h / 2) * 32; chest.x = yx; chest.y = yy; chest.carried = false; out.chestDrop = Math.round(Math.hypot(chest.x - chest.home.x, chest.y - chest.home.y));
+      d.goto(c.x + 900, c.y); var tt = 0; for (var i = 0; i < 90 && Math.hypot(chest.x - chest.home.x, chest.y - chest.home.y) > 48; i++) { sim(1); tt++; } out.chestHome = { after: tt, dist: Math.round(Math.hypot(chest.x - chest.home.x, chest.y - chest.home.y)), inB: d.B.items.indexOf(chest) >= 0, sentBack: !!chest.sentBack }; }
+    // more men next time
+    var g0 = d.garrison().defence[vi][4]; d.seen.raids = d.seen.raids || {}; d.seen.raids[vi] = 2; out.menMore = [g0, d.garrison().defence[vi][4]]; d.seen.raids[vi] = 0;
+    out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+    out.fault = !out.bound || !out.wonBack || (th && !out.joined) || (vm && !(out.letGo && out.letGo[0] === 'flee')) || (chest && !(out.chestHome && out.chestHome.dist < 48)) || !(out.menMore[1] > out.menMore[0]) ? '!!' : '';
+    } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
+    return out;
+  }
+  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step7: step7, step8: step8, step9: step9, town: town, men: men, sim: sim, own: own };
 })();

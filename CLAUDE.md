@@ -111,20 +111,29 @@ and not built (`docs/idea-bank.md`).
 - **The raid (decided 2026-10-07 and 2026-10-13):** about twenty minutes, made of loot spread out behind doors to break (the
   storehouse, the church's silver, the hall's chest, a hidden cellar, every house), each thing taken waking more of the
   place; heavy loot carried to the ship a piece at a time with hirdmen helping, the walk to the shore the gamble; the
-  defenders gather to the noise (no bell, no waves; fighting is not the biggest part). **Decided, not built** (what is built
-  today in brackets): a town at peace lets you walk in alone, and with armed men at your back its gates are barred (built);
-  pursuit by what you took: short for a quiet theft, to your ship for the church's or the jarl's silver (built: nobody past
-  700 units from his post); a man of yours left behind is taken as a thrall and won back by a raid or silver (built: he
-  dies); the party grows with your ships (a karve's six for farms, churches and small villages; a town of twenty waits for a
-  longship's crew); a carrier holds on until badly hurt (built: drops it at the first blow); men not fighting fall back with
-  you when you carry (built: only on G); a line becomes a real shield wall, strong in a gate (built: no advantage); if the
-  hero falls with any of his own standing he is dragged aboard and wakes at sea, what he carried lost (built: rises at the
-  wreck with everything); one more order, keep the ship. **Built as decided:** a blow from behind on a man who has noticed
-  nothing kills; the unarmed can be killed; X draws the weapon and a drawn blade in a place at peace is a threat; a fallen
-  man's weapon stays with him and is taken from him with E. How many come at you at once has five versions on the battle
-  board; none is chosen. **Next to build:** the raid in the real game (the lowland island, its town and church, your own
-  hird, saved) and people (thralls to cut loose, your taken men to win back, a man who yields bound or let go, a priest who
-  does not fight).
+  defenders gather to the noise (no bell, no waves; fighting is not the biggest part). **It runs in the real game since
+  2026-10-20** (`docs/raid-build-plan.md`, steps 1 to 9 built, step 10 is Robin's play; the live checks are
+  `tools/visual/raidgame.js`). **Decided, not built** (what is built today in brackets): pursuit by what you took: short for a
+  quiet theft, to your ship for the church's or the jarl's silver (built: nobody past 700 units from his post, further
+  under a hunters' plan); a man of yours left behind won back by silver (built: won back by a raid, below); the party grows
+  with your ships (a karve's six for farms, churches and small villages; a town of twenty waits for a longship's crew;
+  built: Admin gives men); men not fighting fall back with you when you carry (built: only on G); a priest who does not
+  fight and can be spared (built: a church has no men and its priest is a villager who runs); traders shut to you and a
+  price on your head; one more order, keep the ship. **Built as decided:** a town at peace lets you walk in alone, and with
+  armed men at your back its gates are barred; a carrier holds on until badly hurt (`MEN.dropAt`); a held line is a real
+  shield wall (`MEN.wallK`); if the hero falls with any of his own standing he wakes at sea aboard his ship, what he carried
+  lost; a blow from behind on a man who has noticed nothing kills; the unarmed can be killed; X draws the weapon and a
+  drawn blade in a place at peace is a threat; a fallen man's weapon stays with him and is taken from him with E. **The
+  people of a raid (step 9, 2026-10-21; the lines are `LORE?`):** a thrall of a place (the generator's role) is cut loose
+  with E and joins the hird where he stands (`cutLoose`; he follows anywhere until he is home or aboard, `m.freed`; the
+  place remembers him gone, `seen.freed`, an index among its folk as the dead are); a man of yours left behind (`m.lost`)
+  stands bound by the hall of the place that took him while its men are up (`boundHere`) and E cuts his bonds; a man who
+  yields is let go with E (`letGo`: he runs, out of the fight); a heavy thing dropped in the open goes home on the back of a
+  free man of the place when nobody of yours is within 240 units of it (`takeBackTick`; a heavy thing remembers where it
+  stood, `it.home`); a place raided before keeps two men more a raid, up to six (`defenceOf`). How many come at you at once
+  has five versions on the battle board; none is chosen. **Next to build:** step 5's second half (the ram, the town
+  fighting fire, men going round by the other gate, the way in chosen) and step 10 (Robin plays; the men retuned to the
+  blows on the press; the twenty-minute measure).
 - **Scale (the canon, 2026-10-09):** the hero is 1.8 m and 39 units tall: a unit is 4.6 cm, a tile (32 units) 1.5 m. The
   camera sits at zoom 0.65 (the view 390 units tall); houses are at the sizes they were dug up at; the starter island is 120
   tiles, the big island 400, about 200 tiles of water between (`gap` 240); the hero jogs at 84 units a second. Islands feel
