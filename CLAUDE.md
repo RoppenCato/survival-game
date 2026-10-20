@@ -20,7 +20,8 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   little of the systems below: their numbers are first settings, measured by bots, not felt.
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
   so at their top (`start-loop.md`, `the-beginning.md`, `world-shape.md`: waters, the lifecycle of a raided place, named
-  islands, claims and the year; `build-plan-waters.md`: the steps to build it, for a long Fable session; `before-wednesday.md`: what comes first; `ui-review.md` has a list waiting).
+  islands, claims and the year; `build-plan-waters.md`: the steps to build it, for a long Fable session; **`raid-build-plan.md`: the raid in the real game in ten
+  steps with a test for each, Robin's order of 2026-10-20, waiting for his yes**; `before-wednesday.md`: what comes first; `ui-review.md` has a list waiting).
 - **One project roof, `C:\dev\SG`** (Robin, 2026-10-16): `Art Director`, `Sound Director` (Robin also says music or
   sound director), `Lore Director` and `Game Developer` (this repo; it was `C:\dev\survival-game`).
 - **The lore is the Lore Director's** (`C:\dev\SG\Lore Director`; the agreement Robin approved on 2026-10-16 is its
