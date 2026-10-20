@@ -60,6 +60,17 @@ def lore_lines():
             if e.get('about'): o['about'] = [x.strip() for x in e['about'].split(',') if x.strip()] if isinstance(e['about'], str) else e['about']
     return json.dumps(out, ensure_ascii=False)
 SRC['__LORE__'] = lore_lines()
+def fire_art():
+    """the Art Director's fires (assets/fires, copied whole from its out/fires/sheets, 2026-10-20): per fire its base, embers and
+    flames sheets (tagged by their bytes) and its numbers (w, h, ax, ay, upp; the flames' frames and fps)"""
+    d = os.path.join(ROOT, 'assets', 'fires'); jp = os.path.join(d, 'fires.json')
+    if not os.path.exists(jp): return 'null'
+    J = json.load(open(jp, encoding='utf-8'))
+    def url(f): fp = os.path.join(d, f); return '../assets/fires/' + f + ('?v=' + sheet_tag(fp) if os.path.exists(fp) else '')
+    for k, f in J.items():
+        f['base'] = url(f['base']); f['embers'] = url(f['embers']); f['flames']['file'] = url(f['flames']['file'])
+    return json.dumps(J)
+SRC['__FIRES__'] = fire_art()
 def item_icons():
     """the things in the hand as icons (art/build/items_icons.py), assets/sprites/items/<kind>_wood.png and _metal.png"""
     d = os.path.join(ROOT, 'assets', 'sprites', 'items'); out = {}

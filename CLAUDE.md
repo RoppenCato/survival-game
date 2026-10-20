@@ -352,8 +352,12 @@ F takes pieces back for what they cost. Nothing can be built in somebody else's 
 
 **Home, sleep and comfort:** a closed room is worth its roof, a hearth, a workbench, a bed, a rug and up to two pieces of
 furniture (at most 7). **A fire burns outdoors** (a campfire or a hearth cannot be built inside) and counts as the house's
-hearth within `FIRE_YARD` 100 units of it; a fireplace goes inside, but not on the starter island (Robin). New animated fire
-models are asked of the Art Director; the comfort line shows it. A bed answers only under a roof and only if it is yours; sleeping skips the
+hearth within `FIRE_YARD` 100 units of it; a fireplace goes inside, but not on the starter island (Robin). **The fires are the
+Art Director's set pieces** (Robin, 2026-10-20: "use the fire models"; `assets/fires`, copied whole from its `out/fires/sheets`,
+inlined as `__FIRES__`): the campfire, the hearth (with its tripod and pot), the fireplace, the brazier and the fire pit, each a
+base, a loop of flames (10 frames at 12 fps, each fire at its own point of the loop) and embers, drawn by `drawFire` at 4 px a
+unit; the light, the smoke, the sparks (from the fire's heart, `fireUp`) and the shadows stay the game's. A hearth nobody keeps
+(`it.cold`: the burnt hall's) shows no flames and is no hearth; `it.burnt` would show the embers. The comfort line shows it. A bed answers only under a roof and only if it is yours; sleeping skips the
 night, and under a roof leaves you rested for comfort × 2 minutes. Inside a room with comfort and near a fire you heal. Chairs
 and benches seat you (E). The shipwright's raft bench needs comfort 4 at home and goes on the sand by the sea.
 

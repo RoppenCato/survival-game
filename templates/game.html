@@ -578,7 +578,25 @@ __COMBAT__
     if (!roomInfo) return true; var ra = roomInfo.at(Math.floor(P.x / T), Math.floor(P.y / T)), rb = roomInfo.at(Math.floor(it.x / T), Math.floor(it.y / T));
     return ra === rb;
   }
-  function isHearth(it) { return it.name == 'stoneHearth' || !!it.hearth; }
+  function isHearth(it) { return !it.cold && (it.name == 'stoneHearth' || !!it.hearth); }   /* it.cold: a hearth nobody keeps (the burnt hall's): no fire, no warmth, no cooking */
+  /* The fires (2026-10-20, Robin: "use the fire models"; the Art Director's set pieces): each fire is a base (stones, logs, iron),
+     a loop of flames on a layer of its own (10 frames at 12 fps) and the embers; drawn at its spot from its sheets (4 px a unit),
+     the drawn prop only while they load. The light, the smoke, the sparks and the shadows stay the game's. */
+  var FIRES = __FIRES__ || null, FIRE_OF = { campfire: 'campfire', stoneHearth: 'hearth', fireplace: 'fireplace', brazier: 'brazier', firePit: 'firepit' }, fireIm = {};
+  function fireImg(url) { var im = fireIm[url]; if (!im) { im = fireIm[url] = new Image(); im.src = url; } return im.complete && im.naturalWidth ? im : null; }
+  function fireArt(it) { var k = FIRE_OF[it.name]; return k && FIRES && FIRES[k] ? FIRES[k] : null; }
+  function drawFire(c, it) {               // true if drawn from the sheets (else the caller draws the old prop)
+    var F = fireArt(it); if (!F) return false;
+    var base = fireImg(it.burnt ? F.embers : F.base); if (!base) return false;
+    var u = F.upp, dx = it.x - F.ax * u, dy = it.y * K - F.ay * u, dw = F.w * u, dh = F.h * u;
+    c.drawImage(base, dx, dy, dw, dh);
+    if (it.cold || it.burnt) return true;
+    var fl = fireImg(F.flames.file); if (!fl) return true;
+    var n = F.flames.frames, ph = ((it.x * 7 + it.y * 13) % 97) / 97, f = Math.floor((clock + ph) * F.flames.fps) % n;   /* each fire at its own point of the loop */
+    c.drawImage(fl, f * F.flames.w, 0, F.flames.w, F.flames.h, dx, dy, dw, dh);
+    return true;
+  }
+  function fireUp(it) { return it.name === 'brazier' ? 18 : (FIRES && fireArt(it) ? 9 : 6); }   /* where the fire's heart is, above its spot: the sparks rise from there (the drop's numbers) */
   var FIRE_YARD = 100;                      // how near the house a fire outside must burn to count as its hearth (about three tiles; mine)
   function stairRoomAt(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; return ri >= 0 && roomInfo.rooms[ri].up ? roomInfo.rooms[ri] : null; }
   function canAfford(cost) { if (ADMIN.free) return true; for (var k in cost) if ((inv[k] || 0) < cost[k]) return false; return true; }
@@ -772,7 +790,7 @@ __COMBAT__
     var P = hero(); if (torchOn) fires.push({ x: P.x + (Math.cos(P.face) >= 0 ? 8 : -8), y: P.y - 24, torch: true });
     c.save(); c.globalCompositeOperation = 'lighter';
     fires.forEach(function (f, fi) {
-      var sx = (f.x - cam.x) * cam.z + 200, sy = (f.y * K - (f.torch ? 0 : 6) - cam.y) * cam.z + 125; if (sx < -30 || sx > 430 || sy < -30 || sy > 280) return;
+      var sx = (f.x - cam.x) * cam.z + 200, sy = (f.y * K - (f.torch ? 0 : fireUp(f)) - cam.y) * cam.z + 125; if (sx < -30 || sx > 430 || sy < -30 || sy > 280) return;
       for (var k = 0; k < (f.torch ? 4 : 7); k++) {
         var t = (clock * 0.55 + k * 0.173 + fi * 0.31) % 1, wob = Math.sin((clock + k) * 3.1) * 2.5, px = sx + wob * cam.z + (k - 3) * 1.4 * cam.z, py = sy - t * 26 * cam.z, a = (1 - t) * 0.8 * L;
         c.fillStyle = 'rgba(255,' + Math.round(140 + 80 * (1 - t)) + ',60,' + a.toFixed(2) + ')'; c.beginPath(); c.arc(px, py, (0.9 + (1 - t) * 0.6) * cam.z, 0, 7); c.fill();
@@ -1538,7 +1556,7 @@ __COMBAT__
   function villageClear() {              // the site is cleared of trees and bushes, and the rubble and the smith placed (every start)
     village = villageSite(); npc = null; if (!village) return; layCairns();
     var x0 = village.tx * T, y0 = village.ty * T, x1 = (village.tx + village.w) * T, y1 = (village.ty + village.h) * T, list = [];
-    w.eachProp(function (o) { if (o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20 && o.name !== 'rubble') list.push(o); });
+    w.eachProp(function (o) { if ((o.x > x0 - 20 && o.x < x1 + 20 && o.y > y0 - 20 && o.y < y1 + 20 && o.name !== 'rubble') || (o.kind === 'tree' && o.x > x0 - 40 && o.x < x1 + 40 && o.y >= y1 + 20 && o.y < y1 + 150)) list.push(o); });   /* and the trees just south, whose crowns stood over the yard (2026-10-20) */
     list.forEach(function (o) { w.removeProp(o); });
     var R = kit.rng(spec.seed * 17 + 3), i;
     w.sortBuckets();
@@ -1574,7 +1592,7 @@ __COMBAT__
        burnt hall is 10 by 5 inside (15 m by 7.5: a farm's longhouse), the hut that still stands and the plank house by the
        well 6 by 4 (9 m by 6). It was 6 by 4 and 4 by 3 on a site of 14 by 12. */
     house(vx + 1, vy + 1, 10, 5, 0, 0, vx + 5, 0);         // the burnt hall: logs, planks (its ruin is laid over it below)
-    item('stoneHearth', vx + 5, vy + 3);
+    item('stoneHearth', vx + 5, vy + 3, { cold: 1 });   // the burnt hall's hearth: cold, nobody keeps it (2026-10-20)
     house(vx + 14, vy + 1, 6, 4, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
     item('table', vx + 14.6, vy + 1.2); item('crate', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });
     house(vx + 14, vy + 9, 6, 4, 1, 0, vx + 17, 5);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces). Its bed is the first home (2026-10-14, Robin: finish the broken house to sleep in it): five gaps, and no roof until they are closed
@@ -5008,7 +5026,7 @@ __COMBAT__
       B.items.forEach(function (it) {
         if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
-        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
+        var s = sprite(it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () { if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 60 && Math.abs(mv.y * K - cam.y) < hh + 60) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });
