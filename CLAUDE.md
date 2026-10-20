@@ -581,7 +581,14 @@ karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, 
   (the engine: `MEN.wallK` 0.5 of a blow gets through a shield in a line, and only a heavy blow breaks it; measured: five
   held before the gate put three of twenty out, was one). The lines are `LORE?`. **Still to build of step 5:** the hird's
   ram, the town fighting a fire near its well, men at a full gate going round by the other, and one of the five ways chosen
-  (`duel` stands). `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
+  (`duel` stands). **The defence's tactics (step 6):** every place draws one plan with its seed (`Village.tacticOf`, `V.tactic`;
+  `Village.tactics` gives its points, `Village.applyTactic` sets a man's flags, the same in the game and in `tests/battle.js
+  plans`): **gate** (on an alarm every man goes to the gate and holds it: the engine's rally point, `e.rally`, `heardTo`),
+  **hall** (the hall's men keep by the hall, `homeR`), **hunters** (they pursue further, `pursueK`, and see further), **watch**
+  (three walk rounds by day, all sharper), **muster** (they gather at the fire pit, hold ten seconds, then come on together),
+  **bows** (a bowman stands fixed on the watchtower and sees and shoots over the wall: `g.towers` in the nav). Measured on one
+  town (`docs/baselines/plans-2026-10-20.txt`): the plans read apart in spread (302 to 463 units from the yard's middle) and
+  in when the hero would fall (21 to 60 s). `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
 way-finding is in every real village. Robin has played none of it.
 
 - **Sides:** every fighter has `e.side` (0 against the hero, 1 with him); the hero's blows pass his friends; beasts know only

@@ -242,7 +242,7 @@ function townMake(seed, arch, wealth, biome) {
   V.props.forEach(p => { const r = p.solid != null ? p.solid : 8; if (r) { solids.push({ x: p.x, y: p.y, r, hide: true }); } });
   V.nature.forEach(n => { if (n.r) { solids.push({ x: n.x, y: n.y, r: n.r, hide: true }); } });
   const walls = Build.rooms(B, 140, 140, { x0: 0, y0: 0, x1: 139, y1: 139 }).solids;
-  const g = Nav.make({ x0: 11, y0: 11, w: site.w + 18, h: site.h + 18, T, open: () => true, edge: Nav.edgeOf(B), solids: () => solids }); g.vi = 0;
+  const g = Nav.make({ x0: 11, y0: 11, w: site.w + 18, h: site.h + 18, T, open: () => true, edge: Nav.edgeOf(B), solids: () => solids }); g.vi = 0; g.towers = V.props.filter(p => p.tower);
   return { T, V, B, g, solids, walls };
 }
 // The hero at a town: he makes for the nearest man who is up (or, when none is, the nearest at all: the first blow is the
@@ -262,7 +262,7 @@ function raider(D, st, foes, g, t) {
 }
 // One town. o: { from: 'gate' | 'back', n, secs, quiet }. quiet: nobody comes; a noise at the gate, and the town is watched going back to its day.
 function townFight(seed, o) {
-  const TW = townMake(seed, o.arch, o.wealth, o.biome), { T, V, B, g, solids, walls } = TW, F = V.fence, R = Village.rng(seed * 7 + 5), DEF = o.arch ? Village.defence(o.arch, o.wealth, o.ring == null ? 1 : o.ring) : null;
+  const TW = townMake(seed, o.arch, o.wealth, o.biome), { T, V, B, g, solids, walls } = TW, F = V.fence, R = Village.rng(seed * 7 + 5), DEF = o.arch || o.tactic ? Village.defence(o.arch || 'town', o.wealth == null ? 0.7 : o.wealth, o.ring == null ? 1 : o.ring) : null, TAC = o.tactic ? Village.tactics(V, o.tactic) : null; if (DEF && o.tactic) DEF.tactic = o.tactic;
   Combat.reset(); const D = Combat.dbg(), P = D.P; P.mode = 'fight'; P.weapon = 'melee'; let t = 0;
   Combat.api.scene = { begin() {}, items() {}, bounds: { x0: 0, y0: 0, x1: 140 * T, y1: 140 * T } };
   Nav.attach(Combat, (x, y) => g.inside(x, y) ? g : null, () => t);
@@ -274,7 +274,8 @@ function townFight(seed, o) {
   const GT = [GEAR.cloth, GEAR.leather, GEAR.mail];
   const men = Village.garrison(V, o.n != null ? o.n : (DEF ? DEF.n : 20), R, DEF).map(q => { const p = Hird.roll(R), G = DEF ? GT[q.kind === 'hall' || q.kind === 'gate' ? DEF.gear[0] : DEF.gear[1]] : (q.kind === 'hall' || q.kind === 'gate' ? GEAR.mail : GEAR.leather), hall = q.kind === 'hall'; if (DEF && DEF.wits) p.stats.wits = Math.min(7, p.stats.wits + DEF.wits);
     const e = Combat.soldier({ side: 0, x: q.x, y: q.y, post: { x: q.x, y: q.y, face: q.face, box: BOX }, aggro: 0.5, vi: 0, wakeDelay: q.delay, homeR: (q.kind === 'door' || q.kind === 'house') && !process.env.NOHOME ? Combat.api.men.homeR : 0, wpn: { kind: q.wpn, mat: 'iron' }, shield: G.shield, armor: G.armor, hp: p.stats.health + (hall ? 8 : 0), strength: p.stats.strength + (hall ? 1 : 0), wits: hall ? Math.max(5, p.stats.wits) : p.stats.wits, aim: p.stats.aim, loyal: hall || p.traits.indexOf('loyal') >= 0, nerve: hall ? 0.9 : 0.5 });
-    e.face = q.face; e.kindOf = q.kind; e.upAt = -1; e.metAt = -1; return e; });
+    e.face = q.face; e.kindOf = q.kind; e.upAt = -1; e.metAt = -1; if (TAC) Village.applyTactic(e, q, TAC); return e; });
+  const yc0 = [(V.yard.x + V.yard.w / 2) * T, (V.yard.y + V.yard.h / 2) * T];
   let friends = [];
   if (o.quiet) { P.hidden = true; P.x = -4000; P.y = -4000; }
   else { P.x = gx; P.y = gy + out * 6.5 * T; P.face = -out * Math.PI / 2; friends = ['sword', 'axe', 'spear', 'sword', 'bow'].slice(0, o.friends != null ? o.friends : 5).map((w, i) => man(1, w, 'leather', gx + (i - 2) * 30, gy + out * (7.6 * T + (i % 2) * 16), rolled())); }
@@ -295,6 +296,7 @@ function townFight(seed, o) {
     if (!o.quiet) { if (P.hp < lastHp) R2.hurt += lastHp - P.hp; if (R2.fell < 0 && R2.hurt >= P.maxHp) R2.fell = t; P.hp = P.maxHp; lastHp = P.hp; if (P.dead) break; }
     for (const e of men) { if (e.upAt < 0 && e.awake !== false) e.upAt = t; if (e.metAt < 0 && e.awake !== false && !gone(e)) { if (e.shots) e.metAt = t; else for (const f of friends.concat(o.quiet ? [] : [P])) if (!f.dead && !f.down && Math.hypot(f.x - e.x, f.y - e.y) < 46) { e.metAt = t; break; } } }
     if (st.frame % 30 === 0 && !o.quiet) { const cm = men.filter(e => !gone(e) && e.awake !== false), cy = friends.filter(f => !f.dead && !f.down).concat(P.dead ? [] : [P]), c = crowdOf(cm, cy);
+      if (cm.length) { R2.spN = (R2.spN || 0) + 1; R2.spread = (R2.spread || 0) + cm.reduce((a, e) => a + Math.hypot(e.x - yc0[0], e.y - yc0[1]), 0) / cm.length; }
       if (c.n) { R2.cN = (R2.cN || 0) + 1; R2.cMost = (R2.cMost || 0) + c.most; R2.cPeak = Math.max(R2.cPeak || 0, c.most); R2.cFights = (R2.cFights || 0) + c.fights; R2.cBig = (R2.cBig || 0) + c.big; R2.c3 = (R2.c3 || 0) + (c.most >= 3 ? 1 : 0); let hn = 0; cm.forEach(m => { if (Math.hypot(m.x - P.x, m.y - P.y) < 80) hn++; }); R2.cHero = (R2.cHero || 0) + hn; R2.cHeroPeak = Math.max(R2.cHeroPeak || 0, hn); } }
     if (st.frame % 30 === 0) all.forEach((e, i) => {
       const q = last[i], moved = Math.hypot(e.x - q.x, e.y - q.y); q.x = e.x; q.y = e.y; if (e.x !== e.x || e.hp !== e.hp) R2.nan = true;
@@ -320,6 +322,18 @@ function townFight(seed, o) {
     friendsUp: friends.filter(e => !e.dead && !e.down).length, waited: st.waited || 0, timeout: t >= limit && !o.quiet, mean: R2.ms / Math.max(1, R2.n), backGate: back != null, lots: V.lots.filter(l => l.id === 'house').length });
 }
 const CROWD = { most: 0, peak: 0, c3: 0, hero: 0, fights: 0, big: 0, n: 0, fell: 0, up: 0, dead: 0 };
+// ---- The defence's tactics (raid step 6, 2026-10-20): the same town under each plan, the hero and five at the gate. A line a
+// plan: how soon the first of them met you, how spread they stood (the awake men's mean distance from the yard's middle),
+// how long the town held, how many of it died, when the hero would have fallen. The plans must read apart.
+function plans(n) {
+  console.log('--- the defence\'s tactics (raid step 6): one town, each plan, the hero and five of his own at the gate; ' + n + ' towns a plan');
+  console.log('    plan      | first met | spread | over in | dead | the hero would fall at | friends up');
+  Village.TACTICS.forEach(tactic => {
+    const S = { met: 0, metN: 0, spread: 0, t: 0, dead: 0, fell: 0, fellN: 0, up: 0, n: 0 };
+    for (let i = 0; i < n; i++) { const r = townFight(101 + i * 37, { tactic, from: 'gate', secs: 480 }); S.n++; if (r.met0 != null && r.met0 >= 0) { S.met += r.met0; S.metN++; } S.spread += r.spN ? r.spread / r.spN : 0; S.t += r.t; S.dead += r.dead; if (r.fell >= 0) { S.fell += r.fell; S.fellN++; } S.up += r.friendsUp; }
+    console.log('    ' + tactic.padEnd(9) + ' | ' + (S.metN ? (S.met / S.metN).toFixed(0) + ' s' : '-').padStart(9) + ' | ' + (S.spread / S.n).toFixed(0).padStart(6) + ' | ' + (S.t / S.n).toFixed(0).padStart(5) + ' s | ' + (S.dead / S.n).toFixed(1).padStart(4) + ' | ' + (S.fellN ? (S.fell / S.fellN).toFixed(0) + ' s (' + S.fellN + '/' + S.n + ')' : 'never').padEnd(22) + ' | ' + (S.up / S.n).toFixed(1) + '/5');
+  });
+}
 // ---- Sizes of villages and levels of defence (raid step 4, 2026-10-20): every archetype at two wealths, the hero (the careful
 // bot, kept alive: a fight is lost when he would have fallen) alone, with two of his own and with five, in n places each.
 // A line a place: its men, and for each party how often it was taken, in how long, and what it cost the hero in health.
@@ -501,6 +515,7 @@ if (mode === 'bows' || mode === 'short') bows(mode === 'short' ? 8 : N);
 if (mode === 'raid' || mode === 'short') raidChecks();
 if (mode === 'ways') ways(+process.argv[3] || 24);
 if (mode === 'arches') arches(+process.argv[3] || 3);
+if (mode === 'plans') plans(+process.argv[3] || 3);
 if (mode === 'ladder') ladder(+process.argv[3] || 40);
 if (mode === 'town' || mode === 'short') town(mode === 'short' ? 2 : (+process.argv[3] || 12), +process.argv[4] || 480);
 console.log('(' + ((Date.now() - t0) / 1000).toFixed(1) + ' s)');

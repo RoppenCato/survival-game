@@ -387,6 +387,7 @@ function make(seed, site, opts) {
   function inWay(o, r) { if (!(r > 0)) return false; for (var i = 0; i < keep.length; i++) if (Math.hypot(o.x - (keep[i][0] + 0.5) * T, o.y - (keep[i][1] + 0.5) * T) < T * 1.5) return true; return false; }
   V.props = V.props.filter(function (o) { return !inWay(o, o.solid != null ? o.solid : (o.name === 'scarecrow' ? 4 : 8)); });
   V.nature = V.nature.filter(function (o) { return !inWay(o, o.r); });
+  V.tactic = tacticOf(V, R);               // the place's plan of defence (raid step 6)
   return V;
 }
 // a page's site for an archetype: the tiles it needs
@@ -535,6 +536,41 @@ function defence(arch, wealth, ring) {
   n = Math.round(n * (1 + 0.16 * Math.max(0, (ring || 0) - 1)));
   return { n: n, gear: d.gear, bows: d.bows, wits: d.wits };
 }
+/* The defence's tactics (raid step 6, 2026-10-20; Robin: "the defence need to be interesting and vary in tactics and how spread
+   out they are"): a place draws one plan with its seed (tacticOf), from what it has: gate (on an alarm every man goes to the
+   gate and holds it: the yard empties), hall (the hall's men keep by the hall and its chest, the householders by their doors),
+   hunters (they go for the noise and pursue further than others), watch (more men walk rounds by day, all a little sharper),
+   muster (on an alarm they gather at the fire pit, hold ten seconds, then come on together), bows (a bowman stands on the
+   watchtower and sees over the wall; the rest as usual). tactics(V, kind) gives the points; applyTactic(e, q, tac) sets a
+   man's flags, the same for the game and for tests/battle.js plans. */
+var TACTICS = ['gate', 'hall', 'hunters', 'watch', 'muster', 'bows'];
+function tacticOf(V, R) {
+  R = R || rngOf(V.seed * 13 + 9); var F = V.fence, can = TACTICS.filter(function (k) {
+    if (k === 'gate') return !!F && !F.round && F.gate != null;
+    if (k === 'hall') return V.lots.some(function (l) { return l.id === 'hall' || l.id === 'longhouse'; });
+    if (k === 'bows') return V.props.some(function (p) { return p.tower; });
+    if (k === 'muster') return V.items.some(function (it) { return it.pit; });
+    return true; });
+  return can[Math.floor(R() * can.length) % can.length];
+}
+function tactics(V, kind) {
+  kind = kind || V.tactic || tacticOf(V); var F = V.fence, T2 = T, out = { kind: kind }, hall = V.lots.filter(function (l) { return l.id === 'hall' || l.id === 'longhouse'; })[0], pit = V.items.filter(function (it) { return it.pit; })[0];
+  if (kind === 'gate' && F && !F.round) out.rally = { x: (F.gate + (F.gateW || 1) / 2) * T2, y: F.y1 * T2 - 44, face: Math.PI / 2 };
+  if (kind === 'muster') out.rally = pit ? { x: pit.x, y: pit.y + 26 } : { x: (V.yard.x + V.yard.w / 2) * T2, y: (V.yard.y + V.yard.h / 2) * T2 };
+  if (kind === 'hall' && hall) out.hallR = 150;
+  if (kind === 'bows') out.tower = V.props.filter(function (p) { return p.tower; })[0] || null;
+  return out;
+}
+function applyTactic(e, q, tac) {
+  if (!tac) return; var k = tac.kind;
+  if (k === 'gate' && tac.rally) { e.rally = tac.rally; e.rallyHold = 1e9; }
+  else if (k === 'muster' && tac.rally) { e.rally = tac.rally; e.rallyHold = 10; e.rallyThen = 'alarm'; }
+  else if (k === 'hall') { if (q && q.kind === 'hall') e.homeR = tac.hallR || 150; }
+  else if (k === 'hunters') { e.pursueK = 1.6; e.sight = (e.sight || 320) * 1.3; }
+  else if (k === 'watch') { e.wits = Math.min(7, (e.wits || 3) + 1); }
+  else if (k === 'bows') { if (q && q.kind === 'tower') e.fixed = true; }
+  e.tactic = k;
+}
 function garrison(V, n, R, D) {
   var F = V.fence, out = [], WP = ['sword', 'axe', 'spear', 'axe', 'sword', 'club', 'spear'], HW = ['sword', 'axe', 'greataxe', 'sword', 'spear', 'axe'], k = 0, i, S = Math.PI / 2, N = -Math.PI / 2; R = R || Math.random;
   if (D && D.n != null && n == null) n = D.n;
@@ -571,8 +607,9 @@ function garrison(V, n, R, D) {
   if (hall) for (i = 0; i < 6; i++) put((hall.x + 1.5 + i * (hall.w - 3) / 5) * T, (hall.y + 1.2 + (i % 2) * 1.4) * T, S, 'hall');           // the jarl's own, in the hall
   houses.forEach(function (l) { put((l.x + l.w / 2) * T, (l.y + l.h / 2) * T, S, 'house'); });                                               // and a man inside every house
   i = 0; while (out.length < n && i < 40) { var a = i * 2.4, r = 70 + (i % 5) * 34; if (i % 4 === 1) bows[out.length] = 1; put(yc[0] + Math.cos(a) * r, yc[1] + Math.sin(a) * r * 0.7, a, 'yard'); i++; }   // the rest about the yard
+  if (D && D.tactic === 'bows') { var tw = V.props.filter(function (p) { return p.tower; })[0], bm = tw ? out.filter(function (q) { return q.wpn === 'bow'; })[0] : null; if (bm) { bm.x = tw.x; bm.y = tw.y - 4; bm.kind = 'tower'; bm.face = S; } }   // the bowman on the tower (his tactic)
   return out;
 }
-return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, draw: draw, rng: rngOf, SIZES: SIZES };
+return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, TACTICS: TACTICS, tacticOf: tacticOf, tactics: tactics, applyTactic: applyTactic, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
 if (typeof module !== 'undefined') module.exports = Village;

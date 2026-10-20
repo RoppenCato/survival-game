@@ -6389,6 +6389,7 @@ function make(seed, site, opts) {
   function inWay(o, r) { if (!(r > 0)) return false; for (var i = 0; i < keep.length; i++) if (Math.hypot(o.x - (keep[i][0] + 0.5) * T, o.y - (keep[i][1] + 0.5) * T) < T * 1.5) return true; return false; }
   V.props = V.props.filter(function (o) { return !inWay(o, o.solid != null ? o.solid : (o.name === 'scarecrow' ? 4 : 8)); });
   V.nature = V.nature.filter(function (o) { return !inWay(o, o.r); });
+  V.tactic = tacticOf(V, R);               // the place's plan of defence (raid step 6)
   return V;
 }
 // a page's site for an archetype: the tiles it needs
@@ -6537,6 +6538,41 @@ function defence(arch, wealth, ring) {
   n = Math.round(n * (1 + 0.16 * Math.max(0, (ring || 0) - 1)));
   return { n: n, gear: d.gear, bows: d.bows, wits: d.wits };
 }
+/* The defence's tactics (raid step 6, 2026-10-20; Robin: "the defence need to be interesting and vary in tactics and how spread
+   out they are"): a place draws one plan with its seed (tacticOf), from what it has: gate (on an alarm every man goes to the
+   gate and holds it: the yard empties), hall (the hall's men keep by the hall and its chest, the householders by their doors),
+   hunters (they go for the noise and pursue further than others), watch (more men walk rounds by day, all a little sharper),
+   muster (on an alarm they gather at the fire pit, hold ten seconds, then come on together), bows (a bowman stands on the
+   watchtower and sees over the wall; the rest as usual). tactics(V, kind) gives the points; applyTactic(e, q, tac) sets a
+   man's flags, the same for the game and for tests/battle.js plans. */
+var TACTICS = ['gate', 'hall', 'hunters', 'watch', 'muster', 'bows'];
+function tacticOf(V, R) {
+  R = R || rngOf(V.seed * 13 + 9); var F = V.fence, can = TACTICS.filter(function (k) {
+    if (k === 'gate') return !!F && !F.round && F.gate != null;
+    if (k === 'hall') return V.lots.some(function (l) { return l.id === 'hall' || l.id === 'longhouse'; });
+    if (k === 'bows') return V.props.some(function (p) { return p.tower; });
+    if (k === 'muster') return V.items.some(function (it) { return it.pit; });
+    return true; });
+  return can[Math.floor(R() * can.length) % can.length];
+}
+function tactics(V, kind) {
+  kind = kind || V.tactic || tacticOf(V); var F = V.fence, T2 = T, out = { kind: kind }, hall = V.lots.filter(function (l) { return l.id === 'hall' || l.id === 'longhouse'; })[0], pit = V.items.filter(function (it) { return it.pit; })[0];
+  if (kind === 'gate' && F && !F.round) out.rally = { x: (F.gate + (F.gateW || 1) / 2) * T2, y: F.y1 * T2 - 44, face: Math.PI / 2 };
+  if (kind === 'muster') out.rally = pit ? { x: pit.x, y: pit.y + 26 } : { x: (V.yard.x + V.yard.w / 2) * T2, y: (V.yard.y + V.yard.h / 2) * T2 };
+  if (kind === 'hall' && hall) out.hallR = 150;
+  if (kind === 'bows') out.tower = V.props.filter(function (p) { return p.tower; })[0] || null;
+  return out;
+}
+function applyTactic(e, q, tac) {
+  if (!tac) return; var k = tac.kind;
+  if (k === 'gate' && tac.rally) { e.rally = tac.rally; e.rallyHold = 1e9; }
+  else if (k === 'muster' && tac.rally) { e.rally = tac.rally; e.rallyHold = 10; e.rallyThen = 'alarm'; }
+  else if (k === 'hall') { if (q && q.kind === 'hall') e.homeR = tac.hallR || 150; }
+  else if (k === 'hunters') { e.pursueK = 1.6; e.sight = (e.sight || 320) * 1.3; }
+  else if (k === 'watch') { e.wits = Math.min(7, (e.wits || 3) + 1); }
+  else if (k === 'bows') { if (q && q.kind === 'tower') e.fixed = true; }
+  e.tactic = k;
+}
 function garrison(V, n, R, D) {
   var F = V.fence, out = [], WP = ['sword', 'axe', 'spear', 'axe', 'sword', 'club', 'spear'], HW = ['sword', 'axe', 'greataxe', 'sword', 'spear', 'axe'], k = 0, i, S = Math.PI / 2, N = -Math.PI / 2; R = R || Math.random;
   if (D && D.n != null && n == null) n = D.n;
@@ -6573,9 +6609,10 @@ function garrison(V, n, R, D) {
   if (hall) for (i = 0; i < 6; i++) put((hall.x + 1.5 + i * (hall.w - 3) / 5) * T, (hall.y + 1.2 + (i % 2) * 1.4) * T, S, 'hall');           // the jarl's own, in the hall
   houses.forEach(function (l) { put((l.x + l.w / 2) * T, (l.y + l.h / 2) * T, S, 'house'); });                                               // and a man inside every house
   i = 0; while (out.length < n && i < 40) { var a = i * 2.4, r = 70 + (i % 5) * 34; if (i % 4 === 1) bows[out.length] = 1; put(yc[0] + Math.cos(a) * r, yc[1] + Math.sin(a) * r * 0.7, a, 'yard'); i++; }   // the rest about the yard
+  if (D && D.tactic === 'bows') { var tw = V.props.filter(function (p) { return p.tower; })[0], bm = tw ? out.filter(function (q) { return q.wpn === 'bow'; })[0] : null; if (bm) { bm.x = tw.x; bm.y = tw.y - 4; bm.kind = 'tower'; bm.face = S; } }   // the bowman on the tower (his tactic)
   return out;
 }
-return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, draw: draw, rng: rngOf, SIZES: SIZES };
+return { DEF: DEF, ARCH: ARCH, BUILD: BUILD, NAMES: NAMES, ROLES: ROLES, cfg: cfg, make: make, siteFor: siteFor, plan: plan, nameFor: nameFor, jettyFor: jettyFor, garrison: garrison, DEFENCE: DEFENCE, defence: defence, TACTICS: TACTICS, tacticOf: tacticOf, tactics: tactics, applyTactic: applyTactic, draw: draw, rng: rngOf, SIZES: SIZES };
 })();
 if (typeof module !== 'undefined') module.exports = Village;
 
@@ -8180,8 +8217,9 @@ function hangStep(e, dt, F) {
   if (Math.abs(vx) + Math.abs(vy) > 4) { moveCircle(e, vx * dt, vy * dt); e.state = 'chase'; } else e.state = 'idle';
   e.face = turnToward(e.face, Math.atan2(-dy, -dx), MEN.turn * 0.6 * dt);
 }
-function tooFar(e, F) { var p = e.post, b = p.box; if (!b) return Math.hypot(F.x - p.x, F.y - p.y) > MEN.pursue; return Math.hypot(Math.max(b.x0 - F.x, 0, F.x - b.x1), Math.max(b.y0 - F.y, 0, F.y - b.y1)) > MEN.pursueOut; }
-function alarmFor(e) { return e.alarm && !(e.homeR && e.post && Math.hypot(e.alarm.x - e.post.x, e.alarm.y - e.post.y) > e.homeR) ? e.alarm : null; }   // where he goes to look: a householder nowhere beyond his own door
+function tooFar(e, F) { var p = e.post, b = p.box, k = e.pursueK || 1; if (!b) return Math.hypot(F.x - p.x, F.y - p.y) > MEN.pursue * k; return Math.hypot(Math.max(b.x0 - F.x, 0, F.x - b.x1), Math.max(b.y0 - F.y, 0, F.y - b.y1)) > MEN.pursueOut * k; }   // (pursueK: a place whose plan is to hunt goes further)
+function alarmFor(e) { return e.alarm && !(e.homeR && e.post && Math.hypot(e.alarm.x - e.post.x, e.alarm.y - e.post.y) > e.homeR) ? e.alarm : null; }
+function heardTo(e) { var a = alarmFor(e); if (!a) return null; if (e.rally && !e.rallied) return { x: e.rally.x, y: e.rally.y, face: e.rally.face, rally: true }; return a; }   // where he goes on an alarm: his rally point first, when his place's plan has one (the defence's tactics, raid step 6, 2026-10-20), else the noise   // where he goes to look: a householder nowhere beyond his own door
 function onTarget(F, me) { var n = 0, i, o; for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o !== me && o.type === 'soldier' && !o.dead && !o.down && !o.out && o.tgt === F && (o.side || 0) === (me.side || 0)) n++; } return n; }
 function pickTarget(e) {
   var best = null, bs = 1e9, cur = e.tgt, wait = null, wd = 1e9;
@@ -8247,6 +8285,7 @@ function sideStep(e, dt, d, far, waiting) {
   return e.sideT > 0 ? e.sideS * (0.7 + e.sideN * 0.55) : 0;
 }
 function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows the walls may give the next corner to make for (api.nav)
+  if (e.fixed) return 0;                     // (a man who stays where he is put: the bowman on the tower, raid step 6)
   var far = Math.hypot(x - e.x, y - e.y);
   if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) { e.progT = 0; return 0; } x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }
   var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 0.5) return 0;
@@ -8270,7 +8309,7 @@ function noise(x, y, r, soft, except) {                   // something loud at a
     o.alarm = { x: x, y: y }; heardN++;
     if (o.asleep && r <= MEN.hush && !o.light) { heardN--; continue; }                         // a quiet noise and a sound sleeper: he sleeps on
     if (o.awake === false) { if (!(o.wakeT > 0)) o.wakeT = o.asleep && r <= MEN.hush ? lerp(MEN.wake[0], MEN.wake[1], Math.random()) : (o.wakeDelay != null ? o.wakeDelay : lerp(MEN.wake[0], MEN.wake[1], Math.random())) * (0.6 + 0.8 * d / r) + (o.asleep ? MEN.getUp : 0); }   // (a light sleeper started out of his sleep by something beside him is up at once, with whatever lay by the bed; a man woken by a far noise arms first)
-    else if (!o.tgt && alarmFor(o)) { o.heardAt = o.alarm; o.lookT = 0; }
+    else if (!o.tgt && alarmFor(o)) { o.heardAt = heardTo(o); o.lookT = 0; }
   }
   if (api.onNoise) api.onNoise(x, y, r, heardN, !!soft);   // heardN: how many men heard it; soft: a noise that is nothing unless somebody did (a blow on a wall)
   return heardN;
@@ -8443,7 +8482,7 @@ function soldierAI(e, dt) {
   }
   if (e.errand) {                           // sent somewhere with something to do there (a chest to the ship): he goes by the grid and fights nobody on the way. { x, y, near, run, slow, done(e), drop(e), fail(e) }
     var er = e.errand, ed = Math.hypot(er.x - e.x, er.y - e.y); e.tgt = null; e.guard = 0; e.sw = null;
-    if (er.gawk && e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.errand = null; e.awake = true; e.heardAt = alarmFor(e); e.lookT = 0; if (api.onWake) api.onWake(e); return; } }   // (a man gone to look at a fire has noticed nothing else: a noise wakes him as it would at his post)
+    if (er.gawk && e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.errand = null; e.awake = true; e.heardAt = heardTo(e); e.lookT = 0; if (api.onWake) api.onWake(e); return; } }   // (a man gone to look at a fire has noticed nothing else: a noise wakes him as it would at his post)
     if (ed < (er.near || 16)) { if (er.hold > 0) { er.hold -= dt; e.state = 'idle'; if (er.fx != null) e.face = turnToward(e.face, Math.atan2(er.fy - e.y, er.fx - e.x), 3 * dt); return; } e.errand = null; e.state = 'idle'; if (er.done) er.done(e); return; }   // (hold: he stands there that long, looking at fx, fy)
     e.state = 'chase'; var em = stepTo(e, er.x, er.y, (er.run ? MEN.run : MEN.speed) * (er.slow || 1), dt);
     e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(er.y - e.y, er.x - e.x), MEN.turn * dt);
@@ -8453,7 +8492,7 @@ function soldierAI(e, dt) {
   }
   if (e.awake === false) {                  // at his post, and has seen nothing
     var seen = false, st = api.mods && api.mods().stealth ? api.mods().stealth : 1;
-    if (e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.awake = true; e.heardAt = alarmFor(e); e.lookT = 0; if (e.asleep) { e.asleep = false; e.riseT = 0.8; } if (api.onWake) api.onWake(e); } }
+    if (e.wakeT > 0) { e.wakeT -= dt; if (e.wakeT <= 0) { e.awake = true; e.heardAt = heardTo(e); e.lookT = 0; if (e.asleep) { e.asleep = false; e.riseT = 0.8; } if (api.onWake) api.onWake(e); } }
     if (e.asleep) { e.state = 'idle'; e.guard = 0; return; }                                 // asleep: he sees nobody and does not stir
     if (e.awake === false) eachFoe(e, function (F) { var q = Math.hypot(F.x - e.x, F.y - e.y), behind = Math.abs(wrap(Math.atan2(F.y - e.y, F.x - e.x) - e.face)) > 1.9; if (q < (e.aggro != null ? e.aggro : MEN.aggro) * (behind ? 0.45 : 1) * (F === P ? st : 1) && !wallBetween(e.x, e.y, F.x, F.y)) seen = true; });
     if (seen) { e.awake = true; if (api.onWake) api.onWake(e); } else if (e.awake === false) { postStep(e, dt); e.state = 'idle'; return; }
@@ -8470,6 +8509,7 @@ function soldierAI(e, dt) {
     else if (e.heardAt) {
       var hd = Math.hypot(e.heardAt.x - e.x, e.heardAt.y - e.y);
       if (hd > 36 && !(e.lookT > 0)) { e.state = 'chase'; var mv = stepTo(e, e.heardAt.x, e.heardAt.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(e.heardAt.y - e.y, e.heardAt.x - e.x), MEN.turn * dt); e.stuckT = mv < MEN.run * dt * 0.2 || e.sideN >= 3 ? (e.stuckT || 0) + dt : 0; if (e.stuckT > 2.5) { e.lookT = 0.01; e.stuckT = 0; e.sideN = 0; } }   // (he cannot get there: he looks about where he is)
+      else if (e.heardAt.rally) { e.lookT = (e.lookT || 0) + dt; if (e.heardAt.face != null) e.face = turnToward(e.face, e.heardAt.face, 3 * dt); else e.face += Math.sin(e.lookT * 1.3 + e.seed) * dt * 1.4; if (e.lookT > (e.rallyHold != null ? e.rallyHold : 10)) { e.rallied = true; e.lookT = 0; e.heardAt = e.rallyThen === 'alarm' ? alarmFor(e) : null; } }   // at his rally point: he holds it as long as his plan says, then goes on to the noise (a muster) or stays by his post there (the gate)
       else { e.lookT = (e.lookT || 0) + dt; e.face += Math.sin(e.lookT * 1.3 + e.seed) * dt * 1.4; if (e.lookT > 7) { e.heardAt = null; e.lookT = 0; e.noT = 0; } }
     }
     else { e.noT = (e.noT || 0) + dt; if (e.homeR && e.post && e.noT <= 22) postStep(e, dt); if (e.post && e.noT > (e.homeR ? 22 : 6)) { postStep(e, dt); if (e.atPost) { e.awake = false; e.noT = 0; e.wakeT = 0; } } }

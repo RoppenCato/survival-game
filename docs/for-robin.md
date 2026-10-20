@@ -54,3 +54,10 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
    bots: five of yours told to hold before a town's gate now put three of twenty out of the fight (was one). The ram, the
    town fighting a fire and the men who go round by the other gate are not built yet. The five ways they come at you:
    `duel` (one on one first) stands as the default; the trial of step 6 will say if another is better.
+8. **The defence's tactics (raid step 6), mine:** every place draws one plan with its seed: gate (all to the gate on an
+   alarm, holding it), hall (the hall's men stay by the hall and its chest), hunters (they chase further and see further),
+   watch (three walk rounds by day, all sharper), muster (they gather at the fire, hold ten seconds, then come together),
+   bows (a bowman on the watchtower sees and shoots over the wall). The bots on one town with five of yours
+   (`tests/battle.js plans`): the men stand 300 to 460 units from the yard's middle by plan and you would fall at 21 (bows,
+   muster) to 60 s (hall). You can read a plan by how its men stand when you walk in. Reactions (falling back to the hall
+   when losing, a sortie when you carry) are not built.

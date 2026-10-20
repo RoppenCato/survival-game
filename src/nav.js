@@ -198,7 +198,7 @@ var Nav = (function () {
       if (keys) { var L = g.lockAt(ox, oy, nx, ny); if (L) (g.opened = g.opened || []).push(L); }
       return g.blocked(ox, oy, nx, ny, keys);
     };
-    Combat.api.wall = function (x0, y0, x1, y1) { var g = at(x0, y0) || at(x1, y1); return g ? g.blocked(x0, y0, x1, y1, false) : false; };
+    Combat.api.wall = function (x0, y0, x1, y1) { var g = at(x0, y0) || at(x1, y1); if (!g) return false; if (g.towers) for (var ti = 0; ti < g.towers.length; ti++) if (Math.hypot(g.towers[ti].x - x0, g.towers[ti].y - y0) < 18) return false; return g.blocked(x0, y0, x1, y1, false); };   // (from a watchtower a man sees and shoots over the wall: g.towers, the place's tower props; raid step 6)
     Combat.api.walled = function (x, y) { return !!at(x, y); };   // are the walls at this place known to a grid (then a wall's own circles are not needed to stop a mover there, and must not push him: see moveCircle)
     return { keysOf: keysOf, chokeFull: chokeFull };
   }
