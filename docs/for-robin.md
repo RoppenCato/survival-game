@@ -47,3 +47,10 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
    (hurt 30 to 60); a village alone 67 to 100%, with men every time; a trading post alone never, with 2 every time; a seat
    alone never, with 2 sometimes, with 5 mostly; a town never, even with 5 (a longship's crew, as you decided). Say which
    rungs feel wrong and I move the numbers.
+7. **Ways in (raid step 5), my choices:** by day one yard man in two walks a round; a dead man of the place seen by anyone of
+   it within about 100 units (a villager within 44 whichever way he faces) raises the cry and the alarm, so you drag a body
+   out of sight (E on him); taking from their chest with a villager or a man looking raises "Thief!" and the alarm; a held
+   line of shields lets through half of what a lone shield would and only a heavy blow breaks it (`MEN.wallK` 0.5). The
+   bots: five of yours told to hold before a town's gate now put three of twenty out of the fight (was one). The ram, the
+   town fighting a fire and the men who go round by the other gate are not built yet. The five ways they come at you:
+   `duel` (one on one first) stands as the default; the trial of step 6 will say if another is better.

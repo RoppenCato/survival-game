@@ -2866,8 +2866,8 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   var mult = 1, weak = false, man = e.type === 'soldier', blocked = false, broke = false;
   var bigE = e.type === 'brute';
   if (man && e.shield && e.guard > 0 && Math.abs(wrap(ang + Math.PI - e.face)) <= (e.inLine ? MEN.frontLine : MEN.front)) {   // on his shield: a share gets through; an axe breaks the guard, a club staggers through it
-    blocked = true; broke = !!hitFlags.guardBreak || stag >= 40;
-    dmg *= kind === 'proj' ? 0 : broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1);   // (an arrow on a raised shield is stopped)   // the sword is the surest guard; a blow that breaks the guard mostly gets through
+    blocked = true; broke = (!!hitFlags.guardBreak || stag >= 40) && !(e.inLine && kind !== 'heavy');   /* (a shield wall: only a heavy blow breaks a shield in it: raid step 5, 2026-10-20) */
+    dmg *= kind === 'proj' ? 0 : broke ? MEN.blockBroken : (kind === 'heavy' ? MEN.blockHeavy : MEN.blockLight) * (e.wpn.kind === 'sword' ? 0.6 : 1); if (e.inLine) dmg *= MEN.wallK;   // (an arrow on a raised shield is stopped)   // the sword is the surest guard; a blow that breaks the guard mostly gets through
     if (broke) { e.guard = 0; e.guardAge = 0; e.guardCd = 1.1; e.brokeT = 1; } else { e.blocked = (e.blocked || 0) + 1; e.guard = Math.max(e.guard, 0.35); e.cd = Math.min(e.cd, 0.2 + (1 - e.w01) * 0.4); }
   }
   if (man) dmg *= 1 - (e.armor || 0);
@@ -3421,7 +3421,7 @@ var MEN = {
   guard: 0.75, guardMax: 1.7, guardCd: [1.5, 0.7],
   blockLight: 0.3, blockHeavy: 0.55, blockBroken: 0.45, front: 1.7, frontLine: 2.7,
   slots: 2, gapT: 0.35, gapHero: 0.75, // how many may be striking one target at once, and the least time between two blows LANDING on it (on the hero: as long as he is untouchable after a blow, so no two land together and none is wasted)
-  backAt: 0.6, yieldAt: 0.25, dropAt: 0.45,   // dropAt: a carrier told to hold on drops what he carries only under this share of his health (raid step 3, mine)
+  backAt: 0.6, yieldAt: 0.25, dropAt: 0.45, wallK: 0.5,   // wallK: in a held line a shield lets through this much of what it would alone, and only a heavy blow breaks it (the shield wall, raid step 5, mine)   // dropAt: a carrier told to hold on drops what he carries only under this share of his health (raid step 3, mine)
   // Man to man (2026-10-13, Robin: "everything just gathers up like ants around a target... more like lots of individual
   // battles where things can go either way"). onOne: how many of a side may be AT one man at first (0: the old way, everybody
   // on the nearest); onHero: at the hero; joinAfter: a man who has been fought this long without an end gets one more on him

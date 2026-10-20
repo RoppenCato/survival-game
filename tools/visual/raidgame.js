@@ -81,5 +81,27 @@
     } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
     return out;
   }
-  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, town: town, men: men, sim: sim, own: own };
+  // Step 5: ways in. By day a yard man walks the round; a man killed quietly and left in the open is found and the cry goes up;
+  // a body dragged with you moves with you and is laid down again; taking from a chest of theirs before a villager's eyes is
+  // seen (the cry, the alarm); nothing of it at a place at peace with nobody looking.
+  function step5() {
+    var t = town(), out = {}; if (!t) return { fault: 'no town outside home water' }; var vi = t.i, d = D(), P = Combat.dbg().P;
+    try {
+    d.B.items = d.B.items.filter(function (it) { return !it.claim; }); d.timeOf(400); var c = d.toVillage(vi); sim(4);
+    var ms = men(vi); out.men = ms.length; out.dayWatch = ms.filter(function (e) { return e.dayWatch; }).map(function (e) { return e.name; });
+    sim(8); out.onRound = ms.filter(function (e) { return e.dayWatch && e.errand && e.errand.round; }).length;
+    // a man killed quietly in the open: who finds him
+    var victim = ms.filter(function (e) { return e.kindOf === 'yard' && !e.dayWatch; })[0] || ms[3]; victim.dead = true; victim.deadT = 0; victim.deadFor = 90; victim.hp = 0; d.goto(c.x + 900, c.y);   // (the hero out of the yard but near: a place keeps its day, and finds its dead, only while he is near)
+    var t0 = 0; for (var i = 0; i < 60 && !victim.found; i++) { sim(1); t0++; } out.found = { after: victim.found ? t0 : null, raid: d.raid().raid ? d.raid().raid.lvl : 0 };
+    // the body dragged: it follows the hero and is laid down
+    sim(45); d.toVillage(vi); sim(0.3); var body = ms.filter(function (e) { return e.dead && !e.held; })[0]; if (body) { d.goto(body.x + 10, body.y); out.prompt = d.eWhat() && d.eWhat().say; d.dragBody(body); d.goto(body.x + 300, body.y + 40); sim(0.5); out.dragged = Math.round(Math.hypot(body.x - P.x, body.y - P.y)); d.putDown(); sim(0.3); out.laid = [!body.held, Math.round(Math.hypot(body.x - P.x, body.y - P.y))]; }
+    // theft in plain sight: a chest of theirs with a villager before it
+    var chest = d.B.items.filter(function (it) { return it.store && !it.heavy && d.villages && true && Math.abs(it.x - c.x) < 1500 && Math.abs(it.y - c.y) < 1500; })[0];
+    if (chest) { var fk = d.folk().filter(function (f) { return f.vi === vi && !f.dead && !f.hidden; })[0]; if (fk) { fk.x = chest.x + 40; fk.y = chest.y + 10; fk.face = Math.PI; fk.hidden = false; fk.fleeing = false; } var lv0 = d.raid().raid ? d.raid().raid.lvl : 0; d.goto(chest.x, chest.y + 12); sim(0.3); d.theft(chest); sim(0.5); out.theft = { before: lv0, after: d.raid().raid ? d.raid().raid.lvl : 0, cry: fk && fk.say }; }
+    out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+    out.fault = !out.dayWatch.length || !out.onRound || !out.found.after || out.found.raid < 2 || (out.dragged != null && out.dragged > 30) || (out.theft && out.theft.after < 2) ? '!!' : '';
+    } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
+    return out;
+  }
+  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, town: town, men: men, sim: sim, own: own };
 })();

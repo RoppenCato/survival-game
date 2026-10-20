@@ -1,6 +1,6 @@
 # The raid in the real game: the build order
 
-**Approved by Robin (2026-10-20: "do all the steps, don't stop to ask; keep a list for me": `docs/for-robin.md`). Status: steps 1 to 4 built and checked 2026-10-20 (`tools/visual/raidgame.js` step1, step2, step2b, step3; `tests/battle.js arches` for step 4); step 5 next.**
+**Approved by Robin (2026-10-20: "do all the steps, don't stop to ask; keep a list for me": `docs/for-robin.md`). Status: steps 1 to 4 built and checked 2026-10-20 (`tools/visual/raidgame.js` step1, step2, step2b, step3; `tests/battle.js arches` for step 4); step 5's first half built (the day watch, bodies found, dragging, theft seen, the shield wall: step5); its second half (the ram, the town fighting fire, men going round by the other gate, the way chosen) and step 6 next.**
 
 **The plan as written (2026-10-20).** Robin's order, in his words: *implement the raid in the real game; different
 sizes of villages, different levels of defence; test each step; different ways of entering villages and buildings (sneaking in,

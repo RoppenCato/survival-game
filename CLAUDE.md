@@ -572,7 +572,16 @@ raid's ground too. One ashore when the ship has sailed 700 units off is **lost**
 day, to be won back in step 9); one the engine kills is dead (`seen.hirdDead`). **A carrier holds on until badly hurt**
 (`MEN.dropAt` 0.45; the carry errand's `hold`). **The hero who falls on a raid with a man of his standing within 600 units
 wakes aboard the ship with his men** (`wakeAtSea`, `raidMenAboard`; the chest he carried stays where he fell). Admin: "A
-karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, `claimAt`, `hirdList`, `raidShore`, `raftUse`. `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
+karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, `claimAt`, `hirdList`, `raidShore`, `raftUse`.
+  **Ways in (step 5, the first half, 2026-10-20):** by day one yard man in two **walks the round** the night watch walks
+  (`dayWatch`, in `sleepTick`); **a dead man of the place seen by one of its people or its men is found** (`bodiesFound`, every
+  half second while the hero is near: the cry and the alarm; the night watch too), so **a body can be dragged** (E on a fallen
+  foe: "Drag his body", `dragBody`, it follows you and E lays it down, lying 90 s more); **taking from a chest of theirs before a
+  villager's or a man's eyes is seen** (`theftSeen` on the chest board's take: "Thief!"); **a held line is a shield wall**
+  (the engine: `MEN.wallK` 0.5 of a blow gets through a shield in a line, and only a heavy blow breaks it; measured: five
+  held before the gate put three of twenty out, was one). The lines are `LORE?`. **Still to build of step 5:** the hird's
+  ram, the town fighting a fire near its well, men at a full gate going round by the other, and one of the five ways chosen
+  (`duel` stands). `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
 way-finding is in every real village. Robin has played none of it.
 
 - **Sides:** every fighter has `e.side` (0 against the hero, 1 with him); the hero's blows pass his friends; beasts know only
