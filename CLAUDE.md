@@ -560,7 +560,15 @@ seeded, a man killed stays dead by his number (`seen.menDead[vi]`, saved). Home 
 and Destruction scenes make their own. **The settlement remembers (step 2):** its pieces are in `B` and saved (a broken door,
 a taken chest, a burnt wall survive a reload); `seen.raids[vi]` counts its raids and `seen.lastRaid[vi]` the day; its folk speak
 of it after a load too (`raidedLines`); **word spreads** (`wordSpreads`, mine): every place within `WORD_REACH` 3200 units is
-wary from then (`seen.wary[vj]`): its men come with wits +2 and rise twice as fast, and its gate man says so (`LORE?`). `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
+wary from then (`seen.wary[vj]`): its men come with wits +2 and rise twice as fast, and its gate man says so (`LORE?`). **The ship, the hird and the loot home (step 3):** a raid is a shore outside home water (`onRaidGround`: the island's ring 1 or
+more); stepping ashore there, every hirdman aboard becomes a man of the engine (side 1, `hirdToMan`: copper arms by his number,
+leather and a shield, following, fighting, carrying, going down) and E at the ship makes him a hirdman again (`hirdBack`); on
+home ground they step off as hirdmen as before; on another shore of home water they keep the boat. A hirdman follows on a
+raid's ground too. One ashore when the ship has sailed 700 units off is **lost** (`hirdLost`: `m.lost` with the place and the
+day, to be won back in step 9); one the engine kills is dead (`seen.hirdDead`). **A carrier holds on until badly hurt**
+(`MEN.dropAt` 0.45; the carry errand's `hold`). **The hero who falls on a raid with a man of his standing within 600 units
+wakes aboard the ship with his men** (`wakeAtSea`, `raidMenAboard`; the chest he carried stays where he fell). Admin: "A
+karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, `claimAt`, `hirdList`, `raidShore`, `raftUse`. `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
 way-finding is in every real village. Robin has played none of it.
 
 - **Sides:** every fighter has `e.side` (0 against the hero, 1 with him); the hero's blows pass his friends; beasts know only

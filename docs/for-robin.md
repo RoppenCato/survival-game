@@ -33,3 +33,8 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
    wreckage lying in the hall's ash (charred beams, burnt heaps, the torn-off gate leaf), ash and soot painted, the new
    palisade stakes and gate, thatch in courses with a turf ridge, a smoke hole in a hearth room's ridge. Start a new game and
    walk to the steading; the Art Director has a board of every village too.
+5. **The hird on a raid (raid step 3), my choices:** a hirdman ashore on a raid fights with copper (an axe, a spear, a sword by
+   his number) in leather with a shield, until looted iron arms him (not built); one left ashore when the ship has sailed 700
+   units off is lost (taken, to be won back in step 9); a carrier holds on until under 45% of his health (`MEN.dropAt`); if
+   you fall on a raid with any of your men standing within 600 units you wake aboard the ship with them, the chest you
+   carried left where you fell, your bag kept. Admin: "A karve by you", "Four hirdmen join".

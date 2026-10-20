@@ -49,5 +49,37 @@
     out.fault = (out.door && out.door.broken !== 1) || out.silverLeft !== 0 || !out.folkDead.length || (expect && out.men !== 18) || !out.raids ? '!!' : '';
     return out;
   }
-  window.R = { step1: step1, step2: step2, step2b: step2b, town: town, men: men, sim: sim };
+  // Step 3: the ship, the hird and the loot home. A karve off the town's shore with the hero and four men; they board, step ashore
+  // on the raid as the engine's men, the church's silver is lifted and stowed, a man left ashore is lost when the ship sails,
+  // the men board again as hirdmen; the ship teleported home, stepping ashore in territory puts them off as hirdmen; the silver
+  // unloaded; saved and reloaded: the hird kept.
+  function own() { return W().enemies.filter(function (e) { return e.type === 'soldier' && e.side === 1 && !e.dead; }); }
+  function step3() {
+    var t = town(), out = {}; if (!t) return { fault: 'no town outside home water' }; var vi = t.i, d = D(), P = Combat.dbg().P, T = 32;
+    try {
+    d.clearMen(); d.B.items = d.B.items.filter(function (it) { return !it.claim; }); d.toSteading(); sim(0.3); var wd0 = d.world(), st0 = { x: P.x, y: P.y }, sea0 = null, land0 = null;
+    for (var dd0 = 20; dd0 < 900 && !sea0; dd0 += 10) for (var a0 = 0; a0 < 16 && !sea0; a0++) { var sx0 = st0.x + Math.cos(a0 * 0.3927) * dd0, sy0 = st0.y + Math.sin(a0 * 0.3927) * dd0; if (wd0.isWater(sx0, sy0)) sea0 = { x: sx0, y: sy0 }; }
+    for (var dd1 = 16; dd1 < 160 && !land0; dd1 += 8) for (var a1 = 0; a1 < 12 && !land0; a1++) { var lx0 = sea0.x + Math.cos(a1 * 0.5236) * dd1, ly0 = sea0.y + Math.sin(a1 * 0.5236) * dd1; if (wd0.isLand(lx0, ly0)) land0 = { x: lx0, y: ly0 }; }
+    d.goto(land0.x, land0.y); d.admin('arnor'); sim(0.5); out.stone = !!d.hird; out.hird0 = d.hirdList().length;           // the first claim stone at the steading's shore: territory there, and Arnor joins
+    var home = { x: land0.x, y: land0.y }, homeSea = sea0;
+    d.toVillage(vi); sim(0.5); var sh = d.raidShore(vi); if (!sh) return { fault: 'no shore near the town' };
+    d.giveBoat('karve', { x: 200, y: 200 }); var r = d.raftObj(); r.x = sh.sea.x; r.y = sh.sea.y; r.h = sh.h; r.vx = r.vy = 0; r.aboard = false; r.cargo = [];
+    d.goto(sh.land.x, sh.land.y); d.giveMen(4); out.hird1 = d.hirdList().length; sim(1);   // at the ship's side, the men at your back
+    d.raftUse(); sim(0.5); out.aboard = d.hirdList().filter(function (m) { return m.aboard; }).length; out.raftAboard = r.aboard;   // E at the ship: aboard with the men at the oars
+    d.raftUse(); sim(1); out.ashoreMen = own().length; out.asMan = d.hirdList().filter(function (m) { return m.asMan; }).length;   // E again: ashore on the raid as the engine's men
+    var B = d.B, chest = B.items.filter(function (it) { return it.heavy && it.heavy.silver; })[0]; out.silver = chest ? chest.heavy.silver : null;
+    if (chest) { delete chest.locked; d.goto(chest.x + 6, chest.y + 10); sim(0.3); d.raid().lift(chest); sim(0.3); out.carrying = !!d.raid().carrying; d.goto(sh.land.x, sh.land.y); sim(0.3); d.raid().stow(); sim(0.3); out.cargo = (r.cargo || []).length; }
+    var ms = own(); var left = ms[ms.length - 1]; left.x = sh.dry.x + 900; left.y = sh.dry.y; left.order = 'hold'; left.holdAt = { x: left.x, y: left.y };   // one man far from the ship when it sails
+    d.goto(sh.land.x, sh.land.y); ms.slice(0, 3).forEach(function (e, i) { e.x = sh.land.x + 10 + i * 12; e.y = sh.land.y + 8; }); sim(0.3);
+    d.raftUse(); sim(0.5); out.aboard2 = d.hirdList().filter(function (m) { return m.aboard; }).length; out.stillAshore = own().length;
+    r.x = sh.sea.x + 3000; r.y = sh.sea.y; P.x = r.x; P.y = r.y; sim(5); out.lost = d.hirdList().filter(function (m) { return m.lost; }).map(function (m) { return m.name; });   // the ship far off: he is lost
+    r.aboard = true; r.x = homeSea.x; r.y = homeSea.y; P.x = r.x; P.y = r.y;                                                             // home: the karve at the steading's shore, within the first stone's reach
+    d.raftUse(); sim(0.5); out.homeHird = d.hirdList().filter(function (m) { return !m.aboard && !m.asMan && !m.lost; }).length; out.homeMen = own().length;
+    out.silverBefore = d.inv.silver || 0; d.raid().unload(); out.silverAfter = d.inv.silver || 0;
+    d.saveNow(); out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+    out.fault = out.aboard !== 4 || out.ashoreMen !== 4 || (out.silver != null && out.cargo !== 1) || out.lost.length !== 1 || out.homeHird !== 4 || out.homeMen !== 0 || (out.silver != null && out.silverAfter <= out.silverBefore) ? '!!' : '';   // (Arnor stays at his bench: four given men board)
+    } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
+    return out;
+  }
+  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, town: town, men: men, sim: sim, own: own };
 })();

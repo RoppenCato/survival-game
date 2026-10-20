@@ -388,7 +388,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   if (!src) logEv({ k: 'hit', e: e, dmg: dealt, crit: crit, kind: kind, blocked: blocked, broke: broke, weak: weak, quiet: quiet, killing: e.hp <= 0 });
   if (!src) { W.heroHit = e; W.heroHitT = W.t; if (man) noise(e.x, e.y, quiet ? MEN.quiet : MEN.noise.blow * din(), false, quiet ? e : null); }
   else if (man && src.type === 'soldier' && !src.dead) { e.hitBy = src; e.hitByT = W.t; }   // (2026-10-14: a man remembers who struck him last, and turns to him: see pickTarget)   // (the man the quiet blow falls on is not one who heard it)
-  if (e.errand) { var er0 = e.errand; e.errand = null; if (er0.drop) er0.drop(e); }   // struck on an errand: that is the end of it (he drops what he carries, and fights)
+  if (e.errand) { var er0 = e.errand; if (er0.hold && e.hp > e.maxHp * MEN.dropAt) { /* a carrier holds on until badly hurt (raid step 3, 2026-10-20; decided 2026-10-13) */ } else { e.errand = null; if (er0.drop) er0.drop(e); } }   // struck on an errand: that is the end of it (he drops what he carries, and fights), unless he was told to hold on
   if (e.side === 1 && e.hp <= 0 && !e.mortal) {            // one of the hero's own: down, not dead
     e.flash = 1; e.flashRgb = '255,255,255'; spark(e.x, e.y, 6, '#ff8a6a', 90); goDown(e); return;
   }
@@ -923,7 +923,7 @@ var MEN = {
   guard: 0.75, guardMax: 1.7, guardCd: [1.5, 0.7],
   blockLight: 0.3, blockHeavy: 0.55, blockBroken: 0.45, front: 1.7, frontLine: 2.7,
   slots: 2, gapT: 0.35, gapHero: 0.75, // how many may be striking one target at once, and the least time between two blows LANDING on it (on the hero: as long as he is untouchable after a blow, so no two land together and none is wasted)
-  backAt: 0.6, yieldAt: 0.25,
+  backAt: 0.6, yieldAt: 0.25, dropAt: 0.45,   // dropAt: a carrier told to hold on drops what he carries only under this share of his health (raid step 3, mine)
   // Man to man (2026-10-13, Robin: "everything just gathers up like ants around a target... more like lots of individual
   // battles where things can go either way"). onOne: how many of a side may be AT one man at first (0: the old way, everybody
   // on the nearest); onHero: at the hero; joinAfter: a man who has been fought this long without an end gets one more on him
