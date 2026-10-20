@@ -438,8 +438,8 @@ thing's picture large, a sub-title (`infoSub`, mine), the tale, its numbers and 
 the number needed in its corner, red when you have too few, and "Short of fibre" beside them** (Robin: "it should just be 3",
 no "Needs"), and the Craft button; the station tabs go down its left edge; a thing's hover card is vellum, over every board.
 A board is drawn in Robin's canvas pixels (`hPx`, three to a unit) so the spec's numbers stand as they are; the mouse is
-tested in units. **The type is Alegreya** (Robin's pick; `UI_FACE`), loaded from Google Fonts by a link in the page, Palatino
-while it loads or offline (embedding it means downloading the font: asked). On the Tab screen a click on
+tested in units. **The type is Alegreya** (Robin's pick; `UI_FACE`): its Latin files from Google Fonts in `assets/fonts`
+(SIL OFL, `OFL.txt`), inlined into the page by the build (`__FONTS__`), so it works offline. On the Tab screen a click on
 the panel or the bag reaches them and the crafting board stays open. E does one thing by one rule, `eWhat(P)` (a new thing E can do is one `add(...)` line there); the HUD
 is health and stamina top left, the chart and the meal top right; damage numbers are the engine's damage × 10 (`SHOW`), whole.
 

@@ -8408,7 +8408,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
      frames the clock lies between and how far; mixTo draws the two into a small canvas, each at its share and added, which
      is the true in-between of the two pictures, edges and all. Only clips that move little: a walk would show two sets of legs. */
   var BLEND = { idle: 1, idle_look: 1, sit: 1, play: 1 };
-  function blends(nm, A) { return !!A && A.frames > 1 && (BLEND[nm] || A.blend) && typeof document !== 'undefined'; }
+  var CROSSFADE = false;   /* no blending between two frames (Robin, 2026-10-20: the added blend faded the idle in and out "like a drunken thing", the laid-over one left the last frame's outline as a shadow following him): an inked frame cannot be faded into the next, so a slow loop shows whole frames */
+  function blends(nm, A) { return CROSSFADE && !!A && A.frames > 1 && (BLEND[nm] || A.blend) && typeof document !== 'undefined'; }
   function loopAt(A, t) { var p = (t * A.fps) % A.frames; if (p < 0) p += A.frames; var f = Math.floor(p) % A.frames; return { f: f, f2: (f + 1) % A.frames, w: p - Math.floor(p) }; }
   function mixTo(H, im, fw, fh, d, f, f2, w) {
     var MB = H.mixBy || (H.mixBy = {}), mk = fw + 'x' + fh, cv2 = MB[mk]; if (!cv2) { cv2 = MB[mk] = document.createElement('canvas'); cv2.width = fw; cv2.height = fh; }   /* (a canvas a size: a layer in a box of its own is another size than the body, every frame) */

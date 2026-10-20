@@ -96,6 +96,14 @@ def hud_art():
         if fn.endswith('.png'): out[fn[:-4]] = '../assets/hud/' + fn + '?v=' + hashlib.md5(open(os.path.join(d, fn), 'rb').read()).hexdigest()[:8]
     return json.dumps(out)
 SRC['__HUD__'] = hud_art()
+def font_faces():
+    """the book face, Alegreya (Robin's pick, 2026-10-20; SIL OFL, assets/fonts/OFL.txt), its Latin files from Google Fonts inlined so it works offline"""
+    d = os.path.join(ROOT, 'assets', 'fonts'); out = []
+    for fn, style in [('alegreya-latin.woff2', 'normal'), ('alegreya-italic-latin.woff2', 'italic')]:
+        fp = os.path.join(d, fn)
+        if os.path.exists(fp): out.append("@font-face{font-family:'Alegreya';font-style:%s;font-weight:400 900;font-display:block;src:url(data:font/woff2;base64,%s) format('woff2');}" % (style, base64.b64encode(open(fp, 'rb').read()).decode()))
+    return ''.join(out)
+SRC['__FONTS__'] = font_faces()
 def prop_images():
     """the Blender set pieces (tools/props.js: assets/props/<name>.png and props.json): the peaks, the cave mouth"""
     jp = os.path.join(ROOT, 'assets', 'props', 'props.json')

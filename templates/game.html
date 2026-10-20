@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>The game</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,700;1,400&display=swap">
+<style>__FONTS__</style>
 <style>
 :root{
   box-sizing:border-box;
@@ -3674,7 +3674,7 @@ __COMBAT__
      they are; what the mouse can hit stays in units. ---------- */
   var HUD_ART = __HUD__, HUD_IMG = {}, HUD_PAT = {};
   (function () { if (!HUD_ART) return; for (var k in HUD_ART) { var im = new Image(); im.src = HUD_ART[k]; HUD_IMG[k] = im; } })();
-  var UI_FACE = "'Alegreya', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif";   /* the book face: Alegreya (Robin's pick in the studio's panel picker, 2026-10-20), loaded from Google Fonts; Palatino while it loads */
+  var UI_FACE = "'Alegreya', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif";   /* the book face: Alegreya (Robin's pick in the studio's panel picker, 2026-10-20), inlined in the page (assets/fonts, SIL OFL); Palatino only if it fails */
   if (typeof document !== 'undefined' && document.fonts && document.fonts.load) ['16px Alegreya', 'bold 16px Alegreya', 'italic 16px Alegreya'].forEach(function (f) { try { document.fonts.load(f).catch(function () {}); } catch (eF) {} });
   var RUNE_FACE = "'Segoe UI Historic', 'Noto Sans Runic', serif";
   var HC = { gold: '#ead08a', short: '#e0604c', cream: '#f0e3c4', ink: '#3b2a1f', sepia: '#6b5236', rubric: '#9e3326', ochre: '#d9a845', well: 'rgba(22,13,8,0.55)', under: '#d8c49c', dark: '#1d120b' };
