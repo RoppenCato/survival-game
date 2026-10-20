@@ -524,7 +524,7 @@ __SPRITES_JS__
     var names = Object.keys(SP).filter(function (nm) { return !SP[nm].meta.boxed; }), MODELS = {};   // the people's sheets are layers in boxes of their own (Sprites.person): not a model of this kind
     names.forEach(function (nm) { MODELS[nm] = Sprites.load(SP, nm); });
     function H() { return MODELS[cur]; }
-    var LABEL = { 'hero2-mixamo': 'The hero', 'boar': 'Wild boar', 'deer': 'Deer', 'wolf': 'Wolf', 'bear': 'Bear', 'moose': 'Moose', 'snake': 'Adder', 'troll_boulder': 'Mountain troll (Bauer)', 'troll_forest': 'Forest troll (Kittelsen)', 'troll_maw': 'The Gape (new)', 'troll_three': 'Three-headed troll (new)', 'draugr': 'Draugr', 'huldra': 'Huldra', 'nacken': 'Näcken', 'bysen': 'Bysen', 'troll_mor': 'Trollmor (new)' };
+    var LABEL = { 'hero-kit': 'The hero (the kit)', 'hero2-mixamo': 'The old hero (Mixamo)', 'boar': 'Wild boar', 'deer': 'Deer', 'wolf': 'Wolf', 'bear': 'Bear', 'moose': 'Moose', 'snake': 'Adder', 'troll_boulder': 'Mountain troll (Bauer)', 'troll_forest': 'Forest troll (Kittelsen)', 'troll_maw': 'The Gape (new)', 'troll_three': 'Three-headed troll (new)', 'draugr': 'Draugr', 'huldra': 'Huldra', 'nacken': 'Näcken', 'bysen': 'Bysen', 'troll_mor': 'Trollmor (new)' };
     var NOTE = {
       'hero2-mixamo': 'The fitted hero on the Mixamo skeleton with eighteen Mixamo clips (2026-10-09): idle, looking around, walk, run, two sword slashes, bow draw and shot, hit, death, chop, mine, pick up, open a lid, drink, sit down, sit, stand up. Walk and run from the keys; the rest on the keys under Clips.' };
     var SPR_PX = Sprites.PX, cur = null, gear = {}, zoom = 1, night = false, anim = 'idle', seated = false, swingNext = 0, active = false;
@@ -553,7 +553,7 @@ __SPRITES_JS__
     window.addEventListener('keydown', function (e) { if (!active || !CLIPKEYS[e.code] || typing(e) || e.repeat) return; var M = meta(); if (!M || Object.keys(M.anims).length <= 2) return; if (H().clip) return; CLIPKEYS[e.code](); e.preventDefault(); });
     function attachModel() { Sprites.attach(Combat, H(), { scale: function () { return zoom * hscale; }, shadow: function () { return !night; }, shadowHue: kit.STYLE.shadowHue, layers: layersOn }); }
     function useNote() { var u = Sprites.heroName(SP, localStorage); $('usenote').textContent = 'The game and every editor draw the hero from ' + (LABEL[u] || u) + '. Use in the game makes the chosen model the hero (game.blenderHero); only a model with the Mixamo clips plays the actions.'; }
-    $('useGame').addEventListener('click', function (e) { if (cur) localStorage.setItem('game.blenderHero', cur); useNote(); e.currentTarget.blur(); });
+    $('useGame').addEventListener('click', function (e) { if (cur) localStorage.setItem('game.heroSet', cur); useNote(); e.currentTarget.blur(); });
     useNote();
     var modelsEl = $('models'), gearEl = $('gear'), animsEl = $('anims');
     function pressed(el, on) { el.setAttribute('aria-pressed', on ? 'true' : 'false'); }

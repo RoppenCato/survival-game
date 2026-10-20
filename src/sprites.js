@@ -15,13 +15,17 @@
     for (var f in set.images) { var im = new Image(); im.src = set.images[f]; H.img[f] = im; }
     return H;
   }
-  function heroName(SP, storage) {
-    var want = null; try { want = storage && storage.getItem('game.blenderHero'); } catch (e) {}
+  function heroName(SP, storage) {        /* the hero's set: game.heroSet (since 2026-10-20; game.blenderHero named the old sets), else the kit, else the old Mixamo hero */
+    var want = null; try { want = storage && storage.getItem('game.heroSet'); } catch (e) {}
     if (want && SP && SP[want]) return want;
+    if (SP && SP['hero-kit']) return 'hero-kit';
     if (SP && SP['hero2-mixamo']) return 'hero2-mixamo';
-    var names = SP ? Object.keys(SP) : []; return names.length ? names[0] : null;
+    var names = SP ? Object.keys(SP).filter(function (k) { return k !== 'people'; }) : []; return names.length ? names[0] : null;
   }
-  function hero(SP, storage) { var nm = heroName(SP, storage); return nm ? load(SP, nm) : null; }
+  function isKit(SP, name) { var st = SP && SP[name]; return !!(st && st.meta && st.meta.boxed); }   // a set in the people's format (an atlas cut per frame, layers in a pile)
+  /* The hero on the people's kit (2026-10-20, Robin: a base body with every garment an equippable layer; the Art Director's
+     hero-kit): loaded lazily like the people, drawn by drawKit through person(), the clip and frame chosen by pick() as before. */
+  function hero(SP, storage) { var nm = heroName(SP, storage); if (!nm) return null; if (!isKit(SP, nm)) return load(SP, nm); var H = loadLazy(SP, nm); H.kit = true; H.clip = null; H.fireT = 0; H.deadT = 0; H.last = null; return H; }
   function scaleOf(storage) { var s = 1; try { var v = parseFloat(storage && storage.getItem('game.blenderScale')); if (v > 0) s = v; } catch (e) {} return s; }
   function dirOf(M, face) {
     var n = M.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
@@ -54,10 +58,13 @@
       if (P.mode === 'gather') { var tl = opts.tool ? opts.tool() : null; nm = tl === 'pick' ? 'mine' : 'chop'; }
       else nm = (a.combo % 2) ? 'attack2' : 'attack1';
       if (A[nm] && A.chop && opts.layers && !shows(A[nm], opts.layers) && shows(A.chop, opts.layers)) nm = 'chop';
-      if (P.mode !== 'gather' && A.thrust && opts.layers && holds(opts.layers, 'spearWood') && shows(A.thrust, opts.layers)) {   /* the spear stabs (2026-10-15, Robin: "he should also be doing a stabbing motion with spear, not swing"): the art studio's thrust, its drive (frames 5 to 7) on the moment the blow lands, which is the windup's end */
+      var onContact = function (nmC) { var AC = A[nmC], cn = AC.contact, n = AC.frames, ph0 = a.ph, u0 = ph0 === 'windup' ? a.t / Math.max(0.001, sd.wu) : ph0 === 'active' ? a.t / Math.max(0.001, sd.ac) : a.t / Math.max(0.001, sd.rec); u0 = Math.max(0, Math.min(0.999, u0)); return { a: nmC, f: ph0 === 'windup' ? Math.min(cn, Math.floor(u0 * cn)) : ph0 === 'active' ? cn : Math.min(n - 1, cn + 1 + Math.floor(u0 * (n - 1 - cn))) }; };   /* (2026-10-20: the kit's clips carry anims.<clip>.contact, the frame the blow lands on) */
+      if (P.mode !== 'gather' && A.thrust && opts.layers && holds(opts.layers, 'spearWood') && shows(A.thrust, opts.layers)) {
+        if (A.thrust.contact != null) return onContact('thrust');   /* the spear stabs (2026-10-15, Robin: "he should also be doing a stabbing motion with spear, not swing"): the art studio's thrust, its drive (frames 5 to 7) on the moment the blow lands, which is the windup's end */
         var ph = a.ph, uu = ph === 'windup' ? a.t / Math.max(0.001, sd.wu) : ph === 'active' ? a.t / Math.max(0.001, sd.ac) : a.t / Math.max(0.001, sd.rec); uu = Math.max(0, Math.min(1, uu));
         return { a: 'thrust', f: frameAt(A.thrust, Math.min(0.999, ph === 'windup' ? 0.38 * uu : ph === 'active' ? 0.38 + 0.22 * uu : 0.6 + 0.4 * uu)) };
       }   /* a clip that cannot show what is in the hand (the hero's slashes have no axe: Robin, 2026-10-15, "the axe seems invisible when hitting") gives way to one that can: the chop, an overhead axe blow */
+      if (A[nm] && A[nm].contact != null) return onContact(nm);
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
     if (H.clip && !A[H.clip.name]) H.clip = null;
@@ -176,9 +183,12 @@
   function attach(Combat, H, opts) {
     opts = opts || {};
     if (!H) { Combat.api.heroSprite = null; return null; }
+    if (H.kit) peopleWarm(H, kitLook(H, null), ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'chop', 'mine', 'death']);   // the first look's sheets asked for at once
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
-      draw(c, H, x, y, face, an, dashing, P, { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool });
+      var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool };
+      if (H.kit) { drawKit(c, H, x, y, face, an, dashing, P, o, (opts.look && opts.look(face)) || kitLook(H, o.layers)); return; }
+      draw(c, H, x, y, face, an, dashing, P, o);
     };
     return H;
   }
@@ -224,7 +234,30 @@
     if (An.hands) { var rows = An.hands[M.dirs[d]], row = rows && rows[f]; if (row && row.length) e.eyes = row.map(function (h) { return [(h[0] - AN.x) * s, (h[1] - AN.y) * s]; }); }
     return true;
   }
-  function drawDead(c, H, x, y, face, an, P, opts) { if (H) { tick(H, P); draw(c, H, x, y, face, an, false, P, opts || {}); } }
+  function drawDead(c, H, x, y, face, an, P, opts) { if (H) { tick(H, P); if (H.kit) drawKit(c, H, x, y, face, an, false, P, opts || {}, (opts && opts.look) || kitLook(H, null)); else draw(c, H, x, y, face, an, false, P, opts || {}); } }
+  /* The kit's starter look (Robin's picks of 2026-10-20: the undyed cream tunic, the dark trousers, tied-back hair and the short
+     beard in red-brown, the plain wooden shield) with what an older page's layers list holds in the hand; a page that knows what
+     the hero wears gives its own look (the game's heroLook). */
+  var KIT_START = { tunic: '#c9b897', legs: '#5a4a3c', hair: '#9a4b26', shield: '#9a7048' };
+  function kitLook(H, layers) {
+    var has = function (l) { return H.meta.layers.indexOf(l) >= 0; }, L = [{ l: 'body' }, { l: 'legs', t: KIT_START.legs }, { l: 'tunic', t: KIT_START.tunic }, { l: 'shoes' }, { l: 'belt' }, { l: 'beardA', t: KIT_START.hair }, { l: 'hairA', t: KIT_START.hair }];
+    (layers || []).forEach(function (q) {
+      var n = typeof q === 'string' ? q : q && q.layer; if (!n || n === 'body' || !has(n)) return;
+      if (n === 'shieldFace') L.push({ l: n, t: !q.tint || q.tint === SHIELD_WOOD ? KIT_START.shield : q.tint });
+      else if (n === 'shieldMark') L.push({ l: n, t: q.tint || SHIELD_MARK });
+      else if (n === 'shieldRim') L.push({ l: n });
+      else if (/Metal$/.test(n)) L.push({ l: n, t: (q && q.tint) || '#c4cbd4', metal: 1, hand: 1 });
+      else L.push({ l: n, hand: 1 });
+    });
+    return idOf({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
+  }
+  // the kit hero drawn: pick() chooses the clip and frame from the engine's state as for the old hero, person() piles the layers
+  function drawKit(c, H, x, y, face, an, dashing, P, o, look) {
+    if (!look) return; o.layers = look.L.map(function (q) { return q.l; });
+    var pk = pick(H, P, an, o); H.last = pk; if (!pk) return; var dead = !!P.dead;
+    var ok = person(c, H, look, { clip: pk.a, face: face, f: pk.f, f2: pk.f2, w: pk.w || 0 }, x, y, { scale: o.scale || 1, shadow: o.shadow !== false && !dead, lying: dead && o.shadow !== false ? 1 : 0, shadowHue: o.shadowHue, lit: o.lit, sx: dashing ? 1.1 : 1, sy: dashing ? 0.92 : 1 });
+    if (!ok && typeof c.ellipse === 'function') { c.save(); c.fillStyle = 'rgba(20,24,40,0.22)'; c.beginPath(); c.ellipse(x, y, 9, 3.2, 0, 0, 6.283); c.fill(); c.restore(); }   /* while his sheets load: a soft shadow where he stands, never the old drawn figure (the Art Director, 2026-10-20) */
+  }
   /* The people (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans; one body, with layers).
      Everybody is the one sheet set (assets/sprites/people, packed by tools/people.js: a sheet is an atlas, every frame of
      every layer trimmed to its own pixels; rectsOf lays the pieces out again by the packer's own shelf rule): a body, a tunic and trousers in near white that are coloured here, and hair, beards, a hood, a cap, a helmet,
@@ -242,8 +275,8 @@
   function rectsOf(H, A, clip, layer) {
     var key = clip + '|' + layer, R = H.rc[key]; if (R) return R;
     var s = A.rects && A.rects[layer]; if (!s) return null;
-    var u = b64(s), n = u.length >> 2, out = new Int16Array(n * 6), x = 0, y = 0, sh = 0, MAXW = H.meta.shelf || 1024, i, w, h;
-    for (i = 0; i < n; i++) { w = u[i * 4]; h = u[i * 4 + 1]; if (w && x + w > MAXW && x > 0) { x = 0; y += sh; sh = 0; } out[i * 6] = x; out[i * 6 + 1] = y; out[i * 6 + 2] = w; out[i * 6 + 3] = h; out[i * 6 + 4] = u[i * 4 + 2]; out[i * 6 + 5] = u[i * 4 + 3]; if (w) { x += w; if (h > sh) sh = h; } }
+    var u = b64(s), two = A.rectBytes === 2, n = two ? u.length >> 3 : u.length >> 2, out = new Int16Array(n * 6), x = 0, y = 0, sh = 0, MAXW = H.meta.shelf || 1024, i, w, h, ox, oy, b;   /* (two bytes a number, little-endian, where a clip's own frame is over 255 px: the kit's thrust, 2026-10-20) */
+    for (i = 0; i < n; i++) { if (two) { b = i * 8; w = u[b] | (u[b + 1] << 8); h = u[b + 2] | (u[b + 3] << 8); ox = u[b + 4] | (u[b + 5] << 8); oy = u[b + 6] | (u[b + 7] << 8); } else { w = u[i * 4]; h = u[i * 4 + 1]; ox = u[i * 4 + 2]; oy = u[i * 4 + 3]; } if (w && x + w > MAXW && x > 0) { x = 0; y += sh; sh = 0; } out[i * 6] = x; out[i * 6 + 1] = y; out[i * 6 + 2] = w; out[i * 6 + 3] = h; out[i * 6 + 4] = ox; out[i * 6 + 5] = oy; if (w) { x += w; if (h > sh) sh = h; } }
     return (H.rc[key] = out);
   }
   function imgOf(H, file) { var im = H.img[file]; if (!im && H.src && H.src[file] && typeof Image !== 'undefined') { im = new Image(); im.src = H.src[file]; H.img[file] = im; } return im && im.complete && im.naturalWidth ? im : null; }
@@ -272,15 +305,15 @@
     if (hand && hand.kind) { L.push({ l: hand.kind + 'Wood', hand: 1 }); L.push({ l: hand.kind + 'Metal', t: hand.tint || null, metal: 1, hand: 1 }); }
     var o = idOf({ L: L, s: look.s, sx: look.sx, sy: look.sy }); (look._h || (look._h = {}))[key] = o; o._h = look._h; return o;
   }
-  var RANK = { body: 0, legs: 1, tunic: 2, dress: 3, mail: 4, cloak: 5, beardA: 6, beardB: 6, hairA: 7, hairB: 7, hairC: 7, hood: 8, cap: 8, helm: 8, shieldRim: 9, shieldFace: 9.1 };
+  var RANK = { body: 0, shoes: 0.5, boots: 0.5, legs: 1, tunic: 2, belt: 2.5, dress: 3, coat: 4, mail: 4.1, cloak: 5, brooch: 5.1, armring: 5.2, beardA: 6, beardB: 6, hairA: 7, hairB: 7, hairC: 7, hairHatA: 7, hairHatB: 7, hairHatC: 7, hood: 8, cap: 8, helm: 8, shieldRim: 9, shieldFace: 9.1, shieldMark: 9.2 };
   // Where a layer lies in the pile. The body hides what is behind it already (every layer was rendered with the body held
   // out); this is only about a layer against another: an arm on the far side carries its shield or weapon under the
   // cloak and the mail, an arm on the near side over them. dirs: s sw w nw n ne e se.
   function rankOf(q, d) {
     var r = RANK[q.l];
-    if (q.hand) { var left = q.l.charAt(0) === 'b' && q.l.charAt(1) === 'o'; return (left ? d <= 3 : d === 0 || d >= 5) ? 11 : 4.5; }      // the bow is in the left hand
+    if (q.hand) { var left = q.l.charAt(0) === 'b' && q.l.charAt(1) === 'o'; return (left ? d <= 3 : d === 0 || d >= 5) ? 11 : 3.5; }      // the bow is in the left hand; the far side under the armour and the cloak, over the tunic and the dress (2026-10-20)
     if (r == null) return 11;
-    if (r >= 9) return d <= 3 ? r : 4.3 + (r - 9);
+    if (r >= 9) return d <= 3 ? r : 3.6 + (r - 9);
     return r;
   }
   var PC = { map: new Map(), max: 700, pool: {}, made: 0 };
@@ -326,7 +359,8 @@
   function person(c, H, look, st, x, y, opts) {
     opts = opts || {}; var M = H.meta, clip = M.anims[st.clip] ? st.clip : 'idle', A = M.anims[clip]; if (!A) return false;
     var d = dirOf(M, st.face || 0), f, f2 = -1, w = 0;
-    if (st.k != null) f = frameAt(A, Math.max(0, Math.min(0.999, st.k)));
+    if (st.f != null) { f = Math.max(0, Math.min(A.frames - 1, st.f)); if (st.f2 != null && opts.blend !== false && blends(clip, A)) { if (st.w >= 0.97) f = st.f2; else if (st.w > 0.03) { f2 = st.f2; w = st.w; } } }   /* (the kit hero: pick() gives the frame) */
+    else if (st.k != null) f = frameAt(A, Math.max(0, Math.min(0.999, st.k)));
     else { var lp = loopAt(A, st.t || 0); f = lp.f; if (opts.blend !== false && blends(clip, A)) { if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) { f2 = lp.f2; w = lp.w; } } }
     var e = personFrame(H, look, clip, d, f);
     if (!e && clip !== 'idle' && M.anims.idle) { clip = 'idle'; A = M.anims.idle; f = loopAt(A, st.t || 0).f; f2 = -1; e = personFrame(H, look, clip, d, f); }   // the sheets of this clip are still on their way: he stands as he stood
@@ -394,5 +428,5 @@
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
   function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { loadLazy: loadLazy, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
+  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });

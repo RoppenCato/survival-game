@@ -22,7 +22,11 @@ before it for the club, the sword and the bow, as now.
 | Club | smash | 30 | narrow | slow windup | 0.85 | huge stagger and knockback: it throws beasts back and stuns | low damage, short, slow |
 | Seax | thrust | 25 | a line | very fast | 0.6 | crit chance +20%, costs little stamina, finishes the staggered | no reach, stopped by the first thing it hits |
 | Spear | thrust | 52 | a line | medium | 1.1 | the longest reach; runs through one beast into the next (pierce) | narrow: a beast at your side is missed; weak in a crowd |
-| Dane axe | swing | 44 | huge | very slow | 2 | every hit is heavy; the whole pack goes flying | windup 0.5 s (half a second to land, 1.3 s before he is free again), stamina 13 a swing, no shield in that hand |
+| Dane axe | swing | 44 | huge | very slow | 2 | every hit is heavy; the whole pack goes flying | a short windup kept (about 0.15 s, Robin 2026-10-20), 0.9 s before he is free again, stamina 13 a swing, no shield in that hand |
+
+**The player's blows start on the press** (Robin, 2026-10-20): every kind but the Dane axe lands a frame or two after the
+press, a charged blow keeps the hold as its windup, and the men keep their windups (the player's warning). So a kind's pace
+is the beat between its blows (the recovery): the seax quickest, then the sword, the axe, the spear, the club, the Dane axe.
 
 The smash lands with dust and a thud; a thrust leaves a straight streak instead of the arc. Chains: sword, axe and seax
 three hits, club, spear and Dane axe two. The last hit of a chain is the heavy one (double damage and knockback, more

@@ -77,7 +77,7 @@ def layer_setup(layer):
     for o in gear_c.objects:
         mine = layer == 'all' or o in own; hold_it = (not mine) and not show and any(o.name.startswith(u) for u in under)
         o.hide_render = not (mine or hold_it); hold(o, hold_it)
-    toon.freestyle(sc, vl, PX, body_c if layer == 'body' else (lines_of(own) if under else gear_c) if (layer != 'all' and not show) else None, STYLE)
+    toon.freestyle(sc, vl, PX, body_c if layer == 'body' else (lines_of(own) if under else gear_c) if (layer != 'all' and not show) else None, STYLE, weight=0.42 if name.endswith('Metal') else 1.0)
 
 def set_action(name):
     act = bpy.data.actions[name]; ad = rig.animation_data; ad.action = act
@@ -91,13 +91,14 @@ INPLACE = [x for x in opt.get('inplace', '').split(',') if x]
 TOP = rig.parent or rig; TOP0 = TOP.location.copy()
 HIPS = next((b for b in ('mixamorig:Hips', 'hips', 'body') if b in rig.pose.bones), None)
 def hips_at(): TOP.location = TOP0; bpy.context.view_layer.update(); return rig.matrix_world @ rig.pose.bones[HIPS].head
+START = {}                            # 2026-10-20 (the studio): a clip may start later than frame 1 (the action's own frame range): the player's attacks begin at the top of the backswing
 def settle(anim, length, nfr, f):
     """The frame set, and for a clip held in place the figure moved back over its spot (call after the direction is set)."""
     if anim in INPLACE and HIPS:
-        sc.frame_set(1); h0 = hips_at().copy(); sc.frame_set(int(round(1 + f * length / nfr))); h = hips_at()
+        sc.frame_set(START.get(anim, 1)); h0 = hips_at().copy(); sc.frame_set(int(round(START.get(anim, 1) + f * length / nfr))); h = hips_at()
         TOP.location = (TOP0.x - (h.x - h0.x), TOP0.y - (h.y - h0.y), TOP0.z); bpy.context.view_layer.update()
     else:
-        TOP.location = TOP0; sc.frame_set(int(round(1 + f * length / nfr))); bpy.context.view_layer.update()
+        TOP.location = TOP0; sc.frame_set(int(round(START.get(anim, 1) + f * length / nfr))); bpy.context.view_layer.update()
 
 # the foot anchor: where the origin lands in the render
 bpy.context.view_layer.update()
@@ -111,7 +112,9 @@ n = 0
 for anim in ANIMS:
     act = set_action(anim); length = int(act.frame_end - act.frame_start + 1) if act.use_frame_range else int(act.frame_range[1] - act.frame_range[0] + 1)
     nfr = FR.get(anim, int(opt['walkframes']) if (anim == 'walk' and opt['walkframes']) else NFR)
+    START[anim] = int(act.frame_start) if act.use_frame_range else 1
     meta['anims'][anim] = {'frames': nfr, 'fps': nfr / (length / sc.render.fps), 'hands': {}}
+    if act.get('contact') is not None: meta['anims'][anim]['contact'] = int(round((int(act['contact']) - START[anim]) * nfr / length))   # the frame the blow lands on (the game puts the hit window there and holds it)
     if anim in INPLACE: meta['anims'][anim]['inplace'] = True
     # the wrists per direction and frame (2026-10-09, for the things in the hands): render pixels [x, y] and the depth toward the camera, right then left
     HANDS = [b for b in ('mixamorig:RightForeArm', 'mixamorig:LeftForeArm', 'hand.R', 'hand.L') if b in rig.pose.bones]

@@ -378,7 +378,30 @@ __COMBAT__
   Combat.api.shield = shieldHeld;
   function shieldThrough(sh) { sh = sh || (equip && equip.shield); var m = sh ? sh.mat : 'wood'; return { wood: 0.2, leather: 0.2, copper: 0.17, bronze: 0.15, iron: 0.12, silver: 0.12, gold: 0.12 }[m] || 0.2; }   /* what a raised shield lets through (Robin, 2026-10-16: it stops 80%, more with a better shield; a parry stops all) */
   Combat.api.shieldThrough = function () { return shieldThrough(); };
-  Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers });
+  /* The hero's look on the kit (2026-10-20, Robin: a base body, every garment an equippable layer; the Art Director's hero-kit):
+     the starter tunic and trousers always (undyed cream, dark wool), shoes or the boots worn, the belt; what is worn over them
+     by slot (the head: a cap, or a helm for iron; the chest: a coat in its material's colour, or mail for iron, over the tunic;
+     the legs in their material; the cloak); the bronze ring on the arm in its metal; the hair (under a hat when the head is
+     filled) and the beard; what is in the hand and the shield, when they are out, as handLayers says. Blades in iron light
+     steel (Robin). */
+  var HERO_LOOK = { hair: '#9a4b26' };
+  function bladeTint(m) { return m === 'iron' ? '#c4cbd4' : ((Items.MATS[m] || {}).face || '#c4cbd4'); }
+  function heroLook(face) {
+    var P = hero(), M = sprHero && sprHero.meta; if (!M || !sprHero.kit) return null;
+    var has = function (l) { return M.layers.indexOf(l) >= 0; }, S = Sprites.KIT_START, mf = function (it, d) { return (it && Items.MATS[it.mat] && Items.MATS[it.mat].face) || d; };
+    var L = [{ l: 'body' }, { l: 'legs', t: equip.legs ? mf(equip.legs, S.legs) : S.legs }, { l: 'tunic', t: S.tunic }, { l: equip.feet ? 'boots' : 'shoes' }, { l: 'belt' }];
+    if (equip.chest) L.push(equip.chest.mat === 'iron' ? { l: 'mail', t: Items.MATS.iron.face } : { l: 'coat', t: mf(equip.chest, '#9a6a44') });
+    if (equip.cloak) L.push({ l: 'cloak', t: mf(equip.cloak, '#6b4f36') });
+    if (ring) L.push({ l: 'armring', t: (Runes.METALS[ring.metal] && Runes.METALS[ring.metal].col) || '#b07a3a' });
+    L.push({ l: 'beardA', t: HERO_LOOK.hair }); L.push({ l: equip.head ? 'hairHatA' : 'hairA', t: HERO_LOOK.hair });
+    if (equip.head) L.push(equip.head.mat === 'iron' ? { l: 'helm', t: Items.MATS.iron.face } : { l: 'cap' });
+    var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || torchOn || (P.mode === 'fight' && !armsOut);   /* (in a place at peace the weapon is away until it is used) */
+    if (!away && it && has(it.kind + 'Wood')) L.push({ l: it.kind + 'Wood', hand: 1 });
+    if (!away && it && has(it.kind + 'Metal')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });
+    if (!away && shieldHeld() && (!ADMIN.shieldRaised || (sprHero.blk || 0) > 0.02)) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
+    return Sprites.lookId({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
+  }
+  Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers, look: heroLook });
   var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, unge: { sheet: 'troll_unge', deadFor: 2.5 } };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
   ['boar', 'deer', 'wolf', 'bear', 'moose', 'snake', 'troll', 'unge'].forEach(function (bk) { var sh = BEAST_OPT[bk].sheet || bk; if (SPR[sh]) BEASTS[bk] = Sprites.load(SPR, sh); });
   /* The people from Blender (2026-10-12, docs/battle-plan.md rung 0; Robin: Blender the hirdmen and other humans, one body with

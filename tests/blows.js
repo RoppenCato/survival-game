@@ -62,11 +62,13 @@ for (const r of rows) {
 // What must hold for the weapons to differ as docs/weapons.md says (the character of each)
 const by = {}; rows.forEach(r => by[r.kind] = r);
 const must = (ok, what) => { if (!ok) faults.push(what); };
-must(by.seax.land < by.sword.land, 'the seax should land quicker than the sword (' + ms(by.seax.land) + ' against ' + ms(by.sword.land) + ' ms)');
-must(by.sword.land < by.axe.land, 'the sword should land quicker than the axe (' + ms(by.sword.land) + ' against ' + ms(by.axe.land) + ' ms)');
-must(by.axe.land < by.greataxe.land, 'the axe should land quicker than the Dane axe (' + ms(by.axe.land) + ' against ' + ms(by.greataxe.land) + ' ms)');
-must(by.club.land > by.sword.land, 'the club should be slower than the sword to land (' + ms(by.club.land) + ' against ' + ms(by.sword.land) + ' ms)');
-must(by.greataxe.land >= 0.4 && PF.greataxe.wu + PF.greataxe.ac + PF.greataxe.rec >= 1.1, 'the Dane axe should be a commitment: 0.4 s at least to land and over 1.1 s before he is free (' + ms(by.greataxe.land) + ' ms, ' + ms(PF.greataxe.wu + PF.greataxe.ac + PF.greataxe.rec) + ' ms)');
+// (2026-10-20, Robin: the player's blows start on the press, so every kind but the Dane axe lands in a frame or two; the pace of a
+// kind is now the beat between its blows, the time until he is free to swing again)
+must(by.seax.gapMin < by.sword.gapMin, 'the seax should strike again quicker than the sword (' + ms(by.seax.gapMin) + ' against ' + ms(by.sword.gapMin) + ' ms)');
+must(by.sword.gapMin < by.axe.gapMin, 'the sword should strike again quicker than the axe (' + ms(by.sword.gapMin) + ' against ' + ms(by.axe.gapMin) + ' ms)');
+must(by.axe.gapMin < by.greataxe.gapMin, 'the axe should strike again quicker than the Dane axe (' + ms(by.axe.gapMin) + ' against ' + ms(by.greataxe.gapMin) + ' ms)');
+must(by.club.gapMin > by.sword.gapMin, 'the club should be slower than the sword between blows (' + ms(by.club.gapMin) + ' against ' + ms(by.sword.gapMin) + ' ms)');
+must(by.greataxe.land >= 0.14 && PF.greataxe.wu + PF.greataxe.ac + PF.greataxe.rec >= 0.9, 'the Dane axe should be a commitment: a short windup kept (about 0.15 s, Robin 2026-10-20) and 0.9 s at least before he is free (' + ms(by.greataxe.land) + ' ms, ' + ms(PF.greataxe.wu + PF.greataxe.ac + PF.greataxe.rec) + ' ms)');
 must(by.sword.land <= 0.3, 'the sword should be quick: within 0.3 s of the press (' + ms(by.sword.land) + ' ms)');
 must(by.seax.perMin > by.sword.perMin && by.sword.perMin > by.axe.perMin && by.axe.perMin > by.club.perMin && by.club.perMin > by.greataxe.perMin, 'held, the weapons should strike in the order seax, sword, axe, club, Dane axe: ' + rows.map(r => r.kind + ' ' + Math.round(r.perMin)).join(', '));
 must(by.spear.reach > by.sword.reach && by.spear.reach > by.greataxe.reach, 'the spear should reach furthest (' + by.spear.reach + ' against the sword ' + by.sword.reach + ', the Dane axe ' + by.greataxe.reach + ')');

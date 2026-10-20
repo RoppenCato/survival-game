@@ -138,6 +138,7 @@ def build_nodes(m, style):
         v = _light(n, L)
         base_t = tuple(base[i] * AMBIENT_TINT[i] for i in range(3))
         dark = _math(n, L, 'LESS_THAN', v, 0.66); lit = _math(n, L, 'GREATER_THAN', v, 0.9)
+        if m.get('matte'): lit = 0.0      # 2026-10-20 (the studio): hair has no highlight step; on a smooth cap it read as a shine, a bald head or a helmet
         shadow = tuple(base_t[i] * SHADOW_TINT_FIT[i] for i in range(3)); light = tuple(base_t[i] * 0.8 + LIGHT_TINT[i] * 0.16 for i in range(3))
         bsock = base_t
         if m.get('face'):             # the painted face laid over the skin before the shading: a decal projected from the front
@@ -300,7 +301,7 @@ def world(scene, ambient=None, style='cel'):
     air = SCENES[SCENE]['air']; k = ambient / 0.10
     bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (air[0] * k, air[1] * k, air[2] * k, 1); bg.inputs[1].default_value = 1.0   # the scene's air
 
-def freestyle(scene, view_layer, px, collection=None, style='cel'):
+def freestyle(scene, view_layer, px, collection=None, style='cel', weight=1.0):
     """The line per style: cel, a whole-silhouette contour heavy toward the lower right and a thinner line at overlaps;
     painted, thin, brown, a little transparent and wobbling; folk, bold and even."""
     r = scene.render; r.use_freestyle = True; r.line_thickness_mode = 'ABSOLUTE'; r.line_thickness = 1.0
@@ -310,6 +311,7 @@ def freestyle(scene, view_layer, px, collection=None, style='cel'):
     # 2026-10-09: the cel line brought up to the props' weight
     cfg = {'cel': ('#231a16', 1.0, 2.6, 1.1, True, 0), 'painted': ('#33231a', 1.0, 1.5, 0.9, False, 1.2), 'folk': ('#1e1612', 1.0, 2.4, 1.6, False, 0)}[style]
     ink, alpha, heavy, thin, calligraphy, wobble = cfg
+    heavy *= weight; thin *= weight             # 2026-10-20 (the studio): a thinner line for blades, whose own width the full contour filled (they read as black sticks)
     def lineset(name, thick, outer):
         ls = fs.linesets.new(name)
         ls.select_silhouette = not outer; ls.select_border = not outer; ls.select_crease = not outer

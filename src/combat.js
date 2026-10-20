@@ -82,6 +82,7 @@ for (var pk in PROFILES) PROFILES[pk].kind = pk;
    the men's own levers are MEN's (their windup, blow and recovery factors). */
 var MAN_PF = JSON.parse(JSON.stringify(PROFILES));
 Object.assign(PROFILES.sword, { wu: 0.11, ac: 0.4, rec: 0.2, reach: 50, lunge: 123 });   // Robin's sword (the Combat Arena, 2026-10-15: "this feels good")
+Object.keys(PROFILES).forEach(function (k) { PROFILES[k].wu = k === 'greataxe' ? 0.15 : 0.03; });   // the player's blows start on the press (Robin, 2026-10-20): a frame or two before the blow lands, so the swing's sound and smear still begin; the Dane axe keeps a short windup, its weight (Robin); a charged blow keeps the hold as its windup; the men keep theirs (MAN_PF above), the player's warning
 function meleeProfile() { var it = itemOf('weapon', 'sword'); return (it && PROFILES[it.kind]) || PROFILES.sword; }
 function chainLen() { return bareHanded() ? 3 : meleeProfile().chain; }
 function heavyHit(a) { return a.combo === 3 || a.combo === chainLen() - 1 || (!bareHanded() && !!meleeProfile().heavy); }
@@ -519,7 +520,7 @@ function stepData0(a) {
       dmg: pf.dmg * (1 + hv) + 1.5 * cc, kb: pf.kb * (1 + hv) + 150 * cc, lunge: pf.lunge * (1 + hv * 0.6) + 60 * cc, stag: pf.stag * (1 + hv * 1.4) + 16 * cc, motion: pf.motion, pierce: !!pf.pierce, guardBreak: !!pf.guardBreak, wt: pf.wt || 1 };
   }
   else if (a.combo === 3) { var c = a.chg || 0; s = { wu: 0.07, ac: 0.14, rec: 0.38, arc: 3.4 + c, reach: 42 + c * 8, blade: 31 + c * 4, dmg: 2 + 1.5 * c, kb: 200 + 150 * c, lunge: 120 + 60 * c, stag: 24 + 16 * c }; }
-  else s = STEPS[a.combo];
+  else { s = STEPS[a.combo]; if (P.mode === 'fight') s = Object.assign({}, s, { wu: a.combo === 2 ? 0.06 : 0.03 }); }   /* the sword and the fists take their blows from STEPS, not PROFILES.sword: they start on the press too (Robin, 2026-10-20) */
   if (S.juice) return s;
   return { wu: s.wu * 2.6, ac: s.ac, rec: s.rec * 2.2, arc: s.arc, reach: s.reach, blade: s.blade, dmg: s.dmg, kb: s.kb, lunge: 0, stag: s.stag, motion: s.motion, pierce: s.pierce, guardBreak: s.guardBreak };
 }
