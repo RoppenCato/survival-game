@@ -1,5 +1,8 @@
 # Roadmap: what to build, in what order, and how to test it
 
+> **Historical (2026-10-20).** The work is planned in `docs/chapters.md`, one chapter at a time (Robin, 2026-10-20), on the
+> world's new shape (`docs/world-shape.md`). This file is the record of the first build order (Goal 1 and the ladder of islands).
+
 Written 2026-10-05 from `CLAUDE.md` (the decided design) and `docs/idea-bank.md` (the undecided ideas). This is the
 build order. When a step is done, mark it here and move anything it decided into `CLAUDE.md`. Questions for
 Robin are at the end; where a step depends on an answer, it says so.

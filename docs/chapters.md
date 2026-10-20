@@ -1,408 +1,287 @@
-# Chapters: how the game is laid out, and how to build a new one
+# Chapters: the work, one chapter at a time
 
-Written 2026-10-07 from `CLAUDE.md`, `docs/roadmap.md` (the ladder of islands), `docs/arm-ring.md`, `docs/hird.md`,
-`docs/beasts.md` and `docs/idea-bank.md`. Robin's words are marked **(Robin)**; the rest is a suggestion until he says yes.
+**Rewritten 2026-10-20** for Robin's way of working (below), and for the new shape of the world (`docs/world-shape.md`, Robin
+2026-10-19). Robin's words are marked **(Robin)**; the cut of the chapters and the lists under them are mine until he says yes.
+This is the file to read first when choosing what to do next. `CLAUDE.md` says how things stand; this file says what is left,
+and where each piece of work belongs. The older version of this file and `docs/roadmap.md` are in the git history.
 
-A **chapter** is one stretch of the world with its own place, its own big events, its own beasts, people and materials,
-and its own measure of power (the ring's metal). There are no gates between chapters: the world stays open, and you
-struggle in a chapter until you have done the things in the one before (**Robin, 2026-10-04**). A chapter ends when its
-big events are done and something in it points at the next one.
+## How we work (Robin, 2026-10-20)
 
-This file does two jobs. It is the **map of the chapters** (what each one holds, what is built, what is missing), and it
-is the **template for a new chapter** (the categories a chapter must answer before it is built). `docs/roadmap.md` keeps
-the older build order; this file is the one to read first when planning a chapter.
+- **One chapter at a time.** **Current chapter: 1, the starter island.**
+- **A chapter is finished when Robin is happy with it**, in its own content and in six areas, each perfected for what the
+  chapter shows:
+  1. **Models and art** for the chapter, until we are happy.
+  2. **Combat and gathering**: the basic fight and the gathering feel good.
+  3. **Menus and crafting** feel good.
+  4. **The interface**: the HUD, the boards, prompts, speech, the map.
+  5. **Music, sounds and effects.**
+  6. **The day and night cycle.**
+- **Things that belong to another chapter are moved there** and not worked on now, so we can focus.
+- A system is perfected in the chapter where the player first meets it (the basic fight, gathering, crafting, the menus,
+  the day and the night are all met in chapter 1); a later chapter perfects only what it adds (the raid's fighting in
+  chapter 3, the ship in chapter 2).
+- **Foundations** (the end of this file) are the technical work every chapter stands on (saves, memory, the world
+  generator). One is done when the current chapter needs it, or the next one would be blocked without it.
+- The studios work to the same chapter: the Art Director's plan (`C:\dev\SG\Art Director\docs\art-plan.md`) by its phases, the
+  Sound Director on the chapter's sounds, the Lore Director on the chapter's people and words.
 
----
+## The chapter map (mine, from the new world shape)
 
-## 0. Where each chapter is worked on (2026-10-13)
+| # | The chapter | Where | Its big things | Material | Ring |
+| --- | --- | --- | --- | --- | --- |
+| 1 | **The starter island** | the starter island | the wreck, the burnt steading and Arnor, the first home, the first night, the raft | wood, stone, flint | none |
+| 2 | **Home water** | the big island and the islands round it (all of home water) | the mountain and the troll's cave, copper, the bronze ring and the runes, the villages and Old Aslak, the jarl's seat, claim stones and the first hirdmen, boats, and the sea-going ship that leaves home | copper | bronze |
+| 3 | **The first sea and the first raid** | the south water (the lowlands) | raiding opened, the first raid in the real game, the jarl's call at home, iron, the raided place's life | iron | silver |
+| 4 | **The other seas** | the north, east and west waters | each sea's own things, the jarl's fall and home's islands claimed, the trading hub, rumours that lead | iron, each its own way | twisted silver |
+| 5+ | **Beyond** | the second circle and further | Kvennaey, legendary Vikings, the gold ring, Odin's ring, the serpent, the full year | the next metals | gold, Odin's ring |
 
-Robin: work on the chapters one at a time, but connected: whatever is fixed in a system is fixed everywhere it is used. So
-every page runs the same engine (`src/combat.js`) and the same numbers (`MEN`, `PROFILES`, `Items`, `Village`, `Ruin`), and the
-start page is laid out by chapter:
+No gates between them: you may sail anywhere you can; you struggle until prepared (Robin, 2026-10-04). Distance from home
+sets how hard, direction what kind (Robin).
 
-| Chapter | Where it is played | Where its systems are worked on |
-| --- | --- | --- |
-| 1 The starter island | `game.html` from the wreck | the Combat Arena (`combat-arena.html`: every fight the game has, beasts and men); the Art, Village, Sea and Song editors |
-| 2 The first big island (the boat built in the yard; the karve and the longship for chapter 3) | `game.html` after the crossing | the Big island test (`game.html?scene=runes`: the ring, the mountain, the cave), the Mountain test (`?scene=mountain`) |
-| 3 The second biome and the first raid | not in the game yet (the lowlands are built but not spawned) | the Battle test (`?scene=battle`: men, the town, the four ways to raid), the Destruction Editor (`?scene=ruin`), and the Combat Arena for the fighting itself |
-
-A change to a weapon, a man's wits or his shield in the Combat Arena is a change to the raid; a change to the raid's rules in
-the Battle test is a change to the real game's men. Nothing is tuned in one place and copied to another.
-
-## 1. The rules every chapter keeps
-
-These are decided and apply to every chapter. A new chapter is checked against them.
-
-- **Big events, not a boss ladder** (Robin). A chapter is remembered for three to five **big events**, set pieces that
-  change what you can do. You do not progress by killing bosses; there are several ways to progress.
-- **Each chapter is harder than the one before** (Robin). Harder means heavier beasts, a heavier metal on the ring-holder,
-  and more to prepare. It does not mean punishment: preparation gives buffs, the unprepared state is the weak baseline.
-- **No gates, keys or locked doors.** You can go anywhere; you struggle until prepared. Biome rarity changes with distance.
-- **One easy formula, plenty of curveballs** (Robin). A player understands a chapter's rule in a minute (heavier metal
-  beats you; each chapter has its ring-holder), and the details inside break the rule in interesting ways.
-- **The compass means something, the details are generated** (Robin). North colder and harder, south richer and more
-  settled, east rivers and trade, west open ocean and the unknown. Distance from home sets how hard; direction sets what kind.
-- **Guidance is subtle** (Robin). No goals, checklists, explaining labels or question marks. A chapter is found: through
-  how things look, what people say in their own voice, a landmark on the horizon, a tooltip.
-- **Reward, never punish.** No draining meters, no stamina cuts, no wetness, no repair chores. Weather and biomes give
-  buffs for preparation.
-- **Real Viking-age things first, real animals, flat pastel look, open uncramped ground.** Fantasy beasts come from Norse
-  myth and nordic folklore with a card whose weakness is a real rule in the fight (`docs/beasts.md`).
-- **Editor first, then the game** (Robin). A new thing is tried in an editor or the test scene with sliders, then handed
-  over with "Use in the game". Numbers live in plain data.
-- **Everything is drawn and synthesized in code**: no asset files.
-
----
-
-## 2. The template: what a chapter must answer
-
-Every chapter is described under the same ten headings. A heading with nothing under it is a **gap**, and the gap list at
-the end of the chapter is the work. The headings are grouped by what they are about.
-
-### A. The place
-
-**A1. The world.** Which islands, how big, which biome, where on the compass and how far from home (which sets hardness).
-The map regions and the look: ground, trees, rocks, water, weather, season. What is generated and what is fixed.
-
-**A2. Places of interest.** The set pieces on the map that are not big events: villages, camps, ruins, shrines, caves,
-landmarks, small finds (a cairn, a dead hunter, a fish weir). What can be found, what can be raided, what can be traded.
-
-### B. The events
-
-**B1. The big events.** Three to five, each with a name, what the player does, what it unlocks, and how it is told
-without text. Each is written as **Have / Build / Test**, the way `docs/roadmap.md` writes its steps. This is the heart of
-the chapter: if the events are weak, the chapter is.
-
-**B2. The way in and the way on.** How you arrive (what you carry, what you can already do), what makes you struggle
-(without a gate), and what points to the next chapter (a landmark on the horizon, a name heard, an item that needs
-something not found here).
-
-### C. The living world
-
-**C1. Beasts and threats.** The animals of the chapter (real ones, with counts, ground, drops), the väsen (a card each,
-with its weakness), the night and what it brings, and what is dangerous because of the chapter's rule.
-
-**C2. People.** The friendly person you meet, the folk of the villages, the leader who holds the chapter's ring, the
-legend whose name is heard. Who can join the hird and how; what each says (in their own voice, never a checklist).
-
-### D. What you make and gain
-
-**D1. Materials and crafting.** New materials and where they come from (gathering, caves, trade, raids), new stations,
-new recipes and what reveals them (a recipe appears from its key ingredient), the tier of tools and weapons, armour, food.
-
-**D2. Building and home.** New building pieces, what a comfortable home needs here, what claiming and the territory
-look like, what the hird does at home.
-
-**D3. Power and reward.** The arm ring: which metal is this chapter's, which runes are found here and from what (beast,
-stone, deed, person, event). Weapons and armour that arrive. Currency, if this chapter adds one (a new one about every
-third chapter, **Robin**). Reputation, if raiding is in play.
-
-### E. Travel
-
-**E1. The sea.** What you cross in, what changes at sea, which hazards exist (none yet), what the ship is (raft, boat,
-Viking ship, with a sail, with a crew) and how crewing and speed work.
-
-### F. Making and checking it
-
-**F1. Editors and the test scene.** Which editor or scene lets Robin try it alone (a page, a row on the Rune Editor's
-board, an Admin row). Which parts need a new editor, which only need rows.
-
-**F2. Tests and definition of done.** The headless tests that check the rules, the play-through in the browser, the
-things tried to break, and the docs updated. A chapter is done when its checklist (section 4) is ticked.
-
----
-
-## 3. Status words
-
-Used in every table below.
+## Status words
 
 | Word | Meaning |
 | --- | --- |
-| **Built** | In the game, played, in `CLAUDE.md` |
+| **Done** | In the game, played by Robin, and he is happy with it |
+| **Built** | In the game and checked by script or bots; Robin has not judged it |
 | **Partly** | Some of it is in; the note says what is missing |
 | **Not started** | Decided or described, nothing built |
-| **Idea** | Only in the idea bank; not decided |
 | **Open** | A question for Robin before it can be built |
 
 ---
 
-# Chapter 1: The starter island
+# Chapter 1: The starter island (the current chapter)
 
-**Summary.** You wake in a wrecked boat on a small island with nothing. You gather, make tools, feed yourself, build a
-home, meet the last survivor of a raided steading, and build the raft that leaves the island. The first chapter teaches
-every basic verb without a word of tutorial. It is the first stretch of the first biome (the second island is the rest of it).
+**Summary.** You wake in a wrecked boat with nothing. You gather, make tools, feed yourself, find the burnt steading and Arnor,
+mend the plank house into a first home, live through the first night, and build the raft that leaves the island. Every basic
+verb is taught here without a word of tutorial, so **the basic fight, gathering, crafting, the menus, the interface, the
+sound and the day and night are perfected in this chapter**.
 
-**The measure of power:** none yet; the island holds no ring. **The chapter's rule:** the unprepared are weak, the prepared
-are fine; night is dangerous and home with a fire is safe.
-
-### A. The place
+## The content
 
 | Part | What it is | Status |
 | --- | --- | --- |
-| A1 The world | A 120-tile island (`isle0`; 60 until the scale pass of 2026-10-09), grass, groves of oak, pine and birch, beaches, the big island about a minute east by raft. Day and night over a 30-minute cycle | Built |
-| A1 Look | The ink look (2026-10-07), painterly meadow, wide warm beaches, critters (butterflies, birds, beetles) by day; the hero and the animals are Blender models (2026-10-09 to 11) | Built |
-| A2 Places | The wreck on the beach, the broken steading (Thorgunna's, a burnt hall, a hut, a half stone house, a well, a palisade), loose finds (nests, fallen trees, herbs, mushrooms) | Built |
-| A2 Small finds with a story | A fish weir on the shore with a net to take down (4 fiber) | **Built (2026-10-12)**, Robin's pick |
-| A2 More finds | A hunter's camp, a cairn, a dead man by a cold fire | Not picked (`docs/start-loop.md` proposal; Robin chose the weir alone) |
+| The island | 120 tiles, groves, wide warm beaches, critters by day; the trees at their old size (Robin, 2026-10-16) | Built |
+| The wreck and the start | The name asked over the dark, E pries planks, branches and stones, the key reminders, trail stones to the steading | Built |
+| The burnt steading | Thorgunna's, made over with the destruction states (2026-10-16: a burnt-out hall, charred posts, a cold hearth), the plank house to mend, the hut, the graves | Built (Robin has seen a picture, not played it) |
+| Arnor | His lines from the lore, building opened by his word, the home's lacks, the raft at comfort 4, the graves, the shore at the first raft | Built |
+| The first home | Mend the plank house, a roof, comfort, the bed under a roof, the first night slept opens building | Built |
+| The first night | Wolves each night, a fire keeps them off, the firelight, the night's sounds | Partly (the means are built; as a *moment* it is Robin's to judge) |
+| The raft and leaving | The shipwright's bench, the raft, Arnor at the shore, "You have left the island" | Built |
+| Beasts | Young boars, deer in herds (the blood trail), adders; the wolves at night | Built |
+| Finds | The fish weir, nests, fallen trees, herbs, mushrooms, crates and barrels kicked open with E | Built |
+| Numbers | How fast wood comes, what a first home costs, how many animals, that death costs nothing | Open (bot-measured, never felt by Robin) |
 
-### B. The events
+## The six areas
 
-| Event | What it is | Status |
-| --- | --- | --- |
-| **Landing with nothing** | Branches and stones round the camp, the first tools by hand, three bare key reminders | Built |
-| **The first night** | Wolves come at night; a fire keeps them off; Arnor's campfire shows it. Since 2026-10-12 the fire's light flickers, throws shadows, stops at walls and shows in windows, and the night has its own sounds (crickets, an owl, the fire) | Built (the night is dangerous; sight and sound now tell home from the field; whether it is a *moment* yet is Robin's to judge) |
-| **The steading and its survivor** | Arnor tells his story, reminds what the home lacks, teaches the raft at Comfort 4 | Built |
-| **The home** | Walls, roof, hearth, bench, bed, rug: Comfort 4 | Built |
-| **The shipwright's bench and the raft** | The Shipyard, the raft from logs and lashings, the crossing and the banner "You have left the island" | Built |
+### 1. Models and art (with the Art Director, its plan's phases 0 and 1)
 
-**The way in:** the wreck. **The way on:** the big island, about a minute off by raft (68 s in the play-through). Nothing on the horizon says go
-there yet (see the gap list).
+| Thing | Status |
+| --- | --- |
+| The hero | Done (Robin's pick) |
+| The lit boar and deer | Built (dropped in 2026-10-20, approved art) |
+| The fires (campfire, hearth, fireplace, brazier, fire pit) | Built (2026-10-20; Robin's yes) |
+| The people (Arnor first): the lit side and the new face | Not started (the studio, phase 0) |
+| The wolf and the adder with the lit side | Not started (the studio, phase 0) |
+| **The trees**: three concepts for Robin, then pine, birch and broadleaf as set pieces with the felling drawn over | Open (the most screen time of anything; the studio, phase 1) |
+| Crafting stations (workbench, shipwright's bench first) | Not started (the studio, phase 1) |
+| Furniture (bed, chest, chair, table, bench, crate, barrel) | Not started (the studio) |
+| Camp things (drying rack, woodpile, cart, well, trough, tent without stripes) | Not started (the studio) |
+| Bushes and plants (bush, berry bush, tall grass, toadstools smaller) | Not started (the studio) |
+| Rocks: three variants each, the crack drawn over | Not started (the studio) |
+| The steading's look (the made-over ruin) | Built (Robin to judge in play) |
+| Yellow thatch on every roof | Built (Robin's rule) |
 
-### C. The living world
+### 2. Combat and gathering
 
-| Part | What it is | Status |
-| --- | --- | --- |
-| C1 Day beasts | Boar, deer and adders; the counts scale with the island's area, so at 120 tiles that is 16 boars, about 20 deer and 12 adders. **The boars here are young** (6 health, 7 a blow, smaller; 2026-10-12) so a wooden club can win | Built (the numbers are Robin's to judge) |
-| C1 Night | One wolf pack a night, fire-shy, glowing red eyes | Built |
-| C2 People | Arnor (the village smith), the first hirdman | Built |
-| C2 The first legendary Viking heard of | Decided to be heard on the home island; Arnor's tale names Ormr Midgardbane; the legend system itself is not built | Partly |
-| C2 Who you are | Robin, 2026-10-12: "kid survives raid then works for revenge". `docs/the-beginning.md` expands it | **Proposal, with questions for Robin** |
+| Thing | Status |
+| --- | --- |
+| The basic fight: blows, the weight of each weapon, the guard by what is in hand (shield, weapon, tool, bare arm), the parry, the chain, balance, the perfect dodge, the finishing blow | Built (Robin's tuning of 2026-10-15 is the default; the guard rules of 2026-10-16 not yet played) |
+| The club, the flint sword, the knife as a weapon, the bow | Built (Robin found the club "awful" on 2026-10-14, before the impact work: to be felt again) |
+| Young boars, wolves, adders, the deer and its blood trail | Built |
+| Chopping: the notch and the back cut, the fall, trunks of four logs, nearby trees chipped | Built (felt clunky on 2026-10-14, reworked since: to be felt again) |
+| Mining: the crack, six rock variations | Built |
+| Picking by hand: berries, grass (a pulled tuft is gone, grows back in three days), fiber from wood now and then | Built |
+| Kicking a box open with E | Built |
+| **A play by Robin of the whole fight and the gathering** | Open: the next step for this area |
 
-### D. What you make and gain
+### 3. Menus and crafting
 
-| Part | What it is | Status |
-| --- | --- | --- |
-| D1 Materials | Wood, stone, fiber, hide, leather, berries, meat, eggs and honey from nests; trunks, sweet spot and rhythm in gathering | Built |
-| D1 Crafting | Hand and workbench recipes revealed by key ingredient; flint, stick and wood tools, the wooden club and bow; leather armour; the hearth and the dishes; boards for crafting, cooking and the shipwright | Built |
-| D1 Fishing | A slow verb with a reward. **Not on this island** (Robin, 2026-10-12: leave it for the lowlands) | **Built (2026-10-08):** the rod (iron, so the lowlands), cast and hook and reel on E, five fish by water, the sunken chest, three dishes, the fisherman's hut on the smallest island who teaches them |
-| D2 Building | Walls in five materials, floors, paths, roofs (thatch, turf, shingles), stairs and an upper floor, fences, docks, furniture, comfort | Built |
-| D3 Power | No ring on this island. Deeds count underneath (trees, meals, sprinting) | Built (hidden until a ring) |
+| Thing | Status |
+| --- | --- |
+| The Tab screen: the panel, the bag with the bar as its top row, the crafting list on the left and the chosen thing beside it | Built |
+| E at a station shows only its own things; the queue, the Ready strip, Cancel | Built |
+| Recipes appear from their key ingredient; a gold dot on a thing never made | Built |
+| The Building board (B): tabs, opened by Arnor's word and the first night | Built |
+| **"Crafting feels off against other survival games"** (Robin, 2026-10-14) | Open: what feels off (the board, the queue, the time a thing takes, things landing in the bag?) is unanswered |
 
-### E. Travel
+### 4. The interface
 
-| Part | What it is | Status |
-| --- | --- | --- |
-| E1 The raft | Paddled at 54 units a second, drawn from its parts | Built |
-| E1 Leaving | The raft slides out and a banner says you have left; nobody sees you go | Partly (`docs/start-loop.md`: Arnor at the shore) |
+| Thing | Status |
+| --- | --- |
+| The HUD: health and stamina, the chart, the meal; the bar from the start (Robin, 2026-10-17) | Built |
+| The speech board, the big-step boards, the name board, prompts over the hero, damage numbers | Built |
+| The map (M) | Built |
+| The look: one book face for names and titles, the bars, the board frames (`docs/ui-review.md` section 4) | Open: the Art Director writes a one-page spec (its plan, item 15), then I build it |
+| **How text appears** (toasts, notes; Robin, 2026-10-14: "a better way is wanted") | Partly (the "something new" toasts are gone; the rest is open) |
 
-### F. Making and checking it
+### 5. Music, sounds and effects
 
-| Part | What it is | Status |
-| --- | --- | --- |
-| F1 Editors | The Art Editor (models, creatures, objects), the Village Editor, the Sea Editor, the Combat Arena, the game's Admin and Sandbox (the Gathering, Character and Item editors went in the cleanup of 2026-10-09) | Built |
-| F2 Tests | `npm test` covers combat, weapons, gather and ring. **Played from the wreck to the raft by script on 2026-10-12** (`tools/visual/startplay.js`; the first was 2026-10-05): the chain holds after four fixes (a home anywhere on the island counts, young boars, Arnor's raft line, E at a bench just set down) | Built by script; a play by hand, for the feel of it, is Robin's |
+| Thing | Status |
+| --- | --- |
+| The place's sound: wind, leaves, sea, birds, crickets, fire, water, footsteps by the ground | Built |
+| The swings (Robin's picks) and the guard's sound | Done |
+| **The hit sound** (the studio's thump replaced; candidates I to L and V in the arena) | Open: Robin picks |
+| Gathering sounds (chop, crack, pull, kick) | Built (synthesized; the studio could record them) |
+| Music: the meadow by day and by night | Built (off until the Escape menu's bar is turned up: is that right? Open) |
+| Effects: sparks from the fires, smoke, chips, splinters, the shake | Built |
 
-### Gap list for Chapter 1 (the work)
+### 6. The day and night cycle
 
-1. **Who you are** (`docs/the-beginning.md`): Robin's "kid survives raid then works for revenge". A proposal with six
-   questions; the cheap version (the place knows you) is a few days, the played memory two to three weeks.
-2. **A landmark on the horizon**: smoke over the trees and a cairn on a rise, so the steading and the far island are
-   *seen* (`docs/start-loop.md`, 1 and 2 of its order). The play-through of 2026-10-12 confirms it: the steading lay 1255
-   units from the wreck with nothing pointing to it.
-3. **The steading as the beginner base**: move the camp, patch the hall's gaps, the hut's furniture (`start-loop.md`, 2).
-   Since 2026-10-12 a home there counts as yours.
-4. **The first night as a moment**: the means are built (the ambient sound and the firelight of 2026-10-12) and the rules
-   hold (wolves come, the fire sends them off, you heal and wake rested); what is left is the staging.
-5. **Leaving as a scene**: Arnor at the shore (`start-loop.md`, 6).
-6. **The legend**: how a name is heard (Open, idea bank 3; `the-beginning.md` section 5 makes Ormr the first).
-7. **Numbers for Robin to judge** (measured 2026-10-12, in CLAUDE.md under "The start played again"): how fast wood comes
-   (a pine's 12 wood in 15 s), what a first home costs (44 wood), how many animals the island holds (16 boars, about 20
-   deer, 12 adders), and that **death costs nothing** (you rise at the wreck with everything).
-8. **Slow verbs**: sitting is built; fishing waits for the lowlands (Robin).
+| Thing | Status |
+| --- | --- |
+| The 30-minute day, the golden dusk that darkens faster at its end, the dark night, the torch | Built (the night's pacing redone after the play-test of 2026-10-14; to be felt again) |
+| Sleep skips the night; rested under a roof | Built |
+| The lighting trials on: the glow, shadows, lit sides, light in rooms and at windows, moths | Built (the first version read as "a weird filter") |
+| The lighting trials off until Robin looks: the moon, mist, light shafts, clouds | Open |
+| The first night as a moment (the staging) | Open |
+
+## What finishes chapter 1 (in this order, mine)
+
+1. **Robin plays chapter 1 from the wreck to the raft** (a second play-test, like `docs/playtest-1.md`), with the six areas as the
+   questions. The three things that feel worst lead the work.
+2. The studio's phase 0 lands (the people, the wolf and the adder lit), then the trees' concepts for Robin.
+3. The open answers above: crafting that feels off, the hit sound, the lighting trials, the music's default.
+4. The fixes and the polish the play-test asks for, area by area, until Robin is happy.
+5. A last play-through by Robin. Then chapter 2.
+
+**Moved out of chapter 1:** the shipyard as models to customise (Robin, 2026-10-14) and the troll's size go to chapter 2;
+fishing (the lowlands) to chapter 3. **Closed:** "who you are" (`docs/the-beginning.md`) is answered by the lore's canon (the
+hero's past is never explained, the player picks his name); the landmark is the trail stones; the steading is the beginner
+base; Arnor sees you off at the shore.
 
 ---
 
-# Chapter 2: The first big island
+# Chapter 2: Home water (next)
 
-**Summary.** The second island is the first biome in full: a big island with a cave, a troll, copper, a living hamlet, bear
-and moose. Its big events are the ones that make you a leader instead of a survivor: **copper, the troll and the cave,
-building an actual village, the arm ring** (Robin, 2026-10-06). It ends with a boat that can sail somewhere else.
+**Summary.** The big island and the islands round it: the first chapter in full. You go from survivor to leader: copper, the
+troll and his cave, the arm ring, the villages, the jarl of home water, your first hirdmen and claim stones, and the
+sea-going ship that leaves home. Home water is bigger, with more islands and villages only (Robin, 2026-10-19); nothing here can
+be raided until raiding is opened in chapter 3 (Robin).
 
-**The measure of power:** the **bronze ring** (two coils: hand and foot), taken from the dead Viking behind the troll's
-lair. Arnor wears bronze. **The chapter's rule:** heavier metal beats you; the troll is heavier than you until you have
-copper and the ring.
+| Part | Status |
+| --- | --- |
+| The big island: the mountain (slopes, plateau, peaks, waterfall, lookout, rock shelter, cliff veins of copper) | Built |
+| The troll's cave, the troll and his young (Hårungen) | Built |
+| Copper: veins, furnace, bars, copper tools and weapons | Built |
+| The arm ring and the thirty runes, the carver's bench | Built |
+| The villages, Old Aslak and Hogni's story | Built |
+| The claim stone, Arnor joins, hirdmen and their jobs | Partly (the hird's next steps, `docs/hird.md`) |
+| **Home water bigger: more islands, villages only, the jarl's seat** (`docs/build-plan-waters.md`, steps 1 to 3) | Not started |
+| **The sea-going ship and the swell that turns small boats at home's edge** (the karve on copper: decision 1 of that plan) | Not started |
+| Boats: the faering and the boat; **the shipyard as a few fine models to customise** (Robin, 2026-10-14; moved here) | Partly |
+| **The troll bigger and scarier** (Robin, 2026-10-14; moved here) | Not started (the studio, its plan item 17) |
+| Rumours told by home's villagers (the canon's Ormr, Aslak, golden boar and Wanderer rumours fit here) | Not started |
+| Trading at home's villages (the basics), the first currency question | Not started |
+| Climates by position (home's look stays as it is) | Not started (`docs/build-plan-waters.md`, step 2) |
 
-### A. The place
-
-| Part | What it is | Status |
-| --- | --- | --- |
-| A1 The world | A 400-tile island east of the first with **a small mountain in its north-west** (2026-10-12: foothills, a small plateau, a peak or two, a lookout, a rock shelter, a tarn in a bowl now and then), the lowland drying and thinning toward it; the troll's cave is in one of its walls | Built |
-| A1 Islands around it | Same biome, mixing toward the next, later filled with different places | Not started |
-| A2 The cave | One way through from a tunnel of daylight: a hall, a hollow under a hole in the roof, a still pool, a cavern split by a chasm, a gallery of copper veins, the lair; tall wall faces fading into the dark, light from holes in the roof, the troll's worn path, a chart of what your light has shown (`src/cave.js`, reworked 2026-10-12) | Built |
-| A2 The hamlet | A living village: four huts, a well, folk who walk and talk (seven to nine), a fence | Built |
-| A2 Other places | A hunter's shelter, a ruined fort, a shrine, a standing-stone ring, a fish weir, a charcoal burner's clamp | Idea |
-
-### B. The events
-
-| Event | What it is | Status |
-| --- | --- | --- |
-| **Copper** | **First as veins in the open cliffs of the mountain** (four, two or three lumps each, 2026-10-12), then veins on the cave walls mined out for good, a little on loose rocks, charcoal from embers, the clamp and finds in the wild, the furnace, copper bars, copper tools and weapons at the workbench | Built |
-| **The troll and the cave** | His young (Hårungen, 2026-10-16) bonk at the ore and leave you be unless struck; he comes for you when they are struck again and again, when three are killed, when he sees you, and by a chance that grows with every ore you mine; he walks out some nights within sight and you can sneak past; his hoard is open while he is out; his walk home at morning; stone at dawn if provoked | Built |
-| **The village** | The claim stone (stone, berries, snake blood), territory on the chart, room for N and food for D days, Arnor joins, muster, jobs yielding into chests | Partly (see gaps) |
-| **The arm ring** | The bronze ring from the dead Viking, the carver's bench (blood rite), thirty runes (2026-10-08) from deeds, ten beasts, stones and Arnor, the Ring tab | Built |
-| **The first real boat** | The Shipyard's boat plan (keel, strakes, thwarts), copper nails, sailing like the Sea Editor | Partly (no mast or sail) |
-
-**The way in:** the raft from Chapter 1, copper tools being the key preparation. **The way on:** a sail. The boat can
-only paddle; the sea beyond the island is where the next chapter begins. A name heard (Ormr Midgardbane) and a bigger ship's
-sail on the horizon are the pointers, neither built.
-
-### C. The living world
-
-| Part | What it is | Status |
-| --- | --- | --- |
-| C1 Day beasts | Boar, deer, bear, moose, wolves, adders, each with its own attack; more of the larger ones here | Built |
-| C1 The troll | Cave troll with the card in the Book | Built |
-| C1 The troll's young | Hårungen: five in the cave, friendly until struck, the rest that see it join in; the troll senses it (2026-10-16) | Built |
-| C1 More väsen | Bysen, huldra, tomtar, näcken, draugr, mara, shapeshifter (`docs/beasts.md`); at least one more for this chapter | Not started, Open: which one next |
-| C1 Night | Wolves and the walking troll | Built |
-| C2 People | The hamlet's folk (two lines each, no trading), Arnor, the ring-holder (the dead Viking) | Built |
-| C2 The hamlet's leader, a trader, a charcoal burner, people who can be helped and join | Idea |
-
-### D. What you make and gain
-
-| Part | What it is | Status |
-| --- | --- | --- |
-| D1 Materials | Copper ore, charcoal, copper bars, snake blood, antler | Built |
-| D1 Metals beyond copper | Bronze (tin), iron: decided later by chapter | Not started |
-| D1 Crafting | Furnace board, copper tools and seven copper weapons, the carver's bench | Built |
-| D1 Trading | The hamlet trades the basics (food, materials) | Not started |
-| D2 Building | Claim stone, the carver's bench, furnace, clamp, chests, stairs and upper floor | Built |
-| D2 The hird at home | Jobs: crafter, woodcutter, cook, keeper; they eat at dawn; Arnor walking to the bench | Partly (Arnor does not yet walk to the bench; idle day, chatter, fighting beside you not built) |
-| D3 Power | Bronze ring, thirty runes (2026-10-08); copper weapons | Built |
-| D3 Currency | The first island trades in the basics | Not started |
-
-### E. Travel
-
-| Part | What it is | Status |
-| --- | --- | --- |
-| E1 The boat | Clinker hull shaped by its strakes, paddled by one; the Sea Editor's physics | Built |
-| E1 Crew and sail | Hirdmen at the oars; a mast and sail | Not started |
-| E1 Hazards at sea | Reefs, storms that give buffs for preparing, never a punishment | Idea |
-
-### F. Making and checking it
-
-| Part | What it is | Status |
-| --- | --- | --- |
-| F1 The test scene | The Rune Editor (the game's second island with the hut, bench, furnace, clamp, ring and a board that goes to the cave, lair, troll and veins) | Built |
-| F1 Editors | Hird Editor, Sea Editor with the Shipyard, Item Editor | Built |
-| F2 Tests | `tests/ring.js`, `tests/weapons.js`, `tests/gather.js` in `npm test`; a play-through from the big island 2026-10-06; the cave and furnace tried to break 2026-10-07 | Built |
-
-### Gap list for Chapter 2 (the work)
-
-1. **The hird's next steps** (`docs/hird.md`, 2 to 4): Arnor walks to the bench and works, the idle day, chatter,
-   following on land and fighting beside you.
-2. **Trading at the hamlet**: the basics for goods; a trader; the first currency question (Open: is it silver?).
-3. **A mast and a sail** so the boat leaves the island, and hirdmen at the oars.
-4. **A second väsen** for this chapter (Open: Robin chooses from the cards), so the cave is not the only one.
-5. **Places of interest** on the island and the islands around it: ruins, a shrine, small finds. (Villages across all six islands with names and jetties: built 2026-10-07, `docs/villages.md` 6.)
-6. **A pointer to Chapter 3**: a name heard, a sail on the horizon, an item that needs something from elsewhere.
-7. **Bronze and the metal ladder**: what tin is and where (idea bank).
-8. **Hazards at sea** as buffs-for-preparation, not punishment.
+**Its six areas** (perfected when chapter 2 is the current one): the troll, the moose and the bear, the villages and buildings,
+cave props and the ring's art (the studio's phase 2); fighting the troll and the bear; the furnace, the carver's bench and the
+shipyard's boards; the ring page and the chart of home water; the cave's and the mountain's sound, the village's sound; the
+night with the troll walking out.
 
 ---
 
-# Chapter 3: The second biome and the first raid
+# Chapter 3: The first sea and the first raid
 
-**Summary (decided in the ladder of islands, Robin 2026-10-06).** New things again. The big events are **the first
-Viking ship** and **the first raid on a nearby island, which everything in this chapter revolves round**. The ring grows:
-the **silver ring** (the eye side) from the second biome's ring-holder or hoard.
+**Summary.** Across the first crossing to the south water, the settled lowlands: churches, towns, a manor, silver. Raiding is
+introduced here (Robin, 2026-10-19). Your first raid there opens raiding at home too: the jarl calls you to his hall.
 
-Nothing here is built. What is written below is only what is already decided or implied by other documents; the rest is
-the template's headings with questions.
+| Part | Status |
+| --- | --- |
+| The south water and its islands (the lowland look: oak, beech, ash, orchards, chalk, fields, marsh) | Built in code, not spawned |
+| The town, the church, the manor (Village archetypes) | Built in code |
+| **The raid in the real game**: the garrison, your ship and hird, carrying, leaving, saved (`docs/build-plan-waters.md`, step 4) | Not started (all of it works in the Battle test) |
+| Men, towns and raids: one on one, bowmen, noise, night raids, storming, villagers who flee or arm (`CLAUDE.md`) | Built in the Battle test |
+| Destruction: breaking in, roofs that fall, fire, mending (`docs/destruction.md`) | Built (real villages and the Destruction Editor) |
+| Iron: bog iron, the bloomery, iron tools and arms, mail, gambeson, helm, painted shield | Built in code |
+| The longship (iron) | Built in the Shipyard |
+| The raided place's life and the season turn (`docs/world-shape.md`; the build plan's step 5) | Not started |
+| The jarl's call after the first raid | Not started |
+| Thralls to cut loose, your taken men to win back, a man who yields, a priest who does not fight | Decided, not built |
+| Fishing (the lowlands' fish, the rod, the fisherman; Robin: not before the lowlands; moved here) | Built in code |
+| The silver ring, silver as the second currency | Not started |
 
-| Heading | What is decided or implied | What is open |
+---
+
+# Chapter 4: The other seas
+
+The north, east and west waters, at about the same level as the south, each giving different things so all are worth a visit
+(Robin, 2026-10-19): the north's furs, ivory and ore; the east's amber, bog iron and the trading hub; the west's seal skin, the
+sunstone and the way further west (`docs/world-shape.md`, my table). **The jarl's fall and home's islands claimed one by one**
+(Robin, 2026-10-19). Rumours as leads that mark the chart. Each sea's named slot (special islands, added as we have ideas:
+Robin). The twisted silver ring.
+
+# Chapters 5 and beyond
+
+The second circle and further: harder, the next metals (Robin: a new ore every circle). **Kvennaey** (the far west; Robin's
+family, canon 2026-10-17: Skuld's Daughters, the invited season, the drowned, Ari, the rune Brimgr; Njord as god of the seas).
+Legendary Vikings with big ships. Gold in the hall of the south, the gold ring; **Odin's ring** (its name the Lore Director's:
+not "dragon", Robin 2026-10-19). The serpent (the studio's `out/serpent`). The väsen waiting in the Art Editor (the huldra,
+Näcken, the draugr, Trollmor, the bysen, the forest troll, the Gape, the three-headed troll): which goes to which chapter is
+Open. **The full year**: every season drawn everywhere, the turn after winter that renews the world (Robin: for later).
+
+---
+
+# Foundations (no chapter: what every chapter stands on)
+
+| Work | When | Status |
 | --- | --- | --- |
-| A1 The world | **Decided 2026-10-07: the south, settled lowlands** (oak, beech, ash, hedgerows, hay meadows, ploughed strips, orchards, chalk; walled towns, churches with priests, a manor); its islands lie further south and mix at the edges with the first biome's. **Built:** biome-marked islands placed south, the biome field, the warm ground, the lowland trees and chalk, marsh, field and chalk ground kinds | How many islands and how far (the balance pass) |
-| A2 Places | Villages, castles and churches stand here and can be raided; some villages trade. **Built 2026-10-07:** the walled town with the jarl's hall, its church and market; the lone church with its priest (the lucky strike, no guards); timber framing, cut stone, tiles, slate | Castles; how many towns a world has |
-| B1 Big events | **The first Viking ship; the first raid**; the silver ring. **Decided 2026-10-07:** the raid is loot spread out behind doors that take blows, carried to the ship piece by piece, the defenders gathering to the noise (no bell, no waves from a castle, fighting not the biggest part); **a human jarl holds the silver ring**, won by a raid on his hall; nothing off limits, reputation the brake **Built 2026-10-07:** the raid itself (`docs/raid.md`): guards who wake to the noise, locked doors the axe breaks, the heavy silver carried to the ship and unloaded at home, the village hiding and remembering. **Built 2026-10-13, in the battle test scene only** (`docs/battle-plan.md`, rungs 5 and 6): a town of twenty men who find their way, wake to noise and go back to their day; bowmen; the blow from behind; your own men carrying a chest or a fallen friend to the ship on your word; leaving. **Decided 2026-10-13** (twelve answers: `CLAUDE.md`): a band is barred at the gate, pursuit by what you took, a man left behind is taken, the party grows with your ships, a shield wall, the hero dragged to the ship, more to take deeper in. **Built 2026-10-13** (`docs/destruction.md`; the Destruction Editor, `?scene=ruin`): breaking in through a wall by what it is made of and the tool in hand, a roof that comes down when a third of its walls are gone, fire that runs along wood and thatch and downwind, a place left trashed, and mending it once it is yours; the people get out of what burns. **Tried big 2026-10-13** (`docs/destruction.md` section 9): a great village and a great town of 17 to 21 buildings raided and sacked by script, then again with every house half again as big; twenty-one faults found and fixed, seven of them in the engine every fighting man uses (a fire now draws the men to look at it, stakes fall one a blow, nobody freezes in a big place, a man against a wall strikes, nobody waits for a foe at a gate) **Built 2026-10-13, the same scene and partly the real game** (`CLAUDE.md`: "Man to man, not a swarm", "Weapons that drop and are taken", "Four ways to raid", "House sizes"): fights that pair off one on one with help after a while; a fallen man's weapon lies to be taken and a man taken from behind bare-handed leaves his in your hand; a sea chest in the boat; villagers who flee, take cover or arm themselves; weapons away in a place at peace and the peace ended by a blow or a theft that is seen; a walled town's gate that lets in one unarmed man; the night (the town asleep, a watch with a torch, sleepers killed with a risk of waking the rest, the back gate on the latch); storming on one word; houses at real sizes. | The third and fourth events; the raid in the real game (the lowlands are not spawned); a ram, a barred gate, the town fighting a fire |
-| B2 Way on | Heavier metal beats you, each chapter has its ring-holder | What points beyond |
-| C1 Beasts | Harder than Chapter 2 | Which animals and väsen (`docs/beasts.md` cards) |
-| C2 People | Villagers with guards, captives who may join, the ring-holder. **Decided 2026-10-13, not built:** thralls to cut loose, your own taken men to win back, a man who yields bound and taken or let go, a priest who does not fight | The legend; reputation (decided: risk and reward, a village remembers) |
-| D1 Materials | Silver and goods as loot; **iron (decided 2026-10-07):** bog iron from the marsh, a bloomery, iron tools and weapons, mail, gambeson, an iron helmet, a painted shield; silver by weight as the second currency. **Built 2026-10-07:** bog iron in the marsh, the bar at the furnace, iron tools and arms, the gambeson, the mail shirt, the iron helm, the painted shield | Silver sources |
-| D3 Power | Silver ring, the eye side; the smith's rework | The runes for this chapter (bosses, raids, fishing, quests, hirdmen) |
-| D3 Currency | A second currency is allowed "about every third biome" | Whether Chapter 3 adds one |
-| E1 Travel | **Built (2026-10-08):** the karve, laid in the yard: a keel of five to nine with iron nails, strakes, two seats or more, a mast amidships, a striped square sail, a steering oar at the stern; the wind a buff only (behind: up to 1.5x), each rower 7% more; followers board as rowers, step off at home, wait with the ship elsewhere | A hirdman's death at sea; cargo beyond the one chest |
-
-**Chapter 3 needs trading before it can start** (the mast and sail, hird crewing and the raid system are built; Chapter 2 gaps 1 to 3).
-Raiding, reputation, recruiting from raids, and the year (spring to winter, repopulation of unclaimed places) are the
-systems this chapter introduces (`docs/roadmap.md`, steps 7 to 9; `docs/idea-bank.md`, 1 to 4).
+| **Saves that fit**: save what changed on the ground, not the whole field (today 1.5 MB of 1.56; the browser gives about 5 MB in all) | before the bigger sea (chapter 2) | Not started (`docs/before-wednesday.md`, 1) |
+| **Sheets loaded when used**, a soft shadow while one loads (the hero's sheets are about 1.5 GB decoded and all load at the start) | now: it touches chapter 1's smoothness | Not started (`docs/before-wednesday.md`, 2) |
+| **The per-frame packer** (each frame cut to its own pixels), then the studio repacks every set | after the lazy loading | Not started (the art plan, item 8) |
+| **The world as waters** (the generator) | chapter 2's start | Planned (`docs/build-plan-waters.md`, step 1) |
+| Performance: the frame log's SPIKE lines, the first frame's time | always | Watched |
+| Tools: `tools/parsecheck.js` (built), `tools/worldtime.js` (to write with the generator) | | |
 
 ---
 
-# Chapters 4 and beyond
+## The template: what a chapter must answer (kept)
 
-Only the shape is known. Each is a new part of the compass, a new ring metal and its own events (**Robin, 2026-10-06**):
+Every chapter is written under these headings before it is built; a heading with nothing under it is a gap.
 
-| Chapter | Where | Known |
-| --- | --- | --- |
-| 4 and 5 | By the compass: north the cold, east the rivers and trade, west the unknown | The twisted silver ring (heart side), the central **trading hub** (heavily guarded, unwise to attack; Hedeby, Birka and Kaupang are the candidates), legendary Vikings with big ships |
-| later | The south, "England in the south": richer, more settled | **Gold in the hall of the south**, the gold ring |
-| last known | Beyond | **Odin's ring** (its name is the Lore Director's; not "dragon", Robin 2026-10-19) |
+- **A. The place:** the islands, the water they are in, the climate and look, what is generated and what is fixed; the places
+  of interest (villages, camps, ruins, caves, landmarks, small finds).
+- **B. The events:** three to five big events (Have / Build / Test each); the way in and the way on (no gate; what points on).
+- **C. The living world:** beasts (real ones first; väsen with a card whose weakness is a rule, `docs/beasts.md`), the night;
+  people (the friend, the folk, the ring-holder, the legend).
+- **D. What you make and gain:** materials, stations, recipes and what reveals each; building and home; the ring's metal and
+  runes; currency; reputation.
+- **E. Travel:** the vessel and the sea.
+- **F. Making and checking:** the editor or test scene to try it alone, the tests, the play-through.
+- **G. The six areas** (Robin, 2026-10-20): art, combat and gathering, menus and crafting, the interface, music and sound and
+  effects, the day and night, each judged by Robin for what the chapter adds.
 
-**Kvennaey, the island of women** (Robin's family, canon through the Lore Director, 2026-10-17; chapter 4 material, nothing
-built): Skuld's Daughters, every woman a Skuldardottir (Geirhild, Eydis, Yngvild; Ari, a hidden son of sixteen); men land
-only in the invited season (generally summer, by how the seasons are made), opened by a quest (Geirhild, met on another
-island, marks it on the chart); out
-of season draugr rise from the surf against men, never women; the lore warns when the season is ending; a hidden son can be
-hired as a hirdman; the rune **Brimgr** makes draugr leave the hero alone unless struck (like the Wolf's run; how it is
-learnt and how the season's end is warned are Robin's to come back to). The lore's ids:
-`family.skulds-daughters`, `place.kvennaey`, `being.noatun-drowned`, `thing.rune-brimgrid`, `person.skuld`, `person.ari`.
-Njord is canon as the god of the seas (in the background, as every god).
+## The rules every chapter keeps
 
----
+- Big events, not a boss ladder; several ways to progress (Robin).
+- Each chapter harder than the one before; harder never means punishment (Robin).
+- No gates, keys or locked doors (Robin).
+- One easy formula, plenty of curveballs (Robin).
+- The compass means something, the details are generated (Robin).
+- Guidance is subtle: no goals, checklists, explaining labels or question marks (Robin).
+- Reward, never punish (Robin).
+- Real Viking-age things and real animals first; fantasy from Norse myth and nordic folklore (Robin).
+- Editor first, then the game; numbers in plain data (Robin).
+- The look is the art direction's (`docs/art-direction.md`): characters and set pieces from the studio's Blender models, the
+  generated world drawn in code; sounds and music from the sound studio; words from the Lore Director.
 
-## 4. The checklist for a new chapter
+## The checklist for finishing a chapter
 
-Copy this when a chapter is started. It is the template in one list; an unticked box is a gap.
-
-**Brief (before any code)**
-- [ ] Place: islands, biome, compass position, distance from home, the look (A1)
-- [ ] Places of interest listed, each with what you can do there (A2)
-- [ ] Three to five big events named, each with Have / Build / Test (B1)
-- [ ] The way in and the way on written, with the pointer to the next chapter (B2)
-- [ ] The beasts (real ones, then väsen with a card whose weakness is a rule) and the night (C1)
-- [ ] The people: the friend, the folk, the ring-holder, the legend (C2)
-- [ ] Materials, stations, recipes and what reveals each; tool and armour tier; food (D1)
-- [ ] Building pieces and what a comfortable home needs here (D2)
-- [ ] The ring: the metal, the runes and their sources; currency; reputation (D3)
-- [ ] The vessel and the sea (E1)
-- [ ] Questions for Robin written down (Open)
-
-**Rules check (section 1)**
-- [ ] No gate, no hint line, no checklist in the game, no question marks
-- [ ] Nothing punishes: no draining meter, no stamina cut, no repair chore
-- [ ] Harder than the chapter before, with one easy formula and curveballs
-- [ ] Real Viking-age things and real animals first; fantasy only from Norse myth with a card
-- [ ] Every number in plain data; nothing hard-coded that an editor could tune
-
-**Build (in this order)**
-1. [ ] **Editor or test scene first**: a row or board that puts the player at the chapter's key place with what it needs
-   (the Rune Editor is the model; add rows, not a new page, where you can)
-2. [ ] The world: islands, ground, props, places of interest
-3. [ ] The big events, one at a time, each playable alone
-4. [ ] Beasts and people
-5. [ ] Materials, stations, recipes
-6. [ ] The ring and its runes
-7. [ ] Travel
-8. [ ] Look and sound (the music's day and evening theme, the palette)
-
-**Check**
-- [ ] A headless test in `tests/` for every rule that can be checked without a screen (`npm test`)
-- [ ] Played through in the browser from the chapter's start, once as a new player
-- [ ] Tried to break it (die in the middle of things, reload mid-job, wreck a working station, full bag, night by day)
-- [ ] Bugs found are fixed and written into `CLAUDE.md` under the feature
-- [ ] `CLAUDE.md` updated; this file's chapter table updated; `docs/roadmap.md` marked
-- [ ] `dist/` rebuilt and committed
-
----
-
-## 5. How to work with this file
-
-- **Planning a chapter:** copy section 4's checklist under the chapter's heading, fill the template (section 2) with what is
-  decided, and write what is not as Open questions for Robin. Ask them with the questionnaire tool, a few at a time.
-- **Working a chapter:** take the first unticked build step; build it behind its test scene row; test; tick it. When a
-  row in a status table changes, change the word and move the detail into `CLAUDE.md`.
-- **Choosing what to do next:** read the gap lists. Chapter 1's gaps are the cheapest and change what every new player
-  sees first; Chapter 2's gaps 1 to 3 (the hird, trading, the sail) unlock Chapter 3.
-- **Keeping it honest:** a thing is **Built** only if it is in the game and has been played. Ideas stay in
-  `docs/idea-bank.md`; decided things go here and in `CLAUDE.md`.
+- [ ] The template answered; questions for Robin asked
+- [ ] Built in its test scene first, then in the game, one big event at a time
+- [ ] A headless test for every rule that can be checked without a screen (`npm test`)
+- [ ] Played through by script, then by Robin
+- [ ] **The six areas judged by Robin**: art, combat and gathering, menus and crafting, the interface, sound, day and night
+- [ ] What Robin found is fixed; `CLAUDE.md` and this file updated; `dist/` rebuilt and committed
+- [ ] Robin is happy: the chapter is **Done**, the next one becomes current

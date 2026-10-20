@@ -1,5 +1,9 @@
 # Before Wednesday (2026-10-21): what to do first, on Opus
 
+> **2026-10-20, later:** with Robin's rule of one chapter at a time (`docs/chapters.md`), the waters plan is chapter 2's and the
+> Fable session's aim is Robin's to choose again. Tasks 1 and 2 here (the saves, the sheets loaded when used) are foundations and
+> stand either way; 3 is done; 6 (the fires) is done; 4, 5 and 7 belong with the waters plan.
+
 **A plan (2026-10-20).** The long Fable session builds `docs/build-plan-waters.md`. These are the things that must or should be
 done before it, so that Fable builds from the first minute and does not trip over them. Each says who does it, why, and when
 it is done. Mine are in order; Robin's can come at any time today.

@@ -80,9 +80,14 @@ and not built (`docs/idea-bank.md`).
 - **Scope for now (2026-10-09): the starter island and the big island only**, until they feel great (`spec.sizes` [120,
   400], `biomes` [0, 0], `count` 2); the lowlands and further islands stay in the code, not spawned. **The big island has a
   small mountain** (foothills and a small plateau, about a sixth of it, its north-west; the first copper).
-- **Chapters** (`docs/chapters.md`, read it first when planning; keep its status tables up to date): 1 the starter island,
-  2 the big island, 3 the second biome and the first raid, 4 on by the compass. Work a chapter at a time on one engine and one
-  set of numbers; raiding and combat get the most work.
+- **Chapters** (`docs/chapters.md`, read it first when choosing what to do; keep its status tables up to date): 1 the starter
+  island, 2 home water (the big island and its neighbours), 3 the first sea and the first raid, 4 the other seas, 5 and
+  beyond (the cut is mine, 2026-10-20). **One chapter at a time** (Robin, 2026-10-20): a chapter is finished when Robin is
+  happy with its content and six areas, each perfected for that chapter: models and art, combat and gathering, menus and
+  crafting, the interface, music and sound and effects, the day and night. **What belongs to another chapter is moved there**
+  and not worked on now. A system is perfected where the player first meets it (the basics all in chapter 1). Foundations
+  (saves, memory, the generator) are done when a chapter needs them. **The current chapter is 1.** One engine and one set of
+  numbers throughout.
 - **The start:** you land with nothing at a wreck on the starter island; an abandoned, broken steading there shows how a
   village is set up and that the world is dangerous; there you meet Arnor, the first friendly person, and hear of the first
   legendary Viking. **Robin's start (2026-10-16, through the Lore Director; canon):** the hero's past is never explained and

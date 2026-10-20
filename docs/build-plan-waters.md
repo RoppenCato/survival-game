@@ -1,5 +1,9 @@
 # Build plan: the sea as waters (for a long Fable session)
 
+> **Which chapter (2026-10-20):** steps 1 to 3 are chapter 2's work (home water) and steps 4 and 5 chapter 3's (the first sea
+> and the first raid). Under Robin's rule of one chapter at a time (`docs/chapters.md`) this waits until chapter 2 is the current
+> chapter, unless Robin chooses to build the generator early as a foundation.
+
 **A plan, written 2026-10-19 (Opus) for a long session on Fable; waiting for Robin's yes on the decisions in section 1.**
 The design is `docs/world-shape.md` (read its "Robin's answers" and "round two" first): what is Robin's there is decided, the
 rest is mine. This file says what to build, in what order, where in the code, with what first numbers, how to check it and
