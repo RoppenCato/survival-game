@@ -1968,7 +1968,7 @@ __COMBAT__
     if (w.mt && w.mAt(P.x, P.y) > 2.62) return 'rock';
     return 'grass';
   }
-  function ambWave(v) { var nm = pickOf('wave'); if (nm === 'wave' || OLD_SFX() || !Sfx.has(nm)) return false; return !!Sfx.play(AC, amb.master, nm, { v: v * 0.35, pitch: 0.06 }); }   /* a recorded wave on the shore, through the place's own volume; 0.35 (mine) lays it about 15 dB under a blow at the water's edge, louder than the beds, as a wave is */
+  function ambWave(v) { var nm = pickOf('wave'); if (nm === 'wave' || OLD_SFX() || !Sfx.has(nm)) return false; return !!Sfx.play(AC, amb.master, nm, { v: v * 0.35, pitch: 0.04 }); }   /* a recorded wave on the shore, through the place's own volume; 0.35 (mine) lays it about 15 dB under a blow at the water's edge, louder than the beds, as a wave is */
   function ambTick(dt) {
     if (!AC || AC.state !== 'running') return;
     if (!amb) { amb = Ambient.make(AC, AC.destination); for (var lk in LAB.snd) amb.layers[lk] = LAB.snd[lk] ? 1 : 0; ambT = 0; amb.wave = ambWave; }

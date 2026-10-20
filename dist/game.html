@@ -6530,6 +6530,7 @@ function make(AC, dest) {
     shape(g, t, attack || Math.min(0.01, dur * 0.3), vol, dur); src.connect(f); f.connect(g); out(g, pan); src.start(t, R() * 1.4, dur + (attack || 0) + 0.1);
   }
   var E = { trees: 0, shore: 0, aboard: false, sail: 0, fells: 0, night: 0, dusk: 0, dawn: 0, fire: 0, torch: false, brook: 0, wind: 0.5, cave: null };
+  var recSea = false;   // the last wave was a recorded one (the page's amb.wave)
   var nx = { gust: 2, wave: 1.5, bird: 2, far: 6, owl: 14, cricket: 1, crackle: 0.3, drip: 2, creak: 12, boom: 3, lap: 1, slap: 1, cuckoo: 40 }, gustV = 0, gustT = 0, crk = [], vol = 0;
   function set(e) { for (var k in e) E[k] = e[k]; }
   var GAIN = 1.9;                                         // the whole of it against the page's other sounds (measured 2026-10-12: the beds lay 30 dB under a sword's blow; this brings them to about 24)
@@ -6573,8 +6574,9 @@ function make(AC, dest) {
     ease(B.leaves, 0.03 * E.trees * (0.2 + gustV) * outD * L.wind, 0.5);
     // the sea: a wave, then its wash
     var sh = E.aboard ? 0.5 : E.shore;
-    if (nx.wave <= 0) { nx.wave = 4.6 + R() * 4.4; if (sh > 0.03 && outD && L.sea && !E.aboard && self.wave && self.wave(sh * (0.7 + R() * 0.6) * L.sea)) note('wave'); else if (sh > 0.03 && outD && L.sea) { var pk = 0.085 * sh * (0.7 + R() * 0.6), g = B.surf.g.gain, fq = B.surf.f[0].frequency; g.setTargetAtTime(pk, t, 0.45); g.setTargetAtTime(0.012 * sh, t + 1.3, 1.1); fq.setTargetAtTime(1500, t, 0.5); fq.setTargetAtTime(480, t + 1.3, 1.2); B.surf.v = -1; if (!E.aboard) burst(t + 1.2, 2.0, 0.022 * sh, 'highpass', 2600, 0.5, (R() - 0.5) * 0.8, 0.8); note('wave'); } }
+    if (nx.wave <= 0) { nx.wave = 4.6 + R() * 4.4; recSea = false; if (sh > 0.03 && outD && L.sea && !E.aboard && self.wave && self.wave(sh * (0.7 + R() * 0.6) * L.sea * Math.pow(10, (R() * 2 - 1) * 0.1))) { recSea = true; B.surf.f[0].frequency.setTargetAtTime(480, t, 1); nx.wave = R() < 0.18 ? 1.2 + R() * 0.8 : 4.6 + R() * 6.4; note('wave'); } else if (sh > 0.03 && outD && L.sea) { var pk = 0.085 * sh * (0.7 + R() * 0.6), g = B.surf.g.gain, fq = B.surf.f[0].frequency; g.setTargetAtTime(pk, t, 0.45); g.setTargetAtTime(0.012 * sh, t + 1.3, 1.1); fq.setTargetAtTime(1500, t, 0.5); fq.setTargetAtTime(480, t + 1.3, 1.2); B.surf.v = -1; if (!E.aboard) burst(t + 1.2, 2.0, 0.022 * sh, 'highpass', 2600, 0.5, (R() - 0.5) * 0.8, 0.8); note('wave'); } }
     if (!(sh > 0.03 && outD && L.sea)) ease(B.surf, 0, 0.6);
+    else if (recSea && !E.aboard) ease(B.surf, 0.01 * sh, 0.8);   /* between recorded waves the wash stays, low and unswept, so the shore never quite stops (the Sound Director's advice, 2026-10-20); each recorded wave is 2 dB either way, now and then a small one close behind a big one */
     ease(B.hull, E.aboard ? (0.012 + 0.06 * E.sail) * L.sea : 0, 0.5);
     if (E.aboard && nx.slap <= 0) { nx.slap = 1.5 - 0.9 * E.sail + R() * 0.7; if (L.sea) { burst(t, 0.13, 0.02 + 0.03 * E.sail, 'lowpass', 380, 0.7, (R() - 0.5) * 0.5); note('slap'); } }
     // birds by day (most at dawn), an owl by night, crickets from dusk
@@ -14621,7 +14623,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (w.mt && w.mAt(P.x, P.y) > 2.62) return 'rock';
     return 'grass';
   }
-  function ambWave(v) { var nm = pickOf('wave'); if (nm === 'wave' || OLD_SFX() || !Sfx.has(nm)) return false; return !!Sfx.play(AC, amb.master, nm, { v: v * 0.35, pitch: 0.06 }); }   /* a recorded wave on the shore, through the place's own volume; 0.35 (mine) lays it about 15 dB under a blow at the water's edge, louder than the beds, as a wave is */
+  function ambWave(v) { var nm = pickOf('wave'); if (nm === 'wave' || OLD_SFX() || !Sfx.has(nm)) return false; return !!Sfx.play(AC, amb.master, nm, { v: v * 0.35, pitch: 0.04 }); }   /* a recorded wave on the shore, through the place's own volume; 0.35 (mine) lays it about 15 dB under a blow at the water's edge, louder than the beds, as a wave is */
   function ambTick(dt) {
     if (!AC || AC.state !== 'running') return;
     if (!amb) { amb = Ambient.make(AC, AC.destination); for (var lk in LAB.snd) amb.layers[lk] = LAB.snd[lk] ? 1 : 0; ambT = 0; amb.wave = ambWave; }
