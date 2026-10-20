@@ -61,7 +61,7 @@ sound and the day and night are perfected in this chapter**.
 
 | Part | What it is | Status |
 | --- | --- | --- |
-| The island | 120 tiles, groves, wide warm beaches, critters by day; the trees at their old size (Robin, 2026-10-16) | Built |
+| The island | 120 tiles, groves, wide warm beaches, critters by day; the trees the studio's pictures since 2026-10-20 (a pine three heroes tall) | Built |
 | The wreck and the start | The name asked over the dark, E pries planks, branches and stones, the key reminders, trail stones to the steading | Built |
 | The burnt steading | Thorgunna's, made over with the destruction states (2026-10-16: a burnt-out hall, charred posts, a cold hearth), the plank house to mend, the hut, the graves | Built (Robin has seen a picture, not played it) |
 | Arnor | His lines from the lore, building opened by his word, the home's lacks, the raft at comfort 4, the graves, the shore at the first raft | Built |
@@ -84,7 +84,7 @@ sound and the day and night are perfected in this chapter**.
 | The fires (campfire, hearth, fireplace, brazier, fire pit) | Built (2026-10-20; Robin's yes) |
 | The people (Arnor first): the lit side and the new face | Built (2026-10-20; 263 MB decoded, was 313) |
 | The wolf and the adder with the lit side | Built (2026-10-20; the wolf 32 MB, was 65; the adder 19, was 30) |
-| **The trees**: three concepts for Robin, then pine, birch and broadleaf as set pieces with the felling drawn over | Open (the most screen time of anything; the studio, phase 1) |
+| **The trees**: three concepts for Robin, then pine, birch and broadleaf as set pieces with the felling drawn over | Built (2026-10-20: Robin's pick, concept A at the large size; the pine, oak and birch and their felled trunks are the studio's pictures; the logs' pictures wait for a use) |
 | Crafting stations (workbench, shipwright's bench first) | Not started (the studio, phase 1) |
 | Furniture (bed, chest, chair, table, bench, crate, barrel) | Not started (the studio) |
 | Camp things (drying rack, woodpile, cart, well, trough, tent without stripes) | Not started (the studio) |
