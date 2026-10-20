@@ -10855,6 +10855,7 @@ function damageEnemy(e, dmg, ang, kb, stag, kind, src) {   // src: the man whose
   spark(hx, hy, Math.round(((heavy && !killing ? 12 : 7) + (crit ? 5 : 0)) * (0.7 + 0.3 * WT)), crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#fff3b0'), heavy ? 150 : 110);
   num(e.x, e.y - e.r * 2.2 - 10, String(Math.max(1, Math.round(dealt * SHOW))), blocked && !broke ? '#cfd6e6' : crit ? '#ffd34d' : (weak ? '#8fe3ff' : '#ffffff'), !blocked && (heavy || crit || WT >= 1.4));   // (the number is the blow times SHOW, whole; a heavy weapon's is big)
   sfx(blocked && !broke ? 'block' : ((heavy && !killing) || WT >= 1.4) ? 'heavyhit' : 'hit', melee ? Math.min(2, P.atk.combo) : 0, null, WK ? { kind: WK, wt: WT, heavy: heavy && !killing } : null);
+  if (!blocked && !killing && e.type === 'beast' && e.bkind) sfx('pain', (heavy || WT >= 1.4) ? 1 : 0, e, { beast: e.bkind });   // the beast's own cry, after the hit (the page plays it if one is picked: 2026-10-20)
   if (broke) { bits(e.x, e.y, 4); sfx('slam', 0, e); }
   if (crit) { sfx('crit'); e.rattle = 1.6; }
   if (bigE) {
@@ -12766,7 +12767,7 @@ function tune(over) {
 function tuneDiff(T) { var D0 = tuneDefaults(), out = {}, g, k, kk; for (g in T) { for (k in T[g]) { if (typeof T[g][k] === 'object') { for (kk in T[g][k]) if (D0[g] && D0[g][k] && Math.abs(T[g][k][kk] - D0[g][k][kk]) > 1e-9) { out[g] = out[g] || {}; out[g][k] = out[g][k] || {}; out[g][k][kk] = T[g][k][kk]; } } else if (D0[g] && Math.abs(T[g][k] - D0[g][k]) > 1e-9) { out[g] = out[g] || {}; out[g][k] = T[g][k]; } } } return out; }   // what differs from the code's own numbers
 function beastNum(k) { if (!TUNED) tune({}); return TUNED.beasts[k] || null; }
 function tuneBeast(e, k, o) {         // a beast dressed from the tuned numbers: its health, bite, speed and windup (and how far it notices you, when the page asks)
-  var b = beastNum(k); if (!b || !e) return e; o = o || {};
+  var b = beastNum(k); if (!b || !e) return e; o = o || {}; e.bkind = k;   // which beast it is (its cry when struck: 2026-10-20)
   e.hp = e.maxHp = b.hp; e.cfg = e.cfg || {}; e.cfg.dmg = b.dmg; e.cfg.speed = 58 * b.speed;
   if (e.cfg.atk) { e.cfg.atk = Object.assign({}, e.cfg.atk); e.cfg.atk.windup = b.windup; } else e.cfg.windup = b.windup;
   if (o.aggro) e.aggro = b.aggro;
@@ -12902,7 +12903,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   /* recorded sounds (2026-10-15, Robin: the attack sounds from the Sound director): src/sfx.js plays the studio's WAVs, bundled into
      assets/sfx/combat.js by tools/sfxjs.js; a sound with no recording plays the synthesized one above. The chain's x2 to x4 are
      chain_2 to chain_4; a hit of a chain's later blows is a shade higher, as the synthesized one is */
-  var SFX_SET = '../assets/sfx/combat.js?v=311bafc0';   /* (the tag is a hash of the bundle: a browser kept the old one, 2026-10-16) */
+  var SFX_SET = '../assets/sfx/combat.js?v=07b0c5f7';   /* (the tag is a hash of the bundle: a browser kept the old one, 2026-10-16) */
   /* the hero's swing starts in his windup so its loudest moment comes as the blow lands (x.lead, 2026-10-15) and is cut when it
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
@@ -12923,7 +12924,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function pickedOnly(b) { var k = SFX_PICK[b]; return k && k !== 'orig' && Sfx.has(b + '_' + k) ? b + '_' + k : null; }
   var SFX_ALIAS = { trunkfall: 'fall', logoff: 'fall', boxbreak: 'fall' };   /* the synthesized sound of a name that has none of its own */
+  var PAIN_OF = { boar: 'boar', boarYoung: 'boar', wolf: 'wolf', deer: 'deer', snake: 'snake', bear: 'bear', moose: 'moose', troll: 'troll' }, painAt = -9;   /* a struck beast's cry (the Sound Director's, 2026-10-20): always on a heavy blow, every other light one, never two within 0.35 s (mine) */
   function recName(n, v, x) {
+    if (n === 'pain') { var pb = x && PAIN_OF[x.beast], tp = AC ? AC.currentTime : 0; if (!pb || (!v && Math.random() < 0.5) || tp - painAt < 0.35) return ''; var pk = pickedOnly('pain_' + pb); if (pk) painAt = tp; return pk || ''; }
     if (n === 'treefall') return pickedOnly('treefall');                     /* at the felling blow: its crash lands with the trunk */
     if (n === 'trunkfall') return pickedOnly('treefall') ? '' : null;        /* the trunk landing: nothing more, when the fall is recorded ('' is heard as handled) */
     if (n === 'logoff') return pickedOnly('logthud');
@@ -12947,6 +12950,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if ((n === 'hit' || n === 'heavyhit') && name !== n && x && x.kind && HIT_RATE[x.kind] && name.indexOf(n + '_' + x.kind) !== 0) o.rate *= HIT_RATE[x.kind];
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */
+    if (n === 'pain') { o.delay = 0.05; o.pitch = 0.05; if (x && x.beast === 'boarYoung') o.rate = 1.15; }   /* the cry a moment after the hit (the studio's preview); a young boar's higher */
     var h = Sfx.play(a, a.destination, name, o); if (h && n === 'swing' && x && x.lead != null) swingH = h;
     return !!h;
   }

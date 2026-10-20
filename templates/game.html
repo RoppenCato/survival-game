@@ -256,7 +256,9 @@ __COMBAT__
   }
   function pickedOnly(b) { var k = SFX_PICK[b]; return k && k !== 'orig' && Sfx.has(b + '_' + k) ? b + '_' + k : null; }
   var SFX_ALIAS = { trunkfall: 'fall', logoff: 'fall', boxbreak: 'fall' };   /* the synthesized sound of a name that has none of its own */
+  var PAIN_OF = { boar: 'boar', boarYoung: 'boar', wolf: 'wolf', deer: 'deer', snake: 'snake', bear: 'bear', moose: 'moose', troll: 'troll' }, painAt = -9;   /* a struck beast's cry (the Sound Director's, 2026-10-20): always on a heavy blow, every other light one, never two within 0.35 s (mine) */
   function recName(n, v, x) {
+    if (n === 'pain') { var pb = x && PAIN_OF[x.beast], tp = AC ? AC.currentTime : 0; if (!pb || (!v && Math.random() < 0.5) || tp - painAt < 0.35) return ''; var pk = pickedOnly('pain_' + pb); if (pk) painAt = tp; return pk || ''; }
     if (n === 'treefall') return pickedOnly('treefall');                     /* at the felling blow: its crash lands with the trunk */
     if (n === 'trunkfall') return pickedOnly('treefall') ? '' : null;        /* the trunk landing: nothing more, when the fall is recorded ('' is heard as handled) */
     if (n === 'logoff') return pickedOnly('logthud');
@@ -280,6 +282,7 @@ __COMBAT__
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if ((n === 'hit' || n === 'heavyhit') && name !== n && x && x.kind && HIT_RATE[x.kind] && name.indexOf(n + '_' + x.kind) !== 0) o.rate *= HIT_RATE[x.kind];
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */
+    if (n === 'pain') { o.delay = 0.05; o.pitch = 0.05; if (x && x.beast === 'boarYoung') o.rate = 1.15; }   /* the cry a moment after the hit (the studio's preview); a young boar's higher */
     var h = Sfx.play(a, a.destination, name, o); if (h && n === 'swing' && x && x.lead != null) swingH = h;
     return !!h;
   }

@@ -623,8 +623,8 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   unless it is chosen on its own. Robin has not chosen yet; the studio's hit is still the default.
 - **The sound bundle and the music scripts carry `?v=` and a hash of their bytes** (`file_tag` in `tools/build.py`): a browser
   kept the old bundle. Rebuild after `node tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|
-  C:/dev/SG/Sound Director/out/sfx/hit_v|C:/dev/SG/Sound Director/out/sfx/chapter1|assets/sfx/robin|assets/sfx/free" combat`
-  (10.6 MB).
+  C:/dev/SG/Sound Director/out/sfx/hit_v|C:/dev/SG/Sound Director/out/sfx/chapter1|C:/dev/SG/Sound Director/out/sfx/flesh|assets/sfx/robin|assets/sfx/free" combat`
+  (11.6 MB).
 - **The world's sounds (2026-10-20, after Robin's play-test; the four free packs he chose, credited in `assets/sfx/free/CREDITS.md`):**
   candidates to pick in the arena's The sounds panel: the hit on a tree (`chop` A to C), on a rock (`clink` A), a tree falling
   (`treefall` A, played from the felling blow and trimmed so its crash lands with the trunk, which then plays nothing more), a
@@ -635,6 +635,14 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   place's volume, ashore only; the arena's row can put the synthesized sea back): each wave ±2 dB and ±4%, gaps 4.6 to 11 s
   with now and then a close pair, and between them the old wash low and unswept (0.01: the Sound Director measured it 11 to
   17 dB under the waves; 0.012 for a more continuous shore, under 0.007 it no longer fills the gaps).
+- **Enemies getting hit (2026-10-20, Robin: "we still need to find good sounds of enemies getting hit"; my brief from what
+  others do: a crack under 10 ms, real flesh, weight only on heavy blows and never leading, a tiny tail, and the creature's
+  own cry).** The Sound Director's `out/sfx/flesh` (CC0 sources in `CREDITS.md`): hits W (the slap), X (the punch), Y (the wet
+  one) with heavy hits to match, in the hit row; and **the beasts' cries when struck** (`pain_boar`, `pain_wolf`, `pain_deer`,
+  `pain_snake` W; chapter 1's beasts only): the engine calls `sfx('pain')` after a hit on a beast that does not kill it
+  (`e.bkind`, set by `tuneBeast`), and the page plays the picked cry 50 ms later, always on a heavy blow, every other light
+  one, never two within 0.35 s (mine); none until one is picked in the arena. Real boar, wolf and deer recordings need
+  Robin's Freesound account or a Sonniss bundle.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the
   Escape menu's bar is turned up; there is no mute key (M is the map).

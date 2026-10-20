@@ -368,7 +368,9 @@ __SFX__
   }
   function pickedOnly(b) { var k = SFX_PICK[b]; return k && k !== 'orig' && Sfx.has(b + '_' + k) ? b + '_' + k : null; }
   var SFX_ALIAS = { trunkfall: 'fall', logoff: 'fall', boxbreak: 'fall' };   /* the synthesized sound of a name that has none of its own */
+  var PAIN_OF = { boar: 'boar', boarYoung: 'boar', wolf: 'wolf', deer: 'deer', snake: 'snake', bear: 'bear', moose: 'moose', troll: 'troll' }, painAt = -9;   /* a struck beast's cry (the Sound Director's, 2026-10-20): always on a heavy blow, every other light one, never two within 0.35 s (mine) */
   function recName(n, v, x) {
+    if (n === 'pain') { var pb = x && PAIN_OF[x.beast], tp = AC ? AC.currentTime : 0; if (!pb || (!v && Math.random() < 0.5) || tp - painAt < 0.35) return ''; var pk = pickedOnly('pain_' + pb); if (pk) painAt = tp; return pk || ''; }
     if (n === 'treefall') return pickedOnly('treefall');                     /* at the felling blow: its crash lands with the trunk */
     if (n === 'trunkfall') return pickedOnly('treefall') ? '' : null;        /* the trunk landing: nothing more, when the fall is recorded ('' is heard as handled) */
     if (n === 'logoff') return pickedOnly('logthud');
@@ -392,6 +394,7 @@ __SFX__
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
     if ((n === 'hit' || n === 'heavyhit') && name !== n && x && x.kind && HIT_RATE[x.kind] && name.indexOf(n + '_' + x.kind) !== 0) o.rate *= HIT_RATE[x.kind];
     if (n === 'swing' && x && x.lead != null) o.peakAt = x.lead * LEAD_K();   /* its loudest moment as the blow lands */
+    if (n === 'pain') { o.delay = 0.05; o.pitch = 0.05; if (x && x.beast === 'boarYoung') o.rate = 1.15; }   /* the cry a moment after the hit (the studio's preview); a young boar's higher */
     var h = Sfx.play(a, a.destination, name, o); if (h && n === 'swing' && x && x.lead != null) swingH = h;
     return !!h;
   }
@@ -462,7 +465,7 @@ __SFX__
     ['Gathering and the world', ['chop', 'clink', 'treefall', 'logthud', 'boxbreak']]
   ];
   function sfxOld(name) { var m = /^chain_(\d)$/.exec(name); if (m) { SFX.chain(+m[1]); return; } var f = SFX[name]; if (!f) { var b = name.replace(/_[a-z]+$/, ''); f = SFX[b]; } if (f) f(0); }
-  var WORLD_NAMES = { chop: 'the hit on a tree', clink: 'the hit on a rock', treefall: 'a tree falling', logthud: 'a log coming off the trunk', boxbreak: 'a box breaking', block: 'the block', hit_club: 'the club’s hit', heavyhit_club: 'the club’s heavy hit', wave: 'a wave on the shore' };   /* the world's sounds (2026-10-20) */
+  var WORLD_NAMES = { chop: 'the hit on a tree', clink: 'the hit on a rock', treefall: 'a tree falling', logthud: 'a log coming off the trunk', boxbreak: 'a box breaking', block: 'the block', hit_club: 'the club’s hit', heavyhit_club: 'the club’s heavy hit', wave: 'a wave on the shore', pain_boar: 'the boar’s cry when struck', pain_wolf: 'the wolf’s yelp when struck', pain_deer: 'the deer’s cry when struck', pain_snake: 'the adder’s hiss when struck', pain_bear: 'the bear’s cry when struck', pain_moose: 'the moose’s cry when struck', pain_man: 'a man’s cry when struck', pain_troll: 'the troll’s cry when struck' };   /* the world's sounds (2026-10-20) */
   function pickText() {                     // the picks as text, to paste to Claude (2026-10-20: Robin's picks live in his own browser; the editors' way: settings as text, made the default)
     var el = document.getElementById('sfxpicks'); if (!el) return; el.value = 'sfxpick2 ' + JSON.stringify(SFX_PICK);
     var cb = document.getElementById('sfxcopy'); if (cb && !cb.__on) { cb.__on = true; cb.addEventListener('click', function () { el.select(); try { navigator.clipboard.writeText(el.value); cb.textContent = 'Copied'; setTimeout(function () { cb.textContent = 'Copy'; }, 1500); } catch (eC) { document.execCommand('copy'); } }); }
@@ -481,12 +484,12 @@ __SFX__
       host.appendChild(d);
     });
     /* the studio's candidates (<name>_a to _e): a click plays one and makes it the one the arena and the game play (game.sfxpick2) */
-    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit|^(chop|clink|treefall|logthud|boxbreak|block|wave)$/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
+    var cands = {}; Object.keys(Sfx.names()).forEach(function (k) { var m = /^(.+)_([a-z])$/.exec(k); if (m && (Sfx.has(m[1]) || /^swing|^hit|^heavyhit|^pain_|^(chop|clink|treefall|logthud|boxbreak|block|wave)$/.test(m[1]))) (cands[m[1]] = cands[m[1]] || []).push(m[2]); });
     Object.keys(cands).sort(function (p, q) { return (WORLD_NAMES[p] && p !== 'block' ? 1 : 0) - (WORLD_NAMES[q] && q !== 'block' ? 1 : 0); }).forEach(function (base) {   /* the fight's rows first, the world's after */
       var d = document.createElement('div'); d.className = 'sfxrow'; var lab = document.createElement('span'); lab.textContent = 'Choose ' + (WORLD_NAMES[base] ? WORLD_NAMES[base] : base === 'hit' ? 'the hit (every weapon)' : base === 'heavyhit' ? 'the heavy hit' : base === 'swing' ? 'the sword’s swing' : base === 'raise' ? 'the shield going up' : base); d.appendChild(lab);
       var opts = base === 'swing' ? ['free', 'robin', 'orig'].filter(function (q) { return q === 'orig' || Sfx.has(SWING_SETS[q][0]); }).concat(cands[base].sort()) : [''].concat(cands[base].sort()), dflt = base === 'swing' ? (Sfx.has('swing_e') ? 'free' : 'orig') : (DEFAULT_PICK[base] || '');
       var sel = document.createElement('select'), cur = base in SFX_PICK ? SFX_PICK[base] : dflt; if (cur === 'orig' && base !== 'swing') cur = ''; sel.setAttribute('aria-label', lab.textContent);
-      opts.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' || base === 'block' ? 'The studio’s' : base === 'wave' ? 'None: the game’s old synthesized sea' : (Sfx.has(base) ? 'As delivered' : 'None: the game’s old synthesized sound')); if (cur === k) o.selected = true; sel.appendChild(o); });
+      opts.forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = k === 'free' ? 'Robin’s pick: E, and F on a heavy blow' : k === 'robin' ? 'Robin’s own two' : k === 'orig' ? 'The studio’s first' : k ? k.toUpperCase() + (Sfx.label(base + '_' + k) ? ' ' + Sfx.label(base + '_' + k) : '') : (base === 'hit' || base === 'heavyhit' || base === 'raise' || base === 'block' ? 'The studio’s' : base === 'wave' ? 'None: the game’s old synthesized sea' : (Sfx.has(base) ? 'As delivered' : /^pain_/.test(base) ? 'None' : 'None: the game’s old synthesized sound')); if (cur === k) o.selected = true; sel.appendChild(o); });
       function hear() { var k = sel.value, a = ac(); if (a) Sfx.play(a, a.destination, k === 'free' ? 'swing_e' : k === 'robin' ? 'swing_light' : k === 'orig' || !k ? base : base + '_' + k); }
       sel.addEventListener('change', function () { var k = sel.value; if (k === dflt) delete SFX_PICK[base]; else SFX_PICK[base] = k || 'orig'; try { localStorage.setItem('game.sfxpick2', JSON.stringify(SFX_PICK)); } catch (eS) {} pickText(); hear(); });
       var hb = document.createElement('button'); hb.textContent = 'Hear it'; hb.addEventListener('click', function () { hear(); hb.blur(); });

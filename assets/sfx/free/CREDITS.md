@@ -31,3 +31,13 @@ Downloaded the same day with Robin's go-ahead (also looked at: the StarNinjas sw
   `block_a` (wood_hit_07, wood_slam_01, wood_hammer_01).
 - **Kenney Impact Sounds** (kenney.nl, CC0): `chop_c` (impactWood_heavy_000 to 002), `clink_a` (impactMining_000 to 002), `logthud_b`
   (impactWood_heavy_003, 004), `boxbreak_c` (impactPlank_medium_000 to 002).
+
+## The studio's hits on flesh and the beasts' cries (2026-10-20; `C:\dev\SG\Sound Director\out\sfx\flesh`, made from these, all CC0)
+
+- **BigSoundBank**, Joseph Sardin (bigsoundbank.com, CC0): punches, slaps, a spanking, whip cracks; zombie groans, cat roars,
+  small dogs barking, a pig done with the mouth.
+- **qubodup**, Punch (opengameart.org/content/punch, CC0).
+- **Independent.nu**, 8 wet squish and slurp impacts; 35 wooden cracks, hits and destruction (submitted by qubodup, OpenGameArt, CC0).
+- **EZduzziteh**, squish sound effects (OpenGameArt, CC0).
+- **HaelDB**, male grunt and yelling sounds (OpenGameArt, CC0).
+- **rubberduck**, 80 CC0 creature SFX and 80 CC0 creature SFX 2 (OpenGameArt, CC0).
