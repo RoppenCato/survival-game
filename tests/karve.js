@@ -33,7 +33,7 @@ check('a seat off the hull is refused', !sc.target(mw(4, 0)).ok, sc.target(mw(4,
 check('a seat on the mast\'s cell is refused', !sc.target(mw(5, KJ)).ok, sc.target(mw(5, KJ)).why);
 sc.pick = Yard.partsFor('karve').findIndex(p => p.id === 'rudder'); check('the steering oar at the bow is refused', /stern/.test(sc.target(mw(9, KJ)).why), sc.target(mw(9, KJ)).why);
 sc.pick = Yard.partsFor('karve').findIndex(p => p.id === 'dragon'); check('the stem at the stern is refused', /bow/.test(sc.target(mw(1, KJ)).why), sc.target(mw(1, KJ)).why);
-const poor = Object.create(sc); poor.host = { canAfford: () => false, costText: () => '24 wood, 8 iron bars' }; poor.yard = { plan: 'karve', cells: y.slice() };
+const poor = Object.create(sc); poor.host = { canAfford: () => false, costText: () => '24 wood, 10 copper, 12 fibre' }; poor.yard = { plan: 'karve', cells: y.slice() };
 check('a hull you cannot pay for is not sound', /costs/.test(poor.check()), poor.check());
 // the other hulls
 check('faering: one seat is enough, no mast', why('faering', [seat(2)]) === '', why('faering', [seat(2)]));
@@ -44,7 +44,7 @@ check('longship: four seats, the rig: sound', why('longship', ls) === '', JSON.s
 check('longship: three seats are too few', /four at least/.test(why('longship', ls.slice(1))), why('longship', ls.slice(1)));
 check('the raft is as it was', /three logs/.test(why('raft', [])), why('raft', []));
 check('the tiers: raft 1, faering and boat 2, karve and longship 3', Yard.PLAN_TIER.raft === 1 && Yard.PLAN_TIER.faering === 2 && Yard.PLAN_TIER.boat === 2 && Yard.PLAN_TIER.karve === 3 && Yard.PLAN_TIER.longship === 3);
-check('the karve\'s parts cost iron, not copper', Yard.partsFor('karve').every(p => !p.cost.copper));
+check('the karve\'s parts cost no iron (the copper-age ship, 2026-10-20)', Yard.partsFor('karve').every(p => !p.cost.ironBar) && Yard.HULLS.karve.cost.copper === 10 && !Yard.HULLS.karve.cost.ironBar);
 check('the boat\'s stem costs copper', Yard.partsFor('boat').filter(p => p.id === 'dragon')[0].cost.copper === 1);
 // the fit
 const v = { kind: 'karve', parts: y, x: 0, y: 0, h: 0, vx: 0, vy: 0 }; Yard.fit(v);

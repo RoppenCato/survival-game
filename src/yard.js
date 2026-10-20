@@ -13,7 +13,7 @@ var T = 32, TS = 24, K = 0.75;
   var KJ = 3, HULLS = {
     faering: { name: 'Faering', n: 4, beam: 1.0, thwarts: [1, 2], mast: null, rudder: null, tier: 2, zoom: 1.1, cost: { wood: 10, copper: 3 }, text: 'A four-oared boat for the fjord and the sound: two rowing seats at most, no mast. Quick to turn, light to row.' },
     boat: { name: 'Boat', n: 6, beam: 1.4, thwarts: [1, 3], mast: null, rudder: null, tier: 2, zoom: 1.1, cost: { wood: 14, copper: 5 }, text: 'A six-oared boat: three rowing seats at most, no mast. The first that crosses to the big island with a crew.' },
-    karve: { name: 'Karve', n: 9, beam: 2.0, thwarts: [2, 6], mast: 5, rudder: 1, tier: 3, zoom: 0.95, cost: { wood: 24, ironBar: 8 }, text: 'The first ship: a mast amidships, a square sail, a steering oar at the stern, up to six seats for twelve rowers. A karve’s crew is for a farm, a church, a small village.' },
+    karve: { name: 'Karve', n: 9, beam: 2.0, thwarts: [2, 6], mast: 5, rudder: 1, tier: 3, zoom: 0.95, cost: { wood: 24, copper: 10, fiber: 12 }, text: 'The first ship: a mast amidships, a square sail, a steering oar at the stern, up to six seats for twelve rowers. A karve’s crew is for a farm, a church, a small village.' },
     longship: { name: 'Longship', n: 16, beam: 2.4, thwarts: [4, 13], mast: 8, rudder: 1, tier: 3, zoom: 0.58, cost: { wood: 44, ironBar: 16 }, text: 'A warship of the kings: thirteen seats, twenty-six oars, longer than the screen. A town waits for a longship’s crew.' }
   };
   var HULL_IDS = ['faering', 'boat', 'karve', 'longship'], RIGGED = ['karve', 'longship'];
@@ -28,8 +28,8 @@ var T = 32, TS = 24, K = 0.75;
     { id: 'thwart', plan: HULL_IDS, name: 'Rowing seat', cost: { wood: 1 }, w: 1, layer: 'deck', on: 'hull', text: 'A seat with an oar each side, laid anywhere along the hull. The first is yours; more need hirdmen to row.' },
     { id: 'mast', plan: RIGGED, name: 'Mast', cost: { wood: 5, fiber: 4 }, w: 1, layer: 'deck', on: 'hull', text: 'A tall pine stepped on the keel amidships, on the marked cell. The sail hangs from its yard.' },
     { id: 'sail', plan: RIGGED, name: 'Sail', cost: { fiber: 18 }, w: 1, layer: 'fit', on: 'deck', text: 'A square sail of woven cloth, striped. It goes on the mast. A wind from behind is speed for nothing.' },
-    { id: 'rudder', plan: RIGGED, name: 'Steering oar', cost: { wood: 3, ironBar: 1 }, w: 1, layer: 'fit', on: 'hull', text: 'The side rudder, bound at the stern on the right-hand side, on the marked cell. You stand by it and steer.' },
-    { id: 'dragon', plan: HULL_IDS, name: 'Dragon stem', cost: { wood: 4, copper: 1 }, costs: { karve: { wood: 4, ironBar: 1 }, longship: { wood: 4, ironBar: 1 } }, w: 1, layer: 'fit', on: 'hull', text: 'A carved head on the stem at the bow. It changes nothing but what the shore sees coming.' },
+    { id: 'rudder', plan: RIGGED, name: 'Steering oar', cost: { wood: 3, copper: 1 }, costs: { longship: { wood: 3, ironBar: 1 } }, w: 1, layer: 'fit', on: 'hull', text: 'The side rudder, bound at the stern on the right-hand side, on the marked cell. You stand by it and steer.' },
+    { id: 'dragon', plan: HULL_IDS, name: 'Dragon stem', cost: { wood: 4, copper: 1 }, costs: { longship: { wood: 4, ironBar: 1 } }, w: 1, layer: 'fit', on: 'hull', text: 'A carved head on the stem at the bow. It changes nothing but what the shore sees coming.' },
     { id: 'shields', plan: RIGGED, name: 'Shields on the rail', cost: { wood: 8, leather: 4 }, w: 1, layer: 'fit', on: 'hull', text: 'Round shields hung along both rails, as a crew hangs them when it comes in peace or in force. Laid once, anywhere on the hull.' }
   ];
   // the keel and strake cells a hull's design lays in the yard: the keel on row KJ, the strake rows by the beam (two at most on each side)
