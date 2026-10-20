@@ -9,8 +9,8 @@
 // rock from _chop180, and the rest from the plain file.
 const { spawn } = require('child_process'); const fs = require('fs'); const path = require('path');
 const R = path.join('art', 'render'), SRC = path.join('art', 'source'), MAIN = path.join(R, 'hero_kit'), OWNDIR = path.join(R, 'hero_kit_own');
-const FR = { idle: 16, idle_look: 16, walk: 12, run: 10, attack1: 10, attack2: 10, bow_draw: 8, bow_shoot: 6, hit: 8, chop: 12, mine: 12, pickup: 16, interact: 16, drink: 16, sitdown: 12, sit: 8, standup: 12, block: 6, block_walk: 12, death: 12, thrust: 9 };
-const ALL = ['idle', 'idle_look', 'walk', 'run', 'attack1', 'attack2', 'bow_draw', 'bow_shoot', 'hit', 'chop', 'mine', 'pickup', 'interact', 'drink', 'sitdown', 'sit', 'standup', 'block', 'block_walk'];
+const FR = { idle: 16, idle_look: 16, walk: 12, run: 10, attack1: 10, attack2: 10, bow_draw: 8, bow_shoot: 6, hit: 8, chop: 12, mine: 12, pickup: 16, interact: 16, drink: 16, sitdown: 12, sit: 8, standup: 12, block: 6, block_walk: 12, death: 12, thrust: 9, block_wpn: 6, block_wpn_walk: 12 };
+const ALL = ['idle', 'idle_look', 'walk', 'run', 'attack1', 'attack2', 'bow_draw', 'bow_shoot', 'hit', 'chop', 'mine', 'pickup', 'interact', 'drink', 'sitdown', 'sit', 'standup', 'block', 'block_walk', 'block_wpn', 'block_wpn_walk'];   // 2026-10-20: the weapon's block (Robin), for every layer
 const OWN = ['death', 'thrust'], FIGHT = ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_walk'], STAND = ['idle', 'walk', 'run'];
 const WEAR = [['body', 'tunic', 'legs', 'shoes'], ['boots', 'belt', 'coat', 'mail'], ['cloak', 'brooch', 'armring', 'cap'], ['helm', 'hood', 'hairA', 'hairHatA'], ['hairB', 'hairHatB', 'hairC', 'hairHatC'], ['beardA', 'beardB']];
 const WK = k => [k + 'Wood', k + 'Metal'];
@@ -33,6 +33,7 @@ J.push(['k_own_thrust', '', ['thrust'], ['shieldRim', 'shieldFace', 'shieldMark'
 // 2026-10-20 (Robin: the caps looked weird; then "I like all the new headwear"): nine head layers (art/build/kit_heads.py) replace the first cap, helm and hood
 const HEADS = [['capA', 'capB', 'capC'], ['helmA', 'helmB', 'helmC'], ['hoodA', 'hoodB', 'hoodC']], OBSOLETE = new Set(['cap', 'helm', 'hood']);
 HEADS.forEach((ls, i) => J.push(['k_heads' + i, '', ALL, ls, 0])); HEADS.forEach((ls, i) => J.push(['k_ownheads' + i, '', OWN, ls, 1]));
+J.push(['k_hand_bwpn', '', ['block_wpn', 'block_wpn_walk'], [...WK('sword'), 'clubWood', ...WK('seax'), ...WK('knife'), ...WK('axe'), ...WK('greataxe'), ...WK('spear'), ...WK('pick')], 0]);   // 2026-10-20: the things in the hand in the weapon's block
 const OWN_ARGS = ['--size', '320', '--ortho', '4.04', '--inplace', 'death'];
 const args = process.argv.slice(2), JOIN = args.includes('--join'), rest = args.filter(a => a !== '--join');
 const AT_ONCE = +rest[0] || 6, only = rest[1] ? rest[1].split(',').map(Number) : null;

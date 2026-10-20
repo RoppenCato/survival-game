@@ -568,7 +568,7 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   boots, the belt, a coat or mail over the tunic by the chest's material, the cloak, the headwear by the helmet's material (`HERO_HEADS`, the studio's nine heads, Robin liked them all, the tiers mine:
   leather the wool cap with ear flaps, wool the Phrygian cap, fur the fur cap, copper and bronze the plain iron cap, iron the
   conical helm, silver and gold the Gjermundbu; the hoods wait for an item) with the hair under a hat,
-  the bronze ring on the arm, what is in the hand and the shield; starter colours `Sprites.KIT_START`; blades light steel;
+  the bronze ring on the arm, what is in the hand and the shield (the guard: with a shield the shield arm across, `block`; without, the weapon raised across, `block_wpn`, both held through a walk); starter colours `Sprites.KIT_START`; blades light steel;
   the old `hero2-mixamo` can still be chosen in the Art Editor, `game.heroSet`), the people (one body with coloured
   layers, packed as WebP atlases, loaded lazily), the six animals (the boar, deer, moose and bear the studio's lit ones, trimmed to the memory budget, dropped in
   2026-10-20), the boulder troll as the cave troll, Hårungen as his young. The forest troll, the Gape, the three-headed troll,

@@ -70,9 +70,10 @@
     if (H.clip && !A[H.clip.name]) H.clip = null;
     if (H.clip) { var C = A[H.clip.name], cf = Math.floor((t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
-    if ((H.blk || 0) > 0.02 && A.block && !(an && an.sit) && (!opts.layers || holds(opts.layers, 'shieldRim'))) {   /* (the block clip raises the shield arm: only with a shield, Robin 2026-10-20) */          // the guard is up (H.blk, eased in tick): the left arm brought across as he stands, held across through the walk
-      if (!(an && an.amt > 0.3)) return { a: 'block', f: frameAt(A.block, Math.min(0.999, H.blk)) };
-      if (H.blk > 0.5 && A.block_walk) return { a: 'block_walk', f: loopFrame(A.block_walk, t * 0.62) };   /* (he walks at about half his pace with it up) */
+    var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
+    if ((H.blk || 0) > 0.02 && A[bk] && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the arm brought across as he stands, held
+      if (!(an && an.amt > 0.3)) return { a: bk, f: frameAt(A[bk], Math.min(0.999, H.blk)) };
+      if (H.blk > 0.5 && A[bkW]) return { a: bkW, f: loopFrame(A[bkW], t * 0.62) };   /* (he walks at about half his pace with it up) */
     }
     if (an && an.sit && A.sit) { var ls = loopAt(A.sit, t); return { a: 'sit', f: ls.f, f2: ls.f2, w: ls.w }; }
     var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (A.walk ? 'walk' : 'idle')) : 'idle';
@@ -183,7 +184,7 @@
   function attach(Combat, H, opts) {
     opts = opts || {};
     if (!H) { Combat.api.heroSprite = null; return null; }
-    if (H.kit) peopleWarm(H, kitLook(H, null), ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'chop', 'mine', 'death']);   // the first look's sheets asked for at once
+    if (H.kit) peopleWarm(H, kitLook(H, null), ['idle', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn', 'chop', 'mine', 'death']);   // the first look's sheets asked for at once
     Combat.api.heroSprite = function (c, x, y, face, an, dashing) {
       var P = Combat.dbg().P; tick(H, P);
       var o = { scale: opts.scale ? opts.scale() : 1, shadow: opts.shadow ? opts.shadow() : true, shadowHue: opts.shadowHue, lit: opts.lit ? opts.lit(P) : null, layers: opts.layers ? opts.layers(face) : null, stepData: Combat.api.stepData, tool: opts.tool };

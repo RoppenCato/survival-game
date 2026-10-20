@@ -58,7 +58,7 @@ Escape, Admin: download the error log and the frame log, and put both in the pro
 7. No beasts in the first village (the steading): they keep a distance from it.
 8. No charcoal on the starter island (nothing there uses it): the old fire rings and the morning embers there give none.
 9. The idle of the hero and Arnor fades in and out "like a drunken thing": the blend between frames made smooth.
-10. Blocking without a shield raises the other arm: until the studio has a block with the weapon, no shield-arm block clip.
+10. Blocking without a shield raises the other arm: now the weapon comes up across the face (the studio's `block_wpn`, and `block_wpn_walk` while walking).
 11. "Step ashore" shows far from the shore.
 12. Leaving the island seems to give every recipe and the arm ring: **not reproduced** (a clean crossing only marks the island left and owes one rune, kept until a ring is worn); a question for Robin.
 
