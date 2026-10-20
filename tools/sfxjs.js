@@ -9,7 +9,7 @@
 const fs = require('fs'), path = require('path');
 const [dir, set, only] = process.argv.slice(2);
 if (!dir || !set) { console.log('usage: node tools/sfxjs.js <folder> <set> [only,these,names]'); process.exit(1); }
-const want = only ? new Set(only.split(',')) : null;
+const want = only ? new Set((only[0] === '@' ? fs.readFileSync(only.slice(1), 'utf8').split(/\r?\n/).filter(l => l.trim()[0] !== '#').join(' ').split(/[\s,]+/).filter(w => w) : only.split(','))) : null;   // only these names: a comma list, or @a file of them, # lines skipped (assets/sfx/keep.txt)
 const files = {}, gain = {}, count = {}, peakSum = {}, peakf = {}, label = {}, layers = {}, trim = {};
 function peakOf(buf) {   // a 16-bit PCM WAV: the time of its loudest 10 ms
   let o = 12, sr = 48000, ch = 1, data = null;

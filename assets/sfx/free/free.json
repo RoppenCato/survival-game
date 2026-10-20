@@ -1,30 +1,6 @@
 {
- "about": "Free sounds tried for the sword's swing and hit (2026-10-15, Robin: 'Maybe you should look online and see if you can find any free sound assets' and 'take swinging of sword too then. Do it'). Every one CC0 or free for any use: see CREDITS.md. Gains set by ear-weighted loudness (a high-pass at 100 Hz and a 4 dB shelf at 1.5 kHz, the loudest 50 ms) against what each would replace in the game at Sfx.vol 0.5: a hit at the studio's sword hit (-22), a heavy hit at its heavy hit (-21), a swing at Robin's light or heavy swing (-30, -26). The cut is laid 6 dB under the light impact in hit_h. The shield going up (raise_e to raise_i, the same day, Robin: 'Id like to change the sound for putting the shield up also'): set at -29 by the same measure, about 4 dB above the studio's raise (-32.8, which was all but lost) and well under a hit; a file's leading silence is skipped (trim), so the guard sounds as it comes up. Hits I to L and heavy hits I to L (2026-10-16, Robin: the hit sounded 'like a bump', and the reference is Valheim's 'sharp fleshy slap'): layered here from the same CC0 packs (Kenney's light impact as the slap, an OpenGameArt thwack or Kenney's knife slice or chop as the crack, Kenney's soft impact as a small body; the heavy ones with Kenney's heavy soft impact and heavy punch), each measured: an attack of 6 to 8 ms, centred 1.2 to 2 kHz, a quarter to a half of the energy between 1 and 4 kHz, under a fifth below 250 Hz (the studio's hit: 104 Hz, all of it below 250). Gains levelled as above. The world's sounds (2026-10-20, Robin after his play-test: the tree hit, the fall, the club, the block, a box breaking; the free packs he chose): raw candidates chop A to C, clink A (rock), treefall A (its lead-in trimmed so the crash lands as the trunk does), logthud A and B, boxbreak A to C, block A, levelled by the same ear-weighted measure (the loudest 50 ms after a high-pass at 100 Hz and a 4 dB shelf at 1.5 kHz, the mean of the variations) so the candidates of a row are heard at one loudness: then moved onto the studio's levels for its chapter 1 set (chapter1.json, relative to the hit at its game gain: the hit on a tree -1 dB, the tree's fall +3, a log off -3, a box breaking 0, the block 0; the rock mine at -1.4) so its V and these are heard alike. The labels of the studio's V are here, its gains in chapter1.json.",
+ "about": "The free sounds the game plays (Robin's picks, locked in 2026-10-20; the candidates he did not pick were removed that day, their story in git and docs/notes-archive.md): the sword's swing E and F, the shield going up (raise_h: raise_e and raise_f together), the block A, the hit on a tree A, on a rock A, a tree falling A (its lead-in trimmed so the crash lands as the trunk does). Gains by the ear-weighted loudness of the loudest 50 ms.",
  "sounds": {
-  "hit_e": {
-   "gain": 1.08,
-   "label": "Kenney: light impact"
-  },
-  "hit_f": {
-   "gain": 0.457,
-   "label": "Kenney: punch"
-  },
-  "hit_g": {
-   "gain": 0.69,
-   "label": "OpenGameArt: thwacks"
-  },
-  "cut": {
-   "gain": 0.254,
-   "label": "Kenney: a chop (a layer)"
-  },
-  "heavyhit_e": {
-   "gain": 0.53,
-   "label": "Kenney: heavy punch"
-  },
-  "heavyhit_f": {
-   "gain": 0.79,
-   "label": "OpenGameArt: thwacks with a crack"
-  },
   "swing_e": {
    "gain": 0.21,
    "label": "OpenGameArt: a swish (like Robin's light)"
@@ -41,46 +17,6 @@
    "gain": 2.0,
    "label": "Kenney: leather handled (the straps)"
   },
-  "raise_g": {
-   "gain": 0.97,
-   "label": "Kenney: cloth moving (the arm)"
-  },
-  "raise_i": {
-   "gain": 0.54,
-   "label": "Kenney: a heavier leather thud"
-  },
-  "hit_i": {
-   "gain": 0.8,
-   "label": "Slap and crack (sharp)"
-  },
-  "hit_j": {
-   "gain": 1.1,
-   "label": "Slap and slice (bright)"
-  },
-  "hit_k": {
-   "gain": 0.86,
-   "label": "Chop and slap"
-  },
-  "hit_l": {
-   "gain": 0.76,
-   "label": "Wet slap (fleshy)"
-  },
-  "heavyhit_i": {
-   "gain": 0.84,
-   "label": "Slap and crack, with body"
-  },
-  "heavyhit_j": {
-   "gain": 1.05,
-   "label": "Slap and slice, with body"
-  },
-  "heavyhit_k": {
-   "gain": 0.9,
-   "label": "Chop and slap, with body"
-  },
-  "heavyhit_l": {
-   "gain": 0.79,
-   "label": "Wet slap, with body"
-  },
   "hit_v": {
    "label": "The studio's: a snap and a slap on skin"
   },
@@ -91,14 +27,6 @@
    "gain": 0.874,
    "label": "Wood pack: an axe in a tree"
   },
-  "chop_b": {
-   "gain": 1.679,
-   "label": "Wood pack: an axe in a log"
-  },
-  "chop_c": {
-   "gain": 0.661,
-   "label": "Kenney: a heavy knock on wood"
-  },
   "clink_a": {
    "gain": 0.565,
    "label": "Kenney: a pick on rock"
@@ -106,26 +34,6 @@
   "treefall_a": {
    "gain": 0.945,
    "label": "Wood pack: a tree felled"
-  },
-  "logthud_a": {
-   "gain": 0.443,
-   "label": "rubberduck: wood falling"
-  },
-  "logthud_b": {
-   "gain": 0.507,
-   "label": "Kenney: a heavy knock on wood"
-  },
-  "boxbreak_a": {
-   "gain": 1.175,
-   "label": "Wood pack: an axe splitting a log"
-  },
-  "boxbreak_b": {
-   "gain": 0.49,
-   "label": "rubberduck: wood breaking"
-  },
-  "boxbreak_c": {
-   "gain": 0.507,
-   "label": "Kenney: a plank knocked"
   },
   "block_a": {
    "gain": 0.634,
@@ -157,21 +65,6 @@
   }
  },
  "layers": {
-  "hit_h": {
-   "parts": [
-    [
-     "hit_e",
-     1,
-     0
-    ],
-    [
-     "cut",
-     1,
-     0
-    ]
-   ],
-   "label": "Kenney: a chop over the light impact"
-  },
   "raise_h": {
    "parts": [
     [
@@ -191,8 +84,6 @@
  "trim": {
   "raise_f_1": 0.035,
   "raise_f_2": 0.055,
-  "raise_g_1": 0.045,
-  "raise_i_1": 0.015,
   "treefall_a_1": 2.05
  }
 }

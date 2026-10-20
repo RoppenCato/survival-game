@@ -606,44 +606,34 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   place's sound (wind, leaves, sea, birds by day, crickets from dusk, fire, water, caves, footsteps by the ground), its
   loudness the Escape menu's second bar, each layer a switch on Admin's Light and sound board (`LAB.snd`). Everything hushes
   when the window loses focus.
-- **Recorded fight sounds:** `src/sfx.js` plays `assets/sfx/combat.js`, built by `node tools/sfxjs.js
-  "C:\dev\SG\Sound Director\out\sfx\combat|assets/sfx/robin|assets/sfx/free" combat` (the studio's set, Robin's own two swings, and free CC0
-  sounds with `assets/sfx/free/CREDITS.md`); `Sfx.vol` 0.5; a recording plays where one exists, else the synthesized sound.
-  **Robin's picks are the defaults:** the swing is the free swish E, and F on a heavy blow (`SWING_SETS`); the other
-  weapons' swings are the studio's `swish_<kind>` made from them; the hit and heavy hit the studio's; the guard going up F
-  (`DEFAULT_PICK`). Picks made in the arena's The sounds panel are kept in `game.sfxpick2` and the game reads them. The cut
-  at the hit is a switch, off.
-- **The hit is being replaced (2026-10-16, Robin: it sounds "like a bump"; the reference is Valheim's "sharp fleshy slap").**
-  Every studio hit measures as a low thump (centred 59 to 173 Hz, all of it under 250 Hz). Candidates **I to L** (and heavy
-  hits I to L) are layered from the CC0 packs in `assets/sfx/free/` (`free.json`, `CREDITS.md`): Kenney's light impact as the
-  slap, a thwack, the knife slice or the chop as the crack, a small soft body; measured: attack 6 to 8 ms, centred 1.2 to
-  2 kHz, a quarter to a half of the energy between 1 and 4 kHz, under a fifth below 250 Hz. The Sound Director's **V** (recorded: a finger snap
-  and a snare's crack, a hand on a tabla's skin, a small tom; attack under 4 ms, centred 1.2 to 1.8 kHz) is in the same row. **A hit picked in the arena is every weapon's hit** (`recName`),
-  pitched by the weapon (`HIT_RATE`: the seax higher, the Dane axe lower), and **the heavy hit follows the hit's letter**
-  unless it is chosen on its own. Robin has not chosen yet; the studio's hit is still the default.
+- **Recorded sounds: Robin's picks, locked in (2026-10-20,** pasted from the arena; `DEFAULT_PICK` in both pages). `src/sfx.js`
+  plays `assets/sfx/combat.js`, built from **only what the game plays** (`assets/sfx/keep.txt`, 40 sounds, 6.3 MB): `node
+  tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|C:/dev/SG/Sound Director/out/sfx/chapter1|C:/dev/SG/Sound
+  Director/out/sfx/flesh|assets/sfx/free" combat @assets/sfx/keep.txt`; `Sfx.vol` 0.5; where no recording exists the
+  synthesized sound plays. Sources and licences in `assets/sfx/free/CREDITS.md`. What plays:
+  - the sword's swing (and fists, and the men's) the free swish E, F on a heavy blow (`SWING_SETS`); the other weapons' the
+    studio's `swish_<kind>`;
+  - the hit **W** (the slap: hand slaps on skin over a punch) and the heavy hit **X** (the punch with a whip-crack snap), the
+    studio's flesh set, every weapon's, pitched by the weapon (`HIT_RATE`); the club's own hit and heavy hit **V**
+    (chapter1: a dry wooden knock over a heavy punch);
+  - the shield going up **H** (the straps and the boards together), the block **A** (wood knocks);
+  - the hit on a tree **A** and on a rock **A** (free packs), a tree falling **A** (played from the felling blow, trimmed so
+    its crash lands with the trunk, which then plays nothing more), a log coming off the trunk **V**, a box breaking **V**;
+  - **the struck beasts' cries W** (boar, deer, adder, wolf): the engine calls `sfx('pain')` after a hit on a beast that does
+    not kill it (`e.bkind`, set by `tuneBeast`); the page plays the cry 50 ms later, always on a heavy blow, every other light
+    one, never two within 0.35 s (mine), a grown boar's slower (0.88: the cry was made for the young). Real boar, wolf and
+    deer recordings would need Robin's Freesound account or a Sonniss bundle;
+  - the studio's own for the rest (parry, crit, the tell, the chain, finish, broken, perfect, stagger, dash, hurt, shoot,
+    slam, die);
+  - **the wave on the shore V** (`amb.wave`, through the place's volume, ashore only): each wave ±2 dB and ±4%, gaps 4.6 to
+    11 s with now and then a close pair, and between them the old wash low and unswept (0.01: measured 11 to 17 dB under the
+    waves; 0.012 for a more continuous shore, under 0.007 it no longer fills the gaps).
+  The arena's The sounds panel lists what plays, offers a Choose row only where there is still more than one candidate (new
+  ones from the studio land there), and shows the picks as text to paste back (`game.sfxpick2`). A pick of something no
+  longer in the bundle falls back to Robin's. The candidates he did not pick were removed; the hunt for the hit (the
+  studio's "bump", the free layers I to L, V, then W to Y from a brief on how other games do it) is in git and the archive.
 - **The sound bundle and the music scripts carry `?v=` and a hash of their bytes** (`file_tag` in `tools/build.py`): a browser
-  kept the old bundle. Rebuild after `node tools/sfxjs.js "C:/dev/SG/Sound Director/out/sfx/combat|
-  C:/dev/SG/Sound Director/out/sfx/hit_v|C:/dev/SG/Sound Director/out/sfx/chapter1|C:/dev/SG/Sound Director/out/sfx/flesh|assets/sfx/robin|assets/sfx/free" combat`
-  (11.6 MB).
-- **The world's sounds (2026-10-20, after Robin's play-test; the four free packs he chose, credited in `assets/sfx/free/CREDITS.md`):**
-  candidates to pick in the arena's The sounds panel: the hit on a tree (`chop` A to C), on a rock (`clink` A), a tree falling
-  (`treefall` A, played from the felling blow and trimmed so its crash lands with the trunk, which then plays nothing more), a
-  log coming off the trunk (`logthud` A, B), a box breaking (`boxbreak` A to C), the block (`block` A), and the Sound Director's
-  layered V of each (`out/sfx/chapter1`), with the club's own hit and heavy hit (`hit_club` V: a pick for a weapon kind comes
-  before the hit every weapon shares, its heavy hit follows its letter); all on the studio's levels. Until one is picked the
-  synthesized sound plays. **The wave on the shore** is the studio's recorded V by default (mine; `amb.wave`, through the
-  place's volume, ashore only; the arena's row can put the synthesized sea back): each wave ±2 dB and ±4%, gaps 4.6 to 11 s
-  with now and then a close pair, and between them the old wash low and unswept (0.01: the Sound Director measured it 11 to
-  17 dB under the waves; 0.012 for a more continuous shore, under 0.007 it no longer fills the gaps).
-- **Enemies getting hit (2026-10-20, Robin: "we still need to find good sounds of enemies getting hit"; my brief from what
-  others do: a crack under 10 ms, real flesh, weight only on heavy blows and never leading, a tiny tail, and the creature's
-  own cry).** The Sound Director's `out/sfx/flesh` (CC0 sources in `CREDITS.md`): hits W (the slap), X (the punch), Y (the wet
-  one) with heavy hits to match, in the hit row; and **the beasts' cries when struck** (`pain_boar`, `pain_wolf`, `pain_deer`,
-  `pain_snake` W; chapter 1's beasts only): the engine calls `sfx('pain')` after a hit on a beast that does not kill it
-  (`e.bkind`, set by `tuneBeast`), and the page plays the picked cry 50 ms later, always on a heavy blow, every other light
-  one, never two within 0.35 s (mine), a grown boar's slower (0.88: the cry was made for the young); none until one is picked
-  in the arena. Real boar, wolf and deer recordings need
-  Robin's Freesound account or a Sonniss bundle.
+  kept the old bundle.
 - **Music:** the studio's recorded meadow by day and by night (`assets/music/*.js`, wrapped by `tools/musicjs.js` so they load
   from disk), crossfading at dusk and dawn; the synthesized songs in `src/music.js` are the fallback. Music is off until the
   Escape menu's bar is turned up; there is no mute key (M is the map).
