@@ -132,8 +132,8 @@ sound and the day and night are perfected in this chapter**.
 | The place's sound: wind, leaves, sea, birds, crickets, fire, water, footsteps by the ground | Built |
 | The swings (Robin's picks) and the guard's sound | Done |
 | **The hit sound** (the studio's thump replaced; candidates I to L and V in the arena) | Open: Robin picks |
-| Gathering sounds (chop, crack, pull, kick) | Built (synthesized; the studio could record them) |
-| Music: the meadow by day and by night | Built (off until the Escape menu's bar is turned up: is that right? Open) |
+| Gathering sounds (chop, crack, pull, kick), footsteps by ground, the fire's crackle, the night (crickets, owl, wolves) | Built (synthesized). Open: a reference Robin likes for each, then the studio matches it (the Sound Director's list: `C:\dev\SG\Sound Director\docs\chapter-1.md`); quickest is a row of free candidates in the arena's The sounds panel to pick from, as the swings were (mine to build) |
+| Music: the meadow by day and by night | Built (off until the Escape menu's bar is turned up). Open: the Sound Director's view is on at about a third of the bar (a new player never looks in the Escape menu); Robin decides |
 | Effects: sparks from the fires, smoke, chips, splinters, the shake | Built |
 
 ### 6. The day and night cycle
