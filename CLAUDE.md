@@ -430,8 +430,8 @@ that SPEC): every board (`wood()`) is the dark oak with a dark outline and two g
 `board_frame_gilt`); every board's heading is its name on a plaque (`hTitle`, `plaque`; Robin's second round, 2026-10-20);
 what is chosen is pale gold `#ead08a`; the Gear board (330 by 360 canvas pixels) has the hero in an
 arched vellum window and six square dark slots with a bronze rim a side (the arm ring where the spec has "armour", mine; an
-empty slot shows a pale sepia sketch; nothing under the window, no runes: Robin), and rounded flaps hanging under it (Gear,
-Rings once a ring is worn, Stats always: what was the status line under the window; `hFlap`, Robin: "rounded flaps on the
+empty slot shows a pale sepia sketch; nothing under the window, no runes: Robin), and rounded flaps hanging under it (Gear and
+Stats: what was the status line under the window; no Rings page, Robin: runes get a window of their own later; `hFlap`, Robin: "rounded flaps on the
 bottom so it's not so square"); the bag (330 by 306) under the flaps is dark sockets; crafting (453 by 500, bottom right,
 narrower so more of the game shows: Robin) has its list in a dark well, a vellum card with the
 thing's picture large, a sub-title (`infoSub`, mine), the tale, its numbers and **the cost as each material in a socket with

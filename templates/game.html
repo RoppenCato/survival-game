@@ -3800,8 +3800,8 @@ __COMBAT__
   }
   /* ---------- the stats board: a second page of the character panel, Gear | Stats ---------- */
   var chTab = 'gear';
-  var CH_TABS = ['gear', 'ring', 'stats'], CH_NAMES = { gear: 'Gear', stats: 'Stats', ring: 'Rings' };   /* (the names and order of Robin's picks, 2026-10-20) */
-  function chTabs() { return CH_TABS.filter(function (t) { return t !== 'ring' || !!ring; }); }   /* (Rings once a ring is worn; Stats always, since the status line under the window went to it: Robin, 2026-10-20) */
+  var CH_TABS = ['gear', 'stats'], CH_NAMES = { gear: 'Gear', stats: 'Stats' };   /* (Robin, 2026-10-20: no Rings page, "runes etc will be its own thing in a separate window later"; drawRingTab waits for that window) */
+  function chTabs() { return CH_TABS; }   /* (Gear and Stats, always: the status line under the window went to Stats, Robin 2026-10-20) */
   var CHAR_TALL = 230;                       // the Saga and Rings pages, over the bag, with room for the flaps under them
   function chTabRect(i) { return { x: chLeft() + (22 + i * 74) / 3, y: CHAR.y + (CHAR.h * 3 - 8) / 3, w: 22, h: 38 / 3 }; }   /* flaps hanging under the board, 74 apart (Robin's pick, 2026-10-20) */
   function chTabAt() { if (!mouseS || CHAR.slide < 0.9) return null; var TB = chTabs(); for (var i = 0; i < TB.length; i++) { var r = chTabRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return TB[i]; } return null; }
@@ -3889,7 +3889,7 @@ __COMBAT__
       });
       // under the window: what you wear turns aside, or what the slot you point at holds
       var txt = '';   /* (no status line under the window: the Stats tab has it, Robin's update) */
-      if (hov) { var txt = hov.ringSlot ? (ring ? Runes.METALS[ring.metal].name + ' arm ring  (the Ring page shows it)' : 'Arm ring: none') : hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ': empty'); }
+      if (hov) { var txt = hov.ringSlot ? (ring ? Runes.METALS[ring.metal].name + ' arm ring' : 'Arm ring: none') : hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ': empty'); }
       if (txt) { c.font = hf('italic', 13); var tw = c.measureText(txt).width; hText(c, txt, 165, 348, hf('italic', tw > 300 ? 11 : 13), HC.under, 'center'); }
     });
     if (hov && !hov.ringSlot && equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
