@@ -6107,6 +6107,28 @@ function makeMine(seed, o) {
   for (i = 0; i < 80 && cave.puddles.length < 6; i++) { var ux2 = cave.pool.x + jit(150), uy2 = cave.pool.y + jit(90); if (!U.clearAt(ux2, uy2, 14, 0) || Math.hypot((ux2 - cave.pool.x) / (cave.pool.rx + 12), (uy2 - cave.pool.y) / (cave.pool.ry + 12)) < 1 || cave.puddles.some(function (q) { return Math.hypot(q.x - ux2, q.y - uy2) < 44; })) continue; cave.puddles.push({ x: ux2, y: uy2, rx: 6 + R() * 7, ry: 3.5 + R() * 3, a: jit(0.3) }); }
   return cave;
 }
+function makeCrypt(seed, o) {                             // a crypt under a church (raid step 8, 2026-10-21; Robin: "room for exploration, churches can have cellars, crypts"): the stair down from the trapdoor, a passage north, the vault with its coffins, and a niche where the reliquary stands over the silver
+  var R = rng(seed * 61 + 23), flip = hash(seed, 7, 11) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 8 : 8, shapes = [];
+  function jit(a) { return (R() - 0.5) * 2 * a; }
+  function box(x, y, hw, hh) { shapes.push({ box: 1, x: x, y: y, hw: hw, hh: hh }); } function oval(x, y, rx, ry) { shapes.push({ x: x, y: y, rx: rx, ry: ry || rx }); }
+  var yV = 24 + jit(0.6), xN = TX + sg * (7.5 + jit(0.8));
+  box(TX, 34, 1.2, 6.2);                                                  // the stair down, straight from the trapdoor
+  box(TX, (yV + 28) / 2, 1.1, (28 - yV) / 2 + 0.6);                       // the passage north
+  oval(TX + sg * 1.2, yV, 4.4, 2.6);                                      // the vault
+  box((TX + xN) / 2, yV, Math.abs(xN - TX) / 2 + 0.5, 1.0); oval(xN, yV - 1.0, 2.4, 1.9);   // a passage to the niche
+  var path = [[TX, 33.4], [TX, 30], [TX, yV + 0.5], [xN, yV]];
+  var cave = base(seed, o, { kind: 'crypt', shapes: shapes, rough: 0.25, TX: TX, tunW: 1.3, path: path, trail: false, flip: flip, salt: 70, tintF: [0.92, 0.92, 0.98], tintW: [0.86, 0.86, 0.94] });
+  var ox = cave.ox, oy = cave.oy; function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
+  cave.name = 'The crypt'; cave.vault = W([TX + sg * 1.2, yV]); cave.niche = W([xN, yV - 1.0]);
+  reachOf(cave);
+  cave.props.push({ name: 'cryptStairs', x: cave.entrance.x, y: cave.entrance.y - 6, s: 1, r: 0, v: 0, cave: true, flat: true });
+  [[-2.6, -1.2, 'coffinStone'], [2.6, -1.2, 'coffinStone'], [-2.4, 1.3, 'coffinWood'], [2.2, 1.3, 'coffinWood']].forEach(function (q, i) { cave.props.push({ name: q[2], x: cave.vault.x + q[0] * T, y: cave.vault.y + q[1] * T, s: 1, r: 12, v: i, cave: true }); });
+  cave.props.push({ name: 'bones', x: cave.vault.x + 0.5 * T, y: cave.vault.y + 2.0 * T, s: 1, r: 0, v: 0, cave: true, flat: true }); cave.props.push({ name: 'bones', x: cave.niche.x - sg * 1.3 * T, y: cave.niche.y + 1.1 * T, s: 1, r: 0, v: 1, cave: true, flat: true });
+  cave.props.push({ name: 'reliquary', x: cave.niche.x, y: cave.niche.y - 0.6 * T, s: 1, r: 8, v: 0, cave: true });
+  cave.chest = { name: 'heavyChest', x: cave.niche.x + sg * 0.2 * T, y: cave.niche.y + 0.5 * T, s: 1, r: 9, v: 0, cave: true }; cave.props.push(cave.chest);
+  cave.hoard = { x: cave.chest.x, y: cave.chest.y, n: o.silver || 20, kind: 'silver', day: 0, relics: true };   // the silver in the chest: E takes it (the game's relicsTake)
+  return cave;
+}
 function makeSea(seed, o) {
   var R = rng(seed * 71 + 29), flip = hash(seed, 7, 11) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 10 : 10, i;
   function jit(a) { return (R() - 0.5) * 2 * a; }
@@ -6159,7 +6181,7 @@ function drawSet(c, st) {
 
 function make(seed, o) {
   o = o || {}; sheets();
-  if (o.kind === 'mine') return makeMine(seed, o); if (o.kind === 'sea') return makeSea(seed, o);
+  if (o.kind === 'mine') return makeMine(seed, o); if (o.kind === 'sea') return makeSea(seed, o); if (o.kind === 'crypt') return makeCrypt(seed, o);
   var ox = o.x || 0, oy = o.y || 0, R = rng(seed * 31 + 9), i, k, x, y;
   function jit(a) { return (R() - 0.5) * 2 * a; }
   // the way through: the tunnel's head, the hall, then east to the lair
@@ -8408,7 +8430,7 @@ var DEF = {
   roadW: 10, backGate: 1,                             // the one winding road (Robin, 2026-10-07): its width in the yard; a back gate for the road to leave by
   nature: 1, clutter: 1,                              // trees, bushes and rocks kept in and round the village; things against the walls (window boxes, lanterns, awnings, signs)
   fields: 1, fieldStrips: 3, sacred: 1, midden: 1, graves: 1,
-  chestLoot: 1, cellarAt: 0.3, storeLoot: 1,           // finds: a chest in every house, a cellar in one house at this wealth and above
+  chestLoot: 1, cellarAt: 0.3, storeLoot: 1, cryptAt: 0.35,   // cryptAt: a church at this wealth and above has a crypt under it (raid step 8)           // finds: a chest in every house, a cellar in one house at this wealth and above
   yardEarth: 1, pathGravel: 1, mossEdge: 1,
   emptySlots: 0.25,                                   // the share of ring slots left open, so no two rings are alike
   sizeJitter: 1,                                      // buildings vary by this many tiles
@@ -8568,6 +8590,7 @@ function make(seed, site, opts) {
     for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : ((l.h >= 6 && l.id !== 'church' ? (y - l.y) % 3 === 1 && R() < 0.6 : y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e') ? 'window' : 'wall'), m); }
     for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) V.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0);
     if (!V.ruin || R() < 0.5) V.roofs.push({ tx: l.x, ty: l.y, m: roof });
+    if (l.id === 'hall' && l.w >= 8) { l.back = l.x + l.w - 3; l.backDy = l.y + Math.floor(l.h / 2); for (y = l.y; y < l.y + l.h; y++) Vw(l.back, y, y === l.backDy ? 'door' : 'wall', m); }   // the hall's back room: an inner wall with a door, the jarl's chest behind it (raid step 8)
     l.m = m; l.roof = roof; l.dx = dx; l.dy = dy;
     furnish(l);
   }
@@ -8586,7 +8609,7 @@ function make(seed, site, opts) {
       if (wealth > 0.5) { item('shieldRack', (seatX - 1.6) * T, (l.y + 0.5) * T); if (l.w >= 19) item('shieldRack', (seatX + 2.7) * T, (l.y + 0.5) * T); }
       item('chest', (l.x + l.w - 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: Math.round((2 + wealth * 6) * hoardK) } });
       item('barrel', (l.x + 2.1) * T, (l.y + l.h - 0.55) * T); item('crate', (l.x + 2.9) * T, (l.y + l.h - 0.5) * T, { loot: { meat: 2, berries: 3 } });
-      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall || archId === 'seat' || archId === 'great') { p = [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: Math.round((A.townwall ? 24 + wealth * 36 : 10 + wealth * 18) * hoardK / (RICH[archId] || 1)) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
+      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall || archId === 'seat' || archId === 'great') { p = l.back != null ? [(l.back + 1.5) * T, (l.y + 0.7) * T] : [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: Math.round((A.townwall ? 24 + wealth * 36 : 10 + wealth * 18) * hoardK / (RICH[archId] || 1)) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
       else item('chair', seatX * T, (l.y + 0.8) * T, { seat: true });
       var py0 = l.y + 2, py1 = l.y + l.h - 2, px2;                    // the posts: at tile corners, two rows, every fourth tile, none beside a fire
       for (px2 = l.x + 2; px2 <= l.x + l.w - 2; px2 += 4) { if (hx.some(function (q) { return Math.abs(q - px2) < 0.8; })) continue; V.posts.push([px2, py0]); if (py1 > py0) V.posts.push([px2, py1]); }
@@ -8615,6 +8638,7 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'pit') { p = tile(l.x, l.y); item('campfire', p[0] + 10, p[1] + 6, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('dryingRack', p[0], p[1] - 4); }
     else if (BUILD[l.id].inside === 'church') {
       p = tile(l.x + Math.floor(l.w / 2), l.y); item('altar', p[0] + (l.w % 2 ? 0 : T / 2), p[1] + 2, { r: 6, altar: true, light: 1, lamp: true });
+      if (wealth >= G.cryptAt) { p = tile(l.x, l.y); item('trapdoor', p[0] + 14, p[1] + 10, { crypt: true, r: 0, flat: true }); }   // the trapdoor behind the altar, down to the crypt (raid step 8)
       for (k = l.y + 2; k < l.y + l.h - 1; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
       p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: Math.round((14 + wealth * 24) * hoardK) }, locked: 1, lore: 'The church\u2019s silver, given by the faithful.' });
       V.finds.push({ kind: 'silver', x: p[0], y: p[1] });
@@ -8648,7 +8672,7 @@ function make(seed, site, opts) {
     }
   }
   V.lots.forEach(pieces);
-  V.lots.forEach(function (l) { if (!(A.townwall || A.chapel) || !(l.id === 'church' || l.id === 'hall' || l.id === 'store')) return; var dk = l.door === 's' ? key(l.dx, l.y + l.h) : l.door === 'n' ? key(l.dx, l.y) : l.door === 'w' ? key(l.x, l.dy) : key(l.x + l.w, l.dy), ed = (l.door === 's' || l.door === 'n') ? V.H[dk] : V.V[dk]; if (ed && ed.t === 'door') ed.locked = 1; });   // the raid (2026-10-07): the church, the hall and the store are locked; the axe opens them
+  V.lots.forEach(function (l) { if (!(A.townwall || A.chapel) || !(l.id === 'church' || l.id === 'hall' || l.id === 'store')) return; var dk = l.door === 's' ? key(l.dx, l.y + l.h) : l.door === 'n' ? key(l.dx, l.y) : l.door === 'w' ? key(l.x, l.dy) : key(l.x + l.w, l.dy), ed = (l.door === 's' || l.door === 'n') ? V.H[dk] : V.V[dk]; if (ed && ed.t === 'door') ed.locked = 1; if (l.back != null && V.V[key(l.back, l.backDy)]) V.V[key(l.back, l.backDy)].locked = 1; });   // the raid (2026-10-07): the church, the hall and the store are locked; the axe opens them; the hall's back room too (step 8)
   // the well in the yard (a fire pit for the poor), the finds, the fence and gate, the fields, the sacred, the midden
   var wc = tile(yx + Math.floor(yw / 2), yy + Math.floor(yh / 2)), fc = [wc[0] - T * 0.2, wc[1] + T * 0.2];                                                             // the fire in the middle of the yard, the well off to the north-east
   if (wealth > 0.3) item('woodenWell', wc[0] + T * (yw >= 7 ? 1.9 : 1.4), wc[1] - T * (yh >= 5 ? 1.1 : 0.7));
@@ -13429,7 +13453,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(CHART_PX);
     raft = null; leftBanner = 0; banner = null; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
-    villageClear(); weirPlace(); caveSetup(); hamletClear(); villagePaint(); hamletDress(); groundBase = groundCopy();   // the ground as the world paints it: the save keeps only what differs from this
+    villageClear(); weirPlace(); caveSetup(); hamletClear(); cryptSetup(); villagePaint(); hamletDress(); groundBase = groundCopy();   // the ground as the world paints it: the save keeps only what differs from this
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
     Combat.api.scene.bounds = worldBounds();
   }
@@ -14414,7 +14438,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function groundCopy() { var o = {}, k; for (k in w.ground) o[k] = w.ground[k]; return o; }
   function groundDiffOf() { var d = {}, k, b = groundBase || {}; for (k in w.ground) if (w.ground[k] !== b[k]) d[k] = w.ground[k]; for (k in b) if (w.ground[k] == null) d[k] = 0; return d; }
   function groundApply(d) { var k; for (k in d) { if (d[k]) w.ground[k] = d[k]; else delete w.ground[k]; } }
-  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, groundDiff: groundDiffOf(), veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, unge: ungeSense, heroName: heroName, pins: pins, craftN: craftN, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard || !!m.asMan, hungry: !!m.hungry, lost: m.lost || null, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, tree: d.tree || undefined, n: d.kind === 'log' ? d.n : undefined, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, groundDiff: groundDiffOf(), veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, unge: ungeSense, heroName: heroName, pins: pins, craftN: craftN, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, vi: cv.vi, hoardN: cv.cave.hoard ? cv.cave.hoard.n : null, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard || !!m.asMan, hungry: !!m.hungry, lost: m.lost || null, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, tree: d.tree || undefined, n: d.kind === 'log' ? d.n : undefined, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -14898,7 +14922,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function here() { return cur ? cur.cave : cave; }
   function placeSeen(id) { return !!(seen.places && seen.places[id]); }
   function placeMark(id) { if (!seen.places) seen.places = {}; seen.places[id] = 1; }
-  var CAVE_NAME = { troll: ['the cave', 'A cave', 'The cave'], mine: ['the mine', 'An old mine', 'The old mine'], sea: ['the sea cave', 'A sea cave', 'The sea cave'] };
+  var CAVE_NAME = { troll: ['the cave', 'A cave', 'The cave'], mine: ['the mine', 'An old mine', 'The old mine'], sea: ['the sea cave', 'A sea cave', 'The sea cave'], crypt: ['the crypt', 'A crypt', 'The crypt'] };
   /* The inside of the cave is src/cave.js (2026-10-12, the rework: Robin wanted it far more immersive, with depth, the
      mountains' technique, light from holes in the roof, a better floor, and not to get lost in it too much). Cave.make lays it
      out and paints it; this page keeps what lives in it (the troll, the hoard, mining, the dead Viking) and lays the dark over it. */
@@ -15025,15 +15049,23 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     fallSnd.g.gain.setTargetAtTime(vol, AC.currentTime, 0.25); fallSnd.lp.frequency.setTargetAtTime(900 + 2600 * Math.max(0, 1 - d / 300), AC.currentTime, 0.3);   // brighter close to
   }
+  function cryptSetup() {                  // every church with a trapdoor gets a crypt (raid step 8, 2026-10-21): a small cave of its own, its silver by the place's wealth and hoard
+    caves = caves.filter(function (cv) { return cv.kind !== 'crypt'; });
+    villages.forEach(function (v, vi) { if (!v.V) return; var td = v.V.items.filter(function (it) { return it.crypt; })[0]; if (!td) return;
+      var cv = Cave.make(v.seed, { kind: 'crypt', x: CAVE_X, y: CAVE_Y + 4500 + caves.length * 700, rockHp: World.HP.rock, silver: Math.round((10 + (v.wealth || 0.5) * 22) * (v.V.hoardK || 1)) });
+      cv.ores.forEach(function (o, oi) { o.id = oi; }); cv.mined = []; caves.push({ kind: 'crypt', cave: cv, mouth: { x: td.x, y: td.y, trap: true }, vi: vi }); });
+  }
+  function relicsNear(P) { return inCave && cur && cur.kind === 'crypt' && cur.cave.hoard && cur.cave.hoard.n > 0 && Math.hypot(P.x - cur.cave.hoard.x, P.y - cur.cave.hoard.y) < 48; }
+  function relicsTake() { var h = cur.cave.hoard, n = h.n; if (n <= 0) return; h.n = 0; h.day = day.n; var left = addItem('silver', n); if (left) drop('silver', h.x, h.y + 10, left); if (cur.cave.chest) cur.cave.chest.name = 'heavyChest_broken'; toast(n + ' silver from the crypt'); deed('crypt'); sfx('pick'); save(); }
   function caveAtHand() {                  // the cave you could step into, or out of, from where you stand (the sea cave from the boat too)
     var P = hero(), best = null; if (!cave || P.dead || sleep) return null;
     if (inCave) return cur && Math.hypot(P.x - cur.cave.exitAt.x, P.y - cur.cave.exitAt.y) < 80 ? cur : null;
-    caves.forEach(function (cv) { var d = Math.hypot(P.x - cv.mouth.x, P.y - (cv.mouth.y + 28)); if (raft && raft.aboard ? (cv.kind === 'sea' && d < 150) : d < (cv.kind === 'sea' ? 90 : 60)) best = cv; });
+    caves.forEach(function (cv) { var d = Math.hypot(P.x - cv.mouth.x, P.y - (cv.mouth.trap ? cv.mouth.y : cv.mouth.y + 28)); if (raft && raft.aboard ? (cv.kind === 'sea' && d < 150) : d < (cv.kind === 'sea' ? 90 : cv.mouth.trap ? 40 : 60)) best = cv; });
     return best;
   }
   function caveUsable() { return !!caveAtHand(); }
   function mouthSpot(cv) {                 // where you stand when you come out: before the mouth; at the sea cave the nearest water you can wade
-    var m = cv.mouth, d, a; if (cv.kind !== 'sea') return { x: m.x, y: m.y + 44 };
+    var m = cv.mouth, d, a; if (m.trap) return { x: m.x, y: m.y + 16 }; if (cv.kind !== 'sea') return { x: m.x, y: m.y + 44 };
     for (d = 0; d < 160; d += 10) for (a = 0; a < 8; a++) { var x = m.x + Math.cos(a * 0.785 + 1.571) * d, y = m.y + 40 + Math.sin(a * 0.785 + 1.571) * d * 0.7; if (w.isWade(x, y) && !w.cliffAt(x, y)) return { x: x, y: y }; }
     return { x: m.x, y: m.y + 44 };
   }
@@ -15041,6 +15073,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(); caveFade = 0.7; sfx('pick');
     if (into) {
       cur = which || caves[0]; cur.byBoat = !!(raft && raft.aboard); if (cur.byBoat) { raft.aboard = false; raft.vx = raft.vy = 0; }   // the boat lies at the mouth while you are in
+      if (cur.mouth.trap) B.items.forEach(function (it) { if (it.crypt && Math.hypot(it.x - cur.mouth.x, it.y - cur.mouth.y) < 4) it.open = 1; });   /* (the trapdoor stands open from now) */
       inCave = true; P.x = cur.cave.entrance.x; P.y = cur.cave.entrance.y; P.face = -Math.PI / 2; Combat.api.scene.bounds = worldBounds(); P.mode = 'fight'; menu = null; invOpen = false;   // you come in northward, the daylight behind you
     } else {
       var was = cur || caves[0]; inCave = false; cur = null; if (was.kind !== 'troll') Cave.release(was.cave);
@@ -16128,6 +16161,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var gn = graveNear(P); if (gn) add(gn, 'Read', function () { sayAt(gn.x, gn.y, 'Carved in the stone', 'Arnor raised this stone for Thorgunna. She did not pay.', 7); });
     var ft = feastNear(P); if (ft) add(ft, 'Eat at their table', function () { feastEat(ft); }, -40);   /* (the prompts are scored by distance and facing: the feast wins over the bench's Sit beside it) */   /* (raid step 7: they are at their meal, so you eat well) */   /* (the lore's person.thorgunna) */
     if (hoardNear(P)) add(cave.hoard, 'Take from the hoard', hoardTake);
+    if (relicsNear(P)) add(cur.cave.hoard, 'Take the silver', relicsTake, -20);   /* (the crypt's chest: raid step 8) */
     var fd = findNear(P); if (fd) add(fd, fd.say, function () { findTake(fd); });
     var s = stationNear(P), it = s && s.it;                          // the built things: one of them, already chosen by the same rule
     if (s && s.kind === 'carver') { if (!build) add(it, 'Cut runes', function () { openRing(it); }); }
@@ -18342,7 +18376,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       B.items.forEach(function (it) {
         if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
-        var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
+        var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
       moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 60 && Math.abs(mv.y * K - cam.y) < hh + 60) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });
@@ -18680,7 +18714,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       w.eachProp(function (o) { if ((o.kind || o.name === 'fireRing' || o.weirNet) && gone[propKey(o)]) w.removeProp(o); }); B.items.forEach(function (it) { if (it.cooking && it.cooking.length && cookFires.indexOf(it) < 0) cookFires.push(it); });
       day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; }); if (sv.groundDiff && typeof sv.groundDiff === 'object') groundApply(sv.groundDiff); else if (sv.ground && typeof sv.ground === 'object') { if (sv.groundDressed) w.ground = sv.ground; else { var gk; for (gk in sv.ground) w.ground[gk] = sv.ground[gk]; } }   // what the player painted over the world's ground; an older save holds the whole field (and is saved as a diff from now on), the oldest its strokes alone
       if (cave && sv.veins && sv.veins.length === cave.veins.length) sv.veins.forEach(function (lf, vi) { cave.veins[vi].left = lf; }); if (cave && sv.caveSeen) Cave.seenLoad(cave, sv.caveSeen);
-      (sv.caves2 || []).forEach(function (q) { var cv = caves.filter(function (c2) { return c2.kind === q.kind; })[0]; if (!cv) return;
+      (sv.caves2 || []).forEach(function (q) { var cv = caves.filter(function (c2) { return c2.kind === q.kind && (q.kind !== 'crypt' || c2.vi === q.vi); })[0]; if (!cv) return; if (q.hoardN != null && cv.cave.hoard) { cv.cave.hoard.n = q.hoardN; if (!q.hoardN && cv.cave.chest) cv.cave.chest.name = 'heavyChest_broken'; }   /* (a crypt by its church; its silver once taken stays taken) */
         (q.mined || []).forEach(function (id) { var oi = -1; cv.cave.ores.forEach(function (o, k2) { if (o.id === id) oi = k2; }); if (oi >= 0) cv.cave.ores.splice(oi, 1); cv.cave.mined.push(id); });
         if (q.veins && q.veins.length === cv.cave.veins.length) q.veins.forEach(function (lf, vi) { cv.cave.veins[vi].left = lf; }); if (q.seen) Cave.seenLoad(cv.cave, q.seen);
         (q.taken || []).forEach(function (id) { cv.cave.finds.forEach(function (f) { if (f.id === id) f.taken = true; }); }); });

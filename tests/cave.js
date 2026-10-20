@@ -5,6 +5,15 @@ global.__mk = (w, h) => require('../node_modules/@napi-rs/canvas').createCanvas(
 const Cave = require('../src/cave.js');
 const seeds = process.argv[2] ? [+process.argv[2]] : [11, 1, 2, 3, 5, 7, 12, 25, 42, 77, 100, 2024];
 let faults = 0;
+// The crypts under churches (raid step 8, 2026-10-21): a small cave each; the niche with the silver must be walkable from the stair
+seeds.slice(0, 6).forEach(seed => {
+  const c = Cave.make(seed, { kind: 'crypt', x: 5000, y: 400, silver: 20 }), W = 288, H = 160, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - c.ox) / 8), cy = p => Math.floor((p.y - c.oy) / 8), q = [[cx(c.entrance), cy(c.entrance)]];
+  seen[q[0][1] * W + q[0][0]] = 1;
+  while (q.length) { const [i, j] = q.pop(); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + a, y = j + b; if (x < 0 || y < 0 || x >= W || y >= H || seen[y * W + x] || c.D[y * W + x] < 0) continue; seen[y * W + x] = 1; q.push([x, y]); } }
+  const reach = p => seen[cy(p) * W + cx(p)] ? 'yes' : 'NO', ok = reach(c.vault) === 'yes' && reach(c.niche) === 'yes' && reach(c.hoard) === 'yes';
+  if (!ok) faults++;
+  console.log((ok ? '   ' : '!! ') + 'crypt ' + String(seed).padEnd(5) + ' the vault from the stair: ' + reach(c.vault) + ', the niche: ' + reach(c.niche) + ', the silver: ' + reach(c.hoard) + ' (' + c.hoard.n + '); ' + c.props.length + ' things (' + c.props.map(p => p.name).filter((n, i, a) => a.indexOf(n) === i).join(', ') + ')');
+});
 seeds.forEach(seed => {
   const cave = Cave.make(seed, { x: 5000, y: 400 }), W = 288, H = 160, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - cave.ox) / 8), cy = p => Math.floor((p.y - cave.oy) / 8), q = [[cx(cave.entrance), cy(cave.entrance)]];
   seen[q[0][1] * W + q[0][0]] = 1; let cells = 0;

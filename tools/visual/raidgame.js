@@ -120,5 +120,22 @@
     } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
     return out;
   }
-  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step7: step7, town: town, men: men, sim: sim, own: own };
+  // Step 8: room for exploration. At the town's church a trapdoor behind the altar leads down into a crypt (a cave of its own):
+  // its coffins, the reliquary, the chest's silver taken with E, the way out at the stairs; the hall has a back room behind a
+  // locked inner door with the jarl's chest in it.
+  function step8() {
+    var t = town(), out = {}, d = D(), P = Combat.dbg().P; if (!t) return { fault: 'no town outside home water' };
+    try {
+    d.B.items = d.B.items.filter(function (it) { return !it.claim; }); d.timeOf(400); var c = d.toVillage(t.i); sim(2);
+    var td = null, tdd = 1e18; d.B.items.forEach(function (it) { if (!it.crypt) return; var dd = Math.hypot(it.x - c.x, it.y - c.y); if (dd < tdd) { tdd = dd; td = it; } }); out.trapdoor = td ? [Math.round(tdd), !!td.open] : null;
+    if (td) { d.goto(td.x, td.y + 8); sim(0.3); out.prompt = d.eWhat(); var q = d.eDo(); if (q && /crypt/.test(q.say || '') && q.act) q.act(); sim(0.5); var cv = d.cur(); out.inCrypt = !!(d.inCave() && cv && cv.kind === 'crypt');
+      if (out.inCrypt) { var h = cv.cave.hoard; out.props = cv.cave.props.map(function (p) { return p.name; }); out.silverIn = h.n; P.x = h.x; P.y = h.y + 20; P.vx = P.vy = 0; sim(0.3); out.prompt2 = d.eWhat();   /* (goto would leave the cave: inside, the hero is moved by hand) */ var q2 = d.eDo(); if (q2 && /silver/.test(q2.say || '') && q2.act) q2.act(); sim(0.3); out.silverBag = d.inv.silver || 0; out.chest = cv.cave.chest && cv.cave.chest.name;
+        P.x = cv.cave.exitAt.x; P.y = cv.cave.exitAt.y; P.vx = P.vy = 0; sim(0.3); out.prompt3 = d.eWhat(); var q3 = d.eDo(); if (q3 && q3.act) q3.act(); sim(0.5); out.outAgain = !d.inCave(); out.trapOpen = !!td.open; } }
+    var vs = d.villages(), V = (Array.isArray(vs) ? vs : vs.list)[t.i].V, hall = V.lots.filter(function (l) { return l.id === 'hall'; })[0]; if (hall) { out.back = hall.back != null ? [hall.back - hall.x, hall.w] : null; var ik = hall.back + ',' + hall.backDy; out.innerDoor = V.V[ik] ? [V.V[ik].t, V.V[ik].locked] : null; out.chestBehind = V.items.filter(function (it) { return it.heavy && it.heavy.silver && it.x > hall.back * 32 && it.x < (hall.x + hall.w) * 32 && it.y > hall.y * 32 && it.y < (hall.y + hall.h) * 32; }).length; }
+    out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+    out.fault = !td || !out.inCrypt || !(out.silverBag > 0) || !out.outAgain || (hall && !(out.innerDoor && out.innerDoor[1] && out.chestBehind)) ? '!!' : '';
+    } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
+    return out;
+  }
+  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step7: step7, step8: step8, town: town, men: men, sim: sim, own: own };
 })();

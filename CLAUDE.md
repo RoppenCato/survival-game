@@ -601,7 +601,14 @@ karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, 
   at dusk (`FEAST` 840 to 1200) E at a laid `foodTable` eats their feast once a day (`FOOD.feast`: above any home dish, for the
   raid; a villager who sees it cries thief). `Village.lootOf(V)` sums what a place holds; `tests/loot.js` prints it against
   the men (`docs/baselines/loot-2026-10-21.txt`: a farm 29 to 37, a village 36 to 53, a seat 61 to 103, a town 149 to 233, a
-  church 46 to 66 with no men; about 8 to 12 of value a man in the defended places). `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
+  church 46 to 66 with no men; about 8 to 12 of value a man in the defended places). **Room for exploration (step 8,
+  2026-10-21):** a church at wealth 0.35 and up has **a trapdoor behind its altar down to a crypt** (`Cave.make` kind `crypt`,
+  `makeCrypt`: the stair, a passage, the vault with its coffins and bones, a niche with the reliquary over the chest; one cave a
+  church, made with the villages by `cryptSetup`, the trapdoor its mouth; E "Enter the crypt", E at the chest "Take the silver"
+  (`relicsTake`: 10 to 32 by the place's wealth and hoard, into the bag; the chest then draws broken; kept in the save by the
+  church), E at the stair out; the trapdoor stands open from then); **the hall has a back room** (an inner wall three tiles from
+  its end with a locked door, `l.back`; the jarl's or the chieftain's chest stands behind it). The hidden cellar and the
+  watchtower were there before; the storehouse loft is not built. `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
 way-finding is in every real village. Robin has played none of it.
 
 - **Sides:** every fighter has `e.side` (0 against the hero, 1 with him); the hero's blows pass his friends; beasts know only

@@ -69,3 +69,9 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
    at dusk the hall's table is laid; E at it eats their feast (heal 60, +30 top health, stamina, for twelve minutes: above the
    stew), once a day a table; a villager who sees it cries thief. The food kinds are the game's own (meat, berries, honey): a
    store of fish and grain waits for those kinds.
+10. **Room for exploration (raid step 8), mine:** a church at wealth 0.35 and up has a trapdoor behind the altar down to a
+    crypt: a cave of its own with a stair, a passage, a vault of stone and wooden coffins and bones, and a niche where the
+    reliquary stands over a chest of silver (10 to 32 by the place's wealth and hoard; E takes it; the chest then shows
+    broken, and stays taken in the save). The hall has a back room behind a locked inner door with the jarl's (or the
+    chieftain's) chest in it. Not built: the storehouse loft, a relic as a thing of its own (the crypt gives silver), a
+    draugr in a crypt (chapter 3's side threat), the men following you down.

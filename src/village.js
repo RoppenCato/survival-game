@@ -17,7 +17,7 @@ var DEF = {
   roadW: 10, backGate: 1,                             // the one winding road (Robin, 2026-10-07): its width in the yard; a back gate for the road to leave by
   nature: 1, clutter: 1,                              // trees, bushes and rocks kept in and round the village; things against the walls (window boxes, lanterns, awnings, signs)
   fields: 1, fieldStrips: 3, sacred: 1, midden: 1, graves: 1,
-  chestLoot: 1, cellarAt: 0.3, storeLoot: 1,           // finds: a chest in every house, a cellar in one house at this wealth and above
+  chestLoot: 1, cellarAt: 0.3, storeLoot: 1, cryptAt: 0.35,   // cryptAt: a church at this wealth and above has a crypt under it (raid step 8)           // finds: a chest in every house, a cellar in one house at this wealth and above
   yardEarth: 1, pathGravel: 1, mossEdge: 1,
   emptySlots: 0.25,                                   // the share of ring slots left open, so no two rings are alike
   sizeJitter: 1,                                      // buildings vary by this many tiles
@@ -177,6 +177,7 @@ function make(seed, site, opts) {
     for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : ((l.h >= 6 && l.id !== 'church' ? (y - l.y) % 3 === 1 && R() < 0.6 : y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e') ? 'window' : 'wall'), m); }
     for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) V.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0);
     if (!V.ruin || R() < 0.5) V.roofs.push({ tx: l.x, ty: l.y, m: roof });
+    if (l.id === 'hall' && l.w >= 8) { l.back = l.x + l.w - 3; l.backDy = l.y + Math.floor(l.h / 2); for (y = l.y; y < l.y + l.h; y++) Vw(l.back, y, y === l.backDy ? 'door' : 'wall', m); }   // the hall's back room: an inner wall with a door, the jarl's chest behind it (raid step 8)
     l.m = m; l.roof = roof; l.dx = dx; l.dy = dy;
     furnish(l);
   }
@@ -195,7 +196,7 @@ function make(seed, site, opts) {
       if (wealth > 0.5) { item('shieldRack', (seatX - 1.6) * T, (l.y + 0.5) * T); if (l.w >= 19) item('shieldRack', (seatX + 2.7) * T, (l.y + 0.5) * T); }
       item('chest', (l.x + l.w - 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: Math.round((2 + wealth * 6) * hoardK) } });
       item('barrel', (l.x + 2.1) * T, (l.y + l.h - 0.55) * T); item('crate', (l.x + 2.9) * T, (l.y + l.h - 0.5) * T, { loot: { meat: 2, berries: 3 } });
-      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall || archId === 'seat' || archId === 'great') { p = [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: Math.round((A.townwall ? 24 + wealth * 36 : 10 + wealth * 18) * hoardK / (RICH[archId] || 1)) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
+      if (A.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!A.townwall }); if (A.townwall || archId === 'seat' || archId === 'great') { p = l.back != null ? [(l.back + 1.5) * T, (l.y + 0.7) * T] : [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: Math.round((A.townwall ? 24 + wealth * 36 : 10 + wealth * 18) * hoardK / (RICH[archId] || 1)) }, locked: 1, lore: 'The jarl\u2019s silver.' }); V.finds.push({ kind: 'jarl', x: p[0], y: p[1] }); } }
       else item('chair', seatX * T, (l.y + 0.8) * T, { seat: true });
       var py0 = l.y + 2, py1 = l.y + l.h - 2, px2;                    // the posts: at tile corners, two rows, every fourth tile, none beside a fire
       for (px2 = l.x + 2; px2 <= l.x + l.w - 2; px2 += 4) { if (hx.some(function (q) { return Math.abs(q - px2) < 0.8; })) continue; V.posts.push([px2, py0]); if (py1 > py0) V.posts.push([px2, py1]); }
@@ -224,6 +225,7 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'pit') { p = tile(l.x, l.y); item('campfire', p[0] + 10, p[1] + 6, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('dryingRack', p[0], p[1] - 4); }
     else if (BUILD[l.id].inside === 'church') {
       p = tile(l.x + Math.floor(l.w / 2), l.y); item('altar', p[0] + (l.w % 2 ? 0 : T / 2), p[1] + 2, { r: 6, altar: true, light: 1, lamp: true });
+      if (wealth >= G.cryptAt) { p = tile(l.x, l.y); item('trapdoor', p[0] + 14, p[1] + 10, { crypt: true, r: 0, flat: true }); }   // the trapdoor behind the altar, down to the crypt (raid step 8)
       for (k = l.y + 2; k < l.y + l.h - 1; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
       p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: Math.round((14 + wealth * 24) * hoardK) }, locked: 1, lore: 'The church\u2019s silver, given by the faithful.' });
       V.finds.push({ kind: 'silver', x: p[0], y: p[1] });
@@ -257,7 +259,7 @@ function make(seed, site, opts) {
     }
   }
   V.lots.forEach(pieces);
-  V.lots.forEach(function (l) { if (!(A.townwall || A.chapel) || !(l.id === 'church' || l.id === 'hall' || l.id === 'store')) return; var dk = l.door === 's' ? key(l.dx, l.y + l.h) : l.door === 'n' ? key(l.dx, l.y) : l.door === 'w' ? key(l.x, l.dy) : key(l.x + l.w, l.dy), ed = (l.door === 's' || l.door === 'n') ? V.H[dk] : V.V[dk]; if (ed && ed.t === 'door') ed.locked = 1; });   // the raid (2026-10-07): the church, the hall and the store are locked; the axe opens them
+  V.lots.forEach(function (l) { if (!(A.townwall || A.chapel) || !(l.id === 'church' || l.id === 'hall' || l.id === 'store')) return; var dk = l.door === 's' ? key(l.dx, l.y + l.h) : l.door === 'n' ? key(l.dx, l.y) : l.door === 'w' ? key(l.x, l.dy) : key(l.x + l.w, l.dy), ed = (l.door === 's' || l.door === 'n') ? V.H[dk] : V.V[dk]; if (ed && ed.t === 'door') ed.locked = 1; if (l.back != null && V.V[key(l.back, l.backDy)]) V.V[key(l.back, l.backDy)].locked = 1; });   // the raid (2026-10-07): the church, the hall and the store are locked; the axe opens them; the hall's back room too (step 8)
   // the well in the yard (a fire pit for the poor), the finds, the fence and gate, the fields, the sacred, the midden
   var wc = tile(yx + Math.floor(yw / 2), yy + Math.floor(yh / 2)), fc = [wc[0] - T * 0.2, wc[1] + T * 0.2];                                                             // the fire in the middle of the yard, the well off to the north-east
   if (wealth > 0.3) item('woodenWell', wc[0] + T * (yw >= 7 ? 1.9 : 1.4), wc[1] - T * (yh >= 5 ? 1.1 : 0.7));

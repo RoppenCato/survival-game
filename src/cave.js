@@ -158,6 +158,28 @@ function makeMine(seed, o) {
   for (i = 0; i < 80 && cave.puddles.length < 6; i++) { var ux2 = cave.pool.x + jit(150), uy2 = cave.pool.y + jit(90); if (!U.clearAt(ux2, uy2, 14, 0) || Math.hypot((ux2 - cave.pool.x) / (cave.pool.rx + 12), (uy2 - cave.pool.y) / (cave.pool.ry + 12)) < 1 || cave.puddles.some(function (q) { return Math.hypot(q.x - ux2, q.y - uy2) < 44; })) continue; cave.puddles.push({ x: ux2, y: uy2, rx: 6 + R() * 7, ry: 3.5 + R() * 3, a: jit(0.3) }); }
   return cave;
 }
+function makeCrypt(seed, o) {                             // a crypt under a church (raid step 8, 2026-10-21; Robin: "room for exploration, churches can have cellars, crypts"): the stair down from the trapdoor, a passage north, the vault with its coffins, and a niche where the reliquary stands over the silver
+  var R = rng(seed * 61 + 23), flip = hash(seed, 7, 11) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 8 : 8, shapes = [];
+  function jit(a) { return (R() - 0.5) * 2 * a; }
+  function box(x, y, hw, hh) { shapes.push({ box: 1, x: x, y: y, hw: hw, hh: hh }); } function oval(x, y, rx, ry) { shapes.push({ x: x, y: y, rx: rx, ry: ry || rx }); }
+  var yV = 24 + jit(0.6), xN = TX + sg * (7.5 + jit(0.8));
+  box(TX, 34, 1.2, 6.2);                                                  // the stair down, straight from the trapdoor
+  box(TX, (yV + 28) / 2, 1.1, (28 - yV) / 2 + 0.6);                       // the passage north
+  oval(TX + sg * 1.2, yV, 4.4, 2.6);                                      // the vault
+  box((TX + xN) / 2, yV, Math.abs(xN - TX) / 2 + 0.5, 1.0); oval(xN, yV - 1.0, 2.4, 1.9);   // a passage to the niche
+  var path = [[TX, 33.4], [TX, 30], [TX, yV + 0.5], [xN, yV]];
+  var cave = base(seed, o, { kind: 'crypt', shapes: shapes, rough: 0.25, TX: TX, tunW: 1.3, path: path, trail: false, flip: flip, salt: 70, tintF: [0.92, 0.92, 0.98], tintW: [0.86, 0.86, 0.94] });
+  var ox = cave.ox, oy = cave.oy; function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
+  cave.name = 'The crypt'; cave.vault = W([TX + sg * 1.2, yV]); cave.niche = W([xN, yV - 1.0]);
+  reachOf(cave);
+  cave.props.push({ name: 'cryptStairs', x: cave.entrance.x, y: cave.entrance.y - 6, s: 1, r: 0, v: 0, cave: true, flat: true });
+  [[-2.6, -1.2, 'coffinStone'], [2.6, -1.2, 'coffinStone'], [-2.4, 1.3, 'coffinWood'], [2.2, 1.3, 'coffinWood']].forEach(function (q, i) { cave.props.push({ name: q[2], x: cave.vault.x + q[0] * T, y: cave.vault.y + q[1] * T, s: 1, r: 12, v: i, cave: true }); });
+  cave.props.push({ name: 'bones', x: cave.vault.x + 0.5 * T, y: cave.vault.y + 2.0 * T, s: 1, r: 0, v: 0, cave: true, flat: true }); cave.props.push({ name: 'bones', x: cave.niche.x - sg * 1.3 * T, y: cave.niche.y + 1.1 * T, s: 1, r: 0, v: 1, cave: true, flat: true });
+  cave.props.push({ name: 'reliquary', x: cave.niche.x, y: cave.niche.y - 0.6 * T, s: 1, r: 8, v: 0, cave: true });
+  cave.chest = { name: 'heavyChest', x: cave.niche.x + sg * 0.2 * T, y: cave.niche.y + 0.5 * T, s: 1, r: 9, v: 0, cave: true }; cave.props.push(cave.chest);
+  cave.hoard = { x: cave.chest.x, y: cave.chest.y, n: o.silver || 20, kind: 'silver', day: 0, relics: true };   // the silver in the chest: E takes it (the game's relicsTake)
+  return cave;
+}
 function makeSea(seed, o) {
   var R = rng(seed * 71 + 29), flip = hash(seed, 7, 11) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 10 : 10, i;
   function jit(a) { return (R() - 0.5) * 2 * a; }
@@ -210,7 +232,7 @@ function drawSet(c, st) {
 
 function make(seed, o) {
   o = o || {}; sheets();
-  if (o.kind === 'mine') return makeMine(seed, o); if (o.kind === 'sea') return makeSea(seed, o);
+  if (o.kind === 'mine') return makeMine(seed, o); if (o.kind === 'sea') return makeSea(seed, o); if (o.kind === 'crypt') return makeCrypt(seed, o);
   var ox = o.x || 0, oy = o.y || 0, R = rng(seed * 31 + 9), i, k, x, y;
   function jit(a) { return (R() - 0.5) * 2 * a; }
   // the way through: the tunnel's head, the hall, then east to the lair
