@@ -20,7 +20,11 @@ it is done. Mine are in order; Robin's can come at any time today.
 
 ## Mine, in order
 
-### 1. Saves that fit the bigger sea (required)
+### 1. Saves that fit the bigger sea (required): done 2026-10-20
+
+**Done:** the ground is saved as a diff from the ground the world paints at every start; a fresh game's save is 54 KB, a
+painted path adds about 2 KB, an old save loads and converts, every save together 124 KB (was 3.3 MB). Along the way: the
+villages' props and roads stood at a fresh start only and were lost on a reload; they stand at every start now.
 
 **Measured 2026-10-20:** `game.save` is 1,561 KB, of which the painted ground (`ground`) is 1,509 KB and the building state
 `B` 47 KB; `game.save.runes` is another 1,552 KB; all the game's storage together is 3.3 MB, and a browser gives a site about

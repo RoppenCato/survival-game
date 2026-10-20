@@ -486,7 +486,7 @@ __COMBAT__
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
     mini = w.chart(700);
     raft = null; leftBanner = 0; banner = null; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
-    villageClear(); weirPlace(); caveSetup(); hamletClear();
+    villageClear(); weirPlace(); caveSetup(); hamletClear(); villagePaint(); hamletDress(); groundBase = groundCopy();   // the ground as the world paints it: the save keeps only what differs from this
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
     Combat.api.scene.bounds = worldBounds();
   }
@@ -1463,7 +1463,15 @@ __COMBAT__
   var TRIAL = (function () { var q; try { q = new URLSearchParams(location.search); } catch (e) { q = null; } var on = SCENE === 'ruin' && !!q, rm = on ? Math.max(1, Math.min(2, +q.get('roomy') || 1)) : 1; return { big: on && q.get('big') === '1', roomy: rm, loud: on && rm > 1 && q.get('loud') !== '0' ? rm : 1 }; })();   // loud: with bigger houses everything is heard that much further (a place spread over half again the ground was half as well guarded: nobody heard anything); &loud=0 leaves the hearing as it is   // (2026-10-13, the big trials: ?big=1 grows a great town and a great village, ?roomy=1.5 makes every building half again as big inside)
   if (SCENE === 'battle' || SCENE === 'ruin') { spec.sizes = [120, 230]; spec.big = 230; spec.biomes = [0, 1]; spec.gap = 70; spec.mountain = null; spec.mountainOpts = null; if (TRIAL.big) { var tk = TRIAL.roomy > 1 ? 380 : 300; spec.sizes = [120, tk, tk]; spec.big = tk; spec.biomes = [0, 0, 1]; spec.count = 3; } else if (TRIAL.roomy > 1) { spec.sizes = [120, 300]; spec.big = 300; } }
   function propKey(o) { return Math.round(o.x) + '|' + Math.round(o.y); }
-  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, ground: w.ground, groundDressed: true, veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, unge: ungeSense, heroName: heroName, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  /* The save keeps only what the player changed on the ground (2026-10-20: the whole painted field was 1.5 MB of a save, most of
+     the browser's room; the bigger sea would not have fit). groundBase is the field as the world paints it at every start
+     (dressing, the steading, the villages, the roads); groundDiff is each cell that differs (0: a cell the player took back
+     to grass). An old save with the whole field loads as it is and is saved as a diff from then on. */
+  var groundBase = null;
+  function groundCopy() { var o = {}, k; for (k in w.ground) o[k] = w.ground[k]; return o; }
+  function groundDiffOf() { var d = {}, k, b = groundBase || {}; for (k in w.ground) if (w.ground[k] !== b[k]) d[k] = w.ground[k]; for (k in b) if (w.ground[k] == null) d[k] = 0; return d; }
+  function groundApply(d) { var k; for (k in d) { if (d[k]) w.ground[k] = d[k]; else delete w.ground[k]; } }
+  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, groundDiff: groundDiffOf(), veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, unge: ungeSense, heroName: heroName, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -1621,6 +1629,17 @@ __COMBAT__
     village.graves = { list: list, x: cx / list.length, y: cy / list.length, stand: north ? { x: x0 + 5.6 * T, y: y0 - 0.4 * T } : { x: x0 + 20.6 * T, y: y0 + 3.8 * T }, route: north ? [{ x: x0 + 12.4 * T, y: y0 + 6.6 * T }, { x: x0 + 11.5 * T, y: y0 + 1.0 * T }, { x: x0 + 11.5 * T, y: y0 - 0.5 * T }] : [{ x: x0 + 13 * T, y: y0 + 6.8 * T }, { x: x0 + 20.6 * T, y: y0 + 6.8 * T }] };
   }
   function graveNear(P) { if (!village || !village.graves || inCave) return null; var g = village.graves.list[0]; return g && Math.hypot(P.x - g.x, P.y - g.y) < 30 ? g : null; }
+  function villagePaint() {              /* the steading's ground, at every start (2026-10-20: the save keeps only what the player painted over what the world paints): the gravel and earth paths, the hall's floor burnt away to earth under the ash, the ground round it burnt to earth */
+    if (!village) return;
+    var R = kit.rng(spec.seed * 23 + 11), vx = village.tx, vy = village.ty, x, y;
+    function stroke(x0, y0, x1, y1, kind) { var n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 6) + 1, i; for (i = 0; i <= n; i++) { var u = i / n; w.paintGround(x0 + (x1 - x0) * u + Math.sin(u * 9) * 5, y0 + (y1 - y0) * u + Math.cos(u * 7) * 4, 13, kind); } }   // a painted path, wandering a little
+    stroke((vx + 11.5) * T, (vy + 1) * T, (vx + 11.5) * T, (vy + 10.6) * T, 1); stroke((vx + 11.5) * T, (vy + 10.6) * T, (vx + 12.4) * T, (vy + 11.4) * T, 1);
+    stroke((vx + 5.5) * T, (vy + 6.6) * T, (vx + 11.5) * T, (vy + 6.8) * T, 1); stroke((vx + 11.5) * T, (vy + 5.8) * T, (vx + 16.5) * T, (vy + 5.6) * T, 2);
+    stroke((vx + 12.6) * T, (vy + 11.6) * T, (vx + 17.5) * T, (vy + 13.6) * T, 2);   // the earth path to the plank house
+    stroke((vx + 3.5) * T, (vy + 9) * T, (vx + 3.5) * T, (vy + 13.4) * T, 2); stroke((vx + 3.5) * T, (vy + 13.4) * T, (vx + 6) * T, (vy + 13.6) * T, 2);   // and to the hay and the cart
+    for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 21 + R() * 6, 2);
+    for (var ag = 0; ag < 16; ag++) w.paintGround((vx + 0.6 + R() * 10.8) * T, (vy + (ag % 2 ? 0.6 : 6.5) + (R() - 0.5) * 0.9) * T, 9 + R() * 9, 2);   // the ground round the hall, burnt to earth
+  }
   function villageBuild() {              // the pieces, written into B (a fresh start only)
     if (!village) return;
     var R = kit.rng(spec.seed * 19 + 7), vx = village.tx, vy = village.ty, x, y, k = Build.key;
@@ -1653,11 +1672,6 @@ __COMBAT__
     item('dragonPost', vx + 9.6, vy + 0.6); item('crate', vx + 1, vy + 5, { loot: { arrows: 10 } });
     // the yard (2026-10-06): a gravel path from the gate past the hall to the well and the huts, a rail fence to the south,
     // a bit of dry-stone wall by the plank house, a trough by the haystack, flowers by the whole hut
-    function stroke(x0, y0, x1, y1, kind) { var n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 6) + 1, i; for (i = 0; i <= n; i++) { var u = i / n; w.paintGround(x0 + (x1 - x0) * u + Math.sin(u * 9) * 5, y0 + (y1 - y0) * u + Math.cos(u * 7) * 4, 13, kind); } }   // a painted path, wandering a little
-    stroke((vx + 11.5) * T, (vy + 1) * T, (vx + 11.5) * T, (vy + 10.6) * T, 1); stroke((vx + 11.5) * T, (vy + 10.6) * T, (vx + 12.4) * T, (vy + 11.4) * T, 1);
-    stroke((vx + 5.5) * T, (vy + 6.6) * T, (vx + 11.5) * T, (vy + 6.8) * T, 1); stroke((vx + 11.5) * T, (vy + 5.8) * T, (vx + 16.5) * T, (vy + 5.6) * T, 2);
-    stroke((vx + 12.6) * T, (vy + 11.6) * T, (vx + 17.5) * T, (vy + 13.6) * T, 2);   // the earth path to the plank house
-    stroke((vx + 3.5) * T, (vy + 9) * T, (vx + 3.5) * T, (vy + 13.4) * T, 2); stroke((vx + 3.5) * T, (vy + 13.4) * T, (vx + 6) * T, (vy + 13.6) * T, 2);   // and to the hay and the cart
     for (x = vx; x < vx + 8; x++) if (B.H[k(x, vy + village.h)]) B.H[k(x, vy + village.h)] = { t: 'rail', m: 1 };
     for (y = vy + 8; y < vy + 14; y++) if (R() < 0.8) V(vx + 21, y, 'drystone', 3);
     item('trough', vx + 5, vy + 11.4); item('flowerBed', vx + 14.9, vy + 5.2); item('scarecrow', vx + 1.5, vy + 10.5);
@@ -1670,14 +1684,13 @@ __COMBAT__
        broken open; the fence is broken in places; the ground round the hall burnt to earth; a few things tipped over. */
     var ruinEdges = function (x0, y0, w0, h0, fn) { var ex, ey; for (ex = x0; ex < x0 + w0; ex++) { fn(B.H[k(ex, y0)], 'n'); fn(B.H[k(ex, y0 + h0)], 's'); } for (ey = y0; ey < y0 + h0; ey++) { fn(B.V[k(x0, ey)], 'w'); fn(B.V[k(x0 + w0, ey)], 'e'); } };
     ruinEdges(vx + 1, vy + 1, 10, 5, function (e) { if (!e) return; if (e.t === 'door') { e.broken = 1; e.breach = 1; e.burnt = 1; return; } var r = R(); if (r < 0.6) { e.breach = 1; e.burnt = 1; } else if (r < 0.88) e.burnt = 1; else { e.scorch = 1; if (R() < 0.5) { e.st = 1; e.dmg = 4; } } });
-    B.ruin = B.ruin || {}; for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) { B.ruin[x + ',' + y] = { k: 'burnt', m: 0, hot: 0 }; delete B.floors[k(x, y)]; w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 21 + R() * 6, 2); }   /* its floor burnt away to earth under the ash */
+    B.ruin = B.ruin || {}; for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) { B.ruin[x + ',' + y] = { k: 'burnt', m: 0, hot: 0 }; delete B.floors[k(x, y)]; }   /* its floor burnt away to earth under the ash */
     ruinEdges(vx + 14, vy + 9, 6, 4, function (e, side) { if (!e || e.t === 'door') return; if (side === 'n' && R() < 0.7) e.scorch = 1; else if (R() < 0.4) { e.st = R() < 0.3 ? 2 : 1; e.dmg = 3; } });
     ruinEdges(vx + 14, vy + 1, 6, 4, function (e, side) { if (!e) return; if (side === 'w') e.scorch = 1; else if (side === 'n' && R() < 0.3) { e.st = 1; e.dmg = 2; } });
     for (x = vx; x < vx + village.w; x++) { var pe = B.H[k(x, vy)]; if (x === vx + 11) continue; if (!pe) { B.H[k(x, vy)] = { t: 'palisade', m: 0, breach: 1, burnt: 1 }; } else if (x <= vx + 12 && R() < 0.5) pe.scorch = 1; }
     for (y = vy; y < vy + village.h; y++) { if (!B.V[k(vx, y)]) B.V[k(vx, y)] = { t: 'palisade', m: 0, breach: 1, burnt: R() < 0.7 ? 1 : 0 }; else if (y < vy + 7 && R() < 0.5) B.V[k(vx, y)].scorch = 1; }
     var gte = B.H[k(vx + 11, vy)]; if (gte) { gte.broken = 1; gte.scorch = 1; }
     for (x = vx; x < vx + 8; x++) { var fe = B.H[k(x, vy + village.h)]; if (fe && R() < 0.3) fe.breach = 1; }
-    for (var ag = 0; ag < 16; ag++) w.paintGround((vx + 0.6 + R() * 10.8) * T, (vy + (ag % 2 ? 0.6 : 6.5) + (R() - 0.5) * 0.9) * T, 9 + R() * 9, 2);   // the ground round the hall, burnt to earth
     B.items.forEach(function (it) { if ((it.name === 'shieldRack' || it.name === 'cart' || it.name === 'dragonPost') && R() < 0.7) it.fallen = 1; });   // tipped over in the raid
     B.roofs = {}; bDirty = true; Build.ensurePosts(B);
     for (y = vy + 1; y <= vy + 6; y++) for (x = vx + 1; x <= vx + 11; x++) { var po = B.posts[k(x, y)]; if (!po) continue; var held = [B.H[k(x, y)], B.H[k(x - 1, y)], B.V[k(x, y)], B.V[k(x, y - 1)]].some(function (e) { return e && !e.breach; }); po.burnt = 1; if (!held && R() < 0.75) po.snap = 0.3 + R() * 0.45; }   // the hall's posts charred, snapped short where no wall stands against them
@@ -2457,20 +2470,9 @@ __COMBAT__
     w.repaint(bx0 - 20, by0 - 20, bx1 + 20, by1 + 20);
     return true;
   }
-  function hamletBuild() {               // every village's pieces written into B (a fresh start only), its ground painted, its props planted, the jetties laid, the roads
+  function hamletDress() {               /* every village's ground painted, its props and its own trees planted, its doorways and gates kept clear, the roads laid and cleared (at every start, 2026-10-20: these stood in the world at a fresh start only, so a loaded game had lost them, and the save keeps only what the player painted over this ground) */
     villages.forEach(function (v) {
-      var V2 = v.V, k, q; if (!V2) return;
-      for (k in V2.floors) B.floors[k] = V2.floors[k];
-      (V2.posts || []).forEach(function (q2) { B.posts[Build.key(q2[0], q2[1])] = { m: 0 }; });   /* (the two rows of posts down a hall) */
-      for (k in V2.H) { B.H[k] = { t: V2.H[k].t, m: V2.H[k].m }; if (V2.H[k].locked) B.H[k].locked = 1; } for (k in V2.V) { B.V[k] = { t: V2.V[k].t, m: V2.V[k].m }; if (V2.V[k].locked) B.V[k].locked = 1; }
-      V2.items.forEach(function (vi) {
-        var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.r != null ? vi.r : (vi.cellar ? 0 : (pc ? pc.r : 8)) };
-        for (q in vi) if (q !== 'x' && q !== 'y' && q !== 'name' && q !== 'store' && q !== 'loot') it[q] = vi[q];
-        if (vi.store) { it.store = lootSlots(vi.loot); if (vi.cellar) it.loot = null; } else if (vi.loot) it.loot = vi.loot;
-        B.items.push(it);
-      });
-      V2.roofs.forEach(function (r) { roofLaters.push({ tx: r.tx, ty: r.ty, m: r.m }); });
-      layArms(v, villages.indexOf(v));
+      var V2 = v.V; if (!V2) return;
       V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); });
       w.repaint((v.tx - 2) * T, (v.ty - 2) * T, (v.tx + v.w + 2) * T, (v.ty + v.h + 2) * T);
       V2.props.forEach(function (pr) { if (!kit.PROPS[pr.name] || !isLand(pr.x, pr.y)) return; var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.solid != null ? pr.solid : (pr.name === 'scarecrow' ? 4 : 8), v: Math.floor(Math.random() * 3) }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
@@ -2486,9 +2488,8 @@ __COMBAT__
         gts.forEach(function (pt) { var cx = (pt[0] + 0.5) * T, cy = (pt[1] + 0.5) * T; w.around(cx, cy, function (o) { if (o.r > 0 && Math.hypot(o.x - cx, o.y - cy) < T * 1.5 && gone3.indexOf(o) < 0) gone3.push(o); }); });
         gone3.forEach(function (o) { w.removeProp(o); });
       }
-      if (v.jetty) {                                                               // the jetty: dock planks out into the shallows, a barrel and a rack on the root, the road up to the gate
+      if (v.jetty) {                                                               // the jetty's barrel and rack on its root, and the road up to the gate
         var J = v.jetty, rt = J.root, ok = true;
-        J.tiles.forEach(function (t) { if (dockOk(t[0], t[1]) || code(t[0], t[1]) === 0) B.floors[Build.key(t[0], t[1])] = 8; });
         w.addProp({ name: 'barrel', x: (rt[0] + 0.5) * T + J.dir[1] * 12, y: (rt[1] + 0.5) * T - J.dir[0] * 12 + 4, s: 1, r: 5, v: 0, loot: { fiber: 2 } });
         if (kit.PROPS.dryingRack) w.addProp({ name: 'dryingRack', x: (rt[0] + 0.5) * T - J.dir[1] * 16, y: (rt[1] + 0.5) * T + J.dir[0] * 16 + 2, s: 1, r: 6, v: 0 });
         var fr = V2.roadEnds ? V2.roadEnds.front : vCentre(v), root = [(rt[0] + 0.5) * T, (rt[1] + 0.5) * T], mid = [(fr[0] + root[0]) / 2 + (root[1] - fr[1]) * 0.18, (fr[1] + root[1]) / 2 - (root[0] - fr[0]) * 0.18];
@@ -2504,6 +2505,26 @@ __COMBAT__
       var m1 = [ca[0] + (cb[0] - ca[0]) * 0.33 + (cb[1] - ca[1]) * 0.12, ca[1] + (cb[1] - ca[1]) * 0.33 - (cb[0] - ca[0]) * 0.12], m2 = [ca[0] + (cb[0] - ca[0]) * 0.66 - (cb[1] - ca[1]) * 0.1, ca[1] + (cb[1] - ca[1]) * 0.66 + (cb[0] - ca[0]) * 0.1];
       if (layRoad([ca, m1, m2, cb], 7, true) && kit.PROPS.trailStone) w.addProp({ name: 'trailStone', x: ca[0] + 14, y: ca[1] + 6, s: 1, r: 4, v: 0 });
     }
+  }
+  function hamletBuild() {               // every village's pieces written into B (a fresh start only): its floors, walls, doors, the things in it, the dock planks; what stands in the world is hamletDress's
+    villages.forEach(function (v) {
+      var V2 = v.V, k, q; if (!V2) return;
+      for (k in V2.floors) B.floors[k] = V2.floors[k];
+      (V2.posts || []).forEach(function (q2) { B.posts[Build.key(q2[0], q2[1])] = { m: 0 }; });   /* (the two rows of posts down a hall) */
+      for (k in V2.H) { B.H[k] = { t: V2.H[k].t, m: V2.H[k].m }; if (V2.H[k].locked) B.H[k].locked = 1; } for (k in V2.V) { B.V[k] = { t: V2.V[k].t, m: V2.V[k].m }; if (V2.V[k].locked) B.V[k].locked = 1; }
+      V2.items.forEach(function (vi) {
+        var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.r != null ? vi.r : (vi.cellar ? 0 : (pc ? pc.r : 8)) };
+        for (q in vi) if (q !== 'x' && q !== 'y' && q !== 'name' && q !== 'store' && q !== 'loot') it[q] = vi[q];
+        if (vi.store) { it.store = lootSlots(vi.loot); if (vi.cellar) it.loot = null; } else if (vi.loot) it.loot = vi.loot;
+        B.items.push(it);
+      });
+      V2.roofs.forEach(function (r) { roofLaters.push({ tx: r.tx, ty: r.ty, m: r.m }); });
+      layArms(v, villages.indexOf(v));
+      if (v.jetty) {                                                               // the jetty: dock planks out into the shallows
+        var J = v.jetty, rt = J.root, ok = true;
+        J.tiles.forEach(function (t) { if (dockOk(t[0], t[1]) || code(t[0], t[1]) === 0) B.floors[Build.key(t[0], t[1])] = 8; });
+      }
+    });
     bDirty = true; Build.ensurePosts(B);
   }
   function folkNear(P) { var best = null; folk.forEach(function (f) { if (f.hidden || f.fallen) return; var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
@@ -5519,7 +5540,7 @@ __COMBAT__
       B = sv.B && sv.B.floors ? sv.B : B; if (!B.items) B.items = []; if (hearth && sv.hearthOut) hearth.out = sv.hearthOut; var hadPosts = !!B.posts; ensureB(); if (!hadPosts) Build.ensurePosts(B); (sv.gone || []).forEach(function (g) { gone[g] = 1; });
       B.items.forEach(function (it) { if (it.store) it.store = it.store.map(function (s) { return !s ? null : (s.kind === 'item' && s.item ? { kind: 'item', n: 1, item: Items.make(s.item.kind, s.item.mat, s.item) } : (NAMES[s.kind] ? { kind: s.kind, n: Math.min(STACK, s.n | 0) } : null)); }); });   // chests, with their things remade
       w.eachProp(function (o) { if ((o.kind || o.name === 'fireRing' || o.weirNet) && gone[propKey(o)]) w.removeProp(o); }); B.items.forEach(function (it) { if (it.cooking && it.cooking.length && cookFires.indexOf(it) < 0) cookFires.push(it); });
-      day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; }); if (sv.ground && typeof sv.ground === 'object') { if (sv.groundDressed) w.ground = sv.ground; else { var gk; for (gk in sv.ground) w.ground[gk] = sv.ground[gk]; } }   // a save from before the world dressed itself keeps the dressing under its own strokes
+      day = sv.day && sv.day.t != null ? sv.day : { t: 0, n: 1 }; rested = sv.rested || 0; trunks = (sv.trunks || []).filter(function (t2) { return t2 && t2.kind === 'trunk'; }); trunks.forEach(function (t2) { t2.shake = 0; t2.dying = null; }); if (sv.groundDiff && typeof sv.groundDiff === 'object') groundApply(sv.groundDiff); else if (sv.ground && typeof sv.ground === 'object') { if (sv.groundDressed) w.ground = sv.ground; else { var gk; for (gk in sv.ground) w.ground[gk] = sv.ground[gk]; } }   // what the player painted over the world's ground; an older save holds the whole field (and is saved as a diff from now on), the oldest its strokes alone
       if (cave && sv.veins && sv.veins.length === cave.veins.length) sv.veins.forEach(function (lf, vi) { cave.veins[vi].left = lf; }); if (cave && sv.caveSeen) Cave.seenLoad(cave, sv.caveSeen);
       (sv.caves2 || []).forEach(function (q) { var cv = caves.filter(function (c2) { return c2.kind === q.kind; })[0]; if (!cv) return;
         (q.mined || []).forEach(function (id) { var oi = -1; cv.cave.ores.forEach(function (o, k2) { if (o.id === id) oi = k2; }); if (oi >= 0) cv.cave.ores.splice(oi, 1); cv.cave.mined.push(id); });

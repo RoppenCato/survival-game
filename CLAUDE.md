@@ -402,7 +402,10 @@ carver's bench for five health (a coil per side: hand, foot, eye, heart); a rune
 **The hird** (`docs/hird.md`, `src/hird.js`): claim stones (stone, berries, snake blood) with a reach; Arnor joins at your
 first; hirdmen follow (inside your territory), take jobs at workplaces and eat at dawn from chests; muster at a stone.
 
-**Villages** (the big island): grown by `Village.make`, placed by `Village.plan`, named, with jetties; their people live
+**Villages** (the big island): grown by `Village.make`, placed by `Village.plan`, named, with jetties; what stands in the
+world (their ground, props and own trees, the roads and the jetty's barrel; the steading's ground too, `villagePaint`) is
+made at every start by `hamletDress` and their pieces in `B` at a fresh one by `hamletBuild` (2026-10-20: a loaded game had
+lost the props and roads); their people live
 routines (spots, jobs, sitting at the fire, watching you a while), find their way round walls, run, hide or arm when you draw
 a blade or raid, and can be killed (the dead are remembered by name). They can be broken into and burnt ("Destruction").
 Houses are narrow and long at real sizes (a house 4 by 6 to 9 tiles, a longhouse 5 by 14 to 18, a hall 6 by 20 to 22).
@@ -414,7 +417,9 @@ steers with A and D (Robin), with the wind for rigged hulls and rowers for the c
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
 chart show what has been seen; saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is
-dropped); **Admin** in the Escape menu (immortal, one-shot, free building and crafting, fly, threefold drops, shield only
+dropped; **the painted ground is saved as what differs from the ground the world paints at every start** (`groundBase`,
+`groundDiff`; 2026-10-20: the whole field was 1.5 MB of a 1.6 MB save, now about 55 KB; an older save's whole field loads and
+is saved as a diff from then on); **Admin** in the Escape menu (immortal, one-shot, free building and crafting, fly, threefold drops, shield only
 when raised, the old fight sounds, the frame readout, full resolution, the Light and sound board, go-tos, the two logs);
 critters (butterflies, birds, beetles) that keep away.
 
