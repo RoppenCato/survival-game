@@ -9007,8 +9007,8 @@ function tactics(V, kind) {
 }
 function applyTactic(e, q, tac) {
   if (!tac) return; var k = tac.kind;
-  if (k === 'gate' && tac.rally) { e.rally = tac.rally; e.rallyHold = 1e9; }
-  else if (k === 'muster' && tac.rally) { e.rally = tac.rally; e.rallyHold = 10; e.rallyThen = 'alarm'; }
+  if (k === 'gate' && tac.rally) { e.rally = tac.rally; e.rallyHold = 1e9; e.homeR = 0; }   // (a man sent to the gate fights there: his own door no longer bounds him, 2026-10-21)
+  else if (k === 'muster' && tac.rally) { e.rally = tac.rally; e.rallyHold = 10; e.rallyThen = 'alarm'; e.homeR = 0; }
   else if (k === 'hall') { if (q && q.kind === 'hall') e.homeR = tac.hallR || 150; }
   else if (k === 'hunters') { e.pursueK = 1.6; e.sight = (e.sight || 320) * 1.3; }
   else if (k === 'watch') { e.wits = Math.min(7, (e.wits || 3) + 1); }
@@ -9082,7 +9082,7 @@ var Nav = (function () {
   function make(o) {
     var T = o.T, X0 = o.x0, Y0 = o.y0, GW = o.w, GH = o.h, N = GW * GH;
     var open = new Uint8Array(N), price = new Float32Array(N), eh = new Uint8Array(N + GW), ev = new Uint8Array(N + GH + GW);   // eh[y * GW + x]: the north edge of (x, y); ev[y * (GW + 1) + x]: its west edge
-    var g = { x0: X0, y0: Y0, w: GW, h: GH, T: T, stamp: 0 }, SOL = [];
+    var g = { x0: X0, y0: Y0, w: GW, h: GH, T: T, stamp: 0 }, SOL = [], AV = null;   // AV: an edge the mover now asking avoids (see path, next: a doorway he has waited at too long)
     function read() {
       var x, y;
       for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) { open[y * GW + x] = o.open(X0 + x, Y0 + y) ? 1 : 0; price[y * GW + x] = o.cost ? (o.cost(X0 + x, Y0 + y) || 0) : 0; eh[y * GW + x] = o.edge('H', X0 + x, Y0 + y) || 0; ev[y * (GW + 1) + x] = o.edge('V', X0 + x, Y0 + y) || 0; }
@@ -9095,11 +9095,13 @@ var Nav = (function () {
     }
     function inside(tx, ty) { return tx >= 0 && ty >= 0 && tx < GW && ty < GH; }
     function shut(v, keys) { return v === 1 || (v === 2 && !keys); }
+    function avoided(ax, ay, bx, by) { if (!AV) return false; var L = AV.list, i, k = bx !== ax ? 'V' : 'H', tx = bx !== ax ? X0 + Math.max(ax, bx) : X0 + ax, ty = bx !== ax ? Y0 + ay : Y0 + Math.max(ay, by); for (i = 0; i < L.length; i++) if (L[i].kind === k && L[i].tx === tx && L[i].ty === ty) return true; return false; }
     // one step between neighbours (in the grid's own tile numbers): is anything shut between them
     function step(ax, ay, bx, by, keys) {
       if (!inside(bx, by) || !inside(ax, ay)) return true;                       // off the stretch: nothing is known there, so nothing is in the way
       if (!open[by * GW + bx]) return false;
       if (bx !== ax && by !== ay) return step(ax, ay, bx, ay, keys) && step(bx, ay, bx, by, keys) && step(ax, ay, ax, by, keys) && step(ax, by, bx, by, keys);   // a corner is not cut
+      if (avoided(ax, ay, bx, by)) return false;
       if (bx < ax) return !shut(ev[ay * (GW + 1) + ax], keys); if (bx > ax) return !shut(ev[by * (GW + 1) + bx], keys);
       if (by < ay) return !shut(eh[ay * GW + ax], keys); if (by > ay) return !shut(eh[by * GW + bx], keys);
       return true;
@@ -9142,7 +9144,10 @@ var Nav = (function () {
     var DX = [1, -1, 0, 0, 1, 1, -1, -1], DY = [0, 0, 1, -1, 1, -1, 1, -1];
     // a way from one place to another, as points in the world (the middles of tiles; the last is the place itself), or null.
     // If the place cannot be reached (a locked hall), the way leads to the tile that comes nearest to it, and .short says so.
-    function path(fx, fy, tx, ty, keys) {
+    function path(fx, fy, tx, ty, keys, avoid) {
+      var av0 = AV; if (avoid !== undefined) AV = avoid; try { return path0(fx, fy, tx, ty, keys); } finally { AV = av0; }
+    }
+    function path0(fx, fy, tx, ty, keys) {
       var sx = Math.max(0, Math.min(GW - 1, Math.floor(fx / T) - X0)), sy = Math.max(0, Math.min(GH - 1, Math.floor(fy / T) - Y0)), ex = Math.max(0, Math.min(GW - 1, Math.floor(tx / T) - X0)), ey = Math.max(0, Math.min(GH - 1, Math.floor(ty / T) - Y0));
       var s = sy * GW + sx, e = ey * GW + ex, i, k, best = s, bestH = 1e9, n = 0; run++; heap.length = 0;
       gS[s] = 0; fS[s] = 0; from[s] = -1; mark[s] = run; push(s);
@@ -9171,12 +9176,15 @@ var Nav = (function () {
     // the place has moved a tile, the grid has been read again, or two seconds have passed. With nowhere to go he is told to
     // stay where he is (the answer has .wait).
     function next(m, tx, ty, t, keys) {
+      var av = m.avoid && m.avoid.g === g && m.avoid.until > t ? m.avoid : null, av0 = AV; AV = av; try { return next0(m, tx, ty, t, keys, av); } finally { AV = av0; }
+    }
+    function next0(m, tx, ty, t, keys, av) {
       var here = inside(Math.floor(m.x / T) - X0, Math.floor(m.y / T) - Y0), there = inside(Math.floor(tx / T) - X0, Math.floor(ty / T) - Y0);
       if (!here && !there) { m.nav = null; return null; }
       if (clear(m.x, m.y, tx, ty, keys)) { m.nav = null; return null; }
       var gx = Math.floor(tx / T), gy = Math.floor(ty / T), nv = m.nav;
-      if (!nv || nv.g !== g || nv.stamp !== g.stamp || nv.gx !== gx || nv.gy !== gy || t - nv.t > 2 || nv.keys !== !!keys) {
-        var pts = path(m.x, m.y, tx, ty, keys); nv = m.nav = { g: g, stamp: g.stamp, gx: gx, gy: gy, t: t, keys: !!keys, pts: pts || [], i: 0, short: !pts || !!pts.short };
+      if (!nv || nv.g !== g || nv.stamp !== g.stamp || nv.gx !== gx || nv.gy !== gy || t - nv.t > 2 || nv.keys !== !!keys || nv.av !== (av ? av.k : null)) {
+        var pts = path0(m.x, m.y, tx, ty, keys); nv = m.nav = { g: g, stamp: g.stamp, gx: gx, gy: gy, t: t, keys: !!keys, av: av ? av.k : null, pts: pts || [], i: 0, short: !pts || !!pts.short };
       }
       while (nv.i < nv.pts.length && Math.hypot(nv.pts[nv.i].x - m.x, nv.pts[nv.i].y - m.y) < T * 0.35) nv.i++;                      // reached
       while (nv.i + 1 < nv.pts.length && clear(m.x, m.y, nv.pts[nv.i + 1].x, nv.pts[nv.i + 1].y, keys)) nv.i++;                      // and as far along it as he can walk straight
@@ -9242,13 +9250,35 @@ var Nav = (function () {
       if (e !== P && side === 1 && !P.dead && !P.hidden && inIt(P, q)) n++;
       return n >= 2;
     }
+    // a way to (x, y) that goes round the doorway q (the whole of it: a gate is two tiles wide): taken if the grid has one
+    function wayRound(g, e, q, x, y, keys, now) {
+      var list = [{ kind: q.kind, tx: q.tx, ty: q.ty }], s2;
+      for (s2 = -2; s2 <= 2; s2++) if (s2) { var ttx = q.kind === 'H' ? q.tx + s2 : q.tx, tty = q.kind === 'H' ? q.ty : q.ty + s2; if (g.edgeAt(q.kind, ttx, tty) >= 2) list.push({ kind: q.kind, tx: ttx, ty: tty }); }
+      var av = { g: g, k: q.kind + ':' + q.tx + ',' + q.ty, list: list, until: now + ROUND.keep }, p2 = g.path(e.x, e.y, x, y, keys, av);
+      if (!p2 || p2.short) return false; e.avoid = av; e.nav = null; e.wentRound = (e.wentRound || 0) + 1; return true;
+    }
+    // the engine asks for a man hanging back from a fight he cannot get to (the men at a full gate, raid step 5): is there a doorway
+    // between him and it within 200 units, and a way round that doorway; if so he has it (e.avoid) and goes
+    Combat.api.wayRound = function (e, x, y) { var st = Combat.api.roundStats || (Combat.api.roundStats = { asked: 0, noGrid: 0, noNarrow: 0, found: 0 }); st.asked++; var g = at(e.x, e.y) || at(x, y); if (!g) { st.noGrid++; return false; } var q = g.narrowAhead(e.x, e.y, x, y, 200); if (!q) { st.noNarrow++; return false; } var ok = wayRound(g, e, q, x, y, keysOf(e, g), clock()); if (ok) st.found++; return ok; };   // (roundStats: a count for the tests)
     Combat.api.nav = function (e, x, y) {
       var g = at(e.x, e.y) || at(x, y); if (!g) return null; var keys = keysOf(e, g), wp = g.next(e, x, y, clock(), keys);
       if (wp && wp.wait) return wp;
       var q = g.narrowAhead(e.x, e.y, wp ? wp.x : x, wp ? wp.y : y, 64);                                                    // a door or a gate on his way
       if (q) {
         if (q.v === 2 && keys && Math.hypot(e.x - q.x, e.y - q.y) < 30) (g.opened = g.opened || []).push({ kind: q.kind, tx: q.tx, ty: q.ty });   // his own locked door, and he is at it: he opens it (unlock() below)
-        if (chokeFull(g, e, q)) { e.choked = clock(); return { x: e.x, y: e.y, wait: true }; }
+        if (chokeFull(g, e, q)) {
+          var now = clock(), qk = q.kind + ':' + q.tx + ',' + q.ty; e.choked = now;
+          // waited too long at a doorway his own side fills (the wait adds up across the moments it clears for a step): he goes round
+          // by another way if the grid has one (the other gate: the men at a full gate take you in the back; a carrier of yours at a
+          // held gate goes by the back gate), else he waits on. The whole doorway is avoided (a gate is two tiles wide).
+          if (e.chokeQ !== qk || now - (e.chokeLast || 0) > 1.5) { e.chokeQ = qk; e.chokeAcc = 0; } else e.chokeAcc += Math.min(0.25, now - e.chokeLast);
+          e.chokeLast = now;
+          if (e.chokeAcc > ROUND.wait && !(e.noRound > now)) {
+            if (wayRound(g, e, q, x, y, keys, now)) { e.chokeQ = null; e.choked = null; return g.next(e, x, y, now, keys); }
+            e.noRound = now + ROUND.retry; e.chokeAcc = 0;
+          }
+          return { x: e.x, y: e.y, wait: true };
+        }
         e.choked = null;                                                                                                   // let through: from now he is one of those in it
       }
       return wp;
@@ -9270,7 +9300,8 @@ var Nav = (function () {
     for (i = 0; i < L.length; i++) { d = (L[i].kind === 'H' ? B.H : B.V)[L[i].tx + ',' + L[i].ty]; if (d && d.locked) { d.locked = 0; any = true; if (fn) fn(L[i]); } }
     L.length = 0; return any;
   }
-  return { make: make, edgeOf: edgeOf, attach: attach, unlock: unlock };
+  var ROUND = { wait: 3, keep: 25, retry: 10 };   // seconds a man waits his turn at a full doorway before he looks for a way round, how long he holds to that way, and how long before he looks again when there was none (2026-10-21, raid step 5)
+  return { make: make, edgeOf: edgeOf, attach: attach, unlock: unlock, ROUND: ROUND };
 })();
 if (typeof module !== 'undefined') module.exports = Nav;
 
@@ -9310,12 +9341,13 @@ var YARDS = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 
 var DEF = {
   on: 1,
   // how much a piece takes before it gives (0: no hand tool breaks it)
-  hp: { fence: 8, rail: 7, wattle: 18, window: 10, door: 14, archDoor: 26, gate: 28, planks: 48, frame: 36, logs: 110, palisade: 90, stake: 30, turf: 56, drystone: 40, blocks: 130, ashlar: 0, townwall: 0 },   // (stake: one sharpened log of a village's round wall; three stand to a tile)
+  hp: { fence: 8, rail: 7, wattle: 18, window: 10, door: 14, archDoor: 26, gate: 28, planks: 48, frame: 36, logs: 110, palisade: 90, stake: 30, turf: 56, drystone: 40, blocks: 130, ashlar: 180, townwall: 300 },   // (stake: one sharpened log of a village's round wall; three stand to a tile. Dressed stone and the town wall: no hand tool bites them (never), only the ram: raid step 5, 2026-10-21)
   // what a tool's blow does to a material, as a share of its power
   bite: {
     axe: { fence: 1, rail: 1, wattle: 1, window: 1, door: 1, archDoor: 1, gate: 1, planks: 1, frame: 1, logs: 1, palisade: 1, turf: 0.3, drystone: 0.1, blocks: 0, ashlar: 0, townwall: 0 },
     pick: { fence: 0.5, rail: 0.5, wattle: 0.5, window: 0.5, door: 0.35, archDoor: 0.35, gate: 0.35, planks: 0.35, frame: 0.5, logs: 0.25, palisade: 0.25, turf: 1, drystone: 1, blocks: 1, ashlar: 0, townwall: 0 },
-    knife: { fence: 0.3, wattle: 0.3 }
+    knife: { fence: 0.3, wattle: 0.3 },
+    ram: { fence: 2, rail: 2, wattle: 2, window: 2, door: 2, archDoor: 1.4, gate: 2, planks: 1.2, frame: 1, logs: 1, palisade: 1, stake: 1, turf: 0.5, drystone: 1.5, blocks: 1, ashlar: 1.4, townwall: 1 }   // the hird's ram (four men and a trunk; the game's RAM.power 3.2 a swing): a gate in about five swings, a church's door in six, a cut-stone wall in forty, the town wall in ninety
   },
   // how far a blow on it is heard, in the world's units (a town's men within that distance hear it)
   noise: { fence: 110, rail: 110, wattle: 150, window: 170, turf: 130, frame: 260, planks: 280, door: 360, gate: 320, logs: 320, palisade: 320, drystone: 300, archDoor: 480, blocks: 430, ashlar: 430, townwall: 430 },
@@ -9342,7 +9374,9 @@ var DEF = {
     spark: 0.1,                  // the chance a second that a burning roof lights a roof right beside it (times that roof's catch; less with distance, nothing at the reach's edge)
     heat: 9,                     // health a second lost by whoever stands in a burning room
     hot: 70,                     // seconds the ashes glow and smoke after
-    loud: 220, louder: 55, loudMax: 1000   // how far a fire is noticed: this, and this much more for every piece alight
+    loud: 220, louder: 55, loudMax: 1000,  // how far a fire is noticed: this, and this much more for every piece alight
+    bucket: 14,                  // a bucket of water on a burning roof undoes this many seconds of its burning (on a wall, one bucket puts it out); the bucket brigade, raid step 5, 2026-10-21
+    wet: 40                      // seconds a doused wall or roof stays wet: it does not catch again from its neighbours in that time
   }
 };
 function cfg(over) {             // DEF with a page's stored numbers laid over it (one level deep, two for hp, bite, fire)
@@ -9373,7 +9407,7 @@ function stageOf(R, e) { var hp = hpOf(R, e); return e.breach ? 3 : !hp || !e.dm
    to it), never (no hand tool does) }, or null when there is nothing there to strike. */
 function hit(R, e, power, tool) {
   if (!R.on || !standing(e)) return null;
-  var mat = matOf(e), hp = R.hp[mat] || 0, bite = (R.bite[tool] && R.bite[tool][mat]) || 0, out = { mat: mat, dealt: 0, k: 0, gave: false, noise: (R.noise[mat] || 200) * (R.noiseK == null ? 1 : R.noiseK), none: false, never: !hp };
+  var mat = matOf(e), hp = R.hp[mat] || 0, bite = (R.bite[tool] && R.bite[tool][mat]) || 0, out = { mat: mat, dealt: 0, k: 0, gave: false, noise: (R.noise[mat] || 200) * (R.noiseK == null ? 1 : R.noiseK), none: false, never: !hp || !((R.bite.axe[mat] || 0) + (R.bite.pick[mat] || 0) + (R.bite.knife[mat] || 0)) };   // (never: no hand tool takes it; the ram may)
   if (!hp || !bite) { out.none = true; out.k = hp ? Math.min(1, (e.dmg || 0) / hp) : 0; out.noise *= 0.6; return out; }
   out.dealt = power * bite; e.dmg = (e.dmg || 0) + out.dealt; out.k = Math.min(1, e.dmg / hp);
   if (e.dmg >= hp) { give(e); out.gave = true; }
@@ -9432,9 +9466,9 @@ function tally(R, B, rooms) {
 }
 
 /* ---------- fire ---------- */
-function burnsWall(R, e) { return !!e && !e.breach && !e.burnt && (R.fire.wall[matOf(e)] || 0) > 0; }
+function burnsWall(R, e) { return !!e && !e.breach && !e.burnt && !(e.wet > 0) && (R.fire.wall[matOf(e)] || 0) > 0; }
 function roofSpec(R, B, room, dflt) { return R.fire.roof[ROOFN[roofOf(B, room, dflt)] || 'none'] || R.fire.roof.none; }
-function burnsRoof(R, B, room, dflt) { return !room.up && !ruined(B, room) && roofSpec(R, B, room, dflt).burn > 0; }
+function burnsRoof(R, B, room, dflt) { return !room.up && !ruined(B, room) && !(B.wetR && B.wetR[room.id] > 0) && roofSpec(R, B, room, dflt).burn > 0; }
 function alight(B) { var n = 0, k; for (k in B.fire || {}) n++; return n; }
 function onFire(B, L, k) { return !!(B.fire && B.fire[L + ':' + k]); }
 // put fire to an edge ('H' | 'V', its key) or to a room's roof ('R', the room): true if it took
@@ -9488,6 +9522,8 @@ function fireTick(R, B, dt, env) {
     }
   }
   for (key in B.ruin || {}) if (B.ruin[key].hot > 0) B.ruin[key].hot = Math.max(0, B.ruin[key].hot - dt);
+  if (B.wetE) { for (i = B.wetE.length - 1; i >= 0; i--) { e = (B.wetE[i].charAt(0) === 'H' ? B.H : B.V)[B.wetE[i].slice(2)]; if (!e || !(e.wet > 0) || (e.wet -= dt) <= 0) { if (e) delete e.wet; B.wetE.splice(i, 1); } } }   // what was doused dries
+  for (key in B.wetR || {}) { B.wetR[key] -= dt; if (B.wetR[key] <= 0) delete B.wetR[key]; }
   return ev;
 }
 function centre(room) { var sx = 0, sy = 0, i; for (i = 0; i < room.tiles.length; i++) { sx += room.tiles[i][0] + 0.5; sy += room.tiles[i][1] + 0.5; } return [sx / room.tiles.length * 32, sy / room.tiles.length * 32]; }
@@ -9497,9 +9533,24 @@ function roofFlame(R, B, room, tx, ty, dflt) {
   var f = B.fire && B.fire['R:' + room.id]; if (!f) return 0; var rs = roofSpec(R, B, room, dflt), d = Math.abs(tx - f.at[0]) + Math.abs(ty - f.at[1]), t0 = d * rs.spread;
   return f.t <= t0 ? 0 : Math.min(1, (f.t - t0) / 3);
 }
+// A bucket on a fire (the brigade, raid step 5, 2026-10-21): a burning wall goes out (scorched); a burning roof loses R.fire.bucket
+// seconds of its burning and goes out when none is left (the flames drawn as far as they had run go back). True when it is out.
+function douse(R, B, key) {
+  var F = B.fire, f = F && F[key]; if (!f) return true;
+  if (key.charAt(0) === 'R') { f.t -= R.fire.bucket; if (f.t > 0) return false; delete F[key]; if (!B.wetR) B.wetR = {}; B.wetR[key.slice(2)] = R.fire.wet; return true; }
+  var e = (key.charAt(0) === 'H' ? B.H : B.V)[key.slice(2)]; if (e && !e.breach) { e.scorch = 1; e.wet = R.fire.wet; if (!B.wetE) B.wetE = []; if (B.wetE.indexOf(key) < 0) B.wetE.push(key); } delete F[key]; return true;
+}
+// Every fire now burning, with where it is in the world (an edge's middle; a roof's room's middle), for whoever would fight it
+function fires(B, env) {
+  var out = [], k, p, i; for (k in B.fire || {}) {
+    if (k.charAt(0) === 'R') { var room = null; for (i = 0; i < env.rooms.length; i++) if (env.rooms[i].id === k.slice(2)) { room = env.rooms[i]; break; } if (room) { var c = centre(room); out.push({ key: k, x: c[0], y: c[1], roof: true, room: room }); } continue; }
+    p = k.slice(2).split(','); out.push({ key: k, x: k.charAt(0) === 'H' ? (+p[0] + 0.5) * 32 : +p[0] * 32, y: k.charAt(0) === 'H' ? +p[1] * 32 : (+p[1] + 0.5) * 32, roof: false });
+  }
+  return out;
+}
 function fireNoise(R, B) { var n = alight(B); return n ? Math.min(R.fire.loudMax, R.fire.loud + R.fire.louder * n) : 0; }
 return { DEF: DEF, TEX: TEX, ROOFN: ROOFN, cfg: cfg, matOf: matOf, hpOf: hpOf, rightTool: rightTool, standing: standing, passable: passable, stageOf: stageOf, hit: hit, give: give, edgesOf: edgesOf, strain: strain, ruined: ruined, roofOf: roofOf, collapse: collapse, due: due, damaged: damaged, mendShare: mendShare, mend: mend, canRaise: canRaise, raise: raise, tally: tally,
-  burnsWall: burnsWall, burnsRoof: burnsRoof, roofSpec: roofSpec, alight: alight, onFire: onFire, ignite: ignite, fireTick: fireTick, roofFlame: roofFlame, fireNoise: fireNoise, centre: centre, isYard: isYard };
+  burnsWall: burnsWall, burnsRoof: burnsRoof, roofSpec: roofSpec, alight: alight, onFire: onFire, ignite: ignite, fireTick: fireTick, roofFlame: roofFlame, fireNoise: fireNoise, douse: douse, fires: fires, centre: centre, isYard: isYard };
 })();
 if (typeof module !== 'undefined') module.exports = Ruin;
 
@@ -11634,6 +11685,7 @@ var MEN = {
   // one; apart, drift: the middle of a fight keeps this far from the men of other fights, moving at this pace to get there; homeR: a
   // householder (o.homeR on the man) fights nobody further than this from his own door.
   onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, way: 'duel', hang: [105, 165], apart: 72, drift: 26, homeR: 190,
+  flankAfter: 3, flankFor: 25, flankRetry: 8,   // a man hanging back from a fight with a doorway between (the men behind a full gate): after flankAfter seconds he asks the grid for a way round (api.wayRound: the other gate), goes that way for up to flankFor seconds, and tries again flankRetry seconds after a way was not found (raid step 5, the second half, 2026-10-21)
   turnT: 2.5, turnK: 120,            // a man struck by a man who is not his foe turns on him for turnT seconds (turnK: how strongly, against distance in units): the relief of a beset man (2026-10-14)
   parryStun: 1.0,                    // a parried man or beast stands stunned this long (2026-10-14, Robin: a parry should stun for about a second)   // (the first five and hang are a WAY: see WAYS)
   sight: 340, aggro: 150, leash: 250, lie: 90,
@@ -11754,6 +11806,9 @@ function apartFrom(e, T) {
 function hangStep(e, dt, F) {
   var dx = e.x - F.x, dy = e.y - F.y, d = Math.hypot(dx, dy) || 1, ring = MEN.hang[0] + (MEN.hang[1] - MEN.hang[0]) * ((e.seed * 0.37) % 1), i, o, q, sx = 0, sy = 0, vx = 0, vy = 0;
   e.noT = 0; e.heardAt = null; e.guard = 0;
+  // hanging back near the fight with a doorway between him and it, or pressing at it through a wall (the men behind a full gate):
+  // after a while he looks for the way round and takes you in the back (api.wayRound: the grid's other gate)
+  if (d <= ring + 80) { e.hangT = (e.hangT || 0) + dt; if (e.hangT > MEN.flankAfter && api.wayRound) { var px = F.x - dx / d * 60, py = F.y - dy / d * 60; if (api.wayRound(e, px, py)) { e.flank = { t: MEN.flankFor, F: F, x: px, y: py }; e.hangT = 0; return; } e.hangT = -MEN.flankRetry; } }   // (the place to reach: just beyond him on the far side, so the way must go round)
   if (d > ring + 80 || wallBetween(e.x, e.y, F.x, F.y)) { e.state = 'chase'; stepTo(e, F.x, F.y, d > ring + 200 ? MEN.run : MEN.speed, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(-dy, -dx), MEN.turn * dt); return; }
   for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o === e || o.type !== 'soldier' || o.dead || o.down || o.out || (o.side || 0) !== (e.side || 0)) continue; q = Math.hypot(e.x - o.x, e.y - o.y); if (q < 46 && q > 0.01) { sx += (e.x - o.x) / q * (1 - q / 46); sy += (e.y - o.y) / q * (1 - q / 46); } }
   if (d > ring + 10) { vx = -dx / d * MEN.speed * 0.8; vy = -dy / d * MEN.speed * 0.8; }
@@ -11761,6 +11816,12 @@ function hangStep(e, dt, F) {
   vx += sx * 34; vy += sy * 34;
   if (Math.abs(vx) + Math.abs(vy) > 4) { moveCircle(e, vx * dt, vy * dt); e.state = 'chase'; } else e.state = 'idle';
   e.face = turnToward(e.face, Math.atan2(-dy, -dx), MEN.turn * 0.6 * dt);
+}
+function flankStep(e, dt) {                 // on his way round: to the fight by the other way, until he is near it with nothing between, or the time is up
+  var fl = e.flank, F = fl.F; fl.t -= dt; e.noT = 0; e.heardAt = null; e.guard = 0;
+  if (!F || F.dead || (F !== P && (F.down || F.out || F.fled)) || (F === P && P.hidden)) { e.flank = null; return; }
+  var d = Math.hypot(F.x - e.x, F.y - e.y); if (Math.hypot(fl.x - e.x, fl.y - e.y) < 30 || (d < 50 && !wallBetween(e.x, e.y, F.x, F.y))) { e.flank = null; return; }
+  e.state = 'chase'; stepTo(e, fl.x, fl.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(fl.y - e.y, fl.x - e.x), MEN.turn * dt);
 }
 function tooFar(e, F) { var p = e.post, b = p.box, k = e.pursueK || 1; if (!b) return Math.hypot(F.x - p.x, F.y - p.y) > MEN.pursue * k; return Math.hypot(Math.max(b.x0 - F.x, 0, F.x - b.x1), Math.max(b.y0 - F.y, 0, F.y - b.y1)) > MEN.pursueOut * k; }   // (pursueK: a place whose plan is to hunt goes further)
 function alarmFor(e) { return e.alarm && !(e.homeR && e.post && Math.hypot(e.alarm.x - e.post.x, e.alarm.y - e.post.y) > e.homeR) ? e.alarm : null; }
@@ -11832,7 +11893,7 @@ function sideStep(e, dt, d, far, waiting) {
 function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows the walls may give the next corner to make for (api.nav)
   if (e.fixed) return 0;                     // (a man who stays where he is put: the bowman on the tower, raid step 6)
   var far = Math.hypot(x - e.x, y - e.y);
-  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) { e.progT = 0; return 0; } x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }
+  e.waiting = false; if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) { e.progT = 0; e.waiting = true; return 0; } x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }   /* (e.waiting: his turn at a full doorway has not come: an errand is not given up for that) */
   var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 0.5) return 0;
   var tb = e.type === 'soldier' ? sideStep(e, dt, far, far > 30, false) : 0; if (tb) { var ta = Math.atan2(dy, dx) + tb; dx = Math.cos(ta) * d; dy = Math.sin(ta) * d; }   // (a man who makes no way on an errand, to his post, to a noise or after the hero steps round what holds him)
   var ox = e.x, oy = e.y, st = Math.min(d, sp * dt); moveCircle(e, dx / d * st, dy / d * st); return Math.hypot(e.x - ox, e.y - oy);
@@ -12032,7 +12093,7 @@ function soldierAI(e, dt) {
     e.state = 'chase'; var em = stepTo(e, er.x, er.y, (er.run ? MEN.run : MEN.speed) * (er.slow || 1), dt);
     e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(er.y - e.y, er.x - e.x), MEN.turn * dt);
     er.t = (er.t || 0) + dt; er.px = er.px == null ? e.x : er.px; er.py = er.py == null ? e.y : er.py;
-    if (er.t >= 6) { if (Math.hypot(e.x - er.px, e.y - er.py) < 6) { e.errand = null; if (er.fail) er.fail(e); else if (er.drop) er.drop(e); } er.t = 0; er.px = e.x; er.py = e.y; }   // six seconds and no way made: he gives it up
+    if (er.t >= 6) { if (Math.hypot(e.x - er.px, e.y - er.py) < 6 && !e.waiting) { e.errand = null; if (er.fail) er.fail(e); else if (er.drop) er.drop(e); } er.t = 0; er.px = e.x; er.py = e.y; }   // six seconds and no way made: he gives it up (not while he waits his turn at a doorway, 2026-10-21)
     return;
   }
   if (e.awake === false) {                  // at his post, and has seen nothing
@@ -12050,6 +12111,7 @@ function soldierAI(e, dt) {
     if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'stunned' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
     e.state = 'idle'; e.guard = 0; e.sw = null; if (e.close) sidearm(e, false);
     if (e.side === 1) { if (e.order === 'storm' && e.stormAt) stormStep(e, dt); else followStep(e, dt); }
+    else if (e.flank && e.flank.t > 0) flankStep(e, dt);
     else if (e.waitOn && !e.waitOn.dead && !(e.waitOn !== P && (e.waitOn.down || e.waitOn.out || e.waitOn.fled))) hangStep(e, dt, e.waitOn);
     else if (e.heardAt) {
       var hd = Math.hypot(e.heardAt.x - e.x, e.heardAt.y - e.y);
@@ -15621,6 +15683,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (f.abed) { if (light() > 0.6 && !f.fleeing) continue; f.abed = false; if (!f.fleeing) f.hidden = false; }                      /* (abed till morning, or till it breaks out) */
       if (f.react === 'arm' && f.armT > 0) { f.armT += dt; if (f.armT > ARM_T) { f.hidden = false; armFolk(f); } continue; }   /* (inside, taking down what hangs on the wall) */
       if (f.hidden) continue;
+      if (f.bucket) { if (f.fleeing || f.cower || f.armed) { f.bucket = null; f.carrying = false; } else { bucketStep(f, dt); continue; } }   /* (a bucket in hand: the brigade) */
       if (f.cower) {                          /* crouched behind something: he looks toward the trouble, and one behind a house runs when you come round it */
         f.moving = false; var cw = f.refuge || f; f.face = Math.atan2((cw.fy != null ? cw.fy : P.y) - f.y, (cw.fx != null ? cw.fx : P.x) - f.x);
         if (d < 46 && f.refuge && f.refuge.cover === 2 && !P.dead) { f.cower = false; f.react = 'flee'; f.refuge = refugeOf(f, true) || refugeOf(f); f.fleeing = true; }
@@ -17777,7 +17840,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function bodiesFound(vi) {               // a dead man of the place seen by one of its people or its men raises the cry (raid step 5, 2026-10-20: where you leave him matters; drag him out of sight)
     var E = Combat.dbg().W.enemies, i, o; if (bodyChk[vi] != null && clock - bodyChk[vi] < 0.5) return; bodyChk[vi] = clock;
     for (i = 0; i < E.length; i++) { o = E[i]; if (o.type !== 'soldier' || o.side === 1 || !o.dead || o.found || o.held || o.vi !== vi || o.villager) continue;
-      var w = witness(vi, o.x, o.y, WATCH.body, 44); if (!w) continue; o.found = true; if (w.type === 'soldier') w.awake = true; cryOut(w, w.type === 'soldier' ? 'A dead man! To arms!' : 'Murder! Murder!', vi, o.x, o.y); }   /* LORE? the lines */
+      var w = witness(vi, o.x, o.y, WATCH.body, 44); if (!w) continue; o.found = true; if (w.type === 'soldier') w.awake = true; cryOut(w, w.type === 'soldier' ? 'One of ours is dead! To arms!' : 'Murder! Murder!', vi, o.x, o.y); }   /* LORE? the lines */
   }
   var bodyChk = {};
   function bodyNear(P) { var E = Combat.dbg().W.enemies, best = null, bd = 26, i, o; for (i = 0; i < E.length; i++) { o = E[i]; if (o.type !== 'soldier' || o.side === 1 || !o.dead || o.held || o.villager) continue; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < bd) { bd = d; best = o; } } return best; }
@@ -17882,7 +17945,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function folkReact(f, x, y) {
     if (f.bound || f.gone) return;
     var h = nameHash(f.name), gone = homeGone(f), k = (h % 1000) / 1000, k2 = ((h >>> 5) % 100) / 100;
-    f.job = null; f.sitting = false; f.wait = 0; f.fleeing = true; f.cower = false; f.armT = 0; f.target = f.spots[0]; f.refuge = null; f.carrying = false; if (f.abed) { f.abed = false; f.hidden = false; }
+    f.job = null; f.sitting = false; f.wait = 0; f.fleeing = true; f.cower = false; f.armT = 0; f.target = f.spots[0]; f.refuge = null; f.carrying = false; f.bucket = null; if (f.abed) { f.abed = false; f.hidden = false; }
     if (f.child) f.react = 'home';
     else if (!gone && k < (FOLK_FIGHT[f.role] || 0)) f.react = 'arm';
     else f.react = gone || k2 < 0.4 ? 'flee' : k2 < 0.8 ? 'home' : 'behind';
@@ -18111,7 +18174,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     burnT -= dt; if (burnT <= 0 || ev.lit.length || ev.gave.length || ev.fell.length) { burnT = 0.25; burnList(); }
     // it is seen and heard from far off: the bigger, the further; the men who come to look come to the nearest open ground by it
     fireLoudT -= dt;
-    if (fireLoudT <= 0 && BURN.length) { fireLoudT = 2.5; var b0 = BURN[0], bd = 1e9; BURN.forEach(function (b) { var d = Math.hypot(b.x - P.x, b.y - P.y); if (d < bd) { bd = d; b0 = b; } }); var at2 = outsideOf(b0.x, b0.y), fr = Ruin.fireNoise(RUIN, B), fv = villageAt(b0.x, b0.y), fn2 = Combat.gawk(at2.x, at2.y, fr, { hold: 5, stays: function (m) { return m.kindOf === 'gate' || m.kindOf === 'hall'; }, spot: gawkSpot }); if (fv >= 0 && (fn2 > 0 || folkHear(fv, b0.x, b0.y, fr * 0.8))) raidStir(fv, b0.x, b0.y); }   // (the men at their day go and stand before it while it burns; the gate keeps its guards and the hall its own)
+    if (fireLoudT <= 0 && BURN.length) { fireLoudT = 2.5; var b0 = BURN[0], bd = 1e9; BURN.forEach(function (b) { var d = Math.hypot(b.x - P.x, b.y - P.y); if (d < bd) { bd = d; b0 = b; } }); var at2 = outsideOf(b0.x, b0.y), fr = Ruin.fireNoise(RUIN, B), fv = villageAt(b0.x, b0.y), fn2 = Combat.gawk(at2.x, at2.y, fr, { hold: 5, stays: function (m) { return m.kindOf === 'gate' || m.kindOf === 'hall'; }, spot: gawkSpot }); if (fv >= 0 && (fn2 > 0 || folkHear(fv, b0.x, b0.y, fr * 0.8)) && raidLvl(fv) >= 1) raidStir(fv, b0.x, b0.y); }   // (the men at their day go and stand before it while it burns; the gate keeps its guards and the hall its own. A fire in a place at peace is no raid in itself (2026-10-21): its people fight it from the well (the brigade) and the house's own run out; a fire in a place already uneasy or raided is part of the raid and stirs it)
     // heat: whoever stands under a roof that burns over him, or right against a burning wall
     var hot = false, hr = roomOf(P.x, P.y); if (hr && roofBurning(hr) && Ruin.roofFlame(RUIN, B, hr, Math.floor(P.x / T), Math.floor(P.y / T), BCFG.roof) > 0) hot = true;
     for (i = 0; i < BURN.length && !hot; i++) if (BURN[i].edge && Math.hypot(BURN[i].x - P.x, BURN[i].y - P.y) < 15) hot = true;
@@ -18129,12 +18192,41 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
   }
   function fellByFire(r) { if (roofBurning(r)) return true; var E = Ruin.edgesOf(B, r), nb = 0, ng = 0, i; for (i = 0; i < E.length; i++) if (E[i].e.breach) { ng++; if (E[i].e.burnt) nb++; } return nb * 2 > ng; }   // its roof was alight, or most of the walls it lost were burnt through: what comes down is ash, not straw (2026-10-13: a house whose walls burnt out from under a burning thatch lost it as if it had been felled)
+  /* The bucket brigade (raid step 5, the second half, 2026-10-21): a place with a well fights a fire within BRIGADE.reach of it. Up
+     to BRIGADE.n of its free villagers (not fleeing, hiding, armed, abed, children or bound) take a bucket: to the well, fill, to the
+     fire that matters most (the roof first, then the wall nearest to burning through), pour (Ruin.douse: a wall out and wet, a roof
+     set back), and again while any fire is within the well's reach; then back to their day. A fire beyond that reach, or in a place
+     with no well, burns. A villager put to flight drops the bucket (folkReact). The numbers are mine; the lines LORE?. */
+  var BRIGADE = { reach: 320, n: 4, fill: 2, pour: 1.5, near: 30, roofNear: 46 }, brigadeT = 0, brigadePoured = 0;
+  function wellOf(vi) { var v = villages[vi], x0 = (v.tx - 2) * T, x1 = (v.tx + v.w + 2) * T, y0 = (v.ty - 2) * T, y1 = (v.ty + v.h + 2) * T, i, it; for (i = 0; i < B.items.length; i++) { it = B.items[i]; if (it.name === 'woodenWell' && it.x > x0 && it.x < x1 && it.y > y0 && it.y < y1) return it; } return null; }
+  function brigadeFree(f) { return !f.hidden && !f.dead && !f.fallen && !f.armed && !f.fleeing && !f.cower && !f.abed && !f.child && !f.bound && !f.gone && !f.react; }
+  function brigadeFires(well) { return Ruin.fires(B, { rooms: roomInfo.rooms }).filter(function (fr) { return Math.hypot(fr.x - well.x, fr.y - well.y) < BRIGADE.reach; }).sort(function (p, q) { return (q.roof ? 1 : 0) - (p.roof ? 1 : 0) || (p.roof ? B.fire[p.key].t - B.fire[q.key].t : B.fire[q.key].t - B.fire[p.key].t); }); }   /* (a roof first, the one that has just caught before one well alight: a bucket kills it; then the wall nearest to burning through) */
+  function brigadeTick(dt) {
+    brigadeT += dt; if (brigadeT < 1) return; brigadeT = 0; if (!B.fire || !roomInfo) return; var any = false, k, i, vi; for (k in B.fire) { any = true; break; } if (!any) return;
+    for (vi = 0; vi < villages.length; vi++) {
+      var well = wellOf(vi); if (!well || !brigadeFires(well).length) continue;
+      var busy = 0; for (i = 0; i < folk.length; i++) if (folk[i].vi === vi && folk[i].bucket) busy++; if (busy >= BRIGADE.n) continue;
+      var cands = folk.filter(function (f) { return f.vi === vi && !f.bucket && brigadeFree(f); }).sort(function (a, b) { return Math.hypot(a.x - well.x, a.y - well.y) - Math.hypot(b.x - well.x, b.y - well.y); });
+      for (i = 0; i < cands.length && busy < BRIGADE.n; i++, busy++) { var f = cands[i]; f.bucket = { stage: 'toWell', well: well, t: 0, key: null }; f.target = null; f.job = null; f.sitting = false; f.carrying = false; f.wait = 0; if (!(f.sayT > 0)) { f.say = i ? 'Water! Water!' : 'Fire! To the well!'; f.sayT = 2.5; } }   /* LORE? */
+    }
+  }
+  function bucketStep(f, dt) {
+    var b = f.bucket, fr;
+    if (b.stage === 'toWell') { if (Math.hypot(f.x - b.well.x, f.y - b.well.y) < 26) { b.stage = 'fill'; b.t = 0; f.moving = false; return; } f.folk = true; if (!navMove(f, b.well.x, b.well.y, 60, dt)) { f.moving = false; if (f.noWay > 3) { f.noWay = 0; f.bucket = null; } return; } f.moving = true; f.ph += dt * 7; return; }
+    if (b.stage === 'fill') { b.t += dt; f.moving = false; f.face = Math.atan2(b.well.y - f.y, b.well.x - f.x); if (b.t < BRIGADE.fill) return; fr = brigadeFires(b.well)[0]; if (!fr) { f.bucket = null; f.wait = 2; return; } b.key = fr.key; b.x = fr.x; b.y = fr.y; b.roof = fr.roof; b.stage = 'toFire'; f.carrying = true; return; }
+    if (b.stage === 'toFire') {
+      if (!B.fire[b.key]) { fr = brigadeFires(b.well)[0]; if (!fr) { f.bucket = null; f.carrying = false; f.wait = 2; return; } b.key = fr.key; b.x = fr.x; b.y = fr.y; b.roof = fr.roof; }
+      if (Math.hypot(f.x - b.x, f.y - b.y) < (b.roof ? BRIGADE.roofNear : BRIGADE.near)) { b.stage = 'pour'; b.t = 0; f.moving = false; f.face = Math.atan2(b.y - f.y, b.x - f.x); return; }
+      f.folk = true; if (!navMove(f, b.x, b.y, 44, dt)) { f.moving = false; if (f.noWay > 3) { f.noWay = 0; b.stage = 'toWell'; f.carrying = false; } return; } f.moving = true; f.ph += dt * 6; return;
+    }
+    if (b.stage === 'pour') { b.t += dt; f.moving = false; if (b.t < BRIGADE.pour) return; var L = b.key.charAt(0); Ruin.douse(RUIN, B, b.key); brigadePoured++; f.carrying = false; if (L !== 'R') { delete edgeCache[L + b.key.slice(2)]; bDirty = true; } sfx('build', 0, f); b.stage = 'toWell'; return; }
+  }
   function ruinTick(dt) {
     var id, r;
     if (bDirty) rebuildRooms();              // (the rooms and their solids are otherwise made again only when a frame is drawn)
     if (!ruinChecked && roomInfo) { ruinChecked = true; roomInfo.rooms.forEach(function (r0) { if (Ruin.due(RUIN, B, r0, BCFG.roof)) Ruin.collapse(RUIN, B, r0, 'fallen', BCFG.roof); }); }   // a game loaded in the moment between a roof's groan and its fall: it is down
     for (id in ruinDue) if (clock >= ruinDue[id]) { r = roomById(id); delete ruinDue[id]; if (r && Ruin.due(RUIN, B, r, BCFG.roof)) roofFalls(r, fellByFire(r) ? 'burnt' : 'fallen'); }
-    lightingTick(dt); takingTick(dt); fireTickAll(dt);
+    lightingTick(dt); takingTick(dt); fireTickAll(dt); brigadeTick(dt);
   }
   // what a tile costs a man to walk over: he goes round a room that burns, and round hot ashes if he can
   function ruinCost(tx, ty) { var ri = roomInfo ? roomInfo.at(tx, ty) : -1; if (ri >= 0 && roofBurning(roomInfo.rooms[ri])) return 60; var ru = B.ruin && B.ruin[tx + ',' + ty]; return ru ? (ru.hot > 0 ? 25 : 2) : 0; }
@@ -19087,7 +19179,57 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return best;
   }
   function shipLand() { if (BT.raid && BT.raid.land && raft && Math.hypot(raft.x - BT.raid.land.x, raft.y - BT.raid.land.y) < 200) return BT.raid.land; return raft ? landNear(raft.x, raft.y, 14) : null; }
+  /* The ram (raid step 5, the second half, 2026-10-21; decided 2026-10-07: four men and a felled trunk, G at the gate). Before a barred
+     gate, a locked or stone door or a stone wall of a place that is not yours, with four of your men free, G orders the ram: a felled
+     trunk within RAM.trunkR becomes it (else RAM.wood wood from the bag), the studio's piece on the ground; the four lift it (the ram
+     goes with them), carry it to RAM.standOff before the piece and swing it every RAM.swing seconds (RAM.power a swing through Ruin's
+     ram bite: a gate in about five, a church's door in six, a cut-stone wall in forty), the loudest thing a raid does (RAM.noise, and the
+     alarm); the piece gives, they set the ram down and follow again. A man badly hurt lets go; under four on it the ram is set down
+     where it is and G at it takes it up again. The numbers are mine; the lines LORE?. */
+  var RAM = { trunkR: 260, wood: 8, men: 4, swing: 1.6, power: 3.2, noise: 560, standOff: 54, slow: 0.55 }, ram = null, ramSwings = 0;
+  function ramTakes(e) { if (!e || e.breach || e.broken) return false; var m = Ruin.matOf(e); return ((e.t === 'gate' || e.t === 'door') && !!e.locked) || m === 'archDoor' || m === 'blocks' || m === 'ashlar' || m === 'townwall' || m === 'drystone'; }
+  function ramStands(e) { return !!e && !e.breach && !e.broken; }   // (a gate its own men have opened on their way out is barred again as the ram comes: it gives only to the ram or the axe)
+  function ramTarget(P) {                  // the piece before the hero a ram would take: the nearest within 110 units that is somebody else's
+    var best = null, bd = 110, tx0 = Math.floor(P.x / T) - 4, ty0 = Math.floor(P.y / T) - 4, x, y, L, i;
+    for (i = 0; i < 2; i++) { L = i ? 'V' : 'H'; for (y = ty0; y <= ty0 + 9; y++) for (x = tx0; x <= tx0 + 9; x++) { var e = B[L][x + ',' + y]; if (!e || !ramTakes(e)) continue; var m = edgeMidOf(L, x, y), d = Math.hypot(m.x - P.x, m.y - P.y); if (d >= bd || !theirs(m.x, m.y)) continue; bd = d; best = { edge: e, L: L, tx: x, ty: y, k: x + ',' + y, x: m.x, y: m.y, nx: L === 'V' ? (P.x > m.x ? 1 : -1) : 0, ny: L === 'H' ? (P.y > m.y ? 1 : -1) : 0 }; } }
+    return best;
+  }
+  function freeMen(x, y, n) { var E = Combat.dbg().W.enemies, L = [], i, e, P = hero(); for (i = 0; i < E.length; i++) { e = E[i]; if (e.type !== 'soldier' || e.side !== 1 || e.dead || e.down || e.errand || e.load || e.loadMan || e.onRam) continue; if (Math.hypot(e.x - P.x, e.y - P.y) > 420) continue; L.push(e); } L.sort(function (a, b) { return Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y); }); return L.slice(0, n); }
+  function trunkNear(P) { var best = null, bd = RAM.trunkR, i, o; for (i = 0; i < trunks.length; i++) { o = trunks[i]; if (o.dying != null) continue; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < bd) { bd = d; best = o; } } return best; }
+  function ramLying(P) { var i, it; for (i = 0; i < B.items.length; i++) { it = B.items[i]; if (it.ram && !it.carried && Math.hypot(it.x - P.x, it.y - P.y) < 160) return it; } return null; }
+  function ramSpots(cx, cy, nx, ny) { var tx = -ny, ty = nx, o = [], i; for (i = 0; i < RAM.men; i++) o.push({ x: cx + nx * (i < 2 ? -13 : 13) + tx * (i % 2 ? 14 : -14), y: cy + ny * (i < 2 ? -13 : 13) + ty * (i % 2 ? 14 : -14) }); return o; }
+  function ramSend(m, sp, slow, fx, fy) { m.onRam = false; m.offRam = false; m.order = 'follow'; m.holdAt = null; m.errand = { x: sp.x, y: sp.y, near: 12, run: !slow, slow: slow || 1, hold: slow ? true : undefined, drop: ramLetGo, fail: ramLetGo, done: function (e) { e.onRam = true; e.errand = { x: sp.x, y: sp.y, near: 12, hold: 1e9, fx: fx, fy: fy, drop: ramLetGo, fail: ramLetGo }; } }; }
+  function ramLetGo(e) { e.offRam = true; e.onRam = false; }
+  function ramMake(rt, tr, men) {
+    var P = hero(), x = tr ? tr.x : P.x + rt.nx * 20, y = tr ? tr.y : P.y + rt.ny * 20, it = { name: 'ram', x: x, y: y, r: 0, ram: true, lore: 'A felled trunk, shouldered as a ram.' };
+    if (tr) { var ti = trunks.indexOf(tr); if (ti >= 0) trunks.splice(ti, 1); } else takeItem('wood', RAM.wood);
+    B.items.push(it); ramLift(it, rt, men); save();
+  }
+  function ramLift(it, rt, men) {
+    var nx = rt.x - it.x, ny = rt.y - it.y, nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
+    ram = { it: it, at: rt, men: men.slice(0, RAM.men), stage: 'toRam', t: 0, spots: ramSpots(it.x, it.y, nx, ny), n: [nx, ny] };
+    ram.men.forEach(function (m, i) { ramSend(m, ram.spots[i], 0, rt.x, rt.y); }); ram.men[0].say = 'Shoulders to it!'; ram.men[0].sayT = 2.5; sfx('tele');   /* LORE? */
+  }
+  function ramSetDown(why) { if (!ram) return; ram.it.carried = false; ram.men.forEach(function (m) { m.onRam = false; m.offRam = false; m.errand = null; }); if (why) toast(why); ram = null; }
+  function ramTick(dt) {
+    var i, it; if (!ram) { for (i = 0; i < B.items.length; i++) { it = B.items[i]; if (it.ram && it.carried) it.carried = false; } return; }
+    var at = ram.at, P = hero();
+    ram.men = ram.men.filter(function (m) { return !m.dead && !m.down && !m.offRam && !m.away; });
+    if (ram.men.length < RAM.men) { ramSetDown('The ram is down'); return; }
+    if (P.dead) { ramSetDown(null); return; }
+    var all = ram.men.every(function (m) { return m.onRam; });
+    if (ram.stage === 'toRam') { if (!all) return; ram.it.carried = true; ram.stage = 'carry'; var S = { x: at.x + at.nx * RAM.standOff, y: at.y + at.ny * RAM.standOff }; ram.spots = ramSpots(S.x, S.y, -at.nx, -at.ny); ram.men.forEach(function (m, i) { ramSend(m, ram.spots[i], RAM.slow, at.x, at.y); }); return; }
+    if (ram.stage === 'carry') { var cx = 0, cy = 0; ram.men.forEach(function (m) { cx += m.x; cy += m.y; }); ram.it.x = cx / ram.men.length; ram.it.y = cy / ram.men.length; if (!all) return; ram.stage = 'batter'; ram.t = RAM.swing * 0.6; ram.it.x = at.x + at.nx * RAM.standOff; ram.it.y = at.y + at.ny * RAM.standOff; return; }
+    if (ram.stage === 'batter') {
+      if (!ramStands(at.edge)) { ramSetDown('It gives!'); return; }
+      ram.t += dt; if (ram.t < RAM.swing) return; ram.t = 0; ramSwings++;
+      if ((at.edge.t === 'gate' || at.edge.t === 'door') && !at.edge.locked) { at.edge.locked = 1; navStale = true; }
+      wallBlow(at, RAM.power, true, 'ram'); sfx('slam', 0, ram.it); Combat.noise(at.x, at.y, RAM.noise, true); var vi = villageAt(at.x, at.y); if (vi >= 0) raidAlarm(vi, at.x, at.y); bDirty = true;
+      if (!ramStands(at.edge)) ramSetDown('It gives!');
+    }
+  }
   function gWhat(P) {
+    if (P && !P.dead && !ram && !(raft && raft.aboard)) { var rt = ramTarget(P); if (rt) { var m4 = freeMen(P.x, P.y, RAM.men); if (m4.length >= RAM.men) { var ly = ramLying(P); if (ly) return { say: 'Take up the ram', act: function () { ramLift(ly, rt, m4); } }; var tr = trunkNear(P); if (tr || (inv.wood || 0) >= RAM.wood) return { say: 'Ram the ' + (rt.edge.t === 'gate' ? 'gate' : rt.edge.t === 'door' ? 'door' : 'wall'), act: function () { ramMake(rt, tr, m4); } }; } } }   /* (the ram, raid step 5) */
     if (P && !P.dead && !(raft && raft.aboard) && !storm) { var sv0 = stormable(P); if (sv0 >= 0 && !heavyNear(P) && !downNear(P, 70)) return { say: 'Storm ' + (villages[sv0].name || 'it'), act: function () { stormOrder(sv0); } }; }
     if (!P || P.dead || !raft || raft.aboard) return null; var best = null, bd = 70, i, it;      // (with your own shoulders full you can still send a man)
     for (i = 0; i < B.items.length; i++) { it = B.items[i]; if (!it.heavy || it.locked || !sameLvl(it) || (it.sentFor && it.sentFor.errand && !it.sentFor.dead && !it.sentFor.down)) continue; var d = Math.hypot(P.x - it.x, P.y - it.y); if (d < bd && canReach(P, it)) { bd = d; best = it; } }   // (not one a man is already on his way to)
@@ -19435,7 +19577,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
   function goTo(x, y) { var P = hero(); if (inCave) caveSwap(false); if (raft && raft.aboard) raft.aboard = false; P.x = x; P.y = y; P.vx = P.vy = 0; P.lvl = 0; return [Math.round(P.x), Math.round(P.y)]; }   // the console's and the studios' way to stand anywhere (2026-10-20, the Art Director's boards)
-  Combat.api.debug = function () { return { cutLoose: cutLoose, letGo: letGo, openBoard: openMenu, theft: theftSeen, dragBody: dragBody, bodyNear: bodyNear, putDown: putDown, raidState: function () { return { wakeAtSea: wakeAtSea, heroFell: heroFell, lastPisP: lastP === hero(), dead: hero().dead }; }, giveMen: hirdGive, claimAt: function (x, y) { var cs = { name: 'claimStone', x: x, y: y, r: 5, claim: true }; B.items.push(cs); raiseStone(cs); return cs; }, clearMen: function () { hird.length = 0; if (npc) npc.joined = false; menAboard = []; save(); }, admin: adminAct, raidShore: raidShore, raftUse: raftUse, hirdList: function () { return hird.map(function (m) { return { name: m.name, aboard: !!m.aboard, asMan: !!m.asMan, down: !!(m.asMan && m.asMan.down), lost: m.lost || null, follow: !!m.follow, x: Math.round(m.x), y: Math.round(m.y) }; }); }, garrison: function () { return { live: Object.keys(menLive), liveObj: menLive, raids: seen.raids || {}, lastRaid: seen.lastRaid || {}, wary: seen.wary || {}, men: villages.map(function (v, vi) { return garrisonMen(vi).length; }), dead: seen.menDead || {}, defence: villages.map(function (v) { return [v.name, v.arch, +(v.wealth || 0).toFixed(2), v.ring, defenceOf(v).n, v.V && v.V.tactic]; }) }; }, goto: goTo, toVillage: function (i) { var tv = villages[i]; if (!tv) return null; goTo((tv.tx + tv.w / 2) * T, (tv.ty + tv.h / 2 + 1) * T); return { i: i, name: tv.name, arch: tv.arch || (tv.V && tv.V.arch), isle: tv.isle, x: hero().x, y: hero().y }; }, toSteading: function () { if (!village) return null; goTo((village.tx + 11.5) * T, (village.ty + 8.5) * T); return [hero().x, hero().y]; }, timeOf: function (t) { if (t != null) day.t = t; return { t: day.t, n: day.n, dusk: DUSK_AT, night: 1200, dawn: 1740, len: DAY_LEN }; }, isleBeasts: function () { var by = {}; Combat.dbg().W.enemies.forEach(function (e) { if (!e.human && !e.dead) by[e.isle] = (by[e.isle] || 0) + 1; }); return { live: Object.keys(isleLive), byIsle: by }; }, sheets: function () { var o = {}, bk; for (bk in BEASTS) o[bk] = Sprites.loaded(BEASTS[bk]); return { beasts: o, near: sheetNear, hero: Sprites.loaded(sprHero), people: Sprites.loaded(PEOPLE) }; }, restart: function () { start(true); }, ui: function () { return { invOpen: invOpen, pauseOpen: pauseOpen, menu: !!menu, store: !!store, bar: hudBarAt(), barDrag: barDrag, mouse: mouseS }; }, naming: function () { return naming ? naming.name : null; }, unge: function () { return { n: unges.length, sense: ungeSense, seekT: trollSeekT, troll: troll ? { x: Math.round(troll.x), y: Math.round(troll.y), awake: !!troll.awake, place: troll.place, why: troll.why || null } : null, list: unges.map(function (u) { return { x: Math.round(u.x), y: Math.round(u.y), awake: !!u.awake, hp: u.hp, job: u.job ? (u.job.at ? 'mining' : 'going') : null }; }) }; }, ungeAlarm: function (i) { if (unges[i || 0]) ungeAlarm(unges[i || 0], false); }, trollSeek: trollSeek, ungeOre: ungeOre, trollSeesIn: function () { return troll ? trollSeesIn(troll, hero()) : null; }, unges: function () { return unges; }, arms: function () { var Pq = hero(); return { out: armsOut, drawn: drawn, t: armsT, peace: placeOfPeace(Pq), lvl: raid ? raid.lvl || 2 : 0, raidT: raid ? raid.t : 0, challenge: challenge ? challenge.t : null, carries: carriesArms(), band: bandNear(Pq), told: gateTold }; }, drawToggle: drawToggle, shield: function () { return { worn: equip.shield ? equip.shield.mat : null, held: shieldHeld(), paint: shieldPaint(), blk: sprHero ? sprHero.blk : null, last: sprHero ? sprHero.last : null, layers: handLayers() }; }, witness: witness, atPeace: atPeace, nightV: function () { return NIGHTV; }, bedDown: function (vi) { nightNow(vi); }, menOf: menOf, folkReact: folkReact, armFolk: armFolk, battle: function () { return BT; }, ruinInfo: function () { return { RUIN: RUIN, RU: RU, due: ruinDue, burn: BURN, fire: B.fire, ruin: B.ruin, rooms: roomInfo, cache: [Object.keys(edgeCache).length, Object.keys(debrisCache).length] }; }, ruinDo: function (id) { ruinAct(id); }, ruinBag: function () { recount(); return { wood: inv.wood, stone: inv.stone, fiber: inv.fiber }; }, wallFaced: function () { return edgeFaced(hero(), 44, function (e) { return Ruin.standing(e); }); }, ruinB: function () { return B; }, ruinWhole: ruinWhole, fireAtHand: function () { return fireAtHand(hero()); }, placeAt: placeAt, theirs: theirs, homeOf: homeOf, ruinTarget: function () { return buildTarget(); }, battleAct: function (id) { battleAct(id); }, cam: function () { return cam; }, folk: function () { return folk; }, navs: function () { return navs; }, villages: function () { return villages; }, raidInfo: function () { return { raid: BT.raid, cargo: raft && raft.cargo, aboard: menAboard.length, raft: raft, carrying: carrying }; }, eDo: function () { return eWhat(hero()); }, gDo: function () { return gWhat(hero()); }, raidItems: function () { return B.items; }, raidB: function () { return B; }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, sceneRows: function () { return SCENE === 'battle' ? battleRows() : SCENE === 'ruin' ? ruinRows() : SCENE === 'mountain' ? mountainRows() : runeRows(); }, scene: function () { return SCENE; }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, cookFires: function () { return cookFires; }, hand: function () { return hand; }, errlog: function () { return ERR.lines.slice(); }, logErr: logErr, cook: function (id) { var r = RECIPES.filter(function (q) { return q.id === id; })[0]; if (r) cook(r); return !!r; }, dishes: RECIPES, yieldK: yieldK, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, arnor: function () { return { state: arnorState(), x: npc && Math.round(npc.x), y: npc && Math.round(npc.y), job: npc && npc.job, route: npc && npc.route ? npc.route.length : 0, seq: npc && npc.seq, shore: npc && npc.shore }; }, graves: function () { return village && village.graves; }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { cutLoose: cutLoose, letGo: letGo, gWhat: function () { return gWhat(hero()); }, ram: function () { return { stage: ram ? ram.stage : null, men: ram ? ram.men.length : 0, at: ram ? [Math.round(ram.it.x), Math.round(ram.it.y)] : null, swings: ramSwings, lying: B.items.filter(function (it) { return it.ram; }).length }; }, addItem: addItem, ignite: function (L, k) { return Ruin.ignite(RUIN, B, L, k, null, null, BCFG.roof); }, brigade: function () { return { reach: BRIGADE.reach, poured: brigadePoured, men: folk.filter(function (f) { return f.bucket; }).map(function (f) { return [f.name, f.bucket.stage]; }), fires: Object.keys(B.fire || {}) }; }, openBoard: openMenu, theft: theftSeen, dragBody: dragBody, bodyNear: bodyNear, putDown: putDown, raidState: function () { return { wakeAtSea: wakeAtSea, heroFell: heroFell, lastPisP: lastP === hero(), dead: hero().dead }; }, giveMen: hirdGive, claimAt: function (x, y) { var cs = { name: 'claimStone', x: x, y: y, r: 5, claim: true }; B.items.push(cs); raiseStone(cs); return cs; }, clearMen: function () { hird.length = 0; if (npc) npc.joined = false; menAboard = []; save(); }, admin: adminAct, raidShore: raidShore, raftUse: raftUse, hirdList: function () { return hird.map(function (m) { return { name: m.name, aboard: !!m.aboard, asMan: !!m.asMan, down: !!(m.asMan && m.asMan.down), lost: m.lost || null, follow: !!m.follow, x: Math.round(m.x), y: Math.round(m.y) }; }); }, garrison: function () { return { live: Object.keys(menLive), liveObj: menLive, raids: seen.raids || {}, lastRaid: seen.lastRaid || {}, wary: seen.wary || {}, men: villages.map(function (v, vi) { return garrisonMen(vi).length; }), dead: seen.menDead || {}, defence: villages.map(function (v) { return [v.name, v.arch, +(v.wealth || 0).toFixed(2), v.ring, defenceOf(v).n, v.V && v.V.tactic]; }) }; }, goto: goTo, toVillage: function (i) { var tv = villages[i]; if (!tv) return null; goTo((tv.tx + tv.w / 2) * T, (tv.ty + tv.h / 2 + 1) * T); return { i: i, name: tv.name, arch: tv.arch || (tv.V && tv.V.arch), isle: tv.isle, x: hero().x, y: hero().y }; }, toSteading: function () { if (!village) return null; goTo((village.tx + 11.5) * T, (village.ty + 8.5) * T); return [hero().x, hero().y]; }, timeOf: function (t) { if (t != null) day.t = t; return { t: day.t, n: day.n, dusk: DUSK_AT, night: 1200, dawn: 1740, len: DAY_LEN }; }, isleBeasts: function () { var by = {}; Combat.dbg().W.enemies.forEach(function (e) { if (!e.human && !e.dead) by[e.isle] = (by[e.isle] || 0) + 1; }); return { live: Object.keys(isleLive), byIsle: by }; }, sheets: function () { var o = {}, bk; for (bk in BEASTS) o[bk] = Sprites.loaded(BEASTS[bk]); return { beasts: o, near: sheetNear, hero: Sprites.loaded(sprHero), people: Sprites.loaded(PEOPLE) }; }, restart: function () { start(true); }, ui: function () { return { invOpen: invOpen, pauseOpen: pauseOpen, menu: !!menu, store: !!store, bar: hudBarAt(), barDrag: barDrag, mouse: mouseS }; }, naming: function () { return naming ? naming.name : null; }, unge: function () { return { n: unges.length, sense: ungeSense, seekT: trollSeekT, troll: troll ? { x: Math.round(troll.x), y: Math.round(troll.y), awake: !!troll.awake, place: troll.place, why: troll.why || null } : null, list: unges.map(function (u) { return { x: Math.round(u.x), y: Math.round(u.y), awake: !!u.awake, hp: u.hp, job: u.job ? (u.job.at ? 'mining' : 'going') : null }; }) }; }, ungeAlarm: function (i) { if (unges[i || 0]) ungeAlarm(unges[i || 0], false); }, trollSeek: trollSeek, ungeOre: ungeOre, trollSeesIn: function () { return troll ? trollSeesIn(troll, hero()) : null; }, unges: function () { return unges; }, arms: function () { var Pq = hero(); return { out: armsOut, drawn: drawn, t: armsT, peace: placeOfPeace(Pq), lvl: raid ? raid.lvl || 2 : 0, raidT: raid ? raid.t : 0, challenge: challenge ? challenge.t : null, carries: carriesArms(), band: bandNear(Pq), told: gateTold }; }, drawToggle: drawToggle, shield: function () { return { worn: equip.shield ? equip.shield.mat : null, held: shieldHeld(), paint: shieldPaint(), blk: sprHero ? sprHero.blk : null, last: sprHero ? sprHero.last : null, layers: handLayers() }; }, witness: witness, atPeace: atPeace, nightV: function () { return NIGHTV; }, bedDown: function (vi) { nightNow(vi); }, menOf: menOf, folkReact: folkReact, armFolk: armFolk, battle: function () { return BT; }, ruinInfo: function () { return { RUIN: RUIN, RU: RU, due: ruinDue, burn: BURN, fire: B.fire, ruin: B.ruin, rooms: roomInfo, cache: [Object.keys(edgeCache).length, Object.keys(debrisCache).length] }; }, ruinDo: function (id) { ruinAct(id); }, ruinBag: function () { recount(); return { wood: inv.wood, stone: inv.stone, fiber: inv.fiber }; }, wallFaced: function () { return edgeFaced(hero(), 44, function (e) { return Ruin.standing(e); }); }, ruinB: function () { return B; }, ruinWhole: ruinWhole, fireAtHand: function () { return fireAtHand(hero()); }, placeAt: placeAt, theirs: theirs, homeOf: homeOf, ruinTarget: function () { return buildTarget(); }, battleAct: function (id) { battleAct(id); }, cam: function () { return cam; }, folk: function () { return folk; }, navs: function () { return navs; }, villages: function () { return villages; }, raidInfo: function () { return { raid: BT.raid, cargo: raft && raft.cargo, aboard: menAboard.length, raft: raft, carrying: carrying }; }, eDo: function () { return eWhat(hero()); }, gDo: function () { return gWhat(hero()); }, raidItems: function () { return B.items; }, raidB: function () { return B; }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, sceneRows: function () { return SCENE === 'battle' ? battleRows() : SCENE === 'ruin' ? ruinRows() : SCENE === 'mountain' ? mountainRows() : runeRows(); }, scene: function () { return SCENE; }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, cookFires: function () { return cookFires; }, hand: function () { return hand; }, errlog: function () { return ERR.lines.slice(); }, logErr: logErr, cook: function (id) { var r = RECIPES.filter(function (q) { return q.id === id; })[0]; if (r) cook(r); return !!r; }, dishes: RECIPES, yieldK: yieldK, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, arnor: function () { return { state: arnorState(), x: npc && Math.round(npc.x), y: npc && Math.round(npc.y), job: npc && npc.job, route: npc && npc.route ? npc.route.length : 0, seq: npc && npc.seq, shore: npc && npc.shore }; }, graves: function () { return village && village.graves; }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
@@ -19559,7 +19701,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); sheetTick(dt); isleBeastTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); sheetTick(dt); isleBeastTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

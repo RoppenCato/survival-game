@@ -5569,8 +5569,8 @@ function tactics(V, kind) {
 }
 function applyTactic(e, q, tac) {
   if (!tac) return; var k = tac.kind;
-  if (k === 'gate' && tac.rally) { e.rally = tac.rally; e.rallyHold = 1e9; }
-  else if (k === 'muster' && tac.rally) { e.rally = tac.rally; e.rallyHold = 10; e.rallyThen = 'alarm'; }
+  if (k === 'gate' && tac.rally) { e.rally = tac.rally; e.rallyHold = 1e9; e.homeR = 0; }   // (a man sent to the gate fights there: his own door no longer bounds him, 2026-10-21)
+  else if (k === 'muster' && tac.rally) { e.rally = tac.rally; e.rallyHold = 10; e.rallyThen = 'alarm'; e.homeR = 0; }
   else if (k === 'hall') { if (q && q.kind === 'hall') e.homeR = tac.hallR || 150; }
   else if (k === 'hunters') { e.pursueK = 1.6; e.sight = (e.sight || 320) * 1.3; }
   else if (k === 'watch') { e.wits = Math.min(7, (e.wits || 3) + 1); }

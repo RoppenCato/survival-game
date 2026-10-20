@@ -1,6 +1,6 @@
 # The raid in the real game: the build order
 
-**Approved by Robin (2026-10-20: "do all the steps, don't stop to ask; keep a list for me": `docs/for-robin.md`). Status: steps 1 to 4 built and checked 2026-10-20 (`tools/visual/raidgame.js` step1, step2, step2b, step3; `tests/battle.js arches` for step 4); step 5's first half built (the day watch, bodies found, dragging, theft seen, the shield wall: step5); its second half (the ram, the town fighting fire, men going round by the other gate, the way chosen) waits; step 6 built (the six tactics, `tests/battle.js plans`); step 7 built (the loot rolls, the sack, the feast, `tests/loot.js`); step 8 built (crypts under churches, the hall's back room; `tests/cave.js`); step 9 built 2026-10-21 (thralls cut loose, the lost man won back, the yielded man let go, the chest carried home, more men after a raid; `raidgame.js` step9); step 10 is Robin's play.**
+**Approved by Robin (2026-10-20: "do all the steps, don't stop to ask; keep a list for me": `docs/for-robin.md`). Status: steps 1 to 4 built and checked 2026-10-20 (`tools/visual/raidgame.js` step1, step2, step2b, step3; `tests/battle.js arches` for step 4); step 5's first half built (the day watch, bodies found, dragging, theft seen, the shield wall: step5); its second half (the ram, the town fighting fire, men going round by the other gate, the way chosen) waits; step 6 built (the six tactics, `tests/battle.js plans`); step 7 built (the loot rolls, the sack, the feast, `tests/loot.js`); step 8 built (crypts under churches, the hall's back room; `tests/cave.js`); step 9 built 2026-10-21 (thralls cut loose, the lost man won back, the yielded man let go, the chest carried home, more men after a raid; `raidgame.js` step9); step 10's bot measures done 2026-10-21 (`tests/battle.js carry`, the ways trial keeps `duel`); the rest of step 10 is Robin's play. Step 5's second half, 2026-10-21: the town fights a fire (the bucket brigade, `tests/ruin.js`, `raidgame.js` step5b), the men behind a full gate go round by the other gate (`Nav.ROUND`, `MEN.flankAfter`; `tests/battle.js town`), the way chosen (`duel`); the ram (`raidgame.js` step5c, the ruin table's ram column). Every step is built; what waits is Robin's play.**
 
 **The plan as written (2026-10-20).** Robin's order, in his words: *implement the raid in the real game; different
 sizes of villages, different levels of defence; test each step; different ways of entering villages and buildings (sneaking in,
@@ -170,7 +170,7 @@ Robin plays a raid at every size, each way in. The frame log, the error log; the
 ## Decisions Robin can make along the way (defaults if he is not there)
 
 1. The feast: eaten at their table during the raid (default), or carried home as a dish.
-2. Which of the five ways the men come (default `duel`, the trial of step 6 proposes one).
+2. Which of the five ways the men come (default `duel`; the trial of 2026-10-21, `tests/battle.js ways 24`, keeps it: the least crowding round one of yours, 2.3 on average and three or more 30% of the time, the hero standing longest at 52 s, the most friends up at the end).
 3. The crypt's contents: silver and relics (default), or a new currency.
 4. A man of yours left behind: taken (default, step 9), or dies as built.
 5. Dogs at farms (default no, until the Art Director has one).

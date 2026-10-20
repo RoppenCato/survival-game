@@ -34,12 +34,13 @@ var YARDS = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 
 var DEF = {
   on: 1,
   // how much a piece takes before it gives (0: no hand tool breaks it)
-  hp: { fence: 8, rail: 7, wattle: 18, window: 10, door: 14, archDoor: 26, gate: 28, planks: 48, frame: 36, logs: 110, palisade: 90, stake: 30, turf: 56, drystone: 40, blocks: 130, ashlar: 0, townwall: 0 },   // (stake: one sharpened log of a village's round wall; three stand to a tile)
+  hp: { fence: 8, rail: 7, wattle: 18, window: 10, door: 14, archDoor: 26, gate: 28, planks: 48, frame: 36, logs: 110, palisade: 90, stake: 30, turf: 56, drystone: 40, blocks: 130, ashlar: 180, townwall: 300 },   // (stake: one sharpened log of a village's round wall; three stand to a tile. Dressed stone and the town wall: no hand tool bites them (never), only the ram: raid step 5, 2026-10-21)
   // what a tool's blow does to a material, as a share of its power
   bite: {
     axe: { fence: 1, rail: 1, wattle: 1, window: 1, door: 1, archDoor: 1, gate: 1, planks: 1, frame: 1, logs: 1, palisade: 1, turf: 0.3, drystone: 0.1, blocks: 0, ashlar: 0, townwall: 0 },
     pick: { fence: 0.5, rail: 0.5, wattle: 0.5, window: 0.5, door: 0.35, archDoor: 0.35, gate: 0.35, planks: 0.35, frame: 0.5, logs: 0.25, palisade: 0.25, turf: 1, drystone: 1, blocks: 1, ashlar: 0, townwall: 0 },
-    knife: { fence: 0.3, wattle: 0.3 }
+    knife: { fence: 0.3, wattle: 0.3 },
+    ram: { fence: 2, rail: 2, wattle: 2, window: 2, door: 2, archDoor: 1.4, gate: 2, planks: 1.2, frame: 1, logs: 1, palisade: 1, stake: 1, turf: 0.5, drystone: 1.5, blocks: 1, ashlar: 1.4, townwall: 1 }   // the hird's ram (four men and a trunk; the game's RAM.power 3.2 a swing): a gate in about five swings, a church's door in six, a cut-stone wall in forty, the town wall in ninety
   },
   // how far a blow on it is heard, in the world's units (a town's men within that distance hear it)
   noise: { fence: 110, rail: 110, wattle: 150, window: 170, turf: 130, frame: 260, planks: 280, door: 360, gate: 320, logs: 320, palisade: 320, drystone: 300, archDoor: 480, blocks: 430, ashlar: 430, townwall: 430 },
@@ -66,7 +67,9 @@ var DEF = {
     spark: 0.1,                  // the chance a second that a burning roof lights a roof right beside it (times that roof's catch; less with distance, nothing at the reach's edge)
     heat: 9,                     // health a second lost by whoever stands in a burning room
     hot: 70,                     // seconds the ashes glow and smoke after
-    loud: 220, louder: 55, loudMax: 1000   // how far a fire is noticed: this, and this much more for every piece alight
+    loud: 220, louder: 55, loudMax: 1000,  // how far a fire is noticed: this, and this much more for every piece alight
+    bucket: 14,                  // a bucket of water on a burning roof undoes this many seconds of its burning (on a wall, one bucket puts it out); the bucket brigade, raid step 5, 2026-10-21
+    wet: 40                      // seconds a doused wall or roof stays wet: it does not catch again from its neighbours in that time
   }
 };
 function cfg(over) {             // DEF with a page's stored numbers laid over it (one level deep, two for hp, bite, fire)
@@ -97,7 +100,7 @@ function stageOf(R, e) { var hp = hpOf(R, e); return e.breach ? 3 : !hp || !e.dm
    to it), never (no hand tool does) }, or null when there is nothing there to strike. */
 function hit(R, e, power, tool) {
   if (!R.on || !standing(e)) return null;
-  var mat = matOf(e), hp = R.hp[mat] || 0, bite = (R.bite[tool] && R.bite[tool][mat]) || 0, out = { mat: mat, dealt: 0, k: 0, gave: false, noise: (R.noise[mat] || 200) * (R.noiseK == null ? 1 : R.noiseK), none: false, never: !hp };
+  var mat = matOf(e), hp = R.hp[mat] || 0, bite = (R.bite[tool] && R.bite[tool][mat]) || 0, out = { mat: mat, dealt: 0, k: 0, gave: false, noise: (R.noise[mat] || 200) * (R.noiseK == null ? 1 : R.noiseK), none: false, never: !hp || !((R.bite.axe[mat] || 0) + (R.bite.pick[mat] || 0) + (R.bite.knife[mat] || 0)) };   // (never: no hand tool takes it; the ram may)
   if (!hp || !bite) { out.none = true; out.k = hp ? Math.min(1, (e.dmg || 0) / hp) : 0; out.noise *= 0.6; return out; }
   out.dealt = power * bite; e.dmg = (e.dmg || 0) + out.dealt; out.k = Math.min(1, e.dmg / hp);
   if (e.dmg >= hp) { give(e); out.gave = true; }
@@ -156,9 +159,9 @@ function tally(R, B, rooms) {
 }
 
 /* ---------- fire ---------- */
-function burnsWall(R, e) { return !!e && !e.breach && !e.burnt && (R.fire.wall[matOf(e)] || 0) > 0; }
+function burnsWall(R, e) { return !!e && !e.breach && !e.burnt && !(e.wet > 0) && (R.fire.wall[matOf(e)] || 0) > 0; }
 function roofSpec(R, B, room, dflt) { return R.fire.roof[ROOFN[roofOf(B, room, dflt)] || 'none'] || R.fire.roof.none; }
-function burnsRoof(R, B, room, dflt) { return !room.up && !ruined(B, room) && roofSpec(R, B, room, dflt).burn > 0; }
+function burnsRoof(R, B, room, dflt) { return !room.up && !ruined(B, room) && !(B.wetR && B.wetR[room.id] > 0) && roofSpec(R, B, room, dflt).burn > 0; }
 function alight(B) { var n = 0, k; for (k in B.fire || {}) n++; return n; }
 function onFire(B, L, k) { return !!(B.fire && B.fire[L + ':' + k]); }
 // put fire to an edge ('H' | 'V', its key) or to a room's roof ('R', the room): true if it took
@@ -212,6 +215,8 @@ function fireTick(R, B, dt, env) {
     }
   }
   for (key in B.ruin || {}) if (B.ruin[key].hot > 0) B.ruin[key].hot = Math.max(0, B.ruin[key].hot - dt);
+  if (B.wetE) { for (i = B.wetE.length - 1; i >= 0; i--) { e = (B.wetE[i].charAt(0) === 'H' ? B.H : B.V)[B.wetE[i].slice(2)]; if (!e || !(e.wet > 0) || (e.wet -= dt) <= 0) { if (e) delete e.wet; B.wetE.splice(i, 1); } } }   // what was doused dries
+  for (key in B.wetR || {}) { B.wetR[key] -= dt; if (B.wetR[key] <= 0) delete B.wetR[key]; }
   return ev;
 }
 function centre(room) { var sx = 0, sy = 0, i; for (i = 0; i < room.tiles.length; i++) { sx += room.tiles[i][0] + 0.5; sy += room.tiles[i][1] + 0.5; } return [sx / room.tiles.length * 32, sy / room.tiles.length * 32]; }
@@ -221,8 +226,23 @@ function roofFlame(R, B, room, tx, ty, dflt) {
   var f = B.fire && B.fire['R:' + room.id]; if (!f) return 0; var rs = roofSpec(R, B, room, dflt), d = Math.abs(tx - f.at[0]) + Math.abs(ty - f.at[1]), t0 = d * rs.spread;
   return f.t <= t0 ? 0 : Math.min(1, (f.t - t0) / 3);
 }
+// A bucket on a fire (the brigade, raid step 5, 2026-10-21): a burning wall goes out (scorched); a burning roof loses R.fire.bucket
+// seconds of its burning and goes out when none is left (the flames drawn as far as they had run go back). True when it is out.
+function douse(R, B, key) {
+  var F = B.fire, f = F && F[key]; if (!f) return true;
+  if (key.charAt(0) === 'R') { f.t -= R.fire.bucket; if (f.t > 0) return false; delete F[key]; if (!B.wetR) B.wetR = {}; B.wetR[key.slice(2)] = R.fire.wet; return true; }
+  var e = (key.charAt(0) === 'H' ? B.H : B.V)[key.slice(2)]; if (e && !e.breach) { e.scorch = 1; e.wet = R.fire.wet; if (!B.wetE) B.wetE = []; if (B.wetE.indexOf(key) < 0) B.wetE.push(key); } delete F[key]; return true;
+}
+// Every fire now burning, with where it is in the world (an edge's middle; a roof's room's middle), for whoever would fight it
+function fires(B, env) {
+  var out = [], k, p, i; for (k in B.fire || {}) {
+    if (k.charAt(0) === 'R') { var room = null; for (i = 0; i < env.rooms.length; i++) if (env.rooms[i].id === k.slice(2)) { room = env.rooms[i]; break; } if (room) { var c = centre(room); out.push({ key: k, x: c[0], y: c[1], roof: true, room: room }); } continue; }
+    p = k.slice(2).split(','); out.push({ key: k, x: k.charAt(0) === 'H' ? (+p[0] + 0.5) * 32 : +p[0] * 32, y: k.charAt(0) === 'H' ? +p[1] * 32 : (+p[1] + 0.5) * 32, roof: false });
+  }
+  return out;
+}
 function fireNoise(R, B) { var n = alight(B); return n ? Math.min(R.fire.loudMax, R.fire.loud + R.fire.louder * n) : 0; }
 return { DEF: DEF, TEX: TEX, ROOFN: ROOFN, cfg: cfg, matOf: matOf, hpOf: hpOf, rightTool: rightTool, standing: standing, passable: passable, stageOf: stageOf, hit: hit, give: give, edgesOf: edgesOf, strain: strain, ruined: ruined, roofOf: roofOf, collapse: collapse, due: due, damaged: damaged, mendShare: mendShare, mend: mend, canRaise: canRaise, raise: raise, tally: tally,
-  burnsWall: burnsWall, burnsRoof: burnsRoof, roofSpec: roofSpec, alight: alight, onFire: onFire, ignite: ignite, fireTick: fireTick, roofFlame: roofFlame, fireNoise: fireNoise, centre: centre, isYard: isYard };
+  burnsWall: burnsWall, burnsRoof: burnsRoof, roofSpec: roofSpec, alight: alight, onFire: onFire, ignite: ignite, fireTick: fireTick, roofFlame: roofFlame, fireNoise: fireNoise, douse: douse, fires: fires, centre: centre, isYard: isYard };
 })();
 if (typeof module !== 'undefined') module.exports = Ruin;

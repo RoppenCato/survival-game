@@ -166,5 +166,44 @@
     } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
     return out;
   }
-  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step7: step7, step8: step8, step9: step9, town: town, men: men, sim: sim, own: own };
+  // Step 5, the second half: the bucket brigade. At the town, nobody raiding, a house wall near the well is set alight: the place's
+  // villagers run to the well with buckets and the fire goes out; a wall beyond the well's reach burns on.
+  function step5b() {
+    var t = town(), out = {}, d = D(); if (!t) return { fault: 'no town outside home water' };
+    try {
+      d.B.items = d.B.items.filter(function (it) { return !it.claim; }); d.timeOf(400); d.clearMen(); var c = d.toVillage(t.i); sim(3); var B = d.B, i;
+      var well = B.items.filter(function (it) { return it.name === 'woodenWell' && Math.abs(it.x - c.x) < 1200 && Math.abs(it.y - c.y) < 1200; })[0]; out.well = well ? [Math.round(well.x), Math.round(well.y)] : null; if (!well) { out.fault = '!! no well'; return out; }
+      function wallNear(dmin, dmax) { var best = null, bd = 1e9, k, p, e, x, y, dd; for (k in B.H) { e = B.H[k]; if (e.t !== 'wall' || e.m === 3 || e.m === 4 || e.m === 6 || e.breach) continue; p = k.split(','); x = (+p[0] + 0.5) * 32; y = +p[1] * 32; dd = Math.hypot(x - well.x, y - well.y); if (dd > dmin && dd < dmax && dd < bd) { bd = dd; best = { k: k, d: Math.round(dd), m: e.m }; } } return best; }
+      var reach = d.brigade().reach, mended = 0; ['H', 'V'].forEach(function (L) { for (var k in B[L]) { var e = B[L][k], p = k.split(','), x = L === 'H' ? (+p[0] + 0.5) * 32 : +p[0] * 32, y = L === 'H' ? +p[1] * 32 : (+p[1] + 0.5) * 32; if (Math.hypot(x - well.x, y - well.y) < 900 && Ruin.damaged(e)) { Ruin.mend(e); mended++; } } }); for (var fk in B.fire || {}) delete B.fire[fk]; d.dirty(); sim(1); out.mended = mended;   // (earlier checks burnt this town: whole again round the well first)
+      var w1 = wallNear(60, reach - 60); out.wall = w1; if (!w1) { out.fault = '!! no wall near the well'; return out; }
+      d.goto(well.x + 70, well.y + 50); sim(0.5); out.lit = d.ignite('H', w1.k); var took = 0, poured0 = d.brigade().poured, outAt = -1, names = {};
+      for (i = 0; i < 180; i++) { sim(1); var bg = d.brigade(); took = Math.max(took, bg.men.length); bg.men.forEach(function (m) { names[m[0]] = m[1]; }); if (!bg.fires.length) { outAt = i + 1; break; } }
+      out.brigade = { took: took, who: Object.keys(names), poured: d.brigade().poured - poured0, outAt: outAt, firesLeft: d.brigade().fires.length, breached: Object.keys(B.H).filter(function (k) { return B.H[k].breach; }).length, folkFleeing: d.folk().filter(function (f) { return f.vi === t.i && f.fleeing; }).length };
+      var w2 = wallNear(reach + 60, 900); out.wall2 = w2;
+      if (w2) { out.lit2 = d.ignite('H', w2.k); var took2 = 0, out2 = -1; for (i = 0; i < 60; i++) { sim(1); var bg2 = d.brigade(); took2 = Math.max(took2, bg2.men.length); if (!bg2.fires.length) { out2 = i + 1; break; } } out.far = { took: took2, outAt: out2, firesLeft: d.brigade().fires.length, breached: Object.keys(B.H).filter(function (k) { return B.H[k].breach; }).length }; }
+      out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+      out.fault = !out.lit || !took || outAt < 0 || out.brigade.poured < 1 || (w2 && out.far.took) ? '!!' : '';
+    } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
+    return out;
+  }
+  // Step 5, the second half: the ram. Before the town's barred gate with four men and eight wood, G offers the ram; the four make it,
+  // carry it to the gate and swing until the gate gives.
+  function step5c() {
+    var t = town(), out = {}, d = D(); if (!t) return { fault: 'no town outside home water' };
+    try {
+      d.B.items = d.B.items.filter(function (it) { return !it.claim && !it.ram; }); d.timeOf(400); d.clearMen(); var c = d.toVillage(t.i); sim(3); var B = d.B, v = t.v, F = v.V.fence, i;
+      var front = F ? (F.round ? { x: F.gateAt ? F.gateAt[0] : F.cx, y: F.gateAt ? F.gateAt[1] : F.cy + F.ry } : { x: (F.gate + (F.gateW || 1) / 2) * 32, y: F.y1 * 32 }) : null; if (!front) { out.fault = '!! no fence'; return out; }
+      var gk = F.round ? null : Math.floor(F.gate) + ',' + F.y1; out.gateKey = gk; var ge = gk ? B.H[gk] : null; out.gate0 = ge ? { t: ge.t, locked: ge.locked, broken: ge.broken } : null;
+      d.goto(front.x, front.y + 80); sim(0.5); d.giveMen(5); sim(2); d.addItem('wood', 8); d.goto(front.x, front.y + 60); sim(1.5);
+      if (ge && !ge.locked) { ge.locked = 1; d.dirty(); out.lockedByHand = true; }
+      var gw = d.gWhat(); out.prompt = gw ? gw.say : null; if (!gw || !/Ram/.test(gw.say)) { out.fault = '!! no ram prompt'; out.men = d.hirdList().length; return out; }
+      gw.act(); var stages = {}, swings0 = d.ram().swings, over = -1;
+      for (i = 0; i < 90; i++) { sim(1); var rs = d.ram(); if (rs.stage) stages[rs.stage] = (stages[rs.stage] || 0) + 1; if (!rs.stage && i > 2) { over = i + 1; break; } }
+      out.stages = stages; out.swings = d.ram().swings - swings0; out.over = over; out.gate1 = ge ? { locked: ge.locked, broken: ge.broken, breach: ge.breach } : null; out.ramLying = d.ram().lying; out.wood = d.ruinBag().wood;
+      out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+      out.fault = !(stages.batter > 0) || !out.swings || !(ge && (ge.broken || ge.breach)) || out.ramLying !== 1 ? '!!' : '';
+    } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
+    return out;
+  }
+  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step5b: step5b, step5c: step5c, step7: step7, step8: step8, step9: step9, town: town, men: men, sim: sim, own: own };
 })();

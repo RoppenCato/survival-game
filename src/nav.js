@@ -22,7 +22,7 @@ var Nav = (function () {
   function make(o) {
     var T = o.T, X0 = o.x0, Y0 = o.y0, GW = o.w, GH = o.h, N = GW * GH;
     var open = new Uint8Array(N), price = new Float32Array(N), eh = new Uint8Array(N + GW), ev = new Uint8Array(N + GH + GW);   // eh[y * GW + x]: the north edge of (x, y); ev[y * (GW + 1) + x]: its west edge
-    var g = { x0: X0, y0: Y0, w: GW, h: GH, T: T, stamp: 0 }, SOL = [];
+    var g = { x0: X0, y0: Y0, w: GW, h: GH, T: T, stamp: 0 }, SOL = [], AV = null;   // AV: an edge the mover now asking avoids (see path, next: a doorway he has waited at too long)
     function read() {
       var x, y;
       for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) { open[y * GW + x] = o.open(X0 + x, Y0 + y) ? 1 : 0; price[y * GW + x] = o.cost ? (o.cost(X0 + x, Y0 + y) || 0) : 0; eh[y * GW + x] = o.edge('H', X0 + x, Y0 + y) || 0; ev[y * (GW + 1) + x] = o.edge('V', X0 + x, Y0 + y) || 0; }
@@ -35,11 +35,13 @@ var Nav = (function () {
     }
     function inside(tx, ty) { return tx >= 0 && ty >= 0 && tx < GW && ty < GH; }
     function shut(v, keys) { return v === 1 || (v === 2 && !keys); }
+    function avoided(ax, ay, bx, by) { if (!AV) return false; var L = AV.list, i, k = bx !== ax ? 'V' : 'H', tx = bx !== ax ? X0 + Math.max(ax, bx) : X0 + ax, ty = bx !== ax ? Y0 + ay : Y0 + Math.max(ay, by); for (i = 0; i < L.length; i++) if (L[i].kind === k && L[i].tx === tx && L[i].ty === ty) return true; return false; }
     // one step between neighbours (in the grid's own tile numbers): is anything shut between them
     function step(ax, ay, bx, by, keys) {
       if (!inside(bx, by) || !inside(ax, ay)) return true;                       // off the stretch: nothing is known there, so nothing is in the way
       if (!open[by * GW + bx]) return false;
       if (bx !== ax && by !== ay) return step(ax, ay, bx, ay, keys) && step(bx, ay, bx, by, keys) && step(ax, ay, ax, by, keys) && step(ax, by, bx, by, keys);   // a corner is not cut
+      if (avoided(ax, ay, bx, by)) return false;
       if (bx < ax) return !shut(ev[ay * (GW + 1) + ax], keys); if (bx > ax) return !shut(ev[by * (GW + 1) + bx], keys);
       if (by < ay) return !shut(eh[ay * GW + ax], keys); if (by > ay) return !shut(eh[by * GW + bx], keys);
       return true;
@@ -82,7 +84,10 @@ var Nav = (function () {
     var DX = [1, -1, 0, 0, 1, 1, -1, -1], DY = [0, 0, 1, -1, 1, -1, 1, -1];
     // a way from one place to another, as points in the world (the middles of tiles; the last is the place itself), or null.
     // If the place cannot be reached (a locked hall), the way leads to the tile that comes nearest to it, and .short says so.
-    function path(fx, fy, tx, ty, keys) {
+    function path(fx, fy, tx, ty, keys, avoid) {
+      var av0 = AV; if (avoid !== undefined) AV = avoid; try { return path0(fx, fy, tx, ty, keys); } finally { AV = av0; }
+    }
+    function path0(fx, fy, tx, ty, keys) {
       var sx = Math.max(0, Math.min(GW - 1, Math.floor(fx / T) - X0)), sy = Math.max(0, Math.min(GH - 1, Math.floor(fy / T) - Y0)), ex = Math.max(0, Math.min(GW - 1, Math.floor(tx / T) - X0)), ey = Math.max(0, Math.min(GH - 1, Math.floor(ty / T) - Y0));
       var s = sy * GW + sx, e = ey * GW + ex, i, k, best = s, bestH = 1e9, n = 0; run++; heap.length = 0;
       gS[s] = 0; fS[s] = 0; from[s] = -1; mark[s] = run; push(s);
@@ -111,12 +116,15 @@ var Nav = (function () {
     // the place has moved a tile, the grid has been read again, or two seconds have passed. With nowhere to go he is told to
     // stay where he is (the answer has .wait).
     function next(m, tx, ty, t, keys) {
+      var av = m.avoid && m.avoid.g === g && m.avoid.until > t ? m.avoid : null, av0 = AV; AV = av; try { return next0(m, tx, ty, t, keys, av); } finally { AV = av0; }
+    }
+    function next0(m, tx, ty, t, keys, av) {
       var here = inside(Math.floor(m.x / T) - X0, Math.floor(m.y / T) - Y0), there = inside(Math.floor(tx / T) - X0, Math.floor(ty / T) - Y0);
       if (!here && !there) { m.nav = null; return null; }
       if (clear(m.x, m.y, tx, ty, keys)) { m.nav = null; return null; }
       var gx = Math.floor(tx / T), gy = Math.floor(ty / T), nv = m.nav;
-      if (!nv || nv.g !== g || nv.stamp !== g.stamp || nv.gx !== gx || nv.gy !== gy || t - nv.t > 2 || nv.keys !== !!keys) {
-        var pts = path(m.x, m.y, tx, ty, keys); nv = m.nav = { g: g, stamp: g.stamp, gx: gx, gy: gy, t: t, keys: !!keys, pts: pts || [], i: 0, short: !pts || !!pts.short };
+      if (!nv || nv.g !== g || nv.stamp !== g.stamp || nv.gx !== gx || nv.gy !== gy || t - nv.t > 2 || nv.keys !== !!keys || nv.av !== (av ? av.k : null)) {
+        var pts = path0(m.x, m.y, tx, ty, keys); nv = m.nav = { g: g, stamp: g.stamp, gx: gx, gy: gy, t: t, keys: !!keys, av: av ? av.k : null, pts: pts || [], i: 0, short: !pts || !!pts.short };
       }
       while (nv.i < nv.pts.length && Math.hypot(nv.pts[nv.i].x - m.x, nv.pts[nv.i].y - m.y) < T * 0.35) nv.i++;                      // reached
       while (nv.i + 1 < nv.pts.length && clear(m.x, m.y, nv.pts[nv.i + 1].x, nv.pts[nv.i + 1].y, keys)) nv.i++;                      // and as far along it as he can walk straight
@@ -182,13 +190,35 @@ var Nav = (function () {
       if (e !== P && side === 1 && !P.dead && !P.hidden && inIt(P, q)) n++;
       return n >= 2;
     }
+    // a way to (x, y) that goes round the doorway q (the whole of it: a gate is two tiles wide): taken if the grid has one
+    function wayRound(g, e, q, x, y, keys, now) {
+      var list = [{ kind: q.kind, tx: q.tx, ty: q.ty }], s2;
+      for (s2 = -2; s2 <= 2; s2++) if (s2) { var ttx = q.kind === 'H' ? q.tx + s2 : q.tx, tty = q.kind === 'H' ? q.ty : q.ty + s2; if (g.edgeAt(q.kind, ttx, tty) >= 2) list.push({ kind: q.kind, tx: ttx, ty: tty }); }
+      var av = { g: g, k: q.kind + ':' + q.tx + ',' + q.ty, list: list, until: now + ROUND.keep }, p2 = g.path(e.x, e.y, x, y, keys, av);
+      if (!p2 || p2.short) return false; e.avoid = av; e.nav = null; e.wentRound = (e.wentRound || 0) + 1; return true;
+    }
+    // the engine asks for a man hanging back from a fight he cannot get to (the men at a full gate, raid step 5): is there a doorway
+    // between him and it within 200 units, and a way round that doorway; if so he has it (e.avoid) and goes
+    Combat.api.wayRound = function (e, x, y) { var st = Combat.api.roundStats || (Combat.api.roundStats = { asked: 0, noGrid: 0, noNarrow: 0, found: 0 }); st.asked++; var g = at(e.x, e.y) || at(x, y); if (!g) { st.noGrid++; return false; } var q = g.narrowAhead(e.x, e.y, x, y, 200); if (!q) { st.noNarrow++; return false; } var ok = wayRound(g, e, q, x, y, keysOf(e, g), clock()); if (ok) st.found++; return ok; };   // (roundStats: a count for the tests)
     Combat.api.nav = function (e, x, y) {
       var g = at(e.x, e.y) || at(x, y); if (!g) return null; var keys = keysOf(e, g), wp = g.next(e, x, y, clock(), keys);
       if (wp && wp.wait) return wp;
       var q = g.narrowAhead(e.x, e.y, wp ? wp.x : x, wp ? wp.y : y, 64);                                                    // a door or a gate on his way
       if (q) {
         if (q.v === 2 && keys && Math.hypot(e.x - q.x, e.y - q.y) < 30) (g.opened = g.opened || []).push({ kind: q.kind, tx: q.tx, ty: q.ty });   // his own locked door, and he is at it: he opens it (unlock() below)
-        if (chokeFull(g, e, q)) { e.choked = clock(); return { x: e.x, y: e.y, wait: true }; }
+        if (chokeFull(g, e, q)) {
+          var now = clock(), qk = q.kind + ':' + q.tx + ',' + q.ty; e.choked = now;
+          // waited too long at a doorway his own side fills (the wait adds up across the moments it clears for a step): he goes round
+          // by another way if the grid has one (the other gate: the men at a full gate take you in the back; a carrier of yours at a
+          // held gate goes by the back gate), else he waits on. The whole doorway is avoided (a gate is two tiles wide).
+          if (e.chokeQ !== qk || now - (e.chokeLast || 0) > 1.5) { e.chokeQ = qk; e.chokeAcc = 0; } else e.chokeAcc += Math.min(0.25, now - e.chokeLast);
+          e.chokeLast = now;
+          if (e.chokeAcc > ROUND.wait && !(e.noRound > now)) {
+            if (wayRound(g, e, q, x, y, keys, now)) { e.chokeQ = null; e.choked = null; return g.next(e, x, y, now, keys); }
+            e.noRound = now + ROUND.retry; e.chokeAcc = 0;
+          }
+          return { x: e.x, y: e.y, wait: true };
+        }
         e.choked = null;                                                                                                   // let through: from now he is one of those in it
       }
       return wp;
@@ -210,6 +240,7 @@ var Nav = (function () {
     for (i = 0; i < L.length; i++) { d = (L[i].kind === 'H' ? B.H : B.V)[L[i].tx + ',' + L[i].ty]; if (d && d.locked) { d.locked = 0; any = true; if (fn) fn(L[i]); } }
     L.length = 0; return any;
   }
-  return { make: make, edgeOf: edgeOf, attach: attach, unlock: unlock };
+  var ROUND = { wait: 3, keep: 25, retry: 10 };   // seconds a man waits his turn at a full doorway before he looks for a way round, how long he holds to that way, and how long before he looks again when there was none (2026-10-21, raid step 5)
+  return { make: make, edgeOf: edgeOf, attach: attach, unlock: unlock, ROUND: ROUND };
 })();
 if (typeof module !== 'undefined') module.exports = Nav;

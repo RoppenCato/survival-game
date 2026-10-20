@@ -17,10 +17,12 @@ const PIECES = [['wattle fence', { t: 'fence', m: 2 }], ['rail fence', { t: 'rai
   ['timber frame', { t: 'wall', m: 5 }], ['plank wall', { t: 'wall', m: 1 }], ['turf wall', { t: 'wall', m: 4 }], ['dry-stone wall', { t: 'drystone', m: 3 }], ['palisade', { t: 'palisade', m: 0 }], ['log wall', { t: 'wall', m: 0 }], ['stone wall', { t: 'wall', m: 3 }], ['cut stone', { t: 'wall', m: 6 }], ['town wall', { t: 'townwall', m: 6 }]];
 function blows(e0, tool) { const e = JSON.parse(JSON.stringify(e0)); let n = 0, r; while (n < 2000) { r = Ruin.hit(R, e, POW, tool); if (!r) return null; n++; if (r.none) return r.never ? 'never' : 'nothing'; if (r.gave) return n; } return 'not in 2000'; }
 const tab = {};
-PIECES.forEach(([name, e]) => { const a = blows(e, 'axe'), p = blows(e, 'pick'); tab[name] = [a, p]; console.log('  ' + name.padEnd(18) + 'axe ' + String(a).padStart(8) + '   pick ' + String(p).padStart(8) + '   heard ' + String(R.noise[Ruin.matOf(e)]).padStart(4) + ' units off'); });
+function ramBlows(e0) { const e = JSON.parse(JSON.stringify(e0)); let n = 0, r; while (n < 2000) { r = Ruin.hit(R, e, 3.2, 'ram'); if (!r) return null; n++; if (r.none) return 'nothing'; if (r.gave) return n; } return 'never'; }   // (the hird's ram at the game's RAM.power 3.2 a swing)
+PIECES.forEach(([name, e]) => { const a = blows(e, 'axe'), p = blows(e, 'pick'), rm = ramBlows(e); tab[name] = [a, p, rm]; console.log('  ' + name.padEnd(18) + 'axe ' + String(a).padStart(8) + '   pick ' + String(p).padStart(8) + '   ram ' + String(rm).padStart(6) + '   heard ' + String(R.noise[Ruin.matOf(e)]).padStart(4) + ' units off'); });
 if (tab['stone wall'][0] !== 'nothing') bad('an axe takes a stone wall');
 if (typeof tab['stone wall'][1] !== 'number') bad('a pick does not take a stone wall');
 if (tab['cut stone'][0] !== 'never' || tab['cut stone'][1] !== 'never' || tab['town wall'][1] !== 'never') bad('a hand tool takes dressed stone');
+if (!(typeof tab['cut stone'][2] === 'number' && tab['cut stone'][2] <= 60) || !(typeof tab['town wall'][2] === 'number' && tab['town wall'][2] <= 120) || !(tab['gate'] ? tab['gate'][2] <= 8 : true)) bad('the ram does not take dressed stone in its time (cut stone within 60 swings, the town wall within 120)');
 if (!(tab['wattle wall'][0] < tab['plank wall'][0] && tab['plank wall'][0] < tab['log wall'][0])) bad('wood is not in order: wattle, planks, logs');
 if (!(tab['plank wall'][0] < tab['plank wall'][1])) bad('the pick is as good as the axe on planks');
 if (!(tab['turf wall'][1] < tab['turf wall'][0])) bad('the axe is as good as the pick on turf');
@@ -95,6 +97,18 @@ function house(ox, oy, m, roof, w, h, lock) {
     console.log('      ' + name.padEnd(26) + 'roof alight ' + (a.lit ? 'after ' + (a.roofAt / a.lit).toFixed(0) + ' s (' + a.lit + '/60)' : 'never') + ', the house down in ' + a.down + '/60, out after ' + (a.out / a.n).toFixed(0) + ' s, ' + (a.gone / a.n).toFixed(1) + ' of ' + a.of + ' pieces burnt through');
     if (name.indexOf('wattle') === 0 && a.down < 55) bad('a thatched wattle house mostly survives a fire'); if (name.indexOf('timber') === 0 && a.lit) bad('a tile roof caught');
   });
+  // the bucket brigade (raid step 5, 2026-10-21): the same thatched wattle house lit at its door, and from 8 s on a bucket poured every 2, 4 or 8 s
+  // (three villagers' rounds from the well, one's, a slow one's: Ruin.douse) on the roof first, then the wall nearest to burning through.
+  // Against the unfought house above, the house with three on it should mostly stand.
+  function fought(seed, every) {
+    const H = house(10, 10, 2, 1, 3, 2), B = H.B, rand = rng(seed), env = { rooms: H.ri.rooms, at: H.ri.at, wind: null, rand, roofDefault: 1 };
+    Ruin.ignite(R, B, 'H', key(11, 12)); let t = 0, next = 8, buckets = 0;
+    while (t < 400 && Ruin.alight(B)) { Ruin.fireTick(R, B, 0.25, env); t += 0.25; if (t >= next) { next += every; const fs = Ruin.fires(B, env).sort((p, q) => (q.roof ? 1 : 0) - (p.roof ? 1 : 0) || (p.roof ? B.fire[p.key].t - B.fire[q.key].t : B.fire[q.key].t - B.fire[p.key].t)); if (fs.length) { Ruin.douse(R, B, fs[0].key); buckets++; } } }   // (the roof first, then the wall nearest to burning through)
+    const E = Ruin.edgesOf(B, H.room); return { out: t, buckets, gone: E.filter(q => q.e.breach).length, down: Ruin.ruined(B, H.room) || Ruin.due(R, B, H.room, 1) };
+  }
+  [2, 4, 8].forEach(every => { const a = { out: 0, buckets: 0, gone: 0, down: 0, n: 0 }; for (let s = 1; s <= 60; s++) { const r = fought(s * 7919, every); a.n++; a.out += r.out; a.buckets += r.buckets; a.gone += r.gone; if (r.down) a.down++; }
+    console.log('      the wattle house fought with a bucket every ' + every + ' s from 8 s: out after ' + (a.out / a.n).toFixed(0) + ' s with ' + (a.buckets / a.n).toFixed(1) + ' buckets, the house down in ' + a.down + '/60, ' + (a.gone / a.n).toFixed(1) + ' pieces burnt through');
+    if (every === 2 && a.down > 12) bad('a thatched wattle house fought with a bucket every 4 s mostly burns down anyway'); });
   // sparks: two thatched houses of stone, the second downwind, upwind, across, and with no wind; a tile's gap between them, and three
   function spread(gap, windA, k, seed) {
     const B = { floors: {}, H: {}, V: {}, posts: {}, stairs: {}, roofs: {}, items: [] };

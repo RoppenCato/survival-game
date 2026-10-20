@@ -131,9 +131,7 @@ and not built (`docs/idea-bank.md`).
   yields is let go with E (`letGo`: he runs, out of the fight); a heavy thing dropped in the open goes home on the back of a
   free man of the place when nobody of yours is within 240 units of it (`takeBackTick`; a heavy thing remembers where it
   stood, `it.home`); a place raided before keeps two men more a raid, up to six (`defenceOf`). How many come at you at once
-  has five versions on the battle board; none is chosen. **Next to build:** step 5's second half (the ram, the town
-  fighting fire, men going round by the other gate, the way in chosen) and step 10 (Robin plays; the men retuned to the
-  blows on the press; the twenty-minute measure).
+  has five versions on the battle board; `duel` (one on one first) stays after the trial of 2026-10-21 (`tests/battle.js ways`: the least crowding round a man of yours and the hero standing longest; Robin may pick another). **Step 5's second half (2026-10-21):** **the ram** (`RAM`, `ramTick`; G before a barred gate, a locked or stone door or a stone wall of a place not yours with four of your men free: a felled trunk within 260 units becomes it, else 8 wood from the bag; the four carry the studio's ram to 54 units before the piece and swing every 1.6 s at power 3.2 through Ruin's `bite.ram`: a gate in about five swings, a church's door in six, a cut-stone wall in forty, the town wall in ninety; dressed stone and the town wall now have hit points but no hand tool bites them; the loudest thing a raid does, 560 units, and the alarm; a man badly hurt lets go and under four the ram is set down, G at it takes it up again); **the town fights a fire** (the brigade, under Destruction); **the men behind a full gate go round** (`Nav.ROUND`: a man who has waited 3 s at a doorway his own side fills asks the grid for a way round the whole doorway and takes it, the other gate; `MEN.flankAfter`: a man hanging back from a fight with a doorway between him and it does the same after 3 s and comes at you from the far side; measured rare in the bots' trials, 0 to 0.5 of twenty: a town's line is over too soon for it; for Robin to see); men sent to a rally point (the gate and muster plans) fight there, their own door no longer bounds them (a fix). **Next:** step 10 (Robin plays).
 - **Scale (the canon, 2026-10-09):** the hero is 1.8 m and 39 units tall: a unit is 4.6 cm, a tile (32 units) 1.5 m. The
   camera sits at zoom 0.65 (the view 390 units tall); houses are at the sizes they were dug up at; the starter island is 120
   tiles, the big island 400, about 200 tiles of water between (`gap` 240); the hero jogs at 84 units a second. Islands feel
@@ -630,7 +628,7 @@ way-finding is in every real village. Robin has played none of it.
 - **Many on one:** at most two strike one target, and no two blows land within 0.75 s on the hero (`slots`, `gapHero`); **one
   on one first** (`onOne`, `onHero` 2, help after `joinAfter` 6 s, at most `onMax`), the rest hang back; a fight makes itself
   room; a man turns on whoever struck him last; householders hold their own doors (`homeR`). Five ways they come
-  (`Combat.WAYS`; `duel` is the default, none chosen).
+  (`Combat.WAYS`; `duel` kept after the trial, 2026-10-21).
 - **Friends** follow beside and behind, fight within a leash, go down instead of dying and get up when it is over; **G** gives
   the orders (with me, hold, storm, carry a chest or a downed man to the ship). A held line keeps its shields up.
 - **Walls and ways** (`src/nav.js`): a grid for every village near the hero; nobody but the hero steps across a shut edge; no
@@ -659,7 +657,7 @@ its material (`Ruin.rightTool`, `Ruin.hit`), heard by its material's reach (a so
 a room that loses too much loses its roof (a groan, then the fall: things inside tipped, people out, the hero hurt).
 **Fire:** a lit torch and E at a wall or roof; it spreads with the wind (`Ruin.fireTick`), burns through walls and roofs,
 lights the night, heats, is heard; men come to watch a fire (`Combat.gawk`) and walk out of a burning room; people run to a
-refuge and come back homeless. The stakes of a village's ring can be hacked down. **Mending** (the piece `mend`, once a claim
+refuge and come back homeless. **A fire in a place at peace is no raid in itself** (2026-10-21): the house's own run out, the men come to look, and **the bucket brigade** fights it: a place with a well sends up to four free villagers to it with buckets for any fire within 320 units of the well (`BRIGADE`, `brigadeTick`, `bucketStep`; the roof that has just caught first, then the wall nearest to burning through; `Ruin.douse`: a wall goes out and stays wet 40 s, a roof loses 14 s of its burning a bucket, `R.fire.bucket`, `wet`); a fire beyond the well's reach, or in a place with no well, burns; a fire in a place already uneasy or raided is part of the raid and stirs it. Measured (`tests/ruin.js`): a thatched wattle house with three on it stands, with one on it mostly burns; in the live town four villagers put out a timber-frame house fire in about 130 s after it had taken a block's worth of walls. The stakes of a village's ring can be hacked down. **Mending** (the piece `mend`, once a claim
 stone of yours stands there) mends walls and raises a fallen roof. Side walls leaning with a face (`Build.CFG.lean`) is a
 trial on the editor's board, off (Robin doubted it).
 A post can be charred too (`p.burnt`, snapped to `p.snap` of its height; no beam is left between burnt posts), a standing

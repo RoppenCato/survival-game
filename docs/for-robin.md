@@ -86,3 +86,27 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
     priest (churches have no men; he is a villager and runs), traders shut to you, a price on your head. The lines are
     placeholders for the Lore Director. Checked in the live game: the lost man (Gudrun) bound by the hall and won back,
     a thrall (Arnfinn) joined, a yielded man ran, a chest 450 units from its place went home in 30 seconds, 23 men became 25.
+12. **The bots' measures of step 10 (yours is the play):** `tests/battle.js carry` (`docs/baselines/carry-2026-10-21.txt`): the
+    loud way with the breaking done, five of yours carrying the heavy things to the ship 450 units beyond the gate while you
+    fight. A seat's chest (23 of silver) reaches the ship in about 42 s, dropped and lifted again about six times on the way,
+    one or two carriers down, you would fall once in three; a town of twenty gives nothing to six: all five carriers down
+    inside a minute and you fall at 51 s (a longship's crew, as you decided); a farm, a village and a trading post hold
+    nothing heavy (their loot goes in the bag). **The five ways they come at you** (`tests/battle.js ways 24`): I keep `duel`
+    (one on one first): the least crowding round one of yours (2.3 men on average, three or more 30% of the time), you stand
+    longest (52 s against a town with five) and most of yours are up at the end; "two at a time" and "all at once" crowd more
+    and you fall sooner. Say if you want another. **The Lore Director** has recorded my raid lines with three variants each
+    beside them for your pick, and proposes `leysingi` for a freed thrall (lowest on the bench, called so until he earns a
+    byname, cropped hair): yours to decide; held as LORE? until then.
+13. **Step 5's second half, mine:** **the bucket brigade**: a place with a well sends up to four free villagers with buckets to
+    any fire within 320 units of it (the roof that has just caught first, then the wall nearest to burning through; a doused
+    wall stays wet 40 s). A fire in a place at peace is no raid in itself any more: the house's own run out, the men come to
+    look, the brigade fights it; a fire in a place already raided stirs it as before. The bots: a thatched house with three
+    on it stands, with one on it mostly burns; in the live town four villagers beat a timber-frame house fire in about 130 s
+    after it had taken a block's worth of walls, and a fire out of the well's reach burned on. **The ram**: G before a barred
+    gate, a stone door or a stone wall with four men free, a felled trunk near (or eight wood): the four carry it up and
+    swing; a gate goes in about five swings, a church's door in six, a cut-stone wall in forty, the town wall in ninety;
+    it is the loudest thing a raid does. Cut stone and the town wall now give to the ram and to nothing else. **Men go
+    round by the other gate**: a man who has waited three seconds at a doorway his own side fills, or hangs back from a
+    fight with a doorway between, asks for a way round and takes it. In the bots' trials it fires rarely (a town's line
+    against twenty is over in half a minute); you will see it or not in play, and I can make it keener. Also fixed: men a
+    plan sends to the gate or the muster fight there (their own door no longer bounds them).

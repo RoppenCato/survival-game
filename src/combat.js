@@ -932,6 +932,7 @@ var MEN = {
   // one; apart, drift: the middle of a fight keeps this far from the men of other fights, moving at this pace to get there; homeR: a
   // householder (o.homeR on the man) fights nobody further than this from his own door.
   onOne: 1, onHero: 2, onMax: 2, joinAfter: 6, joinYours: 3, odds: 0, way: 'duel', hang: [105, 165], apart: 72, drift: 26, homeR: 190,
+  flankAfter: 3, flankFor: 25, flankRetry: 8,   // a man hanging back from a fight with a doorway between (the men behind a full gate): after flankAfter seconds he asks the grid for a way round (api.wayRound: the other gate), goes that way for up to flankFor seconds, and tries again flankRetry seconds after a way was not found (raid step 5, the second half, 2026-10-21)
   turnT: 2.5, turnK: 120,            // a man struck by a man who is not his foe turns on him for turnT seconds (turnK: how strongly, against distance in units): the relief of a beset man (2026-10-14)
   parryStun: 1.0,                    // a parried man or beast stands stunned this long (2026-10-14, Robin: a parry should stun for about a second)   // (the first five and hang are a WAY: see WAYS)
   sight: 340, aggro: 150, leash: 250, lie: 90,
@@ -1052,6 +1053,9 @@ function apartFrom(e, T) {
 function hangStep(e, dt, F) {
   var dx = e.x - F.x, dy = e.y - F.y, d = Math.hypot(dx, dy) || 1, ring = MEN.hang[0] + (MEN.hang[1] - MEN.hang[0]) * ((e.seed * 0.37) % 1), i, o, q, sx = 0, sy = 0, vx = 0, vy = 0;
   e.noT = 0; e.heardAt = null; e.guard = 0;
+  // hanging back near the fight with a doorway between him and it, or pressing at it through a wall (the men behind a full gate):
+  // after a while he looks for the way round and takes you in the back (api.wayRound: the grid's other gate)
+  if (d <= ring + 80) { e.hangT = (e.hangT || 0) + dt; if (e.hangT > MEN.flankAfter && api.wayRound) { var px = F.x - dx / d * 60, py = F.y - dy / d * 60; if (api.wayRound(e, px, py)) { e.flank = { t: MEN.flankFor, F: F, x: px, y: py }; e.hangT = 0; return; } e.hangT = -MEN.flankRetry; } }   // (the place to reach: just beyond him on the far side, so the way must go round)
   if (d > ring + 80 || wallBetween(e.x, e.y, F.x, F.y)) { e.state = 'chase'; stepTo(e, F.x, F.y, d > ring + 200 ? MEN.run : MEN.speed, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(-dy, -dx), MEN.turn * dt); return; }
   for (i = 0; i < W.enemies.length; i++) { o = W.enemies[i]; if (o === e || o.type !== 'soldier' || o.dead || o.down || o.out || (o.side || 0) !== (e.side || 0)) continue; q = Math.hypot(e.x - o.x, e.y - o.y); if (q < 46 && q > 0.01) { sx += (e.x - o.x) / q * (1 - q / 46); sy += (e.y - o.y) / q * (1 - q / 46); } }
   if (d > ring + 10) { vx = -dx / d * MEN.speed * 0.8; vy = -dy / d * MEN.speed * 0.8; }
@@ -1059,6 +1063,12 @@ function hangStep(e, dt, F) {
   vx += sx * 34; vy += sy * 34;
   if (Math.abs(vx) + Math.abs(vy) > 4) { moveCircle(e, vx * dt, vy * dt); e.state = 'chase'; } else e.state = 'idle';
   e.face = turnToward(e.face, Math.atan2(-dy, -dx), MEN.turn * 0.6 * dt);
+}
+function flankStep(e, dt) {                 // on his way round: to the fight by the other way, until he is near it with nothing between, or the time is up
+  var fl = e.flank, F = fl.F; fl.t -= dt; e.noT = 0; e.heardAt = null; e.guard = 0;
+  if (!F || F.dead || (F !== P && (F.down || F.out || F.fled)) || (F === P && P.hidden)) { e.flank = null; return; }
+  var d = Math.hypot(F.x - e.x, F.y - e.y); if (Math.hypot(fl.x - e.x, fl.y - e.y) < 30 || (d < 50 && !wallBetween(e.x, e.y, F.x, F.y))) { e.flank = null; return; }
+  e.state = 'chase'; stepTo(e, fl.x, fl.y, MEN.run, dt); e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(fl.y - e.y, fl.x - e.x), MEN.turn * dt);
 }
 function tooFar(e, F) { var p = e.post, b = p.box, k = e.pursueK || 1; if (!b) return Math.hypot(F.x - p.x, F.y - p.y) > MEN.pursue * k; return Math.hypot(Math.max(b.x0 - F.x, 0, F.x - b.x1), Math.max(b.y0 - F.y, 0, F.y - b.y1)) > MEN.pursueOut * k; }   // (pursueK: a place whose plan is to hunt goes further)
 function alarmFor(e) { return e.alarm && !(e.homeR && e.post && Math.hypot(e.alarm.x - e.post.x, e.alarm.y - e.post.y) > e.homeR) ? e.alarm : null; }
@@ -1130,7 +1140,7 @@ function sideStep(e, dt, d, far, waiting) {
 function stepTo(e, x, y, sp, dt) {          // toward a place; a page that knows the walls may give the next corner to make for (api.nav)
   if (e.fixed) return 0;                     // (a man who stays where he is put: the bowman on the tower, raid step 6)
   var far = Math.hypot(x - e.x, y - e.y);
-  if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) { e.progT = 0; return 0; } x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }
+  e.waiting = false; if (api.nav) { var wpt = api.nav(e, x, y); if (wpt) { if (wpt.wait) { e.progT = 0; e.waiting = true; return 0; } x = wpt.x; y = wpt.y; e.wayA = Math.atan2(y - e.y, x - e.x); } else e.wayA = null; }   /* (e.waiting: his turn at a full doorway has not come: an errand is not given up for that) */
   var dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy); if (d < 0.5) return 0;
   var tb = e.type === 'soldier' ? sideStep(e, dt, far, far > 30, false) : 0; if (tb) { var ta = Math.atan2(dy, dx) + tb; dx = Math.cos(ta) * d; dy = Math.sin(ta) * d; }   // (a man who makes no way on an errand, to his post, to a noise or after the hero steps round what holds him)
   var ox = e.x, oy = e.y, st = Math.min(d, sp * dt); moveCircle(e, dx / d * st, dy / d * st); return Math.hypot(e.x - ox, e.y - oy);
@@ -1330,7 +1340,7 @@ function soldierAI(e, dt) {
     e.state = 'chase'; var em = stepTo(e, er.x, er.y, (er.run ? MEN.run : MEN.speed) * (er.slow || 1), dt);
     e.face = turnToward(e.face, e.wayA != null ? e.wayA : Math.atan2(er.y - e.y, er.x - e.x), MEN.turn * dt);
     er.t = (er.t || 0) + dt; er.px = er.px == null ? e.x : er.px; er.py = er.py == null ? e.y : er.py;
-    if (er.t >= 6) { if (Math.hypot(e.x - er.px, e.y - er.py) < 6) { e.errand = null; if (er.fail) er.fail(e); else if (er.drop) er.drop(e); } er.t = 0; er.px = e.x; er.py = e.y; }   // six seconds and no way made: he gives it up
+    if (er.t >= 6) { if (Math.hypot(e.x - er.px, e.y - er.py) < 6 && !e.waiting) { e.errand = null; if (er.fail) er.fail(e); else if (er.drop) er.drop(e); } er.t = 0; er.px = e.x; er.py = e.y; }   // six seconds and no way made: he gives it up (not while he waits his turn at a doorway, 2026-10-21)
     return;
   }
   if (e.awake === false) {                  // at his post, and has seen nothing
@@ -1348,6 +1358,7 @@ function soldierAI(e, dt) {
     if (e.state === 'windup' || e.state === 'lunge' || e.state === 'recover' || e.state === 'stagger' || e.state === 'stunned' || e.state === 'back' || e.state === 'aim' || e.state === 'loose') { if (e.t >= e.dur) { e.state = 'chase'; e.sw = null; e.swung = false; } return; }
     e.state = 'idle'; e.guard = 0; e.sw = null; if (e.close) sidearm(e, false);
     if (e.side === 1) { if (e.order === 'storm' && e.stormAt) stormStep(e, dt); else followStep(e, dt); }
+    else if (e.flank && e.flank.t > 0) flankStep(e, dt);
     else if (e.waitOn && !e.waitOn.dead && !(e.waitOn !== P && (e.waitOn.down || e.waitOn.out || e.waitOn.fled))) hangStep(e, dt, e.waitOn);
     else if (e.heardAt) {
       var hd = Math.hypot(e.heardAt.x - e.x, e.heardAt.y - e.y);
