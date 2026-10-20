@@ -349,7 +349,14 @@ run, `stake_stump` for one hacked down (`spriteName`), `railPost` and the wattle
 come; the palisade, rail, wattle and gate drawing of the Build edges is the studio's in `src/build.js`), **and the faces**
 (`assets/props/faces`: porch, bell tower, apse, gable cross, lantern, sign, awning, woodshed, the laid `foodTable`; thatch in
 courses with a turf ridge and the turf roof's bark board in `drawRoof`; **a room with a hearth or a fire pit indoors has a
-smoke hole in its ridge** (`Build.drawSmokeHole` at `Build.ridgeMid`), the fireplace keeps its chimney). **Two more ground
+smoke hole in its ridge** (`Build.drawSmokeHole` at `Build.ridgeMid`), the fireplace keeps its chimney), **and the yard's
+things and the sacred** (`assets/props/yard`, `assets/props/sacred`: the storage hut, boathouse, bee skeps, stall, banner,
+sign post, fire ring, runestone, burial mound, cairn, stone ship, lych gate, way cross, font, altar, furnace, charcoal pit,
+the carver's and mason's benches by their names; and new in the generator (mine, 2026-10-20): a `quern` in the door pool, a
+`washingLine` behind one house in two, the hall's `spearRack` and a `torchBracket` at its door in place of the lantern, the
+`forge` in the smithy, the `midden` heap on earth behind the longhouse, a `watchtower` and a torch inside a walled town's gate
+at wealth 0.5 and up (a bowman's post, raid step 6), a `beachedBoat` on a shore place's sand; a set piece with no drawn prop
+of its name passes the village's prop check). **Two more ground
 kinds, ash (7) and soot (8)** (the studio's paints): the steading's `villagePaint` lays ash over the hall's floor thinning out
 of its south side and soot at the foot of the hut's wall and under the plank house's north wall. The build folds any
 `assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`); `w.sprite` looks for `name_1` to `name_N` for

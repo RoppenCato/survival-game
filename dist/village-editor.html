@@ -5190,7 +5190,7 @@ function make(seed, site, opts) {
       p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 2, { loot: { berries: 5, fiber: 4 } }); p = tile(l.x + 1, l.y); item('barrel', p[0] - 4, p[1] + 2, { loot: { meat: 2, leather: 1 } });
       p = tile(l.x, l.y + 1); item('crate', p[0] + 6, p[1], { loot: { arrows: 10, wood: 4 } });
     } else if (BUILD[l.id].inside === 'byre') { p = tile(l.x, l.y); item('haystack', p[0] + 8, p[1] + 4); p = tile(l.x + l.w - 1, l.y + l.h - 1); item('trough', p[0] - 4, p[1] - 4); }
-    else if (BUILD[l.id].inside === 'smithy') { p = tile(l.x, l.y); item('furnace', p[0] + 8, p[1] + 2, { furnace: true, light: 1 }); p = tile(l.x + l.w - 1, l.y); item('workbench', p[0] - 6, p[1] + 2, { bench: true }); p = tile(l.x + 1, l.y + l.h - 1); item('trough', p[0], p[1]); }
+    else if (BUILD[l.id].inside === 'smithy') { p = tile(l.x, l.y); item('furnace', p[0] + 8, p[1] + 2, { furnace: true, light: 1 }); V.props.push({ name: 'forge', x: (l.x + l.w / 2) * T + 4, y: (l.y + l.h / 2) * T + 4, solid: 9 }); p = tile(l.x + l.w - 1, l.y); item('workbench', p[0] - 6, p[1] + 2, { bench: true }); p = tile(l.x + 1, l.y + l.h - 1); item('trough', p[0], p[1]); }
     else if (BUILD[l.id].inside === 'bath') { p = tile(l.x, l.y); item('stoneHearth', p[0] + 8, p[1] + 4, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('bench', p[0], p[1] - 4, { seat: true }); }
     else if (BUILD[l.id].inside === 'pit') { p = tile(l.x, l.y); item('campfire', p[0] + 10, p[1] + 6, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('dryingRack', p[0], p[1] - 4); }
     else if (BUILD[l.id].inside === 'church') {
@@ -5210,17 +5210,19 @@ function make(seed, site, opts) {
     }
     else if (BUILD[l.id].inside === 'boat') { V.finds.push({ kind: 'boat', x: tile(l.x + l.w / 2, l.y + 1)[0], y: tile(l.x, l.y + 1)[1], lot: l }); p = tile(l.x, l.y); item('barrel', p[0] + 6, p[1] + 2, { loot: { fiber: 4 } }); }
     // things by the door: a woodpile, a barrel, a bench, bee skeps, a cart
-    var dp = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1), pool = ['woodpile', 'barrel', 'bench', 'beeSkeps', 'cart', 'dryingRack', 'crate', 'logSeat', 'trough', 'haystack'];
+    var dp = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1), pool = ['woodpile', 'barrel', 'bench', 'beeSkeps', 'cart', 'dryingRack', 'crate', 'logSeat', 'trough', 'haystack', 'quern'];   /* (the quern: the Art Director's yard pieces, 2026-10-20) */
     V.paints.push({ x: dp[0], y: dp[1] + (l.door === 's' ? 6 : 0), r: 7, kind: 1 });                                        // a worn step at every door
     var nd = Math.round(G.doorProps + (R() - 0.5)), di2, used = {};
     for (di2 = 0; di2 < nd; di2++) { var by = pool[Math.floor(R() * pool.length)]; if (used[by]) continue; used[by] = 1; var sideS = di2 % 2 ? 1 : -1, off = l.door === 's' ? [T * (1.2 + 0.5 * di2) * sideS, 6 + R() * 6] : l.door === 'e' ? [10 + R() * 8, T * (1.0 + 0.6 * di2) * sideS] : l.door === 'w' ? [-10 - R() * 8, T * (1.0 + 0.6 * di2) * sideS] : [T * (1.2 + 0.5 * di2) * sideS, -8]; V.props.push({ name: by, x: dp[0] + off[0], y: dp[1] + off[1], loot: by === 'barrel' || by === 'crate' ? { berries: 2, fiber: 2 } : null }); }
     if (l.id === big) { var wp = l.door === 's' ? tile(l.x + l.w, l.y + l.h) : tile(l.x - 1, l.y + l.h); V.props.push({ name: G.clutter ? 'woodshed' : 'woodpile', x: wp[0] + 8, y: wp[1] + 4, solid: 9 }); V.props.push({ name: 'choppingBlock', x: wp[0] + 36, y: wp[1] + 12, block: true }); }
+    if (l.id === 'house' && l.door === 's' && R() < 0.5) V.props.push({ name: 'washingLine', x: (l.x + l.w / 2) * T, y: l.y * T - 14, solid: 4 });   // washing behind one house in two (the yard pieces, 2026-10-20)
+    if (l.id === big && A.hall && l.door === 's') { V.props.push({ name: 'spearRack', x: (l.dx + 2.2) * T, y: (l.y + l.h) * T + 6, solid: 4 }); }   // the hall's spears by its door
     // things against the walls (Robin, 2026-10-07: lived-in like the reference): a window box under every south window, a lantern by
     // the door that is lit at night, an awning on the open-fronted buildings, a sign on the hall and the trading stores
     if (G.clutter && !V.ruin) {
       var wy = (l.y + l.h) * T;
       l.wins.forEach(function (wx) { item('windowBox', (wx + 0.5) * T, wy + 4, { r: 0, wall: true }); });
-      if (l.door === 's' && (l.id === big || l.id === 'house' || l.id === 'bath')) item('lantern', l.dx * T - 6, wy + 2, { r: 0, wall: true, light: 1, lamp: true });
+      if (l.door === 's' && (l.id === big || l.id === 'house' || l.id === 'bath')) item(l.id === big && A.hall ? 'torchBracket' : 'lantern', l.dx * T - 6, wy + 2, { r: 0, wall: true, light: 1, lamp: true });   /* (a torch in a bracket at a hall's door, a lantern elsewhere: the night raid's light) */
       if (l.door === 's' && (l.id === 'store' || l.id === 'smithy' || l.id === 'boathouse')) item('awning', (l.dx < l.x + l.w / 2 ? (l.x + l.w - 0.6) : (l.x + 0.6)) * T, wy + 9, { r: 2 });
       if (l.door === 's' && ((A.hall && l.id === big) || (A.stores && l.id === 'store'))) item('sign', l.dx * T + T + 7, wy + 2, { r: 0, wall: true });
     }
@@ -5241,6 +5243,7 @@ function make(seed, site, opts) {
   ex0 = Math.max(tx, ex0 - G.fenceGap); ey0 = Math.max(ty, ey0 - G.fenceGap); ex1 = Math.min(tx + w, ex1 + G.fenceGap); ey1 = Math.min(ty + h, ey1 + G.fenceGap);
   var gateX = yx + Math.floor(yw / 2), fk = fenceKind, fm = fk === 'drystone' ? 3 : (fk === 'townwall' ? 6 : 2), x, y;
   if (A.chapel) V.props.push({ name: 'lychGate', x: (gateX + 0.5) * T, y: (ey1 + 0.02) * T });   // the churchyard's roofed gate
+  if (shore && !V.ruin && R() < 0.7) { var bx2 = shore === 'e' ? tx + w - 1.2 : shore === 'w' ? tx + 1.2 : yx + yw / 2 + (R() - 0.5) * 4, by2 = shore === 's' ? ty + h - 1.1 : shore === 'n' ? ty + 1.1 : yx + yw / 2; V.props.push({ name: 'beachedBoat', x: bx2 * T, y: by2 * T, solid: 10 }); }   // a boat drawn up on the sand at the site's shore edge (the game keeps it only on land)
   var roadSide = R() < 0.5 ? 1 : -1, backGateX = null;                                                         // the road bends past the fire on this side and leaves by a back gate beside the longhouse
   if (G.backGate && (!shore || shore === 's') && (A.houses[1] >= 3 || shore === 's')) { backGateX = roadSide > 0 ? L0.x + L0.w + 1 : L0.x - 2; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = roadSide > 0 ? L0.x - 2 : L0.x + L0.w + 1; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = null; }
   if (fk === 'palisade' && !A.townwall) {              // a round wall of sharpened stakes round the whole ring, a gap for the gate on the path, banners either side
@@ -5257,6 +5260,7 @@ function make(seed, site, opts) {
     for (x = ex0; x < ex1; x++) { if (x === backGateX) H(x, ey0, 'gate', 2); else if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if ((x === gateX || (wideGate && x === gateX + 1)) && shore !== 's') H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
     for (y = ey0; y < ey1; y++) { if (!(V.ruin && R() < 0.4) && shore !== 'w') Vw(ex0, y, fk, fm); if (!(V.ruin && R() < 0.4) && shore !== 'e') Vw(ex1, y, fk, fm); }
     V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: fk, gate: gateX, gateW: 1 + wideGate };
+    if (A.townwall && wealth >= 0.5) { V.props.push({ name: 'watchtower', x: (gateX - 1.2) * T, y: ey1 * T - 18, solid: 12, tower: true }); V.items.push({ name: 'torchBracket', x: (gateX + 1 + wideGate + 0.35) * T, y: ey1 * T + 2, r: 0, wall: true, light: 1, lamp: true }); }   // a walled town's gate: a watchtower inside the wall beside it (a bowman's post, step 6 of the raid plan) and a torch at the post, lit at night (the Art Director's pieces, 2026-10-20)
   }
   // the ground: the yard trodden to earth, gravel from the gate to the well and to the shore, earth from every door, moss at the back
   function dab(x, y, r, kind) { V.paints.push({ x: x, y: y, r: r, kind: kind }); }
@@ -5323,7 +5327,7 @@ function make(seed, site, opts) {
   // the fields outside the fence, the sacred stone at a corner, the midden behind, a grave beyond
   if (G.fields && A.houses[1] > 0 && !V.ruin) { var fx = shore === 'e' ? ex0 - 6 : ex1 + 2, fy0 = ey0 + 1, strips = G.fieldStrips; if (fx > tx && fx + 4 < tx + w) for (var s2 = 0; s2 < strips; s2++) { var sy = fy0 + s2 * 3; if (sy + 2 > ty + h) break; strokeTo([(fx + 0.5) * T, (sy + 1) * T], [(fx + 3.5) * T, (sy + 1) * T], 10, 2); if (s2 === 1) V.props.push({ name: 'scarecrow', x: (fx + 2) * T, y: (sy + 0.3) * T }); } V.props.push({ name: 'haystack', x: (fx + 2) * T, y: (fy0 + strips * 3 + 0.5) * T }); }
   if (G.sacred) { var sc = tile(ex0 - 1 >= tx ? ex0 - 1 : ex1 + 1, ey0); V.props.push({ name: 'runestone', x: sc[0], y: sc[1], lore: 'Raised by the folk of ' + (opts.name || 'this place') + ' for one who did not come home.' }); V.finds.push({ kind: 'stone', x: sc[0], y: sc[1] }); }
-  if (G.midden) { var mp = tile(ex1 - 1, ey0 - 1 >= ty ? ey0 - 1 : ey0); dab(mp[0], mp[1], 14, 1); V.props.push({ name: 'crate', x: mp[0], y: mp[1], loot: { fiber: 2 } }); }
+  if (G.midden) { var mp = tile(ex1 - 1, ey0 - 1 >= ty ? ey0 - 1 : ey0); dab(mp[0], mp[1], 16, 2); V.props.push({ name: 'midden', x: mp[0], y: mp[1], solid: 10 }); V.props.push({ name: 'crate', x: mp[0] - 22, y: mp[1] + 6, loot: { fiber: 2 } }); }   /* (the midden heap on trodden earth, the Art Director's piece, 2026-10-20) */
   if (G.graves && R() < 0.6) { var gp = tile(ex1 + 1 < tx + w ? ex1 + 1 : ex0 - 1, ey1 - 1); V.props.push({ name: 'cairn', x: gp[0], y: gp[1], grave: true }); V.finds.push({ kind: 'grave', x: gp[0], y: gp[1] }); }
   // the people: a household per home, with their spots (their door, the well, the yard, a workplace) and lines by role
   var nPeople = V.ruin ? 0 : pickRange(R, A.people, 0), hi = 0, roles = ['farmer', 'fisher', 'smith', 'weaver', 'elder', 'child', 'thrall'];
