@@ -4336,6 +4336,18 @@ if (typeof module !== 'undefined') module.exports = StyleLab;
 var World = (function () {
 'use strict';
 var T = 32, TS = 24, K = 0.75, CT = 16;
+/* The sea as waters (2026-10-20, Robin's shape of the sea, docs/world-shape.md; built by docs/build-plan-waters.md): one
+   continuous sea of waters, each a cluster of islands in a disc, with long crossings between. Home water (ring 0) holds the
+   starter island and the big island as they were, and more islands round them; four waters (ring 1) lie north, south, east
+   and west of it, their angle jittered and their distance varied, so the map is lumpy, not a cross. Every water and island
+   has a seed of its own, so any island can be regrown alone. The numbers are mine, in tiles; a page passes o.waters = true
+   (these) or an object laid over them. */
+var WATERS = { homeR: 600, homeMid: [3, 75, 125], homeSmall: [6, 15, 40], crossing: 350, crossVar: [0.75, 1.3], ringR: [300, 380], ringN: [4, 6], ringBig: [100, 175], ringMid: [60, 100], ringSmall: [15, 60], inGap: [40, 150], inGapRing: [25, 90], edge: 60, jitter: 0.35 };
+/* The climate (step 2): warm and wet, each 0 to 1, read at any point from its angle and distance from home water's centre. Home
+   is the middle (0.5, 0.5) and comes out exactly as before; past home's radius the field blends over the crossing toward an
+   anchor per compass direction (directions between blend, so a north-east water is cold and wet), with a little low noise
+   outside home. The south, warm and dry, is the lowlands as decided (2026-10-07); the rest are first settings (mine). */
+var ANCHORS = [{ a: -Math.PI / 2, warm: 0.15, wet: 0.35 }, { a: Math.PI / 2, warm: 0.85, wet: 0.3 }, { a: 0, warm: 0.65, wet: 0.85 }, { a: Math.PI, warm: 0.3, wet: 0.8 }];   // north, south, east, west
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
@@ -4389,13 +4401,46 @@ function make(kit, opts) {
   function pickR() { var u = R(), f = u < 0.25 ? rnd(0.15, 0.45) : (u < 0.78 ? rnd(0.7, 1.3) : rnd(1.5, 2.2)); return Math.max(5, o.isle / 2 * (1 + (f - 1) * o.sizeVar)); }
   function pickGap() { var u = R(), f = u < 0.15 ? rnd(0.1, 0.3) : (u < 0.75 ? rnd(0.5, 1.5) : (u < 0.95 ? rnd(1.6, 3) : rnd(4, 8))); return Math.max(4, o.gap * (1 + (f - 1) * o.gapVar)); }
   var isles = [{ x: 0, y: 0, r: (o.isle0 || o.isle) / 2, gap: 0, biome: 0 }];   // o.isle0: the first island's width (the starter island is small)
-  for (i = 1; i < o.count; i++) for (tries = 0; tries < 60; tries++) {
+  var waters = null, WD = null;
+  if (!o.waters) for (i = 1; i < o.count; i++) for (tries = 0; tries < 60; tries++) {
     var bm = o.biomes ? (o.biomes[i] || 0) : 0, par = isles[Math.floor(R() * isles.length) % isles.length], a0 = R() * 6.283, a = (i === 1 && o.dir != null) ? o.dir : a0, r = pickR(), g = pickGap(); if (i === 1 && o.big) r = o.big / 2; if (o.sizes && o.sizes[i]) r = o.sizes[i] / 2;   // o.big: the second island's width; o.sizes: every island's width
     if (bm) { var south = isles.slice().sort(function (p1, p2) { return p2.y - p1.y; }); par = south[Math.floor(R() * Math.min(2, south.length))]; a = 0.95 + R() * 1.25; g = g * 1.7 + 18; }   // o.biomes: the second biome's islands lie to the south, a bit further off (Robin)
     var d0 = 0, d = par.r + r + g;   // o.dir: the second island lies in that direction (0 is east, where the game's camp is)
     var cand = { x: par.x + Math.cos(a) * d, y: par.y + Math.sin(a) * d * 0.9, r: r, gap: g, biome: bm }, ok = true;
     for (k = 0; k < isles.length; k++) if (Math.hypot(isles[k].x - cand.x, isles[k].y - cand.y) < isles[k].r + r + 4) { ok = false; break; }
     if (ok) { isles.push(cand); break; }
+  }
+  if (o.waters) {
+    WD = {}; for (k in WATERS) WD[k] = WATERS[k]; if (typeof o.waters === 'object') for (k in o.waters) if (o.waters[k] != null) WD[k] = o.waters[k];
+    var RW = kit.rng(s * 101 + 7), rndW = function (a, b) { return a + RW() * (b - a); }, intW = function (a, b) { return Math.floor(rndW(a, b + 0.999)); };
+    waters = [{ id: 'home', ring: 0, dir: null, cx: 0, cy: 0, r: WD.homeR, seed: s * 101 + 1, isles: [] }];
+    ['north', 'south', 'east', 'west'].forEach(function (nm, wi) {
+      var a = ANCHORS[wi].a + rndW(-WD.jitter, WD.jitter), rr = rndW(WD.ringR[0], WD.ringR[1]), d = WD.homeR + WD.crossing * rndW(WD.crossVar[0], WD.crossVar[1]) + rr;
+      waters.push({ id: nm, ring: 1, dir: nm, a: a, cx: Math.cos(a) * d, cy: Math.sin(a) * d, r: rr, seed: s * 101 + 11 + wi * 37, isles: [] });
+    });
+    isles = [];
+    var placeAt = function (wt, cx, cy, r, role, slot, biome) { var rec = { x: cx, y: cy, r: r, gap: rndW(WD.inGap[0], WD.inGap[1]), biome: biome || 0, water: waters.indexOf(wt), ring: wt.ring, slot: !!slot, role: role || null, seed: wt.seed * 31 + isles.length * 17 }; isles.push(rec); wt.isles.push(isles.length - 1); return rec; };
+    var placeIn = function (wt, r, role, slot, biome) {        // an island somewhere in the water's disc, keeping its gap of open water from every coast; biggest first; a second try with the smallest gap
+      var ri = kit.rng(wt.seed * 7 + isles.length * 13 + 5), gr = wt.ring ? WD.inGapRing : WD.inGap, g = rndW(gr[0], gr[1]), t2, j;
+      for (t2 = 0; t2 < 900; t2++) {
+        if (t2 === 450) g = gr[0];
+        var ang = ri() * 6.283, dd = Math.sqrt(ri()) * Math.max(0, wt.r - r - 6), cx = wt.cx + Math.cos(ang) * dd, cy = wt.cy + Math.sin(ang) * dd, ok2 = true;
+        for (j = 0; j < isles.length; j++) { var q2 = isles[j]; if (Math.hypot(q2.x - cx, q2.y - cy) < q2.r + r + Math.max(g, q2.gap || 0)) { ok2 = false; break; } }
+        if (ok2) { var rec = placeAt(wt, cx, cy, r, role, slot, biome); rec.gap = g; return rec; }
+      }
+      return null;
+    };
+    // home: the starter island and the big island as they were (o.sizes, o.gap, o.dir), the pair in the middle of the water; then the others round them
+    var rS = (o.sizes ? o.sizes[0] : o.isle0 || o.isle) / 2, rB = (o.sizes ? o.sizes[1] : o.big || o.isle) / 2, dir = o.dir != null ? o.dir : 0.1, D = rS + rB + o.gap, px = Math.cos(dir) * D, py = Math.sin(dir) * D * 0.9;
+    placeAt(waters[0], -px / 2 - (rB - rS) / 2, -py / 2, rS, 'starter'); placeAt(waters[0], px / 2 - (rB - rS) / 2, py / 2, rB, 'big');
+    for (i = 0; i < WD.homeMid[0]; i++) placeIn(waters[0], rndW(WD.homeMid[1], WD.homeMid[2]));
+    for (i = 0; i < WD.homeSmall[0]; i++) placeIn(waters[0], rndW(WD.homeSmall[1], WD.homeSmall[2]));
+    waters.slice(1).forEach(function (wt) {                      // a ring-1 water: one or two big islands, the rest small, and one slot (a generic island now; a special island's recipe drops in later)
+      var nI = intW(WD.ringN[0], WD.ringN[1]), nBig = RW() < 0.5 ? 1 : 2, j, south = wt.dir === 'south' ? 1 : 0, mid = null;
+      for (j = 0; j < nI; j++) { var rr2 = j < nBig ? rndW(WD.ringBig[0], WD.ringBig[1]) : j === nBig ? rndW(WD.ringMid[0], WD.ringMid[1]) : rndW(WD.ringSmall[0], WD.ringSmall[1]), rec2 = placeIn(wt, rr2, null, false, south); if (rec2 && j === nBig) mid = rec2; }
+      if (mid) mid.slot = true; else if (wt.isles.length > 1) isles[wt.isles[1]].slot = true;   // the slot: the medium island
+    });
+    o.count = isles.length; if (!(o.maxTiles > 2e7)) o.maxTiles = 2e7;   // (nothing is dropped for size: the budget is measured instead)
   }
   /* 2. size the map to fit them; if it would be too big, leave out the last islands */
   var x0, y0, x1, y1, n = isles.length, GW, GH;
@@ -4408,6 +4453,10 @@ function make(kit, opts) {
   }
   isles.length = n;
   isles.forEach(function (q) { q.x -= x0; q.y -= y0; });
+  if (waters) waters.forEach(function (wt) { wt.cx -= x0; wt.cy -= y0; });
+  w.waters = waters; w.homeWater = waters ? waters[0] : null; w.WD = WD;
+  w.waterAt = function (wx, wy) { if (!waters) return null; var tx = wx / T, ty = wy / T, j; for (j = 0; j < waters.length; j++) if (Math.hypot(tx - waters[j].cx, ty - waters[j].cy) <= waters[j].r) return waters[j]; return null; };   // the water a point is in, or the crossing between (null)
+  w.swellAt = function (wx, wy) { if (!waters) return 0; var hw = waters[0]; return sstep(hw.r, hw.r + WD.edge, Math.hypot(wx / T - hw.cx, wy / T - hw.cy)); };   // 0 inside home water, 1 past its edge: where the swell turns a small boat
   var WX = GW * T, WY = GH * T, CW = GW / CT, CH = GH / CT;
   w.GW = GW; w.GH = GH; w.WX = WX; w.WY = WY; w.CW = CW; w.CH = CH; w.isles = isles; w.wanted = o.count;
 
@@ -4423,15 +4472,31 @@ function make(kit, opts) {
     }
   }
   isles.forEach(function (q, idx) {
-    blob(q.x, q.y, q.r, s + idx * 17, o.rough);
+    blob(q.x, q.y, q.r, q.seed != null ? q.seed : s + idx * 17, o.rough);
     var ns = Math.round(o.skerries * (2 + q.r * 0.07));
     for (var j = 0; j < ns; j++) { var sa = R() * 6.283, sdist = q.r * rnd(1.1, 1.42) + rnd(3, 12); blob(q.x + Math.cos(sa) * sdist, q.y + Math.sin(sa) * sdist * 0.9, rnd(1.8, 5.5), s + idx * 31 + j, 0.8); skerries++; }
   });
   w.E = E;
   /* 3b. the biome of every tile (2026-10-07, Robin: the second biome, the southern lowlands, mixing at the edges like Valheim's):
      the nearest island's biome, with noise on top so a lowland island keeps pine groves and the first biome gets a warm patch or two */
+  function climateT(tx, ty) {                                // warm and wet at a tile (the waters' climate field; see ANCHORS)
+    if (!waters) return { warm: 0.5, wet: 0.5 };
+    var hw = waters[0], dx = tx - hw.cx, dy = ty - hw.cy, d = Math.hypot(dx, dy), t = sstep(hw.r, hw.r + WD.crossing, d);
+    if (t <= 0) return { warm: 0.5, wet: 0.5 };
+    var a = Math.atan2(dy, dx), wsum = 0, aw = 0, ww = 0, j;
+    for (j = 0; j < ANCHORS.length; j++) { var wg = Math.max(0, Math.cos(a - ANCHORS[j].a)); wg *= wg; wsum += wg; aw += wg * ANCHORS[j].warm; ww += wg * ANCHORS[j].wet; }
+    var nz = (fbm(tx / 120, ty / 120, s + 130) - 0.5) * 0.12 * t, warm = 0.5 + (aw / wsum - 0.5) * t + nz, wet = 0.5 + (ww / wsum - 0.5) * t + nz * 0.5;
+    return { warm: Math.max(0, Math.min(1, warm)), wet: Math.max(0, Math.min(1, wet)) };
+  }
+  w.climate = function (wx, wy) { return climateT(wx / T, wy / T); };
+  w.lowlandAt = function (cl) { return sstep(0.15, 0.5, (cl.warm - 0.5) * 2 * (1 - cl.wet)); };   // how much of the lowlands' look a climate has (1 in the warm dry south)
   var BM = new Uint8Array(GW * GH);
-  for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
+  if (waters) for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
+    var pw = y * GW + x; if (E[pw] < -600) continue;                   // the open sea stays 0: only land and the coast are read (the map is far bigger)
+    var lw = w.lowlandAt(climateT(x, y)), bw = lw * 0.9 + (fbm(x / 22, y / 22, s + 90) - 0.5) * 1.1 + (-0.32 + 0.44 * lw);
+    BM[pw] = Math.round(Math.max(0, Math.min(1, bw)) * 255);
+  }
+  else for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
     var bq = null, bd = 1e9, bi;
     for (bi = 0; bi < isles.length; bi++) { var dq = Math.hypot(x - isles[bi].x, (y - isles[bi].y) / 0.9) - isles[bi].r; if (dq < bd) { bd = dq; bq = isles[bi]; } }
     var base = bq && bq.biome ? 1 : 0, bv = base * 0.9 + (fbm(x / 22, y / 22, s + 90) - 0.5) * 1.1 + (base ? 0.12 : -0.32);
@@ -5854,7 +5919,7 @@ var GRASS_INK = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shi
    troll's cave in a wall, a rock shelter, a few veins of copper in the open cliffs. No sea cliffs, no mine, no sea cave: those
    are for a real mountain island. spec.mountain = 1 with these options. */
 var BIG_MOUNTAIN = { at: [-0.3, -0.5], r: 0.56, high: 3.5, shore: 6, rise: 9, sea: false, mine: false, seaCave: false, veins: 4, minPatch: 60 };
-return { TREE_SHAPES: TREE_SHAPES, setTreeShape: function (k) { if (TREE_SHAPES[k]) treeShape = TREE_SHAPES[k]; return treeShape; }, make: make, setImages: setImages, IMAGES: IMAGES, BIG_MOUNTAIN: BIG_MOUNTAIN, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, mountainOpts: null, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
+return { WATERS: WATERS, ANCHORS: ANCHORS, TREE_SHAPES: TREE_SHAPES, setTreeShape: function (k) { if (TREE_SHAPES[k]) treeShape = TREE_SHAPES[k]; return treeShape; }, make: make, setImages: setImages, IMAGES: IMAGES, BIG_MOUNTAIN: BIG_MOUNTAIN, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, mountainOpts: null, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
 })();
 if (typeof module !== 'undefined') module.exports = World;
 
@@ -8697,9 +8762,15 @@ function plan(env, opts) {
   }
   var maxLow = 0; isles.forEach(function (q) { if (q.biome) maxLow = Math.max(maxLow, q.r); });
   var fisherIsle = -1; (function () { var best = -1; for (var fi = 1; fi < isles.length; fi++) if (isles[fi].r <= 60 && (best < 0 || isles[fi].r < isles[best].r)) best = fi; fisherIsle = best; })();   // the fisherman lives alone on the smallest island
+  /* The sea as waters (2026-10-20, docs/build-plan-waters.md step 3): home water (ring 0) gets only peaceful places and exactly one
+     seat, the jarl's, on a medium island (never the big island, whose first village is Old Aslak's); a ring-1 water gets its own
+     mix (the south the town and church, by its biome). Without waters nothing changes. */
+  var seatIsle = -1; if (isles.some(function (q) { return q.ring != null; })) { var meds = []; for (var mi = 2; mi < isles.length; mi++) if (isles[mi].ring === 0 && mi !== fisherIsle && isles[mi].r >= 60 && isles[mi].r <= 140) meds.push(mi); if (meds.length) seatIsle = meds[Math.floor(R() * meds.length) % meds.length]; }
   for (i = 1; i < isles.length; i++) {
     var q = isles[i], wants = [], big = i === 1 || q.r >= 100 || (q.biome && q.r === maxLow);   // the biggest lowland island always has the town
     if (i === fisherIsle) wants = [['fisher', true]];
+    else if (q.ring === 0 && i === seatIsle) wants = [['seat', false], [R() < 0.5 ? 'trading' : 'fishing', true], ['small', false]];   // the jarl's seat (its name and his are the Lore Director's: LORE? proposed Tingvoll, Jarl Fridmund)
+    else if (q.ring === 0 && big) wants = [['village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];   // home's other big islands: a village, never a seat
     else if (q.biome && big) wants = [['town', false], [R() < 0.4 ? 'trading' : 'fishing', true], [R() < 0.6 ? 'church' : 'farmstead', false]];
     else if (q.biome && q.r >= 42) wants = [[R() < 0.5 ? 'church' : 'village', false], [R() < 0.6 ? 'fishing' : 'trading', true]];
     else if (big) wants = [[R() < 0.45 ? 'seat' : 'village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];
@@ -8711,7 +8782,7 @@ function plan(env, opts) {
       if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
       if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && R() < 0.14) arch = 'ruin';
       var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat' || arch === 'great') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
-      st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
+      st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.water = q.water != null ? q.water : null; st.ring = q.ring != null ? q.ring : null; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
       sites.push(st);
     });
@@ -13015,8 +13086,9 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // until they feel great, the further biomes later): the starter 120 tiles, the big island 400, about 85 tiles of water between
   // (50 s by raft, 27 s by boat), no lowland island; the view 390 units tall (zoom 0.65) so the hero is a tenth of the screen's height.
   // The canon: the hero is 1.8 m and 39 units tall, so a unit is 4.6 cm and a tile 1.5 m.
-  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN }, zoom = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12)
-  try { var gwS = JSON.parse(localStorage.getItem('game.world2')); if (gwS && gwS.count) { for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
+  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: true, maxTiles: 2e7 }, zoom = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12; the sea as waters round them since 2026-10-20: World.WATERS)
+  try { var gwS = JSON.parse(localStorage.getItem('game.world3')); if (gwS && gwS.count) {   /* (game.world2 is ignored since the sea became waters, 2026-10-20) */ for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
+  var CHART_PX = 1400;   /* the chart's width in pixels (700 until the sea became waters: a small island of 15 tiles was two pixels) */
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
   var GIVES = { tree: ['wood', 3], stone: ['stone', 2], bush: ['fiber', 1] };
   // what a felled tree, a broken rock and a cut bush give: a day's work should reach 40 wood, 20 stone and 15 fiber
@@ -13172,7 +13244,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; home = w.home;
     w.plant(); (function () { var gone2 = []; w.eachProp(function (o) { if (isleAt(o.x, o.y) !== 0) return; if (o.name === 'fireRing') gone2.push(o); else if (o.name === 'struckTree') o.name = 'birch'; }); gone2.forEach(function (o) { w.removeProp(o); }); })();   /* (no charcoal on the starter island: no old fire rings, no lightning-struck trees; Robin 2026-10-20) */ if (w.peaks) w.peaks(); w.camp([['wreckedBoat', 44, 6, 0]]); campTrees(); markOre(); w.sortBuckets(); buckets = w.buckets; if (w.dress) w.dress(); if (w.plantBog) w.plantBog();
     drops = []; bits = []; decals = []; gone = {}; book = {}; RS = freshRunes(); ring = null; heroRingSync(); cds = {}; for (var ek in equip) equip[ek] = null; quiver = { slots: [null, null, null], sel: 0 }; B = freshB(); roofA = {}; bDirty = true;
-    mini = w.chart(700);
+    mini = w.chart(CHART_PX);
     raft = null; leftBanner = 0; banner = null; hearth = null; hird = []; musterOpen = false; around(home.x, home.y, function (o) { if (o.name === 'stoneHearth') hearth = o; });
     villageClear(); weirPlace(); caveSetup(); hamletClear(); villagePaint(); hamletDress(); groundBase = groundCopy();   // the ground as the world paints it: the save keeps only what differs from this
     info = 'Island ' + spec.seed + ': ' + (w.isles[0].r * 2 / 100).toFixed(1) + ' km across, ' + w.stats.trees + ' trees and ' + w.stats.rocks + ' rocks.';
@@ -14450,6 +14522,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), H = handling(raft.kind);
     if (K2.ShiftLeft || K2.ShiftRight) { H.top *= 1.3; H.accel *= 1.3; }   // pulling harder
     Yard.sail(raft, { ix: ix, iy: iy }, dt, raftHull, H, Yard.rigged(raft.kind) ? wind : null);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail
+    if (!Yard.rigged(raft.kind) && w.homeWater) {                 /* the edge of home water (2026-10-20): past it the swell turns a raft or a rowing boat back toward home, gently, with no word and nothing lost (reward, not punishment); a rigged hull sails on */
+      var hw = w.homeWater, hx = hw.cx * T, hy = hw.cy * T, dh = Math.hypot(raft.x - hx, raft.y - hy) || 1, past = dh - (hw.r + w.WD.edge) * T;
+      if (past > 0) { var k3 = Math.min(1, past / (30 * T)), ux = (hx - raft.x) / dh, uy = (hy - raft.y) / dh, bl = Math.min(1, dt * (0.6 + 2.4 * k3)); raft.vx += (ux * 45 * (0.5 + k3) - raft.vx) * bl; raft.vy += (uy * 45 * (0.5 + k3) - raft.vy) * bl; raft.speed *= Math.max(0, 1 - dt * 1.5 * k3); if (past > 60 * T) { raft.x += ux * 30 * dt; raft.y += uy * 30 * dt; } }
+    }
   }
   function raftAfter() {
     if (raft && raft.aboard) { var P = hero(), st = raft.seat || 0; P.x = raft.x + Math.cos(raft.h) * st; P.y = raft.y + Math.sin(raft.h) * st; P.vx = P.vy = 0; P.sprinting = false; }   // on a boat you stand in the bow; on the karve at the stern by the steering oar
@@ -15399,7 +15475,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var hirdDay = 0;
   var mapOpen = false;
   function drawMap(c) {
-    var w0 = 372, h0 = 236, x0 = 14, y0 = 7, iw = mini.width, ih = mini.height, sc = Math.min((w0 - 16) / iw, (h0 - 26) / ih), mw = iw * sc, mh = ih * sc, mx = x0 + (w0 - mw) / 2, my = y0 + 18, step = Math.max(1, Math.ceil(GW / 700)), P = hero();
+    var w0 = 372, h0 = 236, x0 = 14, y0 = 7, iw = mini.width, ih = mini.height, sc = Math.min((w0 - 16) / iw, (h0 - 26) / ih), mw = iw * sc, mh = ih * sc, mx = x0 + (w0 - mw) / 2, my = y0 + 18, step = Math.max(1, Math.ceil(GW / CHART_PX)), P = hero();
     c.fillStyle = 'rgba(10,8,6,0.55)'; c.fillRect(0, 0, 400, 250);
     wood(c, x0, y0, w0, h0);
     c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(inCave ? CAVE_NAME[cur ? cur.kind : 'troll'][2] : 'Skargard', x0 + 10, y0 + 12);   /* the realm's name (the lore's world.realm, Robin 2026-10-16) */
@@ -17101,7 +17177,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function landSpot(kind, minFromHero, minFromHome, maxFromHome) {
     var P = hero();
     for (var tries = 0; tries < (maxFromHome ? 1500 : 300); tries++) {
-      var x = (3 + Math.random() * (GW - 6)) * T, y = (3 + Math.random() * (GH - 6)) * T;
+      var qI = placeIsle != null ? w.isles[placeIsle] : null, x = qI ? (qI.x + (Math.random() * 2 - 1) * qI.r * 1.3) * T : (3 + Math.random() * (GW - 6)) * T, y = qI ? (qI.y + (Math.random() * 2 - 1) * qI.r * 1.3) * T : (3 + Math.random() * (GH - 6)) * T;   /* (a spot on the island asked for is looked for round that island: the sea is far bigger than the islands since 2026-10-20) */
+      if (x < 3 * T || y < 3 * T || x > (GW - 3) * T || y > (GH - 3) * T) continue;
       if (maxFromHome && Math.hypot(x - home.x, y - home.y) > maxFromHome) continue;
       if (!groundOk(kind, x, y)) continue;
       if (Math.hypot(x - home.x, y - home.y) < minFromHome || Math.hypot(x - P.x, y - P.y) < minFromHero) continue;
@@ -17140,7 +17217,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     });
   }
   function villageAt(x, y) { for (var i = 0; i < villages.length; i++) { var v = villages[i]; if (x > (v.tx - 3) * T && x < (v.tx + v.w + 3) * T && y > (v.ty - 3) * T && y < (v.ty + v.h + 3) * T) return i; } return -1; }
-  function raidAlarm(vi, x, y) { if (vi < 0) return; raidStir(vi, x, y); Combat.noise(x, y, 520 * TRIAL.loud); }   // a door broken, a box smashed, a chest lifted: loud, and the town's men within 520 units hear it
+  function raidAlarm(vi, x, y) { if (vi < 0 || homeAtPeace(vi)) return; raidStir(vi, x, y); Combat.noise(x, y, 520 * TRIAL.loud); }   // a door broken, a box smashed, a chest lifted: loud, and the town's men within 520 units hear it
   /* Walking in with weapons away, and what a guarded town asks at its gate (2026-10-13, Robin: "Walking in secretly with
      weapons not drawn, then suddenly drawing weapons and start attacking. Towns with heavy guards should probably check if
      you have a weapon then. So that there exists a thing that you leave your weapons by the boat and try to scavenge or
@@ -17444,7 +17521,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // whose ground a spot is: a village's number, 99 the Destruction Editor's sampler, -1 nobody's (yours to build on)
   function placeAt(x, y) { if (RU.box && x > RU.box.x0 && x < RU.box.x1 && y > RU.box.y0 && y < RU.box.y1) return 99; return villageAt(x, y); }
   function villageHeld(vi) { if (RU.on) return RU.held; var ss = stones(), i; for (i = 0; i < ss.length; i++) if (villageAt(ss[i].x, ss[i].y) === vi) return true; return false; }   // a place is yours when a stone of yours stands in it
-  function theirs(x, y) { var pl = placeAt(x, y); return pl >= 0 && !(pl === 99 ? RU.held : villageHeld(pl)); }       // somebody else's: your tools and your fire work on it, your building does not
+  function homeAtPeace(pl) { return pl >= 0 && pl !== 99 && !seen.raidOpen && villages[pl] && villages[pl].ring === 0; }   /* home water's places are not raid places until raiding is opened (Robin, 2026-10-19: not before the second circle); nothing sets seen.raidOpen yet (the jarl's call comes later) */
+  function theirs(x, y) { var pl = placeAt(x, y); if (homeAtPeace(pl)) return false; return pl >= 0 && !(pl === 99 ? RU.held : villageHeld(pl)); }       // somebody else's: your tools and your fire work on it, your building does not
   function defended(vi) { var E = Combat.dbg().W.enemies, i; for (i = 0; i < E.length; i++) if (E[i].human && E[i].vi === vi && E[i].side !== 1 && !E[i].dead && !E[i].out && !E[i].fled && !E[i].down) return true; return false; }
   function edgeMidOf(L, x, y) { return L === 'H' ? { x: (x + 0.5) * T, y: y * T } : { x: x * T, y: (y + 0.5) * T }; }
   function edgeRooms(L, x, y) { var o = []; if (!roomInfo) return o; var a = roomInfo.at(L === 'H' ? x : x - 1, L === 'H' ? y - 1 : y), b = roomInfo.at(x, y); if (a >= 0) o.push(roomInfo.rooms[a]); if (b >= 0 && b !== a) o.push(roomInfo.rooms[b]); return o; }
@@ -17831,7 +17909,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(dc.x, dc.y * K, dc.r, dc.r * 0.7, 0, 0, 7); c.fill();
         c.fillStyle = '#b98a5a'; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.78, dc.r * 0.52, 0, 0, 7); c.fill();
         c.strokeStyle = 'rgba(90,58,38,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.ellipse(dc.x, dc.y * K - 1.5, dc.r * 0.45, dc.r * 0.3, 0, 0, 7); c.stroke(); }
-      if (!PERF.skip.waves) { w.drawWaves(c, cam, hw, hh, clock, spec.waves, spec.foam); w.drawFalls(c, cam, hw, hh, clock); }
+      if (!PERF.skip.waves) { w.drawWaves(c, cam, hw, hh, clock, spec.waves * (1 + 1.4 * (w.swellAt ? w.swellAt(cam.x, cam.y) : 0)), spec.foam * (1 + 0.6 * (w.swellAt ? w.swellAt(cam.x, cam.y) : 0)));   /* (the open sea past home's edge heaves: the swell that turns small boats, 2026-10-20) */ w.drawFalls(c, cam, hw, hh, clock); }
       if (!inCave && !PERF.skip.grass) w.drawGrass(c, cam, hw, hh, clock, grassLook);
       // shadows of what lies on the ground
       c.fillStyle = 'rgba(20,40,20,0.22)';
@@ -17936,7 +18014,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       // the chart: a window of the sea round you (about 110 tiles wide), sharp, with markers you can tell apart
       var mw = 48, mh = 32, mx = 400 - mw - 8, my = 6, VIEW = 110;
       var hpx = inCave && cur ? cur.mouth.x : P.x, hpy = inCave && cur ? cur.mouth.y : P.y;
-      var step = Math.max(1, Math.ceil(GW / 700)), cw = mini.width, ch = mini.height, sw = Math.min(cw, VIEW / step), sh = Math.min(ch, sw * mh / mw);
+      var step = Math.max(1, Math.ceil(GW / CHART_PX)), cw = mini.width, ch = mini.height, sw = Math.min(cw, VIEW / step), sh = Math.min(ch, sw * mh / mw);
       var sx0 = Math.max(0, Math.min(cw - sw, hpx / T / step - sw / 2)), sy0 = Math.max(0, Math.min(ch - sh, hpy / T / step - sh / 2)), zx = mw / sw, zy = mh / sh;
       function mp(wx, wy) { return { x: mx + (wx / T / step - sx0) * zx, y: my + (wy / T / step - sy0) * zy }; }
       if (inUse('snakeseye')) Combat.dbg().W.enemies.forEach(function (en) { if (en.dead || Math.hypot(en.x - P.x, en.y - P.y) > 300) return; var q = mp(en.x, en.y); if (q.x < mx || q.x > mx + mw || q.y < my || q.y > my + mh) return; c.fillStyle = '#ff5a4a'; c.beginPath(); c.arc(q.x, q.y, 1.1, 0, 7); c.fill(); });
@@ -18203,7 +18281,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  function layoutKey() { return spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m5' + (spec.mountainOpts ? 'b' : '') : '') + ':h2'; }   // a save only fits the same arrangement of islands (h2: the houses grew, 2026-10-13: every village and the steading are laid out anew)
+  function layoutKey() { return (spec.waters ? 'w' + JSON.stringify(spec.waters === true ? World.WATERS : spec.waters) + ':' : '') + spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m5' + (spec.mountainOpts ? 'b' : '') : '') + ':h2'; }   // a save only fits the same arrangement of islands (h2: the houses grew, 2026-10-13: every village and the steading are laid out anew)
   function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }   // the hero starts in his wrecked boat on the beach
   function start(fresh) {
     if (BT.on) { noSave = true; try { localStorage.removeItem(SAVE); } catch (e) {} }   /* the battle and destruction scenes save nothing and load nothing (2026-10-15: something saved during their very first load, before the scene switched saving off, and every later visit loaded it: the destruction scene then had no sampler and "To the sampler" threw) */

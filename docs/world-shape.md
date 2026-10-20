@@ -1,7 +1,9 @@
 # The shape of the world: raids, exploration, special islands, claims and the year
 
 **A proposal (2026-10-19); Robin finds the idea good and has answered the first questions (below).** Robin set out the directional challenges below; the problems list and the
-solutions are mine. Nothing here is decided or built. Where it touches decided things (`CLAUDE.md`: the compass, the
+solutions are mine. **Built so far (2026-10-20):** the sea as waters with its climate field, home water's peaceful places and
+its one seat, home not raidable, the edge that turns small boats (`docs/build-plan-waters.md` steps 1 to 3; CLAUDE.md says
+how they stand). The rest is not built. Where it touches decided things (`CLAUDE.md`: the compass, the
 chapters, the year, the hird, the raid) it keeps them and says how they fit.
 
 ## Robin's answers (2026-10-19)

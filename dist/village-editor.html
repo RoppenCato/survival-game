@@ -5370,9 +5370,15 @@ function plan(env, opts) {
   }
   var maxLow = 0; isles.forEach(function (q) { if (q.biome) maxLow = Math.max(maxLow, q.r); });
   var fisherIsle = -1; (function () { var best = -1; for (var fi = 1; fi < isles.length; fi++) if (isles[fi].r <= 60 && (best < 0 || isles[fi].r < isles[best].r)) best = fi; fisherIsle = best; })();   // the fisherman lives alone on the smallest island
+  /* The sea as waters (2026-10-20, docs/build-plan-waters.md step 3): home water (ring 0) gets only peaceful places and exactly one
+     seat, the jarl's, on a medium island (never the big island, whose first village is Old Aslak's); a ring-1 water gets its own
+     mix (the south the town and church, by its biome). Without waters nothing changes. */
+  var seatIsle = -1; if (isles.some(function (q) { return q.ring != null; })) { var meds = []; for (var mi = 2; mi < isles.length; mi++) if (isles[mi].ring === 0 && mi !== fisherIsle && isles[mi].r >= 60 && isles[mi].r <= 140) meds.push(mi); if (meds.length) seatIsle = meds[Math.floor(R() * meds.length) % meds.length]; }
   for (i = 1; i < isles.length; i++) {
     var q = isles[i], wants = [], big = i === 1 || q.r >= 100 || (q.biome && q.r === maxLow);   // the biggest lowland island always has the town
     if (i === fisherIsle) wants = [['fisher', true]];
+    else if (q.ring === 0 && i === seatIsle) wants = [['seat', false], [R() < 0.5 ? 'trading' : 'fishing', true], ['small', false]];   // the jarl's seat (its name and his are the Lore Director's: LORE? proposed Tingvoll, Jarl Fridmund)
+    else if (q.ring === 0 && big) wants = [['village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];   // home's other big islands: a village, never a seat
     else if (q.biome && big) wants = [['town', false], [R() < 0.4 ? 'trading' : 'fishing', true], [R() < 0.6 ? 'church' : 'farmstead', false]];
     else if (q.biome && q.r >= 42) wants = [[R() < 0.5 ? 'church' : 'village', false], [R() < 0.6 ? 'fishing' : 'trading', true]];
     else if (big) wants = [[R() < 0.45 ? 'seat' : 'village', false], [R() < 0.3 ? 'trading' : 'fishing', true], [R() < 0.5 ? 'small' : 'farmstead', false]];
@@ -5384,7 +5390,7 @@ function plan(env, opts) {
       if (!st) { st = find(q, wq[1] ? 'fishing' : 'small', wq[1]); arch = wq[1] ? 'fishing' : 'small'; } if (!st) return;
       if (arch !== 'seat' && arch !== 'trading' && arch !== 'town' && arch !== 'church' && arch !== 'fisher' && arch !== 'great' && arch !== 'bigtown' && R() < 0.14) arch = 'ruin';
       var dist = Math.hypot(st.cx - env.home[0], st.cy - env.home[1]) / maxD, wealth = Math.max(0.15, Math.min(0.95, 0.2 + dist * 0.5 + R() * 0.25)); if (arch === 'seat' || arch === 'great') wealth = Math.max(0.72, wealth); if (arch === 'trading') wealth = Math.max(0.5, wealth); if (q.biome) wealth = Math.min(0.95, wealth + 0.15);   // the settled south is richer
-      st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
+      st.arch = arch; st.wealth = wealth; st.isle = i; st.biome = q.biome ? 1 : 0; st.water = q.water != null ? q.water : null; st.ring = q.ring != null ? q.ring : null; st.seed = Math.floor(R() * 1e9); st.name = nameFor(R, arch, st.shore, used);
       st.jetty = jettyFor(st, env, R);
       sites.push(st);
     });

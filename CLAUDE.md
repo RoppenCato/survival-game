@@ -550,8 +550,19 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
 
 ## The world (`src/world.js`)
 
-- **The game's world** is two islands (`spec`: sizes [120, 400], gap 240, the big island east, `World.BIG_MOUNTAIN` on it);
-  `layoutKey()` names the arrangement. The Sea Editor lays out the same sea (`game.world2`). Islands are blobs from noise on a
+- **The game's world is the sea as waters** (`spec.waters`, 2026-10-20; `docs/build-plan-waters.md` steps 1 to 3 built,
+  Robin's "start working on 1-3"): home water (ring 0, radius 600 tiles) holds the starter island and the big island as they
+  were (sizes [120, 400], gap 240, the big island east, `World.BIG_MOUNTAIN` on it) and nine more islands round them; four
+  waters (ring 1, north, south, east, west; `World.WATERS`, mine) lie a crossing of about 350 tiles off, each four to six
+  islands with a medium one as the **slot** for a special island later; one grid of about 3000 by 3200 tiles (`maxTiles`
+  2e7), made in 2 s. `w.waters`, `w.homeWater`, `w.waterAt`; every island and water has its own seed. **The edge of home
+  water** (`w.swellAt`): past radius plus 60 tiles the swell turns a raft or a rowing boat back toward home, with no word and
+  nothing lost; a rigged hull sails on; the waves heave out there. **The climate** `w.climate(wx, wy)` gives warm and wet
+  from the angle and distance from home (`World.ANCHORS`: north cold and dryish, south warm and dry (the lowlands), east
+  warm and wet, west cool and wet); home is the middle and looks exactly as before; the biome field is read from it. The
+  chart is 1400 pixels wide (`CHART_PX`). Beasts live on the first two islands only (the others have none yet). The
+  Sea Editor lays out the same sea (`game.world3`; an old `game.world2` is ignored); `layoutKey()` names the arrangement
+  (the waters' numbers in it, so a save of the old sea is dropped with the toast). `tools/visual/waters.js` draws it. Islands are blobs from noise on a
   height field (`E`); the ground is painted per pixel from it (deep sea, shallows that can be waded, a white lip, wet then dry
   sand, grass), baked in pieces at 2 pixels a unit with the meadow; `w.dress()` paints earth, moss and gravel; the ground
   brush paints the same into `w.ground`. The lowland biome (warmer ground, oak, beech, ash, apple, chalk, marsh, field, bog
@@ -570,7 +581,12 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   fire pit (a longhouse or hall, houses with doors to the yard, outbuildings, a fence or a ring of stakes with gates, a
   winding road, nature kept, things against the walls, job spots, the people as households); archetypes in `ARCH`
   (farmstead to chieftain's seat, fishing hamlet, trading post, abandoned, the lowland town and church, and `great` and
-  `bigtown` for the trials); `Village.plan(env)` places them (none on the starter island). `tools/visual/villages.js`,
+  `bigtown` for the trials); `Village.plan(env)` places them (none on the starter island). **By water (2026-10-20):** home
+  water gets only peaceful places and exactly one seat, the jarl's, on a medium island (never the big island: Old Aslak's
+  village stays; the jarl and his seat are the Lore Director's, proposed Fridmund at Tingvoll, `LORE?`); the south water
+  the town and church; sites keep `water` and `ring`. **Home water cannot be raided** until `seen.raidOpen` (nothing sets
+  it yet: the jarl's call comes later): `homeAtPeace(vi)`: tools and fire do nothing to a ring-0 place and no raid alarm
+  sounds there; a drawn blade still makes it uneasy. `tools/visual/villages.js`,
   `bigplace.js`.
 
 ## Art (`art/`, `assets/sprites/`; `art/README.md`, `docs/moving-to-blender.md`)
