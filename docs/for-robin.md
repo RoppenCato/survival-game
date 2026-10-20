@@ -22,3 +22,14 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
    damage of a man's blow: the tapper now wins half against one man in leather (23 health left), the careful bot three in four
    against two axe-men, the skilled bot everything with 94 left, five against five a coin. To feel: the Combat Arena, one man
    with an axe, leather; a blow on you now takes about a fifth of your health. If it is too much, 16 is the next step down.
+2. **The settlements' men (raid step 1): how many a place has** is a first table of mine: a town 20, a seat 10, a trading post
+   4; villages, farms and churches have no soldiers, only householders who arm when raided. Step 4 makes it by wealth and ring
+   with a bots' table for you to set the targets on. They come when you are within 1200 units and go when you have been 2600
+   off for 40 s. Admin has "Go to the first sea's town" to see them.
+3. **Word spreads (raid step 2):** a raid makes every place within 3200 units wary: its men sharper (wits +2, up twice as fast)
+   and its gate man says so ("We heard what you did at X": a placeholder line, the Lore Director's to write). Mine; the reach
+   and the sharpening are first numbers.
+4. **The steading in the Art Director's pieces** (its villages plan, steps 1 to 3, 2026-10-20): the graves as mounds, the
+   wreckage lying in the hall's ash (charred beams, burnt heaps, the torn-off gate leaf), ash and soot painted, the new
+   palisade stakes and gate, thatch in courses with a turf ridge, a smoke hole in a hearth room's ridge. Start a new game and
+   walk to the steading; the Art Director has a board of every village too.

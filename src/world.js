@@ -73,7 +73,9 @@ function whiteSheet() { if (whiteT) return whiteT; var o = new Float32Array(WSN 
    image, its size in pixels, the pixel it stands on, and the game units a pixel. A world's sprite(name) hands the image back
    as a kit sprite does (cv, l, t, w, h); until it has loaded, a blank. */
 var IMAGES = {};
-function setImages(map) { for (var k in map) IMAGES[k] = map[k]; }
+var varN = {};
+function setImages(map) { for (var k in map) IMAGES[k] = map[k]; varN = {}; }
+function variantsOf(name) { if (varN[name] != null) return varN[name]; var n = 0; while (IMAGES[name + '_' + (n + 1)]) n++; varN[name] = n; return n; }   // how many name_1, name_2, ... pictures there are (the rocks six, the trees three, the graves two)
 function imgReady(im) { return !!im && (im.complete === undefined ? im.width > 0 : (im.complete && im.naturalWidth > 0)); }
 function make(kit, opts) {
   var o = {}, k; for (k in DEF) o[k] = DEF[k]; for (k in opts || {}) if (opts[k] != null) o[k] = opts[k];
@@ -665,7 +667,7 @@ function make(kit, opts) {
 
   /* baking */
   w.sprite = function (name, v) {
-    var im = IMAGES[name + '_' + (((v | 0) % 6) + 1)] || IMAGES[name + '_' + (((v | 0) % 3) + 1)] || IMAGES[name];   // a set piece in six or three variants (the rocks, the trees and plants, 2026-10-20: rock_1 to rock_6 by the prop's seed), else one picture, else the drawn prop baked
+    var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name];   // a set piece in however many variants it has (the rocks six, the trees three, the graves two; by the prop's seed), else one picture, else the drawn prop baked
     if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [], fixed: true };   /* (fixed: a set piece is drawn at its own size, never by the prop's planted scale) */ return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
     var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); var tb = treeBake(name); sprites[kk] = kit.bakeProp(name, 3 + v * 7, tb.sx !== 1 || tb.sy !== 1 ? tb : null); sprites[kk].bake = tb.sy; } return sprites[kk]; };
   /* The trees are baked bigger (2026-10-14, Robin: "trees are way too small, they should probably be three times the size"): a tree
@@ -685,7 +687,7 @@ function make(kit, opts) {
     var pw = CT * T, qx0 = Math.max(0, Math.floor(x0 / pw)), qx1 = Math.min(CW - 1, Math.floor(x1 / pw)), qy0 = Math.max(0, Math.floor(y0 / pw)), qy1 = Math.min(CH - 1, Math.floor(y1 / pw)), qx, qy;
     for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) stale[ck] = 1; }   // the old piece stays on screen until drawGround has baked the new one (2026-10-08: baking every touched piece at once made painting stutter)   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
   };
-  w.paintGround = function (x, y, r, kind) {              // kind 1 gravel, 2 earth, 3 moss, 0 back to grass; true if anything changed
+  w.paintGround = function (x, y, r, kind) {              // kind 1 gravel, 2 earth, 3 moss, 4 field, 5 chalk, 6 marsh, 7 ash, 8 soot, 0 back to grass; true if anything changed
     var changed = false, qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy;
     for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) {
       if (Math.hypot((qx + 0.5) * GQ - x, (qy + 0.5) * GQ - y) > r) continue; var kk = qx + ',' + qy;
@@ -708,20 +710,22 @@ function make(kit, opts) {
   }
   function paintGroundInto(c, cx, cy, W2, H2) {
     var gv = kit.mk(W2, H2), gc = gv.getContext('2d'), img = gc.createImageData(W2, H2), d = img.data, pp = 0, py, px;
-    var ox = Math.floor((cx * W2) / GQ) - 3, oy = Math.floor((cy * H2 / K) / GQ) - 3, nx = Math.ceil(W2 / GQ) + 7, ny = Math.ceil(H2 / K / GQ) + 7, G = new Uint8Array(nx * ny), gi, gj, wk = new Float32Array(8);
+    var ox = Math.floor((cx * W2) / GQ) - 3, oy = Math.floor((cy * H2 / K) / GQ) - 3, nx = Math.ceil(W2 / GQ) + 7, ny = Math.ceil(H2 / K / GQ) + 7, G = new Uint8Array(nx * ny), gi, gj, wk = new Float32Array(10);
     for (gj = 0; gj < ny; gj++) for (gi = 0; gi < nx; gi++) G[gj * nx + gi] = w.ground[(ox + gi) + ',' + (oy + gj)] || 0;   // the chunk's painted cells, once
     for (py = 0; py < H2; py++) for (px = 0; px < W2; px++, pp += 4) {
       var wx = cx * W2 + px, wys = cy * H2 + py, wy = wys / K, n1v = noise[((wys & 127) << 7) | (wx & 127)], n2v = noise[(((wys * 2) & 127) << 7) | ((wx * 2) & 127)];
       var fx = wx / GQ - 0.5, fy = wy / GQ - 0.5, ci = Math.floor(fx), cj = Math.floor(fy), u = fx - ci, v = fy - cj, li = ci - ox, lj = cj - oy, b0 = lj * nx + li;
-      wk[0] = wk[1] = wk[2] = wk[3] = wk[4] = wk[5] = wk[6] = 0; wk[G[b0]] += (1 - u) * (1 - v); wk[G[b0 + 1]] += u * (1 - v); wk[G[b0 + nx]] += (1 - u) * v; wk[G[b0 + nx + 1]] += u * v;   // the field of each kind, read between the cells
-      var fg = wk[1] + (n1v - 0.5) * 0.55, fe = wk[2] + (n1v - 0.5) * 0.55, fm = wk[3] + (n1v - 0.5) * 0.6, ff = wk[4] + (n1v - 0.5) * 0.4, fc = wk[5] + (n1v - 0.5) * 0.5, fw = wk[6] + (n1v - 0.5) * 0.6, r = 0, g = 0, b = 0, a = 0, f = 0;
+      wk[0] = wk[1] = wk[2] = wk[3] = wk[4] = wk[5] = wk[6] = wk[7] = wk[8] = 0; wk[G[b0]] += (1 - u) * (1 - v); wk[G[b0 + 1]] += u * (1 - v); wk[G[b0 + nx]] += (1 - u) * v; wk[G[b0 + nx + 1]] += u * v;   // the field of each kind, read between the cells
+      var fg = wk[1] + (n1v - 0.5) * 0.55, fe = wk[2] + (n1v - 0.5) * 0.55, fm = wk[3] + (n1v - 0.5) * 0.6, ff = wk[4] + (n1v - 0.5) * 0.4, fc = wk[5] + (n1v - 0.5) * 0.5, fw = wk[6] + (n1v - 0.5) * 0.6, fa = wk[7] + (n1v - 0.5) * 0.5, fs = wk[8] + (n1v - 0.5) * 0.4, r = 0, g = 0, b = 0, a = 0, f = 0, ak = 1;
       if (fg > 0.5) { f = fg; r = 150 + (n2v - 0.5) * 44; g = 138 + (n2v - 0.5) * 40; b = 118 + (n2v - 0.5) * 34; }
       else if (fe > 0.5) { f = fe; r = 126 + (n2v - 0.5) * 30; g = 98 + (n2v - 0.5) * 26; b = 62 + (n2v - 0.5) * 20; }
       else if (fm > 0.5) { f = fm; r = 92 + (n2v - 0.5) * 26; g = 128 + (n2v - 0.5) * 30; b = 70 + (n2v - 0.5) * 22; }   // moss: a deeper, bluer green
       else if (ff > 0.5) { f = ff; var fur = Math.sin(wy * 0.9) * 0.5 + 0.5; r = 118 + (n2v - 0.5) * 24 - fur * 26; g = 88 + (n2v - 0.5) * 20 - fur * 22; b = 56 + (n2v - 0.5) * 16 - fur * 14; }   // a ploughed field: dark furrows east to west
       else if (fc > 0.5) { f = fc; r = 214 + (n2v - 0.5) * 30; g = 210 + (n2v - 0.5) * 28; b = 196 + (n2v - 0.5) * 26; }   // chalk: pale, almost white
       else if (fw > 0.5) { f = fw; var gl = n2v > 0.82 ? 1 : 0; r = 70 + (n2v - 0.5) * 20 + gl * 60; g = 96 + (n2v - 0.5) * 24 + gl * 70; b = 64 + (n2v - 0.5) * 20 + gl * 90; }   // marsh: dark olive with glints of standing water
-      if (f > 0.5) { var edge = Math.min(1, (f - 0.5) / 0.28); r -= (1 - edge) * 26; g -= (1 - edge) * 24; b -= (1 - edge) * 18; a = Math.min(1, (f - 0.5) / 0.1) * 255; }
+      else if (fa > 0.5) { f = fa; var fl = n2v > 0.86 ? 1 : 0; r = 74 + (n2v - 0.5) * 20 + fl * 110; g = 68 + (n2v - 0.5) * 18 + fl * 110; b = 63 + (n2v - 0.5) * 16 + fl * 100; ak = 0.7; }   // ash (kind 7; the Art Director's paint, 2026-10-20): grey at 70% with pale flecks: a burnt hall's floor, a ring round a fire pit
+      else if (fs > 0.5) { f = fs; r = 43 + (n2v - 0.5) * 12; g = 37 + (n2v - 0.5) * 10; b = 34 + (n2v - 0.5) * 10; ak = 0.45; }   // soot (kind 8): a dark strip at the foot of a wall a fire licked, at 45%
+      if (f > 0.5) { var edge = Math.min(1, (f - 0.5) / 0.28); r -= (1 - edge) * 26; g -= (1 - edge) * 24; b -= (1 - edge) * 18; a = Math.min(1, (f - 0.5) / 0.1) * 255 * ak; }
       d[pp] = r; d[pp + 1] = g; d[pp + 2] = b; d[pp + 3] = a;
     }
     gc.putImageData(img, 0, 0); c.drawImage(gv, 0, 0, W2, H2);

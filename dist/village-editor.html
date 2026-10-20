@@ -4317,6 +4317,7 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Dock', tile: 'plank', water: true },
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
+var TURF_RIDGE = '#4e6a3a';   // the sod cap on a thatch ridge (the studio, 2026-10-20)
 var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 0 };   /* (lean: a trial on the Destruction Editor's board; on by default for an hour on 2026-10-14 and taken back, Robin: a wall at an angle might look odd; the build cursor marks the edge instead) */   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
@@ -4588,6 +4589,22 @@ function drawFlame(c, x, y, s, t, seed) {
 }
 // a fence along the top of tile (x, y): posts with woven wattle between; a gate: a bar frame that swings open as you come near;
 // a palisade: a row of pointed logs; a rail fence; a dry-stone wall
+// A fence as nature leaves it (2026-10-20, the villages plan step 2; Robin: the perfect rings "can look weird"): stakes of
+// uneven height that lean a little, one in ten mended with pale new wood, one in six with a rotted flat top, a rail lashed
+// on with withies, brush and nettles at the foot. The shape of the ring is the generator's; this is the look of every tile.
+var TUFT = ['#4f7a35', '#6a9a44', '#86b450'];
+function tuft(c, x, y, seed, k) {                                   // a tuft of grass or nettles at the foot of a post: three or four blades leaning out
+  var n = 3 + Math.floor(hs(seed, k) * 2), i; c.lineCap = 'round';
+  for (i = 0; i < n; i++) { var a = -1.1 - (i / (n - 1) - 0.5) * 1.6 + (hs(seed + i, k) - 0.5) * 0.4, L = 3 + hs(seed + 3, k + i) * 3.5; c.strokeStyle = TUFT[(i + k) % 3]; c.lineWidth = 1.1; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + Math.cos(a) * L * 0.5, y + Math.sin(a) * L * 0.7, x + Math.cos(a) * L, y + Math.sin(a) * L); c.stroke(); }
+}
+function stake(c, x, yb, w, h, m, seed, k, vertical) {              // one stake of a palisade: split timber, a lean, a pointed or a rotted top, its own tone; new wood when mended
+  var lean = (hs(seed, k + 40) - 0.5) * 2.6, hh = h - 3 + hs(seed, k) * 6, newer = hs(seed, k + 50) < 0.1, rot = !newer && hs(seed, k + 60) < 0.16,
+      col = newer ? (m.burnt ? m.face : FRESH.logs) : mix(m.face, hs(seed, k + 70) < 0.5 ? '#ffffff' : '#000000', 0.04 + hs(seed, k + 80) * 0.1), top = yb - hh;
+  var pts = rot ? [[x + 0.3, yb], [x + lean - 0.3, top + 2.5], [x + lean + w * 0.45, top + 3.2], [x + lean + w, top + 2], [x + w - 0.3, yb]] : [[x + 0.3, yb], [x + lean, top + 4], [x + lean + w * 0.5, top], [x + lean + w, top + 4], [x + w - 0.3, yb]];
+  ink(c, pts, col, { wob: 0.7, seed: seed + k, lw: 0.7, heavy: 1.3 });
+  if (!newer && hs(seed, k + 90) < 0.5) stroke(c, [[x + w * 0.5 + lean * 0.3, top + 8], [x + w * 0.5 + lean * 0.7, yb - 4]], INK.faint, 0.6);   // the split's grain
+  if (rot) stroke(c, [[x + lean + 0.5, top + 3], [x + lean + w - 0.5, top + 2.6]], '#2a2320', 1.1);                                                 // the rotted top, dark
+}
 function drawFenceH(c, x, y, e, open, C) {
   var m = e.burnt || e.scorch ? wallMat(e) : (WALLS[e.m] || WALLS[2]), x0 = x * T, yb = y * TS, i, seed = x * 31 + y * 7;
   if (e.breach) {                         // it has given: stumps of its posts, and the rest on the ground
@@ -4598,8 +4615,12 @@ function drawFenceH(c, x, y, e, open, C) {
     return;
   }
   if (e.t === 'palisade') {
-    for (i = 0; i < 4; i++) { var px = x0 + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4, col = mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08); ink(c, [[px + 0.3, yb], [px, yb - ph + 4], [px + 4, yb - ph], [px + 8, yb - ph + 4], [px + 7.7, yb]], col, { wob: 0.7, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[px + 2.5, yb - 3], [px + 2.2, yb - ph + 6]], INK.faint, 0.6); stroke(c, [[px + 5.5, yb - 2], [px + 5.8, yb - ph + 7]], INK.faint, 0.5); }
-    ink(c, rect(x0, yb - 11, T, 2.4), m.dark, { wob: 0.4, seed: seed + 9, flat: true, lw: 0.6, heavy: 1 }); ink(c, rect(x0, yb - 22, T, 2.4), m.dark, { wob: 0.4, seed: seed + 10, flat: true, lw: 0.6, heavy: 1 });
+    var gapAt = hs(seed, 99) < 0.06 ? 1 + Math.floor(hs(seed, 98) * 2) : -1;                                            // now and then a stake is gone: the rail shows through (the tile still stops you)
+    ink(c, rect(x0, yb - 20.5, T, 2.6), m.dark, { wob: 0.5, seed: seed + 9, flat: true, lw: 0.6, heavy: 1 });                   // the rail, behind the stakes
+    for (i = 0; i < 4; i++) { if (i === gapAt) continue; stake(c, x0 + i * 8, yb, 8, PALISADE_H, m, seed, i); }
+    for (i = 0; i < 4; i++) { if (i === gapAt) continue; stroke(c, [[x0 + i * 8 + 1, yb - 22.5], [x0 + i * 8 + 7, yb - 18]], '#3a2a1c', 0.9); }   // the withy that lashes each stake to the rail
+    stroke(c, [[x0, yb - 0.4], [x0 + T, yb + 0.2]], INK.soft, 0.8);                                                              // the earth at the foot
+    if (hs(seed, 97) < 0.55) tuft(c, x0 + 3 + hs(seed, 96) * (T - 6), yb + 0.5, seed, 1); if (hs(seed, 95) < 0.3) tuft(c, x0 + 3 + hs(seed, 94) * (T - 6), yb + 1, seed, 2);
     return;
   }
   if (e.t === 'townwall') {               // the town's wall: cut stone a storey high with a coping of flat slabs and a shadow at its foot
@@ -4610,9 +4631,11 @@ function drawFenceH(c, x, y, e, open, C) {
     return;
   }
   var h = FENCE_H;
-  if (e.t === 'rail') {                   // a split-rail fence: two rails between posts, the rails a little bent
-    post(c, x0 + 1.5, yb, 3, h + 3, m, seed); post(c, x0 + T - 1.5, yb, 3, h + 3, m, seed + 1);
-    [yb - h + 1, yb - 5.5].forEach(function (ry, ri) { ink(c, [[x0, ry], [x0 + T / 2, ry - 0.5 + ri * 0.8], [x0 + T, ry], [x0 + T, ry + 2.6], [x0 + T / 2, ry + 2.2 + ri * 0.8], [x0, ry + 2.6]], m.face, { wob: 0, seed: seed + ri, lw: 0.65, heavy: 1.2 }); if (hs(seed, ri) < 0.6) knot(c, x0 + 8 + hs(seed, ri + 4) * 16, ry + 1.3, 0.8, m.dark); });
+  if (e.t === 'rail') {                   // a split-rail fence: two rails between posts that lean a little, the rails bent by their own weight, one gone now and then
+    var l1 = (hs(seed, 11) - 0.5) * 1.6, l2 = (hs(seed, 12) - 0.5) * 1.6, gone = hs(seed, 13) < 0.1 ? Math.floor(hs(seed, 14) * 2) : -1;
+    ink(c, [[x0, yb], [x0 + l1 - 0.2, yb - h - 3], [x0 + l1 + 3.2, yb - h - 3.6], [x0 + 3, yb]], m.dark, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 }); ink(c, [[x0 + T - 3, yb], [x0 + T - 3 + l2 - 0.2, yb - h - 3], [x0 + T + l2 + 0.2, yb - h - 3.6], [x0 + T, yb]], m.dark, { wob: 0.5, seed: seed + 1, lw: 0.7, heavy: 1.3 });
+    [yb - h + 1, yb - 5.5].forEach(function (ry, ri) { if (ri === gone) return; var sag = 0.8 + hs(seed, ri + 20) * 1.2; ink(c, [[x0, ry], [x0 + T / 2, ry + sag], [x0 + T, ry], [x0 + T, ry + 2.6], [x0 + T / 2, ry + 2.6 + sag], [x0, ry + 2.6]], mix(m.face, hs(seed, ri + 30) < 0.5 ? '#ffffff' : '#000000', 0.06), { wob: 0.3, seed: seed + ri, lw: 0.65, heavy: 1.2 }); if (hs(seed, ri) < 0.6) knot(c, x0 + 6 + hs(seed, ri + 2) * (T - 12), ry + 1.3, 0.9); });
+    if (hs(seed, 15) < 0.5) tuft(c, x0 + 4 + hs(seed, 16) * (T - 8), yb + 0.5, seed, 3);
     return;
   }
   if (e.t === 'drystone') {               // a low wall of stacked stones with a row of capstones set on edge
@@ -4621,15 +4644,21 @@ function drawFenceH(c, x, y, e, open, C) {
     c.restore(); stroke(c, [[x0, yb - 0.3], [x0 + T, yb - 0.3]], INK.line, 1.2); stroke(c, [[x0, yb - 11.5], [x0, yb - 0.3]], INK.line, 0.6);
     return;
   }
-  if (e.t === 'gate') {
-    post(c, x0 + 1.5, yb, 3, h + 3, m, seed); post(c, x0 + T - 1.5, yb, 3, h + 3, m, seed + 1);
-    if (open) { ink(c, rect(x0 + 3, yb - h - 1, 3, h), m.top, { wob: 0.4, seed: seed + 2, lw: 0.6, heavy: 1 }); return; }
-    ink(c, rect(x0 + 3, yb - h, T - 6, 2.4), m.top, { wob: 0.4, seed: seed + 3, lw: 0.6, heavy: 1 }); ink(c, rect(x0 + 3, yb - 4, T - 6, 2.4), m.top, { wob: 0.4, seed: seed + 4, lw: 0.6, heavy: 1 });
-    ink(c, [[x0 + 3.5, yb - 2], [x0 + T - 3.5, yb - h + 0.5], [x0 + T - 3.5, yb - h + 2.8], [x0 + 3.5, yb + 0.3]], m.face, { wob: 0.3, seed: seed + 5, flat: true, lw: 0.55, heavy: 0.9 });
+  if (e.t === 'gate') {                   // a yard gate between two heavy posts under a lintel: a leaf of upright planks with a brace, barred when shut; open, it stands edge on at the left post
+    var gh = h + 10, pw = 5;
+    ink(c, [[x0, yb], [x0 + 0.2, yb - gh], [x0 + pw, yb - gh - 0.6], [x0 + pw, yb]], m.dark, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.4 }); ink(c, [[x0 + T - pw, yb], [x0 + T - pw, yb - gh - 0.6], [x0 + T - 0.2, yb - gh], [x0 + T, yb]], m.dark, { wob: 0.5, seed: seed + 1, lw: 0.7, heavy: 1.4 });
+    ink(c, rect(x0 - 1.5, yb - gh - 3, T + 3, 3.2), m.top, { wob: 0.4, seed: seed + 2, lw: 0.7, heavy: 1.3 });                       // the lintel
+    if (open) { ink(c, rect(x0 + pw, yb - h - 2, 3.2, h + 2), m.top, { wob: 0.4, seed: seed + 3, lw: 0.6, heavy: 1.1 }); return; }
+    var lx = x0 + pw + 0.5, lw = T - pw * 2 - 1, ly = yb - h - 2, lh = h + 1;
+    ink(c, rect(lx, ly, lw, lh), m.face, { wob: 0.4, seed: seed + 4, lw: 0.6, heavy: 1.1 }); face(c, { face: m.face, dark: m.dark, tex: 'planks' }, lx, ly, lw, lh, seed + 4, true);
+    ink(c, [[lx + 1, ly + lh - 2.4], [lx + lw - 1, ly + 1.2], [lx + lw - 1, ly + 3.6], [lx + 1, ly + lh]], m.top, { wob: 0.3, seed: seed + 5, flat: true, lw: 0.55, heavy: 0.9 });   // the brace
+    ink(c, rect(x0 + 1, ly + lh * 0.45, T - 2, 2.8), m.dark, { wob: 0.3, seed: seed + 6, flat: true, lw: 0.6, heavy: 1.1 });        // the bar across, resting in the posts
     return;
   }
-  ink(c, rect(x0, yb - h + 2, T, h - 3), m.face, { wob: 0.6, seed: seed, lw: 0.7, heavy: 1.3 }); face(c, { face: m.face, dark: m.dark, tex: 'wattle' }, x0, yb - h + 2, T, h - 3, seed);
-  post(c, x0 + 1.5, yb, 3, h + 2, m, seed); post(c, x0 + T / 2, yb, 3, h + 2, m, seed + 1); post(c, x0 + T - 1.5, yb, 3, h + 2, m, seed + 2);
+  var wt = h - 3 + (hs(seed, 5) - 0.5) * 2;                                                                                     // the wattle: its top ragged where the withies end, a post leaning, a tuft at its foot
+  ink(c, [[x0, yb], [x0, yb - wt + 2], [x0 + T * 0.3, yb - wt + 2.6 - hs(seed, 6) * 1.4], [x0 + T * 0.6, yb - wt + 1.4], [x0 + T, yb - wt + 2 + hs(seed, 7) * 1.2], [x0 + T, yb]], m.face, { wob: 0.6, seed: seed, lw: 0.7, heavy: 1.3 }); face(c, { face: m.face, dark: m.dark, tex: 'wattle' }, x0, yb - wt + 2, T, wt - 3, seed);
+  post(c, x0 + 1.5 + (hs(seed, 8) - 0.5) * 1.2, yb, 3, h + 2, m, seed); post(c, x0 + T / 2, yb, 3, h + 2 + hs(seed, 9) * 2, m, seed + 1); post(c, x0 + T - 1.5, yb, 3, h + 2, m, seed + 2);
+  if (hs(seed, 10) < 0.5) tuft(c, x0 + 4 + hs(seed, 17) * (T - 8), yb + 0.5, seed, 4);
 }
 function drawFenceV(c, x, y, e, open, more, C) {
   var m = e.burnt || e.scorch ? wallMat(e) : (WALLS[e.m] || WALLS[2]), xl = x * T, yt = y * TS, i, seed = x * 17 + y * 29;
@@ -4640,7 +4669,9 @@ function drawFenceV(c, x, y, e, open, more, C) {
     return;
   }
   if (e.t === 'palisade') {
-    for (i = 0; i < 3; i++) { var py = yt + i * 8, ph = PALISADE_H - 2 + hs(seed, i) * 4; ink(c, [[xl - 3, py + 8], [xl - 3, py + 8 - ph + 3], [xl, py + 8 - ph], [xl + 3, py + 8 - ph + 3], [xl + 3, py + 8]], mix(m.face, i % 2 ? '#ffffff' : '#000000', 0.08), { wob: 0.6, seed: seed + i, lw: 0.75, heavy: 1.5 }); stroke(c, [[xl - 1, py + 6], [xl - 1.2, py + 8 - ph + 6]], INK.faint, 0.55); }
+    for (i = 0; i < 3; i++) { stake(c, xl - 3, yt + i * 8 + 8, 6, PALISADE_H, m, seed, i, true); }
+    stroke(c, [[xl - 1, yt + 2], [xl + 1.2, yt + TS - 1]], '#3a2a1c', 0.9);                                                        // the rail's edge, seen end on along the run
+    if (hs(seed, 97) < 0.4) tuft(c, xl + 3.5, yt + 4 + hs(seed, 96) * (TS - 8), seed, 1);
     return;
   }
   if (e.t === 'townwall') { var am = WALLS[6]; cap(c, am, xl - 3.5, yt - TOWNWALL_H, 7, TS, seed, false); if (!more) { var d2 = ink(c, rect(xl - 3.5, yt + TS - TOWNWALL_H, 7, TOWNWALL_H), am.face, { wob: 0.4, seed: seed + 1, noLine: true, flat: true }); face(c, am, xl - 3.5, yt + TS - TOWNWALL_H, 7, TOWNWALL_H, seed + 1, true); path(c, d2); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, d2, 1.6); } return; }
@@ -4761,6 +4792,23 @@ function drawStairs(c, x, y, C) {
   }
 }
 // A stone chimney rising from x, yBase (screen units) to h above it, with smoke drifting from its top (t is a clock).
+// A smoke hole (the studio, 2026-10-20): a Viking house has no chimney; the hearth's smoke leaves by a louvre in the ridge,
+// a small plank hood on four short posts with the dark under it, and the smoke drifts from it. In place of drawChimney for a
+// room with a hearth; the fireplace, a built thing of its own, keeps its chimney. x, yBase: the ridge's spot; a: alpha; t: the clock.
+function ridgeMid(room, C) {                     // where a room's ridge is at its middle, as drawRoof lays it (the smoke hole's place, 2026-10-20): the first roof rect's
+  C = C || CFG; var rc = roofRects(room.tiles)[0]; if (!rc) return null;
+  var ov = C.overhang + 1.5, up = C.wallH + C.thick * K + 1, top = rc.y0 * TS - up - ov * K, bot = (rc.y1 + 1) * TS - up + ov * K, left = rc.x0 * T - ov, right = (rc.x1 + 1) * T + ov, D = bot - top, Wd = right - left;
+  var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT), rh = ns ? Math.min(34, Wd * 0.46) : Math.min(26, D * 0.42);
+  return { x: (left + right) / 2, y: (top + bot) / 2 - rh };
+}
+function drawSmokeHole(c, x, yBase, a, t) {
+  var w = 10, h = 4, i, seed = Math.round(x); c.save(); c.globalAlpha = a;
+  c.fillStyle = '#1e1714'; c.beginPath(); c.ellipse(x, yBase, w * 0.5, 1.6, 0, 0, 7); c.fill();                                   // the dark hole in the ridge
+  for (i = 0; i < 2; i++) ink(c, rect(x - w / 2 + 1 + i * (w - 3.4), yBase - h - 3, 1.4, h + 3), '#4a3626', { wob: 0.3, seed: seed + i, lw: 0.5, heavy: 0.9 });   // the posts
+  ink(c, [[x - w / 2 - 1.5, yBase - h - 2], [x + w / 2 + 1.5, yBase - h - 2.4], [x + w / 2 + 0.5, yBase - h - 4.4], [x - w / 2 - 0.5, yBase - h - 4]], '#5a4030', { wob: 0.5, seed: seed + 3, lw: 0.7, heavy: 1.3 });   // the plank hood
+  for (i = 0; i < 5; i++) { var u = ((t * 0.25 + i * 0.2) % 1), px = x + Math.sin(t * 0.8 + i * 1.7) * 2.5 + u * 7, py = yBase - h - 6 - u * 22, r = 1.8 + u * 4; c.fillStyle = 'rgba(226,222,214,' + ((1 - u) * 0.32).toFixed(3) + ')'; c.beginPath(); c.arc(px, py, r, 0, 7); c.fill(); }
+  c.restore();
+}
 function drawChimney(c, x, yBase, h, a, t) {
   var w = 9, i, sm = WALLS[3], seed = Math.round(x); c.save(); c.globalAlpha = a;
   var d = ink(c, rect(x - w / 2, yBase - h, w, h), sm.face, { wob: 0.6, seed: seed, noLine: true, flat: true }); face(c, sm, x - w / 2, yBase - h, w, h, seed);
@@ -4817,7 +4865,7 @@ function drawRoof(c, room, a, C, dy) {
       var dx = x1 - x0, dy2 = y1 - y0, len = Math.hypot(dx, dy2) || 1, nx = -dy2 / len, ny = dx / len, k;   // (nx, ny): outward, below the line
       if (ny < 0) { nx = -nx; ny = -ny; }
       if (kind === 1) { for (k = 1; k < len; k += 2.1) { var u = k / len, px = x0 + dx * u, py = y0 + dy2 * u, ln = 4 + hs(px, py) * 5, dark = hs(px + 1, py) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(px - nx * 3, py - ny * 3); c.lineTo(px + nx * ln + (hs(px, py + 3) - 0.5) * 1.5, py + ny * ln); c.stroke(); } c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 + nx * 1.5, y0 + ny * 1.5); c.lineTo(x1 + nx * 1.5, y1 + ny * 1.5); c.stroke(); }
-      else if (kind === 0) { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.6, y1 + ny * 2.6], [x0 + nx * 2.6, y0 + ny * 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 2; k < len; k += 3) { var u2 = k / len, qx = x0 + dx * u2, qy = y0 + dy2 * u2; if (hs(qx, qy + 4) > 0.55) continue; c.strokeStyle = hs(qx, qy + 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(qx - nx, qy - ny); c.lineTo(qx + nx * (3 + hs(qx, qy + 7) * 2.5) + (hs(qx, qy + 6) - 0.5) * 2, qy + ny * (3 + hs(qx, qy + 7) * 2.5)); c.stroke(); } }
+      else if (kind === 0) { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.6, y1 + ny * 2.6], [x0 + nx * 2.6, y0 + ny * 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); stroke(c, [[x0 + nx * 1.2, y0 + ny * 1.2], [x1 + nx * 1.2, y1 + ny * 1.2]], '#d9cdb0', 1.0, 0.8); /* the birch-bark board that holds the sod at the eave */ for (k = 2; k < len; k += 3) { var u2 = k / len, qx = x0 + dx * u2, qy = y0 + dy2 * u2; if (hs(qx, qy + 4) > 0.55) continue; c.strokeStyle = hs(qx, qy + 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(qx - nx, qy - ny); c.lineTo(qx + nx * (3 + hs(qx, qy + 7) * 2.5) + (hs(qx, qy + 6) - 0.5) * 2, qy + ny * (3 + hs(qx, qy + 7) * 2.5)); c.stroke(); } }
       else { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.2, y1 + ny * 2.2], [x0 + nx * 2.2, y0 + ny * 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 4; k < len; k += (kind === 3 ? 6 : 8)) { var u3 = k / len; stroke(c, [[x0 + dx * u3, y0 + dy2 * u3], [x0 + dx * u3 + nx * 2, y0 + dy2 * u3 + ny * 2]], INK.soft, 0.6); } }
     }
     // a facet of the roof: fill, the material's rows following it, grain
@@ -4825,7 +4873,8 @@ function drawRoof(c, room, a, C, dy) {
       var d = ink(c, pts, mix(r.col, tone > 0 ? '#fff4d0' : '#1a1410', Math.abs(tone)), { wob: 0, flat: true, noLine: true });
       c.save(); path(c, d); c.clip();
       var bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9; d.forEach(function (p) { bx0 = Math.min(bx0, p[0]); by0 = Math.min(by0, p[1]); bx1 = Math.max(bx1, p[0]); by1 = Math.max(by1, p[1]); });
-      if (kind === 1) {                                      // straw in rows along the eave: level on the slopes, down the hips
+      if (kind === 1) {                                      // straw in rows along the eave: level on the slopes, down the hips; every other course a shade darker, so the roof reads as laid thatch and not a wash (the studio, 2026-10-20)
+        c.globalAlpha = a * 0.16; c.fillStyle = dk; if (rows === 'h') { for (j = by0 + 3; j < by1; j += 10) c.fillRect(bx0, j, bx1 - bx0, 5); } else { for (i = bx0 + 2; i < bx1; i += 9) c.fillRect(i, by0, 4.5, by1 - by0); }
         c.strokeStyle = lineCol; c.globalAlpha = a * 0.55; c.lineWidth = 1;
         if (rows === 'h') { for (j = by0 + 3; j < by1; j += 5) { c.beginPath(); c.moveTo(bx0, j); for (i = bx0; i < bx1; i += 4) c.quadraticCurveTo(i + 2, j + 1.2 + hs(i, j) * 2.2, i + 4, j); c.stroke(); } }
         else { for (i = bx0 + 2; i < bx1; i += 4.5) { c.beginPath(); c.moveTo(i, by0); for (j = by0; j < by1; j += 4) c.quadraticCurveTo(i + 1.2 + hs(i, j) * 2, j + 2, i, j + 4); c.stroke(); } }
@@ -4875,7 +4924,8 @@ function drawRoof(c, room, a, C, dy) {
       stroke(c, [[cx, top - rh], [cx, bot - rh]], INK.soft, 0.9);
       var sil = [[left, top], [cx, top - rh], [right, top], [right, bot], [cx, bot - rh], [left, bot]];
       path(c, sil); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, sil, 2.4);
-      ink(c, [[cx - 2.2, top - rh - 1], [cx + 2.2, top - rh - 1], [cx + 2, bot - rh + 1], [cx - 2, bot - rh + 1]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
+      if (kind === 1) ink(c, [[cx - 3.4, top - rh - 1], [cx + 3.4, top - rh - 1], [cx + 3.2, bot - rh + 1], [cx - 3.2, bot - rh + 1]], TURF_RIDGE, { wob: 0.8, seed: seed, lw: 0.7, heavy: 1.2 });   // a thatch ridge is capped with turf, held by the crossed boards
+      else ink(c, [[cx - 2.2, top - rh - 1], [cx + 2.2, top - rh - 1], [cx + 2, bot - rh + 1], [cx - 2, bot - rh + 1]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
       if (kind !== 0) { ridgeBoards(cx, top - rh + 2, 1); ridgeBoards(cx, bot - rh - 1, -1); }
     } else {
       // a hipped roof with the ridge east to west: the far slope lit, the near slope in shadow, the hips between, the ridge raised high
@@ -4888,7 +4938,8 @@ function drawRoof(c, room, a, C, dy) {
       stroke(c, [[left, top], [left + hip, ridgeY]], INK.soft, 0.9); stroke(c, [[left, bot], [left + hip, ridgeY]], INK.line, 1.1);
       stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
       path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
-      ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
+      if (kind === 1) ink(c, [[left + hip - 1, ridgeY - 3.2], [right - hip + 1, ridgeY - 3.6], [right - hip + 1, ridgeY + 3], [left + hip - 1, ridgeY + 3.4]], TURF_RIDGE, { wob: 0.8, seed: seed, lw: 0.7, heavy: 1.2 });   // the turf cap of a thatch ridge
+      else ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
       if (kind !== 0) [left + hip + 4, right - hip - 4].forEach(function (cx2, ci) { [[cx2 - 4, ridgeY + 3, cx2 + 4, ridgeY - 9], [cx2 + 4, ridgeY + 3, cx2 - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
     }
   });
@@ -4916,7 +4967,7 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
+return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;
 

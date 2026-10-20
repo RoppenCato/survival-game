@@ -339,9 +339,21 @@ bush until it regrows), **and the rocks** (`assets/props/rocks`: rock, boulder a
 the prop's seed; the cracks and the sweet spot's cue are drawn over them), **and the camp things** (`assets/props/camp`:
 the drying rack, woodpile, chopping block, log seat, cart, well, trough and the two tents in undyed wool, their mouths
 south), **and the furniture** (`assets/props/furniture`: bed, chest (and `chest_open` while its board is open), chair, table,
-bench, crate, barrel; the rug, loom, stool, shelf and cupboard come with the steading). The build folds any
-`assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`); `w.sprite` looks for `name_1` to `name_6`, then
-`name_1` to `name_3`, then `name`, then the drawn prop. The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
+bench, crate, barrel; the rug, loom, stool, shelf and cupboard come with the steading), **and the villages plan's drops**
+(the Art Director's `out/villages`, 2026-10-20): **the steading's things** (`assets/props/steading`: the graves as turf mounds
+with Thorgunna's standing stone, `spriteName` maps `graveStone` to them; the trail stones; the scarecrow, shield rack, dragon
+post, flower bed, haystack, net, weir and well; and the raid's wreckage laid at a fresh start as **ground litter**: decals of
+kind `litter` drawn under everything, `charredBeam` in the hall's ash and across its door, `burntHeap` in the hall and by the
+hut, `brokenDoor` by the gate), **the fences** (`assets/props/fences`: a ring's stakes `stake_1..6`, `stake_new` for a mended
+run, `stake_stump` for one hacked down (`spriteName`), `railPost` and the wattle `hurdle` pieces for the polygon rings to
+come; the palisade, rail, wattle and gate drawing of the Build edges is the studio's in `src/build.js`), **and the faces**
+(`assets/props/faces`: porch, bell tower, apse, gable cross, lantern, sign, awning, woodshed, the laid `foodTable`; thatch in
+courses with a turf ridge and the turf roof's bark board in `drawRoof`; **a room with a hearth or a fire pit indoors has a
+smoke hole in its ridge** (`Build.drawSmokeHole` at `Build.ridgeMid`), the fireplace keeps its chimney). **Two more ground
+kinds, ash (7) and soot (8)** (the studio's paints): the steading's `villagePaint` lays ash over the hall's floor thinning out
+of its south side and soot at the foot of the hut's wall and under the plank house's north wall. The build folds any
+`assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`); `w.sprite` looks for `name_1` to `name_N` for
+however many variants a piece has (`variantsOf`), then `name`, then the drawn prop. The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
 props at their old size (Admin's **Trees** cycles their bake; `World.TREE_SHAPES`); rocks come in six variations of tone and build.
 
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
@@ -538,7 +550,10 @@ three bots: tapper, careful, skilled); `tools/visual/battleplay.js` and `raidpla
 through `townMen`, `DEFENCE` men by archetype, a town 20, a seat 10, a trading post 4, mine until step 4) **when the hero comes
 within 1200 units of its bounds**, and loses them when he has been 2600 off for 40 s and no raid is on there; their names are
 seeded, a man killed stays dead by his number (`seen.menDead[vi]`, saved). Home water's places have none (at peace); the Battle
-and Destruction scenes make their own. `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
+and Destruction scenes make their own. **The settlement remembers (step 2):** its pieces are in `B` and saved (a broken door,
+a taken chest, a burnt wall survive a reload); `seen.raids[vi]` counts its raids and `seen.lastRaid[vi]` the day; its folk speak
+of it after a load too (`raidedLines`); **word spreads** (`wordSpreads`, mine): every place within `WORD_REACH` 3200 units is
+wary from then (`seen.wary[vj]`): its men come with wits +2 and rise twice as fast, and its gate man says so (`LORE?`). `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
 way-finding is in every real village. Robin has played none of it.
 
 - **Sides:** every fighter has `e.side` (0 against the hero, 1 with him); the hero's blows pass his friends; beasts know only

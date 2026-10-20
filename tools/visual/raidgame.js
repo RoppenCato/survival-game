@@ -23,5 +23,31 @@
     out.errs = D().errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
     return out;
   }
-  window.R = { step1: step1, town: town, men: men, sim: sim };
+  // Step 2: the settlement remembers. A raid (the alarm), a broken church door, the church's silver taken, a villager and a man
+  // killed; saved. After a reload (R.step2b, in the page reloaded without the driver): the door still broken, the chest gone, the
+  // dead still dead, the raid counted, the places near wary, the folk's lines changed.
+  function churchDoor(v) { var B = D().B, l = v.V.lots.filter(function (q) { return q.id === 'church'; })[0]; if (!l) return null; var k = l.door === 's' ? [l.dx, l.y + l.h] : l.door === 'n' ? [l.dx, l.y] : null; if (!k) return null; return { key: k[0] + ',' + k[1], ed: B.H[k[0] + ',' + k[1]], lot: l }; }
+  function step2() {
+    var t = town(), out = {}; if (!t) return { fault: 'no town outside home water' }; var vi = t.i, v = t.v, B = D().B;
+    D().toVillage(vi); sim(3.5); var c = D().toVillage(vi);
+    D().raid().alarm(vi, c.x, c.y); sim(1); var g = D().garrison(); out.raids = g.raids[vi]; out.wary = Object.keys(g.wary).map(function (k) { return [+k, g.wary[k].of]; });
+    var dr = churchDoor(v); out.door0 = dr ? { locked: dr.ed && dr.ed.locked, broken: dr.ed && dr.ed.broken } : 'no church door'; if (dr && dr.ed) { dr.ed.broken = 1; delete dr.ed.locked; D().dirty(); }
+    var chest = B.items.filter(function (it) { return it.heavy && it.heavy.silver && Math.abs(it.x / 32 - (dr ? dr.lot.x : -999)) < 12; })[0]; out.silver = chest ? chest.heavy.silver : null; if (chest) B.items.splice(B.items.indexOf(chest), 1);
+    var fk = D().folk().filter(function (f) { return f.vi === vi && !f.dead && !f.child; }), f0 = fk[0], ix = D().folk().filter(function (f) { return f.vi === vi; }).indexOf(f0); out.folk = [f0 && f0.name, ix];
+    if (f0) { f0.dead = true; f0.hidden = true; var s = D().seen; if (!s.dead) s.dead = {}; if (!s.dead[vi]) s.dead[vi] = []; s.dead[vi].push(ix); if (!s.slain) s.slain = {}; if (!s.slain[vi]) s.slain[vi] = []; s.slain[vi].push(f0.name); }
+    var m = men(vi).filter(function (e) { return !e.dead; }), victim = m[5]; out.man = [victim.gi, victim.name]; victim.dead = true; victim.deadT = 0; victim.deadFor = 90; victim.hp = 0; sim(3.5);
+    out.deadMen = JSON.stringify(D().garrison().dead); sim(40); out.raidOver = !D().raid().raid; D().saveNow(); out.errs = D().errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+    return out;
+  }
+  function step2b(expect) {                // after the reload: expect = step2's result
+    var t = town(), out = {}; if (!t) return { fault: 'no town' }; var vi = t.i, v = t.v, B = D().B, dr = churchDoor(v);
+    out.door = dr && dr.ed ? { locked: dr.ed.locked, broken: dr.ed.broken } : 'no church door';
+    out.silverLeft = B.items.filter(function (it) { return it.heavy && it.heavy.silver && Math.abs(it.x / 32 - (dr ? dr.lot.x : -999)) < 12; }).length;
+    var fk = D().folk().filter(function (f) { return f.vi === vi; }); out.folkDead = fk.filter(function (f) { return f.dead; }).map(function (f) { return f.name; });
+    out.men = men(vi).length; out.deadMen = JSON.stringify(D().garrison().dead); var g = D().garrison(); out.raids = g.raids[vi]; out.lastRaid = g.lastRaid[vi]; out.wary = Object.keys(g.wary).length;
+    out.lines = fk.filter(function (f) { return !f.dead; }).slice(0, 2).map(function (f) { return f.lines && f.lines[0]; });
+    out.fault = (out.door && out.door.broken !== 1) || out.silverLeft !== 0 || !out.folkDead.length || (expect && out.men !== 18) || !out.raids ? '!!' : '';
+    return out;
+  }
+  window.R = { step1: step1, step2: step2, step2b: step2b, town: town, men: men, sim: sim };
 })();
