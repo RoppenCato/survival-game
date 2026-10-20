@@ -88,6 +88,14 @@ def worn_icons():
         if fn.endswith('.png'): out[fn[:-4]] = '../assets/sprites/worn/' + fn + '?v=' + hashlib.md5(open(os.path.join(d, fn), 'rb').read()).hexdigest()[:8]
     return json.dumps(out)
 SRC['__WORN__'] = worn_icons()
+def hud_art():
+    """the panels' art (the Art Director's, 2026-10-20: out/hud/assets copied whole into assets/hud): <name>.png by name"""
+    d = os.path.join(ROOT, 'assets', 'hud'); out = {}
+    if not os.path.isdir(d): return 'null'
+    for fn in sorted(os.listdir(d)):
+        if fn.endswith('.png'): out[fn[:-4]] = '../assets/hud/' + fn + '?v=' + hashlib.md5(open(os.path.join(d, fn), 'rb').read()).hexdigest()[:8]
+    return json.dumps(out)
+SRC['__HUD__'] = hud_art()
 def prop_images():
     """the Blender set pieces (tools/props.js: assets/props/<name>.png and props.json): the peaks, the cave mouth"""
     jp = os.path.join(ROOT, 'assets', 'props', 'props.json')

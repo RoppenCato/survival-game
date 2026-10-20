@@ -3015,7 +3015,7 @@ __COMBAT__
     var drag = pick && pick.drag && pick.i === i, n = s.n; if (drag && !(pick.half && s.kind !== 'item' && s.n > 1)) return; if (drag) n = s.n - Math.ceil(s.n / 2);
     if (s.kind === 'item') { c.save(); c.translate(r.x + r.w / 2, r.y + r.h / 2); itemIcon(c, s.item, r.w - 2.5, r.w / 2 - 1); c.restore(); }
     else { c.save(); c.beginPath(); c.rect(r.x + 1, r.y + 1, r.w - 2, r.h - 2); c.clip(); drawDropIcon(c, s.kind, r.x + r.w / 2, r.y + r.h / 2 + 0.5, r.w / 15); c.restore(); }   /* (inside the slot, 2026-10-16) */
-    if (n > 1) { c.font = 'bold 6px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'right'; c.strokeText(String(n), r.x + r.w - 1.5, r.y + r.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(n), r.x + r.w - 1.5, r.y + r.h - 1.5); }
+    if (n > 1) { c.font = hf('bold', r.w * 13 / 42); c.lineWidth = 1; c.lineJoin = 'round'; c.strokeStyle = HC.dark; c.textAlign = 'right'; c.strokeText(String(n), r.x + r.w - 0.7, r.y + r.h - 0.7); c.fillStyle = HC.cream; c.fillText(String(n), r.x + r.w - 0.7, r.y + r.h - 0.7); c.textAlign = 'left'; }
   }
   /* The toolbar dragged with Shift held (Robin, 2026-10-20): onto another of its slots it swaps (the thing in hand stays in
      hand), off the bar it goes into the bag's first free slot. The bar's slots as the engine draws them (src/combat.js drawHotbar). */
@@ -3265,16 +3265,16 @@ __COMBAT__
   }
   function openInfo() {
     menuStation = menuTab === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (menuTab === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : (menuTab === 'furnace' ? { kind: 'furnace', it: furnaceAt(hero()) } : null)); if (menuStation && !menuStation.it) menuStation = null;
-    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 176, h: 164, list: infoList(), scroll: 0, maxScroll: 0 };
-    menu.x = 400 - menu.w - 6; menu.y = 250 - menu.h - 6;   /* lower right, under the chart, clear of the hero; the list on the left and the chosen thing beside it */
-    var tabs = menuTabs(); if (tabs.length > 1) { var tx = menu.x + 6; tabs.forEach(function (t) { var w = Math.round(t.name.length * 3.4 + 11); menu.tabs.push({ id: t.id, name: t.name, x: tx, y: menu.y + 5, w: w, h: 13 }); tx += w + 2; }); }
-    var rowH = 11; menu.ly = menu.y + (menu.tabs.length ? 21 : 7); menu.lw = 64;
-    var listH = menu.y + menu.h - 6 - menu.ly - (menuStation ? 41 : 0); menu.rowH = rowH; menu.listH = listH;
+    menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 175, h: 500 / 3, list: infoList(), scroll: 0, maxScroll: 0 };
+    menu.x = 400 - menu.w - 5; menu.y = 250 - menu.h - 20 / 3;   /* 525 by 500 canvas pixels, bottom right (the studio's spec, 2026-10-20) */   /* lower right, under the chart, clear of the hero; the list on the left and the chosen thing beside it */
+    var tabs = menuTabs(); if (tabs.length > 1) { var ty = 24; tabs.forEach(function (t) { var hp = Math.max(60, Math.round(t.name.length * 7 + 20)); menu.tabs.push({ id: t.id, name: t.name, x: menu.x - 20 / 3, y: menu.y + ty / 3, w: 20 / 3, h: hp / 3, py: ty, hp: hp }); ty += hp + 4; }); }   // down the board's left edge
+    var rowH = 10; menu.ly = menu.y + 18; menu.lw = 170 / 3; menu.lx = menu.x + 6;
+    var listH = (428 - (menuStation ? 104 : 0)) / 3; menu.rowH = rowH; menu.listH = listH;
     // the list as it is shown: under a small heading a category when there is more than one (Tools, Weapons, Armour, Supplies); it was one long scroll
     var show = [], cats = CATS2.filter(function (ct) { return menu.list.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
     if (cats.length > 1) cats.forEach(function (ct) { show.push({ head: ct[1] }); menu.list.forEach(function (e) { if (e.r && e.r.cat === ct[0]) show.push({ e: e }); }); });
     menu.list.forEach(function (e) { if (!show.some(function (q) { return q.e === e; })) show.push({ e: e }); });
-    show.forEach(function (q) { q.y = yy0; q.h = q.head ? 9 : rowH; yy0 += q.h; }); menu.show = show; menu.listTotal = yy0; menu.maxScroll = Math.max(0, yy0 - listH);
+    show.forEach(function (q) { q.y = yy0; q.h = q.head ? 8 : rowH; yy0 += q.h; }); menu.show = show; menu.listTotal = yy0; menu.maxScroll = Math.max(0, yy0 - listH);
     var ids = show.filter(function (q) { return q.e; }).map(function (q) { return q.e.id; }); if (ids.indexOf(menuSel[menuTab]) < 0) menuSel[menuTab] = ids[0] || null;
   }
   function infoSel() { if (!menu || !menu.info) return null; for (var i = 0; i < menu.list.length; i++) if (menu.list[i].id === menuSel[menuTab]) return menu.list[i]; return null; }
@@ -3344,66 +3344,73 @@ __COMBAT__
   function infoCancelHit() { var b = menu && menu.info && menu.cbtn; return !!b && mouseS && mouseS.x >= b.x && mouseS.x <= b.x + b.w && mouseS.y >= b.y && mouseS.y <= b.y + b.h; }
   function infoMake(e) { if (!e || !infoCan(e)) return; markMade(e.id); if (e.dish) cook(e.dish); else if (e.r.at === 'furnace') smelt(e.r); else craft(e.r); }
   function wrapText(c, text, maxW) { var words = text.split(' '), lines = [], cur = ''; words.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }); if (cur) lines.push(cur); return lines; }
+  function infoSub(e) {                     // the card's line under the name (interface words, mine)
+    if (e.dish) return 'a dish, cooked at the fire';
+    var o = e.r.out;
+    if (o.item) { var K = Items.KINDS[o.item[0]]; if (K.gear) return { head: 'worn on the head', chest: 'worn on the body', legs: 'worn on the legs', feet: 'worn on the feet', cloak: 'worn on the back', shield: 'carried on the arm' }[K.gear] || 'worn'; if (K.tool && K.melee) return 'a tool, and a weapon at need'; if (K.tool) return 'a tool'; if (K.ranged) return 'a weapon for a distance'; return 'a weapon'; }
+    if (o.raft) return 'a vessel'; if (o.arrows) return 'for the bow'; if (o.stack && o.stack[0] === 'torch') return 'a light for the dark'; if (e.r.at === 'furnace') return 'smelted in the furnace';
+    return 'a supply';
+  }
+  function bigSc(e) { return e.dish || !e.r.out.item ? 2.2 : (Items.KINDS[e.r.out.item[0]].gear ? 2.1 : 2.0); }   // the thing's picture on the card, about 116 canvas pixels
   function drawInfo(c) {
-    var P = hero(), th = menuTabHit(), i, bench = benchNear(P), roofed = bench && benchRoofed(bench);
-    wood(c, menu.x, menu.y, menu.w, menu.h);
-    menu.tabs.forEach(function (t) { tabUi(c, t, t.id === menuTab, th === t); });
-    // the list
-    var lx = menu.x + 6, ly = menu.ly, lw = menu.lw, rowH = menu.rowH, sel = infoSel(); menu.rows = [];
-    c.fillStyle = '#33241a'; c.fillRect(lx, ly, lw, menu.listH); uiGrain(c, lx, ly, lw, menu.listH, 0.14); c.strokeStyle = UI_INK; c.lineWidth = 0.9; c.strokeRect(lx + 0.5, ly + 0.5, lw - 1, menu.listH - 1);
-    c.save(); c.beginPath(); c.rect(lx, ly, lw, menu.listH); c.clip();
-    menu.show.forEach(function (q) {
-      var e = q.e, y = ly + q.y - menu.scroll;
-      if (q.head) { c.font = 'bold 4.4px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.55)'; c.fillText(q.head.toUpperCase(), lx + 4, y + 6.8); c.fillStyle = 'rgba(246,226,184,0.16)'; c.fillRect(lx + 4 + c.measureText(q.head.toUpperCase()).width + 3, y + 5, lw - 12 - c.measureText(q.head.toUpperCase()).width, 0.6); return; }
-      var on = e === sel, hov = mouseS && mouseS.x >= lx && mouseS.x <= lx + lw && mouseS.y >= y && mouseS.y < y + rowH && mouseS.y >= ly && mouseS.y <= ly + menu.listH;
-      menu.rows.push({ e: e, x: lx, y: y, w: lw, h: rowH });
-      if (on) { c.fillStyle = '#a8702c'; c.fillRect(lx, y, lw, rowH); c.strokeStyle = UI_INK; c.lineWidth = 0.8; c.strokeRect(lx + 0.5, y + 0.5, lw - 1, rowH - 1); } else if (hov) { c.fillStyle = 'rgba(255,230,180,0.12)'; c.fillRect(lx, y, lw, rowH); }
-      var can = infoCan(e); c.globalAlpha = can ? 1 : 0.55; infoIcon(c, e, lx + 7, y + rowH / 2, 0.44); c.globalAlpha = 1;
-      c.font = (on ? 'bold ' : '600 ') + '5.2px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = on ? '#fff' : (can ? '#f6e2b8' : 'rgba(246,226,184,0.55)'); c.fillText(infoName(e), lx + 15, y + rowH / 2 + 2);
-      var pr = infoProgress(e); if (pr) { c.fillStyle = '#ffd34d'; c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.fillText('x' + pr.n, lx + lw - 3, y + rowH / 2 + 2); }
-      else if (isNew(e.id)) { c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(lx + lw - 5, y + 4.5, 1.6, 0, 7); c.fill(); }   // never made: a mark, where a toast used to say "something new"
+    var P = hero(), th = menuTabHit(), bench = benchNear(P), roofed = bench && benchRoofed(bench), sel = infoSel(), X = menu.x, Y = menu.y, LX = 18, LY = 54, wellH = menu.listH * 3;
+    menu.rows = []; menu.takes = []; menu.btn = null; menu.cbtn = null;
+    var inR = function (r) { return !!r && !!mouseS && mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h; };
+    hPx(c, X, Y, function () {
+      hBoard(c, 525, 500);
+      menu.tabs.forEach(function (t) { hTab(c, -20, t.py, t.hp, t.name, t.id === menuTab, th === t); });
+      hTitle(c, menuTab === 'hearth' ? 'Cooking' : menuTab === 'furnace' ? 'Smelting' : 'Crafting', 22, 42, 20);   /* (the heading by the board: mine) */
+      // the list, in its dark well
+      c.fillStyle = HC.well; c.fillRect(LX, LY, 170, 428);
+      c.save(); c.beginPath(); c.rect(LX, LY, 170, wellH); c.clip();
+      menu.show.forEach(function (q) {
+        var e = q.e, top = LY + (q.y - menu.scroll) * 3; if (top > LY + wellH || top + q.h * 3 < LY) return;
+        if (q.head) { hText(c, q.head.toUpperCase(), LX + 10, top + 17, hf('bold', 12), HC.ochre); return; }
+        var on = e === sel, row = { e: e, x: X + LX / 3, y: Y + top / 3, w: 170 / 3, h: 10 }, hovR = inR(row) && mouseS.y >= menu.ly && mouseS.y <= menu.ly + menu.listH; menu.rows.push(row);
+        if (on) { if (!nine(c, 'list_bar', LX + 2, top + 2, 166, 26, 6)) { c.fillStyle = 'rgba(217,168,69,0.30)'; c.fillRect(LX + 2, top + 2, 166, 26); } } else if (hovR) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(LX + 2, top + 2, 166, 26); }
+        var can = infoCan(e); c.globalAlpha = can ? 1 : 0.5; hUnits(c, LX + 20, top + 15, function () { infoIcon(c, e, 0, 0, 0.6); });
+        hText(c, infoName(e), LX + 38, top + 21, hf('', 16), HC.cream); c.globalAlpha = 1;
+        var pr = infoProgress(e); if (pr) hText(c, 'x' + pr.n, LX + 162, top + 21, hf('bold', 14), HC.ochre, 'right'); else if (isNew(e.id)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(LX + 160, top + 9, 3.5, 0, 7); c.fill(); }   // never made: a mark
+      });
+      c.restore();
+      if (menu.maxScroll) { var kh = Math.max(24, wellH * wellH / (menu.listTotal * 3)), ky = LY + (wellH - kh) * menu.scroll / menu.maxScroll; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(LX + 164, LY, 5, wellH); c.fillStyle = 'rgba(240,227,196,0.55)'; c.fillRect(LX + 164, ky, 5, kh); }
+      if (!menu.list.length) hText(c, 'Nothing known yet', LX + 12, LY + 30, hf('italic', 14), 'rgba(240,227,196,0.7)');
+      if (menuStation) {                    // what waits at the station, at the foot of the well: take it with a click
+        var oy = LY + wellH + 4, outs = menuStation.it.out || [], si;
+        c.strokeStyle = 'rgba(255,225,170,0.18)'; c.lineWidth = 1; c.beginPath(); c.moveTo(LX + 8, oy); c.lineTo(LX + 162, oy); c.stroke();
+        hText(c, outs.length ? 'Ready: click to take' : 'Nothing ready', LX + 10, oy + 20, hf('italic', 13), 'rgba(240,227,196,0.75)');
+        for (si = 0; si < 8; si++) { var bx = LX + 9 + (si % 4) * 39, by = oy + 28 + Math.floor(si / 4) * 37, o = outs[si], tr = { x: X + bx / 3, y: Y + by / 3, w: 34 / 3, h: 34 / 3, i: si };
+          hSocket(c, bx, by, 34, false, o && inR(tr)); if (!o) continue; menu.takes.push(tr);
+          hUnits(c, bx + 17, by + 17, function () { if (o.item) itemIcon(c, o.item, 9.3, 5.4); else drawDropIcon(c, o.kind, 0, 0, 0.75); });
+          if (o.n > 1) { c.font = hf('bold', 12); c.lineWidth = 3; c.lineJoin = 'round'; c.strokeStyle = HC.dark; c.textAlign = 'right'; c.strokeText(o.n, bx + 32, by + 32); c.fillStyle = HC.cream; c.fillText(o.n, bx + 32, by + 32); c.textAlign = 'left'; } }
+      }
+      if (!sel) return;
+      // the chosen thing, on its vellum card
+      var cx0 = 202, cy0 = 54, cw = 306;
+      hVellum(c, cx0, cy0, cw, 362, 'card_frame');
+      if (!nine(c, 'plate_frame', cx0 + 16, cy0 + 14, cw - 32, 130, 12)) { c.strokeStyle = HC.ink; c.lineWidth = 1.2; c.strokeRect(cx0 + 16, cy0 + 14, cw - 32, 130); }
+      hUnits(c, cx0 + cw / 2, cy0 + 79, function () { infoIcon(c, sel, 0, 0, bigSc(sel)); });
+      if (menuTab === 'bench' && !roofed) hText(c, 'It needs a roof over it', cx0 + cw / 2, cy0 + 136, hf('italic', 13), HC.rubric, 'center');
+      var nm = infoName(sel), ns = 25; c.font = hf('bold', ns); while (ns > 15 && c.measureText(nm).width + ns * 0.6 > cw - 32) { ns -= 1; c.font = hf('bold', ns); }
+      hRubric(c, nm, cx0 + 16, cy0 + 178, ns, HC.ink);
+      var pr2 = infoProgress(sel);
+      hText(c, infoSub(sel), cx0 + 16, cy0 + 199, hf('italic', 13), HC.sepia);
+      if (pr2 && pr2.n > 1) hText(c, 'x' + pr2.n + ' on the way', cx0 + cw - 16, cy0 + 199, hf('italic', 13), '#8a5a1a', 'right');
+      var sts = infoStats(sel), nr = Math.ceil(sts.length / 3), top = cy0 + 316 - nr * 40;
+      c.font = hf('', 14.5); var lines = wrapText(c, infoText(sel), cw - 32), maxL = Math.max(0, Math.floor((top - 6 - (cy0 + 226)) / 20) + 1);
+      if (lines.length > maxL) { lines = lines.slice(0, maxL); if (maxL) lines[maxL - 1] = lines[maxL - 1].replace(/[,;:\s]*\S*$/, '') + ' \u2026'; }
+      lines.forEach(function (ln, k) { hText(c, ln, cx0 + 16, cy0 + 226 + k * 20, hf('', 14.5), HC.ink); });
+      sts.forEach(function (st, k) { var x = cx0 + 16 + (k % 3) * 96, y = top + Math.floor(k / 3) * 40; hText(c, st[0], x, y + 14, hf('italic', 13), HC.sepia); c.font = hf('bold', 17); var vs = c.measureText(st[1]).width > 90 ? 14 : 17; hText(c, st[1], x, y + 34, hf('bold', vs), HC.ink);
+        if (st[2]) { c.font = hf('bold', vs); var vw = c.measureText(st[1]).width; hText(c, (st[2] > 0 ? '+' : '\u2212') + Math.abs(st[2]) + (st[3] || ''), x + vw + 5, y + 34, hf('bold', 13), st[2] > 0 ? '#3e7a2e' : '#a8402e'); } });
+      // what it takes: each material's picture, what it needs of what you have, red where you have too few
+      hText(c, 'Needs', cx0 + 16, cy0 + 348, hf('bold', 13), HC.rubric);
+      var needs = infoNeeds(sel), ks = Object.keys(needs), step = Math.min(116, (cw - 64 - 8) / Math.max(1, ks.length)), small = step < 100, is = small ? 26 : 34;
+      ks.forEach(function (k, q) { var x = cx0 + 64 + q * step, have = inv[k] || 0, ok = ADMIN.free || have >= needs[k]; hUnits(c, x + is / 2, cy0 + 339, function () { drawDropIcon(c, k, 0, 0, is / 42); }); hText(c, needs[k] + ' of ' + have, x + is + 2, cy0 + 345, hf('bold', small ? 13 : 15), ok ? HC.ink : HC.rubric); });
+      // the Craft button under the card, filling as the first one is made; Cancel beside it while something is on the way
+      var can = infoCan(sel), bw = pr2 ? 196 : cw; menu.btn = { x: X + cx0 / 3, y: Y + 428 / 3, w: bw / 3, h: 52 / 3 };
+      hButton(c, cx0, 428, bw, 52, sel.dish ? 'Cook' : 'Craft', can, inR(menu.btn), pr2 ? pr2.f : 0, 24);
+      if (pr2) { menu.cbtn = { x: X + (cx0 + 206) / 3, y: Y + 428 / 3, w: 100 / 3, h: 52 / 3 }; hButton(c, cx0 + 206, 428, 100, 52, 'Cancel 1', true, inR(menu.cbtn), 0, 18); }
     });
-    c.restore();
-    if (menu.maxScroll) { var sh = menu.listH, kh = Math.max(8, sh * sh / menu.listTotal), ky = ly + (sh - kh) * menu.scroll / menu.maxScroll; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(lx + lw - 2.5, ly, 2, sh); c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillRect(lx + lw - 2.5, ky, 2, kh); }
-    if (!menu.list.length) { c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.textAlign = 'left'; c.fillText('Nothing known yet', lx + 6, ly + 12); }
-    menu.takes = [];
-    if (menuStation) {                      // what waits at the station: take it with a click
-      var oy = ly + menu.listH + 2, outs = menuStation.it.out || [];
-      c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText(outs.length ? 'Ready: click to take' : 'Nothing ready', lx + 1, oy + 5);
-      var sw = Math.floor((lw - 2) / 4), si; c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(lx, oy + 6.5, sw * 4 + 2, sw * 2 + 3);
-      for (si = 0; si < 8; si++) { var bx = lx + 1 + (si % 4) * sw, by = oy + 8 + Math.floor(si / 4) * sw, o = outs[si], hov = o && mouseS && mouseS.x >= bx && mouseS.x < bx + sw && mouseS.y >= by && mouseS.y < by + sw;
-        slotUi(c, bx, by, sw - 1, sw, hov, false);
-        if (!o) continue; menu.takes.push({ x: bx, y: by, w: sw, h: sw, i: si });
-        c.save(); c.translate(bx + (sw - 1) / 2, by + sw / 2); if (o.item) itemIcon(c, o.item, sw - 3, sw / 2 - 1); else drawDropIcon(c, o.kind, 0, 0, 0.85); c.restore();
-        if (o.n > 1) { c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 1.6; c.strokeStyle = '#2e1a10'; c.strokeText(o.n, bx + sw - 2, by + sw - 1.5); c.fillStyle = '#fff'; c.fillText(o.n, bx + sw - 2, by + sw - 1.5); } }
-    }
-    // the chosen thing
-    var rx = lx + lw + 9, rw = menu.x + menu.w - 9 - rx, ry = ly + 3; menu.btn = null;
-    if (!sel) return;
-    parchment(c, rx - 4, ry - 3, rw + 8, (menu.y + menu.h - 52) - (ry - 3));                            // the chosen thing on a page beside the list (what it takes lies under the page)
-    c.fillStyle = 'rgba(35,26,22,0.1)'; c.beginPath(); c.arc(rx + 10, ry + 10, 9.5, 0, 7); c.fill(); c.strokeStyle = 'rgba(35,26,22,0.45)'; c.lineWidth = 0.8; c.stroke(); infoIcon(c, sel, rx + 10, ry + 10, 0.85);
-    c.font = 'bold 7px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = '#2e1e14'; c.fillText(infoName(sel), rx + 24, ry + 9);
-    var pr2 = infoProgress(sel); if (pr2 && pr2.n > 1) { c.font = 'bold 5.2px system-ui, sans-serif'; c.fillStyle = '#8a5a1a'; c.fillText('x' + pr2.n + ' on the way', rx + 24, ry + 17); }
-    c.strokeStyle = 'rgba(35,26,22,0.35)'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(rx, ry + 22); c.lineTo(rx + rw, ry + 22.4); c.stroke();
-    c.font = '600 5.2px system-ui, sans-serif'; c.fillStyle = '#3a2a1e'; var lines = wrapText(c, infoText(sel), rw), yy = ry + 30;
-    var sts = infoStats(sel), maxL = Math.max(1, Math.floor(((menu.y + menu.h - 54) - yy - 3 - Math.max(0, sts.length - 1) * 6.8) / 6.8));   // as many lines of the tale as the page holds over the numbers
-    if (lines.length > maxL) { lines = lines.slice(0, maxL); lines[maxL - 1] = lines[maxL - 1].replace(/[,;:\s]*\S*$/, '') + ' …'; }
-    lines.forEach(function (ln) { c.fillText(ln, rx, yy); yy += 6.8; });
-    yy += 3; sts.forEach(function (st) { c.fillStyle = '#5a4634'; c.fillText(st[0] + ':', rx, yy); var kw = c.measureText(st[0] + ': ').width; c.fillStyle = '#8a5a1a'; c.fillText(st[1], rx + kw, yy); if (st[2]) { c.fillStyle = st[2] > 0 ? '#3e7a2e' : '#a8402e'; c.fillText((st[2] > 0 ? '+' : '\u2212') + Math.abs(st[2]) + (st[3] || ''), rx + kw + c.measureText(st[1] + '   ').width, yy); } yy += 7.5; });
-    // what it takes
-    var needs = infoNeeds(sel), bx = rx, by = menu.y + menu.h - 46, nk = Object.keys(needs).length, bw = Math.min(22, Math.floor((rw + 3) / Math.max(1, nk)) - 3); for (var k in needs) {
-      var have = inv[k] || 0, ok = have >= needs[k]; slotUi(c, bx, by, bw, 22, false, false); if (!ok) { c.strokeStyle = 'rgba(200,80,60,0.8)'; c.lineWidth = 1; c.strokeRect(bx + 0.5, by + 0.5, bw - 1, 21); }
-      drawDropIcon(c, k, bx + bw / 2, by + 8, 0.85); c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = ok ? '#f6e2b8' : '#ff9a8a'; c.fillText(have + '/' + needs[k], bx + bw / 2, by + 19.5);
-      bx += bw + 3;
-    }
-    // the Craft button, filling as the first one is made
-    var btn = { x: rx, y: menu.y + menu.h - 21, w: pr2 ? rw - 50 : rw, h: 16 }; menu.btn = btn; menu.cbtn = null; var can = infoCan(sel), hovB = mouseS && mouseS.x >= btn.x && mouseS.x <= btn.x + btn.w && mouseS.y >= btn.y && mouseS.y <= btn.y + btn.h;
-    buttonUi(c, btn.x, btn.y, btn.w, btn.h, sel.dish ? 'Cook' : 'Craft', can, hovB, pr2 ? pr2.f : 0);
-    if (pr2) {                              // something of this is on the way: a Cancel box gives the last one's materials back
-      var cb = { x: rx + rw - 46, y: btn.y, w: 46, h: 16 }, hovC = mouseS && mouseS.x >= cb.x && mouseS.x <= cb.x + cb.w && mouseS.y >= cb.y && mouseS.y <= cb.y + cb.h; menu.cbtn = cb;
-      buttonUi(c, cb.x, cb.y, cb.w, cb.h, 'Cancel 1', true, hovC, 0);
-    }
-    if (menuTab === 'bench' && !roofed) { c.font = '600 5.2px system-ui, sans-serif'; c.fillStyle = '#ff9a8a'; c.textAlign = 'left'; c.fillText('It needs a roof over it', rx, by - 3); }   // beside what it takes (it lay across those boxes)
   }
   function infoRowHit() { if (!menu || !menu.info || !mouseS) return null; for (var i = 0; i < menu.rows.length; i++) { var r = menu.rows[i]; if (mouseS.y < menu.ly || mouseS.y > menu.ly + menu.listH) continue; if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y < r.y + r.h) return r.e; } return null; }
   function infoBtnHit() { var b = menu && menu.info && menu.btn; return !!b && mouseS && mouseS.x >= b.x && mouseS.x <= b.x + b.w && mouseS.y >= b.y && mouseS.y <= b.y + b.h; }
@@ -3576,7 +3583,8 @@ __COMBAT__
     c.lineWidth = heavy; c.lineCap = 'round'; c.beginPath(); c.moveTo(x + r, y + h); c.lineTo(x + w - r, y + h); c.moveTo(x + w, y + r); c.lineTo(x + w, y + h - r); c.stroke();
     c.strokeStyle = UI_LIT; c.lineWidth = 1; c.beginPath(); c.moveTo(x + r + 1, y + 1.2); c.lineTo(x + w - r - 1, y + 1.2); c.moveTo(x + 1.2, y + r + 1); c.lineTo(x + 1.2, y + h - r - 1); c.stroke();
   }
-  function wood(c, x, y, w, h) {          // a wooden board: planks across, grain, the ink frame, iron nails at the corners
+  function wood(c, x, y, w, h) {          // a wooden board: the studio's oak and frame (2026-10-20); planks drawn in code while they load
+    if (himg('wood_tile') && himg('board_frame')) { hPx(c, x, y, function () { hBoard(c, w * 3, h * 3); }); return; }
     c.save();
     c.fillStyle = '#5c4535'; c.beginPath(); c.roundRect(x, y, w, h, 4); c.fill();
     c.save(); c.beginPath(); c.roundRect(x + 1, y + 1, w - 2, h - 2, 3); c.clip();
@@ -3647,18 +3655,79 @@ __COMBAT__
   };
   Combat.api.onArrowLand = function (x, y) { };   /* (no arrows lie to be picked up while there is no quiver) */
 
+  /* ---------- the panels' look (the Art Director's, 2026-10-20: Robin picked a mix of its three directions; SPEC.md and
+     hud_mix.png in C:\dev\SG\Art Director\out\hud, the art copied whole into assets/hud): dark oak boards with a carved line and
+     rivets, the hero in an arched vellum window with round light slots, red capitals on the headings, crafting with its list in
+     a dark well beside a vellum card with the thing's picture large; light only for the window, the slots and the card. A
+     board is drawn in the canvas pixels of Robin's size (1200 by 750, three to a unit: hPx), so the spec's numbers are used as
+     they are; what the mouse can hit stays in units. ---------- */
+  var HUD_ART = __HUD__, HUD_IMG = {}, HUD_PAT = {};
+  (function () { if (!HUD_ART) return; for (var k in HUD_ART) { var im = new Image(); im.src = HUD_ART[k]; HUD_IMG[k] = im; } })();
+  var UI_FACE = "'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif";   /* the book face: the mock's Palatino (Robin picked the mock); the studio suggests Alegreya, embedded, which would need the font downloaded */
+  var RUNE_FACE = "'Segoe UI Historic', 'Noto Sans Runic', serif";
+  var HC = { cream: '#f0e3c4', ink: '#3b2a1f', sepia: '#6b5236', rubric: '#9e3326', ochre: '#d9a845', well: 'rgba(22,13,8,0.55)', under: '#d8c49c', dark: '#1d120b' };
+  var HERO_WIN = 1.3;                       // the hero in the window, against his size in the world (mine, judged against hud_mix.png)
+  function hf(st, px) { return (st ? st + ' ' : '') + px + 'px ' + UI_FACE; }
+  function himg(n) { var im = HUD_IMG[n]; return im && im.complete && im.naturalWidth ? im : null; }
+  function hpat(c, n) { var p = HUD_PAT[n]; if (p) return p; var im = himg(n); if (!im) return null; p = c.createPattern(im, 'repeat'); HUD_PAT[n] = p; return p; }
+  function hPx(c, x, y, fn) { c.save(); c.translate(x, y); c.scale(1 / 3, 1 / 3); fn(); c.restore(); }   // a board's own canvas pixels, its corner at (x, y) in units
+  function hUnits(c, px, py, fn) { c.save(); c.translate(px, py); c.scale(3, 3); fn(); c.restore(); }   // back to units, about a point of a board's pixels
+  function hText(c, s, x, y, font, col, align) { c.font = font; c.fillStyle = col; c.textAlign = align || 'left'; c.fillText(s, x, y); c.textAlign = 'left'; }
+  function nine(c, n, x, y, w, h, s) {      // a 9-slice frame: the corners as they are, the edges and the middle stretched
+    var im = himg(n); if (!im) return false; var W = im.naturalWidth, H = im.naturalHeight, d = Math.min(s, w / 2, h / 2), mw = W - 2 * s, mh = H - 2 * s, iw = w - 2 * d, ih = h - 2 * d;
+    c.drawImage(im, 0, 0, s, s, x, y, d, d); c.drawImage(im, s, 0, mw, s, x + d, y, iw, d); c.drawImage(im, W - s, 0, s, s, x + w - d, y, d, d);
+    c.drawImage(im, 0, s, s, mh, x, y + d, d, ih); c.drawImage(im, s, s, mw, mh, x + d, y + d, iw, ih); c.drawImage(im, W - s, s, s, mh, x + w - d, y + d, d, ih);
+    c.drawImage(im, 0, H - s, s, s, x, y + h - d, d, d); c.drawImage(im, s, H - s, mw, s, x + d, y + h - d, iw, d); c.drawImage(im, W - s, H - s, s, s, x + w - d, y + h - d, d, d);
+    return true;
+  }
+  function hBoard(c, w, h) {                // a board: the oak, a shade from top to bottom, the frame with its carved line and rivets
+    var p = hpat(c, 'wood_tile'); c.fillStyle = p || '#5e4230'; c.fillRect(0, 0, w, h);
+    var gr = c.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,230,180,0.08)'); gr.addColorStop(1, 'rgba(0,0,0,0.20)'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
+    if (!nine(c, 'board_frame', 0, 0, w, h, 24)) { c.strokeStyle = '#1f130c'; c.lineWidth = 3; c.strokeRect(1.5, 1.5, w - 3, h - 3); c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = 1.5; c.strokeRect(8, 8, w - 16, h - 16); }
+  }
+  function hTitle(c, t, x, y, size) {      // a heading: its first letter red in a small vellum square, the rest cream beside it
+    var bw = size * 1.5, by = y - size * 1.22, im = himg('capital_box');
+    if (im) c.drawImage(im, x, by, bw, bw); else { c.fillStyle = '#e8dbbd'; c.fillRect(x, by, bw, bw); c.strokeStyle = '#1f130c'; c.lineWidth = 2; c.strokeRect(x, by, bw, bw); }
+    hText(c, t.charAt(0), x + bw / 2, y + size * 0.05, hf('bold', size * 1.25), HC.rubric, 'center');
+    hText(c, t.slice(1), x + bw + 4, y, hf('bold', size), HC.cream);
+  }
+  function hRubric(c, t, x, y, size, col) { // a name with its first letter large and red (the card's)
+    c.font = hf('bold', size * 1.45); var w0 = c.measureText(t.charAt(0)).width; hText(c, t.charAt(0), x, y + size * 0.2, c.font, HC.rubric);
+    hText(c, t.slice(1), x + w0 + 1, y, hf('bold', size), col);
+  }
+  function hVellum(c, x, y, w, h, frame) { var p = hpat(c, 'vellum_tile'); c.fillStyle = p || '#e6d6b4'; c.fillRect(x, y, w, h); if (frame) nine(c, frame, x, y, w, h, frame === 'card_frame' ? 16 : 12); }
+  function hSocket(c, x, y, s, chosen, hov) {   // a bag cell: dark, a faint light line; the ochre square round the chosen one
+    var im = himg('socket'); if (im) c.drawImage(im, x, y, s, s); else { c.fillStyle = '#2b1c13'; c.fillRect(x, y, s, s); c.strokeStyle = 'rgba(255,225,170,0.16)'; c.lineWidth = 1; c.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1); }
+    if (hov) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(x + 2, y + 2, s - 4, s - 4); }
+    if (chosen) { var k = s / 42, ch = himg('socket_chosen'); if (ch) c.drawImage(ch, x - 3 * k, y - 3 * k, 48 * k, 48 * k); else { c.strokeStyle = HC.ochre; c.lineWidth = 2.4; c.strokeRect(x - 1, y - 1, s + 2, s + 2); } }
+  }
+  function hButton(c, x, y, w, h, label, can, hov, fill, size) {   // the Craft button: the carved plank with its ochre edge; it fills as the first one is made
+    c.save(); if (!can) c.globalAlpha = 0.5;
+    if (!nine(c, hov && can ? 'button_hover' : 'button', x, y, w, h, 12)) { c.fillStyle = '#3d2a1d'; c.fillRect(x, y, w, h); c.strokeStyle = HC.ochre; c.lineWidth = 2; c.strokeRect(x + 1, y + 1, w - 2, h - 2); }
+    if (fill) { c.fillStyle = 'rgba(217,168,69,0.32)'; c.fillRect(x + 5, y + 5, (w - 10) * Math.max(0, Math.min(1, fill)), h - 10); }
+    hText(c, label, x + w / 2, y + h / 2 + size * 0.36, hf('bold', size), HC.cream, 'center'); c.restore();
+  }
+  function hTab(c, x, y, h, label, on, hov) {   // a tab down a board's left edge, its word turned up it
+    var im = himg(on ? 'tab_on' : 'tab_off'); if (im) c.drawImage(im, x, y, 20, h); else { c.fillStyle = on ? '#8e2f22' : '#4e3a2c'; c.fillRect(x + 2, y, 18, h); }
+    if (hov && !on) { c.fillStyle = 'rgba(255,230,180,0.14)'; c.fillRect(x + 3, y + 2, 16, h - 4); }
+    c.save(); c.translate(x + 11, y + h / 2); c.rotate(-Math.PI / 2); hText(c, label, 0, 4, hf('bold', 12), HC.cream, 'center'); c.restore();
+  }
+  var RUNE_OF = { a: '\u16c5', b: '\u16d2', c: '\u16b4', d: '\u16cf', e: '\u16c1', f: '\u16a0', g: '\u16b4', h: '\u16bc', i: '\u16c1', j: '\u16c1', k: '\u16b4', l: '\u16da', m: '\u16d8', n: '\u16be', o: '\u16a2', p: '\u16d2', q: '\u16b4', r: '\u16b1', s: '\u16cb', t: '\u16cf', u: '\u16a2', v: '\u16a2', w: '\u16a2', x: '\u16b4\u16cb', y: '\u16a2', z: '\u16cb', '\u00e5': '\u16ac', '\u00e4': '\u16c5', '\u00e6': '\u16c5', '\u00f6': '\u16a2', '\u00f8': '\u16a2', '\u00fe': '\u16a6', '\u00f0': '\u16a6' };
+  function runesOf(s) {                     // a name in the Younger Futhark, a doubled letter cut once (as the stones do)
+    var out = '', prev = ''; String(s || '').toLowerCase().split('').forEach(function (ch) { var r = RUNE_OF[ch]; if (r == null) { if (ch === ' ') { out += '\u16eb'; prev = ''; } return; } if (r !== prev) out += r; prev = r; }); return out;
+  }
+
   /* ---------- the character panel: slides in from the left on Tab, the bag from the right ---------- */
-  var CHAR_H = 112, CHAR = { w: 102, h: CHAR_H, x: 8, y: 6, slide: 0 };   /* (2026-10-14, one screen on Tab: the panel top left over the bag, the crafting board on the right, as Valheim lays it out in Robin's picture) */
+  var CHAR_H = 120, CHAR = { w: 110, h: CHAR_H, x: 8, y: 16 / 3, slide: 0 };   /* (330 by 360 canvas pixels at Robin's size, the studio's spec, 2026-10-20) */   /* (2026-10-14, one screen on Tab: the panel top left over the bag, the crafting board on the right, as Valheim lays it out in Robin's picture) */
   function chLeft() { return CHAR.x - (1 - CHAR.slide) * (CHAR.w + 40); }
   var EQUIP = [['head', 'Helmet'], ['cloak', 'Cloak'], ['chest', 'Tunic'], ['legs', 'Trousers'], ['feet', 'Boots'], ['shield', 'Shield'], ['neck', 'Necklace'], ['ring1', 'Ring'], ['ring2', 'Ring'], ['trinket', 'Trinket'], ['trinket2', 'Trinket']];   // the right column: shield, necklace, two rings, two trinkets (Robin, 2026-10-07)
   var EQUIPPED = { weapon: 'sword', bow: 'bow' };
   function gearFor(id) { if (equip[id]) return true; for (var k in Items.KINDS) if (TOOL_SLOT[k] === id) return true; return false; }   // is there anything in the game that goes in this slot?
-  function chSlots() {                      // (2026-10-12: the necklace, the rings and the trinkets show once there is something to put in them; they were five empty outlines)
-    var x0 = chLeft(), out = [], i, rn = 0;
-    for (i = 0; i < 5; i++) out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + 9, y: CHAR.y + 20 + i * 12, w: 11, h: 11 });
-    for (i = 5; i < EQUIP.length; i++) { out.push({ id: EQUIP[i][0], name: EQUIP[i][1], x: x0 + CHAR.w - 20, y: CHAR.y + 20 + rn * 12, w: 11, h: 11 }); rn++; }   /* (every slot shown, 2026-10-14, Robin: the rings and the trinkets were hidden until something could fill them) */
-    out.push({ id: 'armring', name: 'Arm ring', ringSlot: true, x: x0 + CHAR.w - 20, y: CHAR.y + 20 + rn * 12, w: 11, h: 11 });   // the arm ring: under the shield
-    /* (the quiver's three slots were here until 2026-10-13: Robin, remove the arrow slots, a better way is to be found) */
+  var GEAR_L = ['head', 'cloak', 'chest', 'armring', 'legs', 'feet'], GEAR_R = ['shield', 'neck', 'ring1', 'ring2', 'trinket', 'trinket2'];   /* six round slots a side (the spec); the arm ring stands where the spec has "armour" (mine: the game's coat or mail is the chest's) */
+  var SKETCH = { head: 'head', cloak: 'cloak', chest: 'chest', legs: 'legs', feet: 'feet', shield: 'shield', neck: 'neck', ring1: 'ring', ring2: 'ring', trinket: 'trinket', trinket2: 'trinket', armring: 'ring' };
+  function chSlots() {                      // the Gear slots: px and py where the board draws them, x, y, w, h in units for the mouse
+    var x0 = chLeft(), out = [], nm = {}; EQUIP.forEach(function (q) { nm[q[0]] = q[1]; });
+    [GEAR_L, GEAR_R].forEach(function (col, side) { col.forEach(function (id, i) { var px = side ? 278 : 52, py = 78 + i * 46, r = 20 / 3; out.push({ id: id, name: id === 'armring' ? 'Arm ring' : nm[id], ringSlot: id === 'armring', px: px, py: py, x: x0 + px / 3 - r, y: CHAR.y + py / 3 - r, w: r * 2, h: r * 2 }); }); });
     return out;
   }
   function chSlotAt() { if (!mouseS || CHAR.slide < 0.9 || chTab === 'stats') return null; var S = chSlots(); for (var i = 0; i < S.length; i++) { var s = S[i]; if (mouseS.x >= s.x && mouseS.x <= s.x + s.w && mouseS.y >= s.y && mouseS.y <= s.y + s.h) return s; } return null; }
@@ -3717,7 +3786,7 @@ __COMBAT__
   var chTab = 'gear';
   var CH_TABS = ['gear', 'stats', 'ring'], CH_NAMES = { gear: 'Gear', stats: 'Stats', ring: 'Ring' };
   function chTabs() { return CH_TABS.filter(function (t) { return t === 'gear' || (t === 'stats' ? !!seen.fought : !!ring); }); }   /* (the interface grows, 2026-10-14: Stats after the first kill, Ring once a ring is worn) */
-  function chTabRect(i) { return { x: chLeft() + 6 + i * 21, y: CHAR.y + 3, w: 19, h: 10 }; }   /* (on the left, the name on the right: Robin, 2026-10-20) */
+  function chTabRect(i) { return { x: chLeft() - 20 / 3, y: CHAR.y + (24 + i * 64) / 3, w: 20 / 3, h: 20 }; }   /* down the board's left edge, outside it (the studio's spec, 2026-10-20) */
   function chTabAt() { if (!mouseS || CHAR.slide < 0.9) return null; var TB = chTabs(); for (var i = 0; i < TB.length; i++) { var r = chTabRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return TB[i]; } return null; }
   function statRows() {
     var P = hero(), wp = handItem('fight'), ws = wp && Items.KINDS[wp.kind] && !Items.KINDS[wp.kind].ranged ? Items.stats(wp) : null, bwi = wp && wp.kind === 'bow' ? wp : bestTool('bow'), bw = bwi ? Items.stats(bwi) : null, m = Combat.api.mods(), ar = Combat.api.armor();
@@ -3741,119 +3810,114 @@ __COMBAT__
   // the Ring tab: the ring itself, every hollow with the rune in it and what it does, and what is known but not cut
   function drawRingTab(c, x0) {
     var y = CHAR.y + 21, xr = x0 + CHAR.w - 14;
-    if (!ring) { c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText('No ring on your arm', x0 + 10, y + 10); return; }
+    if (!ring) { c.font = '600 6px ' + UI_FACE; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText('No ring on your arm', x0 + 10, y + 10); return; }
     var m = Runes.METALS[ring.metal];
-    c.font = 'bold 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = '#f6e2b8'; c.fillText(m.name + ' ring', x0 + 13, y + 6);
-    c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillText(ring.coils.length + ' hollows', xr, y + 6);
+    c.font = 'bold 6.5px ' + UI_FACE; c.textAlign = 'left'; c.fillStyle = '#f6e2b8'; c.fillText(m.name + ' ring', x0 + 13, y + 6);
+    c.font = '600 5px ' + UI_FACE; c.textAlign = 'right'; c.fillStyle = 'rgba(246,226,184,0.6)'; c.fillText(ring.coils.length + ' hollows', xr, y + 6);
     Runes.ringD(c, x0 + CHAR.w / 2, y + 31, ring, 19, -1, ringGlow.i, ringGlow.t, 0);
     var ly = y + 56, i, rowH = ring.coils.length > 6 ? 12.2 : 13.5;
     for (i = 0; i < ring.coils.length; i++) {
       var cl = ring.coils[i], r = cl.id ? Runes.BY[cl.id] : null;
       if (i % 2 === 0) { c.fillStyle = 'rgba(0,0,0,0.16)'; c.fillRect(x0 + 11, ly - 6, CHAR.w - 22, rowH); }
       if (r) Runes.stone(c, r, x0 + 17, ly, 4.2, 'alive'); else { c.fillStyle = '#2a1c14'; c.beginPath(); c.arc(x0 + 17, ly, 3.6, 0, 7); c.fill(); c.strokeStyle = m.col; c.lineWidth = 0.7; c.stroke(); }
-      c.font = (r ? 'bold ' : '600 ') + '5.5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = r ? '#ffd34d' : 'rgba(246,226,184,0.5)'; c.fillText(r ? r.name : 'Empty ' + cl.side + ' hollow', x0 + 24, ly + 1.5);
-      if (r) { c.font = '600 4.6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.fillText(wrapText(c, r.text, CHAR.w - 40)[0], x0 + 24, ly + 6.5); }
-      else { c.font = '600 4.6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.4)'; c.fillText('Cut a rune in at the carver’s bench', x0 + 24, ly + 6.5); }
+      c.font = (r ? 'bold ' : '600 ') + '5.5px ' + UI_FACE; c.textAlign = 'left'; c.fillStyle = r ? '#ffd34d' : 'rgba(246,226,184,0.5)'; c.fillText(r ? r.name : 'Empty ' + cl.side + ' hollow', x0 + 24, ly + 1.5);
+      if (r) { c.font = '600 4.6px ' + UI_FACE; c.fillStyle = 'rgba(246,226,184,0.75)'; c.fillText(wrapText(c, r.text, CHAR.w - 40)[0], x0 + 24, ly + 6.5); }
+      else { c.font = '600 4.6px ' + UI_FACE; c.fillStyle = 'rgba(246,226,184,0.4)'; c.fillText('Cut a rune in at the carver’s bench', x0 + 24, ly + 6.5); }
       ly += rowH;
     }
     var rest = Runes.LIST.filter(function (r2) { return RS.learnt[r2.id] && !inUse(r2.id); }).map(function (r2) { return r2.name; });
-    if (rest.length && ly < CHAR.y + CHAR.h - 14) { c.font = '600 4.8px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.5)'; var kl = wrapText(c, 'Known, not cut: ' + rest.join(', '), CHAR.w - 28), room = Math.max(1, Math.floor((CHAR.y + CHAR.h - 12 - ly) / 6)); if (kl.length > room) { kl = kl.slice(0, room); kl[room - 1] = kl[room - 1].replace(/[,\s]*\S*$/, '') + ' …'; } kl.forEach(function (ln, k) { c.fillText(ln, x0 + 13, ly + 2 + k * 6); }); }
+    if (rest.length && ly < CHAR.y + CHAR.h - 14) { c.font = '600 4.8px ' + UI_FACE; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.5)'; var kl = wrapText(c, 'Known, not cut: ' + rest.join(', '), CHAR.w - 28), room = Math.max(1, Math.floor((CHAR.y + CHAR.h - 12 - ly) / 6)); if (kl.length > room) { kl = kl.slice(0, room); kl[room - 1] = kl[room - 1].replace(/[,\s]*\S*$/, '') + ' …'; } kl.forEach(function (ln, k) { c.fillText(ln, x0 + 13, ly + 2 + k * 6); }); }
   }
   function drawStats(c, x0) {
     var rows = statRows(), y = CHAR.y + 28, i, xr = x0 + CHAR.w - 14;
     rows.forEach(function (r, k) {
       if (k % 2 === 0) { c.fillStyle = 'rgba(0,0,0,0.16)'; c.fillRect(x0 + 11, y - 7.5, CHAR.w - 22, 11); }
-      c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.78)'; c.fillText(r[0], x0 + 14, y);
-      c.font = 'bold 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = '#fff'; c.fillText(r[1], xr, y);
+      c.font = '600 6px ' + UI_FACE; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.78)'; c.fillText(r[0], x0 + 14, y);
+      c.font = 'bold 6px ' + UI_FACE; c.textAlign = 'right'; c.fillStyle = '#fff'; c.fillText(r[1], xr, y);
       y += 11;
     });
   }
   function isNew(id) { return !(seen.made && seen.made[id]); }
   function markMade(id) { if (!seen.made) seen.made = {}; seen.made[id] = 1; }
   function drawChar(c) {
-    var x0 = chLeft(), P = hero(), hov = chSlotAt(), i;
-    wood(c, x0, CHAR.y, CHAR.w, CHAR.h);
-    leather(c, x0 + 5, CHAR.y + 15, CHAR.w - 10, CHAR.h - 20);
-    c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'right'; c.fillText(heroName || 'You', x0 + CHAR.w - 8, CHAR.y + 11); c.textAlign = 'left';
-    var hovT = chTabAt(); if (chTabs().indexOf(chTab) < 0) chTab = 'gear'; CHAR.h = chTab === 'gear' ? CHAR_H : 238;   /* (Stats and Ring want the height: the tall panel lies over the bag) */
-    chTabs().forEach(function (tid, ti) { var nm = CH_NAMES[tid], tr = chTabRect(ti), on = tid === chTab; c.fillStyle = on ? 'rgba(255,230,180,0.26)' : (hovT === tid ? 'rgba(255,230,180,0.14)' : 'rgba(0,0,0,0.28)'); c.fillRect(tr.x, tr.y, tr.w, tr.h); c.font = (on ? 'bold ' : '600 ') + '5.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#fff' : 'rgba(246,226,184,0.8)'; c.fillText(nm, tr.x + tr.w / 2, tr.y + 7.2); });
+    var x0 = chLeft(), P = hero(), hov = chSlotAt(), hovT = chTabAt();
+    if (chTabs().indexOf(chTab) < 0) chTab = 'gear'; CHAR.h = chTab === 'gear' ? CHAR_H : 238;   /* (Stats and Ring want the height: the tall panel lies over the bag) */
+    hPx(c, x0, CHAR.y, function () {
+      hBoard(c, CHAR.w * 3, CHAR.h * 3);
+      chTabs().forEach(function (tid, ti) { hTab(c, -20, 24 + ti * 64, 60, CH_NAMES[tid], tid === chTab, hovT === tid); });
+      hTitle(c, heroName || 'You', 22, 40, 20);
+      hText(c, runesOf(heroName), 310, 38, '17px ' + RUNE_FACE, '#c96a4f', 'right');   // the name in runes
+    });
     if (chTab === 'stats') { drawStats(c, x0); return; }
     if (chTab === 'ring') { drawRingTab(c, x0); return; }
-    // the hero, turning slowly, on a patch of floor
-    var cx = x0 + CHAR.w / 2, cy = CHAR.y + 88, vx = 0, side = false, dir = 'down';   // he always faces you, so the face and the gear can be seen
-    c.fillStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(cx, cy + 2, 20, 7, 0, 0, 7); c.fill();
-    c.save(); c.translate(cx, cy); c.scale(1.1, 1.1);
-    if (sprHero && sprHero.kit) Sprites.drawKit(c, sprHero, 0, 0, Math.PI / 2, { amt: 0, sit: 0 }, false, { atk: { ph: 'none' }, dead: false, hurtT: 0, mode: 'fight', sprinting: false }, { scale: Sprites.scaleOf(localStorage), shadow: false }, heroLook(Math.PI / 2));   /* (the kit, 2026-10-20: Robin saw a row of broken pieces) */
-    else if (sprHero) Sprites.draw(c, sprHero, 0, 0, Math.PI / 2, { amt: 0, sit: 0 }, false, { atk: { ph: 'none' }, dead: false, hurtT: 0, mode: 'fight', sprinting: false }, { scale: Sprites.scaleOf(localStorage), shadow: false, layers: handLayers() });   // the Blender hero, facing you, with the thing in hand (2026-10-09)
-    else lib.playerD(c, 0, 0, dir, { phase: 0, amt: 0, t: clock, lx: 0, ly: 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: side ? 0 : Math.max(-1, Math.min(1, vx / 0.7)) }, null);
-    c.restore();
-    // equipment and quiver slots
-    chSlots().forEach(function (s) {
-      var isQ = s.q != null, on = isQ && s.q === quiver.sel && quiver.slots[s.q], hv = hov === s;
-      slotUi(c, s.x, s.y, s.w, s.h, hv, on);
-      var mx = s.x + s.w / 2, my = s.y + s.h / 2;
-      if (s.ringSlot) { if (ring) Runes.ringD(c, mx, my + 0.4, ring, 6.3, -1, ringGlow.i, ringGlow.t); else { c.strokeStyle = 'rgba(246,226,184,0.35)'; c.lineWidth = 1.7; c.lineCap = 'round'; c.beginPath(); c.arc(mx, my, 4.6, 0.55, 6.283 - 0.55); c.stroke(); } return; }
-      if (isQ) {
-        var qs = quiver.slots[s.q];
-        if (qs) { drawDropIcon(c, 'arrow', mx, my, 1.1); c.font = 'bold 5.5px system-ui, sans-serif'; c.textAlign = 'right'; c.lineWidth = 1.8; c.strokeStyle = '#2e1a10'; c.strokeText(String(qs.n), s.x + s.w - 1.5, s.y + s.h - 1.5); c.fillStyle = '#fff'; c.fillText(String(qs.n), s.x + s.w - 1.5, s.y + s.h - 1.5); }
-        else arrowGlyph(c, mx, my);
-      } else if (equip[s.id]) { c.save(); c.translate(mx, my); itemIcon(c, equip[s.id], s.id === 'axe' || s.id === 'pick' || s.id === 'knife' ? 9 : 10.5, 7.5); c.restore(); }
-      else if (s.id === 'axe' || s.id === 'pick' || s.id === 'knife') { c.save(); c.globalAlpha = 0.34; c.translate(mx, my); Items.icon(c, Items.make(s.id, 'wood'), 9.5); c.restore(); }   // an empty tool slot shows its tool, faint
-      else glyph(c, s.id, mx, my);
+    hPx(c, x0, CHAR.y, function () {
+      // the window: vellum and the meadow behind him, the hero facing you, the dark arch with its bronze line over him
+      c.save(); c.beginPath(); c.moveTo(104, 328); c.lineTo(104, 120); c.arc(165, 120, 61, Math.PI, 0); c.lineTo(226, 328); c.closePath(); c.clip();
+      var wb = himg('window_back'); if (wb) c.drawImage(wb, 100, 54); else { hVellum(c, 100, 54, 130, 280); }
+      hUnits(c, 165, 308, function () {
+        c.scale(HERO_WIN, HERO_WIN);
+        if (sprHero && sprHero.kit) Sprites.drawKit(c, sprHero, 0, 0, Math.PI / 2, { amt: 0, sit: 0 }, false, { atk: { ph: 'none' }, dead: false, hurtT: 0, mode: 'fight', sprinting: false }, { scale: Sprites.scaleOf(localStorage), shadow: false }, heroLook(Math.PI / 2));
+        else if (sprHero) Sprites.draw(c, sprHero, 0, 0, Math.PI / 2, { amt: 0, sit: 0 }, false, { atk: { ph: 'none' }, dead: false, hurtT: 0, mode: 'fight', sprinting: false }, { scale: Sprites.scaleOf(localStorage), shadow: false, layers: handLayers() });
+        else lib.playerD(c, 0, 0, 'down', { phase: 0, amt: 0, t: clock, lx: 0, ly: 0, blink: (clock % 3.4) < 0.12 ? 1 : 0, sq: 0, turn: 0 }, null);
+      });
+      c.restore();
+      var wf = himg('window_frame'); if (wf) c.drawImage(wf, 100, 54); else { c.strokeStyle = '#1f130c'; c.lineWidth = 4; c.beginPath(); c.moveTo(104, 328); c.lineTo(104, 120); c.arc(165, 120, 61, Math.PI, 0); c.lineTo(226, 328); c.closePath(); c.stroke(); }
+      // the round slots: a thing worn shows its icon, an empty one a sepia sketch of what goes there
+      chSlots().forEach(function (s) {
+        var sr = himg('slot_round'); if (sr) c.drawImage(sr, s.px - 24, s.py - 24, 48, 48); else { c.fillStyle = '#e4d5b2'; c.beginPath(); c.arc(s.px, s.py, 20, 0, 7); c.fill(); c.strokeStyle = HC.ink; c.lineWidth = 1.8; c.stroke(); }
+        if (hov && hov.id === s.id) { var sc = himg('slot_round_chosen'); if (sc) c.drawImage(sc, s.px - 28, s.py - 28, 56, 56); else { c.strokeStyle = '#c0392b'; c.lineWidth = 2.6; c.beginPath(); c.arc(s.px, s.py, 23.5, 0, 7); c.stroke(); } }
+        var worn = s.ringSlot ? ring : equip[s.id];
+        if (worn && s.ringSlot) hUnits(c, s.px, s.py, function () { Runes.ringD(c, 0, 0.4, ring, 5.4, -1, ringGlow.i, ringGlow.t); });
+        else if (worn) hUnits(c, s.px, s.py, function () { itemIcon(c, worn, 10.9, 6.2); });
+        else { var sk = himg('sketch_' + SKETCH[s.id]); if (sk) c.drawImage(sk, s.px - 20, s.py - 20, 40, 40); else hUnits(c, s.px, s.py, function () { glyph(c, s.id, 0, 0); }); }
+      });
+      // under the window: what you wear turns aside, or what the slot you point at holds
+      var txt = 'Armour ' + Math.round(Combat.api.armor() * 100) + '%';
+      if (hov) { var txt = hov.ringSlot ? (ring ? Runes.METALS[ring.metal].name + ' arm ring  (the Ring page shows it)' : 'Arm ring: none') : hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ': empty'); }
+      c.font = hf('italic', 13); var tw = c.measureText(txt).width; hText(c, txt, 165, 348, hf('italic', tw > 300 ? 11 : 13), HC.under, 'center');
     });
-    if (hov) {                              // what the slot is
-      var txt = hov.ringSlot ? (ring ? Runes.METALS[ring.metal].name + ' arm ring  (the Ring page shows it)' : 'Arm ring: none') : hov.q != null ? (quiver.slots[hov.q] ? ARROWS[quiver.slots[hov.q].kind].name + ' x ' + quiver.slots[hov.q].n + (hov.q === quiver.sel ? ' (in use)' : ', click to use') : 'Empty quiver slot') : (equip[hov.id] ? equip[hov.id].name + '  (right click: take off)' : hov.name + ': empty');
-      if (equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
-      c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + 6, CHAR.y + CHAR.h - 2.5); c.fillStyle = '#fff'; c.fillText(txt, x0 + 6, CHAR.y + CHAR.h - 2.5);
-    }
+    if (hov && !hov.ringSlot && equip[hov.id]) cardLater(equip[hov.id], x0 + CHAR.w + 6, hov.y - 10);
   }
-  var CELL = 15, INV = { w: COLS * CELL + 12, h: 16 + ROWS * CELL + 8, slide: 0 };   // the bag: one board under the character panel; its first row is the bar (Robin, 2026-10-14: the 1 to 6 as part of the bag's slots, not a board of its own)
-  INV.x = 8; INV.y = CHAR_H + 12; var BAR = { y: INV.y, h: 0 };
+  var CELL = 47 / 3, INV = { w: 110, h: 100, slide: 0 };   /* (330 by 300 canvas pixels, cells 42 and 47 apart: the studio's spec, 2026-10-20) */   // the bag: one board under the character panel; its first row is the bar (Robin, 2026-10-14: the 1 to 6 as part of the bag's slots, not a board of its own)
+  INV.x = 8; INV.y = 386 / 3; var BAR = { y: INV.y, h: 0 };
   function invLeft() { return INV.x - (1 - INV.slide) * (INV.w + 40); }
-  function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + 6 + (i % COLS) * CELL, y: INV.y + 16 + row * CELL, w: CELL - 2, h: CELL - 2 }; }
-  var STORE_UI = { x: 400 - (COLS * CELL + 12) - 8, y: 250 - (16 + (STORE_N / COLS) * CELL + 8) - 6, w: COLS * CELL + 12, h: 16 + (STORE_N / COLS) * CELL + 8 };   // an open chest: on the right, where the crafting board sits otherwise
+  function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + (20 + (i % COLS) * 47) / 3, y: INV.y + (54 + row * 47) / 3, w: 14, h: 14 }; }
+  var STORE_UI = { w: 110, h: (54 + (STORE_N / COLS) * 47 + 12) / 3 }; STORE_UI.x = 400 - STORE_UI.w - 5; STORE_UI.y = 250 - STORE_UI.h - 20 / 3;   // an open chest: on the right, where the crafting board sits otherwise
   function storeLeft() { return STORE_UI.x + (1 - INV.slide) * (STORE_UI.w + 40); }
-  function storeRect(j) { var x0 = storeLeft(); return { x: x0 + 6 + (j % COLS) * CELL, y: STORE_UI.y + 16 + Math.floor(j / COLS) * CELL, w: CELL - 2, h: CELL - 2 }; }
+  function storeRect(j) { var x0 = storeLeft(); return { x: x0 + (20 + (j % COLS) * 47) / 3, y: STORE_UI.y + (54 + Math.floor(j / COLS) * 47) / 3, w: 14, h: 14 }; }
   function slotAt() {
-    if (!mouseS || INV.slide < 0.9) return -1; var i, r;
-    for (i = 0; i < SLOTS; i++) { r = slotRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return i; }
+    if (!mouseS || INV.slide < 0.9) return -1; var i, r, under = CHAR.h > CHAR_H && mouseS.x < chLeft() + CHAR.w && mouseS.y < CHAR.y + CHAR.h;   /* (under the tall Stats or Ring page the bag is not there to point at) */
+    if (!under) for (i = 0; i < SLOTS; i++) { r = slotRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return i; }
     if (store) for (i = 0; i < STORE_N; i++) { r = storeRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return 100 + i; }
     return -1;
   }
   function drawStore(c) {                  // the open chest's board, on the right
     var x0 = storeLeft(), i, hov = slotAt();
-    wood(c, x0, STORE_UI.y, STORE_UI.w, STORE_UI.h);
-    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Chest', x0 + 8, STORE_UI.y + 11);
-    c.font = '600 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.textAlign = 'right'; c.fillText('Shift and click moves across', x0 + STORE_UI.w - 6, STORE_UI.y + 11);
-    for (i = 0; i < STORE_N; i++) {
-      var r = storeRect(i), s = store.store[i];
-      slotUi(c, r.x, r.y, r.w, r.h, hov === 100 + i, false);      // the bag's own slots (they were a flatter kind of their own)
-      if (s) stackIn(c, r, s, 100 + i);
-    }
+    hPx(c, x0, STORE_UI.y, function () {
+      hBoard(c, STORE_UI.w * 3, STORE_UI.h * 3); hTitle(c, 'Chest', 22, 42, 20);
+      hText(c, 'Shift and click moves across', STORE_UI.w * 3 - 20, 37, hf('italic', 13), HC.under, 'right');
+      for (i = 0; i < STORE_N; i++) hSocket(c, 20 + (i % COLS) * 47, 54 + Math.floor(i / COLS) * 47, 42, false, hov === 100 + i);
+    });
+    for (i = 0; i < STORE_N; i++) { var s = store.store[i]; if (s) stackIn(c, storeRect(i), s, 100 + i); }
   }
   var BTN = [{ id: 'sort' }];
-  function btnRect(k) { return { x: invLeft() + INV.w - 17, y: INV.y - 11, w: 16, h: 10 }; }
+  function btnRect(k) { return { x: invLeft() + 270 / 3, y: INV.y + 18 / 3, w: 44 / 3, h: 26 / 3 }; }   // Sort, at the right of the bag's heading
   function btnAt() { if (!mouseS || INV.slide < 0.9) return null; for (var k = 0; k < BTN.length; k++) { var r = btnRect(k); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return BTN[k].id; } return null; }
   function drawInv(c) {
-    var x0 = invLeft(), i, hov = slotAt(), hb = btnAt();
-    var sr = btnRect(0);                                // a small Sort button above the bag: three bars side by side
-    c.fillStyle = hb === 'sort' ? '#6b4a32' : '#4a2e1c'; c.beginPath(); c.roundRect(sr.x, sr.y, sr.w, sr.h, 2); c.fill(); c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.stroke();
-    c.fillStyle = '#f6e2b8'; c.fillRect(sr.x + 3.5, sr.y + 3, 2.2, 5); c.fillRect(sr.x + 6.9, sr.y + 2, 2.2, 6); c.fillRect(sr.x + 10.3, sr.y + 3.8, 2.2, 4.2);
-    wood(c, x0, INV.y, INV.w, INV.h);
-    c.fillStyle = 'rgba(246,226,184,0.22)'; c.fillRect(x0 + 6, INV.y + 16 + CELL - 1.2, COLS * CELL - 2, 0.8);   // the bar is the first row: a thin line under it
-    c.font = 'bold 8px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Bag', x0 + 8, INV.y + 11);
-    for (i = 0; i < SLOTS; i++) {
-      var r = slotRect(i), s = slots[i], top = i < BAG0, inHand = top && i === hand;
-      slotUi(c, r.x, r.y, r.w, r.h, hov === i, inHand);
-      if (top) { c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.75)'; c.textAlign = 'left'; c.fillText(String(i % COLS + 1), r.x + 2, r.y + 6.5); }   // the key that takes it in hand
-      if (s) stackIn(c, r, s, i);
-    }
-    if (hb === 'sort' && !(pick && pick.drag)) { c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText('Sort the bag', x0 + 3, INV.y - 4); c.fillStyle = '#fff'; c.fillText('Sort the bag', x0 + 3, INV.y - 4); }
-    if (hov >= 0 && slotGet(hov) && !(pick && pick.drag)) {   // the name of what you point at, and what eating it does
+    var x0 = invLeft(), i, hov = slotAt(), hb = btnAt(), hint = '';
+    if (hov >= 0 && slotGet(hov) && !(pick && pick.drag)) {   // the name of what you point at is on its card; what a click does, in the heading
       var s2 = slotGet(hov), f = FOOD[s2.kind], txt = hov >= 100 ? 'Shift and click, or right click: take' : store ? 'Shift and click: into the chest' : f ? 'Right click: eat' : s2.kind === 'torch' ? (torchOn ? 'Right click or T: put it out' : 'Right click or T: light it') : s2.kind === 'item' && hov >= BAG0 ? (TOOL_SLOT[s2.item.kind] ? 'Right click: wear' : BAR_OF[s2.item.kind] ? 'Right click: to your bar' : '') : '';   // (its card says what it is)
-      c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(txt, x0 + 3, INV.y - 4); c.fillStyle = '#fff'; c.fillText(txt, x0 + 3, INV.y - 4);
       cardLater(s2.kind === 'item' ? s2.item : s2.kind, hov >= 100 ? storeLeft() - 150 : x0 + INV.w + 6, hov >= 100 ? STORE_UI.y : BAR.y);   // a thing's card, or a material's, beside the board it is in
-    }
+      hint = txt;
+    } else if (hb === 'sort' && !(pick && pick.drag)) hint = 'Sort the bag';
+    hPx(c, x0, INV.y, function () {
+      hBoard(c, 330, 300); hTitle(c, 'Bag', 22, 42, 20);
+      hText(c, 'Sort', 292, 37, hf(hb === 'sort' ? 'bold' : '', 13), hb === 'sort' ? HC.cream : 'rgba(240,227,196,0.65)', 'center');
+      if (hint) { c.font = hf('italic', 13); hText(c, hint, 268, 37, hf('italic', c.measureText(hint).width > 170 ? 11 : 13), HC.under, 'right'); }
+      for (i = 0; i < SLOTS; i++) hSocket(c, 20 + (i % COLS) * 47, 54 + Math.floor(i / COLS) * 47, 42, i < BAG0 && i === hand, hov === i);
+    });
+    for (i = 0; i < SLOTS; i++) { var s = slots[i]; if (s) stackIn(c, slotRect(i), s, i); }
+    hPx(c, x0, INV.y, function () { for (i = 0; i < BAG0; i++) hText(c, String(i + 1), 23 + i * 47, 65, hf('bold', 10), HC.ochre); });   // the bar's keys, over the things
     if (pick && pick.drag && slotGet(pick.i) && mouseS) { var sd = slotGet(pick.i), dn = sd.kind === 'item' ? 1 : (pick.half && sd.n > 1 ? Math.ceil(sd.n / 2) : sd.n); c.globalAlpha = 0.9; if (sd.kind === 'item') { c.save(); c.translate(mouseS.x, mouseS.y); Items.icon(c, sd.item, 16); c.restore(); } else drawDropIcon(c, sd.kind, mouseS.x, mouseS.y, 1.3); c.globalAlpha = 1; if (dn > 1) { c.font = 'bold 6px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText(String(dn), mouseS.x + 5, mouseS.y + 8); c.fillStyle = '#fff'; c.fillText(String(dn), mouseS.x + 5, mouseS.y + 8); } }
   }
   function barMark(c, which, x, y) {     // a tiny sword or axe beside a bar row of the bag
@@ -3868,7 +3932,6 @@ __COMBAT__
     INV.slide += ((invOpen ? 1 : 0) - INV.slide) * 0.25; if (INV.slide < 0.01 && !invOpen) INV.slide = 0;
     CHAR.slide = INV.slide;
     if (INV.slide > 0.01) { drawInv(c); if (store) drawStore(c); drawChar(c); }   /* (the bag, then the chest on the right, then the panel: a tall Stats or Ring page lies over the bag) */
-    if (pendingCard) { itemCard(c, pendingCard.it, pendingCard.x, pendingCard.y); pendingCard = null; }   // over both boards
 
   }
   function rowAt() { if (!mouseS) return null; for (var i = 0; i < rows.length; i++) { var r = rows[i]; if (mouseS.x > r.x0 && mouseS.x < r.x1 && Math.abs(mouseS.y - r.y) < (r.h ? r.h / 2 : 9)) return r.item; } return null; }
@@ -5238,6 +5301,7 @@ __COMBAT__
       if (pauseOpen) { rows = []; if (adminOpen && labOpen) drawLab(c); else if (adminOpen) drawAdmin(c); else drawPause(c); }
       if (naming && !pauseOpen) drawNaming(c);
       if (menu) drawMenu(c);
+      if (pendingCard) { itemCard(c, pendingCard.it, pendingCard.x, pendingCard.y); pendingCard = null; }   // a thing's card over every board, the crafting board too
       if (over && !pauseOpen) drawNotes(c, menu ? menu.y : 30);
       if (P.dead && !pauseOpen) {            // fallen: a board of the game's own (it was the engine's plain white words on a blue veil)
         c.fillStyle = 'rgba(24,16,12,0.5)'; c.fillRect(0, 0, 400, 250); wood(c, 122, 96, 156, 50);
@@ -5283,22 +5347,22 @@ __COMBAT__
   }
   function drawDrop(c, d) { c.save(); c.translate(d.x, d.y * K - d.z); if (d.item) { c.rotate(Math.sin(d.spin) * 0.3); Items.icon(c, d.item, 14); } else { c.rotate(d.kind === 'wood' ? d.spin : 0); drawDropIcon(c, d.kind, 0, 0, 1); } c.restore(); }
   function stackTale(kind) { if (STACK_TALE[kind]) return STACK_TALE[kind]; for (var i = 0; i < RECIPES.length; i++) if (RECIPES[i].id === kind) return RECIPES[i].text + '.'; return ''; }
-  function itemCard(c, it, x, y) {        // a small leather card: a thing's name, its numbers beside what you hold, its tale; or a material's tale and a food's meal (it: a thing, or a kind's name)
+  function itemCard(c, it, x, y) {        // a small vellum card: a thing's name, its numbers beside what you hold, its tale; or a material's tale and a food's meal (it: a thing, or a kind's name)
     var stack = typeof it === 'string' ? it : null, name = stack ? NAMES[stack] : it.name, tale = stack ? stackTale(stack) : it.desc, nums = stack ? foodLines(stack) : thingLines(it), lines = [];
-    c.font = '6px Georgia, serif'; var body = tale ? wrapLines(c, tale, 121) : [];
+    c.font = hf('', 5.6); var body = tale ? wrapLines(c, tale, 121) : [];
     nums.forEach(function (n) { lines.push({ k: n[0], v: n[1], d: n[2], u: n[3] || '' }); });
     body.forEach(function (l) { lines.push({ t: l }); });
     if (!lines.length) return;
-    var h = 20 + lines.length * 8 + 3, w = 140; x = Math.max(4, Math.min(400 - w - 4, x)); y = Math.max(4, Math.min(250 - h - 4, y));
-    leather(c, x, y, w, h);
+    var h = 20 + lines.length * 7.5 + 4, w = 140; x = Math.max(4, Math.min(400 - w - 4, x)); y = Math.max(4, Math.min(250 - h - 4, y));
+    hPx(c, x, y, function () { c.fillStyle = 'rgba(0,0,0,0.28)'; c.fillRect(4, 5, w * 3, h * 3); hVellum(c, 0, 0, w * 3, h * 3, 'card_frame'); });
     if (stack) drawDropIcon(c, stack, x + 14, y + 12, 1.05); else { c.save(); c.translate(x + 14, y + 12); Items.icon(c, it, 16); c.restore(); }
-    c.font = 'bold 7px Georgia, serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(name, x + 26, y + 14);
+    hPx(c, x, y, function () { hRubric(c, name, 78, 40, 20 / 1, HC.ink); });
     lines.forEach(function (l, i) {
-      var yy = y + 27 + i * 8;
-      if (l.t) { c.font = '6px Georgia, serif'; c.fillStyle = '#efe2c1'; c.fillText(l.t, x + 8, yy); return; }
-      c.font = '600 6px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.7)'; c.fillText(l.k, x + 8, yy); var kw = c.measureText(l.k + '  ').width;
-      c.fillStyle = '#f6e2b8'; c.fillText(l.v, x + 8 + kw, yy);
-      if (l.d) { c.fillStyle = l.d > 0 ? '#9be58b' : '#ff9a8a'; c.fillText((l.d > 0 ? '+' : '\u2212') + Math.abs(l.d) + l.u, x + 8 + kw + c.measureText(l.v + '  ').width, yy); }
+      var yy = y + 27 + i * 7.5;
+      if (l.t) { hText(c, l.t, x + 8, yy, hf('', 5.6), HC.ink); return; }
+      c.font = hf('italic', 5.4); hText(c, l.k, x + 8, yy, c.font, HC.sepia); var kw = c.measureText(l.k + '  ').width;
+      c.font = hf('bold', 5.6); hText(c, l.v, x + 8 + kw, yy, c.font, HC.ink);
+      if (l.d) { var vw = c.measureText(l.v + '  ').width; hText(c, (l.d > 0 ? '+' : '\u2212') + Math.abs(l.d) + l.u, x + 8 + kw + vw, yy, hf('bold', 5.6), l.d > 0 ? '#3e7a2e' : '#a8402e'); }
     });
   }
 
@@ -5352,7 +5416,7 @@ __COMBAT__
     if (bookOpen) { if (e.button === 0) bookClick(); return; }
     var mxc = 400 - (GW >= GH ? 64 : 64 * GW / GH) - 6 - 34; if (SHOW.book && e.button === 0 && Math.abs(mouseS.x - mxc) < 9 && Math.abs(mouseS.y - 16) < 9) { bookOpen = true; invOpen = false; cookOpen = false; menu = null; return; }
 
-    if (menu) {
+    if (menu && !(menu.info && invOpen && !overMenu() && !menuTabHit())) {   /* (on the Tab screen a click on the panel or the bag goes to them and the crafting board stays: it closed the board and the click was lost) */
       var th = menuTabHit(), hit = menuHit();
       if (th && e.button === 0) { openMenu(th.id); return; }
       if (menu.info) { var ie = infoRowHit(); if (ie && e.button === 0) { menuSel[menuTab] = ie.id; return; } if (e.button === 0 && menuStation && menu.takes) { for (var tk = 0; tk < menu.takes.length; tk++) { var tq = menu.takes[tk]; if (mouseS.x >= tq.x && mouseS.x < tq.x + tq.w && mouseS.y >= tq.y && mouseS.y < tq.y + tq.h) { stationTake(menuStation.it, tq.i); return; } } } if (infoCancelHit() && e.button === 0) { infoCancel(infoSel()); return; } if (infoBtnHit() && e.button === 0) { infoMake(infoSel()); return; } if (e.button === 2 || !overMenu()) menu = null; return; }

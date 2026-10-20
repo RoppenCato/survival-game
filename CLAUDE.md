@@ -423,8 +423,17 @@ fading to the night's colour), `shadows` (things throw shadows away from a fire;
 from a fire), `walls` (a fire indoors lights its room and pools at doors and windows) and `moths`; off until Robin has
 looked: `moon`, `mist`, `shafts`, `clouds`. Robin found the first version "a weird filter"; the shadows were liked.
 
-**The UI** (`docs/ui-review.md`): boards are drawn over the HUD in one order (`scene.boards`) in the art direction's wood,
-leather and parchment; E does one thing by one rule, `eWhat(P)` (a new thing E can do is one `add(...)` line there); the HUD
+**The UI** (`docs/ui-review.md`): boards are drawn over the HUD in one order (`scene.boards`). **The panels' look is the Art
+Director's** (2026-10-20, Robin's mix of its three directions; its `out/hud/SPEC.md` and `hud_mix.png`, the art copied whole
+into `assets/hud`, inlined as `__HUD__`): every board (`wood()`) is the dark oak with a carved line and rivets (`hBoard`, a
+9-slice `board_frame`); the Gear board (330 by 360 canvas pixels) has the hero in an arched vellum window and six round light
+slots a side (the arm ring where the spec has "armour", mine; an empty slot shows a sepia sketch), the tabs down its left
+edge, the name with a red capital and in runes; the bag (330 by 300) is dark sockets; crafting (525 by 500, bottom right) has
+its list in a dark well and a vellum card with the thing's picture large, a sub-title (`infoSub`, mine), its numbers and what
+it needs ("3 of 25": needs of has), and the Craft button; a thing's hover card is vellum, over every board. A board is drawn
+in Robin's canvas pixels (`hPx`, three to a unit) so the spec's numbers stand as they are; the mouse is tested in units. The
+type is the book face, `UI_FACE` (the mock's Palatino; Alegreya would need the font downloaded). On the Tab screen a click on
+the panel or the bag reaches them and the crafting board stays open. E does one thing by one rule, `eWhat(P)` (a new thing E can do is one `add(...)` line there); the HUD
 is health and stamina top left, the chart and the meal top right; damage numbers are the engine's damage × 10 (`SHOW`), whole.
 
 ## Combat (`src/combat.js`)
