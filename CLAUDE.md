@@ -331,7 +331,9 @@ heroes; `assets/props/trees`, set pieces through `World.setImages` in three vari
 own size, `fixed`); the felling states stay the game's, and **a felled tree lies as its own trunk picture** along the fall,
 its chopped end at the stump, shortened at the far end as the logs come off (never thinner: Robin), the wood rolling out
 there; the log picture waits for a use. **The workbench and the raft bench are the studio's pictures too** (2026-10-20,
-`assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12). The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
+`assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12), **and the plants** (`assets/props/plants`:
+bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three variants each; a picked berry bush is a
+bush until it regrows). The build folds any `assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`). The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
 props at their old size (Admin's **Trees** cycles their bake; `World.TREE_SHAPES`); rocks come in six variations of tone and build.
 
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
