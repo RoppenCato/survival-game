@@ -16074,7 +16074,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     menu = { build: true, cat: buildCat, items: [], tabs: [], labels: [], w: COLS_B * CW + 12, h: 23 + nrows * CH + 5, scroll: 0, maxScroll: 0 };
     menu.x = Math.round((400 - menu.w) / 2); menu.y = 50;
     list.forEach(function (p, k) { menu.items.push({ i: k, piece: p, x: menu.x + 7 + (k % COLS_B) * CW, y: menu.y + 23 + Math.floor(k / COLS_B) * CH, w: CW - 2, h: CH - 2 }); });
-    var tx = menu.x + 6; cats.forEach(function (ct) { var w = Math.round(ct[1].length * 3.4 + 11); menu.tabs.push({ id: 'cat:' + ct[0], name: ct[1], on: ct[0] === buildCat, x: tx, y: menu.y + 5, w: w, h: 13 }); tx += w + 2; });
+    var tx = 20; ctx.font = hf('bold', 13); cats.forEach(function (ct) { var on = ct[0] === buildCat, pw = Math.ceil(ctx.measureText(ct[1]).width) + 28, ph = on ? 38 : 30; menu.tabs.push({ id: 'cat:' + ct[0], name: ct[1], on: on, px: tx, pw: pw, ph: ph, x: menu.x + tx / 3, y: menu.y - (ph - 8) / 3, w: pw / 3, h: ph / 3 }); tx += pw + 6; });   /* flaps across the top (the Art Director's follow-up, 2026-10-20): as wide as the word plus 28, 6 apart, from 20 px in, the chosen one 38 tall, the others 30, their feet 8 px under the board */
   }
   /* ---------- the recipe boards (2026-10-06, after Robin's reference): a list of what can be made on the left, the chosen
      thing on the right with its tale, its numbers and what it takes, and a Craft button that fills as it is made. The
@@ -16088,7 +16088,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     menuStation = menuTab === 'hearth' ? { kind: 'hearth', it: hearthAt(hero()) } : (menuTab === 'bench' ? { kind: 'bench', it: benchNear(hero()) } : (menuTab === 'furnace' ? { kind: 'furnace', it: furnaceAt(hero()) } : null)); if (menuStation && !menuStation.it) menuStation = null;
     menu = { info: true, items: [], rows: [], tabs: [], labels: [], w: 151, h: 500 / 3, list: infoList(), scroll: 0, maxScroll: 0 };   /* (453 by 500 canvas pixels: narrower, so more of the game shows, Robin's update) */
     menu.x = 400 - menu.w - 5; menu.y = 250 - menu.h - 20 / 3;   /* 525 by 500 canvas pixels, bottom right (the studio's spec, 2026-10-20) */   /* lower right, under the chart, clear of the hero; the list on the left and the chosen thing beside it */
-    var tabs = menuTabs(); if (tabs.length > 1) { var ty = 24; tabs.forEach(function (t) { var hp = Math.max(60, Math.round(t.name.length * 7 + 20)); menu.tabs.push({ id: t.id, name: t.name, x: menu.x - 20 / 3, y: menu.y + ty / 3, w: 20 / 3, h: hp / 3, py: ty, hp: hp }); ty += hp + 4; }); }   // down the board's left edge
+    var tabs = menuTabs(); if (tabs.length > 1) { var ty = 24; ctx.font = hf('bold', 13); tabs.forEach(function (t) { var hp = Math.max(60, Math.ceil(ctx.measureText(t.name).width) + 24); menu.tabs.push({ id: t.id, name: t.name, x: menu.x - 24 / 3, y: menu.y + ty / 3, w: 24 / 3, h: hp / 3, py: ty, hp: hp }); ty += hp + 6; }); }   // flaps off the board's left edge (the Art Director's follow-up, 2026-10-20): the first 24 px under the top, 6 apart, each as tall as its word plus 24
     var rowH = 10; menu.ly = menu.y + 18; menu.lw = 150 / 3; menu.lx = menu.x + 6;
     var listH = (428 - (menuStation ? 104 : 0)) / 3; menu.rowH = rowH; menu.listH = listH;
     // the list as it is shown: under a small heading a category when there is more than one (Tools, Weapons, Armour, Supplies); it was one long scroll
@@ -16178,8 +16178,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     menu.rows = []; menu.takes = []; menu.btn = null; menu.cbtn = null;
     var inR = function (r) { return !!r && !!mouseS && mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h; };
     hPx(c, X, Y, function () {
+      menu.tabs.forEach(function (t) { hTab(c, t.py, t.hp, t.name, t.id === menuTab, th === t); });   // the flaps first: their right edges go under the board
       hBoard(c, 453, 500);
-      menu.tabs.forEach(function (t) { hTab(c, -20, t.py, t.hp, t.name, t.id === menuTab, th === t); });
       hTitle(c, menuTab === 'hearth' ? 'Cooking' : menuTab === 'furnace' ? 'Smelting' : 'Crafting');   /* (the heading by the board: mine) */
       // the list, in its dark well
       c.fillStyle = HC.well; c.fillRect(LX, LY, 150, 428);
@@ -16250,29 +16250,25 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function menuHit() { if (!menu || !mouseS) return null; for (var i = 0; i < menu.items.length; i++) { var it = menu.items[i]; if (mouseS.x >= it.x && mouseS.x <= it.x + (it.w || MCELL) && mouseS.y >= it.y && mouseS.y <= it.y + (it.h || MCELL)) return it; } return null; }
   function overMenu() { return !!menu && !!mouseS && mouseS.x >= menu.x && mouseS.x <= menu.x + menu.w && mouseS.y >= menu.y && mouseS.y <= menu.y + menu.h; }
   function menuTabHit() { if (!menu || !mouseS) return null; for (var i = 0; i < menu.tabs.length; i++) { var t = menu.tabs[i]; if (mouseS.x >= t.x && mouseS.x <= t.x + t.w && mouseS.y >= t.y && mouseS.y <= t.y + t.h) return t; } return null; }
-  function tabUi(c, t, on, hov) {           // a board's tab: carved, amber when it is the open one (one make of tab for every board)
-    c.fillStyle = on ? '#a8702c' : (hov ? '#4a3626' : '#33241a'); c.fillRect(t.x, t.y, t.w, t.h); c.strokeStyle = UI_INK; c.lineWidth = 0.8; c.strokeRect(t.x + 0.5, t.y + 0.5, t.w - 1, t.h - 1);
-    c.font = (on ? 'bold ' : '600 ') + (t.small ? '6px' : '6.5px') + ' system-ui, sans-serif'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.textAlign = 'center'; c.fillText(t.name, t.x + t.w / 2, t.y + t.h / 2 + 2.6);
-  }
-  function costRow(c, cost, cx, y) {        // what a piece takes: each kind's small picture and its number, red where you have too few
-    var ks = Object.keys(cost), ws = [], tot = 0, x; c.font = 'bold 4.6px system-ui, sans-serif';
-    ks.forEach(function (k) { var w = 7.4 + c.measureText(String(cost[k])).width + 1.8; ws.push(w); tot += w; }); x = cx - tot / 2 + 0.9;
-    ks.forEach(function (k, q) { var ok = ADMIN.free || (inv[k] || 0) >= cost[k]; drawDropIcon(c, k, x + 3.2, y - 1.6, 0.4); c.font = 'bold 4.6px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = ok ? '#f6e2b8' : '#ff9a8a'; c.fillText(String(cost[k]), x + 7.2, y); x += ws[q]; });
-  }
-  function drawMenu(c) {
+  function drawMenu(c) {                    // the Building board in the studio's clothes (its follow-up, 2026-10-20): flaps across the top, the name plaque, a dark cell a piece
     if (menu.info) { drawInfo(c); return; }
     var P = hero(), hit = menuHit(), th = menuTabHit(), i;
-    wood(c, menu.x, menu.y, menu.w, menu.h);
-    menu.tabs.forEach(function (t) { t.small = true; tabUi(c, t, t.on, th === t); });
-    for (i = 0; i < menu.items.length; i++) {
-      var it = menu.items[i], p = it.piece, on = !P.wreck && PIECES[P.piece] === p && P.mode === 'build', cost = buildCost(p.cost || {}), ok = canAfford(cost);
-      c.fillStyle = hit === it ? '#5c3e2a' : '#452c1b'; c.fillRect(it.x, it.y, it.w, it.h); uiGrain(c, it.x, it.y, it.w, it.h, 0.12);
-      c.strokeStyle = on ? '#ffd34d' : UI_INK; c.lineWidth = on ? 1.4 : 0.8; c.strokeRect(it.x + 0.5, it.y + 0.5, it.w - 1, it.h - 1);
-      c.save(); c.beginPath(); c.rect(it.x + 1, it.y + 1, it.w - 2, 25); c.clip(); c.translate(it.x + it.w / 2, it.y + 13.5); c.globalAlpha = ok ? 1 : 0.5; if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); c.restore();
-      c.font = '600 4.6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = ok ? '#f6e2b8' : 'rgba(246,226,184,0.6)';
-      var nl = wrapText(c, p.name, it.w - 3).slice(0, 2); nl.forEach(function (ln, k) { c.fillText(ln, it.x + it.w / 2, it.y + (nl.length === 1 ? 31 : 29) + k * 5.2); });
-      costRow(c, cost, it.x + it.w / 2, it.y + it.h - 2.6); if (isNew('p:' + it.piece.id + ':' + it.piece.m)) { c.fillStyle = '#ffd34d'; c.beginPath(); c.arc(it.x + it.w - 4, it.y + 4, 1.7, 0, 7); c.fill(); }
-    }
+    hPx(c, menu.x, menu.y, function () {
+      menu.tabs.forEach(function (t) { hTopFlap(c, t.px, 8 - t.ph, t.pw, t.ph, t.name, t.on, th === t); });   // the flaps first: their feet go under the board
+      hBoard(c, menu.w * 3, menu.h * 3);
+      hTitle(c, 'Building');
+      for (i = 0; i < menu.items.length; i++) {
+        var it = menu.items[i], p = it.piece, on = !P.wreck && PIECES[P.piece] === p && P.mode === 'build', cost = buildCost(p.cost || {}), ok = canAfford(cost), cx = (it.x - menu.x) * 3, cy = (it.y - menu.y) * 3, cw = it.w * 3, chh = it.h * 3;
+        c.save(); if (!ok) c.globalAlpha = 0.45;   // a cell that cannot be paid, whole, at 45%
+        if (!nine(c, 'build_cell', cx, cy, cw, chh, 10)) { c.fillStyle = '#2b1c13'; c.fillRect(cx, cy, cw, chh); }
+        c.save(); c.beginPath(); c.rect(cx + 3, cy + 3, cw - 6, 67); c.clip(); hUnits(c, cx + cw / 2, cy + 36, function () { if (p.icon) p.icon(c); else Build.icon(c, p.id, p.m); }); c.restore();   // the piece as the game draws it, in the upper 70
+        c.font = hf('', 13); var nl = wrapText(c, p.name, cw - 10).slice(0, 2); nl.forEach(function (ln, k) { hText(c, ln, cx + cw / 2, nl.length === 1 ? cy + 89 : cy + 80 + k * 15, hf('', 13), HC.cream, 'center'); });
+        hCostRow(c, cost, cx + cw / 2, cy + 111);
+        if (isNew('p:' + p.id + ':' + p.m)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(cx + cw - 11, cy + 11, 3.5, 0, 7); c.fill(); }   // never built: the mark the crafting list has
+        c.restore();
+        if ((on || hit === it) && !nine(c, 'build_cell_chosen', cx, cy, cw, chh, 8)) { c.strokeStyle = HC.gold; c.lineWidth = 3; c.strokeRect(cx + 1.5, cy + 1.5, cw - 3, chh - 3); }
+      }
+    });
   }
   // panels: the inventory (Tab) and the hearth (E). Rows are remembered so clicks can find them.
 
@@ -16489,7 +16485,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      a dark well beside a vellum card with the thing's picture large; light only for the window, the slots and the card. A
      board is drawn in the canvas pixels of Robin's size (1200 by 750, three to a unit: hPx), so the spec's numbers are used as
      they are; what the mouse can hit stays in units. ---------- */
-  var HUD_ART = {"board_frame": "../assets/hud/board_frame.png?v=a3dc2cc2", "board_frame_gilt": "../assets/hud/board_frame_gilt.png?v=8c45eec8", "button": "../assets/hud/button.png?v=da923b68", "button_down": "../assets/hud/button_down.png?v=9724e8b3", "button_hover": "../assets/hud/button_hover.png?v=57f2482a", "capital_box": "../assets/hud/capital_box.png?v=5e4a81b8", "card_frame": "../assets/hud/card_frame.png?v=69c6fbf5", "cost_socket": "../assets/hud/cost_socket.png?v=d5a8b977", "flap_off": "../assets/hud/flap_off.png?v=c45f8165", "flap_on": "../assets/hud/flap_on.png?v=23d6fe0f", "list_bar": "../assets/hud/list_bar.png?v=9cb61956", "list_bar_gold": "../assets/hud/list_bar_gold.png?v=9a69ffa0", "plaque": "../assets/hud/plaque.png?v=8911fdce", "plate_frame": "../assets/hud/plate_frame.png?v=dc63f7f5", "rivet": "../assets/hud/rivet.png?v=703a4492", "sketch_armour": "../assets/hud/sketch_armour.png?v=0dde2a7e", "sketch_chest": "../assets/hud/sketch_chest.png?v=728689a2", "sketch_cloak": "../assets/hud/sketch_cloak.png?v=a2ca11f6", "sketch_feet": "../assets/hud/sketch_feet.png?v=0c512317", "sketch_head": "../assets/hud/sketch_head.png?v=3e2ab850", "sketch_legs": "../assets/hud/sketch_legs.png?v=5813b244", "sketch_light_armour": "../assets/hud/sketch_light_armour.png?v=f48cff4c", "sketch_light_chest": "../assets/hud/sketch_light_chest.png?v=75c1bfb9", "sketch_light_cloak": "../assets/hud/sketch_light_cloak.png?v=933d8778", "sketch_light_feet": "../assets/hud/sketch_light_feet.png?v=cf709a54", "sketch_light_head": "../assets/hud/sketch_light_head.png?v=ce927fff", "sketch_light_legs": "../assets/hud/sketch_light_legs.png?v=6148d0b1", "sketch_light_neck": "../assets/hud/sketch_light_neck.png?v=ea088f61", "sketch_light_ring": "../assets/hud/sketch_light_ring.png?v=a4e935bb", "sketch_light_shield": "../assets/hud/sketch_light_shield.png?v=8dcbd063", "sketch_light_trinket": "../assets/hud/sketch_light_trinket.png?v=a565c57e", "sketch_neck": "../assets/hud/sketch_neck.png?v=cb95b00d", "sketch_ring": "../assets/hud/sketch_ring.png?v=dcae29d3", "sketch_shield": "../assets/hud/sketch_shield.png?v=78dd282d", "sketch_trinket": "../assets/hud/sketch_trinket.png?v=e7e68059", "slot_round": "../assets/hud/slot_round.png?v=ea136761", "slot_round_chosen": "../assets/hud/slot_round_chosen.png?v=7de463f1", "slot_square": "../assets/hud/slot_square.png?v=3ed6814b", "slot_square_chosen": "../assets/hud/slot_square_chosen.png?v=9cb24252", "socket": "../assets/hud/socket.png?v=a20d3ac8", "socket_chosen": "../assets/hud/socket_chosen.png?v=520b3290", "socket_chosen_gold": "../assets/hud/socket_chosen_gold.png?v=694ca89b", "tab_off": "../assets/hud/tab_off.png?v=a0be3ee0", "tab_on": "../assets/hud/tab_on.png?v=189221ee", "vellum_tile": "../assets/hud/vellum_tile.png?v=10d2ef7c", "window_back": "../assets/hud/window_back.png?v=e9056a98", "window_frame": "../assets/hud/window_frame.png?v=428d0ba8", "wood_tile": "../assets/hud/wood_tile.png?v=a798f512"}, HUD_IMG = {}, HUD_PAT = {};
+  var HUD_ART = {"board_frame": "../assets/hud/board_frame.png?v=a3dc2cc2", "board_frame_gilt": "../assets/hud/board_frame_gilt.png?v=8c45eec8", "build_cell": "../assets/hud/build_cell.png?v=41b4a39b", "build_cell_chosen": "../assets/hud/build_cell_chosen.png?v=25b64600", "button": "../assets/hud/button.png?v=da923b68", "button_down": "../assets/hud/button_down.png?v=9724e8b3", "button_hover": "../assets/hud/button_hover.png?v=57f2482a", "capital_box": "../assets/hud/capital_box.png?v=5e4a81b8", "card_frame": "../assets/hud/card_frame.png?v=69c6fbf5", "cost_socket": "../assets/hud/cost_socket.png?v=d5a8b977", "flap_left_off": "../assets/hud/flap_left_off.png?v=9f88addb", "flap_left_on": "../assets/hud/flap_left_on.png?v=12742541", "flap_off": "../assets/hud/flap_off.png?v=c45f8165", "flap_on": "../assets/hud/flap_on.png?v=23d6fe0f", "flap_top_off": "../assets/hud/flap_top_off.png?v=316b7ef9", "flap_top_on": "../assets/hud/flap_top_on.png?v=fbf9ba4d", "list_bar": "../assets/hud/list_bar.png?v=9cb61956", "list_bar_gold": "../assets/hud/list_bar_gold.png?v=9a69ffa0", "plaque": "../assets/hud/plaque.png?v=8911fdce", "plate_frame": "../assets/hud/plate_frame.png?v=dc63f7f5", "portrait_ring": "../assets/hud/portrait_ring.png?v=e3f4bbfa", "rivet": "../assets/hud/rivet.png?v=703a4492", "sketch_armour": "../assets/hud/sketch_armour.png?v=0dde2a7e", "sketch_chest": "../assets/hud/sketch_chest.png?v=728689a2", "sketch_cloak": "../assets/hud/sketch_cloak.png?v=a2ca11f6", "sketch_feet": "../assets/hud/sketch_feet.png?v=0c512317", "sketch_head": "../assets/hud/sketch_head.png?v=3e2ab850", "sketch_legs": "../assets/hud/sketch_legs.png?v=5813b244", "sketch_light_armour": "../assets/hud/sketch_light_armour.png?v=f48cff4c", "sketch_light_chest": "../assets/hud/sketch_light_chest.png?v=75c1bfb9", "sketch_light_cloak": "../assets/hud/sketch_light_cloak.png?v=933d8778", "sketch_light_feet": "../assets/hud/sketch_light_feet.png?v=cf709a54", "sketch_light_head": "../assets/hud/sketch_light_head.png?v=ce927fff", "sketch_light_legs": "../assets/hud/sketch_light_legs.png?v=6148d0b1", "sketch_light_neck": "../assets/hud/sketch_light_neck.png?v=ea088f61", "sketch_light_ring": "../assets/hud/sketch_light_ring.png?v=a4e935bb", "sketch_light_shield": "../assets/hud/sketch_light_shield.png?v=8dcbd063", "sketch_light_trinket": "../assets/hud/sketch_light_trinket.png?v=a565c57e", "sketch_neck": "../assets/hud/sketch_neck.png?v=cb95b00d", "sketch_ring": "../assets/hud/sketch_ring.png?v=dcae29d3", "sketch_shield": "../assets/hud/sketch_shield.png?v=78dd282d", "sketch_trinket": "../assets/hud/sketch_trinket.png?v=e7e68059", "slot_round": "../assets/hud/slot_round.png?v=ea136761", "slot_round_chosen": "../assets/hud/slot_round_chosen.png?v=7de463f1", "slot_square": "../assets/hud/slot_square.png?v=3ed6814b", "slot_square_chosen": "../assets/hud/slot_square_chosen.png?v=9cb24252", "socket": "../assets/hud/socket.png?v=a20d3ac8", "socket_chosen": "../assets/hud/socket_chosen.png?v=520b3290", "socket_chosen_gold": "../assets/hud/socket_chosen_gold.png?v=694ca89b", "stat_boot": "../assets/hud/stat_boot.png?v=38dd60e8", "stat_burst": "../assets/hud/stat_burst.png?v=a86d996c", "stat_guard": "../assets/hud/stat_guard.png?v=e01c83e5", "stat_heart": "../assets/hud/stat_heart.png?v=0d002e3b", "stat_return": "../assets/hud/stat_return.png?v=6ca92b74", "stat_shield": "../assets/hud/stat_shield.png?v=3ff97d30", "stat_star": "../assets/hud/stat_star.png?v=db546e3f", "stat_wind": "../assets/hud/stat_wind.png?v=2acb1d78", "tab_off": "../assets/hud/tab_off.png?v=a0be3ee0", "tab_on": "../assets/hud/tab_on.png?v=189221ee", "vellum_tile": "../assets/hud/vellum_tile.png?v=10d2ef7c", "window_back": "../assets/hud/window_back.png?v=e9056a98", "window_frame": "../assets/hud/window_frame.png?v=428d0ba8", "wood_tile": "../assets/hud/wood_tile.png?v=a798f512"}, HUD_IMG = {}, HUD_PAT = {};
   (function () { if (!HUD_ART) return; for (var k in HUD_ART) { var im = new Image(); im.src = HUD_ART[k]; HUD_IMG[k] = im; } })();
   var UI_FACE = "'Alegreya', 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif";   /* the book face: Alegreya (Robin's pick in the studio's panel picker, 2026-10-20), inlined in the page (assets/fonts, SIL OFL); Palatino only if it fails */
   if (typeof document !== 'undefined' && document.fonts && document.fonts.load) ['16px Alegreya', 'bold 16px Alegreya', 'italic 16px Alegreya'].forEach(function (f) { try { document.fonts.load(f).catch(function () {}); } catch (eF) {} });
@@ -16540,10 +16536,21 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (hov && !on) { c.fillStyle = 'rgba(255,230,180,0.14)'; c.beginPath(); c.roundRect(x + 3, y + 8, 60, h - 11, [0, 0, 8, 8]); c.fill(); }
     hText(c, label, x + 33, y + h - (on ? 11 : 9), hf('bold', 13), HC.cream, 'center');
   }
-  function hTab(c, x, y, h, label, on, hov) {   // a tab down a board's left edge, its word turned up it
-    var im = himg(on ? 'tab_on' : 'tab_off'); if (im) c.drawImage(im, x, y, 20, h); else { c.fillStyle = on ? '#8e2f22' : '#4e3a2c'; c.fillRect(x + 2, y, 18, h); }
-    if (hov && !on) { c.fillStyle = 'rgba(255,230,180,0.14)'; c.fillRect(x + 3, y + 2, 16, h - 4); }
-    c.save(); c.translate(x + 11, y + h / 2); c.rotate(-Math.PI / 2); hText(c, label, 0, 4, hf('bold', 12), HC.cream, 'center'); c.restore();
+  function hTab(c, y, h, label, on, hov) {   // a station flap off a board's left edge (y: its top in the board's pixels): 30 wide in red leather when chosen, 24 in oak when not, its right 6 px under the board, the word turned up it
+    var w = on ? 30 : 24, x = 6 - w;
+    if (!nine(c, on ? 'flap_left_on' : 'flap_left_off', x, y, w, h, 14)) { c.fillStyle = on ? '#8e2f22' : '#4e3a2c'; c.beginPath(); c.roundRect(x, y, w, h, [10, 0, 0, 10]); c.fill(); }
+    if (hov && !on) { c.fillStyle = 'rgba(255,230,180,0.14)'; c.beginPath(); c.roundRect(x + 3, y + 3, w - 9, h - 6, [8, 0, 0, 8]); c.fill(); }
+    c.save(); c.translate(x + (w - 6) / 2, y + h / 2); c.rotate(-Math.PI / 2); hText(c, label, 0, 4.5, hf('bold', 13), on ? HC.cream : HC.under, 'center'); c.restore();
+  }
+  function hTopFlap(c, x, y, w, h, label, on, hov) {   // a flap standing up from a board's top edge (x, y: its top left in the board's pixels; its foot runs 8 px under the board, so it is drawn before it)
+    if (!nine(c, on ? 'flap_top_on' : 'flap_top_off', x, y, w, h, 16)) { c.fillStyle = on ? '#8e2f22' : '#4e3a2c'; c.beginPath(); c.roundRect(x, y, w, h, [10, 10, 0, 0]); c.fill(); }
+    if (hov && !on) { c.fillStyle = 'rgba(255,230,180,0.14)'; c.beginPath(); c.roundRect(x + 3, y + 3, w - 6, h - 11, [8, 8, 0, 0]); c.fill(); }
+    hText(c, label, x + w / 2, y + (on ? 22 : 18), hf('bold', 13), on ? HC.cream : HC.under, 'center');
+  }
+  function hCostRow(c, cost, cx, y) {       // a Building cell's cost (the board's pixels, y the row's middle): each material's small picture and a bold 12 number, red where you have too few
+    var ks = Object.keys(cost), ws = [], tot = 0, x; c.font = hf('bold', 12);
+    ks.forEach(function (k) { var w = 20 + c.measureText(String(cost[k])).width + 6; ws.push(w); tot += w; }); x = cx - tot / 2;
+    ks.forEach(function (k, q) { var ok = ADMIN.free || (inv[k] || 0) >= cost[k]; hUnits(c, x + 10, y, function () { drawDropIcon(c, k, 0, 0, 0.4); }); hText(c, String(cost[k]), x + 21, y + 4.5, hf('bold', 12), ok ? HC.cream : HC.short, 'left'); x += ws[q]; });
   }
   var RUNE_OF = { a: '\u16c5', b: '\u16d2', c: '\u16b4', d: '\u16cf', e: '\u16c1', f: '\u16a0', g: '\u16b4', h: '\u16bc', i: '\u16c1', j: '\u16c1', k: '\u16b4', l: '\u16da', m: '\u16d8', n: '\u16be', o: '\u16a2', p: '\u16d2', q: '\u16b4', r: '\u16b1', s: '\u16cb', t: '\u16cf', u: '\u16a2', v: '\u16a2', w: '\u16a2', x: '\u16b4\u16cb', y: '\u16a2', z: '\u16cb', '\u00e5': '\u16ac', '\u00e4': '\u16c5', '\u00e6': '\u16c5', '\u00f6': '\u16a2', '\u00f8': '\u16a2', '\u00fe': '\u16a6', '\u00f0': '\u16a6' };
   function runesOf(s) {                     // a name in the Younger Futhark, a doubled letter cut once (as the stones do)

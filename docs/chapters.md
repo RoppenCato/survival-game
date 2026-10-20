@@ -114,7 +114,7 @@ sound and the day and night are perfected in this chapter**.
 | The Tab screen: the panel, the bag with the bar as its top row, the crafting list on the left and the chosen thing beside it | Built |
 | E at a station shows only its own things; the queue, the Ready strip, Cancel | Built |
 | Recipes appear from their key ingredient; a gold dot on a thing never made | Built |
-| The Building board (B): tabs, opened by Arnor's word and the first night | Built |
+| The Building board (B): tabs, opened by Arnor's word and the first night | Built (in the studio's clothes since 2026-10-20: flaps across the top, dark cells; the station tabs on the crafting board are flaps too) |
 | **"Crafting feels off against other survival games"** (Robin, 2026-10-14) | Open: what feels off (the board, the queue, the time a thing takes, things landing in the bag?) is unanswered |
 
 ### 4. The interface

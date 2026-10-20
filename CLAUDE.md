@@ -454,7 +454,14 @@ bottom so it's not so square"); the bag (330 by 306) under the flaps is dark soc
 narrower so more of the game shows: Robin) has its list in a dark well, a vellum card with the
 thing's picture large, a sub-title (`infoSub`, mine), the tale, its numbers and **the cost as each material in a socket with
 the number needed in its corner, red when you have too few, and "Short of fibre" beside them** (Robin: "it should just be 3",
-no "Needs"), and the Craft button; the station tabs go down its left edge; a thing's hover card is vellum, over every board.
+no "Needs"), and the Craft button; **the station tabs are flaps off its left edge** (the studio's follow-up, 2026-10-20: `hTab`, `flap_left_on` in red
+leather 30 wide when chosen, `flap_left_off` in oak 24 wide, each as tall as its word plus 24, drawn before the board so their
+right edges go under it); a thing's hover card is vellum, over every board. **The Building board** (924 by its rows) is in the
+same clothes (2026-10-20): its category tabs are **flaps across its top** (`hTopFlap`, `flap_top_on` 38 tall, `flap_top_off`
+30, as wide as the word plus 28, 6 apart, their feet under the board), the Building plaque, and **a dark cell a piece**
+(`build_cell`, 105 by 126 at the board's pitch of 111 by 132: the piece as the game draws it in the upper 70, the name in
+regular 13, the cost as each material's small picture and a bold 12 number, red when short; a cell that cannot be paid at
+45%; the chosen or hovered one ringed in pale gold, `build_cell_chosen`); the never-built mark is the crafting list's ochre dot.
 A board is drawn in Robin's canvas pixels (`hPx`, three to a unit) so the spec's numbers stand as they are; the mouse is
 tested in units. **The type is Alegreya** (Robin's pick; `UI_FACE`): its Latin files from Google Fonts in `assets/fonts`
 (SIL OFL, `OFL.txt`), inlined into the page by the build (`__FONTS__`), so it works offline. On the Tab screen a click on
