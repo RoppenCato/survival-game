@@ -71,6 +71,7 @@ sound and the day and night are perfected in this chapter**.
 | Beasts | Young boars, deer in herds (the blood trail), adders; the wolves at night | Built |
 | Finds | The fish weir, nests, fallen trees, herbs, mushrooms, crates and barrels kicked open with E | Built |
 | Numbers | How fast wood comes, what a first home costs, how many animals, that death costs nothing | Open (bot-measured, never felt by Robin) |
+| Words waiting for Robin (the Lore Director's `docs/questions.md`, at its top) | Arnor's hearth line for fires outside, his riposte line, his joining line, "Thorgunnastead" or "Thorgunnastad", the name dice (the home men's 24 names proposed) | Open: Robin picks, the words come in a handoff |
 
 ## The six areas
 
