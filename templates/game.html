@@ -5233,6 +5233,7 @@ __COMBAT__
       if (bookOpen) drawBook(c);
       if (ringOpen) drawRingBoard(c);
       drawRite(c);
+      drawBarDrag(c);   /* (the thing dragged off the toolbar with Shift, under the mouse) */
       if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen) drawRunePanel(c);
       if (pauseOpen) { rows = []; if (adminOpen && labOpen) drawLab(c); else if (adminOpen) drawAdmin(c); else drawPause(c); }
       if (naming && !pauseOpen) drawNaming(c);
