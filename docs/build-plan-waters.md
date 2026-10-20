@@ -9,6 +9,10 @@ The design is `docs/world-shape.md` (read its "Robin's answers" and "round two" 
 rest is mine. This file says what to build, in what order, where in the code, with what first numbers, how to check it and
 when a step is done. Each step is a rung (Robin's way: try the smallest case, fix, scale up), each ends committed and playable.
 
+**Status (2026-10-20, Robin: "start working on 1-3"):** steps 1, 2 and 3 are built (commits 6154370, 255952a and the
+climate's look; CLAUDE.md "The world" and "Villages" say how they stand). Left of them: beasts on the new islands, the
+raw small fixes below. Steps 4 and 5 are not started.
+
 ## 0. Before you start
 
 **Read:** `CLAUDE.md` (all of it: the working rules, "Things to know before changing code", the controls), `docs/world-shape.md`,

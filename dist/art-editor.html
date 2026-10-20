@@ -4492,6 +4492,16 @@ var WATERS = { homeR: 600, homeMid: [3, 75, 125], homeSmall: [6, 15, 40], crossi
    anchor per compass direction (directions between blend, so a north-east water is cold and wet), with a little low noise
    outside home. The south, warm and dry, is the lowlands as decided (2026-10-07); the rest are first settings (mine). */
 var ANCHORS = [{ a: -Math.PI / 2, warm: 0.15, wet: 0.35 }, { a: Math.PI / 2, warm: 0.85, wet: 0.3 }, { a: 0, warm: 0.65, wet: 0.85 }, { a: Math.PI, warm: 0.3, wet: 0.8 }];   // north, south, east, west
+/* The look of a climate (step 2; data, mine, first settings), as what changes from home's look, so home at (0.5, 0.5) comes out
+   exactly as before: cold is 0 at home and 1 at the north anchor, wet 0 at home and 1 at the east's, dry likewise. The ground's
+   tint (red, green, blue added to the grass, per unit), what grows (the shares of a tree kind, bushes, rocks taken by cold or
+   by wet) and the dressing (moss, marsh). The four seasons are slots: summer is drawn, the others are copies of it for now. */
+var CLIMATE = {
+  cold: { tint: [-10, -13, 14], trees: { pine: 0.55, dwarfBirch: 0.25, birch: 1 }, treeK: 0.4, bushes: ['heather', 'juniper', 'heather', 'bush', 'tallGrass'], boulder: 1 },   // the north: thin birch and pine, boulders, heather, a cooler greyer green
+  wet: { tint: [-8, 9, -5], trees: { birch: 0.6, willow: 1 }, treeK: -0.15, bushes: ['tallGrass', 'reeds', 'tallGrass', 'bush', 'berryBush'], marsh: 1, moss: 1 },   // the east: deep lush green, birch and willow, tall grass and reeds, marsh by the water
+  dry: { tint: [6, 2, -8] }   // the south is the lowlands (the biome field); a dry north-west gets a straw tinge
+};
+var SEASONS = { spring: { tint: [0, 0, 0] }, summer: { tint: [0, 0, 0] }, autumn: { tint: [0, 0, 0] }, winter: { tint: [0, 0, 0] } };   // slots, filled later
 var DEF = { isle: 160, count: 1, sizeVar: 0.8, gap: 40, gapVar: 0.8, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 25, maxTiles: 9e6 };
 
 // what can be gathered in the first biome, and how much it takes
@@ -4633,6 +4643,7 @@ function make(kit, opts) {
     return { warm: Math.max(0, Math.min(1, warm)), wet: Math.max(0, Math.min(1, wet)) };
   }
   w.climate = function (wx, wy) { return climateT(wx / T, wy / T); };
+  w.season = 'summer'; w.setSeason = function (name) { if (!SEASONS[name] || name === w.season) return false; w.season = name; for (var ck in chunkCv) delete chunkCv[ck]; chunkOrder.length = 0; return true; };   // the season's slot (step 2.4): nothing but summer is drawn yet; the ground bakes again with the new one
   w.lowlandAt = function (cl) { return sstep(0.15, 0.5, (cl.warm - 0.5) * 2 * (1 - cl.wet)); };   // how much of the lowlands' look a climate has (1 in the warm dry south)
   var BM = new Uint8Array(GW * GH);
   if (waters) for (y = 0; y < GH; y++) for (x = 0; x < GW; x++) {
@@ -5200,7 +5211,7 @@ function make(kit, opts) {
     var n1 = CT + 2, EE = new Float32Array(n1 * n1), BW = new Float32Array(n1 * n1), DK = new Float32Array(n1 * n1), BMv = new Float32Array(n1 * n1), SFt = mtn ? new Float32Array(n1 * n1) : null, HTt = mtn ? new Float32Array(n1 * n1) : null, SNt = mtn ? new Float32Array(n1 * n1) : null, sfv = 0, htv = 0, snv = 0;
     for (jj = 0; jj < n1; jj++) for (ii = 0; ii < n1; ii++) { var gx = cx * CT + ii - 1, gy = cy * CT + jj - 1; EE[jj * n1 + ii] = eTile(gx, gy); BW[jj * n1 + ii] = beachAt(gx, gy); DK[jj * n1 + ii] = fbm(gx / 9, gy / 9, s + 70); BMv[jj * n1 + ii] = w.biomeAt(gx, gy);
       if (mtn) { SFt[jj * n1 + ii] = fbm(gx / 3.1, gy / 3.1, s + 141); HTt[jj * n1 + ii] = fbm(gx / 3.7, gy / 2.7, s + 142); SNt[jj * n1 + ii] = fbm(gx / 3.3, gy / 1.5, s + 143); } }   // the fells' soft patches, the heather's drifts, the snow's fields: a value a tile, read between the tiles
-    var ov = kit.mk(W2, H2), oc = ov.getContext('2d'), img = oc.createImageData(W2, H2), d = img.data, P = PAL, pp = 0, tP = pnow();
+    var ov = kit.mk(W2, H2), oc = ov.getContext('2d'), img = oc.createImageData(W2, H2), d = img.data, P = PAL, pp = 0, tP = pnow(), LM = new Uint8Array(W2 * H2);   // LM: the grass pixels, for the climate's tint
     /* The mountains in this piece. Everything is worked out on a sheet wider and taller than the piece (MG to each side, PADR
        above: three faces, PADB below), so what an edge outside the piece casts into it is found, and what is drawn across a
        piece's border is drawn the same from both sides. lev is the level of every pixel and mfr the field itself; then four
@@ -5437,7 +5448,7 @@ function make(kit, opts) {
             a = Math.min(1, (bw - eg) / 0.32) * 255;        // the grass comes in raggedly at the top of the beach
           } else {                                          // grass: darker by the beach and in soft patches, never in squares
             var dk = DK[q] * w00 + DK[q + 1] * w10 + DK[q + n1] * w01 + DK[q + n1 + 1] * w11, rim = Lp ? 0 : Math.max(0, 1 - (eg - bw) / 0.4);
-            r = 22; g = 84; b = 40; a = Math.min(120, Math.max(0, (dk - 0.54) * 5) * 62 + rim * 70);
+            LM[pp >> 2] = 1; r = 22; g = 84; b = 40; a = Math.min(120, Math.max(0, (dk - 0.54) * 5) * 62 + rim * 70);
             var bmv = BMv[q] * w00 + BMv[q + 1] * w10 + BMv[q + n1] * w01 + BMv[q + n1 + 1] * w11; if (bmv > 0.05) { var bt = bmv * 95, at = a + bt; r = (r * a + 196 * bt) / at; g = (g * a + 176 * bt) / at; b = (b * a + 62 * bt) / at; a = Math.min(255, at); }   // the lowlands: a warmer, yellower green
           }
         }
@@ -5615,6 +5626,15 @@ function make(kit, opts) {
     c.imageSmoothingEnabled = true; c.drawImage(ov, 0, 0, W2, H2);
     if (groundInChunk(cx, cy)) paintGroundInto(c, cx, cy, W2, H2);
     if (w.meadowLook) { c.save(); c.setTransform(2, 0, 0, 2, -cx * W2 * 2, -cy * H2 * 2); w.drawMeadow(c, { x: cx * W2 + W2 / 2, y: cy * H2 + H2 / 2 }, W2 / 2 + 4, H2 / 2 + 4, w.meadowLook); c.restore(); }   // the meadow is still, so it is baked here, not drawn every frame (2026-10-08, the lag)
+    if (waters) {                                             // the climate's tint over the grass (and the season's): nothing at home, where it is zero
+      var clc = climateT(cx * CT + CT / 2, cy * CT + CT / 2), cK = Math.max(0, 0.5 - clc.warm) * 2, wK = Math.max(0, clc.wet - 0.5) * 2, dK = Math.max(0, 0.5 - clc.wet) * 2 * (clc.warm < 0.5 ? 1 : 0.3), ST = SEASONS[w.season] || SEASONS.summer;
+      var tr = CLIMATE.cold.tint[0] * cK + CLIMATE.wet.tint[0] * wK + CLIMATE.dry.tint[0] * dK + ST.tint[0], tg = CLIMATE.cold.tint[1] * cK + CLIMATE.wet.tint[1] * wK + CLIMATE.dry.tint[1] * dK + ST.tint[1], tb = CLIMATE.cold.tint[2] * cK + CLIMATE.wet.tint[2] * wK + CLIMATE.dry.tint[2] * dK + ST.tint[2];
+      if (Math.abs(tr) + Math.abs(tg) + Math.abs(tb) > 0.5) {
+        var cid = c.getImageData(0, 0, W2 * 2, H2 * 2), cd = cid.data, px, py, q4;
+        for (py = 0; py < H2 * 2; py++) for (px = 0; px < W2 * 2; px++) { if (!LM[(py >> 1) * W2 + (px >> 1)]) continue; q4 = (py * W2 * 2 + px) * 4; cd[q4] = Math.max(0, Math.min(255, cd[q4] + tr)); cd[q4 + 1] = Math.max(0, Math.min(255, cd[q4 + 1] + tg)); cd[q4 + 2] = Math.max(0, Math.min(255, cd[q4 + 2] + tb)); }
+        c.putImageData(cid, 0, 0);
+      }
+    }
     var R2 = kit.rng(cx * 7919 + cy * 104729 + s);           // grains, pebbles and shells on the dry sand
     for (ii = 0; ii < 260; ii++) {
       var sx = R2() * W2, sy = R2() * H2, kind = R2(), wxx = cx * W2 + sx, wyy = (cy * H2 + sy) / K, e2 = elevAt(wxx, wyy);
@@ -5948,12 +5968,12 @@ function make(kit, opts) {
           else if (roll > 0.9) { p = { name: R() < 0.6 && has('boulder') ? 'boulder' : (R() < 0.5 ? 'rock' : 'rockFormation'), s: 0.85 + R() * 0.45, r: 12 }; w.stats.rocks++; }
         }
       } else if (t3 >= 2 && t3 !== 5) {
-        var bmp = w.biomeAt(x, y), apr = mtn ? w.fellNear(wx, wy) : 0, hasP = function (nm) { return !!kit.PROPS[nm]; };
+        var bmp = w.biomeAt(x, y), apr = mtn ? w.fellNear(wx, wy) : 0, hasP = function (nm) { return !!kit.PROPS[nm]; }, clp = waters ? climateT(x, y) : null, coldP = clp ? Math.max(0, 0.5 - clp.warm) * 2 : 0, wetP = clp ? Math.max(0, clp.wet - 0.5) * 2 : 0;   // (the climate's share of cold and of wet: 0 at home)
         if (apr > 0.08 && roll > 0.9 && roll < 0.9 + 0.034 * apr) { p = { name: R() < 0.45 && hasP('boulder') ? 'boulder' : (R() < 0.6 ? 'rock' : 'rockFormation'), s: 0.8 + R() * 0.35, r: 11 }; w.stats.rocks++; }   // the approach to the mountains: boulders and rock in the grass
         else if (apr > 0.08 && roll > 0.86 && roll < 0.86 + 0.03 * apr) p = { name: ['juniper', 'heather', 'juniper', 'tallGrass'].filter(hasP)[Math.floor(R() * 4) % ['juniper', 'heather', 'juniper', 'tallGrass'].filter(hasP).length], s: 0.9, r: 0 };   // juniper and heather before the first rise
-        else if (roll < 0.15 * (1 - 0.5 * apr) && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tl = bmp > R() && LOW.length ? LOW : TREES, tn = tl[Math.floor(R() * tl.length) % tl.length]; if (apr > R() * 1.1) tn = R() < 0.3 * apr && hasP('dwarfBirch') ? 'dwarfBirch' : (R() < 0.6 ? 'pine' : 'birch'); if (R() < 0.02 && kit.PROPS.struckTree) tn = 'struckTree'; p = { name: tn, s: (tn === 'pine' ? 0.54 : (tn === 'struckTree' ? 0.6 : (tn === 'dwarfBirch' ? 0.85 : 0.49))) + R() * 0.1, r: tn === 'dwarfBirch' ? 7 : 11 }; w.stats.trees++; }   // now and then a tree struck by lightning: charcoal
-        else if (roll > 0.955) p = { name: ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower'][Math.floor(R() * 5)], s: 0.9, r: 0 };
-        else if (roll > 0.948) { p = { name: bmp > 0.5 && kit.PROPS.chalkRock && R() < 0.7 ? 'chalkRock' : (R() < 0.6 ? 'rock' : 'rockFormation'), s: 0.9, r: 10 }; w.stats.rocks++; }
+        else if (roll < 0.15 * (1 - 0.5 * apr) * (1 - CLIMATE.cold.treeK * coldP - CLIMATE.wet.treeK * wetP) && vnoise(x / 7, y / 7, s + 20) > 0.62) { var tl = bmp > R() && LOW.length ? LOW : TREES, tn = tl[Math.floor(R() * tl.length) % tl.length]; if (coldP > 0 && R() < coldP * 0.75) tn = R() < CLIMATE.cold.trees.pine ? 'pine' : (R() < CLIMATE.cold.trees.dwarfBirch * coldP && hasP('dwarfBirch') ? 'dwarfBirch' : 'birch'); else if (wetP > 0 && R() < wetP * 0.5) tn = R() < CLIMATE.wet.trees.birch ? 'birch' : (hasP('willow') ? 'willow' : 'birch'); if (apr > R() * 1.1) tn = R() < 0.3 * apr && hasP('dwarfBirch') ? 'dwarfBirch' : (R() < 0.6 ? 'pine' : 'birch'); if (R() < 0.02 && kit.PROPS.struckTree) tn = 'struckTree'; p = { name: tn, s: (tn === 'pine' ? 0.54 : (tn === 'struckTree' ? 0.6 : (tn === 'dwarfBirch' ? 0.85 : 0.49))) + R() * 0.1, r: tn === 'dwarfBirch' ? 7 : 11 }; w.stats.trees++; }   // now and then a tree struck by lightning: charcoal
+        else if (roll > 0.955) { var bl = coldP > R() ? CLIMATE.cold.bushes : wetP > R() ? CLIMATE.wet.bushes : ['bush', 'tallGrass', 'berryBush', 'wildHerbs', 'flower']; p = { name: bl[Math.floor(R() * bl.length) % bl.length], s: 0.9, r: 0 }; }
+        else if (roll > 0.948) { p = { name: bmp > 0.5 && kit.PROPS.chalkRock && R() < 0.7 ? 'chalkRock' : (coldP * CLIMATE.cold.boulder > R() && hasP('boulder') ? 'boulder' : (R() < 0.6 ? 'rock' : 'rockFormation')), s: 0.9, r: 10 }; w.stats.rocks++; }
         else if (roll > 0.9475) p = { name: ['fallenTree', 'birdNest', 'mushrooms', 'fallenTree', 'wildHerbs', 'fireRing'][Math.floor(R() * 6)], s: 1, r: 10 };   // things of nature, and an old fire ring someone left: no carved stones or posts lie about
       } else if (t3 === 1 && roll < 0.008) { p = { name: 'rock', s: 0.7 + R() * 0.35, r: 9 }; w.stats.rocks++; }
       if (!p || !kit.PROPS[p.name]) continue;
@@ -6011,11 +6031,11 @@ function make(kit, opts) {
     for (y = 4; y < GH - 4; y++) for (x = 4; x < GW - 4; x++) {
       if (grid[y * GW + x] < 2) continue;
       var gv = vnoise(x / 7, y / 7, s + 20);
-      var bmd = w.biomeAt(x, y);
-      if (bmd > 0.55 && eTile(x, y) < beachAt(x, y) + 2.2 && gv < 0.55 && R() < 0.14) { dab((x + 0.5) * T, (y + 0.5) * T, 16 + R() * 18, 6); n++; continue; }   // the lowlands: marsh on the low ground by the water
+      var bmd = w.biomeAt(x, y), cld = waters ? climateT(x, y) : null, wetD = cld ? Math.max(0, cld.wet - 0.5) * 2 : 0, mossD = cld ? Math.max(0, 0.5 - cld.warm) * 2 * wetD : 0;
+      if ((bmd > 0.55 || wetD * CLIMATE.wet.marsh > 0.4) && eTile(x, y) < beachAt(x, y) + 2.2 && gv < 0.55 && R() < 0.14) { dab((x + 0.5) * T, (y + 0.5) * T, 16 + R() * 18, 6); n++; continue; }   // the lowlands: marsh on the low ground by the water
       if (bmd > 0.6 && gv < 0.42 && eTile(x, y) > 2 && R() < 0.012) { for (var fi = -2; fi <= 2; fi++) dab((x + 0.5 + fi * 0.9) * T, (y + 0.5) * T, 13 + R() * 4, 4); n++; continue; }   // a strip of ploughed field in the open
       if (gv > 0.76 && R() < 0.22) { dab((x + 0.5) * T, (y + 0.5) * T, 18 + R() * 16, 2); n++; }            // earth under the thickest canopy
-      else if (gv > 0.62 && gv < 0.7 && R() < 0.1) { dab((x + 0.5) * T, (y + 0.5) * T, 12 + R() * 12, 3); n++; }   // moss at a grove's edge
+      else if (gv > 0.62 && gv < 0.7 && R() < 0.1 + 0.35 * mossD * CLIMATE.wet.moss) { dab((x + 0.5) * T, (y + 0.5) * T, 12 + R() * 12, 3); n++; }   // moss at a grove's edge, more where it is cold and wet
     }
     var k; for (k in w.buckets) { var bk = w.buckets[k]; if (!bk || !bk.length) continue; for (var i = 0; i < bk.length; i++) { var p = bk[i]; if (p.name === 'rockFormation' || p.name === 'chalkRock') { dab(p.x, p.y + 4, 14 + R() * 6, p.name === 'chalkRock' || w.biome(p.x, p.y) > 0.5 ? 5 : 1); n++; } else if (p.name === 'pine' && R() < 0.35) { dab(p.x, p.y + 6, 10 + R() * 8, 3); n++; } } }
     return n;
@@ -6063,7 +6083,7 @@ var GRASS_INK = { density: 0.4, spacing: 19, height: 6, sway: 0.5, speed: 1, shi
    troll's cave in a wall, a rock shelter, a few veins of copper in the open cliffs. No sea cliffs, no mine, no sea cave: those
    are for a real mountain island. spec.mountain = 1 with these options. */
 var BIG_MOUNTAIN = { at: [-0.3, -0.5], r: 0.56, high: 3.5, shore: 6, rise: 9, sea: false, mine: false, seaCave: false, veins: 4, minPatch: 60 };
-return { WATERS: WATERS, ANCHORS: ANCHORS, TREE_SHAPES: TREE_SHAPES, setTreeShape: function (k) { if (TREE_SHAPES[k]) treeShape = TREE_SHAPES[k]; return treeShape; }, make: make, setImages: setImages, IMAGES: IMAGES, BIG_MOUNTAIN: BIG_MOUNTAIN, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, mountainOpts: null, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
+return { WATERS: WATERS, ANCHORS: ANCHORS, CLIMATE: CLIMATE, SEASONS: SEASONS, TREE_SHAPES: TREE_SHAPES, setTreeShape: function (k) { if (TREE_SHAPES[k]) treeShape = TREE_SHAPES[k]; return treeShape; }, make: make, setImages: setImages, IMAGES: IMAGES, BIG_MOUNTAIN: BIG_MOUNTAIN, MOUNTAIN_SPEC: { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11, mountain: true, mountainOpts: null, sizes: null, biomes: null, big: null }, DEF: DEF, GRASS: GRASS, GRASS_INK: GRASS_INK, KIND: KIND, HP: HP, CAMP: CAMP, hash: hash, vnoise: vnoise, fbm: fbm, T: T, TS: TS, K: K, CT: CT };
 })();
 if (typeof module !== 'undefined') module.exports = World;
 

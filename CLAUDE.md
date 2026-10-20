@@ -559,7 +559,12 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   water** (`w.swellAt`): past radius plus 60 tiles the swell turns a raft or a rowing boat back toward home, with no word and
   nothing lost; a rigged hull sails on; the waves heave out there. **The climate** `w.climate(wx, wy)` gives warm and wet
   from the angle and distance from home (`World.ANCHORS`: north cold and dryish, south warm and dry (the lowlands), east
-  warm and wet, west cool and wet); home is the middle and looks exactly as before; the biome field is read from it. The
+  warm and wet, west cool and wet); home is the middle and looks exactly as before; the biome field is read from it.
+  **The climate's look** (`World.CLIMATE`, data, mine): as what changes from home, so home stays exact: the cold tints the
+  grass cooler and greyer, thins the trees toward pine, birch and dwarf birch, puts boulders and heather about; the wet
+  deepens the green, brings birch and willow, tall grass and reeds, marsh by the water and (cold and wet) moss; the dry
+  south is the lowlands. The tint is laid over a chunk's grass as it bakes. **Seasons are slots** (`World.SEASONS`,
+  `w.season`, `w.setSeason`: the ground bakes again); only summer is drawn. The
   chart is 1400 pixels wide (`CHART_PX`). Beasts live on the first two islands only (the others have none yet). The
   Sea Editor lays out the same sea (`game.world3`; an old `game.world2` is ignored); `layoutKey()` names the arrangement
   (the waters' numbers in it, so a save of the old sea is dropped with the toast). `tools/visual/waters.js` draws it. Islands are blobs from noise on a

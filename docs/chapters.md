@@ -179,7 +179,7 @@ be raided until raiding is opened in chapter 3 (Robin).
 | The arm ring and the thirty runes, the carver's bench | Built |
 | The villages, Old Aslak and Hogni's story | Built |
 | The claim stone, Arnor joins, hirdmen and their jobs | Partly (the hird's next steps, `docs/hird.md`) |
-| **Home water bigger: more islands, villages only, the jarl's seat** (`docs/build-plan-waters.md`, steps 1 to 3) | Built (2026-10-20: the sea as waters, the climate field, home's peaceful places and one seat, home cannot be raided; not yet: beasts on the new islands, the climate's look beyond the lowlands, the seasons' slots) |
+| **Home water bigger: more islands, villages only, the jarl's seat** (`docs/build-plan-waters.md`, steps 1 to 3) | Built (2026-10-20: the sea as waters, the climate field, home's peaceful places and one seat, home cannot be raided; the climate's first look and the seasons' slots; not yet: beasts on the new islands) |
 | **The sea-going ship and the swell that turns small boats at home's edge** (the karve on copper: decision 1 of that plan) | Built (2026-10-20: the karve on copper; a raft is held at home's edge, a karve sails on) |
 | Boats: the faering and the boat; **the shipyard as a few fine models to customise** (Robin, 2026-10-14; moved here) | Partly |
 | **The troll bigger and scarier** (Robin, 2026-10-14; moved here) | Not started (the studio, its plan item 17) |
