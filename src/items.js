@@ -230,14 +230,26 @@ function iconImage(c, it, s) {
   if (ok(metal)) { var key = it.kind + '|' + it.mat, cv = SPR.cache[key]; if (!cv) { cv = tintCanvas(metal, hsl(M.face, it.hue || 0)); SPR.cache[key] = cv; } c.drawImage(cv, -side / 2, -side / 2, side, side); }
   c.restore(); return true;
 }
+/* The worn things' rendered icons (the art studio's, 2026-10-20): a page sets Items.setWorn({ layer: Image }, pick), pick(it) giving
+   [layer, tint or null] (the game picks by kind and material as it dresses the hero); the cloth ones are near white and take the
+   tint by multiplying, their own shading kept. Drawn upright in the slot. */
+var WORN = { imgs: null, pick: null, cache: {} };
+function setWorn(imgs, pick) { WORN.imgs = imgs; WORN.pick = pick; WORN.cache = {}; }
+function tintWhite(im, tint) { var cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight; var g = cv.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'multiply'; g.fillStyle = tint; g.fillRect(0, 0, cv.width, cv.height); g.globalCompositeOperation = 'destination-in'; g.drawImage(im, 0, 0); return cv; }
+function wornImage(c, it, s) {
+  if (!WORN.imgs || !WORN.pick || !KINDS[it.kind] || !KINDS[it.kind].gear) return false;
+  var pk = WORN.pick(it), im = pk && WORN.imgs[pk[0]]; if (!im || !im.complete || !im.naturalWidth) return false;
+  var src = im; if (pk[1]) { var key = pk[0] + '|' + pk[1]; src = WORN.cache[key] || (WORN.cache[key] = tintWhite(im, pk[1])); }
+  var side = (s || 14) * 1.05; c.save(); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(src, -side / 2, -side / 2, side, side); c.restore(); return true;
+}
 function icon(c, it, s) {
-  if (iconImage(c, it, s)) return;
+  if (wornImage(c, it, s) || iconImage(c, it, s)) return;
   var K = KINDS[it.kind], L = K.len * (it.kind === 'bow' ? 1 : it.size), span = it.kind === 'bow' ? L * it.size * 2.2 : L + 7 + (it.kind === 'greataxe' ? 8 : 0), k = (s || 14) / span;
   c.save(); c.scale(k, k);
   if (K.gear) draw(c, it, 0, 0, 1, 0, null);
   else if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
   c.restore();
 }
-return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons };
+return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons, setWorn: setWorn };
 })();
 if (typeof module !== 'undefined') module.exports = Items;

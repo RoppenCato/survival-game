@@ -77,4 +77,4 @@ a tree, the rock, a tree falling, a log coming off, a box breaking, the block, t
 packs' A to C and the studio's layered V in each. The wave on the shore plays the studio's recorded V by default (mine).
 
 **The Art Director:** the character panel, the bag and the crafting board in the art direction (the panel's gear icons too
-cramped, plain and ugly); a block with the weapon raised for when no shield is worn; the trees (already in its plan).
+cramped, plain and ugly; **the rendered icons for what is worn are in, 2026-10-20**; three directions for the panels shown to Robin); a block with the weapon raised for when no shield is worn; the trees (already in its plan).

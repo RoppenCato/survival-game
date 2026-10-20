@@ -7480,15 +7480,27 @@ function iconImage(c, it, s) {
   if (ok(metal)) { var key = it.kind + '|' + it.mat, cv = SPR.cache[key]; if (!cv) { cv = tintCanvas(metal, hsl(M.face, it.hue || 0)); SPR.cache[key] = cv; } c.drawImage(cv, -side / 2, -side / 2, side, side); }
   c.restore(); return true;
 }
+/* The worn things' rendered icons (the art studio's, 2026-10-20): a page sets Items.setWorn({ layer: Image }, pick), pick(it) giving
+   [layer, tint or null] (the game picks by kind and material as it dresses the hero); the cloth ones are near white and take the
+   tint by multiplying, their own shading kept. Drawn upright in the slot. */
+var WORN = { imgs: null, pick: null, cache: {} };
+function setWorn(imgs, pick) { WORN.imgs = imgs; WORN.pick = pick; WORN.cache = {}; }
+function tintWhite(im, tint) { var cv = document.createElement('canvas'); cv.width = im.naturalWidth; cv.height = im.naturalHeight; var g = cv.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'multiply'; g.fillStyle = tint; g.fillRect(0, 0, cv.width, cv.height); g.globalCompositeOperation = 'destination-in'; g.drawImage(im, 0, 0); return cv; }
+function wornImage(c, it, s) {
+  if (!WORN.imgs || !WORN.pick || !KINDS[it.kind] || !KINDS[it.kind].gear) return false;
+  var pk = WORN.pick(it), im = pk && WORN.imgs[pk[0]]; if (!im || !im.complete || !im.naturalWidth) return false;
+  var src = im; if (pk[1]) { var key = pk[0] + '|' + pk[1]; src = WORN.cache[key] || (WORN.cache[key] = tintWhite(im, pk[1])); }
+  var side = (s || 14) * 1.05; c.save(); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(src, -side / 2, -side / 2, side, side); c.restore(); return true;
+}
 function icon(c, it, s) {
-  if (iconImage(c, it, s)) return;
+  if (wornImage(c, it, s) || iconImage(c, it, s)) return;
   var K = KINDS[it.kind], L = K.len * (it.kind === 'bow' ? 1 : it.size), span = it.kind === 'bow' ? L * it.size * 2.2 : L + 7 + (it.kind === 'greataxe' ? 8 : 0), k = (s || 14) / span;
   c.save(); c.scale(k, k);
   if (K.gear) draw(c, it, 0, 0, 1, 0, null);
   else if (it.kind === 'bow') draw(c, it, 1, 0, 1, 0, L); else draw(c, it, -(L - 7) / 2 * 0.7, (L - 7) / 2 * 0.7, 0.7071, -0.7071, L);
   c.restore();
 }
-return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons };
+return { KINDS: KINDS, MATS: MATS, DEF: DEF, ORDER: ORDER, MELEE: MELEE, RANGED: RANGED, MORDER: MORDER, make: make, name: name, desc: desc, stats: stats, pal: pal, draw: draw, icon: icon, setIcons: setIcons, setWorn: setWorn };
 })();
 if (typeof module !== 'undefined') module.exports = Items;
 
@@ -13122,6 +13134,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return Sprites.beast(c, BH, e, K, o); };
   (function () { var PI = {"cave_mouth": {"w": 420, "h": 279, "ax": 212, "ay": 197.6, "upp": 0.5, "src": "../assets/props/cave_mouth.png?v=0b78823e"}, "mine_mouth": {"w": 381, "h": 266, "ax": 192.6, "ay": 188.6, "upp": 0.5, "src": "../assets/props/mine_mouth.png?v=0906b9d8"}, "sea_mouth": {"w": 488, "h": 263, "ax": 241.3, "ay": 183, "upp": 0.5, "src": "../assets/props/sea_mouth.png?v=415be92a"}, "shelter": {"w": 644, "h": 349, "ax": 318.8, "ay": 287.3, "upp": 0.5, "src": "../assets/props/shelter.png?v=08a7c938"}, "shelter_in": {"w": 331, "h": 205, "ax": 166, "ay": 194.1, "upp": 0.5, "src": "../assets/props/shelter_in.png?v=f4cd4cdd"}}; if (!PI) return; var map = {}; for (var k in PI) { var im = new Image(); im.src = PI[k].src; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } World.setImages(map); })();   // the Blender set pieces (2026-10-12): the peaks and the cave mouth, drawn as props
   (function () { var IC = {"axe": {"metal": "../assets/sprites/items/axe_metal.png", "wood": "../assets/sprites/items/axe_wood.png"}, "bow": {"wood": "../assets/sprites/items/bow_wood.png"}, "club": {"wood": "../assets/sprites/items/club_wood.png"}, "greataxe": {"metal": "../assets/sprites/items/greataxe_metal.png", "wood": "../assets/sprites/items/greataxe_wood.png"}, "knife": {"metal": "../assets/sprites/items/knife_metal.png", "wood": "../assets/sprites/items/knife_wood.png"}, "pick": {"metal": "../assets/sprites/items/pick_metal.png", "wood": "../assets/sprites/items/pick_wood.png"}, "rod": {"wood": "../assets/sprites/items/rod_wood.png"}, "seax": {"metal": "../assets/sprites/items/seax_metal.png", "wood": "../assets/sprites/items/seax_wood.png"}, "spear": {"metal": "../assets/sprites/items/spear_metal.png", "wood": "../assets/sprites/items/spear_wood.png"}, "sword": {"metal": "../assets/sprites/items/sword_metal.png", "wood": "../assets/sprites/items/sword_wood.png"}}; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the rendered icons for the bag, the bars and the drops
+  (function () { var WN = {"armring": "../assets/sprites/worn/armring.png?v=f0e768de", "belt": "../assets/sprites/worn/belt.png?v=f4c2a57f", "boots": "../assets/sprites/worn/boots.png?v=4a8b119a", "brooch": "../assets/sprites/worn/brooch.png?v=5ed4ad11", "capA": "../assets/sprites/worn/capA.png?v=84a41575", "capB": "../assets/sprites/worn/capB.png?v=2f4963ac", "capC": "../assets/sprites/worn/capC.png?v=3ba461d8", "cloak": "../assets/sprites/worn/cloak.png?v=402adfed", "coat": "../assets/sprites/worn/coat.png?v=11414593", "helmA": "../assets/sprites/worn/helmA.png?v=46edb87d", "helmB": "../assets/sprites/worn/helmB.png?v=b201d8da", "helmC": "../assets/sprites/worn/helmC.png?v=3d86f815", "hoodA": "../assets/sprites/worn/hoodA.png?v=66a2d5b4", "hoodB": "../assets/sprites/worn/hoodB.png?v=b6c4beb4", "hoodC": "../assets/sprites/worn/hoodC.png?v=a086deed", "legs": "../assets/sprites/worn/legs.png?v=c6f4ce4c", "mail": "../assets/sprites/worn/mail.png?v=4c522b2d", "shield_painted": "../assets/sprites/worn/shield_painted.png?v=7da474c4", "shield_wood": "../assets/sprites/worn/shield_wood.png?v=f5fdf10d", "shoes": "../assets/sprites/worn/shoes.png?v=4bf87881", "tunic": "../assets/sprites/worn/tunic.png?v=53db6699"}; if (!WN) return; var imgs = {}; for (var k in WN) { var im = new Image(); im.src = WN[k]; imgs[k] = im; } WORN_IMG = imgs; Items.setWorn(imgs, wornPick); })();   // the worn things' rendered icons (the art studio, 2026-10-20), in the bag, on the Gear page and the crafting board
   try { var cg = JSON.parse(localStorage.getItem('game.creatures')); if (cg) for (var ck in cg) if (cg[ck]) lib.useAnimal(ck, cg[ck]); } catch (e) {}   // the Creature Editor's "Update in game"
   try { var gg = JSON.parse(localStorage.getItem('game.grass')); if (gg && gg.g) { grassLook = JSON.parse(JSON.stringify(World.GRASS)); for (var gk in gg.g) grassLook[gk] = gg.g[gk]; for (var gs in (gg.st || {})) kit.STYLE[gs] = gg.st[gs]; } } catch (e) {}
   // one box for everything that moves: the map, and the cave and the yard that lie east of it. The engine clamps every
@@ -16327,7 +16340,25 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (k = 0; k < n; k++) { var rx = x + k * 6, t = k % 5; c.moveTo(rx, y - 3); c.lineTo(rx, y + 3); if (t === 0) { c.moveTo(rx, y - 3); c.lineTo(rx + 2.4, y - 1.4); c.lineTo(rx, y + 0.2); } else if (t === 1) { c.moveTo(rx + 2.4, y - 3); c.lineTo(rx, y); c.lineTo(rx + 2.4, y + 3); } else if (t === 2) { c.moveTo(rx - 2, y - 2); c.lineTo(rx + 2, y + 2); } else if (t === 3) { c.moveTo(rx, y - 1); c.lineTo(rx + 2.4, y - 3); } else { c.moveTo(rx - 2, y + 2); c.lineTo(rx + 2, y - 2); } }
     c.stroke(); c.restore();
   }
+  /* The worn things' icons (the art studio's, 2026-10-20) picked as the hero is dressed (heroLook): the headwear by HERO_HEADS, a
+     coat or mail by the chest's material, the cloth tinted by the material, the shield's face its paint */
+  var WORN_IMG = null, WORN_EMPTY = { head: 'helmC', cloak: 'cloak', chest: 'tunic', legs: 'legs', feet: 'boots', shield: 'shield_wood' };
+  function wornPick(it) {
+    var mf = Items.MATS[it.mat] ? Items.MATS[it.mat].face : null;
+    if (it.kind === 'helmet') { var hd = HERO_HEADS[it.mat] || HERO_HEADS.leather; return [hd[0], hd[1]]; }
+    if (it.kind === 'tunic') return it.mat === 'iron' ? ['mail', Items.MATS.iron.face] : ['coat', mf || '#9a6a44'];
+    if (it.kind === 'trousers') return ['legs', mf || Sprites.KIT_START.legs];
+    if (it.kind === 'boots') return ['boots', null];
+    if (it.kind === 'cloak') return ['cloak', mf || '#6b4f36'];
+    if (it.kind === 'shield') return it.mat === 'wood' ? ['shield_wood', Sprites.SHIELD_WOOD] : ['shield_painted', YOURS];
+    return null;
+  }
+  function wornGlyph(c, id, x, y) {        // an empty slot for a worn thing: its icon, faint and pale
+    var im = WORN_IMG && WORN_IMG[WORN_EMPTY[id]]; if (!im || !im.complete || !im.naturalWidth) return false;
+    c.save(); c.globalAlpha = 0.3; c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high'; c.drawImage(im, x - 5.6, y - 5.6, 11.2, 11.2); c.restore(); return true;
+  }
   function glyph(c, id, x, y) {            // what goes in a slot, drawn faintly when it is empty
+    if (wornGlyph(c, id, x, y)) return;
     c.save(); c.translate(x, y); c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = 'rgba(246,226,184,0.35)'; c.lineWidth = 1.2; c.beginPath();
     if (id === 'head') { c.arc(0, 1, 5, Math.PI, 0); c.lineTo(5, 3); c.lineTo(-5, 3); c.closePath(); }
     else if (id === 'cloak') { c.moveTo(-3, -5); c.lineTo(3, -5); c.lineTo(5.5, 5); c.lineTo(-5.5, 5); c.closePath(); }

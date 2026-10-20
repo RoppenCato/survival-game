@@ -333,7 +333,7 @@ default); Admin's **Trees** still cycles the bigger ones baked toward `World.TRE
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
 right click uses, Shift and click sends across to a chest, Shift and drag carries half a stack; Sort tidies. The panel
 ("You") has Gear (helmet, cloak, tunic, trousers, boots; shield, necklace, two rings, two trinkets, the arm ring), Stats after
-the first kill, Ring once a ring is worn. The crafting board sits lower right under the chart, **the list on the left and
+the first kill, Ring once a ring is worn. **What is worn shows as the art studio's rendered icons** (`assets/sprites/worn/`, 2026-10-20; `Items.setWorn`, the game's `wornPick` choosing them as the hero is dressed, the cloth tinted by its material) in the slots, the bag and the crafting board; an empty slot shows its icon faint. The panel's redesign waits for Robin's pick of the studio's three directions. The crafting board sits lower right under the chart, **the list on the left and
 the chosen thing beside it** (Robin). **Each board lists only its own**: Tab opens what you make by hand, with a tab for a
 workbench, a fire or a furnace you stand at; E at a fire shows its dishes, at a furnace its bars, at a workbench its things
 (with a By hand tab). A chest takes the right side instead. The middle of the screen stays clear (Robin).

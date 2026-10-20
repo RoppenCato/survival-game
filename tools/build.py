@@ -80,6 +80,14 @@ def item_icons():
         if m: out.setdefault(m.group(1), {})[m.group(2)] = '../assets/sprites/items/' + fn
     return json.dumps(out)
 SRC['__ICONS__'] = item_icons()
+def worn_icons():
+    """the worn things as icons (the art studio's kit_icons.py, 2026-10-20): assets/sprites/worn/<layer>.png, near white where the game tints them"""
+    d = os.path.join(ROOT, 'assets', 'sprites', 'worn'); out = {}
+    if not os.path.isdir(d): return 'null'
+    for fn in sorted(os.listdir(d)):
+        if fn.endswith('.png'): out[fn[:-4]] = '../assets/sprites/worn/' + fn + '?v=' + hashlib.md5(open(os.path.join(d, fn), 'rb').read()).hexdigest()[:8]
+    return json.dumps(out)
+SRC['__WORN__'] = worn_icons()
 def prop_images():
     """the Blender set pieces (tools/props.js: assets/props/<name>.png and props.json): the peaks, the cave mouth"""
     jp = os.path.join(ROOT, 'assets', 'props', 'props.json')
