@@ -413,7 +413,7 @@ Houses are narrow and long at real sizes (a house 4 by 6 to 9 tiles, a longhouse
 **Boats** (`src/yard.js`, `docs/boats.md`): E at a shipwright's bench steps into the Shipyard; a vessel is a hull design chosen
 there (raft, faering, boat, karve, longship by the bench's tier), fitted out with seats, mast, sail, steering oar, dragon stem
 and shields, and launched (the hull is paid then). Sailing is `Yard.sail`: every vessel, the raft too, goes forward on W and
-steers with A and D (Robin), with the wind for rigged hulls and rowers for the crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper, ships iron.
+steers with A and D (Robin), with the wind for rigged hulls and rowers for the crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper; **the karve is the copper age's sea-going ship** (wood 24, copper 10, fiber 12; decision 1 of the waters plan at its default, 2026-10-20: the ship that leaves home must be buildable from home's materials), the longship needs iron.
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
 chart show what has been seen; saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is
@@ -591,7 +591,11 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   conical helm, silver and gold the Gjermundbu; the hoods wait for an item) with the hair under a hat,
   the bronze ring on the arm, what is in the hand and the shield (the guard: with a shield the shield arm across, `block`; without, the weapon raised across, `block_wpn`, both held through a walk); starter colours `Sprites.KIT_START`; blades light steel;
   the old `hero2-mixamo` can still be chosen in the Art Editor, `game.heroSet`), the people (one body with coloured
-  layers, packed as WebP atlases, loaded lazily), the six animals (the boar, deer, moose and bear the studio's lit ones, trimmed to the memory budget, dropped in
+  layers, packed as WebP atlases, loaded lazily), the six animals (**their sheets loaded when a beast of the kind comes within
+  900 units and let go after 60 s with none near** (`sheetTick`, `Sprites.warm`, `unload`; 2026-10-20: all eight kinds were
+  made at the start, about 550 MB decoded, the troll's 234); a sheet is decoded off the frame as it arrives (`imgOf`); while
+  it is on its way the beast stands as a soft shadow; the hero's kit warms the clips of what he holds as his look changes;
+  `debug().sheets()` counts what is loaded) (the boar, deer, moose and bear the studio's lit ones, trimmed to the memory budget, dropped in
   2026-10-20), the boulder troll as the cave troll, Hårungen as his young. The forest troll, the Gape, the three-headed troll,
   the draugr, the huldra, Näcken (the last three the redesigned ones, 2026-10-20), Trollmor (new) and the bysen are in the Art
   Editor only (`docs/beasts.md`). **The art plan** is the studio's (`C:\dev\SG\Art Director\docs\art-plan.md`, 2026-10-20):

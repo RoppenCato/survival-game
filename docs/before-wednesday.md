@@ -38,7 +38,11 @@ If anything else large turns up in the save, the same rule: keep what changed, n
 **Done when:** a save after painting a path is under about 100 KB; reloading keeps the path; an old save still loads; all
 the game's storage is well under 1 MB.
 
-### 2. Sprite sheets loaded when they are used
+### 2. Sprite sheets loaded when they are used: done 2026-10-20
+
+**Done:** the beasts' sheets are made when a beast of the kind comes within 900 units, decoded off the frame, and let go
+after a minute with none near; a beast whose sheets are on their way stands as a soft shadow; the hero (the kit, lazy since
+its drop) warms the clips of what he holds as his look changes. At the start no beast sheet is loaded (`debug().sheets()`).
 
 **Measured 2026-10-20:** the hero's sheets are 178 images, about 1.5 GB decoded if all are loaded (one idle layer is 16,400 by
 1,312 pixels, 82 MB), and `Sprites.hero()` creates every one at the start (`load()` in `src/sprites.js`). The beasts the game
@@ -61,7 +65,7 @@ In their art plan (`C:\dev\SG\Art Director\docs\art-plan.md`): memory budgets pe
 100 frames to 16), the approved beasts and väsen trimmed before they are dropped in. **After Wednesday, mine:** a packer that
 cuts each frame to its own pixels with an offset (`tools/sprites.js` and `src/sprites.js`), then the studio repacks every set.
 
-### 4. Baselines for Fable to compare against
+### 4. Baselines for Fable to compare against: done 2026-10-20 (`docs/baselines/`, the numbers in the plan's section 0; `tools/worldtime.js`)
 
 - `tools/worldtime.js`: time and memory of `World.make`, `plant` and `dress` for the game's sea (run it now, keep it for
   Wednesday's step 1 budget).
@@ -71,7 +75,7 @@ cuts each frame to its own pixels with an offset (`tools/sprites.js` and `src/sp
 
 Write the numbers into `docs/build-plan-waters.md` section 0.
 
-### 5. Names ahead, from the Lore Director (a message)
+### 5. Names ahead, from the Lore Director (a message): asked 2026-10-20, waiting
 
 The jarl of home water (his name, his household, his seat's name) and names for home water and the four waters (or whether
 they stay unnamed on screen), so Fable does not need `LORE?` placeholders.
@@ -82,12 +86,12 @@ Copy the Art Director's `out\fires` as the whole folder; draw the campfire, the 
 others from their sheets with the drop's numbers (`fires.json`: 10 frames at 12 fps, `upp` 0.25, each sheet's anchor; the
 brazier's fire heart about 15 units above its origin for the light); check by day and by night at Robin's size.
 
-### 7. The karve on copper (if Robin says yes to decision 1)
+### 7. The karve on copper: done 2026-10-20 at decision 1's default (Robin: "do 1-7")
 
 `HULLS.karve.cost` in `src/yard.js` to wood 24, copper 10, fiber 12; `tests/karve.js`; `docs/boats.md` and CLAUDE.md ("boats
 need copper, ships iron" becomes: the karve is the copper age's sea-going ship, the longship needs iron).
 
-### 8. Ready for Wednesday
+### 8. Ready for Wednesday (not asked for yet: the push, and the opening prompt once Robin picks Wednesday's aim)
 
 `npm test`, commit and push; update `docs/build-plan-waters.md` with what changed here; and write the opening prompt for the
 Fable session (which files to read, which step to start, the effort), so Robin pastes it and goes.

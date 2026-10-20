@@ -5061,7 +5061,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      opts: scale, shadow, shadowHue, windupLoop, attackLoop; clip and clipK (a clip the page asks for and how far through it: the
      troll shielding its eyes), tint { color, a } (laid over the frame: the troll turned to stone), deadFor (how long it lies). Returns false while the sheets are still loading (the page then draws
      the old creature). A sheet's marked points (a wolf's eyes) are left on e.eyes, about (e.x, e.y * K), for the night glow. */
-  function ready(H) { var A = H && H.meta.anims.idle, im = A && H.img[A.sheets.body]; return !!(im && im.complete && im.naturalWidth); }
+  function ready(H) { var A = H && H.meta.anims.idle; return !!(A && (H.src ? imgOf(H, A.sheets.body) : (H.img[A.sheets.body] && H.img[A.sheets.body].complete && H.img[A.sheets.body].naturalWidth))); }
   function beast(c, H, e, K, opts) {
     if (!ready(H)) return false; opts = opts || {};
     var M = H.meta, A = M.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null }), dt = t - st.t;
@@ -5081,7 +5081,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     if (opts.clip && A[opts.clip] && opts.clipK == null) loopN = nm;
     if (loopN && opts.blend !== false && blends(nm, A[nm])) { var lp = loopAt(A[nm], ph); f = lp.f; if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) mixB = lp; }   // a slow loop: between two frames
-    var An = A[nm], d = dirOf(M, st.face), F0 = An.frame || M.frame, AN = An.anchor || M.anchor, fw = F0.w, fh = F0.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.img[file];
+    if (H.src && !imgOf(H, A[nm].sheets.body)) { nm = 'idle'; f = loopFrame(A.idle, ph); mixB = null; }   // this clip's sheet is still on its way: the idle, which is there
+    var An = A[nm], d = dirOf(M, st.face), F0 = An.frame || M.frame, AN = An.anchor || M.anchor, fw = F0.w, fh = F0.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.src ? imgOf(H, file) : H.img[file];
     if (!im || !im.complete || !im.naturalWidth) return false;
     c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (lie - e.deadT) / 0.4));
@@ -5141,7 +5142,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (i = 0; i < n; i++) { if (two) { b = i * 8; w = u[b] | (u[b + 1] << 8); h = u[b + 2] | (u[b + 3] << 8); ox = u[b + 4] | (u[b + 5] << 8); oy = u[b + 6] | (u[b + 7] << 8); } else { w = u[i * 4]; h = u[i * 4 + 1]; ox = u[i * 4 + 2]; oy = u[i * 4 + 3]; } if (w && x + w > MAXW && x > 0) { x = 0; y += sh; sh = 0; } out[i * 6] = x; out[i * 6 + 1] = y; out[i * 6 + 2] = w; out[i * 6 + 3] = h; out[i * 6 + 4] = ox; out[i * 6 + 5] = oy; if (w) { x += w; if (h > sh) sh = h; } }
     return (H.rc[key] = out);
   }
-  function imgOf(H, file) { var im = H.img[file]; if (!im && H.src && H.src[file] && typeof Image !== 'undefined') { im = new Image(); im.src = H.src[file]; H.img[file] = im; } return im && im.complete && im.naturalWidth ? im : null; }
+  function imgOf(H, file) { var im = H.img[file]; if (!im && H.src && H.src[file] && typeof Image !== 'undefined') { im = new Image(); im.src = H.src[file]; H.img[file] = im; if (im.decode) im.decode().catch(function () {}); } return im && im.complete && im.naturalWidth ? im : null; }   /* (a sheet asked for is decoded off the frame as it arrives, 2026-10-20: the first draw of a big sheet was a spike) */
+  function warm(H) { var n = 0, f; if (!H || !H.src) return 0; for (f in H.src) { if (!H.img[f]) n++; imgOf(H, f); } return n; }   // a lazy set's every sheet asked for (a beast coming near)
+  function unload(H) { if (!H || !H.lazy) return; H.img = {}; H.sil = {}; if (H.rc) H.rc = {}; }   // a lazy set let go (no beast of it near for a while): its sheets, silhouettes and tints
+  function loaded(H) { var n = 0, f; if (H) for (f in H.img) n++; return n; }
   var HAIRS = { 0: 'hairA', 1: 'hairA', 2: 'hairB', 3: 'hairB', 4: 'hairC', 5: null, 6: 'hairC', 7: 'hairB', 8: 'hairB' }, BEARDS = { 0: null, 1: 'beardA', 2: 'beardA', 3: 'beardB', 4: null }, HATS = { 0: null, 1: 'hood', 2: 'cap', 3: 'helm', 4: 'cap', 5: null };
   function idOf(look) { look.id = look.L.map(function (q) { return q.l + (q.t || ''); }).join(','); return look; }
   // spec: a figure spec (hair, beard, hat, clothes, scale, bodyW, legL and col, as lib.folkSpec and Hird.figureSpec give them);
@@ -5290,7 +5294,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
   function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
+  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });
 
 /* Sfx: recorded sound effects (2026-10-15, Robin: "work on the attack sounds; request the sounds you need from the Sound
