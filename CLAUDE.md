@@ -335,7 +335,9 @@ log picture drops wood as before). **The workbench and the raft bench are the st
 `assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12), **and the plants** (`assets/props/plants`:
 bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three variants each; a picked berry bush is a
 bush until it regrows), **and the rocks** (`assets/props/rocks`: rock, boulder and rock formation in six variants each, by
-the prop's seed; the cracks and the sweet spot's cue are drawn over them). The build folds any
+the prop's seed; the cracks and the sweet spot's cue are drawn over them), **and the camp things** (`assets/props/camp`:
+the drying rack, woodpile, chopping block, log seat, cart, well, trough and the two tents in undyed wool, their mouths
+south). The build folds any
 `assets/props/<folder>/<folder>.json` into the set pieces (`prop_images`); `w.sprite` looks for `name_1` to `name_6`, then
 `name_1` to `name_3`, then `name`, then the drawn prop. The other kinds (beech, ash, apple, dwarf birch, the struck tree) are still drawn
 props at their old size (Admin's **Trees** cycles their bake; `World.TREE_SHAPES`); rocks come in six variations of tone and build.
