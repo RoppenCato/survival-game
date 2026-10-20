@@ -110,3 +110,7 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
     fight with a doorway between, asks for a way round and takes it. In the bots' trials it fires rarely (a town's line
     against twenty is over in half a minute); you will see it or not in play, and I can make it keener. Also fixed: men a
     plan sends to the gate or the muster fight there (their own door no longer bounds them).
+14. **Two old bugs found by a new check** (`tools/dupcheck.js`: a name defined twice in a page, the second silently winning):
+    since 2026-10-20 the arm ring could not be taken from Hogni's body in the troll's cave (the raid's "fallen man" finder had
+    the same name as the cave's); and since the chest was built, a hirdman's job gave nothing into the chests by his claim
+    stone (the chest board's `storeAdd` had hidden the hird's). Both fixed; the check runs with the build from now on.

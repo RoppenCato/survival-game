@@ -184,3 +184,8 @@ Robin plays a raid at every size, each way in. The frame log, the error log; the
   index among the place's folk, `markDead`, `markFreed`) slipped for the next one; he stays in `folk`, hidden and `gone`.
 - Step 9: `hisHer` gives his or her (the possessive), so "Let his go": the let-go prompt chooses him or her itself.
 - Step 9: an errand with `gawk` is dropped when a noise wakes the man; the one that carries a chest home must not have it.
+- Found by `tools/dupcheck.js` (2026-10-21, after step 10's measures): step 5's `bodyNear` (a fallen man) had shadowed the cave's
+  `bodyNear` (Hogni's body), so E offered no arm ring since 2026-10-20: renamed `fallenNear`. The chest board's `storeAdd(s)`
+  had shadowed the hird's `storeAdd(st, kind, n)` since the storage commit, so a hirdman's job gave nothing into the chests:
+  renamed `stoneStoreAdd`. A second `isleAt` (the null-safe one) stood beside the first: the first is gone.
+- Step 9: a thrall cut loose, marked gone, could still be talked to (E found him): `folkNear` skips the gone.

@@ -151,7 +151,7 @@
     var bound = d.folk().filter(function (f) { return f.bound; })[0]; out.bound = bound ? [bound.name, bound.name === mName] : null;
     if (bound) { d.goto(bound.x, bound.y + 12); sim(0.3); out.prompt = d.eWhat(); d.cutLoose(bound); sim(0.3); out.wonBack = d.hirdList().filter(function (m) { return m.name === mName && !m.lost; }).length; out.boundLeft = d.folk().filter(function (f) { return f.bound; }).length; }
     // a thrall cut loose
-    var th = d.folk().filter(function (f) { return f.vi === vi && f.role === 'thrall' && !f.dead && !f.hidden; })[0]; out.thrall = th ? th.name : null;
+    var th = d.folk().filter(function (f) { return f.vi === vi && f.role === 'thrall' && !f.dead && !f.hidden && !f.gone; })[0]; out.thrall = th ? th.name : null;
     if (th) { var n0 = d.hirdList().length; d.goto(th.x, th.y + 12); sim(0.3); out.prompt2 = d.eWhat(); d.cutLoose(th); sim(0.3); out.joined = d.hirdList().length - n0; out.freedSaved = JSON.stringify(d.seen.freed || {}); }
     // a man who yields, let go
     var vm = men(vi).filter(function (e) { return !e.dead; })[0]; if (vm) { vm.state = 'yield'; vm.out = true; d.goto(vm.x, vm.y + 14); sim(0.2); out.prompt3 = d.eWhat(); d.letGo(vm); sim(2); out.letGo = [vm.state, !!vm.spared]; }

@@ -248,7 +248,11 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 ## Things to know before changing code
 
 - `dist/` is committed: after editing `src/` or `templates/`, `npm run build`, then **parse the built pages** (`node
-  tools/parsecheck.js`: `new Function(script)` over each page's scripts; it takes a second).
+  tools/parsecheck.js`: `new Function(script)` over each page's scripts; it takes a second) **and check for a name defined twice**
+  (`node tools/dupcheck.js`: a page's script is one long scope, and a second `function x` in it silently wins over the first
+  wherever it is called. 2026-10-21: it found `bodyNear` (the raid's fallen man had hidden the cave's body: the arm ring could
+  not be taken for a day) and `storeAdd` (the chest board's had hidden the hird's: a job gave nothing into the chests since
+  the storage commit); `menOf` had done the same in raid step 1. A new function gets a name nothing else in the page has.)
 - Source files load two ways, inlined into a page and `require`d by Node scripts: no ES module syntax, no browser globals at
   load time. `stylelab.js` needs `global.__mk` for canvases.
 - **A patch must not put a `//` comment in the middle of a line**: the templates' lines are long and hold many statements,

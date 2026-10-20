@@ -15646,7 +15646,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     });
     bDirty = true; Build.ensurePosts(B);
   }
-  function folkNear(P) { var best = null; folk.forEach(function (f) { if (f.hidden || f.fallen) return; var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
+  function folkNear(P) { var best = null; folk.forEach(function (f) { if (f.hidden || f.fallen || f.gone) return; var d = Math.hypot(P.x - f.x, P.y - f.y); if (d < 40 && (!best || d < Math.hypot(P.x - best.x, P.y - best.y))) best = f; }); return best; }
   function aslakMake(vi) {               /* Old Aslak (the lore's person.aslak, Robin 2026-10-16): a fixed man of the big island's first village, who went into the troll's hill with his brother Hogni forty winters ago and tells it at the fire */
     var men = folk.filter(function (f) { return f.vi === vi && !f.child && WOMEN.indexOf(f.name) < 0 && f.fig && f.fig.spec && f.fig.spec.clothes !== 3; }), f = men.filter(function (q) { return q.role === 'elder'; })[0] || men[0], seat = null;
     if (!f) return; f.name = 'Old Aslak'; f.aslak = true; f.role = 'elder'; var sp = f.fig.spec; sp.beard = 3; sp.hair = 2; sp.hat = 0; sp.col.hair = '#cfc9bd'; f.fig = lib.makeFigure(sp); f.look = null;
@@ -15774,7 +15774,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function storesIn(st) { return itemsIn(st).filter(function (it) { return it.store; }); }
   function storeCount(st, kind) { var n = 0; storesIn(st).forEach(function (ch) { ch.store.forEach(function (s) { if (s && s.kind === kind) n += s.n; }); }); return n; }
   function storeTake(st, kind, n) { storesIn(st).forEach(function (ch) { for (var i = 0; i < ch.store.length && n > 0; i++) { var s = ch.store[i]; if (s && s.kind === kind) { var t = Math.min(n, s.n); s.n -= t; n -= t; if (!s.n) ch.store[i] = null; } } }); return n; }
-  function storeAdd(st, kind, n) { storesIn(st).forEach(function (ch) { for (var i = 0; i < ch.store.length && n > 0; i++) { var s = ch.store[i]; if (s && s.kind === kind && s.n < STACK) { var t = Math.min(n, STACK - s.n); s.n += t; n -= t; } } for (var j = 0; j < ch.store.length && n > 0; j++) if (!ch.store[j]) { var t2 = Math.min(n, STACK); ch.store[j] = { kind: kind, n: t2 }; n -= t2; } }); return n; }
+  function stoneStoreAdd(st, kind, n) { storesIn(st).forEach(function (ch) { for (var i = 0; i < ch.store.length && n > 0; i++) { var s = ch.store[i]; if (s && s.kind === kind && s.n < STACK) { var t = Math.min(n, STACK - s.n); s.n += t; n -= t; } } for (var j = 0; j < ch.store.length && n > 0; j++) if (!ch.store[j]) { var t2 = Math.min(n, STACK); ch.store[j] = { kind: kind, n: t2 }; n -= t2; } }); return n; }
   function mealsIn(st) { var n = 0; for (var k in FOOD) n += storeCount(st, k); return n; }
   function foodDays(st) { var m = mealsIn(st), per = Math.max(1, hird.length) * HD.mealsPerDay; return Math.floor(m / per); }
   function raiseStone(it) {                 // a fallen stone stood up again, or a new one placed: the place is claimed
@@ -15819,7 +15819,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
         if (Math.hypot(m.at.x - m.x, m.at.y - m.y) > 4) { tx = m.at.x; ty = m.at.y; }
         else if (HD.jobs[m.job].rate > 0 && (st = inTerritory(m.x, m.y))) {   // at work: the yield, when the stores hold what it takes
           m.jobT = (m.jobT || 0) + dt * pace * (m.traits_nightfear && light() > 0.5 ? 0 : 1) * (inUse('fellowship') ? 1.3 : 1);
-          if (m.jobT >= HD.jobs[m.job].rate) { m.jobT = 0; var J = HD.jobs[m.job], can = true, k; for (k in J.takes) if (storeCount(st, k) < J.takes[k]) can = false; if (can) { for (k in J.takes) storeTake(st, k, J.takes[k]); for (k in J.gives) storeAdd(st, k, J.gives[k]); sfx('craft'); } }
+          if (m.jobT >= HD.jobs[m.job].rate) { m.jobT = 0; var J = HD.jobs[m.job], can = true, k; for (k in J.takes) if (storeCount(st, k) < J.takes[k]) can = false; if (can) { for (k in J.takes) storeTake(st, k, J.takes[k]); for (k in J.gives) stoneStoreAdd(st, k, J.gives[k]); sfx('craft'); } }   /* (stoneStoreAdd: was storeAdd, shadowed by the chest board's storeAdd(s) since the storage commit, so a job gave nothing into the chests; found by tools/dupcheck.js, 2026-10-21) */
         }
       } else if (!m.wait || m.wait <= 0) {   // idle: a few steps about the stone now and then
         var hs = homeStone(); if (hs && Math.random() < 0.5) { m.idleTo = { x: hs.x + (Math.random() - 0.5) * 120, y: hs.y + 20 + (Math.random() - 0.5) * 80 }; } m.wait = 4 + Math.random() * 6;
@@ -16254,7 +16254,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var sg = signNear(P); if (sg) add(sg, 'Write', function () { signWrite(sg); });
     var ly = taking ? null : lyingNear(P); if (ly) add(ly, 'Take the ' + ly.item.name.toLowerCase(), function () { startTake({ drop: ly }); });
     var am = taking ? null : armedNear(P); if (am) add(am, 'Take ' + hisHer(am) + ' ' + armsName(am), function () { startTake({ man: am }); }, 3);
-    var bd = taking || carrying ? null : bodyNear(P); if (bd && !(am === bd)) add(bd, 'Drag ' + hisHer(bd) + ' body', function () { dragBody(bd); }, 3);   /* (a body dragged out of sight before it is found: raid step 5) */
+    var bd = taking || carrying ? null : fallenNear(P); if (bd && !(am === bd)) add(bd, 'Drag ' + hisHer(bd) + ' body', function () { dragBody(bd); }, 3);   /* (a body dragged out of sight before it is found: raid step 5) */
     var lg = latchNear(P); if (lg) add(lg, 'Lift the latch', function () { liftLatch(lg); }, 6);
     var sc0 = rUse && !cargo ? seaChest() : null; if (sc0) add(sc0, 'Open the sea chest', function () { store = sc0; invOpen = true; bookOpen = false; clothOpen = false; }, 4);
     if (rUse) add(raft, cargo ? 'Unload the silver' : 'Board the ' + Yard.nameOf(raft.kind).toLowerCase(), cargo ? unloadCargo : raftUse);
@@ -17606,7 +17606,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
 
   /* ---------- boars: a few roam the island in home ranges; a new one wanders in when one is killed ---------- */
   var respawnT = 0;
-  function isleAt(x, y) { var best = -1, bd = 1e9; w.isles.forEach(function (q, i) { var d = Math.hypot(x / T - q.x, y / T - q.y) - q.r; if (d < bd) { bd = d; best = i; } }); return best; }
   var placeIsle = null;                  // when set, animals are placed only on that island
   function groundOk(kind, x, y) {        // whether this spot is the kind of ground an animal lives on
     var tx = Math.floor(x / T), ty = Math.floor(y / T), cd = code(tx, ty);
@@ -17843,7 +17842,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       var w = witness(vi, o.x, o.y, WATCH.body, 44); if (!w) continue; o.found = true; if (w.type === 'soldier') w.awake = true; cryOut(w, w.type === 'soldier' ? 'One of ours is dead! To arms!' : 'Murder! Murder!', vi, o.x, o.y); }   /* LORE? the lines */
   }
   var bodyChk = {};
-  function bodyNear(P) { var E = Combat.dbg().W.enemies, best = null, bd = 26, i, o; for (i = 0; i < E.length; i++) { o = E[i]; if (o.type !== 'soldier' || o.side === 1 || !o.dead || o.held || o.villager) continue; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < bd) { bd = d; best = o; } } return best; }
+  function fallenNear(P) { var E = Combat.dbg().W.enemies, best = null, bd = 26, i, o;   /* (was bodyNear, 2026-10-20 to 2026-10-21: the name shadowed the cave's bodyNear, Hogni's body, and the arm ring could not be taken) */ for (i = 0; i < E.length; i++) { o = E[i]; if (o.type !== 'soldier' || o.side === 1 || !o.dead || o.held || o.villager) continue; var d = Math.hypot(o.x - P.x, o.y - P.y); if (d < bd) { bd = d; best = o; } } return best; }
   function dragBody(e) { if (carrying || !e || !e.dead) return; carrying = { man: e, x: e.x, y: e.y, drag: true }; e.held = true; e.heldBy = hero(); e.deadFor = 1e9; sfx('pick'); }   // a body dragged with you (E again lays it down: putDown); it lies 90 s more where it is left
   function theftSeen(it) {                 // taking from a chest or a crate of theirs before somebody's eyes: the cry, and the alarm (raid step 5; Robin's "robbing in plain sight" from the idea bank)
     if (!it || it.x == null) return; var vi = villageAt(it.x, it.y); if (vi < 0 || !theirs(it.x, it.y) || raidLvl(vi) >= 2) return;
