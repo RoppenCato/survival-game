@@ -1487,7 +1487,7 @@ __COMBAT__
   function groundCopy() { var o = {}, k; for (k in w.ground) o[k] = w.ground[k]; return o; }
   function groundDiffOf() { var d = {}, k, b = groundBase || {}; for (k in w.ground) if (w.ground[k] !== b[k]) d[k] = w.ground[k]; for (k in b) if (w.ground[k] == null) d[k] = 0; return d; }
   function groundApply(d) { var k; for (k in d) { if (d[k]) w.ground[k] = d[k]; else delete w.ground[k]; } }
-  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, groundDiff: groundDiffOf(), veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, unge: ungeSense, heroName: heroName, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, tree: d.tree || undefined, n: d.kind === 'log' ? d.n : undefined, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
+  function save() { if (noSave) return; try { var P = hero(); localStorage.setItem(SAVE, JSON.stringify({ v: 1, fishLog: fishLog, carrying: carrying && carrying.heavy ? carrying : null, seed: spec.seed, isle: spec.isle, layout: layoutKey(), hand: hand, lvl: hero().lvl || 0, ring: ring, trunks: trunks, groundDiff: groundDiffOf(), veins: cave ? cave.veins.map(function (v) { return v.left; }) : null, unge: ungeSense, heroName: heroName, pins: pins, craftN: craftN, caveSeen: cave ? Cave.seenStr(cave) : null, caves2: caves.map(function (cv) { return { kind: cv.kind, mined: cv.cave.mined, veins: cv.kind === 'troll' ? null : cv.cave.veins.map(function (v) { return v.left; }), seen: cv.kind === 'troll' ? null : Cave.seenStr(cv.cave), taken: cv.cave.finds.filter(function (f) { return f.taken; }).map(function (f) { return f.id; }) }; }), cliffVeins: w.mt ? w.mt.veins.map(function (v) { return v.left; }) : null, seaBoat: !!(inCave && cur && cur.byBoat), hoard: cave && cave.hoard ? { n: cave.hoard.n, day: cave.hoard.day } : null, hearthOut: hearth && hearth.out ? hearth.out : null, hird: hird.map(function (m) { return { brokk: m === npc, name: m.name, person: m.person, job: m.job, at: m.at, workIdx: m.workAt ? B.items.indexOf(m.workAt) : -1, follow: !!m.follow, aboard: !!m.aboard, hungry: !!m.hungry, x: Math.round(m.x), y: Math.round(m.y) }; }), hirdDay: hirdDay, torch: { on: torchOn, left: Math.round(torchLeft) }, raft: raft, slots: slots, B: B, gone: Object.keys(gone), stumps: decals.filter(function (d) { return d.k !== 'blood'; }), fed: fed, book: book, quiver: quiver, equip: equip, seen: seen, runes: RS, day: day, rested: Math.round(rested), drops: drops.filter(function (d) { return d.t > 0.4; }).map(function (d) { return { kind: d.kind, tree: d.tree || undefined, n: d.kind === 'log' ? d.n : undefined, x: Math.round(d.x), y: Math.round(d.y), item: d.item || null, lie: d.lie ? 1 : undefined, own: d.own != null ? d.own : undefined, keep: d.keep ? 1 : undefined }; }), hero: inYard && yardBench ? (function () { var sp = landNear(yardBench.x, yardBench.y + 34, 6); return { x: Math.round(sp.x), y: Math.round(sp.y) }; })() : inCave && cur ? { x: Math.round(mouthSpot(cur).x), y: Math.round(mouthSpot(cur).y) } : { x: Math.round(P.x), y: Math.round(P.y) } })); } catch (e) {} }
   function loadSave() { try { var o = JSON.parse(localStorage.getItem(SAVE)); return o && o.v === 1 ? o : null; } catch (e) { return null; } }
 
   /* ---------- gathering: wear, falling trees, breaking rocks, drops ---------- */
@@ -3204,6 +3204,7 @@ __COMBAT__
     if (hearth) q(hearth, 'hearth', 50);
     B.items.forEach(function (it) { if (!sameLvl(it)) return; if (isHearth(it)) q(it, 'hearth', 50); else if (it.bench) q(it, 'bench', 56); else if (it.carver) q(it, 'carver', 56); else if (it.furnace) q(it, 'furnace', 56); else if (it.bed) q(it, 'bed', 40); else if (it.store) q(it, 'store', 40); else if (isSeat(it)) q(it, 'seat', 34); });
     pickC = { t: clock, x: P.x, y: P.y, f: P.face, n: B.items.length, l: lvl(), v: best };
+    if (best && STATION_NAMES[best.kind]) { if (!seen.stations) seen.stations = {}; seen.stations[best.kind] = 1; }   // a station kind once stood at is taught on the hand board
     return best;
   }
   function nearHearth(P) { var s = stationNear(P); return !!s && s.kind === 'hearth'; }
@@ -3227,6 +3228,7 @@ __COMBAT__
   }
   var CRAFT_T = { hand: 2, bench: 3, ship: 3 }, crafting = [];   // crafting takes a moment too (a bar over the hero), stacked
   function craftTick(dt) {
+    if (btnHold) { if (!menu || !menu.info || !infoBtnHit() || infoSel() !== btnHold.e) btnHold = null; else { btnHold.t += dt; if (btnHold.t >= 0.5) { btnHold.t = 0; infoMake(btnHold.e, true); } } }   // holding the Craft button keeps making, one every half second
     if (!crafting.length) return; var j = crafting[0]; j.t += dt;
     if (j.t >= j.dur) { crafting.shift(); craftGive(j.r, j.at); }
   }
@@ -3304,6 +3306,54 @@ __COMBAT__
      thing on the right with its tale, its numbers and what it takes, and a Craft button that fills as it is made. The
      hearth (cooking), the hand, the workbench and the shipwright's bench all use it; Building keeps its grid. ---------- */
   var menuSel = {};                                         // the chosen recipe id per tab
+  /* The crafting board's three picks (Robin, 2026-10-20, through the Art Director's CRAFTING.md): a count for stacks (the
+     Craft button reads "Craft 3", a press pays as many as it can, holding it keeps making), a pin on the card (a pinned
+     recipe shows as a small vellum slip bottom left while the boards are shut and no fight is on, its materials as
+     have/need), and the hand board teaching the stations (faint groups of what a hearth, workbench or furnace the hero has
+     stood at would make). Where a material comes from waits for the lore book (Robin: no). The pins and the counts are saved. */
+  var pins = [], craftN = {}, btnHold = null, fightT = 0, slipT = 0, slipPins = [], STATION_NAMES = { hearth: 'hearth', bench: 'workbench', furnace: 'furnace' };
+  function recipeById(id) { var i; for (i = 0; i < RECIPES2.length; i++) if (RECIPES2[i].id === id) return { id: id, r: RECIPES2[i] }; for (i = 0; i < RECIPES.length; i++) if (RECIPES[i].id === id) return { id: id, dish: RECIPES[i] }; return null; }
+  function hitS(r) { return !!r && !!mouseS && mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h; }
+  function craftMax(e) { if (ADMIN.free) return 99; var n = 99, needs = infoNeeds(e), k; for (k in needs) n = Math.min(n, Math.floor((inv[k] || 0) / needs[k])); return n; }
+  function craftCount(e) { return Math.max(1, Math.min(99, craftN[e.id] || 1)); }
+  function craftStep(e, d) { craftN[e.id] = Math.max(1, Math.min(99, craftCount(e) + d)); }
+  function pinToggle(id) { var i = pins.indexOf(id); if (i >= 0) pins.splice(i, 1); else { pins.push(id); while (pins.length > 3) pins.shift(); } sfx('pick'); save(); }   // up to three; a fourth lets the oldest go
+  function teachList() {                    // the hand board's faint groups: each station kind the hero has stood at (seen.stations), with what it makes that he knows
+    var out = [], st = seen.stations || {};
+    if (st.hearth) { var dl = RECIPES.filter(dishKnown).map(function (d) { return { id: d.id, dish: d, dim: true, at: 'hearth' }; }); if (dl.length) out.push({ at: 'hearth', list: dl }); }
+    ['bench', 'furnace'].forEach(function (k) { if (!st[k]) return; var rl = RECIPES2.filter(function (r) { return r.at === k && known(r); }).map(function (r) { return { id: r.id, r: r, dim: true, at: k }; }); if (rl.length) out.push({ at: k, list: rl }); });
+    return out;
+  }
+  function drawPin(c, cx, cy, on, hov) {    // the recipe pin, 28 px about its centre: upright and dull bronze loose, turned with a gold head when pinned (the studio's pin_on and pin_off; drawn here until they land)
+    var im = himg(on ? 'pin_on' : 'pin_off'); c.save(); if (hov) c.globalAlpha = 0.75;
+    if (im) c.drawImage(im, cx - 14, cy - 14, 28, 28);
+    else { c.translate(cx, cy); c.rotate(on ? -0.7 : 0); c.strokeStyle = on ? '#7a5a1e' : '#6e6052'; c.lineWidth = 2.2; c.beginPath(); c.moveTo(0, -1); c.lineTo(0, 11); c.stroke(); c.fillStyle = on ? '#e2b84a' : '#a08c6c'; c.beginPath(); c.arc(0, -5, 5, 0, 7); c.fill(); c.strokeStyle = HC.ink; c.lineWidth = 1; c.stroke(); }
+    c.restore();
+  }
+  var SLIP = { x: 24, y: 560, w: 200, h: 64, gap: 74 };
+  function slipsShown() { return pins.length && !menu && !invOpen && !mapOpen && !ringOpen && !pauseOpen && !naming && !inYard && !musterOpen && !bookOpen && fightT <= 0 && !hero().dead; }
+  function slipTick(dt) {                   // the slips hide in a fight: a beast or a man awake and near (the music's own test, kept here so it works with the music off)
+    slipT += dt; if (slipT < 0.5) { fightT = Math.max(0, fightT - dt); return; } slipT = 0; var P = hero(), awake = false;
+    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
+    fightT = awake ? 4 : Math.max(0, fightT - dt);
+  }
+  function drawSlips(c) {                   // the pinned recipes as vellum slips, bottom left, read-only but for the pin that lets one go
+    slipPins = []; if (!slipsShown()) return;
+    pins.forEach(function (id, i) {
+      var e = recipeById(id); if (!e) return; var sy = SLIP.y + i * SLIP.gap, needs = infoNeeds(e), ks = Object.keys(needs), all = true, pr = { i: i, id: id, x: (SLIP.x + SLIP.w - 18 - 14) / 3, y: (sy + 16 - 14) / 3, w: 28 / 3, h: 28 / 3 }; slipPins.push(pr);
+      hPx(c, SLIP.x / 3, sy / 3, function () {
+        c.fillStyle = 'rgba(0,0,0,0.3)'; c.fillRect(3, 3, SLIP.w, SLIP.h); hVellum(c, 0, 0, SLIP.w, SLIP.h, 'card_frame');
+        hUnits(c, 26, 32, function () { infoIcon(c, e, 0, 0, 0.7); });
+        hText(c, infoName(e), 50, 24, hf('bold', 14), HC.ink);
+        ks.forEach(function (k, q) { var x = 50 + q * 46, y = 30, have = inv[k] || 0, ok = ADMIN.free || have >= needs[k], csk = himg('cost_socket'); if (!ok) all = false;
+          if (csk) c.drawImage(csk, x, y, 28, 28); else hSocket(c, x, y, 28, false, false);
+          hUnits(c, x + 14, y + 14, function () { drawDropIcon(c, k, 0, 0, 22 / 42); });
+          c.font = hf('bold', 11); c.lineWidth = 3; c.lineJoin = 'round'; c.strokeStyle = HC.cream; c.textAlign = 'right'; c.strokeText(have + '/' + needs[k], x + 27, y + 27); c.fillStyle = ok ? '#9fd27a' : HC.short; c.fillText(have + '/' + needs[k], x + 27, y + 27); c.textAlign = 'left'; });
+        if (all) { c.font = hf('italic', 11); var rw = c.measureText('ready to make').width; c.font = hf('bold', 14); var nw = c.measureText(infoName(e)).width; if (50 + (ks.length - 1) * 46 + 28 + 6 + rw < SLIP.w - 10) hText(c, 'ready to make', SLIP.w - 10, 54, hf('italic', 11), '#3e7a2e', 'right'); else if (50 + nw + 8 + rw < SLIP.w - 34) hText(c, 'ready to make', SLIP.w - 34, 24, hf('italic', 11), '#3e7a2e', 'right'); }   // at the right of the sockets, else beside the name, else nothing: the slip is small
+        drawPin(c, SLIP.w - 18, 16, true, hitS(pr));
+      });
+    });
+  }
   function infoList() {
     if (menuTab === 'hearth') return RECIPES.filter(dishKnown).map(function (d) { return { id: d.id, dish: d }; });   /* a board lists only its own (Robin: E at a fire opened a list mixed with the hand recipes) */
     return RECIPES2.filter(function (r) { return r.at === menuTab && known(r); }).map(function (r) { return { id: r.id, r: r }; });
@@ -3319,6 +3369,7 @@ __COMBAT__
     var show = [], cats = CATS2.filter(function (ct) { return menu.list.some(function (e) { return e.r && e.r.cat === ct[0]; }); }), yy0 = 0;
     if (cats.length > 1) cats.forEach(function (ct) { show.push({ head: ct[1] }); menu.list.forEach(function (e) { if (e.r && e.r.cat === ct[0]) show.push({ e: e }); }); });
     menu.list.forEach(function (e) { if (!show.some(function (q) { return q.e === e; })) show.push({ e: e }); });
+    if (menuTab === 'hand') teachList().forEach(function (g2) { show.push({ head: 'At the ' + STATION_NAMES[g2.at], dim: true }); g2.list.forEach(function (e) { show.push({ e: e, dim: true }); }); menu.list = menu.list.concat(g2.list); });   // the stations' groups, faint, after the hand's own (Robin's pick)
     show.forEach(function (q) { q.y = yy0; q.h = q.head ? 8 : rowH; yy0 += q.h; }); menu.show = show; menu.listTotal = yy0; menu.maxScroll = Math.max(0, yy0 - listH);
     var ids = show.filter(function (q) { return q.e; }).map(function (q) { return q.e.id; }); if (ids.indexOf(menuSel[menuTab]) < 0) menuSel[menuTab] = ids[0] || null;
   }
@@ -3378,7 +3429,7 @@ __COMBAT__
     if (e.r && e.r.at === 'furnace') { var f2 = furnaceAt(hero()), q2 = f2 && f2.cooking; if (!q2 || !q2.length) return null; var n2 = q2.filter(function (j) { return j.id === e.r.id; }).length; return n2 ? { f: q2[0].id === e.r.id ? q2[0].t / (q2[0].dur || 8) : 0, n: n2 } : null; }
     var n2 = crafting.filter(function (j) { return j.r === e.r; }).length; if (!n2) return null; return { f: crafting[0].r === e.r ? crafting[0].t / crafting[0].dur : 0, n: n2 };
   }
-  function infoCan(e) { var P = hero(); if (menuTab === 'bench' && e.r && e.r.at === 'bench') { var b = benchNear(P); if (!b || !benchRoofed(b)) return false; } return canAfford(infoNeeds(e)); }
+  function infoCan(e) { if (e.dim) return false; var P = hero(); if (menuTab === 'bench' && e.r && e.r.at === 'bench') { var b = benchNear(P); if (!b || !benchRoofed(b)) return false; } return canAfford(infoNeeds(e)); }
   function refund(needs, at) { if (ADMIN.free) return; var P = hero(); for (var k in needs) { var left = addItem(k, needs[k]); if (left) drop(k, at ? at.x : P.x, (at ? at.y : P.y) + 12, left); } }
   function infoCancel(e) {                  // the last queued one of this thing is taken off the queue and its materials come back
     if (!e) return; var P = hero(), q, i;
@@ -3387,7 +3438,7 @@ __COMBAT__
     for (i = crafting.length - 1; i >= 0; i--) if (crafting[i].r === e.r) { var j = crafting.splice(i, 1)[0]; refund(e.r.needs, j.at); sfx('pick'); save(); return; }
   }
   function infoCancelHit() { var b = menu && menu.info && menu.cbtn; return !!b && mouseS && mouseS.x >= b.x && mouseS.x <= b.x + b.w && mouseS.y >= b.y && mouseS.y <= b.y + b.h; }
-  function infoMake(e) { if (!e || !infoCan(e)) return; markMade(e.id); if (e.dish) cook(e.dish); else if (e.r.at === 'furnace') smelt(e.r); else craft(e.r); }
+  function infoMake(e, one) { if (!e || e.dim || !infoCan(e)) return; var n = one ? 1 : craftCount(e), i; for (i = 0; i < n; i++) { if (!infoCan(e)) break; markMade(e.id); if (e.dish) cook(e.dish); else if (e.r.at === 'furnace') smelt(e.r); else craft(e.r); } }   // the count: as many as can be paid
   function wrapText(c, text, maxW) { var words = text.split(' '), lines = [], cur = ''; words.forEach(function (w) { var t = cur ? cur + ' ' + w : w; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }); if (cur) lines.push(cur); return lines; }
   function infoSub(e) {                     // the card's line under the name (interface words, mine)
     if (e.dish) return 'a dish, cooked at the fire';
@@ -3399,7 +3450,7 @@ __COMBAT__
   function bigSc(e) { return e.dish || !e.r.out.item ? 1.6 : (Items.KINDS[e.r.out.item[0]].gear ? 1.5 : 1.45); }   // the picture about 96 canvas pixels   // the thing's picture on the card, about 116 canvas pixels
   function drawInfo(c) {
     var P = hero(), th = menuTabHit(), bench = benchNear(P), roofed = bench && benchRoofed(bench), sel = infoSel(), X = menu.x, Y = menu.y, LX = 18, LY = 54, wellH = menu.listH * 3;
-    menu.rows = []; menu.takes = []; menu.btn = null; menu.cbtn = null;
+    menu.rows = []; menu.takes = []; menu.btn = null; menu.cbtn = null; menu.pin = null; menu.minus = null; menu.plus = null;
     var inR = function (r) { return !!r && !!mouseS && mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h; };
     hPx(c, X, Y, function () {
       menu.tabs.forEach(function (t) { hTab(c, t.py, t.hp, t.name, t.id === menuTab, th === t); });   // the flaps first: their right edges go under the board
@@ -3410,12 +3461,12 @@ __COMBAT__
       c.save(); c.beginPath(); c.rect(LX, LY, 150, wellH); c.clip();
       menu.show.forEach(function (q) {
         var e = q.e, top = LY + (q.y - menu.scroll) * 3; if (top > LY + wellH || top + q.h * 3 < LY) return;
-        if (q.head) { hText(c, q.head.toUpperCase(), LX + 10, top + 17, hf('bold', 12), HC.ochre); return; }
+        if (q.head) { c.globalAlpha = q.dim ? 0.55 : 1; hText(c, q.head.toUpperCase(), LX + 10, top + 17, hf('bold', 12), HC.ochre); c.globalAlpha = 1; return; }
         var on = e === sel, row = { e: e, x: X + LX / 3, y: Y + top / 3, w: 150 / 3, h: 10 }, hovR = inR(row) && mouseS.y >= menu.ly && mouseS.y <= menu.ly + menu.listH; menu.rows.push(row);
         if (on) { if (!nine(c, 'list_bar_gold', LX + 2, top + 2, 146, 26, 6) && !nine(c, 'list_bar', LX + 2, top + 2, 146, 26, 6)) { c.fillStyle = 'rgba(217,168,69,0.30)'; c.fillRect(LX + 2, top + 2, 146, 26); } } else if (hovR) { c.fillStyle = 'rgba(255,230,180,0.10)'; c.fillRect(LX + 2, top + 2, 146, 26); }
-        var can = infoCan(e); c.globalAlpha = can ? 1 : 0.5; hUnits(c, LX + 20, top + 15, function () { infoIcon(c, e, 0, 0, 0.6); });
+        var can = infoCan(e); c.globalAlpha = q.dim ? 0.45 : (can ? 1 : 0.5); hUnits(c, LX + 20, top + 15, function () { infoIcon(c, e, 0, 0, 0.6); });
         hText(c, infoName(e), LX + 38, top + 21, hf('', 16), HC.cream); c.globalAlpha = 1;
-        var pr = infoProgress(e); if (pr) hText(c, 'x' + pr.n, LX + 142, top + 21, hf('bold', 14), HC.ochre, 'right'); else if (isNew(e.id)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(LX + 140, top + 9, 3.5, 0, 7); c.fill(); }   // never made: a mark
+        var pr = infoProgress(e); if (pr) hText(c, 'x' + pr.n, LX + 142, top + 21, hf('bold', 14), HC.ochre, 'right'); else if (!q.dim && isNew(e.id)) { c.fillStyle = HC.ochre; c.beginPath(); c.arc(LX + 140, top + 9, 3.5, 0, 7); c.fill(); }   // never made: a mark
       });
       c.restore();
       if (menu.maxScroll) { var kh = Math.max(24, wellH * wellH / (menu.listTotal * 3)), ky = LY + (wellH - kh) * menu.scroll / menu.maxScroll; c.fillStyle = 'rgba(0,0,0,0.35)'; c.fillRect(LX + 144, LY, 5, wellH); c.fillStyle = 'rgba(240,227,196,0.55)'; c.fillRect(LX + 144, ky, 5, kh); }
@@ -3458,10 +3509,19 @@ __COMBAT__
         c.font = hf('bold', 14); c.lineWidth = 3; c.lineJoin = 'round'; c.strokeStyle = HC.dark; c.textAlign = 'right'; c.strokeText(String(needs[k]), x + 34, y + 34); c.fillStyle = ok ? HC.cream : HC.short; c.fillText(String(needs[k]), x + 34, y + 34); c.textAlign = 'left';
       });
       if (short.length) { var sx = cx0 + 16 + ks.length * 46 + 4; c.font = hf('italic', 13); var sl = wrapText(c, 'Short of ' + short.join(' and '), cx0 + cw - 16 - sx).slice(0, 2); sl.forEach(function (ln, k) { hText(c, ln, sx, cy0 + (sl.length > 1 ? 337 : 345) + k * 15, hf('italic', 13), HC.rubric); }); }
-      // the Craft button under the card, filling as the first one is made; Cancel beside it while something is on the way
-      var can = infoCan(sel), bw = pr2 ? 160 : cw; menu.btn = { x: X + cx0 / 3, y: Y + 428 / 3, w: bw / 3, h: 52 / 3 };
-      hButton(c, cx0, 428, bw, 52, sel.dish ? 'Cook' : 'Craft', can, inR(menu.btn), pr2 ? pr2.f : 0, 24);
-      if (pr2) { menu.cbtn = { x: X + (cx0 + 167) / 3, y: Y + 428 / 3, w: 90 / 3, h: 52 / 3 }; hButton(c, cx0 + 167, 428, 90, 52, 'Cancel 1', true, inR(menu.cbtn), 0, 17); }
+      // the pin at the plate's top right (Robin's pick, 2026-10-20): pinned, the recipe shows as a slip while the boards are shut
+      menu.pin = { x: X + (cx0 + 231 - 14) / 3, y: Y + (cy0 + 26 - 14) / 3, w: 28 / 3, h: 28 / 3 }; drawPin(c, cx0 + 231, cy0 + 26, pins.indexOf(sel.id) >= 0, inR(menu.pin));
+      // the button row: a count with its sockets and the Craft button reading "Craft 3", filling once per piece; Cancel beside it while something is on the way; a dim row says where its thing is made instead
+      if (sel.dim) { hText(c, 'Made at the ' + STATION_NAMES[sel.at], cx0 + cw / 2, 428 + 32, hf('italic', 14), HC.rubric, 'center'); }
+      else {
+        var can = infoCan(sel), cnt = craftCount(sel), cmax = craftMax(sel), bx0 = cx0 + 122, bw = pr2 ? 80 : 135;
+        menu.minus = { x: X + cx0 / 3, y: Y + 436 / 3, w: 12, h: 12 }; menu.plus = { x: X + (cx0 + 76) / 3, y: Y + 436 / 3, w: 12, h: 12 };
+        [[cx0, '\u2212', menu.minus], [cx0 + 76, '+', menu.plus]].forEach(function (s) { var csk = himg('cost_socket'); if (csk) c.drawImage(csk, s[0], 436, 36, 36); else hSocket(c, s[0], 436, 36, false, false); if (inR(s[2])) { c.fillStyle = 'rgba(255,230,180,0.12)'; c.fillRect(s[0] + 3, 439, 30, 30); } hText(c, s[1], s[0] + 18, 461, hf('bold', 20), HC.cream, 'center'); });
+        hText(c, String(cnt), cx0 + 56, 462, hf('bold', 22), cnt > cmax ? HC.short : HC.cream, 'center');
+        menu.btn = { x: X + bx0 / 3, y: Y + 428 / 3, w: bw / 3, h: 52 / 3 };
+        hButton(c, bx0, 428, bw, 52, (sel.dish ? 'Cook ' : 'Craft ') + cnt, can, inR(menu.btn), pr2 ? pr2.f : 0, pr2 ? 18 : 22);
+        if (pr2) { menu.cbtn = { x: X + (bx0 + 86) / 3, y: Y + 428 / 3, w: 49 / 3, h: 52 / 3 }; hButton(c, bx0 + 86, 428, 49, 52, 'Cancel', true, inR(menu.cbtn), 0, 13); }
+      }
     });
   }
   function infoRowHit() { if (!menu || !menu.info || !mouseS) return null; for (var i = 0; i < menu.rows.length; i++) { var r = menu.rows[i]; if (mouseS.y < menu.ly || mouseS.y > menu.ly + menu.listH) continue; if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y < r.y + r.h) return r.e; } return null; }
@@ -5371,7 +5431,7 @@ __COMBAT__
       var PSN = Combat.api.pixelScale || 2, over = !!menu;      // over: a board lies across the hero, so the notes go above it
       c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0);
       if (inYard) { YSCENE.hud(c, mouseS, P.wreck); drawNotes(c); c.restore(); return; }
-      drawPanels(c); drawHint(c);
+      drawPanels(c); drawHint(c); drawSlips(c);
       drawSpeech(c); if (!over) drawNotes(c);
       if (musterOpen) drawMuster(c);
       if (mapOpen) drawMap(c);
@@ -5499,10 +5559,11 @@ __COMBAT__
     if (bookOpen) { if (e.button === 0) bookClick(); return; }
     var mxc = 400 - (GW >= GH ? 64 : 64 * GW / GH) - 6 - 34; if (SHOW.book && e.button === 0 && Math.abs(mouseS.x - mxc) < 9 && Math.abs(mouseS.y - 16) < 9) { bookOpen = true; invOpen = false; cookOpen = false; menu = null; return; }
 
+    if (slipsShown() && e.button === 0) { for (var sp = 0; sp < slipPins.length; sp++) if (hitS(slipPins[sp])) { pinToggle(slipPins[sp].id); return; } }   // a click on a slip's pin lets the recipe go
     if (menu && !(menu.info && invOpen && !overMenu() && !menuTabHit())) {   /* (on the Tab screen a click on the panel or the bag goes to them and the crafting board stays: it closed the board and the click was lost) */
       var th = menuTabHit(), hit = menuHit();
       if (th && e.button === 0) { openMenu(th.id); return; }
-      if (menu.info) { var ie = infoRowHit(); if (ie && e.button === 0) { menuSel[menuTab] = ie.id; return; } if (e.button === 0 && menuStation && menu.takes) { for (var tk = 0; tk < menu.takes.length; tk++) { var tq = menu.takes[tk]; if (mouseS.x >= tq.x && mouseS.x < tq.x + tq.w && mouseS.y >= tq.y && mouseS.y < tq.y + tq.h) { stationTake(menuStation.it, tq.i); return; } } } if (infoCancelHit() && e.button === 0) { infoCancel(infoSel()); return; } if (infoBtnHit() && e.button === 0) { infoMake(infoSel()); return; } if (e.button === 2 || !overMenu()) menu = null; return; }
+      if (menu.info) { if (e.button === 0 && hitS(menu.pin) && infoSel()) { pinToggle(infoSel().id); return; } if (e.button === 0 && hitS(menu.minus)) { craftStep(infoSel(), -1); return; } if (e.button === 0 && hitS(menu.plus)) { craftStep(infoSel(), 1); return; } var ie = infoRowHit(); if (ie && e.button === 0) { menuSel[menuTab] = ie.id; return; } if (e.button === 0 && menuStation && menu.takes) { for (var tk = 0; tk < menu.takes.length; tk++) { var tq = menu.takes[tk]; if (mouseS.x >= tq.x && mouseS.x < tq.x + tq.w && mouseS.y >= tq.y && mouseS.y < tq.y + tq.h) { stationTake(menuStation.it, tq.i); return; } } } if (infoCancelHit() && e.button === 0) { infoCancel(infoSel()); return; } if (infoBtnHit() && e.button === 0) { var mse = infoSel(); infoMake(mse); btnHold = { e: mse, t: 0 }; return; } if (e.button === 2 || !overMenu()) menu = null; return; }
       if (hit && hit.piece && e.button === 0) { P.piece = PIECES.indexOf(hit.piece); P.wreck = false; menu = null; markMade('p:' + hit.piece.id + ':' + hit.piece.m); if (P.mode !== 'build') { P.lastMode = P.mode; P.mode = 'build'; lastMode = 'build'; } }
       else if (hit && hit.r && e.button === 0) { if (menuTab !== 'bench' || benchRoofed(benchNear(P))) craft(hit.r); }
       else if (hit && hit.dish && e.button === 0) cook(hit.dish);
@@ -5529,7 +5590,7 @@ __COMBAT__
     Combat.button(e.button, true);
   });
   window.addEventListener('mouseup', function (e) {
-    mdown = 0; musicDrag = false; Combat.button(e.button, false);
+    mdown = 0; musicDrag = false; btnHold = null; Combat.button(e.button, false);
     if (barDrag) { mouseS = toScreen(e); barDragEnd(); return; }
 
     if (pick) {
@@ -5569,7 +5630,7 @@ __COMBAT__
     if (sv && sv.layout !== layoutKey()) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The sea was remade with more islands: a fresh start'); }, 500); }
     if (sv && sv.isle && sv.isle !== spec.isle) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The island was remade at a new size: a fresh start'); }, 500); }   // a save from an island of another size does not fit
     if (sv) spec.seed = sv.seed;
-    heroName = sv && sv.heroName ? sv.heroName : ''; naming = !heroName && !SCENE && !BT.on ? { name: '' } : null;   /* the hero's name, asked once */
+    heroName = sv && sv.heroName ? sv.heroName : ''; pins = sv && sv.pins ? sv.pins.filter(function (id) { return !!recipeById(id); }).slice(0, 3) : []; craftN = sv && sv.craftN ? sv.craftN : {}; naming = !heroName && !SCENE && !BT.on ? { name: '' } : null;   /* the hero's name, asked once */
     ungeSense = Object.assign({ hits: 0, kills: 0, ore: 0, dead: 0, day: -1 }, sv && sv.unge ? sv.unge : {}); ungeSense.hits = 0; ungeInit = false; trollSeekT = 0;   /* the troll's young: how many are lost, and what the troll has sensed */
     buildWorld();
     for (k = 0; k < SLOTS; k++) slots[k] = null;
@@ -6387,7 +6448,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && RI() && P.hp < P.maxHp) { var hri = RI().at(Math.floor(P.x / T), Math.floor(P.y / T)); if (((hri >= 0 && comfortOf(hri, lvl()).n >= 1) || shelterComfort(P.x, P.y) || inUse('hearthwarmth')) && fireNear(P.x, P.y, 140)) P.hp = Math.min(P.maxHp, P.hp + 0.6 * dt); }   // by a fire in a comfortable room you heal slowly
-    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); sheetTick(dt); isleBeastTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); caveTick(dt); ambTick(dt); sheetTick(dt); isleBeastTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;

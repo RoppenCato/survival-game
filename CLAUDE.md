@@ -354,7 +354,18 @@ workbench, a fire or a furnace you stand at; E at a fire shows its dishes, at a 
 **Crafting** (`RECIPES2`): a recipe is listed once you have picked up its key ingredient; a thing never made carries a gold
 dot. Made by hand anywhere, or at a roofed workbench, a hearth, a furnace or a shipwright's bench; each press pays, so a
 queue is what you can afford; jobs take seconds; a station keeps what it made in its Ready strip; Cancel gives the materials
-back. Hand: flint axe, knife, pick, wooden club, stick bow, torch. Bench: the flint sword, the wooden shield, the leather set,
+back. **The board's three picks (Robin, 2026-10-20, from the Art Director's `out/hud/CRAFTING.md`; the fourth, where a
+material comes from, waits for a lore book):** **a count** (− and + in sockets beside the button, which reads "Craft 3"
+or "Cook 3"; remembered per recipe, `craftN`; red when that many cannot be paid; a press pays as many as it can and
+queues them; holding the button keeps making one every half second; the button fills once per piece); **a pin** at the
+card's plate corner (`pins`, up to three, the oldest let go; saved): a pinned recipe shows as a **vellum slip** bottom left
+(`drawSlips`, 200 by 64 from x 24, y 560, 74 apart) while no board is open and no fight is on (`fightT`: a beast or man
+awake within 420 units, the music's test), with its picture, name and each material as have/need (green when enough, red
+when short) and "ready to make"; a click on the slip's pin lets it go; **the hand board teaches the stations**: under its
+own groups, faint, "At the hearth", "At the workbench", "At the furnace" for each station kind the hero has stood at
+(`seen.stations`, set in `stationNear`) with what it makes that he knows; a dim row can be chosen and its card says "Made
+at the hearth" in place of the button. The pin pieces (`pin_on`, `pin_off`) are drawn in code until the studio's land.
+Hand: flint axe, knife, pick, wooden club, stick bow, torch. Bench: the flint sword, the wooden shield, the leather set,
 copper and iron tools and weapons from bars. Charcoal (none on the starter island, where nothing uses it: no old fire rings or struck trees there, no embers: Robin, 2026-10-20): embers at dawn by every fire that burned all night, the charcoal
 clamp, lightning-struck trees, old fire rings. The furnace makes copper bars (and iron bars from bog iron).
 
