@@ -121,6 +121,7 @@ async function packOwn(out, inDir, outDir) {
     }
   }
   await packOwn(out, inDir, outDir);
+  if (process.argv.includes('--strides')) process.argv[process.argv.indexOf('--strides') + 1].split(',').forEach(kv => { const [c, v] = kv.split('='); if (out.anims[c]) out.anims[c].stride = +v; });   // --strides walk=20.24,run=78.38: the ground a loop carries the figure, in game units (the studio's numbers; Sprites picks those clips by distance)
   fs.writeFileSync(path.join(outDir, name + '.json'), JSON.stringify(out, null, 1));
   console.log(`packed ${Object.keys(files).length} frames into ${outDir}: frame ${fw}x${fh}, anchor ${anchor.x.toFixed(1)},${anchor.y.toFixed(1)}, figure ${(meta.figure_px / PX).toFixed(0)} px`);
   if (!process.argv.includes('--grid') && path.resolve(outDir) === path.resolve(path.join(__dirname, '..', 'assets', 'sprites', name))) require('child_process').execFileSync(process.execPath, [path.join(__dirname, 'framepack.js'), name], { stdio: 'inherit' });   // every frame cut to its own pixels (2026-10-21, tools/framepack.js); --grid keeps the whole-frame sheets

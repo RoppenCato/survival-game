@@ -359,3 +359,6 @@ before, and the sprint costs 18 stamina a second instead of 22, as you asked. Th
 gait)" puts it back at 84 whenever you want to compare. The fights barely change (the test ladder is within its noise). The studio
 also caught a mistake of its own today: every stride was a tenth short, so the feet crept a little; that is fixed, and walking up
 or down the screen now keeps the feet planted too.
+
+**The wolf in the kraken's style (2026-10-21):** the night's wolves are the studio's new wolf, shaggier, with more frames and
+feet that follow the ground, their eyes still glowing at night. The deer comes next.
