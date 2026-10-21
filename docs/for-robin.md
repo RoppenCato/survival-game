@@ -326,3 +326,11 @@ remade in the boar's style first? That remake would bring their idles and walks 
 
 **The hero's third walk and run (2026-10-21, your yes):** in the game, with the hips, chest, head and arms moving, at the speed and
 jog you kept. The feet still land on their distance in every frame.
+
+**Crafting as in Valheim (2026-10-21, your notes):** one thing at a time, no queue. Press Craft and the button turns into Cancel,
+filling as the thing is made; you cannot close the board or walk off until it is made or you cancel (a blow breaks it off and gives
+everything back). Hold Shift and the button reads Craft x5: five times the materials, in half the time five would take. The bar
+over your head is gone, and what you make goes straight into the bag. Two choices of mine to check: cooking at a fire and smelting
+at a furnace still queue at the station and carry on while you walk away (as Valheim's cooking station and smelter do), with Cook x5
+and Smelt x5 on Shift; and the count with its minus and plus is gone, since Shift x5 replaces it. Say if either should go the
+other way.

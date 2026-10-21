@@ -415,12 +415,16 @@ workbench, a fire or a furnace you stand at; E at a fire shows its dishes, at a 
 (with a By hand tab). A chest takes the right side instead. The middle of the screen stays clear (Robin).
 
 **Crafting** (`RECIPES2`): a recipe is listed once you have picked up its key ingredient; a thing never made carries a gold
-dot. Made by hand anywhere, or at a roofed workbench, a hearth, a furnace or a shipwright's bench; each press pays, so a
-queue is what you can afford; jobs take seconds; a station keeps what it made in its Ready strip; Cancel gives the materials
-back. **The board's three picks (Robin, 2026-10-20, from the Art Director's `out/hud/CRAFTING.md`; the fourth, where a
-material comes from, waits for a lore book):** **a count** (− and + in sockets beside the button, which reads "Craft 3"
-or "Cook 3"; remembered per recipe, `craftN`; red when that many cannot be paid; a press pays as many as it can and
-queues them; holding the button keeps making one every half second; the button fills once per piece); **a pin** at the
+dot. **Crafting is as in Valheim** (Robin, 2026-10-21): made by hand anywhere or at a roofed workbench or a shipwright's bench,
+**one thing at a time, no queue**; a press pays and **the Craft button turns into Cancel, filling as the thing is made**; **the
+board cannot be left** until it is made or cancelled (every key but Shift is held, the hero stands, a click anywhere but Cancel does
+nothing; a blow taken breaks the work off and gives the materials back); **Shift held makes it Craft x5** (the cost sockets show
+five times, made in half the time five would take: `CRAFT_BATCH` 0.5; the raft stays single); what is made goes into the bag (a
+workbench no longer keeps it); no bar over the hero (`craft`, `craftJob`, `craftTick`, `craftStop`). **Cooking at a fire and
+smelting at a furnace keep their station's queue in the background** (mine: as Valheim's cooking station and smelter), with Cook or
+Smelt (x5 with Shift), Cancel beside it while something is queued, the bar over the fire and the Ready strip. The board's picks of
+2026-10-20 (Robin, from the Art Director's `out/hud/CRAFTING.md`; the count with its sockets and hold-to-repeat gave way to the
+above): **a pin** at the
 card's plate corner (`pins`, up to three, the oldest let go; saved): a pinned recipe shows as a **vellum slip** bottom left
 (`drawSlips`, 200 by 64 from x 24, y 560, 74 apart) while no board is open and no fight is on (`fightT`: a beast or man
 awake within 420 units, the music's test), with its picture, name and each material as have/need (green when enough, red
