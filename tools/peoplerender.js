@@ -16,12 +16,13 @@ const FR = { idle: 32, idle_look: 48,      // 2026-10-21 (the studio, Robin's la
 // (--size 208), looking lower (--aim 0.6) and held over its spot (--inplace death) into art/render/people_own, with numbers
 // of its own; tools/people.js packs what lies there with its own frame.   node tools/peoplerender.js 4 8,9,10,11
 const OWN = ['death'], OWN_OUT = path.join('art', 'render', 'people_own'), OWN_ARGS = ['--size', '208', '--ortho', '2.626', '--aim', '0.6', '--inplace', OWN.join(',')];
-const ALL = Object.keys(FR).filter(c => OWN.indexOf(c) < 0), ARMED = ['idle', 'walk', 'jog', 'run', 'attack1', 'attack2', 'chop', 'mine', 'hit', 'block'], BOW = ['idle', 'walk', 'jog', 'run', 'bow_draw', 'bow_shoot'];
+const ALL = Object.keys(FR).filter(c => OWN.indexOf(c) < 0), SHIELDED = ALL.filter(c => ['hammer', 'saw', 'carry', 'carry_walk', 'kneel', 'sit_work', 'row', 'helm'].indexOf(c) < 0), ARMED = ['idle', 'walk', 'jog', 'run', 'attack1', 'attack2', 'chop', 'mine', 'hit', 'block'], BOW = ['idle', 'walk', 'jog', 'run', 'bow_draw', 'bow_shoot'];
 const JOBS = [
-  [ALL, ['body', 'tunic', 'legs', 'hairA']], [ALL, ['hairB', 'hairC', 'beardA', 'beardB']], [ALL, ['hood', 'cap', 'helm', 'mail']], [ALL, ['cloak', 'dress', 'shieldRim', 'shieldFace']],
+  [ALL, ['body', 'tunic', 'legs', 'hairA']], [ALL, ['hairB', 'hairC', 'beardA', 'beardB']], [ALL, ['hood', 'cap', 'helm', 'mail']], [ALL, ['cloak', 'dress']],
   [ARMED, ['swordWood', 'swordMetal', 'axeWood', 'axeMetal']], [ARMED, ['clubWood', 'seaxWood', 'seaxMetal', 'spearWood']], [ARMED, ['spearMetal', 'greataxeWood', 'greataxeMetal']], [BOW, ['bowWood']],
   [ALL, ['apron', 'kerchief', 'strawHat']], [['hammer'], ['hammerWood', 'hammerMetal']], [['saw'], ['sawWood', 'sawMetal']], [['carry', 'carry_walk'], ['bucketWood']],   // step 5B: the clothes by role and the things of the work
-  [OWN, ['body', 'tunic', 'legs', 'hairA'], 1], [OWN, ['hairB', 'hairC', 'beardA', 'beardB'], 1], [OWN, ['hood', 'cap', 'helm', 'mail'], 1], [OWN, ['cloak', 'dress', 'shieldRim', 'shieldFace'], 1]
+  [OWN, ['body', 'tunic', 'legs', 'hairA'], 1], [OWN, ['hairB', 'hairC', 'beardA', 'beardB'], 1], [OWN, ['hood', 'cap', 'helm', 'mail'], 1], [OWN, ['cloak', 'dress', 'shieldRim', 'shieldFace'], 1],
+  [SHIELDED, ['shieldRim', 'shieldFace']]   // job 16 (2026-10-22, the Art Director's note): the shield is not rendered for the work and ship clips, which the set has never packed it for (it was in job 3 with the cloak over every clip)
 ];
 const only = process.argv[3] ? process.argv[3].split(',').map(Number) : null;       // a third argument picks jobs by number: 4,5,6,7 for the things in the hand
 const AT_ONCE = +process.argv[2] || 4; fs.mkdirSync(OUT, { recursive: true }); fs.mkdirSync(OWN_OUT, { recursive: true });

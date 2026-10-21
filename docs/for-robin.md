@@ -417,3 +417,8 @@ now (sixteen frames where they had eight, the laggy ones), and the goat's, sheep
 **The hero in the kraken's style (2026-10-21):** the hero is re-rendered on every layer and clip in the chosen tones: warmer where
 the light falls, cooler in the shade, the dyed cloth's shade its own colour, and fewer crease lines inside the figure. He keeps his
 heavy outline. At game size it is a subtle change; nothing about how he moves is different.
+
+**The people in the kraken's style (2026-10-22):** the villagers, the men and the hird are re-rendered like the hero: the chosen
+tones, fewer crease lines, the heavy outline kept. A subtle change at game size; how they move is the same, and they take a little
+less memory than before. That completes the studio's list of renders. Still yours to decide: the moose's memory, which of the three
+troll concepts, and whether the troll's painted cave mouth gets the new look.
