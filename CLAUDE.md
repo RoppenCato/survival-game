@@ -219,7 +219,7 @@ links back to the menu. Adding a page is a template and a line in `PAGES` in `to
 draws in raw canvas pixels uses that scale. **Removed** (the archive has their story): the Environment, Base and Grass
 editors (2026-10-06); the Light, Gathering, Hird and Item editors and the Art Direction page (2026-10-09; the game still
 honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the Art Editor's Characters and Creatures tabs
-(the drawn figures; the old Character Editor is in `art/backup/`); the Song Editor (2026-10-16: the music comes from the studio); the clean-up of 2026-10-21 (Robin: "declutter and cleanup"): Admin's old fight sounds, shield-only-when-raised and layer test, the Light board's mist, sun shafts and cloud shadows, the Destruction Editor's leaning walls, four one-off scripts, the stale pictures and docs.
+(the drawn figures; the old Character Editor was in `art/backup/` until 2026-10-21, now in git's history); the Song Editor (2026-10-16: the music comes from the studio); the clean-up of 2026-10-21 (Robin: "declutter and cleanup"): Admin's old fight sounds, shield-only-when-raised and layer test, the Light board's mist, sun shafts and cloud shadows, the Destruction Editor's leaning walls, four one-off scripts, the stale pictures and docs.
 
 ## Source layout
 
@@ -260,7 +260,8 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   or check it (`drive.js`, `startplay.js`, `battleplay.js`, `raidplay.js`, `ruinplay.js`, `sackplay.js`, `mountainplay.js`,
   `ui.js`, `smoke.js`, `scenesmoke.js`).
 - `tests/`: headless checks (table in `tests/README.md`). `docs/`: the decided and proposed designs (each says which).
-- `art/` (`art/README.md`): the Blender build scripts and sources; `art/render/` (raw frames) is not committed.
+- `art/` (`art/README.md`): the Blender build scripts and sources; `art/render/` (raw frames) is not committed and is
+  remade by a render (emptied on Robin's word, 2026-10-21: 4.7 GB; a sheet is repacked only after its clip is rendered again).
 - `assets/`: `sprites/` (the packed sheets, and `items/` icons), `props/` (Blender set pieces), `sfx/` (the sound bundle and
   its sources), `music/` (the recorded loops as scripts). `dist/`: the built pages, committed.
 

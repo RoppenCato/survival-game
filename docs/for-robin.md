@@ -279,3 +279,8 @@ now look pasted on beside the trees.
 **The boat's shadow (2026-10-21, your note):** it was an ellipse that never turned with the ship, so a turned hull sat on a
 sideways blob. It is now the hull's own outline, turned with her, thrown a little to the lower right by the sun, soft at the
 edge, and it stays on the water while she bobs.
+
+**The deletions (2026-10-21, your answer):** `art/render` (4.7 GB of raw frames) is in the Recycle Bin, so empty it when you
+like; a render makes the frames again when a sheet needs repacking. `art/backup` (the old drawn Character Editor) is gone from
+the folder and kept in git's history. The Art-Editor-only creatures stay, as you said, for later; the old `hero2-mixamo` hero
+set stays too until you say otherwise.
