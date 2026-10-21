@@ -413,3 +413,7 @@ wood, cooler shade. Nothing moved and no size changed.
 **The farm animals in the kraken's style (2026-10-21; chapter 2):** the goats, sheep, cows and hens are the studio's new ones. The
 goat, sheep and cow are remade: one-piece heads, the sheep in a lumpy fleece, the goat with a ragged beard. Their idles are smooth
 now (sixteen frames where they had eight, the laggy ones), and the goat's, sheep's and cow's feet hold to the ground.
+
+**The hero in the kraken's style (2026-10-21):** the hero is re-rendered on every layer and clip in the chosen tones: warmer where
+the light falls, cooler in the shade, the dyed cloth's shade its own colour, and fewer crease lines inside the figure. He keeps his
+heavy outline. At game size it is a subtle change; nothing about how he moves is different.

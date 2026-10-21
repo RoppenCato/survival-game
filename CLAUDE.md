@@ -851,7 +851,7 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   is packed as a clip with its own frame: `node tools/kitpack.js art/render/hero_kit assets/sprites/hero-kit hero-kit --own`
   with the frames in `art/render/hero_kit_own`).
 - **What is in the game:** **the hero on the kit** (`hero-kit`, 2026-10-20, Robin's decisions: a base body, every garment a
-  layer; drawn on the people's path by `Sprites.drawKit`, the clip and frame from `pick()` as before, an attack's frame put on
+  layer; in the kraken's style since 2026-10-21, the round's fifth item: chosen tones on every layer and the inner line only where colours meet, the heavy outer line kept, every file and clip number as before, the row clip carried over; the starter look 275 MB decoded, was 264; the studio rebuilds it with its `tools/kitrender_k.js` and `hero_finish.py`; drawn on the people's path by `Sprites.drawKit`, the clip and frame from `pick()` as before, an attack's frame put on
   the clip's `contact`; his look built by the game's `heroLook` from what he wears: the starter tunic and trousers, shoes or
   boots, the belt, a coat or mail over the tunic by the chest's material, the cloak, the headwear by the helmet's material (`HERO_HEADS`, the studio's nine heads, Robin liked them all, the tiers mine:
   leather the wool cap with ear flaps, wool the Phrygian cap, fur the fur cap, copper and bronze the plain iron cap, iron the
