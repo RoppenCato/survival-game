@@ -88,7 +88,7 @@ brazier's fire heart about 15 units above its origin for the light); check by da
 
 ### 7. The karve on copper: done 2026-10-20 at decision 1's default (Robin: "do 1-7")
 
-`HULLS.karve.cost` in `src/yard.js` to wood 24, copper 10, fiber 12; `tests/karve.js`; `docs/boats.md` and CLAUDE.md ("boats
+`HULLS.karve.cost` in `src/yard.js` to wood 24, copper 10, fiber 12; `tests/karve.js`; `docs/archive/boats.md` and CLAUDE.md ("boats
 need copper, ships iron" becomes: the karve is the copper age's sea-going ship, the longship needs iron).
 
 ### 8. Ready for Wednesday (not asked for yet: the push, and the opening prompt once Robin picks Wednesday's aim)

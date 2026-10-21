@@ -643,7 +643,7 @@ hear any of it; Robin judges it by ear with the switches on the Light and sound 
 
 ## Lighting: what is left after the trials (2026-10-12)
 
-Built as switches (`docs/lighting.md`): the fire's glow and flicker, shadows thrown away from a fire, lit and dark sides, walls
+Built as switches (`docs/archive/lighting.md`): the fire's glow and flicker, shadows thrown away from a fire, lit and dark sides, walls
 that stop light with glowing windows, moths (all on); a moonlit night, mist, sun shafts, cloud shadows (off until Robin has
 looked). Ideas, none decided:
 

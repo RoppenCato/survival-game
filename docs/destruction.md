@@ -1,7 +1,7 @@
 # Destruction: breaking in, bringing down, burning, mending
 
 **Built 2026-10-13, tried in the Destruction Editor (`game.html?scene=ruin`). Robin has not played it: every number here
-is a first setting.** The pictures are `docs/destruction.jpg` and `docs/destruction-lean.jpg`.
+is a first setting.** The pictures are `docs/pictures/destruction.jpg` and `docs/pictures/destruction-lean.jpg`.
 
 Robin's brief (2026-10-13): you should be able to destroy houses and villages, and to break in. It must be balanced (a
 stone wall is not felled by an axe: another tool), immersive, semi-realistic, usable as tactics to break in or go through
@@ -144,7 +144,7 @@ carries over directly: a wall that runs north to south is drawn as a strip seen 
 the weakest part of how a house reads. The mountains give such an edge a **leaning face**, lit where it looks west
 and in shade where it looks east. `Build.CFG.lean` does that for houses (the foot of a side wall stands so many units
 out from its top, and its outer face shows): **off by default**, a switch on the editor's board and a slider (0 to
-14) in its panel. `docs/destruction-lean.jpg` is before and after at 9. My reading: the side walls are much clearer,
+14) in its panel. `docs/pictures/destruction-lean.jpg` is before and after at 9. My reading: the side walls are much clearer,
 above all from inside, and a damaged or burnt side wall can then show its scars; but the house gets a splayed foot,
 which suits turf and stone and looks odd on planks. A smaller lean (4 to 6) may be the better trade. Robin's call.
 
@@ -179,7 +179,7 @@ Also changed for everybody, because breaking in needed it: **a roof thins when y
 
 Robin: *"Now do a big trial where you build a big village/town and raid it. Destroying houses, breaking in etc. Then a
 new trial where you make the houses bigger so there is more room to move around. Every time work on fixing bugs you
-find."* `docs/destruction-trials.jpg` is the pictures.
+find."* `docs/pictures/destruction-trials.jpg` is the pictures.
 
 ### What was built for it
 

@@ -23,7 +23,7 @@ rung is good enough to stand in the game.
 | **The hird** | `hird` in the page: people who follow you inside your territory, take jobs, eat, crew a boat. **They never fight.** `Hird.roll` gives each health 20 to 40, strength, aim, wits and traits (loyal, afraid of the dark...). | The numbers a fighter needs are already rolled; nothing reads them in a fight. |
 | **Sides** | None. Every enemy's thinking starts from the hero's position (`updateEnemies`: distance and angle to `P`), and a blow can only land on the hero (`hurtPlayer`) or come from him (`damageEnemy`). | "A hirdman on your side" and "five against five" need **sides** in the engine: who is whose enemy, and blows between any two fighters. This is the biggest single change. |
 | **Finding a way** | None. A mover walks straight at its target and slides along circles (`moveCircle`). | Fine in a field. In a town with houses, a palisade and a gate, nobody will reach anybody. A town needs **way-finding**. |
-| **The raid** | Built 2026-10-07 (`docs/raid.md`): locked doors the axe breaks, the heavy chest carried on the shoulder and stowed aboard, the alarm that wakes a town's guards and sends the folk to hide. Not built: hirdmen carrying, fire, reputation. | The bones are there. What is missing is the fight worth having, the hird's part in it, and the reasons to stay or run. |
+| **The raid** | Built 2026-10-07 (`docs/archive/raid.md`): locked doors the axe breaks, the heavy chest carried on the shoulder and stowed aboard, the alarm that wakes a town's guards and sends the folk to hide. Not built: hirdmen carrying, fire, reputation. | The bones are there. What is missing is the fight worth having, the hird's part in it, and the reasons to stay or run. |
 | **Testing** | The engine runs in Node (`tests/balance.js`: a bot taps at each animal). The page can be driven by script (`drive.js`, `ui.js`, `startplay.js`). | Fights can be run hundreds of times with no screen, and every rung can be played by script before Robin plays it. |
 
 ## 2. The shape of it
@@ -404,9 +404,9 @@ left behind or the fight is lost). Then: go through the whole plan, and by that,
   Blender's holdout switch takes an object out of what can hide an ink line, so every outline behind a body showed through
   it. The first hair hid the faces and the first beards were beaks; both redone. A tint does turn the line with it (the
   line is in the same picture); at the game's size it reads as a darker line of the cloth's own colour and was left.
-- **The gate:** thirty rolled people beside the hero (`docs/people-crowd.jpg`); the clips on contact sheets
+- **The gate:** thirty rolled people beside the hero (`docs/pictures/people-crowd.jpg`); the clips on contact sheets
   (`node tools/visual/people.js clips|blows`); a village by day and by night with only sheets in it once they have loaded
-  (`docs/people-village.jpg`, `people-night.jpg`); forty in view at 15 ms a frame against 27 ms drawn (the pane's software
+  (`docs/pictures/people-village.jpg`, `pictures/people-night.jpg`); forty in view at 15 ms a frame against 27 ms drawn (the pane's software
   drawing: a comparison, not Robin's card).
 - **Left for the sitting with Robin signed in to Mixamo:** a thrust, a two-handed swing, a stagger, yielding, a second death,
   and the jobs. Until then: a spear is swung, a Dane axe uses the wood-chopping swing, a club the pick's, a man on his knees

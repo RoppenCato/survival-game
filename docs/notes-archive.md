@@ -176,7 +176,7 @@ pane has a tab limit: close old tabs if a page will not open).
 | `index.html` | `index.html` | Start page. **Laid out by chapter since 2026-10-13** (Robin: work on the chapters one at a time, all connected): **Play** (the game: chapters 1 and 2), **Systems** (each a part of the game set up to be worked on by itself, on the same engine and numbers as the game, so what is fixed there is fixed everywhere: the Combat Arena, the Battle test and the Destruction Editor for chapter 3's raiding, the Big island test, the Mountain test) and **Editors** (Art, Village, Sea). |
 | `art-editor.html` | `art.html` | **Art Editor (2026-10-09, the cleanup; the Creatures tab removed 2026-10-13, see "The editors cleaned up" under The game):** the Object and Blender editors as one page with two tabs, **Models** (the Blender sheets: model, gear layers, Height, "Use in the game" picks which model is the hero, the starter island, arena or night forest, the Clips keys) and **Objects** (one world prop at a time: category, variations, size, shape, surface, colour). The hero in every tab is the Blender model (`Sprites.attach`). One canvas and one engine: each tab is an object in `TABS` with `enter` (sets `Combat.api.scene`, `roster` and resets the arena), `leave`, `tick` and `after`; a tab's elements are found by `data-id` inside its own containers (`scope(name)`), so the tabs share names; the open tab is kept in `arteditor.tab` and `?tab=` opens one. The Characters tab (the drawn hero's editor) was retired the same day to `art/backup/character-editor.html`. **Since 2026-10-13 the Models tab has a People panel** (rolled villagers from the one body every person shares: the clip, the thing in the hand, mail, helmet, shield and cloak for all; `crowdRoll`, `crowdItems`). |
 | `sea-editor.html` | `sea.html` | Sea Editor: the archipelago, ships and sailing |
-| `combat-arena.html` | `combat.html` | **Combat Arena (rebuilt 2026-10-13, Robin: more tools to work combat out to perfection: dodging, parrying, blocking, every weapon, moving, different and multiple enemies, hirdmen and fighting men):** the fight on its own, on the game's engine and numbers. **You:** the melee kind, the ranged kind, the metal, what you wear (cloth, leather, mail and helm: `Combat.api.armor`), a shield on the arm (`Combat.api.shield`, the game's rule: not with a bow or a Dane axe), Heal, Never fall. **Men:** against you a weapon, gear and wits and Add one; beside you a weapon and gear and Add a hirdman; set pieces (one, two, two with one beside you, five against five, with a bowman each, three against your line of three); **They come** (`Combat.WAYS`); Clear the field, Start over. **Beasts:** every animal, the four trolls, the four väsen, a pair of wolves. **The clock and the eye:** the clock as it runs, half, a quarter; **Show the blows** (`Combat.api.overlay`: your weapon's reach and arc, amber winding up and red as it lands; your guard, white in the parry's instant and blue after; the dash while it keeps you untouchable; on every man his reach, his blow filling as he winds up, his shield's cover); Hold them still (`e.hold`); Sound; aiming. **The last blows** (`Combat.api.onLog`): a log, newest first, of every dodge, parry, block (what got through, a guard broken), hit taken, blow landed (crit, on his shield, his guard broken) and kill, with a tally. The men are the game's soldiers drawn from the people's sheets (`Combat.api.dressMan`, `Sprites.fighter`; a look from `lib.folkSpec`, a name; yours in your red); **G** gives the two orders. Hit weight (Snappy) and crit (15%) are the decided settings and no longer switches; Juice is always on. `docs/combat-arena.jpg`. **The Tuning panel (2026-10-15, Robin: tune combat against animals, men and many; `docs/combat-tuning.md` is what to test):** sliders for the feel of a hit, the chosen weapon's `PROFILES`, the men's `MEN` and each beast's numbers (`Combat.tune`, see "Things to know"), green where moved, settings as text, **Use in the game** (`game.combat`), Take back, Defaults; the working copy in `combatarena.tune`. The arena's beasts are dressed from the same numbers as the game's (they bit for 12 whatever they were), with a **Young boar** and groups: a pair of wolves, the night's pack, two boars, three young boars, a boar and a wolf. |
+| `combat-arena.html` | `combat.html` | **Combat Arena (rebuilt 2026-10-13, Robin: more tools to work combat out to perfection: dodging, parrying, blocking, every weapon, moving, different and multiple enemies, hirdmen and fighting men):** the fight on its own, on the game's engine and numbers. **You:** the melee kind, the ranged kind, the metal, what you wear (cloth, leather, mail and helm: `Combat.api.armor`), a shield on the arm (`Combat.api.shield`, the game's rule: not with a bow or a Dane axe), Heal, Never fall. **Men:** against you a weapon, gear and wits and Add one; beside you a weapon and gear and Add a hirdman; set pieces (one, two, two with one beside you, five against five, with a bowman each, three against your line of three); **They come** (`Combat.WAYS`); Clear the field, Start over. **Beasts:** every animal, the four trolls, the four väsen, a pair of wolves. **The clock and the eye:** the clock as it runs, half, a quarter; **Show the blows** (`Combat.api.overlay`: your weapon's reach and arc, amber winding up and red as it lands; your guard, white in the parry's instant and blue after; the dash while it keeps you untouchable; on every man his reach, his blow filling as he winds up, his shield's cover); Hold them still (`e.hold`); Sound; aiming. **The last blows** (`Combat.api.onLog`): a log, newest first, of every dodge, parry, block (what got through, a guard broken), hit taken, blow landed (crit, on his shield, his guard broken) and kill, with a tally. The men are the game's soldiers drawn from the people's sheets (`Combat.api.dressMan`, `Sprites.fighter`; a look from `lib.folkSpec`, a name; yours in your red); **G** gives the two orders. Hit weight (Snappy) and crit (15%) are the decided settings and no longer switches; Juice is always on. `docs/pictures/combat-arena.jpg`. **The Tuning panel (2026-10-15, Robin: tune combat against animals, men and many; `docs/combat-tuning.md` is what to test):** sliders for the feel of a hit, the chosen weapon's `PROFILES`, the men's `MEN` and each beast's numbers (`Combat.tune`, see "Things to know"), green where moved, settings as text, **Use in the game** (`game.combat`), Take back, Defaults; the working copy in `combatarena.tune`. The arena's beasts are dressed from the same numbers as the game's (they bit for 12 whatever they were), with a **Young boar** and groups: a pair of wolves, the night's pack, two boars, three young boars, a boar and a wolf. |
 | `village-editor.html` | `village.html` | Village Editor (2026-10-07): the rules that grow a village (`docs/villages.md`): an archetype, a seed, the wealth and the shore, the numbers as sliders, settings as text, "Use in the game" (`game.village`) |
 | `game.html` | `game.html` | The game: the first island, gathering, boars, inventory, the arm ring |
 | `game.html?scene=mountain` | `game.html` | **Mountain test (2026-10-12)**, the test scene of the mountain biome: the game on one island of its own (`World.MOUNTAIN_SPEC`: 220 tiles, the first biome in the south, the mountains in the north), started at the foot of a slope with tools, weapons and building stuff. The board on the left (it folds): to a slope, onto the foothills, the high plateau, under the peaks, north of the fells, to the waterfall, to the lookout, a boat under the sea cliffs, to the cave mouth and into the cave, **to the old mine, into it, to its fall of rock, to the rock shelter, to a copper vein, a boat at the sea cave, into it, to its beach**, the troll out or home, beasts, night or day, more to build with, to the wreck, start over. Its own save (`game.save.mountain`). `mountainScene()`, `mountainRows()`, `mountainAct` |
@@ -464,7 +464,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   not a stick sword. `node tools/visual/weapons.js` renders every swing in four directions; `tests/weapons.js` checks hits,
   pierce, chains and throws (in `npm test`).
 - `docs/hird.md`: the concept for recruiting people and founding a town (claim stone, joining, jobs, muster); step 1 is built.
-- `docs/boats.md` (**a study, 2026-10-13**; Robin: re-evaluate the boat and the shipyard: boats big enough for several rowers,
+- `docs/archive/boats.md` (**a study, 2026-10-13**; Robin: re-evaluate the boat and the shipyard: boats big enough for several rowers,
   more customisable yet functional, or a few good designs with parts and colours): what is built, the challenges (the grid
   is the hull's length and a seat a cell, the free-form rules fight every new part, the shape changes nothing of the
   handling, cargo has no shape, forty parts by hand), three ways (grow the free-form yard; a few designs with choices of
@@ -486,11 +486,11 @@ the text and it is made the default. When a spec's meaning changes, change the s
   `?scene=battle`, `tests/battle.js`, a gate for every rung, and nine questions for Robin. **Every rung is built** (its section 13,
   "How it went", says what each found); the raid, rung 6, as far as a script can judge it: Robin has not played any of it.
 - `docs/ui-review.md` (2026-10-12; Robin: look through every menu, board and bar for function, looks and sense): what was
-  looked at, what was found broken and fixed (`docs/ui-review.jpg`, before and after), and **what is proposed and waits for
+  looked at, what was found broken and fixed (`docs/pictures/ui-review.jpg`, before and after), and **what is proposed and waits for
   Robin**: C for making by hand, one rule for everything E does, one number for a weapon, tabs on the Building board, the
-  map showing only what has been seen, a book typeface (`docs/ui-type.jpg`), the HUD's three corners and the map in the art
+  map showing only what has been seen, a book typeface (`docs/pictures/ui-type.jpg`), the HUD's three corners and the map in the art
   direction. Read it before touching a board.
-- `docs/lighting.md` (2026-10-12): how similar games light a 2D world, the nine techniques tried here as switches, the verdict on
+- `docs/archive/lighting.md` (2026-10-12): how similar games light a 2D world, the nine techniques tried here as switches, the verdict on
   each, what was not tried and why, and the sources. Read it before touching the night or the fires.
 - `docs/moving-to-blender.md` (**decided 2026-10-09, Robin: the graphics move to Blender models**): what moves (characters, creatures, later
   some props), what stays in code (ground, water, building, vessels, UI), the order of work (foundations: `src/sprites.js`, a model
@@ -677,7 +677,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   in his right hand when his left side is toward us (he faces west, or us), under it when it is the far side
   (`attach` now hands the facing to `opts.layers(face)`); `SHIELD_WOOD`, `SHIELD_MARK`, `tintedMul` (a whole sheet, for an
   editor's sheet view). The rule and the game's side are under "Fighting men" ("The hero's shield").
-  `docs/hero-shield.jpg`. **Seen on the way:** the block's weapon layers were rendered the new way (a hole cut by
+  `docs/pictures/hero-shield.jpg`. **Seen on the way:** the block's weapon layers were rendered the new way (a hole cut by
   material, so nothing shows through the hand), the hero's older weapon layers the old way, so a sword's grip loses a few
   pixels as the guard comes up. **The seax, the spear and the Dane axe are in his hand since 2026-10-13** (Robin: "when I
   tried equipping some weapons it doesn't seem like it gets equipped": those three had no layers, so his hand was empty):
@@ -770,7 +770,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   and `tools/sprites.js <name> <in> <out> 1.333` writes `scale` into the sheet's numbers, which `Sprites.draw` and `Sprites.beast`
   multiply in (a troll's line is a little heavier than an animal's, which suits it). `npm run art:troll:boulder` (`:forest`,
   `:maw`, `:three`), `npm run art:trolls`; `node tools/visual/trollsheet.js` puts all four on the island beside the hero
-  (trolls3d.png). **In the game the cave troll is the boulder troll's sheets** (`BEAST_OPT.troll.sheet`): `Sprites.beast` takes
+  (pictures/trolls3d.png). **In the game the cave troll is the boulder troll's sheets** (`BEAST_OPT.troll.sheet`): `Sprites.beast` takes
   `clip` and `clipK` (the page asks for a clip: `shield` while `e.holdT` runs), `tint` (the troll turned to stone is the shield
   pose under a grey tint) and `deadFor` (he lies three seconds). **The Combat Arena** has buttons for the moose, the deer and all
   four trolls (`trollForest`, `trollMaw`, `trollThree` in `ANIMALS` with their numbers; the Gape's attack is a lunge,
@@ -791,7 +791,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   the lyre in his lap, plucking and swaying. The **bysen**: half the hero's height (`size` 0.5), grey coat, a red woven cap, a big
   pale beard, a little axe; clip `chop` (slowly, at a tree), `hide` (he folds down and **the stump** grows where he stood: an old
   stump with spread roots, rings on its top, moss and one red toadstool the colour of his cap) and `stump` (one frame). `npm run
-  art:draugr`, `art:huldra`, `art:nacken`, `art:bysen`, `art:vasen`; `node tools/visual/vasensheet.js` writes vasen.png. They are
+  art:draugr`, `art:huldra`, `art:nacken`, `art:bysen`, `art:vasen`; `node tools/visual/vasensheet.js` writes pictures/vasen.png. They are
   in the Art Editor's Models tab; **nothing in the game spawns them and their mechanics are not decided** (`docs/beasts.md`).
   **The models tried out (2026-10-12, Robin: try every model in the game, fight them, walk as them, fix what is wrong):** all
   fifteen (the hero, six animals, four trolls, the draugr, the huldra, Nacken, the bysen) were fought in the Combat Arena and
@@ -847,8 +847,8 @@ the text and it is made the default. When a spec's meaning changes, change the s
   wear, and walk among them. `node tools/visual/people.js crowd|clips|blows` draws them with the game's own code outside
   a browser (thirty rolled people beside the hero at Robin's size; every clip; the blows frame by frame);
   `tools/visual/peoplelooks.js` puts the raw renders together large, to judge shapes before packing.
-  `docs/people-crowd.jpg`, `people-looks.jpg`, `people-village.jpg`, `people-night.jpg`.
-  **The death has a frame of its own (2026-10-13, Robin: "when they die, half their body disappear").** A man falling backward ends two metres from where he stood, and the frame every clip was rendered in (160 px, the feet 25 px from its foot) cut him off: in seven of the eight directions the fallen lay with the head and chest gone. The hero's own death was cut the same way (behind the "You have fallen" board). Now: **`render.py --inplace death`** holds the figure over the spot it began on (the whole figure is moved, frame by frame, by what the hips have travelled: a body lies where the man stood, which is also where E lifts him), **`--aim 0.6`** looks lower (room below the feet) and `--size 208 --ortho 2.626` is a bigger frame at the same pixels a metre. Such a clip is rendered into **`<render dir>_own`** with numbers of its own (`tools/peoplerender.js` jobs 8 to 11, `node tools/peoplerender.js 4 8,9,10,11`; the hero: `npm run art:hero:death`), and both packers pack what lies there after the rest with **its own frame and anchor** (`anims[clip].frame`, `.anchor`; `node tools/people.js --own` and `node tools/sprites.js <name> <in> <out> --own` pack only those clips into the sheets there are; a clip whose pixels reach the edge of its own frame is flagged `!!`). `src/sprites.js` draws by the clip's own frame where it has one (`draw`, `beast`, `person`, `hand`). A body on the ground has no long shadow but **the shadow it lies on** (`opts.lying` in `person`; `fighter` sets it). `node tools/visual/people.js dead` draws the dead from all eight sides and the fall frame by frame (`docs/people-dead.jpg`). **Found on the way and not fixed: the same 160 px frame cuts the tips of long things in the hand** (a sword at full reach, a spear, a Dane axe; and a raised arm by a pixel or two) in the people's and the hero's sheets: the weapon layers need rendering in a bigger frame, which wants a frame of its own for a *layer* as well as for a clip.
+  `docs/pictures/people-crowd.jpg`, `pictures/people-looks.jpg`, `pictures/people-village.jpg`, `pictures/people-night.jpg`.
+  **The death has a frame of its own (2026-10-13, Robin: "when they die, half their body disappear").** A man falling backward ends two metres from where he stood, and the frame every clip was rendered in (160 px, the feet 25 px from its foot) cut him off: in seven of the eight directions the fallen lay with the head and chest gone. The hero's own death was cut the same way (behind the "You have fallen" board). Now: **`render.py --inplace death`** holds the figure over the spot it began on (the whole figure is moved, frame by frame, by what the hips have travelled: a body lies where the man stood, which is also where E lifts him), **`--aim 0.6`** looks lower (room below the feet) and `--size 208 --ortho 2.626` is a bigger frame at the same pixels a metre. Such a clip is rendered into **`<render dir>_own`** with numbers of its own (`tools/peoplerender.js` jobs 8 to 11, `node tools/peoplerender.js 4 8,9,10,11`; the hero: `npm run art:hero:death`), and both packers pack what lies there after the rest with **its own frame and anchor** (`anims[clip].frame`, `.anchor`; `node tools/people.js --own` and `node tools/sprites.js <name> <in> <out> --own` pack only those clips into the sheets there are; a clip whose pixels reach the edge of its own frame is flagged `!!`). `src/sprites.js` draws by the clip's own frame where it has one (`draw`, `beast`, `person`, `hand`). A body on the ground has no long shadow but **the shadow it lies on** (`opts.lying` in `person`; `fighter` sets it). `node tools/visual/people.js dead` draws the dead from all eight sides and the fall frame by frame (`docs/pictures/people-dead.jpg`). **Found on the way and not fixed: the same 160 px frame cuts the tips of long things in the hand** (a sword at full reach, a spear, a Dane axe; and a raised arm by a pixel or two) in the people's and the hero's sheets: the weapon layers need rendering in a bigger frame, which wants a frame of its own for a *layer* as well as for a clip.
   **Not done:** the Mixamo sitting
   for the clips a fight and a village still lack (a thrust, a two-handed swing, a stagger, yielding, sweeping, hammering,
   carrying, rowing): the spear is swung like a sword and a job is the nearest clip there is; a fur vest and a fur hat
@@ -989,7 +989,7 @@ the text and it is made the default. When a spec's meaning changes, change the s
   (a win-back of 0.6 of a hit, 6 a blow, over 3 s; balance 0.05 a blocked blow and 0.03 a landed one) he won every fight,
   mostly through the win-back; at these, 42% and 96%; the careful bot keeps 10 to 18 more health. Checked in the arena at
   Robin's size by script: the red and white glints, parry x2 to x4, FINISH HIM, the finishing blow, the stretch on the bar and
-  its win-back, DODGE!, and both bars (`docs/combat-four.jpg`).
+  its win-back, DODGE!, and both bars (`docs/pictures/combat-four.jpg`).
 - Melee range is not just `reach`: a hit lands when distance <= `reach + enemy.r + 2`, and the player also steps
   forward during the active phase (`lunge`).
 - The engine's enemy types are **`beast`** (chase and lunge, every animal), **`brute`** (a lunge, a chain of hits and a spin,
@@ -1322,7 +1322,7 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   three or more 34% of the time (65%), the largest fight 3.2 men (5.1); the hero would have fallen after 57 s (59: no easier);
   a town fight takes longer (150 to 290 s; the town test's limit is 480 s). Five against five is still a coin (45 to 56% over
   100), about 45 s (38); the hero's bots with four friends against five: tapper 2 to 6%, careful 84 to 90%, skilled 94 to 98%
-  (as before); a held line 37% (42). In the page (`docs/battle-pairs.jpg`): pairs at the gate, the rest of the town behind it.
+  (as before); a held line 37% (42). In the page (`docs/pictures/battle-pairs.jpg`): pairs at the gate, the rest of the town behind it.
   **Found on the way:** since the houses grew a town is wider than `MEN.pursue` 700, and the hall's men stood idle beside a
   fight at their own gate: a post may carry its town's bounds (`post.box`, from `vBox(v)`), and then a man goes for nobody
   further than `MEN.pursueOut` 450 outside them. The test's hero bot fights whoever is at him first (it walked at men who only
@@ -1338,7 +1338,7 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   fights again, and leaves nothing if he later falls). A man taken from behind with empty hands: his weapon is in your hand
   as he falls, as before. Things that lie (what you laid down, a place's own) are taken up the same way, quicker. So twenty
   dead are twenty weapons only to one who kneels twenty times in a minute and a half with room for them. **What arms are FOR
-  is still open** (they will arm the hird). `docs/take-weapon.jpg`.
+  is still open** (they will arm the hird). `docs/pictures/take-weapon.jpg`.
   **2. The unarmed can be killed.** The engine hands the hero's blow and his arrows to people the page keeps
   (`Combat.api.struck = { list(at), hit(o, dmg, ang, kind) }`, asked in the melee loop after the enemies and for the hero's
   arrows). A grown villager has `FOLK_HP` 2 on the men's scale (two blows of an iron sword or one heavy one; five punches),
@@ -1460,7 +1460,7 @@ should be was left as "not sure, try how it feels", so the numbers below are a f
   of the night, everybody where he would be, `nightNow`; you outside the back gate with your five and your weapons),
   **Storm it: a longship's crew** (sixteen behind you before the gate, by day). `tests/battle.js raid` checks the engine's
   part (lines 7 to 10: three against one, a householder, sleepers, the storm order). Debug: `arms()`, `witness`, `atPeace`,
-  `nightV()`, `bedDown(vi)`, `menOf(vi)`, `folkReact`, `armFolk`. `docs/raid-ways.jpg`.
+  `nightV()`, `bedDown(vi)`, `menOf(vi)`, `folkReact`, `armFolk`. `docs/pictures/raid-ways.jpg`.
   **Not done, and open:** a watchman's torch and a villager's weapon rack are not drawn (the light is); a body cannot be
   carried out of the watch's way; your men do not kill sleepers, loot, or put fire to anything; villagers of a place with
   no men at all (the first biome's villages in the real game) react to a blow seen and to noise, but nobody there fights
@@ -1687,7 +1687,7 @@ big island's villages can be broken into and burnt today. **Robin has not played
   `Build.CFG.lean` (the editor's switch and slider; `setLean(v)`; stored in `game.ruin` as `lean`) its foot stands that
   far out from its top and its outer face shows (`sideFace`: lit where it looks west, in shade where it looks east;
   `vSide(x, y)` says which way), as the mountains' side walls do. **Off by default; Robin has not judged it**
-  (`docs/destruction-lean.jpg`). It makes side walls clear, above all from inside, and gives a house a splayed foot.
+  (`docs/pictures/destruction-lean.jpg`). It makes side walls clear, above all from inside, and gives a house a splayed foot.
 - **`RUIN`** is `Ruin.cfg(game.ruin)`; sounds `SFX.groan`, `crash`, `whoosh`. Debug: `ruinInfo()` (RUIN, RU, due, burn,
   fire, ruin, rooms), `ruinDo(id)`, `ruinB()`, `ruinBag()`, `wallFaced()`, `fireAtHand()`, `placeAt`, `theirs`, `homeOf`,
   `ruinWhole`, `ruinTarget()`.
@@ -1698,7 +1698,7 @@ big island's villages can be broken into and burnt today. **Robin has not played
   `fire(secs)`, `mend(n)`, `walk`, `wait`, `state(n)`, `table()`, `opt.god`).
 - **The big trials (2026-10-13, Robin: build a big village or town and raid it, destroying houses and breaking in; then a
   new trial with bigger houses so there is more room to move; fix the bugs found each time). `docs/destruction.md` section 9
-  has the tables, the twenty-one faults and four questions for Robin; `docs/destruction-trials.jpg` the pictures.** Played by
+  has the tables, the twenty-one faults and four questions for Robin; `docs/pictures/destruction-trials.jpg` the pictures.** Played by
   script in the Destruction Editor (`tools/visual/sackplay.js`, after `drive.js`: `SK.setup(place, men)`, `SK.party(x, y)`,
   `SK.go`, `SK.jump`, `SK.breach`, `SK.fell(lot)`, `SK.torch`, `SK.burnWait`, `SK.hallBack()`, `SK.sack({ from, n, god })`,
   `SK.raid('hall' | 'fire', men)` (the town only), `SK.state()`, `SK.check()`, and **`SK.watch()`**: with every step it
@@ -1964,7 +1964,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   where this file names one of them it is history. **A board taller than the screen scrolls** (`panel()` in the game: its rows
   are clipped to the screen, a strip at the right shows where you are, the wheel over it moves them, `panelScroll`,
   `panelWheel`; the Admin board had outgrown the screen, which was the menu that could not scroll). **The start page is laid
-  out by chapter** (see `index.html` in the table). **The Combat Arena was rebuilt** (see its row). `docs/creatures.md` is marked
+  out by chapter** (see `index.html` in the table). **The Combat Arena was rebuilt** (see its row). `docs/archive/creatures.md` is marked
   superseded; `README.md`'s tables are current again.
 - **The editors cleaned up (2026-10-08, Robin: a lot of bloat; remove what we do not need):** the **Creature Editor** lost the Rig switch
   (the game draws the view rig and so does the editor, always), the steampunk body plans (Blob, Critter, Brute, Floater, Crawler) and
@@ -2021,7 +2021,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   deer got away from the bot's ten arrows (the bow aims by the mouse). `docs/chapters.md` chapter 1 lists them.
 - **Ready for the first play-through (2026-10-14, Robin: a manual test from the beginning to the big island; make sure it is
   all ready, rebalance the drops with a parameter to treble them when testing, check crafting and cooking, berries that drop on
-  E, a list of what to test, an error log). `docs/playtest-1.md` is the list for Robin, the balance table and what the
+  E, a list of what to test, an error log). `docs/archive/playtest-1.md` is the list for Robin, the balance table and what the
   scripted play-through found.** **Berries drop from the bush on E** (`pickBerries`: `yieldDrop('berries', ...)`, three of
   them, picked up like anything that drops; they laid themselves in the bag before). **Fiber is 3 a bush** (`BUSH_FIBER` in `src/gather.js`, which is the one the cutting reads; the page's constant of the same name is kept alike; was 2:
   the chain to the raft wants about 22 fiber, eight bushes now instead of eleven; wood, stone, berries and the beasts' drops
@@ -2042,7 +2042,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   bow (it shoots), a young boar (the careless bot wins with 9 of 93 left; a careful one loses 7), the hut at Comfort 5 (44 wood,
   3 stone, 8 fiber, 2 leather), roast meat and roast berries cooked and waiting at the campfire, Brokk's story and the raft
   taught, the raft bench on the sand, the raft laid and launched, the crossing in 68 s with "You have left the island".
-- **Robin's first play-through (2026-10-14; `docs/playtest-1.md`, "Robin's report", has every point and the order I propose).
+- **Robin's first play-through (2026-10-14; `docs/archive/playtest-1.md`, "Robin's report", has every point and the order I propose).
   Robin's direction from it, not yet built unless said:** a slower beginning that introduces things one at a time, with the
   broken house finished as the first home; **no sleeping in a bed with no roof, and a village's beds are not yours** (built:
   `bedWhy`: "No roof over it", "Not your bed"); combat not smooth or snappy enough, the club awful, **a parry stuns about a
@@ -2135,7 +2135,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   right, with the ink line at the edge. The page still keeps the `cave_mouth` prop for the place (E, the troll's walks) but
   marks it `painted` and draws nothing for it. **The mine's and the sea cave's mouths are still the Blender pieces** (they are
   not on the big island; `mtn.noPaintMouth` would turn the painting off). My look, not Robin's; the scree and the skull of
-  the Blender piece are not painted yet. `docs/cave-mouth.png` is the older before-and-after.
+  the Blender piece are not painted yet. `docs/pictures/cave-mouth.png` is the older before-and-after.
 - **The beginning that grows (2026-10-14; Robin: "Yes, do all this" to my five points on being overwhelmed at the start, and his own
   additions: big steps announced on a bordered board, Brokk as the gate, only the basic pieces, Brokk naming what the house still
   lacks). Built the same day, in three commits (one bar first, see "Controls and modes").** **C is gone, and Tab is one screen (the
@@ -2180,7 +2180,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   1500 units from the wreck, by choice nearest the way from the wreck to the steading: a `fishWeir` (stakes and wattle) in the
   shallows and a `fishingNet` hung on the beach beside it (`weirNet`). **E "Take down the net"** (`weirNear`, `weirTake`) gives 4
   fiber and the net is gone for good (`gone`). Left by people: the first sign that somebody lived here, and the fiber for the
-  first lashings. It gives no fish (fishing stays in the lowlands, Robin). `Combat.api.debug().weir()`; `docs/fish-weir.jpg`.
+  first lashings. It gives no fish (fishing stays in the lowlands, Robin). `Combat.api.debug().weir()`; `docs/pictures/fish-weir.jpg`.
 - **The shipwright’s bench (step 8, 2026-10-05):** a board piece (12 wood, 2 stone; prop `shipwright`: two trestles carrying
   a keel timber with its curled stem and the first ribs; `it.ship`). It only goes on **sand** (`code` 1) within 4 tiles
   of the sea (`nearWater`), and only when your home has **Comfort 4** (`baseComfort`); the cursor says which is
@@ -2190,7 +2190,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   so `known()` is false until Brokk has taught it (`seen.raft`; the cell says "Someone must teach you this"), and
   `soon: true` until step 9 builds the raft. Hints: speak to Brokk again once the home is ready, then build the
   bench at the water.
-- **The hulls (2026-10-13, decided by Robin: "Do it" to the recommendation of `docs/boats.md`): a vessel is a design chosen in the
+- **The hulls (2026-10-13, decided by Robin: "Do it" to the recommendation of `docs/archive/boats.md`): a vessel is a design chosen in the
   yard and laid at once; the fitting out is the player's.** `Yard.HULLS` in `src/yard.js`: **faering** (4 keel cells, 1 to 2
   seats, no mast; 10 wood, 3 copper), **boat** (6 cells, 1 to 3 seats; 14 wood, 5 copper), **karve** (9 cells, 2 to 6 seats, a
   mast on cell 5, the steering oar on cell 1; 24 wood, 8 iron bars) and **longship** (16 cells, 4 to 13 seats, 26 oars, a mast on
@@ -2217,7 +2217,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   `nameOf(kind)` are what the game asks instead of `kind === 'boat' || 'karve'`. **A vessel saved with its strakes** (before
   this) keeps its kind and its seats on the design's hull (`scene.enter` drops laid hull parts from a saved yard). `tests/karve.js`
   checks every hull's rules, where the yard lets a part go, the fit and the sailing; `node tools/visual/boats.js` renders them
-  all (`docs/boats.jpg`). **Not done:** the rowing clip (rowers sit, the oars pull by themselves), the sail's colours, the ship's
+  all (`docs/pictures/boats.jpg`). **Not done:** the rowing clip (rowers sit, the oars pull by themselves), the sail's colours, the ship's
   name, the knarr with its hold, the Sea Editor's own four old ship kinds (still there beside the yard's). **What the older
   paragraphs below say about laying a keel and strakes is history.**
 - **The Shipyard (2026-10-05, Robin's design):** E at the shipwright's bench steps into its own small place (like the cave,
@@ -2768,9 +2768,9 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   trying things by eye and ear (`LAB`, kept in `game.lab`; `labRows`, `drawLab`, `labAct`): one for every layer of the ambient
   sound (`LAB.snd`) and one for every lighting technique on trial (`LAB.light`, `lightRows`, `lightAct`).
 - **The lighting trials (2026-10-12, Robin: research how similar games make good lighting, test a few techniques, see what works
-  best; the answers: fire and torch at night first, and atmosphere; pictures, then switches). `docs/lighting.md` has the research
+  best; the answers: fire and torch at night first, and atmosphere; pictures, then switches). `docs/archive/lighting.md` has the research
   (Graveyard Keeper, Factorio, Red Blob Games, Octopath, the painters' rules), every technique, its verdict and the sources;
-  the pictures are `docs/lighting-fire.jpg`, `-village.jpg`, `-air.jpg`.** Nine techniques, each a switch in `LAB.light` on the
+  the pictures are `docs/pictures/lighting-fire.jpg`, `-village.jpg`, `-air.jpg`.** Nine techniques, each a switch in `LAB.light` on the
   Light and sound board, all in `templates/game.html` under "the lighting trials" (`lt(k)` asks a switch).
   **Robin's look at them in the game (2026-10-12): "not sure about the lighting... it's more like some weird filter over it";
   the shadows that things throw were liked, but with the torch they "run quickly when walking".** What that was, seen at
@@ -2984,7 +2984,7 @@ The first playable build, started 2026-10-04. One generated island from `World` 
   far gable), the **cross on the gable's peak** (`gableCross`, drawn 66 units up to the ridge's end), a **font** by the door, and the
   churchyard's **lychgate** (`lychGate`, a roofed gate on four posts) on the chapel's wall. `quoins`, `saxonOpening`, `ashlarFill`
   are the shared bits. The first biome's gables keep their timbers; a stone gable gets a small arched window instead.
-- **The raid (2026-10-07, built; `docs/raid.md`):** **guards** are the engine's enemies with a figure (`e.fig`, `e.human`, `drawHuman` in
+- **The raid (2026-10-07, built; `docs/archive/raid.md`):** **guards** are the engine's enemies with a figure (`e.fig`, `e.human`, `drawHuman` in
   `src/combat.js`: the villagers' figure in an iron helm and mail with a sword that hangs, rises behind the shoulder and comes round;
   `lib.heldD` draws a `sword`), dressed by the game (`guardSpec`, `wantKind` `'guard'`: 24 health, 9 damage, the plain lunge,
   `aggro` 0.5 so only the alarm or a blow wakes them, and awake they give up only 900 units off, then walk back to `e.post`);
@@ -3115,7 +3115,7 @@ The hero had two modes, switched with **Q**, each with its own six-slot bar at t
 - In the arena an enemy with `e.creature = true` is drawn this way (`e.skin` for its own creature). `e.cfg`
   overrides the bot AI speeds, `e.hold` freezes it, `e.aggro` keeps it calm until the hero is near, `e.flee` makes
   it run away instead of fighting (the deer).
-- **The view rig (2026-10-07, Robin: the turntable clipped everywhere, "a new car"; `docs/creatures.md`):** animals (plan 5,
+- **The view rig (2026-10-07, Robin: the turntable clipped everywhere, "a new car"; `docs/archive/creatures.md`):** animals (plan 5,
   `quadD`) and the trolls (plans 8 and 9, `trollViewD`) are drawn like the hero, in three designed views (the side facing left and
   flipped for right, the front, the back; the front and back turned by `tq` on the diagonals), each a 2D construction with its
   own layering (far limbs, the body with the head and hair, near limbs) through the ink layers, so nothing cuts through anything
@@ -3284,7 +3284,7 @@ The hero had two modes, switched with **Q**, each with its own six-slot bar at t
   every standing thing can be walked to from the way in, and the light-to-light distances; `node tools/visual/cave.js [seed]
   [map|lit|dark|all]` (`npm run cave`) writes cave_map.png (the whole cave, the holes ringed), cave_lit.png (six places evenly
   lit, to judge the painting) and cave_dark.png (the same as the game shows them, by torch and by night too).
-  `docs/cave-lit.jpg`, `docs/cave-dark.jpg` and `docs/cave-game.jpg` are the pictures of 2026-10-12.
+  `docs/pictures/cave-lit.jpg`, `docs/pictures/cave-dark.jpg` and `docs/pictures/cave-game.jpg` are the pictures of 2026-10-12.
   **The other caves (2026-10-12, Robin: more than troll caves; an old copper mine, a sea cave).** `Cave.make(seed, { kind })`:
   `'troll'` (the cave above, the default), `'mine'`, `'sea'`. The same sheets and painter, another lay-out: `base()` makes the
   fields from a list of shapes (ellipses, and **boxes for what people dug: straight walls**, with a third of the roughness) and
@@ -3324,7 +3324,7 @@ The hero had two modes, switched with **Q**, each with its own six-slot bar at t
   sea cave by E from the boat, waded and walked to the pocket, the chest and driftwood taken, out and aboard again; the shelter
   walked into, a bed under it slept in (rested); a vein in the open cliff worked out. `tests/cave.js` lays both out for twelve
   seeds; `node tools/visual/cave.js [seed] [what] mine|sea` writes `cave_mine_*.png` and `cave_sea_*.png`.
-  `docs/cave-mine.jpg`, `docs/cave-sea.jpg`.
+  `docs/pictures/cave-mine.jpg`, `docs/pictures/cave-sea.jpg`.
 - **Charcoal, the furnace and copper tools (2026-10-07, Robin decided):** charcoal is never made in the furnace. **Morning embers:**
   at every dawn each fire that burned through the night (the camp hearth, campfires, hearths, braziers) drops two lumps of
   charcoal beside it (`morningEmbers`, from `dayTick` and waking). **The charcoal clamp** (the `charcoal` piece, prop `charcoalPit`,
@@ -3569,7 +3569,7 @@ all land as before).
   mountains. **`w.peaks()` now only lists places on the peaks' ground** (`w.mt.peaks`: for the test board and the look
   scripts). **Cost** (Node, a piece is 512 by 384): the thirty-odd pieces with peaks in them take about 77 ms the first time
   they are seen, against about 55 before (the peak painter is 20 of it); the walls cost what they did. Baking a piece over
-  several frames would end those hitches and is not done. `docs/mountain-rock.jpg` is before and after.
+  several frames would end those hitches and is not done. `docs/pictures/mountain-rock.jpg` is before and after.
 - **Set pieces from Blender** (`art/build/rocks_build.py`, `tools/props.js`, `npm run art:rocks`): `cave_mouth`, `mine_mouth`,
   `sea_mouth`, `shelter` and `shelter_in` (the peaks were set pieces too until 2026-10-12; their builder is kept and runs only
   when a peak is asked for by name). **The packer gives a piece the drawn world's finish**: the kit's grain, a cool shade
@@ -3590,7 +3590,7 @@ all land as before).
   cliff is a holdout** with the mouth cut in it, so nothing of the inside shows except through the mouth. The packer keeps the
   grain's pale specks out of the dark (they sat on the picture's surface and flattened a deep shadow). **A changed picture is
   always fetched:** `tools/build.py` tags every set piece's path with a few letters of its own bytes (`?v=`), because a browser
-  kept showing the old cave mouth. `docs/cave-mouth.png` is before and after.
+  kept showing the old cave mouth. `docs/pictures/cave-mouth.png` is before and after.
   **The sun for these renders is 3.0**: at the characters' 1.15 no face passes the cel shader's light step (found 2026-10-12;
   **every character so far was rendered that way**; whether to re-render them with a lit side is Robin's call).
 - **In the game:** `fellOk`, `fellSame`, `edgeFell`, `tileFell`, `fellWhy` keep building to level dry ground ("Not on a cliff", "Not
@@ -3632,7 +3632,7 @@ all land as before).
   foot with weed and barnacles), `shelter` and `shelter_in`. The render's ground depth is not the game's (a camera 35 degrees up
   shows a metre of ground as 12.4 screen units, the game's 0.75 makes it 16.3), so the shelter's floor is modelled 3.74 m deep
   to lie over the 62-unit pocket. **Thin things take the ink as black sticks** (hanging roots did): use moss, not twigs.
-  `docs/mountain-places.jpg` (the adit, the shelter, the sea cave's mouth, a vein).
+  `docs/pictures/mountain-places.jpg` (the adit, the shelter, the sea cave's mouth, a vein).
 - **A mountain in one part of an island, and the big island's own (2026-10-12, Robin: put a small version of the biome on the
   first big island, to introduce the player to mountains and get the first copper; his answer: foothills and a small plateau).**
   `mountainOpts.at = [x, y]` (island radii from the island's middle) with `r` puts the mountain round one place instead of across
@@ -3647,7 +3647,7 @@ all land as before).
   **Villages keep off it**: `w.siteCode(tx, ty)` answers 255 for the mountains and the ground before them, and `Village.plan`
   and the rune hut ask it. **A hollow the fells close round** (a tarn in its bowl: the mountains keep a shore round a lake too)
   **is given a way in**: the flood now starts from the largest piece of low ground, and any other piece, low or high, is joined
-  on (a slope down a face, a gap in a rim). `docs/big-island-mountain.jpg` is four worlds' charts (ways up ringed, the cave red,
+  on (a slope down a face, a gap in a rim). `docs/pictures/big-island-mountain.jpg` is four worlds' charts (ways up ringed, the cave red,
   veins green).
 - **The approach (2026-10-12, Robin: find a good way to make the mountains go seamlessly with other biomes).** The field is
   smooth, so on the low ground it already says how near the first rise is: **`w.fellNear(x, y)`** runs from 0 out in the lowland
@@ -3656,13 +3656,13 @@ all land as before).
   **the ground dries toward the foothills' turf** (the fells' tint laid on by how near, in `bakeChunk`), **stones and sedge come
   up through the grass** (the pen), **the trees thin and turn to pine, birch and mountain birch**, **juniper and heather
   appear**, and **boulders and rock lie about** (`w.plant`). The cliffs themselves stay hard edges: that is the terraces'
-  nature. `docs/mountain-approach.jpg`.
+  nature. `docs/pictures/mountain-approach.jpg`.
 - **Checking it:** `node tools/visual/mountainlook.js` has shots `mine`, `shelter`, `seacave`, `vein`, `approach`, `over`, and
   `peaks`, `peaks2`, `peaks3` (the painted range; `SEAMS=1` marks the pieces' borders in red, `PROF=1` prints what a bake cost),
   and `MSPEC=big` paints the game's own two islands (the big one with its small mountain) and `MAT=tx,ty,zoom` any place;
   `node tools/visual/worlds.js` prints the big island's mountain (the share of each level, the ways up, the cave, the shelter,
   the veins). `node tools/visual/mountain.js [seed]` (`npm run mountain`) prints the share of the land each level takes, the
-  slopes, the waterfall, the lookout, the bay and the cave, and whether every level is reached on foot, and writes mountain.png
+  slopes, the waterfall, the lookout, the bay and the cave, and whether every level is reached on foot, and writes pictures/mountain.png
   (the chart and eight close-ups painted as the game paints them); checked on seeds 11, 3, 25, 42 and 7: every one has a way to
   every level, a waterfall, a lookout, a bay and a cave. `node tools/visual/mountainlook.js [seed] [shots] [zoom]` writes one
   picture a place, larger (east, west, north, face, fells1, fells2, sea, sea2, sea3, fall, look, peaks, cave, chart).

@@ -150,7 +150,7 @@ sound and the day and night are perfected in this chapter**.
 
 ## What finishes chapter 1 (in this order, mine)
 
-1. **Robin plays chapter 1 from the wreck to the raft** (a second play-test, like `docs/playtest-1.md`), with the six areas as the
+1. **Robin plays chapter 1 from the wreck to the raft** (a second play-test, like `docs/archive/playtest-1.md`), with the six areas as the
    questions. The three things that feel worst lead the work.
 2. The studio's phase 0 lands (the people, the wolf and the adder lit), then the trees' concepts for Robin.
 3. The open answers above: crafting that feels off, the hit sound, the lighting trials, the music's default.
@@ -239,8 +239,8 @@ Open. **The full year**: every season drawn everywhere, the turn after winter th
 
 | Work | When | Status |
 | --- | --- | --- |
-| **Saves that fit**: save what changed on the ground, not the whole field (today 1.5 MB of 1.56; the browser gives about 5 MB in all) | before the bigger sea (chapter 2) | Not started (`docs/before-wednesday.md`, 1) |
-| **Sheets loaded when used**, a soft shadow while one loads (the hero's sheets are about 1.5 GB decoded and all load at the start) | now: it touches chapter 1's smoothness | Built (the kit and the people load a sheet on first use and, 2026-10-21, let go of clips not drawn for two minutes: `Sprites.trim`; the beasts since 2026-10-20) (`docs/before-wednesday.md`, 2) |
+| **Saves that fit**: save what changed on the ground, not the whole field (today 1.5 MB of 1.56; the browser gives about 5 MB in all) | before the bigger sea (chapter 2) | Not started (`docs/archive/before-wednesday.md`, 1) |
+| **Sheets loaded when used**, a soft shadow while one loads (the hero's sheets are about 1.5 GB decoded and all load at the start) | now: it touches chapter 1's smoothness | Built (the kit and the people load a sheet on first use and, 2026-10-21, let go of clips not drawn for two minutes: `Sprites.trim`; the beasts since 2026-10-20) (`docs/archive/before-wednesday.md`, 2) |
 | **The per-frame packer** (each frame cut to its own pixels), then the studio repacks every set | after the lazy loading | Not started (the art plan, item 8; the people's atlas already does it: `tools/people.js` packs per frame and `rectsOf` in `src/sprites.js` draws it, the base for the general one) |
 | **The world as waters** (the generator) | chapter 2's start | Planned (`docs/build-plan-waters.md`, step 1) |
 | Performance: the frame log's SPIKE lines, the first frame's time | always | Watched |

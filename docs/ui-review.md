@@ -6,7 +6,7 @@ the art direction, is it pleasing? Does it make sense, does it feel intuitive?"*
 
 Every board was opened in the browser pane at Robin's size (a 1200 by 750 canvas), on a fresh game, in the sandbox and in the
 test hut (`?scene=runes`), with the keys and the mouse driven by script, and the code behind each was read. What was plainly
-broken is **fixed** (section 2, `docs/ui-review.jpg` is before and after). What is a matter of taste or of how the game
+broken is **fixed** (section 2, `docs/pictures/ui-review.jpg` is before and after). What is a matter of taste or of how the game
 should work is **proposed** (sections 3 to 5) and waits for Robin.
 
 ## 1. What was looked at
@@ -90,7 +90,7 @@ the meal's round mark are right too.
    app, set on boards drawn after Bauer and Egerkrans. The one place that uses a book face, the item card (Georgia), is the
    one that looks at home. **Proposal:** one book face for names and titles everywhere (Palatino or Georgia from the
    system, or a face carried with the game), the sans kept for small numbers only.
-   **`docs/ui-type.jpg`** is the same board as it is, in Palatino and in Georgia: a throwaway preview (`U.face` in
+   **`docs/pictures/ui-type.jpg`** is the same board as it is, in Palatino and in Georgia: a throwaway preview (`U.face` in
    `tools/visual/ui.js` swaps the face on its way into the canvas); nothing of it is in the game.
 2. **The three corners of the HUD are from the look before the ink.** The health and stamina bars are glossy and bright
    with rounded ends; the hotbar is six flat boxes floating on the grass with a line of key reminders over them that never
@@ -132,7 +132,7 @@ Mostly yes, and where it is not, the cause is in section 3: B meaning two things
 
 *"1. Yes. 2. For now show all. 3. What you think is best. 4. Nah. 5. All."*
 
-`docs/ui-review2.jpg`: the Building board, what you make by hand, the bag with a material's card, the map.
+`docs/pictures/ui-review2.jpg`: the Building board, what you make by hand, the bag with a material's card, the map.
 
 | Section 3 | Done |
 | --- | --- |

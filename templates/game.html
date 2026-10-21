@@ -282,7 +282,7 @@ __COMBAT__
   }
   var HIT_RATE = { seax: 1.12, spear: 1.05, sword: 1, axe: 0.95, club: 0.9, greataxe: 0.85 };   /* a picked hit on a lighter weapon a little higher and quicker, on a heavier one lower and slower (as the swishes are) */
   function recSfx(n, v, x) {
-    var a = AC; if (!a || OLD_SFX()) return false;
+    var a = AC; if (!a) return false;
     if (swingH && (((n === 'hit' || n === 'heavyhit' || n === 'block') && x) || n === 'hurt' || n === 'parry')) { if (SFX_PICK.cut) Sfx.cut(a, swingH, 0.03); swingH = null; }   /* cut at the blow only if the arena's switch says so (off since Robin's own swings: a cut whoosh may be what spoiled the studio's) */
     var name = recName(n, v, x); if (name === '') return true; if (!name) return false;
     var o = { rate: n === 'hit' ? 1 + Math.min(2, v || 0) * 0.03 : 1 };
@@ -293,7 +293,6 @@ __COMBAT__
     return !!h;
   }
   function synthAt(f, v, x) { if (x && x.lead != null && x.lead > 0.02) setTimeout(function () { f(v, x); }, (x.lead * LEAD_K() - 0.01) * 1000); else f(v, x); }   /* the old whoosh as the blow lands, as before */
-  function OLD_SFX() { return !!(ADMIN && ADMIN.oldSfx); }
   function sfx(n, v) { if (S.sound) Combat.api.sfx(n, v); }
   window.addEventListener('keydown', ac); window.addEventListener('mousedown', ac);
 
@@ -380,7 +379,7 @@ __COMBAT__
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; if (carrying || torchOn || (P.mode === 'fight' && !armsOut)) return out;   /* (in a place at peace the weapon is away until it is used) */
     if (it && M.layers.indexOf(it.kind + 'Wood') >= 0) out.push(it.kind + 'Wood');
     if (it && M.layers.indexOf(it.kind + 'Metal') >= 0) { var mm = Items.MATS[it.mat]; out.push({ layer: it.kind + 'Metal', tint: mm ? mm.face : '#9ca3ad' }); }
-    if (shieldHeld() && (!ADMIN.shieldRaised || (sprHero.blk || 0) > 0.02)) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, shieldPaint());
+    if (shieldHeld()) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, shieldPaint());
     return out;
   }
   /* The shield (2026-10-13, Robin: "you need to create a shield and implement it"). Until now K raised a guard as strong with
@@ -422,7 +421,7 @@ __COMBAT__
     var it = P.mode === 'fight' || P.mode === 'gather' ? handItem() : null, away = carrying || torchOn || (P.mode === 'fight' && !armsOut);   /* (in a place at peace the weapon is away until it is used) */
     if (!away && it && has(it.kind + 'Wood')) L.push({ l: it.kind + 'Wood', hand: 1 });
     if (!away && it && has(it.kind + 'Metal')) L.push({ l: it.kind + 'Metal', t: bladeTint(it.mat), metal: 1, hand: 1 });
-    if (!away && shieldHeld() && (!ADMIN.shieldRaised || (sprHero.blk || 0) > 0.02)) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
+    if (!away && shieldHeld()) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
     return Sprites.lookId({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
   }
   Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers, look: heroLook });
@@ -882,7 +881,7 @@ __COMBAT__
     c.restore();
   }
   /* ---------- the lighting trials (2026-10-12, Robin: research how similar games light their worlds, test a few techniques,
-     see what works best; first fire and torch at night, and atmosphere). docs/lighting.md has the research and the verdicts.
+     see what works best; first fire and torch at night, and atmosphere). docs/archive/lighting.md has the research and the verdicts.
      Every technique is a switch on the Light and sound board (LAB.light):
        glow     the fire's light gutters and flares (three sines and a slow swell), a hot glow at the flame, warm light in the air
        shadows  props, built things and figures throw their shape on the ground away from the nearest fire or the torch
@@ -1013,51 +1012,10 @@ __COMBAT__
       }); });
     c.restore();
   }
-  /* The night under a moon, and the air (the lighting trials, second half):
-       moon    the night's blue a little lighter and bluer, colour drained from whatever no fire lights (Factorio's lesson: a
-               night is a change of palette, not a black sheet), and the moon's path glittering on the sea
-       mist    at dawn, and thinner at dusk, mist lies over the ground: one layer under whatever stands (trees rise out of
-               it), a thin veil over all (Graveyard Keeper's fog in layers, by height)
-       shafts  by day, where trees stand close, light slants down between them, with motes turning in it
-       clouds  by day, the shadows of clouds drift over the land with the wind */
-  var softT = {}, satCv = null;
-  function softTile(key, n, r0, r1, col) {   // a tile of soft blobs that repeats with no seam (each blob drawn across the edges too)
-    if (softT[key]) return softT[key]; var S2 = 256, cv2 = document.createElement('canvas'); cv2.width = cv2.height = S2; var g = cv2.getContext('2d'), R2 = kit.rng(key.length * 97 + n), i, dx, dy;
-    for (i = 0; i < n; i++) { var x = R2() * S2, y = R2() * S2, r = r0 + R2() * (r1 - r0), a = 0.35 + R2() * 0.65; for (dy = -S2; dy <= S2; dy += S2) for (dx = -S2; dx <= S2; dx += S2) { if (x + dx + r < 0 || x + dx - r > S2 || y + dy + r < 0 || y + dy - r > S2) continue; var gr = g.createRadialGradient(x + dx, y + dy, 0, x + dx, y + dy, r); gr.addColorStop(0, 'rgba(' + col + ',' + (a * 0.9).toFixed(3) + ')'); gr.addColorStop(0.6, 'rgba(' + col + ',' + (a * 0.4).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)'); g.fillStyle = gr; g.beginPath(); g.arc(x + dx, y + dy, r, 0, 7); g.fill(); } }
-    softT[key] = { cv: cv2, pat: null }; return softT[key];
-  }
-  function tileFill(c, t, scale, ox, oy, hw, hh) {   // the tile laid over the view in the world's own space, drifted by (ox, oy)
-    if (!t.pat) t.pat = c.createPattern(t.cv, 'repeat'); c.save(); c.translate(-ox, -oy); c.scale(scale, scale); c.fillStyle = t.pat; c.fillRect((cam.x - hw + ox) / scale - 1, (cam.y - hh + oy) / scale - 1, hw * 2 / scale + 2, hh * 2 / scale + 2); c.restore();
-  }
-  function mistK() { var D = dusk(), L = light(), m = day.t < 260 ? Math.pow(1 - day.t / 260, 0.8) : 0; return Math.max(m, 0.5 * D, 0.22 * L); }   // thick at first light, some at dusk, a little all night
-  function drawMist(c, hw, hh, over) {     // (inside the camera's transform) under the things that stand, then a veil over them
-    if (!lt('mist') || inCave || inYard) return; var k = mistK(); if (k < 0.03) return;
-    var t1 = softTile('mistA', 9, 34, 78, '236,240,244'), t2 = softTile('mistB', 6, 54, 110, '226,232,240'); c.save();   // banks of it with clear ground between, not a sheet (the first try was a white wash over everything)
-    if (!over) { c.globalAlpha = 0.5 * k; tileFill(c, t1, 3.1, clock * 5, clock * 1.6, hw, hh); c.globalAlpha = 0.3 * k; tileFill(c, t2, 5.3, -clock * 3, clock * 2.2 + 300, hw, hh); }
-    else { c.globalAlpha = 0.11 * k; tileFill(c, t2, 6.1, clock * 4 + 500, -clock * 1.2, hw, hh); }
-    c.restore();
-  }
-  function drawClouds(c, hw, hh) {         // cloud shadows over the land by day
-    var L = light(); if (!lt('clouds') || inCave || inYard || L > 0.5) return; var t = softTile('cloud', 9, 70, 128, '52,70,112');
-    c.save(); c.globalCompositeOperation = 'multiply'; c.globalAlpha = 0.5 * (1 - L * 2); tileFill(c, t, 7, clock * 9 * Math.cos(wind.a) + 4000, clock * 9 * Math.sin(wind.a) * 0.75 + 4000, hw, hh); c.restore();
-  }
-  var shaftC = {};
-  function drawShafts(c, hw, hh) {         // sun shafts between the trees of a wood, by day; strongest when the sun is low
-    var L = light(); if (!lt('shafts') || inCave || inYard || L > 0.35) return; var G = 150, low = Math.max(day.t < 320 ? 1 - day.t / 320 : 0, day.t > 560 ? Math.min(1, (day.t - 560) / 260) : 0), sk = (0.55 + 0.45 * low) * (1 - L * 2.8), gx, gy; if (sk <= 0.02) return;
-    c.save(); c.globalCompositeOperation = 'lighter';
-    for (gy = Math.floor((cam.y - hh) / K / G) - 1; gy <= Math.floor((cam.y + hh) / K / G) + 1; gy++) for (gx = Math.floor((cam.x - hw) / G) - 1; gx <= Math.floor((cam.x + hw) / G) + 1; gx++) {
-      var h0 = World.hash(gx, gy, 311); if (h0 > 0.55) continue; var key = gx + ',' + gy, tc = shaftC[key];
-      var wx = (gx + 0.2 + 0.6 * World.hash(gx, gy, 312)) * G, wy = (gy + 0.2 + 0.6 * World.hash(gx, gy, 313)) * G;
-      if (tc == null) { tc = 0; around(wx, wy, function (o) { if (o.kind === 'tree' && Math.hypot(o.x - wx, o.y - wy) < 130) tc++; }); if (!isLand(wx, wy)) tc = 0; shaftC[key] = tc; }
-      if (tc < 3) continue;
-      var x = wx, y = wy * K, rx = 26 + h0 * 30, ry = rx * 0.5, top = y - 150, lx = -0.42, a = sk * (0.5 + 0.5 * Math.min(1, tc / 6)) * (0.75 + 0.25 * Math.sin(clock * 0.5 + gx * 2 + gy)), NB = 9, wI;
-      var g = c.createLinearGradient(0, top, 0, y + ry * 0.6); g.addColorStop(0, 'rgba(255,246,206,0)'); g.addColorStop(0.5, 'rgba(255,246,206,' + (0.17 * a).toFixed(3) + ')'); g.addColorStop(0.86, 'rgba(255,246,206,' + (0.34 * a).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,246,206,0)'); c.fillStyle = g;
-      for (wI = 0; wI < NB; wI++) { var u0 = wI / NB - 0.5, u1 = (wI + 1) / NB - 0.5, pr = Math.pow(Math.sin((wI + 0.5) / NB * Math.PI), 1.3) * (0.5 + World.hash(wI, gx * 7 + gy, 314)); c.globalAlpha = Math.min(1, pr); var yb0 = y + ry * 0.6 * Math.sqrt(Math.max(0, 1 - 4 * u0 * u0)), yb1 = y + ry * 0.6 * Math.sqrt(Math.max(0, 1 - 4 * u1 * u1)); c.beginPath(); c.moveTo(x + u0 * rx * 1.6, yb0); c.lineTo(x + u0 * rx * 0.8 + (top - y) * lx, top); c.lineTo(x + u1 * rx * 0.8 + 0.3 + (top - y) * lx, top); c.lineTo(x + u1 * rx * 1.6 + 0.3, yb1); c.closePath(); c.fill(); }
-      c.globalAlpha = 1; var pg = c.createRadialGradient(x, y, 0, x, y, rx * 1.2); pg.addColorStop(0, 'rgba(255,244,190,' + (0.42 * a).toFixed(3) + ')'); pg.addColorStop(1, 'rgba(255,244,190,0)'); c.save(); c.translate(x, y); c.scale(1, 0.5); c.translate(-x, -y); c.fillStyle = pg; c.beginPath(); c.arc(x, y, rx * 1.2, 0, 7); c.fill(); c.restore();
-      for (wI = 0; wI < 7; wI++) { var hm = World.hash(wI, gx * 3 + gy * 5, 315), tm = (clock * (0.03 + hm * 0.04) + World.hash(wI, gx + gy * 9, 316)) % 1, my = y - tm * 110, mx = x + (World.hash(wI, gx, 317) - 0.5) * rx * 1.4 + (my - y) * lx + Math.sin(clock * 0.7 + wI) * 3; c.fillStyle = 'rgba(255,250,220,' + ((0.35 + 0.3 * Math.sin(clock * 1.3 + wI * 2)) * a * Math.sin(tm * Math.PI)).toFixed(3) + ')'; c.fillRect(mx, my, 1.2, 1.2); }
-    }
-    c.restore();
-  }
+  /* The night under a moon (the lighting trial kept, off: a moon is for later): the night's blue a little lighter and bluer,
+     and the moon's path glittering on the sea. The mist, sun shaft and cloud shadow trials were cut in the clean-up of 2026-10-21
+     (the research is docs/archive/lighting.md). */
+  var satCv = null;
   function drawMoonSea(c, hw, hh) {        // the moon's path on the water: a band of glints across the sea
     var L = light(); if (!lt('moon') || L < 0.5 || inCave || inYard) return; var G = 22, gx, gy; c.save(); c.globalCompositeOperation = 'lighter';
     for (gy = Math.floor((cam.y - hh) / G); gy <= Math.floor((cam.y + hh) / G); gy++) for (gx = Math.floor((cam.x - hw) / G); gx <= Math.floor((cam.x + hw) / G); gx++) {
@@ -2226,7 +2184,7 @@ __COMBAT__
     if (w.mt && w.mAt(P.x, P.y) > 2.62) return 'rock';
     return 'grass';
   }
-  function ambWave(v) { var nm = pickOf('wave'); if (nm === 'wave' || OLD_SFX() || !Sfx.has(nm)) return false; return !!Sfx.play(AC, amb.master, nm, { v: v * 0.35, pitch: 0.04 }); }   /* a recorded wave on the shore, through the place's own volume; 0.35 (mine) lays it about 15 dB under a blow at the water's edge, louder than the beds, as a wave is */
+  function ambWave(v) { var nm = pickOf('wave'); if (nm === 'wave' || !Sfx.has(nm)) return false; return !!Sfx.play(AC, amb.master, nm, { v: v * 0.35, pitch: 0.04 }); }   /* a recorded wave on the shore, through the place's own volume; 0.35 (mine) lays it about 15 dB under a blow at the water's edge, louder than the beds, as a wave is */
   function ambTick(dt) {
     if (!AC || AC.state !== 'running') return;
     if (!amb) { amb = Ambient.make(AC, AC.destination); for (var lk in LAB.snd) amb.layers[lk] = LAB.snd[lk] ? 1 : 0; ambT = 0; amb.wave = ambWave; }
@@ -3802,7 +3760,7 @@ __COMBAT__
   // panels: the inventory (Tab) and the hearth (E). Rows are remembered so clicks can find them.
 
   /* ---------- Admin: cheats for testing, in the Escape menu (Robin, 2026-10-06). Toggles persist in game.admin ---------- */
-  var ADMIN = { immortal: false, oneshot: false, free: false, fly: false, fullres: false, fps: false, shieldRaised: false, triple: false, oldSfx: false }, adminOpen = false;
+  var ADMIN = { immortal: false, oneshot: false, free: false, fly: false, fullres: false, fps: false, triple: false }, adminOpen = false;
   try { var ad0 = JSON.parse(localStorage.getItem('game.admin')); if (ad0) for (var ak in ADMIN) if (ad0[ak] != null) ADMIN[ak] = !!ad0[ak]; } catch (e) {}
   fitCanvas();
   function saveAdmin() { try { localStorage.setItem('game.admin', JSON.stringify(ADMIN)); } catch (e) {} }
@@ -3812,8 +3770,6 @@ __COMBAT__
     { id: 'free', name: 'Free building and crafting', text: 'Nothing costs anything.', toggle: true },
     { id: 'fly', name: 'Fly', text: 'Walk over water and through anything, fast.', toggle: true },
     { id: 'fullres', name: 'Full resolution', text: 'Draws at up to 5 pixels a unit instead of 3 (the props are baked at 2). Costs the graphics card a lot on a big screen.', toggle: true },
-    { id: 'shieldRaised', name: 'Shield only when raised', text: 'The shield is on the arm whenever the weapon is out. With this on it shows only while K holds it up, as the drawn hero\u2019s did.', toggle: true },
-    { id: 'oldSfx', name: 'The old fight sounds', text: 'Swings, hits, blocks and parries as the synthesized sounds they were, in place of the studio’s recordings (assets/sfx/combat.js), to compare the two.', toggle: true },
     { id: 'fps', name: 'Show frame time', text: 'Frames a second, milliseconds and the frame\u2019s parts, bottom left. The frame log is kept whether this shows or not.', toggle: true },
     { id: 'trees', get name() { var k = 'old'; try { k = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} return 'Trees: ' + ((World.TREE_SHAPES[k] || World.TREE_SHAPES.old)[2]); }, text: 'How big the trees are drawn: as before (the default), twice their old size, one and a half, or tall and thin. The page reloads.' },
     { id: 'triple', name: 'Threefold drops', text: 'For testing: trees, rocks, bushes, berries, beasts, the weir and the veins give three times as much.', toggle: true },
@@ -3829,7 +3785,6 @@ __COMBAT__
     { id: 'hirdmen', name: 'Four hirdmen join', text: 'Four men of yours at your side, following; they crew the ship and come ashore with you on a raid.' },
     { id: 'tpTown', name: 'Go to the first sea\u2019s town', text: 'Stand before the gate of the nearest town outside home water (the south water\u2019s): its men come as you come near.' },
     { id: 'arnor', name: 'Arnor joins', text: 'A stone stands at Thorgunna’s and he is yours.' },
-    { id: 'layertest', name: 'Run the layer test', text: 'Twelve seconds: each layer off in turn (grass, grain, waves, ground, night, things), the frame drawn four times over so the cost shows. Results in the frame log.' },
     { id: 'perflog', name: 'Download the frame log', text: 'Saves framelog.txt: a line a second with the frame time, its parts and what was happening, for finding the lag.' },
     { id: 'weapons', name: 'Copper weapons', text: 'One of every kind into the bag: sword, axe, club, seax, spear, Dane axe, bow, sling, javelin, throwing axe.' },
     { id: 'lab', name: 'Light and sound', text: 'Switches for trying things by eye and ear: each layer of the world\u2019s sound, each lighting technique.' },
@@ -3838,7 +3793,7 @@ __COMBAT__
   /* The Light and sound board (2026-10-12, Robin: compare the lighting techniques in pictures, then as switches on the Admin
      board; and I cannot hear the ambient sound I make, so he judges it by ear): a switch for every layer of the world's sound
      and for every lighting technique on trial. Kept in game.lab across reloads. */
-  var LAB = { snd: { wind: true, sea: true, birds: true, insects: true, fire: true, steps: true, cave: true, water: true }, light: { glow: true, shadows: true, sides: true, walls: true, moths: true, moon: false, mist: false, shafts: false, clouds: false } }, labOpen = false;   // the five fire techniques are on (they were the better picture in every scene tried); the moon and the air are off until Robin has looked
+  var LAB = { snd: { wind: true, sea: true, birds: true, insects: true, fire: true, steps: true, cave: true, water: true }, light: { glow: true, shadows: true, sides: true, walls: true, moths: true, moon: false } }, labOpen = false;   // the five fire techniques are on (they were the better picture in every scene tried); the moon and the air are off until Robin has looked
   try { var lb0 = JSON.parse(localStorage.getItem('game.lab')), lk0; if (lb0) { for (lk0 in LAB.snd) if (lb0.snd && lb0.snd[lk0] != null) LAB.snd[lk0] = !!lb0.snd[lk0]; for (lk0 in (lb0.light || {})) LAB.light[lk0] = lb0.light[lk0]; } } catch (e) {}
   function saveLab() { try { localStorage.setItem('game.lab', JSON.stringify(LAB)); } catch (e) {} }
   /* The tone (Robin, 2026-10-21: the Sea Editor's colours looked more vibrant than the game's; the game lays a grain over the frame and
@@ -3860,7 +3815,7 @@ __COMBAT__
   applyTone();
   var SND_ROWS = [['wind', 'Wind', 'Gusts, leaves rustling where trees are, a whistle up on the plateau.'], ['sea', 'The sea', 'A wave and its wash by the shore; water along the hull aboard.'], ['birds', 'Birds', 'By day, most at dawn and where trees are; gulls by the shore, a raven on the fells, an owl at night.'], ['insects', 'Crickets', 'From dusk on.'], ['fire', 'Fire', 'The roar and the crackle near any fire, and of a torch in the hand.'], ['steps', 'Footsteps', 'By the ground: grass, sand, rock, gravel, wood, water.'], ['cave', 'Caves', 'The low tone, drops, the mine\u2019s timber, the sea cave\u2019s boom.'], ['water', 'Running water', 'The brook and the pool.']];
   function labRows() { return SND_ROWS.map(function (q) { return { id: 'snd:' + q[0], name: 'Sound: ' + q[1], text: q[2], on: LAB.snd[q[0]] }; }).concat(lightRows(), toneRows(), [{ id: 'back', name: 'Back', text: '' }]); }
-  var LIGHT_ROWS = [['glow', 'Fire: glow and flicker', 'The flame\u2019s light gutters and flares; a hot glow at its heart, warm light in the air round it.'], ['shadows', 'Fire: shadows', 'Trees, rocks, things and figures throw shadows away from a fire and from the torch.'], ['sides', 'Fire: lit side, dark side', 'What stands between you and the fire is a dark shape with a lit edge; what stands beyond it catches the light.'], ['walls', 'Fire: walls stop the light', 'A fire indoors lights its room and what falls out through door and windows; a wall throws a shadow; windows glow.'], ['moths', 'Fire: moths', 'A few moths round every fire at night.'], ['moon', 'Night: moonlight', 'The night a little less black and more blue, colour drained from what no fire lights, the moon\u2019s path on the sea.'], ['mist', 'Air: mist', 'Mist lying over the ground at dawn and again at dusk.'], ['shafts', 'Air: sun shafts', 'By day, light slanting down between the trees of a wood, motes turning in it.'], ['clouds', 'Air: cloud shadows', 'By day, the shadows of clouds drifting over open ground.']];
+  var LIGHT_ROWS = [['glow', 'Fire: glow and flicker', 'The flame\u2019s light gutters and flares; a hot glow at its heart, warm light in the air round it.'], ['shadows', 'Fire: shadows', 'Trees, rocks, things and figures throw shadows away from a fire and from the torch.'], ['sides', 'Fire: lit side, dark side', 'What stands between you and the fire is a dark shape with a lit edge; what stands beyond it catches the light.'], ['walls', 'Fire: walls stop the light', 'A fire indoors lights its room and what falls out through door and windows; a wall throws a shadow; windows glow.'], ['moths', 'Fire: moths', 'A few moths round every fire at night.'], ['moon', 'Night: moonlight', 'The night a little less black and more blue, colour drained from what no fire lights, the moon\u2019s path on the sea.']];
   function lightRows() { return LIGHT_ROWS.map(function (q) { return { id: 'lt:' + q[0], name: q[1], text: q[2], on: !!LAB.light[q[0]] }; }); }
   function drawLab(c) {
     c.fillStyle = 'rgba(10,8,6,0.45)'; c.fillRect(0, 0, 400, 250);
@@ -3893,7 +3848,6 @@ __COMBAT__
     if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'fullres') fitCanvas(); return; }
     if (id === 'perflog') { perfDownload(); return; }
     if (id === 'errlog') { errDownload(); return; }
-    if (id === 'layertest') { perfTestStart(); pauseOpen = false; adminOpen = false; toast('Layer test running'); return; }
     if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }
     else if (id === 'weapons') { Items.MELEE.concat(Items.RANGED).forEach(function (k) { var w2 = Items.make(k, 'copper'); if (!addThing(w2)) dropThing(w2, P.x, P.y + 10); }); addItem('stone', 20); toast('Copper weapons, and stones for the sling'); }
     else if (id === 'reveal') { seen.village = 1; seen.hamlet = 1; seen.cave = 1; seen.raft = 1; seen.met = 1; seen.vill = {}; villages.forEach(function (vv, vi) { seen.vill[vi] = 1; }); toast('The chart knows the islands'); }
@@ -5184,8 +5138,6 @@ __COMBAT__
      the fall of a roof, fire, what the people do, and mending. Tried in game.html?scene=ruin (the Destruction Editor). ---------- */
   var RUIN_SV = (function () { try { return JSON.parse(localStorage.getItem('game.ruin') || 'null') || {}; } catch (e) { return {}; } })(), RUIN = Ruin.cfg(RUIN_SV);
   var RU = { on: SCENE === 'ruin', held: false, box: null, men: 0, place: 'town' }, wallHv = {}, wallHitT = -9, wallLast = null, ruinDue = {}, edgeCache = {}, debrisCache = {}, lighting = null, ruinChecked = false, BURN = [], burnT = 0, fireLoudT = 0, heatAcc = 0, fireMenT = 0;
-  function setLean(v) { Build.CFG.lean = v || 0; BCFG.lean = v || 0; for (var k in roofCfgs) roofCfgs[k].lean = v || 0; edgeCache = {}; }
-  if (RUIN.lean) setLean(RUIN.lean);
   function wrapA(a) { while (a > Math.PI) a -= 6.2831853; while (a < -Math.PI) a += 6.2831853; return a; }
   // whose ground a spot is: a village's number, 99 the Destruction Editor's sampler, -1 nobody's (yours to build on)
   function placeAt(x, y) { if (RU.box && x > RU.box.x0 && x < RU.box.x1 && y > RU.box.y0 && y < RU.box.y1) return 99; return villageAt(x, y); }
@@ -5681,7 +5633,6 @@ __COMBAT__
       for (i = 0; i < drops.length; i++) { var dr = drops[i]; c.beginPath(); c.ellipse(dr.x, dr.y * K, 4, 2.2, 0, 0, 7); c.fill(); }
       if (bDirty) rebuildRooms();
       drawFireShadows(c, hw, hh);
-      drawMist(c, hw, hh, false);
     },
     items: function (items) {
       var z = cam.z, hw = 200 / z, hh = 125 / z, P = hero(), i;
@@ -5773,7 +5724,6 @@ __COMBAT__
       if (inYard) { c.restore(); return; }   // the yard's own boards are drawn with the others, in boards()
       if (seaEnv && !inCave && !inYard) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); Sea.drawGulls(c, sea, seaEnv, SEA_IMG); c.restore(); }   /* the gulls in the air, over everything on the ground */
       if (kit.STYLE.look === 3 && !inCave && !PERF.skip.grain && LAB.tone.grain !== false) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); c.globalAlpha = 0.085 * (kit.STYLE.texture || 1) * (typeof LAB.tone.grain === 'number' ? LAB.tone.grain : 1); c.fillStyle = kit.grain(c); c.fillRect(cam.x - 200 / cam.z - 2, cam.y - 125 / cam.z - 2, 400 / cam.z + 4, 250 / cam.z + 4); c.restore(); c.save(); c.globalAlpha = 1; if (kit.STYLE.vignette > 0) { var vg = c.createRadialGradient(200, 125, 120, 200, 125, 300); vg.addColorStop(0, 'rgba(20,16,12,0)'); vg.addColorStop(1, 'rgba(20,16,12,' + kit.STYLE.vignette + ')'); c.fillStyle = vg; c.fillRect(0, 0, 400, 250); } c.restore(); }   // the ink look: grain over the world and a vignette
-      if (!inCave && !inYard && (LAB.light.mist || LAB.light.shafts || LAB.light.clouds || LAB.light.moon)) { var azh = 200 / cam.z, azv = 125 / cam.z; c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); drawClouds(c, azh, azv); drawShafts(c, azh, azv); drawMist(c, azh, azv, true); c.restore(); }   // the air (the lighting trials): cloud shadows, sun shafts, the mist's veil
       if (inCave) drawCaveDark(c, P); else if (!PERF.skip.night) drawNight(c);
       if (!inCave && !inYard && LAB.light.moon) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); drawMoonSea(c, 200 / cam.z, 125 / cam.z); c.restore(); }
       if (caveFade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, caveFade / 0.7) + ')'; c.fillRect(0, 0, 400, 250); }
@@ -6625,7 +6575,7 @@ __COMBAT__
       { id: 'held', name: RU.held ? 'This place is yours: mend it' : 'This place is theirs: break it', on: RU.held },
       { id: 'burn', name: 'Set fire to the nearest house' }, { id: 'fall', name: 'Bring the nearest roof down' }, { id: 'out', name: 'Put the fires out' + (t ? ' (' + t + ')' : '') },
       { id: 'whole', name: 'Whole again' }, { id: 'again', name: 'The sampler anew' },
-      { id: 'wind', name: 'The wind blows ' + (wind.k < 0.05 ? 'not at all' : (wn ? wn[0] : 'about')) }, { id: 'lean', name: BCFG.lean ? 'Side walls: leaning, a face' : 'Side walls: as now', on: !!BCFG.lean },
+      { id: 'wind', name: 'The wind blows ' + (wind.k < 0.05 ? 'not at all' : (wn ? wn[0] : 'about')) },
       { id: 'torch', name: torchOn ? 'Put the torch out' : 'Light a torch', on: torchOn }, { id: 'stuff', name: 'More to mend with' }, { id: 'heal', name: 'Heal' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' },
       { id: 'big', name: TRIAL.big ? 'Places: great ones' : 'Places: as in the game', on: TRIAL.big }, { id: 'roomy', name: 'Houses: ' + (TRIAL.roomy > 1.7 ? 'twice as big' : TRIAL.roomy > 1 ? 'half again as big' : 'as now'), on: TRIAL.roomy > 1 }].concat(TRIAL.roomy > 1 ? [{ id: 'loud', name: TRIAL.loud > 1 ? 'Heard as far again, too' : 'Heard as far as before', on: TRIAL.loud > 1 }] : []);   // (the last two grow the world anew: the page loads again)
   }
@@ -6644,7 +6594,6 @@ __COMBAT__
     else if (id === 'whole') { ruinWhole(); if (RU.items0) { B.items = JSON.parse(RU.items0); carrying = null; BT.loot0 = null; bDirty = true; navStale = true; }   /* (and what stood in the houses: a fire takes it for good, and a second trial ran through empty rooms) */ ['H', 'V'].forEach(function (L) { for (var k in B[L]) if (B[L][k].lock0) { B[L][k].locked = 1; B[L][k].broken = 0; } }); if (BT.doors0) BT.doors0.forEach(function (d) { var e = (d[0] === 'H' ? B.H : B.V)[d[1]]; if (e) { e.locked = 1; e.broken = 0; } }); toast('Whole again'); }
     else if (id === 'again') { samplerBuild(); toast('The sampler, new'); }
     else if (id === 'wind') { var i = 0; if (wind.k < 0.05) { wind.k = Yard.WIND.k; wind.a = wind.to = WINDS[0][1]; } else { WINDS.forEach(function (q, n) { if (Math.abs(wrapA(q[1] - wind.a)) < 0.4) i = n + 1; }); if (i >= WINDS.length) wind.k = 0; else wind.a = wind.to = WINDS[i][1]; } wind.t = 1e9; }
-    else if (id === 'lean') { setLean(BCFG.lean ? 0 : (RUIN.lean || 9)); ruinPanelSync(); }
     else if (id === 'torch') { torchOn = !torchOn; if (torchOn) torchLeft = TORCH_TIME; }
     else if (id === 'stuff') { ['wood', 'stone', 'fiber'].forEach(function (k2) { addItem(k2, 25); }); addItem('torch', 5); }
     else if (id === 'heal') { P.hp = P.maxHp; P.st = 100; }
@@ -6657,10 +6606,10 @@ __COMBAT__
     ['What a blow of the wrong tool does (a share of its power)', [['bite.axe.turf', 'Axe on turf', 0, 1, 0.05], ['bite.axe.drystone', 'Axe on dry stone', 0, 1, 0.05], ['bite.axe.blocks', 'Axe on a stone wall', 0, 1, 0.05], ['bite.pick.planks', 'Pick on planks', 0, 1, 0.05], ['bite.pick.logs', 'Pick on logs', 0, 1, 0.05], ['bite.pick.wattle', 'Pick on wattle', 0, 1, 0.05]]],
     ['The roof and the noise', [['collapse', 'Walls gone before it falls', 0.1, 1, 0.02], ['frameCounts', 'A broken frame panel counts', 0, 1, 0.05], ['warn', 'Seconds from groan to fall', 0, 5, 0.1], ['fallHurt', 'It hurts you', 0, 100, 1], ['fallHurtMen', 'It hurts a man', 0, 60, 1], ['noiseK', 'How loud breaking is', 0, 3, 0.05]]],
     ['Fire', [['fire.on', 'Fire (0 off, 1 on)', 0, 1, 1], ['fire.catchT', 'Seconds to set alight', 0, 5, 0.1], ['fire.roof.thatch.burn', 'Thatch burns for', 5, 120, 1], ['fire.roof.thatch.spread', 'Thatch: seconds a tile', 0.2, 10, 0.1], ['fire.roof.shingles.burn', 'Shingles burn for', 5, 180, 1], ['fire.roof.shingles.catch', 'Shingles catch', 0, 1, 0.05], ['fire.roof.turf.burn', 'Turf roof burns for', 5, 240, 1], ['fire.roof.turf.catch', 'Turf roof catches', 0, 1, 0.02], ['fire.wallK', 'Walls burn: times as long', 0.2, 4, 0.1], ['fire.along', 'Wall to wall, each try', 0, 1, 0.05], ['fire.toRoof', 'Wall lights its roof after', 0, 30, 0.5], ['fire.toWalls', 'Roof lights its walls after', 0, 30, 0.5], ['fire.jump', 'Sparks carry', 0, 300, 5], ['fire.wind', 'Downwind, times as far', 1, 4, 0.1], ['fire.spark', 'Chance a second', 0, 0.5, 0.01], ['fire.heat', 'Heat: health a second', 0, 40, 1], ['fire.hot', 'Ashes glow for', 0, 300, 5]]],
-    ['Mending and the look', [['mend', 'Mending costs (share of the price)', 0, 1.5, 0.05], ['lean', 'Side walls lean (0: as now)', 0, 14, 1]]]
+    ['Mending and the look', [['mend', 'Mending costs (share of the price)', 0, 1.5, 0.05]]]
   ];
   function ruGet(path) { var p = path.split('.'), o = RUIN, i; for (i = 0; i < p.length; i++) { if (o == null) return 0; o = o[p[i]]; } return o == null ? 0 : o; }
-  function ruSet(path, v) { var p = path.split('.'), o = RUIN, i; for (i = 0; i < p.length - 1; i++) o = o[p[i]]; o[p[p.length - 1]] = v; if (path === 'lean') setLean(v); edgeCache = {}; }
+  function ruSet(path, v) { var p = path.split('.'), o = RUIN, i; for (i = 0; i < p.length - 1; i++) o = o[p[i]]; o[p[p.length - 1]] = v; edgeCache = {}; }
   function ruinDiff() {                    // what differs from the defaults, as an object of the same shape
     var D = Ruin.cfg({}), out = {}; D.lean = 0;
     (function walk(a, b, o) { for (var k in a) { if (a[k] && typeof a[k] === 'object') { var sub = {}; walk(a[k], b[k] || {}, sub); for (var q in sub) { o[k] = sub; break; } } else if (a[k] !== b[k]) o[k] = a[k]; } })(RUIN, D, out);
@@ -6689,12 +6638,12 @@ __COMBAT__
     var bar = document.createElement('div'); bar.className = 'group'; bar.style.marginTop = '6px';
     function btn(name, fn) { var b = document.createElement('button'); b.textContent = name; b.style.cssText = 'min-height:32px;font-size:.8rem;padding:0 9px'; b.addEventListener('click', fn); bar.appendChild(b); return b; }
     var sayEl = document.createElement('p'); sayEl.className = 'desc';
-    btn('Apply the text', function () { try { var o = JSON.parse(txt.value || '{}'); RUIN = Ruin.cfg(o); RUIN.lean = o.lean || 0; setLean(RUIN.lean); ruinPanelSync(); sayEl.textContent = 'Applied.'; } catch (e) { sayEl.textContent = 'That is not settings text.'; } });
-    btn('Defaults', function () { RUIN = Ruin.cfg({}); RUIN.lean = 0; setLean(0); ruinPanelSync(); sayEl.textContent = 'The defaults.'; });
+    btn('Apply the text', function () { try { var o = JSON.parse(txt.value || '{}'); RUIN = Ruin.cfg(o); ruinPanelSync(); sayEl.textContent = 'Applied.'; } catch (e) { sayEl.textContent = 'That is not settings text.'; } });
+    btn('Defaults', function () { RUIN = Ruin.cfg({}); ruinPanelSync(); sayEl.textContent = 'The defaults.'; });
     btn('Use in the game', function () { try { localStorage.setItem('game.ruin', JSON.stringify(ruinDiff())); sayEl.textContent = 'Stored: the game uses these from its next start.'; } catch (e) {} });
     btn('Take back', function () { try { localStorage.removeItem('game.ruin'); sayEl.textContent = 'Taken back: the game uses the defaults.'; } catch (e) {} });
     box.appendChild(bar); box.appendChild(sayEl); stage.appendChild(box);
-    ruinPanelSync = function () { rows.forEach(function (q) { var v = q[0][0] === 'lean' ? (BCFG.lean || 0) : ruGet(q[0][0]); q[1].value = v; q[2].textContent = (+v).toString(); }); RUIN.lean = BCFG.lean || 0; txt.value = JSON.stringify(ruinDiff()); };
+    ruinPanelSync = function () { rows.forEach(function (q) { var v = ruGet(q[0][0]); q[1].value = v; q[2].textContent = (+v).toString(); }); txt.value = JSON.stringify(ruinDiff()); };
     ruinPanelSync(); fitCanvas();
   }
   var runePanel = { x: 6, y: 40, w: 92, rows: [], folded: false }, runeSite = null, noSave = false;
@@ -6872,20 +6821,6 @@ __COMBAT__
   }
   // The layer test (2026-10-08): each layer off in turn for a second and a half, the GPU read back every frame, so the log says what
   // each layer costs on Robin's own card. Admin: "Run the layer test".
-  var PERF_TESTS = [['everything', {}], ['no grass', { grass: 1 }], ['no grain', { grain: 1 }], ['no waves', { waves: 1 }], ['no ground', { ground: 1 }], ['no night', { night: 1 }], ['no things', { things: 1 }], ['nothing', { grass: 1, grain: 1, waves: 1, ground: 1, night: 1, things: 1 }]];
-  // No readbacks: Chrome drops a canvas to software after a few getImageData calls (Robin's third log: 3 fps for good). Instead the
-  // frame is drawn PERF_K extra times while a layer is off, so the fps falls below 60 and the drawing's cost shows in it.
-  var PERF_K = 3;
-  function perfTestStart() { PERF.test = { i: 0, t0: performance.now(), n: 0, sum: 0, fr: 0 }; PERF.skip = PERF_TESTS[0][1]; perfLine('t ' + clock.toFixed(1) + ' layer test (' + (PERF_K + 1) + ' renders a frame): ' + perfState()); }
-  function perfTestTick(now, renderMs) {
-    var ts = PERF.test, cfg = PERF_TESTS[ts.i], k, tr = performance.now(); for (k = 0; k < PERF_K; k++) Combat.render(ctx); ts.sum += renderMs + performance.now() - tr; ts.n++; ts.fr++;
-    if (now - ts.t0 < 1500) return;
-    var fps = ts.fr / ((now - ts.t0) / 1000), cpu = ts.sum / Math.max(1, ts.n) / (PERF_K + 1), frameMs = 1000 / Math.max(1, fps);
-    perfLine('t ' + clock.toFixed(1) + ' layertest ' + cfg[0] + ': ' + fps.toFixed(0) + ' fps with ' + (PERF_K + 1) + ' renders a frame = ' + (frameMs / (PERF_K + 1)).toFixed(1) + 'ms a render (cpu ' + cpu.toFixed(1) + ', so about ' + Math.max(0, frameMs / (PERF_K + 1) - cpu).toFixed(1) + ' on the card)');
-    ts.i++; ts.t0 = now; ts.n = 0; ts.sum = 0; ts.fr = 0;
-    if (ts.i >= PERF_TESTS.length) { PERF.test = null; PERF.skip = {}; toast('Layer test done: download the frame log'); return; }
-    PERF.skip = PERF_TESTS[ts.i][1];
-  }
   function perfDownload() {
     var txt = 'Frame log, ' + new Date().toISOString() + ', ' + navigator.userAgent + '\n' + PERF.lines.join('\n') + '\n\nErrors (' + ERR.lines.length + '):\n' + ERR.lines.join('\n'), a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([txt], { type: 'text/plain' })); a.download = 'framelog.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a); toast('framelog.txt saved: put it in the project folder');
@@ -6915,7 +6850,6 @@ __COMBAT__
     var tf0 = performance.now(); PERF.parts.ground = PERF.parts.items = PERF.parts.end = PERF.parts.update = 0;
     simTick(dt); var tf1 = performance.now(); PERF.parts.tick = tf1 - tf0 - PERF.parts.update;
     Combat.render(ctx); var tf2 = performance.now(); PERF.parts.draw = Math.max(0, tf2 - tf1 - PERF.parts.ground - PERF.parts.items - PERF.parts.end);
-    if (PERF.test) perfTestTick(now, tf2 - tf1);
     perfFrame(now, tf2 - tf0); if (ADMIN.fps && !pauseOpen) drawPerf(ctx);   // the readout is on Admin's switch (it was always on, across the character panel, with a second one behind the switch); the log is written either way
   }
   // one step of the world: the solids near the hero, every tick of the page, then the engine (also the debug hook `tick`, so checks can run it without rendering)

@@ -4,7 +4,7 @@
 likes building or customising his own ship (or, if that is too hard, good-looking premade ships with some parts to customise);
 the rowers must face the right way; the hirdmen must sit so it looks good; they must get on and off without getting stuck;
 the hero rows only when alone, else stands at the bow looking out; and, if it can be done, some fighting from or on ships.
-This answers each, says what is built today, and lays out the build in steps with a test each. **Steps 1 to 4 are built (2026-10-21: the hulls at true size, the crew seated and rowing, the hero's place, on and off by the gangway; `tests/ships.js`); Robin answered the questions the same day (at the end), and the fittings board and the zoom buttons were built on them.** `docs/boats.md` (2026-10-13)
+This answers each, says what is built today, and lays out the build in steps with a test each. **Steps 1 to 4 are built (2026-10-21: the hulls at true size, the crew seated and rowing, the hero's place, on and off by the gangway; `tests/ships.js`); Robin answered the questions the same day (at the end), and the fittings board and the zoom buttons were built on them.** `docs/archive/boats.md` (2026-10-13)
 is the earlier write-up of the yard; its recommendation C is what was built and is kept here.
 
 ## What is wrong today (seen 2026-10-21 in the game, a karve with ten hirdmen)

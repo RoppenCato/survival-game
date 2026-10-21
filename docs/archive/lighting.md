@@ -99,7 +99,7 @@ shadows are faint and short, none at all from what stands within about 22 units,
 
 ### Fire and torch at night
 
-`docs/lighting-fire.jpg` (a torch in a wood; a hut with a fire inside), `docs/lighting-village.jpg` (a house in a village).
+`docs/pictures/lighting-fire.jpg` (a torch in a wood; a hut with a fire inside), `docs/pictures/lighting-village.jpg` (a house in a village).
 
 | Switch | What it does | Verdict |
 | --- | --- | --- |
@@ -117,7 +117,7 @@ shadows are faint and short, none at all from what stands within about 22 units,
 
 ### The air
 
-`docs/lighting-air.jpg` (taken with the first version of the firelight; the four techniques themselves have not changed).
+`docs/pictures/lighting-air.jpg` (taken with the first version of the firelight; the four techniques themselves have not changed).
 
 | Switch | What it does | Verdict |
 | --- | --- | --- |

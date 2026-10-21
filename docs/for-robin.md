@@ -35,7 +35,7 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
   longer put you in FIGHT mode (that was what turned the place against you: a drawn blade among people).
 - **The ring's clipping**: the polygon cut through a house or a yard wall where a dent lay between two corners. The ring
   now keeps every lot's whole outline inside and lays no stake within a few units of any wall; checked on 84 rings.
-- **The boats too small for the men**: noted for the Shipyard (`docs/boats.md`): bigger hulls so the crew fits aboard.
+- **The boats too small for the men**: noted for the Shipyard (`docs/archive/boats.md`): bigger hulls so the crew fits aboard.
   Not started.
 
 ## From the raid work (2026-10-20 on)
@@ -246,3 +246,21 @@ first use, as before, and now the clips not drawn for two minutes are let go aga
 so what sits in memory is what the last minutes used (measured: the hero's sheets 127 MB decoded at the start, 60 MB two
 minutes later standing still; the villagers' 52 to 38). Your framelog from your own machine is still the thing that would
 show whether that is where the 20 fps went.
+
+**The look and the night (2026-10-21, your two decisions through the Art Director):** the vibrant look is the default and
+there is no menu for it: the land's colour is up and the grain is a whisper (the old hand-over from the Art Direction page is
+retired). The night is the studio's palette you said yes to: the darks lifted with blue and a third of the colour taken out,
+the fire's light ochre and shorter (it was a disc of daylight), the water at night darker and greyer than the land, a faint
+cool light from above when there is a moon; the cave is a deep blue-black the wall's grain shows through, with a warm circle
+round a torch and the glowing stones cold foxfire. The Tone rows on Admin's Light and sound board are my own dials, nothing
+you need to open.
+
+**The clean-up (2026-10-21, "declutter and cleanup"):** Admin lost the trials that were never going to be picked: the old
+fight sounds (your sound picks are locked in), shield only when raised, and the layer test; the Light and sound board lost
+the mist, sun shafts and cloud shadows (never looked at; the moon stays off, for later); the Destruction Editor lost the
+leaning walls trial you doubted. Four one-off scripts, six stale pictures and the errorlog and framelog from the 14th went;
+the finished docs (boats, raid, lighting, the two playtests, creatures, before-wednesday) are in `docs/archive/` and the
+pictures in `docs/pictures/`. Waiting for your word, because they are big and would be yours to delete: the old
+`hero2-mixamo` hero set (50 MB, still choosable in the Art Editor), the Art-Editor-only creature sets (the forest, three-headed
+and maw trolls, Trollmor, the draugr, huldra, Näcken, bysen: about 80 MB, nothing in the game uses them), `art/render`
+(4.6 GB of raw frames on disk, not in git) and `art/backup` (the old drawn Character Editor).

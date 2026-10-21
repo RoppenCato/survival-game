@@ -20,8 +20,10 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   little of the systems below: their numbers are first settings, measured by bots, not felt.
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
   so at their top (`start-loop.md`, `the-beginning.md`, `world-shape.md`: waters, the lifecycle of a raided place, named
-  islands, claims and the year; `build-plan-waters.md`: the steps to build it, for a long Fable session; **`raid-build-plan.md`: the raid in the real game in ten
-  steps with a test for each, Robin's order of 2026-10-20, waiting for his yes**; `before-wednesday.md`: what comes first; `ui-review.md` has a list waiting).
+  islands, claims and the year; `build-plan-waters.md`: the steps to build it; **`raid-build-plan.md`: the raid in the real game in ten
+  steps with a test for each, Robin's order of 2026-10-20**; `ships-plan.md`; `ui-review.md` has a list waiting). **Finished
+  business lives in `docs/archive/`** (`archive/before-wednesday.md`, `archive/boats.md`, `archive/lighting.md`, `archive/raid.md`, `archive/creatures.md`, the two playtests) and the
+  pictures in `docs/pictures/`.
 - **One project roof, `C:\dev\SG`** (Robin, 2026-10-16): `Art Director`, `Sound Director` (Robin also says music or
   sound director), `Lore Director` and `Game Developer` (this repo; it was `C:\dev\survival-game`).
 - **The lore is the Lore Director's** (`C:\dev\SG\Lore Director`; the agreement Robin approved on 2026-10-16 is its
@@ -202,7 +204,7 @@ links back to the menu. Adding a page is a template and a line in `PAGES` in `to
 draws in raw canvas pixels uses that scale. **Removed** (the archive has their story): the Environment, Base and Grass
 editors (2026-10-06); the Light, Gathering, Hird and Item editors and the Art Direction page (2026-10-09; the game still
 honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the Art Editor's Characters and Creatures tabs
-(the drawn figures; the old Character Editor is in `art/backup/`); the Song Editor (2026-10-16: the music comes from the studio).
+(the drawn figures; the old Character Editor is in `art/backup/`); the Song Editor (2026-10-16: the music comes from the studio); the clean-up of 2026-10-21 (Robin: "declutter and cleanup"): Admin's old fight sounds, shield-only-when-raised and layer test, the Light board's mist, sun shafts and cloud shadows, the Destruction Editor's leaning walls, four one-off scripts, the stale pictures and docs.
 
 ## Source layout
 
@@ -473,7 +475,7 @@ routines (spots, jobs, sitting at the fire, watching you a while), find their wa
 a blade or raid, and can be killed (the dead are remembered by name). **Their clothes and their work are the Art Director's step 5B** (wired 2026-10-21): the people's atlas carries the apron, the kerchief and the straw hat, the hammer, the saw and the bucket for the hand, and the clips hammer, saw, carry, carry_walk, kneel and sit_work (`tools/peoplerender.js` renders them, `art/build/folk_build.py` keys them on `people.blend`); a villager's calling dresses him (`ROLE_X`, `roleLook`: the smith's leather apron, the weaver's linen one, a straw hat on one farmer or fisher in two, grey hair on an elder; a woman in the dress wears the kerchief, under no hat) and gives him his clip (`JOB_CLIP`: the smith hammers at the forge with the hammer in hand, the well is the bucket held and carried, `carry_walk` whenever a villager carries (the brigade too), a priest kneels before the altar (the spot `pray`, held), the weaver and the net mender sit at their work; the hird's crafter saws at the bench). They can be broken into and burnt ("Destruction").
 Houses are narrow and long at real sizes (a house 4 by 6 to 9 tiles, a longhouse 5 by 14 to 18, a hall 6 by 20 to 22).
 
-**Boats** (`src/yard.js`, `docs/boats.md`; **`docs/ships-plan.md`: how the ships should work, Robin's six thoughts answered,
+**Boats** (`src/yard.js`, `docs/archive/boats.md` for the yard's first write-up; **`docs/ships-plan.md`: how the ships should work, Robin's six thoughts answered,
 2026-10-21, its questions waiting for him**): E at a shipwright's bench steps into the Shipyard; a vessel is a hull design chosen
 there (raft, faering, boat, karve, longship by the bench's tier), **fitted out on a board** (2026-10-21, Robin: the yard's laid
 cells for upright things looked weird; the raft keeps its laid logs: he liked that): the rowing seats as a count with − and +
@@ -555,21 +557,26 @@ chart show what has been seen; saving in `localStorage` (keyed by the world's la
 dropped; **the painted ground is saved as what differs from the ground the world paints at every start** (`groundBase`,
 `groundDiff`; 2026-10-20: the whole field was 1.5 MB of a 1.6 MB save, now about 55 KB; an older save's whole field loads and
 is saved as a diff from then on); **Admin** in the Escape menu (immortal, one-shot, free building and crafting, fly, threefold drops, shield only
-when raised, the old fight sounds, the frame readout, full resolution, the Light and sound board, go-tos, the two logs);
+the frame readout, full resolution, the Light and sound board, go-tos, the two logs; the old fight sounds, shield only when
+raised and the layer test were cut in the clean-up of 2026-10-21);
 critters (butterflies, birds, beetles) that keep away.
 
-**The lighting trials** (`docs/lighting.md`; switches on Admin's Light and sound board, `LAB.light`): on are `glow` (warm light
-fading to the night's colour), `shadows` (things throw shadows away from a fire; a torch's are faint), `sides` (figures lit
-from a fire), `walls` (a fire indoors lights its room and pools at doors and windows) and `moths`; off until Robin has
-looked: `moon`, `mist`, `shafts`, `clouds`. Robin found the first version "a weird filter"; the shadows were liked. **The
-Tone rows** (`LAB.tone`, 2026-10-21, Robin: the Sea Editor's colours looked more vibrant than the game's): colour, contrast and
-warmth as a CSS filter on the whole canvas (`applyTone`, stepped by clicks), the frame's grain on or off, and the stored look
-(`game.look`, handed over from the old Art Direction page and applied by the game alone, never by the Sea Editor) cleared
-with a reload; and **the Art Director's three presets** (`TONE_PRESETS`, 2026-10-21: Now; Clear water, saturate 1.3 and no
-grain, toward the Sea Editor; **Bauer day, its pick**, saturate 1.18, contrast 1.04, a touch warm, the grain halved) and its
-**change at the source** (`LAB.tone.src`, a reload: the ink look's `sat` 0.66 to 0.80 and `texture` 1.1 to 0.6: the game's land
-measured an olive at 29% saturation; the open sea is the same paint on both pages). Its captures: `C:\\dev\\SG\\Art
-Director\\work\\review\\light`. Robin picks; the default stays as it was until he does.
+**The look is the code's** (Robin, 2026-10-21, through the Art Director: "I wanted the vibrant from the sea editor", and no menu
+to open for it): `STYLE_INK` `sat` 0.86 (was 0.66: the land measured an olive) and `texture` 0.25 (the grain a whisper, alpha
+about 0.02; was 1.1); the old Art Direction page's hand-over `game.look` is retired (cleared at start, no page reads it). The
+studio's fallback if the land turns loud beside the people after a day's play: 0.80 with 0.4. **The night palette** (the Art
+Director's `out/lighting/NIGHT_PALETTE.md`, Robin's yes, 2026-10-21; the table is in `docs/art-direction.md`): the veil's
+multiply kept, then the darks lifted with blue (screen `rgba(40,60,120,0.22)`) and a third of the colour taken out (the
+'saturation' blend, the fires cut out of it); the fire's light ochre, never white (`FIRE_T`, `TORCH_T`: `rgb(225,165,85)` at the
+core through `rgb(120,80,40)` at 0.4 to the night's blue, the reach 102, a third shorter: it was a disc of daylight); the water
+at night darker and greyer than the land (half its light, a third less colour, laid into the night canvas in blocks of six
+screen pixels tested against the world's water); the hero's own circle cool; a faint cool light from the top when there is a
+moon. **The cave's dark** (`Cave.dark`): deep blue-black the wall's grain shows through (`rgba(8,10,22,0.93)`), the hero's circle
+without a torch cool and small (radius 60, `rgb(40,48,70)`), with one warm (`rgb(210,150,70)` to the blue at 170), the glowing
+stones cold foxfire (`rgb(120,200,170)`). **The lighting switches** on Admin's Light and sound board (`LAB.light`): `glow`,
+`shadows`, `sides`, `walls`, `moths` on; `moon` off (a moon is for later; the mist, sun shaft and cloud trials were cut in the
+clean-up of 2026-10-21, the research is `docs/archive/lighting.md`). **The Tone rows** there (`LAB.tone`: colour, contrast,
+warmth as a CSS filter, the grain full, half or none) are my own dials, nothing Robin opens.
 
 **The UI** (`docs/ui-review.md`): boards are drawn over the HUD in one order (`scene.boards`). **The panels' look is the Art
 Director's** (2026-10-20, Robin's mix of its three directions; its `out/hud/SPEC.md` and `hud_mix.png`, the art copied whole
@@ -745,8 +752,8 @@ a room that loses too much loses its roof (a groan, then the fall: things inside
 **Fire:** a lit torch and E at a wall or roof; it spreads with the wind (`Ruin.fireTick`), burns through walls and roofs,
 lights the night, heats, is heard; men come to watch a fire (`Combat.gawk`) and walk out of a burning room; people run to a
 refuge and come back homeless. **A fire in a place at peace is no raid in itself** (2026-10-21): the house's own run out, the men come to look, and **the bucket brigade** fights it: a place with a well sends up to four free villagers to it with buckets for any fire within 320 units of the well (`BRIGADE`, `brigadeTick`, `bucketStep`; the roof that has just caught first, then the wall nearest to burning through; `Ruin.douse`: a wall goes out and stays wet 40 s, a roof loses 14 s of its burning a bucket, `R.fire.bucket`, `wet`); a fire beyond the well's reach, or in a place with no well, burns; a fire in a place already uneasy or raided is part of the raid and stirs it. Measured (`tests/ruin.js`): a thatched wattle house with three on it stands, with one on it mostly burns; in the live town four villagers put out a timber-frame house fire in about 130 s after it had taken a block's worth of walls. The stakes of a village's ring can be hacked down. **Mending** (the piece `mend`, once a claim
-stone of yours stands there) mends walls and raises a fallen roof. Side walls leaning with a face (`Build.CFG.lean`) is a
-trial on the editor's board, off (Robin doubted it).
+stone of yours stands there) mends walls and raises a fallen roof. The leaning side face (`Build.CFG.lean`, 0) stays in `src/build.js` for the
+mountains' walls; its trial on the editor's board was cut in the clean-up of 2026-10-21 (Robin doubted it).
 A post can be charred too (`p.burnt`, snapped to `p.snap` of its height; no beam is left between burnt posts), a standing
 fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.noGrass`); the burnt steading uses all of it.
 
