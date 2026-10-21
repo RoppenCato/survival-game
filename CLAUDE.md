@@ -366,7 +366,7 @@ after `GT.regrowDays` 3 (mine; a saved decal of kind `grass`; the regrowth runs 
 comes with a strip of fiber; everything shakes when struck; the swing's pace is 1.5; a tool bites a beast at `TOOL_DMG` 0.8 of a weapon. Stumps regrow. Drops lie with a bounce
 and are picked up by walking over them. Admin's "Threefold drops" (`yieldK`) multiplies what is gathered and dropped. **The pine,
 oak and birch are the Art Director's pictures** (2026-10-20, Robin's pick: concept A, the large size, a pine of about 5.3 m, three
-heroes; `assets/props/trees`, set pieces through `World.setImages` in three variants a kind by the prop's seed, drawn at their
+heroes; **in the kraken's style since 2026-10-21**, the first of Robin's kraken round: the chosen tones of `art/build/toon.py`, `TONES` 'chosen' in `trees_build.py`, every other builder still 'shared'; `assets/props/trees`, set pieces through `World.setImages` in three variants a kind by the prop's seed, drawn at their
 own size, `fixed`); the felling states stay the game's, and **a felled tree lies as its own trunk picture** along the fall,
 its chopped end at the stump, shortened at the far end as the logs come off (never thinner: Robin), **and each log rolls
 out at the far end as the studio's log picture** (a drop of kind `log` that gives its wood when walked over; a tree without a

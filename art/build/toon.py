@@ -31,6 +31,28 @@ AMBIENT_TINT = SCENES[SCENE]['ambient']
 SHADOW_TINT_FIT = SCENES[SCENE]['shadow']
 RIM_K = SCENES[SCENE]['rim']
 GRAIN_K = 0.16                        # the world's grain is stronger than the first fit (2026-10-09)
+# 2026-10-21, the kraken round (Robin: "update a lot of the models with our new knowledge of today (the kraken thing)"): chosen
+# tones. The shared cel tone lightens the lit side toward a warm white and multiplies the shade by one blue, so every colour
+# comes out greyed (6 to 17 per cent saturation, measured). The kraken and the new boar paint each surface with three chosen
+# colours: the base, a lit tone lighter but as saturated, a shade darker and turned toward blue. TONES = 'chosen' (or the
+# environment's TOON_TONES) gives every material those, derived from its base colour, or taken from its 'lit' and 'shade'
+# when a builder picks them by hand; the lit band only where the sun strikes hard (the kraken's steps: 0.66 and 1.2), no rim.
+# 'shared' keeps the old tone, so nothing already in the game changes until its builder switches.
+import os, colorsys
+TONES = os.environ.get('TOON_TONES', 'shared')
+T_DARK, T_LIT = 0.66, 1.2
+def _hex(rgb): return '#%02x%02x%02x' % tuple(max(0, min(255, int(round(c * 255)))) for c in rgb)
+def _hue_toward(h, target, k):
+    d = ((target - h + 0.5) % 1.0) - 0.5; return (h + d * k) % 1.0
+COOL = (0.20, 0.26, 0.42)              # the shade's blue (#33426b), mixed in, so a warm colour's shade turns violet-brown and a grey a blue-grey
+WARM = (1.0, 0.86, 0.58)               # the lit side's warmth, a little
+def chosen_tones(hexs, lit_dl=0.085, shade_dl=0.10, cool_k=0.26, warm_k=0.08):
+    """the kraken's way from one base colour: (lit, shade) as hex. The lit tone lighter, as saturated, a touch warmer; the shade
+    darker and as saturated, with a quarter of a deep blue mixed in (the boar's chosen shade #3d2c33 for #6b4a33 is close to it)."""
+    h = hexs.lstrip('#'); r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)); hh, ll, ss = colorsys.rgb_to_hls(r, g, b)
+    lit = colorsys.hls_to_rgb(hh, min(0.93, ll + lit_dl), min(1.0, ss * 1.04)); lit = tuple(lit[i] * (1 - warm_k) + WARM[i] * warm_k for i in range(3))
+    dk = colorsys.hls_to_rgb(hh, max(0.03, ll - shade_dl), min(1.0, ss * 1.05)); shade = tuple(dk[i] * (1 - cool_k) + COOL[i] * cool_k * (ll / 0.45 if ll < 0.45 else 1.0) for i in range(3))
+    return _hex(lit), _hex(shade)
 def set_scene(name):
     global SCENE, AMBIENT_TINT, SHADOW_TINT_FIT, RIM_K
     SCENE = name if name in SCENES else 'day'; sc = SCENES[SCENE]; AMBIENT_TINT = sc['ambient']; SHADOW_TINT_FIT = sc['shadow']; RIM_K = sc['rim']
@@ -133,6 +155,19 @@ def build_nodes(m, style):
         pool = _math(n, L, 'SUBTRACT', 1.0, _math(n, L, 'MULTIPLY', lw.outputs['Facing'], 0.34))
         col = _mix(n, L, 'MULTIPLY', 1.0, col, _gray(n, L, pool))
         col = _grain(n, L, col, 0.08, 220)
+        L.new(col, em.inputs['Color'])
+    elif style == 'cel' and (TONES == 'chosen' or m.get('lit')):   # the kraken's three chosen tones (2026-10-21)
+        v = _light(n, L)
+        lit_h, shade_h = (m.get('lit'), m.get('shade')) if m.get('lit') else chosen_tones(m['hex'])
+        base_t = tuple(base[i] * AMBIENT_TINT[i] for i in range(3)); lit_c = srgb(lit_h); shade_c = srgb(shade_h)
+        dark = _math(n, L, 'LESS_THAN', v, m.get('t_dark', T_DARK)); bright = 0.0 if m.get('matte') else _math(n, L, 'GREATER_THAN', v, m.get('t_lit', T_LIT))
+        bsock = _decal(n, L, base_t) if m.get('face') else base_t
+        col = _mix(n, L, 'MIX', bright, _mix(n, L, 'MIX', dark, bsock, shade_c), lit_c)
+        if m.get('wet'):
+            col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _math(n, L, 'GREATER_THAN', v, 0.88), 0.38), col, (0.80, 0.92, 0.98))
+        if pattern:
+            col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _pattern(n, L, pattern), 0.16), col, _mix(n, L, 'MULTIPLY', 1.0, col, (0.55, 0.58, 0.62)))
+        col = _grain(n, L, col, GRAIN_K, 320)
         L.new(col, em.inputs['Color'])
     else:   # cel
         v = _light(n, L)
@@ -267,10 +302,13 @@ def face_images(kind='hero'):
     for eyes in ('dot', 'oval', 'highlight'):
         for expr in ('neutral', 'blink', 'angry', 'hurt'): _paint_face('face_%s_%s' % (eyes, expr), eyes, expr, kind=kind)
 
-def material(name, hexs, pattern=None, style='cel', face=False, wet=False):
+def material(name, hexs, pattern=None, style='cel', face=False, wet=False, lit=None, shade=None, t_dark=None, t_lit=None):
     m = bpy.data.materials.get(name)
     if m: return m
     m = bpy.data.materials.new(name); m['hex'] = hexs; m['pattern'] = pattern or ''
+    if lit and shade: m['lit'] = lit; m['shade'] = shade      # tones picked by hand (2026-10-21)
+    if t_dark is not None: m['t_dark'] = t_dark                # where the shade begins and the lit band ends, per material (2026-10-21)
+    if t_lit is not None: m['t_lit'] = t_lit
     if face: m['face'] = 1
     if wet: m['wet'] = 1
     build_nodes(m, style); m.diffuse_color = (*srgb(hexs), 1)
@@ -336,7 +374,7 @@ def setup_render(scene, size, px, samples=16):
     scene.display_settings.display_device = 'sRGB'
 
 
-def piece_line(fs, k_outer=0.55, k_inner=0.8, outer='#2f3a28', inner='#2a2f22'):
+def piece_line(fs, k_outer=0.55, k_inner=0.8, outer='#2f3a28', inner='#2a2f22', at_colours=False):
     """the set pieces' line (2026-10-21; Robin: the pieces looked pasted on like stickers against the lineless ground): the outer
     contour at about half its weight and coloured dark green-brown, the inner line a little lighter. The people, the beasts and
     the hero keep the heavy black line: figures are meant to stand out from the ground."""
@@ -344,3 +382,9 @@ def piece_line(fs, k_outer=0.55, k_inner=0.8, outer='#2f3a28', inner='#2a2f22'):
         st = ls.linestyle; k = k_outer if ls.name == 'contour' else k_inner; st.thickness *= k; st.color = srgb(outer if ls.name == 'contour' else inner)
         for md in st.thickness_modifiers:
             if hasattr(md, 'thickness_min'): md.thickness_min *= k; md.thickness_max *= k
+        if at_colours and ls.name != 'contour':   # 2026-10-21, the kraken round: the inner line only where two colours meet or one piece passes before another
+            ls.select_crease = False; ls.select_border = False; ls.select_material_boundary = True; ls.select_silhouette = True
+def inner_at_colours(fs):
+    """the figures' inner line only at colour changes and overlaps, none on creases and facets (the boar's E, 2026-10-21)"""
+    ls = fs.linesets.get('inner')
+    if ls: ls.select_crease = False; ls.select_border = False; ls.select_material_boundary = True; ls.select_silhouette = True

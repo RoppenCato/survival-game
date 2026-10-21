@@ -350,3 +350,6 @@ a power walk at 55 units a second (the jog is 84), his feet planted; Shift still
 **A faster walk to try (2026-10-21, your note):** Admin now has "Walking test: speed" under the walking test; each click steps it
 through 55, 60, 65 and 70 units a second (the jog is 84). The walk's frames follow the ground, so faster means quicker steps with
 the feet still planted; the studio warned they look frantic past about 60, so judge it by eye. The jog stays the default.
+
+**The trees in the kraken's style (2026-10-21, the first of your kraken round):** the pine, oak and birch, their trunks and logs
+are the studio's new pictures, in the same sizes and places. The wolves and the deer come next.
