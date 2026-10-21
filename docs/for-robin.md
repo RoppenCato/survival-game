@@ -238,3 +238,11 @@ above the far rail to hanging below the near rail as its side turns toward you. 
 sailed, so it curves in a turn, and a turn with way on breaks white along the outer side from the bow to the quarter. The
 sail: it is set while you drive her (W) and furled at rest, with its belly by the wind; the wind still gives the speed and
 rests the oars when it fills the sail, and the pennant at the masthead shows which way it blows.
+
+**Done on "do 2 and 3" (2026-10-21):** the living sea is in the Sea Editor too, with a **Wind strength** slider; Use in the
+game makes that strength the default the game's wind wanders round. The shallows now have the green-blue band by the shore on
+both pages (the studio's depth tint in the ground painter). And the hero's and the people's sheets: a clip's sheets load on
+first use, as before, and now the clips not drawn for two minutes are let go again (the fighting and walking clips are kept),
+so what sits in memory is what the last minutes used (measured: the hero's sheets 127 MB decoded at the start, 60 MB two
+minutes later standing still; the villagers' 52 to 38). Your framelog from your own machine is still the thing that would
+show whether that is where the 20 fps went.

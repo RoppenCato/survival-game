@@ -240,7 +240,7 @@ Open. **The full year**: every season drawn everywhere, the turn after winter th
 | Work | When | Status |
 | --- | --- | --- |
 | **Saves that fit**: save what changed on the ground, not the whole field (today 1.5 MB of 1.56; the browser gives about 5 MB in all) | before the bigger sea (chapter 2) | Not started (`docs/before-wednesday.md`, 1) |
-| **Sheets loaded when used**, a soft shadow while one loads (the hero's sheets are about 1.5 GB decoded and all load at the start) | now: it touches chapter 1's smoothness | Not started (`docs/before-wednesday.md`, 2) |
+| **Sheets loaded when used**, a soft shadow while one loads (the hero's sheets are about 1.5 GB decoded and all load at the start) | now: it touches chapter 1's smoothness | Built (the kit and the people load a sheet on first use and, 2026-10-21, let go of clips not drawn for two minutes: `Sprites.trim`; the beasts since 2026-10-20) (`docs/before-wednesday.md`, 2) |
 | **The per-frame packer** (each frame cut to its own pixels), then the studio repacks every set | after the lazy loading | Not started (the art plan, item 8; the people's atlas already does it: `tools/people.js` packs per frame and `rectsOf` in `src/sprites.js` draws it, the base for the general one) |
 | **The world as waters** (the generator) | chapter 2's start | Planned (`docs/build-plan-waters.md`, step 1) |
 | Performance: the frame log's SPIKE lines, the first frame's time | always | Watched |

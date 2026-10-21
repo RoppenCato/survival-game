@@ -545,7 +545,9 @@ fluke and is gone for minutes; a fish leaping from the shoal; a seal's head by t
 (`Yard.masthead`) and **bow spray** when the way and the wind are up. **The wind blows at `wind.s`** (0 to 1, wandering every
 minute or two between 0.15 and 0.75; mine, Robin's default waits), and everything scales with it: a calm day shows the swell
 and the glitter only. `seaTick` runs when the sea is in sight (`sea.on`); `tests/sea.js`; `debug().sea()`, `seaEnv()`,
-`windObj()`. Not wired: the depth tint (the shallows' green-blue band, a ground-painting change), the Sea Editor. On the
+`windObj()`. **The depth tint** is in the ground painter (`world.js`: the sea green-blue by the shore, gone a few levels out, on
+both pages). **The Sea Editor has the living sea too** (the same module, its wind from the sliders: **Wind strength** is a
+slider there, and Use in the game makes it the game's default round which `wind.s` wanders, `game.boat.windS`). On the
 studio's word: puffins, a sea eagle, a humpback, jellyfish, the night sea.
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
@@ -823,7 +825,11 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   900 units and let go after 60 s with none near** (`sheetTick`, `Sprites.warm`, `unload`; 2026-10-20: all eight kinds were
   made at the start, about 550 MB decoded, the troll's 234); a sheet is decoded off the frame as it arrives (`imgOf`); while
   it is on its way the beast stands as a soft shadow; the hero's kit warms the clips of what he holds as his look changes;
-  `debug().sheets()` counts what is loaded) (the boar, deer, moose and bear the studio's lit ones, trimmed to the memory budget, dropped in
+  `debug().sheets()` counts what is loaded, `sheetBytes()` what they take decoded; **the hero's kit and the people let go of the
+  sheets of clips not drawn for two minutes** (`Sprites.trim`, `trimTick` every 5 s, the core clips kept: `KEEP_HERO`,
+  `KEEP_PEOPLE`; a warmed clip counts as used when warmed; 2026-10-21: the kit held every clip ever used; measured in the pane: the
+  kit 127 MB decoded with 105 sheets at the start, 60 MB with 56 once the unused ones expire, the people 52 to 38; `trimNow()`
+  forces it)) (the boar, deer, moose and bear the studio's lit ones, trimmed to the memory budget, dropped in
   2026-10-20), the boulder troll as the cave troll, Hårungen as his young. The forest troll, the Gape, the three-headed troll,
   the draugr, the huldra, Näcken (the last three the redesigned ones, 2026-10-20), Trollmor (new) and the bysen are in the Art
   Editor only (`docs/beasts.md`). **The art plan** is the studio's (`C:\dev\SG\Art Director\docs\art-plan.md`, 2026-10-20):

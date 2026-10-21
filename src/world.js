@@ -972,6 +972,7 @@ function make(kit, opts) {
           r = P.sh[0] + (P.dp[0] - P.sh[0]) * t; g = P.sh[1] + (P.dp[1] - P.sh[1]) * t; b = P.sh[2] + (P.dp[2] - P.sh[2]) * t;
           var st = Math.max(0, 1 + e / 0.95) * 0.62;
           r += (P.wet[0] - r) * st; g += (P.wet[1] - g) * st; b += (P.wet[2] - b) * st;
+          var dz = Math.max(0, 1 + e / 2.2); dz = dz * dz * (3 - 2 * dz) * 0.42; r += (120 - r) * dz; g += (205 - g) * dz; b += (195 - b) * dz;   // the depth's colour (the Art Director's living sea, 2026-10-21): green-blue by the shore, gone a few tiles out
           var tx2 = (n2v - 0.5) * 12; r += tx2; g += tx2; b += tx2;
           if (e > -0.14) { var fo = (1 + e / 0.14) * 0.85; r += (255 - r) * fo; g += (255 - g) * fo; b += (252 - b) * fo; }   // the white lip at the waterline
         } else {

@@ -153,6 +153,7 @@ __LIB__
 __WORLD__
 __VILLAGE__
 __YARD__
+__SEALIB__
 __COMBAT__
 __SPRITES_JS__
 (function () {
@@ -193,6 +194,7 @@ __SPRITES_JS__
     { k: 'grip', label: 'Grip', min: 0, max: 1, step: 0.05 },
     { k: 'windK', label: 'Wind strength', min: 0, max: 1.5, step: 0.05 },
     { k: 'windA', label: 'Wind blows toward', min: -3.1, max: 3.1, step: 0.1 },
+    { k: 'windS', label: 'Wind strength (the sea\u2019s look)', min: 0, max: 1, step: 0.05 },
     { k: 'rowers', label: 'Rowers aboard', min: 0, max: 12, step: 1 }
   ];
   var SEA = [
@@ -223,7 +225,7 @@ __SPRITES_JS__
   var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.3, max: 2, step: 0.05 }];
   var NUM = BOAT.concat(HANDLE, SEA, LAND, GAME);
   var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Stripes and shields']];
-  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, windK: 0.5, windA: 0.6, rowers: 0, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
+  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, windK: 0.5, windA: 0.6, windS: 0.45, rowers: 0, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
     isle: 160, sizeVar: 0.8, count: 2, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, seed: 25, layout: 1, starter: 120, big: 400, lowFrom: 9, lowSize: 130,   // the game's two islands (2026-10-09)
     col: { hull: '#5a3a26', deck: '#b98a5a', sail: '#efe6cf', trim: '#b83a2e' } };
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -396,7 +398,7 @@ __SPRITES_JS__
   }
   function yardLeave() { var P = Combat.dbg().P; inYard = false; YSCENE.leave(); view.zoom = yardZoom || 0.7; syncView(); P.x = (dockEnd.x + 7.4) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; yui(); }
   function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + ('a ' + Yard.nameOf(built.kind).toLowerCase()) + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
-  document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { var kind = built ? built.kind : 'boat'; localStorage.setItem('game.boat', JSON.stringify({ kind: kind, steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip, windK: spec.windK })); document.getElementById('usemsg').textContent = 'The game\'s ' + kind + ' now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ', wind ' + spec.windK + ').'; } catch (err) {} };
+  document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { var kind = built ? built.kind : 'boat'; localStorage.setItem('game.boat', JSON.stringify({ kind: kind, steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip, windK: spec.windK, windS: spec.windS })); document.getElementById('usemsg').textContent = 'The game\'s ' + kind + ' now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ', wind ' + spec.windK + ').'; } catch (err) {} };
   document.getElementById('useworld').onclick = function (e) { e.currentTarget.blur(); try { var o = worldSpec(), g = {}; ['count', 'gap', 'gapVar', 'skerries', 'rough', 'beach', 'seed', 'isle', 'isle0', 'big', 'sizes', 'biomes', 'dir', 'sizeVar'].forEach(function (k) { if (o[k] != null) g[k] = o[k]; }); if (!spec.layout) { g.sizes = null; g.biomes = null; } g.waters = true; g.maxTiles = 2e7; localStorage.setItem('game.world3', JSON.stringify(g)); document.getElementById('worldmsg').textContent = 'The game now builds this sea on its next fresh start: ' + g.count + ' islands, sea number ' + g.seed + (g.biomes ? ', lowlands from island ' + spec.lowFrom : '') + '. Esc, New island in the game starts it.'; } catch (err) {} };
   document.getElementById('yopen').onclick = function (e) { e.currentTarget.blur(); if (inYard) yardLeave(); else yardEnter(); };
   document.getElementById('yclear').onclick = function (e) { e.currentTarget.blur(); yardS.cells = []; ysave(); yui(); };
@@ -466,6 +468,14 @@ __SPRITES_JS__
   function free(x, y, h) {                 // is the whole hull over water?
     var d = dims(), c = Math.cos(h), s = Math.sin(h);
     return isWater(x + c * d.L, y + s * d.L) && isWater(x - c * d.L, y - s * d.L) && isWater(x - s * d.W, y + c * d.W) && isWater(x + s * d.W, y - c * d.W) && isWater(x, y);
+  }
+  var SEA_ART = __SEA__ || null, SEA_IMG = {}; (function () { if (!SEA_ART) return; for (var k in SEA_ART) { var im = new Image(); im.src = SEA_ART[k].src; SEA_IMG[k] = { img: im, origin: SEA_ART[k].origin, water: SEA_ART[k].water, ppm: SEA_ART[k].ppm }; } })();   /* the living sea's pieces (the Art Director, 2026-10-21) */
+  var sea = Sea.make(), seaEnv = null, seaT = null, shoreT = 0, shorePt = null;
+  function seaTick(dt) {                   // the living sea (src/sea.js), as in the game: the water, the gulls round the ship or the shore, the whale, the fish, the seal
+    var P = Combat.dbg().P, z = cam.z || view.zoom;
+    if ((shoreT -= dt) <= 0) { shoreT = 2; shorePt = null; var bd = 1e9; for (var a = 0; a < 6.283; a += 0.5236) for (var dd = 60; dd <= 360 && dd < bd; dd += 40) { var sx = P.x + Math.cos(a) * dd, sy = P.y + Math.sin(a) * dd; if (w.isWater(sx, sy) !== w.isWater(P.x, P.y)) { if (dd < bd) { bd = dd; shorePt = { x: sx, y: sy }; } break; } } }
+    seaEnv = { x: cam.x, y: cam.y / K, hw: 200 / z, hh: 125 / z / K, z: z, wind: { a: spec.windA, s: spec.windS }, water: function (x, y) { return x > 0 && y > 0 && x < WX && y < WY && w.isWater(x, y); }, night: 0, ship: aboard ? { x: boat.x, y: boat.y } : null, shore: shorePt };
+    Sea.tick(sea, dt, seaEnv);
   }
   function sail(dt) {
     var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), iy = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0);
@@ -592,13 +602,15 @@ __SPRITES_JS__
       c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250);
       c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y);
       w.drawGround(c, cam, hw, hh);
+      if (seaEnv) Sea.drawWater(c, sea, seaEnv);   /* the living sea's water */
       w.drawWaves(c, cam, hw, hh, clock, spec.waves, spec.foam);
       for (i = 0; i < wakes.length; i++) { var wk = wakes[i], a = wk.life / wk.max; c.strokeStyle = 'rgba(235,252,255,' + (0.5 * a * Math.min(1, spec.wake)).toFixed(3) + ')'; c.lineWidth = 1.2 + spec.wake; c.beginPath(); c.ellipse(wk.x, wk.y * K, wk.r, wk.r * K, 0, 0, 7); c.stroke(); }
     },
     items: function (items) {
       if (inYard) return;
       var z = cam.z, hw = 200 / z, hh = 125 / z;
-      items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { if (built) Yard.drawVessel(ctx, vesselNow(), clock); else drawBoat(ctx); } });
+      if (seaEnv) Sea.lifeItems(sea, seaEnv, SEA_IMG).forEach(function (li) { items.push({ y: li.y, f: function () { li.f(ctx); } }); });
+      items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { if (built) { var vn = vesselNow(); Yard.drawVessel(ctx, vn, clock); var mh = Yard.masthead(vn, clock); if (mh) { ctx.__t = clock * 9; Sea.pennant(ctx, mh[0], mh[1], spec.windA, spec.windS); } if (Math.hypot(vn.vx || 0, vn.vy || 0) > 40 && spec.windS > 0.25) { var sp = Yard.stemPoint(vn); Sea.bowSpray(ctx, sp[0], sp[1] * K, vn.h, spec.windS, clock); } } else drawBoat(ctx); } });
       if (Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
       if (aboard) items.push({ y: hero.y + 0.5, f: function () { if (built) Yard.drawVesselFront(ctx, vesselNow(), clock, hero.y); else drawBoatFront(ctx); } });
       // only the objects in the pieces of map near the view (trees are tall, so look a little further down)
@@ -618,6 +630,7 @@ __SPRITES_JS__
       }
     },
     end: function (c, P) {
+      if (seaEnv && !inYard) Sea.drawGulls(c, sea, seaEnv, SEA_IMG);   /* the gulls in the air */
       if (inYard) { var PSN0 = Combat.api.pixelScale || 2; c.save(); c.setTransform(PSN0, 0, 0, PSN0, 0, 0); YSCENE.hud(c, mouseS, false); c.restore(); return; }
       for (var i = 0; i < smoke.length; i++) { var q = smoke[i], a = q.life / q.max; c.fillStyle = 'rgba(225,225,235,' + (0.5 * a).toFixed(3) + ')'; c.beginPath(); c.arc(q.x, q.y * K - q.z, q.r, 0, 7); c.fill(); }
       // chart
@@ -668,7 +681,7 @@ __SPRITES_JS__
     var want = Math.hypot(P.x - npc.x, P.y - npc.y) < 110 ? Math.atan2(P.y - npc.y, P.x - npc.x) : Math.PI / 2, dn = Math.atan2(Math.sin(want - npc.face), Math.cos(want - npc.face));
     npc.face += Math.max(-4 * dt, Math.min(4 * dt, dn)); if (npc.sayT > 0) npc.sayT -= dt;
     if (!P.dead) P.hp = P.maxHp;
-    sail(dt);
+    sail(dt); if (!inYard) seaTick(dt); else seaEnv = null;
     if (aboard) {
       var d = dims(); P.x = boat.x - Math.cos(boat.h) * d.L * 0.25; P.y = boat.y - Math.sin(boat.h) * d.L * 0.25; P.vx = P.vy = 0;
       if (Math.hypot(boat.vx, boat.vy) > 8 || keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD) { P.face = boat.h; }

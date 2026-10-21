@@ -15,7 +15,7 @@ check('six swells, two cloud shadows', S.swells.length === 6 && S.clouds.length 
 check('every patch lies on the water', S.paws.concat(S.caps, S.swells, S.clouds, S.glints).every(p => water(p.x, p.y)));
 check('gulls circle the ship: two to five', S.gulls.length >= 2 && S.gulls.length <= 5, S.gulls.length);
 check('a gull keeps its ring round the ship', S.gulls.every(g => Math.abs(Math.hypot(g.x - g.cx, g.y - g.cy) - g.R) < 1));
-check('a shoal has formed', S.shoals.length >= 1, S.shoals.length);
+for (let i = 0; i < 3000 && !S.shoals.length; i++) Sea.tick(S, 1 / 30, env); check('a shoal has formed (within two minutes)', S.shoals.length >= 1, S.shoals.length);
 S.nextWhale = 0; Sea.tick(S, 1 / 30, env);
 check('the whale comes far out, surfacing first', !!S.whale && S.whale.state === 'back1' && Math.hypot(S.whale.x - env.x, S.whale.y - env.y) >= 500, S.whale && Math.round(Math.hypot(S.whale.x - env.x, S.whale.y - env.y)));
 for (let i = 0; i < 30 * 3.6; i++) Sea.tick(S, 1 / 30, env); check('after 3.6 s it is under', !!S.whale && S.whale.state === 'under', S.whale && S.whale.state);

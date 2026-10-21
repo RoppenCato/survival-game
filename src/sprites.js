@@ -287,6 +287,13 @@
   function imgOf(H, file) { var im = H.img[file]; if (!im && H.src && H.src[file] && typeof Image !== 'undefined') { im = new Image(); im.src = H.src[file]; H.img[file] = im; if (im.decode) im.decode().catch(function () {}); } return im && im.complete && im.naturalWidth ? im : null; }   /* (a sheet asked for is decoded off the frame as it arrives, 2026-10-20: the first draw of a big sheet was a spike) */
   function warm(H) { var n = 0, f; if (!H || !H.src) return 0; for (f in H.src) { if (!H.img[f]) n++; imgOf(H, f); } return n; }   // a lazy set's every sheet asked for (a beast coming near)
   function unload(H) { if (!H || !H.lazy) return; H.img = {}; H.sil = {}; if (H.rc) H.rc = {}; }   // a lazy set let go (no beast of it near for a while): its sheets, silhouettes and tints
+  function trim(H, keep, after) {        /* the sheets of clips not drawn for `after` seconds let go (the hero's kit and the people, 2026-10-21: what he holds and does warms its clips as he goes, so the resident set is what the last minutes used); keep: clips never let go. Returns how many sheets went. */
+    if (!H || !H.lazy || !H.use) return 0; var t = now(), A = H.meta.anims, n = 0, cl, f, k;
+    for (cl in A) { if (keep.indexOf(cl) >= 0) continue; var u = H.use[cl]; if (u == null || t - u < after) continue; var sh = A[cl].sheets || {}; for (f in sh) if (H.img[sh[f]]) { delete H.img[sh[f]]; n++; } H.use[cl] = null; }
+    if (n) { H.sil = {}; if (H.rc) H.rc = {}; if (H.ubox) H.ubox = {}; }
+    return n;
+  }
+  function sheetBytes(H) { var b = 0, f; if (!H || !H.img) return 0; for (f in H.img) { var im = H.img[f]; if (im && (im.naturalWidth || im.width)) b += (im.naturalWidth || im.width) * (im.naturalHeight || im.height) * 4; } return b; }   // what a set's loaded sheets take decoded
   function loaded(H) { var n = 0, f; if (H) for (f in H.img) n++; return n; }
   var HAIRS = { 0: 'hairA', 1: 'hairA', 2: 'hairB', 3: 'hairB', 4: 'hairC', 5: null, 6: 'hairC', 7: 'hairB', 8: 'hairB' }, BEARDS = { 0: null, 1: 'beardA', 2: 'beardA', 3: 'beardB', 4: null }, HATS = { 0: null, 1: 'hood', 2: 'cap', 3: 'helm', 4: 'cap', 5: null };
   function idOf(look) { look.id = look.L.map(function (q) { return q.l + (q.t || ''); }).join(','); return look; }
@@ -369,6 +376,7 @@
   }
   function person(c, H, look, st, x, y, opts) {
     opts = opts || {}; var M = H.meta, clip = M.anims[st.clip] ? st.clip : 'idle', A = M.anims[clip]; if (!A) return false;
+    if (H.lazy) { if (!H.use) H.use = {}; H.use[clip] = now(); }
     var d = dirOf(M, st.face || 0), f, f2 = -1, w = 0;
     if (st.f != null) { f = Math.max(0, Math.min(A.frames - 1, st.f)); if (st.f2 != null && opts.blend !== false && blends(clip, A)) { if (st.w >= 0.97) f = st.f2; else if (st.w > 0.03) { f2 = st.f2; w = st.w; } } }   /* (the kit hero: pick() gives the frame) */
     else if (st.k != null) f = frameAt(A, Math.max(0, Math.min(0.999, st.k)));
@@ -438,6 +446,6 @@
   }
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
-  function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
+  function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; if (H.lazy && !H.use) H.use = {}; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; if (H.use && H.use[cl] == null) H.use[cl] = now();   /* (a warmed clip counts as used now, so one never drawn is let go in its time) */ look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
+  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });
