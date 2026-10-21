@@ -392,3 +392,16 @@ high, the mast snapped and the striped sail over the side, an oar and planks spi
 **The bear in the kraken's style (2026-10-21; chapter 2, on your list):** the big island's bear is the studio's remade brown bear:
 a broad domed head with a dished face and a pale muzzle, thick legs on broad paws with short pale claws, a shaggy crest over the
 shoulder hump, a ruff round the cheeks and ragged hair under the belly and on the legs. Its feet hold to the ground as it walks.
+
+**Waiting for you: the new moose (2026-10-21).** The studio's moose in the kraken's style is ready but not in the game, because it
+is over the art plan's memory budget and the call is yours. It has broad palms with tines, a one-piece head, a shaggy mane and
+bell, and chosen browns (the studio's picture: `C:\dev\SG\Art Director\out\kraken_round\moose\compare.png`).
+
+| The moose | Decoded in memory |
+| --- | --- |
+| The art plan's budget | 50 MB |
+| The one in the game now | 65 MB |
+| The new one | 88 MB |
+
+Its sheets load only while a moose is within 900 units on the big island and are let go a minute after, so the cost is paid only
+near one. Say yes and it goes in as the studio handed it over; say no and the studio cuts it further.
