@@ -8437,7 +8437,7 @@ function render(c) {
    from it. The Combat Arena edits it live and hands it to the game as 'game.combat'; the game lays that over its own on load.
    BEAST_GAME holds what the game's ANIMALS said a bite does and how far a beast notices you (the arena's beasts did 12 a bite
    whatever they were, until this); health, speed and windup come from the art library's specs and attacks. */
-var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 3, aggro: 25, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
+var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 0, aggro: 36, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
 var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge', 'st'], MEN_KEYS = ['hpK', 'dmg', 'wu', 'wuK', 'slots', 'gapHero', 'onHero', 'joinAfter', 'toMen'];
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {
@@ -8508,7 +8508,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var n = M.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
     var want = (n === 8 ? DIRS8 : DIRS4)[i], k = M.dirs.indexOf(want); return k < 0 ? 0 : k;
   }
-  function play(H, name, then) { if (!H || !H.meta.anims[name]) return false; H.clip = { name: name, t0: now(), then: then || null }; return true; }
+  function play(H, name, then, dur) { if (!H || !H.meta.anims[name]) return false; H.clip = { name: name, t0: now(), then: then || null, dur: dur || 0 }; return true; }   // dur: the clip spread over this many seconds instead of its own pace (the hero's pick-up in the take's time, 2026-10-21)
   function now() { return (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000; }
   function frameAt(A, k) { return Math.max(0, Math.min(A.frames - 1, Math.floor(k * A.frames))); }
   function loopFrame(A, t) { return Math.floor(t * A.fps) % A.frames; }
@@ -8546,7 +8546,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
     if (H.clip && !A[H.clip.name]) H.clip = null;
-    if (H.clip) { var C = A[H.clip.name], cf = Math.floor((t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
+    if (H.clip) { var C = A[H.clip.name], cf = Math.floor(H.clip.dur > 0 ? (t - H.clip.t0) / H.clip.dur * C.frames : (t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if ((H.blk || 0) > 0.02 && A[bk] && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the arm brought across as he stands, held

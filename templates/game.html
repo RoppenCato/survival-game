@@ -142,7 +142,7 @@ __COMBAT__
     unge: { n: 0, ground: 'dark', r: 9, dmg: 6, aggro: 0, range: 60, drops: { stone: 1, copper: 0.3 } },   // the troll's young: only in his cave (ungeSpawn)
     // the villages' animals (2026-10-21; n 0: never on an island of their own, placed by stockSpawn): a hen, a sheep and a cow scatter from you (flee) and come back; a goat butts
     hen: { n: 0, ground: 'grass', r: 2, dmg: 0, aggro: 70, range: 46, flee: true, drops: { meat: 1 } },
-    goat: { n: 0, ground: 'grass', r: 5, dmg: 3, aggro: 25, range: 70, drops: { meat: 2, leather: 1 } },
+    goat: { n: 0, ground: 'grass', r: 5, dmg: 0, aggro: 36, range: 70, flee: true, drops: { meat: 2, leather: 1 } },   /* (Robin, 2026-10-21: a goat going for him at random was weird and set the place against him: it keeps off like the sheep, and butts the air now and then) */
     sheep: { n: 0, ground: 'grass', r: 5, dmg: 0, aggro: 60, range: 56, flee: true, drops: { meat: 2, leather: 1 } },
     cow: { n: 0, ground: 'grass', r: 9, dmg: 0, aggro: 45, range: 50, flee: true, drops: { meat: 4, leather: 2 } }
   };
@@ -245,7 +245,7 @@ __COMBAT__
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick2') || '{}') || {}; } catch (eP) {}
-  var DEFAULT_PICK = { raise: 'h', hit: 'w', heavyhit: 'x', hit_club: 'v', heavyhit_club: 'v', block: 'a', chop: 'a', clink: 'a', treefall: 'a', logthud: 'v', boxbreak: 'v', wave: 'v', pain_boar: 'w', pain_deer: 'w', pain_snake: 'w', pain_wolf: 'w' };   /* Robin's picks, locked in (2026-10-20, pasted from the arena's The sounds panel); the sword's swing is his E, and F on a heavy blow (SWING_SETS) */
+  var DEFAULT_PICK = { raise: 'h', hit: 'w', heavyhit: 'x', hit_club: 'w', heavyhit_club: 'x', block: 'a', chop: 'a', clink: 'a', treefall: 'a', logthud: 'v', boxbreak: 'v', wave: 'v', pain_boar: 'w', pain_deer: 'w', pain_snake: 'w', pain_wolf: 'w' };   /* Robin's picks, locked in (2026-10-20, pasted from the arena's The sounds panel); the sword's swing is his E, and F on a heavy blow (SWING_SETS) */
   function pickOf(n) { var k = n in SFX_PICK ? SFX_PICK[n] : DEFAULT_PICK[n]; if (k && k !== 'orig' && Sfx.has(n + '_' + k)) return n + '_' + k; k = DEFAULT_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }   /* (a pick of a sound no longer in the bundle falls back to Robin's) */
   /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
      finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
@@ -334,7 +334,7 @@ __COMBAT__
     }
     var next = isEvening() ? (day.t > DAY_LEN - 40 ? dayTheme() : null) : (day.t > DUSK_AT - 40 ? eveTheme() : null), nf = next && fileOf(next); if (nf) Music.loadTrack(nf.url);   // the next loop decoded a little before it is wanted
     var P = hero(), awake = false;       // a beast counts as awake when it is chasing or attacking within earshot
-    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
+    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.tame && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
     var was = dangerT > 0; dangerT = awake ? 4 : Math.max(0, dangerT - dt);
     if ((dangerT > 0) !== was && !Music.trackPlaying()) { Music.setLayer('danger', dangerT > 0 ? 1 : 0, dangerT > 0 ? 1.2 : 4); Music.setLayer('calm', dangerT > 0 ? 0.15 : 1, dangerT > 0 ? 1.2 : 4); }
   }
@@ -496,7 +496,7 @@ __COMBAT__
   Combat.api.enemySprite = function (c, e) { if (e.human) return drawFighter(c, e); var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind];
     if (!Sprites.beastReady(BH)) { Sprites.warm(BH); if (e.dead) return true; c.save(); c.translate(e.x, e.y * K); c.fillStyle = 'rgba(24,18,14,0.22)'; c.beginPath(); c.ellipse(0, e.r * 0.25, e.r * 1.25, e.r * 0.5, 0, 0, 7); c.fill(); c.restore(); return true; }   /* its sheets on their way: a soft shadow where it stands */
     var o = { tame: !!e.tame, shadow: !inCave, lit: figLit(e.x, e.y, true, 34), shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: bo.deadFor };
-    if (e.tame) { o.idleClip = e.idleClip || null; if (e.lieT > 0) { o.clip = e.stock === 'hen' ? 'sit' : 'lie'; o.clipK = Math.min(0.999, (e.lieK || 0) / 1.2); } }   // a village animal: pecking or grazing, or lying down (held at the clip's end)
+    if (e.tame) { o.idleClip = e.idleClip || null; if (e.lieT > 0) { o.clip = e.stock === 'hen' ? 'sit' : 'lie'; o.clipK = Math.min(0.999, (e.lieK || 0) / 1.2); } else if (e.buttT > 0) { o.clip = 'butt'; o.clipK = Math.min(0.999, (e.lieK || 0) / 0.75); } }   // a village animal: pecking or grazing, or lying down (held at the clip's end)
     if (e.stoneT != null) { o.clip = 'shield'; o.clipK = 0.999; o.tint = { color: '#a3a29a', a: 0.86 }; }        // the troll caught by the dawn: stone in the pose he threw up against it
     else if (e.holdT > 0) { o.clip = 'shield'; o.clipK = Math.min(0.999, (4 - e.holdT) / 0.6, e.holdT / 0.4); }   // shielding his eyes from a fire
     else if (e.unge && !e.awake && e.job && e.job.at) { o.clip = 'attack'; o.clipK = Math.min(0.999, e.job.ph || 0); }   // a troll's young at the ore: bonking at it with his bone
@@ -3094,7 +3094,7 @@ __COMBAT__
     return best;
   }
   function armsName(e) { var th = e.dead ? e.arms[0] : manArms(e)[0]; return th ? Items.KINDS[th.kind].name.toLowerCase() : 'weapon'; }
-  function startTake(o) { var P = hero(); if (taking || P.dead) return; taking = { man: o.man || null, drop: o.drop || null, t: 0, x: P.x, y: P.y, dur: o.man ? (o.man.dead ? TAKE_T.man : TAKE_T.yield) : TAKE_T.lie }; if (sprHero) Sprites.play(sprHero, 'pickup'); }
+  function startTake(o) { var P = hero(); if (taking || P.dead) return; taking = { man: o.man || null, drop: o.drop || null, t: 0, x: P.x, y: P.y, dur: o.man ? (o.man.dead ? TAKE_T.man : TAKE_T.yield) : TAKE_T.lie }; if (sprHero) Sprites.play(sprHero, 'pickup', null, taking.dur); }
   function takingTick(dt) {
     if (!taking) return; var P = hero(), q = taking, e = q.man, d = q.drop;
     if (P.dead || P.hurtT > 0 || Math.hypot(P.x - q.x, P.y - q.y) > 9 || (e && (e.dead ? !(e.arms && e.arms.length) || e.deadT > (e.deadFor || 90) : e.state !== 'yield')) || (d && drops.indexOf(d) < 0)) { taking = null; return; }
@@ -3451,7 +3451,7 @@ __COMBAT__
   function slipsShown() { return pins.length && !menu && !invOpen && !mapOpen && !ringOpen && !pauseOpen && !naming && !inYard && !musterOpen && !bookOpen && fightT <= 0 && !hero().dead; }
   function slipTick(dt) {                   // the slips hide in a fight: a beast or a man awake and near (the music's own test, kept here so it works with the music off)
     slipT += dt; if (slipT < 0.5) { fightT = Math.max(0, fightT - dt); return; } slipT = 0; var P = hero(), awake = false;
-    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
+    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.tame && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
     fightT = awake ? 4 : Math.max(0, fightT - dt);
   }
   function drawSlips(c) {                   // the pinned recipes as vellum slips, bottom left, read-only but for the pin that lets one go
@@ -5375,10 +5375,7 @@ __COMBAT__
   function stockMind(e, dt) {               // between walks: a hen pecks and now and then sits in the dust, a grazer grazes and now and then lies down; a goat that has butted calms again
     var w = e.wander;
     if (e.lieT > 0) { e.lieT -= dt; e.lieK = (e.lieK || 0) + dt; if (w) w.wait = Math.max(w.wait || 0, 0.5); if (e.awake) e.lieT = 0; return; }
-    if (e.stock === 'goat') {                 // it goes for whoever stands within its reach, butts once, and then wants nothing of him for a while (calmT: or it would chase him about the yard for ever)
-      if (e.calmT > 0) { e.calmT -= dt; e.awake = false; e.buttT = 0; }
-      else if (e.awake) { e.buttT = (e.buttT || 0) + dt; if (e.state === 'lunge' || e.state === 'recover') e.butted = true; if ((e.butted && e.state !== 'lunge' && e.state !== 'windup') || e.buttT > 4) { e.awake = false; e.butted = false; e.buttT = 0; e.calmT = 8 + Math.random() * 6; e.state = 'idle'; if (w) { w.tx = null; w.wait = 1; } } }
-    }
+    if (e.stock === 'goat' && !e.awake && w && w.wait > 0 && !(e.lieT > 0)) { if (e.buttT > 0) { e.buttT -= dt; e.lieK = (e.lieK || 0) + dt; if (e.buttT <= 0) e.idleClip = null; return; } if (Math.random() < dt / 25) { e.buttT = 0.75; e.lieK = 0; w.wait = Math.max(w.wait, 1); return; } }   // a goat butts the air now and then (the butt clip once, 0.75 s), and goes for nobody
     if (e.awake || !w || !(w.wait > 0)) { e.idleClip = null; return; }
     e.idleT -= dt; if (e.idleT > 0) return; e.idleT = 2 + Math.random() * 4; var r = Math.random();
     if (e.stock === 'hen') { if (r < 0.08) { e.lieT = 5 + Math.random() * 4; e.lieK = 0; e.idleClip = null; } else e.idleClip = r < 0.75 ? 'peck' : null; }

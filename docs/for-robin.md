@@ -13,6 +13,29 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
 - **`art/render/`**: 4.1 GB of raw frames; everything in the game is packed from them already. Delete?
 - **The sword's timing switch** (`STEPS` or its profile): would change the feel you approved.
 
+## Robin's first answers (2026-10-21, after the morning's list) and what changed
+
+- **The frame rate, about 20 on your machine.** Measured side by side in the pane, the build from before today's work and
+  today's run at the same places at the same speed (24 frames a second at the steading and in Hildsborg, 39 at sea, with
+  10 ms of our own code a frame; the pane itself paints no faster), so today's work did not slow it, and the cost is the
+  browser's painting of what is drawn, not the game's logic. **Please drop today's `framelog.txt` and `errorlog.txt` in the
+  project folder** (Esc, Admin) so I can see your numbers. A quick test meanwhile: Esc, Admin, the Light and sound board,
+  switch off `glow` and `shadows` and see whether the rate changes (they are full-screen passes every frame).
+- **Trees and bushes small**: in a village they were half trees: the generator scaled its kept trees by 0.5 for the old
+  drawn props, and the studio's pictures kept the scale. They stand at their true size now (a birch 4.5 m, a pine 5.3 m);
+  the wild trees outside the villages were right. Say if you want the whole world's trees bigger: that is one number.
+- **The idle choppy**: at 20 frames a second everything is; look again once the rate is back.
+- **The loot bend of five seconds**: the pick-up clip played at its own pace (ten seconds for sixteen frames) whatever the
+  take's time. It now plays in the take's time (under a second).
+- **The club's hit**: the wooden knock is out; the club hits with the flesh set like every other weapon, pitched lower by
+  its weight. The knock stays a candidate in the arena's The sounds panel if you want to compare.
+- **The goat**: it goes for nobody now, keeps off like the sheep, and butts the air now and then. A village's animals no
+  longer put you in FIGHT mode (that was what turned the place against you: a drawn blade among people).
+- **The ring's clipping**: the polygon cut through a house or a yard wall where a dent lay between two corners. The ring
+  now keeps every lot's whole outline inside and lays no stake within a few units of any wall; checked on 84 rings.
+- **The boats too small for the men**: noted for the Shipyard (`docs/boats.md`): bigger hulls so the crew fits aboard.
+  Not started.
+
 ## From the raid work (2026-10-20 on)
 
 1. **The men hit harder: `MEN.dmg` 18, was 12** (`src/combat.js`). Why: your blows start on the press since 2026-10-20 and the

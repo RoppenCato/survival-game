@@ -8708,12 +8708,13 @@ function make(seed, site, opts) {
     ang[nearestTo(gateA)] = gateA; if (gate2A != null && nearestTo(gate2A) !== ang.indexOf(gateA)) ang[nearestTo(gate2A)] = gate2A; else if (gate2A != null) { gate2A = null; backGateX = null; }
     ang.sort(function (p, q) { return p - q; });
     var poly = [], tries, kcorner = 1 / Math.cos(step / 2), corners = [], rad = [];
-    V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / erx, dy = (q[1] * T - ecy) / ery; corners.push({ x: q[0] * T, y: q[1] * T, a: Math.atan2(dy, dx), r: Math.hypot(dx, dy) }); }); });
+    V.lots.forEach(function (l) { var pts = [], sx, sy; for (sx = l.x; sx <= l.x + l.w; sx += 0.5) { pts.push([sx, l.y]); pts.push([sx, l.y + l.h]); } for (sy = l.y; sy <= l.y + l.h; sy += 0.5) { pts.push([l.x, sy]); pts.push([l.x + l.w, sy]); } pts.forEach(function (q) { var dx = (q[0] * T - ecx) / erx, dy = (q[1] * T - ecy) / ery; corners.push({ x: q[0] * T, y: q[1] * T, a: Math.atan2(dy, dx), r: Math.hypot(dx, dy) }); }); });   // every lot's whole outline (a dent between two corners cut through a house, 2026-10-21)
     // each corner's radius (in the ellipse's own measure): what the buildings in its sector need, so the ring hugs them on an empty side too, a little more, a little off; then any lot corner still outside pushes the two ring corners round it out until all are in
     ang.forEach(function (a) { var need = 0.5; corners.forEach(function (q) { var dd = Math.abs(wrapA(q.a - a)); if (dd < step * 0.95) need = Math.max(need, q.r / Math.max(0.35, Math.cos(dd))); }); rad.push(Math.min(1.12, need * kcorner * 1.04 * (0.98 + R() * 0.06)) + T * 0.4 / Math.min(erx, ery)); });
     function inside(px, py) { var n = poly.length, j, c = false, i; for (i = 0, j = n - 1; i < n; j = i++) { var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) c = !c; } return c; }
-    function lay() { poly = ang.map(function (a, i3) { return [Math.max((tx + 0.5) * T, Math.min((tx + w - 0.5) * T, ecx + Math.cos(a) * erx * rad[i3])), Math.max((ty + 0.5) * T, Math.min((ty + h - 0.5) * T, ecy + Math.sin(a) * ery * rad[i3]))]; }); }
-    for (tries = 0; tries < 14; tries++) {
+    var bx0 = (tx - (shore === 'w' ? 0 : 2)) * T, bx1 = (tx + w + (shore === 'e' ? 0 : 2)) * T, by0 = (ty - (shore === 'n' ? 0 : 2)) * T, by1 = (ty + h + (shore === 's' ? 0 : 2)) * T;   // the ring may go two tiles beyond the site (the ellipse did), not toward the water
+    function lay() { poly = ang.map(function (a, i3) { return [Math.max(bx0, Math.min(bx1, ecx + Math.cos(a) * erx * rad[i3])), Math.max(by0, Math.min(by1, ecy + Math.sin(a) * ery * rad[i3]))]; }); }
+    for (tries = 0; tries < 30; tries++) {
       lay(); var bad = corners.filter(function (q) { return !inside(q.x, q.y); }); if (!bad.length) break;
       bad.forEach(function (q) { var lo = -1, hi = -1; for (i2 = 0; i2 < N; i2++) { if (wrapA(q.a - ang[i2]) >= 0 && (lo < 0 || wrapA(q.a - ang[i2]) < wrapA(q.a - ang[lo]))) lo = i2; } hi = (lo + 1) % N; if (lo < 0) lo = N - 1; rad[lo] *= 1.06; rad[hi] *= 1.06; });
     }
@@ -8721,7 +8722,8 @@ function make(seed, site, opts) {
     function runOf(k) { var p0 = poly[k], p1 = poly[(k + 1) % N], dx = p1[0] - p0[0], dy = p1[1] - p0[1], len = Math.hypot(dx, dy) || 1; return { p0: p0, p1: p1, ux: dx / len, uy: dy / len, len: len }; }
     [[gIx, GAP], [bIx, GAPB]].forEach(function (g3) { if (g3[0] < 0) return; var r3 = runOf(g3[0]); poly[g3[0]] = [r3.p0[0] - r3.ux * g3[1] / 2, r3.p0[1] - r3.uy * g3[1] / 2]; });   // the gate corner slides back along its run so the gap's middle sits where the road comes
     var nat = (V.nature || []).filter(function (q) { return q.r >= 6; }), gateAt = null, backAt = null;   /* (nature is kept after the fence: the stakes near a kept tree go where V.nature is settled) */
-    function stakeAt(px, py, mended) { for (var ni = 0; ni < nat.length; ni++) if (Math.hypot(nat[ni].x - px, nat[ni].y - py) < nat[ni].r + 9) return; if (shore === 's' && py > ecy + ery * 0.75) return; if (V.ruin && R() < 0.35) return; var st = { name: 'stake', x: px, y: py, solid: 5 }; if (mended) st.mended = true; V.props.push(st); }
+    var edgeMids = []; (function () { var k9, p9; for (k9 in V.H) { p9 = k9.split(','); edgeMids.push([(+p9[0] + 0.5) * T, +p9[1] * T]); } for (k9 in V.V) { p9 = k9.split(','); edgeMids.push([+p9[0] * T, (+p9[1] + 0.5) * T]); } })();
+    function stakeAt(px, py, mended) { for (var ni = 0; ni < nat.length; ni++) if (Math.hypot(nat[ni].x - px, nat[ni].y - py) < nat[ni].r + 9) return; for (ni = 0; ni < edgeMids.length; ni++) if (Math.abs(edgeMids[ni][0] - px) < 18 && Math.abs(edgeMids[ni][1] - py) < 18) return; if (shore === 's' && py > ecy + ery * 0.75) return; if (V.ruin && R() < 0.35) return; var st = { name: 'stake', x: px, y: py, solid: 5 }; if (mended) st.mended = true; V.props.push(st); }
     for (i2 = 0; i2 < N; i2++) {
       var r2 = runOf(i2), skip0 = i2 === gIx ? GAP : i2 === bIx ? GAPB : 0, s2;
       if (i2 === gIx) gateAt = [r2.p0[0] + r2.ux * GAP / 2, r2.p0[1] + r2.uy * GAP / 2]; if (i2 === bIx) backAt = [r2.p0[0] + r2.ux * GAPB / 2, r2.p0[1] + r2.uy * GAPB / 2];
@@ -8788,14 +8790,14 @@ function make(seed, site, opts) {
       var inside = x >= ex0 && x < ex1 && y >= ey0 && y < ey1, px3 = (x + 0.2 + R() * 0.6) * T, py3 = (y + 0.3 + R() * 0.5) * T, roll = R(), nm = null, ns3 = 1, nr = 0;
       if (x < tx || y < ty || x >= tx + w || y >= ty + h) continue;
       if (!inside && (x === ex0 - 1 || x === ex1 || y === ey0 - 1 || y === ey1)) continue;   // nothing on the fence line itself
-      if (inside) { if (roll < 0.05) { nm = R() < 0.6 ? 'birch' : 'oak'; ns3 = 0.5 + R() * 0.08; nr = 11; } else if (roll < 0.11) { nm = R() < 0.6 ? 'bush' : 'flower'; ns3 = 0.6 + R() * 0.15; } }
-      else { if (roll < 0.1) { nm = R() < 0.7 ? 'rock' : 'rockFormation'; ns3 = 0.8 + R() * 0.2; nr = 10; } else if (roll < 0.17) { nm = 'bush'; ns3 = 0.65 + R() * 0.15; } else if (roll < 0.3) { nm = R() < 0.5 ? 'birch' : 'pine'; ns3 = 0.52 + R() * 0.08; nr = 11; } }
+      if (inside) { if (roll < 0.05) { nm = R() < 0.6 ? 'birch' : 'oak'; ns3 = 0.92 + R() * 0.12; nr = 11; } else if (roll < 0.11) { nm = R() < 0.6 ? 'bush' : 'flower'; ns3 = 0.8 + R() * 0.2; } }   /* (the scales were for the drawn props; the Art Director's pictures are at their true size, and a village's trees were half trees: Robin, 2026-10-21) */
+      else { if (roll < 0.1) { nm = R() < 0.7 ? 'rock' : 'rockFormation'; ns3 = 0.85 + R() * 0.15; nr = 10; } else if (roll < 0.17) { nm = 'bush'; ns3 = 0.8 + R() * 0.2; } else if (roll < 0.3) { nm = R() < 0.5 ? 'birch' : 'pine'; ns3 = 0.92 + R() * 0.12; nr = 11; } }
       if (!nm || !freeAt(px3, py3, nr + 6)) continue;
       V.nature.push({ name: nm, x: px3, y: py3, s: ns3, r: nr, v: Math.floor(R() * 3) });
     }
     V.lots.forEach(function (l) {                      // a bush against a side wall now and then
       if (R() > 0.55) return; var sideB = R() < 0.5 ? -1 : 1, bx = sideB < 0 ? l.x * T - 10 : (l.x + l.w) * T + 10, by = (l.y + 0.3 + R() * (l.h - 0.6)) * T;
-      if (!freeAt(bx, by, 4, true)) return; V.nature.push({ name: 'bush', x: bx, y: by, s: 0.6, r: 0, v: Math.floor(R() * 3) });
+      if (!freeAt(bx, by, 4, true)) return; V.nature.push({ name: 'bush', x: bx, y: by, s: 0.85, r: 0, v: Math.floor(R() * 3) });
     });
   }
   // the fields outside the fence, the sacred stone at a corner, the midden behind, a grave beyond
@@ -10292,7 +10294,7 @@ if (typeof module !== 'undefined') module.exports = Music;
     var n = M.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
     var want = (n === 8 ? DIRS8 : DIRS4)[i], k = M.dirs.indexOf(want); return k < 0 ? 0 : k;
   }
-  function play(H, name, then) { if (!H || !H.meta.anims[name]) return false; H.clip = { name: name, t0: now(), then: then || null }; return true; }
+  function play(H, name, then, dur) { if (!H || !H.meta.anims[name]) return false; H.clip = { name: name, t0: now(), then: then || null, dur: dur || 0 }; return true; }   // dur: the clip spread over this many seconds instead of its own pace (the hero's pick-up in the take's time, 2026-10-21)
   function now() { return (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000; }
   function frameAt(A, k) { return Math.max(0, Math.min(A.frames - 1, Math.floor(k * A.frames))); }
   function loopFrame(A, t) { return Math.floor(t * A.fps) % A.frames; }
@@ -10330,7 +10332,7 @@ if (typeof module !== 'undefined') module.exports = Music;
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
     if (H.clip && !A[H.clip.name]) H.clip = null;
-    if (H.clip) { var C = A[H.clip.name], cf = Math.floor((t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
+    if (H.clip) { var C = A[H.clip.name], cf = Math.floor(H.clip.dur > 0 ? (t - H.clip.t0) / H.clip.dur * C.frames : (t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if ((H.blk || 0) > 0.02 && A[bk] && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the arm brought across as he stands, held
@@ -13124,7 +13126,7 @@ function render(c) {
    from it. The Combat Arena edits it live and hands it to the game as 'game.combat'; the game lays that over its own on load.
    BEAST_GAME holds what the game's ANIMALS said a bite does and how far a beast notices you (the arena's beasts did 12 a bite
    whatever they were, until this); health, speed and windup come from the art library's specs and attacks. */
-var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 3, aggro: 25, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
+var BEAST_GAME = { boar: { dmg: 14, aggro: 75, speed: 1.1 }, boarYoung: { dmg: 7, aggro: 75, hp: 6, of: 'boar' }, deer: { dmg: 0, aggro: 230 }, snake: { dmg: 6, aggro: 40 }, wolf: { dmg: 22, aggro: 220 }, moose: { dmg: 22, aggro: 60 }, bear: { dmg: 30, aggro: 85 }, troll: { dmg: 40, aggro: 100 }, unge: { dmg: 6, aggro: 0 }, hen: { dmg: 0, aggro: 70, hp: 2, speed: 0.9 }, goat: { dmg: 0, aggro: 36, hp: 8, speed: 1.0 }, sheep: { dmg: 0, aggro: 60, hp: 8, speed: 0.75 }, cow: { dmg: 0, aggro: 45, hp: 20, speed: 0.6 } };   // (the villages' animals, 2026-10-21: a hen or a sheep or a cow never bites, a goat butts for 3)
 var HERO_KEYS = ['wu', 'ac', 'rec', 'reach', 'arc', 'dmg', 'kb', 'stag', 'lunge', 'st'], MEN_KEYS = ['hpK', 'dmg', 'wu', 'wuK', 'slots', 'gapHero', 'onHero', 'joinAfter', 'toMen'];
 var TUNE0 = null, TUNED = null;
 function tuneDefaults() {
@@ -13190,7 +13192,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     unge: { n: 0, ground: 'dark', r: 9, dmg: 6, aggro: 0, range: 60, drops: { stone: 1, copper: 0.3 } },   // the troll's young: only in his cave (ungeSpawn)
     // the villages' animals (2026-10-21; n 0: never on an island of their own, placed by stockSpawn): a hen, a sheep and a cow scatter from you (flee) and come back; a goat butts
     hen: { n: 0, ground: 'grass', r: 2, dmg: 0, aggro: 70, range: 46, flee: true, drops: { meat: 1 } },
-    goat: { n: 0, ground: 'grass', r: 5, dmg: 3, aggro: 25, range: 70, drops: { meat: 2, leather: 1 } },
+    goat: { n: 0, ground: 'grass', r: 5, dmg: 0, aggro: 36, range: 70, flee: true, drops: { meat: 2, leather: 1 } },   /* (Robin, 2026-10-21: a goat going for him at random was weird and set the place against him: it keeps off like the sheep, and butts the air now and then) */
     sheep: { n: 0, ground: 'grass', r: 5, dmg: 0, aggro: 60, range: 56, flee: true, drops: { meat: 2, leather: 1 } },
     cow: { n: 0, ground: 'grass', r: 9, dmg: 0, aggro: 45, range: 50, flee: true, drops: { meat: 4, leather: 2 } }
   };
@@ -13293,7 +13295,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
   try { SFX_PICK = JSON.parse(localStorage.getItem('game.sfxpick2') || '{}') || {}; } catch (eP) {}
-  var DEFAULT_PICK = { raise: 'h', hit: 'w', heavyhit: 'x', hit_club: 'v', heavyhit_club: 'v', block: 'a', chop: 'a', clink: 'a', treefall: 'a', logthud: 'v', boxbreak: 'v', wave: 'v', pain_boar: 'w', pain_deer: 'w', pain_snake: 'w', pain_wolf: 'w' };   /* Robin's picks, locked in (2026-10-20, pasted from the arena's The sounds panel); the sword's swing is his E, and F on a heavy blow (SWING_SETS) */
+  var DEFAULT_PICK = { raise: 'h', hit: 'w', heavyhit: 'x', hit_club: 'w', heavyhit_club: 'x', block: 'a', chop: 'a', clink: 'a', treefall: 'a', logthud: 'v', boxbreak: 'v', wave: 'v', pain_boar: 'w', pain_deer: 'w', pain_snake: 'w', pain_wolf: 'w' };   /* Robin's picks, locked in (2026-10-20, pasted from the arena's The sounds panel); the sword's swing is his E, and F on a heavy blow (SWING_SETS) */
   function pickOf(n) { var k = n in SFX_PICK ? SFX_PICK[n] : DEFAULT_PICK[n]; if (k && k !== 'orig' && Sfx.has(n + '_' + k)) return n + '_' + k; k = DEFAULT_PICK[n]; return k && Sfx.has(n + '_' + k) ? n + '_' + k : n; }   /* (a pick of a sound no longer in the bundle falls back to Robin's) */
   /* the sword's swing (also fists and the men's): a pair, one for an ordinary blow and one for a heavy blow (the chain's last, a charged or a
      finishing blow). Robin's pick (2026-10-15) is the default: the free swish E and the heavier swish F (assets/sfx/free); his own two (robin)
@@ -13382,7 +13384,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     var next = isEvening() ? (day.t > DAY_LEN - 40 ? dayTheme() : null) : (day.t > DUSK_AT - 40 ? eveTheme() : null), nf = next && fileOf(next); if (nf) Music.loadTrack(nf.url);   // the next loop decoded a little before it is wanted
     var P = hero(), awake = false;       // a beast counts as awake when it is chasing or attacking within earshot
-    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
+    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.tame && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
     var was = dangerT > 0; dangerT = awake ? 4 : Math.max(0, dangerT - dt);
     if ((dangerT > 0) !== was && !Music.trackPlaying()) { Music.setLayer('danger', dangerT > 0 ? 1 : 0, dangerT > 0 ? 1.2 : 4); Music.setLayer('calm', dangerT > 0 ? 0.15 : 1, dangerT > 0 ? 1.2 : 4); }
   }
@@ -13544,7 +13546,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.enemySprite = function (c, e) { if (e.human) return drawFighter(c, e); var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind];
     if (!Sprites.beastReady(BH)) { Sprites.warm(BH); if (e.dead) return true; c.save(); c.translate(e.x, e.y * K); c.fillStyle = 'rgba(24,18,14,0.22)'; c.beginPath(); c.ellipse(0, e.r * 0.25, e.r * 1.25, e.r * 0.5, 0, 0, 7); c.fill(); c.restore(); return true; }   /* its sheets on their way: a soft shadow where it stands */
     var o = { tame: !!e.tame, shadow: !inCave, lit: figLit(e.x, e.y, true, 34), shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: bo.deadFor };
-    if (e.tame) { o.idleClip = e.idleClip || null; if (e.lieT > 0) { o.clip = e.stock === 'hen' ? 'sit' : 'lie'; o.clipK = Math.min(0.999, (e.lieK || 0) / 1.2); } }   // a village animal: pecking or grazing, or lying down (held at the clip's end)
+    if (e.tame) { o.idleClip = e.idleClip || null; if (e.lieT > 0) { o.clip = e.stock === 'hen' ? 'sit' : 'lie'; o.clipK = Math.min(0.999, (e.lieK || 0) / 1.2); } else if (e.buttT > 0) { o.clip = 'butt'; o.clipK = Math.min(0.999, (e.lieK || 0) / 0.75); } }   // a village animal: pecking or grazing, or lying down (held at the clip's end)
     if (e.stoneT != null) { o.clip = 'shield'; o.clipK = 0.999; o.tint = { color: '#a3a29a', a: 0.86 }; }        // the troll caught by the dawn: stone in the pose he threw up against it
     else if (e.holdT > 0) { o.clip = 'shield'; o.clipK = Math.min(0.999, (4 - e.holdT) / 0.6, e.holdT / 0.4); }   // shielding his eyes from a fire
     else if (e.unge && !e.awake && e.job && e.job.at) { o.clip = 'attack'; o.clipK = Math.min(0.999, e.job.ph || 0); }   // a troll's young at the ore: bonking at it with his bone
@@ -16142,7 +16144,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return best;
   }
   function armsName(e) { var th = e.dead ? e.arms[0] : manArms(e)[0]; return th ? Items.KINDS[th.kind].name.toLowerCase() : 'weapon'; }
-  function startTake(o) { var P = hero(); if (taking || P.dead) return; taking = { man: o.man || null, drop: o.drop || null, t: 0, x: P.x, y: P.y, dur: o.man ? (o.man.dead ? TAKE_T.man : TAKE_T.yield) : TAKE_T.lie }; if (sprHero) Sprites.play(sprHero, 'pickup'); }
+  function startTake(o) { var P = hero(); if (taking || P.dead) return; taking = { man: o.man || null, drop: o.drop || null, t: 0, x: P.x, y: P.y, dur: o.man ? (o.man.dead ? TAKE_T.man : TAKE_T.yield) : TAKE_T.lie }; if (sprHero) Sprites.play(sprHero, 'pickup', null, taking.dur); }
   function takingTick(dt) {
     if (!taking) return; var P = hero(), q = taking, e = q.man, d = q.drop;
     if (P.dead || P.hurtT > 0 || Math.hypot(P.x - q.x, P.y - q.y) > 9 || (e && (e.dead ? !(e.arms && e.arms.length) || e.deadT > (e.deadFor || 90) : e.state !== 'yield')) || (d && drops.indexOf(d) < 0)) { taking = null; return; }
@@ -16499,7 +16501,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function slipsShown() { return pins.length && !menu && !invOpen && !mapOpen && !ringOpen && !pauseOpen && !naming && !inYard && !musterOpen && !bookOpen && fightT <= 0 && !hero().dead; }
   function slipTick(dt) {                   // the slips hide in a fight: a beast or a man awake and near (the music's own test, kept here so it works with the music off)
     slipT += dt; if (slipT < 0.5) { fightT = Math.max(0, fightT - dt); return; } slipT = 0; var P = hero(), awake = false;
-    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
+    Combat.dbg().W.enemies.forEach(function (e) { if (!e.dead && !e.tame && e.side !== 1 && !e.down && !e.out && !e.flee && e.state && e.state !== 'idle' && e.state !== 'wander' && (e.awake || !(e.aggro || e.strolls)) && Math.hypot(e.x - P.x, e.y - P.y) < 420) awake = true; });
     fightT = awake ? 4 : Math.max(0, fightT - dt);
   }
   function drawSlips(c) {                   // the pinned recipes as vellum slips, bottom left, read-only but for the pin that lets one go
@@ -18423,10 +18425,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function stockMind(e, dt) {               // between walks: a hen pecks and now and then sits in the dust, a grazer grazes and now and then lies down; a goat that has butted calms again
     var w = e.wander;
     if (e.lieT > 0) { e.lieT -= dt; e.lieK = (e.lieK || 0) + dt; if (w) w.wait = Math.max(w.wait || 0, 0.5); if (e.awake) e.lieT = 0; return; }
-    if (e.stock === 'goat') {                 // it goes for whoever stands within its reach, butts once, and then wants nothing of him for a while (calmT: or it would chase him about the yard for ever)
-      if (e.calmT > 0) { e.calmT -= dt; e.awake = false; e.buttT = 0; }
-      else if (e.awake) { e.buttT = (e.buttT || 0) + dt; if (e.state === 'lunge' || e.state === 'recover') e.butted = true; if ((e.butted && e.state !== 'lunge' && e.state !== 'windup') || e.buttT > 4) { e.awake = false; e.butted = false; e.buttT = 0; e.calmT = 8 + Math.random() * 6; e.state = 'idle'; if (w) { w.tx = null; w.wait = 1; } } }
-    }
+    if (e.stock === 'goat' && !e.awake && w && w.wait > 0 && !(e.lieT > 0)) { if (e.buttT > 0) { e.buttT -= dt; e.lieK = (e.lieK || 0) + dt; if (e.buttT <= 0) e.idleClip = null; return; } if (Math.random() < dt / 25) { e.buttT = 0.75; e.lieK = 0; w.wait = Math.max(w.wait, 1); return; } }   // a goat butts the air now and then (the butt clip once, 0.75 s), and goes for nobody
     if (e.awake || !w || !(w.wait > 0)) { e.idleClip = null; return; }
     e.idleT -= dt; if (e.idleT > 0) return; e.idleT = 2 + Math.random() * 4; var r = Math.random();
     if (e.stock === 'hen') { if (r < 0.08) { e.lieT = 5 + Math.random() * 4; e.lieK = 0; e.idleClip = null; } else e.idleClip = r < 0.75 ? 'peck' : null; }

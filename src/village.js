@@ -289,12 +289,13 @@ function make(seed, site, opts) {
     ang[nearestTo(gateA)] = gateA; if (gate2A != null && nearestTo(gate2A) !== ang.indexOf(gateA)) ang[nearestTo(gate2A)] = gate2A; else if (gate2A != null) { gate2A = null; backGateX = null; }
     ang.sort(function (p, q) { return p - q; });
     var poly = [], tries, kcorner = 1 / Math.cos(step / 2), corners = [], rad = [];
-    V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / erx, dy = (q[1] * T - ecy) / ery; corners.push({ x: q[0] * T, y: q[1] * T, a: Math.atan2(dy, dx), r: Math.hypot(dx, dy) }); }); });
+    V.lots.forEach(function (l) { var pts = [], sx, sy; for (sx = l.x; sx <= l.x + l.w; sx += 0.5) { pts.push([sx, l.y]); pts.push([sx, l.y + l.h]); } for (sy = l.y; sy <= l.y + l.h; sy += 0.5) { pts.push([l.x, sy]); pts.push([l.x + l.w, sy]); } pts.forEach(function (q) { var dx = (q[0] * T - ecx) / erx, dy = (q[1] * T - ecy) / ery; corners.push({ x: q[0] * T, y: q[1] * T, a: Math.atan2(dy, dx), r: Math.hypot(dx, dy) }); }); });   // every lot's whole outline (a dent between two corners cut through a house, 2026-10-21)
     // each corner's radius (in the ellipse's own measure): what the buildings in its sector need, so the ring hugs them on an empty side too, a little more, a little off; then any lot corner still outside pushes the two ring corners round it out until all are in
     ang.forEach(function (a) { var need = 0.5; corners.forEach(function (q) { var dd = Math.abs(wrapA(q.a - a)); if (dd < step * 0.95) need = Math.max(need, q.r / Math.max(0.35, Math.cos(dd))); }); rad.push(Math.min(1.12, need * kcorner * 1.04 * (0.98 + R() * 0.06)) + T * 0.4 / Math.min(erx, ery)); });
     function inside(px, py) { var n = poly.length, j, c = false, i; for (i = 0, j = n - 1; i < n; j = i++) { var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) c = !c; } return c; }
-    function lay() { poly = ang.map(function (a, i3) { return [Math.max((tx + 0.5) * T, Math.min((tx + w - 0.5) * T, ecx + Math.cos(a) * erx * rad[i3])), Math.max((ty + 0.5) * T, Math.min((ty + h - 0.5) * T, ecy + Math.sin(a) * ery * rad[i3]))]; }); }
-    for (tries = 0; tries < 14; tries++) {
+    var bx0 = (tx - (shore === 'w' ? 0 : 2)) * T, bx1 = (tx + w + (shore === 'e' ? 0 : 2)) * T, by0 = (ty - (shore === 'n' ? 0 : 2)) * T, by1 = (ty + h + (shore === 's' ? 0 : 2)) * T;   // the ring may go two tiles beyond the site (the ellipse did), not toward the water
+    function lay() { poly = ang.map(function (a, i3) { return [Math.max(bx0, Math.min(bx1, ecx + Math.cos(a) * erx * rad[i3])), Math.max(by0, Math.min(by1, ecy + Math.sin(a) * ery * rad[i3]))]; }); }
+    for (tries = 0; tries < 30; tries++) {
       lay(); var bad = corners.filter(function (q) { return !inside(q.x, q.y); }); if (!bad.length) break;
       bad.forEach(function (q) { var lo = -1, hi = -1; for (i2 = 0; i2 < N; i2++) { if (wrapA(q.a - ang[i2]) >= 0 && (lo < 0 || wrapA(q.a - ang[i2]) < wrapA(q.a - ang[lo]))) lo = i2; } hi = (lo + 1) % N; if (lo < 0) lo = N - 1; rad[lo] *= 1.06; rad[hi] *= 1.06; });
     }
@@ -302,7 +303,8 @@ function make(seed, site, opts) {
     function runOf(k) { var p0 = poly[k], p1 = poly[(k + 1) % N], dx = p1[0] - p0[0], dy = p1[1] - p0[1], len = Math.hypot(dx, dy) || 1; return { p0: p0, p1: p1, ux: dx / len, uy: dy / len, len: len }; }
     [[gIx, GAP], [bIx, GAPB]].forEach(function (g3) { if (g3[0] < 0) return; var r3 = runOf(g3[0]); poly[g3[0]] = [r3.p0[0] - r3.ux * g3[1] / 2, r3.p0[1] - r3.uy * g3[1] / 2]; });   // the gate corner slides back along its run so the gap's middle sits where the road comes
     var nat = (V.nature || []).filter(function (q) { return q.r >= 6; }), gateAt = null, backAt = null;   /* (nature is kept after the fence: the stakes near a kept tree go where V.nature is settled) */
-    function stakeAt(px, py, mended) { for (var ni = 0; ni < nat.length; ni++) if (Math.hypot(nat[ni].x - px, nat[ni].y - py) < nat[ni].r + 9) return; if (shore === 's' && py > ecy + ery * 0.75) return; if (V.ruin && R() < 0.35) return; var st = { name: 'stake', x: px, y: py, solid: 5 }; if (mended) st.mended = true; V.props.push(st); }
+    var edgeMids = []; (function () { var k9, p9; for (k9 in V.H) { p9 = k9.split(','); edgeMids.push([(+p9[0] + 0.5) * T, +p9[1] * T]); } for (k9 in V.V) { p9 = k9.split(','); edgeMids.push([+p9[0] * T, (+p9[1] + 0.5) * T]); } })();
+    function stakeAt(px, py, mended) { for (var ni = 0; ni < nat.length; ni++) if (Math.hypot(nat[ni].x - px, nat[ni].y - py) < nat[ni].r + 9) return; for (ni = 0; ni < edgeMids.length; ni++) if (Math.abs(edgeMids[ni][0] - px) < 18 && Math.abs(edgeMids[ni][1] - py) < 18) return; if (shore === 's' && py > ecy + ery * 0.75) return; if (V.ruin && R() < 0.35) return; var st = { name: 'stake', x: px, y: py, solid: 5 }; if (mended) st.mended = true; V.props.push(st); }
     for (i2 = 0; i2 < N; i2++) {
       var r2 = runOf(i2), skip0 = i2 === gIx ? GAP : i2 === bIx ? GAPB : 0, s2;
       if (i2 === gIx) gateAt = [r2.p0[0] + r2.ux * GAP / 2, r2.p0[1] + r2.uy * GAP / 2]; if (i2 === bIx) backAt = [r2.p0[0] + r2.ux * GAPB / 2, r2.p0[1] + r2.uy * GAPB / 2];
@@ -369,14 +371,14 @@ function make(seed, site, opts) {
       var inside = x >= ex0 && x < ex1 && y >= ey0 && y < ey1, px3 = (x + 0.2 + R() * 0.6) * T, py3 = (y + 0.3 + R() * 0.5) * T, roll = R(), nm = null, ns3 = 1, nr = 0;
       if (x < tx || y < ty || x >= tx + w || y >= ty + h) continue;
       if (!inside && (x === ex0 - 1 || x === ex1 || y === ey0 - 1 || y === ey1)) continue;   // nothing on the fence line itself
-      if (inside) { if (roll < 0.05) { nm = R() < 0.6 ? 'birch' : 'oak'; ns3 = 0.5 + R() * 0.08; nr = 11; } else if (roll < 0.11) { nm = R() < 0.6 ? 'bush' : 'flower'; ns3 = 0.6 + R() * 0.15; } }
-      else { if (roll < 0.1) { nm = R() < 0.7 ? 'rock' : 'rockFormation'; ns3 = 0.8 + R() * 0.2; nr = 10; } else if (roll < 0.17) { nm = 'bush'; ns3 = 0.65 + R() * 0.15; } else if (roll < 0.3) { nm = R() < 0.5 ? 'birch' : 'pine'; ns3 = 0.52 + R() * 0.08; nr = 11; } }
+      if (inside) { if (roll < 0.05) { nm = R() < 0.6 ? 'birch' : 'oak'; ns3 = 0.92 + R() * 0.12; nr = 11; } else if (roll < 0.11) { nm = R() < 0.6 ? 'bush' : 'flower'; ns3 = 0.8 + R() * 0.2; } }   /* (the scales were for the drawn props; the Art Director's pictures are at their true size, and a village's trees were half trees: Robin, 2026-10-21) */
+      else { if (roll < 0.1) { nm = R() < 0.7 ? 'rock' : 'rockFormation'; ns3 = 0.85 + R() * 0.15; nr = 10; } else if (roll < 0.17) { nm = 'bush'; ns3 = 0.8 + R() * 0.2; } else if (roll < 0.3) { nm = R() < 0.5 ? 'birch' : 'pine'; ns3 = 0.92 + R() * 0.12; nr = 11; } }
       if (!nm || !freeAt(px3, py3, nr + 6)) continue;
       V.nature.push({ name: nm, x: px3, y: py3, s: ns3, r: nr, v: Math.floor(R() * 3) });
     }
     V.lots.forEach(function (l) {                      // a bush against a side wall now and then
       if (R() > 0.55) return; var sideB = R() < 0.5 ? -1 : 1, bx = sideB < 0 ? l.x * T - 10 : (l.x + l.w) * T + 10, by = (l.y + 0.3 + R() * (l.h - 0.6)) * T;
-      if (!freeAt(bx, by, 4, true)) return; V.nature.push({ name: 'bush', x: bx, y: by, s: 0.6, r: 0, v: Math.floor(R() * 3) });
+      if (!freeAt(bx, by, 4, true)) return; V.nature.push({ name: 'bush', x: bx, y: by, s: 0.85, r: 0, v: Math.floor(R() * 3) });
     });
   }
   // the fields outside the fence, the sacred stone at a corner, the midden behind, a grave beyond

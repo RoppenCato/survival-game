@@ -31,7 +31,7 @@
     var n = M.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
     var want = (n === 8 ? DIRS8 : DIRS4)[i], k = M.dirs.indexOf(want); return k < 0 ? 0 : k;
   }
-  function play(H, name, then) { if (!H || !H.meta.anims[name]) return false; H.clip = { name: name, t0: now(), then: then || null }; return true; }
+  function play(H, name, then, dur) { if (!H || !H.meta.anims[name]) return false; H.clip = { name: name, t0: now(), then: then || null, dur: dur || 0 }; return true; }   // dur: the clip spread over this many seconds instead of its own pace (the hero's pick-up in the take's time, 2026-10-21)
   function now() { return (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000; }
   function frameAt(A, k) { return Math.max(0, Math.min(A.frames - 1, Math.floor(k * A.frames))); }
   function loopFrame(A, t) { return Math.floor(t * A.fps) % A.frames; }
@@ -69,7 +69,7 @@
       if (A[nm]) return { a: nm, f: frameAt(A[nm], k) };
     }
     if (H.clip && !A[H.clip.name]) H.clip = null;
-    if (H.clip) { var C = A[H.clip.name], cf = Math.floor((t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
+    if (H.clip) { var C = A[H.clip.name], cf = Math.floor(H.clip.dur > 0 ? (t - H.clip.t0) / H.clip.dur * C.frames : (t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
     if ((H.blk || 0) > 0.02 && A[bk] && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the arm brought across as he stands, held
