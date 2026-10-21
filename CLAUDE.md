@@ -473,16 +473,24 @@ Houses are narrow and long at real sizes (a house 4 by 6 to 9 tiles, a longhouse
 
 **Boats** (`src/yard.js`, `docs/boats.md`; **`docs/ships-plan.md`: how the ships should work, Robin's six thoughts answered,
 2026-10-21, its questions waiting for him**): E at a shipwright's bench steps into the Shipyard; a vessel is a hull design chosen
-there (raft, faering, boat, karve, longship by the bench's tier), fitted out with seats, mast, sail, steering oar, dragon stem
-and shields, and launched (the hull is paid then). Sailing is `Yard.sail`: every vessel, the raft too, goes forward on W and
+there (raft, faering, boat, karve, longship by the bench's tier), **fitted out on a board** (2026-10-21, Robin: the yard's laid
+cells for upright things looked weird; the raft keeps its laid logs: he liked that): the rowing seats as a count with − and +
+(placed along the hull by `Yard.autoThwarts`: a rigged hull fills out from the mast, aft first; a boat spreads them), the mast,
+sail and steering oar as one needed thing, the dragon stem and the shields as yes or no, the vessel drawn live on the water in
+the frame as it will look (`scene.fittings`, `fitSet`, `hudHull`; the board writes the yard's cells, so the checks, the fit, the
+save and the launch read what they always read), and launched (the hull is paid then). Sailing is `Yard.sail`: every vessel, the raft too, goes forward on W and
 steers with A and D (Robin), with the wind for rigged hulls and rowers for the crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper; **the karve is the copper age's sea-going ship** (wood 24, copper 10, fiber 12; decision 1 of the waters plan at its default, 2026-10-20: the ship that leaves home must be buildable from home's materials), the longship needs iron.
 **The hulls are at the sizes they were dug up at** (2026-10-21, `Yard.HULLS` in metres: the faering 6.5 m, the boat 9, the karve
 16 by 4.2, the longship 23; a yard cell is a thwart's pitch, `CW` 24; the sizes measured by `tests/ships.js`), **the camera pulls
-back at sea by the hull** (`H.sea`: a karve 0.55, a longship 0.45; mine). **The crew sits by `Yard.crewPlaces`:** on a rigged hull
+back at sea by the hull** (`H.sea`: a karve 0.55, a longship 0.45; Robin, 2026-10-21: "it feels more epic and big, and you feel
+small") **and a + and a − by the chart zoom in and out** (Robin; `ZOOM_STEPS` 0.6 to 1.3 on the standard, `zoomK`, kept in
+`game.zoomK`; the sea's pull-back multiplies it; `zoomTarget`). **The hull's look (Robin's question 1, settled with the Art
+Director, 2026-10-21): drawn in code, the studio's surfaces laid on it** (its palette, a plank strip and a rail strip mapped
+along the strake rows, painted shield faces; the outlines for it in `docs/baselines/hulls-2026-10-21.svg`, `tools/visual/hullpaths.js`). **The crew sits by `Yard.crewPlaces`:** on a rigged hull
 the hirdman with the most wits is the helmsman at the steering oar facing forward (he does not row: `v.helm`), the rowers fill
 the thwarts from the stern, the right-hand side first, two a thwart (one on the faering), **facing aft**, the rest on the floor;
 **the hero rows only alone** (seated on the aft thwart, his pair of oars, `P.anim.sit`; alone on a karve at the steering oar) **and
-with any man aboard stands in the bow looking ahead** (`Yard.heroSeat`; Robin), turning only to strike or shoot. **One stroke for
+with any man aboard stands in the bow looking ahead** (`Yard.heroSeat`; Robin, and the helmsman rule his yes of 2026-10-21), turning only to strike or shoot. **One stroke for
 the whole ship** (`v.stroke`, `v.rowing` in `Yard.sail`: a pull then a recovery; the oars are shipped when the sail is full and
 doing the work): `Yard.drawOars` draws every oar from the rower's hands over the rail to the blade and `Yard.strokeLean` leans
 the `sit` clip with it (**the `row` and `helm` clips are asked of the Art Director**). **The vessel is one drawing** (`drawShip`:
@@ -496,8 +504,9 @@ aboard within 28 of it; the engine's men on a raid shore the same by an errand, 
 and a helmsman) and a man says so. **Landing files them off** one every 0.35 s (`raft.landing`, `landingTick`) onto spots spread
 along the shore (`Yard.landingSpots`), each walking to his spot (`m.landTo`); on a raid's ground each becomes a man of the engine
 as he steps off; on another shore of home water they keep the boat. Admin's karve lays three thwarts aft of the mast and three
-before it. The lines are `LORE?` (asked). **Not built:** shooting from the deck, enemy ships, grappling and the fight on the
-decks (chapter 3), the fleet, the hull's look to the studio's karve (the plan's steps 5 to 8).
+before it. The lines are `LORE?` (asked). **Not built:** shooting from the deck (chapter 2), enemy ships, grappling and the fight on the
+decks (chapter 3: Robin's yes), the fleet, the studio's surfaces on the hull (the plan's steps 5 to 8); your colours on the sail
+and the shields and a ship's name come later (Robin).
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
 chart show what has been seen; saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is

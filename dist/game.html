@@ -7940,6 +7940,14 @@ var T = 32, TS = 24, K = 0.75;
       out.push(sp || { x: bx, y: by }); }
     return out;
   }
+  function addCost(a, b) { var o = {}, k; for (k in a) o[k] = (o[k] || 0) + a[k]; for (k in b) o[k] = (o[k] || 0) + b[k]; return o; }
+  function autoThwarts(H, n) {             // where n rowing seats go on a hull of a design: a rigged hull fills out from the mast, aft first; a rowing boat spreads them evenly (the cells 2 to n - 1, never the mast's)
+    var out = [], cells = [], i; if (n <= 0) return out;
+    if (H.mast) { for (i = 1; cells.length < n && (H.mast - i >= 2 || H.mast + i <= H.n - 1); i++) { if (H.mast - i >= 2) cells.push(H.mast - i); if (cells.length < n && H.mast + i <= H.n - 1) cells.push(H.mast + i); } }
+    else { var cand = []; for (i = 2; i <= H.n - 1; i++) cand.push(i); for (i = 0; i < n && cand.length; i++) cells.push(cand[Math.min(cand.length - 1, Math.floor((i + 0.5) * cand.length / n))]); }
+    cells.sort(function (a, b) { return a - b; }).forEach(function (ci) { if (!out.some(function (q) { return q.i === ci; })) out.push({ id: 'thwart', i: ci, j: KJ }); });
+    return out;
+  }
   function isShip(kind) { return !!HULLS[kind]; }                  // a hull of a design (every vessel but the raft)
   function rigged(kind) { return !!(HULLS[kind] && HULLS[kind].mast); }   // a mast, a sail, a steering oar, the wind
   function nameOf(kind) { return HULLS[kind] ? HULLS[kind].name : 'Raft'; }
@@ -8342,8 +8350,8 @@ function wood(c, x, y, w, h) {            // a wooden board: planks across with 
     c.restore();
   }
 var scene = {
-  Y: { X: 0, Y: 400, W: 9, H: 6 }, PAL: { x: 6, y: 34, cell: 30 }, ZOOM: 1.1, SHIFT: 18,
-  yard: null, pick: 0, active: false, host: null, label: null, fade: 0,
+  Y: { X: 0, Y: 400, W: 9, H: 6 }, PAL: { x: 6, y: 34, cell: 30 }, FIT: { x: 6, y: 34, w: 120, h: 25 }, ZOOM: 1.1, SHIFT: 18,
+  yard: null, pick: 0, active: false, host: null, label: null, fade: 0, clock: 0,
   enter: function (host, yardState) {
     this.host = host; this.yard = yardState && yardState.cells ? yardState : { plan: 'raft', cells: [] }; if (!this.yard.plan || !PLANS[this.yard.plan]) this.yard.plan = 'raft';
     this.yard.cells = this.yard.cells.filter(function (p) { var pt = partOf(p.id); return pt && (this.yard.plan === 'raft' || pt.layer !== 'hull'); }, this);   // a hull laid strake by strake (before 2026-10-13) is the design's now
@@ -8352,7 +8360,7 @@ var scene = {
     this.setPlan(this.yard.plan);
     return this.yard;
   },
-  setPlan: function (plan) { var H = HULLS[plan]; this.yard.plan = plan; this.Y.W = H ? H.n + 2 : 9; this.ZOOM = H ? H.zoom : 1.1; this.pick = 0; },   // the yard is as long as the hull; the camera pulls back for a long one
+  setPlan: function (plan) { var H = HULLS[plan]; this.yard.plan = plan; this.Y.W = H ? H.n + 2 : 9; this.ZOOM = H ? H.zoom : 1.1; this.SHIFT = H ? 66 : 18; this.pick = 0; },   // the yard is as long as the hull; the camera pulls back for a long one (and sits right of the fittings board)
   hull: function () { return HULLS[this.yard ? this.yard.plan : 'raft'] || null; },
   planList: function () { var t = this.host && this.host.tier ? this.host.tier() : 3; return YARD_PLANS.filter(function (pl) { return (PLAN_TIER[pl[0]] || 1) <= t; }); },
   leave: function () { this.active = false; this.fade = 0.5; },
@@ -8360,13 +8368,13 @@ var scene = {
   cam: function () { var Y = this.Y; return { x: Y.X + Y.W * T / 2 - 4 - this.SHIFT / this.ZOOM, y: (Y.Y + Y.H * T / 2) * K, z: this.ZOOM }; },   // shifted right of the parts strip
   heroSpot: function () { var Y = this.Y; return { x: Y.X + Y.W * T + 8, y: Y.Y + Y.H * T + 14 }; },
   walk: function (x, y) { var Y = this.Y; return x >= Y.X - 18 && x <= Y.X + Y.W * T + 18 && y >= Y.Y - 14 && y <= Y.Y + Y.H * T + 26; },
-  tick: function (dt) { if (this.fade > 0) this.fade = Math.max(0, this.fade - dt); },
+  tick: function (dt) { if (this.fade > 0) this.fade = Math.max(0, this.fade - dt); this.clock = (this.clock || 0) + dt; },
   cell: function (mw) { var Y = this.Y; if (!mw) return null; var i = Math.floor((mw.x - Y.X) / T), j = Math.floor((mw.y - Y.Y) / T); if (i < 0 || j < 0 || i >= Y.W || j >= Y.H) return null; return { i: i, j: j }; },
   top: function (i, j) {                  // what a right click takes: what lies on a log first, wherever on the log it sits; then the log
     var y = this.yard; for (var L = LAYERS.length - 1; L >= 0; L--) { var k = yardAt(y, i, j, LAYERS[L]); if (k === -2) return -1; if (k >= 0) { if (LAYERS[L] === 'hull') { var p = y.cells[k], pt = partOf(p.id); for (var L2 = LAYERS.length - 1; L2 >= 1; L2--) for (var q = 0; q < pt.w; q++) { var k2 = yardAt(y, p.i + q, p.j, LAYERS[L2]); if (k2 >= 0) return k2; } } return k; } } return -1;
   },
-  target: function (mw, wreck) {          // what the cursor would lay, or take away
-    var c = this.cell(mw), h = this.host; if (!c) return null;
+  target: function (mw, wreck) {          // what the cursor would lay, or take away (the raft only: a hull of a design is fitted out on the board, 2026-10-21)
+    var c = this.cell(mw), h = this.host; if (!c || this.hull()) return null;
     if (wreck) { var top = this.top(c.i, c.j); return { kind: 'yard', wreck: true, i: c.i, j: c.j, idx: top, ok: top >= 0, why: '' }; }
     var PL = this.parts(), pt = PL[this.pick] || PL[0], i = c.i, j = c.j, why = '', H = this.hull();
     if (i + pt.w > this.Y.W) i = this.Y.W - pt.w;
@@ -8402,7 +8410,14 @@ var scene = {
     for (j = 0; j <= Y.H; j++) { c.moveTo(Y.X, (Y.Y + j * T) * K); c.lineTo(Y.X + Y.W * T, (Y.Y + j * T) * K); }
     c.stroke(); c.setLineDash([]);
     var y = this.yard, H = this.hull();
-    if (H) {                               // the hull as the design lays it: the keel and its strakes, and the cells the rig goes on marked
+    if (H) {                               // a hull of a design (2026-10-21, Robin: the laid cells for upright things looked weird): the frame holds water and the vessel floats in it as it will look, its fittings from the board
+      c.save(); c.beginPath(); c.rect(Y.X, Y.Y * K, Y.W * T, Y.H * TS); c.clip(); c.fillStyle = '#3a6f8e'; c.fillRect(Y.X, Y.Y * K, Y.W * T, Y.H * TS); c.globalAlpha = 0.16; c.fillStyle = grainPat(c); c.fillRect(Y.X, Y.Y * K, Y.W * T, Y.H * TS); c.globalAlpha = 1;
+      c.strokeStyle = 'rgba(235,250,255,0.3)'; c.lineWidth = 0.8; for (i = 0; i < 9; i++) { var qx = Y.X + 20 + ((i * 97) % (Y.W * T - 40)), qy = Y.Y * K + 10 + ((i * 53) % (Y.H * TS - 20)); c.beginPath(); c.moveTo(qx, qy); c.quadraticCurveTo(qx + 4, qy - 2.5, qx + 8, qy); c.quadraticCurveTo(qx + 12, qy + 2.5, qx + 16, qy); c.stroke(); }
+      c.restore();
+      var pv = { kind: y.plan, parts: y.cells, x: Y.X + Y.W * T / 2, y: Y.Y + Y.H * T / 2 + 8, h: -0.35, vx: 0, vy: 0, aboard: false, sailFill: 0.55, crew: 0 }; fitVessel(pv); drawVessel(c, pv, this.clock || 0);
+      return;
+    }
+    if (false) {
       hullCellsOf(y.plan).forEach(function (p) { drawYardPart(c, { id: p.id, w: 1 }, Y.X + p.i * T, (Y.Y + p.j * T) * K, 1); });   /* (the keel and the strakes are no parts of the strip any more: drawn by name) */
       [[H.mast, 'mast'], [H.rudder, 'steering oar'], [H.n, 'stem']].forEach(function (q) { if (!q[0]) return; var mx = Y.X + (q[0] + 0.5) * T, my = (Y.Y + (KJ + 0.5) * T) * K; c.save(); c.setLineDash([2, 2]); c.strokeStyle = 'rgba(255,230,160,0.85)'; c.lineWidth = 1; c.beginPath(); c.ellipse(mx, my, 10, 7, 0, 0, 7); c.stroke(); c.setLineDash([]); c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(255,230,160,0.9)'; c.fillText(q[1], mx, my + 13); c.restore(); });
     }
@@ -8418,12 +8433,65 @@ var scene = {
     c.restore();
     this.label = t.wreck ? (t.ok ? { text: 'Take back: +' + h.costText(partOf(this.yard.cells[t.idx].id).cost), bad: false } : null) : (t.ok ? { text: t.part.name + '  ' + h.costText(t.part.cost), bad: false } : { text: t.why, bad: true });
   },
+  /* The fittings of a hull of a design (2026-10-21; Robin liked laying the raft's logs, but the cells for the mast and the other
+     upright things looked weird): the rowing seats as a count, the rig (mast, sail and steering oar) as one thing a rigged hull
+     needs, the dragon stem and the shields as yes or no. The board writes the yard's cells (the seats placed by autoThwarts),
+     so the checks, the fit, the save and the launch read what they always read. */
+  fittings: function () {
+    var H = this.hull(); if (!H) return []; var y = this.yard, pl = y.plan, rows = [], th = partOf('thwart');
+    rows.push({ id: 'thwart', name: 'Rowing seats', count: yardParts(y, 'thwart').length, min: H.thwarts[0], max: H.thwarts[1], cost: costFor(th, pl), text: 'An oar each side of every seat; two men to a seat' + (H.per === 1 ? ' (one on a faering)' : '') + '. The first is yours; more need hirdmen to row.' });
+    if (H.mast) rows.push({ id: 'rig', name: 'Mast, sail, steering oar', on: !!(yardParts(y, 'mast').length && yardParts(y, 'sail').length && yardParts(y, 'rudder').length), cost: addCost(addCost(costFor(partOf('mast'), pl), costFor(partOf('sail'), pl)), costFor(partOf('rudder'), pl)), need: true, text: 'A tall pine stepped amidships, the square sail on its yard, and the side rudder bound at the stern. A wind from behind is speed for nothing.' });
+    rows.push({ id: 'dragon', name: 'Dragon stem', on: !!yardParts(y, 'dragon').length, cost: costFor(partOf('dragon'), pl), text: partOf('dragon').text });
+    if (H.mast) rows.push({ id: 'shields', name: 'Shields on the rail', on: !!yardParts(y, 'shields').length, cost: costFor(partOf('shields'), pl), text: partOf('shields').text });
+    return rows;
+  },
+  fitSet: function (id, d) {               // + or - on the seats, yes or no on the rest; pays or gives back as laying did
+    var H = this.hull(), y = this.yard, h = this.host, pl = y.plan, rows = this.fittings(), r = rows.filter(function (q) { return q.id === id; })[0]; if (!H || !r) return false;
+    function drop(ids) { y.cells = y.cells.filter(function (p) { return ids.indexOf(p.id) < 0; }); }
+    if (id === 'thwart') { var n = r.count + d; if (n < 0 || n > r.max) return false; if (d > 0) { if (!h.canAfford(r.cost)) { h.toast('Need ' + h.costText(r.cost)); return false; } h.pay(r.cost); } else h.pay(r.cost, 1); drop(['thwart']); y.cells = y.cells.concat(autoThwarts(H, n)); }
+    else { var ids = id === 'rig' ? ['mast', 'sail', 'rudder'] : [id]; if (r.on) { h.pay(r.cost, 1); drop(ids); } else { if (!h.canAfford(r.cost)) { h.toast('Need ' + h.costText(r.cost)); return false; } h.pay(r.cost); if (id === 'rig') y.cells.push({ id: 'mast', i: H.mast, j: KJ }, { id: 'sail', i: H.mast, j: KJ }, { id: 'rudder', i: H.rudder, j: KJ }); else y.cells.push({ id: id, i: id === 'dragon' ? H.n : Math.min(4, H.n), j: KJ }); } }
+    h.sfx('build'); h.save(); return true;
+  },
+  fitRect: function (k) { var F = this.FIT; return { x: F.x + 3, y: F.y + 10 + k * F.h, w: F.w, h: F.h - 3 }; },
+  fitBtn: function (k, what) { var r = this.fitRect(k); if (what === 'minus') return { x: r.x + r.w - 42, y: r.y + 6, w: 11, h: 11 }; if (what === 'plus') return { x: r.x + r.w - 14, y: r.y + 6, w: 11, h: 11 }; return { x: r.x + r.w - 26, y: r.y + 6, w: 23, h: 11 }; },
+  fitAt: function (ms) { if (!ms || !this.hull()) return null; var rows = this.fittings(), k, self = this; function inR(r) { return ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h; }
+    for (k = 0; k < rows.length; k++) { var r = rows[k]; if (r.count != null) { if (inR(self.fitBtn(k, 'minus'))) return { k: k, what: 'minus', row: r }; if (inR(self.fitBtn(k, 'plus'))) return { k: k, what: 'plus', row: r }; } else if (inR(self.fitBtn(k, 'toggle'))) return { k: k, what: 'toggle', row: r }; if (inR(self.fitRect(k))) return { k: k, what: 'row', row: r }; }
+    return null; },
+  hudHull: function (c, ms, wreck) {       // a hull of a design: the frame, the plan tabs, the fittings board, the guidance, Finish
+    var why = this.check(), h = this.host, HH = this.hull(), rows = this.fittings(), hit = this.fitAt(ms), self = this, F = this.FIT;
+    wood(c, -6, -6, 412, 28); wood(c, -6, 228, 412, 28); wood(c, 388, 0, 18, 250);
+    wood(c, F.x - 4, F.y - 4, F.w + 14, rows.length * F.h + 20);
+    c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Fitting out the ' + HH.name.toLowerCase(), F.x + 3, F.y + 5);
+    rows.forEach(function (r, k) {
+      var rr = self.fitRect(k), hv = hit && hit.k === k;
+      c.fillStyle = hv ? '#4a3626' : '#33241a'; c.fillRect(rr.x, rr.y, rr.w, rr.h); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(rr.x, rr.y, rr.w, rr.h); c.restore();
+      c.strokeStyle = INK.line; c.lineWidth = 0.9; c.strokeRect(rr.x + 0.5, rr.y + 0.5, rr.w - 1, rr.h - 1);
+      c.font = '600 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(r.name, rr.x + 4, rr.y + 8.5);
+      c.font = '600 4.6px system-ui, sans-serif'; c.fillStyle = r.count != null || r.on || h.canAfford(r.cost) ? 'rgba(246,226,184,0.7)' : 'rgba(255,170,120,0.85)'; c.fillText((r.count != null ? 'each ' : '') + h.costText(r.cost) + (r.need ? '  (needed)' : ''), rr.x + 4, rr.y + 16.5);
+      if (r.count != null) {
+        var bm = self.fitBtn(k, 'minus'), bp = self.fitBtn(k, 'plus');
+        [[bm, '−', r.count > 0, 'minus'], [bp, '+', r.count < r.max, 'plus']].forEach(function (b) { var on = b[2], hov = hv && hit.what === b[3]; c.fillStyle = on ? (hov ? '#8a5a2c' : '#5a4232') : '#3a2a20'; c.fillRect(b[0].x, b[0].y, b[0].w, b[0].h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(b[0].x + 0.5, b[0].y + 0.5, b[0].w - 1, b[0].h - 1); c.font = 'bold 7.5px system-ui, sans-serif'; c.fillStyle = on ? '#fff' : 'rgba(255,255,255,0.3)'; c.textAlign = 'center'; c.fillText(b[1], b[0].x + b[0].w / 2, b[0].y + 8.4); });
+        c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = r.count < r.min ? '#ffb070' : '#fff'; c.textAlign = 'center'; c.fillText(String(r.count), (bm.x + bm.w + bp.x) / 2, bm.y + 8.4);
+      } else {
+        var bt = self.fitBtn(k, 'toggle'), hov2 = hv && hit.what === 'toggle'; c.fillStyle = r.on ? (hov2 ? '#c08a3a' : '#a8702c') : (hov2 ? '#4a3626' : '#3a2a20'); c.fillRect(bt.x, bt.y, bt.w, bt.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(bt.x + 0.5, bt.y + 0.5, bt.w - 1, bt.h - 1); c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = r.on ? '#fff' : 'rgba(255,255,255,0.55)'; c.textAlign = 'center'; c.fillText(r.on ? 'yes' : 'no', bt.x + bt.w / 2, bt.y + 7.6);
+      }
+    });
+    self.planList().forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? '#a8702c' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.font = (on ? 'bold ' : '600 ') + '5px system-ui, sans-serif'; c.fillStyle = on ? '#fff' : 'rgba(246,226,184,0.8)'; c.textAlign = 'center'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.2); });
+    var line = why || ('The ' + HH.name.toLowerCase() + ' is sound. Finish to launch it (the hull: ' + h.costText(HH.cost) + ').');
+    c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 300, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 300, 14);
+    if (!why) { var fr = this.finishRect(), fhv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = fhv ? '#6a4e38' : '#5a4232'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 3); c.fill(); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fill(); c.restore(); c.strokeStyle = INK.line; c.lineWidth = 0.9; c.stroke(); c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.4); }
+    if (hit) { var tt = hit.row.text, tw; c.font = '600 5.5px system-ui, sans-serif'; while (tt.length > 4 && c.measureText(tt).width > 240) tt = tt.slice(0, -1); if (tt !== hit.row.text) tt += '…'; tw = c.measureText(tt).width + 10; c.fillStyle = 'rgba(35,26,22,0.88)'; c.beginPath(); c.roundRect(F.x + F.w + 14, this.fitRect(hit.k).y + 2, tw, 12, 3); c.fill(); c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(tt, F.x + F.w + 19, this.fitRect(hit.k).y + 10.5); }
+    c.font = '600 5px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText('Click a fitting to change it.  E leaves the yard.', 52, 242); c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText('Click a fitting to change it.  E leaves the yard.', 52, 242);
+    if (ms && !hit && this.planAt(ms) < 0) { c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.75)'; var ht = HH.text; while (ht.length > 4 && c.measureText(ht).width > 300) ht = ht.slice(0, -1); c.fillText(ht === HH.text ? ht : ht + '…', 52, 234); }
+    if (this.fade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, this.fade / 0.5) + ')'; c.fillRect(0, 0, 400, 250); }
+  },
   palRect: function (k) { var P = this.PAL; return { x: P.x + 3, y: P.y + 10 + k * (P.cell + 4), w: P.cell, h: P.cell }; },
   palAt: function (ms) { if (!ms) return -1; for (var k = 0; k < this.parts().length; k++) { var r = this.palRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
   planRect: function (k) { return { x: 50 + k * 32, y: 6, w: 29, h: 10 }; },
   planAt: function (ms) { if (!ms) return -1; var PLs = this.planList(); for (var k = 0; k < PLs.length; k++) { var r = this.planRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
   finishRect: function () { return { x: 320, y: 234, w: 62, h: 12 }; },
-  hud: function (c, ms, wreck) {          // the frame, the parts, the plan tabs, the guidance, Finish, the cursor's label
+  hud: function (c, ms, wreck) {          // the frame, the parts, the plan tabs, the guidance, Finish, the cursor's label (the raft; a hull of a design: hudHull)
+    if (this.hull()) return this.hudHull(c, ms, wreck);
     var why = this.check(), hp = this.palAt(ms), PL = this.parts(), P = this.PAL, h = this.host, k, self = this;
     wood(c, -6, -6, 412, 28); wood(c, -6, 228, 412, 28); wood(c, 388, 0, 18, 250);
     wood(c, P.x - 4, P.y - 4, P.cell + 14, PL.length * (P.cell + 4) + 20);
@@ -8457,19 +8525,21 @@ var scene = {
   },
   mousedown: function (button, mw, ms) {  // the tabs, the parts, Finish, taking back, laying
     var h = this.host, ypl = this.planAt(ms);
-    if (ypl >= 0) { var PLs2 = this.planList(); if (button === 0 && this.yard.plan !== PLs2[ypl][0]) { if (this.yard.cells.length) h.toast('Take the parts back first'); else { this.setPlan(PLs2[ypl][0]); h.save(); } } return true; }
+    if (ypl >= 0) { var PLs2 = this.planList(); if (button === 0 && this.yard.plan !== PLs2[ypl][0]) { if (this.yard.cells.length && !this.hull()) h.toast('Take the parts back first'); else { this.refundAll(); this.setPlan(PLs2[ypl][0]); h.save(); } } return true; }
+    if (this.hull()) { var fh = this.fitAt(ms); if (fh && button === 0) { if (fh.what === 'minus') this.fitSet(fh.row.id, -1); else if (fh.what === 'plus') this.fitSet(fh.row.id, 1); else if (fh.what === 'toggle') this.fitSet(fh.row.id, 0); } else if (fh && button === 2 && fh.row.count != null) this.fitSet(fh.row.id, -1); var fr0 = this.finishRect(); if (button === 0 && !this.check() && ms && ms.x >= fr0.x && ms.x <= fr0.x + fr0.w && ms.y >= fr0.y && ms.y <= fr0.y + fr0.h) h.finish(); return true; }
     var ypk = this.palAt(ms); if (ypk >= 0) { if (button === 0) this.pick = ypk; return true; }
     var fr = this.finishRect(); if (button === 0 && !this.check() && ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h) { h.finish(); return true; }
     if (button === 2) { this.act(mw, true, true); return true; }
     if (button === 0) { this.act(mw, true, false); return true; }
     return false;
   },
-  wheel: function (d) { var n = this.parts().length; this.pick = (this.pick + d + n) % n; },
+  wheel: function (d) { if (this.hull()) return; var n = this.parts().length; this.pick = (this.pick + d + n) % n; },
+  refundAll: function () { var h = this.host, y = this.yard, pl = y.plan; y.cells.forEach(function (p) { var pt = partOf(p.id); if (pt && (pl === 'raft' || pt.layer !== 'hull')) h.pay(costFor(pt, pl), 1); }); y.cells = []; },   // the fittings given back (a hull plan switched)
   key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
 };
 
 return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
-  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, drawOars: drawOars, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
+  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, drawOars: drawOars, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullParts: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();
@@ -14909,11 +14979,25 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (!seen.left && onOtherIsland(best.x, best.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ormr sailed east.'); earnRune('sealegs', 'the second island reached'); }
     save();
   }
+  /* The zoom (Robin, 2026-10-21): the sea pulls the camera back by the hull (Yard.HULLS[kind].sea, "it feels more epic and big,
+     and you feel small"), and a + and a - by the chart zoom in and out on top of that, ashore too (ZOOM_STEPS, zoomK, kept in
+     game.zoomK). The lookout and a big fight pull back further still, as before. */
+  var ZOOM_STEPS = [0.6, 0.72, 0.85, 1, 1.15, 1.3], zoomK = 1;
+  try { var zk0 = parseFloat(localStorage.getItem('game.zoomK')); if (zk0 > 0 && ZOOM_STEPS.indexOf(zk0) >= 0) zoomK = zk0; } catch (eZ) {}
+  function zoomTarget() { return (raft && raft.aboard && Yard.HULLS[raft.kind] ? Yard.HULLS[raft.kind].sea : ZOOM0) * zoomK; }
+  function zoomStep(d) { var i = ZOOM_STEPS.indexOf(zoomK); if (i < 0) i = 3; i = Math.max(0, Math.min(ZOOM_STEPS.length - 1, i + d)); zoomK = ZOOM_STEPS[i]; try { localStorage.setItem('game.zoomK', String(zoomK)); } catch (eZ2) {} sfx('pick'); }
+  function zoomBtns() { var mw = 48, mx = 400 - mw - 8, my = 6, mh = 32; return [{ d: -1, x: mx + 7, y: my + mh + 8, r: 5 }, { d: 1, x: mx + 20, y: my + mh + 8, r: 5 }]; }
+  function zoomBtnAt() { var bs = zoomBtns(); for (var i = 0; i < bs.length; i++) if (mouseS && Math.hypot(mouseS.x - bs[i].x, mouseS.y - bs[i].y) <= bs[i].r + 1.5) return bs[i]; return null; }
+  function drawZoomBtns(c) {
+    var hv = zoomBtnAt(); zoomBtns().forEach(function (b) { var on = hv === b, can = b.d < 0 ? zoomK > ZOOM_STEPS[0] : zoomK < ZOOM_STEPS[ZOOM_STEPS.length - 1];
+      c.fillStyle = on ? '#6a4e38' : '#4a3626'; c.beginPath(); c.arc(b.x, b.y, b.r, 0, 7); c.fill(); c.strokeStyle = UI_INK; c.lineWidth = 1; c.stroke();
+      c.strokeStyle = can ? '#f6e2b8' : 'rgba(246,226,184,0.35)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(b.x - 2.6, b.y); c.lineTo(b.x + 2.6, b.y); if (b.d > 0) { c.moveTo(b.x, b.y - 2.6); c.lineTo(b.x, b.y + 2.6); } c.stroke(); });
+  }
   function raftTick(dt) {
     if (leftBanner > 0) leftBanner -= dt; if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
     if (!seen.left && !SCENE && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ormr sailed east.'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
     windTick(dt); landingTick(dt);
-    var zt = raft && raft.aboard && Yard.HULLS[raft.kind] ? Yard.HULLS[raft.kind].sea : ZOOM0; if (!inYard && !inCave && Math.abs(zoom - zt) > 0.0005) zoom += (zt - zoom) * Math.min(1, dt * 1.6);   /* the camera pulls back at sea by the hull (a karve 0.55, a longship 0.45; mine, 2026-10-21) and comes in again ashore */
+    var zt = zoomTarget(); if (!inYard && !inCave && Math.abs(zoom - zt) > 0.0005) zoom += (zt - zoom) * Math.min(1, dt * 1.6);   /* the camera pulls back at sea by the hull (a karve 0.55, a longship 0.45; mine, 2026-10-21) and comes in again ashore */
     if (!raft || !raft.aboard) return;
     raft.crew = hird.filter(function (m) { return m.aboard; }).length + menAboard.length;
     var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), H = handling(raft.kind);
@@ -18816,6 +18900,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (inCave) drawCaveDark(c, P); else if (!PERF.skip.night) drawNight(c);
       if (!inCave && !inYard && LAB.light.moon) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); drawMoonSea(c, 200 / cam.z, 125 / cam.z); c.restore(); }
       if (caveFade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, caveFade / 0.7) + ')'; c.fillRect(0, 0, 400, 250); }
+      drawZoomBtns(c);   /* the + and - by the chart (Robin, 2026-10-21) */
       // the chart: a window of the sea round you (about 110 tiles wide), sharp, with markers you can tell apart
       var mw = 48, mh = 32, mx = 400 - mw - 8, my = 6, VIEW = 110;
       var hpx = inCave && cur ? cur.mouth.x : P.x, hpy = inCave && cur ? cur.mouth.y : P.y;
@@ -19050,6 +19135,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (sl >= 0) { if (e.button === 0 && slots[sl]) pick = { i: sl, x: mouseS.x, y: mouseS.y, drag: false, shift: e.shiftKey, half: e.shiftKey && slots[sl].kind !== 'item' && slots[sl].n > 1 }; else if (e.button === 2 && slots[sl]) useSlot(sl); return; }
       if (mouseS.x > invLeft() - 4 && mouseS.y > CHAR.y - 4 && mouseS.y < INV.y + INV.h + 4) return;   // on the boards, nothing behind them
     }
+    if (!inYard && e.button === 0) { var zb = zoomBtnAt(); if (zb) { zoomStep(zb.d); return; } }   /* the chart's + and - */
     if (inYard) { YSCENE.mousedown(e.button, mouseW, mouseS); return; }
     if (P.mode === 'build') { if (e.button === 2) { menuFrom = 'B'; openMenu('build'); } else if (e.button === 0) { mdown = 1; lastPlaced = ''; buildAct(true); } return; }
     Combat.button(e.button, true);

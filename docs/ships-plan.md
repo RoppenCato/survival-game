@@ -4,7 +4,7 @@
 likes building or customising his own ship (or, if that is too hard, good-looking premade ships with some parts to customise);
 the rowers must face the right way; the hirdmen must sit so it looks good; they must get on and off without getting stuck;
 the hero rows only when alone, else stands at the bow looking out; and, if it can be done, some fighting from or on ships.
-This answers each, says what is built today, and lays out the build in steps with a test each. **Steps 1 to 4 are built (2026-10-21: the hulls at true size, the crew seated and rowing, the hero's place, on and off by the gangway; `tests/ships.js`); the questions below wait.** `docs/boats.md` (2026-10-13)
+This answers each, says what is built today, and lays out the build in steps with a test each. **Steps 1 to 4 are built (2026-10-21: the hulls at true size, the crew seated and rowing, the hero's place, on and off by the gangway; `tests/ships.js`); Robin answered the questions the same day (at the end), and the fittings board and the zoom buttons were built on them.** `docs/boats.md` (2026-10-13)
 is the earlier write-up of the yard; its recommendation C is what was built and is kept here.
 
 ## What is wrong today (seen 2026-10-21 in the game, a karve with ten hirdmen)
@@ -156,6 +156,20 @@ Steps 1 to 4 are the same under every answer below and are built first. The Sea 
 4. Fighting on the decks in chapter 3, after the raid on land is played; shooting from the deck now? [yes]
 5. The yard as it is (a hull chosen, the fittings laid), the raft the one laid piece by piece? [yes]
 6. Your colours on the sail and the shields chosen at the bench, the ship's name at the launch: now, or with the sagas? [later]
+
+**Robin's answers (2026-10-21):** 1 settled with the Art Director as ours: **the hull drawn in code, the studio's surfaces laid
+on it** (its reasoning: a painted plan view turned by the game would carry the light round with the hull and be the one thing
+in another projection; in code the hull turns to any heading and is shaded in world space like the kit's props; the studio
+gives the palette from its karve, a tiling plank strip and a rail strip mapped along each strake row, six to eight shield
+faces in the muted set with one or two bright, and later a painted sail; the hull outlines for it are
+`docs/baselines/hulls-2026-10-21.svg` from `tools/visual/hullpaths.js`). 2 yes: zooming out is the standard at sea ("it feels
+more epic and big, and you feel small"), **and a + and a − by the chart zoom in and out** in the game (built: `ZOOM_STEPS`,
+`zoomK`, kept in `game.zoomK`, the sea's pull-back on top of it). 3 yes. 4 yes. 5: Robin liked laying the raft's base, but the
+yard did not work that well in practice, "especially mast and things which aren't flat becomes weird": **built the same day:
+a hull of a design is fitted out on a board** (the rowing seats as a count with − and +, placed along the hull by
+`Yard.autoThwarts`; the mast, sail and steering oar as one needed thing; the dragon stem and the shields as yes or no; the
+vessel drawn live on the water in the frame as it will look; the board writes the yard's cells, so the checks, the fit, the
+save and the launch are unchanged; the raft keeps its laid logs). 6 later.
 
 **Asked of the Art Director** (2026-10-21): the `row` clip (people and the hero's kit, eight frames, no oar) and the `helm`
 pose; a palette review of the drawn hull against its karve. **Of the Lore Director:** the crew's lines ("To the oars", "Land",

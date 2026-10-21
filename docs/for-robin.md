@@ -193,3 +193,11 @@ something.", "Next time, a bigger ship. I'll be here."), the word steersman in s
 sixteen ship names (the Crane, the Bison, Iron-Beard, Ellidi, the Grey Goose, the Ash, Wave-Horse, Sea-Steed, the Raven, the
 Swan, the Gull, the Otter, the Hart, the Bear, the Seal, the Tern), with one rule: no ship is ever called the Serpent, that name
 is Ormr's. All of it waits for your yes in its lore.json.
+
+**Your answers of 2026-10-21, and what came of them:** the hull's look is settled with the Art Director as ours: drawn in code,
+with the studio's surfaces laid on it (its palette, a plank strip, a rail strip, painted shield faces; a painted plan view
+turned by the game would carry the light round with the hull). The zoom: a **+ and a − under the chart** (top right) zoom in
+and out, remembered, and the sea still pulls back on top of that. The yard: **a hull of a design is fitted out on a board**
+now (the seats with − and +, the rig as one needed thing, the stem and the shields yes or no) with the ship floating live in
+the frame as it will look; the raft is still laid log by log. Try it at the Sea Editor's "Open the Shipyard" (free) or at a
+bench of tier 3 in the game. The helmsman rule and the chapter 3 deck fighting stand as you said; colours and names later.

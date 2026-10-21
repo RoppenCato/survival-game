@@ -21,18 +21,27 @@ y.push(seat(4), seat(5), seat(10), seat(12)); check('karve: six seats are the mo
 y.push(seat(13)); check('karve: a seventh seat is refused', /No room/.test(why('karve', y)), why('karve', y)); y.pop();
 y.push({ id: 'dragon', i: KN, j: KJ }, { id: 'dragon', i: KN, j: KJ - 1 }); check('karve: two stems are refused', /One stem/.test(why('karve', y)), why('karve', y)); y.pop();
 y.push({ id: 'shields', i: 4, j: KJ }); check('karve: a stem and shields are fine', why('karve', y) === '');
-// where the yard lets a part go (the scene's target, with a free host)
-const host = { canAfford: () => true, costText: () => 'free' }, sc = Object.create(Yard.scene); sc.host = host; sc.yard = { plan: 'karve', cells: [] }; sc.setPlan('karve'); sc.pick = Yard.partsFor('karve').findIndex(p => p.id === 'mast');
+// the fittings board (2026-10-21: a hull of a design is fitted out on a board, the raft alone is laid by the cursor)
+const host = { canAfford: () => true, costText: () => 'free', pay: () => {}, sfx: () => {}, save: () => {}, toast: () => {} }, sc = Object.create(Yard.scene); sc.host = host; sc.yard = { plan: 'karve', cells: [] }; sc.setPlan('karve');
 const T = 32, mw = (i, j) => ({ x: sc.Y.X + (i + 0.5) * T, y: sc.Y.Y + (j + 0.5) * T });
 check('the yard is as long as the karve and two', sc.Y.W === KN + 2, sc.Y.W);
-check('a mast off its cell is refused', !sc.target(mw(3, KJ)).ok && /amidships/.test(sc.target(mw(3, KJ)).why), sc.target(mw(3, KJ)).why);
-check('a mast on its cell is allowed', sc.target(mw(KM, KJ)).ok);
-sc.pick = Yard.partsFor('karve').findIndex(p => p.id === 'thwart');
-check('a seat on a strake cell is allowed (the hull is the design\'s)', sc.target(mw(4, KJ - 1)).ok, sc.target(mw(4, KJ - 1)).why);
-check('a seat off the hull is refused', !sc.target(mw(4, 0)).ok, sc.target(mw(4, 0)).why);
-check('a seat on the mast\'s cell is refused', !sc.target(mw(KM, KJ)).ok, sc.target(mw(KM, KJ)).why);
-sc.pick = Yard.partsFor('karve').findIndex(p => p.id === 'rudder'); check('the steering oar at the bow is refused', /stern/.test(sc.target(mw(KN, KJ)).why), sc.target(mw(KN, KJ)).why);
-sc.pick = Yard.partsFor('karve').findIndex(p => p.id === 'dragon'); check('the stem at the stern is refused', /bow/.test(sc.target(mw(1, KJ)).why), sc.target(mw(1, KJ)).why);
+check('a hull of a design lays nothing by the cursor', sc.target(mw(KM, KJ)) === null);
+let rows = sc.fittings(); check("the karve's board: seats, the rig, the stem, the shields", rows.map(r => r.id).join(',') === 'thwart,rig,dragon,shields', rows.map(r => r.id).join(','));
+check("the rig row is needed and carries the mast's, the sail's and the steering oar's cost", rows[1].need === true && rows[1].cost.wood === 8 && rows[1].cost.fiber === 22 && rows[1].cost.copper === 1, JSON.stringify(rows[1].cost));
+for (let i = 0; i < 6; i++) sc.fitSet('thwart', 1); rows = sc.fittings();
+check('six presses on + lay six seats, three aft of the mast and three before it', rows[0].count === 6 && Yard.parts(sc.yard, 'thwart').map(p => p.i).sort((a, b) => a - b).join(',') === [KM - 3, KM - 2, KM - 1, KM + 1, KM + 2, KM + 3].join(','), Yard.parts(sc.yard, 'thwart').map(p => p.i).sort((a, b) => a - b).join(','));
+check('a seventh is refused', sc.fitSet('thwart', 1) === false && sc.fittings()[0].count === 6);
+sc.fitSet('thwart', -1); check('- takes one back', sc.fittings()[0].count === 5);
+check('the karve wants its rig', /mast/.test(sc.check()), sc.check());
+sc.fitSet('rig', 0); check('the rig: a mast, a sail and a steering oar on their cells', Yard.parts(sc.yard, 'mast')[0].i === KM && Yard.parts(sc.yard, 'sail')[0].i === KM && Yard.parts(sc.yard, 'rudder')[0].i === 1 && sc.check() === '', sc.check());
+sc.fitSet('dragon', 0); sc.fitSet('shields', 0); check('the stem and the shields, yes', sc.fittings()[2].on && sc.fittings()[3].on && sc.check() === '');
+sc.fitSet('shields', 0); check('the shields, no again', !sc.fittings()[3].on && Yard.parts(sc.yard, 'shields').length === 0);
+const at = (id, n) => Yard.autoThwarts(Yard.HULLS[id], n).map(p => p.i).join(',');
+check("a boat's seats spread evenly: one amidships, two apart, three along", at('boat', 1) === '5' && at('boat', 2) === '3,6' && at('boat', 3) === '3,5,7', at('boat', 1) + ' / ' + at('boat', 2) + ' / ' + at('boat', 3));
+check("a faering's two seats", at('faering', 2) === '2,4' && at('faering', 1) === '3', at('faering', 2));
+check("a longship's thirteen: six aft, seven before", at('longship', 13) === [4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17].join(','), at('longship', 13));
+sc.refundAll(); check('switching the plan gives the fittings back', sc.yard.cells.length === 0);
+sc.yard = { plan: 'karve', cells: y.slice() }; sc.setPlan('karve');
 const poor = Object.create(sc); poor.host = { canAfford: () => false, costText: () => '24 wood, 10 copper, 12 fibre' }; poor.yard = { plan: 'karve', cells: y.slice() };
 check('a hull you cannot pay for is not sound', /costs/.test(poor.check()), poor.check());
 // the other hulls
