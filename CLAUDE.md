@@ -350,7 +350,8 @@ out at the far end as the studio's log picture** (a drop of kind `log` that give
 log picture drops wood as before). **The workbench and the raft bench are the studio's pictures too** (2026-10-20,
 `assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12), **and the plants** (`assets/props/plants`:
 bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three variants each; a picked berry bush is a
-bush until it regrows), **and the rocks** (`assets/props/rocks`: rock, boulder and rock formation in six variants each, by
+bush until it regrows; **the tall grass redone 2026-10-21** (Robin: the first "looks like a plant"; now a loose tuft of flat blades
+leaning one way in the grass's greens, the silhouette line only; the studio's `out/plants/grass2`, its `plants_build.py` the game's copy)), **and the rocks** (`assets/props/rocks`: rock, boulder and rock formation in six variants each, by
 the prop's seed; the cracks and the sweet spot's cue are drawn over them), **and the camp things** (`assets/props/camp`:
 the drying rack, woodpile, chopping block, log seat, cart, well, trough and the two tents in undyed wool, their mouths
 south), **and the furniture** (`assets/props/furniture`: bed, chest (and `chest_open` while its board is open), chair, table,

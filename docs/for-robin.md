@@ -264,3 +264,7 @@ pictures in `docs/pictures/`. Waiting for your word, because they are big and wo
 `hero2-mixamo` hero set (50 MB, still choosable in the Art Editor), the Art-Editor-only creature sets (the forest, three-headed
 and maw trolls, Trollmor, the draugr, huldra, Näcken, bysen: about 80 MB, nothing in the game uses them), `art/render`
 (4.6 GB of raw frames on disk, not in git) and `art/backup` (the old drawn Character Editor).
+
+**The tall grass (2026-10-21, your yes through the Art Director):** the new tuft is in the game: a loose tuft of flat blades
+leaning one way as grass does in a wind, in the meadow's own greens, no body and no inner ink; three variants, in the same
+places as before. E pulls it as before.

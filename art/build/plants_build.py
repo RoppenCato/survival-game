@@ -37,7 +37,7 @@ def fresh():
 C = {}
 def mats():
     for k, v in {'leaf': '#5a8c38', 'leafl': '#7aa848', 'needle': '#3d6a38', 'needlel': '#5a8a42', 'heath': '#627c4c', 'heathl': '#7d9a5c', 'bloom': '#8f5c8c',
-                 'fern': '#4f8a3c', 'fernl': '#6aa64a', 'grassd': '#4c7a38', 'grass': '#6a9a44', 'grassl': '#8ab45a', 'straw': '#c9b870', 'reed': '#7a9a4c', 'reedl': '#9ab860',
+                 'fern': '#4f8a3c', 'fernl': '#6aa64a', 'grassd': '#4c7a38', 'grass': '#6a9a44', 'grassl': '#8ab45a', 'ggd': '#4f7f42', 'ggm': '#75a258', 'ggl': '#a3bf6e', 'straw': '#c9b870', 'reed': '#7a9a4c', 'reedl': '#9ab860',
                  'cattail': '#5a3f2e', 'stem': '#6b4a36', 'berry': '#c43a3a', 'jberry': '#6f7f9a', 'cap': '#b08a4a', 'capd': '#8a6a38', 'stalk': '#e2d6bc', 'fleck': '#ece2cc'}.items():
         C[k] = toon.material('p_' + k, v, None, 'cel')
 def obj(name, coll, bm, m, smooth=True):
@@ -124,17 +124,24 @@ def fern(coll, v):
             widths.append(w * (1.0 if i % 2 == 0 else 0.8) if 0 < i < npin * 2 else 0.012)
         strip('frond%d' % k, coll, C['fern'] if k % 2 else C['fernl'], pts, widths, thick=0.014, droop=0.12)
     return dict(h=H + 0.1, w=R * 2.4 + 0.3)
+# the grass greens ggd/ggm/ggl sit a step lighter than the game's ink-look grass (#3d6a33, #5f8a44, #8aa65a): the cel's shade brings them down to it
 def tall_grass(coll, v):
-    n = 8 + v; H = U(0.7, 0.9)
-    blob('tussock', coll, C['grass'], [((0, 0, 0.1), 0.22, (1.1, 0.9, 0.6)), ((0.08, -0.06, 0.14), 0.14, (1, 1, 0.7))], tufts=8, tuft_r=0.3)
-    blob('tussocklit', coll, C['grassl'], [((-0.08, -0.1, 0.2), 0.12, (1.1, 0.9, 0.6))], tufts=4, tuft_r=0.3)
+    """meadow grass (redone 2026-10-21; Robin: the first tuft "looks like a plant"; the second inked to a scribble at game size):
+    a loose tussock of fourteen broad flat blades in the game's own grass colours (the drawn tufts' dark, mid and light), no
+    body, no inner ink, rising from a hand's width of ground and all leaning one way as grass does in a wind; the lit tone on
+    the leaning side; two seed heads. Knee to thigh high, as wide as tall."""
+    n = 13 + v; H = U(0.6, 0.75); lean_dir = U(0.0, TAU); lean = U(0.3, 0.45)
     for k in range(n):
-        th = TAU * k / n + U(-0.25, 0.25); L = U(0.2, 0.45); rise = H * U(0.6, 1.0)
-        pts = arc_pts((math.cos(th) * 0.03, math.sin(th) * 0.03, 0), th, L, rise, peak=0.82, n=10, sway=U(-0.1, 0.1), droop_end=0.0)
-        widths = [0.07 * (1 - i / 10) ** 0.6 + 0.008 for i in range(11)]
-        strip('blade%d' % k, coll, C[('grass', 'grassl', 'grassl')[k % 3]], pts, widths, thick=0.012)
-        if k % 6 == 1: ball('seed%d' % k, coll, C['straw'], pts[-1] + Vector((0, 0, 0.03)), 0.018, 1.0, 1.0, 2.6)
-    return dict(h=H + 0.1, w=1.0)
+        th = TAU * k / n + U(-0.25, 0.25); r0 = U(0.03, 0.14); h = H * U(0.5, 1.0)
+        base = (math.cos(th) * r0, math.sin(th) * r0, 0); pts = []; m = 6
+        for i in range(m + 1):
+            t = i / m; bend = lean * h * t * t; out = r0 * 0.5 * t
+            pts.append(Vector((base[0] + math.cos(lean_dir) * bend + math.cos(th) * out, base[1] + math.sin(lean_dir) * bend + math.sin(th) * out, h * t)))
+        widths = [0.11 * (1 - t / m) ** 0.7 + 0.012 for t in range(m + 1)]
+        tone = 'ggl' if math.cos(th - lean_dir) > 0.2 else ('ggm' if k % 3 else 'ggd')
+        strip('blade%d' % k, coll, C[tone], pts, widths, thick=0.02)
+        if h > H * 0.92 and k % 6 == 1: ball('seed%d' % k, coll, C['straw'], pts[-1] + Vector((0, 0, 0.02)), 0.02, 1.0, 1.0, 3.0)
+    return dict(h=H + 0.08, w=1.1)
 def reeds(coll, v):
     n = 5 + v; H = U(1.7, 1.95); S = Stick()
     blob('tussock', coll, C['reed'], [((0, 0, 0.08), 0.16, (1.2, 0.9, 0.5))], tufts=6, tuft_r=0.3)
@@ -159,7 +166,8 @@ def mushrooms(coll, v):
     S.build('stalks', coll, C, subdiv=2)
     return dict(h=H + 0.06, w=0.9)
 
-LINE = {'tallGrass': 0.65, 'reeds': 0.75, 'fern': 0.85}
+LINE = {'tallGrass': 0.35, 'reeds': 0.75, 'fern': 0.85}
+NO_INNER = {'tallGrass'}                               # grass: the silhouette only, no inner lines (thin blades inked to a scribble at game size)
 CREASE = {'bush': 82, 'berryBush': 82, 'juniper': 82, 'heather': 82}
 KINDS = {'bush': lambda c, v: bush(c, v), 'berryBush': lambda c, v: bush(c, v, True), 'juniper': juniper, 'heather': heather, 'fern': fern, 'tallGrass': tall_grass, 'reeds': reeds, 'mushrooms': mushrooms}
 meta_p = os.path.join(OUT, 'meta.json'); meta = json.load(open(meta_p)) if os.path.exists(meta_p) else {}
@@ -173,6 +181,7 @@ for ki, (kind, fn) in enumerate(KINDS.items()):
         cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
         toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
         fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel'); fs.crease_angle = rad(CREASE.get(kind, 100)); lk = LINE.get(kind, 1.0)
+        if kind in NO_INNER: fs.linesets.remove(fs.linesets['inner'])
         for ls in fs.linesets:
             st = ls.linestyle; st.thickness *= lk
             for md in st.thickness_modifiers:
