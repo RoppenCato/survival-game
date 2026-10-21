@@ -492,8 +492,22 @@ the thwarts from the stern, the right-hand side first, two a thwart (one on the 
 **the hero rows only alone** (seated on the aft thwart, his pair of oars, `P.anim.sit`; alone on a karve at the steering oar) **and
 with any man aboard stands in the bow looking ahead** (`Yard.heroSeat`; Robin, and the helmsman rule his yes of 2026-10-21), turning only to strike or shoot. **One stroke for
 the whole ship** (`v.stroke`, `v.rowing` in `Yard.sail`: a pull then a recovery; the oars are shipped when the sail is full and
-doing the work): `Yard.drawOars` draws every oar from the rower's hands over the rail to the blade and `Yard.strokeLean` leans
-the `sit` clip with it (**the `row` and `helm` clips are asked of the Art Director**). **The vessel is one drawing** (`drawShip`:
+doing the work): `Yard.drawOars` draws every oar from the rower's hands over the rail to the blade. **The rowers row and the helmsman
+steers with the Art Director's clips** (its ships drop, wired 2026-10-21): the people's atlas carries `row` (8 frames, the pull
+frames 0 to 2, the recovery 3 to 7; `frame = floor(phase * 8)` from `Yard.strokePhase`) and `helm` (a seated idle, the hand on
+the tiller), and the oar's inboard end is the drawn frame's hand (`Sprites.hand`: the right hand on the port side's rower,
+the left on the starboard's; `rowers[i].hands`); **the hero rows alone with the kit's own `row`** (packed with its own frame
+by `kitpack.js --own`, no hand things, no blending; `P.anim.row` is the phase, picked in `Sprites.pick`); the `sit` clip and
+`Yard.strokeLean` stand in only where a sheet is missing. `art/build/rowing_build.py` (the studio's) keys both on
+`people.blend` after the folk build (in `npm run art:people`) and `row` on `hero_kit.blend` after the kit's; `peoplerender.js`
+has `row` and `helm`. **The hull wears the studio's surfaces** (`assets/ship/`, the same drop: `plank_strip.png` and the lit
+one, `rail_strip.png`, `shield_01..08.png`, the palette in `palette_review.png`): `Yard.setSurfaces` takes the loaded images
+(the pages load them from `../assets/ship/`, `tools/visual/boats.js` headless), `hullBake` bakes each hull's sides once a kind
+and lit side at 2 px a unit (the plank strip along every strake row cell by cell, u along the keel, v from the inner curve
+to the rail; the lit strip on the side facing the world's upper left, `litPort`; the rail strip along the gunwale; the ink
+outline over it) and `drawBoat` and `drawVesselFront` draw the bake; `drawShields` lays the painted faces 11 units apart
+(`shieldFace`: the muted six, the red two one in four); `COL` is the studio's palette; the shadow under the hull is the sea's
+own colour, soft at the edge. Without the images the hull draws as before. **The vessel is one drawing** (`drawShip`:
 the hull, everyone aboard by depth, the rig between those behind the mast and those before it, the near rail with its shields
 over their legs (`Yard.drawVesselFront` takes the figures), then the oars); the engine's own hero draw stands down aboard
 (`shipHero`). **On and off (`BOARD`, mine):** the gangway is the hull's point nearest the land (`Yard.gangway`); E within reach
@@ -759,7 +773,10 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   `art/build/toon.py` is the shared cel look (its sun is 3.0, so everything rendered now has a lit side; bright base colours
   want taking down about 15%); `art/build/render.py` renders every clip, direction and layer; `tools/sprites.js` and
   `tools/people.js` pack the sheets. `npm run art:mixamo`, `art:items`, `art:shield`, `art:icons`, `art:people`,
-  `art:beasts` (and `art:boar` to `art:snake`), `art:trolls`, `art:vasen`, `art:rocks`, `art:hero:death`.
+  `art:beasts` (and `art:boar` to `art:snake`), `art:trolls`, `art:vasen`, `art:rocks`, `art:hero:death`; the ships' clips
+  (`row`, `helm`) are `art/build/rowing_build.py` on `people.blend` and `hero_kit.blend` (in `art:people`; the kit's `row`
+  is packed as a clip with its own frame: `node tools/kitpack.js art/render/hero_kit assets/sprites/hero-kit hero-kit --own`
+  with the frames in `art/render/hero_kit_own`).
 - **What is in the game:** **the hero on the kit** (`hero-kit`, 2026-10-20, Robin's decisions: a base body, every garment a
   layer; drawn on the people's path by `Sprites.drawKit`, the clip and frame from `pick()` as before, an attack's frame put on
   the clip's `contact`; his look built by the game's `heroLook` from what he wears: the starter tunic and trousers, shoes or

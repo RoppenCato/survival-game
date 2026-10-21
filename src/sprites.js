@@ -72,6 +72,7 @@
     if (H.clip) { var C = A[H.clip.name], cf = Math.floor(H.clip.dur > 0 ? (t - H.clip.t0) / H.clip.dur * C.frames : (t - H.clip.t0) * C.fps); if (cf >= C.frames) { var nx = H.clip.then; H.clip = null; if (nx) play(H, nx.name, nx.then); } else return { a: H.clip.name, f: cf }; }
     if (P.hurtT > 0 && A.hit) { var hk = 1 - P.hurtT / 0.35; return { a: 'hit', f: frameAt(A.hit, Math.max(0, Math.min(0.999, hk * 0.6))) }; }
     var bkS = !opts.layers || holds(opts.layers, 'shieldRim'), bk = bkS ? 'block' : 'block_wpn', bkW = bk + '_walk';   /* with a shield on the arm the shield's block; without, the weapon raised across (the art studio's block_wpn, 2026-10-20: Robin, "you should just raise your weapon, not the other arm") */
+    if (an && an.row != null && A.row) return { a: 'row', f: frameAt(A.row, an.row) };   // at the oars alone (2026-10-21, the studio's row clip): the stroke's phase picks the frame, no blending
     if ((H.blk || 0) > 0.02 && A[bk] && !(an && an.sit)) {          // the guard is up (H.blk, eased in tick): the arm brought across as he stands, held
       if (!(an && an.amt > 0.3)) return { a: bk, f: frameAt(A[bk], Math.min(0.999, H.blk)) };
       if (H.blk > 0.5 && A[bkW]) return { a: bkW, f: loopFrame(A[bkW], t * 0.62) };   /* (he walks at about half his pace with it up) */

@@ -1,8 +1,10 @@
 // Renders boats.png: the raft and every hull design fitted out, afloat at a few headings, the karve and the longship under
 // sail with rowers, and the parts in the yard. node tools/visual/boats.js
-const { createCanvas } = require('@napi-rs/canvas'); const fs = require('fs');
+const { createCanvas, loadImage } = require('@napi-rs/canvas'); const fs = require('fs');
 global.__mk = (w, h) => createCanvas(w, h);
 const Yard = require('../../src/yard.js');
+async function surfaces() { const d = 'assets/ship/', SF = { plank: await loadImage(d + 'plank_strip.png'), plankLit: await loadImage(d + 'plank_strip_lit.png'), rail: await loadImage(d + 'rail_strip.png'), shields: [] }; for (let i = 1; i <= 8; i++) SF.shields.push(await loadImage(d + 'shield_0' + i + '.png')); Yard.setSurfaces(SF); }   // the studio's surfaces (2026-10-21)
+surfaces().then(() => {
 const Z = 2, W = 1800, H = 1240, cv = createCanvas(W * Z, H * Z), c = cv.getContext('2d');
 c.setTransform(Z, 0, 0, Z, 0, 0); c.fillStyle = '#3a6f8e'; c.fillRect(0, 0, W, H);
 const KJ = Yard.KJ, seat = i => ({ id: 'thwart', i, j: KJ }), HK = Yard.HULLS.karve, HL = Yard.HULLS.longship;
@@ -18,3 +20,4 @@ c.fillStyle = '#8a7250'; c.fillRect(1250, 1180, 520, 44);
 Yard.partsFor('longship').forEach((pt, k) => Yard.drawPart(c, pt, 1256 + k * 46, 1188, 1));
 c.font = '600 12px sans-serif'; c.fillStyle = '#f6e2b8'; ['Raft', 'Faering', 'Boat (a dragon stem)', 'Karve (stem, shields)'].forEach((t, r) => c.fillText(t, 12, 30 + r * 170)); c.fillText('Under sail, rowed', 12, 740); c.fillText('The longship: 13 seats, 26 oars', 12, 600);
 fs.writeFileSync('boats.png', cv.toBuffer('image/png')); console.log('wrote boats.png');
+});

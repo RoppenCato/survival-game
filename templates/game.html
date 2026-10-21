@@ -473,6 +473,8 @@ __COMBAT__
     else if (m.fleeing && m.moving) { st.clip = 'run'; st.t = (m.ph || 0) / 9 + ph0; }
     else if (m.moving) { if (m.carrying) { st.clip = 'carry_walk'; look = Sprites.withHand(look, { kind: 'bucket' }); } else st.clip = 'walk'; st.t = (m.ph || 0) / 7 + ph0; }
     else if (m.carrying && !m.job) { st.clip = 'carry'; look = Sprites.withHand(look, { kind: 'bucket' }); }
+    else if (m.aboard && m.place && m.place.kind === 'helm' && PEOPLE.meta.anims.helm) { st.clip = 'helm'; if (!m.warmR) { m.warmR = 1; Sprites.peopleWarm(PEOPLE, look, ['helm', 'row']); } }   /* the helmsman at the tiller (the studio's clip, 2026-10-21) */
+    else if (m.aboard && m.place && m.place.kind === 'row' && raft && raft.rowing && PEOPLE.meta.anims.row) { st.clip = 'row'; st.k = Yard.strokePhase(raft); if (!m.warmR) { m.warmR = 1; Sprites.peopleWarm(PEOPLE, look, ['helm', 'row']); } }   /* a rower pulling: the ship's one stroke picks the frame */
     else if (m.sitting) st.clip = (m.role === 'weaver' || m.role === 'fisher') && !(m.sayT > 0) ? 'sit_work' : 'sit';
     else if (m.job && (J = typeof m.job === 'string' ? (m.at && Math.hypot(m.at.x - m.x, m.at.y - m.y) < 6 ? HIRD_CLIP[m.job] : null) : JOB_CLIP[m.job.kind])) { st.clip = J[0]; st.t = (m.job.t != null ? m.job.t : clock) * J[1]; if (J[3] === 'hold') st.k = Math.min(0.999, (m.job.t != null ? m.job.t : 1) / 1.1); if (J[2]) look = Sprites.withHand(look, J[2]); }   /* (hold: the clip runs once and stays at its end: the kneel) */
     else if (!(m.sayT > 0) && m.idle && m.idle.id === 'look') { st.clip = 'idle_look'; st.t = m.idle.t; }
@@ -502,6 +504,8 @@ __COMBAT__
     else if (e.holdT > 0) { o.clip = 'shield'; o.clipK = Math.min(0.999, (4 - e.holdT) / 0.6, e.holdT / 0.4); }   // shielding his eyes from a fire
     else if (e.unge && !e.awake && e.job && e.job.at) { o.clip = 'attack'; o.clipK = Math.min(0.999, e.job.ph || 0); }   // a troll's young at the ore: bonking at it with his bone
     return Sprites.beast(c, BH, e, K, o); };
+  (function () { var SF = { plank: new Image(), plankLit: new Image(), rail: new Image(), shields: [] }, n = 0, want = 11, i; function one(im, src) { im.onload = function () { if (++n === want) Yard.setSurfaces(SF); }; im.src = src; }   /* the hull's surfaces (the Art Director, 2026-10-21, assets/ship/) */
+    one(SF.plank, '../assets/ship/plank_strip.png?v=1021'); one(SF.plankLit, '../assets/ship/plank_strip_lit.png?v=1021'); one(SF.rail, '../assets/ship/rail_strip.png?v=1021'); for (i = 1; i <= 8; i++) { var si = new Image(); SF.shields.push(si); one(si, '../assets/ship/shield_0' + i + '.png?v=1021'); } })();
   (function () { var PI = __PROPIMG__; if (!PI) return; var map = {}; for (var k in PI) { var im = new Image(); im.src = PI[k].src; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } World.setImages(map); })();   // the Blender set pieces (2026-10-12): the peaks and the cave mouth, drawn as props
   (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the rendered icons for the bag, the bars and the drops
   (function () { var WN = __WORN__; if (!WN) return; var imgs = {}; for (var k in WN) { var im = new Image(); im.src = WN[k]; imgs[k] = im; } WORN_IMG = imgs; Items.setWorn(imgs, wornPick); })();   // the worn things' rendered icons (the art studio, 2026-10-20), in the bag, on the Gear page and the crafting board
@@ -1797,7 +1801,7 @@ __COMBAT__
       if (isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) best = { x: x, y: y };
     }
     if (!best) { toast('No shore close enough'); return; }
-    raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; P.anim.sit = 0; sfx('pick'); crewAshore(best); menAshore(best);
+    raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; P.anim.sit = 0; P.anim.row = null; sfx('pick'); crewAshore(best); menAshore(best);
     if (!seen.left && onOtherIsland(best.x, best.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ormr sailed east.'); earnRune('sealegs', 'the second island reached'); }
     save();
   }
@@ -1842,6 +1846,7 @@ __COMBAT__
     if (raft.aboard) {
       var st = Yard.heroSeat(raft); P.x = raft.x + ch * st; P.y = raft.y + sh * st; P.vx = P.vy = 0; P.sprinting = false;
       P.anim.sit = order.length === 0 && !Yard.rigged(raft.kind) ? 1 : 0;
+      P.anim.row = P.anim.sit && raft.rowing && sprHero && sprHero.meta && sprHero.meta.anims.row ? Yard.strokePhase(raft) : null; if (P.anim.row != null && !heroRowWarm) { heroRowWarm = true; Sprites.peopleWarm(sprHero, heroLook(P.faceVis), ['row']); }   /* at the oars alone: the kit's row clip (2026-10-21) */
       if (P.atk.ph === 'none' && !P.guard) { if (order.length > 0) { P.face = raft.h; P.faceVis = raft.h; } else if (!Yard.rigged(raft.kind)) { P.face = raft.h + Math.PI; P.faceVis = P.face; } }   /* with a crew he stands in the bow looking ahead and turns only to strike or shoot; alone at the oars he faces aft (Robin, 2026-10-21) */
     }
   }
@@ -1990,14 +1995,14 @@ __COMBAT__
   function drawYardPart(c, pt, x, y, sc) { Yard.drawPart(c, pt, x, y, sc); }
   function raftFit() { if (raft) Yard.fit(raft); }
   function drawRaft(c) { Yard.drawVessel(c, raft, clock); }
-  var shipHero = false;                    // the hero is drawn by the ship while aboard (his place in the ship's depth order, not the world's): the engine's own draw stands down
+  var shipHero = false, heroRowWarm = false;   // the hero is drawn by the ship while aboard (his place in the ship's depth order, not the world's): the engine's own draw stands down
   function drawShip(c, v) {                /* the vessel as one drawing (docs/ships-plan.md step 2, 2026-10-21): the hull, then everyone aboard by depth, the rig between those behind the mast and those before it, the near rail with its shields over their legs, and the oars from the rowers' hands, all in one stroke */
-    var P = hero(), ch = Math.cos(v.h), sh = Math.sin(v.h), figs = [], rowers = [], lean = Yard.strokeLean(v);
+    var P = hero(), ch = Math.cos(v.h), sh = Math.sin(v.h), figs = [], rowers = [], hasRow = !!(PEOPLE && PEOPLE.meta.anims.row), lean = hasRow ? 0 : Yard.strokeLean(v), rf = Math.floor(Yard.strokePhase(v) * 8);
     Yard.drawVessel(c, v, clock, { split: true });
     if (!Yard.isShip(v.kind)) return;
-    hird.forEach(function (m) { if (!m.aboard || m.lost || m.dead) return; var row = m.place && m.place.kind === 'row'; m.leanX = row ? ch * lean : 0; m.leanY = row ? sh * lean : 0; figs.push({ x: m.x, y: m.y, draw: m === npc ? function () { drawNpc(c); } : function () { drawFolk(c, m); } }); if (row) rowers.push({ x: m.place.x, y: m.place.y, side: m.place.side }); });
+    hird.forEach(function (m) { if (!m.aboard || m.lost || m.dead) return; var row = m.place && m.place.kind === 'row'; m.leanX = row ? ch * lean : 0; m.leanY = row ? sh * lean : 0; figs.push({ x: m.x, y: m.y, draw: m === npc ? function () { drawNpc(c); } : function () { drawFolk(c, m); } }); if (row) { var rw = { x: m.place.x, y: m.place.y, side: m.place.side }; if (hasRow && v.rowing) { var hd = Sprites.hand(PEOPLE, { a: 'row', f: rf }, m.face, m.place.side < 0 ? 0 : 1); if (hd) { rw.hands = {}; rw.hands[m.place.side] = [m.x + hd[0], m.y * K + hd[1]]; } } rowers.push(rw); } });   /* (the oar's inboard end is the right hand on the port side, the left on the starboard: the rower faces aft) */
     menAboard.forEach(function (e) { figs.push({ x: e.x, y: e.y, draw: function () { drawManAboard(c, e); } }); });
-    if (v.aboard && v === raft) { var hl = !(v.crew > 0) && !Yard.rigged(v.kind) ? lean : 0; figs.push({ x: P.x, y: P.y, draw: function () { shipHero = true; try { Combat.api.heroSprite(c, P.x + ch * hl, (P.y + sh * hl) * K + 3, P.faceVis, P.anim, false); } finally { shipHero = false; } } }); if (hl || (!(v.crew > 0) && !Yard.rigged(v.kind))) rowers.push({ x: Yard.heroSeat(v), y: 0, side: 0 }); }
+    if (v.aboard && v === raft) { var hl = !(v.crew > 0) && !Yard.rigged(v.kind) && !(sprHero && sprHero.meta && sprHero.meta.anims.row) ? lean : 0; figs.push({ x: P.x, y: P.y, draw: function () { shipHero = true; try { Combat.api.heroSprite(c, P.x + ch * hl, (P.y + sh * hl) * K + 3, P.faceVis, P.anim, false); } finally { shipHero = false; } } }); if (hl || (!(v.crew > 0) && !Yard.rigged(v.kind))) { var hr = { x: Yard.heroSeat(v), y: 0, side: 0 }, KA = sprHero && sprHero.meta && sprHero.meta.anims; if (KA && KA.row && v.rowing) { var h0 = Sprites.hand(sprHero, { a: 'row', f: rf }, P.faceVis, 0), h1 = Sprites.hand(sprHero, { a: 'row', f: rf }, P.faceVis, 1); hr.hands = {}; if (h0) hr.hands[-1] = [P.x + h0[0], P.y * K + 3 + h0[1]]; if (h1) hr.hands[1] = [P.x + h1[0], P.y * K + 3 + h1[1]]; } rowers.push(hr); } }
     figs.sort(function (a, b) { return a.y - b.y; });
     var my = v.mastX != null && v.sail != null ? v.y + v.mastX * sh : null, rigDone = my == null;
     figs.forEach(function (f) { if (!rigDone && f.y >= my) { Yard.drawRigOf(c, v, clock); rigDone = true; } f.draw(); });

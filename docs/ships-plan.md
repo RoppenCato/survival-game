@@ -171,6 +171,11 @@ a hull of a design is fitted out on a board** (the rowing seats as a count with 
 vessel drawn live on the water in the frame as it will look; the board writes the yard's cells, so the checks, the fit, the
 save and the launch are unchanged; the raft keeps its laid logs). 6 later.
 
+**The Art Director's ships drop (2026-10-21, `C:\dev\SG\Art Director\out\ships`) is wired:** the people's `row` and `helm`
+clips in the atlas, the hero kit's `row` with its own frame, and the hull's surfaces (the plank and rail strips, eight shield
+faces, the palette) laid on the drawn hull. Still with the studio on word: the sail's weave as a texture, the dragon stem as a
+piece, a bailing clip.
+
 **Asked of the Art Director** (2026-10-21): the `row` clip (people and the hero's kit, eight frames, no oar) and the `helm`
 pose; a palette review of the drawn hull against its karve. **Of the Lore Director:** the crew's lines ("To the oars", "Land",
 "Astrid is left ashore") and names for ships, `LORE?` until then.

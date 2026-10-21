@@ -163,7 +163,7 @@ var T = 32, TS = 24, K = 0.75;
 
   var RAFT_DEFAULT = [{ id: 'log', i: 0, j: 0 }, { id: 'log', i: 0, j: 1 }, { id: 'log', i: 0, j: 2 }, { id: 'log', i: 0, j: 3 }, { id: 'log', i: 0, j: 4 }, { id: 'lash', i: 0, j: 0 }, { id: 'lash', i: 1, j: 0 }, { id: 'lash', i: 0, j: 4 }, { id: 'lash', i: 1, j: 4 }];
   function drawOar(c, x, y, ang) { c.save(); c.translate(x, y); c.rotate(ang); c.strokeStyle = '#2e1a10'; c.lineWidth = 3.4; c.beginPath(); c.moveTo(-9, 0); c.lineTo(9, 0); c.stroke(); c.strokeStyle = '#8a5a3a'; c.lineWidth = 1.8; c.stroke(); c.fillStyle = '#c99a66'; c.strokeStyle = '#2e1a10'; c.lineWidth = 1; c.beginPath(); c.ellipse(9, 0, 4, 2.4, 0, 0, 7); c.fill(); c.stroke(); c.restore(); }
-  var LINE = '#231a16', COL = { hull: '#5e4430', deck: '#9a7c5c', trim: '#8a3a34', rope: '#c9b48a', iron: '#4a4a50', sail: '#e9dfc4' };   // the earth palette (docs/art-direction.md, 2026-10-07)
+  var LINE = '#231a16', COL = { hull: '#4e3a2c', deck: '#b08a5a', trim: '#8a4a3a', rope: '#c9b48a', iron: '#6f777f', sail: '#e6dcc6', tar: '#2e2520', hullLit: '#6a5040', planedLit: '#c9a874', bone: '#e6dcc6' };   // the Art Director's palette for the hull (2026-10-21, assets/ship/palette_review.png: the strakes tarred dark, the planed wood of thwarts and oars, the ship's one red, iron, bone)
   /* the ink toolkit (as in build.js): a fill with grain and a cool shade toward the lower right, a lit edge, a thin hand-made line
      all round and the heavy line on the shadow side */
   var INK = { line: '#231a16', lit: 'rgba(255,238,200,0.4)', soft: 'rgba(35,26,22,0.55)', faint: 'rgba(35,26,22,0.32)', grain: 0.2 }, grainCv = null;
@@ -210,6 +210,49 @@ var T = 32, TS = 24, K = 0.75;
   }
   function shadeHex(hex, d) { var n = parseInt(hex.substr(1), 16), r = Math.max(0, Math.min(255, (n >> 16) + d)), g = Math.max(0, Math.min(255, ((n >> 8) & 255) + d)), b = Math.max(0, Math.min(255, (n & 255) + d)); return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0'); }
   function speedOf(v) { return Math.hypot(v.vx || 0, v.vy || 0); }
+  /* The hull's surfaces (the Art Director, 2026-10-21, assets/ship/: decided with it as A with C, the hull drawn in code and the
+     studio's surfaces laid on it). setSurfaces({ plank, plankLit, rail, shields: [8 faces] }) is called by the page once the
+     images are loaded (and by the render checks headless). The sides are BAKED once a hull kind and lit side (hullBake, at BK
+     px a unit, in the hull's own frame): the plank strip tiled along each strake row cell by cell (u along the keel, a cell a
+     strip; v from the inner curve at the strip's bottom to the rail at its top), the lit strip on the side that faces the
+     world's upper left (the sun), the rail strip along the gunwale, the ink outline over it; the floor, the thwarts, the stems
+     and the rig stay drawn as before. The shields are the eight painted faces (shieldFace: mostly the muted six, the red
+     two one in four at most). Without surfaces the hull draws as it did. */
+  var SURF = null, bakes = {}, BK = 2, ROWS = [[0.62, 0.81], [0.81, 1.0]], RAIL = [0.955, 1.03];
+  function setSurfaces(sf) { SURF = sf && sf.plank ? sf : null; bakes = {}; }
+  function imgOk(im) { return !!im && (im.complete === undefined ? !!(im.width || im.naturalWidth) : (im.complete && im.naturalWidth > 0)); }
+  function surfacesOn() { return !!(SURF && imgOk(SURF.plank) && imgOk(SURF.plankLit) && imgOk(SURF.rail)); }
+  function litPort(h) { return 0.8 * Math.cos(h) - 0.6 * Math.sin(h) > 0; }   // the port side's outward normal faces the sun (upper left) at this heading
+  function hullBake(kind, litSide) {
+    var key = kind + ':' + litSide; if (bakes[key]) return bakes[key];
+    var H = HULLS[kind], pr = hullProfile(H), L = pr.L, W = pr.Wmax, bw = Math.ceil((2 * L + 24) * BK), bh = Math.ceil((2 * W + 24) * BK), cv = mkCv(bw, bh), c = cv.getContext('2d'), k, sd;
+    c.setTransform(BK, 0, 0, BK, bw / 2, bh / 2); c.imageSmoothingEnabled = true;
+    c.beginPath(); shapedPath(c, pr, 1, 1); c.fillStyle = COL.hull; c.fill();
+    var cells = []; for (k = 0; k < H.n; k++) cells.push([(k + 1 - pr.cx) * CW, (k + 2 - pr.cx) * CW]); cells[0][0] = -L; cells[cells.length - 1][1] = L;   // the end cells run out to the stems
+    function band(sdn, f0, f1, x0, x1) { var m = 6, i, pts0 = [], pts1 = []; for (i = 0; i <= m; i++) { var x = x0 + (x1 - x0) * i / m, w = profW(pr, x, sdn); pts0.push([x, sdn * w * f0]); pts1.push([x, sdn * w * f1]); } c.beginPath(); c.moveTo(pts0[0][0], pts0[0][1]); for (i = 1; i <= m; i++) c.lineTo(pts0[i][0], pts0[i][1]); for (i = m; i >= 0; i--) c.lineTo(pts1[i][0], pts1[i][1]); c.closePath(); }
+    [-1, 1].forEach(function (sdn) {
+      var strip = sdn === litSide ? SURF.plankLit : SURF.plank;
+      ROWS.forEach(function (row) { cells.forEach(function (cell) {
+        var x0 = cell[0], x1 = cell[1], wm = (profW(pr, x0, sdn) + profW(pr, x1, sdn)) / 2, hgt = wm * (row[1] - row[0]); if (hgt < 0.4) return;
+        c.save(); band(sdn, row[0], row[1], x0, x1); c.clip();
+        c.translate(x0, sdn * wm * row[1]); c.scale((x1 - x0) / strip.width, sdn * hgt / strip.height); c.drawImage(strip, 0, 0); c.restore();   // the strip's top at the rail, its bottom toward the keel, on either side
+      }); });
+      cells.forEach(function (cell) {
+        var x0 = cell[0], x1 = cell[1], wm = (profW(pr, x0, sdn) + profW(pr, x1, sdn)) / 2, hgt = wm * (RAIL[1] - RAIL[0]); if (hgt < 0.3) return;
+        c.save(); band(sdn, RAIL[0], RAIL[1], x0, x1); c.clip(); c.translate(x0, sdn * wm * RAIL[1]); c.scale((x1 - x0) / SURF.rail.width, sdn * hgt / SURF.rail.height); c.drawImage(SURF.rail, 0, 0); c.restore();
+      });
+    });
+    c.beginPath(); shapedPath(c, pr, 1, 1); c.lineJoin = 'round'; c.lineWidth = 1.2; c.strokeStyle = LINE; c.stroke();
+    c.save(); c.translate(0.9, 1.1); c.beginPath(); shapedPath(c, pr, 1, 1); c.globalAlpha = 0.45; c.lineWidth = 1.9; c.stroke(); c.restore();   // the heavy side
+    bakes[key] = { cv: cv, L: L, W: W, w: bw / BK, h: bh / BK }; return bakes[key];
+  }
+  function shieldFace(i) { var r = hs(i + 1, 3); return SURF.shields[r < 0.22 ? 6 + (hs(i + 1, 5) < 0.5 ? 0 : 1) : Math.floor(hs(i + 1, 7) * 6)]; }
+  function drawShields(c, pr, L) {           // along both rails, 11 units apart, overlapping by half (in the hull's frame)
+    var SHC = ['#b08a5a', '#e6dcc6', '#8a6a44', '#8a4a3a'], sn = 0, faces = SURF && SURF.shields && SURF.shields.length >= 8 && SURF.shields.every(imgOk);
+    for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98, f;
+      if (faces) { f = shieldFace(sn++); c.drawImage(f, sx2 - 10, sd * wy - 10, 20, 20); return; }
+      c.fillStyle = SHC[(sn++ * 7) % 11 < 2 ? 3 : (sn % 3)]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.8; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(sx2, sd * wy, 2, 0, 7); c.fill(); });
+  }
   // How a vessel handles: the Sea Editor's handling sliders, as numbers per kind. steer 0 is Direct (hold a direction
   // and the hull turns to face it and goes), 1 is Tiller (W drives, S backs, A and D turn). top and accel in units a
   // second, turn in radians a second, glide how long it keeps moving after you let go, grip how firmly it follows its bow.
@@ -342,16 +385,20 @@ var T = 32, TS = 24, K = 0.75;
     function inFrame(dy, fn) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(h + roll); fn(); c.restore(); }
     function fillStroke(fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke(); }
     var box = [-L - 12, -W - 12, 2 * L + 24, 2 * W + 24];
-    c.fillStyle = 'rgba(8,12,40,0.28)'; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.95, W * 1.05, 0, 0, 7); c.fill();
+    var shg = c.createRadialGradient(sx + 2, v.y * K + 5 * sz, 0, sx + 2, v.y * K + 5 * sz, L); shg.addColorStop(0, 'rgba(18,42,64,0.34)'); shg.addColorStop(0.75, 'rgba(18,42,64,0.3)'); shg.addColorStop(1, 'rgba(18,42,64,0)');   // the shadow the sea's own colour, darker and bluer, soft at its edge (the studio's note)
+    c.fillStyle = shg; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.98, W * 1.1, 0, 0, 7); c.fill();
     inFrame(3 + 2.5 * ds, function () { inkPath(c, shadeHex(col.hull, -30), { box: box, flat: true, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); }); });   // the hull's depth below the rail
+    var baked = surfacesOn() && H ? hullBake(v.kind, litPort(h) ? -1 : 1) : null;
     inFrame(0, function () {
-      inkPath(c, col.hull, { box: box, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); });
+      if (baked) c.drawImage(baked.cv, -baked.w / 2, -baked.h / 2, baked.w, baked.h);   // the studio's planks and rail, the lit side toward the sun
+      else { inkPath(c, col.hull, { box: box, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); });
       [0.95, 0.9].forEach(function (k, n) { c.beginPath(); shapedPath(c, pr, k, 0.9 - n * 0.12); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); });   // the strakes, overlapping toward the rail
-      c.beginPath(); shapedPath(c, pr, 0.92, 0.95); c.lineWidth = 0.9; c.strokeStyle = INK.lit; c.stroke();
+      c.beginPath(); shapedPath(c, pr, 0.92, 0.95); c.lineWidth = 0.9; c.strokeStyle = INK.lit; c.stroke(); }
       inkPath(c, col.deck, { box: box, lw: 0.9, shade: 0.1 }, function () { shapedPath(c, pr, 0.84, 0.62); });   // the bottom boards
       for (var bi = -2; bi <= 2; bi++) { c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.lineWidth = 0.5; c.strokeStyle = INK.faint; c.save(); c.beginPath(); shapedPath(c, pr, 0.84, 0.62); c.clip(); c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.stroke(); c.restore(); }
       seats.forEach(function (x, si) { var wt = profW(pr, x, -1) * 0.6, wb = profW(pr, x, 1) * 0.6; ink(c, [[x - 3, -wt], [x + 3, -wt], [x + 3, wb], [x - 3, wb]], shadeHex(col.deck, -16), { wob: 0.3, seed: si, lw: 0.7, heavy: 1.1 }); });   // the rowing seats as laid: a thwart across the hull
-      if (v.shields) { var SHC = ['#8a3a34', '#d9c48a', '#3f5a7a'], sn = 0; for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98; c.fillStyle = SHC[sn++ % 3]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.ellipse(sx2, sd * wy, 1.1 * sz, 0.7 * sz, 0, 0, 7); c.fill(); }); }   // shields hung along both rails, seen from above as leaning discs
+      if (v.shields) drawShields(c, pr, L);
+      if (false) { var SHC = ['#8a3a34', '#d9c48a', '#3f5a7a'], sn = 0; for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98; c.fillStyle = SHC[sn++ % 3]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.ellipse(sx2, sd * wy, 1.1 * sz, 0.7 * sz, 0, 0, 7); c.fill(); }); }   // shields hung along both rails, seen from above as leaning discs
     });
     var fx = Math.cos(h), fy = Math.sin(h) * K;                                                          // the upright stems, curling at bow and stern
     function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
@@ -384,7 +431,8 @@ var T = 32, TS = 24, K = 0.75;
      along the keel a rower's body leans (toward the bow at the finish, since he faces aft); drawOars draws each oar from the
      rower's hands over the rail to the blade, all in time; at rest the oars are held out level. rowers: [{ x, y, side }] in the
      hull's frame (side 0: a pair, the hero alone). */
-  function strokeK(v) { var ph = (((v.stroke || 0) / (2 * Math.PI)) % 1 + 1) % 1; if (!v.rowing) return { th: 0, lean: 0, lift: 3, wet: false }; if (ph < 0.4) { var t = ph / 0.4; return { th: 0.55 - 1.1 * t, lean: -4 + 9 * t, lift: 0, wet: true }; } var t2 = (ph - 0.4) / 0.6; return { th: -0.55 + 1.1 * t2, lean: 5 - 9 * t2, lift: 5, wet: false }; }
+  function strokePhase(v) { return (((v.stroke || 0) / (2 * Math.PI)) % 1 + 1) % 1; }
+  function strokeK(v) { var ph = strokePhase(v); if (!v.rowing) return { th: 0, lean: 0, lift: 3, wet: false }; if (ph < 0.375) { var t = ph / 0.375; return { th: 0.55 - 1.1 * t, lean: -4 + 9 * t, lift: 0, wet: true }; } var t2 = (ph - 0.375) / 0.625; return { th: -0.55 + 1.1 * t2, lean: 5 - 9 * t2, lift: 5, wet: false }; }   // (the pull is the clip's frames 0 to 2 of 8)
   function strokeLean(v) { return strokeK(v).lean; }
   function drawOars(c, v, clock, rowers) {
     if (!rowers || !rowers.length || !HULLS[v.kind]) return;
@@ -393,7 +441,7 @@ var T = 32, TS = 24, K = 0.75;
     c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
     for (i = 0; i < rowers.length; i++) { var r = rowers[i]; (r.side ? [r.side] : [-1, 1]).forEach(function (sd) {
       var w = profW(pr, r.x, sd), len = w * 0.9 + 34, hx = r.x + S.lean, hy = r.side ? r.y + sd * 5 : sd * 6, T = [r.x + S.lean * 0.3 + 1, sd * (w + 1)], B = [T[0] + Math.sin(S.th) * len, T[1] + sd * Math.cos(S.th) * len];
-      var Hs = toS(hx, hy, 14), Ts = toS(T[0], T[1], 6), Bs = toS(B[0], B[1], S.lift);
+      var Hs = r.hands && r.hands[sd] ? r.hands[sd] : toS(hx, hy, 14), Ts = toS(T[0], T[1], 6), Bs = toS(B[0], B[1], S.lift);   // (r.hands[side]: the hand's place on screen from the drawn frame, else a guess at chest height)
       c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(Hs[0], Hs[1]); c.lineTo(Ts[0], Ts[1]); c.lineTo(Bs[0], Bs[1]); c.stroke();
       c.strokeStyle = S.wet ? shadeHex(COL.deck, -10) : shadeHex(COL.deck, 2); c.lineWidth = 1.8; c.stroke();
       c.beginPath(); c.ellipse(Bs[0], Bs[1], 2.6, 5, Math.atan2(Bs[1] - Ts[1], Bs[0] - Ts[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(COL.deck, -10); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke();
@@ -446,10 +494,13 @@ var T = 32, TS = 24, K = 0.75;
     c.beginPath(); if (figs && figs.length) { for (i = 0; i < figs.length; i++) c.rect(figs[i].x - 13, figs[i].y * K - 2, 26, 44); } else c.rect(sx - L * 2, sy + 1.5, L * 4, L * 3); c.clip();   // only over their legs, whatever the heading
     c.lineJoin = 'round'; c.strokeStyle = LINE;
     c.beginPath(); sub(3 + 2.5 * ds, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(COL.hull, -30); c.fill('evenodd'); c.lineWidth = 1.2; c.beginPath(); sub(3 + 2.5 * ds, 1, 1); c.stroke();
-    c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = COL.hull; c.fill('evenodd');
+    var baked2 = surfacesOn() ? hullBake(v.kind, litPort(v.h) ? -1 : 1) : null;
+    if (baked2) { c.save(); c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.clip('evenodd'); c.translate(sx, sy); c.scale(1, K); c.rotate(v.h + roll); c.drawImage(baked2.cv, -baked2.w / 2, -baked2.h / 2, baked2.w, baked2.h); c.restore(); }
+    else { c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = COL.hull; c.fill('evenodd');
     c.save(); c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.clip('evenodd'); c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(sx - L * 2, sy - L, L * 4, L * 3); c.globalAlpha = 1; c.beginPath(); sub(0, 0.95, 0.9); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); c.beginPath(); sub(0, 0.92, 0.95); c.lineWidth = 0.9; c.strokeStyle = INK.lit; c.stroke(); c.restore();
-    c.lineWidth = 1.2; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 0.9; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
-    if (v.shields) { var SHC = ['#8a3a34', '#d9c48a', '#3f5a7a'], sn = 0; c.save(); c.translate(sx, sy); c.scale(1, K); c.rotate(v.h + roll); for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98; c.fillStyle = SHC[sn++ % 3]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.8; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(sx2, sd * wy, 2, 0, 7); c.fill(); }); c.restore(); }   // the shields along the rail, over the legs too
+    c.lineWidth = 1.2; c.beginPath(); sub(0, 1, 1); c.stroke(); }
+    c.lineWidth = 0.9; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
+    if (v.shields) { c.save(); c.translate(sx, sy); c.scale(1, K); c.rotate(v.h + roll); drawShields(c, pr, L); c.restore(); }   // the shields along the rail, over the legs too
     c.restore();
   }
 
@@ -659,7 +710,7 @@ var scene = {
 };
 
 return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
-  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, drawOars: drawOars, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
+  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullParts: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();

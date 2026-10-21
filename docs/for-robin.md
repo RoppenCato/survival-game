@@ -201,3 +201,10 @@ and out, remembered, and the sea still pulls back on top of that. The yard: **a 
 now (the seats with − and +, the rig as one needed thing, the stem and the shields yes or no) with the ship floating live in
 the frame as it will look; the raft is still laid log by log. Try it at the Sea Editor's "Open the Shipyard" (free) or at a
 bench of tier 3 in the game. The helmsman rule and the chapter 3 deck fighting stand as you said; colours and names later.
+
+**The Art Director's ships drop, wired the same day:** the rowers now pull with the studio's rowing clip (the body leaning
+back on the pull, forward on the recovery; the oar from the drawn hand), the helmsman sits with his hand on the tiller, and
+alone in a boat you row with your own rowing clip. The hull wears the studio's planks (the lit strip on the side toward the
+sun whatever the heading), its rail with the oar ports, and eight painted shield faces along the rail (ochre, bone, grey, a
+red one in four). Look at the karve with eight men against the wind, and at the boat alone; the planks and the shields are
+best judged at your size.
