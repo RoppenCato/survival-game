@@ -409,3 +409,7 @@ near one. Say yes and it goes in as the studio handed it over; say no and the st
 **The villages' set pieces in the kraken's style (2026-10-21; chapter 2):** the fences, the house faces, the yard's things, the
 sacred places and the raid's pieces are the studio's new pictures in the chosen tones. It is a quiet change: richer straw, warmer
 wood, cooler shade. Nothing moved and no size changed.
+
+**The farm animals in the kraken's style (2026-10-21; chapter 2):** the goats, sheep, cows and hens are the studio's new ones. The
+goat, sheep and cow are remade: one-piece heads, the sheep in a lumpy fleece, the goat with a ragged beard. Their idles are smooth
+now (sixteen frames where they had eight, the laggy ones), and the goat's, sheep's and cow's feet hold to the ground.

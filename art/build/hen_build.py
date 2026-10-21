@@ -9,6 +9,7 @@ hit, death. Saves source/hen.blend (or rooster.blend)."""
 import bpy, bmesh, math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21): chosen tones
 from mathutils import Vector, Matrix
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
