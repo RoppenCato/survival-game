@@ -185,3 +185,11 @@ are built (nothing here depends on your answers):
 Waiting for you in the plan: the hull's look (in code to the studio's karve, or the studio's painted plan view turned), the camera
 at sea, the helmsman rule, fighting on the decks in chapter 3 (shooting from the deck sooner), the yard as it is, colours and a
 ship's name later.
+
+**The Lore Director's answer (2026-10-21):** the four crew lines are recorded as the game says them (the two toasts stay plain,
+as interface words); it proposes variants for the two spoken ones ("Out oars. Where to, then?", "A cup over the stem for Njörd,
+and pull.", "Benches, all of you. He's aboard."; "Full up. I'll stay and mind the hall.", "No oar for me? Then bring me back
+something.", "Next time, a bigger ship. I'll be here."), the word steersman in speech (stýrimaðr for the Book), and a pool of
+sixteen ship names (the Crane, the Bison, Iron-Beard, Ellidi, the Grey Goose, the Ash, Wave-Horse, Sea-Steed, the Raven, the
+Swan, the Gull, the Otter, the Hart, the Bear, the Seal, the Tern), with one rule: no ship is ever called the Serpent, that name
+is Ormr's. All of it waits for your yes in its lore.json.
