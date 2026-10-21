@@ -12,7 +12,7 @@ global.__mk = (w, h) => createCanvas(w, h);
 const kit = require('../src/stylelab.js').kit; kit.setup(kit.STYLE);
 const INK = '#261e1a', PAD = 5, GRAIN = 0.4, SHADE = 0.2;
 (async () => {
-  const inDir = process.argv[2] || path.join('art', 'render', 'rocks'), outDir = process.argv[3] || path.join('assets', 'props');
+  const inDir = process.argv[2] || path.join('art', 'render', 'caves'), outDir = process.argv[3] || path.join('assets', 'props');
   const meta = JSON.parse(fs.readFileSync(path.join(inDir, 'meta.json'), 'utf8')), out = fs.existsSync(path.join(outDir, 'props.json')) ? JSON.parse(fs.readFileSync(path.join(outDir, 'props.json'), 'utf8')) : {};
   fs.mkdirSync(outDir, { recursive: true });
   for (const name of Object.keys(meta)) {

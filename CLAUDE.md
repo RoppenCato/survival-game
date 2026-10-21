@@ -842,7 +842,7 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
 - **The pipeline:** Blender 5.2 by script (`tools/blender.js` finds it). `art/build/*_build.py` model, rig and animate
   (`hero2_build.py` and `mixamo_bind.py` the hero on Mixamo's clips; `items_build.py` the things in the hand as Wood and Metal
   layers the game tints; `shield_build.py`, `thrust_build.py`; `quad_build.py` the four-legged animals; `snake_build.py`;
-  `troll_build.py` the trolls and the four väsen; `people_build.py` the people; `caves_build.py` the peaks, the cave mouths and the rock shelter, packed by `tools/props.js` (`art:caves`; it was `rocks_build.py` until the studio's rocks took that name on 2026-10-20, brought back from git on 2026-10-21); the studio's set-piece builders `trees_build.py`, `plants_build.py`, `rocks_build.py` and the rest, packed in the studio);
+  `troll_build.py` the trolls and the four väsen; `people_build.py` the people; `caves_build.py` the cave mouths and the rock shelter in the kraken's style (the studio's, 2026-10-21; the peaks only when named, they are painted with the ground), rendered to `art/render/caves` and packed by `tools/props.js` (`art:caves`; it was `rocks_build.py` until the studio's rocks took that name on 2026-10-20); the studio's set-piece builders `trees_build.py`, `plants_build.py`, `rocks_build.py` and the rest, packed in the studio);
   `art/build/toon.py` is the shared cel look (its sun is 3.0, so everything rendered now has a lit side; bright base colours
   want taking down about 15%); `art/build/render.py` renders every clip, direction and layer; `tools/sprites.js` and
   `tools/people.js` pack the sheets. `npm run art:mixamo`, `art:items`, `art:shield`, `art:icons`, `art:people`,

@@ -1,6 +1,10 @@
-"""(caves_build.py since 2026-10-21: this was art/build/rocks_build.py until the studio's rock set pieces took that name on
-2026-10-20; brought back from git 756dffe under its own name.) The mountains' set pieces, modelled by script and rendered once each (2026-10-12, Robin: the mountain biome and a new cave;
-set pieces from Blender, the cliff faces themselves painted in code).   node tools/blender.js art/build/caves_build.py
+"""The caves (2026-10-21, the kraken round; recovered from the game's rocks_build.py of 756dffe, which the studio's rocks builder
+of the same name replaced on 2026-10-20, and renamed so the two never clash again): chosen tones, the stone with all three tones on
+its facets, living moss, the set pieces' line only where colours meet; the peaks are left out (Robin, 2026-10-12: peaks painted with
+the ground). Renders the cave mouth, the mine mouth, the sea cave and the rock shelter (its two pictures).
+
+The mountains' set pieces, modelled by script and rendered once each (2026-10-12, Robin: the mountain biome and a new cave;
+set pieces from Blender, the cliff faces themselves painted in code).   node tools/blender.js art/build/rocks_build.py
 
   peak_a, peak_b, peak_c   snow-capped peaks that stand on the ground nobody can walk: faceted rock, a main summit and
                            shoulders, snow on what faces up above the snow line
@@ -14,18 +18,24 @@ pixel and the pixels a metre); tools/props.js trims and packs them into assets/p
 import bpy, bmesh, math, os, sys, json, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21)
 from mathutils import Vector
 from bpy_extras.object_utils import world_to_camera_view
 
-HERE = os.path.dirname(os.path.abspath(__file__)); SRC = os.path.join(HERE, '..', 'source'); OUT = os.path.abspath(os.path.join(HERE, '..', 'render', 'rocks'))
+HERE = os.path.dirname(os.path.abspath(__file__)); SRC = os.path.join(HERE, '..', 'source'); OUT = os.path.abspath(os.path.join(HERE, '..', 'render', 'caves'))
 UNIT = 39 / 1.8                                    # game units a metre
 PPM = 2 * UNIT                                     # pixels a metre: 2 px a unit, as the props are baked
 PX = 2                                             # rendered at twice that and halved by the packer
-COL = {'rock': '#66737a', 'rock2': '#5a676e', 'dark': '#4a565e', 'snow': '#f4f7fb', 'snow2': '#dfe7f2', 'hole': '#0d0b10', 'hole2': '#1a161c', 'bone': '#ece4cc', 'moss': '#7d9e4c', 'grass': '#86b450', 'root': '#6b5a40', 'earth': '#8a6e50', 'wood': '#8a6540', 'wood2': '#6b4c33', 'ore': '#5fa585', 'weed': '#3f5a34'}
+COL = {'rock': '#6e7a80', 'rock2': '#64707a', 'dark': '#525e68', 'snow': '#f4f7fb', 'snow2': '#dfe7f2', 'hole': '#0d0b10', 'hole2': '#1a161c', 'bone': '#ece4cc', 'moss': '#5c8f3a', 'grass': '#7fb04c', 'root': '#6b5a40', 'earth': '#8a6e50', 'wood': '#8a6540', 'wood2': '#6b4c33', 'ore': '#5fa585', 'weed': '#3f5a34'}
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene; vl = bpy.context.view_layer
-M = {k: toon.material('rk_' + k, v, None, 'cel') for k, v in COL.items()}
+def _mat(k, v):                                    # 2026-10-21: stone keeps all three tones on its facets; the living green the leaves' lighter shade
+    if k in ('moss', 'grass', 'weed'):
+        lit, shade = toon.chosen_tones(v, lit_dl=0.09, shade_dl=0.075, cool_k=0.2); return toon.material('rk_' + k, v, None, 'cel', lit=lit, shade=shade, t_dark=0.5, t_lit=1.0)
+    if k in ('rock', 'rock2', 'dark'): return toon.material('rk_' + k, v, None, 'cel', t_dark=0.62, t_lit=0.95)
+    return toon.material('rk_' + k, v, None, 'cel')
+M = {k: _mat(k, v) for k, v in COL.items()}
 PIECES = {}
 def coll(name):
     c = bpy.data.collections.new(name); sc.collection.children.link(c); PIECES[name] = c; return c
@@ -56,6 +66,12 @@ def cone(c, name, p0, p1, r0, r1, mat, seg=6):
     for i in range(seg): bm.faces.new((rings[0][i], rings[0][(i + 1) % seg], rings[1][(i + 1) % seg], rings[1][i]))
     bm.faces.new(rings[0][::-1]); bm.faces.new(rings[1])
     return obj(c, name, bm, [M[mat]])
+def tuft(c, name, p0, p1):
+    """a grass tuft (2026-10-21; a single thin cone read as a thorn at game size): three short broad blades fanned from one spot"""
+    p0 = Vector(p0); p1 = Vector(p1); h = (p1 - p0).length * 0.62; side = Vector((1, 0, 0))
+    for j, (dx, k) in enumerate(((-0.13, 0.85), (0.0, 1.0), (0.14, 0.8))):
+        tip = p0 + Vector((dx * 1.6, -0.04, h * k)) + (p1 - p0).normalized() * 0.02
+        cone(c, name + '_%d' % j, p0 + side * dx * 0.4, tip, 0.085, 0.012, 'grass', seg=4)
 def ball(c, name, centre, r, mat, sx=1, sy=1, sz=1, sub=1):
     bm = bmesh.new(); bmesh.ops.create_icosphere(bm, subdivisions=sub, radius=r)
     for v in bm.verts: v.co = Vector((v.co.x * sx, v.co.y * sy, v.co.z * sz)) + Vector(centre)
@@ -210,7 +226,7 @@ def cave_mouth():
         block(c, 'outer%d' % i, (math.cos(a) * rx, 0.0, max(1.0, Z0 + math.sin(a) * rz)), (sx, 1.1, sz), 40 + i, mat='rock2' if i % 2 else 'rock', jit=0.24)
     for i in range(10):                               # grass along the top, moss in the joints, roots hanging into the mouth
         x = -3.0 + i * 0.68 + (R.random() - 0.5) * 0.3; zt = 5.05 - 0.55 * (abs(x) / 3.2) ** 2
-        cone(c, 'tuft%d' % i, (x, -0.4 + (R.random() - 0.5) * 0.4, zt), (x + (R.random() - 0.5) * 0.3, -0.5, zt + 0.4 + R.random() * 0.3), 0.11, 0.01, 'grass', seg=4)
+        tuft(c, 'tuft%d' % i, (x, -0.4 + (R.random() - 0.5) * 0.4, zt), (x + (R.random() - 0.5) * 0.3, -0.5, zt + 0.4 + R.random() * 0.3))
     for (x, z, r) in ((-2.3, 3.9, 0.45), (0.5, 4.75, 0.6), (2.5, 3.7, 0.4), (-3.4, 2.2, 0.35)): ball(c, 'moss', (x, -0.95, z), r, 'moss', sx=1.3, sy=0.5, sz=0.4)
     for i in range(6):
         x = -1.3 + i * 0.52 + (R.random() - 0.5) * 0.3; zt = Z0 + (H_ - Z0) * math.sin(math.acos(max(-1, min(1, x / W_)))) ** 0.85 - 0.05; L = 0.4 + R.random() * 0.8
@@ -297,7 +313,7 @@ def mine_mouth():
         block(c, 'mrock%d' % i, (x, -0.05 + (0.25 if i > 4 else 0), z), (sx, 1.5 if i < 5 else 1.1, sz), 30 + i, mat='rock' if i % 2 else 'rock2', jit=0.22)
     for i in range(9):
         x = -2.8 + i * 0.7 + (R.random() - 0.5) * 0.3; zt = 4.75 - 0.5 * (abs(x) / 3.0) ** 2
-        cone(c, 'mtuft%d' % i, (x, -0.4 + (R.random() - 0.5) * 0.4, zt), (x + (R.random() - 0.5) * 0.3, -0.5, zt + 0.4 + R.random() * 0.3), 0.11, 0.01, 'grass', seg=4)
+        tuft(c, 'mtuft%d' % i, (x, -0.4 + (R.random() - 0.5) * 0.4, zt), (x + (R.random() - 0.5) * 0.3, -0.5, zt + 0.4 + R.random() * 0.3))
     for (x, z, r) in ((-2.6, 3.5, 0.4), (2.9, 3.3, 0.36), (0.6, 4.7, 0.5)): ball(c, 'mmoss', (x, -0.9, z), r, 'moss', sx=1.3, sy=0.5, sz=0.4)
     # the spoil: broken rock thrown out to the right of the way, green ore among it; a plank left lying
     for i in range(16):
@@ -334,7 +350,7 @@ def sea_mouth():
     for i, (x, y, s3) in enumerate(((-3.9, -2.1, 0.7), (2.6, -2.5, 0.55), (4.4, -1.9, 0.5))): block(c, 'sskerry%d' % i, (x, y, s3 * 0.3), (s3 * 1.7, s3 * 1.3, s3 * 0.8), 280 + i, mat='dark')
     for i in range(8):
         x = -3.0 + i * 0.85 + (R.random() - 0.5) * 0.3; zt = 4.55 - 0.5 * (abs(x) / 3.2) ** 2
-        cone(c, 'stuft%d' % i, (x, -0.4 + (R.random() - 0.5) * 0.4, zt), (x + (R.random() - 0.5) * 0.3, -0.5, zt + 0.4 + R.random() * 0.3), 0.11, 0.01, 'grass', seg=4)
+        tuft(c, 'stuft%d' % i, (x, -0.4 + (R.random() - 0.5) * 0.4, zt), (x + (R.random() - 0.5) * 0.3, -0.5, zt + 0.4 + R.random() * 0.3))
     return c
 
 def rock_shelter():
@@ -352,7 +368,7 @@ def rock_shelter():
         block(c, 'over%d' % i, (x, 0.3, z), (sx, 1.3, sz), 330 + i, mat='rock2' if i % 2 else 'rock', jit=0.22)
     for i in range(14):
         x = -5.2 + i * 0.8 + (R.random() - 0.5) * 0.3; zt = 7.25 - 0.55 * (abs(x) / 5.4) ** 2
-        cone(c, 'htuft%d' % i, (x, -0.2 + (R.random() - 0.5) * 0.5, zt), (x + (R.random() - 0.5) * 0.3, -0.3, zt + 0.4 + R.random() * 0.35), 0.11, 0.01, 'grass', seg=4)
+        tuft(c, 'htuft%d' % i, (x, -0.2 + (R.random() - 0.5) * 0.5, zt), (x + (R.random() - 0.5) * 0.3, -0.3, zt + 0.4 + R.random() * 0.35))
     for (x, z, r) in ((-3.2, 6.1, 0.5), (2.2, 6.25, 0.6), (5.0, 5.2, 0.45), (-5.6, 3.6, 0.4)): ball(c, 'hmoss', (x, -0.95, z), r, 'moss', sx=1.4, sy=0.5, sz=0.4)
     for i, (x, r) in enumerate(((-2.4, 0.32), (0.9, 0.4), (2.9, 0.3))): ball(c, 'hlip%d' % i, (x, -0.95, 5.12), r, 'moss', sx=1.6, sy=0.5, sz=0.5)   # moss hanging at the lip (thin roots took the ink as black sticks)
     for i in range(8):
@@ -397,7 +413,7 @@ toon.world(sc, style='cel'); sun = toon.sun('cel'); sun.data.energy = 3.0; sun.d
 cam = toon.camera(sc, 35, 10, 0); cam.data.clip_end = 400
 look = cam.rotation_euler.to_matrix() @ Vector((0, 0, -1)); right = cam.rotation_euler.to_matrix() @ Vector((1, 0, 0)); upv = cam.rotation_euler.to_matrix() @ Vector((0, 1, 0))
 os.makedirs(OUT, exist_ok=True); META = {}
-ONLY = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []           # name the pieces to render only those (the others' numbers are kept)
+ONLY = (sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []) or ['cave_mouth', 'mine_mouth', 'sea_mouth', 'shelter', 'shelter_in']   # the peaks left out (painted with the ground)
 if ONLY and os.path.exists(os.path.join(OUT, 'meta.json')): META = json.load(open(os.path.join(OUT, 'meta.json')))
 for name, c in PIECES.items():
     if ONLY and name not in ONLY: continue
@@ -410,7 +426,7 @@ for name, c in PIECES.items():
     cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2; span = max(max(xs) - min(xs), max(ys) - min(ys)) * 1.08 + 0.6
     size = int(math.ceil(span * PPM / 2) * 2)
     cam.data.ortho_scale = size / PPM; cam.location = right * cx + upv * cy - look * 120
-    toon.setup_render(sc, size, PX, 16); toon.freestyle(sc, vl, PX, c, 'cel')
+    toon.setup_render(sc, size, PX, 16); fs = toon.freestyle(sc, vl, PX, c, 'cel'); toon.piece_line(fs, at_colours=True)   # 2026-10-21: the set pieces' line, only where colours meet
     if name.startswith('peak'): vl.freestyle_settings.crease_angle = math.radians(136)   # the ribs' edges take a line too
     vl.update()
     a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
@@ -418,5 +434,5 @@ for name, c in PIECES.items():
     META[name] = {'size': size, 'px': PX, 'ppm': PPM, 'anchor': {'x': a.x * size * PX, 'y': (1 - a.y) * size * PX}}
     print('rendered', name, size, 'px, anchor', round(a.x * size), round((1 - a.y) * size))
 with open(os.path.join(OUT, 'meta.json'), 'w') as fh: json.dump(META, fh, indent=1)
-os.makedirs(SRC, exist_ok=True); bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(os.path.join(SRC, 'rocks.blend')))
+os.makedirs(SRC, exist_ok=True); bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(os.path.join(SRC, 'caves.blend')))
 print('rocks in', OUT)
