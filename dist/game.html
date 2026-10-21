@@ -8127,13 +8127,15 @@ var T = 32, TS = 24, K = 0.75;
     bakes[key] = { cv: cv, L: L, W: W, w: bw / BK, h: bh / BK }; return bakes[key];
   }
   function shieldFace(i) { var r = hs(i + 1, 3); return SURF.shields[r < 0.22 ? 6 + (hs(i + 1, 5) < 0.5 ? 0 : 1) : Math.floor(hs(i + 1, 7) * 6)]; }
-  function drawShields(c, v, pr, L, which, bob) {   /* the shields hang on the hull's SIDES, upright (Robin, 2026-10-21: laid flat on the rail they looked wrong): each at its rail point on screen, 11 units apart along the rail, overlapping by half; those on the side away from the camera ('back') are drawn before the hull, so the hull hides their lower part and they show above the far rail; those on the near side and the flanks ('front') after it, hanging below the near rail over the hull's side */
-    var faces = SURF && SURF.shields && SURF.shields.length >= 8 && SURF.shields.every(imgOk), SHC = ['#b08a5a', '#e6dcc6', '#8a6a44', '#8a4a3a'], sn = 0, roll = Math.sin((v.clock || 0) * 1.7 + 1) * 0.02, ch = Math.cos(v.h + roll), sh = Math.sin(v.h + roll), sy0 = v.y * K + (bob || 0);
+  function drawShields(c, v, pr, L, which, bob) {   /* the shields hang on the hull's SIDES, upright, drawn after the hull and clipped to what lies outside its outline on screen: a shield on the side away from the camera shows its upper part above the far rail, one on the near side hangs whole below the near rail, and between (the flanks, a turn) each slides smoothly from the one to the other by how much its side faces the camera (Robin, 2026-10-21: a side jumped as the ship turned). which: 'front' draws them; 'back' is nothing now */
+    if (which !== 'front') return;
+    var faces = SURF && SURF.shields && SURF.shields.length >= 8 && SURF.shields.every(imgOk), SHC = ['#b08a5a', '#e6dcc6', '#8a6a44', '#8a4a3a'], sn = 0, roll = Math.sin((v.clock || 0) * 1.7 + 1) * 0.02, ch = Math.cos(v.h + roll), sh = Math.sin(v.h + roll), sx = v.x, sy0 = v.y * K + (bob || 0);
+    c.save(); c.beginPath(); c.rect(sx - L * 2, sy0 - L * 2, L * 4, L * 4); c.save(); c.translate(sx, sy0); c.scale(1, K); c.rotate(v.h + roll); shapedPath(c, pr, 1, 1); c.restore(); c.clip('evenodd');   // outside the hull only
     for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) {
-      var wy = sd * profW(pr, sx2, sd) * 1.02, i = sn++, ny = sd * ch, front = ny >= -0.05, X = v.x + sx2 * ch - wy * sh, Y = sy0 + (sx2 * sh + wy * ch) * K + (front ? 3 : -7);
-      if ((which === 'front') !== front) return;
+      var wy = sd * profW(pr, sx2, sd) * 1.02, i = sn++, ny = sd * ch, t = Math.max(0, Math.min(1, (ny + 0.35) / 0.7)), X = sx + sx2 * ch - wy * sh, Y = sy0 + (sx2 * sh + wy * ch) * K - 8 + 16 * t;
       if (faces) { c.drawImage(shieldFace(i), X - 10, Y - 10, 20, 20); return; }
       c.fillStyle = SHC[(i * 7) % 11 < 2 ? 3 : (i % 3)]; c.beginPath(); c.arc(X, Y, 10, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.9; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(X, Y, 2.2, 0, 7); c.fill(); });
+    c.restore();
   }
   // How a vessel handles: the Sea Editor's handling sliders, as numbers per kind. steer 0 is Direct (hold a direction
   // and the hull turns to face it and goes), 1 is Tiller (W drives, S backs, A and D turn). top and accel in units a
@@ -8148,11 +8150,12 @@ var T = 32, TS = 24, K = 0.75;
   // One step of sailing: v = { x, y, h, speed, vx, vy }, inp = { ix, iy } (-1..1 each), free(x, y, h) says whether the
   // hull fits there, H the handling. The same physics in the game and the Sea Editor.
   function sail(v, inp, dt, free, H, wind) {
-    var ix = inp.ix || 0, iy = inp.iy || 0, want = 0, stuck = !free(v.x, v.y, v.h);
+    var ix = inp.ix || 0, iy = inp.iy || 0, want = 0, stuck = !free(v.x, v.y, v.h), h0 = v.h;
     if (v.speed == null) v.speed = 0;
     var crew = Math.min(Math.max(0, (v.crew || 0) - (v.helm ? 1 : 0)), v.rowers != null ? v.rowers : 99), rowK = 1 + (H.rowK != null ? H.rowK : (WIND.rowK || 0)) * crew, sailK = 1, fill = 0;   // (the helmsman does not row)
     if (v.sail && wind && wind.k > 0) { fill = Math.max(0, Math.cos(wind.a - v.h)); sailK = 1 + wind.k * fill; }      // the share of the wind that fills the sail
-    v.sailFill += ((iy < 0 || (!H.steer && (ix || iy)) ? fill : 0) - (v.sailFill || 0)) * Math.min(1, dt * 2); if (!(v.sailFill > 0)) v.sailFill = 0;   // the sail fills as it is set and the wind comes behind
+    v.sailFill += ((iy < 0 || (!H.steer && (ix || iy)) ? fill : 0) - (v.sailFill || 0)) * Math.min(1, dt * 2); if (!(v.sailFill > 0)) v.sailFill = 0;   /* (the true fill: the speed's buff, and whether the oars rest) */
+    v.sailSet = (v.sailSet || 0) + ((v.sail && (iy < 0 || (!H.steer && (ix || iy)) || Math.abs(v.speed) > 20) ? 1 : 0) - (v.sailSet || 0)) * Math.min(1, dt * 1.5);   /* (Robin, 2026-10-21: the sail furling whenever the wind was not behind read as random; now it is SET while she is driven and furled at rest, its belly by the wind) */   // the sail fills as it is set and the wind comes behind
     v.rud = (v.rud || 0) + (ix - (v.rud || 0)) * Math.min(1, dt * 6);                                                                          // the steering oar follows the tiller
     H = { steer: H.steer, top: H.top * rowK * sailK, accel: H.accel * rowK * (1 + (sailK - 1) * 0.5), turn: H.turn, glide: H.glide, grip: H.grip };
     if (!H.steer) {
@@ -8177,6 +8180,9 @@ var T = 32, TS = 24, K = 0.75;
     else if (free(v.x, ny, v.h)) { v.y = ny; v.vx *= 0.3; v.speed *= 0.9; }
     else { v.vx *= 0.2; v.vy *= 0.2; v.speed *= 0.5; }
     v.h = wrapA(v.h);
+    v.turn = wrapA(v.h - h0) / Math.max(1e-4, dt);                                                                           // the rate of turn, for the water (radians a second)
+    if (!v.trail) v.trail = []; v.trailT = (v.trailT || 0) + dt; if (v.trailT > 0.12) { v.trailT = 0; v.trail.push({ x: v.x, y: v.y, age: 0, sp: Math.abs(v.speed) }); if (v.trail.length > 18) v.trail.shift(); }
+    for (var ti = 0; ti < v.trail.length; ti++) v.trail[ti].age += dt;
     v.rowing = (crew > 0 || !rigged(v.kind)) && (iy < 0 || Math.abs(v.speed) > 8) && !(v.sailFill > 0.6);   // (alone in a rowing boat the hero rows)                                           // the oars pull while there is way to make and the sail is not doing the work; else they are shipped
     if (v.rowing) v.stroke = (v.stroke || 0) + dt * (2 * Math.PI / 1.7) * (0.4 + 0.6 * Math.min(1, Math.abs(v.speed) / (H.top || 1)));   // one stroke for the whole ship: every rower in time, quicker with the way on (docs/ships-plan.md)
     return stuck;
@@ -8185,14 +8191,16 @@ var T = 32, TS = 24, K = 0.75;
   function drawWater(c, v, hl, hw, clock, pr) {
     var sp = speedOf(v), mv = Math.min(1, sp / 60), i;
     c.save(); c.translate(v.x, v.y * K);
-    if (mv > 0.05) {                                        // the wake: ripples behind, spreading and fading
-      var bx = -Math.cos(v.h) * hl, by = -Math.sin(v.h) * hl * K;
-      for (i = 0; i < 5; i++) {
-        var t = ((clock * 1.4 + i * 0.2) % 1), d = t * 70 * mv, a = (1 - t) * 0.45 * mv, w = hw * K * (0.6 + t * 1.6);
-        var px = bx - Math.cos(v.h) * d, py = by - Math.sin(v.h) * d * K;
-        c.strokeStyle = 'rgba(235,250,255,' + a.toFixed(2) + ')'; c.lineWidth = 1.2 + (1 - t);
-        c.beginPath(); c.ellipse(px, py, 4 + t * 6, w, v.h, 0, 7); c.stroke();
-      }
+    if (v.trail && v.trail.length > 1) {                    // the wake: ripples laid along the track she has sailed (it curves in a turn: Robin, 2026-10-21), spreading and fading as they age
+      for (i = 0; i < v.trail.length - 1; i++) { var p = v.trail[i], q = v.trail[i + 1], age = p.age, k = Math.min(1, p.sp / 60); if (age > 2.4 || k < 0.08) continue;
+        var dx = q.x - p.x, dy = q.y - p.y, ang = Math.atan2(dy, dx), t = age / 2.4, a = (1 - t) * 0.42 * k, w = hw * K * (0.5 + t * 1.8);
+        c.strokeStyle = 'rgba(235,250,255,' + a.toFixed(2) + ')'; c.lineWidth = 1.2 + (1 - t); c.beginPath(); c.ellipse(p.x - v.x, (p.y - v.y) * K, 3 + t * 7, w, ang, 0, 7); c.stroke(); }
+    }
+    var tr = Math.abs(v.turn || 0) * mv; if (tr > 0.12) {    // turning with way on: the water piles and breaks white along the outer side, bow to quarter
+      var sd = (v.turn || 0) < 0 ? 1 : -1, ta = Math.min(1, (tr - 0.12) / 0.6), ch = Math.cos(v.h), sh = Math.sin(v.h), n = 7 + Math.round(ta * 6);
+      c.strokeStyle = 'rgba(240,250,255,' + (0.35 + ta * 0.4).toFixed(2) + ')'; c.lineCap = 'round';
+      for (i = 0; i < n; i++) { var x = hl * (0.75 - 1.1 * i / n), wy = (pr ? profW(pr, x, sd) : hw) * 1.02 + 2 + hs(i, 5) * 3, lx = x + (hs(i, 7) - 0.5) * 6, ly = sd * wy, L = (4 + hs(i, 3) * 6) * (0.5 + ta), wob = Math.sin(clock * 9 + i) * 1.2;
+        c.lineWidth = 0.9 + ta * 0.6; c.beginPath(); c.moveTo((lx - L / 2) * ch - ly * sh, ((lx - L / 2) * sh + ly * ch) * K + wob); c.quadraticCurveTo(lx * ch - (ly + sd * 3) * sh, (lx * sh + (ly + sd * 3) * ch) * K + wob, (lx + L / 2) * ch - ly * sh, ((lx + L / 2) * sh + ly * ch) * K + wob); c.stroke(); }
     }
     c.scale(1, K); c.rotate(v.h);
     c.strokeStyle = 'rgba(235,250,255,' + (0.3 + 0.25 * mv).toFixed(2) + ')'; c.lineWidth = 2.2; c.beginPath(); if (pr) shapedPath(c, pr, (hl + 5) / hl, (hw * 1.15 + 3) / hw); else { c.moveTo(-hl - 5, 0); c.quadraticCurveTo(0, -(hw * 1.15 + 3) * 1.9, hl + 5, 0); c.quadraticCurveTo(0, (hw * 1.15 + 3) * 1.9, -hl - 5, 0); } c.stroke();   // foam at the waterline
@@ -8269,7 +8277,7 @@ var T = 32, TS = 24, K = 0.75;
     var box = [-L - 12, -W - 12, 2 * L + 24, 2 * W + 24];
     var shg = c.createRadialGradient(sx + 2, v.y * K + 5 * sz, 0, sx + 2, v.y * K + 5 * sz, L); shg.addColorStop(0, 'rgba(18,42,64,0.34)'); shg.addColorStop(0.75, 'rgba(18,42,64,0.3)'); shg.addColorStop(1, 'rgba(18,42,64,0)');   // the shadow the sea's own colour, darker and bluer, soft at its edge (the studio's note)
     c.fillStyle = shg; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.98, W * 1.1, 0, 0, 7); c.fill();
-    v.clock = clock; if (v.shields) drawShields(c, v, pr, L, 'back', bob);
+    v.clock = clock;
     inFrame(3 + 2.5 * ds, function () { inkPath(c, shadeHex(col.hull, -30), { box: box, flat: true, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); }); });   // the hull's depth below the rail
     var baked = surfacesOn() && H ? hullBake(v.kind, litPort(h) ? -1 : 1) : null;
     inFrame(0, function () {
@@ -8347,7 +8355,7 @@ var T = 32, TS = 24, K = 0.75;
     c.strokeStyle = shadeHex(col.deck, -12); c.lineWidth = 1.8; c.stroke();
     c.beginPath(); c.ellipse(blade[0], blade[1], 2.4 * ds, 5 * ds, Math.atan2(blade[1] - piv[1], blade[0] - piv[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(col.deck, -12); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke(); }
     if (v.mastX == null || !parts0(v, 'mast')) return;
-    var mx = v.mastX, m = at(mx, 0), mh = L * 0.84, yl = W * 1.3 + 10, fill = v.sailFill || 0, full = fill > 0.12;   // the mast's height (the karve's about seven metres), the yard's half length
+    var mx = v.mastX, m = at(mx, 0), mh = L * 0.84, yl = W * 1.3 + 10, fill = Math.max(0.3, v.sailFill || 0), full = v.sailSet != null ? v.sailSet > 0.5 : (v.sailFill || 0) > 0.12;   // the mast's height (the karve's about seven metres), the yard's half length
     var a1 = at(mx, -yl), b1 = at(mx, yl), TA = [a1[0], a1[1] - mh], TB = [b1[0], b1[1] - mh], foot = mh * 0.28, bl = (3 + fill * 9) * ds;
     c.strokeStyle = LINE; c.lineWidth = 2.2 * ds + 1.8; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();   // the mast, its foot on the keel
     c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 2.2 * ds; c.stroke();

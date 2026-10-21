@@ -508,10 +508,14 @@ one, `rail_strip.png`, `shield_01..08.png`, the palette in `palette_review.png`)
 and lit side at 2 px a unit (the plank strip along every strake row cell by cell, u along the keel, v from the inner curve
 to the rail; the lit strip on the side facing the world's upper left, `litPort`; the rail strip along the gunwale; the ink
 outline over it) and `drawBoat` and `drawVesselFront` draw the bake; `drawShields` hangs the painted faces **upright on the hull's sides** (Robin,
-2026-10-21: laid flat on the rail they looked wrong): 11 units apart along the rail, those on the side away from the camera
-drawn before the hull so they show above the far rail, those on the near side and the flanks after it, hanging below the
-near rail (`shieldFace`: the muted six, the red two one in four); the stems and the rig follow the hull's roll (they swayed
-loose of it); `COL` is the studio's palette; the shadow under the hull is the sea's
+2026-10-21: laid flat on the rail they looked wrong): 11 units apart along the rail, every one drawn after the hull and
+clipped to what lies outside its outline on screen, and each **slides smoothly** from showing its upper part above the far
+rail to hanging whole below the near rail by how much its side faces the camera (Robin: a side jumped as the ship turned;
+`shieldFace`: the muted six, the red two one in four); the stems and the rig follow the hull's roll (they swayed loose of
+it); **the wake is laid along the track she has sailed** (`v.trail`, so it curves in a turn) and **a turn with way on breaks
+white along the outer side** (`v.turn`; Robin: the turning was stiff); **the sail is set while she is driven and furled at
+rest** (`v.sailSet`; its belly by the wind, never flat: Robin: it furling whenever the wind was not behind read as random;
+the wind still sets the speed's buff and whether the oars rest, `v.sailFill`); `COL` is the studio's palette; the shadow under the hull is the sea's
 own colour, soft at the edge. Without the images the hull draws as before. **The vessel is one drawing** (`drawShip`:
 the hull, everyone aboard by depth, the rig between those behind the mast and those before it, the near rail with its shields
 over their legs (`Yard.drawVesselFront` takes the figures), then the oars); the engine's own hero draw stands down aboard

@@ -232,3 +232,9 @@ the frame and the ink look's saturation on the land (an olive). Its presets are 
 preset: "Now", "Clear water" (toward the editor) and "Bauer day" (the studio's pick: a touch warm, a touch more contrast, the
 grain halved); and "Tone: the paint itself" makes its change at the source (saturation 0.66 to 0.80, the grain 1.1 to 0.6; it
 reloads). Pick by eye; nothing is the default until you say.
+
+**Your three notes on the turning ship (2026-10-21), answered:** the shields no longer jump: each slides smoothly from showing
+above the far rail to hanging below the near rail as its side turns toward you. The wake now follows the track the ship has
+sailed, so it curves in a turn, and a turn with way on breaks white along the outer side from the bow to the quarter. The
+sail: it is set while you drive her (W) and furled at rest, with its belly by the wind; the wind still gives the speed and
+rests the oars when it fills the sail, and the pennant at the masthead shows which way it blows.
