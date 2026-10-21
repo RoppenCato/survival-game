@@ -228,6 +228,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 - `src/yard.js` (`Yard`): the Shipyard scene (shared by the game and the Sea Editor), hull designs, parts, drawing vessels,
   sailing (`Yard.sail`).
 - `src/runes.js` (`Runes`): the thirty runes and the arm ring's drawing. `src/hird.js` (`Hird`): hirdmen's numbers and rolls.
+- `src/sea.js` (`Sea`): the living sea (the Art Director's recipe, 2026-10-21): the water's wind effects and the creatures, no browser globals.
 - `src/fishing.js` (`Fishing`): the fishing round, no drawing. `src/ambient.js` (`Ambient`): the synthesized sound of the
   place. `src/sfx.js` (`Sfx`): playing recorded sounds. `src/music.js` (`Music`): the recorded loops' player and the
   synthesized songs (the fallback).
@@ -527,6 +528,22 @@ before it. The lines are `LORE?` (asked). **Not built:** shooting from the deck 
 decks (chapter 3: Robin's yes), the fleet, the studio's surfaces on the hull (the plan's steps 5 to 8); your colours on the sail
 and the shields and a ship's name come later (Robin).
 
+**The living sea** (`src/sea.js`, the Art Director's `out/sea` drop, 2026-10-21, on Robin's word: "ambiance creatures, whales
+swimming by, gulls circling, some fish, not too much; wind effects and motion in the water; the water more beautiful and
+living"): **the water** over the painted sea (`Sea.drawWater`, before the waves' marks): soft swell bands at an angle to the
+wind, cloud shadows, cat's-paws (dark patches long with the wind, ruffled across it) and whitecaps (a bright curl with a foam
+trail) by the wind's strength, the sun's glitter in a band on the upper-left side by day, a shoal's shimmer now and then;
+every patch a world point that drifts downwind and dies and is never laid over land (`clear`); **the life** (the studio's
+pieces in `assets/sea/`, inlined as `__SEA__` by `sea_art()`, 65 px a metre): gulls on a loose ring round the ship at sea or
+round the nearest shore (`shorePt`), flapping and gliding in the eight directions with shadows on the water, two to five, none
+far out at night; a minke far out that surfaces three or four times twenty seconds apart (the blow is `Sea.spout`), shows its
+fluke and is gone for minutes; a fish leaping from the shoal; a seal's head by the shore; **the ship's pennant** from the masthead
+(`Yard.masthead`) and **bow spray** when the way and the wind are up. **The wind blows at `wind.s`** (0 to 1, wandering every
+minute or two between 0.15 and 0.75; mine, Robin's default waits), and everything scales with it: a calm day shows the swell
+and the glitter only. `seaTick` runs when the sea is in sight (`sea.on`); `tests/sea.js`; `debug().sea()`, `seaEnv()`,
+`windObj()`. Not wired: the depth tint (the shallows' green-blue band, a ground-painting change), the Sea Editor. On the
+studio's word: puffins, a sea eagle, a humpback, jellyfish, the night sea.
+
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
 chart show what has been seen; saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is
 dropped; **the painted ground is saved as what differs from the ground the world paints at every start** (`groundBase`,
@@ -542,7 +559,11 @@ looked: `moon`, `mist`, `shafts`, `clouds`. Robin found the first version "a wei
 Tone rows** (`LAB.tone`, 2026-10-21, Robin: the Sea Editor's colours looked more vibrant than the game's): colour, contrast and
 warmth as a CSS filter on the whole canvas (`applyTone`, stepped by clicks), the frame's grain on or off, and the stored look
 (`game.look`, handed over from the old Art Direction page and applied by the game alone, never by the Sea Editor) cleared
-with a reload; the Art Director is asked to look at the two pages and propose a tone.
+with a reload; and **the Art Director's three presets** (`TONE_PRESETS`, 2026-10-21: Now; Clear water, saturate 1.3 and no
+grain, toward the Sea Editor; **Bauer day, its pick**, saturate 1.18, contrast 1.04, a touch warm, the grain halved) and its
+**change at the source** (`LAB.tone.src`, a reload: the ink look's `sat` 0.66 to 0.80 and `texture` 1.1 to 0.6: the game's land
+measured an olive at 29% saturation; the open sea is the same paint on both pages). Its captures: `C:\\dev\\SG\\Art
+Director\\work\\review\\light`. Robin picks; the default stays as it was until he does.
 
 **The UI** (`docs/ui-review.md`): boards are drawn over the HUD in one order (`scene.boards`). **The panels' look is the Art
 Director's** (2026-10-20, Robin's mix of its three directions; its `out/hud/SPEC.md` and `hud_mix.png`, the art copied whole

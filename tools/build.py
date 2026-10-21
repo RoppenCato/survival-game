@@ -20,7 +20,7 @@ def write(path, text):
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(text)
 
-SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__CAVE__': read('src', 'cave.js'), '__AMBIENT__': read('src', 'ambient.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes.js'), '__HIRD__': read('src', 'hird.js'), '__NAV__': read('src', 'nav.js'), '__RUIN__': read('src', 'ruin.js'), '__YARD__': read('src', 'yard.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__SFX__': read('src', 'sfx.js'), '__SPRITES_JS__': read('src', 'sprites.js'), '__COMBAT__': read('src', 'combat.js')}
+SRC = {'__ART__': read('src', 'art.js'), '__LIB__': read('src', 'stylelab.js'), '__WORLD__': read('src', 'world.js'), '__CAVE__': read('src', 'cave.js'), '__AMBIENT__': read('src', 'ambient.js'), '__BUILD__': read('src', 'build.js'), '__ITEMS__': read('src', 'items.js'), '__RUNES__': read('src', 'runes.js'), '__HIRD__': read('src', 'hird.js'), '__NAV__': read('src', 'nav.js'), '__RUIN__': read('src', 'ruin.js'), '__YARD__': read('src', 'yard.js'), '__SEALIB__': read('src', 'sea.js'), '__VILLAGE__': read('src', 'village.js'), '__GATHER__': read('src', 'gather.js'), '__FISHING__': read('src', 'fishing.js'), '__MUSIC__': read('src', 'music.js'), '__SFX__': read('src', 'sfx.js'), '__SPRITES_JS__': read('src', 'sprites.js'), '__COMBAT__': read('src', 'combat.js')}
 
 # The Blender hero's sprite sheets (assets/sprites/hero, 2026-10-09): the Character Editor and the Blender Editor get each sheet's
 # metadata inlined and the PNGs as paths beside dist/ (../assets/sprites/...), which load from file:// and from the workbench
@@ -71,6 +71,19 @@ def fire_art():
         f['base'] = url(f['base']); f['embers'] = url(f['embers']); f['flames']['file'] = url(f['flames']['file'])
     return json.dumps(J)
 SRC['__FIRES__'] = fire_art()
+def sea_art():
+    """the Art Director's living sea (assets/sea, its out/sea/render, 2026-10-21): each piece's picture (tagged by its bytes), its origin on the water, its waterline cuts thinned to one in six, its pixels a metre"""
+    d = os.path.join(ROOT, 'assets', 'sea')
+    if not os.path.isdir(d): return 'null'
+    out = {}
+    for fn in sorted(os.listdir(d)):
+        if not fn.endswith('.json'): continue
+        n = fn[:-5]; pp = os.path.join(d, n + '.png')
+        if not os.path.exists(pp): continue
+        j = json.load(open(os.path.join(d, fn), encoding='utf-8'))
+        out[n] = { 'src': '../assets/sea/' + n + '.png?v=' + hashlib.md5(open(pp, 'rb').read()).hexdigest()[:8], 'origin': j['origin'], 'water': j.get('water', [])[::6], 'ppm': j.get('ppm', 65) }
+    return json.dumps(out)
+SRC['__SEA__'] = sea_art()
 def item_icons():
     """the things in the hand as icons (art/build/items_icons.py), assets/sprites/items/<kind>_wood.png and _metal.png"""
     d = os.path.join(ROOT, 'assets', 'sprites', 'items'); out = {}

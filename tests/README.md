@@ -7,6 +7,7 @@ Run everything: `npm install` once, then `npm test` from the project root.
 
 | Script | What it checks |
 | --- | --- |
+| sea.js | the living sea (2026-10-21): the water's patches by the wind and on the water only, the glitter by day, gulls round the ship, the whale's rises, the seal, the fish, a calm day, the drawing |
 | ships.js | the ships (2026-10-21): the hulls at true size, the crew's places (helmsman, rowers two a thwart facing aft, clear of each other), the hero's place, the stroke, the gangway and the landing spots |
 | ctest2.js | melee reach, body collision, enemy spacing, move speed, parry, auto ranged |
 | ctest4.js | dash distance, backstep, dash i-frames, turn speed |

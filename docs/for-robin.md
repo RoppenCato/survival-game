@@ -218,3 +218,17 @@ follow anywhere, board when called and step off with you. The colours: the game 
 applies the look you handed over from the old Art Direction page (`game.look`); the Sea Editor does neither, which is the
 difference you saw. Admin's Light and sound board has Tone rows now: colour, contrast, warmth (click to step), the grain on or
 off, and the stored look cleared. The Art Director is asked to look at both pages and propose a tone.
+
+**The living sea (2026-10-21, your words to the studio; wired the same day):** at sea the water has swell bands, cat's-paws
+and whitecaps by the wind, the sun's glitter on the upper-left side, cloud shadows, a shoal's shimmer; gulls circle the ship
+(or the shore when you walk the beach), a minke surfaces far out now and then and shows its fluke, a fish leaps from a shoal,
+a seal looks out by the shore; the ship streams a pennant and throws spray at the bow when the wind is up. The wind's
+strength wanders between light and fresh on its own (my default); say whether you want it calmer or wilder by default, a
+humpback as well as the minke, and more birds. Nothing here is in the Sea Editor yet, and the shallows' wider green band it
+has is a change to the ground painting still to make.
+
+**The tones, the Art Director's answer:** the open sea is the same paint on both pages; what dulls the game is the grain over
+the frame and the ink look's saturation on the land (an olive). Its presets are on Admin's Light and sound board under Tone:
+preset: "Now", "Clear water" (toward the editor) and "Bauer day" (the studio's pick: a touch warm, a touch more contrast, the
+grain halved); and "Tone: the paint itself" makes its change at the source (saturation 0.66 to 0.80, the grain 1.1 to 0.6; it
+reloads). Pick by eye; nothing is the default until you say.

@@ -424,6 +424,11 @@ var T = 32, TS = 24, K = 0.75;
     drawOars(c, v, clock, rw);
     if (H && H.mast) drawRig(c, v, pr, ds, bob, clock, at, curve);
   }
+  function masthead(v, clock) {           // where the masthead is on screen (null without a mast): for the pennant
+    var H = HULLS[v.kind]; if (!H || !H.mast || v.mastX == null || !parts0(v, 'mast')) return null; var pr = profileOf(v), L = pr.L, bob = bobOf(v, clock), h = v.h + Math.sin(clock * 1.7 + 1) * 0.02;
+    return [v.x + v.mastX * Math.cos(h), v.y * K + bob + v.mastX * Math.sin(h) * K - L * 0.84];
+  }
+  function stemPoint(v) { var pr = profileOf(v), L = pr.L; return [v.x + Math.cos(v.h) * L * 0.96, v.y + Math.sin(v.h) * L * 0.96]; }   // the bow's foot, in the world
   function drawRigOf(c, v, clock) {        // the mast, the yard, the sail and the steering oar, drawn apart (over the men behind the mast, under those before it)
     var H = HULLS[v.kind]; if (!H || !H.mast) return; var pr = profileOf(v), L = pr.L, ds = Math.max(0.8, L / 110), bob = bobOf(v, clock), sx = v.x, sy = v.y * K + bob, h = v.h + Math.sin(clock * 1.7 + 1) * 0.02;
     function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
@@ -713,7 +718,7 @@ var scene = {
 };
 
 return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
-  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
+  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, masthead: masthead, stemPoint: stemPoint, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullParts: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();
