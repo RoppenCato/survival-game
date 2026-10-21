@@ -343,3 +343,6 @@ jog is written down in the idea bank).
 studio is making one test clip, the fastest walk that still reads as walking for his build (about 45 to 50 units a second against
 the jog's 84). When it arrives, Admin's "The hero walks (a test)" switches him to it at its own speed, with Shift still sprinting
 as now, so you can compare the two in play. Until then the switch says the walk is not rendered yet.
+
+**The walking test is ready (2026-10-21):** Escape, Admin, "The hero walks (a test)". He then walks with the studio's fast walk,
+a power walk at 55 units a second (the jog is 84), his feet planted; Shift still sprints as now; switch it off for the jog again.
