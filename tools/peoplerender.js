@@ -8,15 +8,15 @@
 const { spawn } = require('child_process'); const fs = require('fs'); const path = require('path');
 const OUT = path.join('art', 'render', 'people'), BLEND = path.join('art', 'source', 'people.blend');
 const FR = { idle: 32, idle_look: 48,      // 2026-10-21 (the studio, Robin's laggy idles): the hero's idle, one breath in 3.8 s (art/build/people_idle.py), at full frames; they were halved to 16 and 18 on 2026-10-20
-  walk: 10, run: 8, attack1: 10, attack2: 10, chop: 10, mine: 10, hit: 5, death: 10, block: 3, sit: 4, pickup: 8, interact: 6, bow_draw: 5, bow_shoot: 4,
-  hammer: 12, saw: 12, carry: 2, carry_walk: 10, kneel: 8, sit_work: 4,
+  walk: 12, jog: 10, run: 10,   /* the gaits made for the game's speeds (2026-10-21, the studio: art/build/kit_gait.py --table people; a stroll for 38, a jog for 60, a run for 80, each with its stride) */ attack1: 10, attack2: 10, chop: 10, mine: 10, hit: 5, death: 10, block: 3, sit: 4, pickup: 8, interact: 6, bow_draw: 5, bow_shoot: 4,
+  hammer: 12, saw: 12, carry: 2, carry_walk: 12, kneel: 8, sit_work: 4,
   row: 8, helm: 8 };   // the ships' clips (the Art Director, 2026-10-21: art/build/rowing_build.py on people.blend after the folk build; no hand things)   // the work clips (the Art Director's step 5B, 2026-10-20: art/build/folk_build.py keys them on people.blend)
 // The death is rendered in a frame of its own (2026-10-13): a man falling backward ends two metres from where he stood and
 // out of the frame every other clip fits in, so the dead lay with half their bodies cut off. Jobs 8 to 11 render it larger
 // (--size 208), looking lower (--aim 0.6) and held over its spot (--inplace death) into art/render/people_own, with numbers
 // of its own; tools/people.js packs what lies there with its own frame.   node tools/peoplerender.js 4 8,9,10,11
 const OWN = ['death'], OWN_OUT = path.join('art', 'render', 'people_own'), OWN_ARGS = ['--size', '208', '--ortho', '2.626', '--aim', '0.6', '--inplace', OWN.join(',')];
-const ALL = Object.keys(FR).filter(c => OWN.indexOf(c) < 0), ARMED = ['idle', 'walk', 'run', 'attack1', 'attack2', 'chop', 'mine', 'hit', 'block'], BOW = ['idle', 'walk', 'run', 'bow_draw', 'bow_shoot'];
+const ALL = Object.keys(FR).filter(c => OWN.indexOf(c) < 0), ARMED = ['idle', 'walk', 'jog', 'run', 'attack1', 'attack2', 'chop', 'mine', 'hit', 'block'], BOW = ['idle', 'walk', 'jog', 'run', 'bow_draw', 'bow_shoot'];
 const JOBS = [
   [ALL, ['body', 'tunic', 'legs', 'hairA']], [ALL, ['hairB', 'hairC', 'beardA', 'beardB']], [ALL, ['hood', 'cap', 'helm', 'mail']], [ALL, ['cloak', 'dress', 'shieldRim', 'shieldFace']],
   [ARMED, ['swordWood', 'swordMetal', 'axeWood', 'axeMetal']], [ARMED, ['clubWood', 'seaxWood', 'seaxMetal', 'spearWood']], [ARMED, ['spearMetal', 'greataxeWood', 'greataxeMetal']], [BOW, ['bowWood']],

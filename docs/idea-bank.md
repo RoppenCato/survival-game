@@ -1002,3 +1002,5 @@ Sources: [enemy telegraph shape language](https://gamineai.com/blog/enemy-telegr
 [hit-stop and juice](https://www.wayline.io/learn/game-feel/1).
 
 - **Releasing the game, and playing it with friends** (Robin, 2026-10-21): the assessment and my recommendation are in `docs/release-and-coop.md`; the open question is whether playing together is a must or a nice-to-have.
+
+- **The jog** (Robin, 2026-10-21: "im still not sure about 'the jog' of hero and villagers. But we'll do it like this for now"): the hero moves at 84 units a second and the raiders at 60, both a jog; a walk would mean those speeds coming down to about 45 (the stroll plants its feet only to there), a change on the developer's side.
