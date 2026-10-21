@@ -338,3 +338,8 @@ other way.
 **The knife (2026-10-21, your note):** the flint knife is no longer offered on the starter island; it appears on the big island as
 before. And the villagers' new walks are in, on your yes: they stroll at their own pace, and the raiders jog (your doubt about the
 jog is written down in the idea bank).
+
+**Testing a walk instead of the jog (2026-10-21, your question):** the hero has no real walk yet (his walk is the jog), so the
+studio is making one test clip, the fastest walk that still reads as walking for his build (about 45 to 50 units a second against
+the jog's 84). When it arrives, Admin's "The hero walks (a test)" switches him to it at its own speed, with Shift still sprinting
+as now, so you can compare the two in play. Until then the switch says the walk is not rendered yet.
