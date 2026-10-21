@@ -356,8 +356,7 @@ with Thorgunna's standing stone, `spriteName` maps `graveStone` to them; the tra
 post, flower bed, haystack, net, weir and well; and the raid's wreckage laid at a fresh start as **ground litter**: decals of
 kind `litter` drawn under everything, `charredBeam` in the hall's ash and across its door, `burntHeap` in the hall and by the
 hut, `brokenDoor` by the gate), **the fences** (`assets/props/fences`: a ring's stakes `stake_1..6`, `stake_new` for a mended
-run, `stake_stump` for one hacked down (`spriteName`), `railPost` and the wattle `hurdle` pieces for the polygon rings to
-come; the palisade, rail, wattle and gate drawing of the Build edges is the studio's in `src/build.js`), **and the faces**
+run, `stake_stump` for one hacked down (`spriteName`), `railPost` and the wattle `hurdle` pieces for rail and wattle rings on a polygon (not built: those fences stay Build edges); the palisade, rail, wattle and gate drawing of the Build edges is the studio's in `src/build.js`), **and the faces**
 (`assets/props/faces`: porch, bell tower, apse, gable cross, lantern, sign, awning, woodshed, the laid `foodTable`; thatch in
 courses with a turf ridge and the turf roof's bark board in `drawRoof`; **a room with a hearth or a fire pit indoors has a
 smoke hole in its ridge** (`Build.drawSmokeHole` at `Build.ridgeMid`), the fireplace keeps its chimney), **and the yard's
@@ -709,7 +708,7 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   `here()` in the game; mined rocks, veins, what was seen and what was taken are saved. `tests/cave.js`, `tools/visual/cave.js`.
 - **Villages** (`src/village.js`, `docs/villages.md`): `Village.make(seed, site, opts)` grows a ring plan round a yard with a
   fire pit (a longhouse or hall, houses with doors to the yard, outbuildings, a fence or a ring of stakes with gates, a
-  winding road, nature kept, things against the walls, job spots, the people as households); archetypes in `ARCH`
+  winding road, nature kept, things against the walls, job spots, the people as households). **The ring of stakes is a polygon** (`V.fence.poly`, 2026-10-21, after the Art Director's step 2 notes; mine): eight to twelve straight runs, each corner a little off its even angle and hugging the buildings in its own sector (every lot's corner inside, the ring kept inside the site), the gate two tiles wide at the start of the run on the road with a banner either side, the back gate a tile and a bit, a run stopping a stake short of a kept rock or tree, now and then one run mended in pale new wood (`stake.mended`, `stake_new`); `F.round` stays true and `F.gateAt`, `F.backAt`, `F.cx`, `F.cy` serve every reader as before. `tools/visual/villages.js 20 village,seat 2 0.9` renders it; archetypes in `ARCH`
   (farmstead to chieftain's seat, fishing hamlet, trading post, abandoned, the lowland town and church, and `great` and
   `bigtown` for the trials); `Village.plan(env)` places them (none on the starter island). **By water (2026-10-20):** home
   water gets only peaceful places and exactly one seat, the jarl's, on a medium island (never the big island: Old Aslak's

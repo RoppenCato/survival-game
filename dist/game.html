@@ -8696,15 +8696,39 @@ function make(seed, site, opts) {
   if (shore && !V.ruin && R() < 0.7) { var bx2 = shore === 'e' ? tx + w - 1.2 : shore === 'w' ? tx + 1.2 : yx + yw / 2 + (R() - 0.5) * 4, by2 = shore === 's' ? ty + h - 1.1 : shore === 'n' ? ty + 1.1 : yx + yw / 2; V.props.push({ name: 'beachedBoat', x: bx2 * T, y: by2 * T, solid: 10 }); }   // a boat drawn up on the sand at the site's shore edge (the game keeps it only on land)
   var roadSide = R() < 0.5 ? 1 : -1, backGateX = null;                                                         // the road bends past the fire on this side and leaves by a back gate beside the longhouse
   if (G.backGate && (!shore || shore === 's') && (A.houses[1] >= 3 || shore === 's')) { backGateX = roadSide > 0 ? L0.x + L0.w + 1 : L0.x - 2; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = roadSide > 0 ? L0.x - 2 : L0.x + L0.w + 1; if (backGateX <= ex0 || backGateX >= ex1 - 1) backGateX = null; }
-  if (fk === 'palisade' && !A.townwall) {              // a round wall of sharpened stakes round the whole ring, a gap for the gate on the path, banners either side
+  if (fk === 'palisade' && !A.townwall) {              // a ring of sharpened stakes round the whole place. Since 2026-10-21 (the Art Director's step 2 notes, mine to build): a POLYGON of eight to twelve straight runs hugging the buildings (V.fence.poly), each corner a little off its even angle and a little outside the hugging ellipse (every lot's corner inside), the gate two tiles wide at the start of the run on the road, the back gate a tile and a bit, a run stopping a stake short of a kept rock or tree, now and then one run mended in pale new wood (stake.mended: stake_new), banners either side of the gate; the stakes a tile apart (G.stakeStep)
     var ecx = (ex0 + ex1) / 2 * T, ecy = (ey0 + ey1) / 2 * T, hw2 = Math.max(1, (ex1 - ex0) / 2 * T), hh2 = Math.max(1, (ey1 - ey0) / 2 * T), kk = 1;
     V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / hw2, dy = (q[1] * T - ecy) / hh2; kk = Math.max(kk, Math.sqrt(dx * dx + dy * dy)); }); });   // the ellipse hugs the buildings: every corner inside it
-    var erx = hw2 * kk + T * 0.8, ery = hh2 * kk + T * 0.8, per = 6.283 * Math.sqrt((erx * erx + ery * ery) / 2), nst = Math.max(12, Math.round(per / G.stakeStep)), gpt = tile(gateX, ey1), gateA = Math.atan2((gpt[1] + T - ecy) / ery, (gpt[0] - ecx) / erx), k2;
+    var erx = hw2 * kk + T * 0.8, ery = hh2 * kk + T * 0.8, gpt = tile(gateX, ey1), gateA = Math.atan2((gpt[1] + T - ecy) / ery, (gpt[0] - ecx) / erx);
     var gpt2 = backGateX != null ? tile(backGateX, ey0) : null, gate2A = gpt2 ? Math.atan2((gpt2[1] - T - ecy) / ery, (gpt2[0] - ecx) / erx) : null;
-    var gapA = Math.min(0.16, 1.7 * T / Math.max(1, Math.min(erx, ery))), gapB = Math.min(0.14, 1.3 * T / Math.max(1, Math.min(erx, ery)));   // the gate's gap by its width on the ground, three tiles and a bit (2026-10-13: by angle alone a big ring's gate was nine tiles of nothing; a small ring keeps what it had)
-    for (k2 = 0; k2 < nst; k2++) { var a2 = k2 / nst * 6.283, px = ecx + Math.cos(a2) * erx, py = ecy + Math.sin(a2) * ery, da = Math.abs(Math.atan2(Math.sin(a2 - gateA), Math.cos(a2 - gateA))); if (da < gapA) continue; if (gate2A != null && Math.abs(Math.atan2(Math.sin(a2 - gate2A), Math.cos(a2 - gate2A))) < gapB) continue; if (shore === 's' && Math.sin(a2) > 0.75) continue; if (V.ruin && R() < 0.35) continue; V.props.push({ name: 'stake', x: px, y: py, solid: 5 }); }
-    for (k2 = 0; k2 < (shore === 's' ? 0 : Math.round(G.banners)); k2++) { var ba = gateA + (k2 % 2 ? 1 : -1) * (gapA + 0.04); V.props.push({ name: 'banner', x: ecx + Math.cos(ba) * erx, y: ecy + Math.sin(ba) * ery + 2, solid: 3 }); }
-    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery, gateAt: shore === 's' ? null : [ecx + Math.cos(gateA) * erx, ecy + Math.sin(gateA) * ery], backAt: gate2A != null ? [ecx + Math.cos(gate2A) * erx, ecy + Math.sin(gate2A) * ery] : null };   // gateAt, backAt: the gaps in the ring of stakes
+    function wrapA(a) { return Math.atan2(Math.sin(a), Math.cos(a)); }
+    var N = 8 + Math.floor(R() * 5), step = 6.283 / N, ang = [], i2, j2;
+    for (i2 = 0; i2 < N; i2++) ang.push(wrapA(R() * step * 0.2 + i2 * step + (R() - 0.5) * step * 0.5));
+    function nearestTo(a) { var bi = 0, bd = 9; for (j2 = 0; j2 < ang.length; j2++) { var dd = Math.abs(wrapA(ang[j2] - a)); if (dd < bd) { bd = dd; bi = j2; } } return bi; }
+    ang[nearestTo(gateA)] = gateA; if (gate2A != null && nearestTo(gate2A) !== ang.indexOf(gateA)) ang[nearestTo(gate2A)] = gate2A; else if (gate2A != null) { gate2A = null; backGateX = null; }
+    ang.sort(function (p, q) { return p - q; });
+    var poly = [], tries, kcorner = 1 / Math.cos(step / 2), corners = [], rad = [];
+    V.lots.forEach(function (l) { [[l.x, l.y], [l.x + l.w, l.y], [l.x, l.y + l.h], [l.x + l.w, l.y + l.h]].forEach(function (q) { var dx = (q[0] * T - ecx) / erx, dy = (q[1] * T - ecy) / ery; corners.push({ x: q[0] * T, y: q[1] * T, a: Math.atan2(dy, dx), r: Math.hypot(dx, dy) }); }); });
+    // each corner's radius (in the ellipse's own measure): what the buildings in its sector need, so the ring hugs them on an empty side too, a little more, a little off; then any lot corner still outside pushes the two ring corners round it out until all are in
+    ang.forEach(function (a) { var need = 0.5; corners.forEach(function (q) { var dd = Math.abs(wrapA(q.a - a)); if (dd < step * 0.95) need = Math.max(need, q.r / Math.max(0.35, Math.cos(dd))); }); rad.push(Math.min(1.12, need * kcorner * 1.04 * (0.98 + R() * 0.06)) + T * 0.4 / Math.min(erx, ery)); });
+    function inside(px, py) { var n = poly.length, j, c = false, i; for (i = 0, j = n - 1; i < n; j = i++) { var xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1]; if ((yi > py) !== (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) c = !c; } return c; }
+    function lay() { poly = ang.map(function (a, i3) { return [Math.max((tx + 0.5) * T, Math.min((tx + w - 0.5) * T, ecx + Math.cos(a) * erx * rad[i3])), Math.max((ty + 0.5) * T, Math.min((ty + h - 0.5) * T, ecy + Math.sin(a) * ery * rad[i3]))]; }); }
+    for (tries = 0; tries < 14; tries++) {
+      lay(); var bad = corners.filter(function (q) { return !inside(q.x, q.y); }); if (!bad.length) break;
+      bad.forEach(function (q) { var lo = -1, hi = -1; for (i2 = 0; i2 < N; i2++) { if (wrapA(q.a - ang[i2]) >= 0 && (lo < 0 || wrapA(q.a - ang[i2]) < wrapA(q.a - ang[lo]))) lo = i2; } hi = (lo + 1) % N; if (lo < 0) lo = N - 1; rad[lo] *= 1.06; rad[hi] *= 1.06; });
+    }
+    var gIx = ang.indexOf(gateA), bIx = gate2A != null ? ang.indexOf(gate2A) : -1, mendIx = R() < 0.4 ? Math.floor(R() * N) : -1, GAP = 2 * T + 6, GAPB = 1.3 * T;
+    function runOf(k) { var p0 = poly[k], p1 = poly[(k + 1) % N], dx = p1[0] - p0[0], dy = p1[1] - p0[1], len = Math.hypot(dx, dy) || 1; return { p0: p0, p1: p1, ux: dx / len, uy: dy / len, len: len }; }
+    [[gIx, GAP], [bIx, GAPB]].forEach(function (g3) { if (g3[0] < 0) return; var r3 = runOf(g3[0]); poly[g3[0]] = [r3.p0[0] - r3.ux * g3[1] / 2, r3.p0[1] - r3.uy * g3[1] / 2]; });   // the gate corner slides back along its run so the gap's middle sits where the road comes
+    var nat = (V.nature || []).filter(function (q) { return q.r >= 6; }), gateAt = null, backAt = null;   /* (nature is kept after the fence: the stakes near a kept tree go where V.nature is settled) */
+    function stakeAt(px, py, mended) { for (var ni = 0; ni < nat.length; ni++) if (Math.hypot(nat[ni].x - px, nat[ni].y - py) < nat[ni].r + 9) return; if (shore === 's' && py > ecy + ery * 0.75) return; if (V.ruin && R() < 0.35) return; var st = { name: 'stake', x: px, y: py, solid: 5 }; if (mended) st.mended = true; V.props.push(st); }
+    for (i2 = 0; i2 < N; i2++) {
+      var r2 = runOf(i2), skip0 = i2 === gIx ? GAP : i2 === bIx ? GAPB : 0, s2;
+      if (i2 === gIx) gateAt = [r2.p0[0] + r2.ux * GAP / 2, r2.p0[1] + r2.uy * GAP / 2]; if (i2 === bIx) backAt = [r2.p0[0] + r2.ux * GAPB / 2, r2.p0[1] + r2.uy * GAPB / 2];
+      for (s2 = skip0; s2 <= r2.len - G.stakeStep * 0.45; s2 += G.stakeStep) stakeAt(r2.p0[0] + r2.ux * s2, r2.p0[1] + r2.uy * s2, i2 === mendIx);
+    }
+    if (shore !== 's' && gateAt) { var rg = runOf(gIx); for (i2 = 0; i2 < Math.round(G.banners); i2++) { var bs = i2 % 2 ? GAP + 7 : -7; V.props.push({ name: 'banner', x: rg.p0[0] + rg.ux * bs, y: rg.p0[1] + rg.uy * bs + 2, solid: 3 }); } }
+    V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: 'palisade', round: true, gate: gateX, cx: ecx, cy: ecy, rx: erx, ry: ery, poly: poly, gateAt: shore === 's' ? null : gateAt, backAt: backAt };   // gateAt, backAt: the gaps in the ring of stakes; poly: its corners in the world's units
   } else {
     var wideGate = A.townwall ? 1 : 0;                         // a town's gate is two tiles wide (2026-10-13: through one tile a fight was a duel with everyone else waiting)
     for (x = ex0; x < ex1; x++) { if (x === backGateX) H(x, ey0, 'gate', 2); else if (!(V.ruin && R() < 0.4)) H(x, ey0, fk, fm); if ((x === gateX || (wideGate && x === gateX + 1)) && shore !== 's') H(x, ey1, 'gate', 2); else if (!(V.ruin && R() < 0.4) && !(shore === 's')) H(x, ey1, fk, fm); }
@@ -8812,6 +8836,7 @@ function make(seed, site, opts) {
   function inWay(o, r) { if (!(r > 0)) return false; for (var i = 0; i < keep.length; i++) if (Math.hypot(o.x - (keep[i][0] + 0.5) * T, o.y - (keep[i][1] + 0.5) * T) < T * 1.5) return true; return false; }
   V.props = V.props.filter(function (o) { return !inWay(o, o.solid != null ? o.solid : (o.name === 'scarecrow' ? 4 : 8)); });
   V.nature = V.nature.filter(function (o) { return !inWay(o, o.r); });
+  if (V.fence && V.fence.poly) V.props = V.props.filter(function (pr) { if (pr.name !== 'stake') return true; for (var ni = 0; ni < V.nature.length; ni++) { var nq = V.nature[ni]; if (nq.r >= 6 && Math.hypot(nq.x - pr.x, nq.y - pr.y) < nq.r + 9) return false; } return true; });   // the ring stops a stake short of a kept rock or tree (the polygon rings, 2026-10-21)
   V.tactic = tacticOf(V, R);               // the place's plan of defence (raid step 6)
   return V;
 }
@@ -14705,6 +14730,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function spriteName(o) {               // a prop's picture by what it is: the graves are mounds (Thorgunna's a standing stone), a hacked stake a stump (the Art Director's steading and fence pieces, 2026-10-20)
     if (o.name === 'graveStone') return o.grave === 'thorgunna' ? 'graveThorgunna' : 'graveMound';
     if (o.name === 'stake' && o.cut) return 'stake_stump';
+    if (o.name === 'stake' && o.mended) return 'stake_new';   /* (a mended run of the ring: pale new wood, the polygon rings, 2026-10-21) */
     return o.name;
   }
   function litter(name, tx, ty, v) { decals.push({ k: 'litter', name: name, x: (tx + 0.5) * T, y: (ty + 0.5) * T, v: v || 0, r: 0 }); }   // ground litter: a picture on the ground, under everything that walks (saved with the stumps)

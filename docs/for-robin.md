@@ -130,3 +130,9 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
     bucket; the priest kneels before the altar; the weaver and the net mender sit at their work; your crafter saws at the
     bench. My picks: which roles get which clothes, and the pace of the hammer and the saw (a stroke every 0.8 s). The
     hammer is small from the south at the game's size: if it does not read, the studio can make the head bigger.
+19. **The ring of stakes is a polygon now** (your note that the round fences looked weird; the Art Director's step 2
+    asked for it): eight to twelve straight runs that hug the buildings, corners a little off, the gate on the road with
+    its banners, the back gate at the far side, the runs stopping short of a kept tree or rock, one run now and then
+    mended in pale new wood. Every village with a palisade has it (the walled towns and the dry-stone and rail fences
+    stay as they were). Look at any village on the big island or the Village Editor. The studio's rail-fence posts and
+    wattle hurdles for polygon fences are not used yet (those fences stay straight).

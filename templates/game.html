@@ -1682,6 +1682,7 @@ __COMBAT__
   function spriteName(o) {               // a prop's picture by what it is: the graves are mounds (Thorgunna's a standing stone), a hacked stake a stump (the Art Director's steading and fence pieces, 2026-10-20)
     if (o.name === 'graveStone') return o.grave === 'thorgunna' ? 'graveThorgunna' : 'graveMound';
     if (o.name === 'stake' && o.cut) return 'stake_stump';
+    if (o.name === 'stake' && o.mended) return 'stake_new';   /* (a mended run of the ring: pale new wood, the polygon rings, 2026-10-21) */
     return o.name;
   }
   function litter(name, tx, ty, v) { decals.push({ k: 'litter', name: name, x: (tx + 0.5) * T, y: (ty + 0.5) * T, v: v || 0, r: 0 }); }   // ground litter: a picture on the ground, under everything that walks (saved with the stumps)
