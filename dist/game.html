@@ -7916,11 +7916,11 @@ var T = 32, TS = 24, K = 0.75;
     return out;
   }
   /* On and off (docs/ships-plan.md step 4, 2026-10-21). The GANGWAY is the point of the hull nearest the land: the rail is sampled
-     all round and from each sample the shore is looked for straight out, up to GANG.reach; the nearest wins. It gives the rail
+     all round and from each sample the walkable ground (the shore, or the shallows that can be waded) is looked for straight out, up to GANG.reach; the nearest wins. It gives the rail
      point (x, y), the land point to walk to (lx, ly, a step up the beach) and the distance. landingSpots spreads n men along the
      shore from a landing point: alternately either side along the shore line, a step apart and a step inland, each tested by
      free(x, y) with a small search round it. The game walks the men to the gangway and files them off onto the spots. */
-  var GANG = { reach: 96, step: 6, up: 10, apart: 16, inland: 12 };
+  var GANG = { reach: 240, step: 6, up: 10, apart: 16, inland: 12 };   // (reach 240: a karve floats well off a gentle beach; the men walk through the shallows to it, so land() is 'can be walked on', the wade band too)
   function gangway(v, land) {
     if (!HULLS[v.kind]) return null;
     if (v._gang && v._gang.x === v.x && v._gang.y === v.y && v._gang.h === v.h) return v._gang.g;
@@ -8127,11 +8127,13 @@ var T = 32, TS = 24, K = 0.75;
     bakes[key] = { cv: cv, L: L, W: W, w: bw / BK, h: bh / BK }; return bakes[key];
   }
   function shieldFace(i) { var r = hs(i + 1, 3); return SURF.shields[r < 0.22 ? 6 + (hs(i + 1, 5) < 0.5 ? 0 : 1) : Math.floor(hs(i + 1, 7) * 6)]; }
-  function drawShields(c, pr, L) {           // along both rails, 11 units apart, overlapping by half (in the hull's frame)
-    var SHC = ['#b08a5a', '#e6dcc6', '#8a6a44', '#8a4a3a'], sn = 0, faces = SURF && SURF.shields && SURF.shields.length >= 8 && SURF.shields.every(imgOk);
-    for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98, f;
-      if (faces) { f = shieldFace(sn++); c.drawImage(f, sx2 - 10, sd * wy - 10, 20, 20); return; }
-      c.fillStyle = SHC[(sn++ * 7) % 11 < 2 ? 3 : (sn % 3)]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.8; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(sx2, sd * wy, 2, 0, 7); c.fill(); });
+  function drawShields(c, v, pr, L, which, bob) {   /* the shields hang on the hull's SIDES, upright (Robin, 2026-10-21: laid flat on the rail they looked wrong): each at its rail point on screen, 11 units apart along the rail, overlapping by half; those on the side away from the camera ('back') are drawn before the hull, so the hull hides their lower part and they show above the far rail; those on the near side and the flanks ('front') after it, hanging below the near rail over the hull's side */
+    var faces = SURF && SURF.shields && SURF.shields.length >= 8 && SURF.shields.every(imgOk), SHC = ['#b08a5a', '#e6dcc6', '#8a6a44', '#8a4a3a'], sn = 0, roll = Math.sin((v.clock || 0) * 1.7 + 1) * 0.02, ch = Math.cos(v.h + roll), sh = Math.sin(v.h + roll), sy0 = v.y * K + (bob || 0);
+    for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) {
+      var wy = sd * profW(pr, sx2, sd) * 1.02, i = sn++, ny = sd * ch, front = ny >= -0.05, X = v.x + sx2 * ch - wy * sh, Y = sy0 + (sx2 * sh + wy * ch) * K + (front ? 3 : -7);
+      if ((which === 'front') !== front) return;
+      if (faces) { c.drawImage(shieldFace(i), X - 10, Y - 10, 20, 20); return; }
+      c.fillStyle = SHC[(i * 7) % 11 < 2 ? 3 : (i % 3)]; c.beginPath(); c.arc(X, Y, 10, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.9; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(X, Y, 2.2, 0, 7); c.fill(); });
   }
   // How a vessel handles: the Sea Editor's handling sliders, as numbers per kind. steer 0 is Direct (hold a direction
   // and the hull turns to face it and goes), 1 is Tiller (W drives, S backs, A and D turn). top and accel in units a
@@ -8267,6 +8269,7 @@ var T = 32, TS = 24, K = 0.75;
     var box = [-L - 12, -W - 12, 2 * L + 24, 2 * W + 24];
     var shg = c.createRadialGradient(sx + 2, v.y * K + 5 * sz, 0, sx + 2, v.y * K + 5 * sz, L); shg.addColorStop(0, 'rgba(18,42,64,0.34)'); shg.addColorStop(0.75, 'rgba(18,42,64,0.3)'); shg.addColorStop(1, 'rgba(18,42,64,0)');   // the shadow the sea's own colour, darker and bluer, soft at its edge (the studio's note)
     c.fillStyle = shg; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.98, W * 1.1, 0, 0, 7); c.fill();
+    v.clock = clock; if (v.shields) drawShields(c, v, pr, L, 'back', bob);
     inFrame(3 + 2.5 * ds, function () { inkPath(c, shadeHex(col.hull, -30), { box: box, flat: true, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); }); });   // the hull's depth below the rail
     var baked = surfacesOn() && H ? hullBake(v.kind, litPort(h) ? -1 : 1) : null;
     inFrame(0, function () {
@@ -8277,17 +8280,17 @@ var T = 32, TS = 24, K = 0.75;
       inkPath(c, col.deck, { box: box, lw: 0.9, shade: 0.1 }, function () { shapedPath(c, pr, 0.84, 0.62); });   // the bottom boards
       for (var bi = -2; bi <= 2; bi++) { c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.lineWidth = 0.5; c.strokeStyle = INK.faint; c.save(); c.beginPath(); shapedPath(c, pr, 0.84, 0.62); c.clip(); c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.stroke(); c.restore(); }
       seats.forEach(function (x, si) { var wt = profW(pr, x, -1) * 0.6, wb = profW(pr, x, 1) * 0.6; ink(c, [[x - 3, -wt], [x + 3, -wt], [x + 3, wb], [x - 3, wb]], shadeHex(col.deck, -16), { wob: 0.3, seed: si, lw: 0.7, heavy: 1.1 }); });   // the rowing seats as laid: a thwart across the hull
-      if (v.shields) drawShields(c, pr, L);
       if (false) { var SHC = ['#8a3a34', '#d9c48a', '#3f5a7a'], sn = 0; for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98; c.fillStyle = SHC[sn++ % 3]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.ellipse(sx2, sd * wy, 1.1 * sz, 0.7 * sz, 0, 0, 7); c.fill(); }); }   // shields hung along both rails, seen from above as leaning discs
     });
     var fx = Math.cos(h), fy = Math.sin(h) * K;                                                          // the upright stems, curling at bow and stern
-    function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
+    function at(lx, ly) { var cs = Math.cos(h + roll), sn = Math.sin(h + roll); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }   // (with the roll, as the hull: the stems swayed loose of it, Robin 2026-10-21)
     function curve(p0, p1, p2, w, fill) { c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = w + 2; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke(); c.strokeStyle = fill; c.lineWidth = w; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke(); }
     function stem(lx, dir, hgt) {
       var p = at(lx, 0), tip = [p[0] + fx * dir * 7 * ds, p[1] + fy * dir * 7 * ds - hgt], w = 2.4 + 1.2 * ds, wood = shadeHex(col.hull, -8);
       curve(p, [p[0] - fx * dir * 1.5 * ds, p[1] - hgt * 0.6], tip, w, wood);
       curve(tip, [tip[0] + fx * dir * 3.5 * ds, tip[1] - 3 * ds], [tip[0] + fx * dir * 1.5 * ds, tip[1] + 2.4 * ds], w * 0.55, wood);
     }
+    if (v.shields && !o.split) drawShields(c, v, pr, L, 'front', bob);
     stem(-L * 0.96, -1, 20 * ds);
     if (v.dragon) {                                                                                    // the dragon stem at the bow: a neck rising forward, a head with its jaw open, an eye, a tongue
       var bp = at(L * 0.96, 0), nk = [bp[0] + fx * 9 * ds, bp[1] + fy * 9 * ds - 16 * ds], hd = [nk[0] + fx * 5 * ds, nk[1] + fy * 5 * ds - 3 * ds], wood2 = shadeHex(col.hull, -10);
@@ -8302,7 +8305,7 @@ var T = 32, TS = 24, K = 0.75;
     if (H && H.mast) drawRig(c, v, pr, ds, bob, clock, at, curve);
   }
   function drawRigOf(c, v, clock) {        // the mast, the yard, the sail and the steering oar, drawn apart (over the men behind the mast, under those before it)
-    var H = HULLS[v.kind]; if (!H || !H.mast) return; var pr = profileOf(v), L = pr.L, ds = Math.max(0.8, L / 110), bob = bobOf(v, clock), sx = v.x, sy = v.y * K + bob, h = v.h;
+    var H = HULLS[v.kind]; if (!H || !H.mast) return; var pr = profileOf(v), L = pr.L, ds = Math.max(0.8, L / 110), bob = bobOf(v, clock), sx = v.x, sy = v.y * K + bob, h = v.h + Math.sin(clock * 1.7 + 1) * 0.02;
     function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
     drawRig(c, v, pr, ds, bob, clock, at, null);
   }
@@ -8380,7 +8383,7 @@ var T = 32, TS = 24, K = 0.75;
     c.save(); c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.clip('evenodd'); c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(sx - L * 2, sy - L, L * 4, L * 3); c.globalAlpha = 1; c.beginPath(); sub(0, 0.95, 0.9); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); c.beginPath(); sub(0, 0.92, 0.95); c.lineWidth = 0.9; c.strokeStyle = INK.lit; c.stroke(); c.restore();
     c.lineWidth = 1.2; c.beginPath(); sub(0, 1, 1); c.stroke(); }
     c.lineWidth = 0.9; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
-    if (v.shields) { c.save(); c.translate(sx, sy); c.scale(1, K); c.rotate(v.h + roll); drawShields(c, pr, L); c.restore(); }   // the shields along the rail, over the legs too
+    v.clock = clock; if (v.shields) drawShields(c, v, pr, L, 'front', bob);   // the near side's shields, hanging on the hull's side over the legs
     c.restore();
   }
 
@@ -11561,6 +11564,7 @@ function updatePlayer(dt) {
   p.fireCd = Math.max(0, p.fireCd - dt); p.fireT = Math.max(0, p.fireT - dt); p.roll.cd = Math.max(0, p.roll.cd - dt); p.parryFx = Math.max(0, p.parryFx - dt);
   p.stDelay -= dt; if (p.stDelay <= 0) p.st = Math.min(maxSt(), p.st + 34 * dt * mod('stam')); if (p.st > maxSt()) p.st = maxSt();
   var ix = (IN.keys.KeyD ? 1 : 0) - (IN.keys.KeyA ? 1 : 0), iy = (IN.keys.KeyS ? 1 : 0) - (IN.keys.KeyW ? 1 : 0);
+  if (api.scene && api.scene.still && api.scene.still()) { ix = 0; iy = 0; }   /* the page holds him still (aboard a ship the keys sail it: he stood running in place, Robin 2026-10-21) */
   var il = Math.hypot(ix, iy); if (il > 0) { ix /= il; iy /= il; }
   p.inAng = il > 0 ? Math.atan2(iy, ix) : null;
   p.moving = il > 0 && p.hurtT <= 0;
@@ -15090,13 +15094,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
      (m.landTo); on a raid's ground each becomes a man of the engine as he steps off. On another shore of home water they keep
      the boat. The men of the engine aboard (menAboard) board and land the same way, by an errand. The lines are LORE?. */
   var BOARD = { far: 420, near: 28, wait: 8, wade: 420, file: 0.35, cap: function (v) { return (v.rowers || 0) + (Yard.rigged(v.kind) ? 1 : 0); } };
-  function gangOf() { return raft ? Yard.gangway(raft, function (x, y) { return isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1; }) : null; }
+  function gangOf() { return raft ? Yard.gangway(raft, function (x, y) { return (isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) || w.isWade(x, y); }) : null; }   /* (the shallows count: the men wade out to a ship lying off the beach, 2026-10-21) */
   function nextSeatNo() { var n = 0; hird.forEach(function (m) { if (m.aboard && m.seatNo >= n) n = m.seatNo + 1; }); return n; }
   function climbAboard(m) { m.aboard = true; m.sitting = true; m.boarding = false; m.landTo = null; m.seatNo = nextSeatNo(); m.follow = true; m.mustered = true; m.job = null; m.at = null; }
   function crewBoard(P) {
     if (!raft || !Yard.isShip(raft.kind)) return; var n = hird.filter(function (m) { return m.aboard; }).length, cap = BOARD.cap(raft), g = gangOf(), said = false;
     raft.landing = null;
-    hird.forEach(function (m) { if (m.aboard || m.boarding || !m.follow || m.asMan || m.lost || m.dead) return; if (n >= cap) { if (!said) { said = true; m.say = 'No room for me aboard.'; m.sayT = 4; } return; }   /* LORE? */
+    hird.forEach(function (m) { if (m.aboard || m.boarding || m.asMan || m.lost || m.dead || (m.job && !m.follow)) return; if (n >= cap) {   /* (every man not at work within reach is called: the ship is yours wherever it lies) */ if (!said) { said = true; m.say = 'No room for me aboard.'; m.sayT = 4; } return; }   /* LORE? */
       var dS = Math.hypot(P.x - m.x, P.y - m.y), dG = g ? Math.hypot(g.lx - m.x, g.ly - m.y) : 1e9;
       if (dS <= BOARD.near || dG <= BOARD.near) { climbAboard(m); if (n === 0) { m.say = 'To the oars.'; m.sayT = 3; } n++; return; }   /* LORE? */
       if (!g) return; if (dG > BOARD.far) return;
@@ -15135,7 +15139,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (raft) raft.crew = Math.max(0, (raft.crew || 1) - 1);
   }
   function crewAshore(spot) {
-    var home = inTerritory(spot.x, spot.y), raidG = !home && onRaidGround(spot.x, spot.y), P = hero();
+    var home = inTerritory(spot.x, spot.y) || !homeStone(), raidG = !home && onRaidGround(spot.x, spot.y), P = hero();
     if (!home && !raidG) return;              // another shore of home water: they keep the boat and wait for you
     var list = hird.filter(function (m) { return m.aboard && !m.lost && !m.dead; }).sort(function (a, b) { return (a.seatNo || 0) - (b.seatNo || 0); }).concat(menAboard);
     if (!list.length) return;
@@ -16131,7 +16135,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function stoneNearH(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.claim && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 46) return it; } return null; }
   function hirdTalk(m) {                    // E at a hirdman: follow, or stay. Arnor's story comes first, through talk()
     if (m === npc && !seen.raft) { talk(); return; }
-    if (!inTerritory(m.x, m.y)) { m.say = 'Not out here. Call me at the stone.'; m.sayT = 4; return; }
+    if (!inTerritory(m.x, m.y) && homeStone()) { m.say = 'Not out here. Call me at the stone.'; m.sayT = 4; return; }   /* (with no stone raised yet there is no territory to keep to: he follows anywhere; mine, 2026-10-21) */
     m.follow = !m.follow; m.mustered = m.follow; if (m.follow) { m.job = null; m.at = null; }
     m.say = m.follow ? (m.hungry ? 'Lead on, then. Slowly. There is nothing in the stores.' : 'Lead on.') : (m.job ? 'Back to it, then.' : 'I will keep by the stone.'); m.sayT = 4; save();
   }
@@ -16147,7 +16151,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       else if (m.boarding) { var bt = boardingTick(dt, m); if (bt) { tx = bt.x; ty = bt.y; speed = HD.followSpeed * pace; } }   // called to the ship: he walks to the gangway (2026-10-21)
       else if (m.landTo) { if (Math.hypot(m.landTo.x - m.x, m.landTo.y - m.y) < 5) m.landTo = null; else { tx = m.landTo.x; ty = m.landTo.y; speed = HD.followSpeed * pace; } }   // just off the ship: to his spot on the shore, out of the next man's way
       else if (m.follow) {
-        if (!inTerritory(P.x, P.y) && !onRaidGround(P.x, P.y) && !m.freed) { m.follow = false; m.mustered = false; m.say = 'This is where I stop.'; m.sayT = 4; }   /* (on a raid's ground he follows: raid step 3) */
+        if (!inTerritory(P.x, P.y) && !onRaidGround(P.x, P.y) && !m.freed && homeStone()) { m.follow = false; m.mustered = false; m.say = 'This is where I stop.'; m.sayT = 4; }   /* (on a raid's ground he follows: raid step 3) */
         else { var d0 = Math.hypot(P.x - m.x, P.y - m.y); if (d0 > HD.followGap) { tx = P.x; ty = P.y; speed = HD.followSpeed * pace; } }
       } else if (m.job && m.at) {
         if (Math.hypot(m.at.x - m.x, m.at.y - m.y) > 4) { tx = m.at.x; ty = m.at.y; }
@@ -17043,8 +17047,26 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var LAB = { snd: { wind: true, sea: true, birds: true, insects: true, fire: true, steps: true, cave: true, water: true }, light: { glow: true, shadows: true, sides: true, walls: true, moths: true, moon: false, mist: false, shafts: false, clouds: false } }, labOpen = false;   // the five fire techniques are on (they were the better picture in every scene tried); the moon and the air are off until Robin has looked
   try { var lb0 = JSON.parse(localStorage.getItem('game.lab')), lk0; if (lb0) { for (lk0 in LAB.snd) if (lb0.snd && lb0.snd[lk0] != null) LAB.snd[lk0] = !!lb0.snd[lk0]; for (lk0 in (lb0.light || {})) LAB.light[lk0] = lb0.light[lk0]; } } catch (e) {}
   function saveLab() { try { localStorage.setItem('game.lab', JSON.stringify(LAB)); } catch (e) {} }
+  /* The tone (Robin, 2026-10-21: the Sea Editor's colours looked more vibrant than the game's; the game lays a grain over the frame and
+     his stored look, game.look, from the old Art Direction page; the editor does neither). A board to try tones by eye: colour,
+     contrast and warmth as a filter on the whole canvas, the grain on or off, and the stored look cleared. Kept in game.lab. */
+  LAB.tone = { sat: 1, con: 1, warm: 0, grain: true };
+  try { var lbT = JSON.parse(localStorage.getItem('game.lab')); if (lbT && lbT.tone) { for (var tk0 in LAB.tone) if (lbT.tone[tk0] != null) LAB.tone[tk0] = lbT.tone[tk0]; } } catch (eT0) {}
+  var TONE_STEPS = { sat: [0.8, 0.9, 1, 1.1, 1.2, 1.35, 1.5], con: [0.9, 1, 1.05, 1.1, 1.2], warm: [-0.15, 0, 0.1, 0.2, 0.35] };
+  function applyTone() { var t = LAB.tone, f = []; if (t.sat !== 1) f.push('saturate(' + t.sat + ')'); if (t.con !== 1) f.push('contrast(' + t.con + ')'); if (t.warm > 0) f.push('sepia(' + t.warm + ')'); else if (t.warm < 0) f.push('hue-rotate(' + Math.round(t.warm * 60) + 'deg)'); try { cv.style.filter = f.join(' '); } catch (eT1) {} }
+  function toneRows() { var t = LAB.tone, lk = null; try { lk = localStorage.getItem('game.look'); } catch (eT2) {}
+    return [{ id: 'tn:sat', name: 'Tone: colour', text: 'How strong the colours are, the whole picture. Click to step through.', on: true, val: '×' + t.sat },
+      { id: 'tn:con', name: 'Tone: contrast', text: 'Darks darker and lights lighter. Click to step through.', on: true, val: '×' + t.con },
+      { id: 'tn:warm', name: 'Tone: warmth', text: 'Warmer toward sepia, cooler toward blue. Click to step through.', on: true, val: t.warm > 0 ? '+' + t.warm : String(t.warm) },
+      { id: 'tn:grain', name: 'Tone: grain', text: 'The paper grain laid over the whole frame (the Sea Editor has none).', on: t.grain !== false },
+      { id: 'tn:clear', name: 'Tone: stored look', text: lk ? 'A look handed over from the old Art Direction page is in use (game.look). Click to clear it and reload.' : 'No stored look: the paint is as the code has it.', on: !!lk, val: lk ? 'CLEAR' : 'none' }]; }
+  function toneAct(id) { if (id.indexOf('tn:') !== 0) return false; var k = id.slice(3), t = LAB.tone;
+    if (k === 'grain') t.grain = t.grain === false; else if (k === 'clear') { try { localStorage.removeItem('game.look'); } catch (eT3) {} saveLab(); location.reload(); return true; }
+    else { var st = TONE_STEPS[k], i = st.indexOf(t[k]); t[k] = st[(i + 1) % st.length]; }
+    applyTone(); return true; }
+  applyTone();
   var SND_ROWS = [['wind', 'Wind', 'Gusts, leaves rustling where trees are, a whistle up on the plateau.'], ['sea', 'The sea', 'A wave and its wash by the shore; water along the hull aboard.'], ['birds', 'Birds', 'By day, most at dawn and where trees are; gulls by the shore, a raven on the fells, an owl at night.'], ['insects', 'Crickets', 'From dusk on.'], ['fire', 'Fire', 'The roar and the crackle near any fire, and of a torch in the hand.'], ['steps', 'Footsteps', 'By the ground: grass, sand, rock, gravel, wood, water.'], ['cave', 'Caves', 'The low tone, drops, the mine\u2019s timber, the sea cave\u2019s boom.'], ['water', 'Running water', 'The brook and the pool.']];
-  function labRows() { return SND_ROWS.map(function (q) { return { id: 'snd:' + q[0], name: 'Sound: ' + q[1], text: q[2], on: LAB.snd[q[0]] }; }).concat(lightRows(), [{ id: 'back', name: 'Back', text: '' }]); }
+  function labRows() { return SND_ROWS.map(function (q) { return { id: 'snd:' + q[0], name: 'Sound: ' + q[1], text: q[2], on: LAB.snd[q[0]] }; }).concat(lightRows(), toneRows(), [{ id: 'back', name: 'Back', text: '' }]); }
   var LIGHT_ROWS = [['glow', 'Fire: glow and flicker', 'The flame\u2019s light gutters and flares; a hot glow at its heart, warm light in the air round it.'], ['shadows', 'Fire: shadows', 'Trees, rocks, things and figures throw shadows away from a fire and from the torch.'], ['sides', 'Fire: lit side, dark side', 'What stands between you and the fire is a dark shape with a lit edge; what stands beyond it catches the light.'], ['walls', 'Fire: walls stop the light', 'A fire indoors lights its room and what falls out through door and windows; a wall throws a shadow; windows glow.'], ['moths', 'Fire: moths', 'A few moths round every fire at night.'], ['moon', 'Night: moonlight', 'The night a little less black and more blue, colour drained from what no fire lights, the moon\u2019s path on the sea.'], ['mist', 'Air: mist', 'Mist lying over the ground at dawn and again at dusk.'], ['shafts', 'Air: sun shafts', 'By day, light slanting down between the trees of a wood, motes turning in it.'], ['clouds', 'Air: cloud shadows', 'By day, the shadows of clouds drifting over open ground.']];
   function lightRows() { return LIGHT_ROWS.map(function (q) { return { id: 'lt:' + q[0], name: q[1], text: q[2], on: !!LAB.light[q[0]] }; }); }
   function drawLab(c) {
@@ -17058,6 +17080,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function labAct(id) {
     if (id === 'back') { labOpen = false; return; }
     if (id.indexOf('snd:') === 0) { var k = id.slice(4); LAB.snd[k] = !LAB.snd[k]; if (amb) amb.layers[k] = LAB.snd[k] ? 1 : 0; saveLab(); return; }
+    if (toneAct(id)) { saveLab(); return; }
     if (lightAct(id)) saveLab();
   }
   function lightAct(id) { if (id.indexOf('lt:') !== 0) return false; var k = id.slice(3); LAB.light[k] = !LAB.light[k]; return true; }
@@ -18829,7 +18852,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   Combat.api.scene = {
     visible: function (x, y, r) { var z = cam.z || 1, hw = 200 / z, hh = 125 / z, m = (r || 0) + 90, v = Math.abs(x - cam.x) < hw + m && Math.abs(y * K - cam.y) < hh + m; if (v) figsInView++; return v; },   // beasts out of view are not drawn
     noHud: false, noKills: true, ownFallen: true,
-    heroLift: function () { return (hero().lvl ? UP : 0) + (raft && raft.aboard && Yard.isShip(raft.kind) ? -3 : 0); },   // a storey up upstairs   // feet a little below the rim, inside the hull
+    heroLift: function () { return (hero().lvl ? UP : 0) + (raft && raft.aboard && Yard.isShip(raft.kind) ? -3 : 0); },
+    still: function () { return !!(raft && raft.aboard); },   /* aboard, the keys sail the ship and he stands (2026-10-21) */   // a storey up upstairs   // feet a little below the rim, inside the hull
     bounds: { x0: 8, y0: 12, x1: WX - 8, y1: WY - 8 },
     walk: function (x, y, e) { var PH = hero(); if (!inYard && !inCave && (!e || e === PH)) { var wtx = Math.floor(x / T), wty = Math.floor(y / T); if (PH.lvl) { var UM = 7; return upFloorAt(wtx, wty) && upFloorAt(Math.floor((x - UM) / T), wty) && upFloorAt(Math.floor((x + UM) / T), wty) && upFloorAt(wtx, Math.floor((y - UM) / T)) && upFloorAt(wtx, Math.floor((y + UM) / T)); } if (B.stairs[Build.key(wtx, wty)] && y / T - wty < 0.5) return false; }   // upstairs only the floor, and never its very edge (UM inside it): coming down by a wall you must land inside the wall, not in it (Robin's clip, 2026-10-07)
       if (!inYard && !inCave && dockAt(Math.floor(x / T), Math.floor(y / T))) return true;
@@ -18952,7 +18976,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
       c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0);
       promptBox = null;
       if (inYard) { c.restore(); return; }   // the yard's own boards are drawn with the others, in boards()
-      if (kit.STYLE.look === 3 && !inCave && !PERF.skip.grain) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); c.globalAlpha = 0.085 * (kit.STYLE.texture || 1); c.fillStyle = kit.grain(c); c.fillRect(cam.x - 200 / cam.z - 2, cam.y - 125 / cam.z - 2, 400 / cam.z + 4, 250 / cam.z + 4); c.restore(); c.save(); c.globalAlpha = 1; if (kit.STYLE.vignette > 0) { var vg = c.createRadialGradient(200, 125, 120, 200, 125, 300); vg.addColorStop(0, 'rgba(20,16,12,0)'); vg.addColorStop(1, 'rgba(20,16,12,' + kit.STYLE.vignette + ')'); c.fillStyle = vg; c.fillRect(0, 0, 400, 250); } c.restore(); }   // the ink look: grain over the world and a vignette
+      if (kit.STYLE.look === 3 && !inCave && !PERF.skip.grain && LAB.tone.grain !== false) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); c.globalAlpha = 0.085 * (kit.STYLE.texture || 1); c.fillStyle = kit.grain(c); c.fillRect(cam.x - 200 / cam.z - 2, cam.y - 125 / cam.z - 2, 400 / cam.z + 4, 250 / cam.z + 4); c.restore(); c.save(); c.globalAlpha = 1; if (kit.STYLE.vignette > 0) { var vg = c.createRadialGradient(200, 125, 120, 200, 125, 300); vg.addColorStop(0, 'rgba(20,16,12,0)'); vg.addColorStop(1, 'rgba(20,16,12,' + kit.STYLE.vignette + ')'); c.fillStyle = vg; c.fillRect(0, 0, 400, 250); } c.restore(); }   // the ink look: grain over the world and a vignette
       if (!inCave && !inYard && (LAB.light.mist || LAB.light.shafts || LAB.light.clouds || LAB.light.moon)) { var azh = 200 / cam.z, azv = 125 / cam.z; c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); drawClouds(c, azh, azv); drawShafts(c, azh, azv); drawMist(c, azh, azv, true); c.restore(); }   // the air (the lighting trials): cloud shadows, sun shafts, the mist's veil
       if (inCave) drawCaveDark(c, P); else if (!PERF.skip.night) drawNight(c);
       if (!inCave && !inYard && LAB.light.moon) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); drawMoonSea(c, 200 / cam.z, 125 / cam.z); c.restore(); }

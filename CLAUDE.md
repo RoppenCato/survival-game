@@ -53,7 +53,8 @@ and not built (`docs/idea-bank.md`).
 - **The hird** (Old Norse hirð; a member is a hirdman, and they call each other fellows): they crew your ships (the more
   aboard, the faster, rowing and sailing), fight beside you on land, can die in battle (never at random), work at home and
   defend what you claim; found and recruited in different ways, with randomised stats and traits and training to change
-  them. **They follow and work only inside your territory and on raids, never in the open world.** Claim stones cost stone
+  them. **They follow and work only inside your territory and on raids, never in the open world** (and, mine 2026-10-21: with no
+  stone raised yet there is no territory to keep to, so Admin's men follow anywhere, board and land as at home). Claim stones cost stone
   and berries (and snake blood, as built); every stone after the first needs a hirdman as its keeper; without food they are
   slow and sad, never leaving. Arnor is the first hirdman.
 - **The year:** spring, summer, autumn, winter, Stardew Valley style but **the player decides when a season moves**, at a
@@ -505,13 +506,17 @@ one, `rail_strip.png`, `shield_01..08.png`, the palette in `palette_review.png`)
 (the pages load them from `../assets/ship/`, `tools/visual/boats.js` headless), `hullBake` bakes each hull's sides once a kind
 and lit side at 2 px a unit (the plank strip along every strake row cell by cell, u along the keel, v from the inner curve
 to the rail; the lit strip on the side facing the world's upper left, `litPort`; the rail strip along the gunwale; the ink
-outline over it) and `drawBoat` and `drawVesselFront` draw the bake; `drawShields` lays the painted faces 11 units apart
-(`shieldFace`: the muted six, the red two one in four); `COL` is the studio's palette; the shadow under the hull is the sea's
+outline over it) and `drawBoat` and `drawVesselFront` draw the bake; `drawShields` hangs the painted faces **upright on the hull's sides** (Robin,
+2026-10-21: laid flat on the rail they looked wrong): 11 units apart along the rail, those on the side away from the camera
+drawn before the hull so they show above the far rail, those on the near side and the flanks after it, hanging below the
+near rail (`shieldFace`: the muted six, the red two one in four); the stems and the rig follow the hull's roll (they swayed
+loose of it); `COL` is the studio's palette; the shadow under the hull is the sea's
 own colour, soft at the edge. Without the images the hull draws as before. **The vessel is one drawing** (`drawShip`:
 the hull, everyone aboard by depth, the rig between those behind the mast and those before it, the near rail with its shields
 over their legs (`Yard.drawVesselFront` takes the figures), then the oars); the engine's own hero draw stands down aboard
-(`shipHero`). **On and off (`BOARD`, mine):** the gangway is the hull's point nearest the land (`Yard.gangway`); E within reach
-boards the hero and **calls every follower within 420 units** (`m.boarding`: he walks to the gangway's land point and climbs
+(`shipHero`); aboard, the keys sail the ship and the hero stands (`api.scene.still`: the engine takes no walking input; he
+ran in place, Robin 2026-10-21). **On and off (`BOARD`, mine):** the gangway is the hull's point nearest the land (`Yard.gangway`); E within reach
+boards the hero and **calls every man of yours not at work within 420 units** (`m.boarding`: he walks to the gangway's land point and climbs
 aboard within 28 of it; the engine's men on a raid shore the same by an errand, `e.toShip`); **the ship waits for them up to 8 s**
 (W does nothing; the toast "The men are coming aboard"), then those within 420 have waded the last bit and the rest are left
 ("X is left ashore", he walks back to the stone); the seats fill in boarding order (`m.seatNo`); no room (`BOARD.cap`: the rowers
@@ -533,7 +538,11 @@ critters (butterflies, birds, beetles) that keep away.
 **The lighting trials** (`docs/lighting.md`; switches on Admin's Light and sound board, `LAB.light`): on are `glow` (warm light
 fading to the night's colour), `shadows` (things throw shadows away from a fire; a torch's are faint), `sides` (figures lit
 from a fire), `walls` (a fire indoors lights its room and pools at doors and windows) and `moths`; off until Robin has
-looked: `moon`, `mist`, `shafts`, `clouds`. Robin found the first version "a weird filter"; the shadows were liked.
+looked: `moon`, `mist`, `shafts`, `clouds`. Robin found the first version "a weird filter"; the shadows were liked. **The
+Tone rows** (`LAB.tone`, 2026-10-21, Robin: the Sea Editor's colours looked more vibrant than the game's): colour, contrast and
+warmth as a CSS filter on the whole canvas (`applyTone`, stepped by clicks), the frame's grain on or off, and the stored look
+(`game.look`, handed over from the old Art Direction page and applied by the game alone, never by the Sea Editor) cleared
+with a reload; the Art Director is asked to look at the two pages and propose a tone.
 
 **The UI** (`docs/ui-review.md`): boards are drawn over the HUD in one order (`scene.boards`). **The panels' look is the Art
 Director's** (2026-10-20, Robin's mix of its three directions; its `out/hud/SPEC.md` and `hud_mix.png`, the art copied whole

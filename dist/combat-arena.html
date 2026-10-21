@@ -3095,6 +3095,7 @@ function updatePlayer(dt) {
   p.fireCd = Math.max(0, p.fireCd - dt); p.fireT = Math.max(0, p.fireT - dt); p.roll.cd = Math.max(0, p.roll.cd - dt); p.parryFx = Math.max(0, p.parryFx - dt);
   p.stDelay -= dt; if (p.stDelay <= 0) p.st = Math.min(maxSt(), p.st + 34 * dt * mod('stam')); if (p.st > maxSt()) p.st = maxSt();
   var ix = (IN.keys.KeyD ? 1 : 0) - (IN.keys.KeyA ? 1 : 0), iy = (IN.keys.KeyS ? 1 : 0) - (IN.keys.KeyW ? 1 : 0);
+  if (api.scene && api.scene.still && api.scene.still()) { ix = 0; iy = 0; }   /* the page holds him still (aboard a ship the keys sail it: he stood running in place, Robin 2026-10-21) */
   var il = Math.hypot(ix, iy); if (il > 0) { ix /= il; iy /= il; }
   p.inAng = il > 0 ? Math.atan2(iy, ix) : null;
   p.moving = il > 0 && p.hurtT <= 0;

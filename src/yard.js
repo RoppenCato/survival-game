@@ -36,11 +36,11 @@ var T = 32, TS = 24, K = 0.75;
     return out;
   }
   /* On and off (docs/ships-plan.md step 4, 2026-10-21). The GANGWAY is the point of the hull nearest the land: the rail is sampled
-     all round and from each sample the shore is looked for straight out, up to GANG.reach; the nearest wins. It gives the rail
+     all round and from each sample the walkable ground (the shore, or the shallows that can be waded) is looked for straight out, up to GANG.reach; the nearest wins. It gives the rail
      point (x, y), the land point to walk to (lx, ly, a step up the beach) and the distance. landingSpots spreads n men along the
      shore from a landing point: alternately either side along the shore line, a step apart and a step inland, each tested by
      free(x, y) with a small search round it. The game walks the men to the gangway and files them off onto the spots. */
-  var GANG = { reach: 96, step: 6, up: 10, apart: 16, inland: 12 };
+  var GANG = { reach: 240, step: 6, up: 10, apart: 16, inland: 12 };   // (reach 240: a karve floats well off a gentle beach; the men walk through the shallows to it, so land() is 'can be walked on', the wade band too)
   function gangway(v, land) {
     if (!HULLS[v.kind]) return null;
     if (v._gang && v._gang.x === v.x && v._gang.y === v.y && v._gang.h === v.h) return v._gang.g;
@@ -247,11 +247,13 @@ var T = 32, TS = 24, K = 0.75;
     bakes[key] = { cv: cv, L: L, W: W, w: bw / BK, h: bh / BK }; return bakes[key];
   }
   function shieldFace(i) { var r = hs(i + 1, 3); return SURF.shields[r < 0.22 ? 6 + (hs(i + 1, 5) < 0.5 ? 0 : 1) : Math.floor(hs(i + 1, 7) * 6)]; }
-  function drawShields(c, pr, L) {           // along both rails, 11 units apart, overlapping by half (in the hull's frame)
-    var SHC = ['#b08a5a', '#e6dcc6', '#8a6a44', '#8a4a3a'], sn = 0, faces = SURF && SURF.shields && SURF.shields.length >= 8 && SURF.shields.every(imgOk);
-    for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98, f;
-      if (faces) { f = shieldFace(sn++); c.drawImage(f, sx2 - 10, sd * wy - 10, 20, 20); return; }
-      c.fillStyle = SHC[(sn++ * 7) % 11 < 2 ? 3 : (sn % 3)]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.8; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(sx2, sd * wy, 2, 0, 7); c.fill(); });
+  function drawShields(c, v, pr, L, which, bob) {   /* the shields hang on the hull's SIDES, upright (Robin, 2026-10-21: laid flat on the rail they looked wrong): each at its rail point on screen, 11 units apart along the rail, overlapping by half; those on the side away from the camera ('back') are drawn before the hull, so the hull hides their lower part and they show above the far rail; those on the near side and the flanks ('front') after it, hanging below the near rail over the hull's side */
+    var faces = SURF && SURF.shields && SURF.shields.length >= 8 && SURF.shields.every(imgOk), SHC = ['#b08a5a', '#e6dcc6', '#8a6a44', '#8a4a3a'], sn = 0, roll = Math.sin((v.clock || 0) * 1.7 + 1) * 0.02, ch = Math.cos(v.h + roll), sh = Math.sin(v.h + roll), sy0 = v.y * K + (bob || 0);
+    for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) {
+      var wy = sd * profW(pr, sx2, sd) * 1.02, i = sn++, ny = sd * ch, front = ny >= -0.05, X = v.x + sx2 * ch - wy * sh, Y = sy0 + (sx2 * sh + wy * ch) * K + (front ? 3 : -7);
+      if ((which === 'front') !== front) return;
+      if (faces) { c.drawImage(shieldFace(i), X - 10, Y - 10, 20, 20); return; }
+      c.fillStyle = SHC[(i * 7) % 11 < 2 ? 3 : (i % 3)]; c.beginPath(); c.arc(X, Y, 10, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.9; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(X, Y, 2.2, 0, 7); c.fill(); });
   }
   // How a vessel handles: the Sea Editor's handling sliders, as numbers per kind. steer 0 is Direct (hold a direction
   // and the hull turns to face it and goes), 1 is Tiller (W drives, S backs, A and D turn). top and accel in units a
@@ -387,6 +389,7 @@ var T = 32, TS = 24, K = 0.75;
     var box = [-L - 12, -W - 12, 2 * L + 24, 2 * W + 24];
     var shg = c.createRadialGradient(sx + 2, v.y * K + 5 * sz, 0, sx + 2, v.y * K + 5 * sz, L); shg.addColorStop(0, 'rgba(18,42,64,0.34)'); shg.addColorStop(0.75, 'rgba(18,42,64,0.3)'); shg.addColorStop(1, 'rgba(18,42,64,0)');   // the shadow the sea's own colour, darker and bluer, soft at its edge (the studio's note)
     c.fillStyle = shg; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.98, W * 1.1, 0, 0, 7); c.fill();
+    v.clock = clock; if (v.shields) drawShields(c, v, pr, L, 'back', bob);
     inFrame(3 + 2.5 * ds, function () { inkPath(c, shadeHex(col.hull, -30), { box: box, flat: true, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); }); });   // the hull's depth below the rail
     var baked = surfacesOn() && H ? hullBake(v.kind, litPort(h) ? -1 : 1) : null;
     inFrame(0, function () {
@@ -397,17 +400,17 @@ var T = 32, TS = 24, K = 0.75;
       inkPath(c, col.deck, { box: box, lw: 0.9, shade: 0.1 }, function () { shapedPath(c, pr, 0.84, 0.62); });   // the bottom boards
       for (var bi = -2; bi <= 2; bi++) { c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.lineWidth = 0.5; c.strokeStyle = INK.faint; c.save(); c.beginPath(); shapedPath(c, pr, 0.84, 0.62); c.clip(); c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.stroke(); c.restore(); }
       seats.forEach(function (x, si) { var wt = profW(pr, x, -1) * 0.6, wb = profW(pr, x, 1) * 0.6; ink(c, [[x - 3, -wt], [x + 3, -wt], [x + 3, wb], [x - 3, wb]], shadeHex(col.deck, -16), { wob: 0.3, seed: si, lw: 0.7, heavy: 1.1 }); });   // the rowing seats as laid: a thwart across the hull
-      if (v.shields) drawShields(c, pr, L);
       if (false) { var SHC = ['#8a3a34', '#d9c48a', '#3f5a7a'], sn = 0; for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98; c.fillStyle = SHC[sn++ % 3]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.ellipse(sx2, sd * wy, 1.1 * sz, 0.7 * sz, 0, 0, 7); c.fill(); }); }   // shields hung along both rails, seen from above as leaning discs
     });
     var fx = Math.cos(h), fy = Math.sin(h) * K;                                                          // the upright stems, curling at bow and stern
-    function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
+    function at(lx, ly) { var cs = Math.cos(h + roll), sn = Math.sin(h + roll); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }   // (with the roll, as the hull: the stems swayed loose of it, Robin 2026-10-21)
     function curve(p0, p1, p2, w, fill) { c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = w + 2; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke(); c.strokeStyle = fill; c.lineWidth = w; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke(); }
     function stem(lx, dir, hgt) {
       var p = at(lx, 0), tip = [p[0] + fx * dir * 7 * ds, p[1] + fy * dir * 7 * ds - hgt], w = 2.4 + 1.2 * ds, wood = shadeHex(col.hull, -8);
       curve(p, [p[0] - fx * dir * 1.5 * ds, p[1] - hgt * 0.6], tip, w, wood);
       curve(tip, [tip[0] + fx * dir * 3.5 * ds, tip[1] - 3 * ds], [tip[0] + fx * dir * 1.5 * ds, tip[1] + 2.4 * ds], w * 0.55, wood);
     }
+    if (v.shields && !o.split) drawShields(c, v, pr, L, 'front', bob);
     stem(-L * 0.96, -1, 20 * ds);
     if (v.dragon) {                                                                                    // the dragon stem at the bow: a neck rising forward, a head with its jaw open, an eye, a tongue
       var bp = at(L * 0.96, 0), nk = [bp[0] + fx * 9 * ds, bp[1] + fy * 9 * ds - 16 * ds], hd = [nk[0] + fx * 5 * ds, nk[1] + fy * 5 * ds - 3 * ds], wood2 = shadeHex(col.hull, -10);
@@ -422,7 +425,7 @@ var T = 32, TS = 24, K = 0.75;
     if (H && H.mast) drawRig(c, v, pr, ds, bob, clock, at, curve);
   }
   function drawRigOf(c, v, clock) {        // the mast, the yard, the sail and the steering oar, drawn apart (over the men behind the mast, under those before it)
-    var H = HULLS[v.kind]; if (!H || !H.mast) return; var pr = profileOf(v), L = pr.L, ds = Math.max(0.8, L / 110), bob = bobOf(v, clock), sx = v.x, sy = v.y * K + bob, h = v.h;
+    var H = HULLS[v.kind]; if (!H || !H.mast) return; var pr = profileOf(v), L = pr.L, ds = Math.max(0.8, L / 110), bob = bobOf(v, clock), sx = v.x, sy = v.y * K + bob, h = v.h + Math.sin(clock * 1.7 + 1) * 0.02;
     function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
     drawRig(c, v, pr, ds, bob, clock, at, null);
   }
@@ -500,7 +503,7 @@ var T = 32, TS = 24, K = 0.75;
     c.save(); c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.clip('evenodd'); c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(sx - L * 2, sy - L, L * 4, L * 3); c.globalAlpha = 1; c.beginPath(); sub(0, 0.95, 0.9); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); c.beginPath(); sub(0, 0.92, 0.95); c.lineWidth = 0.9; c.strokeStyle = INK.lit; c.stroke(); c.restore();
     c.lineWidth = 1.2; c.beginPath(); sub(0, 1, 1); c.stroke(); }
     c.lineWidth = 0.9; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
-    if (v.shields) { c.save(); c.translate(sx, sy); c.scale(1, K); c.rotate(v.h + roll); drawShields(c, pr, L); c.restore(); }   // the shields along the rail, over the legs too
+    v.clock = clock; if (v.shields) drawShields(c, v, pr, L, 'front', bob);   // the near side's shields, hanging on the hull's side over the legs
     c.restore();
   }
 

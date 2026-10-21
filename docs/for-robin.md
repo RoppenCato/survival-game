@@ -208,3 +208,13 @@ alone in a boat you row with your own rowing clip. The hull wears the studio's p
 sun whatever the heading), its rail with the oar ports, and eight painted shield faces along the rail (ochre, bone, grey, a
 red one in four). Look at the karve with eight men against the wind, and at the boat alone; the planks and the shields are
 best judged at your size.
+
+**Your ship notes of 2026-10-21, answered:** the shields now hang upright on the hull's sides (the far side's showing above the
+rail, the near side's hanging below it); the hero stands at sea instead of running in place; the stems and the rig follow the
+hull's roll, so the dragon stays on the boat (it was the roll they lacked, not the drawing; if you still want them gone, the
+yard's "Dragon stem: no" leaves plain stems, and I can turn Admin's karve plain). The men: your hird keeps to the territory by
+rule, and at the wreck's beach there is no claim stone, so "Not out here" stopped them; now, with no stone raised at all, they
+follow anywhere, board when called and step off with you. The colours: the game lays a paper grain over the whole frame and
+applies the look you handed over from the old Art Direction page (`game.look`); the Sea Editor does neither, which is the
+difference you saw. Admin's Light and sound board has Tone rows now: colour, contrast, warmth (click to step), the grain on or
+off, and the stored look cleared. The Art Director is asked to look at both pages and propose a tone.
