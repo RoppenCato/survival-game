@@ -883,7 +883,7 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   will carry it, the hero first, then the people, then the beasts) is picked by the distance walked, not the clock
   (`Sprites.odo`, a running ground distance from a thing's world position, a jump of 60 units in a frame not walked;
   `strideFrame`, the stride grown with the figure's drawn size): the hero (`pick`, the guard walk too), the game's people (`st.d`
-  from `drawPerson`), the engine's men (`fighter`) and the beasts (`beast`). A clip without one keeps the clock as before.
+  from `drawPerson`), the engine's men (`fighter`) and the beasts (`beast`). A clip without one keeps the clock as before. **The hero's walk and run have it** (the studio's `out/hero_gait`, 2026-10-21: the walk 12 frames, stride 50.4 units at 84 a second, a light jog; the run 10 frames, stride 65.0 at 130; the planted foot measured 3.50 against 3.52 m/s and 5.38 against 5.44; checked in the models scene: every frame on its distance); the guard walk and the people and beasts follow. Robin has not felt it yet; a stroll would mean the walking speed about halved (`src/combat.js`, `spd = 84`).
 - **Traps already met:** hold out by material, not by the object's switch (Freestyle lines showed through bodies); render one
   clip again with `--keep 1` (else the numbers hold that clip alone); a clip that travels gets a frame of its own
   (`--inplace`, `anims[clip].frame`); a layer packed with `--only` lies in a box cut to its pixels; a changed sheet needs its

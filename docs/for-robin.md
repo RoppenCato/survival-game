@@ -309,3 +309,8 @@ feel; it now takes nothing. And every beast sheet is cut per frame: the beasts t
 (639 MB to 324), the cave troll a third. The idles themselves get smooth when the studio renders them again with all their
 frames: that room is what the packing frees, and I have asked it. The game's own work per frame is about 4 ms of the 16 a
 frame has at 60 fps; the rest is the browser drawing on the graphics card, which here shares the card with the studios.
+
+**The moonwalk, the hero's half (2026-10-21):** the studio's new walk and run are in, and his feet now stay planted: each frame is
+picked by the ground he covers. One thing for you to judge by feel: at his speed of 84 units a second (3.5 m/s) a man his size
+has to jog, so the walk is a light jog now. If you want a stroll, his walking speed would have to come down to about half; say so
+and I change the one number. The guard walk, the people and the beasts get the same fix next.
