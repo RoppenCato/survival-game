@@ -323,3 +323,6 @@ wolf.
 **The people's and the adder's idles (2026-10-21):** the villagers now breathe with the hero's idle at all its frames, so a crowd no
 longer steps, and the adder's idle has twice its frames. The deer and the wolf wait for your answer to the Art Director: are they
 remade in the boar's style first? That remake would bring their idles and walks with it, so doing their idles now could be wasted.
+
+**The hero's third walk and run (2026-10-21, your yes):** in the game, with the hips, chest, head and arms moving, at the speed and
+jog you kept. The feet still land on their distance in every frame.
