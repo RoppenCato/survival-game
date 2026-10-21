@@ -428,7 +428,8 @@ __COMBAT__
      reasonably fast, rather than jogging?"): Admin's switch makes him walk with the studio's walk_fast at the speed that clip was
      made for (its stride times its fps over its frames), Shift still sprints at 130 on the run; off, the jog at 84 as decided. */
   function walkFast() { var A = ADMIN.walks && sprHero && sprHero.meta && sprHero.meta.anims.walk_fast; return A && A.stride ? A : null; }
-  function walkFastK() { var A = walkFast(); return A ? (A.stride * A.fps / A.frames) / 84 : 1; }   // the walk's speed against the jog's 84
+  var WALK_STEPS = [55, 60, 65, 70], walkTest = 55; try { var wt0 = +localStorage.getItem('game.walkTest'); if (WALK_STEPS.indexOf(wt0) >= 0) walkTest = wt0; } catch (e) {}   /* (Robin, 2026-10-21: "too slow walking; what if you try just increasing speed a bit": the test's speed, stepped through on Admin; above the clip's 55 the steps quicken, the feet stay planted) */
+  function walkFastK() { var A = walkFast(); return A ? walkTest / 84 : 1; }   // the walk's speed against the jog's 84
   function attachKit() {                 // the hero as the game draws him (the models scene swaps the figure and comes back to this)
     Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers, look: heroLook, walkClip: function () { return walkFast() ? 'walk_fast' : null; } });
     var hd0 = Combat.api.heroSprite; if (hd0) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { if (!shipHero && raft && raft.aboard && Yard.isShip(raft.kind)) return; hd0(c, x, y, face, an, dashing); };
@@ -3818,7 +3819,8 @@ __COMBAT__
     { id: 'fps', name: 'Show frame time', text: 'Frames a second, milliseconds and the frame\u2019s parts, bottom left. The frame log is kept whether this shows or not.', toggle: true },
     { id: 'trees', get name() { var k = 'old'; try { k = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} return 'Trees: ' + ((World.TREE_SHAPES[k] || World.TREE_SHAPES.old)[2]); }, text: 'How big the trees are drawn: as before (the default), twice their old size, one and a half, or tall and thin. The page reloads.' },
     { id: 'triple', name: 'Threefold drops', text: 'For testing: trees, rocks, bushes, berries, beasts, the weir and the veins give three times as much.', toggle: true },
-    { id: 'walks', name: 'The hero walks (a test)', text: 'He walks with the studio\u2019s fast walk at the speed it was made for, instead of the jog; Shift still sprints. To compare the two in play.', toggle: true },
+    { id: 'walks', name: 'The hero walks (a test)', text: 'He walks with the studio\u2019s fast walk instead of the jog; Shift still sprints. To compare the two in play.', toggle: true },
+    { id: 'walkSpeed', name: 'Walking test: speed', text: 'Click to step through 55 (the walk as made), 60, 65 and 70 units a second; the jog is 84. Faster means quicker steps; the feet stay planted.', val: function () { return String(walkTest); } },
     { id: 'errlog', name: 'Download the error log', text: 'Saves errorlog.txt: every error the page caught, with the time, the day and what was happening. Put it in the project folder.' },
     { id: 'stuff', name: 'Plenty of everything', text: '25 of every material into the bag.' },
     { id: 'reveal', name: 'Reveal the chart', text: 'The steading, every village and the cave known; the raft taught.' },
@@ -3884,11 +3886,13 @@ __COMBAT__
       c.font = '600 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(it.p.name, x0 + 14, yy + 2.2);
       c.font = '600 4.6px system-ui, sans-serif'; c.fillStyle = 'rgba(255,255,255,0.65)'; var tx = it.p.text; while (tx.length > 1 && c.measureText(tx).width > w0 - 150) tx = tx.slice(0, -1); c.fillText(tx === it.p.text ? tx : tx.replace(/\s*$/, '') + '…', x0 + 110, yy + 2);
       if (it.p.toggle) { var on = ADMIN[it.p.id]; c.font = 'bold 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = on ? '#9be58b' : 'rgba(255,255,255,0.45)'; c.fillText(on ? 'ON' : 'off', x0 + w0 - 14, yy + 2.2); }
+      else if (it.p.val) { c.font = 'bold 6px system-ui, sans-serif'; c.textAlign = 'right'; c.fillStyle = '#f6e2b8'; c.fillText(it.p.val(), x0 + w0 - 14, yy + 2.2); }
     }, 11);
   }
   function adminAct(id) {
     var P = hero(), row = ADMIN_ROWS.filter(function (r) { return r.id === id; })[0];
     if (id === 'back') { adminOpen = false; return; }
+    if (id === 'walkSpeed') { walkTest = WALK_STEPS[(WALK_STEPS.indexOf(walkTest) + 1) % WALK_STEPS.length]; try { localStorage.setItem('game.walkTest', String(walkTest)); } catch (e) {} toast('Walking test: ' + walkTest + ' units a second' + (ADMIN.walks ? '' : ' (switch the walking test on to try it)')); return; }
     if (id === 'trees') { var tk = ['old', 'big', 'mid', 'tall'], cur0 = 'old'; try { cur0 = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} var nx = tk[(tk.indexOf(cur0) + 1) % tk.length]; try { localStorage.setItem('game.trees', nx); save(); } catch (eT) {} location.reload(); return; }
     if (id === 'lab') { labOpen = true; return; }
     if (row && row.toggle) { if (id === 'walks' && !ADMIN.walks && !(sprHero && sprHero.meta && sprHero.meta.anims.walk_fast)) { toast('The fast walk is not rendered yet: the studio is making it'); return; } ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'fullres') fitCanvas(); if (id === 'walks' && ADMIN.walks) Sprites.peopleWarm(sprHero, heroLook(Math.PI / 2) || { L: [] }, ['walk_fast']); return; }

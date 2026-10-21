@@ -346,3 +346,7 @@ as now, so you can compare the two in play. Until then the switch says the walk 
 
 **The walking test is ready (2026-10-21):** Escape, Admin, "The hero walks (a test)". He then walks with the studio's fast walk,
 a power walk at 55 units a second (the jog is 84), his feet planted; Shift still sprints as now; switch it off for the jog again.
+
+**A faster walk to try (2026-10-21, your note):** Admin now has "Walking test: speed" under the walking test; each click steps it
+through 55, 60, 65 and 70 units a second (the jog is 84). The walk's frames follow the ground, so faster means quicker steps with
+the feet still planted; the studio warned they look frantic past about 60, so judge it by eye. The jog stays the default.
