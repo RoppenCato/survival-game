@@ -301,6 +301,12 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 - **`Combat.api.debug()`** in the game is the console's way in (`eWhat()`, `errlog()`, `perflog()`, `world()`, `villages()`,
   `sceneRows()`, `act(id)`, `tick(dt)`, `place(...)`, `raid()`, `arms()`, `shield()`, `cave()`, and many more); `Combat.dbg()`
   hands out the engine's `P`, `W`, `S`.
+- **Frame time (measured 2026-10-21 in the pane at 1200 by 750):** the game's own work is about 4 ms a frame; what is left of a
+  frame is the browser drawing on the graphics card, which the pane shares with whatever else the computer is doing (with
+  nearly nothing drawn it ran 56 to 60 fps at one moment and 44 at another). Fixed that day: the living grass is baked tufts
+  drawn as pictures (`tuftPic`, fifteen sway steps, six shapes a count: 47 to 54 fps), and the save's ground diff is kept until
+  the ground is painted again (`GDIFF`, `w.groundRev`: the autosave cost 120 ms every ten seconds, a hitch). Before judging a
+  change by its fps, measure it in alternation with a near-empty frame (`PERF.skip`), as outside load moves both.
 - **The error log and the frame log:** every error a page throws (or a frame throws: the loop catches it and goes on) goes to
   `ERR.lines` and `game.errlog`; Admin downloads `errorlog.txt`. Every second of play writes a line to the frame log
   (`game.perflog`; Admin downloads `framelog.txt`; a frame over 50 ms is a SPIKE line). Robin puts both in the project folder.
@@ -863,6 +869,15 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   the draugr, the huldra, Näcken (the last three the redesigned ones, 2026-10-20), Trollmor (new) and the bysen are in Models only, waiting (`docs/beasts.md`). **The art plan** is the studio's (`C:\dev\SG\Art Director\docs\art-plan.md`, 2026-10-20):
   who draws what, memory budgets per set, the drops first. **A clip may carry its own frame and anchor** (`anims[clip].frame`,
   `.anchor`; the set's top level is the idle's): the game, the Models scene and the `tools/visual` sheet tools read it. **The cast** (`Sprites.CAST`, `castList`, `castStatus`): every figure set by group with its name and its chapter, the one list Models and the studio's viewer show.
+- **Every frame cut to its own pixels** (`tools/framepack.js`, 2026-10-21, Robin: "do the laggy idles and frame rate"; the art
+  plan's foundation): a set of whole-frame sheets is repacked into the people's format (each frame's piece on shelves 1024 px
+  wide, `anims[clip].rects[layer]`, `rectBytes` 2 past 255 px, `meta.shelf`, `meta.framepacked`), drawn through
+  `Sprites.pieceOf` by `beast`, `draw` and the models scene's sheet view (the shadow, the rim light, the flash and the tints
+  follow, their whole-sheet copies shrinking with the sheets); `tools/sprites.js` runs it after every pack (`--grid` keeps the
+  grid). Every set is packed but `hero2-mixamo` (one of its sheets crashes the image library; a backup): the beasts the game
+  spawns 639 MB decoded to 324, the waiting trolls and väsen 1391 MB in all to 537. `tools/visual/beasts.js`, `trollsheet.js`,
+  `vasensheet.js` read the pieces. **The idles get their frames back** when the studio renders them again at full counts into
+  the room this frees (the 2026-10-20 slimming cut them to 8 frames at 4 fps, and the crossfade is off on Robin's word).
 - **The feet locked to the ground** (Robin, 2026-10-21: "the moon walk"; his choice: keep the speeds, fix the stride): a walk or
   run whose clip carries `anims.<clip>.stride` (the ground its figure covers in one loop, in game units; the studio's new clips
   will carry it, the hero first, then the people, then the beasts) is picked by the distance walked, not the clock

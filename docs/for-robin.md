@@ -301,3 +301,11 @@ last set, with the old tuner. The old island, arena and night forest of the edit
 **The moonwalk (2026-10-21, your yes):** my half is in. A walk or run that comes with its stride now picks its frame by the
 ground covered, so the feet stay planted at any speed. Nothing changes until the studio's new walk and run arrive with that
 number, the hero's first.
+
+**The laggy idles and the frame rate (2026-10-21, your "do it"):** three things found and fixed by measuring, with the frame log in
+the pane at your size. The living grass was drawn as fresh vector shapes every frame, about 500 tufts at once, and cost 9 fps;
+it is now baked pictures and costs 2 (47 to 54 fps, same look). The autosave took 120 ms every ten seconds, a hitch you would
+feel; it now takes nothing. And every beast sheet is cut per frame: the beasts the game spawns take half the memory they did
+(639 MB to 324), the cave troll a third. The idles themselves get smooth when the studio renders them again with all their
+frames: that room is what the packing frees, and I have asked it. The game's own work per frame is about 4 ms of the 16 a
+frame has at 60 fps; the rest is the browser drawing on the graphics card, which here shares the card with the studios.

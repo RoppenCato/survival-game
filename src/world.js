@@ -1376,28 +1376,43 @@ function make(kit, opts) {
     }
     c.globalAlpha = 1;
   };
+  /* The tufts baked (2026-10-21, Robin: "do the laggy idles and frame rate"): every tuft was a fresh shade ellipse, three to five
+     blade paths and, in the light's band, a new gradient, every frame (about 500 tufts at the sea's zoom: switched off, the frame
+     rate rose from 47 to 56 in the pane). Now a tuft is one of six shapes a blade count and fell, baked once at each of fifteen
+     steps of its sway into a small picture, and drawn as that picture; the light's band is one soft disc drawn through a
+     transform. The blades, their colours and their sway are drawn as before. */
+  var TUFT = {}, GLOWC = {}, SWAY_N = 15, TPX = 4, TUFT_V = 6;
+  function tuftPic(G, fl2, n, v, si) {
+    var key = fl2 + '|' + n + '|' + v + '|' + si, P = TUFT[G.dark + G.mid + G.light + G.height + '|' + G.shade + '|' + G.sway] || (TUFT[G.dark + G.mid + G.light + G.height + '|' + G.shade + '|' + G.sway] = {}), t = P[key]; if (t) return t;
+    var fk = fl2 === 2 ? 0.5 : (fl2 === 1 ? 0.72 : 1), cols = fl2 ? ['#5f6a3a', '#858a4c', '#aea766'] : [G.dark, G.mid, G.light], sway = (si / (SWAY_N - 1) * 2 - 1) * 1.45 * G.sway;
+    var top = G.height * fk * 1.36 + Math.abs(sway) * G.height * 0.7 + 2, hwT = 6 + Math.abs(sway) * G.height * 0.7, bot = 2.6, cv = kit.mk(Math.ceil(hwT * 2 * TPX), Math.ceil((top + bot) * TPX)), c = cv.getContext('2d');
+    c.scale(TPX, TPX); c.translate(hwT, top);
+    if (G.shade > 0) { c.fillStyle = G.dark; c.globalAlpha = 0.28 * G.shade; c.beginPath(); c.ellipse(0, 0.6, 4.6, 1.8, 0, 0, 7); c.fill(); c.globalAlpha = 1; }
+    for (var k = 0; k < n; k++) {
+      var hk = hash(v * 7 + k, n * 13 + fl2, 35), bx = (k - (n - 1) / 2) * 1.7 + (hk - 0.5) * 1.2, bh = G.height * fk * (0.65 + hk * 0.7), lean = (k - (n - 1) / 2) * 0.9 + sway * bh * 0.5;
+      c.fillStyle = cols[(k + v) % 3 === 0 ? 0 : (hk > 0.55 ? 2 : 1)];
+      c.beginPath(); c.moveTo(bx - 0.9, 0); c.quadraticCurveTo(bx + lean * 0.35, -bh * 0.6, bx + lean, -bh); c.quadraticCurveTo(bx + lean * 0.35 + 0.5, -bh * 0.55, bx + 0.9, 0); c.closePath(); c.fill();
+    }
+    return (P[key] = { cv: cv, l: -hwT, t: -top, w: hwT * 2, h: top + bot });
+  }
+  function glowPic(col) { if (GLOWC[col]) return GLOWC[col]; var cv = kit.mk(64, 64), g = cv.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return (GLOWC[col] = cv); }
   // living grass: tufts of blades on the open ground that sway in a wind, with slow bands of light rolling over the meadow
   // like the glints on the water. G is a World.GRASS-style spec (palette, density, sway); nothing is drawn on sand or water.
   w.drawGrass = function (c, cam, hw, hh, clock, G) {
     G = G || GRASS; if (!w.meadowLook) w.drawMeadow(c, cam, hw, hh, G); if (!(G.density > 0)) return;   // a page that sets w.meadowLook has the meadow baked into the ground
     var sp = G.spacing, gx0 = Math.floor((cam.x - hw) / sp) - 1, gx1 = Math.ceil((cam.x + hw) / sp), gy0 = Math.floor((cam.y - hh) / (sp * 0.75)) - 1, gy1 = Math.ceil((cam.y + hh) / (sp * 0.75)) + 1;
-    var cols = [G.dark, G.mid, G.light], sp0 = G.speed, FELLC = ['#5f6a3a', '#858a4c', '#aea766'];
-    c.lineCap = 'round';
+    var sp0 = G.speed, glow = G.shimmer > 0 ? glowPic(G.glow) : null, swayK = (SWAY_N - 1) / (2 * 1.45 * (G.sway || 1e-6)), ga = c.globalAlpha;
     for (var gy = gy0; gy <= gy1; gy++) for (var gx = gx0; gx <= gx1; gx++) {
       var h1 = hash(gx, gy, 31); if (h1 > G.density) continue;
       var x = (gx + hash(gx, gy, 32)) * sp, y = (gy + hash(gx, gy, 33)) * sp * 0.75;
       if (x < 0 || y < 0 || x >= WX || y / K >= WY) continue;
       if (!meadowOk(x, y)) continue;
-      var fl2 = fellOf(x, y), fk = fl2 === 2 ? 0.5 : (fl2 === 1 ? 0.72 : 1); if (fl2 && h1 > G.density * (fl2 === 2 ? 0.5 : 0.75)) continue;   // the fells: shorter, thinner, drier grass
+      var fl2 = fellOf(x, y); if (fl2 && h1 > G.density * (fl2 === 2 ? 0.5 : 0.75)) continue;   // the fells: shorter, thinner, drier grass
       var wave = Math.sin(x * 0.011 - clock * 0.9 * sp0 + y * 0.007), gust = Math.sin(clock * 0.35 * sp0 + x * 0.004 - y * 0.003);
-      if (G.shimmer > 0 && wave > 0.2) { var gr = c.createRadialGradient(x, y, 0, x, y, sp * 1.1); gr.addColorStop(0, G.glow); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.save(); c.translate(x, y); c.scale(1, 0.5); c.translate(-x, -y); c.fillStyle = gr; c.globalAlpha = (wave - 0.2) * 0.34 * G.shimmer; c.beginPath(); c.arc(x, y, sp * 1.1, 0, 7); c.fill(); c.restore(); c.globalAlpha = 1; }
+      if (glow && wave > 0.2) { c.globalAlpha = ga * (wave - 0.2) * 0.34 * G.shimmer; c.drawImage(glow, x - sp * 1.1, y - sp * 0.55, sp * 2.2, sp * 1.1); c.globalAlpha = ga; }
       var sway = (Math.sin(clock * 1.9 * sp0 + x * 0.05 + y * 0.03) * 0.5 + gust * 0.7 + wave * 0.25) * G.sway, n = 3 + Math.floor(hash(gx, gy, 34) * 3);
-      if (G.shade > 0) { c.fillStyle = G.dark; c.globalAlpha = 0.28 * G.shade; c.beginPath(); c.ellipse(x, y + 0.6, 4.6, 1.8, 0, 0, 7); c.fill(); c.globalAlpha = 1; }
-      for (var k = 0; k < n; k++) {
-        var hk = hash(gx * 7 + k, gy, 35), bx = (k - (n - 1) / 2) * 1.7 + (hk - 0.5) * 1.2, bh = G.height * fk * (0.65 + hk * 0.7), lean = (k - (n - 1) / 2) * 0.9 + sway * bh * 0.5;
-        c.fillStyle = (fl2 ? FELLC : cols)[(k + gx + gy) % 3 === 0 ? 0 : (hk > 0.55 ? 2 : 1)];
-        c.beginPath(); c.moveTo(x + bx - 0.9, y); c.quadraticCurveTo(x + bx + lean * 0.35, y - bh * 0.6, x + bx + lean, y - bh); c.quadraticCurveTo(x + bx + lean * 0.35 + 0.5, y - bh * 0.55, x + bx + 0.9, y); c.closePath(); c.fill();
-      }
+      var si = Math.max(0, Math.min(SWAY_N - 1, Math.round((sway + 1.45 * G.sway) * swayK))), t = tuftPic(G, fl2, n, Math.floor(hash(gx, gy, 38) * TUFT_V), si);
+      c.drawImage(t.cv, x + t.l, y + t.t, t.w, t.h);
       if (G.flowers > 0 && fl2 < 2 && hash(gx, gy, 36) < G.flowers * (fl2 ? 0.4 : 1)) {
         var fc = G.bloom[Math.floor(hash(gx, gy, 37) * G.bloom.length) % G.bloom.length], fh = G.height * 0.9;
         c.strokeStyle = G.mid; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x + 2.2, y); c.lineTo(x + 2.2 + sway * fh * 0.5, y - fh); c.stroke();

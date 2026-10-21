@@ -11,7 +11,7 @@
   var DIRS8 = ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'], DIRS4 = ['s', 'w', 'n', 'e'];
   function load(SP, name) {
     var set = SP && SP[name]; if (!set) return null;
-    var H = { name: name, meta: set.meta, img: {}, sil: {}, clip: null, fireT: 0, deadT: 0, last: null };
+    var H = { name: name, meta: set.meta, img: {}, sil: {}, rc: {}, clip: null, fireT: 0, deadT: 0, last: null };
     for (var f in set.images) { var im = new Image(); im.src = set.images[f]; H.img[f] = im; }
     return H;
   }
@@ -166,20 +166,21 @@
     var im = H.img[A.sheets.body]; if (!im || !im.complete || !im.naturalWidth) return;
     c.save(); c.translate(x, y); if (dashing) c.scale(1.1, 0.92);
     c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
-    var lit = opts.lit || null, mixW = pk.w > 0.03 && pk.w < 0.97 && opts.blend !== false && blends(pk.a, A);
+    var lit = opts.lit || null, mixW = pk.w > 0.03 && pk.w < 0.97 && opts.blend !== false && blends(pk.a, A) && !A.rects;
     if (pk.w >= 0.97) pk = { a: pk.a, f: pk.f2 };                                                   // all but the next frame already
-    if (opts.shadow !== false && !P.dead) cast(c, H, im, A.sheets.body, opts.shadowHue, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s, lit && lit.cast);
-    litUnder(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+    var pb = pieceOf(H, A, pk.a, 'body', d, pk.f, DP), bx0 = (pb.ox - AN.x) * s, by0 = (pb.oy - AN.y) * s;
+    if (pb.w && opts.shadow !== false && !P.dead) cast(c, H, im, A.sheets.body, opts.shadowHue, pb.sx, pb.sy, pb.w, pb.h, bx0, by0, pb.w * s, pb.h * s, lit && lit.cast);
+    if (pb.w) litUnder(c, H, im, A.sheets.body, lit, pb.sx, pb.sy, pb.w, pb.h, bx0, by0, pb.w * s, pb.h * s);
     for (var i = 0; i < layers.length; i++) {                     // a layer is a name, or { layer, tint } for a recoloured one
       var L = layers[i], ln = typeof L === 'string' ? L : L.layer, file = A.sheets[ln]; if (!file) continue;
       var li = H.img[file]; if (!li || !li.complete || !li.naturalWidth) continue;
       var mulL = typeof L !== 'string' && L.tint && L.mul, src = typeof L === 'string' || !L.tint || mulL ? li : tinted(H, li, file, L.tint);
-      var LB = A.boxes && A.boxes[ln], lw = LB ? LB[2] : fw, lh = LB ? LB[3] : fh, dx = (-AN.x + (LB ? LB[0] : 0)) * s, dy = (-AN.y + (LB ? LB[1] : 0)) * s;   /* (a layer may be packed in a box of its own, cut to its pixels: its corner in the frame, its size) */
-      if (mulL) { var mx = mixW ? mixTo(H, li, lw, lh, d, pk.f, pk.f2, pk.w) : null, mc = mulTo(H, mx || li, mx ? 0 : pk.f * lw, mx ? 0 : d * lh, lw, lh, L.tint); c.drawImage(mc || mx || li, mc || mx ? 0 : pk.f * lw, mc || mx ? 0 : d * lh, lw, lh, dx, dy, lw * s, lh * s); }   /* (a colour multiplied in, a frame at a time: the shield's face) */
+      var lp = pieceOf(H, A, pk.a, ln, d, pk.f, LP), lw = lp.w, lh = lp.h, dx = (lp.ox - AN.x) * s, dy = (lp.oy - AN.y) * s; if (!lw) continue;   /* (the layer's piece of this frame: on the grid, in a box of its own, or cut to its pixels) */
+      if (mulL) { var mx = mixW ? mixTo(H, li, lw, lh, d, pk.f, pk.f2, pk.w) : null, mc = mulTo(H, mx || li, mx ? 0 : lp.sx, mx ? 0 : lp.sy, lw, lh, L.tint); c.drawImage(mc || mx || li, mc || mx ? 0 : lp.sx, mc || mx ? 0 : lp.sy, lw, lh, dx, dy, lw * s, lh * s); }   /* (a colour multiplied in, a frame at a time: the shield's face) */
       else if (mixW) c.drawImage(mixTo(H, src, lw, lh, d, pk.f, pk.f2, pk.w), 0, 0, lw, lh, dx, dy, lw * s, lh * s);
-      else c.drawImage(src, pk.f * lw, d * lh, lw, lh, dx, dy, lw * s, lh * s);
+      else c.drawImage(src, lp.sx, lp.sy, lw, lh, dx, dy, lw * s, lh * s);
     }
-    litOver(c, H, im, A.sheets.body, lit, pk.f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+    if (pb.w) litOver(c, H, im, A.sheets.body, lit, pb.sx, pb.sy, pb.w, pb.h, bx0, by0, pb.w * s, pb.h * s);
     c.restore();
   }
   // once a frame: the one-shot clips the engine's state does not carry (the bow's shot) and the moment of death
@@ -235,15 +236,17 @@
     if (H.src && !imgOf(H, A[nm].sheets.body)) { nm = 'idle'; f = loopFrame(A.idle, ph); mixB = null; }   // this clip's sheet is still on its way: the idle, which is there
     var An = A[nm], d = dirOf(M, st.face), F0 = An.frame || M.frame, AN = An.anchor || M.anchor, fw = F0.w, fh = F0.h, s = (opts.scale || 1) * (M.scale || 1) / PX, file = An.sheets.body, im = H.src ? imgOf(H, file) : H.img[file];
     if (!im || !im.complete || !im.naturalWidth) return false;
+    var p = pieceOf(H, An, nm, 'body', d, f, BP); if (An.rects) mixB = null; if (!p.w) return true;   /* (a packed clip: the frame's own piece; an empty frame draws nothing) */
+    var sx = p.sx, sy = p.sy, pw = p.w, ph = p.h, dx0 = (p.ox - AN.x) * s, dy0 = (p.oy - AN.y) * s, dw0 = pw * s, dh0 = ph * s;
     c.save(); c.translate(e.x, e.y * K); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
     if (e.dead) c.globalAlpha = Math.max(0, Math.min(1, (lie - e.deadT) / 0.4));
-    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s, opts.lit && opts.lit.cast);
-    litUnder(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
+    if (opts.shadow !== false && !e.dead) cast(c, H, im, file, opts.shadowHue, sx, sy, pw, ph, dx0, dy0, dw0, dh0, opts.lit && opts.lit.cast);
+    litUnder(c, H, im, file, opts.lit, sx, sy, pw, ph, dx0, dy0, dw0, dh0);
     if (mixB) c.drawImage(mixTo(H, im, fw, fh, d, mixB.f, mixB.f2, mixB.w), 0, 0, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
-    else c.drawImage(im, f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
-    litOver(c, H, im, file, opts.lit, f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s);
-    if (opts.tint) { var ga = c.globalAlpha; c.globalAlpha = ga * opts.tint.a; c.drawImage(tinted(H, im, file, opts.tint.color), f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s); c.globalAlpha = ga; }
-    if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), f * fw, d * fh, fw, fh, -AN.x * s, -AN.y * s, fw * s, fh * s); }
+    else c.drawImage(im, sx, sy, pw, ph, dx0, dy0, dw0, dh0);
+    litOver(c, H, im, file, opts.lit, sx, sy, pw, ph, dx0, dy0, dw0, dh0);
+    if (opts.tint) { var ga = c.globalAlpha; c.globalAlpha = ga * opts.tint.a; c.drawImage(tinted(H, im, file, opts.tint.color), sx, sy, pw, ph, dx0, dy0, dw0, dh0); c.globalAlpha = ga; }
+    if (e.flash > 0.02 && !e.dead) { c.globalAlpha = Math.min(1, e.flash) * 0.75; c.drawImage(tinted(H, im, file, '#ffffff'), sx, sy, pw, ph, dx0, dy0, dw0, dh0); }
     c.restore();
     if (An.hands) { var rows = An.hands[M.dirs[d]], row = rows && rows[f]; if (row && row.length) e.eyes = row.map(function (h) { return [(h[0] - AN.x) * s, (h[1] - AN.y) * s]; }); }
     return true;
@@ -326,6 +329,16 @@
     for (i = 0; i < n; i++) { if (two) { b = i * 8; w = u[b] | (u[b + 1] << 8); h = u[b + 2] | (u[b + 3] << 8); ox = u[b + 4] | (u[b + 5] << 8); oy = u[b + 6] | (u[b + 7] << 8); } else { w = u[i * 4]; h = u[i * 4 + 1]; ox = u[i * 4 + 2]; oy = u[i * 4 + 3]; } if (w && x + w > MAXW && x > 0) { x = 0; y += sh; sh = 0; } out[i * 6] = x; out[i * 6 + 1] = y; out[i * 6 + 2] = w; out[i * 6 + 3] = h; out[i * 6 + 4] = ox; out[i * 6 + 5] = oy; if (w) { x += w; if (h > sh) sh = h; } }
     return (H.rc[key] = out);
   }
+  /* where a frame's picture lies in its sheet (2026-10-21, the per-frame packer: tools/framepack.js): for a packed clip its piece
+     (rectsOf: its place in the sheet, its size, its corner in the frame; w 0 for an empty frame), else the whole box on the grid
+     (a layer in a box of its own at its corner). Into `o`, so a frame's drawing makes no garbage. */
+  function pieceOf(H, A, clip, layer, d, f, o) {
+    o = o || {};
+    if (A.rects && A.rects[layer]) { if (!H.rc) H.rc = {}; var R = rectsOf(H, A, clip, layer), i = (d * A.frames + f) * 6; if (!R) { o.w = 0; return o; } o.sx = R[i]; o.sy = R[i + 1]; o.w = R[i + 2]; o.h = R[i + 3]; o.ox = R[i + 4]; o.oy = R[i + 5]; return o; }
+    var F0 = A.frame || H.meta.frame, LB = A.boxes && A.boxes[layer], lw = LB ? LB[2] : F0.w, lh = LB ? LB[3] : F0.h;
+    o.sx = f * lw; o.sy = d * lh; o.w = lw; o.h = lh; o.ox = LB ? LB[0] : 0; o.oy = LB ? LB[1] : 0; return o;
+  }
+  var BP = {}, DP = {}, LP = {};
   function imgOf(H, file) { var im = H.img[file]; if (!im && H.src && H.src[file] && typeof Image !== 'undefined') { im = new Image(); im.src = H.src[file]; H.img[file] = im; if (im.decode) im.decode().catch(function () {}); } return im && im.complete && im.naturalWidth ? im : null; }   /* (a sheet asked for is decoded off the frame as it arrives, 2026-10-20: the first draw of a big sheet was a spike) */
   function warm(H) { var n = 0, f; if (!H || !H.src) return 0; for (f in H.src) { if (!H.img[f]) n++; imgOf(H, f); } return n; }   // a lazy set's every sheet asked for (a beast coming near)
   function unload(H) { if (!H || !H.lazy) return; H.img = {}; H.sil = {}; if (H.rc) H.rc = {}; }   // a lazy set let go (no beast of it near for a while): its sheets, silhouettes and tints
@@ -491,5 +504,5 @@
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
   function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; if (H.lazy && !H.use) H.use = {}; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; if (H.use && H.use[cl] == null) H.use[cl] = now();   /* (a warmed clip counts as used now, so one never drawn is let go in its time) */ look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, odo: odo, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
+  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, pieceOf: pieceOf, odo: odo, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });
