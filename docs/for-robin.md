@@ -388,3 +388,7 @@ people's heavy black line; now they have the set pieces' lighter one in a warm d
 and heaps, the dragon post, the shield rack, the weir and net, the trail stones) are the studio's new pictures in the chosen tones.
 The wreck you wake in is no longer drawn in code: it is the studio's picture of a faering stove in on the sand, its ends curled
 high, the mast snapped and the striped sail over the side, an oar and planks spilled beside it. Prying planks works as before.
+
+**The bear in the kraken's style (2026-10-21; chapter 2, on your list):** the big island's bear is the studio's remade brown bear:
+a broad domed head with a dished face and a pale muzzle, thick legs on broad paws with short pale claws, a shaggy crest over the
+shoulder hump, a ruff round the cheeks and ragged hair under the belly and on the legs. Its feet hold to the ground as it walks.
