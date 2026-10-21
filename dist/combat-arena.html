@@ -4921,7 +4921,16 @@ if (typeof module !== 'undefined') module.exports = Combat;
      its figure covers in one loop, in game units, the studio's) is picked by the distance walked: odo keeps a running ground
      distance for a thing from its world position (a jump of 60 units or more in one frame, a teleport or a landing, is not walked);
      strideFrame turns it into the frame, the stride grown with the figure's drawn size. A clip without one keeps the clock. */
-  function odo(o, x, y) { var od = o._odo || (o._odo = { x: x, y: y, d: 0 }), step = Math.hypot(x - od.x, y - od.y); if (step < 60) od.d += step; od.x = x; od.y = y; return od.d; }
+  function odo(o, x, y) { var od = o._odo || (o._odo = { x: x, y: y, d: 0, t: now(), v: 0 }), step = Math.hypot(x - od.x, y - od.y), t = now(), dt = t - od.t; if (step < 60) { od.d += step; if (dt > 0.001 && dt < 0.5) od.v += (step / dt - od.v) * Math.min(1, dt * 6); } od.t = t; od.x = x; od.y = y; return od.d; }   /* (od.v: the speed, smoothed, units a second) */
+  function odoSpeed(o) { return o && o._odo ? o._odo.v : 0; }
+  /* walk, jog or run by the speed (2026-10-21, the studio's people's gaits: a stroll made for 40, a jog for 60, a run for 80, each
+     with its stride): a set that has a jog clip is picked by how fast the figure really moves, with a hold at each edge so it does
+     not flicker; a set without one keeps its old choice */
+  var GAIT = { jogAt: 50, runAt: 62, hold: 4 };   /* (a stroll to about 54, a jog from there to about 66, a run above: villagers at 38 to 44 walk, the men at 60 jog, fleeing at 70 and the men at 94 run) */
+  function gaitClip(A, v, prev) {
+    var h = GAIT.hold, runAt = GAIT.runAt + (prev === 'run' ? -h : h), jogAt = GAIT.jogAt + (prev === 'jog' || prev === 'run' ? -h : h);
+    if (A.run && v > runAt) return 'run'; if (A.jog && v > jogAt) return 'jog'; return 'walk';
+  }
   function strideFrame(A, d, scale) { var L = A.stride * (scale || 1), p = (d % L + L) % L; return Math.min(A.frames - 1, Math.floor(p / L * A.frames)); }
   function gait(A, d, t, scale) { return A.stride > 0 && d != null ? strideFrame(A, d, scale) : loopFrame(A, t); }
   /* Slow clips are melted from one frame into the next (2026-10-12, Robin: the new creatures' idles looked laggy; they are
@@ -5349,7 +5358,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
      without it), the shield up (e.guard), a flinch, and otherwise idle, walk or run by how fast he is really moving.
      The thing in his hand is e.wpn = { kind, tint }. */
   var BEATS = { attack1: [0.39, 0.6], attack2: [0.3, 0.55], chop: [0.3, 0.62], mine: [0.39, 0.55] };   // where in each clip the weapon is drawn back, and where the blow is over (tools/visual/people.js blows)
-  var FIGHT = ['idle', 'walk', 'run', 'attack1', 'attack2', 'chop', 'mine', 'hit', 'block'];
+  var FIGHT = ['idle', 'walk', 'jog', 'run', 'attack1', 'attack2', 'chop', 'mine', 'hit', 'block'];
   function fighter(c, H, e, K, look, opts) {
     if (!peopleReady(H)) return false; opts = opts || {};
     var A = H.meta.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null, ph: Math.random() * 10, wp: 0 }), dt = t - st.t;
@@ -5375,7 +5384,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (e.state === 'stagger' || flash > 0.35) { s.clip = 'hit'; s.k = e.state === 'stagger' ? 0.15 + 0.6 * k : Math.min(0.999, (1 - flash) * 0.8); }
     else {
       st.run = st.run ? st.spd > 50 : st.spd > 62; st.walk = st.walk ? st.spd > 3 : st.spd > 7;
-      if (st.run) { st.wp += dt * Math.max(0.8, Math.min(1.4, st.spd / 100)); s.clip = 'run'; s.t = st.wp; s.d = odo(e, e.x, e.y); }
+      if (A.jog && (st.run || st.walk)) { st.g = gaitClip(A, st.spd, st.g); st.wp += dt; s.clip = st.g; s.t = st.wp; s.d = odo(e, e.x, e.y); }   /* (a set with a jog: the gait by the real speed) */
+      else if (st.run) { st.wp += dt * Math.max(0.8, Math.min(1.4, st.spd / 100)); s.clip = 'run'; s.t = st.wp; s.d = odo(e, e.x, e.y); }
       else if (st.walk) { st.wp += dt * Math.max(0.7, Math.min(1.9, st.spd / 36)); s.clip = 'walk'; s.t = st.wp; s.d = odo(e, e.x, e.y); }
       else odo(e, e.x, e.y);
     }
@@ -5385,7 +5395,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
   function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; if (H.lazy && !H.use) H.use = {}; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; if (H.use && H.use[cl] == null) H.use[cl] = now();   /* (a warmed clip counts as used now, so one never drawn is let go in its time) */ look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, pieceOf: pieceOf, odo: odo, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
+  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, pieceOf: pieceOf, odo: odo, odoSpeed: odoSpeed, gaitClip: gaitClip, GAIT: GAIT, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });
 
 /* Sfx: recorded sound effects (2026-10-15, Robin: "work on the attack sounds; request the sounds you need from the Sound
