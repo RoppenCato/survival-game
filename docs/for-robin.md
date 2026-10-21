@@ -334,3 +334,7 @@ over your head is gone, and what you make goes straight into the bag. Two choice
 at a furnace still queue at the station and carry on while you walk away (as Valheim's cooking station and smelter do), with Cook x5
 and Smelt x5 on Shift; and the count with its minus and plus is gone, since Shift x5 replaces it. Say if either should go the
 other way.
+
+**The knife (2026-10-21, your note):** the flint knife is no longer offered on the starter island; it appears on the big island as
+before. And the villagers' new walks are in, on your yes: they stroll at their own pace, and the raiders jog (your doubt about the
+jog is written down in the idea bank).

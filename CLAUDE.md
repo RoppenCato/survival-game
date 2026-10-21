@@ -432,7 +432,7 @@ when short) and "ready to make"; a click on the slip's pin lets it go; **the han
 own groups, faint, "At the hearth", "At the workbench", "At the furnace" for each station kind the hero has stood at
 (`seen.stations`, set in `stationNear`) with what it makes that he knows; a dim row can be chosen and its card says "Made
 at the hearth" in place of the button. The pin is the studio's `pin_on` and `pin_off` (drawn in code while they load).
-Hand: flint axe, knife, pick, wooden club, stick bow, torch. Bench: the flint sword, the wooden shield, the leather set,
+Hand: flint axe, knife, pick, wooden club, stick bow, torch; **the flint knife is not offered on the starter island** (Robin, 2026-10-21: "not really useful anyway", for now; `STARTER_HIDE`). Bench: the flint sword, the wooden shield, the leather set,
 copper and iron tools and weapons from bars. Charcoal (none on the starter island, where nothing uses it: no old fire rings or struck trees there, no embers: Robin, 2026-10-20): embers at dawn by every fire that burned all night, the charcoal
 clamp, lightning-struck trees, old fire rings. The furnace makes copper bars (and iron bars from bog iron).
 

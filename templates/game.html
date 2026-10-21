@@ -1172,7 +1172,8 @@ __COMBAT__
   ];
   // A recipe is learnt when you first hold its key ingredient (the important one: flint for a flint axe, fiber for a
   // bow, leather for armour); until then it is not shown at all. Taught recipes (the raft) wait for the teaching.
-  function known(r) { if (r.out && r.out.arrows) return false; if (r.taught && !seen[r.taught]) return false;   /* (arrows are not made while there is no quiver) */ if (r.key) return !!seen[r.key]; for (var k in r.needs) if (!seen[k]) return false; return true; }
+  var STARTER_HIDE = { flintKnife: 1 };   /* recipes not offered on the starter island (Robin, 2026-10-21: the knife, "not really useful anyway", for now) */
+  function known(r) { if (r.out && r.out.arrows) return false; if (STARTER_HIDE[r.id] && onStarter()) return false; if (r.taught && !seen[r.taught]) return false;   /* (arrows are not made while there is no quiver) */ if (r.key) return !!seen[r.key]; for (var k in r.needs) if (!seen[k]) return false; return true; }
   function dishKnown(d) { if (d.taught && !seen[d.taught]) return false; for (var k in d.needs) if (!seen[k]) return false; return true; }
   function recipeName(r) { return r.out.item ? Items.name(Items.make(r.out.item[0], r.out.item[1])) : (r.out.raft ? 'raft' : (r.out.stack ? (r.out.stack[0] === 'torch' ? r.out.stack[1] + ' torches' : NAMES[r.out.stack[0]]) : r.out.arrows + ' wood arrows')); }
   function needsText(r) { var p = []; for (var k in r.needs) p.push(r.needs[k] + ' ' + NAMES[k].toLowerCase() + ' (' + (inv[k] || 0) + ')'); return p.join(', '); }
