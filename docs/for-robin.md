@@ -365,3 +365,7 @@ feet that follow the ground, their eyes still glowing at night. The deer comes n
 
 **The deer in the kraken's style (2026-10-21):** the starter island's deer is the studio's new red deer stag, in his summer red with
 pale-tipped antlers, more frames and feet that follow the ground. The plants come next.
+
+**The plants in the kraken's style (2026-10-21):** the bushes, berry bushes, juniper, heather, ferns, tall grass, reeds and
+mushrooms are the studio's new pictures, in the same sizes and places. The round dark-teal bushes the studio asked about are not in
+your game; they were only in a check picture of mine, which now shows the game's own pictures too.

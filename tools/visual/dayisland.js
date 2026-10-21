@@ -2,8 +2,24 @@
 // of 60 tiles, the wreck, no jetty), painted round the camp with the ground pieces, the waves, the living grass and the props from
 // the buckets, exactly as the game draws them. paint(kit, World, W, H, Z, opts) returns { cv, home, w }: a canvas W by H pixels at
 // Z px a unit with the camp at the middle (or opts.at), the home point in canvas pixels, and the world. Shared by herofit.js.
-const { createCanvas } = require('../../node_modules/@napi-rs/canvas');
+const { createCanvas, loadImage } = require('../../node_modules/@napi-rs/canvas');
+const fs = require('fs'), path = require('path');
 const K = 0.75;
+/* The studio's set pieces, as the game draws them (2026-10-21, the Art Director: the round drawn bushes in this scene were the most
+   out-of-style thing on screen, and the game no longer draws them): await load(World) before make() and paint(), and every
+   picture of assets/props (props.json and each folder's own json, as tools/build.py gathers them) goes to World.setImages, so
+   w.sprite gives the pictures, drawn at their own size with the game's cast shadow and, on grass, the halo and the meadow's blades
+   at the foot (the sticker cure). Node decodes a picture only once its event loop has run, hence the await. A script that does
+   not call load() gets the drawn props as before. */
+let PIECES = null;
+async function load(World) {
+  if (PIECES) return PIECES;
+  const root = path.join(__dirname, '..', '..', 'assets', 'props'), map = {}, jobs = [];
+  const add = (dir, j) => { for (const n in j) { const fp = path.join(dir, n + '.png'); if (!fs.existsSync(fp)) continue; jobs.push(loadImage(fs.readFileSync(fp)).then(im => { map[n] = { img: im, w: j[n].w, h: j[n].h, ax: j[n].ax, ay: j[n].ay, upp: j[n].upp }; })); } };
+  const top = path.join(root, 'props.json'); if (fs.existsSync(top)) add(root, JSON.parse(fs.readFileSync(top, 'utf8')));
+  for (const sub of fs.readdirSync(root)) { const jp = path.join(root, sub, sub + '.json'); if (fs.existsSync(jp)) add(path.join(root, sub), JSON.parse(fs.readFileSync(jp, 'utf8'))); }
+  await Promise.all(jobs); World.setImages(map); PIECES = map; return map;
+}
 function make(kit, World, seed) {
   const spec = { isle: 60, isle0: 60, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: seed || 11 };
   const w = World.make(kit, spec); w.meadowLook = World.GRASS_INK; w.plant(); w.camp(); w.sortBuckets();
@@ -23,7 +39,10 @@ function paint(kit, World, W, H, Z, opts) {
   const by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1);
   for (let by = by0; by <= by1; by++) for (let bx = bx0; bx <= bx1; bx++) {
     const list = w.buckets[by * CW + bx]; if (!list) continue;
-    list.forEach(o => { const s = w.sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, ww = s.w * o.s, h = s.h * o.s; if (px + ww < cam.x - hw || px > cam.x + hw || py + h < cam.y - hh || py > cam.y + hh) return; items.push({ y: o.y, f: () => c.drawImage(s.cv, px, py, ww, h) }); });
+    list.forEach(o => { if (o.painted) return; const s = w.sprite(o.name, o.v), sS = s.fixed ? 1 : o.s, px = o.x + s.l * sS, py = o.y * K + s.t * sS, ww = s.w * sS, h = s.h * sS; if (px + ww < cam.x - hw - h || px > cam.x + hw || py + h < cam.y - hh || py > cam.y + hh + h) return;
+      if (w.castShadow && h >= 10) w.castShadow(c, o.x, o.y * K, ww, h, { k: 1, len: 1, dusk: 0 });   // the game's shadow, under everything that stands
+      const gr = w.onGrass && h > 6 && !o.peak && !o.inFace ? w.onGrass(o.x, o.y) : 0;
+      items.push({ y: o.y, f: () => { if (gr) w.footHalo(c, o.x, o.y * K, ww); c.drawImage(s.cv, px, py, ww, h); if (gr) w.footGrass(c, s, o.x, o.y * K + 0.7, ww, gr === 2, World.GRASS_INK); } }); });
   }
   (opts.items || []).forEach(it => items.push(it));
   items.sort((a, b) => a.y - b.y).forEach(it => it.f());
@@ -38,4 +57,4 @@ function sample(cv) {
   for (let y = 0; y < H; y += 4) for (let x = 0; x < W; x += 4) { const i = (y * W + x) * 4; r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
   return '#' + [r / n, g / n, b / n].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
 }
-module.exports = { make, paint, contactShadow, sample };
+module.exports = { load, make, paint, contactShadow, sample };

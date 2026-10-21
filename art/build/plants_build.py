@@ -1,4 +1,5 @@
-"""The plants of the starter island as set pieces (2026-10-20; art plan item 8, the third of Robin's order): the bush, the berry
+"""The plants (2026-10-21, the kraken round: chosen tones, each bush one mass lit as one with a ragged rim, no pale clumps, thicker reeds,
+the line only where colours meet; the tall grass as Robin picked it). The plants of the starter island as set pieces (2026-10-20; art plan item 8, the third of Robin's order): the bush, the berry
 bush, the juniper, the heather, the fern, the tall grass, the reeds and the toadstools. Drawn in the trees' hand (concept A, the
 printed tale book, Robin's pick 2026-10-20) and rendered from the set pieces' camera as the trees and the benches were: 35 degrees
 above the ground, looking north, 4 px a game unit when packed, twice that here. The old drawn bushes were dark blobs with a heavy
@@ -19,6 +20,8 @@ greens, and the toadstools a hand high.
 import bpy, bmesh, math, os, sys, json, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21)
+from mathutils.bvhtree import BVHTree
 from skin import Stick, ball
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -35,11 +38,36 @@ def fresh():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene; coll = bpy.data.collections.new('Piece'); sc.collection.children.link(coll); return sc, coll
 C = {}
+GRASS = ('ggd', 'ggm', 'ggl', 'straw')
+FOLIAGE = ('leaf', 'leafl', 'needle', 'needlel', 'heath', 'heathl', 'fern', 'fernl', 'reed', 'reedl')
+def one_form(objs, spheres, k=0.85, voxel=0.08, iters=20, grow=1.04):
+    """the light from one smooth mass (the trees' and the boar's way, 2026-10-21)"""
+    coll = objs[0].users_collection[0]; bm = bmesh.new()
+    for (c, r, sc_) in spheres: bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=10, radius=r * grow, matrix=Matrix.Translation(Vector(c)) @ Matrix.Diagonal((sc_[0], sc_[1], sc_[2], 1.0)))
+    me = bpy.data.meshes.new('proxy_raw'); bm.to_mesh(me); bm.free(); pobj = bpy.data.objects.new('proxy_raw', me); coll.objects.link(pobj)
+    rm = pobj.modifiers.new('rm', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = voxel
+    smd = pobj.modifiers.new('sm', 'SMOOTH'); smd.factor = 1.0; smd.iterations = iters
+    bpy.context.view_layer.update(); dg = bpy.context.evaluated_depsgraph_get(); me2 = bpy.data.meshes.new_from_object(pobj.evaluated_get(dg))
+    bpy.data.objects.remove(pobj); bpy.data.meshes.remove(me)
+    PB = bmesh.new(); PB.from_mesh(me2); PB.normal_update(); Tr = BVHTree.FromBMesh(PB)
+    for o in objs:
+        om = o.data; vn = []
+        for v in om.vertices:
+            hit = Tr.find_nearest(o.matrix_world @ v.co); n = hit[1].normalized() if hit and hit[1] is not None else None
+            vn.append(((n * k + v.normal * (1 - k)).normalized())[:] if n is not None else v.normal[:])
+        om.normals_split_custom_set_from_vertices(vn)
+    PB.free(); bpy.data.meshes.remove(me2)
 def mats():
-    for k, v in {'leaf': '#5a8c38', 'leafl': '#7aa848', 'needle': '#3d6a38', 'needlel': '#5a8a42', 'heath': '#627c4c', 'heathl': '#7d9a5c', 'bloom': '#8f5c8c',
-                 'fern': '#4f8a3c', 'fernl': '#6aa64a', 'grassd': '#4c7a38', 'grass': '#6a9a44', 'grassl': '#8ab45a', 'ggd': '#4f7f42', 'ggm': '#75a258', 'ggl': '#a3bf6e', 'straw': '#c9b870', 'reed': '#7a9a4c', 'reedl': '#9ab860',
-                 'cattail': '#5a3f2e', 'stem': '#6b4a36', 'berry': '#c43a3a', 'jberry': '#6f7f9a', 'cap': '#b08a4a', 'capd': '#8a6a38', 'stalk': '#e2d6bc', 'fleck': '#ece2cc'}.items():
-        C[k] = toon.material('p_' + k, v, None, 'cel')
+    # 2026-10-21 (the kraken round): chosen tones; the leaves a step deeper and more saturated than the meadow, beside the trees'
+    # greens, with a lighter, smaller shade (by day lush and bright); the tall grass (Robin's pick earlier today) keeps its tone
+    for k, v in {'leaf': '#4f8f38', 'leafl': '#5a9a40', 'needle': '#356f42', 'needlel': '#3e7a49', 'heath': '#5f7c46', 'heathl': '#6f8c52', 'bloom': '#8f5886',
+                 'fern': '#4a8a38', 'fernl': '#5c9c44', 'grassd': '#4c7a38', 'grass': '#6a9a44', 'grassl': '#8ab45a', 'ggd': '#4f7f42', 'ggm': '#75a258', 'ggl': '#a3bf6e', 'straw': '#c9b870', 'reed': '#6f9a48', 'reedl': '#86ac56',
+                 'cattail': '#6a4630', 'stem': '#6b4a36', 'berry': '#c43a3a', 'jberry': '#6f7f9a', 'cap': '#b8843e', 'capd': '#985f34', 'stalk': '#e2d6bc', 'fleck': '#ece2cc'}.items():
+        if k in GRASS: C[k] = toon.material('p_' + k, v, None, 'cel', shared=True)
+        elif k in FOLIAGE:
+            lit, shade = toon.chosen_tones(v, lit_dl=0.09, shade_dl=0.075, cool_k=0.2)
+            C[k] = toon.material('p_' + k, v, None, 'cel', lit=lit, shade=shade, t_dark=0.5, t_lit=1.0)
+        else: C[k] = toon.material('p_' + k, v, None, 'cel')
 def obj(name, coll, bm, m, smooth=True):
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); me.materials.append(m)
     for p in me.polygons: p.use_smooth = smooth
@@ -89,11 +117,11 @@ def bush(coll, v, berries=False):
     W = U(1.55, 1.9) * (0.92 if berries else 1.0); H = W * U(0.62, 0.72); S = Stick()                            # waist high on the hero: a thing he picks from
     stems(S, (0, 0), 4, H * 0.45, 0.025, W * 0.18); S.build('stems', coll, C, subdiv=2)
     cl = []
-    for k in range(5 + v):
-        a = TAU * k / (5 + v) + U(-0.3, 0.3); rr = W * U(0.14, 0.2); cl.append(((math.cos(a) * W * 0.25, math.sin(a) * W * 0.2, H * 0.5 + U(-0.05, 0.05)), rr, (1.25, 1.0, 0.85)))
-    cl.append(((0, 0, H * 0.62), W * 0.24, (1.2, 1.0, 0.8)))
-    blob('crown', coll, C['leaf'], cl, tufts=12, tuft_r=0.22)
-    blob('crownlit', coll, C['leafl'], [((-W * 0.14, -W * 0.14, H * 0.74), W * 0.2, (1.25, 1.0, 0.7)), ((W * 0.08, -W * 0.2, H * 0.6), W * 0.13, (1.2, 1.0, 0.8))], tufts=5, tuft_r=0.3)
+    for k in range(3 + v % 2):                         # 2026-10-21: a few big lobes melted into one, a ragged rim, lit as one (no pale clumps faking the light)
+        a = TAU * k / (3 + v % 2) + U(-0.3, 0.3); rr = W * U(0.2, 0.25); cl.append(((math.cos(a) * W * 0.2, math.sin(a) * W * 0.16, H * 0.5 + U(-0.04, 0.05)), rr, (1.25, 1.0, 0.85)))
+    cl.append(((0, 0, H * 0.62), W * 0.27, (1.2, 1.0, 0.8)))
+    crown = blob('crown', coll, C['leaf'], cl, voxel=0.032, tufts=11, tuft_r=0.27)
+    one_form([crown], cl, k=0.85)
     if berries:
         for k in range(11 + v * 2):
             a = U(-2.9, -0.2); ball('berry%d' % k, coll, C['berry'], (math.cos(a) * W * U(0.3, 0.42), math.sin(a) * W * U(0.26, 0.36), H * U(0.55, 0.92)), 0.05)
@@ -101,16 +129,16 @@ def bush(coll, v, berries=False):
 def juniper(coll, v):
     H = U(1.3, 1.6); W = H * U(0.42, 0.5); S = Stick(); stems(S, (0, 0), 2, H * 0.3, 0.03, W * 0.1); S.build('stems', coll, C, subdiv=2)
     cl = [((0, 0, H * 0.3), W * 0.46, (1.0, 0.9, 1.1)), ((U(-0.05, 0.05), U(-0.05, 0.05), H * 0.58), W * 0.4, (1.0, 0.9, 1.25)), ((U(-0.04, 0.04), 0, H * 0.84), W * 0.24, (1.0, 0.9, 1.3))]
-    blob('body', coll, C['needle'], cl, tufts=10, tuft_r=0.3)
-    blob('lit', coll, C['needlel'], [((-W * 0.26, -W * 0.22, H * 0.5), W * 0.2, (1.0, 0.8, 1.6)), ((-W * 0.1, -W * 0.2, H * 0.8), W * 0.13, (1.0, 0.8, 1.3))], tufts=5, tuft_r=0.3)
+    body = blob('body', coll, C['needle'], cl, voxel=0.03, tufts=10, tuft_r=0.3); one_form([body], cl, k=0.8)
     for k in range(4 + v): a = U(-2.6, 0.4); ball('jb%d' % k, coll, C['jberry'], (math.cos(a) * W * 0.36, math.sin(a) * W * 0.3 - 0.04, H * U(0.35, 0.7)), 0.028)
     return dict(h=H + 0.1, w=W + 0.5)
 def heather(coll, v):
     W = U(1.1, 1.35); H = U(0.34, 0.42)
     cl = [((math.cos(a) * W * 0.26, math.sin(a) * W * 0.2, H * 0.45), W * U(0.16, 0.22), (1.2, 1.0, 0.55)) for a in [TAU * k / (4 + v) + U(-0.3, 0.3) for k in range(4 + v)]] + [((0, 0, H * 0.5), W * 0.25, (1.3, 1.0, 0.6))]
-    blob('cushion', coll, C['heath'], cl, tufts=14, tuft_r=0.22)
-    blob('cushionlit', coll, C['heathl'], [((-W * 0.16, -W * 0.14, H * 0.72), W * 0.2, (1.4, 1.0, 0.5))], tufts=5, tuft_r=0.3)
-    for k in range(16 + v * 3): a = U(0, TAU); rr = W * U(0.08, 0.46); ball('bloom%d' % k, coll, C['bloom'], (math.cos(a) * rr, math.sin(a) * rr * 0.8, H * U(0.84, 1.02) - rr * 0.28), U(0.035, 0.05), 1.3, 1.0, 0.6)
+    cush = blob('cushion', coll, C['heath'], cl, voxel=0.03, tufts=14, tuft_r=0.24); one_form([cush], cl, k=0.8)
+    # 2026-10-21: the heather in flower as a big mass, not dots: a ragged purple crown over most of the cushion's top, lit with it
+    bl = [((math.cos(a) * rr, math.sin(a) * rr * 0.8, H * 0.98 - rr * 0.35), W * U(0.12, 0.16), (1.3, 1.0, 0.5)) for a, rr in [(U(0, TAU), W * U(0.0, 0.3)) for _ in range(8 + v)]]
+    crown = blob('bloom', coll, C['bloom'], bl, voxel=0.028, tufts=10, tuft_r=0.3); one_form([crown], cl, k=0.8)
     return dict(h=H + 0.1, w=W + 0.4)
 def fern(coll, v):
     R = U(0.5, 0.6); n = 6 + v; H = R * 0.85
@@ -147,13 +175,13 @@ def reeds(coll, v):
     blob('tussock', coll, C['reed'], [((0, 0, 0.08), 0.16, (1.2, 0.9, 0.5))], tufts=6, tuft_r=0.3)
     for k in range(n):
         a = TAU * k / n + U(-0.3, 0.3); rr = U(0.05, 0.28); x, y = math.cos(a) * rr, math.sin(a) * rr * 0.7; h = H * U(0.72, 1.0); lean = U(-0.08, 0.08)
-        S.chain([Vector((x, y, 0)), Vector((x + lean * 0.5, y, h * 0.5)), Vector((x + lean, y + U(-0.04, 0.04), h))], [(0.032, 0.03), (0.028, 0.026), (0.022, 0.02)], None, 'reed' if k % 2 else 'reedl')
-        if k % 2 == 0: ball('head%d' % k, coll, C['cattail'], (x + lean * 0.86, y, h * 0.86), 0.05, 1.0, 1.0, 3.2)
+        S.chain([Vector((x, y, 0)), Vector((x + lean * 0.5, y, h * 0.5)), Vector((x + lean, y + U(-0.04, 0.04), h))], [(0.05, 0.047), (0.044, 0.041), (0.034, 0.03)], None, 'reed' if k % 2 else 'reedl')   # 2026-10-21: thicker, so not a black stick
+        if k % 2 == 0: ball('head%d' % k, coll, C['cattail'], (x + lean * 0.86, y, h * 0.86), 0.068, 1.0, 1.0, 3.0)
     S.build('stalks', coll, C, subdiv=2)
     for k in range(4 + v):
         th = TAU * k / (4 + v) + U(-0.4, 0.4); L = U(0.3, 0.5)
         pts = arc_pts((0, 0, 0), th, L, H * U(0.5, 0.7), peak=0.75, n=10, sway=U(-0.1, 0.1))
-        strip('leaf%d' % k, coll, C['reedl' if k % 2 else 'reed'], pts, [0.045 * (1 - i / 10) ** 0.6 + 0.006 for i in range(11)], thick=0.012)
+        strip('leaf%d' % k, coll, C['reedl' if k % 2 else 'reed'], pts, [0.065 * (1 - i / 10) ** 0.6 + 0.008 for i in range(11)], thick=0.012)
     return dict(h=H + 0.1, w=1.3)
 def mushrooms(coll, v):
     n = 3 + v * 2 if v < 2 else 2; S = Stick(); H = 0.0
@@ -181,7 +209,7 @@ for ki, (kind, fn) in enumerate(KINDS.items()):
         cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
         toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
         fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel'); fs.crease_angle = rad(CREASE.get(kind, 100)); lk = LINE.get(kind, 1.0)
-        toon.piece_line(fs)
+        toon.piece_line(fs, at_colours=True)               # 2026-10-21: the inner line only where colours meet or one mass passes before another
         if kind in NO_INNER: fs.linesets.remove(fs.linesets['inner'])
         for ls in fs.linesets:
             st = ls.linestyle; st.thickness *= lk

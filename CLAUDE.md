@@ -287,6 +287,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   on the committed code (`git show HEAD:src/x.js` into a scratch folder) and on the change. The scripted raids in the page are
   measured by the same engine: run them again last.
 - Tests and render scripts write throwaway PNGs into the current folder; `.gitignore` covers PNGs in the root.
+- **The reference scene** (`tools/visual/dayisland.js`, the starter island as the game draws it, used by the sheet checks and the studio's boards): `await DI.load(World)` before `make` and `paint` loads every studio picture (node decodes a picture only once its event loop has run), so the scene shows the set pieces at their own size with the game's shadow and foot grass; a script that skips it gets the old drawn props (2026-10-21: the round teal bushes the studio saw were only ever this scene's).
 - **Test with the sound off:** open every page with **`?mute=1`** in the pane (Robin hears it and cannot silence the pane).
 - **Judge it at Robin's size:** the pane's canvas is 800 by 500 at 2 pixels a unit; Robin's is 1200 by 750 at 3, shown about
   half again larger. Before judging light or painted ground: `resize_window` to 1920 by 1080, reload, capture the canvas and
@@ -373,7 +374,7 @@ out at the far end as the studio's log picture** (a drop of kind `log` that give
 log picture drops wood as before). **The workbench and the raft bench are the studio's pictures too** (2026-10-20,
 `assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12), **and the plants** (`assets/props/plants`:
 bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three variants each; a picked berry bush is a
-bush until it regrows; **the tall grass redone 2026-10-21** (Robin: the first "looks like a plant"; now a loose tuft of flat blades
+bush until it regrows; **all of them in the kraken's style since 2026-10-21** (the round's fourth item: `plants_build.py`, the chosen tones, `shared=True` keeping the old tone where a builder wants it); **the tall grass redone 2026-10-21** (Robin: the first "looks like a plant"; now a loose tuft of flat blades
 leaning one way in the grass's greens, the silhouette line only; the studio's `out/plants/grass2`, its `plants_build.py` the game's copy)), **and the rocks** (`assets/props/rocks`: rock, boulder and rock formation in six variants each, by
 the prop's seed; the cracks and the sweet spot's cue are drawn over them), **and the camp things** (`assets/props/camp`:
 the drying rack, woodpile, chopping block, log seat, cart, well, trough and the two tents in undyed wool, their mouths

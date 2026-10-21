@@ -6,7 +6,7 @@ const { createCanvas, loadImage } = require('../../node_modules/@napi-rs/canvas'
 global.__mk = (w, h) => createCanvas(w, h);
 const S = require('../../src/stylelab.js'), World = require('../../src/world.js'), DI = require('./dayisland.js'); const kit = S.kit; kit.setup(kit.STYLE);
 const seed = +(process.argv[2] || 11), want = (process.argv[3] || 'all').split(','), Z = +(process.argv[4] || 2), BIG = process.env.MSPEC === 'big', SPEC = BIG ? { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 150, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed, mountain: 1, mountainOpts: World.BIG_MOUNTAIN } : Object.assign({}, World.MOUNTAIN_SPEC, { seed });   // MSPEC=big: the game's own two islands, the big one with its small mountain
-(async () => {
+(async () => { await DI.load(World);   /* the studio's set pieces, as the game draws them (2026-10-21) */
   try { const PJ = JSON.parse(fs.readFileSync('assets/props/props.json', 'utf8')), map = {}; for (const k in PJ) map[k] = Object.assign({ img: await loadImage(path.join('assets/props', k + '.png')) }, PJ[k]); World.setImages(map); } catch (e) { console.log('no set pieces packed'); }
   const w = World.make(kit, SPEC); if (process.env.SEAMS) w.debugSeams = true; w.meadowLook = World.GRASS_INK; w.plant(); if (w.peaks) w.peaks(); if (w.dress) w.dress();
   const caveAt = w.caveSite ? w.caveSite(kit.rng(seed * 31 + 9)) : null; if (caveAt && World.IMAGES.cave_mouth) w.addProp({ name: 'cave_mouth', x: caveAt.x, y: caveAt.y + 2, s: 1, r: 0, v: 0 });

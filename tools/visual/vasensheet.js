@@ -9,7 +9,7 @@ const ROWS = [
   ['nacken', 'Nacken: a river-pale man with a lyre', [['idle', 's', 0], ['idle', 'sw', 0.3], ['walk', 'w', 0.3], ['idle', 'n', 0], ['play', 's', 0.2], ['play', 'sw', 0.6], ['play', 'e', 0.4], ['death', 'sw', 0.95]]],
   ['bysen', 'The bysen: chopping, and the stump he turns into', [['idle', 's', 0], ['walk', 'sw', 0.3], ['chop', 'w', 0.3], ['chop', 'w', 0.75], ['hide', 's', 0.4], ['hide', 's', 0.7], ['stump', 's', 0], ['stump', 'w', 0]]]];
 const W = 2300, ROW = 420, H = ROW * ROWS.length + 20, Z = 3;
-(async () => {
+(async () => { await DI.load(World);   /* the studio's set pieces, as the game draws them (2026-10-21) */
   const w = DI.make(kit, World, 11), r = DI.paint(kit, World, W, H, Z, { world: w, at: { x: w.home.x - 520, y: w.home.y - 300 } });
   const cv = r.cv, c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
   c.fillStyle = 'rgba(126,160,96,0.6)'; c.fillRect(0, 0, W, H);

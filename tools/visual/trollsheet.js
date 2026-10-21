@@ -7,7 +7,7 @@ const S = require('../../src/stylelab.js'), World = require('../../src/world.js'
 const names = process.argv.slice(2).length ? process.argv.slice(2) : ['troll_boulder', 'troll_forest', 'troll_maw', 'troll_three'];
 const TITLE = { troll_boulder: 'Mountain troll (after Bauer)', troll_forest: 'Forest troll (after Kittelsen)', troll_maw: 'The Gape (new)', troll_three: 'Three-headed troll (new)' };
 const W = 2500, ROW = 430, H = ROW * names.length + 20, Z = 3;
-(async () => {
+(async () => { await DI.load(World);   /* the studio's set pieces, as the game draws them (2026-10-21) */
   const w = DI.make(kit, World, 11), r = DI.paint(kit, World, W, H, Z, { world: w, at: { x: w.home.x - 520, y: w.home.y - 300 }, bare: true });
   const cv = r.cv, c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
   c.fillStyle = 'rgba(126,160,96,0.55)'; c.fillRect(0, 0, W, H);                       // the island knocked back so the figures read

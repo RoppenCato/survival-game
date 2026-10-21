@@ -9,7 +9,7 @@ const { createCanvas, loadImage } = require('../../node_modules/@napi-rs/canvas'
 global.__mk = (w, h) => createCanvas(w, h);
 const S = require('../../src/stylelab.js'), World = require('../../src/world.js'), DI = require('./dayisland.js'); const kit = S.kit; kit.setup(kit.STYLE);
 const seed = +(process.argv[2] || 11), SPEC = World.MOUNTAIN_SPEC ? Object.assign({}, World.MOUNTAIN_SPEC, { seed }) : { isle: 220, isle0: 220, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed, mountain: true };
-(async () => {
+(async () => { await DI.load(World);   /* the studio's set pieces, as the game draws them (2026-10-21) */
   try { const PJ = JSON.parse(fs.readFileSync('assets/props/props.json', 'utf8')), map = {}; for (const k in PJ) map[k] = Object.assign({ img: await loadImage(path.join('assets/props', k + '.png')) }, PJ[k]); World.setImages(map); } catch (e) { console.log('no set pieces packed (assets/props): the peaks and the cave mouth are left out'); }
   const t0 = Date.now(), w = World.make(kit, SPEC); w.meadowLook = World.GRASS_INK; w.plant(); const nPeaks = w.peaks ? w.peaks() : 0; if (w.dress) w.dress();
   const caveAt = w.caveSite ? w.caveSite(kit.rng(seed * 31 + 9)) : null; if (caveAt && World.IMAGES.cave_mouth) w.addProp({ name: 'cave_mouth', x: caveAt.x, y: caveAt.y + 2, s: 1, r: 0, v: 0 }); w.sortBuckets();

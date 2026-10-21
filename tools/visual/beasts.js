@@ -5,7 +5,7 @@ global.__mk = (w, h) => createCanvas(w, h); const SPRT = require('../../src/spri
 const S = require('../../src/stylelab.js'), World = require('../../src/world.js'), DI = require('./dayisland.js'); const kit = S.kit; kit.setup(kit.STYLE);
 const names = process.argv.slice(2).length ? process.argv.slice(2) : ['boar', 'deer', 'wolf'];
 const W = 1700, ROW = 470, H = ROW * names.length + 20, Z = 3;
-(async () => {
+(async () => { await DI.load(World);   /* the studio's set pieces, as the game draws them (2026-10-21) */
   const w = DI.make(kit, World, 11), r = DI.paint(kit, World, W, H, Z, { world: w, at: { x: w.home.x - 420, y: w.home.y - 260 } });
   const cv = r.cv, c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
   const label = (t, x, y) => { c.fillStyle = 'rgba(20,16,12,0.62)'; c.font = 'bold 13px sans-serif'; const tw = c.measureText(t).width; c.fillRect(x - 4, y - 14, tw + 8, 19); c.fillStyle = '#f0e6cc'; c.fillText(t, x, y); };

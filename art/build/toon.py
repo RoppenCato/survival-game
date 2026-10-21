@@ -156,7 +156,7 @@ def build_nodes(m, style):
         col = _mix(n, L, 'MULTIPLY', 1.0, col, _gray(n, L, pool))
         col = _grain(n, L, col, 0.08, 220)
         L.new(col, em.inputs['Color'])
-    elif style == 'cel' and (TONES == 'chosen' or m.get('lit')):   # the kraken's three chosen tones (2026-10-21)
+    elif style == 'cel' and (TONES == 'chosen' or m.get('lit')) and not m.get('shared'):   # the kraken's three chosen tones (2026-10-21)
         v = _light(n, L)
         lit_h, shade_h = (m.get('lit'), m.get('shade')) if m.get('lit') else chosen_tones(m['hex'])
         base_t = tuple(base[i] * AMBIENT_TINT[i] for i in range(3)); lit_c = srgb(lit_h); shade_c = srgb(shade_h)
@@ -302,13 +302,14 @@ def face_images(kind='hero'):
     for eyes in ('dot', 'oval', 'highlight'):
         for expr in ('neutral', 'blink', 'angry', 'hurt'): _paint_face('face_%s_%s' % (eyes, expr), eyes, expr, kind=kind)
 
-def material(name, hexs, pattern=None, style='cel', face=False, wet=False, lit=None, shade=None, t_dark=None, t_lit=None):
+def material(name, hexs, pattern=None, style='cel', face=False, wet=False, lit=None, shade=None, t_dark=None, t_lit=None, shared=False):
     m = bpy.data.materials.get(name)
     if m: return m
     m = bpy.data.materials.new(name); m['hex'] = hexs; m['pattern'] = pattern or ''
     if lit and shade: m['lit'] = lit; m['shade'] = shade      # tones picked by hand (2026-10-21)
     if t_dark is not None: m['t_dark'] = t_dark                # where the shade begins and the lit band ends, per material (2026-10-21)
     if t_lit is not None: m['t_lit'] = t_lit
+    if shared: m['shared'] = 1                                   # keeps the shared tone under TONES = 'chosen' (2026-10-21)
     if face: m['face'] = 1
     if wet: m['wet'] = 1
     build_nodes(m, style); m.diffuse_color = (*srgb(hexs), 1)

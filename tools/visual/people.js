@@ -22,7 +22,7 @@ async function hero(c, x, y, Z, d) {
 }
 async function put(c, look, st, x, y, Z, opts) { await need(look, [st.clip]); c.save(); c.scale(Z, Z); const ok = Sprites.person(c, H, look, st, x / Z, y / Z, Object.assign({ shadowHue: kit.STYLE.shadowHue }, opts || {})); c.restore(); return ok; }
 const mode = process.argv[2] || 'crowd';
-(async () => {
+(async () => { await DI.load(World);   /* the studio's set pieces, as the game draws them (2026-10-21) */
   if (mode === 'crowd') {
     const seed = +process.argv[3] || 7, R = rng(seed), Z = 4.5, W = 1800, HH = 1000;
     const w = DI.make(kit, World, 11), r = DI.paint(kit, World, W, HH, Z, { world: w, at: { x: w.home.x - 330, y: w.home.y - 250 } }), cv = r.cv, c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
