@@ -561,11 +561,11 @@ function dark(c, cave, o) {
   if (!darkCv) darkCv = mkCanvas(W / 2, H / 2);
   var n = darkCv.getContext('2d');
   function sx(x) { return ((x - cam.x) * cam.z + W / 2) / 2; } function sy(y) { return ((y * K2 - cam.y) * cam.z + H / 2) / 2; }
-  n.globalCompositeOperation = 'source-over'; n.clearRect(0, 0, W / 2, H / 2); n.fillStyle = 'rgba(3,4,10,0.972)'; n.fillRect(0, 0, W / 2, H / 2);
+  n.globalCompositeOperation = 'source-over'; n.clearRect(0, 0, W / 2, H / 2); n.fillStyle = 'rgba(8,10,22,0.93)'; n.fillRect(0, 0, W / 2, H / 2);   /* (the palette, 2026-10-21: a deep blue-black the wall's grain shows through, never pure black) */
   n.globalCompositeOperation = 'destination-out';
   function hole(x, y, rx, ry, a) { var g = n.createRadialGradient(x, y, 0, x, y, rx); g.addColorStop(0, 'rgba(0,0,0,' + a + ')'); g.addColorStop(0.55, 'rgba(0,0,0,' + a * 0.6 + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); n.save(); n.translate(x, y); n.scale(1, ry / rx); n.translate(-x, -y); n.fillStyle = g; n.beginPath(); n.arc(x, y, rx, 0, 7); n.fill(); n.restore(); }   // (the gradient is made where it lies and the squash laid round it: one made at 0,0 under a translate drew a quarter of itself in the Node canvas)
-  var tl = o.torch ? 1 + 0.03 * Math.sin(clock * 11) : 0, hr = (o.torch ? 190 + tl * 8 : 96) * z2;
-  hole(sx(P.x), sy(P.y) - 6 * z2, hr, hr, 1);
+  var tl = o.torch ? 1 + 0.03 * Math.sin(clock * 11) : 0, hr = (o.torch ? 170 + tl * 8 : 60) * z2;
+  hole(sx(P.x), sy(P.y) - 6 * z2, hr, hr, o.torch ? 1 : 0.78);   /* without a torch his circle is cool and small (eyes in the dark); with one, warm and wide */
   hole(sx(cave.exitAt.x), sy(cave.exitAt.y + 30), 150 * z2, 190 * z2, 0.5 + 0.45 * sun);                 // the daylight up the tunnel
   cave.shafts.forEach(function (s) { var x = sx(s.x), y = sy(s.y); if (x < -80 || x > W / 2 + 80 || y < -80 || y > H / 2 + 80) return; var a = Math.min(0.93, s.k * (0.14 + 0.8 * sun)); hole(x, y, s.rx * 1.9 * z2, s.ry * 1.9 * K2 * z2, a * 0.55); hole(x, y, s.rx * 1.1 * z2, s.ry * 1.1 * K2 * z2, a); });
   (cave.glows || []).forEach(function (g2) { var x = sx(g2.x), y = sy(g2.y); if (x < -160 || x > W / 2 + 160 || y < -160 || y > H / 2 + 160) return; hole(x, y, g2.r * 1.5 * z2, g2.r * 1.1 * K2 * z2, g2.a * (0.3 + 0.7 * sun)); });   // daylight carried in over water
@@ -588,10 +588,11 @@ function dark(c, cave, o) {
     if (!g2.sea) return; var x = px(g2.x), y = py(g2.y), r = g2.r * cam.z; if (x < -r || x > W + r || y < -r || y > H + r) return;
     var a = g2.a * (0.3 + 0.7 * sun) * (0.2 + 0.05 * Math.sin(clock * 1.7 + gi * 2)), gg2 = c.createRadialGradient(x, y, 0, x, y, r); gg2.addColorStop(0, 'rgba(90,220,210,' + a.toFixed(3) + ')'); gg2.addColorStop(1, 'rgba(60,180,200,0)');
     c.save(); c.translate(x, y); c.scale(1, K2); c.translate(-x, -y); c.fillStyle = gg2; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); });
-  if (o.torch) { var tx = px(P.x), ty = py(P.y) - 10 * cam.z, tg = c.createRadialGradient(tx, ty, 0, tx, ty, 150 * cam.z); tg.addColorStop(0, 'rgba(255,170,80,' + (0.22 + 0.03 * Math.sin(clock * 13)).toFixed(3) + ')'); tg.addColorStop(1, 'rgba(255,110,40,0)'); c.fillStyle = tg; c.beginPath(); c.arc(tx, ty, 150 * cam.z, 0, 7); c.fill(); }
-  cave.ores.forEach(function (q) {                         // the copper in the rock shows warm
+  if (!o.torch) { var cx0 = px(P.x), cy0 = py(P.y) - 10 * cam.z, cg = c.createRadialGradient(cx0, cy0, 0, cx0, cy0, 60 * cam.z); cg.addColorStop(0, 'rgba(40,48,70,0.55)'); cg.addColorStop(1, 'rgba(40,48,70,0)'); c.fillStyle = cg; c.beginPath(); c.arc(cx0, cy0, 60 * cam.z, 0, 7); c.fill(); }
+  if (o.torch) { var tx = px(P.x), ty = py(P.y) - 10 * cam.z, tg = c.createRadialGradient(tx, ty, 0, tx, ty, 170 * cam.z); tg.addColorStop(0, 'rgba(210,150,70,' + (0.3 + 0.03 * Math.sin(clock * 13)).toFixed(3) + ')'); tg.addColorStop(0.5, 'rgba(160,110,60,0.12)'); tg.addColorStop(1, 'rgba(40,60,120,0)'); c.fillStyle = tg; c.beginPath(); c.arc(tx, ty, 150 * cam.z, 0, 7); c.fill(); }
+  cave.ores.forEach(function (q) {                         // the glowing stones (the ore in the rock), a cold foxfire
     if (q.dying != null || q.ore === false) return; var x = px(q.x), y = py(q.y) - 6 * cam.z; if (x < -30 || x > W + 30 || y < -30 || y > H + 30) return;
-    var g = c.createRadialGradient(x, y, 0, x, y, 15 * cam.z), a = 0.5 + 0.12 * Math.sin(clock * 2 + q.x); g.addColorStop(0, 'rgba(255,170,100,' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,110,50,0)'); c.fillStyle = g; c.beginPath(); c.arc(x, y, 15 * cam.z, 0, 7); c.fill();
+    var g = c.createRadialGradient(x, y, 0, x, y, 15 * cam.z), a = 0.6 + 0.1 * Math.sin(clock * 2 + q.x); g.addColorStop(0, 'rgba(120,200,170,' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(120,200,170,0)');   /* the glowing stones cold foxfire, so warm belongs to fire and torch alone (the palette) */ c.fillStyle = g; c.beginPath(); c.arc(x, y, 15 * cam.z, 0, 7); c.fill();
   });
   c.restore();
 }

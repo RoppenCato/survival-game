@@ -71,7 +71,7 @@ __VILLAGE__
 <script>
 (function () {
   var lib = GameArt.lib, kit = StyleLab.kit, KEY = 'villageeditor1';
-  lib.applyStored(localStorage); kit.applyStored(localStorage);
+  lib.applyStored(localStorage); /* (the stored look game.look is retired, 2026-10-21) */
   kit.setup(kit.STYLE);
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   var st = { arch: 'small', seed: 1234, wealth: 0.5, shore: 's', G: {} }, history = [];

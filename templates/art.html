@@ -256,7 +256,7 @@ __SPRITES_JS__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75;
-  lib.applyStored(localStorage); kit.applyStored(localStorage); kit.setup(kit.STYLE);
+  lib.applyStored(localStorage); /* (the stored look game.look is retired, 2026-10-21) */ kit.setup(kit.STYLE);
   Combat.init(lib);
   var S = Combat.S; S.sound = false;
   Combat.clear();

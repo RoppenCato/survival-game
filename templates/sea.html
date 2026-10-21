@@ -167,7 +167,7 @@ __SPRITES_JS__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, TS = kit.TH;
-  lib.applyStored(localStorage); kit.applyStored(localStorage);   // the hero, the creatures, the rig and the look the editors handed to the game, from one place
+  lib.applyStored(localStorage); /* (the stored look game.look is retired, 2026-10-21) */   // the hero, the creatures, the rig and the look the editors handed to the game, from one place
   Combat.init(lib);
   Sprites.attach(Combat, Sprites.hero(__SPRITES__ || {}, localStorage), { scale: function () { return Sprites.scaleOf(localStorage); }, shadowHue: kit.STYLE.shadowHue });   // the Blender hero (2026-10-09)
   var S = Combat.S; S.sound = false;

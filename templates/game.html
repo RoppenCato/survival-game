@@ -124,8 +124,7 @@ __COMBAT__
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, TS = kit.TH, BASE = kit.STYLE;
-  try { var tnSrc = JSON.parse(localStorage.getItem('game.lab')); if (tnSrc && tnSrc.tone && tnSrc.tone.src) { kit.STYLE.sat = 0.8; kit.STYLE.texture = 0.6; } } catch (eTs) {}   /* the Art Director's source change for the tone, on Robin's trial switch (2026-10-21) */
-  (function () { var lookSv = kit.applyStored(localStorage); if (lookSv) { if (lookSv.figGrain != null) lib.INK_FIG.grain = lookSv.figGrain; if (lookSv.figShade != null) lib.INK_FIG.shade = lookSv.figShade; } })();   // the Art Direction page's "Use in the game"
+  try { localStorage.removeItem('game.look'); } catch (eLk) {}   /* the old Art Direction page's hand-over (game.look) is retired: the look is the code's (Robin, 2026-10-21, through the Art Director) */
 
   /* ---------- the engine: nobody starts in the world; boars are placed by hand ---------- */
   Combat.api.roster = [];
@@ -936,7 +935,7 @@ __COMBAT__
   }
   // a fire's light as a gradient for the night's canvas: the colours the ground should end at (bright and warm at the fire,
   // amber, then ember-red, then the night's own), less the night's colour, since the lights are added to it
-  var FIRE_T = [[0, 255, 242, 208], [0.16, 255, 228, 172], [0.38, 238, 182, 116], [0.6, 176, 118, 78], [0.8, 98, 70, 74]], TORCH_T = [[0, 250, 230, 190], [0.18, 244, 208, 154], [0.42, 208, 154, 102], [0.66, 128, 92, 76], [0.86, 72, 58, 78]];
+  var FIRE_T = [[0, 225, 165, 85], [0.4, 120, 80, 40], [0.75, 70, 54, 50]], TORCH_T = [[0, 210, 150, 70], [0.4, 118, 84, 48], [0.75, 68, 54, 52]];   /* the night palette (the Art Director, Robin's yes, 2026-10-21): the fire's core ochre, never white, through rgb(120,80,40) at 0.4 of the reach to the night's blue; it was a disc of daylight */
   function warmGrad(n, sx, sy, rad, NB, stops, k) {
     var gr = n.createRadialGradient(sx, sy, 0, sx, sy, rad), i;
     for (i = 0; i < stops.length; i++) { var q = stops[i]; gr.addColorStop(q[0], 'rgba(' + Math.max(0, Math.round((q[1] - NB[0]) * k)) + ',' + Math.max(0, Math.round((q[2] - NB[1]) * k)) + ',' + Math.max(0, Math.round((q[3] - NB[2]) * k)) + ',1)'); }
@@ -1074,26 +1073,33 @@ __COMBAT__
     n.globalCompositeOperation = 'source-over';
     var MOON = lt('moon'), r = Math.round(255 - (MOON ? 200 : 222) * L + 0 * D), g = Math.round(255 - (MOON ? 184 : 215) * L - 70 * D), b = Math.round(255 - (MOON ? 136 : 178) * L - 120 * D);   // dusk goes amber, night goes very dark blue (under a moon a little lighter, and bluer)
     n.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')'; n.fillRect(0, 0, 200, 125);
+    if (L > 0.05 && !inYard) {               /* the water's night is darker and greyer than the land's (the palette): half its remaining light, a third less colour, in blocks of six screen pixels tested against the world's water */
+      var wk = 0.5 + 0.5 * (1 - L), wgr = (r + g + b) / 3, wr = Math.round((r + (wgr - r) / 3) * wk), wg = Math.round((g + (wgr - g) / 3) * wk), wb = Math.round((b + (wgr - b) / 3) * wk), BS = 3, gx, gy;
+      n.fillStyle = 'rgb(' + wr + ',' + wg + ',' + wb + ')';
+      for (gy = 0; gy < 125; gy += BS) { var wy = (cam.y + (2 * gy + BS - 125) / cam.z) / K; for (gx = 0; gx < 200; gx += BS) { var wx = cam.x + (2 * gx + BS - 200) / cam.z; if (w.isWater(wx, wy)) n.fillRect(gx, gy, BS, BS); } }
+    }
     var GL = lt('glow'), fsN = nightFires(), i, NB = [r, g, b];
     if (L > 0.05 || inUse('stonesense')) {  // fires light their surroundings
       n.globalCompositeOperation = 'lighter';
       for (i = 0; i < fsN.length; i++) {
-        var f = fsN[i]; if (f.torch) continue; var sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (GL ? 152 * (1 + 0.03 * f.fl) : 145 + Math.sin(clock * 9 + i) * 5 + Math.sin(clock * 1.7 + i) * 8) * (f.lamp ? 0.4 : 1) * (f.big || 1) * cam.z / 2, br = GL ? L * (0.97 + 0.04 * f.fl) : L;
+        var f = fsN[i]; if (f.torch) continue; var sx = ((f.x - cam.x) * cam.z + 200) / 2, sy = ((f.y * K - cam.y) * cam.z + 125) / 2 - 2, rad = (GL ? 102 * (1 + 0.03 * f.fl) : 98 + Math.sin(clock * 9 + i) * 4 + Math.sin(clock * 1.7 + i) * 5) * (f.lamp ? 0.4 : 1) * (f.big || 1) * cam.z / 2, br = GL ? L * (0.97 + 0.04 * f.fl) : L;
         if (sx < -rad || sx > 200 + rad || sy < -rad || sy > 125 + rad) continue;
         var gr; if (GL) gr = warmGrad(n, sx, sy, rad, NB, FIRE_T, Math.min(1, br * 1.15) * (f.lamp ? 0.86 : 1));   // (the light as it was: a dim core, grey-yellow by the middle of its reach, which on a big screen read as a filter and not as light)
-        else { gr = n.createRadialGradient(sx, sy, 0, sx, sy, rad); gr.addColorStop(0, 'rgba(' + Math.round(190 * br) + ',' + Math.round(150 * br) + ',' + Math.round(70 * br) + ',1)'); gr.addColorStop(0.35, 'rgba(' + Math.round(130 * br) + ',' + Math.round(90 * br) + ',' + Math.round(30 * br) + ',1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); }
+        else { gr = n.createRadialGradient(sx, sy, 0, sx, sy, rad); gr.addColorStop(0, 'rgba(' + Math.round(225 * br) + ',' + Math.round(165 * br) + ',' + Math.round(85 * br) + ',1)'); gr.addColorStop(0.4, 'rgba(' + Math.round(120 * br) + ',' + Math.round(80 * br) + ',' + Math.round(40 * br) + ',1)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); }
         lightInto(n, f, gr, sx, sy, rad);
       }
       var tfl = GL ? flick(7) : 0, hx = ((P.x - cam.x) * cam.z + 200) / 2, hy = ((P.y * K - cam.y) * cam.z + 125) / 2, hr = (torchOn ? (GL ? 176 * (1 + 0.022 * tfl) : 170 + Math.sin(clock * 11) * 5 + Math.sin(clock * 23) * 3) : (inUse('nighteyes') ? 42 : 18)) * cam.z / 2;   // and you can always see yourself; a torch lights a wide warm circle
-      var g2 = n.createRadialGradient(hx, hy, 0, hx, hy, hr); g2.addColorStop(0, torchOn ? 'rgba(' + Math.round(180 * L) + ',' + Math.round(135 * L) + ',' + Math.round(70 * L) + ',1)' : 'rgba(' + Math.round(34 * L) + ',' + Math.round(34 * L) + ',' + Math.round(36 * L) + ',1)'); if (torchOn) g2.addColorStop(0.4, 'rgba(' + Math.round(110 * L) + ',' + Math.round(80 * L) + ',' + Math.round(35 * L) + ',1)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+      var g2 = n.createRadialGradient(hx, hy, 0, hx, hy, hr); g2.addColorStop(0, torchOn ? 'rgba(' + Math.round(180 * L) + ',' + Math.round(135 * L) + ',' + Math.round(70 * L) + ',1)' : 'rgba(' + Math.round(40 * L) + ',' + Math.round(48 * L) + ',' + Math.round(70 * L) + ',1)'); if (torchOn) g2.addColorStop(0.4, 'rgba(' + Math.round(110 * L) + ',' + Math.round(80 * L) + ',' + Math.round(35 * L) + ',1)'); g2.addColorStop(1, 'rgba(0,0,0,0)');
       if (torchOn && GL) g2 = warmGrad(n, hx, hy, hr, NB, TORCH_T, Math.min(1, L * 1.15) * (0.985 + 0.025 * tfl));
       if (torchOn) lightInto(n, { x: P.x, y: P.y, r: 170, lvl: P.lvl || 0 }, g2, hx, hy, hr); else { n.fillStyle = g2; n.beginPath(); n.arc(hx, hy, hr, 0, 7); n.fill(); }
     }
     c.save(); c.globalCompositeOperation = 'multiply'; c.imageSmoothingEnabled = true; c.drawImage(nightCv, 0, 0, 400, 250); c.restore();
-    if (MOON && L > 0.1) {                 // what no fire lights loses its colour: grey laid on with the 'saturation' blend, the lights cut out of it
+    if (L > 0.05) { c.save(); c.globalCompositeOperation = 'screen'; c.fillStyle = 'rgba(40,60,120,' + (0.22 * L).toFixed(3) + ')'; c.fillRect(0, 0, 400, 250); c.restore(); }   /* the darks lifted with blue after the multiply (the palette: Bauer's blue, not black-teal mud) */
+    if (MOON && L > 0.1) { c.save(); c.globalCompositeOperation = 'screen'; var mg = c.createLinearGradient(0, 0, 0, 110); mg.addColorStop(0, 'rgba(150,180,255,' + (0.1 * L).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(150,180,255,0)'); c.fillStyle = mg; c.fillRect(0, 0, 400, 110); c.restore(); }   /* a faint cool light from the top when there is a moon */
+    if (L > 0.1) {                         // what no fire lights loses a third of its colour: grey laid on with the 'saturation' blend, the lights cut out of it (every night since 2026-10-21; it was the moon trial's)
       if (!satCv) { satCv = document.createElement('canvas'); satCv.width = 200; satCv.height = 125; } var sg = satCv.getContext('2d'); sg.globalCompositeOperation = 'source-over'; sg.fillStyle = '#808080'; sg.fillRect(0, 0, 200, 125); sg.globalCompositeOperation = 'destination-out';
       fsN.forEach(function (f) { var qx = ((f.x - cam.x) * cam.z + 200) / 2, qy = ((f.y * K - cam.y) * cam.z + 125) / 2, qr = f.r * (f.lamp ? 0.4 : 1) * 0.95 * cam.z / 2; if (qx < -qr || qx > 200 + qr || qy < -qr || qy > 125 + qr) return; var q = sg.createRadialGradient(qx, qy, 0, qx, qy, qr); q.addColorStop(0, 'rgba(0,0,0,1)'); q.addColorStop(0.6, 'rgba(0,0,0,0.8)'); q.addColorStop(1, 'rgba(0,0,0,0)'); sg.fillStyle = q; sg.beginPath(); sg.arc(qx, qy, qr, 0, 7); sg.fill(); });
-      c.save(); c.globalCompositeOperation = 'saturation'; c.globalAlpha = 0.62 * L; c.imageSmoothingEnabled = true; c.drawImage(satCv, 0, 0, 400, 250); c.restore();
+      c.save(); c.globalCompositeOperation = 'saturation'; c.globalAlpha = (MOON ? 0.5 : 0.35) * L; c.imageSmoothingEnabled = true; c.drawImage(satCv, 0, 0, 400, 250); c.restore();
     }
     if (GL && L > 0.05) {                  // the glow: a hot heart at the flame, and warm light hanging in the air round it
       c.save(); c.globalCompositeOperation = 'lighter';
@@ -3838,23 +3844,18 @@ __COMBAT__
   /* The tone (Robin, 2026-10-21: the Sea Editor's colours looked more vibrant than the game's; the game lays a grain over the frame and
      his stored look, game.look, from the old Art Direction page; the editor does neither). A board to try tones by eye: colour,
      contrast and warmth as a filter on the whole canvas, the grain on or off, and the stored look cleared. Kept in game.lab. */
-  LAB.tone = { sat: 1, con: 1, warm: 0, grain: 1, src: false, preset: 'now' };
-  var TONE_PRESETS = { now: { name: 'Now', sat: 1, con: 1, warm: 0, grain: 1 }, clear: { name: 'Clear water', sat: 1.3, con: 1, warm: 0, grain: 0 }, bauer: { name: 'Bauer day', sat: 1.18, con: 1.04, warm: 0.1, grain: 0.5 } }, TONE_ORDER = ['now', 'clear', 'bauer'];   /* the Art Director's three (2026-10-21): Bauer day its pick, a touch warm, a touch more contrast, the grain lightened not gone */
+  LAB.tone = { sat: 1, con: 1, warm: 0, grain: 1 };   /* my own dials only (Robin, 2026-10-21: the vibrant look is the default and nothing he has to open; the studio's presets are gone from the board) */
   try { var lbT = JSON.parse(localStorage.getItem('game.lab')); if (lbT && lbT.tone) { for (var tk0 in LAB.tone) if (lbT.tone[tk0] != null) LAB.tone[tk0] = lbT.tone[tk0]; if (LAB.tone.grain === true) LAB.tone.grain = 1; if (LAB.tone.grain === false) LAB.tone.grain = 0; } } catch (eT0) {}
   var TONE_STEPS = { sat: [0.8, 0.9, 1, 1.1, 1.2, 1.35, 1.5], con: [0.9, 1, 1.05, 1.1, 1.2], warm: [-0.15, 0, 0.1, 0.2, 0.35] };
   function applyTone() { var t = LAB.tone, f = []; if (t.sat !== 1) f.push('saturate(' + t.sat + ')'); if (t.con !== 1) f.push('contrast(' + t.con + ')'); if (t.warm > 0) f.push('sepia(' + t.warm + ')'); else if (t.warm < 0) f.push('hue-rotate(' + Math.round(t.warm * 60) + 'deg)'); try { cv.style.filter = f.join(' '); } catch (eT1) {} }
-  function toneRows() { var t = LAB.tone, lk = null; try { lk = localStorage.getItem('game.look'); } catch (eT2) {}
+  function toneRows() { var t = LAB.tone;
     return [{ id: 'tn:sat', name: 'Tone: colour', text: 'How strong the colours are, the whole picture. Click to step through.', on: true, val: '×' + t.sat },
       { id: 'tn:con', name: 'Tone: contrast', text: 'Darks darker and lights lighter. Click to step through.', on: true, val: '×' + t.con },
       { id: 'tn:warm', name: 'Tone: warmth', text: 'Warmer toward sepia, cooler toward blue. Click to step through.', on: true, val: t.warm > 0 ? '+' + t.warm : String(t.warm) },
-      { id: 'tn:grain', name: 'Tone: grain', text: 'The paper grain laid over the whole frame (the Sea Editor has none): full, half, none.', on: t.grain > 0, val: t.grain >= 1 ? 'full' : t.grain > 0 ? 'half' : 'none' },
-      { id: 'tn:preset', name: 'Tone: preset', text: 'The Art Director’s three: Now (as it is), Clear water (toward the Sea Editor), Bauer day (its pick). Click to step.', on: true, val: (TONE_PRESETS[t.preset] || TONE_PRESETS.now).name },
-      { id: 'tn:src', name: 'Tone: the paint itself', text: 'The studio’s change at the source: the ink look’s saturation 0.66 to 0.80 and its grain 1.1 to 0.6 (the land was an olive). Reloads.', on: !!t.src },
-      { id: 'tn:clear', name: 'Tone: stored look', text: lk ? 'A look handed over from the old Art Direction page is in use (game.look). Click to clear it and reload.' : 'No stored look: the paint is as the code has it.', on: !!lk, val: lk ? 'CLEAR' : 'none' }]; }
+      { id: 'tn:grain', name: 'Tone: grain', text: 'The paper grain laid over the whole frame (a whisper by default): full, half, none.', on: t.grain > 0, val: t.grain >= 1 ? 'full' : t.grain > 0 ? 'half' : 'none' }]; }
   function toneAct(id) { if (id.indexOf('tn:') !== 0) return false; var k = id.slice(3), t = LAB.tone;
-    if (k === 'grain') t.grain = t.grain >= 1 ? 0.5 : t.grain > 0 ? 0 : 1; else if (k === 'preset') { var pi = TONE_ORDER.indexOf(t.preset), pr = TONE_PRESETS[TONE_ORDER[(pi + 1) % TONE_ORDER.length]]; t.preset = TONE_ORDER[(pi + 1) % TONE_ORDER.length]; t.sat = pr.sat; t.con = pr.con; t.warm = pr.warm; t.grain = pr.grain; }
-    else if (k === 'src') { t.src = !t.src; saveLab(); location.reload(); return true; } else if (k === 'clear') { try { localStorage.removeItem('game.look'); } catch (eT3) {} saveLab(); location.reload(); return true; }
-    else { var st = TONE_STEPS[k], i = st.indexOf(t[k]); t[k] = st[(i + 1) % st.length]; t.preset = 'custom'; }
+    if (k === 'grain') t.grain = t.grain >= 1 ? 0.5 : t.grain > 0 ? 0 : 1;
+    else { var st = TONE_STEPS[k], i = st.indexOf(t[k]); t[k] = st[(i + 1) % st.length]; }
     applyTone(); return true; }
   applyTone();
   var SND_ROWS = [['wind', 'Wind', 'Gusts, leaves rustling where trees are, a whistle up on the plateau.'], ['sea', 'The sea', 'A wave and its wash by the shore; water along the hull aboard.'], ['birds', 'Birds', 'By day, most at dawn and where trees are; gulls by the shore, a raven on the fells, an owl at night.'], ['insects', 'Crickets', 'From dusk on.'], ['fire', 'Fire', 'The roar and the crackle near any fire, and of a torch in the hand.'], ['steps', 'Footsteps', 'By the ground: grass, sand, rock, gravel, wood, water.'], ['cave', 'Caves', 'The low tone, drops, the mine\u2019s timber, the sea cave\u2019s boom.'], ['water', 'Running water', 'The brook and the pool.']];

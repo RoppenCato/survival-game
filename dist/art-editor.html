@@ -2315,7 +2315,7 @@ var STYLE_FLAT = { factoryHue: 215, outsideHue: 100, accentHue: 46, shadowHue: 1
   light: 0.8, fog: 0, glow: 0.2, vignette: 0, look: 0, seed: 7, scaleRef: 0, fruit: 0 };
 // The ink look (2026-10-07, docs/art-direction.md): Egerkrans's line, Bauer's light. look 3 in shape(): a cool shadow crescent,
 // grain in every fill, a warm lit edge, a thin line all round and a heavy line fading in on the shadow side, warm brown-black ink.
-var STYLE_INK = { look: 3, shadowHue: 222, outsideHue: 92, sat: 0.66, bright: -2, contrast: 1.04, shade: 0.52, outlineW: 1.6, outlineDark: 1, texture: 1.1, rough: 0.08, vignette: 0.2, round: 1, lush: 1, sparkle: 0, fog: 0, glow: 0.15 };   // Robin's numbers, 2026-10-07
+var STYLE_INK = { look: 3, shadowHue: 222, outsideHue: 92, sat: 0.86, bright: -2, contrast: 1.04, shade: 0.52, outlineW: 1.6, outlineDark: 1, texture: 0.25, rough: 0.08, vignette: 0.2, round: 1, lush: 1, sparkle: 0, fog: 0, glow: 0.15 };   // Robin's numbers, 2026-10-07; sat 0.66 to 0.86 and texture 1.1 to 0.25 on 2026-10-21 (Robin: "I wanted the vibrant from the sea editor"; the Art Director's numbers: the land as saturated as the Clear water preset, the grain a whisper)
 // The heavy ink line: each edge segment is stroked as dark as its outward normal faces away from the light (upper left), so
 // the line thickens on a shape's shadow side and thins toward the light whatever the shape, and always lies on its edge.
 function inkEdge(c, d, w) {
@@ -8939,7 +8939,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
   var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75;
-  lib.applyStored(localStorage); kit.applyStored(localStorage); kit.setup(kit.STYLE);
+  lib.applyStored(localStorage); /* (the stored look game.look is retired, 2026-10-21) */ kit.setup(kit.STYLE);
   Combat.init(lib);
   var S = Combat.S; S.sound = false;
   Combat.clear();

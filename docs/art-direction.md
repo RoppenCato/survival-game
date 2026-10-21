@@ -46,6 +46,24 @@ Everything is still drawn in code. The look is a renderer and a palette, not a s
   rendering.
 - **Air.** Far things slightly paler and bluer; mist low in the ground at dawn; a faint vignette at the edges of the view.
 
+### The night and underground (the Art Director's palette, Robin's yes, 2026-10-21)
+
+By day the game is right: nothing to change. At night and underground, old and deep: one key, one hot accent, shadows
+cooler and bluer than the light, never the same hue darkened, no pure black. The numbers (`drawNight` in the game,
+`Cave.dark`):
+
+| Where | The rule |
+| --- | --- |
+| The night's veil | the multiply kept; then the darks lifted with blue (screen `rgba(40,60,120,0.22)`) and a third of the colour taken out toward grey, so greens read as night green, not day green dimmed |
+| The moon's light | a faint cool light from the top of the screen at 10 per cent, when there is a moon |
+| The fire's light | the core ochre, never white: `rgb(225,165,85)` at the centre, through `rgb(120,80,40)` at 0.4 of the reach, to the night's blue at the edge; the reach about 100 at zoom 1; the ground under a fire dark green-brown with an orange rim |
+| The water at night | darker and greyer than the land: half its remaining light and a third less colour; the moon's path the one light on it when there is a moon |
+| The cave's dark | a deep blue-black the wall's grain shows through: `rgba(8,10,22,0.93)` |
+| The hero's circle, no torch | cool and small: `rgb(40,48,70)`, a radius of about 60: eyes in the dark |
+| The hero's circle, with a torch | warm: ochre `rgb(210,150,70)` at the core, falling to the blue at about 170; the walls' near faces catch the warm |
+| The glowing stones | cold foxfire, `rgb(120,200,170)` at 60 per cent, so warm belongs to fire and torch alone |
+| What stays | the shaft of daylight down the cave's tunnel, sandy and soft; the pool's blue-grey; the hero taking the veil at night, his cream tunic gone grey |
+
 ## 4. Figures and proportion
 
 - **People are lean and long**, small against the trees and smaller against the trolls. Character lives in the face and the
