@@ -369,3 +369,8 @@ pale-tipped antlers, more frames and feet that follow the ground. The plants com
 **The plants in the kraken's style (2026-10-21):** the bushes, berry bushes, juniper, heather, ferns, tall grass, reeds and
 mushrooms are the studio's new pictures, in the same sizes and places. The round dark-teal bushes the studio asked about are not in
 your game; they were only in a check picture of mine, which now shows the game's own pictures too.
+
+**The rocks and the cave mouths in the kraken's style (2026-10-21):** the rocks, boulders and rock formations are the studio's new
+pictures, six of each. The mine mouth, the sea cave and the rock shelter have three tones of stone, living moss and grass in tufts
+where thin spikes read as thorns. The troll's cave mouth is painted into the cliff by the world, so its new picture is not seen in
+play. The builder of the cave mouths had been lost under the rocks' name on 2026-10-20 and is back as `art/build/caves_build.py`.
