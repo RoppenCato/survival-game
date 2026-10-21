@@ -21,6 +21,13 @@ north, 4 px a game unit when packed, twice that here. Wood the key; iron, water 
 import bpy, bmesh, math, os, sys, json, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21): chosen tones
+def kmat(name, k, v):
+    """greens with the leaves' lighter, smaller shade; stone, ash and char with all three tones on their facets; the rest chosen"""
+    if any(w in k for w in ('moss', 'turf', 'grass', 'leaf', 'hedge', 'ivy', 'thatchg')):
+        lit, shade = toon.chosen_tones(v, lit_dl=0.09, shade_dl=0.075, cool_k=0.2); return toon.material(name, v, None, 'cel', lit=lit, shade=shade, t_dark=0.5, t_lit=1.0)
+    if any(w in k for w in ('stone', 'rock', 'ash', 'char', 'grey', 'slate')): return toon.material(name, v, None, 'cel', t_dark=0.62, t_lit=0.95)
+    return toon.material(name, v, None, 'cel')
 from skin import Stick, loft, ball
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -40,7 +47,7 @@ def mats():
     for k, v in {'wood': '#6b4a36', 'woodd': '#55392a', 'planed': '#b08a5a', 'planedl': '#c9a874', 'bark': '#5e4332', 'log': '#6e5540', 'logd': '#4e3b2c', 'iron': '#6f777f', 'irond': '#4a5058', 'thatch': '#bda258', 'thatchd': '#9a8140', 'turf': '#4e6a3a',
                  'straw': '#c9b05e', 'strawd': '#a88f44', 'stone': '#8a8478', 'stoned': '#6a655c', 'canvas': '#cbb892', 'canvasd': '#ab9772', 'linen': '#e2d8c2', 'woolg': '#8a8478', 'woolb': '#7d6a5a', 'madder': '#8a4a3a', 'earth': '#4a3d2e', 'bone': '#e6dcc6', 'shell': '#d9d2c4', 'clay': '#9a7352',
                  'ash': '#9a948a', 'char': '#1e1916', 'flame': '#ffb24a', 'hull': '#5a4030', 'hulll': '#7a5a40', 'water': '#5d7f8e', 'fish': '#8d9f96', 'cut': '#d9c28c', 'ring': '#b58e58', 'dark': '#2b2522'}.items():
-        C[k] = toon.material('y_' + k, v, None, 'cel')
+        C[k] = kmat('y_' + k, k, v)
 def obj(name, coll, bm, m, smooth=False):
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); me.materials.append(m)
     for p in me.polygons: p.use_smooth = smooth
@@ -231,7 +238,7 @@ for name, fn in PIECES.items():
     cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
     toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
     fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel'); fs.crease_angle = rad(CREASE.get(name, 100))
-    toon.piece_line(fs)
+    toon.piece_line(fs, at_colours=True)
     sc.render.filepath = os.path.join(OUT, name + '.png'); bpy.ops.render.render(write_still=True)
     a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
     meta[name] = {'w': sc.render.resolution_x, 'h': sc.render.resolution_y, 'anchor': {'x': round(a.x * sc.render.resolution_x, 1), 'y': round((1 - a.y) * sc.render.resolution_y, 1)}, 'px': PX, 'ppm': PPM, 'height_m': round(H, 2)}

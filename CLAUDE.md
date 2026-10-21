@@ -380,7 +380,7 @@ the prop's seed; the cracks and the sweet spot's cue are drawn over them), **and
 the drying rack, woodpile, chopping block, log seat, cart, well, trough and the two tents in undyed wool, their mouths
 south), **and the furniture** (`assets/props/furniture`: bed, chest (and `chest_open` while its board is open), chair, table,
 bench, crate, barrel; the rug, loom, stool, shelf and cupboard come with the steading), **and the villages plan's drops**
-(the Art Director's `out/villages`, 2026-10-20): **the steading's things** (`assets/props/steading`, in the kraken's style since 2026-10-21, `steading_build.py`: the graves as turf mounds
+(the Art Director's `out/villages`, 2026-10-20; the fences, faces, yard, sacred and raid sets in the kraken's style since 2026-10-21, a quiet change of tones: `fences_build.py`, `faces_build.py`, `yard_build.py`, `sacred_build.py`, `raid_build.py`): **the steading's things** (`assets/props/steading`, in the kraken's style since 2026-10-21, `steading_build.py`: the graves as turf mounds
 with Thorgunna's standing stone, `spriteName` maps `graveStone` to them; the trail stones; the scarecrow, shield rack, dragon
 post, flower bed, haystack, net, weir and well; and the raid's wreckage laid at a fresh start as **ground litter**: decals of
 kind `litter` drawn under everything, `charredBeam` in the hall's ash and across its door, `burntHeap` in the hall and by the

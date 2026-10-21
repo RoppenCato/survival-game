@@ -405,3 +405,7 @@ bell, and chosen browns (the studio's picture: `C:\dev\SG\Art Director\out\krake
 
 Its sheets load only while a moose is within 900 units on the big island and are let go a minute after, so the cost is paid only
 near one. Say yes and it goes in as the studio handed it over; say no and the studio cuts it further.
+
+**The villages' set pieces in the kraken's style (2026-10-21; chapter 2):** the fences, the house faces, the yard's things, the
+sacred places and the raid's pieces are the studio's new pictures in the chosen tones. It is a quiet change: richer straw, warmer
+wood, cooler shade. Nothing moved and no size changed.

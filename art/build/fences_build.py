@@ -17,6 +17,13 @@ the ground, looking north, 4 px a game unit when packed, twice that here.
 import bpy, bmesh, math, os, sys, json, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21): chosen tones
+def kmat(name, k, v):
+    """greens with the leaves' lighter, smaller shade; stone, ash and char with all three tones on their facets; the rest chosen"""
+    if any(w in k for w in ('moss', 'turf', 'grass', 'leaf', 'hedge', 'ivy', 'thatchg')):
+        lit, shade = toon.chosen_tones(v, lit_dl=0.09, shade_dl=0.075, cool_k=0.2); return toon.material(name, v, None, 'cel', lit=lit, shade=shade, t_dark=0.5, t_lit=1.0)
+    if any(w in k for w in ('stone', 'rock', 'ash', 'char', 'grey', 'slate')): return toon.material(name, v, None, 'cel', t_dark=0.62, t_lit=0.95)
+    return toon.material(name, v, None, 'cel')
 from skin import Stick, loft, ball
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -34,7 +41,7 @@ def fresh():
 C = {}
 def mats():
     for k, v in {'bark': '#5e4332', 'barkl': '#6e5540', 'barkd': '#4a3626', 'fresh': '#d7bf93', 'freshd': '#b89d6e', 'wood': '#6b4a36', 'woodd': '#55392a', 'withy': '#8a7452', 'wattle': '#a89474', 'wattled': '#7e6c4e', 'rot': '#2a2320', 'grass': '#6a9a44', 'grassl': '#86b450'}.items():
-        C[k] = toon.material('f_' + k, v, None, 'cel')
+        C[k] = kmat('f_' + k, k, v)
 def obj(name, coll, bm, m, smooth=True):
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); me.materials.append(m)
     for p in me.polygons: p.use_smooth = smooth
@@ -110,7 +117,7 @@ for name, fn in PIECES.items():
     cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
     toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
     fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel')
-    toon.piece_line(fs)
+    toon.piece_line(fs, at_colours=True)
     sc.render.filepath = os.path.join(OUT, name + '.png'); bpy.ops.render.render(write_still=True)
     a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
     meta[name] = {'w': sc.render.resolution_x, 'h': sc.render.resolution_y, 'anchor': {'x': round(a.x * sc.render.resolution_x, 1), 'y': round((1 - a.y) * sc.render.resolution_y, 1)}, 'px': PX, 'ppm': PPM, 'height_m': round(H, 2)}

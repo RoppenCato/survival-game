@@ -23,6 +23,13 @@ at them (the developer, 2026-10-20).
 import bpy, bmesh, math, os, sys, json, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21): chosen tones
+def kmat(name, k, v):
+    """greens with the leaves' lighter, smaller shade; stone, ash and char with all three tones on their facets; the rest chosen"""
+    if any(w in k for w in ('moss', 'turf', 'grass', 'leaf', 'hedge', 'ivy', 'thatchg')):
+        lit, shade = toon.chosen_tones(v, lit_dl=0.09, shade_dl=0.075, cool_k=0.2); return toon.material(name, v, None, 'cel', lit=lit, shade=shade, t_dark=0.5, t_lit=1.0)
+    if any(w in k for w in ('stone', 'rock', 'ash', 'char', 'grey', 'slate')): return toon.material(name, v, None, 'cel', t_dark=0.62, t_lit=0.95)
+    return toon.material(name, v, None, 'cel')
 from skin import Stick, loft, ball
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -41,7 +48,7 @@ C = {}
 def mats():
     for k, v in {'wood': '#6b4a36', 'woodd': '#55392a', 'planed': '#b08a5a', 'planedl': '#c9a874', 'grey': '#8a8478', 'greyd': '#6a655c', 'stone': '#7e7f84', 'stoned': '#5f6066', 'ashlar': '#a9a39a', 'ashlard': '#8a847a', 'shingle': '#6a5240', 'turf': '#577838', 'turfl': '#78994e', 'moss': '#6b8c46',
                  'clay': '#9a7352', 'clayd': '#7a5a40', 'iron': '#6f777f', 'irond': '#4a5058', 'char': '#1e1916', 'ember': '#c0602a', 'flame': '#ffb24a', 'slag': '#3a3336', 'leather': '#7a5a3a', 'cloth': '#e2d8c2', 'cut': '#d9c28c', 'ring': '#b58e58', 'dust': '#c9c2b4', 'dark': '#2b2522', 'earth': '#5a4a38', 'smoke': '#b8b4ac'}.items():
-        C[k] = toon.material('q_' + k, v, None, 'cel')
+        C[k] = kmat('q_' + k, k, v)
 def obj(name, coll, bm, m, smooth=False):
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); me.materials.append(m)
     for p in me.polygons: p.use_smooth = smooth
@@ -222,7 +229,7 @@ for name, fn in PIECES.items():
     cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
     toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
     fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel'); fs.crease_angle = rad(CREASE.get(name, 100))
-    toon.piece_line(fs)
+    toon.piece_line(fs, at_colours=True)
     sc.render.filepath = os.path.join(OUT, name + '.png'); bpy.ops.render.render(write_still=True)
     a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
     meta[name] = {'w': sc.render.resolution_x, 'h': sc.render.resolution_y, 'anchor': {'x': round(a.x * sc.render.resolution_x, 1), 'y': round((1 - a.y) * sc.render.resolution_y, 1)}, 'px': PX, 'ppm': PPM, 'height_m': round(H, 2)}
