@@ -319,3 +319,7 @@ and I change the one number. The guard walk, the people and the beasts get the s
 wrong way at push-off, the hips leaned, the feet landed in one line), his walk with the guard up is planted too, and his idle and
 his look-around now have all their frames, so they no longer step. The people's idles come next, then the boar, deer, adder and
 wolf.
+
+**The people's and the adder's idles (2026-10-21):** the villagers now breathe with the hero's idle at all its frames, so a crowd no
+longer steps, and the adder's idle has twice its frames. The deer and the wolf wait for your answer to the Art Director: are they
+remade in the boar's style first? That remake would bring their idles and walks with it, so doing their idles now could be wasted.

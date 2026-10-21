@@ -7,7 +7,7 @@
 // run overwrites what another said about a clip. Then: node tools/people.js
 const { spawn } = require('child_process'); const fs = require('fs'); const path = require('path');
 const OUT = path.join('art', 'render', 'people'), BLEND = path.join('art', 'source', 'people.blend');
-const FR = { idle: 16, idle_look: 18,      // 2026-10-20 (the studio, the memory budget): the idles halved from 32 and 36
+const FR = { idle: 32, idle_look: 48,      // 2026-10-21 (the studio, Robin's laggy idles): the hero's idle, one breath in 3.8 s (art/build/people_idle.py), at full frames; they were halved to 16 and 18 on 2026-10-20
   walk: 10, run: 8, attack1: 10, attack2: 10, chop: 10, mine: 10, hit: 5, death: 10, block: 3, sit: 4, pickup: 8, interact: 6, bow_draw: 5, bow_shoot: 4,
   hammer: 12, saw: 12, carry: 2, carry_walk: 10, kneel: 8, sit_work: 4,
   row: 8, helm: 8 };   // the ships' clips (the Art Director, 2026-10-21: art/build/rowing_build.py on people.blend after the folk build; no hand things)   // the work clips (the Art Director's step 5B, 2026-10-20: art/build/folk_build.py keys them on people.blend)
