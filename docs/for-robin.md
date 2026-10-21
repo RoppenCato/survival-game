@@ -378,3 +378,8 @@ play. The builder of the cave mouths had been lost under the rocks' name on 2026
 **The adder in the kraken's style, and the boar's feet (2026-10-21):** the adder is the studio's new one, in the chosen colours
 with one continuous zigzag down its back where it had separate lozenges, and its body's wave now moves with the ground it covers.
 The boar's walk and run had no stride numbers, so its hooves slid; now they hold to the ground, the young boars' too.
+
+**The camp things, furniture, benches and fires in the kraken's style (2026-10-21):** the drying rack, woodpile, chopping block,
+log seat, cart, well, trough, the tents, the bed, chest, chair, table, bench, crate, barrel, the workbench and the raft bench are
+the studio's new pictures in the chosen tones: the wood warmer in the light and cooler in its shade. The fires' bases had kept the
+people's heavy black line; now they have the set pieces' lighter one in a warm dark brown. The flames are as they were.

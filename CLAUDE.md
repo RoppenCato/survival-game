@@ -372,7 +372,7 @@ own size, `fixed`); the felling states stay the game's, and **a felled tree lies
 its chopped end at the stump, shortened at the far end as the logs come off (never thinner: Robin), **and each log rolls
 out at the far end as the studio's log picture** (a drop of kind `log` that gives its wood when walked over; a tree without a
 log picture drops wood as before). **The workbench and the raft bench are the studio's pictures too** (2026-10-20,
-`assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12), **and the plants** (`assets/props/plants`:
+`assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12; with the camp things and the furniture below, in the kraken's style since 2026-10-21, the round's tenth item: `benches_build.py`, `camp_build.py`, `furniture_build.py`, the chosen tones), **and the plants** (`assets/props/plants`:
 bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three variants each; a picked berry bush is a
 bush until it regrows; **all of them in the kraken's style since 2026-10-21** (the round's fourth item: `plants_build.py`, the chosen tones, `shared=True` keeping the old tone where a builder wants it); **the tall grass redone 2026-10-21** (Robin: the first "looks like a plant"; now a loose tuft of flat blades
 leaning one way in the grass's greens, the silhouette line only; the studio's `out/plants/grass2`, its `plants_build.py` the game's copy)), **and the rocks** (`assets/props/rocks`: rock, boulder and rock formation in six variants each, by
@@ -452,7 +452,7 @@ furniture (at most 7). **A fire burns outdoors** (a campfire or a hearth cannot 
 hearth within `FIRE_YARD` 100 units of it; a fireplace goes inside, but not on the starter island (Robin). **The fires are the
 Art Director's set pieces** (Robin, 2026-10-20: "use the fire models"; `assets/fires`, copied whole from its `out/fires/sheets`,
 inlined as `__FIRES__`): the campfire, the hearth (with its tripod and pot), the fireplace, the brazier and the fire pit, each a
-base, a loop of flames (10 frames at 12 fps, each fire at its own point of the loop) and embers, drawn by `drawFire` at 4 px a
+base, a loop of flames (10 frames at 12 fps, each fire at its own point of the loop) and embers (the bases with the set pieces' line in a warm dark brown since 2026-10-21, `art/build/fires_build.py`: they had kept the figures' heavy black one; the flames unchanged), drawn by `drawFire` at 4 px a
 unit; the light, the smoke, the sparks (from the fire's heart, `fireUp`) and the shadows stay the game's. A hearth nobody keeps
 (`it.cold`: the burnt hall's) shows no flames and is no hearth; `it.burnt` would show the embers. The comfort line shows it. A bed answers only under a roof and only if it is yours; sleeping skips the
 night, and under a roof leaves you rested for comfort × 2 minutes. Inside a room with comfort and near a fire you heal. Chairs

@@ -14,6 +14,7 @@ cel light, the hero's line, one key colour with the iron as the cool note.
 import bpy, bmesh, math, os, sys, json, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21): chosen tones
 from skin import Stick, loft, ball
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -93,7 +94,7 @@ for name, fn in PIECES.items():
     cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
     toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
     fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel')
-    toon.piece_line(fs)
+    toon.piece_line(fs, at_colours=True)                   # 2026-10-21: the line only where colours meet or one piece passes before another
     sc.render.filepath = os.path.join(OUT, name + '.png'); bpy.ops.render.render(write_still=True)
     a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
     meta[name] = {'w': sc.render.resolution_x, 'h': sc.render.resolution_y, 'anchor': {'x': round(a.x * sc.render.resolution_x, 1), 'y': round((1 - a.y) * sc.render.resolution_y, 1)}, 'px': PX, 'ppm': PPM, 'height_m': H}
