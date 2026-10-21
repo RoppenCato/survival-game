@@ -857,8 +857,8 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   forces it)) (the deer, moose and bear the studio's lit ones, trimmed to the memory budget, dropped in
   2026-10-20; **the boar in the kraken's style** since 2026-10-21, Robin: "that new boar looks so much better": chosen three-tone colours
   instead of the shared shading, the light from one smooth body, fewer bigger pieces, hair as a ragged outline; `quad_build.py`'s
-  style switch, `BOAR_STYLE=A` the old one, `render.py --inner mat`; full frame counts, 51 MB decoded against the studio's 30
-  budget; the wolf, deer, bear, moose and farm animals follow one at a time on Robin's word), the boulder troll as the cave troll, Hårungen as his young. The forest troll, the Gape, the three-headed troll,
+  style switch, `BOAR_STYLE=A` the old one, `render.py --inner mat`; every clip in its own tight frame, the idle 16 frames at 8 fps
+  (kept on purpose: the studio traces the laggy idles Robin sees to the 2026-10-20 slimming), 41 MB decoded against its budget of 30; the wolf, deer, bear, moose and farm animals follow one at a time on Robin's word), the boulder troll as the cave troll, Hårungen as his young. The forest troll, the Gape, the three-headed troll,
   the draugr, the huldra, Näcken (the last three the redesigned ones, 2026-10-20), Trollmor (new) and the bysen are in the Art
   Editor only (`docs/beasts.md`). **The art plan** is the studio's (`C:\dev\SG\Art Director\docs\art-plan.md`, 2026-10-20):
   who draws what, memory budgets per set, the drops first. **A clip may carry its own frame and anchor** (`anims[clip].frame`,
