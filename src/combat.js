@@ -13,6 +13,10 @@ var api = { onBlood: null, sfx: function () {}, facings8: true, heroSprite: null
   mods: null, skills: null, trigger: null, powerMul: null, onDeed: null };
 // mods(): { sprint, sprintCost, stam, dash, block, riposte, charge, roll, heavyblow } from the arm ring's runes; skills: [{ id, name, draw(c), cd }] on the fight bar;
 // trigger: a skill id to cast this frame; powerMul(kind): tool power multiplier; onDeed(kind): 'block', 'parry', 'dash'
+/* The hero's speeds in units a second (Robin, 2026-10-21: "walking with 60 speed looks more natural. Lets use that. But save the
+   jog in case we change our minds later"): he walks at 60 on the kit's walk_fast and sprints at 130 on the run; the guard walk keeps
+   46.2. The jog he had is kept whole: walk 84 with the kit's walk clip (a page's switch: Combat.HERO_GAIT, Sprites.pick's walkClip). */
+var HERO_GAIT = { walk: 60, sprint: 130, guard: 46.2, jog: 84, sprintSt: 18 };   // sprintSt: stamina a second at a sprint (22 until 2026-10-21; Robin: "lower the stamina cost slightly for sprint to compensate, as you will sprint more"; 18 is mine)
 function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null ? m[k] : 1; }
 function modZ(k) { var m = api.mods ? api.mods() : null; return m && m[k] ? m[k] : 0; }   // a rune's switch: 0 unless the page says so
 function maxSt() { var m = api.mods ? api.mods() : null; return m && m.stMax ? m.stMax : 100; }   // food can raise top stamina (mods().stMax)   // armor(): share of a blow the hero's gear turns aside
@@ -740,13 +744,13 @@ function updatePlayer(dt) {
   if (p.st <= 0.5) p.sprintLock = true; else if (p.st >= 14) p.sprintLock = false;
   p.sprinting = !!sprint;
   p.anim.run = Math.max(0, Math.min(1, (p.anim.run || 0) + (sprint ? dt / 0.7 : -dt / 0.35)));   // the lean into a run builds up over 0.7 s (Robin, 2026-10-07)
-  var spd = 84 * mod('speed');           // a walk, not a jog (118 was too fast for the world's scale); mods().speed for a page's cheats
-  if (sprint) { spd *= 1.55 * mod('sprint'); p.st = Math.max(0, p.st - 22 * dt * mod('sprintCost')); p.stDelay = Math.max(p.stDelay, 0.55); }
+  var spd = HERO_GAIT.walk * mod('speed');   // mods().speed for a page's runes and cheats
+  if (sprint) { spd *= (HERO_GAIT.sprint / HERO_GAIT.walk) * mod('sprint'); p.st = Math.max(0, p.st - HERO_GAIT.sprintSt * dt * mod('sprintCost')); p.stDelay = Math.max(p.stDelay, 0.55); }
   if (sprint && il > 0 && modZ('charge') > 0 && p.mode === 'fight') for (i = 0; i < W.enemies.length; i++) {   // the boar's charge: your run is a blow
     var ce = W.enemies[i]; if (ce.dead || ce.side === 1 || ce.down || (ce.chargeT || 0) > 0) continue;
     if (Math.hypot(ce.x - p.x, ce.y - p.y) < ce.r + p.r + 6) { ce.chargeT = 1.2; var cang = Math.atan2(ce.y - p.y, ce.x - p.x); damageEnemy(ce, 1.2 * dmgMul('sword'), cang, 260, 40, 'heavy'); ring(ce.x, ce.y, 0, 14, 0.25, '255,243,196', false, 2); sfx('slam'); }
   }
-  if (p.guard) spd *= 0.55;
+  if (p.guard) spd *= sprint ? 0.55 : HERO_GAIT.guard / HERO_GAIT.walk;   // the guard walk at its own pace (46.2, the clip's), whatever the walk; with a sprint as before
   /* (2026-10-15, Robin: attacking on and moving at once, the legs did not move and he glided: the sheets' slash is the whole body, so a
      walk under it cannot be shown. Now the blow is a commitment: a shuffle in the windup, no walking in the blow itself (its step is
      the lunge), little in the first half of the recovery, and moving in the second half ends the recovery (the walk shows at once);
@@ -1247,7 +1251,7 @@ function followStep(e, dt) {                // a friend with nobody to fight: hi
   }
   var hd = W.heading == null ? P.face : W.heading, f = FOLLOW[n % FOLLOW.length], k = 1 + Math.floor(n / FOLLOW.length) * 0.6, bx = -Math.cos(hd), by = -Math.sin(hd), lx = -by, ly = bx;
   var tx = P.x + (lx * f[0] + bx * f[1]) * k, ty = P.y + (ly * f[0] + by * f[1]) * k, d = Math.hypot(tx - e.x, ty - e.y);
-  if (d > MEN.followGap || e.moving) { e.moving = d > 4; var sp = d > 70 ? MEN.run * 1.15 : (d > 26 ? P.sprinting ? MEN.run * 1.1 : 84 : MEN.speed); stepTo(e, tx, ty, sp, dt); e.face = turnToward(e.face, Math.atan2(ty - e.y, tx - e.x), MEN.turn * dt); }
+  if (d > MEN.followGap || e.moving) { e.moving = d > 4; var sp = d > 70 ? MEN.run * 1.15 : (d > 26 ? P.sprinting ? MEN.run * 1.1 : Math.max(MEN.speed, HERO_GAIT.walk) : MEN.speed); stepTo(e, tx, ty, sp, dt); e.face = turnToward(e.face, Math.atan2(ty - e.y, tx - e.x), MEN.turn * dt); }
   else e.face = turnToward(e.face, hd, 3 * dt);
 }
 function order(kind) {                      // the hero's word to his own men within call: 'follow' (break off and come) or 'hold' (a line abreast where he stands, facing where he faces)
@@ -2367,7 +2371,7 @@ function tuneBeast(e, k, o) {         // a beast dressed from the tuned numbers:
   return e;
 }
 function init(l) { lib = l; reset(); buildGround(); }
-return { tune: tune, tuneDefaults: tuneDefaults, tuneDiff: tuneDiff, beastNum: beastNum, tuneBeast: tuneBeast, init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
+return { HERO_GAIT: HERO_GAIT, tune: tune, tuneDefaults: tuneDefaults, tuneDiff: tuneDiff, beastNum: beastNum, tuneBeast: tuneBeast, init: init, update: update, render: render, key: key, button: button, mouse: mouse, spawn: spawn, soldier: soldier, armMan: armMan, order: order, way: way, WAYS: WAYS, noise: noise, gawk: gawk, reset: reset, S: S, api: api,
   clear: function () { W.enemies.length = 0; W.projs.length = 0; W.lock = null; },
   hurt: function (e, dmg, ang) { damageEnemy(e, dmg * (e.type === 'soldier' ? MEN.hpK : 1), ang == null ? e.face + Math.PI : ang, 40, 30, 'heavy', { x: e.x, y: e.y, world: true }); },   // something of the world hurts him (a roof coming down, a fire): nobody's blow
 

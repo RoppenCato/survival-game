@@ -353,3 +353,9 @@ the feet still planted; the studio warned they look frantic past about 60, so ju
 
 **The trees in the kraken's style (2026-10-21, the first of your kraken round):** the pine, oak and birch, their trunks and logs
 are the studio's new pictures, in the same sizes and places. The wolves and the deer come next.
+
+**Walking at 60 (2026-10-21, your decision):** the hero now walks at 60 with the studio's power walk; Shift sprints at 130 as
+before, and the sprint costs 18 stamina a second instead of 22, as you asked. The jog is kept: Admin's "The hero jogs (the old
+gait)" puts it back at 84 whenever you want to compare. The fights barely change (the test ladder is within its noise). The studio
+also caught a mistake of its own today: every stride was a tenth short, so the feet crept a little; that is fixed, and walking up
+or down the screen now keeps the feet planted too.

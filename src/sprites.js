@@ -40,7 +40,13 @@
      its figure covers in one loop, in game units, the studio's) is picked by the distance walked: odo keeps a running ground
      distance for a thing from its world position (a jump of 60 units or more in one frame, a teleport or a landing, is not walked);
      strideFrame turns it into the frame, the stride grown with the figure's drawn size. A clip without one keeps the clock. */
-  function odo(o, x, y) { var od = o._odo || (o._odo = { x: x, y: y, d: 0, t: now(), v: 0 }), step = Math.hypot(x - od.x, y - od.y), t = now(), dt = t - od.t; if (step < 60) { od.d += step; if (dt > 0.001 && dt < 0.5) od.v += (step / dt - od.v) * Math.min(1, dt * 6); } od.t = t; od.x = x; od.y = y; return od.d; }   /* (od.v: the speed, smoothed, units a second) */
+  /* The ground as the sheets see it (2026-10-21, the Art Director's catch): a figure is rendered from 35 degrees up, so a ground step
+     north or south shows in its sheet at sin 35 of its length, while the game draws the world's north-south at GROUND_K (0.75). The
+     odometer counts each step as the sheet sees it, its north-south part times GROUND_K / sin(elev) (1.31 at 35 degrees), so the feet
+     stay planted on every heading; od.v stays the world's speed. */
+  var GROUND_K = 0.75;
+  function nsOf(elev) { return GROUND_K / Math.sin((elev || 35) * Math.PI / 180); }
+  function odo(o, x, y, ns) { var od = o._odo || (o._odo = { x: x, y: y, d: 0, t: now(), v: 0 }), dx = x - od.x, dy = y - od.y, step = Math.hypot(dx, dy), t = now(), dt = t - od.t; if (step < 60) { od.d += Math.hypot(dx, dy * (ns || nsOf(35))); if (dt > 0.001 && dt < 0.5) od.v += (step / dt - od.v) * Math.min(1, dt * 6); } od.t = t; od.x = x; od.y = y; return od.d; }   /* (od.v: the speed, smoothed, units a second) */
   function odoSpeed(o) { return o && o._odo ? o._odo.v : 0; }
   /* walk, jog or run by the speed (2026-10-21, the studio's people's gaits: a stroll made for 40, a jog for 60, a run for 80, each
      with its stride): a set that has a jog clip is picked by how fast the figure really moves, with a hold at each edge so it does
@@ -69,7 +75,7 @@
   function shows(A, layers) { var sh = A.sheets || {}, i, n; for (i = 0; i < layers.length; i++) { n = typeof layers[i] === 'string' ? layers[i] : layers[i] && layers[i].layer; if (!n || n === 'body' || /^shield/.test(n)) continue; if (!sh[n]) return false; } return true; }   /* does the clip hold every layer of what is in the hand */
   // which clip and frame the hero's state asks for. opts: stepData() (the engine's attack step), tool() ('pick', 'axe', ... or null)
   function pick(H, P, an, opts) {
-    var A = H.meta.anims, t = now(), a = P.atk, dd = odo(P, P.x, P.y), sc = opts.scale || 1;
+    var A = H.meta.anims, t = now(), a = P.atk, dd = odo(P, P.x, P.y, nsOf(H.meta.elev)), sc = opts.scale || 1;
     if (P.dead) { if (!A.death) return null; return { a: 'death', f: Math.min(A.death.frames - 1, Math.floor((t - H.deadT) * A.death.fps)) }; }
     if (a && a.ph !== 'none' && opts.stepData) {                     // the attack's phases drive the clip: windup, the blow, the recovery
       var sd = opts.stepData(), tot = sd.wu + sd.ac + sd.rec, el = a.ph === 'windup' ? a.t : a.ph === 'active' ? sd.wu + a.t : sd.wu + sd.ac + a.t, k = Math.max(0, Math.min(0.999, el / tot)), nm;
@@ -95,7 +101,7 @@
       if (H.blk > 0.5 && A[bkW]) return { a: bkW, f: A[bkW].stride > 0 ? strideFrame(A[bkW], dd, sc) : loopFrame(A[bkW], t * 0.62) };   /* (he walks at about half his pace with it up) */
     }
     if (an && an.sit && A.sit) { var ls = loopAt(A.sit, t); return { a: 'sit', f: ls.f, f2: ls.f2, w: ls.w }; }
-    var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (opts.walkClip && A[opts.walkClip] ? opts.walkClip : (A.walk ? 'walk' : 'idle'))) : 'idle';   /* (walkClip: a page's other walk, the hero's fast walk on test) */
+    var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (opts.walkClip && A[opts.walkClip] ? opts.walkClip : (A.walk_fast ? 'walk_fast' : (A.walk ? 'walk' : 'idle')))) : 'idle';   /* (the kit walks on walk_fast since 2026-10-21; walkClip: a page's other walk, the kept jog's 'walk') */
     if (!A[nm2]) return null;                                          // a sheet set with no such clip draws nothing (it threw)
     if (nm2 === 'idle') { var li = loopAt(A.idle, t); return { a: 'idle', f: li.f, f2: li.f2, w: li.w }; }
     return { a: nm2, f: gait(A[nm2], dd, t, sc) };
@@ -225,7 +231,7 @@
     if (!ready(H)) return false; opts = opts || {};
     var M = H.meta, A = M.anims, t = now(), st = e._bs || (e._bs = { x: e.x, y: e.y, t: t, spd: 0, face: null }), dt = t - st.t;
     if (dt > 0.004) { var sp = Math.hypot(e.x - st.x, e.y - st.y) / dt; st.spd += (sp - st.spd) * Math.min(1, dt * 8); st.x = e.x; st.y = e.y; st.t = t; }
-    var dd = odo(e, e.x, e.y);   /* (the ground walked, for a clip with a stride) */
+    var dd = odo(e, e.x, e.y, nsOf(M.elev));   /* (the ground walked as the sheet sees it, for a clip with a stride) */
     var a = e.face || 0; if (st.face == null) st.face = a; var dA = Math.atan2(Math.sin(a - st.face), Math.cos(a - st.face)); st.face += Math.max(-0.22, Math.min(0.22, dA));
     var nm, f, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, ph = t + (e.seed || 0), loopN = null, mixB = null;
     var lie = opts.deadFor || 1.5;
@@ -503,10 +509,10 @@
     else if (e.state === 'stagger' || flash > 0.35) { s.clip = 'hit'; s.k = e.state === 'stagger' ? 0.15 + 0.6 * k : Math.min(0.999, (1 - flash) * 0.8); }
     else {
       st.run = st.run ? st.spd > 50 : st.spd > 62; st.walk = st.walk ? st.spd > 3 : st.spd > 7;
-      if (A.jog && (st.run || st.walk)) { st.g = gaitClip(A, st.spd, st.g); st.wp += dt; s.clip = st.g; s.t = st.wp; s.d = odo(e, e.x, e.y); }   /* (a set with a jog: the gait by the real speed) */
-      else if (st.run) { st.wp += dt * Math.max(0.8, Math.min(1.4, st.spd / 100)); s.clip = 'run'; s.t = st.wp; s.d = odo(e, e.x, e.y); }
-      else if (st.walk) { st.wp += dt * Math.max(0.7, Math.min(1.9, st.spd / 36)); s.clip = 'walk'; s.t = st.wp; s.d = odo(e, e.x, e.y); }
-      else odo(e, e.x, e.y);
+      if (A.jog && (st.run || st.walk)) { st.g = gaitClip(A, st.spd, st.g); st.wp += dt; s.clip = st.g; s.t = st.wp; s.d = odo(e, e.x, e.y, nsOf(H.meta.elev)); }   /* (a set with a jog: the gait by the real speed) */
+      else if (st.run) { st.wp += dt * Math.max(0.8, Math.min(1.4, st.spd / 100)); s.clip = 'run'; s.t = st.wp; s.d = odo(e, e.x, e.y, nsOf(H.meta.elev)); }
+      else if (st.walk) { st.wp += dt * Math.max(0.7, Math.min(1.9, st.spd / 36)); s.clip = 'walk'; s.t = st.wp; s.d = odo(e, e.x, e.y, nsOf(H.meta.elev)); }
+      else odo(e, e.x, e.y, nsOf(H.meta.elev));
     }
     if (!A[s.clip]) s.clip = 'idle';
     return person(c, H, withHand(look, hand), s, e.x, e.y * K, { scale: opts.scale, shadow: opts.shadow !== false && !(e.dead || e.down || e.asleep), lying: opts.shadow !== false && (e.dead || e.down || e.asleep) ? s.k : 0, shadowHue: opts.shadowHue, lit: opts.lit, flash: flash, alpha: alpha, tint: opts.tint });
@@ -514,5 +520,5 @@
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
   function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; if (H.lazy && !H.use) H.use = {}; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; if (H.use && H.use[cl] == null) H.use[cl] = now();   /* (a warmed clip counts as used now, so one never drawn is let go in its time) */ look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, pieceOf: pieceOf, odo: odo, odoSpeed: odoSpeed, gaitClip: gaitClip, GAIT: GAIT, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
+  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, pieceOf: pieceOf, odo: odo, nsOf: nsOf, odoSpeed: odoSpeed, gaitClip: gaitClip, GAIT: GAIT, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });
