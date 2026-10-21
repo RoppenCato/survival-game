@@ -21,9 +21,11 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
   browser's painting of what is drawn, not the game's logic. **Please drop today's `framelog.txt` and `errorlog.txt` in the
   project folder** (Esc, Admin) so I can see your numbers. A quick test meanwhile: Esc, Admin, the Light and sound board,
   switch off `glow` and `shadows` and see whether the rate changes (they are full-screen passes every frame).
-- **Trees and bushes small**: in a village they were half trees: the generator scaled its kept trees by 0.5 for the old
-  drawn props, and the studio's pictures kept the scale. They stand at their true size now (a birch 4.5 m, a pine 5.3 m);
-  the wild trees outside the villages were right. Say if you want the whole world's trees bigger: that is one number.
+- **Trees and bushes small**: every tree in the world was drawn at about half. The world plants its trees at a scale of
+  about 0.5 because it bakes the old drawn props twice as big, and the game's drawing applied that scale to the studio's
+  pictures too (the cave's drawing had it right: a set piece at its own size). Fixed: a picture is drawn at its own size
+  everywhere, a birch 4.5 m, a pine 5.3 m, as you picked. Say if that is now too big or too uniform: a little variety
+  from the planted scale is one number.
 - **The idle choppy**: at 20 frames a second everything is; look again once the rate is back.
 - **The loot bend of five seconds**: the pick-up clip played at its own pace (ten seconds for sixteen frames) whatever the
   take's time. It now plays in the take's time (under a second).

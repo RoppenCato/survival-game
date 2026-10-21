@@ -5547,7 +5547,7 @@ __COMBAT__
         var list = buckets[by * CW + bx]; if (!list) continue;
         list.forEach(function (o) {
           if (o.painted) return;   /* (the troll cave's mouth is painted into the face by the world since 2026-10-14; the prop only marks the place) */
-          var s = sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
+          var s = sprite(o.name, o.v), sS = s.fixed ? 1 : o.s, px = o.x + s.l * sS, py = o.y * K + s.t * sS, w = s.w * sS, h = s.h * sS;   /* (a set piece at its own size, never by the prop's planted scale: the world plants trees at about 0.5 for the drawn props it bakes twice as big, and the studio's pictures were drawn half their size, Robin 2026-10-21) */
           if (px + w < cam.x - hw - 60 || px > cam.x + hw + 60 || py + h < cam.y - hh || py > cam.y + hh) return;
           items.push({ y: o.y, f: function () {
             var lit = SIDES && o.dying == null && !o.shake && !o.peak && !o.inFace && !o.shelter && h > 12 && !(P.y < o.y && P.x > px - 4 && P.x < px + w + 4 && P.y * K > py - 6) ? figLit(o.x, o.y, false) : null;   // (not a thing you stand behind: it is drawn thin there, and its lit edge would show through it)
