@@ -374,3 +374,7 @@ your game; they were only in a check picture of mine, which now shows the game's
 pictures, six of each. The mine mouth, the sea cave and the rock shelter have three tones of stone, living moss and grass in tufts
 where thin spikes read as thorns. The troll's cave mouth is painted into the cliff by the world, so its new picture is not seen in
 play. The builder of the cave mouths had been lost under the rocks' name on 2026-10-20 and is back as `art/build/caves_build.py`.
+
+**The adder in the kraken's style, and the boar's feet (2026-10-21):** the adder is the studio's new one, in the chosen colours
+with one continuous zigzag down its back where it had separate lozenges, and its body's wave now moves with the ground it covers.
+The boar's walk and run had no stride numbers, so its hooves slid; now they hold to the ground, the young boars' too.

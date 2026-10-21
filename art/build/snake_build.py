@@ -13,13 +13,14 @@ rolls belly up and lies still). Saves art/source/snake.blend."""
 import bpy, bmesh, math, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21)
 from mathutils import Vector, Matrix
 
 NAME = 'snake'
 SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'source'); OUT = os.path.abspath(os.path.join(SRC, NAME + '.blend'))
 FPS = 24; rad = math.radians
 N = 16; LEN = 1.5; SEG = LEN / N; RMAX = 0.084          # bigger than a real adder (0.7 m) so it reads at game scale
-COL = {'body': '#b9a67a', 'belly': '#e6dcc0', 'zig': '#33291f', 'head': '#a8946a', 'eye': '#d6452a', 'tongue': '#2a1512'}
+COL = {'body': '#b8aa88', 'belly': '#e0d6bc', 'zig': '#2c241e', 'head': '#9c8a6c', 'eye': '#d6452a', 'tongue': '#2a1512'}   # 2026-10-21: a grey-tan adder, a near-black zigzag; the red eye its one hot thing
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene; sc.render.fps = FPS
@@ -87,9 +88,17 @@ for j in range(NR - 1):
         if math.sin(2 * math.pi * (i + 1.0) / SEGS) < -0.3: f.material_index = 1
 bm.faces.new(RINGS[0][::-1]); bm.faces.new(RINGS[-1])
 mesh_object('body', bm, [M['body'], M['belly']], weights=bw)
-for i in range(2, N):                               # the zigzag: a dark lozenge on every segment, set left and right in turn
-    u = (i + 0.5) / N; r = radius(u); y = Y0 - (i + 0.5) * SEG; sx = 1 if i % 2 else -1
-    ball('zig%d' % i, M['zig'], 's%02d' % i, (sx * r * 0.30, y, ZC * (r / RMAX) + r * 0.80), r * 0.62, sx=1.0, sy=SEG / (r * 0.62) * 0.62, sz=0.22, seg=8, rings=5)
+# the zigzag (2026-10-21, the kraken round; it was a lozenge on each segment, left and right in turn, and read as a row of dots): one
+# continuous dark band down the back from the neck to near the tail's tip, a zig every segment, lying on the body's top and bent with it
+def top_z(u, x):
+    r = radius(u); rx = r * 1.12; rz = r * 0.86; k = max(0.0, 1 - (x / rx) ** 2); return ZC * (r / RMAX) + rz * math.sqrt(k) + 0.004
+bmz = bmesh.new(); rows = []; K = 260
+for j in range(K + 1):
+    u = 0.1 + 0.88 * j / K; y = Y0 - u * LEN; r = radius(u); ph = (Y0 - y) / SEG; tri = 2 * abs(2 * (ph / 2 - math.floor(ph / 2 + 0.5))) - 1   # a triangle wave, a zig a segment
+    amp = r * 0.55; w = r * 0.42 * (0.6 + 0.4 * min(1.0, u / 0.3)); x = amp * tri   # bold enough to read at game size (the first, 0.40 and 0.26, vanished)
+    rows.append([bmz.verts.new((x + dx, y, top_z(u, x + dx))) for dx in (-w, w)])
+for (a0, b0), (a1, b1) in zip(rows, rows[1:]): bmz.faces.new((a0, b0, b1, a1))
+zig = mesh_object('zigzag', bmz, M['zig'], weights=bw); sol = zig.modifiers.new('solid', 'SOLIDIFY'); sol.thickness = 0.006; sol.offset = 1.0
 hy = -Y0
 ball('skull', M['head'], 'head', (0, hy - HEADL * 0.50, ZC), 0.09, sx=1.0, sy=1.25, sz=0.62)                 # a broad flat head, wider than the neck
 ball('snout', M['head'], 'head', (0, hy - HEADL * 0.95, ZC - 0.006), 0.055, sx=1.0, sy=1.1, sz=0.6)
