@@ -144,6 +144,21 @@ and not built (`docs/idea-bank.md`).
   hot accent, shadows cooler and bluer than the light, an earth-and-bone palette, a warm brown-black hand-made line heavy on
   the shadow side, one sun upper left, grain in every fill. Characters in the cel style Robin picked (2026-10-09). Trolls as
   in the old illustrations: hairy, heavy, long-armed, evil and careless, never goofy or smiling.
+- **The sticker cure** (Robin, 2026-10-21, through the Art Director: "the ground looks lovely but the trees etc look pasted on
+  like stickers"; the studio's board `out/sticker`): three things make the rule for every set piece. **The studio's:** every
+  set piece re-rendered with the outer contour at 0.55 of its weight in dark green-brown and the inner line at 0.8
+  (`toon.piece_line`, in `art/build/toon.py`, called after `toon.freestyle` in every set-piece builder; the people, the
+  beasts and the hero keep the heavy black line; the fires and the Building board's icons are not re-rendered); the drop
+  `out/thinline` copied whole, 2026-10-21 (every box 2 to 4 px smaller, the JSON with the pictures). **Mine at runtime:** a
+  **cast shadow** under every set piece (`drawCastShadows`, before the fire shadows: a soft blue ellipse to the lower right,
+  `w.castShadow`: the studio's numbers, its reach about half the piece's height, its centre 0.4 of the height right and 0.15
+  down; full by day, half again longer and bluer through the dusk and the dawn (`sunK`), gone at night when the fires'
+  shadows take over), and **ground contact on grass only** (`w.onGrass`: the meadow's grass, the fells' drier grass, or
+  none on sand, rock, painted ground, a laid floor or the ash of a burnt room): a dark halo under the foot (`w.footHalo`)
+  before the piece and the meadow's own blades over the lowest bit of its base after it (`w.footGrass`, seven to twelve
+  tufts of three in the living grass's three greens, baked once a picture). One soft disc a colour drawn through a
+  transform, so a shadow or a halo is one drawImage; what a thing stands in is remembered until the ground is painted again
+  (`w.groundRev`). `STICK` switches both. Not done: a shadow for the Build pieces' walls and roofs (not set pieces).
 - **The ground never looks square:** kinds of ground meet along smooth ragged curves, coasts curve, sand is warm, beaches
   wide; square tiles only for built floors indoors. **Worldbuilding is open:** groves with clear ground between, undergrowth
   near the trees, room to build. Moving things turn smoothly to any heading, like the ship.
@@ -518,8 +533,9 @@ rail to hanging whole below the near rail by how much its side faces the camera 
 it); **the wake is laid along the track she has sailed** (`v.trail`, so it curves in a turn) and **a turn with way on breaks
 white along the outer side** (`v.turn`; Robin: the turning was stiff); **the sail is set while she is driven and furled at
 rest** (`v.sailSet`; its belly by the wind, never flat: Robin: it furling whenever the wind was not behind read as random;
-the wind still sets the speed's buff and whether the oars rest, `v.sailFill`); `COL` is the studio's palette; the shadow under the hull is the sea's
-own colour, soft at the edge. Without the images the hull draws as before. **The vessel is one drawing** (`drawShip`:
+the wind still sets the speed's buff and whether the oars rest, `v.sailFill`); `COL` is the studio's palette; **the shadow under the hull is the hull's own
+outline turned with her** (Robin, 2026-10-21: the blob that never turned looked unnatural), thrown a little to the lower right, the
+sea's own colour darker and bluer, soft at the edge from three fills, still on the water while she bobs. Without the images the hull draws as before. **The vessel is one drawing** (`drawShip`:
 the hull, everyone aboard by depth, the rig between those behind the mast and those before it, the near rail with its shields
 over their legs (`Yard.drawVesselFront` takes the figures), then the oars); the engine's own hero draw stands down aboard
 (`shipHero`); aboard, the keys sail the ship and the hero stands (`api.scene.still`: the engine takes no walking input; he

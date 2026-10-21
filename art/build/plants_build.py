@@ -181,6 +181,7 @@ for ki, (kind, fn) in enumerate(KINDS.items()):
         cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
         toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
         fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel'); fs.crease_angle = rad(CREASE.get(kind, 100)); lk = LINE.get(kind, 1.0)
+        toon.piece_line(fs)
         if kind in NO_INNER: fs.linesets.remove(fs.linesets['inner'])
         for ls in fs.linesets:
             st = ls.linestyle; st.thickness *= lk

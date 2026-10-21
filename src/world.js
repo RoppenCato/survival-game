@@ -682,7 +682,7 @@ function make(kit, opts) {
   /* Painted ground (2026-10-07, Robin: the tile paths were too mechanical): gravel and earth painted with a brush into cells a
      quarter tile wide (GQ), read as a smooth field with noise on top, so every edge is ragged and no two strokes look alike. It is
      painted into the ground pieces at bake time; painting forgets the pieces it touches so they bake again. */
-  var GQ = 8; w.ground = {};
+  var GQ = 8; w.ground = {}; w.groundRev = 0;   /* (groundRev counts the paintings, so a thing's cached 'am I on grass' knows when to look again) */
   w.repaint = function (x0, y0, x1, y1) {
     var pw = CT * T, qx0 = Math.max(0, Math.floor(x0 / pw)), qx1 = Math.min(CW - 1, Math.floor(x1 / pw)), qy0 = Math.max(0, Math.floor(y0 / pw)), qy1 = Math.min(CH - 1, Math.floor(y1 / pw)), qx, qy;
     for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var ck = qy * CW + qx; if (chunkCv[ck]) stale[ck] = 1; }   // the old piece stays on screen until drawGround has baked the new one (2026-10-08: baking every touched piece at once made painting stutter)   // baked again at once: a missing piece showed the sea for a frame (Robin, 2026-10-07)
@@ -693,11 +693,38 @@ function make(kit, opts) {
       if (Math.hypot((qx + 0.5) * GQ - x, (qy + 0.5) * GQ - y) > r) continue; var kk = qx + ',' + qy;
       if (kind) { if (w.ground[kk] !== kind) { w.ground[kk] = kind; changed = true; } } else if (w.ground[kk] != null) { delete w.ground[kk]; changed = true; }
     }
-    if (changed) w.repaint(x - r - GQ * 3, y - r - GQ * 3, x + r + GQ * 3, y + r + GQ * 3);
+    if (changed) { w.repaint(x - r - GQ * 3, y - r - GQ * 3, x + r + GQ * 3, y + r + GQ * 3); w.groundRev++; }
     return changed;
   };
-  w.dabGround = function (x, y, r, kind) { var qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy; for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var dx = (qx + 0.5) * GQ - x, dy = (qy + 0.5) * GQ - y; if (dx * dx + dy * dy * 1.6 > r * r) continue; if (!w.isLand((qx + 0.5) * GQ, (qy + 0.5) * GQ)) continue; if (kind) w.ground[qx + ',' + qy] = kind; else delete w.ground[qx + ',' + qy]; } };   // cells only, no repaint: call w.repaint over the area after many
+  w.dabGround = function (x, y, r, kind) { var qx0 = Math.floor((x - r) / GQ), qx1 = Math.floor((x + r) / GQ), qy0 = Math.floor((y - r) / GQ), qy1 = Math.floor((y + r) / GQ), qx, qy; for (qy = qy0; qy <= qy1; qy++) for (qx = qx0; qx <= qx1; qx++) { var dx = (qx + 0.5) * GQ - x, dy = (qy + 0.5) * GQ - y; if (dx * dx + dy * dy * 1.6 > r * r) continue; if (!w.isLand((qx + 0.5) * GQ, (qy + 0.5) * GQ)) continue; if (kind) w.ground[qx + ',' + qy] = kind; else delete w.ground[qx + ',' + qy]; } w.groundRev++; };   // cells only, no repaint: call w.repaint over the area after many
   w.groundKind = function (x, y) { return w.ground[Math.floor(x / GQ) + ',' + Math.floor(y / GQ)] || 0; };
+  w.onGrass = function (wx, wy) { if (w.groundKind(wx, wy) || !meadowOk(wx, wy * K)) return 0; return fellOf(wx, wy * K) ? 2 : 1; };   /* what grass a point is in: 1 the meadow's, 2 the fells' drier grass, 0 sand, rock, water, painted ground or a burnt floor (the sticker cure's ground contact is drawn on grass only, 2026-10-21) */
+  /* The sticker cure (the Art Director's board, Robin's yes, 2026-10-21: "the ground looks lovely but the trees etc look pasted on
+     like stickers"): every set piece throws a soft blue shadow to the lower right (the sun is upper left), and on grass it stands
+     in the ground: a dark halo under its foot and the meadow's own blades over the lowest bit of its base. The numbers are the
+     studio's (its out/sticker/sticker_board.js: castShadow, footHalo, footGrass), in units here. One soft disc a colour, made
+     once and drawn through a transform, so a shadow or a halo is one drawImage; the blades are baked once a picture. */
+  var DISC = {}, FOOT = {}, FOOTN = 0;
+  function disc(key, col, a0, a1) {
+    if (DISC[key]) return DISC[key]; var cv = kit.mk(128, 128), g = cv.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(' + col + ',' + a0 + ')'); gr.addColorStop(0.55, 'rgba(' + col + ',' + a1 + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return DISC[key] = cv;
+  }
+  w.castShadow = function (c, x, y, pw, ph, o) {   /* x, y the foot in screen units, pw and ph the piece's drawn size; o.k its strength (1 by day), o.len its length (1 by day, longer through the dusk), o.dusk 0..1 bluer */
+    var L = ph * 0.55 * ((o && o.len) || 1), sx = x + L * 0.75, sy = y + L * 0.28, r = L * 0.9 / 64; if (r <= 0) return;
+    c.save(); c.translate(sx, sy); c.rotate(0.35); c.scale(1.6 * r, 0.6 * r); c.globalAlpha = o && o.k != null ? o.k : 1;
+    c.drawImage(disc('cast', '20,40,90', 0.32, 0.2), -64, -64); if (o && o.dusk > 0) { c.globalAlpha *= o.dusk * 0.6; c.drawImage(disc('dusk', '30,36,130', 0.3, 0.18), -64, -64); } c.restore();
+  };
+  w.footHalo = function (c, x, y, pw) { var r = pw * 0.5 / 64; if (r <= 0) return; c.save(); c.translate(x, y); c.scale(r, r * 0.45); c.drawImage(disc('halo', '30,50,25', 0.35, 0.16), -64, -64); c.restore(); };
+  w.footGrass = function (c, s, x, y, pw, fell, G) {   /* the meadow's blades over the base of a piece: seven to twelve small tufts of three in the grass's own three greens (the fells' drier ones there), baked once a picture at 3 px a unit */
+    G = G || GRASS_INK; if (!s.fkey) s.fkey = 'f' + (++FOOTN); var key = s.fkey + (fell ? 'F' : '') + (G.mid || ''), f = FOOT[key];
+    if (!f) {
+      var hw = pw * 0.175 + 2.6, hh = 6.4, base = 4.8, BK = 3, cv = kit.mk(Math.ceil(hw * 2 * BK), Math.ceil(hh * BK)), g = cv.getContext('2d'), cols = fell ? ['#5f6a3a', '#858a4c', '#aea766'] : [G.dark, G.mid, G.light], sd = FOOTN * 13 + Math.round(pw), n = 7 + Math.floor(hash(sd, 1, 9) * 5), i, k;
+      g.scale(BK, BK); g.translate(hw, base);
+      for (i = 0; i < n; i++) { var bx = (hash(sd, i, 10) - 0.5) * pw * 0.35, by = (hash(sd, i, 11) - 0.3) * 2; for (k = 0; k < 3; k++) { var dx = (k - 1) * 0.6 + (hash(sd, i * 3 + k, 12) - 0.5) / 3, bh = 2 + hash(sd, i * 3 + k, 13) * 2, lean = (k - 1) * 0.4 + hash(sd, i * 3 + k, 14) * 0.67; g.fillStyle = cols[(i + k) % 3]; g.beginPath(); g.moveTo(bx + dx - 0.3, by); g.quadraticCurveTo(bx + dx + lean * 0.35, by - bh * 0.6, bx + dx + lean, by - bh); g.quadraticCurveTo(bx + dx + lean * 0.35 + 0.17, by - bh * 0.55, bx + dx + 0.3, by); g.closePath(); g.fill(); } }
+      f = FOOT[key] = { cv: cv, l: -hw, t: -base, w: hw * 2, h: hh };
+    }
+    c.drawImage(f.cv, x + f.l, y + f.t, f.w, f.h);
+  };
   function groundField(kind, wx, wy) {                     // 0..1, read between the cells
     var fx = wx / GQ - 0.5, fy = wy / GQ - 0.5, i = Math.floor(fx), j = Math.floor(fy), u = fx - i, v = fy - j;
     function g(a, b) { return w.ground[a + ',' + b] === kind ? 1 : 0; }

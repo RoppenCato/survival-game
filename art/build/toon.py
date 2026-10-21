@@ -334,3 +334,13 @@ def setup_render(scene, size, px, samples=16):
     scene.eevee.taa_render_samples = samples
     scene.view_settings.view_transform = 'Standard'; scene.view_settings.look = 'None'
     scene.display_settings.display_device = 'sRGB'
+
+
+def piece_line(fs, k_outer=0.55, k_inner=0.8, outer='#2f3a28', inner='#2a2f22'):
+    """the set pieces' line (2026-10-21; Robin: the pieces looked pasted on like stickers against the lineless ground): the outer
+    contour at about half its weight and coloured dark green-brown, the inner line a little lighter. The people, the beasts and
+    the hero keep the heavy black line: figures are meant to stand out from the ground."""
+    for ls in fs.linesets:
+        st = ls.linestyle; k = k_outer if ls.name == 'contour' else k_inner; st.thickness *= k; st.color = srgb(outer if ls.name == 'contour' else inner)
+        for md in st.thickness_modifiers:
+            if hasattr(md, 'thickness_min'): md.thickness_min *= k; md.thickness_max *= k

@@ -268,3 +268,14 @@ and maw trolls, Trollmor, the draugr, huldra, Näcken, bysen: about 80 MB, nothi
 **The tall grass (2026-10-21, your yes through the Art Director):** the new tuft is in the game: a loose tuft of flat blades
 leaning one way as grass does in a wind, in the meadow's own greens, no body and no inner ink; three variants, in the same
 places as before. E pulls it as before.
+
+**The sticker cure (2026-10-21, your yes through the Art Director):** all three things are in. The studio re-rendered every set
+piece with a thinner, dark green-brown contour (the people, the beasts and you keep the heavy black line); every set piece now
+throws a soft blue shadow to the lower right, longer and bluer toward dusk and gone at night when the fires' shadows take over;
+and on grass a piece stands in the ground: a dark halo under its foot and the meadow's own blades over its base (nothing on
+sand, rock, painted ground or a floor). The walls and roofs you build are not set pieces and throw no shadow yet: say if they
+now look pasted on beside the trees.
+
+**The boat's shadow (2026-10-21, your note):** it was an ellipse that never turned with the ship, so a turned hull sat on a
+sideways blob. It is now the hull's own outline, turned with her, thrown a little to the lower right by the sun, soft at the
+edge, and it stays on the water while she bobs.

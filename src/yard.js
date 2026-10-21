@@ -395,8 +395,12 @@ var T = 32, TS = 24, K = 0.75;
     function inFrame(dy, fn) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(h + roll); fn(); c.restore(); }
     function fillStroke(fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke(); }
     var box = [-L - 12, -W - 12, 2 * L + 24, 2 * W + 24];
-    var shg = c.createRadialGradient(sx + 2, v.y * K + 5 * sz, 0, sx + 2, v.y * K + 5 * sz, L); shg.addColorStop(0, 'rgba(18,42,64,0.34)'); shg.addColorStop(0.75, 'rgba(18,42,64,0.3)'); shg.addColorStop(1, 'rgba(18,42,64,0)');   // the shadow the sea's own colour, darker and bluer, soft at its edge (the studio's note)
-    c.fillStyle = shg; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.98, W * 1.1, 0, 0, 7); c.fill();
+    /* the hull's shadow on the water (Robin, 2026-10-21: the blob under a turned ship looked weird and unnatural; it was an ellipse that
+       never turned with her): the hull's own outline turned with the heading, thrown a little to the lower right by the sun, the sea's
+       own colour darker and bluer, soft at its edge from three fills, and still on the water while she bobs */
+    c.save(); c.translate(sx + 3, v.y * K + 2 + 2.5 * ds); c.scale(1, K); c.rotate(h); c.fillStyle = 'rgb(18,42,64)';
+    [[1.14, 1.75, 0.07], [1.07, 1.38, 0.1], [1.0, 1.08, 0.17]].forEach(function (q) { c.globalAlpha = q[2]; c.beginPath(); shapedPath(c, pr, q[0], q[1]); c.fill(); });
+    c.restore();
     v.clock = clock;
     inFrame(3 + 2.5 * ds, function () { inkPath(c, shadeHex(col.hull, -30), { box: box, flat: true, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); }); });   // the hull's depth below the rail
     var baked = surfacesOn() && H ? hullBake(v.kind, litPort(h) ? -1 : 1) : null;

@@ -953,6 +953,30 @@ __COMBAT__
     folk.concat(hird, npc ? [npc] : []).forEach(function (m) { if (!m || m.hidden || m.aboard || m.spr) return; var q = figLit(m.x, m.y, true, 40); if (!q || !q.cast) return;   // people: a long soft shape (they are drawn afresh every frame, with no shape kept to lay down)
       c.save(); c.globalAlpha = q.cast.a * 0.85; c.translate(m.x, m.y * K); c.transform(1, 0, -q.cast.kx, -q.cast.ky, 0, 0); c.fillStyle = '#070a1a'; c.beginPath(); c.ellipse(0, -19, 6.5, 19, 0, 0, 7); c.fill(); c.restore(); });
   }
+  var STICK = { cast: true, contact: true }, GR = new WeakMap();   /* the sticker cure's two drawings (the Art Director, Robin's yes, 2026-10-21); the numbers are the world's (w.castShadow, w.footHalo, w.footGrass) */
+  function sunK() {                        // the sun's shadow through the day: full by day, longer and bluer through the dusk and the dawn, gone at night (the fires' shadows take over)
+    var t = day.t, L = light(); if (L >= 0.98) return null; var dusk = t >= DUSK_AT && t < NIGHT_AT ? Math.min(1, (t - DUSK_AT) / (NIGHT_AT - DUSK_AT) * 1.4) : (t >= DAWN_AT ? 1 - (t - DAWN_AT) / (DAY_LEN - DAWN_AT) : 0);
+    return { k: 1 - L, len: 1 + 0.5 * dusk, dusk: dusk };
+  }
+  function floorUnder(x, y) { var f = B.floors[Build.key(Math.floor(x / T), Math.floor(y / T))]; return f != null && f !== 4 && f !== 5 && f !== 6; }   // a laid floor (not the grass and moss floors, not a dock)
+  function grassUnder(o) {                 // what grass a thing stands in (1 the meadow, 2 the fells, 0 none), remembered until the ground is painted again
+    var g = GR.get(o); if (g && g.rev === w.groundRev) return g.gr; var gr = w.onGrass(o.x, o.y); if (gr && floorUnder(o.x, o.y)) gr = 0; GR.set(o, { rev: w.groundRev, gr: gr }); return gr;
+  }
+  function stickHalo(c, x, y, pw) { w.footHalo(c, x, y, pw); }
+  function stickGrass(c, s, x, y, pw, fell) { w.footGrass(c, s, x, y, pw, fell, grassLook); }
+  function drawCastShadows(c, hw, hh) {    // every set piece's shadow thrown to the lower right, under everything that stands
+    if (inCave || inYard || !STICK.cast) return; var sk = sunK(); if (!sk) return;
+    var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1), by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT) - 1), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1), bx, by;
+    for (by = by0; by <= by1; by++) for (bx = bx0; bx <= bx1; bx++) { var list = buckets[by * CW + bx]; if (!list) continue; list.forEach(function (o) {
+      if (o.painted || o.peak || o.inFace || o.shelter || o.ledge || o.dying != null) return; var s = sprite(o.name, o.v), sS = s.fixed ? 1 : o.s, ph = s.h * sS; if (ph < 10) return;
+      if (o.x < cam.x - hw - ph || o.x > cam.x + hw + 20 || o.y * K < cam.y - hh - 10 || o.y * K > cam.y + hh + ph) return;
+      var g = o.grow != null ? 0.3 + 0.7 * Math.min(1, o.grow) : 1; w.castShadow(c, o.x, o.y * K, s.w * sS * g, ph * g, sk); }); }
+    B.items.forEach(function (it) {
+      if (it.lvl || it.flat || it.fallen || it.light || Math.abs(it.x - cam.x) > hw + 140 || Math.abs(it.y * K - cam.y) > hh + 140) return;
+      var F = fireArt(it); if (F) { w.castShadow(c, it.x, it.y * K, F.w * F.upp, F.h * F.upp * 0.35, sk); return; }   /* a fire: its base's shadow */
+      var s = sprite(it.name, it.v || 0); if (s.h < 10) return; w.castShadow(c, it.x, it.y * K, s.w, s.h, sk);
+    });
+  }
   function drawMoths(c) {                  // a few moths round every fire at night: pale flecks that circle, rise and fall, and blink as their wings turn
     var L = light(); if (!lt('moths') || L < 0.5) return; var fs = nightFires(); c.save(); c.globalCompositeOperation = 'lighter';
     fs.forEach(function (f, fi) { if (f.lamp || f.torch) return; for (var i = 0; i < 4; i++) {
@@ -5632,6 +5656,7 @@ __COMBAT__
       c.fillStyle = 'rgba(20,40,20,0.22)';
       for (i = 0; i < drops.length; i++) { var dr = drops[i]; c.beginPath(); c.ellipse(dr.x, dr.y * K, 4, 2.2, 0, 0, 7); c.fill(); }
       if (bDirty) rebuildRooms();
+      drawCastShadows(c, hw, hh);
       drawFireShadows(c, hw, hh);
     },
     items: function (items) {
@@ -5649,11 +5674,13 @@ __COMBAT__
           var s = sprite(o.name, o.v), sS = s.fixed ? 1 : o.s, px = o.x + s.l * sS, py = o.y * K + s.t * sS, w = s.w * sS, h = s.h * sS;   /* (a set piece at its own size, never by the prop's planted scale: the world plants trees at about 0.5 for the drawn props it bakes twice as big, and the studio's pictures were drawn half their size, Robin 2026-10-21) */
           if (px + w < cam.x - hw - 60 || px > cam.x + hw + 60 || py + h < cam.y - hh || py > cam.y + hh) return;
           items.push({ y: o.y, f: function () {
+            var gr = STICK.contact && o.dying == null && !o.peak && !o.inFace && !o.shelter && !o.ledge && h > 6 ? grassUnder(o) : 0; if (gr) stickHalo(ctx, o.x, o.y * K, w);   /* the sticker cure: the halo under the foot, the blades over the base */
             var lit = SIDES && o.dying == null && !o.shake && !o.peak && !o.inFace && !o.shelter && h > 12 && !(P.y < o.y && P.x > px - 4 && P.x < px + w + 4 && P.y * K > py - 6) ? figLit(o.x, o.y, false) : null;   // (not a thing you stand behind: it is drawn thin there, and its lit edge would show through it)
             if (lit && lit.rim) { ctx.globalAlpha = lit.rim.a; ctx.drawImage(silCol(s, '#ffb45e'), px + lit.rim.ox, py + lit.rim.oy, w, h); ctx.globalAlpha = 1; }
             drawProp(o, s, px, py, w, h, P);
             if (lit && lit.dark) { ctx.globalAlpha = lit.dark; ctx.drawImage(silCol(s, '#060a1c'), px, py, w, h); ctx.globalAlpha = 1; }
             else if (lit && lit.warm) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = lit.warm; ctx.drawImage(silCol(s, '#ff8a2a'), px, py, w, h); ctx.restore(); }
+            if (gr) stickGrass(ctx, s, o.x, o.y * K + 0.7, w, gr === 2);
           } });
         });
       }
@@ -5687,7 +5714,7 @@ __COMBAT__
       B.items.forEach(function (it) {
         if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
-        var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
+        var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } var gr = STICK.contact && !under && !it.light && !it.flat && s.h > 6 ? grassUnder(it) : 0; if (gr) stickHalo(ctx, it.x, it.y * K, s.w); if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (gr) stickGrass(ctx, s, it.x, it.y * K + 0.7, s.w, gr === 2); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
       if (seaEnv) Sea.lifeItems(sea, seaEnv, SEA_IMG).forEach(function (li) { items.push({ y: li.y, f: function () { li.f(ctx); } }); });   /* the whale, the fish, the seal, the gulls' shadows */
       if (raft && Math.abs(raft.x - cam.x) < hw + 320 && Math.abs(raft.y * K - cam.y) < hh + 320) items.push({ y: raft.y - 14, f: function () { drawShip(ctx, raft); } });   /* (a hull is up to 520 units long now: the margin is its half-length and the mast) */

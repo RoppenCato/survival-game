@@ -150,6 +150,7 @@ sc.render.engine = 'BLENDER_EEVEE'; sc.render.resolution_x = int(vw * PPM); sc.r
 sc.render.film_transparent = True; sc.render.image_settings.file_format = 'PNG'; sc.render.image_settings.color_mode = 'RGBA'; sc.render.filter_size = 1.0; sc.eevee.taa_render_samples = 16
 sc.view_settings.view_transform = 'Standard'; sc.view_settings.look = 'None'; sc.display_settings.display_device = 'sRGB'
 fs = toon.freestyle(sc, vl, 0.7, None, 'cel'); fs.linesets['inner'].select_material_boundary = True
+toon.piece_line(fs)
 for ls in fs.linesets: ls.select_by_collection = True; ls.collection = WATER; ls.collection_negation = 'EXCLUSIVE'
 sc.render.filepath = os.path.join(OUT, tag + '.png'); bpy.ops.render.render(write_still=True)
 dg = bpy.context.evaluated_depsgraph_get(); rx, ry = sc.render.resolution_x, sc.render.resolution_y

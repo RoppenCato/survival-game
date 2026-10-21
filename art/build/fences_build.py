@@ -109,7 +109,8 @@ for name, fn in PIECES.items():
     H, W = cfg['h'], cfg['w']; vw = W; vh = H * 0.9 + 0.8 + cfg.get('d', 0) * 0.6; aim = H * 0.38
     cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
     toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
-    toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel')
+    fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel')
+    toon.piece_line(fs)
     sc.render.filepath = os.path.join(OUT, name + '.png'); bpy.ops.render.render(write_still=True)
     a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
     meta[name] = {'w': sc.render.resolution_x, 'h': sc.render.resolution_y, 'anchor': {'x': round(a.x * sc.render.resolution_x, 1), 'y': round((1 - a.y) * sc.render.resolution_y, 1)}, 'px': PX, 'ppm': PPM, 'height_m': round(H, 2)}
