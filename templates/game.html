@@ -5759,6 +5759,7 @@ __COMBAT__
       if (inCave) drawCaveDark(c, P); else if (!PERF.skip.night) drawNight(c);
       if (!inCave && !inYard && LAB.light.moon) { c.save(); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y); drawMoonSea(c, 200 / cam.z, 125 / cam.z); c.restore(); }
       if (caveFade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, caveFade / 0.7) + ')'; c.fillRect(0, 0, 400, 250); }
+      if (MS.on && MS.clean) { c.restore(); return; }   /* the models scene's clean view: no chart, no prompts, no bars */
       drawZoomBtns(c);   /* the + and - by the chart (Robin, 2026-10-21) */
       // the chart: a window of the sea round you (about 110 tiles wide), sharp, with markers you can tell apart
       var mw = 48, mh = 32, mx = 400 - mw - 8, my = 6, VIEW = 110;
@@ -5840,8 +5841,7 @@ __COMBAT__
       var PSN = Combat.api.pixelScale || 2, over = !!menu;      // over: a board lies across the hero, so the notes go above it
       c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0);
       if (inYard) { YSCENE.hud(c, mouseS, P.wreck); drawNotes(c); c.restore(); return; }
-      drawPanels(c); drawHint(c); drawSlips(c);
-      drawSpeech(c); if (!over) drawNotes(c);
+      drawPanels(c); if (!(MS.on && MS.clean)) { drawHint(c); drawSlips(c); drawSpeech(c); if (!over) drawNotes(c); }
       if (musterOpen) drawMuster(c);
       if (mapOpen) drawMap(c);
       bookFlash = Math.max(0, bookFlash - 0.02);
@@ -6142,13 +6142,24 @@ __COMBAT__
      group (Sprites.CAST: in the game, waiting, backup), the figure you walk as, its clips (each plays once on you) and the sheet of
      the chosen one, the hero's gear as the game dresses him, a crowd of rolled villagers, the day and the night and the places, the
      numbers. The studio's viewer lays its sheets over the game's (window.__SPRITES_OVERRIDE__). It saves nothing. ---------- */
-  var MS = { on: SCENE === 'models', cur: 'hero-kit', clip: 'idle', H: null, crowd: [], pClip: 'idle', pHand: null, pGear: { mail: false, helm: false, shield: false, cloak: false }, pTurn: false, gear: {}, handKind: null, el: null, kitGear: { head: '', chest: '', legs: '', feet: '', cloak: '', hand: '', mat: 'iron', shield: '', ring: '' } };
+  var MS = { on: SCENE === 'models', clean: true, cur: 'hero-kit', clip: 'idle', H: null, crowd: [], pClip: 'idle', pHand: null, pGear: { mail: false, helm: false, shield: false, cloak: false }, pTurn: false, gear: {}, handKind: null, el: null, kitGear: { head: '', chest: '', legs: '', feet: '', cloak: '', hand: '', mat: 'iron', shield: '', ring: '' } };
   var MS_PLACE = { boar: 1, deer: 1, wolf: 1, snake: 1, bear: 1, moose: 1, hen: 1, goat: 1, sheep: 1, cow: 1 };   /* the kinds the game can put down as live beasts beside you */
   function msScene() {                     // a fresh start at the wreck by day, the reminders done, tools in the bag
     var P = hero(); day.t = 300; caveFade = 0; noSave = true;
     seen.met = 1; seen.build = 1; seen.bar = 1; seen.fiber = 1; seen.pried = 1; seen.village = 1; seen.hamlet = 1; seen.cave = 1;
     ['axe', 'knife', 'pick'].forEach(function (k) { if (!barPut(Items.make(k, 'flint'))) addThing(Items.make(k, 'flint')); });
     hand = -1; recount(); toCamp(); P.face = Math.PI / 2;
+    var isl = w.isles[isleAt(home.x, home.y)] || w.isles[0], ix = isl.x * T, iy = isl.y * T, dd = Math.hypot(ix - home.x, iy - home.y) || 1;
+    msClear(home.x + (ix - home.x) / dd * 140, home.y + (iy - home.y) / dd * 140, 0);   /* a few tiles inland from the wreck, on open meadow */
+  }
+  function msClear(x0, y0, rMin) {         // the nearest dry, open ground to a point, so a model is seen whole (the Art Director, 2026-10-21: it started half hidden by the wreck)
+    var best = null, a, r;
+    for (r = rMin || 0; r <= 600 && !best; r += 20) for (a = 0; a < 6.283 && !best; a += r ? 16 / r : 7) {
+      var x = x0 + Math.cos(a) * r, y = y0 + Math.sin(a) * r * 0.8; if (!isLand(x, y) || (w.onGrass && !w.onGrass(x, y))) continue;
+      var near = w.nearSolids({ x: x, y: y }).some(function (q) { return Math.hypot(q.x - x, q.y - y) < (q.r || 6) + 40; }) || B.items.some(function (it) { return Math.hypot(it.x - x, it.y - y) < 46; }) || floorUnder(x, y);
+      if (!near) best = { x: x, y: y };
+    }
+    var P = hero(); if (best) { P.x = best.x; P.y = best.y; P.vx = P.vy = 0; P.lvl = 0; } return best;
   }
   function msSetOf(id) {                   // the chosen set: the game's own hero for the kit, else its sheets loaded now (one at a time)
     var set = SPR[id]; if (!set) return null;
@@ -6279,15 +6290,18 @@ __COMBAT__
     var pw = document.createElement('div'); pw.className = 'group'; pw.style.marginTop = '6px'; ['mail', 'helm', 'shield', 'cloak'].forEach(function (k) { var b = msBtn(k === 'helm' ? 'Helmet' : k.charAt(0).toUpperCase() + k.slice(1), function () { MS.pGear[k] = !MS.pGear[k]; b.setAttribute('aria-pressed', MS.pGear[k] ? 'true' : 'false'); }); pw.appendChild(b); }); E.peopleBox.appendChild(pw);
     var ps = panel('The scene'); var sg = document.createElement('div'); sg.className = 'group'; ps.appendChild(sg);
     sg.appendChild(msBtn('Day or night', function () { day.t = light() > 0.5 ? 300 : 1300; }));
-    sg.appendChild(msBtn('The wreck', function () { if (inCave) caveSwap(false); toCamp(); }));
-    sg.appendChild(msBtn('The steading', function () { adminAct('tpVillage'); }));
-    sg.appendChild(msBtn('A village', function () { adminAct('tpHamlet'); }));
-    sg.appendChild(msBtn('The troll\u2019s cave', function () { adminAct('tpCave'); }));
+    sg.appendChild(msBtn('The wreck', function () { if (inCave) caveSwap(false); toCamp(); msClear(home.x, home.y, 80); }));
+    sg.appendChild(msBtn('The steading', function () { adminAct('tpVillage'); var P = hero(); msClear(P.x, P.y, 40); }));
+    sg.appendChild(msBtn('A village', function () { adminAct('tpHamlet'); var P = hero(); msClear(P.x, P.y, 40); }));
+    sg.appendChild(msBtn('The troll\u2019s cave', function () { adminAct('tpCave'); var P = hero(); msClear(P.x, P.y, 60); }));
     sg.appendChild(msBtn('A karve', function () { adminAct('karve'); }));
     E.place = msBtn('Put one down beside you', function () { var P = hero(), at = null, a, r; for (r = 80; r <= 200 && !at; r += 40) for (a = 0.4; a < 6.6 && !at; a += 0.6) { var x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r * 0.7; if (isLand(x, y)) at = { x: x, y: y }; } var e = at ? placeAnimal(MS.cur, 0, at, false) : null; if (e) { e.awake = false; e.aggro = 50; } else toast('No dry ground beside you'); }); sg.appendChild(E.place);
     sg.appendChild(msBtn('Clear the beasts here', function () { var P = hero(); E2().forEach(function (e) { if (e.type === 'beast' && Math.hypot(e.x - P.x, e.y - P.y) < 600) e.away = true; }); }));
+    var cl = msBtn('Clean view', function () { MS.clean = !MS.clean; cl.setAttribute('aria-pressed', MS.clean ? 'true' : 'false'); }); cl.setAttribute('aria-pressed', 'true'); sg.appendChild(cl);
+    sg.appendChild(msBtn('Closer', function () { zoomStep(1); })); sg.appendChild(msBtn('Further', function () { zoomStep(-1); }));
+    try { Object.defineProperty(Combat.api.scene, 'noHud', { get: function () { return MS.clean; }, configurable: true }); Object.defineProperty(Combat.api.scene, 'noHotbar', { get: function () { return MS.clean; }, configurable: true }); } catch (e) {}
     var nd = msBtn('No damage', function () { ADMIN.immortal = !ADMIN.immortal; nd.setAttribute('aria-pressed', ADMIN.immortal ? 'true' : 'false'); }); ADMIN.immortal = true; nd.setAttribute('aria-pressed', 'true'); sg.appendChild(nd);
-    var sd = document.createElement('p'); sd.className = 'desc'; sd.textContent = 'The game\u2019s own world: its set pieces, shadows, grass, sea and night. The + and \u2212 by the chart zoom. Esc opens the game\u2019s menu and Admin.'; ps.appendChild(sd);
+    var sd = document.createElement('p'); sd.className = 'desc'; sd.textContent = 'The game’s own world: its set pieces, shadows, grass, sea and night. Clean view hides the game’s bars, chart, hotbar and prompts, so the figure stands alone; off, the screen is the game’s as it plays. Esc opens the game’s menu and Admin.'; ps.appendChild(sd);
     var pn = panel('Numbers'); E.numbers = document.createElement('p'); E.numbers.className = 'desc'; pn.appendChild(E.numbers);
     msPick(SPR[MS.cur] ? MS.cur : (Sprites.castList(SPR)[0] || {}).id);
   }
