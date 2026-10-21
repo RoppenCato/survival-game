@@ -21,7 +21,7 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
 - Undecided ideas and open questions go to `docs/idea-bank.md`, not here. Proposals waiting for Robin live in `docs/` and say
   so at their top (`start-loop.md`, `the-beginning.md`, `world-shape.md`: waters, the lifecycle of a raided place, named
   islands, claims and the year; `build-plan-waters.md`: the steps to build it; **`raid-build-plan.md`: the raid in the real game in ten
-  steps with a test for each, Robin's order of 2026-10-20**; `ships-plan.md`; `ui-review.md` has a list waiting). **Finished
+  steps with a test for each, Robin's order of 2026-10-20**; `ships-plan.md`; `ui-review.md` has a list waiting; **`release-and-coop.md`: what releasing the game and playing it with two or three friends would take, and the browser question with its frame-log test, 2026-10-21**). **Finished
   business lives in `docs/archive/`** (`archive/before-wednesday.md`, `archive/boats.md`, `archive/lighting.md`, `archive/raid.md`, `archive/creatures.md`, the two playtests) and the
   pictures in `docs/pictures/`.
 - **One project roof, `C:\dev\SG`** (Robin, 2026-10-16): `Art Director`, `Sound Director` (Robin also says music or

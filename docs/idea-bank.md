@@ -1000,3 +1000,5 @@ Sources: [enemy telegraph shape language](https://gamineai.com/blog/enemy-telegr
 [Windblown preview](https://www.pcgamer.com/games/roguelike/im-terrified-for-my-free-time-after-a-few-hours-with-the-dead-cells-developers-new-frantic-co-op-roguelike-out-this-month/),
 [Hyper Light Drifter](https://www.hardcoregaming101.net/hyper-light-drifter/),
 [hit-stop and juice](https://www.wayline.io/learn/game-feel/1).
+
+- **Releasing the game, and playing it with friends** (Robin, 2026-10-21): the assessment and my recommendation are in `docs/release-and-coop.md`; the open question is whether playing together is a must or a nice-to-have.
