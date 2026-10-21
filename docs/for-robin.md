@@ -314,3 +314,8 @@ frame has at 60 fps; the rest is the browser drawing on the graphics card, which
 picked by the ground he covers. One thing for you to judge by feel: at his speed of 84 units a second (3.5 m/s) a man his size
 has to jog, so the walk is a light jog now. If you want a stroll, his walking speed would have to come down to about half; say so
 and I change the one number. The guard walk, the people and the beasts get the same fix next.
+
+**The hero's second gait drop and his idles (2026-10-21):** the walk and run you saw are replaced by fixed ones (the foot rolled the
+wrong way at push-off, the hips leaned, the feet landed in one line), his walk with the guard up is planted too, and his idle and
+his look-around now have all their frames, so they no longer step. The people's idles come next, then the boar, deer, adder and
+wolf.
