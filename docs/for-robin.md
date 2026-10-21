@@ -362,3 +362,6 @@ or down the screen now keeps the feet planted too.
 
 **The wolf in the kraken's style (2026-10-21):** the night's wolves are the studio's new wolf, shaggier, with more frames and
 feet that follow the ground, their eyes still glowing at night. The deer comes next.
+
+**The deer in the kraken's style (2026-10-21):** the starter island's deer is the studio's new red deer stag, in his summer red with
+pale-tipped antlers, more frames and feet that follow the ground. The plants come next.
