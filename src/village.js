@@ -378,7 +378,7 @@ function make(seed, site, opts) {
     else if (role === 'fisher' || role === 'fisherman') { if (shore) spots.push((shore === 's' ? [wc[0] + (R() - 0.5) * 80, (ty + h - 1) * T + 6] : shore === 'n' ? [wc[0], (ty + 1) * T] : shore === 'e' ? [(tx + w - 1) * T, wc[1]] : [(tx + 1) * T, wc[1]]).concat(['fish'])); if (rackIt) spots.push([rackIt.x, rackIt.y + 12, 'hang']); }
     else if (role === 'farmer' || role === 'thrall') { if (block && R() < 0.7) spots.push([block.x, block.y - 16, 'chop']); if (wellIt) spots.push([wellIt.x, wellIt.y + 16, 'carry']); }
     else if (role === 'weaver' || role === 'elder') { spots.push([door[0] + 12, door[1] + 2, 'sweep']); if (wellIt && R() < 0.5) spots.push([wellIt.x, wellIt.y + 16, 'carry']); }
-    else if (role === 'priest') { var chl = V.lots.filter(function (l) { return l.id === 'church'; })[0]; if (chl) spots.push([(chl.dx + 0.5) * T, (chl.y + chl.h + 1.2) * T, 'door']); }
+    else if (role === 'priest') { var chl = V.lots.filter(function (l) { return l.id === 'church'; })[0]; if (chl) { spots.push([(chl.dx + 0.5) * T, (chl.y + chl.h + 1.2) * T, 'door']); var alt = V.items.filter(function (it) { return it.altar; })[0]; if (alt) spots.push([alt.x, alt.y + 18, 'pray']); } }   // (pray: he kneels before the altar, the kneel clip of step 5B, 2026-10-21)
     else if (role === 'guard') { var gt = tile(gateX, ey1); spots.push([gt[0] + (pi === 1 ? -14 : 14), gt[1] - 18, 'guard']); }
     else if (role === 'merchant') { var stl = V.items.filter(function (it) { return it.name === 'stall'; })[0]; if (stl) spots.push([stl.x, stl.y + 14, 'guard']); }
     else if (work) spots.push(tile(work.dx >= 0 ? work.dx : work.x, work.y + work.h + 1));

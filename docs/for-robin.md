@@ -124,3 +124,9 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
 17. **A third old bug found by the new check** (a statement swallowed by a `//` comment): every beast had drawn without its
     options since 2026-10-20: no fire light on it, the boar's charge not looped, young boars at full size, the troll lying
     the wrong time. Fixed; the check now reports such lines too.
+18. **The villagers' clothes and work** (the Art Director's step 5B, wired): the smith wears a leather apron and hammers at
+    the forge, the weaver a linen one, one farmer or fisher in two a straw hat, elders are grey; a woman in a dress wears a
+    kerchief. The well's water is a bucket held and carried; whoever carries anything (the fire brigade) walks with the
+    bucket; the priest kneels before the altar; the weaver and the net mender sit at their work; your crafter saws at the
+    bench. My picks: which roles get which clothes, and the pace of the hammer and the saw (a stroke every 0.8 s). The
+    hammer is small from the south at the game's size: if it does not read, the studio can make the head bigger.
