@@ -469,9 +469,10 @@ __COMBAT__
     var look = personLook(m), ph0 = m.ph0 || (m.ph0 = 1 + Math.random() * 9), st = { face: m.face, clip: 'idle', t: clock + ph0 }, J = null;
     if (!m.warm) { m.warm = 1; Sprites.peopleWarm(PEOPLE, look, ['idle', 'walk', 'idle_look', 'sit', 'run']); }
     if (m.fallen) { st = { face: m.face, clip: 'death', k: Math.min(0.999, m.fallen.t / 0.9) }; if (!m.warmD) { m.warmD = 1; Sprites.peopleWarm(PEOPLE, look, ['death']); } m.spr = Sprites.person(c, PEOPLE, look, st, m.x, m.y * K, { shadow: false, lying: Math.min(1, m.fallen.t / 0.9), shadowHue: kit.STYLE.shadowHue, alpha: Math.max(0, Math.min(1, (90 - m.fallen.t) / 1.2)) }); return true; }
+    var odoD = Sprites.odo(m, m.x, m.y);   /* the ground he has walked: a walk or run with a stride is picked by it (the moonwalk fix, 2026-10-21) */
     if (m.cower) { st = { face: m.face, clip: 'pickup', k: 0.4 + Math.sin(clock * 5 + ph0) * 0.012 }; if (!m.warmC) { m.warmC = 1; Sprites.peopleWarm(PEOPLE, look, ['pickup']); } }   /* (crouched, and shaking a little) */
-    else if (m.fleeing && m.moving) { st.clip = 'run'; st.t = (m.ph || 0) / 9 + ph0; }
-    else if (m.moving) { if (m.carrying) { st.clip = 'carry_walk'; look = Sprites.withHand(look, { kind: 'bucket' }); } else st.clip = 'walk'; st.t = (m.ph || 0) / 7 + ph0; }
+    else if (m.fleeing && m.moving) { st.clip = 'run'; st.t = (m.ph || 0) / 9 + ph0; st.d = odoD; }
+    else if (m.moving) { if (m.carrying) { st.clip = 'carry_walk'; look = Sprites.withHand(look, { kind: 'bucket' }); } else st.clip = 'walk'; st.t = (m.ph || 0) / 7 + ph0; st.d = odoD; }
     else if (m.carrying && !m.job) { st.clip = 'carry'; look = Sprites.withHand(look, { kind: 'bucket' }); }
     else if (m.aboard && m.place && m.place.kind === 'helm' && PEOPLE.meta.anims.helm) { st.clip = 'helm'; if (!m.warmR) { m.warmR = 1; Sprites.peopleWarm(PEOPLE, look, ['helm', 'row']); } }   /* the helmsman at the tiller (the studio's clip, 2026-10-21) */
     else if (m.aboard && m.place && m.place.kind === 'row' && raft && raft.rowing && PEOPLE.meta.anims.row) { st.clip = 'row'; st.k = Yard.strokePhase(raft); if (!m.warmR) { m.warmR = 1; Sprites.peopleWarm(PEOPLE, look, ['helm', 'row']); } }   /* a rower pulling: the ship's one stroke picks the frame */

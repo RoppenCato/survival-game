@@ -863,6 +863,12 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   Editor only (`docs/beasts.md`). **The art plan** is the studio's (`C:\dev\SG\Art Director\docs\art-plan.md`, 2026-10-20):
   who draws what, memory budgets per set, the drops first. **A clip may carry its own frame and anchor** (`anims[clip].frame`,
   `.anchor`; the set's top level is the idle's): the game, the Art Editor and the `tools/visual` sheet tools read it.
+- **The feet locked to the ground** (Robin, 2026-10-21: "the moon walk"; his choice: keep the speeds, fix the stride): a walk or
+  run whose clip carries `anims.<clip>.stride` (the ground its figure covers in one loop, in game units; the studio's new clips
+  will carry it, the hero first, then the people, then the beasts) is picked by the distance walked, not the clock
+  (`Sprites.odo`, a running ground distance from a thing's world position, a jump of 60 units in a frame not walked;
+  `strideFrame`, the stride grown with the figure's drawn size): the hero (`pick`, the guard walk too), the game's people (`st.d`
+  from `drawPerson`), the engine's men (`fighter`) and the beasts (`beast`). A clip without one keeps the clock as before.
 - **Traps already met:** hold out by material, not by the object's switch (Freestyle lines showed through bodies); render one
   clip again with `--keep 1` (else the numbers hold that clip alone); a clip that travels gets a frame of its own
   (`--inplace`, `anims[clip].frame`); a layer packed with `--only` lies in a box cut to its pixels; a changed sheet needs its
