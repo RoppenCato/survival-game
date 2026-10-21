@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Art Editor</title>
+<title>Set pieces</title>
 <style>
 :root{
   box-sizing:border-box;
@@ -27,22 +27,18 @@ main{max-width:2400px;margin:0 auto}
 .back:hover{color:var(--accent)}
 h1{font-size:1.35rem;line-height:1.2;margin:4px 0 6px;font-weight:700;letter-spacing:-0.01em}
 .lede{margin:0 0 10px;color:var(--ink2);max-width:80ch}
-.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
-.tabs button{min-height:42px;padding:0 18px;font-weight:600}
+.lede a{color:var(--accent)}
 .wrap{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
 @media (min-width:1000px){
   .wrap{grid-template-columns:minmax(0,1fr) clamp(340px,24vw,460px);align-items:start}
   .left{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto}
 }
 .stage{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
-#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto;background:#8fd66d;cursor:crosshair;touch-action:none}
-#cv.dark{background:#20262c}
+#cv{width:min(100%,calc((100vh - 210px)*1.6));margin:0 auto;background:#20262c;touch-action:none}
 canvas{display:block;width:100%;height:auto;border-radius:8px}
-.sheetcv{max-width:900px}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.panel + .panel,.stage + .panel,.tab > .panel + .panel{margin-top:12px}
-.tab[hidden]{display:none}
-.left .tab > .panel:first-child{margin-top:12px}
+.panel + .panel,.stage + .panel{margin-top:12px}
+.panel[hidden]{display:none}
 .panel h2{margin:0 0 8px;font-size:.95rem;font-weight:650}
 .panel h2.more{margin-top:14px}
 .group{display:flex;flex-wrap:wrap;gap:8px}
@@ -50,17 +46,12 @@ button{min-height:40px;padding:0 13px;border:1px solid var(--line);background:va
 button:hover{background:var(--btnh)}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
-.chips button,.objs button{min-height:34px;padding:0 10px;font-size:.87rem}
+.objs button{min-height:34px;padding:0 10px;font-size:.87rem}
 .desc{margin:8px 2px 0;color:var(--ink2);font-size:.88rem}
 .row{display:grid;grid-template-columns:8.6em minmax(0,1fr) 3.2em;gap:10px;align-items:center;font-size:.9rem;min-height:32px}
 .row input{width:100%;accent-color:var(--accent);margin:0}
 .row output{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2)}
-.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 10px}
-.sw{display:flex;align-items:center;gap:8px;font-size:.9rem}
-.sw input{width:38px;height:30px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;cursor:pointer;flex:none}
 textarea{display:block;width:100%;min-height:92px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--btn);color:var(--ink);font:.8rem/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:8px}
-input[type=text]{min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--btn);color:var(--ink);font:inherit}
-select{min-height:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--btn);color:var(--ink);font:inherit}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0;font-size:.9rem}
 kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;background:var(--key);font:600 .82rem ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .keys dt{white-space:nowrap}
@@ -70,167 +61,59 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
 <body>
 <main>
   <a class="back" href="index.html">&larr; Back to menu</a>
-  <h1>Art Editor</h1>
-  <p class="lede">Everything that is drawn or modelled, in one place: the Blender models (the hero, the beasts, the people) and the world's objects. One arena, one engine; the tabs change what stands in it and what the panels on the right tune. The hero in every tab is the Blender model; the old drawn hero is kept in art/backup.</p>
-  <div class="tabs" id="tabs">
-    <button data-tab="models">Models</button>
-    <button data-tab="objects">Objects</button>
-  </div>
+  <h1>Set pieces</h1>
+  <p class="lede">Every picture the studio made for the world, by its set, each with all its variants and states, standing on the game's own ground at the game's size with its shadow, the grass at its foot and its footprint, drawn as the game draws it. The things the game still draws in code are the last set, with their tuner. The figures are in <a href="game.html?scene=models">Models</a>.</p>
   <div class="wrap">
     <div class="left">
-      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Arena"></canvas></div>
-
-      <div class="tab" id="left-objects" hidden>
-        <section class="panel">
-          <h2>View</h2>
-          <div data-id="pview"></div>
-          <div class="group" style="margin-top:8px">
-            <button data-id="fit">Fit to view</button>
-            <button data-id="night" aria-pressed="false">Night lighting</button>
-            <button data-id="foot" aria-pressed="false">Show footprint</button>
-          </div>
-          <h2 class="more">Copies side by side</h2>
-          <div class="group" data-id="copies"></div>
-          <h2 class="more">Ground</h2>
-          <div class="group" data-id="grounds"></div>
-          <p class="desc" data-id="info"></p>
-          <h2 class="more">Controls</h2>
-          <dl class="keys">
-            <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Move. Hold <kbd>Shift</kbd> to sprint</dd>
-            <dt><kbd>Space</kbd></dt><dd>Dash</dd>
-            <dt><kbd>J</kbd> or <kbd>Left click</kbd></dt><dd>Attack</dd>
-            <dt><kbd>K</kbd> or <kbd>Right click</kbd></dt><dd>Block</dd>
-          </dl>
-        </section>
-      </div>
-
-      <div class="tab" id="left-models" hidden>
-        <section class="panel">
-          <h2>The sheet</h2>
-          <div class="group" data-id="anims"></div>
-          <canvas data-id="sheet" width="1000" height="500" aria-label="The sprite sheet"></canvas>
-          <p class="desc">A row per direction, a column per frame, at 1x (the game's 3 px a unit).</p>
-        </section>
-        <section class="panel">
-          <h2>Controls</h2>
-          <dl class="keys">
-            <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk. Hold <kbd>Shift</kbd> to run (the run clip, when the model has one)</dd>
-            <dt><kbd>Space</kbd></dt><dd>Dash</dd>
-            <dt><kbd>H</kbd></dt><dd>Spawn a beast</dd>
-          </dl>
-          <h2 class="more">Clips</h2>
-          <p class="desc">A model with more clips than idle and walk plays them on these keys (Mixamo, 2026-10-09). A clip plays once and the idle comes back; sitting stays until you stand.</p>
-          <dl class="keys">
-            <dt><kbd>J</kbd></dt><dd>Sword: the outward and the inward slash in turn</dd>
-            <dt><kbd>K</kbd></dt><dd>Bow: draw, then shoot</dd>
-            <dt><kbd>E</kbd></dt><dd>Open a lid (interact)</dd>
-            <dt><kbd>G</kbd></dt><dd>Pick up</dd>
-            <dt><kbd>C</kbd> <kbd>M</kbd></dt><dd>Chop, mine</dd>
-            <dt><kbd>V</kbd></dt><dd>Drink</dd>
-            <dt><kbd>X</kbd></dt><dd>Sit down; again to stand up</dd>
-            <dt><kbd>T</kbd> <kbd>B</kbd></dt><dd>Take a hit, die (the idle returns after)</dd>
-            <dt><kbd>L</kbd></dt><dd>Look around</dd>
-          </dl>
-        </section>
-      </div>
+      <div class="stage"><canvas id="cv" width="800" height="500" aria-label="The piece on the ground"></canvas></div>
+      <section class="panel">
+        <h2>View</h2>
+        <label class="row"><span>Zoom</span><input id="zoom" type="range" min="0.5" max="3" step="0.05" value="1"><output id="zoomo">1</output></label>
+        <div class="group" style="margin-top:8px">
+          <button id="tShadow" aria-pressed="true">Shadow</button>
+          <button id="tFoot" aria-pressed="true">Grass at the foot</button>
+          <button id="tPrint" aria-pressed="false">Footprint</button>
+          <button id="tAnchor" aria-pressed="false">Anchor</button>
+        </div>
+        <h2 class="more">Ground</h2>
+        <div class="group" id="grounds"></div>
+        <p class="desc">At zoom 1 a piece is the game's size beside the hero (39 units, 1.8 m). The shadow, the halo and the blades are the game's own (the sticker cure, 2026-10-21); on sand nothing grows at the foot.</p>
+        <h2 class="more">Controls</h2>
+        <dl class="keys">
+          <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk round it. Hold <kbd>Shift</kbd> to sprint</dd>
+        </dl>
+      </section>
     </div>
-
     <div class="right">
-      <div class="tab" id="right-objects" hidden>
-        <section class="panel">
-          <h2>Category</h2>
-          <div class="group" data-id="cats"></div>
-          <h2 class="more">Object</h2>
-          <div class="group objs" data-id="objs"></div>
-          <p class="desc" data-id="refnote"></p>
-        </section>
-        <section class="panel">
-          <h2>Shape variations</h2>
-          <div class="group" data-id="shapes"></div>
-          <h2 class="more">Colour variations</h2>
-          <div class="group" data-id="palettes"></div>
-          <h2 class="more">Drawing style</h2>
-          <div class="group" data-id="looks"></div>
-          <div class="group" style="margin-top:12px">
-            <button data-id="nextvar">Next variation</button>
-            <button data-id="resetall">Reset this object</button>
-          </div>
-          <p class="desc">Shape and colour variations are independent, so you can combine one of each. Next variation redraws the same object with different random details.</p>
-        </section>
-        <section class="panel">
-          <h2>Size</h2>
-          <div data-id="psize"></div>
-          <div class="group" style="margin-top:8px"><button data-id="flip" aria-pressed="false">Mirror</button></div>
-        </section>
-        <section class="panel">
-          <h2>Shape</h2>
-          <div data-id="pshape"></div>
-          <p class="desc">Wonkiness, Thinness and Fullness mostly affect trees and plants. Roughness affects every outline.</p>
-        </section>
-        <section class="panel">
-          <h2>Surface</h2>
-          <div data-id="psurf"></div>
-        </section>
-        <section class="panel">
-          <h2>Colour</h2>
-          <div data-id="pcol"></div>
-        </section>
-        <section class="panel">
-          <h2>Settings as text</h2>
-          <textarea data-id="json" spellcheck="false" aria-label="Object settings as text"></textarea>
-          <div class="group" style="margin-top:8px">
-            <button data-id="copy">Copy</button>
-            <button data-id="applyjson">Apply text</button>
-          </div>
-          <p class="desc" data-id="jsonmsg">Copy this to keep a look. Paste one in and press Apply text to load it.</p>
-        </section>
-      </div>
-
-      <div class="tab" id="right-models" hidden>
-        <section class="panel">
-          <h2>Model</h2>
-          <div class="group" data-id="models"></div>
-          <p class="desc" data-id="modelnote"></p>
-          <label class="row"><span>Height</span><input data-id="hscale" type="range" min="0.6" max="1.2" step="0.01" value="1"><output data-id="hscaleo">1</output></label>
-          <p class="desc">The figure's size on the ground, here and in the game (game.blenderScale): 1 is the render's own size, which since 2026-10-09 is the drawn hero's height for the Mixamo sheets (the older sheets render larger: 0.85 fits them).</p>
-          <div class="group"><button data-id="useGame">Use in the game</button></div>
-          <p class="desc" data-id="usenote"></p>
-          <h2 class="more">In the hand</h2>
-          <div class="group" data-id="hand"></div>
-          <p class="desc">The things modelled for the hand (2026-10-09): each is its wood and its metal as layers over the body, the metal tinted by the material in the game; here iron. They show in the clips they were rendered for.</p>
-          <h2 class="more">Gear</h2>
-          <div class="group" data-id="gear"></div>
-          <p class="desc">Each piece is its own layer, rendered over the body as a holdout, so they stack in any order.</p>
-        </section>
-        <section class="panel">
-          <h2>People</h2>
-          <div class="group"><button data-id="pRoll">Roll twelve people</button><button data-id="pNone">Send them away</button><button data-id="pTurn" aria-pressed="false">Turn slowly</button></div>
-          <h2 class="more">What they do</h2>
-          <div class="group" data-id="pClips"></div>
-          <h2 class="more">In the hand</h2>
-          <div class="group" data-id="pHand"></div>
-          <h2 class="more">Worn by all</h2>
-          <div class="group" data-id="pGear"></div>
-          <p class="desc" data-id="pNote">The people of the world (2026-10-12): one modelled body that every villager, hirdman and guard shares, with the tunic and trousers coloured when drawn and hair, beards, hats, mail, a cloak, a dress, a shield and the things for the hand as layers. Roll twelve and walk among them: each is the look the game would roll for a villager. They face you unless Turn slowly is on.</p>
-        </section>
-        <section class="panel">
-          <h2>Scene</h2>
-          <div class="group">
-            <button data-id="scIsland" aria-pressed="true">Starter island</button>
-            <button data-id="scArena" aria-pressed="false">Arena</button>
-            <button data-id="scNight" aria-pressed="false">Night forest</button>
-            <button data-id="sbeast">Add beast</button>
-            <button data-id="sclear">Clear</button>
-            <button data-id="nodmg" aria-pressed="true">No damage</button>
-          </div>
-          <label class="row" style="margin-top:10px"><span>Zoom</span><input data-id="zoom" type="range" min="1" max="3" step="0.25" value="1"><output data-id="zoomo">1</output></label>
-          <p class="desc">Zoom enlarges the drawing only: at 1 the figure is the game's size. The starter island is the game's own world (one island of 60 tiles with the wreck) drawn as the game draws it; the night forest is the kit's props in the Night Forest key with one campfire. New sheets: <code>npm run art:mixamo:sheets</code>, then <code>npm run build</code>.</p>
-        </section>
-        <section class="panel">
-          <h2>Numbers</h2>
-          <p class="desc" data-id="numbers"></p>
-        </section>
-      </div>
+      <section class="panel">
+        <h2>Set</h2>
+        <div class="group objs" id="sets"></div>
+        <h2 class="more">Piece</h2>
+        <div class="group objs" id="pieces"></div>
+        <p class="desc" id="note"></p>
+      </section>
+      <section class="panel">
+        <h2>Numbers</h2>
+        <p class="desc" id="numbers"></p>
+      </section>
+      <section class="panel tuner" hidden>
+        <h2>Shape variations</h2>
+        <div class="group" id="shapes"></div>
+        <h2 class="more">Colour variations</h2>
+        <div class="group" id="palettes"></div>
+        <div class="group" style="margin-top:12px"><button id="nextvar">Next variation</button><button id="resetall">Reset this object</button></div>
+        <p class="desc">Drawn in code: the ink look of the world (STYLE). Shape and colour combine. Copy the text to keep a look; the game takes it when it is made the default.</p>
+      </section>
+      <section class="panel tuner" hidden><h2>Size</h2><div id="psize"></div></section>
+      <section class="panel tuner" hidden><h2>Shape</h2><div id="pshape"></div></section>
+      <section class="panel tuner" hidden><h2>Surface</h2><div id="psurf"></div></section>
+      <section class="panel tuner" hidden><h2>Colour</h2><div id="pcol"></div></section>
+      <section class="panel tuner" hidden>
+        <h2>Settings as text</h2>
+        <textarea id="json" spellcheck="false" aria-label="Object settings as text"></textarea>
+        <div class="group" style="margin-top:8px"><button id="copy">Copy</button><button id="applyjson">Apply text</button></div>
+        <p class="desc" id="jsonmsg">Paste one in and press Apply text to load it.</p>
+      </section>
     </div>
   </div>
 </main>
@@ -247,485 +130,152 @@ __WORLD__
 __COMBAT__
 __SPRITES_JS__
 (function () {
-  /* ---------- shared: the canvas, the engine, the input, the tabs (the Art Editor, 2026-10-09: the Character, Creature, Object and Blender editors folded into one page) ---------- */
+  /* The Art Editor's set pieces (2026-10-21, the clean-up with the Art Director, Robin's yes: the old Objects tab tuned drawn props
+     the game no longer shows, and its Models tab drew an island of its own; the figures moved to game.html?scene=models). Every
+     picture of assets/props (by its folder), the fires and the sea's life, each piece with all its variants and states side by side
+     on the game's own ground (World.make, the meadow and the sand), drawn at the game's size with the game's cast shadow, halo and
+     foot grass (w.castShadow, w.footHalo, w.footGrass); the things still drawn in code are the last set, with the old tuner (the
+     ink look only). */
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-  function fitCanvas() {
-    var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4;
-    if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); }
-    Combat.api.pixelScale = ps;
-  }
+  function fitCanvas() { var ps = Math.max(2, Math.min(5, (cv.clientWidth || 800) * (window.devicePixelRatio || 1) / 400)); ps = Math.round(ps * 4) / 4; if (cv.width !== Math.round(400 * ps)) { cv.width = Math.round(400 * ps); cv.height = Math.round(250 * ps); } Combat.api.pixelScale = ps; }
   fitCanvas(); window.addEventListener('resize', fitCanvas); window.addEventListener('load', fitCanvas);
-  var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75;
-  lib.applyStored(localStorage); /* (the stored look game.look is retired, 2026-10-21) */ kit.setup(kit.STYLE);
-  Combat.init(lib);
-  var S = Combat.S; S.sound = false;
-  Combat.clear();
-  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, KeyF: 1, KeyQ: 1, KeyJ: 1, KeyK: 1, KeyR: 1, KeyH: 1, ShiftLeft: 1, ShiftRight: 1, Digit1: 1, Digit2: 1, Digit3: 1, Digit4: 1, Digit5: 1, Digit6: 1, ControlLeft: 1, ControlRight: 1 }, held = {};
-  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range') || t.tagName === 'SELECT'); }
-  window.addEventListener('keydown', function (e) { if (!codes[e.code] || typing(e)) return; e.preventDefault(); ac(); if (e.repeat) return; held[e.code] = true; Combat.key(e.code, true); });
+  var lib = GameArt.lib, kit = StyleLab.kit, K = 0.75, T = kit.TW, BASE = kit.STYLE; kit.setup(BASE);
+  Combat.init(lib); Combat.S.sound = false; Combat.clear();
+  var codes = { KeyW: 1, KeyA: 1, KeyS: 1, KeyD: 1, Space: 1, ShiftLeft: 1, ShiftRight: 1 }, held = {};
+  function typing(e) { var t = e.target; return t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range')); }
+  window.addEventListener('keydown', function (e) { if (!codes[e.code] || typing(e)) return; e.preventDefault(); if (e.repeat) return; held[e.code] = true; Combat.key(e.code, true); });
   window.addEventListener('keyup', function (e) { if (!codes[e.code] || typing(e)) return; e.preventDefault(); held[e.code] = false; Combat.key(e.code, false); });
-  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } Combat.button(0, false); Combat.button(2, false); });
-  function pos(e) { var r = cv.getBoundingClientRect(); Combat.mouse((e.clientX - r.left) / r.width * 400, (e.clientY - r.top) / r.height * 250); }
-  cv.addEventListener('mousemove', pos);
-  cv.addEventListener('mousedown', function (e) { ac(); pos(e); Combat.button(e.button, true); e.preventDefault(); });
-  window.addEventListener('mouseup', function (e) { Combat.button(e.button, false); });
-  cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-  function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  function snapTo(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
-  function hsl(h, s, l) {
-    h = ((h % 360) + 360) % 360; var c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r, g, b;
-    if (h < 60) { r = c; g = x; b = 0; } else if (h < 120) { r = x; g = c; b = 0; } else if (h < 180) { r = 0; g = c; b = x; }
-    else if (h < 240) { r = 0; g = x; b = c; } else if (h < 300) { r = x; g = 0; b = c; } else { r = c; g = 0; b = x; }
-    function h2(v) { v = Math.round((v + m) * 255).toString(16); return v.length < 2 ? '0' + v : v; }
-    return '#' + h2(r) + h2(g) + h2(b);
-  }
-  function rnd(a, b) { return a + Math.random() * (b - a); }
-  // every tab's elements are found inside its own containers, by data-id, so the tabs may share names
-  function scope(name) {
-    var roots = [document.getElementById('left-' + name), document.getElementById('right-' + name)];
-    function $(id) { for (var i = 0; i < roots.length; i++) { var el = roots[i].querySelector('[data-id="' + id + '"]'); if (el) return el; } return null; }
-    function $$(id, sel) { var el = $(id); return el ? el.querySelectorAll(sel) : []; }
-    return { $: $, $$: $$, roots: roots };
-  }
-  // the usual slider rows, buttons and the settings text, shared by the tabs
-  function sliders(host, list, target, onChange, inputs, outputs) {
-    list.forEach(function (p) {
-      var row = document.createElement('label'); row.className = 'row';
-      var name = document.createElement('span'); name.textContent = p.label;
-      var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step;
-      var out = document.createElement('output');
-      inp.addEventListener('input', function () { target()[p.k] = parseFloat(inp.value); onChange(); });
-      inp.addEventListener('change', function () { inp.blur(); });
-      row.appendChild(name); row.appendChild(inp); row.appendChild(out); host.appendChild(row);
-      inputs[p.k] = inp; outputs[p.k] = out;
-    });
-  }
-  function fmt(p, v) { return p.step < 1 ? v.toFixed(p.step < 0.1 || (p.step * 100) % 10 ? 2 : 1) : String(v); }
-  function copyText(json, jsonmsg, text) {
-    json.value = text;
-    var done = function () { jsonmsg.textContent = 'Copied.'; }, fail = function () { json.focus(); json.select(); jsonmsg.textContent = 'Could not copy automatically. The text is selected: press Ctrl+C.'; };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json.value).then(done, fail); else fail();
-  }
-  function parseText(json, jsonmsg) {
-    var o = null; try { o = JSON.parse(json.value); } catch (err) {}
-    if (!o || typeof o !== 'object') { jsonmsg.textContent = 'That text is not valid settings. Nothing was changed.'; return null; }
-    json.blur(); jsonmsg.textContent = 'Applied.'; return o;
-  }
+  window.addEventListener('blur', function () { for (var k in held) if (held[k]) { held[k] = false; Combat.key(k, false); } });
+  function $(id) { return document.getElementById(id); }
+  function press(el, on) { el.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+  function btn(text, fn) { var b = document.createElement('button'); b.textContent = text; b.addEventListener('click', function (e) { fn(b); e.currentTarget.blur(); }); return b; }
 
-  /* sound (the Characters tab's arena) */
-  var AC = null;
-  function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
-  function tone(f, d, type, v, to) {
-    var a = ac(); if (!a) return; var t = a.currentTime, o = a.createOscillator(), g = a.createGain();
-    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t); if (to) o.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + d);
-    g.gain.setValueAtTime(v || 0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+  /* the pictures: assets/props by folder (the build gives each its set), the fires, the sea's life */
+  var PI = __PROPIMG__ || {}, FIRES = __FIRES__ || {}, SEA = __SEA__ || {}, IMG = {}, map = {}, k;
+  for (k in PI) { var im = new Image(); im.src = PI[k].src; IMG[k] = im; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; }
+  World.setImages(map);
+  var SETS = [], BY = {}, SET_NAME = { trees: 'Trees', plants: 'Plants', rocks: 'Rocks', camp: 'Camp', furniture: 'Furniture', pieces: 'Benches', steading: 'Steading', fences: 'Fences', faces: 'Faces', yard: 'Yard', sacred: 'Sacred', raid: 'Raid', props: 'Mountain and cave' };
+  function addPic(set, name, pic) { if (!BY[set]) { BY[set] = {}; SETS.push(set); } var base = name.replace(/_\d+$/, ''); (BY[set][base] = BY[set][base] || []).push(pic); }
+  Object.keys(PI).forEach(function (n) { var q = PI[n]; addPic(q.set || 'props', n, { name: n, img: IMG[n], w: q.w, h: q.h, ax: q.ax, ay: q.ay, upp: q.upp, meta: q }); });
+  Object.keys(FIRES).forEach(function (n) { var F = FIRES[n], b = new Image(), fl = new Image(), em = new Image(); b.src = F.base; fl.src = F.flames.file; em.src = F.embers; addPic('fires', n, { name: n, img: b, w: F.w, h: F.h, ax: F.ax, ay: F.ay, upp: F.upp, meta: F, fire: { flames: fl, embers: em, F: F } }); addPic('fires', n + '_embers', { name: n + ' (embers)', img: em, w: F.w, h: F.h, ax: F.ax, ay: F.ay, upp: F.upp, meta: F }); });
+  Object.keys(SEA).forEach(function (n) { var q = SEA[n], s2 = new Image(); s2.src = q.src; var pic = { name: n, img: s2, ax: q.origin[0], ay: q.origin[1], upp: (1 / 0.046) / (q.ppm || 65), meta: q, sea: true }; s2.onload = function () { pic.w = s2.naturalWidth; pic.h = s2.naturalHeight; }; addPic('sea', n, pic); });
+  SET_NAME.fires = 'Fires'; SET_NAME.sea = 'The sea’s life';
+  /* still drawn in code (measured in the live game, 2026-10-21): the old tuner works on these */
+  var DRAWN = ['beech', 'ash', 'apple', 'dwarfBirch', 'struckTree', 'fallenTree', 'flower', 'wildHerbs', 'birdNest', 'varde', 'wreckedBoat', 'hedge', 'chalkRock', 'bogIron', 'mushRing'].filter(function (n) { return !!kit.PROPS[n]; });
+  var ORDER = ['trees', 'plants', 'rocks', 'camp', 'furniture', 'pieces', 'steading', 'fences', 'faces', 'yard', 'sacred', 'raid', 'fires', 'sea', 'props']; SETS.sort(function (a, b) { var i = ORDER.indexOf(a), j = ORDER.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+  SETS.push('drawn'); SET_NAME.drawn = 'Drawn in code';
+  /* the footprint: the solid circle the hero cannot walk through, as the game places them (the world's planting and the Building board's pieces) */
+  var FOOT = { pine: 6, birch: 6, oak: 6, dwarfBirch: 6, beech: 6, ash: 6, apple: 6, rock: 8, boulder: 11, rockFormation: 14, bogIron: 6, cairn: 8, fireRing: 10, varde: 13, workbench: 8, shipwright1: 12, shipwright: 7, shipwright3: 11, carverBench: 5, masonBench: 5, furnace: 9, stoneHearth: 8, fireplace: 7, firePit: 11, campfire: 5, brazier: 3, charcoalPit: 7, cart: 7, trough: 5, woodenWell: 6, well: 6, haystack: 6, scarecrow: 2, shieldRack: 5, dragonPost: 3, signPost: 2, stall: 8, altar: 6, beeSkeps: 5, bellTower: 14, wayCross: 3, graveStone: 2 };
+  function label(n) { var s = n.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  /* the ground: a small island of the game's own world, its meadow and its sand */
+  var w = World.make(kit, { isle: 60, isle0: 60, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11 }); w.meadowLook = World.GRASS_INK;
+  var cx0 = w.isles[0].x * T, cy0 = w.isles[0].y * T, SPOT = {};
+  (function () { var a, r; for (r = 0; r < 1600 && !SPOT.meadow; r += 24) for (a = 0; a < 6.28 && !SPOT.meadow; a += 0.4) { var x = cx0 + Math.cos(a) * r, y = cy0 + Math.sin(a) * r; if (w.onGrass(x, y) === 1 && w.onGrass(x - 160, y) && w.onGrass(x + 160, y)) SPOT.meadow = { x: x, y: y }; }
+    for (r = 0; r < 2400 && !SPOT.sea; r += 12) { var xs = cx0 + r, ys = cy0 + r * 0.3; if (!SPOT.sand && w.isLand(xs, ys) && !w.onGrass(xs, ys) && w.isLand(xs - 60, ys)) SPOT.sand = { x: xs - 30, y: ys }; if (w.isWater(xs, ys) && w.isWater(xs + 120, ys)) SPOT.sea = { x: xs + 120, y: ys }; }
+    SPOT.meadow = SPOT.meadow || { x: cx0, y: cy0 }; SPOT.sand = SPOT.sand || SPOT.meadow; SPOT.sea = SPOT.sea || SPOT.sand; })();
+  var ground = 'meadow', show = { shadow: true, foot: true, print: false, anchor: false }, zoom = 1, clock = 0;
+  var cur = { set: SETS[0], base: null }, drawnSpec = null, drawnBaked = [];
+  function spot() { return cur.set === 'sea' ? SPOT.sea : SPOT[ground]; }
+
+  /* the hero beside it for scale: the game's own, on the kit, as he starts */
+  var SP = __SPRITES__ || {}, HERO = Sprites.hero(SP, localStorage);
+  if (HERO) Sprites.attach(Combat, HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, shadowHue: kit.STYLE.shadowHue });
+  function home() { var P = Combat.dbg().P, s = spot(); P.x = s.x - 70; P.y = s.y + 50; P.vx = P.vy = 0; }
+
+  /* the pieces of the chosen base, side by side: each a picture (or a drawn prop baked by the tuner) at its own size */
+  function picsNow() {
+    if (cur.set === 'drawn') return drawnBaked;
+    return (BY[cur.set] && BY[cur.set][cur.base]) || [];
   }
-  function noise(d, v, fc, q) {
-    var a = ac(); if (!a) return; var n = Math.floor(a.sampleRate * d), b = a.createBuffer(1, n, a.sampleRate), ch = b.getChannelData(0);
-    for (var i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
-    var s = a.createBufferSource(); s.buffer = b; var f = a.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fc; f.Q.value = q || 1;
-    var g = a.createGain(); g.gain.value = v; s.connect(f); f.connect(g); g.connect(a.destination); s.start();
-  }
-  var SFX = {
-    swing: function (v) { noise(0.12, 0.2, 1500 + (v || 0) * 400, 0.8); },
-    hit: function (v) { var m = 1 + (v || 0) * 0.16; tone(200 * m, 0.1, 'square', 0.09, 70); tone(90, 0.12, 'sine', 0.16, 45); noise(0.05, 0.28, 2600, 1); },
-    heavyhit: function () { tone(130, 0.2, 'sawtooth', 0.12, 38); tone(70, 0.3, 'sine', 0.26, 32); noise(0.1, 0.32, 1400, 0.8); tone(900, 0.08, 'triangle', 0.05, 400); },
-    parry: function () { tone(1320, 0.35, 'triangle', 0.12); tone(1980, 0.28, 'sine', 0.08); noise(0.04, 0.2, 5000, 2); },
-    block: function () { tone(220, 0.1, 'square', 0.08, 120); noise(0.06, 0.2, 900, 1); },
-    dash: function () { noise(0.13, 0.16, 1400, 0.9); tone(760, 0.1, 'triangle', 0.05, 320); },
-    shoot: function () { tone(520, 0.1, 'square', 0.06, 180); },
-    hurt: function () { tone(150, 0.22, 'sawtooth', 0.12, 60); tone(70, 0.2, 'sine', 0.2, 40); },
-    tele: function () { tone(880, 0.07, 'square', 0.04); },
-    die: function () { tone(300, 0.28, 'sawtooth', 0.07, 60); tone(80, 0.2, 'sine', 0.1, 40); noise(0.14, 0.12, 700); },
-    crit: function () { tone(1560, 0.2, 'triangle', 0.07); tone(2340, 0.16, 'sine', 0.05); },
-    stagger: function () { tone(260, 0.3, 'triangle', 0.1, 520); },
-    slam: function () { tone(70, 0.35, 'sine', 0.25, 35); noise(0.25, 0.3, 300, 0.6); },
-    raise: function () { tone(420, 0.04, 'triangle', 0.03); },
-    charge: function (v) { tone(420 + (v || 0) * 220, 0.12, 'triangle', 0.05); if (v === 3) tone(1400, 0.2, 'sine', 0.06); }
+  function layout(list) { var s = spot(), tot = 0, gap = 26; list.forEach(function (p) { p.dw = (p.w || 40) * p.upp; tot += p.dw + gap; }); var x = s.x - (tot - gap) / 2; list.forEach(function (p) { p.x = x + p.dw / 2 + (p.ax - (p.w || 0) / 2) * p.upp; p.y = s.y; x += p.dw + gap; }); }
+  var cam = { x: 0, y: 0, z: 1 };
+  var scene = {
+    noHud: true, noHotbar: true, noKills: true,
+    walk: function (x, y) { return w.isLand(x, y); },
+    begin: function (c, P) {
+      var list = picsNow(), s = spot(); layout(list); clock += 1 / 60;
+      var hw = 200 / zoom, hh = 125 / zoom, f = Math.max(0, Math.min(1, zoom - 1)); cam.x = s.x + (P.x - s.x) * f; cam.y = s.y * K - 60 / zoom + (P.y * K - 16 - (s.y * K - 60 / zoom)) * f; cam.z = zoom;
+      c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(zoom, zoom); c.translate(-cam.x, -cam.y);
+      w.drawGround(c, cam, hw, hh); w.drawWaves(c, cam, hw, hh, clock, 0.75, 1.05); w.drawGrass(c, cam, hw, hh, clock, World.GRASS_INK);
+      if (show.shadow && cur.set !== 'sea') list.forEach(function (p) { if (p.h) w.castShadow(c, p.x, p.y * K, p.w * p.upp, (p.fire ? 0.35 : 1) * p.h * p.upp, { k: 1, len: 1, dusk: 0 }); });
+      if (show.print) list.forEach(function (p) { var r = FOOT[p.base || cur.base]; if (!r) return; c.fillStyle = 'rgba(255,90,70,0.28)'; c.strokeStyle = 'rgba(255,120,90,0.9)'; c.lineWidth = 1 / zoom; c.beginPath(); c.ellipse(p.x, p.y * K, r, r * K, 0, 0, 7); c.fill(); c.stroke(); });
+    },
+    items: function (items) {
+      picsNow().forEach(function (p) { items.push({ y: p.y, f: function () {
+        var g = show.foot && cur.set !== 'sea' && w.onGrass(p.x, p.y) ? w.onGrass(p.x, p.y) : 0, dw = (p.w || 0) * p.upp, dh = (p.h || 0) * p.upp, x0 = p.x - p.ax * p.upp, y0 = p.y * K - p.ay * p.upp;
+        if (g && dh > 6) w.footHalo(ctx, p.x, p.y * K, dw);
+        if (p.cv) ctx.drawImage(p.cv, p.x + p.l, p.y * K + p.t, p.dwB, p.dhB);
+        else if (p.img && p.img.complete && p.img.naturalWidth) ctx.drawImage(p.img, x0, y0, dw, dh);
+        if (p.fire && p.fire.flames.complete && p.fire.flames.naturalWidth) { var F = p.fire.F, fr = Math.floor(clock * F.flames.fps) % F.flames.frames; ctx.drawImage(p.fire.flames, fr * F.flames.w, 0, F.flames.w, F.flames.h, x0, y0, dw, dh); }
+        if (g && dh > 6) w.footGrass(ctx, p.img || p, p.x, p.y * K + 0.7, dw, g === 2, World.GRASS_INK);
+        if (show.anchor) { ctx.strokeStyle = '#ff3b30'; ctx.lineWidth = 1 / zoom; ctx.beginPath(); ctx.moveTo(p.x - 4, p.y * K); ctx.lineTo(p.x + 4, p.y * K); ctx.moveTo(p.x, p.y * K - 4); ctx.lineTo(p.x, p.y * K + 4); ctx.stroke(); }
+      } }); });
+    },
+    end: function () {}
   };
-  Combat.api.sfx = function (n, v, src, x) { if (!S.sound) return; var f = (x && x.kind && SFX[n + '_' + x.kind]) || SFX[n]; if (f) f(v, x); };
+  Combat.api.scene = scene;
 
-  var TABS = {}, SP = __SPRITES__ || {};
-  var GAME_HERO = Sprites.hero(SP, localStorage);                 // the hero of every tab is the Blender model (2026-10-09)
-  function attachHero() { Sprites.attach(Combat, GAME_HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, shadowHue: kit.STYLE.shadowHue }); }
-
-  /* ================= Objects: one world prop at a time (the old Object Editor) ================= */
-  TABS.objects = (function () {
-    var sc = scope('objects'), $ = sc.$;
-    var BASE = kit.STYLE;
-    var REF = {
-      oak: 'The round tree. Settles the canopy: how many lobes, the scalloped edge, the dark underside, the lit top, how short and wide the trunk is.',
-      pine: 'The pointed tree. Settles tiers and their edges, and how the pines differ from the round trees.',
-      bush: 'The small plant mass. Same canopy rules as the oak at bush size; the berry bush follows it.',
-      rock: 'The boulder. Settles the rock: facets or smooth, the highlight, the moss, the outline weight.',
-      cliff: 'The big rock. Settles how stone reads at the size of a wall, and the layered strata of the first reference.',
-      longhouse: 'The house. Settles wood, thatch or turf, the horned gable, doors and windows; the hut and boathouse follow it.',
-      woodpile: 'The small built thing. Settles planks and logs in the same hand as the house.',
-      tallGrass: 'The ground plant. Settles blades: how few, how soft, how they sit on the grass.',
-      flower: 'The flower. Settles the tiny bright things: petals, the dot of a centre, how much outline a small thing gets.',
-      runestone: 'The landmark. Settles carved stone and the marks on it; cairns and burial mounds follow it.'
-    };
-    var CATS = [
-      { name: 'Reference set', ground: 'grass', solid: 10, ref: true, list: Object.keys(REF) },
-      { name: 'Found in nature', ground: 'grass', solid: 10, list: ['dwarfBirch', 'juniper', 'heather', 'boulder', 'beech', 'ash', 'apple', 'chalkRock', 'hedge', 'bogIron', 'yew', 'cave', 'birdNest', 'mushrooms', 'berryBush', 'fallenTree', 'struckTree', 'animalDen', 'wildHive', 'rockFormation', 'wildHerbs', 'spring'] },
-      { name: 'Left by people', ground: 'grass', solid: 10, list: ['animalTrap', 'huntingBlind', 'fishingNet', 'fishWeir', 'fence', 'trailStone', 'charcoalPit', 'fireRing', 'beeSkeps', 'woodenBridge', 'farmland', 'runestone', 'cairn', 'varde', 'stoneShip', 'woodpile'] },
-      { name: 'Built by Vikings', ground: 'grass', solid: 12, list: ['bellTower', 'porch', 'apse', 'gableCross', 'font', 'lychGate', 'altar', 'graveStone', 'wayCross', 'stall', 'firePit', 'logSeat', 'stake', 'banner', 'choppingBlock', 'cellarDoor', 'windowBox', 'lantern', 'awning', 'sign', 'woodshed', 'foodTable', 'longhouse', 'beachedBoat', 'campfire', 'furnace', 'storageHut', 'boathouse', 'palisade', 'watchtower', 'burialMound', 'stoneHearth', 'fireplace', 'carverBench', 'deadViking', 'trough', 'woodenWell', 'vikingTent', 'shieldRack', 'dragonPost', 'dryingRack', 'forge', 'brazier'] },
-      { name: 'Trees', ground: 'grass', solid: 9, list: ['oak', 'birch', 'pine', 'pineBig', 'willow', 'cypress', 'ancient', 'blossom', 'deadTree', 'snowPine', 'snowPineBig'] },
-      { name: 'Plants', ground: 'grass', solid: 0, list: ['bush', 'berryBush', 'fern', 'reeds', 'flower', 'flowerBed', 'tallGrass', 'wildHerbs', 'mushrooms', 'mushRing', 'snowBush'] },
-      { name: 'Rocks and ground', ground: 'grass', solid: 12, list: ['rock', 'rockFormation', 'cliff', 'rubble', 'log', 'cairn', 'snowRock', 'waterfall', 'stalagmite', 'caveColumn'] },
-      { name: 'Household', ground: 'plank', solid: 10, list: ['bench', 'chair', 'table', 'bed', 'crate', 'barrel', 'chest', 'rug', 'workbench', 'shipwright', 'shipwright1', 'shipwright3', 'masonBench', 'signPost', 'haystack', 'cart', 'well', 'scarecrow', 'dock'] }
-    ];
-    var GROUND_FOR = { snowPine: 'snow', snowPineBig: 'snow', snowRock: 'snow', snowBush: 'snow', deadTree: 'ash', emberRock: 'ash', emberBush: 'ash', vent: 'ash', ventBig: 'ash', cliff: 'rock' };
-    var NO_SOLID = { dock: 1 };
-    var GROUNDS = [['grass', 'Grass'], ['grassDark', 'Dark grass'], ['path', 'Path'], ['plank', 'Planks'], ['snow', 'Snow'], ['ash', 'Ash'], ['rock', 'Rock'], ['flat', 'Plain grey']];
-    CATS.forEach(function (cat) { cat.list = cat.list.filter(function (n) { return !!kit.PROPS[n]; }); });
-    function label(n) { var s = n.replace(/([A-Z])/g, ' $1').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
-    function catOf(name) { for (var i = 1; i < CATS.length; i++) if (CATS[i].list.indexOf(name) >= 0) return CATS[i]; return CATS[1]; }
-    var SIZE = [{ k: 'scale', label: 'Overall size', min: 0.4, max: 2.5, step: 0.05 }, { k: 'wide', label: 'Width', min: 0.5, max: 1.8, step: 0.05 }, { k: 'tall', label: 'Height', min: 0.5, max: 1.8, step: 0.05 }, { k: 'solid', label: 'Footprint', min: 0, max: 40, step: 1 }];
-    var SHAPE = [{ k: 'rough', label: 'Roughness', min: 0, max: 0.6, step: 0.01 }, { k: 'twist', label: 'Wonkiness', min: 0, max: 1, step: 0.01 }, { k: 'spindly', label: 'Thinness', min: 0, max: 1, step: 0.01 }, { k: 'lush', label: 'Fullness', min: 0.2, max: 1.4, step: 0.01 }, { k: 'round', label: 'Roundness', min: 0, max: 1.2, step: 0.01 }, { k: 'seed', label: 'Variation number', min: 1, max: 60, step: 1 }];
-    var SURF = [{ k: 'texture', label: 'Brush texture', min: 0, max: 1.5, step: 0.01 }, { k: 'shade', label: 'Shading depth', min: 0, max: 1, step: 0.01 }, { k: 'outlineW', label: 'Outline width', min: 0.4, max: 2.5, step: 0.05 }, { k: 'outlineDark', label: 'Outline darkness', min: 0, max: 1, step: 0.01 }, { k: 'glow', label: 'Glow', min: 0, max: 1.5, step: 0.05 }];
-    var COL = [{ k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 }, { k: 'accentHue', label: 'Glow colour', min: 0, max: 360, step: 2 }, { k: 'sat', label: 'Saturation', min: 0, max: 1.8, step: 0.05 }, { k: 'bright', label: 'Brightness', min: -15, max: 15, step: 1 }, { k: 'contrast', label: 'Contrast', min: 0.7, max: 1.4, step: 0.02 }];
-    var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.4, max: 3, step: 0.05 }];
-    var NUM = SIZE.concat(SHAPE, SURF, COL), SHAPE_KEYS = ['scale', 'wide', 'tall', 'rough', 'twist', 'spindly', 'lush', 'round', 'texture'], COLOUR_KEYS = ['hue', 'accentHue', 'sat', 'bright', 'contrast'];
-    var SHAPES = [{ name: 'Default', set: {} }, { name: 'Small', set: { scale: 0.7 } }, { name: 'Large', set: { scale: 1.4 } }, { name: 'Giant', set: { scale: 2 } }, { name: 'Wide', set: { wide: 1.3 } }, { name: 'Tall', set: { tall: 1.3 } }, { name: 'Squat', set: { wide: 1.2, tall: 0.75 } }, { name: 'Slender', set: { wide: 0.8, tall: 1.2 } },
-      { name: 'Rough', set: { rough: 0.3, texture: 1.1 } }, { name: 'Smooth', set: { rough: 0, texture: 0.2, round: 1.1 } }, { name: 'Gnarled', set: { twist: 0.6, spindly: 0.45, rough: 0.18 } }, { name: 'Lush', set: { lush: 1.3, round: 1 } }, { name: 'Sparse', set: { lush: 0.4, spindly: 0.5 } }];
-    var PALETTES = [{ name: 'Default', set: {} }, { name: 'Autumn', set: { hue: -115, sat: 1.1 } }, { name: 'Frosted', set: { hue: 45, sat: 0.55, bright: 8 } }, { name: 'Withered', set: { hue: -95, sat: 0.45, bright: -3 } }, { name: 'Vivid', set: { sat: 1.35, contrast: 1.2 } },
-      { name: 'Faded', set: { sat: 0.6, contrast: 0.9, bright: 4 } }, { name: 'Gloomy', set: { sat: 0.75, bright: -7, contrast: 1.16 } }, { name: 'Alien', set: { hue: 140, accentHue: 300 } }];
-    var LOOKS = [[1, 'Painted'], [0, 'Cartoon'], [2, 'Ink']];
-    function defSpec(name) {
-      return { scale: 1, wide: 1, tall: 1, solid: NO_SOLID[name] ? 0 : catOf(name).solid, flip: 0, seed: 3, look: BASE.look, rough: BASE.rough, twist: BASE.twist, spindly: BASE.spindly, lush: BASE.lush, round: BASE.round,
-        texture: BASE.texture, shade: BASE.shade, outlineW: BASE.outlineW, outlineDark: BASE.outlineDark, glow: BASE.glow, hue: 0, accentHue: BASE.accentHue, sat: 1, bright: 0, contrast: 1 };
-    }
-    function styleFor(sp) {
-      var p = {}, k; for (k in BASE) p[k] = BASE[k];
-      ['rough', 'twist', 'spindly', 'lush', 'round', 'texture', 'shade', 'outlineW', 'outlineDark', 'glow', 'look', 'accentHue'].forEach(function (key) { p[key] = sp[key]; });
-      p.outsideHue = BASE.outsideHue + sp.hue; p.factoryHue = BASE.factoryHue + sp.hue; p.sat = BASE.sat * sp.sat; p.bright = BASE.bright + sp.bright; p.contrast = BASE.contrast * sp.contrast;
-      return p;
-    }
-    var cur = 'longhouse', spec = defSpec('longhouse'), copies = 1, ground = 'grass', night = false, showFoot = false, view = { zoom: 1 };
-    var baked = [], dirty = true, OBJ_X = 200, OBJ_Y = 170, inputs = {}, outputs = {};
-    var json = $('json'), jsonmsg = $('jsonmsg'), info = $('info');
-    function pressed(hostId, test) { var b = sc.$$(hostId, 'button'); for (var i = 0; i < b.length; i++) b[i].setAttribute('aria-pressed', test(b[i]) ? 'true' : 'false'); }
-    function apply() {
-      var d = defSpec(cur), i, k;
-      for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snapTo(p, isFinite(v) ? v : d[p.k]); }
-      spec.flip = spec.flip ? 1 : 0; spec.look = (spec.look === 0 || spec.look === 1 || spec.look === 2 || spec.look === 3) ? spec.look : BASE.look;
-      var clean = {}; for (k in d) clean[k] = spec[k]; spec = clean;
-      for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
-      $('flip').setAttribute('aria-pressed', spec.flip ? 'true' : 'false');
-      pressed('looks', function (b) { return Number(b.getAttribute('data-v')) === spec.look; });
-      var out = { object: cur }; for (k in spec) out[k] = spec[k];
-      if (document.activeElement !== json) json.value = JSON.stringify(out);
-      dirty = true;
-      try { localStorage.setItem('objecteditor3.' + cur, JSON.stringify(spec)); } catch (e) {}
-    }
-    function getSpec() { return spec; }
-    sliders($('psize'), SIZE, getSpec, apply, inputs, outputs); sliders($('pshape'), SHAPE, getSpec, apply, inputs, outputs); sliders($('psurf'), SURF, getSpec, apply, inputs, outputs); sliders($('pcol'), COL, getSpec, apply, inputs, outputs);
-    function syncView() { inputs.zoom.value = view.zoom; outputs.zoom.textContent = view.zoom.toFixed(2); }
-    sliders($('pview'), VIEW, function () { return view; }, syncView, inputs, outputs);
-    function buttons(hostId, list, text, fn, attr) {
-      var host = $(hostId); host.textContent = '';
-      list.forEach(function (item) { var b = document.createElement('button'); b.textContent = text(item); if (attr) b.setAttribute('data-v', attr(item)); b.addEventListener('click', function () { fn(item); b.blur(); }); host.appendChild(b); });
-    }
-    buttons('shapes', SHAPES, function (v) { return v.name; }, function (v) { var d = defSpec(cur), k; SHAPE_KEYS.forEach(function (key) { spec[key] = d[key]; }); for (k in v.set) spec[k] = v.set[k]; apply(); fit(); });
-    buttons('palettes', PALETTES, function (v) { return v.name; }, function (v) { var d = defSpec(cur), k; COLOUR_KEYS.forEach(function (key) { spec[key] = d[key]; }); for (k in v.set) spec[k] = v.set[k]; apply(); });
-    buttons('looks', LOOKS, function (v) { return v[1]; }, function (v) { spec.look = v[0]; apply(); }, function (v) { return v[0]; });
-    buttons('copies', [1, 3, 5], function (v) { return String(v); }, function (v) { copies = v; pressed('copies', function (b) { return Number(b.getAttribute('data-v')) === copies; }); dirty = true; bake(); fit(); }, function (v) { return v; });
-    buttons('grounds', GROUNDS, function (v) { return v[1]; }, function (v) { setGround(v[0]); }, function (v) { return v[0]; });
-    pressed('copies', function (b) { return Number(b.getAttribute('data-v')) === copies; });
-    function toggle(id, fn) { var b = $(id); b.addEventListener('click', function () { b.setAttribute('aria-pressed', fn() ? 'true' : 'false'); b.blur(); }); }
-    toggle('night', function () { night = !night; return night; }); toggle('foot', function () { showFoot = !showFoot; return showFoot; });
-    $('flip').addEventListener('click', function (e) { spec.flip = spec.flip ? 0 : 1; apply(); e.currentTarget.blur(); });
-    $('nextvar').addEventListener('click', function (e) { spec.seed = spec.seed >= 60 ? 1 : spec.seed + 1; apply(); e.currentTarget.blur(); });
-    $('resetall').addEventListener('click', function (e) { spec = defSpec(cur); apply(); bake(); fit(); e.currentTarget.blur(); });
-    $('fit').addEventListener('click', function (e) { bake(); fit(); e.currentTarget.blur(); });
-    function bake() {
-      if (!dirty) return;
-      dirty = false; baked = [];
-      kit.setup(styleFor(spec));
-      var b0 = kit.PROPS[cur].b, corner = b0[0] === 0 && b0[1] === 0, i;
-      for (i = 0; i < copies; i++) { var s = kit.bakeProp(cur, spec.seed + i * 7, { sx: spec.scale * spec.wide, sy: spec.scale * spec.tall }); if (corner) { s.lights.forEach(function (l) { l.x -= s.w / 2; l.y -= s.h; }); s.l = -s.w / 2; s.t = -s.h; } baked.push(s); }
-      kit.setup(BASE);
-      var s0 = baked[0], gap = Math.max(44, s0.w * 0.8);
-      baked.forEach(function (s2, n) { s2.x = OBJ_X + (n - (copies - 1) / 2) * gap; });
-      info.textContent = label(cur) + ': ' + Math.round(s0.w) + ' wide and ' + Math.round(s0.h) + ' tall. The hero is 39 tall (the Blender model). Footprint is the solid circle the hero cannot walk through (0 means walk-through).';
-    }
-    function fit() { if (!baked.length) return; var s0 = baked[0], spanW = (baked[baked.length - 1].x - baked[0].x) + s0.w + 70, spanH = -s0.t + 110; view.zoom = snapTo(VIEW[0], Math.min(1.5, 400 / spanW, 250 / spanH)); syncView(); }
-    var GT = 16, groundCv = null, groundKey = '';
-    function hash(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
-    function bakeGround() {
-      if (groundKey === ground) return;
-      groundKey = ground; var w = GT * kit.TW, h = GT * kit.TH, x, y;
-      groundCv = kit.mk(w * 2, h * 2); var g = groundCv.getContext('2d'); g.setTransform(2, 0, 0, 2, 0, 0);
-      if (ground === 'flat') { g.fillStyle = '#6b6f7a'; g.fillRect(0, 0, w, h); return; }
-      kit.setup(BASE); var n = kit.TILES[ground].n, tiles = [];
-      for (x = 0; x < n; x++) tiles.push(kit.bakeTile(ground, x));
-      for (y = 0; y < GT; y++) for (x = 0; x < GT; x++) g.drawImage(tiles[Math.floor(hash(x, y) * n) % n], x * kit.TW, y * kit.TH, kit.TW, kit.TH);
-    }
-    function setGround(t) { ground = t; pressed('grounds', function (b) { return b.getAttribute('data-v') === ground; }); }
-    var cam = { x: 200, y: 125, z: 1 }, dark = null;
-    function camera(P) {
-      var z = view.zoom, s0 = baked[0], bottom = OBJ_Y * K + 95, top = OBJ_Y * K + (s0 ? s0.t : -60) - 12, vh = 250 / z;
-      var cy = (bottom - top <= vh) ? (top + bottom) / 2 : bottom - vh / 2, cx = OBJ_X, f = Math.max(0, Math.min(1, z - 1));
-      cam.x = cx + (P.x - cx) * f; cam.y = cy + (P.y * K - 16 - cy) * f; cam.z = z;
-    }
-    var scene = {
-      noHud: true, noHotbar: true,
-      begin: function (c, P) {
-        bake(); bakeGround(); camera(P);
-        c.fillStyle = '#20262c'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(cam.z, cam.z); c.translate(-cam.x, -cam.y);
-        var w = GT * kit.TW, h = GT * kit.TH, hw = 200 / cam.z, hh = 125 / cam.z, gx, gy;
-        for (gy = Math.floor((cam.y - hh) / h); gy * h < cam.y + hh; gy++) for (gx = Math.floor((cam.x - hw) / w); gx * w < cam.x + hw; gx++) c.drawImage(groundCv, gx * w, gy * h, w + 0.5, h + 0.5);
-        if (showFoot && spec.solid > 0) { var r = spec.solid * spec.scale; baked.forEach(function (s) { c.fillStyle = 'rgba(255,90,70,0.28)'; c.strokeStyle = 'rgba(255,120,90,0.9)'; c.lineWidth = 1; c.beginPath(); c.ellipse(s.x, OBJ_Y * K, r, r * K, 0, 0, Math.PI * 2); c.fill(); c.stroke(); }); }
-      },
-      items: function (items) { baked.forEach(function (s) { items.push({ y: OBJ_Y, f: function () { ctx.save(); ctx.translate(s.x, OBJ_Y * K); if (spec.flip) ctx.scale(-1, 1); ctx.drawImage(s.cv, s.l, s.t, s.w, s.h); ctx.restore(); } }); }); },
-      end: function (c, P) {
-        if (!night) return;
-        if (!dark || dark.width !== cv.width) dark = kit.mk(cv.width, cv.height);
-        var d = dark.getContext('2d'), lights = [{ x: P.x, y: P.y * K - 14, r: 46, h: 40, s: 60, l: 70, a: 0.55 }];
-        baked.forEach(function (s) { s.lights.forEach(function (l) { lights.push({ x: s.x + (spec.flip ? -l.x : l.x), y: OBJ_Y * K + l.y, r: l.r, h: l.h, s: l.s, l: l.l, a: l.a }); }); });
-        var PSN = Combat.api.pixelScale || 2;
-        function px(l) { return [((l.x - cam.x) * cam.z + 200) * PSN, ((l.y - cam.y) * cam.z + 125) * PSN, l.r * cam.z * PSN]; }
-        d.globalCompositeOperation = 'source-over'; d.clearRect(0, 0, cv.width, cv.height); d.fillStyle = 'rgba(10,9,34,0.66)'; d.fillRect(0, 0, cv.width, cv.height); d.globalCompositeOperation = 'destination-out';
-        lights.forEach(function (l) { var q = px(l), g = d.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); g.addColorStop(0, 'rgba(0,0,0,' + Math.min(1, l.a) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); d.fillStyle = g; d.fillRect(q[0] - q[2], q[1] - q[2], q[2] * 2, q[2] * 2); });
-        c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(dark, 0, 0); c.globalCompositeOperation = 'lighter';
-        lights.forEach(function (l) { var q = px(l), g = c.createRadialGradient(q[0], q[1], 0, q[0], q[1], q[2]); g.addColorStop(0, 'hsla(' + l.h + ',' + l.s + '%,' + l.l + '%,' + (0.22 * l.a) + ')'); g.addColorStop(1, 'hsla(' + l.h + ',' + l.s + '%,' + l.l + '%,0)'); c.fillStyle = g; c.fillRect(q[0] - q[2], q[1] - q[2], q[2] * 2, q[2] * 2); });
-        c.restore();
-      }
-    };
-    var curCat = CATS[0];
-    function showCat(cat) { curCat = cat; pressed('cats', function (b) { return b.textContent === cat.name; }); buttons('objs', cat.list, function (n) { return (REF[n] ? '★ ' : '') + label(n); }, pick, function (n) { return n; }); pressed('objs', function (b) { return b.getAttribute('data-v') === cur; }); }
-    function pick(name) {
-      cur = name; spec = null; try { spec = JSON.parse(localStorage.getItem('objecteditor3.' + name)); } catch (e) {}
-      if (!spec || typeof spec !== 'object') spec = defSpec(name);
-      var cat = curCat && curCat.list.indexOf(name) >= 0 ? curCat : catOf(name); if (cat !== curCat) showCat(cat);
-      pressed('objs', function (b) { return b.getAttribute('data-v') === cur; });
-      $('refnote').textContent = REF[name] ? '★ Reference object. ' + REF[name] : '';
-      setGround(GROUND_FOR[name] || cat.ground); apply(); bake(); fit();
-    }
-    buttons('cats', CATS, function (cat) { return cat.name; }, function (cat) { showCat(cat); pick(cat.list[0]); });
-    $('copy').addEventListener('click', function (e) { copyText(json, jsonmsg, json.value); e.currentTarget.blur(); });
-    $('applyjson').addEventListener('click', function (e) {
-      var o = parseText(json, jsonmsg); if (!o) return;
-      if (typeof o.object === 'string' && kit.PROPS[o.object] && o.object !== cur) { cur = o.object; var cat = catOf(cur); showCat(cat); setGround(GROUND_FOR[cur] || cat.ground); }
-      spec = o; apply(); bake(); fit(); pressed('objs', function (b) { return b.getAttribute('data-v') === cur; }); e.currentTarget.blur();
-    });
-    showCat(CATS[0]); pick('oak');
-    return {
-      enter: function () { cv.classList.add('dark'); Combat.api.roster = []; Combat.reset(); Combat.api.scene = scene; attachHero(); dirty = true; var P = Combat.dbg().P; P.x = 200; P.y = 215; },
-      leave: function () { Combat.api.scene = null; },
-      tick: function () { var D = Combat.dbg(), r = spec.solid * spec.scale; D.W.pillars = r > 0 ? baked.map(function (s) { return { x: s.x, y: OBJ_Y, r: r, hide: true }; }) : []; if (!D.P.dead) D.P.hp = D.P.maxHp; }
-    };
-  })();
-
-  /* ================= Models: the Blender sheets (the old Blender Editor) ================= */
-  TABS.models = (function () {
-    var sc = scope('models'), $ = sc.$;
-    var names = Object.keys(SP).filter(function (nm) { return !SP[nm].meta.boxed; }), MODELS = {};   // the people's sheets are layers in boxes of their own (Sprites.person): not a model of this kind
-    names.forEach(function (nm) { MODELS[nm] = Sprites.load(SP, nm); });
-    function H() { return MODELS[cur]; }
-    var LABEL = { 'hero-kit': 'The hero (the kit)', 'hero2-mixamo': 'The old hero (Mixamo)', 'boar': 'Wild boar', 'deer': 'Deer', 'wolf': 'Wolf', 'bear': 'Bear', 'moose': 'Moose', 'snake': 'Adder', 'troll_boulder': 'Mountain troll (Bauer)', 'troll_forest': 'Forest troll (Kittelsen)', 'troll_maw': 'The Gape (new)', 'troll_three': 'Three-headed troll (new)', 'draugr': 'Draugr', 'huldra': 'Huldra', 'nacken': 'Näcken', 'bysen': 'Bysen', 'troll_mor': 'Trollmor (new)' };
-    var NOTE = {
-      'hero2-mixamo': 'The fitted hero on the Mixamo skeleton with eighteen Mixamo clips (2026-10-09): idle, looking around, walk, run, two sword slashes, bow draw and shot, hit, death, chop, mine, pick up, open a lid, drink, sit down, sit, stand up. Walk and run from the keys; the rest on the keys under Clips.' };
-    var SPR_PX = Sprites.PX, cur = null, gear = {}, zoom = 1, night = false, anim = 'idle', seated = false, swingNext = 0, active = false;
-    var hscale = 1; try { var hs0 = parseFloat(localStorage.getItem('game.blenderScale')); if (hs0 > 0) hscale = hs0; } catch (e) {}
-    var hscaleEl = $('hscale'); hscaleEl.value = hscale; $('hscaleo').textContent = hscale;
-    hscaleEl.addEventListener('input', function () { hscale = +hscaleEl.value; $('hscaleo').textContent = hscale; localStorage.setItem('game.blenderScale', String(hscale)); });
-    function meta() { return SP[cur] && SP[cur].meta; }
-    var handKind = null;
-    function isHandLayer(l) { return /^(\w+?)(Wood|Metal)$/.test(l); }
-    function layersOn(face) {
-      var M = meta(), out = ['body']; if (!M) return out;
-      M.layers.forEach(function (l) { if (l !== 'body' && !isHandLayer(l) && !/^shield/.test(l) && gear[l]) out.push(l); });
-      if (handKind) { if (M.layers.indexOf(handKind + 'Wood') >= 0) out.push(handKind + 'Wood'); if (M.layers.indexOf(handKind + 'Metal') >= 0) out.push({ layer: handKind + 'Metal', tint: '#9ca3ad' }); }
-      if (gear.shield) out = Sprites.shieldInto(out, M, face, gear.shield === 'paint' ? { face: '#8a3a34', mark: Sprites.SHIELD_MARK } : null);   /* (the shield is three layers and two colours: one piece of gear here, bare or painted) */
-      return out;
-    }
-    function spriteDir(face) {
-      var M = meta(), n = M.dirs.length, i = Math.round((face - Math.PI / 2) / (2 * Math.PI / n)); i = ((i % n) + n) % n;
-      var want = n === 8 ? ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'][i] : ['s', 'w', 'n', 'e'][i], k = M.dirs.indexOf(want); return k < 0 ? 0 : k;
-    }
-    function play(name, then) { return Sprites.play(H(), name, then); }
-    function sit(on) { seated = on; var P = Combat.dbg().P; P.anim.sit = on ? 1 : 0; }
-    var CLIPKEYS = { KeyJ: function () { play(swingNext++ % 2 ? 'attack2' : 'attack1') || play('attack1') || play('attack') || play('call') || play('play') || play('chop'); }, KeyK: function () { play('bow_draw', { name: 'bow_shoot' }) || play('windup') || play('hide', { name: 'stump' }); },
-      KeyE: function () { play('interact'); }, KeyG: function () { play('pickup'); }, KeyC: function () { play('chop'); }, KeyM: function () { play('mine'); }, KeyV: function () { play('drink'); },
-      KeyX: function () { if (seated) { sit(false); play('standup'); } else if (play('sitdown', { name: '__sit' })) {} }, KeyT: function () { play('hit'); }, KeyB: function () { play('death'); }, KeyL: function () { play('idle_look'); } };
-    window.addEventListener('keydown', function (e) { if (!active || !CLIPKEYS[e.code] || typing(e) || e.repeat) return; var M = meta(); if (!M || Object.keys(M.anims).length <= 2) return; if (H().clip) return; CLIPKEYS[e.code](); e.preventDefault(); });
-    function attachModel() { Sprites.attach(Combat, H(), { scale: function () { return zoom * hscale; }, shadow: function () { return !night; }, shadowHue: kit.STYLE.shadowHue, layers: layersOn }); }
-    function useNote() { var u = Sprites.heroName(SP, localStorage); $('usenote').textContent = 'The game and every editor draw the hero from ' + (LABEL[u] || u) + '. Use in the game makes the chosen model the hero (game.blenderHero); only a model with the Mixamo clips plays the actions.'; }
-    $('useGame').addEventListener('click', function (e) { if (cur) localStorage.setItem('game.heroSet', cur); useNote(); e.currentTarget.blur(); });
-    useNote();
-    var modelsEl = $('models'), gearEl = $('gear'), animsEl = $('anims');
-    function pressed(el, on) { el.setAttribute('aria-pressed', on ? 'true' : 'false'); }
-    function pick(nm) {
-      cur = nm; gear = {}; sit(false); if (H()) H().clip = null; localStorage.setItem('blendereditor.model', nm); if (active) attachModel();
-      Array.prototype.forEach.call(modelsEl.children, function (b) { pressed(b, b.dataset.nm === nm); });
-      $('modelnote').textContent = NOTE[nm] || ('Sheets from assets/sprites/' + nm + '.');
-      gearEl.innerHTML = ''; var M = meta(); handKind = null;
-      M.layers.forEach(function (l) { if (l === 'body' || isHandLayer(l) || /^shield/.test(l)) return; var b = document.createElement('button'); b.textContent = l.charAt(0).toUpperCase() + l.slice(1); pressed(b, false); b.addEventListener('click', function () { gear[l] = !gear[l]; pressed(b, gear[l]); b.blur(); drawSheet(); }); gearEl.appendChild(b); });
-      if (M.layers.indexOf('shieldRim') >= 0) [['wood', 'Shield'], ['paint', 'Painted shield']].forEach(function (q) { var b = document.createElement('button'); b.textContent = q[1]; b.dataset.sh = q[0]; pressed(b, false); b.addEventListener('click', function () { gear.shield = gear.shield === q[0] ? null : q[0]; Array.prototype.forEach.call(gearEl.children, function (z) { if (z.dataset && z.dataset.sh) pressed(z, gear.shield === z.dataset.sh); }); b.blur(); drawSheet(); }); gearEl.appendChild(b); });
-      if (gearEl.children.length === 0) { var p = document.createElement('span'); p.className = 'desc'; p.textContent = 'This model has no gear layers.'; gearEl.appendChild(p); }
-      var handEl = $('hand'); handEl.innerHTML = ''; var kinds = [];
-      M.layers.forEach(function (l) { var mk = /^(\w+?)(Wood|Metal)$/.exec(l); if (mk && kinds.indexOf(mk[1]) < 0) kinds.push(mk[1]); });
-      ['none'].concat(kinds).forEach(function (k) { var b = document.createElement('button'); b.textContent = k === 'none' ? 'Empty hands' : k.charAt(0).toUpperCase() + k.slice(1); pressed(b, k === 'none'); b.addEventListener('click', function () { handKind = k === 'none' ? null : k; Array.prototype.forEach.call(handEl.children, function (q) { pressed(q, q === b); }); b.blur(); drawSheet(); }); handEl.appendChild(b); });
-      if (!kinds.length) { var p2 = document.createElement('span'); p2.className = 'desc'; p2.textContent = 'Nothing modelled for this hand yet.'; handEl.appendChild(p2); }
-      animsEl.innerHTML = '';
-      Object.keys(M.anims).forEach(function (a) { var b = document.createElement('button'); b.textContent = a + ' (' + M.anims[a].frames + ' frames, ' + M.anims[a].fps + ' fps)'; pressed(b, a === anim); b.addEventListener('click', function () { anim = a; Array.prototype.forEach.call(animsEl.children, function (q) { pressed(q, q === b); }); b.blur(); drawSheet(); }); animsEl.appendChild(b); });
-      if (!M.anims[anim]) anim = Object.keys(M.anims)[0];
-      $('numbers').textContent = 'Frame ' + M.frame.w + ' by ' + M.frame.h + ' px, the figure about ' + Math.round(M.figure_px) + ' px tall at 1x, the foot anchor at ' + M.anchor.x.toFixed(1) + ', ' + M.anchor.y.toFixed(1) + '; ' + M.dirs.length + ' directions (' + M.dirs.join(' ') + '); layers ' + M.layers.join(', ') + '; camera ' + M.elev + ' degrees above the ground; source ' + M.source + '.';
-      drawSheet();
-    }
-    names.forEach(function (nm) { var b = document.createElement('button'); b.textContent = LABEL[nm] || nm; b.dataset.nm = nm; b.addEventListener('click', function () { pick(nm); b.blur(); }); modelsEl.appendChild(b); });
-    if (!names.length) { modelsEl.innerHTML = '<span class="desc">No sheets in this build: run npm run art:mixamo:sheets, then npm run build.</span>'; }
-    var sheet = $('sheet'), sctx = sheet.getContext('2d');
-    function drawSheet() {
-      var M = meta(); sctx.setTransform(1, 0, 0, 1, 0, 0); sctx.fillStyle = '#cfc19c'; sctx.fillRect(0, 0, sheet.width, sheet.height);
-      sctx.globalAlpha = 0.18; sctx.fillStyle = kit.grain(sctx); sctx.fillRect(0, 0, sheet.width, sheet.height); sctx.globalAlpha = 1;
-      if (!M) return;
-      var A = M.anims[anim], fw = (A.frame || M.frame).w, fh = (A.frame || M.frame).h, cols = A.frames, rows = M.dirs.length, s = Math.min(sheet.width / (cols * fw / SPR_PX * 2), sheet.height / (rows * fh / SPR_PX * 2)) * 2 / SPR_PX;
-      sctx.imageSmoothingEnabled = true; sctx.imageSmoothingQuality = 'high';
-      for (var r = 0; r < rows; r++) for (var f = 0; f < cols; f++) {
-        layersOn(Math.PI / 2 + Math.max(0, ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'].indexOf(M.dirs[r])) * Math.PI / 4).forEach(function (l) { var ln = typeof l === 'string' ? l : l.layer, file = A.sheets[ln], im = file && H().img[file]; if (!im || !im.complete || !im.naturalWidth) return; var src = typeof l === 'string' ? im : l.mul ? Sprites.tintedMul(H(), im, file, l.tint) : Sprites.tinted(H(), im, file, l.tint), LB = A.boxes && A.boxes[ln], lw = LB ? LB[2] : fw, lh = LB ? LB[3] : fh; sctx.drawImage(src, f * lw, r * lh, lw, lh, (f * fw + (LB ? LB[0] : 0)) * s, (r * fh + (LB ? LB[1] : 0)) * s, lw * s, lh * s); });   /* (a layer may lie in a box of its own: anims[clip].boxes) */
-        if (f === 0) { sctx.fillStyle = '#231a16'; sctx.font = '11px sans-serif'; sctx.fillText(M.dirs[r], 4, r * fh * s + 14); }
-      }
-    }
-    var pending = 0; names.forEach(function (nm) { for (var f in MODELS[nm].img) { pending++; MODELS[nm].img[f].onload = function () { if (--pending === 0 && cur) drawSheet(); }; } });
-    /* the night forest */
-    var forest = null;
-    function hash(a, b, c) { var v = Math.sin(a * 12.9898 + b * 78.233 + (c || 0) * 37.719) * 43758.5453; return v - Math.floor(v); }
-    function paintForest() {
-      var W = 400, H = 250, Z = 2, fc = document.createElement('canvas'); fc.width = W * Z; fc.height = H * Z; var c = fc.getContext('2d');
-      kit.setup(Object.assign({}, kit.STYLE, { outsideHue: 152, shadowHue: 250, sat: 0.72, bright: -8 }));
-      c.setTransform(Z, 0, 0, Z, 0, 0); c.fillStyle = '#2f4a3e'; c.fillRect(0, 0, W, H);
-      for (var i = 0; i < 400; i++) { var x = hash(i, 1, 3) * W, y = hash(i, 2, 3) * H, r = 3 + hash(i, 3, 3) * 16; c.fillStyle = i % 3 ? 'rgba(40,78,60,0.35)' : 'rgba(70,110,80,0.25)'; c.beginPath(); c.ellipse(x, y, r, r * 0.45, 0, 0, 7); c.fill(); }
-      var things = [], back = ['pine', 'birch', 'pine', 'deadTree', 'pine', 'birch', 'pine', 'pine', 'birch', 'pine', 'deadTree'];
-      back.forEach(function (n, i) { things.push([n, 5 + i * 40 + hash(i, 5) * 14, 70 + hash(i, 6) * 30, 0.55 + hash(i, 7) * 0.25, i]); });
-      for (i = 0; i < 6; i++) things.push([i % 3 === 0 ? 'rockFormation' : i % 3 === 1 ? 'bush' : 'rock', 20 + i * 70 + hash(i, 8) * 30, 95 + hash(i, 9) * 15, 0.6 + hash(i, 10) * 0.4, i + 20]);
-      for (i = 0; i < 12; i++) things.push([i % 2 ? 'fern' : i % 3 ? 'tallGrass' : 'mushrooms', hash(i, 11) * W, 120 + hash(i, 12) * 120, 0.6 + hash(i, 13) * 0.4, i + 40]);
-      things.push(['campfire', 200, 232, 0.8, 99]);
-      things.sort(function (a, b) { return a[2] - b[2]; }).forEach(function (t) { var sp = kit.bakeProp(t[0], t[4]); c.drawImage(sp.cv, t[1] + sp.l * t[3], t[2] + sp.t * t[3], sp.w * t[3], sp.h * t[3]); });
-      var nc = document.createElement('canvas'); nc.width = W * Z; nc.height = H * Z; var n = nc.getContext('2d');
-      n.fillStyle = 'rgb(96,132,138)'; n.fillRect(0, 0, W * Z, H * Z);
-      var g = n.createRadialGradient(200 * Z, 222 * Z, 0, 200 * Z, 222 * Z, 260 * Z); g.addColorStop(0, 'rgba(255,200,120,1)'); g.addColorStop(0.4, 'rgba(230,170,90,0.6)'); g.addColorStop(1, 'rgba(96,132,138,0)');
-      n.fillStyle = g; n.beginPath(); n.arc(200 * Z, 222 * Z, 260 * Z, 0, 7); n.fill();
-      c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'multiply'; c.drawImage(nc, 0, 0); c.globalCompositeOperation = 'source-over';
-      c.globalAlpha = 0.14; c.fillStyle = kit.grain(c); c.fillRect(0, 0, W * Z, H * Z); c.globalAlpha = 1;
-      kit.setup(kit.STYLE); return fc;
-    }
-    var nightScene = { noKills: true, begin: function (c) { if (!forest) forest = paintForest(); c.drawImage(forest, 0, 0, 400, 250); }, items: function (items) { crowdItems(items); }, end: function () {} };
-    /* the starter island */
-    var T = kit.TW, CT, CW, CH, island = null, icam = { x: 0, y: 0 }, clock = 0, grassLook = World.GRASS_INK;
-    function makeIsland() { island = World.make(kit, { isle: 60, isle0: 60, count: 1, noDock: true, skerries: 1, rough: 1, beach: 4.5, hue: 0, seed: 11 }); island.meadowLook = grassLook; island.plant(); island.camp(); island.sortBuckets(); CT = island.CT; CW = island.CW; CH = island.CH; }
-    var islandScene = {
-      noKills: true, bounds: null,
-      walk: function (x, y) { return island.isLand(x, y); },
-      begin: function (c, P) {
-        var hw = 200, hh = 125, WX = island.GW * T, WY = island.GH * T;
-        icam.x = Math.max(hw, Math.min(WX - hw, P.x)); icam.y = Math.max(hh, Math.min(WY * K - hh, P.y * K - 14));
-        c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.translate(-icam.x, -icam.y);
-        island.drawGround(c, icam, hw, hh); island.drawWaves(c, icam, hw, hh, clock, 0.75, 1.05); island.drawGrass(c, icam, hw, hh, clock, grassLook);
-      },
-      items: function (items) {
-        crowdItems(items);
-        var hw = 200, hh = 125, TS = T * K, hero = Combat.dbg().P;
-        var bx0 = Math.max(0, Math.floor((icam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((icam.x + hw) / T / CT) + 1);
-        var by0 = Math.max(0, Math.floor((icam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((icam.y + hh) / TS / CT) + 1);
-        for (var by = by0; by <= by1; by++) for (var bx = bx0; bx <= bx1; bx++) {
-          var list = island.buckets[by * CW + bx]; if (!list) continue;
-          list.forEach(function (o) {
-            var s = island.sprite(o.name, o.v), px = o.x + s.l * o.s, py = o.y * K + s.t * o.s, w = s.w * o.s, h = s.h * o.s;
-            if (px + w < icam.x - hw || px > icam.x + hw || py + h < icam.y - hh || py > icam.y + hh) return;
-            items.push({ y: o.y, f: function () { var behind = o.r === 8 && hero.y < o.y && hero.y * K > py + h * 0.25 && Math.abs(hero.x - o.x) < w * 0.3; if (behind) ctx.globalAlpha = 0.45; ctx.drawImage(s.cv, px, py, w, h); ctx.globalAlpha = 1; } });
-          });
-        }
-      },
-      end: function (c) { var PSN = Combat.api.pixelScale || 2; c.save(); c.setTransform(PSN, 0, 0, PSN, 0, 0); c.globalAlpha = 0.12; c.fillStyle = kit.grain(c); c.fillRect(0, 0, 400 * PSN, 250 * PSN); c.globalAlpha = 1; c.restore(); }
-    };
-    var sceneName = 'island';
-    // where the hero starts: the nearest ground to the wreck with dry land all round it and nothing solid on it (he was put in the sea beside the island)
-    function startSpot() {
-      var hx = island.home.x, hy = island.home.y, ok = function (x, y) { for (var a = 0; a < 8; a++) if (!island.isLand(x + Math.cos(a * 0.785) * 44, y + Math.sin(a * 0.785) * 44)) return false; var so = island.nearSolids ? island.nearSolids({ x: x, y: y }) : []; for (var i = 0; so && i < so.length; i++) if (Math.hypot(so[i].x - x, so[i].y - y) < (so[i].r || 8) + 16) return false; return island.isLand(x, y); };
-      for (var d = 0; d < 1200; d += 24) for (var a = 0; a < 16; a++) { var x = hx + Math.cos(a * 0.3927) * d, y = hy + Math.sin(a * 0.3927) * d; if (ok(x, y)) return { x: x, y: y }; }
-      return { x: hx, y: hy };
-    }
-    function setScene(nm) {
-      sceneName = nm; night = nm === 'night';
-      if (nm === 'island') {
-        if (!island) makeIsland();
-        islandScene.bounds = { x0: 8, y0: 12, x1: island.GW * T - 8, y1: island.GH * T - 8 }; Combat.api.scene = islandScene;
-        var P = Combat.dbg().P, st = startSpot(); if (!P.onIsland) { P.x = st.x; P.y = st.y; P.onIsland = true; }
-        if (!island.isLand(P.x, P.y)) { P.x = st.x; P.y = st.y; }
-      } else { Combat.api.scene = night ? nightScene : null; var Q = Combat.dbg().P; if (Q.onIsland) { Q.x = 200; Q.y = 200; Q.onIsland = false; } }
-      Combat.dbg().W.pillars.forEach(function (p) { p.hide = nm !== 'arena'; });
-      pressed($('scIsland'), nm === 'island'); pressed($('scArena'), nm === 'arena'); pressed($('scNight'), night);
-    }
-    $('scIsland').addEventListener('click', function (e) { setScene('island'); e.currentTarget.blur(); });
-    $('scArena').addEventListener('click', function (e) { setScene('arena'); e.currentTarget.blur(); });
-    $('scNight').addEventListener('click', function (e) { setScene('night'); e.currentTarget.blur(); });
-    /* the people (2026-10-12): rolled villagers standing about the hero, from the sheets every person shares (Sprites.person) */
-    var PEOPLE = SP.people ? Sprites.loadLazy(SP, 'people') : null, crowd = [], pClip = 'idle', pHand = null, pGear = { mail: false, helm: false, shield: false, cloak: false }, pTurn = false;
-    function crowdRoll() {
-      var P = Combat.dbg().P, R = kit.rng(Math.floor(Math.random() * 1e9)), i; crowd = [];
-      for (i = 0; i < 12; i++) { var row = i < 6 ? 0 : 1, col = i % 6, sp = lib.folkSpec('villager', R); if (i === 10) { sp.scale = 0.55; sp.beard = 0; } crowd.push({ x: P.x - 80 + col * 32 + (R() - 0.5) * 8, y: P.y + (row ? 46 : -52) + (R() - 0.5) * 8, spec: sp, ph: R() * 10, look: null, key: '' }); }
-      if (sceneName === 'island' && island) crowd = crowd.filter(function (q) { return island.isLand(q.x, q.y); });
-    }
-    function crowdLook(q) {
-      var key = (pGear.mail ? 'm' : '') + (pGear.helm ? 'h' : '') + (pGear.shield ? 's' : '') + (pGear.cloak ? 'c' : '') + '|' + (pHand || '');
-      if (q.key !== key) { q.key = key; q.look = Sprites.lookOf(q.spec, { mail: pGear.mail, helm: pGear.helm, shield: pGear.shield ? '#8a3a34' : null, cloak: pGear.cloak ? '#8a3a34' : null, hand: pHand ? { kind: pHand, tint: '#9ca3ad' } : null }); }
-      return q.look;
-    }
-    function crowdItems(items) {
-      if (!PEOPLE || !crowd.length) return; var P = Combat.dbg().P, t = performance.now() / 1000;
-      crowd.forEach(function (q) { items.push({ y: q.y, f: function () { Sprites.person(ctx, PEOPLE, crowdLook(q), { clip: pClip, face: pTurn ? t * 0.6 + q.ph : Math.atan2(P.y - q.y, P.x - q.x), t: t + q.ph }, q.x, q.y * K, { shadow: !night, shadowHue: kit.STYLE.shadowHue }); } }); });
-    }
-    (function () {
-      if (!PEOPLE) { $('pNote').textContent = 'No people in this build: run npm run art:people, then npm run build.'; return; }
-      var clipsEl = $('pClips'), handEl = $('pHand'), gearEl2 = $('pGear'), A = PEOPLE.meta.anims;
-      Object.keys(A).forEach(function (a) { var b = document.createElement('button'); b.textContent = a; pressed(b, a === pClip); b.addEventListener('click', function () { pClip = a; Array.prototype.forEach.call(clipsEl.children, function (q) { pressed(q, q === b); }); b.blur(); }); clipsEl.appendChild(b); });
-      [null, 'sword', 'axe', 'club', 'seax', 'spear', 'greataxe', 'bow'].forEach(function (k) { var b = document.createElement('button'); b.textContent = k ? (k === 'greataxe' ? 'Dane axe' : k.charAt(0).toUpperCase() + k.slice(1)) : 'Empty hands'; pressed(b, k === pHand); b.addEventListener('click', function () { pHand = k; Array.prototype.forEach.call(handEl.children, function (q) { pressed(q, q === b); }); b.blur(); }); handEl.appendChild(b); });
-      ['mail', 'helm', 'shield', 'cloak'].forEach(function (g) { var b = document.createElement('button'); b.textContent = g === 'helm' ? 'Helmet' : g.charAt(0).toUpperCase() + g.slice(1); pressed(b, false); b.addEventListener('click', function () { pGear[g] = !pGear[g]; pressed(b, pGear[g]); b.blur(); }); gearEl2.appendChild(b); });
-      $('pRoll').addEventListener('click', function (e) { crowdRoll(); e.currentTarget.blur(); });
-      $('pNone').addEventListener('click', function (e) { crowd = []; e.currentTarget.blur(); });
-      $('pTurn').addEventListener('click', function (e) { pTurn = !pTurn; pressed(e.currentTarget, pTurn); e.currentTarget.blur(); });
-    })();
-    var noDmg = true;
-    $('sbeast').addEventListener('click', function (e) { Combat.spawn('beast'); e.currentTarget.blur(); });
-    $('sclear').addEventListener('click', function (e) { Combat.clear(); var Q = Combat.dbg().P; Q.onIsland = false; setScene(sceneName); e.currentTarget.blur(); });
-    $('nodmg').addEventListener('click', function (e) { noDmg = !noDmg; pressed(e.currentTarget, noDmg); e.currentTarget.blur(); });
-    var zoomEl = $('zoom'); zoomEl.addEventListener('input', function () { zoom = +zoomEl.value; $('zoomo').textContent = zoom; });
-    var first = localStorage.getItem('blendereditor.model'); if (!SP[first]) first = names[0];
-    if (first) pick(first);
-    return {
-      enter: function () { active = true; cv.classList.remove('dark'); Combat.api.roster = []; Combat.reset(); attachModel(); var P = Combat.dbg().P; P.onIsland = false; setScene(sceneName); },
-      leave: function () { active = false; Combat.api.scene = null; sit(false); },
-      tick: function (dt) { clock += dt; var P = Combat.dbg().P; if (noDmg && !P.dead) P.hp = P.maxHp; var hc = H() && H().clip; if (hc && hc.name === 'sitdown' && hc.then && hc.then.name === '__sit') { var C = H().meta.anims.sitdown; if ((performance.now() / 1000 - hc.t0) * C.fps >= C.frames - 1) { H().clip = null; sit(true); } } if (sceneName === 'island' && island) { var D = Combat.dbg(); D.W.pillars = island.nearSolids(D.P); } }
-    };
-  })();
-
-  /* ---------- the tabs ---------- */
-  var curTab = null, tabBtns = document.querySelectorAll('#tabs button');
-  function show(name) {
-    if (!TABS[name]) name = 'models';
-    if (curTab && TABS[curTab].leave) TABS[curTab].leave();
-    ['objects', 'models'].forEach(function (n) { document.getElementById('left-' + n).hidden = n !== name; document.getElementById('right-' + n).hidden = n !== name; });
-    Array.prototype.forEach.call(tabBtns, function (b) { b.setAttribute('aria-pressed', b.dataset.tab === name ? 'true' : 'false'); });
-    curTab = name; TABS[name].enter(); try { localStorage.setItem('arteditor.tab', name); } catch (e) {}
+  /* the sets and their pieces */
+  function showSet(set) {
+    cur.set = set; Array.prototype.forEach.call($('sets').children, function (b) { press(b, b.dataset.set === set); });
+    var host = $('pieces'); host.textContent = '';
+    var bases = set === 'drawn' ? DRAWN : Object.keys(BY[set] || {}).sort();
+    bases.forEach(function (bn) { var b = btn(label(bn) + (set !== 'drawn' && BY[set][bn].length > 1 ? ' ×' + BY[set][bn].length : ''), function () { pick(bn); }); b.dataset.base = bn; host.appendChild(b); });
+    Array.prototype.forEach.call(document.querySelectorAll('.tuner'), function (p) { p.hidden = set !== 'drawn'; });
+    if (bases.length) pick(bases[0]); home();
   }
-  Array.prototype.forEach.call(tabBtns, function (b) { b.addEventListener('click', function () { show(b.dataset.tab); b.blur(); }); });
-  var startTab = 'models'; try { startTab = localStorage.getItem('arteditor.tab') || 'models'; } catch (e) {}
-  if (/[?&]tab=(\w+)/.test(location.search)) startTab = RegExp.$1;
-  show(startTab);
+  function pick(bn) {
+    cur.base = bn; Array.prototype.forEach.call($('pieces').children, function (b) { press(b, b.dataset.base === bn); });
+    if (cur.set === 'drawn') { tunerPick(bn); return; }
+    var list = BY[cur.set][bn]; list.forEach(function (p) { p.base = bn; });
+    var p0 = list[0], m = p0.meta || {};
+    $('note').textContent = label(bn) + (list.length > 1 ? ': ' + list.length + ' variants, drawn left to right (' + list.map(function (p) { return p.name; }).join(', ') + ')' : ': ' + p0.name) + '.';
+    $('numbers').textContent = 'Picture ' + (p0.w || '?') + ' by ' + (p0.h || '?') + ' px at ' + (+p0.upp).toFixed(3) + ' units a pixel: ' + Math.round((p0.w || 0) * p0.upp) + ' by ' + Math.round((p0.h || 0) * p0.upp) + ' units on the ground' + (m.height_m ? ', ' + m.height_m + ' m tall' : '') + '; the foot at ' + (+p0.ax).toFixed(1) + ', ' + (+p0.ay).toFixed(1) + '. Footprint ' + (FOOT[bn] ? 'about ' + FOOT[bn] + ' units' : 'none (walk through, or set where it is placed)') + '. ' + (cur.set === 'fires' ? 'The flames loop ' + m.flames.frames + ' frames at ' + m.flames.fps + ' fps; the light, the smoke and the sparks are the game’s.' : cur.set === 'sea' ? 'Drawn at ' + (m.ppm || 65) + ' px a metre from its point on the water.' : 'assets/props/' + (m.set || '') + '.');
+  }
+  SETS.forEach(function (set) { var b = btn(SET_NAME[set] || label(set), function () { showSet(set); }); b.dataset.set = set; $('sets').appendChild(b); });
+  [['meadow', 'Meadow'], ['sand', 'Sand']].forEach(function (q) { var b = btn(q[1], function () { ground = q[0]; Array.prototype.forEach.call($('grounds').children, function (z) { press(z, z === b); }); home(); }); press(b, q[0] === ground); $('grounds').appendChild(b); });
+  [['tShadow', 'shadow'], ['tFoot', 'foot'], ['tPrint', 'print'], ['tAnchor', 'anchor']].forEach(function (q) { $(q[0]).addEventListener('click', function (e) { show[q[1]] = !show[q[1]]; press(e.currentTarget, show[q[1]]); e.currentTarget.blur(); }); });
+  $('zoom').addEventListener('input', function () { zoom = +$('zoom').value; $('zoomo').textContent = zoom.toFixed(2); });
+  $('zoom').addEventListener('change', function () { $('zoom').blur(); });
 
+  /* ---- the tuner for what is still drawn in code (the old Objects tab, the ink look only) ---- */
+  var SIZE = [{ k: 'scale', label: 'Overall size', min: 0.4, max: 2.5, step: 0.05 }, { k: 'wide', label: 'Width', min: 0.5, max: 1.8, step: 0.05 }, { k: 'tall', label: 'Height', min: 0.5, max: 1.8, step: 0.05 }];
+  var SHAPE = [{ k: 'rough', label: 'Roughness', min: 0, max: 0.6, step: 0.01 }, { k: 'twist', label: 'Wonkiness', min: 0, max: 1, step: 0.01 }, { k: 'spindly', label: 'Thinness', min: 0, max: 1, step: 0.01 }, { k: 'lush', label: 'Fullness', min: 0.2, max: 1.4, step: 0.01 }, { k: 'round', label: 'Roundness', min: 0, max: 1.2, step: 0.01 }, { k: 'seed', label: 'Variation number', min: 1, max: 60, step: 1 }];
+  var SURF = [{ k: 'texture', label: 'Brush texture', min: 0, max: 1.5, step: 0.01 }, { k: 'shade', label: 'Shading depth', min: 0, max: 1, step: 0.01 }, { k: 'outlineW', label: 'Outline width', min: 0.4, max: 2.5, step: 0.05 }, { k: 'outlineDark', label: 'Outline darkness', min: 0, max: 1, step: 0.01 }];
+  var COLS = [{ k: 'hue', label: 'Hue shift', min: -180, max: 180, step: 5 }, { k: 'sat', label: 'Saturation', min: 0, max: 1.8, step: 0.05 }, { k: 'bright', label: 'Brightness', min: -15, max: 15, step: 1 }, { k: 'contrast', label: 'Contrast', min: 0.7, max: 1.4, step: 0.02 }];
+  var NUM = SIZE.concat(SHAPE, SURF, COLS), inputs = {}, outputs = {};
+  var SHAPES = [{ name: 'Default', set: {} }, { name: 'Small', set: { scale: 0.7 } }, { name: 'Large', set: { scale: 1.4 } }, { name: 'Wide', set: { wide: 1.3 } }, { name: 'Tall', set: { tall: 1.3 } }, { name: 'Rough', set: { rough: 0.3, texture: 1.1 } }, { name: 'Smooth', set: { rough: 0, texture: 0.2, round: 1.1 } }, { name: 'Gnarled', set: { twist: 0.6, spindly: 0.45, rough: 0.18 } }, { name: 'Lush', set: { lush: 1.3, round: 1 } }, { name: 'Sparse', set: { lush: 0.4, spindly: 0.5 } }];
+  var PALETTES = [{ name: 'Default', set: {} }, { name: 'Autumn', set: { hue: -115, sat: 1.1 } }, { name: 'Frosted', set: { hue: 45, sat: 0.55, bright: 8 } }, { name: 'Withered', set: { hue: -95, sat: 0.45, bright: -3 } }, { name: 'Vivid', set: { sat: 1.35, contrast: 1.2 } }, { name: 'Faded', set: { sat: 0.6, contrast: 0.9, bright: 4 } }];
+  function defSpec() { return { scale: 1, wide: 1, tall: 1, seed: 3, rough: BASE.rough, twist: BASE.twist, spindly: BASE.spindly, lush: BASE.lush, round: BASE.round, texture: BASE.texture, shade: BASE.shade, outlineW: BASE.outlineW, outlineDark: BASE.outlineDark, hue: 0, sat: 1, bright: 0, contrast: 1 }; }
+  function snapTo(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
+  function fmt(p, v) { return p.step < 1 ? v.toFixed(p.step < 0.1 || (p.step * 100) % 10 ? 2 : 1) : String(v); }
+  function styleFor(sp) { var p = {}, q; for (q in BASE) p[q] = BASE[q]; ['rough', 'twist', 'spindly', 'lush', 'round', 'texture', 'shade', 'outlineW', 'outlineDark'].forEach(function (key) { p[key] = sp[key]; }); p.outsideHue = BASE.outsideHue + sp.hue; p.factoryHue = BASE.factoryHue + sp.hue; p.sat = BASE.sat * sp.sat; p.bright = BASE.bright + sp.bright; p.contrast = BASE.contrast * sp.contrast; p.look = BASE.look; return p; }
+  function tunerApply() {
+    var d = defSpec(), i; for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(drawnSpec[p.k]); drawnSpec[p.k] = snapTo(p, isFinite(v) ? v : d[p.k]); inputs[p.k].value = drawnSpec[p.k]; outputs[p.k].textContent = fmt(p, drawnSpec[p.k]); }
+    var out = { object: cur.base }; for (var q in drawnSpec) out[q] = drawnSpec[q]; if (document.activeElement !== $('json')) $('json').value = JSON.stringify(out);
+    try { localStorage.setItem('objecteditor3.' + cur.base, JSON.stringify(drawnSpec)); } catch (e) {}
+    kit.setup(styleFor(drawnSpec)); drawnBaked = [];
+    for (i = 0; i < 3; i++) { var sp = kit.bakeProp(cur.base, drawnSpec.seed + i * 7, { sx: drawnSpec.scale * drawnSpec.wide, sy: drawnSpec.scale * drawnSpec.tall }), sc = 0.5; drawnBaked.push({ cv: sp.cv, l: sp.l * sc, t: sp.t * sc, dwB: sp.w * sc, dhB: sp.h * sc, w: sp.w, h: sp.h, upp: sc, ax: -sp.l, ay: -sp.t, base: cur.base }); }
+    kit.setup(BASE);
+    $('numbers').textContent = label(cur.base) + ', drawn in code: ' + Math.round(drawnBaked[0].dwB) + ' by ' + Math.round(drawnBaked[0].dhB) + ' units at the world’s planted scale (0.5), three variations. Footprint ' + (FOOT[cur.base] ? 'about ' + FOOT[cur.base] + ' units' : 'none') + '.';
+  }
+  function tunerPick(bn) { drawnSpec = null; try { drawnSpec = JSON.parse(localStorage.getItem('objecteditor3.' + bn)); } catch (e) {} if (!drawnSpec || typeof drawnSpec !== 'object') drawnSpec = defSpec(); $('note').textContent = label(bn) + ': still drawn by the game’s code (no studio picture yet).'; tunerApply(); }
+  function sliders(host, list) { list.forEach(function (p) { var row = document.createElement('label'); row.className = 'row'; var nm = document.createElement('span'); nm.textContent = p.label; var inp = document.createElement('input'); inp.type = 'range'; inp.min = p.min; inp.max = p.max; inp.step = p.step; var out = document.createElement('output'); inp.addEventListener('input', function () { drawnSpec[p.k] = parseFloat(inp.value); tunerApply(); }); inp.addEventListener('change', function () { inp.blur(); }); row.appendChild(nm); row.appendChild(inp); row.appendChild(out); host.appendChild(row); inputs[p.k] = inp; outputs[p.k] = out; }); }
+  sliders($('psize'), SIZE); sliders($('pshape'), SHAPE); sliders($('psurf'), SURF); sliders($('pcol'), COLS);
+  SHAPES.forEach(function (v) { $('shapes').appendChild(btn(v.name, function () { var d = defSpec(); ['scale', 'wide', 'tall', 'rough', 'twist', 'spindly', 'lush', 'round', 'texture'].forEach(function (q) { drawnSpec[q] = d[q]; }); for (var q in v.set) drawnSpec[q] = v.set[q]; tunerApply(); })); });
+  PALETTES.forEach(function (v) { $('palettes').appendChild(btn(v.name, function () { var d = defSpec(); ['hue', 'sat', 'bright', 'contrast'].forEach(function (q) { drawnSpec[q] = d[q]; }); for (var q in v.set) drawnSpec[q] = v.set[q]; tunerApply(); })); });
+  $('nextvar').addEventListener('click', function (e) { drawnSpec.seed = drawnSpec.seed >= 60 ? 1 : drawnSpec.seed + 1; tunerApply(); e.currentTarget.blur(); });
+  $('resetall').addEventListener('click', function (e) { drawnSpec = defSpec(); tunerApply(); e.currentTarget.blur(); });
+  $('copy').addEventListener('click', function (e) { var t = $('json'); if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t.value).then(function () { $('jsonmsg').textContent = 'Copied.'; }, function () { t.select(); $('jsonmsg').textContent = 'Selected: press Ctrl+C.'; }); else { t.select(); $('jsonmsg').textContent = 'Selected: press Ctrl+C.'; } e.currentTarget.blur(); });
+  $('applyjson').addEventListener('click', function (e) { var o = null; try { o = JSON.parse($('json').value); } catch (err) {} if (!o || typeof o !== 'object') { $('jsonmsg').textContent = 'That text is not valid settings. Nothing was changed.'; return; } if (typeof o.object === 'string' && DRAWN.indexOf(o.object) >= 0 && o.object !== cur.base) { cur.base = o.object; Array.prototype.forEach.call($('pieces').children, function (b) { press(b, b.dataset.base === cur.base); }); } delete o.object; drawnSpec = o; tunerApply(); $('jsonmsg').textContent = 'Applied.'; e.currentTarget.blur(); });
+
+  var want = null; if (/[?&]set=(\w+)/.test(location.search)) want = RegExp.$1;
+  showSet(want && (BY[want] || want === 'drawn') ? want : SETS[0]);
   var last = performance.now();
-  function frame(now) {
-    var dt = Math.min(0.05, (now - last) / 1000); last = now;
-    var tab = TABS[curTab];
-    if (tab.tick) tab.tick(dt);
-    Combat.update(dt); Combat.render(ctx);
-    if (tab.after) tab.after(dt);
-    requestAnimationFrame(frame);
-  }
+  function frame(now) { var dt = Math.min(0.05, (now - last) / 1000); last = now; var P = Combat.dbg().P; if (!P.dead) P.hp = P.maxHp; Combat.update(dt); Combat.render(ctx); requestAnimationFrame(frame); }
   requestAnimationFrame(frame);
+  window.SETPIECES = { sets: function () { return SETS.slice(); }, set: showSet, pick: pick, cur: cur, spot: SPOT, world: w };   // for checks from the console
 })();
 </script>
 </body>

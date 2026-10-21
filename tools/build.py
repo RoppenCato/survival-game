@@ -135,7 +135,7 @@ def prop_images():
         tj = json.load(open(tp, encoding='utf-8'))
         for name in tj:
             fp = os.path.join(ROOT, 'assets', 'props', sub, name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
-            tj[name]['src'] = '../assets/props/' + sub + '/' + name + '.png?v=' + tag; j[name] = tj[name]
+            tj[name]['src'] = '../assets/props/' + sub + '/' + name + '.png?v=' + tag; tj[name]['set'] = sub; j[name] = tj[name]   # (set: its folder, for the Art Editor's set-piece browser)
     return json.dumps(j)
 SRC['__PROPIMG__'] = prop_images()
 def file_tag(*parts):   # the sound bundle and the music scripts carry a hash of their bytes too (2026-10-16: a browser kept the old bundle)
@@ -148,7 +148,7 @@ SRC['__TAG_NIGHT__'] = file_tag('assets', 'music', 'meadow-night.js')
 # page name in dist/  ->  template in templates/
 PAGES = [
     ('index', 'index'),
-    ('art-editor', 'art'),          # the Character, Creature, Object and Blender editors as one page (2026-10-09, the cleanup)
+    ('art-editor', 'art'),          # the Art Editor's set pieces (2026-10-21; its figures are game.html?scene=models)
     ('sea-editor', 'sea'),
     ('combat-arena', 'combat'), ('village-editor', 'village'), ('game', 'game'),
 ]

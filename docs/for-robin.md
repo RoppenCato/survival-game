@@ -288,3 +288,16 @@ set stays too until you say otherwise.
 **The new boar (2026-10-21, your yes through the Art Director):** it is in the game, in the kraken's style. The studio repacked it
 with every clip in its own tight frame: 41 MB of memory while a boar is near, against its budget of 30. It kept every frame of
 the idle on purpose, because cutting frames is what made the idles you found laggy.
+
+**The Art Editor cleaned up (2026-10-21, your yes to the plan with the Art Director):** it is two pages now, both on the start
+page under the Art Editor. **Models** is a scene of the game itself: the starter island drawn by the game's own code, with a
+panel beside it listing every figure by group (the hero, people, beasts, farm animals, trolls, väsen, and the old hero under
+backup), each marked "in the game" with its chapter or "waiting". You walk as the one you pick and its clips play on you, and
+the hero is dressed through real things in his slots (helm, mail, a sword of any metal, a painted shield, the arm ring), so he
+looks exactly as in the game. **Set pieces** shows every picture the studio made, by its set, with all its variants side by side
+on the game's ground with the shadow, the grass at the foot and the footprint; the things the game still draws in code are the
+last set, with the old tuner. The old island, arena and night forest of the editor are gone.
+
+**The moonwalk (2026-10-21, your yes):** my half is in. A walk or run that comes with its stride now picks its frame by the
+ground covered, so the feet stay planted at any speed. Nothing changes until the studio's new walk and run arrive with that
+number, the hero's first.

@@ -5164,6 +5164,39 @@ if (typeof module !== 'undefined') module.exports = Combat;
        person(c, H, look, st, x, y, opts): st = { clip, face, and k (0..1 through the clip) or t (a clock for a loop) };
          opts: scale, sx, sy, alpha, shadow, shadowHue, lit, flash, tint, blend. False while the sheets it needs are
          still loading (the page draws the old figure meanwhile). */
+  /* The cast (2026-10-21, the Art Editor's clean-up with the Art Director, Robin's yes): every figure set by group with the name
+     the editors show and whether the game spawns it (game) and in which chapter (ch); one table for the models scene, the editors
+     and the studio's viewer. The väsen's names are the Lore Director's canon. The things in the hand and the worn icons are no
+     figures and stay out. */
+  var CAST = [
+    { id: 'hero-kit', name: 'The hero', group: 'The hero', game: true, ch: 1 },
+    { id: 'people', name: 'People', group: 'People', game: true, ch: 1 },
+    { id: 'boar', name: 'Wild boar', group: 'Beasts', game: true, ch: 1 }, { id: 'deer', name: 'Deer', group: 'Beasts', game: true, ch: 1 },
+    { id: 'wolf', name: 'Wolf', group: 'Beasts', game: true, ch: 1 }, { id: 'snake', name: 'Adder', group: 'Beasts', game: true, ch: 1 },
+    { id: 'bear', name: 'Bear', group: 'Beasts', game: true, ch: 2 }, { id: 'moose', name: 'Moose', group: 'Beasts', game: true, ch: 2 },
+    { id: 'hen', name: 'Hen', group: 'Farm animals', game: true, ch: 2 }, { id: 'goat', name: 'Goat', group: 'Farm animals', game: true, ch: 2 },
+    { id: 'sheep', name: 'Sheep', group: 'Farm animals', game: true, ch: 2 }, { id: 'cow', name: 'Cow', group: 'Farm animals', game: true, ch: 2 },
+    { id: 'troll_boulder', name: 'Mountain troll', group: 'Trolls', game: true, ch: 2 }, { id: 'troll_unge', name: 'H\u00e5rungen', group: 'Trolls', game: true, ch: 2 },
+    { id: 'troll_mor', name: 'Trollmor', group: 'Trolls' }, { id: 'troll_forest', name: 'Forest troll', group: 'Trolls' },
+    { id: 'troll_maw', name: 'The Gape', group: 'Trolls' }, { id: 'troll_three', name: 'Three-headed troll', group: 'Trolls' },
+    { id: 'bysen', name: 'Bysen', group: 'V\u00e4sen' }, { id: 'huldra', name: 'Huldra', group: 'V\u00e4sen' },
+    { id: 'nacken', name: 'N\u00e4cken', group: 'V\u00e4sen' }, { id: 'draugr', name: 'Draugr', group: 'V\u00e4sen' },
+    { id: 'hero2-mixamo', name: 'The old hero', group: 'Backup' }
+  ], GROUPS = ['The hero', 'People', 'Beasts', 'Farm animals', 'Trolls', 'V\u00e4sen', 'Backup', 'Compare'], NOT_FIGURES = { items: 1, worn: 1 };
+  function castOf(SP, id) {                // a set's entry: the table's, else what an override entry says (label, group), else its id under Compare
+    var set = SP && SP[id], i; for (i = 0; i < CAST.length; i++) if (CAST[i].id === id) { var c = CAST[i]; return set && (set.label || set.group) ? { id: id, name: set.label || c.name, group: set.group || c.group, game: c.game, ch: c.ch } : c; }
+    return { id: id, name: (set && set.label) || id, group: (set && set.group) || 'Compare' };
+  }
+  function castStatus(c) { return c.group === 'Backup' ? 'backup' : c.group === 'Compare' ? 'to compare' : c.game ? 'in the game, chapter ' + c.ch : 'waiting' + (c.ch ? ': chapter ' + c.ch : ', its chapter open'); }
+  function castList(SP) {                  // every figure set there is, in the table's order, then the rest under Compare
+    var out = [], seen = {}; CAST.forEach(function (c) { if (SP && SP[c.id]) { out.push(castOf(SP, c.id)); seen[c.id] = 1; } });
+    Object.keys(SP || {}).forEach(function (id) { if (!seen[id] && !NOT_FIGURES[id]) out.push(castOf(SP, id)); });
+    return out;
+  }
+  /* the studio's viewer lays its sheets over the game's (window.__SPRITES_OVERRIDE__, injected before the page's scripts): the same
+     shape as the game's table, { set: { meta, images, label?, group? } }; a set of the game's name stands in for it, a new one is
+     added (the studio's "<name>.game" for the game's own copy, group "compare") */
+  function withOverride(SP, over) { if (!over || typeof over !== 'object') return SP || {}; var out = {}, k; for (k in SP || {}) out[k] = SP[k]; for (k in over) out[k] = over[k]; return out; }
   function loadLazy(SP, name) { var set = SP && SP[name]; if (!set) return null; return { name: name, meta: set.meta, img: {}, src: set.images, sil: {}, lazy: true, ubox: {}, rc: {} }; }
   function b64(s) { var i, a; if (typeof atob === 'function') { var bin = atob(s); a = new Uint8Array(bin.length); for (i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; } return new Uint8Array(Buffer.from(s, 'base64')); }
   // where every frame's piece lies: six numbers a frame (its place in the sheet, its size, its place in the frame), a row of directions after another
@@ -5339,7 +5372,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function peopleReady(H) { if (!H) return false; var A = H.meta.anims.idle; return !!(A && imgOf(H, A.sheets.body)); }
   function peopleStats() { return { kept: PC.map.size, made: PC.made }; }
   function peopleWarm(H, look, clips) { var A = H.meta.anims, n = 0; if (H.lazy && !H.use) H.use = {}; (clips || Object.keys(A)).forEach(function (cl) { if (!A[cl]) return; if (H.use && H.use[cl] == null) H.use[cl] = now();   /* (a warmed clip counts as used now, so one never drawn is let go in its time) */ look.L.forEach(function (q) { var f = A[cl].sheets[q.l]; if (f) { imgOf(H, f); n++; } }); }); return n; }   // ask for a look's sheets ahead of the moment they are needed
-  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, odo: odo, strideFrame: strideFrame, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
+  return { isKit: isKit, kitLook: kitLook, drawKit: drawKit, lookId: idOf, KIT_START: KIT_START, loadLazy: loadLazy, warm: warm, unload: unload, trim: trim, sheetBytes: sheetBytes, loaded: loaded, beastReady: ready, lookOf: lookOf, withHand: withHand, person: person, fighter: fighter, personFrame: personFrame, peopleReady: peopleReady, peopleStats: peopleStats, peopleWarm: peopleWarm, loopAt: loopAt, mixTo: mixTo, blends: blends, PX: PX, load: load, hero: hero, heroName: heroName, scaleOf: scaleOf, dirOf: dirOf, play: play, pick: pick, odo: odo, strideFrame: strideFrame, CAST: CAST, GROUPS: GROUPS, castOf: castOf, castStatus: castStatus, castList: castList, withOverride: withOverride, draw: draw, tick: tick, attach: attach, drawDead: drawDead, cast: cast, hand: hand, tinted: tinted, tintedMul: tintedMul, shieldInto: shieldInto, SHIELD_WOOD: SHIELD_WOOD, SHIELD_MARK: SHIELD_MARK, beast: beast, ready: ready };
 });
 
 /* Sfx: recorded sound effects (2026-10-15, Robin: "work on the attack sounds; request the sounds you need from the Sound
