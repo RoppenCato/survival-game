@@ -88,8 +88,9 @@ sound and the day and night are perfected in this chapter**.
 | Crafting stations (workbench, shipwright's bench first) | Built (2026-10-20: the workbench and the raft bench are the studio's pictures; the boat bench and the yard come with their chapters) |
 | Furniture (bed, chest, chair, table, bench, crate, barrel) | Built (2026-10-20: the studio's pictures, the chest open while its board is; the rug and the rest come with the steading) |
 | Camp things (drying rack, woodpile, cart, well, trough, tent without stripes) | Built (2026-10-20: nine of them the studio's pictures; the dragon post, beached boat, haystack, fence, banner, stall and signs later) |
-| Bushes and plants (bush, berry bush, tall grass, toadstools smaller) | Not started (the studio) |
+| Bushes and plants (bush, berry bush, tall grass, toadstools smaller) | Built (2026-10-20: the studio's plants set, three variants each; the tall grass redone 2026-10-21, Robin: the first "looks like a plant") |
 | Rocks: six variants each, the crack drawn over | Built (2026-10-20: rock, boulder and rock formation are the studio's pictures) |
+| **The sticker cure** (Robin, 2026-10-21: "the trees etc look pasted on like stickers") | Built (2026-10-21: every set piece re-rendered with a thin dark green-brown line, a blue cast shadow to the lower right, a halo and the meadow's blades at the foot on grass; the Build walls and roofs throw no shadow yet) |
 | The steading's look (the made-over ruin) | Built (Robin to judge in play) |
 | Yellow thatch on every roof | Built (Robin's rule) |
 
@@ -124,7 +125,7 @@ sound and the day and night are perfected in this chapter**.
 | The HUD: health and stamina, the chart, the meal; the bar from the start (Robin, 2026-10-17) | Built |
 | The speech board, the big-step boards, the name board, prompts over the hero, damage numbers | Built |
 | The map (M) | Built |
-| The look: one book face for names and titles, the bars, the board frames (`docs/ui-review.md` section 4) | Open: the Art Director writes a one-page spec (its plan, item 15), then I build it |
+| The look: one book face for names and titles, the bars, the board frames (`docs/ui-review.md` section 4) | Built (2026-10-20: the studio's panels in Robin's mix, the type Alegreya, the Gear and Stats pages, the crafting and Building boards) |
 | **How text appears** (toasts, notes; Robin, 2026-10-14: "a better way is wanted") | Partly (the "something new" toasts are gone; the rest is open) |
 
 ### 5. Music, sounds and effects
@@ -133,7 +134,7 @@ sound and the day and night are perfected in this chapter**.
 | --- | --- |
 | The place's sound: wind, leaves, sea, birds, crickets, fire, water, footsteps by the ground | Built |
 | The swings (Robin's picks) and the guard's sound | Done |
-| **The hit sound** (the studio's thump replaced; candidates I to L and V in the arena) | Open: Robin picks |
+| **The hit sound** (the studio's thump replaced; candidates I to L and V in the arena) | Done (Robin's picks locked in 2026-10-20: the slap W and the heavy hit X, every weapon's, the club's too since 2026-10-21) |
 | Gathering sounds (chop, crack, pull, kick), footsteps by ground, the fire's crackle, the night (crickets, owl, wolves) | Built (synthesized). Open: a reference Robin likes for each, then the studio matches it (the Sound Director's list: `C:\dev\SG\Sound Director\docs\chapter-1.md`); quickest is a row of free candidates in the arena's The sounds panel to pick from, as the swings were (mine to build) |
 | Music: the meadow by day and by night | Built (off until the Escape menu's bar is turned up). Open: the Sound Director's view is on at about a third of the bar (a new player never looks in the Escape menu); Robin decides |
 | Effects: sparks from the fires, smoke, chips, splinters, the shake | Built |
@@ -144,8 +145,8 @@ sound and the day and night are perfected in this chapter**.
 | --- | --- |
 | The 30-minute day, the golden dusk that darkens faster at its end, the dark night, the torch | Built (the night's pacing redone after the play-test of 2026-10-14; to be felt again) |
 | Sleep skips the night; rested under a roof | Built |
-| The lighting trials on: the glow, shadows, lit sides, light in rooms and at windows, moths | Built (the first version read as "a weird filter") |
-| The lighting trials off until Robin looks: the moon, mist, light shafts, clouds | Open |
+| The lighting trials on: the glow, shadows, lit sides, light in rooms and at windows, moths | Built (the first version read as "a weird filter"; the night is the studio's palette since 2026-10-21, Robin's yes: the darks lifted with blue, the fire ochre and shorter, the water darker than the land) |
+| The lighting trials off until Robin looks: the moon, mist, light shafts, clouds | Closed 2026-10-21: the mist, shafts and clouds cut in the clean-up; the moon kept, off, for later |
 | The first night as a moment (the staging) | Open |
 
 ## What finishes chapter 1 (in this order, mine)
@@ -203,14 +204,14 @@ introduced here (Robin, 2026-10-19). Your first raid there opens raiding at home
 | --- | --- |
 | The south water and its islands (the lowland look: oak, beech, ash, orchards, chalk, fields, marsh) | Built in code, not spawned |
 | The town, the church, the manor (Village archetypes) | Built in code |
-| **The raid in the real game**: the garrison, your ship and hird, carrying, leaving, saved (`docs/raid-build-plan.md`, ten steps) | Started 2026-10-20: steps 1 to 4 built and half of 5 (the settlements' men by distance, the place's memory and word spreading, the hird ashore on a raid and home with the loot, the defence table by archetype and wealth, the day watch, bodies found and dragged, theft seen, the shield wall; step 6: the defence's six tactics; step 7: the loot rolls, the sack of food, the feast at their table; step 8: crypts under churches, the hall's back room; step 9 (2026-10-21): thralls cut loose, a lost man won back, a yielded man let go, a dropped chest carried home, more men after a raid; step 5's second half (2026-10-21): the bucket brigade, the ram, men round by the other gate, the way kept (`duel`); step 10's bot measures (`tests/battle.js carry`); what waits is Robin's play) |
+| **The raid in the real game**: the garrison, your ship and hird, carrying, leaving, saved (`docs/raid-build-plan.md`, ten steps) | Built to step 9 (2026-10-21: the garrisons, the memory and word spreading, ship, hird and loot home, the defence ladder, the ways in and the ram, the six plans, rewards, the crypt and the back room, the people of a raid); step 10 is Robin's play |
 | Men, towns and raids: one on one, bowmen, noise, night raids, storming, villagers who flee or arm (`CLAUDE.md`) | Built in the Battle test |
 | Destruction: breaking in, roofs that fall, fire, mending (`docs/destruction.md`) | Built (real villages and the Destruction Editor) |
 | Iron: bog iron, the bloomery, iron tools and arms, mail, gambeson, helm, painted shield | Built in code |
 | The longship (iron) | Built in the Shipyard |
 | The raided place's life and the season turn (`docs/world-shape.md`; the build plan's step 5) | Not started |
 | The jarl's call after the first raid | Not started |
-| Thralls to cut loose, your taken men to win back, a man who yields, a priest who does not fight | Decided, not built |
+| Thralls to cut loose, your taken men to win back, a man who yields, a priest who does not fight | Built (raid step 9, 2026-10-21; the priest is a villager who runs; the lines `LORE?`) |
 | Fishing (the lowlands' fish, the rod, the fisherman; Robin: not before the lowlands; moved here) | Built in code |
 | The silver ring, silver as the second currency | Not started |
 
@@ -239,10 +240,10 @@ Open. **The full year**: every season drawn everywhere, the turn after winter th
 
 | Work | When | Status |
 | --- | --- | --- |
-| **Saves that fit**: save what changed on the ground, not the whole field (today 1.5 MB of 1.56; the browser gives about 5 MB in all) | before the bigger sea (chapter 2) | Not started (`docs/archive/before-wednesday.md`, 1) |
+| **Saves that fit**: save what changed on the ground, not the whole field (today 1.5 MB of 1.56; the browser gives about 5 MB in all) | before the bigger sea (chapter 2) | Built (2026-10-20: the painted ground saved as what differs, about 55 KB, was 1.5 MB) |
 | **Sheets loaded when used**, a soft shadow while one loads (the hero's sheets are about 1.5 GB decoded and all load at the start) | now: it touches chapter 1's smoothness | Built (the kit and the people load a sheet on first use and, 2026-10-21, let go of clips not drawn for two minutes: `Sprites.trim`; the beasts since 2026-10-20) (`docs/archive/before-wednesday.md`, 2) |
 | **The per-frame packer** (each frame cut to its own pixels), then the studio repacks every set | after the lazy loading | Not started (the art plan, item 8; the people's atlas already does it: `tools/people.js` packs per frame and `rectsOf` in `src/sprites.js` draws it, the base for the general one) |
-| **The world as waters** (the generator) | chapter 2's start | Planned (`docs/build-plan-waters.md`, step 1) |
+| **The world as waters** (the generator) | chapter 2's start | Built (2026-10-20: `docs/build-plan-waters.md` steps 1 to 3) |
 | Performance: the frame log's SPIKE lines, the first frame's time | always | Watched |
 | Tools: `tools/parsecheck.js` (built), `tools/worldtime.js` (to write with the generator) | | |
 
