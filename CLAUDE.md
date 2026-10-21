@@ -471,10 +471,33 @@ routines (spots, jobs, sitting at the fire, watching you a while), find their wa
 a blade or raid, and can be killed (the dead are remembered by name). **Their clothes and their work are the Art Director's step 5B** (wired 2026-10-21): the people's atlas carries the apron, the kerchief and the straw hat, the hammer, the saw and the bucket for the hand, and the clips hammer, saw, carry, carry_walk, kneel and sit_work (`tools/peoplerender.js` renders them, `art/build/folk_build.py` keys them on `people.blend`); a villager's calling dresses him (`ROLE_X`, `roleLook`: the smith's leather apron, the weaver's linen one, a straw hat on one farmer or fisher in two, grey hair on an elder; a woman in the dress wears the kerchief, under no hat) and gives him his clip (`JOB_CLIP`: the smith hammers at the forge with the hammer in hand, the well is the bucket held and carried, `carry_walk` whenever a villager carries (the brigade too), a priest kneels before the altar (the spot `pray`, held), the weaver and the net mender sit at their work; the hird's crafter saws at the bench). They can be broken into and burnt ("Destruction").
 Houses are narrow and long at real sizes (a house 4 by 6 to 9 tiles, a longhouse 5 by 14 to 18, a hall 6 by 20 to 22).
 
-**Boats** (`src/yard.js`, `docs/boats.md`): E at a shipwright's bench steps into the Shipyard; a vessel is a hull design chosen
+**Boats** (`src/yard.js`, `docs/boats.md`; **`docs/ships-plan.md`: how the ships should work, Robin's six thoughts answered,
+2026-10-21, its questions waiting for him**): E at a shipwright's bench steps into the Shipyard; a vessel is a hull design chosen
 there (raft, faering, boat, karve, longship by the bench's tier), fitted out with seats, mast, sail, steering oar, dragon stem
 and shields, and launched (the hull is paid then). Sailing is `Yard.sail`: every vessel, the raft too, goes forward on W and
 steers with A and D (Robin), with the wind for rigged hulls and rowers for the crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper; **the karve is the copper age's sea-going ship** (wood 24, copper 10, fiber 12; decision 1 of the waters plan at its default, 2026-10-20: the ship that leaves home must be buildable from home's materials), the longship needs iron.
+**The hulls are at the sizes they were dug up at** (2026-10-21, `Yard.HULLS` in metres: the faering 6.5 m, the boat 9, the karve
+16 by 4.2, the longship 23; a yard cell is a thwart's pitch, `CW` 24; the sizes measured by `tests/ships.js`), **the camera pulls
+back at sea by the hull** (`H.sea`: a karve 0.55, a longship 0.45; mine). **The crew sits by `Yard.crewPlaces`:** on a rigged hull
+the hirdman with the most wits is the helmsman at the steering oar facing forward (he does not row: `v.helm`), the rowers fill
+the thwarts from the stern, the right-hand side first, two a thwart (one on the faering), **facing aft**, the rest on the floor;
+**the hero rows only alone** (seated on the aft thwart, his pair of oars, `P.anim.sit`; alone on a karve at the steering oar) **and
+with any man aboard stands in the bow looking ahead** (`Yard.heroSeat`; Robin), turning only to strike or shoot. **One stroke for
+the whole ship** (`v.stroke`, `v.rowing` in `Yard.sail`: a pull then a recovery; the oars are shipped when the sail is full and
+doing the work): `Yard.drawOars` draws every oar from the rower's hands over the rail to the blade and `Yard.strokeLean` leans
+the `sit` clip with it (**the `row` and `helm` clips are asked of the Art Director**). **The vessel is one drawing** (`drawShip`:
+the hull, everyone aboard by depth, the rig between those behind the mast and those before it, the near rail with its shields
+over their legs (`Yard.drawVesselFront` takes the figures), then the oars); the engine's own hero draw stands down aboard
+(`shipHero`). **On and off (`BOARD`, mine):** the gangway is the hull's point nearest the land (`Yard.gangway`); E within reach
+boards the hero and **calls every follower within 420 units** (`m.boarding`: he walks to the gangway's land point and climbs
+aboard within 28 of it; the engine's men on a raid shore the same by an errand, `e.toShip`); **the ship waits for them up to 8 s**
+(W does nothing; the toast "The men are coming aboard"), then those within 420 have waded the last bit and the rest are left
+("X is left ashore", he walks back to the stone); the seats fill in boarding order (`m.seatNo`); no room (`BOARD.cap`: the rowers
+and a helmsman) and a man says so. **Landing files them off** one every 0.35 s (`raft.landing`, `landingTick`) onto spots spread
+along the shore (`Yard.landingSpots`), each walking to his spot (`m.landTo`); on a raid's ground each becomes a man of the engine
+as he steps off; on another shore of home water they keep the boat. Admin's karve lays three thwarts aft of the mast and three
+before it. The lines are `LORE?` (asked). **Not built:** shooting from the deck, enemy ships, grappling and the fight on the
+decks (chapter 3), the fleet, the hull's look to the studio's karve (the plan's steps 5 to 8).
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
 chart show what has been seen; saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is

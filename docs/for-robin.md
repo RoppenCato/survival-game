@@ -161,3 +161,27 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
     mended in pale new wood. Every village with a palisade has it (the walled towns and the dry-stone and rail fences
     stay as they were). Look at any village on the big island or the Village Editor. The studio's rail-fence posts and
     wattle hurdles for polygon fences are not used yet (those fences stay straight).
+
+## The ships (2026-10-21, after "figure out how the ships should work")
+
+The design is `docs/ships-plan.md`: your six thoughts answered, eight build steps, six questions with my defaults. Steps 1 to 4
+are built (nothing here depends on your answers):
+
+1. **The hulls at true size.** The karve is 16 m by 4.2 m now (it was 12 by 1.4), the longship 23 m, the boat 9, the faering 6.5.
+   Admin: "A karve by you", "Four hirdmen join" (twice for eight), E at the ship. The camera pulls back at sea (a karve to 0.55,
+   a longship 0.45) and comes in again ashore: say if that is too far or too close.
+2. **The crew.** They sit two to a thwart facing aft, from the stern; on the karve the wittiest takes the steering oar at the stern
+   facing forward and does not row; the near rail and its shields cover their legs; the oars go from their hands over the rail into
+   the water and the whole ship pulls in time (a pull, then the blade lifted and carried forward). The rowers lean with the stroke
+   on the `sit` clip until the Art Director's `row` clip comes (asked). Under a full sail with the wind behind, the oars are shipped.
+3. **You.** Alone in a boat you sit on the aft thwart and row (your own pair of oars); alone on the karve you stand at the steering
+   oar; with anyone aboard you stand in the bow looking ahead, and turn only to strike or shoot.
+4. **On and off.** E at the ship calls every follower within 420 units: he walks to the gangway (the hull's point nearest the
+   land) and climbs in; the ship waits for them up to eight seconds (a toast says so), then anyone still coming but near has waded
+   the last bit, anyone far is left (a toast names him). E at a shore steps you off at once and the men file off one every third of
+   a second onto spots along the shore, then follow you. Try it with the eight men spread out on the beach: nobody should be left
+   who was within sight, and nobody should stand in the water or on top of another.
+
+Waiting for you in the plan: the hull's look (in code to the studio's karve, or the studio's painted plan view turned), the camera
+at sea, the helmsman rule, fighting on the decks in chapter 3 (shooting from the deck sooner), the yard as it is, colours and a
+ship's name later.

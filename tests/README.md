@@ -7,6 +7,7 @@ Run everything: `npm install` once, then `npm test` from the project root.
 
 | Script | What it checks |
 | --- | --- |
+| ships.js | the ships (2026-10-21): the hulls at true size, the crew's places (helmsman, rowers two a thwart facing aft, clear of each other), the hero's place, the stroke, the gangway and the landing spots |
 | ctest2.js | melee reach, body collision, enemy spacing, move speed, parry, auto ranged |
 | ctest4.js | dash distance, backstep, dash i-frames, turn speed |
 | btest3.js | brute lunge can be parried, spin can be dashed |

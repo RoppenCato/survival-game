@@ -7890,13 +7890,56 @@ var T = 32, TS = 24, K = 0.75;
      how many strake rows it carries amidships, and hullProfile() draws the half-width of every column from it. thwarts
      [min, max] rowing seats; mast and rudder the cells they must go on (none: no rig); tier the bench's; cost paid when
      the vessel is launched (the parts are paid as they are laid); zoom the yard's camera, so a longship fits the screen. */
-  var KJ = 3, HULLS = {
-    faering: { name: 'Faering', n: 4, beam: 1.0, thwarts: [1, 2], mast: null, rudder: null, tier: 2, zoom: 1.1, cost: { wood: 10, copper: 3 }, text: 'A four-oared boat for the fjord and the sound: two rowing seats at most, no mast. Quick to turn, light to row.' },
-    boat: { name: 'Boat', n: 6, beam: 1.4, thwarts: [1, 3], mast: null, rudder: null, tier: 2, zoom: 1.1, cost: { wood: 14, copper: 5 }, text: 'A six-oared boat: three rowing seats at most, no mast. The first that crosses to the big island with a crew.' },
-    karve: { name: 'Karve', n: 9, beam: 2.0, thwarts: [2, 6], mast: 5, rudder: 1, tier: 3, zoom: 0.95, cost: { wood: 24, copper: 10, fiber: 12 }, text: 'The first ship: a mast amidships, a square sail, a steering oar at the stern, up to six seats for twelve rowers. A karve’s crew is for a farm, a church, a small village.' },
-    longship: { name: 'Longship', n: 16, beam: 2.4, thwarts: [4, 13], mast: 8, rudder: 1, tier: 3, zoom: 0.58, cost: { wood: 44, ironBar: 16 }, text: 'A warship of the kings: thirteen seats, twenty-six oars, longer than the screen. A town waits for a longship’s crew.' }
+  var U = 1 / 0.046;                     // units a metre (the canon scale: a unit is 4.6 cm; docs/ships-plan.md, 2026-10-21: the hulls at the sizes they were dug up at)
+  var KJ = 3, HULLS = {                    // m: the length in metres, beam in metres, n: keel cells (a cell a thwart's pitch, CW), per: rowers to a thwart, zoom: the yard's camera, sea: the game's camera when aboard
+    faering: { name: 'Faering', m: 6.5, beam: 1.4, n: 5, per: 1, thwarts: [1, 2], mast: null, rudder: null, tier: 2, zoom: 1.1, sea: 0.65, cost: { wood: 10, copper: 3 }, text: 'A four-oared boat for the fjord and the sound, six and a half metres: two rowing seats at most, one man to a seat with a pair of oars, no mast. Quick to turn, light to row.' },
+    boat: { name: 'Boat', m: 9, beam: 2.0, n: 8, per: 2, thwarts: [1, 3], mast: null, rudder: null, tier: 2, zoom: 0.9, sea: 0.65, cost: { wood: 14, copper: 5 }, text: 'A six-oared boat of nine metres: three rowing seats at most, two men to a seat, no mast. The first that crosses to the big island with a crew.' },
+    karve: { name: 'Karve', m: 16, beam: 4.2, n: 14, per: 2, thwarts: [2, 6], mast: 8, rudder: 1, tier: 3, zoom: 0.6, sea: 0.55, cost: { wood: 24, copper: 10, fiber: 12 }, text: 'The first ship, sixteen metres: a mast amidships, a square sail, a steering oar at the stern, up to six seats for twelve rowers and a helmsman. A karve’s crew is for a farm, a church, a small village.' },
+    longship: { name: 'Longship', m: 23, beam: 5.2, n: 21, per: 2, thwarts: [4, 13], mast: 11, rudder: 1, tier: 3, zoom: 0.46, sea: 0.45, cost: { wood: 44, ironBar: 16 }, text: 'A warship of the kings, twenty-three metres: thirteen seats, twenty-six oars, most of the screen long. A town waits for a longship’s crew.' }
   };
   var HULL_IDS = ['faering', 'boat', 'karve', 'longship'], RIGGED = ['karve', 'longship'];
+  function heroSeat(v) {                   // where the hero is along the keel (the bow at +): alone on a rowing hull on the aft-most thwart at the oars; alone on a rigged hull at the steering oar; with any man aboard in the bow, looking ahead (Robin, 2026-10-21)
+    var H = HULLS[v.kind]; if (!H) return 0;
+    if ((v.crew || 0) > 0) return (v.hw || 0) * 0.72;
+    if (H.rudder) return -(v.hw || 0) * 0.62;
+    return v.seats && v.seats.length ? v.seats[0] : -(v.hw || 0) * 0.28;
+  }
+  function crewPlaces(v, n, nFloor) {              /* where n men sit, in the hull's frame (x along the keel, the bow at +; y across, the right-hand side looking forward at +): on a rigged hull the first place is the helmsman's at the steering oar, facing forward; the rowers fill the thwarts from the stern, the right-hand side first, two a thwart (one on the faering), facing aft; the rest sit on the floor in the stern and the bow. docs/ships-plan.md, 2026-10-21 */
+    var H = HULLS[v.kind], out = [], pr, seats, per, i, k, fl = 0; nFloor = nFloor || 0; if (!H || !(n + nFloor > 0)) return out;
+    pr = profileOf(v); seats = v.seats && v.seats.length ? v.seats : [0]; per = v.per || H.per || 2;
+    if (H.rudder && v.rudder !== false) { var hx = Math.min(-pr.L * 0.72, seats[0] - 22); out.push({ x: hx, y: Math.max(6, profW(pr, hx, 1) - 15), face: 0, kind: 'helm', side: 1 }); }   // (aft of the aft-most thwart, whatever was laid)
+    for (i = 0; i < seats.length && out.length < n; i++) for (k = 0; k < per && out.length < n; k++) {
+      var sd = per === 1 ? 0 : (k === 0 ? 1 : -1), wv = profW(pr, seats[i], sd || 1), lat = per === 1 ? 0 : sd * Math.max(7, wv - 13);
+      out.push({ x: seats[i], y: lat, face: Math.PI, kind: 'row', side: sd, seat: i });
+    }
+    while (out.length < n + nFloor) { var aft = fl % 2 === 0, q = Math.floor(fl / 2), x2 = aft ? -pr.L * 0.5 - q * 14 : pr.L * 0.42 + q * 14; out.push({ x: x2, y: (q % 2 ? -1 : 1) * 7, face: aft ? Math.PI / 2 : -Math.PI / 2, kind: 'floor', side: 0 }); fl++; }
+    return out;
+  }
+  /* On and off (docs/ships-plan.md step 4, 2026-10-21). The GANGWAY is the point of the hull nearest the land: the rail is sampled
+     all round and from each sample the shore is looked for straight out, up to GANG.reach; the nearest wins. It gives the rail
+     point (x, y), the land point to walk to (lx, ly, a step up the beach) and the distance. landingSpots spreads n men along the
+     shore from a landing point: alternately either side along the shore line, a step apart and a step inland, each tested by
+     free(x, y) with a small search round it. The game walks the men to the gangway and files them off onto the spots. */
+  var GANG = { reach: 96, step: 6, up: 10, apart: 16, inland: 12 };
+  function gangway(v, land) {
+    if (!HULLS[v.kind]) return null;
+    if (v._gang && v._gang.x === v.x && v._gang.y === v.y && v._gang.h === v.h) return v._gang.g;
+    var pr = profileOf(v), L = pr.L, ch = Math.cos(v.h), sh = Math.sin(v.h), best = null, i, d;
+    function toW(x, y) { return [v.x + x * ch - y * sh, v.y + x * sh + y * ch]; }
+    var samples = []; for (i = 0; i <= 16; i++) { var x = -L * 0.92 + L * 1.84 * i / 16; [-1, 1].forEach(function (sd) { samples.push({ x: x, y: sd * profW(pr, x, sd), nx: 0, ny: sd }); }); }
+    samples.push({ x: L * 0.98, y: 0, nx: 1, ny: 0 }); samples.push({ x: -L * 0.98, y: 0, nx: -1, ny: 0 });
+    for (i = 0; i < samples.length; i++) { var q = samples[i], S = toW(q.x, q.y), N = [q.nx * ch - q.ny * sh, q.nx * sh + q.ny * ch];
+      for (d = GANG.step; d <= GANG.reach; d += GANG.step) if (land(S[0] + N[0] * d, S[1] + N[1] * d)) { if (!best || d < best.d) best = { x: S[0], y: S[1], lx: S[0] + N[0] * (d + GANG.up), ly: S[1] + N[1] * (d + GANG.up), nx: N[0], ny: N[1], d: d }; break; } }
+    v._gang = { x: v.x, y: v.y, h: v.h, g: best }; return best;
+  }
+  function landingSpots(sx, sy, nx, ny, n, free) {   // n spots on the land from (sx, sy), (nx, ny) pointing inland, spread along the shore
+    var out = [], k, tx = -ny, ty = nx;
+    for (k = 0; k < n; k++) { var side = k % 2 ? -1 : 1, q = Math.ceil(k / 2), bx = sx + nx * GANG.inland + tx * side * q * GANG.apart, by = sy + ny * GANG.inland + ty * side * q * GANG.apart, sp = null, r, a;
+      function ok(px, py) { return free(px, py) && !out.some(function (o) { return Math.hypot(o.x - px, o.y - py) < 10; }); }
+      if (ok(bx, by)) sp = { x: bx, y: by }; else for (r = 8; r <= 40 && !sp; r += 8) for (a = 0; a < 6.283 && !sp; a += 0.785) { var px = bx + Math.cos(a) * r, py = by + Math.sin(a) * r; if (ok(px, py)) sp = { x: px, y: py }; }
+      out.push(sp || { x: bx, y: by }); }
+    return out;
+  }
   function isShip(kind) { return !!HULLS[kind]; }                  // a hull of a design (every vessel but the raft)
   function rigged(kind) { return !!(HULLS[kind] && HULLS[kind].mast); }   // a mast, a sail, a steering oar, the wind
   function nameOf(kind) { return HULLS[kind] ? HULLS[kind].name : 'Raft'; }
@@ -7915,7 +7958,7 @@ var T = 32, TS = 24, K = 0.75;
   // the keel and strake cells a hull's design lays in the yard: the keel on row KJ, the strake rows by the beam (two at most on each side)
   function hullCellsOf(plan) {
     var H = HULLS[plan], out = [], k; if (!H) return out;
-    for (k = 0; k < H.n; k++) { out.push({ id: 'keel', i: 1 + k, j: KJ }); var rows = Math.min(2, Math.round(H.beam * shapeK(k, H.n))); for (var r = 1; r <= rows; r++) { out.push({ id: 'strake', i: 1 + k, j: KJ - r }); out.push({ id: 'strake', i: 1 + k, j: KJ + r }); } }
+    for (k = 0; k < H.n; k++) { out.push({ id: 'keel', i: 1 + k, j: KJ }); var rows = Math.min(2, Math.round(H.beam / 2.2 * shapeK(k, H.n))); for (var r = 1; r <= rows; r++) { out.push({ id: 'strake', i: 1 + k, j: KJ - r }); out.push({ id: 'strake', i: 1 + k, j: KJ + r }); } }
     return out;
   }
   function shapeK(k, n) { return Math.pow(Math.max(0, Math.min(1, 1.3 * Math.sin(Math.PI * (k + 0.5) / n))), 0.7); }   // full amidships, drawing in to the stems
@@ -7972,7 +8015,7 @@ var T = 32, TS = 24, K = 0.75;
     c.restore();
   }
 
-  var CW = 27, CH = 7.6;                   // a yard cell on the water: how long and how wide a log is
+  var CW = 24, CH = 7.6;                   // a yard cell on the water: how long a cell is (a thwart's pitch, a metre and a bit, 2026-10-21; a raft's log is two) and how wide a log is
   function hullCells(parts) { return (parts || []).filter(function (p) { return partOf(p.id) && partOf(p.id).layer === 'hull'; }); }
   function fitVessel(raft) {                     // from its parts: how big the hull is (for the water test) and where you sit
     if (!raft) return; var parts = raft.parts && raft.parts.length ? raft.parts : RAFT_DEFAULT, hull = hullCells(parts), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
@@ -7981,12 +8024,11 @@ var T = 32, TS = 24, K = 0.75;
     if (H) {
       var pr = hullProfile(H); raft.hw = pr.L + 2; raft.hh = pr.Wmax + 2;
       raft.seats = parts.filter(function (p) { return p.id === 'thwart'; }).map(function (p) { return Math.max(-(pr.L - 12), Math.min(pr.L - 12, (p.i + 0.5 - pr.cx) * CW)); }).sort(function (a, b) { return a - b; });   // the rowing seats along the keel (bow at +)
-      raft.rowers = raft.seats.length * 2;                                                                   // two to a seat
+      raft.rowers = raft.seats.length * (H.per || 2); raft.per = H.per || 2;                                 // two to a seat (one on the faering)
       raft.mastX = H.mast ? (H.mast + 0.5 - pr.cx) * CW : null;
       raft.sail = !!H.mast && parts.some(function (p) { return p.id === 'sail'; }); raft.rudder = !!H.rudder && parts.some(function (p) { return p.id === 'rudder'; });
       raft.dragon = parts.some(function (p) { return p.id === 'dragon'; }); raft.shields = parts.some(function (p) { return p.id === 'shields'; });
-      if (H.rudder) raft.seat = -raft.hw * 0.62;                                                              // on a rigged ship you stand at the stern by the steering oar
-      else raft.seat = (raft.crew || 0) > 0 ? raft.hw * 0.5 : -raft.hw * 0.28;                                // alone you sit aft and paddle; with rowers you stand halfway to the bow
+      raft.seat = heroSeat(raft);
     }
     else { raft.hw = (maxI - minI) * CW / 2 + 4; raft.hh = (maxJ - minJ) * CH / 2 + 4; raft.seat = 0; }
   }
@@ -8055,7 +8097,7 @@ var T = 32, TS = 24, K = 0.75;
   function sail(v, inp, dt, free, H, wind) {
     var ix = inp.ix || 0, iy = inp.iy || 0, want = 0, stuck = !free(v.x, v.y, v.h);
     if (v.speed == null) v.speed = 0;
-    var crew = Math.min(v.crew || 0, v.rowers != null ? v.rowers : 99), rowK = 1 + (H.rowK != null ? H.rowK : (WIND.rowK || 0)) * crew, sailK = 1, fill = 0;
+    var crew = Math.min(Math.max(0, (v.crew || 0) - (v.helm ? 1 : 0)), v.rowers != null ? v.rowers : 99), rowK = 1 + (H.rowK != null ? H.rowK : (WIND.rowK || 0)) * crew, sailK = 1, fill = 0;   // (the helmsman does not row)
     if (v.sail && wind && wind.k > 0) { fill = Math.max(0, Math.cos(wind.a - v.h)); sailK = 1 + wind.k * fill; }      // the share of the wind that fills the sail
     v.sailFill += ((iy < 0 || (!H.steer && (ix || iy)) ? fill : 0) - (v.sailFill || 0)) * Math.min(1, dt * 2); if (!(v.sailFill > 0)) v.sailFill = 0;   // the sail fills as it is set and the wind comes behind
     v.rud = (v.rud || 0) + (ix - (v.rud || 0)) * Math.min(1, dt * 6);                                                                          // the steering oar follows the tiller
@@ -8082,6 +8124,8 @@ var T = 32, TS = 24, K = 0.75;
     else if (free(v.x, ny, v.h)) { v.y = ny; v.vx *= 0.3; v.speed *= 0.9; }
     else { v.vx *= 0.2; v.vy *= 0.2; v.speed *= 0.5; }
     v.h = wrapA(v.h);
+    v.rowing = (crew > 0 || !rigged(v.kind)) && (iy < 0 || Math.abs(v.speed) > 8) && !(v.sailFill > 0.6);   // (alone in a rowing boat the hero rows)                                           // the oars pull while there is way to make and the sail is not doing the work; else they are shipped
+    if (v.rowing) v.stroke = (v.stroke || 0) + dt * (2 * Math.PI / 1.7) * (0.4 + 0.6 * Math.min(1, Math.abs(v.speed) / (H.top || 1)));   // one stroke for the whole ship: every rower in time, quicker with the way on (docs/ships-plan.md)
     return stuck;
   }
   // the water round a hull: a thin line of foam hugging it, and when it moves a wake of ripples trailing from the stern
@@ -8101,9 +8145,10 @@ var T = 32, TS = 24, K = 0.75;
     c.strokeStyle = 'rgba(235,250,255,' + (0.3 + 0.25 * mv).toFixed(2) + ')'; c.lineWidth = 2.2; c.beginPath(); if (pr) shapedPath(c, pr, (hl + 5) / hl, (hw * 1.15 + 3) / hw); else { c.moveTo(-hl - 5, 0); c.quadraticCurveTo(0, -(hw * 1.15 + 3) * 1.9, hl + 5, 0); c.quadraticCurveTo(0, (hw * 1.15 + 3) * 1.9, -hl - 5, 0); } c.stroke();   // foam at the waterline
     c.restore();
   }
-  function drawVessel(c, v, clock) {                        // the vessel as it was laid in the yard, on the water
-    var bob = Math.sin(clock * 2 + v.x * 0.01) * 0.8, parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT;
-    if (HULLS[v.kind]) { drawBoat(c, v, parts, bob, clock); return; }
+  function bobOf(v, clock) { return Math.sin(clock * 2 + v.x * 0.01) * 0.8; }
+  function drawVessel(c, v, clock, o) {                     // the vessel as it was laid in the yard, on the water. o.split: the hull alone (the page draws the crew, then drawRigOf, drawVesselFront and drawOars in its own order; docs/ships-plan.md step 2, 2026-10-21)
+    var bob = bobOf(v, clock), parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT;
+    if (HULLS[v.kind]) { drawBoat(c, v, parts, bob, clock, o || {}); return; }
     var logs = parts.filter(function (p) { return p.id === 'log'; }), minI = 1e9, maxI = -1e9, minJ = 1e9, maxJ = -1e9;
     logs.forEach(function (p) { minI = Math.min(minI, p.i); maxI = Math.max(maxI, p.i + 2); minJ = Math.min(minJ, p.j); maxJ = Math.max(maxJ, p.j + 1); });
     var cx = (minI + maxI) / 2, cy = (minJ + maxJ) / 2, hw = (maxI - minI) / 2 * CW + 4, hh = (maxJ - minJ) / 2 * CH + 4;
@@ -8130,7 +8175,7 @@ var T = 32, TS = 24, K = 0.75;
   // its own, smoothed a little so one strake makes a swell rather than a step; the keel's length sets the length
   var ROW = CH * 0.85 * 0.6;
   function hullProfile(H) {                // a design's profile: the half-width of every column from its beam and the shape, the same on both sides
-    var top = [], k; for (k = 0; k < H.n; k++) top.push(3 + (1 + H.beam * shapeK(k, H.n)) * ROW * 0.9);
+    var top = [], k, Wh = (H.beam || 2) * U / 2; for (k = 0; k < H.n; k++) top.push(Wh * (0.22 + 0.78 * shapeK(k, H.n)));   // (the half-beam in units, full amidships, drawing in to the stems)
     var L = H.n * CW / 2 + 8, cx = H.n / 2 + 1, Wmax = Math.max.apply(null, top);
     return { L: L, n: H.n, cx: cx, top: top, bot: top.slice(), Wmax: Wmax, keelJ: KJ };
   }
@@ -8161,8 +8206,8 @@ var T = 32, TS = 24, K = 0.75;
     c.quadraticCurveTo(pts[pts.length - 1][0], pts[pts.length - 1][1], pts[0][0], pts[0][1]); c.closePath();
   }
   // a clinker boat in the look of the Sea Editor's ships: the karve without its sail (a mast and sail come later)
-  function drawBoat(c, v, parts, bob, clock) {
-    var pr = profileOf(v), L = pr.L, W = pr.Wmax, sz = Math.max(0.7, Math.min(1.2, L / 60)), col = COL, h = v.h, i, H = HULLS[v.kind];
+  function drawBoat(c, v, parts, bob, clock, o) {
+    var pr = profileOf(v), L = pr.L, W = pr.Wmax, sz = Math.max(0.7, Math.min(1.2, L / 60)), ds = Math.max(0.8, L / 110), col = COL, h = v.h, i, H = HULLS[v.kind];   // (ds: the stems, the head, the rig and the oars grow with the hull; sz the line weights)
     var sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02, mv = Math.min(1, speedOf(v) / 60);
     var seats = parts.filter(function (p) { return p.id === 'thwart'; }).map(function (p) { return (p.i + 0.5 - pr.cx) * CW; });
     drawWater(c, v, L, W, clock, pr);
@@ -8170,54 +8215,78 @@ var T = 32, TS = 24, K = 0.75;
     function fillStroke(fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke(); }
     var box = [-L - 12, -W - 12, 2 * L + 24, 2 * W + 24];
     c.fillStyle = 'rgba(8,12,40,0.28)'; c.beginPath(); c.ellipse(sx + 2, v.y * K + 5 * sz, L * 0.95, W * 1.05, 0, 0, 7); c.fill();
-    inFrame(4 * sz, function () { inkPath(c, shadeHex(col.hull, -30), { box: box, flat: true, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); }); });   // the hull's depth below the rail
+    inFrame(3 + 2.5 * ds, function () { inkPath(c, shadeHex(col.hull, -30), { box: box, flat: true, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); }); });   // the hull's depth below the rail
     inFrame(0, function () {
       inkPath(c, col.hull, { box: box, lw: 1.2 }, function () { shapedPath(c, pr, 1, 1); });
       [0.95, 0.9].forEach(function (k, n) { c.beginPath(); shapedPath(c, pr, k, 0.9 - n * 0.12); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); });   // the strakes, overlapping toward the rail
       c.beginPath(); shapedPath(c, pr, 0.92, 0.95); c.lineWidth = 0.9; c.strokeStyle = INK.lit; c.stroke();
       inkPath(c, col.deck, { box: box, lw: 0.9, shade: 0.1 }, function () { shapedPath(c, pr, 0.84, 0.62); });   // the bottom boards
       for (var bi = -2; bi <= 2; bi++) { c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.lineWidth = 0.5; c.strokeStyle = INK.faint; c.save(); c.beginPath(); shapedPath(c, pr, 0.84, 0.62); c.clip(); c.beginPath(); c.moveTo(-L * 0.8, bi * W * 0.12); c.lineTo(L * 0.8, bi * W * 0.12 + 0.3); c.stroke(); c.restore(); }
-      seats.forEach(function (x, si) { var wt = profW(pr, x, -1) * 0.6, wb = profW(pr, x, 1) * 0.6; ink(c, [[x - 1.4, -wt], [x + 1.4, -wt], [x + 1.4, wb], [x - 1.4, wb]], shadeHex(col.hull, 12), { wob: 0.3, seed: si, lw: 0.7, heavy: 1.1 }); });   // the rowing seats as laid
-      if (v.shields) { var SHC = ['#8a3a34', '#d9c48a', '#3f5a7a'], sn = 0; for (var sx2 = -L * 0.72; sx2 <= L * 0.72; sx2 += 10 * sz) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98; c.fillStyle = SHC[sn++ % 3]; c.beginPath(); c.ellipse(sx2, sd * wy, 4.2 * sz, 2.3 * sz, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.ellipse(sx2, sd * wy, 1.1 * sz, 0.7 * sz, 0, 0, 7); c.fill(); }); }   // shields hung along both rails, seen from above as leaning discs
-      if ((v.crew || 0) > 0) seats.forEach(function (x, n) { [-1, 1].forEach(function (sd) {          // an oar each side of every seat, pulling when under way (only with rowers)
-        var a = sd * (Math.PI / 2) - Math.sin(clock * (2.6 + mv * 4.5) + n) * 0.55 * mv - 0.2;
-        var ox = x, oy = sd * profW(pr, x, sd), len = W * 1.7 + 7 * sz, ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
-        c.strokeStyle = LINE; c.lineWidth = 2.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
-        c.strokeStyle = shadeHex(col.deck, -10); c.lineWidth = 1.3; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
-        c.beginPath(); c.ellipse(ex, ey, 3.2, 1.6, a, 0, 7); fillStroke(shadeHex(col.deck, -10), 0.9);
-      }); });
+      seats.forEach(function (x, si) { var wt = profW(pr, x, -1) * 0.6, wb = profW(pr, x, 1) * 0.6; ink(c, [[x - 3, -wt], [x + 3, -wt], [x + 3, wb], [x - 3, wb]], shadeHex(col.deck, -16), { wob: 0.3, seed: si, lw: 0.7, heavy: 1.1 }); });   // the rowing seats as laid: a thwart across the hull
+      if (v.shields) { var SHC = ['#8a3a34', '#d9c48a', '#3f5a7a'], sn = 0; for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98; c.fillStyle = SHC[sn++ % 3]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.ellipse(sx2, sd * wy, 1.1 * sz, 0.7 * sz, 0, 0, 7); c.fill(); }); }   // shields hung along both rails, seen from above as leaning discs
     });
     var fx = Math.cos(h), fy = Math.sin(h) * K;                                                          // the upright stems, curling at bow and stern
     function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
     function curve(p0, p1, p2, w, fill) { c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = w + 2; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke(); c.strokeStyle = fill; c.lineWidth = w; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke(); }
     function stem(lx, dir, hgt) {
-      var p = at(lx, 0), tip = [p[0] + fx * dir * 7 * sz, p[1] + fy * dir * 7 * sz - hgt], w = 3.2 * sz, wood = shadeHex(col.hull, -8);
-      curve(p, [p[0] - fx * dir * 1.5 * sz, p[1] - hgt * 0.6], tip, w, wood);
-      curve(tip, [tip[0] + fx * dir * 3.5 * sz, tip[1] - 3 * sz], [tip[0] + fx * dir * 1.5 * sz, tip[1] + 2.4 * sz], w * 0.55, wood);
+      var p = at(lx, 0), tip = [p[0] + fx * dir * 7 * ds, p[1] + fy * dir * 7 * ds - hgt], w = 2.4 + 1.2 * ds, wood = shadeHex(col.hull, -8);
+      curve(p, [p[0] - fx * dir * 1.5 * ds, p[1] - hgt * 0.6], tip, w, wood);
+      curve(tip, [tip[0] + fx * dir * 3.5 * ds, tip[1] - 3 * ds], [tip[0] + fx * dir * 1.5 * ds, tip[1] + 2.4 * ds], w * 0.55, wood);
     }
-    stem(-L * 0.96, -1, 10 * sz);
+    stem(-L * 0.96, -1, 20 * ds);
     if (v.dragon) {                                                                                    // the dragon stem at the bow: a neck rising forward, a head with its jaw open, an eye, a tongue
-      var bp = at(L * 0.96, 0), nk = [bp[0] + fx * 9 * sz, bp[1] + fy * 9 * sz - 16 * sz], hd = [nk[0] + fx * 5 * sz, nk[1] + fy * 5 * sz - 3 * sz], wood2 = shadeHex(col.hull, -10);
-      curve(bp, [bp[0] - fx * 1 * sz, bp[1] - 10 * sz], nk, 3.4 * sz, wood2);
-      c.fillStyle = wood2; c.strokeStyle = LINE; c.lineWidth = 1; c.beginPath(); c.moveTo(nk[0] - fx * 2 * sz, nk[1] + 1 * sz); c.lineTo(nk[0] + fx * 1 * sz, nk[1] - 4 * sz); c.lineTo(hd[0] + fx * 3 * sz, hd[1] - 1.5 * sz); c.lineTo(hd[0] + fx * 2.5 * sz, hd[1] + 1.5 * sz); c.lineTo(hd[0] - fx * 1 * sz, hd[1] + 2.5 * sz); c.closePath(); c.fill(); c.stroke();
-      c.fillStyle = '#f1e3b8'; c.beginPath(); c.arc(nk[0] + fx * 1.5 * sz, nk[1] - 1.6 * sz, 0.8 * sz, 0, 7); c.fill(); c.strokeStyle = '#8a3a34'; c.lineWidth = 1.1 * sz; c.beginPath(); c.moveTo(hd[0] + fx * 2.8 * sz, hd[1]); c.lineTo(hd[0] + fx * 5.5 * sz, hd[1] + 1.5 * sz); c.stroke();
-    } else stem(L * 0.96, 1, 11 * sz);
-    if (H && H.mast) drawRig(c, v, pr, sz, bob, clock, at, curve);
+      var bp = at(L * 0.96, 0), nk = [bp[0] + fx * 9 * ds, bp[1] + fy * 9 * ds - 16 * ds], hd = [nk[0] + fx * 5 * ds, nk[1] + fy * 5 * ds - 3 * ds], wood2 = shadeHex(col.hull, -10);
+      curve(bp, [bp[0] - fx * 1 * ds, bp[1] - 10 * ds], nk, 3.4 * ds, wood2);
+      c.fillStyle = wood2; c.strokeStyle = LINE; c.lineWidth = 1; c.beginPath(); c.moveTo(nk[0] - fx * 2 * ds, nk[1] + 1 * ds); c.lineTo(nk[0] + fx * 1 * ds, nk[1] - 4 * ds); c.lineTo(hd[0] + fx * 3 * ds, hd[1] - 1.5 * ds); c.lineTo(hd[0] + fx * 2.5 * ds, hd[1] + 1.5 * ds); c.lineTo(hd[0] - fx * 1 * ds, hd[1] + 2.5 * ds); c.closePath(); c.fill(); c.stroke();
+      c.fillStyle = '#f1e3b8'; c.beginPath(); c.arc(nk[0] + fx * 1.5 * ds, nk[1] - 1.6 * ds, 0.8 * ds, 0, 7); c.fill(); c.strokeStyle = '#8a3a34'; c.lineWidth = 1.1 * ds; c.beginPath(); c.moveTo(hd[0] + fx * 2.8 * ds, hd[1]); c.lineTo(hd[0] + fx * 5.5 * ds, hd[1] + 1.5 * ds); c.stroke();
+    } else stem(L * 0.96, 1, 22 * ds);
+    if (o.split) return;
+    var rw = [], pl = crewPlaces(v, v.crew || 0); pl.forEach(function (q) { if (q.kind === 'row') rw.push({ x: q.x, y: q.y, side: q.side }); });   // a whole drawing (the Sea Editor, the render checks): the oars at the crew's places
+    if (!pl.length && v.aboard && !H.mast) rw.push({ x: heroSeat(v), y: 0, side: 0 });
+    drawOars(c, v, clock, rw);
+    if (H && H.mast) drawRig(c, v, pr, ds, bob, clock, at, curve);
+  }
+  function drawRigOf(c, v, clock) {        // the mast, the yard, the sail and the steering oar, drawn apart (over the men behind the mast, under those before it)
+    var H = HULLS[v.kind]; if (!H || !H.mast) return; var pr = profileOf(v), L = pr.L, ds = Math.max(0.8, L / 110), bob = bobOf(v, clock), sx = v.x, sy = v.y * K + bob, h = v.h;
+    function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
+    drawRig(c, v, pr, ds, bob, clock, at, null);
+  }
+  /* The stroke (docs/ships-plan.md, 2026-10-21): v.stroke runs in sail() while v.rowing; the pull is the first two fifths of a cycle
+     (the blade in the water, moving aft), the recovery the rest (the blade lifted and carried forward). strokeLean gives how far
+     along the keel a rower's body leans (toward the bow at the finish, since he faces aft); drawOars draws each oar from the
+     rower's hands over the rail to the blade, all in time; at rest the oars are held out level. rowers: [{ x, y, side }] in the
+     hull's frame (side 0: a pair, the hero alone). */
+  function strokeK(v) { var ph = (((v.stroke || 0) / (2 * Math.PI)) % 1 + 1) % 1; if (!v.rowing) return { th: 0, lean: 0, lift: 3, wet: false }; if (ph < 0.4) { var t = ph / 0.4; return { th: 0.55 - 1.1 * t, lean: -4 + 9 * t, lift: 0, wet: true }; } var t2 = (ph - 0.4) / 0.6; return { th: -0.55 + 1.1 * t2, lean: 5 - 9 * t2, lift: 5, wet: false }; }
+  function strokeLean(v) { return strokeK(v).lean; }
+  function drawOars(c, v, clock, rowers) {
+    if (!rowers || !rowers.length || !HULLS[v.kind]) return;
+    var pr = profileOf(v), ch = Math.cos(v.h), sh = Math.sin(v.h), bob = bobOf(v, clock), S = strokeK(v), mv = Math.min(1, speedOf(v) / 60), i;
+    function toS(bx, by, up) { return [v.x + bx * ch - by * sh, (v.y + bx * sh + by * ch) * K + bob - (up || 0)]; }
+    c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+    for (i = 0; i < rowers.length; i++) { var r = rowers[i]; (r.side ? [r.side] : [-1, 1]).forEach(function (sd) {
+      var w = profW(pr, r.x, sd), len = w * 0.9 + 34, hx = r.x + S.lean, hy = r.side ? r.y + sd * 5 : sd * 6, T = [r.x + S.lean * 0.3 + 1, sd * (w + 1)], B = [T[0] + Math.sin(S.th) * len, T[1] + sd * Math.cos(S.th) * len];
+      var Hs = toS(hx, hy, 14), Ts = toS(T[0], T[1], 6), Bs = toS(B[0], B[1], S.lift);
+      c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(Hs[0], Hs[1]); c.lineTo(Ts[0], Ts[1]); c.lineTo(Bs[0], Bs[1]); c.stroke();
+      c.strokeStyle = S.wet ? shadeHex(COL.deck, -10) : shadeHex(COL.deck, 2); c.lineWidth = 1.8; c.stroke();
+      c.beginPath(); c.ellipse(Bs[0], Bs[1], 2.6, 5, Math.atan2(Bs[1] - Ts[1], Bs[0] - Ts[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(COL.deck, -10); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke();
+      if (S.wet && mv > 0.05) { c.strokeStyle = 'rgba(235,250,255,0.6)'; c.lineWidth = 1.2; c.beginPath(); c.ellipse(Bs[0], Bs[1] + 2, 5 + mv * 3, 2 + mv, 0, 0, 7); c.stroke(); }
+    }); }
+    c.restore();
   }
   // The karve's rig (2026-10-08): the steering oar at the stern on the right-hand side, the mast amidships with its yard, and the
   // square striped sail hanging from the yard: full and bellied toward the bow when the wind is behind (v.sailFill), else furled on the yard.
-  function drawRig(c, v, pr, sz, bob, clock, at, curve) {
+  function drawRig(c, v, pr, ds, bob, clock, at, curve) {
     var h = v.h, L = pr.L, W = pr.Wmax, col = COL, fx = Math.cos(h), fy = Math.sin(h) * K, k;
     var rx = -L * 0.78, rw = profW(pr, rx, 1), rud = v.rud || 0;                                   // the steering oar: a broad blade in the water aft, the tiller inboard
-    if (v.rudder !== false) { var piv = at(rx, rw * 0.95), blade = at(rx - 6 * sz - rud * 2, rw * 0.95 + 7 * sz + rud * 3), till = at(rx + 7 * sz, rw * 0.3);
+    if (v.rudder !== false) { var piv = at(rx, rw * 0.95), blade = at(rx - 6 * ds - rud * 2, rw * 0.95 + 9 * ds + rud * 3), till = at(rx + 9 * ds, rw * 0.3);
     c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(till[0], till[1]); c.lineTo(piv[0], piv[1]); c.lineTo(blade[0], blade[1]); c.stroke();
     c.strokeStyle = shadeHex(col.deck, -12); c.lineWidth = 1.8; c.stroke();
-    c.beginPath(); c.ellipse(blade[0], blade[1], 2.4 * sz, 4.6 * sz, Math.atan2(blade[1] - piv[1], blade[0] - piv[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(col.deck, -12); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke(); }
+    c.beginPath(); c.ellipse(blade[0], blade[1], 2.4 * ds, 5 * ds, Math.atan2(blade[1] - piv[1], blade[0] - piv[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(col.deck, -12); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke(); }
     if (v.mastX == null || !parts0(v, 'mast')) return;
-    var mx = v.mastX, m = at(mx, 0), mh = (24 + L * 0.14) * sz, yl = W * 1.25 + 7 * sz, fill = v.sailFill || 0, full = fill > 0.12;   // the mast's height, the yard's half length
-    var a1 = at(mx, -yl), b1 = at(mx, yl), TA = [a1[0], a1[1] - mh], TB = [b1[0], b1[1] - mh], foot = mh * 0.28, bl = (3 + fill * 9) * sz;
-    c.strokeStyle = LINE; c.lineWidth = 2.2 * sz + 1.8; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();   // the mast, its foot on the keel
-    c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 2.2 * sz; c.stroke();
+    var mx = v.mastX, m = at(mx, 0), mh = L * 0.84, yl = W * 1.3 + 10, fill = v.sailFill || 0, full = fill > 0.12;   // the mast's height (the karve's about seven metres), the yard's half length
+    var a1 = at(mx, -yl), b1 = at(mx, yl), TA = [a1[0], a1[1] - mh], TB = [b1[0], b1[1] - mh], foot = mh * 0.28, bl = (3 + fill * 9) * ds;
+    c.strokeStyle = LINE; c.lineWidth = 2.2 * ds + 1.8; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();   // the mast, its foot on the keel
+    c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 2.2 * ds; c.stroke();
     if (full) {                                                                                         // the sail set: hanging from the yard to the foot, bellied toward the bow
       var TM = [m[0] + fx * bl * 0.35, m[1] - mh + fy * bl * 0.35], BA = [a1[0], a1[1] - foot], BB = [b1[0], b1[1] - foot], BM = [m[0] + fx * bl, m[1] - foot + fy * bl];
       function topAt(s) { return s < 0.5 ? [TA[0] + (TM[0] - TA[0]) * s * 2, TA[1] + (TM[1] - TA[1]) * s * 2] : [TM[0] + (TB[0] - TM[0]) * (s - 0.5) * 2, TM[1] + (TB[1] - TM[1]) * (s - 0.5) * 2]; }
@@ -8229,42 +8298,31 @@ var T = 32, TS = 24, K = 0.75;
       var sg = c.createLinearGradient(TA[0], 0, TB[0], 0); sg.addColorStop(0, 'rgba(255,250,230,0.18)'); sg.addColorStop(1, 'rgba(40,50,90,0.22)'); c.fillStyle = sg; c.fillRect(Math.min(TA[0], TB[0]) - 20, TA[1] - 20, Math.abs(TB[0] - TA[0]) + 40, mh + 40);   // lit from the left, cool toward the right
       c.strokeStyle = INK.faint; c.lineWidth = 0.6; for (k = 1; k < 4; k++) { var sy0 = k / 4; c.beginPath(); c.moveTo(TA[0] + (BA[0] - TA[0]) * sy0, TA[1] + (BA[1] - TA[1]) * sy0); c.quadraticCurveTo(TM[0] + (BM[0] - TM[0]) * sy0 + fx * 2, TM[1] + (BM[1] - TM[1]) * sy0 + fy * 2, TB[0] + (BB[0] - TB[0]) * sy0, TB[1] + (BB[1] - TB[1]) * sy0); c.stroke(); }   // the folds
       c.restore(); outline(); c.lineWidth = 1.1; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke();
-      c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(BA[0], BA[1]); c.lineTo(at(mx - 4 * sz, -profW(pr, mx - 4 * sz, -1))[0], at(mx - 4 * sz, -profW(pr, mx - 4 * sz, -1))[1]); c.moveTo(BB[0], BB[1]); c.lineTo(at(mx - 4 * sz, profW(pr, mx - 4 * sz, 1))[0], at(mx - 4 * sz, profW(pr, mx - 4 * sz, 1))[1]); c.stroke();   // the sheets down to the rails
-      c.strokeStyle = LINE; c.lineWidth = 1.8 * sz + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke(); c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 1.8 * sz; c.stroke();   // the yard
+      c.strokeStyle = 'rgba(35,26,22,0.6)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(BA[0], BA[1]); c.lineTo(at(mx - 4 * ds, -profW(pr, mx - 4 * ds, -1))[0], at(mx - 4 * ds, -profW(pr, mx - 4 * ds, -1))[1]); c.moveTo(BB[0], BB[1]); c.lineTo(at(mx - 4 * ds, profW(pr, mx - 4 * ds, 1))[0], at(mx - 4 * ds, profW(pr, mx - 4 * ds, 1))[1]); c.stroke();   // the sheets down to the rails
+      c.strokeStyle = LINE; c.lineWidth = 1.8 * ds + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke(); c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 1.8 * ds; c.stroke();   // the yard
     } else {                                                                                            // furled: the cloth bundled along the yard and tied
-      c.strokeStyle = LINE; c.lineWidth = 1.8 * sz + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TB[0], TB[1]); c.stroke(); c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 1.8 * sz; c.stroke();
-      c.strokeStyle = LINE; c.lineWidth = 4.2 * sz + 1.6; c.beginPath(); c.moveTo(TA[0] + (TB[0] - TA[0]) * 0.06, TA[1] + 1.5 + (TB[1] - TA[1]) * 0.06); c.lineTo(TB[0] - (TB[0] - TA[0]) * 0.06, TB[1] + 1.5 - (TB[1] - TA[1]) * 0.06); c.stroke(); c.strokeStyle = col.sail; c.lineWidth = 4.2 * sz; c.stroke();
-      c.strokeStyle = col.trim; c.lineWidth = 1.3; [0.25, 0.5, 0.75].forEach(function (t) { var px = TA[0] + (TB[0] - TA[0]) * t, py = TA[1] + 1.5 + (TB[1] - TA[1]) * t; c.beginPath(); c.moveTo(px, py - 2.6 * sz); c.lineTo(px, py + 2.6 * sz); c.stroke(); });   // the ties
+      c.strokeStyle = LINE; c.lineWidth = 1.8 * ds + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TB[0], TB[1]); c.stroke(); c.strokeStyle = shadeHex(col.hull, -6); c.lineWidth = 1.8 * ds; c.stroke();
+      c.strokeStyle = LINE; c.lineWidth = 4.2 * ds + 1.6; c.beginPath(); c.moveTo(TA[0] + (TB[0] - TA[0]) * 0.06, TA[1] + 1.5 + (TB[1] - TA[1]) * 0.06); c.lineTo(TB[0] - (TB[0] - TA[0]) * 0.06, TB[1] + 1.5 - (TB[1] - TA[1]) * 0.06); c.stroke(); c.strokeStyle = col.sail; c.lineWidth = 4.2 * ds; c.stroke();
+      c.strokeStyle = col.trim; c.lineWidth = 1.3; [0.25, 0.5, 0.75].forEach(function (t) { var px = TA[0] + (TB[0] - TA[0]) * t, py = TA[1] + 1.5 + (TB[1] - TA[1]) * t; c.beginPath(); c.moveTo(px, py - 2.6 * ds); c.lineTo(px, py + 2.6 * ds); c.stroke(); });   // the ties
     }
-    c.fillStyle = col.trim; c.beginPath(); c.moveTo(m[0], m[1] - mh - 1); c.lineTo(m[0] + 6 * sz, m[1] - mh + 1.2); c.lineTo(m[0], m[1] - mh + 3.2); c.closePath(); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke();   // a pennant at the masthead
+    c.fillStyle = col.trim; c.beginPath(); c.moveTo(m[0], m[1] - mh - 1); c.lineTo(m[0] + 6 * ds, m[1] - mh + 1.2); c.lineTo(m[0], m[1] - mh + 3.2); c.closePath(); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.7; c.stroke();   // a pennant at the masthead
   }
   // the near side of the hull, drawn again over the hero's legs so he sits in the boat instead of on it; and his paddle
   function parts0(v, id) { return !!(v.parts || []).some(function (p) { return p.id === id; }); }
-  function drawVesselFront(c, v, clock, heroY) {
+  function drawVesselFront(c, v, clock, figs) {
     if (!HULLS[v.kind]) return;
-    var parts = v.parts && v.parts.length ? v.parts : RAFT_DEFAULT, pr = profileOf(v), L = pr.L, sz = Math.max(0.7, Math.min(1.2, L / 60)), bob = Math.sin(clock * 2 + v.x * 0.01) * 0.8;
-    var sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02;
+    var pr = profileOf(v), L = pr.L, ds = Math.max(0.8, L / 110), bob = bobOf(v, clock), sx = v.x, sy = v.y * K + bob, roll = Math.sin(clock * 1.7 + 1) * 0.02, i;
+    if (typeof figs === 'number') figs = [{ x: v.x + Math.cos(v.h) * (v.seat || 0), y: figs }];
     function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(v.h + roll); shapedPath(c, pr, k1, k2); c.restore(); }
-    var cy = heroY != null ? heroY * K - 2 : sy + 1.5, hx0 = v.x + Math.cos(v.h) * (v.seat || 0);
     c.save();
-    c.beginPath(); if (heroY != null) c.rect(hx0 - 10, cy, 20, 40); else c.rect(sx - L * 2, cy, L * 4, L * 3); c.clip();   // only over his legs, whatever the heading
+    c.beginPath(); if (figs && figs.length) { for (i = 0; i < figs.length; i++) c.rect(figs[i].x - 13, figs[i].y * K - 2, 26, 44); } else c.rect(sx - L * 2, sy + 1.5, L * 4, L * 3); c.clip();   // only over their legs, whatever the heading
     c.lineJoin = 'round'; c.strokeStyle = LINE;
-    c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(COL.hull, -30); c.fill('evenodd'); c.lineWidth = 1.2; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
+    c.beginPath(); sub(3 + 2.5 * ds, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(COL.hull, -30); c.fill('evenodd'); c.lineWidth = 1.2; c.beginPath(); sub(3 + 2.5 * ds, 1, 1); c.stroke();
     c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = COL.hull; c.fill('evenodd');
-    c.save(); c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.clip('evenodd'); c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(sx - L * 2, cy, L * 4, L * 3); c.globalAlpha = 1; c.beginPath(); sub(0, 0.95, 0.9); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); c.restore();
+    c.save(); c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.clip('evenodd'); c.globalAlpha = INK.grain; c.fillStyle = grainPat(c); c.fillRect(sx - L * 2, sy - L, L * 4, L * 3); c.globalAlpha = 1; c.beginPath(); sub(0, 0.95, 0.9); c.lineWidth = 0.7; c.strokeStyle = INK.faint; c.stroke(); c.beginPath(); sub(0, 0.92, 0.95); c.lineWidth = 0.9; c.strokeStyle = INK.lit; c.stroke(); c.restore();
     c.lineWidth = 1.2; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 0.9; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
+    if (v.shields) { var SHC = ['#8a3a34', '#d9c48a', '#3f5a7a'], sn = 0; c.save(); c.translate(sx, sy); c.scale(1, K); c.rotate(v.h + roll); for (var sx2 = -L * 0.74; sx2 <= L * 0.74; sx2 += 11) [-1, 1].forEach(function (sd) { var wy = profW(pr, sx2, sd) * 0.98; c.fillStyle = SHC[sn++ % 3]; c.beginPath(); c.ellipse(sx2, sd * wy, 9.5, 7, 0, 0, 7); c.fill(); c.strokeStyle = LINE; c.lineWidth = 0.8; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(sx2, sd * wy, 2, 0, 7); c.fill(); }); c.restore(); }   // the shields along the rail, over the legs too
     c.restore();
-    if (!rigged(v.kind) && !(v.crew || 0) && v.aboard && heroY != null) {        // alone: a straight paddle from the near rail down into the water, stroking as the boat moves
-      var mv = Math.min(1, speedOf(v) / 60), st = mv > 0.05 ? Math.sin(clock * (3 + mv * 3)) : -1, side = Math.cos(v.h) >= 0 ? 1 : -1;
-      var ch = Math.cos(v.h), sh = Math.sin(v.h), seat = v.seat || 0, W = profW(pr, seat, side);
-      function toS(bx, by) { return [v.x + bx * ch - by * sh, v.y * K + (bx * sh + by * ch) * K]; }
-      var rail = toS(seat + 2 + st * 3, side * (W * 0.9)), blade = toS(seat + 5 + st * 7, side * (W * 0.9 + 13));
-      c.save(); c.lineCap = 'round';
-      c.strokeStyle = LINE; c.lineWidth = 3.4; c.beginPath(); c.moveTo(rail[0], rail[1]); c.lineTo(blade[0], blade[1]); c.stroke(); c.strokeStyle = shadeHex(COL.deck, -10); c.lineWidth = 1.8; c.stroke();
-      c.beginPath(); c.ellipse(blade[0], blade[1], 2.6, 4.4, Math.atan2(blade[1] - rail[1], blade[0] - rail[0]) + Math.PI / 2, 0, 7); c.fillStyle = shadeHex(COL.deck, -10); c.fill(); c.lineWidth = 1; c.strokeStyle = LINE; c.stroke();
-      if (mv > 0.05 && st > 0.3) { c.strokeStyle = 'rgba(235,250,255,0.6)'; c.lineWidth = 1.2; c.beginPath(); c.ellipse(blade[0], blade[1] + 2, 5 + st * 3, 2 + st, 0, 0, 7); c.stroke(); }
-      c.restore();
-    }
   }
 
 /* ---------- the Shipyard scene: a clear yard of grass in a wooden frame, the parts down the left, the hero in a corner,
@@ -8411,7 +8469,7 @@ var scene = {
 };
 
 return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
-  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, KJ: KJ,
+  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, drawOars: drawOars, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullParts: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();
@@ -13397,7 +13455,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // until they feel great, the further biomes later): the starter 120 tiles, the big island 400, about 85 tiles of water between
   // (50 s by raft, 27 s by boat), no lowland island; the view 390 units tall (zoom 0.65) so the hero is a tenth of the screen's height.
   // The canon: the hero is 1.8 m and 39 units tall, so a unit is 4.6 cm and a tile 1.5 m.
-  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: true, maxTiles: 2e7 }, zoom = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12; the sea as waters round them since 2026-10-20: World.WATERS)
+  var spec = { isle: 160, isle0: 120, big: 400, sizes: [120, 400], biomes: [0, 0], noDock: true, count: 2, dir: 0.1, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, hue: 0, waves: 0.75, foam: 1.05, seed: 11, mountain: 1, mountainOpts: World.BIG_MOUNTAIN, waters: true, maxTiles: 2e7 }, zoom = 0.65, ZOOM0 = 0.65;   // (the big island has a small mountain in its north-west since 2026-10-12; the sea as waters round them since 2026-10-20: World.WATERS)
   try { var gwS = JSON.parse(localStorage.getItem('game.world3')); if (gwS && gwS.count) {   /* (game.world2 is ignored since the sea became waters, 2026-10-20) */ for (var gk in gwS) if (gwS[gk] != null) spec[gk] = gwS[gk]; if (!gwS.sizes) { spec.sizes = null; spec.biomes = null; } } } catch (e) {}   // the Sea Editor's "Use in the game" for the world (2026-10-08): the islands, their sizes, the lowlands, the gaps and the sea number
   var CHART_PX = 1400;   /* the chart's width in pixels (700 until the sea became waters: a small island of 15 tiles was two pixels) */
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3, buckets = [], home = { x: 0, y: 0 }, mini = null, info = '', clock = 0;
@@ -13475,6 +13533,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     return Sprites.lookId({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
   }
   Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers, look: heroLook });
+  (function () { var hd0 = Combat.api.heroSprite; if (hd0) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { if (!shipHero && raft && raft.aboard && Yard.isShip(raft.kind)) return; hd0(c, x, y, face, an, dashing); }; })();   /* (aboard a ship, drawShip draws him in the ship's depth order) */
   var BEASTS = {}, BEAST_OPT = { boar: { windupLoop: true, attackLoop: true }, deer: {}, wolf: {}, bear: {}, moose: {}, snake: {}, troll: { sheet: 'troll_boulder', deadFor: 3 }, unge: { sheet: 'troll_unge', deadFor: 2.5 }, hen: { deadFor: 4 }, goat: { deadFor: 4 }, sheep: { deadFor: 4 }, cow: { deadFor: 5 } };   // the animals modelled in Blender (2026-10-11); the rest are still drawn
   ['boar', 'deer', 'wolf', 'bear', 'moose', 'snake', 'troll', 'unge', 'hen', 'goat', 'sheep', 'cow'].forEach(function (bk) { var sh = BEAST_OPT[bk].sheet || bk; if (SPR[sh]) { BEASTS[bk] = Sprites.loadLazy(SPR, sh); BEASTS[bk].clip = null; BEASTS[bk].fireT = 0; BEASTS[bk].deadT = 0; BEASTS[bk].last = null; } });
   /* The beasts' sheets are loaded when a beast comes near and let go when none has been near for a while (2026-10-20: every
@@ -13525,7 +13584,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     else if (m.sitting) st.clip = (m.role === 'weaver' || m.role === 'fisher') && !(m.sayT > 0) ? 'sit_work' : 'sit';
     else if (m.job && (J = typeof m.job === 'string' ? (m.at && Math.hypot(m.at.x - m.x, m.at.y - m.y) < 6 ? HIRD_CLIP[m.job] : null) : JOB_CLIP[m.job.kind])) { st.clip = J[0]; st.t = (m.job.t != null ? m.job.t : clock) * J[1]; if (J[3] === 'hold') st.k = Math.min(0.999, (m.job.t != null ? m.job.t : 1) / 1.1); if (J[2]) look = Sprites.withHand(look, J[2]); }   /* (hold: the clip runs once and stays at its end: the kneel) */
     else if (!(m.sayT > 0) && m.idle && m.idle.id === 'look') { st.clip = 'idle_look'; st.t = m.idle.t; }
-    m.spr = Sprites.person(c, PEOPLE, look, st, m.x, m.y * K, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, lit: figLit(m.x, m.y, true, 40) });
+    m.spr = Sprites.person(c, PEOPLE, look, st, m.x + (m.leanX || 0), (m.y + (m.leanY || 0)) * K, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, lit: figLit(m.x, m.y, true, 40) });   /* (leanX, leanY: a rower's body with the stroke) */
     return m.spr;
   }
   function drawFighter(c, e) {             // one of the engine's men (a guard today)
@@ -14846,17 +14905,19 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) best = { x: x, y: y };
     }
     if (!best) { toast('No shore close enough'); return; }
-    raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; sfx('pick'); crewAshore(best); menAshore(best);
+    raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; P.anim.sit = 0; sfx('pick'); crewAshore(best); menAshore(best);
     if (!seen.left && onOtherIsland(best.x, best.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ormr sailed east.'); earnRune('sealegs', 'the second island reached'); }
     save();
   }
   function raftTick(dt) {
     if (leftBanner > 0) leftBanner -= dt; if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
     if (!seen.left && !SCENE && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ormr sailed east.'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
-    windTick(dt);
+    windTick(dt); landingTick(dt);
+    var zt = raft && raft.aboard && Yard.HULLS[raft.kind] ? Yard.HULLS[raft.kind].sea : ZOOM0; if (!inYard && !inCave && Math.abs(zoom - zt) > 0.0005) zoom += (zt - zoom) * Math.min(1, dt * 1.6);   /* the camera pulls back at sea by the hull (a karve 0.55, a longship 0.45; mine, 2026-10-21) and comes in again ashore */
     if (!raft || !raft.aboard) return;
     raft.crew = hird.filter(function (m) { return m.aboard; }).length + menAboard.length;
     var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), H = handling(raft.kind);
+    if (raftWaitTick(dt)) { ix = 0; iy = 0; }   /* the men are coming aboard: she waits (docs/ships-plan.md step 4) */
     if (K2.ShiftLeft || K2.ShiftRight) { H.top *= 1.3; H.accel *= 1.3; }   // pulling harder
     Yard.sail(raft, { ix: ix, iy: iy }, dt, raftHull, H, Yard.rigged(raft.kind) ? wind : null);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail
     if (!Yard.rigged(raft.kind) && w.homeWater) {                 /* the edge of home water (2026-10-20): past it the swell turns a raft or a rowing boat back toward home, gently, with no word and nothing lost (reward, not punishment); a rigged hull sails on */
@@ -14865,19 +14926,82 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
   }
   function raftAfter() {
-    if (raft && raft.aboard) { var P = hero(), st = raft.seat || 0; P.x = raft.x + Math.cos(raft.h) * st; P.y = raft.y + Math.sin(raft.h) * st; P.vx = P.vy = 0; P.sprinting = false; }   // on a boat you stand in the bow; on the karve at the stern by the steering oar
-    var k = 0; hird.forEach(function (m) {                                                  // the rowers sit two to a seat, facing aft, and ride along
-      if (!m.aboard) return; if (!raft) { m.aboard = false; m.sitting = false; return; }
-      var seats = raft.seats && raft.seats.length ? raft.seats : [0], sx = seats[Math.floor(k / 2) % seats.length], lat = (k % 2 ? 1 : -1) * (raft.hh || 20) * 0.26, ch = Math.cos(raft.h), sh = Math.sin(raft.h); k++;
-      m.x = raft.x + ch * sx - sh * lat; m.y = raft.y + sh * sx + ch * lat; m.face = raft.h + Math.PI; m.sitting = true; m.moving = false; m.ph = (m.ph || 0) + 0.016 * Math.min(1, Math.hypot(raft.vx, raft.vy) / 40) * 6;
-    });
+    if (!raft) { hird.forEach(function (m) { if (m.aboard) { m.aboard = false; m.sitting = false; } }); return; }
+    var P = hero(), crewM = hird.filter(function (m) { return m.aboard; }), helmM = null, ch = Math.cos(raft.h), sh = Math.sin(raft.h);
+    crewM.sort(function (a, b) { return (a.seatNo || 0) - (b.seatNo || 0); });
+    if (Yard.rigged(raft.kind) && crewM.length) { helmM = crewM[0]; crewM.forEach(function (m) { if (witsOf(m) > witsOf(helmM)) helmM = m; }); }   // the helmsman: the man with the most wits aboard (the styrimaðr)
+    var up = menAboard.filter(function (e) { return !e.down; }), lying = menAboard.filter(function (e) { return !!e.down; }), order = (helmM ? [helmM].concat(crewM.filter(function (m) { return m !== helmM; })) : crewM).concat(up).concat(lying), places = Yard.crewPlaces(raft, order.length - lying.length, lying.length);
+    raft.crew = order.length; raft.helm = !!helmM;
+    order.forEach(function (m, k) { var q = places[k]; if (!q) return; m.x = raft.x + ch * q.x - sh * q.y; m.y = raft.y + sh * q.x + ch * q.y; m.face = raft.h + q.face; m.sitting = true; m.moving = false; m.place = q; if (m.state !== undefined) { m.vx = 0; m.vy = 0; } });   // (a man of the engine aboard is placed the same)
+    if (raft.aboard) {
+      var st = Yard.heroSeat(raft); P.x = raft.x + ch * st; P.y = raft.y + sh * st; P.vx = P.vy = 0; P.sprinting = false;
+      P.anim.sit = order.length === 0 && !Yard.rigged(raft.kind) ? 1 : 0;
+      if (P.atk.ph === 'none' && !P.guard) { if (order.length > 0) { P.face = raft.h; P.faceVis = raft.h; } else if (!Yard.rigged(raft.kind)) { P.face = raft.h + Math.PI; P.faceVis = P.face; } }   /* with a crew he stands in the bow looking ahead and turns only to strike or shoot; alone at the oars he faces aft (Robin, 2026-10-21) */
+    }
   }
-  // The crew (2026-10-08): hirdmen following you step aboard when you board (as many as the seats take, two a seat) and row: each adds to
-  // the speed. Stepping ashore inside your territory they step off with you; on another shore they keep the boat and wait for you.
+  function witsOf(m) { return m.person && m.person.stats ? (m.person.stats.wits || 0) : 0; }
+  /* The crew (2026-10-08; on and off since 2026-10-21, docs/ships-plan.md step 4, Robin: they must get on and off easily without
+     getting stuck). Boarding: when the hero boards, every follower within BOARD.far of the ship is CALLED (m.boarding): he walks
+     to the gangway's land point (Yard.gangway: the hull's point nearest the shore) and climbs aboard within BOARD.near of it; the
+     ship waits for them (W does nothing) up to BOARD.wait seconds, then anyone still coming but within BOARD.wade has waded the
+     last bit and is aboard, and anyone further is left (he walks back to the stone). Landing: the hero steps off at once; the
+     men FILE off one every BOARD.file seconds onto spots spread along the shore (Yard.landingSpots), each walking to his spot
+     (m.landTo); on a raid's ground each becomes a man of the engine as he steps off. On another shore of home water they keep
+     the boat. The men of the engine aboard (menAboard) board and land the same way, by an errand. The lines are LORE?. */
+  var BOARD = { far: 420, near: 28, wait: 8, wade: 420, file: 0.35, cap: function (v) { return (v.rowers || 0) + (Yard.rigged(v.kind) ? 1 : 0); } };
+  function gangOf() { return raft ? Yard.gangway(raft, function (x, y) { return isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1; }) : null; }
+  function nextSeatNo() { var n = 0; hird.forEach(function (m) { if (m.aboard && m.seatNo >= n) n = m.seatNo + 1; }); return n; }
+  function climbAboard(m) { m.aboard = true; m.sitting = true; m.boarding = false; m.landTo = null; m.seatNo = nextSeatNo(); m.follow = true; m.mustered = true; m.job = null; m.at = null; }
   function crewBoard(P) {
-    if (!raft || !Yard.isShip(raft.kind)) return; var n = hird.filter(function (m) { return m.aboard; }).length, cap = raft.rowers || 0;
-    hird.forEach(function (m) { if (m.aboard || !m.follow || n >= cap) return; if (Math.hypot(P.x - m.x, P.y - m.y) > 150) return; m.aboard = true; m.sitting = true; m.say = n === 0 ? 'To the oars.' : ''; m.sayT = m.say ? 3 : 0; n++; });
-    raft.crew = n;
+    if (!raft || !Yard.isShip(raft.kind)) return; var n = hird.filter(function (m) { return m.aboard; }).length, cap = BOARD.cap(raft), g = gangOf(), said = false;
+    raft.landing = null;
+    hird.forEach(function (m) { if (m.aboard || m.boarding || !m.follow || m.asMan || m.lost || m.dead) return; if (n >= cap) { if (!said) { said = true; m.say = 'No room for me aboard.'; m.sayT = 4; } return; }   /* LORE? */
+      var dS = Math.hypot(P.x - m.x, P.y - m.y), dG = g ? Math.hypot(g.lx - m.x, g.ly - m.y) : 1e9;
+      if (dS <= BOARD.near || dG <= BOARD.near) { climbAboard(m); if (n === 0) { m.say = 'To the oars.'; m.sayT = 3; } n++; return; }   /* LORE? */
+      if (!g) return; if (dG > BOARD.far) return;
+      m.boarding = true; m.boardT = 0; n++; });
+    raft.waitT = 0; raft.waitSaid = false;
+    if (!g && hird.some(function (m) { return m.follow && !m.aboard && !m.asMan && !m.lost && !m.dead; })) toast('No shore by the ship for the men to come aboard');
+  }
+  function boardingTick(dt, m) {           // a called man walking to the gangway; returns where he walks to, or null when he is aboard or has given up
+    if (!raft || !raft.aboard) { m.boarding = false; return null; } var g = gangOf(); m.boardT = (m.boardT || 0) + dt;
+    if (!g) { m.boarding = false; return null; }
+    var dR = Math.hypot(g.x - m.x, g.y - m.y), dL = Math.hypot(g.lx - m.x, g.ly - m.y);
+    if (dR <= BOARD.near || dL <= 10) { climbAboard(m); return null; }
+    return { x: g.lx, y: g.ly };
+  }
+  function boardingDone() {                // the wait is over: those near enough have waded the last bit, the rest are left
+    var g = gangOf();
+    hird.forEach(function (m) { if (!m.boarding) return; var dL = g ? Math.hypot(g.lx - m.x, g.ly - m.y) : 1e9; if (dL <= BOARD.wade) climbAboard(m); else { m.boarding = false; m.follow = false; m.mustered = false; toast(m.name + ' is left ashore'); } });   /* LORE? */
+    Combat.dbg().W.enemies.forEach(function (e) { if (!e.toShip) return; var dL = g ? Math.hypot(g.lx - e.x, g.ly - e.y) : 1e9; e.toShip = false; e.errand = null; if (dL <= BOARD.wade) manClimbs(e); });
+    menBoardOnly();
+  }
+  function stillComing() { return hird.some(function (m) { return m.boarding; }) || Combat.dbg().W.enemies.some(function (e) { return e.toShip && !e.dead; }); }
+  function raftWaitTick(dt) {              // the ship waits for the men coming aboard: returns true while it may not sail
+    if (!raft || !raft.aboard) return false;
+    if (!stillComing()) { raft.waitT = 0; raft.waitSaid = false; return false; }
+    raft.waitT = (raft.waitT || 0) + dt;
+    if (raft.waitT > BOARD.wait) { boardingDone(); return false; }
+    if (!raft.waitSaid) { raft.waitSaid = true; toast('The men are coming aboard'); }   /* LORE? */
+    return true;
+  }
+  function landingTick(dt) {               // the men file off the ship one at a time onto their spots
+    var L = raft && raft.landing; if (!L) return; L.t -= dt; if (L.t > 0) return; L.t = BOARD.file;
+    var m = L.list.shift(); if (!m) { raft.landing = null; return; } var sp = L.spots[L.k++] || L.spots[L.spots.length - 1] || { x: L.at.x, y: L.at.y };
+    if (m.state !== undefined) { manLands(m, sp); return; }   /* (a man of the engine) */
+    if (!m.aboard) return; m.aboard = false; m.sitting = false; m.freed = false; m.place = null; m.leanX = m.leanY = 0; m.x = L.at.x; m.y = L.at.y;
+    if (L.home) { m.landTo = sp; } else hirdToMan(m, sp.x, sp.y);
+    if (raft) raft.crew = Math.max(0, (raft.crew || 1) - 1);
+  }
+  function crewAshore(spot) {
+    var home = inTerritory(spot.x, spot.y), raidG = !home && onRaidGround(spot.x, spot.y), P = hero();
+    if (!home && !raidG) return;              // another shore of home water: they keep the boat and wait for you
+    var list = hird.filter(function (m) { return m.aboard && !m.lost && !m.dead; }).sort(function (a, b) { return (a.seatNo || 0) - (b.seatNo || 0); }).concat(menAboard);
+    if (!list.length) return;
+    var nx = spot.x - raft.x, ny = spot.y - raft.y, nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;   // inland: from the ship toward where the hero stepped
+    var spots = Yard.landingSpots(spot.x, spot.y, nx, ny, list.length, function (x, y) { var q = landNear(x, y, 0); return q.x === x && q.y === y; });
+    raft.landing = { list: list, spots: spots, k: 0, t: 0.15, at: { x: spot.x, y: spot.y }, home: home };
+    hird.forEach(function (m) { if (m.boarding) m.boarding = false; });
   }
   /* The hird on a raid (raid step 3, 2026-10-20; Robin: they follow and work only inside your territory and on raids). A raid is
      a shore outside home water (onRaidGround). Stepping ashore there, every hirdman aboard becomes a man of the engine (side 1,
@@ -14891,7 +15015,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var e = Combat.soldier({ side: 1, x: x, y: y, wpn: { kind: HIRD_ARMS[k % HIRD_ARMS.length], mat: 'copper' }, shield: G2.shield, armor: G2.armor, hp: p.stats.health, strength: p.stats.strength, wits: p.stats.wits, aim: p.stats.aim, loyal: true, nerve: 0.7, name: m.name, person: p, mail: false, helm: false });
     e.face = -Math.PI / 2; e.hirdOf = m; e.order = 'follow'; m.asMan = e; m.aboard = false; m.sitting = false; m.follow = true; m.raiding = true; m.x = x; m.y = y; return e;
   }
-  function hirdBack(e) { var m = e.hirdOf; if (!m) return; m.asMan = null; m.aboard = true; m.sitting = true; m.raiding = false; m.follow = true; m.hurt = !!e.down; if (raft) { m.x = raft.x; m.y = raft.y; } }
+  function hirdBack(e) { var m = e.hirdOf; if (!m) return; m.asMan = null; m.aboard = true; m.sitting = true; m.seatNo = nextSeatNo(); m.raiding = false; m.follow = true; m.hurt = !!e.down; if (raft) { m.x = raft.x; m.y = raft.y; } }
   function hirdLost(m) { var e = m.asMan; m.lost = { vi: e ? villageAt(e.x, e.y) : -1, day: day.n, x: e ? Math.round(e.x) : m.x, y: e ? Math.round(e.y) : m.y }; if (e) { e.away = true; e.hirdOf = null; } m.asMan = null; m.follow = false; m.raiding = false; toast(m.name + ' is left behind'); save(); }
   function hirdDie(m) { var e = m.asMan; m.dead = true; m.asMan = null; if (e) e.hirdOf = null; if (!seen.hirdDead) seen.hirdDead = []; seen.hirdDead.push({ name: m.name, day: day.n, vi: e ? villageAt(e.x, e.y) : -1 }); toast(m.name + ' is dead'); }
   function ownStanding(P) { return Combat.dbg().W.enemies.some(function (e) { return e.type === 'soldier' && e.side === 1 && !e.dead && !e.down && Math.hypot(e.x - P.x, e.y - P.y) < 600; }); }
@@ -14941,12 +15065,6 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(), i; for (i = 0; i < n; i++) { var p = Hird.roll(Math.random, HD), m = { x: P.x + 20 + (i % 2) * 18, y: P.y + 14 + Math.floor(i / 2) * 16, face: -Math.PI / 2, say: '', sayT: 0, name: p.name, fig: lib.makeFigure(Hird.figureSpec(p, lib.heroDef)), person: p, job: null, at: null, workAt: null, follow: true, mustered: true, aboard: false, sitting: false, hungry: false, ph: 0, moving: false }; hird.push(m); if (!inTerritory(P.x, P.y) && onRaidGround(P.x, P.y)) hirdToMan(m, m.x, m.y); }   // (given on a raid's ground they are the engine's men at once)
     save();
   }
-  function crewAshore(spot) {
-    var k = 0, home = inTerritory(spot.x, spot.y), raidG = !home && onRaidGround(spot.x, spot.y);
-    if (!home && !raidG) return;              // another shore of home water: they keep the boat and wait for you
-    hird.forEach(function (m) { if (!m.aboard) return; var sp = landNear(spot.x + 10 + (k % 3) * 10, spot.y + 8 + Math.floor(k / 3) * 10, 6); k++; if (home) { m.aboard = false; m.sitting = false; m.freed = false; m.x = sp.x; m.y = sp.y; } else hirdToMan(m, sp.x, sp.y); });
-    if (raft) raft.crew = 0;
-  }
 
   /* ---------- the cave: a mouth on the island, a big dark cave behind it ----------
      The inside is a generated tunnel (about 70 by 40 tiles) laid out in its own coordinates far off the map's east
@@ -14966,6 +15084,25 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function drawYardPart(c, pt, x, y, sc) { Yard.drawPart(c, pt, x, y, sc); }
   function raftFit() { if (raft) Yard.fit(raft); }
   function drawRaft(c) { Yard.drawVessel(c, raft, clock); }
+  var shipHero = false;                    // the hero is drawn by the ship while aboard (his place in the ship's depth order, not the world's): the engine's own draw stands down
+  function drawShip(c, v) {                /* the vessel as one drawing (docs/ships-plan.md step 2, 2026-10-21): the hull, then everyone aboard by depth, the rig between those behind the mast and those before it, the near rail with its shields over their legs, and the oars from the rowers' hands, all in one stroke */
+    var P = hero(), ch = Math.cos(v.h), sh = Math.sin(v.h), figs = [], rowers = [], lean = Yard.strokeLean(v);
+    Yard.drawVessel(c, v, clock, { split: true });
+    if (!Yard.isShip(v.kind)) return;
+    hird.forEach(function (m) { if (!m.aboard || m.lost || m.dead) return; var row = m.place && m.place.kind === 'row'; m.leanX = row ? ch * lean : 0; m.leanY = row ? sh * lean : 0; figs.push({ x: m.x, y: m.y, draw: m === npc ? function () { drawNpc(c); } : function () { drawFolk(c, m); } }); if (row) rowers.push({ x: m.place.x, y: m.place.y, side: m.place.side }); });
+    menAboard.forEach(function (e) { figs.push({ x: e.x, y: e.y, draw: function () { drawManAboard(c, e); } }); });
+    if (v.aboard && v === raft) { var hl = !(v.crew > 0) && !Yard.rigged(v.kind) ? lean : 0; figs.push({ x: P.x, y: P.y, draw: function () { shipHero = true; try { Combat.api.heroSprite(c, P.x + ch * hl, (P.y + sh * hl) * K + 3, P.faceVis, P.anim, false); } finally { shipHero = false; } } }); if (hl || (!(v.crew > 0) && !Yard.rigged(v.kind))) rowers.push({ x: Yard.heroSeat(v), y: 0, side: 0 }); }
+    figs.sort(function (a, b) { return a.y - b.y; });
+    var my = v.mastX != null && v.sail != null ? v.y + v.mastX * sh : null, rigDone = my == null;
+    figs.forEach(function (f) { if (!rigDone && f.y >= my) { Yard.drawRigOf(c, v, clock); rigDone = true; } f.draw(); });
+    if (!rigDone) Yard.drawRigOf(c, v, clock);
+    Yard.drawVesselFront(c, v, clock, figs);
+    Yard.drawOars(c, v, clock, rowers);
+  }
+  function drawManAboard(c, e) {           // a man of the engine aboard (dragged aboard, or lifted down): seated, or lying on the floor
+    if (!PEOPLE || !e.fig) return; var look = e.look || (e.look = Sprites.lookOf(e.fig.spec, e.lookX || { mail: true, helm: true }));
+    Sprites.person(c, PEOPLE, e.down ? Sprites.withHand(look, null) : look, e.down ? { face: e.face, clip: 'death', k: 0.999 } : { face: e.face, clip: 'sit', t: clock + (e.seed || 0) }, e.x, e.y * K, { shadow: !inCave, shadowHue: kit.STYLE.shadowHue, lit: figLit(e.x, e.y, true, 40) });
+  }
   var YSCENE = Yard.scene, YARD = YSCENE.Y;
   var yardHost = {                        // what the scene needs from the game
     hero: hero, canAfford: canAfford, pay: pay, costText: costText, sfx: sfx, toast: toast,
@@ -15866,6 +16003,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
       if (m.sayT > 0) m.sayT -= dt;
       if (m.lost || m.dead) continue; if (m.asMan) { if (m.asMan.dead) hirdDie(m); else { m.x = m.asMan.x; m.y = m.asMan.y; } continue; }   // on a raid he is the engine's (raid step 3)
       if (m.aboard) { if (!raft) { m.aboard = false; m.sitting = false; } }                                  // at the oars: raftAfter seats them, the territory rule rests (they crew the ship)
+      else if (m.boarding) { var bt = boardingTick(dt, m); if (bt) { tx = bt.x; ty = bt.y; speed = HD.followSpeed * pace; } }   // called to the ship: he walks to the gangway (2026-10-21)
+      else if (m.landTo) { if (Math.hypot(m.landTo.x - m.x, m.landTo.y - m.y) < 5) m.landTo = null; else { tx = m.landTo.x; ty = m.landTo.y; speed = HD.followSpeed * pace; } }   // just off the ship: to his spot on the shore, out of the next man's way
       else if (m.follow) {
         if (!inTerritory(P.x, P.y) && !onRaidGround(P.x, P.y) && !m.freed) { m.follow = false; m.mustered = false; m.say = 'This is where I stop.'; m.sayT = 4; }   /* (on a raid's ground he follows: raid step 3) */
         else { var d0 = Math.hypot(P.x - m.x, P.y - m.y); if (d0 > HD.followGap) { tx = P.x; ty = P.y; speed = HD.followSpeed * pace; } }
@@ -18640,14 +18779,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
         var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
-      if (raft && Math.abs(raft.x - cam.x) < hw + 60 && Math.abs(raft.y * K - cam.y) < hh + 60) items.push({ y: raft.y - 14, f: function () { drawRaft(ctx); } });
-      moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 60 && Math.abs(mv.y * K - cam.y) < hh + 60) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });
-      if (raft && raft.aboard && Yard.isShip(raft.kind)) items.push({ y: P.y + 0.5, f: function () { Yard.drawVesselFront(ctx, raft, clock, P.y); } });
+      if (raft && Math.abs(raft.x - cam.x) < hw + 320 && Math.abs(raft.y * K - cam.y) < hh + 320) items.push({ y: raft.y - 14, f: function () { drawShip(ctx, raft); } });   /* (a hull is up to 520 units long now: the margin is its half-length and the mast) */
+      moored.forEach(function (mv) { if (Math.abs(mv.x - cam.x) < hw + 320 && Math.abs(mv.y * K - cam.y) < hh + 320) items.push({ y: mv.y - 14, f: function () { Yard.drawVessel(ctx, mv, clock); } }); });
       if (fishing) items.push({ y: P.y + 0.4, f: function () { drawFishing(ctx); } });
       if (carrying && carrying.man) items.push({ y: P.y + 0.6, f: function () { drawCarried(ctx, P.x, P.y - (hero().lvl ? UP / K : 0), P.face, carrying.man); } });
       else if (carrying) items.push({ y: P.y + 0.6, f: function () { var s2 = sprite(carrying.name === 'sack' ? 'sack' : 'chest', 0); ctx.save(); ctx.translate(P.x + (Math.cos(P.face) >= 0 ? -3 : 3), P.y * K - 30 - (hero().lvl ? UP : 0)); ctx.scale(0.9, 0.9); ctx.drawImage(s2.cv, s2.l, s2.t); ctx.restore(); } });   // the heavy chest on the shoulder
-      if (npc && !npc.asMan && !npc.lost && !npc.dead && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });   /* (on a raid Arnor is the engine's man, drawn by it) */
-      hird.forEach(function (m) { if (m === npc || m.asMan || m.lost || m.dead) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });
+      if (npc && !npc.asMan && !npc.lost && !npc.dead && !npc.aboard && Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });   /* (on a raid Arnor is the engine's man, drawn by it; aboard, the ship draws him) */
+      hird.forEach(function (m) { if (m === npc || m.asMan || m.lost || m.dead || m.aboard) return; if (Math.abs(m.x - cam.x) < hw + 30 && Math.abs(m.y * K - cam.y) < hh + 50) items.push({ y: m.y, f: function () { drawFolk(ctx, m); } }); });
       folk.forEach(function (f) { if (!f.hidden && Math.abs(f.x - cam.x) < hw + 30 && Math.abs(f.y * K - cam.y) < hh + 50) { figsInView++; items.push({ y: f.y, f: function () { drawFolk(ctx, f); } }); } });
       var IF = lib.INK_FIG; IF.passes = figsInView > 14 ? 6 : 8; IF.heavyPasses = figsInView > 14 ? 2 : 4; figsLast = figsInView; figsInView = 0;   // a crowd gets a lighter outline so the frame keeps up (2026-10-08)
       if (roomInfo) roomInfo.rooms.forEach(function (r, ri) {
@@ -19379,12 +19517,19 @@ if (typeof module !== 'undefined') module.exports = Combat;
     } };
   }
   // boarding with men of the engine for a crew (the game's own hird are not soldiers yet): those within reach of the ship step aboard and row
-  function menBoard() {
-    if (!raft || !Yard.isShip(raft.kind)) return; var W2 = Combat.dbg().W;
-    W2.enemies = W2.enemies.filter(function (e) { if (e.type === 'soldier' && e.side === 1 && !e.dead && !e.down && !e.load && !e.loadMan && Math.hypot(e.x - raft.x, e.y - raft.y) < 190) { e.errand = null; e.tgt = null; if (e.hirdOf) { hirdBack(e); return false; } menAboard.push(e); return false; } return true; });
-    if (menAboard.length) { var m = menAboard[0]; toast(menAboard.length === 1 ? m.name + ' is aboard' : menAboard.length + ' of yours are aboard'); }
+  function manClimbs(e) { e.errand = null; e.tgt = null; e.toShip = false; var W2 = Combat.dbg().W, ix = W2.enemies.indexOf(e); if (ix >= 0) W2.enemies.splice(ix, 1); if (e.hirdOf) hirdBack(e); else { e.away = true; menAboard.push(e); } }
+  function menBoardOnly() { if (!raft || !Yard.isShip(raft.kind)) return; var W2 = Combat.dbg().W, n = 0; W2.enemies.slice().forEach(function (e) { if (e.type === 'soldier' && e.side === 1 && !e.dead && !e.down && !e.load && !e.loadMan && Math.hypot(e.x - raft.x, e.y - raft.y) < 190) { manClimbs(e); n++; } }); return n; }
+  function menBoard() {                    // the men of the engine with you on a raid's shore: those at the rail climb aboard now, the rest within reach are called to the gangway (raid step 3; on and off, 2026-10-21)
+    if (!raft || !Yard.isShip(raft.kind)) return; var W2 = Combat.dbg().W, g = gangOf(), n = 0, called = 0;
+    W2.enemies.slice().forEach(function (e) { if (e.type !== 'soldier' || e.side !== 1 || e.dead || e.down || e.load || e.loadMan || e.toShip) return;
+      var dR = Math.hypot(e.x - raft.x, e.y - raft.y), dG = g ? Math.hypot(g.lx - e.x, g.ly - e.y) : 1e9;
+      if (dG <= BOARD.near + 10 || dR < (raft.hh || 21) + 40) { manClimbs(e); n++; return; }
+      if (!g || dG > BOARD.far) return;
+      e.toShip = true; e.tgt = null; e.errand = { x: g.lx, y: g.ly, near: 24, run: true, done: function (e2) { e2.toShip = false; manClimbs(e2); }, fail: function (e2) { e2.toShip = false; } }; called++; });
+    if (menAboard.length && n) { var m = menAboard[0]; toast(menAboard.length === 1 ? m.name + ' is aboard' : menAboard.length + ' of yours are aboard'); }
   }
-  function menAshore(spot) { var W2 = Combat.dbg().W, k = 0; menAboard.forEach(function (e) { var sp = landNear(spot.x + 12 + (k % 3) * 12, spot.y + 10 + Math.floor(k / 3) * 12, 6); e.x = sp.x; e.y = sp.y; e.state = 'idle'; e._bs = null; if (e.down) { e.down = false; e.hp = Math.max(1, e.maxHp * 0.35); } e.held = false; e.heldBy = null; e.away = false; W2.enemies.push(e); k++; }); menAboard = []; }
+  function manLands(e, sp) { var W2 = Combat.dbg().W, ix = menAboard.indexOf(e); if (ix >= 0) menAboard.splice(ix, 1); e.x = sp.x; e.y = sp.y; e.state = 'idle'; e._bs = null; if (e.down) { e.down = false; e.hp = Math.max(1, e.maxHp * 0.35); } e.held = false; e.heldBy = null; e.away = false; e.place = null; W2.enemies.push(e); }
+  function menAshore(spot) { if (!(raft && raft.landing)) { var k = 0; menAboard.slice().forEach(function (e) { var sp = landNear(spot.x + 12 + (k % 3) * 12, spot.y + 10 + Math.floor(k / 3) * 12, 6); manLands(e, sp); k++; }); } }   // (with a file under way they are in it; else, on a shore where the hird stays aboard, they step off as before)
   // A man of yours who is down (rung 6: a friend who falls on the way must be carried or left). E lifts him onto your own
   // shoulders (a carrier's pace, no weapon), E at the ship lays him aboard; G with a man free has him carried there. Held, he
   // neither gets up nor dies of being left (e.held); set down, he is where he was set.
@@ -19701,11 +19846,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var P = hero(), sp = at || raftSpot(P.x, P.y); if (!sp) return false; var parts = [], i;
     var KJ = Yard.KJ, HD = Yard.HULLS[kind];
     if (kind === 'faering' || kind === 'boat') { parts.push({ id: 'thwart', i: 2, j: KJ }); if (kind === 'boat') parts.push({ id: 'thwart', i: 4, j: KJ }); }
-    if (kind === 'karve' || kind === 'longship') { for (i = 2; i <= HD.n - 1; i++) if (i !== HD.mast && (kind === 'longship' || i % 2 === 0 || i === 3)) parts.push({ id: 'thwart', i: i, j: KJ }); parts.length = Math.min(parts.length, HD.thwarts[1]); parts.push({ id: 'mast', i: HD.mast, j: KJ }, { id: 'sail', i: HD.mast, j: KJ }, { id: 'rudder', i: HD.rudder, j: KJ }, { id: 'dragon', i: HD.n, j: KJ }, { id: 'shields', i: 4, j: KJ }); }
+    if (kind === 'karve' || kind === 'longship') { for (i = HD.mast - 1; i >= 2 && parts.length < Math.floor(HD.thwarts[1] / 2); i--) parts.push({ id: 'thwart', i: i, j: KJ }); for (i = HD.mast + 1; i <= HD.n - 1 && parts.length < HD.thwarts[1]; i++) parts.push({ id: 'thwart', i: i, j: KJ }); parts.push({ id: 'mast', i: HD.mast, j: KJ }, { id: 'sail', i: HD.mast, j: KJ }, { id: 'rudder', i: HD.rudder, j: KJ }, { id: 'dragon', i: HD.n, j: KJ }, { id: 'shields', i: 4, j: KJ }); }
     raft = { x: sp.x, y: sp.y, h: 0, vx: 0, vy: 0, speed: 0, aboard: false, kind: kind || 'raft', parts: parts, hw: 21, hh: 21, seat: 0 }; raftFit(); save(); return true;
   }
   function goTo(x, y) { var P = hero(); if (inCave) caveSwap(false); if (raft && raft.aboard) raft.aboard = false; P.x = x; P.y = y; P.vx = P.vy = 0; P.lvl = 0; return [Math.round(P.x), Math.round(P.y)]; }   // the console's and the studios' way to stand anywhere (2026-10-20, the Art Director's boards)
-  Combat.api.debug = function () { return { cutLoose: cutLoose, letGo: letGo, people: function () { return PEOPLE; }, sprOf: function (n) { return SPR[n]; }, stock: function (vi) { return stockOf(vi).map(function (e) { return { sid: e.sid, k: e.stock, x: Math.round(e.x), y: Math.round(e.y), clip: e.idleClip, lie: e.lieT > 0, awake: !!e.awake, hp: e.hp, state: e.state }; }); }, stockLive: function () { return stockLive; }, stockKill: function (sid) { var e = Combat.dbg().W.enemies.filter(function (q) { return q.sid === sid; })[0]; if (e) Combat.hurt(e, 999); return !!e; }, gWhat: function () { return gWhat(hero()); }, ram: function () { return { stage: ram ? ram.stage : null, men: ram ? ram.men.length : 0, at: ram ? [Math.round(ram.it.x), Math.round(ram.it.y)] : null, swings: ramSwings, lying: B.items.filter(function (it) { return it.ram; }).length }; }, addItem: addItem, ignite: function (L, k) { return Ruin.ignite(RUIN, B, L, k, null, null, BCFG.roof); }, brigade: function () { return { reach: BRIGADE.reach, poured: brigadePoured, men: folk.filter(function (f) { return f.bucket; }).map(function (f) { return [f.name, f.bucket.stage]; }), fires: Object.keys(B.fire || {}) }; }, openBoard: openMenu, theft: theftSeen, dragBody: dragBody, bodyNear: bodyNear, putDown: putDown, raidState: function () { return { wakeAtSea: wakeAtSea, heroFell: heroFell, lastPisP: lastP === hero(), dead: hero().dead }; }, giveMen: hirdGive, claimAt: function (x, y) { var cs = { name: 'claimStone', x: x, y: y, r: 5, claim: true }; B.items.push(cs); raiseStone(cs); return cs; }, clearMen: function () { hird.length = 0; if (npc) npc.joined = false; menAboard = []; save(); }, admin: adminAct, raidShore: raidShore, raftUse: raftUse, hirdList: function () { return hird.map(function (m) { return { name: m.name, aboard: !!m.aboard, asMan: !!m.asMan, down: !!(m.asMan && m.asMan.down), lost: m.lost || null, follow: !!m.follow, x: Math.round(m.x), y: Math.round(m.y) }; }); }, garrison: function () { return { live: Object.keys(menLive), liveObj: menLive, raids: seen.raids || {}, lastRaid: seen.lastRaid || {}, wary: seen.wary || {}, men: villages.map(function (v, vi) { return garrisonMen(vi).length; }), dead: seen.menDead || {}, defence: villages.map(function (v) { return [v.name, v.arch, +(v.wealth || 0).toFixed(2), v.ring, defenceOf(v).n, v.V && v.V.tactic]; }) }; }, goto: goTo, toVillage: function (i) { var tv = villages[i]; if (!tv) return null; goTo((tv.tx + tv.w / 2) * T, (tv.ty + tv.h / 2 + 1) * T); return { i: i, name: tv.name, arch: tv.arch || (tv.V && tv.V.arch), isle: tv.isle, x: hero().x, y: hero().y }; }, toSteading: function () { if (!village) return null; goTo((village.tx + 11.5) * T, (village.ty + 8.5) * T); return [hero().x, hero().y]; }, timeOf: function (t) { if (t != null) day.t = t; return { t: day.t, n: day.n, dusk: DUSK_AT, night: 1200, dawn: 1740, len: DAY_LEN }; }, isleBeasts: function () { var by = {}; Combat.dbg().W.enemies.forEach(function (e) { if (!e.human && !e.dead) by[e.isle] = (by[e.isle] || 0) + 1; }); return { live: Object.keys(isleLive), byIsle: by }; }, sheets: function () { var o = {}, bk; for (bk in BEASTS) o[bk] = Sprites.loaded(BEASTS[bk]); return { beasts: o, near: sheetNear, hero: Sprites.loaded(sprHero), people: Sprites.loaded(PEOPLE) }; }, restart: function () { start(true); }, ui: function () { return { invOpen: invOpen, pauseOpen: pauseOpen, menu: !!menu, store: !!store, bar: hudBarAt(), barDrag: barDrag, mouse: mouseS }; }, naming: function () { return naming ? naming.name : null; }, unge: function () { return { n: unges.length, sense: ungeSense, seekT: trollSeekT, troll: troll ? { x: Math.round(troll.x), y: Math.round(troll.y), awake: !!troll.awake, place: troll.place, why: troll.why || null } : null, list: unges.map(function (u) { return { x: Math.round(u.x), y: Math.round(u.y), awake: !!u.awake, hp: u.hp, job: u.job ? (u.job.at ? 'mining' : 'going') : null }; }) }; }, ungeAlarm: function (i) { if (unges[i || 0]) ungeAlarm(unges[i || 0], false); }, trollSeek: trollSeek, ungeOre: ungeOre, trollSeesIn: function () { return troll ? trollSeesIn(troll, hero()) : null; }, unges: function () { return unges; }, arms: function () { var Pq = hero(); return { out: armsOut, drawn: drawn, t: armsT, peace: placeOfPeace(Pq), lvl: raid ? raid.lvl || 2 : 0, raidT: raid ? raid.t : 0, challenge: challenge ? challenge.t : null, carries: carriesArms(), band: bandNear(Pq), told: gateTold }; }, drawToggle: drawToggle, shield: function () { return { worn: equip.shield ? equip.shield.mat : null, held: shieldHeld(), paint: shieldPaint(), blk: sprHero ? sprHero.blk : null, last: sprHero ? sprHero.last : null, layers: handLayers() }; }, witness: witness, atPeace: atPeace, nightV: function () { return NIGHTV; }, bedDown: function (vi) { nightNow(vi); }, menOf: menOf, folkReact: folkReact, armFolk: armFolk, battle: function () { return BT; }, ruinInfo: function () { return { RUIN: RUIN, RU: RU, due: ruinDue, burn: BURN, fire: B.fire, ruin: B.ruin, rooms: roomInfo, cache: [Object.keys(edgeCache).length, Object.keys(debrisCache).length] }; }, ruinDo: function (id) { ruinAct(id); }, ruinBag: function () { recount(); return { wood: inv.wood, stone: inv.stone, fiber: inv.fiber }; }, wallFaced: function () { return edgeFaced(hero(), 44, function (e) { return Ruin.standing(e); }); }, ruinB: function () { return B; }, ruinWhole: ruinWhole, fireAtHand: function () { return fireAtHand(hero()); }, placeAt: placeAt, theirs: theirs, homeOf: homeOf, ruinTarget: function () { return buildTarget(); }, battleAct: function (id) { battleAct(id); }, cam: function () { return cam; }, folk: function () { return folk; }, navs: function () { return navs; }, villages: function () { return villages; }, raidInfo: function () { return { raid: BT.raid, cargo: raft && raft.cargo, aboard: menAboard.length, raft: raft, carrying: carrying }; }, eDo: function () { return eWhat(hero()); }, gDo: function () { return gWhat(hero()); }, raidItems: function () { return B.items; }, raidB: function () { return B; }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, sceneRows: function () { return SCENE === 'battle' ? battleRows() : SCENE === 'ruin' ? ruinRows() : SCENE === 'mountain' ? mountainRows() : runeRows(); }, scene: function () { return SCENE; }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, cookFires: function () { return cookFires; }, hand: function () { return hand; }, errlog: function () { return ERR.lines.slice(); }, logErr: logErr, cook: function (id) { var r = RECIPES.filter(function (q) { return q.id === id; })[0]; if (r) cook(r); return !!r; }, dishes: RECIPES, yieldK: yieldK, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, arnor: function () { return { state: arnorState(), x: npc && Math.round(npc.x), y: npc && Math.round(npc.y), job: npc && npc.job, route: npc && npc.route ? npc.route.length : 0, seq: npc && npc.seq, shore: npc && npc.shore }; }, graves: function () { return village && village.graves; }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
+  Combat.api.debug = function () { return { cutLoose: cutLoose, letGo: letGo, people: function () { return PEOPLE; }, sprOf: function (n) { return SPR[n]; }, stock: function (vi) { return stockOf(vi).map(function (e) { return { sid: e.sid, k: e.stock, x: Math.round(e.x), y: Math.round(e.y), clip: e.idleClip, lie: e.lieT > 0, awake: !!e.awake, hp: e.hp, state: e.state }; }); }, stockLive: function () { return stockLive; }, stockKill: function (sid) { var e = Combat.dbg().W.enemies.filter(function (q) { return q.sid === sid; })[0]; if (e) Combat.hurt(e, 999); return !!e; }, gWhat: function () { return gWhat(hero()); }, ram: function () { return { stage: ram ? ram.stage : null, men: ram ? ram.men.length : 0, at: ram ? [Math.round(ram.it.x), Math.round(ram.it.y)] : null, swings: ramSwings, lying: B.items.filter(function (it) { return it.ram; }).length }; }, addItem: addItem, ignite: function (L, k) { return Ruin.ignite(RUIN, B, L, k, null, null, BCFG.roof); }, brigade: function () { return { reach: BRIGADE.reach, poured: brigadePoured, men: folk.filter(function (f) { return f.bucket; }).map(function (f) { return [f.name, f.bucket.stage]; }), fires: Object.keys(B.fire || {}) }; }, openBoard: openMenu, theft: theftSeen, dragBody: dragBody, bodyNear: bodyNear, putDown: putDown, raidState: function () { return { wakeAtSea: wakeAtSea, heroFell: heroFell, lastPisP: lastP === hero(), dead: hero().dead }; }, giveMen: hirdGive, gangway: gangOf, boarding: function () { return { coming: stillComing(), waitT: raft && raft.waitT, landing: raft && raft.landing ? raft.landing.list.length : 0, men: hird.map(function (m) { return { n: m.name, aboard: !!m.aboard, boarding: !!m.boarding, landTo: !!m.landTo, follow: !!m.follow, seat: m.seatNo }; }) }; }, hirdRaw: function () { return hird; }, BOARD: BOARD, claimAt: function (x, y) { var cs = { name: 'claimStone', x: x, y: y, r: 5, claim: true }; B.items.push(cs); raiseStone(cs); return cs; }, clearMen: function () { hird.length = 0; if (npc) npc.joined = false; menAboard = []; save(); }, admin: adminAct, raidShore: raidShore, raftUse: raftUse, hirdList: function () { return hird.map(function (m) { return { name: m.name, aboard: !!m.aboard, asMan: !!m.asMan, down: !!(m.asMan && m.asMan.down), lost: m.lost || null, follow: !!m.follow, x: Math.round(m.x), y: Math.round(m.y) }; }); }, garrison: function () { return { live: Object.keys(menLive), liveObj: menLive, raids: seen.raids || {}, lastRaid: seen.lastRaid || {}, wary: seen.wary || {}, men: villages.map(function (v, vi) { return garrisonMen(vi).length; }), dead: seen.menDead || {}, defence: villages.map(function (v) { return [v.name, v.arch, +(v.wealth || 0).toFixed(2), v.ring, defenceOf(v).n, v.V && v.V.tactic]; }) }; }, goto: goTo, toVillage: function (i) { var tv = villages[i]; if (!tv) return null; goTo((tv.tx + tv.w / 2) * T, (tv.ty + tv.h / 2 + 1) * T); return { i: i, name: tv.name, arch: tv.arch || (tv.V && tv.V.arch), isle: tv.isle, x: hero().x, y: hero().y }; }, toSteading: function () { if (!village) return null; goTo((village.tx + 11.5) * T, (village.ty + 8.5) * T); return [hero().x, hero().y]; }, timeOf: function (t) { if (t != null) day.t = t; return { t: day.t, n: day.n, dusk: DUSK_AT, night: 1200, dawn: 1740, len: DAY_LEN }; }, isleBeasts: function () { var by = {}; Combat.dbg().W.enemies.forEach(function (e) { if (!e.human && !e.dead) by[e.isle] = (by[e.isle] || 0) + 1; }); return { live: Object.keys(isleLive), byIsle: by }; }, sheets: function () { var o = {}, bk; for (bk in BEASTS) o[bk] = Sprites.loaded(BEASTS[bk]); return { beasts: o, near: sheetNear, hero: Sprites.loaded(sprHero), people: Sprites.loaded(PEOPLE) }; }, restart: function () { start(true); }, ui: function () { return { invOpen: invOpen, pauseOpen: pauseOpen, menu: !!menu, store: !!store, bar: hudBarAt(), barDrag: barDrag, mouse: mouseS }; }, naming: function () { return naming ? naming.name : null; }, unge: function () { return { n: unges.length, sense: ungeSense, seekT: trollSeekT, troll: troll ? { x: Math.round(troll.x), y: Math.round(troll.y), awake: !!troll.awake, place: troll.place, why: troll.why || null } : null, list: unges.map(function (u) { return { x: Math.round(u.x), y: Math.round(u.y), awake: !!u.awake, hp: u.hp, job: u.job ? (u.job.at ? 'mining' : 'going') : null }; }) }; }, ungeAlarm: function (i) { if (unges[i || 0]) ungeAlarm(unges[i || 0], false); }, trollSeek: trollSeek, ungeOre: ungeOre, trollSeesIn: function () { return troll ? trollSeesIn(troll, hero()) : null; }, unges: function () { return unges; }, arms: function () { var Pq = hero(); return { out: armsOut, drawn: drawn, t: armsT, peace: placeOfPeace(Pq), lvl: raid ? raid.lvl || 2 : 0, raidT: raid ? raid.t : 0, challenge: challenge ? challenge.t : null, carries: carriesArms(), band: bandNear(Pq), told: gateTold }; }, drawToggle: drawToggle, shield: function () { return { worn: equip.shield ? equip.shield.mat : null, held: shieldHeld(), paint: shieldPaint(), blk: sprHero ? sprHero.blk : null, last: sprHero ? sprHero.last : null, layers: handLayers() }; }, witness: witness, atPeace: atPeace, nightV: function () { return NIGHTV; }, bedDown: function (vi) { nightNow(vi); }, menOf: menOf, folkReact: folkReact, armFolk: armFolk, battle: function () { return BT; }, ruinInfo: function () { return { RUIN: RUIN, RU: RU, due: ruinDue, burn: BURN, fire: B.fire, ruin: B.ruin, rooms: roomInfo, cache: [Object.keys(edgeCache).length, Object.keys(debrisCache).length] }; }, ruinDo: function (id) { ruinAct(id); }, ruinBag: function () { recount(); return { wood: inv.wood, stone: inv.stone, fiber: inv.fiber }; }, wallFaced: function () { return edgeFaced(hero(), 44, function (e) { return Ruin.standing(e); }); }, ruinB: function () { return B; }, ruinWhole: ruinWhole, fireAtHand: function () { return fireAtHand(hero()); }, placeAt: placeAt, theirs: theirs, homeOf: homeOf, ruinTarget: function () { return buildTarget(); }, battleAct: function (id) { battleAct(id); }, cam: function () { return cam; }, folk: function () { return folk; }, navs: function () { return navs; }, villages: function () { return villages; }, raidInfo: function () { return { raid: BT.raid, cargo: raft && raft.cargo, aboard: menAboard.length, raft: raft, carrying: carrying }; }, eDo: function () { return eWhat(hero()); }, gDo: function () { return gWhat(hero()); }, raidItems: function () { return B.items; }, raidB: function () { return B; }, usePick: function () { var s = stationNear(hero()); return s ? s.kind : null; }, eWhat: function () { var q = eWhat(hero()); return q ? (q.say || '(no prompt)') + (q.act ? '' : ' [no act]') : null; }, board: function () { return menu ? (menu.info ? menuTab : 'build:' + (menu.cat || '')) : (invOpen ? (store ? 'chest' : 'bag') : mapOpen ? 'map' : ringOpen ? 'ring' : pauseOpen ? 'pause' : null); }, reach: function (it) { return canReach(hero(), it); }, roomAt: function (x, y) { return RI() ? RI().at(Math.floor(x / T), Math.floor(y / T)) : -2; }, spr: function () { return sprHero; }, tick: simTick, levelTick: levelTick, sitting: function () { return sitting; }, seatNear: seatNear, giveBoat: giveBoat, nightFires: nightFires, figLit: figLit, amb: function () { return amb; }, ambEnv: function () { return ambEnv(hero()); }, groundUnder: function () { return groundUnder(hero()); }, lab: function () { return LAB; }, weir: function () { return weirAt; }, cave: function () { return cave; }, caves: function () { return caves; }, cur: function () { return cur; }, findNear: findNear, findTake: findTake, caveAtHand: caveAtHand, caveSwap: caveSwap, look: function () { return { looking: looking, k: lookK, near: lookoutNear(hero()), out: lookOut, snd: fallSnd, seen: seen, zoom: cam.z }; }, fishing: function () { return { st: fishing, fl: fishFloat, log: fishLog, cast: castLine, press: fishPress, spot: castSpot, hold: function (v) { eHeld = !!v; } }; }, perflog: function () { return PERF.lines.join('\n'); }, perf: PERF, wind: function () { return wind; }, crewBoard: crewBoard, GT: function () { return GT; }, trunks: function () { return trunks; }, regrowTick: regrowTick, ring: function () { return ring; }, RS: function () { return RS; }, takeRing: takeRing, earnRune: earnRune, learnRune: learnRune, killDeed: killDeed, cut: function (id) { return Runes.cut(ring, id, RS.learnt); }, openRing: function () { var it = carverNear(hero()); if (it) openRing(it); return ringOpen; }, cutting: function () { return cutting; }, critters: function () { return critters; }, up: function () { return B.up; }, rooms1: function () { return roomInfo1; }, lvl: lvl, freshB: freshB, ensureB: ensureB, rebuildRooms: rebuildRooms, handling: handling, clearRaft: function () { raft = null; B.items.forEach(function (it) { if (it.ship) it.launched = false; }); }, night: function () { return { spawned: nightSpawned, wolves: nightWolves.length, isle: isleAt(hero().x, hero().y), L: light() }; }, hird: function () { return { hird: hird, stones: stones(), raise: raiseStone, HD: HD }; }, hamlet: function () { return { hamlet: hamlet, folk: folk, villages: villages, moored: moored }; }, raid: function () { return { raid: raid, guards: guards, carrying: carrying, alarm: raidAlarm, lift: liftHeavy, stow: stowHeavy, unload: unloadCargo, heavyNear: heavyNear }; }, hamletBuild: hamletBuild, yard: function () { return { yard: YSCENE.yard, inYard: inYard, bench: yardBench }; }, inv: inv, slots: slots, addItem: addItem, B: B, rooms: roomInfo, drops: drops, gone: gone, home: home, hearth: hearth, fed: fed, menu: menu, cookOpen: cookOpen, eat: eat, cook: cook, recipes: RECIPES, craft: craft, runes: function () { return RS; }, world: function () { return w; }, roomsNow: function () { if (bDirty) rebuildRooms(); return roomInfo; }, saveNow: function () { save(); }, act: function (id) { runeAct(id); }, sceneRows: function () { return SCENE === 'battle' ? battleRows() : SCENE === 'ruin' ? ruinRows() : SCENE === 'mountain' ? mountainRows() : runeRows(); }, scene: function () { return SCENE; }, caveUsable: function () { return caveUsable(); }, target: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); return t ? { ok: !!t.ok, why: t.why || '', kind: t.kind } : null; }, learnRune: learnRune, deed: deed, cast: castSkill, recipes2: RECIPES2, seen: seen, sandbox: sandbox, quiver: function () { return quiver; }, cookFires: function () { return cookFires; }, hand: function () { return hand; }, errlog: function () { return ERR.lines.slice(); }, logErr: logErr, cook: function (id) { var r = RECIPES.filter(function (q) { return q.id === id; })[0]; if (r) cook(r); return !!r; }, dishes: RECIPES, yieldK: yieldK, equip: equip, addThing: addThing, book: book, learn: learn, openBook: function (p) { bookOpen = true; bookPage = p || 0; }, day: function (t) { if (t != null) day.t = t; return day; }, comfort: function () { return baseComfort(); }, torch: function () { return { on: torchOn, left: torchLeft }; }, torchToggle: torchToggle, troll: function () { return troll; }, spawnTroll: trollReset, trollTick: trollTick, veinHit: veinHit, clampNear: clampNear, clampUse: clampUse, furnaceAt: furnaceAt, trollSees: trollSees, trollOut: function () { var e = troll; if (!e || !caveMouth) return null; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; return e; }, trollHome: function (walk) { if (troll) trollHome(troll, walk); return troll; }, hoardTake: hoardTake, hoardFree: hoardFree, light: light, cave: function () { return cave; }, caveMouth: function () { return caveMouth; }, caveSwap: caveSwap, inCave: function () { return inCave; }, raftObj: function () { return raft; }, raftUse: function () { if (raftUsable()) raftUse(); }, left: function () { return seen.left; }, isles: function () { return w.isles; }, place: function (i, wx, wy) { var P = hero(); P.mode = 'build'; P.piece = i; mouseW = { x: wx, y: wy }; var t = buildTarget(); if (t && t.ok) buildAct(true); return t ? { ok: !!t.ok, why: t.why || '' } : null; }, pieceIndex: function (id, m) { for (var i = 0; i < PIECES.length; i++) if (PIECES[i].id === id && (m == null || PIECES[i].m === m)) return i; return -1; }, pieces: function () { return PIECES; }, shipNear: function () { return shipNear(hero()); }, arnor: function () { return { state: arnorState(), x: npc && Math.round(npc.x), y: npc && Math.round(npc.y), job: npc && npc.job, route: npc && npc.route ? npc.route.length : 0, seq: npc && npc.seq, shore: npc && npc.shore }; }, graves: function () { return village && village.graves; }, dirty: function () { bDirty = true; }, sleep: goSleep, rested: function () { return rested; }, village: function () { return village; }, npc: function () { return npc; }, talk: talk, breakBox: breakBox, store: function (it) { if (it !== undefined) store = it; return store; } }; };   // for checks from the console
 
   start();
   var lastP = hero(), lastMode = 'fight';
