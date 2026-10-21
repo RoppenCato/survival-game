@@ -31,6 +31,13 @@ SIZE, PX = int(opt['size']), int(opt['px'])
 DIRS8 = ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se']
 dir_names = DIRS8 if NDIR == 8 else ['s', 'w', 'n', 'e'] if NDIR == 4 else [('d%d' % d) for d in range(NDIR)]
 STYLE = opt['style']; toon.FACE = opt['face']; toon.EYES = opt['eyes']; toon.set_scene(opt['scene'])
+if opt.get('inner') == 'mat':                         # the boar style test (2026-10-21): the inner line only at colour changes and where one piece passes in front of another; none on creases and facets
+    _fs0 = toon.freestyle
+    def _fs1(*a, **k):
+        fs = _fs0(*a, **k); ls = fs.linesets.get('inner')
+        if ls: ls.select_crease = False; ls.select_border = False; ls.select_material_boundary = True; ls.select_silhouette = True
+        return fs
+    toon.freestyle = _fs1
 
 bpy.ops.wm.open_mainfile(filepath=blend)
 sc = bpy.context.scene; vl = bpy.context.view_layer

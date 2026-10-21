@@ -284,3 +284,7 @@ edge, and it stays on the water while she bobs.
 like; a render makes the frames again when a sheet needs repacking. `art/backup` (the old drawn Character Editor) is gone from
 the folder and kept in git's history. The Art-Editor-only creatures stay, as you said, for later; the old `hero2-mixamo` hero
 set stays too until you say otherwise.
+
+**The new boar (2026-10-21, your yes through the Art Director):** it is in the game, in the kraken's style. Its sheets came at
+full frame counts, so it takes 51 MB of memory while a boar is near, against the studio's own budget of 30; I asked the studio
+whether it wants to trim it to budget as the other beasts were.

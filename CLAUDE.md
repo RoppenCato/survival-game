@@ -854,8 +854,11 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   sheets of clips not drawn for two minutes** (`Sprites.trim`, `trimTick` every 5 s, the core clips kept: `KEEP_HERO`,
   `KEEP_PEOPLE`; a warmed clip counts as used when warmed; 2026-10-21: the kit held every clip ever used; measured in the pane: the
   kit 127 MB decoded with 105 sheets at the start, 60 MB with 56 once the unused ones expire, the people 52 to 38; `trimNow()`
-  forces it)) (the boar, deer, moose and bear the studio's lit ones, trimmed to the memory budget, dropped in
-  2026-10-20), the boulder troll as the cave troll, Hårungen as his young. The forest troll, the Gape, the three-headed troll,
+  forces it)) (the deer, moose and bear the studio's lit ones, trimmed to the memory budget, dropped in
+  2026-10-20; **the boar in the kraken's style** since 2026-10-21, Robin: "that new boar looks so much better": chosen three-tone colours
+  instead of the shared shading, the light from one smooth body, fewer bigger pieces, hair as a ragged outline; `quad_build.py`'s
+  style switch, `BOAR_STYLE=A` the old one, `render.py --inner mat`; full frame counts, 51 MB decoded against the studio's 30
+  budget; the wolf, deer, bear, moose and farm animals follow one at a time on Robin's word), the boulder troll as the cave troll, Hårungen as his young. The forest troll, the Gape, the three-headed troll,
   the draugr, the huldra, Näcken (the last three the redesigned ones, 2026-10-20), Trollmor (new) and the bysen are in the Art
   Editor only (`docs/beasts.md`). **The art plan** is the studio's (`C:\dev\SG\Art Director\docs\art-plan.md`, 2026-10-20):
   who draws what, memory budgets per set, the drops first. **A clip may carry its own frame and anchor** (`anims[clip].frame`,

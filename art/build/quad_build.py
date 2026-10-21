@@ -104,6 +104,28 @@ sc = bpy.context.scene; sc.render.fps = FPS
 body_c = bpy.data.collections.new('Body'); gear_c = bpy.data.collections.new('Gear')
 sc.collection.children.link(body_c); sc.collection.children.link(gear_c)
 M = {k: toon.material(NAME + '_' + k, v, None, 'cel') for k, v in S['col'].items()}
+# ---- the boar style test (2026-10-21; Robin: the kraken's style reads far better than the beasts): BOAR_STYLE A as now; B the
+# kraken's chosen three tones; C + the light taken from one smooth body and the inner line only at colour changes and overlaps;
+# D + bigger, simpler pieces (the head one shape from neck to nose, each leg one limb, the bristles one ridge, the nose disc and
+# the hooves painted as colour on the ends)
+DEFAULT_T = 'E' if NAME == 'boar' else 'A'          # Robin picked E for the boar (2026-10-21); every other species stays as it was until its own pass
+STYLE_T = os.environ.get('BOAR_STYLE', DEFAULT_T)
+OUT = os.path.abspath(os.path.join(SRC, NAME + ('' if STYLE_T == DEFAULT_T else '_' + STYLE_T) + '.blend'))
+def cel3(name, base, lit, shade, hi=None, t_dark=0.66, t_lit=1.2):
+    m = bpy.data.materials.new(name); m.use_nodes = True; nt = m.node_tree; n, L = nt.nodes, nt.links; n.clear()
+    out = n.new('ShaderNodeOutputMaterial'); em = n.new('ShaderNodeEmission'); em.inputs['Strength'].default_value = 1.0
+    v = toon._light(n, L); dark = toon._math(n, L, 'LESS_THAN', v, t_dark); bright = toon._math(n, L, 'GREATER_THAN', v, t_lit)
+    col = toon._mix(n, L, 'MIX', bright, toon._mix(n, L, 'MIX', dark, toon.srgb(base), toon.srgb(shade)), toon.srgb(lit))
+    if hi: col = toon._mix(n, L, 'MIX', toon._math(n, L, 'MULTIPLY', toon._math(n, L, 'GREATER_THAN', v, t_lit + 0.55), 0.55), col, toon.srgb(hi))
+    col = toon._grain(n, L, col, toon.GRAIN_K, 320); L.new(col, em.inputs['Color']); L.new(em.outputs[0], out.inputs['Surface'])
+    m.diffuse_color = (*toon.srgb(base), 1); return m
+PALETTE3 = {'boar': {                              # base, lit, shade: a richer, darker wild-boar brown, about 35 per cent saturated, the shade cooler and a touch plum
+    'body': ('#6b4a33', '#8a6142', '#3d2c33'), 'belly': ('#4f3628', '#664632', '#2c2028'), 'leg': ('#4f3628', '#664632', '#2c2028'),
+    'hoof': ('#2a211c', '#3a2e27', '#191418'), 'snout': ('#9c7466', '#b68b7a', '#6a4c4a'), 'tusk': ('#e8dcc0', '#f6eedb', '#b8a88c'),
+    'mane': ('#2e2420', '#45352c', '#1e171b'), 'eye': ('#120e0c', '#120e0c', '#120e0c'), 'ear': ('#5a4030', '#74533c', '#352630')}}
+if STYLE_T in ('B', 'C', 'D', 'E') and NAME in PALETTE3:
+    M = {k: cel3(NAME + '3_' + k, *PALETTE3[NAME][k]) for k in S['col']}
+
 PARTS = []
 def mesh_object(name, bm, mats, weights=None, group=None, smooth=True):
     """weights: a function of a vertex position giving {group: weight}; or group: one bone for the whole part"""
@@ -307,6 +329,201 @@ else:   # wolf
         ball('eye' + str(sx), C['eye'], 'head', headp(HL * 0.30, 0.04, sx * 0.064), 0.017)
     t0, t1 = V3(S['tail'][0]), V3(S['tail'][1]); tm = t0.lerp(t1, 0.55)
     cone('tailA', C['body'], 'tail', t0, tm, 0.04, 0.07, seg=8); cone('tailB', C['mane'], 'tail', tm, t1, 0.07, 0.015, seg=8)
+from mathutils.bvhtree import BVHTree
+def drop(names):
+    for o in [o for o in PARTS if o.name in names or any(o.name.startswith(nm) for nm in names if nm.endswith('*'))]:
+        PARTS.remove(o); bpy.data.objects.remove(o)
+def lerp_rings(pts, radii, k):                      # k extra rings between every pair, linear
+    P, Rr = [], []
+    for i in range(len(pts) - 1):
+        for j in range(k + 1):
+            t = j / (k + 1); P.append(pts[i].lerp(pts[i + 1], t)); Rr.append((radii[i][0] + (radii[i + 1][0] - radii[i][0]) * t, radii[i][1] + (radii[i + 1][1] - radii[i][1]) * t))
+    P.append(pts[-1]); Rr.append(radii[-1]); return P, Rr
+def along(pts, co):                                  # the distance along a polyline of its nearest point to co, and that point
+    best = (1e9, 0.0, pts[0]); acc = 0.0
+    for a, b in zip(pts, pts[1:]):
+        ab = b - a; L = ab.length; t = max(0.0, min(1.0, (co - a).dot(ab) / (L * L))) if L > 1e-9 else 0.0; c = a + ab * t; d = (co - c).length
+        if d < best[0]: best = (d, acc + t * L, c)
+        acc += L
+    return best[1], best[2]
+def tube(name, pts, radii, mats, seg_mat, weights, seg=14, cap0=None, cap1=None):
+    bm = bmesh.new(); rows = []; n = len(pts)
+    for i, p in enumerate(pts):
+        t = (pts[min(i + 1, n - 1)] - pts[max(i - 1, 0)]).normalized(); side = Vector((1, 0, 0)); side = (side - t * side.dot(t)).normalized(); upv = t.cross(side).normalized()
+        rx, rz = radii[i]; rows.append([bm.verts.new(p + side * math.cos(2 * math.pi * (j + 0.5) / seg) * rx + upv * math.sin(2 * math.pi * (j + 0.5) / seg) * rz) for j in range(seg)])
+    for i, (a, b) in enumerate(zip(rows, rows[1:])):
+        for j in range(seg): f = bm.faces.new((a[j], a[(j + 1) % seg], b[(j + 1) % seg], b[j])); f.material_index = seg_mat(i)
+    f0 = bm.faces.new(rows[0][::-1]); f1 = bm.faces.new(rows[-1]); f0.material_index = seg_mat(0) if cap0 is None else cap0; f1.material_index = seg_mat(n - 2) if cap1 is None else cap1
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return mesh_object(name, bm, mats, weights=weights)
+def sstep(a, b, x): t = max(0.0, min(1.0, (x - a) / (b - a))); return t * t * (3 - 2 * t)
+LEGPATH = {}
+for nl, Lg in LEGS.items():
+    J = [V3(q, Lg['x']) for q in Lg['J']]; LEGPATH[nl] = [J[0] + Vector((0, 0, 0.04)), J[1], J[2], J[3] + Vector((0, 0, 0.045)), J[3] + Vector((0, -0.012, -0.022))]
+if STYLE_T in ('D', 'E') and NAME == 'boar':
+    drop(['neck', 'skull', 'snout', 'disc'] + ['mane%d' % i for i in range(9)] + [nl + suf for nl in LEGS for suf in ('_upper', '_knee', '_lower', '_ankle', '_cannon', '_hoof')])
+    # the head: one shape from inside the chest to the nose, the disc painted on its end
+    HP = [n0 + Vector((0, 0.10, 0.02)), n0.lerp(n1, 0.5) + Vector((0, 0.04, 0.01)), headp(-0.06), headp(HL * 0.30), headp(HL * 0.55), headp(HL * 0.80), headp(HL * 0.97), headp(HL * 1.02)]
+    HR = [(0.24, 0.27), (0.215, 0.24), (0.19, 0.205), (0.16, 0.17), (0.125, 0.13), (0.095, 0.097), (0.074, 0.073), (0.068, 0.066)]
+    HPp, HRr = lerp_rings(HP, HR, 2); s_h0, _ = along(HPp, h0)
+    def head_w(co):
+        sv, _ = along(HPp, co); w = sstep(s_h0 - 0.07, s_h0 + 0.05, sv); return {'neck': 1 - w, 'head': w}
+    ndisc = len(HPp) - 2
+    tube('head_one', HPp, HRr, [C['body'], C['snout']], lambda i: 1 if i >= ndisc else 0, head_w, seg=16, cap0=0, cap1=1)
+    # the eyes, set on the new head's surface (the old ones sat 1.5 cm inside it), a little larger, a lighter ring round each so the
+    # dark eye shows on the dark head, and a catchlight (Robin, 2026-10-21: "I don't really see its eyes")
+    drop(['eye1', 'eye-1'])
+    hobj = next(o for o in PARTS if o.name == 'head_one'); hb = bmesh.new(); hb.from_mesh(hobj.data); hb.normal_update(); HT = BVHTree.FromBMesh(hb)
+    C_ring = cel3(NAME + '3_eyering', '#8a6142', '#a37552', '#5a4030'); C_glint = cel3(NAME + '3_glint', '#f4efe4', '#f4efe4', '#d8d2c4')
+    def flat_ball(name, mat, c, r, nrm, flat):
+        bmf = bmesh.new(); bmesh.ops.create_uvsphere(bmf, u_segments=14, v_segments=9, radius=1.0)
+        bmesh.ops.transform(bmf, matrix=Matrix.Translation(c) @ nrm.to_track_quat('Z', 'Y').to_matrix().to_4x4() @ Matrix.Diagonal((r, r, r * flat, 1.0)), verts=bmf.verts)
+        return mesh_object(name, bmf, mat, group='head')
+    for sx in (1, -1):
+        ax = headp(HL * 0.30); dvec = (Vector((sx, 0, 0)) * 0.105 + up * 0.075).normalized(); hit = HT.ray_cast(ax + dvec * 0.5, -dvec)
+        if hit[0] is None: continue
+        sp, sn = hit[0], hit[1].normalized()
+        # (Robin, 2026-10-21: the round eye with a light ring "pops a bit much, he looks a little surprised") a boar's eye is small and
+        # deep-set under a heavy brow: a small almond eye, no ring, a fold of brow over its top tilted down toward the snout, a small catchlight
+        u = (up - sn * up.dot(sn)).normalized(); w = sn.cross(u).normalized()
+        if w.dot(hd) < 0: w = -w
+        def ellip(name, mat, c, rw, ru, rn, tilt=0.0):
+            a = math.radians(tilt); w2 = w * math.cos(a) - u * math.sin(a); u2 = u * math.cos(a) + w * math.sin(a)
+            bme = bmesh.new(); bmesh.ops.create_uvsphere(bme, u_segments=14, v_segments=9, radius=1.0)
+            B = Matrix((w2 * rw, u2 * ru, sn * rn)).transposed().to_4x4(); B.translation = c
+            bmesh.ops.transform(bme, matrix=B, verts=bme.verts); return mesh_object(name, bme, mat, group='head')
+        ellip('eye' + str(sx), C['eye'], sp + sn * 0.005, 0.027, 0.012, 0.011, tilt=15)     # a dark almond, its front end lower: wary, not surprised
+        ellip('brow' + str(sx), C['mane'], sp + sn * 0.003 + u * 0.021 + w * 0.002, 0.036, 0.0055, 0.004, tilt=22)   # a short dark brow stroke lying on the skin, slanting down to the snout
+        ball('glint' + str(sx), C_glint, 'head', sp + sn * 0.016 + u * 0.002 - w * 0.009, 0.005)
+    # each leg one limb: the upper part in the body's colour, below the knee the leg's, the hoof painted on the end
+    for nl, Lg in LEGS.items():
+        LP = LEGPATH[nl]; hindleg = Lg['kind'] == 'h'; ku = 1.25 if hindleg else 1.0; sy = 1.35 if hindleg else 1.15
+        LR = [(r_up * ku, r_up * ku * sy), (r_lo * 1.1, r_lo * 1.2), (r_ft * 1.15, r_ft * 1.15), (r_hoof * 1.05, r_hoof * 1.05), (r_hoof * 1.5, r_hoof * 1.4)]
+        LPp, LRr = lerp_rings(LP, LR, 3); seg_len = [(b - a).length for a, b in zip(LP, LP[1:])]; s1 = seg_len[0]; s2 = s1 + seg_len[1]; s3 = s2 + seg_len[2]
+        cum = [0.0]
+        for a, b in zip(LPp, LPp[1:]): cum.append(cum[-1] + (b - a).length)
+        def leg_mat(i, cum=cum, s1=s1, s3=s3): m = 0.5 * (cum[i] + cum[i + 1]); return 2 if m > s3 else (1 if m > s1 * 0.85 else 0)
+        def leg_w(co, LPp=LPp, s1=s1, s2=s2, nl=nl):
+            sv, _ = along(LPp, co); a = sstep(s1 - 0.03, s1 + 0.03, sv); b = sstep(s2 - 0.025, s2 + 0.025, sv); return {nl + '_up': 1 - a, nl + '_lo': a - b, nl + '_ft': b}
+        tube(nl + '_limb', LPp, LRr, [C['body'], C['leg'], C['hoof']], leg_mat, leg_w, seg=12, cap0=0, cap1=2)
+    # the bristles: one jagged ridge along the back, leaning back as the spikes did
+    TR = sorted(torso, key=lambda r: r[0])
+    def back_z(y):
+        if y <= TR[0][0]: return TR[0][1] + TR[0][3]
+        for a, b in zip(TR, TR[1:]):
+            if a[0] <= y <= b[0]: t = (y - a[0]) / (b[0] - a[0]); return (a[1] + a[3]) + ((b[1] + b[3]) - (a[1] + a[3])) * t
+        return TR[-1][1] + TR[-1][3]
+    y0, y1, step, bm = -0.56, 0.50, 0.01, bmesh.new(); rows = []
+    ys = [y0 + i * step for i in range(int((y1 - y0) / step) + 1)]
+    for y in ys:
+        k = int((y - y0) / 0.12); u = ((y - y0) % 0.12) / 0.12; hk = (0.085 - 0.004 * k) * (0.85 + 0.3 * abs(math.sin(k * 2.1)))
+        hgt = 0.012 + (hk * (u / 0.72) if u < 0.72 else hk * max(0.0, (1 - u) / 0.28)); top = back_z(y) - 0.02; zt = top + hgt; zb = top - 0.04
+        wt = 0.005 + 0.016 * (1 - hgt / max(hk, 0.02)); wb = 0.03
+        rows.append((bm.verts.new((wb, y, zb)), bm.verts.new((-wb, y, zb)), bm.verts.new((wt, y, zt)), bm.verts.new((-wt, y, zt))))
+    for (b0, c0, t0, d0), (b1, c1, t1, d1) in zip(rows, rows[1:]):
+        bm.faces.new((b0, b1, t1, t0)); bm.faces.new((c1, c0, d0, d1)); bm.faces.new((t0, t1, d1, d0)); bm.faces.new((c0, c1, b1, b0))
+    for (b0, c0, t0, d0), flip in ((rows[0], False), (rows[-1], True)):
+        f = (b0, t0, d0, c0); bm.faces.new(f[::-1] if flip else f)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces); mesh_object('bristle_ridge', bm, C['mane'], weights=spine_w)
+if STYLE_T == 'E' and NAME == 'boar':
+    # E: D with hair (Robin, 2026-10-21: "maybe he needs more hair to look more natural"): every tuft a jagged strip on the outline,
+    # never strands; a tall ragged crest down the back, highest over the shoulders, and a short one on the crown and neck; a
+    # fringe under the jaw and the throat; tufts on the cheeks; a shaggy fringe along the belly; a ragged skirt at the top of
+    # each leg. Each in the boar's own colours, bound to the bones it sits on, lit from the one smooth body.
+    import random as _rnd
+    RH = _rnd.Random(7)
+    drop(['bristle_ridge'])
+    def ragged(name, bases, ups, heights, mat, weights, wb=0.03, wt0=0.006, sink=0.035, lean=None):
+        bm = bmesh.new(); rows = []; n = len(bases); hmax = max(heights) or 1.0
+        for i in range(n):
+            b, u, h = bases[i], ups[i].normalized(), heights[i]
+            t = bases[min(i + 1, n - 1)] - bases[max(i - 1, 0)]; t = t.normalized() if t.length > 1e-6 else Vector((0, 1, 0))
+            sd = t.cross(u); sd = sd.normalized() if sd.length > 1e-6 else Vector((1, 0, 0)); wt = wt0 + wb * 0.55 * (1 - h / hmax)
+            tip = b + u * h + (lean[i] if lean else Vector((0, 0, 0))); bot = b - u * sink
+            rows.append((bm.verts.new(bot + sd * wb), bm.verts.new(bot - sd * wb), bm.verts.new(tip + sd * wt), bm.verts.new(tip - sd * wt)))
+        for (b0, c0, t0, d0), (b1, c1, t1, d1) in zip(rows, rows[1:]):
+            bm.faces.new((b0, b1, t1, t0)); bm.faces.new((c1, c0, d0, d1)); bm.faces.new((t0, t1, d1, d0)); bm.faces.new((c0, c1, b1, b0))
+        for (b0, c0, t0, d0), flip in ((rows[0], False), (rows[-1], True)):
+            f = (b0, t0, d0, c0); bm.faces.new(f[::-1] if flip else f)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces); return mesh_object(name, bm, mat, weights=weights)
+    def saw(svals, period, hfun, peak=0.68, jitter=0.35):   # a tooth every period, rising slowly and dropping fast (leaning back), each its own height
+        out, cache = [], {}
+        for sv in svals:
+            k = int(sv // period); u = (sv % period) / period
+            if k not in cache: cache[k] = hfun(k * period) * (1 - jitter + 2 * jitter * RH.random())
+            hk = cache[k]; out.append(0.008 + (hk * (u / peak) if u < peak else hk * max(0.0, (1 - u) / (1 - peak))))
+        return out
+    def dense(pts, step=0.006):                       # points every step along a polyline, and their arc lengths
+        out, ss, acc = [pts[0]], [0.0], 0.0
+        for a, b in zip(pts, pts[1:]):
+            L = (b - a).length; n = max(1, int(L / step))
+            for j in range(1, n + 1): out.append(a.lerp(b, j / n)); acc += L / n; ss.append(acc)
+        return out, ss
+    # the crest along the back, front to back so the teeth lean back; highest over the shoulders' hump
+    ys = [-0.56 + i * 0.006 for i in range(int(1.02 / 0.006) + 1)]
+    cb = [Vector((0, y, back_z(y) - 0.015)) for y in ys]; cs = [y + 0.56 for y in ys]
+    hump = lambda sv: (lambda y: 0.07 + 0.11 * math.exp(-((y + 0.28) / 0.26) ** 2))(-0.56 + sv)
+    ragged('hair_crest', cb, [Vector((0, 0.18, 1))] * len(cb), saw(cs, 0.06, hump), C['mane'], spine_w, wb=0.036, lean=[Vector((0, 0.02, 0))] * len(cb))
+    # the head's own rings: their tops (crown and neck), bottoms (jaw and throat) and sides (cheeks)
+    ringS = [along(HPp, q)[0] for q in HPp]
+    def ring_pts(lo, hi, f):
+        sel = [i for i, sv in enumerate(ringS) if lo <= sv <= hi]; return [f(HPp[i], HRr[i]) for i in sel]
+    crown = ring_pts(s_h0 - 0.16, s_h0 + 0.14, lambda q, r: q + up * r[1] * 0.92)[::-1]   # from the crown back over the neck
+    cpts, css = dense(crown); ragged('hair_crown', cpts, [up + Vector((0, 0.25, 0))] * len(cpts), saw(css, 0.05, lambda sv: 0.05 + 0.2 * sv), C['mane'], head_w, wb=0.03)
+    under = ring_pts(s_h0 - 0.12, s_h0 + HL * 0.55, lambda q, r: q - up * r[1] * 0.9)[::-1]   # from the jaw back to the throat
+    upts, uss = dense(under); ragged('hair_jowl', upts, [-up * 0.85 + Vector((0, 0.35, 0))] * len(upts), saw(uss, 0.045, lambda sv: 0.045 + 0.14 * sv), C['mane'], head_w, wb=0.034)
+    for sx in (1, -1):
+        cheek = ring_pts(s_h0 + HL * 0.12, s_h0 + HL * 0.5, lambda q, r, sx=sx: q + Vector((sx, 0, 0)) * r[0] * 0.93 - up * r[1] * 0.35)[::-1]
+        kp, ks = dense(cheek); ragged('hair_cheek' + str(sx), kp, [Vector((sx * 0.7, 0.3, 0)) - up * 0.6] * len(kp), saw(ks, 0.04, lambda sv: 0.045 + 0.08 * sv), C['mane'], head_w, wb=0.026)
+    # the belly's fringe, front to back
+    def belly_z(y):
+        TRb = sorted(torso, key=lambda r: r[0])
+        if y <= TRb[0][0]: return TRb[0][1] - TRb[0][3]
+        for a, b in zip(TRb, TRb[1:]):
+            if a[0] <= y <= b[0]: t = (y - a[0]) / (b[0] - a[0]); return (a[1] - a[3]) + ((b[1] - b[3]) - (a[1] - a[3])) * t
+        return TRb[-1][1] - TRb[-1][3]
+    bys = [-0.42 + i * 0.006 for i in range(int(0.84 / 0.006) + 1)]
+    bb = [Vector((0, y, belly_z(y) + 0.02)) for y in bys]
+    ragged('hair_belly', bb, [Vector((0, 0.25, -1))] * len(bb), saw([y + 0.42 for y in bys], 0.05, lambda sv: 0.06), C['mane'], spine_w, wb=0.06)
+    # a ragged skirt at the top of each leg (the shoulders and the hams), named for its leg so it takes the leg's light
+    for nl, Lg in LEGS.items():
+        LP = LEGPATH[nl]; hindleg = Lg['kind'] == 'h'; ku = 1.25 if hindleg else 1.0; sy = 1.35 if hindleg else 1.15
+        P = LP[0].lerp(LP[1], 0.34); t = (LP[1] - LP[0]).normalized(); ax1 = (Vector((1, 0, 0)) - t * t.x).normalized(); ax2 = t.cross(ax1).normalized()
+        r = r_up * ku * 0.98; N = 20; bm = bmesh.new(); ring_b, ring_t, ring_i = [], [], []
+        for i in range(N):
+            a = 2 * math.pi * i / N; rad_v = ax1 * math.cos(a) + ax2 * math.sin(a) * sy; L = 0.045 + 0.045 * RH.random() * (1 if i % 2 else 0.5)
+            b = P + rad_v * r; ring_b.append(bm.verts.new(b)); ring_t.append(bm.verts.new(b + rad_v.normalized() * 0.022 + t * L)); ring_i.append(bm.verts.new(P + rad_v * r * 0.8 + t * L * 0.6))
+        for i in range(N):
+            j = (i + 1) % N; bm.faces.new((ring_b[i], ring_b[j], ring_t[j], ring_t[i])); bm.faces.new((ring_t[i], ring_t[j], ring_i[j], ring_i[i]))
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces); mesh_object(nl + '_skirt', bm, C['body'], group=nl + '_up')
+if STYLE_T in ('C', 'D', 'E') and NAME == 'boar':
+    # the light from one smooth body: the trunk's and the head's normals taken from a melted, smoothed copy of them; the legs'
+    # from a smooth tube along each leg; the bristles take the back's light
+    trunk = [o for o in PARTS if o.name in ('torso', 'neck', 'skull', 'snout', 'disc', 'head_one')]
+    bmp = bmesh.new()
+    for o in trunk: bmp.from_mesh(o.data)
+    mep = bpy.data.meshes.new('proxy'); bmp.to_mesh(mep); bmp.free(); tmp = bpy.data.objects.new('proxy', mep); sc.collection.objects.link(tmp)
+    rm = tmp.modifiers.new('rm', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = 0.05
+    smd = tmp.modifiers.new('sm', 'SMOOTH'); smd.factor = 1.0; smd.iterations = 18
+    dg = bpy.context.evaluated_depsgraph_get(); me2 = bpy.data.meshes.new_from_object(tmp.evaluated_get(dg)); bpy.data.objects.remove(tmp)
+    PROXY = bmesh.new(); PROXY.from_mesh(me2); PROXY.normal_update(); TREE = BVHTree.FromBMesh(PROXY)
+    def set_normals(o, fn, k=0.85):
+        me = o.data; vn = []
+        for v in me.vertices:
+            n = fn(v.co); vn.append(((n * k + v.normal * (1 - k)).normalized())[:] if n is not None else v.normal[:])
+        me.normals_split_custom_set_from_vertices(vn)
+    def proxy_n(co):
+        hit = TREE.find_nearest(co); return hit[1].normalized() if hit and hit[1] is not None else None
+    for o in list(PARTS):
+        nm = o.name
+        if o in trunk or nm.startswith('mane') or nm == 'bristle_ridge' or nm.startswith('hair_'): set_normals(o, proxy_n, 0.85 if o in trunk else 0.7)
+        else:
+            for nl in LEGS:
+                if nm.startswith(nl + '_') and not nm.endswith('_hoof'):
+                    LP = LEGPATH[nl][:4]
+                    def tube_n(co, LP=LP):
+                        _, c = along(LP, co); d = co - c; return d.normalized() if d.length > 1e-5 else None
+                    set_normals(o, tube_n, 0.85)
 for o in PARTS:
     md = o.modifiers.new('rig', 'ARMATURE'); md.object = rig; o.parent = rig
 if NAME == 'wolf':                                  # the eyes' places for the night glow: render.py writes them per frame (rig['marks'])
