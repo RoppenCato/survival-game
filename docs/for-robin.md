@@ -9,7 +9,6 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
 - **The Art Director's lighting review** (`C:\dev\SG\Art Director\out\lighting\REVIEW.md`, `night_proposed.png`): the fire's
   light a hole of daylight, the night black-teal not blue, the water too blue at night, the cave's dark. Nothing changed; your
   yes or no, then I make the numbers.
-- **The Stats page** in the Art Director's picker: save your pick and it sends the change list.
 - **The Lore Director's names** for home water (Fridmund at Tingvoll, the Meadow Isles, the four Ways, island pools).
 - **`art/render/`**: 4.1 GB of raw frames; everything in the game is packed from them already. Delete?
 - **The sword's timing switch** (`STEPS` or its profile): would change the feel you approved.
@@ -114,3 +113,14 @@ what I chose, and what to look at. Cleared when Robin has answered (the answer g
     since 2026-10-20 the arm ring could not be taken from Hogni's body in the troll's cave (the raid's "fallen man" finder had
     the same name as the cave's); and since the chest was built, a hirdman's job gave nothing into the chests by his claim
     stone (the chest board's `storeAdd` had hidden the hird's). Both fixed; the check runs with the build from now on.
+15. **The Stats page** is built to your picks in the studio's spec (as big as the Gear page, your face in a ring, the
+    four groups with pictures, bars for health and stamina). Look at it on the Tab screen; the face's framing in the ring
+    is mine (his feet 29 units under the ring's centre at 1.15).
+16. **The villages' animals** (the Art Director's drop, wired): hens, goats, sheep and cows in every village (`LIVESTOCK`
+    by the place's kind: a farmstead four hens, a goat, three sheep and a cow; a town eight hens, two goats, two cows). Hens
+    scatter when you come near and come back; sheep and cows too; a goat butts you if you stand close (3 damage) and then
+    leaves you be. Kill one for meat and hide: a villager who sees it cries thief; the dead stay dead for the day. Not built:
+    eggs to the yard's basket, the dog (the studio offers one on the wolf's build). The numbers are mine.
+17. **A third old bug found by the new check** (a statement swallowed by a `//` comment): every beast had drawn without its
+    options since 2026-10-20: no fire light on it, the boar's charge not looped, young boars at full size, the troll lying
+    the wrong time. Fixed; the check now reports such lines too.

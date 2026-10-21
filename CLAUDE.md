@@ -252,7 +252,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   (`node tools/dupcheck.js`: a page's script is one long scope, and a second `function x` in it silently wins over the first
   wherever it is called. 2026-10-21: it found `bodyNear` (the raid's fallen man had hidden the cave's body: the arm ring could
   not be taken for a day) and `storeAdd` (the chest board's had hidden the hird's: a job gave nothing into the chests since
-  the storage commit); `menOf` had done the same in raid step 1. A new function gets a name nothing else in the page has.)
+  the storage commit); `menOf` had done the same in raid step 1. A new function gets a name nothing else in the page has. **It also reports a statement swallowed by a `//` comment on the same line**: found 2026-10-21 in `enemySprite`, where `var o = {...}`, every beast's drawing options, had sat after a comment since 2026-10-20, so the beasts drew without their fire light, loops, young size and lying time.)
 - Source files load two ways, inlined into a page and `require`d by Node scripts: no ES module syntax, no browser globals at
   load time. `stylelab.js` needs `global.__mk` for canvases.
 - **A patch must not put a `//` comment in the middle of a line**: the templates' lines are long and hold many statements,
@@ -434,6 +434,8 @@ golden and darkens faster toward its end (`DUSK_POW` 2.4); "The light is going" 
 **Food:** dishes heal at once and give top health, health a second and stamina for ten minutes or more (`FOOD`); no hunger.
 Cooked at a fire in a queue, waiting there. Roast berries, roast meat, berry stew, eggs and honey; fish dishes in the lowlands.
 
+**The villages' animals** (the Art Director's step 5A, wired 2026-10-21; the numbers mine): hens, goats, sheep and cows on the beasts' sheets (`assets/sprites/hen|goat|sheep|cow`, `npm run art:stock`). A place gets its stock by its kind (`LIVESTOCK`: a farmstead four hens, a goat, three sheep and a cow; a town eight hens, two goats, two cows; a church two hens) when the hero comes within 1200 units and loses them when he has been 2600 off for 40 s, as its men (`stockTick`); hens and goats keep to the yard, sheep and cows to the byre's side; they amble, graze or peck, lie down now and then (`stockMind`, the sheets' graze, peck, lie and sit clips through `idleClip` and `clip` in `Sprites.beast`); a hen, a sheep and a cow scatter from the hero (the engine's flee) and come back; a goat butts whoever stands within 25 units (3 damage, the sheet's butt clip) and then wants nothing of him for ten seconds. They can be killed for meat and hide; a villager or a man who sees it cries thief and the place is stirred (never in home water), and the dead stay dead for the day (`seen.stock[vi]`). Checked in the live game (`raidgame.js` R.stock). Not built: eggs, the dog.
+
 **Beasts** (Blender sheets, dressed from the combat numbers: `Combat.tuneBeast`): on the starter island **young boars** (6
 health, 7 a bite), **deer in herds** and adders; on the big island boars, moose and a bear, and the troll in his cave; wolves
 at night. Counts scale with an island's area. A beast ambles round its home and charges when you come near, each its own
@@ -496,7 +498,7 @@ that SPEC): every board (`wood()`) is the dark oak with a dark outline and two g
 what is chosen is pale gold `#ead08a`; the Gear board (330 by 360 canvas pixels) has the hero in an
 arched vellum window and six square dark slots with a bronze rim a side (the arm ring where the spec has "armour", mine; an
 empty slot shows a pale sepia sketch; nothing under the window, no runes: Robin), and rounded flaps hanging under it (Gear and
-Stats: what was the status line under the window; no Rings page, Robin: runes get a window of their own later; `hFlap`, Robin: "rounded flaps on the
+Stats: what was the status line under the window; no Rings page, Robin: runes get a window of their own later; **the Stats page** (Robin's picks of 2026-10-20 in the studio's SPEC, built 2026-10-21: `drawStats`) as big as the Gear page so the bag shows, his face in a ring top right (`portrait_ring`, the kit as he is dressed clipped to it), the thirteen rows of `statRows` in four groups, Life, Fighting, Moving, Work, each with a small picture (the studio's `stat_*` pieces; the sword, bow, axe, pick and knife icons for the weapon and tool rows), health and stamina as bars at the right edge; `hFlap`, Robin: "rounded flaps on the
 bottom so it's not so square"); the bag (330 by 306) under the flaps is dark sockets; crafting (453 by 500, bottom right,
 narrower so more of the game shows: Robin) has its list in a dark well, a vellum card with the
 thing's picture large, a sub-title (`infoSub`, mine), the tale, its numbers and **the cost as each material in a socket with

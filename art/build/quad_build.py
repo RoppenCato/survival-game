@@ -68,6 +68,33 @@ SPECS = {
         'col': {'body': '#a67c56', 'belly': '#7a5a40', 'leg': '#d6c8ae', 'hoof': '#2a211c', 'snout': '#7d5c48', 'tusk': '#d9c7a0', 'mane': '#6e5040', 'eye': '#120e0c', 'ear': '#8a6650'},
         'leg_r': (0.16, 0.095, 0.058, 0.05),
     },
+    # the goat (the studio, 2026-10-20): light and leggy, a short upturned tail, backswept horns, a beard, a bar of an eye; it grazes the yard and butts
+    'goat': {
+        'hind': [(0.40, 0.66), (0.32, 0.44), (0.44, 0.22), (0.42, 0.025)], 'hx': 0.09, 'front': [(-0.30, 0.64), (-0.26, 0.42), (-0.28, 0.20), (-0.29, 0.025)], 'fx': 0.09,
+        'torso': [(0.54, 0.70, 0.03, 0.04), (0.48, 0.70, 0.12, 0.14), (0.32, 0.71, 0.16, 0.19), (0.08, 0.70, 0.17, 0.21), (-0.16, 0.71, 0.17, 0.21), (-0.34, 0.73, 0.15, 0.19), (-0.46, 0.75, 0.11, 0.14)],
+        'piv': {'body': (0, 0.04, 0.70), 'hips': (0, 0.14, 0.70), 'chest': (0, -0.06, 0.71)},
+        'neck': [(-0.44, 0.78), (-0.62, 0.98)], 'head': [(-0.62, 0.98), (-0.84, 0.92)], 'tail': [(0.52, 0.76), (0.58, 0.90)],
+        'col': {'body': '#b4a386', 'belly': '#d6ccb6', 'leg': '#8a7a62', 'hoof': '#2a211c', 'snout': '#4a3e34', 'tusk': '#6a5a48', 'mane': '#5a4a3a', 'eye': '#c9a24a', 'ear': '#a08c70'},
+        'leg_r': (0.055, 0.036, 0.024, 0.02),
+    },
+    # the sheep: a woolly barrel on thin dark legs, a dark face, ears out sideways, a short tail down; it grazes and lies in the paddock
+    'sheep': {
+        'hind': [(0.36, 0.56), (0.28, 0.38), (0.40, 0.19), (0.38, 0.025)], 'hx': 0.10, 'front': [(-0.28, 0.54), (-0.24, 0.36), (-0.26, 0.17), (-0.27, 0.025)], 'fx': 0.10,
+        'torso': [(0.50, 0.62, 0.05, 0.06), (0.46, 0.64, 0.20, 0.22), (0.30, 0.66, 0.26, 0.28), (0.06, 0.66, 0.27, 0.30), (-0.18, 0.66, 0.26, 0.30), (-0.36, 0.66, 0.22, 0.26), (-0.46, 0.66, 0.15, 0.18)],
+        'piv': {'body': (0, 0.03, 0.64), 'hips': (0, 0.12, 0.64), 'chest': (0, -0.06, 0.64)},
+        'neck': [(-0.44, 0.70), (-0.60, 0.80)], 'head': [(-0.60, 0.80), (-0.80, 0.74)], 'tail': [(0.49, 0.62), (0.52, 0.50)],
+        'col': {'body': '#e6dfcf', 'belly': '#d8d0bc', 'leg': '#3a3330', 'hoof': '#1f1a17', 'snout': '#2e2a28', 'tusk': '#cfc6b4', 'mane': '#efe8d8', 'eye': '#120e0c', 'ear': '#3a3330'},
+        'leg_r': (0.05, 0.034, 0.022, 0.02),
+    },
+    # the cow: long and heavy on short legs, a straight back, a long head with short curved horns, a hanging tail with a tuft, an udder; she grazes and lies in the byre
+    'cow': {
+        'hind': [(0.72, 1.06), (0.60, 0.72), (0.78, 0.38), (0.74, 0.03)], 'hx': 0.18, 'front': [(-0.58, 1.02), (-0.50, 0.70), (-0.54, 0.36), (-0.56, 0.03)], 'fx': 0.18,
+        'torso': [(0.96, 1.08, 0.05, 0.07), (0.90, 1.08, 0.26, 0.30), (0.62, 1.10, 0.34, 0.38), (0.20, 1.10, 0.36, 0.42), (-0.24, 1.10, 0.36, 0.43), (-0.58, 1.12, 0.33, 0.40), (-0.78, 1.10, 0.24, 0.30)],
+        'piv': {'body': (0, 0.06, 1.08), 'hips': (0, 0.28, 1.08), 'chest': (0, -0.14, 1.09)},
+        'neck': [(-0.76, 1.14), (-1.02, 1.22)], 'head': [(-1.02, 1.22), (-1.42, 1.02)], 'tail': [(0.96, 1.10), (1.02, 0.42)],
+        'col': {'body': '#8a5a3a', 'belly': '#c9b89a', 'leg': '#7a5034', 'hoof': '#2a211c', 'snout': '#c9a090', 'tusk': '#d9c8a4', 'mane': '#3a2a22', 'eye': '#120e0c', 'ear': '#7a5034'},
+        'leg_r': (0.11, 0.075, 0.05, 0.045),
+    },
 }
 S = SPECS[NAME]
 
@@ -235,6 +262,40 @@ elif NAME == 'moose':
         for (dx, dy, dz) in ((0.10, -0.24, 0.06), (0.24, -0.22, 0.10), (0.36, -0.12, 0.13), (0.40, 0.04, 0.15), (0.34, 0.20, 0.14), (-0.06, -0.26, 0.02)):
             b = pc + Vector((sx * dx * 0.75, dy * 0.75, dz * 0.4)); cone('tine%d%d' % (sx, int(dx * 100)), C['tusk'], 'head', b, pc + Vector((sx * dx * 1.35, dy * 1.4, dz + 0.08)), 0.05, 0.014, seg=5)
     cone('tail', C['body'], 'tail', V3(S['tail'][0]), V3(S['tail'][1]), 0.05, 0.02, seg=6)
+elif NAME == 'goat':
+    cone('neck', C['body'], 'neck', n0 + Vector((0, 0.08, -0.05)), n1 + Vector((0, 0.0, -0.01)), 0.12, 0.075, sy=1.2)
+    cone('skull', C['body'], 'head', headp(-0.05), headp(HL * 0.50), 0.08, 0.06, sy=1.05)
+    cone('muzzle', C['body'], 'head', headp(HL * 0.46), headp(HL * 0.96), 0.06, 0.04)
+    ball('nose', C['snout'], 'head', headp(HL * 0.98, -0.004), 0.028, sz=0.85)
+    cone('beard', C['mane'], 'head', headp(HL * 0.70, -0.045), headp(HL * 0.62, -0.16), 0.035, 0.008, seg=6)
+    for sx in (1, -1):
+        cone('ear' + str(sx), C['ear'], 'head', headp(-0.02, 0.03, sx * 0.06), headp(-0.06, 0.02, sx * 0.19), 0.04, 0.012, seg=6, sx=1.0, sy=0.4)        # ears out sideways
+        ball('eye' + str(sx), C['eye'], 'head', headp(HL * 0.30, 0.04, sx * 0.06), 0.018, sy=0.6)
+        h0_ = headp(-0.02, 0.07, sx * 0.035); h1_ = h0_ + Vector((sx * 0.03, 0.10, 0.12)); h2_ = h1_ + Vector((sx * 0.02, 0.09, 0.05))                   # the horns, swept back
+        cone('hornA' + str(sx), C['tusk'], 'head', h0_, h1_, 0.022, 0.015, seg=6); cone('hornB' + str(sx), C['tusk'], 'head', h1_, h2_, 0.015, 0.004, seg=6)
+    cone('tail', C['body'], 'tail', V3(S['tail'][0]), V3(S['tail'][1]), 0.03, 0.012, seg=6)
+elif NAME == 'sheep':
+    cone('neck', C['mane'], 'neck', n0 + Vector((0, 0.10, -0.04)), n1 + Vector((0, 0.0, -0.01)), 0.17, 0.09, sy=1.2)                                     # the wool runs up the neck
+    cone('skull', C['snout'], 'head', headp(-0.04), headp(HL * 0.52), 0.07, 0.055, sy=1.05)
+    cone('muzzle', C['snout'], 'head', headp(HL * 0.48), headp(HL * 0.98), 0.052, 0.035)
+    ball('poll', C['mane'], 'head', headp(0.0, 0.05), 0.06, sy=1.1, sz=0.8)                                                                                 # a cap of wool on the poll
+    for sx in (1, -1):
+        cone('ear' + str(sx), C['ear'], 'head', headp(0.0, 0.02, sx * 0.05), headp(-0.03, 0.0, sx * 0.16), 0.035, 0.01, seg=6, sx=1.0, sy=0.45)
+        ball('eye' + str(sx), C['tusk'], 'head', headp(HL * 0.32, 0.035, sx * 0.055), 0.015)
+    cone('tail', C['mane'], 'tail', V3(S['tail'][0]), V3(S['tail'][1]), 0.045, 0.02, seg=6)
+elif NAME == 'cow':
+    cone('neck', C['body'], 'neck', n0 + Vector((0, 0.12, -0.08)), n1 + Vector((0, 0.0, -0.02)), 0.24, 0.14, sy=1.25)
+    cone('dewlap', C['belly'], 'neck', n0 + Vector((0, 0.0, -0.22)), n1 + Vector((0, -0.04, -0.12)), 0.09, 0.05, seg=8)
+    cone('skull', C['body'], 'head', headp(-0.08), headp(HL * 0.46), 0.14, 0.11, sy=1.1)
+    cone('muzzle', C['body'], 'head', headp(HL * 0.42), headp(HL * 0.94), 0.11, 0.085)
+    ball('nose', C['snout'], 'head', headp(HL * 0.98, -0.01), 0.075, sy=1.1, sz=0.8)
+    for sx in (1, -1):
+        cone('ear' + str(sx), C['ear'], 'head', headp(-0.02, 0.06, sx * 0.10), headp(-0.06, 0.05, sx * 0.30), 0.06, 0.015, seg=6, sx=1.0, sy=0.4)
+        ball('eye' + str(sx), C['eye'], 'head', headp(HL * 0.28, 0.06, sx * 0.10), 0.024)
+        h0_ = headp(-0.04, 0.12, sx * 0.07); h1_ = h0_ + Vector((sx * 0.14, 0.02, 0.06)); h2_ = h1_ + Vector((sx * 0.06, -0.02, 0.10))                  # short horns out and up
+        cone('hornA' + str(sx), C['tusk'], 'head', h0_, h1_, 0.035, 0.025, seg=6); cone('hornB' + str(sx), C['tusk'], 'head', h1_, h2_, 0.025, 0.006, seg=6)
+    ball('udder', C['snout'], 'hips', (0, 0.42, 0.72), 0.16, sx=1.0, sy=1.2, sz=0.8)
+    cone('tail', C['body'], 'tail', V3(S['tail'][0]), V3(S['tail'][1]), 0.035, 0.018, seg=6); ball('tuft', C['mane'], 'tail', V3(S['tail'][1]) + Vector((0, 0.01, -0.06)), 0.05, sz=1.5)
 else:   # wolf
     cone('neck', C['body'], 'neck', n0 + Vector((0, 0.10, -0.04)), n1 + Vector((0, 0.0, -0.01)), 0.15, 0.105, sy=1.2)
     cone('ruff', C['belly'], 'neck', n0 + Vector((0, 0.02, -0.10)), n1 + Vector((0, -0.03, -0.07)), 0.10, 0.07, seg=8)
@@ -308,6 +369,9 @@ GAIT = {
     'wolf': {'walk': dict(S=0.40, h=0.07, beta=0.58, bob=0.012, lift=40), 'run': dict(S=0.80, h=0.17, beta=0.32, bob=0.055, pitch=5, flex=13, lift=70)},
     'bear': {'walk': dict(S=0.50, h=0.10, beta=0.62, bob=0.02, lift=30), 'run': dict(S=0.95, h=0.20, beta=0.36, bob=0.07, pitch=5, flex=9, lift=50)},
     'moose': {'walk': dict(S=0.75, h=0.18, beta=0.62, bob=0.02, lift=30), 'run': dict(S=1.30, h=0.34, beta=0.45, bob=0.07, pitch=2, flex=4, lift=60)},
+    'goat': {'walk': dict(S=0.32, h=0.08, beta=0.62, bob=0.012, lift=34), 'run': dict(S=0.66, h=0.20, beta=0.34, bob=0.08, pitch=5, flex=9, lift=70)},
+    'sheep': {'walk': dict(S=0.28, h=0.06, beta=0.64, bob=0.012, lift=30), 'run': dict(S=0.56, h=0.14, beta=0.36, bob=0.06, pitch=4, flex=7, lift=60)},
+    'cow': {'walk': dict(S=0.50, h=0.09, beta=0.66, bob=0.014, lift=22), 'run': dict(S=0.90, h=0.16, beta=0.40, bob=0.05, pitch=3, flex=5, lift=45)},
 }[NAME]
 WALK_OFF = {'hL': 0.0, 'fL': 0.25, 'hR': 0.5, 'fR': 0.75}          # the four-beat walk: each hind foot, then the front foot on its side
 RUN_OFF = {'hL': 0.0, 'hR': 0.10, 'fL': 0.47, 'fR': 0.57}          # the gallop: the hind pair, a moment in the air, the front pair
@@ -330,6 +394,9 @@ def run(p, low=0.0, speed=1.0):
 def idle(p):
     w = TWO * p; br = 0.5 - 0.5 * math.cos(2 * w)
     if NAME == 'boar': return {'loc': (0, 0, -0.006 * br), 'neck': 10 + 5 * math.sin(w), 'head': 6 + 4 * math.sin(w + 0.8), 'head_yaw': 5 * math.sin(w), 'wag': 16 * math.sin(3 * w), 'tail': 6}
+    if NAME == 'goat': return {'loc': (0, 0, -0.005 * br), 'neck': -2 + 3 * math.sin(w), 'neck_yaw': 12 * math.sin(w), 'head_yaw': 10 * math.sin(w + 0.5), 'head': 4 * math.sin(2 * w), 'wag': 25 * math.sin(5 * w), 'tail': -30}
+    if NAME == 'sheep': return {'loc': (0, 0, -0.004 * br), 'neck': 8 + 2 * math.sin(w), 'head': 6 + 3 * math.sin(2 * w + 1), 'head_yaw': 6 * math.sin(w), 'wag': 8 * math.sin(3 * w), 'tail': 20}
+    if NAME == 'cow': return {'loc': (0, 0, -0.004 * br), 'neck': 6 + 2 * math.sin(w), 'head': 4 + 2 * math.sin(2 * w + 0.6), 'head_yaw': 8 * math.sin(w * 0.5), 'wag': 18 * math.sin(2 * w), 'tail': 4 * math.sin(w)}
     if NAME == 'deer': return {'loc': (0, 0, -0.005 * br), 'neck': -3 + 2 * math.sin(w), 'neck_yaw': 14 * math.sin(w), 'head_yaw': 12 * math.sin(w + 0.5), 'head': 3 * math.sin(2 * w), 'wag': 20 * max(0, math.sin(4 * w)), 'tail': -6}
     return {'loc': (0, 0, -0.006 * br), 'neck': 3 + 2 * math.sin(w), 'head': 4 + 2 * math.sin(2 * w), 'head_yaw': 7 * math.sin(w), 'wag': 9 * math.sin(w), 'tail': 3 * math.sin(2 * w)}
 def windup(p):
@@ -370,8 +437,22 @@ def death(p):
     legs = {n: fk(n) for n in LEGS if fk(n)}
     return {'loc': (0.10 * f, 0.04 * stagger, -drop * f + settle), 'roll': 86 * f + 7 * stagger, 'pitch': -4 * stagger, 'neck': 14 * f, 'neck_yaw': -10 * f, 'head': 8 * f, 'tail': -30 * f, 'legs': legs}
 
+FARM = NAME in ('goat', 'sheep', 'cow')
+def graze(p):                                       # the head down in the grass, nibbling, the tail flicking
+    w = TWO * p; nib = 5 * math.sin(6 * w); dn = 48 if NAME == 'goat' else 44 if NAME == 'sheep' else 40
+    return {'loc': (0, 0.01, -0.01), 'pitch': 3, 'chest': 2, 'neck': dn + 3 * math.sin(2 * w), 'head': 24 + nib, 'head_yaw': 6 * math.sin(w), 'wag': 12 * math.sin(3 * w), 'tail': (-30 if NAME == 'goat' else 20 if NAME == 'sheep' else 6)}
+def butt(p):                                        # the goat's nudge: it gathers, drops its head and shoves forward, then stands back up
+    k = 0.5 - 0.5 * math.cos(math.pi * min(1.0, p / 0.3)); sh = math.sin(math.pi * max(0.0, min(1.0, (p - 0.3) / 0.45))) if p > 0.3 else 0.0; back = max(0.0, (p - 0.75) / 0.25)
+    return {'loc': (0, 0.06 * k - 0.26 * sh, -0.03 * k - 0.02 * sh), 'pitch': 6 * k + 6 * sh, 'hips': -6 * sh, 'neck': 30 * k + 20 * sh - 50 * back * (k + sh), 'head': 22 * k + 10 * sh, 'tail': -35, 'wag': 10 * math.sin(TWO * 3 * p)}
+def lie(p):                                         # from standing to lying: the hind end sinks first, then the front, the legs folded under, the head up; the last frame is the lying beast
+    k = p * p * (3 - 2 * p); hk = min(1.0, k * 1.4); fk_ = max(0.0, (k - 0.3) / 0.7)
+    half = max(r[2] for r in torso); drop = PIV['body'][2] - half * 1.05
+    fold = lambda n: ('fk', (-70 if n[0] == 'h' else 60) * (hk if n[0] == 'h' else fk_), (120 if n[0] == 'h' else -115) * (hk if n[0] == 'h' else fk_), (-40 if n[0] == 'h' else 50) * (hk if n[0] == 'h' else fk_))
+    return {'loc': (0, 0.02 * k, -drop * (0.55 * hk + 0.45 * fk_)), 'pitch': -8 * hk + 8 * fk_, 'neck': 8 - 6 * k, 'head': 6, 'head_yaw': 10 * k, 'tail': 10, 'legs': {n: fold(n) for n in LEGS}}
 clip('idle', 48, idle); clip('walk', 24, walk); clip('run', 12, run); clip('hit', 8, hit); clip('death', 20, death)
-if NAME != 'deer': clip('windup', 24 if NAME == 'boar' else 16 if NAME in ('bear', 'moose') else 12, windup); clip('attack', 16 if NAME in ('bear', 'moose') else 12, attack)
+if FARM: clip('graze', 48, graze); clip('lie', 24, lie)
+if NAME == 'goat': clip('butt', 16, butt)
+if NAME != 'deer' and not FARM: clip('windup', 24 if NAME == 'boar' else 16 if NAME in ('bear', 'moose') else 12, windup); clip('attack', 16 if NAME in ('bear', 'moose') else 12, attack)
 ad = rig.animation_data; ad.action = bpy.data.actions['idle']
 if hasattr(ad, 'action_slot') and len(ad.action.slots): ad.action_slot = ad.action.slots[0]
 sc.frame_set(1)

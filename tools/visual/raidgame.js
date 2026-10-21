@@ -205,5 +205,28 @@
     } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
     return out;
   }
-  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step5b: step5b, step5c: step5c, step7: step7, step8: step8, step9: step9, town: town, men: men, sim: sim, own: own };
+  // The villages' animals (2026-10-21): at a home-water village the stock stands in the yard and by the byre, pecks and grazes
+  // and lies down; a hen scatters from the hero; a sheep killed drops meat and hide, somebody cries thief, and it stays dead for
+  // the day: gone when the hero is far, the rest back when he returns.
+  function stock() {
+    var d = D(), P = Combat.dbg().P, out = {}, vs = d.villages(), L = Array.isArray(vs) ? vs : vs.list, vi = -1, i;
+    try {
+      for (i = 0; i < L.length; i++) if (L[i].ring === 0 && L[i].arch !== 'ruin' && L[i].arch !== 'church' && L[i].V && (LIVE(L[i].arch))) { vi = i; break; }
+      function LIVE(a) { return a === 'village' || a === 'farmstead' || a === 'small' || a === 'seat'; }
+      if (vi < 0) return { fault: 'no home village' }; d.timeOf(400); var c = d.toVillage(vi); sim(3);
+      var st = d.stock(vi), cnt = {}; st.forEach(function (e) { cnt[e.k] = (cnt[e.k] || 0) + 1; }); out.village = [vi, L[vi].arch, L[vi].name]; out.n = cnt; out.live = Object.keys(d.stockLive());
+      var clips = {}; for (i = 0; i < 24; i++) { sim(1); d.stock(vi).forEach(function (e) { var k = e.k + ':' + (e.lie ? 'lie' : e.clip || (e.state || 'idle')); clips[k] = (clips[k] || 0) + 1; }); } out.clips = clips;
+      var hen = d.stock(vi).filter(function (e) { return e.k === 'hen' && !e.awake; })[0];
+      if (hen) { d.goto(hen.x + 24, hen.y); sim(0.2); var h0 = d.stock(vi).filter(function (e) { return e.sid === hen.sid; })[0], d0 = Math.hypot(h0.x - P.x, h0.y - P.y); sim(2.5); var h1 = d.stock(vi).filter(function (e) { return e.sid === hen.sid; })[0]; out.hen = { before: Math.round(d0), after: h1 ? Math.round(Math.hypot(h1.x - P.x, h1.y - P.y)) : null, awake: h1 && h1.awake, state: h1 && h1.state }; }
+      var sh = d.stock(vi).filter(function (e) { return e.k === 'sheep' || e.k === 'cow' || e.k === 'goat'; })[0];
+      var goat = d.stock(vi).filter(function (e) { return e.k === 'goat'; })[0]; if (goat) { d.goto(goat.x + 14, goat.y); var gs = {}; for (i = 0; i < 16; i++) { sim(0.5); var g2 = d.stock(vi).filter(function (e) { return e.sid === goat.sid; })[0]; if (g2) gs[g2.state + (g2.awake ? '+' : '-')] = (gs[g2.state + (g2.awake ? '+' : '-')] || 0) + 1; } out.goat = { states: gs, hp: Math.round(P.hp) }; }
+      if (sh) { d.goto(sh.x + 20, sh.y + 10); sim(0.3); d.stockKill(sh.sid); sim(1.5); var cries = d.folk().filter(function (f) { return f.vi === vi && f.sayT > 0; }).map(function (f) { return f.say; }); out.kill = { kind: sh.k, left: d.stock(vi).filter(function (e) { return e.k === sh.k; }).length, cries: cries.slice(0, 2), dead: d.seen.stock && d.seen.stock[vi], raid: d.raidState ? d.raidState() : null }; }
+      d.goto(c.x + 4000, c.y); sim(46); out.far = { stock: d.stock(vi).length, live: Object.keys(d.stockLive()).indexOf(String(vi)) >= 0 };
+      d.toVillage(vi); sim(3); var cnt2 = {}; d.stock(vi).forEach(function (e) { cnt2[e.k] = (cnt2[e.k] || 0) + 1; }); out.back = cnt2;
+      out.errs = d.errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
+      out.fault = !st.length || !(out.hen && out.hen.after > out.hen.before) || (sh && !(out.kill.left === (cnt[sh.k] || 0) - 1 && (out.back[sh.k] || 0) === (cnt[sh.k] || 0) - 1)) || out.far.stock ? '!!' : '';
+    } catch (e) { out.threw = String(e && e.stack).slice(0, 300); }
+    return out;
+  }
+  window.R = { step1: step1, step2: step2, step2b: step2b, step3: step3, step5: step5, step5b: step5b, step5c: step5c, stock: stock, step7: step7, step8: step8, step9: step9, town: town, men: men, sim: sim, own: own };
 })();

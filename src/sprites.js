@@ -214,10 +214,11 @@
     else if (opts.clip && A[opts.clip]) { nm = opts.clip; f = opts.clipK != null ? frameAt(A[nm], Math.max(0, Math.min(0.999, opts.clipK))) : loopFrame(A[nm], ph); }
     else if (e.state === 'windup' && A.windup) { nm = 'windup'; f = opts.windupLoop ? loopFrame(A.windup, ph) : frameAt(A.windup, k); }
     else if (e.state === 'lunge' && A.attack) { nm = 'attack'; f = opts.attackLoop ? loopFrame(A.attack, ph) : frameAt(A.attack, k); }
+    else if ((e.state === 'windup' || e.state === 'lunge') && A.butt) { nm = 'butt'; f = frameAt(A.butt, e.state === 'windup' ? k * 0.5 : 0.5 + k * 0.5); }   // the goat: one clip for the gathering and the shove (the villages' animals, 2026-10-21)
     else if ((e.state === 'stunned' || e.flash > 0.3) && A.hit) { nm = 'hit'; f = e.state === 'stunned' ? loopFrame(A.hit, ph * 0.5) : frameAt(A.hit, 1 - e.flash); }
     else {                                                           // the gait by the real speed, with a little hold so it does not flicker at the edge
       st.run = st.run ? st.spd > 28 : st.spd > 40; st.walk = st.walk ? st.spd > 3 : st.spd > 7;
-      nm = st.run && A.run ? 'run' : st.walk && A.walk ? 'walk' : 'idle'; f = loopFrame(A[nm], ph); loopN = nm;
+      nm = st.run && A.run ? 'run' : st.walk && A.walk ? 'walk' : (opts.idleClip && A[opts.idleClip] ? opts.idleClip : 'idle'); f = loopFrame(A[nm], ph); loopN = nm;   /* (idleClip: what the page says it does standing still: graze, peck) */
     }
     if (opts.clip && A[opts.clip] && opts.clipK == null) loopN = nm;
     if (loopN && opts.blend !== false && blends(nm, A[nm])) { var lp = loopAt(A[nm], ph); f = lp.f; if (lp.w >= 0.97) f = lp.f2; else if (lp.w > 0.03) mixB = lp; }   // a slow loop: between two frames

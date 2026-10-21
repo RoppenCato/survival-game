@@ -77,7 +77,7 @@ def layer_setup(layer):
     for o in gear_c.objects:
         mine = layer == 'all' or o in own; hold_it = (not mine) and not show and any(o.name.startswith(u) for u in under)
         o.hide_render = not (mine or hold_it); hold(o, hold_it)
-    toon.freestyle(sc, vl, PX, body_c if layer == 'body' else (lines_of(own) if under else gear_c) if (layer != 'all' and not show) else None, STYLE, weight=0.42 if name.endswith('Metal') else 1.0)
+    toon.freestyle(sc, vl, PX, body_c if layer == 'body' else (lines_of(own) if under else gear_c) if (layer != 'all' and not show) else None, STYLE, weight=0.42 if name.endswith('Metal') else float(opt.get('line', 1.0)))   # --line: a lighter line for a small beast (the hen; the studio, 2026-10-20)
 
 def set_action(name):
     act = bpy.data.actions[name]; ad = rig.animation_data; ad.action = act

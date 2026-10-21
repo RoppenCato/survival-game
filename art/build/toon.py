@@ -138,6 +138,7 @@ def build_nodes(m, style):
         v = _light(n, L)
         base_t = tuple(base[i] * AMBIENT_TINT[i] for i in range(3))
         dark = _math(n, L, 'LESS_THAN', v, 0.66); lit = _math(n, L, 'GREATER_THAN', v, 0.9)
+        if m.get('matte'): lit = 0.0      # 2026-10-20 (the studio): hair has no highlight step; on a smooth cap it read as a shine, a bald head or a helmet
         shadow = tuple(base_t[i] * SHADOW_TINT_FIT[i] for i in range(3)); light = tuple(base_t[i] * 0.8 + LIGHT_TINT[i] * 0.16 for i in range(3))
         bsock = base_t
         if m.get('face'):             # the painted face laid over the skin before the shading: a decal projected from the front
@@ -186,7 +187,7 @@ def _paint_face(name, eyes, expr, size=256, kind='hero'):
     # each with a catchlight in its upper left; thick brows with a slight slant down toward the nose (a determined look, not
     # an angry one); a shadow line down the shadow side of the nose; a warm patch on each cheek; a moustache in the beard's
     # colour over a dark mouth line, so the mouth shows above the modelled beard (hero2_build lowers the beard to the jaw).
-    # kind (2026-10-13): 'hero' as described; 'huldra' no moustache, thin arched brows, a lash at each eye's corner, red lips,
+    # kind (2026-10-13): 'hero' as described; 'folk' (2026-10-20) the hero's face with a mouth and no moustache, for the people; 'huldra' no moustache, thin arched brows, a lash at each eye's corner, red lips,
     # a stronger blush; 'nacken' narrow eyes, brows slanted up toward the nose (sad), hollows under the eyes, a thin mouth
     # with drooping ends, no blush; 'draugr' one eye wide and pale with a pinpoint, the other sunk in a dark socket, heavy
     # low brows, hollow cheeks, no catchlight, no mouth (the jaw is modelled). The people-shaped väsen's heads take these.
@@ -204,8 +205,8 @@ def _paint_face(name, eyes, expr, size=256, kind='hero'):
                     i = (y * size + x) * 4
                     if px[i + 3] < 0.99: px[i] = col[0]; px[i + 1] = col[1]; px[i + 2] = col[2]; px[i + 3] = max(px[i + 3], a * max(0.0, min(1.0, (1.4 - d) / 0.6)))
     ex, ey = 0.17, 0.545; es = size
-    if kind in ('hero', 'huldra'):
-        for sx in (-1, 1): soft((0.5 + sx * 0.205) * es, (1 - 0.455) * es, 0.052 * es, 0.034 * es, blush, 0.42 if kind == 'hero' else 0.55)
+    if kind in ('hero', 'huldra', 'folk'):
+        for sx in (-1, 1): soft((0.5 + sx * 0.205) * es, (1 - 0.455) * es, 0.052 * es, 0.034 * es, blush, 0.55 if kind == 'huldra' else 0.42)
     else:
         for sx in (-1, 1): soft((0.5 + sx * 0.19) * es, (1 - 0.47) * es, 0.055 * es, 0.03 * es, shade, 0.45)       # hollows under the eyes
     soft((0.5 + 0.036) * es, (1 - 0.47) * es, 0.012 * es, 0.042 * es, shade, 0.55)                      # the nose's shadow side (the sun is upper left)
@@ -238,6 +239,10 @@ def _paint_face(name, eyes, expr, size=256, kind='hero'):
         if expr == 'hurt': ellipse(0.5 * es, (1 - 0.345) * es, 0.03 * es, 0.022 * es, ink)
         elif expr == 'angry': ellipse(0.5 * es, (1 - 0.35) * es, 0.052 * es, 0.009 * es, ink)
         else: ellipse(0.5 * es, (1 - 0.35) * es, 0.042 * es, 0.0075 * es, ink)
+    elif kind == 'folk':              # 2026-10-20 (the studio): the people's face: the hero's eyes, brows and cheeks, a mouth and no moustache
+        if expr == 'hurt': ellipse(0.5 * es, (1 - 0.345) * es, 0.03 * es, 0.022 * es, ink)    # (a beard is a layer of its own, so women and the young are not given one)
+        elif expr == 'angry': ellipse(0.5 * es, (1 - 0.35) * es, 0.05 * es, 0.009 * es, ink)
+        else: ellipse(0.5 * es, (1 - 0.352) * es, 0.04 * es, 0.0075 * es, ink)
     elif kind == 'huldra':
         if expr == 'hurt': ellipse(0.5 * es, (1 - 0.35) * es, 0.026 * es, 0.02 * es, ink)
         else: ellipse(0.5 * es, (1 - 0.358) * es, 0.036 * es, 0.015 * es, lip); ellipse(0.5 * es, (1 - 0.356) * es, 0.034 * es, 0.004 * es, ink)
@@ -296,7 +301,7 @@ def world(scene, ambient=None, style='cel'):
     air = SCENES[SCENE]['air']; k = ambient / 0.10
     bg = w.node_tree.nodes['Background']; bg.inputs[0].default_value = (air[0] * k, air[1] * k, air[2] * k, 1); bg.inputs[1].default_value = 1.0   # the scene's air
 
-def freestyle(scene, view_layer, px, collection=None, style='cel'):
+def freestyle(scene, view_layer, px, collection=None, style='cel', weight=1.0):
     """The line per style: cel, a whole-silhouette contour heavy toward the lower right and a thinner line at overlaps;
     painted, thin, brown, a little transparent and wobbling; folk, bold and even."""
     r = scene.render; r.use_freestyle = True; r.line_thickness_mode = 'ABSOLUTE'; r.line_thickness = 1.0
@@ -306,6 +311,7 @@ def freestyle(scene, view_layer, px, collection=None, style='cel'):
     # 2026-10-09: the cel line brought up to the props' weight
     cfg = {'cel': ('#231a16', 1.0, 2.6, 1.1, True, 0), 'painted': ('#33231a', 1.0, 1.5, 0.9, False, 1.2), 'folk': ('#1e1612', 1.0, 2.4, 1.6, False, 0)}[style]
     ink, alpha, heavy, thin, calligraphy, wobble = cfg
+    heavy *= weight; thin *= weight             # 2026-10-20 (the studio): a thinner line for blades, whose own width the full contour filled (they read as black sticks)
     def lineset(name, thick, outer):
         ls = fs.linesets.new(name)
         ls.select_silhouette = not outer; ls.select_border = not outer; ls.select_crease = not outer

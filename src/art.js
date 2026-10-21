@@ -1025,6 +1025,11 @@ var ANIMALS = {
     col: { body: '#5a3d28', belly: '#b8946a', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
   snake: { name: 'Snake', set: { plan: 6, size: 0.9, pattern: 2, fangs: 1, wobble: 1, speed: 0.9, lunge: 1.5, windup: 0.5, hp: 3, aggro: 45 },
     col: { body: '#8a8f78', belly: '#d9d5bd', accent: '#efe6cf', eye: '#1e1418', glow: '#ff5a3a' } },
+  // the villages' animals (the Art Director's step 5A, 2026-10-20; wired 2026-10-21): drawn only from their sheets; these numbers feed the engine (speed, health, windup, how near you may come) and the drawn fallback is never shown
+  hen: { name: 'Hen', set: { plan: 5, size: 1, speed: 0.9, windup: 0.5, hp: 2, aggro: 70, lunge: 0 }, col: { body: '#c9a06a', belly: '#e8d8b8', accent: '#b8322a', eye: '#1e1418', glow: '#ffd34d' } },
+  goat: { name: 'Goat', set: { plan: 5, size: 1, speed: 1.0, windup: 0.35, hp: 8, aggro: 25, lunge: 0.6 }, col: { body: '#d8cdb4', belly: '#efe6cf', accent: '#5a4a3a', eye: '#1e1418', glow: '#ffd34d' } },
+  sheep: { name: 'Sheep', set: { plan: 5, size: 1, speed: 0.75, windup: 0.5, hp: 8, aggro: 60, lunge: 0 }, col: { body: '#e3dccb', belly: '#efe6cf', accent: '#3a2e26', eye: '#1e1418', glow: '#ffd34d' } },
+  cow: { name: 'Cow', set: { plan: 5, size: 1, speed: 0.6, windup: 0.6, hp: 20, aggro: 45, lunge: 0 }, col: { body: '#8a4f32', belly: '#e0cdb0', accent: '#3a2e26', eye: '#1e1418', glow: '#ffd34d' } },
   moose: { name: 'Moose', set: { plan: 5, size: 1.6, bodyW: 1.05, bodyH: 1.1, head: 1.1, legLen: 1.7, legW: 0.9, neck: 1, neckUp: 0.55, snout: 1.5, snoutW: 1.2, ears: 3, antlers: 3, antlerSize: 1.15, hump: 1.2, hoof: 1, tail: 1, pattern: 0, eyeSize: 0.75, tell: 1, lunge: 1.3, windup: 0.7, hp: 26, aggro: 70 },
     col: { body: '#4f3b2c', belly: '#8a7a6a', accent: '#cdbb98', eye: '#1e1418', glow: '#ff5a3a' } },
   troll: { name: 'Mountain troll', set: { plan: 8, size: 2.2, speed: 0.6, windup: 1.6, lunge: 0, hp: 80, aggro: 130, tell: 1, trollHair: 1.1, trollMoss: 0.8, trollAge: 0.75 },   // the boulder troll after Bauer (2026-10-07)
@@ -1060,6 +1065,7 @@ var ATTACKS = {
   trollMaw: { kind: 'lunge', windup: 1.3, dur: 0.5, speed: 300, recover: 1.6, cd: 2.2, heavy: true, turn: 1.6 },   // it sits back, the lid comes up, and it throws itself at you mouth first
   troll: { kind: 'arc', windup: 1.6, dur: 0.6, reach: 62, arc: 3.8, hitAt: 0.45, step: 30, recover: 2.2, cd: 2.6, heavy: true, turn: 1.4 },   // a great slow sweep of the arm, wide as he is
   wolf: { kind: 'lunge', windup: 0.25, dur: 0.2, speed: 320, ring: 70, recover: 0.4, cd: 0.8, pack: true },
+  goat: { kind: 'arc', windup: 0.35, dur: 0.25, reach: 16, arc: 1.6, hitAt: 0.5, step: 26, recover: 0.7, cd: 4, turn: 3 },   // the goat's butt (the sheet's butt clip: it gathers, drops its head and shoves)
   unge: { kind: 'arc', windup: 0.6, dur: 0.3, reach: 20, arc: 1.8, hitAt: 0.45, step: 40, recover: 0.8, cd: 1.3, turn: 3 },   // Hårungen: he rears back with the bone overhead, shaking, then hops in and brings it down
   moose: { kind: 'arc', windup: 0.7, dur: 0.35, reach: 30, arc: 1.7, hitAt: 0.4, step: 120, recover: 0.9, cd: 1.3, turn: 2.6 },
   bear: { kind: 'arc', windup: 0.9, dur: 0.3, reach: 26, arc: 2.1, hitAt: 0.35, step: 50, recover: 1.0, cd: 1.5, heavy: true }
