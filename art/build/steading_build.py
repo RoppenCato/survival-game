@@ -24,6 +24,7 @@ things were: 35 degrees above the ground, looking north, 4 px a game unit when p
 import bpy, bmesh, math, os, sys, json, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21): chosen tones
 from skin import Stick, loft, ball
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -43,7 +44,11 @@ def mats():
     for k, v in {'wood': '#6b4a36', 'woodd': '#55392a', 'planed': '#b08a5a', 'grey': '#8a8478', 'greyd': '#6a655c', 'stone': '#66737a', 'stoned': '#56636a', 'moss': '#6b8c46', 'turf': '#577838', 'turfl': '#78994e',
                  'char': '#1e1916', 'chard': '#2c2522', 'ash': '#9a948a', 'ashl': '#c2bcb0', 'ember': '#7a4a2a', 'iron': '#8a9199', 'irond': '#5f666e', 'sack': '#a89470', 'cloth': '#7d6a5a', 'straw': '#c9b05e', 'strawd': '#a88f44',
                  'net': '#5e5a50', 'float': '#b08a5a', 'leaf': '#5a8c38', 'leafl': '#7aa848', 'flower': '#e6dcc6', 'flowerp': '#b58aa8', 'dry': '#9a8a60', 'water': '#5d7f8e', 'rope': '#9a846a'}.items():
-        C[k] = toon.material('s_' + k, v, None, 'cel')
+        if k in ('moss', 'turf', 'turfl', 'leaf', 'leafl'):   # 2026-10-21: living green, the leaves' lighter, smaller shade
+            lit, shade = toon.chosen_tones(v, lit_dl=0.09, shade_dl=0.075, cool_k=0.2); C[k] = toon.material('s_' + k, v, None, 'cel', lit=lit, shade=shade, t_dark=0.5, t_lit=1.0)
+        elif k in ('char', 'chard', 'ash', 'ashl', 'ember', 'stone', 'stoned', 'grey', 'greyd'):   # ash and stone keep all three tones on their facets (at 1.2 the heaps went black)
+            C[k] = toon.material('s_' + k, v, None, 'cel', t_dark=0.62, t_lit=0.95)
+        else: C[k] = toon.material('s_' + k, v, None, 'cel')
 def obj(name, coll, bm, m, smooth=False):
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); me.materials.append(m)
     for p in me.polygons: p.use_smooth = smooth
@@ -228,7 +233,7 @@ for name, fn in PIECES.items():
     cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
     toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
     fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel'); fs.crease_angle = rad(CREASE.get(name, 100))
-    toon.piece_line(fs)
+    toon.piece_line(fs, at_colours=True)
     sc.render.filepath = os.path.join(OUT, name + '.png'); bpy.ops.render.render(write_still=True)
     a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
     meta[name] = {'w': sc.render.resolution_x, 'h': sc.render.resolution_y, 'anchor': {'x': round(a.x * sc.render.resolution_x, 1), 'y': round((1 - a.y) * sc.render.resolution_y, 1)}, 'px': PX, 'ppm': PPM, 'height_m': round(H, 2)}

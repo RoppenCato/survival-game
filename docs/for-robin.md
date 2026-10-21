@@ -383,3 +383,8 @@ The boar's walk and run had no stride numbers, so its hooves slid; now they hold
 log seat, cart, well, trough, the tents, the bed, chest, chair, table, bench, crate, barrel, the workbench and the raft bench are
 the studio's new pictures in the chosen tones: the wood warmer in the light and cooler in its shade. The fires' bases had kept the
 people's heavy black line; now they have the set pieces' lighter one in a warm dark brown. The flames are as they were.
+
+**The steading's pieces and the wreck (2026-10-21):** the burnt steading's things (graves, scarecrow, haystacks, the charred beams
+and heaps, the dragon post, the shield rack, the weir and net, the trail stones) are the studio's new pictures in the chosen tones.
+The wreck you wake in is no longer drawn in code: it is the studio's picture of a faering stove in on the sand, its ends curled
+high, the mast snapped and the striped sail over the side, an oar and planks spilled beside it. Prying planks works as before.

@@ -129,7 +129,8 @@ def prop_images():
     for name in j:                                    # a tag from the picture's own bytes: a browser that has the old picture cached fetches the new one (2026-10-12: the cave mouth was redone and the old one kept showing)
         fp = os.path.join(ROOT, 'assets', 'props', name + '.png'); tag = hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else '0'
         j[name]['src'] = '../assets/props/' + name + '.png?v=' + tag
-    for sub, jn in [('trees', 'trees.json'), ('pieces', 'pieces.json'), ('plants', 'plants.json'), ('rocks', 'rocks.json'), ('camp', 'camp.json'), ('furniture', 'furniture.json'), ('steading', 'steading.json'), ('fences', 'fences.json'), ('faces', 'faces.json'), ('yard', 'yard.json'), ('sacred', 'sacred.json'), ('raid', 'raid.json')]:   # the Art Director's set pieces by folder (2026-10-20): the trees (three variants a kind, the felled trunk, a log), the benches
+    pdir = os.path.join(ROOT, 'assets', 'props')
+    for sub, jn in [(d, d + '.json') for d in sorted(os.listdir(pdir)) if os.path.isfile(os.path.join(pdir, d, d + '.json'))]:   # the Art Director's set pieces, every folder of assets/props with its own json (2026-10-20: the trees, the benches, ...; 2026-10-21: any folder, so a new one such as the wreck needs no line here)
         tp = os.path.join(ROOT, 'assets', 'props', sub, jn)
         if not os.path.exists(tp): continue
         tj = json.load(open(tp, encoding='utf-8'))

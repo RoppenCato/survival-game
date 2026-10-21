@@ -154,14 +154,14 @@ __SPRITES_JS__
   var PI = __PROPIMG__ || {}, FIRES = __FIRES__ || {}, SEA = __SEA__ || {}, IMG = {}, map = {}, k;
   for (k in PI) { var im = new Image(); im.src = PI[k].src; IMG[k] = im; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; }
   World.setImages(map);
-  var SETS = [], BY = {}, SET_NAME = { trees: 'Trees', plants: 'Plants', rocks: 'Rocks', camp: 'Camp', furniture: 'Furniture', pieces: 'Benches', steading: 'Steading', fences: 'Fences', faces: 'Faces', yard: 'Yard', sacred: 'Sacred', raid: 'Raid', props: 'Mountain and cave' };
+  var SETS = [], BY = {}, SET_NAME = { trees: 'Trees', plants: 'Plants', rocks: 'Rocks', camp: 'Camp', furniture: 'Furniture', pieces: 'Benches', steading: 'Steading', fences: 'Fences', faces: 'Faces', yard: 'Yard', sacred: 'Sacred', raid: 'Raid', wreck: 'The wreck', props: 'Mountain and cave' };
   function addPic(set, name, pic) { if (!BY[set]) { BY[set] = {}; SETS.push(set); } var base = name.replace(/_\d+$/, ''); (BY[set][base] = BY[set][base] || []).push(pic); }
   Object.keys(PI).forEach(function (n) { var q = PI[n]; addPic(q.set || 'props', n, { name: n, img: IMG[n], w: q.w, h: q.h, ax: q.ax, ay: q.ay, upp: q.upp, meta: q }); });
   Object.keys(FIRES).forEach(function (n) { var F = FIRES[n], b = new Image(), fl = new Image(), em = new Image(); b.src = F.base; fl.src = F.flames.file; em.src = F.embers; addPic('fires', n, { name: n, img: b, w: F.w, h: F.h, ax: F.ax, ay: F.ay, upp: F.upp, meta: F, fire: { flames: fl, embers: em, F: F } }); addPic('fires', n + '_embers', { name: n + ' (embers)', img: em, w: F.w, h: F.h, ax: F.ax, ay: F.ay, upp: F.upp, meta: F }); });
   Object.keys(SEA).forEach(function (n) { var q = SEA[n], s2 = new Image(); s2.src = q.src; var pic = { name: n, img: s2, ax: q.origin[0], ay: q.origin[1], upp: (1 / 0.046) / (q.ppm || 65), meta: q, sea: true }; s2.onload = function () { pic.w = s2.naturalWidth; pic.h = s2.naturalHeight; }; addPic('sea', n, pic); });
   SET_NAME.fires = 'Fires'; SET_NAME.sea = 'The sea’s life';
   /* still drawn in code (measured in the live game, 2026-10-21): the old tuner works on these */
-  var DRAWN = ['beech', 'ash', 'apple', 'dwarfBirch', 'struckTree', 'fallenTree', 'flower', 'wildHerbs', 'birdNest', 'varde', 'wreckedBoat', 'hedge', 'chalkRock', 'bogIron', 'mushRing'].filter(function (n) { return !!kit.PROPS[n]; });
+  var DRAWN = ['beech', 'ash', 'apple', 'dwarfBirch', 'struckTree', 'fallenTree', 'flower', 'wildHerbs', 'birdNest', 'varde', 'hedge', 'chalkRock', 'bogIron', 'mushRing'].filter(function (n) { return !!kit.PROPS[n]; });
   var ORDER = ['trees', 'plants', 'rocks', 'camp', 'furniture', 'pieces', 'steading', 'fences', 'faces', 'yard', 'sacred', 'raid', 'fires', 'sea', 'props']; SETS.sort(function (a, b) { var i = ORDER.indexOf(a), j = ORDER.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
   SETS.push('drawn'); SET_NAME.drawn = 'Drawn in code';
   /* the footprint: the solid circle the hero cannot walk through, as the game places them (the world's planting and the Building board's pieces) */
