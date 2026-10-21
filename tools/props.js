@@ -1,4 +1,4 @@
-// Packs the Blender set pieces (art/build/rocks_build.py: the peaks, the cave mouth) for the game (2026-10-12):
+// Packs the Blender set pieces (art/build/caves_build.py: the peaks, the cave mouth; it was rocks_build.py until 2026-10-20) for the game (2026-10-12):
 //   node tools/props.js [render dir] [out dir]
 // Each render is halved with a smooth filter (it was rendered at twice its size), cut down to its drawn pixels, and written to
 // assets/props/<name>.png; props.json gives each piece's size in pixels, where its origin (the spot it stands on) lies in the

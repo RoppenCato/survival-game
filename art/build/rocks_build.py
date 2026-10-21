@@ -1,4 +1,4 @@
-"""The rocks of the starter island as set pieces (2026-10-20; art plan item 9, the fourth of Robin's order): the rock, the boulder
+"""The rocks (2026-10-21, the kraken round: chosen tones, a few bolder facets, living moss, the line only where colours meet). The rocks of the starter island as set pieces (2026-10-20; art plan item 9, the fourth of Robin's order): the rock, the boulder
 and the rock formation, six variants each (the game plants rocks in six). The art plan on the drawn rocks: the most consistent
 family, faceted grey with moss; keep the look, give them the lit side. So: Bauer's erratics, a few big facets, flat shaded so the
 sun lights the top and the left and the lower right falls into cool shade, moss capping some, a pale lichen patch on others, the
@@ -15,6 +15,7 @@ twice that here.
 import bpy, bmesh, math, os, sys, json, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-21)
 from skin import ball
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -31,15 +32,17 @@ def fresh():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene; coll = bpy.data.collections.new('Piece'); sc.collection.children.link(coll); return sc, coll
 C = {}
-TINTS = ['#66737a', '#5f6e7c', '#6e706c', '#66737a', '#6a7378', '#5c6a70']      # the drawn rockMat's six: grey, blue-grey, warm grey, grey, grey-green, dark
+TINTS = ['#6e7a80', '#64748a', '#7c7a70', '#6a7884', '#6e7c74', '#5e6a74']      # 2026-10-21: the six a little warmer and more saturated, each its own (chosen tones give the cool shade)
 def mats(v):
-    for k, c in {'rock': TINTS[v % 6], 'moss': '#6b8c46', 'mossl': '#83a452', 'lichen': '#a3ad92', 'grass': '#86b450'}.items():
-        C[k] = toon.material('r_' + k, c, None, 'cel')
+    for k, c in {'rock': TINTS[v % 6], 'moss': '#5c8f3a', 'mossl': '#6fa048', 'lichen': '#b2b99c', 'grass': '#7fb04c'}.items():
+        if k in ('moss', 'mossl', 'grass'):                 # living green, the leaves' lighter, smaller shade (2026-10-21)
+            lit, shade = toon.chosen_tones(c, lit_dl=0.09, shade_dl=0.075, cool_k=0.2); C[k] = toon.material('r_' + k, c, None, 'cel', lit=lit, shade=shade, t_dark=0.5, t_lit=1.0)
+        else: C[k] = toon.material('r_' + k, c, None, 'cel', t_dark=0.62, t_lit=0.95)   # stone: all three tones on its facets (at the kraken's 1.2 hardly a facet was lit, and the rock read flat)
 def obj(name, coll, bm, m, smooth=False):
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); me.materials.append(m)
     for p in me.polygons: p.use_smooth = smooth
     o = bpy.data.objects.new(name, me); coll.objects.link(o); return o
-def stone(name, coll, m, c, size, n=14, flat=0.22, tilt=(0, 0), rz=0.0, merge=12.0, cap=0.0):
+def stone(name, coll, m, c, size, n=14, flat=0.22, tilt=(0, 0), rz=0.0, merge=15.0, cap=0.0):   # 2026-10-21: merge 12 to 15, a few bolder facets
     """a stone: the hull of n random points on an ellipsoid, its underside cut flat so it sits; near-flat joins dissolved so
     a few big facets are left for the sun to light one by one. size: half extents (x, y, z); flat: how far up the bottom is cut;
     tilt: a lean (about x, about y) in radians"""
@@ -104,7 +107,7 @@ def rock(coll, v):
     top, zmax = top_of(o); return dict(h=zmax + 0.1, w=w * 2.6 + 0.4)
 def boulder(coll, v):
     w = U(1.8, 2.4) / 2; h = w * U(0.6, 0.75)
-    o = stone('boulder', coll, C['rock'], (0, 0, -0.06), (w, w * U(0.75, 0.9), h), n=20 + (v % 3) * 4, flat=0.18, rz=U(0, TAU), tilt=(U(-0.08, 0.08), U(-0.08, 0.08)), merge=9.0)
+    o = stone('boulder', coll, C['rock'], (0, 0, -0.06), (w, w * U(0.75, 0.9), h), n=20 + (v % 3) * 4, flat=0.18, rz=U(0, TAU), tilt=(U(-0.08, 0.08), U(-0.08, 0.08)), merge=12.0)
     if v in (0, 2, 3, 5): moss_cap('moss', coll, o, k=1.0, sink=0.55)
     if v in (1, 3, 4): lichen('lichen', coll, o, 3)
     sd = -1 if v % 2 else 1; stone('small', coll, C['rock'], (sd * w * 1.05, -w * 0.3, 0), (w * 0.28, w * 0.25, w * 0.2), n=9, rz=U(0, TAU))         # the small stone at its side
@@ -114,7 +117,7 @@ def formation(coll, v):
     for k in range(n):
         a = TAU * k / n + U(-0.3, 0.3) + v; r = 0.28 if n == 3 else 0.22; x, y = math.cos(a) * r, math.sin(a) * r * 0.7; hk = H * (1.0 if k == 0 else U(0.6, 0.85)); hw = U(0.38, 0.52)
         lean = Vector((-x, -y, 0)); lean = lean.normalized() * U(0.08, 0.2) if lean.length > 0 else Vector((0, 0, 0))                                       # leaning in toward the middle
-        o = stone('shard%d' % k, coll, C['rock'], (x, y, 0), (hw, hw * U(0.6, 0.8), hk / 2), n=14, flat=0.1, cap=U(0.08, 0.2), tilt=(lean.y, -lean.x), rz=U(0, TAU), merge=12.0)
+        o = stone('shard%d' % k, coll, C['rock'], (x, y, 0), (hw, hw * U(0.6, 0.8), hk / 2), n=14, flat=0.1, cap=U(0.08, 0.2), tilt=(lean.y, -lean.x), rz=U(0, TAU), merge=15.0)
         top, zmax = top_of(o)
         if zmax > zt: zt, tallest = zmax, o
     stone('fallen', coll, C['rock'], (U(-0.3, 0.3), -0.65, 0), (0.3, 0.22, 0.14), n=10, flat=0.3, rz=U(0, TAU))                                            # a fallen piece at the foot
@@ -135,7 +138,7 @@ for ki, (kind, fn) in enumerate(KINDS.items()):
         cam = toon.camera(sc, 35, vw, aim); cam.data.sensor_fit = 'HORIZONTAL'; cam.data.clip_end = 100
         toon.setup_render(sc, 10, PX, 16); sc.render.resolution_x = int(round(vw * PPM * PX)); sc.render.resolution_y = int(round(vh * PPM * PX))
         fs = toon.freestyle(sc, bpy.context.view_layer, PX, None, 'cel'); fs.crease_angle = rad(CREASE.get(kind, 100))
-        toon.piece_line(fs)
+        toon.piece_line(fs, at_colours=True)               # 2026-10-21: the line only where colours meet (the facets' own light parts them)
         sc.render.filepath = os.path.join(OUT, name + '.png'); bpy.ops.render.render(write_still=True)
         a = world_to_camera_view(sc, cam, Vector((0, 0, 0)))
         meta[name] = {'w': sc.render.resolution_x, 'h': sc.render.resolution_y, 'anchor': {'x': round(a.x * sc.render.resolution_x, 1), 'y': round((1 - a.y) * sc.render.resolution_y, 1)}, 'px': PX, 'ppm': PPM, 'height_m': round(H, 2)}
