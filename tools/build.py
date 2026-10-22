@@ -164,6 +164,8 @@ MUTE = """<script>
 for page, template in PAGES:
     html = read('templates', template + '.html')
     for mark, code in SRC.items():
+        n = html.count(mark)
+        if n > 1 and len(code) > 20000: print('!! ' + page + ': ' + mark + ' is named ' + str(n) + ' times, so its ' + str(round(len(code) / 1e6, 2)) + ' MB is pasted ' + str(n) + ' times (a comment that names a placeholder is filled too: 2026-10-22, the sprite table was in the game three times)')
         html = html.replace(mark, code)
     if '<script>' in html: html = html.replace('<script>', MUTE + '<script>', 1)
     write(os.path.join(ROOT, 'dist', page + '.html'), html)

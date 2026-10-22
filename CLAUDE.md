@@ -274,6 +274,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   wherever it is called. 2026-10-21: it found `bodyNear` (the raid's fallen man had hidden the cave's body: the arm ring could
   not be taken for a day) and `storeAdd` (the chest board's had hidden the hird's: a job gave nothing into the chests since
   the storage commit); `menOf` had done the same in raid step 1. A new function gets a name nothing else in the page has. **It also reports a statement swallowed by a `//` comment on the same line**: found 2026-10-21 in `enemySprite`, where `var o = {...}`, every beast's drawing options, had sat after a comment since 2026-10-20, so the beasts drew without their fire light, loops, young size and lying time.)
+- **Never write a placeholder's name (`__SPRITES__`, `__WORLD__`, ...) in a comment:** the build fills every mention, comments too (2026-10-22: two comments pasted the 1.6 MB sprite table into the game three times and into three editors twice, 7.9 MB of the pages); `tools/build.py` prints a `!!` line when a big one is named twice in a page.
 - Source files load two ways, inlined into a page and `require`d by Node scripts: no ES module syntax, no browser globals at
   load time. `stylelab.js` needs `global.__mk` for canvases.
 - **A patch must not put a `//` comment in the middle of a line**: the templates' lines are long and hold many statements,

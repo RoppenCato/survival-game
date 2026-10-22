@@ -370,7 +370,7 @@ __COMBAT__
   var grassLook = kit.STYLE.look === 3 ? World.GRASS_INK : World.GRASS;   // the Grass Editor's "Use in the game" look, if there is one; the ink look's grass otherwise
   lib.applyStored(localStorage);                            // the hero, the creatures and the rig the editors handed to the game, from one place
   /* The hero is the Blender model (2026-10-09, Robin: the new character model in every editor and the game): src/sprites.js draws him
-     from the sheets the build inlines (__SPRITES__), his clips following the game's actions (walk and run, the slashes by the attack's
+     from the sheets the build inlines (the sprite table), his clips following the game's actions (walk and run, the slashes by the attack's
      phases, chop and mine by the tool, the bow's shot, the hit, sitting, death) with the props' cast shadow. The drawn ink figure stays in
      src/art.js for the villagers, Arnor and the guards until they are modelled too; a build without sheets falls back to it. */
   var SPR = Sprites.withOverride(__SPRITES__ || {}, typeof window !== 'undefined' ? window.__SPRITES_OVERRIDE__ : null), sprHero = Sprites.hero(SPR, localStorage);   /* (window.__SPRITES_OVERRIDE__: the studio's viewer lays its sheets over the game's, 2026-10-21) */   // the Blender hero (hero2-mixamo, or the model game.blenderHero names); without sheets the drawn figure stays

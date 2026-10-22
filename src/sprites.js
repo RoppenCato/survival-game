@@ -1,6 +1,6 @@
 /* Sprites: the Blender models' sheets drawn in the game and the editors (2026-10-09, the first foundation of docs/moving-to-blender.md;
    Robin: the new character model in every editor and the game). A sheet set is what tools/sprites.js packs into assets/sprites/<name>/
-   and tools/build.py inlines as __SPRITES__ ({ name: { meta, images: { file: path } } }). `hero(SP)` loads the game's hero model
+   and tools/build.py inlines as the page's sprite table ({ name: { meta, images: { file: path } } }). `hero(SP)` loads the game's hero model
    (game.blenderHero in storage, else hero2-mixamo, else the first sheet); `attach(Combat, H, opts)` makes it the engine's hero
    through Combat.api.heroSprite, with the clips chosen from the engine's own state (walk and run, the attack's phases for the
    slashes, chop and mine by the tool in hand, the hit, sitting, the bow's shot, death) and the cast shadow laid as the props throw
