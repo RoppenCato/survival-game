@@ -392,7 +392,7 @@ run, `stake_stump` for one hacked down (`spriteName`), `railPost` and the wattle
 smoke hole in its ridge** (`Build.drawSmokeHole` at `Build.ridgeMid`), the fireplace keeps its chimney), **and the yard's
 things and the sacred** (`assets/props/yard`, `assets/props/sacred`: the storage hut, boathouse, bee skeps, stall, banner,
 sign post, fire ring, runestone, burial mound, cairn, stone ship, lych gate, way cross, font, altar, furnace, charcoal pit,
-the carver's and mason's benches by their names; and new in the generator (mine, 2026-10-20): a `quern` in the door pool, a
+the carver's and mason's benches by their names; **the settlements' pieces** (`assets/props/settle`, the Art Director's, 2026-10-22, Robin's yes: the thing ring, the farm gates shut and open, the toll post, the boundary stones, the foot bridge, placed by the generator under its own names, and the stall redrawn under its old one; a walled town's front gate wears `townGate_whole`, `_open`, `_barred` or `_broken` by its state, drawn over the Build gate in the edge pass); and new in the generator (mine, 2026-10-20): a `quern` in the door pool, a
 `washingLine` behind one house in two, the hall's `spearRack` and a `torchBracket` at its door in place of the lantern, the
 `forge` in the smithy, the `midden` heap on earth behind the longhouse, a `watchtower` and a torch inside a walled town's gate
 at wealth 0.5 and up (a bowman's post, raid step 6), a `beachedBoat` on a shore place's sand; a set piece with no drawn prop

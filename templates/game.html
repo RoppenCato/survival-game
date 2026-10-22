@@ -5862,6 +5862,12 @@ __COMBAT__
         var low = mine(x, y - 1, x, y) && y * T > P.y, under = underMe(x, y - 1) || underMe(x, y);      // the walls in front of you drop low while you are inside
         items.push({ y: under ? FAR : y * T, f: function () { var fa = fadeOf((x + 0.5) * T, y * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'H', x, y, e, kk, 0); else Build.drawH(ctx, x, y, e, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, BCFG); if (fa < 1) ctx.restore(); } });
       });
+      if (World.IMAGES.townGate_whole) villages.forEach(function (v) {   /* a walled town's front gate wears the studio's face by its state (the Art Director's settle pieces, 2026-10-22, Robin's yes): broken, barred (locked), open (as the gate opens: somebody near and it not locked) or whole */
+        if (!v.V || !gated(v)) return; var F = v.V.fence, gw = F.gateW || 1; if (gw < 2) return; var gx = (F.gate + gw / 2) * T, gy = F.y1; if (Math.abs(gx - cam.x) > hw + 90 || Math.abs(gy * TS - cam.y) > hh + 140) return;
+        var eds = [], gi; for (gi = 0; gi < gw; gi++) eds.push(B.H[Build.key(F.gate + gi, gy)]); if (!eds[0]) return;
+        var st = eds.some(function (q) { return q && (q.broken || q.breach); }) ? 'broken' : eds.some(function (q) { return q && q.locked; }) ? 'barred' : near(gx, gy * T) ? 'open' : 'whole';
+        items.push({ y: gy * T + 0.05, f: function () { var sp = sprite('townGate_' + st, 0); if (sp && sp.fixed) drawSpriteAt(ctx, sp, gx, gy * T); } });
+      });
       Object.keys(B.V).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.V[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
         var under = underMe(x - 1, y) || underMe(x, y);
