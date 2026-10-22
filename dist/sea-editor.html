@@ -7399,7 +7399,7 @@ var T = 32, TS = 24, K = 0.75;
   var KJ = 3, HULLS = {                    // m: the length in metres, beam in metres, n: keel cells (a cell a thwart's pitch, CW), per: rowers to a thwart, zoom: the yard's camera, sea: the game's camera when aboard
     faering: { name: 'Faering', m: 6.5, beam: 1.4, n: 5, per: 1, thwarts: [1, 2], mast: null, rudder: null, tier: 2, zoom: 1.1, sea: 0.65, cost: { wood: 10, copper: 3 }, text: 'A four-oared boat for the fjord and the sound, six and a half metres: two rowing seats at most, one man to a seat with a pair of oars, no mast. Quick to turn, light to row.' },
     boat: { name: 'Boat', m: 9, beam: 2.0, n: 8, per: 2, thwarts: [1, 3], mast: null, rudder: null, tier: 2, zoom: 0.9, sea: 0.65, cost: { wood: 14, copper: 5 }, text: 'A six-oared boat of nine metres: three rowing seats at most, two men to a seat, no mast. The first that crosses to the big island with a crew.' },
-    rowboat: { name: 'Rowboat', m: 4.6, beam: 1.25, n: 4, per: 1, thwarts: [1, 1], mast: null, rudder: null, tier: 1, zoom: 1.25, sea: 0.65, cost: { wood: 14, fiber: 4 }, model: 'rowboat', size: 'for you', text: 'A small boat of four and a half metres, a pair of oars and a seat: just you. Wood and fibre, taught by Arnor.' },
+    rowboat: { name: 'Rowboat', m: 5.2, beam: 1.25, n: 4, per: 1, thwarts: [1, 1], mast: null, rudder: null, tier: 1, zoom: 1.25, sea: 0.65, cost: { wood: 14, fiber: 4 }, model: 'rowboat', size: 'for you', text: 'A small boat of five metres, a pair of oars and a seat: just you. Wood and fibre, taught by Arnor.' },
     karve4: { name: 'Karve', m: 11, beam: 3.2, n: 9, per: 2, thwarts: [2, 2], mast: 5, rudder: 1, tier: 2, zoom: 0.75, sea: 0.6, cost: { wood: 20, copper: 6, fiber: 8 }, model: 'karve', size: 'for 4', text: 'A small karve of eleven metres: a mast and a square sail, two seats for four rowers and a helmsman. The ship that leaves home.' },
     karve8: { name: 'Karve', m: 13.5, beam: 3.7, n: 11, per: 2, thwarts: [4, 4], mast: 6, rudder: 1, tier: 2, zoom: 0.68, sea: 0.58, cost: { wood: 28, copper: 10, fiber: 12 }, model: 'karve', size: 'for 8', text: 'A karve of thirteen and a half metres: four seats for eight rowers and a helmsman.' },
     karve: { name: 'Karve', m: 16, beam: 4.2, n: 14, per: 2, thwarts: [6, 6], mast: 8, rudder: 1, tier: 2, zoom: 0.6, sea: 0.55, cost: { wood: 36, copper: 14, fiber: 16 }, model: 'karve', size: 'for 12', text: 'The first ship, sixteen metres: a mast amidships, a square sail, a steering oar at the stern, up to six seats for twelve rowers and a helmsman. A karve’s crew is for a farm, a church, a small village.' },
@@ -7435,6 +7435,12 @@ var T = 32, TS = 24, K = 0.75;
     cargo: { name: 'Cargo', text: 'A hold for heavy loot: twice the chests and sacks aboard, a bigger sea chest; a little slower.', oarK: 0.94, heavyK: 2, chestK: 2, cost: { wood: 8, fiber: 6 } },
     voyager: { name: 'Voyager', text: 'A better sail, half again more from the wind; provisions, so the crew stays fed on long crossings.', sailK: 1.5, fed: true, cost: { fiber: 12, leather: 2 } }
   };
+  /* What a ship holds (mine): heavy things aboard (chests, sacks, the church's silver) by its size, twice with a Cargo hold; the sea
+     chest's places, twice with Cargo. fitOf(v): its fitting's numbers, or none. */
+  var HOLD = { rowboat: 1, karve4: 2, karve8: 3, karve: 4, longship16: 4, longship20: 5, longship: 6 }, NOFIT = {};
+  function fitOf(v) { return (v && FITTINGS[v.fit]) || NOFIT; }
+  function holdOf(v) { return (HOLD[v.kind] || 2) * (fitOf(v).heavyK || 1); }
+  function chestK(v) { return fitOf(v).chestK || 1; }
   function heroSeat(v) {                   // where the hero is along the keel (the bow at +): alone on a rowing hull on the aft-most thwart at the oars; alone on a rigged hull at the steering oar; with any man aboard in the bow, looking ahead (Robin, 2026-10-21)
     var H = HULLS[v.kind]; if (!H) return 0;
     if ((v.crew || 0) > 0) return (v.hw || 0) * 0.72;
@@ -7724,8 +7730,8 @@ var T = 32, TS = 24, K = 0.75;
     else if (!v.beached && beach && !free(v.x, v.y, v.h) && beach(v.x, v.y, v.h)) v.beached = 1;   // lying on a beach (a loaded game keeps no state: where she lies says it)
     var ix = inp.ix || 0, iy = inp.iy || 0, want = 0, stuck = !free(v.x, v.y, v.h) && !v.beached, h0 = v.h;
     if (v.speed == null) v.speed = 0;
-    var crew = Math.min(Math.max(0, (v.crew || 0) - (v.helm ? 1 : 0)), v.rowers != null ? v.rowers : 99), rowK = 1 + (H.rowK != null ? H.rowK : (WIND.rowK || 0)) * crew, sailK = 1, fill = 0;   // (the helmsman does not row)
-    if (v.sail && wind && wind.k > 0) { fill = sailFill(wind.a, v.h); sailK = 1 + wind.k * (v.sailK || 1) * fill; }      // the share of the wind that fills the sail (sailK: a Voyager's better sail)
+    var FT = fitOf(v), crew = Math.min(Math.max(0, (v.crew || 0) - (v.helm ? 1 : 0)), v.rowers != null ? v.rowers : 99), rowK = (1 + (H.rowK != null ? H.rowK : (WIND.rowK || 0)) * crew) * (FT.oarK || 1), sailK = 1, fill = 0;   // (the helmsman does not row; oarK: a Raider's quicker stroke, a laden Cargo's slower)
+    if (v.sail && wind && wind.k > 0) { fill = sailFill(wind.a, v.h); sailK = 1 + wind.k * (v.sailK || FT.sailK || 1) * fill; }      // the share of the wind that fills the sail (sailK: a Voyager's better sail)
     v.sailFill += ((iy < 0 || (!H.steer && (ix || iy)) ? fill : 0) - (v.sailFill || 0)) * Math.min(1, dt * 2); if (!(v.sailFill > 0)) v.sailFill = 0;   /* (the true fill: the speed's buff, and whether the oars rest) */
     v.sailSet = (v.sailSet || 0) + ((v.sail && (iy < 0 || (!H.steer && (ix || iy)) || Math.abs(v.speed) > 20) ? 1 : 0) - (v.sailSet || 0)) * Math.min(1, dt * 1.5);   /* (Robin, 2026-10-21: the sail furling whenever the wind was not behind read as random; now it is SET while she is driven and furled at rest, its belly by the wind) */   // the sail fills as it is set and the wind comes behind
     v.rud = (v.rud || 0) + (ix - (v.rud || 0)) * Math.min(1, dt * 6);                                                                          // the steering oar follows the tiller
@@ -8228,7 +8234,7 @@ var scene = {
   key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
 };
 
-return { colOf: colOf, scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { colOf: colOf, fitOf: fitOf, holdOf: holdOf, chestK: chestK, HOLD: HOLD, scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, masthead: masthead, stemPoint: stemPoint, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullParts: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
@@ -9947,13 +9953,14 @@ function updateProjs(dt) {
     if (!gone && (pillarHit(pr.x, pr.y, pr.r) || wallBetween(pr.x - pr.vx * dt, pr.y - pr.vy * dt, pr.x, pr.y))) { gone = true; spark(pr.x, pr.y, 4, '#ffe9a0', 60); }
     if (!gone) {
       if (pr.owner === 'man') {              // a bowman's arrow: the other side only (his own it passes), the hero's shield stops it
-        if (pr.side === 0 && !P.dead && !P.hidden && Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) { if (hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr.src)) { gone = true; hit = true; } }
+        if (pr.side === 0 && !P.dead && !P.hidden && Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) { if (api.arrowStop && api.arrowStop(pr, P)) { gone = true; spark(pr.x, pr.y, 5, '#ffe9a0', 70); if (api.sfx) api.sfx('block', 0.6); } else if (hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr.src)) { gone = true; hit = true; } }   /* (arrowStop: the page says something stops it first, a Raider's shields on the rail) */
         if (!gone) for (var jm = 0; jm < W.enemies.length; jm++) {
           var em = W.enemies[jm]; if (em.type !== 'soldier' || em.dead || em.down || em.out || (em.side || 0) === pr.side) continue;
           if (Math.hypot(pr.x - em.x, pr.y - em.y) < pr.r + em.r) { damageEnemy(em, pr.dmg * MEN.bow.toMen * MEN.hpK, Math.atan2(pr.vy, pr.vx), 30, 8, 'proj', pr.src); gone = true; hit = true; break; }
         }
       } else if (pr.owner === 'enemy') {
-        if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) {
+        if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r && api.arrowStop && api.arrowStop(pr, P)) { gone = true; spark(pr.x, pr.y, 5, '#ffe9a0', 70); }
+        else if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) {
           var res = hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr);
           if (res === 'parry') { pr.owner = 'player'; pr.vx *= -1.4; pr.vy *= -1.4; pr.dmg = 3; pr.life = 3; pr.ang += Math.PI; pr.reflected = true; }
           else if (res) gone = true;

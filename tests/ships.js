@@ -63,7 +63,7 @@ check('the split drawing (hull, rig, near rail, oars) and the whole one throw no
 // 90 s in the rowboat, a karve with a crew about half that; the turn from a standstill and under way; the wind a clear bonus; the
 // beach run up and backed off; a rock wall slid along, never stuck
 function run(kind, crew, opts) {
-  opts = opts || {}; const H = Object.assign({}, Yard.HANDLING[kind]), v = { x: 0, y: 0, h: opts.h || 0, speed: 0, vx: 0, vy: 0, kind, crew, sail: Yard.rigged(kind), sailK: 1 }, dt = 1 / 60;
+  opts = opts || {}; const H = Object.assign({}, Yard.HANDLING[kind]), v = { x: 0, y: 0, h: opts.h || 0, speed: 0, vx: 0, vy: 0, kind, crew, sail: Yard.rigged(kind), fit: opts.fit || null }, dt = 1 / 60;
   const free = opts.free || (() => true), wind = opts.wind || null; let t = 0;
   while (t < (opts.T || 400)) { Yard.sail(v, opts.inp ? opts.inp(t, v) : { ix: 0, iy: -1 }, dt, free, H, wind, opts.beach); t += dt; if (opts.until && opts.until(v, t)) break; }
   return { v, t };
@@ -96,4 +96,16 @@ check('and S backs her off into the water', !back.beached && back.x < 380, 'x ' 
 const wv = { x: 0, y: -80, h: 0.6, speed: 0, vx: 0, vy: 0, kind: 'rowboat', crew: 0 }, wf = (x, y) => y < x * 0.3 - 40, H2 = Yard.HANDLING.rowboat; let moved = 0, lastX = 0;
 for (let t = 0; t < 20; t += 1 / 60) { Yard.sail(wv, { ix: 0, iy: -1 }, 1 / 60, wf, H2, null); }
 check('against a slanting rock wall she slides along it', wv.x > 300 && wf(wv.x, wv.y), 'x ' + wv.x.toFixed(0) + ' y ' + wv.y.toFixed(0));
+// the fittings (docs/ships-rework.md step 8, the numbers mine): a Raider faster under oars, a Cargo a little slower and holding twice,
+// a Voyager more from the wind
+const top = (fit, o) => Math.round(run('karve', 8, Object.assign({ fit, T: 40 }, o || {})).v.speed);
+const fo = { none: top(null), raider: top('raider'), cargo: top('cargo'), voyager: top('voyager') };
+console.log('     a karve with eight at the oars, top speed: none ' + fo.none + ', Raider ' + fo.raider + ', Cargo ' + fo.cargo + ', Voyager ' + fo.voyager);
+check('a Raider is faster under oars, a Cargo a little slower', fo.raider > fo.none * 1.05 && fo.cargo < fo.none && fo.cargo > fo.none * 0.9, fo.raider + ' > ' + fo.none + ' > ' + fo.cargo);
+const wb = { wind: { a: 0, k: 0.5 } }, fw = { none: top(null, wb), voyager: top('voyager', wb) };
+check('a Voyager gets half again more from the wind behind', fw.voyager > fw.none * 1.08, 'none ' + fw.none + ', Voyager ' + fw.voyager);
+const hold = k => Yard.holdOf({ kind: k }), holdC = k => Yard.holdOf({ kind: k, fit: 'cargo' });
+console.log('     heavy things aboard (chests, sacks), plain and with a Cargo hold: ' + ['rowboat', 'karve4', 'karve8', 'karve', 'longship16', 'longship20', 'longship'].map(k => k + ' ' + hold(k) + '/' + holdC(k)).join(', '));
+check('a Cargo hold takes twice the heavy things and its sea chest twice the places', holdC('karve') === 2 * hold('karve') && Yard.chestK({ kind: 'karve', fit: 'cargo' }) === 2 && Yard.chestK({ kind: 'karve' }) === 1);
+check('a Raider has its men on and off in half the time, its shields stop arrows; a Voyager feeds its crew', Yard.FITTINGS.raider.boardK === 0.5 && Yard.FITTINGS.raider.shieldsStop && Yard.FITTINGS.voyager.fed);
 console.log('bad = ' + bad);

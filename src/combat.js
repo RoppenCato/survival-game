@@ -1591,13 +1591,14 @@ function updateProjs(dt) {
     if (!gone && (pillarHit(pr.x, pr.y, pr.r) || wallBetween(pr.x - pr.vx * dt, pr.y - pr.vy * dt, pr.x, pr.y))) { gone = true; spark(pr.x, pr.y, 4, '#ffe9a0', 60); }
     if (!gone) {
       if (pr.owner === 'man') {              // a bowman's arrow: the other side only (his own it passes), the hero's shield stops it
-        if (pr.side === 0 && !P.dead && !P.hidden && Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) { if (hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr.src)) { gone = true; hit = true; } }
+        if (pr.side === 0 && !P.dead && !P.hidden && Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) { if (api.arrowStop && api.arrowStop(pr, P)) { gone = true; spark(pr.x, pr.y, 5, '#ffe9a0', 70); if (api.sfx) api.sfx('block', 0.6); } else if (hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr.src)) { gone = true; hit = true; } }   /* (arrowStop: the page says something stops it first, a Raider's shields on the rail) */
         if (!gone) for (var jm = 0; jm < W.enemies.length; jm++) {
           var em = W.enemies[jm]; if (em.type !== 'soldier' || em.dead || em.down || em.out || (em.side || 0) === pr.side) continue;
           if (Math.hypot(pr.x - em.x, pr.y - em.y) < pr.r + em.r) { damageEnemy(em, pr.dmg * MEN.bow.toMen * MEN.hpK, Math.atan2(pr.vy, pr.vx), 30, 8, 'proj', pr.src); gone = true; hit = true; break; }
         }
       } else if (pr.owner === 'enemy') {
-        if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) {
+        if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r && api.arrowStop && api.arrowStop(pr, P)) { gone = true; spark(pr.x, pr.y, 5, '#ffe9a0', 70); }
+        else if (Math.hypot(pr.x - P.x, pr.y - P.y) < pr.r + P.r) {
           var res = hurtPlayer(pr.dmg, pr.x - pr.vx * 0.05, pr.y - pr.vy * 0.05, 'proj', pr);
           if (res === 'parry') { pr.owner = 'player'; pr.vx *= -1.4; pr.vy *= -1.4; pr.dmg = 3; pr.life = 3; pr.ang += Math.PI; pr.reflected = true; }
           else if (res) gone = true;

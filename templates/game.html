@@ -399,6 +399,7 @@ __COMBAT__
   Combat.api.shield = shieldHeld;
   function shieldThrough(sh) { sh = sh || (equip && equip.shield); var m = sh ? sh.mat : 'wood'; return { wood: 0.2, leather: 0.2, copper: 0.17, bronze: 0.15, iron: 0.12, silver: 0.12, gold: 0.12 }[m] || 0.2; }   /* what a raised shield lets through (Robin, 2026-10-16: it stops 80%, more with a better shield; a parry stops all) */
   Combat.api.shieldThrough = function () { return shieldThrough(); };
+  Combat.api.arrowStop = function (pr) { if (!raft || !raft.aboard || !raft.shields || !Yard.fitOf(raft).shieldsStop) return false; return Math.abs(Math.sin(Math.atan2(pr.vy, pr.vx) - raft.h)) > 0.45; };   /* a Raider's shields on the rail stop an arrow that comes from either side while you are aboard (docs/ships-rework.md step 8) */
   /* The hero's look on the kit (2026-10-20, Robin: a base body, every garment an equippable layer; the Art Director's hero-kit):
      the starter tunic and trousers always (undyed cream, dark wool), shoes or the boots worn, the belt; what is worn over them
      by slot (the head: a cap, or a helm for iron; the chest: a coat in its material's colour, or mail for iron, over the tunic;
@@ -1848,7 +1849,7 @@ __COMBAT__
   function shipOf(o) {                     // a ship as the game keeps it, from a save's or a builder's fields
     var kind = o.kind || 'raft'; if (kind === 'raft' || kind === 'faering' || kind === 'boat') kind = 'rowboat';
     var v = { x: o.x || 0, y: o.y || 0, h: o.h || 0, vx: 0, vy: 0, speed: 0, aboard: !!o.aboard, kind: kind, parts: o.kind === kind && o.parts && o.parts.length ? o.parts : Yard.designParts(kind, o.look || {}), cargo: o.cargo || [], name: o.name || Yard.nameOf(kind), look: o.look || Yard.lookDefault(), fit: o.fit || null, stowed: !!o.stowed, id: o.id || ('s' + Date.now().toString(36) + Math.floor(Math.random() * 1e4)), hw: 21, hh: 21, seat: 0 };
-    if (o.chest && o.chest.store) v.chest = { sea: true, store: o.chest.store.slice(0, STORE_N).map(function (q) { return !q ? null : (q.kind === 'item' && q.item ? { kind: 'item', n: 1, item: Items.make(q.item.kind, q.item.mat, q.item) } : (NAMES[q.kind] ? { kind: q.kind, n: Math.min(STACK, q.n | 0) } : null)); }) };
+    if (o.chest && o.chest.store) v.chest = { sea: true, store: o.chest.store.slice(0, STORE_N * 2).map(function (q) { return !q ? null : (q.kind === 'item' && q.item ? { kind: 'item', n: 1, item: Items.make(q.item.kind, q.item.mat, q.item) } : (NAMES[q.kind] ? { kind: q.kind, n: Math.min(STACK, q.n | 0) } : null)); }) };
     Yard.fit(v); return v;
   }
   function addShip(o) { var v = shipOf(o); fleet.push(v); return v; }
@@ -2065,12 +2066,12 @@ __COMBAT__
     if (!raft || !raft.aboard) return false;
     if (!stillComing()) { raft.waitT = 0; raft.waitSaid = false; return false; }
     raft.waitT = (raft.waitT || 0) + dt;
-    if (raft.waitT > BOARD.wait) { boardingDone(); return false; }
+    if (raft.waitT > BOARD.wait * (Yard.fitOf(raft).boardK || 1)) { boardingDone(); return false; }   /* (a Raider's men are aboard quicker) */
     if (!raft.waitSaid) { raft.waitSaid = true; toast('The men are coming aboard'); }   /* LORE? */
     return true;
   }
   function landingTick(dt) {               // the men file off the ship one at a time onto their spots
-    var L = raft && raft.landing; if (!L) return; L.t -= dt; if (L.t > 0) return; L.t = BOARD.file;
+    var L = raft && raft.landing; if (!L) return; L.t -= dt; if (L.t > 0) return; L.t = BOARD.file * (Yard.fitOf(raft).boardK || 1);
     var m = L.list.shift(); if (!m) { raft.landing = null; return; } var sp = L.spots[L.k++] || L.spots[L.spots.length - 1] || { x: L.at.x, y: L.at.y };
     if (m.state !== undefined) { manLands(m, sp); return; }   /* (a man of the engine) */
     if (!m.aboard) return; m.aboard = false; m.sitting = false; m.freed = false; m.place = null; m.leanX = m.leanY = 0; m.x = L.at.x; m.y = L.at.y;
@@ -3183,7 +3184,7 @@ __COMBAT__
   function hirdAssign(P) { var f = followerNear(P), it = workplaceNear(P); if (!f || !it) return false; if (!assignTo(f, it)) return false; f.say = HD.jobs[f.job].name.toLowerCase() === 'keeper' ? 'I will hold this stone.' : 'I can do that.'; f.sayT = 4; save(); return true; }
   function hirdTick(dt) {
     var P = hero(), st, i;
-    if (day.n !== hirdDay) { hirdDay = day.n; st = homeStone(); hird.forEach(function (m) { m.hungry = true; if (!st) return; for (var k in FOOD) if (!m.hungry) break; else if (storeCount(st, k) >= HD.mealsPerDay) { storeTake(st, k, HD.mealsPerDay); m.hungry = false; } }); }   // dawn: a meal each from the stores
+    if (day.n !== hirdDay) { hirdDay = day.n; st = homeStone(); hird.forEach(function (m) { m.hungry = true; if (!st) return; for (var k in FOOD) if (!m.hungry) break; else if (storeCount(st, k) >= HD.mealsPerDay) { storeTake(st, k, HD.mealsPerDay); m.hungry = false; } }); hird.forEach(function (m) { if (m.aboard && raft && raft.aboard && Yard.fitOf(raft).fed) m.hungry = false; }); }   // dawn: a meal each from the stores (aboard a Voyager, from her provisions)
     for (i = 0; i < hird.length; i++) {
       var m = hird[i], pace = m.hungry ? HD.hungryPace : 1, tx = null, ty = null, speed = HD.walkSpeed;
       if (m.sayT > 0) m.sayT -= dt;
@@ -3672,7 +3673,7 @@ __COMBAT__
     if (e.dead) e.arms.shift(); else { e.disarmed = true; e.nerve = 0; e.loyal = false; e.say = 'Take it.'; e.sayT = 1.8; }
     toast(th.name + (where === 'hand' ? ': in your hand' : '')); sfx('pick'); recount(); save();
   }
-  function seaChest() { if (!raft || !Yard.isShip(raft.kind)) return null; if (!raft.chest) { raft.chest = { sea: true, store: [] }; for (var i = 0; i < STORE_N; i++) raft.chest.store.push(null); } var ch = Math.cos(raft.h || 0), sh = Math.sin(raft.h || 0), k = (raft.hw || 21) * 0.55; raft.chest.x = raft.x - ch * k; raft.chest.y = raft.y - sh * k; return raft.chest; }   // (by the stern)
+  function seaChest() { if (!raft || !Yard.isShip(raft.kind)) return null; if (!raft.chest) raft.chest = { sea: true, store: [] }; while (raft.chest.store.length < STORE_N * Yard.chestK(raft)) raft.chest.store.push(null);   /* (a Cargo ship's chest has twice the places; refitted away, what is in it stays) */ var ch = Math.cos(raft.h || 0), sh = Math.sin(raft.h || 0), k = (raft.hw || 21) * 0.55; raft.chest.x = raft.x - ch * k; raft.chest.y = raft.y - sh * k; return raft.chest; }   // (by the stern)
   Combat.api.items = {                    // what is in the hand: the chosen slot of the mode's bar
     held: function () { var P = hero(); return P.mode === 'fight' || P.mode === 'gather' ? handItem() : null; },
     tool: function (i) { var it = handItem(); return it && it.kind === TOOL_IDS[i] ? it : null; },
@@ -3714,8 +3715,8 @@ __COMBAT__
   function storeAdd(s) {                   // a stack or thing into the open chest: like kinds first, then an empty slot; returns what did not fit
     if (!store) return s;
     var i, t;
-    if (s.kind !== 'item') for (i = 0; i < STORE_N && s.n > 0; i++) { t = store.store[i]; if (t && t.kind === s.kind && t.n < STACK) { var take = Math.min(s.n, STACK - t.n); t.n += take; s.n -= take; } }
-    for (i = 0; i < STORE_N && (s.kind === 'item' ? s : s.n > 0); i++) if (!store.store[i]) { store.store[i] = s; return null; }
+    var sn = store.store.length; if (s.kind !== 'item') for (i = 0; i < sn && s.n > 0; i++) { t = store.store[i]; if (t && t.kind === s.kind && t.n < STACK) { var take = Math.min(s.n, STACK - t.n); t.n += take; s.n -= take; } }
+    for (i = 0; i < sn && (s.kind === 'item' ? s : s.n > 0); i++) if (!store.store[i]) { store.store[i] = s; return null; }
     return s.kind === 'item' || s.n > 0 ? s : null;
   }
   function transfer(i) {                   // a click while a chest is open moves the stack across
@@ -4773,22 +4774,23 @@ __COMBAT__
   function invLeft() { return INV.x - (1 - INV.slide) * (INV.w + 40); }
   function slotRect(i) { var x0 = invLeft(), row = Math.floor(i / COLS); return { x: x0 + (20 + (i % COLS) * 47) / 3, y: INV.y + (54 + row * 47) / 3, w: 14, h: 14 }; }
   var STORE_UI = { w: 110, h: (54 + (STORE_N / COLS) * 47 + 12) / 3 }; STORE_UI.x = 400 - STORE_UI.w - 5; STORE_UI.y = 250 - STORE_UI.h - 20 / 3;   // an open chest: on the right, where the crafting board sits otherwise
+  function openStoreN() { var n = store && store.store ? store.store.length : STORE_N; STORE_UI.h = (54 + Math.ceil(n / COLS) * 47 + 12) / 3; STORE_UI.y = 250 - STORE_UI.h - 20 / 3; return n; }   /* (the open chest's places, and its board as tall as they need: a Cargo ship's sea chest has twice) */
   function storeLeft() { return STORE_UI.x + (1 - INV.slide) * (STORE_UI.w + 40); }
   function storeRect(j) { var x0 = storeLeft(); return { x: x0 + (20 + (j % COLS) * 47) / 3, y: STORE_UI.y + (54 + Math.floor(j / COLS) * 47) / 3, w: 14, h: 14 }; }
   function slotAt() {
-    if (!mouseS || INV.slide < 0.9) return -1; var i, r, under = CHAR.h > CHAR_H && mouseS.x < chLeft() + CHAR.w && mouseS.y < CHAR.y + CHAR.h + 10;   /* (under the tall Stats or Ring page the bag is not there to point at) */
+    if (!mouseS || INV.slide < 0.9) return -1; var i, r, n, under = CHAR.h > CHAR_H && mouseS.x < chLeft() + CHAR.w && mouseS.y < CHAR.y + CHAR.h + 10;   /* (under the tall Stats or Ring page the bag is not there to point at) */
     if (!under) for (i = 0; i < SLOTS; i++) { r = slotRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return i; }
-    if (store) for (i = 0; i < STORE_N; i++) { r = storeRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return 100 + i; }
+    if (store) for (i = 0, n = openStoreN(); i < n; i++) { r = storeRect(i); if (mouseS.x >= r.x && mouseS.x <= r.x + r.w && mouseS.y >= r.y && mouseS.y <= r.y + r.h) return 100 + i; }
     return -1;
   }
   function drawStore(c) {                  // the open chest's board, on the right
-    var x0 = storeLeft(), i, hov = slotAt();
+    var sn = openStoreN(), x0 = storeLeft(), i, hov = slotAt();
     hPx(c, x0, STORE_UI.y, function () {
       hBoard(c, STORE_UI.w * 3, STORE_UI.h * 3); hTitle(c, 'Chest');
       hText(c, 'Shift and click moves across', STORE_UI.w * 3 - 20, 37, hf('italic', 13), HC.under, 'right');
-      for (i = 0; i < STORE_N; i++) hSocket(c, 20 + (i % COLS) * 47, 54 + Math.floor(i / COLS) * 47, 42, false, hov === 100 + i);
+      for (i = 0; i < sn; i++) hSocket(c, 20 + (i % COLS) * 47, 54 + Math.floor(i / COLS) * 47, 42, false, hov === 100 + i);
     });
-    for (i = 0; i < STORE_N; i++) { var s = store.store[i]; if (s) stackIn(c, storeRect(i), s, 100 + i); }
+    for (i = 0; i < sn; i++) { var s = store.store[i]; if (s) stackIn(c, storeRect(i), s, 100 + i); }
   }
   var BTN = [{ id: 'sort' }];
   function btnRect(k) { return { x: invLeft() + 270 / 3, y: INV.y + 18 / 3, w: 44 / 3, h: 26 / 3 }; }   // Sort, at the right of the bag's heading
@@ -5956,7 +5958,8 @@ __COMBAT__
   function heavyNear(P) { for (var i = 0; i < B.items.length; i++) { var it = B.items[i]; if (it.heavy && sameLvl(it) && Math.hypot(P.x - it.x, P.y - it.y) < 40) return it; } return null; }
   function liftHeavy(it) { var i = B.items.indexOf(it); if (i < 0) return; if (!it.home) it.home = { x: it.x, y: it.y }; B.items.splice(i, 1); carrying = it; it.carried = true; raidAlarm(villageAt(it.x, it.y), it.x, it.y); sfx('pick'); save(); }
   function putDown() { var P = hero(); if (!carrying) return; if (carrying.man) { if (carrying.drag) carrying.man.deadFor = carrying.man.deadT + 90; setDown(carrying.man, P.x + 10, P.y + 4); carrying = null; sfx('build'); return; } carrying.x = P.x + 10; carrying.y = P.y + 4; carrying.carried = false; carrying.r = 6; B.items.push(carrying); carrying = null; sfx('build'); save(); }
-  function stowHeavy() { if (!carrying || !raft) return; if (carrying.man) { layAboard(carrying.man); carrying = null; sfx('build'); return; } if (!raft.cargo) raft.cargo = []; var cg0 = {}; for (var ck in carrying.heavy) cg0[ck] = carrying.heavy[ck]; cg0.lore = carrying.lore; raft.cargo.push(cg0); carrying = null; toast('Stowed aboard'); sfx('build'); save(); }   /* (silver or a sack's food: whatever the heavy thing holds) */
+  function holdFull() { return !!(raft && raft.cargo && raft.cargo.length >= Yard.holdOf(raft)); }   /* (docs/ships-rework.md step 8: the hold by the ship's size, twice with a Cargo hold) */
+  function stowHeavy() { if (!carrying || !raft) return; if (carrying.man) { layAboard(carrying.man); carrying = null; sfx('build'); return; } if (holdFull()) { toast('There is no room aboard'); return; } if (!raft.cargo) raft.cargo = []; var cg0 = {}; for (var ck in carrying.heavy) cg0[ck] = carrying.heavy[ck]; cg0.lore = carrying.lore; raft.cargo.push(cg0); carrying = null; toast('Stowed aboard'); sfx('build'); save(); }   /* (silver or a sack's food: whatever the heavy thing holds) */
   function atHome(x, y) { return !!inTerritory(x, y) || Math.hypot(x - home.x, y - home.y) < 700; }
   function cargoHome() { return !!(raft && raft.cargo && raft.cargo.length && !raft.aboard && atHome(raft.x, raft.y)); }
   function unloadCargo() { var n = 0, food = {}, k; (raft.cargo || []).forEach(function (cg) { for (k in cg) { if (k === 'silver') n += cg[k]; else if (cg[k] > 0 && inv[k] != null) food[k] = (food[k] || 0) + cg[k]; } }); raft.cargo = []; if (n) { var left = addItem('silver', n); if (left) drop('silver', raft.x, raft.y, left); toast(n + ' silver, home'); } var fn = 0; for (k in food) { var lf = addItem(k, food[k]); if (lf) drop(k, raft.x + 10, raft.y + 8, lf); fn += food[k]; } if (fn) toast(fn + ' of food, home'); sfx('craft'); save(); }   /* (a sack's food unloads too: raid step 7) */
@@ -6948,7 +6951,7 @@ __COMBAT__
   }
   function walkSet() {
     raidSet(); var vi = BT.town, v = villages[vi], P = hero(), g = gateOf(v), ch = seaChest(), i, n = 0; freshTown(vi); BT.setup = 'walkin';
-    for (i = 0; i < SLOTS; i++) if (isArm(slots[i]) && ch && n < STORE_N) { ch.store[n++] = slots[i]; slots[i] = null; }
+    for (i = 0; i < SLOTS; i++) if (isArm(slots[i]) && ch && n < ch.store.length) { ch.store[n++] = slots[i]; slots[i] = null; }
     recount(); Combat.order('hold'); P.x = g.x; P.y = g.y + 7 * T; P.face = -Math.PI / 2; P.vx = P.vy = 0;
   }
   function nightSet() {
@@ -7165,6 +7168,7 @@ __COMBAT__
       if (!it.home) it.home = { x: it.x, y: it.y }; B.items.splice(i, 1); it.carried = true; e.load = it; raidAlarm(villageAt(it.x, it.y), it.x, it.y); sfx('pick', 0, e);
       e.errand = { x: land.x, y: land.y, near: 30, run: true, slow: 0.62, hold: true, drop: dropLoad, fail: dropLoad, done: function (e2) {
         if (!raft || Math.hypot(raft.x - e2.x, raft.y - e2.y) > 160) { dropLoad(e2); return; }                // the ship is gone: he sets it down on the sand
+        if (holdFull()) { dropLoad(e2); e2.say = 'No room aboard.'; e2.sayT = 2.5; return; }                   // the hold is full: down on the sand by her
         if (!raft.cargo) raft.cargo = []; var cg1 = {}; for (var ck1 in it.heavy) cg1[ck1] = it.heavy[ck1]; cg1.lore = it.lore; raft.cargo.push(cg1); e2.load = null; e2.say = 'Stowed.'; e2.sayT = 2; sfx('build', 0, e2);
       } };
     } };
