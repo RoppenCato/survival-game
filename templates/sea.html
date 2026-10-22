@@ -69,14 +69,12 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
     <div class="left">
       <div class="stage"><canvas id="cv" width="800" height="500" aria-label="Sea and islands"></canvas></div>
       <section class="panel">
-        <h2>The Shipyard</h2>
-        <div class="group">
-          <button id="yopen">Open the Shipyard</button>
-          <button id="yclear">Clear the yard</button>
-          <button id="yship">Sail a ship instead</button>
-        </div>
-        <p class="desc" id="ywhy"></p>
-        <p class="desc">The same yard as in the game, with nothing costing anything: a stretch of grass in a wooden frame, the parts down the left, Raft or Boat along the top. Click lays a part, right click takes one back, Enter or Finish launches the vessel at the dock, and you sail it with the handling above. E leaves the yard. Open it again to rebuild.</p>
+        <h2>The ship</h2>
+        <div class="group" id="ships"></div>
+        <div class="group" id="fits" style="margin-top:6px"></div>
+        <p class="desc" id="shipdesc"></p>
+        <p class="desc" id="crossing"></p>
+        <p class="desc">The game's ships (docs/ships-rework.md): the rowboat, the karve for 4, 8 and 12, the longship for 16, 20 and 26, sailed by the same code as the game (src/yard.js). Choosing one sets its handling and puts its full crew at the oars; the sliders then change them, and Use in the game hands the handling to the game for that ship.</p>
       </section>
       <section class="panel">
         <p class="stat" id="stat"></p>
@@ -89,26 +87,19 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <h2 class="more">Controls</h2>
         <dl class="keys">
           <dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>Walk on land, steer on water. Hold <kbd>Shift</kbd> to sprint on land</dd>
-          <dt><kbd>E</kbd></dt><dd>Board the boat when you stand next to it. Step ashore when the boat is next to land</dd>
+          <dt><kbd>E</kbd></dt><dd>Board the ship when you stand next to it. Step ashore when it is next to land</dd>
         </dl>
       </section>
     </div>
 
     <div class="right">
       <section class="panel">
-        <h2>Boat</h2>
-        <div class="group" id="types"></div>
-        <p class="desc" id="typedesc"></p>
-        <div id="pboat" style="margin-top:8px"></div>
-        <p class="desc">Choosing a boat sets its handling. The sliders then change it.</p>
-      </section>
-      <section class="panel">
         <h2>Steering</h2>
         <div class="group" id="steers"></div>
         <p class="desc" id="steerdesc"></p>
         <div id="phandle" style="margin-top:8px"></div>
         <div class="group" style="margin-top:8px"><button id="usehandling">Use in the game</button></div>
-        <p class="desc" id="usemsg">The game's vessel of the kind afloat here (the boat unless the yard launched a karve) takes this steering, speed, acceleration, turn, glide, grip and wind strength; the raft a slower share of the boat's.</p>
+        <p class="desc" id="usemsg">The game's ship of this size takes this steering, speed, acceleration, turn, glide and grip, and the wind's strength.</p>
         <p class="desc">The wind is a buff only: a karve's sail with the wind behind goes up to (1 + strength) times its top speed, a wind ahead costs nothing. Each rower adds 7% while the seats last.</p>
         <p class="desc">Glide is how long the boat keeps moving after you let go. Grip is how firmly it follows its bow; low grip lets it slide sideways in turns.</p>
       </section>
@@ -130,10 +121,6 @@ kbd{display:inline-block;min-width:1.6em;text-align:center;padding:1px 7px;borde
         <h2>Archipelago</h2>
         <div id="pland"></div>
         <p class="desc">Sizes and gaps are in tiles: 100 tiles is one kilometre, and the hero is about one tile wide. Island width is the normal island; Size variety mixes in small and large ones. Most gaps are near the typical gap; Gap variety adds narrow straits and the occasional long crossing. Skerries are the tiny rocky islets around the coasts.</p>
-      </section>
-      <section class="panel">
-        <h2>Boat colours</h2>
-        <div class="swatches" id="swatches"></div>
       </section>
       <section class="panel">
         <h2>Settings as text</h2>
@@ -175,16 +162,14 @@ __SPRITES_JS__
   var BASE = kit.STYLE;   // the one shared look of the world, set in src/stylelab.js
 
   /* ---------- boats ---------- */
-  var LINE = '#1d1622';
-  var TYPES = [
-    { name: 'Faering', L: 20, W: 7.5, oars: 2, sail: 0, shields: 0, head: 0, note: 'A small four-oared boat. Nimble, for short hops along the coast.', set: { top: 95, accel: 110, turn: 2.6, glide: 0.8, grip: 0.8 } },
-    { name: 'Karve', L: 27, W: 9, oars: 3, sail: 1, mast: 34, yard: 1.5, stripes: 1, shields: 0, head: 0, note: 'A small ship with oars and a striped sail. A good all-rounder.', set: { top: 130, accel: 70, turn: 2, glide: 1.8, grip: 0.65 } },
-    { name: 'Longship', L: 36, W: 9, oars: 5, sail: 1, mast: 40, yard: 1.7, stripes: 1, shields: 6, head: 1, note: 'A dragon-headed warship with shields along the rail. Fast and long, wide in the turn.', set: { top: 165, accel: 60, turn: 1.5, glide: 2.4, grip: 0.6 } },
-    { name: 'Knarr', L: 30, W: 12, oars: 0, sail: 1, mast: 38, yard: 1.3, stripes: 0, shields: 0, head: 0, note: 'A broad cargo ship under sail alone. Slow to start and steady.', set: { top: 110, accel: 40, turn: 1.2, glide: 2.6, grip: 0.55 } }
-  ];
+  /* The game's ships (src/yard.js, docs/ships-rework.md, 2026-10-22): every size of every model, its handling Yard's, its look the
+     default with a dragon on a ship with a mast; the fittings as in the shipyard. */
+  var SIZES = []; Yard.MODELS.forEach(function (m) { m.sizes.forEach(function (z) { SIZES.push(z); }); });
+  var FITS = [[null, 'No fitting'], ['raider', 'Raider'], ['cargo', 'Cargo'], ['voyager', 'Voyager']];
+  function sizeName(z) { var H = Yard.HULLS[z]; return H.name + (H.size && H.size !== 'for you' ? ' ' + H.size : ''); }
+  function seatsOf(z) { var H = Yard.HULLS[z]; return H.thwarts[1] * (H.per || 2); }
   var STEER = [['Direct', 'Hold a direction and the boat turns to face it and goes. Easy, like walking.'], ['Tiller', 'W drives forward, S backs up, A and D turn the bow. More like a real boat: you have to be moving to turn.']];
   var BOAT = [
-    { k: 'size', label: 'Boat size', min: 0.7, max: 1.8, step: 0.05 },
     { k: 'top', label: 'Top speed', min: 40, max: 300, step: 5 },
     { k: 'accel', label: 'Acceleration', min: 20, max: 300, step: 5 }
   ];
@@ -195,7 +180,7 @@ __SPRITES_JS__
     { k: 'windK', label: 'Wind strength', min: 0, max: 1.5, step: 0.05 },
     { k: 'windA', label: 'Wind blows toward', min: -3.1, max: 3.1, step: 0.1 },
     { k: 'windS', label: 'Wind strength (the sea\u2019s look)', min: 0, max: 1, step: 0.05 },
-    { k: 'rowers', label: 'Rowers aboard', min: 0, max: 12, step: 1 }
+    { k: 'rowers', label: 'Rowers aboard', min: 0, max: 26, step: 1 }
   ];
   var SEA = [
     { k: 'hue', label: 'Water colour', min: -60, max: 60, step: 2 },
@@ -224,12 +209,10 @@ __SPRITES_JS__
   var LAYOUTS = [['Free archipelago', 'Islands of the normal width with the size variety, placed freely: the editor\'s own sea.'], ['The game\'s layout', 'The game\'s arrangement: a small starter island, the big island east of it, then the other islands, and from a chosen one on the southern lowlands, a bit further off. The village plan is drawn on the chart.']];
   var VIEW = [{ k: 'zoom', label: 'Zoom', min: 0.3, max: 2, step: 0.05 }];
   var NUM = BOAT.concat(HANDLE, SEA, LAND, GAME);
-  var COLS = [['hull', 'Hull'], ['deck', 'Deck'], ['sail', 'Sail'], ['trim', 'Stripes and shields']];
-  var DEF = { type: 2, steer: 1, size: 1.4, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, windK: 0.5, windA: 0.6, windS: 0.45, rowers: 0, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
-    isle: 160, sizeVar: 0.8, count: 2, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, seed: 25, layout: 1, starter: 120, big: 400, lowFrom: 9, lowSize: 130,   // the game's two islands (2026-10-09)
-    col: { hull: '#5a3a26', deck: '#b98a5a', sail: '#efe6cf', trim: '#b83a2e' } };
+  var DEF = { kind: 'karve', fit: null, steer: 1, top: 115, accel: 42, turn: 1.3, glide: 3.2, grip: 0.72, windK: 0.5, windA: 0.6, windS: 0.45, rowers: 0, hue: 0, waves: 0.75, foam: 1.05, bob: 1.4, wake: 0.6,
+    isle: 160, sizeVar: 0.8, count: 2, gap: 240, gapVar: 0.3, skerries: 1, rough: 1, beach: 4.5, seed: 25, layout: 1, starter: 120, big: 400, lowFrom: 9, lowSize: 130 };   // the game's two islands (2026-10-09)
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  var spec = clone(DEF), view = { zoom: 0.7 }, inputs = {}, outputs = {}, swatch = {};
+  var spec = clone(DEF), view = { zoom: 0.7 }, inputs = {}, outputs = {};
   var json = document.getElementById('json'), jsonmsg = document.getElementById('jsonmsg'), stat = document.getElementById('stat');
   function snap(p, v) { v = Math.min(p.max, Math.max(p.min, v)); return Math.round(Math.round(v / p.step) * p.step * 1000) / 1000; }
   function fmt(p, v) { return p.step < 1 ? v.toFixed(2) : String(v); }
@@ -239,18 +222,14 @@ __SPRITES_JS__
   function apply() {
     var i;
     for (i = 0; i < NUM.length; i++) { var p = NUM[i], v = Number(spec[p.k]); spec[p.k] = snap(p, isFinite(v) ? v : DEF[p.k]); }
-    spec.type = Math.max(0, Math.min(TYPES.length - 1, Math.round(Number(spec.type)) || 0));
+    if (!Yard.HULLS[spec.kind] || SIZES.indexOf(spec.kind) < 0) spec.kind = DEF.kind; if (!Yard.FITTINGS[spec.fit] || !Yard.rigged(spec.kind)) spec.fit = null;
     spec.steer = spec.steer === 1 ? 1 : 0; spec.layout = spec.layout === 0 ? 0 : 1;
-    if (!spec.col || typeof spec.col !== 'object') spec.col = {};
-    COLS.forEach(function (c) { if (!/^#[0-9a-fA-F]{6}$/.test(spec.col[c[0]])) spec.col[c[0]] = DEF.col[c[0]]; });
     var clean = {}; for (var k in DEF) clean[k] = spec[k]; spec = clean;
     for (i = 0; i < NUM.length; i++) { inputs[NUM[i].k].value = spec[NUM[i].k]; outputs[NUM[i].k].textContent = fmt(NUM[i], spec[NUM[i].k]); }
-    COLS.forEach(function (c) { swatch[c[0]].value = spec.col[c[0]]; });
-    pressed('types', spec.type); pressed('steers', spec.steer); pressed('layouts', spec.layout); document.getElementById('layoutdesc').textContent = LAYOUTS[spec.layout][1];
-    document.getElementById('typedesc').textContent = TYPES[spec.type].note;
+    pressed('ships', SIZES.indexOf(spec.kind)); pressed('fits', FITS.map(function (f) { return f[0]; }).indexOf(spec.fit)); shipNow(); pressed('steers', spec.steer); pressed('layouts', spec.layout); document.getElementById('layoutdesc').textContent = LAYOUTS[spec.layout][1];
     document.getElementById('steerdesc').textContent = STEER[spec.steer][1];
     if (document.activeElement !== json) json.value = JSON.stringify(spec);
-    try { localStorage.setItem('seaeditor4', JSON.stringify(spec)); } catch (e) {}
+    try { localStorage.setItem('seaeditor5', JSON.stringify(spec)); } catch (e) {}
     var wk = [spec.isle, spec.sizeVar, spec.count, spec.gap, spec.gapVar, spec.skerries, spec.rough, spec.beach, spec.seed, spec.hue, spec.layout, spec.starter, spec.big, spec.lowFrom, spec.lowSize].join('|');
     if (wk === worldKey) showStat();
     if (wk !== worldKey) { var relocate = wk.split('|').slice(0, 9).join('|') !== worldKey.split('|').slice(0, 9).join('|'); worldKey = wk; buildWorld(relocate); }
@@ -271,25 +250,17 @@ __SPRITES_JS__
   }
   function getSpec() { return spec; }
   LAND.forEach(function (p) { p.slow = true; }); GAME.forEach(function (p) { p.slow = true; }); SEA[0].slow = true;   // these rebuild the map, so wait until the slider is let go
-  sliders('pboat', BOAT, getSpec, apply); sliders('phandle', HANDLE, getSpec, apply); sliders('psea', SEA, getSpec, apply); sliders('pland', LAND, getSpec, apply); sliders('pgame', GAME, getSpec, apply);
+  sliders('phandle', BOAT.concat(HANDLE), getSpec, apply); sliders('psea', SEA, getSpec, apply); sliders('pland', LAND, getSpec, apply); sliders('pgame', GAME, getSpec, apply);
   function syncView() { inputs.zoom.value = view.zoom; outputs.zoom.textContent = view.zoom.toFixed(2); }
   sliders('pview', VIEW, function () { return view; }, syncView); syncView();
   function buttons(hostId, list, text, fn) {
     var host = document.getElementById(hostId);
     list.forEach(function (item, i) { var b = document.createElement('button'); b.textContent = text(item); b.addEventListener('click', function () { fn(item, i); b.blur(); }); host.appendChild(b); });
   }
-  buttons('types', TYPES, function (t) { return t.name; }, function (t, i) { spec.type = i; for (var k in t.set) spec[k] = t.set[k]; apply(); });
+  buttons('ships', SIZES, sizeName, function (z) { var HK = Yard.HANDLING[z]; spec.kind = z; if (HK) ['steer', 'top', 'accel', 'turn', 'glide', 'grip'].forEach(function (k) { if (HK[k] != null) spec[k] = HK[k]; }); spec.rowers = Yard.rigged(z) ? seatsOf(z) : 0; apply(); toDock(); });   /* (the rowboat is rowed by you: no crew) */   // a ship brings its own handling and its full crew
+  buttons('fits', FITS, function (f) { return f[1]; }, function (f) { spec.fit = f[0]; apply(); });
   buttons('steers', STEER, function (s) { return s[0]; }, function (s, i) { spec.steer = i; apply(); });
   buttons('layouts', LAYOUTS, function (s) { return s[0]; }, function (s, i) { spec.layout = i; apply(); });
-  var swHost = document.getElementById('swatches');
-  COLS.forEach(function (cdef) {
-    var lab = document.createElement('label'); lab.className = 'sw';
-    var inp = document.createElement('input'); inp.type = 'color';
-    var name = document.createElement('span'); name.textContent = cdef[1];
-    inp.addEventListener('input', function () { spec.col[cdef[0]] = inp.value; apply(); });
-    lab.appendChild(inp); lab.appendChild(name); swHost.appendChild(lab); swatch[cdef[0]] = inp;
-  });
-
   /* ---------- world: the archipelago comes from src/world.js; this page keeps short names for what it uses ---------- */
   var w = null, GW = 64, GH = 48, WX = GW * T, WY = GH * T, CT = World.CT, CW = 4, CH = 3;
   var E = null, grid = null, buckets = [], solidB = [], home = { x: 0, y: 0 }, dockEnd = { x: 0, y: 0 }, mini = null, info = '';
@@ -330,7 +301,7 @@ __SPRITES_JS__
   function buildWorld(relocate) {
     w = World.make(kit, worldSpec());
     GW = w.GW; GH = w.GH; WX = w.WX; WY = w.WY; CW = w.CW; CH = w.CH; E = w.E; grid = w.grid; home = w.home; dockEnd = w.dockEnd;
-    w.plant(); if (w.peaks) w.peaks(); w.camp(); w.sortBuckets(); YSCENE.Y.X = WX + 6000; Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX + 9000, y1: WY - 8 };
+    w.plant(); if (w.peaks) w.peaks(); w.camp(); w.sortBuckets(); Combat.api.scene.bounds = { x0: 8, y0: 12, x1: WX + 9000, y1: WY - 8 };
     buckets = w.buckets; solidB = w.solidB;
     var isles = w.isles, n = isles.length, skerries = w.stats.skerries, landTiles = w.stats.landTiles;
     // Arnor stands by the hearth at the camp, on the first bit of clear land found there
@@ -381,39 +352,32 @@ __SPRITES_JS__
   }
 
   var boat = { x: 0, y: 0, h: 0, speed: 0, vx: 0, vy: 0 }, aboard = false, wakes = [], smoke = [], wakeT = 0, clock = 0;
-  /* ---------- the Shipyard: the game's yard scene (src/yard.js), here for free, launched to the dock ---------- */
-  var YKEY = 'seayard2', yardS = { plan: 'raft', cells: [] }, built = null, inYard = false, yardZoom = 0, YSCENE = Yard.scene, mouseW = null, mouseS = null;
-  YSCENE.Y.X = 0;   // set when the world is made: far east of the map
-  try { var ys = JSON.parse(localStorage.getItem(YKEY)); if (ys && ys.yard) { yardS = ys.yard; if (ys.built) { built = ys.built; Yard.fit(built); } } } catch (e) {}
-  function ysave() { try { localStorage.setItem(YKEY, JSON.stringify({ yard: yardS, built: built ? { kind: built.kind, parts: built.parts } : null })); } catch (e) {} }
-  function vesselNow() { return { x: boat.x, y: boat.y, h: boat.h, vx: boat.vx, vy: boat.vy, aboard: aboard, kind: built.kind, parts: built.parts, hw: built.hw, hh: built.hh, seat: built.seat, seats: built.seats, rowers: built.rowers, mastX: built.mastX, sail: built.sail, crew: boat.crew, sailFill: boat.sailFill, rud: boat.rud }; }
-  var yardHost = {
-    hero: function () { return Combat.dbg().P; }, canAfford: function () { return true; }, pay: function () {}, costText: function () { return 'free'; },
-    sfx: function () {}, toast: function (t) { prompt = t; }, tile: function (c, gx, gy, x, y, w2, h2) { c.drawImage(w.tile('grass', gx, gy), x, y, w2, h2); },
-    save: function () { ysave(); yui(); },
-    finish: function () { if (YSCENE.check()) return; built = { kind: yardS.plan, parts: yardS.cells.slice() }; Yard.fit(built); var HK = Yard.HANDLING[built.kind]; if (HK) { for (var k in HK) spec[k] = HK[k]; apply(); } ysave(); yardLeave(); toDock(); yui(); }   // a launched vessel brings its own handling to the sliders
-  };
-  function yardEnter() {
-    var P = Combat.dbg().P; if (aboard) return; yardS = YSCENE.enter(yardHost, yardS); inYard = true; yardZoom = view.zoom; view.zoom = YSCENE.ZOOM; syncView();
-    var hs = YSCENE.heroSpot(); P.x = hs.x; P.y = hs.y; P.vx = P.vy = 0; releaseWalk(); yui();
+  /* ---------- the ship: the game's, its size, its fitting (the boat object is the vessel Yard draws and sails) ---------- */
+  var built = null, mouseW = null, mouseS = null, shipKey = '';
+  function shipNow() {                     // the vessel of the chosen size and fitting, and what its crossing takes
+    var key = spec.kind + '|' + spec.fit; if (key !== shipKey) { shipKey = key; var look = Yard.lookDefault(); look.head = Yard.rigged(spec.kind) ? 'dragon' : 'curl';
+      boat.kind = spec.kind; boat.look = look; boat.fit = spec.fit; boat.parts = Yard.designParts(spec.kind, look); Yard.fit(boat); built = boat; }
+    var H = Yard.HULLS[spec.kind], fs = document.getElementById('fits').querySelectorAll('button'); for (var i = 0; i < fs.length; i++) fs[i].disabled = !Yard.rigged(spec.kind) && i > 0;
+    document.getElementById('shipdesc').textContent = H.text + ' Seats for ' + seatsOf(spec.kind) + '; heavy things aboard: ' + Yard.holdOf(boat) + (spec.fit ? '. ' + Yard.FITTINGS[spec.fit].name + ': ' + Yard.FITTINGS[spec.fit].text : '.');
+    document.getElementById('crossing').textContent = 'To the big island (8700 units, the middle of the crossing on the game\u2019s map) ' + (Yard.rigged(spec.kind) ? 'with ' + Math.min(spec.rowers, seatsOf(spec.kind)) + ' at the oars' : 'rowing her yourself') + ': ' + crossT(null) + ' s in a calm' + (Yard.rigged(spec.kind) ? ', ' + crossT(0) + ' s with the wind behind, ' + crossT(Math.PI / 2) + ' s with it abeam.' : '.');
   }
-  function yardLeave() { var P = Combat.dbg().P; inYard = false; YSCENE.leave(); view.zoom = yardZoom || 0.7; syncView(); P.x = (dockEnd.x + 7.4) * T; P.y = (dockEnd.y + 0.5) * T; P.vx = P.vy = 0; yui(); }
-  function yui() { document.getElementById('yship').disabled = !built; document.getElementById('yopen').textContent = inYard ? 'Leave the yard' : 'Open the Shipyard'; var why = Yard.check(yardS); document.getElementById('ywhy').textContent = (built ? 'Afloat: ' + ('a ' + Yard.nameOf(built.kind).toLowerCase()) + ' of ' + built.parts.length + ' parts.  ' : '') + (yardS.cells.length ? (why || 'The hull is sound.') : 'The yard is empty.'); }
-  document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { var kind = built ? built.kind : 'boat'; localStorage.setItem('game.boat', JSON.stringify({ kind: kind, steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip, windK: spec.windK, windS: spec.windS })); document.getElementById('usemsg').textContent = 'The game\'s ' + kind + ' now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ', wind ' + spec.windK + ').'; } catch (err) {} };
+  function crossT(windA) {                 // the crossing by the game's own sailing (tests/ships.js measures the same)
+    var v = { x: 0, y: 0, h: 0, speed: 0, vx: 0, vy: 0, kind: spec.kind, crew: spec.rowers, rowers: seatsOf(spec.kind), sail: Yard.rigged(spec.kind), fit: spec.fit }, t = 0, dt = 1 / 30;
+    while (t < 600 && v.x < 8700) { Yard.sail(v, { ix: 0, iy: -1 }, dt, function () { return true; }, handNow(), windA == null ? null : { a: windA, k: spec.windK }); t += dt; }
+    return Math.round(t);
+  }
+  function vesselNow() { boat.aboard = aboard; boat.crew = spec.rowers; return boat; }
+  function handNow() { var o = {}, k, HK = Yard.HANDLING[spec.kind] || {}; for (k in HK) o[k] = HK[k]; ['steer', 'top', 'accel', 'turn', 'glide', 'grip'].forEach(function (q) { o[q] = spec[q]; }); return o; }   /* the size's handling with the sliders over it (its rowK, what each rower adds, stays the game's) */
+  document.getElementById('usehandling').onclick = function (e) { e.currentTarget.blur(); try { var kind = spec.kind; localStorage.setItem('game.boat', JSON.stringify({ v: 2, kind: kind, steer: spec.steer, top: spec.top, accel: spec.accel, turn: spec.turn, glide: spec.glide, grip: spec.grip, windK: spec.windK, windS: spec.windS })); document.getElementById('usemsg').textContent = 'The game\'s ' + kind + ' now sails like this (steering ' + (spec.steer ? 'Tiller' : 'Direct') + ', top speed ' + spec.top + ', wind ' + spec.windK + ').'; } catch (err) {} };
   document.getElementById('useworld').onclick = function (e) { e.currentTarget.blur(); try { var o = worldSpec(), g = {}; ['count', 'gap', 'gapVar', 'skerries', 'rough', 'beach', 'seed', 'isle', 'isle0', 'big', 'sizes', 'biomes', 'dir', 'sizeVar'].forEach(function (k) { if (o[k] != null) g[k] = o[k]; }); if (!spec.layout) { g.sizes = null; g.biomes = null; } g.waters = true; g.maxTiles = 2e7; localStorage.setItem('game.world3', JSON.stringify(g)); document.getElementById('worldmsg').textContent = 'The game now builds this sea on its next fresh start: ' + g.count + ' islands, sea number ' + g.seed + (g.biomes ? ', lowlands from island ' + spec.lowFrom : '') + '. Esc, New island in the game starts it.'; } catch (err) {} };
-  document.getElementById('yopen').onclick = function (e) { e.currentTarget.blur(); if (inYard) yardLeave(); else yardEnter(); };
-  document.getElementById('yclear').onclick = function (e) { e.currentTarget.blur(); yardS.cells = []; ysave(); yui(); };
-  document.getElementById('yship').onclick = function (e) { e.currentTarget.blur(); built = null; ysave(); yui(); if (!inYard) toDock(); };
   function toScreen(e) { var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * 400, y: (e.clientY - r.top) / r.height * 250 }; }
   function toWorld(ms) { return { x: (ms.x - 200) / cam.z + cam.x, y: ((ms.y - 125) / cam.z + cam.y) / K }; }
   cv.addEventListener('mousemove', function (e) { mouseS = toScreen(e); mouseW = toWorld(mouseS); });
   cv.addEventListener('mouseleave', function () { mouseS = null; mouseW = null; });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-  cv.addEventListener('mousedown', function (e) { if (!inYard) return; e.preventDefault(); mouseS = toScreen(e); mouseW = toWorld(mouseS); YSCENE.mousedown(e.button, mouseW, mouseS); });
-  cv.addEventListener('wheel', function (e) { if (!inYard) return; e.preventDefault(); YSCENE.wheel(e.deltaY > 0 ? 1 : -1); }, { passive: false });
   function moor() {                               // the first spot beside the dock where the whole hull floats
     var d = dims(), side, along;
-    if (built) { for (var out = 0; out < 20; out++) { var ox = (dockEnd.x + 1) * T + d.L + 24 + out * T, oy = (dockEnd.y + 0.5) * T; if (free(ox, oy, 0) && free(ox, oy, 0.7) && free(ox, oy, -0.7)) return { x: ox, y: oy }; } }   // a built vessel lies off the end of the jetty, bow to the sea, with room to turn
+    { for (var out = 0; out < 20; out++) { var ox = (dockEnd.x + 1) * T + d.L + 24 + out * T, oy = (dockEnd.y + 0.5) * T; if (free(ox, oy, 0) && free(ox, oy, 0.7) && free(ox, oy, -0.7)) return { x: ox, y: oy }; } }   // a built vessel lies off the end of the jetty, bow to the sea, with room to turn
     for (side = 1; side >= -1; side -= 2) for (along = 6 + d.L / T; along >= 1.5; along -= 0.5) {   // as far out along the jetty as it fits (a long hull further out)
       var bx = (dockEnd.x + along) * T, by = (dockEnd.y + 0.5) * T + side * (T * 0.5 + d.W + 5);
       if (free(bx, by, 0) && free(bx - T * 1.5, by, 0) && free(bx, by, 0.6)) return { x: bx, y: by };   // room to turn, and clear of the jetty's end
@@ -434,8 +398,7 @@ __SPRITES_JS__
   function releaseWalk() { for (var k in walkCodes) Combat.key(k, false); }
   window.addEventListener('keydown', function (e) {
     if (typing(e)) return;
-    if (inYard && e.code === 'Enter') { e.preventDefault(); if (!e.repeat) YSCENE.key('Enter'); return; }
-    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (inYard) yardLeave(); else if (nearNpc(Combat.dbg().P)) talk(); else useBoat(); } return; }
+    if (e.code === 'KeyE') { e.preventDefault(); if (!e.repeat) { if (nearNpc(Combat.dbg().P)) talk(); else useBoat(); } return; }
     if (!walkCodes[e.code]) return;
     e.preventDefault(); if (e.repeat) return;
     keys[e.code] = true; if (!aboard) Combat.key(e.code, true);
@@ -447,7 +410,7 @@ __SPRITES_JS__
   window.addEventListener('blur', function () { keys = {}; releaseWalk(); });
 
   /* ---------- boarding ---------- */
-  function dims() { if (built) return { L: built.hw, W: built.hh }; var d = TYPES[spec.type]; return { L: d.L * spec.size, W: d.W * spec.size }; }
+  function dims() { return { L: boat.hw || 21, W: boat.hh || 21 }; }
   function landing() {                     // the nearest spot of land the hero could step onto from the boat
     var d = dims(), best = null, bd = 1e9, a, r;
     for (r = d.W + 10; r <= d.L + 30; r += 8) for (a = 0; a < 16; a++) {
@@ -481,8 +444,8 @@ __SPRITES_JS__
   function sail(dt) {
     var ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0), iy = (keys.KeyS ? 1 : 0) - (keys.KeyW ? 1 : 0);
     if (!aboard) ix = iy = 0;
-    boat.sail = !!(built && Yard.rigged(built.kind) && built.sail); boat.crew = spec.rowers; boat.rowers = built && built.rowers != null ? built.rowers : 99;
-    Yard.sail(boat, { ix: ix, iy: iy }, dt, free, spec, { a: spec.windA, k: spec.windK });   // the same physics as the game (src/yard.js); the wind fills a karve's sail
+    boat.crew = spec.rowers;
+    Yard.sail(boat, { ix: ix, iy: iy }, dt, free, handNow(), { a: spec.windA, k: spec.windK });   // the same physics as the game (src/yard.js); the wind fills a karve's sail
     var sp = Math.hypot(boat.vx, boat.vy), d = dims();
     wakeT -= dt;
     if (sp > 12 && wakeT <= 0 && spec.wake > 0) { wakeT = 0.07; wakes.push({ x: boat.x - Math.cos(boat.h) * d.L * 0.9, y: boat.y - Math.sin(boat.h) * d.L * 0.9, r: d.W * 0.7, life: 1.3, max: 1.3, v: 6 + sp * 0.05 }); }
@@ -490,114 +453,18 @@ __SPRITES_JS__
     for (i = smoke.length - 1; i >= 0; i--) { var q = smoke[i]; q.life -= dt; q.z += 14 * dt; q.r += 4 * dt; q.x -= boat.vx * dt * 0.02; if (q.life <= 0) smoke.splice(i, 1); }
   }
 
-  /* ---------- drawing the ship ----------
-     The hull is a top-down outline, turned to the ship's heading and squashed by the view. Stems, mast and sail
-     stand upright on top of it. */
-  function shadeHex(hex, d) { var n = parseInt(hex.substr(1), 16), r = Math.max(0, Math.min(255, (n >> 16) + d)), g = Math.max(0, Math.min(255, ((n >> 8) & 255) + d)), b = Math.max(0, Math.min(255, (n & 255) + d)); return 'rgb(' + r + ',' + g + ',' + b + ')'; }
   function bobY() { return Math.sin(clock * 2.1) * 1.2 * spec.bob; }
-  function hullPath(c, L, W) { c.moveTo(-L, 0); c.quadraticCurveTo(0, -W * 1.9, L, 0); c.quadraticCurveTo(0, W * 1.9, -L, 0); c.closePath(); }   // pointed at both ends
-  function halfW(W, u) { return 0.95 * W * (1 - u * u); }
-  function drawBoat(c) {
-    var d = dims(), L = d.L, W = d.W, sz = spec.size, TY = TYPES[spec.type], col = spec.col, h = boat.h, i;
-    var sx = boat.x, sy = boat.y * K + bobY(), roll = Math.sin(clock * 1.7 + 1) * 0.03 * spec.bob, mv = Math.min(1, Math.hypot(boat.vx, boat.vy) / Math.max(1, spec.top));
-    function inFrame(dy, fn) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(h + roll); fn(); c.restore(); }
-    function fillStroke(fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw || 1.6; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke(); }
-    c.fillStyle = 'rgba(8,12,40,0.28)'; c.beginPath(); c.ellipse(sx + 2, boat.y * K + 5 * sz, L * 0.95, W * 1.05, 0, 0, 7); c.fill();
-    inFrame(4 * sz, function () { c.beginPath(); hullPath(c, L, W); fillStroke(shadeHex(col.hull, -30)); });
-    inFrame(0, function () {
-      c.beginPath(); hullPath(c, L, W); fillStroke(col.hull);
-      c.save(); c.scale(0.9, 0.78); c.beginPath(); hullPath(c, L, W); c.lineWidth = 0.9; c.strokeStyle = 'rgba(20,12,20,0.45)'; c.stroke(); c.restore();   // a line of planking
-      c.save(); c.scale(0.84, 0.62); c.beginPath(); hullPath(c, L, W); fillStroke(col.deck, 1.2); c.restore();
-      for (i = -2; i <= 2; i++) { var tu = i * 0.22, tw = halfW(W, tu) * 0.6; c.beginPath(); c.rect(L * tu - 1.3, -tw, 2.6, tw * 2); fillStroke(shadeHex(col.hull, 12), 0.9); }   // rowing benches
-      // steering oar on the right side of the stern
-      c.lineCap = 'round'; c.strokeStyle = LINE; c.lineWidth = 3; c.beginPath(); c.moveTo(-L * 0.7, W * 0.45); c.lineTo(-L * 0.98, W * 1.0); c.stroke();
-      c.strokeStyle = shadeHex(col.deck, -20); c.lineWidth = 1.6; c.beginPath(); c.moveTo(-L * 0.7, W * 0.45); c.lineTo(-L * 0.98, W * 1.0); c.stroke();
-      for (var n = 0; n < TY.oars; n++) [-1, 1].forEach(function (sd) {
-        var u = TY.oars === 1 ? 0 : -0.42 + n * (0.78 / (TY.oars - 1)), a = sd * (Math.PI / 2) - Math.sin(clock * (2.6 + mv * 4.5)) * 0.55 * mv - 0.2;
-        var ox = L * u, oy = sd * halfW(W, u), len = W * 1.7 + 7 * sz, ex = ox + Math.cos(a) * len, ey = oy + Math.sin(a) * len;
-        c.strokeStyle = LINE; c.lineWidth = 2.6; c.lineCap = 'round'; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
-        c.strokeStyle = shadeHex(col.deck, -10); c.lineWidth = 1.3; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ex, ey); c.stroke();
-        c.beginPath(); c.ellipse(ex, ey, 3.2, 1.6, a, 0, 7); fillStroke(shadeHex(col.deck, -10), 0.9);
-      });
-      for (i = 0; i < TY.shields; i++) [-1, 1].forEach(function (sd) {
-        var u = -0.6 + i * (1.2 / (TY.shields - 1)), r = 2.7 * sz;
-        c.beginPath(); c.arc(L * u, sd * halfW(W, u), r, 0, 7); fillStroke(i % 2 ? col.sail : col.trim, 1);
-        c.beginPath(); c.arc(L * u, sd * halfW(W, u), r * 0.32, 0, 7); c.fillStyle = '#8a8f9a'; c.fill();
-      });
-    });
-    // upright parts: stems, mast and sail
-    var fx = Math.cos(h), fy = Math.sin(h) * K;
-    function at(lx, ly) { var cs = Math.cos(h), sn = Math.sin(h); return [sx + lx * cs - ly * sn, sy + (lx * sn + ly * cs) * K]; }
-    function curve(p0, p1, p2, w, fill) {
-      c.lineCap = 'round';
-      c.strokeStyle = LINE; c.lineWidth = w + 2; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke();
-      c.strokeStyle = fill; c.lineWidth = w; c.beginPath(); c.moveTo(p0[0], p0[1]); c.quadraticCurveTo(p1[0], p1[1], p2[0], p2[1]); c.stroke();
-    }
-    function stem(lx, dir, hgt, head) {
-      var p = at(lx, 0), tip = [p[0] + fx * dir * 7 * sz, p[1] + fy * dir * 7 * sz - hgt], w = 3.2 * sz, wood = shadeHex(col.hull, -8);
-      curve(p, [p[0] - fx * dir * 1.5 * sz, p[1] - hgt * 0.6], tip, w, wood);
-      if (head) {
-        var jaw = [tip[0] + fx * dir * 7 * sz, tip[1] + fy * dir * 7 * sz + 2.5 * sz];
-        curve(tip, [tip[0] + fx * dir * 3 * sz, tip[1] - 1.5 * sz], jaw, w * 0.9, wood);
-        curve(tip, [tip[0] - fx * dir * 4 * sz, tip[1] - 4.5 * sz], [tip[0] - fx * dir * 5 * sz, tip[1] - 0.5 * sz], w * 0.5, wood);   // crest curling back
-        c.beginPath(); c.arc(tip[0] + fx * dir * 2.4 * sz, tip[1] + fy * dir * 2.4 * sz - 0.4 * sz, 1.1 * sz, 0, 7); c.fillStyle = '#ffd34d'; c.fill();
-        c.strokeStyle = col.trim; c.lineWidth = 1.2 * sz; c.beginPath(); c.moveTo(jaw[0], jaw[1]); c.lineTo(jaw[0] + fx * dir * 3 * sz, jaw[1] + fy * dir * 3 * sz + 1.5 * sz); c.stroke();
-      } else curve(tip, [tip[0] + fx * dir * 3.5 * sz, tip[1] - 3 * sz], [tip[0] + fx * dir * 1.5 * sz, tip[1] + 2.4 * sz], w * 0.55, wood);   // a simple curl
-    }
-    stem(-L * 0.96, -1, (TY.head ? 15 : 10) * sz, false);
-    stem(L * 0.96, 1, (TY.head ? 19 : 11) * sz, !!TY.head);
-    if (TY.sail) {
-      var m = at(L * 0.05, 0), mh = TY.mast * sz, top = mh * 0.92, foot = mh * 0.3, yw = W * TY.yard, bl = 10 * sz;
-      var a1 = at(L * 0.05, -yw), b1 = at(L * 0.05, yw), a0 = at(L * 0.05, -yw * 0.9), b0 = at(L * 0.05, yw * 0.9);
-      // corners and a centre line that billows forward, so the sail still shows when the ship is seen side on
-      var TA = [a1[0], a1[1] - top], TB = [b1[0], b1[1] - top], TM = [m[0] + fx * bl * 0.3, m[1] + fy * bl * 0.3 - top];
-      var BA = [a0[0], a0[1] - foot], BB = [b0[0], b0[1] - foot], BM = [m[0] + fx * bl, m[1] + fy * bl - foot];
-      function topAt(s) { return s < 0.5 ? [TA[0] + (TM[0] - TA[0]) * s * 2, TA[1] + (TM[1] - TA[1]) * s * 2] : [TM[0] + (TB[0] - TM[0]) * (s - 0.5) * 2, TM[1] + (TB[1] - TM[1]) * (s - 0.5) * 2]; }
-      function botAt(s) { return s < 0.5 ? [BA[0] + (BM[0] - BA[0]) * s * 2, BA[1] + (BM[1] - BA[1]) * s * 2] : [BM[0] + (BB[0] - BM[0]) * (s - 0.5) * 2, BM[1] + (BB[1] - BM[1]) * (s - 0.5) * 2]; }
-      c.strokeStyle = LINE; c.lineWidth = 2 * sz + 2; c.lineCap = 'round'; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();
-      c.strokeStyle = shadeHex(col.hull, -8); c.lineWidth = 2 * sz; c.beginPath(); c.moveTo(m[0], m[1]); c.lineTo(m[0], m[1] - mh); c.stroke();
-      c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.lineTo(BB[0], BB[1]); c.lineTo(BM[0], BM[1]); c.lineTo(BA[0], BA[1]); c.closePath();
-      c.fillStyle = col.sail; c.fill();
-      if (TY.stripes) { c.fillStyle = col.trim; for (i = 0; i < 6; i += 2) { var s0 = i / 6, s1 = (i + 1) / 6, mid = (s0 < 0.5 && s1 > 0.5); c.beginPath(); var q = topAt(s0); c.moveTo(q[0], q[1]); if (mid) c.lineTo(TM[0], TM[1]); q = topAt(s1); c.lineTo(q[0], q[1]); q = botAt(s1); c.lineTo(q[0], q[1]); if (mid) c.lineTo(BM[0], BM[1]); q = botAt(s0); c.lineTo(q[0], q[1]); c.closePath(); c.fill(); } }
-      c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.lineTo(BB[0], BB[1]); c.lineTo(BM[0], BM[1]); c.lineTo(BA[0], BA[1]); c.closePath();
-      c.lineWidth = 1.5; c.strokeStyle = LINE; c.lineJoin = 'round'; c.stroke();
-      c.strokeStyle = LINE; c.lineWidth = 2.2 * sz + 1.6; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke();
-      c.strokeStyle = shadeHex(col.hull, -8); c.lineWidth = 2.2 * sz; c.beginPath(); c.moveTo(TA[0], TA[1]); c.lineTo(TM[0], TM[1]); c.lineTo(TB[0], TB[1]); c.stroke();
-    }
-  }
-  // The near side of the hull, drawn again over the hero's feet so he stands in the ship instead of on it.
-  function drawBoatFront(c) {
-    var d = dims(), L = d.L, W = d.W, sz = spec.size, sx = boat.x, sy = boat.y * K + bobY(), roll = Math.sin(clock * 1.7 + 1) * 0.03 * spec.bob;
-    function sub(dy, k1, k2) { c.save(); c.translate(sx, sy + dy); c.scale(1, K); c.rotate(boat.h + roll); c.scale(k1, k2); hullPath(c, L, W); c.restore(); }
-    c.save();
-    c.beginPath(); c.rect(sx - L * 2, sy + 1.5, L * 4, L * 3); c.clip();
-    c.lineJoin = 'round'; c.strokeStyle = LINE;
-    c.beginPath(); sub(4 * sz, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = shadeHex(spec.col.hull, -30); c.fill('evenodd'); c.lineWidth = 1.6; c.beginPath(); sub(4 * sz, 1, 1); c.stroke();
-    c.beginPath(); sub(0, 1, 1); sub(0, 0.84, 0.62); c.fillStyle = spec.col.hull; c.fill('evenodd');
-    c.lineWidth = 1.6; c.beginPath(); sub(0, 1, 1); c.stroke(); c.lineWidth = 1.2; c.beginPath(); sub(0, 0.84, 0.62); c.stroke();
-    var TY = TYPES[spec.type];
-    for (var i = 0; i < TY.shields; i++) {            // the shields on the near rail sit in front of him too
-      var u = -0.6 + i * (1.2 / (TY.shields - 1)), cs = Math.cos(boat.h + roll), sn = Math.sin(boat.h + roll);
-      [-1, 1].forEach(function (sd) {
-        var ly = sd * halfW(W, u), px = sx + L * u * cs - ly * sn, py = sy + (L * u * sn + ly * cs) * K, r = 2.7 * sz;
-        c.beginPath(); c.ellipse(px, py, r, r * K, 0, 0, 7); c.fillStyle = i % 2 ? spec.col.sail : spec.col.trim; c.fill(); c.lineWidth = 1; c.stroke();
-      });
-    }
-    c.restore();
-  }
-
   /* ---------- scene ---------- */
   var cam = { x: 0, y: 0, z: 1 }, hero = null, prompt = '';
   Combat.api.scene = {
     noHud: true, noHotbar: true,
     bounds: { x0: 8, y0: 12, x1: WX + 9000, y1: WY - 8 },
-    walk: function (x, y) { if (inYard) return YSCENE.walk(x, y); var tx = Math.floor(x / T), ty = Math.floor(y / T); return aboard || isLand(x, y) || (grid && tx >= 0 && ty >= 0 && tx < GW && ty < GH && grid[ty * GW + tx] === 4); },   // the jetty's planks carry you
+    walk: function (x, y) { var tx = Math.floor(x / T), ty = Math.floor(y / T); return aboard || isLand(x, y) || (grid && tx >= 0 && ty >= 0 && tx < GW && ty < GH && grid[ty * GW + tx] === 4); },   // the jetty's planks carry you
     heroLift: function () { return aboard ? -bobY() - 3.5 : 0; },   // feet sit a little below the rim, inside the hull
     begin: function (c, P) {
       hero = P; this.noHeroShadow = aboard;
       var z = view.zoom, hw = 200 / z, hh = 125 / z, i;
       cam.z = z;
-      if (inYard) { var yc = YSCENE.cam(); cam.x = yc.x; cam.y = yc.y; if (view.zoom !== yc.z) { view.zoom = yc.z; syncView(); } z = yc.z; cam.z = z; c.fillStyle = '#2d4a22'; c.fillRect(0, 0, 400, 250); c.translate(200, 125); c.scale(z, z); c.translate(-cam.x, -cam.y); YSCENE.floor(c); YSCENE.ghost(c, mouseW, false); return; }
       cam.x = hw * 2 >= WX ? WX / 2 : Math.max(hw, Math.min(WX - hw, P.x));
       cam.y = hh * 2 >= WY * K ? WY * K / 2 : Math.max(hh, Math.min(WY * K - hh, P.y * K - 14));
       c.fillStyle = '#0e1a2a'; c.fillRect(0, 0, 400, 250);
@@ -608,12 +475,11 @@ __SPRITES_JS__
       for (i = 0; i < wakes.length; i++) { var wk = wakes[i], a = wk.life / wk.max; c.strokeStyle = 'rgba(235,252,255,' + (0.5 * a * Math.min(1, spec.wake)).toFixed(3) + ')'; c.lineWidth = 1.2 + spec.wake; c.beginPath(); c.ellipse(wk.x, wk.y * K, wk.r, wk.r * K, 0, 0, 7); c.stroke(); }
     },
     items: function (items) {
-      if (inYard) return;
       var z = cam.z, hw = 200 / z, hh = 125 / z;
       if (seaEnv) Sea.lifeItems(sea, seaEnv, SEA_IMG).forEach(function (li) { items.push({ y: li.y, f: function () { li.f(ctx); } }); });
-      items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { if (built) { var vn = vesselNow(); Yard.drawVessel(ctx, vn, clock); var mh = Yard.masthead(vn, clock); if (mh) { ctx.__t = clock * 9; Sea.pennant(ctx, mh[0], mh[1], spec.windA, spec.windS); } if (Math.hypot(vn.vx || 0, vn.vy || 0) > 40 && spec.windS > 0.25) { var sp = Yard.stemPoint(vn); Sea.bowSpray(ctx, sp[0], sp[1] * K, vn.h, spec.windS, clock); } } else drawBoat(ctx); } });
+      items.push({ y: aboard ? Math.min(boat.y, hero.y) - 1 : boat.y, f: function () { { var vn = vesselNow(); Yard.drawVessel(ctx, vn, clock); var mh = Yard.masthead(vn, clock); if (mh) { ctx.__t = clock * 9; Sea.pennant(ctx, mh[0], mh[1], spec.windA, spec.windS); } if (Math.hypot(vn.vx || 0, vn.vy || 0) > 40 && spec.windS > 0.25) { var sp = Yard.stemPoint(vn); Sea.bowSpray(ctx, sp[0], sp[1] * K, vn.h, spec.windS, clock); } } } });
       if (Math.abs(npc.x - cam.x) < hw + 30 && Math.abs(npc.y * K - cam.y) < hh + 50) items.push({ y: npc.y, f: function () { drawNpc(ctx); } });
-      if (aboard) items.push({ y: hero.y + 0.5, f: function () { if (built) Yard.drawVesselFront(ctx, vesselNow(), clock, hero.y); else drawBoatFront(ctx); } });
+      if (aboard) items.push({ y: hero.y + 0.5, f: function () { Yard.drawVesselFront(ctx, vesselNow(), clock, hero.y); } });
       // only the objects in the pieces of map near the view (trees are tall, so look a little further down)
       var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1);
       var by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT)), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1);
@@ -631,8 +497,7 @@ __SPRITES_JS__
       }
     },
     end: function (c, P) {
-      if (seaEnv && !inYard) Sea.drawGulls(c, sea, seaEnv, SEA_IMG);   /* the gulls in the air */
-      if (inYard) { var PSN0 = Combat.api.pixelScale || 2; c.save(); c.setTransform(PSN0, 0, 0, PSN0, 0, 0); YSCENE.hud(c, mouseS, false); c.restore(); return; }
+      if (seaEnv) Sea.drawGulls(c, sea, seaEnv, SEA_IMG);   /* the gulls in the air */
       for (var i = 0; i < smoke.length; i++) { var q = smoke[i], a = q.life / q.max; c.fillStyle = 'rgba(225,225,235,' + (0.5 * a).toFixed(3) + ')'; c.beginPath(); c.arc(q.x, q.y * K - q.z, q.r, 0, 7); c.fill(); }
       // chart
       var mw = GW >= GH ? 96 : 96 * GW / GH, mh = mw * GH / GW, mx = 400 - mw - 6, my = 6;
@@ -669,7 +534,7 @@ __SPRITES_JS__
     json.blur(); spec = o; apply(); jsonmsg.textContent = 'Applied.'; e.currentTarget.blur();
   });
 
-  try { var saved = JSON.parse(localStorage.getItem('seaeditor4')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}
+  try { var saved = JSON.parse(localStorage.getItem('seaeditor5')); if (saved && typeof saved === 'object') spec = saved; } catch (e) {}   /* (5: the game's ships, 2026-10-22; 4 held the editor's own) */
   apply();
 
   var last = performance.now();
@@ -682,20 +547,18 @@ __SPRITES_JS__
     var want = Math.hypot(P.x - npc.x, P.y - npc.y) < 110 ? Math.atan2(P.y - npc.y, P.x - npc.x) : Math.PI / 2, dn = Math.atan2(Math.sin(want - npc.face), Math.cos(want - npc.face));
     npc.face += Math.max(-4 * dt, Math.min(4 * dt, dn)); if (npc.sayT > 0) npc.sayT -= dt;
     if (!P.dead) P.hp = P.maxHp;
-    sail(dt); if (!inYard) seaTick(dt); else seaEnv = null;
+    sail(dt); seaTick(dt);
     if (aboard) {
       var d = dims(); P.x = boat.x - Math.cos(boat.h) * d.L * 0.25; P.y = boat.y - Math.sin(boat.h) * d.L * 0.25; P.vx = P.vy = 0;
       if (Math.hypot(boat.vx, boat.vy) > 8 || keys.KeyW || keys.KeyA || keys.KeyS || keys.KeyD) { P.face = boat.h; }
       prompt = landing() ? 'Step ashore' : '';
     } else prompt = nearNpc(P) ? (npc.sayT > 0 ? '' : 'Talk') : (canBoard(P) ? 'Board' : '');
-    if (inYard) YSCENE.tick(dt);
     Combat.update(dt);
-    if (aboard) { var d2 = dims(), st = built ? (built.seat || 0) : -d2.L * 0.25; P.x = boat.x + Math.cos(boat.h) * st; P.y = boat.y + Math.sin(boat.h) * st; }
+    if (aboard) { var d2 = dims(), st = boat.seat || 0; P.x = boat.x + Math.cos(boat.h) * st; P.y = boat.y + Math.sin(boat.h) * st; }
     Combat.render(ctx);
     requestAnimationFrame(frame);
   }
-  window.seaDbg = { yardEnter: yardEnter, yardLeave: yardLeave, scene: YSCENE, inYard: function () { return inYard; }, boat: boat, toDock: toDock, built: function () { return built; }, yard: function () { return yardS; }, useBoat: useBoat, aboard: function () { return aboard; }, dims: dims };   // for scripted checks
-  yui();
+  window.seaDbg = { boat: boat, toDock: toDock, built: function () { return built; }, useBoat: useBoat, aboard: function () { return aboard; }, dims: dims, crossT: crossT, spec: function () { return spec; } };   // for scripted checks
   requestAnimationFrame(frame);
 })();
 </script>
