@@ -1,5 +1,7 @@
 # Ships: how they should work (2026-10-21)
 
+**Replaced where they differ by `docs/ships-rework.md` (Robin's decisions of 2026-10-22):** three ships (the rowboat, the karve and the longship, each in sizes) as Colin, AD's models rendered at many headings, customised and summoned at shipyards on any shore, several ships kept, never lost; the raft, the faering, the boat and the yard scene go. What this plan built for the crew, the hero's place, the gangway and the camera stays; its fighting stages stand.
+
 **A proposal waiting for Robin.** Robin asked (2026-10-21): "Figure out how the ships should work", with six thoughts: he still
 likes building or customising his own ship (or, if that is too hard, good-looking premade ships with some parts to customise);
 the rowers must face the right way; the hirdmen must sit so it looks good; they must get on and off without getting stuck;
