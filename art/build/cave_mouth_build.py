@@ -60,6 +60,8 @@ def decimate(o, ratio):
 W, TOP, DEEP = 4.3, 4.75, 7.0                                           # TOP: the game's wall, one level (HF = 84 units on screen) seen at 35 degrees
 MH, MW = 3.6, 4.3                                                        # the opening at the face: the troll's door (Trollmor is 2.7 m), as the painted one was (4.1 by 3.6)
 def smooth01(a, b, x): t = min(1.0, max(0.0, (x - a) / (b - a))); return t * t * (3 - 2 * t)
+def brow(z, e=0.0):                                                      # how far the brow stands out at height z: a rounded brow whose top meets the game's rim (2026-10-22, the developer: the turf run out over a lip read as a lighter strip)
+    return smooth01(MH - 0.5 + e, MH + 0.35 + e, z) - 0.88 * smooth01(MH + 0.4, TOP, z)
 bm = bmesh.new(); bmesh.ops.create_cube(bm, size=1.0)
 bmesh.ops.transform(bm, matrix=Matrix.Translation((0, DEEP / 2 - 0.2, TOP / 2)) @ Matrix.Diagonal((W * 2, DEEP, TOP, 1.0)), verts=bm.verts)
 bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=26, use_grid_fill=True)
@@ -70,7 +72,7 @@ for v in bm.verts:
         rb = abs(((xb / 1.9) % 1.0) - 0.5) * 2                                                   # 0 on a buttress's crest, 1 in the gully between two
         d = 0.1 * (rb ** 1.6) * (1 - 0.9 * math.exp(-(p.x / 2.8) ** 2))     # (no small lumps: they made dark specks)
         e = 0.2 * noise.noise(Vector((p.x * 0.6, 20.0, 1.0)))
-        d -= (0.65 + 0.25 * e) * math.exp(-(p.x / 2.9) ** 2) * smooth01(MH - 0.5 + e, MH + 0.55 + e, p.z)          # the lip over the opening, standing out, ragged
+        d -= (0.65 + 0.25 * e) * math.exp(-(p.x / 2.9) ** 2) * brow(p.z, e)          # the brow over the opening, standing out, ragged, and back to the wall's line at the top
         d -= 0.15 * math.exp(-((abs(p.x) - 2.9) / 0.9) ** 2) * (1 - smooth01(2.6, 3.6, p.z))     # the jambs standing out a little at either side
         p.y = p.y + d
     if p.z > TOP - 0.1:                                                  # the top: ragged, lower toward the sides
@@ -111,8 +113,8 @@ FMARK = face.data.attributes.new('freestyle_face', 'BOOLEAN', 'FACE')   # the fa
 FRONT_Y = 0.25                                                           # the face's own surface (drawn over a man who walks in); behind it the inside
 for pl in face.data.polygons:
     c, nn = pl.center, pl.normal
-    if (nn.z > 0.6 and c.y > 1.1) or (abs(nn.x) > 0.8 and abs(c.x) > W - 1.2 and c.y > 0.3) or c.y > DEEP - 0.6: pl.material_index = 2   # the slab's top, sides and back: the game's own plateau and cliff are there
-    elif nn.z > 0.55 and c.z > TOP - 0.7: pl.material_index = 3         # the lip's top: the turf of the plateau, run out over the edge
+    if (nn.z > 0.6 and c.y > 0.25) or (abs(nn.x) > 0.8 and abs(c.x) > W - 1.2 and c.y > 0.3) or c.y > DEEP - 0.6: pl.material_index = 2   # the slab's top, sides and back: the game's own plateau and cliff are there
+    elif nn.z > 0.55 and c.z > TOP - 0.2: pl.material_index = 2         # the top edge held out too: the game's own rim, its line, stones and grass, runs on over the piece (2026-10-22: a turf of our own read as a strip)
     pl.use_smooth = True
 for pl in face.data.polygons: FMARK.data[pl.index].value = pl.material_index == 2 or abs(pl.center.x) > 3.6
 # ---- the floor: earth running in from the threshold and a little down toward the back, tucked under the walls
@@ -154,7 +156,7 @@ def moss(name, pts, m, voxel=0.04, tufts=8):
     for (c, r, s) in allp: bmesh.ops.create_uvsphere(bm, u_segments=10, v_segments=7, radius=r, matrix=Matrix.Translation(Vector(c)) @ Matrix.Diagonal((s[0], s[1], s[2], 1.0)))
     o = obj(name, bm, C[m]); remesh(o, voxel, 1); return o
 def lip_y(x, z):                                                         # where the face's front stands at x, z (the lip included), for laying moss on it
-    return -0.2 - 0.65 * math.exp(-(x / 2.9) ** 2) * smooth01(MH - 0.5, MH + 0.55, z)
+    return -0.2 - 0.65 * math.exp(-(x / 2.9) ** 2) * brow(z)
 C['blade'] = toon.material('c_blade', '#608c3e', None, 'cel', lit='#6e9a46', shade='#4f7a36', t_dark=0.4, t_lit=1.0)
 bm = bmesh.new()
 for x in [-2.7 + 5.4 * k / 8 + U(-0.2, 0.2) for k in range(9)]:
@@ -165,7 +167,8 @@ for x in [-2.7 + 5.4 * k / 8 + U(-0.2, 0.2) for k in range(9)]:
 blades = obj('blades', bm, C['blade'], smooth=False); blades.visible_shadow = False
 _bm = blades.data.attributes.new('freestyle_face', 'BOOLEAN', 'FACE')
 for i in range(len(blades.data.polygons)): _bm.data[i].value = True
-TOPS = [blades]
+for o in (blades,): bpy.data.objects.remove(o)         # (the game's rim has its own blades)
+TOPS = []
 foot = moss('footgrass', [((x, U(-0.4, -0.25), 0.02), U(0.11, 0.16), (1.6, 0.9, 0.45)) for x in (-2.9, -2.35, 2.45, 3.0, 3.9)], 'grass', voxel=0.03, tufts=5)
 
 face.visible_shadow = False; foot.visible_shadow = False
@@ -190,7 +193,7 @@ def fade_sides(m, x0=3.0, x1=4.1):
     nt.links.new(mx.outputs[0], out.inputs['Surface'])
 foot_dark(C['rock'])
 for k in ('rock', 'turf', 'grass'): fade_sides(C[k])
-def fade_back(m, y0=0.2, y1=0.75):                                      # just past the game's own rim (the face's top at y -0.2), then gone
+def fade_back(m, y0=0.0, y1=0.3):                                       # just past the game's own rim (the face's top at y -0.2), then gone
     nt = m.node_tree; out = next(n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL'); link = out.inputs['Surface'].links[0]; src = link.from_socket; nt.links.remove(link)
     geo = nt.nodes.new('ShaderNodeNewGeometry'); sep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(geo.outputs['Position'], sep.inputs[0])
     mr = nt.nodes.new('ShaderNodeMapRange'); mr.interpolation_type = 'SMOOTHSTEP'; mr.inputs['From Min'].default_value = y0; mr.inputs['From Max'].default_value = y1; nt.links.new(sep.outputs['Y'], mr.inputs['Value'])
