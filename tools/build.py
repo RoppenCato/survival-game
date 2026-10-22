@@ -154,6 +154,33 @@ SRC['__TAG_SFX__'] = file_tag('assets', 'sfx', 'combat.js')
 SRC['__TAG_DAY__'] = file_tag('assets', 'music', 'meadow-day.js')
 SRC['__TAG_NIGHT__'] = file_tag('assets', 'music', 'meadow-night.js')
 
+def portraits():
+    """the talk window's and the Lore Book's pictures (Colin, AD's; docs/talk-and-lore-book.md): assets/portraits/<lore id>.png as
+    { lore id: its path with a tag of its bytes }, loaded by the page when first shown, as the sheets are"""
+    d = os.path.join(ROOT, 'assets', 'portraits'); out = {}
+    if os.path.isdir(d):
+        for fn in sorted(os.listdir(d)):
+            if fn.endswith('.png') and not fn.endswith('_thumb.png'):
+                out[fn[:-4]] = '../assets/portraits/' + fn + '?v=' + file_tag('assets', 'portraits', fn)
+    return json.dumps(out)
+SRC['__PORTRAITS__'] = portraits()
+
+def lore_book():
+    """the lore's people, beings, beasts, places and things (canon or in-game), for the talk window's name and the Lore Book:
+    kind, title, norse, byname, and the book's own fields once Robin has said yes to them (book, book_more, book_more_after,
+    book_facts; Alistair, LD's, 2026-10-22); never body"""
+    fp = os.path.join(ROOT, 'assets', 'lore', 'lore.json')
+    if not os.path.exists(fp): return '{}'
+    with open(fp, encoding='utf-8') as f: L = json.load(f)
+    out = {}
+    for e in L.get('entries', []):
+        if e.get('status') not in ('canon', 'in-game') or e.get('kind') not in ('person', 'being', 'beast', 'place', 'thing', 'family'): continue
+        o = out[e['id']] = { 'kind': e['kind'], 'title': e.get('title', '') }
+        for k in ('norse', 'byname', 'book', 'book_more', 'book_more_after', 'book_facts'):
+            if e.get(k): o[k] = e[k]
+    return json.dumps(out, ensure_ascii=False)
+SRC['__LOREBOOK__'] = lore_book()
+
 # page name in dist/  ->  template in templates/
 PAGES = [
     ('index', 'index'),
