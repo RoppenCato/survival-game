@@ -2271,7 +2271,7 @@ function drawHotbar(c) {
     c.font = 'bold 3.8px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText(String(i + 1), x + 1.3, y0 + 4.5);
   }
   c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36';
-  var pc = slots[P.piece], label = build ? (P.wreck ? 'WRECK  (F to build, B to leave)' : 'BUILD: ' + (pc ? pc.name + (pc.cost ? ' (' + pc.cost + ')' : '') : '') + '   (right click: pieces, F: wreck, B: leave)') : (paged ? '' : (gather ? 'GATHER  (Q to fight, B to build)' : 'FIGHT  (Q to gather, B to build)'));   /* (a page with its own bar has no Q: the mode follows the thing in hand, 2026-10-14; and no word over the bar but in build mode since 2026-10-22, Robin: "remove the FIGHT and GATHER text") */
+  var pc = slots[P.piece], label = build ? (P.wreck ? 'WRECK  (F to build, B to leave)' : 'BUILD: ' + (pc ? pc.name + (pc.cost ? ' (' + pc.cost + ')' : '') : '') + '   (right click: pieces, F: wreck, B: leave)') : '';   /* (no word over the bar but in build mode on any page since 2026-10-22, Robin: "remove the FIGHT and GATHER text"; the arena too) */
   var col = build ? (P.wreck ? '#e08a7a' : '#a9c8d8') : (gather ? '#a9cf8a' : '#e6c46a');
   if (label) { c.strokeStyle = '#231a16'; c.strokeText(label, SW / 2, y0 - 3); c.fillStyle = col; c.fillText(label, SW / 2, y0 - 3); }
   c.restore();

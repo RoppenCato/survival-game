@@ -4775,7 +4775,7 @@ function drawHotbar(c) {
     c.font = 'bold 3.8px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(255,255,255,0.65)'; c.fillText(String(i + 1), x + 1.3, y0 + 4.5);
   }
   c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 1.8; c.strokeStyle = '#3a2a36';
-  var pc = slots[P.piece], label = build ? (P.wreck ? 'WRECK  (F to build, B to leave)' : 'BUILD: ' + (pc ? pc.name + (pc.cost ? ' (' + pc.cost + ')' : '') : '') + '   (right click: pieces, F: wreck, B: leave)') : (paged ? '' : (gather ? 'GATHER  (Q to fight, B to build)' : 'FIGHT  (Q to gather, B to build)'));   /* (a page with its own bar has no Q: the mode follows the thing in hand, 2026-10-14; and no word over the bar but in build mode since 2026-10-22, Robin: "remove the FIGHT and GATHER text") */
+  var pc = slots[P.piece], label = build ? (P.wreck ? 'WRECK  (F to build, B to leave)' : 'BUILD: ' + (pc ? pc.name + (pc.cost ? ' (' + pc.cost + ')' : '') : '') + '   (right click: pieces, F: wreck, B: leave)') : '';   /* (no word over the bar but in build mode on any page since 2026-10-22, Robin: "remove the FIGHT and GATHER text"; the arena too) */
   var col = build ? (P.wreck ? '#e08a7a' : '#a9c8d8') : (gather ? '#a9cf8a' : '#e6c46a');
   if (label) { c.strokeStyle = '#231a16'; c.strokeText(label, SW / 2, y0 - 3); c.fillStyle = col; c.fillText(label, SW / 2, y0 - 3); }
   c.restore();
@@ -5551,7 +5551,22 @@ if (typeof module !== 'undefined') module.exports = Sfx;
     if (Combat.api.shield()) out = Sprites.shieldInto(out, M, face == null ? P.faceVis : face, gear.id === 'cloth' ? null : { face: YOURS, mark: Sprites.SHIELD_MARK });   /* (a wooden shield in cloth, a painted one with the leather or the mail) */
     return out;
   }
-  Sprites.attach(Combat, ARENA_HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var P = Combat.dbg().P, t = Combat.api.tools && Combat.api.tools[P.tool]; return t ? t.id : null; }, shadowHue: 222, layers: arenaLayers });
+  /* The hero dressed as the game dresses him (its heroLook, 2026-10-22: the arena drew the starter clothes whatever he wore): the
+     leather set is the coat over the tunic, leather trousers, boots and the wool cap with ear flaps; the mail is mail over it with the
+     conical iron helm; cloth is the starter clothes. The hair is the game's hero's; what is in the hand and the shield as before. */
+  var ARENA_HAIR = '#9a4b26';
+  function arenaLook(face) {
+    var M = ARENA_HERO && ARENA_HERO.meta; if (!M || !ARENA_HERO.kit) return null;
+    var has = function (l) { return M.layers.indexOf(l) >= 0; }, S = Sprites.KIT_START, lf = Items.MATS.leather.face, worn = gear.id !== 'cloth';
+    var L = [{ l: 'body' }, { l: 'legs', t: worn ? lf : S.legs }, { l: 'tunic', t: S.tunic }, { l: worn ? 'boots' : 'shoes' }, { l: 'belt' }];
+    if (gear.id === 'leather') L.push({ l: 'coat', t: lf }); else if (gear.id === 'mail') L.push({ l: 'mail', t: Items.MATS.iron.face });
+    L.push({ l: 'beardA', t: ARENA_HAIR }); L.push({ l: worn ? 'hairHatA' : 'hairA', t: ARENA_HAIR });
+    if (gear.id === 'leather') L.push({ l: 'capC', t: '#6e5a44' }); else if (gear.id === 'mail') L.push({ l: 'helmB' });
+    arenaLayers(face).forEach(function (q) { var n = typeof q === 'string' ? q : q && q.layer; if (!n || n === 'body' || !has(n)) return;
+      if (n === 'shieldFace') L.push({ l: n, t: !q.tint || q.tint === Sprites.SHIELD_WOOD ? S.shield : q.tint }); else if (n === 'shieldMark') L.push({ l: n, t: q.tint || Sprites.SHIELD_MARK }); else if (n === 'shieldRim') L.push({ l: n }); else if (/Metal$/.test(n)) L.push({ l: n, t: (q && q.tint) || '#c4cbd4', metal: 1, hand: 1 }); else L.push({ l: n, hand: 1 }); });
+    return Sprites.lookId({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
+  }
+  Sprites.attach(Combat, ARENA_HERO, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var P = Combat.dbg().P, t = Combat.api.tools && Combat.api.tools[P.tool]; return t ? t.id : null; }, shadowHue: 222, layers: arenaLayers, look: arenaLook });
   (function () { var IC = {"axe": {"metal": "../assets/sprites/items/axe_metal.png?v=76bc4e6f", "wood": "../assets/sprites/items/axe_wood.png?v=9dafd670"}, "bow": {"wood": "../assets/sprites/items/bow_wood.png?v=e6fb28bd"}, "club": {"wood": "../assets/sprites/items/club_wood.png?v=0ee2cefc"}, "greataxe": {"metal": "../assets/sprites/items/greataxe_metal.png?v=68c951d0", "wood": "../assets/sprites/items/greataxe_wood.png?v=b33ea587"}, "knife": {"metal": "../assets/sprites/items/knife_metal.png?v=77d0c904", "wood": "../assets/sprites/items/knife_wood.png?v=75cd6770"}, "pick": {"metal": "../assets/sprites/items/pick_metal.png?v=70beb929", "wood": "../assets/sprites/items/pick_wood.png?v=ef5b433c"}, "rod": {"wood": "../assets/sprites/items/rod_wood.png?v=a873975f"}, "seax": {"metal": "../assets/sprites/items/seax_metal.png?v=608bda39", "wood": "../assets/sprites/items/seax_wood.png?v=b67263d1"}, "spear": {"metal": "../assets/sprites/items/spear_metal.png?v=fe55f738", "wood": "../assets/sprites/items/spear_wood.png?v=c1b9cd0a"}, "sword": {"metal": "../assets/sprites/items/sword_metal.png?v=a8399a42", "wood": "../assets/sprites/items/sword_wood.png?v=45ede8da"}}; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the Blender icons for the hotbar
   function btnRow(hostId, list, isOn, onPick) {
     var host = document.getElementById(hostId); host.innerHTML = '';
@@ -5631,7 +5646,7 @@ if (typeof module !== 'undefined') module.exports = Sfx;
   /* recorded sounds (2026-10-15, Robin: the attack sounds from the Sound director): src/sfx.js plays the studio's WAVs, bundled into
      assets/sfx/combat.js by tools/sfxjs.js; a sound with no recording plays the synthesized one above. The chain's x2 to x4 are
      chain_2 to chain_4; a hit of a chain's later blows is a shade higher, as the synthesized one is */
-  var SFX_SET = '../assets/sfx/combat.js?v=0a69a9ea';   /* (the tag is a hash of the bundle: a browser kept the old one, 2026-10-16) */
+  var SFX_SET = '../assets/sfx/combat.js?v=7049ef84';   /* (the tag is a hash of the bundle: a browser kept the old one, 2026-10-16) */
   /* the hero's swing starts in his windup so its loudest moment comes as the blow lands (x.lead, 2026-10-15) and is cut when it
      lands; SFX_PICK (game.sfxpick, set in the Combat Arena's The sounds panel) chooses among the studio's candidates, <name>_a to _e */
   var swingH = null, SFX_PICK = {};
