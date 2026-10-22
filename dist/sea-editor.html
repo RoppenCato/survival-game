@@ -7226,7 +7226,7 @@ function draw(c, V, env, clock) {
   // name_1..name_N for a piece with variants, as World.setImages takes them; the editor since 2026-10-22), else as the kit's drawn prop
   var IM = env.images || null;
   function imageOf(name, v) { if (!IM) return null; var nv = 0; while (IM[name + '_' + (nv + 1)]) nv++; var im = nv ? IM[name + '_' + (((v | 0) % nv) + 1)] : IM[name]; return im && im.img && (im.img.complete === undefined ? im.img.width > 0 : (im.img.complete && im.img.naturalWidth > 0)) ? im : null; }
-  function pieceName(it) { return it.name === 'stake' && it.cut ? 'stake_stump' : it.name === 'stake' && it.mended ? 'stake_new' : it.name; }
+  function pieceName(it) { return it.name === 'stake' && it.cut ? 'stake_stump' : it.name === 'stake' && it.mended ? 'stake_new' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : it.name; }   /* (the trapdoor by its state, as the game draws it) */
   V.items.concat(V.props).forEach(function (it) {
     if (!inView(it.x, it.y, 160)) return; var nm = pieceName(it), im = imageOf(nm, it.v || Math.floor(Math.abs(it.x * 7 + it.y * 13)) % 97);
     if (im) items.push({ y: it.y - (it.under ? 2 : 0), f: function () { c.drawImage(im.img, it.x - im.ax * im.upp, it.y * K - im.ay * im.upp, im.w * im.upp, im.h * im.upp); } });
