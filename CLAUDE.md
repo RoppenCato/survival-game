@@ -299,6 +299,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   seconds. Sheets load lazily: let real time pass before judging people on screen. Results too big for the tool land in a
   file: decode them from there.
 - **Never read the canvas back** (`getImageData`) in the game's loop: Chrome drops the canvas to software drawing for good.
+- **Never fill with a pattern made from a picture** (`createPattern` of an image or bitmap) on the game's canvas: each such fill makes the browser finish everything drawn so far on the spot (measured 2026-10-22: about 6 ms a fill, 30 to 45 for a frame's first board; Robin's frames fell to 25 a second with the bag open beside the workbench). Make the pattern from a canvas copy of the picture (`hpat`); a canvas's pattern costs nothing. The frame log times the boards apart (`boards`) and writes the script heap and the decoded sheets each second (`perfMem`).
 - Rooms and their solids are rebuilt when a frame is drawn (`if (bDirty) rebuildRooms()`) and in `ruinTick`.
 - **`Combat.api.debug()`** in the game is the console's way in (`eWhat()`, `errlog()`, `perflog()`, `world()`, `villages()`,
   `sceneRows()`, `act(id)`, `tick(dt)`, `place(...)`, `raid()`, `arms()`, `shield()`, `cave()`, and many more); `Combat.dbg()`
