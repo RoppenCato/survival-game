@@ -85,12 +85,12 @@ def sea_art():
     return json.dumps(out)
 SRC['__SEA__'] = sea_art()
 def item_icons():
-    """the things in the hand as icons (art/build/items_icons.py), assets/sprites/items/<kind>_wood.png and _metal.png"""
+    """the things in the hand as icons (art/build/weapon_icons.py through tools/icons.js since 2026-10-22), assets/sprites/items/<kind>_wood.png and _metal.png, each with a tag from its bytes (2026-10-22: the icons were remade, and a browser keeps a picture it has)"""
     d = os.path.join(ROOT, 'assets', 'sprites', 'items'); out = {}
     if not os.path.isdir(d): return 'null'
     for fn in sorted(os.listdir(d)):
         m = re.match(r'^(\w+?)_(wood|metal)\.png$', fn)
-        if m: out.setdefault(m.group(1), {})[m.group(2)] = '../assets/sprites/items/' + fn
+        if m: out.setdefault(m.group(1), {})[m.group(2)] = '../assets/sprites/items/' + fn + '?v=' + sheet_tag(os.path.join(d, fn))
     return json.dumps(out)
 SRC['__ICONS__'] = item_icons()
 def worn_icons():

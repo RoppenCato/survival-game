@@ -847,7 +847,7 @@ fence or palisade shows soot, and no grass grows in the ash of a burnt room (`w.
   `troll_build.py` the trolls and the four väsen; `people_build.py` the people; `caves_build.py` the cave mouths and the rock shelter in the kraken's style (the studio's, 2026-10-21; the peaks only when named, they are painted with the ground), rendered to `art/render/caves` and packed by `tools/props.js` (`art:caves`; it was `rocks_build.py` until the studio's rocks took that name on 2026-10-20); the studio's set-piece builders `trees_build.py`, `plants_build.py`, `rocks_build.py` and the rest, packed in the studio);
   `art/build/toon.py` is the shared cel look (its sun is 3.0, so everything rendered now has a lit side; bright base colours
   want taking down about 15%); `art/build/render.py` renders every clip, direction and layer; `tools/sprites.js` and
-  `tools/people.js` pack the sheets. `npm run art:mixamo`, `art:items`, `art:shield`, `art:icons`, `art:people`,
+  `tools/people.js` pack the sheets. `npm run art:mixamo`, `art:items`, `art:shield`, `art:icons` (`tools/icons.js`, 2026-10-22: the weapon and tool icons rendered by `art/build/weapon_icons.py` from the hero kit's own weapons, halved into `assets/sprites/items`; it takes the kit's .blend, which is the studio's; the icons carry a tag from their bytes), `art:people`,
   `art:beasts` (and `art:boar` to `art:snake`), `art:trolls`, `art:vasen`, `art:caves`, `art:hero:death`; the ships' clips
   (`row`, `helm`) are `art/build/rowing_build.py` on `people.blend` and `hero_kit.blend` (in `art:people`; the kit's `row`
   is packed as a clip with its own frame: `node tools/kitpack.js art/render/hero_kit assets/sprites/hero-kit hero-kit --own`
