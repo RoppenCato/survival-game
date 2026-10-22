@@ -30,6 +30,16 @@ seeds.slice(0, 6).forEach(seed => {
   const coffins = c.finds.filter(f => f.coffin).length, chests = c.finds.filter(f => f.prop === 'chest').length;
   console.log((ok ? '   ' : '!! ') + (rank === 2 ? 'cathedral ' : 'town crypt ') + String(seed).padEnd(5) + ' loops round ' + (sides ? 'yes' : 'NO') + ', alcoves ' + c.alcoves.map(p => (open(p) ? 'o' : 'X') + (closed(p) ? '!' : '')).join('') + ', vault ' + (open(c.vault) ? 'yes' : 'NO') + (closed(c.vault) ? ' (NOT SHUT)' : '') + ', ways out ' + c.exits.map(e => e.id + (open(e) && closed(e) ? '' : ' NO')).join(' ') + '; ' + c.gates.length + ' gate' + (c.gates.length > 1 ? 's' : '') + ' (' + c.gates.map(g => Math.round(g.w)).join(', ') + ' wide), ' + c.niches.length + ' niches, ' + coffins + ' coffins (' + c.finds.filter(f => f.ring).length + ' with a ring), ' + chests + ' hidden chest' + (chests > 1 ? 's' : '') + ', ' + c.ores.length + ' stones of the falls');
 }));
+// The cellars (Colin, AD's, 2026-10-22): under a village's hatch, the stair down to the stores room (a second room in a big house) and,
+// in an old place, the old tunnel to a ladder up or the crack in the floor; the chest of the stores and every way out walkable from the stair
+[[false, false], [false, true], [true, false], [true, true]].forEach(([old, big]) => seeds.slice(0, 6).forEach(seed => {
+  const c = Cave.make(seed, { kind: 'cellar', old, big, x: 5000, y: 400 }), W = c.GW * 4, H = c.GH * 4, cx = p => Math.floor((p.x - c.ox) / 8), cy = p => Math.floor((p.y - c.oy) / 8), seen = new Uint8Array(W * H), q = [[cx(c.entrance), cy(c.entrance)]];
+  seen[q[0][1] * W + q[0][0]] = 1;
+  while (q.length) { const [i, j] = q.pop(); for (const [a2, b2] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + a2, y = j + b2; if (x < 0 || y < 0 || x >= W || y >= H || seen[y * W + x] || !Cave.floor(c, c.ox + (x + .5) * 8, c.oy + (y + .5) * 8)) continue; seen[y * W + x] = 1; q.push([x, y]); } }
+  const at = p => !!seen[cy(p) * W + cx(p)], chest = c.finds.filter(f => f.id === 'store')[0], ok = chest && at({ x: chest.x, y: chest.y + 14 }) && c.rooms.every(at) && c.exits.every(at) && c.rooms.length === (big ? 2 : 1);
+  if (!ok) faults++;
+  console.log((ok ? '   ' : '!! ') + 'cellar ' + String(seed).padEnd(5) + (old ? 'old ' : 'new ') + (big ? 'big   ' : 'small ') + 'rooms ' + c.rooms.length + ', the chest of the stores ' + (chest && at({ x: chest.x, y: chest.y + 14 }) ? 'yes' : 'NO') + ', ' + (c.exits.length ? 'the old tunnel ' + (c.exits.every(at) ? 'yes' : 'NO') : c.deeps ? 'the crack' : 'no way out but the stair') + '; ' + c.dress.length + ' things, ' + c.candles.length + ' candles');
+}));
 seeds.forEach(seed => {
   const cave = Cave.make(seed, { x: 5000, y: 400 }), W = cave.GW * 4, H = cave.GH * 4, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - cave.ox) / 8), cy = p => Math.floor((p.y - cave.oy) / 8), q = [[cx(cave.entrance), cy(cave.entrance)]];
   seen[q[0][1] * W + q[0][0]] = 1; let cells = 0;

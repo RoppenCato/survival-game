@@ -302,7 +302,7 @@ function makeCellar(seed, o) {
     box(tx0, (ty0 + ty1) / 2, 0.7, (ty0 - ty1) / 2 + 0.4); box((tx0 + tx1) / 2, ty1, Math.abs(tx1 - tx0) / 2 + 0.4, 0.7); box(tx1, ty1 - 0.8, 1.2, 1.1);
     tunnel = { x: tx1, y: ty1 - 1.2 }; path.push([tx0, ty0], [tx0, ty1], [tx1, ty1]);
   } else if (old) {                                                                                      // the crack: where the floor gave way
-    crack = { x: far.x + jit(0.8), y: far.y + 0.5, hw: Math.min(1.8, far.rx - 1.4), hh: 0.42 }; pits.push(crack);
+    crack = { x: far.x + sg * Math.max(0, far.rx - 1.8), y: far.y + 0.3, hw: Math.min(1.2, far.rx * 0.28), hh: 0.42 }; pits.push(crack);   /* (at the far end of the far room: in the middle of a one-room cellar it lay between the stair and the stores' chest, 2026-10-22) */
   }
   var cave = base(seed, o, { kind: 'cellar', shapes: shapes, pits: pits, rough: 0.32, TX: TX, tunW: 1.0, path: path, trail: false, flip: flip, salt: 90, tintF: [1.08, 0.96, 0.84], tintW: [1.0, 0.93, 0.86] });
   var ox = cave.ox, oy = cave.oy; function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
