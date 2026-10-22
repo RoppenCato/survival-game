@@ -4,8 +4,11 @@
 //   2. load tools/visual/drive.js, then document.open(); document.write(await (await fetch(location.href)).text()); document.close();
 //   3. load this file, then call the steps in order, ONE A CALL (the browser tool cuts a script off after about half a minute, and
 //      a script cut off in mid-frame leaves the game's loop dead: reload the page and go on from its save):
-//        ST.land()  ST.tools()  ST.wood()  ST.stoneAndFiber()  ST.arms()  ST.boar()  ST.deer()  ST.home()  ST.brokk()
-//        ST.bench()  ST.raft()  ST.cross()  ST.night();  and since 2026-10-14 ST.berries() (after tools) and ST.cook() (after home)
+//        ST.land()  ST.tools()  ST.wood()  ST.stoneAndFiber()  ST.arms()  ST.boar()  ST.deer()  ST.arnor()  ST.home()
+//        ST.arnor()  ST.bench()  ST.raft()  ST.cross()  ST.night();  ST.berries() (after tools) and ST.cook() (after home)
+//    A fresh start first asks the hero's name: type a letter or two and Enter with key events that carry .key (H2.keyev sends
+//    only .code). Brought up to date 2026-10-22 after a run (the wreck's planks, E for berries and grass, the knife not on the
+//    starter island, Arnor, a campfire outdoors, the raft rowed on W and steered with A and D).
 // Each returns a line or two to read. What is walked and waited is ticked without a picture (fast); what falls or dies is
 // drawn (a felled tree only becomes a trunk in a drawn frame). The script walks by the keys and swings by the keys; where it
 // jumps the hero to a place (ST.brokk, ST.bench) or adds to the bag (ST.raft), the line says so.
@@ -26,7 +29,8 @@ window.ST = (function () {
       key('KeyD', ax > 3); key('KeyA', ax < -3); key('KeyS', ay > 3); key('KeyW', ay < -3); fast(1); }
     clear(); return f;
   }
-  function pick(radius) { var n = 0, g = 0; for (;;) { var p = P(), ds = D().drops.filter(function (q) { return Math.hypot(q.x - p.x, q.y - p.y) < radius; }).sort(function (a, b) { return Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y); }); if (!ds.length || g++ > 50) break; var b4 = D().drops.length; walkTo(ds[0].x, ds[0].y, 8, 900); fast(20); if (D().drops.length < b4) n++; else if (g > 25) break; } return n; }
+  function pick(radius) { var n = 0, g = 0; draw(60); for (;;) { var p = P(), ds = D().drops.filter(function (q) { return Math.hypot(q.x - p.x, q.y - p.y) < radius; }).sort(function (a, b) { return Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y); }); if (!ds.length || g++ > 50) break; var b4 = D().drops.length; walkTo(ds[0].x, ds[0].y, 8, 900); fast(20); if (D().drops.length < b4) n++; else if (g > 25) break; } return n; }
+  function pry() { var wk = nearest(function (o) { return o.name === 'wreckedBoat'; }), n = 0, i; if (!wk) return 0; walkTo(wk.x - 20, wk.y + 30, 10, 2000); for (i = 0; i < 6; i++) { var w = D().eDo(); if (!w || !w.act || !/plank/i.test(w.say)) break; w.act(); n++; fast(20); } return n; }   /* E at the wreck: a plank a press, four in all (12 wood) */
   function nearest(test) { var b = null, bd = 1e9, p = P(); D().world().eachProp(function (o) { if (!test(o) || o.dying != null) return; var d = Math.hypot(o.x - p.x, o.y - p.y); if (d < bd) { bd = d; b = o; } }); return b; }
   function mode(m) { /* (one bar since 2026-10-14: the mode follows the thing in hand; nothing to press) */ }
   function takeKind(kind) { var sl = D().slots, i; for (i = 0; i < 6; i++) if (sl[i] && sl[i].kind === 'item' && sl[i].item.kind === kind) { take(i + 1); return true; } return false; }   // the bar slot that holds a kind of thing
@@ -35,8 +39,8 @@ window.ST = (function () {
   function trunks() { var t = D().trunks; return typeof t === 'function' ? t() : t; }
   function beasts(kind) { var G = Combat.dbg(), p = P(); return ((G.W && G.W.enemies) || []).filter(function (e) { return !e.dead && e.kind === kind; }).sort(function (a, b) { return Math.hypot(a.x - p.x, a.y - p.y) - Math.hypot(b.x - p.x, b.y - p.y); }); }
 
-  ST.land = function () { draw(30); var k = {}; D().drops.forEach(function (q) { k[q.kind] = (k[q.kind] || 0) + 1; }); var f0 = ST.frames; pick(420); return 'woke at ' + Math.round(P().x) + ',' + Math.round(P().y) + '; lying about: ' + JSON.stringify(k) + '; picked up in ' + Math.round((ST.frames - f0) / 60) + ' s: ' + JSON.stringify(inv()); };
-  ST.tools = function () { ['flintAxe', 'flintPick', 'flintKnife'].forEach(make); mode('gather'); return 'the first tools: ' + D().slots.filter(Boolean).filter(function (s) { return s.kind === 'item'; }).map(function (s) { return s.item.mat + ' ' + s.item.kind; }).join(', ') + '; left ' + JSON.stringify(inv()) + '; ' + clock(); };
+  ST.land = function () { draw(30); var pried = pry(); var k = {}; D().drops.forEach(function (q) { k[q.kind] = (k[q.kind] || 0) + 1; }); var f0 = ST.frames; pick(420); return 'pried ' + pried + ' planks from the wreck; ' + 'woke at ' + Math.round(P().x) + ',' + Math.round(P().y) + '; lying about: ' + JSON.stringify(k) + '; picked up in ' + Math.round((ST.frames - f0) / 60) + ' s: ' + JSON.stringify(inv()); };
+  ST.tools = function () { ['flintAxe', 'flintPick'].forEach(make); mode('gather'); return 'the first tools: ' + D().slots.filter(Boolean).filter(function (s) { return s.kind === 'item'; }).map(function (s) { return s.item.mat + ' ' + s.item.kind; }).join(', ') + '; left ' + JSON.stringify(inv()) + '; ' + clock(); };
   ST.wood = function () {                                 // a tree from one side, then its trunk; then one the woodcutter's way (the back cut)
     mode('gather'); var out = [];
     [false, true].forEach(function (smart) {
@@ -48,15 +52,15 @@ window.ST = (function () {
     });
     return out.join('\n') + '\n' + JSON.stringify(inv()) + '; ' + clock();
   };
-  ST.stoneAndFiber = function () { mode('gather'); var i0 = inv(), f0 = ST.frames, a = work(nearest(function (o) { return o.kind === 'stone'; }), 2, -20); pick(120); var b = 0, i; for (i = 0; i < 5; i++) { b += work(nearest(function (o) { return o.kind === 'bush'; }), 3, -16); pick(120); } var i1 = inv(); return 'a rock mined in ' + (a / 60).toFixed(1) + ' s: ' + ((i1.stone || 0) - (i0.stone || 0)) + ' stone; five bushes cut: ' + ((i1.fiber || 0) - (i0.fiber || 0)) + ' fiber, ' + ((i1.berries || 0) - (i0.berries || 0)) + ' berries; all in ' + Math.round((ST.frames - f0) / 60) + ' s; ' + JSON.stringify(i1) + '; ' + clock(); };
+  ST.stoneAndFiber = function () { mode('gather'); var i0 = inv(), f0 = ST.frames, a = work(nearest(function (o) { return o.kind === 'stone'; }), 2, -20); pick(120); var b = 0, i; for (i = 0; i < 5; i++) { var g = nearest(function (o) { return /tallGrass/.test(o.name); }); if (!g) break; walkTo(g.x - 18, g.y + 4, 8, 2400); key('KeyD', true); fast(4); key('KeyD', false); var w = D().eDo(); if (w && w.act && /grass/i.test(w.say)) { w.act(); b++; } fast(10); pick(120); } var i1 = inv(); return 'a rock mined in ' + (a / 60).toFixed(1) + ' s: ' + ((i1.stone || 0) - (i0.stone || 0)) + ' stone; ' + b + ' tufts of tall grass pulled by hand: ' + ((i1.fiber || 0) - (i0.fiber || 0)) + ' fiber, ' + ((i1.berries || 0) - (i0.berries || 0)) + ' berries; all in ' + Math.round((ST.frames - f0) / 60) + ' s; ' + JSON.stringify(i1) + '; ' + clock(); };
   ST.arms = function () { ['woodClub', 'woodBow'].forEach(make); draw(3); return 'a club and a bow made (the bow shoots without arrows since 2026-10-13); ' + JSON.stringify(inv()); };
   ST.berries = function () {                              // E at a berry bush: the berries drop and are picked up (2026-10-14)
     var b = nearest(function (o) { return o.kind === 'bush' && /berr/i.test(o.name); }); if (!b) return 'no berry bush near'; walkTo(b.x - 20, b.y + 4, 8, 2400); key('KeyD', true); fast(4); key('KeyD', false); var i0 = inv().berries || 0, d0 = D().drops.length;
     var w = D().eDo(); if (!w || !w.act) return 'E offers nothing at the bush (' + (w ? w.say : '') + ')'; w.act(); fast(5); var dropped = D().drops.length - d0; pick(120); return 'E said "' + w.say + '"; berries dropped: ' + dropped + '; in the bag after picking up: ' + ((inv().berries || 0) - i0) + ' more; ' + JSON.stringify(inv());
   };
   ST.cook = function () {                                 // at the hut's fire: a dish queued, cooked and waiting at the station (2026-10-14)
-    var s = ST.site; if (!s) return 'no hut (ST.home first)'; var q = P(); q.x = (s.tx + 0.6) * 32 + 2; q.y = (s.ty + 0.6) * 32 + 26; q.face = -Math.PI / 2; fast(5); if (!(inv().meat > 0)) { D().addItem('meat', 1); } if (!(inv().berries >= 3)) D().addItem('berries', 3);
-    var ok1 = D().cook('cookedMeat'), ok2 = D().cook('roastBerries'); fast(60 * 12); draw(2); var fires = D().cookFires ? D().cookFires() : null; var f = fires && fires[0];
+    var s = ST.site; if (!s) return 'no hut (ST.home first)'; var q = P(), fx = (s.tx + 1.5) * 32, fy = (s.ty + 4.4) * 32, fire = D().B.items.filter(function (it) { return /campfire|hearth|firePit/i.test(it.name) && !it.cold; }).sort(function (a, b) { return Math.hypot(a.x - fx, a.y - fy) - Math.hypot(b.x - fx, b.y - fy); })[0]; if (!fire) return 'no fire by the hut'; q.x = fire.x; q.y = fire.y + 26; q.face = -Math.PI / 2; fast(5);   /* (the hut's own fire, outdoors before its door since 2026-10-22) */ if (!(inv().meat > 0)) { D().addItem('meat', 1); } if (!(inv().berries >= 3)) D().addItem('berries', 3);
+    var ok1 = D().cook('cookedMeat'), ok2 = D().cook('roastBerries'); fast(60 * 12); draw(2); var f = fire;
     return 'queued: meat ' + ok1 + ', roast berries ' + ok2 + '; after 12 s the fire holds ' + (f ? JSON.stringify({ cooking: (f.cooking || []).length, ready: (f.out || []).map(function (o) { return o && (o.kind + ' x' + o.n); }) }) : 'no fire found') + '; ' + JSON.stringify(inv());
   };
   ST.boar = function () {                                 // a plain fighter: turns to face it and swings when it is in reach; never blocks, never steps aside
@@ -77,14 +81,17 @@ window.ST = (function () {
     function put(id, m, x, y, sx, sy) { var q = P(); q.x = sx; q.y = sy; fast(1); var t = D().place(D().pieceIndex(id, m), x, y); if (!t || !t.ok) no.push(id + ': ' + ((t && t.why) || 'nothing to aim at')); }
     for (a = 0; a < 4; a++) { put('wall', 0, (site.tx + a + 0.5) * 32, site.ty * 32, (site.tx + a + 0.5) * 32, site.ty * 32 + 30); put(a === 1 ? 'door' : 'wall', 0, (site.tx + a + 0.5) * 32, (site.ty + 3) * 32, (site.tx + a + 0.5) * 32, (site.ty + 3) * 32 + 30); }
     for (b = 0; b < 3; b++) { put('wall', 0, site.tx * 32, (site.ty + b + 0.5) * 32, site.tx * 32, (site.ty + b + 0.5) * 32 + 30); put('wall', 0, (site.tx + 4) * 32, (site.ty + b + 0.5) * 32, (site.tx + 4) * 32, (site.ty + b + 0.5) * 32 + 30); }
-    var mx = (site.tx + 2) * 32, my = (site.ty + 1.6) * 32; [['campfire', 0.6, 0.6], ['bench', 3.3, 0.6], ['bed', 3.2, 2.3], ['rug', 1.8, 1.6]].forEach(function (q) { put(q[0], null, (site.tx + q[1]) * 32, (site.ty + q[2]) * 32, mx, my); });
+    var mx = (site.tx + 2) * 32, my = (site.ty + 1.6) * 32; [['campfire', 1.5, 4.4], ['bench', 3.3, 0.6], ['bed', 3.2, 2.3], ['rug', 1.8, 1.6]].forEach(function (q) { put(q[0], null, (site.tx + q[1]) * 32, (site.ty + q[2]) * 32, mx, my); });
     fast(5); draw(3); P().mode = 'fight'; var i1 = inv(), spent = {}, k; for (k in i0) if ((i0[k] || 0) !== (i1[k] || 0)) spent[k] = (i0[k] || 0) - (i1[k] || 0);
     return 'a hut ' + Math.round(Math.hypot(mx - D().home.x, my - D().home.y)) + ' units from the wreck; it cost ' + JSON.stringify(spent) + (no.length ? '; REFUSED: ' + no.join(', ') : '') + '; your home\'s comfort: ' + JSON.stringify(D().comfort());
   };
-  ST.brokk = function () {                                // (the hero is put beside him: finding the steading is not what is tested here)
-    var n = D().npc(), v = D().village(); if (!n) return 'no Brokk'; var said = [], i; for (i = 0; i < 10 && !D().seen.raft; i++) { var st = D().brokk(); D().talk(); said.push(st + ': ' + n.say); fast(20); }
-    return 'the steading lies ' + Math.round(Math.hypot((v.tx + v.w / 2) * 32 - D().home.x, (v.ty + v.h / 2) * 32 - D().home.y)) + ' units from the wreck\n' + said.join('\n') + '\nthe raft taught: ' + !!D().seen.raft;
+  ST.arnor = function () {                                // (the hero is put at the steading: finding it is not what is tested here) talks to Arnor until he has said what he has to say now: his story and building first, the raft once home has comfort 4
+    var n = D().npc(); if (!n) return 'no Arnor'; if (!ST.metAt) { D().toSteading(); fast(10); ST.metAt = 1; } var said = [], i, s0 = D().arnor().state;
+    for (i = 0; i < 10; i++) { walkTo(n.x + 22, n.y + 6, 14, 1500); var w = D().eDo(); if (!w || !w.act) { fast(60); continue; } w.act(); fast(40); said.push(D().arnor().state + ': ' + n.say); var st = D().arnor().state; if ((st === 'wait' && s0 === 'meet') || st === 'taught') break; }
+    return said.join('\n') + '\nbuilding open: ' + !!(Combat.api.canBuild && Combat.api.canBuild()) + '; the raft taught: ' + !!D().seen.raft;
   };
+  ST.brokk = ST.arnor;
+
   ST.bench = function () {                                // (the hero is put on the wreck's beach)
     var q = P(); q.x = D().home.x + 44; q.y = D().home.y + 10; fast(5); var i = D().pieceIndex('ship1'), spot = null, why = {}, tx0 = Math.floor(q.x / 32), ty0 = Math.floor(q.y / 32), r, dy, dx;
     for (r = 0; r < 12 && !spot; r++) for (dy = -r; dy <= r && !spot; dy++) for (dx = -r; dx <= r && !spot; dx++) { var x = (tx0 + dx + 0.5) * 32, y = (ty0 + dy + 0.5) * 32; q = P(); q.x = x + 34; q.y = y + 20; var t = D().target(i, x, y); if (t && t.ok) spot = { x: x, y: y }; else if (t && t.why) why[t.why] = 1; }
@@ -99,13 +106,15 @@ window.ST = (function () {
     if (S.check()) return 'the hull is not ready: ' + S.check(); S.host.finish(); draw(60); var rf = D().raftObj();
     return 'the yard said, part by part: ' + says.join(' | ') + '\n' + (Object.keys(add).length ? '(added to the bag for it: ' + JSON.stringify(add) + ') ' : '') + (rf ? 'a raft lies in the water at ' + Math.round(rf.x) + ',' + Math.round(rf.y) : 'NO RAFT');
   };
-  ST.cross = function () {
-    var rf = D().raftObj(); if (!rf) return 'no raft'; var q = P(); q.x = rf.x + 10; q.y = rf.y + 30; fast(3); P().mode = 'fight'; D().raftUse(); fast(10); if (!D().raftObj().aboard) return 'could not board';
-    var big = D().isles()[1], tx = big.x * 32, ty = big.y * 32, W = D().world(), f = 0, lastD = 1e9, stall = 0, side = 1;
-    for (; f < 12000; f++) { var r = D().raftObj(), dx = tx - r.x, dy = ty - r.y, d = Math.hypot(dx, dy); if (f % 90 === 0) { if (d > lastD - 20) stall++; else stall = 0; lastD = d; if (stall > 4) break; }
-      var go = stall >= 2 ? [dx * 0.3 - side * dy, dy * 0.3 + side * dx] : [dx, dy]; key('KeyD', go[0] > 20); key('KeyA', go[0] < -20); key('KeyS', go[1] > 20); key('KeyW', go[1] < -20); fast(1); }
-    clear(); D().raftUse(); fast(20); draw(5); q = P(); return 'paddled for ' + Math.round(f / 60) + ' s; stepped ashore: ' + !D().raftObj().aboard + ', on land: ' + W.isLand(q.x, q.y) + ', "You have left the island": ' + !!D().left() + '; ' + clock();
+  ST.cross = function () {                                // W rows forward and A and D steer (every vessel, Robin): toward the big island, two calls if the first is cut off
+    var rf = D().raftObj(); if (!rf) return 'no raft'; var W = D().world(), q = P(); if (!rf.aboard) { q.x = rf.x + 10; q.y = rf.y + 30; fast(3); P().mode = 'fight'; D().raftUse(); fast(10); } if (!D().raftObj().aboard) return 'could not board';
+    var big = D().isles()[1], tx = big.x * 32, ty = big.y * 32, f = 0, ahead = false; key('KeyW', true);
+    for (; f < 9000 && !ahead; f++) { var a = Math.atan2(ty - rf.y, tx - rf.x) - rf.h; while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; key('KeyD', a > 0.1); key('KeyA', a < -0.1); fast(1);
+      if (f % 30 === 0 && Math.hypot(tx - rf.x, ty - rf.y) < big.r * 32 * 1.4 && W.isLand(rf.x + Math.cos(rf.h) * 40, rf.y + Math.sin(rf.h) * 40)) ahead = true; }
+    clear(); if (!ahead) return 'rowed for ' + Math.round(f / 60) + ' s, ' + Math.round(Math.hypot(tx - rf.x, ty - rf.y)) + ' units still to go: call ST.cross() again';
+    D().raftUse(); fast(20); draw(5); q = P(); return 'rowed for ' + Math.round(f / 60) + ' s; stepped ashore: ' + !D().raftObj().aboard + ', on land: ' + W.isLand(q.x, q.y) + ', "You have left the island": ' + !!D().left() + '; ' + clock();
   };
+
   ST.night = function () {                                // back in the hut by its fire as night falls: do the wolves keep off, and does the bed give a morning
     var s = ST.site; if (!s) return 'no hut (ST.home first)'; var rf = D().raftObj(); if (rf && rf.aboard) D().raftUse(); var q = P(); q.x = (s.tx + 2) * 32; q.y = (s.ty + 1.6) * 32; fast(5); D().day(1195); fast(60 * 12); draw(3);
     var G = Combat.dbg(), wolves = function () { return ((G.W && G.W.enemies) || []).filter(function (e) { return !e.dead && e.kind === 'wolf'; }); }, n0 = wolves().length, hp0 = P().hp; fast(60 * 40); draw(3); var lost = Math.round(hp0 - P().hp), n1 = wolves().length;

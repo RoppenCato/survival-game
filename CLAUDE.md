@@ -512,7 +512,7 @@ cells for upright things looked weird; the raft keeps its laid logs: he liked th
 (placed along the hull by `Yard.autoThwarts`: a rigged hull fills out from the mast, aft first; a boat spreads them), the mast,
 sail and steering oar as one needed thing, the dragon stem and the shields as yes or no, the vessel drawn live on the water in
 the frame as it will look (`scene.fittings`, `fitSet`, `hudHull`; the board writes the yard's cells, so the checks, the fit, the
-save and the launch read what they always read), and launched (the hull is paid then). Sailing is `Yard.sail`: every vessel, the raft too, goes forward on W and
+save and the launch read what they always read), and launched (the hull is paid then; it lies facing the open water, `launchHeading`: 2026-10-22, it had a fixed heading that pointed onto the land from any shore but the wreck's). Sailing is `Yard.sail`: every vessel, the raft too, goes forward on W and
 steers with A and D (Robin), with the wind for rigged hulls and rowers for the crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper; **the karve is the copper age's sea-going ship** (wood 24, copper 10, fiber 12; decision 1 of the waters plan at its default, 2026-10-20: the ship that leaves home must be buildable from home's materials), the longship needs iron.
 **The hulls are at the sizes they were dug up at** (2026-10-21, `Yard.HULLS` in metres: the faering 6.5 m, the boat 9, the karve
 16 by 4.2, the longship 23; a yard cell is a thwart's pitch, `CW` 24; the sizes measured by `tests/ships.js`), **the camera pulls

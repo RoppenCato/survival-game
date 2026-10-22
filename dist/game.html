@@ -15288,7 +15288,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
     for (var r = 36; r < 320; r += 12) for (var a = 0; a < 6.283; a += 0.3) { var x = nx + Math.cos(a) * r, y = ny + Math.sin(a) * r; if (raftHull(x, y)) return { x: x, y: y }; }
     return null;
   }
-  function placeRaft(bench) { var sp = raftSpot(bench.x, bench.y); if (!sp) return false; raft = { x: sp.x, y: sp.y, h: -0.4, vx: 0, vy: 0, speed: 0, aboard: false, kind: 'raft', hw: 21, hh: 21, seat: 0 }; return true; }
+  function placeRaft(bench) { var sp = raftSpot(bench.x, bench.y); if (!sp) return false; raft = { x: sp.x, y: sp.y, h: launchHeading(bench, sp), vx: 0, vy: 0, speed: 0, aboard: false, kind: 'raft', hw: 21, hh: 21, seat: 0 }; return true; }
+  function launchHeading(bench, sp) {      /* a new vessel faces the open water (2026-10-22, the scripted run: it lay at a fixed -0.4, out to sea from the wreck's beach but onto the land from a bench on any other shore): of sixteen headings, the one with the most water ahead of it out to 400 units, the nearest to the line from the bench to the water first */
+    var base = Math.atan2(sp.y - bench.y, sp.x - bench.x), best = base, bestN = -1, k, s, n, a;
+    for (k = 0; k < 16; k++) { a = base + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * Math.PI / 8; for (n = 0, s = 40; s <= 400; s += 40, n++) if (isLand(sp.x + Math.cos(a) * s, sp.y + Math.sin(a) * s)) break; if (n > bestN) { bestN = n; best = a; } }
+    return best;
+  }
   function raftUsable() {                  // within E's reach of the vessel: 45 units from its hull, whatever its size (a raft's 66 from its middle as before; a karve is seven men long, and from the shore its middle was out of reach)
     var P = hero(); if (!raft || P.dead || sleep) return false; if (raft.aboard) return true;
     var dx = P.x - raft.x, dy = P.y - raft.y, ch = Math.cos(raft.h || 0), sh = Math.sin(raft.h || 0), u = (dx * ch + dy * sh) / ((raft.hw || 21) + 45), v = (-dx * sh + dy * ch) / ((raft.hh || 21) + 45); return u * u + v * v < 1;
