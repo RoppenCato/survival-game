@@ -354,7 +354,7 @@ launched he is at the shore to see you off. **Every line he says is the Lore Dir
 `assets/lore/lore.json`, inlined as `__LORE__`), as are Old Aslak's (the first village of the big island: his brother Hogni's
 story a line a talk, other lines once you wear the bronze ring) and the villagers' pairs about Ormr. Words that are not a
 person's (the scratch by Hogni, the carving on Thorgunna's stone) go on the speech board too (`sayAt`). What anyone says
-shows on the speech board at the foot of the screen, **only within hearing** (`HEAR` 130 units). **Talk follows the lore's modes** (Robin, 2026-10-22: Arnor circled his lines, and a line stayed after you walked off): a story (mode `sequence`) is told a line a press and not again; remarks (mode `variants`) are one a talk, and then the speaker is quiet, with no Talk, for `TALK_QUIET` 20 s (a villager `FOLK_QUIET` 12), or until you have walked off and come back, or until he has something new to say; out of hearing his line ends, and a story (the graves) waits and says the cut line again when you are back. The big steps
+shows on the speech board at the foot of the screen, **only within hearing** (`HEAR` 130 units). **Talk follows the lore's modes** (Robin, 2026-10-22: Arnor circled his lines, and a line stayed after you walked off): a story (mode `sequence`) is told a line a press and not again, its Talk staying over the speaker while lines are left (`arnorMore`, `aslakMore`; Robin, later the same day: the prompt went while he spoke, the story seemed over after one line and building never opened); remarks (mode `variants`) are one a talk, and then the speaker is quiet, with no Talk, for `TALK_QUIET` 20 s (a villager `FOLK_QUIET` 12), or until you have walked off and come back, or until he has something new to say; out of hearing his line ends, and a story (the graves) waits and says the cut line again when you are back. The big steps
 are bordered boards (`bigStep`: "Building", "The raft", "You have left the island", the last whenever you stand
 on another island's land). **The bar is there from the start** (Robin, 2026-10-17: not something you gain); B, and the bar's "(B to build)" (`api.canBuild`), wait for Arnor; the Building
 board holds the plank house's pieces and the workbench until the first night slept under a roof opens twenty-four more
@@ -598,7 +598,7 @@ slider there, and Use in the game makes it the game's default round which `wind.
 studio's word: puffins, a sea eagle, a humpback, jellyfish, the night sea.
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
-chart show what has been seen (the map zooms with the wheel, 1 to 10 times toward the mouse: `mapWheel`, Robin 2026-10-22); saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is
+chart show what has been seen (the map zooms with the wheel, 1 to 10 times toward the mouse, and is dragged with the left button when zoomed in: `mapWheel`, `mapDrag`, Robin 2026-10-22; a press off the map closes it); saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is
 dropped; **the painted ground is saved as what differs from the ground the world paints at every start** (`groundBase`,
 `groundDiff`; 2026-10-20: the whole field was 1.5 MB of a 1.6 MB save, now about 55 KB; an older save's whole field loads and
 is saved as a diff from then on); **Admin** in the Escape menu (immortal, one-shot, free building and crafting, fly, threefold drops, shield only

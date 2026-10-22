@@ -2832,6 +2832,11 @@ __COMBAT__
     folk.forEach(function (q) { if (q.vi === vi && !seat) q.spots.forEach(function (s2) { if (s2.sit && !seat) seat = s2; }); });
     if (seat) f.spots.push(seat, seat, seat);   // the fire is where he is most
   }
+  function arnorMore() {                  // is Arnor in the middle of a story (a sequence with lines still to tell)?
+    if (!npc) return false; var st = arnorState(), id = arnorLineId(st), e = LORE[id];
+    return (!e || e.mode === 'sequence') && npc.st === st && npc.line > 0 && npc.line < loreLines(id).length;
+  }
+  function aslakMore() { return !!(ring && ring.metal === 'bronze' && !seen.aslakRing && (seen.aslakRingI || 0) > 0) || (!seen.ring && (seen.aslakI || 0) > 0 && (seen.aslakI || 0) < loreLines('line.aslak.story').length); }   // the same for Old Aslak's story of his brother
   function aslakTalk(f) {                 // his brother's story, a line a talk; with the bronze ring on your arm, what he says then
     var L, k;
     if (ring && ring.metal === 'bronze' && !seen.aslakRing) { L = loreLines('line.aslak.ring'); k = seen.aslakRingI || 0; f.say = L[k] || ''; seen.aslakRingI = k + 1; if (k + 1 >= L.length) seen.aslakRing = 1; }
@@ -3020,7 +3025,14 @@ __COMBAT__
     if (!P.dead) heroFell = false;
   }
   var mapOpen = false;
-  var mapZ = 1, mapC = null, MAPV = null;
+  var mapZ = 1, mapC = null, MAPV = null, mapDrag = null;
+  function mapIn() { var V = MAPV; return !!(V && mouseS && mouseS.x >= V.mx && mouseS.x <= V.mx + V.mw && mouseS.y >= V.my && mouseS.y <= V.my + V.mh); }
+  function mapDragTo() {                   // the zoomed map follows the mouse held on it (Robin, 2026-10-22: "dragged by mouse1 when zoomed in")
+    var V = MAPV, g = mapDrag; if (!V || !g || !mouseS || mapZ <= 1) return;
+    var vw = V.iw / mapZ, vh = V.ih / mapZ, cpx = g.cx - (mouseS.x - g.x) / V.kz, cpy = g.cy - (mouseS.y - g.y) / V.kz;
+    cpx = Math.max(vw / 2, Math.min(V.iw - vw / 2, cpx)); cpy = Math.max(vh / 2, Math.min(V.ih - vh / 2, cpy));
+    mapC = { x: cpx * T * V.step, y: cpy * T * V.step };
+  }
   function mapWheel(d) {                    // in toward the mouse, out back to the whole sea (1 to 10 times)
     var V = MAPV, z0 = mapZ, z1 = Math.max(1, Math.min(10, z0 * (d < 0 ? 1.3 : 1 / 1.3))); if (!V || z1 === z0) return;
     var m = mouseS && mouseS.x >= V.mx && mouseS.x <= V.mx + V.mw && mouseS.y >= V.my && mouseS.y <= V.my + V.mh ? mouseS : { x: V.mx + V.mw / 2, y: V.my + V.mh / 2 };
@@ -3509,8 +3521,8 @@ __COMBAT__
     if (st) add(st, st.fallen ? 'Raise the stone (6 stone)' : 'Muster', st.fallen ? function () { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(st); } else toast('It takes 6 stone to raise it'); } : muster);
     if (wp) add(wp, HD.jobs[jobOf(wp)].name + ': ' + fo.name, function () { if (!hirdAssign(P) && wp === st && !st.fallen) muster(); }, -6);   // a follower and a place to work: the work comes before the muster
     var hm = hirdNear(P); if (hm) add(hm, hm.sayT > 0 ? null : hm.follow ? 'Stay' : (hm === npc && !seen.raft ? 'Talk' : 'Follow me'), function () { hirdTalk(hm); });
-    if (nearNpc(P) && hm !== npc && !(npc.quietUntil > clock)) add(npc, npc.sayT > 0 ? null : 'Talk', talk);   /* (quiet after a remark: talking above) */
-    var fk = folkNear(P); if (fk && (fk.bound || (fk.role === 'thrall' && !fk.dead && !fk.gone))) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk && !(fk.quietUntil > clock)) add(fk, fk.sayT > 0 ? null : 'Talk', function () { folkTalk(fk); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
+    if (nearNpc(P) && hm !== npc && !(npc.quietUntil > clock)) add(npc, npc.sayT > 0 && !arnorMore() ? null : 'Talk', talk);   /* (a story with lines left keeps its Talk while he speaks: Robin, 2026-10-22) */   /* (quiet after a remark: talking above) */
+    var fk = folkNear(P); if (fk && (fk.bound || (fk.role === 'thrall' && !fk.dead && !fk.gone))) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk && !(fk.quietUntil > clock)) add(fk, fk.sayT > 0 && !(fk.aslak && aslakMore()) ? null : 'Talk', function () { folkTalk(fk); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
     var ym = yieldedNear(P); if (ym) add(ym, 'Let ' + (hisHer(ym) === 'her' ? 'her' : 'him') + ' go', function () { letGo(ym); }, -6);
     var rk = rackUsable(P); if (rk) add(rk, rackCured(rk) ? 'Collect leather' : 'Hang hide', function () { rackUse(rk); });
     var bb = berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });
@@ -6086,7 +6098,7 @@ __COMBAT__
       return;
     }
     if ((SCENE === 'runes' || SCENE === 'mountain' || SCENE === 'battle' || SCENE === 'ruin') && !pauseOpen && !invOpen && !ringOpen && !menu && !mapOpen && !musterOpen && !bookOpen && e.button === 0) { var rp = runePanelHit(); if (rp) { runeAct(rp); return; } }
-    if (mapOpen) { mapOpen = false; return; }
+    if (mapOpen) { if (e.button === 0 && !inCave && mapIn()) { var V0 = MAPV, vw0 = V0.iw / mapZ, vh0 = V0.ih / mapZ; mapDrag = { x: mouseS.x, y: mouseS.y, cx: Math.max(vw0 / 2, Math.min(V0.iw - vw0 / 2, V0.sx0 + vw0 / 2)), cy: Math.max(vh0 / 2, Math.min(V0.ih - vh0 / 2, V0.sy0 + vh0 / 2)) }; return; } mapOpen = false; mapDrag = null; return; }   /* (on the map: held, and dragged when zoomed in) */
     if (e.button === 0 && e.shiftKey && !invOpen && !menu && !store) { var hb = hudBarAt(); if (hb >= 0 && slotGet(hb)) { barDrag = { i: hb }; return; } }   /* (the toolbar, dragged with Shift) */
     if (musterOpen) { if (e.button === 0) musterClick(); else musterOpen = false; return; }
     if (ringOpen) { ringClick(e.button); return; }
@@ -6125,7 +6137,7 @@ __COMBAT__
     Combat.button(e.button, true);
   });
   window.addEventListener('mouseup', function (e) {
-    mdown = 0; musicDrag = false; btnHold = null; Combat.button(e.button, false);
+    mdown = 0; musicDrag = false; btnHold = null; mapDrag = null; Combat.button(e.button, false);
     if (barDrag) { mouseS = toScreen(e); barDragEnd(); return; }
 
     if (pick) {
@@ -6140,7 +6152,7 @@ __COMBAT__
     }
   });
   cv.addEventListener('mousemove', function (e) {        // the bow aims at the mouse; build mode places under it
-    mouseW = toWorld(e); mouseS = toScreen(e); Combat.mouse(mouseW.x, mouseW.y * K);
+    mouseW = toWorld(e); mouseS = toScreen(e); Combat.mouse(mouseW.x, mouseW.y * K); if (mapDrag && mapOpen) mapDragTo();
     if (musicDrag && pauseOpen) musicSet(mouseS.x, PAUSE_X, PAUSE_W);
     if (pick && !pick.drag && Math.hypot(mouseS.x - pick.x, mouseS.y - pick.y) > 4) pick.drag = true;
 
