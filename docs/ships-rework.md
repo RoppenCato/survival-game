@@ -57,5 +57,22 @@ below goes ahead together, each landing as it is ready.
 | 15 | **The sea's sounds:** the oars' stroke, the sail filling and flapping, the hull's creak, the keel on sand when beaching; references Robin picks in the arena | Derek, SD | a row in the arena's The sounds panel |
 | 16 | **The Sea Editor** on the same ships and handling | Clive, GD | its ships and their times match the game's |
 
+## Where it stands (2026-10-23)
+
+| # | Status |
+| --- | --- |
+| 1 to 4 | **Built.** `tests/ships.js`: the rowboat 96 s to the big island, a karve with eight 53 s, a longship with 26 40 s; the turn from a standstill; the wind 173 / 158 / 130 / 115 behind, abeam, close-hauled, ahead; the beach and the rock wall. `tools/visual/shipsplay.js` in the real game: the rowboat and a karve beach and come off at five places round the starter island. Played: the rowboat from the far side of the starter island to the big island's beach in about 104 s. |
+| 5 | **Built.** The fleet in the save (name, look, fitting, where each lies); a raft, faering or boat of an older save becomes a rowboat. |
+| 6, 7, 9 | **Built.** The shipyard piece on any sand at the water (on the starter island's list too), its panel with New ship and Your ships, the preview by the yard with the camera pulled back to fit her; the models opened by Arnor's teaching, copper and iron. |
+| 8 | **Built.** Raider, Cargo, Voyager with their numbers (`tests/ships.js` prints each). |
+| 10 | **Built** but for the words: Arnor teaches a boat, the board "A boat", his farewell at the shore. His lines are still the raft's until Robin's yes to Alistair, LD's handoff 8 (the rowboat lines, the ship names, the crew's lines). |
+| 11, 12 | **The rowboat is in** (Colin, AD's model, the hero rowing on its thwart and tholes). The karve's and the longship's sizes are coming from Colin, AD; until then they are drawn in code with the look on them. |
+| 13 | Waiting for Colin, AD (the shipyard's picture: a naust on the shore). The raft bench's picture stands in. |
+| 14 | Waiting for Robin's yes to handoff 8. |
+| 15 | Derek, SD has the brief; the game calls the sounds by name already. |
+| 16 | **Built.** The Sea Editor sails the game's ships with their handling, and its crossing times match the game's. |
+
+The old yard scene where a hull was laid part by part is gone; `tests/karve.js` checks the ship line in its place.
+
 Not in this rework: fighting from the deck and on the decks (`docs/ships-plan.md` stage A in chapter 2, stage B in chapter 3,
 both as decided), the War fitting with them, and ships of other people that sail.
