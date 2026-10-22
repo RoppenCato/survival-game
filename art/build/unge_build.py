@@ -14,6 +14,7 @@ hero and the cave troll at 79 px a unit). The body is sculpted from a radius-ske
 import bpy, math, os, sys, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-22; Robin: keep the old trolls, updated)
 from skin import Stick, ball
 from figure import Figure, R3, ease, ik2
 from mathutils import Vector, Matrix

@@ -161,8 +161,8 @@ def build_nodes(m, style):
         lit_h, shade_h = (m.get('lit'), m.get('shade')) if m.get('lit') else chosen_tones(m['hex'])
         base_t = tuple(base[i] * AMBIENT_TINT[i] for i in range(3)); lit_c = srgb(lit_h); shade_c = srgb(shade_h)
         dark = _math(n, L, 'LESS_THAN', v, m.get('t_dark', T_DARK)); bright = 0.0 if m.get('matte') else _math(n, L, 'GREATER_THAN', v, m.get('t_lit', T_LIT))
-        bsock = _decal(n, L, base_t) if m.get('face') else base_t
-        col = _mix(n, L, 'MIX', bright, _mix(n, L, 'MIX', dark, bsock, shade_c), lit_c)
+        col = _mix(n, L, 'MIX', bright, _mix(n, L, 'MIX', dark, base_t, shade_c), lit_c)
+        if m.get('face'): col = _decal(n, L, col)       # the painted face over all three tones (laid on the base only, it vanished where the face is lit)
         if m.get('wet'):
             col = _mix(n, L, 'MIX', _math(n, L, 'MULTIPLY', _math(n, L, 'GREATER_THAN', v, 0.88), 0.38), col, (0.80, 0.92, 0.98))
         if pattern:

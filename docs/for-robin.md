@@ -428,3 +428,7 @@ arch is gone. The mouth is now the studio's model: an opening in the rock with a
 bends away into the dark, no ring of stones, one big block and scree at its foot. You can walk into it about two and a half metres:
 under the lip you go dark, and near the end you are inside the cave, as E at the mouth still does. The troll does not walk in. How
 far in, and whether he should, are yours to change.
+
+**The trolls, the old ones updated (2026-10-22, your "go with the old (updated)"):** all six are in: the cave troll, the forest
+troll, the Gape, the three-headed troll, Trollmor and Hårungen, in the chosen tones with deeper colours and broader locks. Their
+idles are smooth (sixteen frames), and their feet hold to the ground as they walk.

@@ -1,4 +1,5 @@
-"""The trolls, modelled, rigged and animated by script (2026-10-12, Robin: the trolls after the animals, and two new ones made
+"""The trolls (2026-10-22, the kraken round; Robin: "I dont like the new trolls, go with the old (updated)": chosen tones, the torso and head lit as
+one mass, hair as broad locks, thicker twigs). The trolls, modelled, rigged and animated by script (2026-10-12, Robin: the trolls after the animals, and two new ones made
 from scratch, horrifyingly evil).   node tools/blender.js art/build/troll_build.py -- <boulder|forest|maw|three>
 
   boulder  the mountain troll after John Bauer: a boulder of a body under a hump, a mane to the ground, moss and a birch
@@ -21,6 +22,8 @@ Clips: idle, walk, windup (the arm drawn far back), attack (the great slow sweep
 import bpy, bmesh, math, os, sys, random
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import toon
+toon.TONES = 'chosen'                                   # the kraken round (2026-10-22; Robin: keep the old trolls, updated): chosen tones
+from mathutils.bvhtree import BVHTree
 from mathutils import Vector, Matrix
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -92,7 +95,19 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 sc = bpy.context.scene; sc.render.fps = FPS
 body_c = bpy.data.collections.new('Body'); gear_c = bpy.data.collections.new('Gear')
 sc.collection.children.link(body_c); sc.collection.children.link(gear_c)
-C = {k: toon.material(NAME + '_' + k, v, None, 'cel') for k, v in S['col'].items()}
+# 2026-10-22: deeper bases for the chosen tones (the old shared tone darkened every colour; shown as they are, the trolls came out pale)
+DEEP = {'boulder': {'skin': '#8a7c66', 'dark': '#564b3e', 'hair': '#463d33', 'grey': '#7b7569', 'nose': '#9c8268'},   # stones near the skin (pale stones on the hump read as camouflage, 2026-10-22)
+        'forest': {'skin': '#86765a', 'dark': '#4c4232', 'hair': '#3e3628', 'grey': '#787362', 'nose': '#94805c', 'birch': '#5e4e38'},
+        'maw': {'skin': '#a3a074', 'belly': '#c4bea0', 'dark': '#4e4f3c'},
+        'three': {'skin': '#c4b994', 'shade': '#8c846f', 'hide': '#6a5644'}}.get(KIND, {})
+for _k, _v in DEEP.items(): S['col'][_k] = _v
+def _tmat(k, v):
+    if k in ('moss', 'leaf', 'kelp'):
+        lit, shade = toon.chosen_tones(v, lit_dl=0.09, shade_dl=0.075, cool_k=0.2); return toon.material(NAME + '_' + k, v, None, 'cel', lit=lit, shade=shade, t_dark=0.5, t_lit=1.0)
+    return toon.material(NAME + '_' + k, v, None, 'cel')
+C = {k: _tmat(k, v) for k, v in S['col'].items()}
+for _k in ('hair', 'grey', 'kelp'):                     # 2026-10-22: hair has no shine band (each lock caught its own and the coat read striped)
+    if _k in C: C[_k]['matte'] = 1; toon.build_nodes(C[_k], 'cel')
 PARTS = []; _n = [0]
 def mesh_object(name, bm, mat, group, smooth=True):
     _n[0] += 1; name = '%s_%03d' % (name, _n[0])
@@ -123,7 +138,7 @@ def hang(name, mat, group, pts, length, r, lean=0.0, seg=5, flat=0.55, vary=0.35
     for p in pts:
         p = Vector(p); L = length * (1 - vary + 2 * vary * RNG.random()); o = Vector((p.x, p.y - (out[1] if out else 0), 0))
         o = o.normalized() * lean * L if o.length > 0.01 else Vector((0, 0, 0))
-        cone(name, mat, group, p, p + o + Vector(((RNG.random() - 0.5) * 0.08, (RNG.random() - 0.5) * 0.08, -L)), r * (0.8 + 0.4 * RNG.random()), r * 0.08, seg=seg, sy=flat)
+        cone(name, mat, group, p, p + o + Vector(((RNG.random() - 0.5) * 0.08, (RNG.random() - 0.5) * 0.08, -L)), r * 1.75 * (0.8 + 0.4 * RNG.random()), r * 0.45, seg=max(seg, 6), sy=min(flat, 0.38))   # 2026-10-22: broad flat locks (thin strands inked to black sticks)
 V3 = lambda yz, x=0.0: Vector((x, yz[0], yz[1]))
 def frame_of(base, tip):
     """a head's own directions: along the muzzle, up, and to its left"""
@@ -201,8 +216,8 @@ def build_boulder():
     cone('birch', C['birch'], 'chest', (-0.18, 0.28, 2.52), (-0.26, 0.34, 3.06), 0.035, 0.015, seg=5)
     for (dx, dy, dz, r) in ((0, 0, 0.0, 0.17), (0.12, 0.05, -0.14, 0.13), (-0.12, -0.04, -0.10, 0.13)): ball('leaf', C['leaf'], 'chest', (-0.26 + dx, 0.34 + dy, 3.10 + dz), r, sz=0.8, seg=7, rings=5)
     row = lambda rr, ry, z, a0, a1, n: [(math.sin(rad(a0 + (a1 - a0) * i / (n - 1))) * rr, 0.10 + math.cos(rad(a0 + (a1 - a0) * i / (n - 1))) * ry, z) for i in range(n)]
-    hang('mane', hair, 'chest', row(0.88, 0.80, 2.05, -112, 112, 13), 1.35, 0.16, lean=0.16, out=(0, 0.10))
-    hang('mane2', hair, 'chest', row(0.66, 0.60, 2.36, -125, 125, 11), 0.95, 0.15, lean=0.22, out=(0, 0.10))
+    hang('mane', sk, 'chest', row(0.88, 0.80, 2.05, -112, 112, 13), 1.35, 0.16, lean=0.16, out=(0, 0.10))     # 2026-10-22: the mane is the hide grown long, one mass with a shaggy edge
+    hang('mane2', sk, 'chest', row(0.66, 0.60, 2.36, -125, 125, 11), 0.95, 0.15, lean=0.22, out=(0, 0.10))   # (dark locks over the hump read as camouflage); the head keeps its dark hair
     hang('mane3', C['grey'], 'chest', row(0.36, 0.34, 2.56, -150, 150, 8), 0.60, 0.12, lean=0.35, out=(0, 0.10))
     hp, HL, hd, up, side = pointer(V3(S['head'][0]), V3(S['head'][1]))
     cone('neck', sk, 'neck', V3(S['neck'][0]) + Vector((0, 0.2, 0.05)), V3(S['neck'][1]), 0.42, 0.34)
@@ -248,7 +263,7 @@ def build_forest():
         ball('socket', C['dark'], 'head', hp(0.33, 0.06, sg * 0.10), 0.06, sy=0.6); ball('eye', C['eye'], 'head', hp(0.37, 0.055, sg * 0.105), 0.024); mark('eye.' + ('L' if sg > 0 else 'R'), hp(0.37, 0.055, sg * 0.105), 'head')
         cone('ear', sk, 'head', hp(0.0, 0.06, sg * 0.18), hp(-0.14, 0.22, sg * 0.52), 0.09, 0.008, seg=5, sy=0.35)
     for i in range(11):                             # the crown: twigs standing out of tangled hair
-        a = rad(i * 33); b = hp(-0.10 + 0.06 * math.cos(a), 0.18, 0.14 * math.sin(a)); cone('twigs', C['birch'], 'head', b, b + up * (0.30 + 0.25 * RNG.random()) - hd * (0.10 + 0.25 * RNG.random()) + side * 0.3 * math.sin(a), 0.03, 0.004, seg=4)
+        a = rad(i * 33); b = hp(-0.10 + 0.06 * math.cos(a), 0.18, 0.14 * math.sin(a)); cone('twigs', C['birch'], 'head', b, b + up * (0.30 + 0.25 * RNG.random()) - hd * (0.10 + 0.25 * RNG.random()) + side * 0.3 * math.sin(a), 0.055, 0.016, seg=5)
     hang('hair', hair, 'head', [hp(-0.20 + 0.05 * (i % 3), 0.10, (i - 3.5) * 0.07) for i in range(8)], 0.70, 0.07, lean=0.2)
     f0 = hp(-0.06, 0.22)
     cone('firstem', C['birch'], 'head', f0, f0 + Vector((0, 0.03, 0.26)), 0.02, 0.012, seg=4)
@@ -501,6 +516,26 @@ if HS != 1.0:
         if g in base:
             for v in o.data.vertices: v.co = base[g] + (v.co - base[g]) * HS
     MARKS[:] = [(nm, base[par] + (pt - base[par]) * HS, par) for (nm, pt, par) in MARKS]
+def _one_form(groups, k_skin=0.85, k_other=0.6):
+    skin = [C[m] for m in ('skin', 'belly', 'shade', 'dark') if m in C]
+    own = [o for o in PARTS if o.vertex_groups[0].name in groups]
+    src = [o for o in own if o.data.materials[0] in skin[:2] and len(o.data.vertices) > 40]
+    if not src: return
+    bm = bmesh.new()
+    for o in src: bm.from_mesh(o.data)
+    me = bpy.data.meshes.new('px'); bm.to_mesh(me); bm.free(); tmp = bpy.data.objects.new('px', me); sc.collection.objects.link(tmp)
+    rm = tmp.modifiers.new('rm', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = 0.12; sm = tmp.modifiers.new('sm', 'SMOOTH'); sm.factor = 1.0; sm.iterations = 45   # a very smooth melt: the lumpy union of balls left the light blotchy
+    bpy.context.view_layer.update(); me2 = bpy.data.meshes.new_from_object(tmp.evaluated_get(bpy.context.evaluated_depsgraph_get())); bpy.data.objects.remove(tmp); bpy.data.meshes.remove(me)
+    PB = bmesh.new(); PB.from_mesh(me2); PB.normal_update(); T = BVHTree.FromBMesh(PB)
+    for o in own:
+        k = k_skin if o.data.materials[0] in skin else k_other; vn = []
+        for v in o.data.vertices:
+            hit = T.find_nearest(v.co); n = hit[1].normalized() if hit and hit[1] is not None else None
+            vn.append(((n * k + v.normal * (1 - k)).normalized())[:] if n is not None else v.normal[:])
+        o.data.normals_split_custom_set_from_vertices(vn)
+    PB.free(); bpy.data.meshes.remove(me2)
+_one_form(('body', 'spine', 'chest'), k_skin=1.0, k_other=0.95)                    # 2026-10-22: the torso lit as one mass (it was lit ball by ball)
+_one_form(('head', 'jaw'), k_skin=0.95, k_other=0.9)
 if MARKS:
     bpy.context.view_layer.objects.active = rig; bpy.ops.object.mode_set(mode='EDIT'); EB = arm_data.edit_bones
     for (nm, p, par) in MARKS: bone(nm, p + Vector((0, 0.04, 0)), p, par)
