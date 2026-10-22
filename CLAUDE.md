@@ -525,15 +525,27 @@ routines (spots, jobs, sitting at the fire, watching you a while), find their wa
 a blade or raid, and can be killed (the dead are remembered by name). **Their clothes and their work are the Art Director's step 5B** (wired 2026-10-21): the people's atlas carries the apron, the kerchief and the straw hat, the hammer, the saw and the bucket for the hand, and the clips hammer, saw, carry, carry_walk, kneel and sit_work (`tools/peoplerender.js` renders them, `art/build/folk_build.py` keys them on `people.blend`); a villager's calling dresses him (`ROLE_X`, `roleLook`: the smith's leather apron, the weaver's linen one, a straw hat on one farmer or fisher in two, grey hair on an elder; a woman in the dress wears the kerchief, under no hat) and gives him his clip (`JOB_CLIP`: the smith hammers at the forge with the hammer in hand, the well is the bucket held and carried, `carry_walk` whenever a villager carries (the brigade too), a priest kneels before the altar (the spot `pray`, held), the weaver and the net mender sit at their work; the hird's crafter saws at the bench). They can be broken into and burnt ("Destruction").
 Houses are narrow and long (a house 6 by 8 to 11 tiles, a longhouse 7 by 16 to 20, a hall 8 by 22 to 24, the outbuildings half as deep again where they are entered: grown 2026-10-22 on Robin's yes through the Art Director, "houses need to be bigger in general to make sense to enter"; the hero is 39 units tall against a tile's 24 of depth, so a 4-tile house was two and a half heroes deep; doors, furniture and the hero as they were).
 
-**Boats** (`src/yard.js`, `docs/archive/boats.md` for the yard's first write-up; **`docs/ships-plan.md`: how the ships should work, Robin's six thoughts answered,
-2026-10-21, its questions waiting for him**): E at a shipwright's bench steps into the Shipyard; a vessel is a hull design chosen
-there (raft, faering, boat, karve, longship by the bench's tier), **fitted out on a board** (2026-10-21, Robin: the yard's laid
-cells for upright things looked weird; the raft keeps its laid logs: he liked that): the rowing seats as a count with − and +
-(placed along the hull by `Yard.autoThwarts`: a rigged hull fills out from the mast, aft first; a boat spreads them), the mast,
-sail and steering oar as one needed thing, the dragon stem and the shields as yes or no, the vessel drawn live on the water in
-the frame as it will look (`scene.fittings`, `fitSet`, `hudHull`; the board writes the yard's cells, so the checks, the fit, the
-save and the launch read what they always read), and launched (the hull is paid then; it lies facing the open water, `launchHeading`: 2026-10-22, it had a fixed heading that pointed onto the land from any shore but the wreck's). Sailing is `Yard.sail`: every vessel, the raft too, goes forward on W and
-steers with A and D (Robin), with the wind for rigged hulls and rowers for the crew (hirdmen board and row). A boat or karve has a sea chest. The raft is taught by Arnor; boats need copper; **the karve is the copper age's sea-going ship** (wood 24, copper 10, fiber 12; decision 1 of the waters plan at its default, 2026-10-20: the ship that leaves home must be buildable from home's materials), the longship needs iron.
+**Boats** (`src/yard.js`; **`docs/ships-rework.md`: Robin's ship decisions of 2026-10-22 and the work in sixteen steps, in
+progress**; `docs/ships-plan.md` and `docs/archive/boats.md` before it): **three ships, each in sizes** (`Yard.MODELS`, a size a
+hull design in `Yard.HULLS`): the **rowboat** (4.6 m, just you, wood and fibre: Arnor's teaching, key `raft`), the **karve** for
+4, 8 and 12 rowers (`karve4`, `karve8`, `karve`; copper: the ship that leaves home) and the **longship** for 16, 20 and 26
+(`longship16`, `longship20`, `longship`; iron bars); a longer size more seats, faster with its crew, slower to turn, dearer.
+The raft, the faering and the boat are gone (an older save's become a rowboat, `shipOf`). **The fleet** (`fleet`; `raft` is the
+one in use: aboard, or ashore the one of yours you stand nearest, `fleetTick`): every ship you build is yours, kept in the save
+with its name, look and fitting, staying where you left it, drawn and solid there (`idleShips`); never lost. **The shipyard**
+(the piece `ship1`, on the sand at the water anywhere on your land, as many as you like; the raft bench's picture until Colin,
+AD's): E opens **its panel** on the right (`drawShipPanel`, `SPB`; `spOpen`, `spBuild`, `spSummon`, `spRefitStart`,
+`spRefitApply`): the ship being made floats by the yard and changes as you choose (`spPrev`, drawn in the world's items, the
+camera between you and her); **New ship**: the model (those you know: `spModelKnown`), the size, the name (click and type), the
+sail's two colours and its pattern, the shields' two paints, the stem's head, the hull's tar and trim (`Yard.LOOK`,
+`lookDefault`), the fitting (`Yard.FITTINGS`: Raider, Cargo, Voyager, the numbers mine), the cost in sockets, Build; **Your
+ships**: each with where it lies, Summon (to this yard's water) and Refit (look, name and fitting; a new fitting is paid). E or
+Esc closes it, and walking 140 off. **Sailing** is `Yard.sail` (shared with the Sea Editor): W forward, A and D turn (a little
+from a standstill, more with way on), the rowboat about 90 s to the big island, a karve with eight rowers about 53
+(`tests/ships.js`); **the wind a clear bonus** (`Yard.sailFill`: behind full, abeam three quarters, nothing from 150 degrees;
+the wind vane on the chart's rim, `drawWindVane`); **run it up the beach** (the page's `raftBeach`: only sand under the bow, the
+middle afloat; `v.beached`, S backs off) and rocks slide her along, never stuck. Every ship has a sea chest. The old
+yard scene (`inYard`) is no longer reached from the game.
 **The hulls are at the sizes they were dug up at** (2026-10-21, `Yard.HULLS` in metres: the faering 6.5 m, the boat 9, the karve
 16 by 4.2, the longship 23; a yard cell is a thwart's pitch, `CW` 24; the sizes measured by `tests/ships.js`), **the camera pulls
 back at sea by the hull** (`H.sea`: a karve 0.55, a longship 0.45; Robin, 2026-10-21: "it feels more epic and big, and you feel
