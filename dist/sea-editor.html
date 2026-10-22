@@ -7646,19 +7646,31 @@ var T = 32, TS = 24, K = 0.75;
   // and the hull turns to face it and goes), 1 is Tiller (W drives, S backs, A and D turn). top and accel in units a
   // second, turn in radians a second, glide how long it keeps moving after you let go, grip how firmly it follows its bow.
   // rowK: what each rower adds to the top speed and the acceleration (a longship's twenty-six add less each than a faering's four)
-  var HANDLING = { raft: { steer: 1, top: 54, accel: 40, turn: 1.6, glide: 1.4, grip: 0.5 }, faering: { steer: 1, top: 92, accel: 56, turn: 2.2, glide: 1.8, grip: 0.62, rowK: 0.1 }, boat: { steer: 1, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, rowK: 0.08 },
-    karve: { steer: 1, top: 115, accel: 42, turn: 1.3, glide: 3.2, grip: 0.72, rowK: 0.05 }, longship: { steer: 1, top: 128, accel: 34, turn: 0.9, glide: 4.2, grip: 0.8, rowK: 0.03 } };
+  /* (2026-10-22, docs/ships-rework.md, Robin: the rowboat crosses to the big island in about 90 s, about 7700 to 9700 units shore to
+     shore on the game's map; a karve with a crew about half that: the rowboat's top 92, the karve's rowers 0.06 each) */
+  var HANDLING = { raft: { steer: 1, top: 92, accel: 52, turn: 1.9, glide: 1.8, grip: 0.58 }, rowboat: { steer: 1, top: 92, accel: 52, turn: 1.9, glide: 1.8, grip: 0.58 }, faering: { steer: 1, top: 92, accel: 56, turn: 2.2, glide: 1.8, grip: 0.62, rowK: 0.1 }, boat: { steer: 1, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, rowK: 0.08 },
+    karve: { steer: 1, top: 115, accel: 42, turn: 1.3, glide: 3.2, grip: 0.72, rowK: 0.06 }, longship: { steer: 1, top: 128, accel: 34, turn: 0.9, glide: 4.2, grip: 0.8, rowK: 0.03 } };
   // The wind is a buff only (reward, never punishment): a sail with the wind behind it goes up to (1 + k) times the top speed, and a wind
   // ahead costs nothing. Each rower aboard (v.crew, capped by the seats) adds rowK to the top speed and the acceleration.
   var WIND = { k: 0.5, rowK: 0.07 };
+  /* How full the sail is by where the wind comes from (2026-10-22, Robin: the wind a clear bonus): d is the angle between the heading and
+     where the wind blows to: behind (0) full, abeam (a right angle) three quarters, close-hauled less, nothing from 150 degrees round */
+  function sailFill(windA, h) { var d = Math.abs(wrapA(windA - h)); return d <= Math.PI / 2 ? 1 - 0.25 * d / (Math.PI / 2) : Math.max(0, 0.75 * (1 - (d - Math.PI / 2) / (Math.PI / 3))); }
   function wrapA(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
   // One step of sailing: v = { x, y, h, speed, vx, vy }, inp = { ix, iy } (-1..1 each), free(x, y, h) says whether the
   // hull fits there, H the handling. The same physics in the game and the Sea Editor.
-  function sail(v, inp, dt, free, H, wind) {
-    var ix = inp.ix || 0, iy = inp.iy || 0, want = 0, stuck = !free(v.x, v.y, v.h), h0 = v.h;
+  /* beach(x, y, h), when the page gives it, says the hull there touches only sand at its bow: the boat runs up the beach and stops
+     there (v.beached), W pushes it no further, S backs it off into the water; rocks, cliffs and steep shores stop it and it slides
+     along them, and a turn blocked by the land first edges off it (2026-10-22, docs/ships-rework.md, Robin: "run it up the beach";
+     "rocks and cliffs stop you without sticking") */
+  function nudged(v, free, h) { var a, k; for (k = 1; k <= 3; k++) for (a = 0; a < 6.283; a += 0.785) { var x = v.x + Math.cos(a) * 3 * k, y = v.y + Math.sin(a) * 3 * k; if (free(x, y, h)) { v.x = x; v.y = y; return true; } } return false; }
+  function sail(v, inp, dt, free, H, wind, beach) {
+    if (v.beached && free(v.x, v.y, v.h)) v.beached = 0;   // afloat again
+    else if (!v.beached && beach && !free(v.x, v.y, v.h) && beach(v.x, v.y, v.h)) v.beached = 1;   // lying on a beach (a loaded game keeps no state: where she lies says it)
+    var ix = inp.ix || 0, iy = inp.iy || 0, want = 0, stuck = !free(v.x, v.y, v.h) && !v.beached, h0 = v.h;
     if (v.speed == null) v.speed = 0;
     var crew = Math.min(Math.max(0, (v.crew || 0) - (v.helm ? 1 : 0)), v.rowers != null ? v.rowers : 99), rowK = 1 + (H.rowK != null ? H.rowK : (WIND.rowK || 0)) * crew, sailK = 1, fill = 0;   // (the helmsman does not row)
-    if (v.sail && wind && wind.k > 0) { fill = Math.max(0, Math.cos(wind.a - v.h)); sailK = 1 + wind.k * fill; }      // the share of the wind that fills the sail
+    if (v.sail && wind && wind.k > 0) { fill = sailFill(wind.a, v.h); sailK = 1 + wind.k * (v.sailK || 1) * fill; }      // the share of the wind that fills the sail (sailK: a Voyager's better sail)
     v.sailFill += ((iy < 0 || (!H.steer && (ix || iy)) ? fill : 0) - (v.sailFill || 0)) * Math.min(1, dt * 2); if (!(v.sailFill > 0)) v.sailFill = 0;   /* (the true fill: the speed's buff, and whether the oars rest) */
     v.sailSet = (v.sailSet || 0) + ((v.sail && (iy < 0 || (!H.steer && (ix || iy)) || Math.abs(v.speed) > 20) ? 1 : 0) - (v.sailSet || 0)) * Math.min(1, dt * 1.5);   /* (Robin, 2026-10-21: the sail furling whenever the wind was not behind read as random; now it is SET while she is driven and furled at rest, its belly by the wind) */   // the sail fills as it is set and the wind comes behind
     v.rud = (v.rud || 0) + (ix - (v.rud || 0)) * Math.min(1, dt * 6);                                                                          // the steering oar follows the tiller
@@ -7671,19 +7683,25 @@ var T = 32, TS = 24, K = 0.75;
         want = H.top * Math.max(0.25, Math.cos(Math.min(1.4, Math.abs(diff))));   // ease off while the bow swings round
       }
     } else {
-      want = iy < 0 ? H.top : (iy > 0 ? -H.top * 0.4 : 0);
-      var nh2 = v.h + ix * H.turn * dt * Math.min(1, Math.abs(v.speed) / (H.top * 0.35)) * (v.speed < 0 ? -1 : 1);
-      if (stuck || free(v.x, v.y, nh2)) v.h = nh2;
+      want = iy < 0 ? (v.beached ? 0 : H.top) : (iy > 0 ? -H.top * 0.4 : 0);
+      var wayK = Math.max(0.28, Math.min(1, Math.abs(v.speed) / (H.top * 0.35))), nh2 = v.h + ix * H.turn * dt * wayK * (v.speed < -2 ? -1 : 1);   // (a little turn with no way on: the oars turn her)
+      if (!v.beached) { if (stuck || free(v.x, v.y, nh2)) v.h = nh2; else if (ix && nudged(v, free, nh2)) v.h = nh2; }
+      else if (ix && (free(v.x, v.y, nh2) || (beach && beach(v.x, v.y, nh2)))) v.h = nh2;   // beached, she pivots slowly on her bow where the sand lets her (never caught with sand at both ends)
     }
     if (want !== 0) { var up = H.accel * dt; v.speed += Math.max(-up, Math.min(up, want - v.speed)); }
     else v.speed *= Math.exp(-dt / H.glide);
     var tvx = Math.cos(v.h) * v.speed, tvy = Math.sin(v.h) * v.speed, g = Math.min(1, dt * (1 + H.grip * 11));
     v.vx += (tvx - v.vx) * g; v.vy += (tvy - v.vy) * g;
     var nx = v.x + v.vx * dt, ny = v.y + v.vy * dt;
+    var fw = v.speed > 0.5;
     if (stuck || free(nx, ny, v.h)) { v.x = nx; v.y = ny; }
-    else if (free(nx, v.y, v.h)) { v.x = nx; v.vy *= 0.3; v.speed *= 0.9; }
-    else if (free(v.x, ny, v.h)) { v.y = ny; v.vx *= 0.3; v.speed *= 0.9; }
-    else { v.vx *= 0.2; v.vy *= 0.2; v.speed *= 0.5; }
+    else if (beach && (fw || v.beached) && beach(nx, ny, v.h)) { v.x = nx; v.y = ny; v.beached = 1; if (fw) { var dk = Math.exp(-dt * 6); v.speed *= dk; v.vx *= dk; v.vy *= dk; if (Math.abs(v.speed) < 4) { v.speed = 0; v.vx = v.vy = 0; } } }   // up the sand: she slows and stops (backing off, she just moves)
+    else if (v.beached && fw) { v.speed = 0; v.vx = v.vy = 0; }                                                     // beached: no further
+    else if (free(nx, v.y, v.h)) { v.x = nx; v.vy *= 0.5; v.speed *= 0.96; }                                       // along the shore
+    else if (free(v.x, ny, v.h)) { v.y = ny; v.vx *= 0.5; v.speed *= 0.96; }
+    else { var vm = Math.hypot(v.vx, v.vy), a2, done = false;                                                       // against rock: slide along it, not stop dead
+      for (a2 = 0.4; a2 <= 1.2 && !done && vm > 1; a2 += 0.4) [1, -1].forEach(function (sd) { if (done) return; var va = Math.atan2(v.vy, v.vx) + sd * a2, sx = v.x + Math.cos(va) * vm * Math.cos(a2) * dt, sy = v.y + Math.sin(va) * vm * Math.cos(a2) * dt; if (free(sx, sy, v.h)) { v.x = sx; v.y = sy; done = true; } });
+      v.vx *= 0.6; v.vy *= 0.6; v.speed *= done ? 0.85 : 0.6; }
     v.h = wrapA(v.h);
     v.turn = wrapA(v.h - h0) / Math.max(1e-4, dt);                                                                           // the rate of turn, for the water (radians a second)
     if (!v.trail) v.trail = []; v.trailT = (v.trailT || 0) + dt; if (v.trailT > 0.12) { v.trailT = 0; v.trail.push({ x: v.x, y: v.y, age: 0, sp: Math.abs(v.speed) }); if (v.trail.length > 18) v.trail.shift(); }
@@ -8114,7 +8132,7 @@ var scene = {
   key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
 };
 
-return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, masthead: masthead, stemPoint: stemPoint, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullParts: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };

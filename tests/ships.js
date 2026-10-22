@@ -59,4 +59,41 @@ check('the spots spread along the shore both ways', sp.some(q => q.x < 950) && s
 const cv = createCanvas(600, 400), c = cv.getContext('2d'); let threw = null;
 try { const v = Object.assign({}, kv, { crew: 13, helm: true, aboard: true, rowing: true, stroke: 1 }); Yard.drawVessel(c, v, 1, { split: true }); Yard.drawRigOf(c, v, 1); Yard.drawVesselFront(c, v, 1, [{ x: v.x, y: v.y }]); Yard.drawOars(c, v, 1, Yard.crewPlaces(v, 13).filter(q => q.kind === 'row').concat([{ x: 0, y: 0, side: 0 }])); Yard.drawVessel(c, v, 1); } catch (e) { threw = e; }
 check('the split drawing (hull, rig, near rail, oars) and the whole one throw nothing', !threw, threw && threw.message);
+// the sailing (docs/ships-rework.md, 2026-10-22): the crossing to the big island (about 7700 to 9700 units shore to shore) in about
+// 90 s in the rowboat, a karve with a crew about half that; the turn from a standstill and under way; the wind a clear bonus; the
+// beach run up and backed off; a rock wall slid along, never stuck
+function run(kind, crew, opts) {
+  opts = opts || {}; const H = Object.assign({}, Yard.HANDLING[kind]), v = { x: 0, y: 0, h: opts.h || 0, speed: 0, vx: 0, vy: 0, kind, crew, sail: Yard.rigged(kind), sailK: 1 }, dt = 1 / 60;
+  const free = opts.free || (() => true), wind = opts.wind || null; let t = 0;
+  while (t < (opts.T || 400)) { Yard.sail(v, opts.inp ? opts.inp(t, v) : { ix: 0, iy: -1 }, dt, free, H, wind, opts.beach); t += dt; if (opts.until && opts.until(v, t)) break; }
+  return { v, t };
+}
+const D = 8700;   // the crossing, the middle of the two measures
+[['rowboat', 0], ['karve', 0], ['karve', 4], ['karve', 8], ['karve', 12], ['longship', 16], ['longship', 26]].forEach(([k, n]) => {
+  const r = run(k, n, { until: v => v.x >= D, T: 600 });
+  console.log('     ' + (k + ' with ' + n + ' at the oars').padEnd(30) + Math.round(r.t) + ' s for ' + D + ' units, top ' + Math.round(r.v.speed));
+});
+const rb = run('rowboat', 0, { until: v => v.x >= D, T: 600 });
+check('the rowboat crosses in about 90 s', rb.t > 75 && rb.t < 110, Math.round(rb.t) + ' s');
+const kc = run('karve', 8, { until: v => v.x >= D, T: 600 });
+check('a karve with eight at the oars about half that or less', kc.t < rb.t * 0.65, Math.round(kc.t) + ' s');
+// the turn from a standstill: a little, and more with the way on
+const still = run('rowboat', 0, { inp: () => ({ ix: 1, iy: 0 }), T: 2 }), under = run('rowboat', 0, { inp: t => ({ ix: t > 3 ? 1 : 0, iy: -1 }), T: 4 });
+check('the rowboat turns a little from a standstill', still.v.h > 0.6, (still.v.h / 2).toFixed(2) + ' rad a second');
+check('and more with the way on', under.v.h > still.v.h / 2 * 1.5, under.v.h.toFixed(2) + ' rad a second');
+// the wind, from four sides: behind, abeam, close-hauled, ahead
+const wk = { k: 0.5 };
+const wind = [0, Math.PI / 2, Math.PI * 0.72, Math.PI].map(d => { const r = run('karve', 0, { wind: { a: d, k: 0.5 }, T: 30 }); return Math.round(r.v.speed); });
+console.log('     the karve alone under sail, the wind behind, abeam, close-hauled, ahead: ' + wind.join(', '));
+check('the wind behind best, abeam nearly as good, ahead nothing', wind[0] > wind[1] && wind[1] > wind[2] && wind[2] >= wind[3] && wind[1] > wind[3] * 1.2, wind.join(' > '));
+// the beach: a shore of sand at x > 400 (the bow may run up onto it); rock beyond x > 460
+const sand = (x, y, h) => { const bx = x + Math.cos(h) * 17; return bx < 400 && x < 400; }, beachFn = (x, y, h) => { const bx = x + Math.cos(h) * 17; return x < 400 && bx >= 400 && bx < 440; };
+const br = run('rowboat', 0, { free: sand, beach: beachFn, T: 12 });
+check('the rowboat runs up the beach and stops there', br.v.beached === 1 && Math.abs(br.v.speed) < 1 && br.v.x > 385, 'x ' + br.v.x.toFixed(0) + ', speed ' + br.v.speed.toFixed(1) + ', beached ' + br.v.beached);
+const back = (() => { const v = br.v, H = Yard.HANDLING.rowboat; let t = 0; while (t < 4) { Yard.sail(v, { ix: 0, iy: 1 }, 1 / 60, sand, H, null, beachFn); t += 1 / 60; } return v; })();
+check('and S backs her off into the water', !back.beached && back.x < 380, 'x ' + back.x.toFixed(0));
+// a rock wall at an angle: she slides along it, never stuck
+const wv = { x: 0, y: -80, h: 0.6, speed: 0, vx: 0, vy: 0, kind: 'rowboat', crew: 0 }, wf = (x, y) => y < x * 0.3 - 40, H2 = Yard.HANDLING.rowboat; let moved = 0, lastX = 0;
+for (let t = 0; t < 20; t += 1 / 60) { Yard.sail(wv, { ix: 0, iy: -1 }, 1 / 60, wf, H2, null); }
+check('against a slanting rock wall she slides along it', wv.x > 300 && wf(wv.x, wv.y), 'x ' + wv.x.toFixed(0) + ' y ' + wv.y.toFixed(0));
 console.log('bad = ' + bad);

@@ -84,7 +84,7 @@ const H = Yard.HANDLING.karve, calm = run('karve', { a: 0, k: 0 }, 0, 20), behin
 check('calm: the top speed', Math.abs(calm - H.top) < 1, calm.toFixed(1));
 check('wind behind: half again as fast', Math.abs(behind - H.top * 1.5) < 1.5, behind.toFixed(1));
 check('wind ahead: no slower', Math.abs(ahead - H.top) < 1, ahead.toFixed(1));
-check('twelve rowers: 60% faster (0.05 each)', Math.abs(rowed - H.top * 1.6) < 1.5, rowed.toFixed(1));
+check('twelve rowers: 72% faster (0.06 each, docs/ships-rework.md)', Math.abs(rowed - H.top * 1.72) < 1.5, rowed.toFixed(1));
 check('more rowers than seats add nothing', Math.abs(over - rowed) < 0.5, over.toFixed(1));
 const lrow = run('longship', { a: 0, k: 0 }, 8, 20, ls), LH = Yard.HANDLING.longship; check('a longship\'s eight rowers: 24% faster (0.03 each)', Math.abs(lrow - LH.top * 1.24) < 1.5, lrow.toFixed(1));
 const boat = run('boat', { a: 0, k: 0.5 }, 0, 20, [seat(2)]); check('the boat has no sail: the wind does nothing', Math.abs(boat - Yard.HANDLING.boat.top) < 1, boat.toFixed(1));
