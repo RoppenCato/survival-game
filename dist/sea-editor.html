@@ -6117,6 +6117,7 @@ var BUILD = {
   bath: { name: 'Bathhouse', w: [3, 3], h: [2, 2], roofed: true, inside: 'bath' },
   pit: { name: 'Pit-house', w: [3, 3], h: [2, 2], roofed: true, inside: 'pit', floor: 1 },    // real pit-houses were about 4 m by 3
   boathouse: { name: 'Boathouse', w: [6, 8], h: [3, 3], roofed: true, inside: 'boat', open: true },
+  lean: { name: 'Lean-to', w: [2, 3], h: [2, 2], roofed: true, inside: 'lean' },   // an annex against a house's side, under its own lower roof (the varied silhouettes, Robin's yes of 2026-10-22)
   church: { name: 'Church', w: [4, 4], h: [8, 9], roofed: true, inside: 'church', floor: 2 }   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side. Escomb's nave is 13.3 m by 4.4 inside: nine tiles by three (it was 5 to 6 deep)
 };
 /* The story roll (settlements-plan.md section 6, mine): the one thing that sets a place apart, rolled before its shape so the
@@ -6145,6 +6146,8 @@ var PRICE = {                                           // what a way in costs t
   gap: { secs: 0, noise: 0, seen: 'nobody', note: 'the villagers’ own shortcut behind a bush' },
   wall: { secs: 40, noise: 430, seen: 'everybody', note: 'the ram on cut stone' }
 };
+// the radius each thing takes on the floor, as the game's PIECES give them (docs/interiors-plan.md section 4; a flat thing 0)
+var RAD = { bed: 8, table: 5, chair: 3, bench: 6, chest: 5, crate: 4, barrel: 4, sack: 5, stoneHearth: 8, campfire: 5, loom: 6, quern: 4, stool: 3, shelf: 4, cupboard: 5, workbench: 7, dryingRack: 6, spearRack: 4, shieldRack: 4, haystack: 6, trough: 5, furnace: 9, altar: 6, font: 4, foodTable: 7, logSeat: 5, stall: 8, rug: 0, cellarDoor: 0, trapdoor: 0, windowBox: 0, lantern: 0, torchBracket: 0, sign: 0, awning: 0, woodenWell: 8, firePit: 8 };
 var NAMES = ['Arnfinn', 'Bera', 'Dagny', 'Eyvind', 'Frida', 'Gorm', 'Halla', 'Ingolf', 'Jorunn', 'Ketil', 'Liv', 'Mundi', 'Nanna', 'Ragna', 'Sigrun', 'Thorir', 'Ulf', 'Vigdis', 'Yngvar', 'Asa', 'Bjorn', 'Gunnhild', 'Hakon'];
 var ROLES = { fisherman: ['Sit, sit. The sea has been feeding me for sixty years and it has not run dry yet.', 'Perch in the shallows, cod and salmon out where the water turns dark. Cast past the weed and wait: the float tells you everything.', 'Grill a fish on a flat stone, or boil two with berries: a soup that warms the whole night. Three on the rack over a charcoal smoke, and they keep till spring.', 'Mind the pike. Let him run when he runs, and reel when he rests, or he takes your line with him.'], priest: ['Peace be upon this house, stranger.', 'The silver on the altar is God’s, not mine. He will know who took it.'], guard: ['Keep your blade sheathed inside the walls.', 'The jarl sees everything from his hall.'], merchant: ['Wool, salt, iron. What have you got?', 'Silver by weight, friend. We take no promises.'], farmer: ['The barley came in well this year.', 'Mind the goat: she butts.'], fisher: ['The herring run at dawn, out past the skerry.', 'That boat has crossed worse water than this.'], smith: ['Copper is soft. Bring me bog iron and I will show you steel.', 'My bench is yours if you leave it as you found it.'], weaver: ['Wool from our own sheep. Feel it.', 'The loom took a winter to build.'], elder: ['Ormr\'s men came once. They will come again.', 'My father raised the stone by the gate.'], child: ['Are you a Viking?', 'I found a bird\'s nest with four eggs!'], thrall: ['...', 'I was taken from the south. This is home now.'] };
 function rngOf(seed) { var s = (seed >>> 0) || 1; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -6166,22 +6169,24 @@ function make(seed, site, opts) {
   var shape = opts.shape && opts.shape !== 'auto' ? opts.shape : (A.family === 'auto' ? (R() < 0.5 ? 'street' : 'green') : A.family);
   var story = opts.story && opts.story !== 'auto' && STORIES[opts.story] ? opts.story : storyOf(archId, shore, R);
   var age = opts.age && opts.age !== 'auto' ? opts.age : (R() < 0.3 ? 'new' : R() < 0.75 ? 'settled' : 'old');
-  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, stockK: stockK, hoardK: hoardK, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, tier: A.tier || 0, shape: shape, story: story, age: age, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin, units: [], yards: [], spine: [], nodes: [], zones: [], ways: [], secrets: [], notes: [] };
+  var V = { seed: seed, arch: archId, wealth: wealth, shore: shore, stockK: stockK, hoardK: hoardK, name: opts.name || null, tx: site.tx, ty: site.ty, w: site.w, h: site.h, tier: A.tier || 0, shape: shape, story: story, age: age, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], folk: [], finds: [], fence: null, ruin: !!A.ruin, units: [], yards: [], spine: [], nodes: [], zones: [], ways: [], secrets: [], notes: [], fences: [] };
   var tx = site.tx, ty = site.ty, w = site.w, h = site.h, HK = G.houseK || 1;
   var lowland = !!(opts.biome || A.lowland);
   var wallOf = function (step) { var wv = wealth - step * 0.3; if (lowland) return wv >= G.wealthStone ? 6 : wv >= G.wealthLogs - 0.15 ? 5 : wv >= G.wealthPlanks ? 1 : 2; return wv >= G.wealthStone ? 3 : wv >= G.wealthLogs ? 0 : wv >= G.wealthPlanks ? 1 : 2; };   // the lowlands: cut stone for the rich, timber framing for most
   var roofOf = function (big) { if (lowland) return (big && wealth >= 0.45) || wealth >= 0.7 ? 3 : 1; if (big && wealth >= G.shinglesAt) return 2; return wealth < G.turfBelow ? 0 : 1; };   /* (2026-10-14, Robin: thatch is the roof; turf only for the poorest) */   // the lowlands: clay tiles for the rich, thatch for the rest
-  var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : wealth >= G.railAt ? 'fence' : 'rail'; if (A.chapel) fenceKind = 'drystone'; if (A.hut && (fenceKind === 'palisade' || fenceKind === 'drystone')) fenceKind = 'fence';   // (the fisherman's hut keeps a wattle fence at most: a ring of stakes round two buildings shut its door, 2026-10-22)
-  var farmFence = A.family === 'single' ? null : wealth >= G.farmFenceAt ? (wealth >= G.farmWattleAt ? 'fence' : 'rail') : null;   // a farm's own fence inside a village (section 9's question 1: both, by wealth)
+  var fenceKind = A.townwall ? 'townwall' : A.palisade || wealth >= G.palisadeAt ? 'palisade' : wealth >= G.drystoneAt ? 'drystone' : 'rail'; if (A.chapel) fenceKind = 'drystone';   /* (wattle only for pens and the kitchen plot: Robin, 2026-10-22) */ if (A.hut && (fenceKind === 'palisade' || fenceKind === 'drystone')) fenceKind = 'fence';   // (the fisherman's hut keeps a wattle fence at most: a ring of stakes round two buildings shut its door, 2026-10-22)
+  var farmFence = A.family === 'single' ? null : wealth >= G.farmFenceAt ? 'rail' : null;   // a farm's own fence inside a village (section 9's question 1: both, by wealth)
   // ---- what the generator writes goes into the current container C: the place itself, or a unit's box before it is stamped in ----
   var C = V;
   function newBox(bw, bh) { return { w: bw, h: bh, lots: [], floors: {}, H: {}, V: {}, posts: [], roofs: [], items: [], paints: [], props: [], finds: [], yard: null, front: null }; }
-  function H(x, y, t, m) { C.H[key(x, y)] = { t: t, m: m }; } function Vw(x, y, t, m) { C.V[key(x, y)] = { t: t, m: m }; }
+  function H(x, y, t, m, hid) { C.H[key(x, y)] = hid ? { t: t, m: m, hidden: 1 } : { t: t, m: m }; } function Vw(x, y, t, m, hid) { C.V[key(x, y)] = hid ? { t: t, m: m, hidden: 1 } : { t: t, m: m }; }   // hidden: the barrier under a fence drawn as a run of posts (V.fences), not to be drawn itself (Robin, 2026-10-22, through the Art Director: fences as angled runs following the land, not on the grid)
   function item(name, x, y, extra) { var it = { name: name, x: x, y: y }; for (var q in extra || {}) it[q] = extra[q]; C.items.push(it); return it; }
   function prop(o) { C.props.push(o); return o; } function find(o) { C.finds.push(o); return o; }
   function dab(x, y, r, kind) { C.paints.push({ x: x, y: y, r: r, kind: kind }); }
   function strokeTo(a, b, r, kind, r2) { var n = Math.max(2, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / (r * 0.6))), i; for (i = 0; i <= n; i++) { var u = i / n, rr = r2 == null ? r : r + (r2 - r) * u; dab(a[0] + (b[0] - a[0]) * u + (R() - 0.5) * 4, a[1] + (b[1] - a[1]) * u + (R() - 0.5) * 4, rr * (0.85 + R() * 0.3), kind); } }
   function tile(x, y) { return [(x + 0.5) * T, (y + 0.5) * T]; }
+  var CALLINGS = ['farmer', 'farmer', 'fisher', 'smith', 'weaver', 'elder', 'thrall'];
+  function rollCalling() { var c = shore && R() < 0.35 ? 'fisher' : CALLINGS[Math.floor(R() * CALLINGS.length)]; return c; }   // a household's calling, rolled on its house so its inside fits it (the work thing by the calling, docs/interiors-plan.md)
   function earthPatch(cx, cy, rx, ry, fill) {           // trodden earth as one shape: dabs on a close grid over an ellipse, solid in the middle, thinning to a ragged rim with islands of grass (the game's ground is a field of tiles: a lone dab is a lone tile, 2026-10-22). The rim thins in CLUSTERS of about a tile and a half, never one tile (Robin, 2026-10-22, through the Art Director): every cell of 48 units keeps or drops all its dabs together
     var sx, sy, cells = {}, CS = 48;
     function keepCell(x2, y2) { var ck = key(Math.floor((x2 + rx) / CS), Math.floor((y2 + ry) / CS)); if (cells[ck] == null) { var ccx = (Math.floor((x2 + rx) / CS) + 0.5) * CS - rx, ccy = (Math.floor((y2 + ry) / CS) + 0.5) * CS - ry, d = Math.hypot(ccx / rx, ccy / ry); cells[ck] = d <= 0.55 || R() <= fill * (1.15 - d); } return cells[ck]; }
@@ -6200,29 +6205,69 @@ function make(seed, site, opts) {
     if (l.w <= 2 && (l.door === 's' || l.door === 'n')) dx = l.x + Math.floor(R() * l.w);
     var gaps = V.ruin || l.ruin ? Math.max(1, Math.floor((l.w + l.h) * 0.35)) : 0, gapAt = {}; if (gaps) for (var g = 0; g < gaps; g++) gapAt[Math.floor(R() * (l.w * 2 + l.h * 2))] = 1;
     var n = 0; l.wins = [];
-    for (x = l.x; x < l.x + l.w; x++) { if (!gapAt[n++]) H(x, l.y, l.door === 'n' && x === dx ? 'door' : 'wall', m); }
-    for (x = l.x; x < l.x + l.w; x++) { var south = l.door === 's' && x === dx ? 'door' : ((l.w >= 6 && l.id !== 'byre' && l.id !== 'boathouse' ? (x - l.x) % 3 === 1 && x !== dx + 1 && R() < 0.8 : (x === l.x + l.w - 1 || (l.door !== 's' && x === l.x)) && l.w > 1 && R() < 0.6) ? 'window' : 'wall');   /* (a long wall has a window every third tile) */ if (b.open && l.door === 's') south = x === dx ? 'door' : (x === l.x || x === l.x + l.w - 1 ? 'wall' : 'door'); if (!gapAt[n++]) { H(x, l.y + l.h, south, m); if (south === 'window') l.wins.push(x); } }
-    for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x, y, l.door === 'w' && y === dy ? 'door' : (l.id === 'church' && y > l.y && y % 2 ? 'window' : 'wall'), m); }
-    for (y = l.y; y < l.y + l.h; y++) { if (!gapAt[n++]) Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : ((l.h >= 6 && l.id !== 'church' ? (y - l.y) % 3 === 1 && R() < 0.6 : y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e') ? 'window' : 'wall'), m); }
-    for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) C.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0);
+    var bow = (l.id === 'longhouse' || l.id === 'hall') && l.w >= 12 && !V.ruin && !l.ruin && (l.door === 's' || l.door === 'n');   // the boat-shaped walls of the real longhouse: a tile of inset at each end (the varied silhouettes, Robin's yes of 2026-10-22)
+    if (bow) { l.bow = 1; if (dx === l.x) dx = l.x + 1; if (dx === l.x + l.w - 1) dx = l.x + l.w - 2; }
+    var bx0 = bow ? l.x + 1 : l.x, bx1 = bow ? l.x + l.w - 1 : l.x + l.w, by0 = bow ? l.y + 1 : l.y, by1 = bow ? l.y + l.h - 1 : l.y + l.h, sk = l.skip || '';
+    for (x = bx0; x < bx1; x++) { if (!gapAt[n++] && sk !== 'n') H(x, l.y, l.door === 'n' && x === dx ? 'door' : 'wall', m); }
+    for (x = bx0; x < bx1; x++) { var south = l.door === 's' && x === dx ? 'door' : ((l.w >= 6 && l.id !== 'byre' && l.id !== 'boathouse' ? (x - l.x) % 3 === 1 && x !== dx + 1 && R() < 0.8 : (x === l.x + l.w - 1 || (l.door !== 's' && x === l.x)) && l.w > 1 && R() < 0.6) ? 'window' : 'wall');   /* (a long wall has a window every third tile) */ if (b.open && l.door === 's') south = x === dx ? 'door' : (x === l.x || x === l.x + l.w - 1 ? 'wall' : 'door'); if (!gapAt[n++] && sk !== 's') { H(x, l.y + l.h, south, m); if (south === 'window') l.wins.push(x); } }
+    for (y = by0; y < by1; y++) { if (!gapAt[n++] && sk !== 'w') Vw(l.x, y, l.door === 'w' && y === dy ? 'door' : (l.id === 'church' && y > l.y && y % 2 ? 'window' : 'wall'), m); }
+    for (y = by0; y < by1; y++) { if (!gapAt[n++] && sk !== 'e') Vw(l.x + l.w, y, l.door === 'e' && y === dy ? 'door' : ((l.h >= 6 && l.id !== 'church' ? (y - l.y) % 3 === 1 && R() < 0.6 : y === l.y && l.h > 1 && R() < 0.5 && l.door !== 'e') ? 'window' : 'wall'), m); }
+    if (bow) { H(l.x, l.y + 1, 'wall', m); H(l.x + l.w - 1, l.y + 1, 'wall', m); H(l.x, l.y + l.h - 1, 'wall', m); H(l.x + l.w - 1, l.y + l.h - 1, 'wall', m); Vw(l.x + 1, l.y, 'wall', m); Vw(l.x + 1, l.y + l.h - 1, 'wall', m); Vw(l.x + l.w - 1, l.y, 'wall', m); Vw(l.x + l.w - 1, l.y + l.h - 1, 'wall', m); }   // the notches at the four corners
+    for (y = l.y; y < l.y + l.h; y++) for (x = l.x; x < l.x + l.w; x++) { if (bow && (x === l.x || x === l.x + l.w - 1) && (y === l.y || y === l.y + l.h - 1)) continue; C.floors[key(x, y)] = b.floor != null ? b.floor : (l.id === 'byre' || l.id === 'boathouse' ? 1 : 0); }
     if (!(V.ruin || l.ruin) || R() < 0.5) C.roofs.push({ tx: l.x, ty: l.y, m: roof });
     if (l.id === 'hall' && l.w >= 8) { l.back = l.x + l.w - 3; l.backDy = l.y + Math.floor(l.h / 2); for (y = l.y; y < l.y + l.h; y++) Vw(l.back, y, y === l.backDy ? 'door' : 'wall', m); }   // the hall's back room: an inner wall with a door, the jarl's chest behind it (raid step 8)
     l.m = m; l.roof = roof; l.dx = dx; l.dy = dy;
-    furnish(l);
+    furnish(l); roomCheck(l);
+  }
+  /* roomCheck(l): the room's things rasterised and tested (docs/interiors-plan.md section 4): the threshold (the door's inside tile and
+     the next) free; the lane (a house: the door's column to the far wall; a long house: a tile either side of its fires) free; the
+     clear circle (two tiles a house, three a long house) somewhere; every thing within reach of the floor the door reaches. A test
+     that fails takes out the optional thing nearest the fault and tries again; what is left failing is written on the lot (l.roomBad)
+     for the audit. The hero is 7 units wide here, the walls a tile apart. */
+  function roomCheck(l) {
+    if (!BUILD[l.id] || BUILD[l.id].open || l.id === 'church' || l.id === 'store' || l.id === 'pit' || l.id === 'bath' || l.id === 'lean' || l.id === 'byre' || l.id === 'boathouse') return;
+    var x0 = l.x * T, y0 = l.y * T, x1 = (l.x + l.w) * T, y1 = (l.y + l.h) * T, long = BUILD[l.id].inside === 'hall', HERO = 7, want = long ? 48 : 32, tries = 0, bad = null;
+    function things() { return C.items.filter(function (it) { var r = it.r != null ? it.r : (RAD[it.name] != null ? RAD[it.name] : 6); return r > 0 && it.x > x0 - 4 && it.x < x1 + 4 && it.y > y0 - 4 && it.y < y1 + 4; }); }
+    function doorIn() { return l.door === 's' ? [l.dx, l.y + l.h - 1, 0, -1] : l.door === 'n' ? [l.dx, l.y, 0, 1] : l.door === 'e' ? [l.x + l.w - 1, l.dy, -1, 0] : [l.x, l.dy, 1, 0]; }
+    function clearAt(px, py, S) { var c = Math.min(px - x0, x1 - px, py - y0, y1 - py), i; for (i = 0; i < S.length; i++) { var r = S[i].r != null ? S[i].r : (RAD[S[i].name] != null ? RAD[S[i].name] : 6); c = Math.min(c, Math.hypot(S[i].x - px, S[i].y - py) - r); } return c; }
+    while (tries++ < 8) {
+      var S = things(), d = doorIn(), fault = null, fx = -1, fy = -1;
+      var t1 = [(d[0] + 0.5) * T, (d[1] + 0.5) * T], t2 = [(d[0] + d[2] + 0.5) * T, (d[1] + d[3] + 0.5) * T];
+      if (clearAt(t1[0], t1[1], S) < HERO) { fault = 'threshold'; fx = t1[0]; fy = t1[1]; }
+      else if (clearAt(t2[0], t2[1], S) < HERO && d[1] + d[3] >= l.y && d[1] + d[3] < l.y + l.h && d[0] + d[2] >= l.x && d[0] + d[2] < l.x + l.w) { fault = 'threshold'; fx = t2[0]; fy = t2[1]; }
+      if (!fault && !long) { var k2 = 0, cx2 = d[0], cy2 = d[1]; while (cx2 >= l.x && cx2 < l.x + l.w && cy2 >= l.y && cy2 < l.y + l.h) { var cl = clearAt((cx2 + 0.5) * T, (cy2 + 0.5) * T, S); if (cl < HERO) { fault = 'lane'; fx = (cx2 + 0.5) * T; fy = (cy2 + 0.5) * T; break; } cx2 += d[2]; cy2 += d[3]; if (++k2 > 40) break; } }
+      if (!fault) { var best = 0, px, py; for (py = y0 + 8; py < y1; py += 8) for (px = x0 + 8; px < x1; px += 8) { var c3 = clearAt(px, py, S); if (c3 > best) best = c3; } if (best < want) { fault = 'circle'; fx = -1; } }
+      if (!fault) {                                       // the reach: the free floor from the door's tile, and every thing beside some of it
+        var free = {}, q = [[d[0], d[1]]], qi = 0, seen = {}; seen[key(d[0], d[1])] = 1;
+        while (qi < q.length) { var cq = q[qi++]; if (clearAt((cq[0] + 0.5) * T, (cq[1] + 0.5) * T, S) < HERO) continue; free[key(cq[0], cq[1])] = 1; [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (dd) { var nx = cq[0] + dd[0], ny = cq[1] + dd[1]; if (nx < l.x || ny < l.y || nx >= l.x + l.w || ny >= l.y + l.h || seen[key(nx, ny)]) return; seen[key(nx, ny)] = 1; q.push([nx, ny]); }); }
+        var i3; for (i3 = 0; i3 < S.length && !fault; i3++) { var it = S[i3], r = it.r != null ? it.r : (RAD[it.name] != null ? RAD[it.name] : 6), near = false, kx, ky; for (ky = Math.floor((it.y - r - 20) / T); ky <= Math.floor((it.y + r + 20) / T) && !near; ky++) for (kx = Math.floor((it.x - r - 20) / T); kx <= Math.floor((it.x + r + 20) / T) && !near; kx++) if (free[key(kx, ky)] && Math.hypot((kx + 0.5) * T - it.x, (ky + 0.5) * T - it.y) < r + 40) near = true; if (!near) { fault = 'reach'; fx = it.x; fy = it.y; } }
+      }
+      if (!fault) { l.roomBad = null; return; }
+      bad = fault;
+      var cand = C.items.filter(function (it) { return it.opt && it.x > x0 && it.x < x1 && it.y > y0 && it.y < y1; }), pick = null, bd = 1e9;   // the optional thing nearest the fault goes
+      cand.forEach(function (it) { var dd2 = fx < 0 ? 0 : Math.hypot(it.x - fx, it.y - fy); if (dd2 < bd) { bd = dd2; pick = it; } });
+      if (!pick) break; C.items.splice(C.items.indexOf(pick), 1);
+    }
+    l.roomBad = bad;
   }
   function furnish(l) {                               // what stands inside, by the building's kind; chests and crates carry the finds
     var cx = l.x + l.w / 2, p, k, U = l.u || {};
     if (BUILD[l.id].inside === 'hall') {
       // A hall: fires down the middle line with open floor between them, the sleeping places at both ends, tables and benches
       // along the far wall with the high seat in its middle, stores by the door wall, and two rows of posts carrying the roof.
-      var nH = l.w >= 19 ? 3 : 2, hk, ym = (l.y + l.h / 2) * T, hx = [];
-      for (hk = 0; hk < nH; hk++) { hx.push(l.x + l.w * (hk + 1) / (nH + 1)); item('stoneHearth', hx[hk] * T, ym + 2, { hearth: true, light: 1 }); }
-      for (k = 0.7; k < l.h - 0.9; k += 1.7) { item('bed', (l.x + 0.62) * T, (l.y + k) * T, { bed: true }); item('bed', (l.x + l.w - 0.62) * T, (l.y + k) * T, { bed: true }); }
+      var nH = l.w >= 19 ? 3 : 2, hk, ym = (l.y + l.h / 2) * T, hx = [], dxc = l.dx + 0.5, farE = dxc < l.x + l.w / 2 ? 1 : -1;   // farE: the end farther from the door (the loot deepest), +1 east
+      for (hk = 0; hk < nH; hk++) { var hxx = l.x + l.w * (hk + 1) / (nH + 1); if (Math.abs(hxx - dxc) < 1.3) hxx += hxx < dxc ? -1.1 : 1.1; hx.push(hxx); item('stoneHearth', hxx * T, ym + 2, { hearth: true, light: 1 }); }   // (a fire never stands straight in from the door)
+      var endIn = l.bow ? 1.5 : 0.7, endOut = l.h - (l.bow ? 1.4 : 0.9), fx = farE > 0 ? l.x + l.w - 0.62 : l.x + 0.62, nx = farE > 0 ? l.x + 0.62 : l.x + l.w - 0.62;
+      for (k = endIn; k < endOut; k += 1.7) item('bed', fx * T, (l.y + k) * T, { bed: true });   // the sleeping end, away from the door
+      item('bed', nx * T, (l.y + endIn) * T, { bed: true, opt: true });
       var seatX = l.x + l.w / 2, tx2;
-      for (tx2 = l.x + 3; tx2 <= l.x + l.w - 3; tx2 += 3.5) { if (Math.abs(tx2 - seatX) < 2.2) continue; item('table', tx2 * T, (l.y + 0.62) * T); item('bench', tx2 * T, (l.y + 1.3) * T, { seat: true }); }
-      if (wealth > 0.5) { item('shieldRack', (seatX - 1.6) * T, (l.y + 0.5) * T); if (l.w >= 19) item('shieldRack', (seatX + 2.7) * T, (l.y + 0.5) * T); }
-      item('chest', (l.x + l.w - 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: Math.round((2 + wealth * 6) * hoardK) } });
-      item('barrel', (l.x + 2.1) * T, (l.y + l.h - 0.55) * T); item('crate', (l.x + 2.9) * T, (l.y + l.h - 0.5) * T, { loot: { meat: 2, berries: 3 } });
+      for (tx2 = l.x + 3; tx2 <= l.x + l.w - 3; tx2 += 3.5) { if (Math.abs(tx2 - seatX) < 2.2) continue; item('table', tx2 * T, (l.y + 0.62) * T, { opt: true }); item('bench', tx2 * T, (l.y + 1.3) * T, { seat: true, opt: true }); }
+      for (tx2 = l.x + 2.5; tx2 <= l.x + l.w - 2.5; tx2 += 3.5) { if (Math.abs(tx2 - dxc) < 1.6) continue; item('bench', tx2 * T, (l.y + l.h - 0.62) * T, { seat: true, opt: true }); }   // the benches along the door wall too (the sleeping platforms), the door left clear
+      if (wealth > 0.5) { item('shieldRack', (seatX - 1.6) * T, (l.y + 0.5) * T, { opt: true }); if (l.w >= 19) item('shieldRack', (seatX + 2.7) * T, (l.y + 0.5) * T, { opt: true }); }
+      item('chest', (farE > 0 ? l.x + l.w - 2.2 : l.x + 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: Math.round((2 + wealth * 6) * hoardK) } });
+      var ex2 = farE > 0 ? l.x + 2.1 : l.x + l.w - 2.1, ex3 = farE > 0 ? l.x + 2.9 : l.x + l.w - 2.9;   // the entrance end: the stores by the door wall, the loom and the quern against the far long wall
+      if (Math.abs(ex2 - dxc) > 1.4) item('barrel', ex2 * T, (l.y + l.h - 0.55) * T, { opt: true }); if (Math.abs(ex3 - dxc) > 1.4) item('crate', ex3 * T, (l.y + l.h - 0.5) * T, { loot: { meat: 2, berries: 3 }, opt: true });
+      if (!l.u || !l.u.hall) { item('loom', (farE > 0 ? l.x + 1.6 : l.x + l.w - 1.6) * T, (l.y + 0.7) * T, { opt: true, work: 'weaver' }); if (R() < 0.6) item('quern', (farE > 0 ? l.x + 3.4 : l.x + l.w - 3.4) * T, (l.y + 0.6) * T, { opt: true, work: 'farmer' }); }
       if (U.hall) { item('chair', seatX * T, (l.y + 0.8) * T, { seat: true, muster: true, jarl: !!U.town }); if (U.heavy) { p = l.back != null ? [(l.back + 1.5) * T, (l.y + 0.7) * T] : [(seatX + 1.15) * T, (l.y + 0.62) * T]; item('chest', p[0], p[1], { heavy: { silver: Math.round((U.town ? 24 + wealth * 36 : 10 + wealth * 18) * hoardK / (RICH[archId] || 1)) }, locked: 1, lore: 'The jarl’s silver.' }); find({ kind: 'jarl', x: p[0], y: p[1] }); } }
       else item('chair', seatX * T, (l.y + 0.8) * T, { seat: true });
       var py0 = l.y + 2, py1 = l.y + l.h - 2, px2;                    // the posts: at tile corners, two rows, every fourth tile, none beside a fire
@@ -6234,12 +6279,22 @@ function make(seed, site, opts) {
       var dS = l.door, LG = dS === 's' || dS === 'n' ? l.h : l.w, AC = dS === 's' || dS === 'n' ? l.w : l.h;
       var at = function (a, c) { return dS === 'w' ? [(l.x + a) * T, (l.y + c) * T] : dS === 'e' ? [(l.x + l.w - a) * T, (l.y + c) * T] : dS === 's' ? [(l.x + c) * T, (l.y + l.h - a) * T] : [(l.x + c) * T, (l.y + a) * T]; };   // a place by how far in from the door end and how far across
       var inH = function (name, a, c, extra) { var q = at(a, c); return item(name, q[0], q[1], extra); };
-      inH('stoneHearth', LG * 0.5, AC * 0.36, { hearth: true, light: 1 });
-      inH('bed', LG - 0.62, 0.62, { bed: true }); inH('bed', LG - 0.62, AC - 0.62, { bed: true }); if (LG >= 8) inH('bed', LG - 2.3, 0.62, { bed: true });
-      inH('chest', LG - 0.6, AC / 2, { store: true, loot: { fiber: 3, berries: 2, coin: Math.round(wealth * 3 * hoardK) } });
-      inH('table', LG * 0.5 + 0.35, AC - 0.62); inH('chair', LG * 0.5 - 0.7, AC - 0.7, { seat: true });
-      inH('bench', 1.7, 0.5, { seat: true }); inH('barrel', 0.5, AC - 0.5);
-      if (LG >= 7) inH('crate', LG - 2.2, AC - 0.55, { loot: { berries: 2, fiber: 2 } });
+      // The lane is the door's own column, from the door to the far wall; the hearth stands a column over on the far half; the table
+      // against the far wall by the hearth; the beds in the far corners and the chest between them (the loot deepest); the boxes and a
+      // bench by the door off the lane; the work thing by the household's calling against the near wall (docs/interiors-plan.md).
+      var Lc = Math.max(0, Math.min(AC - 1, (dS === 's' || dS === 'n' ? l.dx - l.x : l.dy - l.y))), side = Lc < AC / 2 ? 1 : -1, hc = Math.max(0, Math.min(AC - 1, Lc + side)), farW = side > 0 ? AC - 1 : 0, nearW = side > 0 ? 0 : AC - 1, nearOk = nearW !== Lc;
+      var cc = function (col) { return col + 0.5; }, calling = l.u && l.u.calling || null;
+      inH('stoneHearth', LG * 0.5 + (R() < 0.17 ? -1.2 : 0), cc(hc), { hearth: true, light: 1 });
+      inH('bed', LG - 0.62, cc(0), { bed: true }); inH('bed', LG - 0.62, cc(AC - 1), { bed: true }); if (LG >= 8) inH('bed', LG - 2.3, cc(farW), { bed: true, opt: true });
+      inH('chest', LG - 0.6, cc(hc), { store: true, loot: { fiber: 3, berries: 2, coin: Math.round(wealth * 3 * hoardK) } });
+      if (wealth > 0.6 && R() < 0.5) inH('chest', LG - 0.6, cc(hc) + side * 0.9, { store: true, loot: { coin: Math.round(wealth * 2 * hoardK), leather: 1 }, opt: true });
+      if (R() < 0.75) { inH('table', LG * 0.5 + 0.9, cc(farW) + (side > 0 ? -0.1 : 0.1), { opt: true }); inH('chair', LG * 0.5 + 0.2, cc(farW), { seat: true, opt: true }); } else inH('bench', LG * 0.5 + 0.9, cc(farW), { seat: true, opt: true });
+      if (nearOk) { inH('bench', 1.7, cc(nearW), { seat: true, opt: true }); inH('barrel', 0.55, cc(nearW), { opt: true }); } else inH('barrel', 0.55, cc(farW), { opt: true });
+      if (LG >= 7) inH('crate', 0.55 + (nearOk ? 0 : 1), cc(nearOk ? nearW : farW) + (nearOk ? 0 : 0.9 * side), { loot: { berries: 2, fiber: 2 }, opt: true });
+      var work = calling === 'weaver' ? 'loom' : calling === 'farmer' || calling === 'thrall' ? 'quern' : calling === 'fisher' || calling === 'fisherman' ? 'dryingRack' : calling === 'smith' ? 'workbench' : calling === 'guard' ? 'spearRack' : (R() < 0.5 ? 'quern' : 'shelf');
+      inH(work, LG * 0.32 + 1, cc(nearOk ? nearW : farW), { opt: true, work: calling || null, bench: work === 'workbench' ? true : undefined });
+      if (wealth > 0.55) inH(R() < 0.5 ? 'cupboard' : 'shelf', LG - 2.0, cc(nearOk ? nearW : farW), { opt: true });
+      if (R() < 0.3) inH('stool', LG * 0.5 - 1.2, cc(hc), { seat: true, opt: true });
     } else if (BUILD[l.id].inside === 'store') {
       var SK = stockK * (0.6 + wealth * 0.8), fm = function (n) { return Math.max(1, Math.round(n * SK)); };   // the stocks: the place's roll and its wealth (raid step 7)
       p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 2, { loot: { berries: fm(5), fiber: 4 } }); p = tile(l.x + 1, l.y); item('barrel', p[0] - 4, p[1] + 2, { loot: { meat: fm(3), leather: 1 } });
@@ -6248,6 +6303,7 @@ function make(seed, site, opts) {
       if (SK >= 1.1) { p = tile(l.x + l.w - 1, l.y); prop({ name: 'sackPile', x: p[0] - 4, y: p[1] + 6, solid: 6 }); if (shore && l.door === 's') prop({ name: 'hangingFish', x: (l.dx + 0.5) * T + 18, y: (l.y + l.h) * T + 2, solid: 0 }); }   // the full store shows it
     } else if (BUILD[l.id].inside === 'byre') { p = tile(l.x, l.y); item('haystack', p[0] + 8, p[1] + 4); p = tile(l.x + l.w - 1, l.y + l.h - 1); item('trough', p[0] - 4, p[1] - 4); }
     else if (BUILD[l.id].inside === 'smithy') { p = tile(l.x, l.y); item('furnace', p[0] + 8, p[1] + 2, { furnace: true, light: 1 }); prop({ name: 'forge', x: (l.x + l.w / 2) * T + 4, y: (l.y + l.h / 2) * T + 4, solid: 9 }); p = tile(l.x + l.w - 1, l.y); item('workbench', p[0] - 6, p[1] + 2, { bench: true }); p = tile(l.x + 1, l.y + l.h - 1); item('trough', p[0], p[1]); }
+    else if (BUILD[l.id].inside === 'lean') { p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 4, { loot: { wood: 3, fiber: 2 } }); p = tile(l.x + l.w - 1, l.y + l.h - 1); item('barrel', p[0] - 4, p[1] - 4); }
     else if (BUILD[l.id].inside === 'bath') { p = tile(l.x, l.y); item('stoneHearth', p[0] + 8, p[1] + 4, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('bench', p[0], p[1] - 4, { seat: true }); }
     else if (BUILD[l.id].inside === 'pit') { p = tile(l.x, l.y); item('campfire', p[0] + 10, p[1] + 6, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('dryingRack', p[0], p[1] - 4); }
     else if (BUILD[l.id].inside === 'church') {
@@ -6257,7 +6313,7 @@ function make(seed, site, opts) {
       p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: Math.round((14 + wealth * 24) * hoardK) }, locked: 1, lore: 'The church’s silver, given by the faithful.' });
       find({ kind: 'silver', x: p[0], y: p[1] });
       prop({ name: 'bellTower', x: l.x * T + 9, y: (l.y + l.h) * T + 8, solid: 14, landmark: true });                            // the tower at the front corner, like a west tower
-      prop({ name: 'porch', x: (l.dx + 0.5) * T, y: (l.y + l.h) * T + 9 });                                                     // the porch over the door
+      prop({ name: 'porch', x: (l.dx + 0.5) * T, y: (l.y + l.h) * T + 9, solid: 0 });                                            // the porch over the door (solid 0: a face, kept at the door; it was cleared away as a solid thing until 2026-10-22)
       prop({ name: 'apse', x: (l.x + l.w / 2) * T, y: (l.y - 1.7) * T });                                                            // the rounded east end beyond the far gable
       prop({ name: 'gableCross', x: (l.x + l.w / 2) * T, y: (l.y + l.h) * T + 2.5 });                                            // the cross on the gable's peak
       p = tile(l.x + l.w - 1, l.y + l.h - 1); item('font', p[0] - 2, p[1] + 2, { r: 4 });                                     // the font by the door
@@ -6271,6 +6327,7 @@ function make(seed, site, opts) {
     var dp = l.door === 's' ? tile(l.dx, l.y + l.h) : l.door === 'e' ? tile(l.x + l.w, l.dy) : l.door === 'w' ? tile(l.x - 1, l.dy) : tile(l.dx, l.y - 1), pool = ['woodpile', 'barrel', 'bench', 'beeSkeps', 'cart', 'dryingRack', 'crate', 'logSeat', 'trough', 'haystack', 'quern'];   /* (the quern: the Art Director's yard pieces, 2026-10-20) */
     if (story === 'brewer') pool = ['barrel', 'barrel', 'bench', 'barrel'].concat(pool);
     dab(dp[0], dp[1] + (l.door === 's' ? 6 : 0), 7, 1);                                                                           // a worn step at every door
+    if (!V.ruin && !l.ruin && l.door === 's' && l.id !== 'church' && (l.id === 'house' ? R() < 0.25 : l.big && R() < 0.5)) prop({ name: 'porch', x: (l.dx + 0.5) * T, y: (l.y + l.h) * T + 9, solid: 0 });   // a porch over one door in four, one longhouse in two (the varied silhouettes, 2026-10-22)
     var nd = Math.round(G.doorProps + (R() - 0.5)), di2, used = {};
     for (di2 = 0; di2 < nd; di2++) { var by = pool[Math.floor(R() * pool.length)]; if (used[by]) continue; used[by] = 1; var sideS = di2 % 2 ? 1 : -1, off = l.door === 's' ? [T * (1.2 + 0.5 * di2) * sideS, 6 + R() * 6] : l.door === 'e' ? [10 + R() * 8, T * (1.0 + 0.6 * di2) * sideS] : l.door === 'w' ? [-10 - R() * 8, T * (1.0 + 0.6 * di2) * sideS] : [T * (1.2 + 0.5 * di2) * sideS, -8]; prop({ name: by, x: dp[0] + off[0], y: dp[1] + off[1], loot: by === 'barrel' || by === 'crate' ? { berries: 2, fiber: 2 } : null }); }
     if (l.big && l.door === 's') { var wp = tile(l.x + l.w, l.y + l.h); if (wp[0] / T > (C.w || 1e9) - 1.5) wp = tile(l.x - 1, l.y + l.h); prop({ name: G.clutter ? 'woodshed' : 'woodpile', x: wp[0] + 8, y: wp[1] + 4, solid: 9 }); prop({ name: 'choppingBlock', x: wp[0] + 36 * (wp[0] / T > l.x ? 1 : -1), y: wp[1] + 12, block: true }); }
@@ -6302,7 +6359,7 @@ function make(seed, site, opts) {
       return true;
     }
     function tryPlace(lot, jitter) {                   // the lot where asked, or shuffled a little until it fits
-      var k, best = null; for (k = 0; k < 12; k++) { var dx = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, dy = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot, big: !!lot.big, u: U, mstep: lot.mstep }; if (fits(l)) { best = l; break; } }
+      var k, best = null; for (k = 0; k < 12; k++) { var dx = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, dy = k ? Math.round((R() - 0.5) * 2 * jitter) : 0, l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot, big: !!lot.big, u: { kind: U.kind, hall: U.hall, heavy: U.heavy, town: U.town, stores: U.stores, calling: lot.id === 'house' || lot.id === 'longhouse' ? rollCalling() : null }, mstep: lot.mstep }; if (fits(l)) { best = l; break; } }
       if (best) L.lots.push(best); return best;
     }
     var bigId = U.big, bs = bigId === 'house' ? houseSize('s') : size(bigId, 's', U.long), bigLot = null, shrink;
@@ -6328,6 +6385,10 @@ function make(seed, site, opts) {
       lot.door = door; lot.w = hs.w; lot.h = hs.h; lot.id = 'house'; lot.slot = sl;
       if (tryPlace(lot, 1)) { placedHouses++; usedSlot[sl] = 1; }
     }
+    L.lots.filter(function (l) { return l.id === 'house' && (l.door === 's' || l.door === 'n'); }).forEach(function (hl) {   // a lean-to against one house in three, under its own lower roof, sharing the house's wall (the varied silhouettes, 2026-10-22)
+      if (R() > 0.34) return; var lw = 2 + Math.floor(R() * 2), east = R() < 0.5, ll = { id: 'lean', x: east ? hl.x + hl.w : hl.x - lw, y: hl.y + 1 + Math.floor(R() * Math.max(1, hl.h - 3)), w: lw, h: 2, door: hl.door, slot: 'lean', big: false, u: U, skip: east ? 'w' : 'e', parent: hl };
+      if (ll.x < 1 || ll.y < 1 || ll.x + ll.w > U.w - 1 || ll.y + ll.h > U.h - 1) return; if (overlaps(ll, L.yard, G.yardGap - 1)) return; var i2; for (i2 = 0; i2 < L.lots.length; i2++) { if (L.lots[i2] === hl) continue; if (overlaps(ll, L.lots[i2], 1)) return; } L.lots.push(ll);
+    });
     // the outbuildings: each near what it serves (a smithy at the edge for its fire; the store by the big house; the byre by a house)
     var outs = (U.outs || ['store', 'byre', 'smithy', 'pit', 'bath']).slice(), nOut = pickRange(R, U.out, 0), placedOut = 0, oi;
     if (story === 'smith' && outs.indexOf('smithy') >= 0 && U.kind === 'farm') { outs.splice(outs.indexOf('smithy'), 1); outs.unshift('smithy'); }
@@ -6390,7 +6451,7 @@ function make(seed, site, opts) {
   function plotUnit(U) {
     var L = newBox(U.w, U.h), old = C; C = L;
     var ac = Math.min(U.ac || 4, U.w - 2), len = Math.min(pickRange(R, U.len || [6, 7], 0), U.h - 3), hx = 1 + Math.floor(R() * Math.max(1, U.w - 1 - ac)), hy = U.h - 1 - len;
-    var hl = { id: 'house', x: hx, y: hy, w: ac, h: len, door: 's', slot: 'plot', big: false, u: U, mstep: U.mstep, ruin: U.ruin }; L.lots.push(hl);
+    var hl = { id: 'house', x: hx, y: hy, w: ac, h: len, door: 's', slot: 'plot', big: false, u: { kind: U.kind, stores: U.stores, calling: U.quarter === 'merchant' ? 'merchant' : U.quarter === 'gate' ? 'guard' : rollCalling() }, mstep: U.mstep, ruin: U.ruin }; L.lots.push(hl);
     if (U.behind && hy >= 4) { var bs = size(U.behind, 's'); if (bs.h <= hy - 2 && bs.w <= U.w - 2) L.lots.push({ id: U.behind, x: 1 + Math.floor(R() * Math.max(1, U.w - 1 - bs.w)), y: hy - 1 - bs.h, w: bs.w, h: bs.h, door: 's', slot: 'plot', u: U }); }
     L.lots.forEach(pieces);
     if (hy >= 2) { if (R() < 0.7) prop({ name: 'woodpile', x: (U.w - 1.4) * T, y: (hy - 0.7) * T, solid: 6 }); if (R() < 0.35) prop({ name: 'midden', x: 1.3 * T, y: 1.0 * T, solid: 7 }); }
@@ -6416,7 +6477,7 @@ function make(seed, site, opts) {
     function pt(o) { var a = PU(o.x, o.y); o.x = a[0]; o.y = a[1]; return o; }
     L.items.forEach(function (o) { V.items.push(pt(o)); }); L.props.forEach(function (o) { V.props.push(pt(o)); }); L.paints.forEach(function (o) { V.paints.push(pt(o)); }); L.finds.forEach(function (o) { V.finds.push(pt(o)); });
     L.lots.forEach(function (l) {
-      var r = rect(l), nl = { x: r.x, y: r.y, w: r.w, h: r.h, id: l.id, slot: l.slot, m: l.m, roof: l.roof, big: !!l.big, unit: U.index, wins: [] };
+      var r = rect(l), nl = { x: r.x, y: r.y, w: r.w, h: r.h, id: l.id, slot: l.slot, m: l.m, roof: l.roof, big: !!l.big, unit: U.index, wins: [], bow: l.bow || 0, lean: l.skip ? 1 : 0, roomBad: l.roomBad || null, calling: l.calling || (l.u && l.u.calling) || null };
       var d0, d1; if (l.door === 's') { d0 = [l.dx, l.y + l.h]; d1 = [l.dx + 1, l.y + l.h]; } else if (l.door === 'n') { d0 = [l.dx, l.y]; d1 = [l.dx + 1, l.y]; } else if (l.door === 'e') { d0 = [l.x + l.w, l.dy]; d1 = [l.x + l.w, l.dy + 1]; } else { d0 = [l.x, l.dy]; d1 = [l.x, l.dy + 1]; }
       var a = P(d0[0], d0[1]), b = P(d1[0], d1[1]);
       if (a[1] === b[1]) { nl.dx = Math.min(a[0], b[0]); nl.dy = -1; nl.door = a[1] === nl.y ? 'n' : 's'; } else { nl.dy = Math.min(a[1], b[1]); nl.dx = -1; nl.door = a[0] === nl.x ? 'w' : 'e'; }
@@ -6431,14 +6492,32 @@ function make(seed, site, opts) {
     V.units.push(unit); return unit;
   }
   // the unit's own fence on its box, with the gap where its lane meets the street (a plot: only the back and the sides behind the house)
+  function fencePoly(box, kind, gaps, openSide, uIndex) {   // the drawn fence (Robin, 2026-10-22, through the Art Director: angled runs following the land, never a right angle but a building's): corners pulled off the grid, a point or two more on a long side, posts a tile apart with a kink each; the raid's barrier is the hidden edge on the box, within a tile of it
+    var X0 = box.x * T, Y0 = box.y * T, X1 = (box.x + box.w) * T, Y1 = (box.y + box.h) * T, pts = [], k, e, cs = [[X0, Y0], [X1, Y0], [X1, Y1], [X0, Y1]], sides = ['n', 'e', 's', 'w'];
+    function jit(a, b) { return a + R() * (b - a); }
+    for (k = 0; k < 4; k++) {
+      var c = cs[k], nx = c[0] === X0 ? 1 : -1, ny = c[1] === Y0 ? 1 : -1; pts.push({ p: [c[0] + nx * jit(3, 22), c[1] + ny * jit(3, 22)], side: sides[k] });
+      var nxt = cs[(k + 1) % 4], len = Math.hypot(nxt[0] - c[0], nxt[1] - c[1]), extra = len > 22 * T ? 2 : len > 10 * T ? 1 : 0, inward = k === 0 ? [0, 1] : k === 1 ? [-1, 0] : k === 2 ? [0, -1] : [1, 0];
+      for (e = 1; e <= extra; e++) { var u = (e + (R() - 0.5) * 0.3) / (extra + 1), mx = c[0] + (nxt[0] - c[0]) * u, my = c[1] + (nxt[1] - c[1]) * u, d = jit(-4, 20); pts.push({ p: [mx + inward[0] * d, my + inward[1] * d], side: sides[k] }); }
+    }
+    var fi = V.fences.length, F2 = { kind: kind, unit: uIndex == null ? null : uIndex, pts: pts.map(function (q) { return q.p; }), gaps: gaps || [], open: openSide || null }, run = 0, i = 0, j;
+    function inGap(px, py) { var g2; for (g2 = 0; g2 < F2.gaps.length; g2++) { var g = F2.gaps[g2]; if (px > g[0] - 10 && px < g[2] + 10 && py > g[1] - 10 && py < g[3] + 10) return true; } return false; }
+    for (j = 0; j < pts.length; j++) {
+      var a = pts[j], b = pts[(j + 1) % pts.length]; if (openSide && a.side === openSide) { run++; continue; }
+      var dx = b.p[0] - a.p[0], dy = b.p[1] - a.p[1], len2 = Math.hypot(dx, dy) || 1, ux = dx / len2, uy = dy / len2, s2, was = false;
+      for (s2 = 0; s2 < len2 - 10; s2 += 26 + R() * 12) { var px = a.p[0] + ux * s2 + (-uy) * (R() - 0.5) * 6, py = a.p[1] + uy * s2 + ux * (R() - 0.5) * 6; if (inGap(px, py) || (V.ruin && R() < 0.3)) { if (was) run++; was = false; continue; } prop({ name: 'railPost', x: px, y: py, solid: 3, v: Math.floor(R() * 3), fence: fi, run: run, i: i++ }); was = true; }
+    }
+    V.fences.push(F2); return F2;
+  }
   function unitFence(u, kind, m) {
-    var x, y, X0 = u.x, Y0 = u.y, X1 = u.x + u.w, Y1 = u.y + u.h, g = u.gap, keep2 = function () { return !(V.ruin && R() < 0.4); };
+    var x, y, X0 = u.x, Y0 = u.y, X1 = u.x + u.w, Y1 = u.y + u.h, g = u.gap, keep2 = function () { return !(V.ruin && R() < 0.4); }, hid = kind === 'rail' || kind === 'fence';
     function inGap(x0, y0, x1, y1) { return x0 >= g[0] && x1 <= g[2] && y0 >= g[1] && y1 <= g[3]; }
     function frontSide(x0, y0, x1, y1) { return u.plot && ((u.front === 's' && y0 === Y1) || (u.front === 'n' && y0 === Y0) || (u.front === 'e' && x0 === X1) || (u.front === 'w' && x0 === X0)); }
     function nearFront(x0, y0, x1, y1) { if (!u.plot) return false; return (u.front === 's' && y1 > Y1 - 2) || (u.front === 'n' && y0 < Y0 + 2) || (u.front === 'e' && x1 > X1 - 2) || (u.front === 'w' && x0 < X0 + 2); }
-    for (x = X0; x < X1; x++) { if (!inGap(x, Y0, x + 1, Y0) && !frontSide(x, Y0, x + 1, Y0) && !nearFront(x, Y0, x + 1, Y0) && keep2() && !V.H[key(x, Y0)]) H(x, Y0, kind, m); if (!inGap(x, Y1, x + 1, Y1) && !frontSide(x, Y1, x + 1, Y1) && !nearFront(x, Y1, x + 1, Y1) && keep2() && !V.H[key(x, Y1)]) H(x, Y1, kind, m); }
-    for (y = Y0; y < Y1; y++) { if (!inGap(X0, y, X0, y + 1) && !frontSide(X0, y, X0, y + 1) && !nearFront(X0, y, X0, y + 1) && keep2() && !V.V[key(X0, y)]) Vw(X0, y, kind, m); if (!inGap(X1, y, X1, y + 1) && !frontSide(X1, y, X1, y + 1) && !nearFront(X1, y, X1, y + 1) && keep2() && !V.V[key(X1, y)]) Vw(X1, y, kind, m); }
+    for (x = X0; x < X1; x++) { if (!inGap(x, Y0, x + 1, Y0) && !frontSide(x, Y0, x + 1, Y0) && !nearFront(x, Y0, x + 1, Y0) && keep2() && !V.H[key(x, Y0)]) H(x, Y0, kind, m, hid); if (!inGap(x, Y1, x + 1, Y1) && !frontSide(x, Y1, x + 1, Y1) && !nearFront(x, Y1, x + 1, Y1) && keep2() && !V.H[key(x, Y1)]) H(x, Y1, kind, m, hid); }
+    for (y = Y0; y < Y1; y++) { if (!inGap(X0, y, X0, y + 1) && !frontSide(X0, y, X0, y + 1) && !nearFront(X0, y, X0, y + 1) && keep2() && !V.V[key(X0, y)]) Vw(X0, y, kind, m, hid); if (!inGap(X1, y, X1, y + 1) && !frontSide(X1, y, X1, y + 1) && !nearFront(X1, y, X1, y + 1) && keep2() && !V.V[key(X1, y)]) Vw(X1, y, kind, m, hid); }
     u.fence = kind;
+    if (hid && !u.plot) fencePoly({ x: u.x, y: u.y, w: u.w, h: u.h }, kind, [[g[0] * T, g[1] * T, g[2] * T, g[3] * T]], null, u.index);   // a farm's fence drawn as posts round its box; a plot's fence stays an edge (its sides are the lanes between plots)
   }
   // ---- the place: the focus, the spine and the growth ----
   var focus = null, green = null, spinePts = [], gateX = null, backGateX = null, hugRects = [], placeLots = [], approachPl = null, exitPl = null;
@@ -6733,6 +6812,7 @@ function make(seed, site, opts) {
     var posterns = [];                                     // a town's postern: a locked door in the side wall on a lane, the axe's way in (two in a great town)
     if (A.townwall) { var pSides = A.tier >= 5 ? ['e', 'w'] : [weakSide === 'e' ? 'w' : 'e'], pk; for (pk = 0; pk < pSides.length; pk++) { var py5 = clamp(Math.floor(ey0 + 3 + R() * Math.max(1, ey1 - ey0 - 6)), ey0 + 1, ey1 - 2); if (py5 === weakY) py5 += 1; var pxx = pSides[pk] === 'e' ? ex1 : ex0, pky = key(pxx, py5); if (V.V[pky] && V.V[pky].t === fk) { V.V[pky] = { t: 'door', m: 6, locked: 1 }; posterns.push([pxx * T, (py5 + 0.5) * T]); } } }
     V.fence = { x0: ex0, y0: ey0, x1: ex1, y1: ey1, kind: fk, gate: gateX, gateW: 1 + wideGate, weakAt: weakAt, posterns: posterns };
+    if (fk === 'rail') { var k7; for (k7 in V.H) { if (V.H[k7].t === 'rail') V.H[k7].hidden = 1; } for (k7 in V.V) { if (V.V[k7].t === 'rail') V.V[k7].hidden = 1; } var gps = []; if (gateX != null && shore !== 's') gps.push([gateX * T, ey1 * T, (gateX + 1 + wideGate) * T, ey1 * T]); if (backGateX != null) gps.push([backGateX * T, ey0 * T, (backGateX + 1) * T, ey0 * T]); fencePoly({ x: ex0, y: ey0, w: ex1 - ex0, h: ey1 - ey0 }, 'rail', gps, shore === 's' ? 's' : shore === 'n' ? 'n' : shore === 'e' ? 'e' : shore === 'w' ? 'w' : null, null); }   // the village's rail fence drawn as posts round the whole, the edges under it hidden
     if (A.townwall && wealth >= 0.5 && gateX != null) { prop({ name: 'watchtower', x: (gateX - 1.2) * T, y: ey1 * T - 18, solid: 12, tower: true, landmark: true }); V.items.push({ name: 'torchBracket', x: (gateX + 1 + wideGate + 0.35) * T, y: ey1 * T + 2, r: 0, wall: true, light: 1, lamp: true }); }   // a walled town's gate: a watchtower inside the wall beside it (a bowman's post, step 6 of the raid plan) and a torch at the post, lit at night (the Art Director's pieces, 2026-10-20)
     if (A.townwall && gateX != null) { prop({ name: 'banner', x: (gateX - 0.4) * T, y: ey1 * T + 8, solid: 3 }); prop({ name: 'banner', x: (gateX + 1 + wideGate + 0.4) * T, y: ey1 * T + 8, solid: 3 }); prop({ name: 'tollPost', x: (gateX + 1 + wideGate + 1.6) * T, y: (ey1 + 2.5) * T, solid: 3 }); }   // the toll post outside the gate beside the road (the Art Director's piece, Robin's yes of 2026-10-22; skipped until it exists)
   }
@@ -6822,7 +6902,7 @@ function make(seed, site, opts) {
   for (var pi = 0; pi < nPeople && homes.length; pi++) {
     var home = homes[hi % homes.length]; hi++;
     var door = home.door === 's' ? tile(home.dx, home.y + home.h + 1) : home.door === 'e' ? tile(home.x + home.w + 1, home.dy) : home.door === 'w' ? tile(home.x - 2, home.dy) : tile(home.dx, home.y - 2);
-    var role = A.lone ? 'fisherman' : shore && R() < 0.4 ? 'fisher' : roles[Math.floor(R() * roles.length)]; if (role === 'smith' && !V.lots.some(function (l) { return l.id === 'smithy'; })) role = 'farmer';
+    var role = home.calling || (A.lone ? 'fisherman' : shore && R() < 0.4 ? 'fisher' : roles[Math.floor(R() * roles.length)]); if (role === 'smith' && !V.lots.some(function (l) { return l.id === 'smithy'; })) role = 'farmer'; if (!home.calling) home.calling = role;
     if (A.chapel) role = 'priest'; else if (A.church && pi === 0) role = 'priest'; else if (A.townwall && (pi === 1 || pi === 2 || (wealth > 0.7 && (pi === 4 || pi === 5)))) role = 'guard'; else if ((A.townwall || A.family === 'row') && pi === 3) role = 'merchant';
     var work = role === 'smith' ? nearestOf(V.lots.filter(function (l) { return l.id === 'smithy'; }).map(function (l) { return { x: l.x * T, y: l.y * T, l: l }; }), door[0], door[1]) : role === 'fisher' && shore ? null : nearestOf(V.lots.filter(function (l) { return l.id === 'byre' || l.id === 'store'; }).map(function (l) { return { x: l.x * T, y: l.y * T, l: l }; }), door[0], door[1]); work = work && work.l;
     var seatsV = V.items.filter(function (it) { return it.name === 'logSeat'; }), seatV = seatsV.length ? seatsV[pi % seatsV.length] : null, hu = unitOf(home);
@@ -6998,6 +7078,9 @@ function audit(V, D) {
   var thatch = V.roofs.filter(function (r) { return r.m === 1; }), seen = {}, longest = 0;
   thatch.forEach(function (r, ri) { if (seen[ri]) return; var stack = [ri], n = 0; seen[ri] = 1; while (stack.length) { var a = thatch[stack.pop()]; n++; thatch.forEach(function (b, bi) { if (!seen[bi] && Math.abs(a.tx - b.tx) + Math.abs(a.ty - b.ty) < 14) { seen[bi] = 1; stack.push(bi); } }); } longest = Math.max(longest, n); });
   st.fireChain = longest; say('fire: ' + thatch.length + ' thatched roofs, the longest chain ' + longest);
+  // the rooms: the threshold, the lane, the circle and the reach (docs/interiors-plan.md section 4)
+  var rooms = V.lots.filter(function (l) { return l.id === 'house' || l.id === 'longhouse' || l.id === 'hall'; }), roomsBad = rooms.filter(function (l) { return l.roomBad; });
+  st.roomsBad = roomsBad.length; say((roomsBad.length ? '!! ' : '') + 'rooms: ' + (rooms.length - roomsBad.length) + ' of ' + rooms.length + ' pass the threshold, the lane, the circle and the reach' + (roomsBad.length ? ' (' + roomsBad.map(function (l) { return l.id + ' ' + l.roomBad; }).join(', ') + ')' : ''));
   // doorways clear
   var blocked = 0; V.lots.forEach(function (l) { if (l.dx == null && l.dy == null) return; var o = l.door === 's' ? [l.dx, l.y + l.h] : l.door === 'n' ? [l.dx, l.y - 1] : l.door === 'e' ? [l.x + l.w, l.dy] : [l.x - 1, l.dy], ox = (o[0] + 0.5) * T, oy = (o[1] + 0.5) * T; V.props.forEach(function (p) { var r = p.solid != null ? p.solid : (p.name === 'stake' ? 5 : 8); if (r > 0 && Math.hypot(p.x - ox, p.y - oy) < T) blocked++; }); });
   say((blocked ? '!! ' : '') + 'doorways: ' + blocked + ' blocked by a solid thing');
@@ -7106,8 +7189,21 @@ function draw(c, V, env, clock) {
   for (k in V.H) { q = k.split(','); (function (x, y, e) { if (!inView(x * T, y * T, 80)) return; items.push({ y: y * T, f: function () { Build.drawH(c, x, y, e, false, false, Build.cfg({})); } }); })(+q[0], +q[1], V.H[k]); }
   for (k in V.V) { q = k.split(','); (function (x, y, e) { if (!inView(x * T, y * T, 80)) return; items.push({ y: (y + 1) * T - 1, f: function () { Build.drawV(c, x, y, e, false, V.V[key(x, y + 1)] || false, Build.cfg({})); } }); })(+q[0], +q[1], V.V[k]); }
   ri.rooms.forEach(function (r) { if (B.roofs[r.id] == null) return; items.push({ y: (r.maxY + 1) * T + 1, f: function () { Build.drawRoof(c, r, 1, Build.cfg({ roof: B.roofs[r.id], wallM: Build.roomWallM(B, r) }), 0); } }); });
-  V.items.concat(V.props).forEach(function (it) { if (!kit.PROPS[it.name] || !inView(it.x, it.y, 140)) return; items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, 3), s = SIZE_OF(kit, it.name); c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } }); });
-  (V.nature || []).forEach(function (it) { if (!kit.PROPS[it.name] || !inView(it.x, it.y, 160)) return; items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, it.v || 0), s = it.s; c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } }); });
+  // a thing is drawn as the game draws it when the page has the game's set pieces (env.images: name -> { img, w, h, ax, ay, upp },
+  // name_1..name_N for a piece with variants, as World.setImages takes them; the editor since 2026-10-22), else as the kit's drawn prop
+  var IM = env.images || null;
+  function imageOf(name, v) { if (!IM) return null; var nv = 0; while (IM[name + '_' + (nv + 1)]) nv++; var im = nv ? IM[name + '_' + (((v | 0) % nv) + 1)] : IM[name]; return im && im.img && (im.img.complete === undefined ? im.img.width > 0 : (im.img.complete && im.img.naturalWidth > 0)) ? im : null; }
+  function pieceName(it) { return it.name === 'stake' && it.cut ? 'stake_stump' : it.name === 'stake' && it.mended ? 'stake_new' : it.name; }
+  V.items.concat(V.props).forEach(function (it) {
+    if (!inView(it.x, it.y, 160)) return; var nm = pieceName(it), im = imageOf(nm, it.v || Math.floor(Math.abs(it.x * 7 + it.y * 13)) % 97);
+    if (im) items.push({ y: it.y - (it.under ? 2 : 0), f: function () { c.drawImage(im.img, it.x - im.ax * im.upp, it.y * K - im.ay * im.upp, im.w * im.upp, im.h * im.upp); } });
+    else if (kit.PROPS[it.name]) items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, 3), s = SIZE_OF(kit, it.name); c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } });
+  });
+  (V.nature || []).forEach(function (it) {
+    if (!inView(it.x, it.y, 200)) return; var im = imageOf(it.name, it.v || 0);
+    if (im) items.push({ y: it.y, f: function () { c.drawImage(im.img, it.x - im.ax * im.upp, it.y * K - im.ay * im.upp, im.w * im.upp, im.h * im.upp); } });
+    else if (kit.PROPS[it.name]) items.push({ y: it.y, f: function () { var sp = kit.bakeProp(it.name, it.v || 0), s = it.s; c.drawImage(sp.cv, it.x + sp.l * s, it.y * K + sp.t * s, sp.w * s, sp.h * s); } });
+  });
   if (env.lib) V.folk.forEach(function (f, fi) {                   // the people out of doors: some at the fire, some at their jobs, the rest idling each their own way
     if (!f.out || !inView(f.x, f.y, 120)) return; var lib = env.lib, sitSpot = f.spots.filter(function (q) { return q[2] === 'sit'; })[0], jobSpot = f.spots.filter(function (q) { return q[2] && q[2] !== 'sit' && q[2] !== 'door'; })[0];
     var mode = sitSpot && fi % 3 === 0 ? 'sit' : (jobSpot && fi % 3 === 1 ? 'job' : 'idle'), px = mode === 'sit' ? sitSpot[0] : (mode === 'job' ? jobSpot[0] : f.x), py = mode === 'sit' ? sitSpot[1] : (mode === 'job' ? jobSpot[1] : f.y);

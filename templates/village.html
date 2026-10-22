@@ -92,7 +92,7 @@ __VILLAGE__
   var lib = GameArt.lib, kit = StyleLab.kit, KEY = 'villageeditor2';   /* (villageeditor1 held the old editor's state: the archetypes and the knobs changed, 2026-10-22) */
   lib.applyStored(localStorage); /* (the stored look game.look is retired, 2026-10-21) */
   kit.setup(kit.STYLE);
-  var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), T = 32, TS = 24, K = 0.75;
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), T = 32, TS = 24, K = 0.75, baked = false, dirty = true;
   var st = { arch: 'village', seed: 1234, wealth: 0.5, shore: '', shape: 'auto', story: 'auto', age: 'auto', ring: 1, rounds: -1, lowland: false, G: {}, show: { roads: true, units: false, zones: false, ways: true, secrets: true, men: true, nodes: false, folk: true } }, history = [];
   try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && typeof sv === 'object') { for (var k in sv) { if (k === 'show' && sv.show) { for (var k2 in sv.show) st.show[k2] = sv.show[k2]; } else st[k] = sv[k]; } } } catch (e) {}
   if (!Village.ARCH[st.arch]) st.arch = 'village';
@@ -147,6 +147,8 @@ __VILLAGE__
   }
   var tiles = {};
   function tileCv(name) { if (!tiles[name]) tiles[name] = kit.bakeTile(name, 0); return tiles[name]; }
+  // the game's set pieces (assets/props, inlined by the build as the game page has them), so the editor shows the real look (2026-10-22); the view bakes again as each picture arrives
+  var IMAGES = {}, imgLeft = 0; (function () { var PI = __PROPIMG__; if (!PI) return; var k; for (k in PI) { var im = new Image(); imgLeft++; im.onload = im.onerror = function () { if (--imgLeft <= 0) { baked = false; dirty = true; } }; im.src = PI[k].src; IMAGES[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } })();
   // ---- the place, grown ----
   function regrow() {
     site = Village.siteFor(st.arch); var A = Village.ARCH[st.arch];
@@ -163,7 +165,7 @@ __VILLAGE__
     ui(); baked = false; dirty = true;
   }
   // ---- the view: a camera over the drawn world (x in units, y in units times three quarters) ----
-  var cam = { cx: 0, cy: 0, z: 1 }, dirty = true, drag = null, layer = document.createElement('canvas'), layerZ = 2, baked = false;
+  var cam = { cx: 0, cy: 0, z: 1 }, drag = null, layer = document.createElement('canvas'), layerZ = 2;
   function worldW() { return (site.w + 4) * T; } function worldH() { return (site.h + 4) * T; }
   function bake() {                                   // the place drawn once into an offscreen canvas at two pixels a unit (a town takes a second to draw; dragging the view must not); the view blits it
     layerZ = Math.min(2, 8000 / worldW(), 8000 / (worldH() * K)); layer.width = Math.ceil(worldW() * layerZ); layer.height = Math.ceil(worldH() * K * layerZ);
@@ -171,7 +173,7 @@ __VILLAGE__
     var gr = tileCv('grass'), x, y; for (y = 0; y < site.h + 4; y++) for (x = 0; x < site.w + 4; x++) g.drawImage(gr, x * T, y * TS, T + 0.4, TS + 0.4);
     if (st.shore) { g.fillStyle = '#4a7f9e'; if (st.shore === 's') g.fillRect(0, (site.h + 2) * TS, worldW(), 2 * TS); else if (st.shore === 'n') g.fillRect(0, 0, worldW(), 2 * TS); else if (st.shore === 'e') g.fillRect((site.w + 2) * T, 0, 2 * T, worldH() * K); else g.fillRect(0, 0, 2 * T, worldH() * K); }
     var V2 = st.show.folk ? V : Object.assign({}, V, { folk: [] });
-    Village.draw(g, V2, { kit: kit, Build: Build, lib: lib, tile: function (c, tx, ty, px, py, w, h) { c.drawImage(tileCv(V.floors[tx + ',' + ty] === 1 ? 'dirt' : 'plank'), px, py, w, h); } }, 0);
+    Village.draw(g, V2, { kit: kit, Build: Build, lib: lib, images: IMAGES, tile: function (c, tx, ty, px, py, w, h) { c.drawImage(tileCv(V.floors[tx + ',' + ty] === 1 ? 'dirt' : 'plank'), px, py, w, h); } }, 0);
     baked = true;
   }
   function fit() { cam.z = Math.min(cv.width / worldW(), cv.height / (worldH() * K)); cam.cx = worldW() / 2; cam.cy = worldH() / 2; dirty = true; }

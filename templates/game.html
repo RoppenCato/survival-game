@@ -975,6 +975,52 @@ __COMBAT__
   }
   function stickHalo(c, x, y, pw) { w.footHalo(c, x, y, pw); }
   function stickGrass(c, s, x, y, pw, fell) { w.footGrass(c, s, x, y, pw, fell, grassLook); }
+  /* The buildings' shadows on the ground (the village look plan, items 1 and 2, 2026-10-22; Robin, through the Art Director: "All of
+     them. Go"): every wall, fence and palisade throws its shadow to the lower right by its height, as the set pieces do, and every
+     roofed room throws one from its roof's outline (cut away from its own floor, so the inside is not shaded when the roof fades);
+     (the band at a wall's foot is the wall's own, build.js). Laid into canvases a chunk of the world each (BSH.cs units a
+     side, 1 px a unit, blurred soft), made again when the rooms are (BSH.rev) or the dusk lengthens them, one chunk a frame at most;
+     drawn at sunK's strength, none at night. Mine: the heights are build.js's, a roof 22 or 26 over the walls. */
+  var BSH = { cs: 640, mar: 10, dx: 0.5, dy: 0.14, a: 0.5, rev: 0, idxRev: -1, idx: {}, cache: {}, used: 0 };
+  function bshH(e) { var t = e.t, h = t === 'palisade' ? Build.PALISADE_H : t === 'townwall' ? Build.TOWNWALL_H : (t === 'fence' || t === 'rail' || t === 'drystone') ? Build.FENCE_H : t === 'gate' ? Build.FENCE_H * 2 : BCFG.wallH; if (e.breach) h = Math.min(h, 7); else if (e.burnt) h *= 0.7; return h; }
+  function bshIndex() {                    // which edges and rooms throw a shadow into which chunk
+    var idx = {}, CS = BSH.cs, k, p, e;
+    function add(x0, y0, x1, y1, item) { var cx, cy; for (cy = Math.floor(y0 / CS); cy <= Math.floor(y1 / CS); cy++) for (cx = Math.floor(x0 / CS); cx <= Math.floor(x1 / CS); cx++) { var q = idx[cx + ',' + cy] || (idx[cx + ',' + cy] = []); q.push(item); } }
+    for (k in B.H) { e = B.H[k]; if (!e || e.hidden) continue; p = k.split(','); var hx = +p[0] * T, hy = +p[1] * TS, hh = bshH(e) * 1.6; add(hx - 4, hy - 4, hx + T + hh * BSH.dx + 4, hy + hh * BSH.dy + 4, { L: 'H', x: hx, y: hy, h: bshH(e) }); }
+    for (k in B.V) { e = B.V[k]; if (!e || e.hidden) continue; p = k.split(','); var vx = +p[0] * T, vy = +p[1] * TS, vh = bshH(e) * 1.6; add(vx - 4, vy - 4, vx + vh * BSH.dx + 4, vy + TS + vh * BSH.dy + 4, { L: 'V', x: vx, y: vy, h: bshH(e) }); }
+    if (roomInfo) roomInfo.rooms.forEach(function (r) { if (!r.tiles || !r.tiles.length || ruinAt(r.tiles[0][0], r.tiles[0][1])) return; var cf = roofCfg(r), H = BCFG.wallH + (cf && cf.roof === 1 ? 30 : 24) + (r.up ? UP : 0), ov = (cf ? cf.overhang : 4) + 1.5;
+      Build.roofRects(r.tiles).forEach(function (rc) { var it = { L: 'R', x0: rc.x0 * T - ov, y0: rc.y0 * TS - ov * K, x1: (rc.x1 + 1) * T + ov, y1: (rc.y1 + 1) * TS + ov * K, fx0: rc.x0 * T, fy0: rc.y0 * TS, fx1: (rc.x1 + 1) * T, fy1: (rc.y1 + 1) * TS, h: H }; add(it.x0 - 4, it.y0 - 4, it.x1 + H * 1.6 * BSH.dx + 4, it.y1 + H * 1.6 * BSH.dy + 4, it); }); });
+    BSH.idx = idx; BSH.idxRev = BSH.rev;
+  }
+  function bshChunk(cx, cy, len) {          // one chunk's shadows, blurred
+    var CS = BSH.cs, M = BSH.mar, key = cx + ',' + cy, list = BSH.idx[key] || [], x0 = cx * CS, y0 = cy * CS, tmp = BSH.tmp || (BSH.tmp = document.createElement('canvas')), ch = BSH.cache[key];
+    if (!ch) ch = BSH.cache[key] = { cv: null }; ch.rev = BSH.rev; ch.len = len; ch.used = ++BSH.used; if (!list.length) { ch.cv = null; return ch; }
+    tmp.width = tmp.height = CS + 2 * M; var g = tmp.getContext('2d'); g.setTransform(1, 0, 0, 1, M - x0, M - y0); g.clearRect(x0 - M, y0 - M, CS + 2 * M, CS + 2 * M);
+    var dxk = BSH.dx * len, dyk = BSH.dy * len;
+    g.fillStyle = 'rgb(26,34,62)'; g.beginPath();   // the cast shadows, one path (all wound the same way), so where they overlap they are no darker
+    list.forEach(function (it) { var dx = it.h * dxk, dy = it.h * dyk;
+      if (it.L === 'H') { g.moveTo(it.x, it.y); g.lineTo(it.x + T, it.y); g.lineTo(it.x + T + dx, it.y + dy); g.lineTo(it.x + dx, it.y + dy); g.closePath(); }
+      else if (it.L === 'V') { g.moveTo(it.x, it.y); g.lineTo(it.x + dx, it.y + dy); g.lineTo(it.x + dx, it.y + TS + dy); g.lineTo(it.x, it.y + TS); g.closePath(); }
+      else { g.moveTo(it.x0, it.y0); g.lineTo(it.x1, it.y0); g.lineTo(it.x1 + dx, it.y0 + dy); g.lineTo(it.x1 + dx, it.y1 + dy); g.lineTo(it.x0 + dx, it.y1 + dy); g.lineTo(it.x0, it.y1); g.closePath(); } });
+    g.fill();
+    g.globalCompositeOperation = 'destination-out'; g.fillStyle = '#000'; list.forEach(function (it) { if (it.L === 'R') g.fillRect(it.fx0, it.fy0, it.fx1 - it.fx0, it.fy1 - it.fy0); }); g.globalCompositeOperation = 'source-over';   // not on its own floor
+    if (!ch.cv) { ch.cv = document.createElement('canvas'); ch.cv.width = ch.cv.height = CS; }
+    var o = ch.cv.getContext('2d'); o.clearRect(0, 0, CS, CS); o.filter = 'blur(4px)'; o.drawImage(tmp, -M, -M); o.filter = 'none';
+    return ch;
+  }
+  function bldShadows(c, hw, hh) {
+    if (inCave || inYard || !STICK.cast) return; var sk = sunK(); if (!sk) return;
+    if (BSH.idxRev !== BSH.rev) bshIndex();
+    var CS = BSH.cs, len = Math.round(sk.len * 10) / 10, cx0 = Math.floor((cam.x - hw) / CS), cx1 = Math.floor((cam.x + hw) / CS), cy0 = Math.floor((cam.y - hh) / CS), cy1 = Math.floor((cam.y + hh) / CS), cx, cy, budget = 1;
+    c.save(); c.globalAlpha = BSH.a * sk.k;
+    for (cy = cy0; cy <= cy1; cy++) for (cx = cx0; cx <= cx1; cx++) {
+      var key = cx + ',' + cy, ch = BSH.cache[key];
+      if ((!ch || ch.rev !== BSH.rev || ch.len !== len) && (budget-- > 0 || !ch)) ch = bshChunk(cx, cy, len);   // one chunk laid again a frame; a chunk never laid is laid at once
+      if (ch) { ch.used = ++BSH.used; if (ch.cv) c.drawImage(ch.cv, cx * CS, cy * CS); }
+    }
+    c.restore();
+    var keys = Object.keys(BSH.cache); if (keys.length > 20) { keys.sort(function (a, b) { return BSH.cache[a].used - BSH.cache[b].used; }); keys.slice(0, keys.length - 20).forEach(function (k2) { delete BSH.cache[k2]; }); }   // the least lately seen let go
+  }
   function drawCastShadows(c, hw, hh) {    // every set piece's shadow thrown to the lower right, under everything that stands
     if (inCave || inYard || !STICK.cast) return; var sk = sunK(); if (!sk) return;
     var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1), by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT) - 1), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1), bx, by;
@@ -1397,9 +1443,11 @@ __COMBAT__
     var rooms = [], parts = cl.map(function (c, i) { var r = Build.rooms(BB, GW, GH, { x0: c.x0, y0: c.y0, x1: c.x1, y1: c.y1, noSolids: i > 0 }); r.base = rooms.length; r.rooms.forEach(function (q) { rooms.push(q); }); r.bx0 = Math.max(0, c.x0); r.by0 = Math.max(0, c.y0); r.bx1 = c.x1; r.by1 = c.y1; return r; });
     return { rooms: rooms, solids: parts[0].solids, at: function (tx, ty) { for (var i = 0; i < parts.length; i++) { var q = parts[i]; if (tx < q.bx0 || ty < q.by0 || tx > q.bx1 || ty > q.by1) continue; var k = q.at(tx, ty); if (k >= 0) return q.base + k; } return -1; } };
   }
+  var SOUTHF = {};
   function rebuildRooms() {
-    bDirty = false; navStale = true; ensureB();
+    bDirty = false; navStale = true; ensureB(); BSH.rev++;   /* (the buildings' shadows are laid again: bldShadows) */
     roomInfo = roomsOf(B);
+    SOUTHF = {}; roomInfo.rooms.forEach(function (r) { if (!r.tiles || !r.tiles.length) return; Build.roofRects(r.tiles).forEach(function (rc) { var f = { x0: rc.x0 * T, x1: (rc.x1 + 1) * T }, x; for (x = rc.x0; x <= rc.x1; x++) if (B.H[Build.key(x, rc.y1 + 1)]) SOUTHF[Build.key(x, rc.y1 + 1)] = f; }); });   /* a room's south face, its walls shaded from the west end to the east (the depth board, 2026-10-22) */
     var k, p, auto = {};
     roofCache = {};
     roomInfo.rooms.forEach(function (r) { if (roofA[r.id] == null) roofA[r.id] = 1; r.up = false; r.tiles.forEach(function (t) { if (B.stairs[Build.key(t[0], t[1])]) r.up = true; }); });
@@ -2799,12 +2847,41 @@ __COMBAT__
     w.repaint(bx0 - 20, by0 - 20, bx1 + 20, by1 + 20);
     return true;
   }
+  /* The fences as angled runs and the churches' towers (the village look plan, items 8 to 10, 2026-10-22; the depth board and fence
+     recipe of the Art Director's out/village_depth; the polygons and posts the village session's V.fences): the rails between a
+     fence's consecutive posts (one fence, one run) in code, two at 0.42 and 0.78 of the post's height, sagging 1 to 2.5, one rail in
+     ten gone (the upper more often), one in twenty-five hanging from one end, sorted with the figures by their foot; the posts are
+     the studio's railPost pieces, set pieces of the world. A church's tower is Build.drawTower over its south door, fading with its
+     roof when you are inside. */
+  var TOWERS = [], RAILS = [];
+  function railsOf(V2) {
+    var by = {}; V2.props.forEach(function (pr) { if (pr.name !== 'railPost' || pr.fence == null || !isLand(pr.x, pr.y)) return; var k = pr.fence + ':' + pr.run; (by[k] || (by[k] = [])).push(pr); });
+    Object.keys(by).forEach(function (k) { var L = by[k].sort(function (a, b) { return a.i - b.i; }), j;
+      for (j = 0; j + 1 < L.length; j++) { var a = L[j], b = L[j + 1]; if (b.i !== a.i + 1 || Math.hypot(b.x - a.x, b.y - a.y) > 60) continue; var R = kit.rng(Math.round(a.x * 7 + a.y * 13));
+        RAILS.push({ ax: a.x, ay: a.y, bx: b.x, by: b.y, v: a.v || 0, sag: 1 + R() * 1.5, miss: [R() < 0.06, R() < 0.14], hang: R() < 0.04 }); } });
+  }
+  function drawRail(c, r) {
+    var sp = sprite('railPost', r.v), h = sp ? Math.max(14, -sp.t * 0.92) : 20, cols = [['#2a2018', 3.4, 0], ['#7d634a', 2.2, 0], ['#55402e', 0.6, 0.6]];
+    [0.42, 0.78].forEach(function (k, ri) { if (r.miss[ri]) return; var y0 = r.ay * K - h * k, y1 = r.hang && ri ? r.by * K - 3 : r.by * K - h * k, mx = (r.ax + r.bx) / 2, my = (y0 + y1) / 2 + r.sag * 2;
+      cols.forEach(function (q) { c.strokeStyle = q[0]; c.lineWidth = q[1]; c.lineCap = 'round'; c.beginPath(); c.moveTo(r.ax, y0 + q[2]); c.quadraticCurveTo(mx, my + q[2], r.bx, y1 + q[2]); c.stroke(); }); });
+  }
+  function pushRailsTowers(items, hw, hh) {
+    RAILS.forEach(function (r) { if (Math.abs(r.ax - cam.x) > hw + 60 || Math.abs(r.ay * K - cam.y) > hh + 60) return; items.push({ y: Math.max(r.ay, r.by) - 0.5, f: function () { drawRail(ctx, r); } }); });
+    TOWERS.forEach(function (tw) {
+      var l = tw.l, cxw = ((l.door === 's' && l.dx != null ? l.dx : l.x + l.w / 2 - 0.5) + 0.5) * T, fy = (l.y + l.h) * T + T * 0.7; if (Math.abs(cxw - cam.x) > hw + 120 || Math.abs(fy * K - cam.y) > hh + 260 || !roomInfo) return;
+      var ri = roomInfo.at(l.x, l.y), r = ri >= 0 ? roomInfo.rooms[ri] : null, cf = r ? roofCfg(r) : BCFG, thatch = cf.roof === 1, ov = cf.overhang + 1.5 + (thatch ? 2 : 0), bot = (l.y + l.h) * TS - Build.UP + ov * K, Wd = l.w * T + 2 * ov, rh = thatch ? Math.min(42, Wd * 0.58) : Math.min(34, Wd * 0.46), al = r && roofA[r.id] != null ? roofA[r.id] : 1;
+      items.push({ y: fy, f: function () { Build.drawTower(ctx, cxw, fy * K, bot - rh, Build.WALLS[l.m] || Build.WALLS[6], Build.ROOFS[cf.roof] || Build.ROOFS[4], al); } });
+    });
+  }
   function hamletDress() {               /* every village's ground painted, its props and its own trees planted, its doorways and gates kept clear, the roads laid and cleared (at every start, 2026-10-20: these stood in the world at a fresh start only, so a loaded game had lost them, and the save keeps only what the player painted over this ground) */
+    TOWERS = []; RAILS = [];
     villages.forEach(function (v) {
       var V2 = v.V; if (!V2) return;
       V2.paints.forEach(function (pa) { w.dabGround(pa.x, pa.y, pa.r, pa.kind); });
       w.repaint((v.tx - 2) * T, (v.ty - 2) * T, (v.tx + v.w + 2) * T, (v.ty + v.h + 2) * T);
-      V2.props.forEach(function (pr) { if (!(kit.PROPS[pr.name] || World.IMAGES[pr.name]) || !isLand(pr.x, pr.y)) return;   /* (a set piece with no drawn prop of its name counts: the yard pieces, 2026-10-20) */ var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.solid != null ? pr.solid : (pr.name === 'scarecrow' ? 4 : 8), v: Math.floor(Math.random() * 3) }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
+      var chL = V2.lots.filter(function (l) { return l.id === 'church'; })[0]; if (chL) TOWERS.push({ v: v, l: chL });   /* the church's tower, drawn in code (the depth board's item 8), in place of the old bell tower piece */
+      railsOf(V2);
+      V2.props.forEach(function (pr) { if (!(kit.PROPS[pr.name] || World.IMAGES[pr.name] || World.IMAGES[pr.name + '_1']) || !isLand(pr.x, pr.y)) return;   /* (a piece in variants only, railPost_1.., counts: 2026-10-22) */ if (chL && pr.name === 'bellTower') return;   /* (a set piece with no drawn prop of its name counts: the yard pieces, 2026-10-20) */ var o = { name: pr.name, x: pr.x, y: pr.y, s: 1, r: pr.solid != null ? pr.solid : (pr.name === 'scarecrow' ? 4 : 8), v: Math.floor(Math.random() * 3) }; if (pr.loot) o.loot = pr.loot; if (pr.lore) o.lore = pr.lore; w.addProp(o); });
       (V2.nature || []).forEach(function (n) { if (!kit.PROPS[n.name] || !isLand(n.x, n.y)) return; var o = { name: n.name, x: n.x, y: n.y, s: n.s, r: n.r, v: n.v, kind: World.KIND[n.name] || null }; if (o.kind) { o.max = o.hp = World.HP[n.name] * (0.7 + 0.6 * o.s); o.leanDir = Math.random() < 0.5 ? -1 : 1; } w.addProp(o); });   // the village's own trees, bushes and rocks
       (V2.lots || []).forEach(function (l) {                                   // the doorways kept clear (Robin, 2026-10-09: things stood in front of doors): no prop within a tile and a half of the tile outside a door, nor the one beyond
         var pts = l.door === 's' ? [[l.dx, l.y + l.h], [l.dx, l.y + l.h + 1]] : l.door === 'n' ? [[l.dx, l.y - 1], [l.dx, l.y - 2]] : l.door === 'e' ? [[l.x + l.w, l.dy], [l.x + l.w + 1, l.dy]] : [[l.x - 1, l.dy], [l.x - 2, l.dy]], gone2 = [];
@@ -2840,7 +2917,7 @@ __COMBAT__
       var V2 = v.V, k, q; if (!V2) return;
       for (k in V2.floors) B.floors[k] = V2.floors[k];
       (V2.posts || []).forEach(function (q2) { B.posts[Build.key(q2[0], q2[1])] = { m: 0 }; });   /* (the two rows of posts down a hall) */
-      for (k in V2.H) { B.H[k] = { t: V2.H[k].t, m: V2.H[k].m }; if (V2.H[k].locked) B.H[k].locked = 1; } for (k in V2.V) { B.V[k] = { t: V2.V[k].t, m: V2.V[k].m }; if (V2.V[k].locked) B.V[k].locked = 1; }
+      for (k in V2.H) { B.H[k] = { t: V2.H[k].t, m: V2.H[k].m }; if (V2.H[k].locked) B.H[k].locked = 1; if (V2.H[k].hidden) B.H[k].hidden = 1; } for (k in V2.V) { B.V[k] = { t: V2.V[k].t, m: V2.V[k].m }; if (V2.V[k].locked) B.V[k].locked = 1; if (V2.V[k].hidden) B.V[k].hidden = 1; }   /* (hidden: a fence's edge kept under its drawn polygon, 2026-10-22) */
       V2.items.forEach(function (vi) {
         var pc = PIECES.filter(function (p) { return p.prop === vi.name; })[0], it = { name: vi.name, x: vi.x, y: vi.y, r: vi.r != null ? vi.r : (vi.cellar ? 0 : (pc ? pc.r : 8)) };
         for (q in vi) if (q !== 'x' && q !== 'y' && q !== 'name' && q !== 'store' && q !== 'loot') it[q] = vi[q];
@@ -5817,10 +5894,8 @@ __COMBAT__
       if (seaEnv && !PERF.skip.waves) Sea.drawWater(c, sea, seaEnv);   /* the living sea's water (2026-10-21) */
       if (!PERF.skip.waves) { w.drawWaves(c, cam, hw, hh, clock, spec.waves * (1 + 1.4 * (w.swellAt ? w.swellAt(cam.x, cam.y) : 0)), spec.foam * (1 + 0.6 * (w.swellAt ? w.swellAt(cam.x, cam.y) : 0)));   /* (the open sea past home's edge heaves: the swell that turns small boats, 2026-10-20) */ w.drawFalls(c, cam, hw, hh, clock); }
       if (!inCave && !PERF.skip.grass) w.drawGrass(c, cam, hw, hh, clock, grassLook);
-      // shadows of what lies on the ground
-      c.fillStyle = 'rgba(20,40,20,0.22)';
-      for (i = 0; i < drops.length; i++) { var dr = drops[i]; c.beginPath(); c.ellipse(dr.x, dr.y * K, 4, 2.2, 0, 0, 7); c.fill(); }
       if (bDirty) rebuildRooms();
+      bldShadows(c, hw, hh);   /* the buildings' and the walls' shadows, under the set pieces' */
       drawCastShadows(c, hw, hh);
       drawFireShadows(c, hw, hh);
     },
@@ -5860,8 +5935,9 @@ __COMBAT__
       Object.keys(B.H).forEach(function (kk) {
         var q = kk.split(','), x = +q[0], y = +q[1], e = B.H[kk]; if (Math.abs(x * T - cam.x) > hw + 40 || Math.abs(y * TS - cam.y) > hh + 60) return;
         var low = mine(x, y - 1, x, y) && y * T > P.y, under = underMe(x, y - 1) || underMe(x, y);      // the walls in front of you drop low while you are inside
-        items.push({ y: under ? FAR : y * T, f: function () { var fa = fadeOf((x + 0.5) * T, y * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'H', x, y, e, kk, 0); else Build.drawH(ctx, x, y, e, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, BCFG); if (fa < 1) ctx.restore(); } });
+        items.push({ y: under ? FAR : y * T, f: function () { var fa = fadeOf((x + 0.5) * T, y * T); if (fa < 1) { ctx.save(); ctx.globalAlpha *= fa; } if (e.breach) drawEdgeKept(ctx, 'H', x, y, e, kk, 0); else Build.drawH(ctx, x, y, e, low, (near((x + 0.5) * T, y * T) && !e.locked) || !!e.broken, BCFG, SOUTHF[kk]); if (fa < 1) ctx.restore(); } });
       });
+      pushRailsTowers(items, hw, hh);   /* the fences' rails and the churches' towers (the village look plan, 2026-10-22) */
       if (World.IMAGES.townGate_whole) villages.forEach(function (v) {   /* a walled town's front gate wears the studio's face by its state (the Art Director's settle pieces, 2026-10-22, Robin's yes): broken, barred (locked), open (as the gate opens: somebody near and it not locked) or whole */
         if (!v.V || !gated(v)) return; var F = v.V.fence, gw = F.gateW || 1; if (gw < 2) return; var gx = (F.gate + gw / 2) * T, gy = F.y1; if (Math.abs(gx - cam.x) > hw + 90 || Math.abs(gy * TS - cam.y) > hh + 140) return;
         var eds = [], gi; for (gi = 0; gi < gw; gi++) eds.push(B.H[Build.key(F.gate + gi, gy)]); if (!eds[0]) return;

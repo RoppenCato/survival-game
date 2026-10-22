@@ -27,7 +27,7 @@ var FLOORS = [{ name: 'Planks', tile: 'plank' }, { name: 'Packed earth', tile: '
   { name: 'Gravel path', tile: 'trail', path: true }, { name: 'Earth path', tile: 'dirt', path: true }, { name: 'Stone path', tile: 'path', path: true }];   // paths: rounded, joining their neighbours
 var ROOFS = [{ name: 'Turf', col: '#607f49', line: '#3e5a33', ridge: '#5a4030' }, { name: 'Thatch', col: '#bda258', line: '#846a34', ridge: '#4a3426' }, { name: 'Wood shingles', col: '#6a5240', line: '#44332a', ridge: '#3a2a22' }, { name: 'Clay tiles', col: '#a85e44', line: '#6a3a2a', ridge: '#4a2a20' }, { name: 'Slate', col: '#5e6672', line: '#363c46', ridge: '#2c3038' }, { name: 'No roof' }];   // tiles and slate: the lowlands (2026-10-07)
 var TURF_RIDGE = '#4e6a3a';   // the sod cap on a thatch ridge (the studio, 2026-10-20)
-var CFG = { wallH: 32, thick: 5, overhang: 4, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 0 };   /* (lean: a trial on the Destruction Editor's board; on by default for an hour on 2026-10-14 and taken back, Robin: a wall at an angle might look odd; the build cursor marks the edge instead) */   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
+var CFG = { wallH: 40, thick: 5, overhang: 10, roof: 1, seeThrough: 0.12, gable: 'auto', wallM: 1, lean: 0 };   /* (lean: a trial on the Destruction Editor's board; on by default for an hour on 2026-10-14 and taken back, Robin: a wall at an angle might look odd; the build cursor marks the edge instead) */   // lean: how far the foot of a wall that runs north to south stands out from its top, so that its face shows (0: as before, a strip seen from above; tried at 9 in the Destruction Editor, 2026-10-13)   // thatch unless another roof is chosen (Robin, 2026-10-06); walls a storey and a half (2026-10-07); gable: 'auto' (a gable end facing south when the room is as deep as it is wide), 'ns', 'ew'; wallM the gable's material
 // Edge types: wall, door and window close a room (and get a roof). fence, gate and palisade are yard pieces: they
 // stop you (the gate opens as you come near) but never close a room, so a fenced yard stays open to the sky.
 var YARD = { fence: 1, gate: 1, palisade: 1, rail: 1, drystone: 1, townwall: 1 }, OPEN = { door: 1, gate: 1 };
@@ -424,8 +424,8 @@ function shutterWindow(c, x, y, w, h, seed) {
   ink(c, rect(x + w - 1, y - 0.5, w * 0.55, h + 1), '#6a4e36', { wob: 0.5, seed: seed + 1, lw: 0.6, heavy: 1.2 }); stroke(c, [[x + w + 1.2, y + 2], [x + w + 1.2, y + h - 2]], INK.faint, 0.5); stroke(c, [[x + w - 0.5, y + h * 0.3], [x + w * 1.5 - 1.5, y + h * 0.3]], INK.faint, 0.5);
   ink(c, rect(x - 1, y + h, w + 2, 1.8), '#8a6a4a', { wob: 0.3, seed: seed + 2, flat: true, lw: 0.5, heavy: 0.9 });
 }
-function drawH(c, x, y, e, low, open, C) {
-  C = C || CFG;
+function drawH(c, x, y, e, low, open, C, fx) {   // fx: the room's south face this edge is part of ({ x0, x1 } in units), for its shade
+  C = C || CFG; if (e.hidden) return;   /* (a fence's edge kept under its drawn polygon: the village session's, 2026-10-22) */
   if (YARD[e.t]) return drawFenceH(c, x, y, e, open, C);
   var m = wallMat(e), h = low ? 7 : C.wallH, x0 = x * T, yb = y * TS, cp = C.thick * K, seed = x * 13 + y * 37;
   if (e.breach) { c.save(); c.translate(x0, yb - h); remains(c, m, T, h, seed, !!e.burnt, null, e.t === 'window'); c.restore(); rubble(c, e.t === 'window' && !e.burnt ? { tex: 'planks', face: '#8a6a4a', dark: '#5a4430' } : m, x0 + (e.t === 'window' ? 8 : 2), yb - 1, T - (e.t === 'window' ? 16 : 4), 8, seed, !!e.burnt); return; }   // it has given: what is left of it, and what lies before it
@@ -444,10 +444,19 @@ function drawH(c, x, y, e, low, open, C) {
   stroke(c, [[x0 + 0.5, yb - h + 0.6], [x0 + T - 0.5, yb - h + 0.6]], INK.lit, 1.0);                                // the lit top of the face
   if (e.t === 'window' && !low) { if (m.tex === 'ashlar') archWindow(c, x0 + 12, yb - h + 3, 8, 12, seed + 5); else shutterWindow(c, x0 + 7, yb - h + 5, (T - 14) * 0.62, h - 12, seed + 5); }
   if (e.st) { c.save(); c.translate(x0, yb - h); scars(c, m, T, h, seed, e.st); c.restore(); }
+  wallFoot(c, m, x0, yb, T, h, fx);
+}
+var DEPTH = { foot: { h: 6, a: 0.6 }, side: 0.2, sill: 9, eave: { h: 9, a: 0.5, thatch: 9.5, other: 2.6 }, gable: { a: 0.28, band: 5, bandA: 0.4 }, post: { proud: 2, over: 3, lit: 0.38 } };   // the depth board's numbers (the Art Director's out/village_depth, 2026-10-22)
+function stoneWall(m) { return m.tex === 'ashlar' || m.tex === 'blocks'; }
+function wallFoot(c, m, x0, yb, w, h, fx) {   // a wall's face: (7) the south face turning from the light, from nothing at the room's west end to 0.2 at its east; (2) a dark band at the foot and, under timber, wattle and logs, sill stones every 9 units
+  if (fx && fx.x1 > fx.x0) { var g = c.createLinearGradient(fx.x0, 0, fx.x1, 0); g.addColorStop(0, 'rgba(22,28,50,0)'); g.addColorStop(1, 'rgba(22,28,50,' + DEPTH.side + ')'); c.fillStyle = g; c.fillRect(x0, yb - h, w, h); }
+  var F = DEPTH.foot, gb = c.createLinearGradient(0, yb, 0, yb - F.h); gb.addColorStop(0, 'rgba(24,18,14,' + F.a + ')'); gb.addColorStop(1, 'rgba(24,18,14,0)'); c.fillStyle = gb; c.fillRect(x0, yb - F.h, w, F.h);
+  if (stoneWall(m)) return;
+  for (var sx = Math.ceil((x0 + 2) / DEPTH.sill) * DEPTH.sill; sx < x0 + w - 2; sx += DEPTH.sill) { var i = Math.round(sx / DEPTH.sill), r = 2.2 + 1.2 * ((Math.sin(i * 7.1) + 1) / 2); c.fillStyle = i % 2 ? '#7d776c' : '#5a554c'; c.beginPath(); c.ellipse(sx + 3, yb + 0.6, r, r * 0.6, 0, 0, 7); c.fill(); c.strokeStyle = 'rgba(40,32,28,0.7)'; c.lineWidth = 0.6; c.stroke(); }
 }
 // an edge along the left side of tile (x, y). more: whether the V edge below continues it (no end face then)
 function drawV(c, x, y, e, open, more, C, side) {
-  C = C || CFG;
+  C = C || CFG; if (e.hidden) return;
   if (YARD[e.t]) return drawFenceV(c, x, y, e, open, !!(more && more.t && YARD[more.t]), C);
   var m = wallMat(e), h = C.wallH, th = C.thick, xl = x * T - th / 2, yt = y * TS - h, seed = x * 41 + y * 11, lean = C.lean || 0, sd = side > 0 ? 1 : -1;
   if (lean) sideFace(c, x, y, e, m, open, C, sd, seed);
@@ -483,7 +492,9 @@ function drawPost(c, x, y, p, C) {
     stroke(c, [[px - 0.6, py - 3], [px - 0.8, py - hb + 5]], 'rgba(150,140,128,0.35)', 0.6); stroke(c, [[px + 1.4, py - hb * 0.3], [px + 1.6, py - hb * 0.62], [px + 0.9, py - hb * 0.7]], 'rgba(0,0,0,0.5)', 0.6);
     return;
   }
-  ink(c, [[px - w / 2, py], [px - w / 2 + 0.3, py - h], [px + w / 2 - 0.3, py - h], [px + w / 2, py]], m.dark, { wob: 0.5, seed: seed, lw: 0.8, heavy: 1.6 });
+  var pd = stoneWall(m) ? 0 : DEPTH.post.proud;   /* (standing proud of the wall's foot, 2026-10-22: the depth board) */
+  ink(c, [[px - w / 2, py + pd], [px - w / 2 + 0.3, py - h], [px + w / 2 - 0.3, py - h], [px + w / 2, py + pd]], m.dark, { wob: 0.5, seed: seed, lw: 0.8, heavy: 1.6 });
+  if (pd) { c.fillStyle = 'rgba(255,240,200,0.28)'; c.fillRect(px - w / 2 + 0.6, py - h + 1, w * DEPTH.post.lit, h + pd - 2); }   // its lit west face
   stroke(c, [[px - 0.6, py - 3], [px - 0.8, py - h + 4]], INK.faint, 0.6); stroke(c, [[px + 1.2, py - 6], [px + 1.4, py - h + 10]], INK.faint, 0.5);
   ink(c, rect(px - w / 2 - 1, py - h - 2.5, w + 2, 3), m.top, { wob: 0.4, seed: seed + 1, lw: 0.7, heavy: 1.2 });
 }
@@ -590,6 +601,25 @@ function thatchWeather(c, outline, eaves, moss, seed, a) {   // the lowest cours
   });
   c.globalAlpha = a; c.restore();
 }
+function drawTower(c, cx, yFoot, ridgeY, m, roof, a) {   // (8) the depth board's tower (2026-10-22): 44 wide over the south door, its walls 70 over the gable's apex, cut stone with its east third in shade, two belfry openings, the eave band under a pyramid roof 34 tall, a weathervane; its shadow on the nave's roof; drawn as a face, the church's room keeps its gable
+  var TW = { w: 44, over: 70, roof: 34, ov: 5 }, w = TW.w, top = ridgeY - TW.over, x0 = cx - w / 2, x1 = cx + w / 2, sh = top - yFoot; m = m || WALLS[6]; roof = roof || ROOFS[4];
+  c.save(); if (a != null) c.globalAlpha *= a;
+  c.fillStyle = 'rgba(26,34,62,0.3)'; c.beginPath(); c.moveTo(x1, top + 4); c.lineTo(x1 + w * 0.9, top + 4 - sh * 0.06); c.lineTo(x1 + w * 0.9, yFoot - 10); c.lineTo(x1, yFoot); c.closePath(); c.fill();   // its shadow on the roof behind it
+  ink(c, [[x0, top], [x1, top], [x1, yFoot], [x0, yFoot]], m.face, { wob: 0.4, seed: 91, noLine: true, flat: true });
+  face(c, m, x0, top, w, yFoot - top, 91, false);
+  c.fillStyle = 'rgba(22,28,50,0.22)'; c.fillRect(cx + w * 0.18, top, w * 0.32, yFoot - top);   // its east third in shade
+  c.fillStyle = 'rgba(255,240,200,0.18)'; c.fillRect(x0 + 1, top, w * 0.14, yFoot - top);       // its west edge lit
+  path(c, [[x0, top], [x1, top], [x1, yFoot], [x0, yFoot]]); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke(); heavy(c, [[x0, top], [x1, top], [x1, yFoot], [x0, yFoot]], 1.8);
+  [-0.22, 0.22].forEach(function (bx) { var ax = cx + bx * w - 3.5, ay = top + 8; ink(c, [[ax, ay + 12], [ax, ay + 3], [ax + 3.5, ay], [ax + 7, ay + 3], [ax + 7, ay + 12]], '#2a2622', { wob: 0, flat: true, lw: 0.6 }); });   // the belfry's openings
+  var eg = c.createLinearGradient(0, top, 0, top + 9); eg.addColorStop(0, 'rgba(22,28,50,0.5)'); eg.addColorStop(1, 'rgba(22,28,50,0)'); c.fillStyle = eg; c.fillRect(x0, top, w, 9);
+  var rt = top - TW.roof, ov = TW.ov;   // the pyramid roof: the west facet lit, the east in shade, a few courses
+  ink(c, [[x0 - ov, top + 3], [cx, rt], [cx, top + 7]], roof.col, { wob: 0.3, seed: 92, lw: 0.7, heavy: 1.2 });
+  ink(c, [[cx, rt], [x1 + ov, top + 3], [cx, top + 7]], mix(roof.col, '#1a1410', 0.3), { wob: 0.3, seed: 93, lw: 0.7, heavy: 1.2 });
+  c.strokeStyle = roof.line || INK.soft; c.lineWidth = 0.6; for (var k = 1; k < 5; k++) { var t = k / 5; c.beginPath(); c.moveTo(x0 - ov + (cx - (x0 - ov)) * t, top + 3 + (rt - top - 3) * t); c.lineTo(cx + (x1 + ov - cx) * (1 - t), top + 3 + (rt - top - 3) * t); c.stroke(); }
+  c.strokeStyle = '#3a3530'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(cx, rt); c.lineTo(cx, rt - 9); c.moveTo(cx - 3, rt - 6); c.lineTo(cx + 3, rt - 6); c.stroke();   // the weathervane's rod and cross
+  var fg = c.createLinearGradient(0, yFoot, 0, yFoot - DEPTH.foot.h); fg.addColorStop(0, 'rgba(24,18,14,' + DEPTH.foot.a + ')'); fg.addColorStop(1, 'rgba(24,18,14,0)'); c.fillStyle = fg; c.fillRect(x0, yFoot - DEPTH.foot.h, w, DEPTH.foot.h);
+  c.restore();
+}
 function drawRoof(c, room, a, C, dy) {
   C = C || CFG; dy = dy || 0;
   var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
@@ -601,7 +631,7 @@ function drawRoof(c, room, a, C, dy) {
     var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT);   // the ridge along the long side: a gable facing south when the room is deep
     var seed = rc.x0 * 7 + rc.y0 * 3, i, j, cx = (left + right) / 2;
     // the shadow the eaves cast on the walls below, and down the right side
-    var shL = kind === 1 ? 14 : 7, sh0 = kind === 1 ? bot + 7 : bot, sg = c.createLinearGradient(0, sh0, 0, sh0 + shL); sg.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,' + (kind === 1 ? 0.58 : 0.42) + ')'); sg.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg; c.fillRect(left, sh0, Wd, shL);   /* (under thatch: deeper, longer, and from under its band of cut ends) */   /* (deeper and longer under thatch) */
+    var EV = DEPTH.eave, sh0 = bot + (kind === 1 ? EV.thatch : EV.other), sg = c.createLinearGradient(0, sh0, 0, sh0 + EV.h); sg.addColorStop(0, 'rgba(22,28,50,' + EV.a + ')'); sg.addColorStop(1, 'rgba(22,28,50,0)'); c.fillStyle = sg; c.fillRect(left + ov, sh0, Wd - 2 * ov, EV.h);   /* (3) the eave's shadow on the wall, over the wall only (the depth board, 2026-10-22) */   /* (deeper and longer under thatch) */
     var sg2 = c.createLinearGradient(right, 0, right + 5, 0); sg2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.3)'); sg2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg2; c.fillRect(right, top + 2, 5, D);
     function eaveEdge(x0, y0, x1, y1) {                       // the thickness of the roof at an eave or a bargeboard: sod, straw ends or shingle ends along the line
       var dx = x1 - x0, dy2 = y1 - y0, len = Math.hypot(dx, dy2) || 1, nx = -dy2 / len, ny = dx / len, k;   // (nx, ny): outward, below the line
@@ -671,6 +701,8 @@ function drawRoof(c, room, a, C, dy) {
       ink(c, [[left + ov + 3, tb - 3.2], [left + ov + 6, tb - 3.2], [cx - 1, bot - rh * 0.52], [cx - 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 12, lw: 0.6, heavy: 1.1 });   // the struts
       ink(c, [[right - ov - 3, tb - 3.2], [right - ov - 6, tb - 3.2], [cx + 1, bot - rh * 0.52], [cx + 1, bot - rh * 0.52 + 3.4]], gl, { wob: 0.3, seed: seed + 13, lw: 0.6, heavy: 1.1 });
       }
+      c.save(); path(c, gd); c.clip(); c.fillStyle = 'rgba(22,28,50,' + DEPTH.gable.a + ')'; c.beginPath(); c.moveTo(cx, bot - rh); c.lineTo(right - ov, bot - ov * K); c.lineTo(cx, bot - ov * K); c.closePath(); c.fill();   /* (7) the gable's east half in shade and a band under its bargeboards (the depth board, 2026-10-22) */
+      c.strokeStyle = 'rgba(22,28,50,' + DEPTH.gable.bandA + ')'; c.lineWidth = DEPTH.gable.band; c.beginPath(); c.moveTo(left + ov + 2, bot - ov * K + 1); c.lineTo(cx, bot - rh + 2); c.lineTo(right - ov - 2, bot - ov * K + 1); c.stroke(); c.restore();
       var g2 = c.createLinearGradient(0, bot - rh, 0, bot - rh + 9); g2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.35)'); g2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.save(); path(c, gd); c.clip(); c.fillStyle = g2; c.fillRect(left, bot - rh, Wd, 10); c.restore();   // the shade under the ridge
       path(c, gd); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke();
       facet(slopeL, 0.14, 'v', 'w'); facet(slopeR, -0.26, 'v', 'e');
@@ -730,6 +762,6 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { ASH_FLOOR: ASH_FLOOR, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
+return { DEPTH: DEPTH, drawTower: drawTower, ASH_FLOOR: ASH_FLOOR, roofRects: roofRects, FENCE_H: FENCE_H, PALISADE_H: PALISADE_H, TOWNWALL_H: TOWNWALL_H, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;
