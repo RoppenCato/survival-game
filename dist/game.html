@@ -12211,6 +12211,7 @@ function newPlayer() {
 function reset() {
   newWorld(); newPlayer();
   (api.roster || ['beast', 'beast', 'shooter']).forEach(function (t) { spawn(t); });   // a page can choose who starts in the arena
+  if (api.afterReset) api.afterReset();   // and set the field itself after every reset (the Combat Arena's one man across the ring, 2026-10-22)
 }
 
 /* ---------- helpers ---------- */

@@ -214,7 +214,7 @@ __SFX__
   var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
   // Every beast in this arena wears an animal: the plain attacker is a wolf, boar or snake, the big one is the bear.
   var lib = GameArt.lib, want = null, BASE_R = { wolf: 7, boar: 8, snake: 5, bear: 9, moose: 7, deer: 6, troll: 5, trollForest: 4.5, trollMaw: 5.5, trollThree: 4.5, draugr: 7, huldra: 7, nacken: 7, bysen: 8, unge: 9 };
-  Combat.api.roster = ['beast', 'beast'];
+  Combat.api.roster = [];   /* (the field is set by the page: one man across the ring, baseField; it was two beasts until 2026-10-22) */
   Combat.api.dress = function (e) {
     if (e.type !== 'beast' && e.type !== 'brute') return;
     var young = want === 'boarYoung'; if (young) want = 'boar';
@@ -540,9 +540,13 @@ __SFX__
   function resetLog() { logLines.length = 0; tally = { hits: 0, dealt: 0, taken: 0, parried: 0, blocked: 0, dodged: 0, kills: 0 }; drawLog(); }
   function clearField() { Combat.clear(); resetLog(); }
   function placeHero() { var P = Combat.dbg().P; P.x = 200; P.y = 220; P.vx = P.vy = 0; P.face = -Math.PI / 2; P.hp = P.maxHp; P.st = 100; }
+  /* The arena's base (Robin, 2026-10-22: "one guy spawns opposite side so he doesnt attack right away"): you on the ring's near side,
+     one man of the chosen kind on its far side, about 200 units off, at load, after Start over, after rising from a fall, and for "One
+     against you". */
+  function baseField() { if (typeof mwpn === 'undefined' || !mwpn) return; clearField(); var P = Combat.dbg().P; P.x = 200; P.y = 268; P.vx = P.vy = 0; P.face = -Math.PI / 2; P.hp = P.maxHp; P.st = 100; spawnMan(0, 200, 62, MWPN[+mwpn.value], +mgear.value, MWITS[+mwits.value].v); }
   function setPiece(id) {
     clearField(); placeHero(); var P = Combat.dbg().P, wk = MWPN[+mwpn.value], g = +mgear.value, wv = MWITS[+mwits.value].v, fk = MWPN[+fwpn.value], fg = +fgear.value, i;
-    if (id === 'one') spawnMan(0, P.x, P.y - 90, wk, g, wv);
+    if (id === 'one') { baseField(); return; }
     else if (id === 'two' || id === 'friend') { spawnMan(0, P.x - 30, P.y - 90, wk, g, wv); spawnMan(0, P.x + 30, P.y - 98, MIX[(+mwpn.value + 1) % MIX.length], g, wv); if (id === 'friend') spawnMan(1, P.x + 30, P.y + 30, fk, fg); }
     else if (id === 'five' || id === 'bows') { var nb = id === 'bows' ? 1 : 0; for (i = 0; i < 5; i++) spawnMan(0, P.x + (i - 2) * 36, P.y - 110 - (i % 2) * 14 - (i >= 5 - nb ? 50 : 0), i >= 5 - nb ? 'bow' : i === 2 ? wk : MIX[i], g, i === 2 ? wv : null); for (i = 0; i < 4; i++) spawnMan(1, P.x + (i - 1.5) * 36, P.y + 36 + (i % 2) * 14 + (i >= 4 - nb ? 50 : 0), i >= 4 - nb ? 'bow' : i === 0 ? fk : MIX[(i + 2) % MIX.length], fg); }
     else if (id === 'line') { for (i = 0; i < 3; i++) spawnMan(0, P.x + (i - 1) * 40, P.y - 120 - (i % 2) * 12, MIX[i], g, wv); for (i = 0; i < 3; i++) spawnMan(1, P.x + (i - 1) * 24, P.y + 20, i === 1 ? fk : 'sword', fg); setTimeout(function () { Combat.order('hold'); }, 400); }
@@ -551,7 +555,8 @@ __SFX__
   act('addfriend', function () { var P = Combat.dbg().P; spawnMan(1, P.x + (Math.random() - 0.5) * 60, P.y + 30 + Math.random() * 20, MWPN[+fwpn.value], +fgear.value); });
   [['setone', 'one'], ['settwo', 'two'], ['setfriend', 'friend'], ['setfive', 'five'], ['setbows', 'bows'], ['setline', 'line']].forEach(function (q) { act(q[0], function () { setPiece(q[1]); }); });
   act('sclear', clearField);
-  act('sreset', function () { Combat.reset(); resetLog(); });
+  act('sreset', function () { Combat.reset(); resetLog(); });   /* (the reset sets the base itself: afterReset) */
+  Combat.api.afterReset = function () { setTimeout(baseField, 0); };
   var WAYTXT = { duel: 'One at a time: a second man joins after six seconds. The game runs this way.', pack: 'One, then more: a second after 2.5 s, a third after five; those who wait stand nearer.', press: 'Two at a time from the first moment, three on you.', odds: 'By the odds: as many to a man as the sides stand.', swarm: 'All at once, as it was before any pairing: everybody on the nearest.' };
   function wayRows() { btnRow('ways', Object.keys(Combat.WAYS).map(function (k) { return { id: k, name: Combat.WAYS[k].name }; }), function (q) { return (Combat.api.men.way || 'duel') === q.id; }, function (q) { Combat.way(q.id); document.getElementById('waydesc').textContent = WAYTXT[q.id] || ''; }); document.getElementById('waydesc').textContent = WAYTXT[Combat.api.men.way || 'duel']; }
   wayRows();
@@ -604,7 +609,7 @@ __SFX__
   act('tback', function () { TUNE = Combat.tune(tuneRead('game.combat') || {}); tuneApply(); Object.keys(TUNE.beasts).forEach(liveBeasts); tuneDraw(); });
   act('tdef', function () { TUNE = Combat.tune({}); tuneApply(); Object.keys(TUNE.beasts).forEach(liveBeasts); tuneDraw(); });
   act('tapply', function () { var o; try { o = JSON.parse(document.getElementById('ttext').value || '{}'); } catch (e) { document.getElementById('tstat').textContent = 'That text is not numbers this page can read.'; return; } TUNE = Combat.tune(o); tuneApply(); Object.keys(TUNE.beasts).forEach(liveBeasts); tuneDraw(); });
-  tuneDraw(); Object.keys(TUNE.beasts).forEach(liveBeasts);   // (the two beasts the arena starts with were dressed before the tuning was read)
+  tuneDraw(); Object.keys(TUNE.beasts).forEach(liveBeasts);
 
   /* the log of the blows */
   var logLines = [], tally = { hits: 0, dealt: 0, taken: 0, parried: 0, blocked: 0, dodged: 0, kills: 0 }, logEl = document.getElementById('log'), tallyEl = document.getElementById('tally');
@@ -687,6 +692,7 @@ __SFX__
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+  baseField();   /* the base: one man across the ring, once everything above is set up */
 })();
 </script>
 </body>
