@@ -88,7 +88,7 @@ window.ST = (function () {
   ST.arnor = function () {                                // (the hero is put at the steading: finding it is not what is tested here) talks to Arnor until he has said what he has to say now: his story and building first, the raft once home has comfort 4
     var n = D().npc(); if (!n) return 'no Arnor'; if (!ST.metAt) { D().toSteading(); fast(10); ST.metAt = 1; } var said = [], i, s0 = D().arnor().state;
     for (i = 0; i < 10; i++) { walkTo(n.x + 22, n.y + 6, 14, 1500); var w = D().eDo(); if (!w || !w.act) { fast(60); continue; } w.act(); fast(40); said.push(D().arnor().state + ': ' + n.say); var st = D().arnor().state; if ((st === 'wait' && s0 === 'meet') || st === 'taught') break; }
-    return said.join('\n') + '\nbuilding open: ' + !!(Combat.api.canBuild && Combat.api.canBuild()) + '; the raft taught: ' + !!D().seen.raft;
+    return said.join('\n') + '\nbuilding open: ' + !!D().seen.build + '; the raft taught: ' + !!D().seen.raft;
   };
   ST.brokk = ST.arnor;
 

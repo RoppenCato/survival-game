@@ -344,8 +344,8 @@ out (most of its walls charred stumps, the rest charred or scorched, its door go
 (`B.ruin`), its floor earth where no grass grows, its posts charred and snapped short where no wall holds them), a whole
 wattle hut scorched on the side toward the hall, a plank house by the well missing five walls and its roof, axe-marked and
 sooty (mend it and it is your first home: its bed answers only with a roof over it), a palisade whose gaps are charred stumps
-and a gate broken open, the ground round the hall burnt to earth, a cart, rack and post tipped over, crates and barrels that
-**E kicks open** (`kickable`, `kickBox`: it breaks at once as to the axe, with no clip; Robin), the graves behind the hall (E reads Thorgunna's stone),
+and a gate broken open, the ground round the hall burnt to earth, a cart, rack and post tipped over, barrels that
+**E kicks open** (`kickable`, `kickBox`: it breaks at once as to the axe, with no clip; Robin), a chest by the cart holding six stone and the flint sword (E to open; the steading's crates became barrels and this chest, Robin 2026-10-22 through the Art Director), a hand quern by the hut's west end, a midden behind the hut and a chopping block by the woodpile (the same day: no scarecrow, no flower bed and no iron fire basket, none of them a Viking farm's; the hut's kitchen plot of herbs and leeks is laid as `kitchenPlot` litter once the studio's picture is in), the graves behind the hall (E reads Thorgunna's stone),
 and a campfire by the well. **Arnor** (`npc`; `arnorState`: meet, wait, teach, taught) goes about the ruin
 scavenging and hammering at what can be mended (`arnorWork`, his spots `npc.work`, every walk by the yard), and stops to
 watch you when you come near; his story's last line opens building; while you build he names what your home lacks; at
@@ -356,7 +356,7 @@ story a line a talk, other lines once you wear the bronze ring) and the villager
 person's (the scratch by Hogni, the carving on Thorgunna's stone) go on the speech board too (`sayAt`). What anyone says
 shows on the speech board at the foot of the screen, **only within hearing** (`HEAR` 130 units). **Talk follows the lore's modes** (Robin, 2026-10-22: Arnor circled his lines, and a line stayed after you walked off): a story (mode `sequence`) is told a line a press and not again, its Talk staying over the speaker while lines are left (`arnorMore`, `aslakMore`; Robin, later the same day: the prompt went while he spoke, the story seemed over after one line and building never opened); remarks (mode `variants`) are one a talk, and then the speaker is quiet, with no Talk, for `TALK_QUIET` 20 s (a villager `FOLK_QUIET` 12), or until you have walked off and come back, or until he has something new to say; out of hearing his line ends, and a story (the graves) waits and says the cut line again when you are back. The big steps
 are bordered boards (`bigStep`: "Building", "The raft", "You have left the island", the last whenever you stand
-on another island's land). **The bar is there from the start** (Robin, 2026-10-17: not something you gain); B, and the bar's "(B to build)" (`api.canBuild`), wait for Arnor; the Building
+on another island's land). **The bar is there from the start** (Robin, 2026-10-17: not something you gain); B waits for Arnor; no word stands over the bar but in build mode (Robin, 2026-10-22: "remove the FIGHT and GATHER text"; the engine's label, `paged`); the Building
 board holds the plank house's pieces and the workbench until the first night slept under a roof opens twenty-four more
 (key `slept`).
 
@@ -417,7 +417,7 @@ numbers and tale; **with Shift held, the card of what you have now of its use st
 worn piece, the tool in hand or the best other of its kind, the hand weapon; the crafting card too), in place of the green and red
 differences (Robin: "instead of having a green +3"). **The materials' and the food's icons are the Art Director's**
 (`assets/sprites/icons`, 30 of them, 2026-10-22, `art/build/item_icons.py`; inlined as `__STACKICONS__`, `STACK_IMG`, drawn by
-`drawDropIcon` in the bag, the bar, the cards and on the ground; a kind without one keeps its drawn icon). The panel
+`drawDropIcon` in the bag, the bar, the cards and on the ground; a kind without one keeps its drawn icon; **wood and stone remade** the same day, Robin: "they look out of place": firewood in the trees' bark and an oval fieldstone, rendered from the world's camera to lie on the ground). **A drop lies unturned with a soft blue shadow to its lower right** (`drawDrop`, the studio's ask: the picture carries its own light). The panel
 ("You") has Gear (helmet, cloak, tunic, trousers, boots; shield, necklace, two rings, two trinkets, the arm ring), Stats after
 the first kill, Ring once a ring is worn. **What is worn shows as the art studio's rendered icons** (`assets/sprites/worn/`, 2026-10-20; `Items.setWorn`, the game's `wornPick` choosing them as the hero is dressed, the cloth tinted by its material) in the slots, the bag and the crafting board; an empty slot shows its icon faint. The panel's redesign waits for Robin's pick of the studio's three directions. The crafting board sits lower right under the chart, **the list on the left and
 the chosen thing beside it** (Robin). **Each board lists only its own**: Tab opens what you make by hand, with a tab for a

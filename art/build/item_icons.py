@@ -81,10 +81,10 @@ def blob(name, m, parts, voxel=0.012, smooth=2):
     o = obj(name, bm, m); remesh(o, voxel, smooth); return o
 
 # ---------------- the kinds ----------------
-BARK, SPLIT, END = '#6e4c34', '#c49a64', '#d8b47e'
+BARK, SPLIT, END = '#6b4a36', '#c9a874', '#d9c28c'            # 2026-10-22, second pass: the trees' own bark and cut (work/kraken_round/trees), so a log on the ground matches the wood
 def billet(name, c, length, r, a0, a1, rot):
     """a split piece of firewood: a slice of a log, bark on the round, pale on the split faces and the ends"""
-    bm = bmesh.new(); n = 8; ends = []
+    bm = bmesh.new(); n = 10; ends = []
     for x in (-length / 2, length / 2):
         ring = [bm.verts.new((x, 0, 0))] + [bm.verts.new((x, math.cos(a0 + (a1 - a0) * i / n) * r, math.sin(a0 + (a1 - a0) * i / n) * r)) for i in range(n + 1)]
         ends.append(ring)
@@ -95,13 +95,28 @@ def billet(name, c, length, r, a0, a1, rot):
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bmesh.ops.transform(bm, matrix=Matrix.Translation(Vector(c)) @ Euler(rot).to_matrix().to_4x4(), verts=bm.verts)
     return obj(name, bm, [mat(BARK), mat(SPLIT), mat(END)], smooth=False)
+def log_round(name, c, length, r, rot):
+    """a round length of log, bark all round, the cut ends pale with a ring"""
+    o = tube(name, mat(BARK), Vector(c) - Vector((length / 2, 0, 0)), Vector(c) + Vector((length / 2, 0, 0)), r, r * 0.95, seg=12)
+    for sx in (-1, 1):
+        bm = bmesh.new(); bmesh.ops.create_circle(bm, cap_ends=True, segments=12, radius=r * 0.92, matrix=Matrix.Translation(Vector(c) + Vector((sx * (length / 2 + 0.002), 0, 0))) @ Matrix.Rotation(math.pi / 2, 4, 'Y'))
+        obj(name + '_end%d' % (sx > 0), bm, mat(END), smooth=False)
+        bm = bmesh.new(); bmesh.ops.create_circle(bm, cap_ends=True, segments=10, radius=r * 0.45, matrix=Matrix.Translation(Vector(c) + Vector((sx * (length / 2 + 0.004), 0, 0))) @ Matrix.Rotation(math.pi / 2, 4, 'Y'))
+        obj(name + '_ring%d' % (sx > 0), bm, mat('#b58e58'), smooth=False)
+    o.rotation_euler = rot; return o
 def k_wood():
-    billet('b1', (0, -0.06, 0.07), 0.62, 0.15, math.radians(200), math.radians(340), (0, 0, 0.1))
-    billet('b2', (0.02, 0.14, 0.07), 0.6, 0.15, math.radians(200), math.radians(330), (0, 0, -0.05))
-    billet('b3', (0.0, 0.04, 0.2), 0.64, 0.15, math.radians(20), math.radians(160), (0.25, 0, 0.04))
+    """two pieces of firewood lying on the ground, a round length and a split one, in the trees' bark (2026-10-22, second pass; Robin: the
+    wood and stone "look out of place": the first was three planks stacked, cut from no tree on the island)"""
+    log_round('l1', (0, 0.07, 0.1), 0.6, 0.1, (0, 0, 0))
+    billet('b1', (0.04, -0.14, 0.0), 0.56, 0.13, math.radians(15), math.radians(165), (0, 0, -0.1))
+    R = Matrix.Rotation(math.radians(-38), 4, 'Z')                          # turned so their cut ends show toward the camera (seen end-on they read as boards)
+    for o in OBJS: o.matrix_world = R @ o.matrix_world
 def k_stone():
-    hull('s1', mat('#8e908e', 'stone'), (0.02, 0.05, 0.13), (0.24, 0.2, 0.15), n=16, seed=3, rot=0.4)
-    hull('s2', mat('#9a9690', 'stone'), (-0.16, -0.14, 0.07), (0.13, 0.11, 0.09), n=12, seed=8, rot=1.2)
+    """a stone off the island: rounded, a few soft facets, the rocks' own blue-grey, a fleck of moss on its top (2026-10-22, second pass:
+    the first was a pale, cold, hard-lit shard)"""
+    hull('s1', mat('#6e7a80', 'stone'), (0, 0, 0.075), (0.25, 0.19, 0.1), n=24, seed=3, merge=26, rot=0.4)          # lying flat, as a fieldstone does
+    blob('moss', mat('#5c8f3a', 'leaf'), [((-0.08, 0.06, 0.155), 0.035, (1.5, 1.0, 0.3))], voxel=0.01)                  # a fleck of moss, not a cap
+    hull('s2', mat('#64748a', 'stone'), (0.21, -0.12, 0.035), (0.07, 0.06, 0.045), n=12, seed=8, merge=26, rot=1.2)
 def k_fiber():
     """a bundle of flax stalks tied in the middle and spread at both ends: plant fibre"""
     rng = random.Random(4); cols = [mat('#c2b478', 'leaf'), mat('#aa9c62', 'leaf'), mat('#b8a86c', 'leaf')]
@@ -313,9 +328,9 @@ KINDS = {'wood': k_wood, 'stone': k_stone, 'fiber': k_fiber, 'berries': k_berrie
          'ironBar': k_ironBar, 'silver': k_silver, 'torch': k_torch, 'roastBerries': k_roastBerries, 'cookedMeat': k_cookedMeat, 'stew': k_stew,
          'fishSoup': k_fishSoup}
 for k in FISH: KINDS[k] = make_fish(k)
-ELEV = {k: 22 for k in FISH}; ELEV.update({'wood': 32, 'stone': 30, 'fiber': 50, 'berries': 45, 'leather': 50, 'eggs': 48, 'hide': 55, 'antler': 15,
+ELEV = {k: 22 for k in FISH}; ELEV.update({'wood': 35, 'stone': 35, 'fiber': 50, 'berries': 45, 'leather': 50, 'eggs': 48, 'hide': 55, 'antler': 15,
                                           'roastBerries': 45, 'stew': 45, 'fishSoup': 45, 'torch': 12, 'snakeBlood': 20, 'honey': 25})
-YAW = {k: -18 for k in KINDS}; YAW.update({k: 0 for k in FISH}); YAW.update({'antler': 0, 'torch': 0})
+YAW = {k: -18 for k in KINDS}; YAW.update({k: 0 for k in FISH}); YAW.update({'antler': 0, 'torch': 0, 'wood': 0, 'stone': 0})   # wood and stone from the world's own camera: the same picture lies on the ground as a drop
 for kind, fn in KINDS.items():
     if ONLY and kind not in ONLY: continue
     OBJS.clear(); fn(); vl.update()

@@ -1742,7 +1742,7 @@ __COMBAT__
     house(vx + 1, vy + 1, 10, 5, 0, 0, vx + 5, 0);         // the burnt hall: logs, planks (its ruin is laid over it below)
     item('stoneHearth', vx + 5, vy + 3, { cold: 1 });   // the burnt hall's hearth: cold, nobody keeps it (2026-10-20)
     house(vx + 14, vy + 1, 6, 4, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
-    item('table', vx + 14.6, vy + 1.2); item('crate', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });
+    item('table', vx + 14.6, vy + 1.2); item('barrel', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });   /* (the steading's crates are barrels and a chest since 2026-10-22: Robin, through the Art Director) */
     house(vx + 14, vy + 9, 6, 4, 1, 0, vx + 17, 5);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces). Its bed is the first home (2026-10-14, Robin: finish the broken house to sleep in it): five gaps, and no roof until they are closed
     item('bed', vx + 14, vy + 9, { bed: true });
     item('woodenWell', vx + 12, vy + 10); item('stoneHearth', vx + 8.6, vy + 10.6, { light: 1 });   // Arnor's fire: light, and a hint that you will want one; a step away from him so E does not muddle them (2026-10-08)
@@ -1752,13 +1752,14 @@ __COMBAT__
     for (y = vy; y < vy + village.h; y++) if (R() < 0.75) V(vx, y, 'palisade', 0);
     for (x = vx; x < vx + 8; x++) if (R() < 0.7) H(x, vy + village.h, 'fence', 2);
     item('woodpile', vx + 2, vy + 8); item('cart', vx + 6, vy + 13); item('dryingRack', vx + 9, vy + 8); item('haystack', vx + 2, vy + 13);
-    item('shieldRack', vx + 18.4, vy + 5.2); item('crate', vx + 10, vy + 13.4, { loot: { stone: 6 }, thing: ['sword', 'flint'] }); item('brazier', vx + 12.6, vy + 4, { light: 1 });
-    item('dragonPost', vx + 9.6, vy + 0.6); item('crate', vx + 1, vy + 5, { loot: { arrows: 10 } });
+    item('shieldRack', vx + 18.4, vy + 5.2); item('chest', vx + 10, vy + 13.4, { store: [{ kind: 'stone', n: 6 }, { kind: 'item', n: 1, item: Items.make('sword', 'flint') }].concat(lootSlots({}).slice(2)) });   /* (the stone and the flint sword in a chest, E to open; the iron fire basket by the hall is gone: Robin, 2026-10-22) */
+    item('dragonPost', vx + 9.6, vy + 0.6); item('barrel', vx + 1, vy + 5, { loot: { arrows: 10 } });
+    item('quern', vx + 12.9, vy + 4.6); item('midden', vx + 20.8, vy + 2.6); item('choppingBlock', vx + 3.3, vy + 8.8);   /* a hand quern by the hut's west end (where the fire basket stood), a midden behind it, a chopping block by the woodpile (Robin, 2026-10-22, through the Art Director; the places mine) */
     // the yard (2026-10-06): a gravel path from the gate past the hall to the well and the huts, a rail fence to the south,
     // a bit of dry-stone wall by the plank house, a trough by the haystack, flowers by the whole hut
     for (x = vx; x < vx + 8; x++) if (B.H[k(x, vy + village.h)]) B.H[k(x, vy + village.h)] = { t: 'rail', m: 1 };
     for (y = vy + 8; y < vy + 14; y++) if (R() < 0.8) V(vx + 21, y, 'drystone', 3);
-    item('trough', vx + 5, vy + 11.4); item('flowerBed', vx + 14.9, vy + 5.2); item('scarecrow', vx + 1.5, vy + 10.5);
+    item('trough', vx + 5, vy + 11.4);   /* (no flower bed and no scarecrow since 2026-10-22, Robin: no scarecrow on a Viking farm; the kitchen plot of herbs and leeks in the flower bed's place is laid below once the studio's picture is here) */
     /* The makeover (2026-10-16, Robin: "do a makeover on the broken down village... we have more tools for that now that you made
        the destruction editor"): the ruin drawn with the destruction states instead of walls simply missing. The hall: every log
        blackened, about a third burnt through to charred stumps (a way in), a third charred but standing, the rest scorched or
@@ -1778,7 +1779,7 @@ __COMBAT__
     B.items.forEach(function (it) { if ((it.name === 'shieldRack' || it.name === 'cart' || it.name === 'dragonPost') && R() < 0.7) it.fallen = 1; });   // tipped over in the raid
     if (World.IMAGES.roofTree) [['roofTree', 8, 3.3], ['charBeamA', 3, 2], ['charBeamB', 9, 5.1], ['charBeamC', 10, 2.4], ['charBeamC', 3.6, 4.4], ['charPile', 2.2, 5.2], ['ashHeap', 6.4, 1.8], ['ashHeap', 8.9, 1.7], ['charStump', 1.6, 1.6], ['charStump', 10.4, 1.7], ['charStump', 7.2, 5.6]].forEach(function (q) { litter(q[0], vx + q[1] - 0.5, vy + q[2] - 0.5, 0); });   /* the burnt hall's inside (the Art Director's ch1_fixes, 2026-10-22, Robin: "Yes, do all 4"): the fallen roof tree, charred beams, a pile, ash heaps and burnt post stumps on its ash, placed once, in tiles from the steading's corner (mine) */
     else { litter('charredBeam', vx + 3.4, vy + 2.4, 0); litter('charredBeam', vx + 7.6, vy + 4.1, 1); litter('charredBeam', vx + 5.6, vy + 6.1, 2); litter('burntHeap', vx + 8.6, vy + 2.2, 0); }
-    litter('burntHeap', vx + 13.3, vy + 3, 1); litter('brokenDoor', vx + 11.7, vy + 1.2, 0);   // the raid's wreckage: charred beams in the hall's ash and one across its door, a burnt heap in the hall and one by the hut's scorched wall, the gate's leaf torn off (the studio's pieces, 2026-10-20)
+    litter('burntHeap', vx + 13.3, vy + 3, 1); if (World.IMAGES.kitchenPlot) litter('kitchenPlot', vx + 14.9, vy + 5.2, 0);   /* the hut's kitchen plot (Robin, 2026-10-22; the studio's picture to come) */ litter('brokenDoor', vx + 11.7, vy + 1.2, 0);   // the raid's wreckage: charred beams in the hall's ash and one across its door, a burnt heap in the hall and one by the hut's scorched wall, the gate's leaf torn off (the studio's pieces, 2026-10-20)
     B.roofs = {}; bDirty = true; Build.ensurePosts(B);
     for (y = vy + 1; y <= vy + 6; y++) for (x = vx + 1; x <= vx + 11; x++) { var po = B.posts[k(x, y)]; if (!po) continue; var held = [B.H[k(x, y)], B.H[k(x - 1, y)], B.V[k(x, y)], B.V[k(x, y - 1)]].some(function (e) { return e && !e.breach; }); po.burnt = 1; if (!held && R() < 0.75) po.snap = 0.3 + R() * 0.45; }   // the hall's posts charred, snapped short where no wall stands against them
     roofLater = { tx: vx + 14, ty: vy + 1, m: 1 };          // the hut's thatch is set once the rooms are known
@@ -3329,7 +3330,6 @@ __COMBAT__
     weapon: function (k) { var it = handItem(); if (!it || GATHER_KINDS[it.kind]) return null; var K2 = Items.KINDS[it.kind]; return (k === 'bow' ? K2.ranged : K2.melee) ? it : null; }   // 'sword' asks for the melee thing in hand, 'bow' for the ranged one
   };
   Combat.api.barSelect = barPress;
-  Combat.api.canBuild = function () { return !!seen.build || !!SCENE; };   /* the bar's "(B to build)" waits for Arnor's word as B does */
   Combat.api.barSlots = function (mode) { var b = 0; return { hand: hand, sel: sel, slots: slots.slice(b, b + COLS).map(function (s) { return s ? { n: s.n, ammo: ammoOf(s), draw: function (c) { if (s.kind === 'item') itemIcon(c, s.item, 16, 9); else { c.save(); c.beginPath(); c.rect(-9, -9, 18, 18); c.clip(); drawDropIcon(c, s.kind, 0, 0, 1.25); c.restore(); } } } : null; }) }; };
   function ammoOf(s) { return null; }   /* (no ammo while there is no quiver, 2026-10-13) */   // arrows for a bow, stones for a sling: written in the thing's own slot
   function handSync() {                   // the engine's mode, tool and weapon follow the hand (one bar, 2026-10-14)
@@ -6033,7 +6033,10 @@ __COMBAT__
     else { c.fillStyle = '#5a3a26'; c.beginPath(); c.ellipse(0, 1.5, 5.2, 3, 0, 0, Math.PI); c.fill(); c.lineWidth = 1.2; c.strokeStyle = '#3a2a36'; c.stroke(); c.fillStyle = '#b84a3a'; c.beginPath(); c.ellipse(0, 1.5, 5.2, 1.6, 0, 0, 7); c.fill(); c.stroke(); c.strokeStyle = 'rgba(255,255,255,0.6)'; c.lineWidth = 0.9; c.beginPath(); c.moveTo(-1.5, -1); c.quadraticCurveTo(-2.5, -3, -1.5, -5); c.moveTo(1.5, -1); c.quadraticCurveTo(0.5, -3, 1.5, -5); c.stroke(); }
     c.restore();
   }
-  function drawDrop(c, d) { c.save(); c.translate(d.x, d.y * K - d.z); if (d.item) { c.rotate(Math.sin(d.spin) * 0.3); Items.icon(c, d.item, 14); } else if (d.kind === 'log') { var ls = sprite(d.tree + '_log', 0); c.rotate(d.spin); c.drawImage(ls.cv, ls.l, ls.t, ls.w, ls.h); } else { c.rotate(d.kind === 'wood' ? d.spin : 0); drawDropIcon(c, d.kind, 0, 0, 1); } c.restore(); }
+  function drawDrop(c, d) {                 // a thing lying on the ground: a soft blue shadow to the lower right as the set pieces have, and the studio's pictures lie as they were rendered, unturned (the Art Director, 2026-10-22: "no spin on the ground ... a soft shadow under each drop ... so they don't float")
+    var dw = d.kind === 'log' ? 13 : 6.5; c.fillStyle = 'rgba(40,58,104,' + (0.24 * Math.max(0.3, 1 - d.z / 40)).toFixed(3) + ')'; c.beginPath(); c.ellipse(d.x + 2.4, d.y * K + 2.2, dw, dw * 0.38, 0, 0, 7); c.fill();
+    c.save(); c.translate(d.x, d.y * K - d.z); if (d.item) { c.rotate(Math.sin(d.spin) * 0.3); Items.icon(c, d.item, 14); } else if (d.kind === 'log') { var ls = sprite(d.tree + '_log', 0); c.rotate(d.spin); c.drawImage(ls.cv, ls.l, ls.t, ls.w, ls.h); } else { var pic = STACK_IMG[d.kind]; c.rotate(d.kind === 'wood' && !(pic && pic.complete && pic.naturalWidth) ? d.spin : 0); drawDropIcon(c, d.kind, 0, 0, 1); } c.restore();
+  }
   function stackTale(kind) { if (STACK_TALE[kind]) return STACK_TALE[kind]; for (var i = 0; i < RECIPES.length; i++) if (RECIPES[i].id === kind) return RECIPES[i].text + '.'; return ''; }
   function itemCard(c, it, x, y, label) {  // a small vellum card: a thing's name, its numbers, its tale; or a material's tale and a food's meal (it: a thing, or a kind's name). With Shift, the card of what you wear or hold of its kind beside it (Robin, 2026-10-22: "instead of having a green +3"); label: that card's heading
     var stack = typeof it === 'string' ? it : null, name = stack ? NAMES[stack] : it.name, tale = stack ? stackTale(stack) : it.desc, nums = stack ? foodLines(stack) : thingLines(it), lines = [];
