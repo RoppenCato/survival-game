@@ -534,7 +534,7 @@ The raft, the faering and the boat are gone (an older save's become a rowboat, `
 one in use: aboard, or ashore the one of yours you stand nearest, `fleetTick`): every ship you build is yours, kept in the save
 with its name, look and fitting, staying where you left it, drawn and solid there (`idleShips`); never lost. **The shipyard**
 (the piece `ship1`, on the sand at the water anywhere on your land, as many as you like; the raft bench's picture until Colin,
-AD's): E opens **its panel** on the right (`drawShipPanel`, `SPB`; `spOpen`, `spBuild`, `spSummon`, `spRefitStart`,
+AD's; on the starter island's list in place of the raft bench): **Arnor teaches it** at comfort 4 as he taught the raft (key `raft`, the board "A boat"), and when your first boat lies at the starter island's shore he comes down to see you off and says his farewell as you board (`arnorToShore`, from `fleetTick` after a reload too; his lines are still the raft's until Robin's yes to the Lore Director's handoff 8). E opens **its panel** on the right (`drawShipPanel`, `SPB`; `spOpen`, `spBuild`, `spSummon`, `spRefitStart`,
 `spRefitApply`): the ship being made floats by the yard and changes as you choose (`spPrev`, drawn in the world's items, the
 camera between you and her); **New ship**: the model (those you know: `spModelKnown`), the size, the name (click and type), the
 sail's two colours and its pattern, the shields' two paints, the stem's head, the hull's tar and trim (`Yard.LOOK`,
@@ -544,7 +544,7 @@ Esc closes it, and walking 140 off; while it is open the camera pulls back until
 from a standstill, more with way on), the rowboat about 90 s to the big island, a karve with eight rowers about 53
 (`tests/ships.js`); **the wind a clear bonus** (`Yard.sailFill`: behind full, abeam three quarters, nothing from 150 degrees;
 the wind vane on the chart's rim, `drawWindVane`); **run it up the beach** (the page's `raftBeach`: only sand under the bow, the
-middle afloat; `v.beached`, S backs off) and rocks slide her along, never stuck. Every ship has a sea chest. The old
+middle afloat; `v.beached`, S backs off) and rocks slide her along, never stuck; stepping ashore puts you clear of her hull (`offHull`), and E at your ship comes before the shipyard she lies by unless you face the yard. Every ship has a sea chest. The old
 yard scene (`inYard`) is no longer reached from the game.
 **The hulls are at the sizes they were dug up at** (2026-10-21, `Yard.HULLS` in metres: the faering 6.5 m, the boat 9, the karve
 16 by 4.2, the longship 23; a yard cell is a thwart's pitch, `CW` 24; the sizes measured by `tests/ships.js`), **the camera pulls

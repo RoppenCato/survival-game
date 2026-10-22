@@ -15191,7 +15191,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   // A piece is on the board once its key has been found (a kind picked up: copper, leather, honey, charcoal, iron, silver, snake blood)
   // or built (the mason's bench opens stone, the shipwright's benches open the dock) or taught (Arnor's raft). 2026-10-08, Robin: the
   // start was overwhelming; wood first, stone with copper, the lowland pieces with iron, finds open the rest.
-  var STARTER_PIECES = { 'Log wall': 1, 'Plank wall': 1, 'Wattle wall': 1, 'Door': 1, 'Window': 1, 'Post': 1, 'Plank floor': 1, 'Packed earth': 1, 'Thatch roof': 1, 'Workbench': 1, 'Bed': 1, 'Raft bench': 1, 'Chair': 1, 'Bench seat': 1, 'Table': 1, 'Rug': 1, 'Chest': 1, 'Campfire': 1 };   /* (the list is mine) */
+  var STARTER_PIECES = { 'Log wall': 1, 'Plank wall': 1, 'Wattle wall': 1, 'Door': 1, 'Window': 1, 'Post': 1, 'Plank floor': 1, 'Packed earth': 1, 'Thatch roof': 1, 'Workbench': 1, 'Bed': 1, 'Shipyard': 1, 'Chair': 1, 'Bench seat': 1, 'Table': 1, 'Rug': 1, 'Chest': 1, 'Campfire': 1 };   /* (the list is mine) */
   function onStarter() { var P = hero(); return !SCENE && !!w && isleAt(P.x, P.y) === 0; }
   function pieceKnown(p) { if (onStarter() && !STARTER_PIECES[p.name]) return false; return !p.key || !!seen[p.key]; }   /* on the starter island, only what the house and the raft need (Robin, 2026-10-20) */   /* keys: a kind picked up, a thing built, Arnor's teaching, and 'slept' (2026-10-14): the first night slept under a roof opens the rest of the board; until then only the plank house's own pieces (plank wall, door, window, plank floor, thatch, a campfire) are listed */
   function stepPiece(d) { var P = hero(), n = 0; do { P.piece = (P.piece + d + PIECES.length) % PIECES.length; } while (!pieceKnown(PIECES[P.piece]) && n++ < PIECES.length); }   // the next piece you know (it called itself until 2026-10-12: the wheel on a piece not yet known froze the game)
@@ -16245,7 +16245,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function loreLines(id, fallback) { var e = LORE[id]; return e && e.lines && e.lines.length ? e.lines : (fallback || ['']); }
   /* Arnor, the village smith, the one Ormr Midgardbane left alive to tell it (the lore's person.arnor, Robin 2026-10-16; he was
      Arnor the dwarf until then). He tells the story once, names what your home still lacks, and when it is a home (Comfort 4)
-     teaches the raft (seen.raft, saved). Every word he says is the canon's (line.arnor.*). */
+     teaches you a boat (seen.raft, saved: the rowboat at a shipyard, docs/ships-rework.md). Every word he says is the canon's (line.arnor.*). */
   function arnorState() { return seen.raft ? 'taught' : (!seen.met ? 'meet' : (baseComfort().n >= 4 ? 'teach' : 'wait')); }   // the story always comes first
   function arnorLineId(st) {               // the lore entry a state speaks from (its mode says how: a sequence is a story told once, line by line; variants are remarks, one a talk)
     if (st === 'meet') return 'line.arnor.meet';
@@ -16397,7 +16397,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function addShip(o) { var v = shipOf(o); fleet.push(v); return v; }
   function shipsRefit() { fleet.forEach(function (v) { Yard.fit(v); v._gang = null; }); if (shipPanel) spPrev(); }   /* (a model arrived: its outline and seats are the ships' now) */
   function fleetTick() {                   // ashore, the ship in use is the one of yours you stand by
-    if (!fleet.length || (raft && raft.aboard)) return; var P = hero(), best = raft && !raft.stowed ? raft : null, bd = best ? Math.hypot(raft.x - P.x, raft.y - P.y) : 1e9;
+    if (!fleet.length || (raft && raft.aboard)) return;
+    if (npc && !npc.joined && !npc.shore && seen.met && seen.raft && !seen.shore && raft && isleAt(raft.x, raft.y) === 0 && !(fleetTick.t > clock)) { fleetTick.t = clock + 5; var yb = null, yd2 = 1e9; B.items.forEach(function (it) { var dd = it.ship ? Math.hypot(it.x - raft.x, it.y - raft.y) : 1e9; if (dd < yd2) { yd2 = dd; yb = it; } }); arnorToShore(yb || raft); }   /* (your first boat lies at the starter island's shore and you have not left: he is there to see you off, after a reload too) */ var P = hero(), best = raft && !raft.stowed ? raft : null, bd = best ? Math.hypot(raft.x - P.x, raft.y - P.y) : 1e9;
     fleet.forEach(function (v) { if (v.stowed || v === best) return; var d = Math.hypot(v.x - P.x, v.y - P.y); if (d < bd - 24) { bd = d; best = v; } });
     if (best && best !== raft) raft = best;
   }
@@ -16455,16 +16456,19 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function shoreInReach() {                /* land within a step of the vessel (the search raftUse makes), looked for four times a second: "Step ashore" showed far from any shore (Robin, 2026-10-20) */
     if (!raft) return false; if (clock - shoreChk.t < 0.25) return shoreChk.ok; shoreChk.t = clock; shoreChk.ok = false;
-    for (var d = 26; d < 120 && !shoreChk.ok; d += 8) for (var k = 0; k < 16; k++) { var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d; if (isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) { shoreChk.ok = true; break; } }
+    var rch = Math.cos(raft.h), rsh = Math.sin(raft.h), hw0 = (raft.hw || 21) + 8, hh0 = (raft.hh || 21) + 8;
+    for (var d = 20; d < Math.max(120, (raft.hw || 21) + 90) && !shoreChk.ok; d += 8) for (var k = 0; k < 16; k++) { var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d, du = Math.cos(a) * d * rch + Math.sin(a) * d * rsh, dq = -Math.cos(a) * d * rsh + Math.sin(a) * d * rch; if ((du / hw0) * (du / hw0) + (dq / hh0) * (dq / hh0) > 1 && isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) { shoreChk.ok = true; break; } }
     return shoreChk.ok;
   }
   function raftUse() {
     var P = hero();
-    if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; crewBoard(P); menBoard(); if (npc && npc.shore && !seen.shore) { seen.shore = 1; var Ls = loreLines('line.arnor.shore'); npc.say = Ls[Math.floor(Math.random() * Ls.length)]; npc.sayT = 7; save(); } toast(Yard.rigged(raft.kind) ? 'In the ' + Yard.nameOf(raft.kind).toLowerCase() + ': W rows, A and D steer, the sail takes a wind from behind, E to step ashore' : raft.kind === 'boat' ? (handling('boat').steer ? 'In the boat: W rows, A and D steer, E to step ashore' : 'In the boat: WASD to row, E to step ashore') : 'On the raft: W paddles, A and D steer, E to step ashore'); sfx('pick'); save(); return; }
+    if (!raft.aboard) { raft.aboard = true; raft.vx = raft.vy = 0; P.x = raft.x; P.y = raft.y; P.mode = 'fight'; crewBoard(P); menBoard(); if (npc && npc.shore && !seen.shore) { seen.shore = 1; var Ls = loreLines('line.arnor.shore'); npc.say = Ls[Math.floor(Math.random() * Ls.length)]; npc.sayT = 7; save(); } if (!seen.rowKeys) { seen.rowKeys = 1; toast('W rows, A and D steer, E to step ashore'); }   /* (a bare key reminder, the first time aboard only: the guidance is subtle) */ sfx('pick'); save(); return; }
     var best = null;                       // step ashore: the nearest land, looking ahead first
-    for (var d = 26; d < 120 && !best; d += 8) for (var k = 0; k < 16 && !best; k++) {
+    var rch = Math.cos(raft.h), rsh = Math.sin(raft.h);
+    function offHull(x, y) { var dx = x - raft.x, dy = y - raft.y, u = (dx * rch + dy * rsh) / ((raft.hw || 21) + 8), q = (-dx * rsh + dy * rch) / ((raft.hh || 21) + 8); return u * u + q * q > 1; }   /* (a step clear of her: off a beached bow he stood in the boat) */
+    for (var d = 20; d < Math.max(120, (raft.hw || 21) + 90) && !best; d += 8) for (var k = 0; k < 16 && !best; k++) {
       var a = raft.h + (k % 2 ? 1 : -1) * Math.floor((k + 1) / 2) * 0.4, x = raft.x + Math.cos(a) * d, y = raft.y + Math.sin(a) * d;
-      if (isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) best = { x: x, y: y };
+      if (offHull(x, y) && isLand(x, y) && code(Math.floor(x / T), Math.floor(y / T)) >= 1) best = { x: x, y: y };
     }
     if (!best) { toast('No shore close enough'); return; }
     raft.aboard = false; raft.vx = raft.vy = 0; P.x = best.x; P.y = best.y; P.vx = P.vy = 0; P.anim.sit = 0; P.anim.row = null; sfx('pick'); crewAshore(best); menAshore(best);
@@ -18355,6 +18359,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var fed = null, hearth = null, cookOpen = false, menu = null, mouseS = null;   // fed: { kind, left, regen, bonus }
   // Which station E means when a fire and a workbench both stand close: the one you look at counts as nearer
   // (facingScore). While a board is open its station is kept, so turning does not swap it.
+  function hullNearPt(P) { var ch = Math.cos(raft.h || 0), sh = Math.sin(raft.h || 0), u = (P.x - raft.x) * ch + (P.y - raft.y) * sh, L = (raft.hw || 21) * 0.8; u = Math.max(-L, Math.min(L, u)); return { x: raft.x + ch * u, y: raft.y + sh * u }; }
   function facingScore(P, x, y) { var dx = x - P.x, dy = y - P.y, d = Math.hypot(dx, dy); if (d < 1) return 0; return d - 24 * ((Math.cos(P.face) * dx + Math.sin(P.face) * dy) / d); }
   var menuStation = null;
   /* E, by one rule (2026-10-12, the UI review; Robin: all of it). What E does was written twice, as two chains of some forty
@@ -18391,7 +18396,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var bd = taking || carrying ? null : fallenNear(P); if (bd && !(am === bd)) add(bd, 'Drag ' + hisHer(bd) + ' body', function () { dragBody(bd); }, 3);   /* (a body dragged out of sight before it is found: raid step 5) */
     var lg = latchNear(P); if (lg) add(lg, 'Lift the latch', function () { liftLatch(lg); }, 6);
     var sc0 = rUse && !cargo ? seaChest() : null; if (sc0) add(sc0, 'Open the sea chest', function () { store = sc0; invOpen = true; bookOpen = false; clothOpen = false; }, 4);
-    if (rUse) add(raft, cargo ? 'Unload the silver' : 'Board the ' + Yard.nameOf(raft.kind).toLowerCase(), cargo ? unloadCargo : raftUse);
+    if (rUse) add(hullNearPt(P), cargo ? 'Unload the silver' : (raft.name && raft.name !== Yard.nameOf(raft.kind) ? 'Board ' + raft.name : 'Board the ' + Yard.nameOf(raft.kind).toLowerCase()), cargo ? unloadCargo : raftUse, -8);   /* (before the shipyard she lies by, unless you face the yard; a ship you named by her name; faced at the point of her keel nearest you, not her middle: a long ship's middle lies far off, and the shipyard by her won) */
     var syd = !(raft && raft.aboard) && !inYard ? shipNear(P) : null; if (syd) add(syd, 'Shipyard', function () { spOpen(syd); });   /* (the shipyard's panel: docs/ships-rework.md) */
     var cv = caveAtHand(); if (cv) add(inCave ? cv.cave.exitAt : { x: cv.mouth.x, y: cv.mouth.y + 28 }, (inCave ? 'Leave ' : 'Enter ') + CAVE_NAME[cv.kind][0], caveUse);
     if (bodyNear(P)) add(cave.body, 'Take the arm ring', function () { takeRing(); });
