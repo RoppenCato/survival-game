@@ -1843,6 +1843,18 @@ __COMBAT__
     Yard.fit(v); return v;
   }
   function addShip(o) { var v = shipOf(o); fleet.push(v); return v; }
+  /* The sea's sounds (docs/ships-rework.md step 15, Derek, SD's to make; the names are called now and play nothing until a
+     recording of the name is in the bundle): the oars at every stroke's catch, one man's or a crew's; the sail filling as it
+     is set; the hull's creak now and then under way; the keel on the sand as she runs up a beach and as she comes off it. */
+  var seaSnd = { ph: 0, set: 0, beached: 0, creakT: 8 };
+  function seaSounds(v, dt) {
+    var ph = Yard.strokePhase(v), crew = v.crew || 0;
+    if (v.rowing && ph < seaSnd.ph - 0.5) sfx(crew > 1 ? 'oars' : 'oar', 0.45 + Math.random() * 0.1);   // (the phase wrapped: a new stroke's catch)
+    seaSnd.ph = ph;
+    if ((v.sailSet || 0) > 0.5 && seaSnd.set <= 0.5) sfx('sail_fill', 0.5); seaSnd.set = v.sailSet || 0;
+    if (v.beached && !seaSnd.beached) sfx('keel_sand', 0.6); else if (!v.beached && seaSnd.beached) sfx('keel_off', 0.45); seaSnd.beached = v.beached ? 1 : 0;
+    if (Math.abs(v.speed || 0) > 20 && (seaSnd.creakT -= dt) <= 0) { seaSnd.creakT = 6 + Math.random() * 8; sfx('creak', Yard.rigged(v.kind) ? 0.35 : 0.2); }
+  }
   function shipsRefit() { fleet.forEach(function (v) { Yard.fit(v); v._gang = null; }); if (shipPanel) spPrev(); }   /* (a model arrived: its outline and seats are the ships' now) */
   function fleetTick() {                   // ashore, the ship in use is the one of yours you stand by
     if (!fleet.length || (raft && raft.aboard)) return;
@@ -1899,7 +1911,7 @@ __COMBAT__
     if (isLand(x, y) || w.cliffAt(x, y)) return false;                                     // her middle stays in the water
     for (k = 0; k < 10; k++) { var a = k * Math.PI / 5, ex = Math.cos(a) * hw, ey = Math.sin(a) * hh, px = x + ex * ch - ey * sh, py = y + ex * sh + ey * ch, tx = Math.floor(px / T), ty = Math.floor(py / T);
       if (!isLand(px, py) && !w.cliffAt(px, py) && !dockAt(tx, ty)) continue;
-      if (ex < hw * 0.3 || w.cliffAt(px, py) || dockAt(tx, ty) || code(tx, ty) !== 1) return false; hit++; }   // the bow on the sand, nothing else ashore
+      if (ex < hw * 0.3 || w.cliffAt(px, py) || dockAt(tx, ty) || code(tx, ty) > 1) return false; hit++; }   // the bow on the sand, nothing else ashore (a tile still coded water at the very edge counts as the sand)
     return hit > 0;
   }
   function shoreInReach() {                /* land within a step of the vessel (the search raftUse makes), looked for four times a second: "Step ashore" showed far from any shore (Robin, 2026-10-20) */
@@ -1999,6 +2011,7 @@ __COMBAT__
     if (raftWaitTick(dt)) { ix = 0; iy = 0; }   /* the men are coming aboard: she waits (docs/ships-plan.md step 4) */
     if (K2.ShiftLeft || K2.ShiftRight) { H.top *= 1.3; H.accel *= 1.3; }   // pulling harder
     Yard.sail(raft, { ix: ix, iy: iy }, dt, raftHull, H, Yard.rigged(raft.kind) ? wind : null, raftBeach);   // the Sea Editor's physics (src/yard.js); the wind fills the karve's sail; she runs up a sandy beach
+    seaSounds(raft, dt);
     if (!Yard.rigged(raft.kind) && w.homeWater) {                 /* the edge of home water (2026-10-20): past it the swell turns a raft or a rowing boat back toward home, gently, with no word and nothing lost (reward, not punishment); a rigged hull sails on */
       var hw = w.homeWater, hx = hw.cx * T, hy = hw.cy * T, dh = Math.hypot(raft.x - hx, raft.y - hy) || 1, past = dh - (hw.r + w.WD.edge) * T;
       if (past > 0) { var k3 = Math.min(1, past / (30 * T)), ux = (hx - raft.x) / dh, uy = (hy - raft.y) / dh, bl = Math.min(1, dt * (0.6 + 2.4 * k3)); raft.vx += (ux * 45 * (0.5 + k3) - raft.vx) * bl; raft.vy += (uy * 45 * (0.5 + k3) - raft.vy) * bl; raft.speed *= Math.max(0, 1 - dt * 1.5 * k3); if (past > 60 * T) { raft.x += ux * 30 * dt; raft.y += uy * 30 * dt; } }

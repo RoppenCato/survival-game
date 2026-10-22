@@ -348,6 +348,7 @@ var T = 32, TS = 24, K = 0.75;
     if (stuck || free(nx, ny, v.h)) { v.x = nx; v.y = ny; }
     else if (beach && (fw || v.beached) && beach(nx, ny, v.h)) { v.x = nx; v.y = ny; v.beached = 1; if (fw) { var dk = Math.exp(-dt * 6); v.speed *= dk; v.vx *= dk; v.vy *= dk; if (Math.abs(v.speed) < 4) { v.speed = 0; v.vx = v.vy = 0; } } }   // up the sand: she slows and stops (backing off, she just moves)
     else if (v.beached && fw) { v.speed = 0; v.vx = v.vy = 0; }                                                     // beached: no further
+    else if (v.beached && v.speed < 0) { v.x = nx; v.y = ny; }                                                      // backing off the sand: the way she came is water (a thin band at the waterline is neither, 2026-10-22: she stuck there)
     else if (free(nx, v.y, v.h)) { v.x = nx; v.vy *= 0.5; v.speed *= 0.96; }                                       // along the shore
     else if (free(v.x, ny, v.h)) { v.y = ny; v.vx *= 0.5; v.speed *= 0.96; }
     else { var vm = Math.hypot(v.vx, v.vy), a2, done = false;                                                       // against rock: slide along it, not stop dead

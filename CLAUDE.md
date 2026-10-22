@@ -262,7 +262,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
   `villages.js`, `bigplace.js`, `boats.js`, `beasts.js`, `trollsheet.js`, `vasensheet.js`, `people.js`, `mountain.js`,
   `mountainlook.js`, `cave.js`, `worlds.js`, `ruin.js`, `weapons.js`, ...) and scripts loaded into a page in the pane to play
   or check it (`drive.js`, `startplay.js`, `battleplay.js`, `raidplay.js`, `ruinplay.js`, `sackplay.js`, `mountainplay.js`,
-  `ui.js`, `smoke.js`, `scenesmoke.js`).
+  `ui.js`, `smoke.js`, `scenesmoke.js`, `shipsplay.js`: a ship run onto the starter island's shore at five places and backed off each).
 - `tests/`: headless checks (table in `tests/README.md`). `docs/`: the decided and proposed designs (each says which).
 - `art/` (`art/README.md`): the Blender build scripts and sources; `art/render/` (raw frames) is not committed and is
   remade by a render (emptied on Robin's word, 2026-10-21: 4.7 GB; a sheet is repacked only after its clip is rendered again).
@@ -544,7 +544,7 @@ Esc closes it, and walking 140 off; while it is open the camera pulls back until
 from a standstill, more with way on), the rowboat about 90 s to the big island, a karve with eight rowers about 53
 (`tests/ships.js`); **the wind a clear bonus** (`Yard.sailFill`: behind full, abeam three quarters, nothing from 150 degrees;
 the wind vane on the chart's rim, `drawWindVane`); **run it up the beach** (the page's `raftBeach`: only sand under the bow, the
-middle afloat; `v.beached`, S backs off) and rocks slide her along, never stuck; stepping ashore puts you clear of her hull (`offHull`), and E at your ship comes before the shipyard she lies by unless you face the yard. Every ship has a sea chest. The old yard scene where a hull was laid part by part is gone (from the game, the Sea Editor and `src/yard.js`); `tests/karve.js` checks the ship line in its place.
+middle afloat; `v.beached`, S backs off) and rocks slide her along, never stuck; stepping ashore puts you clear of her hull (`offHull`), and E at your ship comes before the shipyard she lies by unless you face the yard. **The sea's sounds** are called by name (`seaSounds`: `oar` or `oars` at each stroke's catch, `sail_fill`, `creak` now and then, `keel_sand` and `keel_off`) and play nothing until Derek, SD's recordings are in the bundle (step 15, briefed 2026-10-22). Every ship has a sea chest. The old yard scene where a hull was laid part by part is gone (from the game, the Sea Editor and `src/yard.js`); `tests/karve.js` checks the ship line in its place.
 **The hulls are at the sizes they were dug up at** (2026-10-21, `Yard.HULLS` in metres: the faering 6.5 m, the boat 9, the karve
 16 by 4.2, the longship 23; a yard cell is a thwart's pitch, `CW` 24; the sizes measured by `tests/ships.js`), **the camera pulls
 back at sea by the hull** (`H.sea`: a karve 0.55, a longship 0.45; Robin, 2026-10-21: "it feels more epic and big, and you feel
