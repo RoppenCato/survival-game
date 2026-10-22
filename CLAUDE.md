@@ -540,7 +540,7 @@ camera between you and her); **New ship**: the model (those you know: `spModelKn
 sail's two colours and its pattern, the shields' two paints, the stem's head, the hull's tar and trim (`Yard.LOOK`,
 `lookDefault`), the fitting (`Yard.FITTINGS`: Raider, Cargo, Voyager, the numbers mine), the cost in sockets, Build; **Your
 ships**: each with where it lies, Summon (to this yard's water) and Refit (look, name and fitting; a new fitting is paid). E or
-Esc closes it, and walking 140 off. **Sailing** is `Yard.sail` (shared with the Sea Editor): W forward, A and D turn (a little
+Esc closes it, and walking 140 off; while it is open the camera pulls back until the whole ship fits left of it (`zoomTarget`). **The look is drawn on the code's hull** until Colin, AD's models (step 12): `Yard.colOf` (the tar laid over the studio's planks at 0.45 and the trim over its rail at 0.55, the first of each the hull as built), the sail plain, striped, checked or bordered in its two colours, the shields every other one in each paint (`shieldPic`), the stem's head a curl, the dragon, a snake or a bear (`drawHead`); `tools/visual/boats.js` renders every size and four looks. **Sailing** is `Yard.sail` (shared with the Sea Editor): W forward, A and D turn (a little
 from a standstill, more with way on), the rowboat about 90 s to the big island, a karve with eight rowers about 53
 (`tests/ships.js`); **the wind a clear bonus** (`Yard.sailFill`: behind full, abeam three quarters, nothing from 150 degrees;
 the wind vane on the chart's rim, `drawWindVane`); **run it up the beach** (the page's `raftBeach`: only sand under the bow, the
