@@ -476,7 +476,7 @@ way (the boar charges, the bear and moose swipe, the wolves circle and bite in t
 230 units ahead and less behind (the herd's watcher sees all round), runs the open way, stands and watches; shot, it bleeds,
 slows, runs shorter and leaves a blood trail to follow (`SHY`, `api.onBlood`); one wood arrow bleeds it out in about 37 s.
 
-**The troll's cave** (on the big island's mountain; its mouth painted into the cliff): a way through from a daylight tunnel
+**The troll's cave** (on the big island's mountain; **its mouth the Art Director's rendered piece since 2026-10-22**, Robin: "Shouldnt it be like a 3D feeling and that you go inside a bit": `assets/props/cavemouth`, the whole mouth drawn with the ground as part of the cliff and its front (the face and the lip) sorted at the wall's foot, so it goes over whoever has walked in; the world's painted arch off, `w.mt.noPaintMouth`; you walk in up to `MOUTH.walkIn` 56 units, darkening with depth, and near the end you are in the cave, as E at the mouth still does; the troll does not walk in; `MOUTH`, `mouthWalk`, `mouthTick`; `art/build/cave_mouth_build.py` and `tools/pack_cave.js` make it; the painted arch remains in `src/world.js` for a world without the picture): a way through from a daylight tunnel
 past holes in the roof that follow the sun, a pool, a chasm, a gallery of copper veins, to the troll's lair and the dead
 Viking with the bronze ring; a chart of what your light has shown. The troll (the boulder troll's sheets) walks out on some
 nights (a fire makes him shield his eyes; caught provoked by daylight he turns to stone), walks home at morning, keeps a

@@ -422,3 +422,9 @@ heavy outline. At game size it is a subtle change; nothing about how he moves is
 tones, fewer crease lines, the heavy outline kept. A subtle change at game size; how they move is the same, and they take a little
 less memory than before. That completes the studio's list of renders. Still yours to decide: the moose's memory, which of the three
 troll concepts, and whether the troll's painted cave mouth gets the new look.
+
+**The troll's cave mouth, remade (2026-10-22, your "Shouldnt it be like a 3D feeling and that you go inside a bit"):** the painted
+arch is gone. The mouth is now the studio's model: an opening in the rock with an overhanging lip, a passage that goes in and
+bends away into the dark, no ring of stones, one big block and scree at its foot. You can walk into it about two and a half metres:
+under the lip you go dark, and near the end you are inside the cave, as E at the mouth still does. The troll does not walk in. How
+far in, and whether he should, are yours to change.
