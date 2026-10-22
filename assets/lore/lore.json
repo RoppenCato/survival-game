@@ -1,6 +1,6 @@
 {
  "about": "The lore for the game, from C:\\dev\\SG\\Lore Director\\canon (tools/build.js). Only canon and in-game entries. Copy to assets/lore/lore.json; do not edit by hand.",
- "built": "2026-10-22T18:54:46.367Z",
+ "built": "2026-10-22T19:27:17.141Z",
  "entries": [
   {
    "id": "world.realm",
@@ -99,7 +99,7 @@
    "title": "Arnor",
    "kind": "person",
    "status": "canon",
-   "decided": "Robin, 2026-10-16 (named Arnor; the village smith; when the hero comes he is in the burnt village scavenging and fixing what he can; he is alive because the raiders always leave a survivor to tell the stories). His place in the game (the story, teaching the raft, the first hirdman) is Brokk's, renamed.",
+   "decided": "Robin, 2026-10-16 (named Arnor; the village smith; when the hero comes he is in the burnt village scavenging and fixing what he can; he is alive because the raiders always leave a survivor to tell the stories). His place in the game (the story, teaching the raft, the first hirdman) is Brokk's, renamed. Robin, 2026-10-22: his look, for the portrait (Clive, GD's talk-and-lore-book.md, decision 7).; Robin, 2026-10-22: the Lore Book page and byname (\"go in as written\")",
    "norse": "Arnórr",
    "summary": "The smith of the burnt steading on the starter island, left alive by Ormr Midgardbane to tell the story. He fixes what he can, and tells it to everyone.",
    "ring": "bronze",
@@ -107,7 +107,11 @@
    "chapter": "chapter.1",
    "tags": "the hird, chapter 1, the survivor",
    "game": "today brokkLines, brokkState (templates/game.html); the first hirdman (src/hird.js)",
-   "body": "Arnor was the smith of [[person.thorgunna|Thorgunna]]'s steading. When the hero comes over the rise he is there in the ruin,\nscavenging and fixing what he can. He is alive because Ormr Midgardbane's raiders always leave one survivor, someone to\ntell the stories of the Viking who raided the place (Robin, 2026-10-16).\n\nPROPOSED: **Who he is.** An ordinary man: short, broad, forty, burn-scarred forearms, with a smith's habit of measuring\neverything by fire and iron. Ormr's men broke his forge and left him standing in it. He has spent two winters mending what\ncan be mended (a roof here, a door there) for nobody to live in. He tells the story of the burning to every trader who puts\nin for water, because he cannot help it, and because Ormr knew he would. That is the part he hates.\n\nPROPOSED: **What the hero is to him.** The first person in two winters who stays. Arnor teaches him the house, the hearth and\nthe raft, the way he would teach an apprentice: by telling him what is missing, never what to do. When the hero raises a claim\nstone, Arnor is the first to join it. He wears bronze, a smith's ring.\n\nPROPOSED: **What he wants.** Not revenge: he has seen Ormr's men and knows better. He wants the steading to have people in it\nagain. [[story.threads|The taken]] are his people. Each one the hero brings home, he greets by name.\n\nSAID: \"Somebody has to tell it, he said. So here I am, telling it.\" — Arnor (proposed, see line.arnor.meet)\n\nIN THE GAME: Built by the Game Developer from lore handoff 1 (commit 03613fa, 2026-10-16): Arnor replaces Brokk everywhere, named on screen and as the hird's first. Before he joins he goes about the burnt steading scavenging and hammering at what can be mended, and stops to watch the hero come near."
+   "byname": "the smith",
+   "book": "The smith of a steading that burned. Ormr Midgardbane's men left him alive so that somebody would tell it, and he tells it to anyone who stops. He mends doors for houses nobody lives in.",
+   "book_more": "He knows who lies in every grave behind the hall, and says each name. He cut Thorgunna's stone himself, and the runes are crooked, because a smith is not a carver.",
+   "book_more_after": "line.arnor.graves",
+   "body": "Arnor was the smith of [[person.thorgunna|Thorgunna]]'s steading. When the hero comes over the rise he is there in the ruin,\nscavenging and fixing what he can. He is alive because Ormr Midgardbane's raiders always leave one survivor, someone to\ntell the stories of the Viking who raided the place (Robin, 2026-10-16).\n\n**His look** (Robin, 2026-10-22, for the portrait Colin, AD draws): about forty, short and broad, a singed beard going grey,\na scorched leather apron, burn-scarred forearms, and a hammer with a mended haft in his belt. Tired and dry, and watching you.\nNever heroic.\n\nPROPOSED: **Who he is.** An ordinary man: short, broad, forty, burn-scarred forearms, with a smith's habit of measuring\neverything by fire and iron. Ormr's men broke his forge and left him standing in it. He has spent two winters mending what\ncan be mended (a roof here, a door there) for nobody to live in. He tells the story of the burning to every trader who puts\nin for water, because he cannot help it, and because Ormr knew he would. That is the part he hates.\n\nPROPOSED: **What the hero is to him.** The first person in two winters who stays. Arnor teaches him the house, the hearth and\nthe raft, the way he would teach an apprentice: by telling him what is missing, never what to do. When the hero raises a claim\nstone, Arnor is the first to join it. He wears bronze, a smith's ring.\n\nPROPOSED: **What he wants.** Not revenge: he has seen Ormr's men and knows better. He wants the steading to have people in it\nagain. [[story.threads|The taken]] are his people. Each one the hero brings home, he greets by name.\n\nSAID: \"Somebody has to tell it, he said. So here I am, telling it.\" — Arnor (proposed, see line.arnor.meet)\n\nIN THE GAME: Built by the Game Developer from lore handoff 1 (commit 03613fa, 2026-10-16): Arnor replaces Brokk everywhere, named on screen and as the hird's first. Before he joins he goes about the burnt steading scavenging and hammering at what can be mended, and stops to watch the hero come near."
   },
   {
    "id": "person.ormr",
@@ -130,12 +134,16 @@
    "title": "Thorgunna",
    "kind": "person",
    "status": "canon",
-   "decided": "Robin, 2026-10-16 (the head of the burnt steading is Thorgunna, replacing Hildir; she would not pay)",
+   "decided": "Robin, 2026-10-16 (the head of the burnt steading is Thorgunna, replacing Hildir; she would not pay); Robin, 2026-10-22: the Lore Book page and byname (\"go in as written\")",
    "norse": "Þórgunna",
    "summary": "Head of the burnt steading on the starter island. She would not pay Ormr, and died at the door of her hall with her two sons.",
    "region": "home",
    "chapter": "chapter.1",
    "tags": "origin, the graves",
+   "byname": "who did not pay",
+   "book": "A stone behind the burnt hall, its runes cut crooked: \"Arnor raised this stone for Thorgunna. She did not pay.\" Two small graves lie beside hers.",
+   "book_more": "She held the steading after her husband drowned, and held it well. When Ormr Midgardbane asked for silver, she said the steading had paid the sea enough. The small graves are her sons.",
+   "book_more_after": "line.arnor.graves",
    "body": "Thorgunna held the steading after her husband drowned, and held it well: the bees, the sheep, the weaving, the feast at the\nwinter nights. When Ormr's longship came up the sound and asked for silver, she said the steading had paid the sea enough\nalready. She died at the door of the hall with her sons. Arnor buried her first, under the biggest stone.\n\nFOUND: Her grave behind the hall has a stone with runes Arnor cut himself, crooked, because a smith is not a carver:\n*\"Arnor raised this stone for Thorgunna. She did not pay.\"*\n\nIN THE GAME: Built by the Game Developer from lore handoff 1 (commit 03613fa, 2026-10-16): Thorgunna replaces Hildir everywhere. Her stone behind the burnt hall reads, on E: \"Carved in the stone: Arnor raised this stone for Thorgunna. She did not pay.\""
   },
   {
@@ -527,12 +535,21 @@
    "title": "Wild boar",
    "kind": "beast",
    "status": "in-game",
-   "decided": "in the game's BESTIARY (Game Developer); Robin has not reviewed the text",
+   "decided": "in the game's BESTIARY (Game Developer); Robin has not reviewed the text; Robin, 2026-10-22: the Lore Book page (\"go in as written\")",
    "norse": "villsvin",
    "summary": "Roots for acorns, keeps to the same few groves, charges hard. Freyr's beast.",
    "region": "home",
    "tags": "chapter 1, Freyr",
    "game": "BESTIARY boar",
+   "book": "Boars root for acorns and keep to the same few groves, year after year. Folk hunt them with spears and roast them at the winter feast. The god Freyr rides a boar with golden bristles, and some swear they have glimpsed it in an oak grove at dusk.",
+   "book_more": "At Yule a boar is led into the hall, and men lay their hands on its bristles and swear what they will do in the year to come.",
+   "book_more_after": "killed",
+   "book_facts": {
+    "folk name": "villsvin",
+    "where": "oak groves and the grass between them",
+    "leaves": "meat",
+    "folk say": "it stamps and shakes its head before it charges"
+   },
    "body": "**Folk name:** Vildsvin. **Where:** grass and oak groves, in small home ranges.\n\n**Lore:** Boars root for acorns and keep to the same few groves. The Norse hunted them with spears and served them at the\nwinter feast, and the god Freyr rode a boar with golden bristles.\n\n**The tell:** it stamps and shakes before it charges. **Drops:** boar meat; cook it at the hearth.\n\nIN THE GAME: Strengths: charges hard and fast; its thick hide takes the first blow. Weaknesses: slow to turn; step aside as it\ncharges and strike its flank. The starter island's boars are young (Game Developer, 2026-10-12).\n\nPROPOSED: One more line for the card, when the Yule boar exists: *\"At Yule a boar is led into the hall and men lay their hands\non its bristles and swear what they will do in the year to come. Not all of them do it.\"* (Real: the *Hervarar saga*.)"
   },
   {
@@ -540,12 +557,19 @@
    "title": "Deer",
    "kind": "beast",
    "status": "in-game",
-   "decided": "in the game's BESTIARY (Game Developer); Robin has not reviewed the text",
+   "decided": "in the game's BESTIARY (Game Developer); Robin has not reviewed the text; Robin, 2026-10-22: the Lore Book page (\"go in as written\")",
    "norse": "hjörtr",
    "summary": "Shy and quick, the hunter's prize. Antler for combs, hide for cloaks.",
    "region": "home",
    "tags": "chapter 1, hunting",
    "game": "BESTIARY deer",
+   "book": "Shy and quick, the deer is the hunter's prize, and hard to come near. Its antlers make combs and its hide makes cloaks. Folk say four harts graze in the branches of the world-tree, and look just like these.",
+   "book_facts": {
+    "folk name": "hjort",
+    "where": "open meadows and the edges of groves",
+    "leaves": "meat and leather",
+    "folk say": "it lifts its head and stands still, and then it runs"
+   },
    "body": "**Folk name:** Hjort. **Where:** open meadows and the edges of groves.\n\n**Lore:** Shy and quick, deer are the hunter's prize. Their antlers were carved into combs and the hides made good cloaks.\n\n**The tell:** it raises its head and freezes before it bolts. **Drops:** meat and leather.\n\nIN THE GAME: Strengths: faster than you, and always watching. Weaknesses: timid; arrows reach it, feet do not. Herds with a\nwatcher; shot, it bleeds and leaves a trail.\n\nPROPOSED: *\"Four harts graze in the branches of the World Tree and gnaw at its bark. The old ones say a white one in a herd is\nan omen, and nobody knows of what.\"*"
   },
   {
@@ -553,12 +577,19 @@
    "title": "Wolf",
    "kind": "beast",
    "status": "in-game",
-   "decided": "in the game's BESTIARY (Game Developer); Robin has not reviewed the text",
+   "decided": "in the game's BESTIARY (Game Developer); Robin has not reviewed the text; Robin, 2026-10-22: the Lore Book page (\"go in as written\")",
    "norse": "úlfr",
    "summary": "The outlaw's name. A pack comes every night; a fire keeps it off.",
    "region": "everywhere",
    "tags": "night, outlaws, Fenrir",
    "game": "BESTIARY wolf",
+   "book": "Wolves hunt in packs in the deep forest, and come closer after dark. The law calls an outlaw a wolf, and folk say the wolf Fenrir will swallow the sun at the end of the world. Fire keeps them off.",
+   "book_facts": {
+    "folk name": "ulv",
+    "where": "deep forest, in packs",
+    "leaves": "meat and a grey pelt",
+    "folk say": "it crouches low and lays its ears back before it springs"
+   },
    "body": "**Folk name:** Ulv. **Where:** deep forest, in packs, bolder at night.\n\n**Lore:** The wolf was the outlaw's name and the giant wolf Fenrir will swallow the sun at the end of the world. Few beasts\nwere feared more.\n\n**The tell:** it crouches low with its ears back. **Drops:** meat and a grey pelt.\n\nIN THE GAME: A pack of three comes each night, eyes red; a fire keeps them off. Strengths: quick, relentless, never alone for\nlong. Weaknesses: light; a parry throws it and a shield wall stops it.\n\nSAID: \"Wolves took two sheep last moon. They come at night, from the dark wood.\" — a villager on the big island"
   },
   {
