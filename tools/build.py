@@ -119,6 +119,10 @@ def hud_art():
     if os.path.isdir(pd):
         for fn in sorted(os.listdir(pd)):
             if fn.endswith('.png'): out['pieces/' + fn[:-4]] = '../assets/hud/pieces/' + fn + '?v=' + hashlib.md5(open(os.path.join(pd, fn), 'rb').read()).hexdigest()[:8]
+    td = os.path.join(d, 'talk')                        # the talk window's own pieces (Colin, AD's, Robin's pick of 2026-10-22): talk/<name>
+    if os.path.isdir(td):
+        for fn in sorted(os.listdir(td)):
+            if fn.endswith('.png'): out['talk/' + fn[:-4]] = '../assets/hud/talk/' + fn + '?v=' + hashlib.md5(open(os.path.join(td, fn), 'rb').read()).hexdigest()[:8]
     return json.dumps(out)
 SRC['__HUD__'] = hud_art()
 def font_faces():

@@ -3382,24 +3382,33 @@ __COMBAT__
     if (P.dead || sleep || inCave || inYard || (raft && raft.aboard) || P.hp < w.hp - 0.01 || P.hurtT > 0 || P.flash > 0.5 || Math.hypot(P.x - w.who.x, P.y - w.who.y) > HEAR) talkClose();
   }
   function talkHit() { return !!talkWin && mouseS.x >= TALKW.x && mouseS.x <= TALKW.x + TALKW.w && mouseS.y >= TALKW.y - 140 / 3 && mouseS.y <= TALKW.y + TALKW.h; }
-  function nineBottom(c, n, x, y, w, h, s) {   // only the bottom row of a 9-slice frame: the rail drawn again over the bust's straight cut
-    var im = himg(n); if (!im) return; var W = im.naturalWidth, H = im.naturalHeight, d = Math.min(s, w / 2, h / 2), mw = W - 2 * s;
-    c.drawImage(im, 0, H - s, s, s, x, y + h - d, d, d); c.drawImage(im, s, H - s, mw, s, x + d, y + h - d, w - 2 * d, d); c.drawImage(im, W - s, H - s, s, s, x + w - d, y + h - d, d, d);
-  }
+  /* The window's look is Robin's pick in Colin, AD's Talk Panel Picker (2026-10-22; his out/talk_panel, the pieces in assets/hud/talk):
+     dark oak with iron rivets (wood_tile under board_frame) on a soft drop shadow; the portrait in an arched window rising 102 px over
+     the board's top edge at its left (talk_arch_back, the portrait clipped to the arch's inside, talk_arch_frame over it); the name on a
+     plaque straddling the top edge (wood_tile under talk_plaque_frame, gilt Alegreya) with the byname beside it; the words in cream
+     in a dark inset; a pulsing gilt arrow while there is more. Every number is his, relative to the board, at Robin's size. */
   function drawTalkWin(c) {
     var w = talkWin; if (!w) return; var meta = LOREBOOK[w.id] || {}, im = portraitImg(w.id), name = meta.title || w.who.name || '', sub = meta.byname || '', more = talkMore(w);
     hPx(c, TALKW.x, TALKW.y, function () {
-      var bw = 900, bh = 142, nx = 278, i;
-      hBoard(c, bw, bh);
-      if (im) { c.drawImage(im, 18, bh - 16 - 288, 240, 288); nineBottom(c, himg('board_frame_gilt') ? 'board_frame_gilt' : 'board_frame', 0, 0, bw, bh, 24); }
-      var cap = himg('capital_box'); if (cap) c.drawImage(cap, nx, 13, 30, 30);
-      c.font = hf('bold', 25); var fw = c.measureText(name.charAt(0)).width; hText(c, name.charAt(0), nx + 15 - fw / 2, 36, c.font, HC.rubric);
-      c.font = hf('bold', 20); hText(c, name.slice(1), nx + 34, 36, c.font, HC.cream); var end = nx + 34 + c.measureText(name.slice(1)).width;
-      if (sub) { hText(c, ',', end, 36, c.font, HC.cream); hText(c, sub, end + c.measureText(',').width + 7, 35, hf('italic', 17), '#c8b48e'); }   /* "Arnor, the smith" */
-      hVellum(c, nx - 6, 48, 618, 78, 'card_frame');
-      c.font = hf('', 17); var lines = wrapLines(c, '\u201c' + (w.line || '') + '\u201d', 570).slice(0, 3);
-      for (i = 0; i < lines.length; i++) hText(c, lines[i], nx + 12, 76 + i * 23 - (lines.length > 2 ? 8 : 0), c.font, HC.ink);
-      if (more) { c.beginPath(); c.arc(bw - 34, bh - 34, 11, 0, 7); c.fillStyle = 'rgba(217,168,69,0.92)'; c.fill(); c.strokeStyle = '#3b2a1f'; c.lineWidth = 1.2; c.stroke(); hText(c, 'E', bw - 34, bh - 29.5, hf('bold', 13), HC.ink, 'center'); }
+      var bw = 900, bh = 142, tx = 240, i, wood = hpat(c, 'wood_tile');
+      c.save(); c.shadowColor = 'rgba(0,0,0,0.45)'; c.shadowBlur = 14; c.shadowOffsetY = 4; c.fillStyle = '#2b1c13'; c.fillRect(4, 4, bw - 8, bh - 8); c.restore();   // the drop shadow
+      c.fillStyle = wood || '#5e4230'; c.fillRect(4, 4, bw - 8, bh - 8);
+      var gr = c.createLinearGradient(0, 0, 0, bh); gr.addColorStop(0, 'rgba(255,230,180,0.08)'); gr.addColorStop(1, 'rgba(0,0,0,0.22)'); c.fillStyle = gr; c.fillRect(4, 4, bw - 8, bh - 8);
+      if (!nine(c, 'board_frame', 0, 0, bw, bh, 24)) { c.strokeStyle = '#1f130c'; c.lineWidth = 3; c.strokeRect(1.5, 1.5, bw - 3, bh - 3); }
+      var ax = 22, ay = bh - 12 - 232, ab = himg('talk/talk_arch_back'), af = himg('talk/talk_arch_frame');   // the arched window
+      if (ab) c.drawImage(ab, ax, ay, 196, 232); else { c.fillStyle = '#9fb6c4'; c.fillRect(ax, ay, 196, 232); }
+      if (im) { c.save(); c.beginPath(); c.moveTo(ax + 7, ay + 225); c.lineTo(ax + 7, ay + 98); c.arc(ax + 98, ay + 98, 91, Math.PI, 0); c.lineTo(ax + 189, ay + 225); c.closePath(); c.clip(); c.drawImage(im, ax - 24, ay + 6, 248, 298); c.restore(); }
+      if (af) c.drawImage(af, ax, ay, 196, 232);
+      c.font = hf('bold', 21); var pw = Math.max(190, Math.ceil(c.measureText(name).width) + 60), px = tx - 4, py = -19;   // the plaque
+      c.fillStyle = wood || '#5e4230'; c.fillRect(px + 2, py + 2, pw - 4, 30); if (!nine(c, 'talk/talk_plaque_frame', px, py, pw, 34, 10)) { c.strokeStyle = '#1f130c'; c.lineWidth = 2; c.strokeRect(px + 1, py + 1, pw - 2, 32); }
+      hText(c, name, px + pw / 2, py + 24, hf('bold', 21), '#ecd08a', 'center');
+      if (sub) hText(c, sub, px + pw + 14, 26, hf('italic', 15), '#c8b48e');
+      var ix = tx - 6, iy = 47, iw = bw - 24 - ix, ih = bh - 11 - iy;   // the dark inset with its inner shadow
+      c.save(); c.beginPath(); c.roundRect(ix, iy, iw, ih, 6); c.fillStyle = 'rgba(18,10,6,0.5)'; c.fill(); c.clip(); c.strokeStyle = 'rgba(0,0,0,0.5)'; c.lineWidth = 12; c.stroke(); c.restore();
+      c.font = hf('', 17); var lines = wrapLines(c, '\u201c' + (w.line || '') + '\u201d', iw - 50).slice(0, 3);
+      for (i = 0; i < lines.length; i++) hText(c, lines[i], tx + 12, 77 + i * 23 - (lines.length > 2 ? 8 : 0), c.font, '#f0e3c4');
+      if (more) { var k = 0.5 + 0.5 * Math.sin(clock * 4), cx = bw - 50 + 4 * k, cy = bh - 34;   // the arrow, pulsing
+        c.save(); c.globalAlpha = 0.45 + 0.55 * k; c.beginPath(); c.moveTo(cx - 6.5, cy - 9); c.lineTo(cx + 6.5, cy); c.lineTo(cx - 6.5, cy + 9); c.closePath(); c.fillStyle = '#ecd08a'; c.fill(); c.strokeStyle = '#3b2a1f'; c.lineWidth = 1.2; c.stroke(); c.restore(); }
     });
   }
   function drawSpeech(c) {
