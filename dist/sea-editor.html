@@ -7399,10 +7399,42 @@ var T = 32, TS = 24, K = 0.75;
   var KJ = 3, HULLS = {                    // m: the length in metres, beam in metres, n: keel cells (a cell a thwart's pitch, CW), per: rowers to a thwart, zoom: the yard's camera, sea: the game's camera when aboard
     faering: { name: 'Faering', m: 6.5, beam: 1.4, n: 5, per: 1, thwarts: [1, 2], mast: null, rudder: null, tier: 2, zoom: 1.1, sea: 0.65, cost: { wood: 10, copper: 3 }, text: 'A four-oared boat for the fjord and the sound, six and a half metres: two rowing seats at most, one man to a seat with a pair of oars, no mast. Quick to turn, light to row.' },
     boat: { name: 'Boat', m: 9, beam: 2.0, n: 8, per: 2, thwarts: [1, 3], mast: null, rudder: null, tier: 2, zoom: 0.9, sea: 0.65, cost: { wood: 14, copper: 5 }, text: 'A six-oared boat of nine metres: three rowing seats at most, two men to a seat, no mast. The first that crosses to the big island with a crew.' },
-    karve: { name: 'Karve', m: 16, beam: 4.2, n: 14, per: 2, thwarts: [2, 6], mast: 8, rudder: 1, tier: 3, zoom: 0.6, sea: 0.55, cost: { wood: 24, copper: 10, fiber: 12 }, text: 'The first ship, sixteen metres: a mast amidships, a square sail, a steering oar at the stern, up to six seats for twelve rowers and a helmsman. A karve’s crew is for a farm, a church, a small village.' },
-    longship: { name: 'Longship', m: 23, beam: 5.2, n: 21, per: 2, thwarts: [4, 13], mast: 11, rudder: 1, tier: 3, zoom: 0.46, sea: 0.45, cost: { wood: 44, ironBar: 16 }, text: 'A warship of the kings, twenty-three metres: thirteen seats, twenty-six oars, most of the screen long. A town waits for a longship’s crew.' }
+    rowboat: { name: 'Rowboat', m: 4.6, beam: 1.25, n: 4, per: 1, thwarts: [1, 1], mast: null, rudder: null, tier: 1, zoom: 1.25, sea: 0.65, cost: { wood: 14, fiber: 4 }, model: 'rowboat', size: 'for you', text: 'A small boat of four and a half metres, a pair of oars and a seat: just you. Wood and fibre, taught by Arnor.' },
+    karve4: { name: 'Karve', m: 11, beam: 3.2, n: 9, per: 2, thwarts: [2, 2], mast: 5, rudder: 1, tier: 2, zoom: 0.75, sea: 0.6, cost: { wood: 20, copper: 6, fiber: 8 }, model: 'karve', size: 'for 4', text: 'A small karve of eleven metres: a mast and a square sail, two seats for four rowers and a helmsman. The ship that leaves home.' },
+    karve8: { name: 'Karve', m: 13.5, beam: 3.7, n: 11, per: 2, thwarts: [4, 4], mast: 6, rudder: 1, tier: 2, zoom: 0.68, sea: 0.58, cost: { wood: 28, copper: 10, fiber: 12 }, model: 'karve', size: 'for 8', text: 'A karve of thirteen and a half metres: four seats for eight rowers and a helmsman.' },
+    karve: { name: 'Karve', m: 16, beam: 4.2, n: 14, per: 2, thwarts: [6, 6], mast: 8, rudder: 1, tier: 2, zoom: 0.6, sea: 0.55, cost: { wood: 36, copper: 14, fiber: 16 }, model: 'karve', size: 'for 12', text: 'The first ship, sixteen metres: a mast amidships, a square sail, a steering oar at the stern, up to six seats for twelve rowers and a helmsman. A karve’s crew is for a farm, a church, a small village.' },
+    longship16: { name: 'Longship', m: 19, beam: 4.6, n: 17, per: 2, thwarts: [8, 8], mast: 9, rudder: 1, tier: 3, zoom: 0.52, sea: 0.5, cost: { wood: 44, ironBar: 12 }, model: 'longship', size: 'for 16', text: 'A longship of nineteen metres: eight seats, sixteen oars and a helmsman.' },
+    longship20: { name: 'Longship', m: 21, beam: 4.9, n: 19, per: 2, thwarts: [10, 10], mast: 10, rudder: 1, tier: 3, zoom: 0.49, sea: 0.47, cost: { wood: 52, ironBar: 16 }, model: 'longship', size: 'for 20', text: 'A longship of twenty-one metres: ten seats, twenty oars.' },
+    longship: { name: 'Longship', m: 23, beam: 5.2, n: 21, per: 2, thwarts: [13, 13], mast: 11, rudder: 1, tier: 3, zoom: 0.46, sea: 0.45, cost: { wood: 64, ironBar: 22 }, model: 'longship', size: 'for 26', text: 'A warship of the kings, twenty-three metres: thirteen seats, twenty-six oars, most of the screen long. A town waits for a longship’s crew.' }
   };
-  var HULL_IDS = ['faering', 'boat', 'karve', 'longship'], RIGGED = ['karve', 'longship'];
+  var HULL_IDS = ['faering', 'boat', 'rowboat', 'karve4', 'karve8', 'karve', 'longship16', 'longship20', 'longship'], RIGGED = ['karve4', 'karve8', 'karve', 'longship16', 'longship20', 'longship'];
+  /* The ships of the rework (docs/ships-rework.md; Robin, 2026-10-22): three models, each in sizes; a size is a hull design above.
+     key: what opens the model (Arnor's teaching, copper, iron bars: by material age). The faering and the boat stay only for older
+     saves (the game makes them rowboats). */
+  var MODELS = [{ id: 'rowboat', name: 'Rowboat', key: 'raft', sizes: ['rowboat'] }, { id: 'karve', name: 'Karve', key: 'copper', sizes: ['karve4', 'karve8', 'karve'] }, { id: 'longship', name: 'Longship', key: 'ironBar', sizes: ['longship16', 'longship20', 'longship']}];
+  function modelOf(kind) { var H = HULLS[kind]; return H && H.model ? H.model : kind === 'raft' || kind === 'faering' || kind === 'boat' ? 'rowboat' : kind; }
+  function designParts(kind, o) {         // a hull of a design fully fitted: every seat its size has, the rig, the stem's head, the shields on the rail
+    var H = HULLS[kind]; o = o || {}; if (!H) return []; var out = autoThwarts(H, H.thwarts[1]);
+    if (H.mast) out.push({ id: 'mast', i: H.mast, j: KJ }, { id: 'sail', i: H.mast, j: KJ }, { id: 'rudder', i: 1, j: KJ });
+    if (H.mast && o.head && o.head !== 'curl') out.push({ id: 'dragon', i: H.n, j: KJ });
+    if (H.mast) out.push({ id: 'shields', i: 2, j: KJ });
+    return out;
+  }
+  /* What a ship can look like (Robin's choices: the sail's colours and stripes, the shields' paint, the hull's tar and trim, the
+     figurehead, a name) and the roles fitted in the shipyard (mine: Raider, Cargo, Voyager; War with the sea fights of chapter 3). */
+  var LOOK = {
+    sail: ['#e8dcc0', '#b23a2e', '#2f4f7a', '#d8a440', '#3e6b3a', '#5a3a26', '#1f1d22', '#7a3d6e'],
+    pattern: [['plain', 'Plain'], ['stripes', 'Stripes'], ['checks', 'Checks'], ['border', 'Border']],
+    shield: ['#b23a2e', '#d8a440', '#2f4f7a', '#e8dcc0', '#3e6b3a', '#1f1d22'],
+    tar: ['#2b211b', '#4a3526', '#6a4a30', '#1c1c20'], trim: ['#c9a25a', '#b23a2e', '#e8dcc0', '#2f4f7a', '#3e6b3a'],
+    head: [['curl', 'A curl'], ['dragon', 'A dragon'], ['snake', 'A snake'], ['bear', 'A bear']]
+  };
+  function lookDefault() { return { sailA: LOOK.sail[0], sailB: LOOK.sail[1], pattern: 'stripes', shield: LOOK.shield[0], shield2: LOOK.shield[1], tar: LOOK.tar[0], trim: LOOK.trim[0], head: 'curl' }; }
+  var FITTINGS = {                        // the roles: what each does (the numbers mine)
+    raider: { name: 'Raider', text: 'The shields on the rail stop arrows from that side; ten in a hundred faster under oars; the men on and off quicker.', oarK: 1.1, boardK: 0.5, shieldsStop: true, cost: { wood: 6, leather: 4 } },
+    cargo: { name: 'Cargo', text: 'A hold for heavy loot: twice the chests and sacks aboard, a bigger sea chest; a little slower.', oarK: 0.94, heavyK: 2, chestK: 2, cost: { wood: 8, fiber: 6 } },
+    voyager: { name: 'Voyager', text: 'A better sail, half again more from the wind; provisions, so the crew stays fed on long crossings.', sailK: 1.5, fed: true, cost: { fiber: 12, leather: 2 } }
+  };
   function heroSeat(v) {                   // where the hero is along the keel (the bow at +): alone on a rowing hull on the aft-most thwart at the oars; alone on a rigged hull at the steering oar; with any man aboard in the bow, looking ahead (Robin, 2026-10-21)
     var H = HULLS[v.kind]; if (!H) return 0;
     if ((v.crew || 0) > 0) return (v.hw || 0) * 0.72;
@@ -7649,7 +7681,9 @@ var T = 32, TS = 24, K = 0.75;
   /* (2026-10-22, docs/ships-rework.md, Robin: the rowboat crosses to the big island in about 90 s, about 7700 to 9700 units shore to
      shore on the game's map; a karve with a crew about half that: the rowboat's top 92, the karve's rowers 0.06 each) */
   var HANDLING = { raft: { steer: 1, top: 92, accel: 52, turn: 1.9, glide: 1.8, grip: 0.58 }, rowboat: { steer: 1, top: 92, accel: 52, turn: 1.9, glide: 1.8, grip: 0.58 }, faering: { steer: 1, top: 92, accel: 56, turn: 2.2, glide: 1.8, grip: 0.62, rowK: 0.1 }, boat: { steer: 1, top: 100, accel: 50, turn: 1.8, glide: 2.2, grip: 0.6, rowK: 0.08 },
-    karve: { steer: 1, top: 115, accel: 42, turn: 1.3, glide: 3.2, grip: 0.72, rowK: 0.06 }, longship: { steer: 1, top: 128, accel: 34, turn: 0.9, glide: 4.2, grip: 0.8, rowK: 0.03 } };
+    karve4: { steer: 1, top: 112, accel: 46, turn: 1.6, glide: 2.8, grip: 0.68, rowK: 0.07 }, karve8: { steer: 1, top: 114, accel: 44, turn: 1.45, glide: 3.0, grip: 0.7, rowK: 0.065 },
+    karve: { steer: 1, top: 115, accel: 42, turn: 1.3, glide: 3.2, grip: 0.72, rowK: 0.06 },
+    longship16: { steer: 1, top: 124, accel: 38, turn: 1.1, glide: 3.8, grip: 0.76, rowK: 0.035 }, longship20: { steer: 1, top: 126, accel: 36, turn: 1.0, glide: 4.0, grip: 0.78, rowK: 0.032 }, longship: { steer: 1, top: 128, accel: 34, turn: 0.9, glide: 4.2, grip: 0.8, rowK: 0.03 } };
   // The wind is a buff only (reward, never punishment): a sail with the wind behind it goes up to (1 + k) times the top speed, and a wind
   // ahead costs nothing. Each rower aboard (v.crew, capped by the seats) adds rowK to the top speed and the acceleration.
   var WIND = { k: 0.5, rowK: 0.07 };
@@ -8132,7 +8166,7 @@ var scene = {
   key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
 };
 
-return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+return { scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
   HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, masthead: masthead, stemPoint: stemPoint, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
   partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullParts: hullCells,
   drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
