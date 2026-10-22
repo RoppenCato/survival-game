@@ -1,0 +1,99 @@
+{
+ "scale": "3 px a HUD unit",
+ "note": "places in HUD units (400 by 250); multiply by 3 for pixels",
+ "bars": {
+  "image": "bars_plaque.png",
+  "at": [
+   4,
+   3
+  ],
+  "size": [
+   80.66666666666667,
+   24
+  ],
+  "three_slice": {
+   "left": 23.333333333333332,
+   "right": 7.333333333333333,
+   "middle_stretches": true
+  },
+  "tracks": {
+   "health": [
+    21.333333333333332,
+    4.666666666666667,
+    52.666666666666664,
+    5
+   ],
+   "stamina": [
+    21.333333333333332,
+    12.666666666666666,
+    52.666666666666664,
+    5
+   ],
+   "note": "x, y, w, h within the plaque; the fill inset 0.7 a side, corners 1 unit"
+  },
+  "fill": {
+   "health": [
+    "#a8382e",
+    "#d06a52"
+   ],
+   "stamina": [
+    "#5e8a3c",
+    "#8db35a"
+   ],
+   "stamina_low": [
+    "#a8862e",
+    "#d0b252"
+   ],
+   "rally": "rgba(236,160,96,0.75)",
+   "note": "a vertical gradient: the lighter at the top, the darker from 45 per cent down"
+  },
+  "number": {
+   "font": "bold 3.7 units Alegreya",
+   "colour": "#f6e7c2",
+   "place": "right-aligned 2 units inside the track end, baseline 3.85 units down"
+  }
+ },
+ "map": {
+  "rim": "map_rim.png",
+  "shade": "map_shade.png",
+  "centre": [
+   370,
+   27.3
+  ],
+  "size": [
+   60,
+   60
+  ],
+  "map_radius": 21.333333333333332,
+  "rim_outer": 25.333333333333332,
+  "note": "draw the chart clipped to the circle of map_radius round the centre, smoothed (imageSmoothing on, and soft: no square pixels), then map_shade, then the marks, then map_rim over all",
+  "buttons": {
+   "minus": {
+    "image": "map_btn_minus.png",
+    "hover": "map_btn_minus_hover.png",
+    "centre": [
+     360.4287616301984,
+     51.47418863309454
+    ],
+    "size": 7.333333333333333
+   },
+   "plus": {
+    "image": "map_btn_plus.png",
+    "hover": "map_btn_plus_hover.png",
+    "centre": [
+     379.5712383698016,
+     51.474188633094535
+    ],
+    "size": 7.333333333333333
+   }
+  },
+  "hero": {
+   "image": "map_hero.png",
+   "size": [
+    5.333333333333333,
+    6
+   ],
+   "note": "points north as drawn: turn it to the hero's facing; at the map's centre"
+  }
+ }
+}

@@ -648,7 +648,7 @@ A board is drawn in Robin's canvas pixels (`hPx`, three to a unit) so the spec's
 tested in units. **The type is Alegreya** (Robin's pick; `UI_FACE`): its Latin files from Google Fonts in `assets/fonts`
 (SIL OFL, `OFL.txt`), inlined into the page by the build (`__FONTS__`), so it works offline. On the Tab screen a click on
 the panel or the bag reaches them and the crafting board stays open. E does one thing by one rule, `eWhat(P)` (a new thing E can do is one `add(...)` line there); the HUD
-is health and stamina top left, the chart and the meal top right; damage numbers are the engine's damage × 10 (`SHOW`), whole.
+is health and stamina top left, the chart and the meal top right, **in oak and iron** (the Art Director's direction A, 2026-10-22; Robin: they looked like "a cheap game", "Go with A"; `assets/hud` `bars_plaque*` and `map_*`, the places from its `bars_map.json`): the bars on an oak plaque with an iron boss and two sunk tracks (`hudBarsA` through the engine's `api.hudBars`; the fills in code, a vertical gradient each, the stamina low in ochre, the number in bold Alegreya; a bigger stamina stretches the plaque's middle), the chart round (`MAPR`, radius 21.3 round (370, 27.3)), drawn soft (`miniSoft`: its window enlarged with a light blur each frame, no square pixels), shaded at its edge, in an oak rim with a carved N, the hero an arrow turned to his facing, the zoom two iron studs on the rim; the comfort line under the rim; damage numbers are the engine's damage × 10 (`SHOW`), whole.
 
 ## Combat (`src/combat.js`)
 
@@ -658,7 +658,7 @@ is health and stamina top left, the chart and the meal top right; damage numbers
 - **The hooks a page uses:** `api.scene` (`begin`, `items`, `end`, `boards`, `bounds`, `walk`, `heroLift`, `noHud`,
   `ownFallen`), `pixelScale`, `roster`, `dress`, `items` (`held`, `tool`, `weapon`), `harvest`, `mods()`, `armor`, `shield`,
   `sfx(n, v, src, x)`, `onLog`, `overlay`, `parryWindow`, `meleeStep`, `struck` (people the hero's blows can hit), `nav`,
-  `onNoise`, `onBlood`, `enemySprite`, `heroSprite`.
+  `onNoise`, `onBlood`, `enemySprite`, `heroSprite`, `hudBars` (a page draws the health and stamina bars itself when it returns true).
 - **One spec of numbers: `Combat.tune(over)`** lays a page's differences over `tuneDefaults()` and writes them in place: the
   feel (`WPRE.snappy`: fz 0.75, pf, kb), `PARRY`, `MEN.parryStun`, `TOOL_DMG`, each melee kind's `PROFILES`, `MEN`, and each
   beast's `BEAST_GAME` numbers with the art library's health, speed and windup (`beastNum`, `tuneBeast`). The game applies

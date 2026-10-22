@@ -9748,12 +9748,14 @@ function drawNums(c) {
 function drawHud(c) {
   var i, bigRow = 0;
   var mst = maxSt(), bw = 60, stw = bw * mst / 100;       // small bars with the numbers beside them
+  if (!(api.hudBars && api.hudBars(c, P, mst))) {           // (a page may draw them itself: the game's oak plaque, 2026-10-22)
   bar(c, 10, 8, bw, 7, P.hp / P.maxHp, '#b8432f');
   if (P.rally > 0.2) { c.fillStyle = 'rgba(236,160,96,0.75)'; c.fillRect(10 + bw * Math.max(0, P.hp) / P.maxHp, 8, bw * Math.min(P.rally, P.maxHp - P.hp) / P.maxHp, 7); }   // what a blow of yours can win back (RALLY)
   bar(c, 10, 18, stw, 6, P.st / mst, P.st < 22 ? '#c9a63a' : '#6f9a4a');
   c.font = 'bold 5px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 1.6; c.strokeStyle = '#3a2a36'; c.fillStyle = '#fff';   // the number sits inside its bar
   var hpTxt = String(Math.ceil(Math.max(0, P.hp))), stTxt = String(Math.round(Math.max(0, P.st)));
   c.strokeText(hpTxt, 13, 13.2); c.fillText(hpTxt, 13, 13.2); c.strokeText(stTxt, 13, 22.8); c.fillText(stTxt, 13, 22.8);
+  }
   c.font = 'bold 8px system-ui, sans-serif'; c.lineWidth = 2.4;
   if (!(api.scene && api.scene.noKills)) { var txt = 'Kills ' + W.kills; c.strokeText(txt, 10, 38); c.fillStyle = '#fff'; c.fillText(txt, 10, 38); }
   for (i = 0; i < W.enemies.length; i++) {
