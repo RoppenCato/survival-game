@@ -3355,7 +3355,7 @@ __COMBAT__
      bust 240 by 288 standing over the board's top edge, its straight cut behind the bottom rail). E gives the next line of a story
      and closes it after the last; anything else closes it and does what it does (a step, a swing, Esc), as do a blow taken, being
      out of hearing, sleep or the dark of a cave. The world does not pause; the hotbar hides while it is open. What a person says
-     on his own while you pass stays on the speech board. The name is the lore's title with its Norse form and byname. */
+     on his own while you pass stays on the speech board. The name is the lore's title in the game's spelling with its byname beside it; the Norse form is the book page's (Alistair, LD, 2026-10-22). */
   Combat.api.hideBar = function () { return !!talkWin; };
   var SHOW_TALK = true, talkWin = null, PORT_IMG = {}, TALKW = { x: 50, y: 592 / 3, w: 300, h: 142 / 3 };
   function portraitImg(id) { var src = PORTRAITS[id]; if (!src) return null; var im = PORT_IMG[id]; if (!im) { im = PORT_IMG[id] = new Image(); im.decoding = 'async'; im.src = src; } return im.complete && im.naturalWidth ? im : null; }
@@ -3379,7 +3379,7 @@ __COMBAT__
     c.drawImage(im, 0, H - s, s, s, x, y + h - d, d, d); c.drawImage(im, s, H - s, mw, s, x + d, y + h - d, w - 2 * d, d); c.drawImage(im, W - s, H - s, s, s, x + w - d, y + h - d, d, d);
   }
   function drawTalkWin(c) {
-    var w = talkWin; if (!w) return; var meta = LOREBOOK[w.id] || {}, im = portraitImg(w.id), name = meta.title || w.who.name || '', sub = [meta.norse, meta.byname].filter(function (q) { return !!q; }).join(', '), more = talkMore(w);
+    var w = talkWin; if (!w) return; var meta = LOREBOOK[w.id] || {}, im = portraitImg(w.id), name = meta.title || w.who.name || '', sub = meta.byname || '', more = talkMore(w);
     hPx(c, TALKW.x, TALKW.y, function () {
       var bw = 900, bh = 142, nx = 278, i;
       hBoard(c, bw, bh);
@@ -3387,7 +3387,7 @@ __COMBAT__
       var cap = himg('capital_box'); if (cap) c.drawImage(cap, nx, 13, 30, 30);
       c.font = hf('bold', 25); var fw = c.measureText(name.charAt(0)).width; hText(c, name.charAt(0), nx + 15 - fw / 2, 36, c.font, HC.rubric);
       c.font = hf('bold', 20); hText(c, name.slice(1), nx + 34, 36, c.font, HC.cream); var end = nx + 34 + c.measureText(name.slice(1)).width;
-      if (sub) hText(c, sub, end + 12, 35, hf('italic', 15), '#c8b48e');
+      if (sub) { hText(c, ',', end, 36, c.font, HC.cream); hText(c, sub, end + c.measureText(',').width + 7, 35, hf('italic', 17), '#c8b48e'); }   /* "Arnor, the smith" */
       hVellum(c, nx - 6, 48, 618, 78, 'card_frame');
       c.font = hf('', 17); var lines = wrapLines(c, '\u201c' + (w.line || '') + '\u201d', 570).slice(0, 3);
       for (i = 0; i < lines.length; i++) hText(c, lines[i], nx + 12, 76 + i * 23 - (lines.length > 2 ? 8 : 0), c.font, HC.ink);
