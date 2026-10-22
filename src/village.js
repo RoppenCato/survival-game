@@ -96,7 +96,7 @@ var PRICE = {                                           // what a way in costs t
   wall: { secs: 40, noise: 430, seen: 'everybody', note: 'the ram on cut stone' }
 };
 // the radius each thing takes on the floor, as the game's PIECES give them (docs/interiors-plan.md section 4; a flat thing 0)
-var RAD = { bed: 8, table: 5, chair: 3, bench: 6, chest: 5, crate: 4, barrel: 4, sack: 5, stoneHearth: 8, campfire: 5, loom: 6, quern: 4, stool: 3, shelf: 4, cupboard: 5, workbench: 7, dryingRack: 6, spearRack: 4, shieldRack: 4, haystack: 6, trough: 5, furnace: 9, altar: 6, font: 4, foodTable: 7, logSeat: 5, stall: 8, rug: 0, cellarDoor: 0, trapdoor: 0, windowBox: 0, lantern: 0, torchBracket: 0, sign: 0, awning: 0, woodenWell: 8, firePit: 8 };
+var RAD = { bed: 8, table: 5, chair: 3, bench: 6, chest: 5, crate: 4, barrel: 4, sack: 5, stoneHearth: 8, campfire: 5, loom: 6, quern: 4, stool: 3, shelf: 4, cupboard: 5, workbench: 7, dryingRack: 6, spearRack: 4, shieldRack: 4, haystack: 6, trough: 5, furnace: 9, altar: 6, font: 4, foodTable: 7, logSeat: 5, stall: 8, rug: 0, cellarDoor: 0, trapdoor: 0, windowBox: 0, lantern: 0, torchBracket: 0, sign: 0, awning: 0, woodenWell: 8, firePit: 8, cradle: 5, wallHanging_1: 0, wallHanging_2: 0, wallHanging_3: 0 };
 var NAMES = ['Arnfinn', 'Bera', 'Dagny', 'Eyvind', 'Frida', 'Gorm', 'Halla', 'Ingolf', 'Jorunn', 'Ketil', 'Liv', 'Mundi', 'Nanna', 'Ragna', 'Sigrun', 'Thorir', 'Ulf', 'Vigdis', 'Yngvar', 'Asa', 'Bjorn', 'Gunnhild', 'Hakon'];
 var ROLES = { fisherman: ['Sit, sit. The sea has been feeding me for sixty years and it has not run dry yet.', 'Perch in the shallows, cod and salmon out where the water turns dark. Cast past the weed and wait: the float tells you everything.', 'Grill a fish on a flat stone, or boil two with berries: a soup that warms the whole night. Three on the rack over a charcoal smoke, and they keep till spring.', 'Mind the pike. Let him run when he runs, and reel when he rests, or he takes your line with him.'], priest: ['Peace be upon this house, stranger.', 'The silver on the altar is God’s, not mine. He will know who took it.'], guard: ['Keep your blade sheathed inside the walls.', 'The jarl sees everything from his hall.'], merchant: ['Wool, salt, iron. What have you got?', 'Silver by weight, friend. We take no promises.'], farmer: ['The barley came in well this year.', 'Mind the goat: she butts.'], fisher: ['The herring run at dawn, out past the skerry.', 'That boat has crossed worse water than this.'], smith: ['Copper is soft. Bring me bog iron and I will show you steel.', 'My bench is yours if you leave it as you found it.'], weaver: ['Wool from our own sheep. Feel it.', 'The loom took a winter to build.'], elder: ['Ormr\'s men came once. They will come again.', 'My father raised the stone by the gate.'], child: ['Are you a Viking?', 'I found a bird\'s nest with four eggs!'], thrall: ['...', 'I was taken from the south. This is home now.'] };
 function rngOf(seed) { var s = (seed >>> 0) || 1; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -114,6 +114,7 @@ function storyOf(archId, shore, R) {
 // name, biome, shape ('auto' | 'street' | 'green'), story, age, rounds (how many units to grow: the editor watches it grow) }
 function make(seed, site, opts) {
   opts = opts || {}; var G = cfg(opts.G), R = rngOf(seed), archId = opts.arch || 'small', A = ARCH[archId] || ARCH.small, wealth = opts.wealth == null ? R() : opts.wealth, shore = site.shore || (A.shore ? 's' : null);
+  var RD = rngOf(((seed >>> 0) ^ 0x5bd1e995) >>> 0);   // the insides' dressing (the cradle, the hangings: the Art Director's, 2026-10-22) rolls on its own stream, so every other roll of a place stays as it was
   var stockK = 0.4 + R() * 1.2, hoardK = (0.7 + R() * 0.7) * (RICH[archId] || 1);   // the place's own rolls (raid step 7): how full its stores, how deep its hoard (and the archetype's wealth in coin: RICH)
   var shape = opts.shape && opts.shape !== 'auto' ? opts.shape : (A.family === 'auto' ? (R() < 0.5 ? 'street' : 'green') : A.family);
   var story = opts.story && opts.story !== 'auto' && STORIES[opts.story] ? opts.story : storyOf(archId, shore, R);
@@ -242,7 +243,8 @@ function make(seed, site, opts) {
       if (LG >= 7) inH('crate', 0.55 + (nearOk ? 0 : 1), cc(nearOk ? nearW : farW) + (nearOk ? 0 : 0.9 * side), { loot: { berries: 2, fiber: 2 }, opt: true });
       var work = calling === 'weaver' ? 'loom' : calling === 'farmer' || calling === 'thrall' ? 'quern' : calling === 'fisher' || calling === 'fisherman' ? 'dryingRack' : calling === 'smith' ? 'workbench' : calling === 'guard' ? 'spearRack' : (R() < 0.5 ? 'quern' : 'shelf');
       inH(work, LG * 0.32 + 1, cc(nearOk ? nearW : farW), { opt: true, work: calling || null, bench: work === 'workbench' ? true : undefined });
-      if (wealth > 0.55) inH(R() < 0.5 ? 'cupboard' : 'shelf', LG - 2.0, cc(nearOk ? nearW : farW), { opt: true });
+      var cupN = wealth > 0.55 ? (R() < 0.5 ? 'cupboard' : 'shelf') : null, cradle = nearOk && LG >= 6 && RD() < 0.35;   // a cradle at the foot of the parents' bed in a third of the houses, where a rich house keeps its cupboard (Robin, 2026-10-22: "Yes to both")
+      if (cradle) inH('cradle', LG - 2.0, cc(nearW), { opt: true, r: 5 }); else if (cupN) inH(cupN, LG - 2.0, cc(nearOk ? nearW : farW), { opt: true });
       if (R() < 0.3) inH('stool', LG * 0.5 - 1.2, cc(hc), { seat: true, opt: true });
     } else if (BUILD[l.id].inside === 'store') {
       var SK = stockK * (0.6 + wealth * 0.8), fm = function (n) { return Math.max(1, Math.round(n * SK)); };   // the stocks: the place's roll and its wealth (raid step 7)
@@ -257,7 +259,7 @@ function make(seed, site, opts) {
     else if (BUILD[l.id].inside === 'pit') { p = tile(l.x, l.y); item('campfire', p[0] + 10, p[1] + 6, { hearth: true, light: 1 }); p = tile(l.x + 1, l.y + 1); item('dryingRack', p[0], p[1] - 4); }
     else if (BUILD[l.id].inside === 'church') {
       p = tile(l.x + Math.floor(l.w / 2), l.y); item('altar', p[0] + (l.w % 2 ? 0 : T / 2), p[1] + 2, { r: 6, altar: true, light: 1, lamp: true });
-      if (wealth >= G.cryptAt) { p = tile(l.x, l.y); item('trapdoor', p[0] + 14, p[1] + 10, { crypt: true, r: 0, flat: true }); V.secrets.push({ kind: 'crypt', x: p[0] + 14, y: p[1] + 10, cue: 'the trapdoor’s seam behind the altar', way: false }); }   // the trapdoor behind the altar, down to the crypt (raid step 8)
+      if (wealth >= G.cryptAt || A.tier >= 5) { p = tile(l.x, l.y); item('trapdoor', p[0] + 14, p[1] + 10, { crypt: true, r: 0, flat: true }); V.secrets.push({ kind: 'crypt', x: p[0] + 14, y: p[1] + 10, cue: 'the trapdoor’s seam behind the altar', way: false }); }   // the trapdoor behind the altar, down to the crypt (raid step 8)
       for (k = l.y + 2; k < l.y + l.h - 1; k++) { p = tile(l.x, k); item('bench', p[0] + 4, p[1] - 4, { seat: true, r: 3 }); p = tile(l.x + l.w - 1, k); item('bench', p[0] - 4, p[1] - 4, { seat: true, r: 3 }); }
       p = tile(l.x + l.w - 1, l.y); item('chest', p[0] - 2, p[1] + 2, { heavy: { silver: Math.round((14 + wealth * 24) * hoardK) }, locked: 1, lore: 'The church’s silver, given by the faithful.' });
       find({ kind: 'silver', x: p[0], y: p[1] });
@@ -961,6 +963,37 @@ function make(seed, site, opts) {
       if (done) { var dirx = sx5 < focus[0] ? 1 : -1; V.nature.push({ name: 'bush', x: sx5 - dirx * 14, y: sy5 + 8, s: 0.9, r: 0, v: 2 }); strokeTo([sx5 + dirx * 10, sy5], [sx5 + dirx * 70, sy5 + (R() - 0.5) * 30], 5, 2); V.secrets.push({ kind: 'shortcut', x: sx5, y: sy5, cue: 'a worn path that runs to the fence and stops', way: true }); if (G.ways) way('gap', sx5, sy5); }
     }
   }
+  // ---- things on the walls inside (Robin, 2026-10-22: hangings and a cradle, "Yes to both"; the Art Director's interior pieces): on the
+  // north wall of a house or a hall, the wall seen from inside with the roof off. Herbs and onions or pelts on a peg rail in most
+  // houses, a woven hanging in a rich one; in a hall the woven hanging behind the high seat and pelts or herbs along the wall. Never on
+  // a door, a window or the back room's wall, nor behind a tall thing standing against that wall. Each picture's foot is the wall's
+  // foot, so it sorts just in front of the wall. The names carry the variant (the game draws an item's first picture only).
+  var HANG_W = { wallHanging_1: 47, wallHanging_2: 34, wallHanging_3: 36 }, TALL = { shieldRack: 1, spearRack: 1, loom: 1, cupboard: 1, shelf: 1, dryingRack: 1, workbench: 1 };
+  if (!V.ruin) V.lots.forEach(function (l) {
+    var ins = BUILD[l.id] && BUILD[l.id].inside; if ((ins !== 'home' && ins !== 'hall') || l.ruin) return;
+    var y0 = l.y * T, put = [];
+    function inRoom(cx, wd) { return Math.max(l.x * T + 4 + wd / 2, Math.min((l.x + l.w) * T - 4 - wd / 2, cx)); }   // a corner column's hanging moved in off the side wall
+    function fits(cx, wd) {                     // the stretch of wall behind it is whole wall, clear of tall things and of another hanging
+      var a = cx - wd / 2, b = cx + wd / 2, x;
+      if (a < l.x * T + 3 || b > (l.x + l.w) * T - 3) return false;
+      for (x = Math.floor(a / T); x <= Math.floor((b - 0.01) / T); x++) { var e = V.H[key(x, l.y)]; if (!e || e.t !== 'wall') return false; if (l.back != null && (x === l.back || x === l.back - 1)) return false; }
+      if (V.items.some(function (it) { return TALL[it.name] && it.y > y0 && it.y < y0 + T * 1.3 && Math.abs(it.x - cx) < wd / 2 + T * 0.6; })) return false;
+      return !put.some(function (q) { return Math.abs(q - cx) < wd / 2 + T * 1.6; });
+    }
+    function hang(name, cx) { V.items.push({ name: name, x: cx, y: y0 + 2, r: 0, wall: true }); put.push(cx); }
+    function homely() { return RD() < 0.55 ? 'wallHanging_3' : 'wallHanging_2'; }   // herbs and onions a little more often than pelts
+    var spots = [], x2; for (x2 = l.x; x2 < l.x + l.w; x2++) spots.push((x2 + 0.5) * T);
+    spots.sort(function () { return RD() - 0.5; });
+    if (ins === 'hall') {
+      var seat = V.items.filter(function (it) { return it.name === 'chair' && it.seat && it.x > l.x * T && it.x < (l.x + l.w) * T && it.y > y0 && it.y < y0 + T * 1.3; })[0];   // the high seat, when it stands against this wall
+      if (seat && fits(seat.x, HANG_W.wallHanging_1)) hang('wallHanging_1', seat.x);
+      var nH = 1 + (l.w >= 14 ? 1 : 0) + (l.w >= 19 ? 1 : 0), i2;
+      for (i2 = 0; i2 < spots.length && nH > 0; i2++) { var nm2 = wealth > 0.6 && RD() < 0.25 ? 'wallHanging_1' : homely(), c2 = inRoom(spots[i2], HANG_W[nm2]); if (fits(c2, HANG_W[nm2])) { hang(nm2, c2); nH--; } }
+    } else if (RD() < 0.85) {
+      var nm = wealth > 0.5 && RD() < 0.35 ? 'wallHanging_1' : homely(), i3;
+      for (i3 = 0; i3 < spots.length; i3++) { var c3 = inRoom(spots[i3], HANG_W[nm]); if (fits(c3, HANG_W[nm])) { hang(nm, c3); break; } }
+    }
+  });
   V.tactic = tacticOf(V, R);               // the place's plan of defence (raid step 6)
   V.wanted = nUnitsWanted;
   if (opts.debug) V.dbg = { bestCandidate: bestCandidate, boxFree: boxFree, spinePts: spinePts, hugRects: hugRects };   // (a test's way in to the growth's own checks)

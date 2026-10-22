@@ -14,6 +14,22 @@ seeds.slice(0, 6).forEach(seed => {
   if (!ok) faults++;
   console.log((ok ? '   ' : '!! ') + 'crypt ' + String(seed).padEnd(5) + ' the vault from the stair: ' + reach(c.vault) + ', the niche: ' + reach(c.niche) + ', the silver: ' + reach(c.hoard) + ' (' + c.hoard.n + '); ' + c.props.length + ' things (' + c.props.map(p => p.name).filter((n, i, a) => a.indexOf(n) === i).join(', ') + ')');
 });
+// The catacombs (2026-10-22): a town church's crypt (rank 1) and a cathedral's (rank 2). Open, all of it from the stair: both sides of
+// every pillar (the loop), the alcoves, the vault, the ways out; and with the falls of masonry and the gates shut, the alcoves and the
+// vault are closed off while the ways out stay open. The pillar is rock.
+[1, 2].forEach(rank => seeds.slice(0, 6).forEach(seed => {
+  const c = Cave.make(seed, { kind: 'crypt', rank, x: 5000, y: 400, silver: 30 }), W = 288, H = 160, cx = p => Math.floor((p.x - c.ox) / 8), cy = p => Math.floor((p.y - c.oy) / 8);
+  const shut = (x, y) => c.ores.some(o => o.block && Math.hypot(x - o.x, y - o.y) < o.r * o.s + 7) || c.gates.some(g => Math.abs(y - g.y) < 9 && Math.abs(x - g.x) < g.w / 2 + 6);
+  function flood(closed) { const seen = new Uint8Array(W * H), q = [[cx(c.entrance), cy(c.entrance)]]; seen[q[0][1] * W + q[0][0]] = 1;
+    while (q.length) { const [i, j] = q.pop(); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + a, y = j + b; if (x < 0 || y < 0 || x >= W || y >= H || seen[y * W + x] || !Cave.floor(c, c.ox + (x + 0.5) * 8, c.oy + (y + 0.5) * 8) || (closed && shut(c.ox + (x + 0.5) * 8, c.oy + (y + 0.5) * 8))) continue; seen[y * W + x] = 1; q.push([x, y]); } }
+    return p => !!seen[cy(p) * W + cx(p)]; }
+  const open = flood(false), closed = flood(true), T = 32;
+  const sides = c.loops.every(L => open({ x: L.pillar.x - 3.3 * T, y: L.pillar.y }) && open({ x: L.pillar.x + 3.3 * T, y: L.pillar.y }) && Cave.dAt(c, L.pillar.x, L.pillar.y) < 0);
+  const ok = sides && c.alcoves.every(open) && open(c.vault) && c.exits.every(open) && c.alcoves.every(p => !closed(p)) && !closed(c.vault) && c.exits.every(closed);
+  if (!ok) faults++;
+  const coffins = c.finds.filter(f => f.coffin).length, chests = c.finds.filter(f => f.prop === 'chest').length;
+  console.log((ok ? '   ' : '!! ') + (rank === 2 ? 'cathedral ' : 'town crypt ') + String(seed).padEnd(5) + ' loops round ' + (sides ? 'yes' : 'NO') + ', alcoves ' + c.alcoves.map(p => (open(p) ? 'o' : 'X') + (closed(p) ? '!' : '')).join('') + ', vault ' + (open(c.vault) ? 'yes' : 'NO') + (closed(c.vault) ? ' (NOT SHUT)' : '') + ', ways out ' + c.exits.map(e => e.id + (open(e) && closed(e) ? '' : ' NO')).join(' ') + '; ' + c.gates.length + ' gate' + (c.gates.length > 1 ? 's' : '') + ' (' + c.gates.map(g => Math.round(g.w)).join(', ') + ' wide), ' + c.niches.length + ' niches, ' + coffins + ' coffins (' + c.finds.filter(f => f.ring).length + ' with a ring), ' + chests + ' hidden chest' + (chests > 1 ? 's' : '') + ', ' + c.ores.length + ' stones of the falls');
+}));
 seeds.forEach(seed => {
   const cave = Cave.make(seed, { x: 5000, y: 400 }), W = 288, H = 160, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - cave.ox) / 8), cy = p => Math.floor((p.y - cave.oy) / 8), q = [[cx(cave.entrance), cy(cave.entrance)]];
   seen[q[0][1] * W + q[0][0]] = 1; let cells = 0;

@@ -24,6 +24,9 @@ long write-ups in `docs/`, and when something here changes, change it here (do n
   steps with a test for each, Robin's order of 2026-10-20**; `ships-plan.md`; **`settlements-plan.md`: one grammar for villages and towns from the farmstead to the great town, grown in rounds, with the research behind it, 2026-10-22**; `ui-review.md` has a list waiting; **`release-and-coop.md`: what releasing the game and playing it with two or three friends would take, and the browser question with its frame-log test, 2026-10-21**). **Finished
   business lives in `docs/archive/`** (`archive/before-wednesday.md`, `archive/boats.md`, `archive/lighting.md`, `archive/raid.md`, `archive/creatures.md`, the two playtests) and the
   pictures in `docs/pictures/`.
+- **Our names** (Robin, 2026-10-22): I am **Clive, GD** (the Game Developer); the Art Director is **Colin, AD**, the Lore
+  Director **Alistair, LD**, the Sound Director **Derek, SD**. Robin may say "Clive" or "Game Developer"; we always write the
+  full form, name and tag, when we name ourselves or each other.
 - **One project roof, `C:\dev\SG`** (Robin, 2026-10-16): `Art Director`, `Sound Director` (Robin also says music or
   sound director), `Lore Director` and `Game Developer` (this repo; it was `C:\dev\survival-game`).
 - **The lore is the Lore Director's** (`C:\dev\SG\Lore Director`; the agreement Robin approved on 2026-10-16 is its
@@ -396,7 +399,12 @@ the carver's and mason's benches by their names; **the settlements' pieces** (`a
 `washingLine` behind one house in two, the hall's `spearRack` and a `torchBracket` at its door in place of the lantern, the
 `forge` in the smithy, the `midden` heap on earth behind the longhouse, a `watchtower` and a torch inside a walled town's gate
 at wealth 0.5 and up (a bowman's post, raid step 6), a `beachedBoat` on a shore place's sand; a set piece with no drawn prop
-of its name passes the village's prop check), **and the raid's set** (`assets/props/raid`, the studio's step 6: the ram, sack
+of its name passes the village's prop check; **a thing with no picture and no drawn prop stands in** as the nearest that has one,
+`STAND_IN` in the game's `sprite` (2026-10-22: the insides' looms, stools, shelves and cupboards have none yet and every frame with
+one in view threw; asked of the studio); **Colin, AD's insides** (`assets/props/interior`: a cradle at the foot of the bed in a
+third of the houses, a hanging on most houses' north wall, herbs and onions, pelts or a woven one, the woven one behind a hall's
+high seat; Colin, AD's own edit of `src/village.js` as the settlements' owner, on its own random stream; a thing with `wall`
+throws no shadow on the floor; the cradle breaks as a stool, `WOODF`)), **and the raid's set** (`assets/props/raid`, the studio's step 6: the ram, sack
 pile and hanging fish, the heavy chest whole and broken, the sack, trapdoor, crypt stairs, coffins, reliquary, bones, ladder,
 bucket, the beached karve; wired as the raid plan's steps 7 and 8 reach them). **The Building board's cells show the studio's
 icons for the buildable set pieces** (`assets/hud/pieces/<picture name>.png`, the villages plan's step 7, inlined as
@@ -752,7 +760,25 @@ karve by you", "Four hirdmen join" (`hirdGive`); `debug().giveMen`, `clearMen`, 
   `makeCrypt`: the stair, a passage, the vault with its coffins and bones, a niche with the reliquary over the chest; one cave a
   church, made with the villages by `cryptSetup`, the trapdoor its mouth; E "Enter the crypt", E at the chest "Take the silver"
   (`relicsTake`: 10 to 32 by the place's wealth and hoard, into the bag; the chest then draws broken; kept in the save by the
-  church), E at the stair out; the trapdoor stands open from then); **the hall has a back room** (an inner wall three tiles from
+  church), E at the stair out; the trapdoor stands open from then); **the catacombs** (the village session's interiors plan,
+  section 7; Robin, 2026-10-22: "Yes"): a crypt grows with its church (`cryptRank`: a lone church's stays as it was; a town's
+  church at `CRYPT_TOWN` 0.5 wealth and up is rank 1; a great town's cathedral rank 2, always, its trapdoor placed at any wealth;
+  `Cave.make` kind `crypt` with `rank`, `makeCatacomb`; the numbers mine). Rank 1: the stair, **the ossuary** (a long passage
+  with the bones of the old dead in arched niches painted on its north wall, `cave.niches`, `penNiches`), three side passages
+  north and south by turns, each **blocked by a fall of masonry** (two of Colin, AD's `masonryFall` heaps, `assets/props/crypt`,
+  ores with `block` that the pick clears as the mine's fall of rock) with **a chest behind one in three** (at least one) or a
+  coffin, **two chambers round a pillar** (the loop; a shape can be cut away now, `L.holes`, the pillar's face niched too), **the
+  relic vault** north of them **behind an iron gate** (`cave.gates`, `Cave.drawGate`: shut it is a wall; E "Unlock the gate"
+  with **the priest's keys**, taken with E from the priest of that place fallen or cowering, `priestKeys`, `seen.keys[vi]`;
+  without them "Locked: break it open" and the axe breaks it, `GATE_BITE`, 14 hit points), and **a second way out**: a ladder up
+  (`cave.exits`, E "Climb up") to a slab before the churchyard's grave farthest from the church's door, nothing marking it until
+  you have come up through it, then the slab lies pushed aside and E "Go down" is a way in (`cv.outs`, `cv.opened`, saved).
+  Rank 2: two loops joined, five side passages, the vault behind **two gates** with an antechamber, and **the well's shaft** up
+  into the market's well ("Climb the well"). The vault's silver is half again more a rank. **Every crypt's coffins open** (E "Open
+  the coffin": "Only bones", or now and then a silver ring of 3 to 6; Colin, AD's `coffinStone_open` and `coffinWood_open`;
+  `seen.graves` counts them for the reputation to come, not built). `tests/cave.js` floods each rank (both ways round every
+  pillar, the alcoves and the vault shut off by the falls and the gates, the ways out open); `tools/visual/cave.js 11 map crypt1`
+  (`crypt2` the cathedral, `OPEN=1` the coffins opened); `debug().crypts()`, `cryptRemake(vi, rank)`, `cryptGo(vi)`. **The hall has a back room** (an inner wall three tiles from
   its end with a locked door, `l.back`; the jarl's or the chieftain's chest stands behind it). The hidden cellar and the
   watchtower were there before; the storehouse loft is not built. `tools/visual/raidgame.js` checks each step in the live game; `debug().garrison()`. The
 way-finding is in every real village. Robin has played none of it.

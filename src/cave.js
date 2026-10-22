@@ -70,6 +70,7 @@ function base(seed, o, L) {
       else { var ux = (tx - cc.x) / cc.rx, uy = (ty - cc.y) / cc.ry; if (ux > 2 || ux < -2 || uy > 2 || uy < -2) continue; dd = (1 - Math.sqrt(ux * ux + uy * uy)) * Math.min(cc.rx, cc.ry); }
       if (dd > best) best = dd; }
     best += (fbm(tx * 1.1, ty * 1.1, ns) - 0.5) * (L.rough != null ? L.rough : 1.3);
+    if (L.holes) for (ci = 0; ci < L.holes.length; ci++) { var hc2 = L.holes[ci], hd = Math.min(hc2.hw - Math.abs(tx - hc2.x), hc2.hh - Math.abs(ty - hc2.y)); if (-hd < best) best = -hd; }   // rock left standing: a pillar (built, so its sides are straight)
     var inTunnel = Math.abs(tx - TX) < tw && ty > 33, edge = Math.min(tx - 1.5, GW - 1.5 - tx, ty - 3.2, inTunnel ? 9 : GH - 1.2 - ty); if (edge < best) best = edge;
     D[j2 * FW + i2] = best;
     if (S) S[j2 * FW + i2] = L.sea(tx, ty) + (fbm(tx * 0.8, ty * 0.8, ns + 11) - 0.5) * 0.4;
@@ -158,7 +159,85 @@ function makeMine(seed, o) {
   for (i = 0; i < 80 && cave.puddles.length < 6; i++) { var ux2 = cave.pool.x + jit(150), uy2 = cave.pool.y + jit(90); if (!U.clearAt(ux2, uy2, 14, 0) || Math.hypot((ux2 - cave.pool.x) / (cave.pool.rx + 12), (uy2 - cave.pool.y) / (cave.pool.ry + 12)) < 1 || cave.puddles.some(function (q) { return Math.hypot(q.x - ux2, q.y - uy2) < 44; })) continue; cave.puddles.push({ x: ux2, y: uy2, rx: 6 + R() * 7, ry: 3.5 + R() * 3, a: jit(0.3) }); }
   return cave;
 }
-function makeCrypt(seed, o) {                             // a crypt under a church (raid step 8, 2026-10-21; Robin: "room for exploration, churches can have cellars, crypts"): the stair down from the trapdoor, a passage north, the vault with its coffins, and a niche where the reliquary stands over the silver
+function makeCrypt(seed, o) {
+  if (o.rank >= 1) return makeCatacomb(seed, o);
+  return makeChapelCrypt(seed, o);
+}
+/* THE CATACOMBS (the village session's interiors plan, section 7; Robin, 2026-10-22: "Yes"): a crypt grows with its church. A
+   chapel's is as it was (the stair, a passage, one vault). A town's church (rank 1: wealth 0.5 and up) has the stair down, then
+   the OSSUARY, a long passage with the bones of the old dead in niches along its wall, side passages off it blocked by a fall of
+   masonry that the pick clears (a chest behind one in three, at least one), two CHAMBERS round a PILLAR (the loop: you can go
+   round it either way), the RELIC VAULT north of them behind an iron GATE (the priest's keys open it, or the axe breaks it), and
+   a second way out: a ladder up to a slab in the churchyard, under a grave with no name. A great town's cathedral (rank 2) has
+   two loops joined, five side passages, the bishop's vault behind TWO gates, and the well's shaft up into the market's well.
+   The coffins open (bones, now and then a silver ring). One way in, the loops near the end. The game makes the gates, the keys
+   and the ways out work; this lays them out (cave.gates, cave.exits, cave.niches). The numbers mine. */
+function makeCatacomb(seed, o) {
+  var rank = o.rank, R = rng(seed * 61 + 23 + rank * 7), flip = hash(seed, 7, 11) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 8 : 8, shapes = [], holes = [], i, k;
+  function jit(a) { return (R() - 0.5) * 2 * a; }
+  function X(c) { return TX + sg * c; }                    // a column counted from the stair toward the far side
+  function box(x, y, hw, hh) { shapes.push({ box: 1, x: x, y: y, hw: hw, hh: hh }); } function oval(x, y, rx, ry) { shapes.push({ x: x, y: y, rx: rx, ry: ry || rx }); }
+  var yO = 25.0, yC = 20.6, yA = yC + 4.2, yB = yC - 4.2, loops = rank >= 2 ? [24, 42] : [26], xA = loops[0] - 5.1, vc = loops[loops.length - 1];
+  box(TX, 34, 1.2, 6.2);                                                  // the stair down, straight from the trapdoor
+  box(TX, 27.0, 1.1, 2.2);                                                // its foot, north to the ossuary
+  box(X(xA / 2), yO, xA / 2 + 0.6, 1.2);                                  // the ossuary
+  loops.forEach(function (c) { box(X(c), yC, 4.6, 6.2); holes.push({ x: X(c), y: yC, hw: 2.1, hh: 1.9 }); oval(X(c), yA, 5.1, 2.5); oval(X(c), yB, 5.1, 2.5); });   // two chambers round a pillar, joined either side of it
+  if (rank >= 2) box(X((loops[0] + loops[1]) / 2), yB, (loops[1] - loops[0]) / 2 - 4.0, 1.15);   // the first loop's north chamber to the second's
+  // the side passages, blocked: north and south of the ossuary by turns, each to an alcove
+  var nSide = rank >= 2 ? 5 : 3, side = [];
+  for (i = 0; i < nSide; i++) { var col = 4.5 + (xA - 7) * (nSide > 1 ? i / (nSide - 1) : 0.5) + jit(0.4), dn = i % 2 ? 1 : -1; side.push({ c: col, dn: dn }); box(X(col), yO + dn * 2.6, 0.95, 1.6); oval(X(col), yO + dn * 5.0, 2.0, 1.4); }
+  // the vault (and the cathedral's antechamber), north of the last loop behind its gate or gates
+  var gateY = [], yV;
+  if (rank >= 2) { box(X(vc), yB - 3.8, 1.0, 1.7); oval(X(vc), yB - 6.8, 3.0, 1.4); box(X(vc), yB - 9.0, 0.95, 1.2); yV = yB - 11.3; oval(X(vc), yV, 4.8, 1.8); gateY = [yB - 3.85, yB - 8.85]; }
+  else { box(X(vc), yB - 4.0, 1.0, 1.7); yV = yB - 8.0; oval(X(vc), yV, 4.4, 2.4); gateY = [yB - 4.1]; }
+  // the second way out: a little room off the first loop's south chamber with a ladder up to the churchyard; the cathedral's well room off the last loop's
+  var slabC = rank >= 2 ? loops[0] + 9.2 : loops[0] + 10.6, slabY = yA - 0.3, wellC = rank >= 2 ? loops[1] + 11 : null;
+  box(X((loops[0] + 5 + slabC - 1.6) / 2), yA, (slabC - 1.6 - loops[0] - 5) / 2 + 0.8, 1.0); oval(X(slabC), slabY, rank >= 2 ? 1.9 : 2.1, 1.8);
+  if (wellC != null) { box(X((loops[1] + 5 + wellC - 2) / 2), yA, (wellC - 2 - loops[1] - 5) / 2 + 0.8, 1.0); oval(X(wellC), yA - 0.4, 2.6, 2.2); }
+  var path = [[TX, 33.4], [TX, 30], [TX, yO], [X(xA), yO], [X(loops[0] - 3.4), yC], [X(loops[0]), yB]].concat(rank >= 2 ? [[X(loops[1]), yB]] : []).concat([[X(vc), yV]]);
+  var cave = base(seed, o, { kind: 'crypt', shapes: shapes, holes: holes, rough: 0.22, TX: TX, tunW: 1.3, path: path, trail: false, flip: flip, salt: 70 + rank, tintF: [0.92, 0.92, 0.98], tintW: [0.86, 0.86, 0.94] });
+  var ox = cave.ox, oy = cave.oy; function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
+  cave.name = rank >= 2 ? 'The catacombs' : 'The crypt'; cave.rank = rank; cave.vault = W([X(vc), yV]); cave.niche = cave.vault; cave.gates = []; cave.exits = []; cave.niches = [];
+  cave.loops = loops.map(function (c) { return { a: W([X(c), yA]), b: W([X(c), yB]), pillar: W([X(c), yC]) }; }); cave.alcoves = side.map(function (q) { return W([X(q.c), yO + q.dn * 5.0]); });
+  reachOf(cave); var U = tools(cave, R, o);
+  function prop(name, x, y, r, v, extra) { var q = { name: name, x: x, y: y, s: 1, r: r || 0, v: v || 0, cave: true }; for (var kk in extra || {}) q[kk] = extra[kk]; cave.props.push(q); U.keep.push({ x: x, y: y, r: 34 }); return q; }
+  var cn = 0;
+  function coffin(x, y, stone) { cave.finds.push({ id: 'coffin' + (cn++), prop: stone ? 'coffinStone' : 'coffinWood', x: x, y: y, s: 1, v: cn, r: 12, say: 'Open the coffin', coffin: true, ring: R() < 0.22 ? 3 + Math.floor(R() * 4) : 0 }); U.keep.push({ x: x, y: y, r: 40 }); }
+  prop('cryptStairs', cave.entrance.x, cave.entrance.y - 6, 0, 0, { flat: true });
+  // the ossuary: niches with the bones of the old dead along its north wall (painted, penCrypt), long bones heaped along its south side
+  var skip = side.map(function (q) { return X(q.c) * T + ox; });
+  for (k = 1.6; k < xA - 0.6; k += 1.45) { var nx = ox + X(k) * T + jit(4); if (skip.some(function (sx) { return Math.abs(sx - nx) < 50; })) continue; var fy = U.footN(nx, oy + yO * T); if (fy == null) continue; var solid = true, h; for (h = 4; h <= 44; h += 4) if (dAt(cave, nx, fy - h) >= 0) solid = false; if (solid) cave.niches.push({ x: nx, y: fy, s: Math.floor(R() * 999) }); }
+  for (k = 0; k < 3 + rank; k++) { var bx = ox + X(2 + (xA - 3) * (k + 0.5) / (3 + rank)) * T + jit(14), by = oy + (yO + 0.75) * T; if (U.clearAt(bx, by, 6, 0)) prop('bones', bx, by, 0, k % 2, { flat: true }); }
+  // the falls of masonry across the side passages (the pick takes them, two stones each, as the mine's fall of rock), and what lies behind
+  var withChest = side.map(function () { return R() < 1 / 3; }); if (!withChest.some(Boolean)) withChest[Math.floor(R() * side.length)] = true;
+  side.forEach(function (q, si) { var px = ox + X(q.c) * T, py = oy + (yO + q.dn * 2.35) * T, hp = (o.rockHp || 11) * 2.2;
+    [-15, 15].forEach(function (dx, bi) { cave.ores.push({ name: o.fallName || 'rockFormation', kind: 'stone', ore: false, block: true, masonry: true, cave: true, x: px + dx, y: py + (bi ? 4 : -3), s: 0.8, r: 17, v: (si + bi) % 3, hp: hp, max: hp, leanDir: 1 }); });
+    U.keep.push({ x: px, y: py, r: 60 });
+    var al = cave.alcoves[si], ay = al.y + (q.dn < 0 ? -8 : 10);
+    if (withChest[si]) { cave.finds.push({ id: 'cache' + si, prop: 'chest', x: al.x + sg * 10, y: ay, s: 1, v: 0, r: 10, say: 'Open', give: { silver: 4 + rank * 3 + Math.floor(R() * 6) }, note: 'Hidden away down here' }); U.keep.push({ x: al.x, y: ay, r: 40 }); }
+    else coffin(al.x, ay, R() < 0.4);
+    prop('bones', al.x - sg * 30, al.y + 12, 0, si % 2, { flat: true });
+  });
+  // the chambers: coffins along their sides, niches on the pillar's south face
+  cave.loops.forEach(function (L2, li) {
+    coffin(L2.a.x - 1.6 * T, L2.a.y + 1.0 * T, true); coffin(L2.a.x + 1.6 * T, L2.a.y + 1.0 * T, R() < 0.5); coffin(L2.b.x - 1.6 * T, L2.b.y - 0.8 * T, R() < 0.5); coffin(L2.b.x + 1.6 * T, L2.b.y - 0.8 * T, true);
+    [-1.2, 0, 1.2].forEach(function (dx) { var nx2 = L2.pillar.x + dx * T, fy2 = U.footN(nx2, L2.a.y); if (fy2 != null && fy2 > L2.pillar.y) cave.niches.push({ x: nx2, y: fy2, s: Math.floor(R() * 999) }); });
+    prop('bones', L2.b.x + (li ? -1 : 1) * 0.8 * T, L2.b.y + 1.2 * T, 0, li % 2, { flat: true });
+  });
+  // the gates across the vault's passage: shut, opened with the priest's keys or broken by the axe (the game's)
+  gateY.forEach(function (gy, gi) { var gx = ox + X(vc) * T, a = U.across(gx, oy + gy * T), wd = Math.max(40, Math.min(70, a[1] - a[0] - 2)); cave.gates.push({ id: gi, x: (a[0] + a[1]) / 2, y: oy + gy * T, w: wd, state: 'shut', hp: 14, max: 14 }); U.keep.push({ x: gx, y: oy + gy * T, r: 46 }); });
+  // the vault: the reliquary over the chest with the silver, the coffins of the great
+  cave.props.push({ name: 'reliquary', x: cave.vault.x, y: cave.vault.y - 0.8 * T, s: 1, r: 8, v: 0, cave: true });
+  cave.chest = { name: 'heavyChest', x: cave.vault.x + sg * 0.3 * T, y: cave.vault.y + 0.35 * T, s: 1, r: 9, v: 0, cave: true }; cave.props.push(cave.chest);
+  cave.hoard = { x: cave.chest.x, y: cave.chest.y, n: o.silver || 20, kind: 'silver', day: 0, relics: true };
+  coffin(cave.vault.x - (rank >= 2 ? 3.4 : 3.0) * T, cave.vault.y + 0.2 * T, true); coffin(cave.vault.x + (rank >= 2 ? 3.4 : 3.0) * T, cave.vault.y + 0.2 * T, true);
+  // the ways out: the ladder up to the churchyard's slab, and the cathedral's well
+  function exit(id, c, y, say, light) { var x = ox + X(c) * T, fy = U.footN(x, oy + y * T) || (oy + (y - 1.5) * T); cave.props.push({ name: 'ladder', x: x, y: fy + 2, s: 1, r: 0, v: 0, cave: true }); cave.exits.push({ id: id, x: x, y: fy + 20, say: say }); cave.shafts.push({ x: x, y: fy + 18, rx: light[0], ry: light[1], k: light[2] }); U.keep.push({ x: x, y: fy + 20, r: 44 }); }
+  exit('slab', slabC, slabY, 'Climb up', [22, 14, 0.3]);
+  if (wellC != null) { exit('well', wellC, yA - 0.4, 'Climb the well', [34, 24, 0.75]); cave.props.push({ name: 'bucket', x: ox + X(wellC) * T + sg * 26, y: oy + (yA + 0.4) * T, s: 1, r: 0, v: 0, cave: true }); }
+  return cave;
+}
+function makeChapelCrypt(seed, o) {                      // a crypt under a church (raid step 8, 2026-10-21; Robin: "room for exploration, churches can have cellars, crypts"): the stair down from the trapdoor, a passage north, the vault with its coffins, and a niche where the reliquary stands over the silver
   var R = rng(seed * 61 + 23), flip = hash(seed, 7, 11) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 8 : 8, shapes = [];
   function jit(a) { return (R() - 0.5) * 2 * a; }
   function box(x, y, hw, hh) { shapes.push({ box: 1, x: x, y: y, hw: hw, hh: hh }); } function oval(x, y, rx, ry) { shapes.push({ x: x, y: y, rx: rx, ry: ry || rx }); }
@@ -173,7 +252,8 @@ function makeCrypt(seed, o) {                             // a crypt under a chu
   cave.name = 'The crypt'; cave.vault = W([TX + sg * 1.2, yV]); cave.niche = W([xN, yV - 1.0]);
   reachOf(cave);
   cave.props.push({ name: 'cryptStairs', x: cave.entrance.x, y: cave.entrance.y - 6, s: 1, r: 0, v: 0, cave: true, flat: true });
-  [[-2.6, -1.2, 'coffinStone'], [2.6, -1.2, 'coffinStone'], [-2.4, 1.3, 'coffinWood'], [2.2, 1.3, 'coffinWood']].forEach(function (q, i) { cave.props.push({ name: q[2], x: cave.vault.x + q[0] * T, y: cave.vault.y + q[1] * T, s: 1, r: 12, v: i, cave: true }); });
+  var RC = rng(seed * 67 + 3); cave.gates = []; cave.exits = []; cave.niches = []; cave.rank = 0;
+  [[-2.6, -1.2, 'coffinStone'], [2.6, -1.2, 'coffinStone'], [-2.4, 1.3, 'coffinWood'], [2.2, 1.3, 'coffinWood']].forEach(function (q, i) { cave.finds.push({ id: 'coffin' + i, prop: q[2], x: cave.vault.x + q[0] * T, y: cave.vault.y + q[1] * T, s: 1, r: 12, v: i, say: 'Open the coffin', coffin: true, ring: RC() < 0.22 ? 3 + Math.floor(RC() * 4) : 0 }); });   /* (the coffins open: the catacombs' rule, 2026-10-22) */
   cave.props.push({ name: 'bones', x: cave.vault.x + 0.5 * T, y: cave.vault.y + 2.0 * T, s: 1, r: 0, v: 0, cave: true, flat: true }); cave.props.push({ name: 'bones', x: cave.niche.x - sg * 1.3 * T, y: cave.niche.y + 1.1 * T, s: 1, r: 0, v: 1, cave: true, flat: true });
   cave.props.push({ name: 'reliquary', x: cave.niche.x, y: cave.niche.y - 0.6 * T, s: 1, r: 8, v: 0, cave: true });
   cave.chest = { name: 'heavyChest', x: cave.niche.x + sg * 0.2 * T, y: cave.niche.y + 0.5 * T, s: 1, r: 9, v: 0, cave: true }; cave.props.push(cave.chest);
@@ -503,12 +583,57 @@ function pen(g, cave, S, X0, Y0, W2, H2) {
       else { g.lineWidth = 0.9; for (k = 0; k < 3; k++) { g.strokeStyle = (k + i2) % 2 ? '#86b450' : '#5d8a3a'; g.beginPath(); g.moveTo(bx + (k - 1) * 1.4, by); g.quadraticCurveTo(bx + (k - 1) * 2, by - 3, bx + (k - 1) * 2.6 + (hb - 0.5) * 2, by - 4.5 - hb * 3); g.stroke(); } }
     } });
   if (cave.kind === 'mine') penMine(g, cave, X0, Y0, W2, H2);
+  if (cave.niches && cave.niches.length) penNiches(g, cave, X0, Y0, W2, H2);
   // the copper veins: green streaks up the walls that face you
   cave.veins.forEach(function (v) { var vx = v.x - ox, vy = (v.y - oy) * K; if (vx < X0 - 30 || vx > X0 + W2 + 30 || vy < Y0 - 60 || vy > Y0 + H2 + 10) return;
     var seg = 3 + (v.s % 3), hh = v.h * K, spent = v.left <= 0; g.strokeStyle = spent ? '#4a4540' : '#2f8a62'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(vx - 6, vy - 2);
     for (k = 1; k <= seg; k++) g.lineTo(vx - 6 + (12 / seg) * k + (hash(k, v.s, 1) - 0.5) * 5, vy - 2 - (hh - 5) * k / seg + (hash(k, v.s, 2) - 0.5) * 4);
     g.stroke(); g.strokeStyle = spent ? '#6a645e' : '#6fd19a'; g.lineWidth = 0.9; g.stroke();
     for (k = 0; k < 4 && !spent; k++) { g.fillStyle = 'rgba(80,190,130,0.7)'; g.beginPath(); g.arc(vx + (hash(k, v.s, 3) - 0.5) * 16, vy - hash(k, v.s, 4) * (hh - 4), 0.9 + hash(k, v.s, 5), 0, 7); g.fill(); } });
+}
+function penNiches(g, cave, X0, Y0, W2, H2) {           // the catacombs' niches: an arched hollow cut in the wall face, a row of skulls on long bones stacked crosswise
+  var ox = cave.ox, oy = cave.oy, INK = 'rgba(22,16,14,0.95)', k;
+  cave.niches.forEach(function (n) { var x = n.x - ox, y = (n.y - oy) * K; if (x < X0 - 40 || x > X0 + W2 + 40 || y < Y0 - 10 || y > Y0 + H2 + 60) return;
+    var w = 10.5, b = y - 7, t = y - 33, tall = hash(n.s, 1, 2) > 0.5;
+    g.save(); g.beginPath(); g.moveTo(x - w, b); g.lineTo(x - w, t + 6); g.quadraticCurveTo(x - w, t - 2, x, t - 3); g.quadraticCurveTo(x + w, t - 2, x + w, t + 6); g.lineTo(x + w, b); g.closePath();
+    g.fillStyle = 'rgba(14,11,14,0.94)'; g.fill(); g.clip();
+    g.lineCap = 'round';
+    for (k = 0; k < 4; k++) { var ly = b - 1.6 - k * 2.3; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.moveTo(x - w + 1, ly); g.lineTo(x + w - 1, ly + (hash(n.s, k, 3) - 0.5)); g.stroke(); g.strokeStyle = k % 2 ? '#a99f8a' : '#bdb39c'; g.lineWidth = 1.5; g.stroke(); }   // the long bones, ends out
+    var row = b - 12.5, nk = 3, i;
+    for (i = 0; i < nk; i++) { var sx = x - w + 3.6 + i * (2 * w - 7.2) / (nk - 1), sy = row + (hash(n.s, i, 5) - 0.5) * 1.2;
+      g.fillStyle = INK; g.beginPath(); g.ellipse(sx, sy, 3.5, 3.1, 0, 0, 7); g.fill(); g.fillStyle = hash(n.s, i, 6) > 0.4 ? '#c9bfa6' : '#b3a98f'; g.beginPath(); g.ellipse(sx, sy, 2.9, 2.6, 0, 0, 7); g.fill();
+      g.fillStyle = '#231c20'; g.beginPath(); g.arc(sx - 1.1, sy - 0.2, 0.85, 0, 7); g.arc(sx + 1.1, sy - 0.2, 0.85, 0, 7); g.fill(); g.fillRect(sx - 0.3, sy + 1.1, 0.6, 0.9); }
+    if (tall) for (k = 0; k < 2; k++) { var ly2 = row - 5 - k * 2.3; g.strokeStyle = INK; g.lineWidth = 2.4; g.beginPath(); g.moveTo(x - w + 2, ly2); g.lineTo(x + w - 2, ly2); g.stroke(); g.strokeStyle = '#b5ab94'; g.lineWidth = 1.4; g.stroke(); }
+    g.restore();
+    g.strokeStyle = 'rgba(205,198,186,0.55)'; g.lineWidth = 1.1; g.beginPath(); g.moveTo(x - w - 0.8, b); g.lineTo(x - w - 0.8, t + 6); g.quadraticCurveTo(x - w - 0.8, t - 3, x, t - 4.1); g.stroke();   // the cut edge lit from the upper left
+    g.strokeStyle = 'rgba(10,8,10,0.6)'; g.beginPath(); g.moveTo(x, t - 4.1); g.quadraticCurveTo(x + w + 0.8, t - 3, x + w + 0.8, t + 6); g.lineTo(x + w + 0.8, b); g.stroke();
+    g.fillStyle = 'rgba(190,184,172,0.45)'; g.fillRect(x - w - 1.5, b, 2 * w + 3, 1.6);   // the sill
+  });
+}
+/* An iron gate across a passage that runs north to south (the catacombs' vaults): bars between two pins in the rock, a lock plate.
+   Drawn with the things that stand, sorted by its foot. g: { x, y (its foot, world), w, state: shut, open (swung back against the
+   west side) or broken (torn off its pins, lying bent on the floor). */
+function drawGate(c, gt) {
+  var x = gt.x, y = gt.y * K, hw = gt.w / 2, H = 46, INK = 'rgba(14,12,14,0.95)', IRON = '#3b3e45', LIT = '#7d828c', k;
+  function bar(x0, y0, x1, y1, wd) { c.strokeStyle = INK; c.lineWidth = wd + 1.4; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.strokeStyle = IRON; c.lineWidth = wd; c.stroke(); c.strokeStyle = LIT; c.lineWidth = wd * 0.35; c.beginPath(); c.moveTo(x0 - wd * 0.2, y0); c.lineTo(x1 - wd * 0.2, y1); c.stroke(); }
+  c.save(); c.lineCap = 'round';
+  [-1, 1].forEach(function (s) { c.fillStyle = INK; c.fillRect(x + s * (hw + 1) - 2, y - H * 0.85, 4, 3); c.fillRect(x + s * (hw + 1) - 2, y - H * 0.25, 4, 3); });   // the pins leaded into the rock
+  if (gt.state === 'shut') {
+    c.fillStyle = 'rgba(4,5,10,0.3)'; c.beginPath(); c.ellipse(x + 4, y + 1.5, hw + 4, 2.6, 0, 0, 7); c.fill();
+    var n = Math.max(4, Math.round(gt.w / 8)); for (k = 0; k <= n; k++) { var bx = x - hw + k * gt.w / n; bar(bx, y, bx, y - H, 2.2); c.fillStyle = INK; c.beginPath(); c.moveTo(bx - 2, y - H); c.lineTo(bx, y - H - 5); c.lineTo(bx + 2, y - H); c.fill(); }
+    [0.18, 0.55, 0.9].forEach(function (f) { bar(x - hw - 1, y - H * f, x + hw + 1, y - H * f, 2.6); });
+    c.fillStyle = INK; c.fillRect(x + hw * 0.3 - 1, y - H * 0.62, 11, 12); c.fillStyle = '#4b4f57'; c.fillRect(x + hw * 0.3, y - H * 0.62 + 1, 9, 10); c.fillStyle = '#16141a'; c.beginPath(); c.arc(x + hw * 0.3 + 4.5, y - H * 0.62 + 5, 1.6, 0, 7); c.fill(); c.fillRect(x + hw * 0.3 + 4, y - H * 0.62 + 5, 1, 3.5);   // the lock
+    c.fillStyle = 'rgba(150,80,40,0.35)'; for (k = 0; k < 5; k++) { c.beginPath(); c.ellipse(x - hw + hash(k, gt.id, 9) * gt.w, y - H * hash(k, gt.id, 8), 1.6, 2.4, 0, 0, 7); c.fill(); }   // rust
+  } else if (gt.state === 'open') {                        // swung back flat against the west side
+    var ex = x - hw + 6, d = 9; for (k = 0; k <= 4; k++) { var t = k / 4; bar(x - hw + t * d, y - t * 2, x - hw + t * d, y - H - t * 2, 2); }
+    [0.18, 0.55, 0.9].forEach(function (f) { bar(x - hw, y - H * f, ex + 3, y - H * f - 2, 2.4); });
+  } else {                                                // broken: torn off, lying bent where it fell
+    c.fillStyle = 'rgba(4,5,10,0.28)'; c.beginPath(); c.ellipse(x + 2, y - 10, hw, 6, 0.1, 0, 7); c.fill();
+    for (k = 0; k <= 5; k++) { var lx = x - hw * 0.8 + k * hw * 0.32, bend = (hash(k, gt.id, 4) - 0.5) * 6; bar(lx, y - 2, lx + bend + 4, y - 18 - k % 2 * 2, 2); }
+    bar(x - hw * 0.9, y - 6, x + hw * 0.9, y - 12, 2.4); bar(x - hw * 0.85, y - 14, x + hw * 0.7, y - 19, 2.4);
+    bar(x - hw - 1, y - H * 0.85, x - hw + 4, y - H * 0.6, 2); bar(x + hw + 1, y - H * 0.25, x + hw - 5, y - H * 0.1, 2);   // what is left on the pins
+  }
+  c.restore();
 }
 function penMine(g, cave, X0, Y0, W2, H2) {                // what people left in the mine: soot where they set fires, posts along the drift, a ladder, a bucket, a sledge
   var ox = cave.ox, oy = cave.oy, INK = 'rgba(22,16,14,0.95)', k;
@@ -623,7 +748,7 @@ function drawChart(c, cave, x, y, w, h, P) {
 function seenStr(cave) { var out = [], i = 0, n = cave.seen.length; while (i < n) { var v = cave.seen[i], j = i; while (j < n && cave.seen[j] === v && j - i < 4000) j++; out.push(v + ':' + (j - i)); i = j; } return out.join(','); }   // the seen cells as runs, for the save
 function seenLoad(cave, str) { if (!str) return; var i = 0; String(str).split(',').forEach(function (run) { var q = run.split(':'), v = +q[0], n = +q[1]; while (n-- > 0 && i < cave.seen.length) cave.seen[i++] = v; }); cave.seenDirty = true; }
 
-return { make: make, prepare: prepare, chunk: chunk, dirty: dirty, release: release, drawSet: drawSet, drawDrift: drawDrift, sAt: sAt, dAt: dAt, pAt: pAt, floor: floor, trailAt: trailAt, drawFloor: drawFloor, dark: dark, see: see, drawChart: drawChart, seenStr: seenStr, seenLoad: seenLoad,
+return { make: make, prepare: prepare, chunk: chunk, dirty: dirty, release: release, drawSet: drawSet, drawGate: drawGate, drawDrift: drawDrift, sAt: sAt, dAt: dAt, pAt: pAt, floor: floor, trailAt: trailAt, drawFloor: drawFloor, dark: dark, see: see, drawChart: drawChart, seenStr: seenStr, seenLoad: seenLoad,
   T: T, K: K, GW: GW, GH: GH, FS: FS, PW: PW, PH: PH, CS: CS, WALLH: WALLH, PITH: PITH };
 })();
 if (typeof module !== 'undefined') module.exports = Cave;
