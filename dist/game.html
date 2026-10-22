@@ -7049,11 +7049,14 @@ function sideFace(c, x, y, e, m, open, C, side, seed) {
   c.restore();
 }
 // what a fallen or a burnt roof leaves on one tile of the floor (ru = { k, m }): straw heaps, sods, shingles or shards and broken rafters; or ash and charred timber
+var ASH_FLOOR = '#787168', ASH_DARK = '#5f5952', ASH_PALE = '#9a958c';   // a burnt room's floor and its patches (the Art Director's ch1_fixes, 2026-10-22)
 function drawDebris(c, tx, ty, ru, C) {
   var x0 = tx * T, y0 = ty * TS, seed = tx * 53 + ty * 97, i, r = ROOFS[ru.m] || ROOFS[1], burnt = ru.k === 'burnt', beam = burnt ? '#1a1512' : '#4a3626';
   if (burnt) {                            // grey ash with paler and darker patches and earth showing through, no two tiles alike (2026-10-22, the Art Director's ch1_fixes: it was black ovals and a rafter or two a tile, "a black mess of thin sticks"; the wreckage is set pieces now)
     var na = 1 + Math.floor(hs(seed + 2, 1) * 3), ns = 2 + Math.floor(hs(seed + 4, 1) * 7);
-    for (i = 0; i < 2; i++) { c.fillStyle = i ? 'rgba(84,74,64,' + (0.06 + hs(seed + 41, 1) * 0.08).toFixed(2) + ')' : 'rgba(120,113,104,' + (0.16 + hs(seed + 43, 1) * 0.1).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 + T / 2 + (hs(seed + 45, i) - 0.5) * T * 0.5, y0 + TS / 2 + (hs(seed + 47, i) - 0.5) * TS * 0.5, T * (0.62 + hs(seed + 49, i) * 0.3), TS * (0.55 + hs(seed + 51, i) * 0.3), hs(seed + 53, i) * 3, 0, 7); c.fill(); }
+    for (i = 0; i < 2; i++) { if (hs(seed + 39, i) > (i ? 0.3 : 0.36)) continue; var pr = T * (0.7 + hs(seed + 49, i) * 0.45), pxc = x0 + T / 2 + (hs(seed + 45, i) - 0.5) * T * 0.6, pyc = y0 + TS / 2 + (hs(seed + 47, i) - 0.5) * TS * 0.6, pg = c.createRadialGradient(pxc, pyc, 0, pxc, pyc, pr), pc = i ? ASH_PALE : ASH_DARK;   // on the opaque ash the page lays first: now and then a darker or a paler patch, big and soft
+      pg.addColorStop(0, pc + 'b0'); pg.addColorStop(0.55, pc + '60'); pg.addColorStop(1, pc + '00'); c.fillStyle = pg; c.beginPath(); c.ellipse(pxc, pyc, pr, pr * 0.72, 0, 0, 7); c.fill(); }
+    ns = hs(seed + 4, 1) < 0.5 ? 0 : 1 + Math.floor(hs(seed + 6, 1) * 2);   // a handful of pale specks in the room, not a scatter on every tile
     for (i = 0; i < ns; i++) { c.fillStyle = 'rgba(196,192,184,' + (0.16 + hs(seed, i) * 0.3).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 - 4 + hs(seed + 3, i) * (T + 8), y0 - 3 + hs(seed + 5, i) * (TS + 6), 1.5 + hs(seed + 7, i) * 6, 0.8 + hs(seed + 9, i) * 2.6, hs(seed + 11, i) * 3, 0, 7); c.fill(); }
   }
   else if (r.col) {
@@ -7379,13 +7382,13 @@ function drawRoof(c, room, a, C, dy) {
     var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT);   // the ridge along the long side: a gable facing south when the room is deep
     var seed = rc.x0 * 7 + rc.y0 * 3, i, j, cx = (left + right) / 2;
     // the shadow the eaves cast on the walls below, and down the right side
-    var shL = kind === 1 ? 12 : 7, sg = c.createLinearGradient(0, bot, 0, bot + shL); sg.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,' + (kind === 1 ? 0.56 : 0.42) + ')'); sg.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg; c.fillRect(left, bot, Wd, shL);   /* (deeper and longer under thatch) */
+    var shL = kind === 1 ? 14 : 7, sh0 = kind === 1 ? bot + 7 : bot, sg = c.createLinearGradient(0, sh0, 0, sh0 + shL); sg.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,' + (kind === 1 ? 0.58 : 0.42) + ')'); sg.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg; c.fillRect(left, sh0, Wd, shL);   /* (under thatch: deeper, longer, and from under its band of cut ends) */   /* (deeper and longer under thatch) */
     var sg2 = c.createLinearGradient(right, 0, right + 5, 0); sg2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.3)'); sg2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg2; c.fillRect(right, top + 2, 5, D);
     function eaveEdge(x0, y0, x1, y1) {                       // the thickness of the roof at an eave or a bargeboard: sod, straw ends or shingle ends along the line
       var dx = x1 - x0, dy2 = y1 - y0, len = Math.hypot(dx, dy2) || 1, nx = -dy2 / len, ny = dx / len, k;   // (nx, ny): outward, below the line
       if (ny < 0) { nx = -nx; ny = -ny; }
       if (kind === 1) {                       // thatch: the straw rounds over and is cut square, a band of cut ends standing proud of the wall
-        var bw = 5; ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * bw, y1 + ny * bw], [x0 + nx * bw, y0 + ny * bw]], THATCH_ENDS, { wob: 0.6, seed: seed + 20 + Math.round(x0), flat: true, lw: 0.7, heavy: 1.2 });
+        var bw = 9.5; ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * bw, y1 + ny * bw], [x0 + nx * bw, y0 + ny * bw]], THATCH_ENDS, { wob: 0.6, seed: seed + 20 + Math.round(x0), flat: true, lw: 0.7, heavy: 1.2 });
         c.lineWidth = 0.8; c.strokeStyle = 'rgba(62,46,22,0.6)'; c.beginPath(); for (k = 1.2; k < len - 0.6; k += 1.4 + hs(k, x0 + y0) * 1.3) { var u = k / len, px = x0 + dx * u, py = y0 + dy2 * u; c.moveTo(px + nx * 0.7, py + ny * 0.7); c.lineTo(px + nx * (bw - 0.5), py + ny * (bw - 0.5)); } c.stroke();
         c.strokeStyle = 'rgba(255,238,190,0.45)'; c.lineWidth = 1; c.beginPath(); c.moveTo(x0 - nx * 0.3, y0 - ny * 0.3); c.lineTo(x1 - nx * 0.3, y1 - ny * 0.3); c.stroke();
       }
@@ -7407,7 +7410,7 @@ function drawRoof(c, room, a, C, dy) {
           var U0 = hz ? bx0 : by0, U1 = hz ? bx1 : by1, us = [U0], vs = [(hs(line0, 1) - 0.5) * 0.8], uu = U0;
           while (uu < U1) { uu = Math.min(U1, uu + 6 + hs(uu, line0) * 7); us.push(uu); vs.push(vs[vs.length - 1]); us.push(uu); vs.push((hs(uu + 1, line0) - 0.5) * 1.6); }
           var cLine = function (off) { c.beginPath(); for (cu = 0; cu < us.length; cu++) { var vv = line0 + sgn * (vs[cu] + off), px2 = hz ? us[cu] : vv, py2 = hz ? vv : us[cu]; if (cu) c.lineTo(px2, py2); else c.moveTo(px2, py2); } c.stroke(); };
-          c.globalAlpha = a * 0.5; c.strokeStyle = dk; c.lineWidth = 3.4; cLine(2);                 // its shadow on the course below
+          c.globalAlpha = a * 0.64; c.strokeStyle = dk; c.lineWidth = 3.4; cLine(2);                 // its shadow on the course below
           c.globalAlpha = a * 0.85; c.strokeStyle = lineCol; c.lineWidth = 0.9; cLine(0);              // the cut edge
           c.globalAlpha = a * (tone > 0 ? 0.45 : 0.26); c.strokeStyle = 'rgb(255,245,210)'; c.lineWidth = 1.1; cLine(-1);   // the rounded straw above it catching the light
         }
@@ -7508,7 +7511,7 @@ function icon(c, id, m) {
   else { c.fillStyle = w.face; c.fillRect(-6, -6, 12, 12); face(c, w, -6, -6, 12, 12, 3); c.fillStyle = w.top; c.fillRect(-6, -8, 12, 2.5); c.strokeStyle = LINE; c.lineWidth = 1; c.strokeRect(-6, -8, 12, 14); }
   c.restore();
 }
-return { T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
+return { ASH_FLOOR: ASH_FLOOR, T: T, TS: TS, K: K, LINE: LINE, UP: UP, WALLS: WALLS, FLOORS: FLOORS, ROOFS: ROOFS, YARD: YARD, OPEN: OPEN, CFG: CFG, cfg: cfg, key: key, edgeAt: edgeAt, edgeOk: edgeOk, roomWallM: roomWallM, rooms: rooms, postsOk: postsOk, postUsed: postUsed, ensurePosts: ensurePosts, ink: ink, INK: INK, face: face, stroke: stroke, drawH: drawH, drawV: drawV, drawRoof: drawRoof, drawSmokeHole: drawSmokeHole, ridgeMid: ridgeMid, drawPost: drawPost, drawBeam: drawBeam, drawStairs: drawStairs, drawChimney: drawChimney, icon: icon, wallMat: wallMat, scars: scars, remains: remains, rubble: rubble, drawDebris: drawDebris, drawFlame: drawFlame };
 })();
 if (typeof module !== 'undefined') module.exports = Build;
 
@@ -19098,6 +19101,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function vSide(x, y) { return roomInfo && roomInfo.at(x - 1, y) >= 0 && roomInfo.at(x, y) < 0 ? 1 : -1; }   // which way a north-south wall's outer face looks: east when it is the east wall of a room, else west
   function drawDebrisAll(c, hw, hh) {
     var k, p, ru, sp, x0, y0;
+    c.fillStyle = Build.ASH_FLOOR; for (k in B.ruin || {}) { ru = B.ruin[k]; if (ru.k !== 'burnt') continue; p = k.split(','); x0 = p[0] * T; y0 = p[1] * TS; if (x0 + T < cam.x - hw - 30 || x0 > cam.x + hw + 30 || y0 + TS < cam.y - hh - 30 || y0 > cam.y + hh + 30) continue; c.fillRect(x0 - 0.3, y0 - 0.3, T + 0.6, TS + 0.6); }   /* the burnt room's floor, one opaque ash under all of it (2026-10-22, the Art Director's check), then each tile's patches over it */
     for (k in B.ruin || {}) {
       p = k.split(','); x0 = p[0] * T; y0 = p[1] * TS; if (x0 + T < cam.x - hw - 30 || x0 > cam.x + hw + 30 || y0 + TS < cam.y - hh - 30 || y0 > cam.y + hh + 30) continue; ru = B.ruin[k];
       sp = debrisCache[k]; if (!sp || sp.sig !== ru.k + ru.m) { var cv = document.createElement('canvas'); cv.width = (T + 44) * 2; cv.height = (TS + 36) * 2; var c2 = cv.getContext('2d'); c2.setTransform(2, 0, 0, 2, -(x0 - 22) * 2, -(y0 - 18) * 2); c2.lineCap = 'round'; c2.lineJoin = 'round'; Build.drawDebris(c2, +p[0], +p[1], ru, BCFG); sp = debrisCache[k] = { cv: cv, sig: ru.k + ru.m }; }
