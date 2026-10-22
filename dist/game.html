@@ -18797,7 +18797,31 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   // Crates, barrels and chests break under a tool (the axe is the right one): what was inside falls out, and a little wood.
   var BREAK = { crate: 3, barrel: 3, chest: 6 }, hvMap = new WeakMap();
-  function hvOf(it) { var h = hvMap.get(it); if (!h) { h = { x: it.x, y: it.y, r: it.r || 7, kind: 'tree', box: it, hp: BREAK[it.name], max: BREAK[it.name], name: it.name, v: 0, s: 1 }; hvMap.set(it, h); } return h; }
+  /* Wooden furniture breaks too (the village session's interiors plan, section 5; Robin, 2026-10-22: "Yes"): in a place that is not
+     yours, as walls are (theirs), the axe takes a table, a bench, a shelf in about four blows (WOODF, its hit points; the pick bites
+     it at half), softly heard (FURN_NOISE); it falls to a heap of its wood with one or two wood (a bed or a loom some fibre too),
+     and in a burning room it burns after FURN_FIRE seconds to a charred heap. Stone never breaks by hand. Mine: the list and the numbers. */
+  var WOODF = { table: 4, bench: 4, chair: 3, stool: 3, shelf: 4, cupboard: 5, loom: 5, bed: 5, foodTable: 4 }, FURN_NOISE = 110, FURN_FIRE = 20, furnT = 0;
+  function hvOf(it) { var h = hvMap.get(it); if (!h) { var hp = BREAK[it.name] || WOODF[it.name]; h = { x: it.x, y: it.y, r: it.r || 7, kind: 'tree', box: it, hp: hp, max: hp, name: it.name, v: 0, s: 1 }; hvMap.set(it, h); } return h; }
+  function furnHeap(it, burnt) {             // where a piece of furniture stood: a heap (the studio's furnitureHeap when it comes; the broken door's planks until then), or a charred one
+    var nm = burnt ? (World.IMAGES.charPile ? 'charPile' : 'burntHeap') : (World.IMAGES.furnitureHeap || World.IMAGES.furnitureHeap_1 ? 'furnitureHeap' : 'brokenDoor');
+    decals.push({ k: 'litter', name: nm, x: it.x, y: it.y, v: Math.floor(Math.random() * 3), r: 0 });
+  }
+  function breakFurn(it) {
+    var i = B.items.indexOf(it); if (i < 0) return; B.items.splice(i, 1); if (store === it) store = null; if (sitting === it) standUp();
+    chip(it.x, it.y, 8, '#b98a5a', 12, 90); sfx('boxbreak'); furnHeap(it, false);
+    drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); if (it.name === 'bed' || it.name === 'loom') drop('fiber', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0));
+    (it.store || []).forEach(function (q) { if (!q) return; if (q.kind === 'item') dropThing(q.item, it.x, it.y); else drop(q.kind, it.x, it.y, q.n); });
+    bDirty = true; save();
+  }
+  function furnFire(dt) {                    // furniture in a burning room, or on its glowing ashes, catches and burns away
+    if ((furnT += dt) < 0.5 || !roomInfo) return; var st = furnT; furnT = 0; var any = BURN.length > 0, k;
+    if (!any && B.ruin) for (k in B.ruin) if (B.ruin[k].hot > 0) { any = true; break; } if (!any) return;
+    for (var i = B.items.length - 1; i >= 0; i--) { var it = B.items[i]; if (!WOODF[it.name] || it.lvl) continue;
+      var tx = Math.floor(it.x / T), ty = Math.floor(it.y / T), ru = B.ruin && B.ruin[tx + ',' + ty], ri = roomInfo.at(tx, ty), hot = (ru && ru.hot > 0) || (ri >= 0 && roofBurning(roomInfo.rooms[ri]));
+      if (!hot) continue; it.burnT = (it.burnT || 0) + st; if (it.burnT >= FURN_FIRE) { B.items.splice(i, 1); if (store === it) store = null; furnHeap(it, true); chip(it.x, it.y, 6, '#2a2018', 8, 60); bDirty = true; }
+    }
+  }
   function kickable(P) {                   // a crate or a barrel with something in it, or somebody else's, within reach (your own empty ones are furniture)
     var best = null, bd = 34;
     B.items.forEach(function (it) { if ((it.name !== 'crate' && it.name !== 'barrel') || it.fallen || (it.lvl || 0) !== (P.lvl || 0)) return; var full = it.loot || it.thing || (it.store && it.store.some(Boolean)); if (!full && villageAt(it.x, it.y) < 0) return; var d = Math.hypot(it.x - P.x, it.y - P.y); if (d < bd && canReach(P, it)) { bd = d; best = it; } });
@@ -18813,11 +18837,12 @@ if (typeof module !== 'undefined') module.exports = Combat;
     drop('wood', it.x, it.y, 1 + (Math.random() < 0.5 ? 1 : 0)); save();
   }
   Combat.api.harvest = {
-    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + o.len * 0.5 && Math.abs(o.y - y) < rad) { o.r = Math.max(6, o.len * 0.5 - 4); out.push(o); } });   /* (a trunk is struck anywhere along its length: its r is half of it, 2026-10-14) */ B.items.forEach(function (it) { if (BREAK[it.name] && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
+    list: function (x, y, rad) { var out = []; if (!inCave) { wallsFor(hero(), out); stakesFor(hero(), out); } if (inCave) { here().ores.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); }); here().veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); return out; } if (w.mt) w.mt.veins.forEach(function (v) { if (v.left > 0 && Math.abs(v.x - x) < rad && Math.abs(v.y - y) < rad) out.push(v); }); around(x, y, function (o) { if (o.kind && o.kind !== 'bush' && o.dying == null && Math.abs(o.x - x) < rad && Math.abs(o.y - y) < rad) out.push(o); });   /* (bushes and grass are picked by hand, E, since 2026-10-16) */ trunks.forEach(function (o) { if (o.dying == null && Math.abs(o.x - x) < rad + o.len * 0.5 && Math.abs(o.y - y) < rad) { o.r = Math.max(6, o.len * 0.5 - 4); out.push(o); } });   /* (a trunk is struck anywhere along its length: its r is half of it, 2026-10-14) */ B.items.forEach(function (it) { if ((BREAK[it.name] || (WOODF[it.name] && !it.lvl && theirs(it.x, it.y))) && !it.fallen && Math.abs(it.x - x) < rad && Math.abs(it.y - y) < rad && canReach(hero(), it)) out.push(hvOf(it)); }); return out; } /* (canReach, 2026-10-13: a swing at a wall broke the barrel behind it) */,
     hit: function (o, power, right, tool) {
       if (o.edge) return wallBlow(o, power, right, tool);   // a wall, a locked door, a fence: src/ruin.js
       if (o.stake) return stakeBlow(o, power, right, tool);
       if (o.box && o.box.heavy) { o.hp -= power; chip(o.x, o.y, 6, '#8a8f98', right ? 3 : 2, 60); sfx('clink'); raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) { o.box.locked = 0; o.hp = o.max; toast('The lock breaks'); sfx('fall'); save(); } return { dealt: power }; }
+      if (o.box && WOODF[o.box.name] && !BREAK[o.box.name]) { o.hp -= power * (tool === 'pick' ? 0.5 : 1); chip(o.x, o.y, 8, '#b98a5a', right ? 4 : 2, 70); Combat.noise(o.x, o.y, FURN_NOISE); if (o.hp <= 0) breakFurn(o.box); return; }   /* (furniture: WOODF) */
       if (o.box) { o.hp -= power; chip(o.x, o.y, 8, '#b98a5a', right ? 4 : 2, 70); if (villageAt(o.x, o.y) >= 0) raidAlarm(villageAt(o.x, o.y), o.x, o.y); if (o.hp <= 0) breakBox(o.box); return; }
       if (o.vein) { veinHit(o, power); return { dealt: power }; }
       var P = hero(), s = o.kind === 'trunk' ? null : sprite(o.name, o.v);
@@ -19831,6 +19856,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (b.stage === 'pour') { b.t += dt; f.moving = false; if (b.t < BRIGADE.pour) return; var L = b.key.charAt(0); Ruin.douse(RUIN, B, b.key); brigadePoured++; f.carrying = false; if (L !== 'R') { delete edgeCache[L + b.key.slice(2)]; bDirty = true; } sfx('build', 0, f); b.stage = 'toWell'; return; }
   }
   function ruinTick(dt) {
+    furnFire(dt);   /* (furniture in a burning room burns: WOODF) */
     var id, r;
     if (bDirty) rebuildRooms();              // (the rooms and their solids are otherwise made again only when a frame is drawn)
     if (!ruinChecked && roomInfo) { ruinChecked = true; roomInfo.rooms.forEach(function (r0) { if (Ruin.due(RUIN, B, r0, BCFG.roof)) Ruin.collapse(RUIN, B, r0, 'fallen', BCFG.roof); }); }   // a game loaded in the moment between a roof's groan and its fall: it is down
