@@ -410,7 +410,15 @@ however many variants a piece has (`variantsOf`), then `name`, then the drawn pr
 props at their old size (Admin's **Trees** cycles their bake; `World.TREE_SHAPES`); rocks come in six variations of tone and build.
 
 **The bag and the Tab screen:** stacks of 25, no weight; the top row is the bar, four rows under it (`BAG0` 6). Drag moves,
-right click uses, Shift and click sends across to a chest, Shift and drag carries half a stack; Sort tidies. The panel
+**a double click uses** (eats, lights the torch, wears, or takes a weapon or tool in hand: `useSlot`, `handTake`), **a right click
+opens a little board** (`openSlotMenu`: Wear or Take in hand, Eat, Light, Drop, Destroy; Robin, 2026-10-22), Shift and click sends
+across to a chest, Shift and drag carries half a stack; Sort tidies. A thing dropped from the bag lies as one pile (`d.n`, saved)
+and is not picked up again until he has walked 70 units off it (`d.mine`). **A thing's card** (vellum, over every board) has its
+numbers and tale; **with Shift held, the card of what you have now of its use stands beside it, marked Now** (`heldLike`: the
+worn piece, the tool in hand or the best other of its kind, the hand weapon; the crafting card too), in place of the green and red
+differences (Robin: "instead of having a green +3"). **The materials' and the food's icons are the Art Director's**
+(`assets/sprites/icons`, 30 of them, 2026-10-22, `art/build/item_icons.py`; inlined as `__STACKICONS__`, `STACK_IMG`, drawn by
+`drawDropIcon` in the bag, the bar, the cards and on the ground; a kind without one keeps its drawn icon). The panel
 ("You") has Gear (helmet, cloak, tunic, trousers, boots; shield, necklace, two rings, two trinkets, the arm ring), Stats after
 the first kill, Ring once a ring is worn. **What is worn shows as the art studio's rendered icons** (`assets/sprites/worn/`, 2026-10-20; `Items.setWorn`, the game's `wornPick` choosing them as the hero is dressed, the cloth tinted by its material) in the slots, the bag and the crafting board; an empty slot shows its icon faint. The panel's redesign waits for Robin's pick of the studio's three directions. The crafting board sits lower right under the chart, **the list on the left and
 the chosen thing beside it** (Robin). **Each board lists only its own**: Tab opens what you make by hand, with a tab for a
@@ -424,8 +432,10 @@ board cannot be left** until it is made or cancelled (every key but Shift is hel
 nothing; a blow taken breaks the work off and gives the materials back); **Shift held makes it Craft x5** (the cost sockets show
 five times, made in half the time five would take: `CRAFT_BATCH` 0.5; the raft stays single); what is made goes into the bag (a
 workbench no longer keeps it); no bar over the hero (`craft`, `craftJob`, `craftTick`, `craftStop`). **Cooking at a fire and
-smelting at a furnace keep their station's queue in the background** (mine: as Valheim's cooking station and smelter), with Cook or
-Smelt (x5 with Shift), Cancel beside it while something is queued, the bar over the fire and the Ready strip. The board's picks of
+smelting at a furnace are made the same way** (2026-10-22, Robin: "Cooking menu still has the old cancel button. Check this in all
+crafting menus": `workStart`, the job's `kind` cook or smelt; Cook or Smelt turns into the filling Cancel, x5 with Shift, into the
+bag; the Ready strip shows only what an older save left at a station). **The times halved** (Robin: "reduced by at least half"):
+`CRAFT_T` 1 s by hand, 1.5 at a bench or the shipwright's; `COOK_T` 2; a bar half its `dur` (copper 4, iron 6). The board's picks of
 2026-10-20 (Robin, from the Art Director's `out/hud/CRAFTING.md`; the count with its sockets and hold-to-repeat gave way to the
 above): **a pin** at the
 card's plate corner (`pins`, up to three, the oldest let go; saved): a pinned recipe shows as a **vellum slip** bottom left
@@ -457,7 +467,9 @@ inlined as `__FIRES__`): the campfire, the hearth (with its tripod and pot), the
 base, a loop of flames (10 frames at 12 fps, each fire at its own point of the loop) and embers (the bases with the set pieces' line in a warm dark brown since 2026-10-21, `art/build/fires_build.py`: they had kept the figures' heavy black one; the flames unchanged), drawn by `drawFire` at 4 px a
 unit; the light, the smoke, the sparks (from the fire's heart, `fireUp`) and the shadows stay the game's. A hearth nobody keeps
 (`it.cold`: the burnt hall's) shows no flames and is no hearth; `it.burnt` would show the embers. The comfort line shows it. A bed answers only under a roof and only if it is yours; sleeping skips the
-night, and under a roof leaves you rested for comfort × 2 minutes. Inside a room with comfort and near a fire you heal. Chairs
+night, and under a roof leaves you rested for comfort × 2 minutes. **Health comes back slowly when no fight is on** (Robin,
+2026-10-22; `HEAL`, mine): 0.6 a second within 140 units of a burning fire, 0.15 a point of comfort in a room of yours, 0.2 under
+a shelter, at most 1.5 (50 to full by a fire in about 83 s). Chairs
 and benches seat you (E). The shipwright's raft bench needs comfort 4 at home and goes on the sand by the sea.
 
 **Day and night:** a 30-minute cycle (`DAY_LEN` 1800: day to 840, dusk to 1200, night to 1740, then dawn). The dusk stays
@@ -573,7 +585,8 @@ wind, cloud shadows, cat's-paws (dark patches long with the wind, ruffled across
 trail) by the wind's strength, the sun's glitter in a band on the upper-left side by day, a shoal's shimmer now and then;
 every patch a world point that drifts downwind and dies and is never laid over land (`clear`); **the life** (the studio's
 pieces in `assets/sea/`, inlined as `__SEA__` by `sea_art()`, 65 px a metre): gulls on a loose ring round the ship at sea or
-round the nearest shore (`shorePt`), flapping and gliding in the eight directions with shadows on the water, two to five, none
+round a point out over the water from the nearest shore (`shorePt`, pushed out `gullOut` 230; Robin, 2026-10-22: "a bit too
+attached"; ashore two or three on a ring of 110 to 230, `gullR`), flapping and gliding in the eight directions with shadows on the water, two to five, none
 far out at night; a minke far out that surfaces three or four times twenty seconds apart (the blow is `Sea.spout`), shows its
 fluke and is gone for minutes; a fish leaping from the shoal; a seal's head by the shore; **the ship's pennant** from the masthead
 (`Yard.masthead`) and **bow spray** when the way and the wind are up. **The wind blows at `wind.s`** (0 to 1, wandering every
@@ -585,7 +598,7 @@ slider there, and Use in the game makes it the game's default round which `wind.
 studio's word: puffins, a sea eagle, a humpback, jellyfish, the night sea.
 
 **Also:** fishing with an iron rod (the lowlands' fish and a fisherman's dishes; not on the two islands); the map (M) and the
-chart show what has been seen; saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is
+chart show what has been seen (the map zooms with the wheel, 1 to 10 times toward the mouse: `mapWheel`, Robin 2026-10-22); saving in `localStorage` (keyed by the world's layout, so a save of another arrangement is
 dropped; **the painted ground is saved as what differs from the ground the world paints at every start** (`groundBase`,
 `groundDiff`; 2026-10-20: the whole field was 1.5 MB of a 1.6 MB save, now about 55 KB; an older save's whole field loads and
 is saved as a diff from then on); **Admin** in the Escape menu (immortal, one-shot, free building and crafting, fly, threefold drops, shield only
@@ -601,8 +614,9 @@ Director's `out/lighting/NIGHT_PALETTE.md`, Robin's yes, 2026-10-21; the table i
 multiply kept, then the darks lifted with blue (screen `rgba(40,60,120,0.22)`) and a third of the colour taken out (the
 'saturation' blend, the fires cut out of it); the fire's light ochre, never white (`FIRE_T`, `TORCH_T`: `rgb(225,165,85)` at the
 core through `rgb(120,80,40)` at 0.4 to the night's blue, the reach 102, a third shorter: it was a disc of daylight); the water
-at night darker and greyer than the land (half its light, a third less colour, laid into the night canvas in blocks of six
-screen pixels tested against the world's water); the hero's own circle cool; a faint cool light from the top when there is a
+at night darker and greyer than the land (half its light, a third less colour, laid into the night canvas a pixel of it at a
+time where the world has water and no painted ground, `nightWater`, kept until the camera moves: Robin's picture of 2026-10-22
+showed the old blocks of six screen pixels as dark squares along the coast); the hero's own circle cool; a faint cool light from the top when there is a
 moon. **The cave's dark** (`Cave.dark`): deep blue-black the wall's grain shows through (`rgba(8,10,22,0.93)`), the hero's circle
 without a torch cool and small (radius 60, `rgb(40,48,70)`), with one warm (`rgb(210,150,70)` to the blue at 170), the glowing
 stones cold foxfire (`rgb(120,200,170)`). **The lighting switches** on Admin's Light and sound board (`LAB.light`): `glow`,

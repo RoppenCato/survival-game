@@ -8,7 +8,7 @@
    only. No browser globals: the page passes what it has (the water and land tests, the camera, the ship, the night). */
 var Sea = (function () {
   var K = 0.75, UPM = 1 / 0.046, DIRS = ['s', 'sw', 'w', 'nw', 'n', 'ne', 'e', 'se'];
-  var CFG = { paws: 14, ruffle: 18, caps: 18, glints: 700, clouds: 2, shoalN: 90, gulls: [2, 5], whaleEvery: [150, 360], fishEvery: [5, 15], sealEvery: [70, 160], sun: [-0.6, -0.8] };
+  var CFG = { paws: 14, ruffle: 18, caps: 18, glints: 700, clouds: 2, shoalN: 90, gulls: [2, 5], gullOut: 230, gullR: [110, 230], whaleEvery: [150, 360], fishEvery: [5, 15], sealEvery: [70, 160], sun: [-0.6, -0.8] };
   function rnd() { return Math.random(); }
   function hs(i, j) { var v = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453; return v - Math.floor(v); }
   function make() { return { t: 0, paws: [], caps: [], glints: [], clouds: [], swells: [], shoals: [], fish: [], gulls: [], whale: null, seal: null, nextWhale: 40 + rnd() * 120, nextSeal: 30 + rnd() * 90, nextFish: 6, chk: 0, on: false, keep: [] }; }
@@ -56,10 +56,11 @@ var Sea = (function () {
     // the gulls: a ring round the ship at sea, else round a point of the shore near the hero; none far out at night
     var want = env.night > 0.5 && !env.shore ? 0 : (env.ship || env.shore ? Math.round(CFG.gulls[0] + rnd() * 0.001 + (CFG.gulls[1] - CFG.gulls[0]) * (S.gullK || (S.gullK = rnd()))) : 0);
     var cx = env.ship ? env.ship.x : (env.shore ? env.shore.x : env.x), cy = env.ship ? env.ship.y : (env.shore ? env.shore.y : env.y);
+    if (!env.ship && env.shore) { var gux = env.shore.x - env.x, guy = env.shore.y - env.y, gul = Math.hypot(gux, guy) || 1, gox = env.shore.x + gux / gul * CFG.gullOut, goy = env.shore.y + guy / gul * CFG.gullOut; if (env.water(gox, goy)) { cx = gox; cy = goy; } if (want > 2) want = 2 + (want > 3 ? 1 : 0); }   /* ashore, the ring lies out over the water and there are fewer (2026-10-22, Robin: "Sea gulls are a bit too attached, they start circeling my hero a lot") */
     for (i = S.gulls.length - 1; i >= 0; i--) { p = S.gulls[i]; p.a += p.spin * dt; p.cx += (cx - p.cx) * Math.min(1, dt * 0.4); p.cy += (cy - p.cy) * Math.min(1, dt * 0.4); p.x = p.cx + Math.cos(p.a) * p.R; p.y = p.cy + Math.sin(p.a) * p.R; p.h = p.a + (p.spin > 0 ? Math.PI / 2 : -Math.PI / 2);
       p.ft += dt; if (p.glide > 0) { p.glide -= dt; p.f = 4; } else { p.f = Math.floor(p.ft * 6) % 4; if (rnd() < dt * 0.25) p.glide = 1 + rnd() * 1.5; }
       p.life -= dt; if (p.life < 0 || (want === 0 && rnd() < dt)) S.gulls.splice(i, 1); }
-    if (S.gulls.length < want && rnd() < dt * 0.5) S.gulls.push({ cx: cx, cy: cy, a: rnd() * 6.283, R: 60 + rnd() * 90, spin: (rnd() < 0.5 ? 1 : -1) * (0.35 + rnd() * 0.35), hgt: 18 + rnd() * 30, f: 0, ft: rnd() * 3, glide: 0, life: 40 + rnd() * 60, x: cx, y: cy, h: 0 });
+    if (S.gulls.length < want && rnd() < dt * 0.5) S.gulls.push({ cx: cx, cy: cy, a: rnd() * 6.283, R: env.ship ? 60 + rnd() * 90 : CFG.gullR[0] + rnd() * (CFG.gullR[1] - CFG.gullR[0]), spin: (rnd() < 0.5 ? 1 : -1) * (0.35 + rnd() * 0.35), hgt: 18 + rnd() * 30, f: 0, ft: rnd() * 3, glide: 0, life: 40 + rnd() * 60, x: cx, y: cy, h: 0 });
     if ((S.gullT = (S.gullT || 0) + dt) > 30) { S.gullT = 0; S.gullK = rnd(); }
   }
   function lin(c, x0, y0, x1, y1) { c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); }

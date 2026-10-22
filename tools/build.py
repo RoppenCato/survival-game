@@ -101,6 +101,14 @@ def worn_icons():
         if fn.endswith('.png'): out[fn[:-4]] = '../assets/sprites/worn/' + fn + '?v=' + hashlib.md5(open(os.path.join(d, fn), 'rb').read()).hexdigest()[:8]
     return json.dumps(out)
 SRC['__WORN__'] = worn_icons()
+def stack_icons():
+    """the materials and the food as icons (the art studio's item_icons.py, 2026-10-22): assets/sprites/icons/<kind>.png, one a kind, untinted, each with a tag from its bytes"""
+    d = os.path.join(ROOT, 'assets', 'sprites', 'icons'); out = {}
+    if not os.path.isdir(d): return 'null'
+    for fn in sorted(os.listdir(d)):
+        if fn.endswith('.png'): out[fn[:-4]] = '../assets/sprites/icons/' + fn + '?v=' + sheet_tag(os.path.join(d, fn))
+    return json.dumps(out)
+SRC['__STACKICONS__'] = stack_icons()
 def hud_art():
     """the panels' art (the Art Director's, 2026-10-20: out/hud/assets copied whole into assets/hud): <name>.png by name"""
     d = os.path.join(ROOT, 'assets', 'hud'); out = {}

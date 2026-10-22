@@ -437,3 +437,16 @@ idles are smooth (sixteen frames), and their feet hold to the ground as they wal
 now the studio's new jog at 78 units a second, made for that speed so his feet stay planted. His cloak now trails behind him,
 bounces with each stride and lags behind his turns. Yesterday's 60 walk is still there under Admin, "The hero walks at 60", if
 you want to compare.
+
+**Your list of 2026-10-22, answered:**
+- **The bag:** a double click eats, wears, or takes a weapon or tool in hand. A right click opens a small board: Wear or Take in hand, Eat or Light, Drop, Destroy. A dropped stack lies as one pile and is not picked up again until you have walked off a little.
+- **Crafting time halved:** 1 s by hand, 1.5 at a bench, 2 s a dish, 4 s a copper bar.
+- **Cooking and smelting** now work as crafting does: the button turns into a filling Cancel, Shift makes five, and what is made goes into the bag. The old Cancel and the empty "Nothing ready" strip are gone.
+- **The dash:** the squash, as you preferred. The studio's dodge is kept in its folder in case you want a calmer one.
+- **Shift on a weapon, tool or piece of armour** shows the card of what you have now beside it, marked "Now". The +3 and −2 are gone, from the crafting card too.
+- **Icons:** the studio's 30 new ones for the materials and the food.
+- **Healing:** 0.6 a second by a fire and slowly at a home with comfort, when no fight is on.
+- **The map** zooms with the wheel.
+- **The water at night** follows the coast, with no squares. If you still see squares, tell me where.
+- **The gulls** circle out over the water and keep further off.
+- **The big island:** it has its animals (24 boars, 21 deer, 12 adders, 6 moose, 3 bears), but at night you see only 14 units without a torch. Its village has no armed men by design: home water is at peace. Its people sleep indoors at night, and the stacked names were the sleepers' (now hidden).
