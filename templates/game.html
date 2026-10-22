@@ -521,6 +521,7 @@ __COMBAT__
     return Sprites.beast(c, BH, e, K, o); };
   (function () { var SF = { plank: new Image(), plankLit: new Image(), rail: new Image(), shields: [] }, n = 0, want = 11, i; function one(im, src) { im.onload = function () { if (++n === want) Yard.setSurfaces(SF); }; im.src = src; }   /* the hull's surfaces (the Art Director, 2026-10-21, assets/ship/) */
     one(SF.plank, '../assets/ship/plank_strip.png?v=1021'); one(SF.plankLit, '../assets/ship/plank_strip_lit.png?v=1021'); one(SF.rail, '../assets/ship/rail_strip.png?v=1021'); for (i = 1; i <= 8; i++) { var si = new Image(); SF.shields.push(si); one(si, '../assets/ship/shield_0' + i + '.png?v=1021'); } })();
+  (function () { var SM = __SHIPS__; if (!SM) return; Object.keys(SM).forEach(function (kind) { var J = SM[kind], I = {}, n = 0, ls = Object.keys(J.src || {}); ls.forEach(function (L) { var im = new Image(); im.onload = function () { if (++n === ls.length) { Yard.setModel(kind, J, I); shipsRefit(); } }; im.src = J.src[L]; I[L] = im; }); }); })();   /* the ship models (Colin, AD's sheets, assets/ships: docs/ships-rework.md step 12) */
   (function () { var PI = __PROPIMG__; if (!PI) return; var map = {}; for (var k in PI) { var im = new Image(); im.src = PI[k].src; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } World.setImages(map); })();   // the Blender set pieces (2026-10-12): the peaks and the cave mouth, drawn as props
   (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the rendered icons for the bag, the bars and the drops
   (function () { var WN = __WORN__; if (!WN) return; var imgs = {}; for (var k in WN) { var im = new Image(); im.src = WN[k]; imgs[k] = im; } WORN_IMG = imgs; Items.setWorn(imgs, wornPick); })();   // the worn things' rendered icons (the art studio, 2026-10-20), in the bag, on the Gear page and the crafting board
@@ -1853,6 +1854,7 @@ __COMBAT__
     Yard.fit(v); return v;
   }
   function addShip(o) { var v = shipOf(o); fleet.push(v); return v; }
+  function shipsRefit() { fleet.forEach(function (v) { Yard.fit(v); v._gang = null; }); if (shipPanel) spPrev(); }   /* (a model arrived: its outline and seats are the ships' now) */
   function fleetTick() {                   // ashore, the ship in use is the one of yours you stand by
     if (!fleet.length || (raft && raft.aboard)) return; var P = hero(), best = raft && !raft.stowed ? raft : null, bd = best ? Math.hypot(raft.x - P.x, raft.y - P.y) : 1e9;
     fleet.forEach(function (v) { if (v.stowed || v === best) return; var d = Math.hypot(v.x - P.x, v.y - P.y); if (d < bd - 24) { bd = d; best = v; } });
@@ -1997,7 +1999,7 @@ __COMBAT__
     if (leftBanner > 0) leftBanner -= dt; if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; }
     if (!seen.left && !SCENE && !inCave && !inYard && !(raft && raft.aboard) && (leftChk = (leftChk || 0) - dt) <= 0) { leftChk = 1; var Pl = hero(); if (isLand(Pl.x, Pl.y) && onOtherIsland(Pl.x, Pl.y)) { seen.left = 1; bigStep('You have left the island', 'Day ' + day.n + '. Ormr sailed east.'); earnRune('sealegs', 'the second island reached'); } }   /* (2026-10-14, Robin never saw the banner: it came only from stepping ashore by E; now it comes however you come to stand on another island's land) */
     windTick(dt); landingTick(dt); seaTick(dt); trimTick(dt); fleetTick();
-    var zt = zoomTarget(); if (!inYard && !inCave && Math.abs(zoom - zt) > 0.0005) zoom += (zt - zoom) * Math.min(1, dt * 1.6);   /* the camera pulls back at sea by the hull (a karve 0.55, a longship 0.45; mine, 2026-10-21) and comes in again ashore */
+    var zt = zoomTarget(); if (!inYard && !inCave && Math.abs(zoom - zt) > 0.0005) zoom += (zt - zoom) * Math.min(1, dt * 1.6); if (!(zoom > 0.15)) zoom = zt > 0.15 ? zt : ZOOM0;   /* (a guard: the frame log once showed the camera's zoom below nothing for ten frames, 2026-10-22, the night's light then threw) */   /* the camera pulls back at sea by the hull (a karve 0.55, a longship 0.45; mine, 2026-10-21) and comes in again ashore */
     if (!raft || !raft.aboard) return;
     raft.crew = hird.filter(function (m) { return m.aboard; }).length + menAboard.length;
     var K2 = Combat.dbg().IN.keys, ix = (K2.KeyD ? 1 : 0) - (K2.KeyA ? 1 : 0), iy = (K2.KeyS ? 1 : 0) - (K2.KeyW ? 1 : 0), H = handling(raft.kind);
@@ -3460,7 +3462,7 @@ __COMBAT__
     invOpen = false; menu = null; mapOpen = false; bookOpen = false; store = null; sfx('pick');
   }
   function spClose() { if (!shipPanel) return; shipPanel = null; }
-  function spSizeOf(kind) { var t = spSizeOf.c || (spSizeOf.c = {}); if (!t[kind]) { var v = { x: 0, y: 0, h: 0, kind: kind, parts: Yard.designParts(kind, {}) }; Yard.fit(v); t[kind] = { hw: v.hw, hh: v.hh }; } return t[kind]; }
+  function spSizeOf(kind) { var t = spSizeOf.c || (spSizeOf.c = {}), ck = kind + (Yard.artOf({ kind: kind }) ? ':model' : ''); if (!t[ck]) { var v = { x: 0, y: 0, h: 0, kind: kind, parts: Yard.designParts(kind, {}) }; Yard.fit(v); t[ck] = { hw: v.hw, hh: v.hh }; } return t[ck]; }
   function spLaunch(bench, kind, skip) {   // clear water by the yard for a hull of this size, away from your other ships
     var sz = spSizeOf(kind), r, a, b, h, best = null;
     for (r = 40; r < 520 && !best; r += 14) for (a = 0; a < 6.283 && !best; a += 0.26) { var x = bench.x + Math.cos(a) * r, y = bench.y + Math.sin(a) * r;

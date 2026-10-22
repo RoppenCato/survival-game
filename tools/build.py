@@ -84,6 +84,21 @@ def sea_art():
         out[n] = { 'src': '../assets/sea/' + n + '.png?v=' + hashlib.md5(open(pp, 'rb').read()).hexdigest()[:8], 'origin': j['origin'], 'water': j.get('water', [])[::6], 'ppm': j.get('ppm', 65) }
     return json.dumps(out)
 SRC['__SEA__'] = sea_art()
+def ship_models():
+    """the ship models (Colin, AD's sheets, docs/ships-rework.md step 12, 2026-10-22): assets/ships/<kind>/<kind>.json (its frames,
+    marks and layers) with each layer's picture tagged by its bytes"""
+    d = os.path.join(ROOT, 'assets', 'ships'); out = {}
+    if not os.path.isdir(d): return 'null'
+    for kind in sorted(os.listdir(d)):
+        jp = os.path.join(d, kind, kind + '.json')
+        if not os.path.exists(jp): continue
+        J = json.load(open(jp, encoding='utf-8')); src = {}
+        for layer, fn in J.get('layers', {}).items():
+            fp = os.path.join(d, kind, fn)
+            if os.path.exists(fp): src[layer] = '../assets/ships/' + kind + '/' + fn + '?v=' + hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8]
+        J['src'] = src; out[kind] = J
+    return json.dumps(out)
+SRC['__SHIPS__'] = ship_models()
 def item_icons():
     """the things in the hand as icons (art/build/weapon_icons.py through tools/icons.js since 2026-10-22), assets/sprites/items/<kind>_wood.png and _metal.png, each with a tag from its bytes (2026-10-22: the icons were remade, and a browser keeps a picture it has)"""
     d = os.path.join(ROOT, 'assets', 'sprites', 'items'); out = {}

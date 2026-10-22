@@ -4,7 +4,8 @@
 const { createCanvas, loadImage } = require('@napi-rs/canvas'); const fs = require('fs');
 global.__mk = (w, h) => createCanvas(w, h);
 const Yard = require('../../src/yard.js');
-async function surfaces() { const d = 'assets/ship/', SF = { plank: await loadImage(d + 'plank_strip.png'), plankLit: await loadImage(d + 'plank_strip_lit.png'), rail: await loadImage(d + 'rail_strip.png'), shields: [] }; for (let i = 1; i <= 8; i++) SF.shields.push(await loadImage(d + 'shield_0' + i + '.png')); Yard.setSurfaces(SF); }   // the studio's surfaces (2026-10-21)
+async function surfaces() { const d = 'assets/ship/', SF = { plank: await loadImage(d + 'plank_strip.png'), plankLit: await loadImage(d + 'plank_strip_lit.png'), rail: await loadImage(d + 'rail_strip.png'), shields: [] }; for (let i = 1; i <= 8; i++) SF.shields.push(await loadImage(d + 'shield_0' + i + '.png')); Yard.setSurfaces(SF);
+  for (const kind of fs.existsSync('assets/ships') ? fs.readdirSync('assets/ships') : []) { const jp = 'assets/ships/' + kind + '/' + kind + '.json'; if (!fs.existsSync(jp)) continue; const J = JSON.parse(fs.readFileSync(jp, 'utf8')), I = {}; for (const L in J.layers) I[L] = await loadImage('assets/ships/' + kind + '/' + J.layers[L]); Yard.setModel(kind, J, I); } }   // and the ship models (Colin, AD's, assets/ships)   // the studio's surfaces (2026-10-21)
 surfaces().then(() => {
   const Z = 2, W = 2000, H = 2500, cv = createCanvas(W * Z, H * Z), c = cv.getContext('2d');
   c.setTransform(Z, 0, 0, Z, 0, 0); c.fillStyle = '#3a6f8e'; c.fillRect(0, 0, W, H);
