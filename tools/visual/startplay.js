@@ -5,7 +5,7 @@
 //   3. load this file, then call the steps in order, ONE A CALL (the browser tool cuts a script off after about half a minute, and
 //      a script cut off in mid-frame leaves the game's loop dead: reload the page and go on from its save):
 //        ST.land()  ST.tools()  ST.wood()  ST.stoneAndFiber()  ST.arms()  ST.boar()  ST.deer()  ST.arnor()  ST.home()
-//        ST.arnor()  ST.bench()  ST.raft()  ST.cross()  ST.night();  ST.berries() (after tools) and ST.cook() (after home)
+//        ST.arnor()  ST.bench() (the shipyard)  ST.raft() (the rowboat)  ST.cross()  ST.night();  ST.berries() (after tools) and ST.cook() (after home)
 //    A fresh start first asks the hero's name: type a letter or two and Enter with key events that carry .key (H2.keyev sends
 //    only .code). Brought up to date 2026-10-22 after a run (the wreck's planks, E for berries and grass, the knife not on the
 //    starter island, Arnor, a campfire outdoors, the raft rowed on W and steered with A and D).
@@ -95,16 +95,14 @@ window.ST = (function () {
   ST.bench = function () {                                // (the hero is put on the wreck's beach)
     var q = P(); q.x = D().home.x + 44; q.y = D().home.y + 10; fast(5); var i = D().pieceIndex('ship1'), spot = null, why = {}, tx0 = Math.floor(q.x / 32), ty0 = Math.floor(q.y / 32), r, dy, dx;
     for (r = 0; r < 12 && !spot; r++) for (dy = -r; dy <= r && !spot; dy++) for (dx = -r; dx <= r && !spot; dx++) { var x = (tx0 + dx + 0.5) * 32, y = (ty0 + dy + 0.5) * 32; q = P(); q.x = x + 34; q.y = y + 20; var t = D().target(i, x, y); if (t && t.ok) spot = { x: x, y: y }; else if (t && t.why) why[t.why] = 1; }
-    if (!spot) return 'the raft bench can go nowhere near the wreck: ' + Object.keys(why).join('; '); q = P(); q.x = spot.x + 34; q.y = spot.y + 20; fast(1); var pl = D().place(i, spot.x, spot.y); fast(5); P().mode = 'fight';
-    return 'the raft bench: ' + (pl && pl.ok ? 'built on the sand' : 'REFUSED: ' + (pl && pl.why)) + '; ' + JSON.stringify(inv());
+    if (!spot) return 'the shipyard can go nowhere near the wreck: ' + Object.keys(why).join('; '); q = P(); q.x = spot.x + 34; q.y = spot.y + 20; fast(1); var pl = D().place(i, spot.x, spot.y); fast(5); P().mode = 'fight';
+    return 'the shipyard: ' + (pl && pl.ok ? 'built on the sand' : 'REFUSED: ' + (pl && pl.why)) + '; ' + JSON.stringify(inv());
   };
-  ST.raft = function () {                                 // three logs side by side, a lashing on each; the bag is topped up for them, and the line says by how much
-    P().mode = 'fight'; H2.keyev('KeyE', true); draw(2); H2.keyev('KeyE', false); draw(40); if (!D().yard().inYard) return 'E at the bench did not open the Shipyard';
-    var i0 = inv(), need = { wood: 6, fiber: 6 }, add = {}, k; for (k in need) if ((i0[k] || 0) < need[k]) { add[k] = need[k] - (i0[k] || 0); D().addItem(k, add[k]); }
-    var S = Yard.scene, PL = S.parts(), at = function (i, j) { return { x: S.Y.X + (i + 0.5) * 32, y: S.Y.Y + (j + 0.5) * 32 }; }, ix = function (id) { for (var q = 0; q < PL.length; q++) if (PL[q].id === id) return q; return 0; }, j, says = [];
-    S.pick = ix('log'); for (j = 1; j <= 3; j++) { S.act(at(2, j), true); says.push(S.check() || 'ready'); } S.pick = ix('lash'); for (j = 1; j <= 3; j++) { S.act(at(2, j), true); says.push(S.check() || 'ready'); }
-    if (S.check()) return 'the hull is not ready: ' + S.check(); S.host.finish(); draw(60); var rf = D().raftObj();
-    return 'the yard said, part by part: ' + says.join(' | ') + '\n' + (Object.keys(add).length ? '(added to the bag for it: ' + JSON.stringify(add) + ') ' : '') + (rf ? 'a raft lies in the water at ' + Math.round(rf.x) + ',' + Math.round(rf.y) : 'NO RAFT');
+  ST.raft = function () {                                 // E at the shipyard opens its panel (docs/ships-rework.md); Build makes the rowboat; the bag is topped up for it, and the line says by how much
+    P().mode = 'fight'; H2.keyev('KeyE', true); draw(2); H2.keyev('KeyE', false); draw(10); var sp = D().shipPanel(); if (!sp) return 'E at the shipyard did not open its panel';
+    var i0 = inv(), need = Yard.HULLS[sp.kind].cost, add = {}, k; for (k in need) if ((i0[k] || 0) < need[k]) { add[k] = need[k] - (i0[k] || 0); D().addItem(k, add[k]); }
+    var offered = sp.model + ' ' + sp.kind; D().spBuild(); draw(30); var rf = D().raftObj(); H2.keyev('KeyE', true); draw(2); H2.keyev('KeyE', false); draw(5);
+    return 'the panel offered: ' + offered + '; ' + (Object.keys(add).length ? '(added to the bag for it: ' + JSON.stringify(add) + ') ' : '') + (rf ? 'a ' + rf.kind + ' lies in the water at ' + Math.round(rf.x) + ',' + Math.round(rf.y) + '; Arnor at the shore: ' + !!D().arnor().shore : 'NO BOAT');
   };
   ST.cross = function () {                                // W rows forward and A and D steer (every vessel, Robin): toward the big island, two calls if the first is cut off
     var rf = D().raftObj(); if (!rf) return 'no raft'; var W = D().world(), q = P(); if (!rf.aboard) { q.x = rf.x + 10; q.y = rf.y + 30; fast(3); P().mode = 'fight'; D().raftUse(); fast(10); } if (!D().raftObj().aboard) return 'could not board';

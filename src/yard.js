@@ -1,7 +1,9 @@
-/* The yard and the vessels: the parts a hull is laid from, the plans that say when a hull is sound, and the drawing of
-   the vessel that comes out of it. Shared by the game (the Shipyard behind the shipwright's bench) and the Sea Editor
-   (where a vessel is laid for free and sailed). A yard is { plan, cells: [{ id, i, j }] }; a vessel is { kind, parts,
-   x, y, h, hw, hh, seat } once fit() has measured it. Coordinates on the water: CW units a cell along the hull, CH across. */
+/* The ships (docs/ships-rework.md, 2026-10-22): the three models and their sizes (HULLS, MODELS), what a size is fitted
+   with (designParts), its look (LOOK) and fittings (FITTINGS), how it sails (HANDLING, sail()), where its crew sits, and its
+   drawing: Colin, AD's models where they are loaded (setModel), else the hull drawn in code. Shared by the game (built at a
+   shipyard's panel) and the Sea Editor. A vessel is { kind, parts, look, fit, x, y, h, hw, hh, seat } once fit() has measured
+   it. Coordinates on the water: CW units a cell along the hull, CH across. (The yard scene where a hull was laid part by part
+   is gone; its story is in git and docs/archive/boats.md.) */
 var Yard = (function () {
 var T = 32, TS = 24, K = 0.75;
   /* The hulls (2026-10-13, Robin: "Do it": a few real hull designs, chosen in the yard and laid at once; the fitting out is
@@ -109,7 +111,6 @@ var T = 32, TS = 24, K = 0.75;
   function isShip(kind) { return !!HULLS[kind]; }                  // a hull of a design (every vessel but the raft)
   function rigged(kind) { return !!(HULLS[kind] && HULLS[kind].mast); }   // a mast, a sail, a steering oar, the wind
   function nameOf(kind) { return HULLS[kind] ? HULLS[kind].name : 'Raft'; }
-  function hullCost(kind) { return HULLS[kind] ? HULLS[kind].cost : null; }
   var ALL_PARTS = [
     { id: 'log', plan: 'raft', name: 'Log', cost: { wood: 2 }, w: 2, layer: 'hull', text: 'A log for the hull. Logs lie side by side, any shape, as long as they touch.' },
     { id: 'lash', plan: 'raft', name: 'Rope lashing', cost: { fiber: 2 }, w: 1, layer: 'bind', on: 'hull', text: 'Rope across a log. Every log needs one.' },
@@ -128,59 +129,7 @@ var T = 32, TS = 24, K = 0.75;
     return out;
   }
   function shapeK(k, n) { return Math.pow(Math.max(0, Math.min(1, 1.3 * Math.sin(Math.PI * (k + 0.5) / n))), 0.7); }   // full amidships, drawing in to the stems
-  function inPlan(p, plan) { return Array.isArray(p.plan) ? p.plan.indexOf(plan) >= 0 : p.plan === plan; }
-  function costFor(pt, plan) { return pt.costs && pt.costs[plan] ? pt.costs[plan] : pt.cost; }       // a part shared by plans can cost differently in each (a rigged ship's nails are iron)
-  function partsFor(plan) { return ALL_PARTS.filter(function (p) { return inPlan(p, plan); }).map(function (p) { var o = {}, k; for (k in p) o[k] = p[k]; o.cost = costFor(p, plan); return o; }); }
-  var YARD_PLANS = [['raft', 'Raft'], ['faering', 'Faering'], ['boat', 'Boat'], ['karve', 'Karve'], ['longship', 'Longship']], PLAN_TIER = { raft: 1, faering: 2, boat: 2, karve: 3, longship: 3 };   // the bench's tier a plan needs
-  var LAYERS = ['hull', 'bind', 'deck', 'fit'];
-  var PLANS = {
-    raft: { name: 'Raft', checks: [
-      function (y) { if (yardParts(y, 'log').length < 3) return 'Lay at least three logs'; return ''; },
-      function (y) { if (!yardConnected(y)) return 'Every log must touch another log'; return ''; },
-      function (y) { if (yardParts(y, 'log').length > 8) return 'Eight logs is as much as rope will hold'; return ''; },
-      function (y) { var lashes = yardParts(y, 'lash'), bad = yardParts(y, 'log').some(function (p) { return !lashes.some(function (l) { return l.j === p.j && l.i >= p.i && l.i < p.i + 2; }); }); if (bad) return 'A rope lashing on every log'; return ''; }
-    ] }
-  };
-  function hullChecks(id) {
-    var H = HULLS[id], WORDS = ['none', 'one', 'two', 'three', 'four', 'five', 'six'];
-    return [
-      function (y) { var n = yardParts(y, 'thwart').length; if (n < H.thwarts[0]) return H.thwarts[0] === 1 ? 'A rowing seat, at least one' : 'Rowing seats, ' + (WORDS[H.thwarts[0]] || H.thwarts[0]) + ' at least'; if (n > H.thwarts[1]) return 'No room for more than ' + H.thwarts[1] + ' seats'; return ''; },
-      H.mast ? function (y) { var m = yardParts(y, 'mast'); if (m.length !== 1) return m.length ? 'One mast is enough' : 'Step a mast on the keel, amidships (the marked cell)'; return ''; } : null,
-      H.mast ? function (y) { var sl = yardParts(y, 'sail'), m = yardParts(y, 'mast'); if (sl.length !== 1) return sl.length ? 'One sail' : 'A sail on the mast'; if (!m.length || sl[0].i !== m[0].i || sl[0].j !== m[0].j) return 'The sail goes on the mast'; return ''; } : null,
-      H.rudder ? function (y) { var r = yardParts(y, 'rudder'); if (r.length !== 1) return r.length ? 'One steering oar' : 'A steering oar at the stern (the marked cell)'; return ''; } : null,
-      function (y) { if (yardParts(y, 'dragon').length > 1) return 'One stem'; if (yardParts(y, 'shields').length > 1) return 'One row of shields'; return ''; }
-    ].filter(function (f) { return !!f; });
-  }
-  HULL_IDS.forEach(function (id) { PLANS[id] = { name: HULLS[id].name, checks: hullChecks(id) }; });
-  function yardConnected(y) {              // every log reaches every other through touching logs (free shapes, one hull)
-    var logs = yardParts(y, 'log'); if (logs.length < 2) return true;
-    function touch(a, b) { if (a.j === b.j) return Math.abs(a.i - b.i) <= 2; if (Math.abs(a.j - b.j) === 1) return a.i < b.i + 2 && b.i < a.i + 2; return false; }
-    var seenL = [logs[0]], grew = true;
-    while (grew) { grew = false; logs.forEach(function (l) { if (seenL.indexOf(l) >= 0) return; if (seenL.some(function (q) { return touch(l, q); })) { seenL.push(l); grew = true; } }); }
-    return seenL.length === logs.length;
-  }
-  function yardParts(y, id) { return y.cells.filter(function (p) { return p.id === id; }); }
-  function yardAt(y, i, j, layer) { for (var k = 0; k < y.cells.length; k++) { var p = y.cells[k], pt = partOf(p.id); if (pt && pt.layer === layer && j === p.j && i >= p.i && i < p.i + pt.w) return k; } if (layer === 'hull' && HULLS[y.plan]) { var hc = hullCellsOf(y.plan); for (k = 0; k < hc.length; k++) if (hc[k].i === i && hc[k].j === j) return -2; } return -1; }   // -2: a cell of the hull's own design (there, but not a laid part)
   function partOf(id) { for (var k = 0; k < ALL_PARTS.length; k++) if (ALL_PARTS[k].id === id) return ALL_PARTS[k]; return null; }
-  function yardCheck(y) { var cs = PLANS[y.plan].checks; for (var k = 0; k < cs.length; k++) { var why = cs[k](y); if (why) return why; } return ''; }
-
-  function drawYardPart(c, pt, x, y, s) {              // a part lying in its cell(s): x, y is the cell's top left on screen
-    c.save(); c.translate(x, y); c.scale(s, s); c.lineJoin = 'round'; c.lineCap = 'round'; var k;
-    if (pt.id === 'log') { ink(c, [[3, 6], [2 * T - 6, 5.5], [2 * T - 6, TS - 5.5], [3, TS - 6]], '#7a5a40', { wob: 0.8, seed: 3, lw: 0.9, heavy: 1.8 }); for (k = 0; k < 3; k++) stroke(c, [[6 + k * 3, 8 + k * 3.2 + (k % 2) * 1.5], [2 * T - 12 - k * 5, 8.5 + k * 3.2 + (k % 2) * 1.5]], INK.faint, 0.6); stroke(c, [[5, 7.2], [2 * T - 9, 7]], INK.lit, 0.9); logEnd(c, 2 * T - 6, TS / 2, 2.6, (TS - 11) / 2, '#c9ab7a'); c.fillStyle = INK.faint; c.beginPath(); c.ellipse(14, TS / 2 + 2, 1.8, 1.1, 0, 0, 7); c.fill(); }
-    else if (pt.id === 'lash') { for (k = 0; k < 5; k++) { var yy = 2 + k * (TS - 4) / 4.5; stroke(c, [[T / 2 - 2.2, yy], [T / 2 + 2.2, yy + 2.6]], INK.line, 2.6); stroke(c, [[T / 2 - 2.2, yy], [T / 2 + 2.2, yy + 2.6]], COL.rope, 1.6); } stroke(c, [[T / 2, 1], [T / 2, TS - 1]], INK.faint, 0.5); }
-    else if (pt.id === 'plank') { ink(c, rect(3, TS / 2 - 3.5, T - 6, 7), COL.deck, { wob: 0.5, seed: 5, lw: 0.8, heavy: 1.4 }); stroke(c, [[6, TS / 2 + 0.3], [T - 6, TS / 2 - 0.2]], INK.faint, 0.5); c.fillStyle = INK.line; c.globalAlpha = 0.5; c.fillRect(5.5, TS / 2 - 0.5, 1, 1); c.fillRect(T - 6.5, TS / 2 - 0.5, 1, 1); c.globalAlpha = 1; }
-    else if (pt.id === 'keel') { ink(c, [[1, TS / 2 - 4], [T - 1, TS / 2 - 4.4], [T - 1, TS / 2 + 4.4], [1, TS / 2 + 4]], mix(COL.hull, '#000000', 0.15), { wob: 0.5, seed: 7, lw: 0.9, heavy: 1.8 }); stroke(c, [[3, TS / 2 - 1.8], [T - 3, TS / 2 - 2]], INK.lit, 0.9); stroke(c, [[4, TS / 2 + 1.5], [T - 4, TS / 2 + 1.2]], INK.faint, 0.5); }
-    else if (pt.id === 'strake') { ink(c, rect(1, TS / 2 - 3.6, T - 2, 7.2), COL.deck, { wob: 0.5, seed: 9, lw: 0.8, heavy: 1.5 }); stroke(c, [[3, TS / 2 - 1.6], [T - 3, TS / 2 - 1.8]], INK.lit, 0.8); [6, T - 6].forEach(function (nx) { c.fillStyle = COL.iron; c.beginPath(); c.arc(nx, TS / 2 + 0.6, 1.1, 0, 7); c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.5; c.stroke(); }); }
-    else if (pt.id === 'thwart') { ink(c, rect(4, 3, T - 8, 5), COL.deck, { wob: 0.4, seed: 11, lw: 0.8, heavy: 1.3 }); stroke(c, [[6, 7], [2, TS - 3]], INK.line, 3.2); stroke(c, [[6, 7], [2, TS - 3]], mix(COL.deck, '#000000', 0.15), 1.8); stroke(c, [[T - 6, 7], [T - 2, TS - 3]], INK.line, 3.2); stroke(c, [[T - 6, 7], [T - 2, TS - 3]], mix(COL.deck, '#000000', 0.15), 1.8); }
-    else if (pt.id === 'mast') { ink(c, [[2, TS / 2 - 2.6], [T - 6, TS / 2 - 2.2], [T - 6, TS / 2 + 2.2], [2, TS / 2 + 2.6]], mix(COL.hull, '#ffffff', 0.08), { wob: 0.4, seed: 13, lw: 0.8, heavy: 1.5 }); stroke(c, [[5, TS / 2 - 0.8], [T - 9, TS / 2 - 1]], INK.lit, 0.7); c.fillStyle = COL.iron; c.beginPath(); c.arc(T - 6, TS / 2, 2.6, 0, 7); c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.7; c.stroke(); }   // the mast lying ready, its iron-bound head
-    else if (pt.id === 'sail') { ink(c, rect(3, 4, T - 6, TS - 8), COL.sail, { wob: 0.4, seed: 17, lw: 0.8, heavy: 1.3 }); c.fillStyle = COL.trim; c.globalAlpha = 0.85; [7, 15, 23].forEach(function (sx) { c.fillRect(sx, 5, 3.4, TS - 10); }); c.globalAlpha = 1; [10, T - 10].forEach(function (tx) { stroke(c, [[tx, 3], [tx, TS - 3]], INK.line, 2.2); stroke(c, [[tx, 3], [tx, TS - 3]], COL.rope, 1.2); }); }   // the sail folded, tied with two ropes
-    else if (pt.id === 'rudder') { stroke(c, [[4, TS - 3], [T - 9, 4]], INK.line, 4); stroke(c, [[4, TS - 3], [T - 9, 4]], mix(COL.deck, '#000000', 0.1), 2.2); c.save(); c.translate(7, TS - 6); c.rotate(0.95); ink(c, [[-3.6, -8], [3.6, -8], [4.2, 7], [-4.2, 7]], mix(COL.deck, '#000000', 0.05), { wob: 0.4, seed: 19, lw: 0.8, heavy: 1.2 }); c.restore(); stroke(c, [[T - 9, 4], [T - 3, 8]], INK.line, 3); stroke(c, [[T - 9, 4], [T - 3, 8]], COL.deck, 1.6); }   // the steering oar: a broad blade and the tiller
-    else if (pt.id === 'dragon') { c.save(); c.translate(T / 2, TS / 2 + 4); ink(c, [[-3, 4], [-1, -6], [4, -10], [9, -9], [11, -6], [6, -5], [3, -2], [2, 4]], mix(COL.hull, '#000000', 0.1), { wob: 0.5, seed: 27, lw: 0.8, heavy: 1.4 }); c.fillStyle = '#f1e3b8'; c.beginPath(); c.arc(6.5, -7.6, 0.9, 0, 7); c.fill(); stroke(c, [[9, -6], [12, -3.5]], '#8a3a34', 1.2); c.restore(); }   // the carved head: a neck, a jaw, an eye, a tongue
-    else if (pt.id === 'shields') { [[8, 7, '#8a3a34'], [16, 11, '#d9c48a'], [24, 7, '#3f5a7a']].forEach(function (q) { c.fillStyle = q[2]; c.beginPath(); c.ellipse(q[0], q[1] + 5, 4.6, 4.6, 0, 0, 7); c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.stroke(); c.fillStyle = COL.iron; c.beginPath(); c.arc(q[0], q[1] + 5, 1.3, 0, 7); c.fill(); }); }   // three round shields
-    else if (pt.id === 'oar') { stroke(c, [[5, TS - 4], [T - 8, 5]], INK.line, 4); stroke(c, [[5, TS - 4], [T - 8, 5]], mix(COL.deck, '#000000', 0.1), 2.2); c.save(); c.translate(T - 7, 6); c.rotate(0.8); ink(c, [[-3.2, -5.5], [3.2, -5.5], [3.2, 5.5], [-3.2, 5.5]], mix(COL.deck, '#000000', 0.05), { wob: 0.6, seed: 13, lw: 0.7, heavy: 1.2 }); c.restore(); }
-    c.restore();
-  }
-
   var CW = 24, CH = 7.6;                   // a yard cell on the water: how long a cell is (a thwart's pitch, a metre and a bit, 2026-10-21; a raft's log is two) and how wide a log is
   function hullCells(parts) { return (parts || []).filter(function (p) { return partOf(p.id) && partOf(p.id).layer === 'hull'; }); }
   function fitVessel(raft) {                     // from its parts: how big the hull is (for the water test) and where you sit
@@ -692,214 +641,8 @@ var T = 32, TS = 24, K = 0.75;
     c.restore();
   }
 
-/* ---------- the Shipyard scene: a clear yard of grass in a wooden frame, the parts down the left, the hero in a corner,
-   and the build cursor laying parts. The host (the game, the Sea Editor) gives it a hero, costs, sounds, a grass tile,
-   saving and what happens on Finish; the scene keeps the yard, the pick, the cursor and the frame. ---------- */
-function wood(c, x, y, w, h) {            // a wooden board: planks across with grain, the ink frame heavy below and to the right, iron nails
-    c.save();
-    c.fillStyle = '#5c4535'; c.beginPath(); c.roundRect(x, y, w, h, 4); c.fill();
-    c.save(); c.beginPath(); c.roundRect(x + 1, y + 1, w - 2, h - 2, 3); c.clip();
-    var py, i = 0; for (py = y; py < y + h; py += 9, i++) { c.fillStyle = ((i * 37) % 7) / 7 > 0.5 ? '#66503e' : '#59433a'; c.fillRect(x, py, w, 9); c.strokeStyle = 'rgba(35,26,22,0.35)'; c.lineWidth = 0.7; c.beginPath(); c.moveTo(x, py + 8.6); c.lineTo(x + w, py + 9); c.stroke(); c.strokeStyle = 'rgba(255,238,200,0.08)'; c.beginPath(); c.moveTo(x, py + 0.8); c.lineTo(x + w, py + 0.8); c.stroke(); }
-    c.globalAlpha = 0.2; c.fillStyle = grainPat(c); c.fillRect(x, y, w, h); c.globalAlpha = 1;
-    var sg = c.createLinearGradient(x, y, x + w * 0.7, y + h); sg.addColorStop(0, 'rgba(255,240,200,0.06)'); sg.addColorStop(1, 'hsla(222,40%,15%,0.22)'); c.fillStyle = sg; c.fillRect(x, y, w, h);
-    c.restore();
-    c.strokeStyle = INK.line; c.lineWidth = 1.1; c.beginPath(); c.roundRect(x, y, w, h, 4); c.stroke(); c.lineWidth = 2.2; c.lineCap = 'round'; c.beginPath(); c.moveTo(x + 4, y + h); c.lineTo(x + w - 4, y + h); c.moveTo(x + w, y + 4); c.lineTo(x + w, y + h - 4); c.stroke();
-    c.strokeStyle = INK.lit; c.lineWidth = 1; c.beginPath(); c.moveTo(x + 5, y + 1.2); c.lineTo(x + w - 5, y + 1.2); c.moveTo(x + 1.2, y + 5); c.lineTo(x + 1.2, y + h - 5); c.stroke();
-    c.fillStyle = '#3a3a40'; [[x + 5, y + 5], [x + w - 5, y + 5], [x + 5, y + h - 5], [x + w - 5, y + h - 5]].forEach(function (q) { c.beginPath(); c.arc(q[0], q[1], 1.8, 0, 7); c.fill(); c.strokeStyle = INK.line; c.lineWidth = 0.7; c.stroke(); });
-    c.restore();
-  }
-var scene = {
-  Y: { X: 0, Y: 400, W: 9, H: 6 }, PAL: { x: 6, y: 34, cell: 30 }, FIT: { x: 6, y: 34, w: 120, h: 25 }, ZOOM: 1.1, SHIFT: 18,
-  yard: null, pick: 0, active: false, host: null, label: null, fade: 0, clock: 0,
-  enter: function (host, yardState) {
-    this.host = host; this.yard = yardState && yardState.cells ? yardState : { plan: 'raft', cells: [] }; if (!this.yard.plan || !PLANS[this.yard.plan]) this.yard.plan = 'raft';
-    this.yard.cells = this.yard.cells.filter(function (p) { var pt = partOf(p.id); return pt && (this.yard.plan === 'raft' || pt.layer !== 'hull'); }, this);   // a hull laid strake by strake (before 2026-10-13) is the design's now
-    this.pick = 0; this.active = true; this.fade = 0.5; this.label = null;
-    if (!this.yard.cells.length && !this.planList().some(function (pl) { return pl[0] === this.yard.plan; }, this)) this.yard.plan = 'raft';   // a plan above the bench's tier is not kept
-    this.setPlan(this.yard.plan);
-    return this.yard;
-  },
-  setPlan: function (plan) { var H = HULLS[plan]; this.yard.plan = plan; this.Y.W = H ? H.n + 2 : 9; this.ZOOM = H ? H.zoom : 1.1; this.SHIFT = H ? 66 : 18; this.pick = 0; },   // the yard is as long as the hull; the camera pulls back for a long one (and sits right of the fittings board)
-  hull: function () { return HULLS[this.yard ? this.yard.plan : 'raft'] || null; },
-  planList: function () { var t = this.host && this.host.tier ? this.host.tier() : 3; return YARD_PLANS.filter(function (pl) { return (PLAN_TIER[pl[0]] || 1) <= t; }); },
-  leave: function () { this.active = false; this.fade = 0.5; },
-  parts: function () { return partsFor(this.yard ? this.yard.plan : 'raft'); },
-  cam: function () { var Y = this.Y; return { x: Y.X + Y.W * T / 2 - 4 - this.SHIFT / this.ZOOM, y: (Y.Y + Y.H * T / 2) * K, z: this.ZOOM }; },   // shifted right of the parts strip
-  heroSpot: function () { var Y = this.Y; return { x: Y.X + Y.W * T + 8, y: Y.Y + Y.H * T + 14 }; },
-  walk: function (x, y) { var Y = this.Y; return x >= Y.X - 18 && x <= Y.X + Y.W * T + 18 && y >= Y.Y - 14 && y <= Y.Y + Y.H * T + 26; },
-  tick: function (dt) { if (this.fade > 0) this.fade = Math.max(0, this.fade - dt); this.clock = (this.clock || 0) + dt; },
-  cell: function (mw) { var Y = this.Y; if (!mw) return null; var i = Math.floor((mw.x - Y.X) / T), j = Math.floor((mw.y - Y.Y) / T); if (i < 0 || j < 0 || i >= Y.W || j >= Y.H) return null; return { i: i, j: j }; },
-  top: function (i, j) {                  // what a right click takes: what lies on a log first, wherever on the log it sits; then the log
-    var y = this.yard; for (var L = LAYERS.length - 1; L >= 0; L--) { var k = yardAt(y, i, j, LAYERS[L]); if (k === -2) return -1; if (k >= 0) { if (LAYERS[L] === 'hull') { var p = y.cells[k], pt = partOf(p.id); for (var L2 = LAYERS.length - 1; L2 >= 1; L2--) for (var q = 0; q < pt.w; q++) { var k2 = yardAt(y, p.i + q, p.j, LAYERS[L2]); if (k2 >= 0) return k2; } } return k; } } return -1;
-  },
-  target: function (mw, wreck) {          // what the cursor would lay, or take away (the raft only: a hull of a design is fitted out on the board, 2026-10-21)
-    var c = this.cell(mw), h = this.host; if (!c || this.hull()) return null;
-    if (wreck) { var top = this.top(c.i, c.j); return { kind: 'yard', wreck: true, i: c.i, j: c.j, idx: top, ok: top >= 0, why: '' }; }
-    var PL = this.parts(), pt = PL[this.pick] || PL[0], i = c.i, j = c.j, why = '', H = this.hull();
-    if (i + pt.w > this.Y.W) i = this.Y.W - pt.w;
-    for (var k = 0; k < pt.w && !why; k++) {
-      if (yardAt(this.yard, i + k, j, pt.layer) >= 0) why = 'Something lies there already';
-      else if (pt.on && yardAt(this.yard, i + k, j, pt.on) === -1) why = pt.on === 'deck' ? 'It goes on the mast' : 'It must go on the hull';
-    }
-    if (!why && H) {                        // the design says where the rig goes
-      if (pt.id === 'mast' && !(i === H.mast && j === KJ)) why = 'The mast steps amidships, on the marked cell';
-      else if (pt.id === 'rudder' && !(i === H.rudder && j === KJ)) why = 'The steering oar is bound at the stern, on the marked cell';
-      else if (pt.id === 'dragon' && !(i === H.n && j === KJ)) why = 'The stem is carved at the bow, on the marked cell';
-      else if (pt.id === 'thwart' && j === KJ && (i === H.mast || i === H.rudder)) why = i === H.mast ? 'The mast stands there' : 'The steering oar is bound there';
-      else if (pt.id === 'shields' && yardParts(this.yard, 'shields').length) why = 'The rails have their shields';
-    }
-    if (!why && !h.canAfford(pt.cost)) why = 'Need ' + h.costText(pt.cost);
-    return { kind: 'yard', i: i, j: j, part: pt, ok: !why, why: why };
-  },
-  act: function (mw, first, wreck) {
-    var t = this.target(mw, wreck), h = this.host; if (!t || !t.ok) return false;
-    if (t.wreck) { var p = this.yard.cells[t.idx]; h.pay(costFor(partOf(p.id), this.yard.plan), 1); this.yard.cells.splice(t.idx, 1); h.sfx('build'); h.save(); return true; }
-    if (!first) return false;
-    h.pay(t.part.cost); this.yard.cells.push({ id: t.part.id, i: t.i, j: t.j }); h.sfx('build'); h.save(); return true;
-  },
-  check: function () { if (!this.yard) return ''; var why = yardCheck(this.yard), H = this.hull(); if (!why && H && this.host && !this.host.canAfford(H.cost)) why = 'The hull costs ' + this.host.costText(H.cost) + ': not enough'; return why; },
-  floor: function (c) {                   // the yard's ground, in world space, with the laid parts: trodden earth inside a frame of timbers
-    var Y = this.Y, i, j;
-    for (j = -2; j < Y.H + 2; j++) for (i = -2; i < Y.W + 2; i++) this.host.tile(c, i + 40, j + 40, Y.X + i * T, (Y.Y + j * T) * K, T + 0.4, TS + 0.4);
-    ink(c, rect(Y.X, Y.Y * K, Y.W * T, Y.H * TS), '#8a7250', { wob: 2.5, seed: 21, lw: 0, noLine: true, shade: 0.12 });
-    ink(c, rect(Y.X - 4, Y.Y * K - 3, Y.W * T + 8, 3), '#6e5540', { wob: 0.6, seed: 22, lw: 0.8, heavy: 1.6 }); ink(c, rect(Y.X - 4, Y.Y * K + Y.H * TS, Y.W * T + 8, 3), '#6e5540', { wob: 0.6, seed: 23, lw: 0.8, heavy: 1.6 });
-    ink(c, rect(Y.X - 4, Y.Y * K - 3, 3, Y.H * TS + 6), '#6e5540', { wob: 0.6, seed: 24, lw: 0.8, heavy: 1.6 }); ink(c, rect(Y.X + Y.W * T + 1, Y.Y * K - 3, 3, Y.H * TS + 6), '#6e5540', { wob: 0.6, seed: 25, lw: 0.8, heavy: 1.6 });
-    c.strokeStyle = 'rgba(35,26,22,0.16)'; c.lineWidth = 0.7; c.setLineDash([2, 4]); c.beginPath();
-    for (i = 0; i <= Y.W; i++) { c.moveTo(Y.X + i * T, Y.Y * K); c.lineTo(Y.X + i * T, (Y.Y + Y.H * T) * K); }
-    for (j = 0; j <= Y.H; j++) { c.moveTo(Y.X, (Y.Y + j * T) * K); c.lineTo(Y.X + Y.W * T, (Y.Y + j * T) * K); }
-    c.stroke(); c.setLineDash([]);
-    var y = this.yard, H = this.hull();
-    if (H) {                               // a hull of a design (2026-10-21, Robin: the laid cells for upright things looked weird): the frame holds water and the vessel floats in it as it will look, its fittings from the board
-      c.save(); c.beginPath(); c.rect(Y.X, Y.Y * K, Y.W * T, Y.H * TS); c.clip(); c.fillStyle = '#3a6f8e'; c.fillRect(Y.X, Y.Y * K, Y.W * T, Y.H * TS); c.globalAlpha = 0.16; c.fillStyle = grainPat(c); c.fillRect(Y.X, Y.Y * K, Y.W * T, Y.H * TS); c.globalAlpha = 1;
-      c.strokeStyle = 'rgba(235,250,255,0.3)'; c.lineWidth = 0.8; for (i = 0; i < 9; i++) { var qx = Y.X + 20 + ((i * 97) % (Y.W * T - 40)), qy = Y.Y * K + 10 + ((i * 53) % (Y.H * TS - 20)); c.beginPath(); c.moveTo(qx, qy); c.quadraticCurveTo(qx + 4, qy - 2.5, qx + 8, qy); c.quadraticCurveTo(qx + 12, qy + 2.5, qx + 16, qy); c.stroke(); }
-      c.restore();
-      var pv = { kind: y.plan, parts: y.cells, x: Y.X + Y.W * T / 2, y: Y.Y + Y.H * T / 2 + 8, h: -0.35, vx: 0, vy: 0, aboard: false, sailFill: 0.55, crew: 0 }; fitVessel(pv); drawVessel(c, pv, this.clock || 0);
-      return;
-    }
-    if (false) {
-      hullCellsOf(y.plan).forEach(function (p) { drawYardPart(c, { id: p.id, w: 1 }, Y.X + p.i * T, (Y.Y + p.j * T) * K, 1); });   /* (the keel and the strakes are no parts of the strip any more: drawn by name) */
-      [[H.mast, 'mast'], [H.rudder, 'steering oar'], [H.n, 'stem']].forEach(function (q) { if (!q[0]) return; var mx = Y.X + (q[0] + 0.5) * T, my = (Y.Y + (KJ + 0.5) * T) * K; c.save(); c.setLineDash([2, 2]); c.strokeStyle = 'rgba(255,230,160,0.85)'; c.lineWidth = 1; c.beginPath(); c.ellipse(mx, my, 10, 7, 0, 0, 7); c.stroke(); c.setLineDash([]); c.font = 'bold 4.5px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = 'rgba(255,230,160,0.9)'; c.fillText(q[1], mx, my + 13); c.restore(); });
-    }
-    LAYERS.forEach(function (L) { y.cells.forEach(function (p) { var pt = partOf(p.id); if (pt && pt.layer === L) drawYardPart(c, pt, Y.X + p.i * T, (Y.Y + p.j * T) * K, 1); }); });
-  },
-  ghost: function (c, mw, wreck) {        // the cursor: the part where it would lie, green or red; sets this.label
-    var t = this.target(mw, wreck), Y = this.Y, h = this.host; this.label = null; if (!t) return;
-    var yx = Y.X + t.i * T, yy = (Y.Y + t.j * T) * K, col = t.ok ? '120,255,160' : '255,80,60', yw = t.wreck ? T : t.part.w * T;
-    c.save();
-    if (!t.wreck) { c.globalAlpha = t.ok ? 0.7 : 0.35; drawYardPart(c, t.part, yx, yy, 1); c.globalAlpha = 1; }
-    if (t.wreck && t.ok) { var wp = this.yard.cells[t.idx]; yx = Y.X + wp.i * T; yw = partOf(wp.id).w * T; col = '255,80,60'; }
-    if (!t.wreck || t.ok) { c.shadowColor = 'rgba(' + col + ',0.95)'; c.shadowBlur = 10; c.strokeStyle = 'rgba(' + col + ',0.95)'; c.lineWidth = 2; c.strokeRect(yx + 1, yy + 1, yw - 2, TS - 2); c.strokeRect(yx + 1, yy + 1, yw - 2, TS - 2); }
-    c.restore();
-    this.label = t.wreck ? (t.ok ? { text: 'Take back: +' + h.costText(partOf(this.yard.cells[t.idx].id).cost), bad: false } : null) : (t.ok ? { text: t.part.name + '  ' + h.costText(t.part.cost), bad: false } : { text: t.why, bad: true });
-  },
-  /* The fittings of a hull of a design (2026-10-21; Robin liked laying the raft's logs, but the cells for the mast and the other
-     upright things looked weird): the rowing seats as a count, the rig (mast, sail and steering oar) as one thing a rigged hull
-     needs, the dragon stem and the shields as yes or no. The board writes the yard's cells (the seats placed by autoThwarts),
-     so the checks, the fit, the save and the launch read what they always read. */
-  fittings: function () {
-    var H = this.hull(); if (!H) return []; var y = this.yard, pl = y.plan, rows = [], th = partOf('thwart');
-    rows.push({ id: 'thwart', name: 'Rowing seats', count: yardParts(y, 'thwart').length, min: H.thwarts[0], max: H.thwarts[1], cost: costFor(th, pl), text: 'An oar each side of every seat; two men to a seat' + (H.per === 1 ? ' (one on a faering)' : '') + '. The first is yours; more need hirdmen to row.' });
-    if (H.mast) rows.push({ id: 'rig', name: 'Mast, sail, steering oar', on: !!(yardParts(y, 'mast').length && yardParts(y, 'sail').length && yardParts(y, 'rudder').length), cost: addCost(addCost(costFor(partOf('mast'), pl), costFor(partOf('sail'), pl)), costFor(partOf('rudder'), pl)), need: true, text: 'A tall pine stepped amidships, the square sail on its yard, and the side rudder bound at the stern. A wind from behind is speed for nothing.' });
-    rows.push({ id: 'dragon', name: 'Dragon stem', on: !!yardParts(y, 'dragon').length, cost: costFor(partOf('dragon'), pl), text: partOf('dragon').text });
-    if (H.mast) rows.push({ id: 'shields', name: 'Shields on the rail', on: !!yardParts(y, 'shields').length, cost: costFor(partOf('shields'), pl), text: partOf('shields').text });
-    return rows;
-  },
-  fitSet: function (id, d) {               // + or - on the seats, yes or no on the rest; pays or gives back as laying did
-    var H = this.hull(), y = this.yard, h = this.host, pl = y.plan, rows = this.fittings(), r = rows.filter(function (q) { return q.id === id; })[0]; if (!H || !r) return false;
-    function drop(ids) { y.cells = y.cells.filter(function (p) { return ids.indexOf(p.id) < 0; }); }
-    if (id === 'thwart') { var n = r.count + d; if (n < 0 || n > r.max) return false; if (d > 0) { if (!h.canAfford(r.cost)) { h.toast('Need ' + h.costText(r.cost)); return false; } h.pay(r.cost); } else h.pay(r.cost, 1); drop(['thwart']); y.cells = y.cells.concat(autoThwarts(H, n)); }
-    else { var ids = id === 'rig' ? ['mast', 'sail', 'rudder'] : [id]; if (r.on) { h.pay(r.cost, 1); drop(ids); } else { if (!h.canAfford(r.cost)) { h.toast('Need ' + h.costText(r.cost)); return false; } h.pay(r.cost); if (id === 'rig') y.cells.push({ id: 'mast', i: H.mast, j: KJ }, { id: 'sail', i: H.mast, j: KJ }, { id: 'rudder', i: H.rudder, j: KJ }); else y.cells.push({ id: id, i: id === 'dragon' ? H.n : Math.min(4, H.n), j: KJ }); } }
-    h.sfx('build'); h.save(); return true;
-  },
-  fitRect: function (k) { var F = this.FIT; return { x: F.x + 3, y: F.y + 10 + k * F.h, w: F.w, h: F.h - 3 }; },
-  fitBtn: function (k, what) { var r = this.fitRect(k); if (what === 'minus') return { x: r.x + r.w - 42, y: r.y + 6, w: 11, h: 11 }; if (what === 'plus') return { x: r.x + r.w - 14, y: r.y + 6, w: 11, h: 11 }; return { x: r.x + r.w - 26, y: r.y + 6, w: 23, h: 11 }; },
-  fitAt: function (ms) { if (!ms || !this.hull()) return null; var rows = this.fittings(), k, self = this; function inR(r) { return ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h; }
-    for (k = 0; k < rows.length; k++) { var r = rows[k]; if (r.count != null) { if (inR(self.fitBtn(k, 'minus'))) return { k: k, what: 'minus', row: r }; if (inR(self.fitBtn(k, 'plus'))) return { k: k, what: 'plus', row: r }; } else if (inR(self.fitBtn(k, 'toggle'))) return { k: k, what: 'toggle', row: r }; if (inR(self.fitRect(k))) return { k: k, what: 'row', row: r }; }
-    return null; },
-  hudHull: function (c, ms, wreck) {       // a hull of a design: the frame, the plan tabs, the fittings board, the guidance, Finish
-    var why = this.check(), h = this.host, HH = this.hull(), rows = this.fittings(), hit = this.fitAt(ms), self = this, F = this.FIT;
-    wood(c, -6, -6, 412, 28); wood(c, -6, 228, 412, 28); wood(c, 388, 0, 18, 250);
-    wood(c, F.x - 4, F.y - 4, F.w + 14, rows.length * F.h + 20);
-    c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Fitting out the ' + HH.name.toLowerCase(), F.x + 3, F.y + 5);
-    rows.forEach(function (r, k) {
-      var rr = self.fitRect(k), hv = hit && hit.k === k;
-      c.fillStyle = hv ? '#4a3626' : '#33241a'; c.fillRect(rr.x, rr.y, rr.w, rr.h); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(rr.x, rr.y, rr.w, rr.h); c.restore();
-      c.strokeStyle = INK.line; c.lineWidth = 0.9; c.strokeRect(rr.x + 0.5, rr.y + 0.5, rr.w - 1, rr.h - 1);
-      c.font = '600 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText(r.name, rr.x + 4, rr.y + 8.5);
-      c.font = '600 4.6px system-ui, sans-serif'; c.fillStyle = r.count != null || r.on || h.canAfford(r.cost) ? 'rgba(246,226,184,0.7)' : 'rgba(255,170,120,0.85)'; c.fillText((r.count != null ? 'each ' : '') + h.costText(r.cost) + (r.need ? '  (needed)' : ''), rr.x + 4, rr.y + 16.5);
-      if (r.count != null) {
-        var bm = self.fitBtn(k, 'minus'), bp = self.fitBtn(k, 'plus');
-        [[bm, '−', r.count > 0, 'minus'], [bp, '+', r.count < r.max, 'plus']].forEach(function (b) { var on = b[2], hov = hv && hit.what === b[3]; c.fillStyle = on ? (hov ? '#8a5a2c' : '#5a4232') : '#3a2a20'; c.fillRect(b[0].x, b[0].y, b[0].w, b[0].h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(b[0].x + 0.5, b[0].y + 0.5, b[0].w - 1, b[0].h - 1); c.font = 'bold 7.5px system-ui, sans-serif'; c.fillStyle = on ? '#fff' : 'rgba(255,255,255,0.3)'; c.textAlign = 'center'; c.fillText(b[1], b[0].x + b[0].w / 2, b[0].y + 8.4); });
-        c.font = 'bold 7px system-ui, sans-serif'; c.fillStyle = r.count < r.min ? '#ffb070' : '#fff'; c.textAlign = 'center'; c.fillText(String(r.count), (bm.x + bm.w + bp.x) / 2, bm.y + 8.4);
-      } else {
-        var bt = self.fitBtn(k, 'toggle'), hov2 = hv && hit.what === 'toggle'; c.fillStyle = r.on ? (hov2 ? '#c08a3a' : '#a8702c') : (hov2 ? '#4a3626' : '#3a2a20'); c.fillRect(bt.x, bt.y, bt.w, bt.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(bt.x + 0.5, bt.y + 0.5, bt.w - 1, bt.h - 1); c.font = 'bold 5.5px system-ui, sans-serif'; c.fillStyle = r.on ? '#fff' : 'rgba(255,255,255,0.55)'; c.textAlign = 'center'; c.fillText(r.on ? 'yes' : 'no', bt.x + bt.w / 2, bt.y + 7.6);
-      }
-    });
-    self.planList().forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? '#a8702c' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.font = (on ? 'bold ' : '600 ') + '5px system-ui, sans-serif'; c.fillStyle = on ? '#fff' : 'rgba(246,226,184,0.8)'; c.textAlign = 'center'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.2); });
-    var line = why || ('The ' + HH.name.toLowerCase() + ' is sound. Finish to launch it (the hull: ' + h.costText(HH.cost) + ').');
-    c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 300, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 300, 14);
-    if (!why) { var fr = this.finishRect(), fhv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = fhv ? '#6a4e38' : '#5a4232'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 3); c.fill(); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fill(); c.restore(); c.strokeStyle = INK.line; c.lineWidth = 0.9; c.stroke(); c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.4); }
-    if (hit) { var tt = hit.row.text, tw; c.font = '600 5.5px system-ui, sans-serif'; while (tt.length > 4 && c.measureText(tt).width > 240) tt = tt.slice(0, -1); if (tt !== hit.row.text) tt += '…'; tw = c.measureText(tt).width + 10; c.fillStyle = 'rgba(35,26,22,0.88)'; c.beginPath(); c.roundRect(F.x + F.w + 14, this.fitRect(hit.k).y + 2, tw, 12, 3); c.fill(); c.fillStyle = '#fff'; c.textAlign = 'left'; c.fillText(tt, F.x + F.w + 19, this.fitRect(hit.k).y + 10.5); }
-    c.font = '600 5px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText('Click a fitting to change it.  E leaves the yard.', 52, 242); c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText('Click a fitting to change it.  E leaves the yard.', 52, 242);
-    if (ms && !hit && this.planAt(ms) < 0) { c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.75)'; var ht = HH.text; while (ht.length > 4 && c.measureText(ht).width > 300) ht = ht.slice(0, -1); c.fillText(ht === HH.text ? ht : ht + '…', 52, 234); }
-    if (this.fade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, this.fade / 0.5) + ')'; c.fillRect(0, 0, 400, 250); }
-  },
-  palRect: function (k) { var P = this.PAL; return { x: P.x + 3, y: P.y + 10 + k * (P.cell + 4), w: P.cell, h: P.cell }; },
-  palAt: function (ms) { if (!ms) return -1; for (var k = 0; k < this.parts().length; k++) { var r = this.palRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
-  planRect: function (k) { return { x: 50 + k * 32, y: 6, w: 29, h: 10 }; },
-  planAt: function (ms) { if (!ms) return -1; var PLs = this.planList(); for (var k = 0; k < PLs.length; k++) { var r = this.planRect(k); if (ms.x >= r.x && ms.x <= r.x + r.w && ms.y >= r.y && ms.y <= r.y + r.h) return k; } return -1; },
-  finishRect: function () { return { x: 320, y: 234, w: 62, h: 12 }; },
-  hud: function (c, ms, wreck) {          // the frame, the parts, the plan tabs, the guidance, Finish, the cursor's label (the raft; a hull of a design: hudHull)
-    if (this.hull()) return this.hudHull(c, ms, wreck);
-    var why = this.check(), hp = this.palAt(ms), PL = this.parts(), P = this.PAL, h = this.host, k, self = this;
-    wood(c, -6, -6, 412, 28); wood(c, -6, 228, 412, 28); wood(c, 388, 0, 18, 250);
-    wood(c, P.x - 4, P.y - 4, P.cell + 14, PL.length * (P.cell + 4) + 20);
-    c.font = 'bold 6px system-ui, sans-serif'; c.fillStyle = '#f6e2b8'; c.textAlign = 'left'; c.fillText('Parts', P.x + 3, P.y + 5);
-    for (k = 0; k < PL.length; k++) {
-      var r = this.palRect(k), pt = PL[k], on = k === this.pick && !wreck, can = h.canAfford(pt.cost);
-      c.fillStyle = hp === k ? '#4a3626' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(r.x, r.y, r.w, r.h); c.restore();
-      c.strokeStyle = on ? '#d9a73a' : INK.line; c.lineWidth = on ? 1.3 : 0.9; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.strokeStyle = 'rgba(255,238,200,0.14)'; c.lineWidth = 0.8; c.beginPath(); c.moveTo(r.x + 1.5, r.y + r.h - 1.2); c.lineTo(r.x + r.w - 1.5, r.y + r.h - 1.2); c.lineTo(r.x + r.w - 1.2, r.y + 1.5); c.stroke();
-      c.globalAlpha = can ? 1 : 0.4; drawYardPart(c, pt, r.x + (pt.w === 2 ? 1 : 7), r.y + 4, pt.w === 2 ? 0.44 : 0.7); c.globalAlpha = 1;
-      c.font = '600 4.2px system-ui, sans-serif'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.textAlign = 'center'; c.fillText(pt.name, r.x + r.w / 2, r.y + r.h - 2.5);
-    }
-    self.planList().forEach(function (pl, k) { var r = self.planRect(k), on = self.yard.plan === pl[0]; c.fillStyle = on ? '#a8702c' : '#33241a'; c.fillRect(r.x, r.y, r.w, r.h); c.strokeStyle = INK.line; c.lineWidth = 0.8; c.strokeRect(r.x + 0.5, r.y + 0.5, r.w - 1, r.h - 1); c.font = (on ? 'bold ' : '600 ') + '6px system-ui, sans-serif'; c.textAlign = 'center'; c.fillStyle = on ? '#f6e2b8' : 'rgba(246,226,184,0.7)'; c.fillText(pl[1], r.x + r.w / 2, r.y + 7.5); });
-    var HH = this.hull(), line = why || ('The ' + (HH ? HH.name.toLowerCase() : 'raft') + ' is sound. Finish to launch it' + (HH ? ' (the hull: ' + h.costText(HH.cost) + ')' : '') + '.');
-    c.font = '600 6.5px system-ui, sans-serif'; c.textAlign = 'center'; c.lineWidth = 2.6; c.strokeStyle = '#2e1a10'; c.strokeText(line, 300, 14); c.fillStyle = why ? '#ffe9a8' : '#9be58b'; c.fillText(line, 300, 14);
-    if (!why) { var fr = this.finishRect(), hv = ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h; c.fillStyle = hv ? '#6a4e38' : '#5a4232'; c.beginPath(); c.roundRect(fr.x, fr.y, fr.w, fr.h, 3); c.fill(); c.save(); c.globalAlpha = 0.14; c.fillStyle = grainPat(c); c.fillRect(fr.x, fr.y, fr.w, fr.h); c.restore(); c.strokeStyle = '#c99a3a'; c.lineWidth = 1; c.beginPath(); c.roundRect(fr.x + 0.5, fr.y + 0.5, fr.w - 1, fr.h - 1, 3); c.stroke(); c.strokeStyle = INK.line; c.lineWidth = 1.6; c.beginPath(); c.moveTo(fr.x + 3, fr.y + fr.h); c.lineTo(fr.x + fr.w - 3, fr.y + fr.h); c.moveTo(fr.x + fr.w, fr.y + 3); c.lineTo(fr.x + fr.w, fr.y + fr.h - 3); c.stroke(); c.font = 'bold 6.5px system-ui, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText('Finish  (Enter)', fr.x + fr.w / 2, fr.y + 8.5); }
-    if (hp >= 0) { var pp = PL[hp], tt = pp.name + '  ' + h.costText(pp.cost) + '.  ' + pp.text; c.font = '600 6px system-ui, sans-serif'; c.textAlign = 'left'; c.lineWidth = 2.4; c.strokeStyle = '#2e1a10'; c.strokeText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); c.fillStyle = '#fff'; c.fillText(tt, P.x + P.cell + 16, this.palRect(hp).y + 8); }
-    if (this.label && ms && hp < 0) { c.font = '600 6.5px system-ui, sans-serif'; var gw = c.measureText(this.label.text).width + 10, gx = Math.max(2, Math.min(398 - gw, ms.x - gw / 2)), gy = Math.min(222, ms.y + 26); c.fillStyle = 'rgba(35,26,22,0.85)'; c.beginPath(); c.roundRect(gx, gy - 8, gw, 12, 2.5); c.fill(); /* under the part, not across it */ c.fillStyle = this.label.bad ? '#ff9a8a' : '#fff'; c.textAlign = 'left'; c.fillText(this.label.text, gx + 5, gy + 1); }
-    c.font = '600 5px system-ui, sans-serif'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.textAlign = 'left'; c.strokeText('Right click takes a part back.  E leaves the yard.', 52, 242); c.fillStyle = 'rgba(255,255,255,0.85)'; c.fillText('Right click takes a part back.  E leaves the yard.', 52, 242);
-    // a preview: the vessel as it will look afloat, in a small window of water at the bottom right
-    if (HH || hullCells(this.yard.cells).length) {
-      var bx = 292, by = 158, bw = 92, bh = 62, pv = { kind: this.yard.plan, parts: this.yard.cells, x: 0, y: 0, h: -0.35, vx: 0, vy: 0, aboard: false, sailFill: 0.6 };
-      fitVessel(pv); var sc = Math.min(1, (bw - 14) / (pv.hw * 2 + 16), (bh - 10) / (pv.hh * 2 + 24));
-      wood(c, bx - 4, by - 4, bw + 8, bh + 8);
-      c.save(); c.beginPath(); c.rect(bx, by, bw, bh); c.clip(); c.fillStyle = '#3a6f8e'; c.fillRect(bx, by, bw, bh); c.globalAlpha = 0.16; c.fillStyle = grainPat(c); c.fillRect(bx, by, bw, bh); c.globalAlpha = 1;
-      c.strokeStyle = 'rgba(235,250,255,0.35)'; c.lineWidth = 0.8; [[8, 12], [60, 20], [30, 50], [78, 46]].forEach(function (q) { c.beginPath(); c.moveTo(bx + q[0], by + q[1]); c.quadraticCurveTo(bx + q[0] + 3, by + q[1] - 2, bx + q[0] + 6, by + q[1]); c.quadraticCurveTo(bx + q[0] + 9, by + q[1] + 2, bx + q[0] + 12, by + q[1]); c.stroke(); });
-      c.translate(bx + bw / 2, by + bh / 2 + 2); c.scale(sc, sc); drawVessel(c, pv, 0); c.restore();
-      c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.85)'; c.fillText('Afloat it will look like this', bx, by - 6);
-    }
-    if (HH && ms && this.planAt(ms) < 0 && hp < 0 && !this.label) { c.font = '600 5px system-ui, sans-serif'; c.textAlign = 'left'; c.fillStyle = 'rgba(246,226,184,0.75)'; var ht = HH.text; while (ht.length > 4 && c.measureText(ht).width > 300) ht = ht.slice(0, -1); c.fillText(ht === HH.text ? ht : ht.replace(/\s*$/, '') + '\u2026', 52, 24.5); }   // what this hull is for
-    if (this.fade > 0) { c.fillStyle = 'rgba(0,0,0,' + Math.min(1, this.fade / 0.5) + ')'; c.fillRect(0, 0, 400, 250); }
-  },
-  mousedown: function (button, mw, ms) {  // the tabs, the parts, Finish, taking back, laying
-    var h = this.host, ypl = this.planAt(ms);
-    if (ypl >= 0) { var PLs2 = this.planList(); if (button === 0 && this.yard.plan !== PLs2[ypl][0]) { if (this.yard.cells.length && !this.hull()) h.toast('Take the parts back first'); else { this.refundAll(); this.setPlan(PLs2[ypl][0]); h.save(); } } return true; }
-    if (this.hull()) { var fh = this.fitAt(ms); if (fh && button === 0) { if (fh.what === 'minus') this.fitSet(fh.row.id, -1); else if (fh.what === 'plus') this.fitSet(fh.row.id, 1); else if (fh.what === 'toggle') this.fitSet(fh.row.id, 0); } else if (fh && button === 2 && fh.row.count != null) this.fitSet(fh.row.id, -1); var fr0 = this.finishRect(); if (button === 0 && !this.check() && ms && ms.x >= fr0.x && ms.x <= fr0.x + fr0.w && ms.y >= fr0.y && ms.y <= fr0.y + fr0.h) h.finish(); return true; }
-    var ypk = this.palAt(ms); if (ypk >= 0) { if (button === 0) this.pick = ypk; return true; }
-    var fr = this.finishRect(); if (button === 0 && !this.check() && ms && ms.x >= fr.x && ms.x <= fr.x + fr.w && ms.y >= fr.y && ms.y <= fr.y + fr.h) { h.finish(); return true; }
-    if (button === 2) { this.act(mw, true, true); return true; }
-    if (button === 0) { this.act(mw, true, false); return true; }
-    return false;
-  },
-  wheel: function (d) { if (this.hull()) return; var n = this.parts().length; this.pick = (this.pick + d + n) % n; },
-  refundAll: function () { var h = this.host, y = this.yard, pl = y.plan; y.cells.forEach(function (p) { var pt = partOf(p.id); if (pt && (pl === 'raft' || pt.layer !== 'hull')) h.pay(costFor(pt, pl), 1); }); y.cells = []; },   // the fittings given back (a hull plan switched)
-  key: function (code) { if (code === 'Enter') { if (!this.check()) this.host.finish(); return true; } return false; }
-};
-
-return { setModel: setModel, artOf: artOf, composeOf: composeOf, markAt: markAt, colOf: colOf, fitOf: fitOf, holdOf: holdOf, chestK: chestK, HOLD: HOLD, scene: scene, wood: wood, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, partsFor: partsFor, costFor: costFor, PARTS: ALL_PARTS, PLAN_LIST: YARD_PLANS, PLAN_TIER: PLAN_TIER, LAYERS: LAYERS, PLANS: PLANS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
-  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, masthead: masthead, stemPoint: stemPoint, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCost: hullCost, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
-  partsFor: partsFor, connected: yardConnected, parts: yardParts, at: yardAt, partOf: partOf, check: yardCheck, hullParts: hullCells,
-  drawPart: drawYardPart, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
+return { setModel: setModel, artOf: artOf, composeOf: composeOf, markAt: markAt, colOf: colOf, fitOf: fitOf, holdOf: holdOf, chestK: chestK, HOLD: HOLD, HANDLING: HANDLING, WIND: WIND, sail: sail, sailFill: sailFill, MODELS: MODELS, modelOf: modelOf, designParts: designParts, LOOK: LOOK, lookDefault: lookDefault, FITTINGS: FITTINGS, PARTS: ALL_PARTS, RAFT_DEFAULT: RAFT_DEFAULT, CW: CW, CH: CH,
+  HULLS: HULLS, HULL_IDS: HULL_IDS, isShip: isShip, heroSeat: heroSeat, crewPlaces: crewPlaces, drawRigOf: drawRigOf, masthead: masthead, stemPoint: stemPoint, drawOars: drawOars, setSurfaces: setSurfaces, surfacesOn: surfacesOn, strokePhase: strokePhase, strokeLean: strokeLean, gangway: gangway, landingSpots: landingSpots, GANG: GANG, U: U, autoThwarts: autoThwarts, rigged: rigged, nameOf: nameOf, hullCells: hullCellsOf, profileOf: profileOf, profW: profW, KJ: KJ,
+  partOf: partOf, fit: fitVessel, drawVessel: drawVessel, drawVesselFront: drawVesselFront, drawOar: drawOar };
 })();
 if (typeof module !== 'undefined') module.exports = Yard;
