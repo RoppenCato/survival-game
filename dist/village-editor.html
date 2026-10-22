@@ -4567,9 +4567,9 @@ function sideFace(c, x, y, e, m, open, C, side, seed) {
 // what a fallen or a burnt roof leaves on one tile of the floor (ru = { k, m }): straw heaps, sods, shingles or shards and broken rafters; or ash and charred timber
 function drawDebris(c, tx, ty, ru, C) {
   var x0 = tx * T, y0 = ty * TS, seed = tx * 53 + ty * 97, i, r = ROOFS[ru.m] || ROOFS[1], burnt = ru.k === 'burnt', beam = burnt ? '#1a1512' : '#4a3626';
-  if (burnt) {                            // black where it burnt and pale ash on it, no two tiles alike (the same oval and six specks on every tile read as rows, 2026-10-13)
+  if (burnt) {                            // grey ash with paler and darker patches and earth showing through, no two tiles alike (2026-10-22, the Art Director's ch1_fixes: it was black ovals and a rafter or two a tile, "a black mess of thin sticks"; the wreckage is set pieces now)
     var na = 1 + Math.floor(hs(seed + 2, 1) * 3), ns = 2 + Math.floor(hs(seed + 4, 1) * 7);
-    for (i = 0; i < na; i++) { c.fillStyle = 'rgba(26,22,20,' + (0.3 + hs(seed + 6, i) * 0.28).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 + T / 2 + (hs(seed + 8, i) - 0.5) * T * 0.7, y0 + TS / 2 + (hs(seed + 10, i) - 0.5) * TS * 0.7, T * (0.36 + hs(seed + 12, i) * 0.4), TS * (0.3 + hs(seed + 14, i) * 0.42), hs(seed + 16, i) * 3, 0, 7); c.fill(); }
+    for (i = 0; i < 2; i++) { c.fillStyle = i ? 'rgba(84,74,64,' + (0.06 + hs(seed + 41, 1) * 0.08).toFixed(2) + ')' : 'rgba(120,113,104,' + (0.16 + hs(seed + 43, 1) * 0.1).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 + T / 2 + (hs(seed + 45, i) - 0.5) * T * 0.5, y0 + TS / 2 + (hs(seed + 47, i) - 0.5) * TS * 0.5, T * (0.62 + hs(seed + 49, i) * 0.3), TS * (0.55 + hs(seed + 51, i) * 0.3), hs(seed + 53, i) * 3, 0, 7); c.fill(); }
     for (i = 0; i < ns; i++) { c.fillStyle = 'rgba(196,192,184,' + (0.16 + hs(seed, i) * 0.3).toFixed(2) + ')'; c.beginPath(); c.ellipse(x0 - 4 + hs(seed + 3, i) * (T + 8), y0 - 3 + hs(seed + 5, i) * (TS + 6), 1.5 + hs(seed + 7, i) * 6, 0.8 + hs(seed + 9, i) * 2.6, hs(seed + 11, i) * 3, 0, 7); c.fill(); }
   }
   else if (r.col) {
@@ -4579,7 +4579,7 @@ function drawDebris(c, tx, ty, ru, C) {
       else for (k = 0; k < 4; k++) { var sx = hx + (hs(seed + 21 + i, k) - 0.5) * hw * 2, sy = hy + (hs(seed + 23 + i, k) - 0.5) * hh * 2.4, a2 = hs(seed + 25 + i, k) * 3; ink(c, [[sx - 2.2 * Math.cos(a2), sy - 1.2 * Math.sin(a2)], [sx + 1.4, sy - 1.3], [sx + 2.2 * Math.cos(a2), sy + 1.1 * Math.sin(a2) + 0.6], [sx - 1.2, sy + 1.4]], mix(col, k % 2 ? '#000000' : '#ffffff', 0.1), { wob: 0, flat: true, lw: 0.5, heavy: 0.8 }); }
     }
   }
-  for (i = 0; i < (hs(seed + 31, 1) < 0.55 ? 2 : 1); i++) {      // a rafter or two, lying where they fell (they may reach onto the next tile)
+  for (i = 0; i < (burnt ? 0 : hs(seed + 31, 1) < 0.55 ? 2 : 1); i++) {      // a rafter or two, lying where they fell (they may reach onto the next tile; none in the ash of a burnt room: its wreckage is set pieces)
     var bx = x0 + hs(seed + 33, i) * T, by = y0 + 3 + hs(seed + 35, i) * (TS - 6), ba = (hs(seed + 37, i) - 0.5) * 2.2, bl = 14 + hs(seed + 39, i) * 18, ca = Math.cos(ba), sa = Math.sin(ba) * K, bw = 1.5;
     ink(c, [[bx - ca * bl / 2 - sa * bw, by - sa * bl / 2 + ca * bw], [bx + ca * bl / 2 - sa * bw, by + sa * bl / 2 + ca * bw], [bx + ca * bl / 2 + sa * bw, by + sa * bl / 2 - ca * bw], [bx - ca * bl / 2 + sa * bw, by - sa * bl / 2 - ca * bw]], beam, { wob: 0.3, seed: seed + 40 + i, flat: burnt, lw: 0.6, heavy: 1.2 });
     if (!burnt) stroke(c, [[bx - ca * bl / 2 + 1, by - sa * bl / 2], [bx + ca * bl / 2 - 1, by + sa * bl / 2]], INK.lit, 0.5);
@@ -4854,10 +4854,40 @@ function roomWallM(B, room) {                                            // the 
   }
   return 1;
 }
+var THATCH_ENDS = '#8e7444', THATCH_COURSE = 11;   // the thatch's cut ends at the eave, and its courses about half a metre apart (the Art Director's target, 2026-10-22)
+function roundCorners(pts, r) {            // a polygon with each corner eased into a curve r long (the thatch's soft outline)
+  var out = [], n = pts.length, i, k;
+  for (i = 0; i < n; i++) {
+    var p = pts[i], a = pts[(i + n - 1) % n], b = pts[(i + 1) % n], la = Math.hypot(a[0] - p[0], a[1] - p[1]) || 1, lb = Math.hypot(b[0] - p[0], b[1] - p[1]) || 1, ra = Math.min(r, la / 2), rb = Math.min(r, lb / 2);
+    var A = [p[0] + (a[0] - p[0]) / la * ra, p[1] + (a[1] - p[1]) / la * ra], Bp = [p[0] + (b[0] - p[0]) / lb * rb, p[1] + (b[1] - p[1]) / lb * rb];
+    for (k = 0; k <= 4; k++) { var t = k / 4, u = 1 - t; out.push([u * u * A[0] + 2 * u * t * p[0] + t * t * Bp[0], u * u * A[1] + 2 * u * t * p[1] + t * t * Bp[1]]); }
+  }
+  return out;
+}
+function turfTufts(c, x0, y0, x1, y1, seed) {   // grass standing on a turf ridge's top
+  var len = Math.hypot(x1 - x0, y1 - y0) || 1, k; c.lineWidth = 0.8; c.lineCap = 'round';
+  for (k = 1; k < len; k += 1.6 + hs(k, seed) * 1.6) { var u = k / len, px = x0 + (x1 - x0) * u, py = y0 + (y1 - y0) * u, h2 = 1.4 + hs(k + 1, seed) * 2; c.strokeStyle = hs(k + 2, seed) < 0.5 ? '#86a85e' : '#4f7a3c'; c.beginPath(); c.moveTo(px, py + 0.6); c.lineTo(px + (hs(k + 3, seed) - 0.5) * 1.6, py - h2); c.stroke(); }
+}
+function thatchWeather(c, outline, eaves, moss, seed, a) {   // the lowest course greyer along every eave, and a little moss lower on the roof
+  var i, k; c.save(); path(c, outline); c.clip();
+  eaves.forEach(function (e) {                // [x0, y0, x1, y1, side]: side 0 a front eave (the band above it), 1 a west one, -1 an east one (the band inside it)
+    var x0 = e[0], y0 = e[1], x1 = e[2], y1 = e[3], sd = e[4], len = Math.hypot(x1 - x0, y1 - y0) || 1, W2 = 10, pts = [], u;
+    for (k = 0; k <= len; k += 5) { u = k / len; var j2 = W2 * (0.7 + hs(k, seed + sd) * 0.5), px = x0 + (x1 - x0) * u, py = y0 + (y1 - y0) * u; pts.push(sd === 0 ? [px, py - j2] : [px + sd * j2, py]); }
+    pts.push(sd === 0 ? [x1, y1] : [x1, y1]); pts.push(sd === 0 ? [x0, y0] : [x0, y0]);
+    c.globalAlpha = a * 0.5; c.fillStyle = '#857c68'; c.beginPath(); pts.forEach(function (q, qi) { if (qi) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); }); c.closePath(); c.fill();
+  });
+  if (hs(seed, 3) < 0.85) moss.forEach(function (m, mi) {   // most roofs have a patch or two
+    if (hs(seed + mi, 5) < 0.35) return; var rx = 4.5 + hs(seed + mi, 7) * 4, ry = rx * 0.72;
+    c.globalAlpha = a * 0.8; c.fillStyle = '#5f8a46'; c.beginPath(); c.ellipse(m[0], m[1], rx, ry, 0, 0, 7); c.fill();
+    c.globalAlpha = a * 0.45; c.fillStyle = '#3e6a32'; c.beginPath(); c.ellipse(m[0] + rx * 0.2, m[1] + ry * 0.3, rx * 0.7, ry * 0.55, 0, 0, 7); c.fill();
+    c.globalAlpha = a * 0.6; c.fillStyle = '#9cbc6e'; for (i = 0; i < 4; i++) { c.beginPath(); c.arc(m[0] - rx * 0.5 + hs(seed + mi, i) * rx, m[1] - ry * 0.4 + hs(seed + mi + 9, i) * ry * 0.6, 0.6, 0, 7); c.fill(); }
+  });
+  c.globalAlpha = a; c.restore();
+}
 function drawRoof(c, room, a, C, dy) {
   C = C || CFG; dy = dy || 0;
   var r = ROOFS[C.roof]; if (!r || !r.col || a <= 0.01) return;
-  var ov = C.overhang + 1.5, up = C.wallH + C.thick * K + 1, kind = C.roof, wm = WALLS[C.wallM] || WALLS[1];
+  var kind = C.roof, ov = C.overhang + 1.5 + (kind === 1 ? 2 : 0), up = C.wallH + C.thick * K + 1, wm = WALLS[C.wallM] || WALLS[1];   /* (thatch stands proud of the wall: 2026-10-22) */
   var lineCol = r.line, hl = mix(r.col, '#fff4d0', 0.25), dk = mix(r.col, '#1a1410', 0.3), edgeCol = mix(r.col, '#1a1410', 0.45);
   c.save(); a *= c.globalAlpha; c.globalAlpha = a; c.translate(0, dy); c.lineCap = 'round'; c.lineJoin = 'round';
   roofRects(room.tiles).forEach(function (rc) {
@@ -4865,26 +4895,39 @@ function drawRoof(c, room, a, C, dy) {
     var wT = rc.x1 - rc.x0 + 1, dT = rc.y1 - rc.y0 + 1, ns = C.gable === 'ns' || (C.gable !== 'ew' && dT >= wT);   // the ridge along the long side: a gable facing south when the room is deep
     var seed = rc.x0 * 7 + rc.y0 * 3, i, j, cx = (left + right) / 2;
     // the shadow the eaves cast on the walls below, and down the right side
-    var sg = c.createLinearGradient(0, bot, 0, bot + 7); sg.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.42)'); sg.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg; c.fillRect(left, bot, Wd, 7);
+    var shL = kind === 1 ? 12 : 7, sg = c.createLinearGradient(0, bot, 0, bot + shL); sg.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,' + (kind === 1 ? 0.56 : 0.42) + ')'); sg.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg; c.fillRect(left, bot, Wd, shL);   /* (deeper and longer under thatch) */
     var sg2 = c.createLinearGradient(right, 0, right + 5, 0); sg2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.3)'); sg2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.fillStyle = sg2; c.fillRect(right, top + 2, 5, D);
     function eaveEdge(x0, y0, x1, y1) {                       // the thickness of the roof at an eave or a bargeboard: sod, straw ends or shingle ends along the line
       var dx = x1 - x0, dy2 = y1 - y0, len = Math.hypot(dx, dy2) || 1, nx = -dy2 / len, ny = dx / len, k;   // (nx, ny): outward, below the line
       if (ny < 0) { nx = -nx; ny = -ny; }
-      if (kind === 1) { for (k = 1; k < len; k += 2.1) { var u = k / len, px = x0 + dx * u, py = y0 + dy2 * u, ln = 4 + hs(px, py) * 5, dark = hs(px + 1, py) < 0.35; c.strokeStyle = dark ? dk : r.col; c.lineWidth = dark ? 1.1 : 1.9; c.beginPath(); c.moveTo(px - nx * 3, py - ny * 3); c.lineTo(px + nx * ln + (hs(px, py + 3) - 0.5) * 1.5, py + ny * ln); c.stroke(); } c.strokeStyle = INK.soft; c.lineWidth = 0.8; c.beginPath(); c.moveTo(x0 + nx * 1.5, y0 + ny * 1.5); c.lineTo(x1 + nx * 1.5, y1 + ny * 1.5); c.stroke(); }
+      if (kind === 1) {                       // thatch: the straw rounds over and is cut square, a band of cut ends standing proud of the wall
+        var bw = 5; ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * bw, y1 + ny * bw], [x0 + nx * bw, y0 + ny * bw]], THATCH_ENDS, { wob: 0.6, seed: seed + 20 + Math.round(x0), flat: true, lw: 0.7, heavy: 1.2 });
+        c.lineWidth = 0.8; c.strokeStyle = 'rgba(62,46,22,0.6)'; c.beginPath(); for (k = 1.2; k < len - 0.6; k += 1.4 + hs(k, x0 + y0) * 1.3) { var u = k / len, px = x0 + dx * u, py = y0 + dy2 * u; c.moveTo(px + nx * 0.7, py + ny * 0.7); c.lineTo(px + nx * (bw - 0.5), py + ny * (bw - 0.5)); } c.stroke();
+        c.strokeStyle = 'rgba(255,238,190,0.45)'; c.lineWidth = 1; c.beginPath(); c.moveTo(x0 - nx * 0.3, y0 - ny * 0.3); c.lineTo(x1 - nx * 0.3, y1 - ny * 0.3); c.stroke();
+      }
       else if (kind === 0) { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.6, y1 + ny * 2.6], [x0 + nx * 2.6, y0 + ny * 2.6]], '#4e3a2a', { wob: 0.5, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); stroke(c, [[x0 + nx * 1.2, y0 + ny * 1.2], [x1 + nx * 1.2, y1 + ny * 1.2]], '#d9cdb0', 1.0, 0.8); /* the birch-bark board that holds the sod at the eave */ for (k = 2; k < len; k += 3) { var u2 = k / len, qx = x0 + dx * u2, qy = y0 + dy2 * u2; if (hs(qx, qy + 4) > 0.55) continue; c.strokeStyle = hs(qx, qy + 5) < 0.5 ? dk : r.col; c.lineWidth = 0.9; c.beginPath(); c.moveTo(qx - nx, qy - ny); c.lineTo(qx + nx * (3 + hs(qx, qy + 7) * 2.5) + (hs(qx, qy + 6) - 0.5) * 2, qy + ny * (3 + hs(qx, qy + 7) * 2.5)); c.stroke(); } }
       else { ink(c, [[x0 - nx, y0 - ny], [x1 - nx, y1 - ny], [x1 + nx * 2.2, y1 + ny * 2.2], [x0 + nx * 2.2, y0 + ny * 2.2]], edgeCol, { wob: 0.4, seed: seed + 20, flat: true, lw: 0.6, heavy: 1.2 }); for (k = 4; k < len; k += (kind === 3 ? 6 : 8)) { var u3 = k / len; stroke(c, [[x0 + dx * u3, y0 + dy2 * u3], [x0 + dx * u3 + nx * 2, y0 + dy2 * u3 + ny * 2]], INK.soft, 0.6); } }
     }
     // a facet of the roof: fill, the material's rows following it, grain
-    function facet(pts, tone, rows) {
+    function facet(pts, tone, rows, eave) {   // eave: the side its eave is on ('s', 'n', 'w', 'e'), for the thatch's courses
       var d = ink(c, pts, mix(r.col, tone > 0 ? '#fff4d0' : '#1a1410', Math.abs(tone)), { wob: 0, flat: true, noLine: true });
       c.save(); path(c, d); c.clip();
       var bx0 = 1e9, by0 = 1e9, bx1 = -1e9, by1 = -1e9; d.forEach(function (p) { bx0 = Math.min(bx0, p[0]); by0 = Math.min(by0, p[1]); bx1 = Math.max(bx1, p[0]); by1 = Math.max(by1, p[1]); });
       if (kind === 1) {                                      // straw in rows along the eave: level on the slopes, down the hips; every other course a shade darker, so the roof reads as laid thatch and not a wash (the studio, 2026-10-20)
-        c.globalAlpha = a * 0.16; c.fillStyle = dk; if (rows === 'h') { for (j = by0 + 3; j < by1; j += 10) c.fillRect(bx0, j, bx1 - bx0, 5); } else { for (i = bx0 + 2; i < bx1; i += 9) c.fillRect(i, by0, 4.5, by1 - by0); }
-        c.strokeStyle = lineCol; c.globalAlpha = a * 0.55; c.lineWidth = 1;
-        if (rows === 'h') { for (j = by0 + 3; j < by1; j += 5) { c.beginPath(); c.moveTo(bx0, j); for (i = bx0; i < bx1; i += 4) c.quadraticCurveTo(i + 2, j + 1.2 + hs(i, j) * 2.2, i + 4, j); c.stroke(); } }
-        else { for (i = bx0 + 2; i < bx1; i += 4.5) { c.beginPath(); c.moveTo(i, by0); for (j = by0; j < by1; j += 4) c.quadraticCurveTo(i + 1.2 + hs(i, j) * 2, j + 2, i, j + 4); c.stroke(); } }
-        c.strokeStyle = tone > 0 ? 'rgba(255,245,210,0.36)' : 'rgba(255,245,210,0.16)'; c.lineWidth = 1.1; c.beginPath();
+        c.strokeStyle = lineCol; c.globalAlpha = a * 0.24; c.lineWidth = 0.7;   // the straw's fine grain between the courses
+        if (rows === 'h') { for (j = by0 + 2; j < by1; j += 3.4) { c.beginPath(); c.moveTo(bx0, j); for (i = bx0; i < bx1; i += 5) c.quadraticCurveTo(i + 2.5, j + 0.8 + hs(i, j) * 1.6, i + 5, j); c.stroke(); } }
+        else { for (i = bx0 + 2; i < bx1; i += 3.4) { c.beginPath(); c.moveTo(i, by0); for (j = by0; j < by1; j += 5) c.quadraticCurveTo(i + 0.8 + hs(i, j) * 1.6, j + 2.5, i, j + 5); c.stroke(); } }
+        var ev = eave || (rows === 'h' ? 's' : 'e'), hz = ev === 's' || ev === 'n', sgn = ev === 's' || ev === 'e' ? 1 : -1, CS = THATCH_COURSE, n0, cu;
+        for (n0 = 1; n0 < 40; n0++) {             // the courses, from the eave in: each one's lower edge, notched where it was cut, lies over the next and shades it
+          var line0 = hz ? (sgn > 0 ? by1 - CS * n0 : by0 + CS * n0) : (sgn > 0 ? bx1 - CS * n0 : bx0 + CS * n0); if (hz ? (line0 < by0 - 1 || line0 > by1 + 1) : (line0 < bx0 - 1 || line0 > bx1 + 1)) break;
+          var U0 = hz ? bx0 : by0, U1 = hz ? bx1 : by1, us = [U0], vs = [(hs(line0, 1) - 0.5) * 0.8], uu = U0;
+          while (uu < U1) { uu = Math.min(U1, uu + 6 + hs(uu, line0) * 7); us.push(uu); vs.push(vs[vs.length - 1]); us.push(uu); vs.push((hs(uu + 1, line0) - 0.5) * 1.6); }
+          var cLine = function (off) { c.beginPath(); for (cu = 0; cu < us.length; cu++) { var vv = line0 + sgn * (vs[cu] + off), px2 = hz ? us[cu] : vv, py2 = hz ? vv : us[cu]; if (cu) c.lineTo(px2, py2); else c.moveTo(px2, py2); } c.stroke(); };
+          c.globalAlpha = a * 0.5; c.strokeStyle = dk; c.lineWidth = 3.4; cLine(2);                 // its shadow on the course below
+          c.globalAlpha = a * 0.85; c.strokeStyle = lineCol; c.lineWidth = 0.9; cLine(0);              // the cut edge
+          c.globalAlpha = a * (tone > 0 ? 0.45 : 0.26); c.strokeStyle = 'rgb(255,245,210)'; c.lineWidth = 1.1; cLine(-1);   // the rounded straw above it catching the light
+        }
+        c.globalAlpha = a; c.strokeStyle = tone > 0 ? 'rgba(255,245,210,0.26)' : 'rgba(255,245,210,0.1)'; c.lineWidth = 1.1; c.beginPath();
         for (j = by0 + 2; j < by1; j += 5) for (i = bx0 + 2; i < bx1; i += 6.5) { var o = hs(i, j + 1); if (o < 0.5) { if (rows === 'h') { c.moveTo(i + o * 3, j + 3.5); c.lineTo(i + o * 3 + 0.6, j + 0.5); } else { c.moveTo(i + 0.5, j + o * 3); c.lineTo(i + 3.5, j + o * 3 + 0.6); } } }
         c.stroke(); c.globalAlpha = a;
       } else if (kind === 0) {                               // sod with grass blades in two greens, a few flowers
@@ -4909,7 +4952,7 @@ function drawRoof(c, room, a, C, dy) {
     if (ns) {
       // a gable roof with the ridge north to south: the west slope lit, the east in shadow, and the south gable end facing you:
       // the end wall in the walls' material with its timbers (a tie beam, a king post, two struts), the bargeboards over it
-      var rh = Math.min(34, Wd * 0.46), slopeL = [[left, top], [cx, top - rh], [cx, bot - rh], [left, bot]], slopeR = [[cx, top - rh], [right, top], [right, bot], [cx, bot - rh]];
+      var rh = kind === 1 ? Math.min(42, Wd * 0.58) : Math.min(34, Wd * 0.46), slopeL = [[left, top], [cx, top - rh], [cx, bot - rh], [left, bot]], slopeR = [[cx, top - rh], [right, top], [right, bot], [cx, bot - rh]];
       var ga = [[left, bot], [cx, bot - rh], [right, bot]], gw = [[left + ov, bot - ov * K], [cx, bot - rh + 1.2], [right - ov, bot - ov * K]];
       ink(c, ga, '#2b221c', { wob: 0, flat: true, noLine: true });                                                        // the dark underside of the eaves
       var gd = ink(c, gw, wm.face, { wob: 0.5, seed: seed + 9, noLine: true, flat: true });
@@ -4924,29 +4967,37 @@ function drawRoof(c, room, a, C, dy) {
       }
       var g2 = c.createLinearGradient(0, bot - rh, 0, bot - rh + 9); g2.addColorStop(0, 'hsla(' + INK.shadowHue + ',40%,12%,0.35)'); g2.addColorStop(1, 'hsla(' + INK.shadowHue + ',40%,12%,0)'); c.save(); path(c, gd); c.clip(); c.fillStyle = g2; c.fillRect(left, bot - rh, Wd, 10); c.restore();   // the shade under the ridge
       path(c, gd); c.lineWidth = 0.8; c.strokeStyle = INK.line; c.stroke();
-      facet(slopeL, 0.14, 'v'); facet(slopeR, -0.26, 'v');
+      facet(slopeL, 0.14, 'v', 'w'); facet(slopeR, -0.26, 'v', 'e');
+      if (kind === 1) thatchWeather(c, [[left, top], [cx, top - rh], [right, top], [right, bot], [cx, bot - rh], [left, bot]], [[left, top, left, bot, 1], [right, top, right, bot, -1]], [[left + Wd * 0.18, bot - D * 0.35], [right - Wd * 0.2, bot - D * 0.6]], seed, a);
       eaveEdge(left, bot, cx, bot - rh); eaveEdge(cx, bot - rh, right, bot);                                                // the bargeboards' edge over the gable
       stroke(c, [[left, bot], [cx, bot - rh], [right, bot]], r.ridge, 2.6); stroke(c, [[left, bot], [cx, bot - rh], [right, bot]], INK.line, 0.8);
       stroke(c, [[cx, top - rh], [cx, bot - rh]], INK.soft, 0.9);
       var sil = [[left, top], [cx, top - rh], [right, top], [right, bot], [cx, bot - rh], [left, bot]];
       path(c, sil); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, sil, 2.4);
-      if (kind === 1) ink(c, [[cx - 3.4, top - rh - 1], [cx + 3.4, top - rh - 1], [cx + 3.2, bot - rh + 1], [cx - 3.2, bot - rh + 1]], TURF_RIDGE, { wob: 0.8, seed: seed, lw: 0.7, heavy: 1.2 });   // a thatch ridge is capped with turf, held by the crossed boards
+      if (kind === 1) { ink(c, [[cx - 5.2, top - rh - 1.5], [cx + 5.2, top - rh - 1.5], [cx + 5, bot - rh + 1.5], [cx - 5, bot - rh + 1.5]], TURF_RIDGE, { wob: 0.9, seed: seed, lw: 0.7, heavy: 1.3 }); turfTufts(c, cx - 4, top - rh, cx - 4, bot - rh, seed); }   /* (fuller, 2026-10-22) */   // a thatch ridge is capped with turf, held by the crossed boards
       else ink(c, [[cx - 2.2, top - rh - 1], [cx + 2.2, top - rh - 1], [cx + 2, bot - rh + 1], [cx - 2, bot - rh + 1]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
-      if (kind !== 0) { ridgeBoards(cx, top - rh + 2, 1); ridgeBoards(cx, bot - rh - 1, -1); }
+      if (kind !== 0 && kind !== 1) { ridgeBoards(cx, top - rh + 2, 1); ridgeBoards(cx, bot - rh - 1, -1); }   /* (no boards over a thatch's turf since 2026-10-22: the studio's target has none) */
     } else {
       // a hipped roof with the ridge east to west: the far slope lit, the near slope in shadow, the hips between, the ridge raised high
-      var rise = Math.min(26, D * 0.42), ridgeY = (top + bot) / 2 - rise, hip = Math.min(D * 0.5, Wd * 0.22);
+      var rise = kind === 1 ? Math.min(32, D * 0.48) : Math.min(26, D * 0.42), ridgeY = (top + bot) / 2 - rise, hip = Math.min(D * 0.5, Wd * 0.22);
       var far = [[left, top], [right, top], [right - hip, ridgeY], [left + hip, ridgeY]], near = [[left + hip, ridgeY], [right - hip, ridgeY], [right, bot], [left, bot]];
       var hipL = [[left, top], [left + hip, ridgeY], [left, bot]], hipR = [[right, top], [right, bot], [right - hip, ridgeY]], outline = [[left, top], [right, top], [right, bot], [left, bot]];
       eaveEdge(left, bot, right, bot);
-      if (kind === 1) { for (j = top + 3; j < bot; j += 2.4) { c.strokeStyle = hs(j, 2) < 0.4 ? dk : r.col; c.lineWidth = 1.3; c.beginPath(); c.moveTo(right - 2, j); c.lineTo(right + 2.5 + hs(j, 4) * 2, j + 1.5); c.moveTo(left + 2, j); c.lineTo(left - 2.5 - hs(j, 5) * 2, j + 1.5); c.stroke(); } }
+      if (kind === 1) {                        // thatch: the facets inside a softened outline, the hips rounded (no ruled line down them), weathered
+        var rOut = roundCorners(outline, 4.5); c.save(); path(c, rOut); c.clip();
+        facet(far, 0.14, 'h', 'n'); facet(hipL, 0.04, 'v', 'w'); facet(hipR, -0.3, 'v', 'e'); facet(near, -0.12, 'h', 's');
+        [[[left, bot], [left + hip, ridgeY]], [[right, bot], [right - hip, ridgeY]], [[left, top], [left + hip, ridgeY]], [[right, top], [right - hip, ridgeY]]].forEach(function (hl2, hi) { stroke(c, hl2, hi < 2 ? 'rgba(60,44,20,0.16)' : 'rgba(255,240,200,0.12)', 3.4); });
+        thatchWeather(c, outline, [[left, bot, right, bot, 0], [left, top, left, bot, 1], [right, top, right, bot, -1]], [[left + hip + (right - left - 2 * hip) * 0.2, bot - (bot - ridgeY) * 0.3], [right - hip - (right - left - 2 * hip) * 0.15, bot - (bot - ridgeY) * 0.55], [left + Wd * 0.5, bot - (bot - ridgeY) * 0.15]], seed, a);
+        c.restore(); path(c, rOut); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, rOut, 2.4);
+      } else {
       facet(far, 0.14, 'h'); facet(hipL, 0.04, 'v'); facet(hipR, -0.3, 'v'); facet(near, -0.12, 'h');
       stroke(c, [[left, top], [left + hip, ridgeY]], INK.soft, 0.9); stroke(c, [[left, bot], [left + hip, ridgeY]], INK.line, 1.1);
       stroke(c, [[right, top], [right - hip, ridgeY]], INK.soft, 0.9); stroke(c, [[right, bot], [right - hip, ridgeY]], INK.line, 1.1);
       path(c, outline); c.lineWidth = 0.9; c.strokeStyle = INK.line; c.stroke(); heavy(c, outline, 2.4);
-      if (kind === 1) ink(c, [[left + hip - 1, ridgeY - 3.2], [right - hip + 1, ridgeY - 3.6], [right - hip + 1, ridgeY + 3], [left + hip - 1, ridgeY + 3.4]], TURF_RIDGE, { wob: 0.8, seed: seed, lw: 0.7, heavy: 1.2 });   // the turf cap of a thatch ridge
+      }
+      if (kind === 1) { ink(c, [[left + hip - 2.5, ridgeY - 5], [right - hip + 2.5, ridgeY - 5.4], [right - hip + 2.5, ridgeY + 4.4], [left + hip - 2.5, ridgeY + 4.8]], TURF_RIDGE, { wob: 0.9, seed: seed, lw: 0.7, heavy: 1.3 }); turfTufts(c, left + hip - 1, ridgeY - 4.6, right - hip + 1, ridgeY - 5, seed); }   // the turf cap of a thatch ridge, fuller (2026-10-22)
       else ink(c, [[left + hip - 1, ridgeY - 2], [right - hip + 1, ridgeY - 2.4], [right - hip + 1, ridgeY + 2], [left + hip - 1, ridgeY + 2.4]], r.ridge, { wob: 0.5, seed: seed, lw: 0.7, heavy: 1.3 });   // the ridge pole
-      if (kind !== 0) [left + hip + 4, right - hip - 4].forEach(function (cx2, ci) { [[cx2 - 4, ridgeY + 3, cx2 + 4, ridgeY - 9], [cx2 + 4, ridgeY + 3, cx2 - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
+      if (kind !== 0 && kind !== 1) [left + hip + 4, right - hip - 4].forEach(function (cx2, ci) { [[cx2 - 4, ridgeY + 3, cx2 + 4, ridgeY - 9], [cx2 + 4, ridgeY + 3, cx2 - 4, ridgeY - 9]].forEach(function (bd, bi) { ink(c, [[bd[0] - 1, bd[1]], [bd[2] - 1, bd[3]], [bd[2] + 1, bd[3]], [bd[0] + 1, bd[1]]], r.ridge, { wob: 0.3, seed: seed + ci * 2 + bi, flat: true, lw: 0.6, heavy: 1.1 }); }); });   // crossed ridge boards
     }
   });
   c.restore();

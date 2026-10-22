@@ -338,7 +338,7 @@ honours `game.gather`, `game.hird`, `game.look`, `game.light`, `game.give`); the
 island's beach (the studio's picture since 2026-10-21, `assets/props/wreck`: a faering stove in on the sand, its high ends curled, the mast snapped and the sail over the side, at 4 px a unit; the drawn `wreckedBoat` only while it loads; the sea cave's wreck the same). E pries four planks from the wreck (12 wood); four
 branches and nine stones lie about; three lone trees stand near. Key reminders, in order: "E at the wreck", "Walk over the
 things lying about", "Tab", then "1 to 6". Trail stones lead toward the steading 1500 to 2400 units off (`layCairns`); a fish
-weir's net on a beach gives 4 fiber. **The burnt steading** (Thorgunna's), burnt by Ormr Midgardbane's crew, drawn with the
+weir's net, an old one washed up on the beach with its floats (`netTangle`, the Art Director's `ch1fix`, 2026-10-22; Robin: the net hung between posts looked "out of place"), gives 4 fiber (E "Take the net"). **The burnt steading** (Thorgunna's), burnt by Ormr Midgardbane's crew, drawn with the
 destruction states (made over 2026-10-16, Robin: "you can make it look much better"; the choices are mine): the hall burnt
 out (most of its walls charred stumps, the rest charred or scorched, its door gone, its roof down as ash and charred beams
 (`B.ruin`), its floor earth where no grass grows, its posts charred and snapped short where no wall holds them), a whole
@@ -375,7 +375,7 @@ its chopped end at the stump, shortened at the far end as the logs come off (nev
 out at the far end as the studio's log picture** (a drop of kind `log` that gives its wood when walked over; a tree without a
 log picture drops wood as before). **The workbench and the raft bench are the studio's pictures too** (2026-10-20,
 `assets/props/pieces`, the same way; their footprints widened to the pictures, `r` 8 and 12; with the camp things and the furniture below, in the kraken's style since 2026-10-21, the round's tenth item: `benches_build.py`, `camp_build.py`, `furniture_build.py`, the chosen tones), **and the plants** (`assets/props/plants`:
-bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three variants each; a picked berry bush is a
+bush, berry bush, juniper, heather, fern, tall grass, reeds and mushrooms, three variants each, and the flower as low clumps of oxeye daisies, harebells and buttercups (`flower_1..3`, `ch1fix`, 2026-10-22, in place of the drawn heads on stems); a picked berry bush is a
 bush until it regrows; **all of them in the kraken's style since 2026-10-21** (the round's fourth item: `plants_build.py`, the chosen tones, `shared=True` keeping the old tone where a builder wants it); **the tall grass redone 2026-10-21** (Robin: the first "looks like a plant"; now a loose tuft of flat blades
 leaning one way in the grass's greens, the silhouette line only; the studio's `out/plants/grass2`, its `plants_build.py` the game's copy)), **and the rocks** (`assets/props/rocks`: rock, boulder and rock formation in six variants each, by
 the prop's seed; the cracks and the sweet spot's cue are drawn over them), **and the camp things** (`assets/props/camp`:
@@ -384,12 +384,11 @@ south), **and the furniture** (`assets/props/furniture`: bed, chest (and `chest_
 bench, crate, barrel; the rug, loom, stool, shelf and cupboard come with the steading), **and the villages plan's drops**
 (the Art Director's `out/villages`, 2026-10-20; the fences, faces, yard, sacred and raid sets in the kraken's style since 2026-10-21, a quiet change of tones: `fences_build.py`, `faces_build.py`, `yard_build.py`, `sacred_build.py`, `raid_build.py`): **the steading's things** (`assets/props/steading`, in the kraken's style since 2026-10-21, `steading_build.py`: the graves as turf mounds
 with Thorgunna's standing stone, `spriteName` maps `graveStone` to them; the trail stones; the scarecrow, shield rack, dragon
-post, flower bed, haystack, net, weir and well; and the raid's wreckage laid at a fresh start as **ground litter**: decals of
-kind `litter` drawn under everything, `charredBeam` in the hall's ash and across its door, `burntHeap` in the hall and by the
-hut, `brokenDoor` by the gate), **the fences** (`assets/props/fences`: a ring's stakes `stake_1..6`, `stake_new` for a mended
+post, flower bed, net, weir and well; the haystack stacked round its pole (`ch1fix`, 2026-10-22, in place of the two domes); and the raid's wreckage laid at a fresh start as **ground litter**: decals of
+kind `litter` drawn under everything: **the burnt hall's inside** (the studio's `ch1fix`, 2026-10-22, Robin: "Yes, do all 4") is about ten of its pieces laid once on the ash, the fallen `roofTree` beside the hearth, `charBeamA`, `charBeamB`, two `charBeamC`, a `charPile`, two `ashHeap` and three `charStump` (an older save keeps its `charredBeam`s), with a `burntHeap` by the
+hut and the `brokenDoor` by the gate; a burnt tile is grey ash with paler and darker patches, no black ovals and no rafters (`drawDebris`)), **the fences** (`assets/props/fences`: a ring's stakes `stake_1..6`, `stake_new` for a mended
 run, `stake_stump` for one hacked down (`spriteName`), `railPost` and the wattle `hurdle` pieces for rail and wattle rings on a polygon (not built: those fences stay Build edges); the palisade, rail, wattle and gate drawing of the Build edges is the studio's in `src/build.js`), **and the faces**
-(`assets/props/faces`: porch, bell tower, apse, gable cross, lantern, sign, awning, woodshed, the laid `foodTable`; thatch in
-courses with a turf ridge and the turf roof's bark board in `drawRoof`; **a room with a hearth or a fire pit indoors has a
+(`assets/props/faces`: porch, bell tower, apse, gable cross, lantern, sign, awning, woodshed, the laid `foodTable`; **the thatch made toward the studio's target** (`ch1fix/roof_target`, 2026-10-22): the eaves proud of the wall with a band of cut straw ends (`THATCH_ENDS`) and a deeper shadow under them, courses `THATCH_COURSE` 11 units apart each stepping over the next with a notched edge and its own shadow line, a steeper pitch, soft hips with no ruled line and rounded corners (`roundCorners`), a fuller turf ridge with grass on it (`turfTufts`) and no crossed boards, the lowest course greyer and a moss patch or two (`thatchWeather`); the turf roof's bark board in `drawRoof`; **a room with a hearth or a fire pit indoors has a
 smoke hole in its ridge** (`Build.drawSmokeHole` at `Build.ridgeMid`), the fireplace keeps its chimney), **and the yard's
 things and the sacred** (`assets/props/yard`, `assets/props/sacred`: the storage hut, boathouse, bee skeps, stall, banner,
 sign post, fire ring, runestone, burial mound, cairn, stone ship, lych gate, way cross, font, altar, furnace, charcoal pit,
