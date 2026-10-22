@@ -212,7 +212,7 @@ function make(seed, site, opts) {
       item('bed', nx * T, (l.y + endIn) * T, { bed: true, opt: true });
       var seatX = l.x + l.w / 2, tx2;
       for (tx2 = l.x + 3; tx2 <= l.x + l.w - 3; tx2 += 3.5) { if (Math.abs(tx2 - seatX) < 2.2) continue; item('table', tx2 * T, (l.y + 0.62) * T, { opt: true }); item('bench', tx2 * T, (l.y + 1.3) * T, { seat: true, opt: true }); }
-      for (tx2 = l.x + 2.5; tx2 <= l.x + l.w - 2.5; tx2 += 3.5) { if (Math.abs(tx2 - dxc) < 1.6) continue; item('bench', tx2 * T, (l.y + l.h - 0.62) * T, { seat: true, opt: true }); }   // the benches along the door wall too (the sleeping platforms), the door left clear
+      for (tx2 = l.x + 2.5; tx2 <= l.x + l.w - 2.5; tx2 += 3.5) { if (Math.abs(tx2 - dxc) < 1.6 || Math.abs(tx2 - (farE > 0 ? l.x + 2.5 : l.x + l.w - 2.5)) < 1.2) continue; item('bench', tx2 * T, (l.y + l.h - 0.62) * T, { seat: true, opt: true }); }   // the benches along the door wall too (the sleeping platforms), the door and the stores by it left clear
       if (wealth > 0.5) { item('shieldRack', (seatX - 1.6) * T, (l.y + 0.5) * T, { opt: true }); if (l.w >= 19) item('shieldRack', (seatX + 2.7) * T, (l.y + 0.5) * T, { opt: true }); }
       item('chest', (farE > 0 ? l.x + l.w - 2.2 : l.x + 2.2) * T, (l.y + l.h - 0.6) * T, { store: true, loot: { leather: 2, berries: 3, coin: Math.round((2 + wealth * 6) * hoardK) } });
       var ex2 = farE > 0 ? l.x + 2.1 : l.x + l.w - 2.1, ex3 = farE > 0 ? l.x + 2.9 : l.x + l.w - 2.9;   // the entrance end: the stores by the door wall, the loom and the quern against the far long wall
@@ -234,18 +234,18 @@ function make(seed, site, opts) {
       // bench by the door off the lane; the work thing by the household's calling against the near wall (docs/interiors-plan.md).
       var Lc = Math.max(0, Math.min(AC - 1, (dS === 's' || dS === 'n' ? l.dx - l.x : l.dy - l.y))), side = Lc < AC / 2 ? 1 : -1, hc = Math.max(0, Math.min(AC - 1, Lc + side)), farW = side > 0 ? AC - 1 : 0, nearW = side > 0 ? 0 : AC - 1, nearOk = nearW !== Lc;
       var cc = function (col) { return col + 0.5; }, calling = l.u && l.u.calling || null;
-      inH('stoneHearth', LG * 0.5 + (R() < 0.17 ? -1.2 : 0), cc(hc), { hearth: true, light: 1 });
+      var hA = LG * 0.5 + (R() < 0.17 ? -1.2 : 0); inH('stoneHearth', hA, cc(hc), { hearth: true, light: 1 });
       inH('bed', LG - 0.62, cc(0), { bed: true }); inH('bed', LG - 0.62, cc(AC - 1), { bed: true }); if (LG >= 8) inH('bed', LG - 2.3, cc(farW), { bed: true, opt: true });
       inH('chest', LG - 0.6, cc(hc), { store: true, loot: { fiber: 3, berries: 2, coin: Math.round(wealth * 3 * hoardK) } });
       if (wealth > 0.6 && R() < 0.5) inH('chest', LG - 0.6, cc(hc) + side * 0.9, { store: true, loot: { coin: Math.round(wealth * 2 * hoardK), leather: 1 }, opt: true });
       if (R() < 0.75) { inH('table', LG * 0.5 + 0.9, cc(farW) + (side > 0 ? -0.1 : 0.1), { opt: true }); inH('chair', LG * 0.5 + 0.2, cc(farW), { seat: true, opt: true }); } else inH('bench', LG * 0.5 + 0.9, cc(farW), { seat: true, opt: true });
       if (nearOk) { inH('bench', 1.7, cc(nearW), { seat: true, opt: true }); inH('barrel', 0.55, cc(nearW), { opt: true }); } else inH('barrel', 0.55, cc(farW), { opt: true });
-      if (LG >= 7) inH('crate', 0.55 + (nearOk ? 0 : 1), cc(nearOk ? nearW : farW) + (nearOk ? 0 : 0.9 * side), { loot: { berries: 2, fiber: 2 }, opt: true });
+      if (LG >= 7) inH('crate', 0.55 + (nearOk ? 0 : 1), nearOk ? (Math.abs(Lc - nearW) > 1 ? cc(nearW) + side * 0.95 : cc(farW)) : cc(farW) - 0.9 * side, { loot: { berries: 2, fiber: 2 }, opt: true });   /* (the crate beside the barrel, not on it, and inside the walls: 2026-10-22) */
       var work = calling === 'weaver' ? 'loom' : calling === 'farmer' || calling === 'thrall' ? 'quern' : calling === 'fisher' || calling === 'fisherman' ? 'dryingRack' : calling === 'smith' ? 'workbench' : calling === 'guard' ? 'spearRack' : (R() < 0.5 ? 'quern' : 'shelf');
       inH(work, LG * 0.32 + 1, cc(nearOk ? nearW : farW), { opt: true, work: calling || null, bench: work === 'workbench' ? true : undefined });
       var cupN = wealth > 0.55 ? (R() < 0.5 ? 'cupboard' : 'shelf') : null, cradle = nearOk && LG >= 6 && RD() < 0.35;   // a cradle at the foot of the parents' bed in a third of the houses, where a rich house keeps its cupboard (Robin, 2026-10-22: "Yes to both")
       if (cradle) inH('cradle', LG - 2.0, cc(nearW), { opt: true, r: 5 }); else if (cupN) inH(cupN, LG - 2.0, cc(nearOk ? nearW : farW), { opt: true });
-      if (R() < 0.3) inH('stool', LG * 0.5 - 1.2, cc(hc), { seat: true, opt: true });
+      if (R() < 0.3) inH('stool', hA < LG * 0.5 ? hA + 1.2 : hA - 1.2, cc(hc), { seat: true, opt: true });   // a stool by the fire, on its far side when the fire stands nearer the door (it stood in the fire, 2026-10-22)
     } else if (BUILD[l.id].inside === 'store') {
       var SK = stockK * (0.6 + wealth * 0.8), fm = function (n) { return Math.max(1, Math.round(n * SK)); };   // the stocks: the place's roll and its wealth (raid step 7)
       p = tile(l.x, l.y); item('crate', p[0] + 6, p[1] + 2, { loot: { berries: fm(5), fiber: 4 } }); p = tile(l.x + 1, l.y); item('barrel', p[0] - 4, p[1] + 2, { loot: { meat: fm(3), leather: 1 } });

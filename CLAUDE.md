@@ -384,7 +384,7 @@ leaning one way in the grass's greens, the silhouette line only; the studio's `o
 the prop's seed; the cracks and the sweet spot's cue are drawn over them), **and the camp things** (`assets/props/camp`:
 the drying rack, woodpile, chopping block, log seat, cart, well, trough and the two tents in undyed wool, their mouths
 south), **and the furniture** (`assets/props/furniture`: bed, chest (and `chest_open` while its board is open), chair, table,
-bench, crate, barrel; the rug, loom, stool, shelf and cupboard come with the steading), **and the villages plan's drops**
+bench, crate, barrel; the loom, stool, shelf and cupboard are in `assets/props/interior` with the cradle and the hangings, Colin, AD's, 2026-10-22; the rug is still to come), **and the villages plan's drops**
 (the Art Director's `out/villages`, 2026-10-20; the fences, faces, yard, sacred and raid sets in the kraken's style since 2026-10-21, a quiet change of tones: `fences_build.py`, `faces_build.py`, `yard_build.py`, `sacred_build.py`, `raid_build.py`): **the steading's things** (`assets/props/steading`, in the kraken's style since 2026-10-21, `steading_build.py`: the graves as turf mounds
 with Thorgunna's standing stone, `spriteName` maps `graveStone` to them; the trail stones; the scarecrow, shield rack, dragon
 post, flower bed, net, weir and well; the haystack stacked round its pole (`ch1fix`, 2026-10-22, in place of the two domes); and the raid's wreckage laid at a fresh start as **ground litter**: decals of
@@ -400,8 +400,8 @@ the carver's and mason's benches by their names; **the settlements' pieces** (`a
 `forge` in the smithy, the `midden` heap on earth behind the longhouse, a `watchtower` and a torch inside a walled town's gate
 at wealth 0.5 and up (a bowman's post, raid step 6), a `beachedBoat` on a shore place's sand; a set piece with no drawn prop
 of its name passes the village's prop check; **a thing with no picture and no drawn prop stands in** as the nearest that has one,
-`STAND_IN` in the game's `sprite` (2026-10-22: the insides' looms, stools, shelves and cupboards have none yet and every frame with
-one in view threw; asked of the studio); **Colin, AD's insides** (`assets/props/interior`: a cradle at the foot of the bed in a
+`STAND_IN` in the game's `sprite` (2026-10-22: the insides' looms, stools, shelves and cupboards had none and every frame with
+one in view threw; Colin, AD's pictures came the same day, and the stand-in stays as the guard); **Colin, AD's insides** (`assets/props/interior`: a cradle at the foot of the bed in a
 third of the houses, a hanging on most houses' north wall, herbs and onions, pelts or a woven one, the woven one behind a hall's
 high seat; Colin, AD's own edit of `src/village.js` as the settlements' owner, on its own random stream; a thing with `wall`
 throws no shadow on the floor; the cradle breaks as a stool, `WOODF`)), **and the raid's set** (`assets/props/raid`, the studio's step 6: the ram, sack
