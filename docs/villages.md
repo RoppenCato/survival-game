@@ -1,5 +1,7 @@
 # Villages: the rules and the settings
 
+**Since 2026-10-22 the generator grows every place by the grammar of `docs/settlements-plan.md`** (a focus, a spine, units grown round it, the edge last, the outside; the ways in, the secrets and the audit over it). What follows is the farm: the ring plan round one yard, which is the unit the grammar builds with (a farmstead is one of them; a village is several, each with its own fence). Sections 5 to 8 below describe the old whole-site plan and the first raid thoughts; the plan doc and CLAUDE.md say how things stand.
+
 Robin's brief (2026-10-07): a set of rules and settings that make good-looking, working villages, spawned at random on islands
 as one of many places of interest. It must feel like people planned where everything stands; every village should feel a bit
 different and reward exploring; and it must be easy to generate in code. What follows are the rules, the numbers, and how the

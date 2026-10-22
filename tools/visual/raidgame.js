@@ -19,7 +19,8 @@
     var victim = m[2]; victim.dead = true; victim.deadT = 0; victim.deadFor = 90; victim.hp = 0; sim(3.5); out.deadKept = JSON.stringify(D().garrison().dead);
     var c = D().toVillage(vi); D().goto(c.x + 4200, c.y); sim(46); out.farLive = D().garrison().live; out.farMen = men(vi).filter(function (e) { return !e.dead; }).length;
     D().toVillage(vi); sim(3.5); m = men(vi).filter(function (e) { return !e.dead; }); out.n2 = m.length; out.victimBack = m.some(function (e) { return e.gi === victim.gi; }); out.names2 = m.slice(0, 2).map(function (e) { return e.name; });
-    out.fault = out.n1 !== 20 || out.onLand !== out.n1 || out.inBox !== out.n1 || out.farMen !== 0 || out.n2 !== 19 || out.victimBack ? '!!' : '';
+    var want = Village.defence(v.arch, v.wealth, v.ring).n, raids = (D().garrison().raids || {})[vi] || 0, bonus = raids ? Math.min(6, 2 * raids) : 0; out.want = [want, bonus];   // the town's own count by its wealth and ring, and the men it keeps more after a raid (the body found raised the alarm), not a fixed twenty (2026-10-22)
+    out.fault = out.n1 !== want || out.onLand !== out.n1 || out.inBox !== out.n1 || out.farMen !== 0 || out.n2 !== want - 1 + bonus || out.victimBack ? '!!' : '';
     out.errs = D().errlog().slice(-3).map(function (l) { return String(l).slice(0, 160); });
     return out;
   }

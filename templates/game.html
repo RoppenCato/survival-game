@@ -6205,12 +6205,12 @@ __COMBAT__
   }, { passive: false });
   cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
-  function layoutKey() { return (spec.waters ? 'w' + JSON.stringify(spec.waters === true ? World.WATERS : spec.waters) + ':' : '') + spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m5' + (spec.mountainOpts ? 'b' : '') : '') + ':h2'; }   // a save only fits the same arrangement of islands (h2: the houses grew, 2026-10-13: every village and the steading are laid out anew)
+  function layoutKey() { return (spec.waters ? 'w' + JSON.stringify(spec.waters === true ? World.WATERS : spec.waters) + ':' : '') + spec.count + ':' + spec.dir + ':' + spec.gap + ':' + spec.gapVar + ':' + spec.isle + ':' + spec.isle0 + ':' + spec.big + ':' + (spec.sizes || []).join('/') + ':' + (spec.biomes || []).join('') + ':' + (spec.sizeVar || 0) + (spec.mountain ? ':m5' + (spec.mountainOpts ? 'b' : '') : '') + ':h2' + (typeof Village !== 'undefined' && Village.VERSION > 1 ? ':v' + Village.VERSION : ''); }   // a save only fits the same arrangement of islands (h2: the houses grew, 2026-10-13: every village and the steading are laid out anew)
   function toCamp() { var P = hero(); P.x = home.x + 44; P.y = home.y + 10; P.vx = P.vy = 0; }   // the hero starts in his wrecked boat on the beach
   function start(fresh) {
     if (BT.on || SCENE === 'models') { noSave = true; try { localStorage.removeItem(SAVE); } catch (e) {} }   /* the battle and destruction scenes save nothing and load nothing (2026-10-15: something saved during their very first load, before the scene switched saving off, and every later visit loaded it: the destruction scene then had no sampler and "To the sampler" threw) */
     var sv = fresh || BT.on ? null : loadSave(), k;
-    if (sv && sv.layout !== layoutKey()) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The sea was remade with more islands: a fresh start'); }, 500); }
+    if (sv && sv.layout !== layoutKey()) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The world was remade: a fresh start'); }, 500); }
     if (sv && sv.isle && sv.isle !== spec.isle) { sv = null; try { localStorage.removeItem(SAVE); } catch (e) {} setTimeout(function () { toast('The island was remade at a new size: a fresh start'); }, 500); }   // a save from an island of another size does not fit
     if (sv) spec.seed = sv.seed;
     heroName = sv && sv.heroName ? sv.heroName : ''; pins = sv && sv.pins ? sv.pins.filter(function (id) { return !!recipeById(id); }).slice(0, 3) : []; craftN = sv && sv.craftN ? sv.craftN : {}; naming = !heroName && !SCENE && !BT.on ? { name: '' } : null;   /* the hero's name, asked once */

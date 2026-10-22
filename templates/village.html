@@ -5,24 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Village Editor</title>
 <style>
-  :root { --bg: #171a1f; --panel: #20242b; --ink: #e8e4da; --muted: #a9a399; --line: #3a3f48; --btn: #2a2f38; --on: #4caf7d; }
+  :root { --bg: #171a1f; --panel: #20242b; --ink: #e8e4da; --muted: #a9a399; --line: #3a3f48; --btn: #2a2f38; --on: #4caf7d; --bad: #e07a5f; }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, sans-serif; }
-  .wrap { max-width: 2400px; margin: 0 auto; padding: 18px 24px 40px; }
+  .wrap { max-width: 2600px; margin: 0 auto; padding: 18px 24px 40px; }
   h1 { margin: 0 0 6px; font-size: 22px; } h2 { margin: 18px 0 8px; font-size: 15px; } h2.more { margin-top: 22px; }
-  .lede { color: var(--muted); margin: 0 0 14px; max-width: 900px; }
-  .cols { display: grid; grid-template-columns: minmax(640px, 1fr) 420px; gap: 20px; align-items: start; }
-  .view { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
-  canvas { width: 100%; height: auto; display: block; border-radius: 8px; image-rendering: auto; background: #5f8a44; }
+  .lede { color: var(--muted); margin: 0 0 14px; max-width: 1100px; }
+  .cols { display: grid; grid-template-columns: minmax(640px, 1fr) 440px; gap: 20px; align-items: start; }
+  .view { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; position: sticky; top: 10px; }
+  canvas { width: 100%; height: auto; display: block; border-radius: 8px; image-rendering: auto; background: #5f8a44; cursor: grab; }
+  canvas.drag { cursor: grabbing; }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
   .group { display: flex; flex-wrap: wrap; gap: 6px; }
   button { background: var(--btn); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font: inherit; cursor: pointer; min-height: 40px; }
   button[aria-pressed="true"] { background: var(--on); color: #10231a; border-color: var(--on); }
-  .row { display: grid; grid-template-columns: 150px 1fr 54px; gap: 10px; align-items: center; margin: 4px 0; }
+  button.small { min-height: 30px; padding: 4px 10px; font-size: 13px; }
+  .row { display: grid; grid-template-columns: 150px 1fr 60px; gap: 10px; align-items: center; margin: 4px 0; }
   .row span:last-child { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
   input[type=range] { width: 100%; }
-  textarea { width: 100%; min-height: 110px; background: #14171c; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: 12px/1.4 ui-monospace, monospace; }
+  select { background: #14171c; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; }
+  textarea { width: 100%; min-height: 90px; background: #14171c; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: 12px/1.4 ui-monospace, monospace; }
+  pre.audit { background: #14171c; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap; margin: 6px 0 0; max-height: 360px; overflow: auto; }
+  pre.audit .bad { color: var(--bad); font-weight: bold; }
   .desc { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .legend { color: var(--muted); font-size: 12px; margin: 6px 0 0; line-height: 1.6; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; vertical-align: -1px; margin: 0 4px 0 8px; }
+  label.chk { display: inline-flex; align-items: center; gap: 6px; margin: 2px 10px 2px 0; font-size: 14px; }
+  details { margin-top: 14px; } summary { cursor: pointer; font-weight: 600; margin-bottom: 6px; }
   a { color: #9fd8ff; }
 </style>
 </head>
@@ -30,24 +39,34 @@
 <div class="wrap">
   <p><a href="index.html">&larr; Back to menu</a></p>
   <h1>Village Editor</h1>
-  <p class="lede">The rules that grow a village (docs/villages.md): pick an archetype, roll a seed, set the wealth and the shore, and tune the numbers. Every village is its seed, archetype, wealth and shore, grown the same each time. "Use in the game" hands the numbers to the game's villages.</p>
+  <p class="lede">One grammar from the farmstead to the great town (docs/settlements-plan.md): a focus, a spine, units grown round it, the edge drawn last, the outside; over it the ways in, the secrets and the defence. Pick a tier, roll a seed, set the wealth, the shore, the shape, the story and the age; the audit says what the rules ask and what the place gives. The wheel zooms, the left button drags the view, a double click fits it. "Use in the game" hands the numbers to the game's villages.</p>
   <div class="cols">
     <div>
-      <div class="view"><canvas id="cv" width="1600" height="1000"></canvas></div>
+      <div class="view"><canvas id="cv" width="1800" height="1100"></canvas>
+        <p class="legend" id="legend"></p></div>
       <p class="desc" id="note"></p>
+      <pre class="audit" id="audit"></pre>
     </div>
     <div>
       <section class="panel">
-        <h2>Archetype</h2>
+        <h2>Tier</h2>
         <div class="group" id="archs"></div>
-        <h2 class="more">Village</h2>
-        <div class="group"><button id="reroll">Reroll (new seed)</button><button id="prev">Previous seed</button></div>
+        <h2 class="more">The place</h2>
+        <div class="group"><button id="reroll">Reroll (new seed)</button><button id="prev">Previous seed</button><button id="fit">Bird&rsquo;s eye</button></div>
         <div class="row"><span>Seed</span><input id="seed" type="range" min="1" max="9999" step="1"><span id="seedv"></span></div>
         <div class="row"><span>Wealth</span><input id="wealth" type="range" min="0" max="1" step="0.05"><span id="wealthv"></span></div>
+        <div class="row"><span>Shape</span><select id="shape"></select><span></span></div>
+        <div class="row"><span>Story</span><select id="story"></select><span></span></div>
+        <div class="row"><span>Age</span><select id="age"></select><span></span></div>
+        <div class="row"><span>Grown so far</span><input id="rounds" type="range" min="0" max="12" step="1"><span id="roundsv"></span></div>
         <h2 class="more">Shore</h2>
         <div class="group" id="shores"></div>
-        <h2 class="more">The rules</h2>
-        <div id="rules"></div>
+        <h2 class="more">Defence</h2>
+        <div class="group" id="rings"></div>
+        <p class="desc" id="defence"></p>
+        <h2 class="more">Show</h2>
+        <div id="shows"></div>
+        <details><summary>The rules (the numbers)</summary><div id="rules"></div></details>
         <h2 class="more">Settings as text</h2>
         <textarea id="json" spellcheck="false"></textarea>
         <div class="group" style="margin-top:8px"><button id="apply">Apply text</button><button id="usegame">Use in the game</button><button id="reset">Reset to default</button></div>
@@ -70,61 +89,124 @@ __VILLAGE__
 </script>
 <script>
 (function () {
-  var lib = GameArt.lib, kit = StyleLab.kit, KEY = 'villageeditor1';
+  var lib = GameArt.lib, kit = StyleLab.kit, KEY = 'villageeditor2';   /* (villageeditor1 held the old editor's state: the archetypes and the knobs changed, 2026-10-22) */
   lib.applyStored(localStorage); /* (the stored look game.look is retired, 2026-10-21) */
   kit.setup(kit.STYLE);
-  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-  var st = { arch: 'small', seed: 1234, wealth: 0.5, shore: 's', G: {} }, history = [];
-  try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && typeof sv === 'object') { for (var k in sv) st[k] = sv[k]; } } catch (e) {}
-  var RULES = [['gap', 'Gap between buildings', 1, 4, 1], ['yardGap', 'Wall to yard', 0, 3, 1], ['fenceGap', 'Ring to fence', 0, 3, 1], ['emptySlots', 'Slots left open', 0, 0.8, 0.05], ['sizeJitter', 'Size varies by', 0, 2, 1],
-    ['peoplePerHouse', 'People per house', 1, 5, 0.1], ['outsideShare', 'Share outside', 0, 1, 0.05], ['cellarAt', 'A cellar from wealth', 0, 1, 0.05], ['palisadeAt', 'A palisade from wealth', 0, 1, 0.05], ['drystoneAt', 'Dry stone from wealth', 0, 1, 0.05], ['railAt', 'A rail fence from wealth', 0, 1, 0.05],
-    ['wealthStone', 'Stone walls from', 0, 1, 0.05], ['wealthLogs', 'Log walls from', 0, 1, 0.05], ['wealthPlanks', 'Plank walls from', 0, 1, 0.05], ['shinglesAt', 'Shingles from', 0, 1, 0.05], ['fieldStrips', 'Field strips', 0, 6, 1], ['fields', 'Fields', 0, 1, 1], ['sacred', 'A stone', 0, 1, 1], ['roadW', 'Road width', 4, 18, 1], ['backGate', 'A back gate', 0, 1, 1], ['nature', 'Trees and bushes kept', 0, 1, 1], ['clutter', 'Things against the walls', 0, 1, 1], ['midden', 'A midden', 0, 1, 1], ['graves', 'A grave', 0, 1, 1], ['yardEarth', 'Earth yard', 0, 1, 1], ['pathGravel', 'Gravel paths', 0, 1, 1], ['pathEarth', 'Earth paths', 0, 1, 1], ['mossEdge', 'Moss at the edges', 0, 1, 1]];
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d'), T = 32, TS = 24, K = 0.75;
+  var st = { arch: 'village', seed: 1234, wealth: 0.5, shore: '', shape: 'auto', story: 'auto', age: 'auto', ring: 1, rounds: -1, lowland: false, G: {}, show: { roads: true, units: false, zones: false, ways: true, secrets: true, men: true, nodes: false, folk: true } }, history = [];
+  try { var sv = JSON.parse(localStorage.getItem(KEY)); if (sv && typeof sv === 'object') { for (var k in sv) { if (k === 'show' && sv.show) { for (var k2 in sv.show) st.show[k2] = sv.show[k2]; } else st[k] = sv[k]; } } } catch (e) {}
+  if (!Village.ARCH[st.arch]) st.arch = 'village';
+  var RULES = [['gap', 'Gap between buildings', 1, 4, 1], ['yardGap', 'Wall to yard', 0, 3, 1], ['fenceGap', 'Ring to fence', 0, 3, 1], ['unitGap', 'Lane between farms', 1, 4, 1], ['emptySlots', 'Slots left open', 0, 0.8, 0.05],
+    ['peoplePerHouse', 'People per house', 1, 5, 0.1], ['outsideShare', 'Share outside', 0, 1, 0.05], ['cellarAt', 'A cellar from wealth', 0, 1, 0.05], ['cryptAt', 'A crypt from wealth', 0, 1, 0.05], ['palisadeAt', 'A palisade from wealth', 0, 1, 0.05], ['drystoneAt', 'Dry stone from wealth', 0, 1, 0.05], ['railAt', 'A rail fence from wealth', 0, 1, 0.05], ['farmFenceAt', 'Farm fences from wealth', 0, 1, 0.05], ['farmWattleAt', 'Wattle farm fences from', 0, 1, 0.05],
+    ['wealthStone', 'Stone walls from', 0, 1, 0.05], ['wealthLogs', 'Log walls from', 0, 1, 0.05], ['wealthPlanks', 'Plank walls from', 0, 1, 0.05], ['shinglesAt', 'Shingles from', 0, 1, 0.05], ['fieldStrips', 'Field strips', 0, 6, 1], ['fields', 'Fields', 0, 1, 1], ['sacred', 'A stone', 0, 1, 1], ['roadW', 'Road width', 4, 18, 1], ['backGate', 'A back gate', 0, 1, 1], ['wear', 'Paths worn by the people', 0, 1, 1], ['wearAt', 'A path from this many routes', 1, 8, 1], ['secrets', 'Secrets', 0, 1, 1], ['ways', 'Ways in', 0, 1, 1], ['nature', 'Trees and bushes kept', 0, 1, 1], ['clutter', 'Things against the walls', 0, 1, 1], ['midden', 'A midden', 0, 1, 1], ['graves', 'A grave', 0, 1, 1], ['yardEarth', 'Earth yard', 0, 1, 1], ['pathGravel', 'Gravel paths', 0, 1, 1], ['mossEdge', 'Moss at the edges', 0, 1, 1]];
   var inputs = {}, outs = {};
   var rulesHost = document.getElementById('rules');
   RULES.forEach(function (r) {
     var row = document.createElement('label'); row.className = 'row'; var lab = document.createElement('span'); lab.textContent = r[1]; var inp = document.createElement('input'); inp.type = 'range'; inp.min = r[2]; inp.max = r[3]; inp.step = r[4]; var out = document.createElement('span');
-    inp.addEventListener('input', function () { st.G[r[0]] = +inp.value; out.textContent = inp.value; draw(); save(); });
+    inp.addEventListener('input', function () { st.G[r[0]] = +inp.value; out.textContent = inp.value; regrow(); save(); });
     row.appendChild(lab); row.appendChild(inp); row.appendChild(out); rulesHost.appendChild(row); inputs[r[0]] = inp; outs[r[0]] = out;
   });
   var archHost = document.getElementById('archs'), archBtns = {};
-  var lowBtn = document.createElement('button'); lowBtn.textContent = 'Lowlands'; lowBtn.addEventListener('click', function () { st.lowland = !st.lowland; lowBtn.style.fontWeight = st.lowland ? 'bold' : 'normal'; draw(); save(); lowBtn.blur(); }); archHost.appendChild(lowBtn); lowBtn.style.fontWeight = st.lowland ? 'bold' : 'normal';
-  Object.keys(Village.ARCH).forEach(function (a) { var b = document.createElement('button'); b.textContent = Village.ARCH[a].name; b.addEventListener('click', function () { st.arch = a; ui(); draw(); save(); b.blur(); }); archHost.appendChild(b); archBtns[a] = b; });
+  var ORDER = ['farmstead', 'fisher', 'small', 'fishing', 'ruin', 'village', 'seat', 'trading', 'church', 'town', 'great', 'bigtown'];
+  ORDER.forEach(function (a) { if (!Village.ARCH[a]) return; var b = document.createElement('button'); b.textContent = Village.ARCH[a].name; b.addEventListener('click', function () { st.arch = a; st.rounds = -1; ui(); regrow(); fit(); save(); b.blur(); }); archHost.appendChild(b); archBtns[a] = b; });
+  var lowBtn = document.createElement('button'); lowBtn.textContent = 'Lowlands'; lowBtn.className = 'small'; lowBtn.addEventListener('click', function () { st.lowland = !st.lowland; ui(); regrow(); save(); lowBtn.blur(); }); archHost.appendChild(lowBtn);
   var shoreHost = document.getElementById('shores'), shoreBtns = {};
-  [['None', ''], ['South', 's'], ['East', 'e'], ['West', 'w'], ['North', 'n']].forEach(function (s) { var b = document.createElement('button'); b.textContent = s[0]; b.addEventListener('click', function () { st.shore = s[1]; ui(); draw(); save(); b.blur(); }); shoreHost.appendChild(b); shoreBtns[s[1]] = b; });
-  var seedIn = document.getElementById('seed'), wealthIn = document.getElementById('wealth'), json = document.getElementById('json'), msg = document.getElementById('msg');
-  seedIn.addEventListener('input', function () { st.seed = +seedIn.value; ui(); draw(); save(); });
-  wealthIn.addEventListener('input', function () { st.wealth = +wealthIn.value; ui(); draw(); save(); });
-  document.getElementById('reroll').addEventListener('click', function (e) { history.push(st.seed); st.seed = 1 + Math.floor(Math.random() * 9998); ui(); draw(); save(); e.currentTarget.blur(); });
-  document.getElementById('prev').addEventListener('click', function (e) { if (history.length) { st.seed = history.pop(); ui(); draw(); save(); } e.currentTarget.blur(); });
-  document.getElementById('apply').addEventListener('click', function (e) { try { var o = JSON.parse(json.value); if (o && typeof o === 'object') { for (var k in o) st[k] = o[k]; } ui(); draw(); save(); msg.textContent = 'Applied.'; } catch (err) { msg.textContent = 'That is not settings text.'; } e.currentTarget.blur(); });
+  [['None', ''], ['South', 's'], ['East', 'e'], ['West', 'w'], ['North', 'n']].forEach(function (s) { var b = document.createElement('button'); b.textContent = s[0]; b.addEventListener('click', function () { st.shore = s[1]; ui(); regrow(); save(); b.blur(); }); shoreHost.appendChild(b); shoreBtns[s[1]] = b; });
+  var ringHost = document.getElementById('rings'), ringBtns = {};
+  [['Home water (0)', 0], ['First sea (1)', 1], ['Second sea (2)', 2], ['Third sea (3)', 3]].forEach(function (s) { var b = document.createElement('button'); b.textContent = s[0]; b.addEventListener('click', function () { st.ring = s[1]; ui(); regrow(); save(); b.blur(); }); ringHost.appendChild(b); ringBtns[s[1]] = b; });
+  var showHost = document.getElementById('shows'), showBoxes = {};
+  [['roads', 'The roads (the spine)'], ['units', 'The units and their fronts'], ['zones', 'The zones'], ['ways', 'The ways in'], ['secrets', 'The secrets'], ['men', 'The men’s posts'], ['nodes', 'The nodes'], ['folk', 'The people']].forEach(function (s) { var l = document.createElement('label'); l.className = 'chk'; var c = document.createElement('input'); c.type = 'checkbox'; c.addEventListener('change', function () { st.show[s[0]] = c.checked; if (s[0] === 'folk') baked = false; dirty = true; save(); }); l.appendChild(c); l.appendChild(document.createTextNode(s[1])); showHost.appendChild(l); showBoxes[s[0]] = c; });
+  function fillSelect(id, list, names) { var sel = document.getElementById(id); sel.innerHTML = ''; list.forEach(function (v) { var o = document.createElement('option'); o.value = v; o.textContent = names && names[v] ? names[v] : (v === 'auto' ? 'By the seed' : v.charAt(0).toUpperCase() + v.slice(1)); sel.appendChild(o); }); return sel; }
+  var storyNames = { auto: 'By the seed' }; Object.keys(Village.STORIES).forEach(function (k) { storyNames[k] = Village.STORIES[k].name; });
+  var shapeSel = fillSelect('shape', Village.SHAPES), storySel = fillSelect('story', ['auto'].concat(Object.keys(Village.STORIES)), storyNames), ageSel = fillSelect('age', Village.AGES);
+  shapeSel.addEventListener('change', function () { st.shape = shapeSel.value; regrow(); save(); }); storySel.addEventListener('change', function () { st.story = storySel.value; regrow(); save(); }); ageSel.addEventListener('change', function () { st.age = ageSel.value; regrow(); save(); });
+  var seedIn = document.getElementById('seed'), wealthIn = document.getElementById('wealth'), roundsIn = document.getElementById('rounds'), json = document.getElementById('json'), msg = document.getElementById('msg');
+  seedIn.addEventListener('input', function () { st.seed = +seedIn.value; ui(); regrow(); save(); });
+  wealthIn.addEventListener('input', function () { st.wealth = +wealthIn.value; ui(); regrow(); save(); });
+  roundsIn.addEventListener('input', function () { st.rounds = +roundsIn.value >= +roundsIn.max ? -1 : +roundsIn.value; ui(); regrow(); save(); });
+  document.getElementById('reroll').addEventListener('click', function (e) { history.push(st.seed); st.seed = 1 + Math.floor(Math.random() * 9998); ui(); regrow(); save(); e.currentTarget.blur(); });
+  document.getElementById('prev').addEventListener('click', function (e) { if (history.length) { st.seed = history.pop(); ui(); regrow(); save(); } e.currentTarget.blur(); });
+  document.getElementById('fit').addEventListener('click', function (e) { fit(); e.currentTarget.blur(); });
+  document.getElementById('apply').addEventListener('click', function (e) { try { var o = JSON.parse(json.value); if (o && typeof o === 'object') { for (var k in o) st[k] = o[k]; } ui(); regrow(); save(); msg.textContent = 'Applied.'; } catch (err) { msg.textContent = 'That is not settings text.'; } e.currentTarget.blur(); });
   document.getElementById('usegame').addEventListener('click', function (e) { try { localStorage.setItem('game.village', JSON.stringify(st.G)); msg.textContent = 'The game now grows its villages from these numbers.'; } catch (err) {} e.currentTarget.blur(); });
-  document.getElementById('reset').addEventListener('click', function (e) { st.G = {}; ui(); draw(); save(); e.currentTarget.blur(); });
+  document.getElementById('reset').addEventListener('click', function (e) { st.G = {}; ui(); regrow(); save(); e.currentTarget.blur(); });
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+  var V = null, D = null, men = [], au = null, site = null, wanted = 0;
   function ui() {
-    var G = Village.cfg(st.G);
+    var G = Village.cfg(st.G), A = Village.ARCH[st.arch];
     RULES.forEach(function (r) { inputs[r[0]].value = G[r[0]]; outs[r[0]].textContent = G[r[0]]; });
     Object.keys(archBtns).forEach(function (a) { archBtns[a].setAttribute('aria-pressed', a === st.arch ? 'true' : 'false'); });
+    lowBtn.setAttribute('aria-pressed', st.lowland ? 'true' : 'false');
     Object.keys(shoreBtns).forEach(function (s) { shoreBtns[s].setAttribute('aria-pressed', s === (st.shore || '') ? 'true' : 'false'); });
+    Object.keys(ringBtns).forEach(function (s) { ringBtns[s].setAttribute('aria-pressed', +s === st.ring ? 'true' : 'false'); });
+    Object.keys(showBoxes).forEach(function (s) { showBoxes[s].checked = !!st.show[s]; });
+    shapeSel.value = st.shape; storySel.value = st.story; ageSel.value = st.age; shapeSel.disabled = A.family !== 'auto';
     seedIn.value = st.seed; document.getElementById('seedv').textContent = st.seed; wealthIn.value = st.wealth; document.getElementById('wealthv').textContent = st.wealth.toFixed(2);
+    roundsIn.max = Math.max(1, wanted || 1); roundsIn.value = st.rounds < 0 ? roundsIn.max : st.rounds; document.getElementById('roundsv').textContent = st.rounds < 0 ? 'all' : st.rounds + ' of ' + wanted;
     if (document.activeElement !== json) json.value = JSON.stringify(st);
   }
   var tiles = {};
   function tileCv(name) { if (!tiles[name]) tiles[name] = kit.bakeTile(name, 0); return tiles[name]; }
-  var V = null, clock = 0;
-  function draw() {
-    var site = Village.siteFor(st.arch), T = 32, TS = 24, K = 0.75;
-    V = Village.make(st.seed, { tx: 2, ty: 2, w: site.w, h: site.h, shore: st.shore || null }, { arch: st.arch, biome: st.lowland ? 1 : 0, wealth: st.wealth, G: st.G });
-    var W = (site.w + 4) * T, H = (site.h + 4) * TS, sc = Math.min(cv.width / W, cv.height / H);
-    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#5f8a44'; ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.setTransform(sc, 0, 0, sc, (cv.width - W * sc) / 2, (cv.height - H * sc) / 2); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    var g = tileCv('grass'); for (var y = 0; y < site.h + 4; y++) for (var x = 0; x < site.w + 4; x++) ctx.drawImage(g, x * T, y * TS, T + 0.4, TS + 0.4);
-    if (st.shore) { ctx.fillStyle = '#4a7f9e'; if (st.shore === 's') ctx.fillRect(0, (site.h + 2) * TS, W, 2 * TS); else if (st.shore === 'n') ctx.fillRect(0, 0, W, 2 * TS); else if (st.shore === 'e') ctx.fillRect((site.w + 2) * T, 0, 2 * T, H); else ctx.fillRect(0, 0, 2 * T, H); }
-    Village.draw(ctx, V, { kit: kit, Build: Build, lib: lib, tile: function (c, tx, ty, x, yy, w, h) { c.drawImage(tileCv(V.floors[tx + ',' + ty] === 1 ? 'dirt' : 'plank'), x, yy, w, h); } }, clock);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    document.getElementById('note').textContent = Village.ARCH[st.arch].name + ', seed ' + st.seed + ': ' + V.lots.length + ' buildings (' + V.lots.map(function (l) { return Village.BUILD[l.id].name.toLowerCase(); }).join(', ') + '), ' + V.folk.length + ' people, ' + V.items.length + ' things inside, finds: ' + (V.finds.map(function (f) { return f.kind; }).join(', ') || 'none') + '. Fence: ' + (V.fence ? V.fence.kind : 'none') + '.';
+  // ---- the place, grown ----
+  function regrow() {
+    site = Village.siteFor(st.arch); var A = Village.ARCH[st.arch];
+    V = Village.make(st.seed, { tx: 2, ty: 2, w: site.w, h: site.h, shore: st.shore || null }, { arch: st.arch, biome: st.lowland || A.lowland ? 1 : 0, wealth: st.wealth, G: st.G, shape: st.shape, story: st.story, age: st.age, rounds: st.rounds >= 0 ? st.rounds : null });
+    wanted = V.wanted || V.units.length;
+    D = Village.defence(st.arch, st.wealth, st.ring); D.tactic = V.tactic;
+    men = D.n ? Village.garrison(V, D.n, Village.rng(st.seed * 37 + 5), D) : [];
+    au = Village.audit(V, D);
+    var L = Village.lootOf(V);
+    document.getElementById('note').textContent = A.name + ', seed ' + st.seed + ': ' + V.units.length + ' units, ' + V.lots.length + ' buildings (' + V.lots.map(function (l) { return Village.BUILD[l.id].name.toLowerCase(); }).join(', ') + '), ' + V.folk.length + ' people, ' + V.items.length + ' things, finds: ' + (V.finds.map(function (f) { return f.kind; }).join(', ') || 'none') + '. Fence: ' + (V.fence ? V.fence.kind + (V.fence.round ? ' (a ring of stakes)' : '') : 'none') + '. Loot ' + Math.round(L.value) + ' (silver ' + Math.round(L.silver) + ').';
+    document.getElementById('defence').textContent = (D.n ? D.n + ' fighting men (' + men.filter(function (m) { return m.wpn === 'bow'; }).length + ' with bows), the hall’s and the gate’s in ' + ['cloth', 'leather', 'mail'][D.gear[0]] + ', the rest in ' + ['cloth', 'leather', 'mail'][D.gear[1]] + ', wits +' + D.wits + '; the plan: ' + V.tactic + '.' : 'No fighting men: the householders arm when raided.') + ' At home water nobody is raided.';
+    var pre = document.getElementById('audit'); pre.innerHTML = ''; au.lines.forEach(function (l) { var s = document.createElement('span'); if (l.indexOf('!!') === 0) s.className = 'bad'; s.textContent = l + '\n'; pre.appendChild(s); });
+    document.getElementById('legend').innerHTML = '<i style="background:#e8c547"></i>ways in <i style="background:#c77dff"></i>secrets <i style="background:#ff6b6b"></i>men at a gate <i style="background:#ffa94d"></i>men about <i style="background:#74c0fc"></i>men indoors and in the hall <i style="background:#2ec4b6"></i>a bowman &middot; zones: green public, blue the fence, red private, a star the prize';
+    ui(); baked = false; dirty = true;
   }
-  ui(); draw();
-  window.villageDbg = { st: st, V: function () { return V; }, draw: draw };
+  // ---- the view: a camera over the drawn world (x in units, y in units times three quarters) ----
+  var cam = { cx: 0, cy: 0, z: 1 }, dirty = true, drag = null, layer = document.createElement('canvas'), layerZ = 2, baked = false;
+  function worldW() { return (site.w + 4) * T; } function worldH() { return (site.h + 4) * T; }
+  function bake() {                                   // the place drawn once into an offscreen canvas at two pixels a unit (a town takes a second to draw; dragging the view must not); the view blits it
+    layerZ = Math.min(2, 8000 / worldW(), 8000 / (worldH() * K)); layer.width = Math.ceil(worldW() * layerZ); layer.height = Math.ceil(worldH() * K * layerZ);
+    var g = layer.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#5f8a44'; g.fillRect(0, 0, layer.width, layer.height); g.setTransform(layerZ, 0, 0, layerZ, 0, 0); g.lineJoin = 'round'; g.lineCap = 'round';
+    var gr = tileCv('grass'), x, y; for (y = 0; y < site.h + 4; y++) for (x = 0; x < site.w + 4; x++) g.drawImage(gr, x * T, y * TS, T + 0.4, TS + 0.4);
+    if (st.shore) { g.fillStyle = '#4a7f9e'; if (st.shore === 's') g.fillRect(0, (site.h + 2) * TS, worldW(), 2 * TS); else if (st.shore === 'n') g.fillRect(0, 0, worldW(), 2 * TS); else if (st.shore === 'e') g.fillRect((site.w + 2) * T, 0, 2 * T, worldH() * K); else g.fillRect(0, 0, 2 * T, worldH() * K); }
+    var V2 = st.show.folk ? V : Object.assign({}, V, { folk: [] });
+    Village.draw(g, V2, { kit: kit, Build: Build, lib: lib, tile: function (c, tx, ty, px, py, w, h) { c.drawImage(tileCv(V.floors[tx + ',' + ty] === 1 ? 'dirt' : 'plank'), px, py, w, h); } }, 0);
+    baked = true;
+  }
+  function fit() { cam.z = Math.min(cv.width / worldW(), cv.height / (worldH() * K)); cam.cx = worldW() / 2; cam.cy = worldH() / 2; dirty = true; }
+  function toWorld(sx, sy) { return [(sx - cv.width / 2) / cam.z + cam.cx, ((sy - cv.height / 2) / cam.z) / K + cam.cy]; }
+  function canvasXY(e) { var r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; }
+  cv.addEventListener('wheel', function (e) { e.preventDefault(); var p = canvasXY(e), before = toWorld(p[0], p[1]), f = e.deltaY < 0 ? 1.18 : 1 / 1.18; cam.z = Math.max(Math.min(cv.width / worldW(), cv.height / (worldH() * K)) * 0.5, Math.min(6, cam.z * f)); var after = toWorld(p[0], p[1]); cam.cx += before[0] - after[0]; cam.cy += before[1] - after[1]; dirty = true; }, { passive: false });
+  cv.addEventListener('mousedown', function (e) { if (e.button !== 0) return; drag = { x: e.clientX, y: e.clientY, cx: cam.cx, cy: cam.cy }; cv.classList.add('drag'); e.preventDefault(); });
+  window.addEventListener('mousemove', function (e) { if (!drag) return; var r = cv.getBoundingClientRect(), k = cv.width / r.width; cam.cx = drag.cx - (e.clientX - drag.x) * k / cam.z; cam.cy = drag.cy - (e.clientY - drag.y) * k / cam.z / K; dirty = true; });
+  window.addEventListener('mouseup', function () { drag = null; cv.classList.remove('drag'); });
+  cv.addEventListener('dblclick', function () { fit(); });
+  function draw() {
+    if (!V) return;
+    var z = cam.z, W = cv.width, H = cv.height, A = Village.ARCH[st.arch];
+    if (!baked) bake();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#5f8a44'; ctx.fillRect(0, 0, W, H);
+    ctx.imageSmoothingEnabled = z < layerZ; ctx.setTransform(z / layerZ, 0, 0, z / layerZ, W / 2 - cam.cx * z, H / 2 - cam.cy * K * z); ctx.drawImage(layer, 0, 0);
+    ctx.setTransform(z, 0, 0, z, W / 2 - cam.cx * z, H / 2 - cam.cy * K * z); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    // the overlays, in the same transform: a size in screen pixels is divided by the zoom
+    var lw = 2 / z, fs = 12 / z; ctx.font = fs + 'px sans-serif'; ctx.textBaseline = 'middle';
+    function dot(px, py, r, col, ring) { ctx.beginPath(); ctx.arc(px, py * K, r / z, 0, 6.283); ctx.fillStyle = col; ctx.fill(); if (ring) { ctx.lineWidth = lw; ctx.strokeStyle = ring; ctx.stroke(); } }
+    function label(px, py, s, col) { var w2 = ctx.measureText(s).width + 6 / z; ctx.fillStyle = 'rgba(20,20,20,0.7)'; ctx.fillRect(px + 8 / z, py * K - fs * 0.7, w2, fs * 1.4); ctx.fillStyle = col || '#fff'; ctx.fillText(s, px + 11 / z, py * K); }
+    function rect(r, col, dash) { ctx.lineWidth = lw; ctx.strokeStyle = col; ctx.setLineDash(dash ? [6 / z, 4 / z] : []); ctx.strokeRect(r.x * T, r.y * TS, r.w * T, r.h * TS); ctx.setLineDash([]); }
+    if (st.show.roads) { ctx.lineWidth = 3 / z; (V.spine || []).forEach(function (pl) { ctx.strokeStyle = pl.cls === 'main' ? 'rgba(255,240,180,0.9)' : pl.cls === 'ring' ? 'rgba(255,210,120,0.9)' : 'rgba(200,220,255,0.8)'; ctx.setLineDash(pl.cls === 'lane' ? [8 / z, 6 / z] : []); ctx.beginPath(); pl.pts.forEach(function (p, i) { if (i) ctx.lineTo(p[0] * T, p[1] * TS); else ctx.moveTo(p[0] * T, p[1] * TS); }); ctx.stroke(); }); ctx.setLineDash([]); }
+    if (st.show.units) (V.units || []).forEach(function (u) { rect(u, u.zone === 'private' ? '#ff8787' : '#ffe066', true); ctx.fillStyle = 'rgba(255,224,102,0.9)'; ctx.fillRect(u.gap[0] * T, u.gap[1] * TS - 2 / z, Math.max(3 / z, (u.gap[2] - u.gap[0]) * T), Math.max(3 / z, (u.gap[3] - u.gap[1]) * TS) + 4 / z); label(u.x * T, u.y * T, u.kind + (u.quarter ? ' ' + u.quarter : '') + ' ' + u.front, '#ffe066'); });
+    if (st.show.zones) (V.zones || []).forEach(function (zn) { var col = zn.kind === 'public' ? '#8ce99a' : zn.kind === 'semi' ? '#74c0fc' : '#ff6b6b'; (zn.rects || []).forEach(function (r) { ctx.fillStyle = zn.kind === 'public' ? 'rgba(140,233,154,0.12)' : zn.kind === 'semi' ? 'rgba(116,192,252,0.08)' : 'rgba(255,107,107,0.14)'; ctx.fillRect(r.x * T, r.y * TS, r.w * T, r.h * TS); rect(r, col, false); }); (zn.pts || []).forEach(function (p) { ctx.fillStyle = '#ffd43b'; ctx.font = (18 / z) + 'px sans-serif'; ctx.fillText('★', p[0] - 7 / z, p[1] * K); ctx.font = fs + 'px sans-serif'; }); });
+    if (st.show.ways) (V.ways || []).forEach(function (wy) { dot(wy.x, wy.y, 7, '#e8c547', '#3b2f00'); label(wy.x, wy.y, wy.kind + ' ' + wy.secs + ' s, heard ' + wy.noise, '#ffe066'); });
+    if (st.show.secrets) (V.secrets || []).forEach(function (sc) { dot(sc.x, sc.y, 6, '#c77dff', '#2b0040'); label(sc.x, sc.y, sc.kind + ': ' + sc.cue, '#e5b8ff'); });
+    if (st.show.nodes) (V.nodes || []).forEach(function (n) { ctx.fillStyle = '#fff'; ctx.fillRect(n.x - 4 / z, n.y * K - 4 / z, 8 / z, 8 / z); label(n.x, n.y, n.kind + (n.what ? ' (' + n.what + ')' : ''), '#fff'); });
+    if (st.show.men) men.forEach(function (m) { var col = m.kind === 'gate' ? '#ff6b6b' : m.kind === 'yard' ? '#ffa94d' : m.kind === 'door' ? '#ffd43b' : m.kind === 'tower' ? '#2ec4b6' : '#74c0fc'; dot(m.x, m.y, 5, col, '#222'); if (m.wpn === 'bow') { ctx.strokeStyle = '#2ec4b6'; ctx.lineWidth = lw; ctx.beginPath(); ctx.arc(m.x, m.y * K, 9 / z, 0, 6.283); ctx.stroke(); } });
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(8, H - 30, 300, 22); ctx.fillStyle = '#fff'; ctx.font = '13px sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('zoom ' + cam.z.toFixed(2) + ' px a unit (the game shows 3): the wheel zooms, drag to move, double click fits', 14, H - 19);
+  }
+  function frame() { if (dirty) { dirty = false; draw(); } requestAnimationFrame(frame); }
+  regrow(); fit(); frame();
+  window.villageDbg = { st: st, V: function () { return V; }, men: function () { return men; }, audit: function () { return au; }, regrow: regrow, fit: fit, cam: cam };
 })();
 </script>
 </body>

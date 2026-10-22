@@ -6,10 +6,10 @@ const { createCanvas } = require('@napi-rs/canvas'); const fs = require('fs');
 global.__mk = (w, h) => createCanvas(w, h);
 const G = require('../../src/art.js'), S = require('../../src/stylelab.js'), Build = require('../../src/build.js'), Village = require('../../src/village.js');
 const lib = G.lib, kit = S.kit; kit.setup(kit.STYLE);
-const seed = +process.argv[2] || 4321, archs = process.argv[3] && process.argv[3] !== 'all' ? process.argv[3].split(',') : ['farmstead', 'small', 'village', 'fishing', 'trading', 'seat', 'ruin', 'town', 'church'], T = 32, TS = 24;
+const seed = +process.argv[2] || 4321, archs = process.argv[3] && process.argv[3] !== 'all' ? process.argv[3].split(',') : ['farmstead', 'small', 'village', 'fishing', 'trading', 'seat', 'ruin', 'town', 'church', 'great', 'bigtown'], T = 32, TS = 24;
 const Z = +process.argv[4] || (archs.length > 3 ? 1 : 2), WEALTH = process.argv[5] != null ? +process.argv[5] : null;
 const sites = archs.map(a => Village.siteFor(a)), mw = Math.max.apply(null, sites.map(s => s.w)) + 4, mh = Math.max.apply(null, sites.map(s => s.h)) + 5;   // a cell holds the largest site
-const cellW = mw * T, cellH = mh * TS, cols = Math.min(3, archs.length), rows = Math.ceil(archs.length / cols), cv = createCanvas(cellW * cols * Z, cellH * rows * Z), c = cv.getContext('2d');
+const cellW = mw * T, cellH = mh * TS, cols = Math.min(archs.length > 9 ? 4 : 3, archs.length), rows = Math.ceil(archs.length / cols), cv = createCanvas(cellW * cols * Z, cellH * rows * Z), c = cv.getContext('2d');
 const tiles = {}; function tileCv(n) { if (!tiles[n]) tiles[n] = kit.bakeTile(n, 0); return tiles[n]; }
 archs.forEach((a, i) => {
   const site = sites[i], ox = (i % cols) * cellW, oy = Math.floor(i / cols) * cellH, A = Village.ARCH[a], shore = A.shore ? 's' : null, wealth = WEALTH != null ? WEALTH : 0.3 + (i % 4) * 0.2;
