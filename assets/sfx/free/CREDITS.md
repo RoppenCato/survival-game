@@ -13,6 +13,10 @@ What the game plays is `assets/sfx/keep.txt` (Robin's picks, locked in 2026-10-2
 | `chop_a_1..3.wav` | `tree_chop_ax_06..08.wav` | Wood Chopping Sound Pack, Mo'ad (yuralria, itch.io) | free for any project, credit not needed, not to be resold unaltered | https://yuralria.itch.io/wood-gathering-sound-pack |
 | `treefall_a_1.wav` | `tree_felling_01.wav` | Wood Chopping Sound Pack, Mo'ad | as above | as above |
 | `clink_a_1..3.ogg` | `impactMining_000..002.ogg` | Impact Sounds 1.0, Kenney | CC0 | https://kenney.nl/assets/impact-sounds |
+| `talk_open_a..h_1.ogg, talk_next_a..h_1.ogg` | `cloth1..4, handleSmallLeather, handleSmallLeather2, beltHandle1..2 .ogg` | RPG Audio, Kenney (kenney.nl) | CC0 | https://kenney.nl/assets/rpg-audio |
+| `book_open_a_1.ogg, book_close_a_1.ogg` | `bookOpen.ogg, bookClose.ogg` | RPG Audio, Kenney (kenney.nl) | CC0 | https://kenney.nl/assets/rpg-audio |
+| `book_open_b..d_1.ogg, book_close_b..d_1.ogg` | `bookPlace1..3.ogg` | RPG Audio, Kenney (kenney.nl) | CC0 | https://kenney.nl/assets/rpg-audio |
+| `book_page_a..c_1.ogg` | `bookFlip1..3.ogg` | RPG Audio, Kenney (kenney.nl) | CC0 | https://kenney.nl/assets/rpg-audio |
 
 **The Sound Director's sounds** (`C:\dev\SG\Sound Director\out\sfx`): the fight sounds made in Sonic Pi (`combat`); the
 club's hit, a log coming off, a box breaking and the wave (`chapter1`), layered from the Wood Chopping Sound Pack, rubberduck's

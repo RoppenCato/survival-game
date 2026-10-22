@@ -3360,6 +3360,14 @@ __COMBAT__
   var SHOW_TALK = true, talkWin = null, PORT_IMG = {}, TALKW = { x: 50, y: 592 / 3, w: 300, h: 142 / 3 };
   function portraitImg(id) { var src = PORTRAITS[id]; if (!src) return null; var im = PORT_IMG[id]; if (!im) { im = PORT_IMG[id] = new Image(); im.decoding = 'async'; im.src = src; } return im.complete && im.naturalWidth ? im : null; }
   function speakerId(who) { return !who ? null : who === npc ? 'person.arnor' : who.aslak ? 'person.aslak' : (who.lore || null); }
+  function uiSfx(n, v) { if (!S.sound || pauseOpen || !AC || AC.state !== 'running') return; var nm = pickOf(n); if (nm === n || !Sfx.has(nm)) return; Sfx.play(AC, AC.destination, nm, { v: v, pitch: 0.03 }); }   /* the talk window's and the Lore Book's sounds (Derek, SD's candidates, picked in the arena: talk_open, talk_next, book_open, book_close, book_page); none until Robin has picked */
+  var uiWas = { talk: null, line: null, book: false, sel: null };
+  function uiSfxTick() {                    // the sounds by what changed: the window opening, its next line, the book opening and shutting, a page turned
+    var w = talkWin; if (w && !uiWas.talk) uiSfx('talk_open', 0.5); else if (w && w.line !== uiWas.line) uiSfx('talk_next', 0.35);
+    uiWas.talk = w; uiWas.line = w ? w.line : null;
+    if (bookOpen && !uiWas.book) uiSfx('book_open', 0.5); else if (!bookOpen && uiWas.book) uiSfx('book_close', 0.5); else if (bookOpen && LB.sel !== uiWas.sel) uiSfx('book_page', 0.45);
+    uiWas.book = bookOpen; uiWas.sel = bookOpen ? LB.sel : null;
+  }
   function talkOpen(who, fn) {              // a Talk: the line is said, in the window when he has a portrait
     fn(); var id = speakerId(who); if (id) lbMeet(id);
     if (!SHOW_TALK || !id || !PORTRAITS[id] || !who.say || who.sayT <= 0) return;
@@ -3681,7 +3689,8 @@ __COMBAT__
     var rUse = raftUsable(), cargo = cargoHome() && rUse && !raft.aboard, build = P.mode === 'build';
     if (carrying) return rUse && !raft.aboard ? { say: carrying.man ? 'Lay him aboard' : 'Stow it aboard', act: stowHeavy } : { say: carrying.man ? 'Set him down' : 'Put it down', act: putDown };
     if (looking) return { say: 'Turn back', act: function () { looking = null; } };
-    if (menu && menu.info) return { act: function () { menu = null; invOpen = false; } };            // E closes a recipe board as it opened it, and the screen with it
+    if (menu && menu.info) return { act: function () { menu = null; invOpen = false; } };
+    if (store && invOpen) return { act: function () { store = null; invOpen = false; } };   /* (a chest's board: E closes it as it opened it; Robin, 2026-10-22) */            // E closes a recipe board as it opened it, and the screen with it
     if (ringOpen) return { act: function () { ringOpen = false; } };
     if (sitting) return { say: 'Stand up', act: standUp };
     if (musterOpen) return { act: function () { musterOpen = false; } };
@@ -7461,7 +7470,7 @@ __COMBAT__
     if (groundDirtyT >= 0 && clock - groundDirtyT > 0.6) { groundDirtyT = -9; save(); }
     if (ADMIN.immortal && !P.dead) { P.hp = P.maxHp; P.st = Math.max(P.st, 100); }
     if (!P.dead && P.hp < P.maxHp && !fighting()) { var hri = RI() ? RI().at(Math.floor(P.x / T), Math.floor(P.y / T)) : -1, hpl = placeAt(P.x, P.y), hown = hpl < 0 || (hpl === 99 ? RU.held : villageHeld(hpl)), hcf = hri >= 0 && hown ? comfortOf(hri, lvl()).n : 0, hrate = (fireNear(P.x, P.y, 140) ? HEAL.fire : 0) + (hcf >= 1 ? HEAL.comfort * hcf : 0) + (shelterComfort(P.x, P.y) || inUse('hearthwarmth') ? HEAL.shelter : 0); if (hrate > 0) P.hp = Math.min(P.maxHp, P.hp + Math.min(HEAL.max, hrate) * dt); }   /* (Robin, 2026-10-22: "regenerate hp slowly when you are near a fire (but no enemies) or your home that gives comfort"; it was only a comfortable room and a fire together) */
-    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
+    tick(); levelTick(); heroGearSync(); bloodTick(dt); raidTick(dt); armsTick(dt); sleepTick(dt, hero()); stormTick(dt); ruinTick(dt); fishTick(dt); sitTick(dt); critterTick(dt); lookTick(dt); talkTick(); lbTick(dt); uiSfxTick(); if (bookOpen && (hero().hurtT > 0 || hero().flash > 0.5)) bookOpen = false; caveTick(dt); mouthTick(); ambTick(dt); sheetTick(dt); isleBeastTick(dt); stockTick(dt); garrisonTick(dt); raidHirdTick(dt); takeBackTick(dt); ramTick(dt); slipTick(dt); beesTick(dt); growTick(dt); keepBoars(dt); feedTick(dt); dayTick(dt); musicTick(dt); npcTick(dt); navTick(dt); folkTick(dt); hirdTick(dt); menTick(dt); nightTick(dt); cookTick(dt); clampTick(dt); craftTick(dt); rackTick(dt); raftTick(dt); trollTick(dt); ungeTick(dt); torchTick(dt);
     if (store && (!invOpen || (store.sea ? !(raft && raft.chest === store && raftUsable() && !raft.aboard) : (B.items.indexOf(store) < 0 || Math.hypot(P.x - store.x, P.y - store.y) > 70)))) store = null;   // the chest closes when you walk away
     Combat.api.quiver = null;
     for (var ck in cds) if (cds[ck] > 0) cds[ck] -= dt;
