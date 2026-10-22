@@ -66,7 +66,7 @@ below goes ahead together, each landing as it is ready.
 | 6, 7, 9 | **Built.** The shipyard piece on any sand at the water (on the starter island's list too), its panel with New ship and Your ships, the preview by the yard with the camera pulled back to fit her; the models opened by Arnor's teaching, copper and iron. |
 | 8 | **Built.** Raider, Cargo, Voyager with their numbers (`tests/ships.js` prints each). |
 | 10 | **Built** but for the words: Arnor teaches a boat, the board "A boat", his farewell at the shore. His lines are still the raft's until Robin's yes to Alistair, LD's handoff 8 (the rowboat lines, the ship names, the crew's lines). |
-| 11, 12 | **The rowboat is in** (Colin, AD's model, the hero rowing on its thwart and tholes). The karve's and the longship's sizes are coming from Colin, AD; until then they are drawn in code with the look on them. |
+| 11, 12 | **Built.** Colin, AD's models of every size: the rowboat (2026-10-22), the karve for 4, 8 and 12 and the longship for 16, 20 and 26 (2026-10-23), the look laid on their parts, the crew, the helmsman, the hero and the oars on their marks, drawn in his order. Played in the pane: a karve with twelve aboard under sail at two headings; a longship in the Sea Editor. |
 | 13 | Waiting for Colin, AD (the shipyard's picture: a naust on the shore). The raft bench's picture stands in. |
 | 14 | Waiting for Robin's yes to handoff 8. |
 | 15 | Derek, SD has the brief; the game calls the sounds by name already. |

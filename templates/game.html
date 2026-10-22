@@ -521,7 +521,15 @@ __COMBAT__
     return Sprites.beast(c, BH, e, K, o); };
   (function () { var SF = { plank: new Image(), plankLit: new Image(), rail: new Image(), shields: [] }, n = 0, want = 11, i; function one(im, src) { im.onload = function () { if (++n === want) Yard.setSurfaces(SF); }; im.src = src; }   /* the hull's surfaces (the Art Director, 2026-10-21, assets/ship/) */
     one(SF.plank, '../assets/ship/plank_strip.png?v=1021'); one(SF.plankLit, '../assets/ship/plank_strip_lit.png?v=1021'); one(SF.rail, '../assets/ship/rail_strip.png?v=1021'); for (i = 1; i <= 8; i++) { var si = new Image(); SF.shields.push(si); one(si, '../assets/ship/shield_0' + i + '.png?v=1021'); } })();
-  (function () { var SM = __SHIPS__; if (!SM) return; Object.keys(SM).forEach(function (kind) { var J = SM[kind], I = {}, n = 0, ls = Object.keys(J.src || {}); ls.forEach(function (L) { var im = new Image(); im.onload = function () { if (++n === ls.length) { Yard.setModel(kind, J, I); shipsRefit(); } }; im.src = J.src[L]; I[L] = im; }); }); })();   /* the ship models (Colin, AD's sheets, assets/ships: docs/ships-rework.md step 12) */
+  var SHIP_ART = __SHIPS__ || {}, shipArtState = {};   /* the ship models (Colin, AD's sheets, assets/ships: docs/ships-rework.md step 12): a kind's pictures are loaded when a ship of it is first wanted (a karve's are 70 to 100 MB decoded, a longship's to 150) */
+  function shipArtWant(kind) {
+    var J = SHIP_ART[kind]; if (!J || !J.urls || shipArtState[kind]) return; shipArtState[kind] = 1;
+    var U = J.urls, big = U.groups && Object.keys(U.groups).length, I = big ? { hull: {}, heads: {} } : {}, n = 0, want = 0, g, l;
+    function one(dst, key, url) { want++; var im = new Image(); im.onload = function () { if (++n === want) { Yard.setModel(kind, J, I); shipsRefit(); } }; im.onerror = function () { shipArtState[kind] = 0; }; im.src = url; dst[key] = im; }
+    if (big) { for (l in U.layers) one(I.hull, l, U.layers[l]); if (U.front) one(I.hull, 'front', U.front); for (g in U.groups) { var o = {}; if (g.indexOf('head_') === 0) I.heads[g.slice(5)] = o; else I[g] = o; for (l in U.groups[g]) one(o, l, U.groups[g][l]); } }
+    else for (l in U.layers) one(I, l, U.layers[l]);
+  }
+  shipArtWant('rowboat');
   (function () { var PI = __PROPIMG__; if (!PI) return; var map = {}; for (var k in PI) { var im = new Image(); im.src = PI[k].src; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } World.setImages(map); })();   // the Blender set pieces (2026-10-12): the peaks and the cave mouth, drawn as props
   (function () { var IC = __ICONS__; if (!IC) return; var imgs = {}; for (var k in IC) { imgs[k] = {}; for (var part in IC[k]) { var im = new Image(); im.src = IC[k][part]; imgs[k][part] = im; } } Items.setIcons(imgs); })();   // the rendered icons for the bag, the bars and the drops
   (function () { var WN = __WORN__; if (!WN) return; var imgs = {}; for (var k in WN) { var im = new Image(); im.src = WN[k]; imgs[k] = im; } WORN_IMG = imgs; Items.setWorn(imgs, wornPick); })();   // the worn things' rendered icons (the art studio, 2026-10-20), in the bag, on the Gear page and the crafting board
@@ -1857,6 +1865,7 @@ __COMBAT__
   }
   function shipsRefit() { fleet.forEach(function (v) { Yard.fit(v); v._gang = null; }); if (shipPanel) spPrev(); }   /* (a model arrived: its outline and seats are the ships' now) */
   function fleetTick() {                   // ashore, the ship in use is the one of yours you stand by
+    for (var fq = 0; fq < fleet.length; fq++) shipArtWant(fleet[fq].kind);   /* (each kind's model loads once a ship of it is yours) */
     if (!fleet.length || (raft && raft.aboard)) return;
     if (npc && !npc.joined && !npc.shore && seen.met && seen.raft && !seen.shore && raft && isleAt(raft.x, raft.y) === 0 && !(fleetTick.t > clock)) { fleetTick.t = clock + 5; var yb = null, yd2 = 1e9; B.items.forEach(function (it) { var dd = it.ship ? Math.hypot(it.x - raft.x, it.y - raft.y) : 1e9; if (dd < yd2) { yd2 = dd; yb = it; } }); arnorToShore(yb || raft); }   /* (your first boat lies at the starter island's shore and you have not left: he is there to see you off, after a reload too) */ var P = hero(), best = raft && !raft.stowed ? raft : null, bd = best ? Math.hypot(raft.x - P.x, raft.y - P.y) : 1e9;
     fleet.forEach(function (v) { if (v.stowed || v === best) return; var d = Math.hypot(v.x - P.x, v.y - P.y); if (d < bd - 24) { bd = d; best = v; } });
@@ -2171,19 +2180,20 @@ __COMBAT__
   var shipHero = false, heroRowWarm = false;   // the hero is drawn by the ship while aboard (his place in the ship's depth order, not the world's): the engine's own draw stands down
   function drawShip(c, v) {                /* the vessel as one drawing (docs/ships-plan.md step 2, 2026-10-21): the hull, then everyone aboard by depth, the rig between those behind the mast and those before it, the near rail with its shields over their legs, and the oars from the rowers' hands, all in one stroke */
     var P = hero(), ch = Math.cos(v.h), sh = Math.sin(v.h), figs = [], rowers = [], hasRow = !!(PEOPLE && PEOPLE.meta.anims.row), lean = hasRow ? 0 : Yard.strokeLean(v), rf = Math.floor(Yard.strokePhase(v) * 8);
-    Yard.drawVessel(c, v, clock, { split: true });
-    if (!Yard.isShip(v.kind)) return;
+    if (!Yard.isShip(v.kind)) { Yard.drawVessel(c, v, clock, { split: true }); return; }
     hird.forEach(function (m) { if (!m.aboard || m.lost || m.dead) return; var row = m.place && m.place.kind === 'row'; m.leanX = row ? ch * lean : 0; m.leanY = row ? sh * lean : 0; figs.push({ x: m.x, y: m.y, draw: m === npc ? function () { drawNpc(c); } : function () { drawFolk(c, m); } }); if (row) { var rw = { x: m.place.x, y: m.place.y, side: m.place.side }; if (hasRow && v.rowing) { var hd = Sprites.hand(PEOPLE, { a: 'row', f: rf }, m.face, m.place.side < 0 ? 0 : 1); if (hd) { rw.hands = {}; rw.hands[m.place.side] = [m.x + hd[0], m.y * K + hd[1]]; } } rowers.push(rw); } });   /* (the oar's inboard end is the right hand on the port side, the left on the starboard: the rower faces aft) */
     menAboard.forEach(function (e) { figs.push({ x: e.x, y: e.y, draw: function () { drawManAboard(c, e); } }); });
     if (v.aboard && v === raft) { var hl = !(v.crew > 0) && !Yard.rigged(v.kind) && !(sprHero && sprHero.meta && sprHero.meta.anims.row) ? lean : 0; figs.push({ x: P.x, y: P.y, draw: function () { shipHero = true; try { Combat.api.heroSprite(c, P.x + ch * hl, (P.y + sh * hl) * K + 3, P.faceVis, P.anim, false); } finally { shipHero = false; } } }); if (hl || (!(v.crew > 0) && !Yard.rigged(v.kind))) { var hr = { x: Yard.heroSeat(v), y: 0, side: 0 }, KA = sprHero && sprHero.meta && sprHero.meta.anims; if (KA && KA.row && v.rowing) { var h0 = Sprites.hand(sprHero, { a: 'row', f: rf }, P.faceVis, 0), h1 = Sprites.hand(sprHero, { a: 'row', f: rf }, P.faceVis, 1); hr.hands = {}; if (h0) hr.hands[-1] = [P.x + h0[0], P.y * K + 3 + h0[1]]; if (h1) hr.hands[1] = [P.x + h1[0], P.y * K + 3 + h1[1]]; } rowers.push(hr); } }
     figs.sort(function (a, b) { return a.y - b.y; });
+    var big = Yard.bigModel(v);   /* (a karve's or a longship's model: Colin, AD's order, the oars in three passes: the far side's under the hull, the near ones behind the mast before the sail, the rest before the front) */
+    Yard.drawVessel(c, v, clock, { split: true, rowers: big ? rowers : null });
     var my = v.mastX != null && v.sail != null ? v.y + v.mastX * sh : null, rigDone = my == null;
-    figs.forEach(function (f) { if (!rigDone && f.y >= my) { Yard.drawRigOf(c, v, clock); rigDone = true; } f.draw(); });
-    if (!rigDone) Yard.drawRigOf(c, v, clock);
+    figs.forEach(function (f) { if (!rigDone && f.y >= my) { if (big) Yard.drawOars(c, v, clock, rowers, 'behind'); Yard.drawRigOf(c, v, clock); rigDone = true; } f.draw(); });
+    if (!rigDone) { if (big) Yard.drawOars(c, v, clock, rowers, 'behind'); Yard.drawRigOf(c, v, clock); }
     var mh = Yard.masthead(v, clock); if (mh) { c.__t = clock * 9; Sea.pennant(c, mh[0], mh[1], wind.a, wind.s); }   /* the pennant streaming from the masthead (the studio's recipe) */
     if (Yard.isShip(v.kind) && Math.hypot(v.vx || 0, v.vy || 0) > 40 && wind.s > 0.25) { var sp = Yard.stemPoint(v); Sea.bowSpray(c, sp[0], sp[1] * K, v.h, wind.s, clock); }
-    Yard.drawVesselFront(c, v, clock, figs);
-    Yard.drawOars(c, v, clock, rowers);
+    if (big) { Yard.drawOars(c, v, clock, rowers, 'front'); Yard.drawVesselFront(c, v, clock, figs); }
+    else { Yard.drawVesselFront(c, v, clock, figs); Yard.drawOars(c, v, clock, rowers); }
   }
   function drawManAboard(c, e) {           // a man of the engine aboard (dragged aboard, or lifted down): seated, or lying on the floor
     if (!PEOPLE || !e.fig) return; var look = e.look || (e.look = Sprites.lookOf(e.fig.spec, e.lookX || { mail: true, helm: true }));
@@ -3455,7 +3465,7 @@ __COMBAT__
       for (b = 0; b < 8 && !best; b++) { h = a + b * 0.785; if (raftHull(x, y, h, sz)) best = { x: x, y: y, h: h }; } }
     return best;
   }
-  function spPrev() { var sp = shipPanel; if (!sp) return; var at = sp.tab === 'new' ? spLaunch(sp.bench, sp.kind, sp.refit) : null; if (sp.refit && sp.refit.x != null && !sp.refit.stowed && Math.hypot(sp.refit.x - sp.bench.x, sp.refit.y - sp.bench.y) < 520) at = { x: sp.refit.x, y: sp.refit.y, h: sp.refit.h }; sp.prev = at ? shipOf({ x: at.x, y: at.y, h: at.h, kind: sp.kind, look: sp.look, fit: sp.fit, name: sp.name }) : null; sp.at = at; }
+  function spPrev() { var sp = shipPanel; if (!sp) return; shipArtWant(sp.kind); var at = sp.tab === 'new' ? spLaunch(sp.bench, sp.kind, sp.refit) : null; if (sp.refit && sp.refit.x != null && !sp.refit.stowed && Math.hypot(sp.refit.x - sp.bench.x, sp.refit.y - sp.bench.y) < 520) at = { x: sp.refit.x, y: sp.refit.y, h: sp.refit.h }; sp.prev = at ? shipOf({ x: at.x, y: at.y, h: at.h, kind: sp.kind, look: sp.look, fit: sp.fit, name: sp.name }) : null; sp.at = at; }
   function spCost() { var sp = shipPanel, c0 = {}, k, add = function (o) { for (k in o) c0[k] = (c0[k] || 0) + o[k]; }; if (!sp.refit) add(Yard.HULLS[sp.kind].cost); if (sp.fit && Yard.FITTINGS[sp.fit] && (!sp.refit || sp.refit.fit !== sp.fit)) add(Yard.FITTINGS[sp.fit].cost); return c0; }
   function spBuild() {
     var sp = shipPanel, cost = spCost(); if (!canAfford(cost)) { toast('It needs ' + costText(cost)); return; }

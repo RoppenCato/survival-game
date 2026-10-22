@@ -274,7 +274,14 @@ __SPRITES_JS__
   // one, the normal ones with the size variety, the lowland ones from lowFrom on) and which are lowland. The game takes the same object.
   (function () { var SF = { plank: new Image(), plankLit: new Image(), rail: new Image(), shields: [] }, n = 0, want = 11, i; function one(im, src) { im.onload = function () { if (++n === want) Yard.setSurfaces(SF); }; im.src = src; }   /* the hull's surfaces (the Art Director, 2026-10-21, assets/ship/) */
     one(SF.plank, '../assets/ship/plank_strip.png?v=1021'); one(SF.plankLit, '../assets/ship/plank_strip_lit.png?v=1021'); one(SF.rail, '../assets/ship/rail_strip.png?v=1021'); for (i = 1; i <= 8; i++) { var si = new Image(); SF.shields.push(si); one(si, '../assets/ship/shield_0' + i + '.png?v=1021'); } })();
-  (function () { var SM = __SHIPS__; if (!SM) return; Object.keys(SM).forEach(function (kind) { var J = SM[kind], I = {}, n = 0, ls = Object.keys(J.src || {}); ls.forEach(function (L) { var im = new Image(); im.onload = function () { if (++n === ls.length) { Yard.setModel(kind, J, I); } }; im.src = J.src[L]; I[L] = im; }); }); })();   /* the ship models (Colin, AD's sheets, assets/ships: docs/ships-rework.md step 12) */
+  var SHIP_ART = __SHIPS__ || {}, shipArtState = {};   /* the ship models (Colin, AD's sheets, assets/ships: docs/ships-rework.md step 12): a kind's pictures are loaded when a ship of it is first wanted (a karve's are 70 to 100 MB decoded, a longship's to 150) */
+  function shipArtWant(kind) {
+    var J = SHIP_ART[kind]; if (!J || !J.urls || shipArtState[kind]) return; shipArtState[kind] = 1;
+    var U = J.urls, big = U.groups && Object.keys(U.groups).length, I = big ? { hull: {}, heads: {} } : {}, n = 0, want = 0, g, l;
+    function one(dst, key, url) { want++; var im = new Image(); im.onload = function () { if (++n === want) { Yard.setModel(kind, J, I); shipKey = ''; shipNow(); } }; im.onerror = function () { shipArtState[kind] = 0; }; im.src = url; dst[key] = im; }
+    if (big) { for (l in U.layers) one(I.hull, l, U.layers[l]); if (U.front) one(I.hull, 'front', U.front); for (g in U.groups) { var o = {}; if (g.indexOf('head_') === 0) I.heads[g.slice(5)] = o; else I[g] = o; for (l in U.groups[g]) one(o, l, U.groups[g][l]); } }
+    else for (l in U.layers) one(I, l, U.layers[l]);
+  }
   (function () { var PI = __PROPIMG__; if (!PI) return; var map = {}; for (var k in PI) { var im = new Image(); im.src = PI[k].src; map[k] = { img: im, w: PI[k].w, h: PI[k].h, ax: PI[k].ax, ay: PI[k].ay, upp: PI[k].upp }; } World.setImages(map); })();   // the Blender set pieces (the big island's peaks)
   function worldSpec() {
     var o = {}, k; for (k in spec) o[k] = spec[k]; if (!spec.layout) return o;
@@ -355,6 +362,7 @@ __SPRITES_JS__
   /* ---------- the ship: the game's, its size, its fitting (the boat object is the vessel Yard draws and sails) ---------- */
   var built = null, mouseW = null, mouseS = null, shipKey = '';
   function shipNow() {                     // the vessel of the chosen size and fitting, and what its crossing takes
+    shipArtWant(spec.kind);
     var key = spec.kind + '|' + spec.fit; if (key !== shipKey) { shipKey = key; var look = Yard.lookDefault(); look.head = Yard.rigged(spec.kind) ? 'dragon' : 'curl';
       boat.kind = spec.kind; boat.look = look; boat.fit = spec.fit; boat.parts = Yard.designParts(spec.kind, look); Yard.fit(boat); built = boat; }
     var H = Yard.HULLS[spec.kind], fs = document.getElementById('fits').querySelectorAll('button'); for (var i = 0; i < fs.length; i++) fs[i].disabled = !Yard.rigged(spec.kind) && i > 0;

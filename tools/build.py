@@ -92,11 +92,17 @@ def ship_models():
     for kind in sorted(os.listdir(d)):
         jp = os.path.join(d, kind, kind + '.json')
         if not os.path.exists(jp): continue
-        J = json.load(open(jp, encoding='utf-8')); src = {}
-        for layer, fn in J.get('layers', {}).items():
+        J = json.load(open(jp, encoding='utf-8'))
+        def url(fn):
             fp = os.path.join(d, kind, fn)
-            if os.path.exists(fp): src[layer] = '../assets/ships/' + kind + '/' + fn + '?v=' + hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8]
-        J['src'] = src; out[kind] = J
+            return '../assets/ships/' + kind + '/' + fn + '?v=' + hashlib.md5(open(fp, 'rb').read()).hexdigest()[:8] if os.path.exists(fp) else None
+        U = { 'layers': {}, 'front': None, 'groups': {} }   # every part's picture by its tagged address (a karve's or a longship's groups too, 2026-10-23)
+        for layer, fn in J.get('layers', {}).items():
+            if url(fn): U['layers'][layer] = url(fn)
+        if J.get('front') and J['front'].get('layer') and url(J['front']['layer']): U['front'] = url(J['front']['layer'])
+        for g, G in (J.get('groups') or {}).items():
+            U['groups'][g] = { l: url(fn) for l, fn in G.get('layers', {}).items() if url(fn) }
+        J['urls'] = U; out[kind] = J
     return json.dumps(out)
 SRC['__SHIPS__'] = ship_models()
 def item_icons():
