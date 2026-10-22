@@ -22,9 +22,9 @@
    what the hero's light has shown and Cave.drawChart draws it, for the chart in the corner. */
 var Cave = (function () {
 'use strict';
-var T = 32, K = 0.75, GW = 72, GH = 40, FS = 8, FW = GW * T / FS, FH = GH * T / FS;   // the fields: cells 8 units wide
+var T = 32, K = 0.75, GW = 104, GH = 60,   /* (the studio's prototype: a bigger cave, 2026-10-22) */ FS = 8, FW = GW * T / FS, FH = GH * T / FS;   // the fields: cells 8 units wide
 var PW = GW * T, PH = Math.round(GH * T * K);                                          // the sheets: a pixel a unit across, the screen's rows down
-var WALLH = 64, SIDE = 16, PITH = 120, PSIDE = 24, CS = 256, PXS = 2, SEEN = 16, SW = PW / SEEN, SH = GH * T / SEEN;
+var WALLH = 64, SIDE = 16, PITH = 240,   /* (the studio's prototype, 2026-10-22: the chasm twice as deep, an abyss) */ PSIDE = 24, CS = 256, PXS = 2, SEEN = 16, SW = PW / SEEN, SH = GH * T / SEEN;
 function hash(x, y, s) { var h = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); }
 function vnoise(x, y, s) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); var a = hash(xi, yi, s), b = hash(xi + 1, yi, s), c = hash(xi, yi + 1, s), d = hash(xi + 1, yi + 1, s); return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
 function fbm(x, y, s) { return vnoise(x, y, s) * 0.65 + vnoise(x * 2.1, y * 2.1, s + 9) * 0.35; }
@@ -49,7 +49,8 @@ function fieldAt(F, cave, x, y) {                        // a field read between
 function dAt(cave, x, y) { return fieldAt(cave.D, cave, x, y); }                       // tiles inside the floor (below zero: rock)
 function pAt(cave, x, y) { return fieldAt(cave.P, cave, x, y); }                       // tiles inside the chasm
 function trailAt(cave, x, y) { var v = fieldAt(cave.TR, cave, x, y); return v < -8 ? 999 : v; }   // units from the middle of the way through
-function floor(cave, x, y) { return dAt(cave, x, y) >= 0 && pAt(cave, x, y) < -0.2; } // where you can stand: floor, and a step back from the chasm
+function onBridge(cave, x, y) { var bs = cave.bridges, i; if (!bs) return false; for (i = 0; i < bs.length; i++) { var b = bs[i]; if (x >= b.x0 && x <= b.x1 && Math.abs(y - b.y) < b.w / 2) return true; } return false; }   // (the studio's prototype: the rope bridge over the abyss)
+function floor(cave, x, y) { return dAt(cave, x, y) >= 0 && (pAt(cave, x, y) < -0.2 || onBridge(cave, x, y)); } // where you can stand: floor, a step back from the chasm, and the bridge over it
 
 /* THE OTHER CAVES (2026-10-12, Robin: there needs to be more to the mountains than troll caves; an old copper mine, a sea cave).
    The same sheets and the same painter, another lay-out. base() makes the fields from a list of shapes (ellipses, and boxes
@@ -74,6 +75,7 @@ function base(seed, o, L) {
     var inTunnel = Math.abs(tx - TX) < tw && ty > 33, edge = Math.min(tx - 1.5, GW - 1.5 - tx, ty - 3.2, inTunnel ? 9 : GH - 1.2 - ty); if (edge < best) best = edge;
     D[j2 * FW + i2] = best;
     if (S) S[j2 * FW + i2] = L.sea(tx, ty) + (fbm(tx * 0.8, ty * 0.8, ns + 11) - 0.5) * 0.4;
+    if (L.pits) for (ci = 0; ci < L.pits.length; ci++) { var pt = L.pits[ci], pd = Math.min(pt.hw - Math.abs(tx - pt.x), pt.hh - Math.abs(ty - pt.y)) + (fbm(tx * 2.1, ty * 2.1, ns + 17) - 0.5) * 0.12; if (pd > P[j2 * FW + i2]) P[j2 * FW + i2] = pd; }   // a burial pit: a shaft with built sides falling away (the studio's prototype)
   }
   var cave = { kind: L.kind, ox: ox, oy: oy, seed: seed, D: D, P: P, S: S, TR: null, chunks: {}, chunkN: 0, noiseT: 0, px: null, ores: [], veins: [], props: [], shafts: [], puddles: [], pockets: [], sets: [], posts: [], soot: [], finds: [], glows: [], seen: new Uint8Array(SW * SH), seenDirty: true, pool: null, lair: null, hoard: null, body: null, pit: null, flip: L.flip, tintF: L.tintF || null, tintW: L.tintW || null, tunW: (tw + 0.3) * T };
   function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
@@ -177,7 +179,7 @@ function makeCatacomb(seed, o) {
   function jit(a) { return (R() - 0.5) * 2 * a; }
   function X(c) { return TX + sg * c; }                    // a column counted from the stair toward the far side
   function box(x, y, hw, hh) { shapes.push({ box: 1, x: x, y: y, hw: hw, hh: hh }); } function oval(x, y, rx, ry) { shapes.push({ x: x, y: y, rx: rx, ry: ry || rx }); }
-  var yO = 25.0, yC = 20.6, yA = yC + 4.2, yB = yC - 4.2, loops = rank >= 2 ? [24, 42] : [26], xA = loops[0] - 5.1, vc = loops[loops.length - 1];
+  var yO = 25.0, yC = 20.6, yA = yC + 4.2, yB = yC - 4.2, loops = rank >= 2 ? [33 + Math.round(jit(1.5)), 51 + Math.round(jit(1.5))] : [30 + Math.round(jit(3))], xA = loops[0] - 5.1,   /* (the studio's prototype: the ossuary half as long again, by the seed) */ vc = loops[loops.length - 1];
   box(TX, 34, 1.2, 6.2);                                                  // the stair down, straight from the trapdoor
   box(TX, 27.0, 1.1, 2.2);                                                // its foot, north to the ossuary
   box(X(xA / 2), yO, xA / 2 + 0.6, 1.2);                                  // the ossuary
@@ -186,6 +188,18 @@ function makeCatacomb(seed, o) {
   // the side passages, blocked: north and south of the ossuary by turns, each to an alcove
   var nSide = rank >= 2 ? 5 : 3, side = [];
   for (i = 0; i < nSide; i++) { var col = 4.5 + (xA - 7) * (nSide > 1 ? i / (nSide - 1) : 0.5) + jit(0.4), dn = i % 2 ? 1 : -1; side.push({ c: col, dn: dn }); box(X(col), yO + dn * 2.6, 0.95, 1.6); oval(X(col), yO + dn * 5.0, 2.0, 1.4); }
+  // THE NEW ROOMS (the studio's prototype, 2026-10-22; Robin: the caves' thinking for the catacombs): a bone hall north of the ossuary
+  // with pillars of the old dead, a burial pit south of it falling away into the dark with planks across it, and a small chapel by the
+  // stair's foot with its altar. Where along the ossuary each stands is the seed's, clear of the side passages.
+  function clearCol(c0, dn) { return side.every(function (q) { return Math.abs(q.c - c0) > 3.4 || q.dn !== dn; }) && c0 > 4 && c0 < xA - 3; }
+  var cB = null, cP = null, t9;
+  for (t9 = 0; t9 < 40 && cB == null; t9++) { var c1 = 5 + R() * (xA - 9); if (clearCol(c1, -1)) cB = c1; }
+  for (t9 = 0; t9 < 40 && cP == null; t9++) { var c2 = 10 + R() * (xA - 14);   /* (clear of the stair and its chapel) */ if (clearCol(c2, 1) && (cB == null || Math.abs(c2 - cB) > 3)) cP = c2; }
+  var hallBn = cB != null ? { x: X(cB), y: yO - 10.2 } : null, pitRm = cP != null ? { x: X(cP), y: yO + 9.8 } : null,   /* (beyond the alcoves' reach: at 7.6 and 7.4 the hall and the pit met the alcoves and went round their falls of masonry, 2026-10-22) */ chapelRm = { x: TX + sg * 3.6, y: 30.2 };
+  if (hallBn) { box(hallBn.x, yO - 4.6, 1.0, 4.1); oval(hallBn.x, hallBn.y, 5.6, 3.2); }
+  if (pitRm) { box(pitRm.x, yO + 4.4, 1.0, 3.9); oval(pitRm.x, pitRm.y, 5.2, 3.0); }
+  box((TX + chapelRm.x) / 2, chapelRm.y, Math.abs(chapelRm.x - TX) / 2, 0.9); oval(chapelRm.x, chapelRm.y - 0.3, 2.5, 1.9);
+  var pits = pitRm ? [{ x: pitRm.x, y: pitRm.y, hw: 2.3, hh: 1.4 }] : [];
   // the vault (and the cathedral's antechamber), north of the last loop behind its gate or gates
   var gateY = [], yV;
   if (rank >= 2) { box(X(vc), yB - 3.8, 1.0, 1.7); oval(X(vc), yB - 6.8, 3.0, 1.4); box(X(vc), yB - 9.0, 0.95, 1.2); yV = yB - 11.3; oval(X(vc), yV, 4.8, 1.8); gateY = [yB - 3.85, yB - 8.85]; }
@@ -195,7 +209,7 @@ function makeCatacomb(seed, o) {
   box(X((loops[0] + 5 + slabC - 1.6) / 2), yA, (slabC - 1.6 - loops[0] - 5) / 2 + 0.8, 1.0); oval(X(slabC), slabY, rank >= 2 ? 1.9 : 2.1, 1.8);
   if (wellC != null) { box(X((loops[1] + 5 + wellC - 2) / 2), yA, (wellC - 2 - loops[1] - 5) / 2 + 0.8, 1.0); oval(X(wellC), yA - 0.4, 2.6, 2.2); }
   var path = [[TX, 33.4], [TX, 30], [TX, yO], [X(xA), yO], [X(loops[0] - 3.4), yC], [X(loops[0]), yB]].concat(rank >= 2 ? [[X(loops[1]), yB]] : []).concat([[X(vc), yV]]);
-  var cave = base(seed, o, { kind: 'crypt', shapes: shapes, holes: holes, rough: 0.22, TX: TX, tunW: 1.3, path: path, trail: false, flip: flip, salt: 70 + rank, tintF: [0.92, 0.92, 0.98], tintW: [0.86, 0.86, 0.94] });
+  var cave = base(seed, o, { kind: 'crypt', shapes: shapes, holes: holes, pits: pits, rough: 0.22, TX: TX, tunW: 1.3, path: path, trail: false, flip: flip, salt: 70 + rank, tintF: [0.92, 0.92, 0.98], tintW: [0.86, 0.86, 0.94] });
   var ox = cave.ox, oy = cave.oy; function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
   cave.name = rank >= 2 ? 'The catacombs' : 'The crypt'; cave.rank = rank; cave.vault = W([X(vc), yV]); cave.niche = cave.vault; cave.gates = []; cave.exits = []; cave.niches = [];
   cave.loops = loops.map(function (c) { return { a: W([X(c), yA]), b: W([X(c), yB]), pillar: W([X(c), yC]) }; }); cave.alcoves = side.map(function (q) { return W([X(q.c), yO + q.dn * 5.0]); });
@@ -235,6 +249,81 @@ function makeCatacomb(seed, o) {
   function exit(id, c, y, say, light) { var x = ox + X(c) * T, fy = U.footN(x, oy + y * T) || (oy + (y - 1.5) * T); cave.props.push({ name: 'ladder', x: x, y: fy + 2, s: 1, r: 0, v: 0, cave: true }); cave.exits.push({ id: id, x: x, y: fy + 20, say: say }); cave.shafts.push({ x: x, y: fy + 18, rx: light[0], ry: light[1], k: light[2] }); U.keep.push({ x: x, y: fy + 20, r: 44 }); }
   exit('slab', slabC, slabY, 'Climb up', [22, 14, 0.3]);
   if (wellC != null) { exit('well', wellC, yA - 0.4, 'Climb the well', [34, 24, 0.75]); cave.props.push({ name: 'bucket', x: ox + X(wellC) * T + sg * 26, y: oy + (yA + 0.4) * T, s: 1, r: 0, v: 0, cave: true }); }
+  cryptDress(cave, R, U, { ossuary: { x0: ox + Math.min(X(1), X(xA)) * T, x1: ox + Math.max(X(1), X(xA)) * T, y: oy + yO * T }, hall: hallBn && W([hallBn.x, hallBn.y]), pit: pitRm && W([pitRm.x, pitRm.y]), pitHW: 2.3 * T, chapel: W([chapelRm.x, chapelRm.y]), sg: sg });
+  return cave;
+}
+/* THE CRYPTS' DRESSING AND LIGHT (the studio's prototype, 2026-10-22): what the catacombs had not, as set pieces from the crypt kit
+   (assets/props/cryptkit): pilasters with vault ribs along the ossuary's north wall so it reads as a long vault, candles left burning
+   at intervals (receding lights down the gallery), the chapel's altar, pillars of skulls in the bone hall, skulls heaped in corners,
+   planks across the burial pit, and cold daylight through grates from the churchyard. cave.dress, cave.candles, cave.bridges. */
+function cryptDress(cave, R, U, o) {
+  cave.dress = cave.dress || []; cave.candles = []; cave.bridges = cave.bridges || [];
+  function put(name, x, y, r, v) { cave.dress.push({ name: name, x: x, y: y, r: r || 0, v: v || 0, cave: true }); }
+  var os = o.ossuary, x, k = 0;
+  if (os) for (x = os.x0 + 40; x < os.x1 - 30; x += 96, k++) {                                       // the pilasters along the north wall, a candle now and then between them
+    var fy = U.footN(x, os.y); if (fy != null && Math.abs(fy - (os.y - 40)) < 40) put('cryptArch', x, fy + 3, 0, 0);
+    if (k % 2 === 1) { var cy = R() < 0.5 ? (fy != null ? fy + 10 : os.y - 20) : os.y + 26, cx = x + 48; if (Cave_floorish(cave, cx, cy)) { put('candles', cx, cy, 0, Math.floor(R() * 3)); cave.candles.push({ x: cx, y: cy, r: 52 + R() * 12, ph: R() * 9 }); } }
+    if (k % 3 === 1) cave.shafts.push({ x: x + 20, y: os.y, rx: 26, ry: 18, k: 0.42, grate: true });              // a grate in the roof: a thin cold light from the churchyard
+  }
+  if (o.hall) {                                                                                         // the bone hall: four pillars of skulls, a heap in a corner, a candle on a skull
+    [[-2.6, -1.0], [2.6, -1.0], [-2.6, 1.2], [2.6, 1.2]].forEach(function (q) { put('bonePillar', o.hall.x + q[0] * 32, o.hall.y + q[1] * 32, 16, 0); });
+    put('skullPile', o.hall.x + o.sg * 4.4 * 32, o.hall.y - 0.6 * 32, 18, 0); put('candles', o.hall.x, o.hall.y + 0.2 * 32, 0, 2); cave.candles.push({ x: o.hall.x, y: o.hall.y + 6, r: 70, ph: 3 });
+    cave.shafts.push({ x: o.hall.x, y: o.hall.y - 10, rx: 40, ry: 26, k: 0.5, grate: true });
+  }
+  if (o.pit) {                                                                                          // the burial pit: planks across it, a candle at its lip, skulls at the edge
+    var hw = o.pitHW + 30; cave.bridges.push({ x0: o.pit.x - hw, x1: o.pit.x + hw, y: o.pit.y, w: 34 }); cave.deeps = [{ x: o.pit.x, y: o.pit.y, rx: o.pitHW, ry: 1.4 * 32 }];   // the pit has its own faint light from below
+    for (x = o.pit.x - hw; x < o.pit.x + hw; x += 32) put('plankBridge', x + 16, o.pit.y, 0, 0);
+    put('candles', o.pit.x - o.sg * (hw + 26), o.pit.y - 30, 0, 1); cave.candles.push({ x: o.pit.x - o.sg * (hw + 26), y: o.pit.y - 30, r: 60, ph: 5 });
+    put('skullPile', o.pit.x + o.sg * (hw + 34), o.pit.y + 26, 18, 0);
+  }
+  if (o.chapel) { put('altar', o.chapel.x, o.chapel.y - 18, 20, 0); cave.candles.push({ x: o.chapel.x - 16, y: o.chapel.y - 20, r: 58, ph: 1 }, { x: o.chapel.x + 16, y: o.chapel.y - 20, r: 58, ph: 2 }); }
+  if (cave.vault && !o.ossuary) { put('skullPile', cave.vault.x - o.sg * 70, cave.vault.y + 30, 16, 0); cave.shafts.push({ x: cave.vault.x, y: cave.vault.y - 6, rx: 30, ry: 20, k: 0.4, grate: true }); }   // the chapel crypt: a heap of the old dead, a grate over the vault
+  if (cave.vault) { cave.candles.push({ x: cave.vault.x - 40, y: cave.vault.y - 10, r: 64, ph: 7 }, { x: cave.vault.x + 40, y: cave.vault.y - 10, r: 64, ph: 8 }); put('candles', cave.vault.x - 40, cave.vault.y - 10, 0, 0); put('candles', cave.vault.x + 40, cave.vault.y - 10, 0, 1); }
+  (cave.alcoves || []).forEach(function (a, i) { if (i % 2 === 0) put('skullPile', a.x + (R() - 0.5) * 30, a.y + (R() < 0.5 ? -14 : 14), 16, 0); });
+}
+function Cave_floorish(cave, x, y) { return dAt(cave, x, y) >= 0 && pAt(cave, x, y) < -0.2; }
+/* A HOUSE'S CELLAR (the studio's prototype, 2026-10-22; Robin: the caves' thinking for the cellars). Until now a cellar was only a
+   hatch you looted; here it is a place under the floor. Dug, so its walls are straight: the stair down from the hatch, the stores room
+   (shelves, casks, hams, roots, sacks, the household's chest), in a big house a second room through a low door; and in an old house
+   one of two things: an old tunnel running off narrow and dark to a hidden way up (a way in or out the raid can use), or a crack in
+   the floor where the earth gave way, falling into the dark, a cold breath coming up and now and then eyes down there.
+   o: { old, big, loot }. The game makes the hatch lead here (the generator's cellarDoor). */
+function makeCellar(seed, o) {
+  var R = rng(seed * 43 + 5), flip = hash(seed, 5, 9) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 8 : 8, shapes = [], pits = [];
+  function jit(a) { return (R() - 0.5) * 2 * a; }
+  function box(x, y, hw, hh) { shapes.push({ box: 1, x: x, y: y, hw: hw, hh: hh }); }
+  var old = o.old != null ? o.old : R() < 0.5, big = o.big != null ? o.big : R() < 0.45;
+  box(TX, 34, 1.0, 5.6); box(TX, 29.4, 0.9, 1.9);                                                       // the stair down from the hatch, its foot
+  var r1 = { x: TX + sg * (2.4 + R()), y: 26.2 + jit(0.4), rx: 4.2 + R() * 1.2, ry: 2.7 + R() * 0.7 }; box(r1.x, r1.y, r1.rx, r1.ry);
+  var r2 = null; if (big) { r2 = { x: r1.x + sg * (r1.rx + 4.0), y: r1.y - 0.6 + jit(0.8), rx: 3.2 + R() * 0.8, ry: 2.4 + R() * 0.4 }; box((r1.x + r2.x) / 2, r2.y, 2.4, 0.75); box(r2.x, r2.y, r2.rx, r2.ry); }
+  var far = r2 || r1, tunnel = null, crack = null, path = [[TX, 33.4], [TX, 29], [r1.x, r1.y]].concat(r2 ? [[r2.x, r2.y]] : []);
+  if (old && R() < 0.5) {                                                                                // the old tunnel: north out of the far room, then on, narrow, to a ladder up
+    var tx0 = far.x + sg * far.rx * 0.5, ty0 = far.y - far.ry, ty1 = ty0 - 5 - R() * 3, tx1 = tx0 + sg * (6 + R() * 5);
+    box(tx0, (ty0 + ty1) / 2, 0.7, (ty0 - ty1) / 2 + 0.4); box((tx0 + tx1) / 2, ty1, Math.abs(tx1 - tx0) / 2 + 0.4, 0.7); box(tx1, ty1 - 0.8, 1.2, 1.1);
+    tunnel = { x: tx1, y: ty1 - 1.2 }; path.push([tx0, ty0], [tx0, ty1], [tx1, ty1]);
+  } else if (old) {                                                                                      // the crack: where the floor gave way
+    crack = { x: far.x + jit(0.8), y: far.y + 0.5, hw: Math.min(1.8, far.rx - 1.4), hh: 0.42 }; pits.push(crack);
+  }
+  var cave = base(seed, o, { kind: 'cellar', shapes: shapes, pits: pits, rough: 0.32, TX: TX, tunW: 1.0, path: path, trail: false, flip: flip, salt: 90, tintF: [1.08, 0.96, 0.84], tintW: [1.0, 0.93, 0.86] });
+  var ox = cave.ox, oy = cave.oy; function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
+  cave.name = 'The cellar'; cave.rooms = [W([r1.x, r1.y])].concat(r2 ? [W([r2.x, r2.y])] : []); cave.exits = []; cave.gates = []; cave.niches = [];
+  reachOf(cave); var U = tools(cave, R, o);
+  cave.dress = []; cave.candles = []; cave.eyes = [];
+  function put(name, x, y, r, v) { cave.dress.push({ name: name, x: x, y: y, r: r || 0, v: v || 0, cave: true }); }
+  function wall(x, y) { return U.footN(x, y); }
+  cave.props.push({ name: 'cryptStairs', x: cave.entrance.x, y: cave.entrance.y - 6, s: 1, r: 0, v: 0, cave: true, flat: true });
+  cave.shafts.push({ x: cave.entrance.x, y: cave.entrance.y + 10, rx: 30, ry: 20, k: 0.7, grate: true });   // the light down the stair from the open hatch
+  // the stores: along the north wall of the first room shelves and casks, the hams on their beam, roots and sacks, the chest
+  var R1 = cave.rooms[0], rw = r1.rx * T, x0 = R1.x - rw + 30, x1 = R1.x + rw - 30, order = ['shelf', 'caskRack', 'hangingHams', 'shelf', 'rootBin'].sort(function () { return R() - 0.5; }), k = 0, x;
+  for (x = x0; x < x1 && k < order.length; x += 54, k++) { var fy = wall(x, R1.y); if (fy == null) continue; put(order[k], x, fy + (order[k] === 'hangingHams' ? 22 : 8), order[k] === 'hangingHams' ? 0 : 16, k); }
+  put('barrel', R1.x - sg * (rw - 26), R1.y + r1.ry * T - 26, 12, 0); put('crate', R1.x - sg * (rw - 64), R1.y + r1.ry * T - 22, 12, 0); put('sackPile', R1.x + sg * (rw - 40), R1.y + r1.ry * T - 26, 14, 0);
+  cave.finds.push({ id: 'store', prop: 'chest', x: R1.x + sg * 30, y: R1.y + 18, s: 1, v: 0, r: 10, say: 'Open', give: o.loot || { meat: 2, berries: 3 }, note: 'The household\'s stores' });
+  var cl = R1.x + sg * (rw - 30), cy = (wall(cl, R1.y) || R1.y - 30) + 10; cave.candles.push({ x: cl, y: cy, r: 54, ph: 2 }); put('candles', cl, cy + 2, 0, 1);   // a tallow candle on a shelf's end
+  var mx = R1.x - sg * rw * 0.25, my = (wall(mx, R1.y) || R1.y - 30) + 14; cave.candles.push({ x: mx, y: my, r: 70, ph: 4 }); put('candles', mx, my + 4, 0, 0);   // and one by the stores, so you see what is kept
+  if (r2) { var c2x = cave.rooms[1].x, c2y = (wall(c2x, cave.rooms[1].y) || cave.rooms[1].y - 30) + 14; cave.candles.push({ x: c2x + sg * 30, y: c2y, r: 60, ph: 6 }); put('candles', c2x + sg * 30, c2y + 4, 0, 2); }
+  if (r2) { var R2 = cave.rooms[1], fy2 = wall(R2.x, R2.y); if (fy2 != null) put('caskRack', R2.x - sg * 20, fy2 + 8, 16, 1); put('barrel', R2.x + sg * (r2.rx * T - 30), R2.y + r2.ry * T - 24, 12, 1); put('crate', R2.x + sg * (r2.rx * T - 64), R2.y - 8, 12, 1); }
+  if (tunnel) { var tw2 = W([tunnel.x, tunnel.y]), fyt = wall(tw2.x, tw2.y + 20) || tw2.y; cave.props.push({ name: 'ladder', x: tw2.x, y: fyt + 2, s: 1, r: 0, v: 0, cave: true }); cave.exits.push({ id: 'tunnel', x: tw2.x, y: fyt + 20, say: 'Climb up' }); cave.shafts.push({ x: tw2.x, y: fyt + 18, rx: 18, ry: 12, k: 0.25, grate: true }); cave.secret = 'tunnel'; }
+  if (crack) { var cw = W([crack.x, crack.y]); cave.deeps = [{ x: cw.x, y: cw.y, rx: crack.hw * T, ry: crack.hh * T * 2.4 }]; if (R() < 0.6) cave.eyes.push({ x: cw.x + (R() - 0.5) * 30, y: cw.y + 14, ph: R() * 9, deep: true }); cave.secret = 'crack'; }
   return cave;
 }
 function makeChapelCrypt(seed, o) {                      // a crypt under a church (raid step 8, 2026-10-21; Robin: "room for exploration, churches can have cellars, crypts"): the stair down from the trapdoor, a passage north, the vault with its coffins, and a niche where the reliquary stands over the silver
@@ -258,6 +347,7 @@ function makeChapelCrypt(seed, o) {                      // a crypt under a chur
   cave.props.push({ name: 'reliquary', x: cave.niche.x, y: cave.niche.y - 0.6 * T, s: 1, r: 8, v: 0, cave: true });
   cave.chest = { name: 'heavyChest', x: cave.niche.x + sg * 0.2 * T, y: cave.niche.y + 0.5 * T, s: 1, r: 9, v: 0, cave: true }; cave.props.push(cave.chest);
   cave.hoard = { x: cave.chest.x, y: cave.chest.y, n: o.silver || 20, kind: 'silver', day: 0, relics: true };   // the silver in the chest: E takes it (the game's relicsTake)
+  cryptDress(cave, RC, tools(cave, RC, o), { ossuary: null, chapel: null, sg: sg });
   return cave;
 }
 function makeSea(seed, o) {
@@ -310,50 +400,102 @@ function drawSet(c, st) {
   c.restore();
 }
 
-function make(seed, o) {
-  o = o || {}; sheets();
-  if (o.kind === 'mine') return makeMine(seed, o); if (o.kind === 'sea') return makeSea(seed, o); if (o.kind === 'crypt') return makeCrypt(seed, o);
+/* Each cave its own grid (2026-10-22, with Colin, AD's bigger troll's cave): the troll's cave 104 by 60 tiles, the mine, the sea
+   cave, the crypts and the cellars 72 by 40 as they were laid out for. The module's grid numbers are set from the cave at every
+   way in from the page (use), so everything inside works on the cave it was given. */
+function setDims(gw, gh) { GW = gw; GH = gh; FW = GW * T / FS; FH = GH * T / FS; PW = GW * T; PH = Math.round(GH * T * K); SW = PW / SEEN; SH = GH * T / SEEN; }
+function use(c) { if (c && c.GW && (c.GW !== GW || c.GH !== GH)) setDims(c.GW, c.GH); }
+function inCave(f, i) { return function () { use(arguments[i || 0]); return f.apply(null, arguments); }; }   // (i: which argument is the cave)
+function make(seed, o) { o = o || {}; var big = !o.kind || o.kind === 'troll'; setDims(big ? 104 : (o.kind === 'crypt' && o.rank >= 2 ? 80 : 72), big ? 60 : 40);   /* (a cathedral's catacombs 80 wide: the longer ossuary put its well room at the edge of 72) */ var c = make0(seed, o); c.GW = GW; c.GH = GH; return c; }
+function make0(seed, o) {
+  sheets();
+  if (o.kind === 'mine') return makeMine(seed, o); if (o.kind === 'sea') return makeSea(seed, o); if (o.kind === 'crypt') return makeCrypt(seed, o); if (o.kind === 'cellar') return makeCellar(seed, o);
   var ox = o.x || 0, oy = o.y || 0, R = rng(seed * 31 + 9), i, k, x, y;
   function jit(a) { return (R() - 0.5) * 2 * a; }
   // the way through: the tunnel's head, the hall, then east to the lair
-  var WP = [[7, 33.4], [7.2, 29.9], [12.6, 24.6], [19, 20.4], [25.2, 15.6], [31.2, 13.2], [37.4, 17.4], [43.4, 20.4], [49.6, 19.2], [54.8, 15.2], [59.6, 17.6], [63.4, 22.6]];
-  for (i = 2; i < WP.length - 1; i++) { WP[i][0] += jit(1.0); WP[i][1] += jit(1.2); }
-  var flip = hash(seed, 3, 7) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 7 : 7;       // in half the worlds the cave is laid the other way round: the tunnel in its south-east corner, the lair in the west
-  if (flip) WP.forEach(function (p) { p[0] = GW - p[0]; });
+  /* THE LAYOUT (the studio's prototype, 2026-10-22; Robin: "larger and scarier ... look at the randomness and layouts ... depth, so
+     that you feel like you're looking down an abyss"). Not one chain any more: the hall first and the lair last, and between them
+     beats dealt from a deck, each its own size: a great cavern wider than the screen, an abyss crossed by a rope bridge, the pool,
+     a grotto of glowing fungus, a hall of columns, a pit of bones before the lair. The way through snakes in two directions between
+     them, tight squeezes between some. The names the rest of the cave uses (hall, fern, poolC, ledge, gal, lairC, pit, pockets)
+     are given to the beats that play those parts. */
+  var flip = hash(seed, 3, 7) < 0.5, sg = flip ? -1 : 1, TX = flip ? GW - 7 : 7, TY0 = GH - 6.6;
+  var SIZE = { hall: [4.6, 3.6], cavern: [11.5, 8.0], abyss: [10.5, 7.4], pool: [5.6, 4.4], grotto: [5.0, 4.0], columns: [7.4, 5.6], bones: [4.6, 3.6], lair: [8.4, 6.8] };
+  var middle = ['cavern', 'abyss', 'pool'].concat(['grotto', 'columns', 'hall'].sort(function () { return R() - 0.5; }).slice(0, 1 + Math.floor(R() * 2)));
+  middle.sort(function () { return R() - 0.5; });
+  if (middle[0] === 'abyss') { middle.push(middle.shift()); }                                         // (never the abyss straight after the hall)
+  var kinds = ['hall'].concat(middle).concat(R() < 0.7 ? ['bones'] : []).concat(['lair']), beats = [], i, k, x, y;
+  function fits(bx, by, rx, ry) { if (bx - rx < 2 || bx + rx > GW - 2 || by - ry < 3.4 || by + ry > TY0 - 0.6) return false; for (var b0 = 0; b0 < beats.length; b0++) { var o2 = beats[b0]; if (Math.hypot((bx - o2.x) / (rx + o2.rx + 2.2), (by - o2.y) / (ry + o2.ry + 2.2)) < 1) return false; } return true; }
+  for (i = 0; i < kinds.length; i++) {
+    var sz = SIZE[kinds[i]], rx = sz[0] * (0.88 + R() * 0.24), ry = sz[1] * (0.88 + R() * 0.24), placed = null;
+    if (i === 0) placed = [TX + sg * (rx * 0.4), TY0 - ry - 0.4];
+    else if (i === 1) { for (var t0 = 0; t0 < 60 && !placed; t0++) { var bx0 = beats[0].x + sg * (beats[0].rx + rx + 2 + R() * 3) * Math.cos(-0.9 + R() * 0.6), by0 = beats[0].y - (beats[0].ry + ry + 2 + R() * 3) * (0.6 + R() * 0.4); if (fits(bx0, by0, rx, ry)) placed = [bx0, by0]; } }   // the first beat climbs north from the hall, so the cave fills its height
+    else {
+      var prev = beats[i - 1];
+      for (var tries = 0; tries < 80 && !placed; tries++) {                                             // heading east (west when flipped), swinging up or down
+        var ang = (R() - 0.5) * (tries < 40 ? 2.6 : 3.8), gap = 2.6 + R() * 3.4 + (R() < 0.35 ? 3 : 0), dd = prev.rx + rx + gap;
+        var bx = prev.x + sg * Math.cos(ang) * dd, by = prev.y + Math.sin(ang) * dd * 0.8; if (fits(bx, by, rx, ry)) placed = [bx, by];
+      }
+      if (!placed && i > 0) { rx *= 0.8; ry *= 0.8; for (var t2 = 0; t2 < 120 && !placed; t2++) { var bx2 = prev.x + sg * (prev.rx + rx + 2 + R() * 4), by2 = 4 + ry + R() * (TY0 - 5 - 2 * ry); if (fits(bx2, by2, rx, ry)) placed = [bx2, by2]; } }
+      if (!placed) break;
+    }
+    beats.push({ kind: kinds[i], x: placed[0], y: placed[1], rx: rx, ry: ry, squeeze: i > 0 && R() < 0.4 });
+  }
+  if (beats[beats.length - 1].kind !== 'lair') beats[beats.length - 1].kind = 'lair';
   var circles = [], path = [], pts = [];
   function carve(cx, cy, rx, ry) { circles.push({ x: cx, y: cy, rx: rx, ry: ry || rx }); }
   function cr(a, b, c, d, t) { var t2 = t * t, t3 = t2 * t; return [0.5 * (2 * b[0] + (c[0] - a[0]) * t + (2 * a[0] - 5 * b[0] + 4 * c[0] - d[0]) * t2 + (3 * b[0] - a[0] - 3 * c[0] + d[0]) * t3), 0.5 * (2 * b[1] + (c[1] - a[1]) * t + (2 * a[1] - 5 * b[1] + 4 * c[1] - d[1]) * t2 + (3 * b[1] - a[1] - 3 * c[1] + d[1]) * t3)]; }
-  for (i = 0; i < WP.length - 1; i++) { var a = WP[Math.max(0, i - 1)], b = WP[i], c = WP[i + 1], d = WP[Math.min(WP.length - 1, i + 2)], n = Math.max(2, Math.round(Math.hypot(c[0] - b[0], c[1] - b[1]) * 2)); for (k = 0; k < n; k++) pts.push(cr(a, b, c, d, k / n)); }
-  pts.push(WP[WP.length - 1].slice());
-  pts.forEach(function (p, j) { carve(p[0], p[1], 2.1 + 0.4 * Math.sin(j * 0.31 + seed) + (R() < 0.06 ? 0.8 : 0), 2.05 + 0.45 * Math.sin(j * 0.23 + seed * 2)); if (j % 2 === 0) path.push({ x: p[0], y: p[1] }); });
-  for (y = 33.4; y <= 41; y += 0.5) carve(TX + Math.sin(y * 0.9) * 0.2, y, 1.55, 1.55);    // the tunnel out, south to the daylight
-  var hall = WP[1], fern = WP[3], poolC = WP[5], ledge = WP[7], gal = WP[9], lairC = WP[11], cavern = [ledge[0] + sg * 0.4, ledge[1] + 3.0];
-  carve(hall[0], hall[1], 4.6, 3.5); carve(fern[0], fern[1], 3.7, 3.2); carve(poolC[0], poolC[1] + 0.6, 5.4, 4.4);
-  carve(cavern[0], cavern[1], 7.2, 6.4); carve(lairC[0], lairC[1], 8.0, 6.6); carve(lairC[0] + sg * 5.8, lairC[1] + 0.4, 2.3, 2.3);
+  function beat(kind) { return beats.filter(function (b) { return b.kind === kind; })[0]; }
+  var abyB = beat('abyss') || beats[Math.max(1, beats.length - 3)];
+  var pit = { x: abyB.x + (R() - 0.5) * 1.6, y: abyB.y - abyB.ry * 0.7, rx: 4.6 + R() * 1.6, ry: 3.4, ext: abyB.ry * 1.6 };
+  var bridge = { x0: pit.x - pit.rx - 1.1, x1: pit.x + pit.rx + 1.1, y: abyB.y, w: 1.15 };
+  var WP = [[TX, TY0]], wide = [1.55];
+  beats.forEach(function (b) {                                                                         // the way meets the abyss square on: through both ends of the bridge, from whichever side it comes
+    if (b === abyB) { var bl = [bridge.x0 - 1.4, b.y], brr = [bridge.x1 + 1.4, b.y], pv = WP[WP.length - 1]; if (Math.abs(pv[0] - bl[0]) <= Math.abs(pv[0] - brr[0])) WP.push(bl, brr); else WP.push(brr, bl); wide.push(2.05, 2.05); }
+    else { WP.push([b.x, b.y]); wide.push(b.squeeze ? 1.25 : 2.05); }
+  });
+  for (i = 0; i < WP.length - 1; i++) { var a = WP[Math.max(0, i - 1)], b = WP[i], c = WP[i + 1], d = WP[Math.min(WP.length - 1, i + 2)], n = Math.max(2, Math.round(Math.hypot(c[0] - b[0], c[1] - b[1]) * 2)), straight = (b[1] === c[1] && Math.abs(b[0] - c[0]) > 6); for (k = 0; k < n; k++) { var p = straight ? [b[0] + (c[0] - b[0]) * k / n, b[1]] : cr(a, b, c, d, k / n); p.w = wide[i + 1]; pts.push(p); } }   /* (over the bridge the way runs straight) */
+  var lastP = WP[WP.length - 1].slice(); lastP.w = 2.05; pts.push(lastP);
+  pts.forEach(function (p, j) { carve(p[0], p[1], p.w + 0.35 * Math.sin(j * 0.31 + seed), p.w + 0.3 * Math.sin(j * 0.23 + seed * 2)); if (j % 2 === 0) path.push({ x: p[0], y: p[1] }); });
+  for (y = TY0; y <= GH + 1; y += 0.5) carve(TX + Math.sin(y * 0.9) * 0.2, y, 1.55, 1.55);              // the tunnel out, south to the daylight
+  beats.forEach(function (b) {                                                                         // the chambers, a cluster of ovals so no wall is a plain ellipse
+    carve(b.x, b.y, b.rx, b.ry); var nb = b.kind === 'cavern' ? 5 : 2;
+    for (var q2 = 0; q2 < nb; q2++) { var aa = R() * Math.PI * 2; carve(b.x + Math.cos(aa) * b.rx * 0.55, b.y + Math.sin(aa) * b.ry * 0.5, b.rx * (0.45 + R() * 0.25), b.ry * (0.45 + R() * 0.25)); }
+  });
+  var hallB = beats[0], lairB = beats[beats.length - 1], poolB = beat('pool') || beats[Math.min(2, beats.length - 2)];
+  var hall = [hallB.x, hallB.y], fern = [beats[1].x, beats[1].y], poolC = [poolB.x, poolB.y], lairC = [lairB.x, lairB.y], gal = [beats[beats.length - 2].x, beats[beats.length - 2].y];
+  carve(lairC[0] + sg * (lairB.rx * 0.7), lairC[1] + 0.4, 2.3, 2.3);                                 // the nook behind the lair (the dead Viking)
   var pockets = [];
-  function pocket(from, cx, cy, rx, ry) { cy = Math.max(cy, ry + 3.4); var q, nq = Math.ceil(Math.hypot(cx - from[0], cy - from[1]) / 1.2); for (q = 0; q <= nq; q++) carve(from[0] + (cx - from[0]) * q / nq, from[1] + (cy - from[1]) * q / nq, 1.95, 1.95); carve(cx, cy, rx, ry); pockets.push({ x: cx, y: cy, rx: rx, ry: ry }); }
-  var mA = pts[Math.floor(pts.length * 0.2)];
-  pocket(mA, mA[0] - sg * 2.4 + jit(1), mA[1] - 7.6 + jit(0.8), 3.4, 2.9);
-  pocket([poolC[0] + sg * 2.4, poolC[1] - 2.6], poolC[0] + sg * 5.6 + jit(0.8), poolC[1] - 6.8, 3.6, 2.7);
-  pocket([cavern[0] + sg * 6.0, cavern[1] + 0.6], cavern[0] + sg * 8.6 + jit(0.6), cavern[1] + 5.6 + jit(0.6), 3.2, 2.7);
-  pocket(gal, gal[0] + sg * 2.4 + jit(0.8), gal[1] - 7.2, 3.4, 2.6);
-  var pit = { x: ledge[0] + sg * 0.3, y: ledge[1] + 5.8, rx: 5.7, ry: 3.5 };                     // the chasm: the south of the cavern, the way through along its north lip
+  function inTrench(x3, y3, m) { return Math.abs(x3 - pit.x) < pit.rx + m && y3 > pit.y - pit.ry - m && y3 < pit.y + pit.ext + pit.ry + m; }   // (near the abyss's trench, with a margin in tiles)
+  function pocket(from, cx, cy, rx, ry) { cy = Math.max(cy, ry + 3.4); cy = Math.min(cy, TY0 - ry - 0.6); var q, nq = Math.ceil(Math.hypot(cx - from[0], cy - from[1]) / 1.2); for (q = 0; q <= nq; q++) carve(from[0] + (cx - from[0]) * q / nq, from[1] + (cy - from[1]) * q / nq, 1.85, 1.85); carve(cx, cy, rx, ry); pockets.push({ x: cx, y: cy, rx: rx, ry: ry }); }
+  beats.slice(1, -1).forEach(function (b, bi) {                                                         // dead ends off some of them, away from the way through
+    if (pockets.length >= 4 || b === abyB || (bi > 0 && R() < 0.4)) return; var up = b.y > GH / 2 ? -1 : 1, px0 = b.x + (R() - 0.5) * b.rx, py0 = b.y + up * (b.ry + 5.5 + R() * 2);
+    if (py0 < 5 || py0 > TY0 - 4) return; var from0 = [b.x, b.y + up * b.ry * 0.6], crosses = false; for (var qq = 0; qq <= 10; qq++) if (inTrench(from0[0] + (px0 - from0[0]) * qq / 10, from0[1] + (py0 - from0[1]) * qq / 10, 4.2)) crosses = true;
+    if (crosses) return; pocket([b.x, b.y + up * b.ry * 0.6], px0, py0, 3.2 + R() * 0.6, 2.6 + R() * 0.4);
+  });
+  while (pockets.length < 2) pocket(hall, hall[0] + sg * 3, Math.max(6, hall[1] - 9), 3.2, 2.7);
+  // the abyss: a trench across its chamber from the north, falling away south; the way through crosses it on a rope bridge
+  var ledge = [pit.x - sg * (pit.rx + 1.4), abyB.y - 1.2];                                             // where the way meets the lip, before the bridge
   // the fields
   var D = new Float32Array(FW * FH), P = new Float32Array(FW * FH), ns = seed * 7 + 3, j2, i2;
+  var offB = pts.filter(function (p3) { return inTrench(p3[0], p3[1], 3) && !(Math.abs(p3[1] - bridge.y) < 1.3 && p3[0] > bridge.x0 - 1.6 && p3[0] < bridge.x1 + 1.6); });   // the way's points near the trench that are not the bridge's
   for (j2 = 0; j2 < FH; j2++) for (i2 = 0; i2 < FW; i2++) {
     var tx = (i2 + 0.5) * FS / T, ty = (j2 + 0.5) * FS / T, best = -9, ci;
     for (ci = 0; ci < circles.length; ci++) { var cc = circles[ci], ux = (tx - cc.x) / cc.rx, uy = (ty - cc.y) / cc.ry; if (ux > 2 || ux < -2 || uy > 2 || uy < -2) continue; var dd = (1 - Math.sqrt(ux * ux + uy * uy)) * Math.min(cc.rx, cc.ry); if (dd > best) best = dd; }
     best += (fbm(tx * 1.1, ty * 1.1, ns) - 0.5) * 1.3;
-    var inTunnel = Math.abs(tx - TX) < 2.2 && ty > 33, edge = Math.min(tx - 1.5, GW - 1.5 - tx, ty - 3.2, inTunnel ? 9 : GH - 1.2 - ty); if (edge < best) best = edge;
+    var inTunnel = Math.abs(tx - TX) < 2.2 && ty > TY0 - 0.4, edge = Math.min(tx - 1.5, GW - 1.5 - tx, ty - 3.2, inTunnel ? 9 : GH - 1.2 - ty); if (edge < best) best = edge;
     D[j2 * FW + i2] = best;
-    var px2 = (tx - pit.x) / pit.rx, py2 = ty > pit.y ? 0 : (ty - pit.y) / pit.ry; P[j2 * FW + i2] = (1 - Math.sqrt(px2 * px2 + py2 * py2)) * pit.ry + (fbm(tx * 0.9, ty * 0.9, ns + 5) - 0.5) * 1.0;
+    var px2 = (tx - pit.x) / pit.rx, py2 = ty > pit.y + pit.ext ? (ty - pit.y - pit.ext) / pit.ry : (ty > pit.y ? 0 : (ty - pit.y) / pit.ry); P[j2 * FW + i2] = (1 - Math.sqrt(px2 * px2 + py2 * py2)) * pit.ry + (fbm(tx * 0.9, ty * 0.9, ns + 5) - 0.5) * 1.0;
+    if (P[j2 * FW + i2] > -1.5) for (var wq = 0; wq < offB.length; wq++) { var wp = offB[wq], dw = Math.hypot(tx - wp[0], ty - wp[1]) - wp.w - 0.9; if (dw < P[j2 * FW + i2]) P[j2 * FW + i2] = dw; }   /* (the way off the bridge keeps clear of the trench: seed 25's grazed its edge) */
   }
   var cave = { kind: 'troll', name: 'The cave', S: null, sets: [], posts: [], soot: [], finds: [], glows: [], tintF: null, tintW: null, tunW: 80, ox: ox, oy: oy, seed: seed, D: D, P: P, TR: null, chunks: {}, chunkN: 0, noiseT: 0, px: null, ores: [], veins: [], props: [], shafts: [], puddles: [], pockets: [], seen: new Uint8Array(SW * SH), seenDirty: true };
   function W(p) { return { x: ox + p[0] * T, y: oy + p[1] * T }; }
   cave.path = path.map(function (q) { return { x: ox + q.x * T, y: oy + q.y * T }; });     // the middle of the way through, a point a tile: the troll walks it home
-  cave.entrance = W([TX, 34.3]); cave.exitAt = W([TX, 36.9]); cave.flip = flip; cave.tunnelY = oy + 35.2 * T;   // where you come in, where E takes you out, where the daylight begins
-  cave.hall = W(hall); cave.fern = W(fern); cave.poolC = W(poolC); cave.ledge = W(ledge); cave.gallery = W(gal); cave.lair = W(lairC); cave.pit = { x: ox + pit.x * T, y: oy + pit.y * T, rx: pit.rx * T, ry: pit.ry * T };
-  cave.body = { name: 'deadViking', x: ox + (lairC[0] + sg * 6.1) * T, y: oy + (lairC[1] + 0.7) * T, s: 1, r: 0, v: 0, cave: true };   // the dead Viking with the bronze ring, in the nook behind the lair
+  cave.entrance = W([TX, TY0 + 0.9]); cave.exitAt = W([TX, TY0 + 3.5]); cave.flip = flip; cave.tunnelY = oy + (TY0 + 1.8) * T;   // where you come in, where E takes you out, where the daylight begins
+  cave.hall = W(hall); cave.fern = W(fern); cave.poolC = W(poolC); cave.ledge = W(ledge); cave.gallery = W(gal); cave.lair = W(lairC); cave.pit = { x: ox + pit.x * T, y: oy + pit.y * T, rx: pit.rx * T, ry: pit.ry * T, ext: pit.ext * T };
+  cave.beats = beats.map(function (b) { return { kind: b.kind, x: ox + b.x * T, y: oy + b.y * T, rx: b.rx * T, ry: b.ry * T }; });
+  cave.bridges = [{ x0: ox + bridge.x0 * T, x1: ox + bridge.x1 * T, y: oy + bridge.y * T, w: bridge.w * T }];   // the way over the abyss: walkable, the void under it
+  cave.body = { name: 'deadViking', x: ox + (lairC[0] + sg * (lairB.rx * 0.7 + 0.6)) * T,   /* (in the nook wherever the lair's rolled size puts it: at a fixed 6.1 he lay in the rock of a small lair, seed 3) */ y: oy + (lairC[1] + 0.7) * T, s: 1, r: 0, v: 0, cave: true };   // the dead Viking with the bronze ring, in the nook behind the lair
   cave.hoard = { x: cave.lair.x + sg * 46, y: cave.lair.y + 30, n: 6, day: 1 };
   cave.pool = { x: ox + (poolC[0] + sg * 0.7) * T, y: oy + (poolC[1] + 2.5) * T, rx: 2.7 * T, ry: 1.7 * T };
   cave.pockets = pockets.map(function (q) { return { x: ox + q.x * T, y: oy + q.y * T, rx: q.rx * T, ry: q.ry * T }; });
@@ -372,8 +514,8 @@ function make(seed, o) {
   var hq = cave.path[Math.floor(cave.path.length * 0.13)]; shaft({ x: hq.x, y: hq.y }, 42, 30, 0.7);
   // the copper veins: green streaks on the walls that look toward you, from the gallery on
   var WU = WALLH / K;
-  for (i = 0; i < 90 && cave.veins.length < 9; i++) {
-    var vt = 0.6 + R() * 0.34, vp = cave.path[Math.min(cave.path.length - 1, Math.floor(vt * cave.path.length))], vx = vp.x + (R() - 0.5) * 80, found = null, fh = 0;
+  for (i = 0; i < 200 && cave.veins.length < 9; i++) {
+    var vt = (i < 90 || cave.veins.length >= 5 ? 0.6 : 0.3) + R() * (i < 90 || cave.veins.length >= 5 ? 0.34 : 0.64),   /* (then from a third of the way on: the great caverns' walls lie far from the way, seed 12 had three) */ vp = cave.path[Math.min(cave.path.length - 1, Math.floor(vt * cave.path.length))], vx = vp.x + (R() - 0.5) * 80, found = null, fh = 0;
     for (k = 0; k < 60; k++) { var yy = vp.y - k * 3; if (dAt(cave, vx, yy) < 0) { found = yy + 3; break; } }
     if (found == null) continue; for (k = 2; k <= WU; k += 2) { if (dAt(cave, vx, found - k) < 0) fh = k; else break; }
     if (fh < 34 || Math.hypot(vx - cave.lair.x, found - cave.lair.y) < 110) continue;
@@ -395,10 +537,8 @@ function make(seed, o) {
   function ore(cx, cy, rx, ry) { var t2; for (t2 = 0; t2 < 30; t2++) { var ex = cx + (R() - 0.5) * 2 * rx, ey = cy + (R() - 0.5) * 2 * ry; if (!clearAt(ex, ey, 14)) continue; var s2 = 0.85 + R() * 0.3, hp = (o.rockHp || 11) * (0.7 + 0.6 * s2); cave.ores.push({ name: 'rock', kind: 'stone', ore: true, cave: true, x: ex, y: ey, s: s2, r: 8, v: Math.floor(R() * 3), hp: hp, max: hp, leanDir: 1 }); return; } }
   cave.pockets.forEach(function (q) { ore(q.x, q.y, q.rx * 0.7, q.ry * 0.7); ore(q.x, q.y, q.rx * 0.7, q.ry * 0.7); });
   ore(cave.hall.x + sg * 60, cave.hall.y - 20, 90, 70); ore(cave.fern.x, cave.fern.y, 110, 90);   // (two near the way in: the first thing the pick meets)
-  function stand(cx, cy, rx, ry, n2) { var t3, got = 0; for (t3 = 0; t3 < n2 * 14 && got < n2; t3++) { var sx = cx + (R() - 0.5) * 2 * rx, sy = cy + (R() - 0.5) * 2 * ry; if (!clearAt(sx, sy, 9)) continue; var dw = dAt(cave, sx, sy); if (dw > 2.4 && R() < 0.7) continue; var big = R() < 0.13; cave.props.push({ name: big ? 'caveColumn' : 'stalagmite', x: sx, y: sy, s: big ? 0.9 + R() * 0.25 : 0.7 + R() * 0.5, r: big ? 9 : 6, v: Math.floor(R() * 3), cave: true }); got++; } }
-  stand(cave.hall.x, cave.hall.y, 140, 100, 2); stand(cave.fern.x, cave.fern.y, 120, 100, 3); stand(cave.poolC.x, cave.poolC.y, 170, 140, 5); stand(cave.ledge.x, cave.ledge.y - 20, 220, 90, 5); stand(cave.lair.x, cave.lair.y, 250, 200, 6);
-  cave.pockets.forEach(function (q) { stand(q.x, q.y, q.rx, q.ry, 2); });
-  cave.path.forEach(function (q, qi) { if (qi % 5 === 2) stand(q.x, q.y, 70, 70, 1); });
+  for (var oq = 0; oq < 12 && cave.ores.length < 6; oq++) { var ob = beats[1 + Math.floor(R() * Math.max(1, beats.length - 2))]; ore(ox + ob.x * T, oy + ob.y * T, ob.rx * T * 0.6, ob.ry * T * 0.6); }   /* (at least six: the pockets are fewer in some layouts, seed 22 had five) */
+  /* (the stand() cones of the troll's cave are gone: the studio's dressing below stands in their place, 2026-10-22) */
   // still water on the floor here and there, more of it where it is damp: round the pool and under the holes in the roof
   for (i = 0; i < 260 && cave.puddles.length < 22; i++) {
     var pq = cave.path[Math.floor(R() * cave.path.length)], ux2 = pq.x + (R() - 0.5) * 240, uy2 = pq.y + (R() - 0.5) * 200, damp = Math.hypot(ux2 - cave.pool.x, uy2 - cave.pool.y) < 260 || cave.shafts.some(function (s3) { return Math.hypot(ux2 - s3.x, uy2 - s3.y) < 130; });
@@ -406,6 +546,44 @@ function make(seed, o) {
     if (Math.hypot((ux2 - cave.pool.x) / (cave.pool.rx + 10), (uy2 - cave.pool.y) / (cave.pool.ry + 10)) < 1 || cave.puddles.some(function (q) { return Math.hypot(q.x - ux2, q.y - uy2) < 50; })) continue;
     cave.puddles.push({ x: ux2, y: uy2, rx: 7 + R() * 9, ry: 4 + R() * 4, a: (R() - 0.5) * 0.6 });
   }
+  /* THE DRESSING (the studio's prototype, 2026-10-22): the things that give the cave its size and its fear, as set pieces from the
+     studio's cave kit (assets/props/cavekit): columns that rise out of sight in the caverns, dripstone by the walls, the glowing fungus
+     that shows the dark has an end, bones toward the lair and the troll's bed in it, the rope bridge over the abyss. cave.dress is
+     what the page draws (name with its variant, x, y, r for the walk round it); cave.fungi are lights; cave.eyes are eyes in the dark.
+     They replace the stand() cones (the drawn 'stalagmite' and 'caveColumn' props). */
+  cave.dress = []; cave.fungi = []; cave.eyes = [];
+  function free(x3, y3, r3, away) {
+    if (!floor(cave, x3, y3) || !floor(cave, x3 + r3, y3) || !floor(cave, x3 - r3, y3) || !floor(cave, x3, y3 + r3 * 0.6) || !floor(cave, x3, y3 - r3 * 0.6)) return false;
+    if (trailAt(cave, x3, y3) < (away || 30) || Math.hypot(x3 - cave.entrance.x, y3 - cave.entrance.y) < 130) return false;
+    if (cave.bridges.some(function (b3) { return x3 > b3.x0 - 50 && x3 < b3.x1 + 50 && Math.abs(y3 - b3.y) < 60; })) return false;
+    return !cave.dress.some(function (q3) { return Math.hypot(q3.x - x3, (q3.y - y3) * 1.3) < r3 + q3.r + 6; });
+  }
+  function put(name, x3, y3, r3, v3) { cave.dress.push({ name: name, x: x3, y: y3, r: r3, v: v3 || 0, cave: true }); }
+  function scatter(b3, n3, name, r3, wallNear, away) {
+    for (var t3 = 0; t3 < n3 * 40 && n3 > 0; t3++) {
+      var a3 = R() * Math.PI * 2, d3 = Math.sqrt(R()), x3 = b3.x + Math.cos(a3) * b3.rx * d3, y3 = b3.y + Math.sin(a3) * b3.ry * d3, dw3 = dAt(cave, x3, y3);
+      if (wallNear && dw3 > wallNear) continue; if (!free(x3, y3, r3, away)) continue; put(name, x3, y3, r3, Math.floor(R() * 3)); n3--;
+    }
+  }
+  cave.beats.forEach(function (b3) {
+    if (b3.kind === 'cavern') { scatter(b3, 6, 'column', 26, 0, 60); scatter(b3, 4, 'stalagmite', 20, 3.5, 40); scatter(b3, 3, 'fungus', 14, 2.4, 30); }
+    else if (b3.kind === 'columns') { scatter(b3, 8, 'column', 24, 0, 44); scatter(b3, 2, 'stalagmite', 18, 3, 40); scatter(b3, 1, 'fungus', 14, 2.2, 30); }
+    else if (b3.kind === 'grotto') scatter(b3, 9, 'fungus', 14, 3.2, 26);
+    else if (b3.kind === 'bones') scatter(b3, 4, 'bonepile', 24, 0, 30);
+    else if (b3.kind === 'lair') { var bx3 = b3.x + sg * b3.rx * 0.35, by3 = b3.y - b3.ry * 0.35; if (free(bx3, by3, 44, 30)) put('trollBed', bx3, by3, 44, 0); scatter(b3, 3, 'bonepile', 24, 0, 40); scatter(b3, 2, 'stalagmite', 18, 3, 40); }
+    else if (b3.kind === 'abyss') scatter(b3, 2, 'stalagmite', 18, 3, 40);
+    else { scatter(b3, 3, 'stalagmite', 18, 2.6, 40); scatter(b3, 1, 'fungus', 14, 2.2, 30); }
+  });
+  cave.pockets.forEach(function (q3) { if (R() < 0.6) scatter(q3, 2, 'fungus', 14, 0, 0); });
+  cave.dress.filter(function (q3) { return q3.name === 'column'; }).forEach(function (q3, i3) {                 // fungus at the feet of some columns: they stand dark against its glow
+    if (i3 % 2) return; var fx3 = q3.x + (R() < 0.5 ? -1 : 1) * (34 + R() * 10), fy3 = q3.y + 8 + R() * 10; if (free(fx3, fy3, 12, 20)) put('fungus', fx3, fy3, 12, Math.floor(R() * 3));
+  });
+  cave.beats.forEach(function (b3) { if (b3.kind === 'cavern' || b3.kind === 'columns') shaft({ x: b3.x + (R() - 0.5) * b3.rx * 0.6, y: b3.y + (R() - 0.5) * b3.ry * 0.4 }, 72, 50, 0.85); });   // daylight far down into the great rooms
+  cave.fires = []; cave.beats.forEach(function (b3) { if (b3.kind !== 'lair') return; var bed = cave.dress.filter(function (q3) { return q3.name === 'trollBed'; })[0], fx4 = bed ? bed.x - sg * 70 : b3.x, fy4 = bed ? bed.y + 40 : b3.y; cave.fires.push({ x: fx4, y: fy4 }); });   // the troll's fire by his bed
+  cave.bridges.forEach(function (b3) { for (var bx4 = b3.x0; bx4 < b3.x1; bx4 += 32) put('ropeBridge', bx4 + 16, b3.y, 0, 0); put('bridgePost', b3.x0 - 6, b3.y + 2, 0, 0); put('bridgePost', b3.x1 + 6, b3.y + 2, 0, 0); });
+  cave.fungi = null; cave.fungi = cave.dress.filter(function (q3) { return q3.name === 'fungus'; }).map(function (q3, i3) { return { x: q3.x, y: q3.y, r: 64 + R() * 24, a: 0.5 + R() * 0.15, ph: i3 * 1.7 }; });
+  cave.pockets.forEach(function (q3) { cave.eyes.push({ x: q3.x, y: q3.y - 6, ph: R() * 9 }); });                       // eyes in the dark: where you have not been
+  cave.beats.forEach(function (b3) { if (b3.kind === 'cavern' || b3.kind === 'columns') cave.eyes.push({ x: b3.x - sg * b3.rx * 0.8, y: b3.y - b3.ry * 0.6, ph: R() * 9 }); });
   return cave;
 }
 
@@ -474,7 +652,7 @@ function chunk(cave, cx, cy) {
         rr = 86 + (soft - 0.5) * 30 + (n2 - 0.5) * 12; gg = 86 + (soft - 0.5) * 28 + (n2 - 0.5) * 12; bb = 98 + (soft - 0.5) * 26 + (n2 - 0.5) * 12;   // cool grey rock
         if (warm > 0.46) { var wk = sm(0.46, 0.56, warm) * 0.8; rr += (112 - rr) * wk; gg += (97 - gg) * wk; bb += (80 - bb) * wk; if (wh > 0.9) { rr += 20; gg += 18; bb += 14; } else if (wh < 0.08) { rr -= 16; gg -= 15; bb -= 12; } }   // earth and gravel in it, a speck a pebble
         var tw = 14 + n1 * 10; if (tr < tw + 10) { var tk = sm(tw + 10, tw - 2, tr) * 0.9; rr += (142 - rr) * tk; gg += (122 - gg) * tk; bb += (92 - bb) * tk; if (tr < tw * 0.5) { rr += 7; gg += 6; bb += 4; } if (wh > 0.95) { rr += 16; gg += 14; bb += 10; } }   // his path: trodden pale and warm down the middle of the way through
-        for (k = 0; k < shafts.length; k++) { var sh = shafts[k], dn = Math.hypot((ox + wx - sh.x) / sh.rx, (oy + wy - sh.y) / sh.ry) + (n1 - 0.5) * 0.3; if (dn < 1.15) { var mk2 = sm(1.15, 0.5, dn) * (0.35 + soft * 0.75) * (tr < tw ? 0.35 : 1); if (mk2 > 1) mk2 = 1; var lit = n2 > 0.52; rr += ((lit ? 104 : 70) - rr) * mk2; gg += ((lit ? 132 : 100) - gg) * mk2; bb += ((lit ? 62 : 52) - bb) * mk2; } }   // moss where the daylight falls
+        for (k = 0; k < shafts.length; k++) { var sh = shafts[k], dn = Math.hypot((ox + wx - sh.x) / sh.rx, (oy + wy - sh.y) / sh.ry) + (n1 - 0.5) * 0.3; if (dn < 1.15) { var mk2 = sm(1.15, 0.5, dn) * (0.35 + soft * 0.75) * (tr < tw ? 0.35 : 1); if (mk2 > 1) mk2 = 1; var lit = n2 > 0.52; if (sh.grate) { rr += ((lit ? 92 : 64) - rr) * mk2 * 0.6; gg += ((lit ? 96 : 68) - gg) * mk2 * 0.6; bb += ((lit ? 100 : 76) - bb) * mk2 * 0.6; } else { rr += ((lit ? 104 : 70) - rr) * mk2; gg += ((lit ? 132 : 100) - gg) * mk2; bb += ((lit ? 62 : 52) - bb) * mk2; } } }   // moss where the daylight falls (under a crypt's grate a damp stain, no moss: the studio's prototype)
         if (oth === 0 && bd < 22) { var ao = 1 - bd / 22; ao *= ao; rr *= 1 - 0.5 * ao; gg *= 1 - 0.47 * ao; bb *= 1 - 0.36 * ao; }   // the dark at a wall's foot
         if (oth === 2 && bd < 7) { if (bd < 1.3) { rr = 18; gg = 16; bb = 20; } else { var lp = 1 - bd / 7; rr += 30 * lp; gg += 28 * lp; bb += 26 * lp; } }   // the lip of the chasm: a pale edge, an ink line at the drop
         if (pool) { var pu = (ox + wx - pool.x) / pool.rx, pvv = (oy + wy - pool.y) / pool.ry, pd = Math.sqrt(pu * pu + pvv * pvv) + (n1 - 0.5) * 0.12; if (pd < 1.1) { if (pd > 1) { rr = rr * 0.72; gg = gg * 0.74; bb = bb * 0.8; } else { var dp = sm(1, 0.25, pd); rr = 70 - dp * 46 + (n2 - 0.5) * 6; gg = 104 - dp * 54 + (n2 - 0.5) * 6; bb = 112 - dp * 44 + (n2 - 0.5) * 6; if (pd > 0.93) { rr = 30; gg = 44; bb = 52; } else if (nsm(gx, gy * 2, 2) > 0.66) { rr += 14; gg += 18; bb += 20; } } } }   // the still pool: clear at its rim, dark in its middle
@@ -505,13 +683,20 @@ function chunk(cave, cx, cy) {
         } else if (oth !== 0 && bd <= 7.5) {              // the near wall, its face turned away: a rim of rock, an ink line at the floor
           if (bd <= 1.4) { rr = 16; gg = 14; bb = 18; } else { var rim = (n1 > 0.5 ? 1.08 : 0.9) * (1 - (bd - 1.4) / 9); rr = 74 * rim; gg = 72 * rim; bb = 84 * rim; }
         } else { var fr = oth !== 0 ? Math.max(0, 1 - bd / 46) : 0, rk = 12 + fr * 22 + (n1 - 0.5) * (5 + fr * 8) + (n2 - 0.5) * fr * 6; rr = rk; gg = rk - 1; bb = rk + 6; }   // the rock itself, seen from above: dark stone by the floor, nothing further in (black is kept for the chasm)
-      } else {                                            // the chasm
+      } else {                                            // the chasm: an abyss (the studio's prototype, 2026-10-22; Robin: "you feel like you're looking down an abyss")
         var pa1 = a1, side2 = 0; if (!pa1) { if (A2[q] || A3[q]) { side2 = A2[q] !== 0 && (A3[q] === 0 || A2[q] <= A3[q]) ? 1 : 2; pa1 = side2 === 1 ? A2[q] : A3[q]; } }
+        var drift = nsm(gx * 0.6 + 50, gy * 2.4, 9);
         if (pa1) {
-          var fp = pa1 / PITH, tp = (side2 ? (side2 === 1 ? 1.1 : 0.7) * (0.9 + (n2 - 0.5) * 0.14) : rockTone(gx, gy, pa1, 2) + (n2 - 0.5) * 0.1), lp2 = Math.pow(Math.max(0, 1 - fp * 1.45), 1.5) * 0.92;   // black by two thirds of the way down
-          rr = 96 * tp * lp2 + 3; gg = 92 * tp * lp2 + 4; bb = 106 * tp * lp2 + 9 + 10 * Math.min(1, fp * 2) * lp2;
+          var fp = pa1 / PITH, tp = (side2 ? (side2 === 1 ? 1.1 : 0.7) * (0.9 + (n2 - 0.5) * 0.14) : rockTone(gx, gy, pa1, 2) + (n2 - 0.5) * 0.1), lp2 = Math.pow(Math.max(0, 1 - fp * 1.02), 1.3) * 0.95;   // the wall fades over the whole fall, not black a third of the way down
+          var sdep = pa1 + (NS[(((gx >> 2) & 127) << 7) | 7] - 0.5) * 18, sb = sdep % 30, ledge = fp < 0.1 ? 1 : (sb < 2.5 ? 1.5 : (sb < 8 ? 0.6 : 1));   // ledges going down: a lit lip every 30 px, its shadow under it
+          var haze = Math.max(0, Math.min(1, (fp - 0.2) / 0.75)) * (0.45 + 0.55 * drift);                          // the depth's own air: haze thickening as it falls
+          rr = 96 * tp * lp2 * ledge + 3 + haze * 26; gg = 92 * tp * lp2 * ledge + 4 + haze * 32; bb = 106 * tp * lp2 * ledge + 9 + haze * 52;
           if (pa1 <= 1) { rr = 16; gg = 14; bb = 18; } else if (pa1 <= 4 && !side2) { rr = 142; gg = 136; bb = 142; }   // the lip: lit stone over the ink
-        } else { var mist = nsm(gx, gy * 2.2, 6); rr = 4 + mist * 5; gg = 5 + mist * 8; bb = 10 + mist * 18; }   // nothing: black, a breath of blue far down
+        } else {                                          // the deep below the far wall: mist drifting in bands, and far down now and then a light
+          var wisp = Math.pow(drift, 2.4), mist = nsm(gx, gy * 2.2, 6);
+          rr = 5 + mist * 6 + wisp * 22; gg = 7 + mist * 9 + wisp * 28; bb = 13 + mist * 20 + wisp * 44;
+          if (wh > 0.9994) { rr += 30; gg += 80; bb += 70; } else if (wh > 0.9986) { rr += 10; gg += 30; bb += 28; }   // the cave fungus far below, as specks
+        }
       }
     }
     d[pp] = rr; d[pp + 1] = gg; d[pp + 2] = bb; d[pp + 3] = 255;
@@ -576,7 +761,7 @@ function pen(g, cave, S, X0, Y0, W2, H2) {
     var an = Math.atan2((nx2.y - p.y) * K, nx2.x - p.x), sd = i % 8 ? 1 : -1, fx = sx - Math.sin(an) * 8 * sd, fy = sy + Math.cos(an) * 8 * sd * K; if (kd(fx, fy) !== 1) return;
     g.save(); g.translate(fx, fy); g.rotate(an); g.fillStyle = 'rgba(46,38,32,0.24)'; g.beginPath(); g.moveTo(-9, 0); g.quadraticCurveTo(-8.5, -2.6, -3, -3.2); g.quadraticCurveTo(3, -4.8, 6.4, -4.2); g.quadraticCurveTo(8, 0, 6.4, 4.2); g.quadraticCurveTo(3, 4.8, -3, 3.2); g.quadraticCurveTo(-8.5, 2.6, -9, 0); g.fill(); for (k = 0; k < 5; k++) { g.beginPath(); g.ellipse(8.3 - Math.abs(k - 2) * 0.5, -3.8 + k * 1.9, 1.2, 0.85, 0, 0, 7); g.fill(); } g.restore(); });
   // moss and fern under the holes in the roof
-  cave.shafts.forEach(function (s, si) { var sx = s.x - ox, sy = (s.y - oy) * K; if (sx < X0 - 120 || sx > X0 + W2 + 120 || sy < Y0 - 90 || sy > Y0 + H2 + 90) return;
+  cave.shafts.forEach(function (s, si) { if (s.grate) return; var sx = s.x - ox, sy = (s.y - oy) * K; if (sx < X0 - 120 || sx > X0 + W2 + 120 || sy < Y0 - 90 || sy > Y0 + H2 + 90) return;
     var n = Math.round(s.rx * 0.5), i2;
     for (i2 = 0; i2 < n; i2++) { var a = hash(i2, si, 81) * 6.283, rd = Math.sqrt(hash(i2, si, 82)), bx = sx + Math.cos(a) * rd * s.rx * 0.95, by = sy + Math.sin(a) * rd * s.ry * K * 0.95, hb = hash(i2, si, 83); if (kd(bx, by) !== 1 || trailAt(cave, ox + bx, oy + by / K) < 16 || Math.hypot((ox + bx - pl0.x) / (pl0.rx + 4), (oy + by / K - pl0.y) / (pl0.ry + 4)) < 1) continue;
       if (hb > 0.8) { g.strokeStyle = '#4f7a36'; g.lineWidth = 0.9; var fr; for (fr = -2; fr <= 2; fr++) { var ex = bx + fr * 4.4, ey = by - 9 + Math.abs(fr) * 2.2; g.beginPath(); g.moveTo(bx, by); g.quadraticCurveTo(bx + fr * 1.6, by - 7, ex, ey); g.stroke(); for (k = 1; k <= 3; k++) { var t = k / 4, mx = bx + (ex - bx) * t + fr * 0.5, my = by + (ey - by) * t - 2 * Math.sin(t * 3.14); g.beginPath(); g.moveTo(mx - 1.6, my + 0.6); g.lineTo(mx + 1.6, my - 0.6); g.stroke(); } } }   // a fern
@@ -686,14 +871,19 @@ function dark(c, cave, o) {
   if (!darkCv) darkCv = mkCanvas(W / 2, H / 2);
   var n = darkCv.getContext('2d');
   function sx(x) { return ((x - cam.x) * cam.z + W / 2) / 2; } function sy(y) { return ((y * K2 - cam.y) * cam.z + H / 2) / 2; }
-  n.globalCompositeOperation = 'source-over'; n.clearRect(0, 0, W / 2, H / 2); n.fillStyle = 'rgba(8,10,22,0.93)'; n.fillRect(0, 0, W / 2, H / 2);   /* (the palette, 2026-10-21: a deep blue-black the wall's grain shows through, never pure black) */
+  n.globalCompositeOperation = 'source-over'; n.clearRect(0, 0, W / 2, H / 2); n.fillStyle = 'rgba(8,10,22,0.885)'; n.fillRect(0, 0, W / 2, H / 2);   /* (the palette, 2026-10-21: a deep blue-black the wall's grain shows through, never pure black) */
   n.globalCompositeOperation = 'destination-out';
   function hole(x, y, rx, ry, a) { var g = n.createRadialGradient(x, y, 0, x, y, rx); g.addColorStop(0, 'rgba(0,0,0,' + a + ')'); g.addColorStop(0.55, 'rgba(0,0,0,' + a * 0.6 + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); n.save(); n.translate(x, y); n.scale(1, ry / rx); n.translate(-x, -y); n.fillStyle = g; n.beginPath(); n.arc(x, y, rx, 0, 7); n.fill(); n.restore(); }   // (the gradient is made where it lies and the squash laid round it: one made at 0,0 under a translate drew a quarter of itself in the Node canvas)
-  var tl = o.torch ? 1 + 0.03 * Math.sin(clock * 11) : 0, hr = (o.torch ? 170 + tl * 8 : 60) * z2;
+  var tl = o.torch ? 1 + 0.04 * Math.sin(clock * 11) + 0.03 * Math.sin(clock * 17.3) : 0, hr = (o.torch ? 210 + tl * 12 : 92) * z2;   /* (the studio's prototype: a wider circle, a torch that breathes) */
   hole(sx(P.x), sy(P.y) - 6 * z2, hr, hr, o.torch ? 1 : 0.78);   /* without a torch his circle is cool and small (eyes in the dark); with one, warm and wide */
   hole(sx(cave.exitAt.x), sy(cave.exitAt.y + 30), 150 * z2, 190 * z2, 0.5 + 0.45 * sun);                 // the daylight up the tunnel
   cave.shafts.forEach(function (s) { var x = sx(s.x), y = sy(s.y); if (x < -80 || x > W / 2 + 80 || y < -80 || y > H / 2 + 80) return; var a = Math.min(0.93, s.k * (0.14 + 0.8 * sun)); hole(x, y, s.rx * 1.9 * z2, s.ry * 1.9 * K2 * z2, a * 0.55); hole(x, y, s.rx * 1.1 * z2, s.ry * 1.1 * K2 * z2, a); });
   (cave.glows || []).forEach(function (g2) { var x = sx(g2.x), y = sy(g2.y); if (x < -160 || x > W / 2 + 160 || y < -160 || y > H / 2 + 160) return; hole(x, y, g2.r * 1.5 * z2, g2.r * 1.1 * K2 * z2, g2.a * (0.3 + 0.7 * sun)); });   // daylight carried in over water
+  (cave.deeps || []).forEach(function (dp) { hole(sx(dp.x), sy(dp.y + dp.ry * 0.6), dp.rx * 1.1 * z2, dp.ry * 1.6 * K2 * z2, 0.32); });   // a burial pit: the same faint light from below as the abyss
+  if (cave.pit && cave.pit.ext) { var pc = cave.pit; hole(sx(pc.x), sy(pc.y + pc.ext * 0.4), pc.rx * 1.05 * z2, (pc.ry + pc.ext) * 0.62 * K2 * z2, 0.34); }   // the abyss's own faint light, rising from far below: its ledges and its haze show
+  (cave.candles || []).forEach(function (cd) { var x = sx(cd.x), y = sy(cd.y) - 6 * z2; if (x < -100 || x > W / 2 + 100 || y < -100 || y > H / 2 + 100) return; var fl = 1 + 0.06 * Math.sin(clock * 7.3 + cd.ph) + 0.04 * Math.sin(clock * 13.1 + cd.ph * 2); hole(x, y, cd.r * fl * z2, cd.r * 0.8 * fl * K2 * z2, 0.82); });   // candles left burning: small warm lights down the galleries
+  (cave.fires || []).forEach(function (fi) { var x = sx(fi.x), y = sy(fi.y) - 8 * z2; if (x < -150 || x > W / 2 + 150 || y < -150 || y > H / 2 + 150) return; var fl = 1 + 0.06 * Math.sin(clock * 9 + 1) + 0.04 * Math.sin(clock * 14.7); hole(x, y, 120 * fl * z2, 100 * fl * K2 * z2, 0.9); });   // the troll's fire: his own light, red and low
+  (cave.fungi || []).forEach(function (fu) { var x = sx(fu.x), y = sy(fu.y) - 6 * z2; if (x < -120 || x > W / 2 + 120 || y < -120 || y > H / 2 + 120) return; hole(x, y, fu.r * z2, fu.r * 0.8 * K2 * z2, fu.a * (0.85 + 0.15 * Math.sin(clock * 0.8 + fu.ph))); });   // the fungus: far lights in the dark
   cave.ores.forEach(function (q) { if (q.dying == null && q.ore !== false) { var x = sx(q.x), y = sy(q.y) - 5 * z2; if (x > -30 && x < W / 2 + 30 && y > -30 && y < H / 2 + 30) hole(x, y, 34 * z2, 34 * z2, 0.62); } });
   cave.veins.forEach(function (v) { if (v.left > 0) { var x = sx(v.x), y = sy(v.y) - 10 * z2; if (x > -30 && x < W / 2 + 30 && y > -30 && y < H / 2 + 30) hole(x, y, 26 * z2, 26 * z2, 0.3); } });
   c.save(); c.imageSmoothingEnabled = true; c.drawImage(darkCv, 0, 0, W, H);
@@ -715,9 +905,22 @@ function dark(c, cave, o) {
     c.save(); c.translate(x, y); c.scale(1, K2); c.translate(-x, -y); c.fillStyle = gg2; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); });
   if (!o.torch) { var cx0 = px(P.x), cy0 = py(P.y) - 10 * cam.z, cg = c.createRadialGradient(cx0, cy0, 0, cx0, cy0, 60 * cam.z); cg.addColorStop(0, 'rgba(40,48,70,0.55)'); cg.addColorStop(1, 'rgba(40,48,70,0)'); c.fillStyle = cg; c.beginPath(); c.arc(cx0, cy0, 60 * cam.z, 0, 7); c.fill(); }
   if (o.torch) { var tx = px(P.x), ty = py(P.y) - 10 * cam.z, tg = c.createRadialGradient(tx, ty, 0, tx, ty, 170 * cam.z); tg.addColorStop(0, 'rgba(210,150,70,' + (0.3 + 0.03 * Math.sin(clock * 13)).toFixed(3) + ')'); tg.addColorStop(0.5, 'rgba(160,110,60,0.12)'); tg.addColorStop(1, 'rgba(40,60,120,0)'); c.fillStyle = tg; c.beginPath(); c.arc(tx, ty, 150 * cam.z, 0, 7); c.fill(); }
+  (cave.fungi || []).forEach(function (fu) {               // the fungus's own glow, a slow pulse of blue-green
+    var x = px(fu.x), y = py(fu.y) - 8 * cam.z, r = fu.r * 0.9 * cam.z; if (x < -r || x > W + r || y < -r || y > H + r) return;
+    var a = 0.16 + 0.05 * Math.sin(clock * 0.8 + fu.ph), gf = c.createRadialGradient(x, y, 0, x, y, r); gf.addColorStop(0, 'rgba(90,225,195,' + a.toFixed(3) + ')'); gf.addColorStop(1, 'rgba(60,170,170,0)'); c.save(); c.translate(x, y); c.scale(1, K2); c.translate(-x, -y); c.fillStyle = gf; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore();
+  });
+  (cave.candles || []).forEach(function (cd) { var x = px(cd.x), y = py(cd.y) - 8 * cam.z, fl = 1 + 0.07 * Math.sin(clock * 7.3 + cd.ph), r = cd.r * 0.85 * fl * cam.z; if (x < -r || x > W + r || y < -r || y > H + r) return; var gc = c.createRadialGradient(x, y, 0, x, y, r); gc.addColorStop(0, 'rgba(255,190,100,0.3)'); gc.addColorStop(0.5, 'rgba(220,130,60,0.1)'); gc.addColorStop(1, 'rgba(160,80,40,0)'); c.save(); c.translate(x, y); c.scale(1, K2); c.translate(-x, -y); c.fillStyle = gc; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); });
+  (cave.fires || []).forEach(function (fi) { var x = px(fi.x), y = py(fi.y) - 10 * cam.z, fl = 1 + 0.07 * Math.sin(clock * 9 + 1) + 0.05 * Math.sin(clock * 14.7), r = 130 * fl * cam.z, gr = c.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, 'rgba(240,120,50,0.42)'); gr.addColorStop(0.45, 'rgba(200,70,30,0.16)'); gr.addColorStop(1, 'rgba(120,30,20,0)'); c.save(); c.translate(x, y); c.scale(1, K2); c.translate(-x, -y); c.fillStyle = gr; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); c.restore(); });
+  (cave.deeps || []).forEach(function (dp) { var dx = px(dp.x), dy = py(dp.y + dp.ry * 0.7), dr = dp.rx * 1.2 * cam.z, dg = c.createRadialGradient(dx, dy, 0, dx, dy, dr); dg.addColorStop(0, 'rgba(70,110,160,0.14)'); dg.addColorStop(1, 'rgba(40,70,120,0)'); c.fillStyle = dg; c.beginPath(); c.arc(dx, dy, dr, 0, 7); c.fill(); });
+  if (cave.pit && cave.pit.ext) { var apx = px(cave.pit.x), apy = py(cave.pit.y + cave.pit.ext * 0.55), ar = cave.pit.rx * 1.1 * cam.z, ag = c.createRadialGradient(apx, apy, 0, apx, apy, ar); ag.addColorStop(0, 'rgba(70,120,170,0.12)'); ag.addColorStop(1, 'rgba(40,70,120,0)'); c.save(); c.translate(apx, apy); c.scale(1, 1.4); c.translate(-apx, -apy); c.fillStyle = ag; c.beginPath(); c.arc(apx, apy, ar, 0, 7); c.fill(); c.restore(); }   // a cold breath of light from the bottom of the abyss
   cave.ores.forEach(function (q) {                         // the glowing stones (the ore in the rock), a cold foxfire
     if (q.dying != null || q.ore === false) return; var x = px(q.x), y = py(q.y) - 6 * cam.z; if (x < -30 || x > W + 30 || y < -30 || y > H + 30) return;
     var g = c.createRadialGradient(x, y, 0, x, y, 15 * cam.z), a = 0.6 + 0.1 * Math.sin(clock * 2 + q.x); g.addColorStop(0, 'rgba(120,200,170,' + a.toFixed(3) + ')'); g.addColorStop(1, 'rgba(120,200,170,0)');   /* the glowing stones cold foxfire, so warm belongs to fire and torch alone (the palette) */ c.fillStyle = g; c.beginPath(); c.arc(x, y, 15 * cam.z, 0, 7); c.fill();
+  });
+  (cave.eyes || []).forEach(function (e) {               // eyes in the dark: two embers low down, far from you; they blink and they are gone when you come near
+    var dd = Math.hypot(e.x - P.x, e.y - P.y); if ((!e.deep && dd < 220) || dd > 760) return; var cyc = (clock * 0.31 + e.ph) % 7; if (cyc > 5.2 || (cyc > 2.4 && cyc < 2.55)) return;
+    var ex = px(e.x), ey = py(e.y) - 16 * cam.z; if (ex < -10 || ex > W + 10 || ey < -10 || ey > H + 10) return; var fa = e.deep ? 0.7 : Math.min(1, (dd - 220) / 120);
+    [-3.2, 3.2].forEach(function (o2) { var gx = c.createRadialGradient(ex + o2 * cam.z, ey, 0, ex + o2 * cam.z, ey, 3.4 * cam.z); gx.addColorStop(0, 'rgba(255,190,110,' + (0.9 * fa).toFixed(3) + ')'); gx.addColorStop(0.4, 'rgba(230,120,60,' + (0.5 * fa).toFixed(3) + ')'); gx.addColorStop(1, 'rgba(200,80,40,0)'); c.fillStyle = gx; c.beginPath(); c.arc(ex + o2 * cam.z, ey, 3.4 * cam.z, 0, 7); c.fill(); });
   });
   c.restore();
 }
@@ -748,7 +951,7 @@ function drawChart(c, cave, x, y, w, h, P) {
 function seenStr(cave) { var out = [], i = 0, n = cave.seen.length; while (i < n) { var v = cave.seen[i], j = i; while (j < n && cave.seen[j] === v && j - i < 4000) j++; out.push(v + ':' + (j - i)); i = j; } return out.join(','); }   // the seen cells as runs, for the save
 function seenLoad(cave, str) { if (!str) return; var i = 0; String(str).split(',').forEach(function (run) { var q = run.split(':'), v = +q[0], n = +q[1]; while (n-- > 0 && i < cave.seen.length) cave.seen[i++] = v; }); cave.seenDirty = true; }
 
-return { make: make, prepare: prepare, chunk: chunk, dirty: dirty, release: release, drawSet: drawSet, drawGate: drawGate, drawDrift: drawDrift, sAt: sAt, dAt: dAt, pAt: pAt, floor: floor, trailAt: trailAt, drawFloor: drawFloor, dark: dark, see: see, drawChart: drawChart, seenStr: seenStr, seenLoad: seenLoad,
+return { onBridge: inCave(onBridge), make: make, prepare: inCave(prepare), chunk: inCave(chunk), dirty: inCave(dirty), release: inCave(release), drawSet: drawSet, drawGate: drawGate, drawDrift: drawDrift, sAt: inCave(sAt), dAt: inCave(dAt), pAt: inCave(pAt), floor: inCave(floor), trailAt: inCave(trailAt), drawFloor: inCave(drawFloor, 1), dark: inCave(dark, 1), see: inCave(see), drawChart: inCave(drawChart, 1), seenStr: inCave(seenStr), seenLoad: inCave(seenLoad),
   T: T, K: K, GW: GW, GH: GH, FS: FS, PW: PW, PH: PH, CS: CS, WALLH: WALLH, PITH: PITH };
 })();
 if (typeof module !== 'undefined') module.exports = Cave;

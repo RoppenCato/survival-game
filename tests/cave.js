@@ -1,5 +1,5 @@
 // The cave (src/cave.js): laid out for a run of seeds, and for each whether every part can be walked to from the way in
-// (a flood over the floor from where you come in), what stands in it, and how far it is from light to light along the way
+// (a flood over the floor from where you come in; each cave's own grid, its GW and GH, at 4 cells a tile), what stands in it, and how far it is from light to light along the way
 // through. No assertions, like the other tests: read the lines. A NO, or a count of 0 where there should be things, is a fault.
 global.__mk = (w, h) => require('../node_modules/@napi-rs/canvas').createCanvas(w, h);
 const Cave = require('../src/cave.js');
@@ -7,7 +7,7 @@ const seeds = process.argv[2] ? [+process.argv[2]] : [11, 1, 2, 3, 5, 7, 12, 25,
 let faults = 0;
 // The crypts under churches (raid step 8, 2026-10-21): a small cave each; the niche with the silver must be walkable from the stair
 seeds.slice(0, 6).forEach(seed => {
-  const c = Cave.make(seed, { kind: 'crypt', x: 5000, y: 400, silver: 20 }), W = 288, H = 160, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - c.ox) / 8), cy = p => Math.floor((p.y - c.oy) / 8), q = [[cx(c.entrance), cy(c.entrance)]];
+  const c = Cave.make(seed, { kind: 'crypt', x: 5000, y: 400, silver: 20 }), W = c.GW * 4, H = c.GH * 4, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - c.ox) / 8), cy = p => Math.floor((p.y - c.oy) / 8), q = [[cx(c.entrance), cy(c.entrance)]];
   seen[q[0][1] * W + q[0][0]] = 1;
   while (q.length) { const [i, j] = q.pop(); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + a, y = j + b; if (x < 0 || y < 0 || x >= W || y >= H || seen[y * W + x] || c.D[y * W + x] < 0) continue; seen[y * W + x] = 1; q.push([x, y]); } }
   const reach = p => seen[cy(p) * W + cx(p)] ? 'yes' : 'NO', ok = reach(c.vault) === 'yes' && reach(c.niche) === 'yes' && reach(c.hoard) === 'yes';
@@ -18,7 +18,7 @@ seeds.slice(0, 6).forEach(seed => {
 // every pillar (the loop), the alcoves, the vault, the ways out; and with the falls of masonry and the gates shut, the alcoves and the
 // vault are closed off while the ways out stay open. The pillar is rock.
 [1, 2].forEach(rank => seeds.slice(0, 6).forEach(seed => {
-  const c = Cave.make(seed, { kind: 'crypt', rank, x: 5000, y: 400, silver: 30 }), W = 288, H = 160, cx = p => Math.floor((p.x - c.ox) / 8), cy = p => Math.floor((p.y - c.oy) / 8);
+  const c = Cave.make(seed, { kind: 'crypt', rank, x: 5000, y: 400, silver: 30 }), W = c.GW * 4, H = c.GH * 4, cx = p => Math.floor((p.x - c.ox) / 8), cy = p => Math.floor((p.y - c.oy) / 8);
   const shut = (x, y) => c.ores.some(o => o.block && Math.hypot(x - o.x, y - o.y) < o.r * o.s + 7) || c.gates.some(g => Math.abs(y - g.y) < 9 && Math.abs(x - g.x) < g.w / 2 + 6);
   function flood(closed) { const seen = new Uint8Array(W * H), q = [[cx(c.entrance), cy(c.entrance)]]; seen[q[0][1] * W + q[0][0]] = 1;
     while (q.length) { const [i, j] = q.pop(); for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + a, y = j + b; if (x < 0 || y < 0 || x >= W || y >= H || seen[y * W + x] || !Cave.floor(c, c.ox + (x + 0.5) * 8, c.oy + (y + 0.5) * 8) || (closed && shut(c.ox + (x + 0.5) * 8, c.oy + (y + 0.5) * 8))) continue; seen[y * W + x] = 1; q.push([x, y]); } }
@@ -31,7 +31,7 @@ seeds.slice(0, 6).forEach(seed => {
   console.log((ok ? '   ' : '!! ') + (rank === 2 ? 'cathedral ' : 'town crypt ') + String(seed).padEnd(5) + ' loops round ' + (sides ? 'yes' : 'NO') + ', alcoves ' + c.alcoves.map(p => (open(p) ? 'o' : 'X') + (closed(p) ? '!' : '')).join('') + ', vault ' + (open(c.vault) ? 'yes' : 'NO') + (closed(c.vault) ? ' (NOT SHUT)' : '') + ', ways out ' + c.exits.map(e => e.id + (open(e) && closed(e) ? '' : ' NO')).join(' ') + '; ' + c.gates.length + ' gate' + (c.gates.length > 1 ? 's' : '') + ' (' + c.gates.map(g => Math.round(g.w)).join(', ') + ' wide), ' + c.niches.length + ' niches, ' + coffins + ' coffins (' + c.finds.filter(f => f.ring).length + ' with a ring), ' + chests + ' hidden chest' + (chests > 1 ? 's' : '') + ', ' + c.ores.length + ' stones of the falls');
 }));
 seeds.forEach(seed => {
-  const cave = Cave.make(seed, { x: 5000, y: 400 }), W = 288, H = 160, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - cave.ox) / 8), cy = p => Math.floor((p.y - cave.oy) / 8), q = [[cx(cave.entrance), cy(cave.entrance)]];
+  const cave = Cave.make(seed, { x: 5000, y: 400 }), W = cave.GW * 4, H = cave.GH * 4, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - cave.ox) / 8), cy = p => Math.floor((p.y - cave.oy) / 8), q = [[cx(cave.entrance), cy(cave.entrance)]];
   seen[q[0][1] * W + q[0][0]] = 1; let cells = 0;
   while (q.length) { const [i, j] = q.pop(); cells++; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + a, y = j + b; if (x < 0 || y < 0 || x >= W || y >= H || seen[y * W + x] || !Cave.floor(cave, cave.ox + (x + .5) * 8, cave.oy + (y + .5) * 8)) continue; seen[y * W + x] = 1; q.push([x, y]); } }
   const at = p => seen[cy(p) * W + cx(p)] ? 'yes' : 'NO', all = l => l.every(p => at(p) === 'yes') ? 'yes' : 'NO';
@@ -48,7 +48,7 @@ console.log(faults ? faults + ' SEEDS WITH A FAULT' : 'every seed: all of the ca
 ['mine', 'sea'].forEach(kind => {
   let bad = 0;
   seeds.forEach(seed => {
-    const cave = Cave.make(seed, { x: 5000, y: 1900, kind }), W = 288, H = 160, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - cave.ox) / 8), cy = p => Math.floor((p.y - cave.oy) / 8), q = [[cx(cave.entrance), cy(cave.entrance)]];
+    const cave = Cave.make(seed, { x: 5000, y: 1900, kind }), W = cave.GW * 4, H = cave.GH * 4, seen = new Uint8Array(W * H), cx = p => Math.floor((p.x - cave.ox) / 8), cy = p => Math.floor((p.y - cave.oy) / 8), q = [[cx(cave.entrance), cy(cave.entrance)]];
     seen[q[0][1] * W + q[0][0]] = 1; let cells = 0, wet = 0;
     while (q.length) { const [i, j] = q.pop(); cells++; if (Cave.sAt(cave, cave.ox + (i + .5) * 8, cave.oy + (j + .5) * 8) > 0) wet++; for (const [a, b2] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + a, y = j + b2; if (x < 0 || y < 0 || x >= W || y >= H || seen[y * W + x] || !Cave.floor(cave, cave.ox + (x + .5) * 8, cave.oy + (y + .5) * 8)) continue; seen[y * W + x] = 1; q.push([x, y]); } }
     const at = p => seen[cy(p) * W + cx(p)] ? 'yes' : 'NO', all = l => l.every(p => at(p) === 'yes') ? 'yes' : 'NO';

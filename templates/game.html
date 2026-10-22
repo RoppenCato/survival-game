@@ -2284,7 +2284,7 @@ __COMBAT__
     if (inFace && World.IMAGES.caveMouth && World.IMAGES.caveMouth_front) { caveMouth.pic = true; caveMouth.foot = inFace.y; w.mt.noPaintMouth = true; mouthArmed = true; }   /* the studio's rendered mouth (MOUTH, below) */
     cave = Cave.make(spec.seed, { x: CAVE_X, y: CAVE_Y, rockHp: World.HP.rock });   // the inside: src/cave.js
     caves.push({ kind: 'troll', cave: cave, mouth: caveMouth });
-    if (w.mt) [['mine', w.mt.mine, 'mine_mouth', 1500], ['sea', w.mt.seaCave, 'sea_mouth', 3000]].forEach(function (q) {     // the old mine and the sea cave, where the mountains have a place for them
+    if (w.mt) [['mine', w.mt.mine, 'mine_mouth', 2400], ['sea', w.mt.seaCave, 'sea_mouth', 4000]]   /* (below the troll's cave, 1920 tall since 2026-10-22) */.forEach(function (q) {     // the old mine and the sea cave, where the mountains have a place for them
       if (!q[1]) return; var m = { name: World.IMAGES[q[2]] ? q[2] : 'cave_mouth', x: q[1].x, y: q[1].y + 2, s: 1, r: 0, v: 0, inFace: true }, nr = [];
       w.eachProp(function (o) { if (!o.peak && !o.shelter && Math.abs(o.x - m.x) < 120 && o.y > m.y - 80 && o.y < m.y + 140) nr.push(o); }); nr.forEach(function (o) { w.removeProp(o); });
       w.addProp(m); caves.push({ kind: q[0], cave: Cave.make(spec.seed, { kind: q[0], x: CAVE_X, y: CAVE_Y + q[3], rockHp: World.HP.rock }), mouth: m });
@@ -2404,7 +2404,7 @@ __COMBAT__
   function cryptFor(v, vi, rankOver) {      // one church's crypt (rankOver: the checks' way to lay out another rank there)
       if (!v.V) return null; var td = v.V.items.filter(function (it) { return it.crypt; })[0]; if (!td) return null;
       var rank = rankOver != null ? rankOver : cryptRank(v), fall = World.IMAGES.masonryFall || World.IMAGES.masonryFall_1 ? 'masonryFall' : 'rockFormation';
-      var cv = Cave.make(v.seed, { kind: 'crypt', rank: rank, fallName: fall, x: CAVE_X, y: CAVE_Y + 4500 + caves.length * 700, rockHp: World.HP.rock, silver: Math.round((10 + (v.wealth || 0.5) * 22) * (v.V.hoardK || 1) * (1 + rank * 0.5)) });
+      var cv = Cave.make(v.seed, { kind: 'crypt', rank: rank, fallName: fall, x: CAVE_X, y: CAVE_Y + 5600 + caves.length * 1400, rockHp: World.HP.rock, silver: Math.round((10 + (v.wealth || 0.5) * 22) * (v.V.hoardK || 1) * (1 + rank * 0.5)) });
       cv.ores.forEach(function (o, oi) { o.id = oi; }); cv.mined = [];
       var outs = {}, cl = v.V.lots.filter(function (l) { return l.id === 'church'; })[0];
       if (cl) { var door = { x: ((cl.dx != null ? cl.dx : cl.x + cl.w / 2) + 0.5) * T, y: (cl.y + cl.h) * T }, best = null, bd = -1;
@@ -2515,6 +2515,12 @@ __COMBAT__
     });
     (hc.gates || []).forEach(function (g) { if (Math.abs(g.x - cam.x) > 300 || Math.abs(g.y * K - cam.y) > 220) return; items.push({ y: g.y, f: function () { Cave.drawGate(ctx, g); } }); });   /* the catacombs' iron gates */
     hc.sets.forEach(function (st) { if (Math.abs(st.x - cam.x) > 300 || Math.abs(st.y * K - cam.y) > 220) return; items.push({ y: st.y, f: function () { Cave.drawSet(ctx, st); } }); });   // the mine's timber: you walk under its caps
+    (hc.dress || []).forEach(function (o) {             /* Colin, AD's dressing (assets/props/cavekit, cryptkit, cellarkit; 2026-10-22): columns, dripstone, fungus, bones, the troll's bed, candles, the bridges; a bridge or the planks lie under everyone */
+      if (Math.abs(o.x - cam.x) > 320 || Math.abs(o.y * K - cam.y) > 260) return;
+      var s = sprite(o.name, o.v), flat = o.name === 'ropeBridge' || o.name === 'plankBridge', P = hero();
+      items.push({ y: flat ? -1e9 : o.y, f: function () { ctx.drawImage(s.cv, o.x + s.l, o.y * K + s.t, s.w, s.h); } });
+    });
+    (hc.fires || []).forEach(function (fi) { if (Math.abs(fi.x - cam.x) > 320 || Math.abs(fi.y * K - cam.y) > 260) return; var it = fi.it || (fi.it = { name: 'firePit', x: fi.x, y: fi.y }); items.push({ y: fi.y, f: function () { drawFire(ctx, it); } }); });   /* the troll's fire by his bed (its light is Cave.dark's) */
     hc.ores.concat(hc.props, trolls && cave.body && !seen.ring ? [cave.body] : []).forEach(function (o) {   // the ore rocks, the stalagmites and columns (you walk behind them), the dead man
       if (Math.abs(o.x - cam.x) > 260 || Math.abs(o.y * K - cam.y) > 200) return;
       var s = sprite(spriteName(o), o.v), sS = s.fixed ? 1 : o.s, px = o.x + s.l * sS, py = o.y * K + s.t * sS, ww = s.w * sS, hh = s.h * sS, P = hero();   /* (a set piece, the trees since 2026-10-20, at its own size) */
@@ -7423,10 +7429,10 @@ __COMBAT__
     else if (id === 'home') { if (inCave) caveSwap(false); var cb = B.items.filter(function (it) { return it.carver; })[0]; if (cb) { P.x = cb.x; P.y = cb.y + 34; P.lvl = 0; } else if (runeSite) { P.x = (runeSite.tx + 2.5) * T; P.y = (runeSite.ty + 1.6) * T; P.lvl = 0; } }
     else if (id === 'dawn') { day.t = 0; day.n++; if (day.n >= 10) earnRune('nighteyes', 'ten days lived'); regrowTick(); morningEmbers(); }
     else if (id === 'cave') { if (inCave) caveSwap(false); if (caveMouth) { P.x = caveMouth.x; P.y = caveMouth.y + 60; P.lvl = 0; } }
-    else if (id === 'cavein') { if (!inCave) caveSwap(true); }
-    else if (id === 'lair') { if (!inCave) caveSwap(true); if (cave) { P.x = cave.lair.x - 80; P.y = cave.lair.y; } }
-    else if (id === 'young') { if (!inCave) caveSwap(true); var yg = unges.filter(function (u) { return !u.dead; })[0]; if (yg) { var ya = Math.random() * 6.283, yt; for (yt = 0; yt < 24; yt++) { var yx = yg.x + Math.cos(ya + yt) * 110, yy = yg.y + Math.sin(ya + yt) * 70; if (Cave.floor(cave, yx, yy)) { P.x = yx; P.y = yy; break; } } } else toast('No young left in the cave'); }
-    else if (id === 'pool' || id === 'chasm') { if (!inCave) caveSwap(true); if (cave) { P.x = id === 'pool' ? cave.poolC.x - 70 : cave.ledge.x - 30; P.y = id === 'pool' ? cave.poolC.y - 10 : cave.ledge.y; } }
+    else if (id === 'cavein') { if (inCave && here() !== cave) caveSwap(false); if (!inCave) caveSwap(true); }
+    else if (id === 'lair') { if (inCave && here() !== cave) caveSwap(false); if (!inCave) caveSwap(true); if (cave) { P.x = cave.lair.x - 80; P.y = cave.lair.y; } }
+    else if (id === 'young') { if (inCave && here() !== cave) caveSwap(false); if (!inCave) caveSwap(true); var yg = unges.filter(function (u) { return !u.dead; })[0]; if (yg) { var ya = Math.random() * 6.283, yt; for (yt = 0; yt < 24; yt++) { var yx = yg.x + Math.cos(ya + yt) * 110, yy = yg.y + Math.sin(ya + yt) * 70; if (Cave.floor(cave, yx, yy)) { P.x = yx; P.y = yy; break; } } } else toast('No young left in the cave'); }
+    else if (id === 'pool' || id === 'chasm') { if (inCave && here() !== cave) caveSwap(false); if (!inCave) caveSwap(true); if (cave) { P.x = id === 'pool' ? cave.poolC.x - 70 : cave.ledge.x - 30; P.y = id === 'pool' ? cave.poolC.y - 10 : cave.ledge.y; } }
     else if (id === 'trollout') { if (light() < 0.5) day.t = 1300; if (!troll) trollMoveIn(); if (troll && caveMouth) { var e = troll; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.stoneT = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; toast('The troll walks out'); } }
     else if (id === 'trollhome') { if (troll && cave) { trollHome(troll, true); toast('The troll walks home'); } }
     else if (id === 'veins') { if (cave) { cave.veins.forEach(function (v) { v.left = 5 + (v.s % 3); v.hp = v.max; }); Cave.dirty(cave); if (cave.hoard) cave.hoard.n = 10; toast('The veins are green again'); } }
@@ -7562,7 +7568,7 @@ __COMBAT__
     if (P.mode === 'build' && lastMode !== 'build') { menuFrom = 'B'; openMenu('build'); }   // B opens the Building board (what you make by hand is on C)
     if (lastMode === 'build' && P.mode !== 'build') menu = null; lastMode = P.mode;
     D.W.pillars = nearSolids(P);
-    if (inCave) { var hcv = here(); hcv.ores.concat(hcv.props, hcv.finds.filter(function (f) { return f.r && !(f.taken && f.gone); })).forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * o.s, hide: true }); });
+    if (inCave) { var hcv = here(); hcv.ores.concat(hcv.props, hcv.finds.filter(function (f) { return f.r && !(f.taken && f.gone); }), (hcv.dress || []).filter(function (q) { return q.r > 0; })).forEach(function (o) { if (o.dying == null && Math.abs(o.x - P.x) < 200 && Math.abs(o.y - P.y) < 200) D.W.pillars.push({ x: o.x, y: o.y, r: o.r * (o.s || 1), hide: true }); });
       hcv.sets.forEach(function (st) { if (Math.abs(st.x - P.x) < 200 && Math.abs(st.y - P.y) < 200) D.W.pillars.push({ x: st.x - st.w / 2, y: st.y, r: 4, hide: true }, { x: st.x + st.w / 2, y: st.y, r: 4, hide: true }); });
       (hcv.gates || []).forEach(function (g) { if (g.state !== 'shut' || Math.abs(g.x - P.x) > 200 || Math.abs(g.y - P.y) > 200) return; var n = Math.max(3, Math.round(g.w / 12)), gi; for (gi = 0; gi < n; gi++) D.W.pillars.push({ x: g.x - g.w / 2 + (gi + 0.5) * g.w / n, y: g.y, r: g.w / n * 0.75, hide: true }); });   /* a shut gate is a wall */ if (P.mode === 'build') { P.mode = 'fight'; menu = null; } }
     var RIs = RI(); if (RIs) for (var si = 0; si < RIs.solids.length; si++) { var sl = RIs.solids[si]; if (Math.abs(sl.x - P.x) < 160 && Math.abs(sl.y - P.y) < 160) D.W.pillars.push(sl); }
