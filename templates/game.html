@@ -1735,8 +1735,8 @@ __COMBAT__
     var asp = lib.folkSpec('villager', kit.rng(spec.seed * 41 + 9)); asp.beard = 1; asp.hat = 0; asp.clothes = 1; asp.col.hair = '#4a3428'; asp.col.coat = '#5d4a3a';   /* an ordinary man, the smith (the lore: not a dwarf) */
     npc = { x: wx - 28, y: wy + 6, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: lib.makeFigure(asp), name: 'Arnor', ph: 0, moving: false, job: null };
     var at = function (tx, ty, job, via) { return { x: x0 + tx * T, y: y0 + ty * T, job: job, via: via ? via.map(function (q) { return { x: x0 + q[0] * T, y: y0 + q[1] * T }; }) : null }; };
-    npc.hub = { x: x0 + 10.8 * T, y: y0 + 7.2 * T };   /* every walk goes by the yard, clear of the houses */
-    npc.work = [at(3.4, 8.7, 'smith'), at(5.5, 6.6, 'scavenge'), at(7.6, 3.8, 'scavenge', [[5.5, 6.6], [5.5, 5.2]]), at(9.5, 9.2, 'smith'), at(13.4, 11.0, 'smith'), at(6.5, 12.7, 'scavenge')];   /* by the woodpile, the burnt hall's door and inside it, the drying rack, the plank house's wall, the cart */
+    npc.hub = { x: x0 + 12.4 * T, y: y0 + 8.4 * T };   /* every walk goes by the yard, clear of the houses */
+    npc.work = [at(3.6, 10.6, 'smith'), at(5.5, 8.6, 'scavenge'), at(7.6, 4.8, 'scavenge', [[5.5, 8.6], [5.5, 7.2]]), at(9.6, 9.9, 'smith'), at(13.4, 11.0, 'smith'), at(6.5, 12.7, 'scavenge')];   /* by the woodpile, the burnt hall's door and inside it, the drying rack, the plank house's wall, the cart */
     arnorGraves(x0, y0);
   }
   function arnorGraves(x0, y0) {          /* the graves behind the burnt hall (2026-10-16, the lore: Thorgunna and her two sons, Grímhild, Thorkel): outside the palisade to the north, or east of the hut if there is no land there */
@@ -1744,7 +1744,7 @@ __COMBAT__
     var north = row.every(ok), use = north ? row : col, list = [];
     use.forEach(function (q, k) { var x = x0 + q[0] * T, y = y0 + q[1] * T, near = []; w.eachProp(function (o) { if (o.kind && Math.hypot(o.x - x, o.y - y) < 26) near.push(o); }); near.forEach(function (o) { w.removeProp(o); }); var g = { name: 'graveStone', x: x, y: y, s: k === 0 ? 1.05 : (k < 3 ? 0.78 : 0.92), r: 3, v: 2 * (k % 3), grave: k === 0 ? 'thorgunna' : true }; w.addProp(g); list.push(g); });
     w.sortBuckets(); var cx = 0, cy = 0; list.forEach(function (g) { cx += g.x; cy += g.y; });
-    village.graves = { list: list, x: cx / list.length, y: cy / list.length, stand: north ? { x: x0 + 5.6 * T, y: y0 - 0.4 * T } : { x: x0 + 20.6 * T, y: y0 + 3.8 * T }, route: north ? [{ x: x0 + 12.4 * T, y: y0 + 6.6 * T }, { x: x0 + 11.5 * T, y: y0 + 1.0 * T }, { x: x0 + 11.5 * T, y: y0 - 0.5 * T }] : [{ x: x0 + 13 * T, y: y0 + 6.8 * T }, { x: x0 + 20.6 * T, y: y0 + 6.8 * T }] };
+    village.graves = { list: list, x: cx / list.length, y: cy / list.length, stand: north ? { x: x0 + 5.6 * T, y: y0 - 0.4 * T } : { x: x0 + 20.6 * T, y: y0 + 3.8 * T }, route: north ? [{ x: x0 + 12.4 * T, y: y0 + 8.4 * T }, { x: x0 + 11.5 * T, y: y0 + 1.0 * T }, { x: x0 + 11.5 * T, y: y0 - 0.5 * T }] : [{ x: x0 + 13 * T, y: y0 + 8.4 * T }, { x: x0 + 20.6 * T, y: y0 + 8.4 * T }] };
   }
   function graveNear(P) { if (!village || !village.graves || inCave) return null; var g = village.graves.list[0]; return g && Math.hypot(P.x - g.x, P.y - g.y) < 30 ? g : null; }
   function villagePaint() {              /* the steading's ground, at every start (2026-10-20: the save keeps only what the player painted over what the world paints): the gravel and earth paths, the hall's floor burnt away to earth under the ash, the ground round it burnt to earth */
@@ -1752,14 +1752,14 @@ __COMBAT__
     var R = kit.rng(spec.seed * 23 + 11), vx = village.tx, vy = village.ty, x, y;
     function stroke(x0, y0, x1, y1, kind) { var n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 6) + 1, i; for (i = 0; i <= n; i++) { var u = i / n; w.paintGround(x0 + (x1 - x0) * u + Math.sin(u * 9) * 5, y0 + (y1 - y0) * u + Math.cos(u * 7) * 4, 13, kind); } }   // a painted path, wandering a little
     stroke((vx + 11.5) * T, (vy + 1) * T, (vx + 11.5) * T, (vy + 10.6) * T, 1); stroke((vx + 11.5) * T, (vy + 10.6) * T, (vx + 12.4) * T, (vy + 11.4) * T, 1);
-    stroke((vx + 5.5) * T, (vy + 6.6) * T, (vx + 11.5) * T, (vy + 6.8) * T, 1); stroke((vx + 11.5) * T, (vy + 5.8) * T, (vx + 16.5) * T, (vy + 5.6) * T, 2);
-    stroke((vx + 12.6) * T, (vy + 11.6) * T, (vx + 17.5) * T, (vy + 13.6) * T, 2);   // the earth path to the plank house
+    stroke((vx + 5.5) * T, (vy + 8.6) * T, (vx + 11.5) * T, (vy + 8.8) * T, 1); stroke((vx + 11.5) * T, (vy + 7.7) * T, (vx + 16.5) * T, (vy + 7.6) * T, 2);
+    stroke((vx + 12.6) * T, (vy + 11.6) * T, (vx + 13.4) * T, (vy + 15.6) * T, 2); stroke((vx + 13.4) * T, (vy + 15.6) * T, (vx + 17.5) * T, (vy + 15.6) * T, 2);   // the earth path to the plank house's door
     stroke((vx + 3.5) * T, (vy + 9) * T, (vx + 3.5) * T, (vy + 13.4) * T, 2); stroke((vx + 3.5) * T, (vy + 13.4) * T, (vx + 6) * T, (vy + 13.6) * T, 2);   // and to the hay and the cart
-    for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 21 + R() * 6, 2);
-    for (var ag = 0; ag < 16; ag++) w.paintGround((vx + 0.6 + R() * 10.8) * T, (vy + (ag % 2 ? 0.6 : 6.5) + (R() - 0.5) * 0.9) * T, 9 + R() * 9, 2);   // the ground round the hall, burnt to earth
-    for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 15 + R() * 6, 7);   // ash over the hall's floor, thinning out of its south side (the Art Director's paints, 2026-10-20)
-    for (var as = 0; as < 14; as++) w.paintGround((vx + 1.5 + R() * 9) * T, (vy + 6.3 + R() * 1.2) * T, 6 + R() * 7, 7);
-    for (var so = 0; so < 5; so++) w.paintGround((vx + 13.75) * T, (vy + 1.3 + so * 0.85) * T, 6, 8);   // soot at the foot of the hut's wall facing the hall
+    for (y = vy + 1; y < vy + 8; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 21 + R() * 6, 2);
+    for (var ag = 0; ag < 16; ag++) w.paintGround((vx + 0.6 + R() * 10.8) * T, (vy + (ag % 2 ? 0.6 : 8.5) + (R() - 0.5) * 0.9) * T, 9 + R() * 9, 2);   // the ground round the hall, burnt to earth
+    for (y = vy + 1; y < vy + 8; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 15 + R() * 6, 7);   // ash over the hall's floor, thinning out of its south side (the Art Director's paints, 2026-10-20)
+    for (var as = 0; as < 14; as++) w.paintGround((vx + 1.5 + R() * 9) * T, (vy + 8.3 + R() * 1.2) * T, 6 + R() * 7, 7);
+    for (var so = 0; so < 7; so++) w.paintGround((vx + 13.75) * T, (vy + 1.3 + so * 0.85) * T, 6, 8);   // soot at the foot of the hut's wall facing the hall
     for (var so2 = 0; so2 < 7; so2++) w.paintGround((vx + 14.3 + so2 * 0.9) * T, (vy + 8.75) * T, 6, 8);   // and under the plank house's north wall
   }
   var FEAST = { from: 840, to: 1200 };     // when a place is at its meal: dusk (the hall's table is laid then; the feast eaten there is a buff above any home dish, for the raid: raid step 7, 2026-10-21, mine)
@@ -1784,14 +1784,15 @@ __COMBAT__
       for (y = y0; y < y0 + h; y++) for (x = x0; x < x0 + w; x++) B.floors[k(x, y)] = floor;
       for (var n = 0; n < breakN && edges.length; n++) { var e = edges.splice(Math.floor(R() * edges.length), 1)[0]; delete B[e[0]][k(e[1], e[2])]; if (R() < 0.5) delete B.floors[k(e[1] + (e[0] === 'V' ? 0 : 0), e[2] - (e[0] === 'H' ? 1 : 0))]; }
     }
-    /* The steading at a house's size (2026-10-13, Robin: the houses were way too small, they did not feel like houses): the
-       burnt hall is 10 by 5 inside (15 m by 7.5: a farm's longhouse), the hut that still stands and the plank house by the
-       well 6 by 4 (9 m by 6). It was 6 by 4 and 4 by 3 on a site of 14 by 12. */
-    house(vx + 1, vy + 1, 10, 5, 0, 0, vx + 5, 0);         // the burnt hall: logs, planks (its ruin is laid over it below)
-    item('stoneHearth', vx + 5, vy + 3, { cold: 1 });   // the burnt hall's hearth: cold, nobody keeps it (2026-10-20)
-    house(vx + 14, vy + 1, 6, 4, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
+    /* The steading at a house's size (2026-10-13, Robin: the houses were way too small, they did not feel like houses; and half as
+       deep again on 2026-10-22, Robin's yes to the Art Director's rule for houses that make sense to enter): the burnt hall is 10 by
+       7 inside (15 m by 10.5), the hut that still stands and the plank house by the well 6 by 6 (9 m by 9). They were 10 by 5 and
+       6 by 4 until then, and 6 by 4 and 4 by 3 on a site of 14 by 12 before that. */
+    house(vx + 1, vy + 1, 10, 7, 0, 0, vx + 5, 0);         // the burnt hall: logs, planks (its ruin is laid over it below)
+    item('stoneHearth', vx + 5, vy + 4, { cold: 1 });   // the burnt hall's hearth: cold, nobody keeps it (2026-10-20)
+    house(vx + 14, vy + 1, 6, 6, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
     item('table', vx + 14.6, vy + 1.2); item('barrel', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });   /* (the steading's crates are barrels and a chest since 2026-10-22: Robin, through the Art Director) */
-    house(vx + 14, vy + 9, 6, 4, 1, 0, vx + 17, 5);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces). Its bed is the first home (2026-10-14, Robin: finish the broken house to sleep in it): five gaps, and no roof until they are closed
+    house(vx + 14, vy + 9, 6, 6, 1, 0, vx + 17, 5);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces). Its bed is the first home (2026-10-14, Robin: finish the broken house to sleep in it): five gaps, and no roof until they are closed
     item('bed', vx + 14, vy + 9, { bed: true });
     item('woodenWell', vx + 12, vy + 10); item('stoneHearth', vx + 8.6, vy + 10.6, { light: 1 });   // Arnor's fire: light, and a hint that you will want one; a step away from him so E does not muddle them (2026-10-08)
     item('barrel', vx + 19, vy + 10, { loot: { berries: 5, meat: 2 } });
@@ -1799,10 +1800,10 @@ __COMBAT__
     H(vx + 11, vy, 'gate', 2);
     for (y = vy; y < vy + village.h; y++) if (R() < 0.75) V(vx, y, 'palisade', 0);
     for (x = vx; x < vx + 8; x++) if (R() < 0.7) H(x, vy + village.h, 'fence', 2);
-    item('woodpile', vx + 2, vy + 8); item('cart', vx + 6, vy + 13); item('dryingRack', vx + 9, vy + 8); item('haystack', vx + 2, vy + 13);
-    item('shieldRack', vx + 18.4, vy + 5.2); item('chest', vx + 10, vy + 13.4, { store: [{ kind: 'stone', n: 6 }, { kind: 'item', n: 1, item: Items.make('sword', 'flint') }].concat(lootSlots({}).slice(2)) });   /* (the stone and the flint sword in a chest, E to open; the iron fire basket by the hall is gone: Robin, 2026-10-22) */
+    item('woodpile', vx + 2, vy + 9.3); item('cart', vx + 6, vy + 13); item('dryingRack', vx + 8.6, vy + 9.3); item('haystack', vx + 2, vy + 13);
+    item('shieldRack', vx + 18.4, vy + 7.4); item('chest', vx + 10, vy + 13.4, { store: [{ kind: 'stone', n: 6 }, { kind: 'item', n: 1, item: Items.make('sword', 'flint') }].concat(lootSlots({}).slice(2)) });   /* (the stone and the flint sword in a chest, E to open; the iron fire basket by the hall is gone: Robin, 2026-10-22) */
     item('dragonPost', vx + 9.6, vy + 0.6); item('barrel', vx + 1, vy + 5, { loot: { arrows: 10 } });
-    item('quern', vx + 12.9, vy + 4.6); item('midden', vx + 20.8, vy + 2.6); item('choppingBlock', vx + 3.3, vy + 8.8);   /* a hand quern by the hut's west end (where the fire basket stood), a midden behind it, a chopping block by the woodpile (Robin, 2026-10-22, through the Art Director; the places mine) */
+    item('quern', vx + 12.9, vy + 4.6); item('midden', vx + 20.8, vy + 2.6); item('choppingBlock', vx + 3.6, vy + 9.8);   /* a hand quern by the hut's west end (where the fire basket stood), a midden behind it, a chopping block by the woodpile (Robin, 2026-10-22, through the Art Director; the places mine) */
     // the yard (2026-10-06): a gravel path from the gate past the hall to the well and the huts, a rail fence to the south,
     // a bit of dry-stone wall by the plank house, a trough by the haystack, flowers by the whole hut
     for (x = vx; x < vx + 8; x++) if (B.H[k(x, vy + village.h)]) B.H[k(x, vy + village.h)] = { t: 'rail', m: 1 };
@@ -1816,20 +1817,20 @@ __COMBAT__
        side; the hut that still stands is scorched on the side toward the hall; the palisade's gaps are charred stumps, its gate
        broken open; the fence is broken in places; the ground round the hall burnt to earth; a few things tipped over. */
     var ruinEdges = function (x0, y0, w0, h0, fn) { var ex, ey; for (ex = x0; ex < x0 + w0; ex++) { fn(B.H[k(ex, y0)], 'n'); fn(B.H[k(ex, y0 + h0)], 's'); } for (ey = y0; ey < y0 + h0; ey++) { fn(B.V[k(x0, ey)], 'w'); fn(B.V[k(x0 + w0, ey)], 'e'); } };
-    ruinEdges(vx + 1, vy + 1, 10, 5, function (e) { if (!e) return; if (e.t === 'door') { e.broken = 1; e.breach = 1; e.burnt = 1; return; } var r = R(); if (r < 0.6) { e.breach = 1; e.burnt = 1; } else if (r < 0.88) e.burnt = 1; else { e.scorch = 1; if (R() < 0.5) { e.st = 1; e.dmg = 4; } } });
-    B.ruin = B.ruin || {}; for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) { B.ruin[x + ',' + y] = { k: 'burnt', m: 0, hot: 0 }; delete B.floors[k(x, y)]; }   /* its floor burnt away to earth under the ash */
-    ruinEdges(vx + 14, vy + 9, 6, 4, function (e, side) { if (!e || e.t === 'door') return; if (side === 'n' && R() < 0.7) e.scorch = 1; else if (R() < 0.4) { e.st = R() < 0.3 ? 2 : 1; e.dmg = 3; } });
-    ruinEdges(vx + 14, vy + 1, 6, 4, function (e, side) { if (!e) return; if (side === 'w') e.scorch = 1; else if (side === 'n' && R() < 0.3) { e.st = 1; e.dmg = 2; } });
+    ruinEdges(vx + 1, vy + 1, 10, 7, function (e) { if (!e) return; if (e.t === 'door') { e.broken = 1; e.breach = 1; e.burnt = 1; return; } var r = R(); if (r < 0.6) { e.breach = 1; e.burnt = 1; } else if (r < 0.88) e.burnt = 1; else { e.scorch = 1; if (R() < 0.5) { e.st = 1; e.dmg = 4; } } });
+    B.ruin = B.ruin || {}; for (y = vy + 1; y < vy + 8; y++) for (x = vx + 1; x < vx + 11; x++) { B.ruin[x + ',' + y] = { k: 'burnt', m: 0, hot: 0 }; delete B.floors[k(x, y)]; }   /* its floor burnt away to earth under the ash */
+    ruinEdges(vx + 14, vy + 9, 6, 6, function (e, side) { if (!e || e.t === 'door') return; if (side === 'n' && R() < 0.7) e.scorch = 1; else if (R() < 0.4) { e.st = R() < 0.3 ? 2 : 1; e.dmg = 3; } });
+    ruinEdges(vx + 14, vy + 1, 6, 6, function (e, side) { if (!e) return; if (side === 'w') e.scorch = 1; else if (side === 'n' && R() < 0.3) { e.st = 1; e.dmg = 2; } });
     for (x = vx; x < vx + village.w; x++) { var pe = B.H[k(x, vy)]; if (x === vx + 11) continue; if (!pe) { B.H[k(x, vy)] = { t: 'palisade', m: 0, breach: 1, burnt: 1 }; } else if (x <= vx + 12 && R() < 0.5) pe.scorch = 1; }
     for (y = vy; y < vy + village.h; y++) { if (!B.V[k(vx, y)]) B.V[k(vx, y)] = { t: 'palisade', m: 0, breach: 1, burnt: R() < 0.7 ? 1 : 0 }; else if (y < vy + 7 && R() < 0.5) B.V[k(vx, y)].scorch = 1; }
     var gte = B.H[k(vx + 11, vy)]; if (gte) { gte.broken = 1; gte.scorch = 1; }
     for (x = vx; x < vx + 8; x++) { var fe = B.H[k(x, vy + village.h)]; if (fe && R() < 0.3) fe.breach = 1; }
     B.items.forEach(function (it) { if ((it.name === 'shieldRack' || it.name === 'cart' || it.name === 'dragonPost') && R() < 0.7) it.fallen = 1; });   // tipped over in the raid
-    if (World.IMAGES.roofTree) [['roofTree', 8, 3.3], ['charBeamA', 3, 2], ['charBeamB', 9, 5.1], ['charBeamC', 10, 2.4], ['charBeamC', 3.6, 4.4], ['charPile', 2.2, 5.2], ['ashHeap', 6.4, 1.8], ['ashHeap', 8.9, 1.7], ['charStump', 1.6, 1.6], ['charStump', 10.4, 1.7], ['charStump', 7.2, 5.6]].forEach(function (q) { litter(q[0], vx + q[1] - 0.5, vy + q[2] - 0.5, 0); });   /* the burnt hall's inside (the Art Director's ch1_fixes, 2026-10-22, Robin: "Yes, do all 4"): the fallen roof tree, charred beams, a pile, ash heaps and burnt post stumps on its ash, placed once, in tiles from the steading's corner (mine) */
-    else { litter('charredBeam', vx + 3.4, vy + 2.4, 0); litter('charredBeam', vx + 7.6, vy + 4.1, 1); litter('charredBeam', vx + 5.6, vy + 6.1, 2); litter('burntHeap', vx + 8.6, vy + 2.2, 0); }
-    litter('burntHeap', vx + 13.3, vy + 3, 1); if (World.IMAGES.kitchenPlot) litter('kitchenPlot', vx + 14.9, vy + 5.2, 0);   /* the hut's kitchen plot (Robin, 2026-10-22; the studio's picture to come) */ litter('brokenDoor', vx + 11.7, vy + 1.2, 0);   // the raid's wreckage: charred beams in the hall's ash and one across its door, a burnt heap in the hall and one by the hut's scorched wall, the gate's leaf torn off (the studio's pieces, 2026-10-20)
+    if (World.IMAGES.roofTree) [['roofTree', 8, 4.2], ['charBeamA', 3, 2.4], ['charBeamB', 9, 6.7], ['charBeamC', 10, 3], ['charBeamC', 3.6, 5.8], ['charPile', 2.2, 6.9], ['ashHeap', 6.4, 2.1], ['ashHeap', 8.9, 2], ['charStump', 1.6, 1.8], ['charStump', 10.4, 2], ['charStump', 7.2, 7.4]].forEach(function (q) { litter(q[0], vx + q[1] - 0.5, vy + q[2] - 0.5, 0); });   /* the burnt hall's inside (the Art Director's ch1_fixes, 2026-10-22, Robin: "Yes, do all 4"): the fallen roof tree, charred beams, a pile, ash heaps and burnt post stumps on its ash, placed once, in tiles from the steading's corner (mine) */
+    else { litter('charredBeam', vx + 3.4, vy + 3, 0); litter('charredBeam', vx + 7.6, vy + 5.4, 1); litter('charredBeam', vx + 5.6, vy + 8.1, 2); litter('burntHeap', vx + 8.6, vy + 2.7, 0); }
+    litter('burntHeap', vx + 13.3, vy + 3, 1); if (World.IMAGES.kitchenPlot) litter('kitchenPlot', vx + 14.2, vy + 7.5, 0);   /* the hut's kitchen plot (Robin, 2026-10-22; the studio's picture to come) */ litter('brokenDoor', vx + 11.7, vy + 1.2, 0);   // the raid's wreckage: charred beams in the hall's ash and one across its door, a burnt heap in the hall and one by the hut's scorched wall, the gate's leaf torn off (the studio's pieces, 2026-10-20)
     B.roofs = {}; bDirty = true; Build.ensurePosts(B);
-    for (y = vy + 1; y <= vy + 6; y++) for (x = vx + 1; x <= vx + 11; x++) { var po = B.posts[k(x, y)]; if (!po) continue; var held = [B.H[k(x, y)], B.H[k(x - 1, y)], B.V[k(x, y)], B.V[k(x, y - 1)]].some(function (e) { return e && !e.breach; }); po.burnt = 1; if (!held && R() < 0.75) po.snap = 0.3 + R() * 0.45; }   // the hall's posts charred, snapped short where no wall stands against them
+    for (y = vy + 1; y <= vy + 8; y++) for (x = vx + 1; x <= vx + 11; x++) { var po = B.posts[k(x, y)]; if (!po) continue; var held = [B.H[k(x, y)], B.H[k(x - 1, y)], B.V[k(x, y)], B.V[k(x, y - 1)]].some(function (e) { return e && !e.breach; }); po.burnt = 1; if (!held && R() < 0.75) po.snap = 0.3 + R() * 0.45; }   // the hall's posts charred, snapped short where no wall stands against them
     roofLater = { tx: vx + 14, ty: vy + 1, m: 1 };          // the hut's thatch is set once the rooms are known
   }
   var roofLater = null;

@@ -8905,18 +8905,18 @@ var DEF = {
    forte), auto (street or green by the seed), row (plots along a shore street), town (plots in blocks inside a wall). farms and
    plots: how many units; green: the common's size; site: the tiles a page should find for it; people: the drawn folk. */
 var ARCH = {
-  farmstead: { name: 'Farmstead', tier: 0, family: 'single', houses: [0, 0], out: [2, 3], yard: [8, 6], long: [10, 13], site: [34, 26], people: [3, 5] },
-  fisher: { name: 'Fisherman’s hut', tier: 0, family: 'single', houses: [0, 0], out: [1, 1], yard: [5, 4], site: [16, 24], hut: true, people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
-  church: { name: 'Church', tier: 0, family: 'single', houses: [1, 1], out: [0, 1], yard: [6, 5], site: [26, 26], people: [2, 3], church: true, chapel: true, lowland: true },   // a lone church with its priest's house (the lucky strike, 2026-10-07)
-  small: { name: 'Small village', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [52, 44], people: [6, 9] },
-  fishing: { name: 'Fishing hamlet', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [52, 44], people: [5, 8], shore: true, racks: 2 },
-  ruin: { name: 'Abandoned', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [52, 44], people: [0, 0], ruin: true },
-  village: { name: 'Village', tier: 2, family: 'auto', farms: [3, 5], green: [10, 7], site: [74, 48], people: [10, 15] },
-  seat: { name: 'Chieftain’s seat', tier: 3, family: 'green', farms: [3, 5], green: [12, 8], site: [78, 56], people: [16, 24], hall: true, palisade: true },
-  trading: { name: 'Trading post', tier: 3, family: 'row', plots: [6, 9], site: [68, 42], people: [8, 12], shore: true, stores: 2 },
-  town: { name: 'Town', tier: 4, family: 'town', plots: [16, 24], site: [96, 70], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church
-  great: { name: 'Great village', tier: 4, family: 'green', farms: [6, 9], green: [14, 9], site: [110, 80], people: [34, 44], hall: true, palisade: true },
-  bigtown: { name: 'Great town', tier: 5, family: 'town', plots: [30, 40], site: [120, 88], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true }
+  farmstead: { name: 'Farmstead', tier: 0, family: 'single', houses: [0, 0], out: [2, 3], yard: [8, 6], long: [12, 16], site: [42, 34], people: [3, 5] },
+  fisher: { name: 'Fisherman’s hut', tier: 0, family: 'single', houses: [0, 0], out: [1, 1], yard: [5, 4], site: [22, 30], hut: true, people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
+  church: { name: 'Church', tier: 0, family: 'single', houses: [1, 1], out: [0, 1], yard: [6, 5], site: [34, 34], people: [2, 3], church: true, chapel: true, lowland: true },   // a lone church with its priest's house (the lucky strike, 2026-10-07)
+  small: { name: 'Small village', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [6, 9] },
+  fishing: { name: 'Fishing hamlet', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [5, 8], shore: true, racks: 2 },
+  ruin: { name: 'Abandoned', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [0, 0], ruin: true },
+  village: { name: 'Village', tier: 2, family: 'auto', farms: [3, 5], green: [10, 7], site: [88, 62], people: [10, 15] },
+  seat: { name: 'Chieftain’s seat', tier: 3, family: 'green', farms: [3, 5], green: [12, 8], site: [96, 72], people: [16, 24], hall: true, palisade: true },
+  trading: { name: 'Trading post', tier: 3, family: 'row', plots: [6, 9], site: [84, 54], people: [8, 12], shore: true, stores: 2 },
+  town: { name: 'Town', tier: 4, family: 'town', plots: [16, 24], site: [120, 88], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church
+  great: { name: 'Great village', tier: 4, family: 'green', farms: [6, 9], green: [14, 9], site: [134, 100], people: [34, 44], hall: true, palisade: true },
+  bigtown: { name: 'Great town', tier: 5, family: 'town', plots: [30, 40], site: [148, 108], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true }
 };
 // the buildings: inside size in tiles [w range, h range], what stands inside, where the door goes (toward the yard)
 var BUILD = {
@@ -8924,17 +8924,17 @@ var BUILD = {
   // in tiles of a metre and a half: nearly everything people lived in was two to five tiles across, as wide as a roof could
   // span, and got its size from its length (Dublin's town houses 6 by 4, Hedeby's 12 by 5, the Trelleborg type 20 by 5; a
   // king's hall 32 by 8). So a building here is NARROW AND LONG, and a house stands with its gable, and its door, to the yard.
-  longhouse: { name: 'Longhouse', w: [14, 18], h: [5, 5], roofed: true, inside: 'hall' },     // a farm's: 21 to 27 m by 7.5 (it was 9 to 12 by 3 to 4)
-  hall: { name: 'Great hall', w: [20, 22], h: [6, 6], roofed: true, inside: 'hall' },         // a jarl's: 30 to 33 m by 9, two rows of posts down it (it was 13 to 16 by 4 to 5). 22 is what the view shows when a big fight draws it back
-  house: { name: 'House', w: [6, 9], h: [4, 4], roofed: true, inside: 'home' },               // w is its LENGTH and h its width, whichever way it stands (houseSize): 9 to 13.5 m by 6, and now and then 7.5 across. (It was 4 to 5 by 3 to 4, and the jitter made a quarter of them 3 across.)
-  store: { name: 'Storehouse', w: [3, 3], h: [2, 2], roofed: true, inside: 'store', posts: true },
-  byre: { name: 'Byre', w: [5, 6], h: [3, 3], roofed: true, inside: 'byre' },
-  smithy: { name: 'Smithy', w: [4, 4], h: [3, 3], roofed: true, inside: 'smithy', open: true },
-  bath: { name: 'Bathhouse', w: [3, 3], h: [2, 2], roofed: true, inside: 'bath' },
-  pit: { name: 'Pit-house', w: [3, 3], h: [2, 2], roofed: true, inside: 'pit', floor: 1 },    // real pit-houses were about 4 m by 3
-  boathouse: { name: 'Boathouse', w: [6, 8], h: [3, 3], roofed: true, inside: 'boat', open: true },
+  longhouse: { name: 'Longhouse', w: [16, 20], h: [7, 7], roofed: true, inside: 'hall' },   /* (grown 2026-10-22: Robin's yes to bigger houses; it was 14 to 18 by 5) */     // a farm's: 21 to 27 m by 7.5 (it was 9 to 12 by 3 to 4)
+  hall: { name: 'Great hall', w: [22, 24], h: [8, 8], roofed: true, inside: 'hall' },   /* (was 20 to 22 by 6) */         // a jarl's: 30 to 33 m by 9, two rows of posts down it (it was 13 to 16 by 4 to 5). 22 is what the view shows when a big fight draws it back
+  house: { name: 'House', w: [8, 11], h: [6, 6], roofed: true, inside: 'home' },   /* (was 6 to 9 by 4) */               // w is its LENGTH and h its width, whichever way it stands (houseSize): 9 to 13.5 m by 6, and now and then 7.5 across. (It was 4 to 5 by 3 to 4, and the jitter made a quarter of them 3 across.)
+  store: { name: 'Storehouse', w: [3, 3], h: [3, 3], roofed: true, inside: 'store', posts: true },
+  byre: { name: 'Byre', w: [5, 6], h: [5, 5], roofed: true, inside: 'byre' },
+  smithy: { name: 'Smithy', w: [4, 4], h: [5, 5], roofed: true, inside: 'smithy', open: true },
+  bath: { name: 'Bathhouse', w: [3, 3], h: [3, 3], roofed: true, inside: 'bath' },
+  pit: { name: 'Pit-house', w: [3, 3], h: [3, 3], roofed: true, inside: 'pit', floor: 1 },    // real pit-houses were about 4 m by 3
+  boathouse: { name: 'Boathouse', w: [6, 8], h: [5, 5], roofed: true, inside: 'boat', open: true },
   lean: { name: 'Lean-to', w: [2, 3], h: [2, 2], roofed: true, inside: 'lean' },   // an annex against a house's side, under its own lower roof (the varied silhouettes, Robin's yes of 2026-10-22)
-  church: { name: 'Church', w: [4, 4], h: [8, 9], roofed: true, inside: 'church', floor: 2 }   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side. Escomb's nave is 13.3 m by 4.4 inside: nine tiles by three (it was 5 to 6 deep)
+  church: { name: 'Church', w: [6, 6], h: [10, 12], roofed: true, inside: 'church', floor: 2 }   /* (was 4 by 8 to 9) */   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side. Escomb's nave is 13.3 m by 4.4 inside: nine tiles by three (it was 5 to 6 deep)
 };
 /* The story roll (settlements-plan.md section 6, mine): the one thing that sets a place apart, rolled before its shape so the
    shape serves it; it biases the pools, the props and the finds. Its words are the Lore Director's (LORE?). */
@@ -9416,18 +9416,18 @@ function make(seed, site, opts) {
     var y0 = yFromAt(best); exitPl = { cls: 'lane', pts: [[best, y0], [best + (R() - 0.5) * 3, (ty + y0) / 2], [best, ty - 0.3]] }; V.spine.push(exitPl); backGateX = Math.floor(best); resample();
   }
   function farmSpec(rich) {
-    return rich ? { kind: 'farm', big: 'longhouse', long: [11, 13], houses: [1, 1], houseLen: [6, 7], out: [2, 3], yard: [7, 5], w: 17, h: 23, compact: true, slots: ['se', 'sw'], firePit: true, well: false, fence: farmFence, rich: true }
-      : { kind: 'farm', big: 'longhouse', long: story === 'oldseat' ? [13, 13] : [9, 12], houses: [0, 0], out: [1, 2], yard: [6, 4], w: 16, h: 16, compact: true, slots: [], firePit: false, well: false, fence: farmFence };
+    return rich ? { kind: 'farm', big: 'longhouse', long: [14, 16], houses: [1, 1], houseLen: [8, 9], out: [2, 3], yard: [7, 5], w: 22, h: 26, yardDy: 0, compact: true, slots: ['se', 'sw'], firePit: true, well: false, fence: farmFence, rich: true }
+      : { kind: 'farm', big: 'longhouse', long: story === 'oldseat' ? [16, 16] : [11, 14], houses: [0, 0], out: [1, 2], yard: [6, 4], w: 20, h: 20, compact: true, slots: [], firePit: false, well: false, fence: farmFence };   // (grown 2026-10-22 with the houses: a plain farm was 16 by 16, a rich one 17 by 23)
   }
-  function hallSpec() { return { kind: 'hall', big: 'hall', houses: [1, 1], out: [1, 2], yard: [8, 5], w: 30, h: 20, yardDy: 4, roomy: 1, compact: true, slots: ['e', 'w'], outs: ['store', 'byre'], firePit: true, well: true, hall: true, heavy: true, town: !!A.townwall, fence: A.townwall ? 'drystone' : 'palisade', zone: 'private', table: true }; }
-  function churchSpec() { return { kind: 'church', big: 'church', houses: [0, 0], out: [0, 0], yard: [4, 3], w: 10, h: 18, yardDy: 7, roomy: 1, bigX: -2, compact: true, slots: [], fire: false, well: false, church: true, fence: 'drystone', lych: true, zone: 'private' }; }
+  function hallSpec() { return { kind: 'hall', big: 'hall', houses: [1, 1], out: [1, 2], yard: [8, 5], w: 36, h: 24, yardDy: 3, roomy: 1, compact: true, slots: ['e', 'w'], outs: ['store', 'byre'], firePit: true, well: true, hall: true, heavy: true, town: !!A.townwall, fence: A.townwall ? 'drystone' : 'palisade', zone: 'private', table: true }; }
+  function churchSpec() { return { kind: 'church', big: 'church', houses: [0, 0], out: [0, 0], yard: [4, 3], w: 12, h: 22, yardDy: 9, roomy: 1, bigX: -2, compact: true, slots: [], fire: false, well: false, church: true, fence: 'drystone', lych: true, zone: 'private' }; }
   function plotSpec(quarter) {
     var q = quarter || 'craft';
-    if (q === 'merchant') return { kind: 'plot', w: 7, h: 12, ac: 5, len: [7, 8], behind: 'store', mstep: 0, fence: 'rail', quarter: q };
-    if (q === 'gate') return { kind: 'plot', w: 6, h: 11, ac: 4, len: [6, 7], behind: R() < 0.5 ? 'smithy' : 'store', mstep: 1, fence: 'rail', quarter: q };
-    if (q === 'poor') return { kind: 'plot', w: 6, h: 9, ac: 4, len: [6, 6], behind: R() < 0.5 ? 'pit' : null, mstep: 2, fence: null, quarter: q };
-    if (q === 'suburb') return { kind: 'plot', w: 6, h: 9, ac: 4, len: [6, 6], behind: R() < 0.4 ? 'pit' : null, mstep: 2, fence: null, quarter: q, zone: 'public' };
-    return { kind: 'plot', w: 6, h: 11, ac: 4, len: [6, 7], behind: R() < 0.6 ? 'pit' : 'store', mstep: 1, fence: wealth > 0.4 ? 'rail' : null, quarter: q };
+    if (q === 'merchant') return { kind: 'plot', w: 9, h: 17, ac: 7, len: [9, 11], behind: 'store', mstep: 0, fence: 'rail', quarter: q };
+    if (q === 'gate') return { kind: 'plot', w: 8, h: 16, ac: 6, len: [8, 9], behind: R() < 0.5 ? 'smithy' : 'store', mstep: 1, fence: 'rail', quarter: q };
+    if (q === 'poor') return { kind: 'plot', w: 8, h: 13, ac: 6, len: [8, 8], behind: R() < 0.5 ? 'pit' : null, mstep: 2, fence: null, quarter: q };
+    if (q === 'suburb') return { kind: 'plot', w: 8, h: 13, ac: 6, len: [8, 8], behind: R() < 0.4 ? 'pit' : null, mstep: 2, fence: null, quarter: q, zone: 'public' };
+    return { kind: 'plot', w: 8, h: 15, ac: 6, len: [8, 9], behind: R() < 0.6 ? 'pit' : 'store', mstep: 1, fence: wealth > 0.4 ? 'rail' : null, quarter: q };
   }
   function tryLot(lot) {                               // a lot of the place's own (a store on the market, the boathouse on the shore): checked against the units and the roads
     var k, l; for (k = 0; k < 8; k++) { var dx = k ? Math.round((R() - 0.5) * 4) : 0, dy = k ? Math.round((R() - 0.5) * 2) : 0; l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot || 'place', big: false, u: lot.u || {} }; if (boxFree(l.x, l.y, l.w, l.h, 0.5) && !(green && overlaps(l, green, 0))) { placeLots.push(l); V.lots.push(l); pieces(l); hugRects.push({ x: l.x, y: l.y, w: l.w, h: l.h }); return l; } }
@@ -9464,8 +9464,8 @@ function make(seed, site, opts) {
   function growCluster() {                            // farms along a winding street, or round a green (the forte): a hamlet, a village, a seat
     var isGreen = shape === 'green', gw = A.green ? A.green[0] : 6, gh = A.green ? A.green[1] : 4;
     var nFarms = clamp(pickRange(R, A.farms, 0) + (age === 'old' ? 1 : age === 'new' ? -1 : 0), 1, A.farms[1] + 1); nUnitsWanted = nFarms + (A.hall ? 1 : 0); nUnitsMin = A.farms[0] + (A.hall ? 1 : 0);
-    cyT = ty + h / 2 + (A.hall ? 5 : 0) + (shore === 's' ? h * 0.12 : 0);
-    var sy = shore === 's' ? ty + h - 6.5 : cyT + (R() - 0.5) * 4;
+    cyT = ty + h / 2 + (A.hall ? 6 : 0) + (shore === 's' ? h * 0.12 : 0);
+    var sy = shore === 's' ? ty + h - 8.5 : cyT + (R() - 0.5) * 4;
     green = { x: Math.round(cxT - gw / 2 + (R() - 0.5) * 4), y: isGreen ? Math.round(sy - gh / 2) : Math.round(sy - 1.5 - gh), w: gw, h: gh };   // a street village keeps a small common north of its street for the fire, the well and the stone
     var gx = clamp(Math.round(cxT + (R() - 0.5) * 12) + 0.5, tx + 5, tx + w - 5), bx = clamp(gx + (R() < 0.5 ? -1 : 1) * (7 + Math.floor(R() * 8)), tx + 5, tx + w - 5);
     var ix0 = tx + 4, ix1 = tx + w - 4;
@@ -9502,28 +9502,28 @@ function make(seed, site, opts) {
     greenThings(green, false); V.yard = green;
     if (shore === 's' && !V.ruin) {                    // the shore strip below the street: racks, a boathouse, a boat drawn up
       var ry = ty + h - 3.5, k3; for (k3 = 0; k3 < (A.racks || 1); k3++) prop({ name: 'dryingRack', x: (focus[0] / T + (k3 - 0.5) * 4 + (R() - 0.5) * 2) * T, y: ry * T, solid: 6 });
-      tryLot({ id: 'boathouse', x: Math.round(focus[0] / T) + 5, y: ty + h - 4, w: 7, h: 3, door: 's', slot: 'shore' });
+      tryLot({ id: 'boathouse', x: Math.round(focus[0] / T) + 5, y: ty + h - 6, w: 7, h: 5, door: 's', slot: 'shore' });
     }
   }
   function growRow() {                                // the shore row (Ribe, Birka): plots with their short side to a street a few tiles up from the water, the market strip between
-    var sy = ty + h - 5.5, ix0 = tx + 4, ix1 = tx + w - 4, bx = clamp(Math.round(cxT + (R() - 0.5) * 12) + 0.5, tx + 6, tx + w - 6), nPlots = pickRange(R, A.plots, 0) + (age === 'old' ? 1 : age === 'new' ? -1 : 0);
+    var sy = ty + h - 7.5, ix0 = tx + 4, ix1 = tx + w - 4, bx = clamp(Math.round(cxT + (R() - 0.5) * 12) + 0.5, tx + 6, tx + w - 6), nPlots = pickRange(R, A.plots, 0) + (age === 'old' ? 1 : age === 'new' ? -1 : 0);
     nUnitsWanted = nPlots + 1; nUnitsMin = A.plots[0];
     V.spine.push({ cls: 'main', pts: wander(ix0, ix1, sy, 1.5) }); approachPl = V.spine[0];
     gateX = null;
-    green = { x: Math.round(cxT - 6 + (R() - 0.5) * 6), y: Math.round(sy + 1.5), w: 12, h: 3 }; focus = [(green.x + green.w / 2) * T, (green.y + green.h / 2) * T];
+    green = { x: Math.round(cxT - 6 + (R() - 0.5) * 6), y: Math.round(sy + 1.5), w: 12, h: 4 }; focus = [(green.x + green.w / 2) * T, (green.y + green.h / 2) * T];
     resample();
     var placed = 0, c, FU = farmSpec(true); FU.table = true;   // the trader's own longhouse first
     c = bestCandidate(FU.w, FU.h); if (c && maxUnits > 0 && placeUnit(FU, c)) placed++;
     var tries = 0;
     while (placed < nUnitsWanted && placed < maxUnits && tries++ < 60) { var PU = plotSpec(R() < 0.3 ? 'merchant' : 'craft'); PU.behind = R() < 0.5 ? 'store' : 'pit'; c = bestCandidate(PU.w, PU.h); if (!c) break; if (placeUnit(PU, c)) placed++; }
     makeExit(null, bx); backLane();
-    var k2; for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: green.x + 1 + k2 * 6, y: green.y + 1, w: 3, h: 2, door: 'n', slot: 'market', u: { stores: true } });
+    var k2; for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: green.x + 1 + k2 * 6, y: green.y + 1, w: 3, h: 3, door: 'n', slot: 'market', u: { stores: true } });
     greenThings(green, true); V.yard = green;
     for (k2 = 0; k2 < (A.racks || 2); k2++) prop({ name: 'dryingRack', x: (green.x - 2 - k2 * 3) * T, y: (ty + h - 2.5) * T, solid: 6 });
-    tryLot({ id: 'boathouse', x: green.x + green.w + 3, y: ty + h - 4, w: 7, h: 3, door: 's', slot: 'shore' });
+    tryLot({ id: 'boathouse', x: green.x + green.w + 3, y: ty + h - 6, w: 7, h: 5, door: 's', slot: 'shore' });
   }
   function growTown() {                               // the walled town: the main street from the gate to the market to the hall, cross lanes, plots in blocks, the church's and the hall's precincts, a suburb outside the gate
-    var E = { x0: tx + 3, x1: tx + w - 3, y0: ty + 2, y1: ty + h - 12 }, big = A.tier >= 5, mw = big ? 16 : 12, mh = 8;
+    var E = { x0: tx + 3, x1: tx + w - 3, y0: ty + 2, y1: ty + h - 16 }, big = A.tier >= 5, mw = big ? 16 : 12, mh = 8;
     var nPlots = pickRange(R, A.plots, 0) + (age === 'old' ? 2 : age === 'new' ? -2 : 0); nUnitsWanted = nPlots + 2; nUnitsMin = A.plots[0];
     var HU = hallSpec(), market = { x: Math.round((E.x0 + E.x1) / 2 - mw / 2 + (R() - 0.5) * 6), y: Math.round(E.y0 + (E.y1 - E.y0) * 0.5 - mh / 2 + 3), w: mw, h: mh };
     var hy = market.y - 3 - HU.h; if (hy < E.y0 + 1) { market.y += E.y0 + 1 - hy; hy = E.y0 + 1; }
@@ -9533,7 +9533,7 @@ function make(seed, site, opts) {
     V.spine.push(approach); approachPl = approach;
     V.spine.push({ cls: 'main', pts: [[market.x + market.w / 2 + (R() - 0.5) * 2, market.y - 0.5], [market.x + market.w / 2, hy + HU.h + 1.5]] });   // up to the hall's gate
     V.spine.push({ cls: 'main', pts: wander(E.x0 + 1, market.x - 0.5, my, 2) }); V.spine.push({ cls: 'main', pts: wander(market.x + market.w + 0.5, E.x1 - 1, my, 2) });   // the cross street, through the market
-    var bxl = R() < 0.5, bx = clamp(bxl ? market.x + market.w / 2 - HU.w / 2 - 3 : market.x + market.w / 2 + HU.w / 2 + 3, E.x0 + 3, E.x1 - 3);
+    var hxPlan = Math.round(market.x + market.w / 2 - HU.w / 2), bxl = R() < 0.5, bxW = clamp(hxPlan - 3, E.x0 + 3, E.x1 - 3), bxE = clamp(hxPlan + HU.w + 3, E.x0 + 3, E.x1 - 3), wOk = bxW < hxPlan - 1, eOk = bxE > hxPlan + HU.w + 1; if (bxl && !wOk) bxl = false; if (!bxl && !eOk) bxl = true; var bx = bxl ? bxW : bxE;   // the lane past the hall on a side where it stays clear of the hall's box (2026-10-22: clamped into the hall, it left the hall no room)
     exitPl = { cls: 'lane', pts: [[bxl ? market.x - 0.5 : market.x + market.w + 0.5, market.y + 0.5], [bx, market.y - 2], [bx + (R() - 0.5) * 3, (hy + ty) / 2], [bx, ty - 0.3]] }; V.spine.push(exitPl);   // the back lane past the hall to the back gate
     if (big) { V.spine.push({ cls: 'main', pts: wanderV(my - 1, E.y1 - 1, market.x - 15, 2) }); V.spine.push({ cls: 'main', pts: wanderV(my + 1, E.y1 - 1, market.x + market.w + 15, 2) }); V.spine.push({ cls: 'main', pts: wander(E.x0 + 1, E.x1 - 1, my + 14, 2) }); }
     backGateX = Math.floor(bx);
@@ -9541,7 +9541,7 @@ function make(seed, site, opts) {
     var placed = 0, c;
     if (maxUnits > 0) { var hx = Math.round(market.x + market.w / 2 - HU.w / 2 + (R() - 0.5) * 4), k2, ok = false; for (k2 = 0; k2 < 10 && !ok; k2++) { var hx2 = hx + Math.round((R() - 0.5) * 2 * k2); if (boxFree(hx2, hy, HU.w, HU.h, 0.5)) ok = !!placeUnit(HU, { x: hx2, y: hy, front: 's' }); } if (ok) placed++; else V.notes.push('!! the hall found no room'); }
     if (A.church && placed < maxUnits) { var CU = churchSpec(); c = bestCandidate(CU.w, CU.h, function (q) { return q.front === 's' && q.y + q.h <= E.y1 && q.y >= E.y0; });   /* (the church stands as grown: its gable and door south, the apse north, the churchyard east; 2026-10-22, a mirrored one laid its roof over the plot behind it) */ if (c && placeUnit(CU, c)) placed++; else V.notes.push('!! the church found no room'); }
-    for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: k2 ? market.x + market.w - 4 : market.x + 1, y: market.y - 3, w: 3, h: 2, door: 's', slot: 'market', u: { stores: true } });
+    for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: k2 ? market.x + market.w - 4 : market.x + 1, y: market.y - 4, w: 3, h: 3, door: 's', slot: 'market', u: { stores: true } });
     var tries = 0, gatePt = [gx, E.y1];
     while (placed < nUnitsWanted && placed < maxUnits && tries++ < 120) {
       var PU0 = plotSpec('craft'); c = bestCandidate(PU0.w, PU0.h, function (q) { return q.y + q.h <= E.y1 && q.y >= E.y0 && q.x >= E.x0 && q.x + q.w <= E.x1; });
@@ -15948,8 +15948,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var asp = lib.folkSpec('villager', kit.rng(spec.seed * 41 + 9)); asp.beard = 1; asp.hat = 0; asp.clothes = 1; asp.col.hair = '#4a3428'; asp.col.coat = '#5d4a3a';   /* an ordinary man, the smith (the lore: not a dwarf) */
     npc = { x: wx - 28, y: wy + 6, face: Math.PI / 2, say: '', sayT: 0, line: 0, fig: lib.makeFigure(asp), name: 'Arnor', ph: 0, moving: false, job: null };
     var at = function (tx, ty, job, via) { return { x: x0 + tx * T, y: y0 + ty * T, job: job, via: via ? via.map(function (q) { return { x: x0 + q[0] * T, y: y0 + q[1] * T }; }) : null }; };
-    npc.hub = { x: x0 + 10.8 * T, y: y0 + 7.2 * T };   /* every walk goes by the yard, clear of the houses */
-    npc.work = [at(3.4, 8.7, 'smith'), at(5.5, 6.6, 'scavenge'), at(7.6, 3.8, 'scavenge', [[5.5, 6.6], [5.5, 5.2]]), at(9.5, 9.2, 'smith'), at(13.4, 11.0, 'smith'), at(6.5, 12.7, 'scavenge')];   /* by the woodpile, the burnt hall's door and inside it, the drying rack, the plank house's wall, the cart */
+    npc.hub = { x: x0 + 12.4 * T, y: y0 + 8.4 * T };   /* every walk goes by the yard, clear of the houses */
+    npc.work = [at(3.6, 10.6, 'smith'), at(5.5, 8.6, 'scavenge'), at(7.6, 4.8, 'scavenge', [[5.5, 8.6], [5.5, 7.2]]), at(9.6, 9.9, 'smith'), at(13.4, 11.0, 'smith'), at(6.5, 12.7, 'scavenge')];   /* by the woodpile, the burnt hall's door and inside it, the drying rack, the plank house's wall, the cart */
     arnorGraves(x0, y0);
   }
   function arnorGraves(x0, y0) {          /* the graves behind the burnt hall (2026-10-16, the lore: Thorgunna and her two sons, Grímhild, Thorkel): outside the palisade to the north, or east of the hut if there is no land there */
@@ -15957,7 +15957,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var north = row.every(ok), use = north ? row : col, list = [];
     use.forEach(function (q, k) { var x = x0 + q[0] * T, y = y0 + q[1] * T, near = []; w.eachProp(function (o) { if (o.kind && Math.hypot(o.x - x, o.y - y) < 26) near.push(o); }); near.forEach(function (o) { w.removeProp(o); }); var g = { name: 'graveStone', x: x, y: y, s: k === 0 ? 1.05 : (k < 3 ? 0.78 : 0.92), r: 3, v: 2 * (k % 3), grave: k === 0 ? 'thorgunna' : true }; w.addProp(g); list.push(g); });
     w.sortBuckets(); var cx = 0, cy = 0; list.forEach(function (g) { cx += g.x; cy += g.y; });
-    village.graves = { list: list, x: cx / list.length, y: cy / list.length, stand: north ? { x: x0 + 5.6 * T, y: y0 - 0.4 * T } : { x: x0 + 20.6 * T, y: y0 + 3.8 * T }, route: north ? [{ x: x0 + 12.4 * T, y: y0 + 6.6 * T }, { x: x0 + 11.5 * T, y: y0 + 1.0 * T }, { x: x0 + 11.5 * T, y: y0 - 0.5 * T }] : [{ x: x0 + 13 * T, y: y0 + 6.8 * T }, { x: x0 + 20.6 * T, y: y0 + 6.8 * T }] };
+    village.graves = { list: list, x: cx / list.length, y: cy / list.length, stand: north ? { x: x0 + 5.6 * T, y: y0 - 0.4 * T } : { x: x0 + 20.6 * T, y: y0 + 3.8 * T }, route: north ? [{ x: x0 + 12.4 * T, y: y0 + 8.4 * T }, { x: x0 + 11.5 * T, y: y0 + 1.0 * T }, { x: x0 + 11.5 * T, y: y0 - 0.5 * T }] : [{ x: x0 + 13 * T, y: y0 + 8.4 * T }, { x: x0 + 20.6 * T, y: y0 + 8.4 * T }] };
   }
   function graveNear(P) { if (!village || !village.graves || inCave) return null; var g = village.graves.list[0]; return g && Math.hypot(P.x - g.x, P.y - g.y) < 30 ? g : null; }
   function villagePaint() {              /* the steading's ground, at every start (2026-10-20: the save keeps only what the player painted over what the world paints): the gravel and earth paths, the hall's floor burnt away to earth under the ash, the ground round it burnt to earth */
@@ -15965,14 +15965,14 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var R = kit.rng(spec.seed * 23 + 11), vx = village.tx, vy = village.ty, x, y;
     function stroke(x0, y0, x1, y1, kind) { var n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 6) + 1, i; for (i = 0; i <= n; i++) { var u = i / n; w.paintGround(x0 + (x1 - x0) * u + Math.sin(u * 9) * 5, y0 + (y1 - y0) * u + Math.cos(u * 7) * 4, 13, kind); } }   // a painted path, wandering a little
     stroke((vx + 11.5) * T, (vy + 1) * T, (vx + 11.5) * T, (vy + 10.6) * T, 1); stroke((vx + 11.5) * T, (vy + 10.6) * T, (vx + 12.4) * T, (vy + 11.4) * T, 1);
-    stroke((vx + 5.5) * T, (vy + 6.6) * T, (vx + 11.5) * T, (vy + 6.8) * T, 1); stroke((vx + 11.5) * T, (vy + 5.8) * T, (vx + 16.5) * T, (vy + 5.6) * T, 2);
-    stroke((vx + 12.6) * T, (vy + 11.6) * T, (vx + 17.5) * T, (vy + 13.6) * T, 2);   // the earth path to the plank house
+    stroke((vx + 5.5) * T, (vy + 8.6) * T, (vx + 11.5) * T, (vy + 8.8) * T, 1); stroke((vx + 11.5) * T, (vy + 7.7) * T, (vx + 16.5) * T, (vy + 7.6) * T, 2);
+    stroke((vx + 12.6) * T, (vy + 11.6) * T, (vx + 13.4) * T, (vy + 15.6) * T, 2); stroke((vx + 13.4) * T, (vy + 15.6) * T, (vx + 17.5) * T, (vy + 15.6) * T, 2);   // the earth path to the plank house's door
     stroke((vx + 3.5) * T, (vy + 9) * T, (vx + 3.5) * T, (vy + 13.4) * T, 2); stroke((vx + 3.5) * T, (vy + 13.4) * T, (vx + 6) * T, (vy + 13.6) * T, 2);   // and to the hay and the cart
-    for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 21 + R() * 6, 2);
-    for (var ag = 0; ag < 16; ag++) w.paintGround((vx + 0.6 + R() * 10.8) * T, (vy + (ag % 2 ? 0.6 : 6.5) + (R() - 0.5) * 0.9) * T, 9 + R() * 9, 2);   // the ground round the hall, burnt to earth
-    for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 15 + R() * 6, 7);   // ash over the hall's floor, thinning out of its south side (the Art Director's paints, 2026-10-20)
-    for (var as = 0; as < 14; as++) w.paintGround((vx + 1.5 + R() * 9) * T, (vy + 6.3 + R() * 1.2) * T, 6 + R() * 7, 7);
-    for (var so = 0; so < 5; so++) w.paintGround((vx + 13.75) * T, (vy + 1.3 + so * 0.85) * T, 6, 8);   // soot at the foot of the hut's wall facing the hall
+    for (y = vy + 1; y < vy + 8; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 21 + R() * 6, 2);
+    for (var ag = 0; ag < 16; ag++) w.paintGround((vx + 0.6 + R() * 10.8) * T, (vy + (ag % 2 ? 0.6 : 8.5) + (R() - 0.5) * 0.9) * T, 9 + R() * 9, 2);   // the ground round the hall, burnt to earth
+    for (y = vy + 1; y < vy + 8; y++) for (x = vx + 1; x < vx + 11; x++) w.paintGround((x + 0.3 + R() * 0.4) * T, (y + 0.3 + R() * 0.4) * T, 15 + R() * 6, 7);   // ash over the hall's floor, thinning out of its south side (the Art Director's paints, 2026-10-20)
+    for (var as = 0; as < 14; as++) w.paintGround((vx + 1.5 + R() * 9) * T, (vy + 8.3 + R() * 1.2) * T, 6 + R() * 7, 7);
+    for (var so = 0; so < 7; so++) w.paintGround((vx + 13.75) * T, (vy + 1.3 + so * 0.85) * T, 6, 8);   // soot at the foot of the hut's wall facing the hall
     for (var so2 = 0; so2 < 7; so2++) w.paintGround((vx + 14.3 + so2 * 0.9) * T, (vy + 8.75) * T, 6, 8);   // and under the plank house's north wall
   }
   var FEAST = { from: 840, to: 1200 };     // when a place is at its meal: dusk (the hall's table is laid then; the feast eaten there is a buff above any home dish, for the raid: raid step 7, 2026-10-21, mine)
@@ -15997,14 +15997,15 @@ if (typeof module !== 'undefined') module.exports = Combat;
       for (y = y0; y < y0 + h; y++) for (x = x0; x < x0 + w; x++) B.floors[k(x, y)] = floor;
       for (var n = 0; n < breakN && edges.length; n++) { var e = edges.splice(Math.floor(R() * edges.length), 1)[0]; delete B[e[0]][k(e[1], e[2])]; if (R() < 0.5) delete B.floors[k(e[1] + (e[0] === 'V' ? 0 : 0), e[2] - (e[0] === 'H' ? 1 : 0))]; }
     }
-    /* The steading at a house's size (2026-10-13, Robin: the houses were way too small, they did not feel like houses): the
-       burnt hall is 10 by 5 inside (15 m by 7.5: a farm's longhouse), the hut that still stands and the plank house by the
-       well 6 by 4 (9 m by 6). It was 6 by 4 and 4 by 3 on a site of 14 by 12. */
-    house(vx + 1, vy + 1, 10, 5, 0, 0, vx + 5, 0);         // the burnt hall: logs, planks (its ruin is laid over it below)
-    item('stoneHearth', vx + 5, vy + 3, { cold: 1 });   // the burnt hall's hearth: cold, nobody keeps it (2026-10-20)
-    house(vx + 14, vy + 1, 6, 4, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
+    /* The steading at a house's size (2026-10-13, Robin: the houses were way too small, they did not feel like houses; and half as
+       deep again on 2026-10-22, Robin's yes to the Art Director's rule for houses that make sense to enter): the burnt hall is 10 by
+       7 inside (15 m by 10.5), the hut that still stands and the plank house by the well 6 by 6 (9 m by 9). They were 10 by 5 and
+       6 by 4 until then, and 6 by 4 and 4 by 3 on a site of 14 by 12 before that. */
+    house(vx + 1, vy + 1, 10, 7, 0, 0, vx + 5, 0);         // the burnt hall: logs, planks (its ruin is laid over it below)
+    item('stoneHearth', vx + 5, vy + 4, { cold: 1 });   // the burnt hall's hearth: cold, nobody keeps it (2026-10-20)
+    house(vx + 14, vy + 1, 6, 6, 2, 1, vx + 16, 0);        // the hut still whole: wattle, packed earth, a thatch roof, a table and a crate (a house to learn from; its bed moved to the plank house on 2026-10-14)
     item('table', vx + 14.6, vy + 1.2); item('barrel', vx + 19, vy + 1.1, { loot: { wood: 8, fiber: 4 } });   /* (the steading's crates are barrels and a chest since 2026-10-22: Robin, through the Art Director) */
-    house(vx + 14, vy + 9, 6, 4, 1, 0, vx + 17, 5);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces). Its bed is the first home (2026-10-14, Robin: finish the broken house to sleep in it): five gaps, and no roof until they are closed
+    house(vx + 14, vy + 9, 6, 6, 1, 0, vx + 17, 5);        // the plank house by the well, half gone: wood mends it (2026-10-08, Robin: the player should feel like fixing it with wooden pieces). Its bed is the first home (2026-10-14, Robin: finish the broken house to sleep in it): five gaps, and no roof until they are closed
     item('bed', vx + 14, vy + 9, { bed: true });
     item('woodenWell', vx + 12, vy + 10); item('stoneHearth', vx + 8.6, vy + 10.6, { light: 1 });   // Arnor's fire: light, and a hint that you will want one; a step away from him so E does not muddle them (2026-10-08)
     item('barrel', vx + 19, vy + 10, { loot: { berries: 5, meat: 2 } });
@@ -16012,10 +16013,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     H(vx + 11, vy, 'gate', 2);
     for (y = vy; y < vy + village.h; y++) if (R() < 0.75) V(vx, y, 'palisade', 0);
     for (x = vx; x < vx + 8; x++) if (R() < 0.7) H(x, vy + village.h, 'fence', 2);
-    item('woodpile', vx + 2, vy + 8); item('cart', vx + 6, vy + 13); item('dryingRack', vx + 9, vy + 8); item('haystack', vx + 2, vy + 13);
-    item('shieldRack', vx + 18.4, vy + 5.2); item('chest', vx + 10, vy + 13.4, { store: [{ kind: 'stone', n: 6 }, { kind: 'item', n: 1, item: Items.make('sword', 'flint') }].concat(lootSlots({}).slice(2)) });   /* (the stone and the flint sword in a chest, E to open; the iron fire basket by the hall is gone: Robin, 2026-10-22) */
+    item('woodpile', vx + 2, vy + 9.3); item('cart', vx + 6, vy + 13); item('dryingRack', vx + 8.6, vy + 9.3); item('haystack', vx + 2, vy + 13);
+    item('shieldRack', vx + 18.4, vy + 7.4); item('chest', vx + 10, vy + 13.4, { store: [{ kind: 'stone', n: 6 }, { kind: 'item', n: 1, item: Items.make('sword', 'flint') }].concat(lootSlots({}).slice(2)) });   /* (the stone and the flint sword in a chest, E to open; the iron fire basket by the hall is gone: Robin, 2026-10-22) */
     item('dragonPost', vx + 9.6, vy + 0.6); item('barrel', vx + 1, vy + 5, { loot: { arrows: 10 } });
-    item('quern', vx + 12.9, vy + 4.6); item('midden', vx + 20.8, vy + 2.6); item('choppingBlock', vx + 3.3, vy + 8.8);   /* a hand quern by the hut's west end (where the fire basket stood), a midden behind it, a chopping block by the woodpile (Robin, 2026-10-22, through the Art Director; the places mine) */
+    item('quern', vx + 12.9, vy + 4.6); item('midden', vx + 20.8, vy + 2.6); item('choppingBlock', vx + 3.6, vy + 9.8);   /* a hand quern by the hut's west end (where the fire basket stood), a midden behind it, a chopping block by the woodpile (Robin, 2026-10-22, through the Art Director; the places mine) */
     // the yard (2026-10-06): a gravel path from the gate past the hall to the well and the huts, a rail fence to the south,
     // a bit of dry-stone wall by the plank house, a trough by the haystack, flowers by the whole hut
     for (x = vx; x < vx + 8; x++) if (B.H[k(x, vy + village.h)]) B.H[k(x, vy + village.h)] = { t: 'rail', m: 1 };
@@ -16029,20 +16030,20 @@ if (typeof module !== 'undefined') module.exports = Combat;
        side; the hut that still stands is scorched on the side toward the hall; the palisade's gaps are charred stumps, its gate
        broken open; the fence is broken in places; the ground round the hall burnt to earth; a few things tipped over. */
     var ruinEdges = function (x0, y0, w0, h0, fn) { var ex, ey; for (ex = x0; ex < x0 + w0; ex++) { fn(B.H[k(ex, y0)], 'n'); fn(B.H[k(ex, y0 + h0)], 's'); } for (ey = y0; ey < y0 + h0; ey++) { fn(B.V[k(x0, ey)], 'w'); fn(B.V[k(x0 + w0, ey)], 'e'); } };
-    ruinEdges(vx + 1, vy + 1, 10, 5, function (e) { if (!e) return; if (e.t === 'door') { e.broken = 1; e.breach = 1; e.burnt = 1; return; } var r = R(); if (r < 0.6) { e.breach = 1; e.burnt = 1; } else if (r < 0.88) e.burnt = 1; else { e.scorch = 1; if (R() < 0.5) { e.st = 1; e.dmg = 4; } } });
-    B.ruin = B.ruin || {}; for (y = vy + 1; y < vy + 6; y++) for (x = vx + 1; x < vx + 11; x++) { B.ruin[x + ',' + y] = { k: 'burnt', m: 0, hot: 0 }; delete B.floors[k(x, y)]; }   /* its floor burnt away to earth under the ash */
-    ruinEdges(vx + 14, vy + 9, 6, 4, function (e, side) { if (!e || e.t === 'door') return; if (side === 'n' && R() < 0.7) e.scorch = 1; else if (R() < 0.4) { e.st = R() < 0.3 ? 2 : 1; e.dmg = 3; } });
-    ruinEdges(vx + 14, vy + 1, 6, 4, function (e, side) { if (!e) return; if (side === 'w') e.scorch = 1; else if (side === 'n' && R() < 0.3) { e.st = 1; e.dmg = 2; } });
+    ruinEdges(vx + 1, vy + 1, 10, 7, function (e) { if (!e) return; if (e.t === 'door') { e.broken = 1; e.breach = 1; e.burnt = 1; return; } var r = R(); if (r < 0.6) { e.breach = 1; e.burnt = 1; } else if (r < 0.88) e.burnt = 1; else { e.scorch = 1; if (R() < 0.5) { e.st = 1; e.dmg = 4; } } });
+    B.ruin = B.ruin || {}; for (y = vy + 1; y < vy + 8; y++) for (x = vx + 1; x < vx + 11; x++) { B.ruin[x + ',' + y] = { k: 'burnt', m: 0, hot: 0 }; delete B.floors[k(x, y)]; }   /* its floor burnt away to earth under the ash */
+    ruinEdges(vx + 14, vy + 9, 6, 6, function (e, side) { if (!e || e.t === 'door') return; if (side === 'n' && R() < 0.7) e.scorch = 1; else if (R() < 0.4) { e.st = R() < 0.3 ? 2 : 1; e.dmg = 3; } });
+    ruinEdges(vx + 14, vy + 1, 6, 6, function (e, side) { if (!e) return; if (side === 'w') e.scorch = 1; else if (side === 'n' && R() < 0.3) { e.st = 1; e.dmg = 2; } });
     for (x = vx; x < vx + village.w; x++) { var pe = B.H[k(x, vy)]; if (x === vx + 11) continue; if (!pe) { B.H[k(x, vy)] = { t: 'palisade', m: 0, breach: 1, burnt: 1 }; } else if (x <= vx + 12 && R() < 0.5) pe.scorch = 1; }
     for (y = vy; y < vy + village.h; y++) { if (!B.V[k(vx, y)]) B.V[k(vx, y)] = { t: 'palisade', m: 0, breach: 1, burnt: R() < 0.7 ? 1 : 0 }; else if (y < vy + 7 && R() < 0.5) B.V[k(vx, y)].scorch = 1; }
     var gte = B.H[k(vx + 11, vy)]; if (gte) { gte.broken = 1; gte.scorch = 1; }
     for (x = vx; x < vx + 8; x++) { var fe = B.H[k(x, vy + village.h)]; if (fe && R() < 0.3) fe.breach = 1; }
     B.items.forEach(function (it) { if ((it.name === 'shieldRack' || it.name === 'cart' || it.name === 'dragonPost') && R() < 0.7) it.fallen = 1; });   // tipped over in the raid
-    if (World.IMAGES.roofTree) [['roofTree', 8, 3.3], ['charBeamA', 3, 2], ['charBeamB', 9, 5.1], ['charBeamC', 10, 2.4], ['charBeamC', 3.6, 4.4], ['charPile', 2.2, 5.2], ['ashHeap', 6.4, 1.8], ['ashHeap', 8.9, 1.7], ['charStump', 1.6, 1.6], ['charStump', 10.4, 1.7], ['charStump', 7.2, 5.6]].forEach(function (q) { litter(q[0], vx + q[1] - 0.5, vy + q[2] - 0.5, 0); });   /* the burnt hall's inside (the Art Director's ch1_fixes, 2026-10-22, Robin: "Yes, do all 4"): the fallen roof tree, charred beams, a pile, ash heaps and burnt post stumps on its ash, placed once, in tiles from the steading's corner (mine) */
-    else { litter('charredBeam', vx + 3.4, vy + 2.4, 0); litter('charredBeam', vx + 7.6, vy + 4.1, 1); litter('charredBeam', vx + 5.6, vy + 6.1, 2); litter('burntHeap', vx + 8.6, vy + 2.2, 0); }
-    litter('burntHeap', vx + 13.3, vy + 3, 1); if (World.IMAGES.kitchenPlot) litter('kitchenPlot', vx + 14.9, vy + 5.2, 0);   /* the hut's kitchen plot (Robin, 2026-10-22; the studio's picture to come) */ litter('brokenDoor', vx + 11.7, vy + 1.2, 0);   // the raid's wreckage: charred beams in the hall's ash and one across its door, a burnt heap in the hall and one by the hut's scorched wall, the gate's leaf torn off (the studio's pieces, 2026-10-20)
+    if (World.IMAGES.roofTree) [['roofTree', 8, 4.2], ['charBeamA', 3, 2.4], ['charBeamB', 9, 6.7], ['charBeamC', 10, 3], ['charBeamC', 3.6, 5.8], ['charPile', 2.2, 6.9], ['ashHeap', 6.4, 2.1], ['ashHeap', 8.9, 2], ['charStump', 1.6, 1.8], ['charStump', 10.4, 2], ['charStump', 7.2, 7.4]].forEach(function (q) { litter(q[0], vx + q[1] - 0.5, vy + q[2] - 0.5, 0); });   /* the burnt hall's inside (the Art Director's ch1_fixes, 2026-10-22, Robin: "Yes, do all 4"): the fallen roof tree, charred beams, a pile, ash heaps and burnt post stumps on its ash, placed once, in tiles from the steading's corner (mine) */
+    else { litter('charredBeam', vx + 3.4, vy + 3, 0); litter('charredBeam', vx + 7.6, vy + 5.4, 1); litter('charredBeam', vx + 5.6, vy + 8.1, 2); litter('burntHeap', vx + 8.6, vy + 2.7, 0); }
+    litter('burntHeap', vx + 13.3, vy + 3, 1); if (World.IMAGES.kitchenPlot) litter('kitchenPlot', vx + 14.2, vy + 7.5, 0);   /* the hut's kitchen plot (Robin, 2026-10-22; the studio's picture to come) */ litter('brokenDoor', vx + 11.7, vy + 1.2, 0);   // the raid's wreckage: charred beams in the hall's ash and one across its door, a burnt heap in the hall and one by the hut's scorched wall, the gate's leaf torn off (the studio's pieces, 2026-10-20)
     B.roofs = {}; bDirty = true; Build.ensurePosts(B);
-    for (y = vy + 1; y <= vy + 6; y++) for (x = vx + 1; x <= vx + 11; x++) { var po = B.posts[k(x, y)]; if (!po) continue; var held = [B.H[k(x, y)], B.H[k(x - 1, y)], B.V[k(x, y)], B.V[k(x, y - 1)]].some(function (e) { return e && !e.breach; }); po.burnt = 1; if (!held && R() < 0.75) po.snap = 0.3 + R() * 0.45; }   // the hall's posts charred, snapped short where no wall stands against them
+    for (y = vy + 1; y <= vy + 8; y++) for (x = vx + 1; x <= vx + 11; x++) { var po = B.posts[k(x, y)]; if (!po) continue; var held = [B.H[k(x, y)], B.H[k(x - 1, y)], B.V[k(x, y)], B.V[k(x, y - 1)]].some(function (e) { return e && !e.breach; }); po.burnt = 1; if (!held && R() < 0.75) po.snap = 0.3 + R() * 0.45; }   // the hall's posts charred, snapped short where no wall stands against them
     roofLater = { tx: vx + 14, ty: vy + 1, m: 1 };          // the hut's thatch is set once the rooms are known
   }
   var roofLater = null;

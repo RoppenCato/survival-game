@@ -38,18 +38,18 @@ var DEF = {
    forte), auto (street or green by the seed), row (plots along a shore street), town (plots in blocks inside a wall). farms and
    plots: how many units; green: the common's size; site: the tiles a page should find for it; people: the drawn folk. */
 var ARCH = {
-  farmstead: { name: 'Farmstead', tier: 0, family: 'single', houses: [0, 0], out: [2, 3], yard: [8, 6], long: [10, 13], site: [34, 26], people: [3, 5] },
-  fisher: { name: 'Fisherman’s hut', tier: 0, family: 'single', houses: [0, 0], out: [1, 1], yard: [5, 4], site: [16, 24], hut: true, people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
-  church: { name: 'Church', tier: 0, family: 'single', houses: [1, 1], out: [0, 1], yard: [6, 5], site: [26, 26], people: [2, 3], church: true, chapel: true, lowland: true },   // a lone church with its priest's house (the lucky strike, 2026-10-07)
-  small: { name: 'Small village', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [52, 44], people: [6, 9] },
-  fishing: { name: 'Fishing hamlet', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [52, 44], people: [5, 8], shore: true, racks: 2 },
-  ruin: { name: 'Abandoned', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [52, 44], people: [0, 0], ruin: true },
-  village: { name: 'Village', tier: 2, family: 'auto', farms: [3, 5], green: [10, 7], site: [74, 48], people: [10, 15] },
-  seat: { name: 'Chieftain’s seat', tier: 3, family: 'green', farms: [3, 5], green: [12, 8], site: [78, 56], people: [16, 24], hall: true, palisade: true },
-  trading: { name: 'Trading post', tier: 3, family: 'row', plots: [6, 9], site: [68, 42], people: [8, 12], shore: true, stores: 2 },
-  town: { name: 'Town', tier: 4, family: 'town', plots: [16, 24], site: [96, 70], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church
-  great: { name: 'Great village', tier: 4, family: 'green', farms: [6, 9], green: [14, 9], site: [110, 80], people: [34, 44], hall: true, palisade: true },
-  bigtown: { name: 'Great town', tier: 5, family: 'town', plots: [30, 40], site: [120, 88], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true }
+  farmstead: { name: 'Farmstead', tier: 0, family: 'single', houses: [0, 0], out: [2, 3], yard: [8, 6], long: [12, 16], site: [42, 34], people: [3, 5] },
+  fisher: { name: 'Fisherman’s hut', tier: 0, family: 'single', houses: [0, 0], out: [1, 1], yard: [5, 4], site: [22, 30], hut: true, people: [1, 1], shore: true, racks: 2, lone: true },   // one old fisherman alone on a small island; he teaches the fish dishes (2026-10-08)
+  church: { name: 'Church', tier: 0, family: 'single', houses: [1, 1], out: [0, 1], yard: [6, 5], site: [34, 34], people: [2, 3], church: true, chapel: true, lowland: true },   // a lone church with its priest's house (the lucky strike, 2026-10-07)
+  small: { name: 'Small village', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [6, 9] },
+  fishing: { name: 'Fishing hamlet', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [5, 8], shore: true, racks: 2 },
+  ruin: { name: 'Abandoned', tier: 1, family: 'street', farms: [2, 3], green: [6, 4], site: [70, 58], people: [0, 0], ruin: true },
+  village: { name: 'Village', tier: 2, family: 'auto', farms: [3, 5], green: [10, 7], site: [88, 62], people: [10, 15] },
+  seat: { name: 'Chieftain’s seat', tier: 3, family: 'green', farms: [3, 5], green: [12, 8], site: [96, 72], people: [16, 24], hall: true, palisade: true },
+  trading: { name: 'Trading post', tier: 3, family: 'row', plots: [6, 9], site: [84, 54], people: [8, 12], shore: true, stores: 2 },
+  town: { name: 'Town', tier: 4, family: 'town', plots: [16, 24], site: [120, 88], people: [16, 26], hall: true, church: true, townwall: true, stores: 1, lowland: true },   // the lowlands (2026-10-07): a walled town round the jarl's hall with a church
+  great: { name: 'Great village', tier: 4, family: 'green', farms: [6, 9], green: [14, 9], site: [134, 100], people: [34, 44], hall: true, palisade: true },
+  bigtown: { name: 'Great town', tier: 5, family: 'town', plots: [30, 40], site: [148, 108], people: [36, 46], hall: true, church: true, townwall: true, stores: 2, lowland: true }
 };
 // the buildings: inside size in tiles [w range, h range], what stands inside, where the door goes (toward the yard)
 var BUILD = {
@@ -57,17 +57,17 @@ var BUILD = {
   // in tiles of a metre and a half: nearly everything people lived in was two to five tiles across, as wide as a roof could
   // span, and got its size from its length (Dublin's town houses 6 by 4, Hedeby's 12 by 5, the Trelleborg type 20 by 5; a
   // king's hall 32 by 8). So a building here is NARROW AND LONG, and a house stands with its gable, and its door, to the yard.
-  longhouse: { name: 'Longhouse', w: [14, 18], h: [5, 5], roofed: true, inside: 'hall' },     // a farm's: 21 to 27 m by 7.5 (it was 9 to 12 by 3 to 4)
-  hall: { name: 'Great hall', w: [20, 22], h: [6, 6], roofed: true, inside: 'hall' },         // a jarl's: 30 to 33 m by 9, two rows of posts down it (it was 13 to 16 by 4 to 5). 22 is what the view shows when a big fight draws it back
-  house: { name: 'House', w: [6, 9], h: [4, 4], roofed: true, inside: 'home' },               // w is its LENGTH and h its width, whichever way it stands (houseSize): 9 to 13.5 m by 6, and now and then 7.5 across. (It was 4 to 5 by 3 to 4, and the jitter made a quarter of them 3 across.)
-  store: { name: 'Storehouse', w: [3, 3], h: [2, 2], roofed: true, inside: 'store', posts: true },
-  byre: { name: 'Byre', w: [5, 6], h: [3, 3], roofed: true, inside: 'byre' },
-  smithy: { name: 'Smithy', w: [4, 4], h: [3, 3], roofed: true, inside: 'smithy', open: true },
-  bath: { name: 'Bathhouse', w: [3, 3], h: [2, 2], roofed: true, inside: 'bath' },
-  pit: { name: 'Pit-house', w: [3, 3], h: [2, 2], roofed: true, inside: 'pit', floor: 1 },    // real pit-houses were about 4 m by 3
-  boathouse: { name: 'Boathouse', w: [6, 8], h: [3, 3], roofed: true, inside: 'boat', open: true },
+  longhouse: { name: 'Longhouse', w: [16, 20], h: [7, 7], roofed: true, inside: 'hall' },   /* (grown 2026-10-22: Robin's yes to bigger houses; it was 14 to 18 by 5) */     // a farm's: 21 to 27 m by 7.5 (it was 9 to 12 by 3 to 4)
+  hall: { name: 'Great hall', w: [22, 24], h: [8, 8], roofed: true, inside: 'hall' },   /* (was 20 to 22 by 6) */         // a jarl's: 30 to 33 m by 9, two rows of posts down it (it was 13 to 16 by 4 to 5). 22 is what the view shows when a big fight draws it back
+  house: { name: 'House', w: [8, 11], h: [6, 6], roofed: true, inside: 'home' },   /* (was 6 to 9 by 4) */               // w is its LENGTH and h its width, whichever way it stands (houseSize): 9 to 13.5 m by 6, and now and then 7.5 across. (It was 4 to 5 by 3 to 4, and the jitter made a quarter of them 3 across.)
+  store: { name: 'Storehouse', w: [3, 3], h: [3, 3], roofed: true, inside: 'store', posts: true },
+  byre: { name: 'Byre', w: [5, 6], h: [5, 5], roofed: true, inside: 'byre' },
+  smithy: { name: 'Smithy', w: [4, 4], h: [5, 5], roofed: true, inside: 'smithy', open: true },
+  bath: { name: 'Bathhouse', w: [3, 3], h: [3, 3], roofed: true, inside: 'bath' },
+  pit: { name: 'Pit-house', w: [3, 3], h: [3, 3], roofed: true, inside: 'pit', floor: 1 },    // real pit-houses were about 4 m by 3
+  boathouse: { name: 'Boathouse', w: [6, 8], h: [5, 5], roofed: true, inside: 'boat', open: true },
   lean: { name: 'Lean-to', w: [2, 3], h: [2, 2], roofed: true, inside: 'lean' },   // an annex against a house's side, under its own lower roof (the varied silhouettes, Robin's yes of 2026-10-22)
-  church: { name: 'Church', w: [4, 4], h: [8, 9], roofed: true, inside: 'church', floor: 2 }   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side. Escomb's nave is 13.3 m by 4.4 inside: nine tiles by three (it was 5 to 6 deep)
+  church: { name: 'Church', w: [6, 6], h: [10, 12], roofed: true, inside: 'church', floor: 2 }   /* (was 4 by 8 to 9) */   // deep, so its gable faces south; cut stone, a slate roof, the bell tower at its side. Escomb's nave is 13.3 m by 4.4 inside: nine tiles by three (it was 5 to 6 deep)
 };
 /* The story roll (settlements-plan.md section 6, mine): the one thing that sets a place apart, rolled before its shape so the
    shape serves it; it biases the pools, the props and the finds. Its words are the Lore Director's (LORE?). */
@@ -549,18 +549,18 @@ function make(seed, site, opts) {
     var y0 = yFromAt(best); exitPl = { cls: 'lane', pts: [[best, y0], [best + (R() - 0.5) * 3, (ty + y0) / 2], [best, ty - 0.3]] }; V.spine.push(exitPl); backGateX = Math.floor(best); resample();
   }
   function farmSpec(rich) {
-    return rich ? { kind: 'farm', big: 'longhouse', long: [11, 13], houses: [1, 1], houseLen: [6, 7], out: [2, 3], yard: [7, 5], w: 17, h: 23, compact: true, slots: ['se', 'sw'], firePit: true, well: false, fence: farmFence, rich: true }
-      : { kind: 'farm', big: 'longhouse', long: story === 'oldseat' ? [13, 13] : [9, 12], houses: [0, 0], out: [1, 2], yard: [6, 4], w: 16, h: 16, compact: true, slots: [], firePit: false, well: false, fence: farmFence };
+    return rich ? { kind: 'farm', big: 'longhouse', long: [14, 16], houses: [1, 1], houseLen: [8, 9], out: [2, 3], yard: [7, 5], w: 22, h: 26, yardDy: 0, compact: true, slots: ['se', 'sw'], firePit: true, well: false, fence: farmFence, rich: true }
+      : { kind: 'farm', big: 'longhouse', long: story === 'oldseat' ? [16, 16] : [11, 14], houses: [0, 0], out: [1, 2], yard: [6, 4], w: 20, h: 20, compact: true, slots: [], firePit: false, well: false, fence: farmFence };   // (grown 2026-10-22 with the houses: a plain farm was 16 by 16, a rich one 17 by 23)
   }
-  function hallSpec() { return { kind: 'hall', big: 'hall', houses: [1, 1], out: [1, 2], yard: [8, 5], w: 30, h: 20, yardDy: 4, roomy: 1, compact: true, slots: ['e', 'w'], outs: ['store', 'byre'], firePit: true, well: true, hall: true, heavy: true, town: !!A.townwall, fence: A.townwall ? 'drystone' : 'palisade', zone: 'private', table: true }; }
-  function churchSpec() { return { kind: 'church', big: 'church', houses: [0, 0], out: [0, 0], yard: [4, 3], w: 10, h: 18, yardDy: 7, roomy: 1, bigX: -2, compact: true, slots: [], fire: false, well: false, church: true, fence: 'drystone', lych: true, zone: 'private' }; }
+  function hallSpec() { return { kind: 'hall', big: 'hall', houses: [1, 1], out: [1, 2], yard: [8, 5], w: 36, h: 24, yardDy: 3, roomy: 1, compact: true, slots: ['e', 'w'], outs: ['store', 'byre'], firePit: true, well: true, hall: true, heavy: true, town: !!A.townwall, fence: A.townwall ? 'drystone' : 'palisade', zone: 'private', table: true }; }
+  function churchSpec() { return { kind: 'church', big: 'church', houses: [0, 0], out: [0, 0], yard: [4, 3], w: 12, h: 22, yardDy: 9, roomy: 1, bigX: -2, compact: true, slots: [], fire: false, well: false, church: true, fence: 'drystone', lych: true, zone: 'private' }; }
   function plotSpec(quarter) {
     var q = quarter || 'craft';
-    if (q === 'merchant') return { kind: 'plot', w: 7, h: 12, ac: 5, len: [7, 8], behind: 'store', mstep: 0, fence: 'rail', quarter: q };
-    if (q === 'gate') return { kind: 'plot', w: 6, h: 11, ac: 4, len: [6, 7], behind: R() < 0.5 ? 'smithy' : 'store', mstep: 1, fence: 'rail', quarter: q };
-    if (q === 'poor') return { kind: 'plot', w: 6, h: 9, ac: 4, len: [6, 6], behind: R() < 0.5 ? 'pit' : null, mstep: 2, fence: null, quarter: q };
-    if (q === 'suburb') return { kind: 'plot', w: 6, h: 9, ac: 4, len: [6, 6], behind: R() < 0.4 ? 'pit' : null, mstep: 2, fence: null, quarter: q, zone: 'public' };
-    return { kind: 'plot', w: 6, h: 11, ac: 4, len: [6, 7], behind: R() < 0.6 ? 'pit' : 'store', mstep: 1, fence: wealth > 0.4 ? 'rail' : null, quarter: q };
+    if (q === 'merchant') return { kind: 'plot', w: 9, h: 17, ac: 7, len: [9, 11], behind: 'store', mstep: 0, fence: 'rail', quarter: q };
+    if (q === 'gate') return { kind: 'plot', w: 8, h: 16, ac: 6, len: [8, 9], behind: R() < 0.5 ? 'smithy' : 'store', mstep: 1, fence: 'rail', quarter: q };
+    if (q === 'poor') return { kind: 'plot', w: 8, h: 13, ac: 6, len: [8, 8], behind: R() < 0.5 ? 'pit' : null, mstep: 2, fence: null, quarter: q };
+    if (q === 'suburb') return { kind: 'plot', w: 8, h: 13, ac: 6, len: [8, 8], behind: R() < 0.4 ? 'pit' : null, mstep: 2, fence: null, quarter: q, zone: 'public' };
+    return { kind: 'plot', w: 8, h: 15, ac: 6, len: [8, 9], behind: R() < 0.6 ? 'pit' : 'store', mstep: 1, fence: wealth > 0.4 ? 'rail' : null, quarter: q };
   }
   function tryLot(lot) {                               // a lot of the place's own (a store on the market, the boathouse on the shore): checked against the units and the roads
     var k, l; for (k = 0; k < 8; k++) { var dx = k ? Math.round((R() - 0.5) * 4) : 0, dy = k ? Math.round((R() - 0.5) * 2) : 0; l = { x: lot.x + dx, y: lot.y + dy, w: lot.w, h: lot.h, id: lot.id, door: lot.door, slot: lot.slot || 'place', big: false, u: lot.u || {} }; if (boxFree(l.x, l.y, l.w, l.h, 0.5) && !(green && overlaps(l, green, 0))) { placeLots.push(l); V.lots.push(l); pieces(l); hugRects.push({ x: l.x, y: l.y, w: l.w, h: l.h }); return l; } }
@@ -597,8 +597,8 @@ function make(seed, site, opts) {
   function growCluster() {                            // farms along a winding street, or round a green (the forte): a hamlet, a village, a seat
     var isGreen = shape === 'green', gw = A.green ? A.green[0] : 6, gh = A.green ? A.green[1] : 4;
     var nFarms = clamp(pickRange(R, A.farms, 0) + (age === 'old' ? 1 : age === 'new' ? -1 : 0), 1, A.farms[1] + 1); nUnitsWanted = nFarms + (A.hall ? 1 : 0); nUnitsMin = A.farms[0] + (A.hall ? 1 : 0);
-    cyT = ty + h / 2 + (A.hall ? 5 : 0) + (shore === 's' ? h * 0.12 : 0);
-    var sy = shore === 's' ? ty + h - 6.5 : cyT + (R() - 0.5) * 4;
+    cyT = ty + h / 2 + (A.hall ? 6 : 0) + (shore === 's' ? h * 0.12 : 0);
+    var sy = shore === 's' ? ty + h - 8.5 : cyT + (R() - 0.5) * 4;
     green = { x: Math.round(cxT - gw / 2 + (R() - 0.5) * 4), y: isGreen ? Math.round(sy - gh / 2) : Math.round(sy - 1.5 - gh), w: gw, h: gh };   // a street village keeps a small common north of its street for the fire, the well and the stone
     var gx = clamp(Math.round(cxT + (R() - 0.5) * 12) + 0.5, tx + 5, tx + w - 5), bx = clamp(gx + (R() < 0.5 ? -1 : 1) * (7 + Math.floor(R() * 8)), tx + 5, tx + w - 5);
     var ix0 = tx + 4, ix1 = tx + w - 4;
@@ -635,28 +635,28 @@ function make(seed, site, opts) {
     greenThings(green, false); V.yard = green;
     if (shore === 's' && !V.ruin) {                    // the shore strip below the street: racks, a boathouse, a boat drawn up
       var ry = ty + h - 3.5, k3; for (k3 = 0; k3 < (A.racks || 1); k3++) prop({ name: 'dryingRack', x: (focus[0] / T + (k3 - 0.5) * 4 + (R() - 0.5) * 2) * T, y: ry * T, solid: 6 });
-      tryLot({ id: 'boathouse', x: Math.round(focus[0] / T) + 5, y: ty + h - 4, w: 7, h: 3, door: 's', slot: 'shore' });
+      tryLot({ id: 'boathouse', x: Math.round(focus[0] / T) + 5, y: ty + h - 6, w: 7, h: 5, door: 's', slot: 'shore' });
     }
   }
   function growRow() {                                // the shore row (Ribe, Birka): plots with their short side to a street a few tiles up from the water, the market strip between
-    var sy = ty + h - 5.5, ix0 = tx + 4, ix1 = tx + w - 4, bx = clamp(Math.round(cxT + (R() - 0.5) * 12) + 0.5, tx + 6, tx + w - 6), nPlots = pickRange(R, A.plots, 0) + (age === 'old' ? 1 : age === 'new' ? -1 : 0);
+    var sy = ty + h - 7.5, ix0 = tx + 4, ix1 = tx + w - 4, bx = clamp(Math.round(cxT + (R() - 0.5) * 12) + 0.5, tx + 6, tx + w - 6), nPlots = pickRange(R, A.plots, 0) + (age === 'old' ? 1 : age === 'new' ? -1 : 0);
     nUnitsWanted = nPlots + 1; nUnitsMin = A.plots[0];
     V.spine.push({ cls: 'main', pts: wander(ix0, ix1, sy, 1.5) }); approachPl = V.spine[0];
     gateX = null;
-    green = { x: Math.round(cxT - 6 + (R() - 0.5) * 6), y: Math.round(sy + 1.5), w: 12, h: 3 }; focus = [(green.x + green.w / 2) * T, (green.y + green.h / 2) * T];
+    green = { x: Math.round(cxT - 6 + (R() - 0.5) * 6), y: Math.round(sy + 1.5), w: 12, h: 4 }; focus = [(green.x + green.w / 2) * T, (green.y + green.h / 2) * T];
     resample();
     var placed = 0, c, FU = farmSpec(true); FU.table = true;   // the trader's own longhouse first
     c = bestCandidate(FU.w, FU.h); if (c && maxUnits > 0 && placeUnit(FU, c)) placed++;
     var tries = 0;
     while (placed < nUnitsWanted && placed < maxUnits && tries++ < 60) { var PU = plotSpec(R() < 0.3 ? 'merchant' : 'craft'); PU.behind = R() < 0.5 ? 'store' : 'pit'; c = bestCandidate(PU.w, PU.h); if (!c) break; if (placeUnit(PU, c)) placed++; }
     makeExit(null, bx); backLane();
-    var k2; for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: green.x + 1 + k2 * 6, y: green.y + 1, w: 3, h: 2, door: 'n', slot: 'market', u: { stores: true } });
+    var k2; for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: green.x + 1 + k2 * 6, y: green.y + 1, w: 3, h: 3, door: 'n', slot: 'market', u: { stores: true } });
     greenThings(green, true); V.yard = green;
     for (k2 = 0; k2 < (A.racks || 2); k2++) prop({ name: 'dryingRack', x: (green.x - 2 - k2 * 3) * T, y: (ty + h - 2.5) * T, solid: 6 });
-    tryLot({ id: 'boathouse', x: green.x + green.w + 3, y: ty + h - 4, w: 7, h: 3, door: 's', slot: 'shore' });
+    tryLot({ id: 'boathouse', x: green.x + green.w + 3, y: ty + h - 6, w: 7, h: 5, door: 's', slot: 'shore' });
   }
   function growTown() {                               // the walled town: the main street from the gate to the market to the hall, cross lanes, plots in blocks, the church's and the hall's precincts, a suburb outside the gate
-    var E = { x0: tx + 3, x1: tx + w - 3, y0: ty + 2, y1: ty + h - 12 }, big = A.tier >= 5, mw = big ? 16 : 12, mh = 8;
+    var E = { x0: tx + 3, x1: tx + w - 3, y0: ty + 2, y1: ty + h - 16 }, big = A.tier >= 5, mw = big ? 16 : 12, mh = 8;
     var nPlots = pickRange(R, A.plots, 0) + (age === 'old' ? 2 : age === 'new' ? -2 : 0); nUnitsWanted = nPlots + 2; nUnitsMin = A.plots[0];
     var HU = hallSpec(), market = { x: Math.round((E.x0 + E.x1) / 2 - mw / 2 + (R() - 0.5) * 6), y: Math.round(E.y0 + (E.y1 - E.y0) * 0.5 - mh / 2 + 3), w: mw, h: mh };
     var hy = market.y - 3 - HU.h; if (hy < E.y0 + 1) { market.y += E.y0 + 1 - hy; hy = E.y0 + 1; }
@@ -666,7 +666,7 @@ function make(seed, site, opts) {
     V.spine.push(approach); approachPl = approach;
     V.spine.push({ cls: 'main', pts: [[market.x + market.w / 2 + (R() - 0.5) * 2, market.y - 0.5], [market.x + market.w / 2, hy + HU.h + 1.5]] });   // up to the hall's gate
     V.spine.push({ cls: 'main', pts: wander(E.x0 + 1, market.x - 0.5, my, 2) }); V.spine.push({ cls: 'main', pts: wander(market.x + market.w + 0.5, E.x1 - 1, my, 2) });   // the cross street, through the market
-    var bxl = R() < 0.5, bx = clamp(bxl ? market.x + market.w / 2 - HU.w / 2 - 3 : market.x + market.w / 2 + HU.w / 2 + 3, E.x0 + 3, E.x1 - 3);
+    var hxPlan = Math.round(market.x + market.w / 2 - HU.w / 2), bxl = R() < 0.5, bxW = clamp(hxPlan - 3, E.x0 + 3, E.x1 - 3), bxE = clamp(hxPlan + HU.w + 3, E.x0 + 3, E.x1 - 3), wOk = bxW < hxPlan - 1, eOk = bxE > hxPlan + HU.w + 1; if (bxl && !wOk) bxl = false; if (!bxl && !eOk) bxl = true; var bx = bxl ? bxW : bxE;   // the lane past the hall on a side where it stays clear of the hall's box (2026-10-22: clamped into the hall, it left the hall no room)
     exitPl = { cls: 'lane', pts: [[bxl ? market.x - 0.5 : market.x + market.w + 0.5, market.y + 0.5], [bx, market.y - 2], [bx + (R() - 0.5) * 3, (hy + ty) / 2], [bx, ty - 0.3]] }; V.spine.push(exitPl);   // the back lane past the hall to the back gate
     if (big) { V.spine.push({ cls: 'main', pts: wanderV(my - 1, E.y1 - 1, market.x - 15, 2) }); V.spine.push({ cls: 'main', pts: wanderV(my + 1, E.y1 - 1, market.x + market.w + 15, 2) }); V.spine.push({ cls: 'main', pts: wander(E.x0 + 1, E.x1 - 1, my + 14, 2) }); }
     backGateX = Math.floor(bx);
@@ -674,7 +674,7 @@ function make(seed, site, opts) {
     var placed = 0, c;
     if (maxUnits > 0) { var hx = Math.round(market.x + market.w / 2 - HU.w / 2 + (R() - 0.5) * 4), k2, ok = false; for (k2 = 0; k2 < 10 && !ok; k2++) { var hx2 = hx + Math.round((R() - 0.5) * 2 * k2); if (boxFree(hx2, hy, HU.w, HU.h, 0.5)) ok = !!placeUnit(HU, { x: hx2, y: hy, front: 's' }); } if (ok) placed++; else V.notes.push('!! the hall found no room'); }
     if (A.church && placed < maxUnits) { var CU = churchSpec(); c = bestCandidate(CU.w, CU.h, function (q) { return q.front === 's' && q.y + q.h <= E.y1 && q.y >= E.y0; });   /* (the church stands as grown: its gable and door south, the apse north, the churchyard east; 2026-10-22, a mirrored one laid its roof over the plot behind it) */ if (c && placeUnit(CU, c)) placed++; else V.notes.push('!! the church found no room'); }
-    for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: k2 ? market.x + market.w - 4 : market.x + 1, y: market.y - 3, w: 3, h: 2, door: 's', slot: 'market', u: { stores: true } });
+    for (k2 = 0; k2 < (A.stores || 0); k2++) tryLot({ id: 'store', x: k2 ? market.x + market.w - 4 : market.x + 1, y: market.y - 4, w: 3, h: 3, door: 's', slot: 'market', u: { stores: true } });
     var tries = 0, gatePt = [gx, E.y1];
     while (placed < nUnitsWanted && placed < maxUnits && tries++ < 120) {
       var PU0 = plotSpec('craft'); c = bestCandidate(PU0.w, PU0.h, function (q) { return q.y + q.h <= E.y1 && q.y >= E.y0 && q.x >= E.x0 && q.x + q.w <= E.x1; });
