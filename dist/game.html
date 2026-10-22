@@ -13632,7 +13632,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     // nearN of them live within nearMax of camp: the safe first meat and leather, a short walk from the fire
     boar: { start: 4, n: 8, ground: 'grass', r: 9, dmg: 14, aggro: 75, range: 110, nearN: 1, nearMax: 900, drops: { meat: 1, leather: 1 }, young: { hp: 6, dmg: 7, size: 0.84 } },   // young: what the starter island's are (see youngOne)
     deer: { start: 5, n: 7, ground: 'grass', r: 8, dmg: 0, aggro: 230, range: 140, nearN: 2, nearMax: 800, flee: true, shy: true, herd: [2, 3], drops: { meat: 1, leather: 2 } },   /* (herd: two or three together, one with its head up; 2026-10-14) */   /* (2026-10-13: it sees you 230 units off before it, 100 behind, further when you sprint, and runs the open way: the engine's shy beast) */
-    snake: { start: 3, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: { snakeBlood: 1 } },
+    snake: { start: 0, n: 4, ground: 'shore', r: 5, dmg: 6, aggro: 40, range: 40, drops: { snakeBlood: 1 } },   /* start 0: no adders on the starter island (Robin, 2026-10-22: "you have no use for the blood yet"; it was 3) */
     wolf: { n: 0, ground: 'grass', r: 8, dmg: 22, aggro: 220, range: 260, drops: { meat: 1, leather: 0.5 } },   // only at night, in packs of three: see nightTick
     moose: { n: 2, ground: 'far', r: 13, dmg: 22, aggro: 60, range: 120, drops: { meat: 3, leather: 2, antler: 1 } },
     troll: { n: 0, ground: 'dark', r: 9, dmg: 40, aggro: 100, range: 120, minHome: 600, drops: { copper: 3, stone: 3 } },
@@ -15128,12 +15128,13 @@ if (typeof module !== 'undefined') module.exports = Combat;
      Arnor the dwarf until then). He tells the story once, names what your home still lacks, and when it is a home (Comfort 4)
      teaches the raft (seen.raft, saved). Every word he says is the canon's (line.arnor.*). */
   function arnorState() { return seen.raft ? 'taught' : (!seen.met ? 'meet' : (baseComfort().n >= 4 ? 'teach' : 'wait')); }   // the story always comes first
-  function arnorLines(st) {
-    if (st === 'meet') return loreLines('line.arnor.meet');
-    if (st === 'wait') { var n = baseComfort().n, has = baseComfort().has || {}; return loreLines('line.arnor.wait.' + (!n ? 'no-walls' : !has.hearth ? 'no-hearth' : !has.bench ? 'no-bench' : 'no-rug')); }   /* (variants: each talk the next) */
-    if (st === 'teach') return loreLines('line.arnor.teach');
-    return loreLines('line.arnor.taught');
+  function arnorLineId(st) {               // the lore entry a state speaks from (its mode says how: a sequence is a story told once, line by line; variants are remarks, one a talk)
+    if (st === 'meet') return 'line.arnor.meet';
+    if (st === 'wait') { var cf = baseComfort(), n = cf.n, has = cf.has || {}; return 'line.arnor.wait.' + (!n ? 'no-walls' : !has.hearth ? 'no-hearth' : !has.bench ? 'no-bench' : 'no-rug'); }
+    if (st === 'teach') return 'line.arnor.teach';
+    return 'line.arnor.taught';
   }
+  function arnorLines(st) { return loreLines(arnorLineId(st)); }
   function villageSite() {               // a flat stretch of grass 22 by 16 tiles (14 by 12 until 2026-10-13: its houses were huts), far from the camp (1500 to 2400 units since 2026-10-14, 900 to 1600 before: a wander first; nearer only if the island has no room), from the island seed
     var R = kit.rng(spec.seed * 13 + 5), tries, best = null;
     for (tries = 0; tries < 900 && !best; tries++) {
@@ -16289,10 +16290,10 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var L, k;
     if (ring && ring.metal === 'bronze' && !seen.aslakRing) { L = loreLines('line.aslak.ring'); k = seen.aslakRingI || 0; f.say = L[k] || ''; seen.aslakRingI = k + 1; if (k + 1 >= L.length) seen.aslakRing = 1; }
     else if (!seen.ring && (seen.aslakI || 0) < (L = loreLines('line.aslak.story')).length) { k = seen.aslakI || 0; f.say = L[k]; seen.aslakI = k + 1; }
-    else { f.say = f.lines[f.line % f.lines.length]; f.line++; }
+    else { f.say = f.lines[f.line % f.lines.length]; f.line++; f.quietUntil = clock + FOLK_QUIET; }   /* (his story told: remarks, then quiet) */
     f.sayT = 6; save();
   }
-  function folkTalk(f) { if (f.aslak) { aslakTalk(f); return; } f.say = f.lines[f.line % f.lines.length]; f.line++; f.sayT = 5; if (f.role === 'fisherman' && f.line >= 4 && !seen.fishTaught) { seen.fishTaught = 1; toast('The fisherman taught you his dishes'); save(); } }
+  function folkTalk(f) { if (f.aslak) { aslakTalk(f); return; } f.say = f.lines[f.line % f.lines.length]; f.line++; f.sayT = 5; f.quietUntil = clock + FOLK_QUIET; if (f.role === 'fisherman' && f.line >= 4 && !seen.fishTaught) { seen.fishTaught = 1; toast('The fisherman taught you his dishes'); save(); } }
   // the villagers' life (2026-10-07, Robin: they all stood the same way): each idles their own way (an idle from lib.IDLES, a new one every
   // few seconds, blended over a third of a second), sits at the fire, and works at the spots their role gave them (chop at the block,
   // carry water from the well home, sweep the doorstep, hang the catch, fish at the shore, hammer by the smithy; lib.jobPose)
@@ -16527,11 +16528,20 @@ if (typeof module !== 'undefined') module.exports = Combat;
   }
   function musterClick() { var w0 = 150, x0 = Math.round((400 - w0) / 2), y0 = 60; if (!mouseS) return; hird.forEach(function (m, i) { var ry = y0 + 22 + i * 14; if (mouseS.x > x0 + 6 && mouseS.x < x0 + w0 - 6 && mouseS.y > ry - 2 && mouseS.y < ry + 11) { m.mustered = !m.mustered; m.follow = m.mustered; if (m.follow) { m.job = null; m.at = null; } save(); } }); }
   function nearNpc(P) { return npc && Math.hypot(P.x - npc.x, P.y - npc.y) < 40; }
+  /* Talking (2026-10-22, Robin: "You can keep standing and pressing E and he just keeps circling his lines ... You can also walk
+     away mid conv and the text just sits there, it should be removed if outside range"): talk follows the lore's modes. A story
+     (mode sequence) is told a line a press, and once told it is not told again (its state moves on); remarks (mode variants)
+     are one a talk, and then he goes back to what he was doing: no Talk for TALK_QUIET seconds, or until you have walked off and
+     come back, or until he has something new to say (another line set). Out of HEAR he stops: the line is gone from the board,
+     and a story waits where it was (the interrupted line is said again). Villagers the same (folkTalk). Distances in units. */
+  var HEAR = 130, TALK_QUIET = 20, FOLK_QUIET = 12;
   function talk() {
-    var st = arnorState(), L = arnorLines(st);
+    var st = arnorState(), id = arnorLineId(st), L = loreLines(id), story = !LORE[id] || LORE[id].mode === 'sequence';
     if (npc.st !== st) { npc.st = st; npc.line = 0; }
-    npc.say = L[npc.line % L.length]; npc.line++; npc.sayT = 5;
-    if (ring && seen.met && !RS.learnt.riposte && !RS.earned.riposte) { npc.say = 'A ring on your arm, I see. Then take this from me: meet the blow on your shield, and strike while they are still swinging.'; npc.sayT = 6; earnRune('riposte', 'Arnor showed you'); return; }   /* LORE? (my words, in-game) */
+    if (ring && seen.met && !RS.learnt.riposte && !RS.earned.riposte) { npc.say = loreLines('line.arnor.riposte', ['A ring on your arm, I see. Then take this from me: meet the blow on your shield, and strike while they are still swinging.'])[0]; npc.sayT = 6; earnRune('riposte', 'Arnor showed you'); return; }
+    if (!story) { npc.say = L[npc.line % L.length]; npc.line++; npc.sayT = 5; npc.quietUntil = clock + TALK_QUIET; return; }
+    if (npc.line >= L.length) { npc.quietUntil = clock + TALK_QUIET; return; }   // (told already; the state moves on as it ends, so this is only a guard)
+    npc.say = L[npc.line]; npc.line++; npc.sayT = 6;
     if (npc.line >= L.length) {          // heard it all: the story is known; the lesson is learnt
       if (st === 'meet' && !seen.met) { seen.met = 1; seen.build = 1; bigStep('Building', 'Press B. The plank house by the well wants its walls, a door and a roof.'); save(); }
       else if (st === 'teach' && !seen.raft) { seen.raft = 1; bigStep('The raft', 'Arnor has taught you the raft. Build the raft bench on the sand, at the water.'); save(); }
@@ -16555,6 +16565,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (npc.seq) {                         // to the graves, and what he says there
       if (arnorStep(dt)) return;
       var gv = village.graves, Lg = loreLines('line.arnor.graves'); npc.face = Math.atan2(gv.y - npc.y, gv.x - npc.x);
+      if (d > HEAR) { if (npc.sayT > 0 && npc.seq.i >= 0) { npc.sayT = 0; npc.seq.i--; } return; }   /* (you walked off: he waits, and says the cut line again when you are back) */
       if (npc.seq.i < 0 || npc.sayT <= 0.3) { npc.seq.i++; if (npc.seq.i < Lg.length) { npc.say = Lg[npc.seq.i]; npc.sayT = 6; } else { seen.graves = 1; npc.seq = null; npc.route = gv.route.slice().reverse().concat([npc.hub]); npc.at = null; save(); } }
       return;
     }
@@ -16609,10 +16620,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
   var signs = [];                          // words that are not a person's (2026-10-16): what is scratched or carved, shown on the speech board a while
   function sayAt(x, y, name, text, t) { signs = signs.filter(function (q) { return q.say !== text; }); signs.push({ x: x, y: y, name: name, say: text, until: clock + (t || 7), sayDur: t || 7 }); }
   function drawSpeech(c) {
-    signs = signs.filter(function (q) { q.sayT = q.until - clock; return q.sayT > 0; }); signs.forEach(function (q) { speakers.push(q); });
-    if (!speakers.length) return; var P = hero(), best = null, bd = 1e9, i;
+    var P = hero(), best = null, bd = 1e9, i;
+    signs = signs.filter(function (q) { q.sayT = q.until - clock; return q.sayT > 0 && Math.hypot(q.x - P.x, q.y - P.y) <= HEAR; }); signs.forEach(function (q) { speakers.push(q); });   /* (read and walked off: gone) */
+    if (!speakers.length) return;
     for (i = 0; i < speakers.length; i++) { var q = speakers[i], d = Math.hypot(q.x - P.x, q.y - P.y); if (d < bd) { bd = d; best = q; } }
-    speakers.length = 0; if (!best || bd > 260) return;
+    speakers.length = 0; if (!best || bd > HEAR) return;   /* (was 260: a line hung on the board long after you had walked off; Robin 2026-10-22) */
     var text = best.say || '', a = Math.min(1, best.sayT / 0.35) * Math.min(1, (best.sayDur || 5) - best.sayT + 0.35 > 0 ? 1 : 1);
     c.save(); c.globalAlpha = a; c.font = '500 7px system-ui, sans-serif';
     var words = text.split(' '), lines = [''], tw = 0; for (i = 0; i < words.length; i++) { var t2 = lines[lines.length - 1] + (lines[lines.length - 1] ? ' ' : '') + words[i]; if (c.measureText(t2).width > 228 && lines[lines.length - 1]) lines.push(words[i]); else lines[lines.length - 1] = t2; }
@@ -16651,6 +16663,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     }
     if (d < 160 && !npc.seq && !npc.moving) { var want = Math.atan2(P.y - npc.y, P.x - npc.x), diff = ((want - npc.face + Math.PI * 3) % (Math.PI * 2)) - Math.PI; npc.face += diff * Math.min(1, dt * 4); }
     if (npc.sayT > 0) npc.sayT -= dt;
+    if (d > HEAR) { if (npc.sayT > 0 && !npc.seq) npc.sayT = 0; npc.quietUntil = 0; }   /* (out of hearing: what he was saying is gone, and he will talk again when you come back) */
+    else if (npc.quietUntil > clock && !npc.joined) { var lid = arnorLineId(arnorState()); if (npc.quietLid && npc.quietLid !== lid) npc.quietUntil = 0; npc.quietLid = lid; } else npc.quietLid = null;   /* (something new to say: the quiet ends) */
     if (roofLaters.length && roomInfo && !bDirty) { roofLaters.forEach(function (rl) { var ri2 = roomInfo.at(rl.tx, rl.ty); if (ri2 >= 0) { if (!B.roofs) B.roofs = {}; B.roofs[roomInfo.rooms[ri2].id] = rl.m; } }); roofLaters = []; save(); }
     if (roofLater && roomInfo && !bDirty) { var ri = roomInfo.at(roofLater.tx, roofLater.ty); if (ri >= 0) { if (!B.roofs) B.roofs = {}; B.roofs[roomInfo.rooms[ri].id] = roofLater.m; save(); } roofLater = null; }
   }
@@ -16919,8 +16933,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     if (st) add(st, st.fallen ? 'Raise the stone (6 stone)' : 'Muster', st.fallen ? function () { if (canAfford({ stone: 6 })) { pay({ stone: 6 }); raiseStone(st); } else toast('It takes 6 stone to raise it'); } : muster);
     if (wp) add(wp, HD.jobs[jobOf(wp)].name + ': ' + fo.name, function () { if (!hirdAssign(P) && wp === st && !st.fallen) muster(); }, -6);   // a follower and a place to work: the work comes before the muster
     var hm = hirdNear(P); if (hm) add(hm, hm.sayT > 0 ? null : hm.follow ? 'Stay' : (hm === npc && !seen.raft ? 'Talk' : 'Follow me'), function () { hirdTalk(hm); });
-    if (nearNpc(P) && hm !== npc) add(npc, npc.sayT > 0 ? null : 'Talk', talk);
-    var fk = folkNear(P); if (fk && (fk.bound || (fk.role === 'thrall' && !fk.dead && !fk.gone))) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk) add(fk, fk.sayT > 0 ? null : 'Talk', function () { folkTalk(fk); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
+    if (nearNpc(P) && hm !== npc && !(npc.quietUntil > clock)) add(npc, npc.sayT > 0 ? null : 'Talk', talk);   /* (quiet after a remark: talking above) */
+    var fk = folkNear(P); if (fk && (fk.bound || (fk.role === 'thrall' && !fk.dead && !fk.gone))) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk && !(fk.quietUntil > clock)) add(fk, fk.sayT > 0 ? null : 'Talk', function () { folkTalk(fk); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
     var ym = yieldedNear(P); if (ym) add(ym, 'Let ' + (hisHer(ym) === 'her' ? 'her' : 'him') + ' go', function () { letGo(ym); }, -6);
     var rk = rackUsable(P); if (rk) add(rk, rackCured(rk) ? 'Collect leather' : 'Hang hide', function () { rackUse(rk); });
     var bb = berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });
