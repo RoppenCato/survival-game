@@ -432,3 +432,8 @@ far in, and whether he should, are yours to change.
 **The trolls, the old ones updated (2026-10-22, your "go with the old (updated)"):** all six are in: the cave troll, the forest
 troll, the Gape, the three-headed troll, Trollmor and Hårungen, in the chosen tones with deeper colours and broader locks. Their
 idles are smooth (sixteen frames), and their feet hold to the ground as they walk.
+
+**The hero jogs at 78, and his cloak swings (2026-10-22, your "id prefer a better jogging ... around 75-80"):** his normal pace is
+now the studio's new jog at 78 units a second, made for that speed so his feet stay planted. His cloak now trails behind him,
+bounces with each stride and lags behind his turns. Yesterday's 60 walk is still there under Admin, "The hero walks at 60", if
+you want to compare.

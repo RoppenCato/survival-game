@@ -21,7 +21,9 @@ from mathutils import Vector, Matrix
 argv = sys.argv[sys.argv.index('--') + 1:]
 IN, OUT = os.path.abspath(argv[0]), os.path.abspath(argv[1])
 def opt(k, d): return tuple(float(v) for v in argv[argv.index(k) + 1].split(',')) if k in argv else d
-UNITS_PER_M = 39 / 1.632                                  # the kit's figure: 1.632 m to the top of the head, drawn 39 units tall
+UNITS_PER_M = 320 / 2.02 / 2 / 3                          # 2026-10-21 fix: a ground metre is 79.2 sheet px (the render's 158.4 px a metre, halved by the packer) and the
+                                                          # game draws 3 px a unit, so 26.4 units a metre; the first clips used 39 / 1.632 = 23.9 (the hero's height on screen,
+                                                          # foreshortened by the camera's tilt, over his true height) and their strides were 10.5 per cent short
 SPEED = {'walk': 84 / UNITS_PER_M, 'run': 130 / UNITS_PER_M}   # the game's walking and sprinting speeds (src/combat.js: 84, x1.55), in the rig's metres a second
 # 2026-10-21, second pass: the first numbers (hips 8.5 cm down, the back curled forward, fists before the chest) made a crouched scurry;
 # now the hips sit 2.5 and 5 cm down (2.5 once the foot pitch was fixed, the third pass); 'apart' is the ball's side offset: the toes
@@ -39,6 +41,20 @@ GAIT = {   # N frames a loop, T seconds a loop, beta (each foot's share of the l
     'run': dict(N=int(opt('--run', (10, 0.5, 0.25))[0]), T=opt('--run', (10, 0.5, 0.25))[1], beta=opt('--run', (10, 0.5, 0.25))[2], lift=0.30, drop=0.05, bob=0.028, lean=11, arm=48, bend=85, apart=0.115,
             spine=(1, 1, 1), neck=0.4, head=0.02, back=10,
             sway=0.014, pelvis_yaw=10, pelvis_roll=4, chest_yaw=14, side=0.5, lean_osc=2.5, head_hold=0.75, arm_lag=0.04, fore_lag=0.08, fore_swing=12),
+    # the fastest walk for his build (2026-10-21; Robin, through the developer: test the hero walking instead of jogging, "push it to
+    # the limit"): one foot always down (beta just over a half, no moment in the air), a long step and a quick cadence; the legs'
+    # reach sets the ceiling: with the foot rolling right the planted foot travels 0.7 m under him, so even 60 units a second locks,
+    # but the steps get frantic and the knees deep; 55 with 0.58 s a loop (207 steps a minute) and the hips 5 cm down reads as a power walk
+    'walk_fast': dict(N=12, T=0.58, beta=0.505, lift=0.09, drop=0.05, bob=-0.012, lean=5, arm=30, bend=45, apart=0.125, speed=55, back=6,
+                      spine=(1, 1, 1), neck=0.3, head=0.0, sway=0.022, pelvis_yaw=10, pelvis_roll=4, chest_yaw=11, side=0.5, lean_osc=1.2,
+                      head_hold=0.75, arm_lag=0.05, fore_lag=0.08, fore_swing=18),
+    # the jog as the normal pace (2026-10-22; Robin: "Im using a speed up walking atm, but id prefer a better jogging. I think the normal
+    # pace needs to be around 75-80 as now its actually too slow"): made for 78 units a second (2.95 m/s); a real jog, not the hop the
+    # first one was (beta 0.22, more air than ground): each foot a third of the loop down, a soft bounce lowest at mid-stance, the
+    # elbows bent near a right angle and the arms swinging short, a light lean, the head steady; 12 frames a 0.62 s loop (194 steps a minute)
+    'jog': dict(N=12, T=0.62, beta=0.33, lift=0.17, drop=0.03, bob=0.03, lean=6, arm=26, bend=88, apart=0.125, back=8, speed=78,
+                spine=(1, 1, 1), neck=0.3, head=0.0, sway=0.016, pelvis_yaw=7, pelvis_roll=4, chest_yaw=9, side=0.5, lean_osc=1.8,
+                head_hold=0.8, arm_lag=0.04, fore_lag=0.06, fore_swing=10),
     # a real walk, for Robin to see beside the jog (2026-10-21; demo: built only when named with --only): at 34 units a second
     # (1.4 m/s, 40 per cent of the game's 84) a man of his build can walk with both feet down a moment each step and no flight:
     # the body vaults over the planted leg (highest at mid-stance, bob < 0), the feet skim, the arms hang and swing from the shoulder
@@ -70,7 +86,7 @@ PEOPLE = {
 if '--table' in argv and argv[argv.index('--table') + 1] == 'people': GAIT = PEOPLE
 ONLY = argv[argv.index('--only') + 1].split(',') if '--only' in argv else None   # rebuild only these clips
 import json
-for _k, _e in (('walk', 'GAIT_W'), ('run', 'GAIT_R'), ('block_walk', 'GAIT_B'), ('block_wpn_walk', 'GAIT_B'), ('jog', 'GAIT_J'), ('carry_walk', 'GAIT_C')):     # trials without editing: GAIT_W='{"drop":0.04}' and so on
+for _k, _e in (('walk', 'GAIT_W'), ('run', 'GAIT_R'), ('block_walk', 'GAIT_B'), ('block_wpn_walk', 'GAIT_B'), ('jog', 'GAIT_J'), ('carry_walk', 'GAIT_C'), ('walk_fast', 'GAIT_F')):     # trials without editing: GAIT_W='{"drop":0.04}' and so on
     if os.environ.get(_e) and _k in GAIT: GAIT[_k].update(json.loads(os.environ[_e]))
 bpy.ops.wm.open_mainfile(filepath=IN)
 sc = bpy.context.scene; rig = next(o for o in sc.objects if o.type == 'ARMATURE'); FPS = sc.render.fps

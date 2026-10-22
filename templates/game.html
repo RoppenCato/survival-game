@@ -424,13 +424,13 @@ __COMBAT__
     if (!away && shieldHeld()) { var pt = shieldPaint(); L.push({ l: 'shieldRim' }); L.push({ l: 'shieldFace', t: equip.shield.mat === 'wood' ? S.shield : pt.face }); if (pt.mark) L.push({ l: 'shieldMark', t: pt.mark }); }
     return Sprites.lookId({ L: L.filter(function (q) { return has(q.l); }), s: 1, sx: 1, sy: 1 });
   }
-  /* The hero's gait (Robin, 2026-10-21: "walking with 60 speed looks more natural. Lets use that. But save the jog in case we change
-     our minds later"): he walks at 60 on the kit's walk_fast (the engine's Combat.HERO_GAIT); Admin's "The hero jogs (the old gait)"
-     brings the jog back whole, the kit's walk clip at 84, for as long as it is on. */
-  function jogging() { return typeof ADMIN !== 'undefined' && !!ADMIN && !!ADMIN.jog && !!(sprHero && sprHero.meta && sprHero.meta.anims.walk); }
-  function gaitSync() { Combat.HERO_GAIT.walk = jogging() ? Combat.HERO_GAIT.jog : 60; }
+  /* The hero's gait (Robin, 2026-10-22: "id prefer a better jogging. I think the normal pace needs to be around 75-80 as now its
+     actually too slow"; on 2026-10-21 it was a walk at 60): he jogs at 78 on the kit's jog, the studio's clip made for that pace
+     (the engine's Combat.HERO_GAIT); Admin's "The hero walks at 60" brings back yesterday's walk_fast at 60 while it is on. */
+  function strolling() { return typeof ADMIN !== 'undefined' && !!ADMIN && !!ADMIN.stroll && !!(sprHero && sprHero.meta && sprHero.meta.anims.walk_fast); }   /* (2026-10-22: the hero jogs at 78 on the kit's jog; Admin's "The hero walks at 60" brings back yesterday's walk_fast at 60, to compare) */
+  function gaitSync() { Combat.HERO_GAIT.walk = strolling() ? Combat.HERO_GAIT.stroll : (sprHero && sprHero.meta && sprHero.meta.anims.jog ? 78 : 60); }
   function attachKit() {                 // the hero as the game draws him (the models scene swaps the figure and comes back to this)
-    Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers, look: heroLook, walkClip: function () { return jogging() ? 'walk' : null; } });
+    Sprites.attach(Combat, sprHero, { scale: function () { return Sprites.scaleOf(localStorage); }, tool: function () { var tl = handItem('gather'); return tl ? tl.kind : null; }, shadow: function () { return !inCave; }, lit: function (P) { return figLit(P.x, P.y, true, 40); }, shadowHue: kit.STYLE.shadowHue, layers: handLayers, look: heroLook, walkClip: function () { return strolling() ? 'walk_fast' : null; } });
     var hd0 = Combat.api.heroSprite; if (hd0) Combat.api.heroSprite = function (c, x, y, face, an, dashing) { if (!shipHero && raft && raft.aboard && Yard.isShip(raft.kind)) return; var PH = hero(), md = inCave ? 1 : mouthDark(PH.x, PH.y); if (md < 1) { c.save(); c.filter = 'brightness(' + md.toFixed(3) + ')'; hd0(c, x, y, face, an, dashing); c.restore(); return; } hd0(c, x, y, face, an, dashing); };   /* (in the troll cave's mouth he goes dark with depth: MOUTH) */
   }
   attachKit();   /* (aboard a ship, drawShip draws him in the ship's depth order) */
@@ -445,7 +445,7 @@ __COMBAT__
   var SHEET_NEAR = 900, SHEET_HOLD = 60, sheetNear = {}, sheetT = 0, heroLookWarmed = '';
   function sheetTick(dt) {
     sheetT += dt; if (sheetT < 0.25) return; sheetT = 0;
-    if (sprHero && sprHero.kit) { var lk = heroLook(Math.PI / 2); if (lk && lk.id !== heroLookWarmed) { heroLookWarmed = lk.id; Sprites.peopleWarm(sprHero, lk, ['idle', 'walk', 'run', 'attack1', 'attack2', 'thrust', 'chop', 'mine', 'hit', 'block', 'block_walk', 'block_wpn', 'block_wpn_walk']); } }
+    if (sprHero && sprHero.kit) { var lk = heroLook(Math.PI / 2); if (lk && lk.id !== heroLookWarmed) { heroLookWarmed = lk.id; Sprites.peopleWarm(sprHero, lk, ['idle', 'jog', 'walk', 'run', 'attack1', 'attack2', 'thrust', 'chop', 'mine', 'hit', 'block', 'block_walk', 'block_wpn', 'block_wpn_walk']); } }
     var P = hero(), W = Combat.dbg().W, near = {}, bk;
     (W.enemies || []).forEach(function (e) { if (e.dead || !e.kind || !BEASTS[e.kind]) return; if (Math.hypot(e.x - P.x, e.y - P.y) < SHEET_NEAR) near[e.kind] = 1; });
     for (bk in BEASTS) { if (near[bk]) { sheetNear[bk] = clock; Sprites.warm(BEASTS[bk]); } else if (Sprites.loaded(BEASTS[bk]) && (sheetNear[bk] == null || clock - sheetNear[bk] > SHEET_HOLD)) { Sprites.unload(BEASTS[bk]); delete sheetNear[bk]; } }
@@ -1841,7 +1841,7 @@ __COMBAT__
      when the sea is in sight, its water drawn over the painted sea before the world's things, what swims among them by depth,
      the gulls over everything. A shore point near the hero (the nearest coast, looked for every two seconds) is where the gulls
      circle when there is no ship. */
-  var KEEP_HERO = ['idle', 'idle_look', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn'], KEEP_PEOPLE = ['idle', 'idle_look', 'walk', 'jog', 'run', 'sit'], trimT = 0;
+  var KEEP_HERO = ['idle', 'idle_look', 'jog', 'walk', 'run', 'attack1', 'attack2', 'hit', 'block', 'block_wpn'], KEEP_PEOPLE = ['idle', 'idle_look', 'walk', 'jog', 'run', 'sit'], trimT = 0;
   function trimTick(dt) {                  /* the hero's and the people's sheets of clips not drawn for two minutes let go (2026-10-21: the kit warmed eleven clips at the start and kept every clip ever used; now the resident set is what the last minutes used) */
     if ((trimT += dt) < 5) return; trimT = 0; if (sprHero) Sprites.trim(sprHero, KEEP_HERO, 120); if (PEOPLE) Sprites.trim(PEOPLE, KEEP_PEOPLE, 120);
   }
@@ -3845,7 +3845,7 @@ __COMBAT__
   // panels: the inventory (Tab) and the hearth (E). Rows are remembered so clicks can find them.
 
   /* ---------- Admin: cheats for testing, in the Escape menu (Robin, 2026-10-06). Toggles persist in game.admin ---------- */
-  var ADMIN = { immortal: false, oneshot: false, free: false, fly: false, fullres: false, fps: false, triple: false, jog: false }, adminOpen = false;
+  var ADMIN = { immortal: false, oneshot: false, free: false, fly: false, fullres: false, fps: false, triple: false, stroll: false }, adminOpen = false;
   try { var ad0 = JSON.parse(localStorage.getItem('game.admin')); if (ad0) for (var ak in ADMIN) if (ad0[ak] != null) ADMIN[ak] = !!ad0[ak]; } catch (e) {}
   gaitSync();   // the walk at 60, or the kept jog if Admin's switch is on
   fitCanvas();
@@ -3859,7 +3859,7 @@ __COMBAT__
     { id: 'fps', name: 'Show frame time', text: 'Frames a second, milliseconds and the frame\u2019s parts, bottom left. The frame log is kept whether this shows or not.', toggle: true },
     { id: 'trees', get name() { var k = 'old'; try { k = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} return 'Trees: ' + ((World.TREE_SHAPES[k] || World.TREE_SHAPES.old)[2]); }, text: 'How big the trees are drawn: as before (the default), twice their old size, one and a half, or tall and thin. The page reloads.' },
     { id: 'triple', name: 'Threefold drops', text: 'For testing: trees, rocks, bushes, berries, beasts, the weir and the veins give three times as much.', toggle: true },
-    { id: 'jog', name: 'The hero jogs (the old gait)', text: 'He jogs at 84 as he did before 2026-10-21 instead of walking at 60; Shift still sprints. Kept in case the jog comes back.', toggle: true },
+    { id: 'stroll', name: 'The hero walks at 60 (yesterday\u2019s pace)', text: 'He walks at 60 on the power walk as on 2026-10-21 instead of jogging at 78; Shift still sprints. To compare the two.', toggle: true },
     { id: 'errlog', name: 'Download the error log', text: 'Saves errorlog.txt: every error the page caught, with the time, the day and what was happening. Put it in the project folder.' },
     { id: 'stuff', name: 'Plenty of everything', text: '25 of every material into the bag.' },
     { id: 'reveal', name: 'Reveal the chart', text: 'The steading, every village and the cave known; the raft taught.' },
@@ -3933,7 +3933,7 @@ __COMBAT__
     if (id === 'back') { adminOpen = false; return; }
     if (id === 'trees') { var tk = ['old', 'big', 'mid', 'tall'], cur0 = 'old'; try { cur0 = localStorage.getItem('game.trees') || 'old'; } catch (eT) {} var nx = tk[(tk.indexOf(cur0) + 1) % tk.length]; try { localStorage.setItem('game.trees', nx); save(); } catch (eT) {} location.reload(); return; }
     if (id === 'lab') { labOpen = true; return; }
-    if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'fullres') fitCanvas(); if (id === 'jog') { gaitSync(); toast(ADMIN.jog ? 'The hero jogs at 84, the old gait' : 'The hero walks at 60'); } return; }
+    if (row && row.toggle) { ADMIN[id] = !ADMIN[id]; saveAdmin(); if (id === 'fullres') fitCanvas(); if (id === 'stroll') { gaitSync(); toast(ADMIN.stroll ? 'The hero walks at 60, yesterday\u2019s pace' : 'The hero jogs at 78'); } return; }
     if (id === 'perflog') { perfDownload(); return; }
     if (id === 'errlog') { errDownload(); return; }
     if (id === 'stuff') { ORDER.forEach(function (k) { addItem(k, 25); seen[k] = 1; }); toast('Plenty of everything'); }

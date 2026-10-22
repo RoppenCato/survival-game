@@ -16,7 +16,7 @@ var api = { onBlood: null, sfx: function () {}, facings8: true, heroSprite: null
 /* The hero's speeds in units a second (Robin, 2026-10-21: "walking with 60 speed looks more natural. Lets use that. But save the
    jog in case we change our minds later"): he walks at 60 on the kit's walk_fast and sprints at 130 on the run; the guard walk keeps
    46.2. The jog he had is kept whole: walk 84 with the kit's walk clip (a page's switch: Combat.HERO_GAIT, Sprites.pick's walkClip). */
-var HERO_GAIT = { walk: 60, sprint: 130, guard: 46.2, jog: 84, sprintSt: 18 };   // sprintSt: stamina a second at a sprint (22 until 2026-10-21; Robin: "lower the stamina cost slightly for sprint to compensate, as you will sprint more"; 18 is mine)
+var HERO_GAIT = { walk: 78, sprint: 130, guard: 46.2, stroll: 60, jog: 84, sprintSt: 18 };   /* walk 78 on the kit's jog since 2026-10-22 (Robin: "id prefer a better jogging. I think the normal pace needs to be around 75-80 as now its actually too slow"; the studio's jog is made for 78); stroll: yesterday's 60 on walk_fast, a page's switch; jog: the first jog's 84, kept as a number */   // sprintSt: stamina a second at a sprint (22 until 2026-10-21; Robin: "lower the stamina cost slightly for sprint to compensate, as you will sprint more"; 18 is mine)
 function mod(k) { var m = api.mods ? api.mods() : null; return m && m[k] != null ? m[k] : 1; }
 function modZ(k) { var m = api.mods ? api.mods() : null; return m && m[k] ? m[k] : 0; }   // a rune's switch: 0 unless the page says so
 function maxSt() { var m = api.mods ? api.mods() : null; return m && m.stMax ? m.stMax : 100; }   // food can raise top stamina (mods().stMax)   // armor(): share of a blow the hero's gear turns aside

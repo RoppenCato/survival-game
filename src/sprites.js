@@ -101,7 +101,7 @@
       if (H.blk > 0.5 && A[bkW]) return { a: bkW, f: A[bkW].stride > 0 ? strideFrame(A[bkW], dd, sc) : loopFrame(A[bkW], t * 0.62) };   /* (he walks at about half his pace with it up) */
     }
     if (an && an.sit && A.sit) { var ls = loopAt(A.sit, t); return { a: 'sit', f: ls.f, f2: ls.f2, w: ls.w }; }
-    var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (opts.walkClip && A[opts.walkClip] ? opts.walkClip : (A.walk_fast ? 'walk_fast' : (A.walk ? 'walk' : 'idle')))) : 'idle';   /* (the kit walks on walk_fast since 2026-10-21; walkClip: a page's other walk, the kept jog's 'walk') */
+    var moving = an && an.amt > 0.35, nm2 = moving ? (P.sprinting && A.run ? 'run' : (opts.walkClip && A[opts.walkClip] ? opts.walkClip : (A.jog ? 'jog' : (A.walk_fast ? 'walk_fast' : (A.walk ? 'walk' : 'idle'))))) : 'idle';   /* (the kit walks on walk_fast since 2026-10-21; walkClip: a page's other walk, the kept jog's 'walk') */
     if (!A[nm2]) return null;                                          // a sheet set with no such clip draws nothing (it threw)
     if (nm2 === 'idle') { var li = loopAt(A.idle, t); return { a: 'idle', f: li.f, f2: li.f2, w: li.w }; }
     return { a: nm2, f: gait(A[nm2], dd, t, sc) };
