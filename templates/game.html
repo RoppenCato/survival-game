@@ -1041,7 +1041,7 @@ __COMBAT__
       if (o.x < cam.x - hw - ph || o.x > cam.x + hw + 20 || o.y * K < cam.y - hh - 10 || o.y * K > cam.y + hh + ph) return;
       var g = o.grow != null ? 0.3 + 0.7 * Math.min(1, o.grow) : 1; w.castShadow(c, o.x, o.y * K, s.w * sS * g, ph * g, sk); }); }
     B.items.forEach(function (it) {
-      if (it.lvl || it.flat || it.fallen || it.light || it.wall || Math.abs(it.x - cam.x) > hw + 140 || Math.abs(it.y * K - cam.y) > hh + 140) return;   /* (it.wall: what hangs on a wall, Colin, AD's hangings and the window boxes, lanterns and signs) */
+      if (it.lvl || it.flat || it.fallen || it.light || it.wall || Math.abs(it.x - cam.x) > hw + (it.box ? 480 : 140) || Math.abs(it.y * K - cam.y) > hh + (it.box ? 480 : 140)) return;   /* (it.wall: what hangs on a wall, Colin, AD's hangings and the window boxes, lanterns and signs) */
       var F = fireArt(it); if (F) { w.castShadow(c, it.x, it.y * K, F.w * F.upp, F.h * F.upp * 0.35, sk); return; }   /* a fire: its base's shadow */
       var s = sprite(it.name, it.v || 0); if (s.h < 10) return; w.castShadow(c, it.x, it.y * K, s.w, s.h, sk);
     });
@@ -3475,17 +3475,34 @@ __COMBAT__
      and Refit (its look, name and fitting changed here; a new fitting is paid). E or Esc closes it, and so does walking off. */
   var shipPanel = null, SPB = { x: 746, y: 120, w: 430, h: 610 }, spRects = [];
   function spModelKnown(m) { return !!seen[m.key]; }
+  function shipNameRoll(model, not) {      // a name from the lore's pool for the model (names.ships.<model>, Alistair, LD's handoff 9), one no ship of yours has; no ship is ever called the Serpent
+    var L = LORE['names.ships.' + model], list = (L && L.list) || [], free = list.filter(function (n) { return n !== not && !fleet.some(function (v) { return v.name === n; }); }), pool = free.length ? free : list;
+    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : Yard.HULLS[(Yard.MODELS.filter(function (m) { return m.id === model; })[0] || { sizes: ['rowboat'] }).sizes[0]].name;
+  }
   function spOpen(bench) {
     var ms = Yard.MODELS.filter(spModelKnown); if (!ms.length) { toast('You do not know how to build a boat yet. Someone must show you.'); return; }
-    var k = ms[0].sizes[0]; shipPanel = { bench: bench, tab: 'new', model: ms[0].id, kind: k, look: Yard.lookDefault(), fit: null, name: Yard.HULLS[k].name, typing: false, refit: null }; spPrev();
+    var k = ms[0].sizes[0]; shipPanel = { bench: bench, tab: 'new', model: ms[0].id, kind: k, look: Yard.lookDefault(), fit: null, name: shipNameRoll(ms[0].id), autoName: true, typing: false, refit: null }; spPrev();
     invOpen = false; menu = null; mapOpen = false; bookOpen = false; store = null; sfx('pick');
   }
   function spClose() { if (!shipPanel) return; shipPanel = null; }
   function spSizeOf(kind) { var t = spSizeOf.c || (spSizeOf.c = {}), ck = kind + (Yard.artOf({ kind: kind }) ? ':model' : ''); if (!t[ck]) { var v = { x: 0, y: 0, h: 0, kind: kind, parts: Yard.designParts(kind, {}) }; Yard.fit(v); t[ck] = { hw: v.hw, hh: v.hh }; } return t[ck]; }
-  function spLaunch(bench, kind, skip) {   // clear water by the yard for a hull of this size, away from your other ships (a naust's off its slipway's end)
+  function onSlip(bench, x, y, sz) {       // a hull there would lie over the naust's slipway
+    if (!bench.slip || !bench.door) return false; var ax = bench.slip.x - bench.door.x, ay = bench.slip.y - bench.door.y, L = Math.hypot(ax, ay) || 1, ux = ax / L, uy = ay / L, along = (x - bench.door.x) * ux + (y - bench.door.y) * uy, across = Math.abs(-(x - bench.door.x) * uy + (y - bench.door.y) * ux);
+    return along > -sz.hw && along < L + sz.hw * 0.6 && across < 40 + sz.hh;
+  }
+  function slipSpot(bench, kind, skip) {   // beside the slipway on the side toward you (south of it; east of one that runs north or south), parallel to it, bow out to sea
+    if (!bench.slip || !bench.door) return null; var sz = spSizeOf(kind), ax = bench.slip.x - bench.door.x, ay = bench.slip.y - bench.door.y, L = Math.hypot(ax, ay) || 1, ux = ax / L, uy = ay / L, h = Math.atan2(uy, ux), px = -uy, py = ux, k, j;
+    if (Math.abs(uy) > 0.7) { px = 1; py = 0; } else if (py < 0) { px = -px; py = -py; }   /* (the side toward the camera: south of an east-west slipway, east of a north-south one) */
+    for (j = 0; j < 8; j++) for (k = 0; k < 6; k++) { var off = 46 + sz.hh + j * 18, al = L - sz.hw * 0.25 + k * 24, x = bench.door.x + ux * al + px * off, y = bench.door.y + uy * al + py * off;
+      if (onSlip(bench, x, y, sz) || fleet.some(function (v) { return v !== skip && !v.stowed && Math.hypot(v.x - x, v.y - y) < (v.hw || 21) + sz.hw * 0.7 + 10; })) continue;
+      if (raftHull(x, y, h, sz)) return { x: x, y: y, h: h }; }
+    return null;
+  }
+  function spLaunch(bench, kind, skip) {   // clear water by the yard for a hull of this size, away from your other ships (a naust's beside its slipway)
+    var near0 = slipSpot(bench, kind, skip); if (near0) return near0;
     var sz = spSizeOf(kind), r, a, b, h, best = null, o0 = bench.slip || bench;
     for (r = bench.slip ? 0 : 40; r < 520 && !best; r += 14) for (a = 0; a < 6.283 && !best; a += 0.26) { var x = o0.x + Math.cos(a) * r, y = o0.y + Math.sin(a) * r;
-      if (fleet.some(function (v) { return v !== skip && !v.stowed && Math.hypot(v.x - x, v.y - y) < (v.hw || 21) + sz.hw + 10; })) continue;
+      if (onSlip(bench, x, y, sz) || fleet.some(function (v) { return v !== skip && !v.stowed && Math.hypot(v.x - x, v.y - y) < (v.hw || 21) + sz.hw + 10; })) continue;
       for (b = 0; b < 8 && !best; b++) { h = a + b * 0.785; if (raftHull(x, y, h, sz)) best = { x: x, y: y, h: h }; } }
     return best;
   }
@@ -3493,10 +3510,10 @@ __COMBAT__
   function spCost() { var sp = shipPanel, c0 = {}, k, add = function (o) { for (k in o) c0[k] = (c0[k] || 0) + o[k]; }; if (!sp.refit) add(Yard.HULLS[sp.kind].cost); if (sp.fit && Yard.FITTINGS[sp.fit] && (!sp.refit || sp.refit.fit !== sp.fit)) add(Yard.FITTINGS[sp.fit].cost); return c0; }
   function spBuild() {
     var sp = shipPanel, cost = spCost(); if (!canAfford(cost)) { toast('It needs ' + costText(cost)); return; }
-    var at = spLaunch(sp.bench, sp.kind); if (!at) { toast('No clear water by the yard for her'); return; }
+    var at = sp.at && raftHull(sp.at.x, sp.at.y, sp.at.h, spSizeOf(sp.kind)) ? sp.at : spLaunch(sp.bench, sp.kind); if (!at) { toast('No clear water by the yard for her'); return; }   /* (she is built where she was shown) */
     pay(cost); var v = addShip({ x: at.x, y: at.y, h: at.h, kind: sp.kind, look: JSON.parse(JSON.stringify(sp.look)), fit: sp.fit, name: (sp.name || '').trim() || Yard.HULLS[sp.kind].name }); if (!(raft && raft.aboard)) raft = v;
     if (npc && !npc.joined && seen.met && !seen.shore && sp.kind === 'rowboat' && isleAt(v.x, v.y) === 0) arnorToShore(sp.bench);   /* Arnor comes down to see you off (line.arnor.shore) */
-    sp.bench.launched = true; toast(v.name + ' is afloat'); sfx('craft'); spPrev(); save();
+    sp.bench.launched = true; toast(v.name + ' is afloat'); sfx('craft'); sp.tab = 'ships'; sp.typing = false; sp.name = null; spPrev(); save();   /* (the panel turns to Your ships: the one you made is the one afloat, no second shown beside her; Robin, 2026-10-23) */
   }
   function spSummon(v) {
     var sp = shipPanel; if (v.aboard) return; var at = spLaunch(sp.bench, v.kind, v); if (!at) { toast('No clear water by the yard for her'); return; }
@@ -3545,10 +3562,12 @@ __COMBAT__
       }
       var H = Yard.HULLS[sp.kind], rig = !!H.mast, L = sp.look;
       y = 112; label('Model', y + 18);
-      Yard.MODELS.filter(spModelKnown).forEach(function (m, k) { btn(100 + k * 104, y, 98, 26, m.name, sp.model === m.id, function () { if (sp.refit) return; sp.model = m.id; var oldDefault = !sp.name || Yard.MODELS.some(function (q) { return q.sizes.some(function (z) { return Yard.HULLS[z].name === sp.name; }); }); sp.kind = m.sizes[0]; if (oldDefault) sp.name = Yard.HULLS[sp.kind].name; spPrev(); }, !!sp.refit && sp.model !== m.id); });
+      Yard.MODELS.filter(spModelKnown).forEach(function (m, k) { btn(100 + k * 104, y, 98, 26, m.name, sp.model === m.id, function () { if (sp.refit) return; var wasModel = sp.model; sp.model = m.id; sp.kind = m.sizes[0]; if (sp.autoName && wasModel !== m.id) sp.name = shipNameRoll(m.id); spPrev(); }, !!sp.refit && sp.model !== m.id); });   /* (a name the dice gave changes with the model; one you typed stays) */
       y += 34; label('Size', y + 18);
       var M = Yard.MODELS.filter(function (m) { return m.id === sp.model; })[0]; M.sizes.forEach(function (z, k) { btn(100 + k * 104, y, 98, 26, Yard.HULLS[z].size, sp.kind === z, function () { if (sp.refit) return; sp.kind = z; spPrev(); }, !!sp.refit && sp.kind !== z); });
-      y += 36; label('Name', y + 19); c.save(); hVellum(c, 100, y, 306, 28); c.restore(); hText(c, (sp.name || '') + (sp.typing && Math.floor(clock * 2) % 2 ? '|' : ''), 110, y + 20, hf('bold', 15), HC.ink); spRects.push({ x: 100, y: y, w: 306, h: 28, act: function () { sp.typing = true; } });
+      if (!sp.name && sp.tab === 'new' && !sp.refit) { sp.name = shipNameRoll(sp.model); sp.autoName = true; }
+      y += 36; label('Name', y + 19); c.save(); hVellum(c, 100, y, 246, 28); c.restore(); hText(c, (sp.name || '') + (sp.typing && Math.floor(clock * 2) % 2 ? '|' : ''), 110, y + 20, hf('bold', 15), HC.ink); spRects.push({ x: 100, y: y, w: 246, h: 28, act: function () { sp.typing = true; } });
+      btn(352, y, 54, 28, 'Roll', false, function () { sp.name = shipNameRoll(sp.model, sp.name); sp.autoName = true; sp.typing = false; spPrev(); });   /* (the dice: another of the lore's names for the model) */
       y += 40;
       if (rig) {
         label('Sail', y + 16); Yard.LOOK.sail.forEach(function (col, k) { sw(100 + k * 38, y, col, L.sailA === col, function () { L.sailA = col; spPrev(); }); }); y += 30;
@@ -3577,8 +3596,8 @@ __COMBAT__
   function shipPanelKey(e) {               // typing the ship's name
     var sp = shipPanel; if (!sp || !sp.typing) return false; e.preventDefault();
     if (e.key === 'Enter' || e.key === 'Escape') { sp.typing = false; spPrev(); return true; }
-    if (e.key === 'Backspace') { sp.name = (sp.name || '').slice(0, -1); return true; }
-    if (e.key.length === 1 && /[A-Za-z\u00c0-\u00ff' -]/.test(e.key) && (sp.name || '').length < 18) { sp.name = (sp.name || '') + e.key; spPrev(); }
+    if (e.key === 'Backspace') { sp.name = (sp.name || '').slice(0, -1); sp.autoName = false; return true; }
+    if (e.key.length === 1 && /[A-Za-z\u00c0-\u00ff' -]/.test(e.key) && (sp.name || '').length < 18) { sp.name = (sp.name || '') + e.key; sp.autoName = false; spPrev(); }
     return true;
   }
   function drawSpeech(c) {
@@ -5163,7 +5182,11 @@ __COMBAT__
   var LB_PIC = { 'person.thorgunna': 'graveThorgunna' }, LB_TABS = [['people', 'People'], ['creatures', 'Creatures'], ['places', 'Places']];
   function learn(key) { var e = book[key] || (book[key] = { slain: 0 }); e.slain++; save(); }   // a beast killed (what opens a creature's later paragraph)
   function lbTabOf(id) { var k = (LOREBOOK[id] || {}).kind; return k === 'person' || k === 'family' ? 'people' : k === 'beast' || k === 'being' ? 'creatures' : k === 'place' ? 'places' : null; }
-  function lbMeet(id) { if (!id || !LOREBOOK[id]) return; if (!seen.lb) seen.lb = {}; if (seen.lb[id]) return; seen.lb[id] = { day: day.n }; save(); }
+  function lbMeet(id) { if (!id || !LOREBOOK[id]) return; if (!seen.lb) seen.lb = {}; if (seen.lb[id]) return; seen.lb[id] = { day: day.n }; if (LOREBOOK[id].book) lbPop(id, false); save(); }
+  /* What says the book has a new page (Robin, 2026-10-23: "The lore book icon shouldnt be shown at the top all the time. Maybe there
+     can just be a small pop-up saying 'Lore added about X'"): a short note when a page opens, and again when its later paragraph
+     does; the first one carries its key. The icon by the chart is gone; L opens the book. */
+  function lbPop(id, more) { var nm = (LOREBOOK[id] && LOREBOOK[id].title) || id; toast((more ? 'More lore about ' : 'Lore added about ') + nm + (seen.lbKey ? '' : '  (L)')); seen.lbKey = 1; }
   function lbPages(tab) { var out = [], id; if (!seen.lb) return out; for (id in seen.lb) if (LOREBOOK[id] && LOREBOOK[id].book && lbTabOf(id) === tab) out.push(id); return out.sort(function (a, b) { return (seen.lb[a].day - seen.lb[b].day) || (a < b ? -1 : 1); }); }
   function lbHasAny() { return LB_TABS.some(function (t) { return lbPages(t[0]).length > 0; }); }
   function lbMoreOpen(id) { var e = LOREBOOK[id], a, bk; if (!e || !e.book_more) return false; a = e.book_more_after || ''; if (a === 'line.arnor.graves') return !!seen.graves; if (a === 'killed') { bk = LORE_BEAST[id]; return !!(bk && book[bk] && book[bk].slain > 0); } return false; }
@@ -5179,6 +5202,7 @@ __COMBAT__
   }
   function lbTick(dt) {                     // a creature met: seen within LB_SEE units; and a blow closes the book
     if ((lbT += dt) < 0.5) return; lbT = 0; var P = hero(); if (P.dead) return;
+    if (seen.lb) Object.keys(seen.lb).forEach(function (id) { var r = seen.lb[id]; if (!r.mp && !r.vm && LOREBOOK[id] && LOREBOOK[id].book && lbMoreOpen(id)) { r.mp = 1; lbPop(id, true); save(); } });   /* (a page's later paragraph opened: said once) */
     (Combat.dbg().W.enemies || []).forEach(function (e) { if (e.dead || e.away || !e.kind || !BEAST_LORE[e.kind] || Math.abs(e.x - P.x) > LB_SEE || Math.abs(e.y - P.y) > LB_SEE) return; if (Math.hypot(e.x - P.x, e.y - P.y) < LB_SEE) lbMeet(BEAST_LORE[e.kind]); });
   }
   function lbTabsShown() { return LB_TABS.filter(function (t) { return lbPages(t[0]).length > 0; }); }   /* (a tab once it has a page) */
@@ -5244,17 +5268,6 @@ __COMBAT__
     for (i = 0; i < R.tabs.length; i++) { var t = R.tabs[i]; if (mx >= t.x - 4 && mx <= t.x + t.w && my >= t.y && my <= t.y + t.h) { LB.tab = t.id; LB.sel = lbPages(t.id)[0] || null; return; } }
     for (i = 0; i < R.meds.length; i++) { var m = R.meds[i]; if (Math.hypot(mx - m.x, my - m.y) < 40) { LB.sel = m.id; return; } }
     if (mx < -20 || mx > 960 || my < 0 || my > 640) bookOpen = false;
-  }
-  function drawBookIcon(c, x, y) {           // a small closed book by the chart, once it has a page; a small red mark while one is unread
-    var hov = mouseS && Math.abs(mouseS.x - x) < 9 && Math.abs(mouseS.y - y) < 9;
-    c.save();
-    c.fillStyle = '#3b2416'; c.beginPath(); c.roundRect(x - 7, y - 8, 14, 16, 1.5); c.fill();
-    c.fillStyle = '#efe2c1'; c.fillRect(x - 5, y - 6, 11, 12);
-    c.fillStyle = '#4e3020'; c.fillRect(x - 7, y - 8, 3, 16); c.fillRect(x - 7, y - 8, 14, 2);
-    c.strokeStyle = 'rgba(230,200,150,0.6)'; c.lineWidth = 0.6; c.setLineDash([1, 1]); c.strokeRect(x - 6, y - 7, 12, 14); c.setLineDash([]);
-    if (LB_TABS.some(function (t) { return lbTabFresh(t[0]); })) { c.fillStyle = HC.rubric; c.beginPath(); c.arc(x + 6, y - 7, 2.2, 0, 7); c.fill(); }
-    c.restore();
-    if (hov) { c.font = hf('bold', 6); c.textAlign = 'center'; c.lineWidth = 2; c.strokeStyle = '#2e1a10'; c.strokeText('Lore Book (L)', x, y + 16); c.fillStyle = '#fff'; c.fillText('Lore Book (L)', x, y + 16); c.textAlign = 'left'; }
   }
   function wrapLines(c, text, maxW) { var words = text.split(' '), lines = [], cur = ''; words.forEach(function (wd) { var t = cur ? cur + ' ' + wd : wd; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = wd; } else cur = t; }); if (cur) lines.push(cur); return lines; }
   function leather(c, x, y, w, h) {           // a leather cover: an even hide with grain, darker toward the edges, a stitched edge and brass rivets
@@ -6271,7 +6284,8 @@ __COMBAT__
       trunks.forEach(function (o) { if (Math.abs(o.x - cam.x) < hw + 60 && Math.abs(o.y * K - cam.y) < hh + 40) items.push({ y: o.y, f: function () { ctx.save(); Gather.drawTrunk(ctx, o, World.IMAGES[o.tree + '_trunk'] ? sprite(o.tree + '_trunk', 0) : null); ctx.restore(); } }); });
       bees.forEach(function (b) { items.push({ y: b.y + 2, f: function () { ctx.fillStyle = '#2a2420'; ctx.beginPath(); ctx.arc(b.x, b.y * K - 14 - Math.sin(b.t * 9) * 3, 1.5, 0, 7); ctx.fill(); ctx.fillStyle = '#f2d75a'; ctx.beginPath(); ctx.arc(b.x + 0.6, b.y * K - 14 - Math.sin(b.t * 9) * 3, 0.7, 0, 7); ctx.fill(); } }); });
       B.items.forEach(function (it) {
-        if (it.lvl || Math.abs(it.x - cam.x) > hw + 40 || Math.abs(it.y * K - cam.y) > hh + 60) return;
+        var cm = it.box ? 440 : 40;   /* (a naust's picture reaches some 300 units past its middle: it popped out of sight as you sailed off, Robin 2026-10-23) */
+        if (it.lvl || Math.abs(it.x - cam.x) > hw + cm || Math.abs(it.y * K - cam.y) > hh + cm + 20) return;
         var under = underMe(Math.floor(it.x / T), Math.floor(it.y / T));
         var s = sprite(it.name === 'chest' && store === it && World.IMAGES.chest_open ? 'chest_open' : it.name === 'trapdoor' ? (it.open ? 'trapdoor_open' : 'trapdoor_shut') : it.name, 0); items.push({ y: under ? FAR + 0.7 : (it.name === 'rug' ? it.y - 300 : it.y), f: function () {   /* (a chest with its board open shows open: the studio's chest_open, 2026-10-20) */ if (it.fallen) { ctx.save(); ctx.translate(it.x, it.y * K); ctx.rotate(1.25); ctx.globalAlpha = 0.9; drawSpriteAt(ctx, s, 0, 0, false); ctx.restore(); return; } var gr = STICK.contact && !under && !it.light && !it.flat && s.h > 6 ? grassUnder(it) : 0; if (gr) stickHalo(ctx, it.x, it.y * K, s.w); if (!drawFire(ctx, it)) drawSpriteAt(ctx, s, it.x, it.y, it.rot & 1); if (gr) stickGrass(ctx, s, it.x, it.y * K + 0.7, s.w, gr === 2); if (it.sign && it.text) drawSignText(ctx, it); if (it.clamp && it.burn) drawSmoke(ctx, it.x + 2, it.y * K - 30, clock, it.burn.t > CLAMP_T * 0.66); if (it.furnace && it.cooking && it.cooking.length) drawSmoke(ctx, it.x, it.y * K - 32, clock, false); if (it.out && it.out.length) { ctx.fillStyle = '#ffd34d'; ctx.beginPath(); ctx.arc(it.x, it.y * K + s.t - 4 + Math.sin(clock * 3) * 1.5, 2.2, 0, 7); ctx.fill(); } } });   // a glint over a crate still holding something, or a station with things ready
       });
@@ -6346,7 +6360,6 @@ __COMBAT__
       drawZoomBtns(c);   /* the + and - as iron studs on the rim (Robin, 2026-10-21; direction A, 2026-10-22) */
       drawWindVane(c);
       c.imageSmoothingEnabled = true;
-      if (SHOW.book && lbHasAny()) drawBookIcon(c, mx - 34, my + 10);
       if (fed) drawFedIcon(c, mx - 14, my + 10);
       drawTorchIcon(c, mx - (SHOW.book ? 94 : 54), my + 10);
       (function () {                       // comfort and rest, under the chart: the room you are in, and how long the rest lasts

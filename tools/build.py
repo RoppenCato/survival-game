@@ -53,6 +53,7 @@ def lore_lines():
     with open(fp, encoding='utf-8') as f: L = json.load(f)
     out = {}
     for e in L.get('entries', []):
+        if e.get('list') and e.get('status') == 'canon' and not e.get('lines'): out[e['id']] = { 'list': e['list'] }   # a pool of names (names.ships.<model>, handoff 9, 2026-10-23)
         if e.get('lines') and e.get('status') in ('canon', 'in-game'):
             o = out[e['id']] = { 'mode': e.get('mode', 'variants'), 'lines': e['lines'] }
             for k in ('tier', 'heard', 'when'):
