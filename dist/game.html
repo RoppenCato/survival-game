@@ -16223,12 +16223,18 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function sunLayer(key, W, H) { var L = SUNL[key]; if (!L || L.width !== W || L.height !== H) { L = SUNL[key] = document.createElement('canvas'); L.width = W; L.height = H; } return L; }
   function sunRgba(c3, a) { return 'rgba(' + Math.round(c3[0]) + ',' + Math.round(c3[1]) + ',' + Math.round(c3[2]) + ',' + a + ')'; }
   function sunHash(x, y) { var n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return n - Math.floor(n); }
+  function sunCells(W, H, n, seed, f) {        /* (2026-10-23, Robin: "part of the ocean graphics seem to follow my hero") the lights on the water are laid by the world, not the screen: a grid of cells over the world in view, as many as n at Robin's size, each cell one point by its own hash, so a dash or a star stays on its water as the camera moves */
+    var kx = W / 400, ky = H / 250, A = Math.min(1.5, W * H / (1920 * 1080)), G = Math.sqrt(100000 / (n * A)) / cam.z, hw = 200 / cam.z, hh = 125 / cam.z;
+    var X0 = Math.floor((cam.x - hw) / G), X1 = Math.floor((cam.x + hw) / G), Y0 = Math.floor((cam.y - hh) / G), Y1 = Math.floor((cam.y + hh) / G), X, Y;
+    for (Y = Y0; Y <= Y1; Y++) for (X = X0; X <= X1; X++) { var h0 = sunHash(X * 1.37 + seed, Y * 0.91 - seed), h1 = sunHash(X + seed * 3, Y + 7), wx = (X + h0) * G, wy = (Y + h1) * G;
+      f(((wx - cam.x) * cam.z + 200) * kx, ((wy - cam.y) * cam.z + 125) * ky, h0, h1, sunHash(X - seed, Y * 1.7 + seed), sunHash(X * 0.3 + Y * 2.1, seed)); }
+  }
   function sunGlitter(W, H, mask, x0, col, k, seed, n) {   // a path of light on the water toward the sun or the moon across the screen: dashes, thickest on its side, masked to the water
     var cvl = sunLayer('gl', W, H), g = cvl.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
-    var sunX = (x0 + 1) / 2 * W, i, A = Math.min(1.5, W * H / (1920 * 1080));
-    for (i = 0; i < Math.round(n * A); i++) { var u = sunHash(i, seed), dir = sunHash(i, seed + 9) < 0.5 ? -1 : 1, x = sunX + dir * Math.pow(u, 1.5) * W * 1.05, y = sunHash(i, seed + 2) * H;
-      var tw = 0.5 + 0.5 * Math.sin(clock * (2 + 3 * sunHash(i, seed + 5)) + i), len = (3 + 12 * (1 - u) * sunHash(i, seed + 3)) * (1 + (1 - u) * 0.6) * (W / 1920 + 0.4);   /* longer and brighter toward the sun or the moon (his round three) */
-      g.fillStyle = sunRgba(col, Math.min(1, k * tw * (0.45 + 0.6 * sunHash(i, seed + 4)) * (1.25 - u))); g.fillRect(x - len / 2, y, len, 1.6 * (W / 1200 + 0.3)); }
+    var sunX = (x0 + 1) / 2 * W, hgt = 1.6 * (W / 1200 + 0.3), lk = W / 1920 + 0.4;
+    sunCells(W, H, n, seed, function (x, y, h0, h1, h2, h3) { var u = Math.min(1, Math.abs(x - sunX) / (W * 1.05)), keep = 0.35 + 0.65 * Math.pow(1 - u, 1.5);   /* (thickest toward the sun: the cells far from it mostly empty) */
+      if (h2 > keep) return; var tw = 0.5 + 0.5 * Math.sin(clock * (2 + 3 * h3) + h0 * 40), len = (3 + 12 * (1 - u) * h1) * (1 + (1 - u) * 0.6) * lk;
+      g.fillStyle = sunRgba(col, Math.min(1, k * tw * (0.45 + 0.6 * h3) * (1.25 - u))); g.fillRect(x - len / 2, y, len, hgt); });
     g.globalCompositeOperation = 'destination-in'; g.imageSmoothingEnabled = true; g.filter = 'blur(' + Math.max(1, Math.round(W / 400)) + 'px)'; g.drawImage(mask, 0, 0, W, H); g.filter = 'none'; g.globalCompositeOperation = 'source-over'; return cvl;
   }
   function sunCutOut(L, M) {                  // (his round three, 2026-10-23: what stands in the water keeps its colours) a layer of light on the water with every standing thing's picture cut out of it: the set pieces whose picture reaches the water (the wreck, reeds, a jetty's barrel), the ships, the hero swimming
@@ -16266,7 +16272,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var M = c.getTransform(); c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'screen';
     var nl = sunLayer('nl', W, H), gn = nl.getContext('2d'); gn.globalCompositeOperation = 'source-over'; gn.globalAlpha = 1; gn.clearRect(0, 0, W, H);
     if (st.moon > 0.02) gn.drawImage(sunGlitter(W, H, mask, st.moonX, [205, 218, 244], st.moon * L, 31, 1800), 0, 0);
-    var sc = SUNL.stars; if (!sc || sc.width !== W || sc.height !== H) { sc = SUNL.stars = document.createElement('canvas'); sc.width = W; sc.height = H; var g = sc.getContext('2d'); for (var n = 0; n < 500; n++) { g.fillStyle = 'rgba(220,230,255,' + (0.3 + 0.6 * sunHash(n, 51)) + ')'; g.fillRect(sunHash(n, 52) * W, sunHash(n, 53) * H, 1.4, 1.4); } }
+    var sc = sunLayer('stars', W, H), g = sc.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H); var spx = 1.4 * (W / 1200 + 0.3); sunCells(W, H, 500, 51, function (x, y, h0, h1, h2) { g.fillStyle = 'rgba(220,230,255,' + (0.3 + 0.6 * h2).toFixed(2) + ')'; g.fillRect(x, y, spx, spx); });   /* (the stars in the water by the world, as the dashes) */
     var sl = sunLayer('sl', W, H), gs = sl.getContext('2d'); gs.globalCompositeOperation = 'copy'; gs.drawImage(sc, 0, 0); gs.globalCompositeOperation = 'destination-in'; gs.imageSmoothingEnabled = true; gs.drawImage(mask, 0, 0, W, H); gs.globalCompositeOperation = 'source-over';
     gn.globalAlpha = L * (1 - 0.6 * st.moon) * 0.7; gn.drawImage(sl, 0, 0); gn.globalAlpha = 1; sunCutOut(nl, M);
     c.globalAlpha = 1; c.drawImage(nl, 0, 0); c.restore();   /* (the moon's path and the stars in one layer, what stands in the water cut out of it once) */
