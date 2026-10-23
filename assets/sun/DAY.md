@@ -111,3 +111,15 @@ Clive, GD put the day in the game. From his pictures, in sun.js (copy `Sun.KEYS`
 
 Pictures: `pictures/after_game_round.png` (golden hour and sunset on a sea view and the woods).
 
+## Round three (2026-10-23, from the game's pictures at Robin's size)
+
+- **What stands in the water keeps its colours.** The sky in the water, the sun's path, the stars and the moon's path are each a layer
+  with every standing thing's picture cut out of it (destination-out) before it is laid on. At sunset the wreck's stern took the pink.
+  `Sun.draw` shows it with `cutOut`. In the game the wreck, the ships and the hero swimming are the ones that matter.
+- **The sky lightens the water a little.** The water now takes the sky's hue at 0.65, a little of its light (screen, 0.35, none at
+  night) and its depth (soft-light, 0.7). Laid on by hue alone, a warm sky turned a dark sea tan.
+- **A warmer sunrise** on the water (the 1700 and 1760 keys).
+- **A stronger path of sun:** longer and brighter dashes toward the sun.
+
+Pictures: `pictures/round3.png`.
+

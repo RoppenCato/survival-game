@@ -35,8 +35,8 @@
     { t: 1410, warm: [255, 255, 255, 0], sx: -1,   near: N0,                    far: N0,                    glow: [200, 120, 140, 0],    shade: [20, 30, 70],  sk: 0,    len: 2,   rimK: 0,    sky: [[60, 70, 130], [50, 60, 120], [40, 50, 110]],       skyK: 0.35, path: null, pathK: 0, rays: 0, night: 1, moon: 1 },
     { t: 1560, warm: [255, 255, 255, 0], sx: -1,   near: N0,                    far: N0,                    glow: [200, 120, 140, 0],    shade: [20, 30, 70],  sk: 0,    len: 2,   rimK: 0,    sky: [[60, 70, 130], [50, 60, 120], [40, 50, 110]],       skyK: 0.35, path: null, pathK: 0, rays: 0, night: 1, moon: 0.35 },
     { t: 1620, warm: [255, 180, 180, 0.06], sx: 1,    near: [150, 140, 200, 0.2],  far: [70, 80, 150, 0.3],    glow: [255, 150, 150, 0.12], shade: [40, 40, 110], sk: 0,    len: 2.3,   rimK: 0,    sky: [[200, 140, 170], [100, 100, 170], [50, 60, 130]],    skyK: 0.45, path: [240, 170, 180], pathK: 0.15, rays: 0,   night: 1,    moon: 0 },
-    { t: 1700, warm: [255, 176, 150, 0.26], sx: 1,    near: [255, 170, 160, 0.35], far: [120, 120, 190, 0.4],  glow: [255, 170, 150, 0.3],  shade: [56, 56, 120], sk: 0.24, len: 2.5, rimK: 0.5,  sky: [[255, 176, 164], [196, 166, 198], [96, 106, 170]],  skyK: 0.42, path: [255, 200, 180], pathK: 0.7, rays: 0.08, night: 0.4, moon: 0 },
-    { t: 1760, warm: [255, 196, 150, 0.3], sx: 1,    near: [255, 196, 160, 0.32], far: [170, 180, 214, 0.26], glow: [255, 200, 150, 0.25], shade: [56, 60, 116], sk: 0.32, len: 2.4, rimK: 0.7,  sky: [[255, 206, 172], [224, 212, 214], [154, 178, 214]], skyK: 0.36, path: [255, 220, 196], pathK: 0.9, rays: 0.14, night: 0.08,  moon: 0 }
+    { t: 1700, warm: [255, 176, 150, 0.26], sx: 1,    near: [255, 170, 160, 0.35], far: [120, 120, 190, 0.4],  glow: [255, 170, 150, 0.3],  shade: [56, 56, 120], sk: 0.24, len: 2.5, rimK: 0.5,  sky: [[255, 156, 132], [214, 160, 190], [96, 106, 170]],  skyK: 0.56, path: [255, 200, 180], pathK: 0.7, rays: 0.08, night: 0.4, moon: 0 },
+    { t: 1760, warm: [255, 196, 150, 0.3], sx: 1,    near: [255, 196, 160, 0.32], far: [170, 180, 214, 0.26], glow: [255, 200, 150, 0.25], shade: [56, 60, 116], sk: 0.32, len: 2.4, rimK: 0.7,  sky: [[255, 172, 120], [242, 192, 182], [154, 178, 214]], skyK: 0.62, path: [255, 220, 196], pathK: 0.9, rays: 0.14, night: 0.08,  moon: 0 }
   ];
   var DAY = 1800;
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -84,9 +84,14 @@
     var W = L.scene.W, H = L.scene.H, cv = C.gl || (C.gl = L.mk(W, H)), g = cv.getContext('2d'); g.globalCompositeOperation = 'copy'; g.clearRect(0, 0, W, H); g.globalCompositeOperation = 'source-over';
     var t = L.t || 0, sunX = (x0 + 1) / 2 * W, i;
     for (i = 0; i < n; i++) { var u = hash(i, seed), dir = hash(i, seed + 9) < 0.5 ? -1 : 1, x = sunX + dir * Math.pow(u, 1.5) * W * 1.05, y = hash(i, seed + 2) * H;   // over all the water, thickest toward the sun's side
-      var tw = 0.5 + 0.5 * Math.sin(t * (2 + 3 * hash(i, seed + 5)) + i), len = 3 + 10 * (1 - u) * hash(i, seed + 3);
-      g.fillStyle = rgba(col, k * tw * (0.35 + 0.6 * hash(i, seed + 4)) * (1 - u * 0.75)); g.fillRect(x - len / 2, y, len, 1.4); }
+      var tw = 0.5 + 0.5 * Math.sin(t * (2 + 3 * hash(i, seed + 5)) + i), len = (3 + 12 * (1 - u) * hash(i, seed + 3)) * (1 + (1 - u) * 0.6);   // longer and brighter toward the sun or the moon
+      g.fillStyle = rgba(col, Math.min(1, k * tw * (0.45 + 0.6 * hash(i, seed + 4)) * (1.25 - u))); g.fillRect(x - len / 2, y, len, 1.6); }
     g.globalCompositeOperation = 'destination-in'; g.drawImage(L.water, 0, 0, W, H); g.globalCompositeOperation = 'source-over'; return cv;
+  }
+  function cutOut(cv, L) {                       // a layer of light on the water, with every standing thing's picture cut out of it
+    var g = cv.getContext('2d'), i, it, r; g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'destination-out'; g.globalAlpha = 1;
+    for (i = 0; i < L.scene.items.length; i++) { it = L.scene.items[i]; r = L.scene.rects[it.key]; g.drawImage(L.atlas, r[0], r[1], r[2], r[3], it.x, it.y, it.w, it.h); }
+    g.globalCompositeOperation = 'source-over'; return cv;
   }
   function draw(ctx, st, L) {
     var W = L.scene.W, H = L.scene.H, mk = L.mk, i, it, r, side = st.sx, sunX = (side + 1) / 2 * W, farX = W - sunX, night = st.night, moon = st.moon;
@@ -119,9 +124,9 @@
       ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = st.near[3]; var g2 = ctx.createLinearGradient(sunX, 0, farX, 0); g2.addColorStop(0, rgba(st.near, 1)); g2.addColorStop(0.6, rgba(st.near, 0)); ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H); }
     if (st.warm && st.warm[3] > 0.005) { ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = st.warm[3]; ctx.fillStyle = rgba(st.warm, 1); ctx.fillRect(0, 0, W, H); }   // the low sun gilding everything
     if (st.glow[3] > 0.005) { ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 1; var g3 = ctx.createRadialGradient(sunX, H * 0.35, 0, sunX, H * 0.35, W * 0.7); g3.addColorStop(0, rgba(st.glow, st.glow[3])); g3.addColorStop(1, rgba(st.glow, 0)); ctx.fillStyle = g3; ctx.fillRect(0, 0, W, H); }
-    // the sky in the water and the sun's path
-    if (L.water && st.skyK > 0.005) { var wl = waterLayer(L, st.sky, sunX, farX); ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = st.skyK; ctx.drawImage(wl, 0, 0); ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = st.skyK * 0.8; ctx.drawImage(wl, 0, 0); }
-    if (L.water && st.path && st.pathK > 0.01) { ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 1; ctx.drawImage(glitter(L, side, st.path, st.pathK, 1, 2200, 110), 0, 0); }
+    // the sky in the water and the sun's path, laid on the water only: what stands in the water (a boat, a swimmer) is cut out of it
+    if (L.water && st.skyK > 0.005) { var wl = cutOut(waterLayer(L, st.sky, sunX, farX), L); ctx.globalCompositeOperation = 'color'; ctx.globalAlpha = st.skyK * 0.65; ctx.drawImage(wl, 0, 0); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = st.skyK * 0.35 * (1 - night); ctx.drawImage(wl, 0, 0); ctx.globalCompositeOperation = 'soft-light'; ctx.globalAlpha = st.skyK * 0.7; ctx.drawImage(wl, 0, 0); }   // its hue, a little of its light (water at sunrise goes pastel, not tan), its depth
+    if (L.water && st.path && st.pathK > 0.01) { ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 1; ctx.drawImage(cutOut(glitter(L, side, st.path, st.pathK, 1, 2200, 110), L), 0, 0); }
     // shafts of light
     if (st.rays > 0.005) { ctx.globalCompositeOperation = 'screen'; var ox = side < 0 ? -W * 0.1 : W * 1.1, ra = side < 0 ? 0.42 : Math.PI - 0.42, t = L.t || 0;
       for (i = 0; i < 5; i++) { var y = H * (0.05 + 0.2 * i) + Math.sin(t * 0.05 + i * 1.7) * 30, wdt = 50 + 70 * hash(i, 7);
@@ -129,10 +134,12 @@
         ctx.globalAlpha = 1; ctx.fillStyle = gr; ctx.fillRect(0, -wdt, W * 1.05, wdt * 2); ctx.restore(); } }
     // the night: the game's palette (a little lighter and bluer under the moon), then the moon's path and the stars in the water
     if (night > 0.005) { var mm = 1 - 0.12 * moon; ctx.globalCompositeOperation = 'multiply'; ctx.globalAlpha = 1; ctx.fillStyle = rgba([255 - 222 * night * mm, 255 - 212 * night * mm, 255 - 172 * night * mm], 1); ctx.fillRect(0, 0, W, H);
-      if (L.water) { ctx.globalCompositeOperation = 'screen';
-        if (moon > 0.02) ctx.drawImage(glitter(L, st.moonX, [205, 218, 244], moon * night, 31, 1800, 70), 0, 0);
+      if (L.water) {
+        var nl = C.nl || (C.nl = mk(W, H)), ng = nl.getContext('2d'); ng.setTransform(1, 0, 0, 1, 0, 0); ng.globalCompositeOperation = 'source-over'; ng.globalAlpha = 1; ng.clearRect(0, 0, W, H);
+        if (moon > 0.02) ng.drawImage(glitter(L, st.moonX, [205, 218, 244], moon * night, 31, 1800, 70), 0, 0);
         var sc = C.st || (C.st = (function () { var cv = mk(W, H), g = cv.getContext('2d'); for (var n = 0; n < 500; n++) { g.fillStyle = 'rgba(220,230,255,' + (0.3 + 0.6 * hash(n, 51)) + ')'; g.fillRect(hash(n, 52) * W, hash(n, 53) * H, 1.4, 1.4); } g.globalCompositeOperation = 'destination-in'; g.drawImage(L.water, 0, 0, W, H); return cv; })());
-        ctx.globalAlpha = night * (1 - 0.6 * moon) * 0.7; ctx.drawImage(sc, 0, 0); } }
+        ng.globalAlpha = night * (1 - 0.6 * moon) * 0.7; ng.drawImage(sc, 0, 0); ng.globalAlpha = 1;
+        cutOut(nl, L); ctx.globalCompositeOperation = 'screen'; ctx.globalAlpha = 1; ctx.drawImage(nl, 0, 0); } }   // not on what stands in the water: the light lies on the water only
     ctx.restore();
   }
   var api = { KEYS: KEYS, state: state, rimPicture: rimPicture, draw: draw, shadowAngle: shadowAngle, silhouette: silhouette };

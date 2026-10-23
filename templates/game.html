@@ -940,13 +940,25 @@ __COMBAT__
     var cvl = sunLayer('gl', W, H), g = cvl.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, W, H);
     var sunX = (x0 + 1) / 2 * W, i, A = Math.min(1.5, W * H / (1920 * 1080));
     for (i = 0; i < Math.round(n * A); i++) { var u = sunHash(i, seed), dir = sunHash(i, seed + 9) < 0.5 ? -1 : 1, x = sunX + dir * Math.pow(u, 1.5) * W * 1.05, y = sunHash(i, seed + 2) * H;
-      var tw = 0.5 + 0.5 * Math.sin(clock * (2 + 3 * sunHash(i, seed + 5)) + i), len = (3 + 10 * (1 - u) * sunHash(i, seed + 3)) * (W / 1920 + 0.4);
-      g.fillStyle = sunRgba(col, k * tw * (0.35 + 0.6 * sunHash(i, seed + 4)) * (1 - u * 0.75)); g.fillRect(x - len / 2, y, len, 1.4 * (W / 1200 + 0.3)); }
+      var tw = 0.5 + 0.5 * Math.sin(clock * (2 + 3 * sunHash(i, seed + 5)) + i), len = (3 + 12 * (1 - u) * sunHash(i, seed + 3)) * (1 + (1 - u) * 0.6) * (W / 1920 + 0.4);   /* longer and brighter toward the sun or the moon (his round three) */
+      g.fillStyle = sunRgba(col, Math.min(1, k * tw * (0.45 + 0.6 * sunHash(i, seed + 4)) * (1.25 - u))); g.fillRect(x - len / 2, y, len, 1.6 * (W / 1200 + 0.3)); }
     g.globalCompositeOperation = 'destination-in'; g.imageSmoothingEnabled = true; g.filter = 'blur(' + Math.max(1, Math.round(W / 400)) + 'px)'; g.drawImage(mask, 0, 0, W, H); g.filter = 'none'; g.globalCompositeOperation = 'source-over'; return cvl;
+  }
+  function sunCutOut(L, M) {                  // (his round three, 2026-10-23: what stands in the water keeps its colours) a layer of light on the water with every standing thing's picture cut out of it: the set pieces whose picture reaches the water (the wreck, reeds, a jetty's barrel), the ships, the hero swimming
+    if (!M) return L; var g = L.getContext('2d'), hw = 200 / cam.z, hh = 125 / cam.z, P = hero(), i; g.save(); g.globalCompositeOperation = 'destination-out'; g.globalAlpha = 1; g.setTransform(M.a, M.b, M.c, M.d, M.e, M.f); g.translate(200, 125); g.scale(cam.z, cam.z); g.translate(-cam.x, -cam.y);   /* (M is the page's base transform, as the gulls' and the grain's passes have it: the camera goes on it) */
+    var bx0 = Math.max(0, Math.floor((cam.x - hw) / T / CT) - 1), bx1 = Math.min(CW - 1, Math.floor((cam.x + hw) / T / CT) + 1), by0 = Math.max(0, Math.floor((cam.y - hh) / TS / CT) - 1), by1 = Math.min(CH - 1, Math.floor((cam.y + hh) / TS / CT) + 1), bx, by;
+    for (by = by0; by <= by1; by++) for (bx = bx0; bx <= bx1; bx++) { var list = buckets[by * CW + bx]; if (!list) continue; list.forEach(function (o) {
+      if (o.painted || o.peak || o.inFace || o.dying != null) return; var s = sprite(o.name, o.v); if (!s || !s.fixed || !s.cv) return; var sS = 1, x0 = o.x + s.l * sS, y0 = o.y * K + s.t * sS, wd = s.w * sS, ht = s.h * sS;
+      if (x0 + wd < cam.x - hw || x0 > cam.x + hw || y0 + ht < cam.y - hh || y0 > cam.y + hh) return;
+      if (!(w.isWater(o.x, o.y) || w.isWater(x0, o.y) || w.isWater(x0 + wd, o.y) || w.isWater(x0, y0 / K) || w.isWater(x0 + wd, y0 / K))) return;   /* (only a piece whose picture reaches the water) */
+      g.drawImage(s.cv, x0, y0, wd, ht); }); }
+    try { if (raft && !raft.stowed && Math.abs(raft.x - cam.x) < hw + 320 && Math.abs(raft.y * K - cam.y) < hh + 320) drawShip(g, raft); idleShips().forEach(function (v) { if (Math.abs(v.x - cam.x) < hw + 320 && Math.abs(v.y * K - cam.y) < hh + 320) drawShip(g, v); }); } catch (eS) {}
+    if (swim.on && !P.dead && !P.hidden && Combat.api.heroSprite) { try { Combat.api.heroSprite(g, P.x, P.y * K, P.faceVis, P.anim, false); } catch (eH) {} }
+    g.restore(); g.globalCompositeOperation = 'source-over'; return L;
   }
   function drawSun(c) {                       // the day's light over the world and the season's light, under the weather and the night
     var st = SUN; if (!st || inCave) return; var W = cv.width, H = cv.height, side = st.sx, sunX = (side + 1) / 2 * W, farX = W - sunX; if (Math.abs(sunX - farX) < 2) farX = sunX + 1;
-    c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
+    var M = c.getTransform(); c.save(); c.setTransform(1, 0, 0, 1, 0, 0);
     var a = Math.max(st.near[3], st.far[3]);
     if (a > 0.005) { var g = c.createLinearGradient(sunX, 0, farX, 0); g.addColorStop(0, sunRgba(st.near, 1)); g.addColorStop(1, sunRgba(st.far, 1)); c.globalCompositeOperation = 'multiply'; c.globalAlpha = a; c.fillStyle = g; c.fillRect(0, 0, W, H);
       c.globalCompositeOperation = 'soft-light'; c.globalAlpha = st.near[3]; var g2 = c.createLinearGradient(sunX, 0, farX, 0); g2.addColorStop(0, sunRgba(st.near, 1)); g2.addColorStop(0.6, sunRgba(st.near, 0)); c.fillStyle = g2; c.fillRect(0, 0, W, H); }
@@ -954,9 +966,9 @@ __COMBAT__
     if (st.glow[3] > 0.005) { c.globalCompositeOperation = 'screen'; c.globalAlpha = 1; var g3 = c.createRadialGradient(sunX, H * 0.35, 0, sunX, H * 0.35, W * 0.7); g3.addColorStop(0, sunRgba(st.glow, st.glow[3])); g3.addColorStop(1, sunRgba(st.glow, 0)); c.fillStyle = g3; c.fillRect(0, 0, W, H); }
     var mask = (st.skyK > 0.005 || (st.path && st.pathK > 0.01)) ? sunWaterMask() : null;
     if (mask && st.skyK > 0.005) { var wl = sunLayer('wl', W, H), gw = wl.getContext('2d'); gw.globalCompositeOperation = 'copy'; gw.imageSmoothingEnabled = true; gw.filter = 'blur(' + Math.max(1, Math.round(W / 400)) + 'px)'; gw.drawImage(mask, 0, 0, W, H); gw.filter = 'none'; gw.globalCompositeOperation = 'source-in';
-      var sg = gw.createLinearGradient(sunX, 0, farX, 0); sg.addColorStop(0, sunRgba(st.sky[0], 1)); sg.addColorStop(0.5, sunRgba(st.sky[1], 1)); sg.addColorStop(1, sunRgba(st.sky[2], 1)); gw.fillStyle = sg; gw.fillRect(0, 0, W, H); gw.globalCompositeOperation = 'source-over';
-      c.globalCompositeOperation = 'color'; c.globalAlpha = st.skyK; c.drawImage(wl, 0, 0); c.globalCompositeOperation = 'soft-light'; c.globalAlpha = st.skyK * 0.8; c.drawImage(wl, 0, 0); }
-    if (mask && st.path && st.pathK > 0.01) { c.globalCompositeOperation = 'screen'; c.globalAlpha = 1; c.drawImage(sunGlitter(W, H, mask, side, st.path, st.pathK, 1, 2200), 0, 0); }
+      var sg = gw.createLinearGradient(sunX, 0, farX, 0); sg.addColorStop(0, sunRgba(st.sky[0], 1)); sg.addColorStop(0.5, sunRgba(st.sky[1], 1)); sg.addColorStop(1, sunRgba(st.sky[2], 1)); gw.fillStyle = sg; gw.fillRect(0, 0, W, H); gw.globalCompositeOperation = 'source-over'; sunCutOut(wl, M);
+      c.globalCompositeOperation = 'color'; c.globalAlpha = st.skyK * 0.65; c.drawImage(wl, 0, 0); c.globalCompositeOperation = 'screen'; c.globalAlpha = st.skyK * 0.35 * (1 - light()); c.drawImage(wl, 0, 0); c.globalCompositeOperation = 'soft-light'; c.globalAlpha = st.skyK * 0.7; c.drawImage(wl, 0, 0); }   /* (his round three: the sky's hue at 0.65, a little of its light by day, its depth at 0.7; by hue alone a warm sky turned the sea tan) */
+    if (mask && st.path && st.pathK > 0.01) { c.globalCompositeOperation = 'screen'; c.globalAlpha = 1; c.drawImage(sunCutOut(sunGlitter(W, H, mask, side, st.path, st.pathK, 1, 2200), M), 0, 0); }
     if (st.rays > 0.005) { c.globalCompositeOperation = 'screen'; var ox = side < 0 ? -W * 0.1 : W * 1.1, ra = side < 0 ? 0.42 : Math.PI - 0.42, i;
       for (i = 0; i < 5; i++) { var y = H * (0.05 + 0.2 * i) + Math.sin(clock * 0.05 + i * 1.7) * 30 * (H / 1080), wdt = (50 + 70 * sunHash(i, 7)) * (H / 1080 + 0.3);
         c.save(); c.translate(ox, y); c.rotate(ra); var gr = c.createLinearGradient(0, -wdt, 0, wdt); gr.addColorStop(0, sunRgba(st.near, 0)); gr.addColorStop(0.5, sunRgba(st.near, st.rays * (0.6 + 0.4 * Math.sin(clock * 0.3 + i)))); gr.addColorStop(1, sunRgba(st.near, 0)); c.globalAlpha = 1; c.fillStyle = gr; c.fillRect(0, -wdt, W * 1.05, wdt * 2); c.restore(); } }
@@ -964,11 +976,13 @@ __COMBAT__
   }
   function drawSunNight(c) {                  // after the night palette: the moon's path on the water and the stars in it when the moon is down
     var st = SUN, L = light(); if (!st || inCave || L < 0.05) return; var W = cv.width, H = cv.height, mask = sunWaterMask(); if (!mask) return;
-    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'screen';
-    if (st.moon > 0.02) { c.globalAlpha = 1; c.drawImage(sunGlitter(W, H, mask, st.moonX, [205, 218, 244], st.moon * L, 31, 1800), 0, 0); }
+    var M = c.getTransform(); c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'screen';
+    var nl = sunLayer('nl', W, H), gn = nl.getContext('2d'); gn.globalCompositeOperation = 'source-over'; gn.globalAlpha = 1; gn.clearRect(0, 0, W, H);
+    if (st.moon > 0.02) gn.drawImage(sunGlitter(W, H, mask, st.moonX, [205, 218, 244], st.moon * L, 31, 1800), 0, 0);
     var sc = SUNL.stars; if (!sc || sc.width !== W || sc.height !== H) { sc = SUNL.stars = document.createElement('canvas'); sc.width = W; sc.height = H; var g = sc.getContext('2d'); for (var n = 0; n < 500; n++) { g.fillStyle = 'rgba(220,230,255,' + (0.3 + 0.6 * sunHash(n, 51)) + ')'; g.fillRect(sunHash(n, 52) * W, sunHash(n, 53) * H, 1.4, 1.4); } }
     var sl = sunLayer('sl', W, H), gs = sl.getContext('2d'); gs.globalCompositeOperation = 'copy'; gs.drawImage(sc, 0, 0); gs.globalCompositeOperation = 'destination-in'; gs.imageSmoothingEnabled = true; gs.drawImage(mask, 0, 0, W, H); gs.globalCompositeOperation = 'source-over';
-    c.globalAlpha = L * (1 - 0.6 * st.moon) * 0.7; c.drawImage(sl, 0, 0); c.restore();
+    gn.globalAlpha = L * (1 - 0.6 * st.moon) * 0.7; gn.drawImage(sl, 0, 0); gn.globalAlpha = 1; sunCutOut(nl, M);
+    c.globalAlpha = 1; c.drawImage(nl, 0, 0); c.restore();   /* (the moon's path and the stars in one layer, what stands in the water cut out of it once) */
   }
   function weatherNow() { return WTH.spells.filter(function (S) { return S.k > 0.02; }).map(function (S) { return S.kind + ' ' + S.k.toFixed(2); }).join(', ') || 'clear'; }
   /* Swimming (Robin, 2026-10-23: "I also want the character to be able to wade in shallow waters around the island, and swim in the
