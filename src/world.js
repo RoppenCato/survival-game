@@ -176,7 +176,7 @@ function make(kit, opts) {
     return { warm: Math.max(0, Math.min(1, warm)), wet: Math.max(0, Math.min(1, wet)) };
   }
   w.climate = function (wx, wy) { return climateT(wx / T, wy / T); };
-  w.season = 'summer'; w.setSeason = function (name) { if (!SEASONS[name] || name === w.season) return false; w.season = name; for (var ck in chunkCv) stale[ck] = 1; for (var ik in IMAGES) delete IMAGES[ik].gs; seasonalProps.forEach(function (p) { w.removeProp(p); }); seasonalProps = []; seasonalDone = {}; return true; };   /* (every baked piece is marked stale and bakes again one at a time, the old season's picture staying until the new one is ready: dropping them all at once left black holes and a second of 7 fps, Robin's "glitched out" of 2026-10-23; every set piece is graded again on its first draw) */
+  w.season = 'summer'; w.setSeason = function (name) { if (!SEASONS[name] || name === w.season) return false; w.season = name; for (var ck in chunkCv) stale[ck] = 1; for (var ik in IMAGES) { delete IMAGES[ik].gs; delete IMAGES[ik].gsm; } seasonalProps.forEach(function (p) { w.removeProp(p); }); seasonalProps = []; seasonalDone = {}; return true; };   /* (every baked piece is marked stale and bakes again one at a time, the old season's picture staying until the new one is ready: dropping them all at once left black holes and a second of 7 fps, Robin's "glitched out" of 2026-10-23; every set piece is graded again on its first draw) */
   /* The set pieces in a season (2026-10-23): a tree, plant or rock of SEASON_KINDS is drawn as a copy graded by the Art Director's
      module (spring's fresh green, autumn's gold and red, winter's snow laid on from its own outline), made on its first draw in the
      season and kept until the season turns (im.gs); in winter an oak or a birch is its bare picture (the trees_bare set, the same tree
@@ -185,20 +185,21 @@ function make(kit, opts) {
   var gradeN = 0, GRADE_A_FRAME = 3;
   var SEASON_KINDS = { pine: 1, oak: 1, birch: 1, bush: 1, berryBush: 1, juniper: 1, heather: 1, fern: 1, tallGrass: 1, reeds: 1, mushroom: 1, mushrooms: 1, flower: 1, wildHerbs: 1, rock: 1, boulder: 1, rockFormation: 1, dwarfBirch: 1, willow: 1 };
   function pixOf(g, cw, chh) { try { return g.getImageData(0, 0, cw, chh); } catch (e) { return null; } }   /* (Chrome taints a canvas that has drawn a picture loaded from file://: reading it throws a SecurityError; the ground's grade is the one reader left, and a piece that holds a picture stays ungraded) */
-  function seasonSprite(name, v, im) {
+  function seasonSprite(name, v, im, o) {
     if (!im.sp || w.season === 'summer' || typeof Seasons === 'undefined') return null;
     var cap = w.season === 'winter' && im.key ? IMAGES[im.key + '_snow'] : null; if (!SEASON_KINDS[name] && !cap) return null;   /* (a winter snow cap, the studio's second drop: <picture>_snow, drawn over the piece at its own foot point) */
     var src = im;
-    if (w.season === 'winter' && name === 'berryBush') { var nvb = variantsOf('bush'), bb = IMAGES[nvb ? 'bush_' + (((v | 0) % nvb) + 1) : 'bush']; if (bb && bb.sp) { src = bb; cap = bb.key ? IMAGES[bb.key + '_snow'] || cap : cap; } }   /* (no berries in winter: the berry bush is a bare bush under its snow; what a season gives is the game's SEASON_GIVES) */
+    if (w.season === 'winter' && Seasons.winterPlant) { var wpn = Seasons.winterPlant(name, v), wim = wpn && IMAGES[wpn]; if (wim) { if (!wim.sp && imgReady(wim.img)) wim.sp = { cv: wim.img, l: -wim.ax * wim.upp, t: -wim.ay * wim.upp, w: wim.w * wim.upp, h: wim.h * wim.upp, lights: [], fixed: true }; if (wim.sp) return wim.sp; } }   /* (Colin, AD's winter plants, 2026-10-23, Robin: "snowed over and sprigs": the bush, the berry bush as a bush, the heather, fern, tall grass, reeds and juniper as their snowed pictures, assets/props/plants_winter, drawn as they are, no grade, no cap) */
     if (w.season === 'winter') { var bn = Seasons.bareTree(name, v), bim = bn && IMAGES[bn]; if (bim) { if (!bim.sp && imgReady(bim.img)) bim.sp = { cv: bim.img, l: -bim.ax * bim.upp, t: -bim.ay * bim.upp, w: bim.w * bim.upp, h: bim.h * bim.upp, lights: [], fixed: true }; if (bim.sp) src = bim; } }
-    if (src.gs && src.gs.season === w.season) return src.gs.sp;
+    var tint = w.season === 'autumn' && name === 'bush' && Seasons.autumnTint ? (o ? Seasons.autumnTint(o.x, o.y) : 0) : 0, gkey = w.season + ':' + tint;   /* (an autumn bush's tint from where it stands, Colin, AD: olive, yellow-brown, still green, rust or red; up to five copies kept a picture) */
+    src.gsm = src.gsm || {}; if (src.gsm[gkey]) return src.gsm[gkey];
     if (src.gs && gradeN >= GRADE_A_FRAME) return src.gs.sp;   /* (the season has just turned: so many pictures graded a frame, the rest still drawn in the old season's look until their turn, so the turn does not freeze the frame) */
     gradeN++;
     var cw = src.img.naturalWidth || src.img.width, chh = src.img.naturalHeight || src.img.height, cv, ok = true;   /* (Colin, AD's composite grade, 2026-10-23: fills and blend modes clipped to the picture, no pixel read, so it works on a page opened from file://) */
-    if (SEASON_KINDS[name]) { var gc = Seasons.gradeCanvas(src.img, name, w.season, !!cap, kit.mk); if (!gc) ok = false; else if (gc === src.img) { cv = kit.mk(cw, chh); cv.getContext('2d').drawImage(src.img, 0, 0); } else cv = gc; }
+    if (SEASON_KINDS[name]) { var gc = Seasons.gradeCanvas(src.img, name, w.season, !!cap, kit.mk, tint); if (!gc) ok = false; else if (gc === src.img) { cv = kit.mk(cw, chh); cv.getContext('2d').drawImage(src.img, 0, 0); } else cv = gc; }
     else { cv = kit.mk(cw, chh); cv.getContext('2d').drawImage(src.img, 0, 0); }
     if (ok && cap && imgReady(cap.img)) cv.getContext('2d').drawImage(cap.img, src.ax - cap.ax, src.ay - cap.ay);
-    src.gs = { season: w.season, sp: ok ? { cv: cv, l: src.sp.l, t: src.sp.t, w: src.sp.w, h: src.sp.h, lights: [], fixed: true } : { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [], fixed: true, none: true } };
+    src.gs = { season: w.season, sp: ok ? { cv: cv, l: src.sp.l, t: src.sp.t, w: src.sp.w, h: src.sp.h, lights: [], fixed: true } : { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [], fixed: true, none: true } }; src.gsm[gkey] = src.gs.sp;
     return src.gs.sp;
   }
   w.seasonSprite = seasonSprite;
@@ -722,9 +723,9 @@ function make(kit, opts) {
   w.isWater = function (wx, wy) { return !onPlank(wx, wy) && elevAt(wx, wy) < -0.18 && wx > 40 && wy > 40 && wx < WX - 40 && wy < WY - 40 && !(mtn && (cellAt(wx, wy) & M_BLOCK)); };   // not where a sea cliff's foot stands in it
 
   /* baking */
-  w.sprite = function (name, v) {
+  w.sprite = function (name, v, o) {   /* (o: the thing itself when the caller has it, for a look that depends on where it stands: an autumn bush's tint) */
     var nv = variantsOf(name), im = nv ? IMAGES[name + '_' + (((v | 0) % nv) + 1)] : IMAGES[name];   // a set piece in however many variants it has (the rocks six, the trees three, the graves two; by the prop's seed), else one picture, else the drawn prop baked
-    if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [], fixed: true };   /* (fixed: a set piece is drawn at its own size, never by the prop's planted scale) */ var ssp = seasonSprite(name, v, im); if (ssp) return ssp; return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
+    if (im) { if (!im.sp && imgReady(im.img)) im.sp = { cv: im.img, l: -im.ax * im.upp, t: -im.ay * im.upp, w: im.w * im.upp, h: im.h * im.upp, lights: [], fixed: true };   /* (fixed: a set piece is drawn at its own size, never by the prop's planted scale) */ var ssp = seasonSprite(name, v, im, o); if (ssp) return ssp; return im.sp || im.blank || (im.blank = { cv: kit.mk(2, 2), l: 0, t: 0, w: 1, h: 1, lights: [] }); }
     var kk = name + ':' + v; if (!sprites[kk]) { kit.setup(BASE); var tb = treeBake(name); sprites[kk] = kit.bakeProp(name, 3 + v * 7, tb.sx !== 1 || tb.sy !== 1 ? tb : null); sprites[kk].bake = tb.sy; } return sprites[kk]; };
   /* The trees are baked bigger (2026-10-14, Robin: "trees are way too small, they should probably be three times the size"): a tree
      kind in TREE_BAKE is drawn through bakeProp's sx/sy at that size, so it stays sharp, and everything that reads the sprite's

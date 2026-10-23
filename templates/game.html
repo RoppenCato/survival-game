@@ -370,7 +370,7 @@ __COMBAT__
   /* A thing with no picture and no drawn prop stands in as the nearest thing that has one (2026-10-22: the villages' insides place
      looms, stools, shelves and cupboards, which have no pictures yet, and every frame with one in view threw); asked of the studio. */
   var STAND_IN = { stool: 'chair', shelf: 'crate', cupboard: 'chest', loom: 'table' };
-  function sprite(name, v) { if (!World.IMAGES[name] && !World.IMAGES[name + '_1'] && !kit.PROPS[name]) name = STAND_IN[name] || 'crate'; return w.sprite(name, v); }
+  function sprite(name, v, o) { if (!World.IMAGES[name] && !World.IMAGES[name + '_1'] && !kit.PROPS[name]) name = STAND_IN[name] || 'crate'; return w.sprite(name, v, o); }
   function around(x, y, fn) { w.around(x, y, fn); }
   function nearSolids(P) { return w.nearSolids(P); }
   function removeProp(o) { if (o.cave) { caves.forEach(function (cv) { if (!cv.cave) return; var ci = cv.cave.ores.indexOf(o); if (ci >= 0) { cv.cave.ores.splice(ci, 1); cv.cave.mined.push(o.id); save(); } }); return; } w.removeProp(o); if (o.kind) { gone[propKey(o)] = 1; save(); } }
@@ -2883,7 +2883,7 @@ __COMBAT__
     hc.sets.forEach(function (st) { if (Math.abs(st.x - cam.x) > 300 || Math.abs(st.y * K - cam.y) > 220) return; items.push({ y: st.y, f: function () { Cave.drawSet(ctx, st); } }); });   // the mine's timber: you walk under its caps
     (hc.dress || []).forEach(function (o) {             /* Colin, AD's dressing (assets/props/cavekit, cryptkit, cellarkit; 2026-10-22): columns, dripstone, fungus, bones, the troll's bed, candles, the bridges; a bridge or the planks lie under everyone */
       if (Math.abs(o.x - cam.x) > 320 || Math.abs(o.y * K - cam.y) > 260) return;
-      var s = sprite(o.name, o.v), flat = o.name === 'ropeBridge' || o.name === 'plankBridge', P = hero();
+      var s = sprite(o.name, o.v, o), flat = o.name === 'ropeBridge' || o.name === 'plankBridge', P = hero();
       items.push({ y: flat ? -1e9 : o.y, f: function () { ctx.drawImage(s.cv, o.x + s.l, o.y * K + s.t, s.w, s.h); } });
     });
     (hc.fires || []).forEach(function (fi) { if (Math.abs(fi.x - cam.x) > 320 || Math.abs(fi.y * K - cam.y) > 260) return; var it = fi.it || (fi.it = { name: 'firePit', x: fi.x, y: fi.y }); items.push({ y: fi.y, f: function () { drawFire(ctx, it); } }); });   /* the troll's fire by his bed (its light is Cave.dark's) */

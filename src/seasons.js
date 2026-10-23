@@ -6,6 +6,7 @@
 //                                                    capped: the piece has its own snow cap picture (the set 'snowcaps': <name>_snow), so
 //                                                    winter leaves the outline snow off and the game draws the cap over it
 //   Seasons.deepen(d, w, h, kind)                  winter's copy with deeper snow, for while it snows (laid over the plain copy at the fresh snow's strength)
+//   Seasons.winterPlant(kind, v)                   winter's picture name for a bush, heather, fern, tall grass, reeds or juniper (set 'plants_winter')
 //   Seasons.bareTree(kind)                           winter's picture name for an oak or a birch (the bare trees, set 'trees_bare')
 //   Seasons.gradeGround(d, w, h, season, water)      a baked ground chunk, once a season; water(x, y) true where the chunk's pixel is sea or
 //                                                    shallows (the game's own heights: elevAt < 0), for the ice at the shore in winter
@@ -67,6 +68,10 @@
     }
     return true;
   }
+  // winter's plants (2026-10-23, Robin: snowed over, a few sprigs, not lush brown bushes): the picture standing in for a plant in winter, in the
+  // set 'plants_winter' (a berry bush is a plain bush in winter); drawn at the plant's place with its own ax, ay, upp, times the object's size
+  var WINTER_PLANT = { bush: 'bush', berryBush: 'bush', heather: 'heather', fern: 'fern', tallGrass: 'tallGrass', reeds: 'reeds', juniper: 'juniper' };
+  function winterPlant(kind, v) { var k = WINTER_PLANT[kind]; return k ? k + '_winter_' + ((((v || 0) % 3) + 3) % 3 + 1) : null; }
   function bareTree(kind, v) { return (kind === 'oak' || kind === 'birch') ? kind + '_bare_' + ((((v || 0) % 3) + 3) % 3 + 1) : null; }
   function gradeGround(d, w, h, season, water) {
     if (season === 'summer') return;
@@ -154,11 +159,17 @@
   var TRUNK = { oak: 0.74, birch: 0.5 };                          // where the crown ends and the bare trunk begins, as a share of the picture's height: the colour fades out down it
   function overFillDown(g, src, w, h, op, col, a, y1) { var gr = g.createLinearGradient(0, h * (y1 - 0.12), 0, h * y1); gr.addColorStop(0, col.replace('hsl(', 'hsla(').replace(')', ',' + a + ')')); gr.addColorStop(1, col.replace('hsl(', 'hsla(').replace(')', ',0)'));
     g.globalCompositeOperation = op; g.fillStyle = gr; g.fillRect(0, 0, w, h); g.globalCompositeOperation = 'destination-in'; g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-over'; }
-  function gradeCanvas(src, kind, season, capped, mk) {
+  // autumn's bushes turn less than the trees and not all alike (Robin, 2026-10-23: "feels strange that the bushes are just complete red in autumn"):
+  // olive, yellow-brown, still greenish, rust, red; the share of each; the tint for a bush standing at x, y (the same bush keeps its tint)
+  var BUSH_AUTUMN = [[62, 0.5, 0], [44, 0.7, 0], [76, 0.35, 0], [24, 0.75, -0.05], [356, 0.8, -0.06]], BUSH_SHARE = [0.32, 0.28, 0.18, 0.14, 0.08];
+  function autumnTint(x, y) { var r = hash(Math.floor(x / 7), Math.floor(y / 7), 17), acc = 0, i; for (i = 0; i < BUSH_SHARE.length; i++) { acc += BUSH_SHARE[i]; if (r < acc) return i; } return 0; }
+  function gradeCanvas(src, kind, season, capped, mk, tint) {
     if (season === 'summer') return src;
     if (season === 'winter' && (kind === 'flower' || kind === 'mushrooms')) return null;
     var w = src.width, h = src.height, c = mkOf(mk)(w, h), g = c.getContext('2d'); g.drawImage(src, 0, 0);
     if (season === 'autumn' && kind === 'flower') { var cf = mkOf(mk)(w, h), gf = cf.getContext('2d'); gf.globalAlpha = 0.45; gf.drawImage(src, 0, 0); return cf; }
+    if (season === 'autumn' && kind === 'bush') { var B = BUSH_AUTUMN[tint || 0]; overFill(g, src, w, h, 'hue', 'hsl(' + B[0] + ',80%,50%)', B[1]); overFill(g, src, w, h, 'saturation', 'hsl(0,48%,50%)', 0.2); if (B[2] < 0) overFill(g, src, w, h, 'multiply', 'hsl(10,30%,62%)', -B[2] * 7); return c; }
+    if (season === 'autumn' && kind === 'berryBush') { overFill(g, src, w, h, 'hue', 'hsl(72,70%,50%)', 0.3); return c; }   // it keeps its green; the red is in the berries
     if (season === 'autumn' || season === 'spring') { if (!PLANT[kind]) return c; var T = LEAF[season][kind] || LEAF[season].def, tk = TRUNK[kind] || 1.12;
       if (season === 'autumn') { overFill(g, src, w, h, 'hue', 'hsl(' + T[0] + ',90%,50%)', kind === 'pine' ? 0.15 : 1); overFillDown(g, src, w, h, 'saturation', 'hsl(0,' + Math.round(Math.min(100, 62 * T[1])) + '%,50%)', kind === 'pine' ? 0 : 0.45, tk);   // the hue over all of it (a trunk, brown and dull, barely moves under it; a fade left green bands)
         if (T[2] > 0) overFill(g, src, w, h, 'screen', 'rgb(255,236,200)', T[2] * 2.2); else if (T[2] < 0) overFillDown(g, src, w, h, 'multiply', 'hsl(10,35%,62%)', Math.min(0.6, -T[2] * 7), tk); }
@@ -176,6 +187,6 @@
     g.drawImage(src, 0, 0); g.globalAlpha = 0.95; g.drawImage(band(src, w, h, 0, ink, 0, ink + D, 'rgb(246,249,252)', mk), 0, 0); g.globalAlpha = 1; return c;
   }
   var api = { PICKS: { spring: 'A, fresh green', summer: 'as the game is', autumn: 'B, fiery', winter: 'A, deep snow' }, LEAF: LEAF, SNOW_DEPTH: SNOW_DEPTH,
-    gradeSprite: gradeSprite, deepen: deepen, gradeCanvas: gradeCanvas, deepenCanvas: deepenCanvas, bareTree: bareTree, gradeGround: gradeGround, sprinkle: sprinkle, grassInk: grassInk, light: light, gradeHex: gradeHex };
+    gradeSprite: gradeSprite, winterPlant: winterPlant, deepen: deepen, gradeCanvas: gradeCanvas, deepenCanvas: deepenCanvas, autumnTint: autumnTint, BUSH_AUTUMN: BUSH_AUTUMN, bareTree: bareTree, gradeGround: gradeGround, sprinkle: sprinkle, grassInk: grassInk, light: light, gradeHex: gradeHex };
   if (typeof module !== 'undefined') module.exports = api; else root.Seasons = api;
 })(this);
