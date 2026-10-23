@@ -101,6 +101,15 @@ The arm ring cannot carry this and does not read as rank. Two moves:
   man with runes cut shows **the cuts as marks** (a blue line on the shield's rim or the haft, one a rune) if Robin wants the
   runes themselves seen; the ring's number of coils is not the sign.
 
+## 2b. How it looks (the mock: `pictures/runes-mock.png`, `tools/visual/runesmock.js`)
+
+Three screens and nothing more. **The Runes tab** (Tab at a fire of yours): the slots down the left, one row each with its input
+and what is in it (grey where a later chapter opens it); the band as a row of small places; click a slot and the middle shows
+only what fits that slot, known runes with a name and a line, unmet ones as "a rune not met" with where it waits; click a rune
+and its card stands on the right with the tale, the tiers and the Bind button. **In play**: the toolbar gets one small mark per
+active slot, a red ring that fills with the blows you land; nothing else on the screen. **The blót**: three cards over the fire,
+Take on each. Managing many runes is managing one slot at a time: the page never lists everything.
+
 ## 3. What this asks of the work
 
 - The engine: a slot table (`SLOTS`) with the input each slot owns, `runeOf(slot)` where the inputs are read (the guard-blow,
