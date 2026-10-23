@@ -239,7 +239,7 @@
     var nm, f, k = e.dur ? Math.max(0, Math.min(0.999, e.t / e.dur)) : 0, ph = t + (e.seed || 0), loopN = null, mixB = null;
     var lie = opts.deadFor || 1.5;
     if (e.dead && !A.death && opts.deathClip && A[opts.deathClip]) { e.deadFor = lie; nm = opts.deathClip; f = Math.min(A[nm].frames - 1, Math.floor(e.deadT / (lie * 0.6) * A[nm].frames)); }   // a creature with no death of its own (the bysen folds into his stump)
-    else if (e.dead && A.death) { e.deadFor = lie; nm = 'death'; f = opts.deadFor ? Math.min(A.death.frames - 1, Math.floor(e.deadT / (lie * 0.6) * A.death.frames)) : Math.min(A.death.frames - 1, Math.floor(e.deadT * A.death.fps)); }
+    else if (e.dead && A.death) { e.deadFor = lie; nm = 'death'; f = opts.deadFor ? Math.min(A.death.frames - 1, Math.floor(e.deadT / (Math.min(lie, 2.5) * 0.6) * A.death.frames)) : Math.min(A.death.frames - 1, Math.floor(e.deadT * A.death.fps)); }
     else if (opts.clip && A[opts.clip]) { nm = opts.clip; f = opts.clipK != null ? frameAt(A[nm], Math.max(0, Math.min(0.999, opts.clipK))) : loopFrame(A[nm], ph); }
     else if (e.state === 'windup' && A.windup) { nm = 'windup'; f = opts.windupLoop ? loopFrame(A.windup, ph) : frameAt(A.windup, k); }
     else if (e.state === 'lunge' && A.attack) { nm = 'attack'; f = opts.attackLoop ? loopFrame(A.attack, ph) : frameAt(A.attack, k); }

@@ -528,7 +528,7 @@ __COMBAT__
     var mdk = !inCave && !e.human && caveMouth && caveMouth.pic ? mouthDark(e.x, e.y) : 1; if (mdk < 1) { c.save(); c.filter = 'brightness(' + mdk.toFixed(3) + ')'; var r0 = beastSpriteOf(c, e); c.restore(); return r0; } return beastSpriteOf(c, e); };   /* (in the troll cave's mouth, dark with depth: MOUTH) */
   function beastSpriteOf(c, e) { if (e.human) return drawFighter(c, e); var BH = BEASTS[e.kind]; if (!BH) return false; var bo = BEAST_OPT[e.kind];
     if (!Sprites.beastReady(BH)) { Sprites.warm(BH); if (e.dead) return true; c.save(); c.translate(e.x, e.y * K); c.fillStyle = 'rgba(24,18,14,0.22)'; c.beginPath(); c.ellipse(0, e.r * 0.25, e.r * 1.25, e.r * 0.5, 0, 0, 7); c.fill(); c.restore(); return true; }   /* its sheets on their way: a soft shadow where it stands */
-    var o = { tame: !!e.tame, shadow: !inCave, lit: figLit(e.x, e.y, true, 34), shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: bo.deadFor };
+    var o = { tame: !!e.tame, shadow: !inCave, lit: figLit(e.x, e.y, true, 34), shadowHue: kit.STYLE.shadowHue, windupLoop: bo.windupLoop, attackLoop: bo.attackLoop, scale: (bo.scale || 1) * (e.sizeK || 1), deadFor: e.human ? bo.deadFor : Math.max(bo.deadFor || 0, DEAD_LIE) };   /* a killed beast lies DEAD_LIE s, to be taken up (Robin, 2026-10-23) */
     if (e.tame) { o.idleClip = e.idleClip || null; if (e.lieT > 0) { o.clip = e.stock === 'hen' ? 'sit' : 'lie'; o.clipK = Math.min(0.999, (e.lieK || 0) / 1.2); } else if (e.buttT > 0) { o.clip = 'butt'; o.clipK = Math.min(0.999, (e.lieK || 0) / 0.75); } }   // a village animal: pecking or grazing, or lying down (held at the clip's end)
     if (e.ko > 0 && !e.dead) { o.clip = 'death'; o.clipK = 0.999; }   /* out cold (the cudgel): lying as the dead lie */
     else if (e.stoneT != null) { o.clip = 'shield'; o.clipK = 0.999; o.tint = { color: '#a3a29a', a: 0.86 }; }        // the troll caught by the dawn: stone in the pose he threw up against it
@@ -5462,8 +5462,8 @@ __COMBAT__
     ceremony = { it: it, t: 0, phase: 'storm', offer: Runes2.offer(R2, rk), pick: -1, tier: tier, rank: rk.id, force0: WTH.force, chosen: null }; WTH.force = 'storm'; altarOpen = false; sfx('storm_rise'); save();
   }
   function ritePick(i) { if (!ceremony || ceremony.phase !== 'choose' || !ceremony.offer[i]) return; ceremony.pick = i; ceremony.phase = 'strike'; ceremony.t = 0; sfx('lightning_strike'); flashT = 0.35; }
-  var flashT = 0, wasReady = {};
-  function runeReadyTick() { Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var rd = Runes2.ready(R2, sl.id) && Runes2.need(R2, sl.id) > 0; if (rd && !wasReady[sl.id]) sfx('rune_ready'); wasReady[sl.id] = rd; }); }   /* the blood ring filling: a small cue by the toolbar (Derek, SD's rune_ready) */
+  var flashT = 0, wasReady = {}, sceneBoarWait = null;
+  function runeReadyTick() { if (sceneBoarWait != null && --sceneBoarWait <= 0) { sceneBoarWait = null; runeAct('boar'); } Runes2.SLOTS.forEach(function (sl) { if (!sl.active) return; var rd = Runes2.ready(R2, sl.id) && Runes2.need(R2, sl.id) > 0; if (rd && !wasReady[sl.id]) sfx('rune_ready'); wasReady[sl.id] = rd; }); }   /* the blood ring filling: a small cue by the toolbar (Derek, SD's rune_ready) */
   function riteTick2(dt) {
     if (!ceremony) return; var C = ceremony; C.t += dt;
     if (C.phase === 'storm') { WTH.spells.forEach(function (S) { if (S.kind === 'storm') S.k = Math.min(1, S.k + dt * 0.5); }); var Ph = hero(), wk = altarWork(C.it), sb = wk.stepBack, tx = C.it.x + sb.x, ty = C.it.y + sb.y / K, dd = Math.hypot(tx - Ph.x, ty - Ph.y); if (dd > 2 && Math.hypot(Ph.x - C.it.x, Ph.y - C.it.y) < 80) { var stp = Math.min(dd, dt * 70); Ph.x += (tx - Ph.x) / dd * stp; Ph.y += (ty - Ph.y) / dd * stp; Ph.face = Math.PI / 2; }   /* he steps back to the north-west as the storm rises (Colin, AD's work.stepBack: the bolt comes down past him, not through him on screen) */ if (C.t >= 3.5) { if (!C.offer.length) { C.phase = 'done'; C.t = 0; C.it.laid = null; C.it.scorched = day.n; C.it.stain = 1; toast('The storm passes and leaves no stone'); seasonTurn(yearNext(year.season)); save(); } else { C.phase = 'choose'; C.t = 0; sfx('rune_carve'); } } }   /* (nothing left to offer: the blood still turns the year) */
@@ -5505,10 +5505,12 @@ __COMBAT__
   /* the beasts out cold (the cudgel): taken up and carried over the shoulders, laid on the altar or set down */
   var BEAST_WORD = { boar: 'boar', deer: 'deer', wolf: 'wolf', snake: 'adder', bear: 'bear', moose: 'moose', hen: 'hen', goat: 'goat', sheep: 'sheep', cow: 'cow' };
   function beastWord(e) { return BEAST_WORD[e.stock || e.kind] || 'beast'; }
-  function koNear(P) { var best = null, bd = 1e9; Combat.dbg().W.enemies.forEach(function (e) { if (!(e.ko > 0) || e.dead || e.hidden || e.carried) return; var d = Math.hypot(e.x - P.x, e.y - P.y); if (d < 44 && d < bd) { bd = d; best = e; } }); return best; }
-  function takeUpBeast(e) { if (carrying || !(e.ko > 0)) return; carrying = { beast: e, heavy: true, x: e.x, y: e.y }; e.carried = true; e.hidden = true; e.ko = Math.max(e.ko, 1); sfx('pick'); }
+  var DEAD_LIE = 12;                         /* how long a killed beast's body lies before it is gone (mine; Robin, 2026-10-23: a couple of seconds at least, so it can be picked up) */
+  function bodyBeast(e) { return e.type === 'beast' && !e.human && ((e.ko > 0 && !e.dead) || (e.dead && e.deadT < (e.deadFor || 0))); }   /* a beast out cold or freshly killed: carried to the altar either way */
+  function koNear(P) { var best = null, bd = 1e9; Combat.dbg().W.enemies.forEach(function (e) { if (!bodyBeast(e) || e.hidden || e.carried) return; var d = Math.hypot(e.x - P.x, e.y - P.y); if (d < 44 && d < bd) { bd = d; best = e; } }); return best; }
+  function takeUpBeast(e) { if (carrying || !bodyBeast(e)) return; carrying = { beast: e, heavy: true, x: e.x, y: e.y }; e.carried = true; e.hidden = true; if (!e.dead) e.ko = Math.max(e.ko, 1); else e.deadFor = 1e9; sfx('pick'); }   /* (a dead one keeps while carried) */
   function layOnAltar(it) { if (!carrying || !carrying.beast || !it) return; var e = carrying.beast; if (it.laid) { toast('Something lies there already'); return; } e.dead = true; e.hidden = true; e.away = true; e.deadT = 1e9; it.laid = { kind: e.stock || e.kind, bkind: e.kind, stock: e.stock || null, r: e.r, sizeK: e.sizeK || 1, face: e.face || 0, seed: e.seed || 0 }; carrying = null; sfx('altar_lay'); save(); }
-  function setDownBeast() { if (!carrying || !carrying.beast) return; var P = hero(), e = carrying.beast; e.x = P.x + Math.cos(P.face) * 14; e.y = P.y + Math.sin(P.face) * 10; e.hidden = false; e.carried = false; carrying = null; sfx('pick'); }
+  function setDownBeast() { if (!carrying || !carrying.beast) return; var P = hero(), e = carrying.beast, EN = Combat.dbg().W.enemies; e.x = P.x + Math.cos(P.face) * 14; e.y = P.y + Math.sin(P.face) * 10; e.hidden = false; e.carried = false; if (e.dead) { e.deadT = 0; e.deadFor = DEAD_LIE; if (EN.indexOf(e) < 0) EN.push(e); } carrying = null; sfx('pick'); }   /* (a dead one set down lies its while again) */
   function drawCarriedBeast(c) { if (!carrying || !carrying.beast) return; var P = hero(), e = carrying.beast, ox = e.x, oy = e.y; e.x = P.x; e.y = P.y - 12 / K; e.hidden = false; Combat.api.enemySprite(c, e); e.hidden = true; e.x = ox; e.y = oy; }
   /* ---------- the Book of Beasts: a card for every creature, earned the first time you slay one ----------
      The left page shows the beast itself, turning slowly; the right page what is known: lore, strengths,
@@ -7803,12 +7805,12 @@ __COMBAT__
     ['wood', 'stone', 'fiber', 'meat', 'berries'].forEach(function (k) { addItem(k, 25); seen[k] = 1; });
     [Items.make('cudgel', 'wood'), Items.make('sword', 'flint'), Items.make('axe', 'flint'), Items.make('club', 'wood'), Items.make('shield', 'wood'), Items.make('bow', 'wood')].forEach(function (it) { if (!barPut(it)) addThing(it); });
     quiver = { slots: [{ kind: 'arrow', n: 40 }, null, null], sel: 0 }; day.t = 300; caveFade = 0; seen.met = 1; seen.build = 1; seen.bar = 1; seen.slept = 1;
-    sandboxRunes(); year.day = YEAR.days; runeAct('boar'); armsOut = true; save();
+    sandboxRunes(); year.day = YEAR.days; sceneBoarWait = 30; seen.pried = 1; armsOut = true; save();   /* (the boar out cold is placed a few frames in, once the island's animals stand; no wreck reminder here) */
   }
   function runeRows() {
     var due = yearDue(), alt = runeSite;
     return [{ id: 'all', name: 'Every rune known' }, { id: 'start', name: 'Only the start\u2019s (the Bash, the Dash)' }, { id: 'tiers', name: 'Every rune at tier III' }, { id: 'due', name: due ? 'The season is due' : 'Make the season due', on: due },
-      { id: 'hen', name: 'A hen out cold here (one stone)' }, { id: 'boar', name: 'A boar out cold here (two)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (Thor\u2019s fell bound)' }, { id: 'blood', name: 'Every blood ring full' },
+      { id: 'boar', name: 'A boar out cold here (two stones)' }, { id: 'deer', name: 'A deer out cold here (two)' }, { id: 'bear', name: 'A bear out cold here (four)' }, { id: 'boarWild', name: 'A boar comes at you' }, { id: 'men', name: 'Two men come at you' }, { id: 'trees', name: 'Four pines in a line (Thor\u2019s fell bound)' }, { id: 'blood', name: 'Every blood ring full' },
       { id: 'altar', name: 'To the altar' }, { id: 'night', name: light() > 0.5 ? 'Make it day' : 'Make it night' }, { id: 'reset', name: 'Start over' }];
   }
   function runeAct(id) {
@@ -7821,24 +7823,13 @@ __COMBAT__
     else if (id === 'start') { R2 = Runes2.start(); Combat.api.runeState = R2; toast('The Bash and the Dash'); }
     else if (id === 'tiers') { Runes2.LIST.forEach(function (r) { Runes2.learn(R2, r.id, 3); }); toast('Every rune at tier III'); }
     else if (id === 'due') { year.day = yearDue() ? 0 : YEAR.days; }
-    else if (id === 'boar' || id === 'deer' || id === 'hen' || id === 'bear') { var kb = placeAnimal(id === 'hen' ? 'boar' : id, 0, { x: P.x + 50, y: P.y + 10 }, false); if (kb) { if (id === 'hen') { kb.stock = 'hen'; kb.tame = true; } Combat.api.knockOut(kb); } }
+    else if (id === 'boar' || id === 'deer' || id === 'bear') { var kb = placeAnimal(id, 0, { x: P.x + 50, y: P.y + 10 }, false); if (kb) Combat.api.knockOut(kb); }
     else if (id === 'boarWild') { var kw = placeAnimal('boar', 0, { x: P.x + 140, y: P.y + 20 }, false); if (kw) { kw.awake = true; kw.aggro = 60; } }
     else if (id === 'men') { [0, 1].forEach(function (k) { var m2 = spawnMan(0, P.x + 140 + k * 30, P.y + (k ? 30 : -20), k ? 'axe' : 'sword', 1, 4); m2.awake = true; m2.aggro = 60; m2.loyal = true; }); }   /* (the Battle test's men, in leather with shields, come at you at once) */
     else if (id === 'blood') { Runes2.readyAll(R2); }
     else if (id === 'trees') { Runes2.learn(R2, 'thorsFell', Math.max(1, Runes2.tierOf(R2, 'thorsFell'))); Runes2.bind(R2, 'swing', 'thorsFell'); var tx0 = P.x + 70, ty0 = P.y - 30, tk; for (tk = 0; tk < 4; tk++) (function (x, y) { var near = []; w.eachProp(function (o) { if (Math.hypot(o.x - x, o.y - y) < 30) near.push(o); }); near.forEach(function (o) { w.removeProp(o); }); var tp = { name: 'pine', x: x, y: y, s: 0.58, r: 11, v: tk % 3, kind: 'tree', leanDir: 1 }; tp.max = tp.hp = World.HP.pine * (0.7 + 0.6 * tp.s); w.addProp(tp); })(tx0 + tk * 44, ty0); toast('Thor\u2019s fell on the swing: fell the first pine toward the others'); }
     else if (id === 'altar') { if (runeSite) { P.x = runeSite.x; P.y = runeSite.y - 44; P.face = Math.PI / 2; P.lvl = 0; } }
     else if (id === 'night') { day.t = light() > 0.5 ? 300 : 1300; }
-    else if (id === 'home') { if (inCave) caveSwap(false); var cb = B.items.filter(function (it) { return it.altar; })[0]; if (cb) { P.x = cb.x; P.y = cb.y + 34; P.lvl = 0; } else if (runeSite) { P.x = (runeSite.tx + 2.5) * T; P.y = (runeSite.ty + 1.6) * T; P.lvl = 0; } }
-    else if (id === 'dawn') { day.t = 0; day.n++; if (day.n >= 10) regrowTick(); morningEmbers(); yearNewDay(); }
-    else if (id === 'cave') { if (inCave) caveSwap(false); if (caveMouth) { P.x = caveMouth.x; P.y = caveMouth.y + 60; P.lvl = 0; } }
-    else if (id === 'cavein') { if (inCave && here() !== cave) caveSwap(false); if (!inCave) caveSwap(true); }
-    else if (id === 'lair') { if (inCave && here() !== cave) caveSwap(false); if (!inCave) caveSwap(true); if (cave) { P.x = cave.lair.x - 80; P.y = cave.lair.y; } }
-    else if (id === 'young') { if (inCave && here() !== cave) caveSwap(false); if (!inCave) caveSwap(true); var yg = unges.filter(function (u) { return !u.dead; })[0]; if (yg) { var ya = Math.random() * 6.283, yt; for (yt = 0; yt < 24; yt++) { var yx = yg.x + Math.cos(ya + yt) * 110, yy = yg.y + Math.sin(ya + yt) * 70; if (Cave.floor(cave, yx, yy)) { P.x = yx; P.y = yy; break; } } } else toast('No young left in the cave'); }
-    else if (id === 'pool' || id === 'chasm') { if (inCave && here() !== cave) caveSwap(false); if (!inCave) caveSwap(true); if (cave) { P.x = id === 'pool' ? cave.poolC.x - 70 : cave.ledge.x - 30; P.y = id === 'pool' ? cave.poolC.y - 10 : cave.ledge.y; } }
-    else if (id === 'trollout') { if (light() < 0.5) day.t = 1300; if (!troll) trollMoveIn(); if (troll && caveMouth) { var e = troll; e.place = 'out'; e.x = caveMouth.x; e.y = caveMouth.y + 50; e.awake = false; e.aggro = 0; e.strolls = true; e.going = null; e.stoneT = null; e.wander = { x0: caveMouth.x, y0: caveMouth.y + 100, r: 340, wait: 1 }; trollOutNight = day.n; toast('The troll walks out'); } }
-    else if (id === 'trollhome') { if (troll && cave) { trollHome(troll, true); toast('The troll walks home'); } }
-    else if (id === 'veins') { if (cave) { cave.veins.forEach(function (v) { v.left = 5 + (v.s % 3); v.hp = v.max; }); Cave.dirty(cave); if (cave.hoard) cave.hoard.n = 10; toast('The veins are green again'); } }
-    else if (id === 'stuff') { ['copper', 'charcoal', 'wood', 'stone'].forEach(function (k) { addItem(k, 25); seen[k] = 1; }); }
     else if (id === 'reset') { noSave = true; try { localStorage.removeItem(SAVE); } catch (e) {} location.reload(); return; }
     save();
   }
