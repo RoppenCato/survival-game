@@ -5192,6 +5192,7 @@ function make(kit, opts) {
     if (!im.sp || w.season === 'summer' || typeof Seasons === 'undefined') return null;
     var cap = w.season === 'winter' && im.key ? IMAGES[im.key + '_snow'] : null; if (!SEASON_KINDS[name] && !cap) return null;   /* (a winter snow cap, the studio's second drop: <picture>_snow, drawn over the piece at its own foot point) */
     var src = im;
+    if (w.season === 'winter' && name === 'berryBush') { var nvb = variantsOf('bush'), bb = IMAGES[nvb ? 'bush_' + (((v | 0) % nvb) + 1) : 'bush']; if (bb && bb.sp) { src = bb; cap = bb.key ? IMAGES[bb.key + '_snow'] || cap : cap; } }   /* (no berries in winter: the berry bush is a bare bush under its snow; what a season gives is the game's SEASON_GIVES) */
     if (w.season === 'winter') { var bn = Seasons.bareTree(name, v), bim = bn && IMAGES[bn]; if (bim) { if (!bim.sp && imgReady(bim.img)) bim.sp = { cv: bim.img, l: -bim.ax * bim.upp, t: -bim.ay * bim.upp, w: bim.w * bim.upp, h: bim.h * bim.upp, lights: [], fixed: true }; if (bim.sp) src = bim; } }
     if (src.gs && src.gs.season === w.season) return src.gs.sp;
     if (src.gs && gradeN >= GRADE_A_FRAME) return src.gs.sp;   /* (the season has just turned: so many pictures graded a frame, the rest still drawn in the old season's look until their turn, so the turn does not freeze the frame) */
@@ -18475,6 +18476,11 @@ if (typeof module !== 'undefined') module.exports = Combat;
     });
     return best;
   }
+  /* What a season gives (Robin, 2026-10-23: "berries shouldnt be available then ... Grass shouldnt be able to be picked then either, but
+     gotten from the trees as per normal"): a table by thing, a season left out or 1 is given, 0 is not. Winter takes the berries (a
+     berry bush is drawn as a bare bush) and the grass of the tufts (a tree's wood still comes with its fibre). The rest is mine to fill. */
+  var SEASON_GIVES = { berries: { winter: 0 }, grass: { winter: 0 } };
+  function seasonGives(k) { var t = SEASON_GIVES[k]; return !t || t[year.season] !== 0; }
   var GRASS_KINDS = { tallGrass: 1 };     /* what is grass: a tuft of tall grass, nothing else (Robin, 2026-10-16: berry bushes give no grass) */
   function grassNear(P) {                 /* a tuft of grass to pull (2026-10-16, Robin: grass with E, popping out like the berries; the knife is no tool now) */
     var best = null;
@@ -19568,8 +19574,8 @@ if (typeof module !== 'undefined') module.exports = Combat;
     var fk = folkNear(P); if (fk && (fk.bound || (fk.role === 'thrall' && !fk.dead && !fk.gone))) add(fk, 'Cut ' + (fk.bound ? hisHer(fk) + ' bonds' : hisHer(fk) + ' rope'), function () { cutLoose(fk); }, -10); else if (fk && !(fk.quietUntil > clock)) add(fk, fk.sayT > 0 && !(fk.aslak && aslakMore()) ? null : 'Talk', function () { talkOpen(fk, function () { folkTalk(fk); }); });   /* (raid step 9: a thrall cut loose is yours; a man of yours they took, the same) */
     var ym = yieldedNear(P); if (ym) add(ym, 'Let ' + (hisHer(ym) === 'her' ? 'her' : 'him') + ' go', function () { letGo(ym); }, -6);
     var rk = rackUsable(P); if (rk) add(rk, rackCured(rk) ? 'Collect leather' : 'Hang hide', function () { rackUse(rk); });
-    var bb = berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });
-    var gb = !bb && grassNear(P); if (gb) add(gb, 'Pull grass', function () { pullGrass(gb); });
+    var bb = seasonGives('berries') && berryNear(P); if (bb) add(bb, 'Pick berries', function () { pickBerries(bb); });   /* (not in a season that gives none: SEASON_GIVES) */
+    var gb = !bb && seasonGives('grass') && grassNear(P); if (gb) add(gb, 'Pull grass', function () { pullGrass(gb); });
     var kb = kickable(P); if (kb) add(kb, 'Kick it open', function () { kickBox(kb); });
     if (!C.length) return null;
     C.sort(function (a, b) { return a.sc - b.sc; });
@@ -20060,7 +20066,7 @@ if (typeof module !== 'undefined') module.exports = Combat;
   function skyAct(id) {
     var m = /^(\w+)\.(.+)$/.exec(id); if (!m) return; var what = m[1], v = m[2];
     if (id === 'sky.back') { skyOpen = false; return; }
-    if (what === 'season') { if (year.season !== v) seasonTurn(v); return; }
+    if (what === 'season') { if (year.season !== v) seasonTurn(v); return; }   /* (what a season gives is SEASON_GIVES) */
     if (what === 'weather') { WTH.force = v === 'own' ? null : v; return; }
     if (what === 'hour') { day.t = +v; sunTick(); return; }
     if (what === 'wind') { wind.sTo = +v; wind.s = +v; return; }

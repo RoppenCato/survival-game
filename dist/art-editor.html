@@ -4547,6 +4547,7 @@ function make(kit, opts) {
     if (!im.sp || w.season === 'summer' || typeof Seasons === 'undefined') return null;
     var cap = w.season === 'winter' && im.key ? IMAGES[im.key + '_snow'] : null; if (!SEASON_KINDS[name] && !cap) return null;   /* (a winter snow cap, the studio's second drop: <picture>_snow, drawn over the piece at its own foot point) */
     var src = im;
+    if (w.season === 'winter' && name === 'berryBush') { var nvb = variantsOf('bush'), bb = IMAGES[nvb ? 'bush_' + (((v | 0) % nvb) + 1) : 'bush']; if (bb && bb.sp) { src = bb; cap = bb.key ? IMAGES[bb.key + '_snow'] || cap : cap; } }   /* (no berries in winter: the berry bush is a bare bush under its snow; what a season gives is the game's SEASON_GIVES) */
     if (w.season === 'winter') { var bn = Seasons.bareTree(name, v), bim = bn && IMAGES[bn]; if (bim) { if (!bim.sp && imgReady(bim.img)) bim.sp = { cv: bim.img, l: -bim.ax * bim.upp, t: -bim.ay * bim.upp, w: bim.w * bim.upp, h: bim.h * bim.upp, lights: [], fixed: true }; if (bim.sp) src = bim; } }
     if (src.gs && src.gs.season === w.season) return src.gs.sp;
     if (src.gs && gradeN >= GRADE_A_FRAME) return src.gs.sp;   /* (the season has just turned: so many pictures graded a frame, the rest still drawn in the old season's look until their turn, so the turn does not freeze the frame) */
