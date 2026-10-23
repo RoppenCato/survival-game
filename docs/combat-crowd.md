@@ -32,8 +32,9 @@ Arena's Tuning panel, 0 turns it off; Use in the game hands them to the game as 
    "if you are using a weapon without a shield, you should be able to just bash by hitting with your shoulder"). J with the guard up
    (K held) is a bash: the man before you within 36 units **with his guard up** has his block broken (as the axe breaks it; no guard
    again for `breakCd` 1.4 s), is thrown back about a hero's length (`shoveD` 380 as a push) and staggers 0.55 s, and a man he is
-   thrown into staggers with him (`shoveT`, `bump`); it costs 14 stamina and comes once in 1.1 s (`shoveSt`, `shoveCd`). With no
-   blocking man before you nothing happens and nothing is spent. Without a shield the shoulder does it at 0.7 of the throw
+   thrown into staggers with him (`shoveT`, `bump`); it costs 14 stamina and comes once in 1.1 s (`shoveSt`, `shoveCd`). The bash comes always (Robin, later that day: "you should be able to bash all the
+   time, but if it doesnt hit a block, it just does low damage"): a man with his guard down takes 0.35 of the held weapon's blow
+   (`bashDmg`) and a small push (`bashKb` 90); nobody in front is a bash at the air; the stamina is spent either way. Without a shield the shoulder does it at 0.7 of the throw
    (`shoulderK`, mine). The clips `bash` and `bash_wpn` (the shoulder) are asked of Colin, AD; until they come the block is held
    through the move (`bashT` 0.3 s).
 

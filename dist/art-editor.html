@@ -6395,7 +6395,7 @@ var PERFECT = { win: 0.18, slow: 0.3, slowT: 0.28, exposed: 1.2, bonus: 1.5 };
    guard up: the man before you within shoveReach is thrown back shoveD and staggers shoveT, and a man he is thrown into
    staggers too; it costs shoveSt stamina, once in shoveCd; with no shield the weapon's haft does it for half the throw). Each
    is a switch: 0 turns it off. */
-var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36, shoulderK: 0.7, breakCd: 1.4, bashT: 0.3 };   /* (the bash breaks a block only, Robin 2026-10-23; without a shield the shoulder does it at shoulderK of the throw, mine; the broken man cannot raise his guard for breakCd; bashT the move's own time, for the clip) */
+var CROWD = { shockR: 80, shockArc: 2.2, shockT: 0.45, fearR: 130, fearT: 0.8, shove: 1, shoveReach: 36, shoveD: 380, shoveT: 0.55, shoveSt: 14, shoveCd: 1.1, bump: 36, shoulderK: 0.7, breakCd: 1.4, bashT: 0.3, bashDmg: 0.35, bashKb: 90 };   /* (the bash comes always, Robin 2026-10-23: on a blocking man it breaks his block and throws him; on a man with his guard down it does low damage, bashDmg of the held weapon's blow with a small push; without a shield the shoulder does it at shoulderK of the throw, mine; the broken man cannot raise his guard for breakCd; bashT the move's own time, for the clip) */
 function headY(e) { return e.y * K - (e.human ? 50 : e.r * 2.6 + 14); }
 function postureAdd(e, v) {
   if (!e || e.dead || e.down || e.out || e.type === 'brute' || e.side === 1) return;
@@ -6419,14 +6419,14 @@ function crowdFear(e) {                   // the finishing blow's fear: the men 
     if (Math.hypot(o.x - e.x, o.y - e.y) > CROWD.fearR) continue; o.state = 'stagger'; o.t = 0; o.dur = CROWD.fearT; o.sw = null; o.swung = false; o.poiseT = 0.9; o.showBar = 2; o.guard = 0; n++; }
   if (n) { ring(e.x, e.y, 0, CROWD.fearR, 0.5, '255,200,140', false, 2); logEv({ k: 'fear', n: n }); }
 }
-function crowdShove(p) {                  // the shield bash (Robin, 2026-10-23: "only be able to be used when the enemy is blocking, to break their block"): the blocking man before you has his guard broken, is thrown back and staggers, and the one he lands on staggers with him; without a shield the shoulder does it (CROWD)
+function crowdShove(p) {                  // the shield bash (Robin, 2026-10-23: "you should be able to bash all the time, but if it doesnt hit a block, it just does low damage"): the man before you with his guard up has it broken, is thrown back and staggers, and the one he lands on staggers with him; one with his guard down takes a low blow and a push; without a shield the shoulder does it (CROWD)
   var best = null, bd = 1e9, i, face = P.inAng !== null ? P.inAng : P.face, hasShield = !!(S.shield && api.shield && api.shield());
   for (i = 0; i < W.enemies.length; i++) { var o = W.enemies[i]; if (o.type !== 'soldier' || o.dead || o.down || o.out || o.side === 1) continue;
-    if (!(o.guard > 0)) continue;   /* (only a man with his guard up: the bash is for breaking a block) */
     var d = Math.hypot(o.x - p.x, o.y - p.y) - o.r - p.r; if (d > CROWD.shoveReach) continue; if (Math.abs(wrap(Math.atan2(o.y - p.y, o.x - p.x) - face)) > 1.0) continue; if (d < bd) { bd = d; best = o; } }
-  if (!best) return false;   /* (nobody blocking before you: nothing happens, nothing is spent) */
   p.st -= CROWD.shoveSt; p.stDelay = 0.6; p.shoveCd = CROWD.shoveCd; p.anim.sq = -0.2; p.anim.sqv = 0; p.bashT = CROWD.bashT; sfx('block', 0.6);
+  if (!best) { ring(p.x + Math.cos(face) * 20, p.y + Math.sin(face) * 20, 0, 14, 0.2, '200,200,200', false, 1.5); logEv({ k: 'shove', hit: false }); return false; }   /* (a bash at the air) */
   var ang = Math.atan2(best.y - p.y, best.x - p.x), k = hasShield ? 1 : CROWD.shoulderK;
+  if (!(best.guard > 0)) { var it = api.items && api.items.held ? api.items.held() : null, wd = 1; if (it) { try { var sd2 = Items.stats(it).dmg; if (isFinite(sd2) && sd2 > 0) wd = sd2; } catch (eI) {} } damageEnemy(best, CROWD.bashDmg * wd * dmgMul('sword') * k, ang, CROWD.bashKb * k, 0, 'melee'); logEv({ k: 'shove', hit: true, e: best, low: true }); return true; }   /* (no block to break: a low blow and a push) */
   best.pkx = 0; best.pky = 0; best.kx += Math.cos(ang) * CROWD.shoveD * k; best.ky += Math.sin(ang) * CROWD.shoveD * k;
   best.state = 'stagger'; best.t = 0; best.dur = CROWD.shoveT; best.sw = null; best.swung = false; best.poiseT = 0.9; best.guard = 0; best.guardAge = 0; best.guardCd = CROWD.breakCd; best.brokeT = 1; best.showBar = 2; postureAdd(best, POSTURE.block);   /* (his block is broken: as the axe breaks it, and no guard again for breakCd) */
   for (i = 0; i < W.enemies.length; i++) { var q = W.enemies[i]; if (q === best || q.type !== 'soldier' || q.dead || q.down || q.out || q.side === 1) continue;
